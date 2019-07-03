@@ -16,7 +16,7 @@
 set -ex
 
 # change to root directory
-cd $(dirname $0)/../..
+cd "$(dirname "$0")/../.."
 
 bundle
 rake dlls

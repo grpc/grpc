@@ -24,12 +24,16 @@
 #include <string>
 
 #include <grpc/grpc.h>
-#include <grpc++/server.h>
-#include <grpc++/server_builder.h>
-#include <grpc++/server_context.h>
-#include <grpc++/security/server_credentials.h>
+#include <grpcpp/server.h>
+#include <grpcpp/server_builder.h>
+#include <grpcpp/server_context.h>
+#include <grpcpp/security/server_credentials.h>
 #include "helper.h"
+#ifdef BAZEL_BUILD
+#include "examples/protos/route_guide.grpc.pb.h"
+#else
 #include "route_guide.grpc.pb.h"
+#endif
 
 using grpc::Server;
 using grpc::ServerBuilder;
@@ -51,6 +55,7 @@ float ConvertToRadians(float num) {
   return num * 3.1415926 /180;
 }
 
+// The formula is based on http://mathforum.org/library/drmath/view/51879.html
 float GetDistance(const Point& start, const Point& end) {
   const float kCoordFactor = 10000000.0;
   float lat_1 = start.latitude() / kCoordFactor;
@@ -146,24 +151,25 @@ class RouteGuideImpl final : public RouteGuide::Service {
 
   Status RouteChat(ServerContext* context,
                    ServerReaderWriter<RouteNote, RouteNote>* stream) override {
-    std::vector<RouteNote> received_notes;
     RouteNote note;
     while (stream->Read(&note)) {
-      for (const RouteNote& n : received_notes) {
+      std::unique_lock<std::mutex> lock(mu_);
+      for (const RouteNote& n : received_notes_) {
         if (n.location().latitude() == note.location().latitude() &&
             n.location().longitude() == note.location().longitude()) {
           stream->Write(n);
         }
       }
-      received_notes.push_back(note);
+      received_notes_.push_back(note);
     }
 
     return Status::OK;
   }
 
  private:
-
   std::vector<Feature> feature_list_;
+  std::mutex mu_;
+  std::vector<RouteNote> received_notes_;
 };
 
 void RunServer(const std::string& db_path) {

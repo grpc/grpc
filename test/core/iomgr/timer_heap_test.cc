@@ -18,9 +18,6 @@
 
 #include "src/core/lib/iomgr/port.h"
 
-// This test only works with the generic timer implementation
-#ifdef GRPC_TIMER_USE_GENERIC
-
 #include "src/core/lib/iomgr/timer_heap.h"
 
 #include <stdlib.h>
@@ -28,8 +25,8 @@
 
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
-#include <grpc/support/useful.h>
 
+#include "src/core/lib/gpr/useful.h"
 #include "test/core/util/test_config.h"
 
 static gpr_atm random_deadline(void) { return rand(); }
@@ -102,7 +99,7 @@ static void test1(void) {
   check_valid(&pq);
 
   for (i = 0; i < num_test_operations; ++i) {
-    size_t elem_num = (size_t)rand() % num_test_elements;
+    size_t elem_num = static_cast<size_t>(rand()) % num_test_elements;
     grpc_timer* el = &test_elements[elem_num];
     if (!inpq[elem_num]) { /* not in pq */
       GPR_ASSERT(!contains(&pq, el));
@@ -142,8 +139,8 @@ static elem_struct* search_elems(elem_struct* elems, size_t count,
     search_order[i] = i;
   }
   for (size_t i = 0; i < count * 2; i++) {
-    size_t a = (size_t)rand() % count;
-    size_t b = (size_t)rand() % count;
+    size_t a = static_cast<size_t>(rand()) % count;
+    size_t b = static_cast<size_t>(rand()) % count;
     GPR_SWAP(size_t, search_order[a], search_order[b]);
   }
   elem_struct* out = nullptr;
@@ -167,13 +164,13 @@ static void test2(void) {
   size_t num_inserted = 0;
 
   grpc_timer_heap_init(&pq);
-  memset(elems, 0, elems_size);
+  memset(elems, 0, elems_size * sizeof(elems[0]));
 
   for (size_t round = 0; round < 10000; round++) {
     int r = rand() % 1000;
     if (r <= 550) {
       /* 55% of the time we try to add something */
-      elem_struct* el = search_elems(elems, GPR_ARRAY_SIZE(elems), false);
+      elem_struct* el = search_elems(elems, elems_size, false);
       if (el != nullptr) {
         el->elem.deadline = random_deadline();
         grpc_timer_heap_add(&pq, &el->elem);
@@ -183,7 +180,7 @@ static void test2(void) {
       }
     } else if (r <= 650) {
       /* 10% of the time we try to remove something */
-      elem_struct* el = search_elems(elems, GPR_ARRAY_SIZE(elems), true);
+      elem_struct* el = search_elems(elems, elems_size, true);
       if (el != nullptr) {
         grpc_timer_heap_remove(&pq, &el->elem);
         el->inserted = false;
@@ -207,7 +204,7 @@ static void test2(void) {
     }
 
     if (num_inserted) {
-      gpr_atm* min_deadline = nullptr;
+      grpc_millis* min_deadline = nullptr;
       for (size_t i = 0; i < elems_size; i++) {
         if (elems[i].inserted) {
           if (min_deadline == nullptr) {
@@ -235,7 +232,7 @@ static void shrink_test(void) {
   size_t expected_size;
 
   /* A large random number to allow for multiple shrinkages, at least 512. */
-  const size_t num_elements = (size_t)rand() % 2000 + 512;
+  const size_t num_elements = static_cast<size_t>(rand()) % 2000 + 512;
 
   grpc_timer_heap_init(&pq);
 
@@ -265,7 +262,7 @@ static void shrink_test(void) {
      4 times the Size and not less than 2 times, but never goes below 16. */
   expected_size = pq.timer_count;
   while (pq.timer_count > 0) {
-    const size_t which = (size_t)rand() % pq.timer_count;
+    const size_t which = static_cast<size_t>(rand()) % pq.timer_count;
     grpc_timer* te = pq.timers[which];
     grpc_timer_heap_remove(&pq, te);
     gpr_free(te);
@@ -289,7 +286,7 @@ static void shrink_test(void) {
 int main(int argc, char** argv) {
   int i;
 
-  grpc_test_init(argc, argv);
+  grpc::testing::TestEnvironment env(argc, argv);
 
   for (i = 0; i < 5; i++) {
     test1();
@@ -299,9 +296,3 @@ int main(int argc, char** argv) {
 
   return 0;
 }
-
-#else /* GRPC_TIMER_USE_GENERIC */
-
-int main(int argc, char** argv) { return 1; }
-
-#endif /* GRPC_TIMER_USE_GENERIC */

@@ -21,18 +21,19 @@
 
 #include <memory>
 
-#include <grpc++/security/credentials.h>
-#include <grpc++/security/server_credentials.h>
-#include <grpc++/support/channel_arguments.h>
+#include <grpcpp/security/credentials.h>
+#include <grpcpp/security/server_credentials.h>
+#include <grpcpp/support/channel_arguments.h>
 
 namespace grpc {
 namespace testing {
 
 const char kInsecureCredentialsType[] = "INSECURE_CREDENTIALS";
-
 // For real credentials, like tls/ssl, this name should match the AuthContext
 // property "transport_security_type".
 const char kTlsCredentialsType[] = "ssl";
+const char kAltsCredentialsType[] = "alts";
+const char kGoogleDefaultCredentialsType[] = "google_default_credentials";
 
 // Provide test credentials of a particular type.
 class CredentialTypeProvider {

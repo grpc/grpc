@@ -16,13 +16,14 @@
  *
  */
 
+#include <grpc/support/port_platform.h>
+
 #include "src/core/lib/transport/timeout_encoding.h"
 
 #include <stdio.h>
 #include <string.h>
 
-#include <grpc/support/port_platform.h>
-#include "src/core/lib/support/string.h"
+#include "src/core/lib/gpr/string.h"
 
 static int64_t round_up(int64_t x, int64_t divisor) {
   return (x / divisor + (x % divisor != 0)) * divisor;
@@ -43,6 +44,9 @@ static int64_t round_up_to_three_sig_figs(int64_t x) {
 /* encode our minimum viable timeout value */
 static void enc_tiny(char* buffer) { memcpy(buffer, "1n", 3); }
 
+/* encode our maximum timeout value, about 1157 days */
+static void enc_huge(char* buffer) { memcpy(buffer, "99999999S", 10); }
+
 static void enc_ext(char* buffer, int64_t value, char ext) {
   int n = int64_ttoa(value, buffer);
   buffer[n] = ext;
@@ -50,6 +54,7 @@ static void enc_ext(char* buffer, int64_t value, char ext) {
 }
 
 static void enc_seconds(char* buffer, int64_t sec) {
+  sec = round_up_to_three_sig_figs(sec);
   if (sec % 3600 == 0) {
     enc_ext(buffer, sec / 3600, 'H');
   } else if (sec % 60 == 0) {
@@ -73,10 +78,13 @@ static void enc_millis(char* buffer, int64_t x) {
 }
 
 void grpc_http2_encode_timeout(grpc_millis timeout, char* buffer) {
+  const grpc_millis kMaxTimeout = 99999999000;
   if (timeout <= 0) {
     enc_tiny(buffer);
   } else if (timeout < 1000 * GPR_MS_PER_SEC) {
     enc_millis(buffer, timeout);
+  } else if (timeout >= kMaxTimeout) {
+    enc_huge(buffer);
   } else {
     enc_seconds(buffer,
                 timeout / GPR_MS_PER_SEC + (timeout % GPR_MS_PER_SEC != 0));
@@ -88,7 +96,7 @@ static int is_all_whitespace(const char* p, const char* end) {
   return p == end;
 }
 
-int grpc_http2_decode_timeout(grpc_slice text, grpc_millis* timeout) {
+int grpc_http2_decode_timeout(const grpc_slice& text, grpc_millis* timeout) {
   grpc_millis x = 0;
   const uint8_t* p = GRPC_SLICE_START_PTR(text);
   const uint8_t* end = GRPC_SLICE_END_PTR(text);
@@ -98,7 +106,7 @@ int grpc_http2_decode_timeout(grpc_slice text, grpc_millis* timeout) {
     ;
   /* decode numeric part */
   for (; p != end && *p >= '0' && *p <= '9'; p++) {
-    int32_t digit = (int32_t)(*p - (uint8_t)'0');
+    int32_t digit = static_cast<int32_t>(*p - static_cast<uint8_t>('0'));
     have_digit = 1;
     /* spec allows max. 8 digits, but we allow values up to 1,000,000,000 */
     if (x >= (100 * 1000 * 1000)) {
@@ -138,5 +146,6 @@ int grpc_http2_decode_timeout(grpc_slice text, grpc_millis* timeout) {
       return 0;
   }
   p++;
-  return is_all_whitespace((const char*)p, (const char*)end);
+  return is_all_whitespace(reinterpret_cast<const char*>(p),
+                           reinterpret_cast<const char*>(end));
 }

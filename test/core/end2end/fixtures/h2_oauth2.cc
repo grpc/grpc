@@ -22,9 +22,10 @@
 #include <string.h>
 
 #include <grpc/support/alloc.h>
-#include <grpc/support/host_port.h>
 #include <grpc/support/log.h>
+
 #include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/gprpp/host_port.h"
 #include "src/core/lib/iomgr/iomgr.h"
 #include "src/core/lib/security/credentials/credentials.h"
 #include "test/core/end2end/data/ssl_test_data.h"
@@ -35,9 +36,9 @@ static const char oauth2_md[] = "Bearer aaslkfjs424535asdf";
 static const char* client_identity_property_name = "smurf_name";
 static const char* client_identity = "Brainy Smurf";
 
-typedef struct fullstack_secure_fixture_data {
-  char* localaddr;
-} fullstack_secure_fixture_data;
+struct fullstack_secure_fixture_data {
+  grpc_core::UniquePtr<char> localaddr;
+};
 
 static const grpc_metadata* find_metadata(const grpc_metadata* md,
                                           size_t md_count, const char* key,
@@ -65,7 +66,7 @@ static void process_oauth2_success(void* state, grpc_auth_context* ctx,
   test_processor_state* s;
 
   GPR_ASSERT(state != nullptr);
-  s = (test_processor_state*)state;
+  s = static_cast<test_processor_state*>(state);
   GPR_ASSERT(s->pseudo_refcount == 1);
   GPR_ASSERT(oauth2 != nullptr);
   grpc_auth_context_add_cstring_property(ctx, client_identity_property_name,
@@ -83,7 +84,7 @@ static void process_oauth2_failure(void* state, grpc_auth_context* ctx,
       find_metadata(md, md_count, "authorization", oauth2_md);
   test_processor_state* s;
   GPR_ASSERT(state != nullptr);
-  s = (test_processor_state*)state;
+  s = static_cast<test_processor_state*>(state);
   GPR_ASSERT(s->pseudo_refcount == 1);
   GPR_ASSERT(oauth2 != nullptr);
   cb(user_data, oauth2, 1, nullptr, 0, GRPC_STATUS_UNAUTHENTICATED, nullptr);
@@ -94,16 +95,12 @@ static grpc_end2end_test_fixture chttp2_create_fixture_secure_fullstack(
   grpc_end2end_test_fixture f;
   int port = grpc_pick_unused_port_or_die();
   fullstack_secure_fixture_data* ffd =
-      static_cast<fullstack_secure_fixture_data*>(
-          gpr_malloc(sizeof(fullstack_secure_fixture_data)));
+      grpc_core::New<fullstack_secure_fixture_data>();
   memset(&f, 0, sizeof(f));
-
-  gpr_join_host_port(&ffd->localaddr, "localhost", port);
-
+  grpc_core::JoinHostPort(&ffd->localaddr, "localhost", port);
   f.fixture_data = ffd;
   f.cq = grpc_completion_queue_create_for_next(nullptr);
   f.shutdown_cq = grpc_completion_queue_create_for_pluck(nullptr);
-
   return f;
 }
 
@@ -112,8 +109,8 @@ static void chttp2_init_client_secure_fullstack(
     grpc_channel_credentials* creds) {
   fullstack_secure_fixture_data* ffd =
       static_cast<fullstack_secure_fixture_data*>(f->fixture_data);
-  f->client =
-      grpc_secure_channel_create(creds, ffd->localaddr, client_args, nullptr);
+  f->client = grpc_secure_channel_create(creds, ffd->localaddr.get(),
+                                         client_args, nullptr);
   GPR_ASSERT(f->client != nullptr);
   grpc_channel_credentials_release(creds);
 }
@@ -128,7 +125,7 @@ static void chttp2_init_server_secure_fullstack(
   }
   f->server = grpc_server_create(server_args, nullptr);
   grpc_server_register_completion_queue(f->server, f->cq, nullptr);
-  GPR_ASSERT(grpc_server_add_secure_http2_port(f->server, ffd->localaddr,
+  GPR_ASSERT(grpc_server_add_secure_http2_port(f->server, ffd->localaddr.get(),
                                                server_creds));
   grpc_server_credentials_release(server_creds);
   grpc_server_start(f->server);
@@ -137,17 +134,16 @@ static void chttp2_init_server_secure_fullstack(
 void chttp2_tear_down_secure_fullstack(grpc_end2end_test_fixture* f) {
   fullstack_secure_fixture_data* ffd =
       static_cast<fullstack_secure_fixture_data*>(f->fixture_data);
-  gpr_free(ffd->localaddr);
-  gpr_free(ffd);
+  grpc_core::Delete(ffd);
 }
 
 static void chttp2_init_client_simple_ssl_with_oauth2_secure_fullstack(
     grpc_end2end_test_fixture* f, grpc_channel_args* client_args) {
-  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
+  grpc_core::ExecCtx exec_ctx;
   grpc_channel_credentials* ssl_creds =
-      grpc_ssl_credentials_create(test_root_cert, nullptr, nullptr);
+      grpc_ssl_credentials_create(test_root_cert, nullptr, nullptr, nullptr);
   grpc_call_credentials* oauth2_creds = grpc_md_only_test_credentials_create(
-      &exec_ctx, "authorization", oauth2_md, true /* is_async */);
+      "authorization", oauth2_md, true /* is_async */);
   grpc_channel_credentials* ssl_oauth2_creds =
       grpc_composite_channel_credentials_create(ssl_creds, oauth2_creds,
                                                 nullptr);
@@ -158,10 +154,9 @@ static void chttp2_init_client_simple_ssl_with_oauth2_secure_fullstack(
   grpc_channel_args* new_client_args =
       grpc_channel_args_copy_and_add(client_args, &ssl_name_override, 1);
   chttp2_init_client_secure_fullstack(f, new_client_args, ssl_oauth2_creds);
-  grpc_channel_args_destroy(&exec_ctx, new_client_args);
+  grpc_channel_args_destroy(new_client_args);
   grpc_channel_credentials_release(ssl_creds);
   grpc_call_credentials_release(oauth2_creds);
-  grpc_exec_ctx_finish(&exec_ctx);
 }
 
 static int fail_server_auth_check(grpc_channel_args* server_args) {
@@ -177,7 +172,7 @@ static int fail_server_auth_check(grpc_channel_args* server_args) {
 }
 
 static void processor_destroy(void* state) {
-  test_processor_state* s = (test_processor_state*)state;
+  test_processor_state* s = static_cast<test_processor_state*>(state);
   GPR_ASSERT((s->pseudo_refcount--) == 1);
   gpr_free(s);
 }
@@ -216,7 +211,7 @@ static grpc_end2end_test_config configs[] = {
          FEATURE_MASK_SUPPORTS_PER_CALL_CREDENTIALS |
          FEATURE_MASK_SUPPORTS_CLIENT_CHANNEL |
          FEATURE_MASK_SUPPORTS_AUTHORITY_HEADER,
-     chttp2_create_fixture_secure_fullstack,
+     "foo.test.google.fr", chttp2_create_fixture_secure_fullstack,
      chttp2_init_client_simple_ssl_with_oauth2_secure_fullstack,
      chttp2_init_server_simple_ssl_secure_fullstack,
      chttp2_tear_down_secure_fullstack},
@@ -224,7 +219,7 @@ static grpc_end2end_test_config configs[] = {
 
 int main(int argc, char** argv) {
   size_t i;
-  grpc_test_init(argc, argv);
+  grpc::testing::TestEnvironment env(argc, argv);
   grpc_end2end_tests_pre_init();
   grpc_init();
 

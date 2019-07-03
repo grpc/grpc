@@ -32,4 +32,22 @@ void grpc_memory_counters_init();
 void grpc_memory_counters_destroy();
 struct grpc_memory_counters grpc_memory_counters_snapshot();
 
+namespace grpc_core {
+namespace testing {
+
+// At destruction time, it will check there is no memory leak.
+// The object should be created before grpc_init() is called and destroyed after
+// grpc_shutdown() is returned.
+class LeakDetector {
+ public:
+  explicit LeakDetector(bool enable);
+  ~LeakDetector();
+
+ private:
+  const bool enabled_;
+};
+
+}  // namespace testing
+}  // namespace grpc_core
+
 #endif

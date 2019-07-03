@@ -23,13 +23,9 @@ def main
   STDERR.puts 'start server'
   server_runner = ServerRunner.new(EchoServerImpl)
   server_port = server_runner.run
-
-  sleep 1
-
   STDERR.puts 'start client'
   _, client_pid = start_client('sig_int_during_channel_watch_client.rb',
                                server_port)
-
   # give time for the client to get into the middle
   # of a channel state watch call
   sleep 1

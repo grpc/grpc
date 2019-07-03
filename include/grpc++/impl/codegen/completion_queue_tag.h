@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015 gRPC authors.
+ * Copyright 2018 gRPC authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,24 +16,13 @@
  *
  */
 
+// DEPRECATED: The headers in include/grpc++ are deprecated. Please include the
+// headers in include/grpcpp instead. This header exists only for backwards
+// compatibility.
+
 #ifndef GRPCXX_IMPL_CODEGEN_COMPLETION_QUEUE_TAG_H
 #define GRPCXX_IMPL_CODEGEN_COMPLETION_QUEUE_TAG_H
 
-namespace grpc {
-
-namespace internal {
-/// An interface allowing implementors to process and filter event tags.
-class CompletionQueueTag {
- public:
-  virtual ~CompletionQueueTag() {}
-  /// Called prior to returning from Next(), return value is the status of the
-  /// operation (return status is the default thing to do). If this function
-  /// returns false, the tag is dropped and not returned from the completion
-  /// queue
-  virtual bool FinalizeResult(void** tag, bool* status) = 0;
-};
-}  // namespace internal
-
-}  // namespace grpc
+#include <grpcpp/impl/codegen/completion_queue_tag.h>
 
 #endif  // GRPCXX_IMPL_CODEGEN_COMPLETION_QUEUE_TAG_H

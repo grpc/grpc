@@ -18,14 +18,16 @@ rename C:\Python27_32bit Python27_32bits
 rename C:\Python34_32bit Python34_32bits
 rename C:\Python35_32bit Python35_32bits
 rename C:\Python36_32bit Python36_32bits
+rename C:\Python37_32bit Python37_32bits
 
 @rem enter repo root
 cd /d %~dp0\..\..\..
 
 call tools/internal_ci/helper_scripts/prepare_build_windows.bat
 
-python tools/run_tests/task_runner.py -f artifact windows -j 4 || goto :error
-goto :EOF
+python tools/run_tests/task_runner.py -f artifact windows -j 4
+set RUNTESTS_EXITCODE=%errorlevel%
 
-:error
-exit /b %errorlevel%
+bash tools/internal_ci/helper_scripts/delete_nonartifacts.sh
+
+exit /b %RUNTESTS_EXITCODE%

@@ -63,23 +63,22 @@ class State(_common.ChannelRpcHandler):
                 if self._code is grpc.StatusCode.OK:
                     if self._responses:
                         response = self._responses.pop(0)
-                        return _common.ChannelRpcRead(
-                            response, None, None, None)
+                        return _common.ChannelRpcRead(response, None, None,
+                                                      None)
                     else:
                         return _common.ChannelRpcRead(
-                            None, self._trailing_metadata,
-                            grpc.StatusCode.OK, self._details)
+                            None, self._trailing_metadata, grpc.StatusCode.OK,
+                            self._details)
                 elif self._code is None:
                     if self._responses:
                         response = self._responses.pop(0)
-                        return _common.ChannelRpcRead(
-                            response, None, None, None)
+                        return _common.ChannelRpcRead(response, None, None,
+                                                      None)
                     else:
                         self._condition.wait()
                 else:
-                    return _common.ChannelRpcRead(
-                        None, self._trailing_metadata, self._code,
-                        self._details)
+                    return _common.ChannelRpcRead(None, self._trailing_metadata,
+                                                  self._code, self._details)
 
     def termination(self):
         with self._condition:
@@ -150,8 +149,8 @@ class State(_common.ChannelRpcHandler):
                 self._responses.append(response)
                 self._condition.notify_all()
 
-    def terminate_with_response(
-            self, response, trailing_metadata, code, details):
+    def terminate_with_response(self, response, trailing_metadata, code,
+                                details):
         with self._condition:
             if self._initial_metadata is None:
                 self._initial_metadata = _common.FUSSED_EMPTY_METADATA
@@ -180,8 +179,8 @@ class State(_common.ChannelRpcHandler):
                 elif self._code is None:
                     self._condition.wait()
                 else:
-                    raise ValueError(
-                        'Status code unexpectedly {}!'.format(self._code))
+                    raise ValueError('Status code unexpectedly {}!'.format(
+                        self._code))
 
     def is_active(self):
         raise NotImplementedError()

@@ -16,9 +16,10 @@
  *
  */
 
-#include "src/core/lib/surface/channel_stack_type.h"
-#include <grpc/support/log.h>
 #include <grpc/support/port_platform.h>
+
+#include <grpc/support/log.h>
+#include "src/core/lib/surface/channel_stack_type.h"
 
 bool grpc_channel_stack_type_is_client(grpc_channel_stack_type type) {
   switch (type) {

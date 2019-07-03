@@ -16,13 +16,13 @@
  *
  */
 
+#include <grpc/support/port_platform.h>
+
 #include "src/core/ext/transport/inproc/inproc_transport.h"
 #include "src/core/lib/debug/trace.h"
 
 grpc_core::TraceFlag grpc_inproc_trace(false, "inproc");
 
-extern "C" void grpc_inproc_plugin_init(void) { grpc_inproc_transport_init(); }
+void grpc_inproc_plugin_init(void) { grpc_inproc_transport_init(); }
 
-extern "C" void grpc_inproc_plugin_shutdown(void) {
-  grpc_inproc_transport_shutdown();
-}
+void grpc_inproc_plugin_shutdown(void) { grpc_inproc_transport_shutdown(); }

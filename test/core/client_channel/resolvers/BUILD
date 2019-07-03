@@ -19,13 +19,29 @@ grpc_package(name = "test/core/client_channel_resolvers")
 licenses(["notice"])  # Apache v2
 
 grpc_cc_test(
-    name = "dns_resolver_connectivity_test",
+    name = "dns_resolver_connectivity_using_ares_resolver_test",
     srcs = ["dns_resolver_connectivity_test.cc"],
     language = "C++",
+    args = [
+        "--resolver=ares",
+    ],
     deps = [
         "//:gpr",
         "//:grpc",
-        "//test/core/util:gpr_test_util",
+        "//test/core/util:grpc_test_util",
+    ],
+)
+
+grpc_cc_test(
+    name = "dns_resolver_connectivity_using_native_resolver_test",
+    srcs = ["dns_resolver_connectivity_test.cc"],
+    language = "C++",
+    args = [
+        "--resolver=native",
+    ],
+    deps = [
+        "//:gpr",
+        "//:grpc",
         "//test/core/util:grpc_test_util",
     ],
 )
@@ -37,7 +53,17 @@ grpc_cc_test(
     deps = [
         "//:gpr",
         "//:grpc",
-        "//test/core/util:gpr_test_util",
+        "//test/core/util:grpc_test_util",
+    ],
+)
+
+grpc_cc_test(
+    name = "dns_resolver_cooldown_test",
+    srcs = ["dns_resolver_cooldown_test.cc"],
+    language = "C++",
+    deps = [
+        "//:gpr",
+        "//:grpc",
         "//test/core/util:grpc_test_util",
     ],
 )
@@ -49,7 +75,6 @@ grpc_cc_test(
     deps = [
         "//:gpr",
         "//:grpc",
-        "//test/core/util:gpr_test_util",
         "//test/core/util:grpc_test_util",
     ],
 )
@@ -62,7 +87,6 @@ grpc_cc_test(
         "//:gpr",
         "//:grpc",
         "//:grpc_resolver_fake",
-        "//test/core/util:gpr_test_util",
         "//test/core/util:grpc_test_util",
     ],
 )

@@ -20,11 +20,11 @@
 
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
-#include <grpc/support/host_port.h>
 #include <grpc/support/log.h>
 #include <grpc/support/sync.h>
 #include <grpc/support/time.h>
 #include <string.h>
+
 #include "src/core/lib/iomgr/endpoint.h"
 #include "src/core/lib/iomgr/sockaddr.h"
 #include "src/core/lib/iomgr/tcp_server.h"
@@ -55,19 +55,19 @@ static void pretty_print_backoffs(reconnect_server* server) {
   }
 }
 
-static void on_connect(grpc_exec_ctx* exec_ctx, void* arg, grpc_endpoint* tcp,
+static void on_connect(void* arg, grpc_endpoint* tcp,
                        grpc_pollset* accepting_pollset,
                        grpc_tcp_server_acceptor* acceptor) {
   gpr_free(acceptor);
   char* peer;
   char* last_colon;
-  reconnect_server* server = (reconnect_server*)arg;
+  reconnect_server* server = static_cast<reconnect_server*>(arg);
   gpr_timespec now = gpr_now(GPR_CLOCK_REALTIME);
   timestamp_list* new_tail;
   peer = grpc_endpoint_get_peer(tcp);
-  grpc_endpoint_shutdown(exec_ctx, tcp,
+  grpc_endpoint_shutdown(tcp,
                          GRPC_ERROR_CREATE_FROM_STATIC_STRING("Connected"));
-  grpc_endpoint_destroy(exec_ctx, tcp);
+  grpc_endpoint_destroy(tcp);
   if (peer) {
     last_colon = strrchr(peer, ':');
     if (server->peer == nullptr) {
@@ -75,8 +75,8 @@ static void on_connect(grpc_exec_ctx* exec_ctx, void* arg, grpc_endpoint* tcp,
     } else {
       if (last_colon == nullptr) {
         gpr_log(GPR_ERROR, "peer does not contain a ':'");
-      } else if (strncmp(server->peer, peer, (size_t)(last_colon - peer)) !=
-                 0) {
+      } else if (strncmp(server->peer, peer,
+                         static_cast<size_t>(last_colon - peer)) != 0) {
         gpr_log(GPR_ERROR, "mismatched peer! %s vs %s", server->peer, peer);
       }
       gpr_free(peer);
@@ -108,7 +108,7 @@ void reconnect_server_start(reconnect_server* server, int port) {
 }
 
 void reconnect_server_poll(reconnect_server* server, int seconds) {
-  test_tcp_server_poll(&server->tcp_server, seconds);
+  test_tcp_server_poll(&server->tcp_server, 1000 * seconds);
 }
 
 void reconnect_server_clear_timestamps(reconnect_server* server) {

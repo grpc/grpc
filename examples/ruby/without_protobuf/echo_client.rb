@@ -28,7 +28,7 @@ def main
   stub = EchoWithoutProtobuf::Stub.new('localhost:50051', :this_channel_is_insecure)
   user = ARGV.size > 0 ?  ARGV[0] : 'world'
   message = stub.echo("hello #{user}")
-  p "Reponse: #{message}"
+  p "Response: #{message}"
 end
 
 main

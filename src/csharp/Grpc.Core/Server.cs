@@ -29,7 +29,7 @@ using Grpc.Core.Utils;
 namespace Grpc.Core
 {
     /// <summary>
-    /// gRPC server. A single server can server arbitrary number of services and can listen on more than one ports.
+    /// gRPC server. A single server can serve an arbitrary number of services and can listen on more than one port.
     /// </summary>
     public class Server
     {
@@ -257,7 +257,7 @@ namespace Grpc.Core
             lock (myLock)
             {
                 GrpcPreconditions.CheckState(!startRequested);
-                foreach (var entry in serviceDefinition.CallHandlers)
+                foreach (var entry in serviceDefinition.GetCallHandlers())
                 {
                     callHandlers.Add(entry.Key, entry.Value);
                 }
@@ -300,6 +300,7 @@ namespace Grpc.Core
         {
             if (!shutdownRequested)
             {
+                // TODO(jtattermusch): avoid unnecessary delegate allocation
                 handle.RequestCall((success, ctx) => HandleNewServerRpc(success, ctx, cq), cq);
             }
         }
@@ -333,7 +334,7 @@ namespace Grpc.Core
         /// <summary>
         /// Selects corresponding handler for given call and handles the call.
         /// </summary>
-        private async Task HandleCallAsync(ServerRpcNew newRpc, CompletionQueueSafeHandle cq, Action continuation)
+        private async Task HandleCallAsync(ServerRpcNew newRpc, CompletionQueueSafeHandle cq, Action<Server, CompletionQueueSafeHandle> continuation)
         {
             try
             {
@@ -350,7 +351,7 @@ namespace Grpc.Core
             }
             finally
             {
-                continuation();
+                continuation(this, cq);
             }
         }
 
@@ -373,7 +374,7 @@ namespace Grpc.Core
                     // Don't await, the continuations will run on gRPC thread pool once triggered
                     // by cq.Next().
                     #pragma warning disable 4014
-                    HandleCallAsync(newRpc, cq, () => AllowOneRpc(cq));
+                    HandleCallAsync(newRpc, cq, (server, state) => server.AllowOneRpc(state));
                     #pragma warning restore 4014
                 }
             }
@@ -387,7 +388,7 @@ namespace Grpc.Core
         /// <summary>
         /// Handles native callback.
         /// </summary>
-        private void HandleServerShutdown(bool success, BatchContextSafeHandle ctx)
+        private void HandleServerShutdown(bool success, BatchContextSafeHandle ctx, object state)
         {
             shutdownTcs.SetResult(null);
         }

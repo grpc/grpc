@@ -23,8 +23,7 @@
 
 grpc_endpoint* grpc_mock_endpoint_create(void (*on_write)(grpc_slice slice),
                                          grpc_resource_quota* resource_quota);
-void grpc_mock_endpoint_put_read(grpc_exec_ctx* exec_ctx,
-                                 grpc_endpoint* mock_endpoint,
+void grpc_mock_endpoint_put_read(grpc_endpoint* mock_endpoint,
                                  grpc_slice slice);
 
 #endif

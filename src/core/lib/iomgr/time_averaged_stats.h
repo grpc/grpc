@@ -19,10 +19,6 @@
 #ifndef GRPC_CORE_LIB_IOMGR_TIME_AVERAGED_STATS_H
 #define GRPC_CORE_LIB_IOMGR_TIME_AVERAGED_STATS_H
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 /* This tracks a time-decaying weighted average.  It works by collecting
    batches of samples and then mixing their average into a time-decaying
    weighted mean.  It is designed for batch operations where we do many adds
@@ -73,9 +69,5 @@ void grpc_time_averaged_stats_add_sample(grpc_time_averaged_stats* stats,
 /* Complete a batch and compute the new estimate of the average sample
    value. */
 double grpc_time_averaged_stats_update_average(grpc_time_averaged_stats* stats);
-
-#ifdef __cplusplus
-}
-#endif
 
 #endif /* GRPC_CORE_LIB_IOMGR_TIME_AVERAGED_STATS_H */

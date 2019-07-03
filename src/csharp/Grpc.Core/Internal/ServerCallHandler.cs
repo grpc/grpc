@@ -21,6 +21,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
+using Grpc.Core.Interceptors;
 using Grpc.Core.Internal;
 using Grpc.Core.Logging;
 using Grpc.Core.Utils;
@@ -50,8 +51,8 @@ namespace Grpc.Core.Internal
         public async Task HandleCall(ServerRpcNew newRpc, CompletionQueueSafeHandle cq)
         {
             var asyncCall = new AsyncCallServer<TRequest, TResponse>(
-                method.ResponseMarshaller.Serializer,
-                method.RequestMarshaller.Deserializer,
+                method.ResponseMarshaller.ContextualSerializer,
+                method.RequestMarshaller.ContextualDeserializer,
                 newRpc.Server);
 
             asyncCall.Initialize(newRpc.Call, cq);
@@ -60,7 +61,7 @@ namespace Grpc.Core.Internal
             var responseStream = new ServerResponseStream<TRequest, TResponse>(asyncCall);
 
             Status status;
-            Tuple<TResponse,WriteFlags> responseTuple = null;
+            AsyncCallServer<TRequest,TResponse>.ResponseWithFlags? responseWithFlags = null;
             var context = HandlerUtils.NewContext(newRpc, responseStream, asyncCall.CancellationToken);
             try
             {
@@ -68,19 +69,19 @@ namespace Grpc.Core.Internal
                 var request = requestStream.Current;
                 var response = await handler(request, context).ConfigureAwait(false);
                 status = context.Status;
-                responseTuple = Tuple.Create(response, HandlerUtils.GetWriteFlags(context.WriteOptions));
-            } 
+                responseWithFlags = new AsyncCallServer<TRequest, TResponse>.ResponseWithFlags(response, HandlerUtils.GetWriteFlags(context.WriteOptions));
+            }
             catch (Exception e)
             {
                 if (!(e is RpcException))
                 {
-                    Logger.Warning(e, "Exception occured in handler.");
+                    Logger.Warning(e, "Exception occurred in the handler or an interceptor.");
                 }
                 status = HandlerUtils.GetStatusFromExceptionAndMergeTrailers(e, context.ResponseTrailers);
             }
             try
             {
-                await asyncCall.SendStatusFromServerAsync(status, context.ResponseTrailers, responseTuple).ConfigureAwait(false);
+                await asyncCall.SendStatusFromServerAsync(status, context.ResponseTrailers, responseWithFlags).ConfigureAwait(false);
             }
             catch (Exception)
             {
@@ -109,8 +110,8 @@ namespace Grpc.Core.Internal
         public async Task HandleCall(ServerRpcNew newRpc, CompletionQueueSafeHandle cq)
         {
             var asyncCall = new AsyncCallServer<TRequest, TResponse>(
-                method.ResponseMarshaller.Serializer,
-                method.RequestMarshaller.Deserializer,
+                method.ResponseMarshaller.ContextualSerializer,
+                method.RequestMarshaller.ContextualDeserializer,
                 newRpc.Server);
 
             asyncCall.Initialize(newRpc.Call, cq);
@@ -131,7 +132,7 @@ namespace Grpc.Core.Internal
             {
                 if (!(e is RpcException))
                 {
-                    Logger.Warning(e, "Exception occured in handler.");
+                    Logger.Warning(e, "Exception occurred in the handler or an interceptor.");
                 }
                 status = HandlerUtils.GetStatusFromExceptionAndMergeTrailers(e, context.ResponseTrailers);
             }
@@ -167,8 +168,8 @@ namespace Grpc.Core.Internal
         public async Task HandleCall(ServerRpcNew newRpc, CompletionQueueSafeHandle cq)
         {
             var asyncCall = new AsyncCallServer<TRequest, TResponse>(
-                method.ResponseMarshaller.Serializer,
-                method.RequestMarshaller.Deserializer,
+                method.ResponseMarshaller.ContextualSerializer,
+                method.RequestMarshaller.ContextualDeserializer,
                 newRpc.Server);
 
             asyncCall.Initialize(newRpc.Call, cq);
@@ -177,26 +178,26 @@ namespace Grpc.Core.Internal
             var responseStream = new ServerResponseStream<TRequest, TResponse>(asyncCall);
 
             Status status;
-            Tuple<TResponse,WriteFlags> responseTuple = null;
+            AsyncCallServer<TRequest, TResponse>.ResponseWithFlags? responseWithFlags = null;
             var context = HandlerUtils.NewContext(newRpc, responseStream, asyncCall.CancellationToken);
             try
             {
                 var response = await handler(requestStream, context).ConfigureAwait(false);
                 status = context.Status;
-                responseTuple = Tuple.Create(response, HandlerUtils.GetWriteFlags(context.WriteOptions));
+                responseWithFlags = new AsyncCallServer<TRequest, TResponse>.ResponseWithFlags(response, HandlerUtils.GetWriteFlags(context.WriteOptions));
             }
             catch (Exception e)
             {
                 if (!(e is RpcException))
                 {
-                    Logger.Warning(e, "Exception occured in handler.");
+                    Logger.Warning(e, "Exception occurred in the handler or an interceptor.");
                 }
                 status = HandlerUtils.GetStatusFromExceptionAndMergeTrailers(e, context.ResponseTrailers);
             }
 
             try
             {
-                await asyncCall.SendStatusFromServerAsync(status, context.ResponseTrailers, responseTuple).ConfigureAwait(false);
+                await asyncCall.SendStatusFromServerAsync(status, context.ResponseTrailers, responseWithFlags).ConfigureAwait(false);
             }
             catch (Exception)
             {
@@ -225,8 +226,8 @@ namespace Grpc.Core.Internal
         public async Task HandleCall(ServerRpcNew newRpc, CompletionQueueSafeHandle cq)
         {
             var asyncCall = new AsyncCallServer<TRequest, TResponse>(
-                method.ResponseMarshaller.Serializer,
-                method.RequestMarshaller.Deserializer,
+                method.ResponseMarshaller.ContextualSerializer,
+                method.RequestMarshaller.ContextualDeserializer,
                 newRpc.Server);
 
             asyncCall.Initialize(newRpc.Call, cq);
@@ -245,7 +246,7 @@ namespace Grpc.Core.Internal
             {
                 if (!(e is RpcException))
                 {
-                    Logger.Warning(e, "Exception occured in handler.");
+                    Logger.Warning(e, "Exception occurred in the handler or an interceptor.");
                 }
                 status = HandlerUtils.GetStatusFromExceptionAndMergeTrailers(e, context.ResponseTrailers);
             }
@@ -318,14 +319,10 @@ namespace Grpc.Core.Internal
             return writeOptions != null ? writeOptions.Flags : default(WriteFlags);
         }
 
-        public static ServerCallContext NewContext<TRequest, TResponse>(ServerRpcNew newRpc, ServerResponseStream<TRequest, TResponse> serverResponseStream, CancellationToken cancellationToken)
-            where TRequest : class
-            where TResponse : class
+        public static ServerCallContext NewContext(ServerRpcNew newRpc, IServerResponseStream serverResponseStream, CancellationToken cancellationToken)
         {
             DateTime realtimeDeadline = newRpc.Deadline.ToClockType(ClockType.Realtime).ToDateTime();
-
-            return new ServerCallContext(newRpc.Call, newRpc.Method, newRpc.Host, realtimeDeadline,
-                newRpc.RequestMetadata, cancellationToken, serverResponseStream.WriteResponseHeadersAsync, serverResponseStream);
+            return new DefaultServerCallContext(newRpc.Call, newRpc.Method, newRpc.Host, realtimeDeadline, newRpc.RequestMetadata, cancellationToken, serverResponseStream);
         }
     }
 }

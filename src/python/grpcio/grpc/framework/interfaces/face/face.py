@@ -50,13 +50,20 @@ class NoSuchMethodError(Exception):
         self.method = method
 
     def __repr__(self):
-        return 'face.NoSuchMethodError(%s, %s)' % (self.group, self.method,)
+        return 'face.NoSuchMethodError(%s, %s)' % (
+            self.group,
+            self.method,
+        )
 
 
 class Abortion(
-        collections.namedtuple('Abortion',
-                               ('kind', 'initial_metadata', 'terminal_metadata',
-                                'code', 'details',))):
+        collections.namedtuple('Abortion', (
+            'kind',
+            'initial_metadata',
+            'terminal_metadata',
+            'code',
+            'details',
+        ))):
     """A value describing RPC abortion.
 
   Attributes:

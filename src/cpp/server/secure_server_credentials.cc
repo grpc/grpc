@@ -20,8 +20,8 @@
 #include <map>
 #include <memory>
 
-#include <grpc++/impl/codegen/slice.h>
-#include <grpc++/security/auth_metadata_processor.h>
+#include <grpcpp/impl/codegen/slice.h>
+#include <grpcpp/security/auth_metadata_processor.h>
 
 #include "src/cpp/common/secure_auth_context.h"
 #include "src/cpp/server/secure_server_credentials.h"
@@ -29,23 +29,24 @@
 namespace grpc {
 
 void AuthMetadataProcessorAyncWrapper::Destroy(void* wrapper) {
-  auto* w = reinterpret_cast<AuthMetadataProcessorAyncWrapper*>(wrapper);
+  auto* w = static_cast<AuthMetadataProcessorAyncWrapper*>(wrapper);
   delete w;
 }
 
 void AuthMetadataProcessorAyncWrapper::Process(
     void* wrapper, grpc_auth_context* context, const grpc_metadata* md,
     size_t num_md, grpc_process_auth_metadata_done_cb cb, void* user_data) {
-  auto* w = reinterpret_cast<AuthMetadataProcessorAyncWrapper*>(wrapper);
+  auto* w = static_cast<AuthMetadataProcessorAyncWrapper*>(wrapper);
   if (!w->processor_) {
     // Early exit.
     cb(user_data, nullptr, 0, nullptr, 0, GRPC_STATUS_OK, nullptr);
     return;
   }
   if (w->processor_->IsBlocking()) {
-    w->thread_pool_->Add(
-        std::bind(&AuthMetadataProcessorAyncWrapper::InvokeProcessor, w,
-                  context, md, num_md, cb, user_data));
+    w->thread_pool_->Add([w, context, md, num_md, cb, user_data] {
+      w->AuthMetadataProcessorAyncWrapper::InvokeProcessor(context, md, num_md,
+                                                           cb, user_data);
+    });
   } else {
     // invoke directly.
     w->InvokeProcessor(context, md, num_md, cb, user_data);
@@ -60,7 +61,7 @@ void AuthMetadataProcessorAyncWrapper::InvokeProcessor(
     metadata.insert(std::make_pair(StringRefFromSlice(&md[i].key),
                                    StringRefFromSlice(&md[i].value)));
   }
-  SecureAuthContext context(ctx, false);
+  SecureAuthContext context(ctx);
   AuthMetadataProcessor::OutputMetadata consumed_metadata;
   AuthMetadataProcessor::OutputMetadata response_metadata;
 
@@ -92,21 +93,25 @@ void AuthMetadataProcessorAyncWrapper::InvokeProcessor(
      status.error_message().c_str());
 }
 
+}  // namespace grpc
+
+namespace grpc_impl {
+
 int SecureServerCredentials::AddPortToServer(const grpc::string& addr,
                                              grpc_server* server) {
   return grpc_server_add_secure_http2_port(server, addr.c_str(), creds_);
 }
 
 void SecureServerCredentials::SetAuthMetadataProcessor(
-    const std::shared_ptr<AuthMetadataProcessor>& processor) {
-  auto* wrapper = new AuthMetadataProcessorAyncWrapper(processor);
+    const std::shared_ptr<grpc::AuthMetadataProcessor>& processor) {
+  auto* wrapper = new grpc::AuthMetadataProcessorAyncWrapper(processor);
   grpc_server_credentials_set_auth_metadata_processor(
-      creds_, {AuthMetadataProcessorAyncWrapper::Process,
-               AuthMetadataProcessorAyncWrapper::Destroy, wrapper});
+      creds_, {grpc::AuthMetadataProcessorAyncWrapper::Process,
+               grpc::AuthMetadataProcessorAyncWrapper::Destroy, wrapper});
 }
 
 std::shared_ptr<ServerCredentials> SslServerCredentials(
-    const SslServerCredentialsOptions& options) {
+    const grpc::SslServerCredentialsOptions& options) {
   std::vector<grpc_ssl_pem_key_cert_pair> pem_key_cert_pairs;
   for (auto key_cert_pair = options.pem_key_cert_pairs.begin();
        key_cert_pair != options.pem_key_cert_pairs.end(); key_cert_pair++) {
@@ -126,4 +131,24 @@ std::shared_ptr<ServerCredentials> SslServerCredentials(
       new SecureServerCredentials(c_creds));
 }
 
-}  // namespace grpc
+namespace experimental {
+
+std::shared_ptr<ServerCredentials> AltsServerCredentials(
+    const AltsServerCredentialsOptions& options) {
+  grpc_alts_credentials_options* c_options =
+      grpc_alts_credentials_server_options_create();
+  grpc_server_credentials* c_creds =
+      grpc_alts_server_credentials_create(c_options);
+  grpc_alts_credentials_options_destroy(c_options);
+  return std::shared_ptr<ServerCredentials>(
+      new SecureServerCredentials(c_creds));
+}
+
+std::shared_ptr<ServerCredentials> LocalServerCredentials(
+    grpc_local_connect_type type) {
+  return std::shared_ptr<ServerCredentials>(
+      new SecureServerCredentials(grpc_local_server_credentials_create(type)));
+}
+
+}  // namespace experimental
+}  // namespace grpc_impl

@@ -22,11 +22,7 @@ cd cmake
 mkdir build
 cd build
 
-@rem TODO(jtattermusch): Stop hardcoding path to yasm once Jenkins workers can locate yasm correctly
-@rem If yasm is not on the path, use hardcoded path instead.
-yasm --version || set USE_HARDCODED_YASM_PATH_MAYBE=-DCMAKE_ASM_NASM_COMPILER="C:/Program Files (x86)/yasm/yasm.exe"
-
-cmake -G "%generator%" -DgRPC_BUILD_TESTS=OFF -DgRPC_MSVC_STATIC_RUNTIME=ON %USE_HARDCODED_YASM_PATH_MAYBE% ../.. || goto :error
+cmake -G "%generator%" -DgRPC_BUILD_TESTS=OFF -DgRPC_MSVC_STATIC_RUNTIME=ON ../.. || goto :error
 cmake --build . --target protoc --config Release || goto :error
 cmake --build . --target plugins --config Release || goto :error
 cd ..\..

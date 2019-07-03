@@ -27,42 +27,33 @@
 #include "test/core/util/memory_counters.h"
 
 #include <benchmark/benchmark.h>
-#include <grpc++/impl/grpc_library.h>
+#include <grpcpp/impl/grpc_library.h>
 
-class Library {
+class LibraryInitializer {
  public:
-  static Library& get() {
-    static Library lib;
-    return lib;
-  }
+  LibraryInitializer();
+  ~LibraryInitializer();
 
   grpc_resource_quota* rq() { return rq_; }
 
+  static LibraryInitializer& get();
+
  private:
-  Library() {
-#ifdef GPR_LOW_LEVEL_COUNTERS
-    grpc_memory_counters_init();
-#endif
-    init_lib_.init();
-    rq_ = grpc_resource_quota_create("bm");
-  }
-
-  ~Library() { init_lib_.shutdown(); }
-
   grpc::internal::GrpcLibrary init_lib_;
   grpc_resource_quota* rq_;
 };
 
 #ifdef GPR_LOW_LEVEL_COUNTERS
-extern "C" gpr_atm gpr_mu_locks;
-extern "C" gpr_atm gpr_counter_atm_cas;
-extern "C" gpr_atm gpr_counter_atm_add;
-extern "C" gpr_atm gpr_now_call_count;
+extern gpr_atm gpr_mu_locks;
+extern gpr_atm gpr_counter_atm_cas;
+extern gpr_atm gpr_counter_atm_add;
+extern gpr_atm gpr_now_call_count;
 #endif
 
 class TrackCounters {
  public:
   TrackCounters() { grpc_stats_collect(&stats_begin_); }
+  virtual ~TrackCounters() {}
   virtual void Finish(benchmark::State& state);
   virtual void AddLabel(const grpc::string& label);
   virtual void AddToLabel(std::ostream& out, benchmark::State& state);

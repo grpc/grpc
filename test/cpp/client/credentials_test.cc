@@ -16,7 +16,7 @@
  *
  */
 
-#include <grpc++/security/credentials.h>
+#include <grpcpp/security/credentials.h>
 
 #include <memory>
 

@@ -1,0 +1,32 @@
+load("@grpc_python_dependencies//:requirements.bzl", "requirement")
+
+package(default_visibility = ["//visibility:public"])
+load("//bazel:python_rules.bzl", "py_proto_library")
+
+proto_library(
+    name = "empty2_proto_descriptor",
+    srcs = ["empty2.proto"],
+)
+
+py_proto_library(
+    name = "empty2_proto",
+    deps = [
+        ":empty2_proto_descriptor",
+    ],
+)
+
+proto_library(
+    name = "empty2_extensions_proto_descriptor",
+    srcs = ["empty2_extensions.proto"],
+    deps = [
+        ":empty2_proto_descriptor",
+    ]
+)
+
+py_proto_library(
+    name = "empty2_extensions_proto",
+    deps = [
+        ":empty2_extensions_proto_descriptor",
+    ],
+)
+

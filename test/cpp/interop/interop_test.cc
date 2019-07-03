@@ -16,10 +16,6 @@
  *
  */
 
-#ifndef _POSIX_SOURCE
-#define _POSIX_SOURCE
-#endif
-
 #include <assert.h>
 #include <signal.h>
 #include <stdio.h>
@@ -31,14 +27,13 @@
 
 #include <gflags/gflags.h>
 #include <grpc/support/alloc.h>
-#include <grpc/support/host_port.h>
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
 #include "test/core/util/port.h"
 #include "test/cpp/util/test_config.h"
 
+#include "src/core/lib/gpr/string.h"
 #include "src/core/lib/iomgr/socket_utils_posix.h"
-#include "src/core/lib/support/string.h"
 
 DEFINE_string(extra_server_flags, "", "Extra flags to pass to server.");
 

@@ -24,9 +24,13 @@
 #include <sstream>
 #include <string>
 
+#ifdef __FreeBSD__
+#include <sys/wait.h>
+#endif
+
 #include <grpc/support/log.h>
 
-#include "src/core/lib/support/env.h"
+#include "src/core/lib/gpr/env.h"
 #include "test/core/util/port.h"
 #include "test/cpp/util/subprocess.h"
 

@@ -19,17 +19,42 @@
 
 require_relative './end2end_common'
 
+# A service that calls back it's received_rpc_callback
+# upon receiving an RPC. Used for synchronization/waiting
+# for child process to start.
+class ClientStartedService < Echo::EchoServer::Service
+  def initialize(received_rpc_callback)
+    @received_rpc_callback = received_rpc_callback
+  end
+
+  def echo(echo_req, _)
+    @received_rpc_callback.call unless @received_rpc_callback.nil?
+    @received_rpc_callback = nil
+    Echo::EchoReply.new(response: echo_req.request)
+  end
+end
+
 def main
   STDERR.puts 'start server'
-  server_runner = ServerRunner.new(EchoServerImpl)
+  client_started = false
+  client_started_mu = Mutex.new
+  client_started_cv = ConditionVariable.new
+  received_rpc_callback = proc do
+    client_started_mu.synchronize do
+      client_started = true
+      client_started_cv.signal
+    end
+  end
+
+  client_started_service = ClientStartedService.new(received_rpc_callback)
+  server_runner = ServerRunner.new(client_started_service)
   server_port = server_runner.run
-
-  sleep 1
-
   STDERR.puts 'start client'
   control_stub, client_pid = start_client('sig_handling_client.rb', server_port)
 
-  sleep 1
+  client_started_mu.synchronize do
+    client_started_cv.wait(client_started_mu) until client_started
+  end
 
   count = 0
   while count < 5

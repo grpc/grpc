@@ -1,0 +1,3 @@
+﻿TODO(kkm): These file will go into Grpc.Tools/build after package split.
+           Remove leading underscores from file names; they are hiding the
+           files from some NuGet versions which pull them into project.

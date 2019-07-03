@@ -18,6 +18,8 @@ import threading
 import grpc
 
 _NOT_YET_OBSERVED = object()
+logging.basicConfig()
+_LOGGER = logging.getLogger(__name__)
 
 
 def _cancel(handler):
@@ -248,7 +250,7 @@ def consume_requests(request_iterator, handler):
                 break
             except Exception:  # pylint: disable=broad-except
                 details = 'Exception iterating requests!'
-                logging.exception(details)
+                _LOGGER.exception(details)
                 handler.cancel(grpc.StatusCode.UNKNOWN, details)
 
     consumption = threading.Thread(target=_consume)

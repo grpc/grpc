@@ -16,6 +16,8 @@
  *
  */
 
+#include <grpc/support/port_platform.h>
+
 #include "src/core/lib/transport/status_conversion.h"
 
 grpc_http2_error_code grpc_status_to_http2_error(grpc_status_code status) {
@@ -37,8 +39,7 @@ grpc_http2_error_code grpc_status_to_http2_error(grpc_status_code status) {
   }
 }
 
-grpc_status_code grpc_http2_error_to_grpc_status(grpc_exec_ctx* exec_ctx,
-                                                 grpc_http2_error_code error,
+grpc_status_code grpc_http2_error_to_grpc_status(grpc_http2_error_code error,
                                                  grpc_millis deadline) {
   switch (error) {
     case GRPC_HTTP2_NO_ERROR:
@@ -47,7 +48,7 @@ grpc_status_code grpc_http2_error_to_grpc_status(grpc_exec_ctx* exec_ctx,
     case GRPC_HTTP2_CANCEL:
       /* http2 cancel translates to STATUS_CANCELLED iff deadline hasn't been
        * exceeded */
-      return grpc_exec_ctx_now(exec_ctx) > deadline
+      return grpc_core::ExecCtx::Get()->Now() > deadline
                  ? GRPC_STATUS_DEADLINE_EXCEEDED
                  : GRPC_STATUS_CANCELLED;
     case GRPC_HTTP2_ENHANCE_YOUR_CALM:

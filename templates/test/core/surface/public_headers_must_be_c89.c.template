@@ -48,10 +48,8 @@
   #include <stdio.h>
 
   int main(int argc, char **argv) {
-    if(argc == 12345678) {
-      % for fn in fns:
-      printf("%lx", (unsigned long) ${fn});
-      % endfor
-    }
+    % for fn in fns:
+    printf("%lx", (unsigned long) ${fn});
+    % endfor
     return 0;
   }

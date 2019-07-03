@@ -20,14 +20,14 @@
 
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
-#include <grpc/support/host_port.h>
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
 
 #include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/gprpp/host_port.h"
+#include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/transport/metadata.h"
-#include "src/core/lib/transport/service_config.h"
 
 #include "test/core/end2end/cq_verifier.h"
 #include "test/core/util/port.h"
@@ -77,18 +77,16 @@ static void run_test(bool wait_for_ready, bool use_service_config) {
 
   /* create a call, channel to a port which will refuse connection */
   int port = grpc_pick_unused_port_or_die();
-  char* addr;
-  gpr_join_host_port(&addr, "127.0.0.1", port);
-  gpr_log(GPR_INFO, "server: %s", addr);
-  chan = grpc_insecure_channel_create(addr, args, nullptr);
+  grpc_core::UniquePtr<char> addr;
+  grpc_core::JoinHostPort(&addr, "127.0.0.1", port);
+  gpr_log(GPR_INFO, "server: %s", addr.get());
+  chan = grpc_insecure_channel_create(addr.get(), args, nullptr);
   grpc_slice host = grpc_slice_from_static_string("nonexistant");
   gpr_timespec deadline = grpc_timeout_seconds_to_deadline(2);
   call =
       grpc_channel_create_call(chan, nullptr, GRPC_PROPAGATE_DEFAULTS, cq,
                                grpc_slice_from_static_string("/service/method"),
                                &host, deadline, nullptr);
-
-  gpr_free(addr);
 
   memset(ops, 0, sizeof(ops));
   op = ops;
@@ -133,16 +131,15 @@ static void run_test(bool wait_for_ready, bool use_service_config) {
   grpc_metadata_array_destroy(&trailing_metadata_recv);
 
   {
-    grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
-    if (args != nullptr) grpc_channel_args_destroy(&exec_ctx, args);
-    grpc_exec_ctx_finish(&exec_ctx);
+    grpc_core::ExecCtx exec_ctx;
+    if (args != nullptr) grpc_channel_args_destroy(args);
   }
 
   grpc_shutdown();
 }
 
 int main(int argc, char** argv) {
-  grpc_test_init(argc, argv);
+  grpc::testing::TestEnvironment env(argc, argv);
   run_test(false /* wait_for_ready */, false /* use_service_config */);
   run_test(true /* wait_for_ready */, false /* use_service_config */);
   run_test(true /* wait_for_ready */, true /* use_service_config */);

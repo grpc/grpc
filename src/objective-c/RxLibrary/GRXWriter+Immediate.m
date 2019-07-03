@@ -18,8 +18,8 @@
 
 #import "GRXWriter+Immediate.h"
 
-#import "GRXImmediateWriter.h"
 #import "GRXImmediateSingleWriter.h"
+#import "GRXImmediateWriter.h"
 
 @implementation GRXWriter (Immediate)
 
@@ -27,7 +27,7 @@
   return [GRXImmediateWriter writerWithEnumerator:enumerator];
 }
 
-+ (instancetype)writerWithValueSupplier:(id (^)())block {
++ (instancetype)writerWithValueSupplier:(id (^)(void))block {
   return [GRXImmediateWriter writerWithValueSupplier:block];
 }
 

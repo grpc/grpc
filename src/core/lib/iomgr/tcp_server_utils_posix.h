@@ -19,14 +19,12 @@
 #ifndef GRPC_CORE_LIB_IOMGR_TCP_SERVER_UTILS_POSIX_H
 #define GRPC_CORE_LIB_IOMGR_TCP_SERVER_UTILS_POSIX_H
 
+#include <grpc/support/port_platform.h>
+
 #include "src/core/lib/iomgr/ev_posix.h"
 #include "src/core/lib/iomgr/resolve_address.h"
 #include "src/core/lib/iomgr/socket_utils_posix.h"
 #include "src/core/lib/iomgr/tcp_server.h"
-
-#ifdef __cplusplus
-extern "C" {
-#endif
 
 /* one listening port */
 typedef struct grpc_tcp_listener {
@@ -94,6 +92,9 @@ struct grpc_tcp_server {
 
   /* channel args for this server */
   grpc_channel_args* channel_args;
+
+  /* a handler for external connections, owned */
+  grpc_core::TcpServerFdHandler* fd_handler;
 };
 
 /* If successful, add a listener to \a s for \a addr, set \a dsmode for the
@@ -115,14 +116,10 @@ grpc_error* grpc_tcp_server_add_all_local_addrs(grpc_tcp_server* s,
                                                 int* out_port);
 
 /* Prepare a recently-created socket for listening. */
-grpc_error* grpc_tcp_server_prepare_socket(int fd,
+grpc_error* grpc_tcp_server_prepare_socket(grpc_tcp_server*, int fd,
                                            const grpc_resolved_address* addr,
                                            bool so_reuseport, int* port);
 /* Ruturn true if the platform supports ifaddrs */
 bool grpc_tcp_server_have_ifaddrs(void);
-
-#ifdef __cplusplus
-}
-#endif
 
 #endif /* GRPC_CORE_LIB_IOMGR_TCP_SERVER_UTILS_POSIX_H */

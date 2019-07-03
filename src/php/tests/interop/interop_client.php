@@ -530,15 +530,10 @@ function _makeStub($args)
         throw new Exception('Missing argument: --test_case is required');
     }
 
-    if ($args['server_port'] === 443) {
-        $server_address = $args['server_host'];
-    } else {
-        $server_address = $args['server_host'].':'.$args['server_port'];
-    }
-
+    $server_address = $args['server_host'].':'.$args['server_port'];
     $test_case = $args['test_case'];
 
-    $host_override = 'foo.test.google.fr';
+    $host_override = '';
     if (array_key_exists('server_host_override', $args)) {
         $host_override = $args['server_host_override'];
     }
@@ -565,7 +560,9 @@ function _makeStub($args)
             $ssl_credentials = Grpc\ChannelCredentials::createSsl();
         }
         $opts['credentials'] = $ssl_credentials;
-        $opts['grpc.ssl_target_name_override'] = $host_override;
+        if (!empty($host_override)) {
+            $opts['grpc.ssl_target_name_override'] = $host_override;
+        }
     } else {
         $opts['credentials'] = Grpc\ChannelCredentials::createInsecure();
     }

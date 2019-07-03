@@ -34,16 +34,19 @@ $BINDIR/interop_server --port=5051 --max_send_message_size=8388608 --use_tls &
 # Kill them when this script exits.
 trap 'kill -9 `jobs -p` ; echo "EXIT TIME:  $(date)"' EXIT
 
+set -o pipefail
+
 # xcodebuild is very verbose. We filter its output and tell Bash to fail if any
 # element of the pipe fails.
 # TODO(jcanizales): Use xctool instead? Issue #2540.
-set -o pipefail
-XCODEBUILD_FILTER='(^CompileC |^Ld |^.*clang |^ *cd |^ *export |^Libtool |^.*libtool |^CpHeader |^ *builtin-copy )'
+XCODEBUILD_FILTER='(^CompileC |^Ld |^ *[^ ]*clang |^ *cd |^ *export |^Libtool |^ *[^ ]*libtool |^CpHeader |^ *builtin-copy )'
+
 echo "TIME:  $(date)"
+
 xcodebuild \
     -workspace Tests.xcworkspace \
-    -scheme AllTests \
-    -destination name="iPhone 6" \
+    -scheme InteropTests \
+    -destination name="iPhone 8" \
     HOST_PORT_LOCALSSL=localhost:5051 \
     HOST_PORT_LOCAL=localhost:5050 \
     HOST_PORT_REMOTE=grpc-test.sandbox.googleapis.com \
@@ -55,30 +58,40 @@ xcodebuild \
 echo "TIME:  $(date)"
 xcodebuild \
     -workspace Tests.xcworkspace \
-    -scheme CoreCronetEnd2EndTests \
-    -destination name="iPhone 6" \
-    test \
-    | egrep -v "$XCODEBUILD_FILTER" \
-    | egrep -v '^$' \
-    | egrep -v "(GPBDictionary|GPBArray)" -
-
-echo "TIME:  $(date)"
-xcodebuild \
-    -workspace Tests.xcworkspace \
-    -scheme CronetUnitTests \
-    -destination name="iPhone 6" \
-    test \
-    | egrep -v "$XCODEBUILD_FILTER" \
-    | egrep -v '^$' \
-    | egrep -v "(GPBDictionary|GPBArray)" -
-
-echo "TIME:  $(date)"
-xcodebuild \
-    -workspace Tests.xcworkspace \
-    -scheme InteropTestsRemoteWithCronet \
-    -destination name="iPhone 6" \
+    -scheme UnitTests \
+    -destination name="iPhone 8" \
+    HOST_PORT_LOCALSSL=localhost:5051 \
+    HOST_PORT_LOCAL=localhost:5050 \
     HOST_PORT_REMOTE=grpc-test.sandbox.googleapis.com \
     test \
     | egrep -v "$XCODEBUILD_FILTER" \
     | egrep -v '^$' \
     | egrep -v "(GPBDictionary|GPBArray)" -
+
+echo "TIME:  $(date)"
+xcodebuild \
+    -workspace Tests.xcworkspace \
+    -scheme CronetTests \
+    -destination name="iPhone 8" \
+    HOST_PORT_LOCALSSL=localhost:5051 \
+    HOST_PORT_LOCAL=localhost:5050 \
+    HOST_PORT_REMOTE=grpc-test.sandbox.googleapis.com \
+    test \
+    | egrep -v "$XCODEBUILD_FILTER" \
+    | egrep -v '^$' \
+    | egrep -v "(GPBDictionary|GPBArray)" -
+
+echo "TIME:  $(date)"
+xcodebuild \
+    -workspace Tests.xcworkspace \
+    -scheme MacTests \
+    -destination platform=macOS \
+    HOST_PORT_LOCALSSL=localhost:5051 \
+    HOST_PORT_LOCAL=localhost:5050 \
+    HOST_PORT_REMOTE=grpc-test.sandbox.googleapis.com \
+    test \
+    | egrep -v "$XCODEBUILD_FILTER" \
+    | egrep -v '^$' \
+    | egrep -v "(GPBDictionary|GPBArray)" -
+
+exit 0

@@ -20,9 +20,9 @@
 
 #include <grpc/support/log.h>
 #include <grpc/support/sync.h>
-#include <grpc/support/thd.h>
 #include <grpc/support/time.h>
 
+#include "src/core/lib/gprpp/thd.h"
 #include "test/core/end2end/cq_verifier.h"
 
 static void* tag(intptr_t t) { return (void*)t; }
@@ -34,7 +34,7 @@ typedef struct {
 } child_events;
 
 static void child_thread(void* arg) {
-  child_events* ce = (child_events*)arg;
+  child_events* ce = static_cast<child_events*>(arg);
   grpc_event ev;
   gpr_event_set(&ce->started, (void*)1);
   gpr_log(GPR_DEBUG, "verifying");
@@ -50,8 +50,6 @@ static void test_connectivity(grpc_end2end_test_config config) {
   grpc_connectivity_state state;
   cq_verifier* cqv = cq_verifier_create(f.cq);
   child_events ce;
-  gpr_thd_options thdopt = gpr_thd_options_default();
-  gpr_thd_id thdid;
 
   grpc_channel_args client_args;
   grpc_arg arg_array[1];
@@ -67,8 +65,8 @@ static void test_connectivity(grpc_end2end_test_config config) {
   ce.channel = f.client;
   ce.cq = f.cq;
   gpr_event_init(&ce.started);
-  gpr_thd_options_set_joinable(&thdopt);
-  GPR_ASSERT(gpr_thd_new(&thdid, child_thread, &ce, &thdopt));
+  grpc_core::Thread thd("grpc_connectivity", child_thread, &ce);
+  thd.Start();
 
   gpr_event_wait(&ce.started, gpr_inf_future(GPR_CLOCK_MONOTONIC));
 
@@ -85,7 +83,7 @@ static void test_connectivity(grpc_end2end_test_config config) {
       f.client, GRPC_CHANNEL_IDLE, gpr_now(GPR_CLOCK_MONOTONIC), f.cq, tag(1));
 
   /* eventually the child thread completion should trigger */
-  gpr_thd_join(thdid);
+  thd.Join();
 
   /* check that we're still in idle, and start connecting */
   GPR_ASSERT(grpc_channel_check_connectivity_state(f.client, 1) ==

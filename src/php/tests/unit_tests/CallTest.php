@@ -24,12 +24,14 @@ class CallTest extends PHPUnit_Framework_TestCase
     public static function setUpBeforeClass()
     {
         self::$server = new Grpc\Server([]);
-        self::$port = self::$server->addHttp2Port('0.0.0.0:0');
+        self::$port = self::$server->addHttp2Port('0.0.0.0:53000');
     }
 
     public function setUp()
     {
-        $this->channel = new Grpc\Channel('localhost:'.self::$port, []);
+        $this->channel = new Grpc\Channel('localhost:'.self::$port, [
+            'force_new' => true,
+        ]);
         $this->call = new Grpc\Call($this->channel,
                                     '/foo',
                                     Grpc\Timeval::infFuture());
@@ -82,6 +84,16 @@ class CallTest extends PHPUnit_Framework_TestCase
         ];
         $result = $this->call->startBatch($batch);
         $this->assertTrue($result->send_metadata);
+    }
+
+    public function testAddMultiAndMultiValueMetadata() 
+    {   
+        $batch = [  
+            Grpc\OP_SEND_INITIAL_METADATA => ['key1' => ['value1', 'value2'],   
+                                              'key2' => ['value3', 'value4'],], 
+        ];  
+        $result = $this->call->startBatch($batch);  
+        $this->assertTrue($result->send_metadata);  
     }
 
     public function testGetPeer()

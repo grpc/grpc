@@ -19,23 +19,22 @@ set -ex
 cd "$(dirname "${0}")/../.."
 
 DIRS=(
+    'examples/python'
     'src/python'
+    'tools'
 )
 EXCLUSIONS=(
-    'grpcio/grpc_*.py'
-    'grpcio_health_checking/grpc_*.py'
-    'grpcio_reflection/grpc_*.py'
-    'grpcio_testing/grpc_*.py'
-    'grpcio_tests/grpc_*.py'
+    '*protoc_lib_deps.py'  # this file is auto-generated
+    '*_pb2*.py'  # no need to format protoc generated files
 )
 
 VIRTUALENV=yapf_virtual_environment
 
-virtualenv $VIRTUALENV
-PYTHON=$(realpath "${VIRTUALENV}/bin/python")
-$PYTHON -m pip install --upgrade pip==9.0.1
-$PYTHON -m pip install --upgrade futures
-$PYTHON -m pip install yapf==0.16.0
+python -m virtualenv $VIRTUALENV
+PYTHON=${VIRTUALENV}/bin/python
+"$PYTHON" -m pip install --upgrade pip==10.0.1
+"$PYTHON" -m pip install --upgrade futures
+"$PYTHON" -m pip install yapf==0.20.0
 
 yapf() {
     local exclusion exclusion_args=()
@@ -55,7 +54,7 @@ else
 	tempdir=$(mktemp -d)
 	cp -RT "${dir}" "${tempdir}"
 	yapf "${tempdir}"
-	diff -ru "${dir}" "${tempdir}" || ok=no
+	diff -x '*.pyc' -ru "${dir}" "${tempdir}" || ok=no
 	rm -rf "${tempdir}"
     done
     if [[ ${ok} == no ]]; then

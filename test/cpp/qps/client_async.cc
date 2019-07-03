@@ -24,18 +24,19 @@
 #include <sstream>
 #include <string>
 #include <thread>
+#include <utility>
 #include <vector>
 
-#include <grpc++/alarm.h>
-#include <grpc++/channel.h>
-#include <grpc++/client_context.h>
-#include <grpc++/generic/generic_stub.h>
 #include <grpc/grpc.h>
 #include <grpc/support/cpu.h>
 #include <grpc/support/log.h>
+#include <grpcpp/alarm.h>
+#include <grpcpp/channel.h>
+#include <grpcpp/client_context.h>
+#include <grpcpp/generic/generic_stub.h>
 
 #include "src/core/lib/surface/completion_queue.h"
-#include "src/proto/grpc/testing/services.grpc.pb.h"
+#include "src/proto/grpc/testing/benchmark_service.grpc.pb.h"
 #include "test/cpp/qps/client.h"
 #include "test/cpp/qps/usage_timer.h"
 #include "test/cpp/util/create_test_channel.h"
@@ -50,9 +51,9 @@ class ClientRpcContext {
   // next state, return false if done. Collect stats when appropriate
   virtual bool RunNextState(bool, HistogramEntry* entry) = 0;
   virtual void StartNewClone(CompletionQueue* cq) = 0;
-  static void* tag(ClientRpcContext* c) { return reinterpret_cast<void*>(c); }
+  static void* tag(ClientRpcContext* c) { return static_cast<void*>(c); }
   static ClientRpcContext* detag(void* t) {
-    return reinterpret_cast<ClientRpcContext*>(t);
+    return static_cast<ClientRpcContext*>(t);
   }
 
   virtual void Start(CompletionQueue* cq, const ClientConfig& config) = 0;
@@ -78,10 +79,11 @@ class ClientRpcContextUnaryImpl : public ClientRpcContext {
         response_(),
         next_state_(State::READY),
         callback_(on_done),
-        next_issue_(next_issue),
+        next_issue_(std::move(next_issue)),
         prepare_req_(prepare_req) {}
   ~ClientRpcContextUnaryImpl() override {}
   void Start(CompletionQueue* cq, const ClientConfig& config) override {
+    GPR_ASSERT(!config.use_coalesce_api());  // not supported.
     StartInternal(cq);
   }
   bool RunNextState(bool ok, HistogramEntry* entry) override {
@@ -280,6 +282,7 @@ class AsyncClient : public ClientImpl<StubType, RequestType> {
         },
         &got_tag, &ok, gpr_inf_future(GPR_CLOCK_REALTIME))) {
       t->UpdateHistogram(entry_ptr);
+      entry = HistogramEntry();
       shutdown_mu->lock();
       ctx = ProcessTag(thread_idx, got_tag);
       if (ctx == nullptr) {
@@ -296,7 +299,7 @@ class AsyncClient : public ClientImpl<StubType, RequestType> {
 };
 
 static std::unique_ptr<BenchmarkService::Stub> BenchmarkStubCreator(
-    std::shared_ptr<Channel> ch) {
+    const std::shared_ptr<Channel>& ch) {
   return BenchmarkService::NewStub(ch);
 }
 
@@ -311,7 +314,7 @@ class AsyncUnaryClient final
   ~AsyncUnaryClient() override {}
 
  private:
-  static void CheckDone(grpc::Status s, SimpleResponse* response,
+  static void CheckDone(const grpc::Status& s, SimpleResponse* response,
                         HistogramEntry* entry) {
     entry->set_status(s.error_code());
   }
@@ -324,7 +327,7 @@ class AsyncUnaryClient final
                                     std::function<gpr_timespec()> next_issue,
                                     const SimpleRequest& req) {
     return new ClientRpcContextUnaryImpl<SimpleRequest, SimpleResponse>(
-        stub, req, next_issue, AsyncUnaryClient::PrepareReq,
+        stub, req, std::move(next_issue), AsyncUnaryClient::PrepareReq,
         AsyncUnaryClient::CheckDone);
   }
 };
@@ -347,11 +350,12 @@ class ClientRpcContextStreamingPingPongImpl : public ClientRpcContext {
         response_(),
         next_state_(State::INVALID),
         callback_(on_done),
-        next_issue_(next_issue),
-        prepare_req_(prepare_req) {}
+        next_issue_(std::move(next_issue)),
+        prepare_req_(prepare_req),
+        coalesce_(false) {}
   ~ClientRpcContextStreamingPingPongImpl() override {}
   void Start(CompletionQueue* cq, const ClientConfig& config) override {
-    StartInternal(cq, config.messages_per_stream());
+    StartInternal(cq, config.messages_per_stream(), config.use_coalesce_api());
   }
   bool RunNextState(bool ok, HistogramEntry* entry) override {
     while (true) {
@@ -374,7 +378,12 @@ class ClientRpcContextStreamingPingPongImpl : public ClientRpcContext {
           }
           start_ = UsageTimer::Now();
           next_state_ = State::WRITE_DONE;
-          stream_->Write(req_, ClientRpcContext::tag(this));
+          if (coalesce_ && messages_issued_ == messages_per_stream_ - 1) {
+            stream_->WriteLast(req_, WriteOptions(),
+                               ClientRpcContext::tag(this));
+          } else {
+            stream_->Write(req_, ClientRpcContext::tag(this));
+          }
           return true;
         case State::WRITE_DONE:
           if (!ok) {
@@ -390,6 +399,11 @@ class ClientRpcContextStreamingPingPongImpl : public ClientRpcContext {
           if ((messages_per_stream_ != 0) &&
               (++messages_issued_ >= messages_per_stream_)) {
             next_state_ = State::WRITES_DONE_DONE;
+            if (coalesce_) {
+              // WritesDone should have been called on the last Write.
+              // loop around to call Finish.
+              break;
+            }
             stream_->WritesDone(ClientRpcContext::tag(this));
             return true;
           }
@@ -412,7 +426,7 @@ class ClientRpcContextStreamingPingPongImpl : public ClientRpcContext {
   void StartNewClone(CompletionQueue* cq) override {
     auto* clone = new ClientRpcContextStreamingPingPongImpl(
         stub_, req_, next_issue_, prepare_req_, callback_);
-    clone->StartInternal(cq, messages_per_stream_);
+    clone->StartInternal(cq, messages_per_stream_, coalesce_);
   }
   void TryCancel() override { context_.TryCancel(); }
 
@@ -448,14 +462,27 @@ class ClientRpcContextStreamingPingPongImpl : public ClientRpcContext {
   // Allow a limit on number of messages in a stream
   int messages_per_stream_;
   int messages_issued_;
+  // Whether to use coalescing API.
+  bool coalesce_;
 
-  void StartInternal(CompletionQueue* cq, int messages_per_stream) {
+  void StartInternal(CompletionQueue* cq, int messages_per_stream,
+                     bool coalesce) {
     cq_ = cq;
     messages_per_stream_ = messages_per_stream;
     messages_issued_ = 0;
+    coalesce_ = coalesce;
+    if (coalesce_) {
+      GPR_ASSERT(messages_per_stream_ != 0);
+      context_.set_initial_metadata_corked(true);
+    }
     stream_ = prepare_req_(stub_, &context_, cq);
     next_state_ = State::STREAM_IDLE;
     stream_->StartCall(ClientRpcContext::tag(this));
+    if (coalesce_) {
+      // When the initial metadata is corked, the tag will not come back and we
+      // need to manually drive the state machine.
+      RunNextState(true, nullptr);
+    }
   }
 };
 
@@ -471,7 +498,7 @@ class AsyncStreamingPingPongClient final
   ~AsyncStreamingPingPongClient() override {}
 
  private:
-  static void CheckDone(grpc::Status s, SimpleResponse* response) {}
+  static void CheckDone(const grpc::Status& s, SimpleResponse* response) {}
   static std::unique_ptr<
       grpc::ClientAsyncReaderWriter<SimpleRequest, SimpleResponse>>
   PrepareReq(BenchmarkService::Stub* stub, grpc::ClientContext* ctx,
@@ -484,7 +511,8 @@ class AsyncStreamingPingPongClient final
                                     const SimpleRequest& req) {
     return new ClientRpcContextStreamingPingPongImpl<SimpleRequest,
                                                      SimpleResponse>(
-        stub, req, next_issue, AsyncStreamingPingPongClient::PrepareReq,
+        stub, req, std::move(next_issue),
+        AsyncStreamingPingPongClient::PrepareReq,
         AsyncStreamingPingPongClient::CheckDone);
   }
 };
@@ -507,10 +535,11 @@ class ClientRpcContextStreamingFromClientImpl : public ClientRpcContext {
         response_(),
         next_state_(State::INVALID),
         callback_(on_done),
-        next_issue_(next_issue),
+        next_issue_(std::move(next_issue)),
         prepare_req_(prepare_req) {}
   ~ClientRpcContextStreamingFromClientImpl() override {}
   void Start(CompletionQueue* cq, const ClientConfig& config) override {
+    GPR_ASSERT(!config.use_coalesce_api());  // not supported yet.
     StartInternal(cq);
   }
   bool RunNextState(bool ok, HistogramEntry* entry) override {
@@ -601,7 +630,7 @@ class AsyncStreamingFromClientClient final
   ~AsyncStreamingFromClientClient() override {}
 
  private:
-  static void CheckDone(grpc::Status s, SimpleResponse* response) {}
+  static void CheckDone(const grpc::Status& s, SimpleResponse* response) {}
   static std::unique_ptr<grpc::ClientAsyncWriter<SimpleRequest>> PrepareReq(
       BenchmarkService::Stub* stub, grpc::ClientContext* ctx,
       SimpleResponse* resp, CompletionQueue* cq) {
@@ -613,7 +642,8 @@ class AsyncStreamingFromClientClient final
                                     const SimpleRequest& req) {
     return new ClientRpcContextStreamingFromClientImpl<SimpleRequest,
                                                        SimpleResponse>(
-        stub, req, next_issue, AsyncStreamingFromClientClient::PrepareReq,
+        stub, req, std::move(next_issue),
+        AsyncStreamingFromClientClient::PrepareReq,
         AsyncStreamingFromClientClient::CheckDone);
   }
 };
@@ -636,10 +666,11 @@ class ClientRpcContextStreamingFromServerImpl : public ClientRpcContext {
         response_(),
         next_state_(State::INVALID),
         callback_(on_done),
-        next_issue_(next_issue),
+        next_issue_(std::move(next_issue)),
         prepare_req_(prepare_req) {}
   ~ClientRpcContextStreamingFromServerImpl() override {}
   void Start(CompletionQueue* cq, const ClientConfig& config) override {
+    GPR_ASSERT(!config.use_coalesce_api());  // not supported
     StartInternal(cq);
   }
   bool RunNextState(bool ok, HistogramEntry* entry) override {
@@ -714,7 +745,7 @@ class AsyncStreamingFromServerClient final
   ~AsyncStreamingFromServerClient() override {}
 
  private:
-  static void CheckDone(grpc::Status s, SimpleResponse* response) {}
+  static void CheckDone(const grpc::Status& s, SimpleResponse* response) {}
   static std::unique_ptr<grpc::ClientAsyncReader<SimpleResponse>> PrepareReq(
       BenchmarkService::Stub* stub, grpc::ClientContext* ctx,
       const SimpleRequest& req, CompletionQueue* cq) {
@@ -726,7 +757,8 @@ class AsyncStreamingFromServerClient final
                                     const SimpleRequest& req) {
     return new ClientRpcContextStreamingFromServerImpl<SimpleRequest,
                                                        SimpleResponse>(
-        stub, req, next_issue, AsyncStreamingFromServerClient::PrepareReq,
+        stub, req, std::move(next_issue),
+        AsyncStreamingFromServerClient::PrepareReq,
         AsyncStreamingFromServerClient::CheckDone);
   }
 };
@@ -747,11 +779,12 @@ class ClientRpcContextGenericStreamingImpl : public ClientRpcContext {
         req_(req),
         response_(),
         next_state_(State::INVALID),
-        callback_(on_done),
-        next_issue_(next_issue),
-        prepare_req_(prepare_req) {}
+        callback_(std::move(on_done)),
+        next_issue_(std::move(next_issue)),
+        prepare_req_(std::move(prepare_req)) {}
   ~ClientRpcContextGenericStreamingImpl() override {}
   void Start(CompletionQueue* cq, const ClientConfig& config) override {
+    GPR_ASSERT(!config.use_coalesce_api());  // not supported yet.
     StartInternal(cq, config.messages_per_stream());
   }
   bool RunNextState(bool ok, HistogramEntry* entry) override {
@@ -862,7 +895,7 @@ class ClientRpcContextGenericStreamingImpl : public ClientRpcContext {
 };
 
 static std::unique_ptr<grpc::GenericStub> GenericStubCreator(
-    std::shared_ptr<Channel> ch) {
+    const std::shared_ptr<Channel>& ch) {
   return std::unique_ptr<grpc::GenericStub>(new grpc::GenericStub(ch));
 }
 
@@ -878,7 +911,7 @@ class GenericAsyncStreamingClient final
   ~GenericAsyncStreamingClient() override {}
 
  private:
-  static void CheckDone(grpc::Status s, ByteBuffer* response) {}
+  static void CheckDone(const grpc::Status& s, ByteBuffer* response) {}
   static std::unique_ptr<grpc::GenericClientAsyncReaderWriter> PrepareReq(
       grpc::GenericStub* stub, grpc::ClientContext* ctx,
       const grpc::string& method_name, CompletionQueue* cq) {
@@ -889,7 +922,8 @@ class GenericAsyncStreamingClient final
                                     std::function<gpr_timespec()> next_issue,
                                     const ByteBuffer& req) {
     return new ClientRpcContextGenericStreamingImpl(
-        stub, req, next_issue, GenericAsyncStreamingClient::PrepareReq,
+        stub, req, std::move(next_issue),
+        GenericAsyncStreamingClient::PrepareReq,
         GenericAsyncStreamingClient::CheckDone);
   }
 };

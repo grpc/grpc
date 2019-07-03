@@ -21,27 +21,45 @@
 
 /* Lock free event notification for file descriptors */
 
+#include <grpc/support/port_platform.h>
+
 #include <grpc/support/atm.h>
 
-#include "src/core/lib/iomgr/exec_ctx.h"
+#include "src/core/lib/iomgr/closure.h"
 
 namespace grpc_core {
 
 class LockfreeEvent {
  public:
   LockfreeEvent();
-  ~LockfreeEvent();
 
   LockfreeEvent(const LockfreeEvent&) = delete;
   LockfreeEvent& operator=(const LockfreeEvent&) = delete;
 
+  // These methods are used to initialize and destroy the internal state. These
+  // cannot be done in constructor and destructor because SetReady may be called
+  // when the event is destroyed and put in a freelist.
+  void InitEvent();
+  void DestroyEvent();
+
+  // Returns true if fd has been shutdown, false otherwise.
   bool IsShutdown() const {
     return (gpr_atm_no_barrier_load(&state_) & kShutdownBit) != 0;
   }
 
-  void NotifyOn(grpc_exec_ctx* exec_ctx, grpc_closure* closure);
-  bool SetShutdown(grpc_exec_ctx* exec_ctx, grpc_error* error);
-  void SetReady(grpc_exec_ctx* exec_ctx);
+  // Schedules \a closure when the event is received (see SetReady()) or the
+  // shutdown state has been set. Note that the event may have already been
+  // received, in which case the closure would be scheduled immediately.
+  // If the shutdown state has already been set, then \a closure is scheduled
+  // with the shutdown error.
+  void NotifyOn(grpc_closure* closure);
+
+  // Sets the shutdown state. If a closure had been provided by NotifyOn and has
+  // not yet been scheduled, it will be scheduled with \a error.
+  bool SetShutdown(grpc_error* error);
+
+  // Signals that the event has been received.
+  void SetReady();
 
  private:
   enum State { kClosureNotReady = 0, kClosureReady = 2, kShutdownBit = 1 };

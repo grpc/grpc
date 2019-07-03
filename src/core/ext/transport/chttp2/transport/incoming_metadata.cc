@@ -16,6 +16,8 @@
  *
  */
 
+#include <grpc/support/port_platform.h>
+
 #include "src/core/ext/transport/chttp2/transport/incoming_metadata.h"
 
 #include <string.h>
@@ -25,41 +27,31 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 
-void grpc_chttp2_incoming_metadata_buffer_init(
-    grpc_chttp2_incoming_metadata_buffer* buffer, gpr_arena* arena) {
-  buffer->arena = arena;
-  grpc_metadata_batch_init(&buffer->batch);
-  buffer->batch.deadline = GRPC_MILLIS_INF_FUTURE;
-}
-
-void grpc_chttp2_incoming_metadata_buffer_destroy(
-    grpc_exec_ctx* exec_ctx, grpc_chttp2_incoming_metadata_buffer* buffer) {
-  grpc_metadata_batch_destroy(exec_ctx, &buffer->batch);
-}
-
 grpc_error* grpc_chttp2_incoming_metadata_buffer_add(
-    grpc_exec_ctx* exec_ctx, grpc_chttp2_incoming_metadata_buffer* buffer,
-    grpc_mdelem elem) {
+    grpc_chttp2_incoming_metadata_buffer* buffer, grpc_mdelem elem) {
   buffer->size += GRPC_MDELEM_LENGTH(elem);
-  return grpc_metadata_batch_add_tail(
-      exec_ctx, &buffer->batch,
-      (grpc_linked_mdelem*)gpr_arena_alloc(buffer->arena,
-                                           sizeof(grpc_linked_mdelem)),
-      elem);
+  grpc_linked_mdelem* storage;
+  if (buffer->count < buffer->kPreallocatedMDElem) {
+    storage = &buffer->preallocated_mdelems[buffer->count];
+    buffer->count++;
+  } else {
+    storage = static_cast<grpc_linked_mdelem*>(
+        buffer->arena->Alloc(sizeof(grpc_linked_mdelem)));
+  }
+  return grpc_metadata_batch_add_tail(&buffer->batch, storage, elem);
 }
 
 grpc_error* grpc_chttp2_incoming_metadata_buffer_replace_or_add(
-    grpc_exec_ctx* exec_ctx, grpc_chttp2_incoming_metadata_buffer* buffer,
-    grpc_mdelem elem) {
+    grpc_chttp2_incoming_metadata_buffer* buffer, grpc_mdelem elem) {
   for (grpc_linked_mdelem* l = buffer->batch.list.head; l != nullptr;
        l = l->next) {
     if (grpc_slice_eq(GRPC_MDKEY(l->md), GRPC_MDKEY(elem))) {
-      GRPC_MDELEM_UNREF(exec_ctx, l->md);
+      GRPC_MDELEM_UNREF(l->md);
       l->md = elem;
       return GRPC_ERROR_NONE;
     }
   }
-  return grpc_chttp2_incoming_metadata_buffer_add(exec_ctx, buffer, elem);
+  return grpc_chttp2_incoming_metadata_buffer_add(buffer, elem);
 }
 
 void grpc_chttp2_incoming_metadata_buffer_set_deadline(
@@ -68,8 +60,6 @@ void grpc_chttp2_incoming_metadata_buffer_set_deadline(
 }
 
 void grpc_chttp2_incoming_metadata_buffer_publish(
-    grpc_exec_ctx* exec_ctx, grpc_chttp2_incoming_metadata_buffer* buffer,
-    grpc_metadata_batch* batch) {
-  *batch = buffer->batch;
-  grpc_metadata_batch_init(&buffer->batch);
+    grpc_chttp2_incoming_metadata_buffer* buffer, grpc_metadata_batch* batch) {
+  grpc_metadata_batch_move(&buffer->batch, batch);
 }

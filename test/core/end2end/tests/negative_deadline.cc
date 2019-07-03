@@ -18,6 +18,7 @@
 
 #include "test/core/end2end/end2end_tests.h"
 
+#include <inttypes.h>
 #include <stdio.h>
 #include <string.h>
 
@@ -26,8 +27,7 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/time.h>
-#include <grpc/support/useful.h>
-#include "src/core/lib/support/string.h"
+#include "src/core/lib/gpr/string.h"
 #include "test/core/end2end/cq_verifier.h"
 
 static void* tag(intptr_t t) { return (void*)t; }
@@ -101,11 +101,9 @@ static void simple_request_body(grpc_end2end_test_config config,
   gpr_log(GPR_DEBUG, "test with %" PRIuPTR " ops", num_ops);
 
   gpr_timespec deadline = gpr_inf_past(GPR_CLOCK_REALTIME);
-  c = grpc_channel_create_call(
-      f.client, nullptr, GRPC_PROPAGATE_DEFAULTS, f.cq,
-      grpc_slice_from_static_string("/foo"),
-      get_host_override_slice("foo.test.google.fr:1234", config), deadline,
-      nullptr);
+  c = grpc_channel_create_call(f.client, nullptr, GRPC_PROPAGATE_DEFAULTS, f.cq,
+                               grpc_slice_from_static_string("/foo"), nullptr,
+                               deadline, nullptr);
   GPR_ASSERT(c);
 
   grpc_metadata_array_init(&initial_metadata_recv);

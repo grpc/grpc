@@ -15,5 +15,6 @@
 # limitations under the License.
 
 # Makes sure NVM is loaded before executing the command passed as an argument
+# shellcheck disable=SC1090
 source ~/.nvm/nvm.sh
-$@
+"$@"

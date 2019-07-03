@@ -16,9 +16,11 @@
  *
  */
 
+#include <grpc/support/port_platform.h>
+
 #include "src/core/lib/iomgr/port.h"
 
-#ifdef GRPC_POSIX_SOCKET
+#ifdef GRPC_POSIX_SOCKET_UTILS_COMMON
 
 #include "src/core/lib/iomgr/socket_utils.h"
 #include "src/core/lib/iomgr/socket_utils_posix.h"
@@ -28,7 +30,11 @@
 #include <fcntl.h>
 #include <limits.h>
 #include <netinet/in.h>
+#ifdef GRPC_LINUX_TCP_H
+#include <linux/tcp.h>
+#else
 #include <netinet/tcp.h>
+#endif
 #include <stdio.h>
 #include <string.h>
 #include <sys/socket.h>
@@ -36,12 +42,13 @@
 #include <unistd.h>
 
 #include <grpc/support/alloc.h>
-#include <grpc/support/host_port.h>
 #include <grpc/support/log.h>
-#include <grpc/support/port_platform.h>
 #include <grpc/support/sync.h>
+
+#include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/gpr/string.h"
+#include "src/core/lib/iomgr/sockaddr.h"
 #include "src/core/lib/iomgr/sockaddr_utils.h"
-#include "src/core/lib/support/string.h"
 
 /* set a socket to non blocking mode */
 grpc_error* grpc_set_socket_nonblocking(int fd, int non_blocking) {
@@ -178,6 +185,30 @@ grpc_error* grpc_set_socket_reuse_port(int fd, int reuse) {
 #endif
 }
 
+static gpr_once g_probe_so_reuesport_once = GPR_ONCE_INIT;
+static int g_support_so_reuseport = false;
+
+void probe_so_reuseport_once(void) {
+#ifndef GPR_MANYLINUX1
+  int s = socket(AF_INET, SOCK_STREAM, 0);
+  if (s < 0) {
+    /* This might be an ipv6-only environment in which case 'socket(AF_INET,..)'
+       call would fail. Try creating IPv6 socket in that case */
+    s = socket(AF_INET6, SOCK_STREAM, 0);
+  }
+  if (s >= 0) {
+    g_support_so_reuseport = GRPC_LOG_IF_ERROR(
+        "check for SO_REUSEPORT", grpc_set_socket_reuse_port(s, 1));
+    close(s);
+  }
+#endif
+}
+
+bool grpc_is_socket_reuse_port_supported() {
+  gpr_once_init(&g_probe_so_reuesport_once, probe_so_reuseport_once);
+  return g_support_so_reuseport;
+}
+
 /* disable nagle */
 grpc_error* grpc_set_socket_low_latency(int fd, int low_latency) {
   int val = (low_latency != 0);
@@ -192,6 +223,101 @@ grpc_error* grpc_set_socket_low_latency(int fd, int low_latency) {
   if ((newval != 0) != val) {
     return GRPC_ERROR_CREATE_FROM_STATIC_STRING("Failed to set TCP_NODELAY");
   }
+  return GRPC_ERROR_NONE;
+}
+
+/* The default values for TCP_USER_TIMEOUT are currently configured to be in
+ * line with the default values of KEEPALIVE_TIMEOUT as proposed in
+ * https://github.com/grpc/proposal/blob/master/A18-tcp-user-timeout.md */
+#define DEFAULT_CLIENT_TCP_USER_TIMEOUT_MS 20000 /* 20 seconds */
+#define DEFAULT_SERVER_TCP_USER_TIMEOUT_MS 20000 /* 20 seconds */
+
+static int g_default_client_tcp_user_timeout_ms =
+    DEFAULT_CLIENT_TCP_USER_TIMEOUT_MS;
+static int g_default_server_tcp_user_timeout_ms =
+    DEFAULT_SERVER_TCP_USER_TIMEOUT_MS;
+static bool g_default_client_tcp_user_timeout_enabled = false;
+static bool g_default_server_tcp_user_timeout_enabled = true;
+
+void config_default_tcp_user_timeout(bool enable, int timeout, bool is_client) {
+  if (is_client) {
+    g_default_client_tcp_user_timeout_enabled = enable;
+    if (timeout > 0) {
+      g_default_client_tcp_user_timeout_ms = timeout;
+    }
+  } else {
+    g_default_server_tcp_user_timeout_enabled = enable;
+    if (timeout > 0) {
+      g_default_server_tcp_user_timeout_ms = timeout;
+    }
+  }
+}
+
+/* Set TCP_USER_TIMEOUT */
+grpc_error* grpc_set_socket_tcp_user_timeout(
+    int fd, const grpc_channel_args* channel_args, bool is_client) {
+#ifdef GRPC_HAVE_TCP_USER_TIMEOUT
+  bool enable;
+  int timeout;
+  if (is_client) {
+    enable = g_default_client_tcp_user_timeout_enabled;
+    timeout = g_default_client_tcp_user_timeout_ms;
+  } else {
+    enable = g_default_server_tcp_user_timeout_enabled;
+    timeout = g_default_server_tcp_user_timeout_ms;
+  }
+  if (channel_args) {
+    for (unsigned int i = 0; i < channel_args->num_args; i++) {
+      if (0 == strcmp(channel_args->args[i].key, GRPC_ARG_KEEPALIVE_TIME_MS)) {
+        const int value = grpc_channel_arg_get_integer(
+            &channel_args->args[i], grpc_integer_options{0, 1, INT_MAX});
+        /* Continue using default if value is 0 */
+        if (value == 0) {
+          continue;
+        }
+        /* Disable if value is INT_MAX */
+        enable = value != INT_MAX;
+      } else if (0 == strcmp(channel_args->args[i].key,
+                             GRPC_ARG_KEEPALIVE_TIMEOUT_MS)) {
+        const int value = grpc_channel_arg_get_integer(
+            &channel_args->args[i], grpc_integer_options{0, 1, INT_MAX});
+        /* Continue using default if value is 0 */
+        if (value == 0) {
+          continue;
+        }
+        timeout = value;
+      }
+    }
+  }
+  if (enable) {
+    extern grpc_core::TraceFlag grpc_tcp_trace;
+    if (GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace)) {
+      gpr_log(GPR_INFO, "Enabling TCP_USER_TIMEOUT with a timeout of %d ms",
+              timeout);
+    }
+    int newval;
+    socklen_t len = sizeof(newval);
+    if (0 != setsockopt(fd, IPPROTO_TCP, TCP_USER_TIMEOUT, &timeout,
+                        sizeof(timeout))) {
+      gpr_log(GPR_ERROR, "setsockopt(TCP_USER_TIMEOUT) %s", strerror(errno));
+      return GRPC_ERROR_NONE;
+    }
+    if (0 != getsockopt(fd, IPPROTO_TCP, TCP_USER_TIMEOUT, &newval, &len)) {
+      gpr_log(GPR_ERROR, "getsockopt(TCP_USER_TIMEOUT) %s", strerror(errno));
+      return GRPC_ERROR_NONE;
+    }
+    if (newval != timeout) {
+      /* Do not fail on failing to set TCP_USER_TIMEOUT for now. */
+      gpr_log(GPR_ERROR, "Failed to set TCP_USER_TIMEOUT");
+      return GRPC_ERROR_NONE;
+    }
+  }
+#else
+  extern grpc_core::TraceFlag grpc_tcp_trace;
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace)) {
+    gpr_log(GPR_INFO, "TCP_USER_TIMEOUT not supported for this platform");
+  }
+#endif /* GRPC_HAVE_TCP_USER_TIMEOUT */
   return GRPC_ERROR_NONE;
 }
 
@@ -213,11 +339,11 @@ static void probe_ipv6_once(void) {
   if (fd < 0) {
     gpr_log(GPR_INFO, "Disabling AF_INET6 sockets because socket() failed.");
   } else {
-    struct sockaddr_in6 addr;
+    grpc_sockaddr_in6 addr;
     memset(&addr, 0, sizeof(addr));
     addr.sin6_family = AF_INET6;
     addr.sin6_addr.s6_addr[15] = 1; /* [::1]:0 */
-    if (bind(fd, (struct sockaddr*)&addr, sizeof(addr)) == 0) {
+    if (bind(fd, reinterpret_cast<grpc_sockaddr*>(&addr), sizeof(addr)) == 0) {
       g_ipv6_loopback_available = 1;
     } else {
       gpr_log(GPR_INFO,
@@ -277,7 +403,8 @@ static int create_socket(grpc_socket_factory* factory, int domain, int type,
 grpc_error* grpc_create_dualstack_socket_using_factory(
     grpc_socket_factory* factory, const grpc_resolved_address* resolved_addr,
     int type, int protocol, grpc_dualstack_mode* dsmode, int* newfd) {
-  const struct sockaddr* addr = (const struct sockaddr*)resolved_addr->addr;
+  const grpc_sockaddr* addr =
+      reinterpret_cast<const grpc_sockaddr*>(resolved_addr->addr);
   int family = addr->sa_family;
   if (family == AF_INET6) {
     if (grpc_ipv6_loopback_available()) {
@@ -307,9 +434,21 @@ grpc_error* grpc_create_dualstack_socket_using_factory(
   return error_for_fd(*newfd, resolved_addr);
 }
 
+uint16_t grpc_htons(uint16_t hostshort) { return htons(hostshort); }
+
+uint16_t grpc_ntohs(uint16_t netshort) { return ntohs(netshort); }
+
+uint32_t grpc_htonl(uint32_t hostlong) { return htonl(hostlong); }
+
+uint32_t grpc_ntohl(uint32_t netlong) { return ntohl(netlong); }
+
+int grpc_inet_pton(int af, const char* src, void* dst) {
+  return inet_pton(af, src, dst);
+}
+
 const char* grpc_inet_ntop(int af, const void* src, char* dst, size_t size) {
   GPR_ASSERT(size <= (socklen_t)-1);
-  return inet_ntop(af, src, dst, (socklen_t)size);
+  return inet_ntop(af, src, dst, static_cast<socklen_t>(size));
 }
 
 #endif

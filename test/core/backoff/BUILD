@@ -26,11 +26,13 @@ package(
 grpc_cc_test(
     name = "backoff_test",
     srcs = ["backoff_test.cc"],
+    external_deps = [
+        "gtest",
+    ],
     language = "C++",
     deps = [
+        "//:gpr",
         "//:grpc",
         "//test/core/util:grpc_test_util",
-        "//:gpr",
-        "//test/core/util:gpr_test_util",
     ],
 )

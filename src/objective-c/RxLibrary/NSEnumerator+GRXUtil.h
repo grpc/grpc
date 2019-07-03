@@ -38,5 +38,5 @@
  * Returns a NSEnumerator instance that delegates the invocations of nextObject to the passed block.
  * When the block first returns nil, it is released.
  */
-+ (NSEnumerator *)grx_enumeratorWithValueSupplier:(id (^)())block;
++ (NSEnumerator *)grx_enumeratorWithValueSupplier:(id (^)(void))block;
 @end

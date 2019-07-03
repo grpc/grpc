@@ -16,9 +16,10 @@ require 'timeout'
 
 include Timeout
 include GRPC::Core
+include GRPC::Spec::Helpers
 
 def start_server(port = 0)
-  @srv = GRPC::RpcServer.new(pool_size: 1)
+  @srv = new_rpc_server_for_testing(pool_size: 1)
   server_port = @srv.add_http2_port("localhost:#{port}", :this_port_is_insecure)
   @srv.handle(EchoService)
   @server_thd = Thread.new { @srv.run }

@@ -21,10 +21,6 @@
 
 #include <grpc/grpc.h>
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
 typedef struct grpc_end2end_test_fixture grpc_end2end_test_fixture;
 typedef struct grpc_end2end_test_config grpc_end2end_test_config;
 
@@ -56,6 +52,11 @@ struct grpc_end2end_test_config {
   /* Which features are supported by this fixture. See feature flags above. */
   uint32_t feature_mask;
 
+  /* If the call host is setup by the fixture (for example, via the
+   * GRPC_SSL_TARGET_NAME_OVERRIDE_ARG channel arg), which value should the test
+   * expect to find in call_details.host */
+  const char* overridden_call_host;
+
   grpc_end2end_test_fixture (*create_fixture)(grpc_channel_args* client_args,
                                               grpc_channel_args* server_args);
   void (*init_client)(grpc_end2end_test_fixture* f,
@@ -77,9 +78,5 @@ const grpc_slice* get_host_override_slice(const char* str,
 
 void validate_host_override_string(const char* pattern, grpc_slice str,
                                    grpc_end2end_test_config config);
-
-#ifdef __cplusplus
-}
-#endif
 
 #endif /* GRPC_TEST_CORE_END2END_END2END_TESTS_H */

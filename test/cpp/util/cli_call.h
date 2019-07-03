@@ -21,15 +21,17 @@
 
 #include <map>
 
-#include <grpc++/channel.h>
-#include <grpc++/completion_queue.h>
-#include <grpc++/generic/generic_stub.h>
-#include <grpc++/support/status.h>
-#include <grpc++/support/string_ref.h>
+#include <grpcpp/channel.h>
+#include <grpcpp/completion_queue.h>
+#include <grpcpp/generic/generic_stub.h>
+#include <grpcpp/support/status.h>
+#include <grpcpp/support/string_ref.h>
 
-namespace grpc {
+namespace grpc_impl {
 
 class ClientContext;
+}  // namespace grpc_impl
+namespace grpc {
 
 namespace testing {
 
@@ -42,7 +44,8 @@ class CliCall final {
   typedef std::multimap<grpc::string_ref, grpc::string_ref>
       IncomingMetadataContainer;
 
-  CliCall(std::shared_ptr<grpc::Channel> channel, const grpc::string& method,
+  CliCall(const std::shared_ptr<grpc::Channel>& channel,
+          const grpc::string& method,
           const OutgoingMetadataContainer& metadata);
   ~CliCall();
 
@@ -84,7 +87,7 @@ class CliCall final {
 
  private:
   std::unique_ptr<grpc::GenericStub> stub_;
-  grpc::ClientContext ctx_;
+  grpc_impl::ClientContext ctx_;
   std::unique_ptr<grpc::GenericClientAsyncReaderWriter> call_;
   grpc::CompletionQueue cq_;
   gpr_mu write_mu_;

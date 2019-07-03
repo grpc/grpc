@@ -24,9 +24,10 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
-#include <grpc/support/useful.h>
-#include "src/core/lib/support/murmur_hash.h"
-#include "src/core/lib/support/string.h"
+
+#include "src/core/lib/gpr/murmur_hash.h"
+#include "src/core/lib/gpr/string.h"
+#include "src/core/lib/gpr/useful.h"
 #include "test/core/util/test_config.h"
 
 #define LOG_TEST(x) gpr_log(GPR_INFO, "%s", x)
@@ -61,6 +62,9 @@ void test_encoding(void) {
   assert_encodes_as(20 * 60 * GPR_MS_PER_SEC, "20M");
   assert_encodes_as(60 * 60 * GPR_MS_PER_SEC, "1H");
   assert_encodes_as(10 * 60 * 60 * GPR_MS_PER_SEC, "10H");
+  assert_encodes_as(60 * 60 * GPR_MS_PER_SEC - 100, "1H");
+  assert_encodes_as(100 * 60 * 60 * GPR_MS_PER_SEC, "100H");
+  assert_encodes_as(100000000000, "99999999S");
 }
 
 static void assert_decodes_as(const char* buffer, grpc_millis expected) {
@@ -70,7 +74,7 @@ static void assert_decodes_as(const char* buffer, grpc_millis expected) {
   GPR_ASSERT(1 == grpc_http2_decode_timeout(
                       grpc_slice_from_static_string(buffer), &got));
   if (got != expected) {
-    gpr_log(GPR_ERROR, "got:'%" PRIdPTR "' != expected:'%" PRIdPTR "'", got,
+    gpr_log(GPR_ERROR, "got:'%" PRId64 "' != expected:'%" PRId64 "'", got,
             expected);
     abort();
   }
@@ -102,20 +106,22 @@ void decode_suite(char ext, grpc_millis (*answer)(int64_t x)) {
 }
 
 static grpc_millis millis_from_nanos(int64_t x) {
-  return (grpc_millis)(x / GPR_NS_PER_MS + (x % GPR_NS_PER_MS != 0));
+  return static_cast<grpc_millis>(x / GPR_NS_PER_MS + (x % GPR_NS_PER_MS != 0));
 }
 static grpc_millis millis_from_micros(int64_t x) {
-  return (grpc_millis)(x / GPR_US_PER_MS + (x % GPR_US_PER_MS != 0));
+  return static_cast<grpc_millis>(x / GPR_US_PER_MS + (x % GPR_US_PER_MS != 0));
 }
-static grpc_millis millis_from_millis(int64_t x) { return (grpc_millis)x; }
+static grpc_millis millis_from_millis(int64_t x) {
+  return static_cast<grpc_millis>(x);
+}
 static grpc_millis millis_from_seconds(int64_t x) {
-  return (grpc_millis)(x * GPR_MS_PER_SEC);
+  return static_cast<grpc_millis>(x * GPR_MS_PER_SEC);
 }
 static grpc_millis millis_from_minutes(int64_t x) {
-  return (grpc_millis)(x * 60 * GPR_MS_PER_SEC);
+  return static_cast<grpc_millis>(x * 60 * GPR_MS_PER_SEC);
 }
 static grpc_millis millis_from_hours(int64_t x) {
-  return (grpc_millis)(x * 3600 * GPR_MS_PER_SEC);
+  return static_cast<grpc_millis>(x * 3600 * GPR_MS_PER_SEC);
 }
 
 void test_decoding(void) {
@@ -153,7 +159,7 @@ void test_decoding_fails(void) {
 }
 
 int main(int argc, char** argv) {
-  grpc_test_init(argc, argv);
+  grpc::testing::TestEnvironment env(argc, argv);
   test_encoding();
   test_decoding();
   test_decoding_fails();

@@ -32,19 +32,18 @@ COORD_FACTOR = 1e7
 RADIUS = 637_100
 
 # Determines the distance between two points.
+# The formula is based on http://mathforum.org/library/drmath/view/51879.html.
 def calculate_distance(point_a, point_b)
   to_radians = proc { |x| x * Math::PI / 180 }
-  lat_a = point_a.latitude / COORD_FACTOR
-  lat_b = point_b.latitude / COORD_FACTOR
-  long_a = point_a.longitude / COORD_FACTOR
-  long_b = point_b.longitude / COORD_FACTOR
-  φ1 = to_radians.call(lat_a)
-  φ2 = to_radians.call(lat_b)
-  Δφ = to_radians.call(lat_a - lat_b)
-  Δλ = to_radians.call(long_a - long_b)
-  a = Math.sin(Δφ / 2)**2 +
-      Math.cos(φ1) * Math.cos(φ2) +
-      Math.sin(Δλ / 2)**2
+  lat_a = to_radians.call(point_a.latitude / COORD_FACTOR)
+  lat_b = to_radians.call(point_b.latitude / COORD_FACTOR)
+  lon_a = to_radians.call(point_a.longitude / COORD_FACTOR)
+  lon_b = to_radians.call(point_b.longitude / COORD_FACTOR)
+  delta_lat = lat_a - lat_b
+  delta_lon = lon_a - lon_b
+  a = Math.sin(delta_lat / 2)**2 +
+      Math.cos(lat_a) * Math.cos(lat_b) +
+      Math.sin(delta_lon / 2)**2
   (2 * RADIUS *  Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))).to_i
 end
 
@@ -173,7 +172,10 @@ def main
   s.add_http2_port(port, :this_port_is_insecure)
   GRPC.logger.info("... running insecurely on #{port}")
   s.handle(ServerImpl.new(feature_db))
-  s.run_till_terminated
+  # Runs the server with SIGHUP, SIGINT and SIGQUIT signal handlers to 
+  #   gracefully shutdown.
+  # User could also choose to run server via call to run_till_terminated
+  s.run_till_terminated_or_interrupted([1, 'int', 'SIGQUIT'])
 end
 
 main

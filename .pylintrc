@@ -1,3 +1,13 @@
+[MASTER]
+ignore=
+	src/python/grpcio/grpc/beta,
+	src/python/grpcio/grpc/framework,
+	src/python/grpcio/grpc/framework/common,
+	src/python/grpcio/grpc/framework/foundation,
+	src/python/grpcio/grpc/framework/interfaces,
+
+extension-pkg-whitelist=grpc._cython.cygrpc
+
 [VARIABLES]
 
 # TODO(https://github.com/PyCQA/pylint/issues/1345): How does the inspection
@@ -9,7 +19,7 @@ dummy-variables-rgx=^ignored_|^unused_
 # NOTE(nathaniel): Not particularly attached to this value; it just seems to
 # be what works for us at the moment (excepting the dead-code-walking Beta
 # API).
-max-args=6
+max-args=7
 
 [MISCELLANEOUS]
 
@@ -72,6 +82,15 @@ disable=
 	# TODO(https://github.com/grpc/grpc/issues/261): Maybe we could have
 	# this one if we extracted just a few more helper functions...
 	too-many-nested-blocks,
-	# NOTE(nathaniel): I have disputed the premise of this inspection from
-	# the beginning and will continue to do so until it goes away for good.
+	# TODO(https://github.com/grpc/grpc/issues/261): Disable unnecessary
+	# super-init requirement for abstract class implementations for now.
+	super-init-not-called,
+	# NOTE(nathaniel): A single statement that always returns program
+	# control is better than two statements the first of which sometimes
+	# returns program control and the second of which always returns
+	# program control. Probably generally, but definitely in the cases of
+	# if:/else: and for:/else:.
 	useless-else-on-loop,
+	no-else-return,
+	# NOTE(lidiz): Python 3 make object inheritance default, but not PY2
+	useless-object-inheritance,

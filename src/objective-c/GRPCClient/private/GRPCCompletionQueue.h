@@ -19,7 +19,7 @@
 #import <Foundation/Foundation.h>
 #include <grpc/grpc.h>
 
-typedef void(^GRPCQueueCompletionHandler)(bool success);
+typedef void (^GRPCQueueCompletionHandler)(bool success);
 
 /**
  * This class lets one more easily use |grpc_completion_queue|. To use it, pass the value of the

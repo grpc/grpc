@@ -29,60 +29,65 @@
 
 @interface GRPCOpSendMetadata : GRPCOperation
 
-- (instancetype)initWithMetadata:(NSDictionary *)metadata
-                         handler:(void(^)())handler;
+- (instancetype)initWithMetadata:(NSDictionary *)metadata handler:(void (^)(void))handler;
 
 - (instancetype)initWithMetadata:(NSDictionary *)metadata
                            flags:(uint32_t)flags
-                         handler:(void(^)())handler NS_DESIGNATED_INITIALIZER;
+                         handler:(void (^)(void))handler NS_DESIGNATED_INITIALIZER;
 
 @end
 
 @interface GRPCOpSendMessage : GRPCOperation
 
 - (instancetype)initWithMessage:(NSData *)message
-                        handler:(void(^)())handler NS_DESIGNATED_INITIALIZER;
+                        handler:(void (^)(void))handler NS_DESIGNATED_INITIALIZER;
 
 @end
 
 @interface GRPCOpSendClose : GRPCOperation
 
-- (instancetype)initWithHandler:(void(^)())handler NS_DESIGNATED_INITIALIZER;
+- (instancetype)initWithHandler:(void (^)(void))handler NS_DESIGNATED_INITIALIZER;
 
 @end
 
 @interface GRPCOpRecvMetadata : GRPCOperation
 
-- (instancetype)initWithHandler:(void(^)(NSDictionary *))handler NS_DESIGNATED_INITIALIZER;
+- (instancetype)initWithHandler:(void (^)(NSDictionary *))handler NS_DESIGNATED_INITIALIZER;
 
 @end
 
 @interface GRPCOpRecvMessage : GRPCOperation
 
-- (instancetype)initWithHandler:(void(^)(grpc_byte_buffer *))handler NS_DESIGNATED_INITIALIZER;
+- (instancetype)initWithHandler:(void (^)(grpc_byte_buffer *))handler NS_DESIGNATED_INITIALIZER;
 
 @end
 
 @interface GRPCOpRecvStatus : GRPCOperation
 
-- (instancetype)initWithHandler:(void(^)(NSError *, NSDictionary *))handler
+- (instancetype)initWithHandler:(void (^)(NSError *, NSDictionary *))handler
     NS_DESIGNATED_INITIALIZER;
 
 @end
 
 #pragma mark GRPCWrappedCall
 
+@class GRPCPooledChannel;
+
 @interface GRPCWrappedCall : NSObject
 
-- (instancetype)initWithHost:(NSString *)host
-                  serverName:(NSString *)serverName
-                        path:(NSString *)path
-                     timeout:(NSTimeInterval)timeout NS_DESIGNATED_INITIALIZER;
+- (instancetype)init NS_UNAVAILABLE;
 
-- (void)startBatchWithOperations:(NSArray *)ops errorHandler:(void(^)())errorHandler;
++ (instancetype) new NS_UNAVAILABLE;
+
+- (instancetype)initWithUnmanagedCall:(grpc_call *)unmanagedCall
+                        pooledChannel:(GRPCPooledChannel *)pooledChannel NS_DESIGNATED_INITIALIZER;
+
+- (void)startBatchWithOperations:(NSArray *)ops errorHandler:(void (^)(void))errorHandler;
 
 - (void)startBatchWithOperations:(NSArray *)ops;
 
 - (void)cancel;
+
+- (void)channelDisconnected;
 
 @end

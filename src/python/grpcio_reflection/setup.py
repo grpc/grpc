@@ -18,6 +18,9 @@ import sys
 
 import setuptools
 
+_PACKAGE_PATH = os.path.realpath(os.path.dirname(__file__))
+_README_PATH = os.path.join(_PACKAGE_PATH, 'README.rst')
+
 # Ensure we're in the proper directory whether or not we're being used by pip.
 os.chdir(os.path.dirname(os.path.abspath(__file__)))
 
@@ -57,27 +60,27 @@ PACKAGE_DIRECTORIES = {
     '': '.',
 }
 
-INSTALL_REQUIRES = ('protobuf>=3.3.0',
-                    'grpcio>={version}'.format(version=grpc_version.VERSION),)
+INSTALL_REQUIRES = (
+    'protobuf>=3.6.0',
+    'grpcio>={version}'.format(version=grpc_version.VERSION),
+)
 
 try:
-    # ensure we can load the _pb2_grpc module:
-    from grpc_reflection.v1alpha import reflection_pb2_grpc as _pb2_grpc
-    # if we can find the _pb2_grpc module, the package has already been built.
+    import reflection_commands as _reflection_commands
+    # we are in the build environment, otherwise the above import fails
+    SETUP_REQUIRES = (
+        'grpcio-tools=={version}'.format(version=grpc_version.VERSION),)
+    COMMAND_CLASS = {
+        # Run preprocess from the repository *before* doing any packaging!
+        'preprocess': _reflection_commands.Preprocess,
+        'build_package_protos': _reflection_commands.BuildPackageProtos,
+    }
+except ImportError:
     SETUP_REQUIRES = ()
     COMMAND_CLASS = {
         # wire up commands to no-op not to break the external dependencies
         'preprocess': _NoOpCommand,
         'build_package_protos': _NoOpCommand,
-    }
-except ImportError:  # we are in the build environment
-    import reflection_commands as _reflection_commands
-    SETUP_REQUIRES = (
-        'grpcio-tools=={version}'.format(version=grpc_version.VERSION),)
-    COMMAND_CLASS = {
-        # Run preprocess from the repository *before* doing any packaging!
-        'preprocess': _reflection_commands.CopyProtoModules,
-        'build_package_protos': _reflection_commands.BuildPackageProtos,
     }
 
 setuptools.setup(
@@ -85,6 +88,7 @@ setuptools.setup(
     version=grpc_version.VERSION,
     license='Apache License 2.0',
     description='Standard Protobuf Reflection Service for gRPC',
+    long_description=open(_README_PATH, 'r').read(),
     author='The gRPC Authors',
     author_email='grpc-io@googlegroups.com',
     classifiers=CLASSIFIERS,

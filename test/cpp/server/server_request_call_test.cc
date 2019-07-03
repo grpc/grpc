@@ -18,13 +18,13 @@
 
 #include <thread>
 
-#include <grpc++/impl/codegen/config.h>
+#include <grpcpp/impl/codegen/config.h>
 
-#include <grpc++/server.h>
-#include <grpc++/server_builder.h>
+#include <grpcpp/server.h>
+#include <grpcpp/server_builder.h>
 
-#include <grpc++/create_channel.h>
-#include <grpc++/security/credentials.h>
+#include <grpcpp/create_channel.h>
+#include <grpcpp/security/credentials.h>
 
 #include <grpc/support/log.h>
 
@@ -115,7 +115,7 @@ TEST(ServerRequestCallTest, ShortDeadlineDoesNotCauseOkayFalse) {
   });
 
   auto stub = testing::EchoTestService::NewStub(
-      CreateChannel(address, InsecureChannelCredentials()));
+      grpc::CreateChannel(address, InsecureChannelCredentials()));
 
   for (int i = 0; i < 100; i++) {
     gpr_log(GPR_INFO, "Sending %d.", i);

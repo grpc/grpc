@@ -16,9 +16,9 @@
 set -ex
 
 # Enter repo root
-cd $(dirname $0)/../../..
+cd "$(dirname "$0")/../../.."
 
 # Enter the grpc-java repo root (expected to be next to grpc repo root)
 cd ../grpc-java
 
-benchmarks/build/install/grpc-benchmarks/bin/benchmark_worker $@
+benchmarks/build/install/grpc-benchmarks/bin/benchmark_worker "$@"

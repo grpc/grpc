@@ -81,13 +81,23 @@ inline bool ReplacePrefix(grpc::string* s, const grpc::string& from,
   return true;
 }
 
-// CapitalizeFirst capitalizes the first char in a string.
-inline grpc::string CapitalizeFirst(grpc::string s) {
+// Modularize converts a string into a ruby module compatible name
+inline grpc::string Modularize(grpc::string s) {
   if (s.empty()) {
     return s;
   }
-  s[0] = ::toupper(s[0]);
-  return s;
+  grpc::string new_string = "";
+  bool was_last_underscore = false;
+  new_string.append(1, ::toupper(s[0]));
+  for (grpc::string::size_type i = 1; i < s.size(); ++i) {
+    if (was_last_underscore && s[i] != '_') {
+      new_string.append(1, ::toupper(s[i]));
+    } else if (s[i] != '_') {
+      new_string.append(1, s[i]);
+    }
+    was_last_underscore = s[i] == '_';
+  }
+  return new_string;
 }
 
 // RubyTypeOf updates a proto type to the required ruby equivalent.
@@ -106,7 +116,7 @@ inline grpc::string RubyTypeOf(const grpc::string& a_type,
         res += "::";  // switch '.' to the ruby module delim
       }
       if (i < prefixes_and_type.size() - 1) {
-        res += CapitalizeFirst(prefixes_and_type[i]);  // capitalize pkgs
+        res += Modularize(prefixes_and_type[i]);  // capitalize pkgs
       } else {
         res += prefixes_and_type[i];
       }

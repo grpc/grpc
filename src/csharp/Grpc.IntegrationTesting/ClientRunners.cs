@@ -131,7 +131,7 @@ namespace Grpc.IntegrationTesting
 
         readonly List<Task> runnerTasks;
         readonly CancellationTokenSource stoppedCts = new CancellationTokenSource();
-        readonly WallClockStopwatch wallClockStopwatch = new WallClockStopwatch();
+        readonly TimeStats timeStats = new TimeStats();
         readonly AtomicCounter statsResetCount = new AtomicCounter();
         
         public ClientRunnerImpl(List<Channel> channels, ClientType clientType, RpcType rpcType, int outstandingRpcsPerChannel, LoadParams loadParams, PayloadConfig payloadConfig, HistogramParams histogramParams, Func<BasicProfiler> profilerFactory)
@@ -165,7 +165,7 @@ namespace Grpc.IntegrationTesting
                 hist.GetSnapshot(histogramData, reset);
             }
 
-            var secondsElapsed = wallClockStopwatch.GetElapsedSnapshot(reset).TotalSeconds;
+            var timeSnapshot = timeStats.GetSnapshot(reset);
 
             if (reset)
             {
@@ -173,15 +173,14 @@ namespace Grpc.IntegrationTesting
             }
 
             GrpcEnvironment.Logger.Info("[ClientRunnerImpl.GetStats] GC collection counts: gen0 {0}, gen1 {1}, gen2 {2}, (histogram reset count:{3}, seconds since reset: {4})",
-                GC.CollectionCount(0), GC.CollectionCount(1), GC.CollectionCount(2), statsResetCount.Count, secondsElapsed);
+                GC.CollectionCount(0), GC.CollectionCount(1), GC.CollectionCount(2), statsResetCount.Count, timeSnapshot.WallClockTime.TotalSeconds);
 
-            // TODO: populate user time and system time
             return new ClientStats
             {
                 Latencies = histogramData,
-                TimeElapsed = secondsElapsed,
-                TimeUser = 0,
-                TimeSystem = 0
+                TimeElapsed = timeSnapshot.WallClockTime.TotalSeconds,
+                TimeUser = timeSnapshot.UserProcessorTime.TotalSeconds,
+                TimeSystem = timeSnapshot.PrivilegedProcessorTime.TotalSeconds
             };
         }
 

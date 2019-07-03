@@ -19,15 +19,13 @@
 #ifndef GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_LB_POLICY_GRPCLB_LOAD_BALANCER_API_H
 #define GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_LB_POLICY_GRPCLB_LOAD_BALANCER_API_H
 
+#include <grpc/support/port_platform.h>
+
 #include <grpc/slice_buffer.h>
 
 #include "src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_client_stats.h"
 #include "src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/load_balancer.pb.h"
-#include "src/core/ext/filters/client_channel/lb_policy_factory.h"
-
-#ifdef __cplusplus
-extern "C" {
-#endif
+#include "src/core/lib/iomgr/exec_ctx.h"
 
 #define GRPC_GRPCLB_SERVICE_NAME_MAX_LENGTH 128
 
@@ -35,17 +33,18 @@ typedef grpc_lb_v1_Server_ip_address_t grpc_grpclb_ip_address;
 typedef grpc_lb_v1_LoadBalanceRequest grpc_grpclb_request;
 typedef grpc_lb_v1_InitialLoadBalanceResponse grpc_grpclb_initial_response;
 typedef grpc_lb_v1_Server grpc_grpclb_server;
-typedef grpc_lb_v1_Duration grpc_grpclb_duration;
+typedef google_protobuf_Duration grpc_grpclb_duration;
+typedef google_protobuf_Timestamp grpc_grpclb_timestamp;
+
 typedef struct {
   grpc_grpclb_server** servers;
   size_t num_servers;
-  grpc_grpclb_duration expiration_interval;
 } grpc_grpclb_serverlist;
 
 /** Create a request for a gRPC LB service under \a lb_service_name */
 grpc_grpclb_request* grpc_grpclb_request_create(const char* lb_service_name);
-grpc_grpclb_request* grpc_grpclb_load_report_request_create_locked(
-    grpc_grpclb_client_stats* client_stats);
+grpc_grpclb_request* grpc_grpclb_load_report_request_create(
+    grpc_core::GrpcLbClientStats* client_stats);
 
 /** Protocol Buffers v3-encode \a request */
 grpc_slice grpc_grpclb_request_encode(const grpc_grpclb_request* request);
@@ -56,11 +55,11 @@ void grpc_grpclb_request_destroy(grpc_grpclb_request* request);
 /** Parse (ie, decode) the bytes in \a encoded_grpc_grpclb_response as a \a
  * grpc_grpclb_initial_response */
 grpc_grpclb_initial_response* grpc_grpclb_initial_response_parse(
-    grpc_slice encoded_grpc_grpclb_response);
+    const grpc_slice& encoded_grpc_grpclb_response);
 
 /** Parse the list of servers from an encoded \a grpc_grpclb_response */
 grpc_grpclb_serverlist* grpc_grpclb_response_parse_serverlist(
-    grpc_slice encoded_grpc_grpclb_response);
+    const grpc_slice& encoded_grpc_grpclb_response);
 
 /** Return a copy of \a sl. The caller is responsible for calling \a
  * grpc_grpclb_destroy_serverlist on the returned copy. */
@@ -86,10 +85,6 @@ grpc_millis grpc_grpclb_duration_to_millis(grpc_grpclb_duration* duration_pb);
 /** Destroy \a initial_response */
 void grpc_grpclb_initial_response_destroy(
     grpc_grpclb_initial_response* response);
-
-#ifdef __cplusplus
-}
-#endif
 
 #endif /* GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_LB_POLICY_GRPCLB_LOAD_BALANCER_API_H \
         */

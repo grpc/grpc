@@ -16,148 +16,137 @@
  *
  */
 
+#include <grpc/support/port_platform.h>
+
 #include "src/core/ext/filters/client_channel/lb_policy.h"
+
+#include "src/core/ext/filters/client_channel/lb_policy_registry.h"
 #include "src/core/lib/iomgr/combiner.h"
 
-#define WEAK_REF_BITS 16
+namespace grpc_core {
 
-grpc_core::DebugOnlyTraceFlag grpc_trace_lb_policy_refcount(
-    false, "lb_policy_refcount");
+DebugOnlyTraceFlag grpc_trace_lb_policy_refcount(false, "lb_policy_refcount");
 
-void grpc_lb_policy_init(grpc_lb_policy* policy,
-                         const grpc_lb_policy_vtable* vtable,
-                         grpc_combiner* combiner) {
-  policy->vtable = vtable;
-  gpr_atm_no_barrier_store(&policy->ref_pair, 1 << WEAK_REF_BITS);
-  policy->interested_parties = grpc_pollset_set_create();
-  policy->combiner = GRPC_COMBINER_REF(combiner, "lb_policy");
+//
+// LoadBalancingPolicy
+//
+
+LoadBalancingPolicy::LoadBalancingPolicy(Args args, intptr_t initial_refcount)
+    : InternallyRefCounted(&grpc_trace_lb_policy_refcount, initial_refcount),
+      combiner_(GRPC_COMBINER_REF(args.combiner, "lb_policy")),
+      interested_parties_(grpc_pollset_set_create()),
+      channel_control_helper_(std::move(args.channel_control_helper)) {}
+
+LoadBalancingPolicy::~LoadBalancingPolicy() {
+  grpc_pollset_set_destroy(interested_parties_);
+  GRPC_COMBINER_UNREF(combiner_, "lb_policy");
 }
 
-#ifndef NDEBUG
-#define REF_FUNC_EXTRA_ARGS , const char *file, int line, const char *reason
-#define REF_MUTATE_EXTRA_ARGS REF_FUNC_EXTRA_ARGS, const char* purpose
-#define REF_FUNC_PASS_ARGS(new_reason) , file, line, new_reason
-#define REF_MUTATE_PASS_ARGS(purpose) , file, line, reason, purpose
-#else
-#define REF_FUNC_EXTRA_ARGS
-#define REF_MUTATE_EXTRA_ARGS
-#define REF_FUNC_PASS_ARGS(new_reason)
-#define REF_MUTATE_PASS_ARGS(x)
-#endif
-
-static gpr_atm ref_mutate(grpc_lb_policy* c, gpr_atm delta,
-                          int barrier REF_MUTATE_EXTRA_ARGS) {
-  gpr_atm old_val = barrier ? gpr_atm_full_fetch_add(&c->ref_pair, delta)
-                            : gpr_atm_no_barrier_fetch_add(&c->ref_pair, delta);
-#ifndef NDEBUG
-  if (grpc_trace_lb_policy_refcount.enabled()) {
-    gpr_log(file, line, GPR_LOG_SEVERITY_DEBUG,
-            "LB_POLICY: %p %12s 0x%" PRIxPTR " -> 0x%" PRIxPTR " [%s]", c,
-            purpose, old_val, old_val + delta, reason);
-  }
-#endif
-  return old_val;
+void LoadBalancingPolicy::Orphan() {
+  // Invoke ShutdownAndUnrefLocked() inside of the combiner.
+  // TODO(roth): Is this actually needed?  We should already be in the
+  // combiner here.  Note that if we directly call ShutdownLocked(),
+  // then we can probably remove the hack whereby the helper is
+  // destroyed at shutdown instead of at destruction.
+  GRPC_CLOSURE_SCHED(
+      GRPC_CLOSURE_CREATE(&LoadBalancingPolicy::ShutdownAndUnrefLocked, this,
+                          grpc_combiner_scheduler(combiner_)),
+      GRPC_ERROR_NONE);
 }
 
-void grpc_lb_policy_ref(grpc_lb_policy* policy REF_FUNC_EXTRA_ARGS) {
-  ref_mutate(policy, 1 << WEAK_REF_BITS, 0 REF_MUTATE_PASS_ARGS("STRONG_REF"));
+void LoadBalancingPolicy::ShutdownAndUnrefLocked(void* arg,
+                                                 grpc_error* ignored) {
+  LoadBalancingPolicy* policy = static_cast<LoadBalancingPolicy*>(arg);
+  policy->ShutdownLocked();
+  policy->channel_control_helper_.reset();
+  policy->Unref();
 }
 
-static void shutdown_locked(grpc_exec_ctx* exec_ctx, void* arg,
-                            grpc_error* error) {
-  grpc_lb_policy* policy = (grpc_lb_policy*)arg;
-  policy->vtable->shutdown_locked(exec_ctx, policy);
-  GRPC_LB_POLICY_WEAK_UNREF(exec_ctx, policy, "strong-unref");
+//
+// LoadBalancingPolicy::UpdateArgs
+//
+
+LoadBalancingPolicy::UpdateArgs::UpdateArgs(const UpdateArgs& other) {
+  addresses = other.addresses;
+  config = other.config;
+  args = grpc_channel_args_copy(other.args);
 }
 
-void grpc_lb_policy_unref(grpc_exec_ctx* exec_ctx,
-                          grpc_lb_policy* policy REF_FUNC_EXTRA_ARGS) {
-  gpr_atm old_val =
-      ref_mutate(policy, (gpr_atm)1 - (gpr_atm)(1 << WEAK_REF_BITS),
-                 1 REF_MUTATE_PASS_ARGS("STRONG_UNREF"));
-  gpr_atm mask = ~(gpr_atm)((1 << WEAK_REF_BITS) - 1);
-  gpr_atm check = 1 << WEAK_REF_BITS;
-  if ((old_val & mask) == check) {
+LoadBalancingPolicy::UpdateArgs::UpdateArgs(UpdateArgs&& other) {
+  addresses = std::move(other.addresses);
+  config = std::move(other.config);
+  // TODO(roth): Use std::move() once channel args is converted to C++.
+  args = other.args;
+  other.args = nullptr;
+}
+
+LoadBalancingPolicy::UpdateArgs& LoadBalancingPolicy::UpdateArgs::operator=(
+    const UpdateArgs& other) {
+  addresses = other.addresses;
+  config = other.config;
+  grpc_channel_args_destroy(args);
+  args = grpc_channel_args_copy(other.args);
+  return *this;
+}
+
+LoadBalancingPolicy::UpdateArgs& LoadBalancingPolicy::UpdateArgs::operator=(
+    UpdateArgs&& other) {
+  addresses = std::move(other.addresses);
+  config = std::move(other.config);
+  // TODO(roth): Use std::move() once channel args is converted to C++.
+  grpc_channel_args_destroy(args);
+  args = other.args;
+  other.args = nullptr;
+  return *this;
+}
+
+//
+// LoadBalancingPolicy::QueuePicker
+//
+
+LoadBalancingPolicy::PickResult LoadBalancingPolicy::QueuePicker::Pick(
+    PickArgs args) {
+  // We invoke the parent's ExitIdleLocked() via a closure instead
+  // of doing it directly here, for two reasons:
+  // 1. ExitIdleLocked() may cause the policy's state to change and
+  //    a new picker to be delivered to the channel.  If that new
+  //    picker is delivered before ExitIdleLocked() returns, then by
+  //    the time this function returns, the pick will already have
+  //    been processed, and we'll be trying to re-process the same
+  //    pick again, leading to a crash.
+  // 2. We are currently running in the data plane combiner, but we
+  //    need to bounce into the control plane combiner to call
+  //    ExitIdleLocked().
+  if (!exit_idle_called_) {
+    exit_idle_called_ = true;
+    parent_->Ref().release();  // ref held by closure.
     GRPC_CLOSURE_SCHED(
-        exec_ctx,
-        GRPC_CLOSURE_CREATE(shutdown_locked, policy,
-                            grpc_combiner_scheduler(policy->combiner)),
+        GRPC_CLOSURE_CREATE(&CallExitIdle, parent_.get(),
+                            grpc_combiner_scheduler(parent_->combiner())),
         GRPC_ERROR_NONE);
-  } else {
-    grpc_lb_policy_weak_unref(exec_ctx,
-                              policy REF_FUNC_PASS_ARGS("strong-unref"));
   }
+  PickResult result;
+  result.type = PickResult::PICK_QUEUE;
+  return result;
 }
 
-void grpc_lb_policy_weak_ref(grpc_lb_policy* policy REF_FUNC_EXTRA_ARGS) {
-  ref_mutate(policy, 1, 0 REF_MUTATE_PASS_ARGS("WEAK_REF"));
+void LoadBalancingPolicy::QueuePicker::CallExitIdle(void* arg,
+                                                    grpc_error* error) {
+  LoadBalancingPolicy* parent = static_cast<LoadBalancingPolicy*>(arg);
+  parent->ExitIdleLocked();
+  parent->Unref();
 }
 
-void grpc_lb_policy_weak_unref(grpc_exec_ctx* exec_ctx,
-                               grpc_lb_policy* policy REF_FUNC_EXTRA_ARGS) {
-  gpr_atm old_val =
-      ref_mutate(policy, -(gpr_atm)1, 1 REF_MUTATE_PASS_ARGS("WEAK_UNREF"));
-  if (old_val == 1) {
-    grpc_pollset_set_destroy(exec_ctx, policy->interested_parties);
-    grpc_combiner* combiner = policy->combiner;
-    policy->vtable->destroy(exec_ctx, policy);
-    GRPC_COMBINER_UNREF(exec_ctx, combiner, "lb_policy");
-  }
+//
+// LoadBalancingPolicy::TransientFailurePicker
+//
+
+LoadBalancingPolicy::PickResult
+LoadBalancingPolicy::TransientFailurePicker::Pick(PickArgs args) {
+  PickResult result;
+  result.type = PickResult::PICK_TRANSIENT_FAILURE;
+  result.error = GRPC_ERROR_REF(error_);
+  return result;
 }
 
-int grpc_lb_policy_pick_locked(grpc_exec_ctx* exec_ctx, grpc_lb_policy* policy,
-                               const grpc_lb_policy_pick_args* pick_args,
-                               grpc_connected_subchannel** target,
-                               grpc_call_context_element* context,
-                               void** user_data, grpc_closure* on_complete) {
-  return policy->vtable->pick_locked(exec_ctx, policy, pick_args, target,
-                                     context, user_data, on_complete);
-}
-
-void grpc_lb_policy_cancel_pick_locked(grpc_exec_ctx* exec_ctx,
-                                       grpc_lb_policy* policy,
-                                       grpc_connected_subchannel** target,
-                                       grpc_error* error) {
-  policy->vtable->cancel_pick_locked(exec_ctx, policy, target, error);
-}
-
-void grpc_lb_policy_cancel_picks_locked(grpc_exec_ctx* exec_ctx,
-                                        grpc_lb_policy* policy,
-                                        uint32_t initial_metadata_flags_mask,
-                                        uint32_t initial_metadata_flags_eq,
-                                        grpc_error* error) {
-  policy->vtable->cancel_picks_locked(exec_ctx, policy,
-                                      initial_metadata_flags_mask,
-                                      initial_metadata_flags_eq, error);
-}
-
-void grpc_lb_policy_exit_idle_locked(grpc_exec_ctx* exec_ctx,
-                                     grpc_lb_policy* policy) {
-  policy->vtable->exit_idle_locked(exec_ctx, policy);
-}
-
-void grpc_lb_policy_ping_one_locked(grpc_exec_ctx* exec_ctx,
-                                    grpc_lb_policy* policy,
-                                    grpc_closure* closure) {
-  policy->vtable->ping_one_locked(exec_ctx, policy, closure);
-}
-
-void grpc_lb_policy_notify_on_state_change_locked(
-    grpc_exec_ctx* exec_ctx, grpc_lb_policy* policy,
-    grpc_connectivity_state* state, grpc_closure* closure) {
-  policy->vtable->notify_on_state_change_locked(exec_ctx, policy, state,
-                                                closure);
-}
-
-grpc_connectivity_state grpc_lb_policy_check_connectivity_locked(
-    grpc_exec_ctx* exec_ctx, grpc_lb_policy* policy,
-    grpc_error** connectivity_error) {
-  return policy->vtable->check_connectivity_locked(exec_ctx, policy,
-                                                   connectivity_error);
-}
-
-void grpc_lb_policy_update_locked(grpc_exec_ctx* exec_ctx,
-                                  grpc_lb_policy* policy,
-                                  const grpc_lb_policy_args* lb_policy_args) {
-  policy->vtable->update_locked(exec_ctx, policy, lb_policy_args);
-}
+}  // namespace grpc_core

@@ -14,62 +14,84 @@
 
 licenses(["notice"])  # Apache v2
 
-load("//bazel:grpc_build_system.bzl", "grpc_cc_test", "grpc_package")
+load("//bazel:grpc_build_system.bzl", "grpc_cc_test", "grpc_package", "grpc_cc_binary", "grpc_sh_test")
 
 grpc_package(name = "test/cpp/codegen")
 
 grpc_cc_test(
     name = "codegen_test_full",
     srcs = ["codegen_test_full.cc"],
-    deps = [
-        "//:grpc++",
-        "//test/core/util:gpr_test_util",
-    ],
     external_deps = [
         "gtest",
+    ],
+    deps = [
+        "//:grpc++",
+        "//test/core/util:grpc_test_util",
     ],
 )
 
 grpc_cc_test(
     name = "codegen_test_minimal",
     srcs = ["codegen_test_minimal.cc"],
-    deps = [
-        "//:grpc++",
-        "//test/core/util:gpr_test_util",
-    ],
     external_deps = [
         "gtest",
+    ],
+    deps = [
+        "//:grpc++",
+        "//test/core/util:grpc_test_util",
     ],
 )
 
 grpc_cc_test(
     name = "proto_utils_test",
     srcs = ["proto_utils_test.cc"],
-    deps = [
-        "//:grpc++",
-        "//test/core/util:gpr_test_util",
-    ],
     external_deps = [
         "gtest",
         "protobuf",
     ],
-)
-
-grpc_cc_test(
-    name = "golden_file_test",
-    srcs = ["golden_file_test.cc"],
-    args = ["--generated_file_path=$(GENDIR)/src/proto/grpc/testing/"],
-    data = [
-        ":compiler_test_golden",
-        "//src/proto/grpc/testing:_compiler_test_proto_grpc_codegen",
-    ],
     deps = [
         "//:grpc++",
-        "//src/proto/grpc/testing:compiler_test_proto",
-        "//test/core/util:gpr_test_util",
+        "//test/core/util:grpc_test_util",
     ],
+)
+
+grpc_cc_binary(
+    name = "golden_file_test",
+    testonly = True,
+    srcs = ["golden_file_test.cc"],
     external_deps = [
         "gtest",
         "gflags",
+    ],
+    deps = [
+        "//:grpc++",
+        "//test/core/util:grpc_test_util",
+        "//test/cpp/util:test_config",
+    ],
+)
+
+genrule(
+    name = "copy_compiler_test_grpc_pb_h",
+    srcs = ["//src/proto/grpc/testing:_compiler_test_proto_grpc_codegen"],
+    outs = ["compiler_test.grpc.pb.h"],
+    cmd = "cat $(GENDIR)/src/proto/grpc/testing/compiler_test.grpc.pb.h > $@",
+)
+
+genrule(
+    name = "copy_compiler_test_mock_grpc_pb_h",
+    srcs = ["//src/proto/grpc/testing:_compiler_test_proto_grpc_codegen"],
+    outs = ["compiler_test_mock.grpc.pb.h"],
+    cmd = "cat $(GENDIR)/src/proto/grpc/testing/compiler_test_mock.grpc.pb.h > $@",
+)
+
+grpc_sh_test(
+    name = "run_golden_file_test",
+    srcs = ["run_golden_file_test.sh"],
+    data = [
+        ":compiler_test.grpc.pb.h",
+        ":compiler_test_golden",
+        ":compiler_test_mock.grpc.pb.h",
+        ":compiler_test_mock_golden",
+        ":golden_file_test",
     ],
 )

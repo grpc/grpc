@@ -19,38 +19,40 @@
 #ifndef GRPC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_INCOMING_METADATA_H
 #define GRPC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_INCOMING_METADATA_H
 
+#include <grpc/support/port_platform.h>
+
 #include "src/core/lib/transport/transport.h"
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+struct grpc_chttp2_incoming_metadata_buffer {
+  explicit grpc_chttp2_incoming_metadata_buffer(grpc_core::Arena* arena)
+      : arena(arena) {
+    grpc_metadata_batch_init(&batch);
+    batch.deadline = GRPC_MILLIS_INF_FUTURE;
+  }
+  ~grpc_chttp2_incoming_metadata_buffer() {
+    grpc_metadata_batch_destroy(&batch);
+  }
 
-typedef struct {
-  gpr_arena* arena;
+  static constexpr size_t kPreallocatedMDElem = 10;
+
+  grpc_core::Arena* arena;
+  size_t size = 0;   // total size of metadata.
+  size_t count = 0;  // minimum of count of metadata and kPreallocatedMDElem.
+  // These preallocated mdelems are used while count < kPreallocatedMDElem.
+  grpc_linked_mdelem preallocated_mdelems[kPreallocatedMDElem];
   grpc_metadata_batch batch;
-  size_t size;  // total size of metadata
-} grpc_chttp2_incoming_metadata_buffer;
+};
 
-/** assumes everything initially zeroed */
-void grpc_chttp2_incoming_metadata_buffer_init(
-    grpc_chttp2_incoming_metadata_buffer* buffer, gpr_arena* arena);
-void grpc_chttp2_incoming_metadata_buffer_destroy(
-    grpc_exec_ctx* exec_ctx, grpc_chttp2_incoming_metadata_buffer* buffer);
 void grpc_chttp2_incoming_metadata_buffer_publish(
-    grpc_exec_ctx* exec_ctx, grpc_chttp2_incoming_metadata_buffer* buffer,
-    grpc_metadata_batch* batch);
+    grpc_chttp2_incoming_metadata_buffer* buffer, grpc_metadata_batch* batch);
 
 grpc_error* grpc_chttp2_incoming_metadata_buffer_add(
-    grpc_exec_ctx* exec_ctx, grpc_chttp2_incoming_metadata_buffer* buffer,
+    grpc_chttp2_incoming_metadata_buffer* buffer,
     grpc_mdelem elem) GRPC_MUST_USE_RESULT;
 grpc_error* grpc_chttp2_incoming_metadata_buffer_replace_or_add(
-    grpc_exec_ctx* exec_ctx, grpc_chttp2_incoming_metadata_buffer* buffer,
+    grpc_chttp2_incoming_metadata_buffer* buffer,
     grpc_mdelem elem) GRPC_MUST_USE_RESULT;
 void grpc_chttp2_incoming_metadata_buffer_set_deadline(
     grpc_chttp2_incoming_metadata_buffer* buffer, grpc_millis deadline);
-
-#ifdef __cplusplus
-}
-#endif
 
 #endif /* GRPC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_INCOMING_METADATA_H */

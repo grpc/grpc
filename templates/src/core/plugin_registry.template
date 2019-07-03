@@ -22,11 +22,13 @@ template: |
    *
    */
 
+  #include <grpc/support/port_platform.h>
+
   #include <grpc/grpc.h>
 
   %for plugin in selected.plugins:
-  extern "C" void ${plugin}_init(void);
-  extern "C" void ${plugin}_shutdown(void);
+  void ${plugin}_init(void);
+  void ${plugin}_shutdown(void);
   %endfor
 
   void grpc_register_built_in_plugins(void) {

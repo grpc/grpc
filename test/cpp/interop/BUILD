@@ -16,7 +16,10 @@ licenses(["notice"])  # Apache v2
 
 load("//bazel:grpc_build_system.bzl", "grpc_cc_library", "grpc_cc_test", "grpc_cc_binary", "grpc_package")
 
-grpc_package(name = "test/cpp/interop")
+grpc_package(
+    name = "test/cpp/interop",
+    visibility = "public",
+)
 
 grpc_cc_library(
     name = "server_helper_lib",
@@ -104,6 +107,20 @@ grpc_cc_binary(
 )
 
 grpc_cc_binary(
+    name = "metrics_client",
+    srcs = ["metrics_client.cc"],
+    external_deps = [
+        "gflags",
+    ],
+    language = "C++",
+    deps = [
+        "//:grpc++",
+        "//test/cpp/util:metrics_server_lib",
+        "//test/cpp/util:test_config",
+    ],
+)
+
+grpc_cc_binary(
     name = "reconnect_interop_client",
     srcs = [
         "reconnect_interop_client.cc",
@@ -140,5 +157,26 @@ grpc_cc_binary(
         "//:grpc++",
         "//test/cpp/util:metrics_server_lib",
         "//test/cpp/util:test_config",
+    ],
+)
+
+grpc_cc_test(
+    name = "interop_test",
+    srcs = ["interop_test.cc"],
+    data = [
+        ":interop_client",
+        ":interop_server",
+    ],
+    external_deps = [
+        "gflags",
+    ],
+    tags = ["no_windows"],
+    deps = [
+        "//:gpr",
+        "//:grpc",
+        "//:grpc++",
+        "//test/core/util:grpc_test_util",
+        "//test/cpp/util:test_config",
+        "//test/cpp/util:test_util",
     ],
 )

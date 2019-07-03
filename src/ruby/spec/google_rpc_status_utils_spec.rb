@@ -12,13 +12,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-require 'grpc'
+require 'spec_helper'
 require_relative '../lib/grpc/google_rpc_status_utils'
 require_relative '../pb/src/proto/grpc/testing/messages_pb'
 require_relative '../pb/src/proto/grpc/testing/messages_pb'
 require 'google/protobuf/well_known_types'
 
 include GRPC::Core
+include GRPC::Spec::Helpers
 
 describe 'conversion from a status struct to a google protobuf status' do
   it 'fails if the input is not a status struct' do
@@ -113,17 +114,6 @@ describe 'conversion from a status struct to a google protobuf status' do
   end
 end
 
-# Test message
-class EchoMsg
-  def self.marshal(_o)
-    ''
-  end
-
-  def self.unmarshal(_o)
-    EchoMsg.new
-  end
-end
-
 # A test service that fills in the "reserved" grpc-status-details-bin trailer,
 # for client-side testing of GoogleRpcStatus protobuf extraction from trailers.
 class GoogleRpcStatusTestService
@@ -150,7 +140,7 @@ GoogleRpcStatusTestStub = GoogleRpcStatusTestService.rpc_stub_class
 
 describe 'receving a google rpc status from a remote endpoint' do
   def start_server(encoded_rpc_status)
-    @srv = GRPC::RpcServer.new(pool_size: 1)
+    @srv = new_rpc_server_for_testing(pool_size: 1)
     @server_port = @srv.add_http2_port('localhost:0',
                                        :this_port_is_insecure)
     @srv.handle(GoogleRpcStatusTestService.new(encoded_rpc_status))
@@ -238,7 +228,7 @@ NoStatusDetailsBinTestServiceStub = NoStatusDetailsBinTestService.rpc_stub_class
 
 describe 'when the endpoint doesnt send grpc-status-details-bin' do
   def start_server
-    @srv = GRPC::RpcServer.new(pool_size: 1)
+    @srv = new_rpc_server_for_testing(pool_size: 1)
     @server_port = @srv.add_http2_port('localhost:0',
                                        :this_port_is_insecure)
     @srv.handle(NoStatusDetailsBinTestService)

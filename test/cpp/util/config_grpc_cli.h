@@ -19,7 +19,7 @@
 #ifndef GRPC_TEST_CPP_UTIL_CONFIG_GRPC_CLI_H
 #define GRPC_TEST_CPP_UTIL_CONFIG_GRPC_CLI_H
 
-#include <grpc++/impl/codegen/config_protobuf.h>
+#include <grpcpp/impl/codegen/config_protobuf.h>
 
 #ifndef GRPC_CUSTOM_DYNAMICMESSAGEFACTORY
 #include <google/protobuf/dynamic_message.h>

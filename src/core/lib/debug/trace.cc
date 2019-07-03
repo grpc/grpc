@@ -16,14 +16,21 @@
  *
  */
 
+#include <grpc/support/port_platform.h>
+
 #include "src/core/lib/debug/trace.h"
 
 #include <string.h>
+#include <type_traits>
 
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
-#include "src/core/lib/support/env.h"
+
+GPR_GLOBAL_CONFIG_DEFINE_STRING(
+    grpc_trace, "",
+    "A comma separated list of tracers that provide additional insight into "
+    "how gRPC C core is processing requests via debug logs.");
 
 int grpc_tracer_set_enabled(const char* name, int enabled);
 
@@ -53,7 +60,8 @@ bool TraceFlagList::Set(const char* name, bool enabled) {
         found = true;
       }
     }
-    if (!found) {
+    // check for unknowns, but ignore "", to allow to GRPC_TRACE=
+    if (!found && 0 != strcmp(name, "")) {
       gpr_log(GPR_ERROR, "Unknown trace var: '%s'", name);
       return false; /* early return */
     }
@@ -75,8 +83,10 @@ void TraceFlagList::LogAllTracers() {
 }
 
 // Flags register themselves on the list during construction
-TraceFlag::TraceFlag(bool default_enabled, const char* name)
-    : name_(name), value_(default_enabled) {
+TraceFlag::TraceFlag(bool default_enabled, const char* name) : name_(name) {
+  static_assert(std::is_trivially_destructible<TraceFlag>::value,
+                "TraceFlag needs to be trivially destructible.");
+  set_enabled(default_enabled);
   TraceFlagList::Add(this);
 }
 
@@ -88,11 +98,11 @@ static void add(const char* beg, const char* end, char*** ss, size_t* ns) {
   char* s;
   size_t len;
   GPR_ASSERT(end >= beg);
-  len = (size_t)(end - beg);
-  s = (char*)gpr_malloc(len + 1);
+  len = static_cast<size_t>(end - beg);
+  s = static_cast<char*>(gpr_malloc(len + 1));
   memcpy(s, beg, len);
   s[len] = 0;
-  *ss = (char**)gpr_realloc(*ss, sizeof(char**) * np);
+  *ss = static_cast<char**>(gpr_realloc(*ss, sizeof(char**) * np));
   (*ss)[n] = s;
   *ns = np;
 }
@@ -127,12 +137,14 @@ static void parse(const char* s) {
   gpr_free(strings);
 }
 
-void grpc_tracer_init(const char* env_var) {
-  char* e = gpr_getenv(env_var);
-  if (e != nullptr) {
-    parse(e);
-    gpr_free(e);
-  }
+void grpc_tracer_init(const char* env_var_name) {
+  (void)env_var_name;  // suppress unused variable error
+  grpc_tracer_init();
+}
+
+void grpc_tracer_init() {
+  grpc_core::UniquePtr<char> value = GPR_GLOBAL_CONFIG_GET(grpc_trace);
+  parse(value.get());
 }
 
 void grpc_tracer_shutdown(void) {}

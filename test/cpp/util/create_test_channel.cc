@@ -18,9 +18,9 @@
 
 #include "test/cpp/util/create_test_channel.h"
 
-#include <grpc++/create_channel.h>
-#include <grpc++/security/credentials.h>
 #include <grpc/support/log.h>
+#include <grpcpp/create_channel.h>
+#include <grpcpp/security/credentials.h>
 
 #include "test/cpp/util/test_credentials_provider.h"
 
@@ -34,7 +34,7 @@ class SslCredentialProvider : public testing::CredentialTypeProvider {
  public:
   std::shared_ptr<ChannelCredentials> GetChannelCredentials(
       grpc::ChannelArguments* args) override {
-    return SslCredentials(SslCredentialsOptions());
+    return grpc::SslCredentials(SslCredentialsOptions());
   }
   std::shared_ptr<ServerCredentials> GetServerCredentials() override {
     return nullptr;
@@ -71,10 +71,74 @@ std::shared_ptr<Channel> CreateTestChannel(
     const grpc::string& override_hostname, bool use_prod_roots,
     const std::shared_ptr<CallCredentials>& creds,
     const ChannelArguments& args) {
+  return CreateTestChannel(server, cred_type, override_hostname, use_prod_roots,
+                           creds, args,
+                           /*interceptor_creators=*/{});
+}
+
+std::shared_ptr<Channel> CreateTestChannel(
+    const grpc::string& server, const grpc::string& override_hostname,
+    testing::transport_security security_type, bool use_prod_roots,
+    const std::shared_ptr<CallCredentials>& creds,
+    const ChannelArguments& args) {
+  return CreateTestChannel(server, override_hostname, security_type,
+                           use_prod_roots, creds, args,
+                           /*interceptor_creators=*/{});
+}
+
+std::shared_ptr<Channel> CreateTestChannel(
+    const grpc::string& server, const grpc::string& override_hostname,
+    testing::transport_security security_type, bool use_prod_roots,
+    const std::shared_ptr<CallCredentials>& creds) {
+  return CreateTestChannel(server, override_hostname, security_type,
+                           use_prod_roots, creds, ChannelArguments());
+}
+
+std::shared_ptr<Channel> CreateTestChannel(
+    const grpc::string& server, const grpc::string& override_hostname,
+    testing::transport_security security_type, bool use_prod_roots) {
+  return CreateTestChannel(server, override_hostname, security_type,
+                           use_prod_roots, std::shared_ptr<CallCredentials>());
+}
+
+// Shortcut for end2end and interop tests.
+std::shared_ptr<Channel> CreateTestChannel(
+    const grpc::string& server, testing::transport_security security_type) {
+  return CreateTestChannel(server, "foo.test.google.fr", security_type, false);
+}
+
+std::shared_ptr<Channel> CreateTestChannel(
+    const grpc::string& server, const grpc::string& credential_type,
+    const std::shared_ptr<CallCredentials>& creds) {
+  ChannelArguments channel_args;
+  std::shared_ptr<ChannelCredentials> channel_creds =
+      testing::GetCredentialsProvider()->GetChannelCredentials(credential_type,
+                                                               &channel_args);
+  GPR_ASSERT(channel_creds != nullptr);
+  if (creds.get()) {
+    channel_creds = grpc::CompositeChannelCredentials(channel_creds, creds);
+  }
+  return ::grpc::CreateCustomChannel(server, channel_creds, channel_args);
+}
+
+std::shared_ptr<Channel> CreateTestChannel(
+    const grpc::string& server, const grpc::string& cred_type,
+    const grpc::string& override_hostname, bool use_prod_roots,
+    const std::shared_ptr<CallCredentials>& creds, const ChannelArguments& args,
+    std::vector<
+        std::unique_ptr<experimental::ClientInterceptorFactoryInterface>>
+        interceptor_creators) {
   ChannelArguments channel_args(args);
   std::shared_ptr<ChannelCredentials> channel_creds;
   if (cred_type.empty()) {
-    return CreateCustomChannel(server, InsecureChannelCredentials(), args);
+    if (interceptor_creators.empty()) {
+      return ::grpc::CreateCustomChannel(server, InsecureChannelCredentials(),
+                                         args);
+    } else {
+      return experimental::CreateCustomChannelWithInterceptors(
+          server, InsecureChannelCredentials(), args,
+          std::move(interceptor_creators));
+    }
   } else if (cred_type == testing::kTlsCredentialsType) {  // cred_type == "ssl"
     if (use_prod_roots) {
       gpr_once_init(&g_once_init_add_prod_ssl_provider, &AddProdSslType);
@@ -93,65 +157,75 @@ std::shared_ptr<Channel> CreateTestChannel(
     const grpc::string& connect_to =
         server.empty() ? override_hostname : server;
     if (creds.get()) {
-      channel_creds = CompositeChannelCredentials(channel_creds, creds);
+      channel_creds = grpc::CompositeChannelCredentials(channel_creds, creds);
     }
-    return CreateCustomChannel(connect_to, channel_creds, channel_args);
+    if (interceptor_creators.empty()) {
+      return ::grpc::CreateCustomChannel(connect_to, channel_creds,
+                                         channel_args);
+    } else {
+      return experimental::CreateCustomChannelWithInterceptors(
+          connect_to, channel_creds, channel_args,
+          std::move(interceptor_creators));
+    }
   } else {
     channel_creds = testing::GetCredentialsProvider()->GetChannelCredentials(
         cred_type, &channel_args);
     GPR_ASSERT(channel_creds != nullptr);
 
-    return CreateCustomChannel(server, channel_creds, args);
+    if (interceptor_creators.empty()) {
+      return ::grpc::CreateCustomChannel(server, channel_creds, args);
+    } else {
+      return experimental::CreateCustomChannelWithInterceptors(
+          server, channel_creds, args, std::move(interceptor_creators));
+    }
   }
 }
 
 std::shared_ptr<Channel> CreateTestChannel(
     const grpc::string& server, const grpc::string& override_hostname,
-    bool enable_ssl, bool use_prod_roots,
+    testing::transport_security security_type, bool use_prod_roots,
+    const std::shared_ptr<CallCredentials>& creds, const ChannelArguments& args,
+    std::vector<
+        std::unique_ptr<experimental::ClientInterceptorFactoryInterface>>
+        interceptor_creators) {
+  grpc::string credential_type =
+      security_type == testing::ALTS
+          ? testing::kAltsCredentialsType
+          : (security_type == testing::TLS ? testing::kTlsCredentialsType
+                                           : testing::kInsecureCredentialsType);
+  return CreateTestChannel(server, credential_type, override_hostname,
+                           use_prod_roots, creds, args,
+                           std::move(interceptor_creators));
+}
+
+std::shared_ptr<Channel> CreateTestChannel(
+    const grpc::string& server, const grpc::string& override_hostname,
+    testing::transport_security security_type, bool use_prod_roots,
     const std::shared_ptr<CallCredentials>& creds,
-    const ChannelArguments& args) {
-  grpc::string type;
-  if (enable_ssl) {
-    type = testing::kTlsCredentialsType;
-  }
-
-  return CreateTestChannel(server, type, override_hostname, use_prod_roots,
-                           creds, args);
-}
-
-std::shared_ptr<Channel> CreateTestChannel(
-    const grpc::string& server, const grpc::string& override_hostname,
-    bool enable_ssl, bool use_prod_roots,
-    const std::shared_ptr<CallCredentials>& creds) {
-  return CreateTestChannel(server, override_hostname, enable_ssl,
-                           use_prod_roots, creds, ChannelArguments());
-}
-
-std::shared_ptr<Channel> CreateTestChannel(
-    const grpc::string& server, const grpc::string& override_hostname,
-    bool enable_ssl, bool use_prod_roots) {
-  return CreateTestChannel(server, override_hostname, enable_ssl,
-                           use_prod_roots, std::shared_ptr<CallCredentials>());
-}
-
-// Shortcut for end2end and interop tests.
-std::shared_ptr<Channel> CreateTestChannel(const grpc::string& server,
-                                           bool enable_ssl) {
-  return CreateTestChannel(server, "foo.test.google.fr", enable_ssl, false);
+    std::vector<
+        std::unique_ptr<experimental::ClientInterceptorFactoryInterface>>
+        interceptor_creators) {
+  return CreateTestChannel(server, override_hostname, security_type,
+                           use_prod_roots, creds, ChannelArguments(),
+                           std::move(interceptor_creators));
 }
 
 std::shared_ptr<Channel> CreateTestChannel(
     const grpc::string& server, const grpc::string& credential_type,
-    const std::shared_ptr<CallCredentials>& creds) {
+    const std::shared_ptr<CallCredentials>& creds,
+    std::vector<
+        std::unique_ptr<experimental::ClientInterceptorFactoryInterface>>
+        interceptor_creators) {
   ChannelArguments channel_args;
   std::shared_ptr<ChannelCredentials> channel_creds =
       testing::GetCredentialsProvider()->GetChannelCredentials(credential_type,
                                                                &channel_args);
   GPR_ASSERT(channel_creds != nullptr);
   if (creds.get()) {
-    channel_creds = CompositeChannelCredentials(channel_creds, creds);
+    channel_creds = grpc::CompositeChannelCredentials(channel_creds, creds);
   }
-  return CreateCustomChannel(server, channel_creds, channel_args);
+  return experimental::CreateCustomChannelWithInterceptors(
+      server, channel_creds, channel_args, std::move(interceptor_creators));
 }
 
 }  // namespace grpc

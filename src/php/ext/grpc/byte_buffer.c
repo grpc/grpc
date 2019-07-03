@@ -16,23 +16,13 @@
  *
  */
 
-#ifdef HAVE_CONFIG_H
-#include "config.h"
-#endif
-
 #include <php.h>
-#include <php_ini.h>
-#include <ext/standard/info.h>
-#include <ext/spl/spl_exceptions.h>
-#include "php_grpc.h"
 
-#include <string.h>
-
+// The include file must place here under <php.h> for fixing compile error.
+// See: https://github.com/grpc/grpc/pull/12360#issuecomment-326484589
 #include "byte_buffer.h"
 
-#include <grpc/grpc.h>
 #include <grpc/byte_buffer_reader.h>
-#include <grpc/slice.h>
 
 grpc_byte_buffer *string_to_byte_buffer(char *string, size_t length) {
   grpc_slice slice = grpc_slice_from_copied_buffer(string, length);

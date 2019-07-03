@@ -62,7 +62,7 @@ static void BM_PumpStreamClientToServer(benchmark::State& state) {
     while (need_tags) {
       GPR_ASSERT(fixture->cq()->Next(&t, &ok));
       GPR_ASSERT(ok);
-      int i = (int)(intptr_t)t;
+      int i = static_cast<int>((intptr_t)t);
       GPR_ASSERT(need_tags & (1 << i));
       need_tags &= ~(1 << i);
     }
@@ -85,7 +85,7 @@ static void BM_PumpStreamClientToServer(benchmark::State& state) {
     need_tags = (1 << 0) | (1 << 1);
     while (need_tags) {
       GPR_ASSERT(fixture->cq()->Next(&t, &ok));
-      int i = (int)(intptr_t)t;
+      int i = static_cast<int>((intptr_t)t);
       GPR_ASSERT(need_tags & (1 << i));
       need_tags &= ~(1 << i);
     }
@@ -95,7 +95,7 @@ static void BM_PumpStreamClientToServer(benchmark::State& state) {
     need_tags = (1 << 0) | (1 << 1);
     while (need_tags) {
       GPR_ASSERT(fixture->cq()->Next(&t, &ok));
-      int i = (int)(intptr_t)t;
+      int i = static_cast<int>((intptr_t)t);
       GPR_ASSERT(need_tags & (1 << i));
       need_tags &= ~(1 << i);
     }
@@ -131,7 +131,7 @@ static void BM_PumpStreamServerToClient(benchmark::State& state) {
     while (need_tags) {
       GPR_ASSERT(fixture->cq()->Next(&t, &ok));
       GPR_ASSERT(ok);
-      int i = (int)(intptr_t)t;
+      int i = static_cast<int>((intptr_t)t);
       GPR_ASSERT(need_tags & (1 << i));
       need_tags &= ~(1 << i);
     }
@@ -154,7 +154,7 @@ static void BM_PumpStreamServerToClient(benchmark::State& state) {
     need_tags = (1 << 0) | (1 << 1);
     while (need_tags) {
       GPR_ASSERT(fixture->cq()->Next(&t, &ok));
-      int i = (int)(intptr_t)t;
+      int i = static_cast<int>((intptr_t)t);
       GPR_ASSERT(need_tags & (1 << i));
       need_tags &= ~(1 << i);
     }

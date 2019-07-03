@@ -20,4 +20,6 @@ from grpc_testing._channel import _channel_state
 # pylint: disable=unused-argument
 def testing_channel(descriptors, time):
     return _channel.TestingChannel(time, _channel_state.State())
+
+
 # pylint: enable=unused-argument

@@ -17,15 +17,15 @@ set -ex
 
 if [ "$CONFIG" != "gcov" ] ; then exit ; fi
 
-root=$(readlink -f $(dirname $0)/../../..)
+root=$(readlink -f "$(dirname "$0")/../../..")
 out=$root/reports/ruby_ext_coverage
 tmp1=$(mktemp)
 tmp2=$(mktemp)
-cd $root
-lcov --capture --directory . --output-file $tmp1
-lcov --extract $tmp1 "$root/src/ruby/*" --output-file $tmp2
-genhtml $tmp2 --output-directory $out
-rm $tmp2
-rm $tmp1
+cd "$root"
+lcov --capture --directory . --output-file "$tmp1"
+lcov --extract "$tmp1" "$root/src/ruby/*" --output-file "$tmp2"
+genhtml "$tmp2" --output-directory "$out"
+rm "$tmp2"
+rm "$tmp1"
 
-cp -rv $root/coverage $root/reports/ruby
+cp -rv "$root/coverage" "$root/reports/ruby"

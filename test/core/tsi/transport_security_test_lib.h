@@ -35,8 +35,8 @@
 #define TSI_TEST_DEFAULT_CHANNEL_SIZE 32768
 #define TSI_TEST_BIG_MESSAGE_SIZE 17000
 #define TSI_TEST_SMALL_MESSAGE_SIZE 10
-#define TSI_TEST_NUM_OF_ARGUMENTS 8
-#define TSI_TEST_NUM_OF_COMBINATIONS 256
+#define TSI_TEST_NUM_OF_ARGUMENTS 7
+#define TSI_TEST_NUM_OF_COMBINATIONS 128
 #define TSI_TEST_UNUSED_BYTES "HELLO GOOGLE"
 
 /* ---  tsi_test_fixture object ---
@@ -46,11 +46,21 @@
   protect/unprotect operations with respect to TSI implementations. */
 typedef struct tsi_test_fixture tsi_test_fixture;
 
-/* ---  tsi_test_frame_protector_config object ---
+/* ---  tsi_test_frame_protector_fixture object ---
+  The object wraps all necessary information used to test correctness of TSI
+  frame protector implementations. */
+typedef struct tsi_test_frame_protector_fixture
+    tsi_test_frame_protector_fixture;
 
+/* ---  tsi_test_frame_protector_config object ---
   This object is used to configure different parameters of TSI frame protector
   APIs. */
 typedef struct tsi_test_frame_protector_config tsi_test_frame_protector_config;
+
+/* ---  tsi_test_channel object ---
+  This object represents simulated channels between the client and server
+  from/to which they could read/write the exchanged information. */
+typedef struct tsi_test_channel tsi_test_channel;
 
 /* V-table for tsi_test_fixture operations that are implemented differently in
    different TSI implementations. */
@@ -73,17 +83,8 @@ struct tsi_test_fixture {
   tsi_handshaker_result* server_result;
   /* size of buffer used to store data received from the peer. */
   size_t handshake_buffer_size;
-  /* simulated channels between client and server. If the server (client)
-     wants to send data to the client (server), he will write data to
-     client_channel (server_channel), which will be read by client (server). */
-  uint8_t* client_channel;
-  uint8_t* server_channel;
-  /* size of data written to the client/server channel. */
-  size_t bytes_written_to_client_channel;
-  size_t bytes_written_to_server_channel;
-  /* size of data read from the client/server channel */
-  size_t bytes_read_from_client_channel;
-  size_t bytes_read_from_server_channel;
+  /* tsi_test_channel instance. */
+  tsi_test_channel* channel;
   /* tsi_test_frame_protector_config instance */
   tsi_test_frame_protector_config* config;
   /* a flag indicating if client has finished TSI handshake first (i.e., before
@@ -104,6 +105,30 @@ struct tsi_test_fixture {
   gpr_cv cv;
   gpr_mu mu;
   bool notified;
+};
+
+struct tsi_test_frame_protector_fixture {
+  /* client/server TSI frame protectors whose ownership are transferred. */
+  tsi_frame_protector* client_frame_protector;
+  tsi_frame_protector* server_frame_protector;
+  /* tsi_test_channel instance. */
+  tsi_test_channel* channel;
+  /* tsi_test_frame_protector_config instance */
+  tsi_test_frame_protector_config* config;
+};
+
+struct tsi_test_channel {
+  /* simulated channels between client and server. If the server (client)
+     wants to send data to the client (server), he will write data to
+     client_channel (server_channel), which will be read by client (server). */
+  uint8_t* client_channel;
+  uint8_t* server_channel;
+  /* size of data written to the client/server channel. */
+  size_t bytes_written_to_client_channel;
+  size_t bytes_written_to_server_channel;
+  /* size of data read from the client/server channel */
+  size_t bytes_read_from_client_channel;
+  size_t bytes_read_from_server_channel;
 };
 
 struct tsi_test_frame_protector_config {
@@ -135,8 +160,7 @@ tsi_test_frame_protector_config* tsi_test_frame_protector_config_create(
     bool use_default_protected_buffer_size, bool use_default_client_message,
     bool use_default_server_message,
     bool use_default_client_max_output_protected_frame_size,
-    bool use_default_server_max_output_protected_frame_size,
-    bool use_default_handshake_buffer_size);
+    bool use_default_server_max_output_protected_frame_size);
 
 /* This method sets different buffer and frame sizes of a
    tsi_test_frame_protector_config instance with user provided values. */
@@ -160,6 +184,35 @@ void tsi_test_fixture_init(tsi_test_fixture* fixture);
    this function. */
 void tsi_test_fixture_destroy(tsi_test_fixture* fixture);
 
+/* This method creates a tsi_test_frame_protector_fixture instance. */
+tsi_test_frame_protector_fixture* tsi_test_frame_protector_fixture_create();
+
+/* This method initializes members of tsi_test_frame_protector_fixture instance.
+   Note that the struct instance should be allocated before making
+   this call. */
+void tsi_test_frame_protector_fixture_init(
+    tsi_test_frame_protector_fixture* fixture,
+    tsi_frame_protector* client_frame_protector,
+    tsi_frame_protector* server_frame_protector);
+
+/* This method destroys a tsi_test_frame_protector_fixture instance. Note that
+   the fixture intance must be dynamically allocated and will be freed by this
+   function. */
+void tsi_test_frame_protector_fixture_destroy(
+    tsi_test_frame_protector_fixture* fixture);
+
+/* This method performs a protect opeation on raw data and sends the result to
+   peer. */
+void tsi_test_frame_protector_send_message_to_peer(
+    tsi_test_frame_protector_config* config, tsi_test_channel* channel,
+    tsi_frame_protector* protector, bool is_client);
+
+/* This method receives message from peer and unprotects it. */
+void tsi_test_frame_protector_receive_message_from_peer(
+    tsi_test_frame_protector_config* config, tsi_test_channel* channel,
+    tsi_frame_protector* protector, unsigned char* message,
+    size_t* bytes_received, bool is_client);
+
 /* This method performs a full TSI handshake between a client and a server.
    Note that the test library will implement the new TSI handshaker API to
    perform handshakes. */
@@ -170,5 +223,9 @@ void tsi_test_do_handshake(tsi_test_fixture* fixture);
    message, and unprotects it. The same operation is triggered again with
    the client and server switching its role. */
 void tsi_test_do_round_trip(tsi_test_fixture* fixture);
+
+/* This method performs the above round trip test without doing handshakes. */
+void tsi_test_frame_protector_do_round_trip_no_handshake(
+    tsi_test_frame_protector_fixture* fixture);
 
 #endif  // GRPC_TEST_CORE_TSI_TRANSPORT_SECURITY_TEST_LIB_H_

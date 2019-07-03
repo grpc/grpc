@@ -16,6 +16,8 @@
  *
  */
 
+#include <grpc/support/port_platform.h>
+
 #include "src/core/lib/iomgr/unix_sockets_posix.h"
 
 #ifndef GRPC_HAVE_UNIX_SOCKET

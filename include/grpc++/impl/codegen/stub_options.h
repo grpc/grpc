@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015 gRPC authors.
+ * Copyright 2018 gRPC authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,14 +16,13 @@
  *
  */
 
+// DEPRECATED: The headers in include/grpc++ are deprecated. Please include the
+// headers in include/grpcpp instead. This header exists only for backwards
+// compatibility.
+
 #ifndef GRPCXX_IMPL_CODEGEN_STUB_OPTIONS_H
 #define GRPCXX_IMPL_CODEGEN_STUB_OPTIONS_H
 
-namespace grpc {
-
-/// Useful interface for generated stubs
-class StubOptions {};
-
-}  // namespace grpc
+#include <grpcpp/impl/codegen/stub_options.h>
 
 #endif  // GRPCXX_IMPL_CODEGEN_STUB_OPTIONS_H

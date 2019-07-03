@@ -44,8 +44,6 @@ namespace Grpc.Core
         readonly ChannelSafeHandle handle;
         readonly Dictionary<string, ChannelOption> options;
 
-        readonly Task connectivityWatcherTask;
-
         bool shutdownRequested;
 
         /// <summary>
@@ -61,7 +59,7 @@ namespace Grpc.Core
 
         /// <summary>
         /// Creates a channel that connects to a specific host.
-        /// Port will default to 80 for an unsecure channel and to 443 for a secure channel.
+        /// Port will default to 80 for an unsecure channel or to 443 for a secure channel.
         /// </summary>
         /// <param name="target">Target of the channel.</param>
         /// <param name="credentials">Credentials to secure the channel.</param>
@@ -74,9 +72,9 @@ namespace Grpc.Core
             this.environment = GrpcEnvironment.AddRef();
 
             this.completionQueue = this.environment.PickCompletionQueue();
-            using (var nativeCredentials = credentials.ToNativeCredentials())
             using (var nativeChannelArgs = ChannelOptions.CreateChannelArgs(this.options.Values))
             {
+                var nativeCredentials = credentials.GetNativeCredentials();
                 if (nativeCredentials != null)
                 {
                     this.handle = ChannelSafeHandle.CreateSecure(nativeCredentials, target, nativeChannelArgs);
@@ -86,9 +84,6 @@ namespace Grpc.Core
                     this.handle = ChannelSafeHandle.CreateInsecure(target, nativeChannelArgs);
                 }
             }
-            // TODO(jtattermusch): Workaround for https://github.com/GoogleCloudPlatform/google-cloud-dotnet/issues/822.
-            // Remove once retries are supported in C core
-            this.connectivityWatcherTask = RunConnectivityWatcherAsync();
             GrpcEnvironment.RegisterChannel(this);
         }
 
@@ -117,7 +112,7 @@ namespace Grpc.Core
 
         /// <summary>
         /// Gets current connectivity state of this channel.
-        /// After channel is has been shutdown, <c>ChannelState.Shutdown</c> will be returned.
+        /// After channel has been shutdown, <c>ChannelState.Shutdown</c> will be returned.
         /// </summary>
         public ChannelState State
         {
@@ -127,29 +122,51 @@ namespace Grpc.Core
             }
         }
 
+        // cached handler for watch connectivity state
+        static readonly BatchCompletionDelegate WatchConnectivityStateHandler = (success, ctx, state) =>
+        {
+            var tcs = (TaskCompletionSource<bool>) state;
+            tcs.SetResult(success);
+        };
+
         /// <summary>
         /// Returned tasks completes once channel state has become different from 
         /// given lastObservedState. 
-        /// If deadline is reached or and error occurs, returned task is cancelled.
+        /// If deadline is reached or an error occurs, returned task is cancelled.
         /// </summary>
-        public Task WaitForStateChangedAsync(ChannelState lastObservedState, DateTime? deadline = null)
+        public async Task WaitForStateChangedAsync(ChannelState lastObservedState, DateTime? deadline = null)
+        {
+            var result = await TryWaitForStateChangedAsync(lastObservedState, deadline).ConfigureAwait(false);
+            if (!result)
+            {
+                throw new TaskCanceledException("Reached deadline.");
+            }
+        }
+
+        /// <summary>
+        /// Returned tasks completes once channel state has become different from
+        /// given lastObservedState (<c>true</c> is returned) or if the wait has timed out (<c>false</c> is returned).
+        /// </summary>
+        public Task<bool> TryWaitForStateChangedAsync(ChannelState lastObservedState, DateTime? deadline = null)
         {
             GrpcPreconditions.CheckArgument(lastObservedState != ChannelState.Shutdown,
                 "Shutdown is a terminal state. No further state changes can occur.");
-            var tcs = new TaskCompletionSource<object>();
+            var tcs = new TaskCompletionSource<bool>();
             var deadlineTimespec = deadline.HasValue ? Timespec.FromDateTime(deadline.Value) : Timespec.InfFuture;
-            var handler = new BatchCompletionDelegate((success, ctx) =>
+            lock (myLock)
             {
-                if (success)
+                if (handle.IsClosed)
                 {
-                    tcs.SetResult(null);
+                    // If channel has been already shutdown and handle was disposed, we would end up with
+                    // an abandoned completion added to the completion registry. Instead, we make sure we fail early.
+                    throw new ObjectDisposedException(nameof(handle), "Channel handle has already been disposed.");
                 }
                 else
                 {
-                    tcs.SetCanceled();
+                    // pass "tcs" as "state" for WatchConnectivityStateHandler.
+                    handle.WatchConnectivityState(lastObservedState, deadlineTimespec, completionQueue, WatchConnectivityStateHandler, tcs);
                 }
-            });
-            handle.WatchConnectivityState(lastObservedState, deadlineTimespec, completionQueue, handler);
+            }
             return tcs.Task;
         }
 
@@ -232,9 +249,12 @@ namespace Grpc.Core
                 Logger.Warning("Channel shutdown was called but there are still {0} active calls for that channel.", activeCallCount);
             }
 
-            handle.Dispose();
+            lock (myLock)
+            {
+                handle.Dispose();
+            }
 
-            await Task.WhenAll(GrpcEnvironment.ReleaseAsync(), connectivityWatcherTask).ConfigureAwait(false);
+            await GrpcEnvironment.ReleaseAsync().ConfigureAwait(false);
         }
 
         internal ChannelSafeHandle Handle
@@ -277,49 +297,24 @@ namespace Grpc.Core
             activeCallCounter.Decrement();
         }
 
+        // for testing only
+        internal long GetCallReferenceCount()
+        {
+            return activeCallCounter.Count;
+        }
+
         private ChannelState GetConnectivityState(bool tryToConnect)
         {
             try
             {
-                return handle.CheckConnectivityState(tryToConnect);
+                lock (myLock)
+                {
+                    return handle.CheckConnectivityState(tryToConnect);
+                }
             }
             catch (ObjectDisposedException)
             {
                 return ChannelState.Shutdown;
-            }
-        }
-
-        /// <summary>
-        /// Constantly Watches channel connectivity status to work around https://github.com/GoogleCloudPlatform/google-cloud-dotnet/issues/822
-        /// </summary>
-        private async Task RunConnectivityWatcherAsync()
-        {
-            try
-            {
-                var lastState = State;
-                while (lastState != ChannelState.Shutdown)
-                {
-                    lock (myLock)
-                    {
-                        if (shutdownRequested)
-                        {
-                            break;
-                        }
-                    }
-
-                    try
-                    {
-                        await WaitForStateChangedAsync(lastState, DateTime.UtcNow.AddSeconds(1)).ConfigureAwait(false);
-                    }
-                    catch (TaskCanceledException)
-                    {
-                        // ignore timeout
-                    }
-                    lastState = State;
-                }
-            }
-            catch (ObjectDisposedException) {
-                // during shutdown, channel is going to be disposed.
             }
         }
 

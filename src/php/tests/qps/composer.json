@@ -1,7 +1,7 @@
 {
   "require": {
     "grpc/grpc": "dev-master",
-    "google/protobuf": "v3.4.1"
+    "google/protobuf": "^v3.3.0"
   },
   "autoload": {
     "psr-4": {

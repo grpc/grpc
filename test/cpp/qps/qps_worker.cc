@@ -25,20 +25,21 @@
 #include <thread>
 #include <vector>
 
-#include <grpc++/client_context.h>
-#include <grpc++/security/server_credentials.h>
-#include <grpc++/server.h>
-#include <grpc++/server_builder.h>
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/cpu.h>
-#include <grpc/support/histogram.h>
-#include <grpc/support/host_port.h>
 #include <grpc/support/log.h>
+#include <grpcpp/client_context.h>
+#include <grpcpp/security/server_credentials.h>
+#include <grpcpp/server.h>
+#include <grpcpp/server_builder.h>
 
-#include "src/proto/grpc/testing/services.pb.h"
+#include "src/core/lib/gprpp/host_port.h"
+#include "src/proto/grpc/testing/worker_service.grpc.pb.h"
 #include "test/core/util/grpc_profiler.h"
+#include "test/core/util/histogram.h"
 #include "test/cpp/qps/client.h"
+#include "test/cpp/qps/qps_server_builder.h"
 #include "test/cpp/qps/server.h"
 #include "test/cpp/util/create_test_channel.h"
 #include "test/cpp/util/test_credentials_provider.h"
@@ -59,6 +60,8 @@ static std::unique_ptr<Client> CreateClient(const ClientConfig& config) {
       return config.payload_config().has_bytebuf_params()
                  ? CreateGenericAsyncStreamingClient(config)
                  : CreateAsyncClient(config);
+    case ClientType::CALLBACK_CLIENT:
+      return CreateCallbackClient(config);
     default:
       abort();
   }
@@ -76,6 +79,8 @@ static std::unique_ptr<Server> CreateServer(const ServerConfig& config) {
       return CreateAsyncServer(config);
     case ServerType::ASYNC_GENERIC_SERVER:
       return CreateAsyncGenericServer(config);
+    case ServerType::CALLBACK_SERVER:
+      return CreateCallbackServer(config);
     default:
       abort();
   }
@@ -272,18 +277,17 @@ QpsWorker::QpsWorker(int driver_port, int server_port,
   impl_.reset(new WorkerServiceImpl(server_port, this));
   gpr_atm_rel_store(&done_, static_cast<gpr_atm>(0));
 
-  ServerBuilder builder;
+  std::unique_ptr<ServerBuilder> builder = CreateQpsServerBuilder();
   if (driver_port >= 0) {
-    char* server_address = nullptr;
-    gpr_join_host_port(&server_address, "::", driver_port);
-    builder.AddListeningPort(
-        server_address,
+    grpc_core::UniquePtr<char> server_address;
+    grpc_core::JoinHostPort(&server_address, "::", driver_port);
+    builder->AddListeningPort(
+        server_address.get(),
         GetCredentialsProvider()->GetServerCredentials(credential_type));
-    gpr_free(server_address);
   }
-  builder.RegisterService(impl_.get());
+  builder->RegisterService(impl_.get());
 
-  server_ = builder.BuildAndStart();
+  server_ = builder->BuildAndStart();
 }
 
 QpsWorker::~QpsWorker() {}

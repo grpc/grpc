@@ -83,7 +83,7 @@ static void BM_StreamingPingPong(benchmark::State& state) {
       while (need_tags) {
         GPR_ASSERT(fixture->cq()->Next(&t, &ok));
         GPR_ASSERT(ok);
-        int i = (int)(intptr_t)t;
+        int i = static_cast<int>((intptr_t)t);
         GPR_ASSERT(need_tags & (1 << i));
         need_tags &= ~(1 << i);
       }
@@ -99,7 +99,7 @@ static void BM_StreamingPingPong(benchmark::State& state) {
         while (need_tags) {
           GPR_ASSERT(fixture->cq()->Next(&t, &ok));
           GPR_ASSERT(ok);
-          int i = (int)(intptr_t)t;
+          int i = static_cast<int>((intptr_t)t);
 
           // If server recv is complete, start the server send operation
           if (i == 1) {
@@ -122,7 +122,7 @@ static void BM_StreamingPingPong(benchmark::State& state) {
       need_tags = (1 << 0) | (1 << 1) | (1 << 2);
       while (need_tags) {
         GPR_ASSERT(fixture->cq()->Next(&t, &ok));
-        int i = (int)(intptr_t)t;
+        int i = static_cast<int>((intptr_t)t);
         GPR_ASSERT(need_tags & (1 << i));
         need_tags &= ~(1 << i);
       }
@@ -175,7 +175,7 @@ static void BM_StreamingPingPongMsgs(benchmark::State& state) {
     while (need_tags) {
       GPR_ASSERT(fixture->cq()->Next(&t, &ok));
       GPR_ASSERT(ok);
-      int i = (int)(intptr_t)t;
+      int i = static_cast<int>((intptr_t)t);
       GPR_ASSERT(need_tags & (1 << i));
       need_tags &= ~(1 << i);
     }
@@ -190,7 +190,7 @@ static void BM_StreamingPingPongMsgs(benchmark::State& state) {
       while (need_tags) {
         GPR_ASSERT(fixture->cq()->Next(&t, &ok));
         GPR_ASSERT(ok);
-        int i = (int)(intptr_t)t;
+        int i = static_cast<int>((intptr_t)t);
 
         // If server recv is complete, start the server send operation
         if (i == 1) {
@@ -210,7 +210,7 @@ static void BM_StreamingPingPongMsgs(benchmark::State& state) {
     need_tags = (1 << 0) | (1 << 1) | (1 << 2);
     while (need_tags) {
       GPR_ASSERT(fixture->cq()->Next(&t, &ok));
-      int i = (int)(intptr_t)t;
+      int i = static_cast<int>((intptr_t)t);
       GPR_ASSERT(need_tags & (1 << i));
       need_tags &= ~(1 << i);
     }
@@ -297,10 +297,10 @@ static void BM_StreamingPingPongWithCoalescingApi(benchmark::State& state) {
           // established). It is necessary when client init metadata is
           // coalesced
           GPR_ASSERT(fixture->cq()->Next(&t, &ok));
-          while ((int)(intptr_t)t != 0) {
+          while (static_cast<int>((intptr_t)t) != 0) {
             // In some cases tag:2 comes before tag:0 (write tag comes out
             // first), this while loop is to make sure get tag:0.
-            int i = (int)(intptr_t)t;
+            int i = static_cast<int>((intptr_t)t);
             GPR_ASSERT(await_tags & (1 << i));
             await_tags &= ~(1 << i);
             GPR_ASSERT(fixture->cq()->Next(&t, &ok));
@@ -317,7 +317,7 @@ static void BM_StreamingPingPongWithCoalescingApi(benchmark::State& state) {
         while (await_tags != 0) {
           GPR_ASSERT(fixture->cq()->Next(&t, &ok));
           GPR_ASSERT(ok);
-          int i = (int)(intptr_t)t;
+          int i = static_cast<int>((intptr_t)t);
 
           // If server recv is complete, start the server send operation
           if (i == 3) {
@@ -367,8 +367,8 @@ static void BM_StreamingPingPongWithCoalescingApi(benchmark::State& state) {
         // wait for server call data structure(call_hook, etc.) to be
         // initialized, since initial metadata is corked.
         GPR_ASSERT(fixture->cq()->Next(&t, &ok));
-        while ((int)(intptr_t)t != 0) {
-          int i = (int)(intptr_t)t;
+        while (static_cast<int>((intptr_t)t) != 0) {
+          int i = static_cast<int>((intptr_t)t);
           GPR_ASSERT(expect_tags & (1 << i));
           expect_tags &= ~(1 << i);
           GPR_ASSERT(fixture->cq()->Next(&t, &ok));
@@ -385,7 +385,7 @@ static void BM_StreamingPingPongWithCoalescingApi(benchmark::State& state) {
 
       while (expect_tags) {
         GPR_ASSERT(fixture->cq()->Next(&t, &ok));
-        int i = (int)(intptr_t)t;
+        int i = static_cast<int>((intptr_t)t);
         GPR_ASSERT(expect_tags & (1 << i));
         expect_tags &= ~(1 << i);
       }

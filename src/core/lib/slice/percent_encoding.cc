@@ -16,6 +16,8 @@
  *
  */
 
+#include <grpc/support/port_platform.h>
+
 #include "src/core/lib/slice/percent_encoding.h"
 
 #include <grpc/support/log.h>
@@ -36,7 +38,7 @@ static bool is_unreserved_character(uint8_t c,
   return ((unreserved_bytes[c / 8] >> (c % 8)) & 1) != 0;
 }
 
-grpc_slice grpc_percent_encode_slice(grpc_slice slice,
+grpc_slice grpc_percent_encode_slice(const grpc_slice& slice,
                                      const uint8_t* unreserved_bytes) {
   static const uint8_t hex[] = "0123456789ABCDEF";
 
@@ -78,13 +80,13 @@ static bool valid_hex(const uint8_t* p, const uint8_t* end) {
 }
 
 static uint8_t dehex(uint8_t c) {
-  if (c >= '0' && c <= '9') return (uint8_t)(c - '0');
-  if (c >= 'A' && c <= 'F') return (uint8_t)(c - 'A' + 10);
-  if (c >= 'a' && c <= 'f') return (uint8_t)(c - 'a' + 10);
+  if (c >= '0' && c <= '9') return static_cast<uint8_t>(c - '0');
+  if (c >= 'A' && c <= 'F') return static_cast<uint8_t>(c - 'A' + 10);
+  if (c >= 'a' && c <= 'f') return static_cast<uint8_t>(c - 'a' + 10);
   GPR_UNREACHABLE_CODE(return 255);
 }
 
-bool grpc_strict_percent_decode_slice(grpc_slice slice_in,
+bool grpc_strict_percent_decode_slice(const grpc_slice& slice_in,
                                       const uint8_t* unreserved_bytes,
                                       grpc_slice* slice_out) {
   const uint8_t* p = GRPC_SLICE_START_PTR(slice_in);
@@ -114,7 +116,7 @@ bool grpc_strict_percent_decode_slice(grpc_slice slice_in,
   uint8_t* q = GRPC_SLICE_START_PTR(*slice_out);
   while (p != in_end) {
     if (*p == '%') {
-      *q++ = (uint8_t)(dehex(p[1]) << 4) | (dehex(p[2]));
+      *q++ = static_cast<uint8_t>(dehex(p[1]) << 4) | (dehex(p[2]));
       p += 3;
     } else {
       *q++ = *p++;
@@ -124,7 +126,7 @@ bool grpc_strict_percent_decode_slice(grpc_slice slice_in,
   return true;
 }
 
-grpc_slice grpc_permissive_percent_decode_slice(grpc_slice slice_in) {
+grpc_slice grpc_permissive_percent_decode_slice(const grpc_slice& slice_in) {
   const uint8_t* p = GRPC_SLICE_START_PTR(slice_in);
   const uint8_t* in_end = GRPC_SLICE_END_PTR(slice_in);
   size_t out_length = 0;
@@ -155,7 +157,7 @@ grpc_slice grpc_permissive_percent_decode_slice(grpc_slice slice_in) {
       if (!valid_hex(p + 1, in_end) || !valid_hex(p + 2, in_end)) {
         *q++ = *p++;
       } else {
-        *q++ = (uint8_t)(dehex(p[1]) << 4) | (dehex(p[2]));
+        *q++ = static_cast<uint8_t>(dehex(p[1]) << 4) | (dehex(p[2]));
         p += 3;
       }
     } else {

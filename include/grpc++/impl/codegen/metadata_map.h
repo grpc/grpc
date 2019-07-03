@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015 gRPC authors.
+ * Copyright 2018 gRPC authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,43 +16,13 @@
  *
  */
 
+// DEPRECATED: The headers in include/grpc++ are deprecated. Please include the
+// headers in include/grpcpp instead. This header exists only for backwards
+// compatibility.
+
 #ifndef GRPCXX_IMPL_CODEGEN_METADATA_MAP_H
 #define GRPCXX_IMPL_CODEGEN_METADATA_MAP_H
 
-#include <grpc++/impl/codegen/slice.h>
-
-namespace grpc {
-
-namespace internal {
-class MetadataMap {
- public:
-  MetadataMap() { memset(&arr_, 0, sizeof(arr_)); }
-
-  ~MetadataMap() {
-    g_core_codegen_interface->grpc_metadata_array_destroy(&arr_);
-  }
-
-  void FillMap() {
-    for (size_t i = 0; i < arr_.count; i++) {
-      // TODO(yangg) handle duplicates?
-      map_.insert(std::pair<grpc::string_ref, grpc::string_ref>(
-          StringRefFromSlice(&arr_.metadata[i].key),
-          StringRefFromSlice(&arr_.metadata[i].value)));
-    }
-  }
-
-  std::multimap<grpc::string_ref, grpc::string_ref>* map() { return &map_; }
-  const std::multimap<grpc::string_ref, grpc::string_ref>* map() const {
-    return &map_;
-  }
-  grpc_metadata_array* arr() { return &arr_; }
-
- private:
-  grpc_metadata_array arr_;
-  std::multimap<grpc::string_ref, grpc::string_ref> map_;
-};
-}  // namespace internal
-
-}  // namespace grpc
+#include <grpcpp/impl/codegen/metadata_map.h>
 
 #endif  // GRPCXX_IMPL_CODEGEN_METADATA_MAP_H

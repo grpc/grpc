@@ -28,9 +28,9 @@
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
 #include <grpc/support/time.h>
-#include <grpc/support/useful.h>
 
 #include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/compression/compression_args.h"
 #include "src/core/lib/surface/call.h"
 #include "src/core/lib/surface/call_test_only.h"
 #include "src/core/lib/transport/static_metadata.h"
@@ -136,32 +136,29 @@ static void request_with_payload_template(
   grpc_slice response_payload_slice =
       grpc_slice_from_copied_string(response_str);
 
-  client_args = grpc_channel_args_set_compression_algorithm(
+  client_args = grpc_channel_args_set_channel_default_compression_algorithm(
       nullptr, default_client_channel_compression_algorithm);
-  server_args = grpc_channel_args_set_compression_algorithm(
+  server_args = grpc_channel_args_set_channel_default_compression_algorithm(
       nullptr, default_server_channel_compression_algorithm);
 
   if (user_agent_override) {
-    grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
+    grpc_core::ExecCtx exec_ctx;
     grpc_channel_args* client_args_old = client_args;
     grpc_arg arg;
     arg.key = const_cast<char*>(GRPC_ARG_PRIMARY_USER_AGENT_STRING);
     arg.type = GRPC_ARG_STRING;
     arg.value.string = user_agent_override;
     client_args = grpc_channel_args_copy_and_add(client_args_old, &arg, 1);
-    grpc_channel_args_destroy(&exec_ctx, client_args_old);
-    grpc_exec_ctx_finish(&exec_ctx);
+    grpc_channel_args_destroy(client_args_old);
   }
 
   f = begin_test(config, test_name, client_args, server_args);
   cqv = cq_verifier_create(f.cq);
 
   gpr_timespec deadline = five_seconds_from_now();
-  c = grpc_channel_create_call(
-      f.client, nullptr, GRPC_PROPAGATE_DEFAULTS, f.cq,
-      grpc_slice_from_static_string("/foo"),
-      get_host_override_slice("foo.test.google.fr:1234", config), deadline,
-      nullptr);
+  c = grpc_channel_create_call(f.client, nullptr, GRPC_PROPAGATE_DEFAULTS, f.cq,
+                               grpc_slice_from_static_string("/foo"), nullptr,
+                               deadline, nullptr);
   GPR_ASSERT(c);
 
   grpc_metadata_array_init(&initial_metadata_recv);
@@ -193,7 +190,8 @@ static void request_with_payload_template(
   op->flags = 0;
   op->reserved = nullptr;
   op++;
-  error = grpc_call_start_batch(c, ops, (size_t)(op - ops), tag(1), nullptr);
+  error = grpc_call_start_batch(c, ops, static_cast<size_t>(op - ops), tag(1),
+                                nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
   error =
@@ -229,7 +227,8 @@ static void request_with_payload_template(
   op->flags = 0;
   op->reserved = nullptr;
   op++;
-  error = grpc_call_start_batch(s, ops, (size_t)(op - ops), tag(101), nullptr);
+  error = grpc_call_start_batch(s, ops, static_cast<size_t>(op - ops), tag(101),
+                                nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
   for (int i = 0; i < 2; i++) {
@@ -248,7 +247,8 @@ static void request_with_payload_template(
     op->flags = 0;
     op->reserved = nullptr;
     op++;
-    error = grpc_call_start_batch(c, ops, (size_t)(op - ops), tag(2), nullptr);
+    error = grpc_call_start_batch(c, ops, static_cast<size_t>(op - ops), tag(2),
+                                  nullptr);
     GPR_ASSERT(GRPC_CALL_OK == error);
 
     memset(ops, 0, sizeof(ops));
@@ -258,8 +258,8 @@ static void request_with_payload_template(
     op->flags = 0;
     op->reserved = nullptr;
     op++;
-    error =
-        grpc_call_start_batch(s, ops, (size_t)(op - ops), tag(102), nullptr);
+    error = grpc_call_start_batch(s, ops, static_cast<size_t>(op - ops),
+                                  tag(102), nullptr);
     GPR_ASSERT(GRPC_CALL_OK == error);
     CQ_EXPECT_COMPLETION(cqv, tag(102), 1);
     cq_verify(cqv);
@@ -276,8 +276,8 @@ static void request_with_payload_template(
     op->flags = 0;
     op->reserved = nullptr;
     op++;
-    error =
-        grpc_call_start_batch(s, ops, (size_t)(op - ops), tag(103), nullptr);
+    error = grpc_call_start_batch(s, ops, static_cast<size_t>(op - ops),
+                                  tag(103), nullptr);
     GPR_ASSERT(GRPC_CALL_OK == error);
     CQ_EXPECT_COMPLETION(cqv, tag(103), 1);
     CQ_EXPECT_COMPLETION(cqv, tag(2), 1);
@@ -310,7 +310,8 @@ static void request_with_payload_template(
   op->flags = 0;
   op->reserved = nullptr;
   op++;
-  error = grpc_call_start_batch(c, ops, (size_t)(op - ops), tag(3), nullptr);
+  error = grpc_call_start_batch(c, ops, static_cast<size_t>(op - ops), tag(3),
+                                nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
   memset(ops, 0, sizeof(ops));
@@ -323,7 +324,8 @@ static void request_with_payload_template(
   op->flags = 0;
   op->reserved = nullptr;
   op++;
-  error = grpc_call_start_batch(s, ops, (size_t)(op - ops), tag(104), nullptr);
+  error = grpc_call_start_batch(s, ops, static_cast<size_t>(op - ops), tag(104),
+                                nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
   CQ_EXPECT_COMPLETION(cqv, tag(1), 1);
@@ -335,8 +337,6 @@ static void request_with_payload_template(
   GPR_ASSERT(status == GRPC_STATUS_OK);
   GPR_ASSERT(0 == grpc_slice_str_cmp(details, "xyz"));
   GPR_ASSERT(0 == grpc_slice_str_cmp(call_details.method, "/foo"));
-  validate_host_override_string("foo.test.google.fr:1234", call_details.host,
-                                config);
   GPR_ASSERT(was_cancelled == 0);
 
   grpc_slice_unref(details);
@@ -351,10 +351,9 @@ static void request_with_payload_template(
   cq_verifier_destroy(cqv);
 
   {
-    grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
-    grpc_channel_args_destroy(&exec_ctx, client_args);
-    grpc_channel_args_destroy(&exec_ctx, server_args);
-    grpc_exec_ctx_finish(&exec_ctx);
+    grpc_core::ExecCtx exec_ctx;
+    grpc_channel_args_destroy(client_args);
+    grpc_channel_args_destroy(server_args);
   }
 
   end_test(&f);

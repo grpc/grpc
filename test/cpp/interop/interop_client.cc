@@ -19,16 +19,16 @@
 #include <cinttypes>
 #include <fstream>
 #include <memory>
+#include <utility>
 
-#include <grpc++/channel.h>
-#include <grpc++/client_context.h>
-#include <grpc++/security/credentials.h>
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
 #include <grpc/support/time.h>
-#include <grpc/support/useful.h>
+#include <grpcpp/channel.h>
+#include <grpcpp/client_context.h>
+#include <grpcpp/security/credentials.h>
 
 #include "src/core/lib/transport/byte_stream.h"
 #include "src/proto/grpc/testing/empty.pb.h"
@@ -74,13 +74,15 @@ void UnaryCompressionChecks(const InteropClientContextInspector& inspector,
 }
 }  // namespace
 
-InteropClient::ServiceStub::ServiceStub(std::shared_ptr<Channel> channel,
-                                        bool new_stub_every_call)
-    : channel_(channel), new_stub_every_call_(new_stub_every_call) {
+InteropClient::ServiceStub::ServiceStub(
+    ChannelCreationFunc channel_creation_func, bool new_stub_every_call)
+    : channel_creation_func_(std::move(channel_creation_func)),
+      channel_(channel_creation_func_()),
+      new_stub_every_call_(new_stub_every_call) {
   // If new_stub_every_call is false, then this is our chance to initialize
   // stub_. (see Get())
   if (!new_stub_every_call) {
-    stub_ = TestService::NewStub(channel);
+    stub_ = TestService::NewStub(channel_);
   }
 }
 
@@ -100,29 +102,21 @@ InteropClient::ServiceStub::GetUnimplementedServiceStub() {
   return unimplemented_service_stub_.get();
 }
 
-void InteropClient::ServiceStub::Reset(std::shared_ptr<Channel> channel) {
-  channel_ = channel;
-
-  // Update stub_ as well. Note: If new_stub_every_call_ is true, we can reset
-  // the stub_ since the next call to Get() will create a new stub
-  if (new_stub_every_call_) {
-    stub_.reset();
-  } else {
-    stub_ = TestService::NewStub(channel);
+void InteropClient::ServiceStub::ResetChannel() {
+  channel_ = channel_creation_func_();
+  if (!new_stub_every_call_) {
+    stub_ = TestService::NewStub(channel_);
   }
 }
 
-void InteropClient::Reset(std::shared_ptr<Channel> channel) {
-  serviceStub_.Reset(channel);
-}
-
-InteropClient::InteropClient(std::shared_ptr<Channel> channel,
+InteropClient::InteropClient(ChannelCreationFunc channel_creation_func,
                              bool new_stub_every_test_case,
                              bool do_not_abort_on_transient_failures)
-    : serviceStub_(channel, new_stub_every_test_case),
+    : serviceStub_(std::move(channel_creation_func), new_stub_every_test_case),
       do_not_abort_on_transient_failures_(do_not_abort_on_transient_failures) {}
 
-bool InteropClient::AssertStatusOk(const Status& s) {
+bool InteropClient::AssertStatusOk(const Status& s,
+                                   const grpc::string& optional_debug_string) {
   if (s.ok()) {
     return true;
   }
@@ -131,17 +125,21 @@ bool InteropClient::AssertStatusOk(const Status& s) {
   // already checked for s.ok() above). So, the following will call abort()
   // (unless s.error_code() corresponds to a transient failure and
   // 'do_not_abort_on_transient_failures' is true)
-  return AssertStatusCode(s, StatusCode::OK);
+  return AssertStatusCode(s, StatusCode::OK, optional_debug_string);
 }
 
-bool InteropClient::AssertStatusCode(const Status& s,
-                                     StatusCode expected_code) {
+bool InteropClient::AssertStatusCode(
+    const Status& s, StatusCode expected_code,
+    const grpc::string& optional_debug_string) {
   if (s.error_code() == expected_code) {
     return true;
   }
 
-  gpr_log(GPR_ERROR, "Error status code: %d (expected: %d), message: %s",
-          s.error_code(), expected_code, s.error_message().c_str());
+  gpr_log(GPR_ERROR,
+          "Error status code: %d (expected: %d), message: %s,"
+          " debug string: %s",
+          s.error_code(), expected_code, s.error_message().c_str(),
+          optional_debug_string.c_str());
 
   // In case of transient transient/retryable failures (like a broken
   // connection) we may or may not abort (see TransientFailureOrAbort())
@@ -161,7 +159,7 @@ bool InteropClient::DoEmpty() {
 
   Status s = serviceStub_.Get()->EmptyCall(&context, request, &response);
 
-  if (!AssertStatusOk(s)) {
+  if (!AssertStatusOk(s, context.debug_error_string())) {
     return false;
   }
 
@@ -176,7 +174,7 @@ bool InteropClient::PerformLargeUnary(SimpleRequest* request,
 
 bool InteropClient::PerformLargeUnary(SimpleRequest* request,
                                       SimpleResponse* response,
-                                      CheckerFn custom_checks_fn) {
+                                      const CheckerFn& custom_checks_fn) {
   ClientContext context;
   InteropClientContextInspector inspector(context);
   request->set_response_size(kLargeResponseSize);
@@ -191,7 +189,7 @@ bool InteropClient::PerformLargeUnary(SimpleRequest* request,
   }
 
   Status s = serviceStub_.Get()->UnaryCall(&context, *request, response);
-  if (!AssertStatusOk(s)) {
+  if (!AssertStatusOk(s, context.debug_error_string())) {
     return false;
   }
 
@@ -241,7 +239,7 @@ bool InteropClient::DoOauth2AuthToken(const grpc::string& username,
 
   Status s = serviceStub_.Get()->UnaryCall(&context, request, &response);
 
-  if (!AssertStatusOk(s)) {
+  if (!AssertStatusOk(s, context.debug_error_string())) {
     return false;
   }
 
@@ -269,7 +267,7 @@ bool InteropClient::DoPerRpcCreds(const grpc::string& json_key) {
 
   Status s = serviceStub_.Get()->UnaryCall(&context, request, &response);
 
-  if (!AssertStatusOk(s)) {
+  if (!AssertStatusOk(s, context.debug_error_string())) {
     return false;
   }
 
@@ -293,6 +291,25 @@ bool InteropClient::DoJwtTokenCreds(const grpc::string& username) {
   GPR_ASSERT(!response.username().empty());
   GPR_ASSERT(username.find(response.username()) != grpc::string::npos);
   gpr_log(GPR_DEBUG, "Large unary with JWT token creds done.");
+  return true;
+}
+
+bool InteropClient::DoGoogleDefaultCredentials(
+    const grpc::string& default_service_account) {
+  gpr_log(GPR_DEBUG,
+          "Sending a large unary rpc with GoogleDefaultCredentials...");
+  SimpleRequest request;
+  SimpleResponse response;
+  request.set_fill_username(true);
+
+  if (!PerformLargeUnary(&request, &response)) {
+    return false;
+  }
+
+  gpr_log(GPR_DEBUG, "Got username %s", response.username().c_str());
+  GPR_ASSERT(!response.username().empty());
+  GPR_ASSERT(response.username().c_str() == default_service_account);
+  gpr_log(GPR_DEBUG, "Large unary rpc with GoogleDefaultCredentials done.");
   return true;
 }
 
@@ -412,7 +429,7 @@ bool InteropClient::DoRequestStreaming() {
   GPR_ASSERT(stream->WritesDone());
 
   Status s = stream->Finish();
-  if (!AssertStatusOk(s)) {
+  if (!AssertStatusOk(s, context.debug_error_string())) {
     return false;
   }
 
@@ -451,7 +468,7 @@ bool InteropClient::DoResponseStreaming() {
   }
 
   Status s = stream->Finish();
-  if (!AssertStatusOk(s)) {
+  if (!AssertStatusOk(s, context.debug_error_string())) {
     return false;
   }
 
@@ -516,7 +533,7 @@ bool InteropClient::DoClientCompressedStreaming() {
   GPR_ASSERT(stream->WritesDone());
 
   s = stream->Finish();
-  if (!AssertStatusOk(s)) {
+  if (!AssertStatusOk(s, context.debug_error_string())) {
     return false;
   }
 
@@ -578,7 +595,7 @@ bool InteropClient::DoServerCompressedStreaming() {
   }
 
   Status s = stream->Finish();
-  if (!AssertStatusOk(s)) {
+  if (!AssertStatusOk(s, context.debug_error_string())) {
     return false;
   }
   return true;
@@ -619,7 +636,7 @@ bool InteropClient::DoResponseStreamingWithSlowConsumer() {
   }
 
   Status s = stream->Finish();
-  if (!AssertStatusOk(s)) {
+  if (!AssertStatusOk(s, context.debug_error_string())) {
     return false;
   }
 
@@ -666,7 +683,7 @@ bool InteropClient::DoHalfDuplex() {
   }
 
   Status s = stream->Finish();
-  if (!AssertStatusOk(s)) {
+  if (!AssertStatusOk(s, context.debug_error_string())) {
     return false;
   }
 
@@ -710,7 +727,7 @@ bool InteropClient::DoPingPong() {
   GPR_ASSERT(!stream->Read(&response));
 
   Status s = stream->Finish();
-  if (!AssertStatusOk(s)) {
+  if (!AssertStatusOk(s, context.debug_error_string())) {
     return false;
   }
 
@@ -732,7 +749,8 @@ bool InteropClient::DoCancelAfterBegin() {
   context.TryCancel();
   Status s = stream->Finish();
 
-  if (!AssertStatusCode(s, StatusCode::CANCELLED)) {
+  if (!AssertStatusCode(s, StatusCode::CANCELLED,
+                        context.debug_error_string())) {
     return false;
   }
 
@@ -790,7 +808,8 @@ bool InteropClient::DoTimeoutOnSleepingServer() {
   stream->Write(request);
 
   Status s = stream->Finish();
-  if (!AssertStatusCode(s, StatusCode::DEADLINE_EXCEEDED)) {
+  if (!AssertStatusCode(s, StatusCode::DEADLINE_EXCEEDED,
+                        context.debug_error_string())) {
     return false;
   }
 
@@ -810,7 +829,7 @@ bool InteropClient::DoEmptyStream() {
   GPR_ASSERT(stream->Read(&response) == false);
 
   Status s = stream->Finish();
-  if (!AssertStatusOk(s)) {
+  if (!AssertStatusOk(s, context.debug_error_string())) {
     return false;
   }
 
@@ -833,7 +852,8 @@ bool InteropClient::DoStatusWithMessage() {
   requested_status->set_code(test_code);
   requested_status->set_message(test_msg);
   Status s = serviceStub_.Get()->UnaryCall(&context, request, &response);
-  if (!AssertStatusCode(s, grpc::StatusCode::UNKNOWN)) {
+  if (!AssertStatusCode(s, grpc::StatusCode::UNKNOWN,
+                        context.debug_error_string())) {
     return false;
   }
   GPR_ASSERT(s.error_message() == test_msg);
@@ -853,7 +873,8 @@ bool InteropClient::DoStatusWithMessage() {
   while (stream->Read(&streaming_response))
     ;
   s = stream->Finish();
-  if (!AssertStatusCode(s, grpc::StatusCode::UNKNOWN)) {
+  if (!AssertStatusCode(s, grpc::StatusCode::UNKNOWN,
+                        context.debug_error_string())) {
     return false;
   }
   GPR_ASSERT(s.error_message() == test_msg);
@@ -867,7 +888,8 @@ bool InteropClient::DoCacheableUnary() {
 
   // Create request with current timestamp
   gpr_timespec ts = gpr_now(GPR_CLOCK_PRECISE);
-  std::string timestamp = std::to_string((long long unsigned)ts.tv_nsec);
+  std::string timestamp =
+      std::to_string(static_cast<long long unsigned>(ts.tv_nsec));
   SimpleRequest request;
   request.mutable_payload()->set_body(timestamp.c_str(), timestamp.size());
 
@@ -880,7 +902,7 @@ bool InteropClient::DoCacheableUnary() {
   context1.AddMetadata("x-user-ip", "1.2.3.4");
   Status s1 =
       serviceStub_.Get()->CacheableUnaryCall(&context1, request, &response1);
-  if (!AssertStatusOk(s1)) {
+  if (!AssertStatusOk(s1, context1.debug_error_string())) {
     return false;
   }
   gpr_log(GPR_DEBUG, "response 1 payload: %s",
@@ -893,7 +915,7 @@ bool InteropClient::DoCacheableUnary() {
   context2.AddMetadata("x-user-ip", "1.2.3.4");
   Status s2 =
       serviceStub_.Get()->CacheableUnaryCall(&context2, request, &response2);
-  if (!AssertStatusOk(s2)) {
+  if (!AssertStatusOk(s2, context2.debug_error_string())) {
     return false;
   }
   gpr_log(GPR_DEBUG, "response 2 payload: %s",
@@ -906,7 +928,7 @@ bool InteropClient::DoCacheableUnary() {
   // Request 3
   // Modify the request body so it will not get a cache hit
   ts = gpr_now(GPR_CLOCK_PRECISE);
-  timestamp = std::to_string((long long unsigned)ts.tv_nsec);
+  timestamp = std::to_string(static_cast<long long unsigned>(ts.tv_nsec));
   SimpleRequest request1;
   request1.mutable_payload()->set_body(timestamp.c_str(), timestamp.size());
   ClientContext context3;
@@ -915,7 +937,7 @@ bool InteropClient::DoCacheableUnary() {
   context3.AddMetadata("x-user-ip", "1.2.3.4");
   Status s3 =
       serviceStub_.Get()->CacheableUnaryCall(&context3, request1, &response3);
-  if (!AssertStatusOk(s3)) {
+  if (!AssertStatusOk(s3, context3.debug_error_string())) {
     return false;
   }
   gpr_log(GPR_DEBUG, "response 3 payload: %s",
@@ -923,6 +945,32 @@ bool InteropClient::DoCacheableUnary() {
 
   // Check that the response is different from the previous response.
   GPR_ASSERT(response3.payload().body() != response1.payload().body());
+  return true;
+}
+
+bool InteropClient::DoPickFirstUnary() {
+  const int rpcCount = 100;
+  SimpleRequest request;
+  SimpleResponse response;
+  std::string server_id;
+  request.set_fill_server_id(true);
+  for (int i = 0; i < rpcCount; i++) {
+    ClientContext context;
+    Status s = serviceStub_.Get()->UnaryCall(&context, request, &response);
+    if (!AssertStatusOk(s, context.debug_error_string())) {
+      return false;
+    }
+    if (i == 0) {
+      server_id = response.server_id();
+      continue;
+    }
+    if (response.server_id() != server_id) {
+      gpr_log(GPR_ERROR, "#%d rpc hits server_id %s, expect server_id %s", i,
+              response.server_id().c_str(), server_id.c_str());
+      return false;
+    }
+  }
+  gpr_log(GPR_DEBUG, "pick first unary successfully finished");
   return true;
 }
 
@@ -946,7 +994,7 @@ bool InteropClient::DoCustomMetadata() {
     request.mutable_payload()->set_body(payload.c_str(), kLargeRequestSize);
 
     Status s = serviceStub_.Get()->UnaryCall(&context, request, &response);
-    if (!AssertStatusOk(s)) {
+    if (!AssertStatusOk(s, context.debug_error_string())) {
       return false;
     }
 
@@ -997,7 +1045,7 @@ bool InteropClient::DoCustomMetadata() {
     GPR_ASSERT(!stream->Read(&response));
 
     Status s = stream->Finish();
-    if (!AssertStatusOk(s)) {
+    if (!AssertStatusOk(s, context.debug_error_string())) {
       return false;
     }
 
@@ -1017,6 +1065,66 @@ bool InteropClient::DoCustomMetadata() {
   return true;
 }
 
+bool InteropClient::DoRpcSoakTest(int32_t soak_iterations) {
+  gpr_log(GPR_DEBUG, "Sending %d RPCs...", soak_iterations);
+  GPR_ASSERT(soak_iterations > 0);
+  SimpleRequest request;
+  SimpleResponse response;
+  for (int i = 0; i < soak_iterations; ++i) {
+    if (!PerformLargeUnary(&request, &response)) {
+      gpr_log(GPR_ERROR, "rpc_soak test failed on iteration %d", i);
+      return false;
+    }
+  }
+  gpr_log(GPR_DEBUG, "rpc_soak test done.");
+  return true;
+}
+
+bool InteropClient::DoChannelSoakTest(int32_t soak_iterations) {
+  gpr_log(GPR_DEBUG, "Sending %d RPCs, tearing down the channel each time...",
+          soak_iterations);
+  GPR_ASSERT(soak_iterations > 0);
+  SimpleRequest request;
+  SimpleResponse response;
+  for (int i = 0; i < soak_iterations; ++i) {
+    serviceStub_.ResetChannel();
+    if (!PerformLargeUnary(&request, &response)) {
+      gpr_log(GPR_ERROR, "channel_soak test failed on iteration %d", i);
+      return false;
+    }
+  }
+  gpr_log(GPR_DEBUG, "channel_soak test done.");
+  return true;
+}
+
+bool InteropClient::DoLongLivedChannelTest(int32_t soak_iterations,
+                                           int32_t iteration_interval) {
+  gpr_log(GPR_DEBUG, "Sending %d RPCs...", soak_iterations);
+  GPR_ASSERT(soak_iterations > 0);
+  GPR_ASSERT(iteration_interval > 0);
+  SimpleRequest request;
+  SimpleResponse response;
+  int num_failures = 0;
+  for (int i = 0; i < soak_iterations; ++i) {
+    gpr_log(GPR_DEBUG, "Sending RPC number %d...", i);
+    if (!PerformLargeUnary(&request, &response)) {
+      gpr_log(GPR_ERROR, "Iteration %d failed.", i);
+      num_failures++;
+    }
+    gpr_sleep_until(
+        gpr_time_add(gpr_now(GPR_CLOCK_REALTIME),
+                     gpr_time_from_seconds(iteration_interval, GPR_TIMESPAN)));
+  }
+  if (num_failures == 0) {
+    gpr_log(GPR_DEBUG, "long_lived_channel test done.");
+    return true;
+  } else {
+    gpr_log(GPR_DEBUG, "long_lived_channel test failed with %d rpc failures.",
+            num_failures);
+    return false;
+  }
+}
+
 bool InteropClient::DoUnimplementedService() {
   gpr_log(GPR_DEBUG, "Sending a request for an unimplemented service...");
 
@@ -1028,7 +1136,8 @@ bool InteropClient::DoUnimplementedService() {
 
   Status s = stub->UnimplementedCall(&context, request, &response);
 
-  if (!AssertStatusCode(s, StatusCode::UNIMPLEMENTED)) {
+  if (!AssertStatusCode(s, StatusCode::UNIMPLEMENTED,
+                        context.debug_error_string())) {
     return false;
   }
 
@@ -1046,7 +1155,8 @@ bool InteropClient::DoUnimplementedMethod() {
   Status s =
       serviceStub_.Get()->UnimplementedCall(&context, request, &response);
 
-  if (!AssertStatusCode(s, StatusCode::UNIMPLEMENTED)) {
+  if (!AssertStatusCode(s, StatusCode::UNIMPLEMENTED,
+                        context.debug_error_string())) {
     return false;
   }
 

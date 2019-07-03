@@ -27,8 +27,8 @@ class _UnaryUnary(grpc_testing.UnaryUnaryChannelRpc):
         self._rpc_state.cancelled()
 
     def terminate(self, response, trailing_metadata, code, details):
-        self._rpc_state.terminate_with_response(
-            response, trailing_metadata, code, details)
+        self._rpc_state.terminate_with_response(response, trailing_metadata,
+                                                code, details)
 
 
 class _UnaryStream(grpc_testing.UnaryStreamChannelRpc):
@@ -67,8 +67,8 @@ class _StreamUnary(grpc_testing.StreamUnaryChannelRpc):
         self._rpc_state.cancelled()
 
     def terminate(self, response, trailing_metadata, code, details):
-        self._rpc_state.terminate_with_response(
-            response, trailing_metadata, code, details)
+        self._rpc_state.terminate_with_response(response, trailing_metadata,
+                                                code, details)
 
 
 class _StreamStream(grpc_testing.StreamStreamChannelRpc):

@@ -35,7 +35,7 @@ updating.
 The example code for our tutorial is in [examples/cpp/route_guide](route_guide).
 You also should have the relevant tools installed to generate the server and
 client interface code - if you don't already, follow the setup instructions in
-[INSTALL.md](../../INSTALL.md).
+[BUILDING.md](../../BUILDING.md).
 
 ## Defining the service
 
@@ -130,7 +130,7 @@ a special gRPC C++ plugin.
 For simplicity, we've provided a [Makefile](route_guide/Makefile) that runs
 `protoc` for you with the appropriate plugin, input, and output (if you want to
 run this yourself, make sure you've installed protoc and followed the gRPC code
-[installation instructions](../../INSTALL.md) first):
+[installation instructions](../../BUILDING.md) first):
 
 ```shell
 $ make route_guide.grpc.pb.cc route_guide.pb.cc

@@ -25,6 +25,7 @@ enum ClientType {
   SYNC_CLIENT = 0;
   ASYNC_CLIENT = 1;
   OTHER_CLIENT = 2; // used for some language-specific variants
+  CALLBACK_CLIENT = 3;
 }
 
 enum ServerType {
@@ -32,6 +33,7 @@ enum ServerType {
   ASYNC_SERVER = 1;
   ASYNC_GENERIC_SERVER = 2;
   OTHER_SERVER = 3; // used for some language-specific variants
+  CALLBACK_SERVER = 4;
 }
 
 enum RpcType {
@@ -108,6 +110,13 @@ message ClientConfig {
 
   // Number of messages on a stream before it gets finished/restarted
   int32 messages_per_stream = 18;
+
+  // Use coalescing API when possible.
+  bool use_coalesce_api = 19;
+
+  // If 0, disabled. Else, specifies the period between gathering latency
+  // medians in milliseconds.
+  int32 median_latency_collection_interval_millis = 20;
 }
 
 message ClientStatus { ClientStats stats = 1; }

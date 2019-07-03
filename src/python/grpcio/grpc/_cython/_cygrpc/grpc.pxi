@@ -14,17 +14,22 @@
 
 cimport libc.time
 
-
-# Typedef types with approximately the same semantics to provide their names to
-# Cython
-ctypedef int int32_t
-ctypedef unsigned uint32_t
-ctypedef long int64_t
+ctypedef          ssize_t   intptr_t
+ctypedef          size_t    uintptr_t
+ctypedef   signed char      int8_t
+ctypedef   signed short     int16_t
+ctypedef   signed int       int32_t
+ctypedef   signed long long int64_t
+ctypedef unsigned char      uint8_t
+ctypedef unsigned short     uint16_t
+ctypedef unsigned int       uint32_t
+ctypedef unsigned long long uint64_t
 
 
 cdef extern from "grpc/support/alloc.h":
 
   void *gpr_malloc(size_t size) nogil
+  void *gpr_zalloc(size_t size) nogil
   void gpr_free(void *ptr) nogil
   void *gpr_realloc(void *p, size_t size) nogil
 
@@ -32,13 +37,6 @@ cdef extern from "grpc/support/alloc.h":
 cdef extern from "grpc/byte_buffer_reader.h":
 
   struct grpc_byte_buffer_reader:
-    # We don't care about the internals
-    pass
-
-
-cdef extern from "grpc/impl/codegen/exec_ctx_fwd.h":
-
-  struct grpc_exec_ctx:
     # We don't care about the internals
     pass
 
@@ -65,6 +63,10 @@ cdef extern from "grpc/grpc.h":
   void *grpc_slice_start_ptr "GRPC_SLICE_START_PTR" (grpc_slice s) nogil
   size_t grpc_slice_length "GRPC_SLICE_LENGTH" (grpc_slice s) nogil
 
+  const int GPR_MS_PER_SEC
+  const int GPR_US_PER_SEC
+  const int GPR_NS_PER_SEC
+
   ctypedef enum gpr_clock_type:
     GPR_CLOCK_MONOTONIC
     GPR_CLOCK_REALTIME
@@ -86,6 +88,8 @@ cdef extern from "grpc/grpc.h":
                                       gpr_clock_type target_clock) nogil
 
   gpr_timespec gpr_time_from_millis(int64_t ms, gpr_clock_type type) nogil
+  gpr_timespec gpr_time_from_nanos(int64_t ns, gpr_clock_type type) nogil
+  double gpr_timespec_to_micros(gpr_timespec t) nogil
 
   gpr_timespec gpr_time_add(gpr_timespec a, gpr_timespec b) nogil
 
@@ -126,7 +130,6 @@ cdef extern from "grpc/grpc.h":
     GRPC_STATUS_DATA_LOSS
     GRPC_STATUS__DO_NOT_USE
 
-  const char *GRPC_ARG_PRIMARY_USER_AGENT_STRING
   const char *GRPC_ARG_ENABLE_CENSUS
   const char *GRPC_ARG_MAX_CONCURRENT_STREAMS
   const char *GRPC_ARG_MAX_RECEIVE_MESSAGE_LENGTH
@@ -136,13 +139,19 @@ cdef extern from "grpc/grpc.h":
   const char *GRPC_ARG_PRIMARY_USER_AGENT_STRING
   const char *GRPC_ARG_SECONDARY_USER_AGENT_STRING
   const char *GRPC_SSL_TARGET_NAME_OVERRIDE_ARG
-  const char *GRPC_COMPRESSION_CHANNEL_DEFAULT_ALGORITHM
+  const char *GRPC_SSL_SESSION_CACHE_ARG
+  const char *_GRPC_COMPRESSION_CHANNEL_DEFAULT_ALGORITHM \
+    "GRPC_COMPRESSION_CHANNEL_DEFAULT_ALGORITHM"
   const char *GRPC_COMPRESSION_CHANNEL_DEFAULT_LEVEL
   const char *GRPC_COMPRESSION_CHANNEL_ENABLED_ALGORITHMS_BITSET
 
   const int GRPC_WRITE_BUFFER_HINT
   const int GRPC_WRITE_NO_COMPRESS
   const int GRPC_WRITE_USED_MASK
+
+  const int GRPC_INITIAL_METADATA_WAIT_FOR_READY
+  const int GRPC_INITIAL_METADATA_WAIT_FOR_READY_EXPLICITLY_SET
+  const int GRPC_INITIAL_METADATA_USED_MASK
 
   const int GRPC_MAX_COMPLETION_QUEUE_PLUCKERS
 
@@ -169,7 +178,7 @@ cdef extern from "grpc/grpc.h":
 
   ctypedef struct grpc_arg_pointer_vtable:
     void *(*copy)(void *)
-    void (*destroy)(grpc_exec_ctx *, void *)
+    void (*destroy)(void *)
     int (*cmp)(void *, void *)
 
   ctypedef struct grpc_arg_value_pointer:
@@ -189,6 +198,12 @@ cdef extern from "grpc/grpc.h":
   ctypedef struct grpc_channel_args:
     size_t arguments_length "num_args"
     grpc_arg *arguments "args"
+
+  ctypedef enum grpc_stream_compression_level:
+    GRPC_STREAM_COMPRESS_LEVEL_NONE
+    GRPC_STREAM_COMPRESS_LEVEL_LOW
+    GRPC_STREAM_COMPRESS_LEVEL_MED
+    GRPC_STREAM_COMPRESS_LEVEL_HIGH
 
   ctypedef enum grpc_call_error:
     GRPC_CALL_OK
@@ -265,9 +280,14 @@ cdef extern from "grpc/grpc.h":
     GRPC_OP_RECV_STATUS_ON_CLIENT
     GRPC_OP_RECV_CLOSE_ON_SERVER
 
+  ctypedef struct grpc_op_send_initial_metadata_maybe_compression_level:
+    uint8_t is_set
+    grpc_compression_level level
+
   ctypedef struct grpc_op_data_send_initial_metadata:
     size_t count
     grpc_metadata *metadata
+    grpc_op_send_initial_metadata_maybe_compression_level maybe_compression_level
 
   ctypedef struct grpc_op_data_send_status_from_server:
     size_t trailing_metadata_count
@@ -279,6 +299,7 @@ cdef extern from "grpc/grpc.h":
     grpc_metadata_array *trailing_metadata
     grpc_status_code *status
     grpc_slice *status_details
+    char** error_string
 
   ctypedef struct grpc_op_data_recv_close_on_server:
     int *cancelled
@@ -307,7 +328,8 @@ cdef extern from "grpc/grpc.h":
     grpc_op_data data
 
   void grpc_init() nogil
-  void grpc_shutdown() nogil
+  void grpc_shutdown_blocking() nogil
+  int grpc_is_initialized() nogil
 
   ctypedef struct grpc_completion_queue_factory:
     pass
@@ -372,6 +394,16 @@ cdef extern from "grpc/grpc.h":
   void grpc_server_cancel_all_calls(grpc_server *server) nogil
   void grpc_server_destroy(grpc_server *server) nogil
 
+  char* grpc_channelz_get_top_channels(intptr_t start_channel_id)
+  char* grpc_channelz_get_servers(intptr_t start_server_id)
+  char* grpc_channelz_get_server(intptr_t server_id)
+  char* grpc_channelz_get_server_sockets(intptr_t server_id,
+                                         intptr_t start_socket_id,
+                                         intptr_t max_results)
+  char* grpc_channelz_get_channel(intptr_t channel_id)
+  char* grpc_channelz_get_subchannel(intptr_t subchannel_id)
+  char* grpc_channelz_get_socket(intptr_t socket_id)
+
 
 cdef extern from "grpc/grpc_security.h":
 
@@ -391,6 +423,42 @@ cdef extern from "grpc/grpc_security.h":
     GRPC_SSL_REQUEST_AND_REQUIRE_CLIENT_CERTIFICATE_BUT_DONT_VERIFY
     GRPC_SSL_REQUEST_AND_REQUIRE_CLIENT_CERTIFICATE_AND_VERIFY
 
+  ctypedef enum grpc_ssl_certificate_config_reload_status:
+    GRPC_SSL_CERTIFICATE_CONFIG_RELOAD_UNCHANGED
+    GRPC_SSL_CERTIFICATE_CONFIG_RELOAD_NEW
+    GRPC_SSL_CERTIFICATE_CONFIG_RELOAD_FAIL
+
+  ctypedef struct grpc_ssl_server_certificate_config:
+    # We don't care about the internals
+    pass
+
+  ctypedef struct grpc_ssl_server_credentials_options:
+    # We don't care about the internals
+    pass
+
+  grpc_ssl_server_certificate_config * grpc_ssl_server_certificate_config_create(
+    const char *pem_root_certs,
+    const grpc_ssl_pem_key_cert_pair *pem_key_cert_pairs,
+    size_t num_key_cert_pairs)
+
+  void grpc_ssl_server_certificate_config_destroy(grpc_ssl_server_certificate_config *config)
+
+  ctypedef grpc_ssl_certificate_config_reload_status (*grpc_ssl_server_certificate_config_callback)(
+    void *user_data,
+    grpc_ssl_server_certificate_config **config)
+
+  grpc_ssl_server_credentials_options *grpc_ssl_server_credentials_create_options_using_config(
+    grpc_ssl_client_certificate_request_type client_certificate_request,
+    grpc_ssl_server_certificate_config *certificate_config)
+
+  grpc_ssl_server_credentials_options* grpc_ssl_server_credentials_create_options_using_config_fetcher(
+    grpc_ssl_client_certificate_request_type client_certificate_request,
+    grpc_ssl_server_certificate_config_callback cb,
+    void *user_data)
+
+  grpc_server_credentials *grpc_ssl_server_credentials_create_with_options(
+      grpc_ssl_server_credentials_options *options)
+
   ctypedef struct grpc_ssl_pem_key_cert_pair:
     const char *private_key
     const char *certificate_chain "cert_chain"
@@ -403,7 +471,18 @@ cdef extern from "grpc/grpc_security.h":
     # We don't care about the internals (and in fact don't know them)
     pass
 
+  ctypedef struct grpc_ssl_session_cache:
+    # We don't care about the internals (and in fact don't know them)
+    pass
+
+  ctypedef struct verify_peer_options:
+    # We don't care about the internals (and in fact don't know them)
+    pass
+
   ctypedef void (*grpc_ssl_roots_override_callback)(char **pem_root_certs)
+
+  grpc_ssl_session_cache *grpc_ssl_session_cache_create_lru(size_t capacity)
+  void grpc_ssl_session_cache_destroy(grpc_ssl_session_cache* cache)
 
   void grpc_set_ssl_roots_override_callback(
       grpc_ssl_roots_override_callback cb) nogil
@@ -411,7 +490,7 @@ cdef extern from "grpc/grpc_security.h":
   grpc_channel_credentials *grpc_google_default_credentials_create() nogil
   grpc_channel_credentials *grpc_ssl_credentials_create(
       const char *pem_root_certs, grpc_ssl_pem_key_cert_pair *pem_key_cert_pair,
-      void *reserved) nogil
+      verify_peer_options *verify_options, void *reserved) nogil
   grpc_channel_credentials *grpc_composite_channel_credentials_create(
       grpc_channel_credentials *creds1, grpc_call_credentials *creds2,
       void *reserved) nogil
@@ -440,10 +519,6 @@ cdef extern from "grpc/grpc_security.h":
     # We don't care about the internals (and in fact don't know them)
     pass
 
-  grpc_server_credentials *grpc_ssl_server_credentials_create(
-      const char *pem_root_certs,
-      grpc_ssl_pem_key_cert_pair *pem_key_cert_pairs,
-      size_t num_key_cert_pairs, int force_client_auth, void *reserved)
   void grpc_server_credentials_release(grpc_server_credentials *creds) nogil
 
   int grpc_server_add_secure_http2_port(grpc_server *server, const char *addr,
@@ -471,8 +546,8 @@ cdef extern from "grpc/grpc_security.h":
         grpc_credentials_plugin_metadata_cb cb, void *user_data,
         grpc_metadata creds_md[GRPC_METADATA_CREDENTIALS_PLUGIN_SYNC_MAX],
         size_t *num_creds_md, grpc_status_code *status,
-        const char **error_details)
-    void (*destroy)(void *state)
+        const char **error_details) except *
+    void (*destroy)(void *state) except *
     void *state
     const char *type
 
@@ -492,7 +567,7 @@ cdef extern from "grpc/grpc_security.h":
 
   grpc_auth_property_iterator grpc_auth_context_property_iterator(
       const grpc_auth_context *ctx)
- 
+
   grpc_auth_property_iterator grpc_auth_context_peer_identity(
       const grpc_auth_context *ctx)
 
@@ -515,6 +590,7 @@ cdef extern from "grpc/compression.h":
     GRPC_COMPRESS_NONE
     GRPC_COMPRESS_DEFLATE
     GRPC_COMPRESS_GZIP
+    GRPC_COMPRESS_STREAM_GZIP
     GRPC_COMPRESS_ALGORITHMS_COUNT
 
   ctypedef enum grpc_compression_level:
@@ -543,3 +619,8 @@ cdef extern from "grpc/compression.h":
   int grpc_compression_options_is_algorithm_enabled(
       const grpc_compression_options *opts,
       grpc_compression_algorithm algorithm) nogil
+
+cdef extern from "grpc/impl/codegen/compression_types.h":
+
+  const char *_GRPC_COMPRESSION_REQUEST_ALGORITHM_MD_KEY \
+    "GRPC_COMPRESSION_REQUEST_ALGORITHM_MD_KEY"

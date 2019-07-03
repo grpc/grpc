@@ -25,7 +25,6 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/time.h>
-#include <grpc/support/useful.h>
 #include "test/core/end2end/cq_verifier.h"
 
 static void* tag(intptr_t t) { return (void*)t; }
@@ -93,11 +92,9 @@ static void test_early_server_shutdown_finishes_inflight_calls(
   int was_cancelled = 2;
 
   gpr_timespec deadline = five_seconds_from_now();
-  c = grpc_channel_create_call(
-      f.client, nullptr, GRPC_PROPAGATE_DEFAULTS, f.cq,
-      grpc_slice_from_static_string("/foo"),
-      get_host_override_slice("foo.test.google.fr:1234", config), deadline,
-      nullptr);
+  c = grpc_channel_create_call(f.client, nullptr, GRPC_PROPAGATE_DEFAULTS, f.cq,
+                               grpc_slice_from_static_string("/foo"), nullptr,
+                               deadline, nullptr);
   GPR_ASSERT(c);
 
   grpc_metadata_array_init(&initial_metadata_recv);
@@ -129,7 +126,8 @@ static void test_early_server_shutdown_finishes_inflight_calls(
   op->flags = 0;
   op->reserved = nullptr;
   op++;
-  error = grpc_call_start_batch(c, ops, (size_t)(op - ops), tag(1), nullptr);
+  error = grpc_call_start_batch(c, ops, static_cast<size_t>(op - ops), tag(1),
+                                nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
   error =
@@ -146,8 +144,16 @@ static void test_early_server_shutdown_finishes_inflight_calls(
   op->flags = 0;
   op->reserved = nullptr;
   op++;
-  error = grpc_call_start_batch(s, ops, (size_t)(op - ops), tag(102), nullptr);
+  error = grpc_call_start_batch(s, ops, static_cast<size_t>(op - ops), tag(102),
+                                nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
+
+  /* Make sure we don't shutdown the server while HTTP/2 PING frames are still
+   * being exchanged on the newly established connection. It can lead to
+   * failures when testing with HTTP proxy. See
+   * https://github.com/grpc/grpc/issues/14471
+   */
+  gpr_sleep_until(n_seconds_from_now(1));
 
   /* shutdown and destroy the server */
   grpc_server_shutdown_and_notify(f.server, f.cq, tag(1000));
@@ -164,8 +170,6 @@ static void test_early_server_shutdown_finishes_inflight_calls(
   GPR_ASSERT(status == GRPC_STATUS_INTERNAL ||
              status == GRPC_STATUS_UNAVAILABLE);
   GPR_ASSERT(0 == grpc_slice_str_cmp(call_details.method, "/foo"));
-  validate_host_override_string("foo.test.google.fr:1234", call_details.host,
-                                config);
   GPR_ASSERT(was_cancelled == 1);
 
   grpc_slice_unref(details);

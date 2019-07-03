@@ -18,6 +18,7 @@
 
 #include "test/core/util/test_config.h"
 
+#include <inttypes.h>
 #include <signal.h>
 #include <stdbool.h>
 #include <stdio.h>
@@ -27,15 +28,16 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 
-#include "src/core/lib/support/env.h"
-#include "src/core/lib/support/string.h"
+#include "src/core/lib/gpr/string.h"
+#include "src/core/lib/gpr/useful.h"
+#include "src/core/lib/surface/init.h"
 
 int64_t g_fixture_slowdown_factor = 1;
 int64_t g_poller_slowdown_factor = 1;
 
 #if GPR_GETPID_IN_UNISTD_H
 #include <unistd.h>
-static unsigned seed(void) { return (unsigned)getpid(); }
+static unsigned seed(void) { return static_cast<unsigned>(getpid()); }
 #endif
 
 #if GPR_GETPID_IN_PROCESS_H
@@ -196,7 +198,6 @@ static void install_crash_handler() {
 #elif GPR_POSIX_CRASH_HANDLER
 #include <errno.h>
 #include <execinfo.h>
-#include <grpc/support/useful.h>
 #include <stdio.h>
 #include <string.h>
 
@@ -264,7 +265,7 @@ static void install_crash_handler() {
   ss.ss_size = sizeof(g_alt_stack);
   ss.ss_sp = g_alt_stack;
   GPR_ASSERT(sigaltstack(&ss, nullptr) == 0);
-  sa.sa_flags = (int)(SA_SIGINFO | SA_ONSTACK | SA_RESETHAND);
+  sa.sa_flags = static_cast<int>(SA_SIGINFO | SA_ONSTACK | SA_RESETHAND);
   sa.sa_sigaction = crash_handler;
   GPR_ASSERT(sigaction(SIGILL, &sa, nullptr) == 0);
   GPR_ASSERT(sigaction(SIGABRT, &sa, nullptr) == 0);
@@ -365,26 +366,21 @@ int64_t grpc_test_slowdown_factor() {
 gpr_timespec grpc_timeout_seconds_to_deadline(int64_t time_s) {
   return gpr_time_add(
       gpr_now(GPR_CLOCK_MONOTONIC),
-      gpr_time_from_millis(grpc_test_slowdown_factor() * (int64_t)1e3 * time_s,
-                           GPR_TIMESPAN));
+      gpr_time_from_millis(
+          grpc_test_slowdown_factor() * static_cast<int64_t>(1e3) * time_s,
+          GPR_TIMESPAN));
 }
 
 gpr_timespec grpc_timeout_milliseconds_to_deadline(int64_t time_ms) {
   return gpr_time_add(
       gpr_now(GPR_CLOCK_MONOTONIC),
-      gpr_time_from_micros(grpc_test_slowdown_factor() * (int64_t)1e3 * time_ms,
-                           GPR_TIMESPAN));
+      gpr_time_from_micros(
+          grpc_test_slowdown_factor() * static_cast<int64_t>(1e3) * time_ms,
+          GPR_TIMESPAN));
 }
 
 void grpc_test_init(int argc, char** argv) {
   install_crash_handler();
-  { /* poll-cv poll strategy runs much more slowly than anything else */
-    char* s = gpr_getenv("GRPC_POLL_STRATEGY");
-    if (s != nullptr && 0 == strcmp(s, "poll-cv")) {
-      g_poller_slowdown_factor = 5;
-    }
-    gpr_free(s);
-  }
   gpr_log(GPR_DEBUG,
           "test slowdown factor: sanitizer=%" PRId64 ", fixture=%" PRId64
           ", poller=%" PRId64 ", total=%" PRId64,
@@ -394,3 +390,15 @@ void grpc_test_init(int argc, char** argv) {
      concurrently running test binary */
   srand(seed());
 }
+
+namespace grpc {
+namespace testing {
+
+TestEnvironment::TestEnvironment(int argc, char** argv) {
+  grpc_test_init(argc, argv);
+}
+
+TestEnvironment::~TestEnvironment() { grpc_maybe_wait_for_async_shutdown(); }
+
+}  // namespace testing
+}  // namespace grpc

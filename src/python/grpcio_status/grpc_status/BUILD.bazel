@@ -1,0 +1,14 @@
+load("@grpc_python_dependencies//:requirements.bzl", "requirement")
+
+package(default_visibility = ["//visibility:public"])
+
+py_library(
+    name = "grpc_status",
+    srcs = ["rpc_status.py",],
+    deps = [
+        "//src/python/grpcio/grpc:grpcio",
+        requirement('protobuf'),
+        requirement('googleapis-common-protos'),
+    ],
+    imports=["../",],
+)

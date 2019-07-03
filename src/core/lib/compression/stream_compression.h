@@ -19,16 +19,14 @@
 #ifndef GRPC_CORE_LIB_COMPRESSION_STREAM_COMPRESSION_H
 #define GRPC_CORE_LIB_COMPRESSION_STREAM_COMPRESSION_H
 
+#include <grpc/support/port_platform.h>
+
 #include <stdbool.h>
 
 #include <grpc/slice_buffer.h>
 #include <zlib.h>
 
 #include "src/core/lib/transport/static_metadata.h"
-
-#ifdef __cplusplus
-extern "C" {
-#endif
 
 typedef struct grpc_stream_compression_vtable grpc_stream_compression_vtable;
 
@@ -70,7 +68,7 @@ struct grpc_stream_compression_vtable {
  * at the end of compression. Emits at most \a max_output_size compressed bytes
  * into \a out. If all the bytes in input buffer \a in are depleted and \a flush
  * is not GRPC_STREAM_COMPRESSION_FLUSH_NONE, the corresponding flush method is
- * executed. The total number of bytes emitted is outputed in \a output_size.
+ * executed. The total number of bytes emitted is outputted in \a output_size.
  *
  * A SYNC flush indicates that the entire messages in \a in can be decompressed
  * from \a out. A FINISH flush implies a SYNC flush, and that any further
@@ -87,7 +85,7 @@ bool grpc_stream_compress(grpc_stream_compression_context* ctx,
  * Decompress bytes provided in \a in with a given context. Emits at most \a
  * max_output_size decompressed bytes into \a out. If decompression process
  * reached the end of a gzip stream, \a end_of_context is set to true; otherwise
- * it is set to false. The total number of bytes emitted is outputed in \a
+ * it is set to false. The total number of bytes emitted is outputted in \a
  * output_size.
  */
 bool grpc_stream_decompress(grpc_stream_compression_context* ctx,
@@ -114,9 +112,5 @@ void grpc_stream_compression_context_destroy(
  */
 int grpc_stream_compression_method_parse(
     grpc_slice value, bool is_compress, grpc_stream_compression_method* method);
-
-#ifdef __cplusplus
-}
-#endif
 
 #endif

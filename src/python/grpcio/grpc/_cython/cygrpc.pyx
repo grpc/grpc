@@ -11,23 +11,40 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+# distutils: language=c++
 
 cimport cpython
 
-import pkg_resources
 import os.path
 import sys
 
 # TODO(atash): figure out why the coverage tool gets confused about the Cython
 # coverage plugin when the following files don't have a '.pxi' suffix.
 include "_cygrpc/grpc_string.pyx.pxi"
+include "_cygrpc/arguments.pyx.pxi"
 include "_cygrpc/call.pyx.pxi"
 include "_cygrpc/channel.pyx.pxi"
+include "_cygrpc/channelz.pyx.pxi"
 include "_cygrpc/credentials.pyx.pxi"
 include "_cygrpc/completion_queue.pyx.pxi"
+include "_cygrpc/event.pyx.pxi"
+include "_cygrpc/metadata.pyx.pxi"
+include "_cygrpc/operation.pyx.pxi"
+include "_cygrpc/propagation_bits.pyx.pxi"
 include "_cygrpc/records.pyx.pxi"
 include "_cygrpc/security.pyx.pxi"
 include "_cygrpc/server.pyx.pxi"
+include "_cygrpc/tag.pyx.pxi"
+include "_cygrpc/time.pyx.pxi"
+include "_cygrpc/vtable.pyx.pxi"
+include "_cygrpc/_hooks.pyx.pxi"
+
+include "_cygrpc/grpc_gevent.pyx.pxi"
+
+IF UNAME_SYSNAME == "Windows":
+    include "_cygrpc/fork_windows.pyx.pxi"
+ELSE:
+    include "_cygrpc/fork_posix.pyx.pxi"
 
 #
 # initialize gRPC

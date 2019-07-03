@@ -66,7 +66,7 @@ static void free_chosen_ports(void) {
   for (i = 0; i < num_chosen_ports; i++) {
     grpc_free_port_using_server(chosen_ports[i]);
   }
-  grpc_shutdown();
+  grpc_shutdown_blocking();
   gpr_free(chosen_ports);
 }
 
@@ -75,8 +75,8 @@ static void chose_port(int port) {
     atexit(free_chosen_ports);
   }
   num_chosen_ports++;
-  chosen_ports =
-      (int*)gpr_realloc(chosen_ports, sizeof(int) * num_chosen_ports);
+  chosen_ports = static_cast<int*>(
+      gpr_realloc(chosen_ports, sizeof(int) * num_chosen_ports));
   chosen_ports[num_chosen_ports - 1] = port;
 }
 

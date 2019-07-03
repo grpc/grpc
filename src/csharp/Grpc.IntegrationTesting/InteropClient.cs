@@ -45,7 +45,7 @@ namespace Grpc.IntegrationTesting
             [Option("server_host", Default = "localhost")]
             public string ServerHost { get; set; }
 
-            [Option("server_host_override", Default = TestCredentials.DefaultHostOverride)]
+            [Option("server_host_override")]
             public string ServerHostOverride { get; set; }
 
             [Option("server_port", Required = true)]
@@ -184,6 +184,9 @@ namespace Grpc.IntegrationTesting
                     break;
                 case "unimplemented_service":
                     RunUnimplementedService(new UnimplementedService.UnimplementedServiceClient(channel));
+                    break;
+                case "special_status_message":
+                    await RunSpecialStatusMessageAsync(client);
                     break;
                 case "unimplemented_method":
                     RunUnimplementedMethod(client);
@@ -562,6 +565,33 @@ namespace Grpc.IntegrationTesting
                     Assert.AreEqual(StatusCode.Unknown, e.Status.StatusCode);
                     Assert.AreEqual(echoStatus.Message, e.Status.Detail);
                 }
+            }
+
+            Console.WriteLine("Passed!");
+        }
+
+        private static async Task RunSpecialStatusMessageAsync(TestService.TestServiceClient client)
+        {
+            Console.WriteLine("running special_status_message");
+
+            var echoStatus = new EchoStatus
+            {
+                Code = 2,
+                Message = "\t\ntest with whitespace\r\nand Unicode BMP ☺ and non-BMP 😈\t\n"
+            };
+
+            try
+            {
+                await client.UnaryCallAsync(new SimpleRequest
+                {
+                    ResponseStatus = echoStatus
+                });
+                Assert.Fail();
+            }
+            catch (RpcException e)
+            {
+                Assert.AreEqual(StatusCode.Unknown, e.Status.StatusCode);
+                Assert.AreEqual(echoStatus.Message, e.Status.Detail);
             }
 
             Console.WriteLine("Passed!");

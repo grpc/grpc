@@ -22,15 +22,15 @@
 #import <ProtoRPC/ProtoMethod.h>
 #import <RemoteTest/Messages.pbobjc.h>
 #import <RemoteTest/Test.pbrpc.h>
-#import <RxLibrary/GRXWriter+Immediate.h>
 #import <RxLibrary/GRXWriteable.h>
+#import <RxLibrary/GRXWriter+Immediate.h>
 
 @implementation ViewController
 
 - (void)viewDidLoad {
   [super viewDidLoad];
 
-  NSString * const kRemoteHost = @"grpc-test.sandbox.googleapis.com";
+  NSString *const kRemoteHost = @"grpc-test.sandbox.googleapis.com";
 
   RMTSimpleRequest *request = [[RMTSimpleRequest alloc] init];
   request.responseSize = 10;
@@ -40,14 +40,14 @@
   // Example gRPC call using a generated proto client library:
 
   RMTTestService *service = [[RMTTestService alloc] initWithHost:kRemoteHost];
-  [service unaryCallWithRequest:request handler:^(RMTSimpleResponse *response, NSError *error) {
-    if (response) {
-      NSLog(@"Finished successfully with response:\n%@", response);
-    } else if (error) {
-      NSLog(@"Finished with error: %@", error);
-    }
-  }];
-
+  [service unaryCallWithRequest:request
+                        handler:^(RMTSimpleResponse *response, NSError *error) {
+                          if (response) {
+                            NSLog(@"Finished successfully with response:\n%@", response);
+                          } else if (error) {
+                            NSLog(@"Finished with error: %@", error);
+                          }
+                        }];
 
   // Same example call using the generic gRPC client library:
 
@@ -61,16 +61,18 @@
                                              path:method.HTTPPath
                                    requestsWriter:requestsWriter];
 
-  id<GRXWriteable> responsesWriteable = [[GRXWriteable alloc] initWithValueHandler:^(NSData *value) {
-    RMTSimpleResponse *response = [RMTSimpleResponse parseFromData:value error:NULL];
-    NSLog(@"Received response:\n%@", response);
-  } completionHandler:^(NSError *errorOrNil) {
-    if (errorOrNil) {
-      NSLog(@"Finished with error: %@", errorOrNil);
-    } else {
-      NSLog(@"Finished successfully.");
-    }
-  }];
+  id<GRXWriteable> responsesWriteable =
+      [[GRXWriteable alloc] initWithValueHandler:^(NSData *value) {
+        RMTSimpleResponse *response = [RMTSimpleResponse parseFromData:value error:NULL];
+        NSLog(@"Received response:\n%@", response);
+      }
+          completionHandler:^(NSError *errorOrNil) {
+            if (errorOrNil) {
+              NSLog(@"Finished with error: %@", errorOrNil);
+            } else {
+              NSLog(@"Finished successfully.");
+            }
+          }];
 
   [call startWithWriteable:responsesWriteable];
 }

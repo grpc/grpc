@@ -37,20 +37,27 @@ PACKAGE_DIRECTORIES = {
 }
 
 INSTALL_REQUIRES = (
-    'coverage>=4.0', 'enum34>=1.0.4', 'futures>=2.2.0',
+    'coverage>=4.0', 'enum34>=1.0.4',
     'grpcio>={version}'.format(version=grpc_version.VERSION),
+    'grpcio-channelz>={version}'.format(version=grpc_version.VERSION),
+    'grpcio-status>={version}'.format(version=grpc_version.VERSION),
     'grpcio-tools>={version}'.format(version=grpc_version.VERSION),
     'grpcio-health-checking>={version}'.format(version=grpc_version.VERSION),
-    'oauth2client>=1.4.7', 'protobuf>=3.3.0', 'six>=1.10', 'google-auth>=1.0.0',
+    'oauth2client>=1.4.7', 'protobuf>=3.6.0', 'six>=1.10', 'google-auth>=1.0.0',
     'requests>=2.14.2')
+
+if not PY3:
+    INSTALL_REQUIRES += ('futures>=2.2.0',)
 
 COMMAND_CLASS = {
     # Run `preprocess` *before* doing any packaging!
     'preprocess': commands.GatherProto,
     'build_package_protos': grpc_tools.command.BuildPackageProtos,
     'build_py': commands.BuildPy,
+    'run_fork': commands.RunFork,
     'run_interop': commands.RunInterop,
-    'test_lite': commands.TestLite
+    'test_lite': commands.TestLite,
+    'test_gevent': commands.TestGevent,
 }
 
 PACKAGE_DATA = {
@@ -99,4 +106,5 @@ setuptools.setup(
     tests_require=TESTS_REQUIRE,
     test_suite=TEST_SUITE,
     test_loader=TEST_LOADER,
-    test_runner=TEST_RUNNER,)
+    test_runner=TEST_RUNNER,
+)

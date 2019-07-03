@@ -16,4 +16,6 @@ FROM debian:wheezy
 
 RUN apt-get update -y && apt-get install -y python python-pip
 
-RUN pip install virtualenv
+# Use --index-url to workaround
+# https://stackoverflow.com/questions/21294997/pip-connection-failure-cannot-fetch-index-base-url-http-pypi-python-org-simpl
+RUN pip install --index-url=https://pypi.python.org/simple/ virtualenv

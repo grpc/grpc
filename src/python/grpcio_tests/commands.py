@@ -22,7 +22,6 @@ import re
 import shutil
 import subprocess
 import sys
-import traceback
 
 import setuptools
 from setuptools.command import build_ext
@@ -108,6 +107,91 @@ class TestLite(setuptools.Command):
         self.distribution.fetch_build_eggs(self.distribution.tests_require)
 
 
+class TestGevent(setuptools.Command):
+    """Command to run tests w/gevent."""
+
+    BANNED_TESTS = (
+        # Fork support is not compatible with gevent
+        'fork._fork_interop_test.ForkInteropTest',
+        # These tests send a lot of RPCs and are really slow on gevent.  They will
+        # eventually succeed, but need to dig into performance issues.
+        'unit._cython._no_messages_server_completion_queue_per_call_test.Test.test_rpcs',
+        'unit._cython._no_messages_single_server_completion_queue_test.Test.test_rpcs',
+        'unit._compression_test',
+        # TODO(https://github.com/grpc/grpc/issues/16890) enable this test
+        'unit._cython._channel_test.ChannelTest.test_multiple_channels_lonely_connectivity',
+        # I have no idea why this doesn't work in gevent, but it shouldn't even be
+        # using the c-core
+        'testing._client_test.ClientTest.test_infinite_request_stream_real_time',
+        # TODO(https://github.com/grpc/grpc/issues/15743) enable this test
+        'unit._session_cache_test.SSLSessionCacheTest.testSSLSessionCacheLRU',
+        # TODO(https://github.com/grpc/grpc/issues/14789) enable this test
+        'unit._server_ssl_cert_config_test',
+        # TODO(https://github.com/grpc/grpc/issues/14901) enable this test
+        'protoc_plugin._python_plugin_test.PythonPluginTest',
+        # Beta API is unsupported for gevent
+        'protoc_plugin.beta_python_plugin_test',
+        'unit.beta._beta_features_test',
+        # TODO(https://github.com/grpc/grpc/issues/15411) unpin gevent version
+        # This test will stuck while running higher version of gevent
+        'unit._auth_context_test.AuthContextTest.testSessionResumption',
+        # TODO(https://github.com/grpc/grpc/issues/15411) enable these tests
+        'unit._channel_ready_future_test.ChannelReadyFutureTest.test_immediately_connectable_channel_connectivity',
+        "unit._cython._channel_test.ChannelTest.test_single_channel_lonely_connectivity",
+        'unit._exit_test.ExitTest.test_in_flight_unary_unary_call',
+        'unit._exit_test.ExitTest.test_in_flight_unary_stream_call',
+        'unit._exit_test.ExitTest.test_in_flight_stream_unary_call',
+        'unit._exit_test.ExitTest.test_in_flight_stream_stream_call',
+        'unit._exit_test.ExitTest.test_in_flight_partial_unary_stream_call',
+        'unit._exit_test.ExitTest.test_in_flight_partial_stream_unary_call',
+        'unit._exit_test.ExitTest.test_in_flight_partial_stream_stream_call',
+        'unit._metadata_flags_test',
+        'health_check._health_servicer_test.HealthServicerTest.test_cancelled_watch_removed_from_watch_list',
+        # TODO(https://github.com/grpc/grpc/issues/17330) enable these three tests
+        'channelz._channelz_servicer_test.ChannelzServicerTest.test_many_subchannels',
+        'channelz._channelz_servicer_test.ChannelzServicerTest.test_many_subchannels_and_sockets',
+        'channelz._channelz_servicer_test.ChannelzServicerTest.test_streaming_rpc',
+        # TODO(https://github.com/grpc/grpc/issues/15411) enable this test
+        'unit._cython._channel_test.ChannelTest.test_negative_deadline_connectivity'
+    )
+    BANNED_WINDOWS_TESTS = (
+        # TODO(https://github.com/grpc/grpc/pull/15411) enable this test
+        'unit._dns_resolver_test.DNSResolverTest.test_connect_loopback',)
+    description = 'run tests with gevent.  Assumes grpc/gevent are installed'
+    user_options = []
+
+    def initialize_options(self):
+        pass
+
+    def finalize_options(self):
+        # distutils requires this override.
+        pass
+
+    def run(self):
+        from gevent import monkey
+        monkey.patch_all()
+
+        import tests
+
+        import grpc.experimental.gevent
+        grpc.experimental.gevent.init_gevent()
+
+        import gevent
+
+        import tests
+        loader = tests.Loader()
+        loader.loadTestsFromNames(['tests'])
+        runner = tests.Runner()
+        if sys.platform == 'win32':
+            runner.skip_tests(self.BANNED_TESTS + self.BANNED_WINDOWS_TESTS)
+        else:
+            runner.skip_tests(self.BANNED_TESTS)
+        result = gevent.spawn(runner.run, loader.suite)
+        result.join()
+        if not result.value.wasSuccessful():
+            sys.exit('Test failure')
+
+
 class RunInterop(test.test):
 
     description = 'run interop test client/server'
@@ -149,3 +233,28 @@ class RunInterop(test.test):
         from tests.interop import client
         sys.argv[1:] = self.args.split()
         client.test_interoperability()
+
+
+class RunFork(test.test):
+
+    description = 'run fork test client'
+    user_options = [('args=', 'a', 'pass-thru arguments for the client')]
+
+    def initialize_options(self):
+        self.args = ''
+
+    def finalize_options(self):
+        # distutils requires this override.
+        pass
+
+    def run(self):
+        if self.distribution.install_requires:
+            self.distribution.fetch_build_eggs(
+                self.distribution.install_requires)
+        if self.distribution.tests_require:
+            self.distribution.fetch_build_eggs(self.distribution.tests_require)
+        # We import here to ensure that our setuptools parent has had a chance to
+        # edit the Python system path.
+        from tests.fork import client
+        sys.argv[1:] = self.args.split()
+        client.test_fork()

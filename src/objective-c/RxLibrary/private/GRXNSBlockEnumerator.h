@@ -27,5 +27,5 @@
  * The first time the passed block returns nil, the enumeration will end and the block will be
  * released.
  */
-- (instancetype)initWithValueSupplier:(id (^)())block;
+- (instancetype)initWithValueSupplier:(id (^)(void))block;
 @end

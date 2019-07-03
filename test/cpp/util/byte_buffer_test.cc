@@ -17,21 +17,38 @@
  */
 
 #include <grpc++/support/byte_buffer.h>
+#include <grpcpp/impl/grpc_library.h>
 
 #include <cstring>
 #include <vector>
 
-#include <grpc++/support/slice.h>
+#include <grpc/grpc.h>
 #include <grpc/slice.h>
+#include <grpcpp/support/slice.h>
 #include <gtest/gtest.h>
 
 namespace grpc {
+
+static internal::GrpcLibraryInitializer g_gli_initializer;
+
 namespace {
 
 const char* kContent1 = "hello xxxxxxxxxxxxxxxxxxxxxxxxxxxxxx";
 const char* kContent2 = "yyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyy world";
 
-class ByteBufferTest : public ::testing::Test {};
+class ByteBufferTest : public ::testing::Test {
+ protected:
+  static void SetUpTestCase() { grpc_init(); }
+
+  static void TearDownTestCase() { grpc_shutdown(); }
+};
+
+TEST_F(ByteBufferTest, CopyCtor) {
+  ByteBuffer buffer1;
+  EXPECT_FALSE(buffer1.Valid());
+  const ByteBuffer& buffer2 = buffer1;
+  EXPECT_FALSE(buffer2.Valid());
+}
 
 TEST_F(ByteBufferTest, CreateFromSingleSlice) {
   Slice s(kContent1);
@@ -109,5 +126,6 @@ TEST_F(ByteBufferTest, SerializationMakesCopy) {
 
 int main(int argc, char** argv) {
   ::testing::InitGoogleTest(&argc, argv);
-  return RUN_ALL_TESTS();
+  int ret = RUN_ALL_TESTS();
+  return ret;
 }

@@ -42,6 +42,9 @@ xcodebuild \
     build \
     -workspace *.xcworkspace \
     -scheme $SCHEME \
-    -destination name="iPhone 6" \
+    -destination generic/platform=iOS \
+    -derivedDataPath Build/Build \
+    CODE_SIGN_IDENTITY="" \
+    CODE_SIGNING_REQUIRED=NO \
     | egrep -v "$XCODEBUILD_FILTER" \
     | egrep -v "^$" -

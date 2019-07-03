@@ -23,10 +23,10 @@
 
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
-#include <grpc/support/thd.h>
 #include <grpc/support/time.h>
 
 #include "src/core/lib/compression/message_compress.h"
+#include "src/core/lib/gprpp/thd.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "test/core/util/test_config.h"
 
@@ -101,6 +101,73 @@ static void test_read_none_compressed_slice(void) {
   grpc_byte_buffer_destroy(buffer);
 }
 
+static void test_peek_one_slice(void) {
+  grpc_slice slice;
+  grpc_byte_buffer* buffer;
+  grpc_byte_buffer_reader reader;
+  grpc_slice* first_slice;
+  grpc_slice* second_slice;
+  int first_code, second_code;
+
+  LOG_TEST("test_peek_one_slice");
+  slice = grpc_slice_from_copied_string("test");
+  buffer = grpc_raw_byte_buffer_create(&slice, 1);
+  grpc_slice_unref(slice);
+  GPR_ASSERT(grpc_byte_buffer_reader_init(&reader, buffer) &&
+             "Couldn't init byte buffer reader");
+  first_code = grpc_byte_buffer_reader_peek(&reader, &first_slice);
+  GPR_ASSERT(first_code != 0);
+  GPR_ASSERT(memcmp(GRPC_SLICE_START_PTR(*first_slice), "test", 4) == 0);
+  second_code = grpc_byte_buffer_reader_peek(&reader, &second_slice);
+  GPR_ASSERT(second_code == 0);
+  grpc_byte_buffer_destroy(buffer);
+}
+
+static void test_peek_one_slice_malloc(void) {
+  grpc_slice slice;
+  grpc_byte_buffer* buffer;
+  grpc_byte_buffer_reader reader;
+  grpc_slice* first_slice;
+  grpc_slice* second_slice;
+  int first_code, second_code;
+
+  LOG_TEST("test_peek_one_slice_malloc");
+  slice = grpc_slice_malloc(4);
+  memcpy(GRPC_SLICE_START_PTR(slice), "test", 4);
+  buffer = grpc_raw_byte_buffer_create(&slice, 1);
+  grpc_slice_unref(slice);
+  GPR_ASSERT(grpc_byte_buffer_reader_init(&reader, buffer) &&
+             "Couldn't init byte buffer reader");
+  first_code = grpc_byte_buffer_reader_peek(&reader, &first_slice);
+  GPR_ASSERT(first_code != 0);
+  GPR_ASSERT(memcmp(GRPC_SLICE_START_PTR(*first_slice), "test", 4) == 0);
+  second_code = grpc_byte_buffer_reader_peek(&reader, &second_slice);
+  GPR_ASSERT(second_code == 0);
+  grpc_byte_buffer_destroy(buffer);
+}
+
+static void test_peek_none_compressed_slice(void) {
+  grpc_slice slice;
+  grpc_byte_buffer* buffer;
+  grpc_byte_buffer_reader reader;
+  grpc_slice* first_slice;
+  grpc_slice* second_slice;
+  int first_code, second_code;
+
+  LOG_TEST("test_peek_none_compressed_slice");
+  slice = grpc_slice_from_copied_string("test");
+  buffer = grpc_raw_byte_buffer_create(&slice, 1);
+  grpc_slice_unref(slice);
+  GPR_ASSERT(grpc_byte_buffer_reader_init(&reader, buffer) &&
+             "Couldn't init byte buffer reader");
+  first_code = grpc_byte_buffer_reader_peek(&reader, &first_slice);
+  GPR_ASSERT(first_code != 0);
+  GPR_ASSERT(memcmp(GRPC_SLICE_START_PTR(*first_slice), "test", 4) == 0);
+  second_code = grpc_byte_buffer_reader_peek(&reader, &second_slice);
+  GPR_ASSERT(second_code == 0);
+  grpc_byte_buffer_destroy(buffer);
+}
+
 static void test_read_corrupted_slice(void) {
   grpc_slice slice;
   grpc_byte_buffer* buffer;
@@ -132,10 +199,11 @@ static void read_compressed_slice(grpc_compression_algorithm algorithm,
   memset(GRPC_SLICE_START_PTR(input_slice), 'a', input_size);
   grpc_slice_buffer_add(&sliceb_in, input_slice); /* takes ownership */
   {
-    grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
-    GPR_ASSERT(
-        grpc_msg_compress(&exec_ctx, algorithm, &sliceb_in, &sliceb_out));
-    grpc_exec_ctx_finish(&exec_ctx);
+    grpc_core::ExecCtx exec_ctx;
+    GPR_ASSERT(grpc_msg_compress(
+
+        grpc_compression_algorithm_to_message_compression_algorithm(algorithm),
+        &sliceb_in, &sliceb_out));
   }
 
   buffer = grpc_raw_compressed_byte_buffer_create(sliceb_out.slices,
@@ -204,8 +272,8 @@ static void test_readall(void) {
 
   LOG_TEST("test_readall");
 
-  memset(lotsa_as, 'a', 512);
-  memset(lotsa_bs, 'b', 1024);
+  memset(lotsa_as, 'a', 512 * sizeof(lotsa_as[0]));
+  memset(lotsa_bs, 'b', 1024 * sizeof(lotsa_bs[0]));
   /* use slices large enough to overflow inlining */
   slices[0] = grpc_slice_malloc(512);
   memcpy(GRPC_SLICE_START_PTR(slices[0]), lotsa_as, 512);
@@ -239,8 +307,8 @@ static void test_byte_buffer_copy(void) {
 
   LOG_TEST("test_byte_buffer_copy");
 
-  memset(lotsa_as, 'a', 512);
-  memset(lotsa_bs, 'b', 1024);
+  memset(lotsa_as, 'a', 512 * sizeof(lotsa_as[0]));
+  memset(lotsa_bs, 'b', 1024 * sizeof(lotsa_bs[0]));
   /* use slices large enough to overflow inlining */
   slices[0] = grpc_slice_malloc(512);
   memcpy(GRPC_SLICE_START_PTR(slices[0]), lotsa_as, 512);
@@ -266,10 +334,13 @@ static void test_byte_buffer_copy(void) {
 }
 
 int main(int argc, char** argv) {
-  grpc_test_init(argc, argv);
+  grpc::testing::TestEnvironment env(argc, argv);
   test_read_one_slice();
   test_read_one_slice_malloc();
   test_read_none_compressed_slice();
+  test_peek_one_slice();
+  test_peek_one_slice_malloc();
+  test_peek_none_compressed_slice();
   test_read_gzip_compressed_slice();
   test_read_deflate_compressed_slice();
   test_read_corrupted_slice();

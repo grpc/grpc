@@ -19,11 +19,12 @@
 #include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
 #include <grpc/support/alloc.h>
-#include <grpc/support/host_port.h>
 #include <grpc/support/log.h>
-#include <grpc/support/thd.h>
 
 #include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/gprpp/host_port.h"
+#include "src/core/lib/gprpp/memory.h"
+#include "src/core/lib/gprpp/thd.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "test/core/end2end/data/ssl_test_data.h"
 #include "test/core/util/port.h"
@@ -66,13 +67,11 @@ static void channel_idle_poll_for_timeout(grpc_channel* channel,
 static void run_timeouts_test(const test_fixture* fixture) {
   gpr_log(GPR_INFO, "TEST: %s", fixture->name);
 
-  char* addr;
-
+  grpc_core::UniquePtr<char> addr;
   grpc_init();
+  grpc_core::JoinHostPort(&addr, "localhost", grpc_pick_unused_port_or_die());
 
-  gpr_join_host_port(&addr, "localhost", grpc_pick_unused_port_or_die());
-
-  grpc_channel* channel = fixture->create_channel(addr);
+  grpc_channel* channel = fixture->create_channel(addr.get());
   grpc_completion_queue* cq = grpc_completion_queue_create_for_next(nullptr);
 
   /* start 1 watcher and then let it time out */
@@ -111,7 +110,6 @@ static void run_timeouts_test(const test_fixture* fixture) {
   grpc_completion_queue_destroy(cq);
 
   grpc_shutdown();
-  gpr_free(addr);
 }
 
 /* An edge scenario; sets channel state to explicitly, and outside
@@ -120,13 +118,11 @@ static void run_channel_shutdown_before_timeout_test(
     const test_fixture* fixture) {
   gpr_log(GPR_INFO, "TEST: %s", fixture->name);
 
-  char* addr;
-
+  grpc_core::UniquePtr<char> addr;
   grpc_init();
+  grpc_core::JoinHostPort(&addr, "localhost", grpc_pick_unused_port_or_die());
 
-  gpr_join_host_port(&addr, "localhost", grpc_pick_unused_port_or_die());
-
-  grpc_channel* channel = fixture->create_channel(addr);
+  grpc_channel* channel = fixture->create_channel(addr.get());
   grpc_completion_queue* cq = grpc_completion_queue_create_for_next(nullptr);
 
   /* start 1 watcher and then shut down the channel before the timer goes off */
@@ -154,7 +150,6 @@ static void run_channel_shutdown_before_timeout_test(
   grpc_completion_queue_destroy(cq);
 
   grpc_shutdown();
-  gpr_free(addr);
 }
 
 static grpc_channel* insecure_test_create_channel(const char* addr) {
@@ -168,7 +163,7 @@ static const test_fixture insecure_test = {
 
 static grpc_channel* secure_test_create_channel(const char* addr) {
   grpc_channel_credentials* ssl_creds =
-      grpc_ssl_credentials_create(test_root_cert, nullptr, nullptr);
+      grpc_ssl_credentials_create(test_root_cert, nullptr, nullptr, nullptr);
   grpc_arg ssl_name_override = {
       GRPC_ARG_STRING,
       const_cast<char*>(GRPC_SSL_TARGET_NAME_OVERRIDE_ARG),
@@ -178,9 +173,8 @@ static grpc_channel* secure_test_create_channel(const char* addr) {
   grpc_channel* channel =
       grpc_secure_channel_create(ssl_creds, addr, new_client_args, nullptr);
   {
-    grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
-    grpc_channel_args_destroy(&exec_ctx, new_client_args);
-    grpc_exec_ctx_finish(&exec_ctx);
+    grpc_core::ExecCtx exec_ctx;
+    grpc_channel_args_destroy(new_client_args);
   }
   grpc_channel_credentials_release(ssl_creds);
   return channel;
@@ -192,7 +186,7 @@ static const test_fixture secure_test = {
 };
 
 int main(int argc, char** argv) {
-  grpc_test_init(argc, argv);
+  grpc::testing::TestEnvironment env(argc, argv);
 
   run_timeouts_test(&insecure_test);
   run_timeouts_test(&secure_test);

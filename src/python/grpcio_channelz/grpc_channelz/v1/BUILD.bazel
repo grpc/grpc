@@ -1,0 +1,18 @@
+load("//bazel:python_rules.bzl", "py_proto_library")
+package(default_visibility = ["//visibility:public"])
+
+py_proto_library(
+    name = "py_channelz_proto",
+    well_known_protos = True,
+    deps = ["//src/proto/grpc/channelz:channelz_proto_descriptors"],
+)
+
+py_library(
+    name = "grpc_channelz",
+    srcs = ["channelz.py",],
+    deps = [
+        ":py_channelz_proto",
+        "//src/python/grpcio/grpc:grpcio",
+    ],
+    imports=["../../",],
+)

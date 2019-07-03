@@ -16,6 +16,8 @@
  *
  */
 
+#include <grpc/support/port_platform.h>
+
 #include "src/core/ext/transport/chttp2/transport/hpack_table.h"
 
 #include <assert.h>
@@ -26,7 +28,10 @@
 #include <grpc/support/string_util.h>
 
 #include "src/core/lib/debug/trace.h"
-#include "src/core/lib/support/murmur_hash.h"
+#include "src/core/lib/gpr/murmur_hash.h"
+#include "src/core/lib/slice/slice_internal.h"
+#include "src/core/lib/surface/validate_metadata.h"
+#include "src/core/lib/transport/static_metadata.h"
 
 extern grpc_core::TraceFlag grpc_http_trace;
 
@@ -165,7 +170,7 @@ static uint32_t entries_for_bytes(uint32_t bytes) {
          GRPC_CHTTP2_HPACK_ENTRY_OVERHEAD;
 }
 
-void grpc_chttp2_hptbl_init(grpc_exec_ctx* exec_ctx, grpc_chttp2_hptbl* tbl) {
+void grpc_chttp2_hptbl_init(grpc_chttp2_hptbl* tbl) {
   size_t i;
 
   memset(tbl, 0, sizeof(*tbl));
@@ -173,26 +178,25 @@ void grpc_chttp2_hptbl_init(grpc_exec_ctx* exec_ctx, grpc_chttp2_hptbl* tbl) {
       GRPC_CHTTP2_INITIAL_HPACK_TABLE_SIZE;
   tbl->max_entries = tbl->cap_entries =
       entries_for_bytes(tbl->current_table_bytes);
-  tbl->ents = (grpc_mdelem*)gpr_malloc(sizeof(*tbl->ents) * tbl->cap_entries);
+  tbl->ents = static_cast<grpc_mdelem*>(
+      gpr_malloc(sizeof(*tbl->ents) * tbl->cap_entries));
   memset(tbl->ents, 0, sizeof(*tbl->ents) * tbl->cap_entries);
   for (i = 1; i <= GRPC_CHTTP2_LAST_STATIC_ENTRY; i++) {
     tbl->static_ents[i - 1] = grpc_mdelem_from_slices(
-        exec_ctx,
-        grpc_slice_intern(grpc_slice_from_static_string(static_table[i].key)),
         grpc_slice_intern(
-            grpc_slice_from_static_string(static_table[i].value)));
+            grpc_slice_from_static_string_internal(static_table[i].key)),
+        grpc_slice_intern(
+            grpc_slice_from_static_string_internal(static_table[i].value)));
   }
 }
 
-void grpc_chttp2_hptbl_destroy(grpc_exec_ctx* exec_ctx,
-                               grpc_chttp2_hptbl* tbl) {
+void grpc_chttp2_hptbl_destroy(grpc_chttp2_hptbl* tbl) {
   size_t i;
   for (i = 0; i < GRPC_CHTTP2_LAST_STATIC_ENTRY; i++) {
-    GRPC_MDELEM_UNREF(exec_ctx, tbl->static_ents[i]);
+    GRPC_MDELEM_UNREF(tbl->static_ents[i]);
   }
   for (i = 0; i < tbl->num_ents; i++) {
-    GRPC_MDELEM_UNREF(exec_ctx,
-                      tbl->ents[(tbl->first_ent + i) % tbl->cap_entries]);
+    GRPC_MDELEM_UNREF(tbl->ents[(tbl->first_ent + i) % tbl->cap_entries]);
   }
   gpr_free(tbl->ents);
 }
@@ -215,20 +219,21 @@ grpc_mdelem grpc_chttp2_hptbl_lookup(const grpc_chttp2_hptbl* tbl,
 }
 
 /* Evict one element from the table */
-static void evict1(grpc_exec_ctx* exec_ctx, grpc_chttp2_hptbl* tbl) {
+static void evict1(grpc_chttp2_hptbl* tbl) {
   grpc_mdelem first_ent = tbl->ents[tbl->first_ent];
   size_t elem_bytes = GRPC_SLICE_LENGTH(GRPC_MDKEY(first_ent)) +
                       GRPC_SLICE_LENGTH(GRPC_MDVALUE(first_ent)) +
                       GRPC_CHTTP2_HPACK_ENTRY_OVERHEAD;
   GPR_ASSERT(elem_bytes <= tbl->mem_used);
-  tbl->mem_used -= (uint32_t)elem_bytes;
+  tbl->mem_used -= static_cast<uint32_t>(elem_bytes);
   tbl->first_ent = ((tbl->first_ent + 1) % tbl->cap_entries);
   tbl->num_ents--;
-  GRPC_MDELEM_UNREF(exec_ctx, first_ent);
+  GRPC_MDELEM_UNREF(first_ent);
 }
 
 static void rebuild_ents(grpc_chttp2_hptbl* tbl, uint32_t new_cap) {
-  grpc_mdelem* ents = (grpc_mdelem*)gpr_malloc(sizeof(*ents) * new_cap);
+  grpc_mdelem* ents =
+      static_cast<grpc_mdelem*>(gpr_malloc(sizeof(*ents) * new_cap));
   uint32_t i;
 
   for (i = 0; i < tbl->num_ents; i++) {
@@ -240,23 +245,21 @@ static void rebuild_ents(grpc_chttp2_hptbl* tbl, uint32_t new_cap) {
   tbl->first_ent = 0;
 }
 
-void grpc_chttp2_hptbl_set_max_bytes(grpc_exec_ctx* exec_ctx,
-                                     grpc_chttp2_hptbl* tbl,
+void grpc_chttp2_hptbl_set_max_bytes(grpc_chttp2_hptbl* tbl,
                                      uint32_t max_bytes) {
   if (tbl->max_bytes == max_bytes) {
     return;
   }
-  if (grpc_http_trace.enabled()) {
-    gpr_log(GPR_DEBUG, "Update hpack parser max size to %d", max_bytes);
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_http_trace)) {
+    gpr_log(GPR_INFO, "Update hpack parser max size to %d", max_bytes);
   }
   while (tbl->mem_used > max_bytes) {
-    evict1(exec_ctx, tbl);
+    evict1(tbl);
   }
   tbl->max_bytes = max_bytes;
 }
 
-grpc_error* grpc_chttp2_hptbl_set_current_table_size(grpc_exec_ctx* exec_ctx,
-                                                     grpc_chttp2_hptbl* tbl,
+grpc_error* grpc_chttp2_hptbl_set_current_table_size(grpc_chttp2_hptbl* tbl,
                                                      uint32_t bytes) {
   if (tbl->current_table_bytes == bytes) {
     return GRPC_ERROR_NONE;
@@ -270,11 +273,11 @@ grpc_error* grpc_chttp2_hptbl_set_current_table_size(grpc_exec_ctx* exec_ctx,
     gpr_free(msg);
     return err;
   }
-  if (grpc_http_trace.enabled()) {
-    gpr_log(GPR_DEBUG, "Update hpack parser table size to %d", bytes);
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_http_trace)) {
+    gpr_log(GPR_INFO, "Update hpack parser table size to %d", bytes);
   }
   while (tbl->mem_used > bytes) {
-    evict1(exec_ctx, tbl);
+    evict1(tbl);
   }
   tbl->current_table_bytes = bytes;
   tbl->max_entries = entries_for_bytes(bytes);
@@ -289,8 +292,7 @@ grpc_error* grpc_chttp2_hptbl_set_current_table_size(grpc_exec_ctx* exec_ctx,
   return GRPC_ERROR_NONE;
 }
 
-grpc_error* grpc_chttp2_hptbl_add(grpc_exec_ctx* exec_ctx,
-                                  grpc_chttp2_hptbl* tbl, grpc_mdelem md) {
+grpc_error* grpc_chttp2_hptbl_add(grpc_chttp2_hptbl* tbl, grpc_mdelem md) {
   /* determine how many bytes of buffer this entry represents */
   size_t elem_bytes = GRPC_SLICE_LENGTH(GRPC_MDKEY(md)) +
                       GRPC_SLICE_LENGTH(GRPC_MDVALUE(md)) +
@@ -320,14 +322,15 @@ grpc_error* grpc_chttp2_hptbl_add(grpc_exec_ctx* exec_ctx,
      * empty table.
      */
     while (tbl->num_ents) {
-      evict1(exec_ctx, tbl);
+      evict1(tbl);
     }
     return GRPC_ERROR_NONE;
   }
 
   /* evict entries to ensure no overflow */
-  while (elem_bytes > (size_t)tbl->current_table_bytes - tbl->mem_used) {
-    evict1(exec_ctx, tbl);
+  while (elem_bytes >
+         static_cast<size_t>(tbl->current_table_bytes) - tbl->mem_used) {
+    evict1(tbl);
   }
 
   /* copy the finalized entry in */
@@ -336,7 +339,7 @@ grpc_error* grpc_chttp2_hptbl_add(grpc_exec_ctx* exec_ctx,
 
   /* update accounting values */
   tbl->num_ents++;
-  tbl->mem_used += (uint32_t)elem_bytes;
+  tbl->mem_used += static_cast<uint32_t>(elem_bytes);
   return GRPC_ERROR_NONE;
 }
 
@@ -356,8 +359,8 @@ grpc_chttp2_hptbl_find_result grpc_chttp2_hptbl_find(
 
   /* Scan the dynamic table */
   for (i = 0; i < tbl->num_ents; i++) {
-    uint32_t idx =
-        (uint32_t)(tbl->num_ents - i + GRPC_CHTTP2_LAST_STATIC_ENTRY);
+    uint32_t idx = static_cast<uint32_t>(tbl->num_ents - i +
+                                         GRPC_CHTTP2_LAST_STATIC_ENTRY);
     grpc_mdelem ent = tbl->ents[(tbl->first_ent + i) % tbl->cap_entries];
     if (!grpc_slice_eq(GRPC_MDKEY(md), GRPC_MDKEY(ent))) continue;
     r.index = idx;
@@ -366,4 +369,24 @@ grpc_chttp2_hptbl_find_result grpc_chttp2_hptbl_find(
   }
 
   return r;
+}
+
+static size_t get_base64_encoded_size(size_t raw_length) {
+  static const uint8_t tail_xtra[3] = {0, 2, 3};
+  return raw_length / 3 * 4 + tail_xtra[raw_length % 3];
+}
+
+size_t grpc_chttp2_get_size_in_hpack_table(grpc_mdelem elem,
+                                           bool use_true_binary_metadata) {
+  const uint8_t* key_buf = GRPC_SLICE_START_PTR(GRPC_MDKEY(elem));
+  size_t key_len = GRPC_SLICE_LENGTH(GRPC_MDKEY(elem));
+  size_t overhead_and_key = 32 + key_len;
+  size_t value_len = GRPC_SLICE_LENGTH(GRPC_MDVALUE(elem));
+  if (grpc_key_is_binary_header(key_buf, key_len)) {
+    return overhead_and_key + (use_true_binary_metadata
+                                   ? value_len + 1
+                                   : get_base64_encoded_size(value_len));
+  } else {
+    return overhead_and_key + value_len;
+  }
 }

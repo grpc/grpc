@@ -35,6 +35,7 @@ class CallCredentials2Test extends PHPUnit_Framework_TestCase
         $this->channel = new Grpc\Channel(
             'localhost:'.$this->port,
             [
+            'force_new' => true,
             'grpc.ssl_target_name_override' => $this->host_override,
             'grpc.default_authority' => $this->host_override,
             'credentials' => $credentials,
@@ -147,7 +148,7 @@ class CallCredentials2Test extends PHPUnit_Framework_TestCase
 
         $this->assertTrue($event->send_metadata);
         $this->assertTrue($event->send_close);
-        $this->assertTrue($event->status->code == Grpc\STATUS_UNAUTHENTICATED);
+        $this->assertTrue($event->status->code == Grpc\STATUS_UNAVAILABLE);
     }
 
     public function invalidReturnCallbackFunc($context)
@@ -179,6 +180,6 @@ class CallCredentials2Test extends PHPUnit_Framework_TestCase
 
         $this->assertTrue($event->send_metadata);
         $this->assertTrue($event->send_close);
-        $this->assertTrue($event->status->code == Grpc\STATUS_UNAUTHENTICATED);
+        $this->assertTrue($event->status->code == Grpc\STATUS_UNAVAILABLE);
     }
 }

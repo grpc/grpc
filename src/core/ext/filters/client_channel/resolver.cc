@@ -16,66 +16,73 @@
  *
  */
 
+#include <grpc/support/port_platform.h>
+
 #include "src/core/ext/filters/client_channel/resolver.h"
 #include "src/core/lib/iomgr/combiner.h"
 
 grpc_core::DebugOnlyTraceFlag grpc_trace_resolver_refcount(false,
                                                            "resolver_refcount");
 
-void grpc_resolver_init(grpc_resolver* resolver,
-                        const grpc_resolver_vtable* vtable,
-                        grpc_combiner* combiner) {
-  resolver->vtable = vtable;
-  resolver->combiner = GRPC_COMBINER_REF(combiner, "resolver");
-  gpr_ref_init(&resolver->refs, 1);
+namespace grpc_core {
+
+//
+// Resolver
+//
+
+Resolver::Resolver(grpc_combiner* combiner,
+                   UniquePtr<ResultHandler> result_handler)
+    : InternallyRefCounted(&grpc_trace_resolver_refcount),
+      result_handler_(std::move(result_handler)),
+      combiner_(GRPC_COMBINER_REF(combiner, "resolver")) {}
+
+Resolver::~Resolver() { GRPC_COMBINER_UNREF(combiner_, "resolver"); }
+
+//
+// Resolver::Result
+//
+
+Resolver::Result::~Result() {
+  GRPC_ERROR_UNREF(service_config_error);
+  grpc_channel_args_destroy(args);
 }
 
-#ifndef NDEBUG
-void grpc_resolver_ref(grpc_resolver* resolver, const char* file, int line,
-                       const char* reason) {
-  if (grpc_trace_resolver_refcount.enabled()) {
-    gpr_atm old_refs = gpr_atm_no_barrier_load(&resolver->refs.count);
-    gpr_log(file, line, GPR_LOG_SEVERITY_DEBUG,
-            "RESOLVER:%p   ref %" PRIdPTR " -> %" PRIdPTR " %s", resolver,
-            old_refs, old_refs + 1, reason);
-  }
-#else
-void grpc_resolver_ref(grpc_resolver* resolver) {
-#endif
-  gpr_ref(&resolver->refs);
+Resolver::Result::Result(const Result& other) {
+  addresses = other.addresses;
+  service_config = other.service_config;
+  service_config_error = GRPC_ERROR_REF(other.service_config_error);
+  args = grpc_channel_args_copy(other.args);
 }
 
-#ifndef NDEBUG
-void grpc_resolver_unref(grpc_exec_ctx* exec_ctx, grpc_resolver* resolver,
-                         const char* file, int line, const char* reason) {
-  if (grpc_trace_resolver_refcount.enabled()) {
-    gpr_atm old_refs = gpr_atm_no_barrier_load(&resolver->refs.count);
-    gpr_log(file, line, GPR_LOG_SEVERITY_DEBUG,
-            "RESOLVER:%p unref %" PRIdPTR " -> %" PRIdPTR " %s", resolver,
-            old_refs, old_refs - 1, reason);
-  }
-#else
-void grpc_resolver_unref(grpc_exec_ctx* exec_ctx, grpc_resolver* resolver) {
-#endif
-  if (gpr_unref(&resolver->refs)) {
-    grpc_combiner* combiner = resolver->combiner;
-    resolver->vtable->destroy(exec_ctx, resolver);
-    GRPC_COMBINER_UNREF(exec_ctx, combiner, "resolver");
-  }
+Resolver::Result::Result(Result&& other) {
+  addresses = std::move(other.addresses);
+  service_config = std::move(other.service_config);
+  service_config_error = other.service_config_error;
+  other.service_config_error = GRPC_ERROR_NONE;
+  args = other.args;
+  other.args = nullptr;
 }
 
-void grpc_resolver_shutdown_locked(grpc_exec_ctx* exec_ctx,
-                                   grpc_resolver* resolver) {
-  resolver->vtable->shutdown_locked(exec_ctx, resolver);
+Resolver::Result& Resolver::Result::operator=(const Result& other) {
+  addresses = other.addresses;
+  service_config = other.service_config;
+  GRPC_ERROR_UNREF(service_config_error);
+  service_config_error = GRPC_ERROR_REF(other.service_config_error);
+  grpc_channel_args_destroy(args);
+  args = grpc_channel_args_copy(other.args);
+  return *this;
 }
 
-void grpc_resolver_channel_saw_error_locked(grpc_exec_ctx* exec_ctx,
-                                            grpc_resolver* resolver) {
-  resolver->vtable->channel_saw_error_locked(exec_ctx, resolver);
+Resolver::Result& Resolver::Result::operator=(Result&& other) {
+  addresses = std::move(other.addresses);
+  service_config = std::move(other.service_config);
+  GRPC_ERROR_UNREF(service_config_error);
+  service_config_error = other.service_config_error;
+  other.service_config_error = GRPC_ERROR_NONE;
+  grpc_channel_args_destroy(args);
+  args = other.args;
+  other.args = nullptr;
+  return *this;
 }
 
-void grpc_resolver_next_locked(grpc_exec_ctx* exec_ctx, grpc_resolver* resolver,
-                               grpc_channel_args** result,
-                               grpc_closure* on_complete) {
-  resolver->vtable->next_locked(exec_ctx, resolver, result, on_complete);
-}
+}  // namespace grpc_core

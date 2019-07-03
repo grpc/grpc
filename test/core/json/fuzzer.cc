@@ -31,8 +31,7 @@ bool leak_check = true;
 
 extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
   char* s;
-  struct grpc_memory_counters counters;
-  grpc_memory_counters_init();
+  grpc_core::testing::LeakDetector leak_detector(true);
   s = static_cast<char*>(gpr_malloc(size));
   memcpy(s, data, size);
   grpc_json* x;
@@ -40,8 +39,5 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
     grpc_json_destroy(x);
   }
   gpr_free(s);
-  counters = grpc_memory_counters_snapshot();
-  grpc_memory_counters_destroy();
-  GPR_ASSERT(counters.total_size_relative == 0);
   return 0;
 }

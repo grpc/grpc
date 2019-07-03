@@ -19,6 +19,8 @@
 #ifndef GRPC_GRPC_CRONET_H
 #define GRPC_GRPC_CRONET_H
 
+#include <grpc/support/port_platform.h>
+
 #include <grpc/grpc.h>
 
 #ifdef __cplusplus

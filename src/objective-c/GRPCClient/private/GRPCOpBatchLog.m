@@ -25,7 +25,7 @@ static NSMutableArray *opBatchLog = nil;
 @implementation GRPCOpBatchLog
 
 + (void)enableOpBatchLog:(BOOL)enabled {
-  @synchronized (opBatchLog) {
+  @synchronized(opBatchLog) {
     if (enabled) {
       if (!opBatchLog) {
         opBatchLog = [NSMutableArray array];
@@ -39,13 +39,13 @@ static NSMutableArray *opBatchLog = nil;
 }
 
 + (void)addOpBatchToLog:(NSArray *)batch {
-  @synchronized (opBatchLog) {
+  @synchronized(opBatchLog) {
     [opBatchLog addObject:batch];
   }
 }
 
 + (NSArray *)obtainAndCleanOpBatchLog {
-  @synchronized (opBatchLog) {
+  @synchronized(opBatchLog) {
     NSArray *out = opBatchLog;
     opBatchLog = [NSMutableArray array];
     return out;

@@ -19,14 +19,12 @@
 #ifndef GRPC_CORE_LIB_IOMGR_RESOURCE_QUOTA_H
 #define GRPC_CORE_LIB_IOMGR_RESOURCE_QUOTA_H
 
+#include <grpc/support/port_platform.h>
+
 #include <grpc/grpc.h>
 
 #include "src/core/lib/debug/trace.h"
-#include "src/core/lib/iomgr/exec_ctx.h"
-
-#ifdef __cplusplus
-extern "C" {
-#endif
+#include "src/core/lib/iomgr/closure.h"
 
 /** \file Tracks resource usage against a pool.
 
@@ -67,12 +65,16 @@ extern "C" {
 
 extern grpc_core::TraceFlag grpc_resource_quota_trace;
 
+// TODO(juanlishen): This is a hack. We need to do real accounting instead of
+// hard coding.
+constexpr size_t GRPC_RESOURCE_QUOTA_CALL_SIZE = 15 * 1024;
+constexpr size_t GRPC_RESOURCE_QUOTA_CHANNEL_SIZE = 50 * 1024;
+
 grpc_resource_quota* grpc_resource_quota_ref_internal(
     grpc_resource_quota* resource_quota);
-void grpc_resource_quota_unref_internal(grpc_exec_ctx* exec_ctx,
-                                        grpc_resource_quota* resource_quota);
+void grpc_resource_quota_unref_internal(grpc_resource_quota* resource_quota);
 grpc_resource_quota* grpc_resource_quota_from_channel_args(
-    const grpc_channel_args* channel_args);
+    const grpc_channel_args* channel_args, bool create = true);
 
 /* Return a number indicating current memory pressure:
    0.0 ==> no memory usage
@@ -93,32 +95,52 @@ grpc_resource_quota* grpc_resource_user_quota(
     grpc_resource_user* resource_user);
 
 void grpc_resource_user_ref(grpc_resource_user* resource_user);
-void grpc_resource_user_unref(grpc_exec_ctx* exec_ctx,
-                              grpc_resource_user* resource_user);
-void grpc_resource_user_shutdown(grpc_exec_ctx* exec_ctx,
-                                 grpc_resource_user* resource_user);
+void grpc_resource_user_unref(grpc_resource_user* resource_user);
+void grpc_resource_user_shutdown(grpc_resource_user* resource_user);
 
-/* Allocate from the resource user (and its quota).
-   If optional_on_done is NULL, then allocate immediately. This may push the
-   quota over-limit, at which point reclamation will kick in.
-   If optional_on_done is non-NULL, it will be scheduled when the allocation has
-   been granted by the quota. */
-void grpc_resource_user_alloc(grpc_exec_ctx* exec_ctx,
-                              grpc_resource_user* resource_user, size_t size,
+/* Attempts to get quota from the resource_user to create 'thread_count' number
+ * of threads. Returns true if successful (i.e the caller is now free to create
+ * 'thread_count' number of threads) or false if quota is not available */
+bool grpc_resource_user_allocate_threads(grpc_resource_user* resource_user,
+                                         int thread_count);
+/* Releases 'thread_count' worth of quota back to the resource user. The quota
+ * should have been previously obtained successfully by calling
+ * grpc_resource_user_allocate_threads().
+ *
+ * Note: There need not be an exact one-to-one correspondence between
+ * grpc_resource_user_allocate_threads() and grpc_resource_user_free_threads()
+ * calls. The only requirement is that the number of threads allocated should
+ * all be eventually released */
+void grpc_resource_user_free_threads(grpc_resource_user* resource_user,
+                                     int thread_count);
+
+/* Allocates from the resource user 'size' worth of memory if this won't exceed
+ * the resource quota's total size. Returns whether the allocation is done
+ * successfully. If allocated successfully, the memory should be freed by the
+ * caller eventually. */
+bool grpc_resource_user_safe_alloc(grpc_resource_user* resource_user,
+                                   size_t size);
+/* Allocates from the resource user 'size' worth of memory.
+ * If optional_on_done is NULL, then allocate immediately. This may push the
+ * quota over-limit, at which point reclamation will kick in. The caller is
+ * always responsible to free the memory eventually.
+ * If optional_on_done is non-NULL, it will be scheduled without error when the
+ * allocation has been granted by the quota, and the caller is responsible to
+ * free the memory eventually. Or it may be scheduled with an error, in which
+ * case the caller fails to allocate the memory and shouldn't free the memory.
+ */
+void grpc_resource_user_alloc(grpc_resource_user* resource_user, size_t size,
                               grpc_closure* optional_on_done);
 /* Release memory back to the quota */
-void grpc_resource_user_free(grpc_exec_ctx* exec_ctx,
-                             grpc_resource_user* resource_user, size_t size);
+void grpc_resource_user_free(grpc_resource_user* resource_user, size_t size);
 /* Post a memory reclaimer to the resource user. Only one benign and one
    destructive reclaimer can be posted at once. When executed, the reclaimer
    MUST call grpc_resource_user_finish_reclamation before it completes, to
    return control to the resource quota. */
-void grpc_resource_user_post_reclaimer(grpc_exec_ctx* exec_ctx,
-                                       grpc_resource_user* resource_user,
+void grpc_resource_user_post_reclaimer(grpc_resource_user* resource_user,
                                        bool destructive, grpc_closure* closure);
 /* Finish a reclamation step */
-void grpc_resource_user_finish_reclamation(grpc_exec_ctx* exec_ctx,
-                                           grpc_resource_user* resource_user);
+void grpc_resource_user_finish_reclamation(grpc_resource_user* resource_user);
 
 /* Helper to allocate slices from a resource user */
 typedef struct grpc_resource_user_slice_allocator {
@@ -145,17 +167,7 @@ void grpc_resource_user_slice_allocator_init(
 /* Allocate \a count slices of length \a length into \a dest. Only one request
    can be outstanding at a time. */
 void grpc_resource_user_alloc_slices(
-    grpc_exec_ctx* exec_ctx,
     grpc_resource_user_slice_allocator* slice_allocator, size_t length,
     size_t count, grpc_slice_buffer* dest);
-
-/* Allocate one slice of length \a size synchronously. */
-grpc_slice grpc_resource_user_slice_malloc(grpc_exec_ctx* exec_ctx,
-                                           grpc_resource_user* resource_user,
-                                           size_t size);
-
-#ifdef __cplusplus
-}
-#endif
 
 #endif /* GRPC_CORE_LIB_IOMGR_RESOURCE_QUOTA_H */

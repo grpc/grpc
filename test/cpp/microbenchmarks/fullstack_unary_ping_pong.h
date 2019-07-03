@@ -78,6 +78,7 @@ static void BM_UnaryPingPong(benchmark::State& state) {
     ClientContextMutator cli_ctx_mut(&cli_ctx);
     std::unique_ptr<ClientAsyncResponseReader<EchoResponse>> response_reader(
         stub->AsyncEcho(&cli_ctx, send_request, fixture->cq()));
+    response_reader->Finish(&recv_response, &recv_status, tag(4));
     void* t;
     bool ok;
     GPR_ASSERT(fixture->cq()->Next(&t, &ok));
@@ -87,11 +88,10 @@ static void BM_UnaryPingPong(benchmark::State& state) {
     ServerEnv* senv = server_env[slot];
     ServerContextMutator svr_ctx_mut(&senv->ctx);
     senv->response_writer.Finish(send_response, Status::OK, tag(3));
-    response_reader->Finish(&recv_response, &recv_status, tag(4));
     for (int i = (1 << 3) | (1 << 4); i != 0;) {
       GPR_ASSERT(fixture->cq()->Next(&t, &ok));
       GPR_ASSERT(ok);
-      int tagnum = (int)reinterpret_cast<intptr_t>(t);
+      int tagnum = static_cast<int>(reinterpret_cast<intptr_t>(t));
       GPR_ASSERT(i & (1 << tagnum));
       i -= 1 << tagnum;
     }

@@ -26,8 +26,7 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/time.h>
-#include <grpc/support/useful.h>
-#include "src/core/lib/support/string.h"
+#include "src/core/lib/gpr/string.h"
 #include "test/core/end2end/cq_verifier.h"
 
 static void* tag(intptr_t t) { return (void*)t; }
@@ -86,7 +85,9 @@ static void end_test(grpc_end2end_test_fixture* f) {
   grpc_completion_queue_destroy(f->shutdown_cq);
 }
 
-static void simple_request_body(grpc_end2end_test_fixture f) {
+static void test_invoke_simple_request(grpc_end2end_test_config config) {
+  grpc_end2end_test_fixture f =
+      begin_test(config, "test_invoke_simple_request", nullptr, nullptr);
   grpc_call* c;
   grpc_call* s;
   cq_verifier* cqv = cq_verifier_create(f.cq);
@@ -141,7 +142,8 @@ static void simple_request_body(grpc_end2end_test_fixture f) {
   op->flags = 0;
   op->reserved = nullptr;
   op++;
-  error = grpc_call_start_batch(c, ops, (size_t)(op - ops), tag(1), nullptr);
+  error = grpc_call_start_batch(c, ops, static_cast<size_t>(op - ops), tag(1),
+                                nullptr);
   GPR_ASSERT(error == GRPC_CALL_OK);
 
   error =
@@ -180,7 +182,8 @@ static void simple_request_body(grpc_end2end_test_fixture f) {
   op->flags = 0;
   op->reserved = nullptr;
   op++;
-  error = grpc_call_start_batch(s, ops, (size_t)(op - ops), tag(102), nullptr);
+  error = grpc_call_start_batch(s, ops, static_cast<size_t>(op - ops), tag(102),
+                                nullptr);
   GPR_ASSERT(error == GRPC_CALL_OK);
 
   CQ_EXPECT_COMPLETION(cqv, tag(102), 1);
@@ -190,7 +193,14 @@ static void simple_request_body(grpc_end2end_test_fixture f) {
   GPR_ASSERT(status == GRPC_STATUS_UNIMPLEMENTED);
   GPR_ASSERT(0 == grpc_slice_str_cmp(details, "xyz"));
   GPR_ASSERT(0 == grpc_slice_str_cmp(call_details.method, "/foo"));
-  GPR_ASSERT(grpc_slice_buf_start_eq(call_details.host, "localhost", 9));
+
+  if (config.overridden_call_host != nullptr) {
+    validate_host_override_string(config.overridden_call_host,
+                                  call_details.host, config);
+  } else {
+    GPR_ASSERT(grpc_slice_buf_start_eq(call_details.host, "localhost", 9) ||
+               grpc_slice_buf_start_eq(call_details.host, "127.0.0.1", 9));
+  }
   GPR_ASSERT(was_cancelled == 1);
 
   grpc_slice_unref(details);
@@ -203,22 +213,12 @@ static void simple_request_body(grpc_end2end_test_fixture f) {
   grpc_call_unref(s);
 
   cq_verifier_destroy(cqv);
-}
 
-static void test_invoke_simple_request(grpc_end2end_test_config config) {
-  grpc_end2end_test_fixture f;
-
-  f = begin_test(config, "test_invoke_simple_request", nullptr, nullptr);
-  simple_request_body(f);
   end_test(&f);
   config.tear_down_data(&f);
 }
 
 void default_host(grpc_end2end_test_config config) {
-  if ((config.feature_mask & FEATURE_MASK_SUPPORTS_HOSTNAME_VERIFICATION) == 0)
-    return;
-  if ((config.feature_mask & FEATURE_MASK_SUPPORTS_DELAYED_CONNECTION) == 0)
-    return;
   test_invoke_simple_request(config);
 }
 

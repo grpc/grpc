@@ -46,10 +46,21 @@ GRPCAPI grpc_channel* grpc_cronet_secure_channel_create(
           "grpc_create_cronet_transport: stream_engine = %p, target=%s", engine,
           target);
 
-  grpc_transport* ct =
-      grpc_create_cronet_transport(engine, target, args, reserved);
+  // Disable client authority filter when using Cronet
+  grpc_arg disable_client_authority_filter_arg;
+  disable_client_authority_filter_arg.key =
+      const_cast<char*>(GRPC_ARG_DISABLE_CLIENT_AUTHORITY_FILTER);
+  disable_client_authority_filter_arg.type = GRPC_ARG_INTEGER;
+  disable_client_authority_filter_arg.value.integer = 1;
+  grpc_channel_args* new_args = grpc_channel_args_copy_and_add(
+      args, &disable_client_authority_filter_arg, 1);
 
-  grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;
-  return grpc_channel_create(&exec_ctx, target, args,
-                             GRPC_CLIENT_DIRECT_CHANNEL, ct);
+  grpc_transport* ct =
+      grpc_create_cronet_transport(engine, target, new_args, reserved);
+
+  grpc_core::ExecCtx exec_ctx;
+  grpc_channel* channel =
+      grpc_channel_create(target, new_args, GRPC_CLIENT_DIRECT_CHANNEL, ct);
+  grpc_channel_args_destroy(new_args);
+  return channel;
 }

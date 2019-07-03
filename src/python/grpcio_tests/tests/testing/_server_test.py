@@ -21,13 +21,8 @@ import grpc_testing
 from tests.testing import _application_common
 from tests.testing import _application_testing_common
 from tests.testing import _server_application
-from tests.testing.proto import services_pb2
 
 
-# TODO(https://github.com/google/protobuf/issues/3452): Drop this skip.
-@unittest.skipIf(
-    services_pb2.DESCRIPTOR.services_by_name.get('FirstService') is None,
-    'Fix protobuf issue 3452!')
 class FirstServiceServicerTest(unittest.TestCase):
 
     def setUp(self):
@@ -110,14 +105,19 @@ class FirstServiceServicerTest(unittest.TestCase):
         second_termination = rpc.termination()
         third_termination = rpc.termination()
 
-        for later_initial_metadata in (second_initial_metadata,
-                                       third_initial_metadata,):
+        for later_initial_metadata in (
+                second_initial_metadata,
+                third_initial_metadata,
+        ):
             self.assertEqual(first_initial_metadata, later_initial_metadata)
         response = first_termination[0]
         terminal_metadata = first_termination[1]
         code = first_termination[2]
         details = first_termination[3]
-        for later_termination in (second_termination, third_termination,):
+        for later_termination in (
+                second_termination,
+                third_termination,
+        ):
             self.assertEqual(response, later_termination[0])
             self.assertEqual(terminal_metadata, later_termination[1])
             self.assertIs(code, later_termination[2])

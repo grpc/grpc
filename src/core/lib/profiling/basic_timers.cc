@@ -25,12 +25,14 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/sync.h>
-#include <grpc/support/thd.h>
 #include <grpc/support/time.h>
+#include <inttypes.h>
+#include <pthread.h>
 #include <stdio.h>
 #include <string.h>
 
-#include "src/core/lib/support/env.h"
+#include "src/core/lib/gprpp/global_config.h"
+#include "src/core/lib/profiling/timers.h"
 
 typedef enum { BEGIN = '{', END = '}', MARK = '.' } marker_type;
 
@@ -68,16 +70,21 @@ static pthread_cond_t g_cv;
 static gpr_timer_log_list g_in_progress_logs;
 static gpr_timer_log_list g_done_logs;
 static int g_shutdown;
-static gpr_thd_id g_writing_thread;
+static pthread_t g_writing_thread;
 static __thread int g_thread_id;
 static int g_next_thread_id;
 static int g_writing_enabled = 1;
 
+GPR_GLOBAL_CONFIG_DEFINE_STRING(grpc_latency_trace, "latency_trace.txt",
+                                "Output file name for latency trace")
+
 static const char* output_filename() {
   if (output_filename_or_null == NULL) {
-    output_filename_or_null = gpr_getenv("LATENCY_TRACE");
-    if (output_filename_or_null == NULL ||
-        strlen(output_filename_or_null) == 0) {
+    grpc_core::UniquePtr<char> value =
+        GPR_GLOBAL_CONFIG_GET(grpc_latency_trace);
+    if (strlen(value.get()) > 0) {
+      output_filename_or_null = value.release();
+    } else {
       output_filename_or_null = "latency_trace.txt";
     }
   }
@@ -149,7 +156,7 @@ static void write_log(gpr_timer_log* log) {
   }
 }
 
-static void writing_thread(void* unused) {
+static void* writing_thread(void* unused) {
   gpr_timer_log* log;
   pthread_mutex_lock(&g_mu);
   for (;;) {
@@ -164,7 +171,7 @@ static void writing_thread(void* unused) {
     }
     if (g_shutdown) {
       pthread_mutex_unlock(&g_mu);
-      return;
+      return NULL;
     }
   }
 }
@@ -182,7 +189,7 @@ static void finish_writing(void) {
   g_shutdown = 1;
   pthread_cond_signal(&g_cv);
   pthread_mutex_unlock(&g_mu);
-  gpr_thd_join(g_writing_thread);
+  pthread_join(g_writing_thread, NULL);
 
   gpr_log(GPR_INFO, "flushing logs");
 
@@ -201,9 +208,12 @@ void gpr_timers_set_log_filename(const char* filename) {
 }
 
 static void init_output() {
-  gpr_thd_options options = gpr_thd_options_default();
-  gpr_thd_options_set_joinable(&options);
-  GPR_ASSERT(gpr_thd_new(&g_writing_thread, writing_thread, NULL, &options));
+  pthread_attr_t attr;
+  pthread_attr_init(&attr);
+  pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_JOINABLE);
+  pthread_create(&g_writing_thread, &attr, &writing_thread, NULL);
+  pthread_attr_destroy(&attr);
+
   atexit(finish_writing);
 }
 

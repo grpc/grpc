@@ -81,15 +81,15 @@ class WorkerServiceClient extends \Grpc\BaseStub {
 
     /**
      * Quit this worker
-     * @param \Grpc\Testing\Void $argument input argument
+     * @param \Grpc\Testing\PBVoid $argument input argument
      * @param array $metadata metadata
      * @param array $options call options
      */
-    public function QuitWorker(\Grpc\Testing\Void $argument,
+    public function QuitWorker(\Grpc\Testing\PBVoid $argument,
       $metadata = [], $options = []) {
         return $this->_simpleRequest('/grpc.testing.WorkerService/QuitWorker',
         $argument,
-        ['\Grpc\Testing\Void', 'decode'],
+        ['\Grpc\Testing\PBVoid', 'decode'],
         $metadata, $options);
     }
 

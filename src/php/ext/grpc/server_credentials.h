@@ -19,16 +19,8 @@
 #ifndef NET_GRPC_PHP_GRPC_SERVER_CREDENTIALS_H_
 #define NET_GRPC_PHP_GRPC_SERVER_CREDENTIALS_H_
 
-#ifdef HAVE_CONFIG_H
-#include "config.h"
-#endif
-
-#include <php.h>
-#include <php_ini.h>
-#include <ext/standard/info.h>
 #include "php_grpc.h"
 
-#include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
 
 /* Class entry for the Server_Credentials PHP class */
@@ -40,23 +32,11 @@ PHP_GRPC_WRAP_OBJECT_START(wrapped_grpc_server_credentials)
   grpc_server_credentials *wrapped;
 PHP_GRPC_WRAP_OBJECT_END(wrapped_grpc_server_credentials)
 
-#if PHP_MAJOR_VERSION < 7
-
-#define Z_WRAPPED_GRPC_SERVER_CREDS_P(zv) \
-  (wrapped_grpc_server_credentials *)zend_object_store_get_object(zv TSRMLS_CC)
-
-#else
-
 static inline wrapped_grpc_server_credentials
 *wrapped_grpc_server_credentials_from_obj(zend_object *obj) {
   return (wrapped_grpc_server_credentials*)(
       (char*)(obj) - XtOffsetOf(wrapped_grpc_server_credentials, std));
 }
-
-#define Z_WRAPPED_GRPC_SERVER_CREDS_P(zv) \
-  wrapped_grpc_server_credentials_from_obj(Z_OBJ_P((zv)))
-
-#endif /* PHP_MAJOR_VERSION */
 
 /* Initializes the Server_Credentials PHP class */
 void grpc_init_server_credentials(TSRMLS_D);

@@ -13,10 +13,28 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-load("//bazel:grpc_build_system.bzl", "grpc_sh_binary", "grpc_cc_test", "grpc_cc_binary")
+load("//bazel:grpc_build_system.bzl", "grpc_cc_test", "grpc_cc_binary")
 
 def generate_resolver_component_tests():
   for unsecure_build_config_suffix in ['_unsecure', '']:
+    grpc_cc_test(
+        name = "address_sorting_test%s" % unsecure_build_config_suffix,
+        srcs = [
+            "address_sorting_test.cc",
+        ],
+        external_deps = [
+            "gtest",
+        ],
+        deps = [
+            "//test/cpp/util:test_util%s" % unsecure_build_config_suffix,
+            "//test/core/util:grpc_test_util%s" % unsecure_build_config_suffix,
+            "//:grpc++%s" % unsecure_build_config_suffix,
+            "//:grpc%s" % unsecure_build_config_suffix,
+            "//:gpr",
+            "//test/cpp/util:test_config",
+        ],
+        tags = ["no_windows"],
+    )
     # meant to be invoked only through the top-level shell script driver
     grpc_cc_binary(
         name = "resolver_component_test%s" % unsecure_build_config_suffix,
@@ -25,17 +43,18 @@ def generate_resolver_component_tests():
             "resolver_component_test.cc",
         ],
         external_deps = [
-            "gmock",
+            "gtest",
         ],
         deps = [
+            ":dns_test_util",
             "//test/cpp/util:test_util%s" % unsecure_build_config_suffix,
             "//test/core/util:grpc_test_util%s" % unsecure_build_config_suffix,
-            "//test/core/util:gpr_test_util",
             "//:grpc++%s" % unsecure_build_config_suffix,
             "//:grpc%s" % unsecure_build_config_suffix,
             "//:gpr",
             "//test/cpp/util:test_config",
         ],
+        tags = ["no_windows"],
     )
     grpc_cc_test(
         name = "resolver_component_tests_runner_invoker%s" % unsecure_build_config_suffix,
@@ -45,7 +64,6 @@ def generate_resolver_component_tests():
         deps = [
             "//test/cpp/util:test_util",
             "//test/core/util:grpc_test_util",
-            "//test/core/util:gpr_test_util",
             "//:grpc++",
             "//:grpc",
             "//:gpr",
@@ -54,11 +72,14 @@ def generate_resolver_component_tests():
         data = [
             ":resolver_component_tests_runner",
             ":resolver_component_test%s" % unsecure_build_config_suffix,
-            ":test_dns_server",
+            "//test/cpp/naming/utils:dns_server",
+            "//test/cpp/naming/utils:dns_resolver",
+            "//test/cpp/naming/utils:tcp_connect",
             "resolver_test_record_groups.yaml", # include the transitive dependency so that the dns sever py binary can locate this
         ],
         args = [
             "--test_bin_name=resolver_component_test%s" % unsecure_build_config_suffix,
             "--running_under_bazel=true",
-        ]
+        ],
+        tags = ["no_windows"],
     )

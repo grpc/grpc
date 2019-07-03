@@ -66,8 +66,27 @@ namespace Grpc.Core.Tests
             new Metadata.Entry("0123456789abc", "XYZ");
             new Metadata.Entry("-abc", "XYZ");
             new Metadata.Entry("a_bc_", "XYZ");
+            new Metadata.Entry("abc.xyz", "XYZ");
+            new Metadata.Entry("abc.xyz-bin", new byte[] {1, 2, 3});
             Assert.Throws(typeof(ArgumentException), () => new Metadata.Entry("abc[", "xyz"));
             Assert.Throws(typeof(ArgumentException), () => new Metadata.Entry("abc/", "xyz"));
+        }
+
+        [Test]
+        public void KeysAreNormalized_UppercaseKey()
+        {
+            var uppercaseKey = "ABC";
+            var entry = new Metadata.Entry(uppercaseKey, "XYZ");
+            Assert.AreEqual("abc", entry.Key);
+        }
+
+        [Test]
+        public void KeysAreNormalized_LowercaseKey()
+        {
+            var lowercaseKey = "abc";
+            var entry = new Metadata.Entry(lowercaseKey, "XYZ");
+            // no allocation if key already lowercase
+            Assert.AreSame(lowercaseKey, entry.Key);
         }
 
         [Test]

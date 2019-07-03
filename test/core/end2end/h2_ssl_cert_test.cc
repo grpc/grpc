@@ -22,14 +22,14 @@
 #include <string.h>
 
 #include <grpc/support/alloc.h>
-#include <grpc/support/host_port.h>
 #include <grpc/support/log.h>
 
 #include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/gpr/string.h"
+#include "src/core/lib/gpr/tmpfile.h"
+#include "src/core/lib/gprpp/host_port.h"
 #include "src/core/lib/security/credentials/credentials.h"
-#include "src/core/lib/support/env.h"
-#include "src/core/lib/support/string.h"
-#include "src/core/lib/support/tmpfile.h"
+#include "src/core/lib/security/security_connector/ssl_utils.h"
 #include "test/core/end2end/cq_verifier.h"
 #include "test/core/end2end/data/ssl_test_data.h"
 #include "test/core/util/port.h"
@@ -40,25 +40,22 @@
 namespace grpc {
 namespace testing {
 
-typedef struct fullstack_secure_fixture_data {
-  char* localaddr;
-} fullstack_secure_fixture_data;
+struct fullstack_secure_fixture_data {
+  grpc_core::UniquePtr<char> localaddr;
+};
 
 static grpc_end2end_test_fixture chttp2_create_fixture_secure_fullstack(
     grpc_channel_args* client_args, grpc_channel_args* server_args) {
   grpc_end2end_test_fixture f;
   int port = grpc_pick_unused_port_or_die();
   fullstack_secure_fixture_data* ffd =
-      static_cast<fullstack_secure_fixture_data*>(
-          gpr_malloc(sizeof(fullstack_secure_fixture_data)));
+      grpc_core::New<fullstack_secure_fixture_data>();
   memset(&f, 0, sizeof(f));
 
-  gpr_join_host_port(&ffd->localaddr, "localhost", port);
+  grpc_core::JoinHostPort(&ffd->localaddr, "localhost", port);
 
   f.fixture_data = ffd;
   f.cq = grpc_completion_queue_create_for_next(nullptr);
-  f.shutdown_cq = grpc_completion_queue_create_for_pluck(nullptr);
-
   return f;
 }
 
@@ -75,8 +72,8 @@ static void chttp2_init_client_secure_fullstack(
     grpc_channel_credentials* creds) {
   fullstack_secure_fixture_data* ffd =
       static_cast<fullstack_secure_fixture_data*>(f->fixture_data);
-  f->client =
-      grpc_secure_channel_create(creds, ffd->localaddr, client_args, nullptr);
+  f->client = grpc_secure_channel_create(creds, ffd->localaddr.get(),
+                                         client_args, nullptr);
   GPR_ASSERT(f->client != nullptr);
   grpc_channel_credentials_release(creds);
 }
@@ -91,7 +88,7 @@ static void chttp2_init_server_secure_fullstack(
   }
   f->server = grpc_server_create(server_args, nullptr);
   grpc_server_register_completion_queue(f->server, f->cq, nullptr);
-  GPR_ASSERT(grpc_server_add_secure_http2_port(f->server, ffd->localaddr,
+  GPR_ASSERT(grpc_server_add_secure_http2_port(f->server, ffd->localaddr.get(),
                                                server_creds));
   grpc_server_credentials_release(server_creds);
   grpc_server_start(f->server);
@@ -100,8 +97,7 @@ static void chttp2_init_server_secure_fullstack(
 void chttp2_tear_down_secure_fullstack(grpc_end2end_test_fixture* f) {
   fullstack_secure_fixture_data* ffd =
       static_cast<fullstack_secure_fixture_data*>(f->fixture_data);
-  gpr_free(ffd->localaddr);
-  gpr_free(ffd);
+  grpc_core::Delete(ffd);
 }
 
 static int fail_server_auth_check(grpc_channel_args* server_args) {
@@ -171,8 +167,8 @@ typedef enum { NONE, SELF_SIGNED, SIGNED, BAD_CERT_PAIR } certtype;
       default:                                                               \
         break;                                                               \
     }                                                                        \
-    ssl_creds =                                                              \
-        grpc_ssl_credentials_create(test_root_cert, key_cert_pair, NULL);    \
+    ssl_creds = grpc_ssl_credentials_create(test_root_cert, key_cert_pair,   \
+                                            NULL, NULL);                     \
     grpc_arg ssl_name_override = {                                           \
         GRPC_ARG_STRING,                                                     \
         const_cast<char*>(GRPC_SSL_TARGET_NAME_OVERRIDE_ARG),                \
@@ -181,9 +177,8 @@ typedef enum { NONE, SELF_SIGNED, SIGNED, BAD_CERT_PAIR } certtype;
         grpc_channel_args_copy_and_add(client_args, &ssl_name_override, 1);  \
     chttp2_init_client_secure_fullstack(f, new_client_args, ssl_creds);      \
     {                                                                        \
-      grpc_exec_ctx exec_ctx = GRPC_EXEC_CTX_INIT;                           \
-      grpc_channel_args_destroy(&exec_ctx, new_client_args);                 \
-      grpc_exec_ctx_finish(&exec_ctx);                                       \
+      grpc_core::ExecCtx exec_ctx;                                           \
+      grpc_channel_args_destroy(new_client_args);                            \
     }                                                                        \
   }
 
@@ -203,6 +198,7 @@ typedef enum { SUCCESS, FAIL } test_result;
      FEATURE_MASK_SUPPORTS_DELAYED_CONNECTION |       \
          FEATURE_MASK_SUPPORTS_PER_CALL_CREDENTIALS | \
          FEATURE_MASK_SUPPORTS_CLIENT_CHANNEL,        \
+     "foo.test.google.fr",                            \
      chttp2_create_fixture_secure_fullstack,          \
      CLIENT_INIT_NAME(cert_type),                     \
      SERVER_INIT_NAME(request_type),                  \
@@ -271,13 +267,13 @@ static void drain_cq(grpc_completion_queue* cq) {
   } while (ev.type != GRPC_QUEUE_SHUTDOWN);
 }
 
+// Shuts down the server.
+// Side effect - Also shuts down and drains the completion queue.
 static void shutdown_server(grpc_end2end_test_fixture* f) {
   if (!f->server) return;
-  grpc_server_shutdown_and_notify(f->server, f->shutdown_cq, tag(1000));
-  GPR_ASSERT(grpc_completion_queue_pluck(f->shutdown_cq, tag(1000),
-                                         grpc_timeout_seconds_to_deadline(5),
-                                         nullptr)
-                 .type == GRPC_OP_COMPLETE);
+  grpc_server_shutdown_and_notify(f->server, f->cq, tag(1000));
+  grpc_completion_queue_shutdown(f->cq);
+  drain_cq(f->cq);
   grpc_server_destroy(f->server);
   f->server = nullptr;
 }
@@ -289,13 +285,9 @@ static void shutdown_client(grpc_end2end_test_fixture* f) {
 }
 
 static void end_test(grpc_end2end_test_fixture* f) {
-  shutdown_server(f);
   shutdown_client(f);
-
-  grpc_completion_queue_shutdown(f->cq);
-  drain_cq(f->cq);
+  shutdown_server(f);
   grpc_completion_queue_destroy(f->cq);
-  grpc_completion_queue_destroy(f->shutdown_cq);
 }
 
 static void simple_request_body(grpc_end2end_test_fixture f,
@@ -320,7 +312,8 @@ static void simple_request_body(grpc_end2end_test_fixture f,
   op->flags = GRPC_INITIAL_METADATA_WAIT_FOR_READY;
   op->reserved = nullptr;
   op++;
-  error = grpc_call_start_batch(c, ops, (size_t)(op - ops), tag(1), nullptr);
+  error = grpc_call_start_batch(c, ops, static_cast<size_t>(op - ops), tag(1),
+                                nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
   CQ_EXPECT_COMPLETION(cqv, tag(1), expected_result == SUCCESS);
@@ -363,7 +356,7 @@ int main(int argc, char** argv) {
   size_t roots_size = strlen(test_root_cert);
   char* roots_filename;
 
-  grpc_test_init(argc, argv);
+  grpc::testing::TestEnvironment env(argc, argv);
   /* Set the SSL roots env var. */
   roots_file =
       gpr_tmpfile("chttp2_simple_ssl_cert_fullstack_test", &roots_filename);
@@ -371,7 +364,7 @@ int main(int argc, char** argv) {
   GPR_ASSERT(roots_file != nullptr);
   GPR_ASSERT(fwrite(test_root_cert, 1, roots_size, roots_file) == roots_size);
   fclose(roots_file);
-  gpr_setenv(GRPC_DEFAULT_SSL_ROOTS_FILE_PATH_ENV_VAR, roots_filename);
+  GPR_GLOBAL_CONFIG_SET(grpc_default_ssl_roots_file_path, roots_filename);
 
   grpc_init();
   ::testing::InitGoogleTest(&argc, argv);

@@ -19,11 +19,12 @@
 #ifndef TEST_QPS_SERVER_H
 #define TEST_QPS_SERVER_H
 
-#include <grpc++/resource_quota.h>
-#include <grpc++/security/server_credentials.h>
-#include <grpc++/server_builder.h>
 #include <grpc/support/cpu.h>
 #include <grpc/support/log.h>
+#include <grpcpp/channel.h>
+#include <grpcpp/resource_quota.h>
+#include <grpcpp/security/server_credentials.h>
+#include <grpcpp/server_builder.h>
 #include <vector>
 
 #include "src/cpp/util/core_stats.h"
@@ -84,7 +85,7 @@ class Server {
     }
     payload->set_type(type);
     // Don't waste time creating a new payload of identical size.
-    if (payload->body().length() != (size_t)size) {
+    if (payload->body().length() != static_cast<size_t>(size)) {
       std::unique_ptr<char[]> body(new char[size]());
       payload->set_body(body.get(), size);
     }
@@ -152,6 +153,7 @@ class Server {
 std::unique_ptr<Server> CreateSynchronousServer(const ServerConfig& config);
 std::unique_ptr<Server> CreateAsyncServer(const ServerConfig& config);
 std::unique_ptr<Server> CreateAsyncGenericServer(const ServerConfig& config);
+std::unique_ptr<Server> CreateCallbackServer(const ServerConfig& config);
 
 }  // namespace testing
 }  // namespace grpc

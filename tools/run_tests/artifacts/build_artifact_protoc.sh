@@ -13,12 +13,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# Use devtoolset environment that has GCC 4.7 before set -ex
-source scl_source enable devtoolset-1.1
+# Use devtoolset environment that has GCC 4.8 before set -ex
+# shellcheck disable=SC1091
+source scl_source enable devtoolset-2
 
 set -ex
 
-cd $(dirname $0)/../../..
+cd "$(dirname "$0")/../../.."
 
 make plugins
 

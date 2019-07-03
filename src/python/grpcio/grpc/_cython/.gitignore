@@ -1,4 +1,4 @@
-cygrpc.c
+cygrpc.cpp
 *.a
 *.so
 *.dll

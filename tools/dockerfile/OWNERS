@@ -1,0 +1,11 @@
+set noparent
+
+# These owners are in place to ensure that dockerfiles are changed in a way
+# that maximizes use of docker cache when rebuilding and that the docker images
+# are fast to build and sane in general.
+# Also, push_testing_images.sh needs to be used upon changing the docker images
+# for kokoro to be able to access the pre-built images.
+
+@jtattermusch
+@apolcyn
+@nicolasnoble

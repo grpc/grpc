@@ -27,6 +27,8 @@
 #include <grpc/impl/codegen/compression_types.h>
 #include <grpc/impl/codegen/grpc_types.h>
 #include <grpc/support/alloc.h>
+#include <grpc/support/log.h>
+#include <grpc/support/string_util.h>
 #include <string.h>
 
 #include "rb_grpc.h"
@@ -50,21 +52,24 @@ typedef struct grpc_rb_compression_options {
   grpc_compression_options* wrapped;
 } grpc_rb_compression_options;
 
-/* Destroys the compression options instances and free the
- * wrapped grpc compression options. */
-static void grpc_rb_compression_options_free(void* p) {
+static void grpc_rb_compression_options_free_internal(void* p) {
   grpc_rb_compression_options* wrapper = NULL;
   if (p == NULL) {
     return;
   };
   wrapper = (grpc_rb_compression_options*)p;
-
   if (wrapper->wrapped != NULL) {
     gpr_free(wrapper->wrapped);
     wrapper->wrapped = NULL;
   }
-
   xfree(p);
+}
+
+/* Destroys the compression options instances and free the
+ * wrapped grpc compression options. */
+static void grpc_rb_compression_options_free(void* p) {
+  grpc_rb_compression_options_free_internal(p);
+  grpc_ruby_shutdown();
 }
 
 /* Ruby recognized data type for the CompressionOptions class. */
@@ -85,9 +90,8 @@ static rb_data_type_t grpc_rb_compression_options_data_type = {
    Allocate the wrapped grpc compression options and
    initialize it here too. */
 static VALUE grpc_rb_compression_options_alloc(VALUE cls) {
+  grpc_ruby_init();
   grpc_rb_compression_options* wrapper = NULL;
-
-  grpc_ruby_once_init();
 
   wrapper = gpr_malloc(sizeof(grpc_rb_compression_options));
   wrapper->wrapped = NULL;
@@ -159,7 +163,6 @@ void grpc_rb_compression_options_algorithm_name_to_value_internal(
     grpc_compression_algorithm* algorithm_value, VALUE algorithm_name) {
   grpc_slice name_slice;
   VALUE algorithm_name_as_string = Qnil;
-  char* tmp_str = NULL;
 
   Check_Type(algorithm_name, T_SYMBOL);
 
@@ -175,8 +178,17 @@ void grpc_rb_compression_options_algorithm_name_to_value_internal(
    * the algorithm parse function
    * in GRPC core. */
   if (!grpc_compression_algorithm_parse(name_slice, algorithm_value)) {
-    tmp_str = grpc_slice_to_c_string(name_slice);
-    rb_raise(rb_eNameError, "Invalid compression algorithm name: %s", tmp_str);
+    char* name_slice_str = grpc_slice_to_c_string(name_slice);
+    char* error_message_str = NULL;
+    VALUE error_message_ruby_str = Qnil;
+    GPR_ASSERT(gpr_asprintf(&error_message_str,
+                            "Invalid compression algorithm name: %s",
+                            name_slice_str) != -1);
+    gpr_free(name_slice_str);
+    error_message_ruby_str =
+        rb_str_new(error_message_str, strlen(error_message_str));
+    gpr_free(error_message_str);
+    rb_raise(rb_eNameError, "%s", StringValueCStr(error_message_ruby_str));
   }
 
   grpc_slice_unref(name_slice);

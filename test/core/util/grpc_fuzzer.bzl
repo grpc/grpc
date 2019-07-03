@@ -14,15 +14,17 @@
 
 load("//bazel:grpc_build_system.bzl", "grpc_cc_test")
 
-def grpc_fuzzer(name, corpus, srcs = [], deps = [], **kwargs):
+def grpc_fuzzer(name, corpus, srcs = [], deps = [], size = "large", timeout = "long", **kwargs):
   grpc_cc_test(
     name = name,
     srcs = srcs,
     deps = deps + ["//test/core/util:fuzzer_corpus_test"],
-    data = [corpus],
-    args = ['--directory', '$(location %s)' % corpus],
+    data = native.glob([corpus + "/**"]),
     external_deps = [
       'gtest',
     ],
+    size = size,
+    timeout = timeout,
+    args = ["--directory=" + native.package_name() + "/" + corpus,],
     **kwargs
   )

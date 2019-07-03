@@ -16,6 +16,8 @@
  *
  */
 
+#include <grpc/support/port_platform.h>
+
 #include "src/core/lib/slice/b64.h"
 
 #include <stdint.h>
@@ -23,8 +25,8 @@
 
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
-#include <grpc/support/useful.h>
 
+#include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/slice/slice_internal.h"
 
 /* --- Constants. --- */
@@ -58,7 +60,7 @@ char* grpc_base64_encode(const void* vdata, size_t data_size, int url_safe,
                          int multiline) {
   size_t result_projected_size =
       grpc_base64_estimate_encoded_size(data_size, url_safe, multiline);
-  char* result = (char*)gpr_malloc(result_projected_size);
+  char* result = static_cast<char*>(gpr_malloc(result_projected_size));
   grpc_base64_encode_core(result, vdata, data_size, url_safe, multiline);
   return result;
 }
@@ -75,7 +77,7 @@ size_t grpc_base64_estimate_encoded_size(size_t data_size, int url_safe,
 
 void grpc_base64_encode_core(char* result, const void* vdata, size_t data_size,
                              int url_safe, int multiline) {
-  const unsigned char* data = (const unsigned char*)vdata;
+  const unsigned char* data = static_cast<const unsigned char*>(vdata);
   const char* base64_chars =
       url_safe ? base64_url_safe_chars : base64_url_unsafe_chars;
   const size_t result_projected_size =
@@ -122,23 +124,24 @@ void grpc_base64_encode_core(char* result, const void* vdata, size_t data_size,
   result[current - result] = '\0';
 }
 
-grpc_slice grpc_base64_decode(grpc_exec_ctx* exec_ctx, const char* b64,
-                              int url_safe) {
-  return grpc_base64_decode_with_len(exec_ctx, b64, strlen(b64), url_safe);
+grpc_slice grpc_base64_decode(const char* b64, int url_safe) {
+  return grpc_base64_decode_with_len(b64, strlen(b64), url_safe);
 }
 
 static void decode_one_char(const unsigned char* codes, unsigned char* result,
                             size_t* result_offset) {
-  uint32_t packed = ((uint32_t)codes[0] << 2) | ((uint32_t)codes[1] >> 4);
-  result[(*result_offset)++] = (unsigned char)packed;
+  uint32_t packed = (static_cast<uint32_t>(codes[0]) << 2) |
+                    (static_cast<uint32_t>(codes[1]) >> 4);
+  result[(*result_offset)++] = static_cast<unsigned char>(packed);
 }
 
 static void decode_two_chars(const unsigned char* codes, unsigned char* result,
                              size_t* result_offset) {
-  uint32_t packed = ((uint32_t)codes[0] << 10) | ((uint32_t)codes[1] << 4) |
-                    ((uint32_t)codes[2] >> 2);
-  result[(*result_offset)++] = (unsigned char)(packed >> 8);
-  result[(*result_offset)++] = (unsigned char)(packed);
+  uint32_t packed = (static_cast<uint32_t>(codes[0]) << 10) |
+                    (static_cast<uint32_t>(codes[1]) << 4) |
+                    (static_cast<uint32_t>(codes[2]) >> 2);
+  result[(*result_offset)++] = static_cast<unsigned char>(packed >> 8);
+  result[(*result_offset)++] = static_cast<unsigned char>(packed);
 }
 
 static int decode_group(const unsigned char* codes, size_t num_codes,
@@ -176,17 +179,18 @@ static int decode_group(const unsigned char* codes, size_t num_codes,
     decode_two_chars(codes, result, result_offset);
   } else {
     /* No padding. */
-    uint32_t packed = ((uint32_t)codes[0] << 18) | ((uint32_t)codes[1] << 12) |
-                      ((uint32_t)codes[2] << 6) | codes[3];
-    result[(*result_offset)++] = (unsigned char)(packed >> 16);
-    result[(*result_offset)++] = (unsigned char)(packed >> 8);
-    result[(*result_offset)++] = (unsigned char)(packed);
+    uint32_t packed = (static_cast<uint32_t>(codes[0]) << 18) |
+                      (static_cast<uint32_t>(codes[1]) << 12) |
+                      (static_cast<uint32_t>(codes[2]) << 6) | codes[3];
+    result[(*result_offset)++] = static_cast<unsigned char>(packed >> 16);
+    result[(*result_offset)++] = static_cast<unsigned char>(packed >> 8);
+    result[(*result_offset)++] = static_cast<unsigned char>(packed);
   }
   return 1;
 }
 
-grpc_slice grpc_base64_decode_with_len(grpc_exec_ctx* exec_ctx, const char* b64,
-                                       size_t b64_len, int url_safe) {
+grpc_slice grpc_base64_decode_with_len(const char* b64, size_t b64_len,
+                                       int url_safe) {
   grpc_slice result = GRPC_SLICE_MALLOC(b64_len);
   unsigned char* current = GRPC_SLICE_START_PTR(result);
   size_t result_size = 0;
@@ -194,7 +198,7 @@ grpc_slice grpc_base64_decode_with_len(grpc_exec_ctx* exec_ctx, const char* b64,
   size_t num_codes = 0;
 
   while (b64_len--) {
-    unsigned char c = (unsigned char)(*b64++);
+    unsigned char c = static_cast<unsigned char>(*b64++);
     signed char code;
     if (c >= GPR_ARRAY_SIZE(base64_bytes)) continue;
     if (url_safe) {
@@ -215,7 +219,7 @@ grpc_slice grpc_base64_decode_with_len(grpc_exec_ctx* exec_ctx, const char* b64,
         goto fail;
       }
     } else {
-      codes[num_codes++] = (unsigned char)code;
+      codes[num_codes++] = static_cast<unsigned char>(code);
       if (num_codes == 4) {
         if (!decode_group(codes, num_codes, current, &result_size)) goto fail;
         num_codes = 0;
@@ -231,6 +235,6 @@ grpc_slice grpc_base64_decode_with_len(grpc_exec_ctx* exec_ctx, const char* b64,
   return result;
 
 fail:
-  grpc_slice_unref_internal(exec_ctx, result);
+  grpc_slice_unref_internal(result);
   return grpc_empty_slice();
 }

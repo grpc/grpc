@@ -27,15 +27,26 @@ $LOAD_PATH.unshift(this_dir) unless $LOAD_PATH.include?(this_dir)
 require 'grpc'
 require 'math_services_pb'
 require 'optparse'
+require 'logger'
 
 include GRPC::Core::TimeConsts
+
+module StdoutLogger
+  def logger
+    LOGGER
+  end
+
+  LOGGER = Logger.new(STDOUT)
+end
+
+GRPC.extend(StdoutLogger)
 
 def do_div(stub)
   GRPC.logger.info('request_response')
   GRPC.logger.info('----------------')
   req = Math::DivArgs.new(dividend: 7, divisor: 3)
   GRPC.logger.info("div(7/3): req=#{req.inspect}")
-  resp = stub.div(req, timeout: INFINITE_FUTURE)
+  resp = stub.div(req)
   GRPC.logger.info("Answer: #{resp.inspect}")
   GRPC.logger.info('----------------')
 end
@@ -56,7 +67,7 @@ def do_fib(stub)
   GRPC.logger.info('----------------')
   req = Math::FibArgs.new(limit: 11)
   GRPC.logger.info("fib(11): req=#{req.inspect}")
-  resp = stub.fib(req, timeout: INFINITE_FUTURE)
+  resp = stub.fib(req)
   resp.each do |r|
     GRPC.logger.info("Answer: #{r.inspect}")
   end
@@ -71,7 +82,7 @@ def do_div_many(stub)
   reqs << Math::DivArgs.new(dividend: 5, divisor: 2)
   reqs << Math::DivArgs.new(dividend: 7, divisor: 2)
   GRPC.logger.info("div(7/3), div(5/2), div(7/2): reqs=#{reqs.inspect}")
-  resp = stub.div_many(reqs, timeout: INFINITE_FUTURE)
+  resp = stub.div_many(reqs)
   resp.each do |r|
     GRPC.logger.info("Answer: #{r.inspect}")
   end
@@ -107,19 +118,16 @@ def main
 
   # The Math::Math:: module occurs because the service has the same name as its
   # package. That practice should be avoided by defining real services.
-
-  p options
   if options['secure']
     stub_opts = {
       :creds => test_creds,
-      GRPC::Core::Channel::SSL_TARGET => 'foo.test.google.fr'
+      GRPC::Core::Channel::SSL_TARGET => 'foo.test.google.fr',
+      timeout: INFINITE_FUTURE,
     }
-    p stub_opts
-    p options['host']
     stub = Math::Math::Stub.new(options['host'], **stub_opts)
     GRPC.logger.info("... connecting securely on #{options['host']}")
   else
-    stub = Math::Math::Stub.new(options['host'])
+    stub = Math::Math::Stub.new(options['host'], :this_channel_is_insecure, timeout: INFINITE_FUTURE)
     GRPC.logger.info("... connecting insecurely on #{options['host']}")
   end
 

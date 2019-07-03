@@ -23,9 +23,10 @@
 
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
-#include <grpc/support/host_port.h>
 #include <grpc/support/log.h>
 
+#include "src/core/lib/gprpp/host_port.h"
+#include "src/core/lib/gprpp/memory.h"
 #include "test/core/end2end/cq_verifier.h"
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
@@ -54,7 +55,6 @@ static struct test_state g_state;
 
 static void prepare_test(int is_client) {
   int port = grpc_pick_unused_port_or_die();
-  char* server_hostport;
   grpc_op* op;
   g_state.is_client = is_client;
   grpc_metadata_array_init(&g_state.initial_metadata_recv);
@@ -77,14 +77,13 @@ static void prepare_test(int is_client) {
   } else {
     g_state.server = grpc_server_create(nullptr, nullptr);
     grpc_server_register_completion_queue(g_state.server, g_state.cq, nullptr);
-    gpr_join_host_port(&server_hostport, "0.0.0.0", port);
-    grpc_server_add_insecure_http2_port(g_state.server, server_hostport);
+    grpc_core::UniquePtr<char> server_hostport;
+    grpc_core::JoinHostPort(&server_hostport, "0.0.0.0", port);
+    grpc_server_add_insecure_http2_port(g_state.server, server_hostport.get());
     grpc_server_start(g_state.server);
-    gpr_free(server_hostport);
-    gpr_join_host_port(&server_hostport, "localhost", port);
+    grpc_core::JoinHostPort(&server_hostport, "localhost", port);
     g_state.chan =
-        grpc_insecure_channel_create(server_hostport, nullptr, nullptr);
-    gpr_free(server_hostport);
+        grpc_insecure_channel_create(server_hostport.get(), nullptr, nullptr);
     grpc_slice host = grpc_slice_from_static_string("bar");
     g_state.call = grpc_channel_create_call(
         g_state.chan, nullptr, GRPC_PROPAGATE_DEFAULTS, g_state.cq,
@@ -209,7 +208,7 @@ static void test_too_many_metadata() {
 
   op = g_state.ops;
   op->op = GRPC_OP_SEND_INITIAL_METADATA;
-  op->data.send_initial_metadata.count = (size_t)INT_MAX + 1;
+  op->data.send_initial_metadata.count = static_cast<size_t>(INT_MAX) + 1;
   op->flags = 0;
   op->reserved = nullptr;
   op++;
@@ -499,7 +498,7 @@ static void test_too_many_trailing_metadata() {
   op = g_state.ops;
   op->op = GRPC_OP_SEND_STATUS_FROM_SERVER;
   op->data.send_status_from_server.trailing_metadata_count =
-      (size_t)INT_MAX + 1;
+      static_cast<size_t>(INT_MAX) + 1;
   op->data.send_status_from_server.status = GRPC_STATUS_UNIMPLEMENTED;
   grpc_slice status_details = grpc_slice_from_static_string("xyz");
   op->data.send_status_from_server.status_details = &status_details;
@@ -609,7 +608,7 @@ static void test_invalid_initial_metadata_reserved_key() {
 }
 
 int main(int argc, char** argv) {
-  grpc_test_init(argc, argv);
+  grpc::testing::TestEnvironment env(argc, argv);
   grpc_init();
   test_invalid_initial_metadata_reserved_key();
   test_non_null_reserved_on_start_batch();

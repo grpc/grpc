@@ -1,7 +1,7 @@
 # gRPC over HTTP2
 
 ## Introduction
-This document serves as a detailed description for an implementation of gRPC carried over HTTP2 draft 17 framing. It assumes familiarity with the HTTP2 specification.
+This document serves as a detailed description for an implementation of gRPC carried over <a href="https://tools.ietf.org/html/rfc7540">HTTP2 framing</a>. It assumes familiarity with the HTTP2 specification.
 
 ## Protocol
 Production rules are using <a href="http://tools.ietf.org/html/rfc5234">ABNF syntax</a>.
@@ -24,7 +24,7 @@ Request-Headers are delivered as HTTP2 headers in HEADERS + CONTINUATION frames.
 * **Call-Definition** → Method Scheme Path TE [Authority] [Timeout] Content-Type [Message-Type] [Message-Encoding] [Message-Accept-Encoding] [User-Agent]
 * **Method** →  ":method POST"
 * **Scheme** → ":scheme "  ("http" / "https")
-* **Path** → ":path" "/" Service-Name "/" {_method name_}
+* **Path** → ":path" "/" Service-Name "/" {_method name_}  # But see note below.
 * **Service-Name** → {_IDL-specific service name_}
 * **Authority** → ":authority" {_virtual host name of authority_}
 * **TE** → "te" "trailers"  # Used to detect incompatible proxies
@@ -61,6 +61,8 @@ the form shown above.
 
 If **Timeout** is omitted a server should assume an infinite timeout. Client implementations are free to send a default minimum timeout based on their deployment requirements.
 
+If **Content-Type** does not begin with "application/grpc", gRPC servers SHOULD respond with HTTP status of 415 (Unsupported Media Type).  This will prevent other HTTP/2 clients from interpreting a gRPC error response, which uses status 200 (OK), as successful.
+
 **Custom-Metadata** is an arbitrary set of key-value pairs defined by the application layer. Header names starting with "grpc-" but not listed here are reserved for future GRPC use and should not be used by applications as **Custom-Metadata**.
 
 Note that HTTP2 does not allow arbitrary octet sequences for header values so binary header values must be encoded using Base64 as per https://tools.ietf.org/html/rfc4648#section-4. Implementations MUST accept padded and un-padded values and should emit un-padded values. Applications define binary headers by having their names end with "-bin". Runtime libraries use this suffix to detect binary headers and properly apply base64 encoding & decoding as headers are sent and received.
@@ -92,7 +94,7 @@ The repeated sequence of **Length-Prefixed-Message** items is delivered in DATA 
 
 * **Length-Prefixed-Message** → Compressed-Flag Message-Length Message
 * <a name="compressed-flag"></a>**Compressed-Flag** → 0 / 1   # encoded as 1 byte unsigned integer
-* **Message-Length** → {_length of Message_}  # encoded as 4 byte unsigned integer
+* **Message-Length** → {_length of Message_}  # encoded as 4 byte unsigned integer (big endian)
 * **Message** → \*{binary octet}
 
 A **Compressed-Flag** value of 1 indicates that the binary octet sequence of **Message** is compressed using the mechanism declared by the **Message-Encoding** header. A value of 0 indicates that no encoding of **Message** bytes has occurred. Compression contexts are NOT maintained over message boundaries, implementations must create a new context for each message in the stream. If the **Message-Encoding** header is omitted then the **Compressed-Flag** must be 0.
@@ -170,6 +172,7 @@ HEADERS (flags = END_STREAM, END_HEADERS)
 grpc-status = 0 # OK
 trace-proto-bin = jher831yy13JHy3hc
 ```
+
 #### User Agents
 
 While the protocol does not require a user-agent to function it is recommended that clients provide a structured user-agent string that provides a basic description of the calling library, version & platform to facilitate issue diagnosis in heterogeneous environments. The following structure is recommended to library developers
@@ -190,14 +193,14 @@ grpc-java-android/0.9.1 (gingerbread/1.2.4; nexus5; tmobile)
 Unless explicitly defined to be, gRPC Calls are not assumed to be idempotent.  Specifically:
 
 * Calls that cannot be proven to have started will not be retried.
-* There is no mechanisim for duplicate suppression as it is not necessary.
+* There is no mechanism for duplicate suppression as it is not necessary.
 * Calls that are marked as idempotent may be sent multiple times.
 
 
 #### HTTP2 Transport Mapping
 
 ##### Stream Identification
-All GRPC calls need to specify an internal ID. We will use HTTP2 stream-ids as call identifiers in this scheme. NOTE: These id’s are contextual to an open HTTP2 session and will not be unique within a given process that is handling more than one HTTP2 session nor can they be used as GUIDs.
+All GRPC calls need to specify an internal ID. We will use HTTP2 stream-ids as call identifiers in this scheme. NOTE: These ids are contextual to an open HTTP2 session and will not be unique within a given process that is handling more than one HTTP2 session nor can they be used as GUIDs.
 
 ##### Data Frames
 DATA frame boundaries have no relation to **Length-Prefixed-Message** boundaries and implementations should make no assumptions about their alignment.
@@ -232,6 +235,7 @@ INADEQUATE_SECURITY| PERMISSION_DENIED … with additional detail indicating tha
 The HTTP2 specification mandates the use of TLS 1.2 or higher when TLS is used with HTTP2. It also places some additional constraints on the allowed ciphers in deployments to avoid known-problems as well as requiring SNI support. It is also expected that HTTP2 will be used in conjunction with proprietary transport security mechanisms about which the specification can make no meaningful recommendations.
 
 ##### Connection Management
+
 ###### GOAWAY Frame
 Sent by servers to clients to indicate that they will no longer accept any new streams on the associated connections. This frame includes the id of the last successfully accepted stream by the server. Clients should consider any stream initiated after the last successfully accepted stream as UNAVAILABLE and retry the call elsewhere. Clients are free to continue working with the already accepted streams until they complete or the connection is terminated.
 
@@ -253,5 +257,3 @@ to be used.
 * **Service-Name** → ?( {_proto package name_} "." ) {_service name_}
 * **Message-Type** → {_fully qualified proto message name_}
 * **Content-Type** → "application/grpc+proto"
-
-

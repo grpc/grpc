@@ -19,7 +19,10 @@ set -ex
 export GRPC_CONFIG=${CONFIG:-opt}
 
 # change to grpc's ruby directory
-cd $(dirname $0)/../../..
+cd "$(dirname "$0")/../../.."
 
 rm -rf ./tmp
 rake compile
+
+# build grpc_ruby_plugin
+make grpc_ruby_plugin -j8

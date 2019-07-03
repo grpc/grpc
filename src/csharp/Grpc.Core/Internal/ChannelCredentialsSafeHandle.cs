@@ -38,15 +38,15 @@ namespace Grpc.Core.Internal
             return creds;
         }
 
-        public static ChannelCredentialsSafeHandle CreateSslCredentials(string pemRootCerts, KeyCertificatePair keyCertPair)
+        public static ChannelCredentialsSafeHandle CreateSslCredentials(string pemRootCerts, KeyCertificatePair keyCertPair, IntPtr verifyPeerCallbackTag)
         {
             if (keyCertPair != null)
             {
-                return Native.grpcsharp_ssl_credentials_create(pemRootCerts, keyCertPair.CertificateChain, keyCertPair.PrivateKey);
+                return Native.grpcsharp_ssl_credentials_create(pemRootCerts, keyCertPair.CertificateChain, keyCertPair.PrivateKey, verifyPeerCallbackTag);
             }
             else
             {
-                return Native.grpcsharp_ssl_credentials_create(pemRootCerts, null, null);
+                return Native.grpcsharp_ssl_credentials_create(pemRootCerts, null, null, verifyPeerCallbackTag);
             }
         }
 

@@ -29,6 +29,7 @@ extern "C" {
 #define GRPC_X509_CN_PROPERTY_NAME "x509_common_name"
 #define GRPC_X509_SAN_PROPERTY_NAME "x509_subject_alternative_name"
 #define GRPC_X509_PEM_CERT_PROPERTY_NAME "x509_pem_cert"
+#define GRPC_SSL_SESSION_REUSED_PROPERTY "ssl_session_reused"
 
 /** Environment variable that points to the default SSL roots file. This file
    must be a PEM encoded file with all the roots such as the one that can be
@@ -56,48 +57,59 @@ typedef enum {
 } grpc_ssl_certificate_config_reload_status;
 
 typedef enum {
-  /** Server does not request client certificate. A client can present a self
-     signed or signed certificates if it wishes to do so and they would be
-     accepted. */
+  /** Server does not request client certificate.
+     The certificate presented by the client is not checked by the server at
+     all. (A client may present a self signed or signed certificate or not
+     present a certificate at all and any of those option would be accepted) */
   GRPC_SSL_DONT_REQUEST_CLIENT_CERTIFICATE,
   /** Server requests client certificate but does not enforce that the client
      presents a certificate.
 
      If the client presents a certificate, the client authentication is left to
-     the application based on the metadata like certificate etc.
+     the application (the necessary metadata will be available to the
+     application via authentication context properties, see grpc_auth_context).
 
-     The key cert pair should still be valid for the SSL connection to be
-     established. */
+     The client's key certificate pair must be valid for the SSL connection to
+     be established. */
   GRPC_SSL_REQUEST_CLIENT_CERTIFICATE_BUT_DONT_VERIFY,
   /** Server requests client certificate but does not enforce that the client
      presents a certificate.
 
      If the client presents a certificate, the client authentication is done by
-     grpc framework (The client needs to either present a signed cert or skip no
-     certificate for a successful connection).
+     the gRPC framework. (For a successful connection the client needs to either
+     present a certificate that can be verified against the root certificate
+     configured by the server or not present a certificate at all)
 
-     The key cert pair should still be valid for the SSL connection to be
-     established. */
+     The client's key certificate pair must be valid for the SSL connection to
+     be established. */
   GRPC_SSL_REQUEST_CLIENT_CERTIFICATE_AND_VERIFY,
-  /** Server requests client certificate but enforces that the client presents a
+  /** Server requests client certificate and enforces that the client presents a
      certificate.
 
      If the client presents a certificate, the client authentication is left to
-     the application based on the metadata like certificate etc.
+     the application (the necessary metadata will be available to the
+     application via authentication context properties, see grpc_auth_context).
 
-     The key cert pair should still be valid for the SSL connection to be
-     established. */
+     The client's key certificate pair must be valid for the SSL connection to
+     be established. */
   GRPC_SSL_REQUEST_AND_REQUIRE_CLIENT_CERTIFICATE_BUT_DONT_VERIFY,
-  /** Server requests client certificate but enforces that the client presents a
+  /** Server requests client certificate and enforces that the client presents a
      certificate.
 
-     The cerificate presented by the client is verified by grpc framework (The
-     client needs to present signed certs for a successful connection).
+     The certificate presented by the client is verified by the gRPC framework.
+     (For a successful connection the client needs to present a certificate that
+     can be verified against the root certificate configured by the server)
 
-     The key cert pair should still be valid for the SSL connection to be
-     established. */
+     The client's key certificate pair must be valid for the SSL connection to
+     be established. */
   GRPC_SSL_REQUEST_AND_REQUIRE_CLIENT_CERTIFICATE_AND_VERIFY
 } grpc_ssl_client_certificate_request_type;
+
+/**
+ * Type of local connections for which local channel/server credentials will be
+ * applied. It supports UDS and local TCP connections.
+ */
+typedef enum { UDS = 0, LOCAL_TCP } grpc_local_connect_type;
 
 #ifdef __cplusplus
 }

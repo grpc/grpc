@@ -16,6 +16,8 @@
  *
  */
 
+#include "php_grpc.h"
+
 #include "call.h"
 #include "channel.h"
 #include "server.h"
@@ -24,19 +26,13 @@
 #include "call_credentials.h"
 #include "server_credentials.h"
 #include "completion_queue.h"
-
-#ifdef HAVE_CONFIG_H
-#include "config.h"
-#endif
-
-#include <php.h>
-#include <php_ini.h>
-#include <ext/standard/info.h>
-#include "php_grpc.h"
+#include <ext/spl/spl_exceptions.h>
+#include <zend_exceptions.h>
 
 ZEND_DECLARE_MODULE_GLOBALS(grpc)
 static PHP_GINIT_FUNCTION(grpc);
-
+HashTable grpc_persistent_list;
+HashTable grpc_target_upper_bound_map;
 /* {{{ grpc_functions[]
  *
  * Every user visible function must have an entry in grpc_functions[].
@@ -45,6 +41,8 @@ const zend_function_entry grpc_functions[] = {
     PHP_FE_END /* Must be the last line in grpc_functions[] */
 };
 /* }}} */
+
+ZEND_DECLARE_MODULE_GLOBALS(grpc);
 
 /* {{{ grpc_module_entry
  */
@@ -71,15 +69,12 @@ ZEND_GET_MODULE(grpc)
 
 /* {{{ PHP_INI
  */
-/* Remove comments and fill if you need to have entries in php.ini
    PHP_INI_BEGIN()
-   STD_PHP_INI_ENTRY("grpc.global_value", "42", PHP_INI_ALL, OnUpdateLong,
-                     global_value, zend_grpc_globals, grpc_globals)
-   STD_PHP_INI_ENTRY("grpc.global_string", "foobar", PHP_INI_ALL,
-                     OnUpdateString, global_string, zend_grpc_globals,
-                     grpc_globals)
+   STD_PHP_INI_ENTRY("grpc.enable_fork_support", "0", PHP_INI_SYSTEM, OnUpdateBool,
+                     enable_fork_support, zend_grpc_globals, grpc_globals)
+   STD_PHP_INI_ENTRY("grpc.poll_strategy", NULL, PHP_INI_SYSTEM, OnUpdateString,
+                     poll_strategy, zend_grpc_globals, grpc_globals)
    PHP_INI_END()
-*/
 /* }}} */
 
 /* {{{ php_grpc_init_globals
@@ -93,12 +88,147 @@ ZEND_GET_MODULE(grpc)
 */
 /* }}} */
 
+void create_new_channel(
+    wrapped_grpc_channel *channel,
+    char *target,
+    grpc_channel_args args,
+    wrapped_grpc_channel_credentials *creds) {
+  if (creds == NULL) {
+    channel->wrapper->wrapped = grpc_insecure_channel_create(target, &args,
+                                                             NULL);
+  } else {
+    channel->wrapper->wrapped =
+        grpc_secure_channel_create(creds->wrapped, target, &args, NULL);
+  }
+}
+
+void acquire_persistent_locks() {
+  zval *data;
+  PHP_GRPC_HASH_FOREACH_VAL_START(&grpc_persistent_list, data)
+    php_grpc_zend_resource *rsrc  =
+                (php_grpc_zend_resource*) PHP_GRPC_HASH_VALPTR_TO_VAL(data)
+    if (rsrc == NULL) {
+      break;
+    }
+    channel_persistent_le_t* le = rsrc->ptr;
+
+    gpr_mu_lock(&le->channel->mu);
+  PHP_GRPC_HASH_FOREACH_END()
+}
+
+void release_persistent_locks() {
+  zval *data;
+  PHP_GRPC_HASH_FOREACH_VAL_START(&grpc_persistent_list, data)
+    php_grpc_zend_resource *rsrc  =
+                (php_grpc_zend_resource*) PHP_GRPC_HASH_VALPTR_TO_VAL(data)
+    if (rsrc == NULL) {
+      break;
+    }
+    channel_persistent_le_t* le = rsrc->ptr;
+
+    gpr_mu_unlock(&le->channel->mu);
+  PHP_GRPC_HASH_FOREACH_END()
+}
+
+void destroy_grpc_channels() {
+  zval *data;
+  PHP_GRPC_HASH_FOREACH_VAL_START(&grpc_persistent_list, data)
+    php_grpc_zend_resource *rsrc  =
+                (php_grpc_zend_resource*) PHP_GRPC_HASH_VALPTR_TO_VAL(data)
+    if (rsrc == NULL) {
+      break;
+    }
+    channel_persistent_le_t* le = rsrc->ptr;
+
+    wrapped_grpc_channel wrapped_channel;
+    wrapped_channel.wrapper = le->channel;
+    grpc_channel_wrapper *channel = wrapped_channel.wrapper;
+    grpc_channel_destroy(channel->wrapped);
+  PHP_GRPC_HASH_FOREACH_END()
+}
+
+void restart_channels() {
+  zval *data;
+  PHP_GRPC_HASH_FOREACH_VAL_START(&grpc_persistent_list, data)
+    php_grpc_zend_resource *rsrc  =
+                (php_grpc_zend_resource*) PHP_GRPC_HASH_VALPTR_TO_VAL(data)
+    if (rsrc == NULL) {
+      break;
+    }
+    channel_persistent_le_t* le = rsrc->ptr;
+
+    wrapped_grpc_channel wrapped_channel;
+    wrapped_channel.wrapper = le->channel;
+    grpc_channel_wrapper *channel = wrapped_channel.wrapper;
+    create_new_channel(&wrapped_channel, channel->target, channel->args,
+                       channel->creds);
+    gpr_mu_unlock(&channel->mu);
+  PHP_GRPC_HASH_FOREACH_END()
+}
+
+void prefork() {
+  acquire_persistent_locks();
+}
+
+void postfork_child() {
+  TSRMLS_FETCH();
+
+  // loop through persistant list and destroy all underlying grpc_channel objs
+  destroy_grpc_channels();
+
+  // clear completion queue
+  grpc_php_shutdown_completion_queue(TSRMLS_C);
+
+  // clean-up grpc_core
+  grpc_shutdown_blocking();
+  if (grpc_is_initialized() > 0) {
+    zend_throw_exception(spl_ce_UnexpectedValueException,
+                         "Oops, failed to shutdown gRPC Core after fork()",
+                         1 TSRMLS_CC);
+  }
+
+  // restart grpc_core
+  grpc_init();
+  grpc_php_init_completion_queue(TSRMLS_C);
+
+  // re-create grpc_channel and point wrapped to it
+  // unlock wrapped grpc channel mutex
+  restart_channels();
+}
+
+void postfork_parent() {
+  release_persistent_locks();
+}
+
+void register_fork_handlers() {
+  if (getenv("GRPC_ENABLE_FORK_SUPPORT")) {
+#ifdef GRPC_POSIX_FORK_ALLOW_PTHREAD_ATFORK
+    pthread_atfork(&prefork, &postfork_parent, &postfork_child);
+#endif  // GRPC_POSIX_FORK_ALLOW_PTHREAD_ATFORK
+  }
+}
+
+void apply_ini_settings(TSRMLS_D) {
+  if (GRPC_G(enable_fork_support)) {
+    char *enable_str = malloc(sizeof("GRPC_ENABLE_FORK_SUPPORT=1"));
+    strcpy(enable_str, "GRPC_ENABLE_FORK_SUPPORT=1");
+    putenv(enable_str);
+  }
+
+  if (GRPC_G(poll_strategy)) {
+    char *poll_str = malloc(sizeof("GRPC_POLL_STRATEGY=") +
+                            strlen(GRPC_G(poll_strategy)));
+    strcpy(poll_str, "GRPC_POLL_STRATEGY=");
+    strcat(poll_str, GRPC_G(poll_strategy));
+    putenv(poll_str);
+  }
+}
+
 /* {{{ PHP_MINIT_FUNCTION
  */
 PHP_MINIT_FUNCTION(grpc) {
-  /* If you have INI entries, uncomment these lines
-     REGISTER_INI_ENTRIES();
-  */
+  REGISTER_INI_ENTRIES();
+
   /* Register call error constants */
   REGISTER_LONG_CONSTANT("Grpc\\CALL_OK", GRPC_CALL_OK,
                          CONST_CS | CONST_PERSISTENT);
@@ -234,15 +364,17 @@ PHP_MINIT_FUNCTION(grpc) {
 /* {{{ PHP_MSHUTDOWN_FUNCTION
  */
 PHP_MSHUTDOWN_FUNCTION(grpc) {
-  /* uncomment this line if you have INI entries
-     UNREGISTER_INI_ENTRIES();
-  */
+  UNREGISTER_INI_ENTRIES();
   // WARNING: This function IS being called by PHP when the extension
   // is unloaded but the logs were somehow suppressed.
   if (GRPC_G(initialized)) {
+    zend_hash_clean(&grpc_persistent_list);
+    zend_hash_destroy(&grpc_persistent_list);
+    zend_hash_clean(&grpc_target_upper_bound_map);
+    zend_hash_destroy(&grpc_target_upper_bound_map);
     grpc_shutdown_timeval(TSRMLS_C);
     grpc_php_shutdown_completion_queue(TSRMLS_C);
-    grpc_shutdown();
+    grpc_shutdown_blocking();
     GRPC_G(initialized) = 0;
   }
   return SUCCESS;
@@ -253,12 +385,10 @@ PHP_MSHUTDOWN_FUNCTION(grpc) {
  */
 PHP_MINFO_FUNCTION(grpc) {
   php_info_print_table_start();
-  php_info_print_table_header(2, "grpc support", "enabled");
+  php_info_print_table_row(2, "grpc support", "enabled");
+  php_info_print_table_row(2, "grpc module version", PHP_GRPC_VERSION);
   php_info_print_table_end();
-
-  /* Remove comments if you have entries in php.ini
-     DISPLAY_INI_ENTRIES();
-  */
+  DISPLAY_INI_ENTRIES();
 }
 /* }}} */
 
@@ -266,7 +396,9 @@ PHP_MINFO_FUNCTION(grpc) {
  */
 PHP_RINIT_FUNCTION(grpc) {
   if (!GRPC_G(initialized)) {
+    apply_ini_settings(TSRMLS_C);
     grpc_init();
+    register_fork_handlers();
     grpc_php_init_completion_queue(TSRMLS_C);
     GRPC_G(initialized) = 1;
   }
@@ -278,6 +410,8 @@ PHP_RINIT_FUNCTION(grpc) {
  */
 static PHP_GINIT_FUNCTION(grpc) {
   grpc_globals->initialized = 0;
+  grpc_globals->enable_fork_support = 0;
+  grpc_globals->poll_strategy = NULL;
 }
 /* }}} */
 

@@ -30,12 +30,13 @@
 #endif
 
 #include <grpc/support/alloc.h>
-#include <grpc/support/cmdline.h>
-#include <grpc/support/host_port.h>
 #include <grpc/support/log.h>
 #include <grpc/support/time.h>
+
+#include "src/core/lib/gprpp/host_port.h"
 #include "src/core/lib/profiling/timers.h"
 #include "test/core/end2end/data/ssl_test_data.h"
+#include "test/core/util/cmdline.h"
 #include "test/core/util/grpc_profiler.h"
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
@@ -111,7 +112,8 @@ static void handle_unary_method(void) {
   op->data.recv_close_on_server.cancelled = &was_cancelled;
   op++;
 
-  error = grpc_call_start_batch(call, unary_ops, (size_t)(op - unary_ops),
+  error = grpc_call_start_batch(call, unary_ops,
+                                static_cast<size_t>(op - unary_ops),
                                 tag(FLING_SERVER_BATCH_OPS_FOR_UNARY), nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
 }
@@ -170,7 +172,7 @@ static void sigint_handler(int x) { _exit(0); }
 int main(int argc, char** argv) {
   grpc_event ev;
   call_state* s;
-  char* addr_buf = nullptr;
+  grpc_core::UniquePtr<char> addr_buf;
   gpr_cmdline* cl;
   grpc_completion_queue* shutdown_cq;
   int shutdown_started = 0;
@@ -188,7 +190,7 @@ int main(int argc, char** argv) {
   grpc_test_init(1, fake_argv);
 
   grpc_init();
-  srand((unsigned)clock());
+  srand(static_cast<unsigned>(clock()));
 
   cl = gpr_cmdline_create("fling server");
   gpr_cmdline_add_string(cl, "bind", "Bind host:port", &addr);
@@ -197,8 +199,8 @@ int main(int argc, char** argv) {
   gpr_cmdline_destroy(cl);
 
   if (addr == nullptr) {
-    gpr_join_host_port(&addr_buf, "::", grpc_pick_unused_port_or_die());
-    addr = addr_buf;
+    grpc_core::JoinHostPort(&addr_buf, "::", grpc_pick_unused_port_or_die());
+    addr = addr_buf.get();
   }
   gpr_log(GPR_INFO, "creating server on: %s", addr);
 
@@ -218,8 +220,8 @@ int main(int argc, char** argv) {
   grpc_server_register_completion_queue(server, cq, nullptr);
   grpc_server_start(server);
 
-  gpr_free(addr_buf);
-  addr = addr_buf = nullptr;
+  addr = nullptr;
+  addr_buf.reset();
 
   grpc_call_details_init(&call_details);
 

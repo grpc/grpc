@@ -24,67 +24,46 @@
 
 #include <grpc/support/alloc.h>
 
+#include "src/core/ext/filters/client_channel/backup_poller.h"
 #include "src/core/ext/filters/client_channel/client_channel.h"
+#include "src/core/ext/filters/client_channel/client_channel_channelz.h"
+#include "src/core/ext/filters/client_channel/global_subchannel_pool.h"
 #include "src/core/ext/filters/client_channel/http_connect_handshaker.h"
 #include "src/core/ext/filters/client_channel/http_proxy.h"
 #include "src/core/ext/filters/client_channel/lb_policy_registry.h"
 #include "src/core/ext/filters/client_channel/proxy_mapper_registry.h"
 #include "src/core/ext/filters/client_channel/resolver_registry.h"
+#include "src/core/ext/filters/client_channel/resolver_result_parsing.h"
 #include "src/core/ext/filters/client_channel/retry_throttle.h"
-#include "src/core/ext/filters/client_channel/subchannel_index.h"
 #include "src/core/lib/surface/channel_init.h"
 
-static bool append_filter(grpc_exec_ctx* exec_ctx,
-                          grpc_channel_stack_builder* builder, void* arg) {
+static bool append_filter(grpc_channel_stack_builder* builder, void* arg) {
   return grpc_channel_stack_builder_append_filter(
-      builder, (const grpc_channel_filter*)arg, nullptr, nullptr);
+      builder, static_cast<const grpc_channel_filter*>(arg), nullptr, nullptr);
 }
 
-static bool set_default_host_if_unset(grpc_exec_ctx* exec_ctx,
-                                      grpc_channel_stack_builder* builder,
-                                      void* unused) {
-  const grpc_channel_args* args =
-      grpc_channel_stack_builder_get_channel_arguments(builder);
-  for (size_t i = 0; i < args->num_args; i++) {
-    if (0 == strcmp(args->args[i].key, GRPC_ARG_DEFAULT_AUTHORITY) ||
-        0 == strcmp(args->args[i].key, GRPC_SSL_TARGET_NAME_OVERRIDE_ARG)) {
-      return true;
-    }
-  }
-  char* default_authority = grpc_get_default_authority(
-      exec_ctx, grpc_channel_stack_builder_get_target(builder));
-  if (default_authority != nullptr) {
-    grpc_arg arg = grpc_channel_arg_string_create(
-        (char*)GRPC_ARG_DEFAULT_AUTHORITY, default_authority);
-    grpc_channel_args* new_args = grpc_channel_args_copy_and_add(args, &arg, 1);
-    grpc_channel_stack_builder_set_channel_arguments(exec_ctx, builder,
-                                                     new_args);
-    gpr_free(default_authority);
-    grpc_channel_args_destroy(exec_ctx, new_args);
-  }
-  return true;
-}
-
-extern "C" void grpc_client_channel_init(void) {
-  grpc_lb_policy_registry_init();
-  grpc_resolver_registry_init();
-  grpc_retry_throttle_map_init();
+void grpc_client_channel_init(void) {
+  grpc_core::ServiceConfig::Init();
+  grpc_core::internal::ClientChannelServiceConfigParser::Register();
+  grpc_core::LoadBalancingPolicyRegistry::Builder::InitRegistry();
+  grpc_core::ResolverRegistry::Builder::InitRegistry();
+  grpc_core::internal::ServerRetryThrottleMap::Init();
   grpc_proxy_mapper_registry_init();
   grpc_register_http_proxy_mapper();
-  grpc_subchannel_index_init();
-  grpc_channel_init_register_stage(GRPC_CLIENT_CHANNEL, INT_MIN,
-                                   set_default_host_if_unset, nullptr);
+  grpc_core::GlobalSubchannelPool::Init();
   grpc_channel_init_register_stage(
       GRPC_CLIENT_CHANNEL, GRPC_CHANNEL_INIT_BUILTIN_PRIORITY, append_filter,
       (void*)&grpc_client_channel_filter);
   grpc_http_connect_register_handshaker_factory();
+  grpc_client_channel_global_init_backup_polling();
 }
 
-extern "C" void grpc_client_channel_shutdown(void) {
-  grpc_subchannel_index_shutdown();
+void grpc_client_channel_shutdown(void) {
+  grpc_core::GlobalSubchannelPool::Shutdown();
   grpc_channel_init_shutdown();
   grpc_proxy_mapper_registry_shutdown();
-  grpc_retry_throttle_map_shutdown();
-  grpc_resolver_registry_shutdown();
-  grpc_lb_policy_registry_shutdown();
+  grpc_core::internal::ServerRetryThrottleMap::Shutdown();
+  grpc_core::ResolverRegistry::Builder::ShutdownRegistry();
+  grpc_core::LoadBalancingPolicyRegistry::Builder::ShutdownRegistry();
+  grpc_core::ServiceConfig::Shutdown();
 }

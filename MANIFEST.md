@@ -3,10 +3,6 @@
 ## Bazel
 * [grpc.bzl](grpc.bzl)
 
-## Node
-* [binding.gyp](binding.gyp)
-* [package.json](package.json)
-
 ## Objective-C
 * [gRPC.podspec](gRPC.podspec)
 

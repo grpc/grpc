@@ -22,7 +22,7 @@
  * A GRXWriteable is an object to which a sequence of values can be sent. The
  * sequence finishes with an optional error.
  */
-@protocol GRXWriteable <NSObject>
+@protocol GRXWriteable<NSObject>
 
 /** Push the next value of the sequence to the receiving object. */
 - (void)writeValue:(id)value;

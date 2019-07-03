@@ -17,7 +17,8 @@
  */
 
 #include <grpc/support/port_platform.h>
-#if GRPC_ARES != 1 || defined(GRPC_UV)
+
+#if GRPC_ARES != 1
 
 #include "src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper.h"
 
@@ -25,36 +26,40 @@ struct grpc_ares_request {
   char val;
 };
 
-static grpc_ares_request* grpc_dns_lookup_ares_impl(
-    grpc_exec_ctx* exec_ctx, const char* dns_server, const char* name,
-    const char* default_port, grpc_pollset_set* interested_parties,
-    grpc_closure* on_done, grpc_lb_addresses** addrs, bool check_grpclb,
-    char** service_config_json) {
+static grpc_ares_request* grpc_dns_lookup_ares_locked_impl(
+    const char* dns_server, const char* name, const char* default_port,
+    grpc_pollset_set* interested_parties, grpc_closure* on_done,
+    grpc_core::UniquePtr<grpc_core::ServerAddressList>* addrs,
+    bool check_grpclb, char** service_config_json, int query_timeout_ms,
+    grpc_combiner* combiner) {
   return NULL;
 }
 
-grpc_ares_request* (*grpc_dns_lookup_ares)(
-    grpc_exec_ctx* exec_ctx, const char* dns_server, const char* name,
-    const char* default_port, grpc_pollset_set* interested_parties,
-    grpc_closure* on_done, grpc_lb_addresses** addrs, bool check_grpclb,
-    char** service_config_json) = grpc_dns_lookup_ares_impl;
+grpc_ares_request* (*grpc_dns_lookup_ares_locked)(
+    const char* dns_server, const char* name, const char* default_port,
+    grpc_pollset_set* interested_parties, grpc_closure* on_done,
+    grpc_core::UniquePtr<grpc_core::ServerAddressList>* addrs,
+    bool check_grpclb, char** service_config_json, int query_timeout_ms,
+    grpc_combiner* combiner) = grpc_dns_lookup_ares_locked_impl;
 
-void grpc_cancel_ares_request(grpc_exec_ctx* exec_ctx, grpc_ares_request* r) {}
+static void grpc_cancel_ares_request_locked_impl(grpc_ares_request* r) {}
+
+void (*grpc_cancel_ares_request_locked)(grpc_ares_request* r) =
+    grpc_cancel_ares_request_locked_impl;
 
 grpc_error* grpc_ares_init(void) { return GRPC_ERROR_NONE; }
 
 void grpc_ares_cleanup(void) {}
 
-static void grpc_resolve_address_ares_impl(grpc_exec_ctx* exec_ctx,
-                                           const char* name,
+static void grpc_resolve_address_ares_impl(const char* name,
                                            const char* default_port,
                                            grpc_pollset_set* interested_parties,
                                            grpc_closure* on_done,
                                            grpc_resolved_addresses** addrs) {}
 
 void (*grpc_resolve_address_ares)(
-    grpc_exec_ctx* exec_ctx, const char* name, const char* default_port,
+    const char* name, const char* default_port,
     grpc_pollset_set* interested_parties, grpc_closure* on_done,
     grpc_resolved_addresses** addrs) = grpc_resolve_address_ares_impl;
 
-#endif /* GRPC_ARES != 1 || defined(GRPC_UV) */
+#endif /* GRPC_ARES != 1 */

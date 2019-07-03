@@ -39,36 +39,6 @@ PROTO_STEM = os.path.join(GRPC_STEM, 'src', 'proto')
 PROTO_GEN_STEM = os.path.join(GRPC_STEM, 'src', 'python', 'gens')
 CYTHON_STEM = os.path.join(PYTHON_STEM, 'grpc', '_cython')
 
-CONF_PY_ADDENDUM = """
-extensions.append('sphinx.ext.napoleon')
-napoleon_google_docstring = True
-napoleon_numpy_docstring = True
-napoleon_include_special_with_doc = True
-
-html_theme = 'sphinx_rtd_theme'
-copyright = "2016, The gRPC Authors"
-"""
-
-API_GLOSSARY = """
-
-Glossary
-================
-
-.. glossary::
-
-  metadatum
-    A key-value pair included in the HTTP header.  It is a 
-    2-tuple where the first entry is the key and the
-    second is the value, i.e. (key, value).  The metadata key is an ASCII str,
-    and must be a valid HTTP header name.  The metadata value can be
-    either a valid HTTP ASCII str, or bytes.  If bytes are provided,
-    the key must end with '-bin', i.e.
-    ``('binary-metadata-bin', b'\\x00\\xFF')``
-
-  metadata
-    A sequence of metadatum.
-"""
-
 
 class CommandError(Exception):
     """Simple exception class for GRPC custom commands."""
@@ -104,8 +74,8 @@ def _get_grpc_custom_bdist(decorated_basename, target_bdist_basename):
         with open(bdist_path, 'w') as bdist_file:
             bdist_file.write(bdist_data)
     except IOError as error:
-        raise CommandError('{}\n\nCould not write grpcio bdist: {}'
-                           .format(traceback.format_exc(), error.message))
+        raise CommandError('{}\n\nCould not write grpcio bdist: {}'.format(
+            traceback.format_exc(), error.message))
     return bdist_path
 
 
@@ -124,24 +94,14 @@ class SphinxDocumentation(setuptools.Command):
     def run(self):
         # We import here to ensure that setup.py has had a chance to install the
         # relevant package eggs first.
-        import sphinx
-        import sphinx.apidoc
-        metadata = self.distribution.metadata
-        src_dir = os.path.join(PYTHON_STEM, 'grpc')
-        sys.path.append(src_dir)
-        sphinx.apidoc.main([
-            '', '--force', '--full', '-H', metadata.name, '-A', metadata.author,
-            '-V', metadata.version, '-R', metadata.version, '-o',
-            os.path.join('doc', 'src'), src_dir
-        ])
-        conf_filepath = os.path.join('doc', 'src', 'conf.py')
-        with open(conf_filepath, 'a') as conf_file:
-            conf_file.write(CONF_PY_ADDENDUM)
-        glossary_filepath = os.path.join('doc', 'src', 'grpc.rst')
-        with open(glossary_filepath, 'a') as glossary_filepath:
-            glossary_filepath.write(API_GLOSSARY)
-        sphinx.main(
-            ['', os.path.join('doc', 'src'), os.path.join('doc', 'build')])
+        import sphinx.cmd.build
+        source_dir = os.path.join(GRPC_STEM, 'doc', 'python', 'sphinx')
+        target_dir = os.path.join(GRPC_STEM, 'doc', 'build')
+        exit_code = sphinx.cmd.build.build_main(
+            ['-b', 'html', '-W', '--keep-going', source_dir, target_dir])
+        if exit_code is not 0:
+            raise CommandError(
+                "Documentation generation has warnings or errors")
 
 
 class BuildProjectMetadata(setuptools.Command):
@@ -189,10 +149,11 @@ def check_and_update_cythonization(extensions):
         for source in extension.sources:
             base, file_ext = os.path.splitext(source)
             if file_ext == '.pyx':
-                generated_pyx_source = next((base + gen_ext
-                                             for gen_ext in ('.c', '.cpp',)
-                                             if os.path.isfile(base + gen_ext)),
-                                            None)
+                generated_pyx_source = next(
+                    (base + gen_ext for gen_ext in (
+                        '.c',
+                        '.cpp',
+                    ) if os.path.isfile(base + gen_ext)), None)
                 if generated_pyx_source:
                     generated_pyx_sources.append(generated_pyx_source)
                 else:
@@ -251,29 +212,40 @@ class BuildExt(build_ext.build_ext):
     LINK_OPTIONS = {}
 
     def build_extensions(self):
-        if "darwin" in sys.platform:
-            config = os.environ.get('CONFIG', 'opt')
-            target_path = os.path.abspath(
-                os.path.join(
-                    os.path.dirname(os.path.realpath(__file__)), '..', '..',
-                    '..', 'libs', config))
-            targets = [
-                os.path.join(target_path, 'libboringssl.a'),
-                os.path.join(target_path, 'libares.a'),
-                os.path.join(target_path, 'libgpr.a'),
-                os.path.join(target_path, 'libgrpc.a')
-            ]
-            make_process = subprocess.Popen(
-                ['make'] + targets,
+
+        def compiler_ok_with_extra_std():
+            """Test if default compiler is okay with specifying c++ version
+            when invoked in C mode. GCC is okay with this, while clang is not.
+            """
+            cc_test = subprocess.Popen(
+                ['cc', '-x', 'c', '-std=c++11', '-'],
+                stdin=subprocess.PIPE,
                 stdout=subprocess.PIPE,
                 stderr=subprocess.PIPE)
-            make_out, make_err = make_process.communicate()
-            if make_out and make_process.returncode != 0:
-                sys.stdout.write(str(make_out) + '\n')
-            if make_err:
-                sys.stderr.write(str(make_err) + '\n')
-            if make_process.returncode != 0:
-                raise Exception("make command failed!")
+            _, cc_err = cc_test.communicate(input=b'int main(){return 0;}')
+            return not 'invalid argument' in str(cc_err)
+
+        # This special conditioning is here due to difference of compiler
+        #   behavior in gcc and clang. The clang doesn't take --stdc++11
+        #   flags but gcc does. Since the setuptools of Python only support
+        #   all C or all C++ compilation, the mix of C and C++ will crash.
+        #   *By default*, macOS and FreBSD use clang and Linux use gcc
+        #
+        #   If we are not using a permissive compiler that's OK with being
+        #   passed wrong std flags, swap out compile function by adding a filter
+        #   for it.
+        if not compiler_ok_with_extra_std():
+            old_compile = self.compiler._compile
+
+            def new_compile(obj, src, ext, cc_args, extra_postargs, pp_opts):
+                if src[-2:] == '.c':
+                    extra_postargs = [
+                        arg for arg in extra_postargs if not '-std=c++' in arg
+                    ]
+                return old_compile(obj, src, ext, cc_args, extra_postargs,
+                                   pp_opts)
+
+            self.compiler._compile = new_compile
 
         compiler = self.compiler.compiler_type
         if compiler in BuildExt.C_OPTIONS:
@@ -299,10 +271,10 @@ class Gather(setuptools.Command):
     """Command to gather project dependencies."""
 
     description = 'gather dependencies for grpcio'
-    user_options = [
-        ('test', 't', 'flag indicating to gather test dependencies'),
-        ('install', 'i', 'flag indicating to gather install dependencies')
-    ]
+    user_options = [('test', 't',
+                     'flag indicating to gather test dependencies'),
+                    ('install', 'i',
+                     'flag indicating to gather install dependencies')]
 
     def initialize_options(self):
         self.test = False

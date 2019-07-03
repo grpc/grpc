@@ -18,7 +18,7 @@ some configuration as environment variables that can be set.
 * GRPC_SSL_CIPHER_SUITES
   A colon separated list of cipher suites to use with OpenSSL
   Defaults to:
-    ECDHE-RSA-AES128-GCM-SHA256:ECDHE-RSA-AES128-SHA256:ECDHE-RSA-AES256-SHA384:ECDHE-RSA-AES256-GCM-SHA384
+    ECDHE-RSA-AES128-GCM-SHA256:ECDHE-RSA-AES256-GCM-SHA384
 
 * GRPC_DEFAULT_SSL_ROOTS_FILE_PATH
   PEM file to load SSL roots from
@@ -39,17 +39,21 @@ some configuration as environment variables that can be set.
   gRPC C core is processing requests via debug logs. Available tracers include:
   - api - traces api calls to the C core
   - bdp_estimator - traces behavior of bdp estimation logic
-  - call_combiner - traces call combiner state
   - call_error - traces the possible errors contributing to final call status
+  - cares_resolver - traces operations of the c-ares based DNS resolver
+  - cares_address_sorting - traces operations of the c-ares based DNS
+    resolver's resolved address sorter
   - channel - traces operations on the C core channel stack
-  - client_channel - traces client channel activity, including resolver
-    and load balancing policy interaction
-  - combiner - traces combiner lock state
+  - client_channel_call - traces client channel call batch activity
+  - client_channel_routing - traces client channel call routing, including
+    resolver and load balancing policy interaction
   - compression - traces compression operations
   - connectivity_state - traces connectivity state changes to channels
-  - channel_stack_builder - traces information about channel stacks being built
+  - cronet - traces state in the cronet transport engine
   - executor - traces grpc's internal thread pool ('the executor')
   - glb - traces the grpclb load balancer
+  - handshaker - traces handshaking state
+  - health_check_client - traces health checking client code
   - http - traces state in the http2 transport engine
   - http2_stream_state - traces all http2 stream state mutations.
   - http1 - traces HTTP/1.x operations performed by gRPC
@@ -64,9 +68,9 @@ some configuration as environment variables that can be set.
   - resource_quota - trace resource quota objects internals
   - round_robin - traces the round_robin load balancing policy
   - queue_pluck
-  - queue_timeout
   - server_channel - lightweight trace of significant server channel events
   - secure_endpoint - traces bytes flowing through encrypted channels
+  - subchannel - traces the connectivity state of subchannel
   - timer - timers (alarms) in the grpc internals
   - timer_check - more detailed trace of timer logic in grpc internals
   - transport_security - traces metadata about secure channel establishment
@@ -77,9 +81,16 @@ some configuration as environment variables that can be set.
   accomplished by invoking `CONFIG=dbg make <target>`
   - alarm_refcount - refcounting traces for grpc_alarm structure
   - metadata - tracks creation and mutation of metadata
+  - combiner - traces combiner lock state
+  - call_combiner - traces call combiner state
   - closure - tracks closure creation, scheduling, and completion
+  - fd_trace - traces fd create(), shutdown() and close() calls for channel fds.
+    Also traces epoll fd create()/close() calls in epollex polling engine
+    traces epoll-fd creation/close calls for epollex polling engine
   - pending_tags - traces still-in-progress tags on completion queues
   - polling - traces the selected polling engine
+  - polling_api - traces the api calls to polling engine
+  - subchannel_refcount
   - queue_refcount
   - error_refcount
   - stream_refcount
@@ -110,15 +121,16 @@ some configuration as environment variables that can be set.
   - ERROR - log only errors
 
 * GRPC_TRACE_FUZZER
-  if set, the fuzzers will output trace (it is usually supressed).
+  if set, the fuzzers will output trace (it is usually suppressed).
 
 * GRPC_DNS_RESOLVER
   Declares which DNS resolver to use. The default is ares if gRPC is built with
   c-ares support. Otherwise, the value of this environment variable is ignored.
   Available DNS resolver include:
-  - native (default)- a DNS resolver based around getaddrinfo(), creates a new thread to
+  - ares (default on most platforms except iOS, Android or Node)- a DNS
+    resolver based around the c-ares library
+  - native - a DNS resolver based around getaddrinfo(), creates a new thread to
     perform name resolution
-  - ares - a DNS resolver based around the c-ares library
 
 * GRPC_CLIENT_CHANNEL_BACKUP_POLL_INTERVAL_MS
   Default: 5000
@@ -127,3 +139,12 @@ some configuration as environment variables that can be set.
   there is no active polling thread. They help reconnect disconnected client
   channels (mostly due to idleness), so that the next RPC on this channel won't
   fail. Set to 0 to turn off the backup polls.
+
+* GRPC_EXPERIMENTAL_DISABLE_FLOW_CONTROL
+  if set, flow control will be effectively disabled. Max out all values and
+  assume the remote peer does the same. Thus we can ignore any flow control
+  bookkeeping, error checking, and decision making
+
+* grpc_cfstream
+  set to 1 to turn on CFStream experiment. With this experiment gRPC uses CFStream API to make TCP
+  connections. The option is only available on iOS platform and when macro GRPC_CFSTREAM is defined.

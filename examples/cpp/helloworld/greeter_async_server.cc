@@ -21,10 +21,14 @@
 #include <string>
 #include <thread>
 
-#include <grpc++/grpc++.h>
+#include <grpcpp/grpcpp.h>
 #include <grpc/support/log.h>
 
+#ifdef BAZEL_BUILD
+#include "examples/protos/helloworld.grpc.pb.h"
+#else
 #include "helloworld.grpc.pb.h"
+#endif
 
 using grpc::Server;
 using grpc::ServerAsyncResponseWriter;

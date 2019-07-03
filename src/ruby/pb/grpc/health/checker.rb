@@ -14,7 +14,6 @@
 
 require 'grpc'
 require 'grpc/health/v1/health_services_pb'
-require 'thread'
 
 module Grpc
   # Health contains classes and modules that support providing a health check
@@ -37,15 +36,29 @@ module Grpc
         @status_mutex.synchronize do
           status = @statuses["#{req.service}"]
         end
-	if status.nil?
+        if status.nil?
           fail GRPC::BadStatus.new_status_exception(StatusCodes::NOT_FOUND)
-	end
+        end
         HealthCheckResponse.new(status: status)
       end
 
       # Adds the health status for a given service.
       def add_status(service, status)
         @status_mutex.synchronize { @statuses["#{service}"] = status }
+      end
+
+      # Adds given health status for all given services
+      def set_status_for_services(status, *services)
+        @status_mutex.synchronize do
+          services.each { |service| @statuses["#{service}"] = status }
+        end
+      end
+
+      # Adds health status for each service given within hash
+      def add_statuses(service_statuses = {})
+        @status_mutex.synchronize do
+          service_statuses.each_pair { |service, status| @statuses["#{service}"] = status }
+        end
       end
 
       # Clears the status for the given service.

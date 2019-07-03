@@ -25,7 +25,6 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/time.h>
-#include <grpc/support/useful.h>
 #include "test/core/end2end/cq_verifier.h"
 
 static void* tag(intptr_t t) { return (void*)t; }
@@ -101,11 +100,9 @@ static void simple_request_body(grpc_end2end_test_config config,
   int was_cancelled = 2;
 
   gpr_timespec deadline = five_seconds_from_now();
-  c = grpc_channel_create_call(
-      f.client, nullptr, GRPC_PROPAGATE_DEFAULTS, f.cq,
-      grpc_slice_from_static_string("/foo"),
-      get_host_override_slice("foo.test.google.fr:1234", config), deadline,
-      nullptr);
+  c = grpc_channel_create_call(f.client, nullptr, GRPC_PROPAGATE_DEFAULTS, f.cq,
+                               grpc_slice_from_static_string("/foo"), nullptr,
+                               deadline, nullptr);
   GPR_ASSERT(c);
 
   grpc_metadata_array_init(&initial_metadata_recv);
@@ -136,7 +133,8 @@ static void simple_request_body(grpc_end2end_test_config config,
   op->flags = 0;
   op->reserved = nullptr;
   op++;
-  error = grpc_call_start_batch(c, ops, (size_t)(op - ops), tag(1), nullptr);
+  error = grpc_call_start_batch(c, ops, static_cast<size_t>(op - ops), tag(1),
+                                nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
   error =
@@ -166,7 +164,8 @@ static void simple_request_body(grpc_end2end_test_config config,
   op->flags = 0;
   op->reserved = nullptr;
   op++;
-  error = grpc_call_start_batch(s, ops, (size_t)(op - ops), tag(102), nullptr);
+  error = grpc_call_start_batch(s, ops, static_cast<size_t>(op - ops), tag(102),
+                                nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
   CQ_EXPECT_COMPLETION(cqv, tag(102), 1);
@@ -176,8 +175,6 @@ static void simple_request_body(grpc_end2end_test_config config,
   GPR_ASSERT(status == GRPC_STATUS_UNIMPLEMENTED);
   GPR_ASSERT(0 == grpc_slice_str_cmp(details, "xyz"));
   GPR_ASSERT(0 == grpc_slice_str_cmp(call_details.method, "/foo"));
-  validate_host_override_string("foo.test.google.fr:1234", call_details.host,
-                                config);
   GPR_ASSERT(was_cancelled == 1);
 
   grpc_slice_unref(details);
@@ -247,17 +244,13 @@ static void test_max_concurrent_streams(grpc_end2end_test_config config) {
   /* start two requests - ensuring that the second is not accepted until
      the first completes */
   deadline = n_seconds_from_now(1000);
-  c1 = grpc_channel_create_call(
-      f.client, nullptr, GRPC_PROPAGATE_DEFAULTS, f.cq,
-      grpc_slice_from_static_string("/alpha"),
-      get_host_override_slice("foo.test.google.fr:1234", config), deadline,
-      nullptr);
+  c1 = grpc_channel_create_call(f.client, nullptr, GRPC_PROPAGATE_DEFAULTS,
+                                f.cq, grpc_slice_from_static_string("/alpha"),
+                                nullptr, deadline, nullptr);
   GPR_ASSERT(c1);
-  c2 = grpc_channel_create_call(
-      f.client, nullptr, GRPC_PROPAGATE_DEFAULTS, f.cq,
-      grpc_slice_from_static_string("/beta"),
-      get_host_override_slice("foo.test.google.fr:1234", config), deadline,
-      nullptr);
+  c2 = grpc_channel_create_call(f.client, nullptr, GRPC_PROPAGATE_DEFAULTS,
+                                f.cq, grpc_slice_from_static_string("/beta"),
+                                nullptr, deadline, nullptr);
   GPR_ASSERT(c2);
 
   GPR_ASSERT(GRPC_CALL_OK == grpc_server_request_call(
@@ -275,7 +268,8 @@ static void test_max_concurrent_streams(grpc_end2end_test_config config) {
   op->flags = 0;
   op->reserved = nullptr;
   op++;
-  error = grpc_call_start_batch(c1, ops, (size_t)(op - ops), tag(301), nullptr);
+  error = grpc_call_start_batch(c1, ops, static_cast<size_t>(op - ops),
+                                tag(301), nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
   memset(ops, 0, sizeof(ops));
@@ -293,7 +287,8 @@ static void test_max_concurrent_streams(grpc_end2end_test_config config) {
   op->flags = 0;
   op->reserved = nullptr;
   op++;
-  error = grpc_call_start_batch(c1, ops, (size_t)(op - ops), tag(302), nullptr);
+  error = grpc_call_start_batch(c1, ops, static_cast<size_t>(op - ops),
+                                tag(302), nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
   memset(ops, 0, sizeof(ops));
@@ -307,7 +302,8 @@ static void test_max_concurrent_streams(grpc_end2end_test_config config) {
   op->flags = 0;
   op->reserved = nullptr;
   op++;
-  error = grpc_call_start_batch(c2, ops, (size_t)(op - ops), tag(401), nullptr);
+  error = grpc_call_start_batch(c2, ops, static_cast<size_t>(op - ops),
+                                tag(401), nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
   memset(ops, 0, sizeof(ops));
@@ -325,7 +321,8 @@ static void test_max_concurrent_streams(grpc_end2end_test_config config) {
   op->flags = 0;
   op->reserved = nullptr;
   op++;
-  error = grpc_call_start_batch(c2, ops, (size_t)(op - ops), tag(402), nullptr);
+  error = grpc_call_start_batch(c2, ops, static_cast<size_t>(op - ops),
+                                tag(402), nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
   got_client_start = 0;
@@ -346,7 +343,7 @@ static void test_max_concurrent_streams(grpc_end2end_test_config config) {
        * both);
        * check this here */
       /* We'll get tag 303 or 403, we want 300, 400 */
-      live_call = ((int)(intptr_t)ev.tag) - 1;
+      live_call = (static_cast<int>((intptr_t)ev.tag)) - 1;
       got_client_start = 1;
     }
   }
@@ -372,7 +369,8 @@ static void test_max_concurrent_streams(grpc_end2end_test_config config) {
   op->flags = 0;
   op->reserved = nullptr;
   op++;
-  error = grpc_call_start_batch(s1, ops, (size_t)(op - ops), tag(102), nullptr);
+  error = grpc_call_start_batch(s1, ops, static_cast<size_t>(op - ops),
+                                tag(102), nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
   CQ_EXPECT_COMPLETION(cqv, tag(102), 1);
@@ -409,7 +407,8 @@ static void test_max_concurrent_streams(grpc_end2end_test_config config) {
   op->flags = 0;
   op->reserved = nullptr;
   op++;
-  error = grpc_call_start_batch(s2, ops, (size_t)(op - ops), tag(202), nullptr);
+  error = grpc_call_start_batch(s2, ops, static_cast<size_t>(op - ops),
+                                tag(202), nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
   CQ_EXPECT_COMPLETION(cqv, tag(live_call + 2), 1);
@@ -487,17 +486,13 @@ static void test_max_concurrent_streams_with_timeout_on_first(
 
   /* start two requests - ensuring that the second is not accepted until
      the first completes */
-  c1 = grpc_channel_create_call(
-      f.client, nullptr, GRPC_PROPAGATE_DEFAULTS, f.cq,
-      grpc_slice_from_static_string("/alpha"),
-      get_host_override_slice("foo.test.google.fr:1234", config),
-      n_seconds_from_now(3), nullptr);
+  c1 = grpc_channel_create_call(f.client, nullptr, GRPC_PROPAGATE_DEFAULTS,
+                                f.cq, grpc_slice_from_static_string("/alpha"),
+                                nullptr, n_seconds_from_now(3), nullptr);
   GPR_ASSERT(c1);
-  c2 = grpc_channel_create_call(
-      f.client, nullptr, GRPC_PROPAGATE_DEFAULTS, f.cq,
-      grpc_slice_from_static_string("/beta"),
-      get_host_override_slice("foo.test.google.fr:1234", config),
-      n_seconds_from_now(1000), nullptr);
+  c2 = grpc_channel_create_call(f.client, nullptr, GRPC_PROPAGATE_DEFAULTS,
+                                f.cq, grpc_slice_from_static_string("/beta"),
+                                nullptr, n_seconds_from_now(1000), nullptr);
   GPR_ASSERT(c2);
 
   GPR_ASSERT(GRPC_CALL_OK == grpc_server_request_call(
@@ -515,7 +510,8 @@ static void test_max_concurrent_streams_with_timeout_on_first(
   op->flags = 0;
   op->reserved = nullptr;
   op++;
-  error = grpc_call_start_batch(c1, ops, (size_t)(op - ops), tag(301), nullptr);
+  error = grpc_call_start_batch(c1, ops, static_cast<size_t>(op - ops),
+                                tag(301), nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
   memset(ops, 0, sizeof(ops));
@@ -533,7 +529,8 @@ static void test_max_concurrent_streams_with_timeout_on_first(
   op->flags = 0;
   op->reserved = nullptr;
   op++;
-  error = grpc_call_start_batch(c1, ops, (size_t)(op - ops), tag(302), nullptr);
+  error = grpc_call_start_batch(c1, ops, static_cast<size_t>(op - ops),
+                                tag(302), nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
   CQ_EXPECT_COMPLETION(cqv, tag(101), 1);
@@ -551,7 +548,8 @@ static void test_max_concurrent_streams_with_timeout_on_first(
   op->flags = 0;
   op->reserved = nullptr;
   op++;
-  error = grpc_call_start_batch(c2, ops, (size_t)(op - ops), tag(401), nullptr);
+  error = grpc_call_start_batch(c2, ops, static_cast<size_t>(op - ops),
+                                tag(401), nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
   memset(ops, 0, sizeof(ops));
@@ -569,7 +567,8 @@ static void test_max_concurrent_streams_with_timeout_on_first(
   op->flags = 0;
   op->reserved = nullptr;
   op++;
-  error = grpc_call_start_batch(c2, ops, (size_t)(op - ops), tag(402), nullptr);
+  error = grpc_call_start_batch(c2, ops, static_cast<size_t>(op - ops),
+                                tag(402), nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
   grpc_call_details_destroy(&call_details);
@@ -604,7 +603,8 @@ static void test_max_concurrent_streams_with_timeout_on_first(
   op->flags = 0;
   op->reserved = nullptr;
   op++;
-  error = grpc_call_start_batch(s2, ops, (size_t)(op - ops), tag(202), nullptr);
+  error = grpc_call_start_batch(s2, ops, static_cast<size_t>(op - ops),
+                                tag(202), nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
   CQ_EXPECT_COMPLETION(cqv, tag(402), 1);
@@ -682,17 +682,13 @@ static void test_max_concurrent_streams_with_timeout_on_second(
   /* start two requests - ensuring that the second is not accepted until
      the first completes , and the second request will timeout in the
      concurrent_list */
-  c1 = grpc_channel_create_call(
-      f.client, nullptr, GRPC_PROPAGATE_DEFAULTS, f.cq,
-      grpc_slice_from_static_string("/alpha"),
-      get_host_override_slice("foo.test.google.fr:1234", config),
-      n_seconds_from_now(1000), nullptr);
+  c1 = grpc_channel_create_call(f.client, nullptr, GRPC_PROPAGATE_DEFAULTS,
+                                f.cq, grpc_slice_from_static_string("/alpha"),
+                                nullptr, n_seconds_from_now(1000), nullptr);
   GPR_ASSERT(c1);
-  c2 = grpc_channel_create_call(
-      f.client, nullptr, GRPC_PROPAGATE_DEFAULTS, f.cq,
-      grpc_slice_from_static_string("/beta"),
-      get_host_override_slice("foo.test.google.fr:1234", config),
-      n_seconds_from_now(3), nullptr);
+  c2 = grpc_channel_create_call(f.client, nullptr, GRPC_PROPAGATE_DEFAULTS,
+                                f.cq, grpc_slice_from_static_string("/beta"),
+                                nullptr, n_seconds_from_now(3), nullptr);
   GPR_ASSERT(c2);
 
   GPR_ASSERT(GRPC_CALL_OK == grpc_server_request_call(
@@ -710,7 +706,8 @@ static void test_max_concurrent_streams_with_timeout_on_second(
   op->flags = 0;
   op->reserved = nullptr;
   op++;
-  error = grpc_call_start_batch(c1, ops, (size_t)(op - ops), tag(301), nullptr);
+  error = grpc_call_start_batch(c1, ops, static_cast<size_t>(op - ops),
+                                tag(301), nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
   memset(ops, 0, sizeof(ops));
@@ -728,7 +725,8 @@ static void test_max_concurrent_streams_with_timeout_on_second(
   op->flags = 0;
   op->reserved = nullptr;
   op++;
-  error = grpc_call_start_batch(c1, ops, (size_t)(op - ops), tag(302), nullptr);
+  error = grpc_call_start_batch(c1, ops, static_cast<size_t>(op - ops),
+                                tag(302), nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
   CQ_EXPECT_COMPLETION(cqv, tag(101), 1);
@@ -746,7 +744,8 @@ static void test_max_concurrent_streams_with_timeout_on_second(
   op->flags = 0;
   op->reserved = nullptr;
   op++;
-  error = grpc_call_start_batch(c2, ops, (size_t)(op - ops), tag(401), nullptr);
+  error = grpc_call_start_batch(c2, ops, static_cast<size_t>(op - ops),
+                                tag(401), nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
   memset(ops, 0, sizeof(ops));
@@ -764,7 +763,8 @@ static void test_max_concurrent_streams_with_timeout_on_second(
   op->flags = 0;
   op->reserved = nullptr;
   op++;
-  error = grpc_call_start_batch(c2, ops, (size_t)(op - ops), tag(402), nullptr);
+  error = grpc_call_start_batch(c2, ops, static_cast<size_t>(op - ops),
+                                tag(402), nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
   /* the second request is time out*/
@@ -797,7 +797,8 @@ static void test_max_concurrent_streams_with_timeout_on_second(
   op->flags = 0;
   op->reserved = nullptr;
   op++;
-  error = grpc_call_start_batch(s1, ops, (size_t)(op - ops), tag(102), nullptr);
+  error = grpc_call_start_batch(s1, ops, static_cast<size_t>(op - ops),
+                                tag(102), nullptr);
   GPR_ASSERT(GRPC_CALL_OK == error);
 
   CQ_EXPECT_COMPLETION(cqv, tag(302), 1);

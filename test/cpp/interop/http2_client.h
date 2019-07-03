@@ -21,8 +21,8 @@
 
 #include <memory>
 
-#include <grpc++/channel.h>
 #include <grpc/grpc.h>
+#include <grpcpp/channel.h>
 #include "src/proto/grpc/testing/messages.pb.h"
 #include "src/proto/grpc/testing/test.grpc.pb.h"
 
@@ -31,7 +31,7 @@ namespace testing {
 
 class Http2Client {
  public:
-  explicit Http2Client(std::shared_ptr<Channel> channel);
+  explicit Http2Client(const std::shared_ptr<Channel>& channel);
   ~Http2Client() {}
 
   bool DoRstAfterHeader();
@@ -44,7 +44,7 @@ class Http2Client {
  private:
   class ServiceStub {
    public:
-    ServiceStub(std::shared_ptr<Channel> channel);
+    ServiceStub(const std::shared_ptr<Channel>& channel);
 
     TestService::Stub* Get();
 
@@ -53,7 +53,7 @@ class Http2Client {
     std::shared_ptr<Channel> channel_;
   };
 
-  void MaxStreamsWorker(std::shared_ptr<grpc::Channel> channel);
+  void MaxStreamsWorker(const std::shared_ptr<grpc::Channel>& channel);
   bool AssertStatusCode(const Status& s, StatusCode expected_code);
   Status SendUnaryCall(SimpleResponse* response);
   SimpleRequest BuildDefaultRequest();

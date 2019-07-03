@@ -19,13 +19,11 @@
 #ifndef GRPC_CORE_LIB_TRANSPORT_CONNECTIVITY_STATE_H
 #define GRPC_CORE_LIB_TRANSPORT_CONNECTIVITY_STATE_H
 
+#include <grpc/support/port_platform.h>
+
 #include <grpc/grpc.h>
 #include "src/core/lib/debug/trace.h"
-#include "src/core/lib/iomgr/exec_ctx.h"
-
-#ifdef __cplusplus
-extern "C" {
-#endif
+#include "src/core/lib/iomgr/closure.h"
 
 typedef struct grpc_connectivity_state_watcher {
   /** we keep watchers in a linked list */
@@ -39,8 +37,6 @@ typedef struct grpc_connectivity_state_watcher {
 typedef struct {
   /** current grpc_connectivity_state */
   gpr_atm current_state_atm;
-  /** error associated with state */
-  grpc_error* current_error;
   /** all our watchers */
   grpc_connectivity_state_watcher* watchers;
   /** a name to help debugging */
@@ -55,15 +51,12 @@ const char* grpc_connectivity_state_name(grpc_connectivity_state state);
 void grpc_connectivity_state_init(grpc_connectivity_state_tracker* tracker,
                                   grpc_connectivity_state init_state,
                                   const char* name);
-void grpc_connectivity_state_destroy(grpc_exec_ctx* exec_ctx,
-                                     grpc_connectivity_state_tracker* tracker);
+void grpc_connectivity_state_destroy(grpc_connectivity_state_tracker* tracker);
 
 /** Set connectivity state; not thread safe; access must be serialized with an
  *  external lock */
-void grpc_connectivity_state_set(grpc_exec_ctx* exec_ctx,
-                                 grpc_connectivity_state_tracker* tracker,
+void grpc_connectivity_state_set(grpc_connectivity_state_tracker* tracker,
                                  grpc_connectivity_state state,
-                                 grpc_error* associated_error,
                                  const char* reason);
 
 /** Return true if this connectivity state has watchers.
@@ -75,21 +68,12 @@ bool grpc_connectivity_state_has_watchers(
 grpc_connectivity_state grpc_connectivity_state_check(
     grpc_connectivity_state_tracker* tracker);
 
-/** Return the last seen connectivity state, and the associated error.
-    Access must be serialized with an external lock. */
-grpc_connectivity_state grpc_connectivity_state_get(
-    grpc_connectivity_state_tracker* tracker, grpc_error** error);
-
 /** Return 1 if the channel should start connecting, 0 otherwise.
     If current==NULL cancel notify if it is already queued (success==0 in that
     case).
     Access must be serialized with an external lock. */
 bool grpc_connectivity_state_notify_on_state_change(
-    grpc_exec_ctx* exec_ctx, grpc_connectivity_state_tracker* tracker,
-    grpc_connectivity_state* current, grpc_closure* notify);
-
-#ifdef __cplusplus
-}
-#endif
+    grpc_connectivity_state_tracker* tracker, grpc_connectivity_state* current,
+    grpc_closure* notify);
 
 #endif /* GRPC_CORE_LIB_TRANSPORT_CONNECTIVITY_STATE_H */

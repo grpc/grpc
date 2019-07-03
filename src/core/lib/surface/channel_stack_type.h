@@ -19,11 +19,9 @@
 #ifndef GRPC_CORE_LIB_SURFACE_CHANNEL_STACK_TYPE_H
 #define GRPC_CORE_LIB_SURFACE_CHANNEL_STACK_TYPE_H
 
-#include <stdbool.h>
+#include <grpc/support/port_platform.h>
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+#include <stdbool.h>
 
 typedef enum {
   // normal top-half client channel with load-balancing, connection management
@@ -45,9 +43,5 @@ typedef enum {
 bool grpc_channel_stack_type_is_client(grpc_channel_stack_type type);
 
 const char* grpc_channel_stack_type_string(grpc_channel_stack_type type);
-
-#ifdef __cplusplus
-}
-#endif
 
 #endif /* GRPC_CORE_LIB_SURFACE_CHANNEL_STACK_TYPE_H */

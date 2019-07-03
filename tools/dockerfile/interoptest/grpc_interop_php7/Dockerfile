@@ -14,6 +14,7 @@
 
 FROM debian:jessie
 
+
 #=================
 # PHP7 dependencies
 
@@ -59,14 +60,6 @@ RUN cd /var/local/git/php-src \
   --with-zlib \
   && make \
   && make install
-
-# Prepare ccache
-RUN ln -s /usr/bin/ccache /usr/local/bin/gcc
-RUN ln -s /usr/bin/ccache /usr/local/bin/g++
-RUN ln -s /usr/bin/ccache /usr/local/bin/cc
-RUN ln -s /usr/bin/ccache /usr/local/bin/c++
-RUN ln -s /usr/bin/ccache /usr/local/bin/clang
-RUN ln -s /usr/bin/ccache /usr/local/bin/clang++
 
 
 RUN mkdir /var/local/jenkins

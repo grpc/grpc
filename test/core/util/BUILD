@@ -16,19 +16,9 @@ load("//bazel:grpc_build_system.bzl", "grpc_cc_library", "grpc_cc_test", "grpc_c
 
 licenses(["notice"])  # Apache v2
 
-grpc_package(name = "test/core/util", visibility = "public")
-
-grpc_cc_library(
-    name = "gpr_test_util",
-    srcs = [
-        "memory_counters.cc",
-        "test_config.cc",
-    ],
-    hdrs = [
-        "memory_counters.h",
-        "test_config.h",
-    ],
-    deps = ["//:gpr"],
+grpc_package(
+    name = "test/core/util",
+    visibility = "public",
 )
 
 grpc_cc_library(
@@ -40,7 +30,6 @@ grpc_cc_library(
         "debugger_macros.h",
     ],
     deps = [
-        ":gpr_test_util",
         "//:grpc_common",
     ],
 )
@@ -48,20 +37,32 @@ grpc_cc_library(
 grpc_cc_library(
     name = "grpc_test_util_base",
     srcs = [
+        "cmdline.cc",
+        "fuzzer_util.cc",
         "grpc_profiler.cc",
+        "histogram.cc",
+        "memory_counters.cc",
         "mock_endpoint.cc",
         "parse_hexstring.cc",
         "passthru_endpoint.cc",
         "port.cc",
+        "port_isolated_runtime_environment.cc",
         "port_server_client.cc",
         "reconnect_server.cc",
         "slice_splitter.cc",
+        "subprocess_posix.cc",
+        "subprocess_windows.cc",
+        "test_config.cc",
         "test_tcp_server.cc",
         "tracer_util.cc",
         "trickle_endpoint.cc",
     ],
     hdrs = [
+        "cmdline.h",
+        "fuzzer_util.h",
         "grpc_profiler.h",
+        "histogram.h",
+        "memory_counters.h",
         "mock_endpoint.h",
         "parse_hexstring.h",
         "passthru_endpoint.h",
@@ -69,15 +70,22 @@ grpc_cc_library(
         "port_server_client.h",
         "reconnect_server.h",
         "slice_splitter.h",
+        "subprocess.h",
+        "test_config.h",
         "test_tcp_server.h",
         "tracer_util.h",
         "trickle_endpoint.h",
     ],
+    data = [
+        "lsan_suppressions.txt",
+        "tsan_suppressions.txt",
+        "ubsan_suppressions.txt",
+    ],
     language = "C++",
     deps = [
-        ":gpr_test_util",
+        ":grpc_debugger_macros",
+        "//:gpr",
         "//:grpc_common",
-        ":grpc_debugger_macros"
     ],
 )
 
@@ -103,21 +111,58 @@ grpc_cc_library(
     ],
 )
 
+grpc_cc_test(
+    name = "cmdline_test",
+    srcs = ["cmdline_test.cc"],
+    language = "C++",
+    deps = [
+        ":grpc_test_util",
+        "//:gpr",
+    ],
+)
+
 grpc_cc_library(
     name = "fuzzer_corpus_test",
     testonly = 1,
     srcs = ["fuzzer_corpus_test.cc"],
-    deps = [
-        ":gpr_test_util",
-        "//:grpc",
-    ],
     external_deps = [
         "gtest",
         "gflags",
+    ],
+    deps = [
+        ":grpc_test_util",
+        "//:grpc",
+        "//test/cpp/util:test_config",
+    ],
+    tags = ["no_windows"],
+)
+
+grpc_cc_test(
+    name = "histogram_test",
+    srcs = ["histogram_test.cc"],
+    language = "C++",
+    deps = [
+        ":grpc_test_util",
+        "//:gpr",
     ],
 )
 
 sh_library(
     name = "fuzzer_one_entry_runner",
     srcs = ["fuzzer_one_entry_runner.sh"],
+)
+
+sh_library(
+    name = "run_with_poller_sh",
+    srcs = ["run_with_poller.sh"],
+)
+
+grpc_cc_library(
+    name = "test_lb_policies",
+    testonly = 1,
+    srcs = ["test_lb_policies.cc"],
+    hdrs = ["test_lb_policies.h"],
+    deps = [
+        "//:grpc",
+    ],
 )

@@ -22,16 +22,25 @@
 #include <gflags/gflags.h>
 #include <gtest/gtest.h>
 
+#include "test/cpp/util/test_config.h"
+
+// In some distros, gflags is in the namespace google, and in some others,
+// in gflags. This hack is enabling us to find both.
+namespace google {}
+namespace gflags {}
+using namespace google;
+using namespace gflags;
+
 DEFINE_string(
     generated_file_path, "",
-    "path to the directory containing generated files compiler_test.grpc.pb.h"
+    "path to the directory containing generated files compiler_test.grpc.pb.h "
     "and compiler_test_mock.grpc.pb.h");
 
 const char kGoldenFilePath[] = "test/cpp/codegen/compiler_test_golden";
 const char kMockGoldenFilePath[] = "test/cpp/codegen/compiler_test_mock_golden";
 
-void run_test(std::basic_string<char> generated_file,
-              std::basic_string<char> golden_file) {
+void run_test(const std::basic_string<char>& generated_file,
+              const std::basic_string<char>& golden_file) {
   std::ifstream generated(generated_file);
   std::ifstream golden(golden_file);
 
@@ -60,7 +69,7 @@ TEST(GoldenMockFileTest, TestGeneratedMockFile) {
 
 int main(int argc, char** argv) {
   ::testing::InitGoogleTest(&argc, argv);
-  ::google::ParseCommandLineFlags(&argc, &argv, true);
+  grpc::testing::InitTest(&argc, &argv, true);
   if (FLAGS_generated_file_path.empty()) {
     FLAGS_generated_file_path = "gens/src/proto/grpc/testing/";
   }

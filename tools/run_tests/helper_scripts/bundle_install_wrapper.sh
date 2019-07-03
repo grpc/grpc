@@ -17,9 +17,9 @@
 set -ex
 
 # change to grpc repo root
-cd $(dirname $0)/../../..
+cd "$(dirname "$0")/../../.."
 
-SYSTEM=`uname | cut -f 1 -d_`
+SYSTEM=$(uname | cut -f 1 -d_)
 
 if [ "$SYSTEM" == "Darwin" ] ; then
   # Workaround for crash during bundle install

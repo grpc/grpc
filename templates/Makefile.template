@@ -37,10 +37,10 @@
 
     # warnings we'd like, but that dont exist in all compilers
     PREFERRED_WARNINGS=['shadow', 'extra-semi']
-    CHECK_WARNINGS=PREFERRED_WARNINGS + ['no-shift-negative-value']
+    CHECK_WARNINGS=PREFERRED_WARNINGS + ['no-shift-negative-value', 'no-unused-but-set-variable', 'no-maybe-uninitialized']
 
     def warning_var(fmt, warning):
-      return fmt % warning.replace('-', '_').upper()
+      return fmt % warning.replace('-', '_').replace('+', 'X').upper()
 
     def neg_warning(warning):
       if warning[0:3] == 'no-':
@@ -191,6 +191,12 @@
   TMPOUT = `mktemp /tmp/test-out-XXXXXX`
   endif
 
+  CHECK_NO_CXX14_COMPAT_WORKS_CMD = $(CC) -std=c++11 -Werror -Wno-c++14-compat -o $(TMPOUT) -c test/build/no-c++14-compat.cc
+  HAS_WORKING_NO_CXX14_COMPAT = $(shell $(CHECK_NO_CXX14_COMPAT_WORKS_CMD) 2> /dev/null && echo true || echo false)
+  ifeq ($(HAS_WORKING_NO_CXX14_COMPAT),true)
+  W_NO_CXX14_COMPAT=-Wno-c++14-compat
+  endif
+
   %for warning in CHECK_WARNINGS:
   ${warning_var('CHECK_%s_WORKS_CMD', warning)} = $(CC) -std=c99 -Werror -W${warning} -o $(TMPOUT) -c test/build/${warning}.c
   ${warning_var('HAS_WORKING_%s', warning)} = $(shell $(${warning_var('CHECK_%s_WORKS_CMD', warning)}) 2> /dev/null && echo true || echo false)
@@ -214,8 +220,9 @@
   CXXFLAGS += -std=c++11
   ifeq ($(SYSTEM),Darwin)
   CXXFLAGS += -stdlib=libc++
+  LDFLAGS += -framework CoreFoundation
   endif
-  % for arg in ['CFLAGS', 'CXXFLAGS', 'CPPFLAGS', 'LDFLAGS', 'DEFINES']:
+  % for arg in ['CFLAGS', 'CXXFLAGS', 'CPPFLAGS', 'COREFLAGS', 'LDFLAGS', 'DEFINES']:
   %  if defaults.get('global', []).get(arg, None) is not None:
   ${arg} += ${defaults.get('global').get(arg)}
   %  endif
@@ -268,6 +275,28 @@
   LDFLAGS += -pthread
   endif
 
+  # If we are installing into a non-default prefix, both
+  # the libraries we build, and the apps users build,
+  # need to know how to find the libraries they depend on.
+  # There is much gnashing of teeth about this subject.
+  # It's tricky to do that without editing images during install,
+  # as you don't want tests during build to find previously installed and
+  # now stale libraries, etc.
+  ifeq ($(SYSTEM),Linux)
+  ifneq ($(prefix),/usr)
+  # Linux best practice for rpath on installed files is probably:
+  # 1) .pc file provides -Wl,-rpath,$(prefix)/lib
+  # 2) binaries we install into $(prefix)/bin use -Wl,-rpath,$ORIGIN/../lib
+  # 3) libraries we install into $(prefix)/lib use -Wl,-rpath,$ORIGIN
+  # cf. https://www.akkadia.org/drepper/dsohowto.pdf
+  # Doing all of that right is hard, but using -Wl,-rpath,$ORIGIN is always
+  # safe, and solves problems seen in the wild.  Note that $ORIGIN
+  # is a literal string interpreted much later by ld.so.  Escape it
+  # here with a dollar sign so Make doesn't expand $O.
+  LDFLAGS += '-Wl,-rpath,$$ORIGIN'
+  endif
+  endif
+
   #
   # The steps for cross-compiling are as follows:
   # First, clone and make install of grpc using the native compilers for the host.
@@ -317,11 +346,11 @@
   ${arg} += $(EXTRA_${arg})
   % endfor
 
-  HOST_CPPFLAGS = $(CPPFLAGS)
-  HOST_CFLAGS = $(CFLAGS)
-  HOST_CXXFLAGS = $(CXXFLAGS)
-  HOST_LDFLAGS = $(LDFLAGS)
-  HOST_LDLIBS = $(LDLIBS)
+  HOST_CPPFLAGS += $(CPPFLAGS)
+  HOST_CFLAGS += $(CFLAGS)
+  HOST_CXXFLAGS += $(CXXFLAGS)
+  HOST_LDFLAGS += $(LDFLAGS)
+  HOST_LDLIBS += $(LDLIBS)
 
   # These are automatically computed variables.
   # There shouldn't be any need to change anything from now on.
@@ -412,9 +441,8 @@
 
   ifeq ($(HAS_PKG_CONFIG),true)
   OPENSSL_ALPN_CHECK_CMD = $(PKG_CONFIG) --atleast-version=1.0.2 openssl
-  OPENSSL_NPN_CHECK_CMD = $(PKG_CONFIG) --atleast-version=1.0.1 openssl
   ZLIB_CHECK_CMD = $(PKG_CONFIG) --exists zlib
-  PROTOBUF_CHECK_CMD = $(PKG_CONFIG) --atleast-version=3.0.0 protobuf
+  PROTOBUF_CHECK_CMD = $(PKG_CONFIG) --atleast-version=3.5.0 protobuf
   CARES_CHECK_CMD = $(PKG_CONFIG) --atleast-version=1.11.0 libcares
   else # HAS_PKG_CONFIG
 
@@ -425,7 +453,6 @@
   endif
 
   OPENSSL_ALPN_CHECK_CMD = $(CC) $(CPPFLAGS) $(CFLAGS) -o $(TMPOUT) test/build/openssl-alpn.c $(addprefix -l, $(OPENSSL_LIBS)) $(LDFLAGS)
-  OPENSSL_NPN_CHECK_CMD = $(CC) $(CPPFLAGS) $(CFLAGS) -o $(TMPOUT) test/build/openssl-npn.c $(addprefix -l, $(OPENSSL_LIBS)) $(LDFLAGS)
   BORINGSSL_COMPILE_CHECK_CMD = $(CC) $(CPPFLAGS) ${defaults.boringssl.CPPFLAGS} $(CFLAGS) ${defaults.boringssl.CFLAGS} -o $(TMPOUT) test/build/boringssl.c $(LDFLAGS)
   ZLIB_CHECK_CMD = $(CC) $(CPPFLAGS) $(CFLAGS) -o $(TMPOUT) test/build/zlib.c -lz $(LDFLAGS)
   PROTOBUF_CHECK_CMD = $(CXX) $(CPPFLAGS) $(CXXFLAGS) -o $(TMPOUT) test/build/protobuf.cc -lprotobuf $(LDFLAGS)
@@ -453,13 +480,7 @@
   ifndef REQUIRE_CUSTOM_LIBRARIES_$(CONFIG)
   HAS_SYSTEM_OPENSSL_ALPN ?= $(shell $(OPENSSL_ALPN_CHECK_CMD) 2> /dev/null && echo true || echo false)
   ifeq ($(HAS_SYSTEM_OPENSSL_ALPN),true)
-  HAS_SYSTEM_OPENSSL_NPN = true
   CACHE_MK += HAS_SYSTEM_OPENSSL_ALPN = true,
-  else
-  HAS_SYSTEM_OPENSSL_NPN ?= $(shell $(OPENSSL_NPN_CHECK_CMD) 2> /dev/null && echo true || echo false)
-  endif
-  ifeq ($(HAS_SYSTEM_OPENSSL_NPN),true)
-  CACHE_MK += HAS_SYSTEM_OPENSSL_NPN = true,
   endif
   HAS_SYSTEM_ZLIB ?= $(shell $(ZLIB_CHECK_CMD) 2> /dev/null && echo true || echo false)
   ifeq ($(HAS_SYSTEM_ZLIB),true)
@@ -476,7 +497,6 @@
   else
   # override system libraries if the config requires a custom compiled library
   HAS_SYSTEM_OPENSSL_ALPN = false
-  HAS_SYSTEM_OPENSSL_NPN = false
   HAS_SYSTEM_ZLIB = false
   HAS_SYSTEM_PROTOBUF = false
   HAS_SYSTEM_CARES = false
@@ -563,7 +583,6 @@
   ZLIB_MERGE_LIBS = $(LIBDIR)/$(CONFIG)/libz.a
   ZLIB_MERGE_OBJS = $(LIBZ_OBJS)
   CPPFLAGS += -Ithird_party/zlib
-  LDFLAGS += -L$(LIBDIR)/$(CONFIG)/zlib
   else
   ifeq ($(HAS_PKG_CONFIG),true)
   CPPFLAGS += $(shell $(PKG_CONFIG) --cflags zlib)
@@ -589,12 +608,16 @@
   EMBED_CARES ?= false
   endif
 
+  ADDRESS_SORTING_DEP = $(LIBDIR)/$(CONFIG)/libaddress_sorting.a
+  ADDRESS_SORTING_MERGE_OBJS = $(LIBADDRESS_SORTING_OBJS)
+  ADDRESS_SORTING_MERGE_LIBS = $(LIBDIR)/$(CONFIG)/libaddress_sorting.a
+  CPPFLAGS := -Ithird_party/address_sorting/include $(CPPFLAGS)
+
   ifeq ($(EMBED_CARES),true)
   CARES_DEP = $(LIBDIR)/$(CONFIG)/libares.a
   CARES_MERGE_OBJS = $(LIBARES_OBJS)
   CARES_MERGE_LIBS = $(LIBDIR)/$(CONFIG)/libares.a
   CPPFLAGS := -Ithird_party/cares -Ithird_party/cares/cares $(CPPFLAGS)
-  LDFLAGS := -L$(LIBDIR)/$(CONFIG)/c-ares $(LDFLAGS)
   else
   ifeq ($(HAS_PKG_CONFIG),true)
   PC_REQUIRES_GRPC += libcares
@@ -620,12 +643,7 @@
   EMBED_OPENSSL ?= $(HAS_EMBEDDED_OPENSSL_ALPN)
   NO_SECURE ?= false
   else # HAS_EMBEDDED_OPENSSL_ALPN=false
-  ifeq ($(HAS_SYSTEM_OPENSSL_NPN),true)
-  EMBED_OPENSSL ?= false
-  NO_SECURE ?= false
-  else
   NO_SECURE ?= true
-  endif # HAS_SYSTEM_OPENSSL_NPN=true
   endif # HAS_EMBEDDED_OPENSSL_ALPN
   endif # HAS_SYSTEM_OPENSSL_ALPN
 
@@ -659,10 +677,10 @@
   else # HAS_PKG_CONFIG=false
   LIBS_SECURE = $(OPENSSL_LIBS)
   endif # HAS_PKG_CONFIG
-  ifeq ($(HAS_SYSTEM_OPENSSL_NPN),true)
+  ifeq ($(DISABLE_ALPN),true)
   CPPFLAGS += -DTSI_OPENSSL_ALPN_SUPPORT=0
   LIBS_SECURE = $(OPENSSL_LIBS)
-  endif # HAS_SYSTEM_OPENSSL_NPN
+  endif # DISABLE_ALPN
   PC_LIBS_SECURE = $(addprefix -l, $(LIBS_SECURE))
   endif # EMBED_OPENSSL
   endif # NO_SECURE
@@ -673,11 +691,20 @@
   LDLIBS_SECURE += $(addprefix -l, $(LIBS_SECURE))
   endif
 
+  # gpr .pc file
+  PC_NAME = gpr
+  PC_DESCRIPTION = gRPC platform support library
+  PC_CFLAGS =
+  PC_REQUIRES_PRIVATE = $(PC_REQUIRES_GPR)
+  PC_LIBS_PRIVATE = $(PC_LIBS_GPR)
+  PC_LIB = -lgpr
+  GPR_PC_FILE := $(CORE_PC_TEMPLATE)
+
   # grpc .pc file
   PC_NAME = gRPC
   PC_DESCRIPTION = high performance general RPC framework
   PC_CFLAGS =
-  PC_REQUIRES_PRIVATE = $(PC_REQUIRES_GRPC) $(PC_REQUIRES_SECURE)
+  PC_REQUIRES_PRIVATE = gpr $(PC_REQUIRES_GRPC) $(PC_REQUIRES_SECURE)
   PC_LIBS_PRIVATE = $(PC_LIBS_GRPC) $(PC_LIBS_SECURE)
   PC_LIB = -lgrpc
   GRPC_PC_FILE := $(CORE_PC_TEMPLATE)
@@ -686,9 +713,9 @@
   PC_NAME = gRPC unsecure
   PC_DESCRIPTION = high performance general RPC framework without SSL
   PC_CFLAGS =
-  PC_REQUIRES_PRIVATE = $(PC_REQUIRES_GRPC)
+  PC_REQUIRES_PRIVATE = gpr $(PC_REQUIRES_GRPC)
   PC_LIBS_PRIVATE = $(PC_LIBS_GRPC)
-  PC_LIB = -lgrpc
+  PC_LIB = -lgrpc_unsecure
   GRPC_UNSECURE_PC_FILE := $(CORE_PC_TEMPLATE)
 
   PROTOBUF_PKG_CONFIG = false
@@ -711,7 +738,7 @@
   ifeq ($(HAS_PKG_CONFIG),true)
   PROTOBUF_PKG_CONFIG = true
   PC_REQUIRES_GRPCXX = protobuf
-  CPPFLAGS := $(shell $(PKG_CONFIG) --cflags protobuf) $(CPPFLAGS)
+  CPPFLAGS := $(CPPFLAGS) $(shell $(PKG_CONFIG) --cflags protobuf)
   LDFLAGS_PROTOBUF_PKG_CONFIG = $(shell $(PKG_CONFIG) --libs-only-L protobuf)
   ifeq ($(SYSTEM),Linux)
   ifneq ($(LDFLAGS_PROTOBUF_PKG_CONFIG),)
@@ -765,7 +792,7 @@
   PC_CFLAGS =
   PC_REQUIRES_PRIVATE = grpc_unsecure $(PC_REQUIRES_GRPCXX)
   PC_LIBS_PRIVATE = $(PC_LIBS_GRPCXX)
-  PC_LIB = -lgrpc++
+  PC_LIB = -lgrpc++_unsecure
   GRPCXX_UNSECURE_PC_FILE := $(CPP_PC_TEMPLATE)
 
   ifeq ($(MAKECMDGOALS),clean)
@@ -839,7 +866,7 @@
   	@echo
   	@echo "DEPENDENCY ERROR"
   	@echo
-  	@echo "The target you are trying to run requires protobuf 3.0.0+"
+  	@echo "The target you are trying to run requires protobuf 3.5.0+"
   	@echo "Your system doesn't have it, and neither does the third_party directory."
   	@echo
   	@echo "Please consult INSTALL to get more information."
@@ -853,7 +880,7 @@
   	@echo
   	@echo "DEPENDENCY ERROR"
   	@echo
-  	@echo "The target you are trying to run requires protobuf-compiler 3.0.0+"
+  	@echo "The target you are trying to run requires protobuf-compiler 3.5.0+"
   	@echo "Your system doesn't have it, and neither does the third_party directory."
   	@echo
   	@echo "Please consult INSTALL to get more information."
@@ -883,7 +910,6 @@
 
   run_dep_checks:
   	$(OPENSSL_ALPN_CHECK_CMD) || true
-  	$(OPENSSL_NPN_CHECK_CMD) || true
   	$(ZLIB_CHECK_CMD) || true
   	$(PERFTOOLS_CHECK_CMD) || true
   	$(PROTOBUF_CHECK_CMD) || true
@@ -896,10 +922,10 @@
 
   $(LIBDIR)/$(CONFIG)/protobuf/libprotobuf.a: third_party/protobuf/configure
   	$(E) "[MAKE]    Building protobuf"
+  	$(Q)mkdir -p $(LIBDIR)/$(CONFIG)/protobuf
   	$(Q)(cd third_party/protobuf ; CC="$(CC)" CXX="$(CXX)" LDFLAGS="$(LDFLAGS_$(CONFIG)) -g $(PROTOBUF_LDFLAGS_EXTRA)" CPPFLAGS="$(PIC_CPPFLAGS) $(CPPFLAGS_$(CONFIG)) -g $(PROTOBUF_CPPFLAGS_EXTRA)" ./configure --disable-shared --enable-static $(PROTOBUF_CONFIG_OPTS))
   	$(Q)$(MAKE) -C third_party/protobuf clean
   	$(Q)$(MAKE) -C third_party/protobuf
-  	$(Q)mkdir -p $(LIBDIR)/$(CONFIG)/protobuf
   	$(Q)mkdir -p $(BINDIR)/$(CONFIG)/protobuf
   	$(Q)cp third_party/protobuf/src/.libs/libprotoc.a $(LIBDIR)/$(CONFIG)/protobuf
   	$(Q)cp third_party/protobuf/src/.libs/libprotobuf.a $(LIBDIR)/$(CONFIG)/protobuf
@@ -921,6 +947,16 @@
   % for lib in libs:
   % if 'Makefile' in lib.get('build_system', ['Makefile']):
   % if lib.build == 'all' and lib.language == 'c++':
+   $(LIBDIR)/$(CONFIG)/lib${lib.name}.a\
+  % endif
+  % endif
+  % endfor
+
+
+  static_csharp: static_c \
+  % for lib in libs:
+  % if 'Makefile' in lib.get('build_system', ['Makefile']):
+  % if lib.build == 'all' and lib.language == 'csharp':
    $(LIBDIR)/$(CONFIG)/lib${lib.name}.a\
   % endif
   % endif
@@ -972,9 +1008,9 @@
   % endif
   % endfor
 
-  pc_c: $(LIBDIR)/$(CONFIG)/pkgconfig/grpc.pc
+  pc_c: $(LIBDIR)/$(CONFIG)/pkgconfig/grpc.pc $(LIBDIR)/$(CONFIG)/pkgconfig/gpr.pc
 
-  pc_c_unsecure: $(LIBDIR)/$(CONFIG)/pkgconfig/grpc_unsecure.pc
+  pc_c_unsecure: $(LIBDIR)/$(CONFIG)/pkgconfig/grpc_unsecure.pc $(LIBDIR)/$(CONFIG)/pkgconfig/gpr.pc
 
   pc_cxx: $(LIBDIR)/$(CONFIG)/pkgconfig/grpc++.pc
 
@@ -1195,6 +1231,11 @@
   	$(E) "[MAKE]    Generating $@"
   	$(Q) echo "$(CACHE_MK)" | tr , '\n' >$@
 
+  $(LIBDIR)/$(CONFIG)/pkgconfig/gpr.pc:
+  	$(E) "[MAKE]    Generating $@"
+  	$(Q) mkdir -p $(@D)
+  	$(Q) echo "$(GPR_PC_FILE)" | tr , '\n' >$@
+
   $(LIBDIR)/$(CONFIG)/pkgconfig/grpc.pc:
   	$(E) "[MAKE]    Generating $@"
   	$(Q) mkdir -p $(@D)
@@ -1268,7 +1309,22 @@
   	$(Q) mkdir -p `dirname $@`
   	$(Q) $(HOST_CXX) $(HOST_CXXFLAGS) $(HOST_CPPFLAGS) -MMD -MF $(addsuffix .dep, $(basename $@)) -c -o $@ $<
 
+  $(OBJDIR)/$(CONFIG)/src/core/%.o : src/core/%.cc
+  	$(E) "[CXX]     Compiling $<"
+  	$(Q) mkdir -p `dirname $@`
+  	$(Q) $(CXX) $(CPPFLAGS) $(CXXFLAGS) $(COREFLAGS) -MMD -MF $(addsuffix .dep, $(basename $@)) -c -o $@ $<
+
+  $(OBJDIR)/$(CONFIG)/test/core/%.o : test/core/%.cc
+  	$(E) "[CXX]     Compiling $<"
+  	$(Q) mkdir -p `dirname $@`
+  	$(Q) $(CXX) $(CPPFLAGS) $(CXXFLAGS) $(COREFLAGS) -MMD -MF $(addsuffix .dep, $(basename $@)) -c -o $@ $<
+
   $(OBJDIR)/$(CONFIG)/%.o : %.cc
+  	$(E) "[CXX]     Compiling $<"
+  	$(Q) mkdir -p `dirname $@`
+  	$(Q) $(CXX) $(CPPFLAGS) $(CXXFLAGS) -MMD -MF $(addsuffix .dep, $(basename $@)) -c -o $@ $<
+
+  $(OBJDIR)/$(CONFIG)/%.o : %.cpp
   	$(E) "[CXX]     Compiling $<"
   	$(Q) mkdir -p `dirname $@`
   	$(Q) $(CXX) $(CPPFLAGS) $(CXXFLAGS) -MMD -MF $(addsuffix .dep, $(basename $@)) -c -o $@ $<
@@ -1337,7 +1393,7 @@
   ifeq ($(SYSTEM),MINGW32)
   	$(Q) $(INSTALL) $(LIBDIR)/$(CONFIG)/lib${lib.name}$(SHARED_VERSION_${lang_to_var[lib.language]})-dll.a $(prefix)/lib/lib${lib.name}.a
   else ifneq ($(SYSTEM),Darwin)
-  	$(Q) ln -sf $(SHARED_PREFIX)${lib.name}$(SHARED_VERSION_${lang_to_var[lib.language]}).$(SHARED_EXT_${lang_to_var[lib.language]}) $(prefix)/lib/lib${lib.name}.so.${settings.core_version.major}
+  	$(Q) ln -sf $(SHARED_PREFIX)${lib.name}$(SHARED_VERSION_${lang_to_var[lib.language]}).$(SHARED_EXT_${lang_to_var[lib.language]}) $(prefix)/lib/lib${lib.name}.so.${settings.get(lang_to_var[lib.language].lower() + '_version').major}
   	$(Q) ln -sf $(SHARED_PREFIX)${lib.name}$(SHARED_VERSION_${lang_to_var[lib.language]}).$(SHARED_EXT_${lang_to_var[lib.language]}) $(prefix)/lib/lib${lib.name}.so
   endif
   % endif
@@ -1370,17 +1426,23 @@
   % endif
   % endfor
 
+  install-grpc-cli: grpc_cli
+  	$(E) "[INSTALL] Installing grpc cli"
+  	$(Q) $(INSTALL) -d $(prefix)/bin
+  	$(Q) $(INSTALL) $(BINDIR)/$(CONFIG)/grpc_cli $(prefix)/bin/grpc_cli
+
   install-pkg-config_c: pc_c pc_c_unsecure
   	$(E) "[INSTALL] Installing C pkg-config files"
   	$(Q) $(INSTALL) -d $(prefix)/lib/pkgconfig
-  	$(Q) $(INSTALL) $(LIBDIR)/$(CONFIG)/pkgconfig/grpc.pc $(prefix)/lib/pkgconfig/grpc.pc
-  	$(Q) $(INSTALL) $(LIBDIR)/$(CONFIG)/pkgconfig/grpc_unsecure.pc $(prefix)/lib/pkgconfig/grpc_unsecure.pc
+  	$(Q) $(INSTALL) -m 0644 $(LIBDIR)/$(CONFIG)/pkgconfig/gpr.pc $(prefix)/lib/pkgconfig/gpr.pc
+  	$(Q) $(INSTALL) -m 0644 $(LIBDIR)/$(CONFIG)/pkgconfig/grpc.pc $(prefix)/lib/pkgconfig/grpc.pc
+  	$(Q) $(INSTALL) -m 0644 $(LIBDIR)/$(CONFIG)/pkgconfig/grpc_unsecure.pc $(prefix)/lib/pkgconfig/grpc_unsecure.pc
 
   install-pkg-config_cxx: pc_cxx pc_cxx_unsecure
   	$(E) "[INSTALL] Installing C++ pkg-config files"
   	$(Q) $(INSTALL) -d $(prefix)/lib/pkgconfig
-  	$(Q) $(INSTALL) $(LIBDIR)/$(CONFIG)/pkgconfig/grpc++.pc $(prefix)/lib/pkgconfig/grpc++.pc
-  	$(Q) $(INSTALL) $(LIBDIR)/$(CONFIG)/pkgconfig/grpc++_unsecure.pc $(prefix)/lib/pkgconfig/grpc++_unsecure.pc
+  	$(Q) $(INSTALL) -m 0644 $(LIBDIR)/$(CONFIG)/pkgconfig/grpc++.pc $(prefix)/lib/pkgconfig/grpc++.pc
+  	$(Q) $(INSTALL) -m 0644 $(LIBDIR)/$(CONFIG)/pkgconfig/grpc++_unsecure.pc $(prefix)/lib/pkgconfig/grpc++_unsecure.pc
 
   install-certs: etc/roots.pem
   	$(E) "[INSTALL] Installing root certificates"
@@ -1465,7 +1527,7 @@
   else
   % endif
 
-  $(LIBDIR)/$(CONFIG)/lib${lib.name}.a: $(ZLIB_DEP) $(OPENSSL_DEP) $(CARES_DEP)\
+  $(LIBDIR)/$(CONFIG)/lib${lib.name}.a: $(ZLIB_DEP) $(OPENSSL_DEP) $(CARES_DEP) $(ADDRESS_SORTING_DEP)\
   ## The else here corresponds to the if secure earlier.
   % else:
   % if lib.language == 'c++':
@@ -1483,11 +1545,10 @@
 
   % endif
   $(LIBDIR)/$(CONFIG)/lib${lib.name}.a: \
-  % if lib.name != 'z':
+  % if lib.name not in ['z', 'ares', 'address_sorting']:
   $(ZLIB_DEP) \
-  % endif
-  % if lib.name != 'ares':
   $(CARES_DEP) \
+  $(ADDRESS_SORTING_DEP) \
   % endif
   % endif
   % if lib.language == 'c++':
@@ -1498,6 +1559,7 @@
    $(LIBGPR_OBJS) \
    $(ZLIB_MERGE_OBJS) \
    $(CARES_MERGE_OBJS) \
+   $(ADDRESS_SORTING_MERGE_OBJS) \
   % if lib.get('secure', 'check') == True:
    $(OPENSSL_MERGE_OBJS) \
   % endif
@@ -1511,6 +1573,7 @@
    $(LIBGPR_OBJS) \
    $(ZLIB_MERGE_OBJS) \
    $(CARES_MERGE_OBJS) \
+   $(ADDRESS_SORTING_MERGE_OBJS) \
   % if lib.get('secure', 'check') == True:
    $(OPENSSL_MERGE_OBJS) \
   % endif
@@ -1533,9 +1596,9 @@
     common = '$(LIB' + lib.name.upper() + '_OBJS)'
 
     link_libs = ''
-    lib_deps = ' $(ZLIB_DEP) $(CARES_DEP)'
+    lib_deps = ' $(ZLIB_DEP) $(CARES_DEP) $(ADDRESS_SORTING_DEP)'
     mingw_libs = ''
-    mingw_lib_deps = ' $(ZLIB_DEP) $(CARES_DEP)'
+    mingw_lib_deps = ' $(ZLIB_DEP) $(CARES_DEP) $(ADDRESS_SORTING_DEP)'
     if lib.language == 'c++':
       lib_deps += ' $(PROTOBUF_DEP)'
       mingw_lib_deps += ' $(PROTOBUF_DEP)'
@@ -1560,7 +1623,7 @@
     security = lib.get('secure', 'check')
     if security == True:
       common = common + ' $(OPENSSL_MERGE_LIBS) $(LDLIBS_SECURE)'
-    common = common + ' $(ZLIB_MERGE_LIBS) $(CARES_MERGE_LIBS)'
+    common = common + ' $(ZLIB_MERGE_LIBS) $(CARES_MERGE_LIBS) $(ADDRESS_SORTING_MERGE_LIBS)'
 
     if security in [True, 'check']:
       for src in lib.src:
@@ -1611,7 +1674,7 @@
   % endif
   % if lib.language == 'c++':
   ## If the lib was C++, we have to close the Makefile's if that tested
-  ## the presence of protobuf 3.0.0+
+  ## the presence of protobuf 3.5.0+
 
   endif
   % endif
@@ -1677,7 +1740,7 @@
 
   ifeq ($(NO_PROTOBUF),true)
 
-  # You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.0.0+.
+  # You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
 
   $(BINDIR)/$(CONFIG)/${tgt.name}: protobuf_dep_error
 

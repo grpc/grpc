@@ -46,7 +46,15 @@ static NSString * const kTestHostAddress = @"grpc-test.sandbox.googleapis.com";
 }
 @end
 
+@interface MakeRPCViewController ()<GRPCProtoResponseHandler>
+
+@end
+
 @implementation MakeRPCViewController
+
+- (dispatch_queue_t)dispatchQueue {
+  return dispatch_get_main_queue();
+}
 
 - (void)viewWillAppear:(BOOL)animated {
 
@@ -57,28 +65,30 @@ static NSString * const kTestHostAddress = @"grpc-test.sandbox.googleapis.com";
   request.fillUsername = YES;
   request.fillOauthScope = YES;
 
-  // Create a not-yet-started RPC. We want to set the request headers on this object before starting
-  // it.
-  ProtoRPC *call =
-      [client RPCToUnaryCallWithRequest:request handler:^(AUTHResponse *response, NSError *error) {
-        if (response) {
-          // This test server responds with the email and scope of the access token it receives.
-          self.mainLabel.text = [NSString stringWithFormat:@"Used scope: %@ on behalf of user %@",
-                                 response.oauthScope, response.username];
-
-        } else {
-          self.mainLabel.text = error.UIDescription;
-        }
-      }];
-
-  // Set the access token to be used.
-  NSString *accessToken = GIDSignIn.sharedInstance.currentUser.authentication.accessToken;
-  call.requestHeaders[@"Authorization"] = [@"Bearer " stringByAppendingString:accessToken];
-
-  // Start the RPC.
+  // Set the request header with call options
+  GRPCMutableCallOptions *options = [[GRPCMutableCallOptions alloc] init];
+  options.oauth2AccessToken = GIDSignIn.sharedInstance.currentUser.authentication.accessToken;
+  GRPCUnaryProtoCall *call = [client unaryCallWithMessage:request
+                                          responseHandler:self
+                                              callOptions:options];
   [call start];
 
   self.mainLabel.text = @"Waiting for RPC to complete...";
+}
+
+- (void)didReceiveProtoMessage:(GPBMessage *)message {
+  AUTHResponse *response = (AUTHResponse *)message;
+  if (response) {
+    // This test server responds with the email and scope of the access token it receives.
+    self.mainLabel.text = [NSString stringWithFormat:@"Used scope: %@ on behalf of user %@",
+                           response.oauthScope, response.username];
+  }
+}
+
+- (void)didCloseWithTrailingMetadata:(NSDictionary *)trailingMetadata error:(NSError *)error {
+  if (error) {
+    self.mainLabel.text = error.UIDescription;
+  }
 }
 
 @end

@@ -16,6 +16,8 @@
  *
  */
 
+#include <grpc/support/port_platform.h>
+
 #include "src/core/lib/iomgr/port.h"
 
 #ifdef GRPC_WINSOCK_SOCKET
@@ -34,7 +36,10 @@
 #include "src/core/lib/iomgr/iomgr_internal.h"
 #include "src/core/lib/iomgr/pollset.h"
 #include "src/core/lib/iomgr/pollset_windows.h"
+#include "src/core/lib/iomgr/sockaddr_windows.h"
 #include "src/core/lib/iomgr/socket_windows.h"
+
+static DWORD s_wsa_socket_flags;
 
 grpc_winsocket* grpc_winsocket_create(SOCKET socket, const char* name) {
   char* final_name;
@@ -47,6 +52,10 @@ grpc_winsocket* grpc_winsocket_create(SOCKET socket, const char* name) {
   gpr_free(final_name);
   grpc_iocp_add_socket(r);
   return r;
+}
+
+SOCKET grpc_winsocket_wrapped_socket(grpc_winsocket* socket) {
+  return socket->socket;
 }
 
 /* Schedule a shutdown of the socket operations. Will call the pending
@@ -109,37 +118,34 @@ void grpc_winsocket_destroy(grpc_winsocket* winsocket) {
 -) The IOCP already completed in the background, and we need to call
 the callback now.
 -) The IOCP hasn't completed yet, and we're queuing it for later. */
-static void socket_notify_on_iocp(grpc_exec_ctx* exec_ctx,
-                                  grpc_winsocket* socket, grpc_closure* closure,
+static void socket_notify_on_iocp(grpc_winsocket* socket, grpc_closure* closure,
                                   grpc_winsocket_callback_info* info) {
   GPR_ASSERT(info->closure == NULL);
   gpr_mu_lock(&socket->state_mu);
   if (info->has_pending_iocp) {
     info->has_pending_iocp = 0;
-    GRPC_CLOSURE_SCHED(exec_ctx, closure, GRPC_ERROR_NONE);
+    GRPC_CLOSURE_SCHED(closure, GRPC_ERROR_NONE);
   } else {
     info->closure = closure;
   }
   gpr_mu_unlock(&socket->state_mu);
 }
 
-void grpc_socket_notify_on_write(grpc_exec_ctx* exec_ctx,
-                                 grpc_winsocket* socket,
+void grpc_socket_notify_on_write(grpc_winsocket* socket,
                                  grpc_closure* closure) {
-  socket_notify_on_iocp(exec_ctx, socket, closure, &socket->write_info);
+  socket_notify_on_iocp(socket, closure, &socket->write_info);
 }
 
-void grpc_socket_notify_on_read(grpc_exec_ctx* exec_ctx, grpc_winsocket* socket,
-                                grpc_closure* closure) {
-  socket_notify_on_iocp(exec_ctx, socket, closure, &socket->read_info);
+void grpc_socket_notify_on_read(grpc_winsocket* socket, grpc_closure* closure) {
+  socket_notify_on_iocp(socket, closure, &socket->read_info);
 }
 
-void grpc_socket_become_ready(grpc_exec_ctx* exec_ctx, grpc_winsocket* socket,
+void grpc_socket_become_ready(grpc_winsocket* socket,
                               grpc_winsocket_callback_info* info) {
   GPR_ASSERT(!info->has_pending_iocp);
   gpr_mu_lock(&socket->state_mu);
   if (info->closure) {
-    GRPC_CLOSURE_SCHED(exec_ctx, info->closure, GRPC_ERROR_NONE);
+    GRPC_CLOSURE_SCHED(info->closure, GRPC_ERROR_NONE);
     info->closure = NULL;
   } else {
     info->has_pending_iocp = 1;
@@ -147,6 +153,51 @@ void grpc_socket_become_ready(grpc_exec_ctx* exec_ctx, grpc_winsocket* socket,
   bool should_destroy = check_destroyable(socket);
   gpr_mu_unlock(&socket->state_mu);
   if (should_destroy) destroy(socket);
+}
+
+static gpr_once g_probe_ipv6_once = GPR_ONCE_INIT;
+static bool g_ipv6_loopback_available = false;
+
+static void probe_ipv6_once(void) {
+  SOCKET s = socket(AF_INET6, SOCK_STREAM, 0);
+  g_ipv6_loopback_available = 0;
+  if (s == INVALID_SOCKET) {
+    gpr_log(GPR_INFO, "Disabling AF_INET6 sockets because socket() failed.");
+  } else {
+    grpc_sockaddr_in6 addr;
+    memset(&addr, 0, sizeof(addr));
+    addr.sin6_family = AF_INET6;
+    addr.sin6_addr.s6_addr[15] = 1; /* [::1]:0 */
+    if (bind(s, reinterpret_cast<grpc_sockaddr*>(&addr), sizeof(addr)) == 0) {
+      g_ipv6_loopback_available = 1;
+    } else {
+      gpr_log(GPR_INFO,
+              "Disabling AF_INET6 sockets because ::1 is not available.");
+    }
+    closesocket(s);
+  }
+}
+
+int grpc_ipv6_loopback_available(void) {
+  gpr_once_init(&g_probe_ipv6_once, probe_ipv6_once);
+  return g_ipv6_loopback_available;
+}
+
+DWORD grpc_get_default_wsa_socket_flags() { return s_wsa_socket_flags; }
+
+void grpc_wsa_socket_flags_init() {
+  s_wsa_socket_flags = WSA_FLAG_OVERLAPPED;
+  /* WSA_FLAG_NO_HANDLE_INHERIT may be not supported on the older Windows
+     versions, see
+     https://msdn.microsoft.com/en-us/library/windows/desktop/ms742212(v=vs.85).aspx
+     for details. */
+  SOCKET sock = WSASocket(AF_INET6, SOCK_STREAM, IPPROTO_TCP, NULL, 0,
+                          s_wsa_socket_flags | WSA_FLAG_NO_HANDLE_INHERIT);
+  if (sock != INVALID_SOCKET) {
+    /* Windows 7, Windows 2008 R2 with SP1 or later */
+    s_wsa_socket_flags |= WSA_FLAG_NO_HANDLE_INHERIT;
+    closesocket(sock);
+  }
 }
 
 #endif /* GRPC_WINSOCK_SOCKET */

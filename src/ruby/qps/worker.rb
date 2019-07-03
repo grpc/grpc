@@ -29,7 +29,7 @@ require 'facter'
 require 'client'
 require 'qps-common'
 require 'server'
-require 'src/proto/grpc/testing/services_services_pb'
+require 'src/proto/grpc/testing/worker_service_services_pb'
 
 class WorkerServiceImpl < Grpc::Testing::WorkerService::Service
   def cpu_cores
@@ -77,8 +77,7 @@ class WorkerServiceImpl < Grpc::Testing::WorkerService::Service
     Grpc::Testing::CoreResponse.new(cores: cpu_cores)
   end
   def quit_worker(_args, _call)
-    Thread.new {
-      sleep 3
+    @shutdown_thread = Thread.new {
       @server.stop
     }
     Grpc::Testing::Void.new
@@ -86,6 +85,9 @@ class WorkerServiceImpl < Grpc::Testing::WorkerService::Service
   def initialize(s, sp)
     @server = s
     @server_port = sp
+  end
+  def join_shutdown_thread
+    @shutdown_thread.join
   end
 end
 
@@ -107,11 +109,13 @@ def main
   # Configure any errors with client or server child threads to surface
   Thread.abort_on_exception = true
   
-  s = GRPC::RpcServer.new
+  s = GRPC::RpcServer.new(poll_period: 3)
   s.add_http2_port("0.0.0.0:" + options['driver_port'].to_s,
                    :this_port_is_insecure)
-  s.handle(WorkerServiceImpl.new(s, options['server_port'].to_i))
+  worker_service = WorkerServiceImpl.new(s, options['server_port'].to_i)
+  s.handle(worker_service)
   s.run
+  worker_service.join_shutdown_thread
 end
 
 main

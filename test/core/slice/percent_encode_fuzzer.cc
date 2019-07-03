@@ -20,6 +20,7 @@
 #include <stdint.h>
 #include <string.h>
 
+#include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 
@@ -30,9 +31,10 @@ bool squelch = true;
 bool leak_check = true;
 
 static void test(const uint8_t* data, size_t size, const uint8_t* dict) {
-  struct grpc_memory_counters counters;
-  grpc_memory_counters_init();
-  grpc_slice input = grpc_slice_from_copied_buffer((const char*)data, size);
+  grpc_core::testing::LeakDetector leak_detector(true);
+  grpc_init();
+  grpc_slice input =
+      grpc_slice_from_copied_buffer(reinterpret_cast<const char*>(data), size);
   grpc_slice output = grpc_percent_encode_slice(input, dict);
   grpc_slice decoded_output;
   // encoder must always produce decodable output
@@ -46,9 +48,7 @@ static void test(const uint8_t* data, size_t size, const uint8_t* dict) {
   grpc_slice_unref(output);
   grpc_slice_unref(decoded_output);
   grpc_slice_unref(permissive_decoded_output);
-  counters = grpc_memory_counters_snapshot();
-  grpc_memory_counters_destroy();
-  GPR_ASSERT(counters.total_size_relative == 0);
+  grpc_shutdown_blocking();
 }
 
 extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {

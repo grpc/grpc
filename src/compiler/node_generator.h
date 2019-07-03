@@ -23,7 +23,14 @@
 
 namespace grpc_node_generator {
 
-grpc::string GenerateFile(const grpc::protobuf::FileDescriptor* file);
+// Contains all the parameters that are parsed from the command line.
+struct Parameters {
+  // Sets the earliest version of nodejs that needs to be supported.
+  int minimum_node_version;
+};
+
+grpc::string GenerateFile(const grpc::protobuf::FileDescriptor* file,
+                          const Parameters& params);
 
 }  // namespace grpc_node_generator
 

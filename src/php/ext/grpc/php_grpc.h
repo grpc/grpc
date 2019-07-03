@@ -20,7 +20,20 @@
 #ifndef PHP_GRPC_H
 #define PHP_GRPC_H
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 #include <stdbool.h>
+
+#include <php.h>
+#include <php_ini.h>
+#include <ext/standard/info.h>
+
+#include <grpc/grpc.h>
+
+#include "php7_wrapper.h"
+#include "version.h"
 
 extern zend_module_entry grpc_module_entry;
 #define phpext_grpc_ptr &grpc_module_entry
@@ -36,11 +49,6 @@ extern zend_module_entry grpc_module_entry;
 #ifdef ZTS
 #include "TSRM.h"
 #endif
-
-#include "php.h"
-#include "php7_wrapper.h"
-#include "grpc/grpc.h"
-#include "version.h"
 
 /* These are all function declarations */
 /* Code that runs at module initialization */
@@ -58,7 +66,11 @@ PHP_RINIT_FUNCTION(grpc);
 */
 ZEND_BEGIN_MODULE_GLOBALS(grpc)
   zend_bool initialized;
+  zend_bool enable_fork_support;
+  char *poll_strategy;
 ZEND_END_MODULE_GLOBALS(grpc)
+
+ZEND_EXTERN_MODULE_GLOBALS(grpc);
 
 /* In every utility function you add that needs to use variables
    in php_grpc_globals, call TSRMLS_FETCH(); after declaring other

@@ -22,14 +22,11 @@ def main
   STDERR.puts 'start server'
   server_runner = ServerRunner.new(EchoServerImpl)
   server_port = server_runner.run
-
-  sleep 1
-
   STDERR.puts 'start client'
   _, client_pid = start_client('channel_state_client.rb', server_port)
-
+  # sleep to allow time for the client to get into
+  # the middle of a "watch connectivity state" call
   sleep 3
-
   Process.kill('SIGTERM', client_pid)
 
   begin

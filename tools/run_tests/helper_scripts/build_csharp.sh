@@ -15,12 +15,12 @@
 
 set -ex
 
-cd $(dirname $0)/../../../src/csharp
+cd "$(dirname "$0")/../../../src/csharp"
 
 if [ "$CONFIG" == "gcov" ]
 then
   # overriding NativeDependenciesConfigurationUnix makes C# project pick up the gcov flavor of grpc_csharp_ext
-  dotnet build --configuration $MSBUILD_CONFIG /p:NativeDependenciesConfigurationUnix=gcov Grpc.sln
+  dotnet build --configuration "$MSBUILD_CONFIG" /p:NativeDependenciesConfigurationUnix=gcov Grpc.sln
 else
-  dotnet build --configuration $MSBUILD_CONFIG Grpc.sln
+  dotnet build --configuration "$MSBUILD_CONFIG" Grpc.sln
 fi

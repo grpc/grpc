@@ -43,7 +43,7 @@ class ReportQpsScenarioServiceClient extends \Grpc\BaseStub {
       $metadata = [], $options = []) {
         return $this->_simpleRequest('/grpc.testing.ReportQpsScenarioService/ReportScenario',
         $argument,
-        ['\Grpc\Testing\Void', 'decode'],
+        ['\Grpc\Testing\PBVoid', 'decode'],
         $metadata, $options);
     }
 

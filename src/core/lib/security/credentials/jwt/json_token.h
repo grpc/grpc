@@ -19,9 +19,9 @@
 #ifndef GRPC_CORE_LIB_SECURITY_CREDENTIALS_JWT_JSON_TOKEN_H
 #define GRPC_CORE_LIB_SECURITY_CREDENTIALS_JWT_JSON_TOKEN_H
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+#include <grpc/support/port_platform.h>
+
+#include "src/core/tsi/grpc_shadow_boringssl.h"
 
 #include <grpc/slice.h>
 #include <openssl/rsa.h>
@@ -30,7 +30,7 @@ extern "C" {
 
 /* --- Constants. --- */
 
-#define GRPC_JWT_OAUTH2_AUDIENCE "https://www.googleapis.com/oauth2/v3/token"
+#define GRPC_JWT_OAUTH2_AUDIENCE "https://oauth2.googleapis.com/token"
 
 /* --- auth_json_key parsing. --- */
 
@@ -73,9 +73,5 @@ typedef char* (*grpc_jwt_encode_and_sign_override)(
 /* Set a custom encode_and_sign override for testing. */
 void grpc_jwt_encode_and_sign_set_override(
     grpc_jwt_encode_and_sign_override func);
-
-#ifdef __cplusplus
-}
-#endif
 
 #endif /* GRPC_CORE_LIB_SECURITY_CREDENTIALS_JWT_JSON_TOKEN_H */
