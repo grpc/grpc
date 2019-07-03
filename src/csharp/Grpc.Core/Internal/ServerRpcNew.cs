@@ -28,12 +28,18 @@ namespace Grpc.Core.Internal
     {
         readonly Server server;
         readonly CallSafeHandle call;
-        readonly string method;
-        readonly string host;
+        readonly StringLike method;
+        readonly StringLike host;
         readonly Timespec deadline;
         readonly Metadata requestMetadata;
 
-        public ServerRpcNew(Server server, CallSafeHandle call, string method, string host, Timespec deadline, Metadata requestMetadata)
+        public void Recycle()
+        {
+            method.Recycle();
+            host.Recycle();
+        }
+
+        public ServerRpcNew(Server server, CallSafeHandle call, StringLike method, StringLike host, Timespec deadline, Metadata requestMetadata)
         {
             this.server = server;
             this.call = call;
@@ -59,7 +65,7 @@ namespace Grpc.Core.Internal
             }
         }
 
-        public string Method
+        public StringLike Method
         {
             get
             {
@@ -67,7 +73,7 @@ namespace Grpc.Core.Internal
             }
         }
 
-        public string Host
+        public StringLike Host
         {
             get
             {
@@ -89,6 +95,14 @@ namespace Grpc.Core.Internal
             {
                 return this.requestMetadata;
             }
+        }
+
+        internal ServerRpcNew WithMethod(StringLike method)
+        {
+            // create a new instance with the designated .Method, recycling
+            // the old .Method since it is now toast
+            this.method.Recycle();
+            return new ServerRpcNew(server, call, method, host, deadline, requestMetadata);
         }
     }
 }

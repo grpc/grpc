@@ -47,7 +47,19 @@ namespace Grpc.Core
 
         readonly List<ServerServiceDefinition> serviceDefinitionsList = new List<ServerServiceDefinition>();
         readonly List<ServerPort> serverPortList = new List<ServerPort>();
-        readonly Dictionary<string, IServerCallHandler> callHandlers = new Dictionary<string, IServerCallHandler>();
+
+        private struct CallHandlerStub // basic tuple for named call-handler values
+        {
+            public readonly StringLike Name;
+            public readonly IServerCallHandler Handler;
+            public CallHandlerStub(StringLike name, IServerCallHandler handler)
+            {
+                Name = name;
+                Handler = handler;
+            }
+        }
+
+        readonly Dictionary<StringLike, CallHandlerStub> callHandlers = new Dictionary<StringLike, CallHandlerStub>();
         readonly TaskCompletionSource<object> shutdownTcs = new TaskCompletionSource<object>();
 
         bool startRequested;
@@ -259,7 +271,8 @@ namespace Grpc.Core
                 GrpcPreconditions.CheckState(!startRequested);
                 foreach (var entry in serviceDefinition.GetCallHandlers())
                 {
-                    callHandlers.Add(entry.Key, entry.Value);
+                    var stringLike = StringLike.Create(entry.Key);
+                    callHandlers.Add(stringLike, new CallHandlerStub(stringLike, entry.Value));
                 }
                 serviceDefinitionsList.Add(serviceDefinition);
             }
@@ -331,6 +344,20 @@ namespace Grpc.Core
             handle.Dispose();
         }
 
+        private IServerCallHandler ResolveCallHandler(ref ServerRpcNew newRpc)
+        {
+            CallHandlerStub stub;
+            if (callHandlers.TryGetValue(newRpc.Method, out stub))
+            {
+                newRpc = newRpc.WithMethod(stub.Name);
+                return stub.Handler;
+            }
+            else
+            {
+                return UnimplementedMethodCallHandler.Instance;
+            }
+        }
+
         /// <summary>
         /// Selects corresponding handler for given call and handles the call.
         /// </summary>
@@ -338,11 +365,7 @@ namespace Grpc.Core
         {
             try
             {
-                IServerCallHandler callHandler;
-                if (!callHandlers.TryGetValue(newRpc.Method, out callHandler))
-                {
-                    callHandler = UnimplementedMethodCallHandler.Instance;
-                }
+                var callHandler = ResolveCallHandler(ref newRpc);
                 await callHandler.HandleCall(newRpc, cq).ConfigureAwait(false);
             }
             catch (Exception e)
@@ -352,6 +375,7 @@ namespace Grpc.Core
             finally
             {
                 continuation();
+                newRpc.Recycle();
             }
         }
 
@@ -366,7 +390,11 @@ namespace Grpc.Core
                 var newRpc = ctx.GetServerRpcNew(this);
 
                 // after server shutdown, the callback returns with null call
-                if (!newRpc.Call.IsInvalid)
+                if (newRpc.Call.IsInvalid)
+                {
+                    newRpc.Recycle();
+                }
+                else
                 {
                     nextRpcRequested = true;
 

@@ -66,11 +66,11 @@ namespace Grpc.Core.Internal
 
             UIntPtr methodLen;
             IntPtr methodPtr = Native.grpcsharp_request_call_context_method(this, out methodLen);
-            var method = Marshal.PtrToStringAnsi(methodPtr, (int) methodLen.ToUInt32());
+            var method = StringLike.Rent(methodPtr, (int) methodLen.ToUInt32());
 
             UIntPtr hostLen;
             IntPtr hostPtr = Native.grpcsharp_request_call_context_host(this, out hostLen);
-            var host = Marshal.PtrToStringAnsi(hostPtr, (int) hostLen.ToUInt32());
+            var host = StringLike.Rent(hostPtr, (int) hostLen.ToUInt32());
 
             var deadline = Native.grpcsharp_request_call_context_deadline(this);
 

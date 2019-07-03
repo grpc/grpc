@@ -30,8 +30,8 @@ namespace Grpc.Core
     internal class DefaultServerCallContext : ServerCallContext
     {
         private readonly CallSafeHandle callHandle;
-        private readonly string method;
-        private readonly string host;
+        private string lazyMethod, lazyHost;
+        private readonly StringLike methodSource, hostSource;
         private readonly DateTime deadline;
         private readonly Metadata requestHeaders;
         private readonly CancellationToken cancellationToken;
@@ -45,12 +45,14 @@ namespace Grpc.Core
         /// To allow reuse of ServerCallContext API by different gRPC implementations, the implementation of some members is provided externally.
         /// To provide state, this <c>ServerCallContext</c> instance and <c>extraData</c> will be passed to the member implementations.
         /// </summary>
-        internal DefaultServerCallContext(CallSafeHandle callHandle, string method, string host, DateTime deadline,
+        internal DefaultServerCallContext(CallSafeHandle callHandle, StringLike method, StringLike host, DateTime deadline,
             Metadata requestHeaders, CancellationToken cancellationToken, IServerResponseStream serverResponseStream)
         {
             this.callHandle = callHandle;
-            this.method = method;
-            this.host = host;
+            this.methodSource = method;
+            this.hostSource = host;
+            this.lazyMethod = method.KnownValue;
+            this.lazyHost = host.KnownValue;
             this.deadline = deadline;
             this.requestHeaders = requestHeaders;
             this.cancellationToken = cancellationToken;
@@ -71,9 +73,9 @@ namespace Grpc.Core
             return serverResponseStream.WriteResponseHeadersAsync(responseHeaders);
         }
 
-        protected override string MethodCore => method;
+        protected override string MethodCore => lazyMethod ?? (lazyMethod = methodSource.ToString());
 
-        protected override string HostCore => host;
+        protected override string HostCore => lazyHost ?? (lazyHost = hostSource.ToString());
 
         protected override string PeerCore => callHandle.GetPeer();
 
