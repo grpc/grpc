@@ -327,4 +327,6 @@ inline grpc_slice grpc_slice_from_static_string_internal(const char* s) {
   return grpc_slice_from_static_buffer_internal(s, strlen(s));
 }
 
+grpc_slice grpc_slice_split_head_noref(grpc_slice* source, size_t split);
+
 #endif /* GRPC_CORE_LIB_SLICE_SLICE_INTERNAL_H */

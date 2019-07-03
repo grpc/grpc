@@ -399,7 +399,8 @@ grpc_slice grpc_slice_split_tail(grpc_slice* source, size_t split) {
   return grpc_slice_split_tail_maybe_ref(source, split, GRPC_SLICE_REF_BOTH);
 }
 
-grpc_slice grpc_slice_split_head(grpc_slice* source, size_t split) {
+template <bool do_ref = true>
+static grpc_slice slice_split_head(grpc_slice* source, size_t split) {
   grpc_slice head;
 
   if (source->refcount == nullptr) {
@@ -423,11 +424,14 @@ grpc_slice grpc_slice_split_head(grpc_slice* source, size_t split) {
     source->data.refcounted.length -= split;
   } else {
     GPR_ASSERT(source->data.refcounted.length >= split);
-
-    /* Build the result */
-    head.refcount = source->refcount->sub_refcount();
-    /* Bump the refcount */
-    head.refcount->Ref();
+    if (do_ref) {
+      /* Build the result */
+      head.refcount = source->refcount->sub_refcount();
+      /* Bump the refcount */
+      head.refcount->Ref();
+    } else {
+      head.refcount = &grpc_core::kNoopRefcount;
+    }
     /* Point into the source array */
     head.data.refcounted.bytes = source->data.refcounted.bytes;
     head.data.refcounted.length = split;
@@ -437,6 +441,14 @@ grpc_slice grpc_slice_split_head(grpc_slice* source, size_t split) {
   }
 
   return head;
+}
+
+grpc_slice grpc_slice_split_head(grpc_slice* source, size_t split) {
+  return slice_split_head<true>(source, split);
+}
+
+grpc_slice grpc_slice_split_head_noref(grpc_slice* source, size_t split) {
+  return slice_split_head<false>(source, split);
 }
 
 int grpc_slice_default_eq_impl(grpc_slice a, grpc_slice b) {
