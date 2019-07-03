@@ -743,7 +743,6 @@ class CSharpLanguage:
     def __str__(self):
         return 'csharp'
 
-
 class PythonLanguage:
 
     def __init__(self):
@@ -822,6 +821,22 @@ class PythonLanguage:
             req_size=1024 * 1024,
             resp_size=1024 * 1024,
             categories=[SMOKETEST, SCALABLE])
+        
+        yield _ping_pong_scenario(
+            'python_to_cpp_sync_unary_qps_unconstrained_many_clients',
+            rpc_type='UNARY',
+            client_type='SYNC_CLIENT',
+            server_type='ASYNC_SERVER',
+            server_language='c++',
+            unconstrained_client='sync')
+
+        yield _ping_pong_scenario(
+            'python_to_cpp_sync_stream_qps_unconstrained_many_clients',
+            rpc_type='STREAMING',
+            client_type='SYNC_CLIENT',
+            server_type='ASYNC_SERVER',
+            server_language='c++',
+            unconstrained_client='sync')
 
     def __str__(self):
         return 'python'
