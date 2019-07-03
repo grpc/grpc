@@ -49,6 +49,7 @@ def handle_sigint(unused_signum, unused_frame):
 
 
 def main_unary(server_target):
+    """Initiate a unary RPC to be interrupted by a SIGINT."""
     global per_process_rpc_future  # pylint: disable=global-statement
     with grpc.insecure_channel(server_target) as channel:
         multicallable = channel.unary_unary(UNARY_UNARY)
@@ -60,6 +61,7 @@ def main_unary(server_target):
 
 
 def main_streaming(server_target):
+    """Initiate a streaming RPC to be interrupted by a SIGINT."""
     global per_process_rpc_future  # pylint: disable=global-statement
     with grpc.insecure_channel(server_target) as channel:
         signal.signal(signal.SIGINT, handle_sigint)
