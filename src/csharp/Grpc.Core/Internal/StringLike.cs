@@ -166,15 +166,15 @@ namespace Grpc.Core.Internal
             public readonly StringLike Value;
             public Boxed(StringLike value)
             {
-                Value = value;
+                // if we have an empty string, or one that is created from a string, then
+                // we can use that directly; otherwise, we'll need a reliable clone
+                Value = value.IsPooled ? Create(value.ToString()) : value;
             }
         }
 
         internal Boxed Box()
         {
-            // if we have an empty string, or one that is created from a string, then
-            // we can use that directly; otherwise, we'll need a reliable clone
-            return new Boxed((length == 0 | !IsPooled) ? this : Create(ToString()));
+            return new Boxed(this);
         }
     }
 }
