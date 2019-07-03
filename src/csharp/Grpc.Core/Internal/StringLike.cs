@@ -66,7 +66,7 @@ namespace Grpc.Core.Internal
         /// </summary>
         public void Recycle()
         {
-            if (IsPooled & length != 0) ArrayPool<byte>.Shared.Return(bytes);
+            if (IsPooled) ArrayPool<byte>.Shared.Return(bytes);
         }
 
         private StringLike(string knownValue, byte[] bytes, int length)
@@ -93,7 +93,7 @@ namespace Grpc.Core.Internal
 
         public int ByteCount { get { return length; } }
 
-        public bool IsPooled { get { return knownValue == null; } }
+        public bool IsPooled { get { return knownValue == null & length != 0; } }
 
         // this **CAN BE NULL** if we didn't start from a string
         public string KnownValue {  get { return knownValue; } }
