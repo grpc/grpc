@@ -2544,3 +2544,11 @@ filegroup(
     ],
     visibility = ["//visibility:public"],
 )
+
+load("@build_bazel_rules_apple//apple:resources.bzl", "apple_resource_bundle")
+
+apple_resource_bundle(
+    # The choice of name is signicant here, since it determines the bundle name.
+    name = "gRPCCertificates",
+    resources = ["etc/roots.pem"]
+)
