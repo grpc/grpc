@@ -104,16 +104,13 @@ bool ParseUri(const grpc_uri* uri,
       errors_found = true;
       break;
     }
-    if (addresses) {
+    if (addresses != nullptr) {
       addresses->emplace_back(addr, nullptr /* args */);
     }
   }
   grpc_slice_buffer_destroy_internal(&path_parts);
   grpc_slice_unref_internal(path_slice);
-  if (errors_found) {
-    return false;
-  }
-  return true;
+  return !errors_found;
 }
 
 OrphanablePtr<Resolver> CreateSockaddrResolver(
@@ -131,7 +128,7 @@ OrphanablePtr<Resolver> CreateSockaddrResolver(
 
 class IPv4ResolverFactory : public ResolverFactory {
  public:
-  bool CheckUri(const grpc_uri* uri) const override {
+  bool IsValidUri(const grpc_uri* uri) const override {
     return ParseUri(uri, grpc_parse_ipv4, nullptr);
   }
 
@@ -144,7 +141,7 @@ class IPv4ResolverFactory : public ResolverFactory {
 
 class IPv6ResolverFactory : public ResolverFactory {
  public:
-  bool CheckUri(const grpc_uri* uri) const override {
+  bool IsValidUri(const grpc_uri* uri) const override {
     return ParseUri(uri, grpc_parse_ipv6, nullptr);
   }
 
@@ -158,7 +155,7 @@ class IPv6ResolverFactory : public ResolverFactory {
 #ifdef GRPC_HAVE_UNIX_SOCKET
 class UnixResolverFactory : public ResolverFactory {
  public:
-  bool CheckUri(const grpc_uri* uri) const override {
+  bool IsValidUri(const grpc_uri* uri) const override {
     return ParseUri(uri, grpc_parse_unix, nullptr);
   }
 

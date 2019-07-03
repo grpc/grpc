@@ -117,17 +117,16 @@ class ResolvingLoadBalancingPolicy : public LoadBalancingPolicy {
   void OnResolverResultChangedLocked(Resolver::Result result);
 
   // Passed in from caller at construction time.
+  grpc_channel_args* channel_args_;
   TraceFlag* tracer_;
   UniquePtr<char> target_uri_;
   ProcessResolverResultCallback process_resolver_result_ = nullptr;
   void* process_resolver_result_user_data_ = nullptr;
   UniquePtr<char> child_policy_name_;
   RefCountedPtr<LoadBalancingPolicy::Config> child_lb_config_;
-  grpc_channel_args* channel_args_;
 
   // Resolver and associated state.
   OrphanablePtr<Resolver> resolver_;
-  bool started_resolving_ = false;
   bool previous_resolution_contained_addresses_ = false;
 
   // Child LB policy.

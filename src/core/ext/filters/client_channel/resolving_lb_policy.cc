@@ -216,8 +216,10 @@ ResolvingLoadBalancingPolicy::ResolvingLoadBalancingPolicy(
 }
 
 grpc_error* ResolvingLoadBalancingPolicy::Init() {
-  if (!ResolverRegistry::CheckTarget(target_uri_.get())) {
-    return GRPC_ERROR_CREATE_FROM_STATIC_STRING("resolver creation failed");
+  // So far, invalid target is the only possible cause of resolver creating
+  // failure.
+  if (!ResolverRegistry::IsValidTarget(target_uri_.get())) {
+    return GRPC_ERROR_CREATE_FROM_STATIC_STRING("the target_uri is invalid");
   }
   // Return our picker to the channel.
   channel_control_helper()->UpdateState(
@@ -260,9 +262,9 @@ void ResolvingLoadBalancingPolicy::ExitIdleLocked() {
     resolver_ = ResolverRegistry::CreateResolver(
         target_uri_.get(), channel_args_, interested_parties(), combiner(),
         UniquePtr<Resolver::ResultHandler>(New<ResolverResultHandler>(Ref())));
+    GPR_ASSERT(resolver_ != nullptr);
     StartResolvingLocked();
   }
-  GPR_ASSERT(resolver_ != nullptr);
   if (lb_policy_ != nullptr) {
     lb_policy_->ExitIdleLocked();
     if (pending_lb_policy_ != nullptr) pending_lb_policy_->ExitIdleLocked();
@@ -282,8 +284,6 @@ void ResolvingLoadBalancingPolicy::StartResolvingLocked() {
   if (GRPC_TRACE_FLAG_ENABLED(*tracer_)) {
     gpr_log(GPR_INFO, "resolving_lb=%p: starting name resolution", this);
   }
-  GPR_ASSERT(!started_resolving_);
-  started_resolving_ = true;
   channel_control_helper()->UpdateState(
       GRPC_CHANNEL_CONNECTING,
       UniquePtr<SubchannelPicker>(New<QueuePicker>(Ref())));

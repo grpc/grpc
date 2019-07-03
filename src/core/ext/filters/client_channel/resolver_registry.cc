@@ -132,12 +132,12 @@ ResolverFactory* ResolverRegistry::LookupResolverFactory(const char* scheme) {
   return g_state->LookupResolverFactory(scheme);
 }
 
-bool ResolverRegistry::CheckTarget(const char* target) {
+bool ResolverRegistry::IsValidTarget(const char* target) {
   grpc_uri* uri = nullptr;
   char* canonical_target = nullptr;
   ResolverFactory* factory =
       g_state->FindResolverFactory(target, &uri, &canonical_target);
-  bool result = factory == nullptr ? false : factory->CheckUri(uri);
+  bool result = factory == nullptr ? false : factory->IsValidUri(uri);
   grpc_uri_destroy(uri);
   gpr_free(canonical_target);
   return result;
