@@ -379,6 +379,7 @@ add_dependencies(buildtests_c memory_usage_test)
 endif()
 add_dependencies(buildtests_c message_compress_test)
 add_dependencies(buildtests_c minimal_stack_is_minimal_test)
+add_dependencies(buildtests_c mpmcqueue_test)
 add_dependencies(buildtests_c multiple_server_queues_test)
 add_dependencies(buildtests_c murmur_hash_test)
 add_dependencies(buildtests_c no_server_test)
@@ -1029,6 +1030,7 @@ add_library(grpc
   src/core/lib/iomgr/ev_windows.cc
   src/core/lib/iomgr/exec_ctx.cc
   src/core/lib/iomgr/executor.cc
+  src/core/lib/iomgr/executor/mpmcqueue.cc
   src/core/lib/iomgr/fork_posix.cc
   src/core/lib/iomgr/fork_windows.cc
   src/core/lib/iomgr/gethostname_fallback.cc
@@ -1464,6 +1466,7 @@ add_library(grpc_cronet
   src/core/lib/iomgr/ev_windows.cc
   src/core/lib/iomgr/exec_ctx.cc
   src/core/lib/iomgr/executor.cc
+  src/core/lib/iomgr/executor/mpmcqueue.cc
   src/core/lib/iomgr/fork_posix.cc
   src/core/lib/iomgr/fork_windows.cc
   src/core/lib/iomgr/gethostname_fallback.cc
@@ -1881,6 +1884,7 @@ add_library(grpc_test_util
   src/core/lib/iomgr/ev_windows.cc
   src/core/lib/iomgr/exec_ctx.cc
   src/core/lib/iomgr/executor.cc
+  src/core/lib/iomgr/executor/mpmcqueue.cc
   src/core/lib/iomgr/fork_posix.cc
   src/core/lib/iomgr/fork_windows.cc
   src/core/lib/iomgr/gethostname_fallback.cc
@@ -2211,6 +2215,7 @@ add_library(grpc_test_util_unsecure
   src/core/lib/iomgr/ev_windows.cc
   src/core/lib/iomgr/exec_ctx.cc
   src/core/lib/iomgr/executor.cc
+  src/core/lib/iomgr/executor/mpmcqueue.cc
   src/core/lib/iomgr/fork_posix.cc
   src/core/lib/iomgr/fork_windows.cc
   src/core/lib/iomgr/gethostname_fallback.cc
@@ -2517,6 +2522,7 @@ add_library(grpc_unsecure
   src/core/lib/iomgr/ev_windows.cc
   src/core/lib/iomgr/exec_ctx.cc
   src/core/lib/iomgr/executor.cc
+  src/core/lib/iomgr/executor/mpmcqueue.cc
   src/core/lib/iomgr/fork_posix.cc
   src/core/lib/iomgr/fork_windows.cc
   src/core/lib/iomgr/gethostname_fallback.cc
@@ -3544,6 +3550,7 @@ add_library(grpc++_cronet
   src/core/lib/iomgr/ev_windows.cc
   src/core/lib/iomgr/exec_ctx.cc
   src/core/lib/iomgr/executor.cc
+  src/core/lib/iomgr/executor/mpmcqueue.cc
   src/core/lib/iomgr/fork_posix.cc
   src/core/lib/iomgr/fork_windows.cc
   src/core/lib/iomgr/gethostname_fallback.cc
@@ -9390,6 +9397,40 @@ target_link_libraries(minimal_stack_is_minimal_test
   if (_gRPC_CORE_NOSTDCXX_FLAGS)
     set_target_properties(minimal_stack_is_minimal_test PROPERTIES LINKER_LANGUAGE C)
     target_compile_options(minimal_stack_is_minimal_test PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
+  endif()
+
+endif (gRPC_BUILD_TESTS)
+if (gRPC_BUILD_TESTS)
+
+add_executable(mpmcqueue_test
+  test/core/iomgr/mpmcqueue_test.cc
+)
+
+
+target_include_directories(mpmcqueue_test
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
+  PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
+)
+
+target_link_libraries(mpmcqueue_test
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  grpc_test_util
+  grpc
+  gpr
+)
+
+  # avoid dependency on libstdc++
+  if (_gRPC_CORE_NOSTDCXX_FLAGS)
+    set_target_properties(mpmcqueue_test PROPERTIES LINKER_LANGUAGE C)
+    target_compile_options(mpmcqueue_test PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
   endif()
 
 endif (gRPC_BUILD_TESTS)

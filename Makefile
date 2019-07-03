@@ -1093,6 +1093,7 @@ memory_usage_server: $(BINDIR)/$(CONFIG)/memory_usage_server
 memory_usage_test: $(BINDIR)/$(CONFIG)/memory_usage_test
 message_compress_test: $(BINDIR)/$(CONFIG)/message_compress_test
 minimal_stack_is_minimal_test: $(BINDIR)/$(CONFIG)/minimal_stack_is_minimal_test
+mpmcqueue_test: $(BINDIR)/$(CONFIG)/mpmcqueue_test
 multiple_server_queues_test: $(BINDIR)/$(CONFIG)/multiple_server_queues_test
 murmur_hash_test: $(BINDIR)/$(CONFIG)/murmur_hash_test
 nanopb_fuzzer_response_test: $(BINDIR)/$(CONFIG)/nanopb_fuzzer_response_test
@@ -1517,6 +1518,7 @@ buildtests_c: privatelibs_c \
   $(BINDIR)/$(CONFIG)/memory_usage_test \
   $(BINDIR)/$(CONFIG)/message_compress_test \
   $(BINDIR)/$(CONFIG)/minimal_stack_is_minimal_test \
+  $(BINDIR)/$(CONFIG)/mpmcqueue_test \
   $(BINDIR)/$(CONFIG)/multiple_server_queues_test \
   $(BINDIR)/$(CONFIG)/murmur_hash_test \
   $(BINDIR)/$(CONFIG)/no_server_test \
@@ -2113,6 +2115,8 @@ test_c: buildtests_c
 	$(Q) $(BINDIR)/$(CONFIG)/message_compress_test || ( echo test message_compress_test failed ; exit 1 )
 	$(E) "[RUN]     Testing minimal_stack_is_minimal_test"
 	$(Q) $(BINDIR)/$(CONFIG)/minimal_stack_is_minimal_test || ( echo test minimal_stack_is_minimal_test failed ; exit 1 )
+	$(E) "[RUN]     Testing mpmcqueue_test"
+	$(Q) $(BINDIR)/$(CONFIG)/mpmcqueue_test || ( echo test mpmcqueue_test failed ; exit 1 )
 	$(E) "[RUN]     Testing multiple_server_queues_test"
 	$(Q) $(BINDIR)/$(CONFIG)/multiple_server_queues_test || ( echo test multiple_server_queues_test failed ; exit 1 )
 	$(E) "[RUN]     Testing murmur_hash_test"
@@ -3529,6 +3533,7 @@ LIBGRPC_SRC = \
     src/core/lib/iomgr/ev_windows.cc \
     src/core/lib/iomgr/exec_ctx.cc \
     src/core/lib/iomgr/executor.cc \
+    src/core/lib/iomgr/executor/mpmcqueue.cc \
     src/core/lib/iomgr/fork_posix.cc \
     src/core/lib/iomgr/fork_windows.cc \
     src/core/lib/iomgr/gethostname_fallback.cc \
@@ -3958,6 +3963,7 @@ LIBGRPC_CRONET_SRC = \
     src/core/lib/iomgr/ev_windows.cc \
     src/core/lib/iomgr/exec_ctx.cc \
     src/core/lib/iomgr/executor.cc \
+    src/core/lib/iomgr/executor/mpmcqueue.cc \
     src/core/lib/iomgr/fork_posix.cc \
     src/core/lib/iomgr/fork_windows.cc \
     src/core/lib/iomgr/gethostname_fallback.cc \
@@ -4368,6 +4374,7 @@ LIBGRPC_TEST_UTIL_SRC = \
     src/core/lib/iomgr/ev_windows.cc \
     src/core/lib/iomgr/exec_ctx.cc \
     src/core/lib/iomgr/executor.cc \
+    src/core/lib/iomgr/executor/mpmcqueue.cc \
     src/core/lib/iomgr/fork_posix.cc \
     src/core/lib/iomgr/fork_windows.cc \
     src/core/lib/iomgr/gethostname_fallback.cc \
@@ -4685,6 +4692,7 @@ LIBGRPC_TEST_UTIL_UNSECURE_SRC = \
     src/core/lib/iomgr/ev_windows.cc \
     src/core/lib/iomgr/exec_ctx.cc \
     src/core/lib/iomgr/executor.cc \
+    src/core/lib/iomgr/executor/mpmcqueue.cc \
     src/core/lib/iomgr/fork_posix.cc \
     src/core/lib/iomgr/fork_windows.cc \
     src/core/lib/iomgr/gethostname_fallback.cc \
@@ -4965,6 +4973,7 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/lib/iomgr/ev_windows.cc \
     src/core/lib/iomgr/exec_ctx.cc \
     src/core/lib/iomgr/executor.cc \
+    src/core/lib/iomgr/executor/mpmcqueue.cc \
     src/core/lib/iomgr/fork_posix.cc \
     src/core/lib/iomgr/fork_windows.cc \
     src/core/lib/iomgr/gethostname_fallback.cc \
@@ -5965,6 +5974,7 @@ LIBGRPC++_CRONET_SRC = \
     src/core/lib/iomgr/ev_windows.cc \
     src/core/lib/iomgr/exec_ctx.cc \
     src/core/lib/iomgr/executor.cc \
+    src/core/lib/iomgr/executor/mpmcqueue.cc \
     src/core/lib/iomgr/fork_posix.cc \
     src/core/lib/iomgr/fork_windows.cc \
     src/core/lib/iomgr/gethostname_fallback.cc \
@@ -12155,6 +12165,38 @@ deps_minimal_stack_is_minimal_test: $(MINIMAL_STACK_IS_MINIMAL_TEST_OBJS:.o=.dep
 ifneq ($(NO_SECURE),true)
 ifneq ($(NO_DEPS),true)
 -include $(MINIMAL_STACK_IS_MINIMAL_TEST_OBJS:.o=.dep)
+endif
+endif
+
+
+MPMCQUEUE_TEST_SRC = \
+    test/core/iomgr/mpmcqueue_test.cc \
+
+MPMCQUEUE_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(MPMCQUEUE_TEST_SRC))))
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL.
+
+$(BINDIR)/$(CONFIG)/mpmcqueue_test: openssl_dep_error
+
+else
+
+
+
+$(BINDIR)/$(CONFIG)/mpmcqueue_test: $(MPMCQUEUE_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS) $(MPMCQUEUE_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/mpmcqueue_test
+
+endif
+
+$(OBJDIR)/$(CONFIG)/test/core/iomgr/mpmcqueue_test.o:  $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a
+
+deps_mpmcqueue_test: $(MPMCQUEUE_TEST_OBJS:.o=.dep)
+
+ifneq ($(NO_SECURE),true)
+ifneq ($(NO_DEPS),true)
+-include $(MPMCQUEUE_TEST_OBJS:.o=.dep)
 endif
 endif
 

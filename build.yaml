@@ -280,6 +280,7 @@ filegroups:
   - src/core/lib/iomgr/ev_windows.cc
   - src/core/lib/iomgr/exec_ctx.cc
   - src/core/lib/iomgr/executor.cc
+  - src/core/lib/iomgr/executor/mpmcqueue.cc
   - src/core/lib/iomgr/fork_posix.cc
   - src/core/lib/iomgr/fork_windows.cc
   - src/core/lib/iomgr/gethostname_fallback.cc
@@ -466,6 +467,7 @@ filegroups:
   - src/core/lib/iomgr/ev_posix.h
   - src/core/lib/iomgr/exec_ctx.h
   - src/core/lib/iomgr/executor.h
+  - src/core/lib/iomgr/executor/mpmcqueue.h
   - src/core/lib/iomgr/gethostname.h
   - src/core/lib/iomgr/grpc_if_nametoindex.h
   - src/core/lib/iomgr/internal_errqueue.h
@@ -3275,6 +3277,16 @@ targets:
   language: c
   src:
   - test/core/channel/minimal_stack_is_minimal_test.cc
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr
+  uses_polling: false
+- name: mpmcqueue_test
+  build: test
+  language: c
+  src:
+  - test/core/iomgr/mpmcqueue_test.cc
   deps:
   - grpc_test_util
   - grpc
