@@ -258,16 +258,15 @@ void ResolvingLoadBalancingPolicy::ShutdownLocked() {
 }
 
 void ResolvingLoadBalancingPolicy::ExitIdleLocked() {
-  if (resolver_ == nullptr) {
+  if (lb_policy_ != nullptr) {
+    lb_policy_->ExitIdleLocked();
+    if (pending_lb_policy_ != nullptr) pending_lb_policy_->ExitIdleLocked();
+  } else if (resolver_ == nullptr) {
     resolver_ = ResolverRegistry::CreateResolver(
         target_uri_.get(), channel_args_, interested_parties(), combiner(),
         UniquePtr<Resolver::ResultHandler>(New<ResolverResultHandler>(Ref())));
     GPR_ASSERT(resolver_ != nullptr);
     StartResolvingLocked();
-  }
-  if (lb_policy_ != nullptr) {
-    lb_policy_->ExitIdleLocked();
-    if (pending_lb_policy_ != nullptr) pending_lb_policy_->ExitIdleLocked();
   }
 }
 

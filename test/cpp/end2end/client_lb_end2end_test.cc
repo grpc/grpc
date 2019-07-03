@@ -135,10 +135,9 @@ class MyTestServiceImpl : public TestServiceImpl {
 
 class FakeResolverResponseGeneratorWrapper {
  public:
-  FakeResolverResponseGeneratorWrapper() {
-    response_generator_ =
-        grpc_core::MakeRefCounted<grpc_core::FakeResolverResponseGenerator>();
-  }
+  FakeResolverResponseGeneratorWrapper()
+      : response_generator_(grpc_core::MakeRefCounted<
+                            grpc_core::FakeResolverResponseGenerator>()) {}
 
   ~FakeResolverResponseGeneratorWrapper() {}
 
@@ -254,13 +253,13 @@ class ClientLbEnd2endTest : public ::testing::Test {
 
   std::shared_ptr<Channel> BuildChannel(
       const grpc::string& lb_policy_name,
-      grpc_core::FakeResolverResponseGenerator* response_generator,
+      std::unique_ptr<FakeResolverResponseGeneratorWrapper>& response_generator,
       ChannelArguments args = ChannelArguments()) {
     if (lb_policy_name.size() > 0) {
       args.SetLoadBalancingPolicyName(lb_policy_name);
     }  // else, default to pick first
     args.SetPointer(GRPC_ARG_FAKE_RESOLVER_RESPONSE_GENERATOR,
-                    response_generator);
+                    response_generator->Get());
     return ::grpc::CreateCustomChannel("fake:///", creds_, args);
   }
 
@@ -431,7 +430,7 @@ TEST_F(ClientLbEnd2endTest, ChannelStateConnectingWhenResolving) {
   const int kNumServers = 3;
   StartServers(kNumServers);
   auto response_generator = BuildResolverResponseGenerator();
-  auto channel = BuildChannel("", response_generator->Get());
+  auto channel = BuildChannel("", response_generator);
   auto stub = BuildStub(channel);
   // Initial state should be IDLE.
   EXPECT_EQ(channel->GetState(false /* try_to_connect */), GRPC_CHANNEL_IDLE);
@@ -455,7 +454,7 @@ TEST_F(ClientLbEnd2endTest, PickFirst) {
   StartServers(kNumServers);
   auto response_generator = BuildResolverResponseGenerator();
   auto channel = BuildChannel(
-      "", response_generator->Get());  // test that pick first is the default.
+      "", response_generator);  // test that pick first is the default.
   auto stub = BuildStub(channel);
   response_generator->SetNextResolution(GetServersPorts());
   for (size_t i = 0; i < servers_.size(); ++i) {
@@ -480,7 +479,7 @@ TEST_F(ClientLbEnd2endTest, PickFirstProcessPending) {
   StartServers(1);  // Single server
   auto response_generator = BuildResolverResponseGenerator();
   auto channel = BuildChannel(
-      "", response_generator->Get());  // test that pick first is the default.
+      "", response_generator);  // test that pick first is the default.
   auto stub = BuildStub(channel);
   response_generator->SetNextResolution({servers_[0]->port_});
   WaitForServer(stub, 0, DEBUG_LOCATION);
@@ -490,7 +489,7 @@ TEST_F(ClientLbEnd2endTest, PickFirstProcessPending) {
   // are globally reused). Progress should happen without any transition from
   // this READY state.
   auto second_response_generator = BuildResolverResponseGenerator();
-  auto second_channel = BuildChannel("", second_response_generator->Get());
+  auto second_channel = BuildChannel("", second_response_generator);
   auto second_stub = BuildStub(second_channel);
   second_response_generator->SetNextResolution({servers_[0]->port_});
   CheckRpcSendOk(second_stub, DEBUG_LOCATION);
@@ -506,7 +505,7 @@ TEST_F(ClientLbEnd2endTest, PickFirstSelectsReadyAtStartup) {
   CreateServers(2, ports);
   StartServer(1);
   auto response_generator1 = BuildResolverResponseGenerator();
-  auto channel1 = BuildChannel("pick_first", response_generator1->Get(), args);
+  auto channel1 = BuildChannel("pick_first", response_generator1, args);
   auto stub1 = BuildStub(channel1);
   response_generator1->SetNextResolution(ports);
   // Wait for second server to be ready.
@@ -515,7 +514,7 @@ TEST_F(ClientLbEnd2endTest, PickFirstSelectsReadyAtStartup) {
   // should immediately pick the second subchannel, since it's already
   // in READY state.
   auto response_generator2 = BuildResolverResponseGenerator();
-  auto channel2 = BuildChannel("pick_first", response_generator2->Get(), args);
+  auto channel2 = BuildChannel("pick_first", response_generator2, args);
   response_generator2->SetNextResolution(ports);
   // Check that the channel reports READY without waiting for the
   // initial backoff.
@@ -529,7 +528,7 @@ TEST_F(ClientLbEnd2endTest, PickFirstBackOffInitialReconnect) {
   const std::vector<int> ports = {grpc_pick_unused_port_or_die()};
   const gpr_timespec t0 = gpr_now(GPR_CLOCK_MONOTONIC);
   auto response_generator = BuildResolverResponseGenerator();
-  auto channel = BuildChannel("pick_first", response_generator->Get(), args);
+  auto channel = BuildChannel("pick_first", response_generator, args);
   auto stub = BuildStub(channel);
   response_generator->SetNextResolution(ports);
   // The channel won't become connected (there's no server).
@@ -559,7 +558,7 @@ TEST_F(ClientLbEnd2endTest, PickFirstBackOffMinReconnect) {
   args.SetInt(GRPC_ARG_MIN_RECONNECT_BACKOFF_MS, kMinReconnectBackOffMs);
   const std::vector<int> ports = {grpc_pick_unused_port_or_die()};
   auto response_generator = BuildResolverResponseGenerator();
-  auto channel = BuildChannel("pick_first", response_generator->Get(), args);
+  auto channel = BuildChannel("pick_first", response_generator, args);
   auto stub = BuildStub(channel);
   response_generator->SetNextResolution(ports);
   // Make connection delay a 10% longer than it's willing to in order to make
@@ -585,7 +584,7 @@ TEST_F(ClientLbEnd2endTest, PickFirstResetConnectionBackoff) {
   args.SetInt(GRPC_ARG_INITIAL_RECONNECT_BACKOFF_MS, kInitialBackOffMs);
   const std::vector<int> ports = {grpc_pick_unused_port_or_die()};
   auto response_generator = BuildResolverResponseGenerator();
-  auto channel = BuildChannel("pick_first", response_generator->Get(), args);
+  auto channel = BuildChannel("pick_first", response_generator, args);
   auto stub = BuildStub(channel);
   response_generator->SetNextResolution(ports);
   // The channel won't become connected (there's no server).
@@ -617,7 +616,7 @@ TEST_F(ClientLbEnd2endTest,
   args.SetInt(GRPC_ARG_INITIAL_RECONNECT_BACKOFF_MS, kInitialBackOffMs);
   const std::vector<int> ports = {grpc_pick_unused_port_or_die()};
   auto response_generator = BuildResolverResponseGenerator();
-  auto channel = BuildChannel("pick_first", response_generator->Get(), args);
+  auto channel = BuildChannel("pick_first", response_generator, args);
   auto stub = BuildStub(channel);
   response_generator->SetNextResolution(ports);
   // Wait for connect, which should fail ~immediately, because the server
@@ -661,7 +660,7 @@ TEST_F(ClientLbEnd2endTest, PickFirstUpdates) {
   const int kNumServers = 3;
   StartServers(kNumServers);
   auto response_generator = BuildResolverResponseGenerator();
-  auto channel = BuildChannel("pick_first", response_generator->Get());
+  auto channel = BuildChannel("pick_first", response_generator);
   auto stub = BuildStub(channel);
 
   std::vector<int> ports;
@@ -710,7 +709,7 @@ TEST_F(ClientLbEnd2endTest, PickFirstUpdateSuperset) {
   const int kNumServers = 3;
   StartServers(kNumServers);
   auto response_generator = BuildResolverResponseGenerator();
-  auto channel = BuildChannel("pick_first", response_generator->Get());
+  auto channel = BuildChannel("pick_first", response_generator);
   auto stub = BuildStub(channel);
 
   std::vector<int> ports;
@@ -745,11 +744,11 @@ TEST_F(ClientLbEnd2endTest, PickFirstGlobalSubchannelPool) {
   std::vector<int> ports = GetServersPorts();
   // Create two channels that (by default) use the global subchannel pool.
   auto response_generator1 = BuildResolverResponseGenerator();
-  auto channel1 = BuildChannel("pick_first", response_generator1->Get());
+  auto channel1 = BuildChannel("pick_first", response_generator1);
   auto stub1 = BuildStub(channel1);
   response_generator1->SetNextResolution(ports);
   auto response_generator2 = BuildResolverResponseGenerator();
-  auto channel2 = BuildChannel("pick_first", response_generator2->Get());
+  auto channel2 = BuildChannel("pick_first", response_generator2);
   auto stub2 = BuildStub(channel2);
   response_generator2->SetNextResolution(ports);
   WaitForServer(stub1, 0, DEBUG_LOCATION);
@@ -772,11 +771,11 @@ TEST_F(ClientLbEnd2endTest, PickFirstLocalSubchannelPool) {
   ChannelArguments args;
   args.SetInt(GRPC_ARG_USE_LOCAL_SUBCHANNEL_POOL, 1);
   auto response_generator1 = BuildResolverResponseGenerator();
-  auto channel1 = BuildChannel("pick_first", response_generator1->Get(), args);
+  auto channel1 = BuildChannel("pick_first", response_generator1, args);
   auto stub1 = BuildStub(channel1);
   response_generator1->SetNextResolution(ports);
   auto response_generator2 = BuildResolverResponseGenerator();
-  auto channel2 = BuildChannel("pick_first", response_generator2->Get(), args);
+  auto channel2 = BuildChannel("pick_first", response_generator2, args);
   auto stub2 = BuildStub(channel2);
   response_generator2->SetNextResolution(ports);
   WaitForServer(stub1, 0, DEBUG_LOCATION);
@@ -795,7 +794,7 @@ TEST_F(ClientLbEnd2endTest, PickFirstManyUpdates) {
   const int kNumServers = 3;
   StartServers(kNumServers);
   auto response_generator = BuildResolverResponseGenerator();
-  auto channel = BuildChannel("pick_first", response_generator->Get());
+  auto channel = BuildChannel("pick_first", response_generator);
   auto stub = BuildStub(channel);
   std::vector<int> ports = GetServersPorts();
   for (size_t i = 0; i < kNumUpdates; ++i) {
@@ -824,7 +823,7 @@ TEST_F(ClientLbEnd2endTest, PickFirstReresolutionNoSelected) {
     }
   }
   auto response_generator = BuildResolverResponseGenerator();
-  auto channel = BuildChannel("pick_first", response_generator->Get());
+  auto channel = BuildChannel("pick_first", response_generator);
   auto stub = BuildStub(channel);
   // The initial resolution only contains dead ports. There won't be any
   // selected subchannel. Re-resolution will return the same result.
@@ -846,7 +845,7 @@ TEST_F(ClientLbEnd2endTest, PickFirstReconnectWithoutNewResolverResult) {
   std::vector<int> ports = {grpc_pick_unused_port_or_die()};
   StartServers(1, ports);
   auto response_generator = BuildResolverResponseGenerator();
-  auto channel = BuildChannel("pick_first", response_generator->Get());
+  auto channel = BuildChannel("pick_first", response_generator);
   auto stub = BuildStub(channel);
   response_generator->SetNextResolution(ports);
   gpr_log(GPR_INFO, "****** INITIAL CONNECTION *******");
@@ -866,7 +865,7 @@ TEST_F(ClientLbEnd2endTest,
   CreateServers(2, ports);
   StartServer(1);
   auto response_generator = BuildResolverResponseGenerator();
-  auto channel = BuildChannel("pick_first", response_generator->Get());
+  auto channel = BuildChannel("pick_first", response_generator);
   auto stub = BuildStub(channel);
   response_generator->SetNextResolution(ports);
   gpr_log(GPR_INFO, "****** INITIAL CONNECTION *******");
@@ -883,7 +882,7 @@ TEST_F(ClientLbEnd2endTest, PickFirstCheckStateBeforeStartWatch) {
   std::vector<int> ports = {grpc_pick_unused_port_or_die()};
   StartServers(1, ports);
   auto response_generator = BuildResolverResponseGenerator();
-  auto channel_1 = BuildChannel("pick_first", response_generator->Get());
+  auto channel_1 = BuildChannel("pick_first", response_generator);
   auto stub_1 = BuildStub(channel_1);
   response_generator->SetNextResolution(ports);
   gpr_log(GPR_INFO, "****** RESOLUTION SET FOR CHANNEL 1 *******");
@@ -894,14 +893,10 @@ TEST_F(ClientLbEnd2endTest, PickFirstCheckStateBeforeStartWatch) {
   // create a new subchannel and hold a ref to it.
   StartServers(1, ports);
   gpr_log(GPR_INFO, "****** SERVER RESTARTED *******");
-  auto rg_2 = BuildResolverResponseGenerator();
-  auto channel_2 = BuildChannel("pick_first", rg_2->Get());
+  auto response_generator_2 = BuildResolverResponseGenerator();
+  auto channel_2 = BuildChannel("pick_first", response_generator_2);
   auto stub_2 = BuildStub(channel_2);
-  // TODO(juanlishen): This resolution result will only be visible to channel 2
-  // since the response generator is only associated with channel 2 now. We
-  // should change the response generator to be able to deliver updates to
-  // multiple channels at once.
-  rg_2->SetNextResolution(ports);
+  response_generator_2->SetNextResolution(ports);
   gpr_log(GPR_INFO, "****** RESOLUTION SET FOR CHANNEL 2 *******");
   WaitForServer(stub_2, 0, DEBUG_LOCATION, true);
   gpr_log(GPR_INFO, "****** CHANNEL 2 CONNECTED *******");
@@ -928,8 +923,8 @@ TEST_F(ClientLbEnd2endTest, PickFirstIdleOnDisconnect) {
   const int kNumServers = 1;
   StartServers(kNumServers);
   auto response_generator = BuildResolverResponseGenerator();
-  auto channel = BuildChannel(
-      "", response_generator->Get());  // pick_first is the default.
+  auto channel =
+      BuildChannel("", response_generator);  // pick_first is the default.
   auto stub = BuildStub(channel);
   response_generator->SetNextResolution(GetServersPorts());
   CheckRpcSendOk(stub, DEBUG_LOCATION);
@@ -944,8 +939,8 @@ TEST_F(ClientLbEnd2endTest, PickFirstIdleOnDisconnect) {
 
 TEST_F(ClientLbEnd2endTest, PickFirstPendingUpdateAndSelectedSubchannelFails) {
   auto response_generator = BuildResolverResponseGenerator();
-  auto channel = BuildChannel(
-      "", response_generator->Get());  // pick_first is the default.
+  auto channel =
+      BuildChannel("", response_generator);  // pick_first is the default.
   auto stub = BuildStub(channel);
   // Create a number of servers, but only start 1 of them.
   CreateServers(10);
@@ -996,8 +991,8 @@ TEST_F(ClientLbEnd2endTest, PickFirstStaysIdleUponEmptyUpdate) {
   const int kNumServers = 1;
   StartServers(kNumServers);
   auto response_generator = BuildResolverResponseGenerator();
-  auto channel = BuildChannel(
-      "", response_generator->Get());  // pick_first is the default.
+  auto channel =
+      BuildChannel("", response_generator);  // pick_first is the default.
   auto stub = BuildStub(channel);
   response_generator->SetNextResolution(GetServersPorts());
   CheckRpcSendOk(stub, DEBUG_LOCATION);
@@ -1024,7 +1019,7 @@ TEST_F(ClientLbEnd2endTest, RoundRobin) {
   const int kNumServers = 3;
   StartServers(kNumServers);
   auto response_generator = BuildResolverResponseGenerator();
-  auto channel = BuildChannel("round_robin", response_generator->Get());
+  auto channel = BuildChannel("round_robin", response_generator);
   auto stub = BuildStub(channel);
   response_generator->SetNextResolution(GetServersPorts());
   // Wait until all backends are ready.
@@ -1051,7 +1046,7 @@ TEST_F(ClientLbEnd2endTest, RoundRobin) {
 TEST_F(ClientLbEnd2endTest, RoundRobinProcessPending) {
   StartServers(1);  // Single server
   auto response_generator = BuildResolverResponseGenerator();
-  auto channel = BuildChannel("round_robin", response_generator->Get());
+  auto channel = BuildChannel("round_robin", response_generator);
   auto stub = BuildStub(channel);
   response_generator->SetNextResolution({servers_[0]->port_});
   WaitForServer(stub, 0, DEBUG_LOCATION);
@@ -1061,8 +1056,7 @@ TEST_F(ClientLbEnd2endTest, RoundRobinProcessPending) {
   // are globally reused). Progress should happen without any transition from
   // this READY state.
   auto second_response_generator = BuildResolverResponseGenerator();
-  auto second_channel =
-      BuildChannel("round_robin", second_response_generator->Get());
+  auto second_channel = BuildChannel("round_robin", second_response_generator);
   auto second_stub = BuildStub(second_channel);
   second_response_generator->SetNextResolution({servers_[0]->port_});
   CheckRpcSendOk(second_stub, DEBUG_LOCATION);
@@ -1073,7 +1067,7 @@ TEST_F(ClientLbEnd2endTest, RoundRobinUpdates) {
   const int kNumServers = 3;
   StartServers(kNumServers);
   auto response_generator = BuildResolverResponseGenerator();
-  auto channel = BuildChannel("round_robin", response_generator->Get());
+  auto channel = BuildChannel("round_robin", response_generator);
   auto stub = BuildStub(channel);
   std::vector<int> ports;
   // Start with a single server.
@@ -1153,7 +1147,7 @@ TEST_F(ClientLbEnd2endTest, RoundRobinUpdateInError) {
   const int kNumServers = 3;
   StartServers(kNumServers);
   auto response_generator = BuildResolverResponseGenerator();
-  auto channel = BuildChannel("round_robin", response_generator->Get());
+  auto channel = BuildChannel("round_robin", response_generator);
   auto stub = BuildStub(channel);
   std::vector<int> ports;
 
@@ -1187,7 +1181,7 @@ TEST_F(ClientLbEnd2endTest, RoundRobinManyUpdates) {
   const int kNumServers = 3;
   StartServers(kNumServers);
   auto response_generator = BuildResolverResponseGenerator();
-  auto channel = BuildChannel("round_robin", response_generator->Get());
+  auto channel = BuildChannel("round_robin", response_generator);
   auto stub = BuildStub(channel);
   std::vector<int> ports = GetServersPorts();
   for (size_t i = 0; i < 1000; ++i) {
@@ -1220,7 +1214,7 @@ TEST_F(ClientLbEnd2endTest, RoundRobinReresolve) {
   }
   StartServers(kNumServers, first_ports);
   auto response_generator = BuildResolverResponseGenerator();
-  auto channel = BuildChannel("round_robin", response_generator->Get());
+  auto channel = BuildChannel("round_robin", response_generator);
   auto stub = BuildStub(channel);
   response_generator->SetNextResolution(first_ports);
   // Send a number of RPCs, which succeed.
@@ -1264,7 +1258,7 @@ TEST_F(ClientLbEnd2endTest, RoundRobinSingleReconnect) {
   StartServers(kNumServers);
   const auto ports = GetServersPorts();
   auto response_generator = BuildResolverResponseGenerator();
-  auto channel = BuildChannel("round_robin", response_generator->Get());
+  auto channel = BuildChannel("round_robin", response_generator);
   auto stub = BuildStub(channel);
   response_generator->SetNextResolution(ports);
   for (size_t i = 0; i < kNumServers; ++i) {
@@ -1311,7 +1305,7 @@ TEST_F(ClientLbEnd2endTest,
       "{\"healthCheckConfig\": "
       "{\"serviceName\": \"health_check_service_name\"}}");
   auto response_generator = BuildResolverResponseGenerator();
-  auto channel = BuildChannel("round_robin", response_generator->Get(), args);
+  auto channel = BuildChannel("round_robin", response_generator, args);
   auto stub = BuildStub(channel);
   response_generator->SetNextResolution({servers_[0]->port_});
   EXPECT_TRUE(WaitForChannelReady(channel.get()));
@@ -1328,7 +1322,7 @@ TEST_F(ClientLbEnd2endTest, RoundRobinWithHealthChecking) {
       "{\"healthCheckConfig\": "
       "{\"serviceName\": \"health_check_service_name\"}}");
   auto response_generator = BuildResolverResponseGenerator();
-  auto channel = BuildChannel("round_robin", response_generator->Get(), args);
+  auto channel = BuildChannel("round_robin", response_generator, args);
   auto stub = BuildStub(channel);
   response_generator->SetNextResolution(GetServersPorts());
   // Channel should not become READY, because health checks should be failing.
@@ -1403,14 +1397,14 @@ TEST_F(ClientLbEnd2endTest, RoundRobinWithHealthCheckingInhibitPerChannel) {
       "{\"healthCheckConfig\": "
       "{\"serviceName\": \"health_check_service_name\"}}");
   auto response_generator1 = BuildResolverResponseGenerator();
-  auto channel1 = BuildChannel("round_robin", response_generator1->Get(), args);
+  auto channel1 = BuildChannel("round_robin", response_generator1, args);
   auto stub1 = BuildStub(channel1);
   std::vector<int> ports = GetServersPorts();
   response_generator1->SetNextResolution(ports);
   // Create a channel with health checking enabled but inhibited.
   args.SetInt(GRPC_ARG_INHIBIT_HEALTH_CHECKING, 1);
   auto response_generator2 = BuildResolverResponseGenerator();
-  auto channel2 = BuildChannel("round_robin", response_generator2->Get(), args);
+  auto channel2 = BuildChannel("round_robin", response_generator2, args);
   auto stub2 = BuildStub(channel2);
   response_generator2->SetNextResolution(ports);
   // First channel should not become READY, because health checks should be
@@ -1440,7 +1434,7 @@ TEST_F(ClientLbEnd2endTest, RoundRobinWithHealthCheckingServiceNamePerChannel) {
       "{\"healthCheckConfig\": "
       "{\"serviceName\": \"health_check_service_name\"}}");
   auto response_generator1 = BuildResolverResponseGenerator();
-  auto channel1 = BuildChannel("round_robin", response_generator1->Get(), args);
+  auto channel1 = BuildChannel("round_robin", response_generator1, args);
   auto stub1 = BuildStub(channel1);
   std::vector<int> ports = GetServersPorts();
   response_generator1->SetNextResolution(ports);
@@ -1451,8 +1445,7 @@ TEST_F(ClientLbEnd2endTest, RoundRobinWithHealthCheckingServiceNamePerChannel) {
       "{\"healthCheckConfig\": "
       "{\"serviceName\": \"health_check_service_name2\"}}");
   auto response_generator2 = BuildResolverResponseGenerator();
-  auto channel2 =
-      BuildChannel("round_robin", response_generator2->Get(), args2);
+  auto channel2 = BuildChannel("round_robin", response_generator2, args2);
   auto stub2 = BuildStub(channel2);
   response_generator2->SetNextResolution(ports);
   // Allow health checks from channel 2 to succeed.
@@ -1506,7 +1499,7 @@ TEST_F(ClientLbInterceptTrailingMetadataTest, InterceptsRetriesDisabled) {
   StartServers(kNumServers);
   auto response_generator = BuildResolverResponseGenerator();
   auto channel =
-      BuildChannel("intercept_trailing_metadata_lb", response_generator->Get());
+      BuildChannel("intercept_trailing_metadata_lb", response_generator);
   auto stub = BuildStub(channel);
   response_generator->SetNextResolution(GetServersPorts());
   for (size_t i = 0; i < kNumRpcs; ++i) {
@@ -1539,8 +1532,8 @@ TEST_F(ClientLbInterceptTrailingMetadataTest, InterceptsRetriesEnabled) {
       "  } ]\n"
       "}");
   auto response_generator = BuildResolverResponseGenerator();
-  auto channel = BuildChannel("intercept_trailing_metadata_lb",
-                              response_generator->Get(), args);
+  auto channel =
+      BuildChannel("intercept_trailing_metadata_lb", response_generator, args);
   auto stub = BuildStub(channel);
   response_generator->SetNextResolution(GetServersPorts());
   for (size_t i = 0; i < kNumRpcs; ++i) {

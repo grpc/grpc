@@ -267,11 +267,10 @@ class NativeDnsResolverFactory : public ResolverFactory {
   }
 
   OrphanablePtr<Resolver> CreateResolver(ResolverArgs args) const override {
-    if (IsValidUri(args.uri)) {
-      return OrphanablePtr<Resolver>(New<NativeDnsResolver>(std::move(args)));
-    } else {
+    if (!IsValidUri(args.uri)) {
       return nullptr;
     }
+    return OrphanablePtr<Resolver>(New<NativeDnsResolver>(std::move(args)));
   }
 
   const char* scheme() const override { return "dns"; }
