@@ -67,6 +67,11 @@ class InfLenFIFOQueue : public MPMCQueueInterface {
   // This routine will cause the thread to block if queue is currently empty.
   void* Get();
 
+  // Same as Get(), but will record how long waited when getting.
+  // This routine should be only called when debug trace is on and wants to
+  // collect stats data.
+  void* Get(gpr_timespec* wait_time);
+
   // Returns number of elements in queue currently.
   // There might be concurrently add/remove on queue, so count might change
   // quickly.

@@ -111,4 +111,22 @@ void* InfLenFIFOQueue::Get() {
   return PopFront();
 }
 
+void* InfLenFIFOQueue::Get(gpr_timespec* wait_time) {
+  MutexLock l(&mu_);
+
+  if (count_.Load(MemoryOrder::RELAXED) == 0) {
+    gpr_timespec start_time;
+    start_time = gpr_now(GPR_CLOCK_MONOTONIC);
+
+    num_waiters_++;
+    do {
+      wait_nonempty_.Wait(&mu_);
+    } while (count_.Load(MemoryOrder::RELAXED) == 0);
+    num_waiters_--;
+    *wait_time = gpr_time_sub(gpr_now(GPR_CLOCK_MONOTONIC), start_time);
+  }
+  GPR_DEBUG_ASSERT(count_.Load(MemoryOrder::RELAXED) > 0);
+  return PopFront();
+}
+
 }  // namespace grpc_core

@@ -53,7 +53,6 @@ if test "$PHP_GRPC" != "no"; then
     src/core/lib/gpr/env_linux.cc \
     src/core/lib/gpr/env_posix.cc \
     src/core/lib/gpr/env_windows.cc \
-    src/core/lib/gpr/host_port.cc \
     src/core/lib/gpr/log.cc \
     src/core/lib/gpr/log_android.cc \
     src/core/lib/gpr/log_linux.cc \
@@ -80,6 +79,7 @@ if test "$PHP_GRPC" != "no"; then
     src/core/lib/gprpp/arena.cc \
     src/core/lib/gprpp/fork.cc \
     src/core/lib/gprpp/global_config_env.cc \
+    src/core/lib/gprpp/host_port.cc \
     src/core/lib/gprpp/thd_posix.cc \
     src/core/lib/gprpp/thd_windows.cc \
     src/core/lib/profiling/basic_timers.cc \
@@ -128,6 +128,7 @@ if test "$PHP_GRPC" != "no"; then
     src/core/lib/iomgr/exec_ctx.cc \
     src/core/lib/iomgr/executor.cc \
     src/core/lib/iomgr/executor/mpmcqueue.cc \
+    src/core/lib/iomgr/executor/threadpool.cc \
     src/core/lib/iomgr/fork_posix.cc \
     src/core/lib/iomgr/fork_windows.cc \
     src/core/lib/iomgr/gethostname_fallback.cc \

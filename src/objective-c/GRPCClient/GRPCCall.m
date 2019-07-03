@@ -322,9 +322,6 @@ const char *kCFStreamVarName = "grpc_cfstream";
   // Guarantees the code in {} block is invoked only once. See ref at:
   // https://developer.apple.com/documentation/objectivec/nsobject/1418639-initialize?language=objc
   if (self == [GRPCCall self]) {
-    // Enable CFStream by default by do not overwrite if the user explicitly disables CFStream with
-    // environment variable "grpc_cfstream=0"
-    setenv(kCFStreamVarName, "1", 0);
     grpc_init();
     callFlags = [NSMutableDictionary dictionary];
   }
@@ -780,7 +777,7 @@ const char *kCFStreamVarName = "grpc_cfstream";
 
     // Connectivity monitor is not required for CFStream
     char *enableCFStream = getenv(kCFStreamVarName);
-    if (enableCFStream == nil || enableCFStream[0] != '1') {
+    if (enableCFStream != nil && enableCFStream[0] != '1') {
       [GRPCConnectivityMonitor registerObserver:self selector:@selector(connectivityChanged:)];
     }
   }

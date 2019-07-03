@@ -282,6 +282,17 @@ grpc_cc_test(
 )
 
 grpc_cc_test(
+    name = "threadpool_test",
+    srcs = ["threadpool_test.cc"],
+    language = "C++",
+    deps = [
+        "//:gpr",
+        "//:grpc",
+        "//test/core/util:grpc_test_util",
+    ],
+)
+
+grpc_cc_test(
     name = "time_averaged_stats_test",
     srcs = ["time_averaged_stats_test.cc"],
     language = "C++",
