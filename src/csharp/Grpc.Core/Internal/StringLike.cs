@@ -14,7 +14,6 @@ namespace Grpc.Core.Internal
         private readonly string knownValue;
         private readonly byte[] bytes;
         private readonly int length, hashCode;
-        private readonly bool isPooled;
 
         private static readonly Encoding Encoding = Encoding.UTF8;
 
@@ -30,7 +29,7 @@ namespace Grpc.Core.Internal
             else
             {
                 var arr = Encoding.GetBytes(value);
-                return new StringLike(value, arr, arr.Length, false);
+                return new StringLike(value, arr, arr.Length);
             }
         }
 
@@ -57,7 +56,7 @@ namespace Grpc.Core.Internal
             {
                 byte[] arr = ArrayPool<byte>.Shared.Rent(length);
                 Marshal.Copy(new IntPtr(pointer), arr, 0, length);
-                return new StringLike(null, arr, length, true);
+                return new StringLike(null, arr, length);
             }
         }
 
@@ -67,15 +66,14 @@ namespace Grpc.Core.Internal
         /// </summary>
         public void Recycle()
         {
-            if (isPooled & length != 0) ArrayPool<byte>.Shared.Return(bytes);
+            if (IsPooled & length != 0) ArrayPool<byte>.Shared.Return(bytes);
         }
 
-        private StringLike(string knownValue, byte[] bytes, int length, bool isPooled)
+        private StringLike(string knownValue, byte[] bytes, int length)
         {
             this.knownValue = knownValue;
             this.length = length;
             this.bytes = bytes;
-            this.isPooled = isPooled;
             hashCode = GetHashCode(bytes, length);
         }
 
@@ -95,7 +93,7 @@ namespace Grpc.Core.Internal
 
         public int ByteCount { get { return length; } }
 
-        public bool IsPooled { get { return isPooled; } }
+        public bool IsPooled { get { return knownValue == null; } }
 
         // this **CAN BE NULL** if we didn't start from a string
         public string KnownValue {  get { return knownValue; } }
@@ -176,7 +174,7 @@ namespace Grpc.Core.Internal
         {
             // if we have an empty string, or one that is created from a string, then
             // we can use that directly; otherwise, we'll need a reliable clone
-            return new Boxed(length == 0 | !IsPooled ? this : Create(ToString()));
+            return new Boxed((length == 0 | !IsPooled) ? this : Create(ToString()));
         }
     }
 }
