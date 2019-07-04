@@ -29,6 +29,8 @@ namespace Grpc.Core.Internal
     /// Manages client side native call lifecycle.
     /// </summary>
     internal class AsyncCall<TRequest, TResponse> : AsyncCallBase<TRequest, TResponse>, IUnaryResponseClientCallback, IReceivedStatusOnClientCallback, IReceivedResponseHeadersCallback
+        where TRequest : class
+        where TResponse : class
     {
         static readonly ILogger Logger = GrpcEnvironment.Logger.ForType<AsyncCall<TRequest, TResponse>>();
 
@@ -41,16 +43,13 @@ namespace Grpc.Core.Internal
         IDisposable cancellationTokenRegistration;
 
         // Completion of a pending unary response if not null.
-        TaskCompletionSource<TResponse> unaryResponseTcs;
+        LazyTask<TResponse> unaryResponseTcs;
 
         // Completion of a streaming response call if not null.
         TaskCompletionSource<object> streamingResponseCallFinishedTcs;
 
-        // Response headers set here once received; if they are queried by the client *before* they
-        // are received, this is a TaskCompletionSource<Metadata> - otherwise it is the Metadata itself...
-        // but once they've looked, we need to construct a Task<Metadata>, unfortunately; so ... it can
-        // be confusing
-        object responseHeadersOrTcs;
+
+        LazyTask<Metadata> responseHeaders;
 
         // Set after status is received. Used for both unary and streaming response calls.
         ClientSideStatus? finishedStatus;
@@ -85,8 +84,6 @@ namespace Grpc.Core.Internal
                 bool callStartedOk = false;
                 try
                 {
-                    unaryResponseTcs = new TaskCompletionSource<TResponse>();
-
                     lock (myLock)
                     {
                         GrpcPreconditions.CheckState(!started);
@@ -137,10 +134,9 @@ namespace Grpc.Core.Internal
                         }
                     }
                 }
-                    
+
                 // Once the blocking call returns, the result should be available synchronously.
-                // Note that GetAwaiter().GetResult() doesn't wrap exceptions in AggregateException.
-                return unaryResponseTcs.Task.GetAwaiter().GetResult();
+                return unaryResponseTcs.GetResult();
             }
         }
 
@@ -164,7 +160,6 @@ namespace Grpc.Core.Internal
 
                     byte[] payload = UnsafeSerialize(msg);
 
-                    unaryResponseTcs = new TaskCompletionSource<TResponse>();
                     using (var metadataArray = MetadataArraySafeHandle.Create(details.Options.Headers))
                     {
                         call.StartUnary(UnaryResponseClientCallback, payload, GetWriteFlagsForCall(), metadataArray, details.Options.Flags);
@@ -201,7 +196,6 @@ namespace Grpc.Core.Internal
 
                     readingDone = true;
 
-                    unaryResponseTcs = new TaskCompletionSource<TResponse>();
                     using (var metadataArray = MetadataArraySafeHandle.Create(details.Options.Headers))
                     {
                         call.StartClientStreaming(UnaryResponseClientCallback, metadataArray, details.Options.Flags);
@@ -357,76 +351,13 @@ namespace Grpc.Core.Internal
         {
             get
             {
-                while (true) // in reality this should iterate exactly once (no competition) or twice (competition)
-                {
-                    // this can happen if they only look *after* it has completed;
-                    // we bypass the TCS
-                    var asTask = responseHeadersOrTcs as Task<Metadata>;
-                    if (asTask != null) return asTask;
-
-                    // this can happen if they look *before* it has completed
-                    var asTCS = responseHeadersOrTcs as TaskCompletionSource<Metadata>;
-                    if (asTCS != null) return asTCS.Task;
-
-                    // if it has completed, but they haven't looked yet, we won't
-                    // have allocated a Task yet; fix that
-                    var asMetadata = responseHeadersOrTcs as Metadata;
-                    if (asMetadata != null)
-                    {
-                        var newTask = Task.FromResult(asMetadata);
-                        if (Interlocked.CompareExchange(ref responseHeadersOrTcs, newTask, asMetadata) == asMetadata)
-                            return newTask;
-                        // if we lose due to a race condition, try again (it should now be something usable)
-                    }
-                    else
-                    {
-                        // otherwise; null - nobody has looked yet and the data hasn't been assigned; allocate a TCS
-                        var tcs = new TaskCompletionSource<Metadata>();
-                        var result = Interlocked.CompareExchange(ref responseHeadersOrTcs, tcs, asMetadata);
-                        if (result == asMetadata) return tcs.Task; // no competition; return the TCS
-
-                        // we lost the race; there's a good chance that means that the Metadata just got assigned
-                        asMetadata = result as Metadata;
-                        if (asMetadata != null)
-                        {
-                            // it was indeed; that means we can complete out TCS
-                            tcs.TrySetResult(asMetadata);
-                            return tcs.Task;
-                        }
-                        // we lost the race to something else, try again (it should now be something usable)
-                    }
-                }
+                return responseHeaders.Task;
             }
         }
 
-        private static Task<Metadata> NullMetadata = Task.FromResult<Metadata>(null);
         private void SetMetadata(Metadata metadata)
         {
-            var asTCS = responseHeadersOrTcs as TaskCompletionSource<Metadata>;
-            if (asTCS != null)
-            {   // update TCS to assign result
-                asTCS.TrySetResult(metadata);
-                return;
-            }
-
-            if (metadata == null)
-            {   // swap in the static Task<Metadata> with a null value
-                Interlocked.CompareExchange(ref responseHeadersOrTcs, NullMetadata, null);
-                return; // no need to check result; if it wasn't null... nothing we can do!
-            }
-
-            // so it isn't a TCS and we have a value; we'll just store the Metadata
-            // directly; no need to spin up a Task<Metadata> unless someone queries it
-            var result = Interlocked.CompareExchange(ref responseHeadersOrTcs, metadata, null);
-            if (result != null)
-            {
-                // we lost a race; that *could* mean that someone peeked, and there's now
-                // a TCS
-                asTCS = result as TaskCompletionSource<Metadata>;
-                if (asTCS != null) asTCS.TrySetResult(metadata);
-            }
-            // at this point, we've done all we can
-            return;
+            responseHeaders.TrySetResult(metadata);
         }
 
 
@@ -653,11 +584,11 @@ namespace Grpc.Core.Internal
             var status = receivedStatus.Status;
             if (status.StatusCode != StatusCode.OK)
             {
-                unaryResponseTcs.SetException(new RpcException(status, receivedStatus.Trailers));
+                unaryResponseTcs.TrySetException(new RpcException(status, receivedStatus.Trailers));
                 return;
             }
 
-            unaryResponseTcs.SetResult(msg);
+            unaryResponseTcs.TrySetResult(msg);
         }
 
         /// <summary>
