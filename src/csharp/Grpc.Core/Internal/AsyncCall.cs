@@ -437,9 +437,13 @@ namespace Grpc.Core.Internal
                 // Note that this throws even for StatusCode.OK.
                 // Writing after the call has finished is not a programming error because server can close
                 // the call anytime, so don't throw directly, but let the write task finish with an error.
+#if NET45
                 var tcs = new TaskCompletionSource<object>();
                 tcs.SetException(new RpcException(finishedStatus.Value.Status, finishedStatus.Value.Trailers));
                 return tcs.Task;
+#else
+                return Task.FromException(new RpcException(finishedStatus.Value.Status, finishedStatus.Value.Trailers));
+#endif
             }
 
             return null;
@@ -453,9 +457,7 @@ namespace Grpc.Core.Internal
             if (cancelRequested)
             {
                 // Return a cancelled task.
-                var tcs = new TaskCompletionSource<object>();
-                tcs.SetCanceled();
-                return tcs.Task;
+                return ReusableTaskLite.CanceledTask;
             }
 
             return null;
@@ -543,7 +545,7 @@ namespace Grpc.Core.Internal
             // success will be always set to true.
 
             TaskCompletionSource<object> delayedStreamingWriteTcs = null;
-            TResponse msg = default(TResponse);
+            TResponse msg;
             var deserializeException = TryDeserialize(receivedMessageReader, out msg);
 
             bool releasedResources;

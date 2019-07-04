@@ -17,13 +17,8 @@
 #endregion
 
 using System;
-using System.Diagnostics;
-using System.IO;
-using System.Runtime.CompilerServices;
-using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
-using Grpc.Core.Internal;
 using Grpc.Core.Utils;
 
 namespace Grpc.Core.Internal
@@ -33,7 +28,7 @@ namespace Grpc.Core.Internal
     /// </summary>
     internal class AsyncCallServer<TRequest, TResponse> : AsyncCallBase<TResponse, TRequest>, IReceivedCloseOnServerCallback, ISendStatusFromServerCompletionCallback
     {
-        readonly TaskCompletionSource<object> finishedServersideTcs = new TaskCompletionSource<object>();
+        readonly ReusableTaskLite finishedServerside = ReusableTaskLite.Get();
         readonly CancellationTokenSource cancellationTokenSource = new CancellationTokenSource();
         readonly Server server;
 
@@ -62,7 +57,7 @@ namespace Grpc.Core.Internal
         /// <summary>
         /// Starts a server side call.
         /// </summary>
-        public Task ServerSideCallAsync()
+        public ReusableTaskLite.Awaitable ServerSideCallAsync()
         {
             lock (myLock)
             {
@@ -71,7 +66,7 @@ namespace Grpc.Core.Internal
                 started = true;
 
                 call.StartServerSide(ReceiveCloseOnServerCallback);
-                return finishedServersideTcs.Task;
+                return finishedServerside.Task;
             }
         }
 
@@ -127,7 +122,7 @@ namespace Grpc.Core.Internal
         /// Sends call result status, indicating we are done with writes.
         /// Sending a status different from StatusCode.OK will also implicitly cancel the call.
         /// </summary>
-        public Task SendStatusFromServerAsync(Status status, Metadata trailers, ResponseWithFlags? optionalWrite)
+        public ReusableTaskLite.Awaitable SendStatusFromServerAsync(Status status, Metadata trailers, ResponseWithFlags? optionalWrite)
         {
             byte[] payload = optionalWrite.HasValue ? UnsafeSerialize(optionalWrite.Value.Response) : null;
             var writeFlags = optionalWrite.HasValue ? optionalWrite.Value.WriteFlags : default(WriteFlags);
@@ -145,7 +140,7 @@ namespace Grpc.Core.Internal
                 }
                 halfcloseRequested = true;
                 initialMetadataSent = true;
-                sendStatusFromServerTcs = new TaskCompletionSource<object>();
+                sendStatusFromServerTcs = ReusableTaskLite.Get();
                 if (optionalWrite.HasValue)
                 {
                     streamingWritesCounter++;
@@ -231,7 +226,7 @@ namespace Grpc.Core.Internal
                 cancellationTokenSource.Cancel();
             }
 
-            finishedServersideTcs.SetResult(null);
+            finishedServerside.SetResult();
         }
 
         IReceivedCloseOnServerCallback ReceiveCloseOnServerCallback => this;

@@ -179,11 +179,11 @@ namespace Grpc.Core.Internal.Tests
             AssertFinished(asyncCallServer, fakeCall, finishedTask);
         }
 
-        static void AssertFinished(AsyncCallServer<string, string> asyncCallServer, FakeNativeCall fakeCall, Task finishedTask)
+        static void AssertFinished(AsyncCallServer<string, string> asyncCallServer, FakeNativeCall fakeCall, ReusableTaskLite.Awaitable finishedTask)
         {
             Assert.IsTrue(fakeCall.IsDisposed);
             Assert.IsTrue(finishedTask.IsCompleted);
-            Assert.DoesNotThrow(() => finishedTask.Wait());
+            Assert.DoesNotThrow(() => finishedTask.GetResult());
         }
 
         IBufferReader CreateNullResponse()

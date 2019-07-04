@@ -18,11 +18,8 @@
 
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using Grpc.Core.Interceptors;
-using Grpc.Core.Internal;
 using Grpc.Core.Logging;
 using Grpc.Core.Utils;
 
@@ -81,14 +78,14 @@ namespace Grpc.Core.Internal
             }
             try
             {
-                await asyncCall.SendStatusFromServerAsync(status, context.ResponseTrailers, responseWithFlags).ConfigureAwait(false);
+                (await asyncCall.SendStatusFromServerAsync(status, context.ResponseTrailers, responseWithFlags)).Recycle();
             }
             catch (Exception)
             {
                 asyncCall.Cancel();
                 throw;
             }
-            await finishedTask.ConfigureAwait(false);
+            (await finishedTask).Recycle();
         }
     }
 
@@ -139,14 +136,14 @@ namespace Grpc.Core.Internal
 
             try
             {
-                await asyncCall.SendStatusFromServerAsync(status, context.ResponseTrailers, null).ConfigureAwait(false);
+                (await asyncCall.SendStatusFromServerAsync(status, context.ResponseTrailers, null)).Recycle();
             }
             catch (Exception)
             {
                 asyncCall.Cancel();
                 throw;
             }
-            await finishedTask.ConfigureAwait(false);
+            (await finishedTask).Recycle();
         }
     }
 
@@ -197,14 +194,14 @@ namespace Grpc.Core.Internal
 
             try
             {
-                await asyncCall.SendStatusFromServerAsync(status, context.ResponseTrailers, responseWithFlags).ConfigureAwait(false);
+                (await asyncCall.SendStatusFromServerAsync(status, context.ResponseTrailers, responseWithFlags)).Recycle();
             }
             catch (Exception)
             {
                 asyncCall.Cancel();
                 throw;
             }
-            await finishedTask.ConfigureAwait(false);
+            (await finishedTask).Recycle();
         }
     }
 
@@ -252,14 +249,14 @@ namespace Grpc.Core.Internal
             }
             try
             {
-                await asyncCall.SendStatusFromServerAsync(status, context.ResponseTrailers, null).ConfigureAwait(false);
+                (await asyncCall.SendStatusFromServerAsync(status, context.ResponseTrailers, null)).Recycle();
             }
             catch (Exception)
             {
                 asyncCall.Cancel();
                 throw;
             }
-            await finishedTask.ConfigureAwait(false);
+            (await finishedTask).Recycle();
         }
     }
 

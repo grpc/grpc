@@ -53,7 +53,7 @@ namespace Grpc.Core.Internal
 
         protected TaskCompletionSource<TRead> streamingReadTcs;  // Completion of a pending streaming read if not null.
         protected TaskCompletionSource<object> streamingWriteTcs;  // Completion of a pending streaming write or send close from client if not null.
-        protected TaskCompletionSource<object> sendStatusFromServerTcs;
+        protected ReusableTaskLite sendStatusFromServerTcs;
         protected bool isStreamingWriteCompletionDelayed;  // Only used for the client side.
 
         protected bool readingDone;  // True if last read (i.e. read with null payload) was already received.
@@ -270,7 +270,7 @@ namespace Grpc.Core.Internal
                 else
                 {
                     origTcs = streamingWriteTcs;
-                    streamingWriteTcs = null;    
+                    streamingWriteTcs = null;
                 }
 
                 releasedResources = ReleaseResourcesIfPossible();
@@ -325,7 +325,7 @@ namespace Grpc.Core.Internal
             }
             else
             {
-                sendStatusFromServerTcs.SetResult(null);
+                sendStatusFromServerTcs.SetResult();
             }
         }
 
