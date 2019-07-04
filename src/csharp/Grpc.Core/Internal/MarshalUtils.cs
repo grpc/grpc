@@ -17,8 +17,9 @@
 #endregion
 
 using System;
-using System.Runtime.InteropServices;
+using System.Runtime.CompilerServices;
 using System.Text;
+using Grpc.Core.Api.Utils;
 
 namespace Grpc.Core.Internal
 {
@@ -32,22 +33,10 @@ namespace Grpc.Core.Internal
         /// <summary>
         /// Converts <c>IntPtr</c> pointing to a UTF-8 encoded byte array to <c>string</c>.
         /// </summary>
-        public static unsafe string PtrToStringUTF8(IntPtr ptr, int len)
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static string PtrToStringUTF8(IntPtr ptr, int len)
         {
-            if (len == 0)
-            {
-                return "";
-            }
-
-            // allocate a right-sized string and decode into it
-            byte* source = (byte*)ptr.ToPointer();
-            int charCount = EncodingUTF8.GetCharCount(source, len);
-            string s = new string('\0', charCount);
-            fixed(char* cPtr = s)
-            {
-                EncodingUTF8.GetChars(source, len, cPtr, charCount);
-            }
-            return s;
+            return EncodingUTF8.GetString(ptr, len);
         }
 
         /// <summary>
@@ -66,6 +55,7 @@ namespace Grpc.Core.Internal
         /// <summary>
         /// Returns the maximum number of bytes required to encode a given string.
         /// </summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static int GetMaxByteCountUTF8(string str)
         {
             return EncodingUTF8.GetMaxByteCount(str.Length);
@@ -74,6 +64,7 @@ namespace Grpc.Core.Internal
         /// <summary>
         /// Returns the actual number of bytes required to encode a given string.
         /// </summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static int GetByteCountUTF8(string str)
         {
             return EncodingUTF8.GetByteCount(str);

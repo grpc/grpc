@@ -19,7 +19,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
 using System.Text;
-using System.Text.RegularExpressions;
+using Grpc.Core.Api.Utils;
 
 using Grpc.Core.Utils;
 
@@ -364,20 +364,7 @@ namespace Grpc.Core
                 }
                 else
                 {
-                    string s;
-                    if (length == 0)
-                    {
-                        s = "";
-                    }
-                    else
-                    {
-                        int charCount = EncodingASCII.GetCharCount(source, length);
-                        s = new string('\0', charCount);
-                        fixed (char* cPtr = s)
-                        {
-                            EncodingASCII.GetChars(source, length, cPtr, charCount);
-                        }
-                    }
+                    string s = length == 0 ? "" : EncodingASCII.GetString(source, length);
                     return new Entry(key, s, null);
                 }
             }
