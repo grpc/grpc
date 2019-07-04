@@ -180,7 +180,21 @@ namespace Grpc.Core.Internal
                         if (!inlineHandlers)
                         {
                             // Use cached delegates to avoid unnecessary allocations
+#if GRPC_CSHARP_SUPPORT_THREADPOOLWORKITEM
+                            if (success)
+                            {   // uses the callback as a queue-item, avoiding a work-item
+                                // allocation; all implementations of IOpCompletionCallback know
+                                // to interpret this as success
+                                ThreadPool.UnsafeQueueUserWorkItem(callback, preferLocal: false);
+                            }
+                            else
+                            {
+                                ThreadPool.QueueUserWorkItem(runCompletionQueueEventCallbackFailure, callback);
+                            }
+#else
                             ThreadPool.QueueUserWorkItem(success ? runCompletionQueueEventCallbackSuccess : runCompletionQueueEventCallbackFailure, callback);
+#endif
+
                         }
                         else
                         {

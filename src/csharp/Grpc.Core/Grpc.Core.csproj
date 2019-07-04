@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
   <Import Project="Common.csproj.include" />
 
@@ -14,7 +14,7 @@
   </PropertyGroup>
 
   <PropertyGroup>
-    <TargetFrameworks>net45;netstandard1.5;netstandard2.0</TargetFrameworks>
+    <TargetFrameworks>net45;netstandard1.5;netstandard2.0;netcoreapp3.0</TargetFrameworks>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
   </PropertyGroup>
@@ -26,6 +26,11 @@
   <PropertyGroup Condition=" '$(TargetFramework)' == 'netstandard2.0' ">
     <LangVersion>7.2</LangVersion>
     <DefineConstants>$(DefineConstants);GRPC_CSHARP_SUPPORT_SYSTEM_MEMORY</DefineConstants>
+  </PropertyGroup>
+
+  <PropertyGroup Condition=" '$(TargetFramework)' == 'netcoreapp3.0' ">
+    <LangVersion>7.2</LangVersion>
+    <DefineConstants>$(DefineConstants);GRPC_CSHARP_SUPPORT_SYSTEM_MEMORY;GRPC_CSHARP_SUPPORT_THREADPOOLWORKITEM</DefineConstants>
   </PropertyGroup>
 
   <ItemGroup>

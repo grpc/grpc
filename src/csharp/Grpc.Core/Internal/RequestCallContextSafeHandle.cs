@@ -18,7 +18,6 @@
 
 using System;
 using System.Runtime.InteropServices;
-using Grpc.Core;
 using Grpc.Core.Logging;
 using Grpc.Core.Utils;
 
@@ -29,6 +28,9 @@ namespace Grpc.Core.Internal
     /// </summary>
     internal class RequestCallContextSafeHandle : SafeHandleZeroIsInvalid, IOpCompletionCallback, IPooledObject<RequestCallContextSafeHandle>
     {
+#if GRPC_CSHARP_SUPPORT_THREADPOOLWORKITEM
+        void System.Threading.IThreadPoolWorkItem.Execute() => ((IOpCompletionCallback)this).OnComplete(true); // when called this way: means success
+#endif
         static readonly NativeMethods Native = NativeMethods.Get();
         static readonly ILogger Logger = GrpcEnvironment.Logger.ForType<RequestCallContextSafeHandle>();
         Action<RequestCallContextSafeHandle> returnToPoolAction;

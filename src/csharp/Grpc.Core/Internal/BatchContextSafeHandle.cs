@@ -17,15 +17,15 @@
 #endregion
 
 using System;
-using System.Runtime.InteropServices;
-using System.Text;
-using Grpc.Core;
 using Grpc.Core.Logging;
 using Grpc.Core.Utils;
 
 namespace Grpc.Core.Internal
 {
     internal interface IOpCompletionCallback
+#if GRPC_CSHARP_SUPPORT_THREADPOOLWORKITEM
+        : System.Threading.IThreadPoolWorkItem
+#endif
     {
         void OnComplete(bool success);
     }
@@ -42,6 +42,9 @@ namespace Grpc.Core.Internal
     /// </summary>
     internal class BatchContextSafeHandle : SafeHandleZeroIsInvalid, IOpCompletionCallback, IPooledObject<BatchContextSafeHandle>, IBufferReader
     {
+#if GRPC_CSHARP_SUPPORT_THREADPOOLWORKITEM
+        void System.Threading.IThreadPoolWorkItem.Execute() => ((IOpCompletionCallback)this).OnComplete(true); // when called this way: means success
+#endif
         static readonly NativeMethods Native = NativeMethods.Get();
         static readonly ILogger Logger = GrpcEnvironment.Logger.ForType<BatchContextSafeHandle>();
 
