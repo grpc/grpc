@@ -376,6 +376,7 @@
     <file baseinstalldir="/" name="src/core/lib/iomgr/ev_posix.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/exec_ctx.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/executor.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/iomgr/executor/mpmcqueue.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/gethostname.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/grpc_if_nametoindex.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/internal_errqueue.h" role="src" />
@@ -529,6 +530,7 @@
     <file baseinstalldir="/" name="src/core/lib/iomgr/ev_windows.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/exec_ctx.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/executor.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/iomgr/executor/mpmcqueue.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/fork_posix.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/fork_windows.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/gethostname_fallback.cc" role="src" />
