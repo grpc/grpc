@@ -266,10 +266,7 @@ namespace Grpc.Core.Internal
             this.grpcsharp_call_start_duplex_streaming = DllImportsFromStaticLib.grpcsharp_call_start_duplex_streaming;
             this.grpcsharp_call_send_message = DllImportsFromStaticLib.grpcsharp_call_send_message;
             this.grpcsharp_call_send_close_from_client = DllImportsFromStaticLib.grpcsharp_call_send_close_from_client;
-            unsafe
-            {
-                this.grpcsharp_call_send_status_from_server = DllImportsFromStaticLib.grpcsharp_call_send_status_from_server;
-            }
+            this.grpcsharp_call_send_status_from_server = DllImportsFromStaticLib.grpcsharp_call_send_status_from_server;
             this.grpcsharp_call_recv_message = DllImportsFromStaticLib.grpcsharp_call_recv_message;
             this.grpcsharp_call_recv_initial_metadata = DllImportsFromStaticLib.grpcsharp_call_recv_initial_metadata;
             this.grpcsharp_call_start_serverside = DllImportsFromStaticLib.grpcsharp_call_start_serverside;
@@ -369,10 +366,7 @@ namespace Grpc.Core.Internal
             this.grpcsharp_call_start_duplex_streaming = DllImportsFromSharedLib.grpcsharp_call_start_duplex_streaming;
             this.grpcsharp_call_send_message = DllImportsFromSharedLib.grpcsharp_call_send_message;
             this.grpcsharp_call_send_close_from_client = DllImportsFromSharedLib.grpcsharp_call_send_close_from_client;
-            unsafe
-            {
-                this.grpcsharp_call_send_status_from_server = DllImportsFromSharedLib.grpcsharp_call_send_status_from_server;
-            }
+            this.grpcsharp_call_send_status_from_server = DllImportsFromSharedLib.grpcsharp_call_send_status_from_server;
             this.grpcsharp_call_recv_message = DllImportsFromSharedLib.grpcsharp_call_recv_message;
             this.grpcsharp_call_recv_initial_metadata = DllImportsFromSharedLib.grpcsharp_call_recv_initial_metadata;
             this.grpcsharp_call_start_serverside = DllImportsFromSharedLib.grpcsharp_call_start_serverside;
