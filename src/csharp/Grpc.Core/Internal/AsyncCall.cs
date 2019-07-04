@@ -47,15 +47,16 @@ namespace Grpc.Core.Internal
         TaskCompletionSource<object> streamingResponseCallFinishedTcs;
 
         // TODO(jtattermusch): this field could be lazy-initialized (only if someone requests the response headers).
-        // Response headers set here once received.
-        TaskCompletionSource<Metadata> responseHeadersTcs = new TaskCompletionSource<Metadata>();
+        // Response headers set here once received (if not null).
+        TaskCompletionSource<Metadata> responseHeadersTcs;
 
         // Set after status is received. Used for both unary and streaming response calls.
         ClientSideStatus? finishedStatus;
 
-        public AsyncCall(CallInvocationDetails<TRequest, TResponse> callDetails)
+        public AsyncCall(CallInvocationDetails<TRequest, TResponse> callDetails, bool expectHeaders = true)
             : base(callDetails.RequestMarshaller.ContextualSerializer, callDetails.ResponseMarshaller.ContextualDeserializer)
         {
+            if (expectHeaders) responseHeadersTcs = new TaskCompletionSource<Metadata>();
             this.details = callDetails.WithOptions(callDetails.Options.Normalize());
             this.initialMetadataSent = true;  // we always send metadata at the very beginning of the call.
         }
@@ -110,8 +111,8 @@ namespace Grpc.Core.Internal
                             try
                             {
                                 using (profiler.NewScope("AsyncCall.UnaryCall.HandleBatch"))
-                                {
-                                    HandleUnaryResponse(success, ctx.GetReceivedStatusOnClient(), ctx.GetReceivedMessageReader(), ctx.GetReceivedInitialMetadata());
+                                {   // note: since UnaryCall has no mechanism to expose headers/trailers: don't parse them
+                                    HandleUnaryResponse(success, ctx.GetReceivedStatusOnClient(false), ctx.GetReceivedMessageReader(), null);
                                 }
                             }
                             catch (Exception e)
@@ -571,7 +572,7 @@ namespace Grpc.Core.Internal
                 OnAfterReleaseResourcesUnlocked();
             }
 
-            responseHeadersTcs.SetResult(responseHeaders);
+            if (responseHeadersTcs != null) responseHeadersTcs.SetResult(responseHeaders);
 
             if (delayedStreamingWriteTcs != null)
             {

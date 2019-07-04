@@ -87,7 +87,7 @@ namespace Grpc.Core.Internal
         }
 
         // Gets data of recv_status_on_client completion.
-        public ClientSideStatus GetReceivedStatusOnClient()
+        public ClientSideStatus GetReceivedStatusOnClient(bool fetchMetadata = true)
         {
             UIntPtr detailsLength;
             IntPtr detailsPtr = Native.grpcsharp_batch_context_recv_status_on_client_details(this, out detailsLength);
@@ -95,7 +95,7 @@ namespace Grpc.Core.Internal
             var status = new Status(Native.grpcsharp_batch_context_recv_status_on_client_status(this), details);
 
             IntPtr metadataArrayPtr = Native.grpcsharp_batch_context_recv_status_on_client_trailing_metadata(this);
-            var metadata = MetadataArraySafeHandle.ReadMetadataFromPtrUnsafe(metadataArrayPtr);
+            var metadata = fetchMetadata ? MetadataArraySafeHandle.ReadMetadataFromPtrUnsafe(metadataArrayPtr) : null;
 
             return new ClientSideStatus(status, metadata);
         }

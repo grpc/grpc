@@ -41,7 +41,7 @@ namespace Grpc.Core
             where TRequest : class
             where TResponse : class
         {
-            var asyncCall = new AsyncCall<TRequest, TResponse>(call);
+            var asyncCall = new AsyncCall<TRequest, TResponse>(call, expectHeaders: false); // headers never made available to caller, so don't process them
             return asyncCall.UnaryCall(req);
         }
 
