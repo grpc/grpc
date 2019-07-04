@@ -50,7 +50,7 @@ namespace Grpc.Core.Internal
         /// <summary>
         /// Reads metadata from pointer to grpc_metadata_array
         /// </summary>
-        public static unsafe Metadata ReadMetadataFromPtrUnsafe(IntPtr metadataArray)
+        public static Metadata ReadMetadataFromPtrUnsafe(IntPtr metadataArray)
         {
             if (metadataArray == IntPtr.Zero)
             {
@@ -66,12 +66,12 @@ namespace Grpc.Core.Internal
                 UIntPtr keyLen;
                 IntPtr keyPtr = Native.grpcsharp_metadata_array_get_key(metadataArray, index, out keyLen);
                 int keyLen32 = checked((int)keyLen.ToUInt32());
-                string key = WellKnownStrings.TryIdentify((byte*)keyPtr.ToPointer(), keyLen32)
+                string key = WellKnownStrings.TryIdentify(keyPtr, keyLen32)
                     ?? Marshal.PtrToStringAnsi(keyPtr, keyLen32);
                 UIntPtr valueLen;
                 IntPtr valuePtr = Native.grpcsharp_metadata_array_get_value(metadataArray, index, out valueLen);
                 int len32 = checked((int)valueLen.ToUInt64());
-                metadata.Add(Metadata.Entry.CreateUnsafe(key, (byte*)valuePtr.ToPointer(), len32));
+                metadata.Add(Metadata.Entry.CreateUnsafe(key, valuePtr, len32));
             }
             return metadata;
         }

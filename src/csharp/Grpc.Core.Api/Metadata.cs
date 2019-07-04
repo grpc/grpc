@@ -346,7 +346,7 @@ namespace Grpc.Core
             /// Creates a binary value or ascii value metadata entry from data received from the native layer.
             /// We trust C core to give us well-formed data, so we don't perform any checks or defensive copying.
             /// </summary>
-            internal static unsafe Entry CreateUnsafe(string key, byte* source, int length)
+            internal static Entry CreateUnsafe(string key, IntPtr source, int length)
             {
                 if (HasBinaryHeaderSuffix(key))
                 {
@@ -358,13 +358,13 @@ namespace Grpc.Core
                     else
                     {   // create a local copy in a fresh array
                         arr = new byte[length];
-                        Marshal.Copy(new IntPtr(source), arr, 0, length);
+                        Marshal.Copy(source, arr, 0, length);
                     }
                     return new Entry(key, null, arr);
                 }
                 else
                 {
-                    string s = length == 0 ? "" : EncodingASCII.GetString(source, length);
+                    string s = EncodingASCII.GetString(source, length);
                     return new Entry(key, s, null);
                 }
             }

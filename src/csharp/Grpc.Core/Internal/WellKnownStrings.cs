@@ -26,6 +26,17 @@ namespace Grpc.Core.Internal
             return *(ushort*)value;
         }
 
+
+        /// <summary>
+        /// Test whether the provided byte sequence is recognized as a well-known string; if
+        /// so, return a shared instance of that string; otherwise, return null
+        /// </summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static unsafe string TryIdentify(IntPtr source, int length)
+        {
+            return TryIdentify((byte*)source.ToPointer(), length);
+        }
+
         /// <summary>
         /// Test whether the provided byte sequence is recognized as a well-known string; if
         /// so, return a shared instance of that string; otherwise, return null

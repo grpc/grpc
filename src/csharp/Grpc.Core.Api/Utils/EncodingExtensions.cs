@@ -1,4 +1,5 @@
 using System;
+using System.Runtime.CompilerServices;
 using System.Text;
 
 namespace Grpc.Core.Api.Utils
@@ -27,6 +28,7 @@ namespace Grpc.Core.Api.Utils
         /// <summary>
         /// Converts <c>IntPtr</c> pointing to a encoded byte array to a <c>string</c> using the provided <c>Encoding</c>.
         /// </summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static unsafe string GetString(this Encoding encoding, IntPtr ptr, int len)
         {
             return len == 0 ? "" : encoding.GetString((byte*)ptr.ToPointer(), len);
