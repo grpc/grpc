@@ -46,12 +46,12 @@ namespace Grpc.Core.Internal
 
         public override byte[] PayloadAsNewBuffer()
         {
-            if (payloadLength == 0) return EmptyBlob;
+            if (payloadLength == 0) return EmptyByteArray;
             var buffer = new byte[payloadLength];
             FillContinguousBuffer(bufferReader, buffer);
             return buffer;
         }
-        private static readonly byte[] EmptyBlob = new byte[0];
+        private static readonly byte[] EmptyByteArray = new byte[0];
 
 #if GRPC_CSHARP_SUPPORT_SYSTEM_MEMORY
         public override ReadOnlySequence<byte> PayloadAsReadOnlySequence()

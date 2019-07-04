@@ -31,7 +31,7 @@ namespace Grpc.Core
         public abstract int PayloadLength { get; }
 
         /// <summary>
-        /// Gets the entire payload as a newly allocated byte array.
+        /// Gets the entire payload as a newly allocated byte array (or a shared zero-length array, if the payload is empty).
         /// Once the byte array is returned, the byte array becomes owned by the caller and won't be ever accessed or reused by gRPC again.
         /// NOTE: Obtaining the buffer as a newly allocated byte array is the simplest way of accessing the payload,
         /// but it can have important consequences in high-performance scenarios.
