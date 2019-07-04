@@ -215,14 +215,6 @@ grpc_cc_binary(
 )
 
 grpc_cc_binary(
-    name = "bm_threadpool",
-    testonly = 1,
-    srcs = ["bm_threadpool.cc"],
-    tags = ["no_windows"],
-    deps = [":helpers"],
-)
-
-grpc_cc_binary(
     name = "bm_timer",
     testonly = 1,
     srcs = ["bm_timer.cc"],
