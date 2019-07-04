@@ -37,7 +37,7 @@ namespace Grpc.Core.Internal
 
             // TODO(jtattermusch): we might wanna check that the metadata is readonly
             int maxTextBytesNeeded = metadata.GetMaxEncodedTextSize();
-            byte[] textBuffer = maxTextBytesNeeded == 0 ? null : ArrayPool<byte>.Shared.Rent(maxTextBytesNeeded);
+            byte[] textBuffer = maxTextBytesNeeded < 0 ? null : ArrayPool<byte>.Shared.Rent(maxTextBytesNeeded);
             try
             {
                 var metadataArray = Native.grpcsharp_metadata_array_create(new UIntPtr((ulong)metadata.Count));

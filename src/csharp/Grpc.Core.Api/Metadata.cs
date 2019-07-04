@@ -220,7 +220,7 @@ namespace Grpc.Core
 
         internal int GetMaxEncodedTextSize()
         {
-            int max = 0;
+            int max = -1; // negative: no text items
             foreach (var entry in entries)
             {
                 if (!entry.IsBinary)
