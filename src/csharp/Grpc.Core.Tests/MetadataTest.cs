@@ -116,7 +116,7 @@ namespace Grpc.Core.Tests
             var bytes = new byte[] { (byte)'X', (byte)'y' };
             fixed (byte* ptr = bytes)
             {
-                var entry = Metadata.Entry.CreateUnsafe("abc", ptr, bytes.Length);
+                var entry = Metadata.Entry.CreateUnsafe("abc", new IntPtr(ptr), bytes.Length);
                 Assert.IsFalse(entry.IsBinary);
                 Assert.AreEqual("abc", entry.Key);
                 Assert.AreEqual("Xy", entry.Value);
@@ -130,7 +130,7 @@ namespace Grpc.Core.Tests
             var bytes = new byte[] { 1, 2, 3 };
             fixed (byte* ptr = bytes)
             {
-                var entry = Metadata.Entry.CreateUnsafe("abc-bin", ptr, bytes.Length);
+                var entry = Metadata.Entry.CreateUnsafe("abc-bin", new IntPtr(ptr), bytes.Length);
                 Assert.IsTrue(entry.IsBinary);
                 Assert.AreEqual("abc-bin", entry.Key);
                 Assert.Throws(typeof(InvalidOperationException), () => { var v = entry.Value; });
