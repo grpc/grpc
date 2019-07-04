@@ -19,42 +19,43 @@ namespace Grpc.Core.Internal
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private ReusableTaskLite() { }
 
-        [ThreadStatic]
-        private static ReusableTaskLite spare1, spare2, spare3;
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private static ReusableTaskLite TryGet(ref ReusableTaskLite storage)
-        {
-            return Interlocked.Exchange(ref storage, null);
-        }
+        private static readonly ReusableTaskLite[] RecyclePool = new ReusableTaskLite[16];
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static ReusableTaskLite Get()
         {
-            return TryGet(ref spare1) ?? TryGet(ref spare2) ?? TryGet(ref spare3) ?? new ReusableTaskLite();
+            var pool = RecyclePool;
+            for (int i = 0; i < pool.Length; i++)
+            {
+                var obj = Interlocked.Exchange(ref pool[i], null);
+                if (obj != null)
+                {
+                    return obj;
+                }
+            }
+            return new ReusableTaskLite();
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private static bool TryPut(ref ReusableTaskLite storage, ReusableTaskLite value)
-        {
-            return Interlocked.CompareExchange(ref storage, value, null) == null;
-        }
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public bool Recycle()
+        public void Recycle()
         {
             Reset();
-            return TryPut(ref spare1, this) || TryPut(ref spare2, this) || TryPut(ref spare3, this);
+            var pool = RecyclePool;
+            for (int i = 0; i < pool.Length; i++)
+            {
+                if (Interlocked.CompareExchange(ref pool[i], this, null) == null)
+                {
+                    return;
+                }
+            }
         }
-
-
 
         public struct Awaitable : INotifyCompletion, ICriticalNotifyCompletion
         {
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            public bool Recycle()
+            public void Recycle()
             {
-                return task.Recycle();
+                task.Recycle();
             }
 
             public override string ToString()
@@ -118,7 +119,7 @@ namespace Grpc.Core.Internal
                 var continuation = Volatile.Read(ref task.scheduled);
                 GrpcPreconditions.CheckState((object)continuation == CompletedSentinel, "task is incomplete");
                 var fault = Volatile.Read(ref task.fault);
-                if (fault != null) throw fault; // yes, the stack-trace will be wrong
+                if (fault != null & (object)fault != NoFault) throw fault; // yes, the stack-trace will be wrong
                 return task;
             }
 
