@@ -24,10 +24,12 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/sync.h>
+
 #include "src/core/ext/filters/client_channel/client_channel.h"
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gprpp/global_config.h"
 #include "src/core/lib/iomgr/error.h"
+#include "src/core/lib/iomgr/iomgr.h"
 #include "src/core/lib/iomgr/pollset.h"
 #include "src/core/lib/iomgr/timer.h"
 #include "src/core/lib/surface/channel.h"
@@ -153,7 +155,7 @@ static void g_poller_init_locked() {
 
 void grpc_client_channel_start_backup_polling(
     grpc_pollset_set* interested_parties) {
-  if (g_poll_interval_ms == 0) {
+  if (g_poll_interval_ms == 0 || grpc_iomgr_run_in_background()) {
     return;
   }
   gpr_mu_lock(&g_poller_mu);
@@ -171,7 +173,7 @@ void grpc_client_channel_start_backup_polling(
 
 void grpc_client_channel_stop_backup_polling(
     grpc_pollset_set* interested_parties) {
-  if (g_poll_interval_ms == 0) {
+  if (g_poll_interval_ms == 0 || grpc_iomgr_run_in_background()) {
     return;
   }
   grpc_pollset_set_del_pollset(interested_parties, g_poller->pollset);

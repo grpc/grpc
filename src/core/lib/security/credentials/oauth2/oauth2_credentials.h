@@ -21,8 +21,15 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <grpc/grpc_security.h>
 #include "src/core/lib/json/json.h"
 #include "src/core/lib/security/credentials/credentials.h"
+#include "src/core/lib/uri/uri_parser.h"
+
+// Constants.
+#define GRPC_STS_POST_MINIMAL_BODY_FORMAT_STRING                               \
+  "grant_type=urn:ietf:params:oauth:grant-type:token-exchange&subject_token=%" \
+  "s&subject_token_type=%s"
 
 // auth_refresh_token parsing.
 typedef struct {
@@ -115,6 +122,7 @@ class grpc_google_refresh_token_credentials final
 
  private:
   grpc_auth_refresh_token refresh_token_;
+  grpc_closure http_post_cb_closure_;
 };
 
 // Access token credentials.
@@ -147,5 +155,13 @@ grpc_credentials_status
 grpc_oauth2_token_fetcher_credentials_parse_server_response(
     const struct grpc_http_response* response, grpc_mdelem* token_md,
     grpc_millis* token_lifetime);
+
+namespace grpc_core {
+// Exposed for testing only. This function validates the options, ensuring that
+// the required fields are set, and outputs the parsed URL of the STS token
+// exchanged service.
+grpc_error* ValidateStsCredentialsOptions(
+    const grpc_sts_credentials_options* options, grpc_uri** sts_url);
+}  // namespace grpc_core
 
 #endif /* GRPC_CORE_LIB_SECURITY_CREDENTIALS_OAUTH2_OAUTH2_CREDENTIALS_H */

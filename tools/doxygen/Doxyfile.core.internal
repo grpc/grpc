@@ -1125,8 +1125,6 @@ src/core/lib/gpr/env.h \
 src/core/lib/gpr/env_linux.cc \
 src/core/lib/gpr/env_posix.cc \
 src/core/lib/gpr/env_windows.cc \
-src/core/lib/gpr/host_port.cc \
-src/core/lib/gpr/host_port.h \
 src/core/lib/gpr/log.cc \
 src/core/lib/gpr/log_android.cc \
 src/core/lib/gpr/log_linux.cc \
@@ -1175,6 +1173,8 @@ src/core/lib/gprpp/global_config_custom.h \
 src/core/lib/gprpp/global_config_env.cc \
 src/core/lib/gprpp/global_config_env.h \
 src/core/lib/gprpp/global_config_generic.h \
+src/core/lib/gprpp/host_port.cc \
+src/core/lib/gprpp/host_port.h \
 src/core/lib/gprpp/inlined_vector.h \
 src/core/lib/gprpp/manual_constructor.h \
 src/core/lib/gprpp/map.h \
@@ -1184,6 +1184,7 @@ src/core/lib/gprpp/orphanable.h \
 src/core/lib/gprpp/pair.h \
 src/core/lib/gprpp/ref_counted.h \
 src/core/lib/gprpp/ref_counted_ptr.h \
+src/core/lib/gprpp/string_view.h \
 src/core/lib/gprpp/sync.h \
 src/core/lib/gprpp/thd.h \
 src/core/lib/gprpp/thd_posix.cc \
@@ -1233,6 +1234,8 @@ src/core/lib/iomgr/exec_ctx.cc \
 src/core/lib/iomgr/exec_ctx.h \
 src/core/lib/iomgr/executor.cc \
 src/core/lib/iomgr/executor.h \
+src/core/lib/iomgr/executor/mpmcqueue.cc \
+src/core/lib/iomgr/executor/mpmcqueue.h \
 src/core/lib/iomgr/fork_posix.cc \
 src/core/lib/iomgr/fork_windows.cc \
 src/core/lib/iomgr/gethostname.h \

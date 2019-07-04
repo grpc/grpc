@@ -63,10 +63,19 @@ class ChannelInterface;
 
 namespace internal {
 class RpcMethod;
-class CallOpClientRecvStatus;
-class CallOpRecvInitialMetadata;
 template <class InputMessage, class OutputMessage>
 class BlockingUnaryCallImpl;
+class CallOpClientRecvStatus;
+class CallOpRecvInitialMetadata;
+}  // namespace internal
+
+namespace testing {
+class InteropClientContextInspector;
+}  // namespace testing
+}  // namespace grpc
+namespace grpc_impl {
+
+namespace internal {
 template <class InputMessage, class OutputMessage>
 class CallbackUnaryCallImpl;
 template <class Request, class Response>
@@ -78,6 +87,10 @@ class ClientCallbackWriterImpl;
 class ClientCallbackUnaryImpl;
 }  // namespace internal
 
+class CallCredentials;
+class Channel;
+class CompletionQueue;
+class ServerContext;
 template <class R>
 class ClientReader;
 template <class W>
@@ -92,17 +105,6 @@ template <class W, class R>
 class ClientAsyncReaderWriter;
 template <class R>
 class ClientAsyncResponseReader;
-
-namespace testing {
-class InteropClientContextInspector;
-}  // namespace testing
-}  // namespace grpc
-namespace grpc_impl {
-
-class CallCredentials;
-class Channel;
-class CompletionQueue;
-class ServerContext;
 
 /// Options for \a ClientContext::FromServerContext specifying which traits from
 /// the \a ServerContext to propagate (copy) from it into a new \a
@@ -398,30 +400,30 @@ class ClientContext {
   friend class ::grpc::internal::CallOpRecvInitialMetadata;
   friend class ::grpc_impl::Channel;
   template <class R>
-  friend class ::grpc::ClientReader;
+  friend class ::grpc_impl::ClientReader;
   template <class W>
-  friend class ::grpc::ClientWriter;
+  friend class ::grpc_impl::ClientWriter;
   template <class W, class R>
-  friend class ::grpc::ClientReaderWriter;
+  friend class ::grpc_impl::ClientReaderWriter;
   template <class R>
-  friend class ::grpc::ClientAsyncReader;
+  friend class ::grpc_impl::ClientAsyncReader;
   template <class W>
-  friend class ::grpc::ClientAsyncWriter;
+  friend class ::grpc_impl::ClientAsyncWriter;
   template <class W, class R>
-  friend class ::grpc::ClientAsyncReaderWriter;
+  friend class ::grpc_impl::ClientAsyncReaderWriter;
   template <class R>
-  friend class ::grpc::ClientAsyncResponseReader;
+  friend class ::grpc_impl::ClientAsyncResponseReader;
   template <class InputMessage, class OutputMessage>
   friend class ::grpc::internal::BlockingUnaryCallImpl;
   template <class InputMessage, class OutputMessage>
-  friend class ::grpc::internal::CallbackUnaryCallImpl;
+  friend class ::grpc_impl::internal::CallbackUnaryCallImpl;
   template <class Request, class Response>
-  friend class ::grpc::internal::ClientCallbackReaderWriterImpl;
+  friend class ::grpc_impl::internal::ClientCallbackReaderWriterImpl;
   template <class Response>
-  friend class ::grpc::internal::ClientCallbackReaderImpl;
+  friend class ::grpc_impl::internal::ClientCallbackReaderImpl;
   template <class Request>
-  friend class ::grpc::internal::ClientCallbackWriterImpl;
-  friend class ::grpc::internal::ClientCallbackUnaryImpl;
+  friend class ::grpc_impl::internal::ClientCallbackWriterImpl;
+  friend class ::grpc_impl::internal::ClientCallbackUnaryImpl;
 
   // Used by friend class CallOpClientRecvStatus
   void set_debug_error_string(const grpc::string& debug_error_string) {
