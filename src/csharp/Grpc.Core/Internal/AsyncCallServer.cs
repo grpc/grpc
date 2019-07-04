@@ -28,7 +28,7 @@ namespace Grpc.Core.Internal
     /// </summary>
     internal class AsyncCallServer<TRequest, TResponse> : AsyncCallBase<TResponse, TRequest>, IReceivedCloseOnServerCallback, ISendStatusFromServerCompletionCallback
     {
-        readonly ReusableTaskLite finishedServerside = ReusableTaskLite.Get();
+        readonly ReusableTaskLite finishedServersideTcs = ReusableTaskLite.Get();
         readonly CancellationTokenSource cancellationTokenSource = new CancellationTokenSource();
         readonly Server server;
 
@@ -66,7 +66,7 @@ namespace Grpc.Core.Internal
                 started = true;
 
                 call.StartServerSide(ReceiveCloseOnServerCallback);
-                return finishedServerside.Task;
+                return finishedServersideTcs.Task;
             }
         }
 
@@ -226,7 +226,7 @@ namespace Grpc.Core.Internal
                 cancellationTokenSource.Cancel();
             }
 
-            finishedServerside.SetResult();
+            finishedServersideTcs.SetResult();
         }
 
         IReceivedCloseOnServerCallback ReceiveCloseOnServerCallback => this;
