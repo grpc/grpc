@@ -15,8 +15,7 @@
 #endregion
 using System;
 using System.Runtime.InteropServices;
-using System.Threading.Tasks;
-using Grpc.Core.Profiling;
+using System.Buffers;
 
 namespace Grpc.Core.Internal
 {
@@ -27,9 +26,7 @@ namespace Grpc.Core.Internal
     {
         static readonly NativeMethods Native = NativeMethods.Get();
 
-        private MetadataArraySafeHandle()
-        {
-        }
+        private MetadataArraySafeHandle() { }
             
         public static MetadataArraySafeHandle Create(Metadata metadata)
         {
@@ -39,13 +36,34 @@ namespace Grpc.Core.Internal
             }
 
             // TODO(jtattermusch): we might wanna check that the metadata is readonly
-            var metadataArray = Native.grpcsharp_metadata_array_create(new UIntPtr((ulong)metadata.Count));
-            for (int i = 0; i < metadata.Count; i++)
+            int maxTextBytesNeeded = metadata.GetMaxEncodedTextSize();
+            byte[] textBuffer = maxTextBytesNeeded == 0 ? null : ArrayPool<byte>.Shared.Rent(maxTextBytesNeeded);
+            try
             {
-                var valueBytes = metadata[i].GetSerializedValueUnsafe();
-                Native.grpcsharp_metadata_array_add(metadataArray, metadata[i].Key, valueBytes, new UIntPtr((ulong)valueBytes.Length));
+                var metadataArray = Native.grpcsharp_metadata_array_create(new UIntPtr((ulong)metadata.Count));
+                for (int i = 0; i < metadata.Count; i++)
+                {
+                    var entry = metadata[i];
+                    byte[] payload;
+                    int payloadLength;
+                    if (entry.IsBinary)
+                    {
+                        payload = entry.GetValueBytesUnsafe();
+                        payloadLength = payload.Length;
+                    }
+                    else
+                    {
+                        payload = textBuffer;
+                        payloadLength = entry.WriteTo(textBuffer);
+                    }
+                    Native.grpcsharp_metadata_array_add(metadataArray, entry.Key, payload, new UIntPtr((ulong)payloadLength));
+                }
+                return metadataArray;
             }
-            return metadataArray;
+            finally
+            {
+                if (textBuffer != null) ArrayPool<byte>.Shared.Return(textBuffer);
+            }
         }
 
         /// <summary>

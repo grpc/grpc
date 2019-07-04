@@ -218,6 +218,20 @@ namespace Grpc.Core
             GrpcPreconditions.CheckState(!readOnly, "Object is read only");
         }
 
+        internal int GetMaxEncodedTextSize()
+        {
+            int max = 0;
+            foreach (var entry in entries)
+            {
+                if (!entry.IsBinary)
+                {
+                    int bytes = entry.EncodedSize();
+                    if (bytes > max) max = bytes;
+                }
+            }
+            return max;
+        }
+
         #endregion
 
         /// <summary>
@@ -333,12 +347,29 @@ namespace Grpc.Core
             }
 
             /// <summary>
-            /// Gets the serialized value for this entry. For binary metadata entries, this leaks
-            /// the internal <c>valueBytes</c> byte array and caller must not change contents of it.
+            /// Gets the internal <c>valueBytes</c> byte array; the caller should not change this value
             /// </summary>
-            internal byte[] GetSerializedValueUnsafe()
+            internal byte[] GetValueBytesUnsafe()
             {
-                return valueBytes ?? EncodingASCII.GetBytes(value);
+                return valueBytes;
+            }
+
+            internal int WriteTo(byte[] buffer)
+            {
+                if (valueBytes == null)
+                {
+                    return EncodingASCII.GetBytes(value, 0, value.Length, buffer, 0);
+                }
+                else
+                {
+                    Buffer.BlockCopy(valueBytes, 0, buffer, 0, valueBytes.Length);
+                    return valueBytes.Length;
+                }
+            }
+
+            internal int EncodedSize()
+            {
+                return valueBytes == null ? EncodingASCII.GetByteCount(value) : valueBytes.Length;
             }
 
             /// <summary>
