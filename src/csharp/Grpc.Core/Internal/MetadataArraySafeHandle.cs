@@ -76,39 +76,6 @@ namespace Grpc.Core.Internal
             return metadata;
         }
 
-        private static class WellKnownStrings
-        {
-            // turn a string of ASCII-length 8 into a ulong using the CPUs current
-            // endianness; this allows us to do the same thing in TryIdentify,
-            // testing string prefixes (of length >= 8) in a single load/compare
-            private static unsafe ulong Thunk8(string value)
-            {
-                int byteCount = Encoding.ASCII.GetByteCount(value);
-                if (byteCount != 8) throw new ArgumentException(nameof(value));
-                ulong result = 0;
-                fixed (char* cPtr = value)
-                {
-                    Encoding.ASCII.GetBytes(cPtr, value.Length, (byte*)&result, byteCount);
-                }
-                return result;
-            }
-            private static readonly ulong UserAgent = Thunk8("user-age");
-            public static unsafe string TryIdentify(byte* source, int length)
-            {
-                switch (length)
-                {
-                    case 10:
-                        // test the first 8 bytes via evilness
-                        ulong first8 = *(ulong*)source;
-                        if (first8 == UserAgent & source[8] == (byte)'n' & source[9] == (byte)'t')
-                            return "user-agent";
-
-                        break;
-                }
-                return null;
-            }
-        }
-
         internal IntPtr Handle
         {
             get
