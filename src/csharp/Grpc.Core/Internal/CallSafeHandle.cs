@@ -128,7 +128,7 @@ namespace Grpc.Core.Internal
             }
         }
 
-        public unsafe void StartSendStatusFromServer(ISendStatusFromServerCompletionCallback callback, Status status, MetadataArraySafeHandle metadataArray, bool sendEmptyInitialMetadata,
+        public void StartSendStatusFromServer(ISendStatusFromServerCompletionCallback callback, Status status, MetadataArraySafeHandle metadataArray, bool sendEmptyInitialMetadata,
             byte[] optionalPayload, WriteFlags writeFlags)
         {
             using (completionQueue.NewScope())
@@ -146,32 +146,35 @@ namespace Grpc.Core.Internal
                     maxBytes = MarshalUtils.GetByteCountUTF8(status.Detail);
                 }
 
-                if (maxBytes <= MaxStackAllocBytes)
-                {   // for small status, we can encode on the stack without touching arrays
-                    // note: if init-locals is disabled, it would be more efficient
-                    // to just stackalloc[MaxStackAllocBytes]; but by default, since we
-                    // expect this to be small and it needs to wipe, just use maxBytes
-                    byte* ptr = stackalloc byte[maxBytes];
-                    int statusBytes = MarshalUtils.GetBytesUTF8(status.Detail, ptr, maxBytes);
-                    Native.grpcsharp_call_send_status_from_server(this, ctx, status.StatusCode, ptr, new UIntPtr((ulong)statusBytes), metadataArray, sendEmptyInitialMetadata ? 1 : 0,
-                        optionalPayload, optionalPayloadLength, writeFlags).CheckOk();
-                }
-                else
-                {   // for larger status (rare), rent a buffer from the pool and
-                    // use that for encoding
-                    var statusBuffer = ArrayPool<byte>.Shared.Rent(maxBytes);
-                    try
-                    {
-                        fixed (byte* ptr = statusBuffer)
-                        {
-                            int statusBytes = MarshalUtils.GetBytesUTF8(status.Detail, ptr, maxBytes);
-                            Native.grpcsharp_call_send_status_from_server(this, ctx, status.StatusCode, ptr, new UIntPtr((ulong)statusBytes), metadataArray, sendEmptyInitialMetadata ? 1 : 0,
-                              optionalPayload, optionalPayloadLength, writeFlags).CheckOk();
-                        }
+                unsafe
+                {
+                    if (maxBytes <= MaxStackAllocBytes)
+                    {   // for small status, we can encode on the stack without touching arrays
+                        // note: if init-locals is disabled, it would be more efficient
+                        // to just stackalloc[MaxStackAllocBytes]; but by default, since we
+                        // expect this to be small and it needs to wipe, just use maxBytes
+                        byte* ptr = stackalloc byte[maxBytes];
+                        int statusBytes = MarshalUtils.GetBytesUTF8(status.Detail, ptr, maxBytes);
+                        Native.grpcsharp_call_send_status_from_server(this, ctx, status.StatusCode, new IntPtr(ptr), new UIntPtr((ulong)statusBytes), metadataArray, sendEmptyInitialMetadata ? 1 : 0,
+                            optionalPayload, optionalPayloadLength, writeFlags).CheckOk();
                     }
-                    finally
-                    {
-                        ArrayPool<byte>.Shared.Return(statusBuffer);
+                    else
+                    {   // for larger status (rare), rent a buffer from the pool and
+                        // use that for encoding
+                        var statusBuffer = ArrayPool<byte>.Shared.Rent(maxBytes);
+                        try
+                        {
+                            fixed (byte* ptr = statusBuffer)
+                            {
+                                int statusBytes = MarshalUtils.GetBytesUTF8(status.Detail, ptr, maxBytes);
+                                Native.grpcsharp_call_send_status_from_server(this, ctx, status.StatusCode, new IntPtr(ptr), new UIntPtr((ulong)statusBytes), metadataArray, sendEmptyInitialMetadata ? 1 : 0,
+                                  optionalPayload, optionalPayloadLength, writeFlags).CheckOk();
+                            }
+                        }
+                        finally
+                        {
+                            ArrayPool<byte>.Shared.Return(statusBuffer);
+                        }
                     }
                 }
             }

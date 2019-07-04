@@ -61,14 +61,11 @@ namespace Grpc.Microbenchmarks
             var native = NativeMethods.Get();
 
             // nop the native-call via reflection
-            unsafe
-            {
-                NativeMethods.Delegates.grpcsharp_call_send_status_from_server_delegate nop = (CallSafeHandle call, BatchContextSafeHandle ctx, StatusCode statusCode, byte* statusMessage, UIntPtr statusMessageLen, MetadataArraySafeHandle metadataArray, int sendEmptyInitialMetadata, byte[] optionalSendBuffer, UIntPtr optionalSendBufferLen, WriteFlags writeFlags) => {
-                    completionRegistry.Extract(ctx.Handle).OnComplete(true); // drain the dictionary as we go
-                    return CallError.OK;
-                };
-                native.GetType().GetField(nameof(native.grpcsharp_call_send_status_from_server)).SetValue(native, nop);
-            }
+            NativeMethods.Delegates.grpcsharp_call_send_status_from_server_delegate nop = (CallSafeHandle call, BatchContextSafeHandle ctx, StatusCode statusCode, IntPtr statusMessage, UIntPtr statusMessageLen, MetadataArraySafeHandle metadataArray, int sendEmptyInitialMetadata, byte[] optionalSendBuffer, UIntPtr optionalSendBufferLen, WriteFlags writeFlags) => {
+                completionRegistry.Extract(ctx.Handle).OnComplete(true); // drain the dictionary as we go
+                return CallError.OK;
+            };
+            native.GetType().GetField(nameof(native.grpcsharp_call_send_status_from_server)).SetValue(native, nop);
 
             environment = GrpcEnvironment.AddRef();
             metadata = MetadataArraySafeHandle.Create(Metadata.Empty);
