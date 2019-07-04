@@ -353,7 +353,7 @@ namespace Grpc.Core
                     byte[] arr;
                     if (length == 0)
                     {
-                        arr = EmptyBlob;
+                        arr = EmptyByteArray;
                     }
                     else
                     {   // create a local copy in a fresh array
@@ -369,7 +369,7 @@ namespace Grpc.Core
                 }
             }
 
-            static readonly byte[] EmptyBlob = new byte[0];
+            static readonly byte[] EmptyByteArray = new byte[0];
 
             private static string NormalizeKey(string key)
             {
