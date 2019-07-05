@@ -78,14 +78,14 @@ namespace Grpc.Core.Internal
             }
             try
             {
-                await asyncCall.SendStatusFromServerAsync(status, context.ResponseTrailers, responseWithFlags);
+                await asyncCall.SendStatusFromServerAsync(status, context.ResponseTrailers, responseWithFlags).ConfigureAwait(false);
             }
             catch (Exception)
             {
                 asyncCall.Cancel();
                 throw;
             }
-            await finishedTask;
+            await finishedTask.ConfigureAwait(false);
         }
     }
 
@@ -136,14 +136,14 @@ namespace Grpc.Core.Internal
 
             try
             {
-                await asyncCall.SendStatusFromServerAsync(status, context.ResponseTrailers, null);
+                await asyncCall.SendStatusFromServerAsync(status, context.ResponseTrailers, null).ConfigureAwait(false);
             }
             catch (Exception)
             {
                 asyncCall.Cancel();
                 throw;
             }
-            await finishedTask;
+            await finishedTask.ConfigureAwait(false);
         }
     }
 
@@ -194,14 +194,14 @@ namespace Grpc.Core.Internal
 
             try
             {
-                await asyncCall.SendStatusFromServerAsync(status, context.ResponseTrailers, responseWithFlags);
+                await asyncCall.SendStatusFromServerAsync(status, context.ResponseTrailers, responseWithFlags).ConfigureAwait(false);
             }
             catch (Exception)
             {
                 asyncCall.Cancel();
                 throw;
             }
-            await finishedTask;
+            await finishedTask.ConfigureAwait(false);
         }
     }
 
@@ -249,14 +249,14 @@ namespace Grpc.Core.Internal
             }
             try
             {
-                await asyncCall.SendStatusFromServerAsync(status, context.ResponseTrailers, null);
+                await asyncCall.SendStatusFromServerAsync(status, context.ResponseTrailers, null).ConfigureAwait(false);
             }
             catch (Exception)
             {
                 asyncCall.Cancel();
                 throw;
             }
-            await finishedTask;
+            await finishedTask.ConfigureAwait(false);
         }
     }
 

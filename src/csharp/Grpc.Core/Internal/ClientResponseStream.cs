@@ -52,7 +52,7 @@ namespace Grpc.Core.Internal
             var cancellationTokenRegistration = token.CanBeCanceled ? token.Register(() => call.Cancel()) : (IDisposable) null;
             using (cancellationTokenRegistration)
             {
-                var result = await call.ReadMessageAsync();
+                var result = await call.ReadMessageAsync().ConfigureAwait(false);
                 this.current = result;
 
                 if (result == null)

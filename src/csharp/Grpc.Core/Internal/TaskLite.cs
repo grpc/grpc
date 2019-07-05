@@ -27,6 +27,14 @@ namespace Grpc.Core.Internal
     // this entire thing can be replaced with ValueTask<T> trivially, when available
     internal struct TaskLite<T> : INotifyCompletion, ICriticalNotifyCompletion
     {
+        // dummy no-op method so that the API doesn't change if we can switch to ValueTask<T>,
+        // and we haven't changed the await behavior
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public TaskLite<T> ConfigureAwait(bool _)
+        {
+            return this;
+        }
+
         private readonly short token;
         private readonly TaskSource<T>.State task;
 
