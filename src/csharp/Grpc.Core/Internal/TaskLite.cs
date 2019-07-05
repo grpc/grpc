@@ -139,14 +139,23 @@ namespace Grpc.Core.Internal
             get { return new TaskLite<T>(state, token); }
         }
 
+        // a successfully completed Task with the default return value
+        public static TaskSource<T> DefaultValue
+        {
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            get { return DefaultSource; }
+        }
+
+        private static readonly TaskSource<T> DefaultSource = new TaskSource<T>(new State(default(T)));
+
         private readonly short token;
         private readonly State state;
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private TaskSource(State state, short token)
+        private TaskSource(State state)
         {
             GrpcPreconditions.CheckNotNull(state);
-            this.token = token;
+            this.token = state.CurrentToken;
             this.state = state;
         }
 
@@ -193,32 +202,61 @@ namespace Grpc.Core.Internal
             for (int i = 0; i < pool.Length; i++)
             {
                 state = Interlocked.Exchange(ref pool[i], null);
-                if (state != null) break;
+                if (state != null)
+                {
+                    break;
+                }
             }
-            if (state == null) state = new State();
-            return new TaskSource<T>(state, state.CurrentToken);
+            if (state == null)
+            {
+                state = new State();
+            }
+            return new TaskSource<T>(state);
         }
 
         internal sealed class State
         {
-            private int currentToken = short.MinValue;
+            public State()
+            {
+                currentToken = MinToken;
+            }
+
+            internal State(T value)
+            {
+                currentToken = SentinelConstantValue;
+                fault = NoFault;
+                scheduled = CompletedSentinel;
+                resultValue = value;
+            }
+
+
+            const int MinToken = short.MinValue + 1, MaxToken = short.MaxValue, SentinelConstantValue = short.MinValue;
+
+            private int currentToken;
             internal short CurrentToken
             {
                 [MethodImpl(MethodImplOptions.AggressiveInlining)]
                 get { return (short)Volatile.Read(ref currentToken); }
             }
 
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            private void NewToken()
+            public bool IsConstant
             {
+                [MethodImpl(MethodImplOptions.AggressiveInlining)]
+                get { return Volatile.Read(ref currentToken) == SentinelConstantValue; }
+            }
+
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            private bool NewToken()
+            {
+                if (IsConstant) return false;
                 while (true)
                 {
                     int newToken = Interlocked.Increment(ref currentToken);
-                    if (newToken <= short.MaxValue) return;
+                    if (newToken <= MaxToken) return true;
 
                     // otherwise, we overflowed; try to reset
-                    if (Interlocked.CompareExchange(ref currentToken, short.MinValue, newToken) == newToken)
-                        return; // we successfully reset it to the min
+                    if (Interlocked.CompareExchange(ref currentToken, MinToken, newToken) == newToken)
+                        return true; // we successfully reset it to the min
 
                     // otherwise, we got into a race; redo from start
                 }
@@ -235,9 +273,12 @@ namespace Grpc.Core.Internal
                 GrpcPreconditions.CheckState(false, "token mismatch; the task is being accessed incorrectly");
             }
 
+            static int _nextInstance;
+            internal readonly int _instance = Interlocked.Increment(ref _nextInstance);
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
             public void Recycle()
             {
+                if (IsConstant) return; // don't recycle these
                 Reset();
                 var pool = RecyclePool;
                 for (int i = 0; i < pool.Length; i++)
@@ -275,10 +316,12 @@ namespace Grpc.Core.Internal
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
             public void Reset()
             {
-                NewToken();
-                resultValue = default(T);
-                Volatile.Write(ref fault, null);
-                Volatile.Write(ref scheduled, null);
+                if (NewToken()) // false if constant; don't reset constants
+                {
+                    resultValue = default(T);
+                    Volatile.Write(ref fault, null);
+                    Volatile.Write(ref scheduled, null);
+                }
             }
 
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -312,8 +355,8 @@ namespace Grpc.Core.Internal
                 GrpcPreconditions.CheckState(oldFault == null, "SetResult called multiple times");
                 resultValue = value;
                 oldFault = Interlocked.CompareExchange(ref fault, exception ?? NoFault, null); // races are fun
-                                                                                               // note that if this fails, we will have stomped value; but this is an example of incorrect
-                                                                                               // API usage - the caller **should not call** SetResult twice per session; fix the caller!
+                // note that if this fails, we will have stomped value; but this is an example of incorrect
+                // API usage - the caller **should not call** SetResult twice per session; fix the caller!
                 GrpcPreconditions.CheckState(oldFault == null, "SetResult called multiple times");
 
                 var continuation = Interlocked.Exchange(ref scheduled, CompletedSentinel);

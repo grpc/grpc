@@ -210,8 +210,7 @@ namespace Grpc.Core.Internal
                     // if there's no pending read, readingDone=true will dispose now.
                     // if there is a pending read, we will dispose once that read finishes.
                     readingDone = true;
-                    streamingReadTcs = TaskSource<TRequest>.Get();
-                    streamingReadTcs.SetResult(default(TRequest));
+                    streamingReadTcs = TaskSource<TRequest>.DefaultValue;
                 }
                 releasedResources = ReleaseResourcesIfPossible();
             }
