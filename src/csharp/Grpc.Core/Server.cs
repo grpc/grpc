@@ -334,25 +334,20 @@ namespace Grpc.Core
         /// <summary>
         /// Selects corresponding handler for given call and handles the call.
         /// </summary>
-        private async Task HandleCallAsync(ServerRpcNew newRpc, CompletionQueueSafeHandle cq, Action<Server, CompletionQueueSafeHandle> continuation)
+        private Task HandleCallAsync(ServerRpcNew newRpc, CompletionQueueSafeHandle cq, Action<Server, CompletionQueueSafeHandle> continuation)
         {
-            try
+            IServerCallHandler callHandler;
+            if (!callHandlers.TryGetValue(newRpc.Method, out callHandler))
             {
-                IServerCallHandler callHandler;
-                if (!callHandlers.TryGetValue(newRpc.Method, out callHandler))
-                {
-                    callHandler = UnimplementedMethodCallHandler.Instance;
-                }
-                await callHandler.HandleCall(newRpc, cq).ConfigureAwait(false);
+                callHandler = UnimplementedMethodCallHandler.Instance;
             }
-            catch (Exception e)
-            {
-                Logger.Warning(e, "Exception while handling RPC.");
-            }
-            finally
-            {
-                continuation(this, cq);
-            }
+            var state = new ServerRpcState(this, cq, continuation);
+            return callHandler.HandleCall(newRpc, state);
+        }
+
+        internal void LogError(Exception e)
+        {
+            Logger.Warning(e, "Exception while handling RPC.");
         }
 
         /// <summary>

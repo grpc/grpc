@@ -18,11 +18,8 @@
 
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using Grpc.Core.Interceptors;
-using Grpc.Core.Internal;
 using Grpc.Core.Logging;
 using Grpc.Core.Utils;
 
@@ -30,7 +27,7 @@ namespace Grpc.Core.Internal
 {
     internal interface IServerCallHandler
     {
-        Task HandleCall(ServerRpcNew newRpc, CompletionQueueSafeHandle cq);
+        Task HandleCall(ServerRpcNew newRpc, ServerRpcState server);
     }
 
     internal class UnaryServerCallHandler<TRequest, TResponse> : IServerCallHandler
@@ -48,47 +45,57 @@ namespace Grpc.Core.Internal
             this.handler = handler;
         }
 
-        public async Task HandleCall(ServerRpcNew newRpc, CompletionQueueSafeHandle cq)
+        public async Task HandleCall(ServerRpcNew newRpc, ServerRpcState server)
         {
-            var asyncCall = new AsyncCallServer<TRequest, TResponse>(
-                method.ResponseMarshaller.ContextualSerializer,
-                method.RequestMarshaller.ContextualDeserializer,
-                newRpc.Server);
+            try {
+                var asyncCall = new AsyncCallServer<TRequest, TResponse>(
+                    method.ResponseMarshaller.ContextualSerializer,
+                    method.RequestMarshaller.ContextualDeserializer,
+                    newRpc.Server);
 
-            asyncCall.Initialize(newRpc.Call, cq);
-            var finishedTask = asyncCall.ServerSideCallAsync();
-            var requestStream = new ServerRequestStream<TRequest, TResponse>(asyncCall);
-            var responseStream = new ServerResponseStream<TRequest, TResponse>(asyncCall);
+                asyncCall.Initialize(newRpc.Call, server.CompletionQueue);
+                var finishedTask = asyncCall.ServerSideCallAsync();
+                var requestStream = new ServerRequestStream<TRequest, TResponse>(asyncCall);
+                var responseStream = new ServerResponseStream<TRequest, TResponse>(asyncCall);
 
-            Status status;
-            AsyncCallServer<TRequest,TResponse>.ResponseWithFlags? responseWithFlags = null;
-            var context = HandlerUtils.NewContext(newRpc, responseStream, asyncCall.CancellationToken);
-            try
-            {
-                GrpcPreconditions.CheckArgument(await requestStream.MoveNext().ConfigureAwait(false));
-                var request = requestStream.Current;
-                var response = await handler(request, context).ConfigureAwait(false);
-                status = context.Status;
-                responseWithFlags = new AsyncCallServer<TRequest, TResponse>.ResponseWithFlags(response, HandlerUtils.GetWriteFlags(context.WriteOptions));
-            }
-            catch (Exception e)
-            {
-                if (!(e is RpcException))
+                Status status;
+                AsyncCallServer<TRequest,TResponse>.ResponseWithFlags? responseWithFlags = null;
+                var context = HandlerUtils.NewContext(newRpc, responseStream, asyncCall.CancellationToken);
+                try
                 {
-                    Logger.Warning(e, "Exception occurred in the handler or an interceptor.");
+                    GrpcPreconditions.CheckArgument(await requestStream.MoveNext().ConfigureAwait(false));
+                    var request = requestStream.Current;
+                    var response = await handler(request, context).ConfigureAwait(false);
+                    status = context.Status;
+                    responseWithFlags = new AsyncCallServer<TRequest, TResponse>.ResponseWithFlags(response, HandlerUtils.GetWriteFlags(context.WriteOptions));
                 }
-                status = HandlerUtils.GetStatusFromExceptionAndMergeTrailers(e, context.ResponseTrailers);
+                catch (Exception e)
+                {
+                    if (!(e is RpcException))
+                    {
+                        Logger.Warning(e, "Exception occurred in the handler or an interceptor.");
+                    }
+                    status = HandlerUtils.GetStatusFromExceptionAndMergeTrailers(e, context.ResponseTrailers);
+                }
+                try
+                {
+                    await asyncCall.SendStatusFromServerAsync(status, context.ResponseTrailers, responseWithFlags).ConfigureAwait(false);
+                }
+                catch (Exception)
+                {
+                    asyncCall.Cancel();
+                    throw;
+                }
+                await finishedTask.ConfigureAwait(false);
             }
-            try
+            catch (Exception ex)
             {
-                await asyncCall.SendStatusFromServerAsync(status, context.ResponseTrailers, responseWithFlags).ConfigureAwait(false);
+                server.LogError(ex);
             }
-            catch (Exception)
+            finally
             {
-                asyncCall.Cancel();
-                throw;
+                server.InvokeContinuation();
             }
-            await finishedTask.ConfigureAwait(false);
         }
     }
 
@@ -107,46 +114,57 @@ namespace Grpc.Core.Internal
             this.handler = handler;
         }
 
-        public async Task HandleCall(ServerRpcNew newRpc, CompletionQueueSafeHandle cq)
+        public async Task HandleCall(ServerRpcNew newRpc, ServerRpcState server)
         {
-            var asyncCall = new AsyncCallServer<TRequest, TResponse>(
-                method.ResponseMarshaller.ContextualSerializer,
-                method.RequestMarshaller.ContextualDeserializer,
-                newRpc.Server);
-
-            asyncCall.Initialize(newRpc.Call, cq);
-            var finishedTask = asyncCall.ServerSideCallAsync();
-            var requestStream = new ServerRequestStream<TRequest, TResponse>(asyncCall);
-            var responseStream = new ServerResponseStream<TRequest, TResponse>(asyncCall);
-
-            Status status;
-            var context = HandlerUtils.NewContext(newRpc, responseStream, asyncCall.CancellationToken);
             try
             {
-                GrpcPreconditions.CheckArgument(await requestStream.MoveNext().ConfigureAwait(false));
-                var request = requestStream.Current;
-                await handler(request, responseStream, context).ConfigureAwait(false);
-                status = context.Status;
-            }
-            catch (Exception e)
-            {
-                if (!(e is RpcException))
+                var asyncCall = new AsyncCallServer<TRequest, TResponse>(
+                    method.ResponseMarshaller.ContextualSerializer,
+                    method.RequestMarshaller.ContextualDeserializer,
+                    newRpc.Server);
+
+                asyncCall.Initialize(newRpc.Call, server.CompletionQueue);
+                var finishedTask = asyncCall.ServerSideCallAsync();
+                var requestStream = new ServerRequestStream<TRequest, TResponse>(asyncCall);
+                var responseStream = new ServerResponseStream<TRequest, TResponse>(asyncCall);
+
+                Status status;
+                var context = HandlerUtils.NewContext(newRpc, responseStream, asyncCall.CancellationToken);
+                try
                 {
-                    Logger.Warning(e, "Exception occurred in the handler or an interceptor.");
+                    GrpcPreconditions.CheckArgument(await requestStream.MoveNext().ConfigureAwait(false));
+                    var request = requestStream.Current;
+                    await handler(request, responseStream, context).ConfigureAwait(false);
+                    status = context.Status;
                 }
-                status = HandlerUtils.GetStatusFromExceptionAndMergeTrailers(e, context.ResponseTrailers);
-            }
+                catch (Exception e)
+                {
+                    if (!(e is RpcException))
+                    {
+                        Logger.Warning(e, "Exception occurred in the handler or an interceptor.");
+                    }
+                    status = HandlerUtils.GetStatusFromExceptionAndMergeTrailers(e, context.ResponseTrailers);
+                }
 
-            try
-            {
-                await asyncCall.SendStatusFromServerAsync(status, context.ResponseTrailers, null).ConfigureAwait(false);
+                try
+                {
+                    await asyncCall.SendStatusFromServerAsync(status, context.ResponseTrailers, null).ConfigureAwait(false);
+                }
+                catch (Exception)
+                {
+                    asyncCall.Cancel();
+                    throw;
+                }
+                await finishedTask.ConfigureAwait(false);
             }
-            catch (Exception)
+            catch (Exception ex)
             {
-                asyncCall.Cancel();
-                throw;
+                server.LogError(ex);
             }
-            await finishedTask.ConfigureAwait(false);
+            finally
+            {
+                server.InvokeContinuation();
+            }
         }
     }
 
@@ -165,46 +183,57 @@ namespace Grpc.Core.Internal
             this.handler = handler;
         }
 
-        public async Task HandleCall(ServerRpcNew newRpc, CompletionQueueSafeHandle cq)
+        public async Task HandleCall(ServerRpcNew newRpc, ServerRpcState server)
         {
-            var asyncCall = new AsyncCallServer<TRequest, TResponse>(
+            try
+            {
+                var asyncCall = new AsyncCallServer<TRequest, TResponse>(
                 method.ResponseMarshaller.ContextualSerializer,
                 method.RequestMarshaller.ContextualDeserializer,
                 newRpc.Server);
 
-            asyncCall.Initialize(newRpc.Call, cq);
-            var finishedTask = asyncCall.ServerSideCallAsync();
-            var requestStream = new ServerRequestStream<TRequest, TResponse>(asyncCall);
-            var responseStream = new ServerResponseStream<TRequest, TResponse>(asyncCall);
+                asyncCall.Initialize(newRpc.Call, server.CompletionQueue);
+                var finishedTask = asyncCall.ServerSideCallAsync();
+                var requestStream = new ServerRequestStream<TRequest, TResponse>(asyncCall);
+                var responseStream = new ServerResponseStream<TRequest, TResponse>(asyncCall);
 
-            Status status;
-            AsyncCallServer<TRequest, TResponse>.ResponseWithFlags? responseWithFlags = null;
-            var context = HandlerUtils.NewContext(newRpc, responseStream, asyncCall.CancellationToken);
-            try
-            {
-                var response = await handler(requestStream, context).ConfigureAwait(false);
-                status = context.Status;
-                responseWithFlags = new AsyncCallServer<TRequest, TResponse>.ResponseWithFlags(response, HandlerUtils.GetWriteFlags(context.WriteOptions));
-            }
-            catch (Exception e)
-            {
-                if (!(e is RpcException))
+                Status status;
+                AsyncCallServer<TRequest, TResponse>.ResponseWithFlags? responseWithFlags = null;
+                var context = HandlerUtils.NewContext(newRpc, responseStream, asyncCall.CancellationToken);
+                try
                 {
-                    Logger.Warning(e, "Exception occurred in the handler or an interceptor.");
+                    var response = await handler(requestStream, context).ConfigureAwait(false);
+                    status = context.Status;
+                    responseWithFlags = new AsyncCallServer<TRequest, TResponse>.ResponseWithFlags(response, HandlerUtils.GetWriteFlags(context.WriteOptions));
                 }
-                status = HandlerUtils.GetStatusFromExceptionAndMergeTrailers(e, context.ResponseTrailers);
-            }
+                catch (Exception e)
+                {
+                    if (!(e is RpcException))
+                    {
+                        Logger.Warning(e, "Exception occurred in the handler or an interceptor.");
+                    }
+                    status = HandlerUtils.GetStatusFromExceptionAndMergeTrailers(e, context.ResponseTrailers);
+                }
 
-            try
-            {
-                await asyncCall.SendStatusFromServerAsync(status, context.ResponseTrailers, responseWithFlags).ConfigureAwait(false);
+                try
+                {
+                    await asyncCall.SendStatusFromServerAsync(status, context.ResponseTrailers, responseWithFlags).ConfigureAwait(false);
+                }
+                catch (Exception)
+                {
+                    asyncCall.Cancel();
+                    throw;
+                }
+                await finishedTask.ConfigureAwait(false);
             }
-            catch (Exception)
+            catch (Exception ex)
             {
-                asyncCall.Cancel();
-                throw;
+                server.LogError(ex);
             }
-            await finishedTask.ConfigureAwait(false);
+            finally
+            {
+                server.InvokeContinuation();
+            }
         }
     }
 
@@ -223,43 +252,54 @@ namespace Grpc.Core.Internal
             this.handler = handler;
         }
 
-        public async Task HandleCall(ServerRpcNew newRpc, CompletionQueueSafeHandle cq)
+        public async Task HandleCall(ServerRpcNew newRpc, ServerRpcState server)
         {
-            var asyncCall = new AsyncCallServer<TRequest, TResponse>(
-                method.ResponseMarshaller.ContextualSerializer,
-                method.RequestMarshaller.ContextualDeserializer,
-                newRpc.Server);
-
-            asyncCall.Initialize(newRpc.Call, cq);
-            var finishedTask = asyncCall.ServerSideCallAsync();
-            var requestStream = new ServerRequestStream<TRequest, TResponse>(asyncCall);
-            var responseStream = new ServerResponseStream<TRequest, TResponse>(asyncCall);
-
-            Status status;
-            var context = HandlerUtils.NewContext(newRpc, responseStream, asyncCall.CancellationToken);
             try
             {
-                await handler(requestStream, responseStream, context).ConfigureAwait(false);
-                status = context.Status;
-            }
-            catch (Exception e)
-            {
-                if (!(e is RpcException))
+                var asyncCall = new AsyncCallServer<TRequest, TResponse>(
+                    method.ResponseMarshaller.ContextualSerializer,
+                    method.RequestMarshaller.ContextualDeserializer,
+                    newRpc.Server);
+
+                asyncCall.Initialize(newRpc.Call, server.CompletionQueue);
+                var finishedTask = asyncCall.ServerSideCallAsync();
+                var requestStream = new ServerRequestStream<TRequest, TResponse>(asyncCall);
+                var responseStream = new ServerResponseStream<TRequest, TResponse>(asyncCall);
+
+                Status status;
+                var context = HandlerUtils.NewContext(newRpc, responseStream, asyncCall.CancellationToken);
+                try
                 {
-                    Logger.Warning(e, "Exception occurred in the handler or an interceptor.");
+                    await handler(requestStream, responseStream, context).ConfigureAwait(false);
+                    status = context.Status;
                 }
-                status = HandlerUtils.GetStatusFromExceptionAndMergeTrailers(e, context.ResponseTrailers);
+                catch (Exception e)
+                {
+                    if (!(e is RpcException))
+                    {
+                        Logger.Warning(e, "Exception occurred in the handler or an interceptor.");
+                    }
+                    status = HandlerUtils.GetStatusFromExceptionAndMergeTrailers(e, context.ResponseTrailers);
+                }
+                try
+                {
+                    await asyncCall.SendStatusFromServerAsync(status, context.ResponseTrailers, null).ConfigureAwait(false);
+                }
+                catch (Exception)
+                {
+                    asyncCall.Cancel();
+                    throw;
+                }
+                await finishedTask.ConfigureAwait(false);
             }
-            try
+            catch (Exception ex)
             {
-                await asyncCall.SendStatusFromServerAsync(status, context.ResponseTrailers, null).ConfigureAwait(false);
+                server.LogError(ex);
             }
-            catch (Exception)
+            finally
             {
-                asyncCall.Cancel();
-                throw;
+                server.InvokeContinuation();
             }
-            await finishedTask.ConfigureAwait(false);
         }
     }
 
@@ -285,9 +325,9 @@ namespace Grpc.Core.Internal
             return TaskUtils.CompletedTask;
         }
 
-        public Task HandleCall(ServerRpcNew newRpc, CompletionQueueSafeHandle cq)
+        public Task HandleCall(ServerRpcNew newRpc, ServerRpcState server)
         {
-            return callHandlerImpl.HandleCall(newRpc, cq);
+            return callHandlerImpl.HandleCall(newRpc, server);
         }
     }
 
