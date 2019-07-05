@@ -35,6 +35,32 @@ namespace Grpc.Core.Internal
             return this;
         }
 
+        /// <summary>
+        /// Consumes the incomplete operation as a Task; this should only be used once, and
+        /// should be used *in place of* await, not in addition to
+        /// </summary>
+        public Task<T> AsTask()
+        {
+            if (!IsCompleted) return Awaited();
+
+            T result;
+            try
+            {
+                result = GetResult();
+            }
+            catch (Exception ex)
+            {
+                return TaskSource<T>.FromException(ex);
+            }
+            return Task.FromResult(result);
+        }
+
+        [MethodImpl(MethodImplOptions.NoInlining)]
+        private async Task<T> Awaited()
+        {
+            return await this;
+        }
+
         private readonly short token;
         private readonly TaskSource<T>.State task;
 
@@ -136,6 +162,19 @@ namespace Grpc.Core.Internal
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
             get { return CanceledTaskInstance ?? (CanceledTaskInstance = CreateCanceled()); }
         }
+
+        public static Task<T> FromException(Exception fault)
+        {
+            GrpcPreconditions.CheckNotNull(fault);
+#if NET45
+            var tcs = new TaskCompletionSource<T>();
+            tcs.SetException(fault);
+            return tcs.Task;
+#else
+            return System.Threading.Tasks.Task.FromException<T>(fault);
+#endif
+        }
+
         [MethodImpl(MethodImplOptions.NoInlining)]
         private static Task<T> CreateCanceled()
         {

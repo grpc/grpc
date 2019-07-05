@@ -652,7 +652,7 @@ namespace Grpc.Core.Internal.Tests
             return fakeBufferReaderManager.CreateNullPayloadBufferReader();
         }
 
-        static void AssertUnaryResponseSuccess(AsyncCall<string, string> asyncCall, FakeNativeCall fakeCall, Task<string> resultTask)
+        static void AssertUnaryResponseSuccess(AsyncCall<string, string> asyncCall, FakeNativeCall fakeCall, TaskLite<string> resultTask)
         {
             Assert.IsTrue(resultTask.IsCompleted);
             Assert.IsTrue(fakeCall.IsDisposed);
@@ -660,7 +660,7 @@ namespace Grpc.Core.Internal.Tests
             Assert.AreEqual(Status.DefaultSuccess, asyncCall.GetStatus());
             Assert.AreEqual(0, asyncCall.ResponseHeadersAsync.Result.Count);
             Assert.AreEqual(0, asyncCall.GetTrailers().Count);
-            Assert.AreEqual("response1", resultTask.Result);
+            Assert.AreEqual("response1", resultTask.GetResult());
         }
 
         static void AssertStreamingResponseSuccess(AsyncCall<string, string> asyncCall, FakeNativeCall fakeCall, Task<bool> moveNextTask)
@@ -673,7 +673,7 @@ namespace Grpc.Core.Internal.Tests
             Assert.AreEqual(0, asyncCall.GetTrailers().Count);
         }
 
-        static void AssertUnaryResponseError(AsyncCall<string, string> asyncCall, FakeNativeCall fakeCall, Task<string> resultTask, StatusCode expectedStatusCode)
+        static void AssertUnaryResponseError(AsyncCall<string, string> asyncCall, FakeNativeCall fakeCall, TaskLite<string> resultTask, StatusCode expectedStatusCode)
         {
             Assert.IsTrue(resultTask.IsCompleted);
             Assert.IsTrue(fakeCall.IsDisposed);

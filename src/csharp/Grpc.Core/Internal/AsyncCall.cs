@@ -41,7 +41,7 @@ namespace Grpc.Core.Internal
         IDisposable cancellationTokenRegistration;
 
         // Completion of a pending unary response if not null.
-        TaskCompletionSource<TResponse> unaryResponseTcs;
+        TaskSource<TResponse> unaryResponseTcs;
 
         // Completion of a streaming response call if not null.
         TaskCompletionSource<object> streamingResponseCallFinishedTcs;
@@ -83,7 +83,7 @@ namespace Grpc.Core.Internal
                 bool callStartedOk = false;
                 try
                 {
-                    unaryResponseTcs = new TaskCompletionSource<TResponse>();
+                    unaryResponseTcs = TaskSource<TResponse>.Get();
 
                     lock (myLock)
                     {
@@ -145,7 +145,7 @@ namespace Grpc.Core.Internal
         /// <summary>
         /// Starts a unary request - unary response call.
         /// </summary>
-        public Task<TResponse> UnaryCallAsync(TRequest msg)
+        public TaskLite<TResponse> UnaryCallAsync(TRequest msg)
         {
             lock (myLock)
             {
@@ -162,7 +162,7 @@ namespace Grpc.Core.Internal
 
                     byte[] payload = UnsafeSerialize(msg);
 
-                    unaryResponseTcs = new TaskCompletionSource<TResponse>();
+                    unaryResponseTcs = TaskSource<TResponse>.Get();
                     using (var metadataArray = MetadataArraySafeHandle.Create(details.Options.Headers))
                     {
                         call.StartUnary(UnaryResponseClientCallback, payload, GetWriteFlagsForCall(), metadataArray, details.Options.Flags);
@@ -185,7 +185,7 @@ namespace Grpc.Core.Internal
         /// Starts a streamed request - unary response call.
         /// Use StartSendMessage and StartSendCloseFromClient to stream requests.
         /// </summary>
-        public Task<TResponse> ClientStreamingCallAsync()
+        public TaskLite<TResponse> ClientStreamingCallAsync()
         {
             lock (myLock)
             {
@@ -199,7 +199,7 @@ namespace Grpc.Core.Internal
 
                     readingDone = true;
 
-                    unaryResponseTcs = new TaskCompletionSource<TResponse>();
+                    unaryResponseTcs = TaskSource<TResponse>.Get();
                     using (var metadataArray = MetadataArraySafeHandle.Create(details.Options.Headers))
                     {
                         call.StartClientStreaming(UnaryResponseClientCallback, metadataArray, details.Options.Flags);
@@ -437,13 +437,7 @@ namespace Grpc.Core.Internal
                 // Note that this throws even for StatusCode.OK.
                 // Writing after the call has finished is not a programming error because server can close
                 // the call anytime, so don't throw directly, but let the write task finish with an error.
-#if NET45
-                var tcs = new TaskCompletionSource<object>();
-                tcs.SetException(new RpcException(finishedStatus.Value.Status, finishedStatus.Value.Trailers));
-                return tcs.Task;
-#else
-                return Task.FromException(new RpcException(finishedStatus.Value.Status, finishedStatus.Value.Trailers));
-#endif
+                return TaskSource<object>.FromException(new RpcException(finishedStatus.Value.Status, finishedStatus.Value.Trailers));
             }
 
             return null;
