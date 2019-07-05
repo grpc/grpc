@@ -42,7 +42,7 @@ namespace Grpc.Core.Internal
         public override byte[] PayloadAsNewBuffer()
         {
             var buffer = new byte[payloadLength];
-            FillContinguousBuffer(bufferReader, buffer);
+            PayloadAsReadOnlySequence().CopyTo(buffer);
             return buffer;
         }
 
@@ -71,11 +71,6 @@ namespace Grpc.Core.Internal
             var instance = threadLocalInstance.Value;
             instance.Initialize(bufferReader);
             return instance;
-        }
-
-        private void FillContinguousBuffer(IBufferReader reader, byte[] destination)
-        {
-            PayloadAsReadOnlySequence().CopyTo(new Span<byte>(destination));
         }
     }
 }
