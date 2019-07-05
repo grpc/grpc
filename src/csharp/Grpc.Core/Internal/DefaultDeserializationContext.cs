@@ -46,9 +46,13 @@ namespace Grpc.Core.Internal
 
         public override byte[] PayloadAsNewBuffer()
         {
-            if (payloadLength == 0) return EmptyByteArray;
-            var buffer = new byte[payloadLength];
-            FillContinguousBuffer(bufferReader, buffer);
+            var buffer = payloadLength == 0 ? EmptyByteArray : new byte[payloadLength];
+            if (payloadLength != 0 | bufferReader == null)
+            {   // ^^ this might look odd, but when empty, we *want* this to fail
+                // if this is because it has been reset and not assigned; we make
+                // it fail in a known way by trying to fill from the (invalid) source
+                FillContinguousBuffer(bufferReader, buffer);
+            }
             return buffer;
         }
         private static readonly byte[] EmptyByteArray = new byte[0];
