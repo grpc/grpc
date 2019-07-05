@@ -28,7 +28,7 @@ namespace Grpc.Core.Internal
     /// </summary>
     internal class AsyncCallServer<TRequest, TResponse> : AsyncCallBase<TResponse, TRequest>, IReceivedCloseOnServerCallback, ISendStatusFromServerCompletionCallback
     {
-        readonly ReusableTaskLite finishedServersideTcs = ReusableTaskLite.Get();
+        readonly TaskSource<object> finishedServersideTcs = TaskSource<object>.Get();
         readonly CancellationTokenSource cancellationTokenSource = new CancellationTokenSource();
         readonly Server server;
 
@@ -57,7 +57,7 @@ namespace Grpc.Core.Internal
         /// <summary>
         /// Starts a server side call.
         /// </summary>
-        public ReusableTaskLite.Awaitable ServerSideCallAsync()
+        public TaskLite<object> ServerSideCallAsync()
         {
             lock (myLock)
             {
@@ -81,7 +81,7 @@ namespace Grpc.Core.Internal
         /// <summary>
         /// Receives a streaming request. Only one pending read action is allowed at any given time.
         /// </summary>
-        public Task<TRequest> ReadMessageAsync()
+        public TaskLite<TRequest> ReadMessageAsync()
         {
             return ReadMessageInternalAsync();
         }
@@ -122,7 +122,7 @@ namespace Grpc.Core.Internal
         /// Sends call result status, indicating we are done with writes.
         /// Sending a status different from StatusCode.OK will also implicitly cancel the call.
         /// </summary>
-        public ReusableTaskLite.Awaitable SendStatusFromServerAsync(Status status, Metadata trailers, ResponseWithFlags? optionalWrite)
+        public TaskLite<object> SendStatusFromServerAsync(Status status, Metadata trailers, ResponseWithFlags? optionalWrite)
         {
             byte[] payload = optionalWrite.HasValue ? UnsafeSerialize(optionalWrite.Value.Response) : null;
             var writeFlags = optionalWrite.HasValue ? optionalWrite.Value.WriteFlags : default(WriteFlags);
@@ -140,7 +140,7 @@ namespace Grpc.Core.Internal
                 }
                 halfcloseRequested = true;
                 initialMetadataSent = true;
-                sendStatusFromServerTcs = ReusableTaskLite.Get();
+                sendStatusFromServerTcs = TaskSource<object>.Get();
                 if (optionalWrite.HasValue)
                 {
                     streamingWritesCounter++;
@@ -205,12 +205,12 @@ namespace Grpc.Core.Internal
             lock (myLock)
             {
                 finished = true;
-                if (streamingReadTcs == null)
+                if (!streamingReadTcs.HasTask)
                 {
                     // if there's no pending read, readingDone=true will dispose now.
                     // if there is a pending read, we will dispose once that read finishes.
                     readingDone = true;
-                    streamingReadTcs = new TaskCompletionSource<TRequest>();
+                    streamingReadTcs = TaskSource<TRequest>.Get();
                     streamingReadTcs.SetResult(default(TRequest));
                 }
                 releasedResources = ReleaseResourcesIfPossible();
@@ -226,7 +226,7 @@ namespace Grpc.Core.Internal
                 cancellationTokenSource.Cancel();
             }
 
-            finishedServersideTcs.SetResult();
+            finishedServersideTcs.SetResult(null);
         }
 
         IReceivedCloseOnServerCallback ReceiveCloseOnServerCallback => this;

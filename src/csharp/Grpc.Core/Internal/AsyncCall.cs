@@ -300,7 +300,7 @@ namespace Grpc.Core.Internal
         /// <summary>
         /// Receives a streaming response. Only one pending read action is allowed at any given time.
         /// </summary>
-        public Task<TResponse> ReadMessageAsync()
+        public TaskLite<TResponse> ReadMessageAsync()
         {
             return ReadMessageInternalAsync();
         }
@@ -457,7 +457,7 @@ namespace Grpc.Core.Internal
             if (cancelRequested)
             {
                 // Return a cancelled task.
-                return ReusableTaskLite.CanceledTask;
+                return TaskSource<object>.CanceledTask;
             }
 
             return null;

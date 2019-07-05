@@ -51,9 +51,9 @@ namespace Grpc.Core.Internal
         protected bool started;
         protected bool cancelRequested;
 
-        protected TaskCompletionSource<TRead> streamingReadTcs;  // Completion of a pending streaming read if not null.
+        protected TaskSource<TRead> streamingReadTcs;  // Completion of a pending streaming read if not null.
         protected TaskCompletionSource<object> streamingWriteTcs;  // Completion of a pending streaming write or send close from client if not null.
-        protected ReusableTaskLite sendStatusFromServerTcs;
+        protected TaskSource<object> sendStatusFromServerTcs;
         protected bool isStreamingWriteCompletionDelayed;  // Only used for the client side.
 
         protected bool readingDone;  // True if last read (i.e. read with null payload) was already received.
@@ -138,7 +138,7 @@ namespace Grpc.Core.Internal
         /// <summary>
         /// Initiates reading a message. Only one read operation can be active at a time.
         /// </summary>
-        protected Task<TRead> ReadMessageInternalAsync()
+        protected TaskLite<TRead> ReadMessageInternalAsync()
         {
             lock (myLock)
             {
@@ -147,15 +147,15 @@ namespace Grpc.Core.Internal
                 {
                     // the last read that returns null or throws an exception is idempotent
                     // and maintains its state.
-                    GrpcPreconditions.CheckState(streamingReadTcs != null, "Call does not support streaming reads.");
+                    GrpcPreconditions.CheckState(streamingReadTcs.HasTask, "Call does not support streaming reads.");
                     return streamingReadTcs.Task;
                 }
 
-                GrpcPreconditions.CheckState(streamingReadTcs == null, "Only one read can be pending at a time");
+                GrpcPreconditions.CheckState(!streamingReadTcs.HasTask, "Only one read can be pending at a time");
                 GrpcPreconditions.CheckState(!disposed);
 
                 call.StartReceiveMessage(ReceivedMessageCallback);
-                streamingReadTcs = new TaskCompletionSource<TRead>();
+                streamingReadTcs = TaskSource<TRead>.Get();
                 return streamingReadTcs.Task;
             }
         }
@@ -325,7 +325,7 @@ namespace Grpc.Core.Internal
             }
             else
             {
-                sendStatusFromServerTcs.SetResult();
+                sendStatusFromServerTcs.SetResult(null);
             }
         }
 
@@ -341,7 +341,7 @@ namespace Grpc.Core.Internal
             TRead msg = default(TRead);
             var deserializeException = (success && receivedMessageReader.TotalLength.HasValue) ? TryDeserialize(receivedMessageReader, out msg) : null;
 
-            TaskCompletionSource<TRead> origTcs = null;
+            TaskSource<TRead> origTcs = default;
             bool releasedResources;
             lock (myLock)
             {
@@ -362,7 +362,7 @@ namespace Grpc.Core.Internal
 
                 if (!readingDone)
                 {
-                    streamingReadTcs = null;
+                    streamingReadTcs = default;
                 }
 
                 releasedResources = ReleaseResourcesIfPossible();

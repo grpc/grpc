@@ -24,183 +24,272 @@ using Grpc.Core.Utils;
 
 namespace Grpc.Core.Internal
 {
-    internal class ReusableTaskLite
+    // this entire thing can be replaced with ValueTask<T> trivially, when available
+    internal struct TaskLite<T> : INotifyCompletion, ICriticalNotifyCompletion
     {
-        public static readonly Task CanceledTask;
-        static ReusableTaskLite()
+        private readonly short token;
+        private readonly TaskSource<T>.State task;
+
+        public override string ToString()
         {
-            TaskCompletionSource<object> source = new TaskCompletionSource<object>();
+            return typeof(TaskLite<T>).FullName;
+        }
+        public override int GetHashCode()
+        {
+            throw new NotSupportedException();
+        }
+        public override bool Equals(object obj)
+        {
+            throw new NotSupportedException();
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        internal TaskLite(TaskSource<T>.State task, short token)
+        {
+            GrpcPreconditions.CheckNotNull(task);
+            this.token = token;
+            this.task = task;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void OnCompleted(Action continuation)
+        {
+            task.Schedule(token, continuation);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void UnsafeOnCompleted(Action continuation)
+        {
+            task.Schedule(token, continuation);
+        }
+
+        public bool IsCompleted
+        {
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            get { return task.IsCompleted(token); }
+        }
+
+        public bool IsFaulted
+        {
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            get { return task.IsFaulted(token); }
+        }
+
+        public bool IsCompletedSuccessfully
+        {
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            get { return IsCompleted & !IsFaulted; }
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public TaskLite<T> GetAwaiter() { return this; }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public T GetResult()
+        {
+            return task.GetResult(token);
+        }
+    }
+
+    internal struct TaskSource<T>
+    {
+        public bool HasTask
+        {
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            get { return state != null; }
+        }
+
+        public TaskLite<T> Task
+        {
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            get { return new TaskLite<T>(state, token); }
+        }
+
+        private readonly short token;
+        private readonly State state;
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private TaskSource(State state, short token)
+        {
+            GrpcPreconditions.CheckNotNull(state);
+            this.token = token;
+            this.state = state;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void SetResult(T value) { state.Complete(token, value, null); }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void SetException(Exception exception) { state.Complete(token, default(T), exception); }
+
+        private static Task<T> CanceledTaskInstance;
+        public static Task<T> CanceledTask
+        {
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            get { return CanceledTaskInstance ?? (CanceledTaskInstance = CreateCanceled()); }
+        }
+        [MethodImpl(MethodImplOptions.NoInlining)]
+        private static Task<T> CreateCanceled()
+        {
+            TaskCompletionSource<T> source = new TaskCompletionSource<T>();
             source.SetCanceled();
-            CanceledTask = source.Task;
+            return source.Task;
         }
 
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private ReusableTaskLite() { }
-
-        private static readonly ReusableTaskLite[] RecyclePool = new ReusableTaskLite[16];
+        private static readonly State[] RecyclePool = new State[16];
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static ReusableTaskLite Get()
+        public static TaskSource<T> Get()
         {
             var pool = RecyclePool;
+            State state = null;
             for (int i = 0; i < pool.Length; i++)
             {
-                var obj = Interlocked.Exchange(ref pool[i], null);
-                if (obj != null)
-                {
-                    return obj;
-                }
+                state = Interlocked.Exchange(ref pool[i], null);
+                if (state != null) break;
             }
-            return new ReusableTaskLite();
+            if (state == null) state = new State();
+            return new TaskSource<T>(state, state.CurrentToken);
         }
 
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void Recycle()
+        internal sealed class State
         {
-            Reset();
-            var pool = RecyclePool;
-            for (int i = 0; i < pool.Length; i++)
+            private int currentToken = short.MinValue;
+            internal short CurrentToken
             {
-                if (Interlocked.CompareExchange(ref pool[i], this, null) == null)
+                [MethodImpl(MethodImplOptions.AggressiveInlining)]
+                get { return (short)Volatile.Read(ref currentToken); }
+            }
+
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            private void NewToken()
+            {
+                while (true)
                 {
-                    return;
+                    int newToken = Interlocked.Increment(ref currentToken);
+                    if (newToken <= short.MaxValue) return;
+
+                    // otherwise, we overflowed; try to reset
+                    if (Interlocked.CompareExchange(ref currentToken, short.MinValue, newToken) == newToken)
+                        return; // we successfully reset it to the min
+
+                    // otherwise, we got into a race; redo from start
                 }
             }
-        }
 
-        public struct Awaitable : INotifyCompletion, ICriticalNotifyCompletion
-        {
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            private void CheckToken(short token)
+            {
+                if (Volatile.Read(ref currentToken) != token) ThrowInvalidToken();
+            }
+            [MethodImpl(MethodImplOptions.NoInlining)]
+            private static void ThrowInvalidToken()
+            {
+                GrpcPreconditions.CheckState(false, "token mismatch; the task is being accessed incorrectly");
+            }
+
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
             public void Recycle()
             {
-                task.Recycle();
-            }
-
-            public override string ToString()
-            {
-                return typeof(Awaitable).FullName;
-            }
-            public override int GetHashCode()
-            {
-                throw new NotSupportedException();
-            }
-            public override bool Equals(object obj)
-            {
-                throw new NotSupportedException();
-            }
-
-            private readonly ReusableTaskLite task;
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            public Awaitable(ReusableTaskLite task)
-            {
-                GrpcPreconditions.CheckNotNull(task);
-                this.task = task;
-            }
-
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            public void OnCompleted(Action continuation)
-            {
-                task.Schedule(continuation);
-            }
-
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            public void UnsafeOnCompleted(Action continuation)
-            {
-                task.Schedule(continuation);
-            }
-
-            public bool IsCompleted
-            {
-                [MethodImpl(MethodImplOptions.AggressiveInlining)]
-                get { return (object)Volatile.Read(ref task.scheduled) == CompletedSentinel; }
-            }
-
-            public bool IsFaulted
-            {
-                [MethodImpl(MethodImplOptions.AggressiveInlining)]
-                get
+                Reset();
+                var pool = RecyclePool;
+                for (int i = 0; i < pool.Length; i++)
                 {
-                    var exception = (object)Volatile.Read(ref task.fault);
-                    return exception != null & (object)exception != NoFault;
+                    if (Interlocked.CompareExchange(ref pool[i], this, null) == null)
+                    {
+                        return;
+                    }
                 }
             }
 
-            public bool IsCompletedSuccessfully
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            public bool IsCompleted(short token)
             {
-                [MethodImpl(MethodImplOptions.AggressiveInlining)]
-                get { return IsCompleted & !IsFaulted; }
+                CheckToken(token);
+                return (object)Volatile.Read(ref this.scheduled) == CompletedSentinel;
             }
 
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            public ReusableTaskLite GetResult()
+            public bool IsFaulted(short token)
             {
-                var continuation = Volatile.Read(ref task.scheduled);
+
+                CheckToken(token);
+                var exception = (object)Volatile.Read(ref this.fault);
+                return exception != null & (object)exception != NoFault;
+            }
+
+            private T resultValue;
+            private Exception fault;
+            private Action scheduled;
+
+            private static readonly Action CompletedSentinel = () => { };
+            private static readonly Exception NoFault = new Exception();
+
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            public void Reset()
+            {
+                NewToken();
+                resultValue = default(T);
+                Volatile.Write(ref fault, null);
+                Volatile.Write(ref scheduled, null);
+            }
+
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            internal void Schedule(short token, Action continuation)
+            {
+                CheckToken(token);
+                GrpcPreconditions.CheckNotNull(continuation);
+                var oldValue = Interlocked.CompareExchange(ref scheduled, continuation, null);
+                if (ReferenceEquals(oldValue, null))
+                {
+                    // fine, we added our continuation
+                }
+                else if (ReferenceEquals(oldValue, CompletedSentinel))
+                {
+                    // the task was already complete; call it inline
+                    continuation();
+                }
+                else
+                {
+                    // multiple continuations: not supported
+                    GrpcPreconditions.CheckState(false, "Only one continuation can be pending at a time");
+                }
+            }
+
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            internal void Complete(short token, T value, Exception exception)
+            {
+                CheckToken(token);
+                // mark it as complete, and execute anything that was scheduled
+                var oldFault = Volatile.Read(ref fault);
+                GrpcPreconditions.CheckState(oldFault == null, "SetResult called multiple times");
+                resultValue = value;
+                oldFault = Interlocked.CompareExchange(ref fault, exception ?? NoFault, null); // races are fun
+                                                                                               // note that if this fails, we will have stomped value; but this is an example of incorrect
+                                                                                               // API usage - the caller **should not call** SetResult twice per session; fix the caller!
+                GrpcPreconditions.CheckState(oldFault == null, "SetResult called multiple times");
+
+                var continuation = Interlocked.Exchange(ref scheduled, CompletedSentinel);
+                if (continuation != null) continuation();
+            }
+
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            internal T GetResult(short token)
+            {
+                CheckToken(token);
+                var continuation = Volatile.Read(ref this.scheduled);
                 GrpcPreconditions.CheckState((object)continuation == CompletedSentinel, "task is incomplete");
-                var fault = Volatile.Read(ref task.fault);
+                var fault = Volatile.Read(ref this.fault);
+                T result = this.resultValue;
+
+                // we've got everything we need out of here, and GetResult() should
+                // only be called once; we can now recycle the object; anyone else who
+                // gets it will have a different token
+                Recycle();
+
                 if (fault != null & (object)fault != NoFault) throw fault; // yes, the stack-trace will be wrong
-                return task;
+                return result;
             }
-
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            public Awaitable GetAwaiter() { return this; }
-        }
-
-        public Awaitable Task
-        {
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            get { return new Awaitable(this); }
-        }
-
-        private Exception fault;
-        private Action scheduled;
-
-        private static readonly Action CompletedSentinel = () => { };
-        private static readonly Exception NoFault = new Exception();
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void Reset()
-        {
-            Volatile.Write(ref fault, null);
-            Volatile.Write(ref scheduled, null);
-        }
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private void Schedule(Action continuation)
-        {
-            GrpcPreconditions.CheckNotNull(continuation);
-            var oldValue = Interlocked.CompareExchange(ref scheduled, continuation, null);
-            if (ReferenceEquals(oldValue, null))
-            {
-                // fine, we added our continuation
-            }
-            else if (ReferenceEquals(oldValue, CompletedSentinel))
-            {
-                // the task was already complete; call it inline
-                continuation();
-            }
-            else
-            {
-                // multiple continuations: not supported
-                GrpcPreconditions.CheckState(false, "Only one continuation can be pending at a time");
-            }
-        }
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void SetResult() { Complete(null); }
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void SetException(Exception exception) { Complete(exception); }
-
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private void Complete(Exception exception = null)
-        {
-            // mark it as complete, and execute anything that was scheduled
-            var oldFault = Interlocked.CompareExchange(ref fault, exception ?? NoFault, null);
-            GrpcPreconditions.CheckState(oldFault == null, "SetResult called multiple times");
-
-            var continuation = Interlocked.Exchange(ref scheduled, CompletedSentinel);
-            if (continuation != null) continuation();
         }
     }
 }
