@@ -13,6 +13,8 @@
 # limitations under the License.
 """Test of responsiveness to signals."""
 
+from __future__ import print_function
+
 import logging
 import os
 import signal
