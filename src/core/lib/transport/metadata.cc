@@ -67,7 +67,7 @@ void grpc_mdelem_trace_ref(void* md, const grpc_slice& key,
   if (grpc_trace_metadata.enabled()) {
     char* key_str = grpc_slice_to_c_string(key);
     char* value_str = grpc_slice_to_c_string(value);
-    gpr_log(file, line, GPR_LOG_SEVERITY_DEBUG,
+    gpr_log(file, line, GPR_LOG_SEVERITY_INFO,
             "ELM   REF:%p:%" PRIdPTR "->%" PRIdPTR ": '%s' = '%s'", md, refcnt,
             refcnt + 1, key_str, value_str);
     gpr_free(key_str);
@@ -81,7 +81,7 @@ void grpc_mdelem_trace_unref(void* md, const grpc_slice& key,
   if (grpc_trace_metadata.enabled()) {
     char* key_str = grpc_slice_to_c_string(key);
     char* value_str = grpc_slice_to_c_string(value);
-    gpr_log(file, line, GPR_LOG_SEVERITY_DEBUG,
+    gpr_log(file, line, GPR_LOG_SEVERITY_INFO,
             "ELM   UNREF:%p:%" PRIdPTR "->%" PRIdPTR ": '%s' = '%s'", md,
             refcnt, refcnt - 1, key_str, value_str);
     gpr_free(key_str);
@@ -115,7 +115,7 @@ AllocatedMetadata::AllocatedMetadata(const grpc_slice& key,
   if (grpc_trace_metadata.enabled()) {
     char* key_str = grpc_slice_to_c_string(key);
     char* value_str = grpc_slice_to_c_string(value);
-    gpr_log(GPR_DEBUG, "ELM ALLOC:%p:%" PRIdPTR ": '%s' = '%s'", this,
+    gpr_log(GPR_INFO, "ELM ALLOC:%p:%" PRIdPTR ": '%s' = '%s'", this,
             RefValue(), key_str, value_str);
     gpr_free(key_str);
     gpr_free(value_str);
@@ -144,7 +144,7 @@ InternedMetadata::InternedMetadata(const grpc_slice& key,
   if (grpc_trace_metadata.enabled()) {
     char* key_str = grpc_slice_to_c_string(key);
     char* value_str = grpc_slice_to_c_string(value);
-    gpr_log(GPR_DEBUG, "ELM   NEW:%p:%" PRIdPTR ": '%s' = '%s'", this,
+    gpr_log(GPR_INFO, "ELM   NEW:%p:%" PRIdPTR ": '%s' = '%s'", this,
             RefValue(), key_str, value_str);
     gpr_free(key_str);
     gpr_free(value_str);
@@ -242,7 +242,7 @@ void InternedMetadata::RefWithShardLocked(mdtab_shard* shard) {
     char* key_str = grpc_slice_to_c_string(key());
     char* value_str = grpc_slice_to_c_string(value());
     intptr_t value = RefValue();
-    gpr_log(__FILE__, __LINE__, GPR_LOG_SEVERITY_DEBUG,
+    gpr_log(__FILE__, __LINE__, GPR_LOG_SEVERITY_INFO,
             "ELM   REF:%p:%" PRIdPTR "->%" PRIdPTR ": '%s' = '%s'", this, value,
             value + 1, key_str, value_str);
     gpr_free(key_str);
