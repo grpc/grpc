@@ -139,6 +139,11 @@ class FakeResolverResponseGeneratorWrapper {
       : response_generator_(grpc_core::MakeRefCounted<
                             grpc_core::FakeResolverResponseGenerator>()) {}
 
+  FakeResolverResponseGeneratorWrapper(
+      FakeResolverResponseGeneratorWrapper&& other) {
+    response_generator_ = std::move(other.response_generator_);
+  }
+
   ~FakeResolverResponseGeneratorWrapper() {}
 
   void SetNextResolution(const std::vector<int>& ports) {
@@ -240,10 +245,8 @@ class ClientLbEnd2endTest : public ::testing::Test {
     return ports;
   }
 
-  std::unique_ptr<FakeResolverResponseGeneratorWrapper>
-  BuildResolverResponseGenerator() {
-    return std::unique_ptr<FakeResolverResponseGeneratorWrapper>(
-        new FakeResolverResponseGeneratorWrapper());
+  FakeResolverResponseGeneratorWrapper BuildResolverResponseGenerator() {
+    return FakeResolverResponseGeneratorWrapper();
   }
 
   std::unique_ptr<grpc::testing::EchoTestService::Stub> BuildStub(
@@ -253,13 +256,13 @@ class ClientLbEnd2endTest : public ::testing::Test {
 
   std::shared_ptr<Channel> BuildChannel(
       const grpc::string& lb_policy_name,
-      std::unique_ptr<FakeResolverResponseGeneratorWrapper>& response_generator,
+      const FakeResolverResponseGeneratorWrapper& response_generator,
       ChannelArguments args = ChannelArguments()) {
     if (lb_policy_name.size() > 0) {
       args.SetLoadBalancingPolicyName(lb_policy_name);
     }  // else, default to pick first
     args.SetPointer(GRPC_ARG_FAKE_RESOLVER_RESPONSE_GENERATOR,
-                    response_generator->Get());
+                    response_generator.Get());
     return ::grpc::CreateCustomChannel("fake:///", creds_, args);
   }
 
@@ -443,7 +446,7 @@ TEST_F(ClientLbEnd2endTest, ChannelStateConnectingWhenResolving) {
   EXPECT_EQ(channel->GetState(false /* try_to_connect */),
             GRPC_CHANNEL_CONNECTING);
   // Return a resolver result, which allows the connection attempt to proceed.
-  response_generator->SetNextResolution(GetServersPorts());
+  response_generator.SetNextResolution(GetServersPorts());
   // We should eventually transition into state READY.
   EXPECT_TRUE(WaitForChannelReady(channel.get()));
 }
@@ -456,7 +459,7 @@ TEST_F(ClientLbEnd2endTest, PickFirst) {
   auto channel = BuildChannel(
       "", response_generator);  // test that pick first is the default.
   auto stub = BuildStub(channel);
-  response_generator->SetNextResolution(GetServersPorts());
+  response_generator.SetNextResolution(GetServersPorts());
   for (size_t i = 0; i < servers_.size(); ++i) {
     CheckRpcSendOk(stub, DEBUG_LOCATION);
   }
@@ -481,7 +484,7 @@ TEST_F(ClientLbEnd2endTest, PickFirstProcessPending) {
   auto channel = BuildChannel(
       "", response_generator);  // test that pick first is the default.
   auto stub = BuildStub(channel);
-  response_generator->SetNextResolution({servers_[0]->port_});
+  response_generator.SetNextResolution({servers_[0]->port_});
   WaitForServer(stub, 0, DEBUG_LOCATION);
   // Create a new channel and its corresponding PF LB policy, which will pick
   // the subchannels in READY state from the previous RPC against the same
@@ -491,7 +494,7 @@ TEST_F(ClientLbEnd2endTest, PickFirstProcessPending) {
   auto second_response_generator = BuildResolverResponseGenerator();
   auto second_channel = BuildChannel("", second_response_generator);
   auto second_stub = BuildStub(second_channel);
-  second_response_generator->SetNextResolution({servers_[0]->port_});
+  second_response_generator.SetNextResolution({servers_[0]->port_});
   CheckRpcSendOk(second_stub, DEBUG_LOCATION);
 }
 
@@ -507,7 +510,7 @@ TEST_F(ClientLbEnd2endTest, PickFirstSelectsReadyAtStartup) {
   auto response_generator1 = BuildResolverResponseGenerator();
   auto channel1 = BuildChannel("pick_first", response_generator1, args);
   auto stub1 = BuildStub(channel1);
-  response_generator1->SetNextResolution(ports);
+  response_generator1.SetNextResolution(ports);
   // Wait for second server to be ready.
   WaitForServer(stub1, 1, DEBUG_LOCATION);
   // Create a second channel with the same addresses.  Its PF instance
@@ -515,7 +518,7 @@ TEST_F(ClientLbEnd2endTest, PickFirstSelectsReadyAtStartup) {
   // in READY state.
   auto response_generator2 = BuildResolverResponseGenerator();
   auto channel2 = BuildChannel("pick_first", response_generator2, args);
-  response_generator2->SetNextResolution(ports);
+  response_generator2.SetNextResolution(ports);
   // Check that the channel reports READY without waiting for the
   // initial backoff.
   EXPECT_TRUE(WaitForChannelReady(channel2.get(), 1 /* timeout_seconds */));
@@ -530,7 +533,7 @@ TEST_F(ClientLbEnd2endTest, PickFirstBackOffInitialReconnect) {
   auto response_generator = BuildResolverResponseGenerator();
   auto channel = BuildChannel("pick_first", response_generator, args);
   auto stub = BuildStub(channel);
-  response_generator->SetNextResolution(ports);
+  response_generator.SetNextResolution(ports);
   // The channel won't become connected (there's no server).
   ASSERT_FALSE(channel->WaitForConnected(
       grpc_timeout_milliseconds_to_deadline(kInitialBackOffMs * 2)));
@@ -560,7 +563,7 @@ TEST_F(ClientLbEnd2endTest, PickFirstBackOffMinReconnect) {
   auto response_generator = BuildResolverResponseGenerator();
   auto channel = BuildChannel("pick_first", response_generator, args);
   auto stub = BuildStub(channel);
-  response_generator->SetNextResolution(ports);
+  response_generator.SetNextResolution(ports);
   // Make connection delay a 10% longer than it's willing to in order to make
   // sure we are hitting the codepath that waits for the min reconnect backoff.
   gpr_atm_rel_store(&g_connection_delay_ms, kMinReconnectBackOffMs * 1.10);
@@ -586,7 +589,7 @@ TEST_F(ClientLbEnd2endTest, PickFirstResetConnectionBackoff) {
   auto response_generator = BuildResolverResponseGenerator();
   auto channel = BuildChannel("pick_first", response_generator, args);
   auto stub = BuildStub(channel);
-  response_generator->SetNextResolution(ports);
+  response_generator.SetNextResolution(ports);
   // The channel won't become connected (there's no server).
   EXPECT_FALSE(
       channel->WaitForConnected(grpc_timeout_milliseconds_to_deadline(10)));
@@ -618,7 +621,7 @@ TEST_F(ClientLbEnd2endTest,
   auto response_generator = BuildResolverResponseGenerator();
   auto channel = BuildChannel("pick_first", response_generator, args);
   auto stub = BuildStub(channel);
-  response_generator->SetNextResolution(ports);
+  response_generator.SetNextResolution(ports);
   // Wait for connect, which should fail ~immediately, because the server
   // is not up.
   gpr_log(GPR_INFO, "=== INITIAL CONNECTION ATTEMPT");
@@ -667,14 +670,14 @@ TEST_F(ClientLbEnd2endTest, PickFirstUpdates) {
 
   // Perform one RPC against the first server.
   ports.emplace_back(servers_[0]->port_);
-  response_generator->SetNextResolution(ports);
+  response_generator.SetNextResolution(ports);
   gpr_log(GPR_INFO, "****** SET [0] *******");
   CheckRpcSendOk(stub, DEBUG_LOCATION);
   EXPECT_EQ(servers_[0]->service_.request_count(), 1);
 
   // An empty update will result in the channel going into TRANSIENT_FAILURE.
   ports.clear();
-  response_generator->SetNextResolution(ports);
+  response_generator.SetNextResolution(ports);
   gpr_log(GPR_INFO, "****** SET none *******");
   grpc_connectivity_state channel_state;
   do {
@@ -686,7 +689,7 @@ TEST_F(ClientLbEnd2endTest, PickFirstUpdates) {
   // Next update introduces servers_[1], making the channel recover.
   ports.clear();
   ports.emplace_back(servers_[1]->port_);
-  response_generator->SetNextResolution(ports);
+  response_generator.SetNextResolution(ports);
   gpr_log(GPR_INFO, "****** SET [1] *******");
   WaitForServer(stub, 1, DEBUG_LOCATION);
   EXPECT_EQ(servers_[0]->service_.request_count(), 0);
@@ -694,7 +697,7 @@ TEST_F(ClientLbEnd2endTest, PickFirstUpdates) {
   // And again for servers_[2]
   ports.clear();
   ports.emplace_back(servers_[2]->port_);
-  response_generator->SetNextResolution(ports);
+  response_generator.SetNextResolution(ports);
   gpr_log(GPR_INFO, "****** SET [2] *******");
   WaitForServer(stub, 2, DEBUG_LOCATION);
   EXPECT_EQ(servers_[0]->service_.request_count(), 0);
@@ -716,7 +719,7 @@ TEST_F(ClientLbEnd2endTest, PickFirstUpdateSuperset) {
 
   // Perform one RPC against the first server.
   ports.emplace_back(servers_[0]->port_);
-  response_generator->SetNextResolution(ports);
+  response_generator.SetNextResolution(ports);
   gpr_log(GPR_INFO, "****** SET [0] *******");
   CheckRpcSendOk(stub, DEBUG_LOCATION);
   EXPECT_EQ(servers_[0]->service_.request_count(), 1);
@@ -726,7 +729,7 @@ TEST_F(ClientLbEnd2endTest, PickFirstUpdateSuperset) {
   ports.clear();
   ports.emplace_back(servers_[1]->port_);
   ports.emplace_back(servers_[0]->port_);
-  response_generator->SetNextResolution(ports);
+  response_generator.SetNextResolution(ports);
   gpr_log(GPR_INFO, "****** SET superset *******");
   CheckRpcSendOk(stub, DEBUG_LOCATION);
   // We stick to the previously connected server.
@@ -746,11 +749,11 @@ TEST_F(ClientLbEnd2endTest, PickFirstGlobalSubchannelPool) {
   auto response_generator1 = BuildResolverResponseGenerator();
   auto channel1 = BuildChannel("pick_first", response_generator1);
   auto stub1 = BuildStub(channel1);
-  response_generator1->SetNextResolution(ports);
+  response_generator1.SetNextResolution(ports);
   auto response_generator2 = BuildResolverResponseGenerator();
   auto channel2 = BuildChannel("pick_first", response_generator2);
   auto stub2 = BuildStub(channel2);
-  response_generator2->SetNextResolution(ports);
+  response_generator2.SetNextResolution(ports);
   WaitForServer(stub1, 0, DEBUG_LOCATION);
   // Send one RPC on each channel.
   CheckRpcSendOk(stub1, DEBUG_LOCATION);
@@ -773,11 +776,11 @@ TEST_F(ClientLbEnd2endTest, PickFirstLocalSubchannelPool) {
   auto response_generator1 = BuildResolverResponseGenerator();
   auto channel1 = BuildChannel("pick_first", response_generator1, args);
   auto stub1 = BuildStub(channel1);
-  response_generator1->SetNextResolution(ports);
+  response_generator1.SetNextResolution(ports);
   auto response_generator2 = BuildResolverResponseGenerator();
   auto channel2 = BuildChannel("pick_first", response_generator2, args);
   auto stub2 = BuildStub(channel2);
-  response_generator2->SetNextResolution(ports);
+  response_generator2.SetNextResolution(ports);
   WaitForServer(stub1, 0, DEBUG_LOCATION);
   // Send one RPC on each channel.
   CheckRpcSendOk(stub1, DEBUG_LOCATION);
@@ -800,7 +803,7 @@ TEST_F(ClientLbEnd2endTest, PickFirstManyUpdates) {
   for (size_t i = 0; i < kNumUpdates; ++i) {
     std::shuffle(ports.begin(), ports.end(),
                  std::mt19937(std::random_device()()));
-    response_generator->SetNextResolution(ports);
+    response_generator.SetNextResolution(ports);
     // We should re-enter core at the end of the loop to give the resolution
     // setting closure a chance to run.
     if ((i + 1) % 10 == 0) CheckRpcSendOk(stub, DEBUG_LOCATION);
@@ -827,12 +830,12 @@ TEST_F(ClientLbEnd2endTest, PickFirstReresolutionNoSelected) {
   auto stub = BuildStub(channel);
   // The initial resolution only contains dead ports. There won't be any
   // selected subchannel. Re-resolution will return the same result.
-  response_generator->SetNextResolution(dead_ports);
+  response_generator.SetNextResolution(dead_ports);
   gpr_log(GPR_INFO, "****** INITIAL RESOLUTION SET *******");
   for (size_t i = 0; i < 10; ++i) CheckRpcSendFailure(stub);
   // Set a re-resolution result that contains reachable ports, so that the
   // pick_first LB policy can recover soon.
-  response_generator->SetNextResolutionUponError(alive_ports);
+  response_generator.SetNextResolutionUponError(alive_ports);
   gpr_log(GPR_INFO, "****** RE-RESOLUTION SET *******");
   WaitForServer(stub, 0, DEBUG_LOCATION, true /* ignore_failure */);
   CheckRpcSendOk(stub, DEBUG_LOCATION);
@@ -847,7 +850,7 @@ TEST_F(ClientLbEnd2endTest, PickFirstReconnectWithoutNewResolverResult) {
   auto response_generator = BuildResolverResponseGenerator();
   auto channel = BuildChannel("pick_first", response_generator);
   auto stub = BuildStub(channel);
-  response_generator->SetNextResolution(ports);
+  response_generator.SetNextResolution(ports);
   gpr_log(GPR_INFO, "****** INITIAL CONNECTION *******");
   WaitForServer(stub, 0, DEBUG_LOCATION);
   gpr_log(GPR_INFO, "****** STOPPING SERVER ******");
@@ -867,7 +870,7 @@ TEST_F(ClientLbEnd2endTest,
   auto response_generator = BuildResolverResponseGenerator();
   auto channel = BuildChannel("pick_first", response_generator);
   auto stub = BuildStub(channel);
-  response_generator->SetNextResolution(ports);
+  response_generator.SetNextResolution(ports);
   gpr_log(GPR_INFO, "****** INITIAL CONNECTION *******");
   WaitForServer(stub, 1, DEBUG_LOCATION);
   gpr_log(GPR_INFO, "****** STOPPING SERVER ******");
@@ -884,7 +887,7 @@ TEST_F(ClientLbEnd2endTest, PickFirstCheckStateBeforeStartWatch) {
   auto response_generator = BuildResolverResponseGenerator();
   auto channel_1 = BuildChannel("pick_first", response_generator);
   auto stub_1 = BuildStub(channel_1);
-  response_generator->SetNextResolution(ports);
+  response_generator.SetNextResolution(ports);
   gpr_log(GPR_INFO, "****** RESOLUTION SET FOR CHANNEL 1 *******");
   WaitForServer(stub_1, 0, DEBUG_LOCATION);
   gpr_log(GPR_INFO, "****** CHANNEL 1 CONNECTED *******");
@@ -896,7 +899,7 @@ TEST_F(ClientLbEnd2endTest, PickFirstCheckStateBeforeStartWatch) {
   auto response_generator_2 = BuildResolverResponseGenerator();
   auto channel_2 = BuildChannel("pick_first", response_generator_2);
   auto stub_2 = BuildStub(channel_2);
-  response_generator_2->SetNextResolution(ports);
+  response_generator_2.SetNextResolution(ports);
   gpr_log(GPR_INFO, "****** RESOLUTION SET FOR CHANNEL 2 *******");
   WaitForServer(stub_2, 0, DEBUG_LOCATION, true);
   gpr_log(GPR_INFO, "****** CHANNEL 2 CONNECTED *******");
@@ -926,11 +929,11 @@ TEST_F(ClientLbEnd2endTest, PickFirstIdleOnDisconnect) {
   auto channel =
       BuildChannel("", response_generator);  // pick_first is the default.
   auto stub = BuildStub(channel);
-  response_generator->SetNextResolution(GetServersPorts());
+  response_generator.SetNextResolution(GetServersPorts());
   CheckRpcSendOk(stub, DEBUG_LOCATION);
   EXPECT_EQ(channel->GetState(false), GRPC_CHANNEL_READY);
   // Stop server.  Channel should go into state IDLE.
-  response_generator->SetFailureOnReresolution();
+  response_generator.SetFailureOnReresolution();
   servers_[0]->Shutdown();
   EXPECT_TRUE(WaitForChannelNotReady(channel.get()));
   EXPECT_EQ(channel->GetState(false), GRPC_CHANNEL_IDLE);
@@ -947,7 +950,7 @@ TEST_F(ClientLbEnd2endTest, PickFirstPendingUpdateAndSelectedSubchannelFails) {
   StartServer(0);
   // Initially resolve to first server and make sure it connects.
   gpr_log(GPR_INFO, "Phase 1: Connect to first server.");
-  response_generator->SetNextResolution({servers_[0]->port_});
+  response_generator.SetNextResolution({servers_[0]->port_});
   CheckRpcSendOk(stub, DEBUG_LOCATION, true /* wait_for_ready */);
   EXPECT_EQ(channel->GetState(false), GRPC_CHANNEL_READY);
   // Send a resolution update with the remaining servers, none of which are
@@ -959,7 +962,7 @@ TEST_F(ClientLbEnd2endTest, PickFirstPendingUpdateAndSelectedSubchannelFails) {
   gpr_log(GPR_INFO,
           "Phase 2: Resolver update pointing to remaining "
           "(not started) servers.");
-  response_generator->SetNextResolution(GetServersPorts(1 /* start_index */));
+  response_generator.SetNextResolution(GetServersPorts(1 /* start_index */));
   // RPCs will continue to be sent to the first server.
   CheckRpcSendOk(stub, DEBUG_LOCATION);
   // Now stop the first server, so that the current subchannel list
@@ -994,7 +997,7 @@ TEST_F(ClientLbEnd2endTest, PickFirstStaysIdleUponEmptyUpdate) {
   auto channel =
       BuildChannel("", response_generator);  // pick_first is the default.
   auto stub = BuildStub(channel);
-  response_generator->SetNextResolution(GetServersPorts());
+  response_generator.SetNextResolution(GetServersPorts());
   CheckRpcSendOk(stub, DEBUG_LOCATION);
   EXPECT_EQ(channel->GetState(false), GRPC_CHANNEL_READY);
   // Stop server.  Channel should go into state IDLE.
@@ -1003,13 +1006,13 @@ TEST_F(ClientLbEnd2endTest, PickFirstStaysIdleUponEmptyUpdate) {
   EXPECT_EQ(channel->GetState(false), GRPC_CHANNEL_IDLE);
   // Now send resolver update that includes no addresses.  Channel
   // should stay in state IDLE.
-  response_generator->SetNextResolution({});
+  response_generator.SetNextResolution({});
   EXPECT_FALSE(channel->WaitForStateChange(
       GRPC_CHANNEL_IDLE, grpc_timeout_seconds_to_deadline(3)));
   // Now bring the backend back up and send a non-empty resolver update,
   // and then try to send an RPC.  Channel should go back into state READY.
   StartServer(0);
-  response_generator->SetNextResolution(GetServersPorts());
+  response_generator.SetNextResolution(GetServersPorts());
   CheckRpcSendOk(stub, DEBUG_LOCATION);
   EXPECT_EQ(channel->GetState(false), GRPC_CHANNEL_READY);
 }
@@ -1021,7 +1024,7 @@ TEST_F(ClientLbEnd2endTest, RoundRobin) {
   auto response_generator = BuildResolverResponseGenerator();
   auto channel = BuildChannel("round_robin", response_generator);
   auto stub = BuildStub(channel);
-  response_generator->SetNextResolution(GetServersPorts());
+  response_generator.SetNextResolution(GetServersPorts());
   // Wait until all backends are ready.
   do {
     CheckRpcSendOk(stub, DEBUG_LOCATION);
@@ -1048,7 +1051,7 @@ TEST_F(ClientLbEnd2endTest, RoundRobinProcessPending) {
   auto response_generator = BuildResolverResponseGenerator();
   auto channel = BuildChannel("round_robin", response_generator);
   auto stub = BuildStub(channel);
-  response_generator->SetNextResolution({servers_[0]->port_});
+  response_generator.SetNextResolution({servers_[0]->port_});
   WaitForServer(stub, 0, DEBUG_LOCATION);
   // Create a new channel and its corresponding RR LB policy, which will pick
   // the subchannels in READY state from the previous RPC against the same
@@ -1058,7 +1061,7 @@ TEST_F(ClientLbEnd2endTest, RoundRobinProcessPending) {
   auto second_response_generator = BuildResolverResponseGenerator();
   auto second_channel = BuildChannel("round_robin", second_response_generator);
   auto second_stub = BuildStub(second_channel);
-  second_response_generator->SetNextResolution({servers_[0]->port_});
+  second_response_generator.SetNextResolution({servers_[0]->port_});
   CheckRpcSendOk(second_stub, DEBUG_LOCATION);
 }
 
@@ -1073,7 +1076,7 @@ TEST_F(ClientLbEnd2endTest, RoundRobinUpdates) {
   // Start with a single server.
   gpr_log(GPR_INFO, "*** FIRST BACKEND ***");
   ports.emplace_back(servers_[0]->port_);
-  response_generator->SetNextResolution(ports);
+  response_generator.SetNextResolution(ports);
   WaitForServer(stub, 0, DEBUG_LOCATION);
   // Send RPCs. They should all go servers_[0]
   for (size_t i = 0; i < 10; ++i) CheckRpcSendOk(stub, DEBUG_LOCATION);
@@ -1085,7 +1088,7 @@ TEST_F(ClientLbEnd2endTest, RoundRobinUpdates) {
   gpr_log(GPR_INFO, "*** SECOND BACKEND ***");
   ports.clear();
   ports.emplace_back(servers_[1]->port_);
-  response_generator->SetNextResolution(ports);
+  response_generator.SetNextResolution(ports);
   // Wait until update has been processed, as signaled by the second backend
   // receiving a request.
   EXPECT_EQ(0, servers_[1]->service_.request_count());
@@ -1099,7 +1102,7 @@ TEST_F(ClientLbEnd2endTest, RoundRobinUpdates) {
   gpr_log(GPR_INFO, "*** THIRD BACKEND ***");
   ports.clear();
   ports.emplace_back(servers_[2]->port_);
-  response_generator->SetNextResolution(ports);
+  response_generator.SetNextResolution(ports);
   WaitForServer(stub, 2, DEBUG_LOCATION);
   for (size_t i = 0; i < 10; ++i) CheckRpcSendOk(stub, DEBUG_LOCATION);
   EXPECT_EQ(0, servers_[0]->service_.request_count());
@@ -1112,7 +1115,7 @@ TEST_F(ClientLbEnd2endTest, RoundRobinUpdates) {
   ports.emplace_back(servers_[0]->port_);
   ports.emplace_back(servers_[1]->port_);
   ports.emplace_back(servers_[2]->port_);
-  response_generator->SetNextResolution(ports);
+  response_generator.SetNextResolution(ports);
   WaitForServer(stub, 0, DEBUG_LOCATION);
   WaitForServer(stub, 1, DEBUG_LOCATION);
   WaitForServer(stub, 2, DEBUG_LOCATION);
@@ -1124,7 +1127,7 @@ TEST_F(ClientLbEnd2endTest, RoundRobinUpdates) {
   // An empty update will result in the channel going into TRANSIENT_FAILURE.
   gpr_log(GPR_INFO, "*** NO BACKENDS ***");
   ports.clear();
-  response_generator->SetNextResolution(ports);
+  response_generator.SetNextResolution(ports);
   grpc_connectivity_state channel_state;
   do {
     channel_state = channel->GetState(true /* try to connect */);
@@ -1135,7 +1138,7 @@ TEST_F(ClientLbEnd2endTest, RoundRobinUpdates) {
   gpr_log(GPR_INFO, "*** BACK TO SECOND BACKEND ***");
   ports.clear();
   ports.emplace_back(servers_[1]->port_);
-  response_generator->SetNextResolution(ports);
+  response_generator.SetNextResolution(ports);
   WaitForServer(stub, 1, DEBUG_LOCATION);
   channel_state = channel->GetState(false /* try to connect */);
   ASSERT_EQ(channel_state, GRPC_CHANNEL_READY);
@@ -1153,7 +1156,7 @@ TEST_F(ClientLbEnd2endTest, RoundRobinUpdateInError) {
 
   // Start with a single server.
   ports.emplace_back(servers_[0]->port_);
-  response_generator->SetNextResolution(ports);
+  response_generator.SetNextResolution(ports);
   WaitForServer(stub, 0, DEBUG_LOCATION);
   // Send RPCs. They should all go to servers_[0]
   for (size_t i = 0; i < 10; ++i) SendRpc(stub);
@@ -1166,7 +1169,7 @@ TEST_F(ClientLbEnd2endTest, RoundRobinUpdateInError) {
   servers_[1]->Shutdown();
   ports.emplace_back(servers_[1]->port_);
   ports.emplace_back(servers_[2]->port_);
-  response_generator->SetNextResolution(ports);
+  response_generator.SetNextResolution(ports);
   WaitForServer(stub, 0, DEBUG_LOCATION);
   WaitForServer(stub, 2, DEBUG_LOCATION);
 
@@ -1187,7 +1190,7 @@ TEST_F(ClientLbEnd2endTest, RoundRobinManyUpdates) {
   for (size_t i = 0; i < 1000; ++i) {
     std::shuffle(ports.begin(), ports.end(),
                  std::mt19937(std::random_device()()));
-    response_generator->SetNextResolution(ports);
+    response_generator.SetNextResolution(ports);
     if (i % 10 == 0) CheckRpcSendOk(stub, DEBUG_LOCATION);
   }
   // Check LB policy name for the channel.
@@ -1216,7 +1219,7 @@ TEST_F(ClientLbEnd2endTest, RoundRobinReresolve) {
   auto response_generator = BuildResolverResponseGenerator();
   auto channel = BuildChannel("round_robin", response_generator);
   auto stub = BuildStub(channel);
-  response_generator->SetNextResolution(first_ports);
+  response_generator.SetNextResolution(first_ports);
   // Send a number of RPCs, which succeed.
   for (size_t i = 0; i < 100; ++i) {
     CheckRpcSendOk(stub, DEBUG_LOCATION);
@@ -1240,7 +1243,7 @@ TEST_F(ClientLbEnd2endTest, RoundRobinReresolve) {
   StartServers(kNumServers, second_ports);
   // Don't notify of the update. Wait for the LB policy's re-resolution to
   // "pull" the new ports.
-  response_generator->SetNextResolutionUponError(second_ports);
+  response_generator.SetNextResolutionUponError(second_ports);
   gpr_log(GPR_INFO, "****** SERVERS RESTARTED *******");
   gpr_log(GPR_INFO, "****** SENDING REQUEST TO SUCCEED *******");
   // Client request should eventually (but still fairly soon) succeed.
@@ -1260,7 +1263,7 @@ TEST_F(ClientLbEnd2endTest, RoundRobinSingleReconnect) {
   auto response_generator = BuildResolverResponseGenerator();
   auto channel = BuildChannel("round_robin", response_generator);
   auto stub = BuildStub(channel);
-  response_generator->SetNextResolution(ports);
+  response_generator.SetNextResolution(ports);
   for (size_t i = 0; i < kNumServers; ++i) {
     WaitForServer(stub, i, DEBUG_LOCATION);
   }
@@ -1307,7 +1310,7 @@ TEST_F(ClientLbEnd2endTest,
   auto response_generator = BuildResolverResponseGenerator();
   auto channel = BuildChannel("round_robin", response_generator, args);
   auto stub = BuildStub(channel);
-  response_generator->SetNextResolution({servers_[0]->port_});
+  response_generator.SetNextResolution({servers_[0]->port_});
   EXPECT_TRUE(WaitForChannelReady(channel.get()));
   CheckRpcSendOk(stub, DEBUG_LOCATION);
 }
@@ -1324,7 +1327,7 @@ TEST_F(ClientLbEnd2endTest, RoundRobinWithHealthChecking) {
   auto response_generator = BuildResolverResponseGenerator();
   auto channel = BuildChannel("round_robin", response_generator, args);
   auto stub = BuildStub(channel);
-  response_generator->SetNextResolution(GetServersPorts());
+  response_generator.SetNextResolution(GetServersPorts());
   // Channel should not become READY, because health checks should be failing.
   gpr_log(GPR_INFO,
           "*** initial state: unknown health check service name for "
@@ -1400,13 +1403,13 @@ TEST_F(ClientLbEnd2endTest, RoundRobinWithHealthCheckingInhibitPerChannel) {
   auto channel1 = BuildChannel("round_robin", response_generator1, args);
   auto stub1 = BuildStub(channel1);
   std::vector<int> ports = GetServersPorts();
-  response_generator1->SetNextResolution(ports);
+  response_generator1.SetNextResolution(ports);
   // Create a channel with health checking enabled but inhibited.
   args.SetInt(GRPC_ARG_INHIBIT_HEALTH_CHECKING, 1);
   auto response_generator2 = BuildResolverResponseGenerator();
   auto channel2 = BuildChannel("round_robin", response_generator2, args);
   auto stub2 = BuildStub(channel2);
-  response_generator2->SetNextResolution(ports);
+  response_generator2.SetNextResolution(ports);
   // First channel should not become READY, because health checks should be
   // failing.
   EXPECT_FALSE(WaitForChannelReady(channel1.get(), 1));
@@ -1437,7 +1440,7 @@ TEST_F(ClientLbEnd2endTest, RoundRobinWithHealthCheckingServiceNamePerChannel) {
   auto channel1 = BuildChannel("round_robin", response_generator1, args);
   auto stub1 = BuildStub(channel1);
   std::vector<int> ports = GetServersPorts();
-  response_generator1->SetNextResolution(ports);
+  response_generator1.SetNextResolution(ports);
   // Create a channel with health-checking enabled with a different
   // service name.
   ChannelArguments args2;
@@ -1447,7 +1450,7 @@ TEST_F(ClientLbEnd2endTest, RoundRobinWithHealthCheckingServiceNamePerChannel) {
   auto response_generator2 = BuildResolverResponseGenerator();
   auto channel2 = BuildChannel("round_robin", response_generator2, args2);
   auto stub2 = BuildStub(channel2);
-  response_generator2->SetNextResolution(ports);
+  response_generator2.SetNextResolution(ports);
   // Allow health checks from channel 2 to succeed.
   servers_[0]->SetServingStatus("health_check_service_name2", true);
   // First channel should not become READY, because health checks should be
@@ -1501,7 +1504,7 @@ TEST_F(ClientLbInterceptTrailingMetadataTest, InterceptsRetriesDisabled) {
   auto channel =
       BuildChannel("intercept_trailing_metadata_lb", response_generator);
   auto stub = BuildStub(channel);
-  response_generator->SetNextResolution(GetServersPorts());
+  response_generator.SetNextResolution(GetServersPorts());
   for (size_t i = 0; i < kNumRpcs; ++i) {
     CheckRpcSendOk(stub, DEBUG_LOCATION);
   }
@@ -1535,7 +1538,7 @@ TEST_F(ClientLbInterceptTrailingMetadataTest, InterceptsRetriesEnabled) {
   auto channel =
       BuildChannel("intercept_trailing_metadata_lb", response_generator, args);
   auto stub = BuildStub(channel);
-  response_generator->SetNextResolution(GetServersPorts());
+  response_generator.SetNextResolution(GetServersPorts());
   for (size_t i = 0; i < kNumRpcs; ++i) {
     CheckRpcSendOk(stub, DEBUG_LOCATION);
   }
