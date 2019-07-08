@@ -37,29 +37,49 @@ target 'UnitTests' do
   pod 'RemoteTest', :path => "RemoteTestClient", :inhibit_warnings => true
 end
 
-%w(
-  InteropTests
-  CronetTests
-).each do |target_name|
-  target target_name do
-    platform :ios, '8.0'
-    pod 'Protobuf', :path => "#{GRPC_LOCAL_SRC}/third_party/protobuf", :inhibit_warnings => true
+target 'InteropTests' do
+  platform :ios, '8.0'
+  pod 'Protobuf', :path => "#{GRPC_LOCAL_SRC}/third_party/protobuf", :inhibit_warnings => true
 
-    pod '!ProtoCompiler',            :path => "#{GRPC_LOCAL_SRC}/src/objective-c"
-    pod '!ProtoCompiler-gRPCPlugin', :path => "#{GRPC_LOCAL_SRC}/src/objective-c"
+  pod '!ProtoCompiler',            :path => "#{GRPC_LOCAL_SRC}/src/objective-c"
+  pod '!ProtoCompiler-gRPCPlugin', :path => "#{GRPC_LOCAL_SRC}/src/objective-c"
 
-    pod 'BoringSSL-GRPC',       :podspec => "#{GRPC_LOCAL_SRC}/src/objective-c", :inhibit_warnings => true
+  pod 'BoringSSL-GRPC',       :podspec => "#{GRPC_LOCAL_SRC}/src/objective-c", :inhibit_warnings => true
 
-    pod 'gRPC',           :path => GRPC_LOCAL_SRC
-    pod 'gRPC-Core',      :path => GRPC_LOCAL_SRC
-    pod 'gRPC-RxLibrary', :path => GRPC_LOCAL_SRC
-    pod 'gRPC-ProtoRPC',  :path => GRPC_LOCAL_SRC, :inhibit_warnings => true
-    pod 'RemoteTest', :path => "RemoteTestClient", :inhibit_warnings => true
+  pod 'gRPC',           :path => GRPC_LOCAL_SRC
+  pod 'gRPC-Core',      :path => GRPC_LOCAL_SRC
+  pod 'gRPC-RxLibrary', :path => GRPC_LOCAL_SRC
+  pod 'gRPC-ProtoRPC',  :path => GRPC_LOCAL_SRC, :inhibit_warnings => true
+  pod 'RemoteTest', :path => "RemoteTestClient", :inhibit_warnings => true
 
-    pod 'gRPC-Core/Cronet-Implementation', :path => GRPC_LOCAL_SRC
-    pod 'CronetFramework', :podspec => "#{GRPC_LOCAL_SRC}/src/objective-c"
-    pod 'gRPC-Core/Tests', :path => GRPC_LOCAL_SRC, :inhibit_warnings => true
-  end
+  pod 'gRPC-Core/Cronet-Implementation', :path => GRPC_LOCAL_SRC
+  pod 'CronetFramework', :podspec => "#{GRPC_LOCAL_SRC}/src/objective-c"
+  pod 'gRPC-Core/Tests', :path => GRPC_LOCAL_SRC, :inhibit_warnings => true
+end
+
+target 'CronetTests' do
+  platform :ios, '8.0'
+  pod 'Protobuf', :path => "#{GRPC_LOCAL_SRC}/third_party/protobuf", :inhibit_warnings => true
+
+  pod '!ProtoCompiler',            :path => "#{GRPC_LOCAL_SRC}/src/objective-c"
+  pod '!ProtoCompiler-gRPCPlugin', :path => "#{GRPC_LOCAL_SRC}/src/objective-c"
+  pod '!ProtoCompiler-gRPCCppPlugin', :path => "#{GRPC_LOCAL_SRC}/src/objective-c"
+  pod 'Protobuf-cc', :podspec => "#{GRPC_LOCAL_SRC}/src/objective-c", :inhibit_warnings => true
+
+  pod 'BoringSSL-GRPC',       :podspec => "#{GRPC_LOCAL_SRC}/src/objective-c", :inhibit_warnings => true
+
+  pod 'gRPC',           :path => GRPC_LOCAL_SRC
+  pod 'gRPC-Core',      :path => GRPC_LOCAL_SRC
+  pod 'gRPC-C++',      :path => GRPC_LOCAL_SRC
+  pod 'gRPC-C++/Protobuf',       :path => GRPC_LOCAL_SRC
+  pod 'gRPC-RxLibrary', :path => GRPC_LOCAL_SRC
+  pod 'gRPC-ProtoRPC',  :path => GRPC_LOCAL_SRC, :inhibit_warnings => true
+  pod 'RemoteTest', :path => "RemoteTestClient", :inhibit_warnings => true
+  pod 'RemoteTestCpp', :path => "RemoteTestClientCpp", :inhibit_warnings => true
+
+  pod 'gRPC-Core/Cronet-Implementation', :path => GRPC_LOCAL_SRC
+  pod 'CronetFramework', :podspec => "#{GRPC_LOCAL_SRC}/src/objective-c"
+  pod 'gRPC-Core/Tests', :path => GRPC_LOCAL_SRC, :inhibit_warnings => true
 end
 
 # gRPC-Core.podspec needs to be modified to be successfully used for local development. A Podfile's
