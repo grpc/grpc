@@ -117,9 +117,7 @@ OrphanablePtr<Resolver> CreateSockaddrResolver(
     ResolverArgs args,
     bool parse(const grpc_uri* uri, grpc_resolved_address* dst)) {
   ServerAddressList addresses;
-  if (!ParseUri(args.uri, parse, &addresses)) {
-    return nullptr;
-  }
+  if (!ParseUri(args.uri, parse, &addresses)) return nullptr;
   // Instantiate resolver.
   return OrphanablePtr<Resolver>(
       New<SockaddrResolver>(std::move(addresses), std::move(args)));

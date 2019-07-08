@@ -91,6 +91,10 @@ FakeResolver::FakeResolver(ResolverArgs args)
                     grpc_combiner_scheduler(combiner()));
   FakeResolverResponseGenerator* response_generator =
       FakeResolverResponseGenerator::GetFromArgs(args.args);
+  // Channels sharing the same subchannels may have different resolver response
+  // generators. If we don't remove this arg, subchannel pool will create new
+  // subchannels for the same address instead of reusing existing ones because
+  // of different values of this channel arg.
   const char* args_to_remove[] = {GRPC_ARG_FAKE_RESOLVER_RESPONSE_GENERATOR};
   channel_args_ = grpc_channel_args_copy_and_remove(
       args.args, args_to_remove, GPR_ARRAY_SIZE(args_to_remove));
