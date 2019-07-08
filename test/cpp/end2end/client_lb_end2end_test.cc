@@ -144,8 +144,6 @@ class FakeResolverResponseGeneratorWrapper {
     response_generator_ = std::move(other.response_generator_);
   }
 
-  ~FakeResolverResponseGeneratorWrapper() {}
-
   void SetNextResolution(const std::vector<int>& ports) {
     grpc_core::ExecCtx exec_ctx;
     response_generator_->SetResponse(BuildFakeResults(ports));
