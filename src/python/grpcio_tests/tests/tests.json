@@ -67,7 +67,6 @@
   "unit._server_ssl_cert_config_test.ServerSSLCertReloadTestWithoutClientAuth",
   "unit._server_test.ServerTest",
   "unit._session_cache_test.SSLSessionCacheTest",
-  "unit._signal_handling_test.SignalHandlingTest",
   "unit._version_test.VersionTest",
   "unit.beta._beta_features_test.BetaFeaturesTest",
   "unit.beta._beta_features_test.ContextManagementAndLifecycleTest",

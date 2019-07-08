@@ -13,7 +13,6 @@
 # limitations under the License.
 """Invocation-side implementation of gRPC Python."""
 
-import functools
 import logging
 import sys
 import threading
@@ -80,6 +79,17 @@ def _deadline(timeout):
 def _unknown_code_details(unknown_cygrpc_code, details):
     return 'Server sent unknown code {} and details "{}"'.format(
         unknown_cygrpc_code, details)
+
+
+def _wait_once_until(condition, until):
+    if until is None:
+        condition.wait()
+    else:
+        remaining = until - time.time()
+        if remaining < 0:
+            raise grpc.FutureTimeoutError()
+        else:
+            condition.wait(timeout=remaining)
 
 
 class _RPCState(object):
@@ -168,11 +178,12 @@ def _event_handler(state, response_deserializer):
 #pylint: disable=too-many-statements
 def _consume_request_iterator(request_iterator, state, call, request_serializer,
                               event_handler):
-    """Consume a request iterator supplied by the user."""
+    if cygrpc.is_fork_support_enabled():
+        condition_wait_timeout = 1.0
+    else:
+        condition_wait_timeout = None
 
     def consume_request_iterator():  # pylint: disable=too-many-branches
-        # Iterate over the request iterator until it is exhausted or an error
-        # condition is encountered.
         while True:
             return_from_user_request_generator_invoked = False
             try:
@@ -213,19 +224,14 @@ def _consume_request_iterator(request_iterator, state, call, request_serializer,
                             state.due.add(cygrpc.OperationType.send_message)
                         else:
                             return
-
-                        def _done():
-                            return (state.code is not None or
-                                    cygrpc.OperationType.send_message not in
-                                    state.due)
-
-                        _common.wait(
-                            state.condition.wait,
-                            _done,
-                            spin_cb=functools.partial(
-                                cygrpc.block_if_fork_in_progress, state))
-                        if state.code is not None:
-                            return
+                        while True:
+                            state.condition.wait(condition_wait_timeout)
+                            cygrpc.block_if_fork_in_progress(state)
+                            if state.code is None:
+                                if cygrpc.OperationType.send_message not in state.due:
+                                    break
+                            else:
+                                return
                 else:
                     return
         with state.condition:
@@ -275,21 +281,13 @@ class _Rendezvous(grpc.RpcError, grpc.Future, grpc.Call):  # pylint: disable=too
         with self._state.condition:
             return self._state.code is not None
 
-    def _is_complete(self):
-        return self._state.code is not None
-
     def result(self, timeout=None):
-        """Returns the result of the computation or raises its exception.
-
-        See grpc.Future.result for the full API contract.
-        """
+        until = None if timeout is None else time.time() + timeout
         with self._state.condition:
-            timed_out = _common.wait(
-                self._state.condition.wait, self._is_complete, timeout=timeout)
-            if timed_out:
-                raise grpc.FutureTimeoutError()
-            else:
-                if self._state.code is grpc.StatusCode.OK:
+            while True:
+                if self._state.code is None:
+                    _wait_once_until(self._state.condition, until)
+                elif self._state.code is grpc.StatusCode.OK:
                     return self._state.response
                 elif self._state.cancelled:
                     raise grpc.FutureCancelledError()
@@ -297,17 +295,12 @@ class _Rendezvous(grpc.RpcError, grpc.Future, grpc.Call):  # pylint: disable=too
                     raise self
 
     def exception(self, timeout=None):
-        """Return the exception raised by the computation.
-
-        See grpc.Future.exception for the full API contract.
-        """
+        until = None if timeout is None else time.time() + timeout
         with self._state.condition:
-            timed_out = _common.wait(
-                self._state.condition.wait, self._is_complete, timeout=timeout)
-            if timed_out:
-                raise grpc.FutureTimeoutError()
-            else:
-                if self._state.code is grpc.StatusCode.OK:
+            while True:
+                if self._state.code is None:
+                    _wait_once_until(self._state.condition, until)
+                elif self._state.code is grpc.StatusCode.OK:
                     return None
                 elif self._state.cancelled:
                     raise grpc.FutureCancelledError()
@@ -315,17 +308,12 @@ class _Rendezvous(grpc.RpcError, grpc.Future, grpc.Call):  # pylint: disable=too
                     return self
 
     def traceback(self, timeout=None):
-        """Access the traceback of the exception raised by the computation.
-
-        See grpc.future.traceback for the full API contract.
-        """
+        until = None if timeout is None else time.time() + timeout
         with self._state.condition:
-            timed_out = _common.wait(
-                self._state.condition.wait, self._is_complete, timeout=timeout)
-            if timed_out:
-                raise grpc.FutureTimeoutError()
-            else:
-                if self._state.code is grpc.StatusCode.OK:
+            while True:
+                if self._state.code is None:
+                    _wait_once_until(self._state.condition, until)
+                elif self._state.code is grpc.StatusCode.OK:
                     return None
                 elif self._state.cancelled:
                     raise grpc.FutureCancelledError()
@@ -357,23 +345,17 @@ class _Rendezvous(grpc.RpcError, grpc.Future, grpc.Call):  # pylint: disable=too
                 raise StopIteration()
             else:
                 raise self
-
-            def _response_ready():
-                return (
-                    self._state.response is not None or
-                    (cygrpc.OperationType.receive_message not in self._state.due
-                     and self._state.code is not None))
-
-            _common.wait(self._state.condition.wait, _response_ready)
-            if self._state.response is not None:
-                response = self._state.response
-                self._state.response = None
-                return response
-            elif cygrpc.OperationType.receive_message not in self._state.due:
-                if self._state.code is grpc.StatusCode.OK:
-                    raise StopIteration()
-                elif self._state.code is not None:
-                    raise self
+            while True:
+                self._state.condition.wait()
+                if self._state.response is not None:
+                    response = self._state.response
+                    self._state.response = None
+                    return response
+                elif cygrpc.OperationType.receive_message not in self._state.due:
+                    if self._state.code is grpc.StatusCode.OK:
+                        raise StopIteration()
+                    elif self._state.code is not None:
+                        raise self
 
     def __iter__(self):
         return self
@@ -404,47 +386,32 @@ class _Rendezvous(grpc.RpcError, grpc.Future, grpc.Call):  # pylint: disable=too
 
     def initial_metadata(self):
         with self._state.condition:
-
-            def _done():
-                return self._state.initial_metadata is not None
-
-            _common.wait(self._state.condition.wait, _done)
+            while self._state.initial_metadata is None:
+                self._state.condition.wait()
             return self._state.initial_metadata
 
     def trailing_metadata(self):
         with self._state.condition:
-
-            def _done():
-                return self._state.trailing_metadata is not None
-
-            _common.wait(self._state.condition.wait, _done)
+            while self._state.trailing_metadata is None:
+                self._state.condition.wait()
             return self._state.trailing_metadata
 
     def code(self):
         with self._state.condition:
-
-            def _done():
-                return self._state.code is not None
-
-            _common.wait(self._state.condition.wait, _done)
+            while self._state.code is None:
+                self._state.condition.wait()
             return self._state.code
 
     def details(self):
         with self._state.condition:
-
-            def _done():
-                return self._state.details is not None
-
-            _common.wait(self._state.condition.wait, _done)
+            while self._state.details is None:
+                self._state.condition.wait()
             return _common.decode(self._state.details)
 
     def debug_error_string(self):
         with self._state.condition:
-
-            def _done():
-                return self._state.debug_error_string is not None
-
-            _common.wait(self._state.condition.wait, _done)
+            while self._state.debug_error_string is None:
+                self._state.condition.wait()
             return _common.decode(self._state.debug_error_string)
 
     def _repr(self):
