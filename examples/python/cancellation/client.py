@@ -20,15 +20,9 @@ from __future__ import print_function
 import argparse
 import logging
 import signal
-import six
-import threading
-
-from six.moves.queue import Queue
-from six.moves.queue import Empty as QueueEmpty
+import sys
 
 import grpc
-import os
-import sys
 
 from examples.python.cancellation import hash_name_pb2
 from examples.python.cancellation import hash_name_pb2_grpc
