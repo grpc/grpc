@@ -90,6 +90,9 @@ class HashFinder(hash_name_pb2_grpc.HashFinderServicer):
 
 @contextlib.contextmanager
 def _running_server(port, maximum_hashes):
+    # We use only a single servicer thread here to demonstrate that, if managed
+    # carefully, cancelled RPCs can need not continue occupying servicers
+    # threads.
     server = grpc.server(
         futures.ThreadPoolExecutor(max_workers=1), maximum_concurrent_rpcs=1)
     hash_name_pb2_grpc.add_HashFinderServicer_to_server(

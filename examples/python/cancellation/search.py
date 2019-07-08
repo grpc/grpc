@@ -19,6 +19,7 @@ from __future__ import print_function
 
 import base64
 import hashlib
+import itertools
 import logging
 import struct
 
@@ -32,7 +33,7 @@ def _get_hamming_distance(a, b):
     """Calculates hamming distance between strings of equal length."""
     distance = 0
     for char_a, char_b in zip(a, b):
-        if char_a.lower() != char_b.lower():
+        if char_a != char_b:
             distance += 1
     return distance
 
@@ -49,8 +50,11 @@ def _get_substring_hamming_distance(candidate, target):
       The minimum Hamming distance between candidate and target.
     """
     min_distance = None
+    if len(target) > len(candidate):
+        raise ValueError("Candidate must be at least as long as target.")
     for i in range(len(candidate) - len(target) + 1):
-        distance = _get_hamming_distance(candidate[i:i + len(target)], target)
+        distance = _get_hamming_distance(candidate[i:i + len(target)].lower(),
+                                         target.lower())
         if min_distance is None or distance < min_distance:
             min_distance = distance
     return min_distance
@@ -75,20 +79,8 @@ def _bytestrings_of_length(length):
     Yields:
       All bytestrings of length `length`.
     """
-    digits = [0] * length
-    while True:
+    for digits in itertools.product(range(_BYTE_MAX), repeat=length):
         yield b''.join(struct.pack('B', i) for i in digits)
-        digits[-1] += 1
-        i = length - 1
-        while digits[i] == _BYTE_MAX + 1:
-            digits[i] = 0
-            i -= 1
-            if i == -1:
-                # Terminate the generator since we've run out of strings of
-                # `length` bytes.
-                raise StopIteration()  # pylint: disable=stop-iteration-return
-            else:
-                digits[i] += 1
 
 
 def _all_bytestrings():
@@ -99,11 +91,9 @@ def _all_bytestrings():
     Yields:
       All bytestrings in ascending order of length.
     """
-    length = 1
-    while True:
-        for bytestring in _bytestrings_of_length(length):
-            yield bytestring
-        length += 1
+    for bytestring in itertools.chain.from_iterable(
+            _bytestrings_of_length(length) for length in itertools.count()):
+        yield bytestring
 
 
 def search(target,
