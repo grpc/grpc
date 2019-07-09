@@ -41,9 +41,7 @@ class SimpleFunctorForAdd : public grpc_experimental_completion_queue_functor {
     callback->count_.FetchAdd(1, grpc_core::MemoryOrder::RELAXED);
   }
 
-  int count() {
-    return count_.Load(grpc_core::MemoryOrder::RELAXED);
-  }
+  int count() { return count_.Load(grpc_core::MemoryOrder::RELAXED); }
 
  private:
   grpc_core::Atomic<int> count_{0};
