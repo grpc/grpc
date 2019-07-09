@@ -50,6 +50,9 @@ class ResolverRegistry {
     static void RegisterResolverFactory(UniquePtr<ResolverFactory> factory);
   };
 
+  /// Checks whether the user input \a target is valid to create a resolver.
+  static bool IsValidTarget(const char* target);
+
   /// Creates a resolver given \a target.
   /// First tries to parse \a target as a URI. If this succeeds, tries
   /// to locate a registered resolver factory based on the URI scheme.
