@@ -21,7 +21,10 @@ objc_library(
     ),
     includes = ["."],
     sdk_frameworks = ["SystemConfiguration"],
-    deps = ["//:grpc"],
+    deps = [
+        "//:grpc",
+        "//:gRPCCertificates"
+    ],
     visibility = ["//visibility:public"]
 )
 
@@ -87,7 +90,6 @@ objc_library(
         ":messages_proto_objc",
         ":test_proto_objc",
         ":test_grpc_objc",
-        "//:gRPCCertificates"
     ]
 )
 
