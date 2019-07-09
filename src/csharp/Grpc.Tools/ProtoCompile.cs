@@ -532,8 +532,6 @@ namespace Grpc.Tools
         // Main task entry point.
         public override bool Execute()
         {
-            base.UseCommandProcessor = false;
-
             bool ok = base.Execute();
             if (!ok)
             {
