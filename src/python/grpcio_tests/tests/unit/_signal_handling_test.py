@@ -31,7 +31,7 @@ _CLIENT_PATH = None
 if sys.executable is not None:
     _CLIENT_PATH = os.path.abspath(os.path.realpath(_signal_client.__file__))
 else:
-    # Note(rbellevi): For compatibility with internal testing.
+    # NOTE(rbellevi): For compatibility with internal testing.
     if len(sys.argv) != 2:
         raise RuntimeError("Must supply path to executable client.")
     client_name = sys.argv[1].split("/")[-1]
