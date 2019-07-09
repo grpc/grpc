@@ -284,7 +284,7 @@ LANG_RELEASE_MATRIX = {
         ('v1.16.0', ReleaseInfo(testcases_file='php__v1.0.1')),
         ('v1.17.1', ReleaseInfo(testcases_file='php__v1.0.1')),
         ('v1.18.0', ReleaseInfo()),
-        # v1.19 and v1.20 were deliberately ommitted here because of an issue.
+        # v1.19 and v1.20 were deliberately omitted here because of an issue.
         # See https://github.com/grpc/grpc/issues/18264
         ('v1.21.4', ReleaseInfo()),
     ]),

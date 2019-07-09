@@ -24,9 +24,12 @@ import sys
 # Analysis in depth: https://github.com/bazelbuild/rules_python/issues/55
 def sys_path_to_site_dir_hack():
     """Add valid sys.path item to site directory to parse the .pth files."""
+    items = []
     for item in sys.path:
         if os.path.exists(item):
             # The only difference between sys.path and site-directory is
             # whether the .pth file will be parsed or not. A site-directory
             # will always exist in sys.path, but not another way around.
-            site.addsitedir(item)
+            items.append(item)
+    for item in items:
+        site.addsitedir(item)

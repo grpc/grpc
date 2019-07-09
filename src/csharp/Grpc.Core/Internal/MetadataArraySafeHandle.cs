@@ -15,8 +15,7 @@
 #endregion
 using System;
 using System.Runtime.InteropServices;
-using System.Threading.Tasks;
-using Grpc.Core.Profiling;
+using System.Text;
 
 namespace Grpc.Core.Internal
 {
@@ -66,12 +65,13 @@ namespace Grpc.Core.Internal
                 var index = new UIntPtr(i);
                 UIntPtr keyLen;
                 IntPtr keyPtr = Native.grpcsharp_metadata_array_get_key(metadataArray, index, out keyLen);
-                string key = Marshal.PtrToStringAnsi(keyPtr, (int)keyLen.ToUInt32());
+                int keyLen32 = checked((int)keyLen.ToUInt32());
+                string key = WellKnownStrings.TryIdentify(keyPtr, keyLen32)
+                    ?? Marshal.PtrToStringAnsi(keyPtr, keyLen32);
                 UIntPtr valueLen;
                 IntPtr valuePtr = Native.grpcsharp_metadata_array_get_value(metadataArray, index, out valueLen);
-                var bytes = new byte[valueLen.ToUInt64()];
-                Marshal.Copy(valuePtr, bytes, 0, bytes.Length);
-                metadata.Add(Metadata.Entry.CreateUnsafe(key, bytes));
+                int len32 = checked((int)valueLen.ToUInt64());
+                metadata.Add(Metadata.Entry.CreateUnsafe(key, valuePtr, len32));
             }
             return metadata;
         }
