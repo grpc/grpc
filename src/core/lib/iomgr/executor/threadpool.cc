@@ -99,7 +99,7 @@ ThreadPool::ThreadPool(int num_threads, const char* thd_name,
 }
 
 ThreadPool::~ThreadPool() {
-  shut_down_.Store(false, MemoryOrder::RELEASE);
+  shut_down_.Store(true, MemoryOrder::RELEASE);
 
   for (int i = 0; i < num_threads_; ++i) {
     queue_->Put(nullptr);
