@@ -76,7 +76,7 @@ static NSMutableDictionary *gHostCache;
 
     if ((self = [super init])) {
       _address = [address copy];
-      _retryEnabled = YES;
+      _retryEnabled = NO;
       gHostCache[address] = self;
     }
   }
