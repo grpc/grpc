@@ -243,7 +243,7 @@ class ChannelData {
   UniquePtr<char> server_name_;
   RefCountedPtr<ServiceConfig> default_service_config_;
   channelz::ChannelNode* channelz_node_;
-  const grpc_channel_args* lb_args_args_;
+  const grpc_channel_args* channel_args_;
   UniquePtr<char> target_uri_;
 
   //
@@ -1256,23 +1256,12 @@ ChannelData::ChannelData(grpc_channel_element_args* args, grpc_error** error)
                               &new_args);
   target_uri_.reset(proxy_name != nullptr ? proxy_name
                                           : gpr_strdup(server_uri));
-  lb_args_args_ = new_args != nullptr
+  channel_args_ = new_args != nullptr
                       ? new_args
                       : grpc_channel_args_copy(args->channel_args);
   if (!ResolverRegistry::IsValidTarget(target_uri_.get())) {
-    // Flush the exec_ctx to ensure
-    // that it finishes shutting down.  This ensures that if we are
-    // failing, we destroy the ClientChannelControlHelper (and thus
-    // unref the channel stack) before we return.
-    // TODO(roth): This is not a complete solution, because it only
-    // catches the case where channel stack initialization fails in this
-    // particular filter.  If there is a failure in a different filter, we
-    // will leave a dangling ref here, which can cause a crash.  Fortunately,
-    // in practice, there are no other filters that can cause failures in
-    // channel stack initialization, so this works for now.
     *error =
         GRPC_ERROR_CREATE_FROM_STATIC_STRING("the target uri is not valid.");
-    ExecCtx::Get()->Flush();
     return;
   }
   // Will delete itself.
@@ -1287,7 +1276,7 @@ ChannelData::~ChannelData() {
     gpr_log(GPR_INFO, "chand=%p: destroying channel", this);
   }
   DestroyResolvingLoadBalancingPolicyLocked();
-  grpc_channel_args_destroy(lb_args_args_);
+  grpc_channel_args_destroy(channel_args_);
   // Stop backup polling.
   grpc_client_channel_stop_backup_polling(interested_parties_);
   grpc_pollset_set_destroy(interested_parties_);
@@ -1305,7 +1294,7 @@ void ChannelData::CreateResolvingLoadBalancingPolicyLocked() {
   lb_args.channel_control_helper =
       UniquePtr<LoadBalancingPolicy::ChannelControlHelper>(
           New<ClientChannelControlHelper>(this));
-  lb_args.args = lb_args_args_;
+  lb_args.args = channel_args_;
   UniquePtr<char> target_uri(strdup(target_uri_.get()));
   resolving_lb_policy_.reset(New<ResolvingLoadBalancingPolicy>(
       std::move(lb_args), &grpc_client_channel_routing_trace,

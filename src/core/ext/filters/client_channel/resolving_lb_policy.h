@@ -51,13 +51,6 @@ namespace grpc_core {
 // child LB policy and config to use.
 class ResolvingLoadBalancingPolicy : public LoadBalancingPolicy {
  public:
-  // If error is set when this returns, then construction failed, and
-  // the caller may not use the new object.
-  ResolvingLoadBalancingPolicy(
-      Args args, TraceFlag* tracer, UniquePtr<char> target_uri,
-      UniquePtr<char> child_policy_name,
-      RefCountedPtr<LoadBalancingPolicy::Config> child_lb_config);
-
   // Private ctor, to be used by client_channel only!
   //
   // Synchronous callback that takes the resolver result and sets
@@ -97,10 +90,8 @@ class ResolvingLoadBalancingPolicy : public LoadBalancingPolicy {
 
   ~ResolvingLoadBalancingPolicy();
 
-  void Init(const grpc_channel_args& args);
   void ShutdownLocked() override;
 
-  void StartResolvingLocked();
   void OnResolverError(grpc_error* error);
   void CreateOrUpdateLbPolicyLocked(
       const char* lb_policy_name,
