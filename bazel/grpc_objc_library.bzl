@@ -6,7 +6,7 @@ load(
 )
 load("//bazel:protobuf.bzl", "well_known_proto_libs")
 
-def objc_proto_lib(name, srcs, deps, use_well_known_protos = False, **kwargs):
+def objc_proto_lib(name, srcs, deps = [], use_well_known_protos = False, **kwargs):
     objc_proto_library_name = "_" + name + "_objc_proto_library"
 
     generate_objc(
@@ -35,10 +35,12 @@ def objc_proto_lib(name, srcs, deps, use_well_known_protos = False, **kwargs):
             "GPB_GRPC_FORWARD_DECLARE_MESSAGE_PROTO=0"
         ],
         includes = ["."],
-        deps = deps
+        deps = deps + [
+            "@com_google_protobuf//:protobuf_objc"
+        ]
     )
 
-def objc_grpc_lib(name, srcs, deps, use_well_known_protos = False, **kwargs):
+def objc_grpc_lib(name, srcs, deps = [], use_well_known_protos = False, **kwargs):
     objc_grpc_library_name = "_" + name + "_objc_proto_library"
 
     generate_objc(
@@ -67,5 +69,8 @@ def objc_grpc_lib(name, srcs, deps, use_well_known_protos = False, **kwargs):
             "GPB_GRPC_FORWARD_DECLARE_MESSAGE_PROTO=0"
         ],
         includes = ["."],
-        deps = deps + ["//src/objective-c:grpc_objc_protoRPC"]
+        deps = deps + [
+            "@com_github_grpc_grpc//src/objective-c:grpc_objc_protoRPC",
+            "@com_google_protobuf//:protobuf_objc"
+        ]
     )

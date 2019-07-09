@@ -110,9 +110,10 @@ def _strip_package_from_path(label_package, file):
     file_name = ""
     if len(label_package) == 0:
         file_name = path
-    if not path.startswith(label_package + "/", prefix_len):
+    if not path.startswith(label_package + "/", prefix_len) and len(label_package) > 0:
         fail("'{}' does not lie within '{}'.".format(path, label_package))
-    file_name = path[prefix_len + len(label_package + "/"):]
+    if len(label_package) > 0:
+        file_name = path[prefix_len + len(label_package + "/"):]
     
     return to_upper_camel_with_extension(file_name, "proto")
 
@@ -167,7 +168,7 @@ def group_objc_files_impl(ctx):
         ext = "m"
     out_files = [
         file 
-        for file in ctx.attr.src.files 
+        for file in ctx.attr.src.files.to_list() 
         if file.basename.split(".")[-1] == ext
     ]
     return struct(files = depset(out_files))

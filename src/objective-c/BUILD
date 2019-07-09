@@ -5,45 +5,6 @@ load(
     "objc_grpc_lib",
 )
 
-proto_library(
-    name = "messages_proto",
-    srcs = ["RemoteTest/messages.proto"],
-)
-
-proto_library(
-    name = "test_proto",
-    srcs = ["RemoteTest/test.proto"],
-    deps = [
-        ":messages_proto",
-    ]
-)
-
-objc_proto_lib(
-    name = "messages_proto_objc",
-    srcs = [":messages_proto"],
-    deps = ["//third_party/protobuf:protobuf_objc"]
-)
-
-objc_proto_lib(
-    name = "test_proto_objc",
-    srcs = [":test_proto"],
-    use_well_known_protos = True,
-    deps = [
-        "//third_party/protobuf:protobuf_objc",
-        ":messages_proto_objc"
-    ]
-)
-
-objc_grpc_lib(
-    name = "test_grpc_objc",
-    srcs = [":test_proto"],
-    use_well_known_protos = True,
-    deps = [
-        ":messages_proto_objc",
-        ":test_proto_objc"
-    ]
-)
-
 objc_library(
     name = "grpc_objc",
     srcs = glob([
@@ -60,7 +21,8 @@ objc_library(
     ),
     includes = ["."],
     sdk_frameworks = ["SystemConfiguration"],
-    deps = ["//:grpc"]
+    deps = ["//:grpc"],
+    visibility = ["//visibility:public"]
 )
 
 objc_library(
@@ -68,14 +30,48 @@ objc_library(
     srcs = glob(["ProtoRPC/*.m"]),
     hdrs = glob(["ProtoRPC/*.h"]),
     defines = ["GPB_USE_PROTOBUF_FRAMEWORK_IMPORTS=0"],
-    includes = [
-        ".",
-        "@protobuf/objectivec"
-    ],
     deps = [
         "//:grpc",
         ":grpc_objc",
-        "//third_party/protobuf:protobuf_objc"
+        "@com_google_protobuf//:protobuf_objc"
+    ],
+    visibility = ["//visibility:public"]
+)
+
+proto_library(
+    name = "messages_proto",
+    srcs = ["RemoteTest/messages.proto"],
+)
+
+proto_library(
+    name = "test_proto",
+    srcs = ["RemoteTest/test.proto"],
+    deps = [
+        ":messages_proto",
+    ]
+)
+
+objc_proto_lib(
+    name = "messages_proto_objc",
+    srcs = [":messages_proto"],
+)
+
+objc_proto_lib(
+    name = "test_proto_objc",
+    srcs = [":test_proto"],
+    use_well_known_protos = True,
+    deps = [
+        ":messages_proto_objc"
+    ]
+)
+
+objc_grpc_lib(
+    name = "test_grpc_objc",
+    srcs = [":test_proto"],
+    use_well_known_protos = True,
+    deps = [
+        ":messages_proto_objc",
+        ":test_proto_objc"
     ]
 )
 
@@ -91,7 +87,6 @@ objc_library(
         ":messages_proto_objc",
         ":test_proto_objc",
         ":test_grpc_objc",
-        ":grpc_objc_protoRPC",
         "//:gRPCCertificates"
     ]
 )
