@@ -160,13 +160,7 @@ class ChannelData {
     return external_connectivity_watcher_list_.size();
   }
 
-  void ExitIdleLocked() {
-    if (resolving_lb_policy_ != nullptr) {
-      resolving_lb_policy_->ExitIdleLocked();
-    } else {
-      CreateResolvingLoadBalancingPolicyLocked();
-    }
-  }
+  void ExitIdleLocked();
 
  private:
   class ConnectivityStateAndPickerSetter;
@@ -1584,6 +1578,14 @@ void ChannelData::RemoveQueuedPick(QueuedPick* to_remove,
       *pick = to_remove->next;
       return;
     }
+  }
+}
+
+void ChannelData::ExitIdleLocked() {
+  if (resolving_lb_policy_ != nullptr) {
+    resolving_lb_policy_->ExitIdleLocked();
+  } else {
+    CreateResolvingLoadBalancingPolicyLocked();
   }
 }
 
