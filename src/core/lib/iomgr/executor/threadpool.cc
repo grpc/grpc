@@ -29,21 +29,21 @@ void ThreadPoolWorker::Run() {
     if (GRPC_TRACE_FLAG_ENABLED(grpc_thread_pool_trace)) {
       // Updates stats and print
       gpr_timespec wait_time = gpr_time_0(GPR_TIMESPAN);
-      elem = static_cast<InfLenFIFOQueue*>(queue_)->Get(&wait_time);
-      stats_.sleep_cycles = gpr_time_add(stats_.sleep_cycles, wait_time);
+      elem = queue_->Get(&wait_time);
+      stats_.sleep_time = gpr_time_add(stats_.sleep_time, wait_time);
       gpr_log(GPR_INFO,
-              "ThreadPool Worker [%s %d] Stats:  sleep_cycles          %f",
-              thd_name_, index_, gpr_timespec_to_micros(stats_.sleep_cycles));
+              "ThreadPool Worker [%s %d] Stats:  sleep_time          %f",
+              thd_name_, index_, gpr_timespec_to_micros(stats_.sleep_time));
     } else {
-      elem = static_cast<InfLenFIFOQueue*>(queue_)->Get();
+      elem = queue_->Get(nullptr);
     }
     if (elem == nullptr) {
       break;
     }
     // Runs closure
-    grpc_experimental_completion_queue_functor* closure =
+    auto* closure =
         static_cast<grpc_experimental_completion_queue_functor*>(elem);
-    closure->functor_run(closure->internal_next, closure->internal_success);
+    closure->functor_run(closure, closure->internal_success);
   }
 }
 
@@ -70,7 +70,8 @@ size_t ThreadPool::DefaultStackSize() {
 }
 
 bool ThreadPool::HasBeenShutDown() {
-  return shut_down_.Load(MemoryOrder::ACQUIRE);
+  // For debug checking purpose, using RELAXED order is sufficient.
+  return shut_down_.Load(MemoryOrder::RELAXED);
 }
 
 ThreadPool::ThreadPool(int num_threads) : num_threads_(num_threads) {
@@ -99,7 +100,8 @@ ThreadPool::ThreadPool(int num_threads, const char* thd_name,
 }
 
 ThreadPool::~ThreadPool() {
-  shut_down_.Store(true, MemoryOrder::RELEASE);
+  // For debug checking purpose, using RELAXED order is sufficient.
+  shut_down_.Store(true, MemoryOrder::RELAXED);
 
   for (int i = 0; i < num_threads_; ++i) {
     queue_->Put(nullptr);
@@ -117,11 +119,8 @@ ThreadPool::~ThreadPool() {
 }
 
 void ThreadPool::Add(grpc_experimental_completion_queue_functor* closure) {
-  if (HasBeenShutDown()) {
-    gpr_log(GPR_ERROR, "ThreadPool Has Already Been Shut Down.");
-  } else {
-    queue_->Put(static_cast<void*>(closure));
-  }
+  GPR_DEBUG_ASSERT(!HasBeenShutDown());
+  queue_->Put(static_cast<void*>(closure));
 }
 
 int ThreadPool::num_pending_closures() const { return queue_->count(); }

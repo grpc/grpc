@@ -84,8 +84,8 @@ class ThreadPoolWorker {
  private:
   // struct for tracking stats of thread
   struct Stats {
-    gpr_timespec sleep_cycles;
-    Stats() { sleep_cycles = gpr_time_0(GPR_TIMESPAN); }
+    gpr_timespec sleep_time;
+    Stats() { sleep_time = gpr_time_0(GPR_TIMESPAN); }
   };
 
   void Run();  // Pulls closures from queue and executes them
@@ -145,6 +145,7 @@ class ThreadPool : public ThreadPoolInterface {
   // For ThreadPool, default stack size for mobile platform is 1952K. for other
   // platforms is 64K.
   size_t DefaultStackSize();
+  // Internal Use Only for debug checking.
   bool HasBeenShutDown();
 };
 

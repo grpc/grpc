@@ -25,8 +25,6 @@
 #define THREAD_SMALL_ITERATION 100
 #define THREAD_LARGE_ITERATION 10000
 
-grpc_core::Mutex mu;
-
 // Simple functor for testing. It will count how many times being called.
 class SimpleFunctorForAdd : public grpc_experimental_completion_queue_functor {
  public:
@@ -40,17 +38,15 @@ class SimpleFunctorForAdd : public grpc_experimental_completion_queue_functor {
   static void Run(struct grpc_experimental_completion_queue_functor* cb,
                   int ok) {
     auto* callback = static_cast<SimpleFunctorForAdd*>(cb);
-    grpc_core::MutexLock l(&mu);
-    callback->count_++;
+    callback->count_.FetchAdd(1, grpc_core::MemoryOrder::RELAXED);
   }
 
   int count() {
-    grpc_core::MutexLock l(&mu);
-    return count_;
+    return count_.Load(grpc_core::MemoryOrder::RELAXED);
   }
 
  private:
-  int count_;
+  grpc_core::Atomic<int> count_{0};
 };
 
 // Checks the given SimpleFunctorForAdd's count with a given number.
@@ -66,8 +62,9 @@ class SimpleFunctorCheckForAdd
   ~SimpleFunctorCheckForAdd() {}
   static void Run(struct grpc_experimental_completion_queue_functor* cb,
                   int ok) {
-    auto* callback = static_cast<SimpleFunctorForAdd*>(cb);
-    GPR_ASSERT(callback->count_ == ok);
+    auto* callback = static_cast<SimpleFunctorCheckForAdd*>(cb);
+    auto* cb_check = static_cast<SimpleFunctorForAdd*>(callback->internal_next);
+    GPR_ASSERT(cb_check->count_.Load(grpc_core::MemoryOrder::RELAXED) == ok);
   }
 };
 
