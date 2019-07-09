@@ -147,8 +147,8 @@ typedef NS_ENUM(NSUInteger, GRPCTransportType) {
 @property(readonly) GRPCCompressionAlgorithm compressionAlgorithm;
 
 /**
- * Enable/Disable gRPC call's retry feature. The default is enabled. For details of this feature
- * refer to
+ * Enable/Disable gRPC call's retry feature. The default is disabled. The retry feature requires
+ * service config on the server side. For details of this feature refer to
  * https://github.com/grpc/proposal/blob/master/A6-client-retries.md
  */
 @property(readonly) BOOL retryEnabled;
@@ -310,8 +310,8 @@ typedef NS_ENUM(NSUInteger, GRPCTransportType) {
 @property(readwrite) GRPCCompressionAlgorithm compressionAlgorithm;
 
 /**
- * Enable/Disable gRPC call's retry feature. The default is enabled. For details of this feature
- * refer to
+ * Enable/Disable gRPC call's retry feature. The default is disabled. The retry feature requires
+ * service config on the server side. For details of this feature refer to
  * https://github.com/grpc/proposal/blob/master/A6-client-retries.md
  */
 @property(readwrite) BOOL retryEnabled;
