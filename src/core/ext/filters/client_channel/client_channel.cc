@@ -161,6 +161,7 @@ class ChannelData {
   }
 
  private:
+  class IdlePicker;
   class ConnectivityStateAndPickerSetter;
   class ServiceConfigSetter;
   class GrpcSubchannel;
@@ -210,6 +211,10 @@ class ChannelData {
   ChannelData(grpc_channel_element_args* args, grpc_error** error);
   ~ChannelData();
 
+  void CreateResolvingLoadBalancingPolicyLocked();
+
+  void DestroyResolvingLoadBalancingPolicyLocked();
+
   static bool ProcessResolverResultLocked(
       void* arg, const Resolver::Result& result, const char** lb_policy_name,
       RefCountedPtr<LoadBalancingPolicy::Config>* lb_policy_config,
@@ -238,6 +243,8 @@ class ChannelData {
   UniquePtr<char> server_name_;
   RefCountedPtr<ServiceConfig> default_service_config_;
   channelz::ChannelNode* channelz_node_;
+  const grpc_channel_args* lb_args_args_;
+  UniquePtr<char> target_uri_;
 
   //
   // Fields used in the data plane.  Guarded by data_plane_combiner.
@@ -704,6 +711,27 @@ class CallData {
   bool seen_send_trailing_metadata_ = false;
   grpc_linked_mdelem* send_trailing_metadata_storage_ = nullptr;
   grpc_metadata_batch send_trailing_metadata_;
+};
+
+//
+// ChannelData::IdlePicker
+//
+class ChannelData::IdlePicker : public LoadBalancingPolicy::SubchannelPicker {
+ public:
+  explicit IdlePicker(ChannelData* chand) : chand_(chand) {}
+
+  LoadBalancingPolicy::PickResult Pick(
+      LoadBalancingPolicy::PickArgs args) override {
+    if (chand_->resolving_lb_policy_ == nullptr) {
+      chand_->CreateResolvingLoadBalancingPolicyLocked();
+    }
+    LoadBalancingPolicy::PickResult result;
+    result.type = LoadBalancingPolicy::PickResult::PICK_QUEUE;
+    return result;
+  }
+
+ private:
+  ChannelData* chand_;
 };
 
 //
@@ -1226,21 +1254,13 @@ ChannelData::ChannelData(grpc_channel_element_args* args, grpc_error** error)
   grpc_channel_args* new_args = nullptr;
   grpc_proxy_mappers_map_name(server_uri, args->channel_args, &proxy_name,
                               &new_args);
-  UniquePtr<char> target_uri(proxy_name != nullptr ? proxy_name
-                                                   : gpr_strdup(server_uri));
-  // Instantiate resolving LB policy.
-  LoadBalancingPolicy::Args lb_args;
-  lb_args.combiner = combiner_;
-  lb_args.channel_control_helper =
-      UniquePtr<LoadBalancingPolicy::ChannelControlHelper>(
-          New<ClientChannelControlHelper>(this));
-  lb_args.args = new_args != nullptr ? new_args : args->channel_args;
-  resolving_lb_policy_.reset(New<ResolvingLoadBalancingPolicy>(
-      std::move(lb_args), &grpc_client_channel_routing_trace,
-      std::move(target_uri), ProcessResolverResultLocked, this, error));
-  grpc_channel_args_destroy(new_args);
-  if (*error != GRPC_ERROR_NONE) {
-    // Orphan the resolving LB policy and flush the exec_ctx to ensure
+  target_uri_.reset(proxy_name != nullptr ? proxy_name
+                                          : gpr_strdup(server_uri));
+  lb_args_args_ = new_args != nullptr
+                      ? new_args
+                      : grpc_channel_args_copy(args->channel_args);
+  if (!ResolverRegistry::IsValidTarget(target_uri_.get())) {
+    // Flush the exec_ctx to ensure
     // that it finishes shutting down.  This ensures that if we are
     // failing, we destroy the ClientChannelControlHelper (and thus
     // unref the channel stack) before we return.
@@ -1250,15 +1270,13 @@ ChannelData::ChannelData(grpc_channel_element_args* args, grpc_error** error)
     // will leave a dangling ref here, which can cause a crash.  Fortunately,
     // in practice, there are no other filters that can cause failures in
     // channel stack initialization, so this works for now.
-    resolving_lb_policy_.reset();
     ExecCtx::Get()->Flush();
   } else {
-    grpc_pollset_set_add_pollset_set(resolving_lb_policy_->interested_parties(),
-                                     interested_parties_);
-    if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_routing_trace)) {
-      gpr_log(GPR_INFO, "chand=%p: created resolving_lb_policy=%p", this,
-              resolving_lb_policy_.get());
-    }
+    // Will delete itself.
+    New<ConnectivityStateAndPickerSetter>(
+        this, GRPC_CHANNEL_IDLE, "initial IDLE",
+        UniquePtr<LoadBalancingPolicy::SubchannelPicker>(
+            New<IdlePicker>(this)));
   }
 }
 
@@ -1266,11 +1284,8 @@ ChannelData::~ChannelData() {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_routing_trace)) {
     gpr_log(GPR_INFO, "chand=%p: destroying channel", this);
   }
-  if (resolving_lb_policy_ != nullptr) {
-    grpc_pollset_set_del_pollset_set(resolving_lb_policy_->interested_parties(),
-                                     interested_parties_);
-    resolving_lb_policy_.reset();
-  }
+  DestroyResolvingLoadBalancingPolicyLocked();
+  grpc_channel_args_destroy(lb_args_args_);
   // Stop backup polling.
   grpc_client_channel_stop_backup_polling(interested_parties_);
   grpc_pollset_set_destroy(interested_parties_);
@@ -1279,6 +1294,34 @@ ChannelData::~ChannelData() {
   GRPC_ERROR_UNREF(disconnect_error_.Load(MemoryOrder::RELAXED));
   grpc_connectivity_state_destroy(&state_tracker_);
   gpr_mu_destroy(&info_mu_);
+}
+
+void ChannelData::CreateResolvingLoadBalancingPolicyLocked() {
+  // Instantiate resolving LB policy.
+  LoadBalancingPolicy::Args lb_args;
+  lb_args.combiner = combiner_;
+  lb_args.channel_control_helper =
+      UniquePtr<LoadBalancingPolicy::ChannelControlHelper>(
+          New<ClientChannelControlHelper>(this));
+  lb_args.args = lb_args_args_;
+  UniquePtr<char> target_uri(strdup(target_uri_.get()));
+  resolving_lb_policy_.reset(New<ResolvingLoadBalancingPolicy>(
+      std::move(lb_args), &grpc_client_channel_routing_trace,
+      std::move(target_uri), ProcessResolverResultLocked, this));
+  grpc_pollset_set_add_pollset_set(resolving_lb_policy_->interested_parties(),
+                                   interested_parties_);
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_routing_trace)) {
+    gpr_log(GPR_INFO, "chand=%p: created resolving_lb_policy=%p", this,
+            resolving_lb_policy_.get());
+  }
+}
+
+void ChannelData::DestroyResolvingLoadBalancingPolicyLocked() {
+  if (resolving_lb_policy_ != nullptr) {
+    grpc_pollset_set_del_pollset_set(resolving_lb_policy_->interested_parties(),
+                                     interested_parties_);
+    resolving_lb_policy_.reset();
+  }
 }
 
 void ChannelData::ProcessLbPolicy(
@@ -1500,10 +1543,7 @@ void ChannelData::StartTransportOpLocked(void* arg, grpc_error* ignored) {
     GPR_ASSERT(chand->disconnect_error_.CompareExchangeStrong(
         &error, op->disconnect_with_error, MemoryOrder::ACQ_REL,
         MemoryOrder::ACQUIRE));
-    grpc_pollset_set_del_pollset_set(
-        chand->resolving_lb_policy_->interested_parties(),
-        chand->interested_parties_);
-    chand->resolving_lb_policy_.reset();
+    chand->DestroyResolvingLoadBalancingPolicyLocked();
     // Will delete itself.
     New<ConnectivityStateAndPickerSetter>(
         chand, GRPC_CHANNEL_SHUTDOWN, "shutdown from API",
@@ -1574,6 +1614,8 @@ void ChannelData::TryToConnectLocked(void* arg, grpc_error* error_ignored) {
   auto* chand = static_cast<ChannelData*>(arg);
   if (chand->resolving_lb_policy_ != nullptr) {
     chand->resolving_lb_policy_->ExitIdleLocked();
+  } else {
+    chand->CreateResolvingLoadBalancingPolicyLocked();
   }
   GRPC_CHANNEL_STACK_UNREF(chand->owning_stack_, "TryToConnect");
 }
