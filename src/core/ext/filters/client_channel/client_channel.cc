@@ -3510,8 +3510,9 @@ void CallData::StartPickLocked(void* arg, grpc_error* error) {
                     grpc_schedule_on_exec_ctx);
   // Attempt pick.
   if (chand->picker() == nullptr) {
-    // ChannelData's picker being null means the channel is currently in IDLE state.
-    // The incoming call will make the channel exit IDLE and queue itself.
+    // ChannelData's picker being null means the channel is currently in IDLE
+    // state. The incoming call will make the channel exit IDLE and queue
+    // itself.
     chand->ExitIdleLocked();
     calld->AddCallToQueuedPicksLocked(elem);
     return;
