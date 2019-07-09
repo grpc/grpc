@@ -160,8 +160,15 @@ class ChannelData {
     return external_connectivity_watcher_list_.size();
   }
 
+  void ExitIdleLocked() {
+    if (resolving_lb_policy_ != nullptr) {
+      resolving_lb_policy_->ExitIdleLocked();
+    } else {
+      CreateResolvingLoadBalancingPolicyLocked();
+    }
+  }
+
  private:
-  class IdlePicker;
   class ConnectivityStateAndPickerSetter;
   class ServiceConfigSetter;
   class GrpcSubchannel;
@@ -714,27 +721,6 @@ class CallData {
 };
 
 //
-// ChannelData::IdlePicker
-//
-class ChannelData::IdlePicker : public LoadBalancingPolicy::SubchannelPicker {
- public:
-  explicit IdlePicker(ChannelData* chand) : chand_(chand) {}
-
-  LoadBalancingPolicy::PickResult Pick(
-      LoadBalancingPolicy::PickArgs args) override {
-    if (chand_->resolving_lb_policy_ == nullptr) {
-      chand_->CreateResolvingLoadBalancingPolicyLocked();
-    }
-    LoadBalancingPolicy::PickResult result;
-    result.type = LoadBalancingPolicy::PickResult::PICK_QUEUE;
-    return result;
-  }
-
- private:
-  ChannelData* chand_;
-};
-
-//
 // ChannelData::ConnectivityStateAndPickerSetter
 //
 
@@ -1267,7 +1253,7 @@ ChannelData::ChannelData(grpc_channel_element_args* args, grpc_error** error)
   // Will delete itself.
   New<ConnectivityStateAndPickerSetter>(
       this, GRPC_CHANNEL_IDLE, "initial IDLE",
-      UniquePtr<LoadBalancingPolicy::SubchannelPicker>(New<IdlePicker>(this)));
+      UniquePtr<LoadBalancingPolicy::SubchannelPicker>(nullptr));
   *error = GRPC_ERROR_NONE;
 }
 
@@ -1603,11 +1589,7 @@ void ChannelData::RemoveQueuedPick(QueuedPick* to_remove,
 
 void ChannelData::TryToConnectLocked(void* arg, grpc_error* error_ignored) {
   auto* chand = static_cast<ChannelData*>(arg);
-  if (chand->resolving_lb_policy_ != nullptr) {
-    chand->resolving_lb_policy_->ExitIdleLocked();
-  } else {
-    chand->CreateResolvingLoadBalancingPolicyLocked();
-  }
+  chand->ExitIdleLocked();
   GRPC_CHANNEL_STACK_UNREF(chand->owning_stack_, "TryToConnect");
 }
 
@@ -3527,6 +3509,13 @@ void CallData::StartPickLocked(void* arg, grpc_error* error) {
   GRPC_CLOSURE_INIT(&calld->pick_closure_, PickDone, elem,
                     grpc_schedule_on_exec_ctx);
   // Attempt pick.
+  if (chand->picker() == nullptr) {
+    // ChannelData's picker being null means the channel is currently in IDLE state.
+    // The incoming call will make the channel exit IDLE and queue itself.
+    chand->ExitIdleLocked();
+    calld->AddCallToQueuedPicksLocked(elem);
+    return;
+  }
   auto result = chand->picker()->Pick(pick_args);
   if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_routing_trace)) {
     gpr_log(GPR_INFO,

@@ -51,8 +51,6 @@ namespace grpc_core {
 // child LB policy and config to use.
 class ResolvingLoadBalancingPolicy : public LoadBalancingPolicy {
  public:
-  // Private ctor, to be used by client_channel only!
-  //
   // Synchronous callback that takes the resolver result and sets
   // lb_policy_name and lb_policy_config to point to the right data.
   // Returns true if the service config has changed since the last result.
