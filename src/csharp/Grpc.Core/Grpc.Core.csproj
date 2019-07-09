@@ -100,6 +100,8 @@
 
   <ItemGroup>
     <PackageReference Include="System.Interactive.Async" Version="3.2.0" />
+    <!-- System.Buffers *may* come in transitively, but: we can *always* use ArrayPool -->
+    <PackageReference Include="System.Buffers" Version="4.5.0" />
   </ItemGroup>
 
   <ItemGroup Condition=" '$(TargetFramework)' == 'net45' ">

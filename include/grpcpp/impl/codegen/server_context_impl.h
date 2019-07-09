@@ -44,10 +44,6 @@ namespace grpc_impl {
 class ClientContext;
 class CompletionQueue;
 class Server;
-}  // namespace grpc_impl
-namespace grpc {
-class GenericServerContext;
-class ServerInterface;
 template <class W, class R>
 class ServerAsyncReader;
 template <class W>
@@ -62,14 +58,6 @@ template <class W>
 class ServerWriter;
 
 namespace internal {
-template <class W, class R>
-class ServerReaderWriterBody;
-template <class ServiceType, class RequestType, class ResponseType>
-class RpcMethodHandler;
-template <class ServiceType, class RequestType, class ResponseType>
-class ClientStreamingHandler;
-template <class ServiceType, class RequestType, class ResponseType>
-class ServerStreamingHandler;
 template <class ServiceType, class RequestType, class ResponseType>
 class BidiStreamingHandler;
 template <class RequestType, class ResponseType>
@@ -80,12 +68,28 @@ template <class RequestType, class ResponseType>
 class CallbackServerStreamingHandler;
 template <class RequestType, class ResponseType>
 class CallbackBidiHandler;
+template <class W, class R>
+class ServerReaderWriterBody;
+class ServerReactor;
+}  // namespace internal
+
+}  // namespace grpc_impl
+namespace grpc {
+class GenericServerContext;
+class ServerInterface;
+
+namespace internal {
+template <class ServiceType, class RequestType, class ResponseType>
+class ClientStreamingHandler;
+template <class ServiceType, class RequestType, class ResponseType>
+class ServerStreamingHandler;
+template <class ServiceType, class RequestType, class ResponseType>
+class RpcMethodHandler;
 template <class Streamer, bool WriteNeeded>
 class TemplatedBidiStreamingHandler;
 template <StatusCode code>
 class ErrorMethodHandler;
 class Call;
-class ServerReactor;
 }  // namespace internal
 
 class ServerInterface;
@@ -275,19 +279,19 @@ class ServerContext {
   friend class ::grpc::ServerInterface;
   friend class ::grpc_impl::Server;
   template <class W, class R>
-  friend class ::grpc::ServerAsyncReader;
+  friend class ::grpc_impl::ServerAsyncReader;
   template <class W>
-  friend class ::grpc::ServerAsyncWriter;
+  friend class ::grpc_impl::ServerAsyncWriter;
   template <class W>
-  friend class ::grpc::ServerAsyncResponseWriter;
+  friend class ::grpc_impl::ServerAsyncResponseWriter;
   template <class W, class R>
-  friend class ::grpc::ServerAsyncReaderWriter;
+  friend class ::grpc_impl::ServerAsyncReaderWriter;
   template <class R>
-  friend class ::grpc::ServerReader;
+  friend class ::grpc_impl::ServerReader;
   template <class W>
-  friend class ::grpc::ServerWriter;
+  friend class ::grpc_impl::ServerWriter;
   template <class W, class R>
-  friend class ::grpc::internal::ServerReaderWriterBody;
+  friend class ::grpc_impl::internal::ServerReaderWriterBody;
   template <class ServiceType, class RequestType, class ResponseType>
   friend class ::grpc::internal::RpcMethodHandler;
   template <class ServiceType, class RequestType, class ResponseType>
@@ -297,13 +301,13 @@ class ServerContext {
   template <class Streamer, bool WriteNeeded>
   friend class ::grpc::internal::TemplatedBidiStreamingHandler;
   template <class RequestType, class ResponseType>
-  friend class ::grpc::internal::CallbackUnaryHandler;
+  friend class ::grpc_impl::internal::CallbackUnaryHandler;
   template <class RequestType, class ResponseType>
-  friend class ::grpc::internal::CallbackClientStreamingHandler;
+  friend class ::grpc_impl::internal::CallbackClientStreamingHandler;
   template <class RequestType, class ResponseType>
-  friend class ::grpc::internal::CallbackServerStreamingHandler;
+  friend class ::grpc_impl::internal::CallbackServerStreamingHandler;
   template <class RequestType, class ResponseType>
-  friend class ::grpc::internal::CallbackBidiHandler;
+  friend class ::grpc_impl::internal::CallbackBidiHandler;
   template <::grpc::StatusCode code>
   friend class ::grpc::internal::ErrorMethodHandler;
   friend class ::grpc_impl::ClientContext;
@@ -317,7 +321,7 @@ class ServerContext {
 
   void BeginCompletionOp(::grpc::internal::Call* call,
                          std::function<void(bool)> callback,
-                         ::grpc::internal::ServerReactor* reactor);
+                         ::grpc_impl::internal::ServerReactor* reactor);
   /// Return the tag queued by BeginCompletionOp()
   ::grpc::internal::CompletionQueueTag* GetCompletionOpTag();
 
