@@ -27,7 +27,18 @@ import grpc
 from tests.unit import test_common
 from tests.unit import _signal_client
 
-_CLIENT_PATH = os.path.abspath(os.path.realpath(_signal_client.__file__))
+_CLIENT_PATH = None
+if sys.executable is not None:
+    _CLIENT_PATH = os.path.abspath(os.path.realpath(_signal_client.__file__))
+else:
+    # Note(rbellevi): For compatibility with internal testing.
+    if len(sys.argv) != 2:
+        raise RuntimeError("Must supply path to executable client.")
+    client_name = sys.argv[1].split("/")[-1]
+    del sys.argv[1]  # For compatibility with test runner.
+    _CLIENT_PATH = os.path.realpath(
+        os.path.join(os.path.dirname(os.path.abspath(__file__)), client_name))
+
 _HOST = 'localhost'
 
 
@@ -104,6 +115,15 @@ def _read_stream(stream):
     return stream.read()
 
 
+def _start_client(args, stdout, stderr):
+    invocation = None
+    if sys.executable is not None:
+        invocation = (sys.executable, _CLIENT_PATH) + tuple(args)
+    else:
+        invocation = (_CLIENT_PATH,) + tuple(args)
+    return subprocess.Popen(invocation, stdout=stdout, stderr=stderr)
+
+
 class SignalHandlingTest(unittest.TestCase):
 
     def setUp(self):
@@ -122,10 +142,8 @@ class SignalHandlingTest(unittest.TestCase):
         server_target = '{}:{}'.format(_HOST, self._port)
         with tempfile.TemporaryFile(mode='r') as client_stdout:
             with tempfile.TemporaryFile(mode='r') as client_stderr:
-                client = subprocess.Popen(
-                    (sys.executable, _CLIENT_PATH, server_target, 'unary'),
-                    stdout=client_stdout,
-                    stderr=client_stderr)
+                client = _start_client((server_target, 'unary'), client_stdout,
+                                       client_stderr)
                 self._handler.await_connected_client()
                 client.send_signal(signal.SIGINT)
                 self.assertFalse(client.wait(), msg=_read_stream(client_stderr))
@@ -139,10 +157,8 @@ class SignalHandlingTest(unittest.TestCase):
         server_target = '{}:{}'.format(_HOST, self._port)
         with tempfile.TemporaryFile(mode='r') as client_stdout:
             with tempfile.TemporaryFile(mode='r') as client_stderr:
-                client = subprocess.Popen(
-                    (sys.executable, _CLIENT_PATH, server_target, 'streaming'),
-                    stdout=client_stdout,
-                    stderr=client_stderr)
+                client = _start_client((server_target, 'streaming'),
+                                       client_stdout, client_stderr)
                 self._handler.await_connected_client()
                 client.send_signal(signal.SIGINT)
                 self.assertFalse(client.wait(), msg=_read_stream(client_stderr))
