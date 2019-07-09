@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015 gRPC authors.
+ * Copyright 2019 gRPC authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,18 +16,9 @@
  *
  */
 
-#include <grpcpp/generic/async_generic_service.h>
+#ifndef GRPCPP_SUPPORT_ASYNC_UNARY_CALL_IMPL_H
+#define GRPCPP_SUPPORT_ASYNC_UNARY_CALL_IMPL_H
 
-#include <grpcpp/server.h>
+#include <grpcpp/impl/codegen/async_unary_call_impl.h>
 
-namespace grpc {
-
-void AsyncGenericService::RequestCall(
-    GenericServerContext* ctx, GenericServerAsyncReaderWriter* reader_writer,
-    ::grpc_impl::CompletionQueue* call_cq,
-    ::grpc_impl::ServerCompletionQueue* notification_cq, void* tag) {
-  server_->RequestAsyncGenericCall(ctx, reader_writer, call_cq, notification_cq,
-                                   tag);
-}
-
-}  // namespace grpc
+#endif  // GRPCPP_SUPPORT_ASYNC_UNARY_CALL_IMPL_H
