@@ -86,6 +86,9 @@ struct XdsLbClientStats {
     LocalityStats Harvest();
     bool IsAllZero();
 
+    // After a LocalityStats is killed, it can't call AddCallStarted() unless
+    // revived. AddCallFinished() can still be called. Once the number of in
+    // progress calls drops to 0, this LocalityStats can be deleted.
     void Kill() { dying = true; }
     void Revive() { dying = false; }
     bool IsSafeToDelete() { return dying && total_requests_in_progress == 0; }

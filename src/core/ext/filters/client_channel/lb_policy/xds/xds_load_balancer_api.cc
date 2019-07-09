@@ -195,11 +195,11 @@ grpc_error* XdsEdsResponseDecodeAndParse(const grpc_slice& encoded_response,
 
 namespace {
 
-grpc_slice LrsRequestEncode(const XdsLoadStatsRequest* request) {
-  upb::Arena arena;
+grpc_slice LrsRequestEncode(const XdsLoadStatsRequest* request,
+                            upb_arena* arena) {
   size_t output_length;
   char* output = envoy_service_load_stats_v2_LoadStatsRequest_serialize(
-      request, arena.ptr(), &output_length);
+      request, arena, &output_length);
   return grpc_slice_from_copied_buffer(output, output_length);
 }
 
@@ -222,7 +222,7 @@ grpc_slice XdsLrsRequestCreateAndEncode(const char* server_name) {
   google_protobuf_Value* value =
       google_protobuf_Struct_FieldsEntry_mutable_value(field, arena.ptr());
   google_protobuf_Value_set_string_value(value, upb_strview_makez(server_name));
-  return LrsRequestEncode(request);
+  return LrsRequestEncode(request, arena.ptr());
 }
 
 namespace {
@@ -283,7 +283,6 @@ grpc_slice XdsLrsRequestCreateAndEncode(XdsLbClientStats* client_stats) {
           request, arena.ptr());
   // Add locality stats.
   for (auto& p : harvest.upstream_locality_stats) {
-    //    gpr_log(GPR_ERROR, "=== total issued=%d", p.second.)
     LocalityStats* locality_stats =
         envoy_api_v2_endpoint_ClusterStats_add_upstream_locality_stats(
             cluster_stats, arena.ptr());
@@ -311,7 +310,7 @@ grpc_slice XdsLrsRequestCreateAndEncode(XdsLbClientStats* client_stats) {
           cluster_stats, arena.ptr());
   google_protobuf_Duration_set_seconds(load_report_interval, timespec.tv_sec);
   google_protobuf_Duration_set_nanos(load_report_interval, timespec.tv_nsec);
-  return LrsRequestEncode(request);
+  return LrsRequestEncode(request, arena.ptr());
 }
 
 grpc_error* XdsLrsResponseDecodeAndParse(const grpc_slice& encoded_response,

@@ -57,8 +57,9 @@ XdsLbClientStats::LocalityStats XdsLbClientStats::LocalityStats::Harvest() {
   LocalityStats stats;
   stats.total_successful_requests =
       AtomicGetAndResetCounter(&total_successful_requests);
-  stats.total_requests_in_progress =
-      AtomicGetAndResetCounter(&total_requests_in_progress);
+  // Don't reset total_requests_in_progress because it's not related to a single
+  // reporting interval.
+  stats.total_requests_in_progress = total_requests_in_progress;
   stats.total_error_requests = AtomicGetAndResetCounter(&total_error_requests);
   stats.total_issued_requests =
       AtomicGetAndResetCounter(&total_issued_requests);
@@ -83,6 +84,11 @@ bool XdsLbClientStats::LocalityStats::IsAllZero() {
 }
 
 void XdsLbClientStats::LocalityStats::AddCallStarted() {
+  if (dying) {
+    gpr_log(GPR_ERROR, "Can't record call starting on dying locality stats %p",
+            this);
+    return;
+  }
   gpr_atm_full_fetch_add(&total_issued_requests, static_cast<gpr_atm>(1));
   gpr_atm_full_fetch_add(&total_requests_in_progress, static_cast<gpr_atm>(1));
 }
