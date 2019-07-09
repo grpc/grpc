@@ -1270,14 +1270,16 @@ ChannelData::ChannelData(grpc_channel_element_args* args, grpc_error** error)
     // will leave a dangling ref here, which can cause a crash.  Fortunately,
     // in practice, there are no other filters that can cause failures in
     // channel stack initialization, so this works for now.
+    *error =
+        GRPC_ERROR_CREATE_FROM_STATIC_STRING("the target uri is not valid.");
     ExecCtx::Get()->Flush();
-  } else {
-    // Will delete itself.
-    New<ConnectivityStateAndPickerSetter>(
-        this, GRPC_CHANNEL_IDLE, "initial IDLE",
-        UniquePtr<LoadBalancingPolicy::SubchannelPicker>(
-            New<IdlePicker>(this)));
+    return;
   }
+  // Will delete itself.
+  New<ConnectivityStateAndPickerSetter>(
+      this, GRPC_CHANNEL_IDLE, "initial IDLE",
+      UniquePtr<LoadBalancingPolicy::SubchannelPicker>(New<IdlePicker>(this)));
+  *error = GRPC_ERROR_NONE;
 }
 
 ChannelData::~ChannelData() {
