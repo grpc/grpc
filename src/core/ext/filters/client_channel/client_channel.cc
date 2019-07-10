@@ -239,10 +239,10 @@ class ChannelData {
   const size_t per_rpc_retry_buffer_size_;
   grpc_channel_stack* owning_stack_;
   ClientChannelFactory* client_channel_factory_;
-  UniquePtr<char> server_name_;
-  RefCountedPtr<ServiceConfig> default_service_config_;
-  UniquePtr<char> target_uri_;
   const grpc_channel_args* channel_args_;
+  RefCountedPtr<ServiceConfig> default_service_config_;
+  UniquePtr<char> server_name_;
+  UniquePtr<char> target_uri_;
   channelz::ChannelNode* channelz_node_;
 
   //
@@ -3470,8 +3470,6 @@ void CallData::StartPickLocked(void* arg, grpc_error* error) {
   ChannelData* chand = static_cast<ChannelData*>(elem->channel_data);
   GPR_ASSERT(calld->connected_subchannel_ == nullptr);
   GPR_ASSERT(calld->subchannel_call_ == nullptr);
-  // Apply service config to call if needed.
-  calld->MaybeApplyServiceConfigToCallLocked(elem);
   // picker's being null means the channel is currently in IDLE state. The
   // incoming call will make the channel exit IDLE and queue itself.
   if (chand->picker() == nullptr) {
@@ -3481,6 +3479,8 @@ void CallData::StartPickLocked(void* arg, grpc_error* error) {
     calld->AddCallToQueuedPicksLocked(elem);
     return;
   }
+  // Apply service config to call if needed.
+  calld->MaybeApplyServiceConfigToCallLocked(elem);
   // If this is a retry, use the send_initial_metadata payload that
   // we've cached; otherwise, use the pending batch.  The
   // send_initial_metadata batch will be the first pending batch in the
