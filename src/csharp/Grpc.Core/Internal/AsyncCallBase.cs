@@ -44,7 +44,7 @@ namespace Grpc.Core.Internal
         readonly Action<TWrite, SerializationContext> serializer;
         readonly Func<DeserializationContext, TRead> deserializer;
 
-        protected readonly object myLock = new object();
+        protected readonly object myLock = Pool.TryRent<object>() ?? new object();
 
         protected INativeCall call;
         protected bool disposed;
@@ -196,7 +196,11 @@ namespace Grpc.Core.Internal
             {
                 call.Dispose();
             }
-            disposed = true;
+            if (!disposed)
+            {
+                disposed = true;
+                Pool.Return(myLock);
+            }
             OnAfterReleaseResourcesLocked();
         }
 

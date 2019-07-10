@@ -453,12 +453,18 @@ namespace Grpc.Core.Internal
             if (cancelRequested)
             {
                 // Return a cancelled task.
-                var tcs = ValueTaskCompletionSource<object>.Create();
-                tcs.TrySetCanceled();
-                return tcs.Task;
+                return CanceledTask;
             }
 
             return null;
+        }
+
+        private static readonly Task<object> CanceledTask = CreateCanceledTask();
+        static Task<object> CreateCanceledTask()
+        {
+            var tcs = ValueTaskCompletionSource<object>.Create();
+            tcs.TrySetCanceled();
+            return tcs.Task;
         }
 
         private void Initialize(CompletionQueueSafeHandle cq)
