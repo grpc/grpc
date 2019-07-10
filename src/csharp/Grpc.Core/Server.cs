@@ -25,6 +25,7 @@ using System.Threading.Tasks;
 using Grpc.Core.Internal;
 using Grpc.Core.Logging;
 using Grpc.Core.Utils;
+using PooledAwait;
 
 namespace Grpc.Core
 {
@@ -207,44 +208,52 @@ namespace Grpc.Core
         /// <summary>
         /// Shuts down the server.
         /// </summary>
-        private async Task ShutdownInternalAsync(bool kill)
+        private Task ShutdownInternalAsync(bool kill)
         {
-            lock (myLock)
+            return Impl();
+            async PooledTask Impl()
             {
-                GrpcPreconditions.CheckState(!shutdownRequested);
-                shutdownRequested = true;
+                lock (myLock)
+                {
+                    GrpcPreconditions.CheckState(!shutdownRequested);
+                    shutdownRequested = true;
+                }
+                GrpcEnvironment.UnregisterServer(this);
+
+                var cq = environment.CompletionQueues.First();  // any cq will do
+                handle.ShutdownAndNotify(HandleServerShutdown, cq);
+                if (kill)
+                {
+                    handle.CancelAllCalls();
+                }
+                await ShutdownCompleteOrEnvironmentDeadAsync().ConfigureAwait(false);
+
+                DisposeHandle();
+
+                await GrpcEnvironment.ReleaseAsync().ConfigureAwait(false);
             }
-            GrpcEnvironment.UnregisterServer(this);
-
-            var cq = environment.CompletionQueues.First();  // any cq will do
-            handle.ShutdownAndNotify(HandleServerShutdown, cq);
-            if (kill)
-            {
-                handle.CancelAllCalls();
-            }
-            await ShutdownCompleteOrEnvironmentDeadAsync().ConfigureAwait(false);
-
-            DisposeHandle();
-
-            await GrpcEnvironment.ReleaseAsync().ConfigureAwait(false);
         }
 
         /// <summary>
         /// In case the environment's threadpool becomes dead, the shutdown completion will
         /// never be delivered, but we need to release the environment's handle anyway.
         /// </summary>
-        private async Task ShutdownCompleteOrEnvironmentDeadAsync()
+        private Task ShutdownCompleteOrEnvironmentDeadAsync()
         {
-            while (true)
+            return Impl();
+            async PooledTask Impl()
             {
-                var task = await Task.WhenAny(shutdownTcs.Task, Task.Delay(20)).ConfigureAwait(false);
-                if (shutdownTcs.Task == task)
+                while (true)
                 {
-                    return;
-                }
-                if (!environment.IsAlive)
-                {
-                    return;
+                    var task = await Task.WhenAny(shutdownTcs.Task, Task.Delay(20)).ConfigureAwait(false);
+                    if (shutdownTcs.Task == task)
+                    {
+                        return;
+                    }
+                    if (!environment.IsAlive)
+                    {
+                        return;
+                    }
                 }
             }
         }
@@ -301,10 +310,40 @@ namespace Grpc.Core
             if (!shutdownRequested)
             {
                 // TODO(jtattermusch): avoid unnecessary delegate allocation
-                handle.RequestCall((success, ctx) => HandleNewServerRpc(success, ctx, cq), cq);
+                handle.RequestCall(ServerRpcRequestCallCompletion.Create(this, cq), cq);
             }
         }
 
+
+        sealed class ServerRpcRequestCallCompletion : RequestCallCompletion, IResettable
+        {
+            private CompletionQueueSafeHandle _cq;
+            private Server _server;
+            private ServerRpcRequestCallCompletion() { }
+            public static RequestCallCompletion Create(Server server, CompletionQueueSafeHandle cq)
+            {
+                var obj = Pool.TryRent<ServerRpcRequestCallCompletion>() ?? new ServerRpcRequestCallCompletion();
+                obj._server = server;
+                obj._cq = cq;
+                return obj;
+            }
+            public override void Invoke(bool success, RequestCallContextSafeHandle ctx)
+            {
+                // snapshot and recycle
+                var server = _server;
+                var cq = _cq;
+                Pool.Return(this);
+
+                // execute the method
+                server.HandleNewServerRpc(success, ctx, cq);
+            }
+
+            void IResettable.Reset()
+            {
+                _cq = null;
+                _server = null;
+            }
+        }
         /// <summary>
         /// Checks that all ports have been bound successfully.
         /// </summary>
@@ -334,24 +373,28 @@ namespace Grpc.Core
         /// <summary>
         /// Selects corresponding handler for given call and handles the call.
         /// </summary>
-        private async Task HandleCallAsync(ServerRpcNew newRpc, CompletionQueueSafeHandle cq, Action<Server, CompletionQueueSafeHandle> continuation)
+        private Task HandleCallAsync(ServerRpcNew newRpc, CompletionQueueSafeHandle cq, Action<Server, CompletionQueueSafeHandle> continuation)
         {
-            try
+            return Impl();
+            async PooledTask Impl()
             {
-                IServerCallHandler callHandler;
-                if (!callHandlers.TryGetValue(newRpc.Method, out callHandler))
+                try
                 {
-                    callHandler = UnimplementedMethodCallHandler.Instance;
+                    IServerCallHandler callHandler;
+                    if (!callHandlers.TryGetValue(newRpc.Method, out callHandler))
+                    {
+                        callHandler = UnimplementedMethodCallHandler.Instance;
+                    }
+                    await callHandler.HandleCall(newRpc, cq).ConfigureAwait(false);
                 }
-                await callHandler.HandleCall(newRpc, cq).ConfigureAwait(false);
-            }
-            catch (Exception e)
-            {
-                Logger.Warning(e, "Exception while handling RPC.");
-            }
-            finally
-            {
-                continuation(this, cq);
+                catch (Exception e)
+                {
+                    Logger.Warning(e, "Exception while handling RPC.");
+                }
+                finally
+                {
+                    continuation(this, cq);
+                }
             }
         }
 

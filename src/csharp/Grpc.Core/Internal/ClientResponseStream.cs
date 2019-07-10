@@ -20,6 +20,7 @@ using System;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
+using PooledAwait;
 
 namespace Grpc.Core.Internal
 {
@@ -47,20 +48,24 @@ namespace Grpc.Core.Internal
             }
         }
 
-        public async Task<bool> MoveNext(CancellationToken token)
+        public Task<bool> MoveNext(CancellationToken token)
         {
-            var cancellationTokenRegistration = token.CanBeCanceled ? token.Register(() => call.Cancel()) : (IDisposable) null;
-            using (cancellationTokenRegistration)
+            return Impl();
+            async PooledTask<bool> Impl()
             {
-                var result = await call.ReadMessageAsync().ConfigureAwait(false);
-                this.current = result;
-
-                if (result == null)
+                var cancellationTokenRegistration = token.CanBeCanceled ? token.Register(() => call.Cancel()) : (IDisposable)null;
+                using (cancellationTokenRegistration)
                 {
-                    await call.StreamingResponseCallFinishedTask.ConfigureAwait(false);
-                    return false;
+                    var result = await call.ReadMessageAsync().ConfigureAwait(false);
+                    this.current = result;
+
+                    if (result == null)
+                    {
+                        await call.StreamingResponseCallFinishedTask.ConfigureAwait(false);
+                        return false;
+                    }
+                    return true;
                 }
-                return true;
             }
         }
 

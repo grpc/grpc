@@ -16,18 +16,26 @@
 
 #endregion
 
-using BenchmarkDotNet.Running;
+using System.Threading.Tasks;
+using PooledAwait;
 
 namespace Grpc.Microbenchmarks
 {
     class Program
     {
-        // typical usage: dotnet run -c Release -f netcoreapp2.1
-        // (this will profile both .net core and .net framework; for some reason
-        // if you start from "-f net461", it goes horribly wrong)
-        public static void Main(string[] args)
+        public static Task Main()
         {
-            BenchmarkSwitcher.FromAssembly(typeof(Program).Assembly).Run(args);
+            return Impl();
+            async PooledTask Impl()
+            {
+                var impl = new PingBenchmark();
+                await impl.Setup();
+                for (int i = 0; i < 10000; i++)
+                {
+                    await impl.PingAsync();
+                }
+                await impl.Cleanup();
+            }
         }
     }
 }

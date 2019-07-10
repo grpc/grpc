@@ -24,6 +24,7 @@ using System.Threading.Tasks;
 using Grpc.Core.Internal;
 using Grpc.Core.Logging;
 using Grpc.Core.Utils;
+using PooledAwait;
 
 namespace Grpc.Core
 {
@@ -84,23 +85,27 @@ namespace Grpc.Core
         /// <summary>
         /// Decrements the reference count for currently active environment and asynchronously shuts down the gRPC environment if reference count drops to zero.
         /// </summary>
-        internal static async Task ReleaseAsync()
+        internal static Task ReleaseAsync()
         {
-            GrpcEnvironment instanceToShutdown = null;
-            lock (staticLock)
+            return Impl();
+            async PooledTask Impl()
             {
-                GrpcPreconditions.CheckState(refCount > 0);
-                refCount--;
-                if (refCount == 0)
+                GrpcEnvironment instanceToShutdown = null;
+                lock (staticLock)
                 {
-                    instanceToShutdown = instance;
-                    instance = null;
+                    GrpcPreconditions.CheckState(refCount > 0);
+                    refCount--;
+                    if (refCount == 0)
+                    {
+                        instanceToShutdown = instance;
+                        instance = null;
+                    }
                 }
-            }
 
-            if (instanceToShutdown != null)
-            {
-                await instanceToShutdown.ShutdownAsync().ConfigureAwait(false);
+                if (instanceToShutdown != null)
+                {
+                    await instanceToShutdown.ShutdownAsync().ConfigureAwait(false);
+                }
             }
         }
 
@@ -385,22 +390,26 @@ namespace Grpc.Core
         /// <summary>
         /// Shuts down this environment.
         /// </summary>
-        private async Task ShutdownAsync()
+        private Task ShutdownAsync()
         {
-            if (isShutdown)
+            return Impl();
+            async PooledTask Impl()
             {
-                throw new InvalidOperationException("ShutdownAsync has already been called");
+                if (isShutdown)
+                {
+                    throw new InvalidOperationException("ShutdownAsync has already been called");
+                }
+
+                await Task.Run(() => ShuttingDown?.Invoke(this, null)).ConfigureAwait(false);
+
+                await threadPool.StopAsync().ConfigureAwait(false);
+                requestCallContextPool.Dispose();
+                batchContextPool.Dispose();
+                GrpcNativeShutdown();
+                isShutdown = true;
+
+                debugStats.CheckOK();
             }
-
-            await Task.Run(() => ShuttingDown?.Invoke(this, null)).ConfigureAwait(false);
-
-            await threadPool.StopAsync().ConfigureAwait(false);
-            requestCallContextPool.Dispose();
-            batchContextPool.Dispose();
-            GrpcNativeShutdown();
-            isShutdown = true;
-
-            debugStats.CheckOK();
         }
 
         private int GetThreadPoolSizeOrDefault()

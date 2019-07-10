@@ -22,6 +22,7 @@ using System.Threading.Tasks;
 using Grpc.Core.Internal;
 using Grpc.Core.Logging;
 using Grpc.Core.Utils;
+using PooledAwait;
 
 namespace Grpc.Core
 {
@@ -134,12 +135,16 @@ namespace Grpc.Core
         /// given lastObservedState. 
         /// If deadline is reached or an error occurs, returned task is cancelled.
         /// </summary>
-        public async Task WaitForStateChangedAsync(ChannelState lastObservedState, DateTime? deadline = null)
+        public Task WaitForStateChangedAsync(ChannelState lastObservedState, DateTime? deadline = null)
         {
-            var result = await TryWaitForStateChangedAsync(lastObservedState, deadline).ConfigureAwait(false);
-            if (!result)
+            return Impl();
+            async PooledTask Impl()
             {
-                throw new TaskCanceledException("Reached deadline.");
+                var result = await TryWaitForStateChangedAsync(lastObservedState, deadline).ConfigureAwait(false);
+                if (!result)
+                {
+                    throw new TaskCanceledException("Reached deadline.");
+                }
             }
         }
 
@@ -207,17 +212,21 @@ namespace Grpc.Core
         /// Starting an RPC on a new channel will request connection implicitly.
         /// </summary>
         /// <param name="deadline">The deadline. <c>null</c> indicates no deadline.</param>
-        public async Task ConnectAsync(DateTime? deadline = null)
+        public Task ConnectAsync(DateTime? deadline = null)
         {
-            var currentState = GetConnectivityState(true);
-            while (currentState != ChannelState.Ready)
+            return Impl();
+            async PooledTask Impl()
             {
-                if (currentState == ChannelState.Shutdown)
+                var currentState = GetConnectivityState(true);
+                while (currentState != ChannelState.Ready)
                 {
-                    throw new OperationCanceledException("Channel has reached Shutdown state.");
+                    if (currentState == ChannelState.Shutdown)
+                    {
+                        throw new OperationCanceledException("Channel has reached Shutdown state.");
+                    }
+                    await WaitForStateChangedAsync(currentState, deadline).ConfigureAwait(false);
+                    currentState = GetConnectivityState(false);
                 }
-                await WaitForStateChangedAsync(currentState, deadline).ConfigureAwait(false);
-                currentState = GetConnectivityState(false);
             }
         }
 
@@ -232,29 +241,33 @@ namespace Grpc.Core
         /// before shutting down the channel to ensure channel shutdown won't impact
         /// the outcome of those remote calls.
         /// </remarks>
-        public async Task ShutdownAsync()
+        public Task ShutdownAsync()
         {
-            lock (myLock)
+            return Impl();
+            async PooledTask Impl()
             {
-                GrpcPreconditions.CheckState(!shutdownRequested);
-                shutdownRequested = true;
+                lock (myLock)
+                {
+                    GrpcPreconditions.CheckState(!shutdownRequested);
+                    shutdownRequested = true;
+                }
+                GrpcEnvironment.UnregisterChannel(this);
+
+                shutdownTokenSource.Cancel();
+
+                var activeCallCount = activeCallCounter.Count;
+                if (activeCallCount > 0)
+                {
+                    Logger.Warning("Channel shutdown was called but there are still {0} active calls for that channel.", activeCallCount);
+                }
+
+                lock (myLock)
+                {
+                    handle.Dispose();
+                }
+
+                await GrpcEnvironment.ReleaseAsync().ConfigureAwait(false);
             }
-            GrpcEnvironment.UnregisterChannel(this);
-
-            shutdownTokenSource.Cancel();
-
-            var activeCallCount = activeCallCounter.Count;
-            if (activeCallCount > 0)
-            {
-                Logger.Warning("Channel shutdown was called but there are still {0} active calls for that channel.", activeCallCount);
-            }
-
-            lock (myLock)
-            {
-                handle.Dispose();
-            }
-
-            await GrpcEnvironment.ReleaseAsync().ConfigureAwait(false);
         }
 
         internal ChannelSafeHandle Handle

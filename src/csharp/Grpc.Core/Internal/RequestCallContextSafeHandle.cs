@@ -18,6 +18,7 @@
 
 using System;
 using System.Runtime.InteropServices;
+using System.Threading;
 using Grpc.Core;
 using Grpc.Core.Logging;
 using Grpc.Core.Utils;
@@ -57,7 +58,12 @@ namespace Grpc.Core.Internal
             returnToPoolAction = returnAction;
         }
 
-        public RequestCallCompletionDelegate CompletionCallback { get; set; }
+        private RequestCallCompletion _completionCallback;
+        public RequestCallCompletion CompletionCallback
+        {
+            get => _completionCallback;
+            set => _completionCallback = value;
+        }
 
         // Gets data of server_rpc_new completion.
         public ServerRpcNew GetServerRpcNew(Server server)
@@ -108,7 +114,8 @@ namespace Grpc.Core.Internal
         {
             try
             {
-                CompletionCallback(success, this);
+                var callback = Interlocked.Exchange(ref _completionCallback, null);
+                callback?.Invoke(success, this);
             }
             catch (Exception e)
             {
@@ -116,7 +123,6 @@ namespace Grpc.Core.Internal
             }
             finally
             {
-                CompletionCallback = null;
                 Recycle();
             }
         }

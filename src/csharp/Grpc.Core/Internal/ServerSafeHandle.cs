@@ -71,7 +71,7 @@ namespace Grpc.Core.Internal
             }
         }
 
-        public void RequestCall(RequestCallCompletionDelegate callback, CompletionQueueSafeHandle completionQueue)
+        public void RequestCall(RequestCallCompletion callback, CompletionQueueSafeHandle completionQueue)
         {
             using (completionQueue.NewScope())
             {

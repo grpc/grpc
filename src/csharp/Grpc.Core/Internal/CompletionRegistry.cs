@@ -24,12 +24,16 @@ using System.Runtime.InteropServices;
 using System.Threading;
 using Grpc.Core.Logging;
 using Grpc.Core.Utils;
+using PooledAwait;
 
 namespace Grpc.Core.Internal
 {
     internal delegate void BatchCompletionDelegate(bool success, BatchContextSafeHandle ctx, object state);
 
-    internal delegate void RequestCallCompletionDelegate(bool success, RequestCallContextSafeHandle ctx);
+    abstract class RequestCallCompletion
+    {
+        public abstract void Invoke(bool success, RequestCallContextSafeHandle ctx);
+    }
 
     internal class CompletionRegistry
     {
@@ -75,7 +79,7 @@ namespace Grpc.Core.Internal
             return ctx;
         }
 
-        public RequestCallContextSafeHandle RegisterRequestCallCompletion(RequestCallCompletionDelegate callback)
+        public RequestCallContextSafeHandle RegisterRequestCallCompletion(RequestCallCompletion callback)
         {
             var ctx = requestCallContextFactory();
             ctx.CompletionCallback = callback;

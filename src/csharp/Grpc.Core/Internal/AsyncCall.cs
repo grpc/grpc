@@ -22,6 +22,7 @@ using System.Threading.Tasks;
 using Grpc.Core.Logging;
 using Grpc.Core.Profiling;
 using Grpc.Core.Utils;
+using PooledAwait;
 
 namespace Grpc.Core.Internal
 {
@@ -484,7 +485,13 @@ namespace Grpc.Core.Internal
             // - We don't care about the overhead as OnFailedToStartCallLocked() only happens
             //   when something goes very bad when initializing a call and that should
             //   never happen when gRPC is used correctly.
-            ThreadPool.QueueUserWorkItem((state) => OnAfterReleaseResourcesUnlocked());
+            _ = BackgroundOnAfterReleaseResourcesUnlocked();
+        }
+
+        private async FireAndForget BackgroundOnAfterReleaseResourcesUnlocked()
+        {
+            await Task.Yield();
+            OnAfterReleaseResourcesUnlocked();
         }
 
         private INativeCall CreateNativeCall(CompletionQueueSafeHandle cq)

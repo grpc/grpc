@@ -24,6 +24,7 @@ using System.Threading.Tasks;
 using Grpc.Core.Logging;
 using Grpc.Core.Profiling;
 using Grpc.Core.Utils;
+using PooledAwait;
 
 namespace Grpc.Core.Internal
 {
@@ -42,8 +43,6 @@ namespace Grpc.Core.Internal
         readonly int poolSize;
         readonly int completionQueueCount;
         readonly bool inlineHandlers;
-        readonly WaitCallback runCompletionQueueEventCallbackSuccess;
-        readonly WaitCallback runCompletionQueueEventCallbackFailure;
         readonly AtomicCounter queuedContinuationCounter = new AtomicCounter();
 
         readonly List<BasicProfiler> threadProfilers = new List<BasicProfiler>();  // profilers assigned to threadpool threads
@@ -67,9 +66,6 @@ namespace Grpc.Core.Internal
             this.inlineHandlers = inlineHandlers;
             GrpcPreconditions.CheckArgument(poolSize >= completionQueueCount,
                 "Thread pool size cannot be smaller than the number of completion queues used.");
-
-            this.runCompletionQueueEventCallbackSuccess = new WaitCallback((callback) => RunCompletionQueueEventCallback((IOpCompletionCallback) callback, true));
-            this.runCompletionQueueEventCallbackFailure = new WaitCallback((callback) => RunCompletionQueueEventCallback((IOpCompletionCallback) callback, false));
         }
 
         public void Start()
@@ -180,7 +176,8 @@ namespace Grpc.Core.Internal
                         if (!inlineHandlers)
                         {
                             // Use cached delegates to avoid unnecessary allocations
-                            ThreadPool.QueueUserWorkItem(success ? runCompletionQueueEventCallbackSuccess : runCompletionQueueEventCallbackFailure, callback);
+
+                            _ = RunBackgroundCompletionQueueEventCallback(callback, success);
                         }
                         else
                         {
@@ -212,6 +209,13 @@ namespace Grpc.Core.Internal
                 Thread.Sleep(FinishContinuationsSleepMillis);
                 sleepIterations ++;
             }
+        }
+
+
+        private async FireAndForget RunBackgroundCompletionQueueEventCallback(IOpCompletionCallback callback, bool success)
+        {
+            await Task.Yield();
+            RunCompletionQueueEventCallback(callback, success);
         }
 
         private static IReadOnlyCollection<CompletionQueueSafeHandle> CreateCompletionQueueList(GrpcEnvironment environment, int completionQueueCount)

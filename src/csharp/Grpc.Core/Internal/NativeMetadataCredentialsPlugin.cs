@@ -20,6 +20,7 @@ using System.Threading.Tasks;
 
 using Grpc.Core.Logging;
 using Grpc.Core.Utils;
+using PooledAwait;
 
 namespace Grpc.Core.Internal
 {
@@ -64,7 +65,7 @@ namespace Grpc.Core.Internal
             {
                 var context = new AuthInterceptorContext(Marshal.PtrToStringAnsi(serviceUrlPtr), Marshal.PtrToStringAnsi(methodNamePtr));
                 // Make a guarantee that credentials_notify_from_plugin is invoked async to be compliant with c-core API.
-                ThreadPool.QueueUserWorkItem(async (stateInfo) => await GetMetadataAsync(context, callbackPtr, userDataPtr));
+                _ = BackgroundGetMetadataAsync(context, callbackPtr, userDataPtr);
             }
             catch (Exception e)
             {
@@ -73,8 +74,9 @@ namespace Grpc.Core.Internal
             }
         }
 
-        private async Task GetMetadataAsync(AuthInterceptorContext context, IntPtr callbackPtr, IntPtr userDataPtr)
+        private async FireAndForget BackgroundGetMetadataAsync(AuthInterceptorContext context, IntPtr callbackPtr, IntPtr userDataPtr)
         {
+            await Task.Yield();
             try
             {
                 var metadata = new Metadata();

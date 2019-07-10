@@ -19,6 +19,7 @@
 using System.Threading.Tasks;
 using BenchmarkDotNet.Attributes;
 using Grpc.Core;
+using PooledAwait;
 
 namespace Grpc.Microbenchmarks
 {
@@ -40,11 +41,15 @@ namespace Grpc.Microbenchmarks
 
 
         [Benchmark]
-        public async ValueTask<string> PingAsync()
+        public ValueTask<string> PingAsync()
         {
-            using (var result = client.PingAsync("", new CallOptions()))
+            return Impl();
+            async PooledValueTask<string> Impl()
             {
-                return await result.ResponseAsync;
+                using (var result = client.PingAsync("", new CallOptions()))
+                {
+                    return await result.ResponseAsync;
+                }
             }
         }
 
@@ -64,26 +69,34 @@ namespace Grpc.Microbenchmarks
         PingClient client;
 
         [GlobalSetup]
-        public async Task Setup()
+        public Task Setup()
         {
-            // create server
-            server = new Server {
-                Ports = { new ServerPort("localhost", 10042, ServerCredentials.Insecure) },
-                Services = { ServerServiceDefinition.CreateBuilder().AddMethod(PingMethod, ServerMethod).Build() },
-            };
-            server.Start();
+            return Impl();
+            async PooledTask Impl()
+            {
+                // create server
+                server = new Server {
+                    Ports = { new ServerPort("localhost", 10042, ServerCredentials.Insecure) },
+                    Services = { ServerServiceDefinition.CreateBuilder().AddMethod(PingMethod, ServerMethod).Build() },
+                };
+                server.Start();
 
-            // create client
-            channel = new Channel("localhost", 10042, ChannelCredentials.Insecure);
-            await channel.ConnectAsync();
-            client = new PingClient(new DefaultCallInvoker(channel));
+                // create client
+                channel = new Channel("localhost", 10042, ChannelCredentials.Insecure);
+                await channel.ConnectAsync();
+                client = new PingClient(new DefaultCallInvoker(channel));
+            }
         }
 
         [GlobalCleanup]
-        public async Task Cleanup()
+        public Task Cleanup()
         {
-            await channel.ShutdownAsync();
-            await server.ShutdownAsync();
+            return Impl();
+            async PooledTask Impl()
+            {
+                await channel.ShutdownAsync();
+                await server.ShutdownAsync();
+            }
         }
 
         class PingClient : LiteClientBase
