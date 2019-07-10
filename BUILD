@@ -1361,14 +1361,12 @@ grpc_cc_library(
 grpc_cc_library(
     name = "grpc_lb_policy_xds",
     srcs = [
-        "src/core/ext/filters/client_channel/lb_policy/xds/client_load_reporting_filter.cc",
         "src/core/ext/filters/client_channel/lb_policy/xds/xds.cc",
         "src/core/ext/filters/client_channel/lb_policy/xds/xds_channel.cc",
         "src/core/ext/filters/client_channel/lb_policy/xds/xds_client_stats.cc",
         "src/core/ext/filters/client_channel/lb_policy/xds/xds_load_balancer_api.cc",
     ],
     hdrs = [
-        "src/core/ext/filters/client_channel/lb_policy/xds/client_load_reporting_filter.h",
         "src/core/ext/filters/client_channel/lb_policy/xds/xds.h",
         "src/core/ext/filters/client_channel/lb_policy/xds/xds_channel.h",
         "src/core/ext/filters/client_channel/lb_policy/xds/xds_client_stats.h",
@@ -1390,14 +1388,12 @@ grpc_cc_library(
 grpc_cc_library(
     name = "grpc_lb_policy_xds_secure",
     srcs = [
-        "src/core/ext/filters/client_channel/lb_policy/xds/client_load_reporting_filter.cc",
         "src/core/ext/filters/client_channel/lb_policy/xds/xds.cc",
         "src/core/ext/filters/client_channel/lb_policy/xds/xds_channel_secure.cc",
         "src/core/ext/filters/client_channel/lb_policy/xds/xds_client_stats.cc",
         "src/core/ext/filters/client_channel/lb_policy/xds/xds_load_balancer_api.cc",
     ],
     hdrs = [
-        "src/core/ext/filters/client_channel/lb_policy/xds/client_load_reporting_filter.h",
         "src/core/ext/filters/client_channel/lb_policy/xds/xds.h",
         "src/core/ext/filters/client_channel/lb_policy/xds/xds_channel.h",
         "src/core/ext/filters/client_channel/lb_policy/xds/xds_client_stats.h",

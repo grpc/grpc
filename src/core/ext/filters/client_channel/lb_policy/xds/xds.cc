@@ -71,7 +71,6 @@
 #include "include/grpc/support/alloc.h"
 #include "src/core/ext/filters/client_channel/client_channel.h"
 #include "src/core/ext/filters/client_channel/lb_policy.h"
-#include "src/core/ext/filters/client_channel/lb_policy/xds/client_load_reporting_filter.h"
 #include "src/core/ext/filters/client_channel/lb_policy/xds/xds.h"
 #include "src/core/ext/filters/client_channel/lb_policy/xds/xds_channel.h"
 #include "src/core/ext/filters/client_channel/lb_policy/xds/xds_client_stats.h"
@@ -363,6 +362,11 @@ class XdsLb : public LoadBalancingPolicy {
     PickResult Pick(PickArgs args);
 
    private:
+    static void RecordCallCompletion(
+        void* arg, grpc_error* error,
+        grpc_metadata_batch* recv_trailing_metadata,
+        LoadBalancingPolicy::CallState* call_state);
+
     UniquePtr<SubchannelPicker> picker_;
     XdsLbClientStats::LocalityStats* locality_stats_;
   };
@@ -585,18 +589,19 @@ LoadBalancingPolicy::PickResult XdsLb::PickerWrapper::Pick(
   }
   // Record a call started.
   locality_stats_->AddCallStarted();
-  // Inject the locality stats to record the call finished later.
-  grpc_mdelem locality_stats_md =
-      grpc_mdelem_from_slices(GRPC_MDSTR_LOCALITY_STATS, grpc_empty_slice());
-  GPR_ASSERT(grpc_mdelem_set_user_data(locality_stats_md,
-                                       XdsLbClientStats::LocalityStats::Destroy,
-                                       locality_stats_) == locality_stats_);
-  grpc_linked_mdelem* mdelem_storage = static_cast<grpc_linked_mdelem*>(
-      args.call_state->Alloc(sizeof(grpc_linked_mdelem)));
-  GPR_ASSERT(grpc_metadata_batch_add_tail(args.initial_metadata, mdelem_storage,
-                                          locality_stats_md) ==
-             GRPC_ERROR_NONE);
+  // Intercept the recv_trailing_metadata op to record call completion.
+  result.recv_trailing_metadata_ready = RecordCallCompletion;
+  result.recv_trailing_metadata_ready_user_data = locality_stats_;
   return result;
+}
+
+void XdsLb::PickerWrapper::RecordCallCompletion(
+    void* arg, grpc_error* error, grpc_metadata_batch* recv_trailing_metadata,
+    grpc_core::LoadBalancingPolicy::CallState* call_state) {
+  XdsLbClientStats::LocalityStats* locality_stats =
+      static_cast<XdsLbClientStats::LocalityStats*>(arg);
+  const bool call_failed = error != GRPC_ERROR_NONE;
+  locality_stats->AddCallFinished(call_failed);
 }
 
 //
@@ -2489,35 +2494,11 @@ class XdsFactory : public LoadBalancingPolicyFactory {
 // Plugin registration
 //
 
-namespace {
-
-// Only add client_load_reporting filter if the xds LB policy is used.
-bool MaybeAddClientLoadReportingFilter(grpc_channel_stack_builder* builder,
-                                       void* arg) {
-  const grpc_channel_args* args =
-      grpc_channel_stack_builder_get_channel_arguments(builder);
-  const grpc_arg* channel_arg =
-      grpc_channel_args_find(args, GRPC_ARG_LB_POLICY_NAME);
-  if (channel_arg != nullptr && channel_arg->type == GRPC_ARG_STRING &&
-      strcmp(channel_arg->value.string, "xds") == 0) {
-    return grpc_channel_stack_builder_append_filter(
-        builder, static_cast<const grpc_channel_filter*>(arg), nullptr,
-        nullptr);
-  }
-  return true;
-}
-
-}  // namespace
-
 void grpc_lb_policy_xds_init() {
   grpc_core::LoadBalancingPolicyRegistry::Builder::
       RegisterLoadBalancingPolicyFactory(
           grpc_core::UniquePtr<grpc_core::LoadBalancingPolicyFactory>(
               grpc_core::New<grpc_core::XdsFactory>()));
-  grpc_channel_init_register_stage(
-      GRPC_CLIENT_SUBCHANNEL, GRPC_CHANNEL_INIT_BUILTIN_PRIORITY,
-      MaybeAddClientLoadReportingFilter,
-      const_cast<grpc_channel_filter*>(&grpc_xds_client_load_reporting_filter));
 }
 
 void grpc_lb_policy_xds_shutdown() {}

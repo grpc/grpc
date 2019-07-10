@@ -644,7 +644,8 @@ class CallData {
   LbCallState lb_call_state_;
   RefCountedPtr<ConnectedSubchannel> connected_subchannel_;
   void (*lb_recv_trailing_metadata_ready_)(
-      void* user_data, grpc_metadata_batch* recv_trailing_metadata,
+      void* user_data, grpc_error* error,
+      grpc_metadata_batch* recv_trailing_metadata,
       LoadBalancingPolicy::CallState* call_state) = nullptr;
   void* lb_recv_trailing_metadata_ready_user_data_ = nullptr;
   grpc_closure pick_closure_;
@@ -1873,7 +1874,7 @@ void CallData::RecvTrailingMetadataReadyForLoadBalancingPolicy(
   CallData* calld = static_cast<CallData*>(arg);
   // Invoke callback to LB policy.
   calld->lb_recv_trailing_metadata_ready_(
-      calld->lb_recv_trailing_metadata_ready_user_data_,
+      calld->lb_recv_trailing_metadata_ready_user_data_, error,
       calld->recv_trailing_metadata_, &calld->lb_call_state_);
   // Chain to original callback.
   GRPC_CLOSURE_RUN(calld->original_recv_trailing_metadata_ready_,

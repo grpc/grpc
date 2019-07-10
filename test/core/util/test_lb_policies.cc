@@ -180,8 +180,8 @@ class InterceptRecvTrailingMetadataLoadBalancingPolicy
 
    private:
     static void RecordRecvTrailingMetadata(
-        void* arg, grpc_metadata_batch* recv_trailing_metadata,
-        CallState* call_state) {
+        void* arg, grpc_error* error,
+        grpc_metadata_batch* recv_trailing_metadata, CallState* call_state) {
       TrailingMetadataHandler* self =
           static_cast<TrailingMetadataHandler*>(arg);
       GPR_ASSERT(recv_trailing_metadata != nullptr);

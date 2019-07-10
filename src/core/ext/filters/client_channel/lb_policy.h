@@ -145,7 +145,8 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
     /// however, so any data that needs to be used after returning must
     /// be copied.
     void (*recv_trailing_metadata_ready)(
-        void* user_data, grpc_metadata_batch* recv_trailing_metadata,
+        void* user_data, grpc_error* error,
+        grpc_metadata_batch* recv_trailing_metadata,
         CallState* call_state) = nullptr;
     void* recv_trailing_metadata_ready_user_data = nullptr;
   };
