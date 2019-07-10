@@ -53,7 +53,7 @@ namespace Grpc.Core
         /// The ReadOnlySequence is only valid for the duration of the deserializer routine and the caller must not access it after the deserializer returns.
         /// Using the read only sequence is the most efficient way to access the message payload. Where possible it allows directly
         /// accessing the received payload without needing to perform any buffer copying or buffer allocations.
-        /// NOTE: In order to access the payload via this method, your compiler needs to support C# 7.2 (to be able to use the <c>Span</c> type).
+        /// NOTE: When using this method, it is recommended to use C# 7.2 compiler to make it more useful (using Span type directly from your code requires C# 7.2)."
         /// NOTE: Deserializers are expected not to call this method (or other payload accessor methods) more than once per received message
         /// (as there is no practical reason for doing so) and <c>DeserializationContext</c> implementations are free to assume so.
         /// </summary>
