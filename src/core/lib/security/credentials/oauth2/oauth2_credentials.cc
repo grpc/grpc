@@ -18,7 +18,6 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "src/core/lib/json/json.h"
 #include "src/core/lib/security/credentials/oauth2/oauth2_credentials.h"
 
 #include <string.h>
@@ -642,8 +641,8 @@ grpc_error* ValidateStsCredentialsOptions(
   *sts_url_out = nullptr;
   InlinedVector<grpc_error*, 3> error_list;
   UniquePtr<grpc_uri, GrpcUriDeleter> sts_url(
-      options->token_exchange_service_uri != nullptr
-          ? grpc_uri_parse(options->token_exchange_service_uri, false)
+      options->sts_endpoint_url != nullptr
+          ? grpc_uri_parse(options->sts_endpoint_url, false)
           : nullptr);
   if (sts_url == nullptr) {
     error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
