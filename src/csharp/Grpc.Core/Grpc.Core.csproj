@@ -23,9 +23,8 @@
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
 
-  <PropertyGroup Condition=" '$(TargetFramework)' == 'netstandard2.0' ">
+  <PropertyGroup>
     <LangVersion>7.2</LangVersion>
-    <DefineConstants>$(DefineConstants);GRPC_CSHARP_SUPPORT_SYSTEM_MEMORY</DefineConstants>
   </PropertyGroup>
 
   <ItemGroup>
@@ -100,8 +99,7 @@
 
   <ItemGroup>
     <PackageReference Include="System.Interactive.Async" Version="3.2.0" />
-    <!-- System.Buffers *may* come in transitively, but: we can *always* use ArrayPool -->
-    <PackageReference Include="System.Buffers" Version="4.5.0" />
+    <PackageReference Include="System.Memory" Version="4.5.3" />
   </ItemGroup>
 
   <ItemGroup Condition=" '$(TargetFramework)' == 'net45' ">

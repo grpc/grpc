@@ -16,8 +16,6 @@
 
 #endregion
 
-#if GRPC_CSHARP_SUPPORT_SYSTEM_MEMORY
-
 using Grpc.Core.Utils;
 using System;
 using System.Threading;
@@ -145,4 +143,3 @@ namespace Grpc.Core.Internal
         }
     }
 }
-#endif

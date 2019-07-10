@@ -259,6 +259,70 @@ std::shared_ptr<CallCredentials> MetadataCredentialsFromPlugin(
 
 namespace experimental {
 
+/// Options for creating STS Oauth Token Exchange credentials following the IETF
+/// draft https://tools.ietf.org/html/draft-ietf-oauth-token-exchange-16.
+/// Optional fields may be set to empty string. It is the responsibility of the
+/// caller to ensure that the subject and actor tokens are refreshed on disk at
+/// the specified paths.
+struct StsCredentialsOptions {
+  grpc::string token_exchange_service_uri;  // Required.
+  grpc::string resource;                    // Optional.
+  grpc::string audience;                    // Optional.
+  grpc::string scope;                       // Optional.
+  grpc::string requested_token_type;        // Optional.
+  grpc::string subject_token_path;          // Required.
+  grpc::string subject_token_type;          // Required.
+  grpc::string actor_token_path;            // Optional.
+  grpc::string actor_token_type;            // Optional.
+};
+
+/// Creates STS Options from a JSON string. The JSON schema is as follows:
+/// {
+///   "title": "STS Credentials Config",
+///   "type": "object",
+///   "required": ["token_exchange_service_uri", "subject_token_path",
+///                "subject_token_type"],
+///    "properties": {
+///      "token_exchange_service_uri": {
+///        "type": "string"
+///     },
+///     "resource": {
+///       "type": "string"
+///     },
+///     "audience": {
+///       "type": "string"
+///     },
+///     "scope": {
+///       "type": "string"
+///     },
+///     "requested_token_type": {
+///       "type": "string"
+///     },
+///     "subject_token_path": {
+///       "type": "string"
+///     },
+///     "subject_token_type": {
+///     "type": "string"
+///     },
+///     "actor_token_path" : {
+///       "type": "string"
+///     },
+///     "actor_token_type": {
+///       "type": "string"
+///     }
+///   }
+/// }
+grpc::Status StsCredentialsOptionsFromJson(const grpc::string& json_string,
+                                           StsCredentialsOptions* options);
+
+/// Creates STS credentials options from the $STS_CREDENTIALS environment
+/// variable. This environment variable points to the path of a JSON file
+/// comforming to the schema described above.
+grpc::Status StsCredentialsOptionsFromEnv(StsCredentialsOptions* options);
+
+std::shared_ptr<CallCredentials> StsCredentials(
+    const StsCredentialsOptions& options);
+
 /// Options used to build AltsCredentials.
 struct AltsCredentialsOptions {
   /// service accounts of target endpoint that will be acceptable

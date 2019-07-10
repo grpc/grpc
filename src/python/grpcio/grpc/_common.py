@@ -15,7 +15,6 @@
 
 import logging
 
-import time
 import six
 
 import grpc
@@ -61,8 +60,6 @@ STATUS_CODE_TO_CYGRPC_STATUS_CODE = {
         CYGRPC_STATUS_CODE_TO_STATUS_CODE)
 }
 
-MAXIMUM_WAIT_TIMEOUT = 0.1
-
 
 def encode(s):
     if isinstance(s, bytes):
@@ -99,50 +96,3 @@ def deserialize(serialized_message, deserializer):
 
 def fully_qualified_method(group, method):
     return '/{}/{}'.format(group, method)
-
-
-def _wait_once(wait_fn, timeout, spin_cb):
-    wait_fn(timeout=timeout)
-    if spin_cb is not None:
-        spin_cb()
-
-
-def wait(wait_fn, wait_complete_fn, timeout=None, spin_cb=None):
-    """Blocks waiting for an event without blocking the thread indefinitely.
-
-    See https://github.com/grpc/grpc/issues/19464 for full context. CPython's
-    `threading.Event.wait` and `threading.Condition.wait` methods, if invoked
-    without a timeout kwarg, may block the calling thread indefinitely. If the
-    call is made from the main thread, this means that signal handlers may not
-    run for an arbitrarily long period of time.
-
-    This wrapper calls the supplied wait function with an arbitrary short
-    timeout to ensure that no signal handler has to wait longer than
-    MAXIMUM_WAIT_TIMEOUT before executing.
-
-    Args:
-      wait_fn: A callable acceptable a single float-valued kwarg named
-        `timeout`. This function is expected to be one of `threading.Event.wait`
-        or `threading.Condition.wait`.
-      wait_complete_fn: A callable taking no arguments and returning a bool.
-        When this function returns true, it indicates that waiting should cease.
-      timeout: An optional float-valued number of seconds after which the wait
-        should cease.
-      spin_cb: An optional Callable taking no arguments and returning nothing.
-        This callback will be called on each iteration of the spin. This may be
-        used for, e.g. work related to forking.
-
-    Returns:
-      True if a timeout was supplied and it was reached. False otherwise.
-    """
-    if timeout is None:
-        while not wait_complete_fn():
-            _wait_once(wait_fn, MAXIMUM_WAIT_TIMEOUT, spin_cb)
-    else:
-        end = time.time() + timeout
-        while not wait_complete_fn():
-            remaining = min(end - time.time(), MAXIMUM_WAIT_TIMEOUT)
-            if remaining < 0:
-                return True
-            _wait_once(wait_fn, remaining, spin_cb)
-    return False
