@@ -1050,100 +1050,102 @@ void XdsLb::LbChannelState::EdsCallState::OnResponseReceivedLocked(
   // specified period of time, and if the timer fires, we go into fallback
   // mode. We will also need to cancel the timer when we receive a serverlist
   // from the balancer.
-  // Parse the response.
-  XdsUpdate update;
-  grpc_error* parse_error =
-      XdsEdsResponseDecodeAndParse(response_slice, &update);
-  if (parse_error != GRPC_ERROR_NONE) {
-    gpr_log(GPR_ERROR, "[xdslb %p] EDS response parsing failed. error=%s",
-            xdslb_policy, grpc_error_string(parse_error));
-    GRPC_ERROR_UNREF(parse_error);
-    goto done;
-  }
-  if (update.locality_list.empty()) {
-    char* response_slice_str =
-        grpc_dump_slice(response_slice, GPR_DUMP_ASCII | GPR_DUMP_HEX);
-    gpr_log(GPR_ERROR,
-            "[xdslb %p] EDS response '%s' doesn't contain any valid locality "
-            "update. Ignoring.",
-            xdslb_policy, response_slice_str);
-    gpr_free(response_slice_str);
-    goto done;
-  }
-  eds_calld->seen_response_ = true;
-  if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_xds_trace)) {
-    gpr_log(GPR_INFO,
-            "[xdslb %p] EDS response with %" PRIuPTR " localities received",
-            xdslb_policy, update.locality_list.size());
-    for (size_t i = 0; i < update.locality_list.size(); ++i) {
-      const XdsLocalityInfo& locality = update.locality_list[i];
-      const XdsLocalityName* locality_name = locality.locality_name.get();
+  // This anonymous lambda is a hack to avoid the usage of goto.
+  [&]() {
+    // Parse the response.
+    XdsUpdate update;
+    grpc_error* parse_error =
+        XdsEdsResponseDecodeAndParse(response_slice, &update);
+    if (parse_error != GRPC_ERROR_NONE) {
+      gpr_log(GPR_ERROR, "[xdslb %p] EDS response parsing failed. error=%s",
+              xdslb_policy, grpc_error_string(parse_error));
+      GRPC_ERROR_UNREF(parse_error);
+      return;
+    }
+    if (update.locality_list.empty()) {
+      char* response_slice_str =
+          grpc_dump_slice(response_slice, GPR_DUMP_ASCII | GPR_DUMP_HEX);
+      gpr_log(GPR_ERROR,
+              "[xdslb %p] EDS response '%s' doesn't contain any valid locality "
+              "update. Ignoring.",
+              xdslb_policy, response_slice_str);
+      gpr_free(response_slice_str);
+      return;
+    }
+    eds_calld->seen_response_ = true;
+    if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_xds_trace)) {
       gpr_log(GPR_INFO,
+              "[xdslb %p] EDS response with %" PRIuPTR " localities received",
+              xdslb_policy, update.locality_list.size());
+      for (size_t i = 0; i < update.locality_list.size(); ++i) {
+        const XdsLocalityInfo& locality = update.locality_list[i];
+        const XdsLocalityName* locality_name = locality.locality_name.get();
+        gpr_log(GPR_INFO,
+                "[xdslb %p] Locality %" PRIuPTR
+                " (region: %s, zone: %s, sub_zone: %s) contains %" PRIuPTR
+                " server addresses",
+                xdslb_policy, i, locality_name->region(), locality_name->zone(),
+                locality_name->sub_zone(), locality.serverlist.size());
+        for (size_t j = 0; j < locality.serverlist.size(); ++j) {
+          char* ipport;
+          grpc_sockaddr_to_string(&ipport, &locality.serverlist[j].address(),
+                                  false);
+          gpr_log(
+              GPR_INFO,
               "[xdslb %p] Locality %" PRIuPTR
-              " (region: %s, zone: %s, sub_zone: %s) contains %" PRIuPTR
-              " server addresses",
+              " (region: %s, zone: %s, sub_zone: %s), server address %" PRIuPTR
+              ": %s",
               xdslb_policy, i, locality_name->region(), locality_name->zone(),
-              locality_name->sub_zone(), locality.serverlist.size());
-      for (size_t j = 0; j < locality.serverlist.size(); ++j) {
-        char* ipport;
-        grpc_sockaddr_to_string(&ipport, &locality.serverlist[j].address(),
-                                false);
-        gpr_log(
-            GPR_INFO,
-            "[xdslb %p] Locality %" PRIuPTR
-            " (region: %s, zone: %s, sub_zone: %s), server address %" PRIuPTR
-            ": %s",
-            xdslb_policy, i, locality_name->region(), locality_name->zone(),
-            locality_name->sub_zone(), j, ipport);
-        gpr_free(ipport);
+              locality_name->sub_zone(), j, ipport);
+          gpr_free(ipport);
+        }
       }
     }
-  }
-  // Pending LB channel receives a serverlist; promote it.
-  // Note that this call can't be on a discarded pending channel, because
-  // such channels don't have any current call but we have checked this call
-  // is a current call.
-  if (!lb_chand->IsCurrentChannel()) {
-    if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_xds_trace)) {
-      gpr_log(GPR_INFO,
-              "[xdslb %p] Pending LB channel %p receives EDS response; "
-              "promoting it to replace current LB channel %p",
-              xdslb_policy, lb_chand, xdslb_policy->lb_chand_.get());
+    // Pending LB channel receives a serverlist; promote it.
+    // Note that this call can't be on a discarded pending channel, because
+    // such channels don't have any current call but we have checked this call
+    // is a current call.
+    if (!lb_chand->IsCurrentChannel()) {
+      if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_xds_trace)) {
+        gpr_log(GPR_INFO,
+                "[xdslb %p] Pending LB channel %p receives EDS response; "
+                "promoting it to replace current LB channel %p",
+                xdslb_policy, lb_chand, xdslb_policy->lb_chand_.get());
+      }
+      // TODO(juanlishen): Maybe promote the pending LB channel when the response
+      // results a READY locality map.
+      xdslb_policy->lb_chand_ = std::move(xdslb_policy->pending_lb_chand_);
     }
-    // TODO(juanlishen): Maybe promote the pending LB channel when the response
-    // results a READY locality map.
-    xdslb_policy->lb_chand_ = std::move(xdslb_policy->pending_lb_chand_);
-  }
-  // Ignore identical update.
-  if (xdslb_policy->locality_list_ == update.locality_list) {
-    if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_xds_trace)) {
-      gpr_log(GPR_INFO,
-              "[xdslb %p] Incoming server list identical to current, "
-              "ignoring.",
-              xdslb_policy);
+    // Ignore identical update.
+    if (xdslb_policy->locality_list_ == update.locality_list) {
+      if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_xds_trace)) {
+        gpr_log(GPR_INFO,
+                "[xdslb %p] Incoming server list identical to current, "
+                "ignoring.",
+                xdslb_policy);
+      }
+      return;
     }
-    goto done;
-  }
-  // At this point, lb_chand must be the current LB channel, so try to start
-  // load reporting.
-  {
-    LrsCallState* lrs_calld = lb_chand->lrs_calld_->lb_calld();
-    if (lrs_calld != nullptr) lrs_calld->MaybeStartReportingLocked();
-  }
-  // If the balancer tells us to drop all the calls, we should exit fallback
-  // mode immediately.
-  // TODO(juanlishen): When we add EDS drop, we should change to check
-  // drop_percentage.
-  if (update.locality_list[0].serverlist.empty()) {
-    xdslb_policy->MaybeExitFallbackMode();
-  }
-  // Update the locality list.
-  xdslb_policy->locality_list_ = std::move(update.locality_list);
-  // Update the locality map.
-  xdslb_policy->locality_map_.UpdateLocked(
-      xdslb_policy->locality_list_, xdslb_policy->child_policy_config_.get(),
-      xdslb_policy->args_, xdslb_policy);
-done:
+    // At this point, lb_chand must be the current LB channel, so try to start
+    // load reporting.
+    {
+      LrsCallState* lrs_calld = lb_chand->lrs_calld_->lb_calld();
+      if (lrs_calld != nullptr) lrs_calld->MaybeStartReportingLocked();
+    }
+    // If the balancer tells us to drop all the calls, we should exit fallback
+    // mode immediately.
+    // TODO(juanlishen): When we add EDS drop, we should change to check
+    // drop_percentage.
+    if (update.locality_list[0].serverlist.empty()) {
+      xdslb_policy->MaybeExitFallbackMode();
+    }
+    // Update the locality list.
+    xdslb_policy->locality_list_ = std::move(update.locality_list);
+    // Update the locality map.
+    xdslb_policy->locality_map_.UpdateLocked(
+        xdslb_policy->locality_list_, xdslb_policy->child_policy_config_.get(),
+        xdslb_policy->args_, xdslb_policy);
+  }();
   grpc_slice_unref_internal(response_slice);
   if (xdslb_policy->shutting_down_) {
     eds_calld->Unref(DEBUG_LOCATION,
