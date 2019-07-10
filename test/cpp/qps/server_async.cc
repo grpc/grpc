@@ -34,7 +34,7 @@
 #include <grpcpp/server_context.h>
 #include <grpcpp/support/config.h>
 
-#include "src/core/lib/gpr/host_port.h"
+#include "src/core/lib/gprpp/host_port.h"
 #include "src/core/lib/surface/completion_queue.h"
 #include "src/proto/grpc/testing/benchmark_service.grpc.pb.h"
 #include "test/core/util/test_config.h"
@@ -80,11 +80,10 @@ class AsyncQpsServerTest final : public grpc::testing::Server {
     auto port_num = port();
     // Negative port number means inproc server, so no listen port needed
     if (port_num >= 0) {
-      char* server_address = nullptr;
-      gpr_join_host_port(&server_address, "::", port_num);
-      builder->AddListeningPort(server_address,
+      grpc_core::UniquePtr<char> server_address;
+      grpc_core::JoinHostPort(&server_address, "::", port_num);
+      builder->AddListeningPort(server_address.get(),
                                 Server::CreateServerCredentials(config));
-      gpr_free(server_address);
     }
 
     register_service(builder.get(), &async_service_);

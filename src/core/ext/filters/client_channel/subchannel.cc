@@ -75,19 +75,20 @@
 
 namespace grpc_core {
 
+TraceFlag grpc_trace_subchannel(false, "subchannel");
+DebugOnlyTraceFlag grpc_trace_subchannel_refcount(false, "subchannel_refcount");
+
 //
 // ConnectedSubchannel
 //
 
 ConnectedSubchannel::ConnectedSubchannel(
     grpc_channel_stack* channel_stack, const grpc_channel_args* args,
-    RefCountedPtr<channelz::SubchannelNode> channelz_subchannel,
-    intptr_t socket_uuid)
-    : ConnectedSubchannelInterface(&grpc_trace_stream_refcount),
+    RefCountedPtr<channelz::SubchannelNode> channelz_subchannel)
+    : ConnectedSubchannelInterface(&grpc_trace_subchannel_refcount),
       channel_stack_(channel_stack),
       args_(grpc_channel_args_copy(args)),
-      channelz_subchannel_(std::move(channelz_subchannel)),
-      socket_uuid_(socket_uuid) {}
+      channelz_subchannel_(std::move(channelz_subchannel)) {}
 
 ConnectedSubchannel::~ConnectedSubchannel() {
   grpc_channel_args_destroy(args_);
@@ -332,7 +333,7 @@ class Subchannel::ConnectedSubchannelStateWatcher {
         case GRPC_CHANNEL_TRANSIENT_FAILURE:
         case GRPC_CHANNEL_SHUTDOWN: {
           if (!c->disconnected_ && c->connected_subchannel_ != nullptr) {
-            if (grpc_trace_stream_refcount.enabled()) {
+            if (grpc_trace_subchannel.enabled()) {
               gpr_log(GPR_INFO,
                       "Connected subchannel %p of subchannel %p has gone into "
                       "%s. Attempting to reconnect.",
@@ -341,6 +342,9 @@ class Subchannel::ConnectedSubchannelStateWatcher {
                           self->pending_connectivity_state_));
             }
             c->connected_subchannel_.reset();
+            if (c->channelz_node() != nullptr) {
+              c->channelz_node()->SetChildSocketUuid(0);
+            }
             c->SetConnectivityStateLocked(GRPC_CHANNEL_TRANSIENT_FAILURE);
             c->backoff_begun_ = false;
             c->backoff_.Reset();
@@ -673,7 +677,7 @@ Subchannel::Subchannel(SubchannelKey* key, grpc_connector* connector,
       (size_t)grpc_channel_arg_get_integer(arg, options);
   if (channelz_enabled) {
     channelz_node_ = MakeRefCounted<channelz::SubchannelNode>(
-        this, channel_tracer_max_memory);
+        GetTargetAddress(), channel_tracer_max_memory);
     channelz_node_->AddTraceEvent(
         channelz::ChannelTrace::Severity::Info,
         grpc_slice_from_static_string("subchannel created"));
@@ -685,7 +689,7 @@ Subchannel::~Subchannel() {
     channelz_node_->AddTraceEvent(
         channelz::ChannelTrace::Severity::Info,
         grpc_slice_from_static_string("Subchannel destroyed"));
-    channelz_node_->MarkSubchannelDestroyed();
+    channelz_node_->UpdateConnectivityState(GRPC_CHANNEL_SHUTDOWN);
   }
   grpc_channel_args_destroy(args_);
   grpc_connector_unref(connector_);
@@ -772,14 +776,6 @@ Subchannel* Subchannel::RefFromWeakRef(GRPC_SUBCHANNEL_REF_EXTRA_ARGS) {
     } else {
       return nullptr;
     }
-  }
-}
-
-intptr_t Subchannel::GetChildSocketUuid() {
-  if (connected_subchannel_ != nullptr) {
-    return connected_subchannel_->socket_uuid();
-  } else {
-    return 0;
   }
 }
 
@@ -927,6 +923,7 @@ const char* SubchannelConnectivityStateChangeString(
 void Subchannel::SetConnectivityStateLocked(grpc_connectivity_state state) {
   state_ = state;
   if (channelz_node_ != nullptr) {
+    channelz_node_->UpdateConnectivityState(state);
     channelz_node_->AddTraceEvent(
         channelz::ChannelTrace::Severity::Info,
         grpc_slice_from_static_string(
@@ -1075,9 +1072,12 @@ bool Subchannel::PublishTransportLocked() {
   }
   // Publish.
   connected_subchannel_.reset(
-      New<ConnectedSubchannel>(stk, args_, channelz_node_, socket_uuid));
+      New<ConnectedSubchannel>(stk, args_, channelz_node_));
   gpr_log(GPR_INFO, "New connected subchannel at %p for subchannel %p",
           connected_subchannel_.get(), this);
+  if (channelz_node_ != nullptr) {
+    channelz_node_->SetChildSocketUuid(socket_uuid);
+  }
   // Instantiate state watcher.  Will clean itself up.
   New<ConnectedSubchannelStateWatcher>(this);
   // Report initial state.
@@ -1106,7 +1106,7 @@ gpr_atm Subchannel::RefMutate(
   gpr_atm old_val = barrier ? gpr_atm_full_fetch_add(&ref_pair_, delta)
                             : gpr_atm_no_barrier_fetch_add(&ref_pair_, delta);
 #ifndef NDEBUG
-  if (grpc_trace_stream_refcount.enabled()) {
+  if (grpc_trace_subchannel_refcount.enabled()) {
     gpr_log(file, line, GPR_LOG_SEVERITY_DEBUG,
             "SUBCHANNEL: %p %12s 0x%" PRIxPTR " -> 0x%" PRIxPTR " [%s]", this,
             purpose, old_val, old_val + delta, reason);

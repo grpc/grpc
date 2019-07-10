@@ -22,8 +22,11 @@
 #include <grpc/support/port_platform.h>
 
 #include <string.h>
+
+#include <algorithm>
 #include <functional>
 #include <iterator>
+
 #include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/gprpp/memory.h"
 #include "src/core/lib/gprpp/pair.h"
@@ -87,6 +90,13 @@ class Map {
   }
 
   iterator end() { return iterator(this, nullptr); }
+
+  iterator lower_bound(const Key& k) {
+    key_compare compare;
+    return std::find_if(begin(), end(), [&k, &compare](const value_type& v) {
+      return !compare(v.first, k);
+    });
+  }
 
  private:
   friend class testing::MapTest;

@@ -46,9 +46,7 @@ namespace grpc_impl {
 class Channel;
 class Server;
 class ServerBuilder;
-}  // namespace grpc_impl
-namespace grpc {
-
+class ServerContext;
 template <class R>
 class ClientReader;
 template <class W>
@@ -63,10 +61,10 @@ namespace internal {
 template <class W, class R>
 class ServerReaderWriterBody;
 }  // namespace internal
+}  // namespace grpc_impl
+namespace grpc {
 
 class ChannelInterface;
-class ClientContext;
-class ServerContext;
 class ServerInterface;
 
 namespace internal {
@@ -256,17 +254,17 @@ class CompletionQueue : private ::grpc::GrpcLibraryCodegen {
   // Friend synchronous wrappers so that they can access Pluck(), which is
   // a semi-private API geared towards the synchronous implementation.
   template <class R>
-  friend class ::grpc::ClientReader;
+  friend class ::grpc_impl::ClientReader;
   template <class W>
-  friend class ::grpc::ClientWriter;
+  friend class ::grpc_impl::ClientWriter;
   template <class W, class R>
-  friend class ::grpc::ClientReaderWriter;
+  friend class ::grpc_impl::ClientReaderWriter;
   template <class R>
-  friend class ::grpc::ServerReader;
+  friend class ::grpc_impl::ServerReader;
   template <class W>
-  friend class ::grpc::ServerWriter;
+  friend class ::grpc_impl::ServerWriter;
   template <class W, class R>
-  friend class ::grpc::internal::ServerReaderWriterBody;
+  friend class ::grpc_impl::internal::ServerReaderWriterBody;
   template <class ServiceType, class RequestType, class ResponseType>
   friend class ::grpc::internal::RpcMethodHandler;
   template <class ServiceType, class RequestType, class ResponseType>
@@ -278,7 +276,7 @@ class CompletionQueue : private ::grpc::GrpcLibraryCodegen {
   template <::grpc::StatusCode code>
   friend class ::grpc::internal::ErrorMethodHandler;
   friend class ::grpc_impl::Server;
-  friend class ::grpc::ServerContext;
+  friend class ::grpc_impl::ServerContext;
   friend class ::grpc::ServerInterface;
   template <class InputMessage, class OutputMessage>
   friend class ::grpc::internal::BlockingUnaryCallImpl;

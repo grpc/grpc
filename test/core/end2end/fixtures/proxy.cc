@@ -24,16 +24,15 @@
 #include <grpc/support/log.h>
 #include <grpc/support/sync.h>
 
-#include "src/core/lib/gpr/host_port.h"
 #include "src/core/lib/gpr/useful.h"
+#include "src/core/lib/gprpp/host_port.h"
+#include "src/core/lib/gprpp/memory.h"
 #include "src/core/lib/gprpp/thd.h"
 #include "test/core/util/port.h"
 
 struct grpc_end2end_proxy {
   grpc_end2end_proxy()
-      : proxy_port(nullptr),
-        server_port(nullptr),
-        cq(nullptr),
+      : cq(nullptr),
         server(nullptr),
         client(nullptr),
         shutdown(false),
@@ -42,8 +41,8 @@ struct grpc_end2end_proxy {
     memset(&new_call_metadata, 0, sizeof(new_call_metadata));
   }
   grpc_core::Thread thd;
-  char* proxy_port;
-  char* server_port;
+  grpc_core::UniquePtr<char> proxy_port;
+  grpc_core::UniquePtr<char> server_port;
   grpc_completion_queue* cq;
   grpc_server* server;
   grpc_channel* client;
@@ -92,15 +91,15 @@ grpc_end2end_proxy* grpc_end2end_proxy_create(const grpc_end2end_proxy_def* def,
 
   grpc_end2end_proxy* proxy = grpc_core::New<grpc_end2end_proxy>();
 
-  gpr_join_host_port(&proxy->proxy_port, "localhost", proxy_port);
-  gpr_join_host_port(&proxy->server_port, "localhost", server_port);
+  grpc_core::JoinHostPort(&proxy->proxy_port, "localhost", proxy_port);
+  grpc_core::JoinHostPort(&proxy->server_port, "localhost", server_port);
 
-  gpr_log(GPR_DEBUG, "PROXY ADDR:%s BACKEND:%s", proxy->proxy_port,
-          proxy->server_port);
+  gpr_log(GPR_DEBUG, "PROXY ADDR:%s BACKEND:%s", proxy->proxy_port.get(),
+          proxy->server_port.get());
 
   proxy->cq = grpc_completion_queue_create_for_next(nullptr);
-  proxy->server = def->create_server(proxy->proxy_port, server_args);
-  proxy->client = def->create_client(proxy->server_port, client_args);
+  proxy->server = def->create_server(proxy->proxy_port.get(), server_args);
+  proxy->client = def->create_client(proxy->server_port.get(), client_args);
 
   grpc_server_register_completion_queue(proxy->server, proxy->cq, nullptr);
   grpc_server_start(proxy->server);
@@ -131,8 +130,6 @@ void grpc_end2end_proxy_destroy(grpc_end2end_proxy* proxy) {
   grpc_server_shutdown_and_notify(proxy->server, proxy->cq,
                                   new_closure(shutdown_complete, proxy));
   proxy->thd.Join();
-  gpr_free(proxy->proxy_port);
-  gpr_free(proxy->server_port);
   grpc_server_destroy(proxy->server);
   grpc_channel_destroy(proxy->client);
   grpc_completion_queue_destroy(proxy->cq);
@@ -441,9 +438,9 @@ static void thread_main(void* arg) {
 }
 
 const char* grpc_end2end_proxy_get_client_target(grpc_end2end_proxy* proxy) {
-  return proxy->proxy_port;
+  return proxy->proxy_port.get();
 }
 
 const char* grpc_end2end_proxy_get_server_port(grpc_end2end_proxy* proxy) {
-  return proxy->server_port;
+  return proxy->server_port.get();
 }

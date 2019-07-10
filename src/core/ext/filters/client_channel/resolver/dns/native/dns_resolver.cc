@@ -31,7 +31,6 @@
 #include "src/core/ext/filters/client_channel/server_address.h"
 #include "src/core/lib/backoff/backoff.h"
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/gpr/host_port.h"
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gprpp/manual_constructor.h"
 #include "src/core/lib/iomgr/combiner.h"
@@ -230,7 +229,8 @@ void NativeDnsResolver::MaybeStartResolvingLocked() {
       // new closure API is done, find a way to track this ref with the timer
       // callback as part of the type system.
       Ref(DEBUG_LOCATION, "next_resolution_timer_cooldown").release();
-      grpc_timer_init(&next_resolution_timer_, ms_until_next_resolution,
+      grpc_timer_init(&next_resolution_timer_,
+                      ExecCtx::Get()->Now() + ms_until_next_resolution,
                       &on_next_resolution_);
       return;
     }
@@ -258,11 +258,16 @@ void NativeDnsResolver::StartResolvingLocked() {
 
 class NativeDnsResolverFactory : public ResolverFactory {
  public:
-  OrphanablePtr<Resolver> CreateResolver(ResolverArgs args) const override {
-    if (GPR_UNLIKELY(0 != strcmp(args.uri->authority, ""))) {
+  bool IsValidUri(const grpc_uri* uri) const override {
+    if (GPR_UNLIKELY(0 != strcmp(uri->authority, ""))) {
       gpr_log(GPR_ERROR, "authority based dns uri's not supported");
-      return OrphanablePtr<Resolver>(nullptr);
+      return false;
     }
+    return true;
+  }
+
+  OrphanablePtr<Resolver> CreateResolver(ResolverArgs args) const override {
+    if (!IsValidUri(args.uri)) return nullptr;
     return OrphanablePtr<Resolver>(New<NativeDnsResolver>(std::move(args)));
   }
 

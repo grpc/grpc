@@ -1568,6 +1568,10 @@ static grpc_call_error call_start_batch(grpc_call* call, const grpc_op* ops,
           error = GRPC_CALL_ERROR_TOO_MANY_OPERATIONS;
           goto done_with_error;
         }
+        // TODO(juanlishen): If the user has already specified a compression
+        // algorithm by setting the initial metadata with key of
+        // GRPC_COMPRESSION_REQUEST_ALGORITHM_MD_KEY, we shouldn't override that
+        // with the compression algorithm mapped from compression level.
         /* process compression level */
         grpc_metadata& compression_md = call->compression_md;
         compression_md.key = grpc_empty_slice();
@@ -1589,17 +1593,18 @@ static grpc_call_error call_start_batch(grpc_call* call, const grpc_op* ops,
             effective_compression_level = copts.default_level.level;
           }
         }
+        // Currently, only server side supports compression level setting.
         if (level_set && !call->is_client) {
           const grpc_compression_algorithm calgo =
               compression_algorithm_for_level_locked(
                   call, effective_compression_level);
-          /* the following will be picked up by the compress filter and used
-           * as the call's compression algorithm. */
+          // The following metadata will be checked and removed by the message
+          // compression filter. It will be used as the call's compression
+          // algorithm.
           compression_md.key = GRPC_MDSTR_GRPC_INTERNAL_ENCODING_REQUEST;
           compression_md.value = grpc_compression_algorithm_slice(calgo);
           additional_metadata_count++;
         }
-
         if (op->data.send_initial_metadata.count + additional_metadata_count >
             INT_MAX) {
           error = GRPC_CALL_ERROR_INVALID_METADATA;

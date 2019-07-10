@@ -23,7 +23,7 @@ def generate_resolver_component_tests():
             "address_sorting_test.cc",
         ],
         external_deps = [
-            "gmock",
+            "gtest",
         ],
         deps = [
             "//test/cpp/util:test_util%s" % unsecure_build_config_suffix,
@@ -43,7 +43,7 @@ def generate_resolver_component_tests():
             "resolver_component_test.cc",
         ],
         external_deps = [
-            "gmock",
+            "gtest",
         ],
         deps = [
             ":dns_test_util",

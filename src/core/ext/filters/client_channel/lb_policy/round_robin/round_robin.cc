@@ -323,8 +323,8 @@ void RoundRobin::RoundRobinSubchannelList::
   } else if (num_connecting_ > 0) {
     /* 2) CONNECTING */
     p->channel_control_helper()->UpdateState(
-        GRPC_CHANNEL_CONNECTING,
-        UniquePtr<SubchannelPicker>(New<QueuePicker>(p->Ref())));
+        GRPC_CHANNEL_CONNECTING, UniquePtr<SubchannelPicker>(New<QueuePicker>(
+                                     p->Ref(DEBUG_LOCATION, "QueuePicker"))));
   } else if (num_transient_failure_ == num_subchannels()) {
     /* 3) TRANSIENT_FAILURE */
     grpc_error* error =

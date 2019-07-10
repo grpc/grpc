@@ -84,7 +84,6 @@
 #include "src/core/lib/backoff/backoff.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_stack.h"
-#include "src/core/lib/gpr/host_port.h"
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gprpp/manual_constructor.h"
 #include "src/core/lib/gprpp/memory.h"
@@ -161,9 +160,7 @@ class GrpcLb : public LoadBalancingPolicy {
     bool seen_serverlist() const { return seen_serverlist_; }
 
    private:
-    // So Delete() can access our private dtor.
-    template <typename T>
-    friend void grpc_core::Delete(T*);
+    GRPC_ALLOW_CLASS_TO_USE_NON_PUBLIC_DELETE
 
     ~BalancerCallState();
 

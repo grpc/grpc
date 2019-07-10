@@ -53,7 +53,8 @@ class SpiffeChannelSecurityConnector final
 
   int cmp(const grpc_security_connector* other_sc) const override;
 
-  bool check_call_host(const char* host, grpc_auth_context* auth_context,
+  bool check_call_host(grpc_core::StringView host,
+                       grpc_auth_context* auth_context,
                        grpc_closure* on_call_host_checked,
                        grpc_error** error) override;
 
@@ -83,8 +84,8 @@ class SpiffeChannelSecurityConnector final
       grpc_tls_server_authorization_check_arg* arg);
 
   grpc_closure* on_peer_checked_;
-  char* target_name_;
-  char* overridden_target_name_;
+  grpc_core::UniquePtr<char> target_name_;
+  grpc_core::UniquePtr<char> overridden_target_name_;
   tsi_ssl_client_handshaker_factory* client_handshaker_factory_ = nullptr;
   grpc_tls_server_authorization_check_arg* check_arg_;
 };

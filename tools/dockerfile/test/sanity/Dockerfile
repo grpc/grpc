@@ -98,7 +98,7 @@ ENV CLANG_TIDY=clang-tidy
 # Bazel installation
 
 # Must be in sync with tools/bazel
-ENV BAZEL_VERSION 0.24.1
+ENV BAZEL_VERSION 0.26.0
 
 # The correct bazel version is already preinstalled, no need to use //tools/bazel wrapper.
 ENV DISABLE_BAZEL_WRAPPER 1

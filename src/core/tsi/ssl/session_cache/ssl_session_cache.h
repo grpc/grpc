@@ -67,13 +67,8 @@ class SslSessionLRUCache : public grpc_core::RefCounted<SslSessionLRUCache> {
   SslSessionPtr Get(const char* key);
 
  private:
-  // So New() can call our private ctor.
-  template <typename T, typename... Args>
-  friend T* grpc_core::New(Args&&... args);
-
-  // So Delete() can call our private dtor.
-  template <typename T>
-  friend void grpc_core::Delete(T*);
+  GRPC_ALLOW_CLASS_TO_USE_NON_PUBLIC_NEW
+  GRPC_ALLOW_CLASS_TO_USE_NON_PUBLIC_DELETE
 
   class Node;
 

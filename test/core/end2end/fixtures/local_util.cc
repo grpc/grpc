@@ -27,7 +27,6 @@
 #include "src/core/ext/filters/http/server/http_server_filter.h"
 #include "src/core/ext/transport/chttp2/transport/chttp2_transport.h"
 #include "src/core/lib/channel/connected_channel.h"
-#include "src/core/lib/gpr/host_port.h"
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/security/credentials/credentials.h"
 #include "src/core/lib/surface/server.h"
@@ -37,8 +36,7 @@
 grpc_end2end_test_fixture grpc_end2end_local_chttp2_create_fixture_fullstack() {
   grpc_end2end_test_fixture f;
   grpc_end2end_local_fullstack_fixture_data* ffd =
-      static_cast<grpc_end2end_local_fullstack_fixture_data*>(
-          gpr_malloc(sizeof(grpc_end2end_local_fullstack_fixture_data)));
+      grpc_core::New<grpc_end2end_local_fullstack_fixture_data>();
   memset(&f, 0, sizeof(f));
   f.fixture_data = ffd;
   f.cq = grpc_completion_queue_create_for_next(nullptr);
@@ -52,8 +50,8 @@ void grpc_end2end_local_chttp2_init_client_fullstack(
   grpc_channel_credentials* creds = grpc_local_credentials_create(type);
   grpc_end2end_local_fullstack_fixture_data* ffd =
       static_cast<grpc_end2end_local_fullstack_fixture_data*>(f->fixture_data);
-  f->client =
-      grpc_secure_channel_create(creds, ffd->localaddr, client_args, nullptr);
+  f->client = grpc_secure_channel_create(creds, ffd->localaddr.get(),
+                                         client_args, nullptr);
   GPR_ASSERT(f->client != nullptr);
   grpc_channel_credentials_release(creds);
 }
@@ -99,8 +97,8 @@ void grpc_end2end_local_chttp2_init_server_fullstack(
                                               nullptr};
     grpc_server_credentials_set_auth_metadata_processor(creds, processor);
   }
-  GPR_ASSERT(
-      grpc_server_add_secure_http2_port(f->server, ffd->localaddr, creds));
+  GPR_ASSERT(grpc_server_add_secure_http2_port(f->server, ffd->localaddr.get(),
+                                               creds));
   grpc_server_credentials_release(creds);
   grpc_server_start(f->server);
 }
@@ -109,6 +107,5 @@ void grpc_end2end_local_chttp2_tear_down_fullstack(
     grpc_end2end_test_fixture* f) {
   grpc_end2end_local_fullstack_fixture_data* ffd =
       static_cast<grpc_end2end_local_fullstack_fixture_data*>(f->fixture_data);
-  gpr_free(ffd->localaddr);
-  gpr_free(ffd);
+  grpc_core::Delete(ffd);
 }

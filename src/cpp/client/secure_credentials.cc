@@ -36,17 +36,17 @@ SecureChannelCredentials::SecureChannelCredentials(
   g_gli_initializer.summon();
 }
 
-std::shared_ptr<grpc::Channel> SecureChannelCredentials::CreateChannelImpl(
-    const grpc::string& target, const grpc::ChannelArguments& args) {
+std::shared_ptr<Channel> SecureChannelCredentials::CreateChannelImpl(
+    const grpc::string& target, const ChannelArguments& args) {
   return CreateChannelWithInterceptors(
       target, args,
       std::vector<std::unique_ptr<
           grpc::experimental::ClientInterceptorFactoryInterface>>());
 }
 
-std::shared_ptr<grpc::Channel>
+std::shared_ptr<Channel>
 SecureChannelCredentials::CreateChannelWithInterceptors(
-    const grpc::string& target, const grpc::ChannelArguments& args,
+    const grpc::string& target, const ChannelArguments& args,
     std::vector<
         std::unique_ptr<grpc::experimental::ClientInterceptorFactoryInterface>>
         interceptor_creators) {
@@ -209,7 +209,7 @@ std::shared_ptr<CallCredentials> CompositeCallCredentials(
   return nullptr;
 }
 
-std::shared_ptr<grpc_impl::CallCredentials> MetadataCredentialsFromPlugin(
+std::shared_ptr<CallCredentials> MetadataCredentialsFromPlugin(
     std::unique_ptr<MetadataCredentialsPlugin> plugin) {
   grpc::GrpcLibraryCodegen init;  // To call grpc_init().
   const char* type = plugin->GetType();

@@ -22,7 +22,7 @@
 #include <grpc/support/log.h>
 #include <grpc/support/time.h>
 
-#include "src/core/lib/gpr/host_port.h"
+#include "src/core/lib/gprpp/host_port.h"
 #include "src/core/lib/security/credentials/credentials.h"
 #include "src/core/lib/security/credentials/fake/fake_credentials.h"
 #include "src/core/tsi/fake_transport_security.h"
@@ -47,17 +47,17 @@ void test_add_same_port_twice() {
   grpc_channel_args args = {1, &a};
 
   int port = grpc_pick_unused_port_or_die();
-  char* addr = nullptr;
+  grpc_core::UniquePtr<char> addr;
   grpc_completion_queue* cq = grpc_completion_queue_create_for_pluck(nullptr);
   grpc_server* server = grpc_server_create(&args, nullptr);
   grpc_server_credentials* fake_creds =
       grpc_fake_transport_security_server_credentials_create();
-  gpr_join_host_port(&addr, "localhost", port);
-  GPR_ASSERT(grpc_server_add_secure_http2_port(server, addr, fake_creds));
-  GPR_ASSERT(grpc_server_add_secure_http2_port(server, addr, fake_creds) == 0);
+  grpc_core::JoinHostPort(&addr, "localhost", port);
+  GPR_ASSERT(grpc_server_add_secure_http2_port(server, addr.get(), fake_creds));
+  GPR_ASSERT(
+      grpc_server_add_secure_http2_port(server, addr.get(), fake_creds) == 0);
 
   grpc_server_credentials_release(fake_creds);
-  gpr_free(addr);
   grpc_server_shutdown_and_notify(server, cq, nullptr);
   grpc_completion_queue_pluck(cq, nullptr, gpr_inf_future(GPR_CLOCK_REALTIME),
                               nullptr);

@@ -67,10 +67,10 @@ class XdsLocalityName : public RefCounted<XdsLocalityName> {
   };
 
   XdsLocalityName(UniquePtr<char> region, UniquePtr<char> zone,
-                  UniquePtr<char> subzone)
+                  UniquePtr<char> sub_zone)
       : region_(std::move(region)),
         zone_(std::move(zone)),
-        sub_zone_(std::move(subzone)) {}
+        sub_zone_(std::move(sub_zone)) {}
 
   bool operator==(const XdsLocalityName& other) const {
     return strcmp(region_.get(), other.region_.get()) == 0 &&
@@ -82,10 +82,21 @@ class XdsLocalityName : public RefCounted<XdsLocalityName> {
   const char* zone() const { return zone_.get(); }
   const char* sub_zone() const { return sub_zone_.get(); }
 
+  const char* AsHumanReadableString() {
+    if (human_readable_string_ == nullptr) {
+      char* tmp;
+      gpr_asprintf(&tmp, "{region=\"%s\", zone=\"%s\", sub_zone=\"%s\"}",
+                   region_.get(), zone_.get(), sub_zone_.get());
+      human_readable_string_.reset(tmp);
+    }
+    return human_readable_string_.get();
+  }
+
  private:
   UniquePtr<char> region_;
   UniquePtr<char> zone_;
   UniquePtr<char> sub_zone_;
+  UniquePtr<char> human_readable_string_;
 };
 
 struct XdsLocalityInfo {
