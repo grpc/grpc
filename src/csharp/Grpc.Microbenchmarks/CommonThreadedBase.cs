@@ -54,7 +54,7 @@ namespace Grpc.Microbenchmarks
             if (Environment != null)
             {
                 Environment = null;
-                GrpcEnvironment.ReleaseAsync().Wait();
+                GrpcEnvironment.ReleaseAsync().GetAwaiter().GetResult();
             }
         }
 

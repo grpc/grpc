@@ -19,11 +19,16 @@
 using System;
 using System.Linq;
 using System.Threading;
+using System.Threading.Tasks;
 using Grpc.Core;
 using NUnit.Framework;
 
 namespace Grpc.Core.Tests
 {
+    public static class ValueTaskExtensions
+    {
+        public static void Wait(this ValueTask task) => task.GetAwaiter().GetResult();
+    }
     public class GrpcEnvironmentTest
     {
         [Test]

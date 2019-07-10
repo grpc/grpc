@@ -25,6 +25,11 @@ using NUnit.Framework;
 
 namespace Grpc.Core.Internal.Tests
 {
+    public static class ValueTaskExtensions
+    {
+        public static void Wait(this ValueTask task) => task.GetAwaiter().GetResult();
+    }
+
     public class CompletionQueueSafeHandleTest
     {
         [Test]

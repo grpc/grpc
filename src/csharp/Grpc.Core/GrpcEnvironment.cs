@@ -85,10 +85,10 @@ namespace Grpc.Core
         /// <summary>
         /// Decrements the reference count for currently active environment and asynchronously shuts down the gRPC environment if reference count drops to zero.
         /// </summary>
-        internal static Task ReleaseAsync()
+        internal static ValueTask ReleaseAsync()
         {
             return Impl();
-            async PooledTask Impl()
+            async PooledValueTask Impl()
             {
                 GrpcEnvironment instanceToShutdown = null;
                 lock (staticLock)
@@ -390,10 +390,10 @@ namespace Grpc.Core
         /// <summary>
         /// Shuts down this environment.
         /// </summary>
-        private Task ShutdownAsync()
+        private ValueTask ShutdownAsync()
         {
             return Impl();
-            async PooledTask Impl()
+            async PooledValueTask Impl()
             {
                 if (isShutdown)
                 {

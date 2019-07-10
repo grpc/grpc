@@ -238,10 +238,10 @@ namespace Grpc.Core
         /// In case the environment's threadpool becomes dead, the shutdown completion will
         /// never be delivered, but we need to release the environment's handle anyway.
         /// </summary>
-        private Task ShutdownCompleteOrEnvironmentDeadAsync()
+        private ValueTask ShutdownCompleteOrEnvironmentDeadAsync()
         {
             return Impl();
-            async PooledTask Impl()
+            async PooledValueTask Impl()
             {
                 while (true)
                 {
@@ -373,28 +373,24 @@ namespace Grpc.Core
         /// <summary>
         /// Selects corresponding handler for given call and handles the call.
         /// </summary>
-        private Task HandleCallAsync(ServerRpcNew newRpc, CompletionQueueSafeHandle cq, Action<Server, CompletionQueueSafeHandle> continuation)
+        private async FireAndForget HandleCallAsync(ServerRpcNew newRpc, CompletionQueueSafeHandle cq, Action<Server, CompletionQueueSafeHandle> continuation)
         {
-            return Impl();
-            async PooledTask Impl()
+            try
             {
-                try
+                IServerCallHandler callHandler;
+                if (!callHandlers.TryGetValue(newRpc.Method, out callHandler))
                 {
-                    IServerCallHandler callHandler;
-                    if (!callHandlers.TryGetValue(newRpc.Method, out callHandler))
-                    {
-                        callHandler = UnimplementedMethodCallHandler.Instance;
-                    }
-                    await callHandler.HandleCall(newRpc, cq).ConfigureAwait(false);
+                    callHandler = UnimplementedMethodCallHandler.Instance;
                 }
-                catch (Exception e)
-                {
-                    Logger.Warning(e, "Exception while handling RPC.");
-                }
-                finally
-                {
-                    continuation(this, cq);
-                }
+                await callHandler.HandleCall(newRpc, cq).ConfigureAwait(false);
+            }
+            catch (Exception e)
+            {
+                Logger.Warning(e, "Exception while handling RPC.");
+            }
+            finally
+            {
+                continuation(this, cq);
             }
         }
 
@@ -416,9 +412,7 @@ namespace Grpc.Core
                     // Start asynchronous handler for the call.
                     // Don't await, the continuations will run on gRPC thread pool once triggered
                     // by cq.Next().
-                    #pragma warning disable 4014
-                    HandleCallAsync(newRpc, cq, (server, state) => server.AllowOneRpc(state));
-                    #pragma warning restore 4014
+                    _= HandleCallAsync(newRpc, cq, (server, state) => server.AllowOneRpc(state));
                 }
             }
 
