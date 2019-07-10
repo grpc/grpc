@@ -25,6 +25,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Grpc.Core.Internal;
 using Grpc.Core.Utils;
+using PooledAwait;
 
 namespace Grpc.Core.Internal
 {
@@ -33,7 +34,7 @@ namespace Grpc.Core.Internal
     /// </summary>
     internal class AsyncCallServer<TRequest, TResponse> : AsyncCallBase<TResponse, TRequest>, IReceivedCloseOnServerCallback, ISendStatusFromServerCompletionCallback
     {
-        readonly TaskCompletionSource<object> finishedServersideTcs = new TaskCompletionSource<object>();
+        readonly ValueTaskCompletionSource<object> finishedServersideTcs = ValueTaskCompletionSource<object>.Create();
         readonly CancellationTokenSource cancellationTokenSource = new CancellationTokenSource();
         readonly Server server;
 
@@ -118,7 +119,7 @@ namespace Grpc.Core.Internal
                 }
 
                 this.initialMetadataSent = true;
-                streamingWriteTcs = new TaskCompletionSource<object>();
+                streamingWriteTcs = ValueTaskCompletionSource<object>.Create();
                 return streamingWriteTcs.Task;
             }
         }
@@ -145,7 +146,7 @@ namespace Grpc.Core.Internal
                 }
                 halfcloseRequested = true;
                 initialMetadataSent = true;
-                sendStatusFromServerTcs = new TaskCompletionSource<object>();
+                sendStatusFromServerTcs = ValueTaskCompletionSource<object>.Create();
                 if (optionalWrite.HasValue)
                 {
                     streamingWritesCounter++;
@@ -193,7 +194,7 @@ namespace Grpc.Core.Internal
         {
             GrpcPreconditions.CheckState(!halfcloseRequested, "Response stream has already been completed.");
             GrpcPreconditions.CheckState(!finished, "Already finished.");
-            GrpcPreconditions.CheckState(streamingWriteTcs == null, "Only one write can be pending at a time");
+            GrpcPreconditions.CheckState(streamingWriteTcs.IsNull, "Only one write can be pending at a time");
             GrpcPreconditions.CheckState(!disposed);
 
             return null;
@@ -210,13 +211,13 @@ namespace Grpc.Core.Internal
             lock (myLock)
             {
                 finished = true;
-                if (streamingReadTcs == null)
+                if (streamingReadTcs.IsNull)
                 {
                     // if there's no pending read, readingDone=true will dispose now.
                     // if there is a pending read, we will dispose once that read finishes.
                     readingDone = true;
-                    streamingReadTcs = new TaskCompletionSource<TRequest>();
-                    streamingReadTcs.SetResult(default(TRequest));
+                    streamingReadTcs = ValueTaskCompletionSource<TRequest>.Create();
+                    streamingReadTcs.TrySetResult(default(TRequest));
                 }
                 releasedResources = ReleaseResourcesIfPossible();
             }
@@ -231,7 +232,7 @@ namespace Grpc.Core.Internal
                 cancellationTokenSource.Cancel();
             }
 
-            finishedServersideTcs.SetResult(null);
+            finishedServersideTcs.TrySetResult(null);
         }
 
         IReceivedCloseOnServerCallback ReceiveCloseOnServerCallback => this;

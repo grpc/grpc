@@ -126,8 +126,8 @@ namespace Grpc.Core
         // cached handler for watch connectivity state
         static readonly BatchCompletionDelegate WatchConnectivityStateHandler = (success, ctx, state) =>
         {
-            var tcs = (TaskCompletionSource<bool>) state;
-            tcs.SetResult(success);
+            var tcs = Pool.UnboxAndReturn<ValueTaskCompletionSource<bool>>(state);
+            tcs.TrySetResult(success);
         };
 
         /// <summary>
@@ -157,7 +157,7 @@ namespace Grpc.Core
         {
             GrpcPreconditions.CheckArgument(lastObservedState != ChannelState.Shutdown,
                 "Shutdown is a terminal state. No further state changes can occur.");
-            var tcs = new TaskCompletionSource<bool>();
+            var tcs = ValueTaskCompletionSource<bool>.Create();
             var deadlineTimespec = deadline.HasValue ? Timespec.FromDateTime(deadline.Value) : Timespec.InfFuture;
             lock (myLock)
             {
@@ -170,7 +170,7 @@ namespace Grpc.Core
                 else
                 {
                     // pass "tcs" as "state" for WatchConnectivityStateHandler.
-                    handle.WatchConnectivityState(lastObservedState, deadlineTimespec, completionQueue, WatchConnectivityStateHandler, tcs);
+                    handle.WatchConnectivityState(lastObservedState, deadlineTimespec, completionQueue, WatchConnectivityStateHandler, Pool.Box(tcs));
                 }
             }
             return tcs.Task;

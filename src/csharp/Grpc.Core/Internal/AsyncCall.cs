@@ -17,7 +17,6 @@
 #endregion
 
 using System;
-using System.Threading;
 using System.Threading.Tasks;
 using Grpc.Core.Logging;
 using Grpc.Core.Profiling;
@@ -42,14 +41,14 @@ namespace Grpc.Core.Internal
         IDisposable cancellationTokenRegistration;
 
         // Completion of a pending unary response if not null.
-        TaskCompletionSource<TResponse> unaryResponseTcs;
+        ValueTaskCompletionSource<TResponse> unaryResponseTcs;
 
         // Completion of a streaming response call if not null.
-        TaskCompletionSource<object> streamingResponseCallFinishedTcs;
+        ValueTaskCompletionSource<object> streamingResponseCallFinishedTcs;
 
         // TODO(jtattermusch): this field could be lazy-initialized (only if someone requests the response headers).
         // Response headers set here once received.
-        TaskCompletionSource<Metadata> responseHeadersTcs = new TaskCompletionSource<Metadata>();
+        ValueTaskCompletionSource<Metadata> responseHeadersTcs = ValueTaskCompletionSource<Metadata>.Create();
 
         // Set after status is received. Used for both unary and streaming response calls.
         ClientSideStatus? finishedStatus;
@@ -84,7 +83,7 @@ namespace Grpc.Core.Internal
                 bool callStartedOk = false;
                 try
                 {
-                    unaryResponseTcs = new TaskCompletionSource<TResponse>();
+                    unaryResponseTcs = ValueTaskCompletionSource<TResponse>.Create();
 
                     lock (myLock)
                     {
@@ -163,7 +162,7 @@ namespace Grpc.Core.Internal
 
                     byte[] payload = UnsafeSerialize(msg);
 
-                    unaryResponseTcs = new TaskCompletionSource<TResponse>();
+                    unaryResponseTcs = ValueTaskCompletionSource<TResponse>.Create();
                     using (var metadataArray = MetadataArraySafeHandle.Create(details.Options.Headers))
                     {
                         call.StartUnary(UnaryResponseClientCallback, payload, GetWriteFlagsForCall(), metadataArray, details.Options.Flags);
@@ -200,7 +199,7 @@ namespace Grpc.Core.Internal
 
                     readingDone = true;
 
-                    unaryResponseTcs = new TaskCompletionSource<TResponse>();
+                    unaryResponseTcs = ValueTaskCompletionSource<TResponse>.Create();
                     using (var metadataArray = MetadataArraySafeHandle.Create(details.Options.Headers))
                     {
                         call.StartClientStreaming(UnaryResponseClientCallback, metadataArray, details.Options.Flags);
@@ -238,7 +237,7 @@ namespace Grpc.Core.Internal
 
                     byte[] payload = UnsafeSerialize(msg);
 
-                    streamingResponseCallFinishedTcs = new TaskCompletionSource<object>();
+                    streamingResponseCallFinishedTcs = ValueTaskCompletionSource<object>.Create();
                     using (var metadataArray = MetadataArraySafeHandle.Create(details.Options.Headers))
                     {
                         call.StartServerStreaming(ReceivedStatusOnClientCallback, payload, GetWriteFlagsForCall(), metadataArray, details.Options.Flags);
@@ -272,7 +271,7 @@ namespace Grpc.Core.Internal
 
                     Initialize(details.Channel.CompletionQueue);
 
-                    streamingResponseCallFinishedTcs = new TaskCompletionSource<object>();
+                    streamingResponseCallFinishedTcs = ValueTaskCompletionSource<object>.Create();
                     using (var metadataArray = MetadataArraySafeHandle.Create(details.Options.Headers))
                     {
                         call.StartDuplexStreaming(ReceivedStatusOnClientCallback, metadataArray, details.Options.Flags);
@@ -333,7 +332,7 @@ namespace Grpc.Core.Internal
                 call.StartSendCloseFromClient(SendCompletionCallback);
 
                 halfcloseRequested = true;
-                streamingWriteTcs = new TaskCompletionSource<object>();
+                streamingWriteTcs = ValueTaskCompletionSource<object>.Create();
                 return streamingWriteTcs.Task;
             }
         }
@@ -438,8 +437,8 @@ namespace Grpc.Core.Internal
                 // Note that this throws even for StatusCode.OK.
                 // Writing after the call has finished is not a programming error because server can close
                 // the call anytime, so don't throw directly, but let the write task finish with an error.
-                var tcs = new TaskCompletionSource<object>();
-                tcs.SetException(new RpcException(finishedStatus.Value.Status, finishedStatus.Value.Trailers));
+                var tcs = ValueTaskCompletionSource<object>.Create();
+                tcs.TrySetException(new RpcException(finishedStatus.Value.Status, finishedStatus.Value.Trailers));
                 return tcs.Task;
             }
 
@@ -449,13 +448,13 @@ namespace Grpc.Core.Internal
         private Task CheckSendPreconditionsClientSide()
         {
             GrpcPreconditions.CheckState(!halfcloseRequested, "Request stream has already been completed.");
-            GrpcPreconditions.CheckState(streamingWriteTcs == null, "Only one write can be pending at a time.");
+            GrpcPreconditions.CheckState(streamingWriteTcs.IsNull, "Only one write can be pending at a time.");
 
             if (cancelRequested)
             {
                 // Return a cancelled task.
-                var tcs = new TaskCompletionSource<object>();
-                tcs.SetCanceled();
+                var tcs = ValueTaskCompletionSource<object>.Create();
+                tcs.TrySetCanceled();
                 return tcs.Task;
             }
 
@@ -540,7 +539,7 @@ namespace Grpc.Core.Internal
         private void HandleReceivedResponseHeaders(bool success, Metadata responseHeaders)
         {
             // TODO(jtattermusch): handle success==false
-            responseHeadersTcs.SetResult(responseHeaders);
+            responseHeadersTcs.TrySetResult(responseHeaders);
         }
 
         /// <summary>
@@ -551,7 +550,7 @@ namespace Grpc.Core.Internal
             // NOTE: because this event is a result of batch containing GRPC_OP_RECV_STATUS_ON_CLIENT,
             // success will be always set to true.
 
-            TaskCompletionSource<object> delayedStreamingWriteTcs = null;
+            ValueTaskCompletionSource<object> delayedStreamingWriteTcs = default;
             TResponse msg = default(TResponse);
             var deserializeException = TryDeserialize(receivedMessageReader, out msg);
 
@@ -569,7 +568,7 @@ namespace Grpc.Core.Internal
                 if (isStreamingWriteCompletionDelayed)
                 {
                     delayedStreamingWriteTcs = streamingWriteTcs;
-                    streamingWriteTcs = null;
+                    streamingWriteTcs = default;
                 }
 
                 releasedResources = ReleaseResourcesIfPossible();
@@ -580,21 +579,21 @@ namespace Grpc.Core.Internal
                 OnAfterReleaseResourcesUnlocked();
             }
 
-            responseHeadersTcs.SetResult(responseHeaders);
+            responseHeadersTcs.TrySetResult(responseHeaders);
 
-            if (delayedStreamingWriteTcs != null)
+            if (!delayedStreamingWriteTcs.IsNull)
             {
-                delayedStreamingWriteTcs.SetException(GetRpcExceptionClientOnly());
+                delayedStreamingWriteTcs.TrySetException(GetRpcExceptionClientOnly());
             }
 
             var status = receivedStatus.Status;
             if (status.StatusCode != StatusCode.OK)
             {
-                unaryResponseTcs.SetException(new RpcException(status, receivedStatus.Trailers));
+                unaryResponseTcs.TrySetException(new RpcException(status, receivedStatus.Trailers));
                 return;
             }
 
-            unaryResponseTcs.SetResult(msg);
+            unaryResponseTcs.TrySetResult(msg);
         }
 
         /// <summary>
@@ -605,7 +604,7 @@ namespace Grpc.Core.Internal
             // NOTE: because this event is a result of batch containing GRPC_OP_RECV_STATUS_ON_CLIENT,
             // success will be always set to true.
 
-            TaskCompletionSource<object> delayedStreamingWriteTcs = null;
+            ValueTaskCompletionSource<object> delayedStreamingWriteTcs = default;
 
             bool releasedResources;
             lock (myLock)
@@ -615,7 +614,7 @@ namespace Grpc.Core.Internal
                 if (isStreamingWriteCompletionDelayed)
                 {
                     delayedStreamingWriteTcs = streamingWriteTcs;
-                    streamingWriteTcs = null;
+                    streamingWriteTcs = default;
                 }
 
                 releasedResources = ReleaseResourcesIfPossible();
@@ -626,19 +625,19 @@ namespace Grpc.Core.Internal
                 OnAfterReleaseResourcesUnlocked();
             }
 
-            if (delayedStreamingWriteTcs != null)
+            if (!delayedStreamingWriteTcs.IsNull)
             {
-                delayedStreamingWriteTcs.SetException(GetRpcExceptionClientOnly());
+                delayedStreamingWriteTcs.TrySetException(GetRpcExceptionClientOnly());
             }
 
             var status = receivedStatus.Status;
             if (status.StatusCode != StatusCode.OK)
             {
-                streamingResponseCallFinishedTcs.SetException(new RpcException(status, receivedStatus.Trailers));
+                streamingResponseCallFinishedTcs.TrySetException(new RpcException(status, receivedStatus.Trailers));
                 return;
             }
 
-            streamingResponseCallFinishedTcs.SetResult(null);
+            streamingResponseCallFinishedTcs.TrySetResult(null);
         }
 
         IUnaryResponseClientCallback UnaryResponseClientCallback => this;

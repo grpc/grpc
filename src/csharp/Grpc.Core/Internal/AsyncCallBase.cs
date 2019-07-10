@@ -28,6 +28,7 @@ using Grpc.Core.Internal;
 using Grpc.Core.Logging;
 using Grpc.Core.Profiling;
 using Grpc.Core.Utils;
+using PooledAwait;
 
 namespace Grpc.Core.Internal
 {
@@ -51,9 +52,9 @@ namespace Grpc.Core.Internal
         protected bool started;
         protected bool cancelRequested;
 
-        protected TaskCompletionSource<TRead> streamingReadTcs;  // Completion of a pending streaming read if not null.
-        protected TaskCompletionSource<object> streamingWriteTcs;  // Completion of a pending streaming write or send close from client if not null.
-        protected TaskCompletionSource<object> sendStatusFromServerTcs;
+        protected ValueTaskCompletionSource<TRead> streamingReadTcs;  // Completion of a pending streaming read if not null.
+        protected ValueTaskCompletionSource<object> streamingWriteTcs;  // Completion of a pending streaming write or send close from client if not null.
+        protected ValueTaskCompletionSource<object> sendStatusFromServerTcs;
         protected bool isStreamingWriteCompletionDelayed;  // Only used for the client side.
 
         protected bool readingDone;  // True if last read (i.e. read with null payload) was already received.
@@ -130,7 +131,7 @@ namespace Grpc.Core.Internal
 
                 initialMetadataSent = true;
                 streamingWritesCounter++;
-                streamingWriteTcs = new TaskCompletionSource<object>();
+                streamingWriteTcs = ValueTaskCompletionSource<object>.Create();
                 return streamingWriteTcs.Task;
             }
         }
@@ -147,15 +148,15 @@ namespace Grpc.Core.Internal
                 {
                     // the last read that returns null or throws an exception is idempotent
                     // and maintains its state.
-                    GrpcPreconditions.CheckState(streamingReadTcs != null, "Call does not support streaming reads.");
+                    GrpcPreconditions.CheckState(!streamingReadTcs.IsNull, "Call does not support streaming reads.");
                     return streamingReadTcs.Task;
                 }
 
-                GrpcPreconditions.CheckState(streamingReadTcs == null, "Only one read can be pending at a time");
+                GrpcPreconditions.CheckState(streamingReadTcs.IsNull, "Only one read can be pending at a time");
                 GrpcPreconditions.CheckState(!disposed);
 
                 call.StartReceiveMessage(ReceivedMessageCallback);
-                streamingReadTcs = new TaskCompletionSource<TRead>();
+                streamingReadTcs = ValueTaskCompletionSource<TRead>.Create();
                 return streamingReadTcs.Task;
             }
         }
@@ -168,7 +169,7 @@ namespace Grpc.Core.Internal
         {
             if (!disposed && call != null)
             {
-                bool noMoreSendCompletions = streamingWriteTcs == null && (halfcloseRequested || cancelRequested || finished);
+                bool noMoreSendCompletions = streamingWriteTcs.IsNull && (halfcloseRequested || cancelRequested || finished);
                 if (noMoreSendCompletions && readingDone && finished)
                 {
                     ReleaseResources();
@@ -254,7 +255,7 @@ namespace Grpc.Core.Internal
         protected void HandleSendFinished(bool success)
         {
             bool delayCompletion = false;
-            TaskCompletionSource<object> origTcs = null;
+            ValueTaskCompletionSource<object> origTcs = default;
             bool releasedResources;
             lock (myLock)
             {
@@ -270,7 +271,7 @@ namespace Grpc.Core.Internal
                 else
                 {
                     origTcs = streamingWriteTcs;
-                    streamingWriteTcs = null;    
+                    streamingWriteTcs = default;
                 }
 
                 releasedResources = ReleaseResourcesIfPossible();
@@ -288,18 +289,18 @@ namespace Grpc.Core.Internal
                     if (IsClient)
                     {
                         GrpcPreconditions.CheckState(finished);  // implied by !success && !delayCompletion && IsClient
-                        origTcs.SetException(GetRpcExceptionClientOnly());
+                        origTcs.TrySetException(GetRpcExceptionClientOnly());
                     }
                     else
                     {
-                        origTcs.SetException (new IOException("Error sending from server."));
+                        origTcs.TrySetException (new IOException("Error sending from server."));
                     }
                 }
                 // if delayCompletion == true, postpone SetException until call finishes.
             }
             else
             {
-                origTcs.SetResult(null);
+                origTcs.TrySetResult(null);
             }
         }
 
@@ -321,11 +322,11 @@ namespace Grpc.Core.Internal
 
             if (!success)
             {
-                sendStatusFromServerTcs.SetException(new IOException("Error sending status from server."));
+                sendStatusFromServerTcs.TrySetException(new IOException("Error sending status from server."));
             }
             else
             {
-                sendStatusFromServerTcs.SetResult(null);
+                sendStatusFromServerTcs.TrySetResult(null);
             }
         }
 
@@ -341,7 +342,7 @@ namespace Grpc.Core.Internal
             TRead msg = default(TRead);
             var deserializeException = (success && receivedMessageReader.TotalLength.HasValue) ? TryDeserialize(receivedMessageReader, out msg) : null;
 
-            TaskCompletionSource<TRead> origTcs = null;
+            ValueTaskCompletionSource<TRead> origTcs = default;
             bool releasedResources;
             lock (myLock)
             {
@@ -362,7 +363,7 @@ namespace Grpc.Core.Internal
 
                 if (!readingDone)
                 {
-                    streamingReadTcs = null;
+                    streamingReadTcs = default;
                 }
 
                 releasedResources = ReleaseResourcesIfPossible();
@@ -375,10 +376,10 @@ namespace Grpc.Core.Internal
 
             if (deserializeException != null && !IsClient)
             {
-                origTcs.SetException(new IOException("Failed to deserialize request message.", deserializeException));
+                origTcs.TrySetException(new IOException("Failed to deserialize request message.", deserializeException));
                 return;
             }
-            origTcs.SetResult(msg);
+            origTcs.TrySetResult(msg);
         }
 
         protected ISendCompletionCallback SendCompletionCallback => this;

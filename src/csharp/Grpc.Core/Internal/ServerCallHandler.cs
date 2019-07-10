@@ -18,11 +18,8 @@
 
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using Grpc.Core.Interceptors;
-using Grpc.Core.Internal;
 using Grpc.Core.Logging;
 using Grpc.Core.Utils;
 using PooledAwait;
@@ -31,7 +28,7 @@ namespace Grpc.Core.Internal
 {
     internal interface IServerCallHandler
     {
-        Task HandleCall(ServerRpcNew newRpc, CompletionQueueSafeHandle cq);
+        ValueTask HandleCall(ServerRpcNew newRpc, CompletionQueueSafeHandle cq);
     }
 
     internal class UnaryServerCallHandler<TRequest, TResponse> : IServerCallHandler
@@ -49,11 +46,11 @@ namespace Grpc.Core.Internal
             this.handler = handler;
         }
 
-        public Task HandleCall(ServerRpcNew newRpc, CompletionQueueSafeHandle cq)
+        public ValueTask HandleCall(ServerRpcNew newRpc, CompletionQueueSafeHandle cq)
         {
             return HandleCallImpl(this, newRpc, cq);
         }
-        static async PooledTask HandleCallImpl(UnaryServerCallHandler<TRequest,TResponse> obj, ServerRpcNew newRpc, CompletionQueueSafeHandle cq)
+        static async PooledValueTask HandleCallImpl(UnaryServerCallHandler<TRequest,TResponse> obj, ServerRpcNew newRpc, CompletionQueueSafeHandle cq)
         {
             var asyncCall = new AsyncCallServer<TRequest, TResponse>(
             obj.method.ResponseMarshaller.ContextualSerializer,
@@ -112,11 +109,11 @@ namespace Grpc.Core.Internal
             this.handler = handler;
         }
 
-        public Task HandleCall(ServerRpcNew newRpc, CompletionQueueSafeHandle cq)
+        public ValueTask HandleCall(ServerRpcNew newRpc, CompletionQueueSafeHandle cq)
         {
             return HandleCallImpl(this, newRpc, cq);
         }
-        private static async PooledTask HandleCallImpl(ServerStreamingServerCallHandler<TRequest, TResponse> obj, ServerRpcNew newRpc, CompletionQueueSafeHandle cq)
+        private static async PooledValueTask HandleCallImpl(ServerStreamingServerCallHandler<TRequest, TResponse> obj, ServerRpcNew newRpc, CompletionQueueSafeHandle cq)
         {
             var asyncCall = new AsyncCallServer<TRequest, TResponse>(
                 obj.method.ResponseMarshaller.ContextualSerializer,
@@ -174,11 +171,11 @@ namespace Grpc.Core.Internal
             this.handler = handler;
         }
 
-        public Task HandleCall(ServerRpcNew newRpc, CompletionQueueSafeHandle cq)
+        public ValueTask HandleCall(ServerRpcNew newRpc, CompletionQueueSafeHandle cq)
         {
             return HandleCallImpl(this, newRpc, cq);
         }
-        private static  async PooledTask HandleCallImpl(ClientStreamingServerCallHandler<TRequest, TResponse>  obj, ServerRpcNew newRpc, CompletionQueueSafeHandle cq)
+        private static  async PooledValueTask HandleCallImpl(ClientStreamingServerCallHandler<TRequest, TResponse>  obj, ServerRpcNew newRpc, CompletionQueueSafeHandle cq)
         {
             var asyncCall = new AsyncCallServer<TRequest, TResponse>(
             obj.method.ResponseMarshaller.ContextualSerializer,
@@ -236,12 +233,12 @@ namespace Grpc.Core.Internal
             this.handler = handler;
         }
 
-        public Task HandleCall(ServerRpcNew newRpc, CompletionQueueSafeHandle cq)
+        public ValueTask HandleCall(ServerRpcNew newRpc, CompletionQueueSafeHandle cq)
         {
             return HandleCallImplImpl(this, newRpc, cq);
         }
 
-        private static async PooledTask HandleCallImplImpl(DuplexStreamingServerCallHandler<TRequest, TResponse> obj, ServerRpcNew newRpc, CompletionQueueSafeHandle cq)
+        private static async PooledValueTask HandleCallImplImpl(DuplexStreamingServerCallHandler<TRequest, TResponse> obj, ServerRpcNew newRpc, CompletionQueueSafeHandle cq)
         {
             var asyncCall = new AsyncCallServer<TRequest, TResponse>(
             obj.method.ResponseMarshaller.ContextualSerializer,
@@ -303,7 +300,7 @@ namespace Grpc.Core.Internal
             return TaskUtils.CompletedTask;
         }
 
-        public Task HandleCall(ServerRpcNew newRpc, CompletionQueueSafeHandle cq)
+        public ValueTask HandleCall(ServerRpcNew newRpc, CompletionQueueSafeHandle cq)
         {
             return callHandlerImpl.HandleCall(newRpc, cq);
         }

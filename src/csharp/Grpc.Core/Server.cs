@@ -49,7 +49,7 @@ namespace Grpc.Core
         readonly List<ServerServiceDefinition> serviceDefinitionsList = new List<ServerServiceDefinition>();
         readonly List<ServerPort> serverPortList = new List<ServerPort>();
         readonly Dictionary<string, IServerCallHandler> callHandlers = new Dictionary<string, IServerCallHandler>();
-        readonly TaskCompletionSource<object> shutdownTcs = new TaskCompletionSource<object>();
+        readonly ValueTaskCompletionSource<object> shutdownTcs = ValueTaskCompletionSource<object>.Create();
 
         bool startRequested;
         volatile bool shutdownRequested;
@@ -427,7 +427,7 @@ namespace Grpc.Core
         /// </summary>
         private void HandleServerShutdown(bool success, BatchContextSafeHandle ctx, object state)
         {
-            shutdownTcs.SetResult(null);
+            shutdownTcs.TrySetResult(null);
         }
 
         /// <summary>
