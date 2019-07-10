@@ -34,13 +34,13 @@ namespace Grpc.Core.Utils
         public static Task ForEachAsync<T>(this IAsyncStreamReader<T> streamReader, Func<T, Task> asyncAction)
             where T : class
         {
-            return Impl();
-            async PooledTask Impl()
+            return ForEachAsyncImpl<T>(streamReader, asyncAction);
+        }
+        private static async PooledTask ForEachAsyncImpl<T>(IAsyncStreamReader<T> streamReader, Func<T, Task> asyncAction)
+        {
+            while (await streamReader.MoveNext().ConfigureAwait(false))
             {
-                while (await streamReader.MoveNext().ConfigureAwait(false))
-                {
-                    await asyncAction(streamReader.Current).ConfigureAwait(false);
-                }
+                await asyncAction(streamReader.Current).ConfigureAwait(false);
             }
         }
 
@@ -50,16 +50,16 @@ namespace Grpc.Core.Utils
         public static Task<List<T>> ToListAsync<T>(this IAsyncStreamReader<T> streamReader)
             where T : class
         {
-            return Impl();
-            async PooledTask<List<T>> Impl()
+            return ToListAsyncImpl<T>(streamReader);
+        }
+        private static async PooledTask<List<T>> ToListAsyncImpl<T>(IAsyncStreamReader<T> streamReader)
+        {
+            var result = new List<T>();
+            while (await streamReader.MoveNext().ConfigureAwait(false))
             {
-                var result = new List<T>();
-                while (await streamReader.MoveNext().ConfigureAwait(false))
-                {
-                    result.Add(streamReader.Current);
-                }
-                return result;
+                result.Add(streamReader.Current);
             }
+            return result;
         }
 
         /// <summary>
@@ -69,17 +69,18 @@ namespace Grpc.Core.Utils
         public static Task WriteAllAsync<T>(this IClientStreamWriter<T> streamWriter, IEnumerable<T> elements, bool complete = true)
             where T : class
         {
-            return Impl();
-            async PooledTask Impl()
+            return WriteAllAsyncImpl<T>(streamWriter, elements, complete);
+        }
+        private static async PooledTask WriteAllAsyncImpl<T>(IClientStreamWriter<T> streamWriter, IEnumerable<T> elements, bool complete)
+            where T : class
+        {
+            foreach (var element in elements)
             {
-                foreach (var element in elements)
-                {
-                    await streamWriter.WriteAsync(element).ConfigureAwait(false);
-                }
-                if (complete)
-                {
-                    await streamWriter.CompleteAsync().ConfigureAwait(false);
-                }
+                await streamWriter.WriteAsync(element).ConfigureAwait(false);
+            }
+            if (complete)
+            {
+                await streamWriter.CompleteAsync().ConfigureAwait(false);
             }
         }
 
@@ -89,13 +90,15 @@ namespace Grpc.Core.Utils
         public static Task WriteAllAsync<T>(this IServerStreamWriter<T> streamWriter, IEnumerable<T> elements)
             where T : class
         {
-            return Impl();
-            async PooledTask Impl()
+            return WriteAllAsyncImpl(streamWriter, elements);
+        }
+
+        private static async PooledTask WriteAllAsyncImpl<T>(this IServerStreamWriter<T> streamWriter, IEnumerable<T> elements)
+            where T : class
+        {
+            foreach (var element in elements)
             {
-                foreach (var element in elements)
-                {
-                    await streamWriter.WriteAsync(element).ConfigureAwait(false);
-                }
+                await streamWriter.WriteAsync(element).ConfigureAwait(false);
             }
         }
     }

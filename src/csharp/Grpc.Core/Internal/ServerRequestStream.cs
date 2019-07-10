@@ -50,16 +50,18 @@ namespace Grpc.Core.Internal
 
         public Task<bool> MoveNext(CancellationToken token)
         {
-            return Impl();
-            async PooledTask<bool> Impl()
+            return MoveNextImpl(this, token);
+        }
+
+        static readonly Action<object> s_CancelToken = state => ((ServerRequestStream<TRequest, TResponse>)state).call.Cancel();
+        private static async PooledTask<bool> MoveNextImpl(ServerRequestStream<TRequest, TResponse> obj, CancellationToken token)
+        {
+            var cancellationTokenRegistration = token.CanBeCanceled ? token.Register(s_CancelToken, obj) : default;
+            using (cancellationTokenRegistration)
             {
-                var cancellationTokenRegistration = token.CanBeCanceled ? token.Register(() => call.Cancel()) : (IDisposable)null;
-                using (cancellationTokenRegistration)
-                {
-                    var result = await call.ReadMessageAsync().ConfigureAwait(false);
-                    this.current = result;
-                    return result != null;
-                }
+                var result = await obj.call.ReadMessageAsync().ConfigureAwait(false);
+                obj.current = result;
+                return result != null;
             }
         }
 

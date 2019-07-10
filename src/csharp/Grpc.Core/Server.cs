@@ -240,8 +240,8 @@ namespace Grpc.Core
         /// </summary>
         private ValueTask ShutdownCompleteOrEnvironmentDeadAsync()
         {
-            return Impl();
-            async PooledValueTask Impl()
+            return ShutdownCompleteOrEnvironmentDeadAsyncImpl();
+            async PooledValueTask ShutdownCompleteOrEnvironmentDeadAsyncImpl()
             {
                 while (true)
                 {
@@ -373,12 +373,12 @@ namespace Grpc.Core
         /// <summary>
         /// Selects corresponding handler for given call and handles the call.
         /// </summary>
-        private async FireAndForget HandleCallAsync(ServerRpcNew newRpc, CompletionQueueSafeHandle cq, Action<Server, CompletionQueueSafeHandle> continuation)
+        private static async FireAndForget HandleCallAsync(Server server, ServerRpcNew newRpc, CompletionQueueSafeHandle cq, Action<Server, CompletionQueueSafeHandle> continuation)
         {
             try
             {
                 IServerCallHandler callHandler;
-                if (!callHandlers.TryGetValue(newRpc.Method, out callHandler))
+                if (!server.callHandlers.TryGetValue(newRpc.Method, out callHandler))
                 {
                     callHandler = UnimplementedMethodCallHandler.Instance;
                 }
@@ -390,7 +390,7 @@ namespace Grpc.Core
             }
             finally
             {
-                continuation(this, cq);
+                continuation(server, cq);
             }
         }
 
@@ -412,7 +412,7 @@ namespace Grpc.Core
                     // Start asynchronous handler for the call.
                     // Don't await, the continuations will run on gRPC thread pool once triggered
                     // by cq.Next().
-                    _= HandleCallAsync(newRpc, cq, (server, state) => server.AllowOneRpc(state));
+                    _= HandleCallAsync(this, newRpc, cq, (server, state) => server.AllowOneRpc(state));
                 }
             }
 

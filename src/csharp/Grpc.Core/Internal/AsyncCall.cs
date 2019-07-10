@@ -519,9 +519,11 @@ namespace Grpc.Core.Internal
             var token = details.Options.CancellationToken;
             if (token.CanBeCanceled)
             {
-                cancellationTokenRegistration = token.Register(() => this.Cancel());
+                cancellationTokenRegistration = token.Register(s_CancelToken, this);
             }
         }
+
+        static readonly Action<object> s_CancelToken = state => ((AsyncCall<TRequest, TResponse>)state).Cancel();
 
         /// <summary>
         /// Gets WriteFlags set in callDetails.Options.WriteOptions

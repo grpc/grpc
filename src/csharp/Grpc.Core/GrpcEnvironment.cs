@@ -87,25 +87,25 @@ namespace Grpc.Core
         /// </summary>
         internal static ValueTask ReleaseAsync()
         {
-            return Impl();
-            async PooledValueTask Impl()
+            return ReleaseAsyncImpl();
+        }
+        private static async PooledValueTask ReleaseAsyncImpl()
+        {
+            GrpcEnvironment instanceToShutdown = null;
+            lock (staticLock)
             {
-                GrpcEnvironment instanceToShutdown = null;
-                lock (staticLock)
+                GrpcPreconditions.CheckState(refCount > 0);
+                refCount--;
+                if (refCount == 0)
                 {
-                    GrpcPreconditions.CheckState(refCount > 0);
-                    refCount--;
-                    if (refCount == 0)
-                    {
-                        instanceToShutdown = instance;
-                        instance = null;
-                    }
+                    instanceToShutdown = instance;
+                    instance = null;
                 }
+            }
 
-                if (instanceToShutdown != null)
-                {
-                    await instanceToShutdown.ShutdownAsync().ConfigureAwait(false);
-                }
+            if (instanceToShutdown != null)
+            {
+                await instanceToShutdown.ShutdownAsync().ConfigureAwait(false);
             }
         }
 
@@ -392,8 +392,8 @@ namespace Grpc.Core
         /// </summary>
         private ValueTask ShutdownAsync()
         {
-            return Impl();
-            async PooledValueTask Impl()
+            return ShutdownAsyncImpl();
+            async PooledValueTask ShutdownAsyncImpl()
             {
                 if (isShutdown)
                 {

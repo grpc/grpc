@@ -43,13 +43,13 @@ namespace Grpc.Microbenchmarks
         [Benchmark]
         public ValueTask<string> PingAsync()
         {
-            return Impl();
-            async PooledValueTask<string> Impl()
+            return PingAsyncImpl(client);
+        }
+        static async PooledValueTask<string> PingAsyncImpl(PingClient client)
+        {
+            using (var result = client.PingAsync("", new CallOptions()))
             {
-                using (var result = client.PingAsync("", new CallOptions()))
-                {
-                    return await result.ResponseAsync;
-                }
+                return await result.ResponseAsync;
             }
         }
 
@@ -71,8 +71,8 @@ namespace Grpc.Microbenchmarks
         [GlobalSetup]
         public Task Setup()
         {
-            return Impl();
-            async PooledTask Impl()
+            return SetupImpl();
+            async PooledTask SetupImpl()
             {
                 // create server
                 server = new Server {
@@ -91,8 +91,8 @@ namespace Grpc.Microbenchmarks
         [GlobalCleanup]
         public Task Cleanup()
         {
-            return Impl();
-            async PooledTask Impl()
+            return CleanupImpl();
+            async PooledTask CleanupImpl()
             {
                 await channel.ShutdownAsync();
                 await server.ShutdownAsync();

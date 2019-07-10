@@ -25,8 +25,8 @@ namespace Grpc.Microbenchmarks
     {
         public static Task Main()
         {
-            return Impl();
-            async PooledTask Impl()
+            return MainImpl();
+            async PooledTask MainImpl()
             {
                 var impl = new PingBenchmark();
                 await impl.Setup();

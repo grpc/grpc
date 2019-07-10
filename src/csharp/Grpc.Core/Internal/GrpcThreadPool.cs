@@ -143,10 +143,10 @@ namespace Grpc.Core.Internal
             var cqIndex = threadIndex % completionQueues.Count;
             var cq = completionQueues.ElementAt(cqIndex);
 
-            var thread = new Thread(new ThreadStart(() => RunHandlerLoop(cq, optionalProfiler)));
+            var thread = new Thread(state => ((GrpcThreadPool)state).RunHandlerLoop(cq, optionalProfiler));
             thread.IsBackground = true;
             thread.Name = string.Format("grpc {0} (cq {1})", threadIndex, cqIndex);
-            thread.Start();
+            thread.Start(this);
 
             return thread;
         }
@@ -175,9 +175,7 @@ namespace Grpc.Core.Internal
                         queuedContinuationCounter.Increment();
                         if (!inlineHandlers)
                         {
-                            // Use cached delegates to avoid unnecessary allocations
-
-                            _ = RunBackgroundCompletionQueueEventCallback(callback, success);
+                            _ = RunBackgroundCompletionQueueEventCallback(this, callback, success);
                         }
                         else
                         {
@@ -212,10 +210,10 @@ namespace Grpc.Core.Internal
         }
 
 
-        private async FireAndForget RunBackgroundCompletionQueueEventCallback(IOpCompletionCallback callback, bool success)
+        private static async FireAndForget RunBackgroundCompletionQueueEventCallback(GrpcThreadPool pool, IOpCompletionCallback callback, bool success)
         {
             await Task.Yield();
-            RunCompletionQueueEventCallback(callback, success);
+            pool.RunCompletionQueueEventCallback(callback, success);
         }
 
         private static IReadOnlyCollection<CompletionQueueSafeHandle> CreateCompletionQueueList(GrpcEnvironment environment, int completionQueueCount)

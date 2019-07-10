@@ -137,14 +137,15 @@ namespace Grpc.Core
         /// </summary>
         public Task WaitForStateChangedAsync(ChannelState lastObservedState, DateTime? deadline = null)
         {
-            return Impl();
-            async PooledTask Impl()
+            return WaitForStateChangedAsyncImpl(this, lastObservedState, deadline);
+            
+        }
+        private static async PooledTask WaitForStateChangedAsyncImpl(Channel obj, ChannelState lastObservedState, DateTime? deadline)
+        {
+            var result = await obj.TryWaitForStateChangedAsync(lastObservedState, deadline).ConfigureAwait(false);
+            if (!result)
             {
-                var result = await TryWaitForStateChangedAsync(lastObservedState, deadline).ConfigureAwait(false);
-                if (!result)
-                {
-                    throw new TaskCanceledException("Reached deadline.");
-                }
+                throw new TaskCanceledException("Reached deadline.");
             }
         }
 
@@ -214,8 +215,8 @@ namespace Grpc.Core
         /// <param name="deadline">The deadline. <c>null</c> indicates no deadline.</param>
         public Task ConnectAsync(DateTime? deadline = null)
         {
-            return Impl();
-            async PooledTask Impl()
+            return ConnectAsyncImpl();
+            async PooledTask ConnectAsyncImpl()
             {
                 var currentState = GetConnectivityState(true);
                 while (currentState != ChannelState.Ready)
@@ -243,8 +244,8 @@ namespace Grpc.Core
         /// </remarks>
         public Task ShutdownAsync()
         {
-            return Impl();
-            async PooledTask Impl()
+            return ShutdownAsyncImpl();
+            async PooledTask ShutdownAsyncImpl()
             {
                 lock (myLock)
                 {
