@@ -2863,16 +2863,6 @@ targets:
   - grpc_test_util
   - grpc
   - gpr
-- name: grpc_fetch_oauth2
-  build: test
-  run: false
-  language: c
-  src:
-  - test/core/security/fetch_oauth2.cc
-  deps:
-  - grpc_test_util
-  - grpc
-  - gpr
 - name: grpc_ipv6_loopback_available_test
   build: test
   language: c
@@ -4945,6 +4935,17 @@ targets:
   deps:
   - grpc_plugin_support
   secure: false
+- name: grpc_fetch_oauth2
+  build: test
+  run: false
+  language: c++
+  src:
+  - test/core/security/fetch_oauth2.cc
+  deps:
+  - grpc_test_util
+  - grpc++
+  - grpc
+  - gpr
 - name: grpc_linux_system_roots_test
   gtest: true
   build: test
