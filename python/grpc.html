@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-    <title>gRPC &#8212; gRPC Python 1.21.1 documentation</title>
+    <title>gRPC &#8212; gRPC Python 1.22.0 documentation</title>
     <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
     <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
@@ -33,7 +33,7 @@
 
 
 
-<p class="blurb">1.21.1</p>
+<p class="blurb">1.22.0</p>
 
 
 
@@ -1058,6 +1058,8 @@ secure_channel requires an instance of this class.</p>
 <dt id="grpc.CallCredentials">
 <em class="property">class </em><code class="descclassname">grpc.</code><code class="descname">CallCredentials</code><span class="sig-paren">(</span><em>credentials</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc.html#CallCredentials"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.CallCredentials" title="Permalink to this definition">¶</a></dt>
 <dd><p>An encapsulation of the data required to assert an identity over a call.</p>
+<p>A CallCredentials has to be used with secure Channel, otherwise the
+metadata will not be transmitted to the server.</p>
 <p>A CallCredentials may be composed with ChannelCredentials to always assert
 identity for every call over that Channel.</p>
 <p>This class has no supported interface - it exists to define the type of its
@@ -1943,7 +1945,8 @@ interceptor chooses to service this RPC, or None otherwise.</p>
 for the RPC.</li>
 <li><strong>metadata</strong> – Optional <a class="reference internal" href="glossary.html#term-metadata"><span class="xref std std-term">metadata</span></a> to be transmitted to the
 service-side of the RPC.</li>
-<li><strong>credentials</strong> – An optional CallCredentials for the RPC.</li>
+<li><strong>credentials</strong> – An optional CallCredentials for the RPC. Only valid for
+secure Channel.</li>
 <li><strong>wait_for_ready</strong> – This is an EXPERIMENTAL argument. An optional
 flag to enable wait for ready mechanism</li>
 <li><strong>compression</strong> – An element of grpc.compression, e.g.
@@ -1977,7 +1980,8 @@ metadata, status code, and details.</p>
 the RPC.</li>
 <li><strong>metadata</strong> – Optional <a class="reference internal" href="glossary.html#term-metadata"><span class="xref std std-term">metadata</span></a> to be transmitted to the
 service-side of the RPC.</li>
-<li><strong>credentials</strong> – An optional CallCredentials for the RPC.</li>
+<li><strong>credentials</strong> – An optional CallCredentials for the RPC. Only valid for
+secure Channel.</li>
 <li><strong>wait_for_ready</strong> – This is an EXPERIMENTAL argument. An optional
 flag to enable wait for ready mechanism</li>
 <li><strong>compression</strong> – An element of grpc.compression, e.g.
@@ -2010,7 +2014,8 @@ the returned Call-Future’s exception value will be an RpcError.</p>
 the RPC.</li>
 <li><strong>metadata</strong> – Optional <a class="reference internal" href="glossary.html#term-metadata"><span class="xref std std-term">metadata</span></a> to be transmitted to the
 service-side of the RPC.</li>
-<li><strong>credentials</strong> – An optional CallCredentials for the RPC.</li>
+<li><strong>credentials</strong> – An optional CallCredentials for the RPC. Only valid for
+secure Channel.</li>
 <li><strong>wait_for_ready</strong> – This is an EXPERIMENTAL argument. An optional
 flag to enable wait for ready mechanism</li>
 <li><strong>compression</strong> – An element of grpc.compression, e.g.
@@ -2050,7 +2055,8 @@ metadata, status code, and details.</p>
 the RPC. If None, the timeout is considered infinite.</li>
 <li><strong>metadata</strong> – An optional <a class="reference internal" href="glossary.html#term-metadata"><span class="xref std std-term">metadata</span></a> to be transmitted to the
 service-side of the RPC.</li>
-<li><strong>credentials</strong> – An optional CallCredentials for the RPC.</li>
+<li><strong>credentials</strong> – An optional CallCredentials for the RPC. Only valid for
+secure Channel.</li>
 <li><strong>wait_for_ready</strong> – This is an EXPERIMENTAL argument. An optional
 flag to enable wait for ready mechanism</li>
 <li><strong>compression</strong> – An element of grpc.compression, e.g.
@@ -2089,7 +2095,8 @@ the RPC.</li>
 the RPC. If None, the timeout is considered infinite.</li>
 <li><strong>metadata</strong> – Optional <a class="reference internal" href="glossary.html#term-metadata"><span class="xref std std-term">metadata</span></a> to be transmitted to the
 service-side of the RPC.</li>
-<li><strong>credentials</strong> – An optional CallCredentials for the RPC.</li>
+<li><strong>credentials</strong> – An optional CallCredentials for the RPC. Only valid for
+secure Channel.</li>
 <li><strong>wait_for_ready</strong> – This is an EXPERIMENTAL argument. An optional
 flag to enable wait for ready mechanism</li>
 <li><strong>compression</strong> – An element of grpc.compression, e.g.
@@ -2123,7 +2130,8 @@ such as metadata, code, and details.</p>
 the RPC. If None, the timeout is considered infinite.</li>
 <li><strong>metadata</strong> – Optional <a class="reference internal" href="glossary.html#term-metadata"><span class="xref std std-term">metadata</span></a> to be transmitted to the
 service-side of the RPC.</li>
-<li><strong>credentials</strong> – An optional CallCredentials for the RPC.</li>
+<li><strong>credentials</strong> – An optional CallCredentials for the RPC. Only valid for
+secure Channel.</li>
 <li><strong>wait_for_ready</strong> – This is an EXPERIMENTAL argument. An optional
 flag to enable wait for ready mechanism</li>
 <li><strong>compression</strong> – An element of grpc.compression, e.g.
@@ -2157,7 +2165,8 @@ the RPC.</li>
 the RPC. If None, the timeout is considered infinite.</li>
 <li><strong>metadata</strong> – Optional <a class="reference internal" href="glossary.html#term-metadata"><span class="xref std std-term">metadata</span></a> to be transmitted to the
 service-side of the RPC.</li>
-<li><strong>credentials</strong> – An optional CallCredentials for the RPC.</li>
+<li><strong>credentials</strong> – An optional CallCredentials for the RPC. Only valid for
+secure Channel.</li>
 <li><strong>wait_for_ready</strong> – This is an EXPERIMENTAL argument. An optional
 flag to enable wait for ready mechanism</li>
 <li><strong>compression</strong> – An element of grpc.compression, e.g.
@@ -2197,7 +2206,8 @@ metadata, status code, and details.</p>
 the RPC. If not specified, the timeout is considered infinite.</li>
 <li><strong>metadata</strong> – Optional <a class="reference internal" href="glossary.html#term-metadata"><span class="xref std std-term">metadata</span></a> to be transmitted to the
 service-side of the RPC.</li>
-<li><strong>credentials</strong> – An optional CallCredentials for the RPC.</li>
+<li><strong>credentials</strong> – An optional CallCredentials for the RPC. Only valid for
+secure Channel.</li>
 <li><strong>wait_for_ready</strong> – This is an EXPERIMENTAL argument. An optional
 flag to enable wait for ready mechanism</li>
 <li><strong>compression</strong> – An element of grpc.compression, e.g.
