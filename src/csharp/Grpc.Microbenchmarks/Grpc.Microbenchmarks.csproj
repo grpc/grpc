@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <Import Project="..\Grpc.Core\Common.csproj.include" />
 
@@ -10,11 +10,18 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Remove="BenchmarkDotNet.Artifacts\**" />
+    <EmbeddedResource Remove="BenchmarkDotNet.Artifacts\**" />
+    <None Remove="BenchmarkDotNet.Artifacts\**" />
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="../Grpc.Core/Grpc.Core.csproj" />
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="BenchmarkDotNet" Version="0.11.5" />
+    <!-- CI build has fixed memory allocations for multi-thread on .NET Core -->
+    <PackageReference Include="BenchmarkDotNet" Version="0.11.5.1113" />
   </ItemGroup>
 
   <ItemGroup Condition=" '$(TargetFramework)' == 'net461' ">
