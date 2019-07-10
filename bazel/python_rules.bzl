@@ -163,7 +163,7 @@ def py_proto_library(
         _generate_py(
             name = codegen_grpc_target,
             deps = deps,
-            plugin = "//:grpc_python_plugin",
+            plugin = "//src/compiler:grpc_python_plugin",
             well_known_protos = well_known_protos,
             **kwargs
         )
