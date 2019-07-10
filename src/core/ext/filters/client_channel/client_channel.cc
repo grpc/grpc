@@ -160,8 +160,6 @@ class ChannelData {
     return external_connectivity_watcher_list_.size();
   }
 
-  void ExitIdleLocked();
-
  private:
   class ConnectivityStateAndPickerSetter;
   class ServiceConfigSetter;
@@ -243,9 +241,9 @@ class ChannelData {
   ClientChannelFactory* client_channel_factory_;
   UniquePtr<char> server_name_;
   RefCountedPtr<ServiceConfig> default_service_config_;
-  channelz::ChannelNode* channelz_node_;
-  const grpc_channel_args* channel_args_;
   UniquePtr<char> target_uri_;
+  const grpc_channel_args* channel_args_;
+  channelz::ChannelNode* channelz_node_;
 
   //
   // Fields used in the data plane.  Guarded by data_plane_combiner.
@@ -1244,10 +1242,6 @@ ChannelData::ChannelData(grpc_channel_element_args* args, grpc_error** error)
         GRPC_ERROR_CREATE_FROM_STATIC_STRING("the target uri is not valid.");
     return;
   }
-  // Will delete itself.
-  New<ConnectivityStateAndPickerSetter>(
-      this, GRPC_CHANNEL_IDLE, "initial IDLE",
-      UniquePtr<LoadBalancingPolicy::SubchannelPicker>(nullptr));
   *error = GRPC_ERROR_NONE;
 }
 
@@ -1581,17 +1575,13 @@ void ChannelData::RemoveQueuedPick(QueuedPick* to_remove,
   }
 }
 
-void ChannelData::ExitIdleLocked() {
-  if (resolving_lb_policy_ != nullptr) {
-    resolving_lb_policy_->ExitIdleLocked();
-  } else {
-    CreateResolvingLoadBalancingPolicyLocked();
-  }
-}
-
 void ChannelData::TryToConnectLocked(void* arg, grpc_error* error_ignored) {
   auto* chand = static_cast<ChannelData*>(arg);
-  chand->ExitIdleLocked();
+  if (chand->resolving_lb_policy_ != nullptr) {
+    chand->resolving_lb_policy_->ExitIdleLocked();
+  } else {
+    chand->CreateResolvingLoadBalancingPolicyLocked();
+  }
   GRPC_CHANNEL_STACK_UNREF(chand->owning_stack_, "TryToConnect");
 }
 
@@ -3482,6 +3472,15 @@ void CallData::StartPickLocked(void* arg, grpc_error* error) {
   GPR_ASSERT(calld->subchannel_call_ == nullptr);
   // Apply service config to call if needed.
   calld->MaybeApplyServiceConfigToCallLocked(elem);
+  // picker's being null means the channel is currently in IDLE state. The
+  // incoming call will make the channel exit IDLE and queue itself.
+  if (chand->picker() == nullptr) {
+    // We are currently in the data plane.
+    // Bounce into the control plane to exit IDLE.
+    chand->CheckConnectivityState(true);
+    calld->AddCallToQueuedPicksLocked(elem);
+    return;
+  }
   // If this is a retry, use the send_initial_metadata payload that
   // we've cached; otherwise, use the pending batch.  The
   // send_initial_metadata batch will be the first pending batch in the
@@ -3511,14 +3510,6 @@ void CallData::StartPickLocked(void* arg, grpc_error* error) {
   GRPC_CLOSURE_INIT(&calld->pick_closure_, PickDone, elem,
                     grpc_schedule_on_exec_ctx);
   // Attempt pick.
-  if (chand->picker() == nullptr) {
-    // ChannelData's picker being null means the channel is currently in IDLE
-    // state. The incoming call will make the channel exit IDLE and queue
-    // itself.
-    chand->ExitIdleLocked();
-    calld->AddCallToQueuedPicksLocked(elem);
-    return;
-  }
   auto result = chand->picker()->Pick(pick_args);
   if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_routing_trace)) {
     gpr_log(GPR_INFO,

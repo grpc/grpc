@@ -1618,8 +1618,7 @@ TEST_F(UpdatesTest, ReresolveDeadBackend) {
   addresses.emplace_back(AddressData{balancers_[0]->port_, true, ""});
   addresses.emplace_back(AddressData{backends_[0]->port_, false, ""});
   SetNextResolution(addresses);
-  // Since the resolver is not created until there comes a RPC, we explicitly
-  // ask the channel to connect to force the channel's resolver work.
+  // Ask channel to connect to trigger resolver creation.
   channel_->GetState(true);
   // The re-resolution result will contain the addresses of the same balancer
   // and a new fallback backend.
@@ -1672,8 +1671,7 @@ class UpdatesWithClientLoadReportingTest : public GrpclbEnd2endTest {
 };
 
 TEST_F(UpdatesWithClientLoadReportingTest, ReresolveDeadBalancer) {
-  // Since the resolver is not created until there comes a RPC, we explicitly
-  // ask the channel to connect to force the channel's resolver work.
+  // Ask channel to connect to trigger resolver creation.
   channel_->GetState(true);
   std::vector<AddressData> addresses;
   addresses.emplace_back(AddressData{balancers_[0]->port_, true, ""});
