@@ -375,6 +375,7 @@ namespace Grpc.Core
         /// </summary>
         private static async FireAndForget HandleCallAsync(Server server, ServerRpcNew newRpc, CompletionQueueSafeHandle cq, Action<Server, CompletionQueueSafeHandle> continuation)
         {
+            await Task.Yield();
             try
             {
                 IServerCallHandler callHandler;
