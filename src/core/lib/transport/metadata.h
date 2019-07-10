@@ -186,19 +186,21 @@ struct UserData {
 
 class StaticMetadata {
  public:
-  StaticMetadata(const grpc_slice& key, const grpc_slice& value)
-      : kv_({key, value}), hash_(0) {}
+  StaticMetadata(const grpc_slice& key, const grpc_slice& value, uintptr_t idx)
+      : kv_({key, value}), hash_(0), static_idx_(idx) {}
 
   const grpc_mdelem_data& data() const { return kv_; }
 
   void HashInit();
   uint32_t hash() { return hash_; }
+  uintptr_t StaticIndex() { return static_idx_; }
 
  private:
   grpc_mdelem_data kv_;
 
   /* private only data */
   uint32_t hash_;
+  uintptr_t static_idx_;
 };
 
 class RefcountedMdBase {
@@ -348,10 +350,11 @@ inline void grpc_mdelem_unref(grpc_mdelem gmd) {
          free an interned md at any time: it's unsafe from this point on to
          access it so we read the hash now. */
       uint32_t hash = md->hash();
-      if (GPR_UNLIKELY(md->Unref())) {
 #ifndef NDEBUG
+      if (GPR_UNLIKELY(md->Unref(file, line))) {
         grpc_mdelem_on_final_unref(storage, md, hash, file, line);
 #else
+      if (GPR_UNLIKELY(md->Unref())) {
         grpc_mdelem_on_final_unref(storage, md, hash);
 #endif
       }

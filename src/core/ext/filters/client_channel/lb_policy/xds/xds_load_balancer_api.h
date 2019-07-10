@@ -61,6 +61,13 @@ struct XdsLocalityInfo {
            priority == other.priority;
   }
 
+  // This comparator only compares the locality names.
+  struct Less {
+    bool operator()(const XdsLocalityInfo& lhs, const XdsLocalityInfo& rhs) {
+      return XdsLocalityName::Less()(lhs.locality_name, rhs.locality_name);
+    }
+  };
+
   RefCountedPtr<XdsLocalityName> locality_name;
   ServerAddressList serverlist;
   uint32_t lb_weight;

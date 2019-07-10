@@ -20,7 +20,7 @@ register_toolchains(
 
 git_repository(
     name = "io_bazel_rules_python",
-    commit = "8b5d0683a7d878b28fffe464779c8a53659fc645",
+    commit = "fdbb17a4118a1728d19e638a5291b4c4266ea5b8",
     remote = "https://github.com/bazelbuild/rules_python.git",
 )
 
@@ -68,8 +68,8 @@ rbe_autoconfig(
 
 http_archive(
     name = "io_bazel_rules_go",
-    sha256 = "6776d68ebb897625dead17ae510eac3d5f6342367327875210df44dbe2aeeb19",
-    urls = ["https://github.com/bazelbuild/rules_go/releases/download/0.17.1/rules_go-0.17.1.tar.gz"],
+    sha256 = "45409e6c4f748baa9e05f8f6ab6efaa05739aa064e3ab94e5a1a09849c51806a",
+    urls = ["https://github.com/bazelbuild/rules_go/releases/download/0.18.7/rules_go-0.18.7.tar.gz"],
 )
 
 load("@envoy_api//bazel:repositories.bzl", "api_dependencies")
@@ -80,7 +80,7 @@ load("@io_bazel_rules_go//go/private:repositories.bzl", "go_rules_dependencies")
 
 go_rules_dependencies()
 
-load("@io_bazel_rules_go//go:def.bzl", "go_rules_dependencies", "go_register_toolchains")
+load("@io_bazel_rules_go//go:deps.bzl", "go_rules_dependencies", "go_register_toolchains")
 
 go_rules_dependencies()
 

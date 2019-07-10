@@ -32,9 +32,14 @@
 #define GPR_DUMP_HEX 0x00000001
 #define GPR_DUMP_ASCII 0x00000002
 
-/* Converts array buf, of length len, into a C string  according to the flags.
+/* Converts array buf, of length len, into a C string according to the flags.
    Result should be freed with gpr_free() */
 char* gpr_dump(const char* buf, size_t len, uint32_t flags);
+/* Converts array buf, of length len, into a C string according to the flags.
+   The length of the returned buffer is stored in out_len.
+   Result should be freed with gpr_free() */
+char* gpr_dump_return_len(const char* buf, size_t len, uint32_t flags,
+                          size_t* out_len);
 
 /* Parses an array of bytes into an integer (base 10). Returns 1 on success,
    0 on failure. */
@@ -110,6 +115,7 @@ char* gpr_strvec_flatten(gpr_strvec* strs, size_t* total_length);
 /** Case insensitive string comparison... return <0 if lower(a)<lower(b), ==0 if
     lower(a)==lower(b), >0 if lower(a)>lower(b) */
 int gpr_stricmp(const char* a, const char* b);
+int gpr_strincmp(const char* a, const char* b, size_t n);
 
 void* gpr_memrchr(const void* s, int c, size_t n);
 

@@ -622,33 +622,37 @@ static const uint8_t inverse_base64[256] = {
     255,
 };
 
+static void GPR_ATTRIBUTE_NOINLINE on_hdr_log(grpc_mdelem md) {
+  char* k = grpc_slice_to_c_string(GRPC_MDKEY(md));
+  char* v = nullptr;
+  if (grpc_is_binary_header_internal(GRPC_MDKEY(md))) {
+    v = grpc_dump_slice(GRPC_MDVALUE(md), GPR_DUMP_HEX);
+  } else {
+    v = grpc_slice_to_c_string(GRPC_MDVALUE(md));
+  }
+  gpr_log(
+      GPR_INFO,
+      "Decode: '%s: %s', elem_interned=%d [%d], k_interned=%d, v_interned=%d",
+      k, v, GRPC_MDELEM_IS_INTERNED(md), GRPC_MDELEM_STORAGE(md),
+      grpc_slice_is_interned(GRPC_MDKEY(md)),
+      grpc_slice_is_interned(GRPC_MDVALUE(md)));
+  gpr_free(k);
+  gpr_free(v);
+}
+
 /* emission helpers */
-static grpc_error* on_hdr(grpc_chttp2_hpack_parser* p, grpc_mdelem md,
-                          int add_to_table) {
+template <bool do_add>
+static grpc_error* on_hdr(grpc_chttp2_hpack_parser* p, grpc_mdelem md) {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_http_trace)) {
-    char* k = grpc_slice_to_c_string(GRPC_MDKEY(md));
-    char* v = nullptr;
-    if (grpc_is_binary_header_internal(GRPC_MDKEY(md))) {
-      v = grpc_dump_slice(GRPC_MDVALUE(md), GPR_DUMP_HEX);
-    } else {
-      v = grpc_slice_to_c_string(GRPC_MDVALUE(md));
-    }
-    gpr_log(
-        GPR_INFO,
-        "Decode: '%s: %s', elem_interned=%d [%d], k_interned=%d, v_interned=%d",
-        k, v, GRPC_MDELEM_IS_INTERNED(md), GRPC_MDELEM_STORAGE(md),
-        grpc_slice_is_interned(GRPC_MDKEY(md)),
-        grpc_slice_is_interned(GRPC_MDVALUE(md)));
-    gpr_free(k);
-    gpr_free(v);
+    on_hdr_log(md);
   }
-  if (add_to_table) {
-    GPR_ASSERT(GRPC_MDELEM_STORAGE(md) == GRPC_MDELEM_STORAGE_INTERNED ||
-               GRPC_MDELEM_STORAGE(md) == GRPC_MDELEM_STORAGE_STATIC);
+  if (do_add) {
+    GPR_DEBUG_ASSERT(GRPC_MDELEM_STORAGE(md) == GRPC_MDELEM_STORAGE_INTERNED ||
+                     GRPC_MDELEM_STORAGE(md) == GRPC_MDELEM_STORAGE_STATIC);
     grpc_error* err = grpc_chttp2_hptbl_add(&p->table, md);
-    if (err != GRPC_ERROR_NONE) return err;
+    if (GPR_UNLIKELY(err != GRPC_ERROR_NONE)) return err;
   }
-  if (p->on_header == nullptr) {
+  if (GPR_UNLIKELY(p->on_header == nullptr)) {
     GRPC_MDELEM_UNREF(md);
     return GRPC_ERROR_CREATE_FROM_STATIC_STRING("on_header callback not set");
   }
@@ -670,7 +674,7 @@ static grpc_slice take_string(grpc_chttp2_hpack_parser* p,
     str->copied = true;
     str->data.referenced = grpc_empty_slice();
   } else if (intern) {
-    s = grpc_slice_intern(grpc_slice_from_static_buffer(
+    s = grpc_slice_intern(grpc_slice_from_static_buffer_internal(
         str->data.copied.str, str->data.copied.length));
   } else {
     s = grpc_slice_from_copied_buffer(str->data.copied.str,
@@ -765,7 +769,7 @@ static grpc_error* finish_indexed_field(grpc_chttp2_hpack_parser* p,
   }
   GRPC_MDELEM_REF(md);
   GRPC_STATS_INC_HPACK_RECV_INDEXED();
-  grpc_error* err = on_hdr(p, md, 0);
+  grpc_error* err = on_hdr<false>(p, md);
   if (err != GRPC_ERROR_NONE) return err;
   return parse_begin(p, cur, end);
 }
@@ -798,11 +802,9 @@ static grpc_error* finish_lithdr_incidx(grpc_chttp2_hpack_parser* p,
   grpc_mdelem md = grpc_chttp2_hptbl_lookup(&p->table, p->index);
   GPR_ASSERT(!GRPC_MDISNULL(md)); /* handled in string parsing */
   GRPC_STATS_INC_HPACK_RECV_LITHDR_INCIDX();
-  grpc_error* err =
-      on_hdr(p,
-             grpc_mdelem_from_slices(grpc_slice_ref_internal(GRPC_MDKEY(md)),
-                                     take_string(p, &p->value, true)),
-             1);
+  grpc_error* err = on_hdr<true>(
+      p, grpc_mdelem_from_slices(grpc_slice_ref_internal(GRPC_MDKEY(md)),
+                                 take_string(p, &p->value, true)));
   if (err != GRPC_ERROR_NONE) return parse_error(p, cur, end, err);
   return parse_begin(p, cur, end);
 }
@@ -813,10 +815,8 @@ static grpc_error* finish_lithdr_incidx_v(grpc_chttp2_hpack_parser* p,
                                           const uint8_t* end) {
   GRPC_STATS_INC_HPACK_RECV_LITHDR_INCIDX_V();
   grpc_error* err =
-      on_hdr(p,
-             grpc_mdelem_from_slices(take_string(p, &p->key, true),
-                                     take_string(p, &p->value, true)),
-             1);
+      on_hdr<true>(p, grpc_mdelem_from_slices(take_string(p, &p->key, true),
+                                              take_string(p, &p->value, true)));
   if (err != GRPC_ERROR_NONE) return parse_error(p, cur, end, err);
   return parse_begin(p, cur, end);
 }
@@ -865,11 +865,9 @@ static grpc_error* finish_lithdr_notidx(grpc_chttp2_hpack_parser* p,
   grpc_mdelem md = grpc_chttp2_hptbl_lookup(&p->table, p->index);
   GPR_ASSERT(!GRPC_MDISNULL(md)); /* handled in string parsing */
   GRPC_STATS_INC_HPACK_RECV_LITHDR_NOTIDX();
-  grpc_error* err =
-      on_hdr(p,
-             grpc_mdelem_from_slices(grpc_slice_ref_internal(GRPC_MDKEY(md)),
-                                     take_string(p, &p->value, false)),
-             0);
+  grpc_error* err = on_hdr<false>(
+      p, grpc_mdelem_from_slices(grpc_slice_ref_internal(GRPC_MDKEY(md)),
+                                 take_string(p, &p->value, false)));
   if (err != GRPC_ERROR_NONE) return parse_error(p, cur, end, err);
   return parse_begin(p, cur, end);
 }
@@ -879,11 +877,9 @@ static grpc_error* finish_lithdr_notidx_v(grpc_chttp2_hpack_parser* p,
                                           const uint8_t* cur,
                                           const uint8_t* end) {
   GRPC_STATS_INC_HPACK_RECV_LITHDR_NOTIDX_V();
-  grpc_error* err =
-      on_hdr(p,
-             grpc_mdelem_from_slices(take_string(p, &p->key, true),
-                                     take_string(p, &p->value, false)),
-             0);
+  grpc_error* err = on_hdr<false>(
+      p, grpc_mdelem_from_slices(take_string(p, &p->key, true),
+                                 take_string(p, &p->value, false)));
   if (err != GRPC_ERROR_NONE) return parse_error(p, cur, end, err);
   return parse_begin(p, cur, end);
 }
@@ -932,11 +928,9 @@ static grpc_error* finish_lithdr_nvridx(grpc_chttp2_hpack_parser* p,
   grpc_mdelem md = grpc_chttp2_hptbl_lookup(&p->table, p->index);
   GPR_ASSERT(!GRPC_MDISNULL(md)); /* handled in string parsing */
   GRPC_STATS_INC_HPACK_RECV_LITHDR_NVRIDX();
-  grpc_error* err =
-      on_hdr(p,
-             grpc_mdelem_from_slices(grpc_slice_ref_internal(GRPC_MDKEY(md)),
-                                     take_string(p, &p->value, false)),
-             0);
+  grpc_error* err = on_hdr<false>(
+      p, grpc_mdelem_from_slices(grpc_slice_ref_internal(GRPC_MDKEY(md)),
+                                 take_string(p, &p->value, false)));
   if (err != GRPC_ERROR_NONE) return parse_error(p, cur, end, err);
   return parse_begin(p, cur, end);
 }
@@ -946,11 +940,9 @@ static grpc_error* finish_lithdr_nvridx_v(grpc_chttp2_hpack_parser* p,
                                           const uint8_t* cur,
                                           const uint8_t* end) {
   GRPC_STATS_INC_HPACK_RECV_LITHDR_NVRIDX_V();
-  grpc_error* err =
-      on_hdr(p,
-             grpc_mdelem_from_slices(take_string(p, &p->key, true),
-                                     take_string(p, &p->value, false)),
-             0);
+  grpc_error* err = on_hdr<false>(
+      p, grpc_mdelem_from_slices(take_string(p, &p->key, true),
+                                 take_string(p, &p->value, false)));
   if (err != GRPC_ERROR_NONE) return parse_error(p, cur, end, err);
   return parse_begin(p, cur, end);
 }
@@ -1496,14 +1488,14 @@ static grpc_error* parse_key_string(grpc_chttp2_hpack_parser* p,
 
 static bool is_binary_literal_header(grpc_chttp2_hpack_parser* p) {
   /* We know that either argument here is a reference counter slice.
-   * 1. If a result of grpc_slice_from_static_buffer, the refcount is set to
-   *    NoopRefcount.
+   * 1. If a result of grpc_slice_from_static_buffer_internal, the refcount is
+   *    set to kNoopRefcount.
    * 2. If it's p->key.data.referenced, then p->key.copied was set to false,
    *    which occurs in begin_parse_string() - where the refcount is set to
    *    p->current_slice_refcount, which is not null. */
   return grpc_is_refcounted_slice_binary_header(
-      p->key.copied ? grpc_slice_from_static_buffer(p->key.data.copied.str,
-                                                    p->key.data.copied.length)
+      p->key.copied ? grpc_slice_from_static_buffer_internal(
+                          p->key.data.copied.str, p->key.data.copied.length)
                     : p->key.data.referenced);
 }
 

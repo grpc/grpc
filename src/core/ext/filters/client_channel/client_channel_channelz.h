@@ -34,13 +34,17 @@ namespace channelz {
 
 class SubchannelNode : public BaseNode {
  public:
-  SubchannelNode(Subchannel* subchannel, size_t channel_tracer_max_nodes);
+  SubchannelNode(const char* target_address, size_t channel_tracer_max_nodes);
   ~SubchannelNode() override;
 
-  void MarkSubchannelDestroyed() {
-    GPR_ASSERT(subchannel_ != nullptr);
-    subchannel_ = nullptr;
-  }
+  // Sets the subchannel's connectivity state without health checking.
+  void UpdateConnectivityState(grpc_connectivity_state state);
+
+  // Used when the subchannel's child socket uuid changes. This should be set
+  // when the subchannel's transport is created and set to 0 when the subchannel
+  // unrefs the transport. A uuid of 0 indicates that the child socket is no
+  // longer associated with this subchannel.
+  void SetChildSocketUuid(intptr_t uuid);
 
   grpc_json* RenderJson() override;
 
@@ -61,7 +65,8 @@ class SubchannelNode : public BaseNode {
  private:
   void PopulateConnectivityState(grpc_json* json);
 
-  Subchannel* subchannel_;
+  Atomic<grpc_connectivity_state> connectivity_state_{GRPC_CHANNEL_IDLE};
+  Atomic<intptr_t> child_socket_uuid_{0};
   UniquePtr<char> target_;
   CallCountingHelper call_counter_;
   ChannelTrace trace_;

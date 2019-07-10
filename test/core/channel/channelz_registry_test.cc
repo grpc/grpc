@@ -43,16 +43,6 @@ namespace grpc_core {
 namespace channelz {
 namespace testing {
 
-class ChannelzRegistryPeer {
- public:
-  const InlinedVector<BaseNode*, 20>* entities() {
-    return &ChannelzRegistry::Default()->entities_;
-  }
-  int num_empty_slots() {
-    return ChannelzRegistry::Default()->num_empty_slots_;
-  }
-};
-
 class ChannelzRegistryTest : public ::testing::Test {
  protected:
   // ensure we always have a fresh registry for tests.
@@ -115,38 +105,15 @@ TEST_F(ChannelzRegistryTest, NullIfNotPresentTest) {
   EXPECT_EQ(channelz_channel, retrieved);
 }
 
-TEST_F(ChannelzRegistryTest, TestCompaction) {
-  const int kLoopIterations = 300;
-  // These channels that will stay in the registry for the duration of the test.
-  std::vector<RefCountedPtr<BaseNode>> even_channels;
-  even_channels.reserve(kLoopIterations);
-  {
-    // The channels will unregister themselves at the end of the for block.
-    std::vector<RefCountedPtr<BaseNode>> odd_channels;
-    odd_channels.reserve(kLoopIterations);
-    for (int i = 0; i < kLoopIterations; i++) {
-      even_channels.push_back(
-          MakeRefCounted<BaseNode>(BaseNode::EntityType::kTopLevelChannel));
-      odd_channels.push_back(
-          MakeRefCounted<BaseNode>(BaseNode::EntityType::kTopLevelChannel));
-    }
-  }
-  // without compaction, there would be exactly kLoopIterations empty slots at
-  // this point. However, one of the unregisters should have triggered
-  // compaction.
-  ChannelzRegistryPeer peer;
-  EXPECT_LT(peer.num_empty_slots(), kLoopIterations);
-}
-
-TEST_F(ChannelzRegistryTest, TestGetAfterCompaction) {
+TEST_F(ChannelzRegistryTest, TestUnregistration) {
   const int kLoopIterations = 100;
-  // These channels that will stay in the registry for the duration of the test.
+  // These channels will stay in the registry for the duration of the test.
   std::vector<RefCountedPtr<BaseNode>> even_channels;
   even_channels.reserve(kLoopIterations);
   std::vector<intptr_t> odd_uuids;
   odd_uuids.reserve(kLoopIterations);
   {
-    // The channels will unregister themselves at the end of the for block.
+    // These channels will unregister themselves at the end of this block.
     std::vector<RefCountedPtr<BaseNode>> odd_channels;
     odd_channels.reserve(kLoopIterations);
     for (int i = 0; i < kLoopIterations; i++) {
@@ -157,6 +124,7 @@ TEST_F(ChannelzRegistryTest, TestGetAfterCompaction) {
       odd_uuids.push_back(odd_channels[i]->uuid());
     }
   }
+  // Check that the even channels are present and the odd channels are not.
   for (int i = 0; i < kLoopIterations; i++) {
     RefCountedPtr<BaseNode> retrieved =
         ChannelzRegistry::Get(even_channels[i]->uuid());
@@ -164,27 +132,8 @@ TEST_F(ChannelzRegistryTest, TestGetAfterCompaction) {
     retrieved = ChannelzRegistry::Get(odd_uuids[i]);
     EXPECT_EQ(retrieved, nullptr);
   }
-}
-
-TEST_F(ChannelzRegistryTest, TestAddAfterCompaction) {
-  const int kLoopIterations = 100;
-  // These channels that will stay in the registry for the duration of the test.
-  std::vector<RefCountedPtr<BaseNode>> even_channels;
-  even_channels.reserve(kLoopIterations);
-  std::vector<intptr_t> odd_uuids;
-  odd_uuids.reserve(kLoopIterations);
-  {
-    // The channels will unregister themselves at the end of the for block.
-    std::vector<RefCountedPtr<BaseNode>> odd_channels;
-    odd_channels.reserve(kLoopIterations);
-    for (int i = 0; i < kLoopIterations; i++) {
-      even_channels.push_back(
-          MakeRefCounted<BaseNode>(BaseNode::EntityType::kTopLevelChannel));
-      odd_channels.push_back(
-          MakeRefCounted<BaseNode>(BaseNode::EntityType::kTopLevelChannel));
-      odd_uuids.push_back(odd_channels[i]->uuid());
-    }
-  }
+  // Add more channels and verify that they get added correctly, to make
+  // sure that the unregistration didn't leave the registry in a weird state.
   std::vector<RefCountedPtr<BaseNode>> more_channels;
   more_channels.reserve(kLoopIterations);
   for (int i = 0; i < kLoopIterations; i++) {

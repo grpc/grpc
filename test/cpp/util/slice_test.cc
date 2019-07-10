@@ -33,6 +33,10 @@ const char* kContent = "hello xxxxxxxxxxxxxxxxxxxx world";
 
 class SliceTest : public ::testing::Test {
  protected:
+  static void SetUpTestCase() { grpc_init(); }
+
+  static void TearDownTestCase() { grpc_shutdown(); }
+
   void CheckSliceSize(const Slice& s, const grpc::string& content) {
     EXPECT_EQ(content.size(), s.size());
   }
@@ -132,8 +136,6 @@ TEST_F(SliceTest, Cslice) {
 
 int main(int argc, char** argv) {
   ::testing::InitGoogleTest(&argc, argv);
-  grpc_init();
   int ret = RUN_ALL_TESTS();
-  grpc_shutdown();
   return ret;
 }

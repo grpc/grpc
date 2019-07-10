@@ -22,6 +22,7 @@
 #include <grpc/support/port_platform.h>
 
 #include <grpc/support/atm.h>
+#include <grpc/support/string_util.h>
 
 #include "src/core/lib/gprpp/atomic.h"
 #include "src/core/lib/gprpp/inlined_vector.h"
@@ -64,10 +65,21 @@ class XdsLocalityName : public RefCounted<XdsLocalityName> {
   const char* zone() const { return zone_.get(); }
   const char* sub_zone() const { return sub_zone_.get(); }
 
+  const char* AsHumanReadableString() {
+    if (human_readable_string_ == nullptr) {
+      char* tmp;
+      gpr_asprintf(&tmp, "{region=\"%s\", zone=\"%s\", sub_zone=\"%s\"}",
+                   region_.get(), zone_.get(), sub_zone_.get());
+      human_readable_string_.reset(tmp);
+    }
+    return human_readable_string_.get();
+  }
+
  private:
   UniquePtr<char> region_;
   UniquePtr<char> zone_;
   UniquePtr<char> sub_zone_;
+  UniquePtr<char> human_readable_string_;
 };
 
 // Thread-safe on data plane; thread-unsafe on control plane.

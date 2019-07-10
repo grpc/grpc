@@ -84,7 +84,6 @@
 #include "src/core/lib/backoff/backoff.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_stack.h"
-#include "src/core/lib/gpr/host_port.h"
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gprpp/manual_constructor.h"
 #include "src/core/lib/gprpp/map.h"
@@ -199,7 +198,6 @@ class XdsLb : public LoadBalancingPolicy {
      public:
       explicit EdsCallState(
           RefCountedPtr<RetryableLbCall<EdsCallState>> parent);
-      ~EdsCallState();
 
       void Orphan() override;
 
@@ -209,6 +207,10 @@ class XdsLb : public LoadBalancingPolicy {
       bool seen_response() const { return seen_response_; }
 
      private:
+      GRPC_ALLOW_CLASS_TO_USE_NON_PUBLIC_DELETE
+
+      ~EdsCallState();
+
       bool IsCurrentCallOnChannel() const;
 
       static void OnResponseReceivedLocked(void* arg, grpc_error* error);
@@ -243,7 +245,6 @@ class XdsLb : public LoadBalancingPolicy {
      public:
       explicit LrsCallState(
           RefCountedPtr<RetryableLbCall<LrsCallState>> parent);
-      ~LrsCallState();
 
       void Orphan() override;
 
@@ -255,6 +256,10 @@ class XdsLb : public LoadBalancingPolicy {
       bool seen_response() const { return seen_response_; }
 
      private:
+      GRPC_ALLOW_CLASS_TO_USE_NON_PUBLIC_DELETE
+
+      ~LrsCallState();
+
       bool IsCurrentCallOnChannel() const;
 
       static void OnInitialRequestSentLocked(void* arg, grpc_error* error);
@@ -387,6 +392,8 @@ class XdsLb : public LoadBalancingPolicy {
     explicit FallbackHelper(RefCountedPtr<XdsLb> parent)
         : parent_(std::move(parent)) {}
 
+    ~FallbackHelper() { parent_.reset(DEBUG_LOCATION, "FallbackHelper"); }
+
     RefCountedPtr<SubchannelInterface> CreateSubchannel(
         const grpc_channel_args& args) override;
     grpc_channel* CreateChannel(const char* target,
@@ -410,11 +417,10 @@ class XdsLb : public LoadBalancingPolicy {
    public:
     class LocalityEntry : public InternallyRefCounted<LocalityEntry> {
      public:
-      LocalityEntry(RefCountedPtr<XdsLb> parent, uint32_t locality_weight,
-                    XdsLbClientStats::LocalityStats* locality_stats)
-          : parent_(std::move(parent)),
-            locality_weight_(locality_weight),
-            locality_stats_(locality_stats) {}
+      LocalityEntry(RefCountedPtr<XdsLb> parent,
+                    RefCountedPtr<XdsLocalityName> name,
+                    uint32_t locality_weight,
+                    XdsLbClientStats::LocalityStats* locality_stats);
       ~LocalityEntry();
 
       void UpdateLocked(ServerAddressList serverlist,
@@ -429,6 +435,8 @@ class XdsLb : public LoadBalancingPolicy {
        public:
         explicit Helper(RefCountedPtr<LocalityEntry> entry)
             : entry_(std::move(entry)) {}
+
+        ~Helper() { entry_.reset(DEBUG_LOCATION, "Helper"); }
 
         RefCountedPtr<SubchannelInterface> CreateSubchannel(
             const grpc_channel_args& args) override;
@@ -455,9 +463,10 @@ class XdsLb : public LoadBalancingPolicy {
       grpc_channel_args* CreateChildPolicyArgsLocked(
           const grpc_channel_args* args);
 
+      RefCountedPtr<XdsLb> parent_;
+      RefCountedPtr<XdsLocalityName> name_;
       OrphanablePtr<LoadBalancingPolicy> child_policy_;
       OrphanablePtr<LoadBalancingPolicy> pending_child_policy_;
-      RefCountedPtr<XdsLb> parent_;
       RefCountedPtr<PickerWrapper> picker_wrapper_;
       grpc_connectivity_state connectivity_state_;
       uint32_t locality_weight_;
@@ -1112,8 +1121,8 @@ void XdsLb::LbChannelState::EdsCallState::OnResponseReceivedLocked(
                 "promoting it to replace current LB channel %p",
                 xdslb_policy, lb_chand, xdslb_policy->lb_chand_.get());
       }
-      // TODO(juanlishen): Maybe promote the pending LB channel when the response
-      // results a READY locality map.
+      // TODO(juanlishen): Maybe promote the pending LB channel when the
+      // response results a READY locality map.
       xdslb_policy->lb_chand_ = std::move(xdslb_policy->pending_lb_chand_);
     }
     // Ignore identical update.
@@ -1672,7 +1681,7 @@ XdsLb::XdsLb(Args args)
 
 XdsLb::~XdsLb() {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_xds_trace)) {
-    gpr_log(GPR_INFO, "Destroying xds %p", this);
+    gpr_log(GPR_INFO, "[xdslb %p] destroying xds LB policy", this);
   }
   gpr_free((void*)server_name_);
   grpc_channel_args_destroy(args_);
@@ -1680,6 +1689,9 @@ XdsLb::~XdsLb() {
 }
 
 void XdsLb::ShutdownLocked() {
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_xds_trace)) {
+    gpr_log(GPR_INFO, "[xdslb %p] shutting down", this);
+  }
   shutting_down_ = true;
   if (fallback_at_startup_checks_pending_) {
     grpc_timer_cancel(&lb_fallback_timer_);
@@ -1746,7 +1758,8 @@ void XdsLb::ProcessAddressesAndChannelArgsLocked(
   }
   if (create_lb_channel) {
     OrphanablePtr<LbChannelState> lb_chand = MakeOrphanable<LbChannelState>(
-        balancer_name_.get(), *lb_channel_args, Ref());
+        balancer_name_.get(), *lb_channel_args,
+        Ref(DEBUG_LOCATION, "BalancerChannelState"));
     if (lb_chand_ == nullptr || !lb_chand_->HasActiveEdsCall()) {
       GPR_ASSERT(pending_lb_chand_ == nullptr);
       // If we do not have a working LB channel yet, use the newly created one.
@@ -1935,7 +1948,8 @@ void XdsLb::UpdateFallbackPolicyLocked() {
 
 OrphanablePtr<LoadBalancingPolicy> XdsLb::CreateFallbackPolicyLocked(
     const char* name, const grpc_channel_args* args) {
-  FallbackHelper* helper = New<FallbackHelper>(Ref());
+  FallbackHelper* helper =
+      New<FallbackHelper>(Ref(DEBUG_LOCATION, "FallbackHelper"));
   LoadBalancingPolicy::Args lb_policy_args;
   lb_policy_args.combiner = combiner();
   lb_policy_args.args = args;
@@ -2003,7 +2017,8 @@ void XdsLb::LocalityMap::UpdateLocked(
       XdsLbClientStats::LocalityStats* locality_stats =
           parent_->client_stats_.FindLocalityStats(locality_name);
       OrphanablePtr<LocalityEntry> new_entry = MakeOrphanable<LocalityEntry>(
-          parent->Ref(), locality_list[i].lb_weight, locality_stats);
+          parent->Ref(DEBUG_LOCATION, "LocalityEntry"), locality_name,
+          locality_list[i].lb_weight, locality_stats);
       iter = map_.emplace(locality_name, std::move(new_entry)).first;
     }
     // Keep a copy of serverlist in locality_list_ so that we can compare it
@@ -2028,6 +2043,34 @@ void XdsLb::LocalityMap::ResetBackoffLocked() {
 // XdsLb::LocalityMap::LocalityEntry
 //
 
+XdsLb::LocalityMap::LocalityEntry::LocalityEntry(
+    RefCountedPtr<XdsLb> parent, RefCountedPtr<XdsLocalityName> name,
+    uint32_t locality_weight, XdsLbClientStats::LocalityStats* locality_stats)
+    : parent_(std::move(parent)),
+      name_(std::move(name)),
+      locality_weight_(locality_weight),
+      locality_stats_(locality_stats) {
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_xds_trace)) {
+    gpr_log(GPR_INFO, "[xdslb %p] created LocalityEntry %p for %s",
+            parent_.get(), this, name_->AsHumanReadableString());
+  }
+}
+
+XdsLb::LocalityMap::LocalityEntry::~LocalityEntry() {
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_xds_trace)) {
+    gpr_log(GPR_INFO,
+            "[xdslb %p] LocalityEntry %p %s: destroying locality entry",
+            parent_.get(), this, name_->AsHumanReadableString());
+  }
+  parent_.reset(DEBUG_LOCATION, "LocalityEntry");
+  // This locality is no longer in the locality map, future picker will not
+  // include this locality any more. Also, the current picker doesn't include
+  // this locality (see XdsLb::LocalityMap::UpdateLocked()). So we can kill its
+  // stats and wait until there is no pending RPCs in this locality and the
+  // stats for the last few RPCs are reported to delete this stats.
+  locality_stats_->Kill();
+}
+
 grpc_channel_args*
 XdsLb::LocalityMap::LocalityEntry::CreateChildPolicyArgsLocked(
     const grpc_channel_args* args_in) {
@@ -2049,7 +2092,7 @@ XdsLb::LocalityMap::LocalityEntry::CreateChildPolicyArgsLocked(
 OrphanablePtr<LoadBalancingPolicy>
 XdsLb::LocalityMap::LocalityEntry::CreateChildPolicyLocked(
     const char* name, const grpc_channel_args* args) {
-  Helper* helper = New<Helper>(this->Ref());
+  Helper* helper = New<Helper>(this->Ref(DEBUG_LOCATION, "Helper"));
   LoadBalancingPolicy::Args lb_policy_args;
   lb_policy_args.combiner = parent_->combiner();
   lb_policy_args.args = args;
@@ -2059,13 +2102,16 @@ XdsLb::LocalityMap::LocalityEntry::CreateChildPolicyLocked(
       LoadBalancingPolicyRegistry::CreateLoadBalancingPolicy(
           name, std::move(lb_policy_args));
   if (GPR_UNLIKELY(lb_policy == nullptr)) {
-    gpr_log(GPR_ERROR, "[xdslb %p] Failure creating child policy %s", this,
-            name);
+    gpr_log(GPR_ERROR,
+            "[xdslb %p] LocalityEntry %p %s: failure creating child policy %s",
+            parent_.get(), this, name_->AsHumanReadableString(), name);
     return nullptr;
   }
   helper->set_child(lb_policy.get());
   if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_xds_trace)) {
-    gpr_log(GPR_INFO, "[xdslb %p] Created new child policy %s (%p)", this, name,
+    gpr_log(GPR_INFO,
+            "[xdslb %p] LocalityEntry %p %s: Created new child policy %s (%p)",
+            parent_.get(), this, name_->AsHumanReadableString(), name,
             lb_policy.get());
   }
   // Add the xDS's interested_parties pollset_set to that of the newly created
@@ -2074,15 +2120,6 @@ XdsLb::LocalityMap::LocalityEntry::CreateChildPolicyLocked(
   grpc_pollset_set_add_pollset_set(lb_policy->interested_parties(),
                                    parent_->interested_parties());
   return lb_policy;
-}
-
-XdsLb::LocalityMap::LocalityEntry::~LocalityEntry() {
-  // This locality is no longer in the locality map, future picker will not
-  // include this locality any more. Also, the current picker doesn't include
-  // this locality (see XdsLb::LocalityMap::UpdateLocked()). So we can kill its
-  // stats and wait until there is no pending RPCs in this locality and the
-  // stats for the last few RPCs are reported to delete this stats.
-  locality_stats_->Kill();
 }
 
 void XdsLb::LocalityMap::LocalityEntry::UpdateLocked(
@@ -2165,7 +2202,9 @@ void XdsLb::LocalityMap::LocalityEntry::UpdateLocked(
     // If child_policy_ is null, we set it (case 1), else we set
     // pending_child_policy_ (cases 2b and 3b).
     if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_xds_trace)) {
-      gpr_log(GPR_INFO, "[xdslb %p] Creating new %schild policy %s", this,
+      gpr_log(GPR_INFO,
+              "[xdslb %p] LocalityEntry %p %s: Creating new %schild policy %s",
+              parent_.get(), this, name_->AsHumanReadableString(),
               child_policy_ == nullptr ? "" : "pending ", child_policy_name);
     }
     auto& lb_policy =
@@ -2183,7 +2222,9 @@ void XdsLb::LocalityMap::LocalityEntry::UpdateLocked(
   GPR_ASSERT(policy_to_update != nullptr);
   // Update the policy.
   if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_xds_trace)) {
-    gpr_log(GPR_INFO, "[xdslb %p] Updating %schild policy %p", this,
+    gpr_log(GPR_INFO,
+            "[xdslb %p] LocalityEntry %p %s: Updating %schild policy %p",
+            parent_.get(), this, name_->AsHumanReadableString(),
             policy_to_update == pending_child_policy_.get() ? "pending " : "",
             policy_to_update);
   }
@@ -2191,17 +2232,22 @@ void XdsLb::LocalityMap::LocalityEntry::UpdateLocked(
 }
 
 void XdsLb::LocalityMap::LocalityEntry::ShutdownLocked() {
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_xds_trace)) {
+    gpr_log(GPR_INFO,
+            "[xdslb %p] LocalityEntry %p %s: shutting down locality entry",
+            parent_.get(), this, name_->AsHumanReadableString());
+  }
   // Remove the child policy's interested_parties pollset_set from the
   // xDS policy.
   grpc_pollset_set_del_pollset_set(child_policy_->interested_parties(),
                                    parent_->interested_parties());
+  child_policy_.reset();
   if (pending_child_policy_ != nullptr) {
     grpc_pollset_set_del_pollset_set(
         pending_child_policy_->interested_parties(),
         parent_->interested_parties());
+    pending_child_policy_.reset();
   }
-  child_policy_.reset();
-  pending_child_policy_.reset();
 }
 
 void XdsLb::LocalityMap::LocalityEntry::ResetBackoffLocked() {
@@ -2346,12 +2392,12 @@ void XdsLb::LocalityMap::LocalityEntry::Helper::UpdateState(
     entry_->parent_->channel_control_helper()->UpdateState(
         GRPC_CHANNEL_CONNECTING,
         UniquePtr<SubchannelPicker>(New<QueuePicker>(
-            entry_->parent_->Ref(DEBUG_LOCATION, "xds+picker"))));
+            entry_->parent_->Ref(DEBUG_LOCATION, "QueuePicker"))));
   } else if (num_idle > 0) {
     entry_->parent_->channel_control_helper()->UpdateState(
         GRPC_CHANNEL_IDLE,
         UniquePtr<SubchannelPicker>(New<QueuePicker>(
-            entry_->parent_->Ref(DEBUG_LOCATION, "xds+picker"))));
+            entry_->parent_->Ref(DEBUG_LOCATION, "QueuePicker"))));
   } else {
     GPR_ASSERT(num_transient_failures ==
                entry_->parent_->locality_map_.map_.size());

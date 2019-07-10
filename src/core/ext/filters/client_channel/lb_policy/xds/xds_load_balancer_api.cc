@@ -18,6 +18,8 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <algorithm>
+
 #include <grpc/impl/codegen/log.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/string_util.h>
@@ -190,6 +192,11 @@ grpc_error* XdsEdsResponseDecodeAndParse(const grpc_slice& encoded_response,
     if (error != GRPC_ERROR_NONE) return error;
     update->locality_list.push_back(std::move(locality_info));
   }
+  // The locality list is sorted here into deterministic order so that it's
+  // easier to check if two locality lists contain the same set of localities.
+  std::sort(update->locality_list.data(),
+            update->locality_list.data() + update->locality_list.size(),
+            XdsLocalityInfo::Less());
   return GRPC_ERROR_NONE;
 }
 

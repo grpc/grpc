@@ -351,6 +351,7 @@ CFLAGS += -std=c99 -Wsign-conversion -Wconversion $(W_SHADOW) $(W_EXTRA_SEMI)
 CXXFLAGS += -std=c++11
 ifeq ($(SYSTEM),Darwin)
 CXXFLAGS += -stdlib=libc++
+LDFLAGS += -framework CoreFoundation
 endif
 CXXFLAGS += -Wnon-virtual-dtor
 CPPFLAGS += -g -Wall -Wextra -Werror -Wno-long-long -Wno-unused-parameter -DOSATOMIC_USE_INLINED=1 -Wno-deprecated-declarations -Ithird_party/nanopb -DPB_FIELD_32BIT
@@ -460,8 +461,8 @@ Q = @
 endif
 
 CORE_VERSION = 7.0.0
-CPP_VERSION = 1.22.0-dev
-CSHARP_VERSION = 1.22.0-dev
+CPP_VERSION = 1.23.0-dev
+CSHARP_VERSION = 1.23.0-dev
 
 CPPFLAGS_NO_ARCH += $(addprefix -I, $(INCLUDES)) $(addprefix -D, $(DEFINES))
 CPPFLAGS += $(CPPFLAGS_NO_ARCH) $(ARCH_FLAGS)
@@ -1015,7 +1016,8 @@ compression_test: $(BINDIR)/$(CONFIG)/compression_test
 concurrent_connectivity_test: $(BINDIR)/$(CONFIG)/concurrent_connectivity_test
 connection_refused_test: $(BINDIR)/$(CONFIG)/connection_refused_test
 dns_resolver_connectivity_test: $(BINDIR)/$(CONFIG)/dns_resolver_connectivity_test
-dns_resolver_cooldown_test: $(BINDIR)/$(CONFIG)/dns_resolver_cooldown_test
+dns_resolver_cooldown_using_ares_resolver_test: $(BINDIR)/$(CONFIG)/dns_resolver_cooldown_using_ares_resolver_test
+dns_resolver_cooldown_using_native_resolver_test: $(BINDIR)/$(CONFIG)/dns_resolver_cooldown_using_native_resolver_test
 dns_resolver_test: $(BINDIR)/$(CONFIG)/dns_resolver_test
 dualstack_socket_test: $(BINDIR)/$(CONFIG)/dualstack_socket_test
 endpoint_pair_test: $(BINDIR)/$(CONFIG)/endpoint_pair_test
@@ -1092,6 +1094,7 @@ memory_usage_server: $(BINDIR)/$(CONFIG)/memory_usage_server
 memory_usage_test: $(BINDIR)/$(CONFIG)/memory_usage_test
 message_compress_test: $(BINDIR)/$(CONFIG)/message_compress_test
 minimal_stack_is_minimal_test: $(BINDIR)/$(CONFIG)/minimal_stack_is_minimal_test
+mpmcqueue_test: $(BINDIR)/$(CONFIG)/mpmcqueue_test
 multiple_server_queues_test: $(BINDIR)/$(CONFIG)/multiple_server_queues_test
 murmur_hash_test: $(BINDIR)/$(CONFIG)/murmur_hash_test
 nanopb_fuzzer_response_test: $(BINDIR)/$(CONFIG)/nanopb_fuzzer_response_test
@@ -1278,6 +1281,7 @@ status_metadata_test: $(BINDIR)/$(CONFIG)/status_metadata_test
 status_util_test: $(BINDIR)/$(CONFIG)/status_util_test
 streaming_throughput_test: $(BINDIR)/$(CONFIG)/streaming_throughput_test
 stress_test: $(BINDIR)/$(CONFIG)/stress_test
+string_view_test: $(BINDIR)/$(CONFIG)/string_view_test
 thread_manager_test: $(BINDIR)/$(CONFIG)/thread_manager_test
 thread_stress_test: $(BINDIR)/$(CONFIG)/thread_stress_test
 time_change_test: $(BINDIR)/$(CONFIG)/time_change_test
@@ -1291,6 +1295,7 @@ gen_legal_metadata_characters: $(BINDIR)/$(CONFIG)/gen_legal_metadata_characters
 gen_percent_encoding_tables: $(BINDIR)/$(CONFIG)/gen_percent_encoding_tables
 boringssl_ssl_test: $(BINDIR)/$(CONFIG)/boringssl_ssl_test
 boringssl_crypto_test: $(BINDIR)/$(CONFIG)/boringssl_crypto_test
+bad_streaming_id_bad_client_test: $(BINDIR)/$(CONFIG)/bad_streaming_id_bad_client_test
 badreq_bad_client_test: $(BINDIR)/$(CONFIG)/badreq_bad_client_test
 connection_prefix_bad_client_test: $(BINDIR)/$(CONFIG)/connection_prefix_bad_client_test
 duplicate_header_bad_client_test: $(BINDIR)/$(CONFIG)/duplicate_header_bad_client_test
@@ -1298,6 +1303,7 @@ head_of_line_blocking_bad_client_test: $(BINDIR)/$(CONFIG)/head_of_line_blocking
 headers_bad_client_test: $(BINDIR)/$(CONFIG)/headers_bad_client_test
 initial_settings_frame_bad_client_test: $(BINDIR)/$(CONFIG)/initial_settings_frame_bad_client_test
 large_metadata_bad_client_test: $(BINDIR)/$(CONFIG)/large_metadata_bad_client_test
+out_of_bounds_bad_client_test: $(BINDIR)/$(CONFIG)/out_of_bounds_bad_client_test
 server_registered_method_bad_client_test: $(BINDIR)/$(CONFIG)/server_registered_method_bad_client_test
 simple_request_bad_client_test: $(BINDIR)/$(CONFIG)/simple_request_bad_client_test
 unknown_frame_bad_client_test: $(BINDIR)/$(CONFIG)/unknown_frame_bad_client_test
@@ -1405,7 +1411,7 @@ plugins: $(PROTOC_PLUGINS)
 
 privatelibs: privatelibs_c privatelibs_cxx
 
-privatelibs_c:  $(LIBDIR)/$(CONFIG)/libalts_test_util.a $(LIBDIR)/$(CONFIG)/libcxxabi.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libreconnect_server.a $(LIBDIR)/$(CONFIG)/libtest_tcp_server.a $(LIBDIR)/$(CONFIG)/libupb.a $(LIBDIR)/$(CONFIG)/libz.a $(LIBDIR)/$(CONFIG)/libares.a $(LIBDIR)/$(CONFIG)/libbad_client_test.a $(LIBDIR)/$(CONFIG)/libbad_ssl_test_server.a $(LIBDIR)/$(CONFIG)/libend2end_tests.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_tests.a
+privatelibs_c:  $(LIBDIR)/$(CONFIG)/libalts_test_util.a $(LIBDIR)/$(CONFIG)/libcxxabi.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libreconnect_server.a $(LIBDIR)/$(CONFIG)/libtest_tcp_server.a $(LIBDIR)/$(CONFIG)/libupb.a $(LIBDIR)/$(CONFIG)/libz.a $(LIBDIR)/$(CONFIG)/libares.a $(LIBDIR)/$(CONFIG)/libbad_ssl_test_server.a $(LIBDIR)/$(CONFIG)/libend2end_tests.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_tests.a
 pc_c: $(LIBDIR)/$(CONFIG)/pkgconfig/grpc.pc $(LIBDIR)/$(CONFIG)/pkgconfig/gpr.pc
 
 pc_c_unsecure: $(LIBDIR)/$(CONFIG)/pkgconfig/grpc_unsecure.pc $(LIBDIR)/$(CONFIG)/pkgconfig/gpr.pc
@@ -1415,9 +1421,9 @@ pc_cxx: $(LIBDIR)/$(CONFIG)/pkgconfig/grpc++.pc
 pc_cxx_unsecure: $(LIBDIR)/$(CONFIG)/pkgconfig/grpc++_unsecure.pc
 
 ifeq ($(EMBED_OPENSSL),true)
-privatelibs_cxx:  $(LIBDIR)/$(CONFIG)/libdns_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++_core_stats.a $(LIBDIR)/$(CONFIG)/libgrpc++_proto_reflection_desc_db.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_config.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_cli_libs.a $(LIBDIR)/$(CONFIG)/libhttp2_client_main.a $(LIBDIR)/$(CONFIG)/libinterop_client_helper.a $(LIBDIR)/$(CONFIG)/libinterop_client_main.a $(LIBDIR)/$(CONFIG)/libinterop_server_helper.a $(LIBDIR)/$(CONFIG)/libinterop_server_lib.a $(LIBDIR)/$(CONFIG)/libinterop_server_main.a $(LIBDIR)/$(CONFIG)/libqps.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libbenchmark.a
+privatelibs_cxx:  $(LIBDIR)/$(CONFIG)/libdns_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++_core_stats.a $(LIBDIR)/$(CONFIG)/libgrpc++_proto_reflection_desc_db.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_config.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_cli_libs.a $(LIBDIR)/$(CONFIG)/libhttp2_client_main.a $(LIBDIR)/$(CONFIG)/libinterop_client_helper.a $(LIBDIR)/$(CONFIG)/libinterop_client_main.a $(LIBDIR)/$(CONFIG)/libinterop_server_helper.a $(LIBDIR)/$(CONFIG)/libinterop_server_lib.a $(LIBDIR)/$(CONFIG)/libinterop_server_main.a $(LIBDIR)/$(CONFIG)/libqps.a $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libbenchmark.a $(LIBDIR)/$(CONFIG)/libbad_client_test.a
 else
-privatelibs_cxx:  $(LIBDIR)/$(CONFIG)/libdns_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++_core_stats.a $(LIBDIR)/$(CONFIG)/libgrpc++_proto_reflection_desc_db.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_config.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_cli_libs.a $(LIBDIR)/$(CONFIG)/libhttp2_client_main.a $(LIBDIR)/$(CONFIG)/libinterop_client_helper.a $(LIBDIR)/$(CONFIG)/libinterop_client_main.a $(LIBDIR)/$(CONFIG)/libinterop_server_helper.a $(LIBDIR)/$(CONFIG)/libinterop_server_lib.a $(LIBDIR)/$(CONFIG)/libinterop_server_main.a $(LIBDIR)/$(CONFIG)/libqps.a $(LIBDIR)/$(CONFIG)/libbenchmark.a
+privatelibs_cxx:  $(LIBDIR)/$(CONFIG)/libdns_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++_core_stats.a $(LIBDIR)/$(CONFIG)/libgrpc++_proto_reflection_desc_db.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_config.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_cli_libs.a $(LIBDIR)/$(CONFIG)/libhttp2_client_main.a $(LIBDIR)/$(CONFIG)/libinterop_client_helper.a $(LIBDIR)/$(CONFIG)/libinterop_client_main.a $(LIBDIR)/$(CONFIG)/libinterop_server_helper.a $(LIBDIR)/$(CONFIG)/libinterop_server_lib.a $(LIBDIR)/$(CONFIG)/libinterop_server_main.a $(LIBDIR)/$(CONFIG)/libqps.a $(LIBDIR)/$(CONFIG)/libbenchmark.a $(LIBDIR)/$(CONFIG)/libbad_client_test.a
 endif
 
 
@@ -1444,7 +1450,8 @@ buildtests_c: privatelibs_c \
   $(BINDIR)/$(CONFIG)/concurrent_connectivity_test \
   $(BINDIR)/$(CONFIG)/connection_refused_test \
   $(BINDIR)/$(CONFIG)/dns_resolver_connectivity_test \
-  $(BINDIR)/$(CONFIG)/dns_resolver_cooldown_test \
+  $(BINDIR)/$(CONFIG)/dns_resolver_cooldown_using_ares_resolver_test \
+  $(BINDIR)/$(CONFIG)/dns_resolver_cooldown_using_native_resolver_test \
   $(BINDIR)/$(CONFIG)/dns_resolver_test \
   $(BINDIR)/$(CONFIG)/dualstack_socket_test \
   $(BINDIR)/$(CONFIG)/endpoint_pair_test \
@@ -1513,6 +1520,7 @@ buildtests_c: privatelibs_c \
   $(BINDIR)/$(CONFIG)/memory_usage_test \
   $(BINDIR)/$(CONFIG)/message_compress_test \
   $(BINDIR)/$(CONFIG)/minimal_stack_is_minimal_test \
+  $(BINDIR)/$(CONFIG)/mpmcqueue_test \
   $(BINDIR)/$(CONFIG)/multiple_server_queues_test \
   $(BINDIR)/$(CONFIG)/murmur_hash_test \
   $(BINDIR)/$(CONFIG)/no_server_test \
@@ -1555,17 +1563,6 @@ buildtests_c: privatelibs_c \
   $(BINDIR)/$(CONFIG)/udp_server_test \
   $(BINDIR)/$(CONFIG)/uri_parser_test \
   $(BINDIR)/$(CONFIG)/public_headers_must_be_c89 \
-  $(BINDIR)/$(CONFIG)/badreq_bad_client_test \
-  $(BINDIR)/$(CONFIG)/connection_prefix_bad_client_test \
-  $(BINDIR)/$(CONFIG)/duplicate_header_bad_client_test \
-  $(BINDIR)/$(CONFIG)/head_of_line_blocking_bad_client_test \
-  $(BINDIR)/$(CONFIG)/headers_bad_client_test \
-  $(BINDIR)/$(CONFIG)/initial_settings_frame_bad_client_test \
-  $(BINDIR)/$(CONFIG)/large_metadata_bad_client_test \
-  $(BINDIR)/$(CONFIG)/server_registered_method_bad_client_test \
-  $(BINDIR)/$(CONFIG)/simple_request_bad_client_test \
-  $(BINDIR)/$(CONFIG)/unknown_frame_bad_client_test \
-  $(BINDIR)/$(CONFIG)/window_overflow_bad_client_test \
   $(BINDIR)/$(CONFIG)/bad_ssl_cert_server \
   $(BINDIR)/$(CONFIG)/bad_ssl_cert_test \
   $(BINDIR)/$(CONFIG)/h2_census_test \
@@ -1753,6 +1750,7 @@ buildtests_cxx: privatelibs_cxx \
   $(BINDIR)/$(CONFIG)/status_util_test \
   $(BINDIR)/$(CONFIG)/streaming_throughput_test \
   $(BINDIR)/$(CONFIG)/stress_test \
+  $(BINDIR)/$(CONFIG)/string_view_test \
   $(BINDIR)/$(CONFIG)/thread_manager_test \
   $(BINDIR)/$(CONFIG)/thread_stress_test \
   $(BINDIR)/$(CONFIG)/time_change_test \
@@ -1762,6 +1760,19 @@ buildtests_cxx: privatelibs_cxx \
   $(BINDIR)/$(CONFIG)/xds_end2end_test \
   $(BINDIR)/$(CONFIG)/boringssl_ssl_test \
   $(BINDIR)/$(CONFIG)/boringssl_crypto_test \
+  $(BINDIR)/$(CONFIG)/bad_streaming_id_bad_client_test \
+  $(BINDIR)/$(CONFIG)/badreq_bad_client_test \
+  $(BINDIR)/$(CONFIG)/connection_prefix_bad_client_test \
+  $(BINDIR)/$(CONFIG)/duplicate_header_bad_client_test \
+  $(BINDIR)/$(CONFIG)/head_of_line_blocking_bad_client_test \
+  $(BINDIR)/$(CONFIG)/headers_bad_client_test \
+  $(BINDIR)/$(CONFIG)/initial_settings_frame_bad_client_test \
+  $(BINDIR)/$(CONFIG)/large_metadata_bad_client_test \
+  $(BINDIR)/$(CONFIG)/out_of_bounds_bad_client_test \
+  $(BINDIR)/$(CONFIG)/server_registered_method_bad_client_test \
+  $(BINDIR)/$(CONFIG)/simple_request_bad_client_test \
+  $(BINDIR)/$(CONFIG)/unknown_frame_bad_client_test \
+  $(BINDIR)/$(CONFIG)/window_overflow_bad_client_test \
   $(BINDIR)/$(CONFIG)/resolver_component_test_unsecure \
   $(BINDIR)/$(CONFIG)/resolver_component_test \
   $(BINDIR)/$(CONFIG)/resolver_component_tests_runner_invoker_unsecure \
@@ -1903,6 +1914,7 @@ buildtests_cxx: privatelibs_cxx \
   $(BINDIR)/$(CONFIG)/status_util_test \
   $(BINDIR)/$(CONFIG)/streaming_throughput_test \
   $(BINDIR)/$(CONFIG)/stress_test \
+  $(BINDIR)/$(CONFIG)/string_view_test \
   $(BINDIR)/$(CONFIG)/thread_manager_test \
   $(BINDIR)/$(CONFIG)/thread_stress_test \
   $(BINDIR)/$(CONFIG)/time_change_test \
@@ -1910,6 +1922,19 @@ buildtests_cxx: privatelibs_cxx \
   $(BINDIR)/$(CONFIG)/transport_security_common_api_test \
   $(BINDIR)/$(CONFIG)/writes_per_rpc_test \
   $(BINDIR)/$(CONFIG)/xds_end2end_test \
+  $(BINDIR)/$(CONFIG)/bad_streaming_id_bad_client_test \
+  $(BINDIR)/$(CONFIG)/badreq_bad_client_test \
+  $(BINDIR)/$(CONFIG)/connection_prefix_bad_client_test \
+  $(BINDIR)/$(CONFIG)/duplicate_header_bad_client_test \
+  $(BINDIR)/$(CONFIG)/head_of_line_blocking_bad_client_test \
+  $(BINDIR)/$(CONFIG)/headers_bad_client_test \
+  $(BINDIR)/$(CONFIG)/initial_settings_frame_bad_client_test \
+  $(BINDIR)/$(CONFIG)/large_metadata_bad_client_test \
+  $(BINDIR)/$(CONFIG)/out_of_bounds_bad_client_test \
+  $(BINDIR)/$(CONFIG)/server_registered_method_bad_client_test \
+  $(BINDIR)/$(CONFIG)/simple_request_bad_client_test \
+  $(BINDIR)/$(CONFIG)/unknown_frame_bad_client_test \
+  $(BINDIR)/$(CONFIG)/window_overflow_bad_client_test \
   $(BINDIR)/$(CONFIG)/resolver_component_test_unsecure \
   $(BINDIR)/$(CONFIG)/resolver_component_test \
   $(BINDIR)/$(CONFIG)/resolver_component_tests_runner_invoker_unsecure \
@@ -1966,8 +1991,10 @@ test_c: buildtests_c
 	$(Q) $(BINDIR)/$(CONFIG)/connection_refused_test || ( echo test connection_refused_test failed ; exit 1 )
 	$(E) "[RUN]     Testing dns_resolver_connectivity_test"
 	$(Q) $(BINDIR)/$(CONFIG)/dns_resolver_connectivity_test || ( echo test dns_resolver_connectivity_test failed ; exit 1 )
-	$(E) "[RUN]     Testing dns_resolver_cooldown_test"
-	$(Q) $(BINDIR)/$(CONFIG)/dns_resolver_cooldown_test || ( echo test dns_resolver_cooldown_test failed ; exit 1 )
+	$(E) "[RUN]     Testing dns_resolver_cooldown_using_ares_resolver_test"
+	$(Q) $(BINDIR)/$(CONFIG)/dns_resolver_cooldown_using_ares_resolver_test || ( echo test dns_resolver_cooldown_using_ares_resolver_test failed ; exit 1 )
+	$(E) "[RUN]     Testing dns_resolver_cooldown_using_native_resolver_test"
+	$(Q) $(BINDIR)/$(CONFIG)/dns_resolver_cooldown_using_native_resolver_test || ( echo test dns_resolver_cooldown_using_native_resolver_test failed ; exit 1 )
 	$(E) "[RUN]     Testing dns_resolver_test"
 	$(Q) $(BINDIR)/$(CONFIG)/dns_resolver_test || ( echo test dns_resolver_test failed ; exit 1 )
 	$(E) "[RUN]     Testing dualstack_socket_test"
@@ -2092,6 +2119,8 @@ test_c: buildtests_c
 	$(Q) $(BINDIR)/$(CONFIG)/message_compress_test || ( echo test message_compress_test failed ; exit 1 )
 	$(E) "[RUN]     Testing minimal_stack_is_minimal_test"
 	$(Q) $(BINDIR)/$(CONFIG)/minimal_stack_is_minimal_test || ( echo test minimal_stack_is_minimal_test failed ; exit 1 )
+	$(E) "[RUN]     Testing mpmcqueue_test"
+	$(Q) $(BINDIR)/$(CONFIG)/mpmcqueue_test || ( echo test mpmcqueue_test failed ; exit 1 )
 	$(E) "[RUN]     Testing multiple_server_queues_test"
 	$(Q) $(BINDIR)/$(CONFIG)/multiple_server_queues_test || ( echo test multiple_server_queues_test failed ; exit 1 )
 	$(E) "[RUN]     Testing murmur_hash_test"
@@ -2176,28 +2205,6 @@ test_c: buildtests_c
 	$(Q) $(BINDIR)/$(CONFIG)/uri_parser_test || ( echo test uri_parser_test failed ; exit 1 )
 	$(E) "[RUN]     Testing public_headers_must_be_c89"
 	$(Q) $(BINDIR)/$(CONFIG)/public_headers_must_be_c89 || ( echo test public_headers_must_be_c89 failed ; exit 1 )
-	$(E) "[RUN]     Testing badreq_bad_client_test"
-	$(Q) $(BINDIR)/$(CONFIG)/badreq_bad_client_test || ( echo test badreq_bad_client_test failed ; exit 1 )
-	$(E) "[RUN]     Testing connection_prefix_bad_client_test"
-	$(Q) $(BINDIR)/$(CONFIG)/connection_prefix_bad_client_test || ( echo test connection_prefix_bad_client_test failed ; exit 1 )
-	$(E) "[RUN]     Testing duplicate_header_bad_client_test"
-	$(Q) $(BINDIR)/$(CONFIG)/duplicate_header_bad_client_test || ( echo test duplicate_header_bad_client_test failed ; exit 1 )
-	$(E) "[RUN]     Testing head_of_line_blocking_bad_client_test"
-	$(Q) $(BINDIR)/$(CONFIG)/head_of_line_blocking_bad_client_test || ( echo test head_of_line_blocking_bad_client_test failed ; exit 1 )
-	$(E) "[RUN]     Testing headers_bad_client_test"
-	$(Q) $(BINDIR)/$(CONFIG)/headers_bad_client_test || ( echo test headers_bad_client_test failed ; exit 1 )
-	$(E) "[RUN]     Testing initial_settings_frame_bad_client_test"
-	$(Q) $(BINDIR)/$(CONFIG)/initial_settings_frame_bad_client_test || ( echo test initial_settings_frame_bad_client_test failed ; exit 1 )
-	$(E) "[RUN]     Testing large_metadata_bad_client_test"
-	$(Q) $(BINDIR)/$(CONFIG)/large_metadata_bad_client_test || ( echo test large_metadata_bad_client_test failed ; exit 1 )
-	$(E) "[RUN]     Testing server_registered_method_bad_client_test"
-	$(Q) $(BINDIR)/$(CONFIG)/server_registered_method_bad_client_test || ( echo test server_registered_method_bad_client_test failed ; exit 1 )
-	$(E) "[RUN]     Testing simple_request_bad_client_test"
-	$(Q) $(BINDIR)/$(CONFIG)/simple_request_bad_client_test || ( echo test simple_request_bad_client_test failed ; exit 1 )
-	$(E) "[RUN]     Testing unknown_frame_bad_client_test"
-	$(Q) $(BINDIR)/$(CONFIG)/unknown_frame_bad_client_test || ( echo test unknown_frame_bad_client_test failed ; exit 1 )
-	$(E) "[RUN]     Testing window_overflow_bad_client_test"
-	$(Q) $(BINDIR)/$(CONFIG)/window_overflow_bad_client_test || ( echo test window_overflow_bad_client_test failed ; exit 1 )
 	$(E) "[RUN]     Testing bad_ssl_cert_test"
 	$(Q) $(BINDIR)/$(CONFIG)/bad_ssl_cert_test || ( echo test bad_ssl_cert_test failed ; exit 1 )
 
@@ -2438,6 +2445,8 @@ test_cxx: buildtests_cxx
 	$(Q) $(BINDIR)/$(CONFIG)/status_util_test || ( echo test status_util_test failed ; exit 1 )
 	$(E) "[RUN]     Testing streaming_throughput_test"
 	$(Q) $(BINDIR)/$(CONFIG)/streaming_throughput_test || ( echo test streaming_throughput_test failed ; exit 1 )
+	$(E) "[RUN]     Testing string_view_test"
+	$(Q) $(BINDIR)/$(CONFIG)/string_view_test || ( echo test string_view_test failed ; exit 1 )
 	$(E) "[RUN]     Testing thread_manager_test"
 	$(Q) $(BINDIR)/$(CONFIG)/thread_manager_test || ( echo test thread_manager_test failed ; exit 1 )
 	$(E) "[RUN]     Testing thread_stress_test"
@@ -2452,6 +2461,32 @@ test_cxx: buildtests_cxx
 	$(Q) $(BINDIR)/$(CONFIG)/writes_per_rpc_test || ( echo test writes_per_rpc_test failed ; exit 1 )
 	$(E) "[RUN]     Testing xds_end2end_test"
 	$(Q) $(BINDIR)/$(CONFIG)/xds_end2end_test || ( echo test xds_end2end_test failed ; exit 1 )
+	$(E) "[RUN]     Testing bad_streaming_id_bad_client_test"
+	$(Q) $(BINDIR)/$(CONFIG)/bad_streaming_id_bad_client_test || ( echo test bad_streaming_id_bad_client_test failed ; exit 1 )
+	$(E) "[RUN]     Testing badreq_bad_client_test"
+	$(Q) $(BINDIR)/$(CONFIG)/badreq_bad_client_test || ( echo test badreq_bad_client_test failed ; exit 1 )
+	$(E) "[RUN]     Testing connection_prefix_bad_client_test"
+	$(Q) $(BINDIR)/$(CONFIG)/connection_prefix_bad_client_test || ( echo test connection_prefix_bad_client_test failed ; exit 1 )
+	$(E) "[RUN]     Testing duplicate_header_bad_client_test"
+	$(Q) $(BINDIR)/$(CONFIG)/duplicate_header_bad_client_test || ( echo test duplicate_header_bad_client_test failed ; exit 1 )
+	$(E) "[RUN]     Testing head_of_line_blocking_bad_client_test"
+	$(Q) $(BINDIR)/$(CONFIG)/head_of_line_blocking_bad_client_test || ( echo test head_of_line_blocking_bad_client_test failed ; exit 1 )
+	$(E) "[RUN]     Testing headers_bad_client_test"
+	$(Q) $(BINDIR)/$(CONFIG)/headers_bad_client_test || ( echo test headers_bad_client_test failed ; exit 1 )
+	$(E) "[RUN]     Testing initial_settings_frame_bad_client_test"
+	$(Q) $(BINDIR)/$(CONFIG)/initial_settings_frame_bad_client_test || ( echo test initial_settings_frame_bad_client_test failed ; exit 1 )
+	$(E) "[RUN]     Testing large_metadata_bad_client_test"
+	$(Q) $(BINDIR)/$(CONFIG)/large_metadata_bad_client_test || ( echo test large_metadata_bad_client_test failed ; exit 1 )
+	$(E) "[RUN]     Testing out_of_bounds_bad_client_test"
+	$(Q) $(BINDIR)/$(CONFIG)/out_of_bounds_bad_client_test || ( echo test out_of_bounds_bad_client_test failed ; exit 1 )
+	$(E) "[RUN]     Testing server_registered_method_bad_client_test"
+	$(Q) $(BINDIR)/$(CONFIG)/server_registered_method_bad_client_test || ( echo test server_registered_method_bad_client_test failed ; exit 1 )
+	$(E) "[RUN]     Testing simple_request_bad_client_test"
+	$(Q) $(BINDIR)/$(CONFIG)/simple_request_bad_client_test || ( echo test simple_request_bad_client_test failed ; exit 1 )
+	$(E) "[RUN]     Testing unknown_frame_bad_client_test"
+	$(Q) $(BINDIR)/$(CONFIG)/unknown_frame_bad_client_test || ( echo test unknown_frame_bad_client_test failed ; exit 1 )
+	$(E) "[RUN]     Testing window_overflow_bad_client_test"
+	$(Q) $(BINDIR)/$(CONFIG)/window_overflow_bad_client_test || ( echo test window_overflow_bad_client_test failed ; exit 1 )
 	$(E) "[RUN]     Testing resolver_component_tests_runner_invoker_unsecure"
 	$(Q) $(BINDIR)/$(CONFIG)/resolver_component_tests_runner_invoker_unsecure || ( echo test resolver_component_tests_runner_invoker_unsecure failed ; exit 1 )
 	$(E) "[RUN]     Testing resolver_component_tests_runner_invoker"
@@ -3358,7 +3393,6 @@ LIBGPR_SRC = \
     src/core/lib/gpr/env_linux.cc \
     src/core/lib/gpr/env_posix.cc \
     src/core/lib/gpr/env_windows.cc \
-    src/core/lib/gpr/host_port.cc \
     src/core/lib/gpr/log.cc \
     src/core/lib/gpr/log_android.cc \
     src/core/lib/gpr/log_linux.cc \
@@ -3385,6 +3419,7 @@ LIBGPR_SRC = \
     src/core/lib/gprpp/arena.cc \
     src/core/lib/gprpp/fork.cc \
     src/core/lib/gprpp/global_config_env.cc \
+    src/core/lib/gprpp/host_port.cc \
     src/core/lib/gprpp/thd_posix.cc \
     src/core/lib/gprpp/thd_windows.cc \
     src/core/lib/profiling/basic_timers.cc \
@@ -3504,6 +3539,7 @@ LIBGRPC_SRC = \
     src/core/lib/iomgr/ev_windows.cc \
     src/core/lib/iomgr/exec_ctx.cc \
     src/core/lib/iomgr/executor.cc \
+    src/core/lib/iomgr/executor/mpmcqueue.cc \
     src/core/lib/iomgr/fork_posix.cc \
     src/core/lib/iomgr/fork_windows.cc \
     src/core/lib/iomgr/gethostname_fallback.cc \
@@ -3933,6 +3969,7 @@ LIBGRPC_CRONET_SRC = \
     src/core/lib/iomgr/ev_windows.cc \
     src/core/lib/iomgr/exec_ctx.cc \
     src/core/lib/iomgr/executor.cc \
+    src/core/lib/iomgr/executor/mpmcqueue.cc \
     src/core/lib/iomgr/fork_posix.cc \
     src/core/lib/iomgr/fork_windows.cc \
     src/core/lib/iomgr/gethostname_fallback.cc \
@@ -4343,6 +4380,7 @@ LIBGRPC_TEST_UTIL_SRC = \
     src/core/lib/iomgr/ev_windows.cc \
     src/core/lib/iomgr/exec_ctx.cc \
     src/core/lib/iomgr/executor.cc \
+    src/core/lib/iomgr/executor/mpmcqueue.cc \
     src/core/lib/iomgr/fork_posix.cc \
     src/core/lib/iomgr/fork_windows.cc \
     src/core/lib/iomgr/gethostname_fallback.cc \
@@ -4660,6 +4698,7 @@ LIBGRPC_TEST_UTIL_UNSECURE_SRC = \
     src/core/lib/iomgr/ev_windows.cc \
     src/core/lib/iomgr/exec_ctx.cc \
     src/core/lib/iomgr/executor.cc \
+    src/core/lib/iomgr/executor/mpmcqueue.cc \
     src/core/lib/iomgr/fork_posix.cc \
     src/core/lib/iomgr/fork_windows.cc \
     src/core/lib/iomgr/gethostname_fallback.cc \
@@ -4940,6 +4979,7 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/lib/iomgr/ev_windows.cc \
     src/core/lib/iomgr/exec_ctx.cc \
     src/core/lib/iomgr/executor.cc \
+    src/core/lib/iomgr/executor/mpmcqueue.cc \
     src/core/lib/iomgr/fork_posix.cc \
     src/core/lib/iomgr/fork_windows.cc \
     src/core/lib/iomgr/gethostname_fallback.cc \
@@ -5513,6 +5553,7 @@ PUBLIC_HEADERS_CXX += \
     include/grpcpp/channel_impl.h \
     include/grpcpp/client_context.h \
     include/grpcpp/completion_queue.h \
+    include/grpcpp/completion_queue_impl.h \
     include/grpcpp/create_channel.h \
     include/grpcpp/create_channel_impl.h \
     include/grpcpp/create_channel_posix.h \
@@ -5556,11 +5597,14 @@ PUBLIC_HEADERS_CXX += \
     include/grpcpp/server_posix.h \
     include/grpcpp/server_posix_impl.h \
     include/grpcpp/support/async_stream.h \
+    include/grpcpp/support/async_stream_impl.h \
     include/grpcpp/support/async_unary_call.h \
+    include/grpcpp/support/async_unary_call_impl.h \
     include/grpcpp/support/byte_buffer.h \
     include/grpcpp/support/channel_arguments.h \
     include/grpcpp/support/channel_arguments_impl.h \
     include/grpcpp/support/client_callback.h \
+    include/grpcpp/support/client_callback_impl.h \
     include/grpcpp/support/client_interceptor.h \
     include/grpcpp/support/config.h \
     include/grpcpp/support/interceptor.h \
@@ -5568,6 +5612,7 @@ PUBLIC_HEADERS_CXX += \
     include/grpcpp/support/proto_buffer_reader.h \
     include/grpcpp/support/proto_buffer_writer.h \
     include/grpcpp/support/server_callback.h \
+    include/grpcpp/support/server_callback_impl.h \
     include/grpcpp/support/server_interceptor.h \
     include/grpcpp/support/slice.h \
     include/grpcpp/support/status.h \
@@ -5575,6 +5620,7 @@ PUBLIC_HEADERS_CXX += \
     include/grpcpp/support/string_ref.h \
     include/grpcpp/support/stub_options.h \
     include/grpcpp/support/sync_stream.h \
+    include/grpcpp/support/sync_stream_impl.h \
     include/grpcpp/support/time.h \
     include/grpcpp/support/validate_service_config.h \
     include/grpc/support/alloc.h \
@@ -5660,7 +5706,9 @@ PUBLIC_HEADERS_CXX += \
     include/grpc++/impl/codegen/time.h \
     include/grpcpp/impl/codegen/async_generic_service.h \
     include/grpcpp/impl/codegen/async_stream.h \
+    include/grpcpp/impl/codegen/async_stream_impl.h \
     include/grpcpp/impl/codegen/async_unary_call.h \
+    include/grpcpp/impl/codegen/async_unary_call_impl.h \
     include/grpcpp/impl/codegen/byte_buffer.h \
     include/grpcpp/impl/codegen/call.h \
     include/grpcpp/impl/codegen/call_hook.h \
@@ -5669,7 +5717,9 @@ PUBLIC_HEADERS_CXX += \
     include/grpcpp/impl/codegen/callback_common.h \
     include/grpcpp/impl/codegen/channel_interface.h \
     include/grpcpp/impl/codegen/client_callback.h \
+    include/grpcpp/impl/codegen/client_callback_impl.h \
     include/grpcpp/impl/codegen/client_context.h \
+    include/grpcpp/impl/codegen/client_context_impl.h \
     include/grpcpp/impl/codegen/client_interceptor.h \
     include/grpcpp/impl/codegen/client_unary_call.h \
     include/grpcpp/impl/codegen/completion_queue.h \
@@ -5690,7 +5740,9 @@ PUBLIC_HEADERS_CXX += \
     include/grpcpp/impl/codegen/security/auth_context.h \
     include/grpcpp/impl/codegen/serialization_traits.h \
     include/grpcpp/impl/codegen/server_callback.h \
+    include/grpcpp/impl/codegen/server_callback_impl.h \
     include/grpcpp/impl/codegen/server_context.h \
+    include/grpcpp/impl/codegen/server_context_impl.h \
     include/grpcpp/impl/codegen/server_interceptor.h \
     include/grpcpp/impl/codegen/server_interface.h \
     include/grpcpp/impl/codegen/service_type.h \
@@ -5700,6 +5752,7 @@ PUBLIC_HEADERS_CXX += \
     include/grpcpp/impl/codegen/string_ref.h \
     include/grpcpp/impl/codegen/stub_options.h \
     include/grpcpp/impl/codegen/sync_stream.h \
+    include/grpcpp/impl/codegen/sync_stream_impl.h \
     include/grpcpp/impl/codegen/time.h \
     include/grpcpp/impl/codegen/sync.h \
     include/grpc++/impl/codegen/proto_utils.h \
@@ -5937,6 +5990,7 @@ LIBGRPC++_CRONET_SRC = \
     src/core/lib/iomgr/ev_windows.cc \
     src/core/lib/iomgr/exec_ctx.cc \
     src/core/lib/iomgr/executor.cc \
+    src/core/lib/iomgr/executor/mpmcqueue.cc \
     src/core/lib/iomgr/fork_posix.cc \
     src/core/lib/iomgr/fork_windows.cc \
     src/core/lib/iomgr/gethostname_fallback.cc \
@@ -6140,6 +6194,7 @@ PUBLIC_HEADERS_CXX += \
     include/grpcpp/channel_impl.h \
     include/grpcpp/client_context.h \
     include/grpcpp/completion_queue.h \
+    include/grpcpp/completion_queue_impl.h \
     include/grpcpp/create_channel.h \
     include/grpcpp/create_channel_impl.h \
     include/grpcpp/create_channel_posix.h \
@@ -6183,11 +6238,14 @@ PUBLIC_HEADERS_CXX += \
     include/grpcpp/server_posix.h \
     include/grpcpp/server_posix_impl.h \
     include/grpcpp/support/async_stream.h \
+    include/grpcpp/support/async_stream_impl.h \
     include/grpcpp/support/async_unary_call.h \
+    include/grpcpp/support/async_unary_call_impl.h \
     include/grpcpp/support/byte_buffer.h \
     include/grpcpp/support/channel_arguments.h \
     include/grpcpp/support/channel_arguments_impl.h \
     include/grpcpp/support/client_callback.h \
+    include/grpcpp/support/client_callback_impl.h \
     include/grpcpp/support/client_interceptor.h \
     include/grpcpp/support/config.h \
     include/grpcpp/support/interceptor.h \
@@ -6195,6 +6253,7 @@ PUBLIC_HEADERS_CXX += \
     include/grpcpp/support/proto_buffer_reader.h \
     include/grpcpp/support/proto_buffer_writer.h \
     include/grpcpp/support/server_callback.h \
+    include/grpcpp/support/server_callback_impl.h \
     include/grpcpp/support/server_interceptor.h \
     include/grpcpp/support/slice.h \
     include/grpcpp/support/status.h \
@@ -6202,6 +6261,7 @@ PUBLIC_HEADERS_CXX += \
     include/grpcpp/support/string_ref.h \
     include/grpcpp/support/stub_options.h \
     include/grpcpp/support/sync_stream.h \
+    include/grpcpp/support/sync_stream_impl.h \
     include/grpcpp/support/time.h \
     include/grpcpp/support/validate_service_config.h \
     include/grpc/support/alloc.h \
@@ -6287,7 +6347,9 @@ PUBLIC_HEADERS_CXX += \
     include/grpc++/impl/codegen/time.h \
     include/grpcpp/impl/codegen/async_generic_service.h \
     include/grpcpp/impl/codegen/async_stream.h \
+    include/grpcpp/impl/codegen/async_stream_impl.h \
     include/grpcpp/impl/codegen/async_unary_call.h \
+    include/grpcpp/impl/codegen/async_unary_call_impl.h \
     include/grpcpp/impl/codegen/byte_buffer.h \
     include/grpcpp/impl/codegen/call.h \
     include/grpcpp/impl/codegen/call_hook.h \
@@ -6296,7 +6358,9 @@ PUBLIC_HEADERS_CXX += \
     include/grpcpp/impl/codegen/callback_common.h \
     include/grpcpp/impl/codegen/channel_interface.h \
     include/grpcpp/impl/codegen/client_callback.h \
+    include/grpcpp/impl/codegen/client_callback_impl.h \
     include/grpcpp/impl/codegen/client_context.h \
+    include/grpcpp/impl/codegen/client_context_impl.h \
     include/grpcpp/impl/codegen/client_interceptor.h \
     include/grpcpp/impl/codegen/client_unary_call.h \
     include/grpcpp/impl/codegen/completion_queue.h \
@@ -6317,7 +6381,9 @@ PUBLIC_HEADERS_CXX += \
     include/grpcpp/impl/codegen/security/auth_context.h \
     include/grpcpp/impl/codegen/serialization_traits.h \
     include/grpcpp/impl/codegen/server_callback.h \
+    include/grpcpp/impl/codegen/server_callback_impl.h \
     include/grpcpp/impl/codegen/server_context.h \
+    include/grpcpp/impl/codegen/server_context_impl.h \
     include/grpcpp/impl/codegen/server_interceptor.h \
     include/grpcpp/impl/codegen/server_interface.h \
     include/grpcpp/impl/codegen/service_type.h \
@@ -6327,6 +6393,7 @@ PUBLIC_HEADERS_CXX += \
     include/grpcpp/impl/codegen/string_ref.h \
     include/grpcpp/impl/codegen/stub_options.h \
     include/grpcpp/impl/codegen/sync_stream.h \
+    include/grpcpp/impl/codegen/sync_stream_impl.h \
     include/grpcpp/impl/codegen/time.h \
     include/grpcpp/impl/codegen/sync.h \
     include/grpc/census.h \
@@ -6694,7 +6761,9 @@ PUBLIC_HEADERS_CXX += \
     include/grpc++/impl/codegen/time.h \
     include/grpcpp/impl/codegen/async_generic_service.h \
     include/grpcpp/impl/codegen/async_stream.h \
+    include/grpcpp/impl/codegen/async_stream_impl.h \
     include/grpcpp/impl/codegen/async_unary_call.h \
+    include/grpcpp/impl/codegen/async_unary_call_impl.h \
     include/grpcpp/impl/codegen/byte_buffer.h \
     include/grpcpp/impl/codegen/call.h \
     include/grpcpp/impl/codegen/call_hook.h \
@@ -6703,7 +6772,9 @@ PUBLIC_HEADERS_CXX += \
     include/grpcpp/impl/codegen/callback_common.h \
     include/grpcpp/impl/codegen/channel_interface.h \
     include/grpcpp/impl/codegen/client_callback.h \
+    include/grpcpp/impl/codegen/client_callback_impl.h \
     include/grpcpp/impl/codegen/client_context.h \
+    include/grpcpp/impl/codegen/client_context_impl.h \
     include/grpcpp/impl/codegen/client_interceptor.h \
     include/grpcpp/impl/codegen/client_unary_call.h \
     include/grpcpp/impl/codegen/completion_queue.h \
@@ -6724,7 +6795,9 @@ PUBLIC_HEADERS_CXX += \
     include/grpcpp/impl/codegen/security/auth_context.h \
     include/grpcpp/impl/codegen/serialization_traits.h \
     include/grpcpp/impl/codegen/server_callback.h \
+    include/grpcpp/impl/codegen/server_callback_impl.h \
     include/grpcpp/impl/codegen/server_context.h \
+    include/grpcpp/impl/codegen/server_context_impl.h \
     include/grpcpp/impl/codegen/server_interceptor.h \
     include/grpcpp/impl/codegen/server_interface.h \
     include/grpcpp/impl/codegen/service_type.h \
@@ -6734,6 +6807,7 @@ PUBLIC_HEADERS_CXX += \
     include/grpcpp/impl/codegen/string_ref.h \
     include/grpcpp/impl/codegen/stub_options.h \
     include/grpcpp/impl/codegen/sync_stream.h \
+    include/grpcpp/impl/codegen/sync_stream_impl.h \
     include/grpcpp/impl/codegen/time.h \
     include/grpc/impl/codegen/byte_buffer.h \
     include/grpc/impl/codegen/byte_buffer_reader.h \
@@ -6864,7 +6938,9 @@ PUBLIC_HEADERS_CXX += \
     include/grpc++/impl/codegen/time.h \
     include/grpcpp/impl/codegen/async_generic_service.h \
     include/grpcpp/impl/codegen/async_stream.h \
+    include/grpcpp/impl/codegen/async_stream_impl.h \
     include/grpcpp/impl/codegen/async_unary_call.h \
+    include/grpcpp/impl/codegen/async_unary_call_impl.h \
     include/grpcpp/impl/codegen/byte_buffer.h \
     include/grpcpp/impl/codegen/call.h \
     include/grpcpp/impl/codegen/call_hook.h \
@@ -6873,7 +6949,9 @@ PUBLIC_HEADERS_CXX += \
     include/grpcpp/impl/codegen/callback_common.h \
     include/grpcpp/impl/codegen/channel_interface.h \
     include/grpcpp/impl/codegen/client_callback.h \
+    include/grpcpp/impl/codegen/client_callback_impl.h \
     include/grpcpp/impl/codegen/client_context.h \
+    include/grpcpp/impl/codegen/client_context_impl.h \
     include/grpcpp/impl/codegen/client_interceptor.h \
     include/grpcpp/impl/codegen/client_unary_call.h \
     include/grpcpp/impl/codegen/completion_queue.h \
@@ -6894,7 +6972,9 @@ PUBLIC_HEADERS_CXX += \
     include/grpcpp/impl/codegen/security/auth_context.h \
     include/grpcpp/impl/codegen/serialization_traits.h \
     include/grpcpp/impl/codegen/server_callback.h \
+    include/grpcpp/impl/codegen/server_callback_impl.h \
     include/grpcpp/impl/codegen/server_context.h \
+    include/grpcpp/impl/codegen/server_context_impl.h \
     include/grpcpp/impl/codegen/server_interceptor.h \
     include/grpcpp/impl/codegen/server_interface.h \
     include/grpcpp/impl/codegen/service_type.h \
@@ -6904,6 +6984,7 @@ PUBLIC_HEADERS_CXX += \
     include/grpcpp/impl/codegen/string_ref.h \
     include/grpcpp/impl/codegen/stub_options.h \
     include/grpcpp/impl/codegen/sync_stream.h \
+    include/grpcpp/impl/codegen/sync_stream_impl.h \
     include/grpcpp/impl/codegen/time.h \
     include/grpc/impl/codegen/byte_buffer.h \
     include/grpc/impl/codegen/byte_buffer_reader.h \
@@ -7082,6 +7163,7 @@ PUBLIC_HEADERS_CXX += \
     include/grpcpp/channel_impl.h \
     include/grpcpp/client_context.h \
     include/grpcpp/completion_queue.h \
+    include/grpcpp/completion_queue_impl.h \
     include/grpcpp/create_channel.h \
     include/grpcpp/create_channel_impl.h \
     include/grpcpp/create_channel_posix.h \
@@ -7125,11 +7207,14 @@ PUBLIC_HEADERS_CXX += \
     include/grpcpp/server_posix.h \
     include/grpcpp/server_posix_impl.h \
     include/grpcpp/support/async_stream.h \
+    include/grpcpp/support/async_stream_impl.h \
     include/grpcpp/support/async_unary_call.h \
+    include/grpcpp/support/async_unary_call_impl.h \
     include/grpcpp/support/byte_buffer.h \
     include/grpcpp/support/channel_arguments.h \
     include/grpcpp/support/channel_arguments_impl.h \
     include/grpcpp/support/client_callback.h \
+    include/grpcpp/support/client_callback_impl.h \
     include/grpcpp/support/client_interceptor.h \
     include/grpcpp/support/config.h \
     include/grpcpp/support/interceptor.h \
@@ -7137,6 +7222,7 @@ PUBLIC_HEADERS_CXX += \
     include/grpcpp/support/proto_buffer_reader.h \
     include/grpcpp/support/proto_buffer_writer.h \
     include/grpcpp/support/server_callback.h \
+    include/grpcpp/support/server_callback_impl.h \
     include/grpcpp/support/server_interceptor.h \
     include/grpcpp/support/slice.h \
     include/grpcpp/support/status.h \
@@ -7144,6 +7230,7 @@ PUBLIC_HEADERS_CXX += \
     include/grpcpp/support/string_ref.h \
     include/grpcpp/support/stub_options.h \
     include/grpcpp/support/sync_stream.h \
+    include/grpcpp/support/sync_stream_impl.h \
     include/grpcpp/support/time.h \
     include/grpcpp/support/validate_service_config.h \
     include/grpc/support/alloc.h \
@@ -7229,7 +7316,9 @@ PUBLIC_HEADERS_CXX += \
     include/grpc++/impl/codegen/time.h \
     include/grpcpp/impl/codegen/async_generic_service.h \
     include/grpcpp/impl/codegen/async_stream.h \
+    include/grpcpp/impl/codegen/async_stream_impl.h \
     include/grpcpp/impl/codegen/async_unary_call.h \
+    include/grpcpp/impl/codegen/async_unary_call_impl.h \
     include/grpcpp/impl/codegen/byte_buffer.h \
     include/grpcpp/impl/codegen/call.h \
     include/grpcpp/impl/codegen/call_hook.h \
@@ -7238,7 +7327,9 @@ PUBLIC_HEADERS_CXX += \
     include/grpcpp/impl/codegen/callback_common.h \
     include/grpcpp/impl/codegen/channel_interface.h \
     include/grpcpp/impl/codegen/client_callback.h \
+    include/grpcpp/impl/codegen/client_callback_impl.h \
     include/grpcpp/impl/codegen/client_context.h \
+    include/grpcpp/impl/codegen/client_context_impl.h \
     include/grpcpp/impl/codegen/client_interceptor.h \
     include/grpcpp/impl/codegen/client_unary_call.h \
     include/grpcpp/impl/codegen/completion_queue.h \
@@ -7259,7 +7350,9 @@ PUBLIC_HEADERS_CXX += \
     include/grpcpp/impl/codegen/security/auth_context.h \
     include/grpcpp/impl/codegen/serialization_traits.h \
     include/grpcpp/impl/codegen/server_callback.h \
+    include/grpcpp/impl/codegen/server_callback_impl.h \
     include/grpcpp/impl/codegen/server_context.h \
+    include/grpcpp/impl/codegen/server_context_impl.h \
     include/grpcpp/impl/codegen/server_interceptor.h \
     include/grpcpp/impl/codegen/server_interface.h \
     include/grpcpp/impl/codegen/service_type.h \
@@ -7269,6 +7362,7 @@ PUBLIC_HEADERS_CXX += \
     include/grpcpp/impl/codegen/string_ref.h \
     include/grpcpp/impl/codegen/stub_options.h \
     include/grpcpp/impl/codegen/sync_stream.h \
+    include/grpcpp/impl/codegen/sync_stream_impl.h \
     include/grpcpp/impl/codegen/time.h \
     include/grpcpp/impl/codegen/sync.h \
 
@@ -8529,7 +8623,7 @@ endif
 LIBBAD_CLIENT_TEST_SRC = \
     test/core/bad_client/bad_client.cc \
 
-PUBLIC_HEADERS_C += \
+PUBLIC_HEADERS_CXX += \
 
 LIBBAD_CLIENT_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBBAD_CLIENT_TEST_SRC))))
 
@@ -8543,8 +8637,16 @@ $(LIBDIR)/$(CONFIG)/libbad_client_test.a: openssl_dep_error
 
 else
 
+ifeq ($(NO_PROTOBUF),true)
 
-$(LIBDIR)/$(CONFIG)/libbad_client_test.a: $(ZLIB_DEP) $(OPENSSL_DEP) $(CARES_DEP) $(ADDRESS_SORTING_DEP) $(LIBBAD_CLIENT_TEST_OBJS) 
+# You can't build a C++ library if you don't have protobuf - a bit overreached, but still okay.
+
+$(LIBDIR)/$(CONFIG)/libbad_client_test.a: protobuf_dep_error
+
+
+else
+
+$(LIBDIR)/$(CONFIG)/libbad_client_test.a: $(ZLIB_DEP) $(OPENSSL_DEP) $(CARES_DEP) $(ADDRESS_SORTING_DEP) $(PROTOBUF_DEP) $(LIBBAD_CLIENT_TEST_OBJS) 
 	$(E) "[AR]      Creating $@"
 	$(Q) mkdir -p `dirname $@`
 	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libbad_client_test.a
@@ -8555,6 +8657,8 @@ endif
 
 
 
+
+endif
 
 endif
 
@@ -9597,34 +9701,66 @@ endif
 endif
 
 
-DNS_RESOLVER_COOLDOWN_TEST_SRC = \
+DNS_RESOLVER_COOLDOWN_USING_ARES_RESOLVER_TEST_SRC = \
     test/core/client_channel/resolvers/dns_resolver_cooldown_test.cc \
 
-DNS_RESOLVER_COOLDOWN_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(DNS_RESOLVER_COOLDOWN_TEST_SRC))))
+DNS_RESOLVER_COOLDOWN_USING_ARES_RESOLVER_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(DNS_RESOLVER_COOLDOWN_USING_ARES_RESOLVER_TEST_SRC))))
 ifeq ($(NO_SECURE),true)
 
 # You can't build secure targets if you don't have OpenSSL.
 
-$(BINDIR)/$(CONFIG)/dns_resolver_cooldown_test: openssl_dep_error
+$(BINDIR)/$(CONFIG)/dns_resolver_cooldown_using_ares_resolver_test: openssl_dep_error
 
 else
 
 
 
-$(BINDIR)/$(CONFIG)/dns_resolver_cooldown_test: $(DNS_RESOLVER_COOLDOWN_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a
+$(BINDIR)/$(CONFIG)/dns_resolver_cooldown_using_ares_resolver_test: $(DNS_RESOLVER_COOLDOWN_USING_ARES_RESOLVER_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LD) $(LDFLAGS) $(DNS_RESOLVER_COOLDOWN_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/dns_resolver_cooldown_test
+	$(Q) $(LD) $(LDFLAGS) $(DNS_RESOLVER_COOLDOWN_USING_ARES_RESOLVER_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/dns_resolver_cooldown_using_ares_resolver_test
 
 endif
 
 $(OBJDIR)/$(CONFIG)/test/core/client_channel/resolvers/dns_resolver_cooldown_test.o:  $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a
 
-deps_dns_resolver_cooldown_test: $(DNS_RESOLVER_COOLDOWN_TEST_OBJS:.o=.dep)
+deps_dns_resolver_cooldown_using_ares_resolver_test: $(DNS_RESOLVER_COOLDOWN_USING_ARES_RESOLVER_TEST_OBJS:.o=.dep)
 
 ifneq ($(NO_SECURE),true)
 ifneq ($(NO_DEPS),true)
--include $(DNS_RESOLVER_COOLDOWN_TEST_OBJS:.o=.dep)
+-include $(DNS_RESOLVER_COOLDOWN_USING_ARES_RESOLVER_TEST_OBJS:.o=.dep)
+endif
+endif
+
+
+DNS_RESOLVER_COOLDOWN_USING_NATIVE_RESOLVER_TEST_SRC = \
+    test/core/client_channel/resolvers/dns_resolver_cooldown_test.cc \
+
+DNS_RESOLVER_COOLDOWN_USING_NATIVE_RESOLVER_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(DNS_RESOLVER_COOLDOWN_USING_NATIVE_RESOLVER_TEST_SRC))))
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL.
+
+$(BINDIR)/$(CONFIG)/dns_resolver_cooldown_using_native_resolver_test: openssl_dep_error
+
+else
+
+
+
+$(BINDIR)/$(CONFIG)/dns_resolver_cooldown_using_native_resolver_test: $(DNS_RESOLVER_COOLDOWN_USING_NATIVE_RESOLVER_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS) $(DNS_RESOLVER_COOLDOWN_USING_NATIVE_RESOLVER_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/dns_resolver_cooldown_using_native_resolver_test
+
+endif
+
+$(OBJDIR)/$(CONFIG)/test/core/client_channel/resolvers/dns_resolver_cooldown_test.o:  $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a
+
+deps_dns_resolver_cooldown_using_native_resolver_test: $(DNS_RESOLVER_COOLDOWN_USING_NATIVE_RESOLVER_TEST_OBJS:.o=.dep)
+
+ifneq ($(NO_SECURE),true)
+ifneq ($(NO_DEPS),true)
+-include $(DNS_RESOLVER_COOLDOWN_USING_NATIVE_RESOLVER_TEST_OBJS:.o=.dep)
 endif
 endif
 
@@ -10177,7 +10313,7 @@ endif
 
 
 GPR_HOST_PORT_TEST_SRC = \
-    test/core/gpr/host_port_test.cc \
+    test/core/gprpp/host_port_test.cc \
 
 GPR_HOST_PORT_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(GPR_HOST_PORT_TEST_SRC))))
 ifeq ($(NO_SECURE),true)
@@ -10197,7 +10333,7 @@ $(BINDIR)/$(CONFIG)/gpr_host_port_test: $(GPR_HOST_PORT_TEST_OBJS) $(LIBDIR)/$(C
 
 endif
 
-$(OBJDIR)/$(CONFIG)/test/core/gpr/host_port_test.o:  $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a
+$(OBJDIR)/$(CONFIG)/test/core/gprpp/host_port_test.o:  $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a
 
 deps_gpr_host_port_test: $(GPR_HOST_PORT_TEST_OBJS:.o=.dep)
 
@@ -12075,6 +12211,38 @@ deps_minimal_stack_is_minimal_test: $(MINIMAL_STACK_IS_MINIMAL_TEST_OBJS:.o=.dep
 ifneq ($(NO_SECURE),true)
 ifneq ($(NO_DEPS),true)
 -include $(MINIMAL_STACK_IS_MINIMAL_TEST_OBJS:.o=.dep)
+endif
+endif
+
+
+MPMCQUEUE_TEST_SRC = \
+    test/core/iomgr/mpmcqueue_test.cc \
+
+MPMCQUEUE_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(MPMCQUEUE_TEST_SRC))))
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL.
+
+$(BINDIR)/$(CONFIG)/mpmcqueue_test: openssl_dep_error
+
+else
+
+
+
+$(BINDIR)/$(CONFIG)/mpmcqueue_test: $(MPMCQUEUE_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS) $(MPMCQUEUE_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/mpmcqueue_test
+
+endif
+
+$(OBJDIR)/$(CONFIG)/test/core/iomgr/mpmcqueue_test.o:  $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a
+
+deps_mpmcqueue_test: $(MPMCQUEUE_TEST_OBJS:.o=.dep)
+
+ifneq ($(NO_SECURE),true)
+ifneq ($(NO_DEPS),true)
+-include $(MPMCQUEUE_TEST_OBJS:.o=.dep)
 endif
 endif
 
@@ -19625,6 +19793,49 @@ $(OBJDIR)/$(CONFIG)/test/cpp/interop/stress_test.o: $(GENDIR)/src/proto/grpc/tes
 $(OBJDIR)/$(CONFIG)/test/cpp/util/metrics_server.o: $(GENDIR)/src/proto/grpc/testing/empty.pb.cc $(GENDIR)/src/proto/grpc/testing/empty.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/messages.pb.cc $(GENDIR)/src/proto/grpc/testing/messages.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/metrics.pb.cc $(GENDIR)/src/proto/grpc/testing/metrics.grpc.pb.cc $(GENDIR)/src/proto/grpc/testing/test.pb.cc $(GENDIR)/src/proto/grpc/testing/test.grpc.pb.cc
 
 
+STRING_VIEW_TEST_SRC = \
+    test/core/gprpp/string_view_test.cc \
+
+STRING_VIEW_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(STRING_VIEW_TEST_SRC))))
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL.
+
+$(BINDIR)/$(CONFIG)/string_view_test: openssl_dep_error
+
+else
+
+
+
+
+ifeq ($(NO_PROTOBUF),true)
+
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
+
+$(BINDIR)/$(CONFIG)/string_view_test: protobuf_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/string_view_test: $(PROTOBUF_DEP) $(STRING_VIEW_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LDXX) $(LDFLAGS) $(STRING_VIEW_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(LDLIBS_SECURE) $(GTEST_LIB) -o $(BINDIR)/$(CONFIG)/string_view_test
+
+endif
+
+endif
+
+$(OBJDIR)/$(CONFIG)/test/core/gprpp/string_view_test.o:  $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a
+
+deps_string_view_test: $(STRING_VIEW_TEST_OBJS:.o=.dep)
+
+ifneq ($(NO_SECURE),true)
+ifneq ($(NO_DEPS),true)
+-include $(STRING_VIEW_TEST_OBJS:.o=.dep)
+endif
+endif
+
+
 THREAD_MANAGER_TEST_SRC = \
     test/cpp/thread_manager/thread_manager_test.cc \
 
@@ -20292,16 +20503,58 @@ ifneq ($(NO_DEPS),true)
 endif
 
 
+BAD_STREAMING_ID_BAD_CLIENT_TEST_SRC = \
+    test/core/bad_client/tests/bad_streaming_id.cc \
+
+BAD_STREAMING_ID_BAD_CLIENT_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(BAD_STREAMING_ID_BAD_CLIENT_TEST_SRC))))
+
+
+
+ifeq ($(NO_PROTOBUF),true)
+
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
+
+$(BINDIR)/$(CONFIG)/bad_streaming_id_bad_client_test: protobuf_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/bad_streaming_id_bad_client_test: $(PROTOBUF_DEP) $(BAD_STREAMING_ID_BAD_CLIENT_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libbad_client_test.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LDXX) $(LDFLAGS) $(BAD_STREAMING_ID_BAD_CLIENT_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libbad_client_test.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(GTEST_LIB) -o $(BINDIR)/$(CONFIG)/bad_streaming_id_bad_client_test
+
+endif
+
+$(OBJDIR)/$(CONFIG)/test/core/bad_client/tests/bad_streaming_id.o:  $(LIBDIR)/$(CONFIG)/libbad_client_test.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr.a
+
+deps_bad_streaming_id_bad_client_test: $(BAD_STREAMING_ID_BAD_CLIENT_TEST_OBJS:.o=.dep)
+
+ifneq ($(NO_DEPS),true)
+-include $(BAD_STREAMING_ID_BAD_CLIENT_TEST_OBJS:.o=.dep)
+endif
+
+
 BADREQ_BAD_CLIENT_TEST_SRC = \
     test/core/bad_client/tests/badreq.cc \
 
 BADREQ_BAD_CLIENT_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(BADREQ_BAD_CLIENT_TEST_SRC))))
 
 
-$(BINDIR)/$(CONFIG)/badreq_bad_client_test: $(BADREQ_BAD_CLIENT_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libbad_client_test.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr.a
+
+ifeq ($(NO_PROTOBUF),true)
+
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
+
+$(BINDIR)/$(CONFIG)/badreq_bad_client_test: protobuf_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/badreq_bad_client_test: $(PROTOBUF_DEP) $(BADREQ_BAD_CLIENT_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libbad_client_test.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LD) $(LDFLAGS) $(BADREQ_BAD_CLIENT_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libbad_client_test.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) -o $(BINDIR)/$(CONFIG)/badreq_bad_client_test
+	$(Q) $(LDXX) $(LDFLAGS) $(BADREQ_BAD_CLIENT_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libbad_client_test.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(GTEST_LIB) -o $(BINDIR)/$(CONFIG)/badreq_bad_client_test
+
+endif
 
 $(OBJDIR)/$(CONFIG)/test/core/bad_client/tests/badreq.o:  $(LIBDIR)/$(CONFIG)/libbad_client_test.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr.a
 
@@ -20318,10 +20571,21 @@ CONNECTION_PREFIX_BAD_CLIENT_TEST_SRC = \
 CONNECTION_PREFIX_BAD_CLIENT_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(CONNECTION_PREFIX_BAD_CLIENT_TEST_SRC))))
 
 
-$(BINDIR)/$(CONFIG)/connection_prefix_bad_client_test: $(CONNECTION_PREFIX_BAD_CLIENT_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libbad_client_test.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr.a
+
+ifeq ($(NO_PROTOBUF),true)
+
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
+
+$(BINDIR)/$(CONFIG)/connection_prefix_bad_client_test: protobuf_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/connection_prefix_bad_client_test: $(PROTOBUF_DEP) $(CONNECTION_PREFIX_BAD_CLIENT_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libbad_client_test.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LD) $(LDFLAGS) $(CONNECTION_PREFIX_BAD_CLIENT_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libbad_client_test.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) -o $(BINDIR)/$(CONFIG)/connection_prefix_bad_client_test
+	$(Q) $(LDXX) $(LDFLAGS) $(CONNECTION_PREFIX_BAD_CLIENT_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libbad_client_test.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(GTEST_LIB) -o $(BINDIR)/$(CONFIG)/connection_prefix_bad_client_test
+
+endif
 
 $(OBJDIR)/$(CONFIG)/test/core/bad_client/tests/connection_prefix.o:  $(LIBDIR)/$(CONFIG)/libbad_client_test.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr.a
 
@@ -20338,10 +20602,21 @@ DUPLICATE_HEADER_BAD_CLIENT_TEST_SRC = \
 DUPLICATE_HEADER_BAD_CLIENT_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(DUPLICATE_HEADER_BAD_CLIENT_TEST_SRC))))
 
 
-$(BINDIR)/$(CONFIG)/duplicate_header_bad_client_test: $(DUPLICATE_HEADER_BAD_CLIENT_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libbad_client_test.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr.a
+
+ifeq ($(NO_PROTOBUF),true)
+
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
+
+$(BINDIR)/$(CONFIG)/duplicate_header_bad_client_test: protobuf_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/duplicate_header_bad_client_test: $(PROTOBUF_DEP) $(DUPLICATE_HEADER_BAD_CLIENT_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libbad_client_test.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LD) $(LDFLAGS) $(DUPLICATE_HEADER_BAD_CLIENT_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libbad_client_test.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) -o $(BINDIR)/$(CONFIG)/duplicate_header_bad_client_test
+	$(Q) $(LDXX) $(LDFLAGS) $(DUPLICATE_HEADER_BAD_CLIENT_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libbad_client_test.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(GTEST_LIB) -o $(BINDIR)/$(CONFIG)/duplicate_header_bad_client_test
+
+endif
 
 $(OBJDIR)/$(CONFIG)/test/core/bad_client/tests/duplicate_header.o:  $(LIBDIR)/$(CONFIG)/libbad_client_test.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr.a
 
@@ -20358,10 +20633,21 @@ HEAD_OF_LINE_BLOCKING_BAD_CLIENT_TEST_SRC = \
 HEAD_OF_LINE_BLOCKING_BAD_CLIENT_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(HEAD_OF_LINE_BLOCKING_BAD_CLIENT_TEST_SRC))))
 
 
-$(BINDIR)/$(CONFIG)/head_of_line_blocking_bad_client_test: $(HEAD_OF_LINE_BLOCKING_BAD_CLIENT_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libbad_client_test.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr.a
+
+ifeq ($(NO_PROTOBUF),true)
+
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
+
+$(BINDIR)/$(CONFIG)/head_of_line_blocking_bad_client_test: protobuf_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/head_of_line_blocking_bad_client_test: $(PROTOBUF_DEP) $(HEAD_OF_LINE_BLOCKING_BAD_CLIENT_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libbad_client_test.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LD) $(LDFLAGS) $(HEAD_OF_LINE_BLOCKING_BAD_CLIENT_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libbad_client_test.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) -o $(BINDIR)/$(CONFIG)/head_of_line_blocking_bad_client_test
+	$(Q) $(LDXX) $(LDFLAGS) $(HEAD_OF_LINE_BLOCKING_BAD_CLIENT_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libbad_client_test.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(GTEST_LIB) -o $(BINDIR)/$(CONFIG)/head_of_line_blocking_bad_client_test
+
+endif
 
 $(OBJDIR)/$(CONFIG)/test/core/bad_client/tests/head_of_line_blocking.o:  $(LIBDIR)/$(CONFIG)/libbad_client_test.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr.a
 
@@ -20378,10 +20664,21 @@ HEADERS_BAD_CLIENT_TEST_SRC = \
 HEADERS_BAD_CLIENT_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(HEADERS_BAD_CLIENT_TEST_SRC))))
 
 
-$(BINDIR)/$(CONFIG)/headers_bad_client_test: $(HEADERS_BAD_CLIENT_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libbad_client_test.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr.a
+
+ifeq ($(NO_PROTOBUF),true)
+
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
+
+$(BINDIR)/$(CONFIG)/headers_bad_client_test: protobuf_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/headers_bad_client_test: $(PROTOBUF_DEP) $(HEADERS_BAD_CLIENT_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libbad_client_test.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LD) $(LDFLAGS) $(HEADERS_BAD_CLIENT_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libbad_client_test.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) -o $(BINDIR)/$(CONFIG)/headers_bad_client_test
+	$(Q) $(LDXX) $(LDFLAGS) $(HEADERS_BAD_CLIENT_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libbad_client_test.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(GTEST_LIB) -o $(BINDIR)/$(CONFIG)/headers_bad_client_test
+
+endif
 
 $(OBJDIR)/$(CONFIG)/test/core/bad_client/tests/headers.o:  $(LIBDIR)/$(CONFIG)/libbad_client_test.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr.a
 
@@ -20398,10 +20695,21 @@ INITIAL_SETTINGS_FRAME_BAD_CLIENT_TEST_SRC = \
 INITIAL_SETTINGS_FRAME_BAD_CLIENT_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(INITIAL_SETTINGS_FRAME_BAD_CLIENT_TEST_SRC))))
 
 
-$(BINDIR)/$(CONFIG)/initial_settings_frame_bad_client_test: $(INITIAL_SETTINGS_FRAME_BAD_CLIENT_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libbad_client_test.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr.a
+
+ifeq ($(NO_PROTOBUF),true)
+
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
+
+$(BINDIR)/$(CONFIG)/initial_settings_frame_bad_client_test: protobuf_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/initial_settings_frame_bad_client_test: $(PROTOBUF_DEP) $(INITIAL_SETTINGS_FRAME_BAD_CLIENT_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libbad_client_test.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LD) $(LDFLAGS) $(INITIAL_SETTINGS_FRAME_BAD_CLIENT_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libbad_client_test.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) -o $(BINDIR)/$(CONFIG)/initial_settings_frame_bad_client_test
+	$(Q) $(LDXX) $(LDFLAGS) $(INITIAL_SETTINGS_FRAME_BAD_CLIENT_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libbad_client_test.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(GTEST_LIB) -o $(BINDIR)/$(CONFIG)/initial_settings_frame_bad_client_test
+
+endif
 
 $(OBJDIR)/$(CONFIG)/test/core/bad_client/tests/initial_settings_frame.o:  $(LIBDIR)/$(CONFIG)/libbad_client_test.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr.a
 
@@ -20418,10 +20726,21 @@ LARGE_METADATA_BAD_CLIENT_TEST_SRC = \
 LARGE_METADATA_BAD_CLIENT_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LARGE_METADATA_BAD_CLIENT_TEST_SRC))))
 
 
-$(BINDIR)/$(CONFIG)/large_metadata_bad_client_test: $(LARGE_METADATA_BAD_CLIENT_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libbad_client_test.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr.a
+
+ifeq ($(NO_PROTOBUF),true)
+
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
+
+$(BINDIR)/$(CONFIG)/large_metadata_bad_client_test: protobuf_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/large_metadata_bad_client_test: $(PROTOBUF_DEP) $(LARGE_METADATA_BAD_CLIENT_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libbad_client_test.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LD) $(LDFLAGS) $(LARGE_METADATA_BAD_CLIENT_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libbad_client_test.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) -o $(BINDIR)/$(CONFIG)/large_metadata_bad_client_test
+	$(Q) $(LDXX) $(LDFLAGS) $(LARGE_METADATA_BAD_CLIENT_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libbad_client_test.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(GTEST_LIB) -o $(BINDIR)/$(CONFIG)/large_metadata_bad_client_test
+
+endif
 
 $(OBJDIR)/$(CONFIG)/test/core/bad_client/tests/large_metadata.o:  $(LIBDIR)/$(CONFIG)/libbad_client_test.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr.a
 
@@ -20432,16 +20751,58 @@ ifneq ($(NO_DEPS),true)
 endif
 
 
+OUT_OF_BOUNDS_BAD_CLIENT_TEST_SRC = \
+    test/core/bad_client/tests/out_of_bounds.cc \
+
+OUT_OF_BOUNDS_BAD_CLIENT_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(OUT_OF_BOUNDS_BAD_CLIENT_TEST_SRC))))
+
+
+
+ifeq ($(NO_PROTOBUF),true)
+
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
+
+$(BINDIR)/$(CONFIG)/out_of_bounds_bad_client_test: protobuf_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/out_of_bounds_bad_client_test: $(PROTOBUF_DEP) $(OUT_OF_BOUNDS_BAD_CLIENT_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libbad_client_test.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LDXX) $(LDFLAGS) $(OUT_OF_BOUNDS_BAD_CLIENT_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libbad_client_test.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(GTEST_LIB) -o $(BINDIR)/$(CONFIG)/out_of_bounds_bad_client_test
+
+endif
+
+$(OBJDIR)/$(CONFIG)/test/core/bad_client/tests/out_of_bounds.o:  $(LIBDIR)/$(CONFIG)/libbad_client_test.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr.a
+
+deps_out_of_bounds_bad_client_test: $(OUT_OF_BOUNDS_BAD_CLIENT_TEST_OBJS:.o=.dep)
+
+ifneq ($(NO_DEPS),true)
+-include $(OUT_OF_BOUNDS_BAD_CLIENT_TEST_OBJS:.o=.dep)
+endif
+
+
 SERVER_REGISTERED_METHOD_BAD_CLIENT_TEST_SRC = \
     test/core/bad_client/tests/server_registered_method.cc \
 
 SERVER_REGISTERED_METHOD_BAD_CLIENT_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(SERVER_REGISTERED_METHOD_BAD_CLIENT_TEST_SRC))))
 
 
-$(BINDIR)/$(CONFIG)/server_registered_method_bad_client_test: $(SERVER_REGISTERED_METHOD_BAD_CLIENT_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libbad_client_test.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr.a
+
+ifeq ($(NO_PROTOBUF),true)
+
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
+
+$(BINDIR)/$(CONFIG)/server_registered_method_bad_client_test: protobuf_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/server_registered_method_bad_client_test: $(PROTOBUF_DEP) $(SERVER_REGISTERED_METHOD_BAD_CLIENT_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libbad_client_test.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LD) $(LDFLAGS) $(SERVER_REGISTERED_METHOD_BAD_CLIENT_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libbad_client_test.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) -o $(BINDIR)/$(CONFIG)/server_registered_method_bad_client_test
+	$(Q) $(LDXX) $(LDFLAGS) $(SERVER_REGISTERED_METHOD_BAD_CLIENT_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libbad_client_test.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(GTEST_LIB) -o $(BINDIR)/$(CONFIG)/server_registered_method_bad_client_test
+
+endif
 
 $(OBJDIR)/$(CONFIG)/test/core/bad_client/tests/server_registered_method.o:  $(LIBDIR)/$(CONFIG)/libbad_client_test.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr.a
 
@@ -20458,10 +20819,21 @@ SIMPLE_REQUEST_BAD_CLIENT_TEST_SRC = \
 SIMPLE_REQUEST_BAD_CLIENT_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(SIMPLE_REQUEST_BAD_CLIENT_TEST_SRC))))
 
 
-$(BINDIR)/$(CONFIG)/simple_request_bad_client_test: $(SIMPLE_REQUEST_BAD_CLIENT_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libbad_client_test.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr.a
+
+ifeq ($(NO_PROTOBUF),true)
+
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
+
+$(BINDIR)/$(CONFIG)/simple_request_bad_client_test: protobuf_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/simple_request_bad_client_test: $(PROTOBUF_DEP) $(SIMPLE_REQUEST_BAD_CLIENT_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libbad_client_test.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LD) $(LDFLAGS) $(SIMPLE_REQUEST_BAD_CLIENT_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libbad_client_test.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) -o $(BINDIR)/$(CONFIG)/simple_request_bad_client_test
+	$(Q) $(LDXX) $(LDFLAGS) $(SIMPLE_REQUEST_BAD_CLIENT_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libbad_client_test.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(GTEST_LIB) -o $(BINDIR)/$(CONFIG)/simple_request_bad_client_test
+
+endif
 
 $(OBJDIR)/$(CONFIG)/test/core/bad_client/tests/simple_request.o:  $(LIBDIR)/$(CONFIG)/libbad_client_test.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr.a
 
@@ -20478,10 +20850,21 @@ UNKNOWN_FRAME_BAD_CLIENT_TEST_SRC = \
 UNKNOWN_FRAME_BAD_CLIENT_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(UNKNOWN_FRAME_BAD_CLIENT_TEST_SRC))))
 
 
-$(BINDIR)/$(CONFIG)/unknown_frame_bad_client_test: $(UNKNOWN_FRAME_BAD_CLIENT_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libbad_client_test.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr.a
+
+ifeq ($(NO_PROTOBUF),true)
+
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
+
+$(BINDIR)/$(CONFIG)/unknown_frame_bad_client_test: protobuf_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/unknown_frame_bad_client_test: $(PROTOBUF_DEP) $(UNKNOWN_FRAME_BAD_CLIENT_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libbad_client_test.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LD) $(LDFLAGS) $(UNKNOWN_FRAME_BAD_CLIENT_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libbad_client_test.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) -o $(BINDIR)/$(CONFIG)/unknown_frame_bad_client_test
+	$(Q) $(LDXX) $(LDFLAGS) $(UNKNOWN_FRAME_BAD_CLIENT_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libbad_client_test.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(GTEST_LIB) -o $(BINDIR)/$(CONFIG)/unknown_frame_bad_client_test
+
+endif
 
 $(OBJDIR)/$(CONFIG)/test/core/bad_client/tests/unknown_frame.o:  $(LIBDIR)/$(CONFIG)/libbad_client_test.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr.a
 
@@ -20498,10 +20881,21 @@ WINDOW_OVERFLOW_BAD_CLIENT_TEST_SRC = \
 WINDOW_OVERFLOW_BAD_CLIENT_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(WINDOW_OVERFLOW_BAD_CLIENT_TEST_SRC))))
 
 
-$(BINDIR)/$(CONFIG)/window_overflow_bad_client_test: $(WINDOW_OVERFLOW_BAD_CLIENT_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libbad_client_test.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr.a
+
+ifeq ($(NO_PROTOBUF),true)
+
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
+
+$(BINDIR)/$(CONFIG)/window_overflow_bad_client_test: protobuf_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/window_overflow_bad_client_test: $(PROTOBUF_DEP) $(WINDOW_OVERFLOW_BAD_CLIENT_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libbad_client_test.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr.a
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LD) $(LDFLAGS) $(WINDOW_OVERFLOW_BAD_CLIENT_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libbad_client_test.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) -o $(BINDIR)/$(CONFIG)/window_overflow_bad_client_test
+	$(Q) $(LDXX) $(LDFLAGS) $(WINDOW_OVERFLOW_BAD_CLIENT_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libbad_client_test.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(GTEST_LIB) -o $(BINDIR)/$(CONFIG)/window_overflow_bad_client_test
+
+endif
 
 $(OBJDIR)/$(CONFIG)/test/core/bad_client/tests/window_overflow.o:  $(LIBDIR)/$(CONFIG)/libbad_client_test.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr.a
 

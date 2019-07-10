@@ -34,9 +34,6 @@
 namespace grpc_impl {
 
 class Channel;
-}
-
-namespace grpc {
 
 class DefaultGlobalClientCallbacks final
     : public ClientContext::GlobalCallbacks {
@@ -46,7 +43,7 @@ class DefaultGlobalClientCallbacks final
   void Destructor(ClientContext* context) override {}
 };
 
-static internal::GrpcLibraryInitializer g_gli_initializer;
+static grpc::internal::GrpcLibraryInitializer g_gli_initializer;
 static DefaultGlobalClientCallbacks* g_default_client_callbacks =
     new DefaultGlobalClientCallbacks();
 static ClientContext::GlobalCallbacks* g_client_callbacks =
@@ -76,7 +73,7 @@ ClientContext::~ClientContext() {
 }
 
 std::unique_ptr<ClientContext> ClientContext::FromServerContext(
-    const ServerContext& context, PropagationOptions options) {
+    const grpc::ServerContext& context, PropagationOptions options) {
   std::unique_ptr<ClientContext> ctx(new ClientContext);
   ctx->propagate_from_call_ = context.call_;
   ctx->propagation_options_ = options;
@@ -130,7 +127,7 @@ void ClientContext::TryCancel() {
 }
 
 void ClientContext::SendCancelToInterceptors() {
-  internal::CancelInterceptorBatchMethods cancel_methods;
+  grpc::internal::CancelInterceptorBatchMethods cancel_methods;
   for (size_t i = 0; i < rpc_info_.interceptors_.size(); i++) {
     rpc_info_.RunInterceptor(&cancel_methods, i);
   }
@@ -153,4 +150,4 @@ void ClientContext::SetGlobalCallbacks(GlobalCallbacks* client_callbacks) {
   g_client_callbacks = client_callbacks;
 }
 
-}  // namespace grpc
+}  // namespace grpc_impl

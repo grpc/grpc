@@ -419,6 +419,24 @@ TEST_F(MapTest, RandomOpsWithIntKey) {
   EXPECT_TRUE(test_map.empty());
 }
 
+// Tests lower_bound().
+TEST_F(MapTest, LowerBound) {
+  Map<int, Payload> test_map;
+  for (int i = 0; i < 10; i += 2) {
+    test_map.emplace(i, Payload(i));
+  }
+  auto it = test_map.lower_bound(-1);
+  EXPECT_EQ(it, test_map.begin());
+  it = test_map.lower_bound(0);
+  EXPECT_EQ(it, test_map.begin());
+  it = test_map.lower_bound(2);
+  EXPECT_EQ(it->first, 2);
+  it = test_map.lower_bound(3);
+  EXPECT_EQ(it->first, 4);
+  it = test_map.lower_bound(9);
+  EXPECT_EQ(it, test_map.end());
+}
+
 }  // namespace testing
 }  // namespace grpc_core
 
