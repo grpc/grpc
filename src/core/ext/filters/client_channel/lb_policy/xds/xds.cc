@@ -194,14 +194,12 @@ class XdsLb : public LoadBalancingPolicy {
       bool shutting_down_ = false;
     };
 
-    // Contains a call to the LB server and all the data related to the call.
-    // Implementation of this virtual class should hold a ref to the parent
-    // RetryableLbCall.
-    // TODO(juanlishen): Maybe move the call state classes into RetryableLbCall.
+    // Contains an EDS call to the LB server.
     class EdsCallState : public InternallyRefCounted<EdsCallState> {
      public:
       explicit EdsCallState(
           RefCountedPtr<RetryableLbCall<EdsCallState>> parent);
+      ~EdsCallState();
 
       void Orphan() override;
 
@@ -211,11 +209,6 @@ class XdsLb : public LoadBalancingPolicy {
       bool seen_response() const { return seen_response_; }
 
      private:
-      ~EdsCallState();
-      // So Delete() can access our private dtor.
-      template <typename T>
-      friend void grpc_core::Delete(T*);
-
       bool IsCurrentCallOnChannel() const;
 
       static void OnResponseReceivedLocked(void* arg, grpc_error* error);
@@ -245,10 +238,12 @@ class XdsLb : public LoadBalancingPolicy {
       grpc_closure on_status_received_;
     };
 
+    // Contains an LRS call to the LB server.
     class LrsCallState : public InternallyRefCounted<LrsCallState> {
      public:
       explicit LrsCallState(
           RefCountedPtr<RetryableLbCall<LrsCallState>> parent);
+      ~LrsCallState();
 
       void Orphan() override;
 
@@ -260,11 +255,6 @@ class XdsLb : public LoadBalancingPolicy {
       bool seen_response() const { return seen_response_; }
 
      private:
-      ~LrsCallState();
-      // So Delete() can access our private dtor.
-      template <typename T>
-      friend void grpc_core::Delete(T*);
-
       bool IsCurrentCallOnChannel() const;
 
       static void OnInitialRequestSentLocked(void* arg, grpc_error* error);
@@ -301,7 +291,7 @@ class XdsLb : public LoadBalancingPolicy {
       grpc_closure on_status_received_;
 
       // Load reporting state.
-      XdsClientLoadReportingConfig load_reporting_config_;
+      grpc_millis load_reporting_interval_;
       bool started_reporting_ = false;
       bool next_report_timer_callback_pending_ = false;
       bool last_report_counters_were_zero_ = false;
@@ -848,7 +838,9 @@ void XdsLb::LbChannelState::RetryableLbCall<T>::OnCallFinishedLocked() {
   const bool seen_response = lb_calld_->seen_response();
   lb_calld_.reset();
   if (seen_response) {
-    // If we lost connection to the LB server, restart the LB call immediately.
+    // If we lost connection to the LB server, reset backoff and restart the LB
+    // call immediately.
+    backoff_.Reset();
     StartNewCallLocked();
   } else {
     // If we failed to connect to the LB server, retry later.
@@ -867,7 +859,6 @@ void XdsLb::LbChannelState::RetryableLbCall<T>::StartNewCallLocked() {
             "retryable call: %p)",
             lb_chand()->xdslb_policy(), lb_chand(), this);
   }
-  backoff_.Reset();
   lb_calld_ = MakeOrphanable<T>(
       this->Ref(DEBUG_LOCATION, "RetryableLbCall+start_new_call"));
 }
@@ -875,7 +866,7 @@ void XdsLb::LbChannelState::RetryableLbCall<T>::StartNewCallLocked() {
 template <typename T>
 void XdsLb::LbChannelState::RetryableLbCall<T>::StartRetryTimerLocked() {
   if (shutting_down_) return;
-  grpc_millis next_attempt_time = backoff_.NextAttemptTime();
+  const grpc_millis next_attempt_time = backoff_.NextAttemptTime();
   if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_xds_trace)) {
     grpc_millis timeout = GPR_MAX(next_attempt_time - ExecCtx::Get()->Now(), 0);
     gpr_log(GPR_INFO,
@@ -1407,49 +1398,53 @@ void XdsLb::LbChannelState::LrsCallState::OnResponseReceivedLocked(
   grpc_byte_buffer_reader_destroy(&bbr);
   grpc_byte_buffer_destroy(lrs_calld->recv_message_payload_);
   lrs_calld->recv_message_payload_ = nullptr;
-  // Parse the response.
-  XdsClientLoadReportingConfig new_config;
-  grpc_error* parse_error = XdsLrsResponseDecodeAndParse(
-      response_slice, &new_config, xdslb_policy->server_name_);
-  if (parse_error != GRPC_ERROR_NONE) {
-    gpr_log(GPR_ERROR, "[xdslb %p] LRS response parsing failed. error=%s",
-            xdslb_policy, grpc_error_string(parse_error));
-    GRPC_ERROR_UNREF(parse_error);
-    goto done;
-  }
-  lrs_calld->seen_response_ = true;
-  if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_xds_trace)) {
-    gpr_log(GPR_INFO,
-            "[xdslb %p] LRS response received, load_report_interval=%ldms, "
-            "report_endpoint_granularity=%d",
-            xdslb_policy, new_config.interval,
-            new_config.report_endpoint_granularity);
-  }
-  if (new_config.interval < GRPC_XDS_MIN_CLIENT_LOAD_REPORTING_INTERVAL_MS) {
-    new_config.interval = GRPC_XDS_MIN_CLIENT_LOAD_REPORTING_INTERVAL_MS;
+  // This anonymous lambda is a hack to avoid the usage of goto.
+  [&]() {
+    // Parse the response.
+    grpc_millis new_load_reporting_interval;
+    grpc_error* parse_error = XdsLrsResponseDecodeAndParse(
+        response_slice, &new_load_reporting_interval,
+        xdslb_policy->server_name_);
+    if (parse_error != GRPC_ERROR_NONE) {
+      gpr_log(GPR_ERROR, "[xdslb %p] LRS response parsing failed. error=%s",
+              xdslb_policy, grpc_error_string(parse_error));
+      GRPC_ERROR_UNREF(parse_error);
+      return;
+    }
+    lrs_calld->seen_response_ = true;
     if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_xds_trace)) {
       gpr_log(GPR_INFO,
-              "[xdslb %p] Increased load_report_interval to minimum value %dms",
-              xdslb_policy, GRPC_XDS_MIN_CLIENT_LOAD_REPORTING_INTERVAL_MS);
+              "[xdslb %p] LRS response received, load_report_interval=%ldms",
+              xdslb_policy, new_load_reporting_interval);
     }
-  }
-  // Ignore identical update.
-  if (lrs_calld->load_reporting_config_ == new_config) {
-    if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_xds_trace)) {
-      gpr_log(GPR_INFO,
-              "[xdslb %p] Incoming LRS response identical to current, "
-              "ignoring.",
-              xdslb_policy);
+    if (new_load_reporting_interval <
+        GRPC_XDS_MIN_CLIENT_LOAD_REPORTING_INTERVAL_MS) {
+      new_load_reporting_interval =
+          GRPC_XDS_MIN_CLIENT_LOAD_REPORTING_INTERVAL_MS;
+      if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_xds_trace)) {
+        gpr_log(
+            GPR_INFO,
+            "[xdslb %p] Increased load_report_interval to minimum value %dms",
+            xdslb_policy, GRPC_XDS_MIN_CLIENT_LOAD_REPORTING_INTERVAL_MS);
+      }
     }
-    goto done;
-  }
-  // Stop load reporting to adopt the new reporting interval.
-  lrs_calld->MaybeStopReportingLocked(new_config.interval);
-  // Record the new config.
-  lrs_calld->load_reporting_config_ = new_config;
-  // Try starting sending load report.
-  lrs_calld->MaybeStartReportingLocked();
-done:
+    // Ignore identical update.
+    if (lrs_calld->load_reporting_interval_ == new_load_reporting_interval) {
+      if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_xds_trace)) {
+        gpr_log(GPR_INFO,
+                "[xdslb %p] Incoming LRS response identical to current, "
+                "ignoring.",
+                xdslb_policy);
+      }
+      return;
+    }
+    // Stop load reporting to adopt the new reporting interval.
+    lrs_calld->MaybeStopReportingLocked(new_load_reporting_interval);
+    // Record the new config.
+    lrs_calld->load_reporting_interval_ = new_load_reporting_interval;
+    // Try starting sending load report.
+    lrs_calld->MaybeStartReportingLocked();
+  }();
   grpc_slice_unref_internal(response_slice);
   if (xdslb_policy->shutting_down_) {
     lrs_calld->Unref(DEBUG_LOCATION,
@@ -1473,7 +1468,7 @@ done:
 void XdsLb::LbChannelState::LrsCallState::MaybeStopReportingLocked(
     grpc_millis new_reporting_interval) {
   if (!started_reporting_) return;
-  if (new_reporting_interval == load_reporting_config_.interval) return;
+  if (new_reporting_interval == load_reporting_interval_) return;
   // Note that next_report_timer_callback_pending_ is false when we are still
   // sending a report. In that case, we don't have any timer to cancel, but we
   // still need to stop the old reporting loop somehow. We do this by checking
@@ -1492,7 +1487,7 @@ void XdsLb::LbChannelState::LrsCallState::MaybeStopReportingLocked(
 
 void XdsLb::LbChannelState::LrsCallState::ScheduleNextReportLocked() {
   const grpc_millis next_report_time =
-      ExecCtx::Get()->Now() + load_reporting_config_.interval;
+      ExecCtx::Get()->Now() + load_reporting_interval_;
   GRPC_CLOSURE_INIT(&load_reporting_closure_, OnNextReportTimerLocked, this,
                     grpc_combiner_scheduler(xdslb_policy()->combiner()));
   grpc_timer_init(&next_report_timer_, next_report_time,
@@ -1513,8 +1508,8 @@ void XdsLb::LbChannelState::LrsCallState::OnNextReportTimerLocked(
 
 void XdsLb::LbChannelState::LrsCallState::SendReportLocked() {
   // Create a request that contains the load report.
-  grpc_slice request_payload_slice =
-      XdsLrsRequestCreateAndEncode(&lb_chand()->xdslb_policy_->client_stats_);
+  grpc_slice request_payload_slice = XdsLrsRequestCreateAndEncode(
+      xdslb_policy()->server_name_, &xdslb_policy()->client_stats_);
   // Skip client load report if the counters were all zero in the last
   // report and they are still zero in this one.
   bool old_val = last_report_counters_were_zero_;

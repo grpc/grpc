@@ -75,6 +75,8 @@ struct XdsLbClientStats {
  public:
   struct LocalityStats {
     struct LoadMetric {
+      // Returns a snapshot of this instance and reset all the accumulative
+      // counters.
       LoadMetric Harvest();
 
       UniquePtr<char> metric_name;
@@ -83,6 +85,8 @@ struct XdsLbClientStats {
       gpr_atm total_metric_value = 0;
     };
 
+    // Returns a snapshot of this instance and reset all the accumulative
+    // counters.
     LocalityStats Harvest();
     bool IsAllZero();
 
@@ -104,8 +108,6 @@ struct XdsLbClientStats {
     gpr_atm total_error_requests = 0;
     gpr_atm total_issued_requests = 0;
     InlinedVector<LoadMetric, 1> load_metric_stats;
-    // TODO(juanlishen): Add upstream_endpoint_stats when we add per-backend
-    // load reporting.
     bool dying = false;
   };
 
@@ -114,6 +116,8 @@ struct XdsLbClientStats {
     DroppedRequests(const char* category, gpr_atm dropped_count)
         : category(category), dropped_count(dropped_count) {}
 
+    // Returns a snapshot of this instance and reset all the accumulative
+    // counters.
     DroppedRequests Harvest();
 
     // FIXME: should be null terminated
@@ -124,6 +128,8 @@ struct XdsLbClientStats {
   XdsLbClientStats() = default;
   XdsLbClientStats(const XdsLbClientStats& other) = default;
 
+  // Returns a snapshot of this instance and reset all the accumulative
+  // counters.
   XdsLbClientStats Harvest();
   bool IsAllZero();
 

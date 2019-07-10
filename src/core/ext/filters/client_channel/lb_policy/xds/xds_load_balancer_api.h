@@ -74,17 +74,6 @@ struct XdsUpdate {
   // TODO(juanlishen): Pass drop_per_million when adding drop support.
 };
 
-struct XdsClientLoadReportingConfig {
-  bool operator==(const XdsClientLoadReportingConfig& other) {
-    return interval == other.interval &&
-           report_endpoint_granularity == other.report_endpoint_granularity;
-  }
-
-  grpc_millis interval = 0;
-  // TODO(juanlishen): Use this when we add per-backend load reporting.
-  bool report_endpoint_granularity = false;
-};
-
 // Creates an EDS request querying \a service_name.
 grpc_slice XdsEdsRequestCreateAndEncode(const char* service_name);
 
@@ -93,18 +82,19 @@ grpc_slice XdsEdsRequestCreateAndEncode(const char* service_name);
 grpc_error* XdsEdsResponseDecodeAndParse(const grpc_slice& encoded_response,
                                          XdsUpdate* update);
 
-// Creates an LRS request querying \a service_name.
+// Creates an LRS request querying \a server_name.
 grpc_slice XdsLrsRequestCreateAndEncode(const char* server_name);
 
 // Creates an LRS request sending client-side load reports. If all the counters
 // in \a client_stats are zero, returns empty slice.
-grpc_slice XdsLrsRequestCreateAndEncode(XdsLbClientStats* client_stats);
+grpc_slice XdsLrsRequestCreateAndEncode(const char* server_name,
+                                        XdsLbClientStats* client_stats);
 
-// Parses the LRS response and returns the config for client-side load
-// reporting. If there is any error (e.g., the found server name doesn't match
-// \a expected_server_name), the output config is invalid.
+// Parses the LRS response and returns the client-side load reporting interval.
+// If there is any error (e.g., the found server name doesn't match \a
+// expected_server_name), the output config is invalid.
 grpc_error* XdsLrsResponseDecodeAndParse(const grpc_slice& encoded_response,
-                                         XdsClientLoadReportingConfig* config,
+                                         grpc_millis* load_reporting_interval,
                                          const char* expected_server_name);
 
 }  // namespace grpc_core

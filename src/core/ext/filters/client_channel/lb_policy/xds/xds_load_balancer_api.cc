@@ -210,18 +210,14 @@ grpc_slice XdsLrsRequestCreateAndEncode(const char* server_name) {
   // Create a request.
   XdsLoadStatsRequest* request =
       envoy_service_load_stats_v2_LoadStatsRequest_new(arena.ptr());
-  // Populate the node field.
-  XdsNode* node = envoy_service_load_stats_v2_LoadStatsRequest_mutable_node(
-      request, arena.ptr());
-  google_protobuf_Struct* metadata =
-      envoy_api_v2_core_Node_mutable_metadata(node, arena.ptr());
-  google_protobuf_Struct_FieldsEntry* field =
-      google_protobuf_Struct_add_fields(metadata, arena.ptr());
-  google_protobuf_Struct_FieldsEntry_set_key(
-      field, upb_strview_makez(kTrafficdirectorGrpcHostname));
-  google_protobuf_Value* value =
-      google_protobuf_Struct_FieldsEntry_mutable_value(field, arena.ptr());
-  google_protobuf_Value_set_string_value(value, upb_strview_makez(server_name));
+  // Add cluster stats. There is only one because we only use one server name in
+  // one channel.
+  envoy_api_v2_endpoint_ClusterStats* cluster_stats =
+      envoy_service_load_stats_v2_LoadStatsRequest_add_cluster_stats(
+          request, arena.ptr());
+  // Set the cluster name.
+  envoy_api_v2_endpoint_ClusterStats_set_cluster_name(
+      cluster_stats, upb_strview_makez(server_name));
   return LrsRequestEncode(request, arena.ptr());
 }
 
@@ -266,7 +262,8 @@ void LocalityStatsPopulate(LocalityStats* output,
 
 }  // namespace
 
-grpc_slice XdsLrsRequestCreateAndEncode(XdsLbClientStats* client_stats) {
+grpc_slice XdsLrsRequestCreateAndEncode(const char* server_name,
+                                        XdsLbClientStats* client_stats) {
   upb::Arena arena;
   XdsLbClientStats harvest = client_stats->Harvest();
   // Prune unused locality stats.
@@ -281,6 +278,9 @@ grpc_slice XdsLrsRequestCreateAndEncode(XdsLbClientStats* client_stats) {
   envoy_api_v2_endpoint_ClusterStats* cluster_stats =
       envoy_service_load_stats_v2_LoadStatsRequest_add_cluster_stats(
           request, arena.ptr());
+  // Set the cluster name.
+  envoy_api_v2_endpoint_ClusterStats_set_cluster_name(
+      cluster_stats, upb_strview_makez(server_name));
   // Add locality stats.
   for (auto& p : harvest.upstream_locality_stats) {
     LocalityStats* locality_stats =
@@ -314,7 +314,7 @@ grpc_slice XdsLrsRequestCreateAndEncode(XdsLbClientStats* client_stats) {
 }
 
 grpc_error* XdsLrsResponseDecodeAndParse(const grpc_slice& encoded_response,
-                                         XdsClientLoadReportingConfig* config,
+                                         grpc_millis* load_reporting_interval,
                                          const char* expected_server_name) {
   upb::Arena arena;
   // Decode the response.
@@ -341,17 +341,14 @@ grpc_error* XdsLrsResponseDecodeAndParse(const grpc_slice& encoded_response,
         "Unexpected cluster (server name).");
   }
   // Get the load report interval.
-  const google_protobuf_Duration* load_reporting_interval =
+  const google_protobuf_Duration* load_reporting_interval_duration =
       envoy_service_load_stats_v2_LoadStatsResponse_load_reporting_interval(
           decoded_response);
   gpr_timespec timespec{
-      google_protobuf_Duration_seconds(load_reporting_interval),
-      google_protobuf_Duration_nanos(load_reporting_interval), GPR_TIMESPAN};
-  config->interval = gpr_time_to_millis(timespec);
-  // Get whether we need to do per-backend load reporting.
-  config->report_endpoint_granularity =
-      envoy_service_load_stats_v2_LoadStatsResponse_report_endpoint_granularity(
-          decoded_response);
+      google_protobuf_Duration_seconds(load_reporting_interval_duration),
+      google_protobuf_Duration_nanos(load_reporting_interval_duration),
+      GPR_TIMESPAN};
+  *load_reporting_interval = gpr_time_to_millis(timespec);
   return GRPC_ERROR_NONE;
 }
 

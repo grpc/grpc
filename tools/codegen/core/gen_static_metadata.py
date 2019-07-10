@@ -150,7 +150,6 @@ CONFIG = [
     ('content-encoding', 'gzip'),
     ('lb-token', ''),
     ('lb-cost-bin', ''),
-    ('locality-stats', '',),
 ]
 
 # All entries here are ignored when counting non-default initial metadata that
@@ -179,7 +178,6 @@ METADATA_BATCH_CALLOUTS = [
     ('user-agent'),
     ('host'),
     ('lb-token'),
-    ('locality-stats'),
     ('grpc-previous-rpc-attempts'),
     ('grpc-retry-pushback-ms'),
 ]

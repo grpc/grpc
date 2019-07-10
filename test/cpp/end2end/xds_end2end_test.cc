@@ -93,7 +93,6 @@ constexpr char kEdsTypeUrl[] =
 constexpr char kDefaultLocalityRegion[] = "xds_default_locality_region";
 constexpr char kDefaultLocalityZone[] = "xds_default_locality_zone";
 constexpr char kDefaultLocalitySubzone[] = "xds_default_locality_subzone";
-constexpr char kTrafficdirectorGrpcHostname[] = "TRAFFICDIRECTOR_GRPC_HOSTNAME";
 
 template <typename ServiceType>
 class CountedService : public ServiceType {
@@ -397,10 +396,9 @@ class LrsServiceImpl : public LrsService {
       IncreaseRequestCount();
       // Send response.
       LoadStatsResponse response;
-      auto server_name =
-          request.node().metadata().fields().find(kTrafficdirectorGrpcHostname);
-      GPR_ASSERT(server_name != request.node().metadata().fields().end());
-      response.add_clusters(server_name->second.string_value());
+      auto server_name = request.cluster_stats()[0].cluster_name();
+      GPR_ASSERT(server_name != "");
+      response.add_clusters(server_name);
       response.mutable_load_reporting_interval()->set_seconds(
           client_load_reporting_interval_seconds_);
       stream->Write(response);
