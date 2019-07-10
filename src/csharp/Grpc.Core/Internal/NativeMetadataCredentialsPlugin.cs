@@ -65,7 +65,7 @@ namespace Grpc.Core.Internal
             {
                 var context = new AuthInterceptorContext(Marshal.PtrToStringAnsi(serviceUrlPtr), Marshal.PtrToStringAnsi(methodNamePtr));
                 // Make a guarantee that credentials_notify_from_plugin is invoked async to be compliant with c-core API.
-                _ = BackgroundGetMetadataAsync(context, callbackPtr, userDataPtr);
+                _ = BackgroundGetMetadataAsync(this, context, callbackPtr, userDataPtr);
             }
             catch (Exception e)
             {
@@ -74,13 +74,13 @@ namespace Grpc.Core.Internal
             }
         }
 
-        private async FireAndForget BackgroundGetMetadataAsync(AuthInterceptorContext context, IntPtr callbackPtr, IntPtr userDataPtr)
+        private static async FireAndForget BackgroundGetMetadataAsync(NativeMetadataCredentialsPlugin obj, AuthInterceptorContext context, IntPtr callbackPtr, IntPtr userDataPtr)
         {
             await Task.Yield();
             try
             {
                 var metadata = new Metadata();
-                await interceptor(context, metadata).ConfigureAwait(false);
+                await obj.interceptor(context, metadata).ConfigureAwait(false);
 
                 using (var metadataArray = MetadataArraySafeHandle.Create(metadata))
                 {

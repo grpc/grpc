@@ -485,13 +485,13 @@ namespace Grpc.Core.Internal
             // - We don't care about the overhead as OnFailedToStartCallLocked() only happens
             //   when something goes very bad when initializing a call and that should
             //   never happen when gRPC is used correctly.
-            _ = BackgroundOnAfterReleaseResourcesUnlocked();
+            _ = BackgroundOnAfterReleaseResourcesUnlocked(this);
         }
 
-        private async FireAndForget BackgroundOnAfterReleaseResourcesUnlocked()
+        private static async FireAndForget BackgroundOnAfterReleaseResourcesUnlocked(AsyncCall<TRequest, TResponse> obj)
         {
             await Task.Yield();
-            OnAfterReleaseResourcesUnlocked();
+            obj.OnAfterReleaseResourcesUnlocked();
         }
 
         private INativeCall CreateNativeCall(CompletionQueueSafeHandle cq)
