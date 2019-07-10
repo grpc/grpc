@@ -26,53 +26,40 @@
 #include <grpc/support/log.h>
 #include <grpc/support/sync.h>
 
+#include "grpcpp/security/credentials_impl.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/load_file.h"
 #include "src/core/lib/security/credentials/credentials.h"
 #include "src/core/lib/security/util/json_util.h"
+#include "src/cpp/client/secure_credentials.h"
 #include "test/core/security/oauth2_utils.h"
 #include "test/core/util/cmdline.h"
 
-static grpc_sts_credentials_options sts_options_from_json(grpc_json* json) {
-  grpc_sts_credentials_options options;
-  memset(&options, 0, sizeof(options));
-  grpc_error* error = GRPC_ERROR_NONE;
-  options.sts_endpoint_url =
-      grpc_json_get_string_property(json, "sts_endpoint_url", &error);
-  GRPC_LOG_IF_ERROR("STS credentials parsing", error);
-  options.resource = grpc_json_get_string_property(json, "resource", nullptr);
-  options.audience = grpc_json_get_string_property(json, "audience", nullptr);
-  options.scope = grpc_json_get_string_property(json, "scope", nullptr);
-  options.requested_token_type =
-      grpc_json_get_string_property(json, "requested_token_type", nullptr);
-  options.subject_token_path =
-      grpc_json_get_string_property(json, "subject_token_path", &error);
-  GRPC_LOG_IF_ERROR("STS credentials parsing", error);
-  options.subject_token_type =
-      grpc_json_get_string_property(json, "subject_token_type", &error);
-  GRPC_LOG_IF_ERROR("STS credentials parsing", error);
-  options.actor_token_path =
-      grpc_json_get_string_property(json, "actor_token_path", nullptr);
-  options.actor_token_type =
-      grpc_json_get_string_property(json, "actor_token_type", nullptr);
-  return options;
-}
-
 static grpc_call_credentials* create_sts_creds(const char* json_file_path) {
-  grpc_slice sts_options_slice;
-  GPR_ASSERT(GRPC_LOG_IF_ERROR(
-      "load_file", grpc_load_file(json_file_path, 1, &sts_options_slice)));
-  grpc_json* json = grpc_json_parse_string(
-      reinterpret_cast<char*>(GRPC_SLICE_START_PTR(sts_options_slice)));
-  if (json == nullptr) {
-    gpr_log(GPR_ERROR, "Invalid json");
-    return nullptr;
+  grpc_impl::experimental::StsCredentialsOptions options;
+  if (strlen(json_file_path) == 0) {
+    auto status =
+        grpc_impl::experimental::StsCredentialsOptionsFromEnv(&options);
+    if (!status.ok()) {
+      gpr_log(GPR_ERROR, "%s", status.error_message().c_str());
+      return nullptr;
+    }
+  } else {
+    grpc_slice sts_options_slice;
+    GPR_ASSERT(GRPC_LOG_IF_ERROR(
+        "load_file", grpc_load_file(json_file_path, 1, &sts_options_slice)));
+    auto status = grpc_impl::experimental::StsCredentialsOptionsFromJson(
+        reinterpret_cast<const char*>(GRPC_SLICE_START_PTR(sts_options_slice)),
+        &options);
+    gpr_slice_unref(sts_options_slice);
+    if (!status.ok()) {
+      gpr_log(GPR_ERROR, "%s", status.error_message().c_str());
+      return nullptr;
+    }
   }
-  grpc_sts_credentials_options options = sts_options_from_json(json);
-  grpc_call_credentials* result =
-      grpc_sts_credentials_create(&options, nullptr);
-  grpc_json_destroy(json);
-  gpr_slice_unref(sts_options_slice);
+  grpc_sts_credentials_options opts =
+      grpc_impl::experimental::StsCredentialsCppToCoreOptions(options);
+  grpc_call_credentials* result = grpc_sts_credentials_create(&opts, nullptr);
   return result;
 }
 
@@ -99,9 +86,12 @@ int main(int argc, char** argv) {
   gpr_cmdline_add_string(cl, "json_refresh_token",
                          "File path of the json refresh token.",
                          &json_refresh_token_file_path);
-  gpr_cmdline_add_string(cl, "json_sts_options",
-                         "File path of the json sts options.",
-                         &json_sts_options_file_path);
+  gpr_cmdline_add_string(
+      cl, "json_sts_options",
+      "File path of the json sts options. If the path is empty, the program "
+      "will attempt to use the $STS_CREDENTIALS environment variable to access "
+      "a file containing the options.",
+      &json_sts_options_file_path);
   gpr_cmdline_add_flag(
       cl, "gce",
       "Get a token from the GCE metadata server (only works in GCE).",

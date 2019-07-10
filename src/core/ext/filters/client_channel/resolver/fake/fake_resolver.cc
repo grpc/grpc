@@ -89,9 +89,15 @@ FakeResolver::FakeResolver(ResolverArgs args)
     : Resolver(args.combiner, std::move(args.result_handler)) {
   GRPC_CLOSURE_INIT(&reresolution_closure_, ReturnReresolutionResult, this,
                     grpc_combiner_scheduler(combiner()));
-  channel_args_ = grpc_channel_args_copy(args.args);
   FakeResolverResponseGenerator* response_generator =
       FakeResolverResponseGenerator::GetFromArgs(args.args);
+  // Channels sharing the same subchannels may have different resolver response
+  // generators. If we don't remove this arg, subchannel pool will create new
+  // subchannels for the same address instead of reusing existing ones because
+  // of different values of this channel arg.
+  const char* args_to_remove[] = {GRPC_ARG_FAKE_RESOLVER_RESPONSE_GENERATOR};
+  channel_args_ = grpc_channel_args_copy_and_remove(
+      args.args, args_to_remove, GPR_ARRAY_SIZE(args_to_remove));
   if (response_generator != nullptr) {
     response_generator->resolver_ = this;
     if (response_generator->has_result_) {
@@ -315,6 +321,8 @@ namespace {
 
 class FakeResolverFactory : public ResolverFactory {
  public:
+  bool IsValidUri(const grpc_uri* uri) const override { return true; }
+
   OrphanablePtr<Resolver> CreateResolver(ResolverArgs args) const override {
     return OrphanablePtr<Resolver>(New<FakeResolver>(std::move(args)));
   }
