@@ -23,7 +23,7 @@
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
 #include <grpcpp/channel.h>
-#include <grpcpp/impl/codegen/status_code_enum.h>
+#include <grpcpp/impl/codegen/status.h>
 #include <grpcpp/impl/grpc_library.h>
 #include <grpcpp/support/channel_arguments.h>
 
@@ -139,7 +139,8 @@ grpc::Status StsCredentialsOptionsFromJson(const grpc::string& json_string,
     void operator()(grpc_json* json) { grpc_json_destroy(json); }
   };
   if (options == nullptr) {
-    return grpc::Status(grpc::INVALID_ARGUMENT, "options cannot be nullptr.");
+    return grpc::Status(grpc::StatusCode::INVALID_ARGUMENT,
+                        "options cannot be nullptr.");
   }
   ClearStsCredentialsOptions(options);
   std::vector<char> scratchpad(json_string.c_str(),
@@ -147,7 +148,7 @@ grpc::Status StsCredentialsOptionsFromJson(const grpc::string& json_string,
   std::unique_ptr<grpc_json, GrpcJsonDeleter> json(
       grpc_json_parse_string(&scratchpad[0]));
   if (json == nullptr) {
-    return grpc::Status(grpc::INVALID_ARGUMENT, "Invalid json.");
+    return grpc::Status(grpc::StatusCode::INVALID_ARGUMENT, "Invalid json.");
   }
 
   // Required fields.
@@ -155,7 +156,7 @@ grpc::Status StsCredentialsOptionsFromJson(const grpc::string& json_string,
       json.get(), "token_exchange_service_uri", nullptr);
   if (value == nullptr) {
     ClearStsCredentialsOptions(options);
-    return grpc::Status(grpc::INVALID_ARGUMENT,
+    return grpc::Status(grpc::StatusCode::INVALID_ARGUMENT,
                         "token_exchange_service_uri must be specified.");
   }
   options->token_exchange_service_uri.assign(value);
@@ -163,7 +164,7 @@ grpc::Status StsCredentialsOptionsFromJson(const grpc::string& json_string,
       grpc_json_get_string_property(json.get(), "subject_token_path", nullptr);
   if (value == nullptr) {
     ClearStsCredentialsOptions(options);
-    return grpc::Status(grpc::INVALID_ARGUMENT,
+    return grpc::Status(grpc::StatusCode::INVALID_ARGUMENT,
                         "subject_token_path must be specified.");
   }
   options->subject_token_path.assign(value);
@@ -171,7 +172,7 @@ grpc::Status StsCredentialsOptionsFromJson(const grpc::string& json_string,
       grpc_json_get_string_property(json.get(), "subject_token_type", nullptr);
   if (value == nullptr) {
     ClearStsCredentialsOptions(options);
-    return grpc::Status(grpc::INVALID_ARGUMENT,
+    return grpc::Status(grpc::StatusCode::INVALID_ARGUMENT,
                         "subject_token_type must be specified.");
   }
   options->subject_token_type.assign(value);
@@ -199,7 +200,8 @@ grpc::Status StsCredentialsOptionsFromJson(const grpc::string& json_string,
 // Builds STS credentials Options from the $STS_CREDENTIALS env var.
 grpc::Status StsCredentialsOptionsFromEnv(StsCredentialsOptions* options) {
   if (options == nullptr) {
-    return grpc::Status(grpc::INVALID_ARGUMENT, "options cannot be nullptr.");
+    return grpc::Status(grpc::StatusCode::INVALID_ARGUMENT,
+                        "options cannot be nullptr.");
   }
   ClearStsCredentialsOptions(options);
   grpc_slice json_string = grpc_empty_slice();
@@ -214,13 +216,14 @@ grpc::Status StsCredentialsOptionsFromEnv(StsCredentialsOptions* options) {
   };
 
   if (sts_creds_path == nullptr) {
-    status = grpc::Status(grpc::NOT_FOUND,
+    status = grpc::Status(grpc::StatusCode::NOT_FOUND,
                           "STS_CREDENTIALS environment variable not set.");
     return cleanup();
   }
   error = grpc_load_file(sts_creds_path, 1, &json_string);
   if (error != GRPC_ERROR_NONE) {
-    status = grpc::Status(grpc::NOT_FOUND, grpc_error_string(error));
+    status =
+        grpc::Status(grpc::StatusCode::NOT_FOUND, grpc_error_string(error));
     return cleanup();
   }
   status = StsCredentialsOptionsFromJson(
