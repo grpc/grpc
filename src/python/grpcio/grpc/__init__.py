@@ -1856,10 +1856,16 @@ def _create_servicer_context(rpc_event, state, request_deserializer):
     context._finalize_state()  # pylint: disable=protected-access
 
 
+@enum.unique
 class Compression(enum.IntEnum):
     """Indicates the compression method to be used for an RPC.
 
        This enumeration is part of an EXPERIMENTAL API.
+
+       Attributes:
+        NoCompression: Do not use compression algorithm.
+        Deflate: Use "Deflate" compression algorithm.
+        Gzip: Use "Gzip" compression algorithm.
     """
     NoCompression = _compression.NoCompression
     Deflate = _compression.Deflate

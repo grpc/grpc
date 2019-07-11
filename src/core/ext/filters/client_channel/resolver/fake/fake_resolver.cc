@@ -196,7 +196,6 @@ void FakeResolverResponseGenerator::SetResponse(Resolver::Result result) {
                           grpc_combiner_scheduler(resolver_->combiner())),
         GRPC_ERROR_NONE);
   } else {
-    GPR_ASSERT(!has_result_);
     has_result_ = true;
     result_ = std::move(result);
   }
