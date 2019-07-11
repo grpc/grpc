@@ -1248,7 +1248,7 @@ void grpc_server_populate_server_sockets(
   channel_data* c = nullptr;
   for (c = s->root_channel_data.next; c != &s->root_channel_data; c = c->next) {
     if (c->socket_node != nullptr && c->socket_node->uuid() >= start_idx) {
-      server_sockets->push_back(c->socket_node.get());
+      server_sockets->push_back(c->socket_node);
     }
   }
   gpr_mu_unlock(&s->mu_global);
