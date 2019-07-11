@@ -31,22 +31,13 @@
 #include <grpc/support/sync.h>
 
 extern "C" {
-
 #if COCOAPODS
   #include <openssl_grpc/bn.h>
-#else
-  #include <openssl/bn.h>
-#endif
-
-#if COCOAPODS
   #include <openssl_grpc/pem.h>
-#else
-  #include <openssl/pem.h>
-#endif
-
-#if COCOAPODS
   #include <openssl_grpc/rsa.h>
 #else
+  #include <openssl/bn.h>
+  #include <openssl/pem.h>
   #include <openssl/rsa.h>
 #endif
 }

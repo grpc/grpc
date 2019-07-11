@@ -42,40 +42,19 @@
 #include <grpc/support/thd_id.h>
 
 extern "C" {
-
 #if COCOAPODS
   #include <openssl_grpc/bio.h>
-#else
-  #include <openssl/bio.h>
-#endif
-
-#if COCOAPODS
-  #include <openssl_grpc/crypto.h>
-#else
-  #include <openssl/crypto.h>
-#endif /* For OPENSSL_free */
-
-#if COCOAPODS
+  #include <openssl_grpc/crypto.h> /* For OPENSSL_free */
   #include <openssl_grpc/err.h>
-#else
-  #include <openssl/err.h>
-#endif
-
-#if COCOAPODS
   #include <openssl_grpc/ssl.h>
-#else
-  #include <openssl/ssl.h>
-#endif
-
-#if COCOAPODS
   #include <openssl_grpc/x509.h>
-#else
-  #include <openssl/x509.h>
-#endif
-
-#if COCOAPODS
   #include <openssl_grpc/x509v3.h>
 #else
+  #include <openssl/bio.h>
+  #include <openssl/crypto.h>
+  #include <openssl/err.h>
+  #include <openssl/ssl.h>
+  #include <openssl/x509.h>
   #include <openssl/x509v3.h>
 #endif
 }
