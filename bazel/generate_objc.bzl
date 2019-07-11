@@ -154,7 +154,7 @@ generate_objc = rule(
             providers = [ProtoInfo],
         ),
         "plugin": attr.label(
-            default = "@com_github_grpc_grpc//:grpc_objective_c_plugin",
+            default = "@com_github_grpc_grpc//src/compiler:grpc_objective_c_plugin",
             executable = True,
             providers = ["files_to_run"],
             cfg = "host",

@@ -74,26 +74,3 @@ objc_grpc_library(
         ":test_proto"
     ]
 )
-
-objc_library(
-    name = "InterceptorSampleLib",
-    srcs = glob(["examples/InterceptorSample/InterceptorSample/**/*.m"]),
-    hdrs = glob(["examples/InterceptorSample/InterceptorSample/**/*.h"]),
-    data = glob([
-        "examples/InterceptorSample/InterceptorSample/Assets.xcassets/**/*",
-        "examples/InterceptorSample/InterceptorSample/Base.lproj/**/*"
-    ]),
-    deps = [
-        ":test_grpc_objc",
-    ]
-)
-
-ios_application(
-    name = "InterceptorSample",
-    bundle_id = "gRPC.InterceptorSample2",
-    families = ["iphone"],
-    minimum_os_version = "9.0",
-    infoplists = ["examples/InterceptorSample/InterceptorSample/Info.plist"],
-    visibility = ["//visibility:public"],
-    deps = [":InterceptorSampleLib"],
-)
