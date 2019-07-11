@@ -59,8 +59,10 @@ grpc_error* grpc_set_socket_zerocopy(int fd) {
   if (err != 0) {
     return GRPC_OS_ERROR(errno, "setsockopt(SO_ZEROCOPY)");
   }
-#endif
   return GRPC_ERROR_NONE;
+#else
+  return GRPC_OS_ERROR(ENOSYS, "setsockopt(SO_ZEROCOPY)");
+#endif
 }
 
 /* set a socket to non blocking mode */
