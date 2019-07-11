@@ -435,4 +435,14 @@ inline grpc_mdelem grpc_mdelem_from_slices(
       GRPC_MDELEM_STORAGE_ALLOCATED);
 }
 
+inline grpc_mdelem grpc_mdelem_from_slices(
+    const grpc_core::StaticSlice& key, const grpc_core::ExternSlice& value) {
+  using grpc_core::AllocatedMetadata;
+  return GRPC_MAKE_MDELEM(
+      grpc_core::New<AllocatedMetadata>(
+          key, value,
+          static_cast<const AllocatedMetadata::NoRefKeyVal*>(nullptr)),
+      GRPC_MDELEM_STORAGE_ALLOCATED);
+}
+
 #endif /* GRPC_CORE_LIB_TRANSPORT_METADATA_H */
