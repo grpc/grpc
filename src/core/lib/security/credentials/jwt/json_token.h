@@ -24,7 +24,12 @@
 #include "src/core/tsi/grpc_shadow_boringssl.h"
 
 #include <grpc/slice.h>
-#include <openssl/rsa.h>
+
+#if COCOAPODS
+  #include <openssl_grpc/rsa.h>
+#else
+  #include <openssl/rsa.h>
+#endif
 
 #include "src/core/lib/json/json.h"
 
