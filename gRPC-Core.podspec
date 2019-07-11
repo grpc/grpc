@@ -1385,10 +1385,4 @@ Pod::Spec.new do |s|
                       'test/core/end2end/end2end_tests.h'
   end
 
-  # TODO (mxyan): Instead of this hack, add include path "third_party" to C core's include path?
-  s.prepare_command = <<-END_OF_COMMAND
-    find src/core/ -type f ! -path '*.grpc_back' -print0 | xargs -0 -L1 sed -E -i'.grpc_back' 's;#include "(pb(_.*)?\\.h)";#include <nanopb/\\1>;g'
-    find src/core/ -type f -path '*.grpc_back' -print0 | xargs -0 rm
-    find src/core/ -type f \\( -path '*.h' -or -path '*.cc' \\) -print0 | xargs -0 -L1 sed -E -i'.grpc_back' 's;#include <openssl/;#include <openssl_grpc/;g'
-  END_OF_COMMAND
 end

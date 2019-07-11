@@ -22,11 +22,36 @@
 
 #include "src/core/tsi/alts/crypt/gsec.h"
 
-#include <openssl/bio.h>
-#include <openssl/buffer.h>
-#include <openssl/err.h>
-#include <openssl/evp.h>
-#include <openssl/hmac.h>
+
+#if COCOAPODS
+  #include <openssl_grpc/bio.h>
+#else
+  #include <openssl/bio.h>
+#endif
+
+#if COCOAPODS
+  #include <openssl_grpc/buffer.h>
+#else
+  #include <openssl/buffer.h>
+#endif
+
+#if COCOAPODS
+  #include <openssl_grpc/err.h>
+#else
+  #include <openssl/err.h>
+#endif
+
+#if COCOAPODS
+  #include <openssl_grpc/evp.h>
+#else
+  #include <openssl/evp.h>
+#endif
+
+#if COCOAPODS
+  #include <openssl_grpc/hmac.h>
+#else
+  #include <openssl/hmac.h>
+#endif
 #include <string.h>
 
 #include <grpc/support/alloc.h>
