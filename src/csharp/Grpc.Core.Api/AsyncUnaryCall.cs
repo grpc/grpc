@@ -29,10 +29,7 @@ namespace Grpc.Core
     public sealed class AsyncUnaryCall<TResponse> : IDisposable
     {
         readonly Task<TResponse> responseAsync;
-        readonly Task<Metadata> responseHeadersAsync;
-        readonly Func<Status> getStatusFunc;
-        readonly Func<Metadata> getTrailersFunc;
-        readonly Action disposeAction;
+        readonly AsyncCallState callState;
 
 
         /// <summary>
@@ -50,10 +47,27 @@ namespace Grpc.Core
                               Action disposeAction)
         {
             this.responseAsync = responseAsync;
-            this.responseHeadersAsync = responseHeadersAsync;
-            this.getStatusFunc = getStatusFunc;
-            this.getTrailersFunc = getTrailersFunc;
-            this.disposeAction = disposeAction;
+            this.callState = new AsyncCallState(responseHeadersAsync, getStatusFunc, getTrailersFunc, disposeAction);
+        }
+
+        /// <summary>
+        /// Creates a new AsyncUnaryCall object with the specified properties.
+        /// </summary>
+        /// <param name="responseAsync">The response of the asynchronous call.</param>
+        /// <param name="responseHeadersAsync">Response headers of the asynchronous call.</param>
+        /// <param name="getStatusFunc">Delegate returning the status of the call.</param>
+        /// <param name="getTrailersFunc">Delegate returning the trailing metadata of the call.</param>
+        /// <param name="disposeAction">Delegate to invoke when Dispose is called on the call object.</param>
+        /// <param name="state">State object for use with the callback parameters.</param>
+        public AsyncUnaryCall(Task<TResponse> responseAsync,
+                              Func<object, Task<Metadata>> responseHeadersAsync,
+                              Func<object, Status> getStatusFunc,
+                              Func<object, Metadata> getTrailersFunc,
+                              Action<object> disposeAction,
+                              object state)
+        {
+            this.responseAsync = responseAsync;
+            callState = new AsyncCallState(responseHeadersAsync, getStatusFunc, getTrailersFunc, disposeAction, state);
         }
 
         /// <summary>
@@ -74,7 +88,7 @@ namespace Grpc.Core
         {
             get
             {
-                return this.responseHeadersAsync;
+                return callState.ResponseHeadersAsync();
             }
         }
 
@@ -92,7 +106,7 @@ namespace Grpc.Core
         /// </summary>
         public Status GetStatus()
         {
-            return getStatusFunc();
+            return callState.GetStatus();
         }
 
         /// <summary>
@@ -101,7 +115,7 @@ namespace Grpc.Core
         /// </summary>
         public Metadata GetTrailers()
         {
-            return getTrailersFunc();
+            return callState.GetTrailers();
         }
 
         /// <summary>
@@ -116,7 +130,7 @@ namespace Grpc.Core
         /// </remarks>
         public void Dispose()
         {
-            disposeAction.Invoke();
+            callState.Dispose();
         }
     }
 }
