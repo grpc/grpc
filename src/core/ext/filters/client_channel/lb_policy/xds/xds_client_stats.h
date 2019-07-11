@@ -163,35 +163,9 @@ class XdsLbClientStats {
     bool dying_ = false;
   };
 
-  class DroppedRequests {
-   public:
-    DroppedRequests() = default;
-    DroppedRequests(const DroppedRequests& other)
-        : category_(other.category_),
-          dropped_count_(other.dropped_count_.Load(MemoryOrder::ACQ_REL)) {}
-    DroppedRequests(const char* category, uint64_t dropped_count)
-        : category_(category), dropped_count_(dropped_count) {}
-
-    // Returns a snapshot of this instance and reset all the accumulative
-    // counters.
-    DroppedRequests Harvest();
-
-    void AddOne() { dropped_count_.FetchAdd(1); }
-
-    const char* category() const { return category_; }
-    uint64_t dropped_count() const {
-      return dropped_count_.Load(MemoryOrder::RELAXED);
-    }
-
-   private:
-    // FIXME: should be null terminated
-    const char* category_ = nullptr;
-    Atomic<uint64_t> dropped_count_{0};
-  };
-
   using LocalityStatsMap =
       Map<RefCountedPtr<XdsLocalityName>, LocalityStats, XdsLocalityName::Less>;
-  using DroppedRequestsList = InlinedVector<DroppedRequests, 2>;
+  using DroppedRequestsMap = Map<UniquePtr<char>, uint64_t, StringLess>;
 
   XdsLbClientStats() = default;
   XdsLbClientStats(XdsLbClientStats&& other) noexcept;
@@ -207,7 +181,7 @@ class XdsLbClientStats {
   LocalityStats* FindLocalityStats(
       const RefCountedPtr<XdsLocalityName>& locality_name);
   void PruneLocalityStats();
-  void AddCallDropped(const char* category);
+  void AddCallDropped(UniquePtr<char> category);
 
   // TODO(juanlishen): Change this to const method when const_iterator is added
   // to Map<>.
@@ -217,16 +191,20 @@ class XdsLbClientStats {
   uint64_t total_dropped_requests() const {
     return total_dropped_requests_.Load(MemoryOrder::RELAXED);
   }
-  const DroppedRequestsList& dropped_requests() const {
-    return dropped_requests_;
-  }
+  // TODO(juanlishen): Change this to const method when const_iterator is added
+  // to Map<>.
+  DroppedRequestsMap& dropped_requests() { return dropped_requests_; }
   grpc_millis load_report_interval() const { return load_report_interval_; }
 
  private:
   // The stats for each locality.
   LocalityStatsMap upstream_locality_stats_;
   Atomic<uint64_t> total_dropped_requests_{0};
-  DroppedRequestsList dropped_requests_;
+  // Protects dropped_requests_. A mutex is necessary because the length of
+  // DroppedRequestsList can be accessed by both the picker (from data plane
+  // combiner) and the load reporting thread (from the control plane combiner).
+  Mutex dropped_requests_mu_;
+  DroppedRequestsMap dropped_requests_;
   // The actual load report interval.
   grpc_millis load_report_interval_;
   // The timestamp of last reporting. For the LB-policy-wide first report, the

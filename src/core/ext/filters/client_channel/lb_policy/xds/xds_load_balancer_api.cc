@@ -295,15 +295,16 @@ grpc_slice XdsLrsRequestCreateAndEncode(const char* server_name,
     LocalityStatsPopulate(locality_stats, p, arena.ptr());
   }
   // Add dropped requests.
-  for (size_t i = 0; i < harvest.dropped_requests().size(); ++i) {
+  for (auto& p : harvest.dropped_requests()) {
+    const char* category = p.first.get();
+    const uint64_t count = p.second;
     envoy_api_v2_endpoint_ClusterStats_DroppedRequests* dropped_requests =
         envoy_api_v2_endpoint_ClusterStats_add_dropped_requests(cluster_stats,
                                                                 arena.ptr());
     envoy_api_v2_endpoint_ClusterStats_DroppedRequests_set_category(
-        dropped_requests,
-        upb_strview_makez(harvest.dropped_requests()[i].category()));
+        dropped_requests, upb_strview_makez(category));
     envoy_api_v2_endpoint_ClusterStats_DroppedRequests_set_dropped_count(
-        dropped_requests, harvest.dropped_requests()[i].dropped_count());
+        dropped_requests, count);
   }
   // Set total dropped requests.
   envoy_api_v2_endpoint_ClusterStats_set_total_dropped_requests(

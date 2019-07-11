@@ -132,17 +132,6 @@ void XdsLbClientStats::LocalityStats::AddCallFinished(bool fail) {
 }
 
 //
-// XdsLbClientStats::DroppedRequests
-//
-
-XdsLbClientStats::DroppedRequests XdsLbClientStats::DroppedRequests::Harvest() {
-  DroppedRequests drop;
-  drop.category_ = category_;
-  GetAndResetCounter(&dropped_count_, &drop.dropped_count_);
-  return drop;
-}
-
-//
 // XdsLbClientStats
 //
 
@@ -166,8 +155,10 @@ XdsLbClientStats XdsLbClientStats::Harvest() {
     stats.upstream_locality_stats_.emplace(p.first, p.second.Harvest());
   }
   GetAndResetCounter(&total_dropped_requests_, &stats.total_dropped_requests_);
-  for (size_t i = 0; i < dropped_requests_.size(); ++i) {
-    stats.dropped_requests_.emplace_back(dropped_requests_[i].Harvest());
+  {
+    MutexLock lock(&dropped_requests_mu_);
+    stats.dropped_requests_ = dropped_requests_;
+    for (auto& p : dropped_requests_) p.second = 0;
   }
   return stats;
 }
@@ -209,16 +200,11 @@ void XdsLbClientStats::PruneLocalityStats() {
   }
 }
 
-void XdsLbClientStats::AddCallDropped(const char* category) {
-  // Record the drop.
-  for (size_t i = 0; i < dropped_requests_.size(); ++i) {
-    if (strcmp(dropped_requests_[i].category(), category) == 0) {
-      dropped_requests_[i].AddOne();
-      return;
-    }
-  }
-  // Not found, so add a new entry.
-  dropped_requests_.emplace_back(category, 1);
+void XdsLbClientStats::AddCallDropped(UniquePtr<char> category) {
+  MutexLock lock(&dropped_requests_mu_);
+  auto iter = dropped_requests_.find(category);
+  if (iter == dropped_requests_.end()) iter = dropped_requests_.emplace().first;
+  ++iter->second;
 }
 
 }  // namespace grpc_core
