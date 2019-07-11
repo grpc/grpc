@@ -58,8 +58,6 @@ NS_ASSUME_NONNULL_BEGIN
 
 - (nullable instancetype)init;
 
-- (nullable instancetype)initWithSize:(NSUInteger)size;
-
 - (nullable ResponseCacheEntry *)getCachedResponseForRequest:(RequestCacheEntry *)request;
 
 - (void)setCachedResponse:(ResponseCacheEntry *)response forRequest:(RequestCacheEntry *)request;
@@ -71,11 +69,6 @@ NS_ASSUME_NONNULL_BEGIN
 - (instancetype)init NS_UNAVAILABLE;
 
 + (instancetype) new NS_UNAVAILABLE;
-
-- (nullable instancetype)initWithInterceptorManager:(GRPCInterceptorManager *)interceptorManager
-                               requestDispatchQueue:(dispatch_queue_t)requestDispatchQueue
-                              responseDispatchQueue:(dispatch_queue_t)responseDispatchQueue
-    NS_DESIGNATED_INITIALIZER;
 
 - (nullable instancetype)initWithInterceptorManager:
                              (GRPCInterceptorManager *_Nonnull)intercepterManager

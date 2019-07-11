@@ -34,24 +34,9 @@
 #include "src/core/lib/slice/b64.h"
 
 extern "C" {
-
-#if COCOAPODS
-  #include <openssl_grpc/bio.h>
-#else
-  #include <openssl/bio.h>
-#endif
-
-#if COCOAPODS
-  #include <openssl_grpc/evp.h>
-#else
-  #include <openssl/evp.h>
-#endif
-
-#if COCOAPODS
-  #include <openssl_grpc/pem.h>
-#else
-  #include <openssl/pem.h>
-#endif
+#include <openssl/bio.h>
+#include <openssl/evp.h>
+#include <openssl/pem.h>
 }
 
 /* --- Constants. --- */

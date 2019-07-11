@@ -27,12 +27,7 @@
 #include <grpc/support/sync.h>
 
 extern "C" {
-
-#if COCOAPODS
-  #include <openssl_grpc/ssl.h>
-#else
-  #include <openssl/ssl.h>
-#endif
+#include <openssl/ssl.h>
 }
 
 #include "src/core/lib/avl/avl.h"

@@ -3,7 +3,7 @@
 	archiveVersion = 1;
 	classes = {
 	};
-	objectVersion = 51;
+	objectVersion = 50;
 	objects = {
 
 /* Begin PBXBuildFile section */
@@ -14,6 +14,7 @@
 		5EE961032266768C0044A74F /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 5EE961022266768C0044A74F /* Assets.xcassets */; };
 		5EE961062266768C0044A74F /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 5EE961042266768C0044A74F /* LaunchScreen.storyboard */; };
 		5EE961092266768C0044A74F /* main.m in Sources */ = {isa = PBXBuildFile; fileRef = 5EE961082266768C0044A74F /* main.m */; };
+		5EE9611222668CF20044A74F /* CacheInterceptor.m in Sources */ = {isa = PBXBuildFile; fileRef = 5EE9611122668CF20044A74F /* CacheInterceptor.m */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -28,6 +29,8 @@
 		5EE961072266768C0044A74F /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		5EE961082266768C0044A74F /* main.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = main.m; sourceTree = "<group>"; };
 		5EE9610F2266774C0044A74F /* AppDelegate.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = AppDelegate.h; sourceTree = "<group>"; };
+		5EE9611022668CE20044A74F /* CacheInterceptor.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = CacheInterceptor.h; sourceTree = "<group>"; };
+		5EE9611122668CF20044A74F /* CacheInterceptor.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = CacheInterceptor.m; sourceTree = "<group>"; };
 		A0789280A4035D0F22F96BE6 /* Pods-InterceptorSample.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-InterceptorSample.release.xcconfig"; path = "Target Support Files/Pods-InterceptorSample/Pods-InterceptorSample.release.xcconfig"; sourceTree = "<group>"; };
 		CB7A7A5B91FC976FCF4637AE /* libPods-InterceptorSample.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = "libPods-InterceptorSample.a"; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
@@ -74,6 +77,8 @@
 				5EE961072266768C0044A74F /* Info.plist */,
 				5EE961082266768C0044A74F /* main.m */,
 				5EE9610F2266774C0044A74F /* AppDelegate.h */,
+				5EE9611022668CE20044A74F /* CacheInterceptor.h */,
+				5EE9611122668CF20044A74F /* CacheInterceptor.m */,
 			);
 			path = InterceptorSample;
 			sourceTree = "<group>";
@@ -209,6 +214,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				5EE9611222668CF20044A74F /* CacheInterceptor.m in Sources */,
 				5EE960FE2266768A0044A74F /* ViewController.m in Sources */,
 				5EE961092266768C0044A74F /* main.m in Sources */,
 				5EE960FB2266768A0044A74F /* AppDelegate.m in Sources */,

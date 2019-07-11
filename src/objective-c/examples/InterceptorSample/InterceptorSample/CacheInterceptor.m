@@ -18,203 +18,6 @@
 
 #import "CacheInterceptor.h"
 
-/**
- * Queue protocol
- */
-@protocol LRUQueue
-
-- (NSUInteger)size;
-- (void)enqueue:(nonnull RequestCacheEntry *)entry;
-- (void)updateUse:(nonnull RequestCacheEntry *)entry;
-- (nullable RequestCacheEntry *)evict;
-- (nullable RequestCacheEntry *)popFront;
-
-@end
-
-/**
- * ArrayQueue
- */
-@class RequestCacheEntry;
-@interface ArrayQueue : NSObject<LRUQueue>
-
-@end
-
-@implementation ArrayQueue {
-  NSMutableArray<RequestCacheEntry*> *_array;
-}
-
-- (nullable instancetype)init {
-  if ((self = [super init])) {
-    _array = [[NSMutableArray alloc] init];
-    if (!_array) {
-      self = nil;
-    }
-  }
-  return self;
-}
-
-- (NSUInteger)size {
-  return _array.count;
-}
-
-- (void)enqueue:(RequestCacheEntry *)entry {
-  [_array addObject:entry];
-}
-
-- (void)updateUse:(RequestCacheEntry *)entry {
-  // if the entry is not in the queue, return (cuz behavior undefined)
-  NSUInteger index = [_array indexOfObject:entry];
-  if (index == NSNotFound || index == _array.count - 1) { return; }
-  for (NSUInteger i = index; i < _array.count - 1; ++i) {
-    _array[i] = _array[i + 1];
-  }
-  _array[_array.count - 1] = entry;
-}
-
-- (RequestCacheEntry *)evict {
-  RequestCacheEntry *toEvict = [_array firstObject];
-  [_array removeObjectAtIndex:0];
-  return toEvict;
-}
-
-- (nullable RequestCacheEntry *)popFront {
-  RequestCacheEntry *toPop = [_array lastObject];
-  [_array removeLastObject];
-  return toPop;
-}
-
-@end
-
-/**
- * Node
- */
-@interface Node : NSObject
-
-@property(nullable, readwrite) Node *prev;
-@property(nullable, readwrite) __weak Node *next;
-@property(nonnull, readonly) RequestCacheEntry *entry;
-- (nullable instancetype)initWithPrevNode:(nullable Node *)prev
-                                 nextNode:(nullable Node *)next
-                            forCacheEntry:(nonnull RequestCacheEntry *)entry;
-
-@end
-
-@implementation Node {
-  RequestCacheEntry *_entry;
-}
-
-@synthesize entry = _entry;
-
-- (nullable instancetype)initWithPrevNode:(Node *)prev
-                                 nextNode:(Node *)next
-                            forCacheEntry:(nonnull RequestCacheEntry *)entry{
-  if ((self = [super init])) {
-    self.prev = prev;
-    self.next = next;
-    _entry = entry;
-  }
-  return self;
-}
-
-
-@end
-
-/**
- * LinkedListQueue
- */
-@interface LinkedListQueue : NSObject<LRUQueue>
-
-@end
-
-@implementation LinkedListQueue {
-  Node *_head;
-  Node *_tail;
-  NSUInteger _size;
-  NSMutableDictionary<RequestCacheEntry *, Node*> *_map;
-}
-
-- (nullable instancetype)init {
-  if ((self = [super init])) {
-    _map = [[NSMutableDictionary alloc] init];
-    if (!_map) {
-      self = nil;
-    } else {
-      _head = _tail = nil;
-      _size = 0;
-    }
-  }
-  return self;
-}
-
-- (void)enqueue:(RequestCacheEntry *)entry {
-  Node *node = [[Node alloc] initWithPrevNode:nil nextNode:_head forCacheEntry:entry];
-  if (_head) {
-    _head.prev = node;
-  } else {
-    _tail = node;
-  }
-  _head = node;
-  [_map setObject:node forKey:entry];
-  ++_size;
-}
-
-- (RequestCacheEntry *)evict {
-  Node *evictNode = _tail;
-  RequestCacheEntry *toEvict = nil;
-  if (evictNode) {
-    _tail = evictNode.prev;
-    if (_tail) {
-      _tail.next = nil;
-    }
-    toEvict = evictNode.entry;
-    [_map removeObjectForKey:toEvict];
-    --_size;
-    if (_size == 0) { _head = nil; }
-  }
-  return toEvict;
-}
-
-- (nullable RequestCacheEntry *)popFront {
-  Node *popNode = _head;
-  RequestCacheEntry *toPop = nil;
-  if (popNode) {
-    _head = popNode.next;
-    if (_head) {
-      _head.prev = nil;
-    }
-    toPop = popNode.entry;
-    [_map removeObjectForKey:toPop];
-    --_size;
-    if (_size == 0) { _tail = nil; }
-  }
-  return toPop;
-}
-
-- (NSUInteger)size {
-  return _size;
-}
-
-- (void)updateUse:(RequestCacheEntry *)entry {
-  Node *updateNode = [_map objectForKey:entry];
-  if (updateNode == _head) { return; }
-  if (!updateNode) { return; }
-  if (updateNode.next) { updateNode.next.prev = updateNode.prev; }
-  if (updateNode.prev) { updateNode.prev.next = updateNode.next; }
-  if (updateNode == _tail) { _tail = updateNode.prev; }
-  updateNode.next = _head;
-  updateNode.prev = nil;
-  if (_head) { _head.prev = updateNode; }
-  _head = updateNode;
-}
-
-
-
-@end
-
-
-/*******************************************
- * Cache Interceptor Implementation Begins *
- *******************************************/
 @implementation RequestCacheEntry {
  @protected
   NSString *_path;
@@ -237,7 +40,7 @@
 }
 
 - (BOOL)isEqual:(id)object {
-  if (![object isKindOfClass:[self class]]) return NO;
+  if ([self class] != [object class]) return NO;
   RequestCacheEntry *rhs = (RequestCacheEntry *)object;
   return ([_path isEqualToString:rhs.path] && [_message isEqual:rhs.message]);
 }
@@ -323,30 +126,13 @@
 
 @end
 
-/**
- * Cache Context
- */
 @implementation CacheContext {
-  NSMutableDictionary<RequestCacheEntry *, ResponseCacheEntry *> *_cache;
-  id<LRUQueue> _queue;
-  NSUInteger _maxCount; // cache size limit
+  NSCache<RequestCacheEntry *, ResponseCacheEntry *> *_cache;
 }
 
 - (instancetype)init {
   if ((self = [super init])) {
-    _queue = [[LinkedListQueue alloc] init]; // ArrayQueue or LinkedListQueue
-    _cache = [[NSMutableDictionary alloc] init];
-    _maxCount = 10; // defaults to 10
-  }
-  return self;
-}
-
-- (instancetype)initWithSize:(NSUInteger)size {
-  if (!size) {
-    return nil;
-  }
-  if (self = [self init]) {
-    _maxCount = size;
+    _cache = [[NSCache alloc] init];
   }
   return self;
 }
@@ -359,34 +145,17 @@
   ResponseCacheEntry *response = nil;
   @synchronized(self) {
     response = [_cache objectForKey:request];
-    if (response) { // cache hit
-      [_queue updateUse:request];
-    }
-    if ([response.deadline timeIntervalSinceNow] < 0) { // needs revalidation
-      [_queue popFront];
+    if ([response.deadline timeIntervalSinceNow] < 0) {
       [_cache removeObjectForKey:request];
       response = nil;
     }
-    NSAssert(_cache.count <= _maxCount, @"Number of cache exceeds set limit.");
-    NSAssert(_cache.count == [_queue size], @"Fatal inconsistency between LRU queue and cache!");
   }
   return response;
 }
 
 - (void)setCachedResponse:(ResponseCacheEntry *)response forRequest:(RequestCacheEntry *)request {
   @synchronized(self) {
-    if ([_cache objectForKey:request] != nil) { // cache hit
-      [_queue updateUse:request];
-    } else { // cache miss
-      if ([_queue size] == _maxCount) {
-        RequestCacheEntry *toEvict = [_queue evict];
-        [_cache removeObjectForKey:toEvict];
-      }
-      [_queue enqueue:request];
-    }
     [_cache setObject:response forKey:request];
-    NSAssert(_cache.count <= _maxCount, @"Number of cache exceeds set limit.");
-    NSAssert(_cache.count == [_queue size], @"Fatal inconsistency between LRU queue and cache!");
   }
 }
 
@@ -413,15 +182,6 @@
 
 - (dispatch_queue_t)dispatchQueue {
   return _dispatchQueue;
-}
-
-- (instancetype)initWithInterceptorManager:(GRPCInterceptorManager *)interceptorManager
-                      requestDispatchQueue:(dispatch_queue_t)requestDispatchQueue
-                     responseDispatchQueue:(dispatch_queue_t)responseDispatchQueue {
-  self = [super initWithInterceptorManager:interceptorManager
-                      requestDispatchQueue:requestDispatchQueue
-                     responseDispatchQueue:responseDispatchQueue];
-  return self;
 }
 
 - (instancetype)initWithInterceptorManager:(GRPCInterceptorManager *_Nonnull)intercepterManager
@@ -490,27 +250,28 @@
 - (void)didReceiveInitialMetadata:(NSDictionary *)initialMetadata {
   if (_cacheable) {
     NSDate *deadline = nil;
-    if ([initialMetadata objectForKey:@"cache-control"]) {
-      NSArray *cacheControls = [initialMetadata[@"cache-control"] componentsSeparatedByString:@","];
-      for (NSString *option in cacheControls) {
-        NSString *trimmedOption =
-        [option stringByTrimmingCharactersInSet:[NSCharacterSet
-                                                 characterSetWithCharactersInString:@" "]];
-        if ([trimmedOption.lowercaseString isEqualToString:@"no-cache"] ||
-            [trimmedOption.lowercaseString isEqualToString:@"no-store"] ||
-            [trimmedOption.lowercaseString isEqualToString:@"no-transform"]) {
-          _cacheable = NO;
-          break;
-        } else if ([trimmedOption.lowercaseString hasPrefix:@"max-age="]) {
-          NSArray<NSString *> *components = [trimmedOption componentsSeparatedByString:@"="];
-          if (components.count == 2) {
-            NSUInteger maxAge = components[1].intValue;
-            deadline = [NSDate dateWithTimeIntervalSinceNow:maxAge];
+    for (NSString *key in initialMetadata) {
+      if ([key.lowercaseString isEqualToString:@"cache-control"]) {
+        NSArray *cacheControls = [initialMetadata[key] componentsSeparatedByString:@","];
+        for (NSString *option in cacheControls) {
+          NSString *trimmedOption =
+              [option stringByTrimmingCharactersInSet:[NSCharacterSet
+                                                          characterSetWithCharactersInString:@" "]];
+          if ([trimmedOption.lowercaseString isEqualToString:@"no-cache"] ||
+              [trimmedOption.lowercaseString isEqualToString:@"no-store"] ||
+              [trimmedOption.lowercaseString isEqualToString:@"no-transform"]) {
+            _cacheable = NO;
+            break;
+          } else if ([trimmedOption.lowercaseString hasPrefix:@"max-age="]) {
+            NSArray<NSString *> *components = [trimmedOption componentsSeparatedByString:@"="];
+            if (components.count == 2) {
+              NSUInteger maxAge = components[1].intValue;
+              deadline = [NSDate dateWithTimeIntervalSinceNow:maxAge];
+            }
           }
         }
       }
     }
-    
     if (_cacheable) {
       _response = [[MutableResponseCacheEntry alloc] init];
       _response.headers = [initialMetadata copy];
@@ -525,7 +286,6 @@
     NSAssert(!_readMessageSeen, @"CacheInterceptor does not support streaming call");
     if (_readMessageSeen) {
       NSLog(@"CacheInterceptor does not support streaming call");
-      _cacheable = NO;
     }
     _readMessageSeen = YES;
     _response.message = [data copy];

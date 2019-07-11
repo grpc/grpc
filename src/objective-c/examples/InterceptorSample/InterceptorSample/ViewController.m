@@ -19,9 +19,10 @@
 #import "ViewController.h"
 
 #import <GRPCClient/GRPCCall.h>
-#import <GRPCClient/CacheInterceptor.h>
 #import <RemoteTest/Messages.pbobjc.h>
 #import <RemoteTest/Test.pbrpc.h>
+
+#import "CacheInterceptor.h"
 
 static NSString *const kPackage = @"grpc.testing";
 static NSString *const kService = @"TestService";

@@ -3,12 +3,7 @@
 
 #ifndef PB_GRPC_LB_V1_LOAD_BALANCER_PB_H_INCLUDED
 #define PB_GRPC_LB_V1_LOAD_BALANCER_PB_H_INCLUDED
-
-#if COCOAPODS
-  #include <nanopb/pb.h>
-#else
-  #include "pb.h"
-#endif
+#include "pb.h"
 #include "src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/google/protobuf/duration.pb.h"
 #include "src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/google/protobuf/timestamp.pb.h"
 /* @@protoc_insertion_point(includes) */
