@@ -64,7 +64,7 @@ intptr_t GetParentUuidFromArgs(const grpc_channel_args& args);
 typedef InlinedVector<intptr_t, 10> ChildRefsList;
 
 class SocketNode;
-typedef InlinedVector<SocketNode*, 10> ChildSocketsList;
+typedef InlinedVector<RefCountedPtr<SocketNode>, 10> ChildSocketsList;
 
 namespace testing {
 class CallCountingHelperPeer;

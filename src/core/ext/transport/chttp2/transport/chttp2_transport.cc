@@ -1237,10 +1237,10 @@ static grpc_closure* add_closure_barrier(grpc_closure* closure) {
   return closure;
 }
 
-static void null_then_run_closure(grpc_closure** closure, grpc_error* error) {
+static void null_then_sched_closure(grpc_closure** closure) {
   grpc_closure* c = *closure;
   *closure = nullptr;
-  GRPC_CLOSURE_RUN(c, error);
+  GRPC_CLOSURE_SCHED(c, GRPC_ERROR_NONE);
 }
 
 void grpc_chttp2_complete_closure_step(grpc_chttp2_transport* t,
@@ -1907,7 +1907,7 @@ void grpc_chttp2_maybe_complete_recv_initial_metadata(grpc_chttp2_transport* t,
     }
     grpc_chttp2_incoming_metadata_buffer_publish(&s->metadata_buffer[0],
                                                  s->recv_initial_metadata);
-    null_then_run_closure(&s->recv_initial_metadata_ready, GRPC_ERROR_NONE);
+    null_then_sched_closure(&s->recv_initial_metadata_ready);
   }
 }
 
@@ -1987,10 +1987,10 @@ void grpc_chttp2_maybe_complete_recv_message(grpc_chttp2_transport* t,
     s->unprocessed_incoming_frames_buffer_cached_length =
         s->unprocessed_incoming_frames_buffer.length;
     if (error == GRPC_ERROR_NONE && *s->recv_message != nullptr) {
-      null_then_run_closure(&s->recv_message_ready, GRPC_ERROR_NONE);
+      null_then_sched_closure(&s->recv_message_ready);
     } else if (s->published_metadata[1] != GRPC_METADATA_NOT_PUBLISHED) {
       *s->recv_message = nullptr;
-      null_then_run_closure(&s->recv_message_ready, GRPC_ERROR_NONE);
+      null_then_sched_closure(&s->recv_message_ready);
     }
     GRPC_ERROR_UNREF(error);
   }
@@ -2056,8 +2056,7 @@ void grpc_chttp2_maybe_complete_recv_trailing_metadata(grpc_chttp2_transport* t,
       s->collecting_stats = nullptr;
       grpc_chttp2_incoming_metadata_buffer_publish(&s->metadata_buffer[1],
                                                    s->recv_trailing_metadata);
-      null_then_run_closure(&s->recv_trailing_metadata_finished,
-                            GRPC_ERROR_NONE);
+      null_then_sched_closure(&s->recv_trailing_metadata_finished);
     }
   }
 }
