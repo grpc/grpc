@@ -11,12 +11,12 @@ _GRPC_PROTO_HEADER_FMT = "{}.pbrpc.h"
 _GRPC_PROTO_SRC_FMT = "{}.pbrpc.m"
 _PROTO_HEADER_FMT = "{}.pbobjc.h"
 _PROTO_SRC_FMT = "{}.pbobjc.m"
+_GENERATED_PROTOS_DIR = "_generated_protos"
 
-def generate_objc_impl(ctx):
+def _generate_objc_impl(ctx):
 
     """Implementation of the generate_cc rule."""
-    protos = [f for src in ctx.attr.srcs for f in src[ProtoInfo].check_deps_sources.to_list()]
-    includes = [
+    protos = [
         f
         for src in ctx.attr.srcs
         for f in src[ProtoInfo].transitive_imports.to_list()
@@ -27,38 +27,46 @@ def generate_objc_impl(ctx):
     )
 
     label_package = _join_directories([ctx.label.workspace_root, ctx.label.package])
-    if ctx.attr.proto_only:
+    
+    for proto in protos:
         outs += [
             proto_path_to_generated_filename(
-                _strip_package_from_path(label_package, proto),
+                _GENERATED_PROTOS_DIR + "/" +
+                _get_directory_from_proto(proto) + _get_slash_from_proto(proto) +
+                to_upper_camel_with_extension(_get_file_name_from_proto(proto), "proto"),
                 _PROTO_HEADER_FMT,
             )
-            for proto in protos
         ]
         outs += [
             proto_path_to_generated_filename(
-                _strip_package_from_path(label_package, proto),
+                _GENERATED_PROTOS_DIR + "/" +
+                _get_directory_from_proto(proto) + _get_slash_from_proto(proto) +
+                to_upper_camel_with_extension(_get_file_name_from_proto(proto), "proto"),
                 _PROTO_SRC_FMT,
             )
-            for proto in protos
         ]
-    else:
-        outs += [
-            proto_path_to_generated_filename(
-                _strip_package_from_path(label_package, proto),
-                _GRPC_PROTO_HEADER_FMT,
-            )
-            for proto in protos
-        ]
-        outs += [
-            proto_path_to_generated_filename(
-                _strip_package_from_path(label_package, proto),
-                _GRPC_PROTO_SRC_FMT,
-            )
-            for proto in protos
-        ]
+        if _strip_package_from_path(label_package, proto) in ctx.attr.files_with_service:
+            outs += [
+                proto_path_to_generated_filename(
+                    _GENERATED_PROTOS_DIR + "/" +
+                    _get_directory_from_proto(proto) + _get_slash_from_proto(proto) +
+                    to_upper_camel_with_extension(_get_file_name_from_proto(proto), "proto"),
+                    _GRPC_PROTO_HEADER_FMT,
+                )
+            ]
+            outs += [
+                proto_path_to_generated_filename(
+                    _GENERATED_PROTOS_DIR + "/" +
+                    _get_directory_from_proto(proto) + _get_slash_from_proto(proto) +
+                    to_upper_camel_with_extension(_get_file_name_from_proto(proto), "proto"),
+                    _GRPC_PROTO_SRC_FMT,
+                )
+            ]
+    
     out_files = [ctx.actions.declare_file(out) for out in outs]
-    dir_out = str(ctx.genfiles_dir.path + proto_root)
+    dir_out = _join_directories([
+        str(ctx.genfiles_dir.path + proto_root), label_package, _GENERATED_PROTOS_DIR
+    ])
 
     arguments = []
     if ctx.executable.plugin:
@@ -70,13 +78,13 @@ def generate_objc_impl(ctx):
         )
         tools = [ctx.executable.plugin]
     arguments += ["--objc_out=" + dir_out]
-    arguments += get_include_protoc_args(includes)
+    arguments += get_include_protoc_args(protos)
 
     # Include the output directory so that protoc puts the generated code in the
     # right directory.
     arguments += ["--proto_path={0}{1}".format(dir_out, proto_root)]
+    arguments += ["--proto_path={}".format(_get_directory_from_proto(proto)) for proto in protos]
     arguments += [_get_srcs_file_path(proto) for proto in protos]
-    arguments += ["--proto_path={}".format(_get_directory_from_proto(proto)) for proto in includes]
 
     # create a list of well known proto files if the argument is non-None
     well_known_proto_files = []
@@ -87,9 +95,8 @@ def generate_objc_impl(ctx):
             f
             for f in ctx.attr.well_known_protos.files.to_list()
         ]
-    
     ctx.actions.run(
-        inputs = protos + includes + well_known_proto_files,
+        inputs = protos + well_known_proto_files,
         tools = tools,
         outputs = out_files,
         executable = ctx.executable._protoc,
@@ -98,8 +105,20 @@ def generate_objc_impl(ctx):
 
     return struct(files = depset(out_files))
 
+def _get_file_name_from_proto(proto):
+    return proto.path.rpartition("/")[2]
+
+def _get_slash_from_proto(proto):
+    return proto.path.rpartition("/")[1]
+
 def _get_directory_from_proto(proto):
     return proto.path.rpartition("/")[0]
+
+def _strip_package_and_to_camel_case(label_package, file):
+    return to_upper_camel_with_extension(
+        _strip_package_from_path(label_package, file),
+        "proto"
+    )
 
 def _strip_package_from_path(label_package, file):
     prefix_len = 0
@@ -111,11 +130,11 @@ def _strip_package_from_path(label_package, file):
     if len(label_package) == 0:
         file_name = path
     if not path.startswith(label_package + "/", prefix_len) and len(label_package) > 0:
-        fail("'{}' does not lie within '{}'.".format(path, label_package))
+        return "//" + file.path
     if len(label_package) > 0:
         file_name = path[prefix_len + len(label_package + "/"):]
     
-    return to_upper_camel_with_extension(file_name, "proto")
+    return file_name
 
 def _get_srcs_file_path(file):
     if not file.is_source and file.path.startswith(file.root.path):
@@ -140,8 +159,9 @@ generate_objc = rule(
             providers = ["files_to_run"],
             cfg = "host",
         ),
-        "proto_only": attr.bool(
-            mandatory = True
+        "files_with_service": attr.string_list(
+            mandatory = False,
+            allow_empty = True
         ),
         "use_well_known_protos": attr.bool(
             mandatory = False,
@@ -157,19 +177,23 @@ generate_objc = rule(
         ),
     },
     output_to_genfiles = True,
-    implementation = generate_objc_impl
+    implementation = _generate_objc_impl
 )
 
-def group_objc_files_impl(ctx):
-    ext = ""
-    if ctx.attr.gen_hdrs:
-        ext = "h"
+def _group_objc_files_impl(ctx):
+    suffix = ""
+    if ctx.attr.gen_mode == 1:
+        suffix = "h"
+    elif ctx.attr.gen_mode == 2:
+        suffix = "pbrpc.m"
+    elif ctx.attr.gen_mode == 3:
+        suffix = "pbobjc.m"
     else:
-        ext = "m"
+        fail("Undefined gen_mode")
     out_files = [
         file 
         for file in ctx.attr.src.files.to_list() 
-        if file.basename.split(".")[-1] == ext
+        if file.basename.endswith(suffix)
     ]
     return struct(files = depset(out_files))
 
@@ -178,11 +202,11 @@ generate_objc_hdrs = rule(
         "src": attr.label(
             mandatory = True,
         ),
-        "gen_hdrs": attr.bool(
-            default = True,
+        "gen_mode": attr.int(
+            default = 1,
         )
     },
-    implementation = group_objc_files_impl
+    implementation = _group_objc_files_impl
 )
 
 generate_objc_srcs = rule(
@@ -190,9 +214,21 @@ generate_objc_srcs = rule(
         "src": attr.label(
             mandatory = True,
         ),
-        "gen_hdrs": attr.bool(
-            default = False,
+        "gen_mode": attr.int(
+            default = 2,
         )
     },
-    implementation = group_objc_files_impl
+    implementation = _group_objc_files_impl
+)
+
+generate_objc_non_arc_srcs = rule(
+    attrs = {
+        "src": attr.label(
+            mandatory = True,
+        ),
+        "gen_mode": attr.int(
+            default = 3,
+        )
+    },
+    implementation = _group_objc_files_impl
 )

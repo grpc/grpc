@@ -16,8 +16,9 @@
 // of unary/streaming requests/responses.
 syntax = "proto3";
 
+import "src/objective-c/RemoteTest/messages.proto";
+import "examples/protos/helloworld.proto";
 import "google/protobuf/empty.proto";
-import "messages.proto";
 
 package grpc.testing;
 
@@ -28,6 +29,8 @@ option objc_class_prefix = "RMT";
 service TestService {
   // One empty request followed by one empty response.
   rpc EmptyCall(google.protobuf.Empty) returns (google.protobuf.Empty);
+  
+  rpc UnaryCall2(SimpleRequest) returns (helloworld.HelloReply);
 
   // One request followed by one response.
   rpc UnaryCall(SimpleRequest) returns (SimpleResponse);

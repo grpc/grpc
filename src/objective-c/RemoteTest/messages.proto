@@ -25,7 +25,7 @@ option objc_class_prefix = "RMT";
 // import "google/protobuf/wrappers.proto";
 message BoolValue {
   // The bool value.
-  bool value = 1;
+  bool value = 1; 
 }
 
 // DEPRECATED, don't use. To be removed shortly.
