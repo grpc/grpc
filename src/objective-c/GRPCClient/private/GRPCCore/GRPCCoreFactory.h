@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2017 gRPC authors.
+ * Copyright 2019 gRPC authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,22 +16,25 @@
  *
  */
 
-#ifdef GRPC_TEST_OBJC
+#import <GRPCClient/GRPCTransport.h>
 
-#import "GRPCCall+InternalTests.h"
+NS_ASSUME_NONNULL_BEGIN
 
-#import "../private/GRPCCore/GRPCOpBatchLog.h"
+@protocol GRPCChannelFactory;
+@protocol GRPCCallOptions;
 
-@implementation GRPCCall (InternalTests)
+@protocol GRPCCoreTransportFactory <GRPCTransportFactory>
 
-+ (void)enableOpBatchLog:(BOOL)enabled {
-  [GRPCOpBatchLog enableOpBatchLog:enabled];
-}
-
-+ (NSArray *)obtainAndCleanOpBatchLog {
-  return [GRPCOpBatchLog obtainAndCleanOpBatchLog];
-}
+- (nullable id<GRPCChannelFactory>)createCoreChannelFactoryWithCallOptions:(GRPCCallOptions *)callOptions;
 
 @end
 
-#endif
+@interface GRPCCoreSecureFactory : NSObject<GRPCCoreTransportFactory>
+
+@end
+
+@interface GRPCCoreInsecureFactory : NSObject<GRPCCoreTransportFactory>
+
+@end
+
+NS_ASSUME_NONNULL_END

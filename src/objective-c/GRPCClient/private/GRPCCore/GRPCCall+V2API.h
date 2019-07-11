@@ -22,12 +22,6 @@
                         path:(NSString *)path
                   callSafety:(GRPCCallSafety)safety
               requestsWriter:(GRXWriter *)requestsWriter
-                 callOptions:(GRPCCallOptions *)callOptions;
-
-- (instancetype)initWithHost:(NSString *)host
-                        path:(NSString *)path
-                  callSafety:(GRPCCallSafety)safety
-              requestsWriter:(GRXWriter *)requestsWriter
                  callOptions:(GRPCCallOptions *)callOptions
                    writeDone:(void (^)(void))writeDone;
 

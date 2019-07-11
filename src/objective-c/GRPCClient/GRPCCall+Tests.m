@@ -18,7 +18,7 @@
 
 #import "GRPCCall+Tests.h"
 
-#import "private/GRPCHost.h"
+#import "private/GRPCCore/GRPCHost.h"
 
 #import "GRPCCallOptions.h"
 

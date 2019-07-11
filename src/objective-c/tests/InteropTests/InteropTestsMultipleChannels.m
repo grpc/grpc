@@ -18,9 +18,7 @@
 
 #import <XCTest/XCTest.h>
 
-#ifdef GRPC_COMPILE_WITH_CRONET
 #import <Cronet/Cronet.h>
-#endif
 #import <RemoteTest/Messages.pbobjc.h>
 #import <RemoteTest/Test.pbobjc.h>
 #import <RemoteTest/Test.pbrpc.h>

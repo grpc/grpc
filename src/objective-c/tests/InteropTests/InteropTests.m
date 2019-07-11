@@ -20,9 +20,7 @@
 
 #include <grpc/status.h>
 
-#ifdef GRPC_COMPILE_WITH_CRONET
 #import <Cronet/Cronet.h>
-#endif
 #import <GRPCClient/GRPCCall+ChannelArg.h>
 #import <GRPCClient/GRPCCall+Cronet.h>
 #import <GRPCClient/GRPCCall+Interceptor.h>
@@ -38,7 +36,6 @@
 #import <grpc/grpc.h>
 #import <grpc/support/log.h>
 
-#import "../ConfigureCronet.h"
 #import "InteropTestsBlockCallbacks.h"
 
 #define TEST_TIMEOUT 32
@@ -92,8 +89,7 @@ BOOL isRemoteInteropTest(NSString *host) {
 - (GRPCInterceptor *)createInterceptorWithManager:(GRPCInterceptorManager *)interceptorManager {
   dispatch_queue_t queue = dispatch_queue_create(NULL, DISPATCH_QUEUE_SERIAL);
   return [[GRPCInterceptor alloc] initWithInterceptorManager:interceptorManager
-                                        requestDispatchQueue:queue
-                                       responseDispatchQueue:queue];
+                                               dispatchQueue:queue];
 }
 
 @end
@@ -101,8 +97,7 @@ BOOL isRemoteInteropTest(NSString *host) {
 @interface HookInterceptorFactory : NSObject<GRPCInterceptorFactory>
 
 - (instancetype)
-initWithRequestDispatchQueue:(dispatch_queue_t)requestDispatchQueue
-       responseDispatchQueue:(dispatch_queue_t)responseDispatchQueue
+initWithDispatchQueue:(dispatch_queue_t)dispatchQueue
                    startHook:(void (^)(GRPCRequestOptions *requestOptions,
                                        GRPCCallOptions *callOptions,
                                        GRPCInterceptorManager *manager))startHook
@@ -125,8 +120,7 @@ initWithRequestDispatchQueue:(dispatch_queue_t)requestDispatchQueue
 
 - (instancetype)
 initWithInterceptorManager:(GRPCInterceptorManager *)interceptorManager
-      requestDispatchQueue:(dispatch_queue_t)requestDispatchQueue
-     responseDispatchQueue:(dispatch_queue_t)responseDispatchQueue
+dispatchQueue:(dispatch_queue_t)dispatchQueue
                  startHook:(void (^)(GRPCRequestOptions *requestOptions,
                                      GRPCCallOptions *callOptions,
                                      GRPCInterceptorManager *manager))startHook
@@ -155,13 +149,11 @@ initWithInterceptorManager:(GRPCInterceptorManager *)interceptorManager
   void (^_responseCloseHook)(NSDictionary *trailingMetadata, NSError *error,
                              GRPCInterceptorManager *manager);
   void (^_didWriteDataHook)(GRPCInterceptorManager *manager);
-  dispatch_queue_t _requestDispatchQueue;
-  dispatch_queue_t _responseDispatchQueue;
+  dispatch_queue_t _dispatchQueue;
 }
 
 - (instancetype)
-initWithRequestDispatchQueue:(dispatch_queue_t)requestDispatchQueue
-       responseDispatchQueue:(dispatch_queue_t)responseDispatchQueue
+initWithDispatchQueue:(dispatch_queue_t)dispatchQueue
                    startHook:(void (^)(GRPCRequestOptions *requestOptions,
                                        GRPCCallOptions *callOptions,
                                        GRPCInterceptorManager *manager))startHook
@@ -176,8 +168,7 @@ initWithRequestDispatchQueue:(dispatch_queue_t)requestDispatchQueue
                                        GRPCInterceptorManager *manager))responseCloseHook
             didWriteDataHook:(void (^)(GRPCInterceptorManager *manager))didWriteDataHook {
   if ((self = [super init])) {
-    _requestDispatchQueue = requestDispatchQueue;
-    _responseDispatchQueue = responseDispatchQueue;
+    _dispatchQueue = dispatchQueue;
     _startHook = startHook;
     _writeDataHook = writeDataHook;
     _finishHook = finishHook;
@@ -192,8 +183,7 @@ initWithRequestDispatchQueue:(dispatch_queue_t)requestDispatchQueue
 
 - (GRPCInterceptor *)createInterceptorWithManager:(GRPCInterceptorManager *)interceptorManager {
   return [[HookInterceptor alloc] initWithInterceptorManager:interceptorManager
-                                        requestDispatchQueue:_requestDispatchQueue
-                                       responseDispatchQueue:_responseDispatchQueue
+                                        dispatchQueue:_dispatchQueue
                                                    startHook:_startHook
                                                writeDataHook:_writeDataHook
                                                   finishHook:_finishHook
@@ -218,22 +208,16 @@ initWithRequestDispatchQueue:(dispatch_queue_t)requestDispatchQueue
                              GRPCInterceptorManager *manager);
   void (^_didWriteDataHook)(GRPCInterceptorManager *manager);
   GRPCInterceptorManager *_manager;
-  dispatch_queue_t _requestDispatchQueue;
-  dispatch_queue_t _responseDispatchQueue;
-}
-
-- (dispatch_queue_t)requestDispatchQueue {
-  return _requestDispatchQueue;
+  dispatch_queue_t _dispatchQueue;
 }
 
 - (dispatch_queue_t)dispatchQueue {
-  return _responseDispatchQueue;
+  return _dispatchQueue;
 }
 
 - (instancetype)
 initWithInterceptorManager:(GRPCInterceptorManager *)interceptorManager
-      requestDispatchQueue:(dispatch_queue_t)requestDispatchQueue
-     responseDispatchQueue:(dispatch_queue_t)responseDispatchQueue
+dispatchQueue:(dispatch_queue_t)dispatchQueue
                  startHook:(void (^)(GRPCRequestOptions *requestOptions,
                                      GRPCCallOptions *callOptions,
                                      GRPCInterceptorManager *manager))startHook
@@ -248,8 +232,7 @@ initWithInterceptorManager:(GRPCInterceptorManager *)interceptorManager
                                      GRPCInterceptorManager *manager))responseCloseHook
           didWriteDataHook:(void (^)(GRPCInterceptorManager *manager))didWriteDataHook {
   if ((self = [super initWithInterceptorManager:interceptorManager
-                           requestDispatchQueue:requestDispatchQueue
-                          responseDispatchQueue:responseDispatchQueue])) {
+                                  dispatchQueue:dispatchQueue])) {
     _startHook = startHook;
     _writeDataHook = writeDataHook;
     _finishHook = finishHook;
@@ -258,8 +241,7 @@ initWithInterceptorManager:(GRPCInterceptorManager *)interceptorManager
     _responseDataHook = responseDataHook;
     _responseCloseHook = responseCloseHook;
     _didWriteDataHook = didWriteDataHook;
-    _requestDispatchQueue = requestDispatchQueue;
-    _responseDispatchQueue = responseDispatchQueue;
+    _dispatchQueue = dispatchQueue;
     _manager = interceptorManager;
   }
   return self;
@@ -320,8 +302,7 @@ initWithInterceptorManager:(GRPCInterceptorManager *)interceptorManager
 
 @property BOOL enabled;
 
-- (instancetype)initWithRequestDispatchQueue:(dispatch_queue_t)requestDispatchQueue
-                       responseDispatchQueue:(dispatch_queue_t)responseDispatchQueue;
+- (instancetype)initWithDispatchQueue:(dispatch_queue_t)dispatchQueue;
 
 - (void)setStartHook:(void (^)(GRPCRequestOptions *requestOptions, GRPCCallOptions *callOptions,
                                GRPCInterceptorManager *manager))startHook
@@ -340,11 +321,9 @@ initWithInterceptorManager:(GRPCInterceptorManager *)interceptorManager
 
 @implementation GlobalInterceptorFactory
 
-- (instancetype)initWithRequestDispatchQueue:(dispatch_queue_t)requestDispatchQueue
-                       responseDispatchQueue:(dispatch_queue_t)responseDispatchQueue {
+- (instancetype)initWithDispatchQueue:(dispatch_queue_t)dispatchQueue {
   _enabled = NO;
-  return [super initWithRequestDispatchQueue:requestDispatchQueue
-                       responseDispatchQueue:responseDispatchQueue
+  return [super initWithDispatchQueue:dispatchQueue
                                    startHook:nil
                                writeDataHook:nil
                                   finishHook:nil
@@ -358,8 +337,7 @@ initWithInterceptorManager:(GRPCInterceptorManager *)interceptorManager
 - (GRPCInterceptor *)createInterceptorWithManager:(GRPCInterceptorManager *)interceptorManager {
   if (_enabled) {
     return [[HookInterceptor alloc] initWithInterceptorManager:interceptorManager
-                                          requestDispatchQueue:_requestDispatchQueue
-                                         responseDispatchQueue:_responseDispatchQueue
+                                                 dispatchQueue:_dispatchQueue
                                                      startHook:_startHook
                                                  writeDataHook:_writeDataHook
                                                     finishHook:_finishHook
@@ -417,8 +395,13 @@ static dispatch_once_t initGlobalInterceptorFactory;
   return 0;
 }
 
+// For backwards compatibility
 + (GRPCTransportType)transportType {
   return GRPCTransportTypeChttp2BoringSSL;
+}
+
++ (GRPCTransportId)transport {
+  return NULL;
 }
 
 + (NSString *)PEMRootCertificates {
@@ -434,21 +417,10 @@ static dispatch_once_t initGlobalInterceptorFactory;
 }
 
 + (void)setUp {
-#ifdef GRPC_COMPILE_WITH_CRONET
-  configureCronet();
-  if ([self useCronet]) {
-    [GRPCCall useCronetWithEngine:[Cronet getGlobalEngine]];
-  }
-#endif
-#ifdef GRPC_CFSTREAM
-  setenv(kCFStreamVarName, "1", 1);
-#endif
-
   dispatch_once(&initGlobalInterceptorFactory, ^{
     dispatch_queue_t globalInterceptorQueue = dispatch_queue_create(NULL, DISPATCH_QUEUE_SERIAL);
     globalInterceptorFactory =
-        [[GlobalInterceptorFactory alloc] initWithRequestDispatchQueue:globalInterceptorQueue
-                                                 responseDispatchQueue:globalInterceptorQueue];
+        [[GlobalInterceptorFactory alloc] initWithDispatchQueue:globalInterceptorQueue];
     [GRPCCall2 registerGlobalInterceptor:globalInterceptorFactory];
   });
 }
@@ -494,7 +466,9 @@ static dispatch_once_t initGlobalInterceptorFactory;
 
   GPBEmpty *request = [GPBEmpty message];
   GRPCMutableCallOptions *options = [[GRPCMutableCallOptions alloc] init];
+  // For backwards compatibility
   options.transportType = [[self class] transportType];
+  options.transport = [[self class] transport];
   options.PEMRootCertificates = [[self class] PEMRootCertificates];
   options.hostNameOverride = [[self class] hostNameOverride];
 
@@ -523,7 +497,9 @@ static dispatch_once_t initGlobalInterceptorFactory;
 
   GPBEmpty *request = [GPBEmpty message];
   GRPCMutableCallOptions *options = [[GRPCMutableCallOptions alloc] init];
+  // For backwards compatibility
   options.transportType = [[self class] transportType];
+  options.transport = [[self class] transport];
   options.PEMRootCertificates = [[self class] PEMRootCertificates];
   options.hostNameOverride = [[self class] hostNameOverride];
 
@@ -600,7 +576,9 @@ static dispatch_once_t initGlobalInterceptorFactory;
   request.payload.body = [NSMutableData dataWithLength:271828];
 
   GRPCMutableCallOptions *options = [[GRPCMutableCallOptions alloc] init];
+  // For backwards compatibility
   options.transportType = [[self class] transportType];
+  options.transport = [[self class] transport];
   options.PEMRootCertificates = [[self class] PEMRootCertificates];
   options.hostNameOverride = [[self class] hostNameOverride];
 
@@ -648,7 +626,9 @@ static dispatch_once_t initGlobalInterceptorFactory;
       request.responseStatus.code = GRPC_STATUS_CANCELLED;
     }
     GRPCMutableCallOptions *options = [[GRPCMutableCallOptions alloc] init];
+  // For backwards compatibility
     options.transportType = [[self class] transportType];
+    options.transport = [[self class] transport];
     options.PEMRootCertificates = [[self class] PEMRootCertificates];
     options.hostNameOverride = [[self class] hostNameOverride];
 
@@ -950,7 +930,9 @@ static dispatch_once_t initGlobalInterceptorFactory;
   id request = [RMTStreamingOutputCallRequest messageWithPayloadSize:requests[index]
                                                requestedResponseSize:responses[index]];
   GRPCMutableCallOptions *options = [[GRPCMutableCallOptions alloc] init];
+  // For backwards compatibility
   options.transportType = [[self class] transportType];
+  options.transport = [[self class] transport];
   options.PEMRootCertificates = [[self class] PEMRootCertificates];
   options.hostNameOverride = [[self class] hostNameOverride];
 
@@ -1002,7 +984,9 @@ static dispatch_once_t initGlobalInterceptorFactory;
   id request = [RMTStreamingOutputCallRequest messageWithPayloadSize:requests[index]
                                                requestedResponseSize:responses[index]];
   GRPCMutableCallOptions *options = [[GRPCMutableCallOptions alloc] init];
+  // For backwards compatibility
   options.transportType = [[self class] transportType];
+  options.transport = [[self class] transport];
   options.PEMRootCertificates = [[self class] PEMRootCertificates];
   options.hostNameOverride = [[self class] hostNameOverride];
   options.flowControlEnabled = YES;
@@ -1159,7 +1143,9 @@ static dispatch_once_t initGlobalInterceptorFactory;
   __block BOOL receivedResponse = NO;
 
   GRPCMutableCallOptions *options = [[GRPCMutableCallOptions alloc] init];
+  // For backwards compatibility
   options.transportType = self.class.transportType;
+  options.transport = [[self class] transport];
   options.PEMRootCertificates = self.class.PEMRootCertificates;
   options.hostNameOverride = [[self class] hostNameOverride];
 
@@ -1192,7 +1178,9 @@ static dispatch_once_t initGlobalInterceptorFactory;
       [self expectationWithDescription:@"Call completed."];
 
   GRPCMutableCallOptions *options = [[GRPCMutableCallOptions alloc] init];
+  // For backwards compatibility
   options.transportType = self.class.transportType;
+  options.transport = [[self class] transport];
   options.PEMRootCertificates = self.class.PEMRootCertificates;
   options.hostNameOverride = [[self class] hostNameOverride];
 
@@ -1278,48 +1266,43 @@ static dispatch_once_t initGlobalInterceptorFactory;
   [self waitForExpectationsWithTimeout:TEST_TIMEOUT handler:nil];
 }
 
-#ifndef GRPC_COMPILE_WITH_CRONET
-- (void)testKeepalive {
+- (void)testKeepaliveWithV2API {
   XCTAssertNotNil([[self class] host]);
   __weak XCTestExpectation *expectation = [self expectationWithDescription:@"Keepalive"];
 
-  [GRPCCall setKeepaliveWithInterval:1500 timeout:0 forHost:[[self class] host]];
 
-  NSArray *requests = @[ @27182, @8 ];
-  NSArray *responses = @[ @31415, @9 ];
+  NSNumber *kRequestSize = @27182;
+  NSNumber *kResponseSize = @31415;
 
-  GRXBufferedPipe *requestsBuffer = [[GRXBufferedPipe alloc] init];
+  id request = [RMTStreamingOutputCallRequest messageWithPayloadSize:kRequestSize
+                                               requestedResponseSize:kResponseSize];
+  GRPCMutableCallOptions *options = [[GRPCMutableCallOptions alloc] init];
+  options.transportType = [[self class] transportType];
+  options.transport = [[self class] transport];
+  options.PEMRootCertificates = [[self class] PEMRootCertificates];
+  options.hostNameOverride = [[self class] hostNameOverride];
+  options.keepaliveInterval = 1.5;
+  options.keepaliveTimeout = 0;
 
-  __block int index = 0;
-
-  id request = [RMTStreamingOutputCallRequest messageWithPayloadSize:requests[index]
-                                               requestedResponseSize:responses[index]];
-  [requestsBuffer writeValue:request];
-
-  [_service
-      fullDuplexCallWithRequestsWriter:requestsBuffer
-                          eventHandler:^(BOOL done, RMTStreamingOutputCallResponse *response,
-                                         NSError *error) {
-                            if (index == 0) {
-                              XCTAssertNil(error, @"Finished with unexpected error: %@", error);
-                              XCTAssertTrue(response, @"Event handler called without an event.");
-                              XCTAssertFalse(done);
-                              index++;
-                            } else {
-                              // Keepalive should kick after 1s elapsed and fails the call.
-                              XCTAssertNotNil(error);
-                              XCTAssertEqual(error.code, GRPC_STATUS_UNAVAILABLE);
-                              XCTAssertEqualObjects(
-                                  error.localizedDescription, @"keepalive watchdog timeout",
-                                  @"Unexpected failure that is not keepalive watchdog timeout.");
-                              XCTAssertTrue(done);
-                              [expectation fulfill];
-                            }
-                          }];
+  __block GRPCStreamingProtoCall *call = [_service
+                                          fullDuplexCallWithResponseHandler:[[InteropTestsBlockCallbacks alloc]
+                                                                             initWithInitialMetadataCallback:nil
+                                                                             messageCallback:nil
+                                                                             closeCallback:^(NSDictionary *trailingMetadata,
+                                                                                             NSError *error) {
+                                                                               XCTAssertNotNil(error);
+                                                                               XCTAssertEqual(error.code, GRPC_STATUS_UNAVAILABLE,
+                                                                                              @"Received status %ld instead of UNAVAILABLE (14).",
+                                                                                              error.code);
+                                                                               [expectation fulfill];
+                                                                             }]
+                                          callOptions:options];
+  [call writeMessage:request];
+  [call start];
 
   [self waitForExpectationsWithTimeout:TEST_TIMEOUT handler:nil];
+  [call finish];
 }
-#endif
 
 - (void)testDefaultInterceptor {
   XCTAssertNotNil([[self class] host]);
@@ -1334,7 +1317,9 @@ static dispatch_once_t initGlobalInterceptorFactory;
   id request = [RMTStreamingOutputCallRequest messageWithPayloadSize:requests[index]
                                                requestedResponseSize:responses[index]];
   GRPCMutableCallOptions *options = [[GRPCMutableCallOptions alloc] init];
+  // For backwards compatibility
   options.transportType = [[self class] transportType];
+  options.transport = [[self class] transport];
   options.PEMRootCertificates = [[self class] PEMRootCertificates];
   options.hostNameOverride = [[self class] hostNameOverride];
   options.interceptorFactories = @[ [[DefaultInterceptorFactory alloc] init] ];
@@ -1389,8 +1374,7 @@ static dispatch_once_t initGlobalInterceptorFactory;
   __block NSUInteger responseCloseCount = 0;
   __block NSUInteger didWriteDataCount = 0;
   id<GRPCInterceptorFactory> factory = [[HookInterceptorFactory alloc]
-      initWithRequestDispatchQueue:dispatch_queue_create(NULL, DISPATCH_QUEUE_SERIAL)
-      responseDispatchQueue:dispatch_queue_create(NULL, DISPATCH_QUEUE_SERIAL)
+      initWithDispatchQueue:dispatch_queue_create(NULL, DISPATCH_QUEUE_SERIAL)
       startHook:^(GRPCRequestOptions *requestOptions, GRPCCallOptions *callOptions,
                   GRPCInterceptorManager *manager) {
         startCount++;
@@ -1438,7 +1422,9 @@ static dispatch_once_t initGlobalInterceptorFactory;
   id request = [RMTStreamingOutputCallRequest messageWithPayloadSize:requests[index]
                                                requestedResponseSize:responses[index]];
   GRPCMutableCallOptions *options = [[GRPCMutableCallOptions alloc] init];
+  // For backwards compatibility
   options.transportType = [[self class] transportType];
+  options.transport = [[self class] transport];
   options.PEMRootCertificates = [[self class] PEMRootCertificates];
   options.hostNameOverride = [[self class] hostNameOverride];
   options.flowControlEnabled = YES;
@@ -1516,8 +1502,7 @@ static dispatch_once_t initGlobalInterceptorFactory;
   __block NSUInteger responseDataCount = 0;
   __block NSUInteger responseCloseCount = 0;
   id<GRPCInterceptorFactory> factory = [[HookInterceptorFactory alloc]
-      initWithRequestDispatchQueue:dispatch_queue_create(NULL, DISPATCH_QUEUE_SERIAL)
-      responseDispatchQueue:dispatch_queue_create(NULL, DISPATCH_QUEUE_SERIAL)
+      initWithDispatchQueue:dispatch_queue_create(NULL, DISPATCH_QUEUE_SERIAL)
       startHook:^(GRPCRequestOptions *requestOptions, GRPCCallOptions *callOptions,
                   GRPCInterceptorManager *manager) {
         startCount++;
@@ -1544,6 +1529,7 @@ static dispatch_once_t initGlobalInterceptorFactory;
         // finish must happen after the hijacking, so directly reply with a close
         [manager forwardPreviousInterceptorCloseWithTrailingMetadata:@{@"grpc-status" : @"0"}
                                                                error:nil];
+        [manager shutDown];
       }
       receiveNextMessagesHook:nil
       responseHeaderHook:^(NSDictionary *initialMetadata, GRPCInterceptorManager *manager) {
@@ -1563,14 +1549,16 @@ static dispatch_once_t initGlobalInterceptorFactory;
         XCTAssertEqual(error.code, GRPC_STATUS_CANCELLED);
         [expectCallInternalComplete fulfill];
       }
-      didWriteDataHook:nil];
+                                        didWriteDataHook:nil];
 
   NSArray *requests = @[ @1, @2, @3, @4 ];
 
   id request = [RMTStreamingOutputCallRequest messageWithPayloadSize:requests[index]
                                                requestedResponseSize:responses[index]];
   GRPCMutableCallOptions *options = [[GRPCMutableCallOptions alloc] init];
+  // For backwards compatibility
   options.transportType = [[self class] transportType];
+  options.transport = [[self class] transport];
   options.PEMRootCertificates = [[self class] PEMRootCertificates];
   options.hostNameOverride = [[self class] hostNameOverride];
   options.interceptorFactories = @[ [[DefaultInterceptorFactory alloc] init], factory ];
@@ -1679,7 +1667,9 @@ static dispatch_once_t initGlobalInterceptorFactory;
   id request = [RMTStreamingOutputCallRequest messageWithPayloadSize:requests[index]
                                                requestedResponseSize:responses[index]];
   GRPCMutableCallOptions *options = [[GRPCMutableCallOptions alloc] init];
+  // For backwards compatibility
   options.transportType = [[self class] transportType];
+  options.transport = [[self class] transport];
   options.PEMRootCertificates = [[self class] PEMRootCertificates];
   options.hostNameOverride = [[self class] hostNameOverride];
   options.flowControlEnabled = YES;
@@ -1734,8 +1724,7 @@ static dispatch_once_t initGlobalInterceptorFactory;
 
 - (void)testConflictingGlobalInterceptors {
   id<GRPCInterceptorFactory> factory = [[HookInterceptorFactory alloc]
-      initWithRequestDispatchQueue:dispatch_queue_create(NULL, DISPATCH_QUEUE_SERIAL)
-             responseDispatchQueue:dispatch_queue_create(NULL, DISPATCH_QUEUE_SERIAL)
+      initWithDispatchQueue:dispatch_queue_create(NULL, DISPATCH_QUEUE_SERIAL)
                          startHook:nil
                      writeDataHook:nil
                         finishHook:nil
@@ -1767,8 +1756,7 @@ static dispatch_once_t initGlobalInterceptorFactory;
   __block NSUInteger didWriteDataCount = 0;
 
   id<GRPCInterceptorFactory> factory = [[HookInterceptorFactory alloc]
-      initWithRequestDispatchQueue:dispatch_queue_create(NULL, DISPATCH_QUEUE_SERIAL)
-      responseDispatchQueue:dispatch_queue_create(NULL, DISPATCH_QUEUE_SERIAL)
+      initWithDispatchQueue:dispatch_queue_create(NULL, DISPATCH_QUEUE_SERIAL)
       startHook:^(GRPCRequestOptions *requestOptions, GRPCCallOptions *callOptions,
                   GRPCInterceptorManager *manager) {
         startCount++;
@@ -1864,7 +1852,9 @@ static dispatch_once_t initGlobalInterceptorFactory;
   id request = [RMTStreamingOutputCallRequest messageWithPayloadSize:requests[index]
                                                requestedResponseSize:responses[index]];
   GRPCMutableCallOptions *options = [[GRPCMutableCallOptions alloc] init];
+  // For backwards compatibility
   options.transportType = [[self class] transportType];
+  options.transport = [[self class] transport];
   options.PEMRootCertificates = [[self class] PEMRootCertificates];
   options.hostNameOverride = [[self class] hostNameOverride];
   options.flowControlEnabled = YES;

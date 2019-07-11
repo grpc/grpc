@@ -25,10 +25,9 @@
 #include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
 
-#import "../internal/GRPCCallOptions+Internal.h"
+#import "../../internal/GRPCCallOptions+Internal.h"
 #import "GRPCChannelFactory.h"
 #import "GRPCCompletionQueue.h"
-#import "GRPCCronetChannelFactory.h"
 #import "GRPCSecureChannelFactory.h"
 #import "NSDictionary+GRPC.h"
 #import "version.h"
@@ -113,20 +112,10 @@ static NSMutableDictionary *gHostCache;
   options.PEMPrivateKey = _PEMPrivateKey;
   options.PEMCertificateChain = _PEMCertificateChain;
   options.hostNameOverride = _hostNameOverride;
-#ifdef GRPC_COMPILE_WITH_CRONET
-  // By old API logic, insecure channel precedes Cronet channel; Cronet channel preceeds default
-  // channel.
-  if ([GRPCCall isUsingCronet]) {
-    if (_transportType == GRPCTransportTypeInsecure) {
-      options.transportType = GRPCTransportTypeInsecure;
-    } else {
-      NSAssert(_transportType == GRPCTransportTypeDefault, @"Invalid transport type");
-      options.transportType = GRPCTransportTypeCronet;
-    }
-  } else
-#endif
-  {
-    options.transportType = _transportType;
+  if (_transportType == GRPCTransportTypeInsecure) {
+    options.transport = GRPCTransportImplList.core_insecure;
+  } else {
+    options.transport = GRPCTransportImplList.core_secure;
   }
   options.logContext = _logContext;
 

@@ -18,6 +18,7 @@
 
 #import <GRPCClient/GRPCCall+Tests.h>
 #import <GRPCClient/internal_testing/GRPCCall+InternalTests.h>
+#import <GRPCClient/GRPCTransport.h>
 
 #import "InteropTests.h"
 // The server address is derived from preprocessor macro, which is
@@ -57,7 +58,11 @@ static int32_t kLocalInteropServerOverhead = 10;
 }
 
 + (GRPCTransportType)transportType {
-  return GRPCTransportTypeChttp2BoringSSL;
+  return GRPCTransportTypeDefault;
+}
+
++ (GRPCTransportId)transport {
+  return GRPCTransportImplList.core_secure;
 }
 
 - (void)setUp {

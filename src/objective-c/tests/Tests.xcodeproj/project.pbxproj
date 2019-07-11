@@ -630,7 +630,7 @@
 			);
 			inputPaths = (
 				"${PODS_ROOT}/Target Support Files/Pods-CronetTests/Pods-CronetTests-resources.sh",
-				"${PODS_CONFIGURATION_BUILD_DIR}/gRPC-iOS/gRPCCertificates.bundle",
+				"${PODS_CONFIGURATION_BUILD_DIR}/gRPC.default-GRPCCoreCronet/gRPCCertificates.bundle",
 			);
 			name = "[CP] Copy Pods Resources";
 			outputPaths = (
@@ -728,7 +728,7 @@
 			);
 			inputPaths = (
 				"${PODS_ROOT}/Target Support Files/Pods-InteropTests/Pods-InteropTests-resources.sh",
-				"${PODS_CONFIGURATION_BUILD_DIR}/gRPC-iOS/gRPCCertificates.bundle",
+				"${PODS_CONFIGURATION_BUILD_DIR}/gRPC.default-GRPCCoreCronet/gRPCCertificates.bundle",
 			);
 			name = "[CP] Copy Pods Resources";
 			outputPaths = (
