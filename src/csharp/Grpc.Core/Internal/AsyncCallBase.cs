@@ -44,7 +44,7 @@ namespace Grpc.Core.Internal
         readonly Action<TWrite, SerializationContext> serializer;
         readonly Func<DeserializationContext, TRead> deserializer;
 
-        protected readonly object myLock = Pool.TryRent<object>() ?? new object();
+        protected readonly LockToken myLock = Pool.TryRent<LockToken>() ?? new LockToken();
 
         protected INativeCall call;
         protected bool disposed;
@@ -400,4 +400,8 @@ namespace Grpc.Core.Internal
             HandleReadFinished(success, receivedMessageReader);
         }
     }
+
+    // just used for the myLock, to avoid sharing a pool
+    // with other potential callers
+    internal sealed class LockToken { }
 }
