@@ -589,6 +589,8 @@ LoadBalancingPolicy::PickResult XdsLb::PickerWrapper::Pick(
   // Record a call started.
   locality_stats_->AddCallStarted();
   // Intercept the recv_trailing_metadata op to record call completion.
+  // Note that the following callback does not run in either the control plane
+  // or data plane combiner.
   result.recv_trailing_metadata_ready = RecordCallCompletion;
   result.recv_trailing_metadata_ready_user_data = locality_stats_;
   return result;

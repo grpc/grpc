@@ -144,6 +144,8 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
     /// modified by the callback.  The callback does not take ownership,
     /// however, so any data that needs to be used after returning must
     /// be copied.
+    // TODO(roth): Replace grpc_error with something better before we allow
+    // people outside of gRPC team to use this API.
     void (*recv_trailing_metadata_ready)(
         void* user_data, grpc_error* error,
         grpc_metadata_batch* recv_trailing_metadata,
