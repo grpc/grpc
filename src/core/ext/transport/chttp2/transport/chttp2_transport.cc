@@ -1140,6 +1140,7 @@ static void queue_setting_update(grpc_chttp2_transport* t,
 
 void grpc_chttp2_add_incoming_goaway(grpc_chttp2_transport* t,
                                      uint32_t goaway_error,
+                                     uint32_t last_stream_id,
                                      const grpc_slice& goaway_text) {
   // Discard the error from a previous goaway frame (if any)
   if (t->goaway_error != GRPC_ERROR_NONE) {
@@ -1153,6 +1154,9 @@ void grpc_chttp2_add_incoming_goaway(grpc_chttp2_transport* t,
           GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_UNAVAILABLE),
       GRPC_ERROR_STR_RAW_BYTES, goaway_text);
 
+  GRPC_CHTTP2_IF_TRACING(
+      gpr_log(GPR_INFO, "transport %p got goaway with last stream id %d", t,
+              last_stream_id));
   /* We want to log this irrespective of whether http tracing is enabled */
   gpr_log(GPR_INFO, "%s: Got goaway [%d] err=%s", t->peer_string, goaway_error,
           grpc_error_string(t->goaway_error));
@@ -1191,8 +1195,9 @@ static void maybe_start_some_streams(grpc_chttp2_transport* t) {
          grpc_chttp2_list_pop_waiting_for_concurrency(t, &s)) {
     /* safe since we can't (legally) be parsing this stream yet */
     GRPC_CHTTP2_IF_TRACING(gpr_log(
-        GPR_INFO, "HTTP:%s: Allocating new grpc_chttp2_stream %p to id %d",
-        t->is_client ? "CLI" : "SVR", s, t->next_stream_id));
+        GPR_INFO,
+        "HTTP:%s: Transport %p allocating new grpc_chttp2_stream %p to id %d",
+        t->is_client ? "CLI" : "SVR", t, s, t->next_stream_id));
 
     GPR_ASSERT(s->id == 0);
     s->id = t->next_stream_id;
@@ -2825,7 +2830,8 @@ static void keepalive_watchdog_fired_locked(void* arg, grpc_error* error) {
 static void connectivity_state_set(grpc_chttp2_transport* t,
                                    grpc_connectivity_state state,
                                    const char* reason) {
-  GRPC_CHTTP2_IF_TRACING(gpr_log(GPR_INFO, "set connectivity_state=%d", state));
+  GRPC_CHTTP2_IF_TRACING(
+      gpr_log(GPR_INFO, "transport %p set connectivity_state=%d", t, state));
   grpc_connectivity_state_set(&t->channel_callback.state_tracker, state,
                               reason);
 }
