@@ -428,7 +428,7 @@ namespace Grpc.Core
         /// </summary>
         private void HandleServerShutdown(bool success, BatchContextSafeHandle ctx, object state)
         {
-            shutdownTcs.TrySetResult(null);
+            shutdownTcs.SetResult(null);
         }
 
         /// <summary>

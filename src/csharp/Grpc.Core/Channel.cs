@@ -127,7 +127,7 @@ namespace Grpc.Core
         static readonly BatchCompletionDelegate WatchConnectivityStateHandler = (success, ctx, state) =>
         {
             var tcs = Pool.UnboxAndReturn<ValueTaskCompletionSource<bool>>(state);
-            tcs.TrySetResult(success);
+            tcs.SetResult(success);
         };
 
         /// <summary>

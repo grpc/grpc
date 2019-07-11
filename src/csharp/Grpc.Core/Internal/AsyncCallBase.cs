@@ -293,7 +293,7 @@ namespace Grpc.Core.Internal
                     if (IsClient)
                     {
                         GrpcPreconditions.CheckState(finished);  // implied by !success && !delayCompletion && IsClient
-                        origTcs.TrySetException(GetRpcExceptionClientOnly());
+                        origTcs.SetException(GetRpcExceptionClientOnly());
                     }
                     else
                     {
@@ -304,7 +304,7 @@ namespace Grpc.Core.Internal
             }
             else
             {
-                origTcs.TrySetResult(null);
+                origTcs.SetResult(null);
             }
         }
 
@@ -326,11 +326,11 @@ namespace Grpc.Core.Internal
 
             if (!success)
             {
-                sendStatusFromServerTcs.TrySetException(new IOException("Error sending status from server."));
+                sendStatusFromServerTcs.SetException(new IOException("Error sending status from server."));
             }
             else
             {
-                sendStatusFromServerTcs.TrySetResult(null);
+                sendStatusFromServerTcs.SetResult(null);
             }
         }
 
@@ -380,10 +380,10 @@ namespace Grpc.Core.Internal
 
             if (deserializeException != null && !IsClient)
             {
-                origTcs.TrySetException(new IOException("Failed to deserialize request message.", deserializeException));
+                origTcs.SetException(new IOException("Failed to deserialize request message.", deserializeException));
                 return;
             }
-            origTcs.TrySetResult(msg);
+            origTcs.SetResult(msg);
         }
 
         protected ISendCompletionCallback SendCompletionCallback => this;

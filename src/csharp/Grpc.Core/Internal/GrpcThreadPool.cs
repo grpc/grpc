@@ -143,10 +143,10 @@ namespace Grpc.Core.Internal
             var cqIndex = threadIndex % completionQueues.Count;
             var cq = completionQueues.ElementAt(cqIndex);
 
-            var thread = new Thread(state => ((GrpcThreadPool)state).RunHandlerLoop(cq, optionalProfiler));
+            var thread = new Thread(new ThreadStart(() => RunHandlerLoop(cq, optionalProfiler)));
             thread.IsBackground = true;
             thread.Name = string.Format("grpc {0} (cq {1})", threadIndex, cqIndex);
-            thread.Start(this);
+            thread.Start();
 
             return thread;
         }

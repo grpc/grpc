@@ -53,10 +53,9 @@ namespace Grpc.Core.Internal
             return MoveNextImpl(this, token);
         }
 
-        static readonly Action<object> s_CancelToken = state => ((ClientResponseStream<TRequest, TResponse>)state).call.Cancel();
         private static async PooledTask<bool> MoveNextImpl(ClientResponseStream<TRequest, TResponse> obj, CancellationToken token)
         {
-            var cancellationTokenRegistration = token.CanBeCanceled ? token.Register(s_CancelToken, obj) : default;
+            var cancellationTokenRegistration = token.CanBeCanceled ? token.Register(() => obj.call.Cancel()) : (IDisposable)null;
             using (cancellationTokenRegistration)
             {
                 var result = await obj.call.ReadMessageAsync().ConfigureAwait(false);

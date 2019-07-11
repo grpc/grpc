@@ -438,7 +438,7 @@ namespace Grpc.Core.Internal
                 // Writing after the call has finished is not a programming error because server can close
                 // the call anytime, so don't throw directly, but let the write task finish with an error.
                 var tcs = ValueTaskCompletionSource<object>.Create();
-                tcs.TrySetException(new RpcException(finishedStatus.Value.Status, finishedStatus.Value.Trailers));
+                tcs.SetException(new RpcException(finishedStatus.Value.Status, finishedStatus.Value.Trailers));
                 return tcs.Task;
             }
 
@@ -463,7 +463,7 @@ namespace Grpc.Core.Internal
         static Task<object> CreateCanceledTask()
         {
             var tcs = ValueTaskCompletionSource<object>.Create();
-            tcs.TrySetCanceled();
+            tcs.SetCanceled();
             return tcs.Task;
         }
 
@@ -524,11 +524,9 @@ namespace Grpc.Core.Internal
             var token = details.Options.CancellationToken;
             if (token.CanBeCanceled)
             {
-                cancellationTokenRegistration = token.Register(s_CancelToken, this);
+                cancellationTokenRegistration = token.Register(() => this.Cancel());
             }
         }
-
-        static readonly Action<object> s_CancelToken = state => ((AsyncCall<TRequest, TResponse>)state).Cancel();
 
         /// <summary>
         /// Gets WriteFlags set in callDetails.Options.WriteOptions
@@ -545,7 +543,7 @@ namespace Grpc.Core.Internal
         private void HandleReceivedResponseHeaders(bool success, Metadata responseHeaders)
         {
             // TODO(jtattermusch): handle success==false
-            responseHeadersTcs.TrySetResult(responseHeaders);
+            responseHeadersTcs.SetResult(responseHeaders);
         }
 
         /// <summary>
@@ -585,21 +583,21 @@ namespace Grpc.Core.Internal
                 OnAfterReleaseResourcesUnlocked();
             }
 
-            responseHeadersTcs.TrySetResult(responseHeaders);
+            responseHeadersTcs.SetResult(responseHeaders);
 
             if (!delayedStreamingWriteTcs.IsNull)
             {
-                delayedStreamingWriteTcs.TrySetException(GetRpcExceptionClientOnly());
+                delayedStreamingWriteTcs.SetException(GetRpcExceptionClientOnly());
             }
 
             var status = receivedStatus.Status;
             if (status.StatusCode != StatusCode.OK)
             {
-                unaryResponseTcs.TrySetException(new RpcException(status, receivedStatus.Trailers));
+                unaryResponseTcs.SetException(new RpcException(status, receivedStatus.Trailers));
                 return;
             }
 
-            unaryResponseTcs.TrySetResult(msg);
+            unaryResponseTcs.SetResult(msg);
         }
 
         /// <summary>
@@ -633,17 +631,17 @@ namespace Grpc.Core.Internal
 
             if (!delayedStreamingWriteTcs.IsNull)
             {
-                delayedStreamingWriteTcs.TrySetException(GetRpcExceptionClientOnly());
+                delayedStreamingWriteTcs.SetException(GetRpcExceptionClientOnly());
             }
 
             var status = receivedStatus.Status;
             if (status.StatusCode != StatusCode.OK)
             {
-                streamingResponseCallFinishedTcs.TrySetException(new RpcException(status, receivedStatus.Trailers));
+                streamingResponseCallFinishedTcs.SetException(new RpcException(status, receivedStatus.Trailers));
                 return;
             }
 
-            streamingResponseCallFinishedTcs.TrySetResult(null);
+            streamingResponseCallFinishedTcs.SetResult(null);
         }
 
         IUnaryResponseClientCallback UnaryResponseClientCallback => this;

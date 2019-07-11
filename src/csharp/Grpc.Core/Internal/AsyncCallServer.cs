@@ -217,7 +217,7 @@ namespace Grpc.Core.Internal
                     // if there is a pending read, we will dispose once that read finishes.
                     readingDone = true;
                     streamingReadTcs = ValueTaskCompletionSource<TRequest>.Create();
-                    streamingReadTcs.TrySetResult(default(TRequest));
+                    streamingReadTcs.SetResult(default(TRequest));
                 }
                 releasedResources = ReleaseResourcesIfPossible();
             }
@@ -232,7 +232,7 @@ namespace Grpc.Core.Internal
                 cancellationTokenSource.Cancel();
             }
 
-            finishedServersideTcs.TrySetResult(null);
+            finishedServersideTcs.SetResult(null);
         }
 
         IReceivedCloseOnServerCallback ReceiveCloseOnServerCallback => this;
