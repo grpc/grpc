@@ -21,7 +21,6 @@
 
 #include <grpc/support/port_platform.h>
 
-#include <grpc/support/atm.h>
 #include <grpc/support/string_util.h>
 
 #include "src/core/lib/gprpp/atomic.h"
@@ -29,6 +28,7 @@
 #include "src/core/lib/gprpp/map.h"
 #include "src/core/lib/gprpp/memory.h"
 #include "src/core/lib/gprpp/ref_counted.h"
+#include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 
 namespace grpc_core {
@@ -83,66 +83,124 @@ class XdsLocalityName : public RefCounted<XdsLocalityName> {
 };
 
 // Thread-safe on data plane; thread-unsafe on control plane.
-struct XdsLbClientStats {
+// FIXME: audit the memory order usage.
+class XdsLbClientStats {
  public:
-  struct LocalityStats {
-    struct LoadMetric {
+  class LocalityStats {
+   public:
+    class LoadMetric {
+     public:
+      LoadMetric() = default;
+      LoadMetric(LoadMetric&& other) noexcept;
+
       // Returns a snapshot of this instance and reset all the accumulative
       // counters.
       LoadMetric Harvest();
+      bool IsAllZero() const;
 
-      UniquePtr<char> metric_name;
-      gpr_atm num_requests_finished_with_metric = 0;
-      // FIXME: this should be double.
-      gpr_atm total_metric_value = 0;
+      const char* metric_name() const { return metric_name_.get(); }
+      uint64_t num_requests_finished_with_metric() const {
+        return num_requests_finished_with_metric_.Load(MemoryOrder::RELAXED);
+      }
+      double total_metric_value() const {
+        return total_metric_value_.Load(MemoryOrder::RELAXED);
+      }
+
+     private:
+      UniquePtr<char> metric_name_;
+      Atomic<uint64_t> num_requests_finished_with_metric_{0};
+      Atomic<double> total_metric_value_{0};
     };
+
+    using LoadMetricList = InlinedVector<LoadMetric, 1>;
+
+    LocalityStats() = default;
+    LocalityStats(LocalityStats&& other) noexcept;
+    // For map operations.
+    LocalityStats& operator=(LocalityStats&& other) noexcept;
 
     // Returns a snapshot of this instance and reset all the accumulative
     // counters.
     LocalityStats Harvest();
-    bool IsAllZero();
+    bool IsAllZero() const;
 
     // After a LocalityStats is killed, it can't call AddCallStarted() unless
     // revived. AddCallFinished() can still be called. Once the number of in
     // progress calls drops to 0, this LocalityStats can be deleted.
-    void Kill() { dying = true; }
-    void Revive() { dying = false; }
-    bool IsSafeToDelete() { return dying && total_requests_in_progress == 0; }
+    void Kill() { dying_ = true; }
+    void Revive() { dying_ = false; }
+    bool IsSafeToDelete() {
+      return dying_ &&
+             total_requests_in_progress_.Load(MemoryOrder::ACQ_REL) == 0;
+    }
 
     void AddCallStarted();
     void AddCallFinished(bool fail = false);
 
-    static void Destroy(void* arg) {}
+    uint64_t total_successful_requests() const {
+      return total_successful_requests_.Load(MemoryOrder::RELAXED);
+    }
+    uint64_t total_requests_in_progress() const {
+      return total_requests_in_progress_.Load(MemoryOrder::RELAXED);
+    }
+    uint64_t total_error_requests() const {
+      return total_error_requests_.Load(MemoryOrder::RELAXED);
+    }
+    uint64_t total_issued_requests() const {
+      return total_issued_requests_.Load(MemoryOrder::RELAXED);
+    }
+    const LoadMetricList& load_metric_stats() const {
+      return load_metric_stats_;
+    }
 
-    gpr_atm total_successful_requests = 0;
-    gpr_atm total_requests_in_progress = 0;
+   private:
+    Atomic<uint64_t> total_successful_requests_{0};
+    Atomic<uint64_t> total_requests_in_progress_{0};
     // Requests that were issued (not dropped) but failed.
-    gpr_atm total_error_requests = 0;
-    gpr_atm total_issued_requests = 0;
-    InlinedVector<LoadMetric, 1> load_metric_stats;
-    bool dying = false;
+    Atomic<uint64_t> total_error_requests_{0};
+    Atomic<uint64_t> total_issued_requests_{0};
+    LoadMetricList load_metric_stats_;
+    bool dying_ = false;
   };
 
-  struct DroppedRequests {
-    DroppedRequests() {}
-    DroppedRequests(const char* category, gpr_atm dropped_count)
-        : category(category), dropped_count(dropped_count) {}
+  class DroppedRequests {
+   public:
+    DroppedRequests() = default;
+    DroppedRequests(const DroppedRequests& other)
+        : category_(other.category_),
+          dropped_count_(other.dropped_count_.Load(MemoryOrder::ACQ_REL)) {}
+    DroppedRequests(const char* category, uint64_t dropped_count)
+        : category_(category), dropped_count_(dropped_count) {}
 
     // Returns a snapshot of this instance and reset all the accumulative
     // counters.
     DroppedRequests Harvest();
 
+    void AddOne() { dropped_count_.FetchAdd(1); }
+
+    const char* category() const { return category_; }
+    uint64_t dropped_count() const {
+      return dropped_count_.Load(MemoryOrder::RELAXED);
+    }
+
+   private:
     // FIXME: should be null terminated
-    const char* category = nullptr;
-    size_t dropped_count = 0;
+    const char* category_ = nullptr;
+    Atomic<uint64_t> dropped_count_{0};
   };
 
+  using LocalityStatsMap =
+      Map<RefCountedPtr<XdsLocalityName>, LocalityStats, XdsLocalityName::Less>;
+  using DroppedRequestsList = InlinedVector<DroppedRequests, 2>;
+
   XdsLbClientStats() = default;
-  XdsLbClientStats(const XdsLbClientStats& other) = default;
+  XdsLbClientStats(XdsLbClientStats&& other) noexcept;
 
   // Returns a snapshot of this instance and reset all the accumulative
   // counters.
   XdsLbClientStats Harvest();
+  // TODO(juanlishen): Change this to const method when const_iterator is added
+  // to Map<>.
   bool IsAllZero();
 
   void MaybeInitLastReportTime();
@@ -151,18 +209,29 @@ struct XdsLbClientStats {
   void PruneLocalityStats();
   void AddCallDropped(const char* category);
 
-  // The name of the server.
-  const char* cluster_name;
+  // TODO(juanlishen): Change this to const method when const_iterator is added
+  // to Map<>.
+  LocalityStatsMap& upstream_locality_stats() {
+    return upstream_locality_stats_;
+  }
+  uint64_t total_dropped_requests() const {
+    return total_dropped_requests_.Load(MemoryOrder::RELAXED);
+  }
+  const DroppedRequestsList& dropped_requests() const {
+    return dropped_requests_;
+  }
+  grpc_millis load_report_interval() const { return load_report_interval_; }
+
+ private:
   // The stats for each locality.
-  Map<RefCountedPtr<XdsLocalityName>, LocalityStats, XdsLocalityName::Less>
-      upstream_locality_stats;
-  gpr_atm total_dropped_requests = 0;
-  InlinedVector<DroppedRequests, 2> dropped_requests;
+  LocalityStatsMap upstream_locality_stats_;
+  Atomic<uint64_t> total_dropped_requests_{0};
+  DroppedRequestsList dropped_requests_;
   // The actual load report interval.
-  grpc_millis load_report_interval;
+  grpc_millis load_report_interval_;
   // The timestamp of last reporting. For the LB-policy-wide first report, the
   // last_report_time is the time we scheduled the first reporting timer.
-  grpc_millis last_report_time;
+  grpc_millis last_report_time_;
 };
 
 }  // namespace grpc_core

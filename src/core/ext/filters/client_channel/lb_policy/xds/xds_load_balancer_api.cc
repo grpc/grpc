@@ -41,7 +41,6 @@ namespace {
 constexpr char kEdsTypeUrl[] =
     "type.googleapis.com/grpc.lb.v2.ClusterLoadAssignment";
 constexpr char kEndpointRequired[] = "endpointRequired";
-constexpr char kTrafficdirectorGrpcHostname[] = "TRAFFICDIRECTOR_GRPC_HOSTNAME";
 
 using LocalityStats = envoy_api_v2_endpoint_UpstreamLocalityStats;
 
@@ -243,27 +242,27 @@ void LocalityStatsPopulate(LocalityStats* output,
   // Set total counts.
   const XdsLbClientStats::LocalityStats& stats = input.second;
   envoy_api_v2_endpoint_UpstreamLocalityStats_set_total_successful_requests(
-      output, stats.total_successful_requests);
+      output, stats.total_successful_requests());
   envoy_api_v2_endpoint_UpstreamLocalityStats_set_total_requests_in_progress(
-      output, stats.total_requests_in_progress);
+      output, stats.total_requests_in_progress());
   envoy_api_v2_endpoint_UpstreamLocalityStats_set_total_error_requests(
-      output, stats.total_error_requests);
+      output, stats.total_error_requests());
   // FIXME: uncomment after regenerating.
   //  envoy_api_v2_endpoint_UpstreamLocalityStats_set_total_issued_requests(
   //      output, stats.total_issued_requests);
   // Add load metric stats.
-  for (size_t i = 0; i < stats.load_metric_stats.size(); ++i) {
+  for (size_t i = 0; i < stats.load_metric_stats().size(); ++i) {
     envoy_api_v2_endpoint_EndpointLoadMetricStats* load_metric =
         envoy_api_v2_endpoint_UpstreamLocalityStats_add_load_metric_stats(
             output, arena);
     envoy_api_v2_endpoint_EndpointLoadMetricStats_set_metric_name(
         load_metric,
-        upb_strview_makez(stats.load_metric_stats[i].metric_name.get()));
+        upb_strview_makez(stats.load_metric_stats()[i].metric_name()));
     envoy_api_v2_endpoint_EndpointLoadMetricStats_set_num_requests_finished_with_metric(
         load_metric,
-        stats.load_metric_stats[i].num_requests_finished_with_metric);
+        stats.load_metric_stats()[i].num_requests_finished_with_metric());
     envoy_api_v2_endpoint_EndpointLoadMetricStats_set_total_metric_value(
-        load_metric, stats.load_metric_stats[i].total_metric_value);
+        load_metric, stats.load_metric_stats()[i].total_metric_value());
   }
 }
 
@@ -289,29 +288,29 @@ grpc_slice XdsLrsRequestCreateAndEncode(const char* server_name,
   envoy_api_v2_endpoint_ClusterStats_set_cluster_name(
       cluster_stats, upb_strview_makez(server_name));
   // Add locality stats.
-  for (auto& p : harvest.upstream_locality_stats) {
+  for (auto& p : harvest.upstream_locality_stats()) {
     LocalityStats* locality_stats =
         envoy_api_v2_endpoint_ClusterStats_add_upstream_locality_stats(
             cluster_stats, arena.ptr());
     LocalityStatsPopulate(locality_stats, p, arena.ptr());
   }
   // Add dropped requests.
-  for (size_t i = 0; i < harvest.dropped_requests.size(); ++i) {
+  for (size_t i = 0; i < harvest.dropped_requests().size(); ++i) {
     envoy_api_v2_endpoint_ClusterStats_DroppedRequests* dropped_requests =
         envoy_api_v2_endpoint_ClusterStats_add_dropped_requests(cluster_stats,
                                                                 arena.ptr());
     envoy_api_v2_endpoint_ClusterStats_DroppedRequests_set_category(
         dropped_requests,
-        upb_strview_makez(harvest.dropped_requests[i].category));
+        upb_strview_makez(harvest.dropped_requests()[i].category()));
     envoy_api_v2_endpoint_ClusterStats_DroppedRequests_set_dropped_count(
-        dropped_requests, harvest.dropped_requests[i].dropped_count);
+        dropped_requests, harvest.dropped_requests()[i].dropped_count());
   }
   // Set total dropped requests.
   envoy_api_v2_endpoint_ClusterStats_set_total_dropped_requests(
-      cluster_stats, harvest.total_dropped_requests);
+      cluster_stats, harvest.total_dropped_requests());
   // Set real load report interval.
   gpr_timespec timespec =
-      grpc_millis_to_timespec(harvest.load_report_interval, GPR_TIMESPAN);
+      grpc_millis_to_timespec(harvest.load_report_interval(), GPR_TIMESPAN);
   google_protobuf_Duration* load_report_interval =
       envoy_api_v2_endpoint_ClusterStats_mutable_load_report_interval(
           cluster_stats, arena.ptr());

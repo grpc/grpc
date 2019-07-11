@@ -28,9 +28,10 @@ namespace grpc_core {
 
 namespace {
 
-// TODO(juanlishen): Try to use Atomic<>.
-gpr_atm AtomicGetAndResetCounter(gpr_atm* counter) {
-  return gpr_atm_full_xchg(counter, static_cast<gpr_atm>(0));
+template <typename T>
+void GetAndResetCounter(Atomic<T>* from, Atomic<T>* to) {
+  T count = from->Exchange(0, MemoryOrder::ACQ_REL);
+  to->Store(count, MemoryOrder::ACQ_REL);
 }
 
 }  // namespace
@@ -39,65 +40,95 @@ gpr_atm AtomicGetAndResetCounter(gpr_atm* counter) {
 // XdsLbClientStats::LocalityStats::LoadMetric
 //
 
+XdsLbClientStats::LocalityStats::LoadMetric::LoadMetric(
+    XdsLbClientStats::LocalityStats::LoadMetric&& other) noexcept
+    : metric_name_(std::move(other.metric_name_)) {
+  GetAndResetCounter(&num_requests_finished_with_metric_,
+                     &other.num_requests_finished_with_metric_);
+  GetAndResetCounter(&total_metric_value_, &other.total_metric_value_);
+}
+
 XdsLbClientStats::LocalityStats::LoadMetric
 XdsLbClientStats::LocalityStats::LoadMetric::Harvest() {
   LoadMetric metric;
-  metric.metric_name.reset(gpr_strdup(metric_name.get()));
-  metric.num_requests_finished_with_metric =
-      AtomicGetAndResetCounter(&num_requests_finished_with_metric);
-  metric.total_metric_value = AtomicGetAndResetCounter(&total_metric_value);
+  metric.metric_name_.reset(gpr_strdup(metric_name()));
+  GetAndResetCounter(&num_requests_finished_with_metric_,
+                     &metric.num_requests_finished_with_metric_);
+  GetAndResetCounter(&total_metric_value_, &metric.total_metric_value_);
   return metric;
+}
+
+bool XdsLbClientStats::LocalityStats::LoadMetric::IsAllZero() const {
+  return total_metric_value_.Load(MemoryOrder::ACQ_REL) == 0 &&
+         num_requests_finished_with_metric_.Load(MemoryOrder::ACQ_REL) == 0;
 }
 
 //
 // XdsLbClientStats::LocalityStats
 //
 
+XdsLbClientStats::LocalityStats::LocalityStats(
+    XdsLbClientStats::LocalityStats&& other) noexcept {
+  *this = std::move(other);
+}
+
+XdsLbClientStats::LocalityStats& XdsLbClientStats::LocalityStats::operator=(
+    grpc_core::XdsLbClientStats::LocalityStats&& other) noexcept {
+  GetAndResetCounter(&other.total_successful_requests_,
+                     &total_successful_requests_);
+  GetAndResetCounter(&other.total_requests_in_progress_,
+                     &total_requests_in_progress_);
+  GetAndResetCounter(&other.total_error_requests_, &total_error_requests_);
+  GetAndResetCounter(&other.total_issued_requests_, &total_issued_requests_);
+  load_metric_stats_ = std::move(other.load_metric_stats_);
+  return *this;
+}
+
 XdsLbClientStats::LocalityStats XdsLbClientStats::LocalityStats::Harvest() {
   LocalityStats stats;
-  stats.total_successful_requests =
-      AtomicGetAndResetCounter(&total_successful_requests);
+  GetAndResetCounter(&total_successful_requests_,
+                     &stats.total_successful_requests_);
   // Don't reset total_requests_in_progress because it's not related to a single
   // reporting interval.
-  stats.total_requests_in_progress = total_requests_in_progress;
-  stats.total_error_requests = AtomicGetAndResetCounter(&total_error_requests);
-  stats.total_issued_requests =
-      AtomicGetAndResetCounter(&total_issued_requests);
-  for (size_t i = 0; i < load_metric_stats.size(); ++i) {
-    stats.load_metric_stats.emplace_back(load_metric_stats[i].Harvest());
+  stats.total_requests_in_progress_.Store(
+      total_requests_in_progress_.Load(MemoryOrder::ACQ_REL),
+      MemoryOrder::ACQ_REL);
+  GetAndResetCounter(&total_error_requests_, &stats.total_error_requests_);
+  GetAndResetCounter(&total_issued_requests_, &stats.total_issued_requests_);
+  for (size_t i = 0; i < load_metric_stats_.size(); ++i) {
+    stats.load_metric_stats_.emplace_back(load_metric_stats_[i].Harvest());
   }
   return stats;
 }
 
-bool XdsLbClientStats::LocalityStats::IsAllZero() {
-  if (total_successful_requests != 0 || total_requests_in_progress != 0 ||
-      total_error_requests != 0 || total_issued_requests != 0) {
+bool XdsLbClientStats::LocalityStats::IsAllZero() const {
+  if (total_successful_requests_.Load(MemoryOrder::ACQ_REL) != 0 ||
+      total_requests_in_progress_.Load(MemoryOrder::ACQ_REL) != 0 ||
+      total_error_requests_.Load(MemoryOrder::ACQ_REL) != 0 ||
+      total_issued_requests_.Load(MemoryOrder::ACQ_REL) != 0) {
     return false;
   }
-  for (size_t i = 0; i < load_metric_stats.size(); ++i) {
-    if (load_metric_stats[i].total_metric_value != 0 ||
-        load_metric_stats[i].num_requests_finished_with_metric != 0) {
-      return false;
-    }
+  for (size_t i = 0; i < load_metric_stats_.size(); ++i) {
+    if (load_metric_stats_[i].IsAllZero()) return false;
   }
   return true;
 }
 
 void XdsLbClientStats::LocalityStats::AddCallStarted() {
-  if (dying) {
+  if (dying_) {
     gpr_log(GPR_ERROR, "Can't record call starting on dying locality stats %p",
             this);
     return;
   }
-  gpr_atm_full_fetch_add(&total_issued_requests, static_cast<gpr_atm>(1));
-  gpr_atm_full_fetch_add(&total_requests_in_progress, static_cast<gpr_atm>(1));
+  total_issued_requests_.FetchAdd(1);
+  total_requests_in_progress_.FetchAdd(1);
 }
 
 void XdsLbClientStats::LocalityStats::AddCallFinished(bool fail) {
-  gpr_atm* to_update =
-      fail ? &total_error_requests : &total_successful_requests;
-  gpr_atm_full_fetch_add(to_update, static_cast<gpr_atm>(1));
-  gpr_atm_full_fetch_add(&total_requests_in_progress, static_cast<gpr_atm>(-1));
+  Atomic<uint64_t>& to_increment =
+      fail ? total_error_requests_ : total_successful_requests_;
+  to_increment.FetchAdd(1);
+  total_requests_in_progress_.FetchAdd(-1);
 }
 
 //
@@ -106,9 +137,8 @@ void XdsLbClientStats::LocalityStats::AddCallFinished(bool fail) {
 
 XdsLbClientStats::DroppedRequests XdsLbClientStats::DroppedRequests::Harvest() {
   DroppedRequests drop;
-  drop.category = category;
-  drop.dropped_count = dropped_count;
-  dropped_count = 0;
+  drop.category_ = category_;
+  GetAndResetCounter(&dropped_count_, &drop.dropped_count_);
   return drop;
 }
 
@@ -116,47 +146,52 @@ XdsLbClientStats::DroppedRequests XdsLbClientStats::DroppedRequests::Harvest() {
 // XdsLbClientStats
 //
 
+XdsLbClientStats::XdsLbClientStats(grpc_core::XdsLbClientStats&& other) noexcept
+    : upstream_locality_stats_(std::move(other.upstream_locality_stats_)),
+      dropped_requests_(std::move(other.dropped_requests_)),
+      load_report_interval_(other.load_report_interval_),
+      last_report_time_(other.last_report_time_) {
+  GetAndResetCounter(&total_dropped_requests_, &other.total_dropped_requests_);
+}
+
 XdsLbClientStats XdsLbClientStats::Harvest() {
   XdsLbClientStats stats;
   // Record reporting interval in the harvest.
   grpc_millis now = ExecCtx::Get()->Now();
-  stats.load_report_interval = now - last_report_time;
+  stats.load_report_interval_ = now - last_report_time_;
   // Update last report time.
-  last_report_time = now;
-  // Record the cluster name.
-  stats.cluster_name = cluster_name;
+  last_report_time_ = now;
   // Harvest all the stats.
-  for (auto& p : upstream_locality_stats) {
-    stats.upstream_locality_stats.emplace(p.first, p.second.Harvest());
+  for (auto& p : upstream_locality_stats_) {
+    stats.upstream_locality_stats_.emplace(p.first, p.second.Harvest());
   }
-  stats.total_dropped_requests =
-      AtomicGetAndResetCounter(&total_dropped_requests);
-  for (size_t i = 0; i < dropped_requests.size(); ++i) {
-    stats.dropped_requests.emplace_back(dropped_requests[i].Harvest());
+  GetAndResetCounter(&total_dropped_requests_, &stats.total_dropped_requests_);
+  for (size_t i = 0; i < dropped_requests_.size(); ++i) {
+    stats.dropped_requests_.emplace_back(dropped_requests_[i].Harvest());
   }
   return stats;
 }
 
 bool XdsLbClientStats::IsAllZero() {
-  for (auto& p : upstream_locality_stats) {
+  for (auto& p : upstream_locality_stats_) {
     if (!p.second.IsAllZero()) return false;
   }
-  return total_dropped_requests == 0;
+  return total_dropped_requests_.Load(MemoryOrder::ACQ_REL) == 0;
 }
 
 void XdsLbClientStats::MaybeInitLastReportTime() {
   static bool inited = false;
   if (inited) return;
-  last_report_time = ExecCtx::Get()->Now();
+  last_report_time_ = ExecCtx::Get()->Now();
   inited = true;
 }
 
 XdsLbClientStats::LocalityStats* XdsLbClientStats::FindLocalityStats(
     const RefCountedPtr<XdsLocalityName>& locality_name) {
-  auto iter = upstream_locality_stats.find(locality_name);
-  if (iter == upstream_locality_stats.end()) {
+  auto iter = upstream_locality_stats_.find(locality_name);
+  if (iter == upstream_locality_stats_.end()) {
     iter =
-        upstream_locality_stats.emplace(locality_name, LocalityStats()).first;
+        upstream_locality_stats_.emplace(locality_name, LocalityStats()).first;
   } else {
     iter->second.Revive();
   }
@@ -164,10 +199,10 @@ XdsLbClientStats::LocalityStats* XdsLbClientStats::FindLocalityStats(
 }
 
 void XdsLbClientStats::PruneLocalityStats() {
-  auto iter = upstream_locality_stats.begin();
-  while (iter != upstream_locality_stats.end()) {
+  auto iter = upstream_locality_stats_.begin();
+  while (iter != upstream_locality_stats_.end()) {
     if (iter->second.IsSafeToDelete()) {
-      iter = upstream_locality_stats.erase(iter);
+      iter = upstream_locality_stats_.erase(iter);
     } else {
       ++iter;
     }
@@ -176,14 +211,14 @@ void XdsLbClientStats::PruneLocalityStats() {
 
 void XdsLbClientStats::AddCallDropped(const char* category) {
   // Record the drop.
-  for (size_t i = 0; i < dropped_requests.size(); ++i) {
-    if (strcmp(dropped_requests[i].category, category) == 0) {
-      ++dropped_requests[i].dropped_count;
+  for (size_t i = 0; i < dropped_requests_.size(); ++i) {
+    if (strcmp(dropped_requests_[i].category(), category) == 0) {
+      dropped_requests_[i].AddOne();
       return;
     }
   }
   // Not found, so add a new entry.
-  dropped_requests.emplace_back(category, 1);
+  dropped_requests_.emplace_back(category, 1);
 }
 
 }  // namespace grpc_core
