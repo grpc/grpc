@@ -131,6 +131,17 @@ grpc_cc_test(
 )
 
 grpc_cc_test(
+    name = "mpmcqueue_test",
+    srcs = ["mpmcqueue_test.cc"],
+    language = "C++",
+    deps = [
+        "//:gpr",
+        "//:grpc",
+        "//test/core/util:grpc_test_util",
+    ],
+)
+
+grpc_cc_test(
     name = "resolve_address_using_ares_resolver_posix_test",
     srcs = ["resolve_address_posix_test.cc"],
     args = [

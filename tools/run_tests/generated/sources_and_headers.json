@@ -1033,22 +1033,6 @@
     "headers": [], 
     "is_filegroup": false, 
     "language": "c", 
-    "name": "grpc_fetch_oauth2", 
-    "src": [
-      "test/core/security/fetch_oauth2.cc"
-    ], 
-    "third_party": false, 
-    "type": "target"
-  }, 
-  {
-    "deps": [
-      "gpr", 
-      "grpc", 
-      "grpc_test_util"
-    ], 
-    "headers": [], 
-    "is_filegroup": false, 
-    "language": "c", 
     "name": "grpc_ipv6_loopback_available_test", 
     "src": [
       "test/core/iomgr/grpc_ipv6_loopback_available_test.cc"
@@ -1638,6 +1622,22 @@
     "name": "minimal_stack_is_minimal_test", 
     "src": [
       "test/core/channel/minimal_stack_is_minimal_test.cc"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "grpc", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "is_filegroup": false, 
+    "language": "c", 
+    "name": "mpmcqueue_test", 
+    "src": [
+      "test/core/iomgr/mpmcqueue_test.cc"
     ], 
     "third_party": false, 
     "type": "target"
@@ -3858,6 +3858,23 @@
     "name": "grpc_csharp_plugin", 
     "src": [
       "src/compiler/csharp_plugin.cc"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "grpc", 
+      "grpc++", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "is_filegroup": false, 
+    "language": "c++", 
+    "name": "grpc_fetch_oauth2", 
+    "src": [
+      "test/core/security/fetch_oauth2.cc"
     ], 
     "third_party": false, 
     "type": "target"
@@ -7167,6 +7184,7 @@
     ], 
     "headers": [
       "src/compiler/config.h", 
+      "src/compiler/config_protobuf.h", 
       "src/compiler/cpp_generator.h", 
       "src/compiler/cpp_generator_helpers.h", 
       "src/compiler/csharp_generator.h", 
@@ -7193,6 +7211,7 @@
     "name": "grpc_plugin_support", 
     "src": [
       "src/compiler/config.h", 
+      "src/compiler/config_protobuf.h", 
       "src/compiler/cpp_generator.cc", 
       "src/compiler/cpp_generator.h", 
       "src/compiler/cpp_generator_helpers.h", 
@@ -8492,6 +8511,7 @@
       "src/core/lib/iomgr/ev_windows.cc", 
       "src/core/lib/iomgr/exec_ctx.cc", 
       "src/core/lib/iomgr/executor.cc", 
+      "src/core/lib/iomgr/executor/mpmcqueue.cc", 
       "src/core/lib/iomgr/fork_posix.cc", 
       "src/core/lib/iomgr/fork_windows.cc", 
       "src/core/lib/iomgr/gethostname_fallback.cc", 
@@ -8680,6 +8700,7 @@
       "src/core/lib/iomgr/ev_posix.h", 
       "src/core/lib/iomgr/exec_ctx.h", 
       "src/core/lib/iomgr/executor.h", 
+      "src/core/lib/iomgr/executor/mpmcqueue.h", 
       "src/core/lib/iomgr/gethostname.h", 
       "src/core/lib/iomgr/grpc_if_nametoindex.h", 
       "src/core/lib/iomgr/internal_errqueue.h", 
@@ -8838,6 +8859,7 @@
       "src/core/lib/iomgr/ev_posix.h", 
       "src/core/lib/iomgr/exec_ctx.h", 
       "src/core/lib/iomgr/executor.h", 
+      "src/core/lib/iomgr/executor/mpmcqueue.h", 
       "src/core/lib/iomgr/gethostname.h", 
       "src/core/lib/iomgr/grpc_if_nametoindex.h", 
       "src/core/lib/iomgr/internal_errqueue.h", 
@@ -10190,7 +10212,9 @@
       "include/grpc++/impl/codegen/time.h", 
       "include/grpcpp/impl/codegen/async_generic_service.h", 
       "include/grpcpp/impl/codegen/async_stream.h", 
+      "include/grpcpp/impl/codegen/async_stream_impl.h", 
       "include/grpcpp/impl/codegen/async_unary_call.h", 
+      "include/grpcpp/impl/codegen/async_unary_call_impl.h", 
       "include/grpcpp/impl/codegen/byte_buffer.h", 
       "include/grpcpp/impl/codegen/call.h", 
       "include/grpcpp/impl/codegen/call_hook.h", 
@@ -10199,6 +10223,7 @@
       "include/grpcpp/impl/codegen/callback_common.h", 
       "include/grpcpp/impl/codegen/channel_interface.h", 
       "include/grpcpp/impl/codegen/client_callback.h", 
+      "include/grpcpp/impl/codegen/client_callback_impl.h", 
       "include/grpcpp/impl/codegen/client_context.h", 
       "include/grpcpp/impl/codegen/client_context_impl.h", 
       "include/grpcpp/impl/codegen/client_interceptor.h", 
@@ -10221,6 +10246,7 @@
       "include/grpcpp/impl/codegen/security/auth_context.h", 
       "include/grpcpp/impl/codegen/serialization_traits.h", 
       "include/grpcpp/impl/codegen/server_callback.h", 
+      "include/grpcpp/impl/codegen/server_callback_impl.h", 
       "include/grpcpp/impl/codegen/server_context.h", 
       "include/grpcpp/impl/codegen/server_context_impl.h", 
       "include/grpcpp/impl/codegen/server_interceptor.h", 
@@ -10232,6 +10258,7 @@
       "include/grpcpp/impl/codegen/string_ref.h", 
       "include/grpcpp/impl/codegen/stub_options.h", 
       "include/grpcpp/impl/codegen/sync_stream.h", 
+      "include/grpcpp/impl/codegen/sync_stream_impl.h", 
       "include/grpcpp/impl/codegen/time.h"
     ], 
     "is_filegroup": true, 
@@ -10270,7 +10297,9 @@
       "include/grpc++/impl/codegen/time.h", 
       "include/grpcpp/impl/codegen/async_generic_service.h", 
       "include/grpcpp/impl/codegen/async_stream.h", 
+      "include/grpcpp/impl/codegen/async_stream_impl.h", 
       "include/grpcpp/impl/codegen/async_unary_call.h", 
+      "include/grpcpp/impl/codegen/async_unary_call_impl.h", 
       "include/grpcpp/impl/codegen/byte_buffer.h", 
       "include/grpcpp/impl/codegen/call.h", 
       "include/grpcpp/impl/codegen/call_hook.h", 
@@ -10279,6 +10308,7 @@
       "include/grpcpp/impl/codegen/callback_common.h", 
       "include/grpcpp/impl/codegen/channel_interface.h", 
       "include/grpcpp/impl/codegen/client_callback.h", 
+      "include/grpcpp/impl/codegen/client_callback_impl.h", 
       "include/grpcpp/impl/codegen/client_context.h", 
       "include/grpcpp/impl/codegen/client_context_impl.h", 
       "include/grpcpp/impl/codegen/client_interceptor.h", 
@@ -10301,6 +10331,7 @@
       "include/grpcpp/impl/codegen/security/auth_context.h", 
       "include/grpcpp/impl/codegen/serialization_traits.h", 
       "include/grpcpp/impl/codegen/server_callback.h", 
+      "include/grpcpp/impl/codegen/server_callback_impl.h", 
       "include/grpcpp/impl/codegen/server_context.h", 
       "include/grpcpp/impl/codegen/server_context_impl.h", 
       "include/grpcpp/impl/codegen/server_interceptor.h", 
@@ -10312,6 +10343,7 @@
       "include/grpcpp/impl/codegen/string_ref.h", 
       "include/grpcpp/impl/codegen/stub_options.h", 
       "include/grpcpp/impl/codegen/sync_stream.h", 
+      "include/grpcpp/impl/codegen/sync_stream_impl.h", 
       "include/grpcpp/impl/codegen/time.h"
     ], 
     "third_party": false, 
@@ -10461,11 +10493,14 @@
       "include/grpcpp/server_posix.h", 
       "include/grpcpp/server_posix_impl.h", 
       "include/grpcpp/support/async_stream.h", 
+      "include/grpcpp/support/async_stream_impl.h", 
       "include/grpcpp/support/async_unary_call.h", 
+      "include/grpcpp/support/async_unary_call_impl.h", 
       "include/grpcpp/support/byte_buffer.h", 
       "include/grpcpp/support/channel_arguments.h", 
       "include/grpcpp/support/channel_arguments_impl.h", 
       "include/grpcpp/support/client_callback.h", 
+      "include/grpcpp/support/client_callback_impl.h", 
       "include/grpcpp/support/client_interceptor.h", 
       "include/grpcpp/support/config.h", 
       "include/grpcpp/support/interceptor.h", 
@@ -10473,6 +10508,7 @@
       "include/grpcpp/support/proto_buffer_reader.h", 
       "include/grpcpp/support/proto_buffer_writer.h", 
       "include/grpcpp/support/server_callback.h", 
+      "include/grpcpp/support/server_callback_impl.h", 
       "include/grpcpp/support/server_interceptor.h", 
       "include/grpcpp/support/slice.h", 
       "include/grpcpp/support/status.h", 
@@ -10480,6 +10516,7 @@
       "include/grpcpp/support/string_ref.h", 
       "include/grpcpp/support/stub_options.h", 
       "include/grpcpp/support/sync_stream.h", 
+      "include/grpcpp/support/sync_stream_impl.h", 
       "include/grpcpp/support/time.h", 
       "include/grpcpp/support/validate_service_config.h", 
       "src/cpp/client/create_channel_internal.h", 
@@ -10589,11 +10626,14 @@
       "include/grpcpp/server_posix.h", 
       "include/grpcpp/server_posix_impl.h", 
       "include/grpcpp/support/async_stream.h", 
+      "include/grpcpp/support/async_stream_impl.h", 
       "include/grpcpp/support/async_unary_call.h", 
+      "include/grpcpp/support/async_unary_call_impl.h", 
       "include/grpcpp/support/byte_buffer.h", 
       "include/grpcpp/support/channel_arguments.h", 
       "include/grpcpp/support/channel_arguments_impl.h", 
       "include/grpcpp/support/client_callback.h", 
+      "include/grpcpp/support/client_callback_impl.h", 
       "include/grpcpp/support/client_interceptor.h", 
       "include/grpcpp/support/config.h", 
       "include/grpcpp/support/interceptor.h", 
@@ -10601,6 +10641,7 @@
       "include/grpcpp/support/proto_buffer_reader.h", 
       "include/grpcpp/support/proto_buffer_writer.h", 
       "include/grpcpp/support/server_callback.h", 
+      "include/grpcpp/support/server_callback_impl.h", 
       "include/grpcpp/support/server_interceptor.h", 
       "include/grpcpp/support/slice.h", 
       "include/grpcpp/support/status.h", 
@@ -10608,6 +10649,7 @@
       "include/grpcpp/support/string_ref.h", 
       "include/grpcpp/support/stub_options.h", 
       "include/grpcpp/support/sync_stream.h", 
+      "include/grpcpp/support/sync_stream_impl.h", 
       "include/grpcpp/support/time.h", 
       "include/grpcpp/support/validate_service_config.h", 
       "src/cpp/client/channel_cc.cc", 

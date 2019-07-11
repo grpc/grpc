@@ -21,7 +21,7 @@
 
 
 
-cmake_minimum_required(VERSION 2.8)
+cmake_minimum_required(VERSION 3.5.1)
 
 set(PACKAGE_NAME      "grpc")
 set(PACKAGE_VERSION   "1.23.0-dev")
@@ -332,7 +332,6 @@ add_dependencies(buildtests_c grpc_channel_stack_test)
 add_dependencies(buildtests_c grpc_completion_queue_test)
 add_dependencies(buildtests_c grpc_completion_queue_threading_test)
 add_dependencies(buildtests_c grpc_credentials_test)
-add_dependencies(buildtests_c grpc_fetch_oauth2)
 add_dependencies(buildtests_c grpc_ipv6_loopback_available_test)
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 add_dependencies(buildtests_c grpc_json_token_test)
@@ -379,6 +378,7 @@ add_dependencies(buildtests_c memory_usage_test)
 endif()
 add_dependencies(buildtests_c message_compress_test)
 add_dependencies(buildtests_c minimal_stack_is_minimal_test)
+add_dependencies(buildtests_c mpmcqueue_test)
 add_dependencies(buildtests_c multiple_server_queues_test)
 add_dependencies(buildtests_c murmur_hash_test)
 add_dependencies(buildtests_c no_server_test)
@@ -633,6 +633,7 @@ add_dependencies(buildtests_cxx golden_file_test)
 add_dependencies(buildtests_cxx grpc_alts_credentials_options_test)
 add_dependencies(buildtests_cxx grpc_cli)
 add_dependencies(buildtests_cxx grpc_core_map_test)
+add_dependencies(buildtests_cxx grpc_fetch_oauth2)
 add_dependencies(buildtests_cxx grpc_linux_system_roots_test)
 add_dependencies(buildtests_cxx grpc_tool_test)
 add_dependencies(buildtests_cxx grpclb_api_test)
@@ -1030,6 +1031,7 @@ add_library(grpc
   src/core/lib/iomgr/ev_windows.cc
   src/core/lib/iomgr/exec_ctx.cc
   src/core/lib/iomgr/executor.cc
+  src/core/lib/iomgr/executor/mpmcqueue.cc
   src/core/lib/iomgr/fork_posix.cc
   src/core/lib/iomgr/fork_windows.cc
   src/core/lib/iomgr/gethostname_fallback.cc
@@ -1468,6 +1470,7 @@ add_library(grpc_cronet
   src/core/lib/iomgr/ev_windows.cc
   src/core/lib/iomgr/exec_ctx.cc
   src/core/lib/iomgr/executor.cc
+  src/core/lib/iomgr/executor/mpmcqueue.cc
   src/core/lib/iomgr/fork_posix.cc
   src/core/lib/iomgr/fork_windows.cc
   src/core/lib/iomgr/gethostname_fallback.cc
@@ -1888,6 +1891,7 @@ add_library(grpc_test_util
   src/core/lib/iomgr/ev_windows.cc
   src/core/lib/iomgr/exec_ctx.cc
   src/core/lib/iomgr/executor.cc
+  src/core/lib/iomgr/executor/mpmcqueue.cc
   src/core/lib/iomgr/fork_posix.cc
   src/core/lib/iomgr/fork_windows.cc
   src/core/lib/iomgr/gethostname_fallback.cc
@@ -2221,6 +2225,7 @@ add_library(grpc_test_util_unsecure
   src/core/lib/iomgr/ev_windows.cc
   src/core/lib/iomgr/exec_ctx.cc
   src/core/lib/iomgr/executor.cc
+  src/core/lib/iomgr/executor/mpmcqueue.cc
   src/core/lib/iomgr/fork_posix.cc
   src/core/lib/iomgr/fork_windows.cc
   src/core/lib/iomgr/gethostname_fallback.cc
@@ -2530,6 +2535,7 @@ add_library(grpc_unsecure
   src/core/lib/iomgr/ev_windows.cc
   src/core/lib/iomgr/exec_ctx.cc
   src/core/lib/iomgr/executor.cc
+  src/core/lib/iomgr/executor/mpmcqueue.cc
   src/core/lib/iomgr/fork_posix.cc
   src/core/lib/iomgr/fork_windows.cc
   src/core/lib/iomgr/gethostname_fallback.cc
@@ -3221,11 +3227,14 @@ foreach(_hdr
   include/grpcpp/server_posix.h
   include/grpcpp/server_posix_impl.h
   include/grpcpp/support/async_stream.h
+  include/grpcpp/support/async_stream_impl.h
   include/grpcpp/support/async_unary_call.h
+  include/grpcpp/support/async_unary_call_impl.h
   include/grpcpp/support/byte_buffer.h
   include/grpcpp/support/channel_arguments.h
   include/grpcpp/support/channel_arguments_impl.h
   include/grpcpp/support/client_callback.h
+  include/grpcpp/support/client_callback_impl.h
   include/grpcpp/support/client_interceptor.h
   include/grpcpp/support/config.h
   include/grpcpp/support/interceptor.h
@@ -3233,6 +3242,7 @@ foreach(_hdr
   include/grpcpp/support/proto_buffer_reader.h
   include/grpcpp/support/proto_buffer_writer.h
   include/grpcpp/support/server_callback.h
+  include/grpcpp/support/server_callback_impl.h
   include/grpcpp/support/server_interceptor.h
   include/grpcpp/support/slice.h
   include/grpcpp/support/status.h
@@ -3240,6 +3250,7 @@ foreach(_hdr
   include/grpcpp/support/string_ref.h
   include/grpcpp/support/stub_options.h
   include/grpcpp/support/sync_stream.h
+  include/grpcpp/support/sync_stream_impl.h
   include/grpcpp/support/time.h
   include/grpcpp/support/validate_service_config.h
   include/grpc/support/alloc.h
@@ -3325,7 +3336,9 @@ foreach(_hdr
   include/grpc++/impl/codegen/time.h
   include/grpcpp/impl/codegen/async_generic_service.h
   include/grpcpp/impl/codegen/async_stream.h
+  include/grpcpp/impl/codegen/async_stream_impl.h
   include/grpcpp/impl/codegen/async_unary_call.h
+  include/grpcpp/impl/codegen/async_unary_call_impl.h
   include/grpcpp/impl/codegen/byte_buffer.h
   include/grpcpp/impl/codegen/call.h
   include/grpcpp/impl/codegen/call_hook.h
@@ -3334,6 +3347,7 @@ foreach(_hdr
   include/grpcpp/impl/codegen/callback_common.h
   include/grpcpp/impl/codegen/channel_interface.h
   include/grpcpp/impl/codegen/client_callback.h
+  include/grpcpp/impl/codegen/client_callback_impl.h
   include/grpcpp/impl/codegen/client_context.h
   include/grpcpp/impl/codegen/client_context_impl.h
   include/grpcpp/impl/codegen/client_interceptor.h
@@ -3356,6 +3370,7 @@ foreach(_hdr
   include/grpcpp/impl/codegen/security/auth_context.h
   include/grpcpp/impl/codegen/serialization_traits.h
   include/grpcpp/impl/codegen/server_callback.h
+  include/grpcpp/impl/codegen/server_callback_impl.h
   include/grpcpp/impl/codegen/server_context.h
   include/grpcpp/impl/codegen/server_context_impl.h
   include/grpcpp/impl/codegen/server_interceptor.h
@@ -3367,6 +3382,7 @@ foreach(_hdr
   include/grpcpp/impl/codegen/string_ref.h
   include/grpcpp/impl/codegen/stub_options.h
   include/grpcpp/impl/codegen/sync_stream.h
+  include/grpcpp/impl/codegen/sync_stream_impl.h
   include/grpcpp/impl/codegen/time.h
   include/grpcpp/impl/codegen/sync.h
   include/grpc++/impl/codegen/proto_utils.h
@@ -3560,6 +3576,7 @@ add_library(grpc++_cronet
   src/core/lib/iomgr/ev_windows.cc
   src/core/lib/iomgr/exec_ctx.cc
   src/core/lib/iomgr/executor.cc
+  src/core/lib/iomgr/executor/mpmcqueue.cc
   src/core/lib/iomgr/fork_posix.cc
   src/core/lib/iomgr/fork_windows.cc
   src/core/lib/iomgr/gethostname_fallback.cc
@@ -3846,11 +3863,14 @@ foreach(_hdr
   include/grpcpp/server_posix.h
   include/grpcpp/server_posix_impl.h
   include/grpcpp/support/async_stream.h
+  include/grpcpp/support/async_stream_impl.h
   include/grpcpp/support/async_unary_call.h
+  include/grpcpp/support/async_unary_call_impl.h
   include/grpcpp/support/byte_buffer.h
   include/grpcpp/support/channel_arguments.h
   include/grpcpp/support/channel_arguments_impl.h
   include/grpcpp/support/client_callback.h
+  include/grpcpp/support/client_callback_impl.h
   include/grpcpp/support/client_interceptor.h
   include/grpcpp/support/config.h
   include/grpcpp/support/interceptor.h
@@ -3858,6 +3878,7 @@ foreach(_hdr
   include/grpcpp/support/proto_buffer_reader.h
   include/grpcpp/support/proto_buffer_writer.h
   include/grpcpp/support/server_callback.h
+  include/grpcpp/support/server_callback_impl.h
   include/grpcpp/support/server_interceptor.h
   include/grpcpp/support/slice.h
   include/grpcpp/support/status.h
@@ -3865,6 +3886,7 @@ foreach(_hdr
   include/grpcpp/support/string_ref.h
   include/grpcpp/support/stub_options.h
   include/grpcpp/support/sync_stream.h
+  include/grpcpp/support/sync_stream_impl.h
   include/grpcpp/support/time.h
   include/grpcpp/support/validate_service_config.h
   include/grpc/support/alloc.h
@@ -3950,7 +3972,9 @@ foreach(_hdr
   include/grpc++/impl/codegen/time.h
   include/grpcpp/impl/codegen/async_generic_service.h
   include/grpcpp/impl/codegen/async_stream.h
+  include/grpcpp/impl/codegen/async_stream_impl.h
   include/grpcpp/impl/codegen/async_unary_call.h
+  include/grpcpp/impl/codegen/async_unary_call_impl.h
   include/grpcpp/impl/codegen/byte_buffer.h
   include/grpcpp/impl/codegen/call.h
   include/grpcpp/impl/codegen/call_hook.h
@@ -3959,6 +3983,7 @@ foreach(_hdr
   include/grpcpp/impl/codegen/callback_common.h
   include/grpcpp/impl/codegen/channel_interface.h
   include/grpcpp/impl/codegen/client_callback.h
+  include/grpcpp/impl/codegen/client_callback_impl.h
   include/grpcpp/impl/codegen/client_context.h
   include/grpcpp/impl/codegen/client_context_impl.h
   include/grpcpp/impl/codegen/client_interceptor.h
@@ -3981,6 +4006,7 @@ foreach(_hdr
   include/grpcpp/impl/codegen/security/auth_context.h
   include/grpcpp/impl/codegen/serialization_traits.h
   include/grpcpp/impl/codegen/server_callback.h
+  include/grpcpp/impl/codegen/server_callback_impl.h
   include/grpcpp/impl/codegen/server_context.h
   include/grpcpp/impl/codegen/server_context_impl.h
   include/grpcpp/impl/codegen/server_interceptor.h
@@ -3992,6 +4018,7 @@ foreach(_hdr
   include/grpcpp/impl/codegen/string_ref.h
   include/grpcpp/impl/codegen/stub_options.h
   include/grpcpp/impl/codegen/sync_stream.h
+  include/grpcpp/impl/codegen/sync_stream_impl.h
   include/grpcpp/impl/codegen/time.h
   include/grpcpp/impl/codegen/sync.h
   include/grpc/census.h
@@ -4387,7 +4414,9 @@ foreach(_hdr
   include/grpc++/impl/codegen/time.h
   include/grpcpp/impl/codegen/async_generic_service.h
   include/grpcpp/impl/codegen/async_stream.h
+  include/grpcpp/impl/codegen/async_stream_impl.h
   include/grpcpp/impl/codegen/async_unary_call.h
+  include/grpcpp/impl/codegen/async_unary_call_impl.h
   include/grpcpp/impl/codegen/byte_buffer.h
   include/grpcpp/impl/codegen/call.h
   include/grpcpp/impl/codegen/call_hook.h
@@ -4396,6 +4425,7 @@ foreach(_hdr
   include/grpcpp/impl/codegen/callback_common.h
   include/grpcpp/impl/codegen/channel_interface.h
   include/grpcpp/impl/codegen/client_callback.h
+  include/grpcpp/impl/codegen/client_callback_impl.h
   include/grpcpp/impl/codegen/client_context.h
   include/grpcpp/impl/codegen/client_context_impl.h
   include/grpcpp/impl/codegen/client_interceptor.h
@@ -4418,6 +4448,7 @@ foreach(_hdr
   include/grpcpp/impl/codegen/security/auth_context.h
   include/grpcpp/impl/codegen/serialization_traits.h
   include/grpcpp/impl/codegen/server_callback.h
+  include/grpcpp/impl/codegen/server_callback_impl.h
   include/grpcpp/impl/codegen/server_context.h
   include/grpcpp/impl/codegen/server_context_impl.h
   include/grpcpp/impl/codegen/server_interceptor.h
@@ -4429,6 +4460,7 @@ foreach(_hdr
   include/grpcpp/impl/codegen/string_ref.h
   include/grpcpp/impl/codegen/stub_options.h
   include/grpcpp/impl/codegen/sync_stream.h
+  include/grpcpp/impl/codegen/sync_stream_impl.h
   include/grpcpp/impl/codegen/time.h
   include/grpc/impl/codegen/byte_buffer.h
   include/grpc/impl/codegen/byte_buffer_reader.h
@@ -4588,7 +4620,9 @@ foreach(_hdr
   include/grpc++/impl/codegen/time.h
   include/grpcpp/impl/codegen/async_generic_service.h
   include/grpcpp/impl/codegen/async_stream.h
+  include/grpcpp/impl/codegen/async_stream_impl.h
   include/grpcpp/impl/codegen/async_unary_call.h
+  include/grpcpp/impl/codegen/async_unary_call_impl.h
   include/grpcpp/impl/codegen/byte_buffer.h
   include/grpcpp/impl/codegen/call.h
   include/grpcpp/impl/codegen/call_hook.h
@@ -4597,6 +4631,7 @@ foreach(_hdr
   include/grpcpp/impl/codegen/callback_common.h
   include/grpcpp/impl/codegen/channel_interface.h
   include/grpcpp/impl/codegen/client_callback.h
+  include/grpcpp/impl/codegen/client_callback_impl.h
   include/grpcpp/impl/codegen/client_context.h
   include/grpcpp/impl/codegen/client_context_impl.h
   include/grpcpp/impl/codegen/client_interceptor.h
@@ -4619,6 +4654,7 @@ foreach(_hdr
   include/grpcpp/impl/codegen/security/auth_context.h
   include/grpcpp/impl/codegen/serialization_traits.h
   include/grpcpp/impl/codegen/server_callback.h
+  include/grpcpp/impl/codegen/server_callback_impl.h
   include/grpcpp/impl/codegen/server_context.h
   include/grpcpp/impl/codegen/server_context_impl.h
   include/grpcpp/impl/codegen/server_interceptor.h
@@ -4630,6 +4666,7 @@ foreach(_hdr
   include/grpcpp/impl/codegen/string_ref.h
   include/grpcpp/impl/codegen/stub_options.h
   include/grpcpp/impl/codegen/sync_stream.h
+  include/grpcpp/impl/codegen/sync_stream_impl.h
   include/grpcpp/impl/codegen/time.h
   include/grpc/impl/codegen/byte_buffer.h
   include/grpc/impl/codegen/byte_buffer_reader.h
@@ -4846,11 +4883,14 @@ foreach(_hdr
   include/grpcpp/server_posix.h
   include/grpcpp/server_posix_impl.h
   include/grpcpp/support/async_stream.h
+  include/grpcpp/support/async_stream_impl.h
   include/grpcpp/support/async_unary_call.h
+  include/grpcpp/support/async_unary_call_impl.h
   include/grpcpp/support/byte_buffer.h
   include/grpcpp/support/channel_arguments.h
   include/grpcpp/support/channel_arguments_impl.h
   include/grpcpp/support/client_callback.h
+  include/grpcpp/support/client_callback_impl.h
   include/grpcpp/support/client_interceptor.h
   include/grpcpp/support/config.h
   include/grpcpp/support/interceptor.h
@@ -4858,6 +4898,7 @@ foreach(_hdr
   include/grpcpp/support/proto_buffer_reader.h
   include/grpcpp/support/proto_buffer_writer.h
   include/grpcpp/support/server_callback.h
+  include/grpcpp/support/server_callback_impl.h
   include/grpcpp/support/server_interceptor.h
   include/grpcpp/support/slice.h
   include/grpcpp/support/status.h
@@ -4865,6 +4906,7 @@ foreach(_hdr
   include/grpcpp/support/string_ref.h
   include/grpcpp/support/stub_options.h
   include/grpcpp/support/sync_stream.h
+  include/grpcpp/support/sync_stream_impl.h
   include/grpcpp/support/time.h
   include/grpcpp/support/validate_service_config.h
   include/grpc/support/alloc.h
@@ -4950,7 +4992,9 @@ foreach(_hdr
   include/grpc++/impl/codegen/time.h
   include/grpcpp/impl/codegen/async_generic_service.h
   include/grpcpp/impl/codegen/async_stream.h
+  include/grpcpp/impl/codegen/async_stream_impl.h
   include/grpcpp/impl/codegen/async_unary_call.h
+  include/grpcpp/impl/codegen/async_unary_call_impl.h
   include/grpcpp/impl/codegen/byte_buffer.h
   include/grpcpp/impl/codegen/call.h
   include/grpcpp/impl/codegen/call_hook.h
@@ -4959,6 +5003,7 @@ foreach(_hdr
   include/grpcpp/impl/codegen/callback_common.h
   include/grpcpp/impl/codegen/channel_interface.h
   include/grpcpp/impl/codegen/client_callback.h
+  include/grpcpp/impl/codegen/client_callback_impl.h
   include/grpcpp/impl/codegen/client_context.h
   include/grpcpp/impl/codegen/client_context_impl.h
   include/grpcpp/impl/codegen/client_interceptor.h
@@ -4981,6 +5026,7 @@ foreach(_hdr
   include/grpcpp/impl/codegen/security/auth_context.h
   include/grpcpp/impl/codegen/serialization_traits.h
   include/grpcpp/impl/codegen/server_callback.h
+  include/grpcpp/impl/codegen/server_callback_impl.h
   include/grpcpp/impl/codegen/server_context.h
   include/grpcpp/impl/codegen/server_context_impl.h
   include/grpcpp/impl/codegen/server_interceptor.h
@@ -4992,6 +5038,7 @@ foreach(_hdr
   include/grpcpp/impl/codegen/string_ref.h
   include/grpcpp/impl/codegen/stub_options.h
   include/grpcpp/impl/codegen/sync_stream.h
+  include/grpcpp/impl/codegen/sync_stream_impl.h
   include/grpcpp/impl/codegen/time.h
   include/grpcpp/impl/codegen/sync.h
 )
@@ -8223,40 +8270,6 @@ target_link_libraries(grpc_credentials_test
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
-add_executable(grpc_fetch_oauth2
-  test/core/security/fetch_oauth2.cc
-)
-
-
-target_include_directories(grpc_fetch_oauth2
-  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
-  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
-  PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
-  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
-  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
-  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
-  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
-)
-
-target_link_libraries(grpc_fetch_oauth2
-  ${_gRPC_ALLTARGETS_LIBRARIES}
-  grpc_test_util
-  grpc
-  gpr
-)
-
-  # avoid dependency on libstdc++
-  if (_gRPC_CORE_NOSTDCXX_FLAGS)
-    set_target_properties(grpc_fetch_oauth2 PROPERTIES LINKER_LANGUAGE C)
-    target_compile_options(grpc_fetch_oauth2 PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
-  endif()
-
-endif (gRPC_BUILD_TESTS)
-if (gRPC_BUILD_TESTS)
-
 add_executable(grpc_ipv6_loopback_available_test
   test/core/iomgr/grpc_ipv6_loopback_available_test.cc
 )
@@ -9357,6 +9370,40 @@ target_link_libraries(minimal_stack_is_minimal_test
   if (_gRPC_CORE_NOSTDCXX_FLAGS)
     set_target_properties(minimal_stack_is_minimal_test PROPERTIES LINKER_LANGUAGE C)
     target_compile_options(minimal_stack_is_minimal_test PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
+  endif()
+
+endif (gRPC_BUILD_TESTS)
+if (gRPC_BUILD_TESTS)
+
+add_executable(mpmcqueue_test
+  test/core/iomgr/mpmcqueue_test.cc
+)
+
+
+target_include_directories(mpmcqueue_test
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
+  PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
+)
+
+target_link_libraries(mpmcqueue_test
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  grpc_test_util
+  grpc
+  gpr
+)
+
+  # avoid dependency on libstdc++
+  if (_gRPC_CORE_NOSTDCXX_FLAGS)
+    set_target_properties(mpmcqueue_test PROPERTIES LINKER_LANGUAGE C)
+    target_compile_options(mpmcqueue_test PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
   endif()
 
 endif (gRPC_BUILD_TESTS)
@@ -13997,6 +14044,45 @@ if (gRPC_INSTALL)
 endif()
 
 endif (gRPC_BUILD_CODEGEN)
+if (gRPC_BUILD_TESTS)
+
+add_executable(grpc_fetch_oauth2
+  test/core/security/fetch_oauth2.cc
+  third_party/googletest/googletest/src/gtest-all.cc
+  third_party/googletest/googlemock/src/gmock-all.cc
+)
+
+
+target_include_directories(grpc_fetch_oauth2
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
+  PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
+  PRIVATE third_party/googletest/googletest/include
+  PRIVATE third_party/googletest/googletest
+  PRIVATE third_party/googletest/googlemock/include
+  PRIVATE third_party/googletest/googlemock
+  PRIVATE ${_gRPC_PROTO_GENS_DIR}
+)
+
+target_link_libraries(grpc_fetch_oauth2
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  grpc_test_util
+  grpc++
+  grpc
+  gpr
+  ${_gRPC_GFLAGS_LIBRARIES}
+)
+
+
+endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
 add_executable(grpc_linux_system_roots_test

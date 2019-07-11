@@ -459,12 +459,13 @@ class GrpcPolledFdWindows : public GrpcPolledFd {
     connect_done_ = true;
     GPR_ASSERT(wsa_connect_error_ == 0);
     if (error == GRPC_ERROR_NONE) {
-      DWORD transfered_bytes = 0;
+      DWORD transferred_bytes = 0;
       DWORD flags;
-      BOOL wsa_success = WSAGetOverlappedResult(
-          grpc_winsocket_wrapped_socket(winsocket_),
-          &winsocket_->write_info.overlapped, &transfered_bytes, FALSE, &flags);
-      GPR_ASSERT(transfered_bytes == 0);
+      BOOL wsa_success =
+          WSAGetOverlappedResult(grpc_winsocket_wrapped_socket(winsocket_),
+                                 &winsocket_->write_info.overlapped,
+                                 &transferred_bytes, FALSE, &flags);
+      GPR_ASSERT(transferred_bytes == 0);
       if (!wsa_success) {
         wsa_connect_error_ = WSAGetLastError();
         char* msg = gpr_format_message(wsa_connect_error_);
@@ -620,8 +621,8 @@ class GrpcPolledFdWindows : public GrpcPolledFd {
       }
     }
     if (error == GRPC_ERROR_NONE) {
-      read_buf_ = grpc_slice_sub_no_ref(read_buf_, 0,
-                                        winsocket_->read_info.bytes_transfered);
+      read_buf_ = grpc_slice_sub_no_ref(
+          read_buf_, 0, winsocket_->read_info.bytes_transferred);
       read_buf_has_data_ = true;
     } else {
       grpc_slice_unref_internal(read_buf_);
@@ -657,9 +658,9 @@ class GrpcPolledFdWindows : public GrpcPolledFd {
     if (error == GRPC_ERROR_NONE) {
       tcp_write_state_ = WRITE_WAITING_FOR_VERIFICATION_UPON_RETRY;
       write_buf_ = grpc_slice_sub_no_ref(
-          write_buf_, 0, winsocket_->write_info.bytes_transfered);
+          write_buf_, 0, winsocket_->write_info.bytes_transferred);
       GRPC_CARES_TRACE_LOG("fd:|%s| OnIocpWriteableInner. bytes transferred:%d",
-                           GetName(), winsocket_->write_info.bytes_transfered);
+                           GetName(), winsocket_->write_info.bytes_transferred);
     } else {
       grpc_slice_unref_internal(write_buf_);
       write_buf_ = grpc_empty_slice();

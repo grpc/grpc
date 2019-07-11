@@ -280,6 +280,7 @@ filegroups:
   - src/core/lib/iomgr/ev_windows.cc
   - src/core/lib/iomgr/exec_ctx.cc
   - src/core/lib/iomgr/executor.cc
+  - src/core/lib/iomgr/executor/mpmcqueue.cc
   - src/core/lib/iomgr/fork_posix.cc
   - src/core/lib/iomgr/fork_windows.cc
   - src/core/lib/iomgr/gethostname_fallback.cc
@@ -467,6 +468,7 @@ filegroups:
   - src/core/lib/iomgr/ev_posix.h
   - src/core/lib/iomgr/exec_ctx.h
   - src/core/lib/iomgr/executor.h
+  - src/core/lib/iomgr/executor/mpmcqueue.h
   - src/core/lib/iomgr/gethostname.h
   - src/core/lib/iomgr/grpc_if_nametoindex.h
   - src/core/lib/iomgr/internal_errqueue.h
@@ -1251,7 +1253,9 @@ filegroups:
   - include/grpc++/impl/codegen/time.h
   - include/grpcpp/impl/codegen/async_generic_service.h
   - include/grpcpp/impl/codegen/async_stream.h
+  - include/grpcpp/impl/codegen/async_stream_impl.h
   - include/grpcpp/impl/codegen/async_unary_call.h
+  - include/grpcpp/impl/codegen/async_unary_call_impl.h
   - include/grpcpp/impl/codegen/byte_buffer.h
   - include/grpcpp/impl/codegen/call.h
   - include/grpcpp/impl/codegen/call_hook.h
@@ -1260,6 +1264,7 @@ filegroups:
   - include/grpcpp/impl/codegen/callback_common.h
   - include/grpcpp/impl/codegen/channel_interface.h
   - include/grpcpp/impl/codegen/client_callback.h
+  - include/grpcpp/impl/codegen/client_callback_impl.h
   - include/grpcpp/impl/codegen/client_context.h
   - include/grpcpp/impl/codegen/client_context_impl.h
   - include/grpcpp/impl/codegen/client_interceptor.h
@@ -1282,6 +1287,7 @@ filegroups:
   - include/grpcpp/impl/codegen/security/auth_context.h
   - include/grpcpp/impl/codegen/serialization_traits.h
   - include/grpcpp/impl/codegen/server_callback.h
+  - include/grpcpp/impl/codegen/server_callback_impl.h
   - include/grpcpp/impl/codegen/server_context.h
   - include/grpcpp/impl/codegen/server_context_impl.h
   - include/grpcpp/impl/codegen/server_interceptor.h
@@ -1293,6 +1299,7 @@ filegroups:
   - include/grpcpp/impl/codegen/string_ref.h
   - include/grpcpp/impl/codegen/stub_options.h
   - include/grpcpp/impl/codegen/sync_stream.h
+  - include/grpcpp/impl/codegen/sync_stream_impl.h
   - include/grpcpp/impl/codegen/time.h
   uses:
   - grpc_codegen
@@ -1411,11 +1418,14 @@ filegroups:
   - include/grpcpp/server_posix.h
   - include/grpcpp/server_posix_impl.h
   - include/grpcpp/support/async_stream.h
+  - include/grpcpp/support/async_stream_impl.h
   - include/grpcpp/support/async_unary_call.h
+  - include/grpcpp/support/async_unary_call_impl.h
   - include/grpcpp/support/byte_buffer.h
   - include/grpcpp/support/channel_arguments.h
   - include/grpcpp/support/channel_arguments_impl.h
   - include/grpcpp/support/client_callback.h
+  - include/grpcpp/support/client_callback_impl.h
   - include/grpcpp/support/client_interceptor.h
   - include/grpcpp/support/config.h
   - include/grpcpp/support/interceptor.h
@@ -1423,6 +1433,7 @@ filegroups:
   - include/grpcpp/support/proto_buffer_reader.h
   - include/grpcpp/support/proto_buffer_writer.h
   - include/grpcpp/support/server_callback.h
+  - include/grpcpp/support/server_callback_impl.h
   - include/grpcpp/support/server_interceptor.h
   - include/grpcpp/support/slice.h
   - include/grpcpp/support/status.h
@@ -1430,6 +1441,7 @@ filegroups:
   - include/grpcpp/support/string_ref.h
   - include/grpcpp/support/stub_options.h
   - include/grpcpp/support/sync_stream.h
+  - include/grpcpp/support/sync_stream_impl.h
   - include/grpcpp/support/time.h
   - include/grpcpp/support/validate_service_config.h
   headers:
@@ -1957,6 +1969,7 @@ libs:
   language: c++
   headers:
   - src/compiler/config.h
+  - src/compiler/config_protobuf.h
   - src/compiler/cpp_generator.h
   - src/compiler/cpp_generator_helpers.h
   - src/compiler/csharp_generator.h
@@ -2851,16 +2864,6 @@ targets:
   - grpc_test_util
   - grpc
   - gpr
-- name: grpc_fetch_oauth2
-  build: test
-  run: false
-  language: c
-  src:
-  - test/core/security/fetch_oauth2.cc
-  deps:
-  - grpc_test_util
-  - grpc
-  - gpr
 - name: grpc_ipv6_loopback_available_test
   build: test
   language: c
@@ -3276,6 +3279,16 @@ targets:
   language: c
   src:
   - test/core/channel/minimal_stack_is_minimal_test.cc
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr
+  uses_polling: false
+- name: mpmcqueue_test
+  build: test
+  language: c
+  src:
+  - test/core/iomgr/mpmcqueue_test.cc
   deps:
   - grpc_test_util
   - grpc
@@ -4923,6 +4936,17 @@ targets:
   deps:
   - grpc_plugin_support
   secure: false
+- name: grpc_fetch_oauth2
+  build: test
+  run: false
+  language: c++
+  src:
+  - test/core/security/fetch_oauth2.cc
+  deps:
+  - grpc_test_util
+  - grpc++
+  - grpc
+  - gpr
 - name: grpc_linux_system_roots_test
   gtest: true
   build: test

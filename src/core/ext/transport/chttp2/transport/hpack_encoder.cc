@@ -381,10 +381,11 @@ static void emit_lithdr_incidx(grpc_chttp2_hpack_compressor* c,
   uint32_t len_val_len;
   GPR_ASSERT(len_val <= UINT32_MAX);
   len_val_len = GRPC_CHTTP2_VARINT_LENGTH((uint32_t)len_val, 1);
-  GRPC_CHTTP2_WRITE_VARINT(key_index, 2, 0x40,
-                           add_tiny_header_data(st, len_pfx), len_pfx);
+  GPR_DEBUG_ASSERT(len_pfx + len_val_len < GRPC_SLICE_INLINED_SIZE);
+  uint8_t* data = add_tiny_header_data(st, len_pfx + len_val_len);
+  GRPC_CHTTP2_WRITE_VARINT(key_index, 2, 0x40, data, len_pfx);
   GRPC_CHTTP2_WRITE_VARINT((uint32_t)len_val, 1, value.huffman_prefix,
-                           add_tiny_header_data(st, len_val_len), len_val_len);
+                           &data[len_pfx], len_val_len);
   add_wire_value(st, value);
 }
 
@@ -398,10 +399,11 @@ static void emit_lithdr_noidx(grpc_chttp2_hpack_compressor* c,
   uint32_t len_val_len;
   GPR_ASSERT(len_val <= UINT32_MAX);
   len_val_len = GRPC_CHTTP2_VARINT_LENGTH((uint32_t)len_val, 1);
-  GRPC_CHTTP2_WRITE_VARINT(key_index, 4, 0x00,
-                           add_tiny_header_data(st, len_pfx), len_pfx);
+  GPR_DEBUG_ASSERT(len_pfx + len_val_len < GRPC_SLICE_INLINED_SIZE);
+  uint8_t* data = add_tiny_header_data(st, len_pfx + len_val_len);
+  GRPC_CHTTP2_WRITE_VARINT(key_index, 4, 0x00, data, len_pfx);
   GRPC_CHTTP2_WRITE_VARINT((uint32_t)len_val, 1, value.huffman_prefix,
-                           add_tiny_header_data(st, len_val_len), len_val_len);
+                           &data[len_pfx], len_val_len);
   add_wire_value(st, value);
 }
 
@@ -418,9 +420,10 @@ static void emit_lithdr_incidx_v(grpc_chttp2_hpack_compressor* c,
   uint32_t len_val_len = GRPC_CHTTP2_VARINT_LENGTH(len_val, 1);
   GPR_ASSERT(len_key <= UINT32_MAX);
   GPR_ASSERT(wire_value_length(value) <= UINT32_MAX);
-  *add_tiny_header_data(st, 1) = 0x40;
-  GRPC_CHTTP2_WRITE_VARINT(len_key, 1, 0x00,
-                           add_tiny_header_data(st, len_key_len), len_key_len);
+  GPR_DEBUG_ASSERT(1 + len_key_len < GRPC_SLICE_INLINED_SIZE);
+  uint8_t* data = add_tiny_header_data(st, 1 + len_key_len);
+  data[0] = 0x40;
+  GRPC_CHTTP2_WRITE_VARINT(len_key, 1, 0x00, &data[1], len_key_len);
   add_header_data(st, grpc_slice_ref_internal(GRPC_MDKEY(elem)));
   GRPC_CHTTP2_WRITE_VARINT(len_val, 1, value.huffman_prefix,
                            add_tiny_header_data(st, len_val_len), len_val_len);
@@ -440,9 +443,10 @@ static void emit_lithdr_noidx_v(grpc_chttp2_hpack_compressor* c,
   uint32_t len_val_len = GRPC_CHTTP2_VARINT_LENGTH(len_val, 1);
   GPR_ASSERT(len_key <= UINT32_MAX);
   GPR_ASSERT(wire_value_length(value) <= UINT32_MAX);
-  *add_tiny_header_data(st, 1) = 0x00;
-  GRPC_CHTTP2_WRITE_VARINT(len_key, 1, 0x00,
-                           add_tiny_header_data(st, len_key_len), len_key_len);
+  /* Preconditions passed; emit header. */
+  uint8_t* data = add_tiny_header_data(st, 1 + len_key_len);
+  data[0] = 0x00;
+  GRPC_CHTTP2_WRITE_VARINT(len_key, 1, 0x00, &data[1], len_key_len);
   add_header_data(st, grpc_slice_ref_internal(GRPC_MDKEY(elem)));
   GRPC_CHTTP2_WRITE_VARINT(len_val, 1, value.huffman_prefix,
                            add_tiny_header_data(st, len_val_len), len_val_len);
