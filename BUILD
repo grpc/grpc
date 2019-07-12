@@ -996,6 +996,7 @@ grpc_cc_library(
         "grpc_client_authority_filter",
         "grpc_lb_policy_pick_first",
         "grpc_lb_policy_round_robin",
+        "grpc_client_channel_idle_filter",
         "grpc_max_age_filter",
         "grpc_message_size_filter",
         "grpc_resolver_dns_ares",
@@ -1080,6 +1081,20 @@ grpc_cc_library(
         "orphanable",
         "ref_counted",
         "ref_counted_ptr",
+    ],
+)
+
+grpc_cc_library(
+    name = "grpc_client_channel_idle_filter",
+    srcs = [
+        "src/core/ext/filters/client_channel_idle/client_channel_idle_filter.cc",
+    ],
+    hdrs = [
+        "src/core/ext/filters/client_channel_idle/client_channel_idle_filter.h",
+    ],
+    language = "c++",
+    deps = [
+        "grpc_base",
     ],
 )
 
