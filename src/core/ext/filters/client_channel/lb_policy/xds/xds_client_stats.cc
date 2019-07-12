@@ -29,84 +29,101 @@ namespace grpc_core {
 namespace {
 
 template <typename T>
-void GetAndResetCounter(Atomic<T>* from, Atomic<T>* to) {
-  T count = from->Exchange(0, MemoryOrder::ACQ_REL);
-  to->Store(count, MemoryOrder::ACQ_REL);
+T GetAndResetCounter(Atomic<T>* from) {
+  return from->Exchange(0, MemoryOrder::RELAXED);
+}
+
+template <typename T>
+void CopyCounter(Atomic<T>* from, Atomic<T>* to) {
+  T count = from->Load(MemoryOrder::RELAXED);
+  to->Store(count, MemoryOrder::RELAXED);
 }
 
 }  // namespace
 
 //
+// XdsLbClientStats::LocalityStats::LoadMetric::Harvest
+//
+
+bool XdsLbClientStats::LocalityStats::LoadMetric::Harvest::IsAllZero() const {
+  return total_metric_value == 0 && num_requests_finished_with_metric == 0;
+}
+
+//
 // XdsLbClientStats::LocalityStats::LoadMetric
 //
 
-XdsLbClientStats::LocalityStats::LoadMetric
-XdsLbClientStats::LocalityStats::LoadMetric::Harvest() {
-  LoadMetric metric(*this);
+XdsLbClientStats::LocalityStats::LoadMetric::Harvest
+XdsLbClientStats::LocalityStats::LoadMetric::Reap() {
+  Harvest metric = {num_requests_finished_with_metric_, total_metric_value_};
   num_requests_finished_with_metric_ = 0;
   total_metric_value_ = 0;
   return metric;
 }
 
-bool XdsLbClientStats::LocalityStats::LoadMetric::IsAllZero() const {
-  return total_metric_value_ == 0 && num_requests_finished_with_metric_ == 0;
+//
+// XdsLbClientStats::LocalityStats::Harvest
+//
+
+bool XdsLbClientStats::LocalityStats::Harvest::IsAllZero() {
+  if (total_successful_requests != 0 || total_requests_in_progress != 0 ||
+      total_error_requests != 0 || total_issued_requests != 0) {
+    return false;
+  }
+  for (auto& p : load_metric_stats) {
+    const LoadMetric::Harvest& metric_value = p.second;
+    if (!metric_value.IsAllZero()) return false;
+  }
+  return true;
 }
 
 //
 // XdsLbClientStats::LocalityStats
 //
 
+// FIXME: What happens when the tree is rebalancing? Fix potential
+// synchronization issue.
 XdsLbClientStats::LocalityStats::LocalityStats(
-    XdsLbClientStats::LocalityStats&& other) noexcept {
-  *this = std::move(other);
+    XdsLbClientStats::LocalityStats&& other) noexcept
+    : total_successful_requests_(
+          GetAndResetCounter(&other.total_successful_requests_)),
+      total_requests_in_progress_(
+          GetAndResetCounter(&other.total_requests_in_progress_)),
+      total_error_requests_(GetAndResetCounter(&other.total_error_requests_)),
+      total_issued_requests_(
+          GetAndResetCounter(&other.total_issued_requests_)) {
+  MutexLock lock(&other.load_metric_stats_mu_);
+  load_metric_stats_ = other.load_metric_stats_;
 }
 
 XdsLbClientStats::LocalityStats& XdsLbClientStats::LocalityStats::operator=(
     grpc_core::XdsLbClientStats::LocalityStats&& other) noexcept {
-  GetAndResetCounter(&other.total_successful_requests_,
-                     &total_successful_requests_);
-  GetAndResetCounter(&other.total_requests_in_progress_,
-                     &total_requests_in_progress_);
-  GetAndResetCounter(&other.total_error_requests_, &total_error_requests_);
-  GetAndResetCounter(&other.total_issued_requests_, &total_issued_requests_);
-  load_metric_stats_ = std::move(other.load_metric_stats_);
+  CopyCounter(&other.total_successful_requests_, &total_successful_requests_);
+  CopyCounter(&other.total_requests_in_progress_, &total_requests_in_progress_);
+  CopyCounter(&other.total_error_requests_, &total_error_requests_);
+  CopyCounter(&other.total_issued_requests_, &total_issued_requests_);
+  load_metric_stats_ = other.load_metric_stats_;
   return *this;
 }
 
-XdsLbClientStats::LocalityStats XdsLbClientStats::LocalityStats::Harvest() {
-  LocalityStats stats;
-  GetAndResetCounter(&total_successful_requests_,
-                     &stats.total_successful_requests_);
-  // Don't reset total_requests_in_progress because it's not related to a single
-  // reporting interval.
-  stats.total_requests_in_progress_.Store(
-      total_requests_in_progress_.Load(MemoryOrder::ACQ_REL),
-      MemoryOrder::ACQ_REL);
-  GetAndResetCounter(&total_error_requests_, &stats.total_error_requests_);
-  GetAndResetCounter(&total_issued_requests_, &stats.total_issued_requests_);
+XdsLbClientStats::LocalityStats::Harvest
+XdsLbClientStats::LocalityStats::Reap() {
+  Harvest harvest = {GetAndResetCounter(&total_successful_requests_),
+                     // Don't reset total_requests_in_progress because it's not
+                     // related to a single reporting interval.
+                     total_requests_in_progress_.Load(MemoryOrder::RELAXED),
+                     GetAndResetCounter(&total_error_requests_),
+                     GetAndResetCounter(&total_issued_requests_)};
   {
     MutexLock lock(&load_metric_stats_mu_);
     for (auto& p : load_metric_stats_) {
       const char* metric_name = p.first.get();
-      const LoadMetric& metric_value = p.second;
-      stats.load_metric_stats_.emplace(gpr_strdup(metric_name), metric_value);
+      LoadMetric& metric_value = p.second;
+      harvest.load_metric_stats.emplace(gpr_strdup(metric_name),
+                                        metric_value.Reap());
     }
   }
-  return stats;
-}
-
-bool XdsLbClientStats::LocalityStats::IsAllZero() {
-  if (total_successful_requests_.Load(MemoryOrder::ACQ_REL) != 0 ||
-      total_requests_in_progress_.Load(MemoryOrder::ACQ_REL) != 0 ||
-      total_error_requests_.Load(MemoryOrder::ACQ_REL) != 0 ||
-      total_issued_requests_.Load(MemoryOrder::ACQ_REL) != 0) {
-    return false;
-  }
-  for (auto& p : load_metric_stats_) {
-    const LoadMetric& metric_value = p.second;
-    if (!metric_value.IsAllZero()) return false;
-  }
-  return true;
+  return harvest;
 }
 
 void XdsLbClientStats::LocalityStats::AddCallStarted() {
@@ -115,54 +132,53 @@ void XdsLbClientStats::LocalityStats::AddCallStarted() {
             this);
     return;
   }
-  total_issued_requests_.FetchAdd(1);
-  total_requests_in_progress_.FetchAdd(1);
+  total_issued_requests_.FetchAdd(1, MemoryOrder::RELAXED);
+  total_requests_in_progress_.FetchAdd(1, MemoryOrder::RELAXED);
 }
 
 void XdsLbClientStats::LocalityStats::AddCallFinished(bool fail) {
   Atomic<uint64_t>& to_increment =
       fail ? total_error_requests_ : total_successful_requests_;
-  to_increment.FetchAdd(1);
-  total_requests_in_progress_.FetchAdd(-1);
+  to_increment.FetchAdd(1, MemoryOrder::ACQ_REL);
+  total_requests_in_progress_.FetchAdd(-1, MemoryOrder::ACQ_REL);
+}
+
+//
+// XdsLbClientStats::Harvest
+//
+
+bool XdsLbClientStats::Harvest::IsAllZero() {
+  for (auto& p : upstream_locality_stats) {
+    if (!p.second.IsAllZero()) return false;
+  }
+  for (auto& p : dropped_requests) {
+    if (p.second != 0) return false;
+  }
+  return total_dropped_requests == 0;
 }
 
 //
 // XdsLbClientStats
 //
 
-XdsLbClientStats::XdsLbClientStats(grpc_core::XdsLbClientStats&& other) noexcept
-    : upstream_locality_stats_(std::move(other.upstream_locality_stats_)),
-      dropped_requests_(std::move(other.dropped_requests_)),
-      load_report_interval_(other.load_report_interval_),
-      last_report_time_(other.last_report_time_) {
-  GetAndResetCounter(&total_dropped_requests_, &other.total_dropped_requests_);
-}
-
-XdsLbClientStats XdsLbClientStats::Harvest() {
-  XdsLbClientStats stats;
-  // Record reporting interval in the harvest.
+XdsLbClientStats::Harvest XdsLbClientStats::Reap() {
   grpc_millis now = ExecCtx::Get()->Now();
-  stats.load_report_interval_ = now - last_report_time_;
+  // Record total_dropped_requests and reporting interval in the harvest.
+  Harvest harvest = {
+      .total_dropped_requests = GetAndResetCounter(&total_dropped_requests_),
+      .load_report_interval = now - last_report_time_};
   // Update last report time.
   last_report_time_ = now;
-  // Harvest all the stats.
+  // Harvest all the other stats.
   for (auto& p : upstream_locality_stats_) {
-    stats.upstream_locality_stats_.emplace(p.first, p.second.Harvest());
+    harvest.upstream_locality_stats.emplace(p.first, p.second.Reap());
   }
-  GetAndResetCounter(&total_dropped_requests_, &stats.total_dropped_requests_);
   {
     MutexLock lock(&dropped_requests_mu_);
-    stats.dropped_requests_ = dropped_requests_;
+    harvest.dropped_requests = dropped_requests_;
     for (auto& p : dropped_requests_) p.second = 0;
   }
-  return stats;
-}
-
-bool XdsLbClientStats::IsAllZero() {
-  for (auto& p : upstream_locality_stats_) {
-    if (!p.second.IsAllZero()) return false;
-  }
-  return total_dropped_requests_.Load(MemoryOrder::ACQ_REL) == 0;
+  return harvest;
 }
 
 void XdsLbClientStats::MaybeInitLastReportTime() {

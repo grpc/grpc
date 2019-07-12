@@ -82,7 +82,14 @@ class XdsLocalityName : public RefCounted<XdsLocalityName> {
   UniquePtr<char> human_readable_string_;
 };
 
-// Thread-safe on data plane; thread-unsafe on control plane.
+// The stats classes (i.e., XdsLbClientStats, LocalityStats, and LoadMetric) can
+// be Reap()ed to populate the load report. The reaped results are contained in
+// the respective Harvest structs. The Harvest structs have no synchronization.
+// The stats classes use several different synchronization methods. 1. Most of
+// the counters are Atomic<>s for performance. 2. Some of the Map<>s are
+// protected by Mutex if we are not guaranteed that the accesses to them are
+// synchronized by the callers. 3. The Map<>s to which the accesses are already
+// synchronized by the callers do not have additional synchronization here.
 // FIXME: audit the memory order usage.
 class XdsLbClientStats {
  public:
@@ -90,15 +97,16 @@ class XdsLbClientStats {
    public:
     class LoadMetric {
      public:
+      struct Harvest {
+        bool IsAllZero() const;
+
+        uint64_t num_requests_finished_with_metric;
+        double total_metric_value;
+      };
+
       // Returns a snapshot of this instance and reset all the accumulative
       // counters.
-      LoadMetric Harvest();
-      bool IsAllZero() const;
-
-      uint64_t num_requests_finished_with_metric() const {
-        return num_requests_finished_with_metric_;
-      }
-      double total_metric_value() const { return total_metric_value_; }
+      Harvest Reap();
 
      private:
       uint64_t num_requests_finished_with_metric_{0};
@@ -106,18 +114,30 @@ class XdsLbClientStats {
     };
 
     using LoadMetricMap = Map<UniquePtr<char>, LoadMetric, StringLess>;
+    using LoadMetricHarvestMap =
+        Map<UniquePtr<char>, LoadMetric::Harvest, StringLess>;
+
+    struct Harvest {
+      // TODO(juanlishen): Change this to const method when const_iterator is
+      // added to Map<>.
+      bool IsAllZero();
+
+      uint64_t total_successful_requests;
+      uint64_t total_requests_in_progress;
+      uint64_t total_error_requests;
+      uint64_t total_issued_requests;
+      LoadMetricHarvestMap load_metric_stats;
+    };
 
     LocalityStats() = default;
+    // Move ctor. For map operations.
     LocalityStats(LocalityStats&& other) noexcept;
-    // For map operations.
+    // Copy assignment. For map operations.
     LocalityStats& operator=(LocalityStats&& other) noexcept;
 
     // Returns a snapshot of this instance and reset all the accumulative
     // counters.
-    LocalityStats Harvest();
-    // TODO(juanlishen): Change this to const method when const_iterator is
-    // added to Map<>.
-    bool IsAllZero();
+    Harvest Reap();
 
     // After a LocalityStats is killed, it can't call AddCallStarted() unless
     // revived. AddCallFinished() can still be called. Once the number of in
@@ -131,22 +151,6 @@ class XdsLbClientStats {
 
     void AddCallStarted();
     void AddCallFinished(bool fail = false);
-
-    uint64_t total_successful_requests() const {
-      return total_successful_requests_.Load(MemoryOrder::RELAXED);
-    }
-    uint64_t total_requests_in_progress() const {
-      return total_requests_in_progress_.Load(MemoryOrder::RELAXED);
-    }
-    uint64_t total_error_requests() const {
-      return total_error_requests_.Load(MemoryOrder::RELAXED);
-    }
-    uint64_t total_issued_requests() const {
-      return total_issued_requests_.Load(MemoryOrder::RELAXED);
-    }
-    // TODO(juanlishen): Change this to const method when const_iterator is
-    // added to Map<>.
-    LoadMetricMap& load_metric_stats() { return load_metric_stats_; }
 
    private:
     Atomic<uint64_t> total_successful_requests_{0};
@@ -165,36 +169,33 @@ class XdsLbClientStats {
 
   using LocalityStatsMap =
       Map<RefCountedPtr<XdsLocalityName>, LocalityStats, XdsLocalityName::Less>;
+  using LocalityStatsHarvestMap =
+      Map<RefCountedPtr<XdsLocalityName>, LocalityStats::Harvest,
+          XdsLocalityName::Less>;
   using DroppedRequestsMap = Map<UniquePtr<char>, uint64_t, StringLess>;
+  using DroppedRequestsHarvestMap = DroppedRequestsMap;
 
-  XdsLbClientStats() = default;
-  XdsLbClientStats(XdsLbClientStats&& other) noexcept;
+  struct Harvest {
+    // TODO(juanlishen): Change this to const method when const_iterator is
+    // added to Map<>.
+    bool IsAllZero();
+
+    LocalityStatsHarvestMap upstream_locality_stats;
+    uint64_t total_dropped_requests;
+    DroppedRequestsHarvestMap dropped_requests;
+    // The actual load report interval.
+    grpc_millis load_report_interval;
+  };
 
   // Returns a snapshot of this instance and reset all the accumulative
   // counters.
-  XdsLbClientStats Harvest();
-  // TODO(juanlishen): Change this to const method when const_iterator is added
-  // to Map<>.
-  bool IsAllZero();
+  Harvest Reap();
 
   void MaybeInitLastReportTime();
   LocalityStats* FindLocalityStats(
       const RefCountedPtr<XdsLocalityName>& locality_name);
   void PruneLocalityStats();
   void AddCallDropped(UniquePtr<char> category);
-
-  // TODO(juanlishen): Change this to const method when const_iterator is added
-  // to Map<>.
-  LocalityStatsMap& upstream_locality_stats() {
-    return upstream_locality_stats_;
-  }
-  uint64_t total_dropped_requests() const {
-    return total_dropped_requests_.Load(MemoryOrder::RELAXED);
-  }
-  // TODO(juanlishen): Change this to const method when const_iterator is added
-  // to Map<>.
-  DroppedRequestsMap& dropped_requests() { return dropped_requests_; }
-  grpc_millis load_report_interval() const { return load_report_interval_; }
 
  private:
   // The stats for each locality.
@@ -205,8 +206,6 @@ class XdsLbClientStats {
   // combiner) and the load reporting thread (from the control plane combiner).
   Mutex dropped_requests_mu_;
   DroppedRequestsMap dropped_requests_;
-  // The actual load report interval.
-  grpc_millis load_report_interval_;
   // The timestamp of last reporting. For the LB-policy-wide first report, the
   // last_report_time is the time we scheduled the first reporting timer.
   grpc_millis last_report_time_;

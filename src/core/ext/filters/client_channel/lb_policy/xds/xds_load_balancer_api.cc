@@ -231,8 +231,8 @@ namespace {
 
 void LocalityStatsPopulate(
     LocalityStats* output,
-    Pair<grpc_core::RefCountedPtr<grpc_core::XdsLocalityName>,
-         grpc_core::XdsLbClientStats::LocalityStats>& input,
+    Pair<RefCountedPtr<XdsLocalityName>,
+         XdsLbClientStats::LocalityStats::Harvest>& input,
     upb_arena* arena) {
   // Set sub_zone.
   XdsLocality* locality =
@@ -241,29 +241,30 @@ void LocalityStatsPopulate(
   envoy_api_v2_core_Locality_set_sub_zone(
       locality, upb_strview_makez(input.first->sub_zone()));
   // Set total counts.
-  XdsLbClientStats::LocalityStats& stats = input.second;
+  XdsLbClientStats::LocalityStats::Harvest& harvest = input.second;
   envoy_api_v2_endpoint_UpstreamLocalityStats_set_total_successful_requests(
-      output, stats.total_successful_requests());
+      output, harvest.total_successful_requests);
   envoy_api_v2_endpoint_UpstreamLocalityStats_set_total_requests_in_progress(
-      output, stats.total_requests_in_progress());
+      output, harvest.total_requests_in_progress);
   envoy_api_v2_endpoint_UpstreamLocalityStats_set_total_error_requests(
-      output, stats.total_error_requests());
+      output, harvest.total_error_requests);
   // FIXME: uncomment after regenerating.
   //  envoy_api_v2_endpoint_UpstreamLocalityStats_set_total_issued_requests(
   //      output, stats.total_issued_requests);
   // Add load metric stats.
-  for (auto& p : stats.load_metric_stats()) {
+  for (auto& p : harvest.load_metric_stats) {
     const char* metric_name = p.first.get();
-    const XdsLbClientStats::LocalityStats::LoadMetric& metric_value = p.second;
+    const XdsLbClientStats::LocalityStats::LoadMetric::Harvest& metric_value =
+        p.second;
     envoy_api_v2_endpoint_EndpointLoadMetricStats* load_metric =
         envoy_api_v2_endpoint_UpstreamLocalityStats_add_load_metric_stats(
             output, arena);
     envoy_api_v2_endpoint_EndpointLoadMetricStats_set_metric_name(
         load_metric, upb_strview_makez(metric_name));
     envoy_api_v2_endpoint_EndpointLoadMetricStats_set_num_requests_finished_with_metric(
-        load_metric, metric_value.num_requests_finished_with_metric());
+        load_metric, metric_value.num_requests_finished_with_metric);
     envoy_api_v2_endpoint_EndpointLoadMetricStats_set_total_metric_value(
-        load_metric, metric_value.total_metric_value());
+        load_metric, metric_value.total_metric_value);
   }
 }
 
@@ -272,7 +273,7 @@ void LocalityStatsPopulate(
 grpc_slice XdsLrsRequestCreateAndEncode(const char* server_name,
                                         XdsLbClientStats* client_stats) {
   upb::Arena arena;
-  XdsLbClientStats harvest = client_stats->Harvest();
+  XdsLbClientStats::Harvest harvest = client_stats->Reap();
   // Prune unused locality stats.
   client_stats->PruneLocalityStats();
   // When all the counts are zero, return empty slice.
@@ -289,14 +290,14 @@ grpc_slice XdsLrsRequestCreateAndEncode(const char* server_name,
   envoy_api_v2_endpoint_ClusterStats_set_cluster_name(
       cluster_stats, upb_strview_makez(server_name));
   // Add locality stats.
-  for (auto& p : harvest.upstream_locality_stats()) {
+  for (auto& p : harvest.upstream_locality_stats) {
     LocalityStats* locality_stats =
         envoy_api_v2_endpoint_ClusterStats_add_upstream_locality_stats(
             cluster_stats, arena.ptr());
     LocalityStatsPopulate(locality_stats, p, arena.ptr());
   }
   // Add dropped requests.
-  for (auto& p : harvest.dropped_requests()) {
+  for (auto& p : harvest.dropped_requests) {
     const char* category = p.first.get();
     const uint64_t count = p.second;
     envoy_api_v2_endpoint_ClusterStats_DroppedRequests* dropped_requests =
@@ -309,10 +310,10 @@ grpc_slice XdsLrsRequestCreateAndEncode(const char* server_name,
   }
   // Set total dropped requests.
   envoy_api_v2_endpoint_ClusterStats_set_total_dropped_requests(
-      cluster_stats, harvest.total_dropped_requests());
+      cluster_stats, harvest.total_dropped_requests);
   // Set real load report interval.
   gpr_timespec timespec =
-      grpc_millis_to_timespec(harvest.load_report_interval(), GPR_TIMESPAN);
+      grpc_millis_to_timespec(harvest.load_report_interval, GPR_TIMESPAN);
   google_protobuf_Duration* load_report_interval =
       envoy_api_v2_endpoint_ClusterStats_mutable_load_report_interval(
           cluster_stats, arena.ptr());
