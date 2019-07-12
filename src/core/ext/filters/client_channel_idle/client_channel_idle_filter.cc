@@ -9,7 +9,9 @@
 #include "src/core/lib/surface/channel_init.h"
 #include "src/core/lib/transport/http2_errors.h"
 
-#define DEFAULT_MAX_LEISURE_TIME_MS GRPC_MILLIS_INF_FUTURE
+// The idle filter is enabled in client channel by default.
+// To disable the idle filte, set GRPC_ARG_MAX_CONNECTION_IDLE_MS to INT_MAX in channel args.
+#define DEFAULT_MAX_LEISURE_TIME_MS (5/*minutes*/ * 60 * 1000)
 
 namespace {
 
@@ -141,7 +143,7 @@ ChannelData::ChannelData(grpc_channel_element_args* args, grpc_error** error)
     const int value = grpc_channel_arg_get_integer(arg, {INT_MAX, 0, INT_MAX});
     max_leisure_time_ = value == INT_MAX ? GRPC_MILLIS_INF_FUTURE : value;
   }
-  if (max_leisure_time_ == GRPC_MILLIS_INF_FUTURE) {
+  if (GPR_UNLIKELY(max_leisure_time_ == GRPC_MILLIS_INF_FUTURE)) {
     // Set the state to BUSY so the timer will never be set.
     IncreaseCallCount();
   } else {
@@ -344,10 +346,9 @@ static bool maybe_add_client_channel_idle_filter(
     grpc_channel_stack_builder* builder, void* arg) {
   const grpc_channel_args* channel_args =
       grpc_channel_stack_builder_get_channel_arguments(builder);
-  bool enable =
-      grpc_channel_arg_get_integer(
+  bool enable = grpc_channel_arg_get_integer(
           grpc_channel_args_find(channel_args, GRPC_ARG_MAX_CONNECTION_IDLE_MS),
-          {INT_MAX, 0, INT_MAX}) != INT_MAX;
+          {DEFAULT_MAX_LEISURE_TIME_MS, 0, INT_MAX}) != INT_MAX;
   if (enable) {
     GRPC_IDLE_FILTER_LOG("enabled");
     return grpc_channel_stack_builder_prepend_filter(
