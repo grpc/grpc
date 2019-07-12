@@ -320,10 +320,6 @@ inline grpc_core::StaticSlice grpc_slice_from_static_buffer_internal(
   return grpc_core::StaticSlice(
       &grpc_core::kNoopRefcount, len,
       reinterpret_cast<uint8_t*>(const_cast<void*>(s)));
-  //  slice.refcount = &grpc_core::kNoopRefcount;
-  //  slice.data.refcounted.bytes = (uint8_t*)s;
-  //  slice.data.refcounted.length = len;
-  //  return slice;
 }
 
 inline grpc_core::StaticSlice grpc_slice_from_static_string_internal(
