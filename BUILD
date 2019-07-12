@@ -1065,7 +1065,7 @@ grpc_cc_library(
         "grpc_base",
         "grpc_client_authority_filter",
         "grpc_deadline_filter",
-        "health_proto",
+        "grpc_health_upb",
         "inlined_vector",
         "orphanable",
         "ref_counted",
@@ -1191,20 +1191,6 @@ grpc_cc_library(
     deps = [
         "gpr_codegen",
     ],
-)
-
-grpc_cc_library(
-    name = "health_proto",
-    srcs = [
-        "src/core/ext/filters/client_channel/health/health.pb.c",
-    ],
-    hdrs = [
-        "src/core/ext/filters/client_channel/health/health.pb.h",
-    ],
-    external_deps = [
-        "nanopb",
-    ],
-    language = "c++",
 )
 
 grpc_cc_library(
@@ -2002,7 +1988,7 @@ grpc_cc_library(
     deps = [
         "grpc",
         "grpc++_codegen_base",
-        "health_proto",
+        "grpc_health_upb",
     ],
 )
 
@@ -2015,7 +2001,7 @@ grpc_cc_library(
     deps = [
         "grpc++_codegen_base",
         "grpc_unsecure",
-        "health_proto",
+        "grpc_health_upb",
     ],
 )
 

@@ -659,7 +659,7 @@ filegroups:
   uses:
   - grpc_base
   - grpc_deadline_filter
-  - health_proto
+  - grpc_health_upb
 - name: grpc_client_idle_filter
   src:
   - src/core/ext/filters/client_idle/client_idle_filter.cc
@@ -688,9 +688,9 @@ filegroups:
   - grpc_base
 - name: grpc_health_upb
   headers:
-  - src/core/ext/upb-generated/grpc/health/v1/health.upb.c
+  - src/core/ext/upb-generated/src/proto/grpc/health/v1/health.upb.h
   src:
-  - src/core/ext/upb-generated/grpc/health/v1/health.upb.h
+  - src/core/ext/upb-generated/src/proto/grpc/health/v1/health.upb.c
 - name: grpc_http_filters
   headers:
   - src/core/ext/filters/http/client/http_client_filter.h
@@ -1201,13 +1201,6 @@ filegroups:
   - src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/load_balancer.pb.c
   uses:
   - nanopb
-- name: health_proto
-  headers:
-  - src/core/ext/filters/client_channel/health/health.pb.h
-  src:
-  - src/core/ext/filters/client_channel/health/health.pb.c
-  uses:
-  - nanopb
 - name: nanopb
   src:
   - third_party/nanopb/pb_common.c
@@ -1542,7 +1535,7 @@ filegroups:
   - grpc++_codegen_base
   - grpc++_internal_hdrs_only
   - nanopb_headers
-  - health_proto
+  - grpc_health_upb
 - name: grpc++_config_proto
   language: c++
   public_headers:
@@ -6161,7 +6154,8 @@ defaults:
   global:
     COREFLAGS: -fno-rtti -fno-exceptions
     CPPFLAGS: -g -Wall -Wextra -Werror -Wno-long-long -Wno-unused-parameter -DOSATOMIC_USE_INLINED=1
-      -Wno-deprecated-declarations -Ithird_party/nanopb -DPB_FIELD_32BIT
+      -Wno-deprecated-declarations -Ithird_party/nanopb -Ithird_party/upb -Isrc/core/ext/upb-generated
+      -DPB_FIELD_32BIT
     CXXFLAGS: -Wnon-virtual-dtor
     LDFLAGS: -g
   upb:
