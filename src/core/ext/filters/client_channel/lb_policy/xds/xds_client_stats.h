@@ -90,29 +90,22 @@ class XdsLbClientStats {
    public:
     class LoadMetric {
      public:
-      LoadMetric() = default;
-      LoadMetric(LoadMetric&& other) noexcept;
-
       // Returns a snapshot of this instance and reset all the accumulative
       // counters.
       LoadMetric Harvest();
       bool IsAllZero() const;
 
-      const char* metric_name() const { return metric_name_.get(); }
       uint64_t num_requests_finished_with_metric() const {
-        return num_requests_finished_with_metric_.Load(MemoryOrder::RELAXED);
+        return num_requests_finished_with_metric_;
       }
-      double total_metric_value() const {
-        return total_metric_value_.Load(MemoryOrder::RELAXED);
-      }
+      double total_metric_value() const { return total_metric_value_; }
 
      private:
-      UniquePtr<char> metric_name_;
-      Atomic<uint64_t> num_requests_finished_with_metric_{0};
-      Atomic<double> total_metric_value_{0};
+      uint64_t num_requests_finished_with_metric_{0};
+      double total_metric_value_{0};
     };
 
-    using LoadMetricList = InlinedVector<LoadMetric, 1>;
+    using LoadMetricMap = Map<UniquePtr<char>, LoadMetric, StringLess>;
 
     LocalityStats() = default;
     LocalityStats(LocalityStats&& other) noexcept;
@@ -122,7 +115,9 @@ class XdsLbClientStats {
     // Returns a snapshot of this instance and reset all the accumulative
     // counters.
     LocalityStats Harvest();
-    bool IsAllZero() const;
+    // TODO(juanlishen): Change this to const method when const_iterator is
+    // added to Map<>.
+    bool IsAllZero();
 
     // After a LocalityStats is killed, it can't call AddCallStarted() unless
     // revived. AddCallFinished() can still be called. Once the number of in
@@ -149,9 +144,9 @@ class XdsLbClientStats {
     uint64_t total_issued_requests() const {
       return total_issued_requests_.Load(MemoryOrder::RELAXED);
     }
-    const LoadMetricList& load_metric_stats() const {
-      return load_metric_stats_;
-    }
+    // TODO(juanlishen): Change this to const method when const_iterator is
+    // added to Map<>.
+    LoadMetricMap& load_metric_stats() { return load_metric_stats_; }
 
    private:
     Atomic<uint64_t> total_successful_requests_{0};
@@ -159,7 +154,12 @@ class XdsLbClientStats {
     // Requests that were issued (not dropped) but failed.
     Atomic<uint64_t> total_error_requests_{0};
     Atomic<uint64_t> total_issued_requests_{0};
-    LoadMetricList load_metric_stats_;
+    // Protects load_metric_stats_. A mutex is necessary because the length of
+    // load_metric_stats_ can be accessed by both the callback intercepting the
+    // call's recv_trailing_metadata (not from any combiner) and the load
+    // reporting thread (from the control plane combiner).
+    Mutex load_metric_stats_mu_;
+    LoadMetricMap load_metric_stats_;
     bool dying_ = false;
   };
 
@@ -201,7 +201,7 @@ class XdsLbClientStats {
   LocalityStatsMap upstream_locality_stats_;
   Atomic<uint64_t> total_dropped_requests_{0};
   // Protects dropped_requests_. A mutex is necessary because the length of
-  // DroppedRequestsList can be accessed by both the picker (from data plane
+  // dropped_requests_ can be accessed by both the picker (from data plane
   // combiner) and the load reporting thread (from the control plane combiner).
   Mutex dropped_requests_mu_;
   DroppedRequestsMap dropped_requests_;

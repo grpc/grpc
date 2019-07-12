@@ -40,27 +40,16 @@ void GetAndResetCounter(Atomic<T>* from, Atomic<T>* to) {
 // XdsLbClientStats::LocalityStats::LoadMetric
 //
 
-XdsLbClientStats::LocalityStats::LoadMetric::LoadMetric(
-    XdsLbClientStats::LocalityStats::LoadMetric&& other) noexcept
-    : metric_name_(std::move(other.metric_name_)) {
-  GetAndResetCounter(&num_requests_finished_with_metric_,
-                     &other.num_requests_finished_with_metric_);
-  GetAndResetCounter(&total_metric_value_, &other.total_metric_value_);
-}
-
 XdsLbClientStats::LocalityStats::LoadMetric
 XdsLbClientStats::LocalityStats::LoadMetric::Harvest() {
-  LoadMetric metric;
-  metric.metric_name_.reset(gpr_strdup(metric_name()));
-  GetAndResetCounter(&num_requests_finished_with_metric_,
-                     &metric.num_requests_finished_with_metric_);
-  GetAndResetCounter(&total_metric_value_, &metric.total_metric_value_);
+  LoadMetric metric(*this);
+  num_requests_finished_with_metric_ = 0;
+  total_metric_value_ = 0;
   return metric;
 }
 
 bool XdsLbClientStats::LocalityStats::LoadMetric::IsAllZero() const {
-  return total_metric_value_.Load(MemoryOrder::ACQ_REL) == 0 &&
-         num_requests_finished_with_metric_.Load(MemoryOrder::ACQ_REL) == 0;
+  return total_metric_value_ == 0 && num_requests_finished_with_metric_ == 0;
 }
 
 //
@@ -95,21 +84,27 @@ XdsLbClientStats::LocalityStats XdsLbClientStats::LocalityStats::Harvest() {
       MemoryOrder::ACQ_REL);
   GetAndResetCounter(&total_error_requests_, &stats.total_error_requests_);
   GetAndResetCounter(&total_issued_requests_, &stats.total_issued_requests_);
-  for (size_t i = 0; i < load_metric_stats_.size(); ++i) {
-    stats.load_metric_stats_.emplace_back(load_metric_stats_[i].Harvest());
+  {
+    MutexLock lock(&load_metric_stats_mu_);
+    for (auto& p : load_metric_stats_) {
+      const char* metric_name = p.first.get();
+      const LoadMetric& metric_value = p.second;
+      stats.load_metric_stats_.emplace(gpr_strdup(metric_name), metric_value);
+    }
   }
   return stats;
 }
 
-bool XdsLbClientStats::LocalityStats::IsAllZero() const {
+bool XdsLbClientStats::LocalityStats::IsAllZero() {
   if (total_successful_requests_.Load(MemoryOrder::ACQ_REL) != 0 ||
       total_requests_in_progress_.Load(MemoryOrder::ACQ_REL) != 0 ||
       total_error_requests_.Load(MemoryOrder::ACQ_REL) != 0 ||
       total_issued_requests_.Load(MemoryOrder::ACQ_REL) != 0) {
     return false;
   }
-  for (size_t i = 0; i < load_metric_stats_.size(); ++i) {
-    if (load_metric_stats_[i].IsAllZero()) return false;
+  for (auto& p : load_metric_stats_) {
+    const LoadMetric& metric_value = p.second;
+    if (!metric_value.IsAllZero()) return false;
   }
   return true;
 }

@@ -229,10 +229,11 @@ grpc_slice XdsLrsRequestCreateAndEncode(const char* server_name) {
 
 namespace {
 
-void LocalityStatsPopulate(LocalityStats* output,
-                           const Pair<RefCountedPtr<XdsLocalityName>,
-                                      XdsLbClientStats::LocalityStats>& input,
-                           upb_arena* arena) {
+void LocalityStatsPopulate(
+    LocalityStats* output,
+    Pair<grpc_core::RefCountedPtr<grpc_core::XdsLocalityName>,
+         grpc_core::XdsLbClientStats::LocalityStats>& input,
+    upb_arena* arena) {
   // Set sub_zone.
   XdsLocality* locality =
       envoy_api_v2_endpoint_UpstreamLocalityStats_mutable_locality(output,
@@ -240,7 +241,7 @@ void LocalityStatsPopulate(LocalityStats* output,
   envoy_api_v2_core_Locality_set_sub_zone(
       locality, upb_strview_makez(input.first->sub_zone()));
   // Set total counts.
-  const XdsLbClientStats::LocalityStats& stats = input.second;
+  XdsLbClientStats::LocalityStats& stats = input.second;
   envoy_api_v2_endpoint_UpstreamLocalityStats_set_total_successful_requests(
       output, stats.total_successful_requests());
   envoy_api_v2_endpoint_UpstreamLocalityStats_set_total_requests_in_progress(
@@ -251,18 +252,18 @@ void LocalityStatsPopulate(LocalityStats* output,
   //  envoy_api_v2_endpoint_UpstreamLocalityStats_set_total_issued_requests(
   //      output, stats.total_issued_requests);
   // Add load metric stats.
-  for (size_t i = 0; i < stats.load_metric_stats().size(); ++i) {
+  for (auto& p : stats.load_metric_stats()) {
+    const char* metric_name = p.first.get();
+    const XdsLbClientStats::LocalityStats::LoadMetric& metric_value = p.second;
     envoy_api_v2_endpoint_EndpointLoadMetricStats* load_metric =
         envoy_api_v2_endpoint_UpstreamLocalityStats_add_load_metric_stats(
             output, arena);
     envoy_api_v2_endpoint_EndpointLoadMetricStats_set_metric_name(
-        load_metric,
-        upb_strview_makez(stats.load_metric_stats()[i].metric_name()));
+        load_metric, upb_strview_makez(metric_name));
     envoy_api_v2_endpoint_EndpointLoadMetricStats_set_num_requests_finished_with_metric(
-        load_metric,
-        stats.load_metric_stats()[i].num_requests_finished_with_metric());
+        load_metric, metric_value.num_requests_finished_with_metric());
     envoy_api_v2_endpoint_EndpointLoadMetricStats_set_total_metric_value(
-        load_metric, stats.load_metric_stats()[i].total_metric_value());
+        load_metric, metric_value.total_metric_value());
   }
 }
 
