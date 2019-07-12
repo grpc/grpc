@@ -215,7 +215,7 @@ grpc_slice grpc_slice_from_copied_buffer(const char* source, size_t length) {
 }
 
 grpc_slice grpc_slice_from_copied_string(const char* source) {
-  return grpc_slice_from_copied_buffer(source, strlen(source));
+  return grpc_slice_from_copied_buffer_internal(source, strlen(source));
 }
 
 grpc_slice grpc_slice_from_moved_buffer(grpc_core::UniquePtr<char> p,
