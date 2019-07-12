@@ -64,8 +64,8 @@ proto_files=( \
   "grpc/gcp/altscontext.proto" \
   "grpc/gcp/handshaker.proto" \
   "grpc/gcp/transport_security_common.proto" \
-  "grpc/health/v1/health.proto" \
   "grpc/lb/v1/load_balancer.proto" \
+  "src/proto/grpc/health/v1/health.proto" \
   "validate/validate.proto")
 
 for i in "${proto_files[@]}"
