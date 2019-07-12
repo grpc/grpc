@@ -66,8 +66,8 @@ class InfLenFIFOQueue : public MPMCQueueInterface {
 
   // Removes the oldest element from the queue and returns it.
   // This routine will cause the thread to block if queue is currently empty.
-  // Argument wait_time should be passed in when trace flag turning on (for
-  // collecting stats info purpose.)
+  // Argument wait_time should be passed in when turning on the trace flag
+  // grpc_thread_pool_trace (for collecting stats info purpose.)
   void* Get(gpr_timespec* wait_time = nullptr);
 
   // Returns number of elements in queue currently.

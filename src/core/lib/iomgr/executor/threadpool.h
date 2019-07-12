@@ -79,8 +79,6 @@ class ThreadPoolWorker {
   void Start() { thd_.Start(); }
   void Join() { thd_.Join(); }
 
-  // GRPC_ABSTRACT_BASE_CLASS
-
  private:
   // struct for tracking stats of thread
   struct Stats {
