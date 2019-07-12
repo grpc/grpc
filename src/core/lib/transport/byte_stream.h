@@ -130,6 +130,8 @@ class ByteStreamCache {
 
     bool Next(size_t max_size_hint, grpc_closure* on_complete) override;
     grpc_error* Pull(grpc_slice* slice) override;
+    grpc_error* PullWithoutRef(grpc_slice* slice);
+
     void Shutdown(grpc_error* error) override;
 
     // Resets the byte stream to the start of the underlying stream.

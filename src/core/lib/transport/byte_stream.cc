@@ -117,6 +117,31 @@ bool ByteStreamCache::CachingByteStream::Next(size_t max_size_hint,
   return cache_->underlying_stream_->Next(max_size_hint, on_complete);
 }
 
+grpc_error* ByteStreamCache::CachingByteStream::PullWithoutRef(
+    grpc_slice* slice) {
+  if (shutdown_error_ != GRPC_ERROR_NONE) {
+    return GRPC_ERROR_REF(shutdown_error_);
+  }
+  if (cursor_ < cache_->cache_buffer_.count) {
+    *slice = (cache_->cache_buffer_.slices[cursor_]);
+    ++cursor_;
+    offset_ += GRPC_SLICE_LENGTH(*slice);
+    return GRPC_ERROR_NONE;
+  }
+  GPR_ASSERT(cache_->underlying_stream_ != nullptr);
+  grpc_error* error = cache_->underlying_stream_->Pull(slice);
+  if (error == GRPC_ERROR_NONE) {
+    grpc_slice_buffer_add(&cache_->cache_buffer_, (*slice));
+    ++cursor_;
+    offset_ += GRPC_SLICE_LENGTH(*slice);
+    // Orphan the underlying stream if it's been drained.
+    if (offset_ == cache_->underlying_stream_->length()) {
+      cache_->underlying_stream_.reset();
+    }
+  }
+  return error;
+}
+
 grpc_error* ByteStreamCache::CachingByteStream::Pull(grpc_slice* slice) {
   if (shutdown_error_ != GRPC_ERROR_NONE) {
     return GRPC_ERROR_REF(shutdown_error_);

@@ -226,10 +226,11 @@ static void send_message_on_complete(void* arg, grpc_error* error) {
 // calld->send_message_bytes_read.
 static grpc_error* pull_slice_from_send_message(call_data* calld) {
   grpc_slice incoming_slice;
-  grpc_error* error = calld->send_message_caching_stream->Pull(&incoming_slice);
+  grpc_error* error =
+      calld->send_message_caching_stream->PullWithoutRef(&incoming_slice);
   if (error == GRPC_ERROR_NONE) {
     calld->send_message_bytes_read += GRPC_SLICE_LENGTH(incoming_slice);
-    grpc_slice_unref_internal(incoming_slice);
+    //    grpc_slice_unref_internal(incoming_slice);
   }
   return error;
 }
