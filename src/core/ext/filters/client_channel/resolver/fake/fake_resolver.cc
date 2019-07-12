@@ -101,7 +101,8 @@ FakeResolver::FakeResolver(ResolverArgs args)
   if (response_generator_ != nullptr) {
     response_generator_->resolver_ = this;
     if (response_generator_->has_result_) {
-      response_generator_->SetResponse(response_generator_->result_);
+      response_generator_->SetResponse(std::move(response_generator_->result_));
+      response_generator_->has_result_ = false;
     }
   }
 }
@@ -187,18 +188,19 @@ void FakeResolverResponseGenerator::SetResponseLocked(void* arg,
 }
 
 void FakeResolverResponseGenerator::SetResponse(Resolver::Result result) {
-  has_result_ = true;
-  result_ = std::move(result);
   if (resolver_ != nullptr) {
     Ref().release();  // ref to be held by closure
     SetResponseClosureArg* closure_arg = New<SetResponseClosureArg>();
     closure_arg->generator = this;
-    closure_arg->result = result_;
+    closure_arg->result = std::move(result);
     GRPC_CLOSURE_SCHED(
         GRPC_CLOSURE_INIT(&closure_arg->set_response_closure, SetResponseLocked,
                           closure_arg,
                           grpc_combiner_scheduler(resolver_->combiner())),
         GRPC_ERROR_NONE);
+  } else {
+    has_result_ = true;
+    result_ = std::move(result);
   }
 }
 

@@ -1465,7 +1465,7 @@ TEST_F(ClientLbEnd2endTest, RoundRobinWithHealthCheckingServiceNamePerChannel) {
   EnableDefaultHealthCheckService(false);
 }
 
-TEST_F(ClientLbEnd2endTest, ChannelIdle) {
+TEST_F(ClientLbEnd2endTest, ChannelIdleness) {
   // Start server.
   const int kNumServers = 1;
   StartServers(kNumServers);
@@ -1475,10 +1475,10 @@ TEST_F(ClientLbEnd2endTest, ChannelIdle) {
   auto response_generator = BuildResolverResponseGenerator();
   auto channel = BuildChannel("", response_generator, args);
   auto stub = BuildStub(channel);
-  response_generator.SetNextResolution(GetServersPorts());
   // The initial channel state should be IDLE.
   EXPECT_EQ(channel->GetState(false), GRPC_CHANNEL_IDLE);
   // After sending RPC, channel state should be READY.
+  response_generator.SetNextResolution(GetServersPorts());
   CheckRpcSendOk(stub, DEBUG_LOCATION);
   EXPECT_EQ(channel->GetState(false), GRPC_CHANNEL_READY);
   // After a period time not using the channel, the channel state should switch
@@ -1486,89 +1486,9 @@ TEST_F(ClientLbEnd2endTest, ChannelIdle) {
   gpr_sleep_until(grpc_timeout_milliseconds_to_deadline(120));
   EXPECT_EQ(channel->GetState(false), GRPC_CHANNEL_IDLE);
   // Sending a new RPC should awake the IDLE channel.
+  response_generator.SetNextResolution(GetServersPorts());
   CheckRpcSendOk(stub, DEBUG_LOCATION);
   EXPECT_EQ(channel->GetState(false), GRPC_CHANNEL_READY);
-}
-
-TEST_F(ClientLbEnd2endTest, ChannelIdleStress) {
-  const int kNumServers = 1;
-  StartServers(kNumServers);
-  ChannelArguments args;
-  args.SetInt(GRPC_ARG_MAX_CONNECTION_IDLE_MS, 5);
-  auto response_generator = BuildResolverResponseGenerator();
-  auto channel = BuildChannel("", response_generator, args);
-  auto stub = BuildStub(channel);
-  response_generator.SetNextResolution(GetServersPorts());
-  std::random_device rd;
-  std::mt19937 mt(rd());
-  std::uniform_int_distribution<int> distribution(0, 10);
-  auto start_time = std::chrono::steady_clock::now();
-  const int kTestDurationSec = 30;
-  while (true) {
-    if (std::chrono::duration_cast<std::chrono::seconds>(
-            std::chrono::steady_clock::now() - start_time)
-            .count() > kTestDurationSec) {
-      break;
-    }
-    CheckRpcSendOk(stub, DEBUG_LOCATION);
-    gpr_sleep_until(grpc_timeout_milliseconds_to_deadline(distribution(mt)));
-  }
-  gpr_sleep_until(grpc_timeout_milliseconds_to_deadline(10));
-  EXPECT_EQ(channel->GetState(false), GRPC_CHANNEL_IDLE);
-}
-
-class ClientIdlenessMultiThreadTest : public ClientLbEnd2endTest {
- protected:
-  void SetUp() override {
-    ClientLbEnd2endTest::SetUp();
-    const int kNumServers = 1;
-    StartServers(kNumServers);
-    ChannelArguments args;
-    args.SetInt(GRPC_ARG_MAX_CONNECTION_IDLE_MS, 5);
-    response_generator_.SetNextResolution(GetServersPorts());
-    channel_ = BuildChannel("", response_generator_, args);
-    stub_ = BuildStub(channel_);
-  }
-
-  void TearDown() override { ClientLbEnd2endTest::TearDown(); }
-
-  void RunTest(size_t thread_num) {
-    std::vector<std::thread> threads;
-    for (size_t i = 0; i < thread_num; ++i) {
-      threads.push_back(std::thread(TestCall, this));
-    }
-    for (size_t i = 0; i < thread_num; ++i) {
-      threads[i].join();
-    }
-    gpr_sleep_until(grpc_timeout_milliseconds_to_deadline(10));
-    EXPECT_EQ(channel_->GetState(false), GRPC_CHANNEL_IDLE);
-  }
-
-  static void TestCall(ClientIdlenessMultiThreadTest* self) {
-    std::random_device rd;
-    std::mt19937 mt(rd());
-    std::uniform_int_distribution<int> distribution(0, 10);
-    auto start_time = std::chrono::steady_clock::now();
-    const int kTestDurationSec = 30;
-    while (true) {
-      if (std::chrono::duration_cast<std::chrono::seconds>(
-              std::chrono::steady_clock::now() - start_time)
-              .count() > kTestDurationSec) {
-        break;
-      }
-      self->CheckRpcSendOk(self->stub_, DEBUG_LOCATION);
-      gpr_sleep_until(grpc_timeout_milliseconds_to_deadline(distribution(mt)));
-    }
-  }
-
-  FakeResolverResponseGeneratorWrapper response_generator_;
-  std::shared_ptr<Channel> channel_;
-  std::unique_ptr<grpc::testing::EchoTestService::Stub> stub_;
-};
-
-TEST_F(ClientIdlenessMultiThreadTest, ChannelIdleMultithreadTest) {
-  const int thread_num = 20;
-  RunTest(thread_num);
 }
 
 class ClientLbInterceptTrailingMetadataTest : public ClientLbEnd2endTest {
