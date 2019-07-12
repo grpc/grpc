@@ -10,8 +10,9 @@
 #include "src/core/lib/transport/http2_errors.h"
 
 // The idle filter is enabled in client channel by default.
-// To disable the idle filte, set GRPC_ARG_MAX_CONNECTION_IDLE_MS to INT_MAX in channel args.
-#define DEFAULT_MAX_LEISURE_TIME_MS (5/*minutes*/ * 60 * 1000)
+// To disable the idle filte, set GRPC_ARG_MAX_CONNECTION_IDLE_MS to INT_MAX in
+// channel args.
+#define DEFAULT_MAX_LEISURE_TIME_MS (5 /*minutes*/ * 60 * 1000)
 
 namespace {
 
@@ -346,7 +347,8 @@ static bool maybe_add_client_channel_idle_filter(
     grpc_channel_stack_builder* builder, void* arg) {
   const grpc_channel_args* channel_args =
       grpc_channel_stack_builder_get_channel_arguments(builder);
-  bool enable = grpc_channel_arg_get_integer(
+  bool enable =
+      grpc_channel_arg_get_integer(
           grpc_channel_args_find(channel_args, GRPC_ARG_MAX_CONNECTION_IDLE_MS),
           {DEFAULT_MAX_LEISURE_TIME_MS, 0, INT_MAX}) != INT_MAX;
   if (enable) {

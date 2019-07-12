@@ -765,7 +765,7 @@ class ChannelData::ConnectivityStateAndPickerSetter {
     auto* self = static_cast<ConnectivityStateAndPickerSetter*>(arg);
     // Update picker.
     self->chand_->picker_ = std::move(self->picker_);
-    // Clear data plane if the updated picker is nullptr.
+    // Clean the data plane if the updated picker is nullptr.
     if (self->chand_->picker_ == nullptr) {
       self->chand_->received_service_config_data_ = false;
       self->chand_->retry_throttle_data_.reset();
