@@ -50,11 +50,6 @@ void grpc_server_setup_transport(
     grpc_core::RefCountedPtr<grpc_core::channelz::SocketNode> socket_node,
     grpc_resource_user* resource_user = nullptr);
 
-/* fills in the uuids of all sockets used for connections on this server */
-void grpc_server_populate_server_sockets(
-    grpc_server* server, grpc_core::channelz::ChildSocketsList* server_sockets,
-    intptr_t start_idx);
-
 /* fills in the uuids of all listen sockets on this server */
 void grpc_server_populate_listen_sockets(
     grpc_server* server, grpc_core::channelz::ChildRefsList* listen_sockets);
