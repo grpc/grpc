@@ -4042,6 +4042,35 @@
       "gpr", 
       "grpc", 
       "grpc++", 
+      "grpc++_test_config", 
+      "grpc++_test_util", 
+      "grpc_test_util"
+    ], 
+    "headers": [
+      "src/proto/grpc/testing/empty.grpc.pb.h", 
+      "src/proto/grpc/testing/empty.pb.h", 
+      "src/proto/grpc/testing/empty_mock.grpc.pb.h", 
+      "src/proto/grpc/testing/messages.grpc.pb.h", 
+      "src/proto/grpc/testing/messages.pb.h", 
+      "src/proto/grpc/testing/messages_mock.grpc.pb.h", 
+      "src/proto/grpc/testing/test.grpc.pb.h", 
+      "src/proto/grpc/testing/test.pb.h", 
+      "src/proto/grpc/testing/test_mock.grpc.pb.h"
+    ], 
+    "is_filegroup": false, 
+    "language": "c++", 
+    "name": "grpclb_fallback_test", 
+    "src": [
+      "test/cpp/interop/grpclb_fallback_test.cc"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "grpc", 
+      "grpc++", 
       "grpc++_test", 
       "grpc_test_util"
     ], 
