@@ -204,9 +204,16 @@ grpc_core::ExternSlice grpc_slice_from_copied_buffer_internal(
   memcpy(GRPC_SLICE_START_PTR(slice), source, length);
   return slice;
 }
+
+grpc_core::ExternSlice grpc_slice_from_copied_string_internal(
+    const char* source) {
+  return grpc_slice_from_copied_buffer_internal(source, strlen(source));
+}
+
 grpc_slice grpc_slice_from_copied_buffer(const char* source, size_t length) {
   return grpc_slice_from_copied_buffer_internal(source, length);
 }
+
 grpc_slice grpc_slice_from_copied_string(const char* source) {
   return grpc_slice_from_copied_buffer(source, strlen(source));
 }
