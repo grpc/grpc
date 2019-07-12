@@ -13,7 +13,6 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
 """Verifies that all gRPC Python artifacts have been successfully published.
 
 This script is intended to be run from a directory containing the artifacts
@@ -107,8 +106,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(
         "Verify a release. Run this from a directory containing only the"
         "artifacts to be uploaded. Note that PyPI may take several minutes"
-        "after the upload to reflect the proper metadata."
-    )
+        "after the upload to reflect the proper metadata.")
     parser.add_argument("version")
     parser.add_argument(
         "packages", nargs='*', type=str, default=_DEFAULT_PACKAGES)
