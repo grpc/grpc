@@ -977,6 +977,8 @@ src/core/ext/filters/client_channel/subchannel.h \
 src/core/ext/filters/client_channel/subchannel_interface.h \
 src/core/ext/filters/client_channel/subchannel_pool_interface.cc \
 src/core/ext/filters/client_channel/subchannel_pool_interface.h \
+src/core/ext/filters/client_channel_idle/client_channel_idle_filter.cc \
+src/core/ext/filters/client_channel_idle/client_channel_idle_filter.h \
 src/core/ext/filters/deadline/deadline_filter.cc \
 src/core/ext/filters/deadline/deadline_filter.h \
 src/core/ext/filters/http/client/http_client_filter.cc \
