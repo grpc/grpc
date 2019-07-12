@@ -90,7 +90,10 @@ class ChannelData {
   void DecreaseCallCount();
 
  private:
+  class ConnectivityWatcherSetter;
+
   ChannelData(grpc_channel_element_args* args, grpc_error** error);
+  ~ChannelData();
 
   static void IdleTimerCallback(void* arg, grpc_error* error);
 
@@ -130,6 +133,40 @@ class ChannelData {
   // Memter data to track the connectivity state of channel.
   grpc_connectivity_state connectivity_state_;
   grpc_closure connectivity_state_changed_callback_;
+
+  ConnectivityWatcherSetter* connectivity_watcher_setter_ = nullptr;
+};
+
+// The usage of the class is a little obscure.
+// Instead of schedule connectivity_state_changed_callback_ closure in the ctor,
+// we schedule it here because if the build of the channel failed, the channel stack, as well as our ChannelData,
+// will get destroyed immediately even if we hold a ref to it.
+// Therefore we use this class to wrap the chand_ and the information of whether the channel
+// is successfully created (cancelled_) together, then use cancelled_ flag to figure out whether to
+// set the watcher or not.
+class ChannelData::ConnectivityWatcherSetter {
+ public:
+  ConnectivityWatcherSetter(ChannelData* chand) : chand_(chand) {
+    GRPC_CLOSURE_INIT(&closure_, SetConnectivityWather, this, grpc_schedule_on_exec_ctx);
+    GRPC_CLOSURE_SCHED(&closure_, GRPC_ERROR_NONE);
+  }
+
+  void Cancel() { cancelled_ = true; }
+
+ private:
+  static void SetConnectivityWather(void* arg, grpc_error* error) {
+    ConnectivityWatcherSetter* self = static_cast<ConnectivityWatcherSetter*>(arg);
+    if (self->cancelled_) return;
+    GRPC_CHANNEL_STACK_REF(self->chand_->channel_stack_, "connectivity state changed callback");
+    GRPC_CLOSURE_SCHED(&self->chand_->connectivity_state_changed_callback_, GRPC_ERROR_NONE);
+    // After successfully set the connectivity state watcher, delete itself.
+    self->chand_->connectivity_watcher_setter_ = nullptr;
+    grpc_core::Delete(self);
+  }
+
+  bool cancelled_ = false;
+  ChannelData* chand_;
+  grpc_closure closure_;
 };
 
 ChannelData::ChannelData(grpc_channel_element_args* args, grpc_error** error)
@@ -153,10 +190,16 @@ ChannelData::ChannelData(grpc_channel_element_args* args, grpc_error** error)
     GRPC_CLOSURE_INIT(&connectivity_state_changed_callback_,
                       ConnectivityStateChangedCallback, this,
                       grpc_schedule_on_exec_ctx);
-    GRPC_CLOSURE_SCHED(&connectivity_state_changed_callback_, GRPC_ERROR_NONE);
+    connectivity_watcher_setter_ = grpc_core::New<ConnectivityWatcherSetter>(this);
   }
   GRPC_IDLE_FILTER_LOG("created with max_leisure_time = %lu",
                        max_leisure_time_);
+}
+
+ChannelData::~ChannelData() {
+  if (connectivity_watcher_setter_ != nullptr) {
+    connectivity_watcher_setter_->Cancel();
+  }
 }
 
 void ChannelData::IncreaseCallCount() {
@@ -299,6 +342,7 @@ void ChannelData::ConnectivityStateChangedCallback(void* arg,
         CHANNEL_STATE_BUSY_FROM_LEISURE) {
       grpc_timer_cancel(&chand->idle_timer_);
     }
+    GRPC_CHANNEL_STACK_UNREF(chand->channel_stack_, "connectivity state changed callback");
   }
 }
 
