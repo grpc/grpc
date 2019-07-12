@@ -270,19 +270,11 @@
     <file baseinstalldir="/" name="src/core/tsi/alts/zero_copy_frame_protector/alts_zero_copy_grpc_protector.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/security/credentials/alts/check_gcp_environment.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/security/credentials/alts/grpc_alts_credentials_options.h" role="src" />
-    <file baseinstalldir="/" name="src/core/tsi/alts/handshaker/alts_handshaker_service_api.h" role="src" />
-    <file baseinstalldir="/" name="src/core/tsi/alts/handshaker/alts_handshaker_service_api_util.h" role="src" />
     <file baseinstalldir="/" name="src/core/tsi/alts/handshaker/alts_tsi_utils.h" role="src" />
     <file baseinstalldir="/" name="src/core/tsi/alts/handshaker/transport_security_common_api.h" role="src" />
-    <file baseinstalldir="/" name="src/core/tsi/alts/handshaker/altscontext.pb.h" role="src" />
-    <file baseinstalldir="/" name="src/core/tsi/alts/handshaker/handshaker.pb.h" role="src" />
-    <file baseinstalldir="/" name="src/core/tsi/alts/handshaker/transport_security_common.pb.h" role="src" />
-    <file baseinstalldir="/" name="third_party/nanopb/pb.h" role="src" />
-    <file baseinstalldir="/" name="third_party/nanopb/pb_common.h" role="src" />
-    <file baseinstalldir="/" name="third_party/nanopb/pb_decode.h" role="src" />
-    <file baseinstalldir="/" name="third_party/nanopb/pb_encode.h" role="src" />
-    <file baseinstalldir="/" name="src/core/tsi/transport_security.h" role="src" />
-    <file baseinstalldir="/" name="src/core/tsi/transport_security_interface.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upb-generated/src/proto/grpc/gcp/altscontext.upb.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upb-generated/src/proto/grpc/gcp/handshaker.upb.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upb-generated/src/proto/grpc/gcp/transport_security_common.upb.h" role="src" />
     <file baseinstalldir="/" name="third_party/upb/upb/decode.h" role="src" />
     <file baseinstalldir="/" name="third_party/upb/upb/encode.h" role="src" />
     <file baseinstalldir="/" name="third_party/upb/upb/generated_util.h" role="src" />
@@ -291,6 +283,8 @@
     <file baseinstalldir="/" name="third_party/upb/upb/port_undef.inc" role="src" />
     <file baseinstalldir="/" name="third_party/upb/upb/table.int.h" role="src" />
     <file baseinstalldir="/" name="third_party/upb/upb/upb.h" role="src" />
+    <file baseinstalldir="/" name="src/core/tsi/transport_security.h" role="src" />
+    <file baseinstalldir="/" name="src/core/tsi/transport_security_interface.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/client/authority.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/client/chttp2_connector.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/backup_poller.h" role="src" />
@@ -772,23 +766,18 @@
     <file baseinstalldir="/" name="src/core/lib/security/credentials/alts/grpc_alts_credentials_client_options.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/security/credentials/alts/grpc_alts_credentials_options.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/security/credentials/alts/grpc_alts_credentials_server_options.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/tsi/alts/handshaker/alts_handshaker_service_api.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/tsi/alts/handshaker/alts_handshaker_service_api_util.cc" role="src" />
     <file baseinstalldir="/" name="src/core/tsi/alts/handshaker/alts_tsi_utils.cc" role="src" />
     <file baseinstalldir="/" name="src/core/tsi/alts/handshaker/transport_security_common_api.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/tsi/alts/handshaker/altscontext.pb.c" role="src" />
-    <file baseinstalldir="/" name="src/core/tsi/alts/handshaker/handshaker.pb.c" role="src" />
-    <file baseinstalldir="/" name="src/core/tsi/alts/handshaker/transport_security_common.pb.c" role="src" />
-    <file baseinstalldir="/" name="third_party/nanopb/pb_common.c" role="src" />
-    <file baseinstalldir="/" name="third_party/nanopb/pb_decode.c" role="src" />
-    <file baseinstalldir="/" name="third_party/nanopb/pb_encode.c" role="src" />
-    <file baseinstalldir="/" name="src/core/tsi/transport_security.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upb-generated/src/proto/grpc/gcp/altscontext.upb.c" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upb-generated/src/proto/grpc/gcp/handshaker.upb.c" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upb-generated/src/proto/grpc/gcp/transport_security_common.upb.c" role="src" />
     <file baseinstalldir="/" name="third_party/upb/upb/decode.c" role="src" />
     <file baseinstalldir="/" name="third_party/upb/upb/encode.c" role="src" />
     <file baseinstalldir="/" name="third_party/upb/upb/msg.c" role="src" />
     <file baseinstalldir="/" name="third_party/upb/upb/port.c" role="src" />
     <file baseinstalldir="/" name="third_party/upb/upb/table.c" role="src" />
     <file baseinstalldir="/" name="third_party/upb/upb/upb.c" role="src" />
+    <file baseinstalldir="/" name="src/core/tsi/transport_security.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/client/insecure/channel_create.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/client/insecure/channel_create_posix.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/client/authority.cc" role="src" />

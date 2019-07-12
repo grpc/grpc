@@ -1862,24 +1862,6 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
-    name = "alts_proto",
-    srcs = [
-        "src/core/tsi/alts/handshaker/altscontext.pb.c",
-        "src/core/tsi/alts/handshaker/handshaker.pb.c",
-        "src/core/tsi/alts/handshaker/transport_security_common.pb.c",
-    ],
-    hdrs = [
-        "src/core/tsi/alts/handshaker/altscontext.pb.h",
-        "src/core/tsi/alts/handshaker/handshaker.pb.h",
-        "src/core/tsi/alts/handshaker/transport_security_common.pb.h",
-    ],
-    external_deps = [
-        "nanopb",
-    ],
-    language = "c++",
-)
-
-grpc_cc_library(
     name = "alts_util",
     srcs = [
         "src/core/lib/security/credentials/alts/check_gcp_environment.cc",
@@ -1889,24 +1871,17 @@ grpc_cc_library(
         "src/core/lib/security/credentials/alts/grpc_alts_credentials_client_options.cc",
         "src/core/lib/security/credentials/alts/grpc_alts_credentials_options.cc",
         "src/core/lib/security/credentials/alts/grpc_alts_credentials_server_options.cc",
-        "src/core/tsi/alts/handshaker/alts_handshaker_service_api.cc",
-        "src/core/tsi/alts/handshaker/alts_handshaker_service_api_util.cc",
         "src/core/tsi/alts/handshaker/transport_security_common_api.cc",
     ],
     hdrs = [
         "src/core/lib/security/credentials/alts/check_gcp_environment.h",
         "src/core/lib/security/credentials/alts/grpc_alts_credentials_options.h",
-        "src/core/tsi/alts/handshaker/alts_handshaker_service_api.h",
-        "src/core/tsi/alts/handshaker/alts_handshaker_service_api_util.h",
         "src/core/tsi/alts/handshaker/transport_security_common_api.h",
-    ],
-    external_deps = [
-        "nanopb",
     ],
     language = "c++",
     public_hdrs = GRPC_SECURE_PUBLIC_HDRS,
     deps = [
-        "alts_proto",
+        "alts_upb",
         "gpr",
         "grpc_base",
     ],

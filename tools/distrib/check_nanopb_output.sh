@@ -15,7 +15,6 @@
 
 set -ex
 
-readonly NANOPB_ALTS_TMP_OUTPUT="$(mktemp -d)"
 readonly NANOPB_HEALTH_TMP_OUTPUT="$(mktemp -d)"
 readonly NANOPB_TMP_OUTPUT="$(mktemp -d)"
 readonly PROTOBUF_INSTALL_PREFIX="$(mktemp -d)"
@@ -55,32 +54,6 @@ readonly HEALTH_GRPC_OUTPUT_PATH='src/core/ext/filters/client_channel/health'
 for NANOPB_OUTPUT_FILE in $NANOPB_HEALTH_TMP_OUTPUT/*.pb.*; do
   if ! diff "$NANOPB_OUTPUT_FILE" "${HEALTH_GRPC_OUTPUT_PATH}/$(basename $NANOPB_OUTPUT_FILE)"; then
     echo "Outputs differ: $NANOPB_HEALTH_TMP_OUTPUT vs $HEALTH_GRPC_OUTPUT_PATH"
-    exit 2
-  fi
-done
-
-#
-# Checks for handshaker.proto and transport_security_common.proto
-#
-readonly HANDSHAKER_GRPC_OUTPUT_PATH='src/core/tsi/alts/handshaker'
-# nanopb-compile the proto to a temp location
-./tools/codegen/core/gen_nano_proto.sh \
-  src/core/tsi/alts/handshaker/proto/handshaker.proto \
-  "$NANOPB_ALTS_TMP_OUTPUT" \
-  "$HANDSHAKER_GRPC_OUTPUT_PATH"
-./tools/codegen/core/gen_nano_proto.sh \
-  src/core/tsi/alts/handshaker/proto/transport_security_common.proto \
-  "$NANOPB_ALTS_TMP_OUTPUT" \
-  "$HANDSHAKER_GRPC_OUTPUT_PATH"
-./tools/codegen/core/gen_nano_proto.sh \
-  src/core/tsi/alts/handshaker/proto/altscontext.proto \
-  "$NANOPB_ALTS_TMP_OUTPUT" \
-  "$HANDSHAKER_GRPC_OUTPUT_PATH"
-
-# compare outputs to checked compiled code
-for NANOPB_OUTPUT_FILE in $NANOPB_ALTS_TMP_OUTPUT/*.pb.*; do
-  if ! diff "$NANOPB_OUTPUT_FILE" "src/core/tsi/alts/handshaker/$(basename $NANOPB_OUTPUT_FILE)"; then
-    echo "Outputs differ: $NANOPB_ALTS_TMP_OUTPUT vs $HANDSHAKER_GRPC_OUTPUT_PATH"
     exit 2
   fi
 done

@@ -528,7 +528,6 @@ add_dependencies(buildtests_cxx alts_frame_handler_test)
 add_dependencies(buildtests_cxx alts_frame_protector_test)
 add_dependencies(buildtests_cxx alts_grpc_record_protocol_test)
 add_dependencies(buildtests_cxx alts_handshaker_client_test)
-add_dependencies(buildtests_cxx alts_handshaker_service_api_test)
 add_dependencies(buildtests_cxx alts_iovec_record_protocol_test)
 add_dependencies(buildtests_cxx alts_security_connector_test)
 add_dependencies(buildtests_cxx alts_tsi_handshaker_test)
@@ -1255,23 +1254,18 @@ add_library(grpc
   src/core/lib/security/credentials/alts/grpc_alts_credentials_client_options.cc
   src/core/lib/security/credentials/alts/grpc_alts_credentials_options.cc
   src/core/lib/security/credentials/alts/grpc_alts_credentials_server_options.cc
-  src/core/tsi/alts/handshaker/alts_handshaker_service_api.cc
-  src/core/tsi/alts/handshaker/alts_handshaker_service_api_util.cc
   src/core/tsi/alts/handshaker/alts_tsi_utils.cc
   src/core/tsi/alts/handshaker/transport_security_common_api.cc
-  src/core/tsi/alts/handshaker/altscontext.pb.c
-  src/core/tsi/alts/handshaker/handshaker.pb.c
-  src/core/tsi/alts/handshaker/transport_security_common.pb.c
-  third_party/nanopb/pb_common.c
-  third_party/nanopb/pb_decode.c
-  third_party/nanopb/pb_encode.c
-  src/core/tsi/transport_security.cc
+  src/core/ext/upb-generated/src/proto/grpc/gcp/altscontext.upb.c
+  src/core/ext/upb-generated/src/proto/grpc/gcp/handshaker.upb.c
+  src/core/ext/upb-generated/src/proto/grpc/gcp/transport_security_common.upb.c
   third_party/upb/upb/decode.c
   third_party/upb/upb/encode.c
   third_party/upb/upb/msg.c
   third_party/upb/upb/port.c
   third_party/upb/upb/table.c
   third_party/upb/upb/upb.c
+  src/core/tsi/transport_security.cc
   src/core/ext/transport/chttp2/client/insecure/channel_create.cc
   src/core/ext/transport/chttp2/client/insecure/channel_create_posix.cc
   src/core/ext/transport/chttp2/client/authority.cc
@@ -1771,16 +1765,11 @@ add_library(grpc_cronet
   src/core/lib/security/credentials/alts/grpc_alts_credentials_client_options.cc
   src/core/lib/security/credentials/alts/grpc_alts_credentials_options.cc
   src/core/lib/security/credentials/alts/grpc_alts_credentials_server_options.cc
-  src/core/tsi/alts/handshaker/alts_handshaker_service_api.cc
-  src/core/tsi/alts/handshaker/alts_handshaker_service_api_util.cc
   src/core/tsi/alts/handshaker/alts_tsi_utils.cc
   src/core/tsi/alts/handshaker/transport_security_common_api.cc
-  src/core/tsi/alts/handshaker/altscontext.pb.c
-  src/core/tsi/alts/handshaker/handshaker.pb.c
-  src/core/tsi/alts/handshaker/transport_security_common.pb.c
-  third_party/nanopb/pb_common.c
-  third_party/nanopb/pb_decode.c
-  third_party/nanopb/pb_encode.c
+  src/core/ext/upb-generated/src/proto/grpc/gcp/altscontext.upb.c
+  src/core/ext/upb-generated/src/proto/grpc/gcp/handshaker.upb.c
+  src/core/ext/upb-generated/src/proto/grpc/gcp/transport_security_common.upb.c
   src/core/tsi/transport_security.cc
   src/core/ext/transport/chttp2/client/insecure/channel_create.cc
   src/core/ext/transport/chttp2/client/insecure/channel_create_posix.cc
@@ -11260,47 +11249,6 @@ target_include_directories(alts_handshaker_client_test
 )
 
 target_link_libraries(alts_handshaker_client_test
-  ${_gRPC_PROTOBUF_LIBRARIES}
-  ${_gRPC_ALLTARGETS_LIBRARIES}
-  alts_test_util
-  gpr
-  grpc
-  ${_gRPC_GFLAGS_LIBRARIES}
-)
-
-
-endif (gRPC_BUILD_TESTS)
-if (gRPC_BUILD_TESTS)
-
-add_executable(alts_handshaker_service_api_test
-  test/core/tsi/alts/handshaker/alts_handshaker_service_api_test.cc
-  third_party/googletest/googletest/src/gtest-all.cc
-  third_party/googletest/googlemock/src/gmock-all.cc
-)
-
-
-target_include_directories(alts_handshaker_service_api_test
-  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
-  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
-  PRIVATE ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
-  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
-  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
-  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
-  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
-  PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${_gRPC_UPB_GENERATED_DIR}
-  PRIVATE ${_gRPC_UPB_GRPC_GENERATED_DIR}
-  PRIVATE ${_gRPC_UPB_INCLUDE_DIR}
-  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
-  PRIVATE third_party/googletest/googletest/include
-  PRIVATE third_party/googletest/googletest
-  PRIVATE third_party/googletest/googlemock/include
-  PRIVATE third_party/googletest/googlemock
-  PRIVATE ${_gRPC_PROTO_GENS_DIR}
-)
-
-target_link_libraries(alts_handshaker_service_api_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   alts_test_util
