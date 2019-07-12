@@ -25,11 +25,13 @@ Google::Protobuf::DescriptorPool.generated_pool.build do
       optional :response_compressed, :message, 6, "grpc.testing.BoolValue"
       optional :response_status, :message, 7, "grpc.testing.EchoStatus"
       optional :expect_compressed, :message, 8, "grpc.testing.BoolValue"
+      optional :fill_server_id, :bool, 9
     end
     add_message "grpc.testing.SimpleResponse" do
       optional :payload, :message, 1, "grpc.testing.Payload"
       optional :username, :string, 2
       optional :oauth_scope, :string, 3
+      optional :server_id, :string, 4
     end
     add_message "grpc.testing.StreamingInputCallRequest" do
       optional :payload, :message, 1, "grpc.testing.Payload"
