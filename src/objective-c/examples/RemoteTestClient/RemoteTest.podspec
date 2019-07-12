@@ -9,6 +9,7 @@ Pod::Spec.new do |s|
 
   s.ios.deployment_target = '7.1'
   s.osx.deployment_target = '10.9'
+  s.tvos.deployment_target = '10.0'
 
   # Run protoc with the Objective-C and gRPC plugins to generate protocol messages and gRPC clients.
   s.dependency "!ProtoCompiler-gRPCPlugin"
