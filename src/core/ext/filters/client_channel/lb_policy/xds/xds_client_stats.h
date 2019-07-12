@@ -146,7 +146,7 @@ class XdsLbClientStats {
     void Revive() { dying_ = false; }
     bool IsSafeToDelete() {
       return dying_ &&
-             total_requests_in_progress_.Load(MemoryOrder::ACQ_REL) == 0;
+             total_requests_in_progress_.FetchAdd(0, MemoryOrder::ACQ_REL) == 0;
     }
 
     void AddCallStarted();

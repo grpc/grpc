@@ -199,35 +199,35 @@ class ClientStats {
 
   // TODO(juanlishen): The following getter-like methods should be const. But we
   // need const_iterator implementation in our map.
-  size_t total_successful_requests() {
-    size_t sum = 0;
+  uint64_t total_successful_requests() {
+    uint64_t sum = 0;
     for (auto& p : locality_stats_) {
       sum += p.second.total_successful_requests;
     }
     return sum;
   }
-  size_t total_requests_in_progress() {
-    size_t sum = 0;
+  uint64_t total_requests_in_progress() {
+    uint64_t sum = 0;
     for (auto& p : locality_stats_) {
       sum += p.second.total_requests_in_progress;
     }
     return sum;
   }
-  size_t total_error_requests() {
-    size_t sum = 0;
+  uint64_t total_error_requests() {
+    uint64_t sum = 0;
     for (auto& p : locality_stats_) {
       sum += p.second.total_error_requests;
     }
     return sum;
   }
-  size_t total_issued_requests() {
-    size_t sum = 0;
+  uint64_t total_issued_requests() {
+    uint64_t sum = 0;
     for (auto& p : locality_stats_) {
       sum += p.second.total_issued_requests;
     }
     return sum;
   }
-  size_t total_dropped_requests() const { return total_dropped_requests_; }
+  uint64_t total_dropped_requests() const { return total_dropped_requests_; }
 
  private:
   struct LocalityStats {
@@ -247,25 +247,24 @@ class ClientStats {
       total_issued_requests = 0;
     }
 
-    size_t total_successful_requests = 0;
-    size_t total_requests_in_progress = 0;
-    size_t total_error_requests = 0;
-    size_t total_issued_requests = 0;
+    uint64_t total_successful_requests = 0;
+    uint64_t total_requests_in_progress = 0;
+    uint64_t total_error_requests = 0;
+    uint64_t total_issued_requests = 0;
   };
 
   grpc_core::Map<grpc_core::UniquePtr<char>, LocalityStats,
                  grpc_core::StringLess>
       locality_stats_;
-  size_t total_dropped_requests_ = 0;
+  uint64_t total_dropped_requests_ = 0;
 };
 
 class EdsServiceImpl : public EdsService {
  public:
-  using EdsStream = ServerReaderWriter<DiscoveryResponse, DiscoveryRequest>;
-  using LrsStream = ServerReaderWriter<LoadStatsResponse, LoadStatsRequest>;
+  using Stream = ServerReaderWriter<DiscoveryResponse, DiscoveryRequest>;
   using ResponseDelayPair = std::pair<DiscoveryResponse, int>;
 
-  Status StreamEndpoints(ServerContext* context, EdsStream* stream) override {
+  Status StreamEndpoints(ServerContext* context, Stream* stream) override {
     // TODO(juanlishen): Clean up the scoping.
     gpr_log(GPR_INFO, "LB[%p]: EDS StreamEndpoints starts", this);
     {
@@ -361,7 +360,7 @@ class EdsServiceImpl : public EdsService {
   }
 
  private:
-  void SendResponse(EdsStream* stream, const DiscoveryResponse& response,
+  void SendResponse(Stream* stream, const DiscoveryResponse& response,
                     int delay_ms) {
     gpr_log(GPR_INFO, "LB[%p]: sleeping for %d ms...", this, delay_ms);
     if (delay_ms > 0) {
@@ -381,13 +380,13 @@ class EdsServiceImpl : public EdsService {
 
 class LrsServiceImpl : public LrsService {
  public:
-  using LrsStream = ServerReaderWriter<LoadStatsResponse, LoadStatsRequest>;
+  using Stream = ServerReaderWriter<LoadStatsResponse, LoadStatsRequest>;
 
   explicit LrsServiceImpl(int client_load_reporting_interval_seconds)
       : client_load_reporting_interval_seconds_(
             client_load_reporting_interval_seconds) {}
 
-  Status StreamLoadStats(ServerContext* context, LrsStream* stream) override {
+  Status StreamLoadStats(ServerContext* context, Stream* stream) override {
     gpr_log(GPR_INFO, "LB[%p]: LRS StreamLoadStats starts", this);
     // Read request.
     LoadStatsRequest request;
