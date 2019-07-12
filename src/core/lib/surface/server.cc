@@ -952,10 +952,10 @@ static void destroy_channel_elem(grpc_channel_element* elem) {
     gpr_free(chand->registered_methods);
   }
   if (chand->server) {
-    grpc_core::channelz::ServerNode* server_node =
-        grpc_server_get_channelz_node(chand->server);
-    if (server_node != nullptr && chand->channelz_socket_uuid) {
-      server_node->RemoveChildSocket(chand->channelz_socket_uuid);
+    if (chand->server->channelz_server != nullptr &&
+        chand->channelz_socket_uuid != 0) {
+      chand->server->channelz_server->RemoveChildSocket(
+          chand->channelz_socket_uuid);
     }
     gpr_mu_lock(&chand->server->mu_global);
     chand->next->prev = chand->prev;
@@ -1173,8 +1173,8 @@ void grpc_server_setup_transport(
   chand->channel = channel;
   if (socket_node != nullptr) {
     chand->channelz_socket_uuid = socket_node->uuid();
-    grpc_server_get_channelz_node(s)->AddChildSocket(socket_node->uuid(),
-                                                     socket_node->remote());
+    s->channelz_server->AddChildSocket(socket_node->uuid(),
+                                               socket_node);
   } else {
     chand->channelz_socket_uuid = 0;
   }

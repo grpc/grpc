@@ -206,14 +206,14 @@ class ChannelNode : public BaseNode {
 class ServerNode : public BaseNode {
  public:
   ServerNode(grpc_server* server, size_t channel_tracer_max_nodes);
+
   ~ServerNode() override;
 
   grpc_json* RenderJson() override;
 
-  char* RenderServerSockets(intptr_t start_socket_id,
-                            intptr_t max_results);
+  char* RenderServerSockets(intptr_t start_socket_id, intptr_t max_results);
 
-  void AddChildSocket(intptr_t child_uuid, const char* remote);
+  void AddChildSocket(intptr_t child_uuid, RefCountedPtr<SocketNode>);
 
   void RemoveChildSocket(intptr_t child_uuid);
 
@@ -236,7 +236,7 @@ class ServerNode : public BaseNode {
   CallCountingHelper call_counter_;
   ChannelTrace trace_;
   Mutex child_mu_;  // Guards child map below.
-  Map<intptr_t, const char*> child_sockets_;
+  Map<intptr_t, RefCountedPtr<SocketNode>> child_sockets_;
 };
 
 // Handles channelz bookkeeping for sockets
