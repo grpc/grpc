@@ -4817,10 +4817,7 @@
     "args": [], 
     "benchmark": false, 
     "ci_platforms": [
-      "linux", 
-      "mac", 
-      "posix", 
-      "windows"
+      "linux"
     ], 
     "cpu_cost": 1.0, 
     "exclude_configs": [], 
@@ -4830,10 +4827,7 @@
     "language": "c++", 
     "name": "grpclb_fallback_test", 
     "platforms": [
-      "linux", 
-      "mac", 
-      "posix", 
-      "windows"
+      "linux"
     ], 
     "uses_polling": true
   }, 

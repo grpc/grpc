@@ -638,7 +638,9 @@ add_dependencies(buildtests_cxx grpc_linux_system_roots_test)
 add_dependencies(buildtests_cxx grpc_tool_test)
 add_dependencies(buildtests_cxx grpclb_api_test)
 add_dependencies(buildtests_cxx grpclb_end2end_test)
+if(_gRPC_PLATFORM_LINUX)
 add_dependencies(buildtests_cxx grpclb_fallback_test)
+endif()
 add_dependencies(buildtests_cxx h2_ssl_cert_test)
 add_dependencies(buildtests_cxx h2_ssl_session_reuse_test)
 add_dependencies(buildtests_cxx health_service_end2end_test)
@@ -14468,6 +14470,7 @@ target_link_libraries(grpclb_end2end_test
 
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
+if(_gRPC_PLATFORM_LINUX)
 
 add_executable(grpclb_fallback_test
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/empty.pb.cc
@@ -14528,6 +14531,7 @@ target_link_libraries(grpclb_fallback_test
 )
 
 
+endif()
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 

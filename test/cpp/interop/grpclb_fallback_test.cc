@@ -1,3 +1,21 @@
+/*
+ *
+ * Copyright 2019 gRPC authors.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ */
+
 #include <grpc/support/port_platform.h>
 
 #include <arpa/inet.h>
@@ -111,7 +129,7 @@ bool TcpUserTimeoutMutateFd(int fd, grpc_socket_mutator* mutator) {
   socklen_t len = sizeof(newval);
   if (0 != getsockopt(fd, IPPROTO_TCP, TCP_USER_TIMEOUT, &newval, &len) ||
       newval != timeout) {
-    gpr_log(GPR_ERROR, "Failed to set socket option TCP_USER_TIMEOUT");
+    gpr_log(GPR_ERROR, "Failed to get expected socket option TCP_USER_TIMEOUT");
     abort();
   }
   return true;
@@ -147,7 +165,7 @@ std::unique_ptr<TestService::Stub> CreateFallbackTestStub() {
       grpc::CreateCustomChannel(FLAGS_server_uri, channel_creds, channel_args));
 }
 
-void RunCommand(const std::string command) {
+void RunCommand(const std::string& command) {
   gpr_log(GPR_INFO, "RunCommand: |%s|", command.c_str());
   int out = std::system(command.c_str());
   if (WIFEXITED(out)) {
@@ -164,7 +182,7 @@ void RunCommand(const std::string command) {
 }
 
 void RunFallbackBeforeStartupTest(
-    const std::string break_lb_and_backend_conns_cmd,
+    const std::string& break_lb_and_backend_conns_cmd,
     int per_rpc_deadline_seconds) {
   std::unique_ptr<TestService::Stub> stub = CreateFallbackTestStub();
   RunCommand(break_lb_and_backend_conns_cmd);
@@ -189,7 +207,7 @@ void DoSlowFallbackBeforeStartup() {
 }
 
 void RunFallbackAfterStartupTest(
-    const std::string break_lb_and_backend_conns_cmd) {
+    const std::string& break_lb_and_backend_conns_cmd) {
   std::unique_ptr<TestService::Stub> stub = CreateFallbackTestStub();
   GrpclbRouteType grpclb_route_type = DoRPCAndGetPath(stub.get(), 20);
   if (grpclb_route_type != GrpclbRouteType::GRPCLB_ROUTE_TYPE_BACKEND) {

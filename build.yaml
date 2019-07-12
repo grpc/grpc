@@ -5056,6 +5056,8 @@ targets:
   - grpc
   - gpr
   - grpc++_test_config
+  platforms:
+  - linux
 - name: h2_ssl_cert_test
   gtest: true
   build: test
