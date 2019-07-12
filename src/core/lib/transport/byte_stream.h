@@ -158,6 +158,38 @@ class ByteStreamCache {
   grpc_slice_buffer cache_buffer_;
 };
 
+class ByteStreamCacheOnce : public ByteStream {
+ public:
+  void Orphan() override;
+
+  bool Next(size_t max_size_hint, grpc_closure* on_complete) override;
+  grpc_error* Pull(grpc_slice* slice) override;
+  void Shutdown(grpc_error* error) override;
+
+  // Resets the byte stream to the start of the underlying stream.
+  void Reset();
+
+  explicit ByteStreamCacheOnce(OrphanablePtr<ByteStream> underlying_stream);
+
+  ~ByteStreamCacheOnce();
+
+  // Must not be destroyed while still in use by a CachingByteStream.
+  void Destroy();
+
+  const grpc_core::InlinedVector<grpc_slice, 8>& cache_buffer() const {
+    return cache_buffer_;
+  }
+
+ private:
+  OrphanablePtr<ByteStream> underlying_stream_;
+  uint32_t length_;
+  uint32_t flags_;
+  uint32_t cursor_ = 0;
+  bool was_reset_ = false;
+  grpc_error* shutdown_error_ = GRPC_ERROR_NONE;
+  grpc_core::InlinedVector<grpc_slice, 8> cache_buffer_;
+};
+
 }  // namespace grpc_core
 
 #endif /* GRPC_CORE_LIB_TRANSPORT_BYTE_STREAM_H */

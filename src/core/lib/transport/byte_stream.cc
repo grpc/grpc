@@ -155,4 +155,76 @@ void ByteStreamCache::CachingByteStream::Reset() {
   offset_ = 0;
 }
 
+//
+// ByteStreamCacheOnce
+//
+ByteStreamCacheOnce::ByteStreamCacheOnce(
+    OrphanablePtr<ByteStream> underlying_stream)
+    : ByteStream(underlying_stream->length(), underlying_stream->flags()),
+      underlying_stream_(std::move(underlying_stream)),
+      length_(underlying_stream_->length()),
+      flags_(underlying_stream_->flags()) {}
+
+ByteStreamCacheOnce::~ByteStreamCacheOnce() { Destroy(); }
+
+void ByteStreamCacheOnce::Destroy() {
+  underlying_stream_.reset();
+  for (size_t idx = cursor_; idx < cache_buffer_.size(); idx++) {
+    grpc_slice_unref_internal(cache_buffer_[idx]);
+  }
+}
+
+void ByteStreamCacheOnce::Orphan() {
+  GRPC_ERROR_UNREF(shutdown_error_);
+  underlying_stream_.reset();
+  // Note: We do not actually delete the object here, since
+  // CachingByteStream is usually allocated as part of a larger
+  // object and has an OrphanablePtr of itself passed down through the
+  // filter stack.
+}
+
+bool ByteStreamCacheOnce::Next(size_t max_size_hint,
+                               grpc_closure* on_complete) {
+  if (shutdown_error_ != GRPC_ERROR_NONE) return true;
+  if (was_reset_) {
+    if (cursor_ < cache_buffer_.size()) return true;
+  }
+  GPR_DEBUG_ASSERT(underlying_stream_ != nullptr);
+  return underlying_stream_->Next(max_size_hint, on_complete);
+}
+
+grpc_error* ByteStreamCacheOnce::Pull(grpc_slice* slice) {
+  if (GPR_UNLIKELY(shutdown_error_ != GRPC_ERROR_NONE)) {
+    return GRPC_ERROR_REF(shutdown_error_);
+  }
+  if (was_reset_) {
+    if (cursor_ < cache_buffer_.size()) {
+      *slice = cache_buffer_[cursor_];
+      cursor_++;
+      return GRPC_ERROR_NONE;
+    } else {
+      GPR_DEBUG_ASSERT(underlying_stream_ != nullptr);
+      return underlying_stream_->Pull(slice);
+    }
+  } else {
+    GPR_DEBUG_ASSERT(underlying_stream_ != nullptr);
+    grpc_error* error = underlying_stream_->Pull(slice);
+    if (error == GRPC_ERROR_NONE) {
+      cache_buffer_.push_back(grpc_slice_ref_internal(*slice));
+    }
+    return error;
+  }
+}
+
+void ByteStreamCacheOnce::Shutdown(grpc_error* error) {
+  GRPC_ERROR_UNREF(shutdown_error_);
+  shutdown_error_ = GRPC_ERROR_REF(error);
+  underlying_stream_->Shutdown(error);
+}
+
+void ByteStreamCacheOnce::Reset() {
+  GPR_DEBUG_ASSERT(!was_reset_);
+  was_reset_ = true;
+}
+
 }  // namespace grpc_core

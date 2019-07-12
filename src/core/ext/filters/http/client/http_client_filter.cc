@@ -84,8 +84,7 @@ struct call_data {
   // State for handling send_message ops.
   grpc_transport_stream_op_batch* send_message_batch;
   size_t send_message_bytes_read = 0;
-  grpc_core::ManualConstructor<grpc_core::ByteStreamCache> send_message_cache;
-  grpc_core::ManualConstructor<grpc_core::ByteStreamCache::CachingByteStream>
+  grpc_core::ManualConstructor<grpc_core::ByteStreamCacheOnce>
       send_message_caching_stream;
   grpc_closure on_send_message_next_done;
   grpc_closure* original_send_message_on_complete;
@@ -217,7 +216,7 @@ static void recv_trailing_metadata_ready(void* user_data, grpc_error* error) {
 static void send_message_on_complete(void* arg, grpc_error* error) {
   grpc_call_element* elem = static_cast<grpc_call_element*>(arg);
   call_data* calld = static_cast<call_data*>(elem->call_data);
-  calld->send_message_cache.Destroy();
+  calld->send_message_caching_stream.Destroy();
   GRPC_CLOSURE_RUN(calld->original_send_message_on_complete,
                    GRPC_ERROR_REF(error));
 }
@@ -275,15 +274,14 @@ static void on_send_message_next_done(void* arg, grpc_error* error) {
   grpc_call_next_op(elem, calld->send_message_batch);
 }
 
-static char* slice_buffer_to_string(grpc_slice_buffer* slice_buffer) {
-  char* payload_bytes =
-      static_cast<char*>(gpr_malloc(slice_buffer->length + 1));
+static char* cached_slices_to_string(grpc_core::ByteStreamCacheOnce* cache) {
+  char* payload_bytes = static_cast<char*>(gpr_malloc(cache->length() + 1));
+  const grpc_core::InlinedVector<grpc_slice, 8>& slices = cache->cache_buffer();
   size_t offset = 0;
-  for (size_t i = 0; i < slice_buffer->count; ++i) {
-    memcpy(payload_bytes + offset,
-           GRPC_SLICE_START_PTR(slice_buffer->slices[i]),
-           GRPC_SLICE_LENGTH(slice_buffer->slices[i]));
-    offset += GRPC_SLICE_LENGTH(slice_buffer->slices[i]);
+  for (size_t i = 0; i < slices.size(); ++i) {
+    memcpy(payload_bytes + offset, GRPC_SLICE_START_PTR(slices[i]),
+           GRPC_SLICE_LENGTH(slices[i]));
+    offset += GRPC_SLICE_LENGTH(slices[i]);
   }
   *(payload_bytes + offset) = '\0';
   return payload_bytes;
@@ -314,7 +312,7 @@ static grpc_error* update_path_for_get(grpc_call_element* elem,
   write_ptr += GRPC_SLICE_LENGTH(path_slice);
   *write_ptr++ = '?';
   char* payload_bytes =
-      slice_buffer_to_string(calld->send_message_cache->cache_buffer());
+      cached_slices_to_string(calld->send_message_caching_stream.get());
   grpc_base64_encode_core(write_ptr, payload_bytes,
                           batch->payload->send_message.send_message->length(),
                           true /* url_safe */, false /* multi_line */);
@@ -380,9 +378,8 @@ static void hc_start_transport_stream_op_batch(
         batch->payload->send_message.send_message->length() <
             channeld->max_payload_size_for_get) {
       calld->send_message_bytes_read = 0;
-      calld->send_message_cache.Init(
+      calld->send_message_caching_stream.Init(
           std::move(batch->payload->send_message.send_message));
-      calld->send_message_caching_stream.Init(calld->send_message_cache.get());
       batch->payload->send_message.send_message.reset(
           calld->send_message_caching_stream.get());
       calld->original_send_message_on_complete = batch->on_complete;
