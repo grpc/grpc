@@ -765,6 +765,12 @@ class ChannelData::ConnectivityStateAndPickerSetter {
     auto* self = static_cast<ConnectivityStateAndPickerSetter*>(arg);
     // Update picker.
     self->chand_->picker_ = std::move(self->picker_);
+    // Clear data plane if the updated picker is nullptr.
+    if (self->chand_->picker_ == nullptr) {
+      self->chand_->received_service_config_data_ = false;
+      self->chand_->retry_throttle_data_.reset();
+      self->chand_->service_config_.reset();
+    }
     // Re-process queued picks.
     for (QueuedPick* pick = self->chand_->queued_picks_; pick != nullptr;
          pick = pick->next) {
@@ -1502,19 +1508,42 @@ void ChannelData::StartTransportOpLocked(void* arg, grpc_error* ignored) {
       chand->resolving_lb_policy_->ResetBackoffLocked();
     }
   }
-  // Disconnect.
+  // Disconnect or enter IDLE.
   if (op->disconnect_with_error != GRPC_ERROR_NONE) {
-    grpc_error* error = GRPC_ERROR_NONE;
-    GPR_ASSERT(chand->disconnect_error_.CompareExchangeStrong(
-        &error, op->disconnect_with_error, MemoryOrder::ACQ_REL,
-        MemoryOrder::ACQUIRE));
+    grpc_connectivity_state connectivity_state;
+    const char* message = nullptr;
+    UniquePtr<LoadBalancingPolicy::SubchannelPicker> picker;
+    intptr_t value;
+    // Shutdown the resolving load balancing policy.
     chand->DestroyResolvingLoadBalancingPolicyLocked();
+    // Enter IDLE state or disconnect.
+    if (grpc_error_get_int(op->disconnect_with_error,
+                           GRPC_ERROR_INT_CHANNEL_CONNECTIVITY_STATE, &value) &&
+        static_cast<grpc_connectivity_state>(value) == GRPC_CHANNEL_IDLE) {
+      // Enter IDLE state.
+      connectivity_state = GRPC_CHANNEL_IDLE;
+      message = "enter IDLE";
+      picker.reset();
+      // Clean the control plane.
+      // The data plane cleaning will be handled by
+      // ConnectivityStateAndPickerSetter.
+      chand->health_check_service_name_.reset();
+      chand->saved_service_config_.reset();
+      chand->received_first_resolver_result_ = false;
+    } else {
+      connectivity_state = GRPC_CHANNEL_SHUTDOWN;
+      message = "shutdown from API";
+      picker.reset(New<LoadBalancingPolicy::TransientFailurePicker>(
+          GRPC_ERROR_REF(op->disconnect_with_error)));
+      // Mark the channel as disconnected.
+      grpc_error* error = GRPC_ERROR_NONE;
+      GPR_ASSERT(chand->disconnect_error_.CompareExchangeStrong(
+          &error, op->disconnect_with_error, MemoryOrder::ACQ_REL,
+          MemoryOrder::ACQUIRE));
+    }
     // Will delete itself.
-    New<ConnectivityStateAndPickerSetter>(
-        chand, GRPC_CHANNEL_SHUTDOWN, "shutdown from API",
-        UniquePtr<LoadBalancingPolicy::SubchannelPicker>(
-            New<LoadBalancingPolicy::TransientFailurePicker>(
-                GRPC_ERROR_REF(op->disconnect_with_error))));
+    New<ConnectivityStateAndPickerSetter>(chand, connectivity_state, message,
+                                          std::move(picker));
   }
   GRPC_CHANNEL_STACK_UNREF(chand->owning_stack_, "start_transport_op");
   GRPC_CLOSURE_SCHED(op->on_consumed, GRPC_ERROR_NONE);
