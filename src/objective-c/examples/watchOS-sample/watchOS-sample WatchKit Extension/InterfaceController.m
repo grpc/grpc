@@ -1,27 +1,31 @@
 //
-//  ViewController.m
-//  tvOS-sample
+//  InterfaceController.m
+//  watchOS-sample WatchKit Extension
 //
 //  Created by Tony Lu on 7/12/19.
 //  Copyright © 2019 Tony Lu. All rights reserved.
 //
 
-#import "ViewController.h"
+#import "InterfaceController.h"
 
 #import <RemoteTest/Messages.pbobjc.h>
 #import <RemoteTest/Test.pbrpc.h>
 
-@interface ViewController ()<GRPCProtoResponseHandler>
+@interface InterfaceController ()<GRPCProtoResponseHandler>
 
 @end
 
-@implementation ViewController {
+
+@implementation InterfaceController {
   GRPCCallOptions *_options;
   RMTTestService *_service;
 }
 
-- (void)viewDidLoad {
-  [super viewDidLoad];
+- (void)awakeWithContext:(id)context {
+  [super awakeWithContext:context];
+
+  // Configure interface objects here.
+
   
   GRPCMutableCallOptions *options = [[GRPCMutableCallOptions alloc] init];
   _options = options;
@@ -30,7 +34,18 @@
                                       callOptions:_options];
 }
 
-- (IBAction)makeCall:(id)sender {
+- (void)willActivate {
+  // This method is called when watch view controller is about to be visible to user
+  [super willActivate];
+}
+
+- (void)didDeactivate {
+  // This method is called when watch view controller is no longer visible
+  [super didDeactivate];
+}
+
+- (IBAction)makeCall {
+  
   RMTSimpleRequest *request = [RMTSimpleRequest message];
   request.responseSize = 100;
   GRPCUnaryProtoCall *call = [_service unaryCallWithMessage:request
@@ -48,3 +63,6 @@
 }
 
 @end
+
+
+
