@@ -211,10 +211,10 @@ class XdsLb : public LoadBalancingPolicy {
 
       ~EdsCallState();
 
-      bool IsCurrentCallOnChannel() const;
-
       static void OnResponseReceivedLocked(void* arg, grpc_error* error);
       static void OnStatusReceivedLocked(void* arg, grpc_error* error);
+
+      bool IsCurrentCallOnChannel() const;
 
       // The owning RetryableLbCall<>.
       RefCountedPtr<RetryableLbCall<EdsCallState>> parent_;
@@ -258,18 +258,53 @@ class XdsLb : public LoadBalancingPolicy {
      private:
       GRPC_ALLOW_CLASS_TO_USE_NON_PUBLIC_DELETE
 
-      ~LrsCallState();
+      // Reports client-side load stats according to a fixed interval.
+      class Reporter : public InternallyRefCounted<Reporter> {
+       public:
+        Reporter(RefCountedPtr<LrsCallState> parent,
+                 grpc_millis report_interval)
+            : parent_(std::move(parent)), report_interval_(report_interval) {
+          GRPC_CLOSURE_INIT(
+              &on_next_report_timer_, OnNextReportTimerLocked, this,
+              grpc_combiner_scheduler(xdslb_policy()->combiner()));
+          GRPC_CLOSURE_INIT(
+              &on_report_done_, OnReportDoneLocked, this,
+              grpc_combiner_scheduler(xdslb_policy()->combiner()));
+          ScheduleNextReportLocked();
+        }
 
-      bool IsCurrentCallOnChannel() const;
+        void Orphan() override;
+
+       private:
+        void ScheduleNextReportLocked();
+        static void OnNextReportTimerLocked(void* arg, grpc_error* error);
+        void SendReportLocked();
+        static void OnReportDoneLocked(void* arg, grpc_error* error);
+
+        bool IsCurrentReporterOnCall() const {
+          return this == parent_->reporter_.get();
+        }
+        XdsLb* xdslb_policy() const { return parent_->xdslb_policy(); }
+
+        // The owning LRS call.
+        RefCountedPtr<LrsCallState> parent_;
+
+        // The load reporting state.
+        const grpc_millis report_interval_;
+        bool last_report_counters_were_zero_ = false;
+        bool next_report_timer_callback_pending_ = false;
+        grpc_timer next_report_timer_;
+        grpc_closure on_next_report_timer_;
+        grpc_closure on_report_done_;
+      };
+
+      ~LrsCallState();
 
       static void OnInitialRequestSentLocked(void* arg, grpc_error* error);
       static void OnResponseReceivedLocked(void* arg, grpc_error* error);
-      void MaybeStopReportingLocked(grpc_millis new_reporting_interval);
-      void ScheduleNextReportLocked();
-      static void OnNextReportTimerLocked(void* arg, grpc_error* error);
-      void SendReportLocked();
-      static void OnReportDoneLocked(void* arg, grpc_error* error);
       static void OnStatusReceivedLocked(void* arg, grpc_error* error);
+
+      bool IsCurrentCallOnChannel() const;
 
       // The owning RetryableLbCall<>.
       RefCountedPtr<RetryableLbCall<LrsCallState>> parent_;
@@ -296,14 +331,8 @@ class XdsLb : public LoadBalancingPolicy {
       grpc_closure on_status_received_;
 
       // Load reporting state.
-      grpc_millis load_reporting_interval_;
-      bool started_reporting_ = false;
-      bool next_report_timer_callback_pending_ = false;
-      bool last_report_counters_were_zero_ = false;
-      grpc_timer next_report_timer_;
-      // The closure used for either the load report timer or the callback for
-      // completion of sending the load report.
-      grpc_closure load_reporting_closure_;
+      grpc_millis load_reporting_interval_ = 0;
+      OrphanablePtr<Reporter> reporter_;
     };
 
     LbChannelState(const char* balancer_name, const grpc_channel_args& args,
@@ -1028,13 +1057,6 @@ void XdsLb::LbChannelState::EdsCallState::Orphan() {
   // corresponding unref happens in on_status_received_ instead of here.
 }
 
-bool XdsLb::LbChannelState::EdsCallState::IsCurrentCallOnChannel() const {
-  // If the retryable EDS call is null (which only happens when the LB channel
-  // is shutting down), all the EDS calls are stale.
-  if (lb_chand()->eds_calld_ == nullptr) return false;
-  return this == lb_chand()->eds_calld_->lb_calld();
-}
-
 void XdsLb::LbChannelState::EdsCallState::OnResponseReceivedLocked(
     void* arg, grpc_error* error) {
   EdsCallState* eds_calld = static_cast<EdsCallState*>(arg);
@@ -1228,6 +1250,89 @@ void XdsLb::LbChannelState::EdsCallState::OnStatusReceivedLocked(
   eds_calld->Unref(DEBUG_LOCATION, "EDS+OnStatusReceivedLocked");
 }
 
+bool XdsLb::LbChannelState::EdsCallState::IsCurrentCallOnChannel() const {
+  // If the retryable EDS call is null (which only happens when the LB channel
+  // is shutting down), all the EDS calls are stale.
+  if (lb_chand()->eds_calld_ == nullptr) return false;
+  return this == lb_chand()->eds_calld_->lb_calld();
+}
+
+//
+// XdsLb::LbChannelState::LrsCallState::Reporter
+//
+
+void XdsLb::LbChannelState::LrsCallState::Reporter::Orphan() {
+  if (next_report_timer_callback_pending_) {
+    grpc_timer_cancel(&next_report_timer_);
+  }
+}
+
+void XdsLb::LbChannelState::LrsCallState::Reporter::ScheduleNextReportLocked() {
+  const grpc_millis next_report_time = ExecCtx::Get()->Now() + report_interval_;
+  grpc_timer_init(&next_report_timer_, next_report_time,
+                  &on_next_report_timer_);
+  next_report_timer_callback_pending_ = true;
+}
+
+void XdsLb::LbChannelState::LrsCallState::Reporter::OnNextReportTimerLocked(
+    void* arg, grpc_error* error) {
+  Reporter* self = static_cast<Reporter*>(arg);
+  self->next_report_timer_callback_pending_ = false;
+  if (error != GRPC_ERROR_NONE || !self->IsCurrentReporterOnCall()) {
+    self->Unref(DEBUG_LOCATION, "Reporter+timer");
+    return;
+  }
+  self->SendReportLocked();
+}
+
+void XdsLb::LbChannelState::LrsCallState::Reporter::SendReportLocked() {
+  // Create a request that contains the load report.
+  grpc_slice request_payload_slice = XdsLrsRequestCreateAndEncode(
+      xdslb_policy()->server_name_, &xdslb_policy()->client_stats_);
+  // Skip client load report if the counters were all zero in the last
+  // report and they are still zero in this one.
+  bool old_val = last_report_counters_were_zero_;
+  last_report_counters_were_zero_ = static_cast<bool>(
+      grpc_slice_eq(request_payload_slice, grpc_empty_slice()));
+  if (old_val && last_report_counters_were_zero_) {
+    ScheduleNextReportLocked();
+    return;
+  }
+  parent_->send_message_payload_ =
+      grpc_raw_byte_buffer_create(&request_payload_slice, 1);
+  grpc_slice_unref_internal(request_payload_slice);
+  // Send the report.
+  grpc_op op;
+  memset(&op, 0, sizeof(op));
+  op.op = GRPC_OP_SEND_MESSAGE;
+  op.data.send_message.send_message = parent_->send_message_payload_;
+  grpc_call_error call_error = grpc_call_start_batch_and_execute(
+      parent_->lb_call_, &op, 1, &on_report_done_);
+  if (GPR_UNLIKELY(call_error != GRPC_CALL_OK)) {
+    gpr_log(GPR_ERROR,
+            "[xdslb %p] lb_calld=%p call_error=%d sending client load report",
+            xdslb_policy(), this, call_error);
+    GPR_ASSERT(GRPC_CALL_OK == call_error);
+  }
+}
+
+void XdsLb::LbChannelState::LrsCallState::Reporter::OnReportDoneLocked(
+    void* arg, grpc_error* error) {
+  Reporter* self = static_cast<Reporter*>(arg);
+  grpc_byte_buffer_destroy(self->parent_->send_message_payload_);
+  self->parent_->send_message_payload_ = nullptr;
+  if (error != GRPC_ERROR_NONE || !self->IsCurrentReporterOnCall()) {
+    // If this reporter is no longer the current one on the call, the reason
+    // might be that it was orphaned for a new one due to config update.
+    if (!self->IsCurrentReporterOnCall()) {
+      self->parent_->MaybeStartReportingLocked();
+    }
+    self->Unref(DEBUG_LOCATION, "Reporter+report_done");
+    return;
+  }
+  self->ScheduleNextReportLocked();
+}
+
 //
 // XdsLb::LbChannelState::LrsCallState
 //
@@ -1342,9 +1447,7 @@ XdsLb::LbChannelState::LrsCallState::~LrsCallState() {
 }
 
 void XdsLb::LbChannelState::LrsCallState::Orphan() {
-  if (next_report_timer_callback_pending_) {
-    grpc_timer_cancel(&next_report_timer_);
-  }
+  reporter_.reset();
   GPR_ASSERT(lb_call_ != nullptr);
   // If we are here because xdslb_policy wants to cancel the call,
   // on_status_received_ will complete the cancellation and clean up. Otherwise,
@@ -1359,9 +1462,9 @@ void XdsLb::LbChannelState::LrsCallState::MaybeStartReportingLocked() {
   // Don't start if this is not the current call on the current channel.
   if (!IsCurrentCallOnChannel() || !lb_chand()->IsCurrentChannel()) return;
   // Don't start again if already started.
-  if (started_reporting_) return;
-  // Don't start if the previous send_message op (of the initial request) hasn't
-  // completed.
+  if (reporter_ != nullptr) return;
+  // Don't start if the previous send_message op (of the initial request or the
+  // last report of the previous reporter) hasn't completed.
   if (send_message_payload_ != nullptr) return;
   // Don't start if no LRS response has arrived.
   if (!seen_response()) return;
@@ -1371,17 +1474,9 @@ void XdsLb::LbChannelState::LrsCallState::MaybeStartReportingLocked() {
   EdsCallState* eds_calld = lb_chand()->eds_calld_->lb_calld();
   if (eds_calld == nullptr || !eds_calld->seen_response()) return;
   // Start reporting.
-  started_reporting_ = true;
   lb_chand()->xdslb_policy_->client_stats_.MaybeInitLastReportTime();
-  Ref(DEBUG_LOCATION, "LRS+load_report+start").release();
-  ScheduleNextReportLocked();
-}
-
-bool XdsLb::LbChannelState::LrsCallState::IsCurrentCallOnChannel() const {
-  // If the retryable LRS call is null (which only happens when the LB channel
-  // is shutting down), all the LRS calls are stale.
-  if (lb_chand()->lrs_calld_ == nullptr) return false;
-  return this == lb_chand()->lrs_calld_->lb_calld();
+  reporter_ = MakeOrphanable<Reporter>(
+      Ref(DEBUG_LOCATION, "LRS+load_report+start"), load_reporting_interval_);
 }
 
 void XdsLb::LbChannelState::LrsCallState::OnInitialRequestSentLocked(
@@ -1451,8 +1546,8 @@ void XdsLb::LbChannelState::LrsCallState::OnResponseReceivedLocked(
       }
       return;
     }
-    // Stop load reporting to adopt the new reporting interval.
-    lrs_calld->MaybeStopReportingLocked(new_load_reporting_interval);
+    // Stop current load reporting (if any) to adopt the new reporting interval.
+    lrs_calld->reporter_.reset();
     // Record the new config.
     lrs_calld->load_reporting_interval_ = new_load_reporting_interval;
     // Try starting sending load report.
@@ -1476,95 +1571,6 @@ void XdsLb::LbChannelState::LrsCallState::OnResponseReceivedLocked(
   const grpc_call_error call_error = grpc_call_start_batch_and_execute(
       lrs_calld->lb_call_, &op, 1, &lrs_calld->on_response_received_);
   GPR_ASSERT(GRPC_CALL_OK == call_error);
-}
-
-void XdsLb::LbChannelState::LrsCallState::MaybeStopReportingLocked(
-    grpc_millis new_reporting_interval) {
-  if (!started_reporting_) return;
-  if (new_reporting_interval == load_reporting_interval_) return;
-  // Note that next_report_timer_callback_pending_ is false when we are still
-  // sending a report. In that case, we don't have any timer to cancel, but we
-  // still need to stop the old reporting loop somehow. We do this by checking
-  // next_report_timer_callback_pending_ in OnReportDoneLocked() - if it's true,
-  // we won't schedule the next report, so that the old reporting loop
-  // terminates. But there is a potential race here. If OnReportDoneLocked() is
-  // invoked when the new reporting loop is sending a report, it will schedule
-  // the next report. This issue should be rare because
-  // GRPC_XDS_MIN_CLIENT_LOAD_REPORTING_INTERVAL_MS = 1000, before which
-  // OnReportDoneLocked() should have been invoked.
-  if (next_report_timer_callback_pending_) {
-    grpc_timer_cancel(&next_report_timer_);
-  }
-  started_reporting_ = false;
-}
-
-void XdsLb::LbChannelState::LrsCallState::ScheduleNextReportLocked() {
-  const grpc_millis next_report_time =
-      ExecCtx::Get()->Now() + load_reporting_interval_;
-  GRPC_CLOSURE_INIT(&load_reporting_closure_, OnNextReportTimerLocked, this,
-                    grpc_combiner_scheduler(xdslb_policy()->combiner()));
-  grpc_timer_init(&next_report_timer_, next_report_time,
-                  &load_reporting_closure_);
-  next_report_timer_callback_pending_ = true;
-}
-
-void XdsLb::LbChannelState::LrsCallState::OnNextReportTimerLocked(
-    void* arg, grpc_error* error) {
-  LrsCallState* lrs_calld = static_cast<LrsCallState*>(arg);
-  lrs_calld->next_report_timer_callback_pending_ = false;
-  if (error != GRPC_ERROR_NONE || !lrs_calld->IsCurrentCallOnChannel()) {
-    lrs_calld->Unref(DEBUG_LOCATION, "LRS+load_report+timer");
-    return;
-  }
-  lrs_calld->SendReportLocked();
-}
-
-void XdsLb::LbChannelState::LrsCallState::SendReportLocked() {
-  // Create a request that contains the load report.
-  grpc_slice request_payload_slice = XdsLrsRequestCreateAndEncode(
-      xdslb_policy()->server_name_, &xdslb_policy()->client_stats_);
-  // Skip client load report if the counters were all zero in the last
-  // report and they are still zero in this one.
-  bool old_val = last_report_counters_were_zero_;
-  last_report_counters_were_zero_ = static_cast<bool>(
-      grpc_slice_eq(request_payload_slice, grpc_empty_slice()));
-  if (old_val && last_report_counters_were_zero_) {
-    ScheduleNextReportLocked();
-    return;
-  }
-  GPR_ASSERT(send_message_payload_ == nullptr);
-  send_message_payload_ =
-      grpc_raw_byte_buffer_create(&request_payload_slice, 1);
-  grpc_slice_unref_internal(request_payload_slice);
-  // Send the report.
-  grpc_op op;
-  memset(&op, 0, sizeof(op));
-  op.op = GRPC_OP_SEND_MESSAGE;
-  op.data.send_message.send_message = send_message_payload_;
-  GRPC_CLOSURE_INIT(&load_reporting_closure_, OnReportDoneLocked, this,
-                    grpc_combiner_scheduler(xdslb_policy()->combiner()));
-  grpc_call_error call_error = grpc_call_start_batch_and_execute(
-      lb_call_, &op, 1, &load_reporting_closure_);
-  if (GPR_UNLIKELY(call_error != GRPC_CALL_OK)) {
-    gpr_log(GPR_ERROR,
-            "[xdslb %p] lb_calld=%p call_error=%d sending client load report",
-            xdslb_policy(), this, call_error);
-    GPR_ASSERT(GRPC_CALL_OK == call_error);
-  }
-}
-
-void XdsLb::LbChannelState::LrsCallState::OnReportDoneLocked(
-    void* arg, grpc_error* error) {
-  LrsCallState* lrs_calld = static_cast<LrsCallState*>(arg);
-  grpc_byte_buffer_destroy(lrs_calld->send_message_payload_);
-  lrs_calld->send_message_payload_ = nullptr;
-  if (error != GRPC_ERROR_NONE || !lrs_calld->IsCurrentCallOnChannel()) {
-    lrs_calld->Unref(DEBUG_LOCATION, "LRS+load_report+report_done");
-    return;
-  }
-  if (!lrs_calld->next_report_timer_callback_pending_) {
-    lrs_calld->ScheduleNextReportLocked();
-  }
 }
 
 void XdsLb::LbChannelState::LrsCallState::OnStatusReceivedLocked(
@@ -1596,6 +1602,13 @@ void XdsLb::LbChannelState::LrsCallState::OnStatusReceivedLocked(
     }
   }
   lrs_calld->Unref(DEBUG_LOCATION, "LRS+OnStatusReceivedLocked");
+}
+
+bool XdsLb::LbChannelState::LrsCallState::IsCurrentCallOnChannel() const {
+  // If the retryable LRS call is null (which only happens when the LB channel
+  // is shutting down), all the LRS calls are stale.
+  if (lb_chand()->lrs_calld_ == nullptr) return false;
+  return this == lb_chand()->lrs_calld_->lb_calld();
 }
 
 //
