@@ -37,7 +37,6 @@
 		65EB19E418B39A8374D407BB /* libPods-CronetTests.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 1B1511C20E16A8422B58D61A /* libPods-CronetTests.a */; };
 		903163C7FE885838580AEC7A /* libPods-InteropTests.a in Frameworks */ = {isa = PBXBuildFile; fileRef = D457AD9797664CFA191C3280 /* libPods-InteropTests.a */; };
 		953CD2942A3A6D6CE695BE87 /* libPods-MacTests.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 276873A05AC5479B60DF6079 /* libPods-MacTests.a */; };
-		ABA42A0322B1E6E50055F813 /* CacheInterceptorTests.m in Sources */ = {isa = PBXBuildFile; fileRef = ABA42A0222B1E6E50055F813 /* CacheInterceptorTests.m */; };
 		B071230B22669EED004B64A1 /* StressTests.m in Sources */ = {isa = PBXBuildFile; fileRef = B071230A22669EED004B64A1 /* StressTests.m */; };
 		B0BB3F08225E7ABA008DA580 /* NSErrorUnitTests.m in Sources */ = {isa = PBXBuildFile; fileRef = 5E0282E8215AA697007AC99D /* NSErrorUnitTests.m */; };
 		B0BB3F0A225EA511008DA580 /* TestCertificates.bundle in Resources */ = {isa = PBXBuildFile; fileRef = 63E240CF1B6C63DC005F3B0E /* TestCertificates.bundle */; };
@@ -138,7 +137,6 @@
 		A58BE6DF1C62D1739EBB2C78 /* libPods-RxLibraryUnitTests.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = "libPods-RxLibraryUnitTests.a"; sourceTree = BUILT_PRODUCTS_DIR; };
 		A6F832FCEFA6F6881E620F12 /* Pods-InteropTestsRemote.test.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-InteropTestsRemote.test.xcconfig"; path = "Pods/Target Support Files/Pods-InteropTestsRemote/Pods-InteropTestsRemote.test.xcconfig"; sourceTree = "<group>"; };
 		AA7CB64B4DD9915AE7C03163 /* Pods-InteropTestsLocalCleartext.cronet.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-InteropTestsLocalCleartext.cronet.xcconfig"; path = "Pods/Target Support Files/Pods-InteropTestsLocalCleartext/Pods-InteropTestsLocalCleartext.cronet.xcconfig"; sourceTree = "<group>"; };
-		ABA42A0222B1E6E50055F813 /* CacheInterceptorTests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = CacheInterceptorTests.m; sourceTree = "<group>"; };
 		AC414EF7A6BF76ED02B6E480 /* Pods-InteropTestsRemoteWithCronet.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-InteropTestsRemoteWithCronet.release.xcconfig"; path = "Pods/Target Support Files/Pods-InteropTestsRemoteWithCronet/Pods-InteropTestsRemoteWithCronet.release.xcconfig"; sourceTree = "<group>"; };
 		AF3FC2CFFE7B0961823BC740 /* libPods-InteropTestsCallOptions.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = "libPods-InteropTestsCallOptions.a"; sourceTree = BUILT_PRODUCTS_DIR; };
 		B071230A22669EED004B64A1 /* StressTests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = StressTests.m; sourceTree = "<group>"; };
@@ -340,7 +338,6 @@
 				5E7F487B22778256006656AD /* ChannelPoolTest.m */,
 				5E7F487C22778256006656AD /* ChannelTests.m */,
 				5E0282E8215AA697007AC99D /* NSErrorUnitTests.m */,
-				ABA42A0222B1E6E50055F813 /* CacheInterceptorTests.m */,
 			);
 			path = UnitTests;
 			sourceTree = "<group>";
@@ -795,7 +792,6 @@
 				5E7F488722778AEA006656AD /* GRPCClientTests.m in Sources */,
 				5E7F487E22778256006656AD /* ChannelTests.m in Sources */,
 				5E7F488B22778B5D006656AD /* RxLibraryUnitTests.m in Sources */,
-				ABA42A0322B1E6E50055F813 /* CacheInterceptorTests.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
