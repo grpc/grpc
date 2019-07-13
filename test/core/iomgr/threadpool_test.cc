@@ -62,6 +62,7 @@ class SimpleFunctorCheckForAdd
     (*callback->count_)++;
     GPR_ASSERT(*callback->count_ == callback->internal_success);
   }
+
  private:
   int* count_;
 };
