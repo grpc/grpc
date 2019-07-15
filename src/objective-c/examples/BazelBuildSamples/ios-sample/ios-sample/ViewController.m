@@ -19,7 +19,6 @@
 #import "ViewController.h"
 
 #import <GRPCClient/GRPCCall.h>
-#import <GRPCClient/CacheInterceptor.h>
 #if COCOAPODS
   #import <RemoteTest/Messages.pbobjc.h>
   #import <RemoteTest/Test.pbrpc.h>
@@ -43,9 +42,7 @@ static NSString *const kService = @"TestService";
   [super viewDidLoad];
   
   GRPCMutableCallOptions *options = [[GRPCMutableCallOptions alloc] init];
-  
-  id<GRPCInterceptorFactory> factory = [[CacheContext alloc] init];
-  options.interceptorFactories = @[ factory ];
+  // optionally modify options
   _options = options;
 }
   

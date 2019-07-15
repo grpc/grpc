@@ -36,9 +36,12 @@ def objc_proto_grpc_library(name, deps, use_well_known_protos = False, **kwargs)
             "GPB_USE_PROTOBUF_FRAMEWORK_IMPORTS=0",
             "GPB_GRPC_FORWARD_DECLARE_MESSAGE_PROTO=0"
         ],
-        includes = ["_generated_protos"],
+        includes = [
+            "_generated_protos",
+            "src/objective-c"
+        ],
         deps = [
-            "@com_github_grpc_grpc//src/objective-c:grpc_objc_rpc",
+            "@com_github_grpc_grpc//:grpc_objc_rpc",
             "@com_google_protobuf//:protobuf_objc"
         ]
     )
@@ -79,9 +82,12 @@ def objc_grpc_library(name, deps, srcs = [], use_well_known_protos = False, **kw
             "GPB_USE_PROTOBUF_FRAMEWORK_IMPORTS=0",
             "GPB_GRPC_FORWARD_DECLARE_MESSAGE_PROTO=0"
         ],
-        includes = ["_generated_protos"],
+        includes = [
+            "_generated_protos",
+            "src/objective-c"
+        ],
         deps = [
-            "@com_github_grpc_grpc//src/objective-c:grpc_objc_rpc",
+            "@com_github_grpc_grpc//:grpc_objc_rpc",
             "@com_google_protobuf//:protobuf_objc"
         ]
     )

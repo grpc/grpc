@@ -83,7 +83,7 @@ apple_rules_dependencies()
 git_repository(
     name = "build_bazel_apple_support",
     remote = "https://github.com/bazelbuild/apple_support.git",
-    branch = "0.6.0"
+    tag = "0.6.0"
 )
 
 load(

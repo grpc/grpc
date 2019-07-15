@@ -2477,3 +2477,40 @@ apple_resource_bundle(
     name = "gRPCCertificates",
     resources = ["etc/roots.pem"]
 )
+
+objc_library(
+    name = "grpc_objc_client",
+    srcs = glob([
+            "src/objective-c/GRPCClient/**/*.m", 
+            "src/objective-c/RxLibrary/**/*.m"
+        ],
+        exclude = ["src/objective-c/GRPCClient/GRPCCall+GID.m"]
+    ),
+    hdrs = glob([
+            "src/objective-c/GRPCClient/**/*.h", 
+            "src/objective-c/RxLibrary/**/*.h"
+        ], 
+        exclude = ["src/objective-c/GRPCClient/GRPCCall+GID.h"]
+    ),
+    includes = ["src/objective-c"],
+    sdk_frameworks = ["SystemConfiguration"],
+    deps = [
+        "//:grpc",
+        "//:gRPCCertificates"
+    ],
+    visibility = ["//visibility:public"]
+)
+
+objc_library(
+    name = "grpc_objc_rpc",
+    srcs = glob(["src/objective-c/ProtoRPC/*.m"]),
+    hdrs = glob(["src/objective-c/ProtoRPC/*.h"]),
+    defines = ["GPB_USE_PROTOBUF_FRAMEWORK_IMPORTS=0"],
+    includes = ["src/objective-c"],
+    deps = [
+        "//:grpc",
+        ":grpc_objc_client",
+        "@com_google_protobuf//:protobuf_objc"
+    ],
+    visibility = ["//visibility:public"]
+)
