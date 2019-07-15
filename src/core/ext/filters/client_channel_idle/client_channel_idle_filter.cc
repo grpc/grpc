@@ -16,7 +16,7 @@
 
 namespace {
 
-grpc_core::TraceFlag grpc_trace_idle_filter(false, "idle_filter");
+grpc_core::DebugOnlyTraceFlag grpc_trace_idle_filter(false, "idle_filter");
 
 #define GRPC_IDLE_FILTER_LOG(format, ...)                        \
   do {                                                           \
@@ -85,6 +85,9 @@ class ChannelData {
                           grpc_channel_element_args* args);
   static void Destroy(grpc_channel_element* elem);
 
+  static void StartTransportOp(grpc_channel_element* elem,
+                               grpc_transport_op* op);
+
   void IncreaseCallCount();
 
   void DecreaseCallCount();
@@ -93,11 +96,8 @@ class ChannelData {
   class ConnectivityWatcherSetter;
 
   ChannelData(grpc_channel_element_args* args, grpc_error** error);
-  ~ChannelData();
 
   static void IdleTimerCallback(void* arg, grpc_error* error);
-
-  static void ConnectivityStateChangedCallback(void* arg, grpc_error* error);
 
   void StartIdleTimer() {
     GRPC_IDLE_FILTER_LOG("timer has started");
@@ -129,83 +129,33 @@ class ChannelData {
   // Idle timer and its callback closure.
   grpc_timer idle_timer_;
   grpc_closure idle_timer_callback_;
-
-  // Memter data to track the connectivity state of channel.
-  grpc_connectivity_state connectivity_state_;
-  grpc_closure connectivity_state_changed_callback_;
-
-  ConnectivityWatcherSetter* connectivity_watcher_setter_ = nullptr;
-};
-
-// The usage of the class is a little obscure.
-// Instead of schedule connectivity_state_changed_callback_ closure in the ctor,
-// we schedule it here because if the build of the channel failed, the channel stack, as well as our ChannelData,
-// will get destroyed immediately even if we hold a ref to it.
-// Therefore we use this class to wrap the chand_ and the information of whether the channel
-// is successfully created (cancelled_) together, then use cancelled_ flag to figure out whether to
-// set the watcher or not.
-class ChannelData::ConnectivityWatcherSetter {
- public:
-  ConnectivityWatcherSetter(ChannelData* chand) : chand_(chand) {
-    GRPC_CLOSURE_INIT(&closure_, SetConnectivityWather, this, grpc_schedule_on_exec_ctx);
-    GRPC_CLOSURE_SCHED(&closure_, GRPC_ERROR_NONE);
-  }
-
-  void Cancel() { cancelled_ = true; }
-
- private:
-  static void SetConnectivityWather(void* arg, grpc_error* error) {
-    ConnectivityWatcherSetter* self = static_cast<ConnectivityWatcherSetter*>(arg);
-    if (self->cancelled_) return;
-    GRPC_CHANNEL_STACK_REF(self->chand_->channel_stack_, "connectivity state changed callback");
-    GRPC_CLOSURE_SCHED(&self->chand_->connectivity_state_changed_callback_, GRPC_ERROR_NONE);
-    // After successfully set the connectivity state watcher, delete itself.
-    self->chand_->connectivity_watcher_setter_ = nullptr;
-    grpc_core::Delete(self);
-  }
-
-  bool cancelled_ = false;
-  ChannelData* chand_;
-  grpc_closure closure_;
 };
 
 ChannelData::ChannelData(grpc_channel_element_args* args, grpc_error** error)
     : channel_stack_(args->channel_stack),
       max_leisure_time_(DEFAULT_MAX_LEISURE_TIME_MS),
       call_count_(0),
-      state_(CHANNEL_STATE_IDLE),
-      connectivity_state_(GRPC_CHANNEL_IDLE) {
+      state_(CHANNEL_STATE_IDLE) {
+  // Get the max_leisure_time_ from channel args, or use the default value.
   auto arg = grpc_channel_args_find(args->channel_args,
                                     GRPC_ARG_MAX_CONNECTION_IDLE_MS);
   if (arg != nullptr) {
     const int value = grpc_channel_arg_get_integer(arg, {INT_MAX, 0, INT_MAX});
     max_leisure_time_ = value == INT_MAX ? GRPC_MILLIS_INF_FUTURE : value;
   }
-  if (GPR_UNLIKELY(max_leisure_time_ == GRPC_MILLIS_INF_FUTURE)) {
-    // Set the state to BUSY so the timer will never be set.
-    IncreaseCallCount();
-  } else {
-    GRPC_CLOSURE_INIT(&idle_timer_callback_, IdleTimerCallback, this,
-                      grpc_schedule_on_exec_ctx);
-    GRPC_CLOSURE_INIT(&connectivity_state_changed_callback_,
-                      ConnectivityStateChangedCallback, this,
-                      grpc_schedule_on_exec_ctx);
-    connectivity_watcher_setter_ = grpc_core::New<ConnectivityWatcherSetter>(this);
-  }
-  GRPC_IDLE_FILTER_LOG("created with max_leisure_time = %lu",
+  // If the idle filter is explicitly disabled in channel args, this ctor should not get called.
+  GPR_ASSERT(max_leisure_time_ != GRPC_MILLIS_INF_FUTURE);
+  GRPC_IDLE_FILTER_LOG("created with max_leisure_time = %" PRId64 " ms",
                        max_leisure_time_);
-}
-
-ChannelData::~ChannelData() {
-  if (connectivity_watcher_setter_ != nullptr) {
-    connectivity_watcher_setter_->Cancel();
-  }
+  // Initialize idle timer callback closure.
+  GRPC_CLOSURE_INIT(&idle_timer_callback_, IdleTimerCallback, this,
+                      grpc_schedule_on_exec_ctx);
 }
 
 void ChannelData::IncreaseCallCount() {
   size_t previous_value =
       call_count_.FetchAdd(1, grpc_core::MemoryOrder::RELAXED);
-  GRPC_IDLE_FILTER_LOG("call counter has increased to %lu", previous_value + 1);
+  GRPC_IDLE_FILTER_LOG("call counter has increased to %" PRIuPTR, previous_value + 1);
   if (previous_value == 0) {
     // If this call is the one makes the channel busy, switch the state from
     // LEISURE to BUSY.
@@ -243,7 +193,7 @@ void ChannelData::IncreaseCallCount() {
 void ChannelData::DecreaseCallCount() {
   size_t previous_value =
       call_count_.FetchSub(1, grpc_core::MemoryOrder::RELAXED);
-  GRPC_IDLE_FILTER_LOG("call counter has decreased to %lu", previous_value - 1);
+  GRPC_IDLE_FILTER_LOG("call counter has decreased to %" PRIuPTR, previous_value - 1);
   if (previous_value == 1) {
     // If this call is the one makes the channel leisure, switch the state from
     // BUSY to LEISURE.
@@ -325,25 +275,25 @@ void ChannelData::IdleTimerCallback(void* arg, grpc_error* error) {
   GRPC_CHANNEL_STACK_UNREF(chand->channel_stack_, "max idle timer callback");
 }
 
-void ChannelData::ConnectivityStateChangedCallback(void* arg,
-                                                   grpc_error* error) {
-  ChannelData* chand = static_cast<ChannelData*>(arg);
-  if (chand->connectivity_state_ != GRPC_CHANNEL_SHUTDOWN) {
-    grpc_transport_op* op = grpc_make_transport_op(nullptr);
-    op->connectivity_state = &chand->connectivity_state_;
-    op->on_connectivity_state_change =
-        &chand->connectivity_state_changed_callback_;
-    grpc_channel_next_op(grpc_channel_stack_element(chand->channel_stack_, 0),
-                         op);
-  } else {
-    // Set the state to BUSY so the timer will not be set again.
-    chand->IncreaseCallCount();
-    if (chand->state_.Load(grpc_core::MemoryOrder::RELAXED) ==
-        CHANNEL_STATE_BUSY_FROM_LEISURE) {
-      grpc_timer_cancel(&chand->idle_timer_);
+void ChannelData::StartTransportOp(grpc_channel_element* elem, grpc_transport_op* op) {
+  ChannelData* chand = static_cast<ChannelData*>(elem->channel_data);
+  intptr_t value;
+  // Catch the disconnect_with_error transport op.
+  // If the op is to disconnect the channel, cancel the idle timer if it has been set.
+  if (op->disconnect_with_error != nullptr) {
+    if (!grpc_error_get_int(op->disconnect_with_error,
+                           GRPC_ERROR_INT_CHANNEL_CONNECTIVITY_STATE, &value) ||
+        static_cast<grpc_connectivity_state>(value) != GRPC_CHANNEL_IDLE) {
+      // Disconnect.
+      // Set the state to BUSY so the timer will not be set again.
+      chand->IncreaseCallCount();
+      if (chand->state_.Load(grpc_core::MemoryOrder::RELAXED) == CHANNEL_STATE_BUSY_FROM_LEISURE) {
+        grpc_timer_cancel(&chand->idle_timer_);
+      }
     }
-    GRPC_CHANNEL_STACK_UNREF(chand->channel_stack_, "connectivity state changed callback");
   }
+  // Pass the op to the next filter.
+  grpc_channel_next_op(elem, op);
 }
 
 grpc_error* CallData::Init(grpc_call_element* elem,
@@ -376,7 +326,7 @@ void ChannelData::Destroy(grpc_channel_element* elem) {
 
 const grpc_channel_filter grpc_client_channel_idle_filter = {
     grpc_call_next_op,
-    grpc_channel_next_op,
+    ChannelData::StartTransportOp,
     sizeof(CallData),
     CallData::Init,
     grpc_call_stack_ignore_set_pollset_or_pollset_set,
