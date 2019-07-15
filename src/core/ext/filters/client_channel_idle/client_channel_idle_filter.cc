@@ -143,19 +143,21 @@ ChannelData::ChannelData(grpc_channel_element_args* args, grpc_error** error)
     const int value = grpc_channel_arg_get_integer(arg, {INT_MAX, 0, INT_MAX});
     max_leisure_time_ = value == INT_MAX ? GRPC_MILLIS_INF_FUTURE : value;
   }
-  // If the idle filter is explicitly disabled in channel args, this ctor should not get called.
+  // If the idle filter is explicitly disabled in channel args, this ctor should
+  // not get called.
   GPR_ASSERT(max_leisure_time_ != GRPC_MILLIS_INF_FUTURE);
   GRPC_IDLE_FILTER_LOG("created with max_leisure_time = %" PRId64 " ms",
                        max_leisure_time_);
   // Initialize idle timer callback closure.
   GRPC_CLOSURE_INIT(&idle_timer_callback_, IdleTimerCallback, this,
-                      grpc_schedule_on_exec_ctx);
+                    grpc_schedule_on_exec_ctx);
 }
 
 void ChannelData::IncreaseCallCount() {
   size_t previous_value =
       call_count_.FetchAdd(1, grpc_core::MemoryOrder::RELAXED);
-  GRPC_IDLE_FILTER_LOG("call counter has increased to %" PRIuPTR, previous_value + 1);
+  GRPC_IDLE_FILTER_LOG("call counter has increased to %" PRIuPTR,
+                       previous_value + 1);
   if (previous_value == 0) {
     // If this call is the one makes the channel busy, switch the state from
     // LEISURE to BUSY.
@@ -193,7 +195,8 @@ void ChannelData::IncreaseCallCount() {
 void ChannelData::DecreaseCallCount() {
   size_t previous_value =
       call_count_.FetchSub(1, grpc_core::MemoryOrder::RELAXED);
-  GRPC_IDLE_FILTER_LOG("call counter has decreased to %" PRIuPTR, previous_value - 1);
+  GRPC_IDLE_FILTER_LOG("call counter has decreased to %" PRIuPTR,
+                       previous_value - 1);
   if (previous_value == 1) {
     // If this call is the one makes the channel leisure, switch the state from
     // BUSY to LEISURE.
@@ -275,19 +278,23 @@ void ChannelData::IdleTimerCallback(void* arg, grpc_error* error) {
   GRPC_CHANNEL_STACK_UNREF(chand->channel_stack_, "max idle timer callback");
 }
 
-void ChannelData::StartTransportOp(grpc_channel_element* elem, grpc_transport_op* op) {
+void ChannelData::StartTransportOp(grpc_channel_element* elem,
+                                   grpc_transport_op* op) {
   ChannelData* chand = static_cast<ChannelData*>(elem->channel_data);
   intptr_t value;
   // Catch the disconnect_with_error transport op.
-  // If the op is to disconnect the channel, cancel the idle timer if it has been set.
+  // If the op is to disconnect the channel, cancel the idle timer if it has
+  // been set.
   if (op->disconnect_with_error != nullptr) {
     if (!grpc_error_get_int(op->disconnect_with_error,
-                           GRPC_ERROR_INT_CHANNEL_CONNECTIVITY_STATE, &value) ||
+                            GRPC_ERROR_INT_CHANNEL_CONNECTIVITY_STATE,
+                            &value) ||
         static_cast<grpc_connectivity_state>(value) != GRPC_CHANNEL_IDLE) {
       // Disconnect.
       // Set the state to BUSY so the timer will not be set again.
       chand->IncreaseCallCount();
-      if (chand->state_.Load(grpc_core::MemoryOrder::RELAXED) == CHANNEL_STATE_BUSY_FROM_LEISURE) {
+      if (chand->state_.Load(grpc_core::MemoryOrder::RELAXED) ==
+          CHANNEL_STATE_BUSY_FROM_LEISURE) {
         grpc_timer_cancel(&chand->idle_timer_);
       }
     }
