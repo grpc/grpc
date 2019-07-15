@@ -9,7 +9,7 @@ def grpc_deps
   pod 'gRPC-RxLibrary', :path => ROOT_DIR
   pod 'RemoteTest', :path => "../RemoteTestClient"
   pod '!ProtoCompiler-gRPCPlugin', :path => "#{ROOT_DIR}/src/objective-c"
-  pod 'BoringSSL-GRPC', :path => "#{ROOT_DIR}/third_party/boringssl"
+  pod 'BoringSSL-GRPC', :podspec => "#{ROOT_DIR}/src/objective-c"
   pod '!ProtoCompiler', :path => "#{ROOT_DIR}/src/objective-c"
 end
 
