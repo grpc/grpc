@@ -309,31 +309,42 @@ ServerNode::ServerNode(grpc_server* server, size_t channel_tracer_max_nodes)
 
 ServerNode::~ServerNode() {}
 
+void ServerNode::AddChildSocket(RefCountedPtr<SocketNode> node) {
+  MutexLock lock(&child_mu_);
+  child_sockets_.insert(MakePair(node->uuid(), std::move(node)));
+}
+
+void ServerNode::RemoveChildSocket(intptr_t child_uuid) {
+  MutexLock lock(&child_mu_);
+  child_sockets_.erase(child_uuid);
+}
+
 char* ServerNode::RenderServerSockets(intptr_t start_socket_id,
                                       intptr_t max_results) {
-  // if user does not set max_results, we choose 500.
+  // If user does not set max_results, we choose 500.
   size_t pagination_limit = max_results == 0 ? 500 : max_results;
   grpc_json* top_level_json = grpc_json_create(GRPC_JSON_OBJECT);
   grpc_json* json = top_level_json;
   grpc_json* json_iterator = nullptr;
-  ChildSocketsList socket_refs;
-  grpc_server_populate_server_sockets(server_, &socket_refs, start_socket_id);
-  // declared early so it can be used outside of the loop.
-  size_t i = 0;
-  if (!socket_refs.empty()) {
-    // create list of socket refs
+  MutexLock lock(&child_mu_);
+  size_t sockets_rendered = 0;
+  if (!child_sockets_.empty()) {
+    // Create list of socket refs
     grpc_json* array_parent = grpc_json_create_child(
         nullptr, json, "socketRef", nullptr, GRPC_JSON_ARRAY, false);
-    for (i = 0; i < GPR_MIN(socket_refs.size(), pagination_limit); ++i) {
+    const size_t limit = GPR_MIN(child_sockets_.size(), pagination_limit);
+    for (auto it = child_sockets_.lower_bound(start_socket_id);
+         it != child_sockets_.end() && sockets_rendered < limit;
+         ++it, ++sockets_rendered) {
       grpc_json* socket_ref_json = grpc_json_create_child(
           nullptr, array_parent, nullptr, nullptr, GRPC_JSON_OBJECT, false);
       json_iterator = grpc_json_add_number_string_child(
-          socket_ref_json, nullptr, "socketId", socket_refs[i]->uuid());
+          socket_ref_json, nullptr, "socketId", it->first);
       grpc_json_create_child(json_iterator, socket_ref_json, "name",
-                             socket_refs[i]->remote(), GRPC_JSON_STRING, false);
+                             it->second->remote(), GRPC_JSON_STRING, false);
     }
   }
-  if (i == socket_refs.size()) {
+  if (sockets_rendered == child_sockets_.size()) {
     json_iterator = grpc_json_create_child(nullptr, json, "end", nullptr,
                                            GRPC_JSON_TRUE, false);
   }
