@@ -88,6 +88,9 @@ class WriteOptions {
   WriteOptions(const WriteOptions& other)
       : flags_(other.flags_), last_message_(other.last_message_) {}
 
+  /// Default assignment operator
+  WriteOptions& operator=(const WriteOptions& other) = default;
+
   /// Clear all flags.
   inline void Clear() { flags_ = 0; }
 
