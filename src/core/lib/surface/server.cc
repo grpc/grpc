@@ -1173,8 +1173,7 @@ void grpc_server_setup_transport(
   chand->channel = channel;
   if (socket_node != nullptr) {
     chand->channelz_socket_uuid = socket_node->uuid();
-    s->channelz_server->AddChildSocket(socket_node->uuid(),
-                                               socket_node);
+    s->channelz_server->AddChildSocket(socket_node);
   } else {
     chand->channelz_socket_uuid = 0;
   }

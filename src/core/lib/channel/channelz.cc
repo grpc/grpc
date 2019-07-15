@@ -309,10 +309,9 @@ ServerNode::ServerNode(grpc_server* server, size_t channel_tracer_max_nodes)
 
 ServerNode::~ServerNode() {}
 
-void ServerNode::AddChildSocket(intptr_t child_uuid,
-                                RefCountedPtr<SocketNode> node) {
+void ServerNode::AddChildSocket(RefCountedPtr<SocketNode> node) {
   MutexLock lock(&child_mu_);
-  child_sockets_.insert(MakePair(child_uuid, std::move(node)));
+  child_sockets_.insert(MakePair(node->uuid(), std::move(node)));
 }
 
 void ServerNode::RemoveChildSocket(intptr_t child_uuid) {
@@ -327,7 +326,6 @@ char* ServerNode::RenderServerSockets(intptr_t start_socket_id,
   grpc_json* top_level_json = grpc_json_create(GRPC_JSON_OBJECT);
   grpc_json* json = top_level_json;
   grpc_json* json_iterator = nullptr;
-
   MutexLock lock(&child_mu_);
   size_t sockets_rendered = 0;
   if (!child_sockets_.empty()) {

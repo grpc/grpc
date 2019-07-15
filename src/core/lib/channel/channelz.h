@@ -213,7 +213,7 @@ class ServerNode : public BaseNode {
 
   char* RenderServerSockets(intptr_t start_socket_id, intptr_t max_results);
 
-  void AddChildSocket(intptr_t child_uuid, RefCountedPtr<SocketNode>);
+  void AddChildSocket(RefCountedPtr<SocketNode>);
 
   void RemoveChildSocket(intptr_t child_uuid);
 
