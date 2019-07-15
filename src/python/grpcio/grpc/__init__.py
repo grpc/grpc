@@ -339,8 +339,7 @@ class RpcContext(six.with_metaclass(abc.ABCMeta)):
           callback: A no-parameter callable to be called on RPC termination.
 
         Returns:
-          bool:
-            True if the callback was added and will be called later; False if
+          True if the callback was added and will be called later; False if
             the callback was not added and will not be called (because the RPC
             already terminated or some other reason).
         """
@@ -1285,6 +1284,7 @@ class RpcMethodHandler(six.with_metaclass(abc.ABCMeta)):
 
 class HandlerCallDetails(six.with_metaclass(abc.ABCMeta)):
     """Describes an RPC that has just arrived for service.
+
     Attributes:
       method: The method name of the RPC.
       invocation_metadata: The :term:`metadata` sent by the client.
@@ -1381,12 +1381,10 @@ class Server(six.with_metaclass(abc.ABCMeta)):
         This method may only be called before starting the server.
 
         Args:
-          address: The address for which to open a port.
-          if the port is 0, or not specified in the address, then gRPC runtime
-          will choose a port.
+          address: The address for which to open a port. If the port is 0,
+            or not specified in the address, then gRPC runtime will choose a port.
 
         Returns:
-          integer:
           An integer port on which server will accept RPC requests.
         """
         raise NotImplementedError()
@@ -1404,7 +1402,6 @@ class Server(six.with_metaclass(abc.ABCMeta)):
           server_credentials: A ServerCredentials object.
 
         Returns:
-          integer:
           An integer port on which server will accept RPC requests.
         """
         raise NotImplementedError()
