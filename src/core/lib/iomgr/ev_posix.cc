@@ -206,7 +206,8 @@ void grpc_register_event_engine_factory(const char* name,
   GPR_ASSERT(false);
 }
 
-/* Call this only after calling grpc_event_engine_init() */
+/*If grpc_event_engine_init() has been called, returns the poll_strategy_name.
+ * Otherwise, returns nullptr. */
 const char* grpc_get_poll_strategy_name() { return g_poll_strategy_name; }
 
 void grpc_event_engine_init(void) {
