@@ -99,6 +99,7 @@ FakeResolver::FakeResolver(ResolverArgs args)
   channel_args_ = grpc_channel_args_copy_and_remove(
       args.args, args_to_remove, GPR_ARRAY_SIZE(args_to_remove));
   if (response_generator_ != nullptr) {
+    response_generator_->Ref().release();
     response_generator_->resolver_ = this;
     if (response_generator_->has_result_) {
       response_generator_->SetResponse(std::move(response_generator_->result_));
@@ -110,6 +111,7 @@ FakeResolver::FakeResolver(ResolverArgs args)
 FakeResolver::~FakeResolver() {
   grpc_channel_args_destroy(channel_args_);
   response_generator_->resolver_ = nullptr;
+  response_generator_->Unref();
 }
 
 void FakeResolver::StartLocked() {
