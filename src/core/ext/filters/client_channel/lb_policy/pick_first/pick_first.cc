@@ -176,7 +176,7 @@ void PickFirst::ExitIdleLocked() {
 }
 
 void PickFirst::ResetBackoffLocked() {
-  subchannel_list_->ResetBackoffLocked();
+  if (subchannel_list_ != nullptr) subchannel_list_->ResetBackoffLocked();
   if (latest_pending_subchannel_list_ != nullptr) {
     latest_pending_subchannel_list_->ResetBackoffLocked();
   }
