@@ -30,6 +30,7 @@ load(
     "//bazel:grpc_build_system.bzl",
     "grpc_cc_library",
     "grpc_generate_one_off_targets",
+    "grpc_objc_library",
 )
 
 config_setting(
@@ -2470,47 +2471,24 @@ filegroup(
     visibility = ["//visibility:public"],
 )
 
-load("@build_bazel_rules_apple//apple:resources.bzl", "apple_resource_bundle")
-
-apple_resource_bundle(
-    # The choice of name is signicant here, since it determines the bundle name.
-    name = "gRPCCertificates",
-    resources = ["etc/roots.pem"]
-)
-
-objc_library(
+grpc_objc_library(
     name = "grpc_objc_client",
-    srcs = glob([
-            "src/objective-c/GRPCClient/**/*.m", 
-            "src/objective-c/RxLibrary/**/*.m"
-        ],
-        exclude = ["src/objective-c/GRPCClient/GRPCCall+GID.m"]
+    hdrs = glob(
+        ["src/objective-c/GRPCClient/*.h"],
+        exclude = ["src/objective-c/GRPCClient/GRPCCall+GID.h"],
     ),
-    hdrs = glob([
-            "src/objective-c/GRPCClient/**/*.h", 
-            "src/objective-c/RxLibrary/**/*.h"
-        ], 
-        exclude = ["src/objective-c/GRPCClient/GRPCCall+GID.h"]
+    srcs = glob(
+        ["src/objective-c/GRPCClient/*.m"],
+        exclude = ["src/objective-c/GRPCClient/GRPCCall+GID.m"],
     ),
     includes = ["src/objective-c"],
-    sdk_frameworks = ["SystemConfiguration"],
-    deps = [
-        "//:grpc",
-        "//:gRPCCertificates"
-    ],
-    visibility = ["//visibility:public"]
+    deps = [":grpc"],
 )
 
-objc_library(
-    name = "grpc_objc_rpc",
-    srcs = glob(["src/objective-c/ProtoRPC/*.m"]),
+grpc_objc_library(
+    name = "proto_objc_rpc",
     hdrs = glob(["src/objective-c/ProtoRPC/*.h"]),
-    defines = ["GPB_USE_PROTOBUF_FRAMEWORK_IMPORTS=0"],
+    srcs = glob(["src/objective-c/ProtoRPC/*.m"]),
     includes = ["src/objective-c"],
-    deps = [
-        "//:grpc",
-        ":grpc_objc_client",
-        "@com_google_protobuf//:protobuf_objc"
-    ],
-    visibility = ["//visibility:public"]
+    deps = [":grpc_objc_client"],
 )

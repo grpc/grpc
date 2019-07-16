@@ -24,6 +24,7 @@
 #
 
 load("//bazel:cc_grpc_library.bzl", "cc_grpc_library")
+load("@build_bazel_rules_apple//apple:resources.bzl", "apple_resource_bundle")
 
 # The set of pollers to test against if a test exercises polling
 POLLERS = ["epollex", "epoll1", "poll"]
@@ -207,7 +208,34 @@ def grpc_cc_binary(name, srcs = [], deps = [], external_deps = [], args = [], da
     )
 
 def grpc_generate_one_off_targets():
-    pass
+    apple_resource_bundle(
+        # The choice of name is signicant here, since it determines the bundle name.
+        name = "gRPCCertificates",
+        resources = ["etc/roots.pem"]
+    )
+
+    native.objc_library(
+        name = "rx_library",
+        srcs = native.glob([
+            "src/objective-c/RxLibrary/*.m",
+            "src/objective-c/RxLibrary/transformations/*.m",
+        ]),
+        hdrs = native.glob([
+            "src/objective-c/RxLibrary/*.h",
+            "src/objective-c/RxLibrary/transformations/*.h",
+        ]),
+        includes = ["src/objective-c"],
+        deps = [
+            ":rx_library_private",
+        ],
+    )
+
+    native.objc_library(
+        name = "rx_library_private",
+        srcs = native.glob(["src/objective-c/RxLibrary/private/*.m"]),
+        textual_hdrs = native.glob(["src/objective-c/RxLibrary/private/*.h"]),
+        visibility = ["//visibility:private"],
+    )
 
 def grpc_sh_test(name, srcs, args = [], data = []):
     native.sh_test(
@@ -248,3 +276,44 @@ def grpc_package(name, visibility = "private", features = []):
             default_visibility = visibility,
             features = features,
         )
+
+def grpc_objc_library(name, hdrs, srcs, includes = [], deps = []):
+    textual_hdrs = []
+    sdk_frameworks = []
+    visibility = ["//visibility:public"]
+    defines = []
+    if len(includes) == 0:
+        includes = []
+    if len(deps) == 0:
+        deps = [] # unfreezes object
+    
+    if name == "grpc_objc_client":
+        srcs += native.glob([
+            "src/objective-c/GRPCClient/private/*.m",
+            "src/objective-c/GRPCClient/internal/*.m",
+        ])
+        textual_hdrs += native.glob([
+            "src/objective-c/GRPCClient/private/*.h",
+            "src/objective-c/GRPCClient/internal/*.h",
+        ])
+        sdk_frameworks += ["SystemConfiguration"]
+        deps += [
+            ":rx_library",
+            ":gRPCCertificates",
+        ]
+
+    elif name == "proto_objc_rpc":
+        defines += ["GPB_USE_PROTOBUF_FRAMEWORK_IMPORTS=0"]
+        deps += ["@com_google_protobuf//:protobuf_objc"]
+
+    native.objc_library(
+        name = name,
+        hdrs = hdrs,
+        srcs = srcs,
+        includes = includes,
+        textual_hdrs = textual_hdrs,
+        defines = defines,
+        sdk_frameworks = sdk_frameworks,
+        deps = deps,
+        visibility = visibility,
+    )
