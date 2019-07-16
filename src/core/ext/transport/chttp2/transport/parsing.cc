@@ -108,7 +108,7 @@ grpc_error* grpc_chttp2_perform_read(grpc_chttp2_transport* t,
     /* fallthrough */
     dts_fh_0:
     case GRPC_DTS_FH_0:
-      GPR_ASSERT(cur < end);
+      GPR_DEBUG_ASSERT(cur < end);
       t->incoming_frame_size = (static_cast<uint32_t>(*cur)) << 16;
       if (++cur == end) {
         t->deframe_state = GRPC_DTS_FH_1;
@@ -116,7 +116,7 @@ grpc_error* grpc_chttp2_perform_read(grpc_chttp2_transport* t,
       }
     /* fallthrough */
     case GRPC_DTS_FH_1:
-      GPR_ASSERT(cur < end);
+      GPR_DEBUG_ASSERT(cur < end);
       t->incoming_frame_size |= (static_cast<uint32_t>(*cur)) << 8;
       if (++cur == end) {
         t->deframe_state = GRPC_DTS_FH_2;
@@ -124,7 +124,7 @@ grpc_error* grpc_chttp2_perform_read(grpc_chttp2_transport* t,
       }
     /* fallthrough */
     case GRPC_DTS_FH_2:
-      GPR_ASSERT(cur < end);
+      GPR_DEBUG_ASSERT(cur < end);
       t->incoming_frame_size |= *cur;
       if (++cur == end) {
         t->deframe_state = GRPC_DTS_FH_3;
@@ -132,7 +132,7 @@ grpc_error* grpc_chttp2_perform_read(grpc_chttp2_transport* t,
       }
     /* fallthrough */
     case GRPC_DTS_FH_3:
-      GPR_ASSERT(cur < end);
+      GPR_DEBUG_ASSERT(cur < end);
       t->incoming_frame_type = *cur;
       if (++cur == end) {
         t->deframe_state = GRPC_DTS_FH_4;
@@ -140,7 +140,7 @@ grpc_error* grpc_chttp2_perform_read(grpc_chttp2_transport* t,
       }
     /* fallthrough */
     case GRPC_DTS_FH_4:
-      GPR_ASSERT(cur < end);
+      GPR_DEBUG_ASSERT(cur < end);
       t->incoming_frame_flags = *cur;
       if (++cur == end) {
         t->deframe_state = GRPC_DTS_FH_5;
@@ -148,7 +148,7 @@ grpc_error* grpc_chttp2_perform_read(grpc_chttp2_transport* t,
       }
     /* fallthrough */
     case GRPC_DTS_FH_5:
-      GPR_ASSERT(cur < end);
+      GPR_DEBUG_ASSERT(cur < end);
       t->incoming_stream_id = ((static_cast<uint32_t>(*cur)) & 0x7f) << 24;
       if (++cur == end) {
         t->deframe_state = GRPC_DTS_FH_6;
@@ -156,7 +156,7 @@ grpc_error* grpc_chttp2_perform_read(grpc_chttp2_transport* t,
       }
     /* fallthrough */
     case GRPC_DTS_FH_6:
-      GPR_ASSERT(cur < end);
+      GPR_DEBUG_ASSERT(cur < end);
       t->incoming_stream_id |= (static_cast<uint32_t>(*cur)) << 16;
       if (++cur == end) {
         t->deframe_state = GRPC_DTS_FH_7;
@@ -164,7 +164,7 @@ grpc_error* grpc_chttp2_perform_read(grpc_chttp2_transport* t,
       }
     /* fallthrough */
     case GRPC_DTS_FH_7:
-      GPR_ASSERT(cur < end);
+      GPR_DEBUG_ASSERT(cur < end);
       t->incoming_stream_id |= (static_cast<uint32_t>(*cur)) << 8;
       if (++cur == end) {
         t->deframe_state = GRPC_DTS_FH_8;
@@ -172,7 +172,7 @@ grpc_error* grpc_chttp2_perform_read(grpc_chttp2_transport* t,
       }
     /* fallthrough */
     case GRPC_DTS_FH_8:
-      GPR_ASSERT(cur < end);
+      GPR_DEBUG_ASSERT(cur < end);
       t->incoming_stream_id |= (static_cast<uint32_t>(*cur));
       t->deframe_state = GRPC_DTS_FRAME;
       err = init_frame_parser(t);
@@ -208,7 +208,7 @@ grpc_error* grpc_chttp2_perform_read(grpc_chttp2_transport* t,
       }
     /* fallthrough */
     case GRPC_DTS_FRAME:
-      GPR_ASSERT(cur < end);
+      GPR_DEBUG_ASSERT(cur < end);
       if (static_cast<uint32_t>(end - cur) == t->incoming_frame_size) {
         err = parse_frame_slice(
             t,
@@ -425,7 +425,7 @@ static void on_initial_header(void* tp, grpc_mdelem md) {
 
   grpc_chttp2_transport* t = static_cast<grpc_chttp2_transport*>(tp);
   grpc_chttp2_stream* s = t->incoming_stream;
-  GPR_ASSERT(s != nullptr);
+  GPR_DEBUG_ASSERT(s != nullptr);
 
   if (GRPC_TRACE_FLAG_ENABLED(grpc_http_trace)) {
     char* key = grpc_slice_to_c_string(GRPC_MDKEY(md));
@@ -473,7 +473,7 @@ static void on_initial_header(void* tp, grpc_mdelem md) {
   const size_t metadata_size_limit =
       t->settings[GRPC_ACKED_SETTINGS]
                  [GRPC_CHTTP2_SETTINGS_MAX_HEADER_LIST_SIZE];
-  if (new_size > metadata_size_limit) {
+  if (GPR_UNLIKELY(new_size > metadata_size_limit)) {
     gpr_log(GPR_DEBUG,
             "received initial metadata size exceeds limit (%" PRIuPTR
             " vs. %" PRIuPTR ")",
@@ -504,7 +504,7 @@ static void on_trailing_header(void* tp, grpc_mdelem md) {
 
   grpc_chttp2_transport* t = static_cast<grpc_chttp2_transport*>(tp);
   grpc_chttp2_stream* s = t->incoming_stream;
-  GPR_ASSERT(s != nullptr);
+  GPR_DEBUG_ASSERT(s != nullptr);
 
   if (GRPC_TRACE_FLAG_ENABLED(grpc_http_trace)) {
     char* key = grpc_slice_to_c_string(GRPC_MDKEY(md));
@@ -627,7 +627,7 @@ static grpc_error* init_header_frame_parser(grpc_chttp2_transport* t,
   } else {
     t->incoming_stream = s;
   }
-  GPR_ASSERT(s != nullptr);
+  GPR_DEBUG_ASSERT(s != nullptr);
   s->stats.incoming.framing_bytes += 9;
   if (GPR_UNLIKELY(s->read_closed)) {
     GRPC_CHTTP2_IF_TRACING(gpr_log(
