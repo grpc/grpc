@@ -87,10 +87,11 @@ class FakeResolver : public Resolver {
 };
 
 FakeResolver::FakeResolver(ResolverArgs args)
-    : Resolver(args.combiner, std::move(args.result_handler)) {
+    : Resolver(args.combiner, std::move(args.result_handler)),
+      response_generator_(
+          FakeResolverResponseGenerator::GetFromArgs(args.args)) {
   GRPC_CLOSURE_INIT(&reresolution_closure_, ReturnReresolutionResult, this,
                     grpc_combiner_scheduler(combiner()));
-  response_generator_ = FakeResolverResponseGenerator::GetFromArgs(args.args);
   // Channels sharing the same subchannels may have different resolver response
   // generators. If we don't remove this arg, subchannel pool will create new
   // subchannels for the same address instead of reusing existing ones because
@@ -100,9 +101,10 @@ FakeResolver::FakeResolver(ResolverArgs args)
       args.args, args_to_remove, GPR_ARRAY_SIZE(args_to_remove));
   if (response_generator_ != nullptr) {
     response_generator_->Ref().release();
-    ReleasableMutexLock lock(&response_generator_->mu_);
-    response_generator_->resolver_ = this;
-    lock.Unlock();
+    {
+      MutexLock lock(&response_generator_->mu_);
+      response_generator_->resolver_ = this;
+    }
     if (response_generator_->has_result_) {
       response_generator_->SetResponse(std::move(response_generator_->result_));
       response_generator_->has_result_ = false;
@@ -112,9 +114,10 @@ FakeResolver::FakeResolver(ResolverArgs args)
 
 FakeResolver::~FakeResolver() {
   grpc_channel_args_destroy(channel_args_);
-  ReleasableMutexLock lock(&response_generator_->mu_);
-  response_generator_->resolver_ = nullptr;
-  lock.Unlock();
+  {
+    MutexLock lock(&response_generator_->mu_);
+    response_generator_->resolver_ = nullptr;
+  }
   response_generator_->Unref();
 }
 
@@ -185,13 +188,10 @@ struct SetResponseClosureArg {
 void FakeResolverResponseGenerator::SetResponseLocked(void* arg,
                                                       grpc_error* error) {
   SetResponseClosureArg* closure_arg = static_cast<SetResponseClosureArg*>(arg);
-  {
-    MutexLock lock(&closure_arg->generator->mu_);
-    FakeResolver* resolver = closure_arg->generator->resolver_;
-    resolver->next_result_ = std::move(closure_arg->result);
-    resolver->has_next_result_ = true;
-    resolver->MaybeSendResultLocked();
-  }
+  FakeResolver* resolver = closure_arg->generator->resolver_;
+  resolver->next_result_ = std::move(closure_arg->result);
+  resolver->has_next_result_ = true;
+  resolver->MaybeSendResultLocked();
   closure_arg->generator->Unref();
   Delete(closure_arg);
 }
@@ -217,12 +217,9 @@ void FakeResolverResponseGenerator::SetResponse(Resolver::Result result) {
 void FakeResolverResponseGenerator::SetReresolutionResponseLocked(
     void* arg, grpc_error* error) {
   SetResponseClosureArg* closure_arg = static_cast<SetResponseClosureArg*>(arg);
-  {
-    MutexLock lock(&closure_arg->generator->mu_);
-    FakeResolver* resolver = closure_arg->generator->resolver_;
-    resolver->reresolution_result_ = std::move(closure_arg->result);
-    resolver->has_reresolution_result_ = closure_arg->has_result;
-  }
+  FakeResolver* resolver = closure_arg->generator->resolver_;
+  resolver->reresolution_result_ = std::move(closure_arg->result);
+  resolver->has_reresolution_result_ = closure_arg->has_result;
   Delete(closure_arg);
 }
 
@@ -256,12 +253,9 @@ void FakeResolverResponseGenerator::UnsetReresolutionResponse() {
 void FakeResolverResponseGenerator::SetFailureLocked(void* arg,
                                                      grpc_error* error) {
   SetResponseClosureArg* closure_arg = static_cast<SetResponseClosureArg*>(arg);
-  {
-    MutexLock lock(&closure_arg->generator->mu_);
-    FakeResolver* resolver = closure_arg->generator->resolver_;
-    resolver->return_failure_ = true;
-    if (closure_arg->immediate) resolver->MaybeSendResultLocked();
-  }
+  FakeResolver* resolver = closure_arg->generator->resolver_;
+  resolver->return_failure_ = true;
+  if (closure_arg->immediate) resolver->MaybeSendResultLocked();
   Delete(closure_arg);
 }
 

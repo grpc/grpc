@@ -160,6 +160,9 @@ typedef struct {
 /** Maximum time that a channel may have no outstanding rpcs. Int valued,
     milliseconds. INT_MAX means unlimited. */
 #define GRPC_ARG_MAX_CONNECTION_IDLE_MS "grpc.max_connection_idle_ms"
+/** Maximum time that a client channel have no outstanding rpcs. Int valued,
+    milliseconds. INT_MAX means unlimited. */
+#define GRPC_ARG_MAX_CLIENT_IDLE_MS "grpc.max_client_idle_ms"
 /** Maximum time that a channel may exist. Int valued, milliseconds.
  * INT_MAX means unlimited. */
 #define GRPC_ARG_MAX_CONNECTION_AGE_MS "grpc.max_connection_age_ms"
