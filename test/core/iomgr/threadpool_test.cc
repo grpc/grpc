@@ -20,10 +20,29 @@
 
 #include "test/core/util/test_config.h"
 
-const int kSmallThreadPoolSize = 20;
-const int kLargeThreadPoolSize = 100;
-const int kThreadSmallIter = 100;
-const int kThreadLargeIter = 10000;
+static const int kSmallThreadPoolSize = 20;
+static const int kLargeThreadPoolSize = 100;
+static const int kThreadSmallIter = 100;
+static const int kThreadLargeIter = 10000;
+
+static void test_size_zero(void) {
+  gpr_log(GPR_INFO, "test_size_zero");
+  grpc_core::ThreadPool* pool_size_zero =
+      grpc_core::New<grpc_core::ThreadPool>(0);
+  GPR_ASSERT(pool_size_zero->pool_capacity() == 1);
+  Delete(pool_size_zero);
+}
+
+static void test_constructor_option(void) {
+  gpr_log(GPR_INFO, "test_constructor_option");
+  // Tests options
+  grpc_core::Thread::Options options;
+  options.set_stack_size(192 * 1024);  // Random non-default value
+  grpc_core::ThreadPool* pool = grpc_core::New<grpc_core::ThreadPool>(
+      0, "test_constructor_option", options);
+  GPR_ASSERT(pool->thread_options().stack_size() == options.stack_size());
+  Delete(pool);
+}
 
 // Simple functor for testing. It will count how many times being called.
 class SimpleFunctorForAdd : public grpc_experimental_completion_queue_functor {
@@ -109,21 +128,6 @@ class WorkThread {
   grpc_core::Thread thd_;
 };
 
-static void test_constructor(void) {
-  // Size is 0 case
-  grpc_core::ThreadPool* pool_size_zero =
-      grpc_core::New<grpc_core::ThreadPool>(0);
-  GPR_ASSERT(pool_size_zero->pool_capacity() == 0);
-  Delete(pool_size_zero);
-  // Tests options
-  grpc_core::Thread::Options options;
-  options.set_stack_size(192 * 1024);  // Random non-default value
-  grpc_core::ThreadPool* pool =
-      grpc_core::New<grpc_core::ThreadPool>(0, "test_constructor", options);
-  GPR_ASSERT(pool->thread_options().stack_size() == options.stack_size());
-  Delete(pool);
-}
-
 static void test_multi_add(void) {
   gpr_log(GPR_INFO, "test_multi_add");
   const int num_work_thds = 10;
@@ -178,7 +182,8 @@ static void test_one_thread_FIFO(void) {
 int main(int argc, char** argv) {
   grpc::testing::TestEnvironment env(argc, argv);
   grpc_init();
-  test_constructor();
+  test_size_zero();
+  test_constructor_option();
   test_add();
   test_multi_add();
   test_one_thread_FIFO();

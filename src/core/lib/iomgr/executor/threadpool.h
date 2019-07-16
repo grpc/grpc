@@ -101,7 +101,8 @@ class ThreadPoolWorker {
 class ThreadPool : public ThreadPoolInterface {
  public:
   // Creates a thread pool with size of "num_threads", with default thread name
-  // "ThreadPoolWorker" and all thread options set to default.
+  // "ThreadPoolWorker" and all thread options set to default. If the given size
+  // is 0 or less, there will be 1 worker threads created inside pool.
   ThreadPool(int num_threads);
 
   // Same as ThreadPool(int num_threads) constructor, except

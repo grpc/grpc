@@ -51,6 +51,9 @@ void ThreadPool::SharedThreadPoolConstructor() {
   // All worker threads in thread pool must be joinable.
   thread_options_.set_joinable(true);
 
+  // Create at least 1 worker threads.
+  if (num_threads_ <= 0) num_threads_ = 1;
+
   queue_ = New<InfLenFIFOQueue>();
   threads_ = static_cast<ThreadPoolWorker**>(
       gpr_zalloc(num_threads_ * sizeof(ThreadPoolWorker*)));
