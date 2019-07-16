@@ -81,6 +81,8 @@ class FakeResolverResponseGenerator
   static void SetReresolutionResponseLocked(void* arg, grpc_error* error);
   static void SetFailureLocked(void* arg, grpc_error* error);
 
+  // This mutex is to proctect resolver_.
+  Mutex mu_;
   FakeResolver* resolver_ = nullptr;  // Do not own.
   Resolver::Result result_;
   bool has_result_ = false;

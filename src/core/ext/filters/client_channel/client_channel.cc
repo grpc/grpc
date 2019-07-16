@@ -1530,6 +1530,9 @@ void ChannelData::StartTransportOpLocked(void* arg, grpc_error* ignored) {
       chand->health_check_service_name_.reset();
       chand->saved_service_config_.reset();
       chand->received_first_resolver_result_ = false;
+      // Unref the error object.
+      GRPC_ERROR_UNREF(op->disconnect_with_error);
+      op->disconnect_with_error = nullptr;
     } else {
       connectivity_state = GRPC_CHANNEL_SHUTDOWN;
       message = "shutdown from API";

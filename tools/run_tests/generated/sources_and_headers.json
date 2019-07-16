@@ -6619,8 +6619,8 @@
       "gpr", 
       "grpc_base", 
       "grpc_client_authority_filter", 
-      "grpc_client_channel_idle_filter", 
       "grpc_deadline_filter", 
+      "grpc_idle_filter", 
       "grpc_lb_policy_grpclb_secure", 
       "grpc_lb_policy_pick_first", 
       "grpc_lb_policy_round_robin", 
@@ -6712,8 +6712,8 @@
       "gpr", 
       "grpc_base", 
       "grpc_client_authority_filter", 
-      "grpc_client_channel_idle_filter", 
       "grpc_deadline_filter", 
+      "grpc_idle_filter", 
       "grpc_lb_policy_grpclb", 
       "grpc_lb_policy_pick_first", 
       "grpc_lb_policy_round_robin", 
@@ -9072,24 +9072,6 @@
   }, 
   {
     "deps": [
-      "gpr", 
-      "grpc_base"
-    ], 
-    "headers": [
-      "src/core/ext/filters/client_channel_idle/client_channel_idle_filter.h"
-    ], 
-    "is_filegroup": true, 
-    "language": "c", 
-    "name": "grpc_client_channel_idle_filter", 
-    "src": [
-      "src/core/ext/filters/client_channel_idle/client_channel_idle_filter.cc", 
-      "src/core/ext/filters/client_channel_idle/client_channel_idle_filter.h"
-    ], 
-    "third_party": false, 
-    "type": "filegroup"
-  }, 
-  {
-    "deps": [
       "gpr_codegen"
     ], 
     "headers": [
@@ -9157,6 +9139,24 @@
       "src/core/ext/filters/http/message_compress/message_compress_filter.h", 
       "src/core/ext/filters/http/server/http_server_filter.cc", 
       "src/core/ext/filters/http/server/http_server_filter.h"
+    ], 
+    "third_party": false, 
+    "type": "filegroup"
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "grpc_base"
+    ], 
+    "headers": [
+      "src/core/ext/filters/idle/idle_filter.h"
+    ], 
+    "is_filegroup": true, 
+    "language": "c", 
+    "name": "grpc_idle_filter", 
+    "src": [
+      "src/core/ext/filters/idle/idle_filter.cc", 
+      "src/core/ext/filters/idle/idle_filter.h"
     ], 
     "third_party": false, 
     "type": "filegroup"

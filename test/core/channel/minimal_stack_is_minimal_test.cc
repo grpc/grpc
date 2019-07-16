@@ -105,7 +105,7 @@ int main(int argc, char** argv) {
                         "message_size", "deadline", "http-server",
                         "message_compress", "connected", NULL);
   errors += CHECK_STACK(nullptr, nullptr, GRPC_CLIENT_CHANNEL,
-                        "client_channel_idle, client-channel", NULL);
+                        "idle, client-channel", NULL);
 
   GPR_ASSERT(errors == 0);
   grpc_shutdown();

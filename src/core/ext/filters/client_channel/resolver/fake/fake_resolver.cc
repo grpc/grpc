@@ -100,7 +100,9 @@ FakeResolver::FakeResolver(ResolverArgs args)
       args.args, args_to_remove, GPR_ARRAY_SIZE(args_to_remove));
   if (response_generator_ != nullptr) {
     response_generator_->Ref().release();
+    ReleasableMutexLock lock(&response_generator_->mu_);
     response_generator_->resolver_ = this;
+    lock.Unlock();
     if (response_generator_->has_result_) {
       response_generator_->SetResponse(std::move(response_generator_->result_));
       response_generator_->has_result_ = false;
@@ -110,7 +112,9 @@ FakeResolver::FakeResolver(ResolverArgs args)
 
 FakeResolver::~FakeResolver() {
   grpc_channel_args_destroy(channel_args_);
+  ReleasableMutexLock lock(&response_generator_->mu_);
   response_generator_->resolver_ = nullptr;
+  lock.Unlock();
   response_generator_->Unref();
 }
 
@@ -181,15 +185,19 @@ struct SetResponseClosureArg {
 void FakeResolverResponseGenerator::SetResponseLocked(void* arg,
                                                       grpc_error* error) {
   SetResponseClosureArg* closure_arg = static_cast<SetResponseClosureArg*>(arg);
-  FakeResolver* resolver = closure_arg->generator->resolver_;
-  resolver->next_result_ = std::move(closure_arg->result);
-  resolver->has_next_result_ = true;
-  resolver->MaybeSendResultLocked();
+  {
+    MutexLock lock(&closure_arg->generator->mu_);
+    FakeResolver* resolver = closure_arg->generator->resolver_;
+    resolver->next_result_ = std::move(closure_arg->result);
+    resolver->has_next_result_ = true;
+    resolver->MaybeSendResultLocked();
+  }
   closure_arg->generator->Unref();
   Delete(closure_arg);
 }
 
 void FakeResolverResponseGenerator::SetResponse(Resolver::Result result) {
+  MutexLock lock(&mu_);
   if (resolver_ != nullptr) {
     Ref().release();  // ref to be held by closure
     SetResponseClosureArg* closure_arg = New<SetResponseClosureArg>();
@@ -209,14 +217,18 @@ void FakeResolverResponseGenerator::SetResponse(Resolver::Result result) {
 void FakeResolverResponseGenerator::SetReresolutionResponseLocked(
     void* arg, grpc_error* error) {
   SetResponseClosureArg* closure_arg = static_cast<SetResponseClosureArg*>(arg);
-  FakeResolver* resolver = closure_arg->generator->resolver_;
-  resolver->reresolution_result_ = std::move(closure_arg->result);
-  resolver->has_reresolution_result_ = closure_arg->has_result;
+  {
+    MutexLock lock(&closure_arg->generator->mu_);
+    FakeResolver* resolver = closure_arg->generator->resolver_;
+    resolver->reresolution_result_ = std::move(closure_arg->result);
+    resolver->has_reresolution_result_ = closure_arg->has_result;
+  }
   Delete(closure_arg);
 }
 
 void FakeResolverResponseGenerator::SetReresolutionResponse(
     Resolver::Result result) {
+  MutexLock lock(&mu_);
   GPR_ASSERT(resolver_ != nullptr);
   SetResponseClosureArg* closure_arg = New<SetResponseClosureArg>();
   closure_arg->generator = this;
@@ -230,6 +242,7 @@ void FakeResolverResponseGenerator::SetReresolutionResponse(
 }
 
 void FakeResolverResponseGenerator::UnsetReresolutionResponse() {
+  MutexLock lock(&mu_);
   GPR_ASSERT(resolver_ != nullptr);
   SetResponseClosureArg* closure_arg = New<SetResponseClosureArg>();
   closure_arg->generator = this;
@@ -243,13 +256,17 @@ void FakeResolverResponseGenerator::UnsetReresolutionResponse() {
 void FakeResolverResponseGenerator::SetFailureLocked(void* arg,
                                                      grpc_error* error) {
   SetResponseClosureArg* closure_arg = static_cast<SetResponseClosureArg*>(arg);
-  FakeResolver* resolver = closure_arg->generator->resolver_;
-  resolver->return_failure_ = true;
-  if (closure_arg->immediate) resolver->MaybeSendResultLocked();
+  {
+    MutexLock lock(&closure_arg->generator->mu_);
+    FakeResolver* resolver = closure_arg->generator->resolver_;
+    resolver->return_failure_ = true;
+    if (closure_arg->immediate) resolver->MaybeSendResultLocked();
+  }
   Delete(closure_arg);
 }
 
 void FakeResolverResponseGenerator::SetFailure() {
+  MutexLock lock(&mu_);
   GPR_ASSERT(resolver_ != nullptr);
   SetResponseClosureArg* closure_arg = New<SetResponseClosureArg>();
   closure_arg->generator = this;
@@ -261,6 +278,7 @@ void FakeResolverResponseGenerator::SetFailure() {
 }
 
 void FakeResolverResponseGenerator::SetFailureOnReresolution() {
+  MutexLock lock(&mu_);
   GPR_ASSERT(resolver_ != nullptr);
   SetResponseClosureArg* closure_arg = New<SetResponseClosureArg>();
   closure_arg->generator = this;

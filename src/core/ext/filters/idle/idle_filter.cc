@@ -1,4 +1,24 @@
-#include "src/core/ext/filters/client_channel_idle/client_channel_idle_filter.h"
+/*
+ *
+ * Copyright 2019 gRPC authors.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ */
+
+#include <grpc/support/port_platform.h>
+
+#include "src/core/ext/filters/idle/idle_filter.h"
 
 #include <limits.h>
 
@@ -331,7 +351,7 @@ void ChannelData::Destroy(grpc_channel_element* elem) {
 
 }  // namespace
 
-const grpc_channel_filter grpc_client_channel_idle_filter = {
+const grpc_channel_filter grpc_idle_filter = {
     grpc_call_next_op,
     ChannelData::StartTransportOp,
     sizeof(CallData),
@@ -342,10 +362,10 @@ const grpc_channel_filter grpc_client_channel_idle_filter = {
     ChannelData::Init,
     ChannelData::Destroy,
     grpc_channel_next_get_info,
-    "client_channel_idle"};
+    "idle"};
 
-static bool maybe_add_client_channel_idle_filter(
-    grpc_channel_stack_builder* builder, void* arg) {
+static bool maybe_add_idle_filter(grpc_channel_stack_builder* builder,
+                                  void* arg) {
   const grpc_channel_args* channel_args =
       grpc_channel_stack_builder_get_channel_arguments(builder);
   bool enable =
@@ -354,19 +374,19 @@ static bool maybe_add_client_channel_idle_filter(
           {DEFAULT_MAX_LEISURE_TIME_MS, 0, INT_MAX}) != INT_MAX;
   if (enable) {
     GRPC_IDLE_FILTER_LOG("enabled");
-    return grpc_channel_stack_builder_prepend_filter(
-        builder, &grpc_client_channel_idle_filter, nullptr, nullptr);
+    return grpc_channel_stack_builder_prepend_filter(builder, &grpc_idle_filter,
+                                                     nullptr, nullptr);
   } else {
     GRPC_IDLE_FILTER_LOG("disabled");
     return true;
   }
 }
 
-void grpc_client_channel_idle_filter_init(void) {
+void grpc_idle_filter_init(void) {
   GRPC_IDLE_FILTER_LOG("init");
-  grpc_channel_init_register_stage(
-      GRPC_CLIENT_CHANNEL, GRPC_CHANNEL_INIT_BUILTIN_PRIORITY,
-      maybe_add_client_channel_idle_filter, nullptr);
+  grpc_channel_init_register_stage(GRPC_CLIENT_CHANNEL,
+                                   GRPC_CHANNEL_INIT_BUILTIN_PRIORITY,
+                                   maybe_add_idle_filter, nullptr);
 }
 
-void grpc_client_channel_idle_filter_shutdown(void) {}
+void grpc_idle_filter_shutdown(void) {}
