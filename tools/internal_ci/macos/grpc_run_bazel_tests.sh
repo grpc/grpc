@@ -20,7 +20,7 @@ cd $(dirname $0)/../../..
 
 # Download bazel
 temp_dir="$(mktemp -d)"
-wget -q https://github.com/bazelbuild/bazel/releases/download/0.23.2/bazel-0.23.2-darwin-x86_64 -O "${temp_dir}/bazel"
+wget -q https://github.com/bazelbuild/bazel/releases/download/0.26.0/bazel-0.26.0-darwin-x86_64 -O "${temp_dir}/bazel"
 chmod 755 "${temp_dir}/bazel"
 export PATH="${temp_dir}:${PATH}"
 # This should show ${temp_dir}/bazel

@@ -1033,22 +1033,6 @@
     "headers": [], 
     "is_filegroup": false, 
     "language": "c", 
-    "name": "grpc_fetch_oauth2", 
-    "src": [
-      "test/core/security/fetch_oauth2.cc"
-    ], 
-    "third_party": false, 
-    "type": "target"
-  }, 
-  {
-    "deps": [
-      "gpr", 
-      "grpc", 
-      "grpc_test_util"
-    ], 
-    "headers": [], 
-    "is_filegroup": false, 
-    "language": "c", 
     "name": "grpc_ipv6_loopback_available_test", 
     "src": [
       "test/core/iomgr/grpc_ipv6_loopback_available_test.cc"
@@ -3882,6 +3866,23 @@
     "deps": [
       "gpr", 
       "grpc", 
+      "grpc++", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "is_filegroup": false, 
+    "language": "c++", 
+    "name": "grpc_fetch_oauth2", 
+    "src": [
+      "test/core/security/fetch_oauth2.cc"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "grpc", 
       "grpc_test_util"
     ], 
     "headers": [], 
@@ -4032,6 +4033,35 @@
     "name": "grpclb_end2end_test", 
     "src": [
       "test/cpp/end2end/grpclb_end2end_test.cc"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "grpc", 
+      "grpc++", 
+      "grpc++_test_config", 
+      "grpc++_test_util", 
+      "grpc_test_util"
+    ], 
+    "headers": [
+      "src/proto/grpc/testing/empty.grpc.pb.h", 
+      "src/proto/grpc/testing/empty.pb.h", 
+      "src/proto/grpc/testing/empty_mock.grpc.pb.h", 
+      "src/proto/grpc/testing/messages.grpc.pb.h", 
+      "src/proto/grpc/testing/messages.pb.h", 
+      "src/proto/grpc/testing/messages_mock.grpc.pb.h", 
+      "src/proto/grpc/testing/test.grpc.pb.h", 
+      "src/proto/grpc/testing/test.pb.h", 
+      "src/proto/grpc/testing/test_mock.grpc.pb.h"
+    ], 
+    "is_filegroup": false, 
+    "language": "c++", 
+    "name": "grpclb_fallback_test", 
+    "src": [
+      "test/cpp/interop/grpclb_fallback_test.cc"
     ], 
     "third_party": false, 
     "type": "target"
@@ -7183,6 +7213,7 @@
     ], 
     "headers": [
       "src/compiler/config.h", 
+      "src/compiler/config_protobuf.h", 
       "src/compiler/cpp_generator.h", 
       "src/compiler/cpp_generator_helpers.h", 
       "src/compiler/csharp_generator.h", 
@@ -7209,6 +7240,7 @@
     "name": "grpc_plugin_support", 
     "src": [
       "src/compiler/config.h", 
+      "src/compiler/config_protobuf.h", 
       "src/compiler/cpp_generator.cc", 
       "src/compiler/cpp_generator.h", 
       "src/compiler/cpp_generator_helpers.h", 

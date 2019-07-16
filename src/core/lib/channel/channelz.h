@@ -64,7 +64,6 @@ intptr_t GetParentUuidFromArgs(const grpc_channel_args& args);
 typedef InlinedVector<intptr_t, 10> ChildRefsList;
 
 class SocketNode;
-typedef InlinedVector<SocketNode*, 10> ChildSocketsList;
 
 namespace testing {
 class CallCountingHelperPeer;
@@ -207,12 +206,16 @@ class ChannelNode : public BaseNode {
 class ServerNode : public BaseNode {
  public:
   ServerNode(grpc_server* server, size_t channel_tracer_max_nodes);
+
   ~ServerNode() override;
 
   grpc_json* RenderJson() override;
 
-  char* RenderServerSockets(intptr_t start_socket_id,
-                            intptr_t pagination_limit);
+  char* RenderServerSockets(intptr_t start_socket_id, intptr_t max_results);
+
+  void AddChildSocket(RefCountedPtr<SocketNode>);
+
+  void RemoveChildSocket(intptr_t child_uuid);
 
   // proxy methods to composed classes.
   void AddTraceEvent(ChannelTrace::Severity severity, const grpc_slice& data) {
@@ -232,6 +235,8 @@ class ServerNode : public BaseNode {
   grpc_server* server_;
   CallCountingHelper call_counter_;
   ChannelTrace trace_;
+  Mutex child_mu_;  // Guards child map below.
+  Map<intptr_t, RefCountedPtr<SocketNode>> child_sockets_;
 };
 
 // Handles channelz bookkeeping for sockets

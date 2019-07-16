@@ -15,7 +15,7 @@ register_execution_platforms(
 )
 
 register_toolchains(
-    "//third_party/toolchains/bazel_0.23.2_rbe_windows:cc-toolchain-x64_windows",
+    "//third_party/toolchains/bazel_0.26.0_rbe_windows:cc-toolchain-x64_windows",
 )
 
 git_repository(
