@@ -525,7 +525,7 @@ ServerAddressList GrpcLb::Serverlist::GetServerAddressList(
       const size_t lb_token_length =
           strnlen(server->load_balance_token, lb_token_max_length);
       memcpy(lb_token, server->load_balance_token, lb_token_length);
-      lb_token[GPR_ARRAY_SIZE(server->load_balance_token)] = '\0';
+      lb_token[lb_token_length] = '\0';
     } else {
       char* uri = grpc_sockaddr_to_uri(&addr);
       gpr_log(GPR_INFO,

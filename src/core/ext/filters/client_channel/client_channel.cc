@@ -319,14 +319,13 @@ class CallData {
 
       grpc_linked_mdelem* linked_mdelem() const { return linked_mdelem_; }
 
-      virtual IteratorInterface& operator=(
-          const IteratorInterface& other) override {
+      IteratorInterface& operator=(const IteratorInterface& other) override {
         const Iterator* it = static_cast<const Iterator*>(&other);
         linked_mdelem_ = it->linked_mdelem_;
         return *this;
       }
 
-      virtual IteratorInterface& operator++() override {
+      IteratorInterface& operator++() override {
         linked_mdelem_ = linked_mdelem_->next;
         return *this;
       }
@@ -336,11 +335,11 @@ class CallData {
         return linked_mdelem_ == it->linked_mdelem_;
       }
 
-      virtual StringView Key() const override {
+      StringView Key() const override {
         return StringView(GRPC_MDKEY(linked_mdelem_->md));
       }
 
-      virtual StringView Value() const override {
+      StringView Value() const override {
         return StringView(GRPC_MDVALUE(linked_mdelem_->md));
       }
 
