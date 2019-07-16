@@ -33,7 +33,6 @@
 #import "private/GRPCCallInternal.h"
 #import "private/GRPCChannelPool.h"
 #import "private/GRPCCompletionQueue.h"
-#import "private/GRPCConnectivityMonitor.h"
 #import "private/GRPCHost.h"
 #import "private/GRPCRequestHeaders.h"
 #import "private/GRPCWrappedCall.h"
@@ -288,7 +287,6 @@ const char *kCFStreamVarName = "grpc_cfstream";
   GRPCCallSafety _callSafety;
   GRPCCallOptions *_callOptions;
   GRPCWrappedCall *_wrappedCall;
-  GRPCConnectivityMonitor *_connectivityMonitor;
 
   // The C gRPC library has less guarantees on the ordering of events than we
   // do. Particularly, in the face of errors, there's no ordering guarantee at
@@ -494,8 +492,6 @@ const char *kCFStreamVarName = "grpc_cfstream";
 }
 
 - (void)dealloc {
-  [GRPCConnectivityMonitor unregisterObserver:self];
-
   __block GRPCWrappedCall *wrappedCall = _wrappedCall;
   dispatch_async(_callQueue, ^{
     wrappedCall = nil;
@@ -797,9 +793,6 @@ const char *kCFStreamVarName = "grpc_cfstream";
 
     // Connectivity monitor is not required for CFStream
     char *enableCFStream = getenv(kCFStreamVarName);
-    if (enableCFStream != nil && enableCFStream[0] != '1') {
-      [GRPCConnectivityMonitor registerObserver:self selector:@selector(connectivityChanged:)];
-    }
   }
 
   // Now that the RPC has been initiated, request writes can start.
