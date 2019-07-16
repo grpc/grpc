@@ -18,7 +18,8 @@ package(default_visibility = ["//visibility:public"])
 
 load("//bazel:grpc_build_system.bzl", "grpc_proto_library")
 load("//bazel:cc_grpc_library.bzl", "cc_grpc_library")
-load("//bazel:python_rules.bzl", "py_proto_library")
+load("//bazel:python_rules.bzl", "py_proto_library", "py_grpc_library")
+load("@grpc_python_dependencies//:requirements.bzl", "requirement")
 
 grpc_proto_library(
     name = "auth_sample",
@@ -60,13 +61,20 @@ grpc_proto_library(
 )
 
 proto_library(
-    name = "helloworld_proto_descriptor",
+    name = "protos/helloworld_proto",
     srcs = ["protos/helloworld.proto"],
 )
 
 py_proto_library(
-    name = "py_helloworld",
-    deps = [":helloworld_proto_descriptor"],
+    name = "helloworld_py_pb2",
+    srcs = [":protos/helloworld_proto"],
+    deps = [requirement('protobuf')],
+)
+
+py_grpc_library(
+    name = "helloworld_py_pb2_grpc",
+    srcs = [":protos/helloworld_proto"],
+    deps = [":helloworld_py_pb2"],
 )
 
 cc_binary(

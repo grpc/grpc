@@ -31,9 +31,12 @@ py_library(
     deps = [
         "//src/python/grpcio/grpc:grpcio",
         "//src/python/grpcio_tests/tests:bazel_namespace_package_hack",
-        "//src/proto/grpc/testing:py_empty_proto",
+        "//src/proto/grpc/testing:empty_py_pb2",
+        "//src/proto/grpc/testing:empty_py_pb2_grpc",
         "//src/proto/grpc/testing:py_messages_proto",
+        "//src/proto/grpc/testing:messages_py_pb2_grpc",
         "//src/proto/grpc/testing:py_test_proto",
+        "//src/proto/grpc/testing:test_py_pb2_grpc",
         requirement("google-auth"),
         requirement("requests"),
         requirement("urllib3"),
@@ -59,7 +62,7 @@ py_library(
     srcs = ["service.py"],
     imports = ["../../"],
     deps = [
-        "//src/proto/grpc/testing:py_empty_proto",
+        "//src/proto/grpc/testing:empty_py_pb2",
         "//src/proto/grpc/testing:py_messages_proto",
         "//src/proto/grpc/testing:py_test_proto",
         "//src/python/grpcio/grpc:grpcio",

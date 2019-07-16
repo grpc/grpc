@@ -16,9 +16,14 @@
 import unittest
 
 import grpc
-from grpc_reflection.v1alpha import reflection
-from grpc_reflection.v1alpha import reflection_pb2
-from grpc_reflection.v1alpha import reflection_pb2_grpc
+try:
+    from src.python.grpcio_reflection.grpc_reflection.v1alpha import reflection
+    from src.python.grpcio_reflection.grpc_reflection.v1alpha import reflection_pb2
+    from src.python.grpcio_reflection.grpc_reflection.v1alpha import reflection_pb2_grpc
+except ImportError:
+    from grpc_reflection.v1alpha import reflection
+    from grpc_reflection.v1alpha import reflection_pb2
+    from grpc_reflection.v1alpha import reflection_pb2_grpc
 
 from google.protobuf import descriptor_pool
 from google.protobuf import descriptor_pb2

@@ -20,7 +20,8 @@ py_library(
     srcs = ["wait_for_ready_example.py"],
     deps = [
         "//src/python/grpcio/grpc:grpcio",
-        "//examples:py_helloworld",
+        "//examples:helloworld_py_pb2",
+        "//examples:helloworld_py_pb2_grpc",
     ],
 )
 

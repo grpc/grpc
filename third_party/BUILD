@@ -8,4 +8,7 @@ exports_files([
     "zope_interface.BUILD",
     "constantly.BUILD",
     "cython.BUILD",
+    "six.BUILD",
+    "enum34.BUILD",
+    "futures.BUILD",
 ])

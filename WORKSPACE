@@ -18,33 +18,6 @@ register_toolchains(
     "//third_party/toolchains/bazel_0.23.2_rbe_windows:cc-toolchain-x64_windows",
 )
 
-git_repository(
-    name = "io_bazel_rules_python",
-    commit = "fdbb17a4118a1728d19e638a5291b4c4266ea5b8",
-    remote = "https://github.com/bazelbuild/rules_python.git",
-)
-
-load("@io_bazel_rules_python//python:pip.bzl", "pip_repositories", "pip_import")
-
-pip_import(
-    name = "grpc_python_dependencies",
-    requirements = "//:requirements.bazel.txt",
-)
-
-http_archive(
-    name = "cython",
-    build_file = "//third_party:cython.BUILD",
-    sha256 = "d68138a2381afbdd0876c3cb2a22389043fa01c4badede1228ee073032b07a27",
-    strip_prefix = "cython-c2b80d87658a8525ce091cbe146cb7eaa29fed5c",
-    urls = [
-        "https://github.com/cython/cython/archive/c2b80d87658a8525ce091cbe146cb7eaa29fed5c.tar.gz",
-    ],
-)
-
-load("//bazel:grpc_python_deps.bzl", "grpc_python_deps")
-
-grpc_python_deps()
-
 load("@bazel_toolchains//rules:rbe_repo.bzl", "rbe_autoconfig")
 
 # Create toolchain configuration for remote execution.
@@ -65,3 +38,19 @@ rbe_autoconfig(
         },
     ),
 )
+
+load("@com_github_grpc_grpc//bazel:grpc_python_deps.bzl", "grpc_python_deps")
+grpc_python_deps()
+
+
+load("@io_bazel_rules_python//python:pip.bzl", "pip_repositories", "pip_import")
+
+pip_import(
+    name = "grpc_python_dependencies",
+    requirements = "@com_github_grpc_grpc//:requirements.bazel.txt",
+)
+
+load("@io_bazel_rules_python//python:pip.bzl", "pip_repositories")
+load("@grpc_python_dependencies//:requirements.bzl", "pip_install")
+pip_repositories()
+pip_install()
