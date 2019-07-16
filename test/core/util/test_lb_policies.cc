@@ -180,7 +180,7 @@ class InterceptRecvTrailingMetadataLoadBalancingPolicy
 
    private:
     static void RecordRecvTrailingMetadata(
-        void* arg, grpc_metadata_batch* recv_trailing_metadata,
+        void* arg, MetadataInterface* recv_trailing_metadata,
         CallState* call_state) {
       TrailingMetadataHandler* self =
           static_cast<TrailingMetadataHandler*>(arg);

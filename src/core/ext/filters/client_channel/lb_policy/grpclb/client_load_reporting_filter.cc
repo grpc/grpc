@@ -20,6 +20,8 @@
 
 #include "src/core/ext/filters/client_channel/lb_policy/grpclb/client_load_reporting_filter.h"
 
+#include <string.h>
+
 #include <grpc/support/atm.h>
 #include <grpc/support/log.h>
 
@@ -95,22 +97,27 @@ static void start_transport_stream_op_batch(
   GPR_TIMER_SCOPE("clr_start_transport_stream_op_batch", 0);
   // Handle send_initial_metadata.
   if (batch->send_initial_metadata) {
-    // Grab client stats object from user_data for LB token metadata.
-    grpc_linked_mdelem* lb_token =
+    // Grab client stats object from metadata.
+    grpc_linked_mdelem* client_stats_md =
         batch->payload->send_initial_metadata.send_initial_metadata->idx.named
-            .lb_token;
-    if (lb_token != nullptr) {
-      grpc_core::GrpcLbClientStats* client_stats =
-          static_cast<grpc_core::GrpcLbClientStats*>(grpc_mdelem_get_user_data(
-              lb_token->md, grpc_core::GrpcLbClientStats::Destroy));
+            .grpclb_client_stats;
+    if (client_stats_md != nullptr) {
+      const char* client_stats_addr_str = reinterpret_cast<const char*>(
+          GRPC_SLICE_START_PTR(GRPC_MDVALUE(client_stats_md->md)));
+      grpc_core::GrpcLbClientStats* client_stats = nullptr;
+      sscanf(client_stats_addr_str, "%p", &client_stats);
       if (client_stats != nullptr) {
-        calld->client_stats = client_stats->Ref();
+        calld->client_stats.reset(client_stats);
         // Intercept completion.
         calld->original_on_complete_for_send = batch->on_complete;
         GRPC_CLOSURE_INIT(&calld->on_complete_for_send, on_complete_for_send,
                           calld, grpc_schedule_on_exec_ctx);
         batch->on_complete = &calld->on_complete_for_send;
       }
+      // Remove metadata so it doesn't go out on the wire.
+      grpc_metadata_batch_remove(
+          batch->payload->send_initial_metadata.send_initial_metadata,
+          client_stats_md);
     }
   }
   // Intercept completion of recv_initial_metadata.

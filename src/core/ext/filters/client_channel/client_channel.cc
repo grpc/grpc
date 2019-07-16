@@ -310,6 +310,75 @@ class CallData {
  private:
   class QueuedPickCanceller;
 
+  class Metadata : public LoadBalancingPolicy::MetadataInterface {
+   public:
+    class Iterator : public MetadataInterface::IteratorInterface {
+     public:
+      explicit Iterator(grpc_linked_mdelem* linked_mdelem)
+          : linked_mdelem_(linked_mdelem) {}
+
+      grpc_linked_mdelem* linked_mdelem() const { return linked_mdelem_; }
+
+      virtual IteratorInterface& operator=(
+          const IteratorInterface& other) override {
+        const Iterator* it = static_cast<const Iterator*>(&other);
+        linked_mdelem_ = it->linked_mdelem_;
+        return *this;
+      }
+
+      virtual IteratorInterface& operator++() override {
+        linked_mdelem_ = linked_mdelem_->next;
+        return *this;
+      }
+
+      bool operator==(const IteratorInterface& other) const override {
+        const Iterator* it = static_cast<const Iterator*>(&other);
+        return linked_mdelem_ == it->linked_mdelem_;
+      }
+
+      virtual StringView Key() const override {
+        return StringView(GRPC_MDKEY(linked_mdelem_->md));
+      }
+
+      virtual StringView Value() const override {
+        return StringView(GRPC_MDVALUE(linked_mdelem_->md));
+      }
+
+     private:
+      grpc_linked_mdelem* linked_mdelem_;
+    };
+
+    Metadata(CallData* calld, grpc_metadata_batch* batch)
+        : calld_(calld), batch_(batch) {}
+
+    void Add(const StringView& key, const StringView& value) override {
+      grpc_linked_mdelem* linked_mdelem = static_cast<grpc_linked_mdelem*>(
+          calld_->arena_->Alloc(sizeof(grpc_linked_mdelem)));
+      bool returned_slice_is_different;
+      linked_mdelem->md = grpc_mdelem_from_slices(
+          grpc_slice_maybe_static_intern(
+              grpc_slice_from_static_buffer_internal(key.data(), key.size()),
+              &returned_slice_is_different),
+          grpc_slice_from_static_buffer_internal(value.data(), value.size()));
+      GPR_ASSERT(grpc_metadata_batch_link_tail(batch_, linked_mdelem) ==
+                 GRPC_ERROR_NONE);
+    }
+
+    IteratorInterface Begin() override { return Iterator(batch_->list.head); }
+    IteratorInterface End() override { return Iterator(nullptr); }
+
+    void Erase(IteratorInterface* it) override {
+      Iterator* i = static_cast<Iterator*>(it);
+      grpc_linked_mdelem* linked_mdelem = i->linked_mdelem();
+      ++(*it);
+      grpc_metadata_batch_remove(batch_, linked_mdelem);
+    }
+
+   private:
+    CallData* calld_;
+    grpc_metadata_batch* batch_;
+  };
+
   class LbCallState : public LoadBalancingPolicy::CallState {
    public:
     explicit LbCallState(CallData* calld) : calld_(calld) {}
@@ -650,7 +719,8 @@ class CallData {
   LbCallState lb_call_state_;
   RefCountedPtr<ConnectedSubchannel> connected_subchannel_;
   void (*lb_recv_trailing_metadata_ready_)(
-      void* user_data, grpc_metadata_batch* recv_trailing_metadata,
+      void* user_data,
+      LoadBalancingPolicy::MetadataInterface* recv_trailing_metadata,
       LoadBalancingPolicy::CallState* call_state) = nullptr;
   void* lb_recv_trailing_metadata_ready_user_data_ = nullptr;
   grpc_closure pick_closure_;
@@ -1886,9 +1956,10 @@ void CallData::RecvTrailingMetadataReadyForLoadBalancingPolicy(
     void* arg, grpc_error* error) {
   CallData* calld = static_cast<CallData*>(arg);
   // Invoke callback to LB policy.
+  Metadata trailing_metadata(calld, calld->recv_trailing_metadata_);
   calld->lb_recv_trailing_metadata_ready_(
-      calld->lb_recv_trailing_metadata_ready_user_data_,
-      calld->recv_trailing_metadata_, &calld->lb_call_state_);
+      calld->lb_recv_trailing_metadata_ready_user_data_, &trailing_metadata,
+      &calld->lb_call_state_);
   // Chain to original callback.
   GRPC_CLOSURE_RUN(calld->original_recv_trailing_metadata_ready_,
                    GRPC_ERROR_REF(error));
@@ -3493,11 +3564,13 @@ void CallData::StartPickLocked(void* arg, grpc_error* error) {
   // attempt) to the LB policy instead the one from the parent channel.
   LoadBalancingPolicy::PickArgs pick_args;
   pick_args.call_state = &calld->lb_call_state_;
-  pick_args.initial_metadata =
+  Metadata initial_metadata(
+      calld,
       calld->seen_send_initial_metadata_
           ? &calld->send_initial_metadata_
           : calld->pending_batches_[0]
-                .batch->payload->send_initial_metadata.send_initial_metadata;
+                .batch->payload->send_initial_metadata.send_initial_metadata);
+  pick_args.initial_metadata = &initial_metadata;
   // Grab initial metadata flags so that we can check later if the call has
   // wait_for_ready enabled.
   const uint32_t send_initial_metadata_flags =
