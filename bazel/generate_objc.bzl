@@ -5,7 +5,11 @@ load(
     "get_proto_root",
     "proto_path_to_generated_filename",
 )
-load(":grpc_util.bzl", "to_upper_camel_with_extension")
+load(
+    ":grpc_util.bzl", 
+    "to_upper_camel_with_extension",
+    "label_to_file",
+)
 
 _GRPC_PROTO_HEADER_FMT = "{}.pbrpc.h"
 _GRPC_PROTO_SRC_FMT = "{}.pbrpc.m"
@@ -27,7 +31,8 @@ def _generate_objc_impl(ctx):
     )
 
     label_package = _join_directories([ctx.label.workspace_root, ctx.label.package])
-    
+
+    files_with_rpc = [label_to_file(f) for f in ctx.attr.files_with_service]
     for proto in protos:
         outs += [
             proto_path_to_generated_filename(
@@ -45,7 +50,11 @@ def _generate_objc_impl(ctx):
                 _PROTO_SRC_FMT,
             )
         ]
-        if _strip_package_from_path(label_package, proto) in ctx.attr.files_with_service:
+
+        file_path = _strip_package_from_path(label_package, proto)
+        if not file_path.startswith("//"):
+            pass # TODO: check package boundary
+        if file_path in files_with_rpc or proto.path in files_with_rpc:
             outs += [
                 proto_path_to_generated_filename(
                     _GENERATED_PROTOS_DIR + "/" +

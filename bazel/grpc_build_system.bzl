@@ -280,7 +280,6 @@ def grpc_package(name, visibility = "private", features = []):
 def grpc_objc_library(name, hdrs, srcs, includes = [], deps = []):
     textual_hdrs = []
     sdk_frameworks = []
-    visibility = ["//visibility:public"]
     defines = []
     if len(includes) == 0:
         includes = []
@@ -315,5 +314,4 @@ def grpc_objc_library(name, hdrs, srcs, includes = [], deps = []):
         defines = defines,
         sdk_frameworks = sdk_frameworks,
         deps = deps,
-        visibility = visibility,
     )

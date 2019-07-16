@@ -45,3 +45,8 @@ def to_upper_camel_with_extension(src, ext):
     src = file_to_upper_camel(src)
     return file_with_extension(src, ext)
 
+def label_to_file(src):
+    # Converts //path/to/package:File.ext to path/to/package/File.ext.
+    src = src.replace("//", "")
+    src = src.replace(":", "/")
+    return src

@@ -2487,8 +2487,12 @@ grpc_objc_library(
 
 grpc_objc_library(
     name = "proto_objc_rpc",
-    hdrs = glob(["src/objective-c/ProtoRPC/*.h"]),
-    srcs = glob(["src/objective-c/ProtoRPC/*.m"]),
+    hdrs = glob(
+        ["src/objective-c/ProtoRPC/*.h"],
+    ),
+    srcs = glob(
+        ["src/objective-c/ProtoRPC/*.m"],
+    ),
     includes = ["src/objective-c"],
     deps = [":grpc_objc_client"],
 )
