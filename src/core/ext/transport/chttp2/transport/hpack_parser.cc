@@ -1611,7 +1611,6 @@ void grpc_chttp2_hpack_parser_init(grpc_chttp2_hpack_parser* p) {
 #endif
   p->dynamic_table_update_allowed = 2;
   p->last_error = GRPC_ERROR_NONE;
-  grpc_chttp2_hptbl_init(&p->table);
 }
 
 void grpc_chttp2_hpack_parser_set_has_priority(grpc_chttp2_hpack_parser* p) {
