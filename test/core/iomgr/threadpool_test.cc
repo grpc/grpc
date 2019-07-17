@@ -66,26 +66,6 @@ class SimpleFunctorForAdd : public grpc_experimental_completion_queue_functor {
   grpc_core::Atomic<int> count_{0};
 };
 
-// Checks the given SimpleFunctorForAdd's count with a given number.
-class SimpleFunctorCheckForAdd
-    : public grpc_experimental_completion_queue_functor {
- public:
-  SimpleFunctorCheckForAdd(int ok, int* count) : count_(count) {
-    functor_run = &SimpleFunctorCheckForAdd::Run;
-    internal_success = ok;
-  }
-  ~SimpleFunctorCheckForAdd() {}
-  static void Run(struct grpc_experimental_completion_queue_functor* cb,
-                  int ok) {
-    auto* callback = static_cast<SimpleFunctorCheckForAdd*>(cb);
-    (*callback->count_)++;
-    GPR_ASSERT(*callback->count_ == callback->internal_success);
-  }
-
- private:
-  int* count_;
-};
-
 static void test_add(void) {
   gpr_log(GPR_INFO, "test_add");
   grpc_core::ThreadPool* pool =
@@ -156,6 +136,26 @@ static void test_multi_add(void) {
   grpc_core::Delete(functor);
   gpr_log(GPR_DEBUG, "Done.");
 }
+
+// Checks the current count with a given number.
+class SimpleFunctorCheckForAdd
+    : public grpc_experimental_completion_queue_functor {
+ public:
+  SimpleFunctorCheckForAdd(int ok, int* count) : count_(count) {
+    functor_run = &SimpleFunctorCheckForAdd::Run;
+    internal_success = ok;
+  }
+  ~SimpleFunctorCheckForAdd() {}
+  static void Run(struct grpc_experimental_completion_queue_functor* cb,
+                  int ok) {
+    auto* callback = static_cast<SimpleFunctorCheckForAdd*>(cb);
+    (*callback->count_)++;
+    GPR_ASSERT(*callback->count_ == callback->internal_success);
+  }
+
+ private:
+  int* count_;
+};
 
 static void test_one_thread_FIFO(void) {
   gpr_log(GPR_INFO, "test_one_thread_FIFO");
