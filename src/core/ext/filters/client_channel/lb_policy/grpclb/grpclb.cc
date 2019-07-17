@@ -62,7 +62,6 @@
 
 #include <inttypes.h>
 #include <limits.h>
-#include <stdio.h>
 #include <string.h>
 
 #include <grpc/byte_buffer_reader.h>
@@ -610,14 +609,13 @@ GrpcLb::PickResult GrpcLb::Picker::Pick(PickArgs args) {
         arg->value.pointer.p != nullptr) {
       GrpcLbClientStats* client_stats =
           static_cast<GrpcLbClientStats*>(arg->value.pointer.p);
-      // Space needed to print the address: every byte of the address is 2
-      // hex digits, plus 2 for the "0x" prefix, plus 1 for the trailing nul.
-      constexpr size_t kPrintedPointerSize = (sizeof(intptr_t) * 2) + 3;
-      char* client_stats_address =
-          static_cast<char*>(args.call_state->Alloc(kPrintedPointerSize));
-      snprintf(client_stats_address, kPrintedPointerSize, "%p", client_stats);
-      client_stats->Ref().release();
-      args.initial_metadata->Add("grpclb_client_stats", client_stats_address);
+      client_stats->Ref().release();  // Ref passed via metadata.
+      // The metadata value is a hack: we pretend the pointer points to
+      // a string and rely on the client_load_reporting filter to know
+      // how to interpret it.
+      args.initial_metadata->Add(
+          "grpclb_client_stats",
+          StringView(reinterpret_cast<const char*>(client_stats), 0));
       // Update calls-started.
       client_stats->AddCallStarted();
     }

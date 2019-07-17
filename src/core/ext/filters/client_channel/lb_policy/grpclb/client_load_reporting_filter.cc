@@ -20,7 +20,6 @@
 
 #include "src/core/ext/filters/client_channel/lb_policy/grpclb/client_load_reporting_filter.h"
 
-#include <stdio.h>
 #include <string.h>
 
 #include <grpc/support/atm.h>
@@ -103,10 +102,10 @@ static void start_transport_stream_op_batch(
         batch->payload->send_initial_metadata.send_initial_metadata->idx.named
             .grpclb_client_stats;
     if (client_stats_md != nullptr) {
-      const char* client_stats_addr_str = reinterpret_cast<const char*>(
-          GRPC_SLICE_START_PTR(GRPC_MDVALUE(client_stats_md->md)));
-      grpc_core::GrpcLbClientStats* client_stats = nullptr;
-      sscanf(client_stats_addr_str, "%p", &client_stats);
+      grpc_core::GrpcLbClientStats* client_stats =
+          const_cast<grpc_core::GrpcLbClientStats*>(
+              reinterpret_cast<const grpc_core::GrpcLbClientStats*>(
+                  GRPC_SLICE_START_PTR(GRPC_MDVALUE(client_stats_md->md))));
       if (client_stats != nullptr) {
         calld->client_stats.reset(client_stats);
         // Intercept completion.
