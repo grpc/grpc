@@ -214,9 +214,6 @@ static const NSTimeInterval kDefaultChannelDestroyDelay = 30;
 - (instancetype)initPrivate {
   if ((self = [super init])) {
     _channelPool = [NSMutableDictionary dictionary];
-
-    // Connectivity monitor is not required for CFStream
-    char *enableCFStream = getenv(kCFStreamVarName);
   }
   return self;
 }
