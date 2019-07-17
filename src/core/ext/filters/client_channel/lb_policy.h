@@ -95,19 +95,10 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
   /// Interface for access metadata.
   class MetadataInterface {
    public:
-    class IteratorInterface {
-     public:
-      virtual ~IteratorInterface() = default;
-      virtual IteratorInterface& operator=(const IteratorInterface& other)
-          GRPC_ABSTRACT;
-      virtual IteratorInterface& operator++() GRPC_ABSTRACT;
-      virtual bool operator==(const IteratorInterface& other) const
-          GRPC_ABSTRACT;
-      virtual StringView Key() const GRPC_ABSTRACT;
-      virtual StringView Value() const GRPC_ABSTRACT;
-
-      GRPC_ABSTRACT_BASE_CLASS
-    };
+    // Implementations whose iterators fit in intptr_t may internally
+    // cast this directly to their iterator type.  Otherwise, they may
+    // dynamically allocate their iterators and store the address here.
+    typedef intptr_t Iterator;
 
     virtual ~MetadataInterface() = default;
 
@@ -119,12 +110,15 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
     virtual void Add(StringView key, StringView value) GRPC_ABSTRACT;
 
     /// Iteration interface.
-    virtual IteratorInterface Begin() GRPC_ABSTRACT;
-    virtual IteratorInterface End() GRPC_ABSTRACT;
+    virtual Iterator Begin() const GRPC_ABSTRACT;
+    virtual bool IsEnd(Iterator it) const GRPC_ABSTRACT;
+    virtual void Next(Iterator* it) const GRPC_ABSTRACT;
+    virtual StringView Key(Iterator it) const GRPC_ABSTRACT;
+    virtual StringView Value(Iterator it) const GRPC_ABSTRACT;
 
     /// Removes the element pointed to by \a it, which is modified to
     /// point to the next element.
-    virtual void Erase(IteratorInterface* it) GRPC_ABSTRACT;
+    virtual void Erase(Iterator* it) GRPC_ABSTRACT;
 
     GRPC_ABSTRACT_BASE_CLASS
   };

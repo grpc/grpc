@@ -312,41 +312,6 @@ class CallData {
 
   class Metadata : public LoadBalancingPolicy::MetadataInterface {
    public:
-    class Iterator : public MetadataInterface::IteratorInterface {
-     public:
-      explicit Iterator(grpc_linked_mdelem* linked_mdelem)
-          : linked_mdelem_(linked_mdelem) {}
-
-      grpc_linked_mdelem* linked_mdelem() const { return linked_mdelem_; }
-
-      IteratorInterface& operator=(const IteratorInterface& other) override {
-        const Iterator* it = static_cast<const Iterator*>(&other);
-        linked_mdelem_ = it->linked_mdelem_;
-        return *this;
-      }
-
-      IteratorInterface& operator++() override {
-        linked_mdelem_ = linked_mdelem_->next;
-        return *this;
-      }
-
-      bool operator==(const IteratorInterface& other) const override {
-        const Iterator* it = static_cast<const Iterator*>(&other);
-        return linked_mdelem_ == it->linked_mdelem_;
-      }
-
-      StringView Key() const override {
-        return StringView(GRPC_MDKEY(linked_mdelem_->md));
-      }
-
-      StringView Value() const override {
-        return StringView(GRPC_MDVALUE(linked_mdelem_->md));
-      }
-
-     private:
-      grpc_linked_mdelem* linked_mdelem_;
-    };
-
     Metadata(CallData* calld, grpc_metadata_batch* batch)
         : calld_(calld), batch_(batch) {}
 
@@ -363,13 +328,31 @@ class CallData {
                  GRPC_ERROR_NONE);
     }
 
-    IteratorInterface Begin() override { return Iterator(batch_->list.head); }
-    IteratorInterface End() override { return Iterator(nullptr); }
+    Iterator Begin() const override {
+      static_assert(sizeof(grpc_linked_mdelem*) <= sizeof(Iterator),
+                    "iterator size too large");
+      return reinterpret_cast<Iterator>(batch_->list.head);
+    }
+    bool IsEnd(Iterator it) const override {
+      return reinterpret_cast<grpc_linked_mdelem*>(it) == nullptr;
+    }
+    void Next(Iterator* it) const override {
+      *it = reinterpret_cast<Iterator>(
+          reinterpret_cast<grpc_linked_mdelem*>(*it)->next);
+    }
+    StringView Key(Iterator it) const override {
+      return StringView(GRPC_MDKEY(
+          reinterpret_cast<grpc_linked_mdelem*>(it)->md));
+    }
+    StringView Value(Iterator it) const override {
+      return StringView(GRPC_MDVALUE(
+          reinterpret_cast<grpc_linked_mdelem*>(it)->md));
+    }
 
-    void Erase(IteratorInterface* it) override {
-      Iterator* i = static_cast<Iterator*>(it);
-      grpc_linked_mdelem* linked_mdelem = i->linked_mdelem();
-      ++(*it);
+    void Erase(Iterator* it) override {
+      grpc_linked_mdelem* linked_mdelem =
+          reinterpret_cast<grpc_linked_mdelem*>(*it);
+      *it = reinterpret_cast<Iterator>(linked_mdelem->next);
       grpc_metadata_batch_remove(batch_, linked_mdelem);
     }
 
