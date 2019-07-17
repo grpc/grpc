@@ -72,17 +72,6 @@ class SubchannelCall;
 
 class ConnectedSubchannel : public ConnectedSubchannelInterface {
  public:
-  struct CallArgs {
-    grpc_polling_entity* pollent;
-    grpc_slice path;
-    gpr_timespec start_time;
-    grpc_millis deadline;
-    Arena* arena;
-    grpc_call_context_element* context;
-    CallCombiner* call_combiner;
-    size_t parent_data_size;
-  };
-
   ConnectedSubchannel(
       grpc_channel_stack* channel_stack, const grpc_channel_args* args,
       RefCountedPtr<channelz::SubchannelNode> channelz_subchannel);
@@ -92,8 +81,6 @@ class ConnectedSubchannel : public ConnectedSubchannelInterface {
                            grpc_connectivity_state* state,
                            grpc_closure* closure);
   void Ping(grpc_closure* on_initiate, grpc_closure* on_ack);
-  RefCountedPtr<SubchannelCall> CreateCall(const CallArgs& args,
-                                           grpc_error** error);
 
   grpc_channel_stack* channel_stack() const { return channel_stack_; }
   const grpc_channel_args* args() const override { return args_; }
@@ -114,10 +101,18 @@ class ConnectedSubchannel : public ConnectedSubchannelInterface {
 // Implements the interface of RefCounted<>.
 class SubchannelCall {
  public:
-  SubchannelCall(RefCountedPtr<ConnectedSubchannel> connected_subchannel,
-                 const ConnectedSubchannel::CallArgs& args)
-      : connected_subchannel_(std::move(connected_subchannel)),
-        deadline_(args.deadline) {}
+  struct Args {
+    RefCountedPtr<ConnectedSubchannel> connected_subchannel;
+    grpc_polling_entity* pollent;
+    grpc_slice path;
+    gpr_timespec start_time;
+    grpc_millis deadline;
+    Arena* arena;
+    grpc_call_context_element* context;
+    CallCombiner* call_combiner;
+    size_t parent_data_size;
+  };
+  static RefCountedPtr<SubchannelCall> Create(Args args, grpc_error** error);
 
   // Continues processing a transport stream op batch.
   void StartTransportStreamOpBatch(grpc_transport_stream_op_batch* batch);
@@ -149,6 +144,8 @@ class SubchannelCall {
   // Allow RefCountedPtr<> to access IncrementRefCount().
   template <typename T>
   friend class RefCountedPtr;
+
+  SubchannelCall(Args args, grpc_error** error);
 
   // If channelz is enabled, intercepts recv_trailing so that we may check the
   // status and associate it to a subchannel.

@@ -89,72 +89,114 @@ class RefCount {
   }
 
   // Increases the ref-count by `n`.
-  void Ref(Value n = 1) { value_.FetchAdd(n, MemoryOrder::RELAXED); }
+  void Ref(Value n = 1) {
+#ifndef NDEBUG
+    const Value prior = value_.FetchAdd(n, MemoryOrder::RELAXED);
+    if (trace_flag_ != nullptr && trace_flag_->enabled()) {
+      gpr_log(GPR_INFO, "%s:%p ref %" PRIdPTR " -> %" PRIdPTR,
+              trace_flag_->name(), this, prior, prior + n);
+    }
+#else
+    value_.FetchAdd(n, MemoryOrder::RELAXED);
+#endif
+  }
   void Ref(const DebugLocation& location, const char* reason, Value n = 1) {
 #ifndef NDEBUG
-    if (location.Log() && trace_flag_ != nullptr && trace_flag_->enabled()) {
-      const RefCount::Value old_refs = get();
+    const Value prior = value_.FetchAdd(n, MemoryOrder::RELAXED);
+    if (trace_flag_ != nullptr && trace_flag_->enabled()) {
       gpr_log(GPR_INFO, "%s:%p %s:%d ref %" PRIdPTR " -> %" PRIdPTR " %s",
               trace_flag_->name(), this, location.file(), location.line(),
-              old_refs, old_refs + n, reason);
+              prior, prior + n, reason);
     }
+#else
+    value_.FetchAdd(n, MemoryOrder::RELAXED);
 #endif
-    Ref(n);
   }
 
   // Similar to Ref() with an assert on the ref-count being non-zero.
   void RefNonZero() {
 #ifndef NDEBUG
     const Value prior = value_.FetchAdd(1, MemoryOrder::RELAXED);
+    if (trace_flag_ != nullptr && trace_flag_->enabled()) {
+      gpr_log(GPR_INFO, "%s:%p ref %" PRIdPTR " -> %" PRIdPTR,
+              trace_flag_->name(), this, prior, prior + 1);
+    }
     assert(prior > 0);
 #else
-    Ref();
+    value_.FetchAdd(1, MemoryOrder::RELAXED);
 #endif
   }
   void RefNonZero(const DebugLocation& location, const char* reason) {
 #ifndef NDEBUG
-    if (location.Log() && trace_flag_ != nullptr && trace_flag_->enabled()) {
-      const RefCount::Value old_refs = get();
+    const Value prior = value_.FetchAdd(1, MemoryOrder::RELAXED);
+    if (trace_flag_ != nullptr && trace_flag_->enabled()) {
       gpr_log(GPR_INFO, "%s:%p %s:%d ref %" PRIdPTR " -> %" PRIdPTR " %s",
               trace_flag_->name(), this, location.file(), location.line(),
-              old_refs, old_refs + 1, reason);
+              prior, prior + 1, reason);
     }
-#endif
+    assert(prior > 0);
+#else
     RefNonZero();
+#endif
   }
 
-  bool RefIfNonZero() { return value_.IncrementIfNonzero(); }
-
+  bool RefIfNonZero() {
+#ifndef NDEBUG
+    if (trace_flag_ != nullptr && trace_flag_->enabled()) {
+      const Value prior = get();
+      gpr_log(GPR_INFO, "%s:%p ref_if_non_zero %" PRIdPTR " -> %" PRIdPTR,
+              trace_flag_->name(), this, prior, prior + 1);
+    }
+#endif
+    return value_.IncrementIfNonzero();
+  }
   bool RefIfNonZero(const DebugLocation& location, const char* reason) {
 #ifndef NDEBUG
-    if (location.Log() && trace_flag_ != nullptr && trace_flag_->enabled()) {
-      const RefCount::Value old_refs = get();
+    if (trace_flag_ != nullptr && trace_flag_->enabled()) {
+      const Value prior = get();
       gpr_log(GPR_INFO,
               "%s:%p %s:%d ref_if_non_zero "
               "%" PRIdPTR " -> %" PRIdPTR " %s",
               trace_flag_->name(), this, location.file(), location.line(),
-              old_refs, old_refs + 1, reason);
+              prior, prior + 1, reason);
     }
 #endif
-    return RefIfNonZero();
+    return value_.IncrementIfNonzero();
   }
 
   // Decrements the ref-count and returns true if the ref-count reaches 0.
   bool Unref() {
+#ifndef NDEBUG
+    // Grab a copy of the trace flag before the atomic change, since we
+    // can't safely access it afterwards if we're going to be freed.
+    auto* trace_flag = trace_flag_;
+#endif
     const Value prior = value_.FetchSub(1, MemoryOrder::ACQ_REL);
+#ifndef NDEBUG
+    if (trace_flag != nullptr && trace_flag->enabled()) {
+      gpr_log(GPR_INFO, "%s:%p unref %" PRIdPTR " -> %" PRIdPTR,
+              trace_flag->name(), this, prior, prior - 1);
+    }
     GPR_DEBUG_ASSERT(prior > 0);
+#endif
     return prior == 1;
   }
   bool Unref(const DebugLocation& location, const char* reason) {
 #ifndef NDEBUG
-    if (location.Log() && trace_flag_ != nullptr && trace_flag_->enabled()) {
-      const RefCount::Value old_refs = get();
-      gpr_log(GPR_INFO, "%s:%p %s:%d unref %" PRIdPTR " -> %" PRIdPTR " %s",
-              trace_flag_->name(), this, location.file(), location.line(),
-              old_refs, old_refs - 1, reason);
-    }
+    // Grab a copy of the trace flag before the atomic change, since we
+    // can't safely access it afterwards if we're going to be freed.
+    auto* trace_flag = trace_flag_;
 #endif
-    return Unref();
+    const Value prior = value_.FetchSub(1, MemoryOrder::ACQ_REL);
+#ifndef NDEBUG
+    if (trace_flag != nullptr && trace_flag->enabled()) {
+      gpr_log(GPR_INFO, "%s:%p %s:%d unref %" PRIdPTR " -> %" PRIdPTR " %s",
+              trace_flag->name(), this, location.file(), location.line(), prior,
+              prior - 1, reason);
+    }
+    GPR_DEBUG_ASSERT(prior > 0);
+#endif
+    return prior == 1;
   }
 
  private:
