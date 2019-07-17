@@ -116,8 +116,7 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
     /// Implementations must ensure that the key and value remain alive
     /// until the call ends.  If desired, they may be allocated via
     /// CallState::Alloc().
-    virtual void Add(const StringView& key,
-                     const StringView& value) GRPC_ABSTRACT;
+    virtual void Add(StringView key, StringView value) GRPC_ABSTRACT;
 
     /// Iteration interface.
     virtual IteratorInterface Begin() GRPC_ABSTRACT;
