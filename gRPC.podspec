@@ -58,8 +58,8 @@ Pod::Spec.new do |s|
     ss.header_mappings_dir = "#{src_dir}"
 
     ss.source_files = "#{src_dir}/*.{h,m}", "#{src_dir}/**/*.{h,m}"
+    ss.exclude_files = "#{src_dir}/GRPCCall+GID.{h,m}"
     ss.private_header_files = "#{src_dir}/private/*.h", "#{src_dir}/internal/*.h"
-    ss.exclude_files = "#{src_dir}/GRPCCall+GID.{h,m}", "#{src_dir}/private/GRPCConnectivityMonitor.{h,m}"
 
     ss.dependency 'gRPC-Core', version
   end
