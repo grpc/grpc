@@ -260,10 +260,6 @@ static const NSTimeInterval kDefaultChannelDestroyDelay = 30;
   }
 }
 
-- (void)connectivityChange:(NSNotification *)note {
-  [self disconnectAllChannels];
-}
-
 @end
 
 @implementation GRPCChannelPool (Test)

@@ -892,23 +892,4 @@ const char *kCFStreamVarName = "grpc_cfstream";
   }
 }
 
-- (void)connectivityChanged:(NSNotification *)note {
-  // Cancel underlying call upon this notification.
-
-  // Retain because connectivity manager only keeps weak reference to GRPCCall.
-  __strong GRPCCall *strongSelf = self;
-  if (strongSelf) {
-    @synchronized(strongSelf) {
-      [_wrappedCall cancel];
-      [strongSelf
-          finishWithError:[NSError errorWithDomain:kGRPCErrorDomain
-                                              code:GRPCErrorCodeUnavailable
-                                          userInfo:@{
-                                            NSLocalizedDescriptionKey : @"Connectivity lost."
-                                          }]];
-    }
-    strongSelf->_requestWriter.state = GRXWriterStateFinished;
-  }
-}
-
 @end
