@@ -5041,6 +5041,23 @@ targets:
   - grpc++
   - grpc
   - gpr
+- name: grpclb_fallback_test
+  build: test
+  language: c++
+  src:
+  - src/proto/grpc/testing/empty.proto
+  - src/proto/grpc/testing/messages.proto
+  - src/proto/grpc/testing/test.proto
+  - test/cpp/interop/grpclb_fallback_test.cc
+  deps:
+  - grpc++_test_util
+  - grpc_test_util
+  - grpc++
+  - grpc
+  - gpr
+  - grpc++_test_config
+  platforms:
+  - linux
 - name: h2_ssl_cert_test
   gtest: true
   build: test

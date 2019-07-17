@@ -31,6 +31,7 @@
 #include <utility>
 
 #include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/channel/channelz.h"
 #include "src/core/lib/channel/connected_channel.h"
 #include "src/core/lib/debug/stats.h"
 #include "src/core/lib/gpr/mpscq.h"
@@ -111,7 +112,7 @@ struct channel_data {
   uint32_t registered_method_max_probes;
   grpc_closure finish_destroy_channel_closure;
   grpc_closure channel_connectivity_changed;
-  grpc_core::RefCountedPtr<grpc_core::channelz::SocketNode> socket_node;
+  intptr_t channelz_socket_uuid;
 };
 
 typedef struct shutdown_tag {
@@ -941,7 +942,6 @@ static grpc_error* init_channel_elem(grpc_channel_element* elem,
 static void destroy_channel_elem(grpc_channel_element* elem) {
   size_t i;
   channel_data* chand = static_cast<channel_data*>(elem->channel_data);
-  chand->socket_node.reset();
   if (chand->registered_methods) {
     for (i = 0; i < chand->registered_method_slots; i++) {
       grpc_slice_unref_internal(chand->registered_methods[i].method);
@@ -952,6 +952,11 @@ static void destroy_channel_elem(grpc_channel_element* elem) {
     gpr_free(chand->registered_methods);
   }
   if (chand->server) {
+    if (chand->server->channelz_server != nullptr &&
+        chand->channelz_socket_uuid != 0) {
+      chand->server->channelz_server->RemoveChildSocket(
+          chand->channelz_socket_uuid);
+    }
     gpr_mu_lock(&chand->server->mu_global);
     chand->next->prev = chand->prev;
     chand->prev->next = chand->next;
@@ -1144,7 +1149,8 @@ void grpc_server_get_pollsets(grpc_server* server, grpc_pollset*** pollsets,
 void grpc_server_setup_transport(
     grpc_server* s, grpc_transport* transport, grpc_pollset* accepting_pollset,
     const grpc_channel_args* args,
-    grpc_core::RefCountedPtr<grpc_core::channelz::SocketNode> socket_node,
+    const grpc_core::RefCountedPtr<grpc_core::channelz::SocketNode>&
+        socket_node,
     grpc_resource_user* resource_user) {
   size_t num_registered_methods;
   size_t alloc;
@@ -1166,7 +1172,12 @@ void grpc_server_setup_transport(
   chand->server = s;
   server_ref(s);
   chand->channel = channel;
-  chand->socket_node = std::move(socket_node);
+  if (socket_node != nullptr) {
+    chand->channelz_socket_uuid = socket_node->uuid();
+    s->channelz_server->AddChildSocket(socket_node);
+  } else {
+    chand->channelz_socket_uuid = 0;
+  }
 
   size_t cq_idx;
   for (cq_idx = 0; cq_idx < s->cq_count; cq_idx++) {
@@ -1239,19 +1250,6 @@ void grpc_server_setup_transport(
         GRPC_ERROR_CREATE_FROM_STATIC_STRING("Server shutdown");
   }
   grpc_transport_perform_op(transport, op);
-}
-
-void grpc_server_populate_server_sockets(
-    grpc_server* s, grpc_core::channelz::ChildSocketsList* server_sockets,
-    intptr_t start_idx) {
-  gpr_mu_lock(&s->mu_global);
-  channel_data* c = nullptr;
-  for (c = s->root_channel_data.next; c != &s->root_channel_data; c = c->next) {
-    if (c->socket_node != nullptr && c->socket_node->uuid() >= start_idx) {
-      server_sockets->push_back(c->socket_node);
-    }
-  }
-  gpr_mu_unlock(&s->mu_global);
 }
 
 void grpc_server_populate_listen_sockets(

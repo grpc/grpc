@@ -39,6 +39,22 @@ grpc_cc_library(
 )
 
 grpc_cc_binary(
+    name = "grpclb_fallback_test",
+    srcs = [
+        "grpclb_fallback_test.cc",
+    ],
+    language = "C++",
+    deps = [
+        "//src/proto/grpc/testing:empty_proto",
+        "//src/proto/grpc/testing:messages_proto",
+        "//src/proto/grpc/testing:test_proto",
+        "//test/cpp/util:test_config",
+        "//test/cpp/util:test_util",
+        "//:grpc++",
+    ],
+)
+
+grpc_cc_binary(
     name = "interop_server",
     srcs = [
         "interop_server_bootstrap.cc",

@@ -2164,9 +2164,8 @@ void CallData::DoRetry(grpc_call_element* elem,
   GPR_ASSERT(method_params_ != nullptr);
   const auto* retry_policy = method_params_->retry_policy();
   GPR_ASSERT(retry_policy != nullptr);
-  // Reset subchannel call and connected subchannel.
+  // Reset subchannel call.
   subchannel_call_.reset();
-  connected_subchannel_.reset();
   // Compute backoff delay.
   grpc_millis next_attempt_time;
   if (server_pushback_ms >= 0) {
@@ -3284,13 +3283,14 @@ void CallData::CreateSubchannelCall(grpc_call_element* elem) {
   ChannelData* chand = static_cast<ChannelData*>(elem->channel_data);
   const size_t parent_data_size =
       enable_retries_ ? sizeof(SubchannelCallRetryState) : 0;
-  const ConnectedSubchannel::CallArgs call_args = {
-      pollent_, path_, call_start_time_, deadline_, arena_,
+  SubchannelCall::Args call_args = {
+      std::move(connected_subchannel_), pollent_, path_, call_start_time_,
+      deadline_, arena_,
       // TODO(roth): When we implement hedging support, we will probably
       // need to use a separate call context for each subchannel call.
       call_context_, call_combiner_, parent_data_size};
   grpc_error* error = GRPC_ERROR_NONE;
-  subchannel_call_ = connected_subchannel_->CreateCall(call_args, &error);
+  subchannel_call_ = SubchannelCall::Create(std::move(call_args), &error);
   if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_routing_trace)) {
     gpr_log(GPR_INFO, "chand=%p calld=%p: create subchannel_call=%p: error=%s",
             chand, this, subchannel_call_.get(), grpc_error_string(error));

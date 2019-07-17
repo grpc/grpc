@@ -117,38 +117,6 @@ void ConnectedSubchannel::Ping(grpc_closure* on_initiate,
   elem->filter->start_transport_op(elem, op);
 }
 
-RefCountedPtr<SubchannelCall> ConnectedSubchannel::CreateCall(
-    const CallArgs& args, grpc_error** error) {
-  const size_t allocation_size =
-      GetInitialCallSizeEstimate(args.parent_data_size);
-  RefCountedPtr<SubchannelCall> call(
-      new (args.arena->Alloc(allocation_size))
-          SubchannelCall(Ref(DEBUG_LOCATION, "subchannel_call"), args));
-  grpc_call_stack* callstk = SUBCHANNEL_CALL_TO_CALL_STACK(call.get());
-  const grpc_call_element_args call_args = {
-      callstk,           /* call_stack */
-      nullptr,           /* server_transport_data */
-      args.context,      /* context */
-      args.path,         /* path */
-      args.start_time,   /* start_time */
-      args.deadline,     /* deadline */
-      args.arena,        /* arena */
-      args.call_combiner /* call_combiner */
-  };
-  *error = grpc_call_stack_init(channel_stack_, 1, SubchannelCall::Destroy,
-                                call.get(), &call_args);
-  if (GPR_UNLIKELY(*error != GRPC_ERROR_NONE)) {
-    const char* error_string = grpc_error_string(*error);
-    gpr_log(GPR_ERROR, "error: %s", error_string);
-    return call;
-  }
-  grpc_call_stack_set_pollset_or_pollset_set(callstk, args.pollent);
-  if (channelz_subchannel_ != nullptr) {
-    channelz_subchannel_->RecordCallStarted();
-  }
-  return call;
-}
-
 size_t ConnectedSubchannel::GetInitialCallSizeEstimate(
     size_t parent_data_size) const {
   size_t allocation_size =
@@ -166,6 +134,43 @@ size_t ConnectedSubchannel::GetInitialCallSizeEstimate(
 //
 // SubchannelCall
 //
+
+RefCountedPtr<SubchannelCall> SubchannelCall::Create(Args args,
+                                                     grpc_error** error) {
+  const size_t allocation_size =
+      args.connected_subchannel->GetInitialCallSizeEstimate(
+          args.parent_data_size);
+  return RefCountedPtr<SubchannelCall>(new (args.arena->Alloc(
+      allocation_size)) SubchannelCall(std::move(args), error));
+}
+
+SubchannelCall::SubchannelCall(Args args, grpc_error** error)
+    : connected_subchannel_(std::move(args.connected_subchannel)),
+      deadline_(args.deadline) {
+  grpc_call_stack* callstk = SUBCHANNEL_CALL_TO_CALL_STACK(this);
+  const grpc_call_element_args call_args = {
+      callstk,           /* call_stack */
+      nullptr,           /* server_transport_data */
+      args.context,      /* context */
+      args.path,         /* path */
+      args.start_time,   /* start_time */
+      args.deadline,     /* deadline */
+      args.arena,        /* arena */
+      args.call_combiner /* call_combiner */
+  };
+  *error = grpc_call_stack_init(connected_subchannel_->channel_stack(), 1,
+                                SubchannelCall::Destroy, this, &call_args);
+  if (GPR_UNLIKELY(*error != GRPC_ERROR_NONE)) {
+    const char* error_string = grpc_error_string(*error);
+    gpr_log(GPR_ERROR, "error: %s", error_string);
+    return;
+  }
+  grpc_call_stack_set_pollset_or_pollset_set(callstk, args.pollent);
+  auto* channelz_node = connected_subchannel_->channelz_subchannel();
+  if (channelz_node != nullptr) {
+    channelz_node->RecordCallStarted();
+  }
+}
 
 void SubchannelCall::StartTransportStreamOpBatch(
     grpc_transport_stream_op_batch* batch) {
