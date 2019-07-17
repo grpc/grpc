@@ -2066,7 +2066,7 @@ static void remove_stream(grpc_chttp2_transport* t, uint32_t id,
                           grpc_error* error) {
   grpc_chttp2_stream* s = static_cast<grpc_chttp2_stream*>(
       grpc_chttp2_stream_map_delete(&t->stream_map, id));
-  GPR_ASSERT(s);
+  GPR_DEBUG_ASSERT(s);
   if (t->incoming_stream == s) {
     t->incoming_stream = nullptr;
     grpc_chttp2_parsing_become_skip_parser(t);

@@ -64,7 +64,7 @@ void grpc_chttp2_stream_map_add(grpc_chttp2_stream_map* map, uint32_t key,
   void** values = map->values;
 
   GPR_ASSERT(count == 0 || keys[count - 1] < key);
-  GPR_ASSERT(value);
+  GPR_DEBUG_ASSERT(value);
   GPR_ASSERT(grpc_chttp2_stream_map_find(map, key) == nullptr);
 
   if (count == capacity) {
@@ -87,6 +87,7 @@ void grpc_chttp2_stream_map_add(grpc_chttp2_stream_map* map, uint32_t key,
   map->count = count + 1;
 }
 
+template <bool strict_find>
 static void** find(grpc_chttp2_stream_map* map, uint32_t key) {
   size_t min_idx = 0;
   size_t max_idx = map->count;
@@ -95,7 +96,8 @@ static void** find(grpc_chttp2_stream_map* map, uint32_t key) {
   void** values = map->values;
   uint32_t mid_key;
 
-  if (max_idx == 0) return nullptr;
+  GPR_DEBUG_ASSERT(!strict_find || max_idx > 0);
+  if (!strict_find && max_idx == 0) return nullptr;
 
   while (min_idx < max_idx) {
     /* find the midpoint, avoiding overflow */
@@ -112,28 +114,28 @@ static void** find(grpc_chttp2_stream_map* map, uint32_t key) {
     }
   }
 
+  GPR_DEBUG_ASSERT(!strict_find);
   return nullptr;
 }
 
 void* grpc_chttp2_stream_map_delete(grpc_chttp2_stream_map* map, uint32_t key) {
-  void** pvalue = find(map, key);
-  void* out = nullptr;
-  if (pvalue != nullptr) {
-    out = *pvalue;
-    *pvalue = nullptr;
-    map->free += (out != nullptr);
-    /* recognize complete emptyness and ensure we can skip
-     * defragmentation later */
-    if (map->free == map->count) {
-      map->free = map->count = 0;
-    }
-    GPR_ASSERT(grpc_chttp2_stream_map_find(map, key) == nullptr);
+  void** pvalue = find<true>(map, key);
+  GPR_DEBUG_ASSERT(pvalue != nullptr);
+  void* out = *pvalue;
+  GPR_DEBUG_ASSERT(out != nullptr);
+  *pvalue = nullptr;
+  map->free++;
+  /* recognize complete emptyness and ensure we can skip
+   * defragmentation later */
+  if (map->free == map->count) {
+    map->free = map->count = 0;
   }
+  GPR_DEBUG_ASSERT(grpc_chttp2_stream_map_find(map, key) == nullptr);
   return out;
 }
 
 void* grpc_chttp2_stream_map_find(grpc_chttp2_stream_map* map, uint32_t key) {
-  void** pvalue = find(map, key);
+  void** pvalue = find<false>(map, key);
   return pvalue != nullptr ? *pvalue : nullptr;
 }
 

@@ -340,9 +340,20 @@ void grpc_chttp2_parsing_become_skip_parser(grpc_chttp2_transport* t) {
   init_skip_frame_parser(t, t->parser == grpc_chttp2_header_parser_parse);
 }
 
-static grpc_error* init_data_frame_parser(grpc_chttp2_transport* t) {
-  grpc_chttp2_stream* s =
+static grpc_chttp2_stream* stream_lookup_cached(grpc_chttp2_transport* t) {
+  if (t->incoming_stream) {
+    GPR_DEBUG_ASSERT(grpc_chttp2_parsing_lookup_stream(
+                         t, t->incoming_stream_id) == t->incoming_stream);
+    return t->incoming_stream;
+  }
+
+  t->incoming_stream =
       grpc_chttp2_parsing_lookup_stream(t, t->incoming_stream_id);
+  return t->incoming_stream;
+}
+
+static grpc_error* init_data_frame_parser(grpc_chttp2_transport* t) {
+  grpc_chttp2_stream* s = stream_lookup_cached(t);
   grpc_error* err = GRPC_ERROR_NONE;
   grpc_core::chttp2::FlowControlAction action;
   if (s == nullptr) {
@@ -557,7 +568,7 @@ static grpc_error* init_header_frame_parser(grpc_chttp2_transport* t,
   t->ping_state.last_ping_sent_time = GRPC_MILLIS_INF_PAST;
 
   /* could be a new grpc_chttp2_stream or an existing grpc_chttp2_stream */
-  s = grpc_chttp2_parsing_lookup_stream(t, t->incoming_stream_id);
+  s = stream_lookup_cached(t);
   if (s == nullptr) {
     if (GPR_UNLIKELY(is_continuation)) {
       GRPC_CHTTP2_IF_TRACING(
@@ -664,8 +675,7 @@ static grpc_error* init_window_update_frame_parser(grpc_chttp2_transport* t) {
       t->incoming_frame_flags);
   if (err != GRPC_ERROR_NONE) return err;
   if (t->incoming_stream_id != 0) {
-    grpc_chttp2_stream* s = t->incoming_stream =
-        grpc_chttp2_parsing_lookup_stream(t, t->incoming_stream_id);
+    grpc_chttp2_stream* s = t->incoming_stream = stream_lookup_cached(t);
     if (s == nullptr) {
       return init_skip_frame_parser(t, 0);
     }
@@ -689,8 +699,7 @@ static grpc_error* init_rst_stream_parser(grpc_chttp2_transport* t) {
   grpc_error* err = grpc_chttp2_rst_stream_parser_begin_frame(
       &t->simple.rst_stream, t->incoming_frame_size, t->incoming_frame_flags);
   if (err != GRPC_ERROR_NONE) return err;
-  grpc_chttp2_stream* s = t->incoming_stream =
-      grpc_chttp2_parsing_lookup_stream(t, t->incoming_stream_id);
+  grpc_chttp2_stream* s = t->incoming_stream = stream_lookup_cached(t);
   if (!t->incoming_stream) {
     return init_skip_frame_parser(t, 0);
   }
