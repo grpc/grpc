@@ -235,6 +235,23 @@ grpc_channel* grpc_channel_create(const char* target,
                                   grpc_channel_stack_type channel_stack_type,
                                   grpc_transport* optional_transport,
                                   grpc_resource_user* resource_user) {
+  // We need to make sure that grpc_shutdown() does not shut things down
+  // until after the channel is destroyed.  However, the channel may not
+  // actually be destroyed by the time grpc_channel_destroy() returns,
+  // since there may be other existing refs to the channel.  If those
+  // refs are held by things that are visible to the wrapped language
+  // (such as outstanding calls on the channel), then the wrapped
+  // language can be responsible for making sure that grpc_shutdown()
+  // does not run until after those refs are released.  However, the
+  // channel may also have refs to itself held internally for various
+  // things that need to be cleaned up at channel destruction (e.g.,
+  // LB policies, subchannels, etc), and because these refs are not
+  // visible to the wrapped language, it cannot be responsible for
+  // deferring grpc_shutdown() until after they are released.  To
+  // accommodate that, we call grpc_init() here and then call
+  // grpc_shutdown() when the channel is actually destroyed, thus
+  // ensuring that shutdown is deferred until that point.
+  grpc_init();
   grpc_channel_stack_builder* builder = grpc_channel_stack_builder_create();
   const grpc_core::UniquePtr<char> default_authority =
       get_default_authority(input_args);
@@ -468,6 +485,8 @@ static void destroy_channel(void* arg, grpc_error* error) {
   gpr_mu_destroy(&channel->registered_call_mu);
   gpr_free(channel->target);
   gpr_free(channel);
+  // See comment in grpc_channel_create() for why we do this.
+  grpc_shutdown();
 }
 
 void grpc_channel_destroy(grpc_channel* channel) {
