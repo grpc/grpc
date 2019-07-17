@@ -219,7 +219,6 @@ static const NSTimeInterval kDefaultChannelDestroyDelay = 30;
 }
 
 - (void)dealloc {
-
 }
 
 - (GRPCPooledChannel *)channelWithHost:(NSString *)host callOptions:(GRPCCallOptions *)callOptions {
