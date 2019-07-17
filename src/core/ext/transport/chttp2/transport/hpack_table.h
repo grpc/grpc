@@ -22,6 +22,7 @@
 #include <grpc/support/port_platform.h>
 
 #include <grpc/slice.h>
+#include "src/core/lib/gprpp/memory.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/transport/metadata.h"
 #include "src/core/lib/transport/static_metadata.h"
@@ -46,32 +47,45 @@
 #endif
 
 /* hpack decoder table */
-typedef struct {
+struct grpc_chttp2_hptbl {
+  static uint32_t entries_for_bytes(uint32_t bytes) {
+    return (bytes + GRPC_CHTTP2_HPACK_ENTRY_OVERHEAD - 1) /
+           GRPC_CHTTP2_HPACK_ENTRY_OVERHEAD;
+  }
+  static constexpr uint32_t kInitialCapacity =
+      (GRPC_CHTTP2_INITIAL_HPACK_TABLE_SIZE + GRPC_CHTTP2_HPACK_ENTRY_OVERHEAD -
+       1) /
+      GRPC_CHTTP2_HPACK_ENTRY_OVERHEAD;
+
+  grpc_chttp2_hptbl() {
+    GPR_DEBUG_ASSERT(!ents);
+    constexpr uint32_t AllocSize = sizeof(*ents) * kInitialCapacity;
+    ents = static_cast<grpc_mdelem*>(gpr_malloc(AllocSize));
+    memset(ents, 0, AllocSize);
+  }
+
   /* the first used entry in ents */
-  uint32_t first_ent;
+  uint32_t first_ent = 0;
   /* how many entries are in the table */
-  uint32_t num_ents;
+  uint32_t num_ents = 0;
   /* the amount of memory used by the table, according to the hpack algorithm */
-  uint32_t mem_used;
+  uint32_t mem_used = 0;
   /* the max memory allowed to be used by the table, according to the hpack
      algorithm */
-  uint32_t max_bytes;
+  uint32_t max_bytes = GRPC_CHTTP2_INITIAL_HPACK_TABLE_SIZE;
   /* the currently agreed size of the table, according to the hpack algorithm */
-  uint32_t current_table_bytes;
+  uint32_t current_table_bytes = GRPC_CHTTP2_INITIAL_HPACK_TABLE_SIZE;
   /* Maximum number of entries we could possibly fit in the table, given defined
      overheads */
-  uint32_t max_entries;
+  uint32_t max_entries = kInitialCapacity;
   /* Number of entries allocated in ents */
-  uint32_t cap_entries;
+  uint32_t cap_entries = kInitialCapacity;
   /* a circular buffer of headers - this is stored in the opposite order to
      what hpack specifies, in order to simplify table management a little...
      meaning lookups need to SUBTRACT from the end position */
-  grpc_mdelem* ents;
-  grpc_mdelem static_ents[GRPC_CHTTP2_LAST_STATIC_ENTRY];
-} grpc_chttp2_hptbl;
+  grpc_mdelem* ents = nullptr;
+};
 
-/* initialize a hpack table */
-void grpc_chttp2_hptbl_init(grpc_chttp2_hptbl* tbl);
 void grpc_chttp2_hptbl_destroy(grpc_chttp2_hptbl* tbl);
 void grpc_chttp2_hptbl_set_max_bytes(grpc_chttp2_hptbl* tbl,
                                      uint32_t max_bytes);
@@ -79,8 +93,20 @@ grpc_error* grpc_chttp2_hptbl_set_current_table_size(grpc_chttp2_hptbl* tbl,
                                                      uint32_t bytes);
 
 /* lookup a table entry based on its hpack index */
-grpc_mdelem grpc_chttp2_hptbl_lookup(const grpc_chttp2_hptbl* tbl,
-                                     uint32_t index);
+grpc_mdelem grpc_chttp2_hptbl_lookup_dynamic_index(const grpc_chttp2_hptbl* tbl,
+                                                   uint32_t tbl_index);
+inline grpc_mdelem grpc_chttp2_hptbl_lookup(const grpc_chttp2_hptbl* tbl,
+                                            uint32_t index) {
+  /* Static table comes first, just return an entry from it.
+     NB: This imposes the constraint that the first
+     GRPC_CHTTP2_LAST_STATIC_ENTRY entries in the core static metadata table
+     must follow the hpack standard. If that changes, we *must* not rely on
+     reading the core static metadata table here; at that point we'd need our
+     own singleton static metadata in the correct order. */
+  return index <= GRPC_CHTTP2_LAST_STATIC_ENTRY
+             ? grpc_static_mdelem_manifested[index - 1]
+             : grpc_chttp2_hptbl_lookup_dynamic_index(tbl, index);
+}
 /* add a table entry to the index */
 grpc_error* grpc_chttp2_hptbl_add(grpc_chttp2_hptbl* tbl,
                                   grpc_mdelem md) GRPC_MUST_USE_RESULT;

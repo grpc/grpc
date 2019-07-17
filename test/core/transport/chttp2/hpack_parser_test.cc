@@ -102,6 +102,7 @@ static void test_vectors(grpc_slice_split_mode mode) {
   grpc_chttp2_hpack_parser_destroy(&parser);
 
   grpc_chttp2_hpack_parser_init(&parser);
+  new (&parser.table) grpc_chttp2_hptbl();
   /* D.3.1 */
   test_vector(&parser, mode,
               "8286 8441 0f77 7777 2e65 7861 6d70 6c65"
@@ -122,6 +123,7 @@ static void test_vectors(grpc_slice_split_mode mode) {
   grpc_chttp2_hpack_parser_destroy(&parser);
 
   grpc_chttp2_hpack_parser_init(&parser);
+  new (&parser.table) grpc_chttp2_hptbl();
   /* D.4.1 */
   test_vector(&parser, mode,
               "8286 8441 8cf1 e3c2 e5f2 3a6b a0ab 90f4"
@@ -142,6 +144,7 @@ static void test_vectors(grpc_slice_split_mode mode) {
   grpc_chttp2_hpack_parser_destroy(&parser);
 
   grpc_chttp2_hpack_parser_init(&parser);
+  new (&parser.table) grpc_chttp2_hptbl();
   grpc_chttp2_hptbl_set_max_bytes(&parser.table, 256);
   grpc_chttp2_hptbl_set_current_table_size(&parser.table, 256);
   /* D.5.1 */
@@ -176,6 +179,7 @@ static void test_vectors(grpc_slice_split_mode mode) {
   grpc_chttp2_hpack_parser_destroy(&parser);
 
   grpc_chttp2_hpack_parser_init(&parser);
+  new (&parser.table) grpc_chttp2_hptbl();
   grpc_chttp2_hptbl_set_max_bytes(&parser.table, 256);
   grpc_chttp2_hptbl_set_current_table_size(&parser.table, 256);
   /* D.6.1 */
