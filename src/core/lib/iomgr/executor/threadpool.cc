@@ -72,7 +72,7 @@ size_t ThreadPool::DefaultStackSize() {
 #endif
 }
 
-void ThreadPool::AssertHasBeenShutDown() {
+void ThreadPool::AssertHasNotBeenShutDown() {
   // For debug checking purpose, using RELAXED order is sufficient.
   GPR_DEBUG_ASSERT(!shut_down_.Load(MemoryOrder::RELAXED));
 }
@@ -122,7 +122,7 @@ ThreadPool::~ThreadPool() {
 }
 
 void ThreadPool::Add(grpc_experimental_completion_queue_functor* closure) {
-  AssertHasBeenShutDown();
+  AssertHasNotBeenShutDown();
   queue_->Put(static_cast<void*>(closure));
 }
 

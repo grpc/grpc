@@ -145,7 +145,7 @@ class ThreadPool : public ThreadPoolInterface {
   // platforms is 64K.
   size_t DefaultStackSize();
   // Internal Use Only for debug checking.
-  void AssertHasBeenShutDown();
+  void AssertHasNotBeenShutDown();
 };
 
 }  // namespace grpc_core
