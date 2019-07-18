@@ -401,6 +401,7 @@
  * This helps non-glibc systems such as alpine using musl to find symbols.
  */
 #if defined(_FORTIFY_SOURCE) && _FORTIFY_SOURCE > 0
+#undef _FORTIFY_SOURCE
 #define _FORTIFY_SOURCE 0
 #endif
 #endif
