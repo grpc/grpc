@@ -115,6 +115,7 @@ namespace grpc_core {
 TraceFlag grpc_lb_glb_trace(false, "glb");
 
 const char kGrpcLbClientStatsMetadataKey[] = "grpclb_client_stats";
+const char kGrpcLbLbTokenMetadataKey[] = "lb-token";
 
 namespace {
 
@@ -623,7 +624,7 @@ GrpcLb::PickResult GrpcLb::Picker::Pick(PickArgs args) {
               parent_, this, result.connected_subchannel.get());
       abort();
     }
-    args.initial_metadata->Add("lb-token",
+    args.initial_metadata->Add(kGrpcLbLbTokenMetadataKey,
                                static_cast<char*>(arg->value.pointer.p));
   }
   return result;
