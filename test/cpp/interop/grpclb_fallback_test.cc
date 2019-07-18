@@ -18,6 +18,8 @@
 
 #include <grpc/support/port_platform.h>
 
+#include "src/core/lib/iomgr/port.h"
+
 #include <arpa/inet.h>
 #include <fcntl.h>
 #include <gflags/gflags.h>
@@ -67,6 +69,7 @@ DEFINE_string(
     "slow_fallback_after_startup : fallback after startup due to LB/backend "
     "addresses becoming blackholed;\n");
 
+#ifdef GRPC_HAVE_TCP_USER_TIMEOUT
 using grpc::testing::GrpclbRouteType;
 using grpc::testing::SimpleRequest;
 using grpc::testing::SimpleResponse;
@@ -270,3 +273,11 @@ int main(int argc, char** argv) {
     abort();
   }
 }
+#else
+int main(int argc, char** argv) {
+  grpc::testing::InitTest(&argc, &argv, true);
+  gpr_log(GPR_ERROR,
+          "This test requires TCP_USER_TIMEOUT, which isn't available");
+  abort();
+}
+#endif  // GRPC_HAVE_TCP_USER_TIMEOUT

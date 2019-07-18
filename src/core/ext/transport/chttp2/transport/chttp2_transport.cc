@@ -2016,9 +2016,10 @@ void grpc_chttp2_maybe_complete_recv_trailing_metadata(grpc_chttp2_transport* t,
        * maybe decompress the next 5 bytes in the stream. */
       if (s->stream_decompression_method ==
           GRPC_STREAM_COMPRESSION_IDENTITY_DECOMPRESS) {
-        grpc_slice_buffer_move_first(&s->frame_storage,
-                                     GRPC_HEADER_SIZE_IN_BYTES,
-                                     &s->unprocessed_incoming_frames_buffer);
+        grpc_slice_buffer_move_first(
+            &s->frame_storage,
+            GPR_MIN(s->frame_storage.length, GRPC_HEADER_SIZE_IN_BYTES),
+            &s->unprocessed_incoming_frames_buffer);
         if (s->unprocessed_incoming_frames_buffer.length > 0) {
           s->unprocessed_incoming_frames_decompressed = true;
           pending_data = true;

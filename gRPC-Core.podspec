@@ -1387,7 +1387,7 @@ Pod::Spec.new do |s|
 
   # TODO (mxyan): Instead of this hack, add include path "third_party" to C core's include path?
   s.prepare_command = <<-END_OF_COMMAND
-    find src/core/ -type f -print0 | xargs -0 -L1 sed -E -i '' 's;#include "(pb(_.*)?\\.h)";#if COCOAPODS\\\n  #include <nanopb/\\1>\\\n#else\\\n  #include "\\1"\\\n#endif;g'
-    find src/core/ -type f \\( -path '*.h' -or -path '*.cc' \\) -print0 | xargs -0 -L1 sed -E -i '' 's;#include <openssl/(.*)>;#if COCOAPODS\\\n  #include <openssl_grpc/\\1>\\\n#else\\\n  #include <openssl/\\1>\\\n#endif;g'
+    sed -E -i '' 's;#include "(pb(_.*)?\\.h)";#if COCOAPODS==1\\\n  #include <nanopb/\\1>\\\n#else\\\n  #include "\\1"\\\n#endif;g' $(find src/core -type f -print | xargs grep -H -c '#include <nanopb/' | grep 0$ | cut -d':' -f1)
+    sed -E -i '' 's;#include <openssl/(.*)>;#if COCOAPODS==1\\\n  #include <openssl_grpc/\\1>\\\n#else\\\n  #include <openssl/\\1>\\\n#endif;g' $(find src/core -type f \\( -path '*.h' -or -path '*.cc' \\) -print | xargs grep -H -c '#include <openssl_grpc/' | grep 0$ | cut -d':' -f1)
   END_OF_COMMAND
 end

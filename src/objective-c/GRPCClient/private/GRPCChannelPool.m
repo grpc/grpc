@@ -24,7 +24,6 @@
 #import "GRPCChannelPool+Test.h"
 #import "GRPCChannelPool.h"
 #import "GRPCCompletionQueue.h"
-#import "GRPCConnectivityMonitor.h"
 #import "GRPCCronetChannelFactory.h"
 #import "GRPCInsecureChannelFactory.h"
 #import "GRPCSecureChannelFactory.h"
@@ -215,18 +214,11 @@ static const NSTimeInterval kDefaultChannelDestroyDelay = 30;
 - (instancetype)initPrivate {
   if ((self = [super init])) {
     _channelPool = [NSMutableDictionary dictionary];
-
-    // Connectivity monitor is not required for CFStream
-    char *enableCFStream = getenv(kCFStreamVarName);
-    if (enableCFStream == nil || enableCFStream[0] != '1') {
-      [GRPCConnectivityMonitor registerObserver:self selector:@selector(connectivityChange:)];
-    }
   }
   return self;
 }
 
 - (void)dealloc {
-  [GRPCConnectivityMonitor unregisterObserver:self];
 }
 
 - (GRPCPooledChannel *)channelWithHost:(NSString *)host callOptions:(GRPCCallOptions *)callOptions {
@@ -265,10 +257,6 @@ static const NSTimeInterval kDefaultChannelDestroyDelay = 30;
   for (GRPCPooledChannel *pooledChannel in copiedPooledChannels) {
     [pooledChannel disconnect];
   }
-}
-
-- (void)connectivityChange:(NSNotification *)note {
-  [self disconnectAllChannels];
 }
 
 @end

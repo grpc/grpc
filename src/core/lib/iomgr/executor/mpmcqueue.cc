@@ -59,7 +59,7 @@ inline void* InfLenFIFOQueue::PopFront() {
   }
 
   Delete(head_to_remove);
-  // Singal waiting thread
+  // Signal waiting thread
   if (count_.Load(MemoryOrder::RELAXED) > 0 && num_waiters_ > 0) {
     wait_nonempty_.Signal();
   }
