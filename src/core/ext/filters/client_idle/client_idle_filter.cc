@@ -102,8 +102,6 @@ class ChannelData {
   void DecreaseCallCount();
 
  private:
-  class ConnectivityWatcherSetter;
-
   ChannelData(grpc_channel_element* elem, grpc_channel_element_args* args,
               grpc_error** error);
   ~ChannelData() = default;
