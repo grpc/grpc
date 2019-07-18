@@ -304,8 +304,7 @@ static grpc_error* update_path_for_get(grpc_call_element* elem,
   estimated_len += grpc_base64_estimate_encoded_size(
       batch->payload->send_message.send_message->length(), true /* url_safe */,
       false /* multi_line */);
-  grpc_core::ExternSlice path_with_query_slice =
-      grpc_slice_malloc_internal(estimated_len);
+  grpc_core::ExternSlice path_with_query_slice(estimated_len);
   /* memcopy individual pieces into this slice */
   char* write_ptr =
       reinterpret_cast<char*> GRPC_SLICE_START_PTR(path_with_query_slice);
@@ -560,7 +559,7 @@ static grpc_core::InternalSlice user_agent_from_args(
   tmp = gpr_strvec_flatten(&v, nullptr);
   gpr_strvec_destroy(&v);
   result =
-      grpc_slice_intern_internal(grpc_slice_from_static_string_internal(tmp));
+      grpc_core::InternedSlice(grpc_slice_from_static_string_internal(tmp));
   gpr_free(tmp);
 
   return result;

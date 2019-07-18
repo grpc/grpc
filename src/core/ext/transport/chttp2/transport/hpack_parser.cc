@@ -667,10 +667,9 @@ static grpc_core::ExternSlice take_string_extern(
     GPR_DEBUG_ASSERT(!grpc_slice_is_interned(str->data.referenced));
     s = static_cast<grpc_core::ExternSlice&>(str->data.referenced);
     str->copied = true;
-    str->data.referenced = grpc_empty_slice_internal();
+    str->data.referenced = grpc_core::ExternSlice();
   } else {
-    s = grpc_slice_from_copied_buffer_internal(str->data.copied.str,
-                                               str->data.copied.length);
+    s = grpc_core::ExternSlice(str->data.copied.str, str->data.copied.length);
   }
   str->data.copied.length = 0;
   return s;
@@ -680,12 +679,12 @@ static grpc_core::InternalSlice take_string_intern(
     grpc_chttp2_hpack_parser* p, grpc_chttp2_hpack_parser_string* str) {
   grpc_core::InternalSlice s;
   if (!str->copied) {
-    s = grpc_slice_intern_internal(str->data.referenced);
+    s = grpc_core::InternedSlice(str->data.referenced);
     grpc_slice_unref_internal(str->data.referenced);
     str->copied = true;
     str->data.referenced = grpc_empty_slice();
   } else {
-    s = grpc_slice_intern_internal(grpc_slice_from_static_buffer_internal(
+    s = grpc_core::InternedSlice(grpc_slice_from_static_buffer_internal(
         str->data.copied.str, str->data.copied.length));
   }
   str->data.copied.length = 0;

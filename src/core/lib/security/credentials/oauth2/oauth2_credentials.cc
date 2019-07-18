@@ -200,7 +200,7 @@ grpc_oauth2_token_fetcher_credentials_parse_server_response(
     if (!GRPC_MDISNULL(*token_md)) GRPC_MDELEM_UNREF(*token_md);
     *token_md = grpc_mdelem_from_slices(
         grpc_slice_from_static_string_internal(GRPC_AUTHORIZATION_METADATA_KEY),
-        grpc_slice_from_copied_string_internal(new_access_token));
+        grpc_core::ExternSlice(new_access_token));
     status = GRPC_CREDENTIALS_OK;
   }
 
@@ -722,7 +722,7 @@ grpc_access_token_credentials::grpc_access_token_credentials(
   grpc_core::ExecCtx exec_ctx;
   access_token_md_ = grpc_mdelem_from_slices(
       grpc_slice_from_static_string_internal(GRPC_AUTHORIZATION_METADATA_KEY),
-      grpc_slice_from_copied_string_internal(token_md_value));
+      grpc_core::ExternSlice(token_md_value));
   gpr_free(token_md_value);
 }
 

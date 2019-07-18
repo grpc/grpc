@@ -37,7 +37,7 @@ char* grpc_slice_to_c_string(grpc_slice slice) {
   return out;
 }
 
-grpc_slice grpc_empty_slice(void) { return grpc_empty_slice_internal(); }
+grpc_slice grpc_empty_slice(void) { return grpc_core::ExternSlice(); }
 
 grpc_slice grpc_slice_copy(grpc_slice s) {
   grpc_slice out = GRPC_SLICE_MALLOC(GRPC_SLICE_LENGTH(s));
@@ -197,25 +197,27 @@ grpc_slice grpc_slice_new_with_len(void* p, size_t len,
   return slice;
 }
 
-grpc_core::ExternSlice grpc_slice_from_copied_buffer_internal(
-    const char* source, size_t length) {
-  if (length == 0) return grpc_empty_slice_internal();
-  grpc_core::ExternSlice slice = grpc_slice_malloc_internal(length);
-  memcpy(GRPC_SLICE_START_PTR(slice), source, length);
-  return slice;
+grpc_core::ExternSlice::ExternSlice(const char* source, size_t length) {
+  if (length <= sizeof(data.inlined.bytes)) {
+    refcount = nullptr;
+    data.inlined.length = static_cast<uint8_t>(length);
+  } else {
+    HeapInit(length);
+  }
+  if (length > 0) {
+    memcpy(GRPC_SLICE_START_PTR(*this), source, length);
+  }
 }
 
-grpc_core::ExternSlice grpc_slice_from_copied_string_internal(
-    const char* source) {
-  return grpc_slice_from_copied_buffer_internal(source, strlen(source));
-}
+grpc_core::ExternSlice::ExternSlice(const char* source)
+    : grpc_core::ExternSlice::ExternSlice(source, strlen(source)) {}
 
 grpc_slice grpc_slice_from_copied_buffer(const char* source, size_t length) {
-  return grpc_slice_from_copied_buffer_internal(source, length);
+  return grpc_core::ExternSlice(source, length);
 }
 
 grpc_slice grpc_slice_from_copied_string(const char* source) {
-  return grpc_slice_from_copied_buffer_internal(source, strlen(source));
+  return grpc_core::ExternSlice(source, strlen(source));
 }
 
 grpc_slice grpc_slice_from_moved_buffer(grpc_core::UniquePtr<char> p,
@@ -266,12 +268,12 @@ class MallocRefCount {
 }  // namespace
 
 grpc_slice grpc_slice_malloc_large(size_t length) {
-  return grpc_slice_malloc_large_internal(length);
+  return grpc_core::ExternSlice(length, true);
 }
 
-grpc_core::ExternSlice grpc_slice_malloc_large_internal(size_t length) {
-  grpc_core::ExternSlice slice;
+grpc_core::ExternSlice::ExternSlice(size_t length, bool) { HeapInit(length); }
 
+void grpc_core::ExternSlice::HeapInit(size_t length) {
   /* Memory layout used by the slice created here:
 
      +-----------+----------------------------------------------------------+
@@ -290,29 +292,25 @@ grpc_core::ExternSlice grpc_slice_malloc_large_internal(size_t length) {
 
   /* Build up the slice to be returned. */
   /* The slices refcount points back to the allocated block. */
-  slice.refcount = rc->base_refcount();
+  refcount = rc->base_refcount();
   /* The data bytes are placed immediately after the refcount struct */
-  slice.data.refcounted.bytes = reinterpret_cast<uint8_t*>(rc + 1);
+  data.refcounted.bytes = reinterpret_cast<uint8_t*>(rc + 1);
   /* And the length of the block is set to the requested length */
-  slice.data.refcounted.length = length;
-  return slice;
+  data.refcounted.length = length;
 }
 
 grpc_slice grpc_slice_malloc(size_t length) {
-  return grpc_slice_malloc_internal(length);
+  return grpc_core::ExternSlice(length);
 }
 
-grpc_core::ExternSlice grpc_slice_malloc_internal(size_t length) {
-  grpc_core::ExternSlice slice;
-
-  if (length > sizeof(slice.data.inlined.bytes)) {
-    return grpc_slice_malloc_large_internal(length);
+grpc_core::ExternSlice::ExternSlice(size_t length) {
+  if (length > sizeof(data.inlined.bytes)) {
+    HeapInit(length);
   } else {
     /* small slice: just inline the data */
-    slice.refcount = nullptr;
-    slice.data.inlined.length = static_cast<uint8_t>(length);
+    refcount = nullptr;
+    data.inlined.length = static_cast<uint8_t>(length);
   }
-  return slice;
 }
 
 template <typename Slice>

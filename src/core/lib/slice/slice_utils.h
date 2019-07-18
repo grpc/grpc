@@ -21,6 +21,8 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <cstring>
+
 #include <grpc/slice.h>
 
 // Internal slice type declarations.
@@ -54,13 +56,32 @@ namespace grpc_core {
 // ----------------------------------
 //
 struct InternalSlice : public grpc_slice {};
-struct ExternSlice : public grpc_slice {};
-struct InternedSlice : public InternalSlice {};
+struct ExternSlice : public grpc_slice {
+  ExternSlice() {
+    refcount = nullptr;
+    data.inlined.length = 0;
+  }
+  explicit ExternSlice(const char* source);
+  ExternSlice(const char* source, size_t length);
+  explicit ExternSlice(size_t length);
+  explicit ExternSlice(size_t length, bool);
+
+ private:
+  void HeapInit(size_t length);
+};
 struct StaticSlice : public InternalSlice {
   StaticSlice(grpc_slice_refcount* ref, size_t length, uint8_t* bytes) {
     refcount = ref;
     data.refcounted.length = length;
     data.refcounted.bytes = bytes;
+  }
+};
+struct InternedSlice : public InternalSlice {
+  InternedSlice() = default;
+  explicit InternedSlice(const grpc_slice& slice);
+  InternedSlice& operator=(const StaticSlice& other) {
+    memcpy(this, &other, sizeof(*this));
+    return *this;
   }
 };
 
