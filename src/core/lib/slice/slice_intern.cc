@@ -152,13 +152,13 @@ grpc_slice grpc_slice_maybe_static_intern(grpc_slice slice,
 }
 
 grpc_slice grpc_slice_intern(grpc_slice slice) {
-  return grpc_slice_intern_internal(slice);
+  return grpc_core::InternedSlice(slice);
 }
 
-grpc_core::InternalSlice grpc_slice_intern_internal(const grpc_slice& slice) {
+grpc_core::InternedSlice::InternedSlice(const grpc_slice& slice) {
   GPR_TIMER_SCOPE("grpc_slice_intern", 0);
   if (GRPC_IS_STATIC_METADATA_STRING(slice)) {
-    return static_cast<const grpc_core::StaticSlice&>(slice);
+    *this = static_cast<const grpc_core::StaticSlice&>(slice);
   }
 
   uint32_t hash = grpc_slice_hash_internal(slice);
@@ -169,7 +169,7 @@ grpc_core::InternalSlice grpc_slice_intern_internal(const grpc_slice& slice) {
     if (ent.hash == hash && ent.idx < GRPC_STATIC_MDSTR_COUNT &&
         grpc_slice_eq_static_interned(slice,
                                       grpc_static_slice_table[ent.idx])) {
-      return grpc_static_slice_table[ent.idx];
+      *this = grpc_static_slice_table[ent.idx];
     }
   }
 
@@ -185,7 +185,7 @@ grpc_core::InternalSlice grpc_slice_intern_internal(const grpc_slice& slice) {
         grpc_slice_eq_static_interned(slice, materialize(s))) {
       if (s->refcnt.RefIfNonZero()) {
         gpr_mu_unlock(&shard->mu);
-        return materialize(s);
+        *this = materialize(s);
       }
     }
   }
@@ -206,7 +206,7 @@ grpc_core::InternalSlice grpc_slice_intern_internal(const grpc_slice& slice) {
   }
 
   gpr_mu_unlock(&shard->mu);
-  return materialize(s);
+  *this = materialize(s);
 }
 
 void grpc_test_only_set_slice_hash_seed(uint32_t seed) {

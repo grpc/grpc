@@ -2151,9 +2151,8 @@ void grpc_chttp2_fake_status(grpc_chttp2_transport* t, grpc_chttp2_stream* s,
         "add_status",
         grpc_chttp2_incoming_metadata_buffer_replace_or_add(
             &s->metadata_buffer[1],
-            grpc_mdelem_from_slices(
-                GRPC_MDSTR_GRPC_STATUS,
-                grpc_slice_from_copied_string_internal(status_string))));
+            grpc_mdelem_from_slices(GRPC_MDSTR_GRPC_STATUS,
+                                    grpc_core::ExternSlice(status_string))));
     if (!GRPC_SLICE_IS_EMPTY(slice)) {
       GRPC_LOG_IF_ERROR(
           "add_status_message",

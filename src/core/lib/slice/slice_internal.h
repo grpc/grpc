@@ -327,20 +327,7 @@ inline grpc_core::StaticSlice grpc_slice_from_static_string_internal(
   return grpc_slice_from_static_buffer_internal(s, strlen(s));
 }
 
-grpc_core::ExternSlice grpc_slice_from_copied_buffer_internal(
-    const char* source, size_t length);
-grpc_core::ExternSlice grpc_slice_from_copied_string_internal(
-    const char* source);
-inline grpc_core::ExternSlice grpc_empty_slice_internal(void) {
-  grpc_core::ExternSlice out;
-  out.refcount = nullptr;
-  out.data.inlined.length = 0;
-  return out;
-}
-grpc_core::ExternSlice grpc_slice_malloc_large_internal(size_t length);
-grpc_core::ExternSlice grpc_slice_malloc_internal(size_t length);
 grpc_core::ExternSlice grpc_slice_sub_no_ref_internal(
     const grpc_core::ExternSlice& source, size_t begin, size_t end);
-grpc_core::InternalSlice grpc_slice_intern_internal(const grpc_slice& slice);
 
 #endif /* GRPC_CORE_LIB_SLICE_SLICE_INTERNAL_H */

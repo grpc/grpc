@@ -395,13 +395,12 @@ void* grpc_channel_register_call(grpc_channel* channel, const char* method,
 
   rc->path = grpc_mdelem_from_slices(
       GRPC_MDSTR_PATH,
-      grpc_slice_intern_internal(grpc_slice_from_static_string(method)));
+      grpc_core::InternedSlice(grpc_slice_from_static_string(method)));
   rc->authority =
-      host
-          ? grpc_mdelem_from_slices(
-                GRPC_MDSTR_AUTHORITY,
-                grpc_slice_intern_internal(grpc_slice_from_static_string(host)))
-          : GRPC_MDNULL;
+      host ? grpc_mdelem_from_slices(
+                 GRPC_MDSTR_AUTHORITY,
+                 grpc_core::InternedSlice(grpc_slice_from_static_string(host)))
+           : GRPC_MDNULL;
   gpr_mu_lock(&channel->registered_call_mu);
   rc->next = channel->registered_calls;
   channel->registered_calls = rc;
@@ -489,5 +488,5 @@ grpc_mdelem grpc_channel_get_reffed_status_elem_slowpath(grpc_channel* channel,
   char tmp[GPR_LTOA_MIN_BUFSIZE];
   gpr_ltoa(i, tmp);
   return grpc_mdelem_from_slices(GRPC_MDSTR_GRPC_STATUS,
-                                 grpc_slice_from_copied_string_internal(tmp));
+                                 grpc_core::ExternSlice(tmp));
 }
