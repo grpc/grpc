@@ -24,4 +24,6 @@ git clone /var/local/jenkins/grpc /var/local/git/grpc
 && git submodule update --init --reference /var/local/jenkins/grpc/${name} \
 ${name}')
 cd /var/local/git/grpc
-bazel build --spawn_strategy=standalone --genrule_strategy=standalone :all test/... examples/...
+# grep lines not starting with INFO to avoid messages when using Bazel wrapper
+bazel build --spawn_strategy=standalone --genrule_strategy=standalone \
+$(bazel query 'kind(cc_.*, :all)' | grep -v "^INFO\: ") test/... examples/...
