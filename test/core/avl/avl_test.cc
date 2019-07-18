@@ -53,7 +53,10 @@ static void check_get(grpc_avl avl, int key, int value) {
 
 static void check_negget(grpc_avl avl, int key) {
   int* k = box(key);
-  GPR_ASSERT(grpc_avl_get(avl, k, nullptr) == nullptr);
+  void* value = nullptr;
+  if (grpc_avl_maybe_get(avl, k, &value, nullptr)) {
+    GPR_ASSERT(value == nullptr);
+  }
   gpr_free(k);
 }
 
@@ -195,6 +198,27 @@ static void test_remove(void) {
   grpc_avl_unref(avln, nullptr);
 }
 
+static void test_clear(void) {
+  grpc_avl avl;
+  grpc_avl avl3, avl4, avl5;
+  gpr_log(GPR_DEBUG, "test_clear");
+  avl = grpc_avl_create(&int_int_vtable);
+  avl = grpc_avl_add(avl, box(3), box(1), nullptr);
+  avl = grpc_avl_add(avl, box(4), box(2), nullptr);
+  avl = grpc_avl_add(avl, box(5), box(3), nullptr);
+
+  avl3 = remove_int(grpc_avl_ref(avl, nullptr), 3);
+  avl4 = remove_int(grpc_avl_ref(avl3, nullptr), 4);
+  avl5 = remove_int(grpc_avl_ref(avl4, nullptr), 5);
+
+  GPR_ASSERT(grpc_avl_is_empty(avl5) == true);
+
+  grpc_avl_unref(avl, nullptr);
+  grpc_avl_unref(avl3, nullptr);
+  grpc_avl_unref(avl4, nullptr);
+  grpc_avl_unref(avl5, nullptr);
+}
+
 static void test_badcase1(void) {
   grpc_avl avl;
 
@@ -293,6 +317,7 @@ int main(int argc, char* argv[]) {
   test_unbalanced();
   test_replace();
   test_remove();
+  test_clear();
   test_badcase1();
   test_stress(10);
 
