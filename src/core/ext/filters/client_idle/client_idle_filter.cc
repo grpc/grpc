@@ -45,44 +45,7 @@ TraceFlag grpc_trace_client_idle_filter(false, "client_idle_filter");
 
 namespace {
 
-/*
-  The state machine to track channel's state:
-
-                                       IDLE
-                                       |  ^
-          ------------------------------  *
-          |                               *
-          v                               *
-         BUSY ======================> LEISURE
-          ^                            |  ^
-          *  ---------------------------  *
-          *  |                            *
-          *  v                            *
-  BUSY_FROM_LEISURE ===========> LEISURE_FROM_BUSY
-          ^                            |
-          |                            |
-          ------------------------------
-
-  ---> Triggered by IncreaseCallCount()
-  ===> Triggered by DecreaseCallCount()
-  ***> Triggered by IdleTimerCallback()
-*/
-enum ChannelState {
-  // Has call: false, Timer: off, Channel IDLE: true
-  CHANNEL_STATE_IDLE,
-  // Has call: true,  Timer: off, Channel IDLE: false
-  CHANNEL_STATE_BUSY,
-  // Has call: true,  Timer: on,  Channel IDLE: false
-  CHANNEL_STATE_BUSY_FROM_LEISURE,
-  // Has call: false, Timer: on,  Channel IDLE: false
-  // In timer callback: reset the timer.
-  CHANNEL_STATE_LEISURE_FROM_BUSY,
-  // Has call: false, Timer: on,  Channel IDLE: false
-  // In timer callback: enter IDLE.
-  CHANNEL_STATE_LEISURE
-};
-
-static grpc_millis GetClientIdleTimeout(const grpc_channel_args* args) {
+grpc_millis GetClientIdleTimeout(const grpc_channel_args* args) {
   return grpc_channel_arg_get_integer(
       grpc_channel_args_find(args, GRPC_ARG_CLIENT_IDLE_TIMEOUT_MS),
       {DEFAULT_IDLE_TIMEOUT_MS, 0, INT_MAX});
@@ -114,38 +77,43 @@ class ChannelData {
 
   void StartIdleTimer() {
     GRPC_IDLE_FILTER_LOG("timer has started");
+    // Hold a ref to the channel stack for the timer callback.
     GRPC_CHANNEL_STACK_REF(channel_stack_, "max idle timer callback");
-    grpc_timer_init(&idle_timer_, last_leisure_start_time_ + max_leisure_time_,
+    grpc_timer_init(&idle_timer_, ExecCtx::Get()->Now() + client_idle_timeout_,
                     &idle_timer_callback_);
   }
 
   void EnterIdle() {
     GRPC_IDLE_FILTER_LOG("the channel will enter IDLE");
+    // Hold a ref to the channel stack for the transport op.
     GRPC_CHANNEL_STACK_REF(channel_stack_, "idle transport op");
+    // Initialize the transport op.
     memset(&idle_transport_op_, 0, sizeof(idle_transport_op_));
     idle_transport_op_.disconnect_with_error = grpc_error_set_int(
         GRPC_ERROR_CREATE_FROM_STATIC_STRING("enter idle"),
         GRPC_ERROR_INT_CHANNEL_CONNECTIVITY_STATE, GRPC_CHANNEL_IDLE);
     idle_transport_op_.on_consumed = &idle_transport_op_complete_callback_;
+    // Pass the transport op down to the channel stack.
     grpc_channel_next_op(elem_, &idle_transport_op_);
   }
 
   grpc_channel_element* elem_;
-  // Take a reference to the channel stack for the timer callback.
+  // Take a reference to the channel stack for the timer callback and the idle
+  // transport op.
   grpc_channel_stack* channel_stack_;
-  // Allowed max time a channel may have no outstanding RPCs.
-  const grpc_millis max_leisure_time_;
+  // Timeout after the last RPC finishes on the client channel at which the
+  // channel goes back into IDLE state.
+  const grpc_millis client_idle_timeout_;
 
   // Member data used to track the state of channel.
-  grpc_millis last_leisure_start_time_;
   Atomic<size_t> call_count_;
-  Atomic<ChannelState> state_;
+  Atomic<bool> has_call_;
 
   // Idle timer and its callback closure.
   grpc_timer idle_timer_;
   grpc_closure idle_timer_callback_;
 
-  // The transport op to tell the client channel to enter IDLE.
+  // The transport op telling the client channel to enter IDLE.
   grpc_transport_op idle_transport_op_;
   grpc_closure idle_transport_op_complete_callback_;
 };
@@ -166,20 +134,11 @@ void ChannelData::StartTransportOp(grpc_channel_element* elem,
                                    grpc_transport_op* op) {
   ChannelData* chand = static_cast<ChannelData*>(elem->channel_data);
   // Catch the disconnect_with_error transport op.
-  // If the op is to disconnect the channel, cancel the idle timer if it has
-  // been set.
   if (op->disconnect_with_error != nullptr) {
     // Disconnect. Cancel the timer if we set it before.
-    // IncreaseCallCount() introduces a dummy call and prevent the timer from
-    // being reset by other threads.
+    // IncreaseCallCount() introduces a dummy call. It will cancel the timer and
+    // prevent the timer from being reset by other threads.
     chand->IncreaseCallCount();
-    // If the timer has been set, cancel the timer.
-    if (chand->state_.Load(MemoryOrder::RELAXED) ==
-        CHANNEL_STATE_BUSY_FROM_LEISURE) {
-      // No synchronization issues here. grpc_timer_cancel() is valid as long as
-      // grpc_timer_init() has been called on the given timer before.
-      grpc_timer_cancel(&chand->idle_timer_);
-    }
   }
   // Pass the op to the next filter.
   grpc_channel_next_op(elem, op);
@@ -190,36 +149,10 @@ void ChannelData::IncreaseCallCount() {
   GRPC_IDLE_FILTER_LOG("call counter has increased to %" PRIuPTR,
                        previous_value + 1);
   if (previous_value == 0) {
-    // If this call is the one makes the channel busy, switch the state from
-    // LEISURE to BUSY.
-    bool finished = false;
-    // Loop here to make sure the previous decrease operation has finished.
-    ChannelState state = state_.Load(MemoryOrder::RELAXED);
-    while (!finished) {
-      switch (state) {
-        // Timer has been set. Switch to CHANNEL_STATE_BUSY_FROM_LEISURE.
-        case CHANNEL_STATE_LEISURE:
-        case CHANNEL_STATE_LEISURE_FROM_BUSY:
-          // At this point, the state may have been switched to IDLE by the
-          // idle timer callback. Therefore, use CAS operation to change the
-          // state atomically.
-          finished = state_.CompareExchangeWeak(
-              &state, CHANNEL_STATE_BUSY_FROM_LEISURE, MemoryOrder::RELAXED,
-              MemoryOrder::RELAXED);
-          break;
-        // Timer has not been set. Switch to CHANNEL_STATE_BUSY.
-        case CHANNEL_STATE_IDLE:
-          // In this case, no other threads will modify the state, so we can
-          // just store the value.
-          state_.Store(CHANNEL_STATE_BUSY, MemoryOrder::RELAXED);
-          finished = true;
-          break;
-        default:
-          // The state has not been switched to LEISURE/IDLE yet, try again.
-          state = state_.Load(MemoryOrder::RELAXED);
-          break;
-      }
-    }
+    while (has_call_.Load(MemoryOrder::ACQUIRE))
+      ;
+    grpc_timer_cancel(&idle_timer_);
+    has_call_.Store(true, MemoryOrder::RELAXED);
   }
 }
 
@@ -228,39 +161,8 @@ void ChannelData::DecreaseCallCount() {
   GRPC_IDLE_FILTER_LOG("call counter has decreased to %" PRIuPTR,
                        previous_value - 1);
   if (previous_value == 1) {
-    // If this call is the one makes the channel leisure, switch the state from
-    // BUSY to LEISURE.
-    last_leisure_start_time_ = ExecCtx::Get()->Now();
-    bool finished = false;
-    // Loop here to make sure the previous increase operation has finished.
-    ChannelState state = state_.Load(MemoryOrder::RELAXED);
-    while (!finished) {
-      switch (state) {
-        // Timer has been set. Switch to CHANNEL_STATE_LEISURE_FROM_BUSY
-        case CHANNEL_STATE_BUSY_FROM_LEISURE:
-          // At this point, the state may have been switched to BUSY by the
-          // idle timer callback. Therefore, use CAS operation to change the
-          // state atomically.
-          //
-          // Release store here to make the idle timer callback see the updated
-          // value of last_leisure_start_time_ to properly reset the idle timer.
-          finished = state_.CompareExchangeWeak(
-              &state, CHANNEL_STATE_LEISURE_FROM_BUSY, MemoryOrder::RELEASE,
-              MemoryOrder::RELAXED);
-          break;
-        // Timer has not been set. Set the timer and switch to
-        // CHANNEL_STATE_LEISURE
-        case CHANNEL_STATE_BUSY:
-          state_.Store(CHANNEL_STATE_LEISURE, MemoryOrder::RELAXED);
-          StartIdleTimer();
-          finished = true;
-          break;
-        default:
-          // The state has not been switched to BUSY yet, try again.
-          state = state_.Load(MemoryOrder::RELAXED);
-          break;
-      }
-    }
+    StartIdleTimer();
+    has_call_.Store(false, MemoryOrder::RELEASE);
   }
 }
 
@@ -268,15 +170,16 @@ ChannelData::ChannelData(grpc_channel_element* elem,
                          grpc_channel_element_args* args, grpc_error** error)
     : elem_(elem),
       channel_stack_(args->channel_stack),
-      max_leisure_time_(GetClientIdleTimeout(args->channel_args)),
-      call_count_(0),
-      state_(CHANNEL_STATE_IDLE) {
+      client_idle_timeout_(GetClientIdleTimeout(args->channel_args)),
+      call_count_(0) {
   // If the idle filter is explicitly disabled in channel args, this ctor should
   // not get called.
-  GPR_ASSERT(max_leisure_time_ != GRPC_MILLIS_INF_FUTURE);
+  GPR_ASSERT(client_idle_timeout_ != GRPC_MILLIS_INF_FUTURE);
   GRPC_IDLE_FILTER_LOG("created with max_leisure_time = %" PRId64 " ms",
-                       max_leisure_time_);
-  // Initialize idle timer callback closure.
+                       client_idle_timeout_);
+  // Initialize the idle timer without setting it.
+  grpc_timer_init_unset(&idle_timer_);
+  // Initialize the idle timer callback closure.
   GRPC_CLOSURE_INIT(&idle_timer_callback_, IdleTimerCallback, this,
                     grpc_schedule_on_exec_ctx);
   // Initialize the idle transport op.
@@ -288,43 +191,10 @@ ChannelData::ChannelData(grpc_channel_element* elem,
 void ChannelData::IdleTimerCallback(void* arg, grpc_error* error) {
   GRPC_IDLE_FILTER_LOG("timer alarms");
   ChannelData* chand = static_cast<ChannelData*>(arg);
-  if (error != GRPC_ERROR_NONE) {
-    GRPC_IDLE_FILTER_LOG("timer canceled");
-    GRPC_CHANNEL_STACK_UNREF(chand->channel_stack_, "max idle timer callback");
-    return;
+  if (error == GRPC_ERROR_NONE) {
+    chand->EnterIdle();
   }
-  bool finished = false;
-  ChannelState state = chand->state_.Load(MemoryOrder::RELAXED);
-  while (!finished) {
-    switch (state) {
-      case CHANNEL_STATE_BUSY_FROM_LEISURE:
-        finished = chand->state_.CompareExchangeWeak(&state, CHANNEL_STATE_BUSY,
-                                                     MemoryOrder::RELAXED,
-                                                     MemoryOrder::RELAXED);
-        break;
-      case CHANNEL_STATE_LEISURE_FROM_BUSY:
-        finished = chand->state_.CompareExchangeWeak(
-            &state, CHANNEL_STATE_LEISURE, MemoryOrder::ACQUIRE,
-            MemoryOrder::RELAXED);
-        if (finished) {
-          chand->StartIdleTimer();
-        }
-        break;
-      case CHANNEL_STATE_LEISURE:
-        finished = chand->state_.CompareExchangeWeak(&state, CHANNEL_STATE_IDLE,
-                                                     MemoryOrder::RELAXED,
-                                                     MemoryOrder::RELAXED);
-        if (finished) {
-          chand->EnterIdle();
-        }
-        break;
-      default:
-        // The state has not been set properly yet, try again.
-        chand->state_.Load(MemoryOrder::RELAXED);
-        break;
-    }
-  }
-  GRPC_IDLE_FILTER_LOG("timer finished");
+  GRPC_IDLE_FILTER_LOG("timer finishes");
   GRPC_CHANNEL_STACK_UNREF(chand->channel_stack_, "max idle timer callback");
 }
 

@@ -82,8 +82,7 @@ class FakeResolverResponseGenerator
   static void SetReresolutionResponseLocked(void* arg, grpc_error* error);
   static void SetFailureLocked(void* arg, grpc_error* error);
 
-  // Mutex synchronizes accesses to shared data from FakeResolver and
-  // FakeResolverResponseGenerator.
+  // Mutex protecting the members below.
   Mutex mu_;
   FakeResolver* resolver_ = nullptr;  // Do not own.
   Resolver::Result result_;
