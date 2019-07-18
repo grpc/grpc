@@ -184,7 +184,7 @@ void CFStreamHandle::Ref(const char* file, int line, const char* reason) {
 void CFStreamHandle::Unref(const char* file, int line, const char* reason) {
   if (grpc_tcp_trace.enabled()) {
     gpr_atm val = gpr_atm_no_barrier_load(&refcount_.count);
-    gpr_log(GPR_ERROR,
+    gpr_log(GPR_DEBUG,
             "CFStream Handle unref %p : %s %" PRIdPTR " -> %" PRIdPTR, this,
             reason, val, val - 1);
   }
