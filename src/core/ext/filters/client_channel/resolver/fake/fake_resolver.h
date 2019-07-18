@@ -74,16 +74,15 @@ class FakeResolverResponseGenerator
   static grpc_arg MakeChannelArg(FakeResolverResponseGenerator* generator);
 
   // Returns the response generator in \a args, or null if not found.
-  static FakeResolverResponseGenerator* GetFromArgs(
+  static RefCountedPtr<FakeResolverResponseGenerator> GetFromArgs(
       const grpc_channel_args* args);
 
  private:
-  class ResponseSetter;
-  class ResolutionResponseSetter;
-  class ReresolutionResponseSetter;
-  class FailureResponseSetter;
+  static void SetResponseLocked(void* arg, grpc_error* error);
+  static void SetReresolutionResponseLocked(void* arg, grpc_error* error);
+  static void SetFailureLocked(void* arg, grpc_error* error);
 
-  // Mutex synchronizes shared data access from FakeResolver and
+  // Mutex synchronizes accesses to shared data from FakeResolver and
   // FakeResolverResponseGenerator.
   Mutex mu_;
   FakeResolver* resolver_ = nullptr;  // Do not own.

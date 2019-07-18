@@ -62,8 +62,10 @@ class FakeResolver : public Resolver {
 
   void ShutdownLocked() override {
     shutdown_ = true;
-    response_generator_->SetFakeResolver(nullptr);
-    response_generator_.reset();
+    if (response_generator_ != nullptr) {
+      response_generator_->SetFakeResolver(nullptr);
+      response_generator_.reset();
+    }
   }
 
   void MaybeSendResultLocked();
@@ -95,7 +97,7 @@ class FakeResolver : public Resolver {
 FakeResolver::FakeResolver(ResolverArgs args)
     : Resolver(args.combiner, std::move(args.result_handler)),
       response_generator_(
-          FakeResolverResponseGenerator::GetFromArgs(args.args)->Ref()) {
+          FakeResolverResponseGenerator::GetFromArgs(args.args)) {
   GRPC_CLOSURE_INIT(&reresolution_closure_, ReturnReresolutionResult, this,
                     grpc_combiner_scheduler(combiner()));
   // Channels sharing the same subchannels may have different resolver response
@@ -168,96 +170,39 @@ void FakeResolver::ReturnReresolutionResult(void* arg, grpc_error* error) {
 // FakeResolverResponseGenerator
 //
 
-class FakeResolverResponseGenerator::ResponseSetter {
- public:
-  ResponseSetter(RefCountedPtr<FakeResolver> resolver,
-                 Resolver::Result result = Resolver::Result(),
-                 bool has_result = false, bool immediate = true)
-      : resolver_(std::move(resolver)),
-        result_(std::move(result)),
-        has_result_(has_result),
-        immediate_(immediate) {
-    GRPC_CLOSURE_SCHED(
-        GRPC_CLOSURE_INIT(&set_response_closure_, SetResponseWrapperLocked,
-                          this, grpc_combiner_scheduler(resolver_->combiner())),
-        GRPC_ERROR_NONE);
-  }
-
-  virtual ~ResponseSetter() {}
-
- protected:
-  virtual void SetResponseLocked() GRPC_ABSTRACT;
-
-  RefCountedPtr<FakeResolver> resolver_;
-  Resolver::Result result_;
-  const bool has_result_;
-  const bool immediate_;
-
- private:
-  static void SetResponseWrapperLocked(void* arg, grpc_error* error) {
-    ResponseSetter* self = static_cast<ResponseSetter*>(arg);
-    self->SetResponseLocked();
-    Delete(self);
-  }
-
-  grpc_closure set_response_closure_;
+struct SetResponseClosureArg {
+  grpc_closure set_response_closure;
+  RefCountedPtr<FakeResolver> resolver;
+  Resolver::Result result;
+  bool has_result = false;
+  bool immediate = true;
 };
 
-class FakeResolverResponseGenerator::ResolutionResponseSetter
-    : public FakeResolverResponseGenerator::ResponseSetter {
- public:
-  ResolutionResponseSetter(RefCountedPtr<FakeResolver> resolver,
-                           Resolver::Result result)
-      : ResponseSetter(std::move(resolver), std::move(result)) {}
-
- protected:
-  void SetResponseLocked() override {
-    if (resolver_->shutdown_) return;
-    resolver_->next_result_ = std::move(result_);
-    resolver_->has_next_result_ = true;
-    resolver_->MaybeSendResultLocked();
+void FakeResolverResponseGenerator::SetResponseLocked(void* arg,
+                                                      grpc_error* error) {
+  SetResponseClosureArg* closure_arg = static_cast<SetResponseClosureArg*>(arg);
+  auto& resolver = closure_arg->resolver;
+  if (!resolver->shutdown_) {
+    resolver->next_result_ = std::move(closure_arg->result);
+    resolver->has_next_result_ = true;
+    resolver->MaybeSendResultLocked();
   }
-};
-
-class FakeResolverResponseGenerator::ReresolutionResponseSetter
-    : public FakeResolverResponseGenerator::ResponseSetter {
- public:
-  ReresolutionResponseSetter(RefCountedPtr<FakeResolver> resolver,
-                             Resolver::Result result = Resolver::Result(),
-                             bool has_result = false)
-      : ResponseSetter(std::move(resolver), std::move(result), has_result) {}
-
- protected:
-  void SetResponseLocked() override {
-    if (resolver_->shutdown_) return;
-    resolver_->reresolution_result_ = std::move(result_);
-    resolver_->has_reresolution_result_ = has_result_;
-  }
-};
-
-class FakeResolverResponseGenerator::FailureResponseSetter
-    : public FakeResolverResponseGenerator::ResponseSetter {
- public:
-  FailureResponseSetter(RefCountedPtr<FakeResolver> resolver,
-                        bool immediate = true)
-      : ResponseSetter(std::move(resolver), Resolver::Result(), false,
-                       immediate) {}
-
- protected:
-  void SetResponseLocked() override {
-    if (resolver_->shutdown_) return;
-    resolver_->return_failure_ = true;
-    if (immediate_) resolver_->MaybeSendResultLocked();
-  }
-};
+  Delete(closure_arg);
+}
 
 void FakeResolverResponseGenerator::SetFakeResolver(FakeResolver* resolver) {
   MutexLock lock(&mu_);
   resolver_ = resolver;
   if (resolver_ == nullptr) return;
   if (has_result_) {
-    RefCountedPtr<FakeResolver> refcounted_resolver = resolver_->Ref();
-    New<ResolutionResponseSetter>(resolver_->Ref(), std::move(result_));
+    SetResponseClosureArg* closure_arg = New<SetResponseClosureArg>();
+    closure_arg->resolver = resolver_->Ref();
+    closure_arg->result = std::move(result_);
+    GRPC_CLOSURE_SCHED(
+        GRPC_CLOSURE_INIT(&closure_arg->set_response_closure, SetResponseLocked,
+                          closure_arg,
+                          grpc_combiner_scheduler(resolver_->combiner())),
+        GRPC_ERROR_NONE);
     has_result_ = false;
   }
 }
@@ -267,12 +212,30 @@ void FakeResolverResponseGenerator::SetResponse(Resolver::Result result) {
   if (resolver_ != nullptr) {
     RefCountedPtr<FakeResolver> resolver = resolver_->Ref();
     lock.Unlock();
-    New<ResolutionResponseSetter>(std::move(resolver), std::move(result));
+    SetResponseClosureArg* closure_arg = New<SetResponseClosureArg>();
+    closure_arg->resolver = std::move(resolver);
+    closure_arg->result = std::move(result);
+    GRPC_CLOSURE_SCHED(
+        GRPC_CLOSURE_INIT(&closure_arg->set_response_closure, SetResponseLocked,
+                          closure_arg,
+                          grpc_combiner_scheduler(resolver_->combiner())),
+        GRPC_ERROR_NONE);
   } else {
     has_result_ = true;
     result_ = std::move(result);
     lock.Unlock();
   }
+}
+
+void FakeResolverResponseGenerator::SetReresolutionResponseLocked(
+    void* arg, grpc_error* error) {
+  SetResponseClosureArg* closure_arg = static_cast<SetResponseClosureArg*>(arg);
+  auto& resolver = closure_arg->resolver;
+  if (!resolver->shutdown_) {
+    resolver->reresolution_result_ = std::move(closure_arg->result);
+    resolver->has_reresolution_result_ = closure_arg->has_result;
+  }
+  Delete(closure_arg);
 }
 
 void FakeResolverResponseGenerator::SetReresolutionResponse(
@@ -281,8 +244,15 @@ void FakeResolverResponseGenerator::SetReresolutionResponse(
   if (resolver_ != nullptr) {
     RefCountedPtr<FakeResolver> resolver = resolver_->Ref();
     lock.Unlock();
-    New<ReresolutionResponseSetter>(std::move(resolver), std::move(result),
-                                    true);
+    SetResponseClosureArg* closure_arg = New<SetResponseClosureArg>();
+    closure_arg->resolver = std::move(resolver);
+    closure_arg->result = std::move(result);
+    closure_arg->has_result = true;
+    GRPC_CLOSURE_SCHED(
+        GRPC_CLOSURE_INIT(&closure_arg->set_response_closure,
+                          SetReresolutionResponseLocked, closure_arg,
+                          grpc_combiner_scheduler(resolver_->combiner())),
+        GRPC_ERROR_NONE);
   } else {
     has_result_ = true;
     result_ = std::move(result);
@@ -295,10 +265,27 @@ void FakeResolverResponseGenerator::UnsetReresolutionResponse() {
   if (resolver_ != nullptr) {
     RefCountedPtr<FakeResolver> resolver = resolver_->Ref();
     lock.Unlock();
-    New<ReresolutionResponseSetter>(std::move(resolver));
+    SetResponseClosureArg* closure_arg = New<SetResponseClosureArg>();
+    closure_arg->resolver = std::move(resolver);
+    GRPC_CLOSURE_SCHED(
+        GRPC_CLOSURE_INIT(&closure_arg->set_response_closure,
+                          SetReresolutionResponseLocked, closure_arg,
+                          grpc_combiner_scheduler(resolver_->combiner())),
+        GRPC_ERROR_NONE);
   } else {
     lock.Unlock();
   }
+}
+
+void FakeResolverResponseGenerator::SetFailureLocked(void* arg,
+                                                     grpc_error* error) {
+  SetResponseClosureArg* closure_arg = static_cast<SetResponseClosureArg*>(arg);
+  auto& resolver = closure_arg->resolver;
+  if (!resolver->shutdown_) {
+    resolver->return_failure_ = true;
+    if (closure_arg->immediate) resolver->MaybeSendResultLocked();
+  }
+  Delete(closure_arg);
 }
 
 void FakeResolverResponseGenerator::SetFailure() {
@@ -306,7 +293,13 @@ void FakeResolverResponseGenerator::SetFailure() {
   if (resolver_ != nullptr) {
     RefCountedPtr<FakeResolver> resolver = resolver_->Ref();
     lock.Unlock();
-    New<FailureResponseSetter>(std::move(resolver));
+    SetResponseClosureArg* closure_arg = New<SetResponseClosureArg>();
+    closure_arg->resolver = std::move(resolver);
+    GRPC_CLOSURE_SCHED(
+        GRPC_CLOSURE_INIT(&closure_arg->set_response_closure, SetFailureLocked,
+                          closure_arg,
+                          grpc_combiner_scheduler(resolver_->combiner())),
+        GRPC_ERROR_NONE);
   } else {
     lock.Unlock();
   }
@@ -317,7 +310,14 @@ void FakeResolverResponseGenerator::SetFailureOnReresolution() {
   if (resolver_ != nullptr) {
     RefCountedPtr<FakeResolver> resolver = resolver_->Ref();
     lock.Unlock();
-    New<FailureResponseSetter>(std::move(resolver), false);
+    SetResponseClosureArg* closure_arg = New<SetResponseClosureArg>();
+    closure_arg->resolver = std::move(resolver);
+    closure_arg->immediate = false;
+    GRPC_CLOSURE_SCHED(
+        GRPC_CLOSURE_INIT(&closure_arg->set_response_closure, SetFailureLocked,
+                          closure_arg,
+                          grpc_combiner_scheduler(resolver_->combiner())),
+        GRPC_ERROR_NONE);
   } else {
     lock.Unlock();
   }
@@ -360,12 +360,13 @@ grpc_arg FakeResolverResponseGenerator::MakeChannelArg(
   return arg;
 }
 
-FakeResolverResponseGenerator* FakeResolverResponseGenerator::GetFromArgs(
-    const grpc_channel_args* args) {
+RefCountedPtr<FakeResolverResponseGenerator>
+FakeResolverResponseGenerator::GetFromArgs(const grpc_channel_args* args) {
   const grpc_arg* arg =
       grpc_channel_args_find(args, GRPC_ARG_FAKE_RESOLVER_RESPONSE_GENERATOR);
   if (arg == nullptr || arg->type != GRPC_ARG_POINTER) return nullptr;
-  return static_cast<FakeResolverResponseGenerator*>(arg->value.pointer.p);
+  return static_cast<FakeResolverResponseGenerator*>(arg->value.pointer.p)
+      ->Ref();
 }
 
 //
