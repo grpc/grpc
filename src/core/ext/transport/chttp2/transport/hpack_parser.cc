@@ -820,9 +820,7 @@ static grpc_mdelem get_precomputed_md_for_idx(grpc_chttp2_hpack_parser* p) {
   return md;
 }
 
-static const grpc_core::InternalSlice& get_indexed_key(
-    grpc_chttp2_hpack_parser* p) {
-  grpc_mdelem md = get_precomputed_md_for_idx(p);
+static const grpc_core::InternalSlice& get_indexed_key(grpc_mdelem md) {
   GPR_DEBUG_ASSERT(GRPC_MDELEM_IS_INTERNED(md));
   return static_cast<const grpc_core::InternalSlice&>(
       grpc_slice_ref_internal(GRPC_MDKEY(md)));
@@ -835,7 +833,7 @@ static grpc_error* finish_lithdr_incidx(grpc_chttp2_hpack_parser* p,
   GRPC_STATS_INC_HPACK_RECV_LITHDR_INCIDX();
   grpc_mdelem md = get_precomputed_md_for_idx(p);
   grpc_error* err = on_hdr<true>(
-      p, grpc_mdelem_from_slices(get_indexed_key(p),
+      p, grpc_mdelem_from_slices(get_indexed_key(md),
                                  take_string_intern(p, &p->value)));
   if (err != GRPC_ERROR_NONE) return parse_error(p, cur, end, err);
   return parse_begin(p, cur, end);
@@ -899,7 +897,7 @@ static grpc_error* finish_lithdr_notidx(grpc_chttp2_hpack_parser* p,
   GRPC_STATS_INC_HPACK_RECV_LITHDR_NOTIDX();
   grpc_mdelem md = get_precomputed_md_for_idx(p);
   grpc_error* err = on_hdr<false>(
-      p, grpc_mdelem_from_slices(get_indexed_key(p),
+      p, grpc_mdelem_from_slices(get_indexed_key(md),
                                  take_string_extern(p, &p->value)));
   if (err != GRPC_ERROR_NONE) return parse_error(p, cur, end, err);
   return parse_begin(p, cur, end);
@@ -963,7 +961,7 @@ static grpc_error* finish_lithdr_nvridx(grpc_chttp2_hpack_parser* p,
   GRPC_STATS_INC_HPACK_RECV_LITHDR_NVRIDX();
   grpc_mdelem md = get_precomputed_md_for_idx(p);
   grpc_error* err = on_hdr<false>(
-      p, grpc_mdelem_from_slices(get_indexed_key(p),
+      p, grpc_mdelem_from_slices(get_indexed_key(md),
                                  take_string_extern(p, &p->value)));
   if (err != GRPC_ERROR_NONE) return parse_error(p, cur, end, err);
   return parse_begin(p, cur, end);
