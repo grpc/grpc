@@ -104,8 +104,7 @@ static void start_transport_stream_op_batch(
     for (; client_stats_md != nullptr;
          client_stats_md = client_stats_md->next) {
       if (GRPC_SLICE_START_PTR(GRPC_MDKEY(client_stats_md->md)) ==
-              static_cast<const void*>(
-                  grpc_core::kGrpcLbClientStatsMetadataKey)) {
+          static_cast<const void*>(grpc_core::kGrpcLbClientStatsMetadataKey)) {
         break;
       }
     }

@@ -597,9 +597,9 @@ GrpcLb::PickResult GrpcLb::Picker::Pick(PickArgs args) {
       result.connected_subchannel != nullptr) {
     // Encode client stats object into metadata for use by
     // client_load_reporting filter.
-    const grpc_arg* arg = grpc_channel_args_find(
-        result.connected_subchannel->args(),
-        GRPC_ARG_GRPCLB_ADDRESS_CLIENT_STATS);
+    const grpc_arg* arg =
+        grpc_channel_args_find(result.connected_subchannel->args(),
+                               GRPC_ARG_GRPCLB_ADDRESS_CLIENT_STATS);
     if (arg != nullptr && arg->type == GRPC_ARG_POINTER &&
         arg->value.pointer.p != nullptr) {
       GrpcLbClientStats* client_stats =
