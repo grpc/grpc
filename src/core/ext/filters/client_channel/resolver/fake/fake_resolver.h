@@ -44,6 +44,9 @@ class FakeResolverResponseGenerator
  public:
   FakeResolverResponseGenerator() {}
 
+  // Set the corresponding FakeResolver to this generator.
+  void SetFakeResolver(FakeResolver* resolver);
+
   // Instructs the fake resolver associated with the response generator
   // instance to trigger a new resolution with the specified result. If the
   // resolver is not available yet, delays response setting until it is. This
@@ -75,12 +78,14 @@ class FakeResolverResponseGenerator
       const grpc_channel_args* args);
 
  private:
-  friend class FakeResolver;
+  class ResponseSetter;
+  class ResolutionResponseSetter;
+  class ReresolutionResponseSetter;
+  class FailureResponseSetter;
 
-  static void SetResponseLocked(void* arg, grpc_error* error);
-  static void SetReresolutionResponseLocked(void* arg, grpc_error* error);
-  static void SetFailureLocked(void* arg, grpc_error* error);
-
+  // Mutex synchronizes shared data access from FakeResolver and
+  // FakeResolverResponseGenerator.
+  Mutex mu_;
   FakeResolver* resolver_ = nullptr;  // Do not own.
   Resolver::Result result_;
   bool has_result_ = false;
