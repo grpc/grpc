@@ -391,8 +391,7 @@ TEST_P(ClientCallbackEnd2endTest, SimpleRpcUnderLockNested) {
     stub_->experimental_async()->Echo(
         &cli_ctx1, &request1, &response1,
         [this, &mu1, &mu2, &mu3, &cv, &done, &request1, &request2, &request3,
-         &response1, &response2, &response3, &cli_ctx1, &cli_ctx2,
-         &cli_ctx3](Status s1) {
+         &response1, &response2, &response3, &cli_ctx2, &cli_ctx3](Status s1) {
           std::lock_guard<std::mutex> l1(mu1);
           EXPECT_TRUE(s1.ok());
           EXPECT_EQ(request1.message(), response1.message());
