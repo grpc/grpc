@@ -69,7 +69,7 @@ rbe_autoconfig(
 git_repository(
     name = "build_bazel_rules_apple",
     remote = "https://github.com/bazelbuild/rules_apple.git",
-    branch = "0.17.2",
+    tag = "0.17.2",
 )
 
 

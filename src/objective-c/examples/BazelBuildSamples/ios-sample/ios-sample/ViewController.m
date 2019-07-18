@@ -20,67 +20,67 @@
 
 #import <GRPCClient/GRPCCall.h>
 #if COCOAPODS
-  #import <RemoteTest/Messages.pbobjc.h>
-  #import <RemoteTest/Test.pbrpc.h>
+#import <RemoteTest/Messages.pbobjc.h>
+#import <RemoteTest/Test.pbrpc.h>
 #else
-  #import "src/objective-c/examples/BazelBuildSamples/Messages.pbobjc.h"
-  #import "src/objective-c/examples/BazelBuildSamples/Test.pbrpc.h"
+#import "src/objective-c/examples/BazelBuildSamples/Messages.pbobjc.h"
+#import "src/objective-c/examples/BazelBuildSamples/Test.pbrpc.h"
 #endif
 
 static NSString *const kPackage = @"grpc.testing";
 static NSString *const kService = @"TestService";
 
 @interface ViewController ()<GRPCResponseHandler>
-  
-  @end
+
+@end
 
 @implementation ViewController {
   GRPCCallOptions *_options;
 }
-  
+
 - (void)viewDidLoad {
   [super viewDidLoad];
-  
+
   GRPCMutableCallOptions *options = [[GRPCMutableCallOptions alloc] init];
   // optionally modify options
   _options = options;
 }
-  
+
 - (IBAction)tapCall:(id)sender {
   GRPCProtoMethod *kUnaryCallMethod =
-  [[GRPCProtoMethod alloc] initWithPackage:kPackage service:kService method:@"UnaryCall"];
-  
+      [[GRPCProtoMethod alloc] initWithPackage:kPackage service:kService method:@"UnaryCall"];
+
   GRPCRequestOptions *requestOptions =
-  [[GRPCRequestOptions alloc] initWithHost:@"grpc-test.sandbox.googleapis.com"
-                                      path:kUnaryCallMethod.HTTPPath
-                                    safety:GRPCCallSafetyCacheableRequest];
-  
+      [[GRPCRequestOptions alloc] initWithHost:@"grpc-test.sandbox.googleapis.com"
+                                          path:kUnaryCallMethod.HTTPPath
+                                        safety:GRPCCallSafetyCacheableRequest];
+
   GRPCCall2 *call = [[GRPCCall2 alloc] initWithRequestOptions:requestOptions
                                               responseHandler:self
                                                   callOptions:_options];
-  
+
   RMTSimpleRequest *request = [RMTSimpleRequest message];
   request.responseSize = 100;
-  
+
   [call start];
   [call writeData:[request data]];
   [call finish];
 }
-  
+
 - (dispatch_queue_t)dispatchQueue {
   return dispatch_get_main_queue();
 }
-  
+
 - (void)didReceiveInitialMetadata:(NSDictionary *)initialMetadata {
   NSLog(@"Header: %@", initialMetadata);
 }
-  
+
 - (void)didReceiveData:(id)data {
   NSLog(@"Message: %@", data);
 }
-  
+
 - (void)didCloseWithTrailingMetadata:(NSDictionary *)trailingMetadata error:(NSError *)error {
   NSLog(@"Trailer: %@\nError: %@", trailingMetadata, error);
 }
-  
-  @end
+
+@end
