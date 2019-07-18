@@ -595,20 +595,11 @@ GrpcLb::PickResult GrpcLb::Picker::Pick(PickArgs args) {
   // If pick succeeded, add LB token to initial metadata.
   if (result.type == PickResult::PICK_COMPLETE &&
       result.connected_subchannel != nullptr) {
-    const grpc_arg* arg = grpc_channel_args_find(
-        result.connected_subchannel->args(), GRPC_ARG_GRPCLB_ADDRESS_LB_TOKEN);
-    if (arg == nullptr) {
-      gpr_log(GPR_ERROR,
-              "[grpclb %p picker %p] No LB token for connected subchannel %p",
-              parent_, this, result.connected_subchannel.get());
-      abort();
-    }
-    args.initial_metadata->Add("lb-token",
-                               static_cast<char*>(arg->value.pointer.p));
     // Encode client stats object into metadata for use by
     // client_load_reporting filter.
-    arg = grpc_channel_args_find(result.connected_subchannel->args(),
-                                 GRPC_ARG_GRPCLB_ADDRESS_CLIENT_STATS);
+    const grpc_arg* arg = grpc_channel_args_find(
+        result.connected_subchannel->args(),
+        GRPC_ARG_GRPCLB_ADDRESS_CLIENT_STATS);
     if (arg != nullptr && arg->type == GRPC_ARG_POINTER &&
         arg->value.pointer.p != nullptr) {
       GrpcLbClientStats* client_stats =
@@ -623,6 +614,17 @@ GrpcLb::PickResult GrpcLb::Picker::Pick(PickArgs args) {
       // Update calls-started.
       client_stats->AddCallStarted();
     }
+    // Encode the LB token in metadata.
+    arg = grpc_channel_args_find(result.connected_subchannel->args(),
+                                 GRPC_ARG_GRPCLB_ADDRESS_LB_TOKEN);
+    if (arg == nullptr) {
+      gpr_log(GPR_ERROR,
+              "[grpclb %p picker %p] No LB token for connected subchannel %p",
+              parent_, this, result.connected_subchannel.get());
+      abort();
+    }
+    args.initial_metadata->Add("lb-token",
+                               static_cast<char*>(arg->value.pointer.p));
   }
   return result;
 }
