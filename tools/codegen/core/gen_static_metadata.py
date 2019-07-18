@@ -51,7 +51,6 @@ CONFIG = [
     'grpc-trace-bin',
     'grpc-previous-rpc-attempts',
     'grpc-retry-pushback-ms',
-    'grpclb_client_stats',
     '1',
     '2',
     '3',
@@ -174,7 +173,6 @@ METADATA_BATCH_CALLOUTS = [
     'grpc-internal-stream-encoding-request',
     'user-agent',
     'host',
-    'grpclb_client_stats',
     'grpc-previous-rpc-attempts',
     'grpc-retry-pushback-ms',
 ]

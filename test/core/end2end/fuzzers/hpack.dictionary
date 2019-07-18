@@ -20,7 +20,6 @@
 "%grpc-internal-stream-encoding-request"
 "\x0Auser-agent"
 "\x04host"
-"\x13grpclb_client_stats"
 "\x1Agrpc-previous-rpc-attempts"
 "\x16grpc-retry-pushback-ms"
 "\x0Cgrpc-timeout"

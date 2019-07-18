@@ -114,6 +114,8 @@ namespace grpc_core {
 
 TraceFlag grpc_lb_glb_trace(false, "glb");
 
+const char kGrpcLbClientStatsMetadataKey[] = "grpclb_client_stats";
+
 namespace {
 
 constexpr char kGrpclb[] = "grpclb";
@@ -616,7 +618,7 @@ GrpcLb::PickResult GrpcLb::Picker::Pick(PickArgs args) {
       // a string and rely on the client_load_reporting filter to know
       // how to interpret it.
       args.initial_metadata->Add(
-          "grpclb_client_stats",
+          kGrpcLbClientStatsMetadataKey,
           StringView(reinterpret_cast<const char*>(client_stats), 0));
       // Update calls-started.
       client_stats->AddCallStarted();
@@ -1855,7 +1857,12 @@ bool maybe_add_client_load_reporting_filter(grpc_channel_stack_builder* builder,
       grpc_channel_args_find(args, GRPC_ARG_LB_POLICY_NAME);
   if (channel_arg != nullptr && channel_arg->type == GRPC_ARG_STRING &&
       strcmp(channel_arg->value.string, "grpclb") == 0) {
-    return grpc_channel_stack_builder_append_filter(
+    // TODO(roth): When we get around to re-attempting
+    // https://github.com/grpc/grpc/pull/16214, we should try to keep
+    // this filter at the very top of the subchannel stack, since that
+    // will minimize the number of metadata elements that the filter
+    // needs to iterate through to find the ClientStats object.
+    return grpc_channel_stack_builder_prepend_filter(
         builder, (const grpc_channel_filter*)arg, nullptr, nullptr);
   }
   return true;

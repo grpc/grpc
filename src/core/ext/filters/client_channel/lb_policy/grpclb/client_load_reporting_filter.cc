@@ -25,6 +25,7 @@
 #include <grpc/support/atm.h>
 #include <grpc/support/log.h>
 
+#include "src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb.h"
 #include "src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_client_stats.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/profiling/timers.h"
@@ -99,8 +100,15 @@ static void start_transport_stream_op_batch(
   if (batch->send_initial_metadata) {
     // Grab client stats object from metadata.
     grpc_linked_mdelem* client_stats_md =
-        batch->payload->send_initial_metadata.send_initial_metadata->idx.named
-            .grpclb_client_stats;
+        batch->payload->send_initial_metadata.send_initial_metadata->list.head;
+    for (; client_stats_md != nullptr;
+         client_stats_md = client_stats_md->next) {
+      if (GRPC_SLICE_START_PTR(GRPC_MDKEY(client_stats_md->md)) ==
+              static_cast<const void*>(
+                  grpc_core::kGrpcLbClientStatsMetadataKey)) {
+        break;
+      }
+    }
     if (client_stats_md != nullptr) {
       grpc_core::GrpcLbClientStats* client_stats =
           const_cast<grpc_core::GrpcLbClientStats*>(
