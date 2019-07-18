@@ -1471,7 +1471,7 @@ TEST_F(ClientLbEnd2endTest, ChannelIdleness) {
   StartServers(kNumServers);
   // Set max idle time and build the channel.
   ChannelArguments args;
-  args.SetInt(GRPC_ARG_MAX_CLIENT_IDLE_MS, 100);
+  args.SetInt(GRPC_ARG_CLIENT_IDLE_TIMEOUT_MS, 100);
   auto response_generator = BuildResolverResponseGenerator();
   auto channel = BuildChannel("", response_generator, args);
   auto stub = BuildStub(channel);

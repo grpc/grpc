@@ -1089,9 +1089,6 @@ grpc_cc_library(
     srcs = [
         "src/core/ext/filters/client_idle/client_idle_filter.cc",
     ],
-    hdrs = [
-        "src/core/ext/filters/client_idle/client_idle_filter.h",
-    ],
     language = "c++",
     deps = [
         "grpc_base",

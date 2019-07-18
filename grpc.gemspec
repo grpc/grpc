@@ -477,7 +477,6 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver.h )
   s.files += %w( src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper.h )
   s.files += %w( src/core/ext/filters/client_channel/resolver/dns/dns_resolver_selection.h )
-  s.files += %w( src/core/ext/filters/client_idle/client_idle_filter.h )
   s.files += %w( src/core/ext/filters/max_age/max_age_filter.h )
   s.files += %w( src/core/ext/filters/message_size/message_size_filter.h )
   s.files += %w( src/core/ext/filters/http/client_authority_filter.h )

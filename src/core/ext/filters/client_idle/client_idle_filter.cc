@@ -18,8 +18,6 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "src/core/ext/filters/client_idle/client_idle_filter.h"
-
 #include <limits.h>
 
 #include "src/core/lib/channel/channel_args.h"
@@ -30,7 +28,7 @@
 #include "src/core/lib/transport/http2_errors.h"
 
 // The idle filter is enabled in client channel by default.
-// To disable the idle filte, set GRPC_ARG_MAX_CLIENT_IDLE_MS to INT_MAX in
+// To disable the idle filte, set GRPC_ARG_CLIENT_IDLE_TIMEOUT_MS to INT_MAX in
 // channel args.
 #define DEFAULT_IDLE_TIMEOUT_MS (5 /*minutes*/ * 60 * 1000)
 
@@ -44,6 +42,8 @@ TraceFlag grpc_trace_client_idle_filter(false, "client_idle_filter");
       gpr_log(GPR_INFO, "(client idle filter) " format, ##__VA_ARGS__); \
     }                                                                   \
   } while (0)
+
+namespace {
 
 /*
   The state machine to track channel's state:
@@ -68,27 +68,25 @@ TraceFlag grpc_trace_client_idle_filter(false, "client_idle_filter");
   ***> Triggered by IdleTimerCallback()
 */
 enum ChannelState {
-  // Busy:         false
-  // Timer is on:  false
-  // Channel IDLE: true
+  // Has call: false, Timer: off, Channel IDLE: true
   CHANNEL_STATE_IDLE,
-  // Busy:         true
-  // Timer is on:  false
-  // Channel IDLE: false
+  // Has call: true,  Timer: off, Channel IDLE: false
   CHANNEL_STATE_BUSY,
-  // Busy:         true
-  // Timer is on:  true
-  // Channel IDLE: false
+  // Has call: true,  Timer: on,  Channel IDLE: false
   CHANNEL_STATE_BUSY_FROM_LEISURE,
-  // Busy:         false
-  // Timer is on:  true (need reset the timer)
-  // Channel IDLE: false
+  // Has call: false, Timer: on,  Channel IDLE: false
+  // In timer callback: reset the timer.
   CHANNEL_STATE_LEISURE_FROM_BUSY,
-  // Busy:         false
-  // Timer is on:  true (need not reset the timer)
-  // Channel IDLE: false
+  // Has call: false, Timer: on,  Channel IDLE: false
+  // In timer callback: enter IDLE.
   CHANNEL_STATE_LEISURE
 };
+
+static grpc_millis GetClientIdleTimeout(const grpc_channel_args* args) {
+  return grpc_channel_arg_get_integer(
+      grpc_channel_args_find(args, GRPC_ARG_CLIENT_IDLE_TIMEOUT_MS),
+      {DEFAULT_IDLE_TIMEOUT_MS, 0, INT_MAX});
+}
 
 class ChannelData {
  public:
@@ -108,10 +106,10 @@ class ChannelData {
 
   ChannelData(grpc_channel_element* elem, grpc_channel_element_args* args,
               grpc_error** error);
-  ~ChannelData();
+  ~ChannelData() = default;
 
   static void IdleTimerCallback(void* arg, grpc_error* error);
-  static void UnrefChannelStackCallback(void* arg, grpc_error* error) {
+  static void IdleTransportOpCompleteCallback(void* arg, grpc_error* error) {
     ChannelData* chand = static_cast<ChannelData*>(arg);
     GRPC_CHANNEL_STACK_UNREF(chand->channel_stack_, "idle transport op");
   }
@@ -126,19 +124,18 @@ class ChannelData {
   void EnterIdle() {
     GRPC_IDLE_FILTER_LOG("the channel will enter IDLE");
     GRPC_CHANNEL_STACK_REF(channel_stack_, "idle transport op");
+    memset(&idle_transport_op_, 0, sizeof(idle_transport_op_));
+    idle_transport_op_.disconnect_with_error = grpc_error_set_int(
+        GRPC_ERROR_CREATE_FROM_STATIC_STRING("enter idle"),
+        GRPC_ERROR_INT_CHANNEL_CONNECTIVITY_STATE, GRPC_CHANNEL_IDLE);
+    idle_transport_op_.on_consumed = &idle_transport_op_complete_callback_;
     grpc_channel_next_op(elem_, &idle_transport_op_);
-  }
-
-  grpc_millis GetIdleTimeout(const grpc_channel_args* args) const {
-    return grpc_channel_arg_get_integer(
-        grpc_channel_args_find(args, GRPC_ARG_MAX_CLIENT_IDLE_MS),
-        {DEFAULT_IDLE_TIMEOUT_MS, 0, INT_MAX});
   }
 
   grpc_channel_element* elem_;
   // Take a reference to the channel stack for the timer callback.
   grpc_channel_stack* channel_stack_;
-  // Allowed max time a channel may have no outstanding rpcs.
+  // Allowed max time a channel may have no outstanding RPCs.
   const grpc_millis max_leisure_time_;
 
   // Member data used to track the state of channel.
@@ -152,7 +149,7 @@ class ChannelData {
 
   // The transport op to tell the client channel to enter IDLE.
   grpc_transport_op idle_transport_op_;
-  grpc_closure unref_channel_stack_callback_;
+  grpc_closure idle_transport_op_complete_callback_;
 };
 
 grpc_error* ChannelData::Init(grpc_channel_element* elem,
@@ -174,11 +171,15 @@ void ChannelData::StartTransportOp(grpc_channel_element* elem,
   // If the op is to disconnect the channel, cancel the idle timer if it has
   // been set.
   if (op->disconnect_with_error != nullptr) {
-    // Disconnect.
-    // Set the state to BUSY so the timer will not be set again.
+    // Disconnect. Cancel the timer if we set it before.
+    // IncreaseCallCount() introduces a dummy call and prevent the timer from
+    // being reset by other threads.
     chand->IncreaseCallCount();
+    // If the timer has been set, cancel the timer.
     if (chand->state_.Load(MemoryOrder::RELAXED) ==
         CHANNEL_STATE_BUSY_FROM_LEISURE) {
+      // No synchronization issues here. grpc_timer_cancel() is valid as long as
+      // grpc_timer_init() has been called on the given timer before.
       grpc_timer_cancel(&chand->idle_timer_);
     }
   }
@@ -269,7 +270,7 @@ ChannelData::ChannelData(grpc_channel_element* elem,
                          grpc_channel_element_args* args, grpc_error** error)
     : elem_(elem),
       channel_stack_(args->channel_stack),
-      max_leisure_time_(GetIdleTimeout(args->channel_args)),
+      max_leisure_time_(GetClientIdleTimeout(args->channel_args)),
       call_count_(0),
       state_(CHANNEL_STATE_IDLE) {
   // If the idle filter is explicitly disabled in channel args, this ctor should
@@ -281,17 +282,9 @@ ChannelData::ChannelData(grpc_channel_element* elem,
   GRPC_CLOSURE_INIT(&idle_timer_callback_, IdleTimerCallback, this,
                     grpc_schedule_on_exec_ctx);
   // Initialize the idle transport op.
-  GRPC_CLOSURE_INIT(&unref_channel_stack_callback_, UnrefChannelStackCallback,
-                    this, grpc_schedule_on_exec_ctx);
-  memset(&idle_transport_op_, 0, sizeof(idle_transport_op_));
-  idle_transport_op_.disconnect_with_error = grpc_error_set_int(
-      GRPC_ERROR_CREATE_FROM_STATIC_STRING("enter idle"),
-      GRPC_ERROR_INT_CHANNEL_CONNECTIVITY_STATE, GRPC_CHANNEL_IDLE);
-  idle_transport_op_.on_consumed = &unref_channel_stack_callback_;
-}
-
-ChannelData::~ChannelData() {
-  GRPC_ERROR_UNREF(idle_transport_op_.disconnect_with_error);
+  GRPC_CLOSURE_INIT(&idle_transport_op_complete_callback_,
+                    IdleTransportOpCompleteCallback, this,
+                    grpc_schedule_on_exec_ctx);
 }
 
 void ChannelData::IdleTimerCallback(void* arg, grpc_error* error) {
@@ -360,11 +353,6 @@ void CallData::Destroy(grpc_call_element* elem,
   chand->DecreaseCallCount();
 }
 
-}  // namespace grpc_core
-
-using grpc_core::CallData;
-using grpc_core::ChannelData;
-
 const grpc_channel_filter grpc_client_idle_filter = {
     grpc_call_next_op,
     ChannelData::StartTransportOp,
@@ -382,11 +370,8 @@ static bool maybe_add_client_idle_filter(grpc_channel_stack_builder* builder,
                                          void* arg) {
   const grpc_channel_args* channel_args =
       grpc_channel_stack_builder_get_channel_arguments(builder);
-  bool enable =
-      grpc_channel_arg_get_integer(
-          grpc_channel_args_find(channel_args, GRPC_ARG_MAX_CLIENT_IDLE_MS),
-          {DEFAULT_IDLE_TIMEOUT_MS, 0, INT_MAX}) != INT_MAX;
-  if (enable) {
+  if (!grpc_channel_args_want_minimal_stack(channel_args) &&
+      GetClientIdleTimeout(channel_args) != INT_MAX) {
     return grpc_channel_stack_builder_prepend_filter(
         builder, &grpc_client_idle_filter, nullptr, nullptr);
   } else {
@@ -394,10 +379,13 @@ static bool maybe_add_client_idle_filter(grpc_channel_stack_builder* builder,
   }
 }
 
+}  // namespace
+}  // namespace grpc_core
+
 void grpc_client_idle_filter_init(void) {
-  grpc_channel_init_register_stage(GRPC_CLIENT_CHANNEL,
-                                   GRPC_CHANNEL_INIT_BUILTIN_PRIORITY,
-                                   maybe_add_client_idle_filter, nullptr);
+  grpc_channel_init_register_stage(
+      GRPC_CLIENT_CHANNEL, GRPC_CHANNEL_INIT_BUILTIN_PRIORITY,
+      grpc_core::maybe_add_client_idle_filter, nullptr);
 }
 
 void grpc_client_idle_filter_shutdown(void) {}

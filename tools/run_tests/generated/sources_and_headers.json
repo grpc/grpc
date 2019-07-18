@@ -9075,15 +9075,12 @@
       "gpr", 
       "grpc_base"
     ], 
-    "headers": [
-      "src/core/ext/filters/client_idle/client_idle_filter.h"
-    ], 
+    "headers": [], 
     "is_filegroup": true, 
     "language": "c", 
     "name": "grpc_client_idle_filter", 
     "src": [
-      "src/core/ext/filters/client_idle/client_idle_filter.cc", 
-      "src/core/ext/filters/client_idle/client_idle_filter.h"
+      "src/core/ext/filters/client_idle/client_idle_filter.cc"
     ], 
     "third_party": false, 
     "type": "filegroup"

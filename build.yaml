@@ -633,8 +633,6 @@ filegroups:
   - grpc_deadline_filter
   - health_proto
 - name: grpc_client_idle_filter
-  headers:
-  - src/core/ext/filters/client_idle/client_idle_filter.h
   src:
   - src/core/ext/filters/client_idle/client_idle_filter.cc
   plugin: grpc_client_idle_filter

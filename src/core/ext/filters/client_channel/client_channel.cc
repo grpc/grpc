@@ -726,7 +726,7 @@ class ChannelData::ConnectivityStateAndPickerSetter {
       ChannelData* chand, grpc_connectivity_state state, const char* reason,
       UniquePtr<LoadBalancingPolicy::SubchannelPicker> picker)
       : chand_(chand), picker_(std::move(picker)) {
-    // Clean the control plane when enter IDLE, while holding control plane
+    // Clean the control plane when entering IDLE, while holding control plane
     // combiner.
     if (picker_ == nullptr) {
       chand->health_check_service_name_.reset();
@@ -1525,6 +1525,7 @@ void ChannelData::StartTransportOpLocked(void* arg, grpc_error* ignored) {
       // Enter IDLE state.
       New<ConnectivityStateAndPickerSetter>(chand, GRPC_CHANNEL_IDLE,
                                             "channel entering IDLE", nullptr);
+      GRPC_ERROR_UNREF(op->disconnect_with_error);
     } else {
       // Disconnect.
       grpc_error* error = GRPC_ERROR_NONE;
@@ -1532,7 +1533,7 @@ void ChannelData::StartTransportOpLocked(void* arg, grpc_error* ignored) {
           &error, op->disconnect_with_error, MemoryOrder::ACQ_REL,
           MemoryOrder::ACQUIRE));
       New<ConnectivityStateAndPickerSetter>(
-          chand, GRPC_CHANNEL_TRANSIENT_FAILURE, "shutdown from API",
+          chand, GRPC_CHANNEL_SHUTDOWN, "shutdown from API",
           UniquePtr<LoadBalancingPolicy::SubchannelPicker>(
               New<LoadBalancingPolicy::TransientFailurePicker>(
                   GRPC_ERROR_REF(op->disconnect_with_error))));

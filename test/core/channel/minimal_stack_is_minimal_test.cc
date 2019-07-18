@@ -66,9 +66,6 @@ int main(int argc, char** argv) {
   minimal_stack_arg[0].type = GRPC_ARG_INTEGER;
   minimal_stack_arg[0].key = const_cast<char*>(GRPC_ARG_MINIMAL_STACK);
   minimal_stack_arg[0].value.integer = 1;
-  minimal_stack_arg[1].type = GRPC_ARG_INTEGER;
-  minimal_stack_arg[1].key = const_cast<char*>(GRPC_ARG_MAX_CLIENT_IDLE_MS);
-  minimal_stack_arg[1].value.integer = INT_MAX;
   grpc_channel_args minimal_stack_args = {2, minimal_stack_arg};
   errors +=
       CHECK_STACK("unknown", &minimal_stack_args, GRPC_CLIENT_DIRECT_CHANNEL,
