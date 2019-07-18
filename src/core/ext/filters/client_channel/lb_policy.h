@@ -92,7 +92,7 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
     GRPC_ABSTRACT_BASE_CLASS
   };
 
-  /// Interface for access metadata.
+  /// Interface for accessing metadata.
   class MetadataInterface {
    public:
     // Implementations whose iterators fit in intptr_t may internally

@@ -447,7 +447,9 @@ UniquePtr<char> GrpcLb::Serverlist::AsText() const {
 }
 
 // vtables for channel args for LB token and client stats.
-void* lb_token_copy(void* token) { return (void*)gpr_strdup((char*)token); }
+void* lb_token_copy(void* token) {
+  return gpr_strdup(static_cast<char*>(token));
+}
 void lb_token_destroy(void* token) { gpr_free(token); }
 void* client_stats_copy(void* p) {
   GrpcLbClientStats* client_stats = static_cast<GrpcLbClientStats*>(p);
