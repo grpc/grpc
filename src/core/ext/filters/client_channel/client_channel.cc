@@ -341,12 +341,12 @@ class CallData {
           reinterpret_cast<grpc_linked_mdelem*>(*it)->next);
     }
     StringView Key(Iterator it) const override {
-      return StringView(GRPC_MDKEY(
-          reinterpret_cast<grpc_linked_mdelem*>(it)->md));
+      return StringView(
+          GRPC_MDKEY(reinterpret_cast<grpc_linked_mdelem*>(it)->md));
     }
     StringView Value(Iterator it) const override {
-      return StringView(GRPC_MDVALUE(
-          reinterpret_cast<grpc_linked_mdelem*>(it)->md));
+      return StringView(
+          GRPC_MDVALUE(reinterpret_cast<grpc_linked_mdelem*>(it)->md));
     }
 
     void Erase(Iterator* it) override {
