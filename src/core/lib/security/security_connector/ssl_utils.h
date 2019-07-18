@@ -28,6 +28,7 @@
 
 #include "src/core/lib/gprpp/global_config.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
+#include "src/core/lib/gprpp/string_view.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/security/security_connector/security_connector.h"
 #include "src/core/tsi/ssl_transport_security.h"
@@ -46,16 +47,17 @@ GPR_GLOBAL_CONFIG_DECLARE_BOOL(grpc_not_use_system_ssl_roots);
 grpc_error* grpc_ssl_check_alpn(const tsi_peer* peer);
 
 /* Check peer name information returned from SSL handshakes. */
-grpc_error* grpc_ssl_check_peer_name(const char* peer_name,
+grpc_error* grpc_ssl_check_peer_name(grpc_core::StringView peer_name,
                                      const tsi_peer* peer);
 /* Compare targer_name information extracted from SSL security connectors. */
-bool grpc_ssl_cmp_target_name(const char* target_name,
-                              const char* other_target_name,
-                              const char* overridden_target_name,
-                              const char* other_overridden_target_name);
+int grpc_ssl_cmp_target_name(
+    grpc_core::StringView target_name, grpc_core::StringView other_target_name,
+    grpc_core::StringView overridden_target_name,
+    grpc_core::StringView other_overridden_target_name);
 /* Check the host that will be set for a call is acceptable.*/
-bool grpc_ssl_check_call_host(const char* host, const char* target_name,
-                              const char* overridden_target_name,
+bool grpc_ssl_check_call_host(grpc_core::StringView host,
+                              grpc_core::StringView target_name,
+                              grpc_core::StringView overridden_target_name,
                               grpc_auth_context* auth_context,
                               grpc_closure* on_call_host_checked,
                               grpc_error** error);
@@ -89,7 +91,8 @@ grpc_core::RefCountedPtr<grpc_auth_context> grpc_ssl_peer_to_auth_context(
 tsi_peer grpc_shallow_peer_from_ssl_auth_context(
     const grpc_auth_context* auth_context);
 void grpc_shallow_peer_destruct(tsi_peer* peer);
-int grpc_ssl_host_matches_name(const tsi_peer* peer, const char* peer_name);
+int grpc_ssl_host_matches_name(const tsi_peer* peer,
+                               grpc_core::StringView peer_name);
 
 /* --- Default SSL Root Store. --- */
 namespace grpc_core {

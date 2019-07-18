@@ -265,8 +265,8 @@ static void test_channel_args_set_compression_algorithm(void) {
   grpc_core::ExecCtx exec_ctx;
   grpc_channel_args* ch_args;
 
-  ch_args =
-      grpc_channel_args_set_compression_algorithm(nullptr, GRPC_COMPRESS_GZIP);
+  ch_args = grpc_channel_args_set_channel_default_compression_algorithm(
+      nullptr, GRPC_COMPRESS_GZIP);
   GPR_ASSERT(ch_args->num_args == 1);
   GPR_ASSERT(strcmp(ch_args->args[0].key,
                     GRPC_COMPRESSION_CHANNEL_DEFAULT_ALGORITHM) == 0);

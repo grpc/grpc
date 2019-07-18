@@ -72,36 +72,21 @@ class SubchannelCall;
 
 class ConnectedSubchannel : public ConnectedSubchannelInterface {
  public:
-  struct CallArgs {
-    grpc_polling_entity* pollent;
-    grpc_slice path;
-    gpr_timespec start_time;
-    grpc_millis deadline;
-    Arena* arena;
-    grpc_call_context_element* context;
-    CallCombiner* call_combiner;
-    size_t parent_data_size;
-  };
-
   ConnectedSubchannel(
       grpc_channel_stack* channel_stack, const grpc_channel_args* args,
-      RefCountedPtr<channelz::SubchannelNode> channelz_subchannel,
-      intptr_t socket_uuid);
+      RefCountedPtr<channelz::SubchannelNode> channelz_subchannel);
   ~ConnectedSubchannel();
 
   void NotifyOnStateChange(grpc_pollset_set* interested_parties,
                            grpc_connectivity_state* state,
                            grpc_closure* closure);
   void Ping(grpc_closure* on_initiate, grpc_closure* on_ack);
-  RefCountedPtr<SubchannelCall> CreateCall(const CallArgs& args,
-                                           grpc_error** error);
 
   grpc_channel_stack* channel_stack() const { return channel_stack_; }
   const grpc_channel_args* args() const override { return args_; }
   channelz::SubchannelNode* channelz_subchannel() const {
     return channelz_subchannel_.get();
   }
-  intptr_t socket_uuid() const { return socket_uuid_; }
 
   size_t GetInitialCallSizeEstimate(size_t parent_data_size) const;
 
@@ -111,17 +96,23 @@ class ConnectedSubchannel : public ConnectedSubchannelInterface {
   // ref counted pointer to the channelz node in this connected subchannel's
   // owning subchannel.
   RefCountedPtr<channelz::SubchannelNode> channelz_subchannel_;
-  // uuid of this subchannel's socket. 0 if this subchannel is not connected.
-  const intptr_t socket_uuid_;
 };
 
 // Implements the interface of RefCounted<>.
 class SubchannelCall {
  public:
-  SubchannelCall(RefCountedPtr<ConnectedSubchannel> connected_subchannel,
-                 const ConnectedSubchannel::CallArgs& args)
-      : connected_subchannel_(std::move(connected_subchannel)),
-        deadline_(args.deadline) {}
+  struct Args {
+    RefCountedPtr<ConnectedSubchannel> connected_subchannel;
+    grpc_polling_entity* pollent;
+    grpc_slice path;
+    gpr_timespec start_time;
+    grpc_millis deadline;
+    Arena* arena;
+    grpc_call_context_element* context;
+    CallCombiner* call_combiner;
+    size_t parent_data_size;
+  };
+  static RefCountedPtr<SubchannelCall> Create(Args args, grpc_error** error);
 
   // Continues processing a transport stream op batch.
   void StartTransportStreamOpBatch(grpc_transport_stream_op_batch* batch);
@@ -153,6 +144,8 @@ class SubchannelCall {
   // Allow RefCountedPtr<> to access IncrementRefCount().
   template <typename T>
   friend class RefCountedPtr;
+
+  SubchannelCall(Args args, grpc_error** error);
 
   // If channelz is enabled, intercepts recv_trailing so that we may check the
   // status and associate it to a subchannel.
@@ -199,8 +192,6 @@ class Subchannel {
   // non-zero. If the strong refcount is zero, does not alter the refcount and
   // returns null.
   Subchannel* RefFromWeakRef(GRPC_SUBCHANNEL_REF_EXTRA_ARGS);
-
-  intptr_t GetChildSocketUuid();
 
   // Gets the string representing the subchannel address.
   // Caller doesn't take ownership.

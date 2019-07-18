@@ -99,9 +99,8 @@ class SliceBufferByteStream : public ByteStream {
   void Shutdown(grpc_error* error) override;
 
  private:
-  grpc_slice_buffer backing_buffer_;
-  size_t cursor_ = 0;
   grpc_error* shutdown_error_ = GRPC_ERROR_NONE;
+  grpc_slice_buffer backing_buffer_;
 };
 
 //

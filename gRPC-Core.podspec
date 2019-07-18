@@ -191,7 +191,6 @@ Pod::Spec.new do |s|
     ss.source_files = 'src/core/lib/gpr/alloc.h',
                       'src/core/lib/gpr/arena.h',
                       'src/core/lib/gpr/env.h',
-                      'src/core/lib/gpr/host_port.h',
                       'src/core/lib/gpr/mpscq.h',
                       'src/core/lib/gpr/murmur_hash.h',
                       'src/core/lib/gpr/spinlock.h',
@@ -212,6 +211,7 @@ Pod::Spec.new do |s|
                       'src/core/lib/gprpp/global_config_custom.h',
                       'src/core/lib/gprpp/global_config_env.h',
                       'src/core/lib/gprpp/global_config_generic.h',
+                      'src/core/lib/gprpp/host_port.h',
                       'src/core/lib/gprpp/manual_constructor.h',
                       'src/core/lib/gprpp/map.h',
                       'src/core/lib/gprpp/memory.h',
@@ -228,7 +228,6 @@ Pod::Spec.new do |s|
                       'src/core/lib/gpr/env_linux.cc',
                       'src/core/lib/gpr/env_posix.cc',
                       'src/core/lib/gpr/env_windows.cc',
-                      'src/core/lib/gpr/host_port.cc',
                       'src/core/lib/gpr/log.cc',
                       'src/core/lib/gpr/log_android.cc',
                       'src/core/lib/gpr/log_linux.cc',
@@ -255,6 +254,7 @@ Pod::Spec.new do |s|
                       'src/core/lib/gprpp/arena.cc',
                       'src/core/lib/gprpp/fork.cc',
                       'src/core/lib/gprpp/global_config_env.cc',
+                      'src/core/lib/gprpp/host_port.cc',
                       'src/core/lib/gprpp/thd_posix.cc',
                       'src/core/lib/gprpp/thd_windows.cc',
                       'src/core/lib/profiling/basic_timers.cc',
@@ -414,6 +414,7 @@ Pod::Spec.new do |s|
                       'src/core/lib/gprpp/orphanable.h',
                       'src/core/lib/gprpp/ref_counted.h',
                       'src/core/lib/gprpp/ref_counted_ptr.h',
+                      'src/core/lib/gprpp/string_view.h',
                       'src/core/lib/http/format_request.h',
                       'src/core/lib/http/httpcli.h',
                       'src/core/lib/http/parser.h',
@@ -436,6 +437,7 @@ Pod::Spec.new do |s|
                       'src/core/lib/iomgr/ev_posix.h',
                       'src/core/lib/iomgr/exec_ctx.h',
                       'src/core/lib/iomgr/executor.h',
+                      'src/core/lib/iomgr/executor/mpmcqueue.h',
                       'src/core/lib/iomgr/gethostname.h',
                       'src/core/lib/iomgr/grpc_if_nametoindex.h',
                       'src/core/lib/iomgr/internal_errqueue.h',
@@ -589,6 +591,7 @@ Pod::Spec.new do |s|
                       'src/core/lib/iomgr/ev_windows.cc',
                       'src/core/lib/iomgr/exec_ctx.cc',
                       'src/core/lib/iomgr/executor.cc',
+                      'src/core/lib/iomgr/executor/mpmcqueue.cc',
                       'src/core/lib/iomgr/fork_posix.cc',
                       'src/core/lib/iomgr/fork_windows.cc',
                       'src/core/lib/iomgr/gethostname_fallback.cc',
@@ -884,7 +887,6 @@ Pod::Spec.new do |s|
     ss.private_header_files = 'src/core/lib/gpr/alloc.h',
                               'src/core/lib/gpr/arena.h',
                               'src/core/lib/gpr/env.h',
-                              'src/core/lib/gpr/host_port.h',
                               'src/core/lib/gpr/mpscq.h',
                               'src/core/lib/gpr/murmur_hash.h',
                               'src/core/lib/gpr/spinlock.h',
@@ -905,6 +907,7 @@ Pod::Spec.new do |s|
                               'src/core/lib/gprpp/global_config_custom.h',
                               'src/core/lib/gprpp/global_config_env.h',
                               'src/core/lib/gprpp/global_config_generic.h',
+                              'src/core/lib/gprpp/host_port.h',
                               'src/core/lib/gprpp/manual_constructor.h',
                               'src/core/lib/gprpp/map.h',
                               'src/core/lib/gprpp/memory.h',
@@ -1067,6 +1070,7 @@ Pod::Spec.new do |s|
                               'src/core/lib/gprpp/orphanable.h',
                               'src/core/lib/gprpp/ref_counted.h',
                               'src/core/lib/gprpp/ref_counted_ptr.h',
+                              'src/core/lib/gprpp/string_view.h',
                               'src/core/lib/http/format_request.h',
                               'src/core/lib/http/httpcli.h',
                               'src/core/lib/http/parser.h',
@@ -1089,6 +1093,7 @@ Pod::Spec.new do |s|
                               'src/core/lib/iomgr/ev_posix.h',
                               'src/core/lib/iomgr/exec_ctx.h',
                               'src/core/lib/iomgr/executor.h',
+                              'src/core/lib/iomgr/executor/mpmcqueue.h',
                               'src/core/lib/iomgr/gethostname.h',
                               'src/core/lib/iomgr/grpc_if_nametoindex.h',
                               'src/core/lib/iomgr/internal_errqueue.h',
@@ -1382,8 +1387,7 @@ Pod::Spec.new do |s|
 
   # TODO (mxyan): Instead of this hack, add include path "third_party" to C core's include path?
   s.prepare_command = <<-END_OF_COMMAND
-    find src/core/ -type f ! -path '*.grpc_back' -print0 | xargs -0 -L1 sed -E -i'.grpc_back' 's;#include "(pb(_.*)?\\.h)";#include <nanopb/\\1>;g'
-    find src/core/ -type f -path '*.grpc_back' -print0 | xargs -0 rm
-    find src/core/ -type f \\( -path '*.h' -or -path '*.cc' \\) -print0 | xargs -0 -L1 sed -E -i'.grpc_back' 's;#include <openssl/;#include <openssl_grpc/;g'
+    sed -E -i '' 's;#include "(pb(_.*)?\\.h)";#if COCOAPODS==1\\\n  #include <nanopb/\\1>\\\n#else\\\n  #include "\\1"\\\n#endif;g' $(find src/core -type f -print | xargs grep -H -c '#include <nanopb/' | grep 0$ | cut -d':' -f1)
+    sed -E -i '' 's;#include <openssl/(.*)>;#if COCOAPODS==1\\\n  #include <openssl_grpc/\\1>\\\n#else\\\n  #include <openssl/\\1>\\\n#endif;g' $(find src/core -type f \\( -path '*.h' -or -path '*.cc' \\) -print | xargs grep -H -c '#include <openssl_grpc/' | grep 0$ | cut -d':' -f1)
   END_OF_COMMAND
 end

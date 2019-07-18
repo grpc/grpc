@@ -90,12 +90,12 @@ grpc_iocp_work_status grpc_iocp_work(grpc_millis deadline) {
     abort();
   }
   if (socket->shutdown_called) {
-    info->bytes_transfered = 0;
+    info->bytes_transferred = 0;
     info->wsa_error = WSA_OPERATION_ABORTED;
   } else {
     success = WSAGetOverlappedResult(socket->socket, &info->overlapped, &bytes,
                                      FALSE, &flags);
-    info->bytes_transfered = bytes;
+    info->bytes_transferred = bytes;
     info->wsa_error = success ? 0 : WSAGetLastError();
   }
   GPR_ASSERT(overlapped == &info->overlapped);

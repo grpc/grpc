@@ -44,12 +44,12 @@ cdef extern from "src/core/lib/iomgr/resolve_address_custom.h":
     pass
 
   struct grpc_custom_resolver_vtable:
-    grpc_error* (*resolve)(char* host, char* port, grpc_resolved_addresses** res) except *
-    void (*resolve_async)(grpc_custom_resolver* resolver, char* host, char* port) except *
+    grpc_error* (*resolve)(char* host, char* port, grpc_resolved_addresses** res);
+    void (*resolve_async)(grpc_custom_resolver* resolver, char* host, char* port);
 
   void grpc_custom_resolve_callback(grpc_custom_resolver* resolver,
                                     grpc_resolved_addresses* result,
-                                    grpc_error* error)
+                                    grpc_error* error);
 
 cdef extern from "src/core/lib/iomgr/tcp_custom.h":
   struct grpc_custom_socket:
@@ -67,25 +67,25 @@ cdef extern from "src/core/lib/iomgr/tcp_custom.h":
   ctypedef void (*grpc_custom_close_callback)(grpc_custom_socket* socket)
 
   struct grpc_socket_vtable:
-      grpc_error* (*init)(grpc_custom_socket* socket, int domain) except *
+      grpc_error* (*init)(grpc_custom_socket* socket, int domain);
       void (*connect)(grpc_custom_socket* socket, const grpc_sockaddr* addr,
-                      size_t len, grpc_custom_connect_callback cb) except *
-      void (*destroy)(grpc_custom_socket* socket) except *
-      void (*shutdown)(grpc_custom_socket* socket) except *
-      void (*close)(grpc_custom_socket* socket, grpc_custom_close_callback cb) except *
+                      size_t len, grpc_custom_connect_callback cb);
+      void (*destroy)(grpc_custom_socket* socket);
+      void (*shutdown)(grpc_custom_socket* socket);
+      void (*close)(grpc_custom_socket* socket, grpc_custom_close_callback cb);
       void (*write)(grpc_custom_socket* socket, grpc_slice_buffer* slices,
-                    grpc_custom_write_callback cb) except *
+                    grpc_custom_write_callback cb);
       void (*read)(grpc_custom_socket* socket, char* buffer, size_t length,
-                   grpc_custom_read_callback cb) except *
+                   grpc_custom_read_callback cb);
       grpc_error* (*getpeername)(grpc_custom_socket* socket,
-                                 const grpc_sockaddr* addr, int* len) except *
+                                 const grpc_sockaddr* addr, int* len);
       grpc_error* (*getsockname)(grpc_custom_socket* socket,
-                             const grpc_sockaddr* addr, int* len) except *
+                             const grpc_sockaddr* addr, int* len);
       grpc_error* (*bind)(grpc_custom_socket* socket, const grpc_sockaddr* addr,
-                          size_t len, int flags) except *
-      grpc_error* (*listen)(grpc_custom_socket* socket) except *
+                          size_t len, int flags);
+      grpc_error* (*listen)(grpc_custom_socket* socket);
       void (*accept)(grpc_custom_socket* socket, grpc_custom_socket* client,
-                     grpc_custom_accept_callback cb) except *
+                     grpc_custom_accept_callback cb);
 
 cdef extern from "src/core/lib/iomgr/timer_custom.h":
   struct grpc_custom_timer:
@@ -94,17 +94,17 @@ cdef extern from "src/core/lib/iomgr/timer_custom.h":
      # We don't care about the rest of the fields
 
   struct grpc_custom_timer_vtable:
-    void (*start)(grpc_custom_timer* t) except *
-    void (*stop)(grpc_custom_timer* t) except *
+    void (*start)(grpc_custom_timer* t);
+    void (*stop)(grpc_custom_timer* t);
 
-  void grpc_custom_timer_callback(grpc_custom_timer* t, grpc_error* error)
+  void grpc_custom_timer_callback(grpc_custom_timer* t, grpc_error* error);
 
 cdef extern from "src/core/lib/iomgr/pollset_custom.h":
   struct grpc_custom_poller_vtable:
-    void (*init)() except *
-    void (*poll)(size_t timeout_ms) except *
-    void (*kick)() except *
-    void (*shutdown)() except *
+    void (*init)()
+    void (*poll)(size_t timeout_ms)
+    void (*kick)()
+    void (*shutdown)()
 
 cdef extern from "src/core/lib/iomgr/iomgr_custom.h":
   void grpc_custom_iomgr_init(grpc_socket_vtable* socket,

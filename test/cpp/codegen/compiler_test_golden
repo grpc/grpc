@@ -31,10 +31,13 @@
 #include <grpcpp/impl/codegen/async_stream.h>
 #include <grpcpp/impl/codegen/async_unary_call.h>
 #include <grpcpp/impl/codegen/client_callback.h>
+#include <grpcpp/impl/codegen/client_context.h>
+#include <grpcpp/impl/codegen/completion_queue.h>
 #include <grpcpp/impl/codegen/method_handler_impl.h>
 #include <grpcpp/impl/codegen/proto_utils.h>
 #include <grpcpp/impl/codegen/rpc_method.h>
 #include <grpcpp/impl/codegen/server_callback.h>
+#include <grpcpp/impl/codegen/server_context.h>
 #include <grpcpp/impl/codegen/service_type.h>
 #include <grpcpp/impl/codegen/status.h>
 #include <grpcpp/impl/codegen/stub_options.h>
@@ -334,7 +337,7 @@ class ServiceA final {
    public:
     ExperimentalWithCallbackMethod_MethodA1() {
       ::grpc::Service::experimental().MarkMethodCallback(0,
-        new ::grpc::internal::CallbackUnaryHandler< ::grpc::testing::Request, ::grpc::testing::Response>(
+        new ::grpc_impl::internal::CallbackUnaryHandler< ::grpc::testing::Request, ::grpc::testing::Response>(
           [this](::grpc::ServerContext* context,
                  const ::grpc::testing::Request* request,
                  ::grpc::testing::Response* response,
@@ -344,7 +347,7 @@ class ServiceA final {
     }
     void SetMessageAllocatorFor_MethodA1(
         ::grpc::experimental::MessageAllocator< ::grpc::testing::Request, ::grpc::testing::Response>* allocator) {
-      static_cast<::grpc::internal::CallbackUnaryHandler< ::grpc::testing::Request, ::grpc::testing::Response>*>(
+      static_cast<::grpc_impl::internal::CallbackUnaryHandler< ::grpc::testing::Request, ::grpc::testing::Response>*>(
           ::grpc::Service::experimental().GetHandler(0))
               ->SetMessageAllocator(allocator);
     }
@@ -365,7 +368,7 @@ class ServiceA final {
    public:
     ExperimentalWithCallbackMethod_MethodA2() {
       ::grpc::Service::experimental().MarkMethodCallback(1,
-        new ::grpc::internal::CallbackClientStreamingHandler< ::grpc::testing::Request, ::grpc::testing::Response>(
+        new ::grpc_impl::internal::CallbackClientStreamingHandler< ::grpc::testing::Request, ::grpc::testing::Response>(
           [this] { return this->MethodA2(); }));
     }
     ~ExperimentalWithCallbackMethod_MethodA2() override {
@@ -377,7 +380,7 @@ class ServiceA final {
       return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
     }
     virtual ::grpc::experimental::ServerReadReactor< ::grpc::testing::Request, ::grpc::testing::Response>* MethodA2() {
-      return new ::grpc::internal::UnimplementedReadReactor<
+      return new ::grpc_impl::internal::UnimplementedReadReactor<
         ::grpc::testing::Request, ::grpc::testing::Response>;}
   };
   template <class BaseClass>
@@ -387,7 +390,7 @@ class ServiceA final {
    public:
     ExperimentalWithCallbackMethod_MethodA3() {
       ::grpc::Service::experimental().MarkMethodCallback(2,
-        new ::grpc::internal::CallbackServerStreamingHandler< ::grpc::testing::Request, ::grpc::testing::Response>(
+        new ::grpc_impl::internal::CallbackServerStreamingHandler< ::grpc::testing::Request, ::grpc::testing::Response>(
           [this] { return this->MethodA3(); }));
     }
     ~ExperimentalWithCallbackMethod_MethodA3() override {
@@ -399,7 +402,7 @@ class ServiceA final {
       return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
     }
     virtual ::grpc::experimental::ServerWriteReactor< ::grpc::testing::Request, ::grpc::testing::Response>* MethodA3() {
-      return new ::grpc::internal::UnimplementedWriteReactor<
+      return new ::grpc_impl::internal::UnimplementedWriteReactor<
         ::grpc::testing::Request, ::grpc::testing::Response>;}
   };
   template <class BaseClass>
@@ -409,7 +412,7 @@ class ServiceA final {
    public:
     ExperimentalWithCallbackMethod_MethodA4() {
       ::grpc::Service::experimental().MarkMethodCallback(3,
-        new ::grpc::internal::CallbackBidiHandler< ::grpc::testing::Request, ::grpc::testing::Response>(
+        new ::grpc_impl::internal::CallbackBidiHandler< ::grpc::testing::Request, ::grpc::testing::Response>(
           [this] { return this->MethodA4(); }));
     }
     ~ExperimentalWithCallbackMethod_MethodA4() override {
@@ -421,7 +424,7 @@ class ServiceA final {
       return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
     }
     virtual ::grpc::experimental::ServerBidiReactor< ::grpc::testing::Request, ::grpc::testing::Response>* MethodA4() {
-      return new ::grpc::internal::UnimplementedBidiReactor<
+      return new ::grpc_impl::internal::UnimplementedBidiReactor<
         ::grpc::testing::Request, ::grpc::testing::Response>;}
   };
   typedef ExperimentalWithCallbackMethod_MethodA1<ExperimentalWithCallbackMethod_MethodA2<ExperimentalWithCallbackMethod_MethodA3<ExperimentalWithCallbackMethod_MethodA4<Service > > > > ExperimentalCallbackService;
@@ -580,7 +583,7 @@ class ServiceA final {
    public:
     ExperimentalWithRawCallbackMethod_MethodA1() {
       ::grpc::Service::experimental().MarkMethodRawCallback(0,
-        new ::grpc::internal::CallbackUnaryHandler< ::grpc::ByteBuffer, ::grpc::ByteBuffer>(
+        new ::grpc_impl::internal::CallbackUnaryHandler< ::grpc::ByteBuffer, ::grpc::ByteBuffer>(
           [this](::grpc::ServerContext* context,
                  const ::grpc::ByteBuffer* request,
                  ::grpc::ByteBuffer* response,
@@ -605,7 +608,7 @@ class ServiceA final {
    public:
     ExperimentalWithRawCallbackMethod_MethodA2() {
       ::grpc::Service::experimental().MarkMethodRawCallback(1,
-        new ::grpc::internal::CallbackClientStreamingHandler< ::grpc::ByteBuffer, ::grpc::ByteBuffer>(
+        new ::grpc_impl::internal::CallbackClientStreamingHandler< ::grpc::ByteBuffer, ::grpc::ByteBuffer>(
           [this] { return this->MethodA2(); }));
     }
     ~ExperimentalWithRawCallbackMethod_MethodA2() override {
@@ -617,7 +620,7 @@ class ServiceA final {
       return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
     }
     virtual ::grpc::experimental::ServerReadReactor< ::grpc::ByteBuffer, ::grpc::ByteBuffer>* MethodA2() {
-      return new ::grpc::internal::UnimplementedReadReactor<
+      return new ::grpc_impl::internal::UnimplementedReadReactor<
         ::grpc::ByteBuffer, ::grpc::ByteBuffer>;}
   };
   template <class BaseClass>
@@ -627,7 +630,7 @@ class ServiceA final {
    public:
     ExperimentalWithRawCallbackMethod_MethodA3() {
       ::grpc::Service::experimental().MarkMethodRawCallback(2,
-        new ::grpc::internal::CallbackServerStreamingHandler< ::grpc::ByteBuffer, ::grpc::ByteBuffer>(
+        new ::grpc_impl::internal::CallbackServerStreamingHandler< ::grpc::ByteBuffer, ::grpc::ByteBuffer>(
           [this] { return this->MethodA3(); }));
     }
     ~ExperimentalWithRawCallbackMethod_MethodA3() override {
@@ -639,7 +642,7 @@ class ServiceA final {
       return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
     }
     virtual ::grpc::experimental::ServerWriteReactor< ::grpc::ByteBuffer, ::grpc::ByteBuffer>* MethodA3() {
-      return new ::grpc::internal::UnimplementedWriteReactor<
+      return new ::grpc_impl::internal::UnimplementedWriteReactor<
         ::grpc::ByteBuffer, ::grpc::ByteBuffer>;}
   };
   template <class BaseClass>
@@ -649,7 +652,7 @@ class ServiceA final {
    public:
     ExperimentalWithRawCallbackMethod_MethodA4() {
       ::grpc::Service::experimental().MarkMethodRawCallback(3,
-        new ::grpc::internal::CallbackBidiHandler< ::grpc::ByteBuffer, ::grpc::ByteBuffer>(
+        new ::grpc_impl::internal::CallbackBidiHandler< ::grpc::ByteBuffer, ::grpc::ByteBuffer>(
           [this] { return this->MethodA4(); }));
     }
     ~ExperimentalWithRawCallbackMethod_MethodA4() override {
@@ -661,7 +664,7 @@ class ServiceA final {
       return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "");
     }
     virtual ::grpc::experimental::ServerBidiReactor< ::grpc::ByteBuffer, ::grpc::ByteBuffer>* MethodA4() {
-      return new ::grpc::internal::UnimplementedBidiReactor<
+      return new ::grpc_impl::internal::UnimplementedBidiReactor<
         ::grpc::ByteBuffer, ::grpc::ByteBuffer>;}
   };
   template <class BaseClass>
@@ -812,7 +815,7 @@ class ServiceB final {
    public:
     ExperimentalWithCallbackMethod_MethodB1() {
       ::grpc::Service::experimental().MarkMethodCallback(0,
-        new ::grpc::internal::CallbackUnaryHandler< ::grpc::testing::Request, ::grpc::testing::Response>(
+        new ::grpc_impl::internal::CallbackUnaryHandler< ::grpc::testing::Request, ::grpc::testing::Response>(
           [this](::grpc::ServerContext* context,
                  const ::grpc::testing::Request* request,
                  ::grpc::testing::Response* response,
@@ -822,7 +825,7 @@ class ServiceB final {
     }
     void SetMessageAllocatorFor_MethodB1(
         ::grpc::experimental::MessageAllocator< ::grpc::testing::Request, ::grpc::testing::Response>* allocator) {
-      static_cast<::grpc::internal::CallbackUnaryHandler< ::grpc::testing::Request, ::grpc::testing::Response>*>(
+      static_cast<::grpc_impl::internal::CallbackUnaryHandler< ::grpc::testing::Request, ::grpc::testing::Response>*>(
           ::grpc::Service::experimental().GetHandler(0))
               ->SetMessageAllocator(allocator);
     }
@@ -881,7 +884,7 @@ class ServiceB final {
    public:
     ExperimentalWithRawCallbackMethod_MethodB1() {
       ::grpc::Service::experimental().MarkMethodRawCallback(0,
-        new ::grpc::internal::CallbackUnaryHandler< ::grpc::ByteBuffer, ::grpc::ByteBuffer>(
+        new ::grpc_impl::internal::CallbackUnaryHandler< ::grpc::ByteBuffer, ::grpc::ByteBuffer>(
           [this](::grpc::ServerContext* context,
                  const ::grpc::ByteBuffer* request,
                  ::grpc::ByteBuffer* response,

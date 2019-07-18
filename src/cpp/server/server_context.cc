@@ -45,8 +45,7 @@ class ServerContext::CompletionOp final
  public:
   // initial refs: one in the server context, one in the cq
   // must ref the call before calling constructor and after deleting this
-  CompletionOp(::grpc::internal::Call* call,
-               ::grpc::internal::ServerReactor* reactor)
+  CompletionOp(::grpc::internal::Call* call, internal::ServerReactor* reactor)
       : call_(*call),
         reactor_(reactor),
         has_tag_(false),
@@ -152,7 +151,7 @@ class ServerContext::CompletionOp final
   }
 
   ::grpc::internal::Call call_;
-  ::grpc::internal::ServerReactor* const reactor_;
+  internal::ServerReactor* const reactor_;
   bool has_tag_;
   void* tag_;
   void* core_cq_tag_;
@@ -294,9 +293,9 @@ void ServerContext::Clear() {
   }
 }
 
-void ServerContext::BeginCompletionOp(
-    ::grpc::internal::Call* call, std::function<void(bool)> callback,
-    ::grpc::internal::ServerReactor* reactor) {
+void ServerContext::BeginCompletionOp(::grpc::internal::Call* call,
+                                      std::function<void(bool)> callback,
+                                      internal::ServerReactor* reactor) {
   GPR_ASSERT(!completion_op_);
   if (rpc_info_) {
     rpc_info_->Ref();

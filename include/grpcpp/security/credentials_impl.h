@@ -24,11 +24,11 @@
 #include <vector>
 
 #include <grpc/grpc_security_constants.h>
-#include <grpcpp/channel.h>
+#include <grpcpp/channel_impl.h>
 #include <grpcpp/impl/codegen/client_interceptor.h>
 #include <grpcpp/impl/codegen/grpc_library.h>
 #include <grpcpp/security/auth_context.h>
-#include <grpcpp/support/channel_arguments.h>
+#include <grpcpp/support/channel_arguments_impl.h>
 #include <grpcpp/support/status.h>
 #include <grpcpp/support/string_ref.h>
 
@@ -41,16 +41,16 @@ class CallCredentials;
 class SecureCallCredentials;
 class SecureChannelCredentials;
 
-std::shared_ptr<::grpc::Channel> CreateCustomChannelImpl(
+std::shared_ptr<Channel> CreateCustomChannelImpl(
     const grpc::string& target,
     const std::shared_ptr<ChannelCredentials>& creds,
-    const grpc::ChannelArguments& args);
+    const ChannelArguments& args);
 
 namespace experimental {
-std::shared_ptr<::grpc::Channel> CreateCustomChannelWithInterceptors(
+std::shared_ptr<Channel> CreateCustomChannelWithInterceptors(
     const grpc::string& target,
     const std::shared_ptr<ChannelCredentials>& creds,
-    const grpc::ChannelArguments& args,
+    const ChannelArguments& args,
     std::vector<
         std::unique_ptr<grpc::experimental::ClientInterceptorFactoryInterface>>
         interceptor_creators);
@@ -75,27 +75,27 @@ class ChannelCredentials : private grpc::GrpcLibraryCodegen {
   virtual SecureChannelCredentials* AsSecureCredentials() = 0;
 
  private:
-  friend std::shared_ptr<::grpc::Channel> CreateCustomChannelImpl(
+  friend std::shared_ptr<Channel> CreateCustomChannelImpl(
       const grpc::string& target,
       const std::shared_ptr<ChannelCredentials>& creds,
-      const grpc::ChannelArguments& args);
+      const ChannelArguments& args);
 
-  friend std::shared_ptr<::grpc::Channel>
+  friend std::shared_ptr<Channel>
   grpc_impl::experimental::CreateCustomChannelWithInterceptors(
       const grpc::string& target,
       const std::shared_ptr<ChannelCredentials>& creds,
-      const grpc::ChannelArguments& args,
+      const ChannelArguments& args,
       std::vector<std::unique_ptr<
           grpc::experimental::ClientInterceptorFactoryInterface>>
           interceptor_creators);
 
-  virtual std::shared_ptr<::grpc::Channel> CreateChannelImpl(
-      const grpc::string& target, const grpc::ChannelArguments& args) = 0;
+  virtual std::shared_ptr<Channel> CreateChannelImpl(
+      const grpc::string& target, const ChannelArguments& args) = 0;
 
   // This function should have been a pure virtual function, but it is
   // implemented as a virtual function so that it does not break API.
-  virtual std::shared_ptr<::grpc::Channel> CreateChannelWithInterceptors(
-      const grpc::string& target, const grpc::ChannelArguments& args,
+  virtual std::shared_ptr<Channel> CreateChannelWithInterceptors(
+      const grpc::string& target, const ChannelArguments& args,
       std::vector<std::unique_ptr<
           grpc::experimental::ClientInterceptorFactoryInterface>>
           interceptor_creators) {
@@ -258,6 +258,70 @@ std::shared_ptr<CallCredentials> MetadataCredentialsFromPlugin(
     std::unique_ptr<MetadataCredentialsPlugin> plugin);
 
 namespace experimental {
+
+/// Options for creating STS Oauth Token Exchange credentials following the IETF
+/// draft https://tools.ietf.org/html/draft-ietf-oauth-token-exchange-16.
+/// Optional fields may be set to empty string. It is the responsibility of the
+/// caller to ensure that the subject and actor tokens are refreshed on disk at
+/// the specified paths.
+struct StsCredentialsOptions {
+  grpc::string token_exchange_service_uri;  // Required.
+  grpc::string resource;                    // Optional.
+  grpc::string audience;                    // Optional.
+  grpc::string scope;                       // Optional.
+  grpc::string requested_token_type;        // Optional.
+  grpc::string subject_token_path;          // Required.
+  grpc::string subject_token_type;          // Required.
+  grpc::string actor_token_path;            // Optional.
+  grpc::string actor_token_type;            // Optional.
+};
+
+/// Creates STS Options from a JSON string. The JSON schema is as follows:
+/// {
+///   "title": "STS Credentials Config",
+///   "type": "object",
+///   "required": ["token_exchange_service_uri", "subject_token_path",
+///                "subject_token_type"],
+///    "properties": {
+///      "token_exchange_service_uri": {
+///        "type": "string"
+///     },
+///     "resource": {
+///       "type": "string"
+///     },
+///     "audience": {
+///       "type": "string"
+///     },
+///     "scope": {
+///       "type": "string"
+///     },
+///     "requested_token_type": {
+///       "type": "string"
+///     },
+///     "subject_token_path": {
+///       "type": "string"
+///     },
+///     "subject_token_type": {
+///     "type": "string"
+///     },
+///     "actor_token_path" : {
+///       "type": "string"
+///     },
+///     "actor_token_type": {
+///       "type": "string"
+///     }
+///   }
+/// }
+grpc::Status StsCredentialsOptionsFromJson(const grpc::string& json_string,
+                                           StsCredentialsOptions* options);
+
+/// Creates STS credentials options from the $STS_CREDENTIALS environment
+/// variable. This environment variable points to the path of a JSON file
+/// comforming to the schema described above.
+grpc::Status StsCredentialsOptionsFromEnv(StsCredentialsOptions* options);
+
+std::shared_ptr<CallCredentials> StsCredentials(
+    const StsCredentialsOptions& options);
 
 /// Options used to build AltsCredentials.
 struct AltsCredentialsOptions {
