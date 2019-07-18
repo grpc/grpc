@@ -69,7 +69,7 @@ class CallbackWithStatusTag
     : public grpc_experimental_completion_queue_functor {
  public:
   // always allocated against a call arena, no memory free required
-  static void operator delete(void* ptr, std::size_t size) {
+  static void operator delete(void* /*ptr*/, std::size_t size) {
     assert(size == sizeof(CallbackWithStatusTag));
   }
 
@@ -133,7 +133,7 @@ class CallbackWithSuccessTag
     : public grpc_experimental_completion_queue_functor {
  public:
   // always allocated against a call arena, no memory free required
-  static void operator delete(void* ptr, std::size_t size) {
+  static void operator delete(void* /*ptr*/, std::size_t size) {
     assert(size == sizeof(CallbackWithSuccessTag));
   }
 
