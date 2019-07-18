@@ -32,7 +32,6 @@
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/string_util.h>
-#include <limits.h>
 #include <string.h>
 
 #include "src/core/lib/channel/channel_stack_builder.h"
@@ -62,11 +61,11 @@ int main(int argc, char** argv) {
   int errors = 0;
 
   // tests with a minimal stack
-  grpc_arg minimal_stack_arg[2];
-  minimal_stack_arg[0].type = GRPC_ARG_INTEGER;
-  minimal_stack_arg[0].key = const_cast<char*>(GRPC_ARG_MINIMAL_STACK);
-  minimal_stack_arg[0].value.integer = 1;
-  grpc_channel_args minimal_stack_args = {2, minimal_stack_arg};
+  grpc_arg minimal_stack_arg;
+  minimal_stack_arg.type = GRPC_ARG_INTEGER;
+  minimal_stack_arg.key = const_cast<char*>(GRPC_ARG_MINIMAL_STACK);
+  minimal_stack_arg.value.integer = 1;
+  grpc_channel_args minimal_stack_args = {1, &minimal_stack_arg};
   errors +=
       CHECK_STACK("unknown", &minimal_stack_args, GRPC_CLIENT_DIRECT_CHANNEL,
                   "authority", "connected", NULL);
