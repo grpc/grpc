@@ -2260,6 +2260,22 @@
     "headers": [], 
     "is_filegroup": false, 
     "language": "c", 
+    "name": "threadpool_test", 
+    "src": [
+      "test/core/iomgr/threadpool_test.cc"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "grpc", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "is_filegroup": false, 
+    "language": "c", 
     "name": "time_averaged_stats_test", 
     "src": [
       "test/core/iomgr/time_averaged_stats_test.cc"
@@ -8541,6 +8557,7 @@
       "src/core/lib/iomgr/exec_ctx.cc", 
       "src/core/lib/iomgr/executor.cc", 
       "src/core/lib/iomgr/executor/mpmcqueue.cc", 
+      "src/core/lib/iomgr/executor/threadpool.cc", 
       "src/core/lib/iomgr/fork_posix.cc", 
       "src/core/lib/iomgr/fork_windows.cc", 
       "src/core/lib/iomgr/gethostname_fallback.cc", 
@@ -8730,6 +8747,7 @@
       "src/core/lib/iomgr/exec_ctx.h", 
       "src/core/lib/iomgr/executor.h", 
       "src/core/lib/iomgr/executor/mpmcqueue.h", 
+      "src/core/lib/iomgr/executor/threadpool.h", 
       "src/core/lib/iomgr/gethostname.h", 
       "src/core/lib/iomgr/grpc_if_nametoindex.h", 
       "src/core/lib/iomgr/internal_errqueue.h", 
@@ -8889,6 +8907,7 @@
       "src/core/lib/iomgr/exec_ctx.h", 
       "src/core/lib/iomgr/executor.h", 
       "src/core/lib/iomgr/executor/mpmcqueue.h", 
+      "src/core/lib/iomgr/executor/threadpool.h", 
       "src/core/lib/iomgr/gethostname.h", 
       "src/core/lib/iomgr/grpc_if_nametoindex.h", 
       "src/core/lib/iomgr/internal_errqueue.h", 
