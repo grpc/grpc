@@ -1438,10 +1438,10 @@ void GrpcLb::UpdateLocked(UpdateArgs args) {
 
 // Returns the backend addresses extracted from the given addresses.
 ServerAddressList ExtractBackendAddresses(const ServerAddressList& addresses) {
-  void* lb_token = (void*)GRPC_MDELEM_LB_TOKEN_EMPTY.payload;
+  static const char* lb_token = "";
   grpc_arg arg = grpc_channel_arg_pointer_create(
-      const_cast<char*>(GRPC_ARG_GRPCLB_ADDRESS_LB_TOKEN), lb_token,
-      &lb_token_arg_vtable);
+      const_cast<char*>(GRPC_ARG_GRPCLB_ADDRESS_LB_TOKEN),
+      const_cast<char*>(lb_token), &lb_token_arg_vtable);
   ServerAddressList backend_addresses;
   for (size_t i = 0; i < addresses.size(); ++i) {
     if (!addresses[i].IsBalancer()) {
