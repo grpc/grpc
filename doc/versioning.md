@@ -8,7 +8,7 @@ All gRPC implementations use a three-part version number (`vX.Y.Z`) and strictly
 - **Patch version bump** corresponds to bugfixes done on release branch.
 
 There are also a few extra rules regarding adding new gRPC implementations (e.g. adding support for a new language)
-- New implementations start at v0.x.y version they reaches 1.0, they are considered not ready for production workloads. Breaking API changes are allowed in the 0.x releases as the library is not considered stable yet.
+- New implementations start at v0.x.y version and until they reach 1.0, they are considered not ready for production workloads. Breaking API changes are allowed in the 0.x releases as the library is not considered stable yet.
 - The "1.0" release has semantics of GA (generally available) and being production ready. Requirements to reach this milestone are at least these
   - basic RPC features are feature complete and tested
   - implementation is tested for interoperability with other languages
@@ -24,7 +24,7 @@ To avoid user confusion and simplify reasoning, the gRPC releases in different l
 - **voluntary change:** Even in non-forced situations, there might be circumstances in which a breaking API change makes sense and represents a net win, but as a rule of thumb breaking changes are very disruptive for users, cause user fragmentation and incur high maintenance costs. Therefore, breaking API changes should be very rare events that need to be considered with extreme care and the bar for accepting such changes is intentionally set very high.
   Example scenarios where a breaking API change might be adequate:
   - fixing a security problem which requires changes to API (need to consider the non-breaking alternatives first)
-  - the change leads to very significant gains to security, usability or development. velocity. These gains need to be clearly documented and claims need to be supported by evidence (ideally by numbers). Costs to the ecosystem (impact on users, dev team etc.) need to be taken into account and the change still needs to be a net positive after subtracting the costs.
+  - the change leads to very significant gains to security, usability or development velocity. These gains need to be clearly documented and claims need to be supported by evidence (ideally by numbers). Costs to the ecosystem (impact on users, dev team etc.) need to be taken into account and the change still needs to be a net positive after subtracting the costs.
 
   All proposals to make a breaking change need to be documented as a gRFC document (in the grpc/proposal repository) that covers at least these areas:
   - Description of the proposal including an explanation why the proposed change is one of the very rare events where a breaking change is introduced.
