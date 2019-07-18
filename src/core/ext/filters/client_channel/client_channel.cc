@@ -318,11 +318,8 @@ class CallData {
     void Add(StringView key, StringView value) override {
       grpc_linked_mdelem* linked_mdelem = static_cast<grpc_linked_mdelem*>(
           calld_->arena_->Alloc(sizeof(grpc_linked_mdelem)));
-      bool returned_slice_is_different;
       linked_mdelem->md = grpc_mdelem_from_slices(
-          grpc_slice_maybe_static_intern(
-              grpc_slice_from_static_buffer_internal(key.data(), key.size()),
-              &returned_slice_is_different),
+          grpc_slice_from_static_buffer_internal(key.data(), key.size()),
           grpc_slice_from_static_buffer_internal(value.data(), value.size()));
       GPR_ASSERT(grpc_metadata_batch_link_tail(batch_, linked_mdelem) ==
                  GRPC_ERROR_NONE);

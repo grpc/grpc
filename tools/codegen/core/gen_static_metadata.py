@@ -147,7 +147,6 @@ CONFIG = [
     ('accept-encoding', ''),
     ('content-encoding', 'identity'),
     ('content-encoding', 'gzip'),
-    ('lb-token', ''),
     ('lb-cost-bin', ''),
 ]
 
@@ -175,7 +174,6 @@ METADATA_BATCH_CALLOUTS = [
     'grpc-internal-stream-encoding-request',
     'user-agent',
     'host',
-    'lb-token',
     'grpclb_client_stats',
     'grpc-previous-rpc-attempts',
     'grpc-retry-pushback-ms',
