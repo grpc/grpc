@@ -88,7 +88,7 @@ class RpcMethodHandler : public MethodHandler {
   }
 
   void* Deserialize(grpc_call* call, grpc_byte_buffer* req, Status* status,
-                    void** handler_data) final {
+                    void** /*handler_data*/) final {
     ByteBuffer buf;
     buf.set_buffer(req);
     auto* request = new (g_core_codegen_interface->grpc_call_arena_alloc(
@@ -193,7 +193,7 @@ class ServerStreamingHandler : public MethodHandler {
   }
 
   void* Deserialize(grpc_call* call, grpc_byte_buffer* req, Status* status,
-                    void** handler_data) final {
+                    void** /*handler_data*/) final {
     ByteBuffer buf;
     buf.set_buffer(req);
     auto* request = new (g_core_codegen_interface->grpc_call_arena_alloc(
@@ -328,8 +328,8 @@ class ErrorMethodHandler : public MethodHandler {
     param.call->cq()->Pluck(&ops);
   }
 
-  void* Deserialize(grpc_call* call, grpc_byte_buffer* req, Status* status,
-                    void** handler_data) final {
+  void* Deserialize(grpc_call* /*call*/, grpc_byte_buffer* req,
+                    Status* /*status*/, void** /*handler_data*/) final {
     // We have to destroy any request payload
     if (req != nullptr) {
       g_core_codegen_interface->grpc_byte_buffer_destroy(req);
