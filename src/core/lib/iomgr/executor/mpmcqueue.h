@@ -42,7 +42,8 @@ class MPMCQueueInterface {
 
   // Removes the oldest element from the queue and return it.
   // This might cause to block on empty queue depending on implementation.
-  virtual void* Get() GRPC_ABSTRACT;
+  // Optional argument for collecting stats purpose.
+  virtual void* Get(gpr_timespec* wait_time = nullptr) GRPC_ABSTRACT;
 
   // Returns number of elements in the queue currently
   virtual int count() const GRPC_ABSTRACT;
@@ -65,7 +66,9 @@ class InfLenFIFOQueue : public MPMCQueueInterface {
 
   // Removes the oldest element from the queue and returns it.
   // This routine will cause the thread to block if queue is currently empty.
-  void* Get();
+  // Argument wait_time should be passed in when turning on the trace flag
+  // grpc_thread_pool_trace (for collecting stats info purpose.)
+  void* Get(gpr_timespec* wait_time = nullptr);
 
   // Returns number of elements in queue currently.
   // There might be concurrently add/remove on queue, so count might change

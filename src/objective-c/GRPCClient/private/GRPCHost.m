@@ -28,7 +28,6 @@
 #import "../internal/GRPCCallOptions+Internal.h"
 #import "GRPCChannelFactory.h"
 #import "GRPCCompletionQueue.h"
-#import "GRPCConnectivityMonitor.h"
 #import "GRPCCronetChannelFactory.h"
 #import "GRPCSecureChannelFactory.h"
 #import "NSDictionary+GRPC.h"

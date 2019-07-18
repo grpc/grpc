@@ -140,8 +140,9 @@ RefCountedPtr<SubchannelCall> SubchannelCall::Create(Args args,
   const size_t allocation_size =
       args.connected_subchannel->GetInitialCallSizeEstimate(
           args.parent_data_size);
-  return RefCountedPtr<SubchannelCall>(new (args.arena->Alloc(
-      allocation_size)) SubchannelCall(std::move(args), error));
+  Arena* arena = args.arena;
+  return RefCountedPtr<SubchannelCall>(new (
+      arena->Alloc(allocation_size)) SubchannelCall(std::move(args), error));
 }
 
 SubchannelCall::SubchannelCall(Args args, grpc_error** error)
