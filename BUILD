@@ -2471,28 +2471,71 @@ filegroup(
     visibility = ["//visibility:public"],
 )
 
+objc_library(
+    name = "rx_library",
+    srcs = glob([
+        "src/objective-c/RxLibrary/*.m",
+        "src/objective-c/RxLibrary/transformations/*.m",
+    ]),
+    hdrs = glob([
+        "src/objective-c/RxLibrary/*.h",
+        "src/objective-c/RxLibrary/transformations/*.h",
+    ]),
+    includes = ["src/objective-c"],
+    deps = [
+        ":rx_library_private",
+    ],
+)
+
+objc_library(
+    name = "rx_library_private",
+    srcs = glob([
+        "src/objective-c/RxLibrary/private/*.m",
+    ]),
+    textual_hdrs = glob([
+        "src/objective-c/RxLibrary/private/*.h",
+    ]),
+    visibility = ["//visibility:private"],
+)
+
 grpc_objc_library(
     name = "grpc_objc_client",
+    srcs = glob(
+        [
+            "src/objective-c/GRPCClient/*.m",
+            "src/objective-c/GRPCClient/private/*.m",
+        ],
+        exclude = ["src/objective-c/GRPCClient/GRPCCall+GID.m"],
+    ),
     hdrs = glob(
         ["src/objective-c/GRPCClient/*.h"],
         exclude = ["src/objective-c/GRPCClient/GRPCCall+GID.h"],
     ),
-    srcs = glob(
-        ["src/objective-c/GRPCClient/*.m"],
-        exclude = ["src/objective-c/GRPCClient/GRPCCall+GID.m"],
-    ),
     includes = ["src/objective-c"],
-    deps = [":grpc"],
+    textual_hdrs = glob([
+        "src/objective-c/GRPCClient/private/*.h",
+        "src/objective-c/GRPCClient/internal/*.h",
+    ]),
+    deps = [
+        ":gRPCCertificates",
+        ":grpc",
+        ":rx_library",
+    ],
 )
 
 grpc_objc_library(
     name = "proto_objc_rpc",
-    hdrs = glob(
-        ["src/objective-c/ProtoRPC/*.h"],
-    ),
     srcs = glob(
         ["src/objective-c/ProtoRPC/*.m"],
     ),
+    hdrs = glob(
+        ["src/objective-c/ProtoRPC/*.h"],
+    ),
+    defines = ["GPB_USE_PROTOBUF_FRAMEWORK_IMPORTS=0"],
     includes = ["src/objective-c"],
-    deps = [":grpc_objc_client"],
+    deps = [
+        ":grpc_objc_client",
+        ":rx_library",
+        "@com_google_protobuf//:protobuf_objc",
+    ],
 )

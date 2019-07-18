@@ -8,6 +8,16 @@ load(
 load("//bazel:protobuf.bzl", "well_known_proto_libs")
 
 def objc_proto_grpc_library(name, deps, use_well_known_protos = False, **kwargs):
+    """A working version of objc_proto_library, by grpc authors.
+    Generates messages stubs for given proto_library and all transitively dependent proto files
+
+    Args:
+        name: name of target
+        deps: a list of proto_library targets that needs to be compiled
+        use_well_known_protos: whether to use the well known protos defined in 
+            @com_google_protobuf//src/google/protobuf, default to false
+        **kwargs: other arguments
+    """
     objc_grpc_library_name = "_" + name + "_objc_proto_library"
 
     generate_objc(
@@ -20,12 +30,12 @@ def objc_proto_grpc_library(name, deps, use_well_known_protos = False, **kwargs)
 
     generate_objc_hdrs(
         name = objc_grpc_library_name + "_hdrs",
-        src = ":" + objc_grpc_library_name
+        src = ":" + objc_grpc_library_name,
     )
 
     generate_objc_non_arc_srcs(
         name = objc_grpc_library_name + "_non_arc_srcs",
-        src = ":" + objc_grpc_library_name
+        src = ":" + objc_grpc_library_name,
     )
 
     native.objc_library(
@@ -34,21 +44,32 @@ def objc_proto_grpc_library(name, deps, use_well_known_protos = False, **kwargs)
         non_arc_srcs = [":" + objc_grpc_library_name + "_non_arc_srcs"],
         defines = [
             "GPB_USE_PROTOBUF_FRAMEWORK_IMPORTS=0",
-            "GPB_GRPC_FORWARD_DECLARE_MESSAGE_PROTO=0"
+            "GPB_GRPC_FORWARD_DECLARE_MESSAGE_PROTO=0",
         ],
         includes = [
             "_generated_protos",
-            "src/objective-c"
+            "src/objective-c",
         ],
         deps = [
             "@com_github_grpc_grpc//:proto_objc_rpc",
-            "@com_google_protobuf//:protobuf_objc"
-        ]
+            "@com_google_protobuf//:protobuf_objc",
+        ],
     )
 
 
 
-def objc_grpc_library(name, deps, srcs = [], use_well_known_protos = False, **kwargs):
+def objc_grpc_library(name, deps, srcs, use_well_known_protos = False, **kwargs):
+    """Generates service stubs for given proto_library and all transitively dependent proto files
+
+    Args:
+        name: name of target
+        deps: a list of proto_library targets that needs to be compiled
+        srcs: a list of labels to proto files with service stubs to be generated,
+            must not be empty and must include service stubs
+        use_well_known_protos: whether to use the well known protos defined in 
+            @com_google_protobuf//src/google/protobuf, default to false
+        **kwargs: other arguments
+    """
     objc_grpc_library_name = "_" + name + "_objc_grpc_library"
 
     generate_objc(
@@ -61,16 +82,16 @@ def objc_grpc_library(name, deps, srcs = [], use_well_known_protos = False, **kw
 
     generate_objc_hdrs(
         name = objc_grpc_library_name + "_hdrs",
-        src = ":" + objc_grpc_library_name
+        src = ":" + objc_grpc_library_name,
     )
     generate_objc_srcs(
         name = objc_grpc_library_name + "_srcs",
-        src = ":" + objc_grpc_library_name
+        src = ":" + objc_grpc_library_name,
     )
 
     generate_objc_non_arc_srcs(
         name = objc_grpc_library_name + "_non_arc_srcs",
-        src = ":" + objc_grpc_library_name
+        src = ":" + objc_grpc_library_name,
     )
 
     native.objc_library(
@@ -84,10 +105,10 @@ def objc_grpc_library(name, deps, srcs = [], use_well_known_protos = False, **kw
         ],
         includes = [
             "_generated_protos",
-            "src/objective-c"
+            "src/objective-c",
         ],
         deps = [
             "@com_github_grpc_grpc//:proto_objc_rpc",
-            "@com_google_protobuf//:protobuf_objc"
-        ]
+            "@com_google_protobuf//:protobuf_objc",
+        ],
     )

@@ -211,30 +211,7 @@ def grpc_generate_one_off_targets():
     apple_resource_bundle(
         # The choice of name is signicant here, since it determines the bundle name.
         name = "gRPCCertificates",
-        resources = ["etc/roots.pem"]
-    )
-
-    native.objc_library(
-        name = "rx_library",
-        srcs = native.glob([
-            "src/objective-c/RxLibrary/*.m",
-            "src/objective-c/RxLibrary/transformations/*.m",
-        ]),
-        hdrs = native.glob([
-            "src/objective-c/RxLibrary/*.h",
-            "src/objective-c/RxLibrary/transformations/*.h",
-        ]),
-        includes = ["src/objective-c"],
-        deps = [
-            ":rx_library_private",
-        ],
-    )
-
-    native.objc_library(
-        name = "rx_library_private",
-        srcs = native.glob(["src/objective-c/RxLibrary/private/*.m"]),
-        textual_hdrs = native.glob(["src/objective-c/RxLibrary/private/*.h"]),
-        visibility = ["//visibility:private"],
+        resources = ["etc/roots.pem"],
     )
 
 def grpc_sh_test(name, srcs, args = [], data = []):
@@ -277,34 +254,27 @@ def grpc_package(name, visibility = "private", features = []):
             features = features,
         )
 
-def grpc_objc_library(name, hdrs, srcs, includes = [], deps = []):
-    textual_hdrs = []
-    sdk_frameworks = []
-    defines = []
-    if len(includes) == 0:
-        includes = []
-    if len(deps) == 0:
-        deps = [] # unfreezes object
+def grpc_objc_library(
+        name,
+        hdrs,
+        srcs,
+        deps,
+        textual_hdrs = [],
+        defines = [],
+        includes = [],
+        ):
+    """The grpc version of objc_library, only used for the Objective-C library compilation
+
+    Args:
+        name: name of target, either grpc_objc_client or proto_objc_rpc
+        hdrs: public headers
+        srcs: all source files (.m)
+        textual_hdrs: private headers
+        defines: preprocessors
+        includes: added to search path, always [the path to objc directory]
+        deps: dependencies
+    """
     
-    if name == "grpc_objc_client":
-        srcs += native.glob([
-            "src/objective-c/GRPCClient/private/*.m",
-            "src/objective-c/GRPCClient/internal/*.m",
-        ])
-        textual_hdrs += native.glob([
-            "src/objective-c/GRPCClient/private/*.h",
-            "src/objective-c/GRPCClient/internal/*.h",
-        ])
-        sdk_frameworks += ["SystemConfiguration"]
-        deps += [
-            ":rx_library",
-            ":gRPCCertificates",
-        ]
-
-    elif name == "proto_objc_rpc":
-        defines += ["GPB_USE_PROTOBUF_FRAMEWORK_IMPORTS=0"]
-        deps += ["@com_google_protobuf//:protobuf_objc"]
-
     native.objc_library(
         name = name,
         hdrs = hdrs,
@@ -312,6 +282,5 @@ def grpc_objc_library(name, hdrs, srcs, includes = [], deps = []):
         includes = includes,
         textual_hdrs = textual_hdrs,
         defines = defines,
-        sdk_frameworks = sdk_frameworks,
         deps = deps,
     )
