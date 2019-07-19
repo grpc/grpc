@@ -25,19 +25,16 @@ load(
 proto_library(
     name = "messages_proto",
     srcs = ["BazelBuildSamples/messages.proto"],
-)
-
-proto_library(
-    name = "test_proto",
-    srcs = ["BazelBuildSamples/test.proto"],
-    deps = [":messages_proto"],
+    visibility = ["//visibility:public"],
 )
 
 objc_grpc_library(
     name = "test_grpc_objc",
-    srcs = ["BazelBuildSamples/test.proto"],
+    srcs = ["BazelBuildSamples/rmt/test.proto"],
     use_well_known_protos = True,
-    deps = [":test_proto"]
+    deps = [
+        "//src/objective-c/examples/BazelBuildSamples/rmt:test_proto",
+    ],
 )
 
 objc_library(

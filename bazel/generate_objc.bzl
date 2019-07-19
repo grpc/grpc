@@ -2,7 +2,6 @@ load(
     "//bazel:protobuf.bzl",
     "get_include_protoc_args",
     "get_plugin_args",
-    "get_proto_root",
     "proto_path_to_generated_filename",
 )
 load(
@@ -17,6 +16,10 @@ _PROTO_HEADER_FMT = "{}.pbobjc.h"
 _PROTO_SRC_FMT = "{}.pbobjc.m"
 _GENERATED_PROTOS_DIR = "_generated_protos"
 
+_GENERATE_HDRS = 1
+_GENERATE_SRCS = 2
+_GENERATE_NON_ARC_SRCS = 3
+
 def _generate_objc_impl(ctx):
 
     """Implementation of the generate_cc rule."""
@@ -26,9 +29,6 @@ def _generate_objc_impl(ctx):
         for f in src[ProtoInfo].transitive_imports.to_list()
     ]
     outs = []
-    proto_root = get_proto_root(
-        ctx.label.workspace_root,
-    )
 
     label_package = _join_directories([ctx.label.workspace_root, ctx.label.package])
 
@@ -46,7 +46,7 @@ def _generate_objc_impl(ctx):
     
     out_files = [ctx.actions.declare_file(out) for out in outs]
     dir_out = _join_directories([
-        str(ctx.genfiles_dir.path + proto_root), label_package, _GENERATED_PROTOS_DIR
+        str(ctx.genfiles_dir.path), label_package, _GENERATED_PROTOS_DIR
     ])
 
     arguments = []
@@ -59,11 +59,12 @@ def _generate_objc_impl(ctx):
         )
         tools = [ctx.executable.plugin]
     arguments += ["--objc_out=" + dir_out]
-    arguments += get_include_protoc_args(protos)
 
+    arguments += ["--proto_path=."]
+    arguments += get_include_protoc_args(protos)
     # Include the output directory so that protoc puts the generated code in the
     # right directory.
-    arguments += ["--proto_path={0}{1}".format(dir_out, proto_root)]
+    arguments += ["--proto_path={}".format(dir_out)]
     arguments += ["--proto_path={}".format(_get_directory_from_proto(proto)) for proto in protos]
     arguments += [_get_srcs_file_path(proto) for proto in protos]
 
@@ -72,10 +73,7 @@ def _generate_objc_impl(ctx):
     if ctx.attr.use_well_known_protos:
         f = ctx.attr.well_known_protos.files.to_list()[0].dirname
         arguments += ["-I{0}".format(f + "/../..")]
-        well_known_proto_files = [
-            f
-            for f in ctx.attr.well_known_protos.files.to_list()
-        ]
+        well_known_proto_files = ctx.attr.well_known_protos.files.to_list()
     ctx.actions.run(
         inputs = protos + well_known_proto_files,
         tools = tools,
@@ -171,11 +169,11 @@ generate_objc = rule(
 
 def _group_objc_files_impl(ctx):
     suffix = ""
-    if ctx.attr.gen_mode == 1:
+    if ctx.attr.gen_mode == _GENERATE_HDRS:
         suffix = "h"
-    elif ctx.attr.gen_mode == 2:
+    elif ctx.attr.gen_mode == _GENERATE_SRCS:
         suffix = "pbrpc.m"
-    elif ctx.attr.gen_mode == 3:
+    elif ctx.attr.gen_mode == _GENERATE_NON_ARC_SRCS:
         suffix = "pbobjc.m"
     else:
         fail("Undefined gen_mode")
@@ -192,7 +190,7 @@ generate_objc_hdrs = rule(
             mandatory = True,
         ),
         "gen_mode": attr.int(
-            default = 1,
+            default = _GENERATE_HDRS,
         )
     },
     implementation = _group_objc_files_impl
@@ -204,7 +202,7 @@ generate_objc_srcs = rule(
             mandatory = True,
         ),
         "gen_mode": attr.int(
-            default = 2,
+            default = _GENERATE_SRCS,
         )
     },
     implementation = _group_objc_files_impl
@@ -216,7 +214,7 @@ generate_objc_non_arc_srcs = rule(
             mandatory = True,
         ),
         "gen_mode": attr.int(
-            default = 3,
+            default = _GENERATE_NON_ARC_SRCS,
         )
     },
     implementation = _group_objc_files_impl

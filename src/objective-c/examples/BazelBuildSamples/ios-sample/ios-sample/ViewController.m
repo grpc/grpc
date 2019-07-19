@@ -24,7 +24,7 @@
 #import <RemoteTest/Test.pbrpc.h>
 #else
 #import "src/objective-c/examples/BazelBuildSamples/Messages.pbobjc.h"
-#import "src/objective-c/examples/BazelBuildSamples/Test.pbrpc.h"
+#import "src/objective-c/examples/BazelBuildSamples/rmt/Test.pbrpc.h"
 #endif
 
 static NSString *const kPackage = @"grpc.testing";
