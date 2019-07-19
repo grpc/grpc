@@ -45,6 +45,65 @@ void grpc_channel_credentials_release(grpc_channel_credentials* creds) {
   if (creds) creds->Unref();
 }
 
+static grpc_core::Map<grpc_core::UniquePtr<char>,
+                      grpc_core::RefCountedPtr<grpc_channel_credentials>,
+                      grpc_core::StringLess>* g_grpc_control_plane_creds;
+static gpr_mu g_control_plane_creds_mu;
+
+bool grpc_channel_credentials_attach_credentials(
+    grpc_channel_credentials* credentials, const char* authority,
+    grpc_channel_credentials* control_plane_creds) {
+  grpc_core::ExecCtx exec_ctx;
+  return credentials->attach_credentials(authority, control_plane_creds->Ref());
+}
+
+bool grpc_control_plane_credentials_register(
+    const char* authority, grpc_channel_credentials* control_plane_creds) {
+  grpc_core::ExecCtx exec_ctx;
+  {
+    grpc_core::MutexLock lock(&g_control_plane_creds_mu);
+    if (g_grpc_control_plane_creds->find(grpc_core::UniquePtr<char>(
+            gpr_strdup(authority))) != g_grpc_control_plane_creds->end()) {
+      return false;
+    }
+    (*g_grpc_control_plane_creds)[grpc_core::UniquePtr<char>(
+        gpr_strdup(authority))] = control_plane_creds->Ref();
+  }
+  return true;
+}
+
+bool grpc_channel_credentials::attach_credentials(
+    const char* authority,
+    grpc_core::RefCountedPtr<grpc_channel_credentials> control_plane_creds) {
+  grpc_core::MutexLock lock(&g_control_plane_creds_mu);
+  auto local_lookup = local_control_plane_creds_.find(
+      grpc_core::UniquePtr<char>(gpr_strdup(authority)));
+  if (local_lookup != local_control_plane_creds_.end()) {
+    return false;
+  }
+  local_control_plane_creds_[grpc_core::UniquePtr<char>(
+      gpr_strdup(authority))] = control_plane_creds;
+  return true;
+}
+
+grpc_core::RefCountedPtr<grpc_channel_credentials>
+grpc_channel_credentials::get_control_plane_credentials(const char* authority) {
+  {
+    grpc_core::MutexLock lock(&g_control_plane_creds_mu);
+    auto local_lookup = local_control_plane_creds_.find(
+        grpc_core::UniquePtr<char>(gpr_strdup(authority)));
+    if (local_lookup != local_control_plane_creds_.end()) {
+      return local_lookup->second;
+    }
+    auto global_lookup = g_grpc_control_plane_creds->find(
+        grpc_core::UniquePtr<char>(gpr_strdup(authority)));
+    if (global_lookup != g_grpc_control_plane_creds->end()) {
+      return global_lookup->second;
+    }
+  }
+  return duplicate_without_call_credentials();
+}
+
 void grpc_call_credentials_release(grpc_call_credentials* creds) {
   GRPC_API_TRACE("grpc_call_credentials_release(creds=%p)", 1, (creds));
   grpc_core::ExecCtx exec_ctx;
@@ -161,28 +220,19 @@ grpc_server_credentials* grpc_find_server_credentials_in_args(
   return nullptr;
 }
 
-grpc_core::Map<const char*, grpc_core::RefCountedPtr<grpc_channel_credentials>,
-               grpc_core::StringLess>
-    g_grpc_control_plane_creds;
-grpc_core::Mutex g_control_plane_creds_mu;
+gpr_once once_init_control_plane_creds;
 
-bool grpc_channel_credentials_attach_credentials(
-    grpc_channel_credentials* credentials, const char* authority,
-    grpc_channel_credentials* control_plane_creds) {
-  grpc_core::ExecCtx exec_ctx;
-  return credentials->attach_credentials(authority, control_plane_creds->Ref());
+void do_control_plane_creds_init() {
+  gpr_mu_init(&g_control_plane_creds_mu);
+  GPR_ASSERT(g_grpc_control_plane_creds == nullptr);
+  g_grpc_control_plane_creds = grpc_core::New<
+      grpc_core::Map<grpc_core::UniquePtr<char>,
+                     grpc_core::RefCountedPtr<grpc_channel_credentials>,
+                     grpc_core::StringLess>>();
 }
 
-bool grpc_control_plane_credentials_register(
-    const char* authority, grpc_channel_credentials* control_plane_creds) {
-  grpc_core::ExecCtx exec_ctx;
-  {
-    grpc_core::MutexLock lock(&g_control_plane_creds_mu);
-    if (g_grpc_control_plane_creds.find(authority) !=
-        g_grpc_control_plane_creds.end()) {
-      return false;
-    }
-    g_grpc_control_plane_creds[authority] = control_plane_creds->Ref();
-  }
-  return true;
+void grpc_secure_init() {
+  gpr_once_init(&once_init_control_plane_creds, do_control_plane_creds_init);
 }
+
+void grpc_secure_shutdown() {}

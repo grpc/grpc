@@ -83,7 +83,7 @@ grpc_server_credentials* create_test_ssl_server_creds() {
 // Perform a simple RPC and capture the ASCII value of the
 // authorization metadata sent to the server, if any. Return
 // nullptr if no authorization metadata was sent to the server.
-char* perform_call_and_get_authorization_header(
+grpc_core::UniquePtr<char> perform_call_and_get_authorization_header(
     grpc_channel_credentials* channel_creds) {
   // Create a new channel and call
   grpc_core::UniquePtr<char> server_addr = nullptr;
@@ -196,7 +196,7 @@ char* perform_call_and_get_authorization_header(
   cq_verify(cqv);
   GPR_ASSERT(status == GRPC_STATUS_OK);
   // Extract the ascii value of the authorization header, if present
-  char* authorization_header_val = nullptr;
+  grpc_core::UniquePtr<char> authorization_header_val = nullptr;
   gpr_log(GPR_DEBUG, "RPC done. Now examine received metadata on server...");
   for (size_t i = 0; i < request_metadata_recv.count; i++) {
     char* cur_key =
@@ -208,9 +208,9 @@ char* perform_call_and_get_authorization_header(
     if (gpr_stricmp(cur_key, "authorization") == 0) {
       // This test is broken if we found multiple authorization headers.
       GPR_ASSERT(authorization_header_val == nullptr);
-      authorization_header_val = gpr_strdup(cur_val);
+      authorization_header_val.reset(gpr_strdup(cur_val));
       gpr_log(GPR_DEBUG, "Found authorization header: %s",
-              authorization_header_val);
+              authorization_header_val.get());
     }
     gpr_free(cur_key);
     gpr_free(cur_val);
@@ -239,10 +239,14 @@ void test_attach_and_get() {
       create_test_ssl_plus_token_channel_creds("foo-auth-header");
   grpc_channel_credentials* bar_creds =
       create_test_ssl_plus_token_channel_creds("bar-auth-header");
-  GPR_ASSERT(grpc_channel_credentials_attach_credentials(main_creds, "foo",
+  char* foo_key = gpr_strdup("foo");
+  GPR_ASSERT(grpc_channel_credentials_attach_credentials(main_creds, foo_key,
                                                          foo_creds) == true);
-  GPR_ASSERT(grpc_channel_credentials_attach_credentials(main_creds, "bar",
+  gpr_free(foo_key);
+  char* bar_key = gpr_strdup("bar");
+  GPR_ASSERT(grpc_channel_credentials_attach_credentials(main_creds, bar_key,
                                                          bar_creds) == true);
+  gpr_free(bar_key);
   GPR_ASSERT(grpc_channel_credentials_attach_credentials(main_creds, "foo",
                                                          foo_creds) == false);
   GPR_ASSERT(grpc_channel_credentials_attach_credentials(main_creds, "bar",
@@ -252,39 +256,38 @@ void test_attach_and_get() {
   {
     // Creds that send auth header with value "foo-auth-header" are attached on
     // main creds under key "foo"
-    char* foo_auth_header = perform_call_and_get_authorization_header(
+    auto foo_auth_header = perform_call_and_get_authorization_header(
         main_creds->get_control_plane_credentials("foo").get());
     GPR_ASSERT(foo_auth_header != nullptr &&
-               gpr_stricmp(foo_auth_header, "Bearer foo-auth-header") == 0);
-    gpr_free(foo_auth_header);
+               gpr_stricmp(foo_auth_header.get(), "Bearer foo-auth-header") ==
+                   0);
   }
   {
     // Creds that send auth header with value "bar-auth-header" are attached on
     // main creds under key "bar"
-    char* bar_auth_header = perform_call_and_get_authorization_header(
+    auto bar_auth_header = perform_call_and_get_authorization_header(
         main_creds->get_control_plane_credentials("bar").get());
     GPR_ASSERT(bar_auth_header != nullptr &&
-               gpr_stricmp(bar_auth_header, "Bearer bar-auth-header") == 0);
-    gpr_free(bar_auth_header);
+               gpr_stricmp(bar_auth_header.get(), "Bearer bar-auth-header") ==
+                   0);
   }
   {
     // Sanity check that the main creds themselves send an authorization header
     // with value "main".
-    char* main_auth_header =
+    auto main_auth_header =
         perform_call_and_get_authorization_header(main_creds);
     GPR_ASSERT(main_auth_header != nullptr &&
-               gpr_stricmp(main_auth_header, "Bearer main-auth-header") == 0);
-    gpr_free(main_auth_header);
+               gpr_stricmp(main_auth_header.get(), "Bearer main-auth-header") ==
+                   0);
   }
   {
     // If a key isn't mapped in the per channel or global registries, then the
     // credentials should be returned but with their per-call creds stripped.
     // The end effect is that we shouldn't see any authorization metadata
     // sent from client to server.
-    char* unmapped_auth_header = perform_call_and_get_authorization_header(
+    auto unmapped_auth_header = perform_call_and_get_authorization_header(
         main_creds->get_control_plane_credentials("unmapped").get());
     GPR_ASSERT(unmapped_auth_header == nullptr);
-    gpr_free(unmapped_auth_header);
   }
   grpc_channel_credentials_release(main_creds);
 }
@@ -294,34 +297,41 @@ void test_registering_same_creds_under_different_keys() {
       create_test_ssl_plus_token_channel_creds("main-auth-header");
   grpc_channel_credentials* foo_creds =
       create_test_ssl_plus_token_channel_creds("foo-auth-header");
-  GPR_ASSERT(grpc_channel_credentials_attach_credentials(main_creds, "foo",
+  char* foo_key = gpr_strdup("foo");
+  GPR_ASSERT(grpc_channel_credentials_attach_credentials(main_creds, foo_key,
                                                          foo_creds) == true);
-  GPR_ASSERT(grpc_channel_credentials_attach_credentials(main_creds, "foo.",
+  gpr_free(foo_key);
+  char* foo2_key = gpr_strdup("foo2");
+  GPR_ASSERT(grpc_channel_credentials_attach_credentials(main_creds, foo2_key,
                                                          foo_creds) == true);
+  gpr_free(foo2_key);
   GPR_ASSERT(grpc_channel_credentials_attach_credentials(main_creds, "foo",
                                                          foo_creds) == false);
-  GPR_ASSERT(grpc_channel_credentials_attach_credentials(main_creds, "foo.",
+  GPR_ASSERT(grpc_channel_credentials_attach_credentials(main_creds, "foo2",
                                                          foo_creds) == false);
   grpc_channel_credentials_release(foo_creds);
   {
     // Access foo creds via foo
-    char* foo_auth_header = perform_call_and_get_authorization_header(
+    auto foo_auth_header = perform_call_and_get_authorization_header(
         main_creds->get_control_plane_credentials("foo").get());
     GPR_ASSERT(foo_auth_header != nullptr &&
-               gpr_stricmp(foo_auth_header, "Bearer foo-auth-header") == 0);
-    gpr_free(foo_auth_header);
+               gpr_stricmp(foo_auth_header.get(), "Bearer foo-auth-header") ==
+                   0);
   }
   {
-    // Access foo creds via foo. (with trailing period)
-    char* foo_auth_header = perform_call_and_get_authorization_header(
-        main_creds->get_control_plane_credentials("foo.").get());
+    // Access foo creds via foo2
+    auto foo_auth_header = perform_call_and_get_authorization_header(
+        main_creds->get_control_plane_credentials("foo2").get());
     GPR_ASSERT(foo_auth_header != nullptr &&
-               gpr_stricmp(foo_auth_header, "Bearer foo-auth-header") == 0);
-    gpr_free(foo_auth_header);
+               gpr_stricmp(foo_auth_header.get(), "Bearer foo-auth-header") ==
+                   0);
   }
   grpc_channel_credentials_release(main_creds);
 }
 
+// Note that this test uses control plane creds registered in the global
+// map. This global registration is done before this and any other
+// test is invoked.
 void test_attach_and_get_with_global_registry() {
   grpc_channel_credentials* main_creds =
       create_test_ssl_plus_token_channel_creds("main-auth-header");
@@ -329,49 +339,47 @@ void test_attach_and_get_with_global_registry() {
       create_test_ssl_plus_token_channel_creds("global-override-auth-header");
   grpc_channel_credentials* random_creds =
       create_test_ssl_plus_token_channel_creds("random-auth-header");
+  char* global_key = gpr_strdup("global");
   GPR_ASSERT(grpc_channel_credentials_attach_credentials(
-                 main_creds, "global", global_override_creds) == true);
+                 main_creds, global_key, global_override_creds) == true);
+  gpr_free(global_key);
   GPR_ASSERT(grpc_channel_credentials_attach_credentials(
                  main_creds, "global", global_override_creds) == false);
   grpc_channel_credentials_release(global_override_creds);
   {
     // The global registry should be used if a key isn't registered on the per
     // channel registry
-    char* global_auth_header = perform_call_and_get_authorization_header(
+    auto global_auth_header = perform_call_and_get_authorization_header(
         random_creds->get_control_plane_credentials("global").get());
     GPR_ASSERT(global_auth_header != nullptr &&
-               gpr_stricmp(global_auth_header, "Bearer global-auth-header") ==
-                   0);
-    gpr_free(global_auth_header);
+               gpr_stricmp(global_auth_header.get(),
+                           "Bearer global-auth-header") == 0);
   }
   {
     // The per-channel registry should be preferred over the global registry
-    char* override_auth_header = perform_call_and_get_authorization_header(
+    auto override_auth_header = perform_call_and_get_authorization_header(
         main_creds->get_control_plane_credentials("global").get());
     GPR_ASSERT(override_auth_header != nullptr &&
-               gpr_stricmp(override_auth_header,
+               gpr_stricmp(override_auth_header.get(),
                            "Bearer global-override-auth-header") == 0);
-    gpr_free(override_auth_header);
   }
   {
     // Sanity check that random creds themselves send authorization header with
     // value "random".
-    char* random_auth_header =
+    auto random_auth_header =
         perform_call_and_get_authorization_header(random_creds);
     GPR_ASSERT(random_auth_header != nullptr &&
-               gpr_stricmp(random_auth_header, "Bearer random-auth-header") ==
-                   0);
-    gpr_free(random_auth_header);
+               gpr_stricmp(random_auth_header.get(),
+                           "Bearer random-auth-header") == 0);
   }
   {
     // If a key isn't mapped in the per channel or global registries, then the
     // credentials should be returned but with their per-call creds stripped.
     // The end effect is that we shouldn't see any authorization metadata
     // sent from client to server.
-    char* unmapped_auth_header = perform_call_and_get_authorization_header(
+    auto unmapped_auth_header = perform_call_and_get_authorization_header(
         random_creds->get_control_plane_credentials("unmapped").get());
     GPR_ASSERT(unmapped_auth_header == nullptr);
-    gpr_free(unmapped_auth_header);
   }
   grpc_channel_credentials_release(main_creds);
   grpc_channel_credentials_release(random_creds);
@@ -395,15 +403,19 @@ int main(int argc, char** argv) {
                                                  server_creds));
     grpc_server_credentials_release(server_creds);
     grpc_server_start(g_server);
-    // Register one channel creds in the global registry; all tests will
-    // have access.
-    grpc_channel_credentials* global_creds =
-        create_test_ssl_plus_token_channel_creds("global-auth-header");
-    GPR_ASSERT(grpc_control_plane_credentials_register("global",
-                                                       global_creds) == true);
-    GPR_ASSERT(grpc_control_plane_credentials_register("global",
-                                                       global_creds) == false);
-    grpc_channel_credentials_release(global_creds);
+    {
+      // First, Register one channel creds in the global registry; all tests
+      // will have access.
+      grpc_channel_credentials* global_creds =
+          create_test_ssl_plus_token_channel_creds("global-auth-header");
+      char* global_key = gpr_strdup("global");
+      GPR_ASSERT(grpc_control_plane_credentials_register(global_key,
+                                                         global_creds) == true);
+      gpr_free(global_key);
+      GPR_ASSERT(grpc_control_plane_credentials_register(
+                     "global", global_creds) == false);
+      grpc_channel_credentials_release(global_creds);
+    }
     // Run tests
     {
       test_attach_and_get();
@@ -433,8 +445,10 @@ int main(int argc, char** argv) {
     // a full shutdown and restart of the library.
     grpc_channel_credentials* global_creds =
         create_test_ssl_plus_token_channel_creds("global-auth-header");
-    GPR_ASSERT(grpc_control_plane_credentials_register("global",
+    char* global_key = gpr_strdup("global");
+    GPR_ASSERT(grpc_control_plane_credentials_register(global_key,
                                                        global_creds) == false);
+    gpr_free(global_key);
     grpc_channel_credentials_release(global_creds);
     // Sanity check that unmapped authorities can still register in
     // the global registry.

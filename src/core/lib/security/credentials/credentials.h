@@ -93,12 +93,6 @@ void grpc_override_well_known_credentials_path_getter(
 
 #define GRPC_ARG_CHANNEL_CREDENTIALS "grpc.channel_credentials"
 
-extern grpc_core::Map<const char*,
-                      grpc_core::RefCountedPtr<grpc_channel_credentials>,
-                      grpc_core::StringLess>
-    g_grpc_control_plane_creds;
-extern grpc_core::Mutex g_control_plane_creds_mu;
-
 // This type is forward declared as a C struct and we cannot define it as a
 // class. Otherwise, compiler will complain about type mismatch due to
 // -Wmismatched-tags.
@@ -144,15 +138,7 @@ struct grpc_channel_credentials
   // true if registered successfully and false if not.
   bool attach_credentials(
       const char* authority,
-      grpc_core::RefCountedPtr<grpc_channel_credentials> control_plane_creds) {
-    grpc_core::MutexLock lock(&g_control_plane_creds_mu);
-    auto local_lookup = local_control_plane_creds_.find(authority);
-    if (local_lookup != local_control_plane_creds_.end()) {
-      return false;
-    }
-    local_control_plane_creds_[authority] = control_plane_creds;
-    return true;
-  }
+      grpc_core::RefCountedPtr<grpc_channel_credentials> control_plane_creds);
 
   // Gets the control plane credentials registered under authority. This
   // prefers the local control plane creds registry but falls back to the
@@ -160,20 +146,7 @@ struct grpc_channel_credentials
   // call credentials stripped off, in the case that neither the local
   // registry nor the global registry have an entry for authority.
   grpc_core::RefCountedPtr<grpc_channel_credentials>
-  get_control_plane_credentials(const char* authority) {
-    {
-      grpc_core::MutexLock lock(&g_control_plane_creds_mu);
-      auto local_lookup = local_control_plane_creds_.find(authority);
-      if (local_lookup != local_control_plane_creds_.end()) {
-        return local_lookup->second;
-      }
-      auto global_lookup = g_grpc_control_plane_creds.find(authority);
-      if (global_lookup != g_grpc_control_plane_creds.end()) {
-        return global_lookup->second;
-      }
-    }
-    return duplicate_without_call_credentials();
-  }
+  get_control_plane_credentials(const char* authority);
 
   const char* type() const { return type_; }
 
@@ -181,7 +154,7 @@ struct grpc_channel_credentials
 
  private:
   const char* type_;
-  grpc_core::Map<const char*,
+  grpc_core::Map<grpc_core::UniquePtr<char>,
                  grpc_core::RefCountedPtr<grpc_channel_credentials>,
                  grpc_core::StringLess>
       local_control_plane_creds_;
