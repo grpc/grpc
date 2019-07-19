@@ -70,10 +70,7 @@ class ChannelData {
   ~ChannelData() = default;
 
   static void IdleTimerCallback(void* arg, grpc_error* error);
-  static void IdleTransportOpCompleteCallback(void* arg, grpc_error* error) {
-    ChannelData* chand = static_cast<ChannelData*>(arg);
-    GRPC_CHANNEL_STACK_UNREF(chand->channel_stack_, "idle transport op");
-  }
+  static void IdleTransportOpCompleteCallback(void* arg, grpc_error* error);
 
   void StartIdleTimer() {
     GRPC_IDLE_FILTER_LOG("timer has started");
@@ -98,8 +95,7 @@ class ChannelData {
   }
 
   grpc_channel_element* elem_;
-  // Take a reference to the channel stack for the timer callback and the idle
-  // transport op.
+  // The channel stack to which we take refs for pending callbacks.
   grpc_channel_stack* channel_stack_;
   // Timeout after the last RPC finishes on the client channel at which the
   // channel goes back into IDLE state.
@@ -182,7 +178,7 @@ ChannelData::ChannelData(grpc_channel_element* elem,
   // Initialize the idle timer callback closure.
   GRPC_CLOSURE_INIT(&idle_timer_callback_, IdleTimerCallback, this,
                     grpc_schedule_on_exec_ctx);
-  // Initialize the idle transport op.
+  // Initialize the idle transport op complete callback.
   GRPC_CLOSURE_INIT(&idle_transport_op_complete_callback_,
                     IdleTransportOpCompleteCallback, this,
                     grpc_schedule_on_exec_ctx);
@@ -196,6 +192,12 @@ void ChannelData::IdleTimerCallback(void* arg, grpc_error* error) {
   }
   GRPC_IDLE_FILTER_LOG("timer finishes");
   GRPC_CHANNEL_STACK_UNREF(chand->channel_stack_, "max idle timer callback");
+}
+
+void ChannelData::IdleTransportOpCompleteCallback(void* arg,
+                                                  grpc_error* error) {
+  ChannelData* chand = static_cast<ChannelData*>(arg);
+  GRPC_CHANNEL_STACK_UNREF(chand->channel_stack_, "idle transport op");
 }
 
 class CallData {
@@ -234,8 +236,8 @@ const grpc_channel_filter grpc_client_idle_filter = {
     grpc_channel_next_get_info,
     "client_idle"};
 
-static bool maybe_add_client_idle_filter(grpc_channel_stack_builder* builder,
-                                         void* arg) {
+static bool MaybeAddClientIdleFilter(grpc_channel_stack_builder* builder,
+                                     void* arg) {
   const grpc_channel_args* channel_args =
       grpc_channel_stack_builder_get_channel_arguments(builder);
   if (!grpc_channel_args_want_minimal_stack(channel_args) &&
@@ -253,7 +255,7 @@ static bool maybe_add_client_idle_filter(grpc_channel_stack_builder* builder,
 void grpc_client_idle_filter_init(void) {
   grpc_channel_init_register_stage(
       GRPC_CLIENT_CHANNEL, GRPC_CHANNEL_INIT_BUILTIN_PRIORITY,
-      grpc_core::maybe_add_client_idle_filter, nullptr);
+      grpc_core::MaybeAddClientIdleFilter, nullptr);
 }
 
 void grpc_client_idle_filter_shutdown(void) {}
