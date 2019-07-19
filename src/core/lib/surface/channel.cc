@@ -416,14 +416,11 @@ void* grpc_channel_register_call(grpc_channel* channel, const char* method,
   GPR_ASSERT(!reserved);
   grpc_core::ExecCtx exec_ctx;
 
-  rc->path = grpc_mdelem_from_slices(
-      GRPC_MDSTR_PATH,
-      grpc_core::InternedSlice(grpc_slice_from_static_string(method)));
-  rc->authority =
-      host ? grpc_mdelem_from_slices(
-                 GRPC_MDSTR_AUTHORITY,
-                 grpc_core::InternedSlice(grpc_slice_from_static_string(host)))
-           : GRPC_MDNULL;
+  rc->path = grpc_mdelem_from_slices(GRPC_MDSTR_PATH,
+                                     grpc_core::InternalSlice(method));
+  rc->authority = host ? grpc_mdelem_from_slices(GRPC_MDSTR_AUTHORITY,
+                                                 grpc_core::InternalSlice(host))
+                       : GRPC_MDNULL;
   gpr_mu_lock(&channel->registered_call_mu);
   rc->next = channel->registered_calls;
   channel->registered_calls = rc;

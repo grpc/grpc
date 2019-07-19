@@ -55,7 +55,18 @@ namespace grpc_core {
 // |   StaticSlice |                |
 // ----------------------------------
 //
-struct InternalSlice : public grpc_slice {};
+struct StaticSlice;
+struct ExternSlice;
+struct InternalSlice : public grpc_slice {
+  explicit InternalSlice(const grpc_slice* slice);
+  explicit InternalSlice(const char* string);
+  InternalSlice(const char* buf, size_t len);
+  InternalSlice() {
+    refcount = nullptr;
+    data.refcounted.bytes = nullptr;
+    data.refcounted.length = 0;
+  }
+};
 struct ExternSlice : public grpc_slice {
   ExternSlice() {
     refcount = nullptr;
@@ -76,13 +87,10 @@ struct StaticSlice : public InternalSlice {
     data.refcounted.bytes = bytes;
   }
 };
+
+struct InternedSliceRefcount;
 struct InternedSlice : public InternalSlice {
-  InternedSlice() = default;
-  explicit InternedSlice(const grpc_slice& slice);
-  InternedSlice& operator=(const StaticSlice& other) {
-    memcpy(this, &other, sizeof(*this));
-    return *this;
-  }
+  explicit InternedSlice(InternedSliceRefcount* s);
 };
 
 }  // namespace grpc_core
