@@ -160,3 +160,29 @@ grpc_server_credentials* grpc_find_server_credentials_in_args(
   }
   return nullptr;
 }
+
+grpc_core::Map<const char*, grpc_core::RefCountedPtr<grpc_channel_credentials>,
+               grpc_core::StringLess>
+    g_grpc_control_plane_creds;
+grpc_core::Mutex g_control_plane_creds_mu;
+
+bool grpc_channel_credentials_attach_credentials(
+    grpc_channel_credentials* credentials, const char* authority,
+    grpc_channel_credentials* control_plane_creds) {
+  grpc_core::ExecCtx exec_ctx;
+  return credentials->attach_credentials(authority, control_plane_creds->Ref());
+}
+
+bool grpc_control_plane_credentials_register(
+    const char* authority, grpc_channel_credentials* control_plane_creds) {
+  grpc_core::ExecCtx exec_ctx;
+  {
+    grpc_core::MutexLock lock(&g_control_plane_creds_mu);
+    if (g_grpc_control_plane_creds.find(authority) !=
+        g_grpc_control_plane_creds.end()) {
+      return false;
+    }
+    g_grpc_control_plane_creds[authority] = control_plane_creds->Ref();
+  }
+  return true;
+}

@@ -26,7 +26,9 @@
 #include <grpc/support/sync.h>
 #include "src/core/lib/transport/metadata_batch.h"
 
+#include "src/core/lib/gprpp/map.h"
 #include "src/core/lib/gprpp/ref_counted.h"
+#include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/http/httpcli.h"
 #include "src/core/lib/http/parser.h"
 #include "src/core/lib/iomgr/polling_entity.h"
@@ -91,6 +93,12 @@ void grpc_override_well_known_credentials_path_getter(
 
 #define GRPC_ARG_CHANNEL_CREDENTIALS "grpc.channel_credentials"
 
+extern grpc_core::Map<const char*,
+                      grpc_core::RefCountedPtr<grpc_channel_credentials>,
+                      grpc_core::StringLess>
+    g_grpc_control_plane_creds;
+extern grpc_core::Mutex g_control_plane_creds_mu;
+
 // This type is forward declared as a C struct and we cannot define it as a
 // class. Otherwise, compiler will complain about type mismatch due to
 // -Wmismatched-tags.
@@ -131,12 +139,52 @@ struct grpc_channel_credentials
     return args;
   }
 
+  // Attaches control_plane_creds to the local registry, under authority,
+  // if no other creds are currently registered under authority. Returns
+  // true if registered successfully and false if not.
+  bool attach_credentials(
+      const char* authority,
+      grpc_core::RefCountedPtr<grpc_channel_credentials> control_plane_creds) {
+    grpc_core::MutexLock lock(&g_control_plane_creds_mu);
+    auto local_lookup = local_control_plane_creds_.find(authority);
+    if (local_lookup != local_control_plane_creds_.end()) {
+      return false;
+    }
+    local_control_plane_creds_[authority] = control_plane_creds;
+    return true;
+  }
+
+  // Gets the control plane credentials registered under authority. This
+  // prefers the local control plane creds registry but falls back to the
+  // global registry. Lastly, this returns self but with any attached
+  // call credentials stripped off, in the case that neither the local
+  // registry nor the global registry have an entry for authority.
+  grpc_core::RefCountedPtr<grpc_channel_credentials>
+  get_control_plane_credentials(const char* authority) {
+    {
+      grpc_core::MutexLock lock(&g_control_plane_creds_mu);
+      auto local_lookup = local_control_plane_creds_.find(authority);
+      if (local_lookup != local_control_plane_creds_.end()) {
+        return local_lookup->second;
+      }
+      auto global_lookup = g_grpc_control_plane_creds.find(authority);
+      if (global_lookup != g_grpc_control_plane_creds.end()) {
+        return global_lookup->second;
+      }
+    }
+    return duplicate_without_call_credentials();
+  }
+
   const char* type() const { return type_; }
 
   GRPC_ABSTRACT_BASE_CLASS
 
  private:
   const char* type_;
+  grpc_core::Map<const char*,
+                 grpc_core::RefCountedPtr<grpc_channel_credentials>,
+                 grpc_core::StringLess>
+      local_control_plane_creds_;
 };
 
 /* Util to encapsulate the channel credentials in a channel arg. */
@@ -149,6 +197,21 @@ grpc_channel_credentials* grpc_channel_credentials_from_arg(
 /* Util to find the channel credentials from channel args. */
 grpc_channel_credentials* grpc_channel_credentials_find_in_args(
     const grpc_channel_args* args);
+
+/** EXPERIMENTAL.  API MAY CHANGE IN THE FUTURE.
+    Attaches \a control_plane_creds to \a credentials
+    under the key \a authority. Returns false if \a authority
+    is already present, in which case no changes are made. */
+bool grpc_channel_credentials_attach_credentials(
+    grpc_channel_credentials* credentials, const char* authority,
+    grpc_channel_credentials* control_plane_creds);
+
+/** EXPERIMENTAL.  API MAY CHANGE IN THE FUTURE.
+    Registers \a control_plane_creds in the global registry
+    under the key \a authority. Returns false if \a authority
+    is already present, in which case no changes are made. */
+bool grpc_control_plane_credentials_register(
+    const char* authority, grpc_channel_credentials* control_plane_creds);
 
 /* --- grpc_credentials_mdelem_array. --- */
 

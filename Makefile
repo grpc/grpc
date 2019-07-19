@@ -1054,6 +1054,7 @@ grpc_channel_stack_builder_test: $(BINDIR)/$(CONFIG)/grpc_channel_stack_builder_
 grpc_channel_stack_test: $(BINDIR)/$(CONFIG)/grpc_channel_stack_test
 grpc_completion_queue_test: $(BINDIR)/$(CONFIG)/grpc_completion_queue_test
 grpc_completion_queue_threading_test: $(BINDIR)/$(CONFIG)/grpc_completion_queue_threading_test
+grpc_control_plane_credentials_test: $(BINDIR)/$(CONFIG)/grpc_control_plane_credentials_test
 grpc_create_jwt: $(BINDIR)/$(CONFIG)/grpc_create_jwt
 grpc_credentials_test: $(BINDIR)/$(CONFIG)/grpc_credentials_test
 grpc_ipv6_loopback_available_test: $(BINDIR)/$(CONFIG)/grpc_ipv6_loopback_available_test
@@ -1490,6 +1491,7 @@ buildtests_c: privatelibs_c \
   $(BINDIR)/$(CONFIG)/grpc_channel_stack_test \
   $(BINDIR)/$(CONFIG)/grpc_completion_queue_test \
   $(BINDIR)/$(CONFIG)/grpc_completion_queue_threading_test \
+  $(BINDIR)/$(CONFIG)/grpc_control_plane_credentials_test \
   $(BINDIR)/$(CONFIG)/grpc_credentials_test \
   $(BINDIR)/$(CONFIG)/grpc_ipv6_loopback_available_test \
   $(BINDIR)/$(CONFIG)/grpc_json_token_test \
@@ -2069,6 +2071,8 @@ test_c: buildtests_c
 	$(Q) $(BINDIR)/$(CONFIG)/grpc_completion_queue_test || ( echo test grpc_completion_queue_test failed ; exit 1 )
 	$(E) "[RUN]     Testing grpc_completion_queue_threading_test"
 	$(Q) $(BINDIR)/$(CONFIG)/grpc_completion_queue_threading_test || ( echo test grpc_completion_queue_threading_test failed ; exit 1 )
+	$(E) "[RUN]     Testing grpc_control_plane_credentials_test"
+	$(Q) $(BINDIR)/$(CONFIG)/grpc_control_plane_credentials_test || ( echo test grpc_control_plane_credentials_test failed ; exit 1 )
 	$(E) "[RUN]     Testing grpc_credentials_test"
 	$(Q) $(BINDIR)/$(CONFIG)/grpc_credentials_test || ( echo test grpc_credentials_test failed ; exit 1 )
 	$(E) "[RUN]     Testing grpc_ipv6_loopback_available_test"
@@ -10932,6 +10936,38 @@ deps_grpc_completion_queue_threading_test: $(GRPC_COMPLETION_QUEUE_THREADING_TES
 ifneq ($(NO_SECURE),true)
 ifneq ($(NO_DEPS),true)
 -include $(GRPC_COMPLETION_QUEUE_THREADING_TEST_OBJS:.o=.dep)
+endif
+endif
+
+
+GRPC_CONTROL_PLANE_CREDENTIALS_TEST_SRC = \
+    test/core/security/control_plane_credentials_test.cc \
+
+GRPC_CONTROL_PLANE_CREDENTIALS_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(GRPC_CONTROL_PLANE_CREDENTIALS_TEST_SRC))))
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL.
+
+$(BINDIR)/$(CONFIG)/grpc_control_plane_credentials_test: openssl_dep_error
+
+else
+
+
+
+$(BINDIR)/$(CONFIG)/grpc_control_plane_credentials_test: $(GRPC_CONTROL_PLANE_CREDENTIALS_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS) $(GRPC_CONTROL_PLANE_CREDENTIALS_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/grpc_control_plane_credentials_test
+
+endif
+
+$(OBJDIR)/$(CONFIG)/test/core/security/control_plane_credentials_test.o:  $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a
+
+deps_grpc_control_plane_credentials_test: $(GRPC_CONTROL_PLANE_CREDENTIALS_TEST_OBJS:.o=.dep)
+
+ifneq ($(NO_SECURE),true)
+ifneq ($(NO_DEPS),true)
+-include $(GRPC_CONTROL_PLANE_CREDENTIALS_TEST_OBJS:.o=.dep)
 endif
 endif
 
