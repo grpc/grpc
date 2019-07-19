@@ -119,6 +119,50 @@ static void test_FIFO(void) {
   }
 }
 
+static void test_space_efficiency(void) {
+  gpr_log(GPR_INFO, "test_space_efficiency");
+  grpc_core::InfLenFIFOQueue queue;
+  for (int i = 0; i < 1024; ++i) {
+    queue.Put(static_cast<void*>(grpc_core::New<WorkItem>(i)));
+  }
+  GPR_ASSERT(queue.num_node() == 1024);
+  for (int i = 0; i < 1024; ++i) {
+    WorkItem* item = static_cast<WorkItem*>(queue.Get());
+    queue.Put(item);
+  }
+  GPR_ASSERT(queue.num_node() == 1024);
+  for (int i = 0; i < 1024; ++i) {
+    WorkItem* item = static_cast<WorkItem*>(queue.Get());
+    grpc_core::Delete(item);
+  }
+  GPR_ASSERT(queue.num_node() == 1024);
+  GPR_ASSERT(queue.count() == 0);
+  // queue empty now
+  for (int i = 0; i < 4000; ++i) {
+    queue.Put(static_cast<void*>(grpc_core::New<WorkItem>(i)));
+  }
+  GPR_ASSERT(queue.count() == 4000);
+  GPR_ASSERT(queue.num_node() == 4096);
+  for (int i = 0; i < 2000; ++i) {
+    WorkItem* item = static_cast<WorkItem*>(queue.Get());
+    grpc_core::Delete(item);
+  }
+  GPR_ASSERT(queue.count() == 2000);
+  GPR_ASSERT(queue.num_node() == 4096);
+  for (int i = 0; i < 1000; ++i) {
+    queue.Put(static_cast<void*>(grpc_core::New<WorkItem>(i)));
+  }
+  GPR_ASSERT(queue.count() == 3000);
+  GPR_ASSERT(queue.num_node() == 4096);
+  for (int i = 0; i < 3000; ++i) {
+    WorkItem* item = static_cast<WorkItem*>(queue.Get());
+    grpc_core::Delete(item);
+  }
+  GPR_ASSERT(queue.count() == 0);
+  GPR_ASSERT(queue.num_node() == 4096);
+  gpr_log(GPR_DEBUG, "Done.");
+}
+
 static void test_many_thread(void) {
   gpr_log(GPR_INFO, "test_many_thread");
   const int num_producer_threads = 10;
@@ -172,6 +216,7 @@ int main(int argc, char** argv) {
   grpc::testing::TestEnvironment env(argc, argv);
   grpc_init();
   test_FIFO();
+  test_space_efficiency();
   test_many_thread();
   grpc_shutdown();
   return 0;

@@ -54,7 +54,7 @@ class MPMCQueueInterface {
 class InfLenFIFOQueue : public MPMCQueueInterface {
  public:
   // Creates a new MPMC Queue. The queue created will have infinite length.
-  InfLenFIFOQueue() {}
+  InfLenFIFOQueue();
 
   // Releases all resources held by the queue. The queue must be empty, and no
   // one waits on conditional variables.
@@ -66,8 +66,8 @@ class InfLenFIFOQueue : public MPMCQueueInterface {
 
   // Removes the oldest element from the queue and returns it.
   // This routine will cause the thread to block if queue is currently empty.
-  // Argument wait_time should be passed in when turning on the trace flag
-  // grpc_thread_pool_trace (for collecting stats info purpose.)
+  // Argument wait_time should be passed in when trace flag turning on (for
+  // collecting stats info purpose.)
   void* Get(gpr_timespec* wait_time = nullptr);
 
   // Returns number of elements in queue currently.
@@ -75,23 +75,29 @@ class InfLenFIFOQueue : public MPMCQueueInterface {
   // quickly.
   int count() const { return count_.Load(MemoryOrder::RELAXED); }
 
+  struct Node {
+    Node* next;                // Linking
+    Node* prev;
+    void* content;             // Points to actual element
+    gpr_timespec insert_time;  // Time for stats
+
+    Node() {
+      next = prev = nullptr;
+      content = nullptr;
+    }
+  };
+
+  // For test purpose only. Returns number of nodes allocated in queue.
+  // All allocated nodes will not be free until destruction of queue.
+  size_t num_node();
+
  private:
   // For Internal Use Only.
   // Removes the oldest element from the queue and returns it. This routine
   // will NOT check whether queue is empty, and it will NOT acquire mutex.
-  // Caller should do the check and acquire mutex before callling.
+  // Caller MUST check that queue is not empty and must acquire mutex before
+  // callling.
   void* PopFront();
-
-  struct Node {
-    Node* next;                // Linking
-    void* content;             // Points to actual element
-    gpr_timespec insert_time;  // Time for stats
-
-    Node(void* c) : content(c) {
-      next = nullptr;
-      insert_time = gpr_now(GPR_CLOCK_MONOTONIC);
-    }
-  };
 
   // Stats of queue. This will only be collect when debug trace mode is on.
   // All printed stats info will have time measurement in microsecond.
@@ -115,15 +121,47 @@ class InfLenFIFOQueue : public MPMCQueueInterface {
     }
   };
 
+  // Node for waiting thread queue. Stands for one waiting thread, should have
+  // exact one thread waiting on its CondVar.
+  // Using a doubly linked list for waiting thread queue to wake up waiting
+  // threads in LIFO order to reduce cache misses.
+  struct Waiter {
+    CondVar cv;
+    Waiter* next;
+    Waiter* prev;
+  };
+
+  // Pushs waiter to the front of queue, require caller held mutex
+  void PushWaiter(Waiter* waiter);
+
+  // Removes waiter from queue, require caller held mutex
+  void RemoveWaiter(Waiter* waiter);
+
+  // Returns pointer to the waiter that should be waken up next, should be the
+  // last added waiter.
+  Waiter* TopWaiter();
+
   Mutex mu_;               // Protecting lock
-  CondVar wait_nonempty_;  // Wait on empty queue on get
-  int num_waiters_ = 0;    // Number of waiters
+  Waiter waiters_;         // Head of waiting thread queue
+
+  Node** delete_list_ = nullptr;  // Keeps track of all allocated array entries
+                                  // for deleting on destruction
+  size_t delete_list_count_ = 0;  // Number of entries in list
+  size_t delete_list_size_ = 0;   // Size of the list. List will be expanded to
+                                  // double size on full
 
   Node* queue_head_ = nullptr;  // Head of the queue, remove position
   Node* queue_tail_ = nullptr;  // End of queue, insert position
   Atomic<int> count_{0};        // Number of elements in queue
+
   Stats stats_;                 // Stats info
   gpr_timespec busy_time;       // Start time of busy queue
+
+  // Internal Helper.
+  // Allocates an array of nodes of size "num", links all nodes together except
+  // the first node's prev and last node's next. They should be set by caller
+  // manually afterward.
+  Node* AllocateNodes(int num);
 };
 
 }  // namespace grpc_core
