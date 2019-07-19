@@ -33,19 +33,13 @@ T GetAndResetCounter(Atomic<T>* from) {
   return from->Exchange(0, MemoryOrder::RELAXED);
 }
 
-template <typename T>
-void CopyCounter(Atomic<T>* from, Atomic<T>* to) {
-  T count = from->Load(MemoryOrder::RELAXED);
-  to->Store(count, MemoryOrder::RELAXED);
-}
-
 }  // namespace
 
 //
-// XdsLbClientStats::LocalityStats::LoadMetric::Harvest
+// XdsLbClientStats::LocalityStats::LoadMetric::Snapshot
 //
 
-bool XdsLbClientStats::LocalityStats::LoadMetric::Harvest::IsAllZero() const {
+bool XdsLbClientStats::LocalityStats::LoadMetric::Snapshot::IsAllZero() const {
   return total_metric_value == 0 && num_requests_finished_with_metric == 0;
 }
 
@@ -53,25 +47,25 @@ bool XdsLbClientStats::LocalityStats::LoadMetric::Harvest::IsAllZero() const {
 // XdsLbClientStats::LocalityStats::LoadMetric
 //
 
-XdsLbClientStats::LocalityStats::LoadMetric::Harvest
-XdsLbClientStats::LocalityStats::LoadMetric::Reap() {
-  Harvest metric = {num_requests_finished_with_metric_, total_metric_value_};
+XdsLbClientStats::LocalityStats::LoadMetric::Snapshot
+XdsLbClientStats::LocalityStats::LoadMetric::GetSnapshotAndReset() {
+  Snapshot metric = {num_requests_finished_with_metric_, total_metric_value_};
   num_requests_finished_with_metric_ = 0;
   total_metric_value_ = 0;
   return metric;
 }
 
 //
-// XdsLbClientStats::LocalityStats::Harvest
+// XdsLbClientStats::LocalityStats::Snapshot
 //
 
-bool XdsLbClientStats::LocalityStats::Harvest::IsAllZero() {
+bool XdsLbClientStats::LocalityStats::Snapshot::IsAllZero() {
   if (total_successful_requests != 0 || total_requests_in_progress != 0 ||
       total_error_requests != 0 || total_issued_requests != 0) {
     return false;
   }
   for (auto& p : load_metric_stats) {
-    const LoadMetric::Harvest& metric_value = p.second;
+    const LoadMetric::Snapshot& metric_value = p.second;
     if (!metric_value.IsAllZero()) return false;
   }
   return true;
@@ -81,8 +75,6 @@ bool XdsLbClientStats::LocalityStats::Harvest::IsAllZero() {
 // XdsLbClientStats::LocalityStats
 //
 
-// FIXME: What happens when the tree is rebalancing? Fix potential
-// synchronization issue.
 XdsLbClientStats::LocalityStats::LocalityStats(
     XdsLbClientStats::LocalityStats&& other) noexcept
     : total_successful_requests_(
@@ -93,37 +85,38 @@ XdsLbClientStats::LocalityStats::LocalityStats(
       total_issued_requests_(
           GetAndResetCounter(&other.total_issued_requests_)) {
   MutexLock lock(&other.load_metric_stats_mu_);
-  load_metric_stats_ = other.load_metric_stats_;
+  load_metric_stats_ = std::move(other.load_metric_stats_);
 }
 
 XdsLbClientStats::LocalityStats& XdsLbClientStats::LocalityStats::operator=(
     grpc_core::XdsLbClientStats::LocalityStats&& other) noexcept {
-  CopyCounter(&other.total_successful_requests_, &total_successful_requests_);
-  CopyCounter(&other.total_requests_in_progress_, &total_requests_in_progress_);
-  CopyCounter(&other.total_error_requests_, &total_error_requests_);
-  CopyCounter(&other.total_issued_requests_, &total_issued_requests_);
-  load_metric_stats_ = other.load_metric_stats_;
+  // This method should never be invoked because the only code path to it is
+  // from Map::InsertRecursive(), which will never be reached because
+  // XdsLbClientStats::FindLocalityStats() always check for pre-existing entry
+  // before adding a new one.
+  GPR_UNREACHABLE_CODE(return *this);
   return *this;
 }
 
-XdsLbClientStats::LocalityStats::Harvest
-XdsLbClientStats::LocalityStats::Reap() {
-  Harvest harvest = {GetAndResetCounter(&total_successful_requests_),
-                     // Don't reset total_requests_in_progress because it's not
-                     // related to a single reporting interval.
-                     total_requests_in_progress_.Load(MemoryOrder::RELAXED),
-                     GetAndResetCounter(&total_error_requests_),
-                     GetAndResetCounter(&total_issued_requests_)};
+XdsLbClientStats::LocalityStats::Snapshot
+XdsLbClientStats::LocalityStats::GetSnapshotAndReset() {
+  Snapshot snapshot = {
+      GetAndResetCounter(&total_successful_requests_),
+      // Don't reset total_requests_in_progress because it's not
+      // related to a single reporting interval.
+      total_requests_in_progress_.Load(MemoryOrder::RELAXED),
+      GetAndResetCounter(&total_error_requests_),
+      GetAndResetCounter(&total_issued_requests_)};
   {
     MutexLock lock(&load_metric_stats_mu_);
     for (auto& p : load_metric_stats_) {
       const char* metric_name = p.first.get();
       LoadMetric& metric_value = p.second;
-      harvest.load_metric_stats.emplace(gpr_strdup(metric_name),
-                                        metric_value.Reap());
+      snapshot.load_metric_stats.emplace(gpr_strdup(metric_name),
+                                         metric_value.GetSnapshotAndReset());
     }
   }
-  return harvest;
+  return snapshot;
 }
 
 void XdsLbClientStats::LocalityStats::AddCallStarted() {
@@ -144,10 +137,10 @@ void XdsLbClientStats::LocalityStats::AddCallFinished(bool fail) {
 }
 
 //
-// XdsLbClientStats::Harvest
+// XdsLbClientStats::Snapshot
 //
 
-bool XdsLbClientStats::Harvest::IsAllZero() {
+bool XdsLbClientStats::Snapshot::IsAllZero() {
   for (auto& p : upstream_locality_stats) {
     if (!p.second.IsAllZero()) return false;
   }
@@ -161,24 +154,25 @@ bool XdsLbClientStats::Harvest::IsAllZero() {
 // XdsLbClientStats
 //
 
-XdsLbClientStats::Harvest XdsLbClientStats::Reap() {
+XdsLbClientStats::Snapshot XdsLbClientStats::GetSnapshotAndReset() {
   grpc_millis now = ExecCtx::Get()->Now();
-  // Record total_dropped_requests and reporting interval in the harvest.
-  Harvest harvest = {
+  // Record total_dropped_requests and reporting interval in the snapshot.
+  Snapshot snapshot = {
       .total_dropped_requests = GetAndResetCounter(&total_dropped_requests_),
       .load_report_interval = now - last_report_time_};
   // Update last report time.
   last_report_time_ = now;
-  // Harvest all the other stats.
+  // Snapshot all the other stats.
   for (auto& p : upstream_locality_stats_) {
-    harvest.upstream_locality_stats.emplace(p.first, p.second.Reap());
+    snapshot.upstream_locality_stats.emplace(p.first,
+                                             p.second.GetSnapshotAndReset());
   }
   {
     MutexLock lock(&dropped_requests_mu_);
-    harvest.dropped_requests = dropped_requests_;
+    snapshot.dropped_requests = dropped_requests_;
     for (auto& p : dropped_requests_) p.second = 0;
   }
-  return harvest;
+  return snapshot;
 }
 
 void XdsLbClientStats::MaybeInitLastReportTime() {

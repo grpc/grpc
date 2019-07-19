@@ -83,13 +83,15 @@ class XdsLocalityName : public RefCounted<XdsLocalityName> {
 };
 
 // The stats classes (i.e., XdsLbClientStats, LocalityStats, and LoadMetric) can
-// be Reap()ed to populate the load report. The reaped results are contained in
-// the respective Harvest structs. The Harvest structs have no synchronization.
-// The stats classes use several different synchronization methods. 1. Most of
-// the counters are Atomic<>s for performance. 2. Some of the Map<>s are
-// protected by Mutex if we are not guaranteed that the accesses to them are
-// synchronized by the callers. 3. The Map<>s to which the accesses are already
-// synchronized by the callers do not have additional synchronization here.
+// be taken a snapshot (and reset) to populate the load report. The snapshots
+// are contained in the respective Snapshot structs. The Snapshot structs have
+// no synchronization. The stats classes use several different synchronization
+// methods. 1. Most of the counters are Atomic<>s for performance. 2. Some of
+// the Map<>s are protected by Mutex if we are not guaranteed that the accesses
+// to them are synchronized by the callers. 3. The Map<>s to which the accesses
+// are already synchronized by the callers do not have additional
+// synchronization here. Note that the Map<>s we mentioned in 2 and 3 refer to
+// the map's tree structure rather than the content in each tree node.
 // FIXME: audit the memory order usage.
 class XdsLbClientStats {
  public:
@@ -97,7 +99,7 @@ class XdsLbClientStats {
    public:
     class LoadMetric {
      public:
-      struct Harvest {
+      struct Snapshot {
         bool IsAllZero() const;
 
         uint64_t num_requests_finished_with_metric;
@@ -106,7 +108,7 @@ class XdsLbClientStats {
 
       // Returns a snapshot of this instance and reset all the accumulative
       // counters.
-      Harvest Reap();
+      Snapshot GetSnapshotAndReset();
 
      private:
       uint64_t num_requests_finished_with_metric_{0};
@@ -114,10 +116,10 @@ class XdsLbClientStats {
     };
 
     using LoadMetricMap = Map<UniquePtr<char>, LoadMetric, StringLess>;
-    using LoadMetricHarvestMap =
-        Map<UniquePtr<char>, LoadMetric::Harvest, StringLess>;
+    using LoadMetricSnapshotMap =
+        Map<UniquePtr<char>, LoadMetric::Snapshot, StringLess>;
 
-    struct Harvest {
+    struct Snapshot {
       // TODO(juanlishen): Change this to const method when const_iterator is
       // added to Map<>.
       bool IsAllZero();
@@ -126,18 +128,18 @@ class XdsLbClientStats {
       uint64_t total_requests_in_progress;
       uint64_t total_error_requests;
       uint64_t total_issued_requests;
-      LoadMetricHarvestMap load_metric_stats;
+      LoadMetricSnapshotMap load_metric_stats;
     };
 
     LocalityStats() = default;
     // Move ctor. For map operations.
     LocalityStats(LocalityStats&& other) noexcept;
-    // Copy assignment. For map operations.
+    // Move assignment. For map operations. Should never be invoked.
     LocalityStats& operator=(LocalityStats&& other) noexcept;
 
     // Returns a snapshot of this instance and reset all the accumulative
     // counters.
-    Harvest Reap();
+    Snapshot GetSnapshotAndReset();
 
     // After a LocalityStats is killed, it can't call AddCallStarted() unless
     // revived. AddCallFinished() can still be called. Once the number of in
@@ -169,27 +171,27 @@ class XdsLbClientStats {
 
   using LocalityStatsMap =
       Map<RefCountedPtr<XdsLocalityName>, LocalityStats, XdsLocalityName::Less>;
-  using LocalityStatsHarvestMap =
-      Map<RefCountedPtr<XdsLocalityName>, LocalityStats::Harvest,
+  using LocalityStatsSnapshotMap =
+      Map<RefCountedPtr<XdsLocalityName>, LocalityStats::Snapshot,
           XdsLocalityName::Less>;
   using DroppedRequestsMap = Map<UniquePtr<char>, uint64_t, StringLess>;
-  using DroppedRequestsHarvestMap = DroppedRequestsMap;
+  using DroppedRequestsSnapshotMap = DroppedRequestsMap;
 
-  struct Harvest {
+  struct Snapshot {
     // TODO(juanlishen): Change this to const method when const_iterator is
     // added to Map<>.
     bool IsAllZero();
 
-    LocalityStatsHarvestMap upstream_locality_stats;
+    LocalityStatsSnapshotMap upstream_locality_stats;
     uint64_t total_dropped_requests;
-    DroppedRequestsHarvestMap dropped_requests;
+    DroppedRequestsSnapshotMap dropped_requests;
     // The actual load report interval.
     grpc_millis load_report_interval;
   };
 
   // Returns a snapshot of this instance and reset all the accumulative
   // counters.
-  Harvest Reap();
+  Snapshot GetSnapshotAndReset();
 
   void MaybeInitLastReportTime();
   LocalityStats* FindLocalityStats(

@@ -196,8 +196,10 @@ class XdsLb : public LoadBalancingPolicy {
     // Contains an EDS call to the LB server.
     class EdsCallState : public InternallyRefCounted<EdsCallState> {
      public:
+      // The ctor and dtor should not be used directly.
       explicit EdsCallState(
           RefCountedPtr<RetryableLbCall<EdsCallState>> parent);
+      ~EdsCallState() override;
 
       void Orphan() override;
 
@@ -207,10 +209,6 @@ class XdsLb : public LoadBalancingPolicy {
       bool seen_response() const { return seen_response_; }
 
      private:
-      GRPC_ALLOW_CLASS_TO_USE_NON_PUBLIC_DELETE
-
-      ~EdsCallState();
-
       static void OnResponseReceivedLocked(void* arg, grpc_error* error);
       static void OnStatusReceivedLocked(void* arg, grpc_error* error);
 
@@ -243,8 +241,10 @@ class XdsLb : public LoadBalancingPolicy {
     // Contains an LRS call to the LB server.
     class LrsCallState : public InternallyRefCounted<LrsCallState> {
      public:
+      // The ctor and dtor should not be used directly.
       explicit LrsCallState(
           RefCountedPtr<RetryableLbCall<LrsCallState>> parent);
+      ~LrsCallState() override;
 
       void Orphan() override;
 
@@ -256,8 +256,6 @@ class XdsLb : public LoadBalancingPolicy {
       bool seen_response() const { return seen_response_; }
 
      private:
-      GRPC_ALLOW_CLASS_TO_USE_NON_PUBLIC_DELETE
-
       // Reports client-side load stats according to a fixed interval.
       class Reporter : public InternallyRefCounted<Reporter> {
        public:
@@ -297,8 +295,6 @@ class XdsLb : public LoadBalancingPolicy {
         grpc_closure on_next_report_timer_;
         grpc_closure on_report_done_;
       };
-
-      ~LrsCallState();
 
       static void OnInitialRequestSentLocked(void* arg, grpc_error* error);
       static void OnResponseReceivedLocked(void* arg, grpc_error* error);
@@ -618,13 +614,13 @@ LoadBalancingPolicy::PickResult XdsLb::PickerWrapper::Pick(
   // Record a call started.
   locality_stats_->AddCallStarted();
   // Intercept the recv_trailing_metadata op to record call completion.
-  // Note that the following callback does not run in either the control plane
-  // or data plane combiner.
   result.recv_trailing_metadata_ready = RecordCallCompletion;
   result.recv_trailing_metadata_ready_user_data = locality_stats_;
   return result;
 }
 
+// Note that the following callback does not run in either the control plane
+// combiner or the data plane combiner.
 void XdsLb::PickerWrapper::RecordCallCompletion(
     void* arg, grpc_error* error, grpc_metadata_batch* recv_trailing_metadata,
     grpc_core::LoadBalancingPolicy::CallState* call_state) {
