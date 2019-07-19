@@ -49,6 +49,7 @@ class BlockingCounter {
       cv_.wait(l);
     }
   }
+
  private:
   int count_;
   std::mutex mu_;
@@ -153,11 +154,8 @@ static void BM_ThreadPool2048AddAnother(benchmark::State& state) {
 }
 BENCHMARK(BM_ThreadPool2048AddAnother)->RangePair(524288, 524288, 1, 1024);
 
-
-
 // A functor class that will delete self on end of running.
-class SuicideFunctorForAdd
-    : public grpc_experimental_completion_queue_functor {
+class SuicideFunctorForAdd : public grpc_experimental_completion_queue_functor {
  public:
   SuicideFunctorForAdd(BlockingCounter* counter) : counter_(counter) {
     functor_run = &SuicideFunctorForAdd::Run;
@@ -176,7 +174,6 @@ class SuicideFunctorForAdd
   BlockingCounter* counter_;
 };
 
-
 // Performs the scenario of external thread(s) adding closures into pool.
 static void BM_ThreadPoolExternalAdd(benchmark::State& state) {
   static grpc_core::ThreadPool* external_add_pool = nullptr;
@@ -185,7 +182,7 @@ static void BM_ThreadPoolExternalAdd(benchmark::State& state) {
     const int num_threads = state.range(1);
     external_add_pool = new grpc_core::ThreadPool(num_threads);
   }
-const int num_iterations = state.range(0);
+  const int num_iterations = state.range(0);
   while (state.KeepRunningBatch(num_iterations)) {
     BlockingCounter counter(num_iterations);
     for (int i = 0; i < num_iterations; ++i) {
@@ -287,13 +284,14 @@ class ShortWorkFunctorForAdd
     val_ = 0;
   }
   ~ShortWorkFunctorForAdd() {}
-  static void Run(grpc_experimental_completion_queue_functor *cb, int ok) {
+  static void Run(grpc_experimental_completion_queue_functor* cb, int ok) {
     auto* callback = static_cast<ShortWorkFunctorForAdd*>(cb);
     for (int i = 0; i < 1000; ++i) {
       callback->val_++;
     }
     callback->counter_->DecrementCount();
   }
+
  private:
   char pad[ABSL_CACHELINE_SIZE];
   volatile int val_;
