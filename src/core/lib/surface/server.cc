@@ -711,8 +711,10 @@ static void maybe_finish_shutdown(grpc_server* server) {
     return;
   }
 
+  gpr_mu_lock(&server->mu_call);
   kill_pending_work_locked(
       server, GRPC_ERROR_CREATE_FROM_STATIC_STRING("Server Shutdown"));
+  gpr_mu_unlock(&server->mu_call);
 
   if (server->root_channel_data.next != &server->root_channel_data ||
       server->listeners_destroyed < num_listeners(server)) {
