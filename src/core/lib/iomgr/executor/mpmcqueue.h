@@ -76,7 +76,7 @@ class InfLenFIFOQueue : public MPMCQueueInterface {
   int count() const { return count_.Load(MemoryOrder::RELAXED); }
 
   struct Node {
-    Node* next;                // Linking
+    Node* next;  // Linking
     Node* prev;
     void* content;             // Points to actual element
     gpr_timespec insert_time;  // Time for stats
@@ -141,8 +141,8 @@ class InfLenFIFOQueue : public MPMCQueueInterface {
   // last added waiter.
   Waiter* TopWaiter();
 
-  Mutex mu_;               // Protecting lock
-  Waiter waiters_;         // Head of waiting thread queue
+  Mutex mu_;        // Protecting lock
+  Waiter waiters_;  // Head of waiting thread queue
 
   Node** delete_list_ = nullptr;  // Keeps track of all allocated array entries
                                   // for deleting on destruction
@@ -154,8 +154,8 @@ class InfLenFIFOQueue : public MPMCQueueInterface {
   Node* queue_tail_ = nullptr;  // End of queue, insert position
   Atomic<int> count_{0};        // Number of elements in queue
 
-  Stats stats_;                 // Stats info
-  gpr_timespec busy_time;       // Start time of busy queue
+  Stats stats_;            // Stats info
+  gpr_timespec busy_time;  // Start time of busy queue
 
   // Internal Helper.
   // Allocates an array of nodes of size "num", links all nodes together except

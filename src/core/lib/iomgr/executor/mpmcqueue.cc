@@ -33,8 +33,8 @@ inline void* InfLenFIFOQueue::PopFront() {
 
   // Updates Stats when trace flag turned on.
   if (GRPC_TRACE_FLAG_ENABLED(grpc_thread_pool_trace)) {
-    gpr_timespec wait_time = gpr_time_sub(gpr_now(GPR_CLOCK_MONOTONIC),
-                                          queue_head_->insert_time);
+    gpr_timespec wait_time =
+        gpr_time_sub(gpr_now(GPR_CLOCK_MONOTONIC), queue_head_->insert_time);
     stats_.num_completed++;
     stats_.total_queue_time = gpr_time_add(stats_.total_queue_time, wait_time);
     stats_.max_queue_time = gpr_time_max(
@@ -103,7 +103,7 @@ void InfLenFIFOQueue::Put(void* elem) {
 
   int curr_count = count_.Load(MemoryOrder::RELAXED);
 
-  if (queue_tail_ == queue_head_ &&  curr_count!= 0) {
+  if (queue_tail_ == queue_head_ && curr_count != 0) {
     // List is full. Expands list to double size by inserting new chunk of nodes
     Node* new_chunk = AllocateNodes(curr_count);
     delete_list_[delete_list_count_++] = new_chunk;
@@ -166,7 +166,7 @@ void* InfLenFIFOQueue::Get(gpr_timespec* wait_time) {
 size_t InfLenFIFOQueue::num_node() {
   size_t num = 1024;
   for (size_t i = 1; i < delete_list_count_; ++i) {
-    num = num* 2;
+    num = num * 2;
   }
   return num;
 }
@@ -184,8 +184,6 @@ void InfLenFIFOQueue::RemoveWaiter(Waiter* waiter) {
   waiter->prev->next = waiter->next;
 }
 
-InfLenFIFOQueue::Waiter* InfLenFIFOQueue::TopWaiter() {
-  return waiters_.next;
-}
+InfLenFIFOQueue::Waiter* InfLenFIFOQueue::TopWaiter() { return waiters_.next; }
 
 }  // namespace grpc_core
