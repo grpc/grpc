@@ -16,11 +16,15 @@
 
 
 load("@build_bazel_rules_apple//apple:ios.bzl", "ios_application")
-load("@com_github_grpc_grpc//bazel:grpc_objc_library.bzl",  "objc_grpc_library", "objc_proto_grpc_library")
+load(
+    "@com_github_grpc_grpc//bazel:objc_grpc_library.bzl",
+    "objc_grpc_library",
+    "objc_proto_grpc_library",
+)
 
 proto_library(
     name = "messages_proto",
-    srcs = ["BazelBuildSamples/messages.proto"]
+    srcs = ["BazelBuildSamples/messages.proto"],
 )
 
 proto_library(

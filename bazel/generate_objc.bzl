@@ -22,7 +22,7 @@ def _generate_objc_impl(ctx):
     """Implementation of the generate_cc rule."""
     protos = [
         f
-        for src in ctx.attr.srcs
+        for src in ctx.attr.deps
         for f in src[ProtoInfo].transitive_imports.to_list()
     ]
     outs = []
@@ -32,45 +32,17 @@ def _generate_objc_impl(ctx):
 
     label_package = _join_directories([ctx.label.workspace_root, ctx.label.package])
 
-    files_with_rpc = [label_to_file(f) for f in ctx.attr.files_with_service]
+    files_with_rpc = [label_to_file(f) for f in ctx.attr.srcs]
     for proto in protos:
-        outs += [
-            proto_path_to_generated_filename(
-                _GENERATED_PROTOS_DIR + "/" +
-                _get_directory_from_proto(proto) + _get_slash_from_proto(proto) +
-                to_upper_camel_with_extension(_get_file_name_from_proto(proto), "proto"),
-                _PROTO_HEADER_FMT,
-            )
-        ]
-        outs += [
-            proto_path_to_generated_filename(
-                _GENERATED_PROTOS_DIR + "/" +
-                _get_directory_from_proto(proto) + _get_slash_from_proto(proto) +
-                to_upper_camel_with_extension(_get_file_name_from_proto(proto), "proto"),
-                _PROTO_SRC_FMT,
-            )
-        ]
+        outs += [_get_file_out_from_proto(proto, _PROTO_HEADER_FMT)]
+        outs += [_get_file_out_from_proto(proto, _PROTO_SRC_FMT)]
 
         file_path = _strip_package_from_path(label_package, proto)
         if not file_path.startswith("//"):
             pass # TODO: check package boundary
         if file_path in files_with_rpc or proto.path in files_with_rpc:
-            outs += [
-                proto_path_to_generated_filename(
-                    _GENERATED_PROTOS_DIR + "/" +
-                    _get_directory_from_proto(proto) + _get_slash_from_proto(proto) +
-                    to_upper_camel_with_extension(_get_file_name_from_proto(proto), "proto"),
-                    _GRPC_PROTO_HEADER_FMT,
-                )
-            ]
-            outs += [
-                proto_path_to_generated_filename(
-                    _GENERATED_PROTOS_DIR + "/" +
-                    _get_directory_from_proto(proto) + _get_slash_from_proto(proto) +
-                    to_upper_camel_with_extension(_get_file_name_from_proto(proto), "proto"),
-                    _GRPC_PROTO_SRC_FMT,
-                )
-            ]
+            outs += [_get_file_out_from_proto(proto, _GRPC_PROTO_HEADER_FMT)]
+            outs += [_get_file_out_from_proto(proto, _GRPC_PROTO_SRC_FMT)]
     
     out_files = [ctx.actions.declare_file(out) for out in outs]
     dir_out = _join_directories([
@@ -113,6 +85,14 @@ def _generate_objc_impl(ctx):
     )
 
     return struct(files = depset(out_files))
+
+def _get_file_out_from_proto(proto, fmt):
+    return proto_path_to_generated_filename(
+        _GENERATED_PROTOS_DIR + "/" +
+        _get_directory_from_proto(proto) + _get_slash_from_proto(proto) +
+        to_upper_camel_with_extension(_get_file_name_from_proto(proto), "proto"),
+        fmt,
+    )
 
 def _get_file_name_from_proto(proto):
     return proto.path.rpartition("/")[2]
@@ -157,7 +137,7 @@ def _join_directories(directories):
 
 generate_objc = rule(
     attrs = {
-        "srcs": attr.label_list(
+        "deps": attr.label_list(
             mandatory = True,
             allow_empty = False,
             providers = [ProtoInfo],
@@ -168,7 +148,7 @@ generate_objc = rule(
             providers = ["files_to_run"],
             cfg = "host",
         ),
-        "files_with_service": attr.string_list(
+        "srcs": attr.string_list(
             mandatory = False,
             allow_empty = True
         ),

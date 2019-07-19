@@ -22,8 +22,8 @@ def objc_proto_grpc_library(name, deps, use_well_known_protos = False, **kwargs)
 
     generate_objc(
         name = objc_grpc_library_name,
-        srcs = deps,
-        files_with_service = [],
+        srcs = [],
+        deps = deps,
         use_well_known_protos = use_well_known_protos,
         **kwargs
     )
@@ -74,8 +74,8 @@ def objc_grpc_library(name, deps, srcs, use_well_known_protos = False, **kwargs)
 
     generate_objc(
         name = objc_grpc_library_name,
-        srcs = deps,
-        files_with_service = srcs,
+        srcs = srcs,
+        deps = deps,
         use_well_known_protos = use_well_known_protos,
         **kwargs
     )
