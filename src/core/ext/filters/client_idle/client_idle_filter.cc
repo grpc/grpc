@@ -69,6 +69,10 @@ class ChannelData {
               grpc_error** error);
   ~ChannelData() = default;
 
+  class ClosureSetter;
+  static void OnIncreaseCallCountToOneLocked(ChannelData* chand);
+  static void OnDecreaseCallCountToZeroLocked(ChannelData* chand);
+  static void ShutdownLocked(ChannelData* chand);
   static void IdleTimerCallback(void* arg, grpc_error* error);
   static void IdleTransportOpCompleteCallback(void* arg, grpc_error* error);
 
@@ -76,8 +80,9 @@ class ChannelData {
     GRPC_IDLE_FILTER_LOG("timer has started");
     // Hold a ref to the channel stack for the timer callback.
     GRPC_CHANNEL_STACK_REF(channel_stack_, "max idle timer callback");
-    grpc_timer_init(&idle_timer_, ExecCtx::Get()->Now() + client_idle_timeout_,
+    grpc_timer_init(&idle_timer_, last_idle_time_ + client_idle_timeout_,
                     &idle_timer_callback_);
+    timer_on_ = true;
   }
 
   void EnterIdle() {
@@ -102,14 +107,13 @@ class ChannelData {
   const grpc_millis client_idle_timeout_;
 
   // Member data used to track the state of channel.
+  bool shutdown_ = false;
   Atomic<size_t> call_count_;
-  bool has_call_ = false;
-
-  // Members used to synchronize IncreaseCallCount() and DecreaseCallCount().
-  Mutex has_call_mu_;
-  CondVar decrease_complete_cv_;
+  size_t inc_closure_cnt_ = 0;
 
   // Idle timer and its callback closure.
+  bool timer_on_ = false;
+  grpc_millis last_idle_time_;
   grpc_timer idle_timer_;
   grpc_closure idle_timer_callback_;
 
@@ -135,10 +139,7 @@ void ChannelData::StartTransportOp(grpc_channel_element* elem,
   ChannelData* chand = static_cast<ChannelData*>(elem->channel_data);
   // Catch the disconnect_with_error transport op.
   if (op->disconnect_with_error != nullptr) {
-    // Disconnect. Cancel the timer if we set it before.
-    // IncreaseCallCount() introduces a dummy call. It will cancel the timer and
-    // prevent the timer from being reset by other threads.
-    chand->IncreaseCallCount();
+    New<ClosureSetter>(ShutdownLocked, chand);
   }
   // Pass the op to the next filter.
   grpc_channel_next_op(elem, op);
@@ -149,12 +150,7 @@ void ChannelData::IncreaseCallCount() {
   GRPC_IDLE_FILTER_LOG("call counter has increased to %" PRIuPTR,
                        previous_value + 1);
   if (previous_value == 0) {
-    MutexLock lock(&has_call_mu_);
-    while (has_call_) {
-      decrease_complete_cv_.Wait(&has_call_mu_);
-    }
-    has_call_ = true;
-    grpc_timer_cancel(&idle_timer_);
+    New<ClosureSetter>(OnIncreaseCallCountToOneLocked, this);
   }
 }
 
@@ -163,10 +159,7 @@ void ChannelData::DecreaseCallCount() {
   GRPC_IDLE_FILTER_LOG("call counter has decreased to %" PRIuPTR,
                        previous_value - 1);
   if (previous_value == 1) {
-    MutexLock lock(&has_call_mu_);
-    StartIdleTimer();
-    has_call_ = false;
-    decrease_complete_cv_.Signal();
+    New<ClosureSetter>(OnDecreaseCallCountToZeroLocked, this);
   }
 }
 
@@ -192,11 +185,58 @@ ChannelData::ChannelData(grpc_channel_element* elem,
                     grpc_schedule_on_exec_ctx);
 }
 
+class ChannelData::ClosureSetter {
+ public:
+  typedef void (*Callback)(ChannelData* chand);
+  ClosureSetter(Callback cb, ChannelData* chand): cb_(cb), chand_(chand) {
+    GRPC_CHANNEL_STACK_REF(chand_->channel_stack_, "client idle filter callback");
+    GRPC_CLOSURE_INIT(&closure_, CallbackWrapper, this, grpc_schedule_on_exec_ctx);
+    GRPC_CLOSURE_SCHED(&closure_, GRPC_ERROR_NONE);
+  }
+
+ private:
+  static void CallbackWrapper(void* arg, grpc_error* error) {
+    ClosureSetter* self = static_cast<ClosureSetter*>(arg);
+    self->cb_(self->chand_);
+    GRPC_CHANNEL_STACK_UNREF(self->chand_->channel_stack_, "client idle filter callback");
+    Delete(self);
+  }
+
+  grpc_closure closure_;
+  Callback cb_;
+  ChannelData* chand_;
+};
+
+void ChannelData::OnIncreaseCallCountToOneLocked(ChannelData* chand) {
+  chand->inc_closure_cnt_++;
+}
+
+void ChannelData::OnDecreaseCallCountToZeroLocked(ChannelData* chand) {
+  chand->inc_closure_cnt_--;
+  if (chand->shutdown_) return;
+  if (chand->inc_closure_cnt_ == 0) {
+    chand->last_idle_time_ = ExecCtx::Get()->Now();
+    if (!chand->timer_on_) {
+      chand->StartIdleTimer();
+    }
+  }
+}
+
+void ChannelData::ShutdownLocked(ChannelData* chand) {
+  chand->shutdown_ = true;
+  if (chand->timer_on_) grpc_timer_cancel(&chand->idle_timer_);
+}
+
 void ChannelData::IdleTimerCallback(void* arg, grpc_error* error) {
   GRPC_IDLE_FILTER_LOG("timer alarms");
   ChannelData* chand = static_cast<ChannelData*>(arg);
-  if (error == GRPC_ERROR_NONE) {
-    chand->EnterIdle();
+  chand->timer_on_ = false;
+  if (error == GRPC_ERROR_NONE && !chand->shutdown_) {
+    if (chand->inc_closure_cnt_ == 0 && ExecCtx::Get()->Now() >= chand->last_idle_time_ + chand->client_idle_timeout_) {
+      chand->EnterIdle();
+    } else {
+      chand->StartIdleTimer();
+    }
   }
   GRPC_IDLE_FILTER_LOG("timer finishes");
   GRPC_CHANNEL_STACK_UNREF(chand->channel_stack_, "max idle timer callback");
