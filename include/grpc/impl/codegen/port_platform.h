@@ -394,6 +394,18 @@
 #endif
 #endif /* GPR_NO_AUTODETECT_PLATFORM */
 
+#if defined(GPR_BACKWARDS_COMPATIBILITY_MODE)
+/*
+ * For backward compatibility mode, reset _FORTIFY_SOURCE to prevent
+ * a library from having non-standard symbols such as __asprintf_chk.
+ * This helps non-glibc systems such as alpine using musl to find symbols.
+ */
+#if defined(_FORTIFY_SOURCE) && _FORTIFY_SOURCE > 0
+#undef _FORTIFY_SOURCE
+#define _FORTIFY_SOURCE 0
+#endif
+#endif
+
 /*
  *  There are platforms for which TLS should not be used even though the
  * compiler makes it seem like it's supported (Android NDK < r12b for example).
