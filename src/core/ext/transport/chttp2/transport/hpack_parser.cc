@@ -679,13 +679,12 @@ static grpc_core::InternalSlice take_string_intern(
     grpc_chttp2_hpack_parser* p, grpc_chttp2_hpack_parser_string* str) {
   grpc_core::InternalSlice s;
   if (!str->copied) {
-    s = grpc_core::InternedSlice(str->data.referenced);
+    s = grpc_core::InternalSlice(&str->data.referenced);
     grpc_slice_unref_internal(str->data.referenced);
     str->copied = true;
     str->data.referenced = grpc_empty_slice();
   } else {
-    s = grpc_core::InternedSlice(grpc_slice_from_static_buffer_internal(
-        str->data.copied.str, str->data.copied.length));
+    s = grpc_core::InternalSlice(str->data.copied.str, str->data.copied.length);
   }
   str->data.copied.length = 0;
   return s;

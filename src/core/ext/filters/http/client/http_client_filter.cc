@@ -520,7 +520,6 @@ static grpc_core::InternalSlice user_agent_from_args(
   size_t i;
   int is_first = 1;
   char* tmp;
-  grpc_core::InternalSlice result;
 
   gpr_strvec_init(&v);
 
@@ -558,8 +557,7 @@ static grpc_core::InternalSlice user_agent_from_args(
 
   tmp = gpr_strvec_flatten(&v, nullptr);
   gpr_strvec_destroy(&v);
-  result =
-      grpc_core::InternedSlice(grpc_slice_from_static_string_internal(tmp));
+  grpc_core::InternalSlice result(tmp);
   gpr_free(tmp);
 
   return result;

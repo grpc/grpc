@@ -107,12 +107,10 @@ static void grow_shard(slice_shard* shard) {
   shard->capacity = capacity;
 }
 
-static grpc_core::InternedSlice materialize(InternedSliceRefcount* s) {
-  grpc_core::InternedSlice slice;
-  slice.refcount = &s->base;
-  slice.data.refcounted.bytes = reinterpret_cast<uint8_t*>(s + 1);
-  slice.data.refcounted.length = s->length;
-  return slice;
+grpc_core::InternedSlice::InternedSlice(InternedSliceRefcount* s) {
+  refcount = &s->base;
+  data.refcounted.bytes = reinterpret_cast<uint8_t*>(s + 1);
+  data.refcounted.length = s->length;
 }
 
 uint32_t grpc_slice_default_hash_impl(grpc_slice s) {
@@ -152,13 +150,70 @@ grpc_slice grpc_slice_maybe_static_intern(grpc_slice slice,
 }
 
 grpc_slice grpc_slice_intern(grpc_slice slice) {
-  return grpc_core::InternedSlice(slice);
+  return grpc_core::InternalSlice(&slice);
 }
 
-grpc_core::InternedSlice::InternedSlice(const grpc_slice& slice) {
+static bool slice_eq_buf(const grpc_slice& slice, const char* buf,
+                         const size_t len) {
+  return slice.data.refcounted.length == len &&
+         memcmp(buf, slice.data.refcounted.bytes, len) == 0;
+}
+
+grpc_core::InternalSlice::InternalSlice(const char* string, size_t len) {
+  GPR_TIMER_SCOPE("grpc_slice_intern", 0);
+  const uint32_t hash = gpr_murmur_hash3(string, len, g_hash_seed);
+  for (uint32_t i = 0; i <= max_static_metadata_hash_probe; i++) {
+    static_metadata_hash_ent ent =
+        static_metadata_hash[(hash + i) % GPR_ARRAY_SIZE(static_metadata_hash)];
+    if (ent.hash == hash && ent.idx < GRPC_STATIC_MDSTR_COUNT &&
+        slice_eq_buf(grpc_static_slice_table[ent.idx], string, len)) {
+      *this = grpc_static_slice_table[ent.idx];
+      return;
+    }
+  }
+  InternedSliceRefcount* s;
+  slice_shard* shard = &g_shards[SHARD_IDX(hash)];
+
+  gpr_mu_lock(&shard->mu);
+
+  /* search for an existing string */
+  size_t idx = TABLE_IDX(hash, shard->capacity);
+  for (s = shard->strs[idx]; s; s = s->bucket_next) {
+    if (s->hash == hash &&
+        slice_eq_buf(grpc_core::InternedSlice(s), string, len)) {
+      if (s->refcnt.RefIfNonZero()) {
+        gpr_mu_unlock(&shard->mu);
+        *this = grpc_core::InternedSlice(s);
+        return;
+      }
+    }
+  }
+
+  /* not found: create a new string */
+  /* string data goes after the internal_string header */
+  s = static_cast<InternedSliceRefcount*>(gpr_malloc(sizeof(*s) + len));
+
+  new (s) grpc_core::InternedSliceRefcount(len, hash, shard->strs[idx]);
+  memcpy(reinterpret_cast<char*>(s + 1), string, len);
+  shard->strs[idx] = s;
+  shard->count++;
+  if (shard->count > shard->capacity * 2) {
+    grow_shard(shard);
+  }
+
+  gpr_mu_unlock(&shard->mu);
+  *this = grpc_core::InternedSlice(s);
+}
+
+grpc_core::InternalSlice::InternalSlice(const char* string)
+    : grpc_core::InternalSlice::InternalSlice(string, strlen(string)) {}
+
+grpc_core::InternalSlice::InternalSlice(const grpc_slice* pSlice) {
+  const grpc_slice& slice = *pSlice;
   GPR_TIMER_SCOPE("grpc_slice_intern", 0);
   if (GRPC_IS_STATIC_METADATA_STRING(slice)) {
     *this = static_cast<const grpc_core::StaticSlice&>(slice);
+    return;
   }
 
   uint32_t hash = grpc_slice_hash_internal(slice);
@@ -170,6 +225,7 @@ grpc_core::InternedSlice::InternedSlice(const grpc_slice& slice) {
         grpc_slice_eq_static_interned(slice,
                                       grpc_static_slice_table[ent.idx])) {
       *this = grpc_static_slice_table[ent.idx];
+      return;
     }
   }
 
@@ -182,10 +238,11 @@ grpc_core::InternedSlice::InternedSlice(const grpc_slice& slice) {
   size_t idx = TABLE_IDX(hash, shard->capacity);
   for (s = shard->strs[idx]; s; s = s->bucket_next) {
     if (s->hash == hash &&
-        grpc_slice_eq_static_interned(slice, materialize(s))) {
+        grpc_slice_eq_static_interned(slice, grpc_core::InternedSlice(s))) {
       if (s->refcnt.RefIfNonZero()) {
         gpr_mu_unlock(&shard->mu);
-        *this = materialize(s);
+        *this = grpc_core::InternedSlice(s);
+        return;
       }
     }
   }
@@ -206,7 +263,7 @@ grpc_core::InternedSlice::InternedSlice(const grpc_slice& slice) {
   }
 
   gpr_mu_unlock(&shard->mu);
-  *this = materialize(s);
+  *this = grpc_core::InternedSlice(s);
 }
 
 void grpc_test_only_set_slice_hash_seed(uint32_t seed) {
@@ -263,8 +320,8 @@ void grpc_slice_intern_shutdown(void) {
               shard->count);
       for (size_t j = 0; j < shard->capacity; j++) {
         for (InternedSliceRefcount* s = shard->strs[j]; s; s = s->bucket_next) {
-          char* text =
-              grpc_dump_slice(materialize(s), GPR_DUMP_HEX | GPR_DUMP_ASCII);
+          char* text = grpc_dump_slice(grpc_core::InternedSlice(s),
+                                       GPR_DUMP_HEX | GPR_DUMP_ASCII);
           gpr_log(GPR_DEBUG, "LEAKED: %s", text);
           gpr_free(text);
         }
