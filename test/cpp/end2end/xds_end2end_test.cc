@@ -250,54 +250,53 @@ class EdsServiceImpl : public EdsService {
   using ResponseDelayPair = std::pair<DiscoveryResponse, int>;
 
   Status StreamEndpoints(ServerContext* context, Stream* stream) override {
-    // TODO(juanlishen): Clean up the scoping.
     gpr_log(GPR_INFO, "LB[%p]: EDS StreamEndpoints starts", this);
-    {
-      grpc_core::MutexLock lock(&mu_);
-      if (eds_done_) goto done;
-    }
-    {
+    [&]() {
+      {
+        grpc_core::MutexLock lock(&eds_mu_);
+        if (eds_done_) return;
+      }
       // Balancer shouldn't receive the call credentials metadata.
       EXPECT_EQ(context->client_metadata().find(g_kCallCredsMdKey),
                 context->client_metadata().end());
+      // Read request.
       DiscoveryRequest request;
-      std::vector<ResponseDelayPair> responses_and_delays;
-      if (!stream->Read(&request)) goto done;
+      if (!stream->Read(&request)) return;
       IncreaseRequestCount();
       gpr_log(GPR_INFO, "LB[%p]: received initial message '%s'", this,
               request.DebugString().c_str());
+      // Send response.
+      std::vector<ResponseDelayPair> responses_and_delays;
       {
-        grpc_core::MutexLock lock(&mu_);
+        grpc_core::MutexLock lock(&eds_mu_);
         responses_and_delays = responses_and_delays_;
       }
       for (const auto& response_and_delay : responses_and_delays) {
         SendResponse(stream, response_and_delay.first,
                      response_and_delay.second);
       }
-      {
-        grpc_core::MutexLock lock(&mu_);
-        eds_cond_.WaitUntil(&mu_, [this] { return eds_done_; });
-      }
-    }
-  done:
+      // Wait until notified done.
+      grpc_core::MutexLock lock(&eds_mu_);
+      eds_cond_.WaitUntil(&eds_mu_, [this] { return eds_done_; });
+    }();
     gpr_log(GPR_INFO, "LB[%p]: EDS StreamEndpoints done", this);
     return Status::OK;
   }
 
   void add_response(const DiscoveryResponse& response, int send_after_ms) {
-    grpc_core::MutexLock lock(&mu_);
+    grpc_core::MutexLock lock(&eds_mu_);
     responses_and_delays_.push_back(std::make_pair(response, send_after_ms));
   }
 
   void Start() {
-    grpc_core::MutexLock lock(&mu_);
+    grpc_core::MutexLock lock(&eds_mu_);
     eds_done_ = false;
     responses_and_delays_.clear();
   }
 
   void Shutdown() {
     {
-      grpc_core::MutexLock lock(&mu_);
+      grpc_core::MutexLock lock(&eds_mu_);
       NotifyDoneWithEdsCallLocked();
       responses_and_delays_.clear();
     }
@@ -333,7 +332,7 @@ class EdsServiceImpl : public EdsService {
   }
 
   void NotifyDoneWithEdsCall() {
-    grpc_core::MutexLock lock(&mu_);
+    grpc_core::MutexLock lock(&eds_mu_);
     NotifyDoneWithEdsCallLocked();
   }
 
@@ -357,10 +356,11 @@ class EdsServiceImpl : public EdsService {
     stream->Write(response);
   }
 
-  std::vector<ResponseDelayPair> responses_and_delays_;
-  grpc_core::Mutex mu_;
   grpc_core::CondVar eds_cond_;
+  // Protect the members below.
+  grpc_core::Mutex eds_mu_;
   bool eds_done_ = false;
+  std::vector<ResponseDelayPair> responses_and_delays_;
 };
 
 class LrsServiceImpl : public LrsService {
@@ -403,6 +403,7 @@ class LrsServiceImpl : public LrsService {
           load_report_cond_.Signal();
         }
       }
+      // Wait until notified done.
       grpc_core::MutexLock lock(&lrs_mu_);
       lrs_cv_.WaitUntil(&lrs_mu_, [this] { return lrs_done; });
     }
@@ -446,11 +447,14 @@ class LrsServiceImpl : public LrsService {
 
  private:
   const int client_load_reporting_interval_seconds_;
-  grpc_core::Mutex lrs_mu_;
+
   grpc_core::CondVar lrs_cv_;
+  // Protect lrs_done.
+  grpc_core::Mutex lrs_mu_;
   bool lrs_done = false;
 
   grpc_core::CondVar load_report_cond_;
+  // Protect the members below.
   grpc_core::Mutex load_report_mu_;
   grpc_core::UniquePtr<ClientStats> client_stats_;
   bool load_report_ready_ = false;
