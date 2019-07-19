@@ -98,32 +98,32 @@ template <typename ServiceType>
 class CountedService : public ServiceType {
  public:
   size_t request_count() {
-    grpc::internal::MutexLock lock(&mu_);
+    grpc_core::MutexLock lock(&mu_);
     return request_count_;
   }
 
   size_t response_count() {
-    grpc::internal::MutexLock lock(&mu_);
+    grpc_core::MutexLock lock(&mu_);
     return response_count_;
   }
 
   void IncreaseResponseCount() {
-    grpc::internal::MutexLock lock(&mu_);
+    grpc_core::MutexLock lock(&mu_);
     ++response_count_;
   }
   void IncreaseRequestCount() {
-    grpc::internal::MutexLock lock(&mu_);
+    grpc_core::MutexLock lock(&mu_);
     ++request_count_;
   }
 
   void ResetCounters() {
-    grpc::internal::MutexLock lock(&mu_);
+    grpc_core::MutexLock lock(&mu_);
     request_count_ = 0;
     response_count_ = 0;
   }
 
  protected:
-  grpc::internal::Mutex mu_;
+  grpc_core::Mutex mu_;
 
  private:
   size_t request_count_ = 0;
@@ -160,18 +160,18 @@ class BackendServiceImpl : public BackendService {
   void Shutdown() {}
 
   std::set<grpc::string> clients() {
-    grpc::internal::MutexLock lock(&clients_mu_);
+    grpc_core::MutexLock lock(&clients_mu_);
     return clients_;
   }
 
  private:
   void AddClient(const grpc::string& client) {
-    grpc::internal::MutexLock lock(&clients_mu_);
+    grpc_core::MutexLock lock(&clients_mu_);
     clients_.insert(client);
   }
 
-  grpc::internal::Mutex mu_;
-  grpc::internal::Mutex clients_mu_;
+  grpc_core::Mutex mu_;
+  grpc_core::Mutex clients_mu_;
   std::set<grpc::string> clients_;
 };
 
@@ -268,7 +268,7 @@ class EdsServiceImpl : public EdsService {
     // TODO(juanlishen): Clean up the scoping.
     gpr_log(GPR_INFO, "LB[%p]: EDS StreamEndpoints starts", this);
     {
-      grpc::internal::MutexLock lock(&mu_);
+      grpc_core::MutexLock lock(&mu_);
       if (eds_done_) goto done;
     }
     {
@@ -282,7 +282,7 @@ class EdsServiceImpl : public EdsService {
       gpr_log(GPR_INFO, "LB[%p]: received initial message '%s'", this,
               request.DebugString().c_str());
       {
-        grpc::internal::MutexLock lock(&mu_);
+        grpc_core::MutexLock lock(&mu_);
         responses_and_delays = responses_and_delays_;
       }
       for (const auto& response_and_delay : responses_and_delays) {
@@ -290,7 +290,7 @@ class EdsServiceImpl : public EdsService {
                      response_and_delay.second);
       }
       {
-        grpc::internal::MutexLock lock(&mu_);
+        grpc_core::MutexLock lock(&mu_);
         eds_cond_.WaitUntil(&mu_, [this] { return eds_done_; });
       }
     }
@@ -300,19 +300,19 @@ class EdsServiceImpl : public EdsService {
   }
 
   void add_response(const DiscoveryResponse& response, int send_after_ms) {
-    grpc::internal::MutexLock lock(&mu_);
+    grpc_core::MutexLock lock(&mu_);
     responses_and_delays_.push_back(std::make_pair(response, send_after_ms));
   }
 
   void Start() {
-    grpc::internal::MutexLock lock(&mu_);
+    grpc_core::MutexLock lock(&mu_);
     eds_done_ = false;
     responses_and_delays_.clear();
   }
 
   void Shutdown() {
     {
-      grpc::internal::MutexLock lock(&mu_);
+      grpc_core::MutexLock lock(&mu_);
       NotifyDoneWithEdsCallLocked();
       responses_and_delays_.clear();
     }
@@ -348,7 +348,7 @@ class EdsServiceImpl : public EdsService {
   }
 
   void NotifyDoneWithEdsCall() {
-    grpc::internal::MutexLock lock(&mu_);
+    grpc_core::MutexLock lock(&mu_);
     NotifyDoneWithEdsCallLocked();
   }
 
@@ -373,8 +373,8 @@ class EdsServiceImpl : public EdsService {
   }
 
   std::vector<ResponseDelayPair> responses_and_delays_;
-  grpc::internal::Mutex mu_;
-  grpc::internal::CondVar eds_cond_;
+  grpc_core::Mutex mu_;
+  grpc_core::CondVar eds_cond_;
   bool eds_done_ = false;
 };
 
@@ -411,7 +411,7 @@ class LrsServiceImpl : public LrsService {
         ClusterStats cluster_stats = request.cluster_stats()[0];
         // We need to acquire the lock here in order to prevent the notify_one
         // below from firing before its corresponding wait is executed.
-        grpc::internal::MutexLock lock(&load_report_mu_);
+        grpc_core::MutexLock lock(&load_report_mu_);
         client_stats_.Add(cluster_stats);
         load_report_ready_ = true;
         load_report_cond_.Signal();
@@ -419,7 +419,7 @@ class LrsServiceImpl : public LrsService {
     }
     {
       // FIXME: Looks like there can be at most one report. Maybe remove Add().
-      grpc::internal::MutexLock lock(&lrs_mu_);
+      grpc_core::MutexLock lock(&lrs_mu_);
       lrs_cv_.WaitUntil(&lrs_mu_, [this] { return lrs_done; });
     }
   done:
@@ -434,14 +434,14 @@ class LrsServiceImpl : public LrsService {
 
   void Shutdown() {
     {
-      grpc::internal::MutexLock lock(&lrs_mu_);
+      grpc_core::MutexLock lock(&lrs_mu_);
       NotifyDoneWithLrsCallLocked();
     }
     gpr_log(GPR_INFO, "LB[%p]: shut down", this);
   }
 
   ClientStats& WaitForLoadReport() {
-    grpc::internal::MutexLock lock(&load_report_mu_);
+    grpc_core::MutexLock lock(&load_report_mu_);
     load_report_cond_.WaitUntil(&load_report_mu_,
                                 [this] { return load_report_ready_; });
     load_report_ready_ = false;
@@ -449,7 +449,7 @@ class LrsServiceImpl : public LrsService {
   }
 
   void NotifyDoneWithLrsCall() {
-    grpc::internal::MutexLock lock(&lrs_mu_);
+    grpc_core::MutexLock lock(&lrs_mu_);
     NotifyDoneWithLrsCallLocked();
   }
 
@@ -462,13 +462,13 @@ class LrsServiceImpl : public LrsService {
 
  private:
   const int client_load_reporting_interval_seconds_;
-  grpc::internal::Mutex lrs_mu_;
-  grpc::internal::CondVar lrs_cv_;
+  grpc_core::Mutex lrs_mu_;
+  grpc_core::CondVar lrs_cv_;
   bool lrs_done = false;
 
   ClientStats client_stats_;
-  grpc::internal::Mutex load_report_mu_;
-  grpc::internal::CondVar load_report_cond_;
+  grpc_core::Mutex load_report_mu_;
+  grpc_core::CondVar load_report_cond_;
   bool load_report_ready_ = false;
 };
 
@@ -770,22 +770,22 @@ class XdsEnd2endTest : public ::testing::Test {
         eds_service_.Start();
         lrs_service_.Start();
       }
-      grpc::internal::Mutex mu;
+      grpc_core::Mutex mu;
       // We need to acquire the lock here in order to prevent the notify_one
       // by ServerThread::Serve from firing before the wait below is hit.
-      grpc::internal::MutexLock lock(&mu);
-      grpc::internal::CondVar cond;
+      grpc_core::MutexLock lock(&mu);
+      grpc_core::CondVar cond;
       thread_.reset(new std::thread(
           std::bind(&ServerThread::Serve, this, server_host, &mu, &cond)));
       cond.Wait(&mu);
       gpr_log(GPR_INFO, "%s server startup complete", Type());
     }
 
-    void Serve(const grpc::string& server_host, grpc::internal::Mutex* mu,
-               grpc::internal::CondVar* cond) {
+    void Serve(const grpc::string& server_host, grpc_core::Mutex* mu,
+               grpc_core::CondVar* cond) {
       // We need to acquire the lock here in order to prevent the notify_one
       // below from firing before its corresponding wait is executed.
-      grpc::internal::MutexLock lock(mu);
+      grpc_core::MutexLock lock(mu);
       std::ostringstream server_address;
       server_address << server_host << ":" << port_;
       ServerBuilder builder;
