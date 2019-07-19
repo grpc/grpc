@@ -32,10 +32,10 @@
 
 - (void)viewDidLoad {
   [super viewDidLoad];
-  
+
   GRPCMutableCallOptions *options = [[GRPCMutableCallOptions alloc] init];
   _options = options;
-  
+
   _service = [[RMTTestService alloc] initWithHost:@"grpc-test.sandbox.googleapis.com"
                                       callOptions:_options];
 }
@@ -43,9 +43,8 @@
 - (IBAction)makeCall:(id)sender {
   RMTSimpleRequest *request = [RMTSimpleRequest message];
   request.responseSize = 100;
-  GRPCUnaryProtoCall *call = [_service unaryCallWithMessage:request
-                                            responseHandler:self
-                                                callOptions:nil];
+  GRPCUnaryProtoCall *call =
+      [_service unaryCallWithMessage:request responseHandler:self callOptions:nil];
   [call start];
 }
 
