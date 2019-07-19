@@ -103,7 +103,11 @@ class ChannelData {
 
   // Member data used to track the state of channel.
   Atomic<size_t> call_count_;
-  Atomic<bool> has_call_;
+  bool has_call_ = false;
+
+  // Members used to synchronize IncreaseCallCount() and DecreaseCallCount().
+  Mutex has_call_mu_;
+  CondVar decrease_complete_cv_;
 
   // Idle timer and its callback closure.
   grpc_timer idle_timer_;
@@ -145,10 +149,12 @@ void ChannelData::IncreaseCallCount() {
   GRPC_IDLE_FILTER_LOG("call counter has increased to %" PRIuPTR,
                        previous_value + 1);
   if (previous_value == 0) {
-    while (has_call_.Load(MemoryOrder::ACQUIRE))
-      ;
+    MutexLock lock(&has_call_mu_);
+    while (has_call_) {
+      decrease_complete_cv_.Wait(&has_call_mu_);
+    }
+    has_call_ = true;
     grpc_timer_cancel(&idle_timer_);
-    has_call_.Store(true, MemoryOrder::RELAXED);
   }
 }
 
@@ -157,8 +163,10 @@ void ChannelData::DecreaseCallCount() {
   GRPC_IDLE_FILTER_LOG("call counter has decreased to %" PRIuPTR,
                        previous_value - 1);
   if (previous_value == 1) {
+    MutexLock lock(&has_call_mu_);
     StartIdleTimer();
-    has_call_.Store(false, MemoryOrder::RELEASE);
+    has_call_ = false;
+    decrease_complete_cv_.Signal();
   }
 }
 
