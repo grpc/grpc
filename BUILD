@@ -2471,7 +2471,7 @@ filegroup(
     visibility = ["//visibility:public"],
 )
 
-objc_library(
+grpc_objc_library(
     name = "rx_library",
     srcs = glob([
         "src/objective-c/RxLibrary/*.m",
@@ -2487,7 +2487,7 @@ objc_library(
     ],
 )
 
-objc_library(
+grpc_objc_library(
     name = "rx_library_private",
     srcs = glob([
         "src/objective-c/RxLibrary/private/*.m",
@@ -2508,13 +2508,15 @@ grpc_objc_library(
         exclude = ["src/objective-c/GRPCClient/GRPCCall+GID.m"],
     ),
     hdrs = glob(
-        ["src/objective-c/GRPCClient/*.h"],
+        [
+            "src/objective-c/GRPCClient/*.h",
+            "src/objective-c/GRPCClient/internal/*.h",
+        ],
         exclude = ["src/objective-c/GRPCClient/GRPCCall+GID.h"],
     ),
     includes = ["src/objective-c"],
     textual_hdrs = glob([
         "src/objective-c/GRPCClient/private/*.h",
-        "src/objective-c/GRPCClient/internal/*.h",
     ]),
     deps = [
         ":gRPCCertificates",
@@ -2531,6 +2533,8 @@ grpc_objc_library(
     hdrs = glob(
         ["src/objective-c/ProtoRPC/*.h"],
     ),
+    # Different from Cocoapods, do not import as if @com_google_protobuf//:protobuf_objc is a framework,
+    # use the real paths of @com_google_protobuf//:protobuf_objc instead
     defines = ["GPB_USE_PROTOBUF_FRAMEWORK_IMPORTS=0"],
     includes = ["src/objective-c"],
     deps = [

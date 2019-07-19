@@ -256,31 +256,33 @@ def grpc_package(name, visibility = "private", features = []):
 
 def grpc_objc_library(
         name,
-        hdrs,
         srcs,
-        deps,
+        hdrs = [],
         textual_hdrs = [],
+        deps = [],
         defines = [],
         includes = [],
-        ):
+        visibility = ["//visibility:public"]):
     """The grpc version of objc_library, only used for the Objective-C library compilation
 
     Args:
-        name: name of target, either grpc_objc_client or proto_objc_rpc
+        name: name of target
         hdrs: public headers
         srcs: all source files (.m)
         textual_hdrs: private headers
         defines: preprocessors
         includes: added to search path, always [the path to objc directory]
         deps: dependencies
+        visibility: visibility, default to public
     """
     
     native.objc_library(
         name = name,
         hdrs = hdrs,
         srcs = srcs,
-        includes = includes,
         textual_hdrs = textual_hdrs,
-        defines = defines,
         deps = deps,
+        defines = defines,
+        includes = includes,
+        visibility = visibility,
     )
