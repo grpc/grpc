@@ -60,7 +60,6 @@ class XdsLocalityName : public RefCounted<XdsLocalityName> {
            strcmp(sub_zone_.get(), other.sub_zone_.get()) == 0;
   }
 
-  // FIXME: should be null terminated
   const char* region() const { return region_.get(); }
   const char* zone() const { return zone_.get(); }
   const char* sub_zone() const { return sub_zone_.get(); }
@@ -92,7 +91,6 @@ class XdsLocalityName : public RefCounted<XdsLocalityName> {
 // are already synchronized by the callers do not have additional
 // synchronization here. Note that the Map<>s we mentioned in 2 and 3 refer to
 // the map's tree structure rather than the content in each tree node.
-// FIXME: audit the memory order usage.
 class XdsLbClientStats {
  public:
   class LocalityStats {
