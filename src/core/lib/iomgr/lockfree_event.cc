@@ -95,7 +95,7 @@ void LockfreeEvent::NotifyOn(grpc_closure* closure) {
      * referencing it. */
     gpr_atm curr = gpr_atm_acq_load(&state_);
     if (GRPC_TRACE_FLAG_ENABLED(grpc_polling_trace)) {
-      gpr_log(GPR_ERROR, "LockfreeEvent::NotifyOn: %p curr=%p closure=%p", this,
+      gpr_log(GPR_DEBUG, "LockfreeEvent::NotifyOn: %p curr=%p closure=%p", this,
               (void*)curr, closure);
     }
     switch (curr) {
@@ -161,7 +161,7 @@ bool LockfreeEvent::SetShutdown(grpc_error* shutdown_err) {
   while (true) {
     gpr_atm curr = gpr_atm_no_barrier_load(&state_);
     if (GRPC_TRACE_FLAG_ENABLED(grpc_polling_trace)) {
-      gpr_log(GPR_ERROR, "LockfreeEvent::SetShutdown: %p curr=%p err=%s",
+      gpr_log(GPR_DEBUG, "LockfreeEvent::SetShutdown: %p curr=%p err=%s",
               &state_, (void*)curr, grpc_error_string(shutdown_err));
     }
     switch (curr) {
@@ -210,7 +210,7 @@ void LockfreeEvent::SetReady() {
     gpr_atm curr = gpr_atm_no_barrier_load(&state_);
 
     if (GRPC_TRACE_FLAG_ENABLED(grpc_polling_trace)) {
-      gpr_log(GPR_ERROR, "LockfreeEvent::SetReady: %p curr=%p", &state_,
+      gpr_log(GPR_DEBUG, "LockfreeEvent::SetReady: %p curr=%p", &state_,
               (void*)curr);
     }
 
