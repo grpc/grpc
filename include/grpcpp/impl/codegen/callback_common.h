@@ -201,9 +201,11 @@ class CallbackWithSuccessTag
     void* ignored = ops_;
     // Allow a "false" return value from FinalizeResult to silence the
     // callback, just as it silences a CQ tag in the async cases
+#ifndef NDEBUG
     auto* ops = ops_;
+#endif
     bool do_callback = ops_->FinalizeResult(&ignored, &ok);
-    GPR_CODEGEN_ASSERT(ignored == ops);
+    GPR_CODEGEN_DEBUG_ASSERT(ignored == ops);
 
     if (do_callback) {
       CatchingCallback(func_, ok);
