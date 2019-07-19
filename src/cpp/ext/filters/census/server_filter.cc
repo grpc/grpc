@@ -149,13 +149,12 @@ void CensusServerCallData::StartTransportStreamOpBatch(
     size_t len = ServerStatsSerialize(absl::ToInt64Nanoseconds(elapsed_time_),
                                       stats_buf_, kMaxServerStatsLen);
     if (len > 0) {
-      GRPC_LOG_IF_ERROR(
-          "census grpc_filter",
-          grpc_metadata_batch_add_tail(
-              op->send_trailing_metadata()->batch(), &census_bin_,
-              grpc_mdelem_from_slices(
-                  GRPC_MDSTR_GRPC_SERVER_STATS_BIN,
-                  grpc_slice_from_copied_buffer_internal(stats_buf_, len))));
+      GRPC_LOG_IF_ERROR("census grpc_filter",
+                        grpc_metadata_batch_add_tail(
+                            op->send_trailing_metadata()->batch(), &census_bin_,
+                            grpc_mdelem_from_slices(
+                                GRPC_MDSTR_GRPC_SERVER_STATS_BIN,
+                                grpc_core::ExternSlice(stats_buf_, len))));
     }
   }
   // Call next op.
