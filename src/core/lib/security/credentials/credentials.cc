@@ -49,6 +49,20 @@ static grpc_core::Map<grpc_core::UniquePtr<char>,
                       grpc_core::RefCountedPtr<grpc_channel_credentials>,
                       grpc_core::StringLess>* g_grpc_control_plane_creds;
 static gpr_mu g_control_plane_creds_mu;
+gpr_once once_init_control_plane_creds;
+
+static void do_control_plane_creds_init() {
+  gpr_mu_init(&g_control_plane_creds_mu);
+  GPR_ASSERT(g_grpc_control_plane_creds == nullptr);
+  g_grpc_control_plane_creds = grpc_core::New<
+      grpc_core::Map<grpc_core::UniquePtr<char>,
+                     grpc_core::RefCountedPtr<grpc_channel_credentials>,
+                     grpc_core::StringLess>>();
+}
+
+void grpc_control_plane_credentials_init() {
+  gpr_once_init(&once_init_control_plane_creds, do_control_plane_creds_init);
+}
 
 bool grpc_channel_credentials_attach_credentials(
     grpc_channel_credentials* credentials, const char* authority,
@@ -219,20 +233,3 @@ grpc_server_credentials* grpc_find_server_credentials_in_args(
   }
   return nullptr;
 }
-
-gpr_once once_init_control_plane_creds;
-
-void do_control_plane_creds_init() {
-  gpr_mu_init(&g_control_plane_creds_mu);
-  GPR_ASSERT(g_grpc_control_plane_creds == nullptr);
-  g_grpc_control_plane_creds = grpc_core::New<
-      grpc_core::Map<grpc_core::UniquePtr<char>,
-                     grpc_core::RefCountedPtr<grpc_channel_credentials>,
-                     grpc_core::StringLess>>();
-}
-
-void grpc_secure_init() {
-  gpr_once_init(&once_init_control_plane_creds, do_control_plane_creds_init);
-}
-
-void grpc_secure_shutdown() {}

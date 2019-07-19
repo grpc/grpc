@@ -186,6 +186,9 @@ bool grpc_channel_credentials_attach_credentials(
 bool grpc_control_plane_credentials_register(
     const char* authority, grpc_channel_credentials* control_plane_creds);
 
+/* Initializes global control plane credentials data. */
+void grpc_control_plane_credentials_init();
+
 /* --- grpc_credentials_mdelem_array. --- */
 
 typedef struct {
