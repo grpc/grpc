@@ -388,11 +388,8 @@ TEST_F(GenericEnd2endTest, ShortDeadline) {
   EchoRequest request;
   EchoResponse response;
 
-  {
-    std::lock_guard<std::mutex> lock(shutting_down_mu_);
-    shutting_down_ = false;
-  }
-  std::thread driver([=] { DriveCompletionQueue(); });
+  shutting_down_ = false;
+  std::thread driver([this] { DriveCompletionQueue(); });
 
   request.set_message("");
   cli_ctx.set_deadline(gpr_time_add(gpr_now(GPR_CLOCK_MONOTONIC),
