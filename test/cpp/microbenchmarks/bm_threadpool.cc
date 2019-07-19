@@ -286,6 +286,7 @@ class ShortWorkFunctorForAdd
   ~ShortWorkFunctorForAdd() {}
   static void Run(grpc_experimental_completion_queue_functor* cb, int ok) {
     auto* callback = static_cast<ShortWorkFunctorForAdd*>(cb);
+    callback->pad[0] = 0;
     for (int i = 0; i < 1000; ++i) {
       callback->val_++;
     }
