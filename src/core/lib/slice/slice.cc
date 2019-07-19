@@ -107,11 +107,11 @@ size_t grpc_slice_memory_usage(grpc_slice s) {
 }
 
 grpc_slice grpc_slice_from_static_buffer(const void* s, size_t len) {
-  return grpc_slice_from_static_buffer_internal(s, len);
+  return grpc_core::StaticSlice(s, len);
 }
 
 grpc_slice grpc_slice_from_static_string(const char* s) {
-  return grpc_slice_from_static_buffer_internal(s, strlen(s));
+  return grpc_core::StaticSlice(s, strlen(s));
 }
 
 grpc_slice grpc_slice_new_with_user_data(void* p, size_t len,

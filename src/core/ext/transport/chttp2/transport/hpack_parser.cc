@@ -1522,14 +1522,13 @@ static grpc_error* parse_key_string(grpc_chttp2_hpack_parser* p,
 
 static bool is_binary_literal_header(grpc_chttp2_hpack_parser* p) {
   /* We know that either argument here is a reference counter slice.
-   * 1. If a result of grpc_slice_from_static_buffer_internal, the refcount is
-   *    set to kNoopRefcount.
+   * 1. If it is a grpc_core::StaticSlice, the refcount is set to kNoopRefcount.
    * 2. If it's p->key.data.referenced, then p->key.copied was set to false,
    *    which occurs in begin_parse_string() - where the refcount is set to
    *    p->current_slice_refcount, which is not null. */
   return grpc_is_refcounted_slice_binary_header(
-      p->key.copied ? grpc_slice_from_static_buffer_internal(
-                          p->key.data.copied.str, p->key.data.copied.length)
+      p->key.copied ? grpc_core::StaticSlice(p->key.data.copied.str,
+                                             p->key.data.copied.length)
                     : p->key.data.referenced);
 }
 

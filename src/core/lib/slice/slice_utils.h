@@ -80,12 +80,20 @@ struct ExternSlice : public grpc_slice {
  private:
   void HeapInit(size_t length);
 };
+
+extern grpc_slice_refcount kNoopRefcount;
+
 struct StaticSlice : public InternalSlice {
   StaticSlice(grpc_slice_refcount* ref, size_t length, uint8_t* bytes) {
     refcount = ref;
     data.refcounted.length = length;
     data.refcounted.bytes = bytes;
   }
+  StaticSlice(const void* s, size_t len)
+      : StaticSlice(&kNoopRefcount, len,
+                    reinterpret_cast<uint8_t*>(const_cast<void*>(s))) {}
+  StaticSlice(const char* s) : StaticSlice(s, strlen(s)) {}
+  StaticSlice() : StaticSlice(&kNoopRefcount, 0, nullptr) {}
 };
 
 struct InternedSliceRefcount;
