@@ -62,6 +62,7 @@ class GenericEnd2endTest : public ::testing::Test {
   GenericEnd2endTest() : server_host_("localhost") {}
 
   void SetUp() override {
+    shut_down_ = false;
     int port = grpc_pick_unused_port_or_die();
     server_address_ << server_host_ << ":" << port;
     // Setup server
@@ -77,17 +78,21 @@ class GenericEnd2endTest : public ::testing::Test {
     server_ = builder.BuildAndStart();
   }
 
-  void TearDown() override {
-    server_->Shutdown();
-    void* ignored_tag;
-    bool ignored_ok;
-    cli_cq_.Shutdown();
-    srv_cq_->Shutdown();
-    while (cli_cq_.Next(&ignored_tag, &ignored_ok))
-      ;
-    while (srv_cq_->Next(&ignored_tag, &ignored_ok))
-      ;
+  void ShutDownServerAndCQs() {
+    if (!shut_down_) {
+      server_->Shutdown();
+      void* ignored_tag;
+      bool ignored_ok;
+      cli_cq_.Shutdown();
+      srv_cq_->Shutdown();
+      while (cli_cq_.Next(&ignored_tag, &ignored_ok))
+        ;
+      while (srv_cq_->Next(&ignored_tag, &ignored_ok))
+        ;
+      shut_down_ = true;
+    }
   }
+  void TearDown() override { ShutDownServerAndCQs(); }
 
   void ResetStub() {
     std::shared_ptr<Channel> channel = grpc::CreateChannel(
@@ -235,6 +240,7 @@ class GenericEnd2endTest : public ::testing::Test {
   const grpc::string server_host_;
   std::ostringstream server_address_;
   bool shutting_down_;
+  bool shut_down_;
   std::mutex shutting_down_mu_;
 };
 
@@ -400,7 +406,7 @@ TEST_F(GenericEnd2endTest, ShortDeadline) {
     std::lock_guard<std::mutex> lock(shutting_down_mu_);
     shutting_down_ = true;
   }
-  TearDown();
+  ShutDownServerAndCQs();
   driver.join();
 }
 
