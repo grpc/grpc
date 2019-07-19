@@ -23,6 +23,7 @@
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_stack_builder.h"
 #include "src/core/lib/gprpp/atomic.h"
+#include "src/core/lib/iomgr/combiner.h"
 #include "src/core/lib/iomgr/timer.h"
 #include "src/core/lib/surface/channel_init.h"
 #include "src/core/lib/transport/http2_errors.h"
@@ -106,6 +107,9 @@ class ChannelData {
   // channel goes back into IDLE state.
   const grpc_millis client_idle_timeout_;
 
+  // Combiner used to synchronize operations.
+  grpc_combiner* combiner_;
+
   // Member data used to track the state of channel.
   bool shutdown_ = false;
   Atomic<size_t> call_count_;
@@ -168,6 +172,7 @@ ChannelData::ChannelData(grpc_channel_element* elem,
     : elem_(elem),
       channel_stack_(args->channel_stack),
       client_idle_timeout_(GetClientIdleTimeout(args->channel_args)),
+      combiner_(grpc_combiner_create()),
       call_count_(0) {
   // If the idle filter is explicitly disabled in channel args, this ctor should
   // not get called.
@@ -178,19 +183,21 @@ ChannelData::ChannelData(grpc_channel_element* elem,
   grpc_timer_init_unset(&idle_timer_);
   // Initialize the idle timer callback closure.
   GRPC_CLOSURE_INIT(&idle_timer_callback_, IdleTimerCallback, this,
-                    grpc_schedule_on_exec_ctx);
+                    grpc_combiner_scheduler(combiner_));
   // Initialize the idle transport op complete callback.
   GRPC_CLOSURE_INIT(&idle_transport_op_complete_callback_,
                     IdleTransportOpCompleteCallback, this,
-                    grpc_schedule_on_exec_ctx);
+                    grpc_combiner_scheduler(combiner_));
 }
 
 class ChannelData::ClosureSetter {
  public:
   typedef void (*Callback)(ChannelData* chand);
-  ClosureSetter(Callback cb, ChannelData* chand): cb_(cb), chand_(chand) {
-    GRPC_CHANNEL_STACK_REF(chand_->channel_stack_, "client idle filter callback");
-    GRPC_CLOSURE_INIT(&closure_, CallbackWrapper, this, grpc_schedule_on_exec_ctx);
+  ClosureSetter(Callback cb, ChannelData* chand) : cb_(cb), chand_(chand) {
+    GRPC_CHANNEL_STACK_REF(chand_->channel_stack_,
+                           "client idle filter callback");
+    GRPC_CLOSURE_INIT(&closure_, CallbackWrapper, this,
+                      grpc_combiner_scheduler(chand_->combiner_));
     GRPC_CLOSURE_SCHED(&closure_, GRPC_ERROR_NONE);
   }
 
@@ -198,13 +205,14 @@ class ChannelData::ClosureSetter {
   static void CallbackWrapper(void* arg, grpc_error* error) {
     ClosureSetter* self = static_cast<ClosureSetter*>(arg);
     self->cb_(self->chand_);
-    GRPC_CHANNEL_STACK_UNREF(self->chand_->channel_stack_, "client idle filter callback");
+    GRPC_CHANNEL_STACK_UNREF(self->chand_->channel_stack_,
+                             "client idle filter callback");
     Delete(self);
   }
 
   grpc_closure closure_;
-  Callback cb_;
-  ChannelData* chand_;
+  const Callback cb_;
+  ChannelData* const chand_;
 };
 
 void ChannelData::OnIncreaseCallCountToOneLocked(ChannelData* chand) {
@@ -232,7 +240,9 @@ void ChannelData::IdleTimerCallback(void* arg, grpc_error* error) {
   ChannelData* chand = static_cast<ChannelData*>(arg);
   chand->timer_on_ = false;
   if (error == GRPC_ERROR_NONE && !chand->shutdown_) {
-    if (chand->inc_closure_cnt_ == 0 && ExecCtx::Get()->Now() >= chand->last_idle_time_ + chand->client_idle_timeout_) {
+    if (chand->inc_closure_cnt_ == 0 &&
+        ExecCtx::Get()->Now() >=
+            chand->last_idle_time_ + chand->client_idle_timeout_) {
       chand->EnterIdle();
     } else {
       chand->StartIdleTimer();
