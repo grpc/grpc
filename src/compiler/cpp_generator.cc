@@ -824,7 +824,7 @@ void PrintHeaderServerAsyncMethodsHelper(
     printer->Print(
         *vars,
         "void Request$Method$("
-        "::grpc::ServerContext* /*context*/, "
+        "::grpc::ServerContext* context, "
         "::grpc::ServerAsyncReader< $RealResponse$, $RealRequest$>* reader, "
         "::grpc::CompletionQueue* new_call_cq, "
         "::grpc::ServerCompletionQueue* notification_cq, void *tag) {\n");
