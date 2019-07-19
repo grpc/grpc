@@ -233,11 +233,11 @@ bool grpc_combiner_continue_exec_ctx() {
   // offload only if all the following conditions are true:
   // 1. the combiner is contended and has more than one closure to execute
   // 2. the current execution context needs to finish as soon as possible
-  // 3. the DEFAULT executor is threaded
-  // 4. the current thread is not a worker for any background poller
+  // 3. the current thread is not a worker for any background poller
+  // 4. the DEFAULT executor is threaded
   if (contended && grpc_core::ExecCtx::Get()->IsReadyToFinish() &&
-      grpc_core::Executor::IsThreadedDefault() &&
-      !grpc_iomgr_is_any_background_poller_thread()) {
+      !grpc_iomgr_is_any_background_poller_thread() &&
+      grpc_core::Executor::IsThreadedDefault()) {
     GPR_TIMER_MARK("offload_from_finished_exec_ctx", 0);
     // this execution context wants to move on: schedule remaining work to be
     // picked up on the executor
