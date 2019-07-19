@@ -40,6 +40,7 @@
 #include "src/core/lib/gpr/env.h"
 #include "src/core/lib/gprpp/map.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
+#include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/iomgr/sockaddr.h"
 #include "src/core/lib/security/credentials/fake/fake_credentials.h"
 #include "src/cpp/client/secure_credentials.h"
@@ -175,26 +176,34 @@ class BackendServiceImpl : public BackendService {
   std::set<grpc::string> clients_;
 };
 
-class ClientStats {
- public:
-  void Add(const ClusterStats& cluster_stats) {
+struct ClientStats {
+  struct LocalityStats {
+    // Converts from proto message class.
+    LocalityStats(const UpstreamLocalityStats& upstream_locality_stats)
+        : total_successful_requests(
+              upstream_locality_stats.total_successful_requests()),
+          total_requests_in_progress(
+              upstream_locality_stats.total_requests_in_progress()),
+          total_error_requests(upstream_locality_stats.total_error_requests()),
+          total_issued_requests(
+              upstream_locality_stats.total_issued_requests()) {}
+
+    uint64_t total_successful_requests;
+    uint64_t total_requests_in_progress;
+    uint64_t total_error_requests;
+    uint64_t total_issued_requests;
+  };
+
+  // Converts from proto message class.
+  ClientStats(const ClusterStats& cluster_stats)
+      : total_dropped_requests_(cluster_stats.total_dropped_requests()) {
     for (const auto& input_locality_stats :
          cluster_stats.upstream_locality_stats()) {
       grpc_core::UniquePtr<char> sub_zone = grpc_core::UniquePtr<char>(
           gpr_strdup(input_locality_stats.locality().sub_zone().c_str()));
-      auto iter = locality_stats_.find(sub_zone);
-      if (iter == locality_stats_.end()) {
-        iter =
-            locality_stats_.emplace(std::move(sub_zone), LocalityStats()).first;
-      }
-      iter->second.Add(input_locality_stats);
+      locality_stats_.emplace(std::move(sub_zone),
+                              LocalityStats(input_locality_stats));
     }
-    total_dropped_requests_ += cluster_stats.total_dropped_requests();
-  }
-
-  void Reset() {
-    locality_stats_.clear();
-    total_dropped_requests_ = 0;
   }
 
   // TODO(juanlishen): The following getter-like methods should be const. But we
@@ -229,34 +238,10 @@ class ClientStats {
   }
   uint64_t total_dropped_requests() const { return total_dropped_requests_; }
 
- private:
-  struct LocalityStats {
-    void Add(const UpstreamLocalityStats& upstream_locality_stats) {
-      total_successful_requests +=
-          upstream_locality_stats.total_successful_requests();
-      total_requests_in_progress +=
-          upstream_locality_stats.total_requests_in_progress();
-      total_error_requests += upstream_locality_stats.total_error_requests();
-      total_issued_requests += upstream_locality_stats.total_issued_requests();
-    }
-
-    void Reset() {
-      total_successful_requests = 0;
-      total_requests_in_progress = 0;
-      total_error_requests = 0;
-      total_issued_requests = 0;
-    }
-
-    uint64_t total_successful_requests = 0;
-    uint64_t total_requests_in_progress = 0;
-    uint64_t total_error_requests = 0;
-    uint64_t total_issued_requests = 0;
-  };
-
   grpc_core::Map<grpc_core::UniquePtr<char>, LocalityStats,
                  grpc_core::StringLess>
       locality_stats_;
-  uint64_t total_dropped_requests_ = 0;
+  uint64_t total_dropped_requests_;
 };
 
 class EdsServiceImpl : public EdsService {
@@ -390,46 +375,45 @@ class LrsServiceImpl : public LrsService {
     gpr_log(GPR_INFO, "LB[%p]: LRS StreamLoadStats starts", this);
     // Read request.
     LoadStatsRequest request;
-    if (!stream->Read(&request)) goto done;
-    if (client_load_reporting_interval_seconds_ > 0) {
-      IncreaseRequestCount();
-      // Send response.
-      LoadStatsResponse response;
-      auto server_name = request.cluster_stats()[0].cluster_name();
-      GPR_ASSERT(server_name != "");
-      response.add_clusters(server_name);
-      response.mutable_load_reporting_interval()->set_seconds(
-          client_load_reporting_interval_seconds_);
-      stream->Write(response);
-      IncreaseResponseCount();
-      // Wait for report.
-      request.Clear();
-      if (stream->Read(&request)) {
-        gpr_log(GPR_INFO, "LB[%p]: received client load report message '%s'",
-                this, request.DebugString().c_str());
-        GPR_ASSERT(request.cluster_stats().size() == 1);
-        ClusterStats cluster_stats = request.cluster_stats()[0];
-        // We need to acquire the lock here in order to prevent the notify_one
-        // below from firing before its corresponding wait is executed.
-        grpc_core::MutexLock lock(&load_report_mu_);
-        client_stats_.Add(cluster_stats);
-        load_report_ready_ = true;
-        load_report_cond_.Signal();
+    if (stream->Read(&request)) {
+      if (client_load_reporting_interval_seconds_ > 0) {
+        IncreaseRequestCount();
+        // Send response.
+        LoadStatsResponse response;
+        auto server_name = request.cluster_stats()[0].cluster_name();
+        GPR_ASSERT(server_name != "");
+        response.add_clusters(server_name);
+        response.mutable_load_reporting_interval()->set_seconds(
+            client_load_reporting_interval_seconds_);
+        stream->Write(response);
+        IncreaseResponseCount();
+        // Wait for report.
+        request.Clear();
+        if (stream->Read(&request)) {
+          gpr_log(GPR_INFO, "LB[%p]: received client load report message '%s'",
+                  this, request.DebugString().c_str());
+          GPR_ASSERT(request.cluster_stats().size() == 1);
+          const ClusterStats& cluster_stats = request.cluster_stats()[0];
+          // We need to acquire the lock here in order to prevent the notify_one
+          // below from firing before its corresponding wait is executed.
+          grpc_core::MutexLock lock(&load_report_mu_);
+          GPR_ASSERT(client_stats_ == nullptr);
+          client_stats_.reset(grpc_core::New<ClientStats>(cluster_stats));
+          load_report_ready_ = true;
+          load_report_cond_.Signal();
+        }
       }
-    }
-    {
-      // FIXME: Looks like there can be at most one report. Maybe remove Add().
       grpc_core::MutexLock lock(&lrs_mu_);
       lrs_cv_.WaitUntil(&lrs_mu_, [this] { return lrs_done; });
     }
-  done:
     gpr_log(GPR_INFO, "LB[%p]: LRS done", this);
     return Status::OK;
   }
 
   void Start() {
+    lrs_done = false;
     load_report_ready_ = false;
-    client_stats_.Reset();
+    client_stats_.reset();
   }
 
   void Shutdown() {
@@ -440,12 +424,12 @@ class LrsServiceImpl : public LrsService {
     gpr_log(GPR_INFO, "LB[%p]: shut down", this);
   }
 
-  ClientStats& WaitForLoadReport() {
+  ClientStats* WaitForLoadReport() {
     grpc_core::MutexLock lock(&load_report_mu_);
     load_report_cond_.WaitUntil(&load_report_mu_,
                                 [this] { return load_report_ready_; });
     load_report_ready_ = false;
-    return client_stats_;
+    return client_stats_.get();
   }
 
   void NotifyDoneWithLrsCall() {
@@ -466,9 +450,9 @@ class LrsServiceImpl : public LrsService {
   grpc_core::CondVar lrs_cv_;
   bool lrs_done = false;
 
-  ClientStats client_stats_;
-  grpc_core::Mutex load_report_mu_;
   grpc_core::CondVar load_report_cond_;
+  grpc_core::Mutex load_report_mu_;
+  grpc_core::UniquePtr<ClientStats> client_stats_;
   bool load_report_ready_ = false;
 };
 
@@ -1556,15 +1540,15 @@ TEST_F(SingleBalancerWithClientLoadReportingTest, Vanilla) {
   EXPECT_EQ(1U, balancers_[0]->lrs_service_.request_count());
   EXPECT_EQ(1U, balancers_[0]->lrs_service_.response_count());
   // The load report received at the balancer should be correct.
-  ClientStats& client_stats = balancers_[0]->lrs_service_.WaitForLoadReport();
+  ClientStats* client_stats = balancers_[0]->lrs_service_.WaitForLoadReport();
   EXPECT_EQ(kNumRpcsPerAddress * num_backends_ + num_ok,
-            client_stats.total_successful_requests());
-  EXPECT_EQ(0U, client_stats.total_requests_in_progress());
+            client_stats->total_successful_requests());
+  EXPECT_EQ(0U, client_stats->total_requests_in_progress());
   // FIXME: uncomment when this field is available in new proto.
   //  EXPECT_EQ(kNumRpcsPerAddress * num_backends_ + num_ok,
-  //            client_stats.total_issued_requests);
-  EXPECT_EQ(0U, client_stats.total_error_requests());
-  EXPECT_EQ(0U, client_stats.total_dropped_requests());
+  //            client_stats->total_issued_requests);
+  EXPECT_EQ(0U, client_stats->total_error_requests());
+  EXPECT_EQ(0U, client_stats->total_dropped_requests());
 }
 
 TEST_F(SingleBalancerWithClientLoadReportingTest, BalancerRestart) {
@@ -1585,12 +1569,12 @@ TEST_F(SingleBalancerWithClientLoadReportingTest, BalancerRestart) {
   std::tie(num_ok, num_failure, num_drops) =
       WaitForAllBackends(/* num_requests_multiple_of */ 1, /* start_index */ 0,
                          /* stop_index */ kNumBackendsFirstPass);
-  ClientStats& client_stats = balancers_[0]->lrs_service_.WaitForLoadReport();
+  ClientStats* client_stats = balancers_[0]->lrs_service_.WaitForLoadReport();
   EXPECT_EQ(static_cast<size_t>(num_ok),
-            client_stats.total_successful_requests());
-  EXPECT_EQ(0U, client_stats.total_requests_in_progress());
-  EXPECT_EQ(0U, client_stats.total_error_requests());
-  EXPECT_EQ(0U, client_stats.total_dropped_requests());
+            client_stats->total_successful_requests());
+  EXPECT_EQ(0U, client_stats->total_requests_in_progress());
+  EXPECT_EQ(0U, client_stats->total_error_requests());
+  EXPECT_EQ(0U, client_stats->total_dropped_requests());
   // Shut down the balancer.
   balancers_[0]->Shutdown();
   // Send 1 more request per backend.  This will continue using the
@@ -1620,10 +1604,10 @@ TEST_F(SingleBalancerWithClientLoadReportingTest, BalancerRestart) {
   num_started += kNumBackendsSecondPass;
   // Check client stats.
   client_stats = balancers_[0]->lrs_service_.WaitForLoadReport();
-  EXPECT_EQ(num_started, client_stats.total_successful_requests());
-  EXPECT_EQ(0U, client_stats.total_requests_in_progress());
-  EXPECT_EQ(0U, client_stats.total_error_requests());
-  EXPECT_EQ(0U, client_stats.total_dropped_requests());
+  EXPECT_EQ(num_started, client_stats->total_successful_requests());
+  EXPECT_EQ(0U, client_stats->total_requests_in_progress());
+  EXPECT_EQ(0U, client_stats->total_error_requests());
+  EXPECT_EQ(0U, client_stats->total_dropped_requests());
 }
 
 // TODO(juanlishen): Add TEST_F(SingleBalancerWithClientLoadReportingTest, Drop)
