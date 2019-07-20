@@ -43,11 +43,11 @@
   } while (0)
 
 namespace {
-grpc_core::StaticSlice g_empty_slice;
-grpc_core::InternalSlice g_fake_path_key;
-grpc_core::StaticSlice g_fake_path_value;
-grpc_core::InternalSlice g_fake_auth_key;
-grpc_core::StaticSlice g_fake_auth_value;
+grpc_slice g_empty_slice;
+grpc_slice g_fake_path_key;
+grpc_slice g_fake_path_value;
+grpc_slice g_fake_auth_key;
+grpc_slice g_fake_auth_value;
 
 struct inproc_stream;
 bool cancel_stream_locked(inproc_stream* s, grpc_error* error);
@@ -1204,10 +1204,18 @@ void inproc_transports_create(grpc_transport** server_transport,
 void grpc_inproc_transport_init(void) {
   grpc_core::ExecCtx exec_ctx;
   g_empty_slice = grpc_core::StaticSlice(nullptr, 0);
-  g_fake_path_key = grpc_core::InternalSlice(":path");
-  g_fake_path_value = grpc_core::StaticSlice("/");
-  g_fake_auth_key = grpc_core::InternalSlice(":authority");
-  g_fake_auth_value = grpc_core::StaticSlice("inproc-fail");
+
+  grpc_slice key_tmp = grpc_slice_from_static_string(":path");
+  g_fake_path_key = grpc_slice_intern(key_tmp);
+  grpc_slice_unref_internal(key_tmp);
+
+  g_fake_path_value = grpc_slice_from_static_string("/");
+
+  grpc_slice auth_tmp = grpc_slice_from_static_string(":authority");
+  g_fake_auth_key = grpc_slice_intern(auth_tmp);
+  grpc_slice_unref_internal(auth_tmp);
+
+  g_fake_auth_value = grpc_slice_from_static_string("inproc-fail");
 }
 
 grpc_channel* grpc_inproc_channel_create(grpc_server* server,
@@ -1250,6 +1258,9 @@ grpc_channel* grpc_inproc_channel_create(grpc_server* server,
 
 void grpc_inproc_transport_shutdown(void) {
   grpc_core::ExecCtx exec_ctx;
+  grpc_slice_unref_internal(g_empty_slice);
   grpc_slice_unref_internal(g_fake_path_key);
+  grpc_slice_unref_internal(g_fake_path_value);
   grpc_slice_unref_internal(g_fake_auth_key);
+  grpc_slice_unref_internal(g_fake_auth_value);
 }
