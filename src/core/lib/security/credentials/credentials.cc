@@ -96,7 +96,7 @@ bool grpc_channel_credentials::attach_credentials(
     return false;
   }
   local_control_plane_creds_[grpc_core::UniquePtr<char>(
-      gpr_strdup(authority))] = control_plane_creds;
+      gpr_strdup(authority))] = std::move(control_plane_creds);
   return true;
 }
 

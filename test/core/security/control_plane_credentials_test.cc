@@ -77,7 +77,7 @@ grpc_server_credentials* create_test_ssl_server_creds() {
                                                   test_server1_cert};
   return grpc_ssl_server_credentials_create_ex(
       test_root_cert, &pem_cert_key_pair, 1,
-      GRPC_SSL_DONT_REQUEST_CLIENT_CERTIFICATE, NULL);
+      GRPC_SSL_DONT_REQUEST_CLIENT_CERTIFICATE, nullptr);
 }
 
 // Perform a simple RPC and capture the ASCII value of the
