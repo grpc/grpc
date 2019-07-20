@@ -58,12 +58,11 @@ BENCHMARK(BM_SliceIntern);
 
 static void BM_SliceReIntern(benchmark::State& state) {
   TrackCounters track_counters;
-  grpc_slice static_slice = grpc_slice_from_static_string("abc");
+  grpc_core::StaticSlice static_slice("abc");
   grpc_core::InternalSlice slice(&static_slice);
   while (state.KeepRunning()) {
     grpc_slice_unref(grpc_core::InternalSlice(&slice));
   }
-  grpc_slice_unref(slice);
   track_counters.Finish(state);
 }
 BENCHMARK(BM_SliceReIntern);
@@ -71,7 +70,7 @@ BENCHMARK(BM_SliceReIntern);
 static void BM_SliceInternStaticMetadata(benchmark::State& state) {
   TrackCounters track_counters;
   while (state.KeepRunning()) {
-    benchmark::DoNotOptimize(grpc_core::InternalSlice(GRPC_MDSTR_GZIP));
+    benchmark::DoNotOptimize(grpc_core::InternalSlice(&GRPC_MDSTR_GZIP));
   }
   track_counters.Finish(state);
 }
@@ -81,7 +80,7 @@ static void BM_SliceInternEqualToStaticMetadata(benchmark::State& state) {
   TrackCounters track_counters;
   grpc_core::StaticSlice slice("gzip");
   while (state.KeepRunning()) {
-    benchmark::DoNotOptimize(grpc_core::InternalSlice(slice));
+    benchmark::DoNotOptimize(grpc_core::InternalSlice(&slice));
   }
   track_counters.Finish(state);
 }
