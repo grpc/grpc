@@ -269,7 +269,8 @@ static void test_things_stick_around(void) {
 static void test_user_data_works(void) {
   int* ud1;
   int* ud2;
-  grpc_mdelem md;
+  int* ud3;
+  grpc_mdelem md, md_static;
   gpr_log(GPR_INFO, "test_user_data_works");
 
   grpc_init();
@@ -278,6 +279,8 @@ static void test_user_data_works(void) {
   *ud1 = 1;
   ud2 = static_cast<int*>(gpr_malloc(sizeof(int)));
   *ud2 = 2;
+  ud3 = static_cast<int*>(gpr_malloc(sizeof(int)));
+  *ud3 = 3;
   md = grpc_mdelem_from_slices(
       grpc_slice_intern(grpc_slice_from_static_string("abc")),
       grpc_slice_intern(grpc_slice_from_static_string("123")));
@@ -285,6 +288,13 @@ static void test_user_data_works(void) {
   grpc_mdelem_set_user_data(md, gpr_free, ud2);
   GPR_ASSERT(grpc_mdelem_get_user_data(md, gpr_free) == ud1);
   GRPC_MDELEM_UNREF(md);
+
+  md_static = GRPC_MAKE_MDELEM(&grpc_static_mdelem_table[0],
+                               GRPC_MDELEM_STORAGE_STATIC);
+  grpc_mdelem_set_user_data(md_static, gpr_free, ud3);
+  GPR_ASSERT(grpc_mdelem_get_user_data(md_static, gpr_free) == 
+             reinterpret_cast<void*>(grpc_static_mdelem_user_data[0]));
+  GRPC_MDELEM_UNREF(md_static);
 
   grpc_shutdown();
 }
