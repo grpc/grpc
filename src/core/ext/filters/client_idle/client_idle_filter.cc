@@ -68,7 +68,7 @@ class ChannelData {
  private:
   ChannelData(grpc_channel_element* elem, grpc_channel_element_args* args,
               grpc_error** error);
-  ~ChannelData() = default;
+  ~ChannelData();
 
   class ClosureSetter;
   static void OnIncreaseCallCountToOneLocked(ChannelData* chand);
@@ -188,6 +188,10 @@ ChannelData::ChannelData(grpc_channel_element* elem,
   GRPC_CLOSURE_INIT(&idle_transport_op_complete_callback_,
                     IdleTransportOpCompleteCallback, this,
                     grpc_combiner_scheduler(combiner_));
+}
+
+ChannelData::~ChannelData() {
+  GRPC_COMBINER_UNREF(combiner_, "client idle filter");
 }
 
 class ChannelData::ClosureSetter {
