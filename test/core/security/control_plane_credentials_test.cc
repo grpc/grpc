@@ -196,7 +196,7 @@ grpc_core::UniquePtr<char> perform_call_and_get_authorization_header(
   cq_verify(cqv);
   GPR_ASSERT(status == GRPC_STATUS_OK);
   // Extract the ascii value of the authorization header, if present
-  grpc_core::UniquePtr<char> authorization_header_val = nullptr;
+  grpc_core::UniquePtr<char> authorization_header_val;
   gpr_log(GPR_DEBUG, "RPC done. Now examine received metadata on server...");
   for (size_t i = 0; i < request_metadata_recv.count; i++) {
     char* cur_key =
