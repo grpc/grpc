@@ -93,6 +93,15 @@ grpc_error* grpc_attach_md_to_error(grpc_error* src, grpc_mdelem md) {
   return out;
 }
 
+static void link_callout(grpc_metadata_batch* batch,
+                         grpc_linked_mdelem* storage,
+                         grpc_metadata_batch_callouts_index idx) {
+  GPR_DEBUG_ASSERT(idx >= 0 && idx < GRPC_BATCH_CALLOUTS_COUNT);
+  GPR_DEBUG_ASSERT(batch->idx.array[idx] == nullptr);
+  ++batch->list.default_count;
+  batch->idx.array[idx] = storage;
+}
+
 static grpc_error* maybe_link_callout(grpc_metadata_batch* batch,
                                       grpc_linked_mdelem* storage)
     GRPC_MUST_USE_RESULT;
@@ -122,21 +131,21 @@ static void maybe_unlink_callout(grpc_metadata_batch* batch,
     return;
   }
   --batch->list.default_count;
-  GPR_ASSERT(batch->idx.array[idx] != nullptr);
+  GPR_DEBUG_ASSERT(batch->idx.array[idx] != nullptr);
   batch->idx.array[idx] = nullptr;
 }
 
 grpc_error* grpc_metadata_batch_add_head(grpc_metadata_batch* batch,
                                          grpc_linked_mdelem* storage,
                                          grpc_mdelem elem_to_add) {
-  GPR_ASSERT(!GRPC_MDISNULL(elem_to_add));
+  GPR_DEBUG_ASSERT(!GRPC_MDISNULL(elem_to_add));
   storage->md = elem_to_add;
   return grpc_metadata_batch_link_head(batch, storage);
 }
 
 static void link_head(grpc_mdelem_list* list, grpc_linked_mdelem* storage) {
   assert_valid_list(list);
-  GPR_ASSERT(!GRPC_MDISNULL(storage->md));
+  GPR_DEBUG_ASSERT(!GRPC_MDISNULL(storage->md));
   storage->prev = nullptr;
   storage->next = list->head;
   storage->reserved = nullptr;
@@ -163,17 +172,28 @@ grpc_error* grpc_metadata_batch_link_head(grpc_metadata_batch* batch,
   return GRPC_ERROR_NONE;
 }
 
+grpc_error* grpc_metadata_batch_link_head(
+    grpc_metadata_batch* batch, grpc_linked_mdelem* storage,
+    grpc_metadata_batch_callouts_index idx) {
+  GPR_DEBUG_ASSERT(GRPC_BATCH_INDEX_OF(GRPC_MDKEY(storage->md)) == idx);
+  assert_valid_callouts(batch);
+  link_callout(batch, storage, idx);
+  link_head(&batch->list, storage);
+  assert_valid_callouts(batch);
+  return GRPC_ERROR_NONE;
+}
+
 grpc_error* grpc_metadata_batch_add_tail(grpc_metadata_batch* batch,
                                          grpc_linked_mdelem* storage,
                                          grpc_mdelem elem_to_add) {
-  GPR_ASSERT(!GRPC_MDISNULL(elem_to_add));
+  GPR_DEBUG_ASSERT(!GRPC_MDISNULL(elem_to_add));
   storage->md = elem_to_add;
   return grpc_metadata_batch_link_tail(batch, storage);
 }
 
 static void link_tail(grpc_mdelem_list* list, grpc_linked_mdelem* storage) {
   assert_valid_list(list);
-  GPR_ASSERT(!GRPC_MDISNULL(storage->md));
+  GPR_DEBUG_ASSERT(!GRPC_MDISNULL(storage->md));
   storage->prev = list->tail;
   storage->next = nullptr;
   storage->reserved = nullptr;
@@ -185,6 +205,17 @@ static void link_tail(grpc_mdelem_list* list, grpc_linked_mdelem* storage) {
   list->tail = storage;
   list->count++;
   assert_valid_list(list);
+}
+
+grpc_error* grpc_metadata_batch_link_tail(
+    grpc_metadata_batch* batch, grpc_linked_mdelem* storage,
+    grpc_metadata_batch_callouts_index idx) {
+  GPR_DEBUG_ASSERT(GRPC_BATCH_INDEX_OF(GRPC_MDKEY(storage->md)) == idx);
+  assert_valid_callouts(batch);
+  link_callout(batch, storage, idx);
+  link_tail(&batch->list, storage);
+  assert_valid_callouts(batch);
+  return GRPC_ERROR_NONE;
 }
 
 grpc_error* grpc_metadata_batch_link_tail(grpc_metadata_batch* batch,
@@ -215,6 +246,18 @@ static void unlink_storage(grpc_mdelem_list* list,
   }
   list->count--;
   assert_valid_list(list);
+}
+
+void grpc_metadata_batch_remove(grpc_metadata_batch* batch,
+                                grpc_metadata_batch_callouts_index idx) {
+  assert_valid_callouts(batch);
+  grpc_linked_mdelem* storage = batch->idx.array[idx];
+  GPR_DEBUG_ASSERT(storage != nullptr);
+  --batch->list.default_count;
+  batch->idx.array[idx] = nullptr;
+  unlink_storage(&batch->list, storage);
+  GRPC_MDELEM_UNREF(storage->md);
+  assert_valid_callouts(batch);
 }
 
 void grpc_metadata_batch_remove(grpc_metadata_batch* batch,
@@ -319,7 +362,9 @@ void grpc_metadata_batch_copy(grpc_metadata_batch* src,
     // there's a duplicate entry for a callout.  However, that can't be
     // the case here, because we would not have been allowed to create
     // a source batch that had that kind of conflict.
-    GPR_ASSERT(error == GRPC_ERROR_NONE);
+    GPR_DEBUG_ASSERT(error == GRPC_ERROR_NONE);
+    if (error) {
+    }  // Silence -Wunused-variable for non debug builds.
   }
 }
 

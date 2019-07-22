@@ -585,9 +585,10 @@ GrpcLb::PickResult GrpcLb::Picker::Pick(PickArgs args) {
     GPR_ASSERT(!GRPC_MDISNULL(lb_token));
     grpc_linked_mdelem* mdelem_storage = static_cast<grpc_linked_mdelem*>(
         args.call_state->Alloc(sizeof(grpc_linked_mdelem)));
-    GPR_ASSERT(grpc_metadata_batch_add_tail(
-                   args.initial_metadata, mdelem_storage,
-                   GRPC_MDELEM_REF(lb_token)) == GRPC_ERROR_NONE);
+    GPR_ASSERT(
+        grpc_metadata_batch_add_tail(args.initial_metadata, mdelem_storage,
+                                     GRPC_MDELEM_REF(lb_token),
+                                     GRPC_BATCH_LB_TOKEN) == GRPC_ERROR_NONE);
     GrpcLbClientStats* client_stats = static_cast<GrpcLbClientStats*>(
         grpc_mdelem_get_user_data(lb_token, GrpcLbClientStats::Destroy));
     if (client_stats != nullptr) {
