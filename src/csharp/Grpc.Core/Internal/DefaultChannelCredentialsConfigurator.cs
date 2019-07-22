@@ -19,6 +19,7 @@
 using System;
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
+using System.Runtime.CompilerServices;
 using Grpc.Core.Utils;
 using Grpc.Core.Logging;
 
@@ -30,6 +31,12 @@ namespace Grpc.Core.Internal
     internal class DefaultChannelCredentialsConfigurator : ChannelCredentialsConfiguratorBase
     {
         static readonly ILogger Logger = GrpcEnvironment.Logger.ForType<DefaultCallCredentialsConfigurator>();
+
+        // Native credentials object need to be kept alive once initialized for subchannel sharing to work correctly
+        // with secure connections. See https://github.com/grpc/grpc/issues/15207.
+        // We rely on finalizer to clean up the native portion of ChannelCredentialsSafeHandle after the ChannelCredentials
+        // instance becomes unused.
+        static readonly ConditionalWeakTable<ChannelCredentials, Lazy<ChannelCredentialsSafeHandle>> CachedNativeCredentials = new ConditionalWeakTable<ChannelCredentials, Lazy<ChannelCredentialsSafeHandle>>();
 
         bool configured;
         ChannelCredentialsSafeHandle nativeCredentials;
@@ -48,18 +55,30 @@ namespace Grpc.Core.Internal
         {
             GrpcPreconditions.CheckState(!configured);
             configured = true;
-            IntPtr verifyPeerCallbackTag = IntPtr.Zero;
-            if (verifyPeerCallback != null)
-            {
-                verifyPeerCallbackTag = new VerifyPeerCallbackRegistration(verifyPeerCallback).CallbackRegistration.Tag;
-            }
-            nativeCredentials = ChannelCredentialsSafeHandle.CreateSslCredentials(rootCertificates, keyCertificatePair, verifyPeerCallbackTag);
+            nativeCredentials = GetOrCreateNativeCredentials((ChannelCredentials) state,
+                () => CreateNativeSslCredentials(rootCertificates, keyCertificatePair, verifyPeerCallback));
         }
 
         public override void SetCompositeCredentials(object state, ChannelCredentials channelCredentials, CallCredentials callCredentials)
         {
             GrpcPreconditions.CheckState(!configured);
             configured = true;
+            nativeCredentials = GetOrCreateNativeCredentials((ChannelCredentials) state,
+                () => CreateNativeCompositeCredentials(channelCredentials, callCredentials));
+        }
+
+        private ChannelCredentialsSafeHandle CreateNativeSslCredentials(string rootCertificates, KeyCertificatePair keyCertificatePair, VerifyPeerCallback verifyPeerCallback)
+        {
+            IntPtr verifyPeerCallbackTag = IntPtr.Zero;
+            if (verifyPeerCallback != null)
+            {
+                verifyPeerCallbackTag = new VerifyPeerCallbackRegistration(verifyPeerCallback).CallbackRegistration.Tag;
+            }
+            return ChannelCredentialsSafeHandle.CreateSslCredentials(rootCertificates, keyCertificatePair, verifyPeerCallbackTag);
+        }
+
+        private ChannelCredentialsSafeHandle CreateNativeCompositeCredentials(ChannelCredentials channelCredentials, CallCredentials callCredentials)
+        {
             using (var callCreds = callCredentials.ToNativeCredentials())
             {
                 var nativeComposite = ChannelCredentialsSafeHandle.CreateComposite(channelCredentials.ToNativeCredentials(), callCreds);
@@ -67,8 +86,32 @@ namespace Grpc.Core.Internal
                 {
                     throw new ArgumentException("Error creating native composite credentials. Likely, this is because you are trying to compose incompatible credentials.");
                 }
-                nativeCredentials = nativeComposite;
+                return nativeComposite;
             }
+        }
+
+        private ChannelCredentialsSafeHandle GetOrCreateNativeCredentials(ChannelCredentials key, Func<ChannelCredentialsSafeHandle> nativeCredentialsFactory)
+        {
+            Lazy<ChannelCredentialsSafeHandle> lazyValue;
+            while (true)
+            {
+                if (CachedNativeCredentials.TryGetValue(key, out lazyValue))
+                {
+                    break;
+                }
+
+                lazyValue = new Lazy<ChannelCredentialsSafeHandle>(nativeCredentialsFactory);
+                try
+                {
+                    CachedNativeCredentials.Add(key, lazyValue);
+                    break;
+                }
+                catch (ArgumentException)
+                {
+                    // key exists, next TryGetValue should fetch the value
+                }
+            }
+            return lazyValue.Value;
         }
 
         private class VerifyPeerCallbackRegistration
