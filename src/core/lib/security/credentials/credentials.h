@@ -178,7 +178,7 @@ grpc_channel_credentials* grpc_channel_credentials_find_in_args(
     Note that this API is not thread safe. Only one thread may
     attach control plane creds to a given credentials object at
     any one time, and new control plane creds must not be
-    attached after \a credentials has been used to create a channel.*/
+    attached after \a credentials has been used to create a channel. */
 bool grpc_channel_credentials_attach_credentials(
     grpc_channel_credentials* credentials, const char* authority,
     grpc_channel_credentials* control_plane_creds);
