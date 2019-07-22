@@ -67,6 +67,8 @@ size_t grpc_metadata_batch_size(grpc_metadata_batch* batch);
 /** Remove \a storage from the batch, unreffing the mdelem contained */
 void grpc_metadata_batch_remove(grpc_metadata_batch* batch,
                                 grpc_linked_mdelem* storage);
+void grpc_metadata_batch_remove(grpc_metadata_batch* batch,
+                                grpc_metadata_batch_callouts_index idx);
 
 /** Substitute a new mdelem for an old value */
 grpc_error* grpc_metadata_batch_substitute(grpc_metadata_batch* batch,
@@ -84,6 +86,9 @@ void grpc_metadata_batch_set_value(grpc_linked_mdelem* storage,
 grpc_error* grpc_metadata_batch_link_head(grpc_metadata_batch* batch,
                                           grpc_linked_mdelem* storage)
     GRPC_MUST_USE_RESULT;
+grpc_error* grpc_metadata_batch_link_head(
+    grpc_metadata_batch* batch, grpc_linked_mdelem* storage,
+    grpc_metadata_batch_callouts_index idx) GRPC_MUST_USE_RESULT;
 
 /** Add \a storage to the end of \a batch. storage->md is
     assumed to be valid.
@@ -93,6 +98,9 @@ grpc_error* grpc_metadata_batch_link_head(grpc_metadata_batch* batch,
 grpc_error* grpc_metadata_batch_link_tail(grpc_metadata_batch* batch,
                                           grpc_linked_mdelem* storage)
     GRPC_MUST_USE_RESULT;
+grpc_error* grpc_metadata_batch_link_tail(
+    grpc_metadata_batch* batch, grpc_linked_mdelem* storage,
+    grpc_metadata_batch_callouts_index idx) GRPC_MUST_USE_RESULT;
 
 /** Add \a elem_to_add as the first element in \a batch, using
     \a storage as backing storage for the linked list element.
@@ -104,6 +112,22 @@ grpc_error* grpc_metadata_batch_add_head(
     grpc_metadata_batch* batch, grpc_linked_mdelem* storage,
     grpc_mdelem elem_to_add) GRPC_MUST_USE_RESULT;
 
+// TODO(arjunroy, roth): Remove redundant methods.
+// add/link_head/tail are almost identical.
+inline grpc_error* GRPC_MUST_USE_RESULT grpc_metadata_batch_add_head(
+    grpc_metadata_batch* batch, grpc_linked_mdelem* storage,
+    grpc_metadata_batch_callouts_index idx) {
+  return grpc_metadata_batch_link_head(batch, storage, idx);
+}
+
+inline grpc_error* GRPC_MUST_USE_RESULT grpc_metadata_batch_add_head(
+    grpc_metadata_batch* batch, grpc_linked_mdelem* storage,
+    grpc_mdelem elem_to_add, grpc_metadata_batch_callouts_index idx) {
+  GPR_DEBUG_ASSERT(!GRPC_MDISNULL(elem_to_add));
+  storage->md = elem_to_add;
+  return grpc_metadata_batch_add_head(batch, storage, idx);
+}
+
 /** Add \a elem_to_add as the last element in \a batch, using
     \a storage as backing storage for the linked list element.
     \a storage is owned by the caller and must survive for the
@@ -113,6 +137,20 @@ grpc_error* grpc_metadata_batch_add_head(
 grpc_error* grpc_metadata_batch_add_tail(
     grpc_metadata_batch* batch, grpc_linked_mdelem* storage,
     grpc_mdelem elem_to_add) GRPC_MUST_USE_RESULT;
+
+inline grpc_error* GRPC_MUST_USE_RESULT grpc_metadata_batch_add_tail(
+    grpc_metadata_batch* batch, grpc_linked_mdelem* storage,
+    grpc_metadata_batch_callouts_index idx) {
+  return grpc_metadata_batch_link_tail(batch, storage, idx);
+}
+
+inline grpc_error* GRPC_MUST_USE_RESULT grpc_metadata_batch_add_tail(
+    grpc_metadata_batch* batch, grpc_linked_mdelem* storage,
+    grpc_mdelem elem_to_add, grpc_metadata_batch_callouts_index idx) {
+  GPR_DEBUG_ASSERT(!GRPC_MDISNULL(elem_to_add));
+  storage->md = elem_to_add;
+  return grpc_metadata_batch_add_tail(batch, storage, idx);
+}
 
 grpc_error* grpc_attach_md_to_error(grpc_error* src, grpc_mdelem md);
 

@@ -3186,8 +3186,7 @@ void CallData::AddRetriableSendInitialMetadataOp(
   if (GPR_UNLIKELY(retry_state->send_initial_metadata.idx.named
                        .grpc_previous_rpc_attempts != nullptr)) {
     grpc_metadata_batch_remove(&retry_state->send_initial_metadata,
-                               retry_state->send_initial_metadata.idx.named
-                                   .grpc_previous_rpc_attempts);
+                               GRPC_BATCH_GRPC_PREVIOUS_RPC_ATTEMPTS);
   }
   if (GPR_UNLIKELY(num_attempts_completed_ > 0)) {
     grpc_mdelem retry_md = grpc_mdelem_create(
@@ -3197,7 +3196,7 @@ void CallData::AddRetriableSendInitialMetadataOp(
         &retry_state->send_initial_metadata,
         &retry_state
              ->send_initial_metadata_storage[send_initial_metadata_.list.count],
-        retry_md);
+        retry_md, GRPC_BATCH_GRPC_PREVIOUS_RPC_ATTEMPTS);
     if (GPR_UNLIKELY(error != GRPC_ERROR_NONE)) {
       gpr_log(GPR_ERROR, "error adding retry metadata: %s",
               grpc_error_string(error));

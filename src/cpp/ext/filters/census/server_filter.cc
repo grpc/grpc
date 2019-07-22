@@ -50,12 +50,12 @@ void FilterInitialMetadata(grpc_metadata_batch* b,
   if (b->idx.named.grpc_trace_bin != nullptr) {
     sml->tracing_slice =
         grpc_slice_ref_internal(GRPC_MDVALUE(b->idx.named.grpc_trace_bin->md));
-    grpc_metadata_batch_remove(b, b->idx.named.grpc_trace_bin);
+    grpc_metadata_batch_remove(b, GRPC_BATCH_GRPC_TRACE_BIN);
   }
   if (b->idx.named.grpc_tags_bin != nullptr) {
     sml->census_proto =
         grpc_slice_ref_internal(GRPC_MDVALUE(b->idx.named.grpc_tags_bin->md));
-    grpc_metadata_batch_remove(b, b->idx.named.grpc_tags_bin);
+    grpc_metadata_batch_remove(b, GRPC_BATCH_GRPC_TAGS_BIN);
   }
 }
 
@@ -155,7 +155,8 @@ void CensusServerCallData::StartTransportStreamOpBatch(
               op->send_trailing_metadata()->batch(), &census_bin_,
               grpc_mdelem_from_slices(
                   GRPC_MDSTR_GRPC_SERVER_STATS_BIN,
-                  grpc_core::UnmanagedMemorySlice(stats_buf_, len))));
+                  grpc_core::UnmanagedMemorySlice(stats_buf_, len)),
+              GRPC_BATCH_GRPC_SERVER_STATS_BIN));
     }
   }
   // Call next op.
