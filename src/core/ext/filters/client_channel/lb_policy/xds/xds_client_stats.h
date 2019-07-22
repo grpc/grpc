@@ -139,13 +139,23 @@ class XdsLbClientStats {
     // counters.
     Snapshot GetSnapshotAndReset();
 
-    // After a LocalityStats is killed, it can't call AddCallStarted() unless
-    // revived. AddCallFinished() can still be called. Once the number of in
-    // progress calls drops to 0, this LocalityStats can be deleted.
-    void Kill() { dying_ = true; }
-    void Revive() { dying_ = false; }
+    // Each XdsLb::PickerWrapper holds a ref to the perspective LocalityStats.
+    // If the refcount is 0, there won't be new calls recorded to the
+    // LocalityStats, so the LocalityStats can be safely deleted when all the
+    // in-progress calls have finished.
+    // Only be called from the control plane combiner.
+    void RefByPicker() { picker_refcount_.FetchAdd(1, MemoryOrder::ACQ_REL); }
+    // Might be called from the control plane combiner or the data plane
+    // combiner.
+    void UnrefByPicker() { picker_refcount_.FetchSub(1, MemoryOrder::ACQ_REL); }
+    // Only be called from the control plane combiner.
+    // The only place where the picker_refcount_ can be increased is
+    // RefByPicker(), which also can only be called from the control plane
+    // combiner. Also, if the picker_refcount_ is 0, total_requests_in_progress_
+    // can't be increased from 0. So it's safe to delete the LocalityStats right
+    // after this method returns true.
     bool IsSafeToDelete() {
-      return dying_ &&
+      return picker_refcount_.FetchAdd(0, MemoryOrder::ACQ_REL) == 0 &&
              total_requests_in_progress_.FetchAdd(0, MemoryOrder::ACQ_REL) == 0;
     }
 
@@ -164,7 +174,9 @@ class XdsLbClientStats {
     // reporting thread (from the control plane combiner).
     Mutex load_metric_stats_mu_;
     LoadMetricMap load_metric_stats_;
-    bool dying_ = false;
+    // Can be accessed from either the control plane combiner or the data plane
+    // combiner.
+    Atomic<uint8_t> picker_refcount_{0};
   };
 
   using LocalityStatsMap =

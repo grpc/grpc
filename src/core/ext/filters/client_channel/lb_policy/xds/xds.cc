@@ -377,7 +377,10 @@ class XdsLb : public LoadBalancingPolicy {
    public:
     PickerWrapper(UniquePtr<SubchannelPicker> picker,
                   XdsLbClientStats::LocalityStats* locality_stats)
-        : picker_(std::move(picker)), locality_stats_(locality_stats) {}
+        : picker_(std::move(picker)), locality_stats_(locality_stats) {
+      locality_stats_->RefByPicker();
+    }
+    ~PickerWrapper() { locality_stats_->UnrefByPicker(); }
 
     PickResult Pick(PickArgs args);
 
@@ -444,8 +447,7 @@ class XdsLb : public LoadBalancingPolicy {
      public:
       LocalityEntry(RefCountedPtr<XdsLb> parent,
                     RefCountedPtr<XdsLocalityName> name,
-                    uint32_t locality_weight,
-                    XdsLbClientStats::LocalityStats* locality_stats);
+                    uint32_t locality_weight);
       ~LocalityEntry();
 
       void UpdateLocked(ServerAddressList serverlist,
@@ -495,7 +497,6 @@ class XdsLb : public LoadBalancingPolicy {
       RefCountedPtr<PickerWrapper> picker_wrapper_;
       grpc_connectivity_state connectivity_state_;
       uint32_t locality_weight_;
-      XdsLbClientStats::LocalityStats* locality_stats_;
     };
 
     explicit LocalityMap(XdsLb* parent) : parent_(parent) {}
@@ -2025,11 +2026,9 @@ void XdsLb::LocalityMap::UpdateLocked(
     // Add a new entry in the locality map if a new locality is received in the
     // locality list.
     if (iter == map_.end()) {
-      XdsLbClientStats::LocalityStats* locality_stats =
-          parent_->client_stats_.FindLocalityStats(locality_name);
       OrphanablePtr<LocalityEntry> new_entry = MakeOrphanable<LocalityEntry>(
           parent->Ref(DEBUG_LOCATION, "LocalityEntry"), locality_name,
-          locality_list[i].lb_weight, locality_stats);
+          locality_list[i].lb_weight);
       iter = map_.emplace(locality_name, std::move(new_entry)).first;
     }
     // Keep a copy of serverlist in locality_list_ so that we can compare it
@@ -2056,11 +2055,10 @@ void XdsLb::LocalityMap::ResetBackoffLocked() {
 
 XdsLb::LocalityMap::LocalityEntry::LocalityEntry(
     RefCountedPtr<XdsLb> parent, RefCountedPtr<XdsLocalityName> name,
-    uint32_t locality_weight, XdsLbClientStats::LocalityStats* locality_stats)
+    uint32_t locality_weight)
     : parent_(std::move(parent)),
       name_(std::move(name)),
-      locality_weight_(locality_weight),
-      locality_stats_(locality_stats) {
+      locality_weight_(locality_weight) {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_xds_trace)) {
     gpr_log(GPR_INFO, "[xdslb %p] created LocalityEntry %p for %s",
             parent_.get(), this, name_->AsHumanReadableString());
@@ -2074,12 +2072,6 @@ XdsLb::LocalityMap::LocalityEntry::~LocalityEntry() {
             parent_.get(), this, name_->AsHumanReadableString());
   }
   parent_.reset(DEBUG_LOCATION, "LocalityEntry");
-  // This locality is no longer in the locality map, future picker will not
-  // include this locality any more. Also, the current picker doesn't include
-  // this locality (see XdsLb::LocalityMap::UpdateLocked()). So we can kill its
-  // stats and wait until there is no pending RPCs in this locality and the
-  // stats for the last few RPCs are reported to delete this stats.
-  locality_stats_->Kill();
 }
 
 grpc_channel_args*
@@ -2335,9 +2327,10 @@ void XdsLb::LocalityMap::LocalityEntry::Helper::UpdateState(
   // If we are in fallback mode, ignore update request from the child policy.
   if (entry_->parent_->fallback_policy_ != nullptr) return;
   GPR_ASSERT(entry_->parent_->lb_chand_ != nullptr);
-  // Cache the picker and its state in the entry
-  entry_->picker_wrapper_ =
-      MakeRefCounted<PickerWrapper>(std::move(picker), entry_->locality_stats_);
+  // Cache the picker and its state in the entry.
+  entry_->picker_wrapper_ = MakeRefCounted<PickerWrapper>(
+      std::move(picker),
+      entry_->parent_->client_stats_.FindLocalityStats(entry_->name_));
   entry_->connectivity_state_ = state;
   // Construct a new xds picker which maintains a map of all locality pickers
   // that are ready. Each locality is represented by a portion of the range

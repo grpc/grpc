@@ -120,11 +120,6 @@ XdsLbClientStats::LocalityStats::GetSnapshotAndReset() {
 }
 
 void XdsLbClientStats::LocalityStats::AddCallStarted() {
-  if (dying_) {
-    gpr_log(GPR_ERROR, "Can't record call starting on dying locality stats %p",
-            this);
-    return;
-  }
   total_issued_requests_.FetchAdd(1, MemoryOrder::RELAXED);
   total_requests_in_progress_.FetchAdd(1, MemoryOrder::RELAXED);
 }
@@ -188,8 +183,6 @@ XdsLbClientStats::LocalityStats* XdsLbClientStats::FindLocalityStats(
   if (iter == upstream_locality_stats_.end()) {
     iter =
         upstream_locality_stats_.emplace(locality_name, LocalityStats()).first;
-  } else {
-    iter->second.Revive();
   }
   return &iter->second;
 }
