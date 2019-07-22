@@ -52,24 +52,5 @@ namespace Grpc.Core.Tests
             var nativeCreds2 = creds.ToNativeCredentials();
             Assert.AreSame(nativeCreds1, nativeCreds2);
         }
-
-        [Test]
-        public void ChannelCredentials_CreateExceptionIsCached()
-        {
-            var creds = new ChannelCredentialsWithPopulateConfigurationThrows();
-            var ex1 = Assert.Throws(typeof(Exception), () => creds.ToNativeCredentials());
-            var ex2 = Assert.Throws(typeof(Exception), () => creds.ToNativeCredentials());
-            Assert.AreSame(ex1, ex2);
-        }
-
-        internal class ChannelCredentialsWithPopulateConfigurationThrows : ChannelCredentials
-        {
-            internal override bool IsComposable => false;
-
-            public override void InternalPopulateConfiguration(ChannelCredentialsConfiguratorBase configurator, object state)
-            {
-                throw new Exception("Creation of native credentials has failed on purpose.");
-            }
-        }
     }
 }
