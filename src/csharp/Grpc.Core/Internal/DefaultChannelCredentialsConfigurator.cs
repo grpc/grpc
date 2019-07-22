@@ -1,0 +1,130 @@
+#region Copyright notice and license
+
+// Copyright 2019 The gRPC Authors
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+#endregion
+
+using System;
+using System.Collections.Generic;
+using System.Runtime.InteropServices;
+using Grpc.Core.Utils;
+using Grpc.Core.Logging;
+
+namespace Grpc.Core.Internal
+{
+    /// <summary>
+    /// Creates native call credential objects from instances of <c>ChannelCredentials</c>.
+    /// </summary>
+    internal class DefaultChannelCredentialsConfigurator : ChannelCredentialsConfiguratorBase
+    {
+        static readonly ILogger Logger = GrpcEnvironment.Logger.ForType<DefaultCallCredentialsConfigurator>();
+
+        bool configured;
+        ChannelCredentialsSafeHandle nativeCredentials;
+
+        public ChannelCredentialsSafeHandle NativeCredentials => nativeCredentials;
+        
+        public override void SetInsecureCredentials(object state)
+        {
+            GrpcPreconditions.CheckState(!configured);
+            // null corresponds to insecure credentials.
+            configured = true;
+            nativeCredentials = null;
+        }
+
+        public override void SetSslCredentials(object state, string rootCertificates, KeyCertificatePair keyCertificatePair, VerifyPeerCallback verifyPeerCallback)
+        {
+            GrpcPreconditions.CheckState(!configured);
+            configured = true;
+            IntPtr verifyPeerCallbackTag = IntPtr.Zero;
+            if (verifyPeerCallback != null)
+            {
+                verifyPeerCallbackTag = new VerifyPeerCallbackRegistration(verifyPeerCallback).CallbackRegistration.Tag;
+            }
+            nativeCredentials = ChannelCredentialsSafeHandle.CreateSslCredentials(rootCertificates, keyCertificatePair, verifyPeerCallbackTag);
+        }
+
+        public override void SetCompositeCredentials(object state, ChannelCredentials channelCredentials, CallCredentials callCredentials)
+        {
+            GrpcPreconditions.CheckState(!configured);
+            configured = true;
+            using (var callCreds = callCredentials.ToNativeCredentials())
+            {
+                var nativeComposite = ChannelCredentialsSafeHandle.CreateComposite(channelCredentials.ToNativeCredentials(), callCreds);
+                if (nativeComposite.IsInvalid)
+                {
+                    throw new ArgumentException("Error creating native composite credentials. Likely, this is because you are trying to compose incompatible credentials.");
+                }
+                nativeCredentials = nativeComposite;
+            }
+        }
+
+        private class VerifyPeerCallbackRegistration
+        {
+            readonly VerifyPeerCallback verifyPeerCallback;
+            readonly NativeCallbackRegistration callbackRegistration;
+
+            public VerifyPeerCallbackRegistration(VerifyPeerCallback verifyPeerCallback)
+            {
+                this.verifyPeerCallback = verifyPeerCallback;
+                this.callbackRegistration = NativeCallbackDispatcher.RegisterCallback(HandleUniversalCallback);
+            }
+
+            public NativeCallbackRegistration CallbackRegistration => callbackRegistration;
+
+            private int HandleUniversalCallback(IntPtr arg0, IntPtr arg1, IntPtr arg2, IntPtr arg3, IntPtr arg4, IntPtr arg5)
+            {
+                return VerifyPeerCallbackHandler(arg0, arg1, arg2 != IntPtr.Zero);
+            }
+
+            private int VerifyPeerCallbackHandler(IntPtr targetName, IntPtr peerPem, bool isDestroy)
+            {
+                if (isDestroy)
+                {
+                    this.callbackRegistration.Dispose();
+                    return 0;
+                }
+
+                try
+                {
+                    var context = new VerifyPeerContext(Marshal.PtrToStringAnsi(targetName), Marshal.PtrToStringAnsi(peerPem));
+
+                    return this.verifyPeerCallback(context) ? 0 : 1;
+                }
+                catch (Exception e)
+                {
+                    // eat the exception, we must not throw when inside callback from native code.
+                    Logger.Error(e, "Exception occurred while invoking verify peer callback handler.");
+                    // Return validation failure in case of exception.
+                    return 1;
+                }
+            }
+        }
+    }
+
+    internal static class ChannelCredentialsExtensions
+    {
+        /// <summary>
+        /// Creates native object for the credentials.
+        /// </summary>
+        /// <returns>The native credentials.</returns>
+        public static ChannelCredentialsSafeHandle ToNativeCredentials(this ChannelCredentials credentials)
+        {
+            var configurator = new DefaultChannelCredentialsConfigurator();
+            credentials.InternalPopulateConfiguration(configurator, credentials);
+            return configurator.NativeCredentials;
+        }
+    }
+}

@@ -18,11 +18,9 @@
 
 using System;
 using System.Collections.Generic;
-using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 
 using Grpc.Core.Internal;
-using Grpc.Core.Logging;
 using Grpc.Core.Utils;
 
 namespace Grpc.Core
@@ -33,7 +31,9 @@ namespace Grpc.Core
     public abstract class ChannelCredentials
     {
         static readonly ChannelCredentials InsecureInstance = new InsecureCredentialsImpl();
-        readonly Lazy<ChannelCredentialsSafeHandle> cachedNativeCredentials;
+        
+        // TODO: caching the instance!!!!
+        //readonly Lazy<ChannelCredentialsSafeHandle> cachedNativeCredentials;
 
         /// <summary>
         /// Creates a new instance of channel credentials
@@ -44,7 +44,7 @@ namespace Grpc.Core
             // with secure connections. See https://github.com/grpc/grpc/issues/15207.
             // We rely on finalizer to clean up the native portion of ChannelCredentialsSafeHandle after the ChannelCredentials
             // instance becomes unused.
-            this.cachedNativeCredentials = new Lazy<ChannelCredentialsSafeHandle>(() => CreateNativeCredentials());
+            //this.cachedNativeCredentials = new Lazy<ChannelCredentialsSafeHandle>(() => CreateNativeCredentials());
         }
 
         /// <summary>
@@ -72,36 +72,39 @@ namespace Grpc.Core
         }
 
         /// <summary>
-        /// Gets native object for the credentials, creating one if it already doesn't exist. May return null if insecure channel
-        /// should be created. Caller must not call <c>Dispose()</c> on the returned native credentials as their lifetime
-        /// is managed by this class (and instances of native credentials are cached).
+        /// Populates channel credentials configurator with this instance's configuration.
+        /// End users never need to invoke this method as it is part of internal implementation.
         /// </summary>
-        /// <returns>The native credentials.</returns>
-        internal ChannelCredentialsSafeHandle GetNativeCredentials()
-        {
-            return cachedNativeCredentials.Value;
-        }
+        public abstract void InternalPopulateConfiguration(ChannelCredentialsConfiguratorBase configurator, object state);
 
-        /// <summary>
-        /// Creates a new native object for the credentials. May return null if insecure channel
-        /// should be created. For internal use only, use <see cref="GetNativeCredentials"/> instead.
-        /// </summary>
-        /// <returns>The native credentials.</returns>
-        internal abstract ChannelCredentialsSafeHandle CreateNativeCredentials();
+        // / <summary>
+        // / Gets native object for the credentials, creating one if it already doesn't exist. May return null if insecure channel
+        // / should be created. Caller must not call <c>Dispose()</c> on the returned native credentials as their lifetime
+        // / is managed by this class (and instances of native credentials are cached).
+        // / </summary>
+        // / <returns>The native credentials.</returns>
+        //internal ChannelCredentialsSafeHandle GetNativeCredentials()
+        //{
+        //    return cachedNativeCredentials.Value;
+        //}
+
+        // / <summary>
+        // / Creates a new native object for the credentials. May return null if insecure channel
+        // / should be created. For internal use only, use <see cref="GetNativeCredentials"/> instead.
+        // / </summary>
+        // / <returns>The native credentials.</returns>
+        //internal abstract ChannelCredentialsSafeHandle CreateNativeCredentials();
 
         /// <summary>
         /// Returns <c>true</c> if this credential type allows being composed by <c>CompositeCredentials</c>.
         /// </summary>
-        internal virtual bool IsComposable
-        {
-            get { return false; }
-        }
+        internal virtual bool IsComposable => false;
 
         private sealed class InsecureCredentialsImpl : ChannelCredentials
         {
-            internal override ChannelCredentialsSafeHandle CreateNativeCredentials()
+            public override void InternalPopulateConfiguration(ChannelCredentialsConfiguratorBase configurator, object state)
             {
-                return null;
+                configurator.SetInsecureCredentials(state);
             }
         }
     }
@@ -126,8 +129,6 @@ namespace Grpc.Core
     /// </summary>
     public sealed class SslCredentials : ChannelCredentials
     {
-        static readonly ILogger Logger = GrpcEnvironment.Logger.ForType<SslCredentials>();
-
         readonly string rootCertificates;
         readonly KeyCertificatePair keyCertificatePair;
         readonly VerifyPeerCallback verifyPeerCallback;
@@ -196,63 +197,16 @@ namespace Grpc.Core
             }
         }
 
-        // Composing composite makes no sense.
-        internal override bool IsComposable
+        /// <summary>
+        /// Populates channel credentials configurator with this instance's configuration.
+        /// End users never need to invoke this method as it is part of internal implementation.
+        /// </summary>
+        public override void InternalPopulateConfiguration(ChannelCredentialsConfiguratorBase configurator, object state)
         {
-            get { return true; }
+            configurator.SetSslCredentials(state, rootCertificates, keyCertificatePair, verifyPeerCallback);
         }
 
-        internal override ChannelCredentialsSafeHandle CreateNativeCredentials()
-        {
-            IntPtr verifyPeerCallbackTag = IntPtr.Zero;
-            if (verifyPeerCallback != null)
-            {
-                verifyPeerCallbackTag = new VerifyPeerCallbackRegistration(verifyPeerCallback).CallbackRegistration.Tag;
-            }
-            return ChannelCredentialsSafeHandle.CreateSslCredentials(rootCertificates, keyCertificatePair, verifyPeerCallbackTag);
-        }
-
-        private class VerifyPeerCallbackRegistration
-        {
-            readonly VerifyPeerCallback verifyPeerCallback;
-            readonly NativeCallbackRegistration callbackRegistration;
-
-            public VerifyPeerCallbackRegistration(VerifyPeerCallback verifyPeerCallback)
-            {
-                this.verifyPeerCallback = verifyPeerCallback;
-                this.callbackRegistration = NativeCallbackDispatcher.RegisterCallback(HandleUniversalCallback);
-            }
-
-            public NativeCallbackRegistration CallbackRegistration => callbackRegistration;
-
-            private int HandleUniversalCallback(IntPtr arg0, IntPtr arg1, IntPtr arg2, IntPtr arg3, IntPtr arg4, IntPtr arg5)
-            {
-                return VerifyPeerCallbackHandler(arg0, arg1, arg2 != IntPtr.Zero);
-            }
-
-            private int VerifyPeerCallbackHandler(IntPtr targetName, IntPtr peerPem, bool isDestroy)
-            {
-                if (isDestroy)
-                {
-                    this.callbackRegistration.Dispose();
-                    return 0;
-                }
-
-                try
-                {
-                    var context = new VerifyPeerContext(Marshal.PtrToStringAnsi(targetName), Marshal.PtrToStringAnsi(peerPem));
-
-                    return this.verifyPeerCallback(context) ? 0 : 1;
-                }
-                catch (Exception e)
-                {
-                    // eat the exception, we must not throw when inside callback from native code.
-                    Logger.Error(e, "Exception occurred while invoking verify peer callback handler.");
-                    // Return validation failure in case of exception.
-                    return 1;
-                }
-            }
-        }
+        internal override bool IsComposable => true;
     }
 
     /// <summary>
@@ -277,17 +231,9 @@ namespace Grpc.Core
             GrpcPreconditions.CheckArgument(channelCredentials.IsComposable, "Supplied channel credentials do not allow composition.");
         }
 
-        internal override ChannelCredentialsSafeHandle CreateNativeCredentials()
+        public override void InternalPopulateConfiguration(ChannelCredentialsConfiguratorBase configurator, object state)
         {
-            using (var callCreds = callCredentials.ToNativeCredentials())
-            {
-                var nativeComposite = ChannelCredentialsSafeHandle.CreateComposite(channelCredentials.GetNativeCredentials(), callCreds);
-                if (nativeComposite.IsInvalid)
-                {
-                    throw new ArgumentException("Error creating native composite credentials. Likely, this is because you are trying to compose incompatible credentials.");
-                }
-                return nativeComposite;
-            }
+            configurator.SetCompositeCredentials(state, channelCredentials, callCredentials);
         }
     }
 }
