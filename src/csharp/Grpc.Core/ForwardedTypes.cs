@@ -70,6 +70,7 @@ using Grpc.Core.Utils;
 [assembly:TypeForwardedToAttribute(typeof(SslCredentials))]
 [assembly:TypeForwardedToAttribute(typeof(Status))]
 [assembly:TypeForwardedToAttribute(typeof(StatusCode))]
+[assembly:TypeForwardedToAttribute(typeof(VerifyPeerCallback))]
 [assembly:TypeForwardedToAttribute(typeof(VerifyPeerContext))]
 [assembly:TypeForwardedToAttribute(typeof(VersionInfo))]
 [assembly:TypeForwardedToAttribute(typeof(WriteOptions))]
