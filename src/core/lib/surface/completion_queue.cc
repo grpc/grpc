@@ -295,9 +295,83 @@ struct cq_pluck_data {
 };
 
 struct cq_callback_data {
+  class WrappedClosure {
+   public:
+    WrappedClosure(cq_callback_data* cq, WrappedClosure** list)
+        : cb_cq_(cq), next_(*list) {
+      // Called during CQ initialization. List is a singly linked list of
+      // wrapped closures that we add ourselves to. After initialization, list
+      // access must be synchronized.
+      *list = this;
+    }
+
+    static void Callback(void* arg, grpc_error* error) {
+      WrappedClosure* wc = static_cast<WrappedClosure*>(arg);
+      wc->DoCallback(error);
+    }
+
+    void Initialize(grpc_iomgr_cb_func cb, void* cb_arg,
+                    grpc_closure_scheduler* scheduler) {
+      cb_ = cb;
+      cb_arg_ = cb_arg;
+      GRPC_CLOSURE_INIT(&wrapper_, &Callback, this, scheduler);
+    }
+
+    grpc_closure* Closure() { return &wrapper_; }
+
+   private:
+    friend struct cq_callback_data;
+    void DoCallback(grpc_error* error) {
+      grpc_iomgr_cb_func cb = cb_;
+      void* cb_arg = cb_arg_;
+      RehookToCqPool();
+      cb(cb_arg, error);
+    }
+
+    void RehookToCqPool() {
+      gpr_spinlock_lock(&cb_cq_->wrapped_closure_list_lock);
+      next_ = cb_cq_->wrapped_closures;
+      cb_cq_->wrapped_closures = this;
+      gpr_spinlock_unlock(&cb_cq_->wrapped_closure_list_lock);
+    }
+
+    grpc_iomgr_cb_func cb_ = nullptr;
+    void* cb_arg_ = nullptr;
+    cq_callback_data* cb_cq_;
+    WrappedClosure* next_ = nullptr;
+    grpc_closure wrapper_;
+  };
+
+  static constexpr int kWrappedClosurePoolSize = 10;
+
   cq_callback_data(
       grpc_experimental_completion_queue_functor* shutdown_callback)
-      : shutdown_callback(shutdown_callback) {}
+      : shutdown_callback(shutdown_callback) {
+    for (int idx = 0; idx < kWrappedClosurePoolSize; idx++) {
+      grpc_core::New<WrappedClosure>(this, &wrapped_closures);
+    }
+  }
+  ~cq_callback_data() {
+    do {
+      if (wrapped_closures) {
+        WrappedClosure* cursor = wrapped_closures;
+        wrapped_closures = cursor->next_;
+        grpc_core::Delete<WrappedClosure>(cursor);
+      }
+    } while (wrapped_closures);
+  }
+
+  WrappedClosure* TryGetWrappedClosure() {
+    WrappedClosure* wc = nullptr;
+    gpr_spinlock_lock(&wrapped_closure_list_lock);
+    if (wrapped_closures) {
+      wc = wrapped_closures;
+      wrapped_closures = wc->next_;
+    }
+    gpr_spinlock_unlock(&wrapped_closure_list_lock);
+    return wc;
+  }
+
   /** No actual completed events queue, unlike other types */
 
   /** Number of pending events (+1 if we're not shutdown).
@@ -313,6 +387,8 @@ struct cq_callback_data {
 
   /** A callback that gets invoked when the CQ completes shutdown */
   grpc_experimental_completion_queue_functor* shutdown_callback;
+  gpr_spinlock wrapped_closure_list_lock = GPR_SPINLOCK_STATIC_INITIALIZER;
+  WrappedClosure* wrapped_closures = nullptr;
 };
 
 }  // namespace
@@ -866,11 +942,20 @@ static void cq_end_op_for_callback(
 
   // Schedule the callback on a closure if not internal or triggered
   // from a background poller thread.
-  GRPC_CLOSURE_SCHED(
-      GRPC_CLOSURE_CREATE(
-          functor_callback, functor,
-          grpc_core::Executor::Scheduler(grpc_core::ExecutorJobType::SHORT)),
-      error);
+  // First, try to allocate wrapped closure from pool.
+  cq_callback_data::WrappedClosure* cqwc = cqd->TryGetWrappedClosure();
+  if (cqwc) {
+    cqwc->Initialize(
+        functor_callback, functor,
+        grpc_core::Executor::Scheduler(grpc_core::ExecutorJobType::SHORT));
+    GRPC_CLOSURE_SCHED(cqwc->Closure(), error);
+  } else {
+    GRPC_CLOSURE_SCHED(
+        GRPC_CLOSURE_CREATE(
+            functor_callback, functor,
+            grpc_core::Executor::Scheduler(grpc_core::ExecutorJobType::SHORT)),
+        error);
+  }
 }
 
 void grpc_cq_end_op(grpc_completion_queue* cq, void* tag, grpc_error* error,
