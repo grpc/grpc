@@ -232,11 +232,7 @@ void FakeResolverResponseGenerator::SetReresolutionResponse(
   RefCountedPtr<FakeResolver> resolver;
   {
     MutexLock lock(&mu_);
-    if (resolver_ == nullptr) {
-      has_result_ = true;
-      result_ = std::move(result);
-      return;
-    }
+    GPR_ASSERT(resolver_ != nullptr);
     resolver = resolver_->Ref();
   }
   SetResponseClosureArg* closure_arg = New<SetResponseClosureArg>();
@@ -255,7 +251,7 @@ void FakeResolverResponseGenerator::UnsetReresolutionResponse() {
   RefCountedPtr<FakeResolver> resolver;
   {
     MutexLock lock(&mu_);
-    if (resolver_ == nullptr) return;
+    GPR_ASSERT(resolver_ != nullptr);
     resolver = resolver_->Ref();
   }
   SetResponseClosureArg* closure_arg = New<SetResponseClosureArg>();
@@ -283,7 +279,7 @@ void FakeResolverResponseGenerator::SetFailure() {
   RefCountedPtr<FakeResolver> resolver;
   {
     MutexLock lock(&mu_);
-    if (resolver_ == nullptr) return;
+    GPR_ASSERT(resolver_ != nullptr);
     resolver = resolver_->Ref();
   }
   SetResponseClosureArg* closure_arg = New<SetResponseClosureArg>();
@@ -299,7 +295,7 @@ void FakeResolverResponseGenerator::SetFailureOnReresolution() {
   RefCountedPtr<FakeResolver> resolver;
   {
     MutexLock lock(&mu_);
-    if (resolver_ == nullptr) return;
+    GPR_ASSERT(resolver_ != nullptr);
     resolver = resolver_->Ref();
   }
   SetResponseClosureArg* closure_arg = New<SetResponseClosureArg>();
