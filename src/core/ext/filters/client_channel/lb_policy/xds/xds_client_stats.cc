@@ -127,7 +127,7 @@ void XdsLbClientStats::LocalityStats::AddCallStarted() {
 void XdsLbClientStats::LocalityStats::AddCallFinished(bool fail) {
   Atomic<uint64_t>& to_increment =
       fail ? total_error_requests_ : total_successful_requests_;
-  to_increment.FetchAdd(1, MemoryOrder::ACQ_REL);
+  to_increment.FetchAdd(1, MemoryOrder::RELAXED);
   total_requests_in_progress_.FetchAdd(-1, MemoryOrder::ACQ_REL);
 }
 
