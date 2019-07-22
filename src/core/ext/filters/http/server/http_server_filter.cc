@@ -125,9 +125,18 @@ static void hs_add_error(const char* error_name, grpc_error** cumulative,
 }
 
 static bool md_strict_equal(grpc_mdelem a, grpc_mdelem b_static) {
-  GPR_DEBUG_ASSERT(grpc_mdelem_static_value_eq(a, b_static) ==
-                   (a.payload == b_static.payload));
-  return a.payload == b_static.payload;
+  // Hpack encoder on the remote side should emit indexed values, in which case
+  // hpack parser on this end should pick up interned values, in which case the
+  // pointer comparison alone is enough.
+  //
+  // That said, if the header was transmitted sans encoding, we still need to do
+  // the right thing.
+  if (GPR_LIKELY(GRPC_MDELEM_IS_INTERNED(a))) {
+    return a.payload == b_static.payload;
+  } else {
+    return grpc_slice_eq_static_interned(GRPC_MDVALUE(a),
+                                         GRPC_MDVALUE(b_static));
+  }
 }
 
 static grpc_error* hs_filter_incoming_metadata(grpc_call_element* elem,
