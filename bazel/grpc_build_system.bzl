@@ -214,6 +214,15 @@ def grpc_generate_one_off_targets():
         resources = ["etc/roots.pem"],
     )
 
+    # In open-source, grpc_objc* libraries depend directly on //:grpc
+    native.alias(
+        name = "grpc_objc",
+        actual = "//:grpc",
+    )
+
+def grpc_generate_objc_one_off_targets():
+    pass
+
 def grpc_sh_test(name, srcs, args = [], data = []):
     native.sh_test(
         name = name,

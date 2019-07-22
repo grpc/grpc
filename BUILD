@@ -30,7 +30,6 @@ load(
     "//bazel:grpc_build_system.bzl",
     "grpc_cc_library",
     "grpc_generate_one_off_targets",
-    "grpc_objc_library",
 )
 
 config_setting(
@@ -2469,77 +2468,4 @@ filegroup(
         "etc/roots.pem",
     ],
     visibility = ["//visibility:public"],
-)
-
-grpc_objc_library(
-    name = "rx_library",
-    srcs = glob([
-        "src/objective-c/RxLibrary/*.m",
-        "src/objective-c/RxLibrary/transformations/*.m",
-    ]),
-    hdrs = glob([
-        "src/objective-c/RxLibrary/*.h",
-        "src/objective-c/RxLibrary/transformations/*.h",
-    ]),
-    includes = ["src/objective-c"],
-    deps = [
-        ":rx_library_private",
-    ],
-)
-
-grpc_objc_library(
-    name = "rx_library_private",
-    srcs = glob([
-        "src/objective-c/RxLibrary/private/*.m",
-    ]),
-    textual_hdrs = glob([
-        "src/objective-c/RxLibrary/private/*.h",
-    ]),
-    visibility = ["//visibility:private"],
-)
-
-grpc_objc_library(
-    name = "grpc_objc_client",
-    srcs = glob(
-        [
-            "src/objective-c/GRPCClient/*.m",
-            "src/objective-c/GRPCClient/private/*.m",
-        ],
-        exclude = ["src/objective-c/GRPCClient/GRPCCall+GID.m"],
-    ),
-    hdrs = glob(
-        [
-            "src/objective-c/GRPCClient/*.h",
-            "src/objective-c/GRPCClient/internal/*.h",
-        ],
-        exclude = ["src/objective-c/GRPCClient/GRPCCall+GID.h"],
-    ),
-    includes = ["src/objective-c"],
-    textual_hdrs = glob([
-        "src/objective-c/GRPCClient/private/*.h",
-    ]),
-    deps = [
-        ":gRPCCertificates",
-        ":grpc",
-        ":rx_library",
-    ],
-)
-
-grpc_objc_library(
-    name = "proto_objc_rpc",
-    srcs = glob(
-        ["src/objective-c/ProtoRPC/*.m"],
-    ),
-    hdrs = glob(
-        ["src/objective-c/ProtoRPC/*.h"],
-    ),
-    # Different from Cocoapods, do not import as if @com_google_protobuf//:protobuf_objc is a framework,
-    # use the real paths of @com_google_protobuf//:protobuf_objc instead
-    defines = ["GPB_USE_PROTOBUF_FRAMEWORK_IMPORTS=0"],
-    includes = ["src/objective-c"],
-    deps = [
-        ":grpc_objc_client",
-        ":rx_library",
-        "@com_google_protobuf//:protobuf_objc",
-    ],
 )

@@ -51,7 +51,7 @@ def objc_proto_grpc_library(name, deps, use_well_known_protos = False, **kwargs)
             "src/objective-c",
         ],
         deps = [
-            "@com_github_grpc_grpc//:proto_objc_rpc",
+            "@com_github_grpc_grpc//src/objective-c:proto_objc_rpc",
             "@com_google_protobuf//:protobuf_objc",
         ],
     )
@@ -108,7 +108,7 @@ def objc_grpc_library(name, deps, srcs, use_well_known_protos = False, **kwargs)
             "src/objective-c",
         ],
         deps = [
-            "@com_github_grpc_grpc//:proto_objc_rpc",
+            "@com_github_grpc_grpc//src/objective-c:proto_objc_rpc",
             "@com_google_protobuf//:protobuf_objc",
         ],
     )
