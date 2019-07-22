@@ -30,7 +30,9 @@
 // The idle filter is disabled in client channel by default.
 // To enable the idle filte, set GRPC_ARG_CLIENT_IDLE_TIMEOUT_MS to [0, INT_MAX)
 // in channel args.
-#define DEFAULT_IDLE_TIMEOUT_MS (5 /*minutes*/ * 60 * 1000)
+// TODO(qianchengz): Find a reasonable default value. Maybe check what deault
+// value Java uses.
+#define DEFAULT_IDLE_TIMEOUT_MS INT_MAX
 
 namespace grpc_core {
 
@@ -48,7 +50,7 @@ namespace {
 grpc_millis GetClientIdleTimeout(const grpc_channel_args* args) {
   return grpc_channel_arg_get_integer(
       grpc_channel_args_find(args, GRPC_ARG_CLIENT_IDLE_TIMEOUT_MS),
-      {INT_MAX, 0, INT_MAX});
+      {DEFAULT_IDLE_TIMEOUT_MS, 0, INT_MAX});
 }
 
 class ChannelData {
