@@ -144,6 +144,7 @@ class XdsLbClientStats {
     // LocalityStats, so the LocalityStats can be safely deleted when all the
     // in-progress calls have finished.
     // Only be called from the control plane combiner.
+    // FIXME: fix memory order.
     void RefByPicker() { picker_refcount_.FetchAdd(1, MemoryOrder::ACQ_REL); }
     // Might be called from the control plane combiner or the data plane
     // combiner.
