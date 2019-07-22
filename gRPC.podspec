@@ -90,7 +90,7 @@ Pod::Spec.new do |s|
                              'src/objective-c/GRPCClient/GRPCCall+ChannelArg.h',
                              'src/objective-c/GRPCClient/internal_testing/*.h'
     ss.private_header_files = 'src/objective-c/GRPCClient/private/GRPCCore/*.h'
-    ss.source_files = 'src/objective-c/GRPCClient/internal_testing/*.h',
+    ss.source_files = 'src/objective-c/GRPCClient/internal_testing/*.{h,m}',
                       'src/objective-c/GRPCClient/private/GRPCCore/*.{h,m}',
                       'src/objective-c/GRPCClient/GRPCCall+ChannelArg.h',
                       'src/objective-c/GRPCClient/GRPCCall+ChannelArg.m',
