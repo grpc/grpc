@@ -107,133 +107,33 @@ namespace Grpc.Core
                 configurator.SetInsecureCredentials(state);
             }
         }
-    }
-
-    /// <summary>
-    /// Callback invoked with the expected targetHost and the peer's certificate.
-    /// If false is returned by this callback then it is treated as a
-    /// verification failure and the attempted connection will fail.
-    /// Invocation of the callback is blocking, so any
-    /// implementation should be light-weight.
-    /// Note that the callback can potentially be invoked multiple times,
-    /// concurrently from different threads (e.g. when multiple connections
-    /// are being created for the same credentials).
-    /// </summary>
-    /// <param name="context">The <see cref="T:Grpc.Core.VerifyPeerContext"/> associated with the callback</param>
-    /// <returns>true if verification succeeded, false otherwise.</returns>
-    /// Note: experimental API that can change or be removed without any prior notice.
-    public delegate bool VerifyPeerCallback(VerifyPeerContext context);
-
-    /// <summary>
-    /// Client-side SSL credentials.
-    /// </summary>
-    public sealed class SslCredentials : ChannelCredentials
-    {
-        readonly string rootCertificates;
-        readonly KeyCertificatePair keyCertificatePair;
-        readonly VerifyPeerCallback verifyPeerCallback;
 
         /// <summary>
-        /// Creates client-side SSL credentials loaded from
-        /// disk file pointed to by the GRPC_DEFAULT_SSL_ROOTS_FILE_PATH environment variable.
-        /// If that fails, gets the roots certificates from a well known place on disk.
+        /// Credentials that allow composing one <see cref="ChannelCredentials"/> object and 
+        /// one or more <see cref="CallCredentials"/> objects into a single <see cref="ChannelCredentials"/>.
         /// </summary>
-        public SslCredentials() : this(null, null, null)
+        private sealed class CompositeChannelCredentials : ChannelCredentials
         {
-        }
+            readonly ChannelCredentials channelCredentials;
+            readonly CallCredentials callCredentials;
 
-        /// <summary>
-        /// Creates client-side SSL credentials from
-        /// a string containing PEM encoded root certificates.
-        /// </summary>
-        public SslCredentials(string rootCertificates) : this(rootCertificates, null, null)
-        {
-        }
-
-        /// <summary>
-        /// Creates client-side SSL credentials.
-        /// </summary>
-        /// <param name="rootCertificates">string containing PEM encoded server root certificates.</param>
-        /// <param name="keyCertificatePair">a key certificate pair.</param>
-        public SslCredentials(string rootCertificates, KeyCertificatePair keyCertificatePair) :
-            this(rootCertificates, keyCertificatePair, null)
-        {
-        }
-
-        /// <summary>
-        /// Creates client-side SSL credentials.
-        /// </summary>
-        /// <param name="rootCertificates">string containing PEM encoded server root certificates.</param>
-        /// <param name="keyCertificatePair">a key certificate pair.</param>
-        /// <param name="verifyPeerCallback">a callback to verify peer's target name and certificate.</param>
-        /// Note: experimental API that can change or be removed without any prior notice.
-        public SslCredentials(string rootCertificates, KeyCertificatePair keyCertificatePair, VerifyPeerCallback verifyPeerCallback)
-        {
-            this.rootCertificates = rootCertificates;
-            this.keyCertificatePair = keyCertificatePair;
-            this.verifyPeerCallback = verifyPeerCallback;
-        }
-
-        /// <summary>
-        /// PEM encoding of the server root certificates.
-        /// </summary>
-        public string RootCertificates
-        {
-            get
+            /// <summary>
+            /// Initializes a new instance of <c>CompositeChannelCredentials</c> class.
+            /// The resulting credentials object will be composite of all the credentials specified as parameters.
+            /// </summary>
+            /// <param name="channelCredentials">channelCredentials to compose</param>
+            /// <param name="callCredentials">channelCredentials to compose</param>
+            public CompositeChannelCredentials(ChannelCredentials channelCredentials, CallCredentials callCredentials)
             {
-                return this.rootCertificates;
+                this.channelCredentials = GrpcPreconditions.CheckNotNull(channelCredentials);
+                this.callCredentials = GrpcPreconditions.CheckNotNull(callCredentials);
+                GrpcPreconditions.CheckArgument(channelCredentials.IsComposable, "Supplied channel credentials do not allow composition.");
             }
-        }
 
-        /// <summary>
-        /// Client side key and certificate pair.
-        /// If null, client will not use key and certificate pair.
-        /// </summary>
-        public KeyCertificatePair KeyCertificatePair
-        {
-            get
+            public override void InternalPopulateConfiguration(ChannelCredentialsConfiguratorBase configurator, object state)
             {
-                return this.keyCertificatePair;
+                configurator.SetCompositeCredentials(state, channelCredentials, callCredentials);
             }
-        }
-
-        /// <summary>
-        /// Populates channel credentials configurator with this instance's configuration.
-        /// End users never need to invoke this method as it is part of internal implementation.
-        /// </summary>
-        public override void InternalPopulateConfiguration(ChannelCredentialsConfiguratorBase configurator, object state)
-        {
-            configurator.SetSslCredentials(state, rootCertificates, keyCertificatePair, verifyPeerCallback);
-        }
-
-        internal override bool IsComposable => true;
-    }
-
-    /// <summary>
-    /// Credentials that allow composing one <see cref="ChannelCredentials"/> object and 
-    /// one or more <see cref="CallCredentials"/> objects into a single <see cref="ChannelCredentials"/>.
-    /// </summary>
-    internal sealed class CompositeChannelCredentials : ChannelCredentials
-    {
-        readonly ChannelCredentials channelCredentials;
-        readonly CallCredentials callCredentials;
-
-        /// <summary>
-        /// Initializes a new instance of <c>CompositeChannelCredentials</c> class.
-        /// The resulting credentials object will be composite of all the credentials specified as parameters.
-        /// </summary>
-        /// <param name="channelCredentials">channelCredentials to compose</param>
-        /// <param name="callCredentials">channelCredentials to compose</param>
-        public CompositeChannelCredentials(ChannelCredentials channelCredentials, CallCredentials callCredentials)
-        {
-            this.channelCredentials = GrpcPreconditions.CheckNotNull(channelCredentials);
-            this.callCredentials = GrpcPreconditions.CheckNotNull(callCredentials);
-            GrpcPreconditions.CheckArgument(channelCredentials.IsComposable, "Supplied channel credentials do not allow composition.");
-        }
-
-        public override void InternalPopulateConfiguration(ChannelCredentialsConfiguratorBase configurator, object state)
-        {
-            configurator.SetCompositeCredentials(state, channelCredentials, callCredentials);
         }
     }
 }
