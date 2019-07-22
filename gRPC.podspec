@@ -40,7 +40,6 @@ Pod::Spec.new do |s|
   s.module_name = name
   s.header_dir = name
 
-  s.dependency 'gRPC-RxLibrary', version
   s.default_subspec = 'Interface', 'GRPCCore'
 
   # Certificates, to be able to establish TLS connections:
@@ -81,8 +80,7 @@ Pod::Spec.new do |s|
   s.subspec 'GRPCCore' do |ss|
     ss.header_mappings_dir = 'src/objective-c/GRPCClient'
 
-    ss.public_header_files = 'src/objective-c/GRPCClient/ChannelArg.h',
-                             'src/objective-c/GRPCClient/GRPCCall+ChannelCredentials.h',
+    ss.public_header_files = 'src/objective-c/GRPCClient/GRPCCall+ChannelCredentials.h',
                              'src/objective-c/GRPCClient/GRPCCall+Cronet.h',
                              'src/objective-c/GRPCClient/GRPCCall+OAuth2.h',
                              'src/objective-c/GRPCClient/GRPCCall+Tests.h',
@@ -107,6 +105,7 @@ Pod::Spec.new do |s|
 
     ss.dependency 'gRPC-Core', version
     ss.dependency "#{s.name}/Interface", version
+    ss.dependency 'gRPC-RxLibrary', version
   end
 
   s.subspec 'GRPCCoreCronet' do |ss|
