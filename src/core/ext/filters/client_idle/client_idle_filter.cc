@@ -163,9 +163,11 @@ ChannelData::ChannelData(grpc_channel_element* elem,
 void ChannelData::IdleTimerCallback(void* arg, grpc_error* error) {
   GRPC_IDLE_FILTER_LOG("timer alarms");
   ChannelData* chand = static_cast<ChannelData*>(arg);
-  MutexLock lock(&chand->call_count_mu_);
-  if (error == GRPC_ERROR_NONE && chand->call_count_ == 0) {
-    chand->EnterIdle();
+  {
+    MutexLock lock(&chand->call_count_mu_);
+    if (error == GRPC_ERROR_NONE && chand->call_count_ == 0) {
+      chand->EnterIdle();
+    }
   }
   GRPC_IDLE_FILTER_LOG("timer finishes");
   GRPC_CHANNEL_STACK_UNREF(chand->channel_stack_, "max idle timer callback");
