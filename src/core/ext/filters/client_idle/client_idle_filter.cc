@@ -72,27 +72,9 @@ class ChannelData {
   static void IdleTimerCallback(void* arg, grpc_error* error);
   static void IdleTransportOpCompleteCallback(void* arg, grpc_error* error);
 
-  void StartIdleTimer() {
-    GRPC_IDLE_FILTER_LOG("timer has started");
-    // Hold a ref to the channel stack for the timer callback.
-    GRPC_CHANNEL_STACK_REF(channel_stack_, "max idle timer callback");
-    grpc_timer_init(&idle_timer_, ExecCtx::Get()->Now() + client_idle_timeout_,
-                    &idle_timer_callback_);
-  }
+  void StartIdleTimer();
 
-  void EnterIdle() {
-    GRPC_IDLE_FILTER_LOG("the channel will enter IDLE");
-    // Hold a ref to the channel stack for the transport op.
-    GRPC_CHANNEL_STACK_REF(channel_stack_, "idle transport op");
-    // Initialize the transport op.
-    memset(&idle_transport_op_, 0, sizeof(idle_transport_op_));
-    idle_transport_op_.disconnect_with_error = grpc_error_set_int(
-        GRPC_ERROR_CREATE_FROM_STATIC_STRING("enter idle"),
-        GRPC_ERROR_INT_CHANNEL_CONNECTIVITY_STATE, GRPC_CHANNEL_IDLE);
-    idle_transport_op_.on_consumed = &idle_transport_op_complete_callback_;
-    // Pass the transport op down to the channel stack.
-    grpc_channel_next_op(elem_, &idle_transport_op_);
-  }
+  void EnterIdle();
 
   grpc_channel_element* elem_;
   // The channel stack to which we take refs for pending callbacks.
@@ -102,12 +84,8 @@ class ChannelData {
   const grpc_millis client_idle_timeout_;
 
   // Member data used to track the state of channel.
-  Atomic<size_t> call_count_;
-  bool has_call_ = false;
-
-  // Members used to synchronize IncreaseCallCount() and DecreaseCallCount().
-  Mutex has_call_mu_;
-  CondVar decrease_complete_cv_;
+  Mutex call_count_mu_;
+  size_t call_count_;
 
   // Idle timer and its callback closure.
   grpc_timer idle_timer_;
@@ -145,29 +123,19 @@ void ChannelData::StartTransportOp(grpc_channel_element* elem,
 }
 
 void ChannelData::IncreaseCallCount() {
-  size_t previous_value = call_count_.FetchAdd(1, MemoryOrder::RELAXED);
-  GRPC_IDLE_FILTER_LOG("call counter has increased to %" PRIuPTR,
-                       previous_value + 1);
-  if (previous_value == 0) {
-    MutexLock lock(&has_call_mu_);
-    while (has_call_) {
-      decrease_complete_cv_.Wait(&has_call_mu_);
-    }
-    has_call_ = true;
+  MutexLock lock(&call_count_mu_);
+  if (call_count_++ == 0) {
     grpc_timer_cancel(&idle_timer_);
   }
+  GRPC_IDLE_FILTER_LOG("call counter has increased to %" PRIuPTR, call_count_);
 }
 
 void ChannelData::DecreaseCallCount() {
-  size_t previous_value = call_count_.FetchSub(1, MemoryOrder::RELAXED);
-  GRPC_IDLE_FILTER_LOG("call counter has decreased to %" PRIuPTR,
-                       previous_value - 1);
-  if (previous_value == 1) {
-    MutexLock lock(&has_call_mu_);
+  MutexLock lock(&call_count_mu_);
+  if (call_count_-- == 1) {
     StartIdleTimer();
-    has_call_ = false;
-    decrease_complete_cv_.Signal();
   }
+  GRPC_IDLE_FILTER_LOG("call counter has decreased to %" PRIuPTR, call_count_);
 }
 
 ChannelData::ChannelData(grpc_channel_element* elem,
@@ -195,7 +163,8 @@ ChannelData::ChannelData(grpc_channel_element* elem,
 void ChannelData::IdleTimerCallback(void* arg, grpc_error* error) {
   GRPC_IDLE_FILTER_LOG("timer alarms");
   ChannelData* chand = static_cast<ChannelData*>(arg);
-  if (error == GRPC_ERROR_NONE) {
+  MutexLock lock(&chand->call_count_mu_);
+  if (error == GRPC_ERROR_NONE && chand->call_count_ == 0) {
     chand->EnterIdle();
   }
   GRPC_IDLE_FILTER_LOG("timer finishes");
@@ -206,6 +175,28 @@ void ChannelData::IdleTransportOpCompleteCallback(void* arg,
                                                   grpc_error* error) {
   ChannelData* chand = static_cast<ChannelData*>(arg);
   GRPC_CHANNEL_STACK_UNREF(chand->channel_stack_, "idle transport op");
+}
+
+void ChannelData::StartIdleTimer() {
+  GRPC_IDLE_FILTER_LOG("timer has started");
+  // Hold a ref to the channel stack for the timer callback.
+  GRPC_CHANNEL_STACK_REF(channel_stack_, "max idle timer callback");
+  grpc_timer_init(&idle_timer_, ExecCtx::Get()->Now() + client_idle_timeout_,
+                  &idle_timer_callback_);
+}
+
+void ChannelData::EnterIdle() {
+  GRPC_IDLE_FILTER_LOG("the channel will enter IDLE");
+  // Hold a ref to the channel stack for the transport op.
+  GRPC_CHANNEL_STACK_REF(channel_stack_, "idle transport op");
+  // Initialize the transport op.
+  memset(&idle_transport_op_, 0, sizeof(idle_transport_op_));
+  idle_transport_op_.disconnect_with_error = grpc_error_set_int(
+      GRPC_ERROR_CREATE_FROM_STATIC_STRING("enter idle"),
+      GRPC_ERROR_INT_CHANNEL_CONNECTIVITY_STATE, GRPC_CHANNEL_IDLE);
+  idle_transport_op_.on_consumed = &idle_transport_op_complete_callback_;
+  // Pass the transport op down to the channel stack.
+  grpc_channel_next_op(elem_, &idle_transport_op_);
 }
 
 class CallData {
