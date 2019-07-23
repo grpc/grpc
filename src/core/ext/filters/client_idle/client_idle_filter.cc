@@ -76,10 +76,10 @@ class ChannelData {
   static void OnIncreaseCallCountToOneLocked(ChannelData* chand);
   static void OnDecreaseCallCountToZeroLocked(ChannelData* chand);
   static void ShutdownLocked(ChannelData* chand);
-  static void IdleTimerCallback(void* arg, grpc_error* error);
+  static void IdleTimerCallbackLocked(void* arg, grpc_error* error);
   static void IdleTransportOpCompleteCallback(void* arg, grpc_error* error);
 
-  void StartIdleTimer();
+  void StartIdleTimerLocked();
 
   void EnterIdle();
 
@@ -96,7 +96,7 @@ class ChannelData {
   // Member data used to track the state of channel.
   bool shutdown_ = false;
   Atomic<size_t> call_count_;
-  size_t inc_closure_cnt_ = 0;
+  size_t pending_inc_count_ = 0;
 
   // Idle timer and its callback closure.
   bool timer_on_ = false;
@@ -165,7 +165,7 @@ ChannelData::ChannelData(grpc_channel_element* elem,
   // Initialize the idle timer without setting it.
   grpc_timer_init_unset(&idle_timer_);
   // Initialize the idle timer callback closure.
-  GRPC_CLOSURE_INIT(&idle_timer_callback_, IdleTimerCallback, this,
+  GRPC_CLOSURE_INIT(&idle_timer_callback_, IdleTimerCallbackLocked, this,
                     grpc_combiner_scheduler(combiner_));
   // Initialize the idle transport op complete callback.
   GRPC_CLOSURE_INIT(&idle_transport_op_complete_callback_,
@@ -177,6 +177,7 @@ ChannelData::~ChannelData() {
   GRPC_COMBINER_UNREF(combiner_, "client idle filter");
 }
 
+// A helper class to set and schedule a closure. It will delete itself.
 class ChannelData::ClosureSetter {
  public:
   typedef void (*Callback)(ChannelData* chand);
@@ -203,16 +204,16 @@ class ChannelData::ClosureSetter {
 };
 
 void ChannelData::OnIncreaseCallCountToOneLocked(ChannelData* chand) {
-  chand->inc_closure_cnt_++;
+  chand->pending_inc_count_++;
 }
 
 void ChannelData::OnDecreaseCallCountToZeroLocked(ChannelData* chand) {
-  chand->inc_closure_cnt_--;
+  chand->pending_inc_count_--;
   if (chand->shutdown_) return;
-  if (chand->inc_closure_cnt_ == 0) {
+  if (chand->pending_inc_count_ == 0) {
     chand->last_idle_time_ = ExecCtx::Get()->Now();
     if (!chand->timer_on_) {
-      chand->StartIdleTimer();
+      chand->StartIdleTimerLocked();
     }
   }
 }
@@ -222,17 +223,17 @@ void ChannelData::ShutdownLocked(ChannelData* chand) {
   if (chand->timer_on_) grpc_timer_cancel(&chand->idle_timer_);
 }
 
-void ChannelData::IdleTimerCallback(void* arg, grpc_error* error) {
+void ChannelData::IdleTimerCallbackLocked(void* arg, grpc_error* error) {
   GRPC_IDLE_FILTER_LOG("timer alarms");
   ChannelData* chand = static_cast<ChannelData*>(arg);
   chand->timer_on_ = false;
   if (error == GRPC_ERROR_NONE && !chand->shutdown_ &&
-      chand->inc_closure_cnt_ == 0) {
+      chand->pending_inc_count_ == 0) {
     if (ExecCtx::Get()->Now() >=
         chand->last_idle_time_ + chand->client_idle_timeout_) {
       chand->EnterIdle();
     } else {
-      chand->StartIdleTimer();
+      chand->StartIdleTimerLocked();
     }
   }
   GRPC_IDLE_FILTER_LOG("timer finishes");
@@ -245,7 +246,7 @@ void ChannelData::IdleTransportOpCompleteCallback(void* arg,
   GRPC_CHANNEL_STACK_UNREF(chand->channel_stack_, "idle transport op");
 }
 
-void ChannelData::StartIdleTimer() {
+void ChannelData::StartIdleTimerLocked() {
   GRPC_IDLE_FILTER_LOG("timer has started");
   // Hold a ref to the channel stack for the timer callback.
   GRPC_CHANNEL_STACK_REF(channel_stack_, "max idle timer callback");
