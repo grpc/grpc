@@ -733,7 +733,8 @@ class ChannelData::ConnectivityStateAndPickerSetter {
       chand->channelz_node_->AddTraceEvent(
           channelz::ChannelTrace::Severity::Info,
           grpc_slice_from_static_string(
-              channelz::GetChannelConnectivityStateChangeString(state)));
+              channelz::ChannelNode::GetChannelConnectivityStateChangeString(
+                  state)));
     }
     // Bounce into the data plane combiner to reset the picker.
     GRPC_CHANNEL_STACK_REF(chand->owning_stack_,

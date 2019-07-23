@@ -70,23 +70,6 @@ class CallCountingHelperPeer;
 class ChannelNodePeer;
 }  // namespace testing
 
-inline static const char* GetChannelConnectivityStateChangeString(
-      grpc_connectivity_state state) {
-  switch (state) {
-    case GRPC_CHANNEL_IDLE:
-      return "Channel state change to IDLE";
-    case GRPC_CHANNEL_CONNECTING:
-      return "Channel state change to CONNECTING";
-    case GRPC_CHANNEL_READY:
-      return "Channel state change to READY";
-    case GRPC_CHANNEL_TRANSIENT_FAILURE:
-      return "Channel state change to TRANSIENT_FAILURE";
-    case GRPC_CHANNEL_SHUTDOWN:
-      return "Channel state change to SHUTDOWN";
-  }
-  GPR_UNREACHABLE_CODE(return "UNKNOWN");
-}
-
 // base class for all channelz entities
 class BaseNode : public RefCounted<BaseNode> {
  public:
@@ -169,6 +152,10 @@ class ChannelNode : public BaseNode {
  public:
   ChannelNode(UniquePtr<char> target, size_t channel_tracer_max_nodes,
               intptr_t parent_uuid);
+
+  // Returns the string description of the given connectivity state.
+  static const char* GetChannelConnectivityStateChangeString(
+      grpc_connectivity_state state);
 
   intptr_t parent_uuid() const { return parent_uuid_; }
 
