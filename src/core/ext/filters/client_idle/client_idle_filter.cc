@@ -28,10 +28,12 @@
 #include "src/core/lib/surface/channel_init.h"
 #include "src/core/lib/transport/http2_errors.h"
 
-// The idle filter is enabled in client channel by default.
-// To disable the idle filte, set GRPC_ARG_CLIENT_IDLE_TIMEOUT_MS to INT_MAX in
-// channel args.
-#define DEFAULT_IDLE_TIMEOUT_MS (5 /*minutes*/ * 60 * 1000)
+// The idle filter is disabled in client channel by default.
+// To enable the idle filte, set GRPC_ARG_CLIENT_IDLE_TIMEOUT_MS to [0, INT_MAX)
+// in channel args.
+// TODO(qianchengz): Find a reasonable default value. Maybe check what deault
+// value Java uses.
+#define DEFAULT_IDLE_TIMEOUT_MS (5 * 60 * 1000)
 
 namespace grpc_core {
 
@@ -77,28 +79,9 @@ class ChannelData {
   static void IdleTimerCallback(void* arg, grpc_error* error);
   static void IdleTransportOpCompleteCallback(void* arg, grpc_error* error);
 
-  void StartIdleTimer() {
-    GRPC_IDLE_FILTER_LOG("timer has started");
-    // Hold a ref to the channel stack for the timer callback.
-    GRPC_CHANNEL_STACK_REF(channel_stack_, "max idle timer callback");
-    grpc_timer_init(&idle_timer_, last_idle_time_ + client_idle_timeout_,
-                    &idle_timer_callback_);
-    timer_on_ = true;
-  }
+  void StartIdleTimer();
 
-  void EnterIdle() {
-    GRPC_IDLE_FILTER_LOG("the channel will enter IDLE");
-    // Hold a ref to the channel stack for the transport op.
-    GRPC_CHANNEL_STACK_REF(channel_stack_, "idle transport op");
-    // Initialize the transport op.
-    memset(&idle_transport_op_, 0, sizeof(idle_transport_op_));
-    idle_transport_op_.disconnect_with_error = grpc_error_set_int(
-        GRPC_ERROR_CREATE_FROM_STATIC_STRING("enter idle"),
-        GRPC_ERROR_INT_CHANNEL_CONNECTIVITY_STATE, GRPC_CHANNEL_IDLE);
-    idle_transport_op_.on_consumed = &idle_transport_op_complete_callback_;
-    // Pass the transport op down to the channel stack.
-    grpc_channel_next_op(elem_, &idle_transport_op_);
-  }
+  void EnterIdle();
 
   grpc_channel_element* elem_;
   // The channel stack to which we take refs for pending callbacks.
@@ -243,10 +226,8 @@ void ChannelData::IdleTimerCallback(void* arg, grpc_error* error) {
   GRPC_IDLE_FILTER_LOG("timer alarms");
   ChannelData* chand = static_cast<ChannelData*>(arg);
   chand->timer_on_ = false;
-  if (error == GRPC_ERROR_NONE && !chand->shutdown_) {
-    if (chand->inc_closure_cnt_ == 0 &&
-        ExecCtx::Get()->Now() >=
-            chand->last_idle_time_ + chand->client_idle_timeout_) {
+  if (error == GRPC_ERROR_NONE && !chand->shutdown_ && chand->inc_closure_cnt_ == 0) {
+    if (ExecCtx::Get()->Now() >= chand->last_idle_time_ + chand->client_idle_timeout_) {
       chand->EnterIdle();
     } else {
       chand->StartIdleTimer();
@@ -260,6 +241,28 @@ void ChannelData::IdleTransportOpCompleteCallback(void* arg,
                                                   grpc_error* error) {
   ChannelData* chand = static_cast<ChannelData*>(arg);
   GRPC_CHANNEL_STACK_UNREF(chand->channel_stack_, "idle transport op");
+}
+
+void ChannelData::StartIdleTimer() {
+  GRPC_IDLE_FILTER_LOG("timer has started");
+  // Hold a ref to the channel stack for the timer callback.
+  GRPC_CHANNEL_STACK_REF(channel_stack_, "max idle timer callback");
+  grpc_timer_init(&idle_timer_, ExecCtx::Get()->Now() + client_idle_timeout_,
+                  &idle_timer_callback_);
+}
+
+void ChannelData::EnterIdle() {
+  GRPC_IDLE_FILTER_LOG("the channel will enter IDLE");
+  // Hold a ref to the channel stack for the transport op.
+  GRPC_CHANNEL_STACK_REF(channel_stack_, "idle transport op");
+  // Initialize the transport op.
+  memset(&idle_transport_op_, 0, sizeof(idle_transport_op_));
+  idle_transport_op_.disconnect_with_error = grpc_error_set_int(
+      GRPC_ERROR_CREATE_FROM_STATIC_STRING("enter idle"),
+      GRPC_ERROR_INT_CHANNEL_CONNECTIVITY_STATE, GRPC_CHANNEL_IDLE);
+  idle_transport_op_.on_consumed = &idle_transport_op_complete_callback_;
+  // Pass the transport op down to the channel stack.
+  grpc_channel_next_op(elem_, &idle_transport_op_);
 }
 
 class CallData {
