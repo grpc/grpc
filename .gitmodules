@@ -53,4 +53,4 @@
 	url = https://github.com/envoyproxy/protoc-gen-validate.git
 [submodule "third_party/upb"]
 	path = third_party/upb
-	url = https://github.com/google/upb.git
+	url = https://github.com/protocolbuffers/upb.git
