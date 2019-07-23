@@ -236,11 +236,12 @@ class AddSelfFunctor : public grpc_experimental_completion_queue_functor {
   int num_add_;
 };
 
-static void BM_ThreadPoolAddSelf(benchmark::State& state) {
+void ThreadPoolAddSelfHelper(benchmark::State& state,
+                                int concurrent_functor) {
   const int num_iterations = state.range(0);
   const int num_threads = state.range(1);
-  int concurrent_functor = num_threads;
-  int num_add = num_iterations / concurrent_functor;
+  // Number of adds done by each closure.
+  const int num_add = num_iterations / concurrent_functor;
   grpc_core::ThreadPool pool(num_threads);
   while (state.KeepRunningBatch(num_iterations)) {
     BlockingCounter counter(concurrent_functor);
@@ -251,9 +252,53 @@ static void BM_ThreadPoolAddSelf(benchmark::State& state) {
   }
   state.SetItemsProcessed(state.iterations());
 }
+
+static void BM_ThreadPool1AddSelf(benchmark::State& state) {
+  ThreadPoolAddSelfHelper(state, 1);
+}
 // First pair is range for number of iterations (num_iterations).
 // Second pair is range for thread pool size (num_threads).
-BENCHMARK(BM_ThreadPoolAddSelf)->RangePair(524288, 524288, 1, 1024);
+BENCHMARK(BM_ThreadPool1AddSelf)->RangePair(524288, 524288, 1, 1024);
+
+static void BM_ThreadPool4AddSelf(benchmark::State& state) {
+  ThreadPoolAddSelfHelper(state, 4);
+}
+BENCHMARK(BM_ThreadPool4AddSelf)->RangePair(524288, 524288, 1, 1024);
+
+static void BM_ThreadPool8AddSelf(benchmark::State& state) {
+  ThreadPoolAddSelfHelper(state, 8);
+}
+BENCHMARK(BM_ThreadPool8AddSelf)->RangePair(524288, 524288, 1, 1024);
+
+static void BM_ThreadPool16AddSelf(benchmark::State& state) {
+  ThreadPoolAddSelfHelper(state, 16);
+}
+BENCHMARK(BM_ThreadPool16AddSelf)->RangePair(524288, 524288, 1, 1024);
+
+static void BM_ThreadPool32AddSelf(benchmark::State& state) {
+  ThreadPoolAddSelfHelper(state, 32);
+}
+BENCHMARK(BM_ThreadPool32AddSelf)->RangePair(524288, 524288, 1, 1024);
+
+static void BM_ThreadPool64AddSelf(benchmark::State& state) {
+  ThreadPoolAddSelfHelper(state, 64);
+}
+BENCHMARK(BM_ThreadPool64AddSelf)->RangePair(524288, 524288, 1, 1024);
+
+static void BM_ThreadPool128AddSelf(benchmark::State& state) {
+  ThreadPoolAddSelfHelper(state, 128);
+}
+BENCHMARK(BM_ThreadPool128AddSelf)->RangePair(524288, 524288, 1, 1024);
+
+static void BM_ThreadPool512AddSelf(benchmark::State& state) {
+  ThreadPoolAddSelfHelper(state, 512);
+}
+BENCHMARK(BM_ThreadPool512AddSelf)->RangePair(524288, 524288, 1, 1024);
+
+static void BM_ThreadPool2048AddSelf(benchmark::State& state) {
+  ThreadPoolAddSelfHelper(state, 2048);
+}
+BENCHMARK(BM_ThreadPool2048AddSelf)->RangePair(524288, 524288, 1, 1024);
 
 #if defined(__GNUC__) && !defined(SWIG)
 #if defined(__i386__) || defined(__x86_64__)
