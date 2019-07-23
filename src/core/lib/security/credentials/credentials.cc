@@ -64,6 +64,18 @@ void grpc_control_plane_credentials_init() {
   gpr_once_init(&once_init_control_plane_creds, do_control_plane_creds_init);
 }
 
+void grpc_test_only_control_plane_credentials_destroy() {
+  grpc_core::Delete(g_grpc_control_plane_creds);
+  g_grpc_control_plane_creds = nullptr;
+  gpr_mu_destroy(&g_control_plane_creds_mu);
+}
+
+void grpc_test_only_control_plane_credentials_force_init() {
+  if (g_grpc_control_plane_creds == nullptr) {
+    do_control_plane_creds_init();
+  }
+}
+
 bool grpc_channel_credentials_attach_credentials(
     grpc_channel_credentials* credentials, const char* authority,
     grpc_channel_credentials* control_plane_creds) {

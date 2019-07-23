@@ -193,6 +193,19 @@ bool grpc_control_plane_credentials_register(
 /* Initializes global control plane credentials data. */
 void grpc_control_plane_credentials_init();
 
+/* Test only: destroy global control plane credentials data.
+ * This API is meant for use by a few tests that need to
+ * satisdy grpc_core::LeakDetector. */
+void grpc_test_only_control_plane_credentials_destroy();
+
+/* Test only: force re-initialization of global control
+ * plane credentials data if it was previously destroyed.
+ * This API is meant to be used in
+ * tandem with the
+ * grpc_test_only_control_plane_credentials_destroy, for
+ * the few tests that need it. */
+void grpc_test_only_control_plane_credentials_force_init();
+
 /* --- grpc_credentials_mdelem_array. --- */
 
 typedef struct {
