@@ -170,8 +170,7 @@ void FakeResolver::ReturnReresolutionResult(void* arg, grpc_error* error) {
 // FakeResolverResponseGenerator
 //
 
-FakeResolverResponseGenerator::FakeResolverResponseGenerator()
-    : resolver_(nullptr) {}
+FakeResolverResponseGenerator::FakeResolverResponseGenerator() {}
 
 FakeResolverResponseGenerator::~FakeResolverResponseGenerator() {}
 
