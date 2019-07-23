@@ -30,9 +30,9 @@ namespace grpc {
 namespace testing {
 
 // This helper class allows a thread to block for a pre-specified number of
-// actions. BlockingCounter has an initial non-negative count on initialization
+// actions. BlockingCounter has an initial non-negative count on initialization.
 // Each call to DecrementCount will decrease the count by 1. When making a call
-// to Wait, if the count is greater than 0, the thread will be block, until
+// to Wait, if the count is greater than 0, the thread will be blocked, until
 // the count reaches 0.
 class BlockingCounter {
  public:
@@ -81,7 +81,7 @@ class AddAnotherFunctor : public grpc_experimental_completion_queue_functor {
     } else {
       callback->counter_->DecrementCount();
     }
-    // Suicide
+    // Suicides.
     delete callback;
   }
 
@@ -93,9 +93,9 @@ class AddAnotherFunctor : public grpc_experimental_completion_queue_functor {
 
 void ThreadPoolAddAnotherHelper(benchmark::State& state,
                                 int concurrent_functor) {
-  const int num_threads = state.range(1);
   const int num_iterations = state.range(0);
-  // number of adds done by each closure
+  const int num_threads = state.range(1);
+  // Number of adds done by each closure.
   const int num_add = num_iterations / concurrent_functor;
   grpc_core::ThreadPool pool(num_threads);
   while (state.KeepRunningBatch(num_iterations)) {
@@ -111,7 +111,8 @@ void ThreadPoolAddAnotherHelper(benchmark::State& state,
 static void BM_ThreadPool1AddAnother(benchmark::State& state) {
   ThreadPoolAddAnotherHelper(state, 1);
 }
-// first pair is range for batch_size, second pair is range for thread pool size
+// First pair is range for number of iterations (num_iterations).
+// Second pair is range for thread pool size (num_threads).
 BENCHMARK(BM_ThreadPool1AddAnother)->RangePair(524288, 524288, 1, 1024);
 
 static void BM_ThreadPool4AddAnother(benchmark::State& state) {
@@ -177,12 +178,12 @@ class SuicideFunctorForAdd : public grpc_experimental_completion_queue_functor {
 // Performs the scenario of external thread(s) adding closures into pool.
 static void BM_ThreadPoolExternalAdd(benchmark::State& state) {
   static grpc_core::ThreadPool* external_add_pool = nullptr;
-  // Setup for each run of test
+  // Setup for each run of test.
   if (state.thread_index == 0) {
     const int num_threads = state.range(1);
-    external_add_pool = new grpc_core::ThreadPool(num_threads);
+    external_add_pool = grpc_core::New<grpc_core::ThreadPool>(num_threads);
   }
-  const int num_iterations = state.range(0);
+  const int num_iterations = state.range(0) / state.threads;
   while (state.KeepRunningBatch(num_iterations)) {
     BlockingCounter counter(num_iterations);
     for (int i = 0; i < num_iterations; ++i) {
@@ -190,15 +191,17 @@ static void BM_ThreadPoolExternalAdd(benchmark::State& state) {
     }
     counter.Wait();
   }
-  state.SetItemsProcessed(num_iterations);
 
-  // Teardown at the end of each test run
+  // Teardown at the end of each test run.
   if (state.thread_index == 0) {
-    Delete(external_add_pool);
+    state.SetItemsProcessed(state.range(0));
+    grpc_core::Delete(external_add_pool);
   }
 }
 BENCHMARK(BM_ThreadPoolExternalAdd)
-    ->RangePair(524288, 524288, 1, 1024)  // ThreadPool size
+    // First pair is range for number of iterations (num_iterations).
+    // Second pair is range for thread pool size (num_threads).
+    ->RangePair(524288, 524288, 1, 1024)
     ->ThreadRange(1, 256);  // Concurrent external thread(s) up to 256
 
 // Functor (closure) that adds itself into pool repeatedly. By adding self, the
@@ -222,7 +225,7 @@ class AddSelfFunctor : public grpc_experimental_completion_queue_functor {
       callback->pool_->Add(cb);
     } else {
       callback->counter_->DecrementCount();
-      // Suicide
+      // Suicides.
       delete callback;
     }
   }
@@ -234,12 +237,12 @@ class AddSelfFunctor : public grpc_experimental_completion_queue_functor {
 };
 
 static void BM_ThreadPoolAddSelf(benchmark::State& state) {
-  const int num_threads = state.range(0);
-  const int kNumIteration = 524288;
+  const int num_iterations = state.range(0);
+  const int num_threads = state.range(1);
   int concurrent_functor = num_threads;
-  int num_add = kNumIteration / concurrent_functor;
+  int num_add = num_iterations / concurrent_functor;
   grpc_core::ThreadPool pool(num_threads);
-  while (state.KeepRunningBatch(kNumIteration)) {
+  while (state.KeepRunningBatch(num_iterations)) {
     BlockingCounter counter(concurrent_functor);
     for (int i = 0; i < concurrent_functor; ++i) {
       pool.Add(new AddSelfFunctor(&pool, &counter, num_add));
@@ -248,25 +251,26 @@ static void BM_ThreadPoolAddSelf(benchmark::State& state) {
   }
   state.SetItemsProcessed(state.iterations());
 }
-
-BENCHMARK(BM_ThreadPoolAddSelf)->Range(1, 1024);
+// First pair is range for number of iterations (num_iterations).
+// Second pair is range for thread pool size (num_threads).
+BENCHMARK(BM_ThreadPoolAddSelf)->RangePair(524288, 524288, 1, 1024);
 
 #if defined(__GNUC__) && !defined(SWIG)
 #if defined(__i386__) || defined(__x86_64__)
-#define ABSL_CACHELINE_SIZE 64
+#define CACHELINE_SIZE 64
 #elif defined(__powerpc64__)
-#define ABSL_CACHELINE_SIZE 128
+#define CACHELINE_SIZE 128
 #elif defined(__aarch64__)
-#define ABSL_CACHELINE_SIZE 64
+#define CACHELINE_SIZE 64
 #elif defined(__arm__)
 #if defined(__ARM_ARCH_5T__)
-#define ABSL_CACHELINE_SIZE 32
+#define CACHELINE_SIZE 32
 #elif defined(__ARM_ARCH_7A__)
-#define ABSL_CACHELINE_SIZE 64
+#define CACHELINE_SIZE 64
 #endif
 #endif
-#ifndef ABSL_CACHELINE_SIZE
-#define ABSL_CACHELINE_SIZE 64
+#ifndef CACHELINE_SIZE
+#define CACHELINE_SIZE 64
 #endif
 #endif
 
@@ -286,6 +290,7 @@ class ShortWorkFunctorForAdd
   ~ShortWorkFunctorForAdd() {}
   static void Run(grpc_experimental_completion_queue_functor* cb, int ok) {
     auto* callback = static_cast<ShortWorkFunctorForAdd*>(cb);
+    // Uses pad to avoid compiler complaining unused variable error.
     callback->pad[0] = 0;
     for (int i = 0; i < 1000; ++i) {
       callback->val_++;
@@ -294,7 +299,7 @@ class ShortWorkFunctorForAdd
   }
 
  private:
-  char pad[ABSL_CACHELINE_SIZE];
+  char pad[CACHELINE_SIZE];
   volatile int val_;
 };
 
