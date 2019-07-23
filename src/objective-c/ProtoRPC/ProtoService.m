@@ -29,14 +29,11 @@
 #pragma clang diagnostic ignored "-Wdeprecated-implementations"
 @implementation ProtoService {
 #pragma clang diagnostic pop
-  NSString *_host;
-  NSString *_packageName;
-  NSString *_serviceName;
   GRPCCallOptions *_callOptions;
 }
 
 - (instancetype)init {
-  return [self initWithHost:nil packageName:nil serviceName:nil];
+  return [self initWithHost:nil packageName:nil serviceName:nil callOptions:nil];
 }
 
 // Designated initializer
@@ -58,37 +55,7 @@
   return self;
 }
 
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wobjc-designated-initializers"
-// Do not call designated initializer here due to nullability incompatibility. This method is from
-// old API and does not assert on nullability of the parameters.
-
-- (instancetype)initWithHost:(NSString *)host
-                 packageName:(NSString *)packageName
-                 serviceName:(NSString *)serviceName {
-  if ((self = [super init])) {
-    _host = [host copy];
-    _packageName = [packageName copy];
-    _serviceName = [serviceName copy];
-    _callOptions = nil;
-  }
-  return self;
-}
-
 #pragma clang diagnostic pop
-
-- (GRPCProtoCall *)RPCToMethod:(NSString *)method
-                requestsWriter:(GRXWriter *)requestsWriter
-                 responseClass:(Class)responseClass
-            responsesWriteable:(id<GRXWriteable>)responsesWriteable {
-  GRPCProtoMethod *methodName =
-      [[GRPCProtoMethod alloc] initWithPackage:_packageName service:_serviceName method:method];
-  return [[GRPCProtoCall alloc] initWithHost:_host
-                                      method:methodName
-                              requestsWriter:requestsWriter
-                               responseClass:responseClass
-                          responsesWriteable:responsesWriteable];
-}
 
 - (GRPCUnaryProtoCall *)RPCToMethod:(NSString *)method
                             message:(id)message

@@ -45,20 +45,32 @@
 
     src_dir = 'src/objective-c/ProtoRPC'
 
-    s.default_subspec = 'Main'
+    s.default_subspec = 'Main', 'Legacy'
 
     s.subspec 'Main' do |ss|
       ss.header_mappings_dir = "#{src_dir}"
       ss.dependency 'gRPC', version
+      ss.dependency 'Protobuf', '~> 3.0'
+
+      ss.source_files = "src/objective-c/ProtoRPC/ProtoMethod.{h,m}",
+                        "src/objective-c/ProtoRPC/ProtoRPC.{h,m}",
+                        "src/objective-c/ProtoRPC/ProtoService.{h,m}"
+    end
+
+    s.subspec 'Legacy' do |ss|
+      ss.header_mappings_dir = "#{src_dir}"
+      ss.dependency "#{s.name}/Main", version
+      ss.dependency 'gRPC/GRPCCore', version
       ss.dependency 'gRPC-RxLibrary', version
       ss.dependency 'Protobuf', '~> 3.0'
 
-      ss.source_files = "#{src_dir}/*.{h,m}"
+      ss.source_files = "src/objective-c/ProtoRPC/ProtoRPCLegacy.{h,m}",
+                        "src/objective-c/ProtoRPC/ProtoServiceLegacy.{h,m}"
     end
 
     # CFStream is now default. Leaving this subspec only for compatibility purpose.
     s.subspec 'CFStream' do |ss|
-      ss.dependency "#{s.name}/Main", version
+      ss.dependency "#{s.name}/Legacy", version
     end
 
     s.pod_target_xcconfig = {

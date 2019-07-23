@@ -38,11 +38,8 @@
 #import "GRPCDispatchable.h"
 
 // The legacy header is included for backwards compatibility. Some V1 API users are still using
-// GRPCCall by importing GRPCCall.h header so we need this import. However, if a user needs to
-// exclude the core implementation, they may do so by defining GRPC_OBJC_NO_LEGACY_COMPATIBILITY.
-#ifndef GRPC_OBJC_NO_LEGACY_COMPATIBILITY
+// GRPCCall by importing GRPCCall.h header so we need this import.
 #import "GRPCCallLegacy.h"
-#endif
 
 NS_ASSUME_NONNULL_BEGIN
 
