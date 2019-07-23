@@ -14,31 +14,34 @@ Pod::Spec.new do |s|
   s.dependency "!ProtoCompiler-gRPCPlugin"
 
   repo_root = '../../../..'
-  bin_dir = "#{repo_root}/bins/$CONFIG"
+  bin_dir = "bins/$CONFIG"
 
   protoc = "#{bin_dir}/protobuf/protoc"
-  well_known_types_dir = "#{repo_root}/third_party/protobuf/src"
+  well_known_types_dir = "third_party/protobuf/src"
   plugin = "#{bin_dir}/grpc_objective_c_plugin"
+  out_dir = "src/objective-c/examples/RemoteTestClient"
 
   s.prepare_command = <<-CMD
+    pushd #{repo_root}
     #{protoc} \
         --plugin=protoc-gen-grpc=#{plugin} \
-        --objc_out=. \
-        --grpc_out=. \
+        --objc_out=#{out_dir} \
+        --grpc_out=#{out_dir} \
         -I . \
         -I #{well_known_types_dir} \
-        *.proto
+        #{out_dir}/*.proto
+    popd
   CMD
 
   s.subspec 'Messages' do |ms|
-    ms.source_files = '*.pbobjc.{h,m}'
+    ms.source_files = '**/*.pbobjc.{h,m}'
     ms.header_mappings_dir = '.'
     ms.requires_arc = false
     ms.dependency 'Protobuf'
   end
 
   s.subspec 'Services' do |ss|
-    ss.source_files = '*.pbrpc.{h,m}'
+    ss.source_files = '**/*.pbrpc.{h,m}'
     ss.header_mappings_dir = '.'
     ss.requires_arc = true
     ss.dependency 'gRPC-ProtoRPC'

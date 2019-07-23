@@ -7,7 +7,6 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		1C4854A76EEB56F8096DBDEF /* libPods-InterceptorSample.a in Frameworks */ = {isa = PBXBuildFile; fileRef = CB7A7A5B91FC976FCF4637AE /* libPods-InterceptorSample.a */; };
 		5EE960FB2266768A0044A74F /* AppDelegate.m in Sources */ = {isa = PBXBuildFile; fileRef = 5EE960FA2266768A0044A74F /* AppDelegate.m */; };
 		5EE960FE2266768A0044A74F /* ViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = 5EE960FD2266768A0044A74F /* ViewController.m */; };
 		5EE961012266768A0044A74F /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 5EE960FF2266768A0044A74F /* Main.storyboard */; };
@@ -15,10 +14,11 @@
 		5EE961062266768C0044A74F /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 5EE961042266768C0044A74F /* LaunchScreen.storyboard */; };
 		5EE961092266768C0044A74F /* main.m in Sources */ = {isa = PBXBuildFile; fileRef = 5EE961082266768C0044A74F /* main.m */; };
 		5EE9611222668CF20044A74F /* CacheInterceptor.m in Sources */ = {isa = PBXBuildFile; fileRef = 5EE9611122668CF20044A74F /* CacheInterceptor.m */; };
+		B39AA5EDA7B541C915C1D823 /* libPods-InterceptorSample.a in Frameworks */ = {isa = PBXBuildFile; fileRef = EE3A6DB9460D83EFDECDEF27 /* libPods-InterceptorSample.a */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
-		09457A264AAE5323BF50B1F8 /* Pods-InterceptorSample.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-InterceptorSample.debug.xcconfig"; path = "Target Support Files/Pods-InterceptorSample/Pods-InterceptorSample.debug.xcconfig"; sourceTree = "<group>"; };
+		53E7AEA20F8F0F23BFC5E85A /* Pods-InterceptorSample.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-InterceptorSample.release.xcconfig"; path = "Target Support Files/Pods-InterceptorSample/Pods-InterceptorSample.release.xcconfig"; sourceTree = "<group>"; };
 		5EE960F62266768A0044A74F /* InterceptorSample.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = InterceptorSample.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		5EE960FA2266768A0044A74F /* AppDelegate.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = AppDelegate.m; sourceTree = "<group>"; };
 		5EE960FC2266768A0044A74F /* ViewController.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = ViewController.h; sourceTree = "<group>"; };
@@ -31,8 +31,8 @@
 		5EE9610F2266774C0044A74F /* AppDelegate.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = AppDelegate.h; sourceTree = "<group>"; };
 		5EE9611022668CE20044A74F /* CacheInterceptor.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = CacheInterceptor.h; sourceTree = "<group>"; };
 		5EE9611122668CF20044A74F /* CacheInterceptor.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = CacheInterceptor.m; sourceTree = "<group>"; };
-		A0789280A4035D0F22F96BE6 /* Pods-InterceptorSample.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-InterceptorSample.release.xcconfig"; path = "Target Support Files/Pods-InterceptorSample/Pods-InterceptorSample.release.xcconfig"; sourceTree = "<group>"; };
-		CB7A7A5B91FC976FCF4637AE /* libPods-InterceptorSample.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = "libPods-InterceptorSample.a"; sourceTree = BUILT_PRODUCTS_DIR; };
+		61819C78C7CC39640B0AF90B /* Pods-InterceptorSample.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-InterceptorSample.debug.xcconfig"; path = "Target Support Files/Pods-InterceptorSample/Pods-InterceptorSample.debug.xcconfig"; sourceTree = "<group>"; };
+		EE3A6DB9460D83EFDECDEF27 /* libPods-InterceptorSample.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = "libPods-InterceptorSample.a"; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -40,20 +40,28 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				1C4854A76EEB56F8096DBDEF /* libPods-InterceptorSample.a in Frameworks */,
+				B39AA5EDA7B541C915C1D823 /* libPods-InterceptorSample.a in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		5DBBA8A4C272D71DA0B942A2 /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+				EE3A6DB9460D83EFDECDEF27 /* libPods-InterceptorSample.a */,
+			);
+			name = Frameworks;
+			sourceTree = "<group>";
+		};
 		5EE960ED2266768A0044A74F = {
 			isa = PBXGroup;
 			children = (
 				5EE960F82266768A0044A74F /* InterceptorSample */,
 				5EE960F72266768A0044A74F /* Products */,
 				9D49DB75F3BEDAFDE7028B51 /* Pods */,
-				BD7184728351C7DDAFBA5FA2 /* Frameworks */,
+				5DBBA8A4C272D71DA0B942A2 /* Frameworks */,
 			);
 			sourceTree = "<group>";
 		};
@@ -86,18 +94,10 @@
 		9D49DB75F3BEDAFDE7028B51 /* Pods */ = {
 			isa = PBXGroup;
 			children = (
-				09457A264AAE5323BF50B1F8 /* Pods-InterceptorSample.debug.xcconfig */,
-				A0789280A4035D0F22F96BE6 /* Pods-InterceptorSample.release.xcconfig */,
+				61819C78C7CC39640B0AF90B /* Pods-InterceptorSample.debug.xcconfig */,
+				53E7AEA20F8F0F23BFC5E85A /* Pods-InterceptorSample.release.xcconfig */,
 			);
 			path = Pods;
-			sourceTree = "<group>";
-		};
-		BD7184728351C7DDAFBA5FA2 /* Frameworks */ = {
-			isa = PBXGroup;
-			children = (
-				CB7A7A5B91FC976FCF4637AE /* libPods-InterceptorSample.a */,
-			);
-			name = Frameworks;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -107,11 +107,11 @@
 			isa = PBXNativeTarget;
 			buildConfigurationList = 5EE9610C2266768C0044A74F /* Build configuration list for PBXNativeTarget "InterceptorSample" */;
 			buildPhases = (
-				7531607F028A04DAAF5E97B5 /* [CP] Check Pods Manifest.lock */,
+				6313E891EAC080560B6D470D /* [CP] Check Pods Manifest.lock */,
 				5EE960F22266768A0044A74F /* Sources */,
 				5EE960F32266768A0044A74F /* Frameworks */,
 				5EE960F42266768A0044A74F /* Resources */,
-				17700C95BAEBB27F7A3D1B01 /* [CP] Copy Pods Resources */,
+				A3ABCCE79BCEB8687DE0D995 /* [CP] Copy Pods Resources */,
 			);
 			buildRules = (
 			);
@@ -168,24 +168,7 @@
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXShellScriptBuildPhase section */
-		17700C95BAEBB27F7A3D1B01 /* [CP] Copy Pods Resources */ = {
-			isa = PBXShellScriptBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			inputFileListPaths = (
-				"${PODS_ROOT}/Target Support Files/Pods-InterceptorSample/Pods-InterceptorSample-resources-${CONFIGURATION}-input-files.xcfilelist",
-			);
-			name = "[CP] Copy Pods Resources";
-			outputFileListPaths = (
-				"${PODS_ROOT}/Target Support Files/Pods-InterceptorSample/Pods-InterceptorSample-resources-${CONFIGURATION}-output-files.xcfilelist",
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-			shellPath = /bin/sh;
-			shellScript = "\"${PODS_ROOT}/Target Support Files/Pods-InterceptorSample/Pods-InterceptorSample-resources.sh\"\n";
-			showEnvVarsInLog = 0;
-		};
-		7531607F028A04DAAF5E97B5 /* [CP] Check Pods Manifest.lock */ = {
+		6313E891EAC080560B6D470D /* [CP] Check Pods Manifest.lock */ = {
 			isa = PBXShellScriptBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -205,6 +188,23 @@
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
 			shellScript = "diff \"${PODS_PODFILE_DIR_PATH}/Podfile.lock\" \"${PODS_ROOT}/Manifest.lock\" > /dev/null\nif [ $? != 0 ] ; then\n    # print error to STDERR\n    echo \"error: The sandbox is not in sync with the Podfile.lock. Run 'pod install' or update your CocoaPods installation.\" >&2\n    exit 1\nfi\n# This output is used by Xcode 'outputs' to avoid re-running this script phase.\necho \"SUCCESS\" > \"${SCRIPT_OUTPUT_FILE_0}\"\n";
+			showEnvVarsInLog = 0;
+		};
+		A3ABCCE79BCEB8687DE0D995 /* [CP] Copy Pods Resources */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+				"${PODS_ROOT}/Target Support Files/Pods-InterceptorSample/Pods-InterceptorSample-resources-${CONFIGURATION}-input-files.xcfilelist",
+			);
+			name = "[CP] Copy Pods Resources";
+			outputFileListPaths = (
+				"${PODS_ROOT}/Target Support Files/Pods-InterceptorSample/Pods-InterceptorSample-resources-${CONFIGURATION}-output-files.xcfilelist",
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "\"${PODS_ROOT}/Target Support Files/Pods-InterceptorSample/Pods-InterceptorSample-resources.sh\"\n";
 			showEnvVarsInLog = 0;
 		};
 /* End PBXShellScriptBuildPhase section */
@@ -357,7 +357,7 @@
 		};
 		5EE9610D2266768C0044A74F /* Debug */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = 09457A264AAE5323BF50B1F8 /* Pods-InterceptorSample.debug.xcconfig */;
+			baseConfigurationReference = 61819C78C7CC39640B0AF90B /* Pods-InterceptorSample.debug.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_STYLE = Automatic;
@@ -374,7 +374,7 @@
 		};
 		5EE9610E2266768C0044A74F /* Release */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = A0789280A4035D0F22F96BE6 /* Pods-InterceptorSample.release.xcconfig */;
+			baseConfigurationReference = 53E7AEA20F8F0F23BFC5E85A /* Pods-InterceptorSample.release.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_STYLE = Automatic;
