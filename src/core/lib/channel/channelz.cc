@@ -192,6 +192,23 @@ ChannelNode::ChannelNode(UniquePtr<char> target,
       trace_(channel_tracer_max_nodes),
       parent_uuid_(parent_uuid) {}
 
+const char* ChannelNode::GetChannelConnectivityStateChangeString(
+    grpc_connectivity_state state) {
+  switch (state) {
+    case GRPC_CHANNEL_IDLE:
+      return "Channel state change to IDLE";
+    case GRPC_CHANNEL_CONNECTING:
+      return "Channel state change to CONNECTING";
+    case GRPC_CHANNEL_READY:
+      return "Channel state change to READY";
+    case GRPC_CHANNEL_TRANSIENT_FAILURE:
+      return "Channel state change to TRANSIENT_FAILURE";
+    case GRPC_CHANNEL_SHUTDOWN:
+      return "Channel state change to SHUTDOWN";
+  }
+  GPR_UNREACHABLE_CODE(return "UNKNOWN");
+}
+
 grpc_json* ChannelNode::RenderJson() {
   // We need to track these three json objects to build our object
   grpc_json* top_level_json = grpc_json_create(GRPC_JSON_OBJECT);
