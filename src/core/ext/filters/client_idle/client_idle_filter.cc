@@ -32,7 +32,7 @@
 // in channel args.
 // TODO(qianchengz): Find a reasonable default value. Maybe check what deault
 // value Java uses.
-#define DEFAULT_IDLE_TIMEOUT_MS INT_MAX
+#define DEFAULT_IDLE_TIMEOUT_MS (5 * 60 * 1000)
 
 namespace grpc_core {
 
