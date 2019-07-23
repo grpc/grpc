@@ -148,7 +148,7 @@
 			children = (
 				ABB17D5622D93BAB00C26D6E /* watchOS-sample */,
 				ABB17D6E22D93BAC00C26D6E /* watchOS-sample WatchKit App */,
-				ABB17D7D22D93BAC00C26D6E /* watchOS-sample WatchKit Extension */,
+				ABB17D7D22D93BAC00C26D6E /* watchOS-sample-WatchKit-Extension */,
 				ABB17D5522D93BAB00C26D6E /* Products */,
 				2C4A0708747AAA7298F757DA /* Pods */,
 				589283F4A582EEF2434E0220 /* Frameworks */,
@@ -191,7 +191,7 @@
 			path = "watchOS-sample WatchKit App";
 			sourceTree = "<group>";
 		};
-		ABB17D7D22D93BAC00C26D6E /* watchOS-sample WatchKit Extension */ = {
+		ABB17D7D22D93BAC00C26D6E /* watchOS-sample-WatchKit-Extension */ = {
 			isa = PBXGroup;
 			children = (
 				ABB17D7E22D93BAC00C26D6E /* InterfaceController.h */,
@@ -201,7 +201,7 @@
 				ABB17D8422D93BAD00C26D6E /* Assets.xcassets */,
 				ABB17D8622D93BAD00C26D6E /* Info.plist */,
 			);
-			path = "watchOS-sample WatchKit Extension";
+			path = "watchOS-sample-WatchKit-Extension";
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -598,7 +598,7 @@
 				ASSETCATALOG_COMPILER_COMPLICATION_NAME = Complication;
 				CODE_SIGN_STYLE = Automatic;
 				DEVELOPMENT_TEAM = 6T98ZJNPG5;
-				INFOPLIST_FILE = "watchOS-sample WatchKit Extension/Info.plist";
+				INFOPLIST_FILE = "$(SRCROOT)/watchOS-sample-WatchKit-Extension/Info.plist";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -620,7 +620,7 @@
 				ASSETCATALOG_COMPILER_COMPLICATION_NAME = Complication;
 				CODE_SIGN_STYLE = Automatic;
 				DEVELOPMENT_TEAM = 6T98ZJNPG5;
-				INFOPLIST_FILE = "watchOS-sample WatchKit Extension/Info.plist";
+				INFOPLIST_FILE = "$(SRCROOT)/watchOS-sample-WatchKit-Extension/Info.plist";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
