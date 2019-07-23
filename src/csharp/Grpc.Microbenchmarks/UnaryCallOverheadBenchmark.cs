@@ -24,12 +24,9 @@ using System;
 
 namespace Grpc.Microbenchmarks
 {
-    // this test creates a real server and client, measuring the inherent inbuilt
-    // platform overheads; the marshallers **DO NOT ALLOCATE**, so any allocations
+    // this test measures the overhead of C# wrapping layer when invoking calls;
+    // the marshallers **DO NOT ALLOCATE**, so any allocations
     // are from the framework, not the messages themselves
-
-    // important: allocs are not reliable on .NET Core until .NET Core 3, since
-    // this test involves multiple threads
 
     [ClrJob, CoreJob] // test .NET Core and .NET Framework
     [MemoryDiagnoser] // allocations
@@ -41,7 +38,7 @@ namespace Grpc.Microbenchmarks
         private static readonly Method<string, string> PingMethod = new Method<string, string>(MethodType.Unary, nameof(PingBenchmark), "Ping", EmptyMarshaller, EmptyMarshaller);
 
         [Benchmark]
-        public string Ping()
+        public string SyncUnaryCallOverhead()
         {
             return client.Ping("", new CallOptions());
         }
@@ -52,7 +49,7 @@ namespace Grpc.Microbenchmarks
         [GlobalSetup]
         public void Setup()
         {
-            // create client
+            // create client, the channel will actually never connect because call logic will be short-circuited
             channel = new Channel("localhost", 10042, ChannelCredentials.Insecure);
             client = new PingClient(new DefaultCallInvoker(channel));
 
