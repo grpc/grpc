@@ -83,9 +83,9 @@ class FakeResolver : public Resolver {
   // RequestReresolutionLocked().
   bool has_reresolution_result_ = false;
   Result reresolution_result_;
-  // True after the calls to StartLocked().
+  // True after the call to StartLocked().
   bool started_ = false;
-  // True after the calls to ShutdownLocked().
+  // True after the call to ShutdownLocked().
   bool shutdown_ = false;
   // if true, return failure
   bool return_failure_ = false;
@@ -108,7 +108,7 @@ FakeResolver::FakeResolver(ResolverArgs args)
   channel_args_ = grpc_channel_args_copy_and_remove(
       args.args, args_to_remove, GPR_ARRAY_SIZE(args_to_remove));
   if (response_generator_ != nullptr) {
-    response_generator_->SetFakeResolver(this);
+    response_generator_->SetFakeResolver(Ref());
   }
 }
 
@@ -170,6 +170,10 @@ void FakeResolver::ReturnReresolutionResult(void* arg, grpc_error* error) {
 // FakeResolverResponseGenerator
 //
 
+FakeResolverResponseGenerator::FakeResolverResponseGenerator() {}
+
+FakeResolverResponseGenerator::~FakeResolverResponseGenerator() {}
+
 struct SetResponseClosureArg {
   grpc_closure set_response_closure;
   RefCountedPtr<FakeResolver> resolver;
@@ -190,41 +194,25 @@ void FakeResolverResponseGenerator::SetResponseLocked(void* arg,
   Delete(closure_arg);
 }
 
-void FakeResolverResponseGenerator::SetFakeResolver(FakeResolver* resolver) {
-  MutexLock lock(&mu_);
-  resolver_ = resolver;
-  if (resolver_ == nullptr) return;
-  if (has_result_) {
-    SetResponseClosureArg* closure_arg = New<SetResponseClosureArg>();
-    closure_arg->resolver = resolver_->Ref();
-    closure_arg->result = std::move(result_);
-    GRPC_CLOSURE_SCHED(
-        GRPC_CLOSURE_INIT(&closure_arg->set_response_closure, SetResponseLocked,
-                          closure_arg,
-                          grpc_combiner_scheduler(resolver_->combiner())),
-        GRPC_ERROR_NONE);
-    has_result_ = false;
-  }
-}
-
 void FakeResolverResponseGenerator::SetResponse(Resolver::Result result) {
-  ReleasableMutexLock lock(&mu_);
-  if (resolver_ != nullptr) {
-    RefCountedPtr<FakeResolver> resolver = resolver_->Ref();
-    lock.Unlock();
-    SetResponseClosureArg* closure_arg = New<SetResponseClosureArg>();
-    closure_arg->resolver = std::move(resolver);
-    closure_arg->result = std::move(result);
-    GRPC_CLOSURE_SCHED(
-        GRPC_CLOSURE_INIT(&closure_arg->set_response_closure, SetResponseLocked,
-                          closure_arg,
-                          grpc_combiner_scheduler(resolver_->combiner())),
-        GRPC_ERROR_NONE);
-  } else {
-    has_result_ = true;
-    result_ = std::move(result);
-    lock.Unlock();
+  RefCountedPtr<FakeResolver> resolver;
+  {
+    MutexLock lock(&mu_);
+    if (resolver_ == nullptr) {
+      has_result_ = true;
+      result_ = std::move(result);
+      return;
+    }
+    resolver = resolver_->Ref();
   }
+  SetResponseClosureArg* closure_arg = New<SetResponseClosureArg>();
+  closure_arg->resolver = std::move(resolver);
+  closure_arg->result = std::move(result);
+  GRPC_CLOSURE_SCHED(
+      GRPC_CLOSURE_INIT(
+          &closure_arg->set_response_closure, SetResponseLocked, closure_arg,
+          grpc_combiner_scheduler(closure_arg->resolver->combiner())),
+      GRPC_ERROR_NONE);
 }
 
 void FakeResolverResponseGenerator::SetReresolutionResponseLocked(
@@ -240,41 +228,39 @@ void FakeResolverResponseGenerator::SetReresolutionResponseLocked(
 
 void FakeResolverResponseGenerator::SetReresolutionResponse(
     Resolver::Result result) {
-  ReleasableMutexLock lock(&mu_);
-  if (resolver_ != nullptr) {
-    RefCountedPtr<FakeResolver> resolver = resolver_->Ref();
-    lock.Unlock();
-    SetResponseClosureArg* closure_arg = New<SetResponseClosureArg>();
-    closure_arg->resolver = std::move(resolver);
-    closure_arg->result = std::move(result);
-    closure_arg->has_result = true;
-    GRPC_CLOSURE_SCHED(
-        GRPC_CLOSURE_INIT(&closure_arg->set_response_closure,
-                          SetReresolutionResponseLocked, closure_arg,
-                          grpc_combiner_scheduler(resolver_->combiner())),
-        GRPC_ERROR_NONE);
-  } else {
-    has_result_ = true;
-    result_ = std::move(result);
-    lock.Unlock();
+  RefCountedPtr<FakeResolver> resolver;
+  {
+    MutexLock lock(&mu_);
+    GPR_ASSERT(resolver_ != nullptr);
+    resolver = resolver_->Ref();
   }
+  SetResponseClosureArg* closure_arg = New<SetResponseClosureArg>();
+  closure_arg->resolver = std::move(resolver);
+  closure_arg->result = std::move(result);
+  closure_arg->has_result = true;
+  GRPC_CLOSURE_SCHED(
+      GRPC_CLOSURE_INIT(
+          &closure_arg->set_response_closure, SetReresolutionResponseLocked,
+          closure_arg,
+          grpc_combiner_scheduler(closure_arg->resolver->combiner())),
+      GRPC_ERROR_NONE);
 }
 
 void FakeResolverResponseGenerator::UnsetReresolutionResponse() {
-  ReleasableMutexLock lock(&mu_);
-  if (resolver_ != nullptr) {
-    RefCountedPtr<FakeResolver> resolver = resolver_->Ref();
-    lock.Unlock();
-    SetResponseClosureArg* closure_arg = New<SetResponseClosureArg>();
-    closure_arg->resolver = std::move(resolver);
-    GRPC_CLOSURE_SCHED(
-        GRPC_CLOSURE_INIT(&closure_arg->set_response_closure,
-                          SetReresolutionResponseLocked, closure_arg,
-                          grpc_combiner_scheduler(resolver_->combiner())),
-        GRPC_ERROR_NONE);
-  } else {
-    lock.Unlock();
+  RefCountedPtr<FakeResolver> resolver;
+  {
+    MutexLock lock(&mu_);
+    GPR_ASSERT(resolver_ != nullptr);
+    resolver = resolver_->Ref();
   }
+  SetResponseClosureArg* closure_arg = New<SetResponseClosureArg>();
+  closure_arg->resolver = std::move(resolver);
+  GRPC_CLOSURE_SCHED(
+      GRPC_CLOSURE_INIT(
+          &closure_arg->set_response_closure, SetReresolutionResponseLocked,
+          closure_arg,
+          grpc_combiner_scheduler(closure_arg->resolver->combiner())),
+      GRPC_ERROR_NONE);
 }
 
 void FakeResolverResponseGenerator::SetFailureLocked(void* arg,
@@ -289,37 +275,53 @@ void FakeResolverResponseGenerator::SetFailureLocked(void* arg,
 }
 
 void FakeResolverResponseGenerator::SetFailure() {
-  ReleasableMutexLock lock(&mu_);
-  if (resolver_ != nullptr) {
-    RefCountedPtr<FakeResolver> resolver = resolver_->Ref();
-    lock.Unlock();
-    SetResponseClosureArg* closure_arg = New<SetResponseClosureArg>();
-    closure_arg->resolver = std::move(resolver);
-    GRPC_CLOSURE_SCHED(
-        GRPC_CLOSURE_INIT(&closure_arg->set_response_closure, SetFailureLocked,
-                          closure_arg,
-                          grpc_combiner_scheduler(resolver_->combiner())),
-        GRPC_ERROR_NONE);
-  } else {
-    lock.Unlock();
+  RefCountedPtr<FakeResolver> resolver;
+  {
+    MutexLock lock(&mu_);
+    GPR_ASSERT(resolver_ != nullptr);
+    resolver = resolver_->Ref();
   }
+  SetResponseClosureArg* closure_arg = New<SetResponseClosureArg>();
+  closure_arg->resolver = std::move(resolver);
+  GRPC_CLOSURE_SCHED(
+      GRPC_CLOSURE_INIT(
+          &closure_arg->set_response_closure, SetFailureLocked, closure_arg,
+          grpc_combiner_scheduler(closure_arg->resolver->combiner())),
+      GRPC_ERROR_NONE);
 }
 
 void FakeResolverResponseGenerator::SetFailureOnReresolution() {
-  ReleasableMutexLock lock(&mu_);
-  if (resolver_ != nullptr) {
-    RefCountedPtr<FakeResolver> resolver = resolver_->Ref();
-    lock.Unlock();
+  RefCountedPtr<FakeResolver> resolver;
+  {
+    MutexLock lock(&mu_);
+    GPR_ASSERT(resolver_ != nullptr);
+    resolver = resolver_->Ref();
+  }
+  SetResponseClosureArg* closure_arg = New<SetResponseClosureArg>();
+  closure_arg->resolver = std::move(resolver);
+  closure_arg->immediate = false;
+  GRPC_CLOSURE_SCHED(
+      GRPC_CLOSURE_INIT(
+          &closure_arg->set_response_closure, SetFailureLocked, closure_arg,
+          grpc_combiner_scheduler(closure_arg->resolver->combiner())),
+      GRPC_ERROR_NONE);
+}
+
+void FakeResolverResponseGenerator::SetFakeResolver(
+    RefCountedPtr<FakeResolver> resolver) {
+  MutexLock lock(&mu_);
+  resolver_ = std::move(resolver);
+  if (resolver_ == nullptr) return;
+  if (has_result_) {
     SetResponseClosureArg* closure_arg = New<SetResponseClosureArg>();
-    closure_arg->resolver = std::move(resolver);
-    closure_arg->immediate = false;
+    closure_arg->resolver = resolver_->Ref();
+    closure_arg->result = std::move(result_);
     GRPC_CLOSURE_SCHED(
-        GRPC_CLOSURE_INIT(&closure_arg->set_response_closure, SetFailureLocked,
+        GRPC_CLOSURE_INIT(&closure_arg->set_response_closure, SetResponseLocked,
                           closure_arg,
                           grpc_combiner_scheduler(resolver_->combiner())),
         GRPC_ERROR_NONE);
-  } else {
-    lock.Unlock();
+    has_result_ = false;
   }
 }
 

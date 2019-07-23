@@ -1522,9 +1522,11 @@ void ChannelData::StartTransportOpLocked(void* arg, grpc_error* ignored) {
     if (grpc_error_get_int(op->disconnect_with_error,
                            GRPC_ERROR_INT_CHANNEL_CONNECTIVITY_STATE, &value) &&
         static_cast<grpc_connectivity_state>(value) == GRPC_CHANNEL_IDLE) {
-      // Enter IDLE state.
-      New<ConnectivityStateAndPickerSetter>(chand, GRPC_CHANNEL_IDLE,
-                                            "channel entering IDLE", nullptr);
+      if (chand->disconnect_error() == GRPC_ERROR_NONE) {
+        // Enter IDLE state.
+        New<ConnectivityStateAndPickerSetter>(chand, GRPC_CHANNEL_IDLE,
+                                              "channel entering IDLE", nullptr);
+      }
       GRPC_ERROR_UNREF(op->disconnect_with_error);
     } else {
       // Disconnect.
