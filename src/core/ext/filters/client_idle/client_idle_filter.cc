@@ -72,7 +72,7 @@ class ChannelData {
   static void IdleTimerCallback(void* arg, grpc_error* error);
   static void IdleTransportOpCompleteCallback(void* arg, grpc_error* error);
 
-  void StartIdleTimer();
+  void StartIdleTimerLocked();
 
   void EnterIdle();
 
@@ -83,9 +83,14 @@ class ChannelData {
   // channel goes back into IDLE state.
   const grpc_millis client_idle_timeout_;
 
+  // Count existing calls in the channel.
+  Atomic<size_t> call_count_;
+
   // Member data used to track the state of channel.
-  Mutex call_count_mu_;
-  size_t call_count_;
+  Mutex mu_;
+  size_t pending_inc_count_ = 0;
+  bool timer_on_ = false;
+  grpc_millis last_idle_time_;
 
   // Idle timer and its callback closure.
   grpc_timer idle_timer_;
@@ -113,29 +118,40 @@ void ChannelData::StartTransportOp(grpc_channel_element* elem,
   ChannelData* chand = static_cast<ChannelData*>(elem->channel_data);
   // Catch the disconnect_with_error transport op.
   if (op->disconnect_with_error != nullptr) {
-    // Disconnect. Cancel the timer if we set it before.
-    // IncreaseCallCount() introduces a dummy call. It will cancel the timer and
-    // prevent the timer from being reset by other threads.
+    // Disconnect.
+    // IncreaseCallCount() introduces a dummy call. It will prevent the timer from being reset by other threads.
     chand->IncreaseCallCount();
+    // Cancel the timer if we set it before.
+    MutexLock lock(&chand->mu_);
+    if (chand->timer_on_) {
+      grpc_timer_cancel(&chand->idle_timer_);
+    }
   }
   // Pass the op to the next filter.
   grpc_channel_next_op(elem, op);
 }
 
 void ChannelData::IncreaseCallCount() {
-  MutexLock lock(&call_count_mu_);
-  if (call_count_++ == 0) {
-    grpc_timer_cancel(&idle_timer_);
+  size_t previous_value = call_count_.FetchAdd(1, MemoryOrder::RELAXED);
+  if (previous_value == 0) {
+    MutexLock lock(&mu_);
+    pending_inc_count_++;
   }
-  GRPC_IDLE_FILTER_LOG("call counter has increased to %" PRIuPTR, call_count_);
+  GRPC_IDLE_FILTER_LOG("call counter has increased to %" PRIuPTR, previous_value + 1);
 }
 
 void ChannelData::DecreaseCallCount() {
-  MutexLock lock(&call_count_mu_);
-  if (call_count_-- == 1) {
-    StartIdleTimer();
+  size_t previous_value = call_count_.FetchSub(1, MemoryOrder::RELAXED);
+  if (previous_value == 1) {
+    MutexLock lock(&mu_);
+    if (--pending_inc_count_ == 0) {
+      last_idle_time_ = ExecCtx::Get()->Now();
+      if (!timer_on_) {
+        StartIdleTimerLocked();
+      }
+    }
   }
-  GRPC_IDLE_FILTER_LOG("call counter has decreased to %" PRIuPTR, call_count_);
+  GRPC_IDLE_FILTER_LOG("call counter has decreased to %" PRIuPTR, previous_value - 1);
 }
 
 ChannelData::ChannelData(grpc_channel_element* elem,
@@ -164,9 +180,15 @@ void ChannelData::IdleTimerCallback(void* arg, grpc_error* error) {
   GRPC_IDLE_FILTER_LOG("timer alarms");
   ChannelData* chand = static_cast<ChannelData*>(arg);
   {
-    MutexLock lock(&chand->call_count_mu_);
-    if (error == GRPC_ERROR_NONE && chand->call_count_ == 0) {
-      chand->EnterIdle();
+    MutexLock lock(&chand->mu_);
+    chand->timer_on_ = false;
+    if (error == GRPC_ERROR_NONE && chand->pending_inc_count_ == 0) {
+      if (ExecCtx::Get()->Now() >= chand->last_idle_time_ + chand->client_idle_timeout_) {
+        chand->EnterIdle();
+      }
+      else {
+        chand->StartIdleTimerLocked();
+      }
     }
   }
   GRPC_IDLE_FILTER_LOG("timer finishes");
@@ -179,12 +201,13 @@ void ChannelData::IdleTransportOpCompleteCallback(void* arg,
   GRPC_CHANNEL_STACK_UNREF(chand->channel_stack_, "idle transport op");
 }
 
-void ChannelData::StartIdleTimer() {
+void ChannelData::StartIdleTimerLocked() {
   GRPC_IDLE_FILTER_LOG("timer has started");
   // Hold a ref to the channel stack for the timer callback.
   GRPC_CHANNEL_STACK_REF(channel_stack_, "max idle timer callback");
-  grpc_timer_init(&idle_timer_, ExecCtx::Get()->Now() + client_idle_timeout_,
+  grpc_timer_init(&idle_timer_, last_idle_time_ + client_idle_timeout_,
                   &idle_timer_callback_);
+  timer_on_ = true;
 }
 
 void ChannelData::EnterIdle() {
