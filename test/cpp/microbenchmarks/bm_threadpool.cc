@@ -236,8 +236,7 @@ class AddSelfFunctor : public grpc_experimental_completion_queue_functor {
   int num_add_;
 };
 
-void ThreadPoolAddSelfHelper(benchmark::State& state,
-                                int concurrent_functor) {
+void ThreadPoolAddSelfHelper(benchmark::State& state, int concurrent_functor) {
   const int num_iterations = state.range(0);
   const int num_threads = state.range(1);
   // Number of adds done by each closure.
