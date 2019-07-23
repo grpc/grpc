@@ -97,6 +97,14 @@ class InlinedVector {
     return data()[offset];
   }
 
+  bool operator==(const InlinedVector& other) const {
+    if (size_ != other.size_) return false;
+    for (size_t i = 0; i < size_; ++i) {
+      if (data()[i] != other.data()[i]) return false;
+    }
+    return true;
+  }
+
   void reserve(size_t capacity) {
     if (capacity > capacity_) {
       T* new_dynamic = static_cast<T*>(gpr_malloc(sizeof(T) * capacity));

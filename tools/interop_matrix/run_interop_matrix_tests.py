@@ -86,6 +86,8 @@ argp.add_argument(
     type=str,
     nargs='?',
     help='Upload test results to a specified BQ table.')
+# Requests will be routed through specified VIP by default.
+# See go/grpc-interop-tests (internal-only) for details.
 argp.add_argument(
     '--server_host',
     default='74.125.206.210',

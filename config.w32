@@ -28,7 +28,6 @@ if (PHP_GRPC != "no") {
     "src\\core\\lib\\gpr\\env_linux.cc " +
     "src\\core\\lib\\gpr\\env_posix.cc " +
     "src\\core\\lib\\gpr\\env_windows.cc " +
-    "src\\core\\lib\\gpr\\host_port.cc " +
     "src\\core\\lib\\gpr\\log.cc " +
     "src\\core\\lib\\gpr\\log_android.cc " +
     "src\\core\\lib\\gpr\\log_linux.cc " +
@@ -55,6 +54,7 @@ if (PHP_GRPC != "no") {
     "src\\core\\lib\\gprpp\\arena.cc " +
     "src\\core\\lib\\gprpp\\fork.cc " +
     "src\\core\\lib\\gprpp\\global_config_env.cc " +
+    "src\\core\\lib\\gprpp\\host_port.cc " +
     "src\\core\\lib\\gprpp\\thd_posix.cc " +
     "src\\core\\lib\\gprpp\\thd_windows.cc " +
     "src\\core\\lib\\profiling\\basic_timers.cc " +
@@ -102,6 +102,8 @@ if (PHP_GRPC != "no") {
     "src\\core\\lib\\iomgr\\ev_windows.cc " +
     "src\\core\\lib\\iomgr\\exec_ctx.cc " +
     "src\\core\\lib\\iomgr\\executor.cc " +
+    "src\\core\\lib\\iomgr\\executor\\mpmcqueue.cc " +
+    "src\\core\\lib\\iomgr\\executor\\threadpool.cc " +
     "src\\core\\lib\\iomgr\\fork_posix.cc " +
     "src\\core\\lib\\iomgr\\fork_windows.cc " +
     "src\\core\\lib\\iomgr\\gethostname_fallback.cc " +
@@ -386,6 +388,7 @@ if (PHP_GRPC != "no") {
     "src\\core\\ext\\filters\\client_channel\\resolver\\dns\\c_ares\\grpc_ares_wrapper_libuv.cc " +
     "src\\core\\ext\\filters\\client_channel\\resolver\\dns\\c_ares\\grpc_ares_wrapper_posix.cc " +
     "src\\core\\ext\\filters\\client_channel\\resolver\\dns\\c_ares\\grpc_ares_wrapper_windows.cc " +
+    "src\\core\\ext\\filters\\client_channel\\resolver\\dns\\dns_resolver_selection.cc " +
     "src\\core\\ext\\filters\\client_channel\\resolver\\dns\\native\\dns_resolver.cc " +
     "src\\core\\ext\\filters\\client_channel\\resolver\\sockaddr\\sockaddr_resolver.cc " +
     "src\\core\\ext\\filters\\census\\grpc_context.cc " +
@@ -738,6 +741,7 @@ if (PHP_GRPC != "no") {
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\lib\\gprpp");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\lib\\http");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\lib\\iomgr");
+  FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\lib\\iomgr\\executor");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\lib\\json");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\lib\\profiling");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\lib\\security");

@@ -30,7 +30,6 @@ load(
     "//bazel:grpc_build_system.bzl",
     "grpc_cc_library",
     "grpc_generate_one_off_targets",
-    "grpc_proto_plugin",
 )
 
 config_setting(
@@ -74,11 +73,11 @@ config_setting(
 )
 
 # This should be updated along with build.yaml
-g_stands_for = "gale"
+g_stands_for = "gangnam"
 
 core_version = "7.0.0"
 
-version = "1.22.0-dev"
+version = "1.23.0-dev"
 
 GPR_PUBLIC_HDRS = [
     "include/grpc/support/alloc.h",
@@ -137,6 +136,7 @@ GRPCXX_SRCS = [
     "src/cpp/common/resource_quota_cc.cc",
     "src/cpp/common/rpc_method.cc",
     "src/cpp/common/version_cc.cc",
+    "src/cpp/common/validate_service_config.cc",    
     "src/cpp/server/async_generic_service.cc",
     "src/cpp/server/channel_argument_option.cc",
     "src/cpp/server/create_default_thread_pool.cc",
@@ -218,8 +218,10 @@ GRPCXX_PUBLIC_HDRS = [
     "include/grpcpp/alarm.h",
     "include/grpcpp/alarm_impl.h",
     "include/grpcpp/channel.h",
+    "include/grpcpp/channel_impl.h",
     "include/grpcpp/client_context.h",
     "include/grpcpp/completion_queue.h",
+    "include/grpcpp/completion_queue_impl.h",
     "include/grpcpp/create_channel.h",
     "include/grpcpp/create_channel_impl.h",
     "include/grpcpp/create_channel_posix.h",
@@ -265,11 +267,14 @@ GRPCXX_PUBLIC_HDRS = [
     "include/grpcpp/server_posix.h",
     "include/grpcpp/server_posix_impl.h",
     "include/grpcpp/support/async_stream.h",
+    "include/grpcpp/support/async_stream_impl.h",
     "include/grpcpp/support/async_unary_call.h",
+    "include/grpcpp/support/async_unary_call_impl.h",
     "include/grpcpp/support/byte_buffer.h",
     "include/grpcpp/support/channel_arguments.h",
     "include/grpcpp/support/channel_arguments_impl.h",
     "include/grpcpp/support/client_callback.h",
+    "include/grpcpp/support/client_callback_impl.h",
     "include/grpcpp/support/client_interceptor.h",
     "include/grpcpp/support/config.h",
     "include/grpcpp/support/interceptor.h",
@@ -277,6 +282,7 @@ GRPCXX_PUBLIC_HDRS = [
     "include/grpcpp/support/proto_buffer_reader.h",
     "include/grpcpp/support/proto_buffer_writer.h",
     "include/grpcpp/support/server_callback.h",
+    "include/grpcpp/support/server_callback_impl.h",
     "include/grpcpp/support/server_interceptor.h",
     "include/grpcpp/support/slice.h",
     "include/grpcpp/support/status.h",
@@ -284,7 +290,9 @@ GRPCXX_PUBLIC_HDRS = [
     "include/grpcpp/support/string_ref.h",
     "include/grpcpp/support/stub_options.h",
     "include/grpcpp/support/sync_stream.h",
+    "include/grpcpp/support/sync_stream_impl.h",
     "include/grpcpp/support/time.h",
+    "include/grpcpp/support/validate_service_config.h",    
 ]
 
 grpc_cc_library(
@@ -421,92 +429,6 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
-    name = "grpc_plugin_support",
-    srcs = [
-        "src/compiler/cpp_generator.cc",
-        "src/compiler/csharp_generator.cc",
-        "src/compiler/node_generator.cc",
-        "src/compiler/objective_c_generator.cc",
-        "src/compiler/php_generator.cc",
-        "src/compiler/python_generator.cc",
-        "src/compiler/ruby_generator.cc",
-    ],
-    hdrs = [
-        "src/compiler/config.h",
-        "src/compiler/cpp_generator.h",
-        "src/compiler/cpp_generator_helpers.h",
-        "src/compiler/cpp_plugin.h",
-        "src/compiler/csharp_generator.h",
-        "src/compiler/csharp_generator_helpers.h",
-        "src/compiler/generator_helpers.h",
-        "src/compiler/node_generator.h",
-        "src/compiler/node_generator_helpers.h",
-        "src/compiler/objective_c_generator.h",
-        "src/compiler/objective_c_generator_helpers.h",
-        "src/compiler/php_generator.h",
-        "src/compiler/php_generator_helpers.h",
-        "src/compiler/protobuf_plugin.h",
-        "src/compiler/python_generator.h",
-        "src/compiler/python_generator_helpers.h",
-        "src/compiler/python_private_generator.h",
-        "src/compiler/ruby_generator.h",
-        "src/compiler/ruby_generator_helpers-inl.h",
-        "src/compiler/ruby_generator_map-inl.h",
-        "src/compiler/ruby_generator_string-inl.h",
-        "src/compiler/schema_interface.h",
-    ],
-    external_deps = [
-        "protobuf_clib",
-    ],
-    language = "c++",
-    deps = [
-        "grpc++_config_proto",
-    ],
-)
-
-grpc_proto_plugin(
-    name = "grpc_cpp_plugin",
-    srcs = ["src/compiler/cpp_plugin.cc"],
-    deps = [":grpc_plugin_support"],
-)
-
-grpc_proto_plugin(
-    name = "grpc_csharp_plugin",
-    srcs = ["src/compiler/csharp_plugin.cc"],
-    deps = [":grpc_plugin_support"],
-)
-
-grpc_proto_plugin(
-    name = "grpc_node_plugin",
-    srcs = ["src/compiler/node_plugin.cc"],
-    deps = [":grpc_plugin_support"],
-)
-
-grpc_proto_plugin(
-    name = "grpc_objective_c_plugin",
-    srcs = ["src/compiler/objective_c_plugin.cc"],
-    deps = [":grpc_plugin_support"],
-)
-
-grpc_proto_plugin(
-    name = "grpc_php_plugin",
-    srcs = ["src/compiler/php_plugin.cc"],
-    deps = [":grpc_plugin_support"],
-)
-
-grpc_proto_plugin(
-    name = "grpc_python_plugin",
-    srcs = ["src/compiler/python_plugin.cc"],
-    deps = [":grpc_plugin_support"],
-)
-
-grpc_proto_plugin(
-    name = "grpc_ruby_plugin",
-    srcs = ["src/compiler/ruby_plugin.cc"],
-    deps = [":grpc_plugin_support"],
-)
-
-grpc_cc_library(
     name = "grpc_csharp_ext",
     srcs = [
         "src/csharp/ext/grpc_csharp_ext.c",
@@ -555,7 +477,6 @@ grpc_cc_library(
         "src/core/lib/gpr/env_linux.cc",
         "src/core/lib/gpr/env_posix.cc",
         "src/core/lib/gpr/env_windows.cc",
-        "src/core/lib/gpr/host_port.cc",
         "src/core/lib/gpr/log.cc",
         "src/core/lib/gpr/log_android.cc",
         "src/core/lib/gpr/log_linux.cc",
@@ -582,6 +503,7 @@ grpc_cc_library(
         "src/core/lib/gprpp/arena.cc",
         "src/core/lib/gprpp/fork.cc",
         "src/core/lib/gprpp/global_config_env.cc",
+        "src/core/lib/gprpp/host_port.cc",
         "src/core/lib/gprpp/thd_posix.cc",
         "src/core/lib/gprpp/thd_windows.cc",
         "src/core/lib/profiling/basic_timers.cc",
@@ -591,7 +513,6 @@ grpc_cc_library(
         "src/core/lib/gpr/alloc.h",
         "src/core/lib/gpr/arena.h",
         "src/core/lib/gpr/env.h",
-        "src/core/lib/gpr/host_port.h",
         "src/core/lib/gpr/mpscq.h",
         "src/core/lib/gpr/murmur_hash.h",
         "src/core/lib/gpr/spinlock.h",
@@ -608,14 +529,16 @@ grpc_cc_library(
         "src/core/lib/gprpp/arena.h",
         "src/core/lib/gprpp/atomic.h",
         "src/core/lib/gprpp/fork.h",
+        "src/core/lib/gprpp/global_config.h",
         "src/core/lib/gprpp/global_config_custom.h",
         "src/core/lib/gprpp/global_config_env.h",
         "src/core/lib/gprpp/global_config_generic.h",
-        "src/core/lib/gprpp/global_config.h",
+        "src/core/lib/gprpp/host_port.h",
         "src/core/lib/gprpp/manual_constructor.h",
         "src/core/lib/gprpp/map.h",
         "src/core/lib/gprpp/memory.h",
         "src/core/lib/gprpp/pair.h",
+        "src/core/lib/gprpp/string_view.h",
         "src/core/lib/gprpp/sync.h",
         "src/core/lib/gprpp/thd.h",
         "src/core/lib/profiling/timers.h",
@@ -624,6 +547,7 @@ grpc_cc_library(
     public_hdrs = GPR_PUBLIC_HDRS,
     deps = [
         "gpr_codegen",
+        "grpc_codegen",
     ],
 )
 
@@ -779,6 +703,8 @@ grpc_cc_library(
         "src/core/lib/iomgr/ev_windows.cc",
         "src/core/lib/iomgr/exec_ctx.cc",
         "src/core/lib/iomgr/executor.cc",
+        "src/core/lib/iomgr/executor/mpmcqueue.cc",
+        "src/core/lib/iomgr/executor/threadpool.cc",
         "src/core/lib/iomgr/fork_posix.cc",
         "src/core/lib/iomgr/fork_windows.cc",
         "src/core/lib/iomgr/gethostname_fallback.cc",
@@ -936,6 +862,8 @@ grpc_cc_library(
         "src/core/lib/iomgr/ev_posix.h",
         "src/core/lib/iomgr/exec_ctx.h",
         "src/core/lib/iomgr/executor.h",
+        "src/core/lib/iomgr/executor/mpmcqueue.h",
+        "src/core/lib/iomgr/executor/threadpool.h",
         "src/core/lib/iomgr/gethostname.h",
         "src/core/lib/iomgr/gevent_util.h",
         "src/core/lib/iomgr/grpc_if_nametoindex.h",
@@ -1030,7 +958,7 @@ grpc_cc_library(
         "src/core/lib/uri/uri_parser.h",
     ],
     external_deps = [
-        "zlib",
+        "madler_zlib",
     ],
     language = "c++",
     public_hdrs = GRPC_PUBLIC_HDRS,
@@ -1140,6 +1068,7 @@ grpc_cc_library(
         "src/core/ext/filters/client_channel/server_address.h",
         "src/core/ext/filters/client_channel/service_config.h",
         "src/core/ext/filters/client_channel/subchannel.h",
+        "src/core/ext/filters/client_channel/subchannel_interface.h",
         "src/core/ext/filters/client_channel/subchannel_pool_interface.h",
     ],
     language = "c++",
@@ -1564,6 +1493,20 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "grpc_resolver_dns_selection",
+    srcs = [
+        "src/core/ext/filters/client_channel/resolver/dns/dns_resolver_selection.cc",
+    ],
+    hdrs = [
+        "src/core/ext/filters/client_channel/resolver/dns/dns_resolver_selection.h",
+    ],
+    language = "c++",
+    deps = [
+        "grpc_base",
+    ],
+)
+
+grpc_cc_library(
     name = "grpc_resolver_dns_native",
     srcs = [
         "src/core/ext/filters/client_channel/resolver/dns/native/dns_resolver.cc",
@@ -1572,6 +1515,7 @@ grpc_cc_library(
     deps = [
         "grpc_base",
         "grpc_client_channel",
+        "grpc_resolver_dns_selection",
     ],
 )
 
@@ -1601,6 +1545,7 @@ grpc_cc_library(
     deps = [
         "grpc_base",
         "grpc_client_channel",
+        "grpc_resolver_dns_selection",
     ],
 )
 
@@ -2134,7 +2079,9 @@ grpc_cc_library(
         "include/grpc++/impl/codegen/time.h",
         "include/grpcpp/impl/codegen/async_generic_service.h",
         "include/grpcpp/impl/codegen/async_stream.h",
+        "include/grpcpp/impl/codegen/async_stream_impl.h",
         "include/grpcpp/impl/codegen/async_unary_call.h",
+        "include/grpcpp/impl/codegen/async_unary_call_impl.h",
         "include/grpcpp/impl/codegen/byte_buffer.h",
         "include/grpcpp/impl/codegen/call.h",
         "include/grpcpp/impl/codegen/call_hook.h",
@@ -2143,10 +2090,13 @@ grpc_cc_library(
         "include/grpcpp/impl/codegen/callback_common.h",
         "include/grpcpp/impl/codegen/channel_interface.h",
         "include/grpcpp/impl/codegen/client_callback.h",
+        "include/grpcpp/impl/codegen/client_callback_impl.h",
         "include/grpcpp/impl/codegen/client_context.h",
+        "include/grpcpp/impl/codegen/client_context_impl.h",
         "include/grpcpp/impl/codegen/client_interceptor.h",
         "include/grpcpp/impl/codegen/client_unary_call.h",
         "include/grpcpp/impl/codegen/completion_queue.h",
+        "include/grpcpp/impl/codegen/completion_queue_impl.h",
         "include/grpcpp/impl/codegen/completion_queue_tag.h",
         "include/grpcpp/impl/codegen/config.h",
         "include/grpcpp/impl/codegen/core_codegen_interface.h",
@@ -2163,7 +2113,9 @@ grpc_cc_library(
         "include/grpcpp/impl/codegen/security/auth_context.h",
         "include/grpcpp/impl/codegen/serialization_traits.h",
         "include/grpcpp/impl/codegen/server_callback.h",
+        "include/grpcpp/impl/codegen/server_callback_impl.h",
         "include/grpcpp/impl/codegen/server_context.h",
+        "include/grpcpp/impl/codegen/server_context_impl.h",
         "include/grpcpp/impl/codegen/server_interceptor.h",
         "include/grpcpp/impl/codegen/server_interface.h",
         "include/grpcpp/impl/codegen/service_type.h",
@@ -2173,6 +2125,7 @@ grpc_cc_library(
         "include/grpcpp/impl/codegen/string_ref.h",
         "include/grpcpp/impl/codegen/stub_options.h",
         "include/grpcpp/impl/codegen/sync_stream.h",
+        "include/grpcpp/impl/codegen/sync_stream_impl.h",
         "include/grpcpp/impl/codegen/time.h",
     ],
     deps = [

@@ -801,6 +801,7 @@ doc/ssl-performance.md \
 doc/status_ordering.md \
 doc/statuscodes.md \
 doc/unit_testing.md \
+doc/versioning.md \
 doc/wait-for-ready.md \
 doc/workarounds.md \
 include/grpc/byte_buffer.h \
@@ -951,6 +952,8 @@ src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper_fallba
 src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper_libuv.cc \
 src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper_posix.cc \
 src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper_windows.cc \
+src/core/ext/filters/client_channel/resolver/dns/dns_resolver_selection.cc \
+src/core/ext/filters/client_channel/resolver/dns/dns_resolver_selection.h \
 src/core/ext/filters/client_channel/resolver/dns/native/README.md \
 src/core/ext/filters/client_channel/resolver/dns/native/dns_resolver.cc \
 src/core/ext/filters/client_channel/resolver/fake/fake_resolver.cc \
@@ -972,6 +975,7 @@ src/core/ext/filters/client_channel/service_config.cc \
 src/core/ext/filters/client_channel/service_config.h \
 src/core/ext/filters/client_channel/subchannel.cc \
 src/core/ext/filters/client_channel/subchannel.h \
+src/core/ext/filters/client_channel/subchannel_interface.h \
 src/core/ext/filters/client_channel/subchannel_pool_interface.cc \
 src/core/ext/filters/client_channel/subchannel_pool_interface.h \
 src/core/ext/filters/deadline/deadline_filter.cc \
@@ -1122,8 +1126,6 @@ src/core/lib/gpr/env.h \
 src/core/lib/gpr/env_linux.cc \
 src/core/lib/gpr/env_posix.cc \
 src/core/lib/gpr/env_windows.cc \
-src/core/lib/gpr/host_port.cc \
-src/core/lib/gpr/host_port.h \
 src/core/lib/gpr/log.cc \
 src/core/lib/gpr/log_android.cc \
 src/core/lib/gpr/log_linux.cc \
@@ -1172,6 +1174,8 @@ src/core/lib/gprpp/global_config_custom.h \
 src/core/lib/gprpp/global_config_env.cc \
 src/core/lib/gprpp/global_config_env.h \
 src/core/lib/gprpp/global_config_generic.h \
+src/core/lib/gprpp/host_port.cc \
+src/core/lib/gprpp/host_port.h \
 src/core/lib/gprpp/inlined_vector.h \
 src/core/lib/gprpp/manual_constructor.h \
 src/core/lib/gprpp/map.h \
@@ -1181,6 +1185,7 @@ src/core/lib/gprpp/orphanable.h \
 src/core/lib/gprpp/pair.h \
 src/core/lib/gprpp/ref_counted.h \
 src/core/lib/gprpp/ref_counted_ptr.h \
+src/core/lib/gprpp/string_view.h \
 src/core/lib/gprpp/sync.h \
 src/core/lib/gprpp/thd.h \
 src/core/lib/gprpp/thd_posix.cc \
@@ -1230,6 +1235,10 @@ src/core/lib/iomgr/exec_ctx.cc \
 src/core/lib/iomgr/exec_ctx.h \
 src/core/lib/iomgr/executor.cc \
 src/core/lib/iomgr/executor.h \
+src/core/lib/iomgr/executor/mpmcqueue.cc \
+src/core/lib/iomgr/executor/mpmcqueue.h \
+src/core/lib/iomgr/executor/threadpool.cc \
+src/core/lib/iomgr/executor/threadpool.h \
 src/core/lib/iomgr/fork_posix.cc \
 src/core/lib/iomgr/fork_windows.cc \
 src/core/lib/iomgr/gethostname.h \

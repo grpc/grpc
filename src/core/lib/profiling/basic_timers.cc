@@ -31,7 +31,8 @@
 #include <stdio.h>
 #include <string.h>
 
-#include "src/core/lib/gpr/env.h"
+#include "src/core/lib/gprpp/global_config.h"
+#include "src/core/lib/profiling/timers.h"
 
 typedef enum { BEGIN = '{', END = '}', MARK = '.' } marker_type;
 
@@ -74,11 +75,16 @@ static __thread int g_thread_id;
 static int g_next_thread_id;
 static int g_writing_enabled = 1;
 
+GPR_GLOBAL_CONFIG_DEFINE_STRING(grpc_latency_trace, "latency_trace.txt",
+                                "Output file name for latency trace")
+
 static const char* output_filename() {
   if (output_filename_or_null == NULL) {
-    output_filename_or_null = gpr_getenv("LATENCY_TRACE");
-    if (output_filename_or_null == NULL ||
-        strlen(output_filename_or_null) == 0) {
+    grpc_core::UniquePtr<char> value =
+        GPR_GLOBAL_CONFIG_GET(grpc_latency_trace);
+    if (strlen(value.get()) > 0) {
+      output_filename_or_null = value.release();
+    } else {
       output_filename_or_null = "latency_trace.txt";
     }
   }

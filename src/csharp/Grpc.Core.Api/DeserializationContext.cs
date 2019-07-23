@@ -48,13 +48,12 @@ namespace Grpc.Core
             throw new NotImplementedException();
         }
 
-#if GRPC_CSHARP_SUPPORT_SYSTEM_MEMORY
         /// <summary>
         /// Gets the entire payload as a ReadOnlySequence.
         /// The ReadOnlySequence is only valid for the duration of the deserializer routine and the caller must not access it after the deserializer returns.
         /// Using the read only sequence is the most efficient way to access the message payload. Where possible it allows directly
         /// accessing the received payload without needing to perform any buffer copying or buffer allocations.
-        /// NOTE: This method is only available in the netstandard2.0 build of the library.
+        /// NOTE: When using this method, it is recommended to use C# 7.2 compiler to make it more useful (using Span type directly from your code requires C# 7.2)."
         /// NOTE: Deserializers are expected not to call this method (or other payload accessor methods) more than once per received message
         /// (as there is no practical reason for doing so) and <c>DeserializationContext</c> implementations are free to assume so.
         /// </summary>
@@ -63,6 +62,5 @@ namespace Grpc.Core
         {
             throw new NotImplementedException();
         }
-#endif        
     }
 }

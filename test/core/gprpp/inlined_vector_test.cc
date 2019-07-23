@@ -109,6 +109,24 @@ TEST(InlinedVectorTest, ConstIndexOperator) {
   const_func(v);
 }
 
+TEST(InlinedVectorTest, EqualOperator) {
+  constexpr int kNumElements = 10;
+  // Both v1 and v2 are empty.
+  InlinedVector<int, 5> v1;
+  InlinedVector<int, 5> v2;
+  EXPECT_TRUE(v1 == v2);
+  // Both v1 and v2 contains the same data.
+  FillVector(&v1, kNumElements);
+  FillVector(&v2, kNumElements);
+  EXPECT_TRUE(v1 == v2);
+  // The sizes of v1 and v2 are different.
+  v1.push_back(0);
+  EXPECT_FALSE(v1 == v2);
+  // The contents of v1 and v2 are different although their sizes are the same.
+  v2.push_back(1);
+  EXPECT_FALSE(v1 == v2);
+}
+
 // the following constants and typedefs are used for copy/move
 // construction/assignment
 const size_t kInlinedLength = 8;

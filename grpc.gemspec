@@ -13,7 +13,7 @@ Gem::Specification.new do |s|
   s.description   = 'Send RPCs from Ruby using GRPC'
   s.license       = 'Apache-2.0'
 
-  s.required_ruby_version = '>= 2.0.0'
+  s.required_ruby_version = '>= 2.3.0'
 
   s.files = %w( Makefile .yardopts )
   s.files += %w( etc/roots.pem )
@@ -29,7 +29,7 @@ Gem::Specification.new do |s|
   s.require_paths = %w( src/ruby/lib src/ruby/bin src/ruby/pb )
   s.platform      = Gem::Platform::RUBY
 
-  s.add_dependency 'google-protobuf', '~> 3.7'
+  s.add_dependency 'google-protobuf', '~> 3.8'
   s.add_dependency 'googleapis-common-protos-types', '~> 1.0'
 
   s.add_development_dependency 'bundler',            '~> 1.9'
@@ -85,7 +85,6 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/lib/gpr/alloc.h )
   s.files += %w( src/core/lib/gpr/arena.h )
   s.files += %w( src/core/lib/gpr/env.h )
-  s.files += %w( src/core/lib/gpr/host_port.h )
   s.files += %w( src/core/lib/gpr/mpscq.h )
   s.files += %w( src/core/lib/gpr/murmur_hash.h )
   s.files += %w( src/core/lib/gpr/spinlock.h )
@@ -106,6 +105,7 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/lib/gprpp/global_config_custom.h )
   s.files += %w( src/core/lib/gprpp/global_config_env.h )
   s.files += %w( src/core/lib/gprpp/global_config_generic.h )
+  s.files += %w( src/core/lib/gprpp/host_port.h )
   s.files += %w( src/core/lib/gprpp/manual_constructor.h )
   s.files += %w( src/core/lib/gprpp/map.h )
   s.files += %w( src/core/lib/gprpp/memory.h )
@@ -122,7 +122,6 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/lib/gpr/env_linux.cc )
   s.files += %w( src/core/lib/gpr/env_posix.cc )
   s.files += %w( src/core/lib/gpr/env_windows.cc )
-  s.files += %w( src/core/lib/gpr/host_port.cc )
   s.files += %w( src/core/lib/gpr/log.cc )
   s.files += %w( src/core/lib/gpr/log_android.cc )
   s.files += %w( src/core/lib/gpr/log_linux.cc )
@@ -149,6 +148,7 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/lib/gprpp/arena.cc )
   s.files += %w( src/core/lib/gprpp/fork.cc )
   s.files += %w( src/core/lib/gprpp/global_config_env.cc )
+  s.files += %w( src/core/lib/gprpp/host_port.cc )
   s.files += %w( src/core/lib/gprpp/thd_posix.cc )
   s.files += %w( src/core/lib/gprpp/thd_windows.cc )
   s.files += %w( src/core/lib/profiling/basic_timers.cc )
@@ -305,6 +305,7 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/ext/filters/client_channel/server_address.h )
   s.files += %w( src/core/ext/filters/client_channel/service_config.h )
   s.files += %w( src/core/ext/filters/client_channel/subchannel.h )
+  s.files += %w( src/core/ext/filters/client_channel/subchannel_interface.h )
   s.files += %w( src/core/ext/filters/client_channel/subchannel_pool_interface.h )
   s.files += %w( src/core/ext/filters/deadline/deadline_filter.h )
   s.files += %w( src/core/ext/filters/client_channel/health/health.pb.h )
@@ -347,6 +348,7 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/lib/gprpp/orphanable.h )
   s.files += %w( src/core/lib/gprpp/ref_counted.h )
   s.files += %w( src/core/lib/gprpp/ref_counted_ptr.h )
+  s.files += %w( src/core/lib/gprpp/string_view.h )
   s.files += %w( src/core/lib/http/format_request.h )
   s.files += %w( src/core/lib/http/httpcli.h )
   s.files += %w( src/core/lib/http/parser.h )
@@ -369,6 +371,8 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/lib/iomgr/ev_posix.h )
   s.files += %w( src/core/lib/iomgr/exec_ctx.h )
   s.files += %w( src/core/lib/iomgr/executor.h )
+  s.files += %w( src/core/lib/iomgr/executor/mpmcqueue.h )
+  s.files += %w( src/core/lib/iomgr/executor/threadpool.h )
   s.files += %w( src/core/lib/iomgr/gethostname.h )
   s.files += %w( src/core/lib/iomgr/grpc_if_nametoindex.h )
   s.files += %w( src/core/lib/iomgr/internal_errqueue.h )
@@ -473,6 +477,7 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/ext/filters/client_channel/lb_policy/subchannel_list.h )
   s.files += %w( src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver.h )
   s.files += %w( src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper.h )
+  s.files += %w( src/core/ext/filters/client_channel/resolver/dns/dns_resolver_selection.h )
   s.files += %w( src/core/ext/filters/max_age/max_age_filter.h )
   s.files += %w( src/core/ext/filters/message_size/message_size_filter.h )
   s.files += %w( src/core/ext/filters/http/client_authority_filter.h )
@@ -521,6 +526,8 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/lib/iomgr/ev_windows.cc )
   s.files += %w( src/core/lib/iomgr/exec_ctx.cc )
   s.files += %w( src/core/lib/iomgr/executor.cc )
+  s.files += %w( src/core/lib/iomgr/executor/mpmcqueue.cc )
+  s.files += %w( src/core/lib/iomgr/executor/threadpool.cc )
   s.files += %w( src/core/lib/iomgr/fork_posix.cc )
   s.files += %w( src/core/lib/iomgr/fork_windows.cc )
   s.files += %w( src/core/lib/iomgr/gethostname_fallback.cc )
@@ -805,6 +812,7 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper_libuv.cc )
   s.files += %w( src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper_posix.cc )
   s.files += %w( src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper_windows.cc )
+  s.files += %w( src/core/ext/filters/client_channel/resolver/dns/dns_resolver_selection.cc )
   s.files += %w( src/core/ext/filters/client_channel/resolver/dns/native/dns_resolver.cc )
   s.files += %w( src/core/ext/filters/client_channel/resolver/sockaddr/sockaddr_resolver.cc )
   s.files += %w( src/core/ext/filters/census/grpc_context.cc )

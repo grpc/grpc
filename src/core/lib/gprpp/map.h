@@ -22,8 +22,11 @@
 #include <grpc/support/port_platform.h>
 
 #include <string.h>
+
+#include <algorithm>
 #include <functional>
 #include <iterator>
+
 #include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/gprpp/memory.h"
 #include "src/core/lib/gprpp/pair.h"
@@ -88,6 +91,13 @@ class Map {
 
   iterator end() { return iterator(this, nullptr); }
 
+  iterator lower_bound(const Key& k) {
+    key_compare compare;
+    return std::find_if(begin(), end(), [&k, &compare](const value_type& v) {
+      return !compare(v.first, k);
+    });
+  }
+
  private:
   friend class testing::MapTest;
   struct Entry {
@@ -112,7 +122,10 @@ class Map {
   // inserted entry and the second value being the new root of the subtree
   // after a rebalance
   Pair<iterator, Entry*> InsertRecursive(Entry* root, value_type&& p);
-  static Entry* RemoveRecursive(Entry* root, const key_type& k);
+  // Returns a pair with the first value being an iterator pointing to the
+  // successor of the deleted entry and the second value being the new root of
+  // the subtree after a rebalance
+  Pair<iterator, Entry*> RemoveRecursive(Entry* root, const key_type& k);
   // Return 0 if lhs = rhs
   //        1 if lhs > rhs
   //       -1 if lhs < rhs
@@ -233,10 +246,10 @@ typename Map<Key, T, Compare>::iterator Map<Key, T, Compare>::erase(
     iterator iter) {
   if (iter == end()) return iter;
   key_type& del_key = iter->first;
-  iter++;
-  root_ = RemoveRecursive(root_, del_key);
+  Pair<iterator, Entry*> ret = RemoveRecursive(root_, del_key);
+  root_ = ret.second;
   size_--;
-  return iter;
+  return ret.first;
 }
 
 template <class Key, class T, class Compare>
@@ -373,34 +386,38 @@ Map<Key, T, Compare>::RebalanceTreeAfterDeletion(Entry* root) {
 }
 
 template <class Key, class T, class Compare>
-typename Map<Key, T, Compare>::Entry* Map<Key, T, Compare>::RemoveRecursive(
-    Entry* root, const key_type& k) {
-  if (root == nullptr) return root;
+typename ::grpc_core::Pair<typename Map<Key, T, Compare>::iterator,
+                           typename Map<Key, T, Compare>::Entry*>
+Map<Key, T, Compare>::RemoveRecursive(Entry* root, const key_type& k) {
+  Pair<iterator, Entry*> ret = MakePair(end(), root);
+  if (root == nullptr) return ret;
   int comp = CompareKeys(root->pair.first, k);
   if (comp > 0) {
-    root->left = RemoveRecursive(root->left, k);
+    ret = RemoveRecursive(root->left, k);
+    root->left = ret.second;
   } else if (comp < 0) {
-    root->right = RemoveRecursive(root->right, k);
+    ret = RemoveRecursive(root->right, k);
+    root->right = ret.second;
   } else {
-    Entry* ret;
+    Entry* entry;
+    Entry* successor = InOrderSuccessor(root);
     if (root->left == nullptr) {
-      ret = root->right;
+      entry = root->right;
       Delete(root);
-      return ret;
+      return MakePair(iterator(this, successor), entry);
     } else if (root->right == nullptr) {
-      ret = root->left;
+      entry = root->left;
       Delete(root);
-      return ret;
+      return MakePair(iterator(this, successor), entry);
     } else {
-      ret = root->right;
-      while (ret->left != nullptr) {
-        ret = ret->left;
-      }
-      root->pair.swap(ret->pair);
-      root->right = RemoveRecursive(root->right, ret->pair.first);
+      entry = successor;
+      root->pair.swap(entry->pair);
+      ret = RemoveRecursive(root->right, entry->pair.first);
+      root->right = ret.second;
+      ret.first = iterator(this, root);
     }
   }
-  return RebalanceTreeAfterDeletion(root);
+  return MakePair(ret.first, RebalanceTreeAfterDeletion(root));
 }
 
 template <class Key, class T, class Compare>

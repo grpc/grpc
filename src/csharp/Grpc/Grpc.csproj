@@ -21,6 +21,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="../Grpc.Core/Grpc.Core.csproj" />
+    <!-- PrivateAssets set to None to ensure the build targets/props are propagated to parent project -->
+    <ProjectReference Include="../Grpc.Core/Grpc.Core.csproj" PrivateAssets="None" />
   </ItemGroup>
 </Project>

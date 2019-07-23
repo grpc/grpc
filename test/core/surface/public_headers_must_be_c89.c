@@ -161,6 +161,7 @@ int main(int argc, char **argv) {
   printf("%lx", (unsigned long) grpc_google_default_credentials_create);
   printf("%lx", (unsigned long) grpc_set_ssl_roots_override_callback);
   printf("%lx", (unsigned long) grpc_ssl_credentials_create);
+  printf("%lx", (unsigned long) grpc_ssl_credentials_create_ex);
   printf("%lx", (unsigned long) grpc_call_credentials_release);
   printf("%lx", (unsigned long) grpc_composite_channel_credentials_create);
   printf("%lx", (unsigned long) grpc_composite_call_credentials_create);
@@ -170,6 +171,7 @@ int main(int argc, char **argv) {
   printf("%lx", (unsigned long) grpc_google_refresh_token_credentials_create);
   printf("%lx", (unsigned long) grpc_access_token_credentials_create);
   printf("%lx", (unsigned long) grpc_google_iam_credentials_create);
+  printf("%lx", (unsigned long) grpc_sts_credentials_create);
   printf("%lx", (unsigned long) grpc_metadata_credentials_create_from_plugin);
   printf("%lx", (unsigned long) grpc_secure_channel_create);
   printf("%lx", (unsigned long) grpc_server_credentials_release);

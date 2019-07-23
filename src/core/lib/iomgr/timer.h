@@ -29,7 +29,8 @@
 
 typedef struct grpc_timer {
   grpc_millis deadline;
-  uint32_t heap_index; /* INVALID_HEAP_INDEX if not in heap */
+  // Uninitialized if not using heap, or INVALID_HEAP_INDEX if not in heap.
+  uint32_t heap_index;
   bool pending;
   struct grpc_timer* next;
   struct grpc_timer* prev;

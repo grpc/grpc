@@ -368,11 +368,16 @@ class XdsEnd2endTest : public ::testing::Test {
         num_backends_(num_backends),
         num_balancers_(num_balancers),
         client_load_reporting_interval_seconds_(
-            client_load_reporting_interval_seconds) {
+            client_load_reporting_interval_seconds) {}
+
+  static void SetUpTestCase() {
     // Make the backup poller poll very frequently in order to pick up
     // updates from all the subchannels's FDs.
     GPR_GLOBAL_CONFIG_SET(grpc_client_channel_backup_poll_interval_ms, 1);
+    grpc_init();
   }
+
+  static void TearDownTestCase() { grpc_shutdown(); }
 
   void SetUp() override {
     response_generator_ =
@@ -792,7 +797,7 @@ TEST_F(SingleBalancerTest, SecureNamingDeathTest) {
   ::testing::FLAGS_gtest_death_test_style = "threadsafe";
   // Make sure that we blow up (via abort() from the security connector) when
   // the name from the balancer doesn't match expectations.
-  ASSERT_DEATH(
+  ASSERT_DEATH_IF_SUPPORTED(
       {
         ResetStub(0, kApplicationTargetName_ + ";lb");
         SetNextResolution({},
@@ -1013,6 +1018,22 @@ TEST_F(SingleBalancerTest, FallbackEarlyWhenBalancerCallFails) {
   // succeeds.
   CheckRpcSendOk(/* times */ 1, /* timeout_ms */ 1000,
                  /* wait_for_ready */ false);
+}
+
+TEST_F(SingleBalancerTest, FallbackIfResponseReceivedButChildNotReady) {
+  const int kFallbackTimeoutMs = 500 * grpc_test_slowdown_factor();
+  ResetStub(kFallbackTimeoutMs);
+  SetNextResolution({backends_[0]->port_}, kDefaultServiceConfig_.c_str());
+  SetNextResolutionForLbChannelAllBalancers();
+  // Send a serverlist that only contains an unreachable backend before fallback
+  // timeout.
+  ScheduleResponseForBalancer(0,
+                              BalancerServiceImpl::BuildResponseForBackends(
+                                  {grpc_pick_unused_port_or_die()}, {}),
+                              0);
+  // Because no child policy is ready before fallback timeout, we enter fallback
+  // mode.
+  WaitForBackend(0);
 }
 
 TEST_F(SingleBalancerTest, FallbackModeIsExitedWhenBalancerSaysToDropAllCalls) {
@@ -1389,10 +1410,8 @@ class SingleBalancerWithClientLoadReportingTest : public XdsEnd2endTest {
 }  // namespace grpc
 
 int main(int argc, char** argv) {
-  grpc_init();
   grpc::testing::TestEnvironment env(argc, argv);
   ::testing::InitGoogleTest(&argc, argv);
   const auto result = RUN_ALL_TESTS();
-  grpc_shutdown();
   return result;
 }

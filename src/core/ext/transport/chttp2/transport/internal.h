@@ -499,7 +499,7 @@ typedef enum {
   GRPC_METADATA_NOT_PUBLISHED,
   GRPC_METADATA_SYNTHESIZED_FROM_FAKE,
   GRPC_METADATA_PUBLISHED_FROM_WIRE,
-  GPRC_METADATA_PUBLISHED_AT_CLOSE
+  GRPC_METADATA_PUBLISHED_AT_CLOSE
 } grpc_published_metadata_method;
 
 struct grpc_chttp2_stream {
@@ -752,6 +752,7 @@ grpc_chttp2_stream* grpc_chttp2_parsing_accept_stream(grpc_chttp2_transport* t,
 
 void grpc_chttp2_add_incoming_goaway(grpc_chttp2_transport* t,
                                      uint32_t goaway_error,
+                                     uint32_t last_stream_id,
                                      const grpc_slice& goaway_text);
 
 void grpc_chttp2_parsing_become_skip_parser(grpc_chttp2_transport* t);

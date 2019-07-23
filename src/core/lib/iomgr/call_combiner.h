@@ -43,7 +43,7 @@
 
 namespace grpc_core {
 
-extern TraceFlag grpc_call_combiner_trace;
+extern DebugOnlyTraceFlag grpc_call_combiner_trace;
 
 class CallCombiner {
  public:

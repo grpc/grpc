@@ -23,6 +23,7 @@
 
 #include "src/core/ext/filters/client_channel/client_channel_channelz.h"
 #include "src/core/ext/filters/client_channel/connector.h"
+#include "src/core/ext/filters/client_channel/subchannel_interface.h"
 #include "src/core/ext/filters/client_channel/subchannel_pool_interface.h"
 #include "src/core/lib/backoff/backoff.h"
 #include "src/core/lib/channel/channel_stack.h"
@@ -69,38 +70,23 @@ namespace grpc_core {
 
 class SubchannelCall;
 
-class ConnectedSubchannel : public RefCounted<ConnectedSubchannel> {
+class ConnectedSubchannel : public ConnectedSubchannelInterface {
  public:
-  struct CallArgs {
-    grpc_polling_entity* pollent;
-    grpc_slice path;
-    gpr_timespec start_time;
-    grpc_millis deadline;
-    Arena* arena;
-    grpc_call_context_element* context;
-    CallCombiner* call_combiner;
-    size_t parent_data_size;
-  };
-
   ConnectedSubchannel(
       grpc_channel_stack* channel_stack, const grpc_channel_args* args,
-      RefCountedPtr<channelz::SubchannelNode> channelz_subchannel,
-      intptr_t socket_uuid);
+      RefCountedPtr<channelz::SubchannelNode> channelz_subchannel);
   ~ConnectedSubchannel();
 
   void NotifyOnStateChange(grpc_pollset_set* interested_parties,
                            grpc_connectivity_state* state,
                            grpc_closure* closure);
   void Ping(grpc_closure* on_initiate, grpc_closure* on_ack);
-  RefCountedPtr<SubchannelCall> CreateCall(const CallArgs& args,
-                                           grpc_error** error);
 
   grpc_channel_stack* channel_stack() const { return channel_stack_; }
-  const grpc_channel_args* args() const { return args_; }
+  const grpc_channel_args* args() const override { return args_; }
   channelz::SubchannelNode* channelz_subchannel() const {
     return channelz_subchannel_.get();
   }
-  intptr_t socket_uuid() const { return socket_uuid_; }
 
   size_t GetInitialCallSizeEstimate(size_t parent_data_size) const;
 
@@ -110,17 +96,23 @@ class ConnectedSubchannel : public RefCounted<ConnectedSubchannel> {
   // ref counted pointer to the channelz node in this connected subchannel's
   // owning subchannel.
   RefCountedPtr<channelz::SubchannelNode> channelz_subchannel_;
-  // uuid of this subchannel's socket. 0 if this subchannel is not connected.
-  const intptr_t socket_uuid_;
 };
 
 // Implements the interface of RefCounted<>.
 class SubchannelCall {
  public:
-  SubchannelCall(RefCountedPtr<ConnectedSubchannel> connected_subchannel,
-                 const ConnectedSubchannel::CallArgs& args)
-      : connected_subchannel_(std::move(connected_subchannel)),
-        deadline_(args.deadline) {}
+  struct Args {
+    RefCountedPtr<ConnectedSubchannel> connected_subchannel;
+    grpc_polling_entity* pollent;
+    grpc_slice path;
+    gpr_timespec start_time;
+    grpc_millis deadline;
+    Arena* arena;
+    grpc_call_context_element* context;
+    CallCombiner* call_combiner;
+    size_t parent_data_size;
+  };
+  static RefCountedPtr<SubchannelCall> Create(Args args, grpc_error** error);
 
   // Continues processing a transport stream op batch.
   void StartTransportStreamOpBatch(grpc_transport_stream_op_batch* batch);
@@ -153,6 +145,8 @@ class SubchannelCall {
   template <typename T>
   friend class RefCountedPtr;
 
+  SubchannelCall(Args args, grpc_error** error);
+
   // If channelz is enabled, intercepts recv_trailing so that we may check the
   // status and associate it to a subchannel.
   void MaybeInterceptRecvTrailingMetadata(
@@ -176,37 +170,9 @@ class SubchannelCall {
 // A subchannel that knows how to connect to exactly one target address. It
 // provides a target for load balancing.
 class Subchannel {
- private:
-  class ConnectivityStateWatcherList;  // Forward declaration.
-
  public:
-  class ConnectivityStateWatcher {
-   public:
-    virtual ~ConnectivityStateWatcher() = default;
-
-    // Will be invoked whenever the subchannel's connectivity state
-    // changes.  There will be only one invocation of this method on a
-    // given watcher instance at any given time.
-    //
-    // When the state changes to READY, connected_subchannel will
-    // contain a ref to the connected subchannel.  When it changes from
-    // READY to some other state, the implementation must release its
-    // ref to the connected subchannel.
-    virtual void OnConnectivityStateChange(
-        grpc_connectivity_state new_state,
-        RefCountedPtr<ConnectedSubchannel> connected_subchannel)  // NOLINT
-        GRPC_ABSTRACT;
-
-    virtual grpc_pollset_set* interested_parties() GRPC_ABSTRACT;
-
-    GRPC_ABSTRACT_BASE_CLASS
-
-   private:
-    // For access to next_.
-    friend class Subchannel::ConnectivityStateWatcherList;
-
-    ConnectivityStateWatcher* next_ = nullptr;
-  };
+  typedef SubchannelInterface::ConnectivityStateWatcher
+      ConnectivityStateWatcher;
 
   // The ctor and dtor are not intended to use directly.
   Subchannel(SubchannelKey* key, grpc_connector* connector,
@@ -226,8 +192,6 @@ class Subchannel {
   // non-zero. If the strong refcount is zero, does not alter the refcount and
   // returns null.
   Subchannel* RefFromWeakRef(GRPC_SUBCHANNEL_REF_EXTRA_ARGS);
-
-  intptr_t GetChildSocketUuid();
 
   // Gets the string representing the subchannel address.
   // Caller doesn't take ownership.
@@ -296,12 +260,15 @@ class Subchannel {
     // Notifies all watchers in the list about a change to state.
     void NotifyLocked(Subchannel* subchannel, grpc_connectivity_state state);
 
-    void Clear();
+    void Clear() { watchers_.clear(); }
 
-    bool empty() const { return head_ == nullptr; }
+    bool empty() const { return watchers_.empty(); }
 
    private:
-    ConnectivityStateWatcher* head_ = nullptr;
+    // TODO(roth): This could be a set instead of a map if we had a set
+    // implementation.
+    Map<ConnectivityStateWatcher*, UniquePtr<ConnectivityStateWatcher>>
+        watchers_;
   };
 
   // A map that tracks ConnectivityStateWatchers using a particular health

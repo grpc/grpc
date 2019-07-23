@@ -31,9 +31,11 @@
 #include <grpcpp/impl/codegen/rpc_method.h>
 #include <grpcpp/impl/codegen/status.h>
 
-namespace grpc {
+namespace grpc_impl {
 class ServerContext;
+}
 
+namespace grpc {
 namespace internal {
 /// Base class for running an RPC handler.
 class MethodHandler {
@@ -50,7 +52,7 @@ class MethodHandler {
     /// \param requester : used only by the callback API. It is a function
     ///        called by the RPC Controller to request another RPC (and also
     ///        to set up the state required to make that request possible)
-    HandlerParameter(Call* c, ServerContext* context, void* req,
+    HandlerParameter(Call* c, ::grpc_impl::ServerContext* context, void* req,
                      Status req_status, void* handler_data,
                      std::function<void()> requester)
         : call(c),
@@ -61,7 +63,7 @@ class MethodHandler {
           call_requester(std::move(requester)) {}
     ~HandlerParameter() {}
     Call* call;
-    ServerContext* server_context;
+    ::grpc_impl::ServerContext* server_context;
     void* request;
     Status status;
     void* internal_data;

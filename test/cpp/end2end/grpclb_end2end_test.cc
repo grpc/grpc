@@ -372,11 +372,16 @@ class GrpclbEnd2endTest : public ::testing::Test {
         num_backends_(num_backends),
         num_balancers_(num_balancers),
         client_load_reporting_interval_seconds_(
-            client_load_reporting_interval_seconds) {
+            client_load_reporting_interval_seconds) {}
+
+  static void SetUpTestCase() {
     // Make the backup poller poll very frequently in order to pick up
     // updates from all the subchannels's FDs.
     GPR_GLOBAL_CONFIG_SET(grpc_client_channel_backup_poll_interval_ms, 1);
+    grpc_init();
   }
+
+  static void TearDownTestCase() { grpc_shutdown(); }
 
   void SetUp() override {
     response_generator_ =
@@ -1007,7 +1012,7 @@ TEST_F(SingleBalancerTest, SecureNamingDeathTest) {
   ::testing::FLAGS_gtest_death_test_style = "threadsafe";
   // Make sure that we blow up (via abort() from the security connector) when
   // the name from the balancer doesn't match expectations.
-  ASSERT_DEATH(
+  ASSERT_DEATH_IF_SUPPORTED(
       {
         ResetStub(0, kApplicationTargetName_ + ";lb");
         SetNextResolution({AddressData{balancers_[0]->port_, true, "woops"}});
@@ -1613,6 +1618,8 @@ TEST_F(UpdatesTest, ReresolveDeadBackend) {
   addresses.emplace_back(AddressData{balancers_[0]->port_, true, ""});
   addresses.emplace_back(AddressData{backends_[0]->port_, false, ""});
   SetNextResolution(addresses);
+  // Ask channel to connect to trigger resolver creation.
+  channel_->GetState(true);
   // The re-resolution result will contain the addresses of the same balancer
   // and a new fallback backend.
   addresses.clear();
@@ -1664,6 +1671,8 @@ class UpdatesWithClientLoadReportingTest : public GrpclbEnd2endTest {
 };
 
 TEST_F(UpdatesWithClientLoadReportingTest, ReresolveDeadBalancer) {
+  // Ask channel to connect to trigger resolver creation.
+  channel_->GetState(true);
   std::vector<AddressData> addresses;
   addresses.emplace_back(AddressData{balancers_[0]->port_, true, ""});
   SetNextResolution(addresses);
@@ -1994,10 +2003,8 @@ TEST_F(SingleBalancerWithClientLoadReportingTest, Drop) {
 }  // namespace grpc
 
 int main(int argc, char** argv) {
-  grpc_init();
   grpc::testing::TestEnvironment env(argc, argv);
   ::testing::InitGoogleTest(&argc, argv);
   const auto result = RUN_ALL_TESTS();
-  grpc_shutdown();
   return result;
 }

@@ -107,7 +107,7 @@ GPRAPI grpc_slice grpc_slice_sub_no_ref(grpc_slice s, size_t begin, size_t end);
 
 /** Splits s into two: modifies s to be s[0:split], and returns a new slice,
    sharing a refcount with s, that contains s[split:s.length].
-   Requires s intialized, split <= s.length */
+   Requires s initialized, split <= s.length */
 GPRAPI grpc_slice grpc_slice_split_tail(grpc_slice* s, size_t split);
 
 typedef enum {
@@ -124,7 +124,7 @@ GPRAPI grpc_slice grpc_slice_split_tail_maybe_ref(grpc_slice* s, size_t split,
 
 /** Splits s into two: modifies s to be s[split:s.length], and returns a new
    slice, sharing a refcount with s, that contains s[0:split].
-   Requires s intialized, split <= s.length */
+   Requires s initialized, split <= s.length */
 GPRAPI grpc_slice grpc_slice_split_head(grpc_slice* s, size_t split);
 
 GPRAPI grpc_slice grpc_empty_slice(void);
