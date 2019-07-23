@@ -267,6 +267,7 @@ grpc_channel* grpc_channel_create(const char* target,
     if (resource_user != nullptr) {
       grpc_resource_user_free(resource_user, GRPC_RESOURCE_QUOTA_CHANNEL_SIZE);
     }
+    grpc_shutdown();  // Since we won't call destroy_channel().
     return nullptr;
   }
   // We only need to do this for clients here. For servers, this will be
@@ -274,7 +275,12 @@ grpc_channel* grpc_channel_create(const char* target,
   if (grpc_channel_stack_type_is_client(channel_stack_type)) {
     CreateChannelzNode(builder);
   }
-  return grpc_channel_create_with_builder(builder, channel_stack_type);
+  grpc_channel* channel =
+      grpc_channel_create_with_builder(builder, channel_stack_type);
+  if (channel == nullptr) {
+    grpc_shutdown();  // Since we won't call destroy_channel().
+  }
+  return channel;
 }
 
 size_t grpc_channel_get_call_size_estimate(grpc_channel* channel) {
