@@ -121,7 +121,8 @@ void ChannelData::StartTransportOp(grpc_channel_element* elem,
   // Catch the disconnect_with_error transport op.
   if (op->disconnect_with_error != nullptr) {
     // Disconnect.
-    // IncreaseCallCount() introduces a dummy call. It will prevent the timer from being reset by other threads.
+    // IncreaseCallCount() introduces a dummy call. It will prevent the timer
+    // from being reset by other threads.
     chand->IncreaseCallCount();
     // Cancel the timer if we set it before.
     MutexLock lock(&chand->mu_);
@@ -139,7 +140,8 @@ void ChannelData::IncreaseCallCount() {
     MutexLock lock(&mu_);
     pending_inc_count_++;
   }
-  GRPC_IDLE_FILTER_LOG("call counter has increased to %" PRIuPTR, previous_value + 1);
+  GRPC_IDLE_FILTER_LOG("call counter has increased to %" PRIuPTR,
+                       previous_value + 1);
 }
 
 void ChannelData::DecreaseCallCount() {
@@ -153,7 +155,8 @@ void ChannelData::DecreaseCallCount() {
       }
     }
   }
-  GRPC_IDLE_FILTER_LOG("call counter has decreased to %" PRIuPTR, previous_value - 1);
+  GRPC_IDLE_FILTER_LOG("call counter has decreased to %" PRIuPTR,
+                       previous_value - 1);
 }
 
 ChannelData::ChannelData(grpc_channel_element* elem,
@@ -185,10 +188,10 @@ void ChannelData::IdleTimerCallback(void* arg, grpc_error* error) {
     MutexLock lock(&chand->mu_);
     chand->timer_on_ = false;
     if (error == GRPC_ERROR_NONE && chand->pending_inc_count_ == 0) {
-      if (ExecCtx::Get()->Now() >= chand->last_idle_time_ + chand->client_idle_timeout_) {
+      if (ExecCtx::Get()->Now() >=
+          chand->last_idle_time_ + chand->client_idle_timeout_) {
         chand->EnterIdle();
-      }
-      else {
+      } else {
         chand->StartIdleTimerLocked();
       }
     }
