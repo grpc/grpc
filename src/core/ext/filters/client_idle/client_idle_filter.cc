@@ -226,8 +226,10 @@ void ChannelData::IdleTimerCallback(void* arg, grpc_error* error) {
   GRPC_IDLE_FILTER_LOG("timer alarms");
   ChannelData* chand = static_cast<ChannelData*>(arg);
   chand->timer_on_ = false;
-  if (error == GRPC_ERROR_NONE && !chand->shutdown_ && chand->inc_closure_cnt_ == 0) {
-    if (ExecCtx::Get()->Now() >= chand->last_idle_time_ + chand->client_idle_timeout_) {
+  if (error == GRPC_ERROR_NONE && !chand->shutdown_ &&
+      chand->inc_closure_cnt_ == 0) {
+    if (ExecCtx::Get()->Now() >=
+        chand->last_idle_time_ + chand->client_idle_timeout_) {
       chand->EnterIdle();
     } else {
       chand->StartIdleTimer();
@@ -247,8 +249,9 @@ void ChannelData::StartIdleTimer() {
   GRPC_IDLE_FILTER_LOG("timer has started");
   // Hold a ref to the channel stack for the timer callback.
   GRPC_CHANNEL_STACK_REF(channel_stack_, "max idle timer callback");
-  grpc_timer_init(&idle_timer_, ExecCtx::Get()->Now() + client_idle_timeout_,
+  grpc_timer_init(&idle_timer_, last_idle_time_ + client_idle_timeout_,
                   &idle_timer_callback_);
+  timer_on_ = true;
 }
 
 void ChannelData::EnterIdle() {
