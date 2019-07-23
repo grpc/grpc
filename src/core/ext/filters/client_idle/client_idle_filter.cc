@@ -27,10 +27,12 @@
 #include "src/core/lib/surface/channel_init.h"
 #include "src/core/lib/transport/http2_errors.h"
 
-// The idle filter is enabled in client channel by default.
-// To disable the idle filte, set GRPC_ARG_CLIENT_IDLE_TIMEOUT_MS to INT_MAX in
-// channel args.
-#define DEFAULT_IDLE_TIMEOUT_MS (5 /*minutes*/ * 60 * 1000)
+// The idle filter is disabled in client channel by default.
+// To enable the idle filte, set GRPC_ARG_CLIENT_IDLE_TIMEOUT_MS to [0, INT_MAX)
+// in channel args.
+// TODO(qianchengz): Find a reasonable default value. Maybe check what deault
+// value Java uses.
+#define DEFAULT_IDLE_TIMEOUT_MS INT_MAX
 
 namespace grpc_core {
 
