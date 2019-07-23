@@ -153,6 +153,10 @@ class ChannelNode : public BaseNode {
   ChannelNode(UniquePtr<char> target, size_t channel_tracer_max_nodes,
               intptr_t parent_uuid);
 
+  // Returns the string description of the given connectivity state.
+  static const char* GetChannelConnectivityStateChangeString(
+      grpc_connectivity_state state);
+
   intptr_t parent_uuid() const { return parent_uuid_; }
 
   grpc_json* RenderJson() override;
