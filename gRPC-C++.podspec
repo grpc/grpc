@@ -205,7 +205,9 @@ Pod::Spec.new do |s|
                       'include/grpcpp/impl/codegen/sync_stream.h',
                       'include/grpcpp/impl/codegen/sync_stream_impl.h',
                       'include/grpcpp/impl/codegen/time.h',
-                      'include/grpcpp/impl/codegen/sync.h'
+                      'include/grpcpp/impl/codegen/sync.h',
+                      'include/grpcpp/security/cronet_credentials.h',
+                      'include/grpcpp/security/cronet_credentials_impl.h'
   end
 
   s.subspec 'Implementation' do |ss|
@@ -269,6 +271,7 @@ Pod::Spec.new do |s|
                       'src/cpp/util/string_ref.cc',
                       'src/cpp/util/time_cc.cc',
                       'src/cpp/codegen/codegen_init.cc',
+                      'src/cpp/client/cronet_credentials.cc',
                       'src/core/lib/gpr/alloc.h',
                       'src/core/lib/gpr/arena.h',
                       'src/core/lib/gpr/env.h',

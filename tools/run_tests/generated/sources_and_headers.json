@@ -6723,6 +6723,7 @@
     "language": "c", 
     "name": "grpc_cronet", 
     "src": [
+      "src/core/ext/transport/cronet/plugin_registry/grpc_cronet_plugin_registry.cc", 
       "src/core/lib/surface/init.cc"
     ], 
     "third_party": false, 
@@ -6936,31 +6937,6 @@
     "src": [
       "src/cpp/util/core_stats.cc", 
       "src/cpp/util/core_stats.h"
-    ], 
-    "third_party": false, 
-    "type": "lib"
-  }, 
-  {
-    "deps": [
-      "census", 
-      "gpr", 
-      "grpc", 
-      "grpc++_base", 
-      "grpc++_codegen_base", 
-      "grpc++_codegen_base_src", 
-      "grpc_cronet", 
-      "grpc_transport_chttp2_client_insecure", 
-      "grpc_transport_chttp2_server_insecure"
-    ], 
-    "headers": [], 
-    "is_filegroup": false, 
-    "language": "c++", 
-    "name": "grpc++_cronet", 
-    "src": [
-      "src/cpp/client/cronet_credentials.cc", 
-      "src/cpp/client/insecure_credentials.cc", 
-      "src/cpp/common/insecure_create_auth_context.cc", 
-      "src/cpp/server/insecure_server_credentials.cc"
     ], 
     "third_party": false, 
     "type": "lib"
@@ -10041,6 +10017,7 @@
       "include/grpc/grpc_cronet.h", 
       "include/grpc/grpc_security.h", 
       "include/grpc/grpc_security_constants.h", 
+      "src/core/ext/transport/cronet/client/secure/cronet_channel_create.h", 
       "src/core/ext/transport/cronet/transport/cronet_transport.h", 
       "third_party/objective_c/Cronet/bidirectional_stream_c.h"
     ], 
@@ -10052,6 +10029,7 @@
       "include/grpc/grpc_security.h", 
       "include/grpc/grpc_security_constants.h", 
       "src/core/ext/transport/cronet/client/secure/cronet_channel_create.cc", 
+      "src/core/ext/transport/cronet/client/secure/cronet_channel_create.h", 
       "src/core/ext/transport/cronet/transport/cronet_api_dummy.cc", 
       "src/core/ext/transport/cronet/transport/cronet_transport.cc", 
       "src/core/ext/transport/cronet/transport/cronet_transport.h"
