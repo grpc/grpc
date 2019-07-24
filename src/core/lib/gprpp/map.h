@@ -55,6 +55,22 @@ class Map {
   typedef Compare key_compare;
   class iterator;
 
+ // Movable.
+  Map(Map&& other) : root_(other.root_), size_(other.size_) {
+    other.root_ = nullptr;
+    other.size_ = 0;
+  }
+  Map& operator=(Map&& other) {
+    if (this != &other) {
+      clear();
+      root_ = other.root_;
+      size_ = other.size_;
+      other.root_ = nullptr;
+      other.size_ = 0;
+    }
+    return *this;
+  }
+
   ~Map() { clear(); }
 
   T& operator[](key_type&& key);
