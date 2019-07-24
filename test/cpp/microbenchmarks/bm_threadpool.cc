@@ -40,7 +40,7 @@ class BlockingCounter {
   void DecrementCount() {
     std::lock_guard<std::mutex> l(mu_);
     count_--;
-    if (count_ == 0) cv_.notify_one();
+    if (count_ == 0) cv_.notify_all();
   }
 
   void Wait() {
@@ -70,7 +70,6 @@ class AddAnotherFunctor : public grpc_experimental_completion_queue_functor {
     internal_next = this;
     internal_success = 0;
   }
-  ~AddAnotherFunctor() {}
   // When the functor gets to run in thread pool, it will take itself as first
   // argument and internal_success as second one.
   static void Run(grpc_experimental_completion_queue_functor* cb, int ok) {
@@ -163,7 +162,7 @@ class SuicideFunctorForAdd : public grpc_experimental_completion_queue_functor {
     internal_next = this;
     internal_success = 0;
   }
-  ~SuicideFunctorForAdd() {}
+
   static void Run(grpc_experimental_completion_queue_functor* cb, int ok) {
     // On running, the first argument would be itself.
     auto* callback = static_cast<SuicideFunctorForAdd*>(cb);
@@ -215,10 +214,8 @@ class AddSelfFunctor : public grpc_experimental_completion_queue_functor {
     internal_next = this;
     internal_success = 0;
   }
-  ~AddSelfFunctor() {}
-  // When the functor gets to run in thread pool, it will take internal_next
-  // as first argument and internal_success as second one. Therefore, the
-  // first argument here would be the closure itself.
+  // When the functor gets to run in thread pool, it will take itself as first
+  // argument and internal_success as second one.
   static void Run(grpc_experimental_completion_queue_functor* cb, int ok) {
     auto* callback = static_cast<AddSelfFunctor*>(cb);
     if (--callback->num_add_ > 0) {
@@ -331,7 +328,6 @@ class ShortWorkFunctorForAdd
     internal_success = 0;
     val_ = 0;
   }
-  ~ShortWorkFunctorForAdd() {}
   static void Run(grpc_experimental_completion_queue_functor* cb, int ok) {
     auto* callback = static_cast<ShortWorkFunctorForAdd*>(cb);
     // Uses pad to avoid compiler complaining unused variable error.
