@@ -504,8 +504,6 @@ class XdsLb : public LoadBalancingPolicy {
       uint32_t locality_weight_;
     };
 
-    explicit LocalityMap(XdsLb* parent) : parent_(parent) {}
-
     void UpdateLocked(const XdsLocalityList& locality_list,
                       LoadBalancingPolicy::Config* child_policy_config,
                       const grpc_channel_args* args, XdsLb* parent);
@@ -518,7 +516,6 @@ class XdsLb : public LoadBalancingPolicy {
     Map<RefCountedPtr<XdsLocalityName>, OrphanablePtr<LocalityEntry>,
         XdsLocalityName::Less>
         map_;
-    XdsLb* parent_;
   };
 
   ~XdsLb();
@@ -1691,10 +1688,7 @@ grpc_channel_args* BuildBalancerChannelArgs(const grpc_channel_args* args) {
 // ctor and dtor
 //
 
-XdsLb::XdsLb(Args args)
-    : LoadBalancingPolicy(std::move(args)),
-      locality_map_(this),
-      locality_list_() {
+XdsLb::XdsLb(Args args) : LoadBalancingPolicy(std::move(args)) {
   // Record server name.
   const grpc_arg* arg = grpc_channel_args_find(args.args, GRPC_ARG_SERVER_URI);
   const char* server_uri = grpc_channel_arg_get_string(arg);

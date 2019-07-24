@@ -55,22 +55,6 @@ class Map {
   typedef Compare key_compare;
   class iterator;
 
-  // FIXME: fix the methods below.
-  Map() = default;
-  // Copy ctor.
-  Map(const Map& other) = default;
-  // Move ctor.
-  Map(Map&& other) noexcept = default;
-  // Copy assignment.
-  Map& operator=(const Map& other) = default;
-  // Move assignment.
-  Map& operator=(Map&& other) noexcept {
-    root_ = other.root_;
-    other.root_ = nullptr;
-    size_ = other.size_;
-    other.size_ = 0;
-    return *this;
-  };
   ~Map() { clear(); }
 
   T& operator[](key_type&& key);

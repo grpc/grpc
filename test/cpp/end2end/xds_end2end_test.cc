@@ -178,7 +178,8 @@ class BackendServiceImpl : public BackendService {
   std::set<grpc::string> clients_;
 };
 
-struct ClientStats {
+class ClientStats {
+ public:
   struct LocalityStats {
     // Converts from proto message class.
     LocalityStats(const UpstreamLocalityStats& upstream_locality_stats)
@@ -245,12 +246,12 @@ struct ClientStats {
     return sum;
   }
   uint64_t total_dropped_requests() const { return total_dropped_requests_; }
-
   uint64_t dropped_requests(const char* category) {
     grpc_core::UniquePtr<char> local_category(gpr_strdup(category));
     return dropped_requests_.find(local_category)->second;
   }
 
+ private:
   grpc_core::Map<grpc_core::UniquePtr<char>, LocalityStats,
                  grpc_core::StringLess>
       locality_stats_;
@@ -835,7 +836,6 @@ class XdsEnd2endTest : public ::testing::Test {
   class BackendServerThread : public ServerThread {
    public:
     BackendServiceImpl* backend_service() { return &backend_service_; }
-    ~BackendServerThread() override {}
 
    private:
     void RegisterAllServices(ServerBuilder* builder) override {
@@ -855,7 +855,6 @@ class XdsEnd2endTest : public ::testing::Test {
    public:
     explicit BalancerServerThread(int client_load_reporting_interval = 0)
         : lrs_service_(client_load_reporting_interval) {}
-    ~BalancerServerThread() override {}
 
     EdsServiceImpl* eds_service() { return &eds_service_; }
     LrsServiceImpl* lrs_service() { return &lrs_service_; }

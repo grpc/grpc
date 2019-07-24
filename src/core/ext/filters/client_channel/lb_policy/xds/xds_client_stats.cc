@@ -75,29 +75,6 @@ bool XdsLbClientStats::LocalityStats::Snapshot::IsAllZero() {
 // XdsLbClientStats::LocalityStats
 //
 
-XdsLbClientStats::LocalityStats::LocalityStats(
-    XdsLbClientStats::LocalityStats&& other) noexcept
-    : total_successful_requests_(
-          GetAndResetCounter(&other.total_successful_requests_)),
-      total_requests_in_progress_(
-          GetAndResetCounter(&other.total_requests_in_progress_)),
-      total_error_requests_(GetAndResetCounter(&other.total_error_requests_)),
-      total_issued_requests_(
-          GetAndResetCounter(&other.total_issued_requests_)) {
-  MutexLock lock(&other.load_metric_stats_mu_);
-  load_metric_stats_ = std::move(other.load_metric_stats_);
-}
-
-XdsLbClientStats::LocalityStats& XdsLbClientStats::LocalityStats::operator=(
-    grpc_core::XdsLbClientStats::LocalityStats&& other) noexcept {
-  // This method should never be invoked because the only code path to it is
-  // from Map::InsertRecursive(), which will never be reached because
-  // XdsLbClientStats::FindLocalityStats() always check for pre-existing entry
-  // before adding a new one.
-  GPR_UNREACHABLE_CODE(return *this);
-  return *this;
-}
-
 XdsLbClientStats::LocalityStats::Snapshot
 XdsLbClientStats::LocalityStats::GetSnapshotAndReset() {
   Snapshot snapshot = {
@@ -160,7 +137,7 @@ XdsLbClientStats::Snapshot XdsLbClientStats::GetSnapshotAndReset() {
   // Snapshot all the other stats.
   for (auto& p : upstream_locality_stats_) {
     snapshot.upstream_locality_stats.emplace(p.first,
-                                             p.second.GetSnapshotAndReset());
+                                             p.second->GetSnapshotAndReset());
   }
   {
     MutexLock lock(&dropped_requests_mu_);
@@ -180,16 +157,17 @@ XdsLbClientStats::LocalityStats* XdsLbClientStats::FindLocalityStats(
     const RefCountedPtr<XdsLocalityName>& locality_name) {
   auto iter = upstream_locality_stats_.find(locality_name);
   if (iter == upstream_locality_stats_.end()) {
-    iter =
-        upstream_locality_stats_.emplace(locality_name, LocalityStats()).first;
+    iter = upstream_locality_stats_
+               .emplace(locality_name, MakeUnique<LocalityStats>())
+               .first;
   }
-  return &iter->second;
+  return iter->second.get();
 }
 
 void XdsLbClientStats::PruneLocalityStats() {
   auto iter = upstream_locality_stats_.begin();
   while (iter != upstream_locality_stats_.end()) {
-    if (iter->second.IsSafeToDelete()) {
+    if (iter->second->IsSafeToDelete()) {
       iter = upstream_locality_stats_.erase(iter);
     } else {
       ++iter;
