@@ -105,17 +105,21 @@ class ObjectiveCGrpcGenerator : public grpc::protobuf::compiler::CodeGenerator {
       ::grpc::string imports = LocalImport(file_name + ".pbobjc.h");
 
       ::grpc::string system_imports = (generator_params.no_v1_compatibility ? SystemImport("ProtoRPC/ProtoService.h") : SystemImport("ProtoRPC/ProtoServiceLegacy.h")) +
-                                      (generator_params.no_v1_compatibility ? SystemImport("ProtoRPC/ProtoRPC.h") : SystemImport("ProtoRPC/ProtoRPCLegacy.h")) +
-                                      SystemImport("RxLibrary/GRXWriteable.h") +
-                                      SystemImport("RxLibrary/GRXWriter.h");
+                                      (generator_params.no_v1_compatibility ? SystemImport("ProtoRPC/ProtoRPC.h") : SystemImport("ProtoRPC/ProtoRPCLegacy.h"));
+      if (!generator_params.no_v1_compatibility) {
+        system_imports += SystemImport("RxLibrary/GRXWriteable.h") +
+                          SystemImport("RxLibrary/GRXWriter.h");
+      }
 
       ::grpc::string forward_declarations =
-          "@class GRPCProtoCall;\n"
           "@class GRPCUnaryProtoCall;\n"
           "@class GRPCStreamingProtoCall;\n"
           "@class GRPCCallOptions;\n"
-          "@protocol GRPCProtoResponseHandler;\n"
-          "\n";
+          "@protocol GRPCProtoResponseHandler;\n";
+      if (!generator_params.no_v1_compatibility) {
+        forward_declarations += "@class GRPCProtoCall;\n";
+      }
+      forward_declarations += "\n";
 
       ::grpc::string class_declarations =
           grpc_objective_c_generator::GetAllMessageClasses(file);
@@ -159,8 +163,10 @@ class ObjectiveCGrpcGenerator : public grpc::protobuf::compiler::CodeGenerator {
 
       ::grpc::string imports = LocalImport(file_name + ".pbrpc.h") +
                                LocalImport(file_name + ".pbobjc.h") +
-                               (generator_params.no_v1_compatibility ? SystemImport("ProtoRPC/ProtoRPC.h") : SystemImport("ProtoRPC/ProtoRPCLegacy.h")) +
-                               SystemImport("RxLibrary/GRXWriter+Immediate.h");
+                               (generator_params.no_v1_compatibility ? SystemImport("ProtoRPC/ProtoRPC.h") : SystemImport("ProtoRPC/ProtoRPCLegacy.h"));
+      if (!generator_params.no_v1_compatibility) {
+        imports += SystemImport("RxLibrary/GRXWriter+Immediate.h");
+      }
 
       ::grpc::string class_imports;
       for (int i = 0; i < file->dependency_count(); i++) {

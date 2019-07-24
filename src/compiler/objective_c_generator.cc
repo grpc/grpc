@@ -402,14 +402,17 @@ void PrintMethodImplementations(Printer* printer,
     }
     printer.Print("#pragma clang diagnostic pop\n\n");
 
+    if (!generator_params.no_v1_compatibility) {
+      printer.Print(
+          "// Override superclass initializer to disallow different"
+          " package and service names.\n"
+          "- (instancetype)initWithHost:(NSString *)host\n"
+          "                 packageName:(NSString *)packageName\n"
+          "                 serviceName:(NSString *)serviceName {\n"
+          "  return [self initWithHost:host];\n"
+          "}\n\n");
+    }
     printer.Print(
-        "// Override superclass initializer to disallow different"
-        " package and service names.\n"
-        "- (instancetype)initWithHost:(NSString *)host\n"
-        "                 packageName:(NSString *)packageName\n"
-        "                 serviceName:(NSString *)serviceName {\n"
-        "  return [self initWithHost:host];\n"
-        "}\n\n"
         "- (instancetype)initWithHost:(NSString *)host\n"
         "                 packageName:(NSString *)packageName\n"
         "                 serviceName:(NSString *)serviceName\n"
