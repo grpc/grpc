@@ -409,18 +409,18 @@ void ParseServer(const grpc_grpclb_server* server,
   const uint16_t netorder_port = grpc_htons((uint16_t)server->port);
   /* the addresses are given in binary format (a in(6)_addr struct) in
    * server->ip_address.bytes. */
-  const grpc_grpclb_ip_address* ip = &server->ip_address;
-  if (ip->size == 4) {
+  const grpc_grpclb_server_ip_address& ip = server->ip_address;
+  if (ip.size == 4) {
     addr->len = static_cast<socklen_t>(sizeof(grpc_sockaddr_in));
     grpc_sockaddr_in* addr4 = reinterpret_cast<grpc_sockaddr_in*>(&addr->addr);
     addr4->sin_family = GRPC_AF_INET;
-    memcpy(&addr4->sin_addr, ip->bytes, ip->size);
+    memcpy(&addr4->sin_addr, ip.data, ip.size);
     addr4->sin_port = netorder_port;
-  } else if (ip->size == 16) {
+  } else if (ip.size == 16) {
     addr->len = static_cast<socklen_t>(sizeof(grpc_sockaddr_in6));
     grpc_sockaddr_in6* addr6 = (grpc_sockaddr_in6*)&addr->addr;
     addr6->sin6_family = GRPC_AF_INET6;
-    memcpy(&addr6->sin6_addr, ip->bytes, ip->size);
+    memcpy(&addr6->sin6_addr, ip.data, ip.size);
     addr6->sin6_port = netorder_port;
   }
 }
@@ -490,7 +490,7 @@ const grpc_arg_pointer_vtable client_stats_arg_vtable = {
 
 bool IsServerValid(const grpc_grpclb_server* server, size_t idx, bool log) {
   if (server->drop) return false;
-  const grpc_grpclb_ip_address* ip = &server->ip_address;
+  const grpc_grpclb_server_ip_address& ip = server->ip_address;
   if (GPR_UNLIKELY(server->port >> 16 != 0)) {
     if (log) {
       gpr_log(GPR_ERROR,
@@ -499,12 +499,12 @@ bool IsServerValid(const grpc_grpclb_server* server, size_t idx, bool log) {
     }
     return false;
   }
-  if (GPR_UNLIKELY(ip->size != 4 && ip->size != 16)) {
+  if (GPR_UNLIKELY(ip.size != 4 && ip.size != 16)) {
     if (log) {
       gpr_log(GPR_ERROR,
               "Expected IP to be 4 or 16 bytes, got %d at index %lu of "
               "serverlist. Ignoring",
-              ip->size, (unsigned long)idx);
+              ip.size, (unsigned long)idx);
     }
     return false;
   }
@@ -523,7 +523,7 @@ ServerAddressList GrpcLb::Serverlist::GetServerAddressList(
     ParseServer(server, &addr);
     // LB token processing.
     char lb_token[GPR_ARRAY_SIZE(server->load_balance_token) + 1];
-    if (server->has_load_balance_token) {
+    if (server->load_balance_token[0] != 0) {
       const size_t lb_token_max_length =
           GPR_ARRAY_SIZE(server->load_balance_token);
       const size_t lb_token_length =
@@ -790,13 +790,14 @@ GrpcLb::BalancerCallState::BalancerCallState(
       GRPC_MDSTR_SLASH_GRPC_DOT_LB_DOT_V1_DOT_LOADBALANCER_SLASH_BALANCELOAD,
       nullptr, deadline, nullptr);
   // Init the LB call request payload.
+  upb::Arena arena;
   grpc_grpclb_request* request =
-      grpc_grpclb_request_create(grpclb_policy()->server_name_);
-  grpc_slice request_payload_slice = grpc_grpclb_request_encode(request);
+      grpc_grpclb_request_create(grpclb_policy()->server_name_, arena.ptr());
+  grpc_slice request_payload_slice =
+      grpc_grpclb_request_encode(request, arena.ptr());
   send_message_payload_ =
       grpc_raw_byte_buffer_create(&request_payload_slice, 1);
   grpc_slice_unref_internal(request_payload_slice);
-  grpc_grpclb_request_destroy(request);
   // Init other data associated with the LB call.
   grpc_metadata_array_init(&lb_initial_metadata_recv_);
   grpc_metadata_array_init(&lb_trailing_metadata_recv_);
@@ -940,27 +941,32 @@ void GrpcLb::BalancerCallState::MaybeSendClientLoadReportLocked(
 
 bool GrpcLb::BalancerCallState::LoadReportCountersAreZero(
     grpc_grpclb_request* request) {
-  GrpcLbClientStats::DroppedCallCounts* drop_entries =
-      static_cast<GrpcLbClientStats::DroppedCallCounts*>(
-          request->client_stats.calls_finished_with_drop.arg);
-  return request->client_stats.num_calls_started == 0 &&
-         request->client_stats.num_calls_finished == 0 &&
-         request->client_stats.num_calls_finished_with_client_failed_to_send ==
+  const grpc_lb_v1_ClientStats* cstats =
+      grpc_lb_v1_LoadBalanceRequest_client_stats(request);
+  if (cstats == nullptr) {
+    return true;
+  }
+  size_t drop_count;
+  grpc_lb_v1_ClientStats_calls_finished_with_drop(cstats, &drop_count);
+  return grpc_lb_v1_ClientStats_num_calls_started(cstats) == 0 &&
+         grpc_lb_v1_ClientStats_num_calls_finished(cstats) == 0 &&
+         grpc_lb_v1_ClientStats_num_calls_finished_with_client_failed_to_send(
+             cstats) == 0 &&
+         grpc_lb_v1_ClientStats_num_calls_finished_known_received(cstats) ==
              0 &&
-         request->client_stats.num_calls_finished_known_received == 0 &&
-         (drop_entries == nullptr || drop_entries->size() == 0);
+         drop_count == 0;
 }
 
 void GrpcLb::BalancerCallState::SendClientLoadReportLocked() {
   // Construct message payload.
   GPR_ASSERT(send_message_payload_ == nullptr);
+  upb::Arena arena;
   grpc_grpclb_request* request =
-      grpc_grpclb_load_report_request_create(client_stats_.get());
+      grpc_grpclb_load_report_request_create(client_stats_.get(), arena.ptr());
   // Skip client load report if the counters were all zero in the last
   // report and they are still zero in this one.
   if (LoadReportCountersAreZero(request)) {
     if (last_client_load_report_counters_were_zero_) {
-      grpc_grpclb_request_destroy(request);
       ScheduleNextClientLoadReportLocked();
       return;
     }
@@ -968,11 +974,11 @@ void GrpcLb::BalancerCallState::SendClientLoadReportLocked() {
   } else {
     last_client_load_report_counters_were_zero_ = false;
   }
-  grpc_slice request_payload_slice = grpc_grpclb_request_encode(request);
+  grpc_slice request_payload_slice =
+      grpc_grpclb_request_encode(request, arena.ptr());
   send_message_payload_ =
       grpc_raw_byte_buffer_create(&request_payload_slice, 1);
   grpc_slice_unref_internal(request_payload_slice);
-  grpc_grpclb_request_destroy(request);
   // Send the report.
   grpc_op op;
   memset(&op, 0, sizeof(op));
@@ -1034,16 +1040,20 @@ void GrpcLb::BalancerCallState::OnBalancerMessageReceivedLocked(
   grpc_byte_buffer_reader_destroy(&bbr);
   grpc_byte_buffer_destroy(lb_calld->recv_message_payload_);
   lb_calld->recv_message_payload_ = nullptr;
-  grpc_grpclb_initial_response* initial_response;
+  const grpc_grpclb_initial_response* initial_response;
   grpc_grpclb_serverlist* serverlist;
+  upb::Arena arena;
   if (!lb_calld->seen_initial_response_ &&
-      (initial_response = grpc_grpclb_initial_response_parse(response_slice)) !=
-          nullptr) {
+      (initial_response = grpc_grpclb_initial_response_parse(
+           response_slice, arena.ptr())) != nullptr) {
     // Have NOT seen initial response, look for initial response.
-    if (initial_response->has_client_stats_report_interval) {
-      lb_calld->client_stats_report_interval_ = GPR_MAX(
-          GPR_MS_PER_SEC, grpc_grpclb_duration_to_millis(
-                              &initial_response->client_stats_report_interval));
+    const google_protobuf_Duration* client_stats_report_interval =
+        grpc_lb_v1_InitialLoadBalanceResponse_client_stats_report_interval(
+            initial_response);
+    if (client_stats_report_interval != nullptr) {
+      lb_calld->client_stats_report_interval_ =
+          GPR_MAX(GPR_MS_PER_SEC,
+                  grpc_grpclb_duration_to_millis(client_stats_report_interval));
       if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_glb_trace)) {
         gpr_log(GPR_INFO,
                 "[grpclb %p] lb_calld=%p: Received initial LB response "
@@ -1058,7 +1068,6 @@ void GrpcLb::BalancerCallState::OnBalancerMessageReceivedLocked(
               "client load reporting NOT enabled",
               grpclb_policy, lb_calld);
     }
-    grpc_grpclb_initial_response_destroy(initial_response);
     lb_calld->seen_initial_response_ = true;
   } else if ((serverlist = grpc_grpclb_response_parse_serverlist(
                   response_slice)) != nullptr) {
