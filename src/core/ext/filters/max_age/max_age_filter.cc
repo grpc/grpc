@@ -47,7 +47,7 @@
 
 namespace {
 struct channel_data {
-  /* We take a reference to the channel stack for the timer callback */
+  /* The channel stack to which we take refs for pending callbacks. */
   grpc_channel_stack* channel_stack;
   /* Guards access to max_age_timer, max_age_timer_pending, max_age_grace_timer
      and max_age_grace_timer_pending */

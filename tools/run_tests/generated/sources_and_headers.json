@@ -6680,6 +6680,7 @@
       "gpr", 
       "grpc_base", 
       "grpc_client_authority_filter", 
+      "grpc_client_idle_filter", 
       "grpc_deadline_filter", 
       "grpc_lb_policy_grpclb_secure", 
       "grpc_lb_policy_pick_first", 
@@ -6772,6 +6773,7 @@
       "gpr", 
       "grpc_base", 
       "grpc_client_authority_filter", 
+      "grpc_client_idle_filter", 
       "grpc_deadline_filter", 
       "grpc_lb_policy_grpclb", 
       "grpc_lb_policy_pick_first", 
@@ -9128,6 +9130,21 @@
       "src/core/ext/filters/client_channel/subchannel_interface.h", 
       "src/core/ext/filters/client_channel/subchannel_pool_interface.cc", 
       "src/core/ext/filters/client_channel/subchannel_pool_interface.h"
+    ], 
+    "third_party": false, 
+    "type": "filegroup"
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "grpc_base"
+    ], 
+    "headers": [], 
+    "is_filegroup": true, 
+    "language": "c", 
+    "name": "grpc_client_idle_filter", 
+    "src": [
+      "src/core/ext/filters/client_idle/client_idle_filter.cc"
     ], 
     "third_party": false, 
     "type": "filegroup"
