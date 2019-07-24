@@ -404,7 +404,10 @@ class XdsLb : public LoadBalancingPolicy {
     // previous value in the vector and is 0 for the first element.
     using PickerList =
         InlinedVector<Pair<uint32_t, RefCountedPtr<PickerWrapper>>, 1>;
-    explicit Picker(PickerList pickers) : pickers_(std::move(pickers)) {}
+    Picker(RefCountedPtr<XdsLb> xds_policy, PickerList pickers)
+        : xds_policy_(std::move(xds_policy)),
+          pickers_(std::move(pickers)),
+          drop_config_(xds_policy_->drop_config_) {}
 
     PickResult Pick(PickArgs args) override;
 
@@ -412,7 +415,9 @@ class XdsLb : public LoadBalancingPolicy {
     // Calls the picker of the locality that the key falls within.
     PickResult PickFromLocality(const uint32_t key, PickArgs args);
 
+    RefCountedPtr<XdsLb> xds_policy_;
     PickerList pickers_;
+    RefCountedPtr<XdsDropConfig> drop_config_;
   };
 
   class FallbackHelper : public ChannelControlHelper {
@@ -596,6 +601,8 @@ class XdsLb : public LoadBalancingPolicy {
   // the current one when new localities in the pending map are ready
   // to accept connections
 
+  RefCountedPtr<XdsDropConfig> drop_config_;
+
   // The stats for client-side load reporting.
   XdsLbClientStats client_stats_;
 };
@@ -636,10 +643,16 @@ void XdsLb::PickerWrapper::RecordCallCompletion(
 //
 
 XdsLb::PickResult XdsLb::Picker::Pick(PickArgs args) {
-  // TODO(roth): Add support for drop handling.
-  // Generate a random number between 0 and the total weight
-  const uint32_t key =
-      (rand() * pickers_[pickers_.size() - 1].first) / RAND_MAX;
+  // Handle drop.
+  const UniquePtr<char>* drop_category;
+  if (drop_config_->ShouldDrop(&drop_category)) {
+    xds_policy_->client_stats_.AddCallDropped(*drop_category);
+    PickResult result;
+    result.type = PickResult::PICK_COMPLETE;
+    return result;
+  }
+  // Generate a random number in [0, total weight).
+  const uint32_t key = rand() % pickers_[pickers_.size() - 1].first;
   // Forward pick to whichever locality maps to the range in which the
   // random number falls in.
   return PickFromLocality(key, args);
@@ -1092,12 +1105,13 @@ void XdsLb::LbChannelState::EdsCallState::OnResponseReceivedLocked(
       GRPC_ERROR_UNREF(parse_error);
       return;
     }
-    if (update.locality_list.empty()) {
+    if (update.locality_list.empty() &&
+        update.drop_config->drop_category_list().empty()) {
       char* response_slice_str =
           grpc_dump_slice(response_slice, GPR_DUMP_ASCII | GPR_DUMP_HEX);
       gpr_log(GPR_ERROR,
               "[xdslb %p] EDS response '%s' doesn't contain any valid locality "
-              "update. Ignoring.",
+              "or drop update. Ignoring.",
               xdslb_policy, response_slice_str);
       gpr_free(response_slice_str);
       return;
@@ -1105,8 +1119,11 @@ void XdsLb::LbChannelState::EdsCallState::OnResponseReceivedLocked(
     eds_calld->seen_response_ = true;
     if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_xds_trace)) {
       gpr_log(GPR_INFO,
-              "[xdslb %p] EDS response with %" PRIuPTR " localities received",
-              xdslb_policy, update.locality_list.size());
+              "[xdslb %p] EDS response with %" PRIuPTR
+              " localities and %" PRIuPTR
+              " drop categories received (drop_all=%d)",
+              xdslb_policy, update.locality_list.size(),
+              update.drop_config->drop_category_list().size(), update.drop_all);
       for (size_t i = 0; i < update.locality_list.size(); ++i) {
         const XdsLocalityInfo& locality = update.locality_list[i];
         const XdsLocalityName* locality_name = locality.locality_name.get();
@@ -1130,8 +1147,17 @@ void XdsLb::LbChannelState::EdsCallState::OnResponseReceivedLocked(
           gpr_free(ipport);
         }
       }
+      for (size_t i = 0; i < update.drop_config->drop_category_list().size();
+           ++i) {
+        const XdsDropConfig::DropCategory& drop_category =
+            update.drop_config->drop_category_list()[i];
+        gpr_log(GPR_INFO,
+                "[xdslb %p] Drop category %s has drop rate %d per million",
+                xdslb_policy, drop_category.name.get(),
+                drop_category.parts_per_million);
+      }
     }
-    // Pending LB channel receives a serverlist; promote it.
+    // Pending LB channel receives a response; promote it.
     // Note that this call can't be on a discarded pending channel, because
     // such channels don't have any current call but we have checked this call
     // is a current call.
@@ -1147,10 +1173,12 @@ void XdsLb::LbChannelState::EdsCallState::OnResponseReceivedLocked(
       xdslb_policy->lb_chand_ = std::move(xdslb_policy->pending_lb_chand_);
     }
     // Ignore identical update.
-    if (xdslb_policy->locality_list_ == update.locality_list) {
+    if (xdslb_policy->locality_list_ == update.locality_list &&
+        xdslb_policy->drop_config_ == update.drop_config) {
       if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_xds_trace)) {
         gpr_log(GPR_INFO,
-                "[xdslb %p] Incoming server list identical to current, "
+                "[xdslb %p] Incoming server list and drop config identical to "
+                "current, "
                 "ignoring.",
                 xdslb_policy);
       }
@@ -1164,11 +1192,9 @@ void XdsLb::LbChannelState::EdsCallState::OnResponseReceivedLocked(
     }
     // If the balancer tells us to drop all the calls, we should exit fallback
     // mode immediately.
-    // TODO(juanlishen): When we add EDS drop, we should change to check
-    // drop_percentage.
-    if (update.locality_list[0].serverlist.empty()) {
-      xdslb_policy->MaybeExitFallbackMode();
-    }
+    if (update.drop_all) xdslb_policy->MaybeExitFallbackMode();
+    // Update the drop config.
+    xdslb_policy->drop_config_ = std::move(update.drop_config);
     // Update the locality list.
     xdslb_policy->locality_list_ = std::move(update.locality_list);
     // Update the locality map.
@@ -2390,8 +2416,9 @@ void XdsLb::LocalityMap::LocalityEntry::Helper::UpdateState(
   // locality pickers are in transient failure
   if (!pickers.empty()) {
     entry_->parent_->channel_control_helper()->UpdateState(
-        GRPC_CHANNEL_READY, UniquePtr<LoadBalancingPolicy::SubchannelPicker>(
-                                New<Picker>(std::move(pickers))));
+        GRPC_CHANNEL_READY,
+        UniquePtr<LoadBalancingPolicy::SubchannelPicker>(
+            New<Picker>(entry_->parent_, std::move(pickers))));
   } else if (num_connecting > 0) {
     entry_->parent_->channel_control_helper()->UpdateState(
         GRPC_CHANNEL_CONNECTING,

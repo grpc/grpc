@@ -76,9 +76,38 @@ struct XdsLocalityInfo {
 
 using XdsLocalityList = InlinedVector<XdsLocalityInfo, 1>;
 
+// There are two phases of accessing this class's content:
+// 1. to initialize in the control plane combiner;
+// 2. to use in the data plane combiner.
+// So no additional synchronization is needed.
+class XdsDropConfig : public RefCounted<XdsDropConfig> {
+ public:
+  struct DropCategory {
+    UniquePtr<char> name;
+    const uint32_t parts_per_million;
+  };
+
+  using DropCategoryList = InlinedVector<DropCategory, 1>;
+
+  void AddCategory(UniquePtr<char> name, uint32_t parts_per_million) {
+    drop_category_list_.emplace_back(
+        DropCategory{std::move(name), parts_per_million});
+  }
+
+  bool ShouldDrop(const UniquePtr<char>** category_name) const;
+
+  const DropCategoryList& drop_category_list() const {
+    return drop_category_list_;
+  }
+
+ private:
+  DropCategoryList drop_category_list_;
+};
+
 struct XdsUpdate {
   XdsLocalityList locality_list;
-  // TODO(juanlishen): Pass drop_per_million when adding drop support.
+  RefCountedPtr<XdsDropConfig> drop_config;
+  bool drop_all = false;
 };
 
 // Creates an EDS request querying \a service_name.

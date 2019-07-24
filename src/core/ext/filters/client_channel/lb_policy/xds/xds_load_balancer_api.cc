@@ -30,6 +30,7 @@
 
 #include "src/core/ext/filters/client_channel/lb_policy/xds/xds_load_balancer_api.h"
 #include "src/core/ext/upb-generated/envoy/api/v2/endpoint/load_report.upb.h"
+#include "src/core/ext/upb-generated/envoy/type/percent.upb.h"
 #include "src/core/ext/upb-generated/google/protobuf/duration.upb.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/sockaddr_utils.h"
@@ -43,8 +44,22 @@ constexpr char kEdsTypeUrl[] =
 constexpr char kEndpointRequired[] = "endpointRequired";
 
 using LocalityStats = envoy_api_v2_endpoint_UpstreamLocalityStats;
+using DropOverload = envoy_api_v2_ClusterLoadAssignment_Policy_DropOverload;
 
 }  // namespace
+
+bool XdsDropConfig::ShouldDrop(const UniquePtr<char>** category_name) const {
+  for (size_t i = 0; i < drop_category_list_.size(); ++i) {
+    const auto& drop_category = drop_category_list_[i];
+    // Generate a random number in [0, 1000000).
+    const int random = rand() % 1000000;
+    if (random < drop_category.parts_per_million) {
+      *category_name = &drop_category.name;
+      return true;
+    }
+  }
+  return false;
+}
 
 grpc_slice XdsEdsRequestCreateAndEncode(const char* service_name) {
   upb::Arena arena;
@@ -143,6 +158,43 @@ grpc_error* LocalityParse(const XdsLocalityLbEndpoints* locality_lb_endpoints,
   return GRPC_ERROR_NONE;
 }
 
+grpc_error* DropParseAndAppend(const DropOverload* drop_overload,
+                               XdsDropConfig* drop_config, bool* drop_all) {
+  // Get the category.
+  upb_strview category =
+      envoy_api_v2_ClusterLoadAssignment_Policy_DropOverload_category(
+          drop_overload);
+  if (category.size == 0) {
+    return GRPC_ERROR_CREATE_FROM_STATIC_STRING("Empty drop category name");
+  }
+  // Get the drop rate (per million).
+  const envoy_type_FractionalPercent* drop_percentage =
+      envoy_api_v2_ClusterLoadAssignment_Policy_DropOverload_drop_percentage(
+          drop_overload);
+  uint32_t numerator = envoy_type_FractionalPercent_numerator(drop_percentage);
+  envoy_type_FractionalPercent_DenominatorType denominator =
+      static_cast<envoy_type_FractionalPercent_DenominatorType>(
+          envoy_type_FractionalPercent_denominator(drop_percentage));
+  // Normalize to million.
+  switch (denominator) {
+    case envoy_type_FractionalPercent_HUNDRED:
+      numerator *= 10000;
+      break;
+    case envoy_type_FractionalPercent_TEN_THOUSAND:
+      numerator *= 100;
+      break;
+    case envoy_type_FractionalPercent_MILLION:
+      break;
+    default:
+      return GRPC_ERROR_CREATE_FROM_STATIC_STRING("Unknown denominator type");
+  }
+  // Cap numerator to 1000000.
+  numerator = GPR_MIN(numerator, 1000000);
+  if (numerator == 1000000) *drop_all = true;
+  drop_config->AddCategory(StringCopy(category), numerator);
+  return GRPC_ERROR_NONE;
+}
+
 }  // namespace
 
 grpc_error* XdsEdsResponseDecodeAndParse(const grpc_slice& encoded_response,
@@ -182,6 +234,7 @@ grpc_error* XdsEdsResponseDecodeAndParse(const grpc_slice& encoded_response,
       envoy_api_v2_ClusterLoadAssignment_parse(
           encoded_cluster_load_assignment.data,
           encoded_cluster_load_assignment.size, arena.ptr());
+  // Get the endpoints.
   const XdsLocalityLbEndpoints* const* endpoints =
       envoy_api_v2_ClusterLoadAssignment_endpoints(cluster_load_assignment,
                                                    &size);
@@ -196,6 +249,19 @@ grpc_error* XdsEdsResponseDecodeAndParse(const grpc_slice& encoded_response,
   std::sort(update->locality_list.data(),
             update->locality_list.data() + update->locality_list.size(),
             XdsLocalityInfo::Less());
+  // Get the drop config.
+  update->drop_config = MakeRefCounted<XdsDropConfig>();
+  const envoy_api_v2_ClusterLoadAssignment_Policy* policy =
+      envoy_api_v2_ClusterLoadAssignment_policy(cluster_load_assignment);
+  if (policy != nullptr) {
+    const DropOverload* const* drop_overload =
+        envoy_api_v2_ClusterLoadAssignment_Policy_drop_overloads(policy, &size);
+    for (size_t i = 0; i < size; ++i) {
+      grpc_error* error = DropParseAndAppend(
+          drop_overload[i], update->drop_config.get(), &update->drop_all);
+      if (error != GRPC_ERROR_NONE) return error;
+    }
+  }
   return GRPC_ERROR_NONE;
 }
 

@@ -164,8 +164,7 @@ XdsLbClientStats::Snapshot XdsLbClientStats::GetSnapshotAndReset() {
   }
   {
     MutexLock lock(&dropped_requests_mu_);
-    snapshot.dropped_requests = dropped_requests_;
-    for (auto& p : dropped_requests_) p.second = 0;
+    snapshot.dropped_requests = std::move(dropped_requests_);
   }
   return snapshot;
 }
@@ -198,11 +197,15 @@ void XdsLbClientStats::PruneLocalityStats() {
   }
 }
 
-void XdsLbClientStats::AddCallDropped(UniquePtr<char> category) {
+void XdsLbClientStats::AddCallDropped(const UniquePtr<char>& category) {
+  total_dropped_requests_.FetchAdd(1, MemoryOrder::RELAXED);
   MutexLock lock(&dropped_requests_mu_);
   auto iter = dropped_requests_.find(category);
-  if (iter == dropped_requests_.end()) iter = dropped_requests_.emplace().first;
-  ++iter->second;
+  if (iter == dropped_requests_.end()) {
+    dropped_requests_.emplace(UniquePtr<char>(gpr_strdup(category.get())), 1);
+  } else {
+    ++iter->second;
+  }
 }
 
 }  // namespace grpc_core

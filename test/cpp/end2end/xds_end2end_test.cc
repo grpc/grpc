@@ -84,6 +84,7 @@ using grpc::lb::v2::ClusterStats;
 using grpc::lb::v2::DiscoveryRequest;
 using grpc::lb::v2::DiscoveryResponse;
 using grpc::lb::v2::EndpointDiscoveryService;
+using grpc::lb::v2::FractionalPercent;
 using grpc::lb::v2::LoadReportingService;
 using grpc::lb::v2::LoadStatsRequest;
 using grpc::lb::v2::LoadStatsResponse;
@@ -205,6 +206,12 @@ struct ClientStats {
       locality_stats_.emplace(std::move(sub_zone),
                               LocalityStats(input_locality_stats));
     }
+    for (const auto& input_dropped_requests :
+         cluster_stats.dropped_requests()) {
+      dropped_requests_.emplace(grpc_core::UniquePtr<char>(gpr_strdup(
+                                    input_dropped_requests.category().c_str())),
+                                input_dropped_requests.dropped_count());
+    }
   }
 
   // TODO(juanlishen): The following getter-like methods should be const. But we
@@ -239,10 +246,17 @@ struct ClientStats {
   }
   uint64_t total_dropped_requests() const { return total_dropped_requests_; }
 
+  uint64_t dropped_requests(const char* category) {
+    grpc_core::UniquePtr<char> local_category(gpr_strdup(category));
+    return dropped_requests_.find(local_category)->second;
+  }
+
   grpc_core::Map<grpc_core::UniquePtr<char>, LocalityStats,
                  grpc_core::StringLess>
       locality_stats_;
   uint64_t total_dropped_requests_;
+  grpc_core::Map<grpc_core::UniquePtr<char>, uint64_t, grpc_core::StringLess>
+      dropped_requests_;
 };
 
 class EdsServiceImpl : public EdsService {
@@ -304,8 +318,9 @@ class EdsServiceImpl : public EdsService {
     gpr_log(GPR_INFO, "LB[%p]: shut down", this);
   }
 
-  static DiscoveryResponse BuildResponseForBackends(
-      const std::vector<std::vector<int>>& backend_ports) {
+  static DiscoveryResponse BuildResponse(
+      const std::vector<std::vector<int>>& backend_ports,
+      const std::map<grpc::string, uint32_t>& drop_categories = {}) {
     ClusterLoadAssignment assignment;
     assignment.set_cluster_name("service name");
     for (size_t i = 0; i < backend_ports.size(); ++i) {
@@ -324,6 +339,18 @@ class EdsServiceImpl : public EdsService {
         auto* socket_address = address->mutable_socket_address();
         socket_address->set_address("127.0.0.1");
         socket_address->set_port_value(backend_port);
+      }
+    }
+    if (!drop_categories.empty()) {
+      auto* policy = assignment.mutable_policy();
+      for (const auto& p : drop_categories) {
+        const grpc::string& name = p.first;
+        const uint32_t parts_per_million = p.second;
+        auto* drop_overload = policy->add_drop_overloads();
+        drop_overload->set_category(name);
+        auto* drop_percentage = drop_overload->mutable_drop_percentage();
+        drop_percentage->set_numerator(parts_per_million);
+        drop_percentage->set_denominator(FractionalPercent::MILLION);
       }
     }
     DiscoveryResponse response;
@@ -888,8 +915,7 @@ TEST_F(SingleBalancerTest, Vanilla) {
   SetNextResolutionForLbChannelAllBalancers();
   const size_t kNumRpcsPerAddress = 100;
   ScheduleResponseForBalancer(
-      0, EdsServiceImpl::BuildResponseForBackends(GetBackendPortsInGroups()),
-      0);
+      0, EdsServiceImpl::BuildResponse(GetBackendPortsInGroups()), 0);
   // Make sure that trying to connect works without a call.
   channel_->GetState(true /* try_to_connect */);
   // We need to wait for all backends to come online.
@@ -917,8 +943,7 @@ TEST_F(SingleBalancerTest, SameBackendListedMultipleTimes) {
   ports.push_back(backends_[0]->port());
   ports.push_back(backends_[0]->port());
   const size_t kNumRpcsPerAddress = 10;
-  ScheduleResponseForBalancer(
-      0, EdsServiceImpl::BuildResponseForBackends({ports}), 0);
+  ScheduleResponseForBalancer(0, EdsServiceImpl::BuildResponse({ports}), 0);
   // We need to wait for the backend to come online.
   WaitForBackend(0);
   // Send kNumRpcsPerAddress RPCs per server.
@@ -939,8 +964,7 @@ TEST_F(SingleBalancerTest, SecureNaming) {
   SetNextResolutionForLbChannel({balancers_[0]->port()});
   const size_t kNumRpcsPerAddress = 100;
   ScheduleResponseForBalancer(
-      0, EdsServiceImpl::BuildResponseForBackends(GetBackendPortsInGroups()),
-      0);
+      0, EdsServiceImpl::BuildResponse(GetBackendPortsInGroups()), 0);
   // Make sure that trying to connect works without a call.
   channel_->GetState(true /* try_to_connect */);
   // We need to wait for all backends to come online.
@@ -985,11 +1009,10 @@ TEST_F(SingleBalancerTest, InitiallyEmptyServerlist) {
   const int kServerlistDelayMs = 500 * grpc_test_slowdown_factor();
   const int kCallDeadlineMs = kServerlistDelayMs * 2;
   // First response is an empty serverlist, sent right away.
-  ScheduleResponseForBalancer(0, EdsServiceImpl::BuildResponseForBackends({{}}),
-                              0);
+  ScheduleResponseForBalancer(0, EdsServiceImpl::BuildResponse({{}}), 0);
   // Send non-empty serverlist only after kServerlistDelayMs
   ScheduleResponseForBalancer(
-      0, EdsServiceImpl::BuildResponseForBackends(GetBackendPortsInGroups()),
+      0, EdsServiceImpl::BuildResponse(GetBackendPortsInGroups()),
       kServerlistDelayMs);
   const auto t0 = system_clock::now();
   // Client will block: LB will initially send empty serverlist.
@@ -1017,12 +1040,181 @@ TEST_F(SingleBalancerTest, AllServersUnreachableFailFast) {
   for (size_t i = 0; i < kNumUnreachableServers; ++i) {
     ports.push_back(grpc_pick_unused_port_or_die());
   }
-  ScheduleResponseForBalancer(
-      0, EdsServiceImpl::BuildResponseForBackends({ports}), 0);
+  ScheduleResponseForBalancer(0, EdsServiceImpl::BuildResponse({ports}), 0);
   const Status status = SendRpc();
   // The error shouldn't be DEADLINE_EXCEEDED.
   EXPECT_EQ(StatusCode::UNAVAILABLE, status.error_code());
   balancers_[0]->eds_service()->NotifyDoneWithEdsCall();
+  // The EDS service got a single request, and sent a single response.
+  EXPECT_EQ(1U, balancers_[0]->eds_service()->request_count());
+  EXPECT_EQ(1U, balancers_[0]->eds_service()->response_count());
+}
+
+TEST_F(SingleBalancerTest, Drop) {
+  SetNextResolution({}, kDefaultServiceConfig_.c_str());
+  SetNextResolutionForLbChannelAllBalancers();
+  const size_t kNumRpcs = 1000;
+  const uint32_t drop_per_million_for_lb = 100000;
+  const uint32_t drop_per_million_for_throttle = 200000;
+  const double drop_rate_for_lb = drop_per_million_for_lb / 1000000.0;
+  const double drop_rate_for_throttle =
+      drop_per_million_for_throttle / 1000000.0;
+  const double drop_rate_for_lb_and_throttle =
+      drop_rate_for_lb + (1 - drop_rate_for_lb) * drop_rate_for_throttle;
+  // The EDS response contains two drop categories.
+  ScheduleResponseForBalancer(
+      0,
+      EdsServiceImpl::BuildResponse(
+          GetBackendPortsInGroups(),
+          {{"lb", drop_per_million_for_lb},
+           {"throttle", drop_per_million_for_throttle}}),
+      0);
+  WaitForAllBackends();
+  // Send kNumRpcs RPCs and count the drops.
+  size_t num_drops = 0;
+  for (size_t i = 0; i < kNumRpcs; ++i) {
+    EchoResponse response;
+    const Status status = SendRpc(&response);
+    if (!status.ok() &&
+        status.error_message() == "Call dropped by load balancing policy") {
+      ++num_drops;
+    } else {
+      EXPECT_TRUE(status.ok()) << "code=" << status.error_code()
+                               << " message=" << status.error_message();
+      EXPECT_EQ(response.message(), kRequestMessage_);
+    }
+  }
+  // The drop rate should be roughly equal to the expectation.
+  const double seen_drop_rate = static_cast<double>(num_drops) / kNumRpcs;
+  const double error_tolerance = 0.2;
+  EXPECT_THAT(seen_drop_rate,
+              ::testing::AllOf(::testing::Ge(drop_rate_for_lb_and_throttle *
+                                             (1 - error_tolerance)),
+                               ::testing::Le(drop_rate_for_lb_and_throttle *
+                                             (1 + error_tolerance))));
+  // The EDS service got a single request, and sent a single response.
+  EXPECT_EQ(1U, balancers_[0]->eds_service()->request_count());
+  EXPECT_EQ(1U, balancers_[0]->eds_service()->response_count());
+}
+
+TEST_F(SingleBalancerTest, DropUpdate) {
+  SetNextResolution({}, kDefaultServiceConfig_.c_str());
+  SetNextResolutionForLbChannelAllBalancers();
+  const size_t kNumRpcs = 1000;
+  const uint32_t drop_per_million_for_lb = 100000;
+  const uint32_t drop_per_million_for_throttle = 200000;
+  const double drop_rate_for_lb = drop_per_million_for_lb / 1000000.0;
+  const double drop_rate_for_throttle =
+      drop_per_million_for_throttle / 1000000.0;
+  const double drop_rate_for_lb_and_throttle =
+      drop_rate_for_lb + (1 - drop_rate_for_lb) * drop_rate_for_throttle;
+  // The first EDS response contains one drop category.
+  ScheduleResponseForBalancer(
+      0,
+      EdsServiceImpl::BuildResponse(GetBackendPortsInGroups(),
+                                    {{"lb", drop_per_million_for_lb}}),
+      0);
+  // The second EDS response contains two drop categories.
+  ScheduleResponseForBalancer(
+      0,
+      EdsServiceImpl::BuildResponse(
+          GetBackendPortsInGroups(),
+          {{"lb", drop_per_million_for_lb},
+           {"throttle", drop_per_million_for_throttle}}),
+      1000);
+  WaitForAllBackends();
+  // Send kNumRpcs RPCs and count the drops.
+  size_t num_drops = 0;
+  gpr_log(GPR_INFO, "========= BEFORE FIRST BATCH ==========");
+  for (size_t i = 0; i < kNumRpcs; ++i) {
+    EchoResponse response;
+    const Status status = SendRpc(&response);
+    if (!status.ok() &&
+        status.error_message() == "Call dropped by load balancing policy") {
+      ++num_drops;
+    } else {
+      EXPECT_TRUE(status.ok()) << "code=" << status.error_code()
+                               << " message=" << status.error_message();
+      EXPECT_EQ(response.message(), kRequestMessage_);
+    }
+  }
+  gpr_log(GPR_INFO, "========= DONE WITH FIRST BATCH ==========");
+  // The drop rate should be roughly equal to the expectation.
+  double seen_drop_rate = static_cast<double>(num_drops) / kNumRpcs;
+  const double error_tolerance = 0.2;
+  EXPECT_THAT(seen_drop_rate,
+              ::testing::AllOf(
+                  ::testing::Ge(drop_rate_for_lb * (1 - error_tolerance)),
+                  ::testing::Le(drop_rate_for_lb * (1 + error_tolerance))));
+  // Wait until the drop rate increases to the middle of the two configs, which
+  // implies that the update has been in effect.
+  const double drop_rate_threshold =
+      (drop_rate_for_lb + drop_rate_for_lb_and_throttle) / 2;
+  size_t num_rpcs = kNumRpcs;
+  while (seen_drop_rate < drop_rate_threshold) {
+    EchoResponse response;
+    const Status status = SendRpc(&response);
+    ++num_rpcs;
+    if (!status.ok() &&
+        status.error_message() == "Call dropped by load balancing policy") {
+      ++num_drops;
+    } else {
+      EXPECT_TRUE(status.ok()) << "code=" << status.error_code()
+                               << " message=" << status.error_message();
+      EXPECT_EQ(response.message(), kRequestMessage_);
+    }
+    seen_drop_rate = static_cast<double>(num_drops) / num_rpcs;
+  }
+  // Send kNumRpcs RPCs and count the drops.
+  num_drops = 0;
+  gpr_log(GPR_INFO, "========= BEFORE SECOND BATCH ==========");
+  for (size_t i = 0; i < kNumRpcs; ++i) {
+    EchoResponse response;
+    const Status status = SendRpc(&response);
+    if (!status.ok() &&
+        status.error_message() == "Call dropped by load balancing policy") {
+      ++num_drops;
+    } else {
+      EXPECT_TRUE(status.ok()) << "code=" << status.error_code()
+                               << " message=" << status.error_message();
+      EXPECT_EQ(response.message(), kRequestMessage_);
+    }
+  }
+  gpr_log(GPR_INFO, "========= DONE WITH SECOND BATCH ==========");
+  // The new drop rate should be roughly equal to the expectation.
+  seen_drop_rate = static_cast<double>(num_drops) / kNumRpcs;
+  EXPECT_THAT(seen_drop_rate,
+              ::testing::AllOf(::testing::Ge(drop_rate_for_lb_and_throttle *
+                                             (1 - error_tolerance)),
+                               ::testing::Le(drop_rate_for_lb_and_throttle *
+                                             (1 + error_tolerance))));
+  // The EDS service got a single request,
+  EXPECT_EQ(1U, balancers_[0]->eds_service()->request_count());
+  // and sent two responses
+  EXPECT_EQ(2U, balancers_[0]->eds_service()->response_count());
+}
+
+TEST_F(SingleBalancerTest, DropAll) {
+  SetNextResolution({}, kDefaultServiceConfig_.c_str());
+  SetNextResolutionForLbChannelAllBalancers();
+  const size_t kNumRpcs = 1000;
+  const uint32_t drop_per_million_for_lb = 100000;
+  const uint32_t drop_per_million_for_throttle = 1000000;
+  // The EDS response contains two drop categories.
+  ScheduleResponseForBalancer(
+      0,
+      EdsServiceImpl::BuildResponse(
+          GetBackendPortsInGroups(),
+          {{"lb", drop_per_million_for_lb},
+           {"throttle", drop_per_million_for_throttle}}),
+      0);
+  // Send kNumRpcs RPCs and all of them are dropped.
+  for (size_t i = 0; i < kNumRpcs; ++i) {
+    EchoResponse response;
+    const Status status = SendRpc(&response);
+    EXPECT_TRUE(!status.ok() && status.error_message() ==
+                                    "Call dropped by load balancing policy");
+  }
   // The EDS service got a single request, and sent a single response.
   EXPECT_EQ(1U, balancers_[0]->eds_service()->request_count());
   EXPECT_EQ(1U, balancers_[0]->eds_service()->response_count());
@@ -1039,7 +1231,7 @@ TEST_F(SingleBalancerTest, Fallback) {
   // Send non-empty serverlist only after kServerlistDelayMs.
   ScheduleResponseForBalancer(
       0,
-      EdsServiceImpl::BuildResponseForBackends(
+      EdsServiceImpl::BuildResponse(
           GetBackendPortsInGroups(kNumBackendsInResolution /* start_index */)),
       kServerlistDelayMs);
   // Wait until all the fallback backends are reachable.
@@ -1088,7 +1280,7 @@ TEST_F(SingleBalancerTest, FallbackUpdate) {
   // Send non-empty serverlist only after kServerlistDelayMs.
   ScheduleResponseForBalancer(
       0,
-      EdsServiceImpl::BuildResponseForBackends(GetBackendPortsInGroups(
+      EdsServiceImpl::BuildResponse(GetBackendPortsInGroups(
           kNumBackendsInResolution +
           kNumBackendsInResolutionUpdate /* start_index */)),
       kServerlistDelayMs);
@@ -1189,10 +1381,8 @@ TEST_F(SingleBalancerTest, FallbackIfResponseReceivedButChildNotReady) {
   SetNextResolutionForLbChannelAllBalancers();
   // Send a serverlist that only contains an unreachable backend before fallback
   // timeout.
-  ScheduleResponseForBalancer(0,
-                              EdsServiceImpl::BuildResponseForBackends(
-                                  {{grpc_pick_unused_port_or_die()}}),
-                              0);
+  ScheduleResponseForBalancer(
+      0, EdsServiceImpl::BuildResponse({{grpc_pick_unused_port_or_die()}}), 0);
   // Because no child policy is ready before fallback timeout, we enter fallback
   // mode.
   WaitForBackend(0);
@@ -1204,8 +1394,10 @@ TEST_F(SingleBalancerTest, FallbackModeIsExitedWhenBalancerSaysToDropAllCalls) {
   SetNextResolutionForLbChannel({grpc_pick_unused_port_or_die()});
   // Enter fallback mode because the LB channel fails to connect.
   WaitForBackend(0);
-  // Return a new balancer that sends an empty serverlist.
-  ScheduleResponseForBalancer(0, EdsServiceImpl::BuildResponseForBackends({{}}),
+  // Return a new balancer that sends a response to drop all calls.
+  ScheduleResponseForBalancer(0,
+                              EdsServiceImpl::BuildResponse(
+                                  GetBackendPortsInGroups(), {{"lb", 1000000}}),
                               0);
   SetNextResolutionForLbChannelAllBalancers();
   // Send RPCs until failure.
@@ -1227,7 +1419,7 @@ TEST_F(SingleBalancerTest, FallbackModeIsExitedAfterChildRready) {
   // Return a new balancer that sends a dead backend.
   ShutdownBackend(1);
   ScheduleResponseForBalancer(
-      0, EdsServiceImpl::BuildResponseForBackends({{backends_[1]->port()}}), 0);
+      0, EdsServiceImpl::BuildResponse({{backends_[1]->port()}}), 0);
   SetNextResolutionForLbChannelAllBalancers();
   // The state (TRANSIENT_FAILURE) update from the child policy will be ignored
   // because we are still in fallback mode.
@@ -1252,8 +1444,7 @@ TEST_F(SingleBalancerTest, BackendsRestart) {
   SetNextResolution({}, kDefaultServiceConfig_.c_str());
   SetNextResolutionForLbChannelAllBalancers();
   ScheduleResponseForBalancer(
-      0, EdsServiceImpl::BuildResponseForBackends(GetBackendPortsInGroups()),
-      0);
+      0, EdsServiceImpl::BuildResponse(GetBackendPortsInGroups()), 0);
   WaitForAllBackends();
   // Stop backends.  RPCs should fail.
   ShutdownAllBackends();
@@ -1274,10 +1465,10 @@ TEST_F(UpdatesTest, UpdateBalancersButKeepUsingOriginalBalancer) {
   SetNextResolutionForLbChannelAllBalancers();
   auto first_backend = GetBackendPortsInGroups(0, 1);
   auto second_backend = GetBackendPortsInGroups(1, 2);
-  ScheduleResponseForBalancer(
-      0, EdsServiceImpl::BuildResponseForBackends(first_backend), 0);
-  ScheduleResponseForBalancer(
-      1, EdsServiceImpl::BuildResponseForBackends(second_backend), 0);
+  ScheduleResponseForBalancer(0, EdsServiceImpl::BuildResponse(first_backend),
+                              0);
+  ScheduleResponseForBalancer(1, EdsServiceImpl::BuildResponse(second_backend),
+                              0);
 
   // Wait until the first backend is ready.
   WaitForBackend(0);
@@ -1327,10 +1518,10 @@ TEST_F(UpdatesTest, UpdateBalancerName) {
   SetNextResolutionForLbChannelAllBalancers();
   auto first_backend = GetBackendPortsInGroups(0, 1);
   auto second_backend = GetBackendPortsInGroups(1, 2);
-  ScheduleResponseForBalancer(
-      0, EdsServiceImpl::BuildResponseForBackends(first_backend), 0);
-  ScheduleResponseForBalancer(
-      1, EdsServiceImpl::BuildResponseForBackends(second_backend), 0);
+  ScheduleResponseForBalancer(0, EdsServiceImpl::BuildResponse(first_backend),
+                              0);
+  ScheduleResponseForBalancer(1, EdsServiceImpl::BuildResponse(second_backend),
+                              0);
 
   // Wait until the first backend is ready.
   WaitForBackend(0);
@@ -1398,10 +1589,10 @@ TEST_F(UpdatesTest, UpdateBalancersRepeated) {
   SetNextResolutionForLbChannelAllBalancers();
   auto first_backend = GetBackendPortsInGroups(0, 1);
   auto second_backend = GetBackendPortsInGroups(1, 2);
-  ScheduleResponseForBalancer(
-      0, EdsServiceImpl::BuildResponseForBackends(first_backend), 0);
-  ScheduleResponseForBalancer(
-      1, EdsServiceImpl::BuildResponseForBackends(second_backend), 0);
+  ScheduleResponseForBalancer(0, EdsServiceImpl::BuildResponse(first_backend),
+                              0);
+  ScheduleResponseForBalancer(1, EdsServiceImpl::BuildResponse(second_backend),
+                              0);
 
   // Wait until the first backend is ready.
   WaitForBackend(0);
@@ -1466,10 +1657,10 @@ TEST_F(UpdatesTest, UpdateBalancersDeadUpdate) {
   SetNextResolutionForLbChannel({balancers_[0]->port()});
   auto first_backend = GetBackendPortsInGroups(0, 1);
   auto second_backend = GetBackendPortsInGroups(1, 2);
-  ScheduleResponseForBalancer(
-      0, EdsServiceImpl::BuildResponseForBackends(first_backend), 0);
-  ScheduleResponseForBalancer(
-      1, EdsServiceImpl::BuildResponseForBackends(second_backend), 0);
+  ScheduleResponseForBalancer(0, EdsServiceImpl::BuildResponse(first_backend),
+                              0);
+  ScheduleResponseForBalancer(1, EdsServiceImpl::BuildResponse(second_backend),
+                              0);
 
   // Start servers and send 10 RPCs per server.
   gpr_log(GPR_INFO, "========= BEFORE FIRST BATCH ==========");
@@ -1540,14 +1731,6 @@ TEST_F(UpdatesTest, UpdateBalancersDeadUpdate) {
 // TODO(juanlishen): Add TEST_F(UpdatesWithClientLoadReportingTest,
 // ReresolveDeadBalancer)
 
-// The drop tests are deferred because the drop handling hasn't been added yet.
-
-// TODO(roth): Add TEST_F(SingleBalancerTest, Drop)
-
-// TODO(roth): Add TEST_F(SingleBalancerTest, DropAllFirst)
-
-// TODO(roth): Add TEST_F(SingleBalancerTest, DropAll)
-
 class SingleBalancerWithClientLoadReportingTest : public XdsEnd2endTest {
  public:
   SingleBalancerWithClientLoadReportingTest() : XdsEnd2endTest(4, 1, 3) {}
@@ -1560,7 +1743,7 @@ TEST_F(SingleBalancerWithClientLoadReportingTest, Vanilla) {
   // TODO(juanlishen): Partition the backends after multiple localities is
   // tested.
   ScheduleResponseForBalancer(0,
-                              EdsServiceImpl::BuildResponseForBackends(
+                              EdsServiceImpl::BuildResponse(
                                   GetBackendPortsInGroups(0, backends_.size())),
                               0);
   // Wait until all backends are ready.
@@ -1601,7 +1784,7 @@ TEST_F(SingleBalancerWithClientLoadReportingTest, BalancerRestart) {
       backends_.size() - kNumBackendsFirstPass;
   ScheduleResponseForBalancer(
       0,
-      EdsServiceImpl::BuildResponseForBackends(
+      EdsServiceImpl::BuildResponse(
           GetBackendPortsInGroups(0, kNumBackendsFirstPass)),
       0);
   // Wait until all backends returned by the balancer are ready.
@@ -1632,7 +1815,7 @@ TEST_F(SingleBalancerWithClientLoadReportingTest, BalancerRestart) {
   balancers_[0]->Start(server_host_);
   ScheduleResponseForBalancer(
       0,
-      EdsServiceImpl::BuildResponseForBackends(
+      EdsServiceImpl::BuildResponse(
           GetBackendPortsInGroups(kNumBackendsFirstPass)),
       0);
   // Wait for queries to start going to one of the new backends.
@@ -1652,7 +1835,71 @@ TEST_F(SingleBalancerWithClientLoadReportingTest, BalancerRestart) {
   EXPECT_EQ(0U, client_stats->total_dropped_requests());
 }
 
-// TODO(juanlishen): Add TEST_F(SingleBalancerWithClientLoadReportingTest, Drop)
+TEST_F(SingleBalancerWithClientLoadReportingTest, Drop) {
+  SetNextResolution({}, kDefaultServiceConfig_.c_str());
+  SetNextResolutionForLbChannelAllBalancers();
+  const size_t kNumRpcs = 1000;
+  const uint32_t drop_per_million_for_lb = 100000;
+  const uint32_t drop_per_million_for_throttle = 200000;
+  const double drop_rate_for_lb = drop_per_million_for_lb / 1000000.0;
+  const double drop_rate_for_throttle =
+      drop_per_million_for_throttle / 1000000.0;
+  const double drop_rate_for_lb_and_throttle =
+      drop_rate_for_lb + (1 - drop_rate_for_lb) * drop_rate_for_throttle;
+  // The EDS response contains two drop categories.
+  ScheduleResponseForBalancer(
+      0,
+      EdsServiceImpl::BuildResponse(
+          GetBackendPortsInGroups(),
+          {{"lb", drop_per_million_for_lb},
+           {"throttle", drop_per_million_for_throttle}}),
+      0);
+  int num_ok = 0;
+  int num_failure = 0;
+  int num_drops = 0;
+  std::tie(num_ok, num_failure, num_drops) = WaitForAllBackends();
+  const size_t num_warmup = num_ok + num_failure + num_drops;
+  // Send kNumRpcs RPCs and count the drops.
+  for (size_t i = 0; i < kNumRpcs; ++i) {
+    EchoResponse response;
+    const Status status = SendRpc(&response);
+    if (!status.ok() &&
+        status.error_message() == "Call dropped by load balancing policy") {
+      ++num_drops;
+    } else {
+      EXPECT_TRUE(status.ok()) << "code=" << status.error_code()
+                               << " message=" << status.error_message();
+      EXPECT_EQ(response.message(), kRequestMessage_);
+    }
+  }
+  // The drop rate should be roughly equal to the expectation.
+  const double seen_drop_rate = static_cast<double>(num_drops) / kNumRpcs;
+  const double error_tolerance = 0.2;
+  EXPECT_THAT(seen_drop_rate,
+              ::testing::AllOf(::testing::Ge(drop_rate_for_lb_and_throttle *
+                                             (1 - error_tolerance)),
+                               ::testing::Le(drop_rate_for_lb_and_throttle *
+                                             (1 + error_tolerance))));
+  // Check client stats.
+  ClientStats* client_stats = balancers_[0]->lrs_service()->WaitForLoadReport();
+  EXPECT_EQ(num_drops, client_stats->total_dropped_requests());
+  const size_t total_rpc = num_warmup + kNumRpcs;
+  EXPECT_THAT(
+      client_stats->dropped_requests("lb"),
+      ::testing::AllOf(
+          ::testing::Ge(total_rpc * drop_rate_for_lb * (1 - error_tolerance)),
+          ::testing::Le(total_rpc * drop_rate_for_lb * (1 + error_tolerance))));
+  EXPECT_THAT(
+      client_stats->dropped_requests("throttle"),
+      ::testing::AllOf(
+          ::testing::Ge(total_rpc * (1 - drop_rate_for_lb) *
+                        drop_rate_for_throttle * (1 - error_tolerance)),
+          ::testing::Le(total_rpc * (1 - drop_rate_for_lb) *
+                        drop_rate_for_throttle * (1 + error_tolerance))));
+  // The EDS service got a single request, and sent a single response.
+  EXPECT_EQ(1U, balancers_[0]->eds_service()->request_count());
+  EXPECT_EQ(1U, balancers_[0]->eds_service()->response_count());
+}
 
 }  // namespace
 }  // namespace testing
