@@ -16,8 +16,8 @@
  *
  */
 
-#import <XCTest/XCTest.h>
 #import <Cronet/Cronet.h>
+#import <XCTest/XCTest.h>
 
 #import <grpc/grpc_cronet.h>
 #import <grpcpp/create_channel.h>
@@ -30,9 +30,9 @@
 #import <grpcpp/support/client_interceptor.h>
 #import <src/proto/grpc/testing/echo.grpc.pb.h>
 
+#import "TestHelper.h"
 #import "src/core/lib/security/credentials/credentials.h"
 #import "test/core/end2end/data/ssl_test_data.h"
-#import "TestHelper.h"
 
 #import <map>
 #import <sstream>
@@ -44,7 +44,6 @@ using std::chrono::system_clock;
 using grpc::Status;
 using grpc::ServerContext;
 using grpc::ClientContext;
-
 
 @interface CppCronetEnd2EndTests : XCTestCase
 
@@ -79,7 +78,6 @@ using grpc::ClientContext;
   builder.RegisterService(&_service);
   builder.RegisterService("foo.test.youtube.com", &_foo_service);
   _server = builder.BuildAndStart();
-
 }
 
 - (void)stopServer {
@@ -90,7 +88,6 @@ using grpc::ClientContext;
   [self stopServer];
   [self startServer];
 }
-
 
 - (void)setUp {
   [self startServer];
@@ -127,7 +124,8 @@ using grpc::ClientContext;
   return channel;
 }
 
-- (std::shared_ptr<::grpc::Channel>)getChannelWithInterceptors:(std::vector<std::unique_ptr<grpc::experimental::ClientInterceptorFactoryInterface>>)creators {
+- (std::shared_ptr<::grpc::Channel>)getChannelWithInterceptors:
+    (std::vector<std::unique_ptr<grpc::experimental::ClientInterceptorFactoryInterface>>)creators {
   stream_engine* cronetEngine = [Cronet getGlobalEngine];
   auto cronetChannelCredentials = grpc::CronetChannelCredentials(cronetEngine);
   grpc::ChannelArguments args;
@@ -135,7 +133,7 @@ using grpc::ClientContext;
   args.SetUserAgentPrefix("custom_prefix");
   args.SetString(GRPC_ARG_SECONDARY_USER_AGENT_STRING, "end2end_test");
   auto channel = grpc::experimental::CreateCustomChannelWithInterceptors(
-                "127.0.01:5000", cronetChannelCredentials, args, std::move(creators));
+      "127.0.01:5000", cronetChannelCredentials, args, std::move(creators));
   return channel;
 }
 
@@ -550,14 +548,12 @@ using grpc::ClientContext;
   XCTAssertTrue(CheckIsLocalhost(context.peer()));
 }
 
--(void)testClientInterceptor {
+- (void)testClientInterceptor {
   DummyInterceptor::Reset();
-  std::vector<std::unique_ptr<grpc::experimental::ClientInterceptorFactoryInterface>>
-      creators;
+  std::vector<std::unique_ptr<grpc::experimental::ClientInterceptorFactoryInterface>> creators;
   // Add 20 dummy interceptors
   for (auto i = 0; i < 20; i++) {
-    creators.push_back(std::unique_ptr<DummyInterceptorFactory>(
-        new DummyInterceptorFactory()));
+    creators.push_back(std::unique_ptr<DummyInterceptorFactory>(new DummyInterceptorFactory()));
   }
   auto channel = [self getChannelWithInterceptors:std::move(creators)];
   auto stub = EchoTestService::NewStub(channel);
@@ -570,6 +566,5 @@ using grpc::ClientContext;
   XCTAssertTrue(s.ok());
   XCTAssertEqual(DummyInterceptor::GetNumTimesRun(), 20);
 }
-
 
 @end

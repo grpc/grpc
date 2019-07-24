@@ -15,10 +15,10 @@
  * limitations under the License.
  *
  */
+#import "TestHelper.h"
 #import <Cronet/Cronet.h>
 #import <grpcpp/impl/codegen/config.h>
 #import <grpcpp/impl/codegen/string_ref.h>
-#import "TestHelper.h"
 
 using std::chrono::system_clock;
 using grpc::testing::EchoRequest;
@@ -38,7 +38,7 @@ void configureCronet(void) {
     [Cronet setHttp2Enabled:YES];
     [Cronet setSslKeyLogFileName:@"Documents/key"];
     [Cronet enableTestCertVerifierForTesting];
-    NSURL *url = [[[NSFileManager defaultManager] URLsForDirectory:NSDocumentDirectory
+    NSURL* url = [[[NSFileManager defaultManager] URLsForDirectory:NSDocumentDirectory
                                                          inDomains:NSUserDomainMask] lastObject];
     [Cronet start];
     [Cronet startNetLogToFile:@"cronet_netlog.json" logBytes:YES];
@@ -50,8 +50,8 @@ bool CheckIsLocalhost(const grpc::string& addr) {
   const grpc::string kIpv4MappedIpv6("[::ffff:127.0.0.1]:");
   const grpc::string kIpv4("127.0.0.1:");
   return addr.substr(0, kIpv4.size()) == kIpv4 ||
-  addr.substr(0, kIpv4MappedIpv6.size()) == kIpv4MappedIpv6 ||
-  addr.substr(0, kIpv6.size()) == kIpv6;
+         addr.substr(0, kIpv4MappedIpv6.size()) == kIpv4MappedIpv6 ||
+         addr.substr(0, kIpv6.size()) == kIpv6;
 }
 
 int GetIntValueFromMetadataHelper(const char* key,
@@ -83,13 +83,13 @@ void MaybeEchoDeadline(ServerContext* context, const EchoRequest* request, EchoR
   }
 }
 
-
-Status TestServiceImpl::Echo(ServerContext* context, const EchoRequest* request, EchoResponse* response) {
+Status TestServiceImpl::Echo(ServerContext* context, const EchoRequest* request,
+                             EchoResponse* response) {
   // A bit of sleep to make sure that short deadline tests fail
   if (request->has_param() && request->param().server_sleep_us() > 0) {
     gpr_sleep_until(
-                    gpr_time_add(gpr_now(GPR_CLOCK_MONOTONIC),
-                                 gpr_time_from_micros(request->param().server_sleep_us(), GPR_TIMESPAN)));
+        gpr_time_add(gpr_now(GPR_CLOCK_MONOTONIC),
+                     gpr_time_from_micros(request->param().server_sleep_us(), GPR_TIMESPAN)));
   }
 
   if (request->has_param() && request->param().has_expected_error()) {
@@ -100,9 +100,9 @@ Status TestServiceImpl::Echo(ServerContext* context, const EchoRequest* request,
 
   if (request->has_param() && request->param().echo_metadata()) {
     const std::multimap<grpc::string_ref, grpc::string_ref>& client_metadata =
-    context->client_metadata();
+        context->client_metadata();
     for (std::multimap<grpc::string_ref, grpc::string_ref>::const_iterator iter =
-         client_metadata.begin();
+             client_metadata.begin();
          iter != client_metadata.end(); ++iter) {
       context->AddTrailingMetadata(ToString(iter->first), ToString(iter->second));
     }
@@ -120,8 +120,9 @@ Status TestServiceImpl::Echo(ServerContext* context, const EchoRequest* request,
   return Status::OK;
 }
 
-Status TestServiceImpl::RequestStream(ServerContext* context, grpc::ServerReader<EchoRequest>* reader,
-                     EchoResponse* response) {
+Status TestServiceImpl::RequestStream(ServerContext* context,
+                                      grpc::ServerReader<EchoRequest>* reader,
+                                      EchoResponse* response) {
   EchoRequest request;
   response->set_message("");
   int num_msgs_read = 0;
@@ -133,11 +134,11 @@ Status TestServiceImpl::RequestStream(ServerContext* context, grpc::ServerReader
 }
 
 Status TestServiceImpl::ResponseStream(ServerContext* context, const EchoRequest* request,
-                      grpc::ServerWriter<EchoResponse>* writer) {
+                                       grpc::ServerWriter<EchoResponse>* writer) {
   EchoResponse response;
   int server_responses_to_send =
-  GetIntValueFromMetadata(kServerResponseStreamsToSend, context->client_metadata(),
-                          kServerDefaultResponseStreamsToSend);
+      GetIntValueFromMetadata(kServerResponseStreamsToSend, context->client_metadata(),
+                              kServerDefaultResponseStreamsToSend);
   for (int i = 0; i < server_responses_to_send; i++) {
     response.set_message(request->message() + grpc::to_string(i));
     if (i == server_responses_to_send - 1) {
@@ -150,14 +151,14 @@ Status TestServiceImpl::ResponseStream(ServerContext* context, const EchoRequest
 }
 
 Status TestServiceImpl::BidiStream(ServerContext* context,
-                  grpc::ServerReaderWriter<EchoResponse, EchoRequest>* stream) {
+                                   grpc::ServerReaderWriter<EchoResponse, EchoRequest>* stream) {
   EchoRequest request;
   EchoResponse response;
 
   // kServerFinishAfterNReads suggests after how many reads, the server should
   // write the last message and send status (coalesced using WriteLast)
   int server_write_last =
-  GetIntValueFromMetadata(kServerFinishAfterNReads, context->client_metadata(), 0);
+      GetIntValueFromMetadata(kServerFinishAfterNReads, context->client_metadata(), 0);
 
   int read_counts = 0;
   while (stream->Read(&request)) {
@@ -175,11 +176,10 @@ Status TestServiceImpl::BidiStream(ServerContext* context,
 
 void DummyInterceptor::Intercept(grpc::experimental::InterceptorBatchMethods* methods) {
   if (methods->QueryInterceptionHookPoint(
-                                          grpc::experimental::InterceptionHookPoints::PRE_SEND_INITIAL_METADATA)) {
+          grpc::experimental::InterceptionHookPoints::PRE_SEND_INITIAL_METADATA)) {
     num_times_run_++;
   } else if (methods->QueryInterceptionHookPoint(
-                                                 grpc::experimental::InterceptionHookPoints::
-                                                 POST_RECV_INITIAL_METADATA)) {
+                 grpc::experimental::InterceptionHookPoints::POST_RECV_INITIAL_METADATA)) {
     num_times_run_reverse_++;
   }
   methods->Proceed();
@@ -191,9 +191,7 @@ void DummyInterceptor::Reset() {
 }
 
 int DummyInterceptor::GetNumTimesRun() {
-  NSCAssert(num_times_run_.load() == num_times_run_reverse_.load(), @"Interceptor must run same number of times in both directions");
+  NSCAssert(num_times_run_.load() == num_times_run_reverse_.load(),
+            @"Interceptor must run same number of times in both directions");
   return num_times_run_.load();
 }
-
-
-
