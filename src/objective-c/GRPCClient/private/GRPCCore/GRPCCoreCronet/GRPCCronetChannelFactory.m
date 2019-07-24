@@ -18,8 +18,8 @@
 
 #import "GRPCCronetChannelFactory.h"
 
-#import "ChannelArgsUtil.h"
-#import "GRPCChannel.h"
+#import "../ChannelArgsUtil.h"
+#import "../GRPCChannel.h"
 
 #import <Cronet/Cronet.h>
 #include <grpc/grpc_cronet.h>

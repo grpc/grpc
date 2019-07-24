@@ -18,13 +18,11 @@
 
 #import "GRPCCall.h"
 
-#include <grpc/support/time.h>
 #import "GRPCCallOptions.h"
 #import "GRPCInterceptor.h"
 #import "GRPCCall+Interceptor.h"
 
 #import "private/GRPCTransport+Private.h"
-#import "private/GRPCCore/GRPCCoreFactory.h"
 
 NSString *const kGRPCHeadersKey = @"io.grpc.HeadersKey";
 NSString *const kGRPCTrailersKey = @"io.grpc.TrailersKey";

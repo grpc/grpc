@@ -21,8 +21,8 @@
 #import <GRPCClient/GRPCTransport.h>
 #import <GRPCClient/GRPCCall+Cronet.h>
 
-#import "GRPCCoreFactory.h"
-#import "GRPCCallInternal.h"
+#import "../GRPCCoreFactory.h"
+#import "../GRPCCallInternal.h"
 #import "GRPCCronetChannelFactory.h"
 
 static GRPCCoreCronetFactory *gGRPCCoreCronetFactory = nil;

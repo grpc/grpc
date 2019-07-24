@@ -16,7 +16,7 @@
  *
  */
 
-#import "GRPCCoreFactory.h"
+#import "../GRPCCoreFactory.h"
 
 @interface GRPCCoreCronetFactory : NSObject<GRPCCoreTransportFactory>
 

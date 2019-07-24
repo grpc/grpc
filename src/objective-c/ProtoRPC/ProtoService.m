@@ -32,9 +32,14 @@
   GRPCCallOptions *_callOptions;
 }
 
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wnonnull"
+// Do not call the default init method
 - (instancetype)init {
+  [NSException raise:NSGenericException format:@"Do not call init method of ProtoService"];
   return [self initWithHost:nil packageName:nil serviceName:nil callOptions:nil];
 }
+#pragma clang diasnostic pop
 
 // Designated initializer
 - (instancetype)initWithHost:(NSString *)host
