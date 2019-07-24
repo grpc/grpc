@@ -27,9 +27,11 @@
 #include "src/core/lib/surface/channel_init.h"
 #include "src/core/lib/transport/http2_errors.h"
 
-// The idle filter is enabled in client channel by default.
-// To disable the idle filte, set GRPC_ARG_CLIENT_IDLE_TIMEOUT_MS to INT_MAX in
-// channel args.
+// The idle filter is disabled in client channel by default.
+// To enable the idle filte, set GRPC_ARG_CLIENT_IDLE_TIMEOUT_MS to [0, INT_MAX)
+// in channel args.
+// TODO(qianchengz): Find a reasonable default value. Maybe check what deault
+// value Java uses.
 #define DEFAULT_IDLE_TIMEOUT_MS (5 /*minutes*/ * 60 * 1000)
 
 namespace grpc_core {
@@ -116,9 +118,10 @@ class ChannelData {
   void EnterIdle();
 
   grpc_channel_element* elem_;
-  // Take a reference to the channel stack for the timer callback.
+  // The channel stack to which we take refs for pending callbacks.
   grpc_channel_stack* channel_stack_;
-  // Allowed max time a channel may have no outstanding RPCs.
+  // Timeout after the last RPC finishes on the client channel at which the
+  // channel goes back into IDLE state.
   const grpc_millis client_idle_timeout_;
 
   // Member data used to track the state of channel.
