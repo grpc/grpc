@@ -95,6 +95,8 @@ constexpr char kEdsTypeUrl[] =
 constexpr char kDefaultLocalityRegion[] = "xds_default_locality_region";
 constexpr char kDefaultLocalityZone[] = "xds_default_locality_zone";
 constexpr char kDefaultLocalitySubzone[] = "xds_default_locality_subzone";
+constexpr char kLbDropType[] = "lb";
+constexpr char kThrottleDropType[] = "throttle";
 
 template <typename ServiceType>
 class CountedService : public ServiceType {
@@ -209,8 +211,7 @@ class ClientStats {
     }
     for (const auto& input_dropped_requests :
          cluster_stats.dropped_requests()) {
-      dropped_requests_.emplace(grpc_core::UniquePtr<char>(gpr_strdup(
-                                    input_dropped_requests.category().c_str())),
+      dropped_requests_.emplace(input_dropped_requests.category(),
                                 input_dropped_requests.dropped_count());
     }
   }
@@ -244,16 +245,16 @@ class ClientStats {
     return sum;
   }
   uint64_t total_dropped_requests() const { return total_dropped_requests_; }
-  uint64_t dropped_requests(const char* category) {
-    grpc_core::UniquePtr<char> local_category(gpr_strdup(category));
-    return dropped_requests_.find(local_category)->second;
+  uint64_t dropped_requests(grpc::string category) const {
+    auto iter = dropped_requests_.find(category);
+    GPR_ASSERT(iter != dropped_requests_.end());
+    return iter->second;
   }
 
  private:
   std::map<std::unique_ptr<char>, LocalityStats> locality_stats_;
   uint64_t total_dropped_requests_;
-  grpc_core::Map<grpc_core::UniquePtr<char>, uint64_t, grpc_core::StringLess>
-      dropped_requests_;
+  std::map<grpc::string, uint64_t> dropped_requests_;
 };
 
 class EdsServiceImpl : public EdsService {
@@ -317,7 +318,9 @@ class EdsServiceImpl : public EdsService {
 
   static DiscoveryResponse BuildResponse(
       const std::vector<std::vector<int>>& backend_ports,
-      const std::map<grpc::string, uint32_t>& drop_categories = {}) {
+      const std::map<grpc::string, uint32_t>& drop_categories = {},
+      const FractionalPercent::DenominatorType denominator =
+          FractionalPercent::MILLION) {
     ClusterLoadAssignment assignment;
     assignment.set_cluster_name("service name");
     for (size_t i = 0; i < backend_ports.size(); ++i) {
@@ -347,7 +350,7 @@ class EdsServiceImpl : public EdsService {
         drop_overload->set_category(name);
         auto* drop_percentage = drop_overload->mutable_drop_percentage();
         drop_percentage->set_numerator(parts_per_million);
-        drop_percentage->set_denominator(FractionalPercent::MILLION);
+        drop_percentage->set_denominator(denominator);
       }
     }
     DiscoveryResponse response;
@@ -1049,20 +1052,19 @@ TEST_F(SingleBalancerTest, Drop) {
   SetNextResolution({}, kDefaultServiceConfig_.c_str());
   SetNextResolutionForLbChannelAllBalancers();
   const size_t kNumRpcs = 1000;
-  const uint32_t drop_per_million_for_lb = 100000;
-  const uint32_t drop_per_million_for_throttle = 200000;
-  const double drop_rate_for_lb = drop_per_million_for_lb / 1000000.0;
-  const double drop_rate_for_throttle =
-      drop_per_million_for_throttle / 1000000.0;
-  const double drop_rate_for_lb_and_throttle =
-      drop_rate_for_lb + (1 - drop_rate_for_lb) * drop_rate_for_throttle;
+  const uint32_t kDropPerMillionForLb = 100000;
+  const uint32_t kDropPerMillionForThrottle = 200000;
+  const double kDropRateForLb = kDropPerMillionForLb / 1000000.0;
+  const double kDropRateForThrottle = kDropPerMillionForThrottle / 1000000.0;
+  const double KDropRateForLbAndThrottle =
+      kDropRateForLb + (1 - kDropRateForLb) * kDropRateForThrottle;
   // The EDS response contains two drop categories.
   ScheduleResponseForBalancer(
       0,
       EdsServiceImpl::BuildResponse(
           GetBackendPortsInGroups(),
-          {{"lb", drop_per_million_for_lb},
-           {"throttle", drop_per_million_for_throttle}}),
+          {{kLbDropType, kDropPerMillionForLb},
+           {kThrottleDropType, kDropPerMillionForThrottle}}),
       0);
   WaitForAllBackends();
   // Send kNumRpcs RPCs and count the drops.
@@ -1081,12 +1083,92 @@ TEST_F(SingleBalancerTest, Drop) {
   }
   // The drop rate should be roughly equal to the expectation.
   const double seen_drop_rate = static_cast<double>(num_drops) / kNumRpcs;
-  const double error_tolerance = 0.2;
-  EXPECT_THAT(seen_drop_rate,
-              ::testing::AllOf(::testing::Ge(drop_rate_for_lb_and_throttle *
-                                             (1 - error_tolerance)),
-                               ::testing::Le(drop_rate_for_lb_and_throttle *
-                                             (1 + error_tolerance))));
+  const double kErrorTolerance = 0.2;
+  EXPECT_THAT(
+      seen_drop_rate,
+      ::testing::AllOf(
+          ::testing::Ge(KDropRateForLbAndThrottle * (1 - kErrorTolerance)),
+          ::testing::Le(KDropRateForLbAndThrottle * (1 + kErrorTolerance))));
+  // The EDS service got a single request, and sent a single response.
+  EXPECT_EQ(1U, balancers_[0]->eds_service()->request_count());
+  EXPECT_EQ(1U, balancers_[0]->eds_service()->response_count());
+}
+
+TEST_F(SingleBalancerTest, DropPerHundred) {
+  SetNextResolution({}, kDefaultServiceConfig_.c_str());
+  SetNextResolutionForLbChannelAllBalancers();
+  const size_t kNumRpcs = 1000;
+  const uint32_t kDropPerHundredForLb = 10;
+  const double kDropRateForLb = kDropPerHundredForLb / 100.0;
+  // The EDS response contains one drop category.
+  ScheduleResponseForBalancer(
+      0,
+      EdsServiceImpl::BuildResponse(GetBackendPortsInGroups(),
+                                    {{kLbDropType, kDropPerHundredForLb}},
+                                    FractionalPercent::HUNDRED),
+      0);
+  WaitForAllBackends();
+  // Send kNumRpcs RPCs and count the drops.
+  size_t num_drops = 0;
+  for (size_t i = 0; i < kNumRpcs; ++i) {
+    EchoResponse response;
+    const Status status = SendRpc(&response);
+    if (!status.ok() &&
+        status.error_message() == "Call dropped by load balancing policy") {
+      ++num_drops;
+    } else {
+      EXPECT_TRUE(status.ok()) << "code=" << status.error_code()
+                               << " message=" << status.error_message();
+      EXPECT_EQ(response.message(), kRequestMessage_);
+    }
+  }
+  // The drop rate should be roughly equal to the expectation.
+  const double seen_drop_rate = static_cast<double>(num_drops) / kNumRpcs;
+  const double kErrorTolerance = 0.2;
+  EXPECT_THAT(
+      seen_drop_rate,
+      ::testing::AllOf(::testing::Ge(kDropRateForLb * (1 - kErrorTolerance)),
+                       ::testing::Le(kDropRateForLb * (1 + kErrorTolerance))));
+  // The EDS service got a single request, and sent a single response.
+  EXPECT_EQ(1U, balancers_[0]->eds_service()->request_count());
+  EXPECT_EQ(1U, balancers_[0]->eds_service()->response_count());
+}
+
+TEST_F(SingleBalancerTest, DropPerTenThousand) {
+  SetNextResolution({}, kDefaultServiceConfig_.c_str());
+  SetNextResolutionForLbChannelAllBalancers();
+  const size_t kNumRpcs = 1000;
+  const uint32_t kDropPerTenThousandForLb = 1000;
+  const double kDropRateForLb = kDropPerTenThousandForLb / 10000.0;
+  // The EDS response contains one drop category.
+  ScheduleResponseForBalancer(
+      0,
+      EdsServiceImpl::BuildResponse(GetBackendPortsInGroups(),
+                                    {{kLbDropType, kDropPerTenThousandForLb}},
+                                    FractionalPercent::TEN_THOUSAND),
+      0);
+  WaitForAllBackends();
+  // Send kNumRpcs RPCs and count the drops.
+  size_t num_drops = 0;
+  for (size_t i = 0; i < kNumRpcs; ++i) {
+    EchoResponse response;
+    const Status status = SendRpc(&response);
+    if (!status.ok() &&
+        status.error_message() == "Call dropped by load balancing policy") {
+      ++num_drops;
+    } else {
+      EXPECT_TRUE(status.ok()) << "code=" << status.error_code()
+                               << " message=" << status.error_message();
+      EXPECT_EQ(response.message(), kRequestMessage_);
+    }
+  }
+  // The drop rate should be roughly equal to the expectation.
+  const double seen_drop_rate = static_cast<double>(num_drops) / kNumRpcs;
+  const double kErrorTolerance = 0.2;
+  EXPECT_THAT(
+      seen_drop_rate,
+      ::testing::AllOf(::testing::Ge(kDropRateForLb * (1 - kErrorTolerance)),
+                       ::testing::Le(kDropRateForLb * (1 + kErrorTolerance))));
   // The EDS service got a single request, and sent a single response.
   EXPECT_EQ(1U, balancers_[0]->eds_service()->request_count());
   EXPECT_EQ(1U, balancers_[0]->eds_service()->response_count());
@@ -1096,26 +1178,25 @@ TEST_F(SingleBalancerTest, DropUpdate) {
   SetNextResolution({}, kDefaultServiceConfig_.c_str());
   SetNextResolutionForLbChannelAllBalancers();
   const size_t kNumRpcs = 1000;
-  const uint32_t drop_per_million_for_lb = 100000;
-  const uint32_t drop_per_million_for_throttle = 200000;
-  const double drop_rate_for_lb = drop_per_million_for_lb / 1000000.0;
-  const double drop_rate_for_throttle =
-      drop_per_million_for_throttle / 1000000.0;
-  const double drop_rate_for_lb_and_throttle =
-      drop_rate_for_lb + (1 - drop_rate_for_lb) * drop_rate_for_throttle;
+  const uint32_t kDropPerMillionForLb = 100000;
+  const uint32_t kDropPerMillionForThrottle = 200000;
+  const double kDropRateForLb = kDropPerMillionForLb / 1000000.0;
+  const double kDropRateForThrottle = kDropPerMillionForThrottle / 1000000.0;
+  const double KDropRateForLbAndThrottle =
+      kDropRateForLb + (1 - kDropRateForLb) * kDropRateForThrottle;
   // The first EDS response contains one drop category.
   ScheduleResponseForBalancer(
       0,
       EdsServiceImpl::BuildResponse(GetBackendPortsInGroups(),
-                                    {{"lb", drop_per_million_for_lb}}),
+                                    {{kLbDropType, kDropPerMillionForLb}}),
       0);
   // The second EDS response contains two drop categories.
   ScheduleResponseForBalancer(
       0,
       EdsServiceImpl::BuildResponse(
           GetBackendPortsInGroups(),
-          {{"lb", drop_per_million_for_lb},
-           {"throttle", drop_per_million_for_throttle}}),
+          {{kLbDropType, kDropPerMillionForLb},
+           {kThrottleDropType, kDropPerMillionForThrottle}}),
       1000);
   WaitForAllBackends();
   // Send kNumRpcs RPCs and count the drops.
@@ -1136,17 +1217,17 @@ TEST_F(SingleBalancerTest, DropUpdate) {
   gpr_log(GPR_INFO, "========= DONE WITH FIRST BATCH ==========");
   // The drop rate should be roughly equal to the expectation.
   double seen_drop_rate = static_cast<double>(num_drops) / kNumRpcs;
-  const double error_tolerance = 0.2;
-  EXPECT_THAT(seen_drop_rate,
-              ::testing::AllOf(
-                  ::testing::Ge(drop_rate_for_lb * (1 - error_tolerance)),
-                  ::testing::Le(drop_rate_for_lb * (1 + error_tolerance))));
+  const double kErrorTolerance = 0.2;
+  EXPECT_THAT(
+      seen_drop_rate,
+      ::testing::AllOf(::testing::Ge(kDropRateForLb * (1 - kErrorTolerance)),
+                       ::testing::Le(kDropRateForLb * (1 + kErrorTolerance))));
   // Wait until the drop rate increases to the middle of the two configs, which
   // implies that the update has been in effect.
-  const double drop_rate_threshold =
-      (drop_rate_for_lb + drop_rate_for_lb_and_throttle) / 2;
+  const double kDropRateThreshold =
+      (kDropRateForLb + KDropRateForLbAndThrottle) / 2;
   size_t num_rpcs = kNumRpcs;
-  while (seen_drop_rate < drop_rate_threshold) {
+  while (seen_drop_rate < kDropRateThreshold) {
     EchoResponse response;
     const Status status = SendRpc(&response);
     ++num_rpcs;
@@ -1178,11 +1259,11 @@ TEST_F(SingleBalancerTest, DropUpdate) {
   gpr_log(GPR_INFO, "========= DONE WITH SECOND BATCH ==========");
   // The new drop rate should be roughly equal to the expectation.
   seen_drop_rate = static_cast<double>(num_drops) / kNumRpcs;
-  EXPECT_THAT(seen_drop_rate,
-              ::testing::AllOf(::testing::Ge(drop_rate_for_lb_and_throttle *
-                                             (1 - error_tolerance)),
-                               ::testing::Le(drop_rate_for_lb_and_throttle *
-                                             (1 + error_tolerance))));
+  EXPECT_THAT(
+      seen_drop_rate,
+      ::testing::AllOf(
+          ::testing::Ge(KDropRateForLbAndThrottle * (1 - kErrorTolerance)),
+          ::testing::Le(KDropRateForLbAndThrottle * (1 + kErrorTolerance))));
   // The EDS service got a single request,
   EXPECT_EQ(1U, balancers_[0]->eds_service()->request_count());
   // and sent two responses
@@ -1193,15 +1274,15 @@ TEST_F(SingleBalancerTest, DropAll) {
   SetNextResolution({}, kDefaultServiceConfig_.c_str());
   SetNextResolutionForLbChannelAllBalancers();
   const size_t kNumRpcs = 1000;
-  const uint32_t drop_per_million_for_lb = 100000;
-  const uint32_t drop_per_million_for_throttle = 1000000;
+  const uint32_t kDropPerMillionForLb = 100000;
+  const uint32_t kDropPerMillionForThrottle = 1000000;
   // The EDS response contains two drop categories.
   ScheduleResponseForBalancer(
       0,
       EdsServiceImpl::BuildResponse(
           GetBackendPortsInGroups(),
-          {{"lb", drop_per_million_for_lb},
-           {"throttle", drop_per_million_for_throttle}}),
+          {{kLbDropType, kDropPerMillionForLb},
+           {kThrottleDropType, kDropPerMillionForThrottle}}),
       0);
   // Send kNumRpcs RPCs and all of them are dropped.
   for (size_t i = 0; i < kNumRpcs; ++i) {
@@ -1390,10 +1471,11 @@ TEST_F(SingleBalancerTest, FallbackModeIsExitedWhenBalancerSaysToDropAllCalls) {
   // Enter fallback mode because the LB channel fails to connect.
   WaitForBackend(0);
   // Return a new balancer that sends a response to drop all calls.
-  ScheduleResponseForBalancer(0,
-                              EdsServiceImpl::BuildResponse(
-                                  GetBackendPortsInGroups(), {{"lb", 1000000}}),
-                              0);
+  ScheduleResponseForBalancer(
+      0,
+      EdsServiceImpl::BuildResponse(GetBackendPortsInGroups(),
+                                    {{kLbDropType, 1000000}}),
+      0);
   SetNextResolutionForLbChannelAllBalancers();
   // Send RPCs until failure.
   gpr_timespec deadline = gpr_time_add(
@@ -1834,20 +1916,19 @@ TEST_F(SingleBalancerWithClientLoadReportingTest, Drop) {
   SetNextResolution({}, kDefaultServiceConfig_.c_str());
   SetNextResolutionForLbChannelAllBalancers();
   const size_t kNumRpcs = 1000;
-  const uint32_t drop_per_million_for_lb = 100000;
-  const uint32_t drop_per_million_for_throttle = 200000;
-  const double drop_rate_for_lb = drop_per_million_for_lb / 1000000.0;
-  const double drop_rate_for_throttle =
-      drop_per_million_for_throttle / 1000000.0;
-  const double drop_rate_for_lb_and_throttle =
-      drop_rate_for_lb + (1 - drop_rate_for_lb) * drop_rate_for_throttle;
+  const uint32_t kDropPerMillionForLb = 100000;
+  const uint32_t kDropPerMillionForThrottle = 200000;
+  const double kDropRateForLb = kDropPerMillionForLb / 1000000.0;
+  const double kDropRateForThrottle = kDropPerMillionForThrottle / 1000000.0;
+  const double KDropRateForLbAndThrottle =
+      kDropRateForLb + (1 - kDropRateForLb) * kDropRateForThrottle;
   // The EDS response contains two drop categories.
   ScheduleResponseForBalancer(
       0,
       EdsServiceImpl::BuildResponse(
           GetBackendPortsInGroups(),
-          {{"lb", drop_per_million_for_lb},
-           {"throttle", drop_per_million_for_throttle}}),
+          {{kLbDropType, kDropPerMillionForLb},
+           {kThrottleDropType, kDropPerMillionForThrottle}}),
       0);
   int num_ok = 0;
   int num_failure = 0;
@@ -1869,28 +1950,27 @@ TEST_F(SingleBalancerWithClientLoadReportingTest, Drop) {
   }
   // The drop rate should be roughly equal to the expectation.
   const double seen_drop_rate = static_cast<double>(num_drops) / kNumRpcs;
-  const double error_tolerance = 0.2;
-  EXPECT_THAT(seen_drop_rate,
-              ::testing::AllOf(::testing::Ge(drop_rate_for_lb_and_throttle *
-                                             (1 - error_tolerance)),
-                               ::testing::Le(drop_rate_for_lb_and_throttle *
-                                             (1 + error_tolerance))));
+  const double kErrorTolerance = 0.2;
+  EXPECT_THAT(
+      seen_drop_rate,
+      ::testing::AllOf(
+          ::testing::Ge(KDropRateForLbAndThrottle * (1 - kErrorTolerance)),
+          ::testing::Le(KDropRateForLbAndThrottle * (1 + kErrorTolerance))));
   // Check client stats.
   ClientStats* client_stats = balancers_[0]->lrs_service()->WaitForLoadReport();
   EXPECT_EQ(num_drops, client_stats->total_dropped_requests());
   const size_t total_rpc = num_warmup + kNumRpcs;
   EXPECT_THAT(
-      client_stats->dropped_requests("lb"),
+      client_stats->dropped_requests(kLbDropType),
       ::testing::AllOf(
-          ::testing::Ge(total_rpc * drop_rate_for_lb * (1 - error_tolerance)),
-          ::testing::Le(total_rpc * drop_rate_for_lb * (1 + error_tolerance))));
-  EXPECT_THAT(
-      client_stats->dropped_requests("throttle"),
-      ::testing::AllOf(
-          ::testing::Ge(total_rpc * (1 - drop_rate_for_lb) *
-                        drop_rate_for_throttle * (1 - error_tolerance)),
-          ::testing::Le(total_rpc * (1 - drop_rate_for_lb) *
-                        drop_rate_for_throttle * (1 + error_tolerance))));
+          ::testing::Ge(total_rpc * kDropRateForLb * (1 - kErrorTolerance)),
+          ::testing::Le(total_rpc * kDropRateForLb * (1 + kErrorTolerance))));
+  EXPECT_THAT(client_stats->dropped_requests(kThrottleDropType),
+              ::testing::AllOf(
+                  ::testing::Ge(total_rpc * (1 - kDropRateForLb) *
+                                kDropRateForThrottle * (1 - kErrorTolerance)),
+                  ::testing::Le(total_rpc * (1 - kDropRateForLb) *
+                                kDropRateForThrottle * (1 + kErrorTolerance))));
   // The EDS service got a single request, and sent a single response.
   EXPECT_EQ(1U, balancers_[0]->eds_service()->request_count());
   EXPECT_EQ(1U, balancers_[0]->eds_service()->response_count());

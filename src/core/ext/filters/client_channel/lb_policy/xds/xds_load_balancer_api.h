@@ -87,7 +87,7 @@ class XdsDropConfig : public RefCounted<XdsDropConfig> {
     const uint32_t parts_per_million;
   };
 
-  using DropCategoryList = InlinedVector<DropCategory, 1>;
+  using DropCategoryList = InlinedVector<DropCategory, 2>;
 
   void AddCategory(UniquePtr<char> name, uint32_t parts_per_million) {
     drop_category_list_.emplace_back(
