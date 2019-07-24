@@ -27,7 +27,7 @@ DebugOnlyTraceFlag grpc_thread_pool_trace(false, "thread_pool");
 inline void* InfLenFIFOQueue::PopFront() {
   // Caller should already check queue is not empty and has already held the
   // mutex. This function will assume that there is at least one element in the
-  // queue (aka queue_head_ content is valid).
+  // queue (i.e. queue_head_->content is valid).
   void* result = queue_head_->content;
   count_.Store(count_.Load(MemoryOrder::RELAXED) - 1, MemoryOrder::RELAXED);
 
@@ -65,6 +65,7 @@ inline void* InfLenFIFOQueue::PopFront() {
 }
 
 InfLenFIFOQueue::Node* InfLenFIFOQueue::AllocateNodes(int num) {
+  num_nodes_  = num_nodes_ + num;
   Node* new_chunk = static_cast<Node*>(gpr_zalloc(sizeof(Node) * num));
   new_chunk[0].next = &new_chunk[1];
   new_chunk[num - 1].prev = &new_chunk[num - 2];
@@ -76,11 +77,11 @@ InfLenFIFOQueue::Node* InfLenFIFOQueue::AllocateNodes(int num) {
 }
 
 InfLenFIFOQueue::InfLenFIFOQueue() {
-  delete_list_size_ = 1024;
+  delete_list_size_ = kDeleteListInitSize;
   delete_list_ =
       static_cast<Node**>(gpr_zalloc(sizeof(Node*) * delete_list_size_));
 
-  Node* new_chunk = AllocateNodes(1024);
+  Node* new_chunk = AllocateNodes(kDeleteListInitSize);
   delete_list_[delete_list_count_++] = new_chunk;
   queue_head_ = queue_tail_ = new_chunk;
   new_chunk[0].prev = &new_chunk[1023];
@@ -126,10 +127,11 @@ void InfLenFIFOQueue::Put(void* elem) {
     stats_.num_started++;
     gpr_log(GPR_INFO, "[InfLenFIFOQueue Put] num_started:        %" PRIu64,
             stats_.num_started);
+    auto current_time = gpr_now(GPR_CLOCK_MONOTONIC);
     if (curr_count == 0) {
-      busy_time = gpr_now(GPR_CLOCK_MONOTONIC);
+      busy_time = current_time;
     }
-    queue_tail_->insert_time = gpr_now(GPR_CLOCK_MONOTONIC);
+    queue_tail_->insert_time = current_time;
   }
 
   count_.Store(curr_count + 1, MemoryOrder::RELAXED);
@@ -161,14 +163,6 @@ void* InfLenFIFOQueue::Get(gpr_timespec* wait_time) {
   }
   GPR_DEBUG_ASSERT(count_.Load(MemoryOrder::RELAXED) > 0);
   return PopFront();
-}
-
-size_t InfLenFIFOQueue::num_node() {
-  size_t num = 1024;
-  for (size_t i = 1; i < delete_list_count_; ++i) {
-    num = num * 2;
-  }
-  return num;
 }
 
 void InfLenFIFOQueue::PushWaiter(Waiter* waiter) {
