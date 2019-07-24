@@ -1226,15 +1226,12 @@ grpc_cc_library(
         "src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_client_stats.h",
         "src/core/ext/filters/client_channel/lb_policy/grpclb/load_balancer_api.h",
     ],
-    external_deps = [
-        "nanopb",
-    ],
     language = "c++",
     deps = [
         "grpc_base",
         "grpc_client_channel",
         "grpc_resolver_fake",
-        "grpclb_proto",
+        "grpc_lb_upb",
     ],
 )
 
@@ -1254,16 +1251,13 @@ grpc_cc_library(
         "src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_client_stats.h",
         "src/core/ext/filters/client_channel/lb_policy/grpclb/load_balancer_api.h",
     ],
-    external_deps = [
-        "nanopb",
-    ],
     language = "c++",
     deps = [
         "grpc_base",
         "grpc_client_channel",
         "grpc_resolver_fake",
         "grpc_secure",
-        "grpclb_proto",
+        "grpc_lb_upb",
     ],
 )
 

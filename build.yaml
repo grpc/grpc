@@ -725,9 +725,8 @@ filegroups:
   uses:
   - grpc_base
   - grpc_client_channel
+  - grpc_lb_upb
   - grpc_resolver_fake
-  - grpclb_proto
-  - nanopb
   - upb
 - name: grpc_lb_policy_grpclb_secure
   headers:
@@ -746,10 +745,9 @@ filegroups:
   uses:
   - grpc_base
   - grpc_client_channel
+  - grpc_lb_upb
   - grpc_resolver_fake
   - grpc_secure
-  - grpclb_proto
-  - nanopb
   - upb
 - name: grpc_lb_policy_pick_first
   src:
@@ -785,7 +783,6 @@ filegroups:
   - grpc_resolver_fake
   - grpclb_proto
   - nanopb
-  - upb
 - name: grpc_lb_policy_xds_secure
   headers:
   - src/core/ext/filters/client_channel/lb_policy/xds/xds.h
@@ -805,7 +802,6 @@ filegroups:
   - grpc_secure
   - grpclb_proto
   - nanopb
-  - upb
 - name: grpc_lb_subchannel_list
   headers:
   - src/core/ext/filters/client_channel/lb_policy/subchannel_list.h

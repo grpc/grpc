@@ -9294,9 +9294,8 @@
       "gpr", 
       "grpc_base", 
       "grpc_client_channel", 
+      "grpc_lb_upb", 
       "grpc_resolver_fake", 
-      "grpclb_proto", 
-      "nanopb", 
       "upb"
     ], 
     "headers": [
@@ -9329,10 +9328,9 @@
       "gpr", 
       "grpc_base", 
       "grpc_client_channel", 
+      "grpc_lb_upb", 
       "grpc_resolver_fake", 
       "grpc_secure", 
-      "grpclb_proto", 
-      "nanopb", 
       "upb"
     ], 
     "headers": [
@@ -9401,8 +9399,7 @@
       "grpc_client_channel", 
       "grpc_resolver_fake", 
       "grpclb_proto", 
-      "nanopb", 
-      "upb"
+      "nanopb"
     ], 
     "headers": [
       "src/core/ext/filters/client_channel/lb_policy/xds/xds.h", 
@@ -9434,8 +9431,7 @@
       "grpc_resolver_fake", 
       "grpc_secure", 
       "grpclb_proto", 
-      "nanopb", 
-      "upb"
+      "nanopb"
     ], 
     "headers": [
       "src/core/ext/filters/client_channel/lb_policy/xds/xds.h", 
