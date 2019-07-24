@@ -104,20 +104,16 @@ namespace Grpc.Core.Internal
 
         private void BeginOp()
         {
-            if (shutdownRefcount != null)
-            {
-                bool success = false;
-                shutdownRefcount.IncrementIfNonzero(ref success);
-                GrpcPreconditions.CheckState(success, "Shutdown has already been called");
-            }
+            GrpcPreconditions.CheckNotNull(shutdownRefcount, nameof(shutdownRefcount));
+            bool success = false;
+            shutdownRefcount.IncrementIfNonzero(ref success);
+            GrpcPreconditions.CheckState(success, "Shutdown has already been called");
         }
 
         private void EndOp()
         {
-            if (shutdownRefcount != null)
-            {
-                DecrementShutdownRefcount();
-            }
+            GrpcPreconditions.CheckNotNull(shutdownRefcount, nameof(shutdownRefcount));
+            DecrementShutdownRefcount();
         }
 
         // Allows declaring BeginOp and EndOp of a completion queue with a using statement.
