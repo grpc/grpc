@@ -159,7 +159,7 @@ class InfLenFIFOQueue : public MPMCQueueInterface {
   Node* queue_head_ = nullptr;  // Head of the queue, remove position
   Node* queue_tail_ = nullptr;  // End of queue, insert position
   Atomic<int> count_{0};        // Number of elements in queue
-  int num_nodes_ = 0;        // Number of nodes allocated
+  int num_nodes_ = 0;           // Number of nodes allocated
 
   Stats stats_;            // Stats info
   gpr_timespec busy_time;  // Start time of busy queue

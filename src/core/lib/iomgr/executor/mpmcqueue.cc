@@ -65,7 +65,7 @@ inline void* InfLenFIFOQueue::PopFront() {
 }
 
 InfLenFIFOQueue::Node* InfLenFIFOQueue::AllocateNodes(int num) {
-  num_nodes_  = num_nodes_ + num;
+  num_nodes_ = num_nodes_ + num;
   Node* new_chunk = static_cast<Node*>(gpr_zalloc(sizeof(Node) * num));
   new_chunk[0].next = &new_chunk[1];
   new_chunk[num - 1].prev = &new_chunk[num - 2];
