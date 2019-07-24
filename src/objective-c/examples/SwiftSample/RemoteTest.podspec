@@ -25,11 +25,11 @@ Pod::Spec.new do |s|
         --plugin=protoc-gen-grpc=#{plugin} \
         --objc_out=. \
         --grpc_out=. \
-        -I #{repo_root} \
+        -I . \
         -I #{well_known_types_dir} \
-        #{repo_root}/src/objective-c/examples/RemoteTestClient/*.proto
+        *.proto
   CMD
-
+    
   s.subspec 'Messages' do |ms|
     ms.source_files = '**/*.pbobjc.{h,m}'
     ms.header_mappings_dir = '.'

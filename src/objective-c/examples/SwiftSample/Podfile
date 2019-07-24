@@ -10,7 +10,7 @@ GRPC_LOCAL_SRC = '../../../..'
 
 target 'SwiftSample' do
   # Depend on the generated RemoteTestClient library
-  pod 'RemoteTest', :path => "../RemoteTestClient"
+  pod 'RemoteTest', :path => "."
 
   # Use the local versions of Protobuf, BoringSSL, and gRPC. You don't need any of the following
   # lines in your application.

@@ -18,7 +18,7 @@
 
 #import <GRPCClient/GRPCCall.h>
 #import <ProtoRPC/ProtoMethod.h>
-#import <RemoteTest/Messages.pbobjc.h>
+#import "src/objective-c/tests/RemoteTestClient/Messages.pbobjc.h"
 #import <XCTest/XCTest.h>
 
 #include <grpc/grpc.h>

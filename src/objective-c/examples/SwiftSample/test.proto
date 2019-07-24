@@ -17,7 +17,7 @@
 syntax = "proto3";
 
 import "google/protobuf/empty.proto";
-import "src/objective-c/tests/RemoteTestClient/messages.proto";
+import "messages.proto";
 
 package grpc.testing;
 
