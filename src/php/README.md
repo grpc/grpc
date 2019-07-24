@@ -261,7 +261,7 @@ Run unit tests
 
 ```sh
 $ cd grpc/src/php
-$ ./bin/run_tests.sh --skip-persistent-channel-tests
+$ ./bin/run_tests.sh 
 ```
 
 ## Generated Code Tests
