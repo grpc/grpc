@@ -1054,6 +1054,7 @@ grpc_channel_stack_builder_test: $(BINDIR)/$(CONFIG)/grpc_channel_stack_builder_
 grpc_channel_stack_test: $(BINDIR)/$(CONFIG)/grpc_channel_stack_test
 grpc_completion_queue_test: $(BINDIR)/$(CONFIG)/grpc_completion_queue_test
 grpc_completion_queue_threading_test: $(BINDIR)/$(CONFIG)/grpc_completion_queue_threading_test
+grpc_control_plane_credentials_test: $(BINDIR)/$(CONFIG)/grpc_control_plane_credentials_test
 grpc_create_jwt: $(BINDIR)/$(CONFIG)/grpc_create_jwt
 grpc_credentials_test: $(BINDIR)/$(CONFIG)/grpc_credentials_test
 grpc_ipv6_loopback_available_test: $(BINDIR)/$(CONFIG)/grpc_ipv6_loopback_available_test
@@ -1132,6 +1133,7 @@ tcp_client_uv_test: $(BINDIR)/$(CONFIG)/tcp_client_uv_test
 tcp_posix_test: $(BINDIR)/$(CONFIG)/tcp_posix_test
 tcp_server_posix_test: $(BINDIR)/$(CONFIG)/tcp_server_posix_test
 tcp_server_uv_test: $(BINDIR)/$(CONFIG)/tcp_server_uv_test
+threadpool_test: $(BINDIR)/$(CONFIG)/threadpool_test
 time_averaged_stats_test: $(BINDIR)/$(CONFIG)/time_averaged_stats_test
 timeout_encoding_test: $(BINDIR)/$(CONFIG)/timeout_encoding_test
 timer_heap_test: $(BINDIR)/$(CONFIG)/timer_heap_test
@@ -1489,6 +1491,7 @@ buildtests_c: privatelibs_c \
   $(BINDIR)/$(CONFIG)/grpc_channel_stack_test \
   $(BINDIR)/$(CONFIG)/grpc_completion_queue_test \
   $(BINDIR)/$(CONFIG)/grpc_completion_queue_threading_test \
+  $(BINDIR)/$(CONFIG)/grpc_control_plane_credentials_test \
   $(BINDIR)/$(CONFIG)/grpc_credentials_test \
   $(BINDIR)/$(CONFIG)/grpc_ipv6_loopback_available_test \
   $(BINDIR)/$(CONFIG)/grpc_json_token_test \
@@ -1553,6 +1556,7 @@ buildtests_c: privatelibs_c \
   $(BINDIR)/$(CONFIG)/tcp_posix_test \
   $(BINDIR)/$(CONFIG)/tcp_server_posix_test \
   $(BINDIR)/$(CONFIG)/tcp_server_uv_test \
+  $(BINDIR)/$(CONFIG)/threadpool_test \
   $(BINDIR)/$(CONFIG)/time_averaged_stats_test \
   $(BINDIR)/$(CONFIG)/timeout_encoding_test \
   $(BINDIR)/$(CONFIG)/timer_heap_test \
@@ -2067,6 +2071,8 @@ test_c: buildtests_c
 	$(Q) $(BINDIR)/$(CONFIG)/grpc_completion_queue_test || ( echo test grpc_completion_queue_test failed ; exit 1 )
 	$(E) "[RUN]     Testing grpc_completion_queue_threading_test"
 	$(Q) $(BINDIR)/$(CONFIG)/grpc_completion_queue_threading_test || ( echo test grpc_completion_queue_threading_test failed ; exit 1 )
+	$(E) "[RUN]     Testing grpc_control_plane_credentials_test"
+	$(Q) $(BINDIR)/$(CONFIG)/grpc_control_plane_credentials_test || ( echo test grpc_control_plane_credentials_test failed ; exit 1 )
 	$(E) "[RUN]     Testing grpc_credentials_test"
 	$(Q) $(BINDIR)/$(CONFIG)/grpc_credentials_test || ( echo test grpc_credentials_test failed ; exit 1 )
 	$(E) "[RUN]     Testing grpc_ipv6_loopback_available_test"
@@ -2189,6 +2195,8 @@ test_c: buildtests_c
 	$(Q) $(BINDIR)/$(CONFIG)/tcp_server_posix_test || ( echo test tcp_server_posix_test failed ; exit 1 )
 	$(E) "[RUN]     Testing tcp_server_uv_test"
 	$(Q) $(BINDIR)/$(CONFIG)/tcp_server_uv_test || ( echo test tcp_server_uv_test failed ; exit 1 )
+	$(E) "[RUN]     Testing threadpool_test"
+	$(Q) $(BINDIR)/$(CONFIG)/threadpool_test || ( echo test threadpool_test failed ; exit 1 )
 	$(E) "[RUN]     Testing time_averaged_stats_test"
 	$(Q) $(BINDIR)/$(CONFIG)/time_averaged_stats_test || ( echo test time_averaged_stats_test failed ; exit 1 )
 	$(E) "[RUN]     Testing timeout_encoding_test"
@@ -3546,6 +3554,7 @@ LIBGRPC_SRC = \
     src/core/lib/iomgr/exec_ctx.cc \
     src/core/lib/iomgr/executor.cc \
     src/core/lib/iomgr/executor/mpmcqueue.cc \
+    src/core/lib/iomgr/executor/threadpool.cc \
     src/core/lib/iomgr/fork_posix.cc \
     src/core/lib/iomgr/fork_windows.cc \
     src/core/lib/iomgr/gethostname_fallback.cc \
@@ -3977,6 +3986,7 @@ LIBGRPC_CRONET_SRC = \
     src/core/lib/iomgr/exec_ctx.cc \
     src/core/lib/iomgr/executor.cc \
     src/core/lib/iomgr/executor/mpmcqueue.cc \
+    src/core/lib/iomgr/executor/threadpool.cc \
     src/core/lib/iomgr/fork_posix.cc \
     src/core/lib/iomgr/fork_windows.cc \
     src/core/lib/iomgr/gethostname_fallback.cc \
@@ -4388,6 +4398,7 @@ LIBGRPC_TEST_UTIL_SRC = \
     src/core/lib/iomgr/exec_ctx.cc \
     src/core/lib/iomgr/executor.cc \
     src/core/lib/iomgr/executor/mpmcqueue.cc \
+    src/core/lib/iomgr/executor/threadpool.cc \
     src/core/lib/iomgr/fork_posix.cc \
     src/core/lib/iomgr/fork_windows.cc \
     src/core/lib/iomgr/gethostname_fallback.cc \
@@ -4706,6 +4717,7 @@ LIBGRPC_TEST_UTIL_UNSECURE_SRC = \
     src/core/lib/iomgr/exec_ctx.cc \
     src/core/lib/iomgr/executor.cc \
     src/core/lib/iomgr/executor/mpmcqueue.cc \
+    src/core/lib/iomgr/executor/threadpool.cc \
     src/core/lib/iomgr/fork_posix.cc \
     src/core/lib/iomgr/fork_windows.cc \
     src/core/lib/iomgr/gethostname_fallback.cc \
@@ -4987,6 +4999,7 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/lib/iomgr/exec_ctx.cc \
     src/core/lib/iomgr/executor.cc \
     src/core/lib/iomgr/executor/mpmcqueue.cc \
+    src/core/lib/iomgr/executor/threadpool.cc \
     src/core/lib/iomgr/fork_posix.cc \
     src/core/lib/iomgr/fork_windows.cc \
     src/core/lib/iomgr/gethostname_fallback.cc \
@@ -5999,6 +6012,7 @@ LIBGRPC++_CRONET_SRC = \
     src/core/lib/iomgr/exec_ctx.cc \
     src/core/lib/iomgr/executor.cc \
     src/core/lib/iomgr/executor/mpmcqueue.cc \
+    src/core/lib/iomgr/executor/threadpool.cc \
     src/core/lib/iomgr/fork_posix.cc \
     src/core/lib/iomgr/fork_windows.cc \
     src/core/lib/iomgr/gethostname_fallback.cc \
@@ -10928,6 +10942,38 @@ endif
 endif
 
 
+GRPC_CONTROL_PLANE_CREDENTIALS_TEST_SRC = \
+    test/core/security/control_plane_credentials_test.cc \
+
+GRPC_CONTROL_PLANE_CREDENTIALS_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(GRPC_CONTROL_PLANE_CREDENTIALS_TEST_SRC))))
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL.
+
+$(BINDIR)/$(CONFIG)/grpc_control_plane_credentials_test: openssl_dep_error
+
+else
+
+
+
+$(BINDIR)/$(CONFIG)/grpc_control_plane_credentials_test: $(GRPC_CONTROL_PLANE_CREDENTIALS_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS) $(GRPC_CONTROL_PLANE_CREDENTIALS_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/grpc_control_plane_credentials_test
+
+endif
+
+$(OBJDIR)/$(CONFIG)/test/core/security/control_plane_credentials_test.o:  $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a
+
+deps_grpc_control_plane_credentials_test: $(GRPC_CONTROL_PLANE_CREDENTIALS_TEST_OBJS:.o=.dep)
+
+ifneq ($(NO_SECURE),true)
+ifneq ($(NO_DEPS),true)
+-include $(GRPC_CONTROL_PLANE_CREDENTIALS_TEST_OBJS:.o=.dep)
+endif
+endif
+
+
 GRPC_CREATE_JWT_SRC = \
     test/core/security/create_jwt.cc \
     test/core/util/cmdline.cc \
@@ -13438,6 +13484,38 @@ deps_tcp_server_uv_test: $(TCP_SERVER_UV_TEST_OBJS:.o=.dep)
 ifneq ($(NO_SECURE),true)
 ifneq ($(NO_DEPS),true)
 -include $(TCP_SERVER_UV_TEST_OBJS:.o=.dep)
+endif
+endif
+
+
+THREADPOOL_TEST_SRC = \
+    test/core/iomgr/threadpool_test.cc \
+
+THREADPOOL_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(THREADPOOL_TEST_SRC))))
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL.
+
+$(BINDIR)/$(CONFIG)/threadpool_test: openssl_dep_error
+
+else
+
+
+
+$(BINDIR)/$(CONFIG)/threadpool_test: $(THREADPOOL_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LD) $(LDFLAGS) $(THREADPOOL_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/threadpool_test
+
+endif
+
+$(OBJDIR)/$(CONFIG)/test/core/iomgr/threadpool_test.o:  $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a
+
+deps_threadpool_test: $(THREADPOOL_TEST_OBJS:.o=.dep)
+
+ifneq ($(NO_SECURE),true)
+ifneq ($(NO_DEPS),true)
+-include $(THREADPOOL_TEST_OBJS:.o=.dep)
 endif
 endif
 

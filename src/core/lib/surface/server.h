@@ -51,10 +51,6 @@ void grpc_server_setup_transport(
         socket_node,
     grpc_resource_user* resource_user = nullptr);
 
-/* fills in the uuids of all listen sockets on this server */
-void grpc_server_populate_listen_sockets(
-    grpc_server* server, grpc_core::channelz::ChildRefsList* listen_sockets);
-
 grpc_core::channelz::ServerNode* grpc_server_get_channelz_node(
     grpc_server* server);
 

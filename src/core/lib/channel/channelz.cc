@@ -192,6 +192,23 @@ ChannelNode::ChannelNode(UniquePtr<char> target,
       trace_(channel_tracer_max_nodes),
       parent_uuid_(parent_uuid) {}
 
+const char* ChannelNode::GetChannelConnectivityStateChangeString(
+    grpc_connectivity_state state) {
+  switch (state) {
+    case GRPC_CHANNEL_IDLE:
+      return "Channel state change to IDLE";
+    case GRPC_CHANNEL_CONNECTING:
+      return "Channel state change to CONNECTING";
+    case GRPC_CHANNEL_READY:
+      return "Channel state change to READY";
+    case GRPC_CHANNEL_TRANSIENT_FAILURE:
+      return "Channel state change to TRANSIENT_FAILURE";
+    case GRPC_CHANNEL_SHUTDOWN:
+      return "Channel state change to SHUTDOWN";
+  }
+  GPR_UNREACHABLE_CODE(return "UNKNOWN");
+}
+
 grpc_json* ChannelNode::RenderJson() {
   // We need to track these three json objects to build our object
   grpc_json* top_level_json = grpc_json_create(GRPC_JSON_OBJECT);
@@ -303,9 +320,7 @@ void ChannelNode::RemoveChildSubchannel(intptr_t child_uuid) {
 //
 
 ServerNode::ServerNode(grpc_server* server, size_t channel_tracer_max_nodes)
-    : BaseNode(EntityType::kServer),
-      server_(server),
-      trace_(channel_tracer_max_nodes) {}
+    : BaseNode(EntityType::kServer), trace_(channel_tracer_max_nodes) {}
 
 ServerNode::~ServerNode() {}
 
@@ -317,6 +332,16 @@ void ServerNode::AddChildSocket(RefCountedPtr<SocketNode> node) {
 void ServerNode::RemoveChildSocket(intptr_t child_uuid) {
   MutexLock lock(&child_mu_);
   child_sockets_.erase(child_uuid);
+}
+
+void ServerNode::AddChildListenSocket(intptr_t child_uuid) {
+  MutexLock lock(&child_mu_);
+  child_listen_sockets_.insert(MakePair(child_uuid, true));
+}
+
+void ServerNode::RemoveChildListenSocket(intptr_t child_uuid) {
+  MutexLock lock(&child_mu_);
+  child_listen_sockets_.erase(child_uuid);
 }
 
 char* ServerNode::RenderServerSockets(intptr_t start_socket_id,
@@ -382,17 +407,17 @@ grpc_json* ServerNode::RenderJson() {
   // ask CallCountingHelper to populate trace and call count data.
   call_counter_.PopulateCallCounts(json);
   json = top_level_json;
-  ChildRefsList listen_sockets;
-  grpc_server_populate_listen_sockets(server_, &listen_sockets);
-  if (!listen_sockets.empty()) {
+  // Render listen sockets
+  MutexLock lock(&child_mu_);
+  if (!child_listen_sockets_.empty()) {
     grpc_json* array_parent = grpc_json_create_child(
         nullptr, json, "listenSocket", nullptr, GRPC_JSON_ARRAY, false);
-    for (size_t i = 0; i < listen_sockets.size(); ++i) {
+    for (const auto& it : child_listen_sockets_) {
       json_iterator =
           grpc_json_create_child(json_iterator, array_parent, nullptr, nullptr,
                                  GRPC_JSON_OBJECT, false);
       grpc_json_add_number_string_child(json_iterator, nullptr, "socketId",
-                                        listen_sockets[i]);
+                                        it.first);
     }
   }
   return top_level_json;
