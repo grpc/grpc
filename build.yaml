@@ -634,6 +634,12 @@ filegroups:
   - grpc_base
   - grpc_deadline_filter
   - health_proto
+- name: grpc_client_idle_filter
+  src:
+  - src/core/ext/filters/client_idle/client_idle_filter.cc
+  plugin: grpc_client_idle_filter
+  uses:
+  - grpc_base
 - name: grpc_codegen
   public_headers:
   - include/grpc/impl/codegen/byte_buffer.h
@@ -1606,6 +1612,7 @@ libs:
   - grpc_resolver_fake
   - grpc_secure
   - census
+  - grpc_client_idle_filter
   - grpc_max_age_filter
   - grpc_message_size_filter
   - grpc_deadline_filter
@@ -1679,6 +1686,7 @@ libs:
   - grpc_lb_policy_pick_first
   - grpc_lb_policy_round_robin
   - census
+  - grpc_client_idle_filter
   - grpc_max_age_filter
   - grpc_message_size_filter
   - grpc_deadline_filter
