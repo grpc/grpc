@@ -433,8 +433,15 @@ static void BM_HpackParserInitDestroy(benchmark::State& state) {
   TrackCounters track_counters;
   grpc_core::ExecCtx exec_ctx;
   grpc_chttp2_hpack_parser p;
+  // Initial destruction so we don't leak memory in the loop.
+  grpc_chttp2_hptbl_destroy(&p.table);
   while (state.KeepRunning()) {
     grpc_chttp2_hpack_parser_init(&p);
+    // Note that grpc_chttp2_hpack_parser_destroy frees the table dynamic
+    // elements so we need to recreate it here. In actual operation,
+    // grpc_core::New<grpc_chttp2_hpack_parser_destroy> allocates the table once
+    // and for all.
+    new (&p.table) grpc_chttp2_hptbl();
     grpc_chttp2_hpack_parser_destroy(&p);
     grpc_core::ExecCtx::Get()->Flush();
   }

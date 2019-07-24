@@ -45,6 +45,90 @@ void grpc_channel_credentials_release(grpc_channel_credentials* creds) {
   if (creds) creds->Unref();
 }
 
+static grpc_core::Map<grpc_core::UniquePtr<char>,
+                      grpc_core::RefCountedPtr<grpc_channel_credentials>,
+                      grpc_core::StringLess>* g_grpc_control_plane_creds;
+static gpr_mu g_control_plane_creds_mu;
+
+static void do_control_plane_creds_init() {
+  gpr_mu_init(&g_control_plane_creds_mu);
+  GPR_ASSERT(g_grpc_control_plane_creds == nullptr);
+  g_grpc_control_plane_creds = grpc_core::New<
+      grpc_core::Map<grpc_core::UniquePtr<char>,
+                     grpc_core::RefCountedPtr<grpc_channel_credentials>,
+                     grpc_core::StringLess>>();
+}
+
+void grpc_control_plane_credentials_init() {
+  static gpr_once once_init_control_plane_creds = GPR_ONCE_INIT;
+  gpr_once_init(&once_init_control_plane_creds, do_control_plane_creds_init);
+}
+
+void grpc_test_only_control_plane_credentials_destroy() {
+  grpc_core::Delete(g_grpc_control_plane_creds);
+  g_grpc_control_plane_creds = nullptr;
+  gpr_mu_destroy(&g_control_plane_creds_mu);
+}
+
+void grpc_test_only_control_plane_credentials_force_init() {
+  if (g_grpc_control_plane_creds == nullptr) {
+    do_control_plane_creds_init();
+  }
+}
+
+bool grpc_channel_credentials_attach_credentials(
+    grpc_channel_credentials* credentials, const char* authority,
+    grpc_channel_credentials* control_plane_creds) {
+  grpc_core::ExecCtx exec_ctx;
+  return credentials->attach_credentials(authority, control_plane_creds->Ref());
+}
+
+bool grpc_control_plane_credentials_register(
+    const char* authority, grpc_channel_credentials* control_plane_creds) {
+  grpc_core::ExecCtx exec_ctx;
+  {
+    grpc_core::MutexLock lock(&g_control_plane_creds_mu);
+    auto key = grpc_core::UniquePtr<char>(gpr_strdup(authority));
+    if (g_grpc_control_plane_creds->find(key) !=
+        g_grpc_control_plane_creds->end()) {
+      return false;
+    }
+    (*g_grpc_control_plane_creds)[std::move(key)] = control_plane_creds->Ref();
+  }
+  return true;
+}
+
+bool grpc_channel_credentials::attach_credentials(
+    const char* authority,
+    grpc_core::RefCountedPtr<grpc_channel_credentials> control_plane_creds) {
+  auto key = grpc_core::UniquePtr<char>(gpr_strdup(authority));
+  if (local_control_plane_creds_.find(key) !=
+      local_control_plane_creds_.end()) {
+    return false;
+  }
+  local_control_plane_creds_[std::move(key)] = std::move(control_plane_creds);
+  return true;
+}
+
+grpc_core::RefCountedPtr<grpc_channel_credentials>
+grpc_channel_credentials::get_control_plane_credentials(const char* authority) {
+  {
+    auto key = grpc_core::UniquePtr<char>(gpr_strdup(authority));
+    auto local_lookup = local_control_plane_creds_.find(key);
+    if (local_lookup != local_control_plane_creds_.end()) {
+      return local_lookup->second;
+    }
+    {
+      grpc_core::MutexLock lock(&g_control_plane_creds_mu);
+      auto global_lookup = g_grpc_control_plane_creds->find(key);
+      if (global_lookup != g_grpc_control_plane_creds->end()) {
+        return global_lookup->second;
+      }
+    }
+  }
+  return duplicate_without_call_credentials();
+}
+
 void grpc_call_credentials_release(grpc_call_credentials* creds) {
   GRPC_API_TRACE("grpc_call_credentials_release(creds=%p)", 1, (creds));
   grpc_core::ExecCtx exec_ctx;

@@ -144,7 +144,7 @@ extern CoreCodegenInterface* g_core_codegen_interface;
 /// Codegen specific version of \a GPR_ASSERT.
 #define GPR_CODEGEN_ASSERT(x)                                              \
   do {                                                                     \
-    if (!(x)) {                                                            \
+    if (GPR_UNLIKELY(!(x))) {                                              \
       grpc::g_core_codegen_interface->assert_fail(#x, __FILE__, __LINE__); \
     }                                                                      \
   } while (0)
