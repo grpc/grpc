@@ -53,7 +53,7 @@
     return out
 
   def grpcpp_private_files(libs, filegroups):
-    out = grpc_lib_files(libs, ("grpc++",), ("headers", "src"))
+    out = grpc_lib_files(libs, ("grpc++", "grpc++_cronet"), ("headers", "src"))
     excl_files = grpc_private_files(libs)
 
     # We exclude proto related files in this particular podspec so that we can provide a protobuf-independent lib
