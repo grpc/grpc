@@ -202,7 +202,7 @@ class ClientStats {
       : total_dropped_requests_(cluster_stats.total_dropped_requests()) {
     for (const auto& input_locality_stats :
          cluster_stats.upstream_locality_stats()) {
-      grpc_core::UniquePtr<char> sub_zone = grpc_core::UniquePtr<char>(
+      std::unique_ptr<char> sub_zone(
           gpr_strdup(input_locality_stats.locality().sub_zone().c_str()));
       locality_stats_.emplace(std::move(sub_zone),
                               LocalityStats(input_locality_stats));
@@ -215,30 +215,28 @@ class ClientStats {
     }
   }
 
-  // TODO(juanlishen): The following getter-like methods should be const. But we
-  // need const_iterator implementation in our map.
-  uint64_t total_successful_requests() {
+  uint64_t total_successful_requests() const {
     uint64_t sum = 0;
     for (auto& p : locality_stats_) {
       sum += p.second.total_successful_requests;
     }
     return sum;
   }
-  uint64_t total_requests_in_progress() {
+  uint64_t total_requests_in_progress() const {
     uint64_t sum = 0;
     for (auto& p : locality_stats_) {
       sum += p.second.total_requests_in_progress;
     }
     return sum;
   }
-  uint64_t total_error_requests() {
+  uint64_t total_error_requests() const {
     uint64_t sum = 0;
     for (auto& p : locality_stats_) {
       sum += p.second.total_error_requests;
     }
     return sum;
   }
-  uint64_t total_issued_requests() {
+  uint64_t total_issued_requests() const {
     uint64_t sum = 0;
     for (auto& p : locality_stats_) {
       sum += p.second.total_issued_requests;
@@ -252,9 +250,7 @@ class ClientStats {
   }
 
  private:
-  grpc_core::Map<grpc_core::UniquePtr<char>, LocalityStats,
-                 grpc_core::StringLess>
-      locality_stats_;
+  std::map<std::unique_ptr<char>, LocalityStats> locality_stats_;
   uint64_t total_dropped_requests_;
   grpc_core::Map<grpc_core::UniquePtr<char>, uint64_t, grpc_core::StringLess>
       dropped_requests_;
