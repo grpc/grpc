@@ -1254,15 +1254,6 @@ void grpc_server_setup_transport(
   grpc_transport_perform_op(transport, op);
 }
 
-void grpc_server_populate_listen_sockets(
-    grpc_server* server, grpc_core::channelz::ChildRefsList* listen_sockets) {
-  gpr_mu_lock(&server->mu_global);
-  for (listener* l = server->listeners; l != nullptr; l = l->next) {
-    listen_sockets->push_back(l->socket_uuid);
-  }
-  gpr_mu_unlock(&server->mu_global);
-}
-
 void done_published_shutdown(void* done_arg, grpc_cq_completion* storage) {
   (void)done_arg;
   gpr_free(storage);
@@ -1350,6 +1341,9 @@ void grpc_server_shutdown_and_notify(grpc_server* server,
     GRPC_CLOSURE_INIT(&l->destroy_done, listener_destroy_done, server,
                       grpc_schedule_on_exec_ctx);
     l->destroy(server, l->arg, &l->destroy_done);
+    if (server->channelz_server != nullptr && l->socket_uuid != 0) {
+      server->channelz_server->RemoveChildListenSocket(l->socket_uuid);
+    }
   }
 
   channel_broadcaster_shutdown(&broadcaster, true /* send_goaway */,
@@ -1413,6 +1407,9 @@ void grpc_server_add_listener(grpc_server* server, void* arg,
   l->start = start;
   l->destroy = destroy;
   l->socket_uuid = socket_uuid;
+  if (server->channelz_server != nullptr && socket_uuid != 0) {
+    server->channelz_server->AddChildListenSocket(socket_uuid);
+  }
   l->next = server->listeners;
   server->listeners = l;
 }

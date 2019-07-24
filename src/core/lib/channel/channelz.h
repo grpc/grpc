@@ -58,11 +58,6 @@ namespace channelz {
 grpc_arg MakeParentUuidArg(intptr_t parent_uuid);
 intptr_t GetParentUuidFromArgs(const grpc_channel_args& args);
 
-// TODO(ncteisen), this only contains the uuids of the children for now,
-// since that is all that is strictly needed. In a future enhancement we will
-// add human readable names as in the channelz.proto
-typedef InlinedVector<intptr_t, 10> ChildRefsList;
-
 class SocketNode;
 
 namespace testing {
@@ -221,6 +216,13 @@ class ServerNode : public BaseNode {
 
   void RemoveChildSocket(intptr_t child_uuid);
 
+  // TODO(ncteisen): This only takes in the uuid of the child socket for now,
+  // since that is all that is strictly needed. In a future enhancement we will
+  // add human readable names as in the channelz.proto
+  void AddChildListenSocket(intptr_t child_uuid);
+
+  void RemoveChildListenSocket(intptr_t child_uuid);
+
   // proxy methods to composed classes.
   void AddTraceEvent(ChannelTrace::Severity severity, const grpc_slice& data) {
     trace_.AddTraceEvent(severity, data);
@@ -236,11 +238,14 @@ class ServerNode : public BaseNode {
   void RecordCallSucceeded() { call_counter_.RecordCallSucceeded(); }
 
  private:
-  grpc_server* server_;
   CallCountingHelper call_counter_;
   ChannelTrace trace_;
-  Mutex child_mu_;  // Guards child map below.
+  Mutex child_mu_;  // Guards child maps below.
   Map<intptr_t, RefCountedPtr<SocketNode>> child_sockets_;
+  // TODO(roth): We don't actually use the values here, only the keys, so
+  // these should be sets instead of maps, but we don't currently have a set
+  // implementation.  Change this if/when we have one.
+  Map<intptr_t, bool> child_listen_sockets_;
 };
 
 // Handles channelz bookkeeping for sockets
