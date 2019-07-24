@@ -201,9 +201,7 @@ class ClientStats {
       : total_dropped_requests_(cluster_stats.total_dropped_requests()) {
     for (const auto& input_locality_stats :
          cluster_stats.upstream_locality_stats()) {
-      std::unique_ptr<char> sub_zone(
-          gpr_strdup(input_locality_stats.locality().sub_zone().c_str()));
-      locality_stats_.emplace(std::move(sub_zone),
+      locality_stats_.emplace(input_locality_stats.locality().sub_zone(),
                               LocalityStats(input_locality_stats));
     }
   }
@@ -239,7 +237,7 @@ class ClientStats {
   uint64_t total_dropped_requests() const { return total_dropped_requests_; }
 
  private:
-  std::map<std::unique_ptr<char>, LocalityStats> locality_stats_;
+  std::map<grpc::string, LocalityStats> locality_stats_;
   uint64_t total_dropped_requests_;
 };
 
@@ -397,7 +395,7 @@ class LrsServiceImpl : public LrsService {
           // below from firing before its corresponding wait is executed.
           grpc_core::MutexLock lock(&load_report_mu_);
           GPR_ASSERT(client_stats_ == nullptr);
-          client_stats_.reset(grpc_core::New<ClientStats>(cluster_stats));
+          client_stats_.reset(new ClientStats(cluster_stats));
           load_report_ready_ = true;
           load_report_cond_.Signal();
         }
@@ -455,7 +453,7 @@ class LrsServiceImpl : public LrsService {
   grpc_core::CondVar load_report_cond_;
   // Protect the members below.
   grpc_core::Mutex load_report_mu_;
-  grpc_core::UniquePtr<ClientStats> client_stats_;
+  std::unique_ptr<ClientStats> client_stats_;
   bool load_report_ready_ = false;
 };
 
