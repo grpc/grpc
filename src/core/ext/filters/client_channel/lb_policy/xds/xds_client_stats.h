@@ -129,12 +129,6 @@ class XdsLbClientStats {
       LoadMetricSnapshotMap load_metric_stats;
     };
 
-    LocalityStats() = default;
-    // Move ctor. For map operations.
-    LocalityStats(LocalityStats&& other) noexcept;
-    // Move assignment. For map operations. Should never be invoked.
-    LocalityStats& operator=(LocalityStats&& other) noexcept;
-
     // Returns a snapshot of this instance and reset all the accumulative
     // counters.
     Snapshot GetSnapshotAndReset();
@@ -144,10 +138,13 @@ class XdsLbClientStats {
     // LocalityStats, so the LocalityStats can be safely deleted when all the
     // in-progress calls have finished.
     // Only be called from the control plane combiner.
-    // FIXME: fix memory order.
     void RefByPicker() { picker_refcount_.FetchAdd(1, MemoryOrder::ACQ_REL); }
     // Might be called from the control plane combiner or the data plane
     // combiner.
+    // TODO(juanlishen): Once https://github.com/grpc/grpc/pull/19390 is merged,
+    //  this method will also only be invoked in the control plane combiner.
+    //  We may then be able to simplify the LocalityStats' lifetime by making it
+    //  RefCounted<> and populating the protobuf in its dtor.
     void UnrefByPicker() { picker_refcount_.FetchSub(1, MemoryOrder::ACQ_REL); }
     // Only be called from the control plane combiner.
     // The only place where the picker_refcount_ can be increased is
@@ -180,8 +177,12 @@ class XdsLbClientStats {
     Atomic<uint8_t> picker_refcount_{0};
   };
 
-  using LocalityStatsMap =
-      Map<RefCountedPtr<XdsLocalityName>, LocalityStats, XdsLocalityName::Less>;
+  // TODO(juanlishen): The value type of Map<> must be movable in current
+  // implementation. To avoid making LocalityStats movable, we wrap it by
+  // UniquePtr<>. We should remove this wrapper if the value type of Map<>
+  // doesn't have to be movable.
+  using LocalityStatsMap = Map<RefCountedPtr<XdsLocalityName>,
+                               UniquePtr<LocalityStats>, XdsLocalityName::Less>;
   using LocalityStatsSnapshotMap =
       Map<RefCountedPtr<XdsLocalityName>, LocalityStats::Snapshot,
           XdsLocalityName::Less>;
