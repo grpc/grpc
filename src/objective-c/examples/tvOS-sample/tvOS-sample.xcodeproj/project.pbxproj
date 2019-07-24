@@ -3,7 +3,7 @@
 	archiveVersion = 1;
 	classes = {
 	};
-	objectVersion = 50;
+	objectVersion = 51;
 	objects = {
 
 /* Begin PBXBuildFile section */
@@ -48,7 +48,6 @@
 				D2D1C60CE9BD00C1371BC913 /* Pods-tvOS-sample.debug.xcconfig */,
 				93F3CF0DB110860F8E180685 /* Pods-tvOS-sample.release.xcconfig */,
 			);
-			name = Pods;
 			path = Pods;
 			sourceTree = "<group>";
 		};
@@ -352,6 +351,7 @@
 				PRODUCT_BUNDLE_IDENTIFIER = "com.google.tvOS-grpc-sample";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				TARGETED_DEVICE_FAMILY = 3;
+				TVOS_DEPLOYMENT_TARGET = 10.0;
 			};
 			name = Debug;
 		};
@@ -371,6 +371,7 @@
 				PRODUCT_BUNDLE_IDENTIFIER = "com.google.tvOS-grpc-sample";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				TARGETED_DEVICE_FAMILY = 3;
+				TVOS_DEPLOYMENT_TARGET = 10.0;
 			};
 			name = Release;
 		};
