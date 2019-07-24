@@ -37,6 +37,27 @@ class ChannelTest extends PHPUnit_Framework_TestCase
         $this->assertSame('Grpc\Channel', get_class($this->channel));
     }
 
+    public function testConstructCreatSsl()
+    {
+        new \Grpc\Channel('localhost', [
+            'credentials' => \Grpc\ChannelCredentials::createSsl(),
+        ]);
+    }
+
+    // // issue#19721
+    // public function testCreatSslNoCrash(){
+    //     $creds = \Grpc\ChannelCredentials::createSsl();
+    //     new \Grpc\Channel('localhost', [
+    //         'credentials' => $creds,
+    //     ]);
+    // }
+
+    // public function testCreatSslCrash(){
+    //     new \Grpc\Channel('localhost', [
+    //         'credentials' => \Grpc\ChannelCredentials::createSsl(),
+    //     ]);
+    // }
+
     public function testGetConnectivityState()
     {
         $this->channel = new Grpc\Channel('localhost:50001',
