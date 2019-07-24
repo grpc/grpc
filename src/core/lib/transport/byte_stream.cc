@@ -55,17 +55,15 @@ void SliceBufferByteStream::Orphan() {
 
 bool SliceBufferByteStream::Next(size_t max_size_hint,
                                  grpc_closure* on_complete) {
-  GPR_ASSERT(cursor_ < backing_buffer_.count);
+  GPR_DEBUG_ASSERT(backing_buffer_.count > 0);
   return true;
 }
 
 grpc_error* SliceBufferByteStream::Pull(grpc_slice* slice) {
-  if (shutdown_error_ != GRPC_ERROR_NONE) {
+  if (GPR_UNLIKELY(shutdown_error_ != GRPC_ERROR_NONE)) {
     return GRPC_ERROR_REF(shutdown_error_);
   }
-  GPR_ASSERT(cursor_ < backing_buffer_.count);
-  *slice = grpc_slice_ref_internal(backing_buffer_.slices[cursor_]);
-  ++cursor_;
+  *slice = grpc_slice_buffer_take_first(&backing_buffer_);
   return GRPC_ERROR_NONE;
 }
 

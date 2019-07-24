@@ -5,6 +5,7 @@
 
 build --client_env=CC=clang
 build --copt=-DGRPC_BAZEL_BUILD
+build --action_env=GRPC_BAZEL_RUNTIME=1
 
 build:opt --compilation_mode=opt
 build:opt --copt=-Wframe-larger-than=16384
@@ -20,6 +21,27 @@ build:asan --copt=-DADDRESS_SANITIZER  # used by absl
 build:asan --linkopt=-fsanitize=address
 build:asan --action_env=ASAN_OPTIONS=detect_leaks=1:color=always
 build:asan --action_env=LSAN_OPTIONS=suppressions=test/core/util/lsan_suppressions.txt:report_objects=1
+
+# We have a separate ASAN config for Mac OS to workaround a couple of bugs:
+# 1. https://github.com/bazelbuild/bazel/issues/6932
+#    _FORTIFY_SOURCE=1 is enabled by default on Mac OS, which breaks ASAN.
+#    We workaround it by setting _FORTIFY_SOURCE=0 and ignoring macro redefined
+#    warnings.
+# 2. https://github.com/google/sanitizers/issues/1026
+#    LSAN is not supported by the version of Clang that ships with Mac OS, so
+#    we disable it.
+build:asan_macos --strip=never
+build:asan_macos --copt=-fsanitize=address
+build:asan_macos --copt -Wno-macro-redefined
+build:asan_macos --copt -D_FORTIFY_SOURCE=0
+build:asan_macos --copt=-fsanitize=address
+build:asan_macos --copt=-O0
+build:asan_macos --copt=-fno-omit-frame-pointer
+build:asan_macos --copt=-DGPR_NO_DIRECT_SYSCALLS
+build:asan_macos --copt=-DADDRESS_SANITIZER  # used by absl
+build:asan_macos --linkopt=-fsanitize=address
+build:asan_macos --action_env=ASAN_OPTIONS=detect_leaks=0
+
 
 build:msan --strip=never
 build:msan --copt=-fsanitize=memory
