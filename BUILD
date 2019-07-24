@@ -136,7 +136,7 @@ GRPCXX_SRCS = [
     "src/cpp/common/resource_quota_cc.cc",
     "src/cpp/common/rpc_method.cc",
     "src/cpp/common/version_cc.cc",
-    "src/cpp/common/validate_service_config.cc",    
+    "src/cpp/common/validate_service_config.cc",
     "src/cpp/server/async_generic_service.cc",
     "src/cpp/server/channel_argument_option.cc",
     "src/cpp/server/create_default_thread_pool.cc",
@@ -292,7 +292,7 @@ GRPCXX_PUBLIC_HDRS = [
     "include/grpcpp/support/sync_stream.h",
     "include/grpcpp/support/sync_stream_impl.h",
     "include/grpcpp/support/time.h",
-    "include/grpcpp/support/validate_service_config.h",    
+    "include/grpcpp/support/validate_service_config.h",
 ]
 
 grpc_cc_library(
@@ -341,20 +341,6 @@ grpc_cc_library(
     ],
 )
 
-grpc_cc_library(
-    name = "grpc_cronet",
-    srcs = [
-        "src/core/lib/surface/init.cc",
-        "src/core/plugin_registry/grpc_cronet_plugin_registry.cc",
-    ],
-    language = "c++",
-    deps = [
-        "grpc_base",
-        "grpc_http_filters",
-        "grpc_transport_chttp2_client_secure",
-        "grpc_transport_cronet_client_secure",
-    ],
-)
 
 grpc_cc_library(
     name = "grpc++_public_hdrs",
@@ -1820,29 +1806,6 @@ grpc_cc_library(
         "grpc_secure",
         "grpc_transport_chttp2",
         "grpc_transport_chttp2_server",
-    ],
-)
-
-grpc_cc_library(
-    name = "grpc_transport_cronet_client_secure",
-    srcs = [
-        "src/core/ext/transport/cronet/client/secure/cronet_channel_create.cc",
-        "src/core/ext/transport/cronet/transport/cronet_api_dummy.cc",
-        "src/core/ext/transport/cronet/transport/cronet_transport.cc",
-    ],
-    hdrs = [
-        "src/core/ext/transport/cronet/transport/cronet_transport.h",
-        "third_party/objective_c/Cronet/bidirectional_stream_c.h",
-    ],
-    language = "c++",
-    public_hdrs = [
-        "include/grpc/grpc_cronet.h",
-        "include/grpc/grpc_security.h",
-        "include/grpc/grpc_security_constants.h",
-    ],
-    deps = [
-        "grpc_base",
-        "grpc_transport_chttp2",
     ],
 )
 
