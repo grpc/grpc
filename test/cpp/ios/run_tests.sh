@@ -18,7 +18,7 @@
 
 set -ev
 
-cd $(dirname $0)
+cd "$(dirname "$0")"
 
 
 set -o pipefail

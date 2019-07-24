@@ -16,8 +16,9 @@
  *
  */
 
-#ifndef TestHelper_h
-#define TestHelper_h
+#ifndef TESTHELPER_H
+#define TESTHELPER_H
+
 #import <XCTest/XCTest.h>
 #import <map>
 #import <sstream>
@@ -77,4 +78,4 @@ class TestServiceImpl : public grpc::testing::EchoTestService::Service {
                                grpc::testing::EchoRequest>* stream);
 };
 
-#endif /* TestHelper_h */
+#endif /* TESTHELPER_H */
