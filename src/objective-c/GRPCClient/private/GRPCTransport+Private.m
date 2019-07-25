@@ -12,8 +12,9 @@
 - (instancetype)initWithTransportId:(GRPCTransportId)transportId
                 previousInterceptor:(id<GRPCResponseHandler>)previousInterceptor {
   if ((self = [super init])) {
-    id<GRPCTransportFactory> factory = [[GRPCTransportRegistry sharedInstance] getTransportFactoryWithId:transportId];
-    
+    id<GRPCTransportFactory> factory =
+        [[GRPCTransportRegistry sharedInstance] getTransportFactoryWithId:transportId];
+
     _transport = [factory createTransportWithManager:self];
     NSAssert(_transport != nil, @"Failed to create transport with id: %s", transportId);
     if (_transport == nil) {
@@ -36,9 +37,11 @@
   return _dispatchQueue;
 }
 
-- (void)startWithRequestOptions:(GRPCRequestOptions *)requestOptions callOptions:(GRPCCallOptions *)callOptions {
+- (void)startWithRequestOptions:(GRPCRequestOptions *)requestOptions
+                    callOptions:(GRPCCallOptions *)callOptions {
   if (_transportId != callOptions.transport) {
-    [NSException raise:NSInvalidArgumentException format:@"Interceptors cannot change the call option 'transport'"];
+    [NSException raise:NSInvalidArgumentException
+                format:@"Interceptors cannot change the call option 'transport'"];
     return;
   }
   [_transport startWithRequestOptions:requestOptions callOptions:callOptions];

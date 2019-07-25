@@ -3,8 +3,8 @@
 #import <GRPCClient/GRPCTransport.h>
 
 #import "GRPCCallInternal.h"
-#import "GRPCSecureChannelFactory.h"
 #import "GRPCInsecureChannelFactory.h"
+#import "GRPCSecureChannelFactory.h"
 
 static GRPCCoreSecureFactory *gGRPCCoreSecureFactory = nil;
 static GRPCCoreInsecureFactory *gGRPCCoreInsecureFactory = nil;
@@ -21,8 +21,9 @@ static dispatch_once_t gInitGRPCCoreInsecureFactory;
 }
 
 + (void)load {
-  [[GRPCTransportRegistry sharedInstance] registerTransportWithId:GRPCTransportImplList.core_secure
-                                                          factory:[self sharedInstance]];
+  [[GRPCTransportRegistry sharedInstance]
+      registerTransportWithId:GRPCDefaultTransportImplList.core_secure
+                      factory:[self sharedInstance]];
 }
 
 - (GRPCTransport *)createTransportWithManager:(GRPCTransportManager *)transportManager {
@@ -31,9 +32,11 @@ static dispatch_once_t gInitGRPCCoreInsecureFactory;
 
 - (id<GRPCChannelFactory>)createCoreChannelFactoryWithCallOptions:(GRPCCallOptions *)callOptions {
   NSError *error;
-  id<GRPCChannelFactory> factory = [GRPCSecureChannelFactory factoryWithPEMRootCertificates:callOptions.PEMRootCertificates
-                                                                                 privateKey:callOptions.PEMPrivateKey
-                                                                                  certChain:callOptions.PEMCertificateChain error:&error];
+  id<GRPCChannelFactory> factory =
+      [GRPCSecureChannelFactory factoryWithPEMRootCertificates:callOptions.PEMRootCertificates
+                                                    privateKey:callOptions.PEMPrivateKey
+                                                     certChain:callOptions.PEMCertificateChain
+                                                         error:&error];
   if (error != nil) {
     NSLog(@"Unable to create secure channel factory");
     return nil;
@@ -53,8 +56,9 @@ static dispatch_once_t gInitGRPCCoreInsecureFactory;
 }
 
 + (void)load {
-  [[GRPCTransportRegistry sharedInstance] registerTransportWithId:GRPCTransportImplList.core_insecure
-                                                          factory:[self sharedInstance]];
+  [[GRPCTransportRegistry sharedInstance]
+      registerTransportWithId:GRPCDefaultTransportImplList.core_insecure
+                      factory:[self sharedInstance]];
 }
 
 - (GRPCTransport *)createTransportWithManager:(GRPCTransportManager *)transportManager {

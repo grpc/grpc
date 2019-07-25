@@ -3,9 +3,8 @@
 static const GRPCTransportId gGRPCCoreSecureId = "io.grpc.transport.core.secure";
 static const GRPCTransportId gGRPCCoreInsecureId = "io.grpc.transport.core.insecure";
 
-const struct GRPCTransportImplList GRPCTransportImplList = {
-  .core_secure = gGRPCCoreSecureId,
-  .core_insecure = gGRPCCoreInsecureId};
+const struct GRPCDefaultTransportImplList GRPCDefaultTransportImplList = {
+    .core_secure = gGRPCCoreSecureId, .core_insecure = gGRPCCoreInsecureId};
 
 static const GRPCTransportId gDefaultTransportId = gGRPCCoreSecureId;
 
@@ -49,10 +48,11 @@ NSUInteger TransportIdHash(GRPCTransportId transportId) {
   return self;
 }
 
-- (void)registerTransportWithId:(GRPCTransportId)transportId factory:(id<GRPCTransportFactory>)factory {
-  NSString *nsTransportId = [NSString stringWithCString:transportId
-                                                       encoding:NSUTF8StringEncoding];
-  NSAssert(_registry[nsTransportId] == nil, @"The transport %@ has already been registered.", nsTransportId);
+- (void)registerTransportWithId:(GRPCTransportId)transportId
+                        factory:(id<GRPCTransportFactory>)factory {
+  NSString *nsTransportId = [NSString stringWithCString:transportId encoding:NSUTF8StringEncoding];
+  NSAssert(_registry[nsTransportId] == nil, @"The transport %@ has already been registered.",
+           nsTransportId);
   if (_registry[nsTransportId] != nil) {
     NSLog(@"The transport %@ has already been registered.", nsTransportId);
     return;
@@ -68,17 +68,18 @@ NSUInteger TransportIdHash(GRPCTransportId transportId) {
 - (id<GRPCTransportFactory>)getTransportFactoryWithId:(GRPCTransportId)transportId {
   if (transportId == NULL) {
     if (_defaultFactory == nil) {
-      [NSException raise:NSInvalidArgumentException format:@"Unable to get default transport factory"];
+      [NSException raise:NSInvalidArgumentException
+                  format:@"Unable to get default transport factory"];
       return nil;
     }
     return _defaultFactory;
   }
-  NSString *nsTransportId = [NSString stringWithCString:transportId
-                                               encoding:NSUTF8StringEncoding];
+  NSString *nsTransportId = [NSString stringWithCString:transportId encoding:NSUTF8StringEncoding];
   id<GRPCTransportFactory> transportFactory = _registry[nsTransportId];
   if (transportFactory == nil) {
     // User named a transport id that was not registered with the registry.
-    [NSException raise:NSInvalidArgumentException format:@"Unable to get transport factory with id %s", transportId];
+    [NSException raise:NSInvalidArgumentException
+                format:@"Unable to get transport factory with id %s", transportId];
     return nil;
   }
   return transportFactory;
@@ -89,28 +90,35 @@ NSUInteger TransportIdHash(GRPCTransportId transportId) {
 @implementation GRPCTransport
 
 - (dispatch_queue_t)dispatchQueue {
-  [NSException raise:NSGenericException format:@"Implementations should override the dispatch queue"];
+  [NSException raise:NSGenericException
+              format:@"Implementations should override the dispatch queue"];
   return nil;
 }
 
-- (void)startWithRequestOptions:(nonnull GRPCRequestOptions *)requestOptions callOptions:(nonnull GRPCCallOptions *)callOptions {
-  [NSException raise:NSGenericException format:@"Implementations should override the methods of GRPCTransport"];
+- (void)startWithRequestOptions:(nonnull GRPCRequestOptions *)requestOptions
+                    callOptions:(nonnull GRPCCallOptions *)callOptions {
+  [NSException raise:NSGenericException
+              format:@"Implementations should override the methods of GRPCTransport"];
 }
 
 - (void)writeData:(nonnull id)data {
-  [NSException raise:NSGenericException format:@"Implementations should override the methods of GRPCTransport"];
+  [NSException raise:NSGenericException
+              format:@"Implementations should override the methods of GRPCTransport"];
 }
 
 - (void)cancel {
-  [NSException raise:NSGenericException format:@"Implementations should override the methods of GRPCTransport"];
+  [NSException raise:NSGenericException
+              format:@"Implementations should override the methods of GRPCTransport"];
 }
 
 - (void)finish {
-  [NSException raise:NSGenericException format:@"Implementations should override the methods of GRPCTransport"];
+  [NSException raise:NSGenericException
+              format:@"Implementations should override the methods of GRPCTransport"];
 }
 
 - (void)receiveNextMessages:(NSUInteger)numberOfMessages {
-  [NSException raise:NSGenericException format:@"Implementations should override the methods of GRPCTransport"];
+  [NSException raise:NSGenericException
+              format:@"Implementations should override the methods of GRPCTransport"];
 }
 
 @end

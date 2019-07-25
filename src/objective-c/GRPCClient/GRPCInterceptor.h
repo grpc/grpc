@@ -169,7 +169,7 @@ NS_ASSUME_NONNULL_BEGIN
  * invoke shutDown method of its corresponding manager so that references to other interceptors can
  * be released.
  */
-@interface GRPCInterceptorManager : NSObject <GRPCInterceptorInterface, GRPCResponseHandler>
+@interface GRPCInterceptorManager : NSObject<GRPCInterceptorInterface, GRPCResponseHandler>
 
 - (instancetype)init NS_UNAVAILABLE;
 
@@ -179,6 +179,10 @@ NS_ASSUME_NONNULL_BEGIN
                        previousInterceptor:(nullable id<GRPCResponseHandler>)previousInterceptor
                                transportId:(GRPCTransportId)transportId;
 
+/**
+ * Notify the manager that the interceptor has shut down and the manager should release references
+ * to other interceptors and stop forwarding requests/responses.
+ */
 - (void)shutDown;
 
 // Methods to forward GRPCInterceptorInterface calls to the next interceptor
@@ -230,7 +234,7 @@ NS_ASSUME_NONNULL_BEGIN
 @interface GRPCInterceptor : NSObject<GRPCInterceptorInterface, GRPCResponseHandler>
 
 - (instancetype)init NS_UNAVAILABLE;
-+ (instancetype)new NS_UNAVAILABLE;
++ (instancetype) new NS_UNAVAILABLE;
 
 /**
  * Initialize the interceptor with the next interceptor in the chain, and provide the dispatch queue
@@ -241,7 +245,8 @@ NS_ASSUME_NONNULL_BEGIN
 
 // Default implementation of GRPCInterceptorInterface
 
-- (void)startWithRequestOptions:(GRPCRequestOptions *)requestOptions callOptions:(GRPCCallOptions *)callOptions;
+- (void)startWithRequestOptions:(GRPCRequestOptions *)requestOptions
+                    callOptions:(GRPCCallOptions *)callOptions;
 - (void)writeData:(id)data;
 - (void)finish;
 - (void)cancel;

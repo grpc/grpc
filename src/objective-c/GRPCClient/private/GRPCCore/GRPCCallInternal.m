@@ -22,8 +22,8 @@
 #import <GRPCClient/GRPCInterceptor.h>
 #import <RxLibrary/GRXBufferedPipe.h>
 
-#import "GRPCCall+V2API.h"
 #import "../GRPCTransport+Private.h"
+#import "GRPCCall+V2API.h"
 
 @implementation GRPCCall2Internal {
   /** Request for the call. */
@@ -53,20 +53,19 @@
   NSUInteger _pendingReceiveNextMessages;
 }
 
-  - (instancetype)initWithTransportManager:(GRPCTransportManager *)transportManager {
-    dispatch_queue_t dispatchQueue;
-    // Set queue QoS only when iOS version is 8.0 or above and Xcode version is 9.0 or above
+- (instancetype)initWithTransportManager:(GRPCTransportManager *)transportManager {
+  dispatch_queue_t dispatchQueue;
+  // Set queue QoS only when iOS version is 8.0 or above and Xcode version is 9.0 or above
 #if __IPHONE_OS_VERSION_MAX_ALLOWED >= 110000 || __MAC_OS_X_VERSION_MAX_ALLOWED >= 101300
-    if (@available(iOS 8.0, macOS 10.10, *)) {
-      dispatchQueue = dispatch_queue_create(
-                                             NULL,
-                                             dispatch_queue_attr_make_with_qos_class(DISPATCH_QUEUE_SERIAL, QOS_CLASS_DEFAULT, 0));
-    } else {
+  if (@available(iOS 8.0, macOS 10.10, *)) {
+    dispatchQueue = dispatch_queue_create(
+        NULL, dispatch_queue_attr_make_with_qos_class(DISPATCH_QUEUE_SERIAL, QOS_CLASS_DEFAULT, 0));
+  } else {
 #else
-      {
+  {
 #endif
-        dispatchQueue = dispatch_queue_create(NULL, DISPATCH_QUEUE_SERIAL);
-      }
+    dispatchQueue = dispatch_queue_create(NULL, DISPATCH_QUEUE_SERIAL);
+  }
   if ((self = [super init])) {
     _pipe = [GRXBufferedPipe pipe];
     _transportManager = transportManager;
@@ -79,7 +78,8 @@
   return _dispatchQueue;
 }
 
-- (void)startWithRequestOptions:(GRPCRequestOptions *)requestOptions callOptions:(GRPCCallOptions *)callOptions {
+- (void)startWithRequestOptions:(GRPCRequestOptions *)requestOptions
+                    callOptions:(GRPCCallOptions *)callOptions {
   NSAssert(requestOptions.host.length != 0 && requestOptions.path.length != 0,
            @"Neither host nor path can be nil.");
   NSAssert(requestOptions.safety <= GRPCCallSafetyCacheableRequest, @"Invalid call safety value.");
@@ -187,13 +187,17 @@
     _pipe = nil;
 
     if (_transportManager != nil) {
-      [_transportManager forwardPreviousInterceptorCloseWithTrailingMetadata:nil
-                                                                         error:[NSError errorWithDomain:kGRPCErrorDomain
-                                                                                                   code:GRPCErrorCodeCancelled
-                                                                                               userInfo:@{
-                                                                                                          NSLocalizedDescriptionKey :
-                                                                                                            @"Canceled by app"
-                                                                                                          }]];
+      [_transportManager
+          forwardPreviousInterceptorCloseWithTrailingMetadata:nil
+                                                        error:
+                                                            [NSError
+                                                                errorWithDomain:kGRPCErrorDomain
+                                                                           code:
+                                                                               GRPCErrorCodeCancelled
+                                                                       userInfo:@{
+                                                                         NSLocalizedDescriptionKey :
+                                                                             @"Canceled by app"
+                                                                       }]];
       [_transportManager shutDown];
     }
   }
@@ -258,7 +262,7 @@
 
 - (void)issueClosedWithTrailingMetadata:(NSDictionary *)trailingMetadata error:(NSError *)error {
   [_transportManager forwardPreviousInterceptorCloseWithTrailingMetadata:trailingMetadata
-                                                                     error:error];
+                                                                   error:error];
   [_transportManager shutDown];
 }
 

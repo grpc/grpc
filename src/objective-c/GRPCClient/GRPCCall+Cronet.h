@@ -24,7 +24,7 @@ typedef struct stream_engine stream_engine;
 // Transport id for Cronet transport
 extern const GRPCTransportId gGRPCCoreCronetId;
 
-// Deprecated class. Please use the previous transport id with GRPCCallOptions instead.
+// Deprecated class. Please use the gGRPCCoreCronetId with GRPCCallOptions.transport instead.
 @interface GRPCCall (Cronet)
 
 + (void)useCronetWithEngine:(stream_engine*)engine;
@@ -32,4 +32,3 @@ extern const GRPCTransportId gGRPCCoreCronetId;
 + (BOOL)isUsingCronet;
 
 @end
-

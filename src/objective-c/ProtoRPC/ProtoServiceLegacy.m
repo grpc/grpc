@@ -1,6 +1,6 @@
 #import "ProtoServiceLegacy.h"
-#import "ProtoRPCLegacy.h"
 #import "ProtoMethod.h"
+#import "ProtoRPCLegacy.h"
 
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wdeprecated-implementations"
@@ -23,13 +23,12 @@
   return self;
 }
 
-
 - (GRPCProtoCall *)RPCToMethod:(NSString *)method
                 requestsWriter:(GRXWriter *)requestsWriter
                  responseClass:(Class)responseClass
             responsesWriteable:(id<GRXWriteable>)responsesWriteable {
   GRPCProtoMethod *methodName =
-  [[GRPCProtoMethod alloc] initWithPackage:_packageName service:_serviceName method:method];
+      [[GRPCProtoMethod alloc] initWithPackage:_packageName service:_serviceName method:method];
   return [[GRPCProtoCall alloc] initWithHost:_host
                                       method:methodName
                               requestsWriter:requestsWriter

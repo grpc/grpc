@@ -40,7 +40,8 @@
                       transportId:(nonnull GRPCTransportId)transportId {
   if ((self = [super init])) {
     if (factories.count == 0) {
-      [NSException raise:NSInternalInconsistencyException format:@"Interceptor manager must have factories"];
+      [NSException raise:NSInternalInconsistencyException
+                  format:@"Interceptor manager must have factories"];
     }
     _thisInterceptor = [factories[0] createInterceptorWithManager:self];
     if (_thisInterceptor == nil) {
@@ -48,20 +49,22 @@
     }
     _previousInterceptor = previousInterceptor;
     _factories = factories;
-      // Generate interceptor
+    // Generate interceptor
 #if __IPHONE_OS_VERSION_MAX_ALLOWED >= 110000 || __MAC_OS_X_VERSION_MAX_ALLOWED >= 101300
     if (@available(iOS 8.0, macOS 10.10, *)) {
-      _dispatchQueue = dispatch_queue_create(NULL, dispatch_queue_attr_make_with_qos_class(DISPATCH_QUEUE_SERIAL, QOS_CLASS_DEFAULT, 0));
+      _dispatchQueue = dispatch_queue_create(
+          NULL,
+          dispatch_queue_attr_make_with_qos_class(DISPATCH_QUEUE_SERIAL, QOS_CLASS_DEFAULT, 0));
     } else {
 #else
-      {
+    {
 #endif
-        _dispatchQueue = dispatch_queue_create(NULL, DISPATCH_QUEUE_SERIAL);
-      }
-      dispatch_set_target_queue(_dispatchQueue, _thisInterceptor.dispatchQueue);
-      _transportId = transportId;
+      _dispatchQueue = dispatch_queue_create(NULL, DISPATCH_QUEUE_SERIAL);
+    }
+    dispatch_set_target_queue(_dispatchQueue, _thisInterceptor.dispatchQueue);
+    _transportId = transportId;
   }
-    return self;
+  return self;
 }
 
 - (void)shutDown {
@@ -71,35 +74,37 @@
   _shutDown = YES;
 }
 
-  - (void)createNextInterceptor {
-    NSAssert(_nextInterceptor == nil, @"Starting the next interceptor more than once");
-    NSAssert(_factories.count > 0, @"Interceptor manager of transport cannot start next interceptor");
-    if (_nextInterceptor != nil) {
-      NSLog(@"Starting the next interceptor more than once");
-      return;
-    }
-    NSMutableArray<id<GRPCInterceptorFactory>> *interceptorFactories = [NSMutableArray arrayWithArray:[_factories subarrayWithRange:NSMakeRange(1, _factories.count - 1)]];
-    while (_nextInterceptor == nil) {
-      if (interceptorFactories.count == 0) {
-        _nextInterceptor = [[GRPCTransportManager alloc] initWithTransportId:_transportId previousInterceptor:self];
-        break;
-      } else {
-        _nextInterceptor =  [[GRPCInterceptorManager alloc] initWithFactories:interceptorFactories
-                                                          previousInterceptor:self
-                                                                  transportId:_transportId];
-        if (_nextInterceptor == nil) {
-          [interceptorFactories removeObjectAtIndex:0];
-        }
+- (void)createNextInterceptor {
+  NSAssert(_nextInterceptor == nil, @"Starting the next interceptor more than once");
+  NSAssert(_factories.count > 0, @"Interceptor manager of transport cannot start next interceptor");
+  if (_nextInterceptor != nil) {
+    NSLog(@"Starting the next interceptor more than once");
+    return;
+  }
+  NSMutableArray<id<GRPCInterceptorFactory>> *interceptorFactories = [NSMutableArray
+      arrayWithArray:[_factories subarrayWithRange:NSMakeRange(1, _factories.count - 1)]];
+  while (_nextInterceptor == nil) {
+    if (interceptorFactories.count == 0) {
+      _nextInterceptor =
+          [[GRPCTransportManager alloc] initWithTransportId:_transportId previousInterceptor:self];
+      break;
+    } else {
+      _nextInterceptor = [[GRPCInterceptorManager alloc] initWithFactories:interceptorFactories
+                                                       previousInterceptor:self
+                                                               transportId:_transportId];
+      if (_nextInterceptor == nil) {
+        [interceptorFactories removeObjectAtIndex:0];
       }
     }
-    NSAssert(_nextInterceptor != nil, @"Failed to create interceptor or transport.");
-    if (_nextInterceptor == nil) {
-      NSLog(@"Failed to create interceptor or transport.");
-    }
   }
+  NSAssert(_nextInterceptor != nil, @"Failed to create interceptor or transport.");
+  if (_nextInterceptor == nil) {
+    NSLog(@"Failed to create interceptor or transport.");
+  }
+}
 
-  - (void)startNextInterceptorWithRequest:(GRPCRequestOptions *)requestOptions
-callOptions:(GRPCCallOptions *)callOptions {
+- (void)startNextInterceptorWithRequest:(GRPCRequestOptions *)requestOptions
+                            callOptions:(GRPCCallOptions *)callOptions {
   if (_nextInterceptor == nil && !_shutDown) {
     [self createNextInterceptor];
   }
@@ -193,8 +198,8 @@ callOptions:(GRPCCallOptions *)callOptions {
 }
 
 /** Forward call close and trailing metadata to the previous interceptor in the chain */
-  - (void)forwardPreviousInterceptorCloseWithTrailingMetadata:(NSDictionary *)trailingMetadata
-error:(NSError *)error {
+- (void)forwardPreviousInterceptorCloseWithTrailingMetadata:(NSDictionary *)trailingMetadata
+                                                      error:(NSError *)error {
   if (_previousInterceptor == nil) {
     return;
   }
@@ -215,54 +220,55 @@ error:(NSError *)error {
   });
 }
 
-  - (dispatch_queue_t)dispatchQueue {
-    return _dispatchQueue;
-  }
+- (dispatch_queue_t)dispatchQueue {
+  return _dispatchQueue;
+}
 
-  - (void)startWithRequestOptions:(GRPCRequestOptions *)requestOptions callOptions:(GRPCCallOptions *)callOptions {
-    [_thisInterceptor startWithRequestOptions:requestOptions callOptions:callOptions];
-  }
+- (void)startWithRequestOptions:(GRPCRequestOptions *)requestOptions
+                    callOptions:(GRPCCallOptions *)callOptions {
+  [_thisInterceptor startWithRequestOptions:requestOptions callOptions:callOptions];
+}
 
-  - (void)writeData:(id)data {
-    [_thisInterceptor writeData:data];
-  }
+- (void)writeData:(id)data {
+  [_thisInterceptor writeData:data];
+}
 
-  - (void)finish {
-    [_thisInterceptor finish];
-  }
+- (void)finish {
+  [_thisInterceptor finish];
+}
 
-  - (void)cancel {
-    [_thisInterceptor cancel];
-  }
+- (void)cancel {
+  [_thisInterceptor cancel];
+}
 
-  - (void)receiveNextMessages:(NSUInteger)numberOfMessages {
-    [_thisInterceptor receiveNextMessages:numberOfMessages];
-  }
+- (void)receiveNextMessages:(NSUInteger)numberOfMessages {
+  [_thisInterceptor receiveNextMessages:numberOfMessages];
+}
 
-  - (void)didReceiveInitialMetadata:(nullable NSDictionary *)initialMetadata {
-    if ([_thisInterceptor respondsToSelector:@selector(didReceiveInitialMetadata:)]) {
-      [_thisInterceptor didReceiveInitialMetadata:initialMetadata];
-    }
+- (void)didReceiveInitialMetadata:(nullable NSDictionary *)initialMetadata {
+  if ([_thisInterceptor respondsToSelector:@selector(didReceiveInitialMetadata:)]) {
+    [_thisInterceptor didReceiveInitialMetadata:initialMetadata];
   }
+}
 
-  - (void)didReceiveData:(id)data {
-    if ([_thisInterceptor respondsToSelector:@selector(didReceiveData:)]) {
-      [_thisInterceptor didReceiveData:data];
-    }
+- (void)didReceiveData:(id)data {
+  if ([_thisInterceptor respondsToSelector:@selector(didReceiveData:)]) {
+    [_thisInterceptor didReceiveData:data];
   }
+}
 
-  - (void)didCloseWithTrailingMetadata:(nullable NSDictionary *)trailingMetadata
-                                 error:(nullable NSError *)error {
+- (void)didCloseWithTrailingMetadata:(nullable NSDictionary *)trailingMetadata
+                               error:(nullable NSError *)error {
   if ([_thisInterceptor respondsToSelector:@selector(didCloseWithTrailingMetadata:error:)]) {
     [_thisInterceptor didCloseWithTrailingMetadata:trailingMetadata error:error];
   }
 }
 
-  - (void)didWriteData {
-    if ([_thisInterceptor respondsToSelector:@selector(didWriteData)]) {
-      [_thisInterceptor didWriteData];
-    }
+- (void)didWriteData {
+  if ([_thisInterceptor respondsToSelector:@selector(didWriteData)]) {
+    [_thisInterceptor didWriteData];
   }
+}
 
 @end
 
@@ -272,7 +278,7 @@ error:(NSError *)error {
 }
 
 - (instancetype)initWithInterceptorManager:(GRPCInterceptorManager *)interceptorManager
-                      dispatchQueue:(dispatch_queue_t)dispatchQueue {
+                             dispatchQueue:(dispatch_queue_t)dispatchQueue {
   if ((self = [super init])) {
     _manager = interceptorManager;
     _dispatchQueue = dispatchQueue;
@@ -285,7 +291,8 @@ error:(NSError *)error {
   return _dispatchQueue;
 }
 
-- (void)startWithRequestOptions:(GRPCRequestOptions *)requestOptions callOptions:(GRPCCallOptions *)callOptions {
+- (void)startWithRequestOptions:(GRPCRequestOptions *)requestOptions
+                    callOptions:(GRPCCallOptions *)callOptions {
   [_manager startNextInterceptorWithRequest:requestOptions callOptions:callOptions];
 }
 

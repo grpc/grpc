@@ -21,15 +21,15 @@
 #include <grpc/support/log.h>
 
 #import "../../internal/GRPCCallOptions+Internal.h"
+#import "../GRPCTransport+Private.h"
 #import "ChannelArgsUtil.h"
 #import "GRPCChannelFactory.h"
 #import "GRPCChannelPool.h"
 #import "GRPCCompletionQueue.h"
+#import "GRPCCoreFactory.h"
 #import "GRPCInsecureChannelFactory.h"
 #import "GRPCSecureChannelFactory.h"
 #import "version.h"
-#import "GRPCCoreFactory.h"
-#import "../GRPCTransport+Private.h"
 
 #import <GRPCClient/GRPCCall+Cronet.h>
 #import <GRPCClient/GRPCCallOptions.h>
@@ -52,12 +52,16 @@
 
 - (id<GRPCChannelFactory>)channelFactory {
   if (_callOptions.transport != NULL) {
-    id<GRPCTransportFactory> transportFactory = [[GRPCTransportRegistry sharedInstance] getTransportFactoryWithId:_callOptions.transport];
-    if (![transportFactory respondsToSelector:@selector(createCoreChannelFactoryWithCallOptions:)]) {
+    id<GRPCTransportFactory> transportFactory =
+        [[GRPCTransportRegistry sharedInstance] getTransportFactoryWithId:_callOptions.transport];
+    if (!
+        [transportFactory respondsToSelector:@selector(createCoreChannelFactoryWithCallOptions:)]) {
       // impossible because we are using GRPCCore now
-      [NSException raise:NSInternalInconsistencyException format:@"Transport factory type is wrong"];
+      [NSException raise:NSInternalInconsistencyException
+                  format:@"Transport factory type is wrong"];
     }
-    id<GRPCCoreTransportFactory> coreTransportFactory = (id<GRPCCoreTransportFactory>)transportFactory;
+    id<GRPCCoreTransportFactory> coreTransportFactory =
+        (id<GRPCCoreTransportFactory>)transportFactory;
     return [coreTransportFactory createCoreChannelFactoryWithCallOptions:_callOptions];
   } else {
     // To maintain backwards compatibility with tranportType
@@ -65,22 +69,22 @@
     switch (type) {
       case GRPCTransportTypeChttp2BoringSSL:
         // TODO (mxyan): Remove when the API is deprecated
-          {
-            NSError *error;
-            id<GRPCChannelFactory> factory = [GRPCSecureChannelFactory
-                                              factoryWithPEMRootCertificates:_callOptions.PEMRootCertificates
-                                              privateKey:_callOptions.PEMPrivateKey
-                                              certChain:_callOptions.PEMCertificateChain
-                                              error:&error];
-            NSAssert(factory != nil, @"Failed to create secure channel factory");
-            if (factory == nil) {
-              NSLog(@"Error creating secure channel factory: %@", error);
-            }
-            return factory;
+        {
+          NSError *error;
+          id<GRPCChannelFactory> factory = [GRPCSecureChannelFactory
+              factoryWithPEMRootCertificates:_callOptions.PEMRootCertificates
+                                  privateKey:_callOptions.PEMPrivateKey
+                                   certChain:_callOptions.PEMCertificateChain
+                                       error:&error];
+          NSAssert(factory != nil, @"Failed to create secure channel factory");
+          if (factory == nil) {
+            NSLog(@"Error creating secure channel factory: %@", error);
           }
-      case GRPCTransportTypeCronet:
-      {
-        id<GRPCCoreTransportFactory> transportFactory = (id<GRPCCoreTransportFactory>)[[GRPCTransportRegistry sharedInstance] getTransportFactoryWithId:gGRPCCoreCronetId];
+          return factory;
+        }
+      case GRPCTransportTypeCronet: {
+        id<GRPCCoreTransportFactory> transportFactory = (id<GRPCCoreTransportFactory>)[
+            [GRPCTransportRegistry sharedInstance] getTransportFactoryWithId:gGRPCCoreCronetId];
         return [transportFactory createCoreChannelFactoryWithCallOptions:_callOptions];
       }
       case GRPCTransportTypeInsecure:
@@ -191,7 +195,7 @@
   grpc_channel *_unmanagedChannel;
 }
 
-  - (instancetype)initWithChannelConfiguration:(GRPCChannelConfiguration *)channelConfiguration {
+- (instancetype)initWithChannelConfiguration:(GRPCChannelConfiguration *)channelConfiguration {
   NSAssert(channelConfiguration != nil, @"channelConfiguration must not be empty.");
   if (channelConfiguration == nil) {
     return nil;

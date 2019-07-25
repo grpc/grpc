@@ -16,17 +16,21 @@
  *
  */
 
-#import <GRPCClient/GRPCTransport.h>
 #import <GRPCClient/GRPCInterceptor.h>
+#import <GRPCClient/GRPCTransport.h>
 
 NS_ASSUME_NONNULL_BEGIN
 
+/**
+ * Private interfaces of the transport registry.
+ */
 @interface GRPCTransportRegistry (Private)
 
-- (nullable instancetype)initWithTransportId:(GRPCTransportId)transportId
-                         previousInterceptor:(id<GRPCResponseHandler>)previousInterceptor;
-
-- (id<GRPCTransportFactory>)getTransportFactoryWithId:(GRPCTransportId)id;
+/**
+ * Get a transport implementation's factory by its transport id. If the transport id was not
+ * registered with the registry, nil is returned.
+ */
+- (id<GRPCTransportFactory>)getTransportFactoryWithId:(GRPCTransportId)transportId;
 
 @end
 
@@ -35,6 +39,10 @@ NS_ASSUME_NONNULL_BEGIN
 - (instancetype)initWithTransportId:(GRPCTransportId)transportId
                 previousInterceptor:(id<GRPCResponseHandler>)previousInterceptor;
 
+/**
+ * Notify the manager that the transport has shut down and the manager should release references to
+ * its response handler and stop forwarding requests/responses.
+ */
 - (void)shutDown;
 
 /** Forward initial metadata to the previous interceptor in the interceptor chain */
@@ -44,7 +52,8 @@ NS_ASSUME_NONNULL_BEGIN
 - (void)forwardPreviousInterceptorWithData:(nullable id)data;
 
 /** Forward call close and trailing metadata to the previous interceptor in the interceptor chain */
-- (void)forwardPreviousInterceptorCloseWithTrailingMetadata:(nullable NSDictionary *)trailingMetadata
+- (void)forwardPreviousInterceptorCloseWithTrailingMetadata:
+            (nullable NSDictionary *)trailingMetadata
                                                       error:(nullable NSError *)error;
 
 /** Forward write completion to the previous interceptor in the interceptor chain */

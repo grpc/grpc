@@ -16,19 +16,27 @@
  *
  */
 
+// The interface for a transport implementation
+
 #import "GRPCInterceptor.h"
 
 NS_ASSUME_NONNULL_BEGIN
 
 #pragma mark Transport ID
 
-extern const struct GRPCTransportImplList {
+/**
+ * The default transport implementations available in gRPC. These implementations will be provided
+ * by gRPC by default unless explicitly excluded.
+ */
+extern const struct GRPCDefaultTransportImplList {
   const GRPCTransportId core_secure;
   const GRPCTransportId core_insecure;
-} GRPCTransportImplList;
+} GRPCDefaultTransportImplList;
 
+/** Returns whether two transport id's are identical. */
 BOOL TransportIdIsEqual(GRPCTransportId lhs, GRPCTransportId rhs);
 
+/** Returns the hash value of a transport id. */
 NSUInteger TransportIdHash(GRPCTransportId);
 
 #pragma mark Transport and factory
@@ -40,20 +48,33 @@ NSUInteger TransportIdHash(GRPCTransportId);
 @class GRPCCallOptions;
 @class GRPCTransport;
 
-@protocol GRPCTransportFactory <NSObject>
+/** The factory method to create a transport. */
+@protocol GRPCTransportFactory<NSObject>
 
 - (GRPCTransport *)createTransportWithManager:(GRPCTransportManager *)transportManager;
 
 @end
 
+/** The registry of transport implementations. */
 @interface GRPCTransportRegistry : NSObject
 
 + (instancetype)sharedInstance;
 
-- (void)registerTransportWithId:(GRPCTransportId)id factory:(id<GRPCTransportFactory>)factory;
+/**
+ * Register a transport implementation with the registry. All transport implementations to be used
+ * in a process must register with the registry on process start-up in its +load: class method.
+ * Parameter \a transportId is the identifier of the implementation, and \a factory is the factory
+ * object to create the corresponding transport instance.
+ */
+- (void)registerTransportWithId:(GRPCTransportId)transportId
+                        factory:(id<GRPCTransportFactory>)factory;
 
 @end
 
+/**
+ * Base class for transport implementations. All transport implementation should inherit from this
+ * class.
+ */
 @interface GRPCTransport : NSObject<GRPCInterceptorInterface>
 
 @end

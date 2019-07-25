@@ -18,11 +18,11 @@
 
 #import "GRPCCoreCronetFactory.h"
 
-#import <GRPCClient/GRPCTransport.h>
 #import <GRPCClient/GRPCCall+Cronet.h>
+#import <GRPCClient/GRPCTransport.h>
 
-#import "../GRPCCoreFactory.h"
 #import "../GRPCCallInternal.h"
+#import "../GRPCCoreFactory.h"
 #import "GRPCCronetChannelFactory.h"
 
 static GRPCCoreCronetFactory *gGRPCCoreCronetFactory = nil;
@@ -38,8 +38,9 @@ static dispatch_once_t gInitGRPCCoreCronetFactory;
 }
 
 + (void)load {
-  [[GRPCTransportRegistry sharedInstance] registerTransportWithId:gGRPCCoreCronetId
-                                                          factory:[GRPCCoreCronetFactory sharedInstance]];
+  [[GRPCTransportRegistry sharedInstance]
+      registerTransportWithId:gGRPCCoreCronetId
+                      factory:[GRPCCoreCronetFactory sharedInstance]];
 }
 
 - (GRPCTransport *)createTransportWithManager:(GRPCTransportManager *)transportManager {

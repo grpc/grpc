@@ -278,7 +278,8 @@ void PrintMethodImplementations(Printer* printer,
   return output;
 }
 
-::grpc::string GetProtocol(const ServiceDescriptor* service, const Parameters& generator_params) {
+::grpc::string GetProtocol(const ServiceDescriptor* service,
+                           const Parameters& generator_params) {
   ::grpc::string output;
 
   if (generator_params.no_v1_compatibility) return output;
@@ -325,7 +326,8 @@ void PrintMethodImplementations(Printer* printer,
   return output;
 }
 
-::grpc::string GetInterface(const ServiceDescriptor* service, const Parameters& generator_params) {
+::grpc::string GetInterface(const ServiceDescriptor* service,
+                            const Parameters& generator_params) {
   ::grpc::string output;
 
   // Scope the output stream so it closes and finalizes output to the string.
@@ -367,7 +369,8 @@ void PrintMethodImplementations(Printer* printer,
   return output;
 }
 
-::grpc::string GetSource(const ServiceDescriptor* service, const Parameters& generator_params) {
+::grpc::string GetSource(const ServiceDescriptor* service,
+                         const Parameters& generator_params) {
   ::grpc::string output;
   {
     // Scope the output stream so it closes and finalizes output to the string.
@@ -422,9 +425,10 @@ void PrintMethodImplementations(Printer* printer,
 
     printer.Print("#pragma mark - Class Methods\n\n");
     if (!generator_params.no_v1_compatibility) {
-      printer.Print("+ (instancetype)serviceWithHost:(NSString *)host {\n"
-                    "  return [[self alloc] initWithHost:host];\n"
-                    "}\n\n");
+      printer.Print(
+          "+ (instancetype)serviceWithHost:(NSString *)host {\n"
+          "  return [[self alloc] initWithHost:host];\n"
+          "}\n\n");
     }
     printer.Print(
         "+ (instancetype)serviceWithHost:(NSString *)host "
@@ -435,7 +439,8 @@ void PrintMethodImplementations(Printer* printer,
     printer.Print("#pragma mark - Method Implementations\n\n");
 
     for (int i = 0; i < service->method_count(); i++) {
-      PrintMethodImplementations(&printer, service->method(i), generator_params);
+      PrintMethodImplementations(&printer, service->method(i),
+                                 generator_params);
     }
 
     printer.Print("@end\n");

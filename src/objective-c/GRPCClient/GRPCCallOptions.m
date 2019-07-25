@@ -17,8 +17,8 @@
  */
 
 #import "GRPCCallOptions.h"
-#import "internal/GRPCCallOptions+Internal.h"
 #import "GRPCTransport.h"
+#import "internal/GRPCCallOptions+Internal.h"
 
 // The default values for the call options.
 static NSString *const kDefaultServerAuthority = nil;
@@ -138,7 +138,7 @@ static BOOL areObjectsEqual(id obj1, id obj2) {
                          PEMPrivateKey:kDefaultPEMPrivateKey
                    PEMCertificateChain:kDefaultPEMCertificateChain
                          transportType:kDefaultTransportType
-          transport:kDefaultTransport
+                             transport:kDefaultTransport
                       hostNameOverride:kDefaultHostNameOverride
                             logContext:kDefaultLogContext
                      channelPoolDomain:kDefaultChannelPoolDomain
@@ -166,7 +166,7 @@ static BOOL areObjectsEqual(id obj1, id obj2) {
                           PEMPrivateKey:(NSString *)PEMPrivateKey
                     PEMCertificateChain:(NSString *)PEMCertificateChain
                           transportType:(GRPCTransportType)transportType
-                          transport:(GRPCTransportId)transport
+                              transport:(GRPCTransportId)transport
                        hostNameOverride:(NSString *)hostNameOverride
                              logContext:(id)logContext
                       channelPoolDomain:(NSString *)channelPoolDomain
@@ -231,7 +231,7 @@ static BOOL areObjectsEqual(id obj1, id obj2) {
                                                       PEMPrivateKey:_PEMPrivateKey
                                                 PEMCertificateChain:_PEMCertificateChain
                                                       transportType:_transportType
-                                                      transport:_transport
+                                                          transport:_transport
                                                    hostNameOverride:_hostNameOverride
                                                          logContext:_logContext
                                                   channelPoolDomain:_channelPoolDomain
@@ -264,7 +264,7 @@ static BOOL areObjectsEqual(id obj1, id obj2) {
                 PEMPrivateKey:[_PEMPrivateKey copy]
           PEMCertificateChain:[_PEMCertificateChain copy]
                 transportType:_transportType
-                transport:_transport
+                    transport:_transport
              hostNameOverride:[_hostNameOverride copy]
                    logContext:_logContext
             channelPoolDomain:[_channelPoolDomain copy]
@@ -375,7 +375,7 @@ static BOOL areObjectsEqual(id obj1, id obj2) {
                          PEMPrivateKey:kDefaultPEMPrivateKey
                    PEMCertificateChain:kDefaultPEMCertificateChain
                          transportType:kDefaultTransportType
-          transport:kDefaultTransport
+                             transport:kDefaultTransport
                       hostNameOverride:kDefaultHostNameOverride
                             logContext:kDefaultLogContext
                      channelPoolDomain:kDefaultChannelPoolDomain
@@ -436,7 +436,7 @@ static BOOL areObjectsEqual(id obj1, id obj2) {
                 PEMPrivateKey:_PEMPrivateKey
           PEMCertificateChain:_PEMCertificateChain
                 transportType:_transportType
-                                        transport:_transport
+                    transport:_transport
              hostNameOverride:_hostNameOverride
                    logContext:_logContext
             channelPoolDomain:_channelPoolDomain

@@ -18,9 +18,9 @@
 
 #import "GRPCCallLegacy.h"
 
+#import "GRPCCall+Cronet.h"
 #import "GRPCCall+OAuth2.h"
 #import "GRPCCallOptions.h"
-#import "GRPCCall+Cronet.h"
 
 #import "private/GRPCCore/GRPCChannelPool.h"
 #import "private/GRPCCore/GRPCCompletionQueue.h"
@@ -552,7 +552,7 @@ static NSString *const kBearerPrefix = @"Bearer ";
         [[GRXConcurrentWriteable alloc] initWithWriteable:writeable dispatchQueue:_responseQueue];
 
     GRPCPooledChannel *channel =
-    [[GRPCChannelPool sharedInstance] channelWithHost:_host callOptions:_callOptions];
+        [[GRPCChannelPool sharedInstance] channelWithHost:_host callOptions:_callOptions];
     _wrappedCall = [channel wrappedCallWithPath:_path
                                 completionQueue:[GRPCCompletionQueue completionQueue]
                                     callOptions:_callOptions];

@@ -18,9 +18,9 @@
 
 #import "GRPCCall.h"
 
+#import "GRPCCall+Interceptor.h"
 #import "GRPCCallOptions.h"
 #import "GRPCInterceptor.h"
-#import "GRPCCall+Interceptor.h"
 
 #import "private/GRPCTransport+Private.h"
 
@@ -32,7 +32,7 @@ NSString *const kGRPCTrailersKey = @"io.grpc.TrailersKey";
  * dispatch queue of a user provided response handler. It removes the requirement of having to use
  * serial dispatch queue in the user provided response handler.
  */
-@interface GRPCResponseDispatcher : NSObject <GRPCResponseHandler>
+@interface GRPCResponseDispatcher : NSObject<GRPCResponseHandler>
 
 - (nullable instancetype)initWithResponseHandler:(id<GRPCResponseHandler>)responseHandler;
 
@@ -48,7 +48,9 @@ NSString *const kGRPCTrailersKey = @"io.grpc.TrailersKey";
     _responseHandler = responseHandler;
 #if __IPHONE_OS_VERSION_MAX_ALLOWED >= 110000 || __MAC_OS_X_VERSION_MAX_ALLOWED >= 101300
     if (@available(iOS 8.0, macOS 10.10, *)) {
-      _dispatchQueue = dispatch_queue_create(NULL, dispatch_queue_attr_make_with_qos_class(DISPATCH_QUEUE_SERIAL, QOS_CLASS_DEFAULT, 0));
+      _dispatchQueue = dispatch_queue_create(
+          NULL,
+          dispatch_queue_attr_make_with_qos_class(DISPATCH_QUEUE_SERIAL, QOS_CLASS_DEFAULT, 0));
     } else {
 #else
     {
@@ -61,38 +63,38 @@ NSString *const kGRPCTrailersKey = @"io.grpc.TrailersKey";
   return self;
 }
 
-  - (dispatch_queue_t)dispatchQueue {
-    return _dispatchQueue;
-  }
+- (dispatch_queue_t)dispatchQueue {
+  return _dispatchQueue;
+}
 
-  - (void)didReceiveInitialMetadata:(nullable NSDictionary *)initialMetadata {
-    if ([_responseHandler respondsToSelector:@selector(didReceiveInitialMetadata:)]) {
-      [_responseHandler didReceiveInitialMetadata:initialMetadata];
-    }
+- (void)didReceiveInitialMetadata:(nullable NSDictionary *)initialMetadata {
+  if ([_responseHandler respondsToSelector:@selector(didReceiveInitialMetadata:)]) {
+    [_responseHandler didReceiveInitialMetadata:initialMetadata];
   }
+}
 
-  - (void)didReceiveData:(id)data {
-    // For backwards compatibility with didReceiveRawMessage, if the user provided a response handler
-    // that handles didReceiveRawMesssage, we issue to that method instead
-    if ([_responseHandler respondsToSelector:@selector(didReceiveRawMessage:)]) {
-      [_responseHandler didReceiveRawMessage:data];
-    } else if ([_responseHandler respondsToSelector:@selector(didReceiveData:)]) {
-      [_responseHandler didReceiveData:data];
-    }
+- (void)didReceiveData:(id)data {
+  // For backwards compatibility with didReceiveRawMessage, if the user provided a response handler
+  // that handles didReceiveRawMesssage, we issue to that method instead
+  if ([_responseHandler respondsToSelector:@selector(didReceiveRawMessage:)]) {
+    [_responseHandler didReceiveRawMessage:data];
+  } else if ([_responseHandler respondsToSelector:@selector(didReceiveData:)]) {
+    [_responseHandler didReceiveData:data];
   }
+}
 
-  - (void)didCloseWithTrailingMetadata:(nullable NSDictionary *)trailingMetadata
-error:(nullable NSError *)error {
+- (void)didCloseWithTrailingMetadata:(nullable NSDictionary *)trailingMetadata
+                               error:(nullable NSError *)error {
   if ([_responseHandler respondsToSelector:@selector(didCloseWithTrailingMetadata:error:)]) {
     [_responseHandler didCloseWithTrailingMetadata:trailingMetadata error:error];
   }
 }
 
-  - (void)didWriteData {
-    if ([_responseHandler respondsToSelector:@selector(didWriteData)]) {
-      [_responseHandler didWriteData];
-    }
+- (void)didWriteData {
+  if ([_responseHandler respondsToSelector:@selector(didWriteData)]) {
+    [_responseHandler didWriteData];
   }
+}
 
 @end
 
@@ -166,10 +168,12 @@ error:(nullable NSError *)error {
     }
     _responseHandler = responseHandler;
 
-    GRPCResponseDispatcher *dispatcher = [[GRPCResponseDispatcher alloc] initWithResponseHandler:_responseHandler];
+    GRPCResponseDispatcher *dispatcher =
+        [[GRPCResponseDispatcher alloc] initWithResponseHandler:_responseHandler];
     NSMutableArray<id<GRPCInterceptorFactory>> *interceptorFactories;
     if (_actualCallOptions.interceptorFactories != nil) {
-      interceptorFactories = [NSMutableArray arrayWithArray:_actualCallOptions.interceptorFactories];
+      interceptorFactories =
+          [NSMutableArray arrayWithArray:_actualCallOptions.interceptorFactories];
     } else {
       interceptorFactories = [NSMutableArray array];
     }
@@ -180,12 +184,14 @@ error:(nullable NSError *)error {
     // continuously create interceptor until one is successfully created
     while (_firstInterceptor == nil) {
       if (interceptorFactories.count == 0) {
-        _firstInterceptor = [[GRPCTransportManager alloc] initWithTransportId:_callOptions.transport previousInterceptor:dispatcher];
+        _firstInterceptor = [[GRPCTransportManager alloc] initWithTransportId:_callOptions.transport
+                                                          previousInterceptor:dispatcher];
         break;
       } else {
-        _firstInterceptor = [[GRPCInterceptorManager alloc] initWithFactories:interceptorFactories
-                                                        previousInterceptor:dispatcher
-                                                                  transportId:_callOptions.transport];
+        _firstInterceptor =
+            [[GRPCInterceptorManager alloc] initWithFactories:interceptorFactories
+                                          previousInterceptor:dispatcher
+                                                  transportId:_callOptions.transport];
         if (_firstInterceptor == nil) {
           [interceptorFactories removeObjectAtIndex:0];
         }
@@ -211,8 +217,7 @@ error:(nullable NSError *)error {
   GRPCRequestOptions *requestOptions = _requestOptions;
   GRPCCallOptions *callOptions = _actualCallOptions;
   dispatch_async(copiedFirstInterceptor.dispatchQueue, ^{
-    [copiedFirstInterceptor startWithRequestOptions:requestOptions
-                                        callOptions:callOptions];
+    [copiedFirstInterceptor startWithRequestOptions:requestOptions callOptions:callOptions];
   });
 }
 

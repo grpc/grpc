@@ -18,7 +18,7 @@
  */
 
 /**
- * An object that process its methods with a dispatch queue.
+ * An object that processes its methods with a dispatch queue.
  */
 @protocol GRPCDispatchable
 

@@ -113,9 +113,9 @@ static NSMutableDictionary *gHostCache;
   options.PEMCertificateChain = _PEMCertificateChain;
   options.hostNameOverride = _hostNameOverride;
   if (_transportType == GRPCTransportTypeInsecure) {
-    options.transport = GRPCTransportImplList.core_insecure;
+    options.transport = GRPCDefaultTransportImplList.core_insecure;
   } else {
-    options.transport = GRPCTransportImplList.core_secure;
+    options.transport = GRPCDefaultTransportImplList.core_secure;
   }
   options.logContext = _logContext;
 

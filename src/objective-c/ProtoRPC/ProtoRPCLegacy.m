@@ -11,7 +11,6 @@
 #import <RxLibrary/GRXWriteable.h>
 #import <RxLibrary/GRXWriter+Transformations.h>
 
-
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wdeprecated-implementations"
 @implementation ProtoRPC {
@@ -63,9 +62,9 @@
         [weakSelf finishWithError:ErrorForBadProto(value, responseClass, error)];
       }
     }
-                                                  completionHandler:^(NSError *errorOrNil) {
-                                                    [responsesWriteable writesFinishedWithError:errorOrNil];
-                                                  }];
+        completionHandler:^(NSError *errorOrNil) {
+          [responsesWriteable writesFinishedWithError:errorOrNil];
+        }];
   }
   return self;
 }
@@ -102,4 +101,3 @@ NSError *ErrorForBadProto(id proto, Class expectedClass, NSError *parsingError) 
   // TODO(jcanizales): Use kGRPCErrorDomain and GRPCErrorCodeInternal when they're public.
   return [NSError errorWithDomain:@"io.grpc" code:13 userInfo:info];
 }
-

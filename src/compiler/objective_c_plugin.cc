@@ -104,8 +104,13 @@ class ObjectiveCGrpcGenerator : public grpc::protobuf::compiler::CodeGenerator {
 
       ::grpc::string imports = LocalImport(file_name + ".pbobjc.h");
 
-      ::grpc::string system_imports = (generator_params.no_v1_compatibility ? SystemImport("ProtoRPC/ProtoService.h") : SystemImport("ProtoRPC/ProtoServiceLegacy.h")) +
-                                      (generator_params.no_v1_compatibility ? SystemImport("ProtoRPC/ProtoRPC.h") : SystemImport("ProtoRPC/ProtoRPCLegacy.h"));
+      ::grpc::string system_imports =
+          (generator_params.no_v1_compatibility
+               ? SystemImport("ProtoRPC/ProtoService.h")
+               : SystemImport("ProtoRPC/ProtoServiceLegacy.h")) +
+          (generator_params.no_v1_compatibility
+               ? SystemImport("ProtoRPC/ProtoRPC.h")
+               : SystemImport("ProtoRPC/ProtoRPCLegacy.h"));
       if (!generator_params.no_v1_compatibility) {
         system_imports += SystemImport("RxLibrary/GRXWriteable.h") +
                           SystemImport("RxLibrary/GRXWriter.h");
@@ -138,13 +143,15 @@ class ObjectiveCGrpcGenerator : public grpc::protobuf::compiler::CodeGenerator {
       ::grpc::string protocols;
       for (int i = 0; i < file->service_count(); i++) {
         const grpc::protobuf::ServiceDescriptor* service = file->service(i);
-        protocols += grpc_objective_c_generator::GetProtocol(service, generator_params);
+        protocols +=
+            grpc_objective_c_generator::GetProtocol(service, generator_params);
       }
 
       ::grpc::string interfaces;
       for (int i = 0; i < file->service_count(); i++) {
         const grpc::protobuf::ServiceDescriptor* service = file->service(i);
-        interfaces += grpc_objective_c_generator::GetInterface(service, generator_params);
+        interfaces +=
+            grpc_objective_c_generator::GetInterface(service, generator_params);
       }
 
       Write(context, file_name + ".pbrpc.h",
@@ -161,9 +168,12 @@ class ObjectiveCGrpcGenerator : public grpc::protobuf::compiler::CodeGenerator {
     {
       // Generate .pbrpc.m
 
-      ::grpc::string imports = LocalImport(file_name + ".pbrpc.h") +
-                               LocalImport(file_name + ".pbobjc.h") +
-                               (generator_params.no_v1_compatibility ? SystemImport("ProtoRPC/ProtoRPC.h") : SystemImport("ProtoRPC/ProtoRPCLegacy.h"));
+      ::grpc::string imports =
+          LocalImport(file_name + ".pbrpc.h") +
+          LocalImport(file_name + ".pbobjc.h") +
+          (generator_params.no_v1_compatibility
+               ? SystemImport("ProtoRPC/ProtoRPC.h")
+               : SystemImport("ProtoRPC/ProtoRPCLegacy.h"));
       if (!generator_params.no_v1_compatibility) {
         imports += SystemImport("RxLibrary/GRXWriter+Immediate.h");
       }
@@ -176,7 +186,8 @@ class ObjectiveCGrpcGenerator : public grpc::protobuf::compiler::CodeGenerator {
       ::grpc::string definitions;
       for (int i = 0; i < file->service_count(); i++) {
         const grpc::protobuf::ServiceDescriptor* service = file->service(i);
-        definitions += grpc_objective_c_generator::GetSource(service, generator_params);
+        definitions +=
+            grpc_objective_c_generator::GetSource(service, generator_params);
       }
 
       Write(context, file_name + ".pbrpc.m",

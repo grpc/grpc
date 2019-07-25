@@ -22,9 +22,8 @@
 #import <Cronet/Cronet.h>
 #import <GRPCClient/GRPCCall+Cronet.h>
 
-#import "InteropTests.h"
 #import "../ConfigureCronet.h"
-
+#import "InteropTests.h"
 
 // The server address is derived from preprocessor macro, which is
 // in turn derived from environment variable of the same name.
@@ -48,7 +47,6 @@ static int32_t kRemoteInteropServerOverhead = 12;
 
   [super setUp];
 }
-
 
 + (NSString *)host {
   return kRemoteSSLHost;
