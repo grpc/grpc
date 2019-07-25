@@ -19,6 +19,10 @@
 #ifndef GRPC_INTERNAL_COMPILER_OBJECTIVE_C_GENERATOR_HELPERS_H
 #define GRPC_INTERNAL_COMPILER_OBJECTIVE_C_GENERATOR_HELPERS_H
 
+#include <iostream>
+using namespace std;
+
+
 #include <map>
 #include "src/compiler/config.h"
 #include "src/compiler/generator_helpers.h"
@@ -43,6 +47,14 @@ inline string ServiceClassName(const ServiceDescriptor* service) {
 
 inline ::grpc::string LocalImport(const ::grpc::string& import) {
   return ::grpc::string("#import \"" + import + "\"\n");
+}
+
+inline ::grpc::string FrameworkImport(const ::grpc::string& import, const ::grpc::string& framework) {
+  // Flattens the directory structure
+  std::size_t pos = import.rfind("/");
+  ::grpc::string filename = import.substr(pos + 1, import.size() - pos);
+  cerr << filename << endl;
+  return ::grpc::string("#import <" + framework + "/" + filename + ">\n");
 }
 
 inline ::grpc::string SystemImport(const ::grpc::string& import) {

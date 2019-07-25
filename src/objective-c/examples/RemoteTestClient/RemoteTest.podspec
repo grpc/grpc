@@ -20,26 +20,29 @@ Pod::Spec.new do |s|
   well_known_types_dir = "#{repo_root}/third_party/protobuf/src"
   plugin = "#{bin_dir}/grpc_objective_c_plugin"
   
-  s.prepare_command = <<-CMD
-    if [ "$FRAMEWORKS" == "" ]; then
+  if ENV['FRAMEWORKS'] != 'NO' then
+    s.user_target_xcconfig = { 'GCC_PREPROCESSOR_DEFINITIONS' => 'USE_FRAMEWORKS=1' }
+    s.prepare_command = <<-CMD
       #{protoc} \
           --plugin=protoc-gen-grpc=#{plugin} \
           --objc_out=. \
-          --grpc_out=. \
-          -I #{repo_root} \
-          -I #{well_known_types_dir} \
-          #{repo_root}/src/objective-c/examples/RemoteTestClient/*.proto
-    else
-      #{protoc} \
-          --plugin=protoc-gen-grpc=#{plugin} \
-          --objc_out=. \
-          --grpc_out=. \
+          --grpc_out=generate_for_named_framework=#{s.name}:. \
           --objc_opt=generate_for_named_framework=#{s.name} \
           -I #{repo_root} \
           -I #{well_known_types_dir} \
           #{repo_root}/src/objective-c/examples/RemoteTestClient/*.proto
-    fi
-  CMD
+    CMD
+  else
+    s.prepare_command = <<-CMD
+      #{protoc} \
+          --plugin=protoc-gen-grpc=#{plugin} \
+          --objc_out=. \
+          --grpc_out=. \
+          -I #{repo_root} \
+          -I #{well_known_types_dir} \
+          #{repo_root}/src/objective-c/examples/RemoteTestClient/*.proto
+    CMD
+  end
 
   s.subspec 'Messages' do |ms|
     ms.source_files = '**/*.pbobjc.{h,m}'
@@ -55,7 +58,7 @@ Pod::Spec.new do |s|
     ss.dependency 'gRPC-ProtoRPC'
     ss.dependency "#{s.name}/Messages"
   end
-
+  
   s.pod_target_xcconfig = {
     # This is needed by all pods that depend on Protobuf:
     'GCC_PREPROCESSOR_DEFINITIONS' => '$(inherited) GPB_USE_PROTOBUF_FRAMEWORK_IMPORTS=1',

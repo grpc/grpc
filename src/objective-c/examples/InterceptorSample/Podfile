@@ -2,6 +2,8 @@ platform :ios, '8.0'
 
 install! 'cocoapods', :deterministic_uuids => false
 
+use_frameworks! if ENV['FRAMEWORKS'] != 'NO'
+
 ROOT_DIR = '../../../..'
 
 target 'InterceptorSample' do
