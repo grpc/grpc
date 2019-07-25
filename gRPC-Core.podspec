@@ -1232,6 +1232,7 @@ Pod::Spec.new do |s|
                       'third_party/nanopb/pb_common.c',
                       'third_party/nanopb/pb_decode.c',
                       'third_party/nanopb/pb_encode.c',
+                      'src/core/ext/transport/cronet/client/secure/cronet_channel_create.h',
                       'src/core/ext/transport/cronet/transport/cronet_transport.h',
                       'third_party/objective_c/Cronet/bidirectional_stream_c.h',
                       'third_party/nanopb/pb.h',
