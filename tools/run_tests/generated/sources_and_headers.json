@@ -7779,7 +7779,7 @@
   {
     "deps": [], 
     "headers": [
-      "third_party/upb/google/protobuf/descriptor.upb.h", 
+      "third_party/upb/generated_for_cmake/google/protobuf/descriptor.upb.h", 
       "third_party/upb/upb/decode.h", 
       "third_party/upb/upb/def.h", 
       "third_party/upb/upb/encode.h", 

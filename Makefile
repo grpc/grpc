@@ -370,7 +370,7 @@ CPPFLAGS += -fPIC
 LDFLAGS += -fPIC
 endif
 
-INCLUDES = . include $(GENDIR)
+INCLUDES = . include $(GENDIR) third_party/upb third_party/upb/generated_for_cmake
 LDFLAGS += -Llibs/$(CONFIG)
 
 ifeq ($(SYSTEM),Darwin)
@@ -7890,7 +7890,7 @@ endif
 
 
 LIBUPB_SRC = \
-    third_party/upb/google/protobuf/descriptor.upb.c \
+    third_party/upb/generated_for_cmake/google/protobuf/descriptor.upb.c \
     third_party/upb/upb/decode.c \
     third_party/upb/upb/def.c \
     third_party/upb/upb/encode.c \
@@ -7905,7 +7905,7 @@ PUBLIC_HEADERS_C += \
 
 LIBUPB_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBUPB_SRC))))
 
-$(LIBUPB_OBJS): CFLAGS += -Ithird_party/upb -Wno-sign-conversion -Wno-shadow -Wno-conversion -Wno-implicit-fallthrough -Wno-sign-compare -Wno-missing-field-initializers
+$(LIBUPB_OBJS): CFLAGS += -Wno-sign-conversion -Wno-shadow -Wno-conversion -Wno-implicit-fallthrough -Wno-sign-compare -Wno-missing-field-initializers
 
 $(LIBDIR)/$(CONFIG)/libupb.a: $(ZLIB_DEP) $(CARES_DEP) $(ADDRESS_SORTING_DEP)  $(LIBUPB_OBJS) 
 	$(E) "[AR]      Creating $@"
