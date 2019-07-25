@@ -20,7 +20,6 @@
 
 #include <grpc/status.h>
 
-#import <Cronet/Cronet.h>
 #import <GRPCClient/GRPCCall+ChannelArg.h>
 #import <GRPCClient/GRPCCall+Cronet.h>
 #import <GRPCClient/GRPCCall+Interceptor.h>
@@ -410,10 +409,6 @@ static dispatch_once_t initGlobalInterceptorFactory;
 
 + (NSString *)hostNameOverride {
   return nil;
-}
-
-+ (BOOL)useCronet {
-  return NO;
 }
 
 + (void)setUp {
@@ -1268,6 +1263,10 @@ static dispatch_once_t initGlobalInterceptorFactory;
 
 - (void)testKeepaliveWithV2API {
   XCTAssertNotNil([[self class] host]);
+  if ([[self class] transport] == gGRPCCoreCronetId) {
+    // Cronet does not support keepalive
+    return;
+  }
   __weak XCTestExpectation *expectation = [self expectationWithDescription:@"Keepalive"];
 
 

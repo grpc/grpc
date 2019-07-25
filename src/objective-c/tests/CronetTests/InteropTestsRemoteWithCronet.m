@@ -44,9 +44,7 @@ static int32_t kRemoteInteropServerOverhead = 12;
 
 + (void)setUp {
   configureCronet();
-  if ([self useCronet]) {
-    [GRPCCall useCronetWithEngine:[Cronet getGlobalEngine]];
-  }
+  [GRPCCall useCronetWithEngine:[Cronet getGlobalEngine]];
 
   [super setUp];
 }
@@ -58,10 +56,6 @@ static int32_t kRemoteInteropServerOverhead = 12;
 
 + (GRPCTransportId)transport {
   return gGRPCCoreCronetId;
-}
-
-+ (BOOL)useCronet {
-  return YES;
 }
 
 - (int32_t)encodingOverhead {
