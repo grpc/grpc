@@ -48,40 +48,69 @@ TraceFlag grpc_trace_client_idle_filter(false, "client_idle_filter");
 namespace {
 
 /*
-  The state machine to track channel's state:
+  client_idle_filter maintains a state tracking if there are active calls in the
+  channel and its internal idle_timer_. The states are specified as following:
 
-                                       IDLE
-                                       |  ^
-          ------------------------------  *
-          |                               *
-          v                               *
-         BUSY ======================> LEISURE
-          ^                            |  ^
-          *  ---------------------------  *
-          *  |                            *
-          *  v                            *
-  BUSY_FROM_LEISURE ===========> LEISURE_FROM_BUSY
-          ^                            |
-          |                            |
-          ------------------------------
+  +--------------------------------------------+-------------+---------+
+  |               ChannelState                 | idle_timer_ | channel |
+  +--------------------------------------------+-------------+---------+
+  | IDLE                                       | unset       | idle    |
+  | CALLS_ACTIVE                               | unset       | busy    |
+  | TIMER_PENDING                              | set-valid   | idle    |
+  | TIMER_PENDING_CALLS_ACTIVE                 | set-invalid | busy    |
+  | TIMER_PENDING_CALLS_SEEN_SINCE_TIMER_START | set-invalid | idle    |
+  +--------------------------------------------+-------------+---------+
+
+  IDLE: The initial state of the client_idle_filter, indicating the channel is
+  in IDLE.
+
+  CALLS_ACTIVE: The channel has 1 or 1+ active calls and the timer is not set.
+
+  TIMER_PENDING: The state after the timer is set and no calls have arrived
+  after the timer is set. The channel must have 0 active call in this state. If
+  the timer is fired in this state, the channel will go into IDLE state.
+
+  TIMER_PENDING_CALLS_ACTIVE: The state after the timer is set and at least one
+  call has arrived after the timer is set. The channel must have 1 or 1+ active
+  calls in this state. If the timer is fired in this state, we won't reschudle
+  it.
+
+  TIMER_PENDING_CALLS_SEEN_SINCE_TIMER_START: The state after the timer is set
+  and the at least one call has arrived after the timer is set, BUT the channel
+  currently has 0 active call. If the timer is fired in this state, we will
+  reschudle it according to the finish time of the latest call.
+
+  idle_timer_ will not be cancelled (unless the channel is shutting down).
+  If the timer callback is called when the idle_timer_ is valid (i.e. idle_state
+  is TIMER_PENDING), the channel will enter IDLE, otherwise the channel won't be
+  changed.
+
+  State transitions:
+                                            IDLE
+                                            |  ^
+            ---------------------------------  *
+            |                                  *
+            v                                  *
+      CALLS_ACTIVE =================> TIMER_PENDING
+            ^                               |  ^
+            *  ------------------------------  *
+            *  |                               *
+            *  v                               *
+TIMER_PENDING_CALLS_ACTIVE ===> TIMER_PENDING_CALLS_SEEN_SINCE_TIMER_START
+            ^                               |
+            |                               |
+            ---------------------------------
 
   ---> Triggered by IncreaseCallCount()
   ===> Triggered by DecreaseCallCount()
   ***> Triggered by IdleTimerCallback()
 */
 enum ChannelState {
-  // Has call: false, Timer: off, Channel IDLE: true
-  CHANNEL_STATE_IDLE,
-  // Has call: true,  Timer: off, Channel IDLE: false
-  CHANNEL_STATE_BUSY,
-  // Has call: true,  Timer: on,  Channel IDLE: false
-  CHANNEL_STATE_BUSY_FROM_LEISURE,
-  // Has call: false, Timer: on,  Channel IDLE: false
-  // In timer callback: reset the timer.
-  CHANNEL_STATE_LEISURE_FROM_BUSY,
-  // Has call: false, Timer: on,  Channel IDLE: false
-  // In timer callback: enter IDLE.
-  CHANNEL_STATE_LEISURE
+  IDLE,
+  CALLS_ACTIVE,
+  TIMER_PENDING,
+  TIMER_PENDING_CALLS_ACTIVE,
+  TIMER_PENDING_CALLS_SEEN_SINCE_TIMER_START
 };
 
 grpc_millis GetClientIdleTimeout(const grpc_channel_args* args) {
@@ -104,8 +133,6 @@ class ChannelData {
   void DecreaseCallCount();
 
  private:
-  class ConnectivityWatcherSetter;
-
   ChannelData(grpc_channel_element* elem, grpc_channel_element_args* args,
               grpc_error** error);
   ~ChannelData() = default;
@@ -154,16 +181,13 @@ void ChannelData::StartTransportOp(grpc_channel_element* elem,
                                    grpc_transport_op* op) {
   ChannelData* chand = static_cast<ChannelData*>(elem->channel_data);
   // Catch the disconnect_with_error transport op.
-  // If the op is to disconnect the channel, cancel the idle timer if it has
-  // been set.
   if (op->disconnect_with_error != nullptr) {
-    // Disconnect. Cancel the timer if we set it before.
     // IncreaseCallCount() introduces a dummy call and prevent the timer from
     // being reset by other threads.
     chand->IncreaseCallCount();
     // If the timer has been set, cancel the timer.
     if (chand->state_.Load(MemoryOrder::RELAXED) ==
-        CHANNEL_STATE_BUSY_FROM_LEISURE) {
+        TIMER_PENDING_CALLS_ACTIVE) {
       // No synchronization issues here. grpc_timer_cancel() is valid as long as
       // grpc_timer_init() has been called on the given timer before.
       grpc_timer_cancel(&chand->idle_timer_);
@@ -178,32 +202,33 @@ void ChannelData::IncreaseCallCount() {
   GRPC_IDLE_FILTER_LOG("call counter has increased to %" PRIuPTR,
                        previous_value + 1);
   if (previous_value == 0) {
-    // If this call is the one makes the channel busy, switch the state from
-    // LEISURE to BUSY.
-    bool finished = false;
+    // This call is the one makes the channel busy.
     // Loop here to make sure the previous decrease operation has finished.
     ChannelState state = state_.Load(MemoryOrder::RELAXED);
-    while (!finished) {
+    while (true) {
       switch (state) {
-        // Timer has been set. Switch to CHANNEL_STATE_BUSY_FROM_LEISURE.
-        case CHANNEL_STATE_LEISURE:
-        case CHANNEL_STATE_LEISURE_FROM_BUSY:
+        // Timer has been set. Switch to TIMER_PENDING_CALLS_ACTIVE.
+        case TIMER_PENDING:
+        case TIMER_PENDING_CALLS_SEEN_SINCE_TIMER_START:
           // At this point, the state may have been switched to IDLE by the
           // idle timer callback. Therefore, use CAS operation to change the
           // state atomically.
-          finished = state_.CompareExchangeWeak(
-              &state, CHANNEL_STATE_BUSY_FROM_LEISURE, MemoryOrder::RELAXED,
-              MemoryOrder::RELAXED);
+          // Use MemoryOrder::ACQUIRE on success to ensure last_idle_time_ has
+          // been properly set in DecreaseCallCount().
+          if (state_.CompareExchangeWeak(&state, TIMER_PENDING_CALLS_ACTIVE,
+                                         MemoryOrder::ACQUIRE,
+                                         MemoryOrder::RELAXED)) {
+            return;
+          }
           break;
-        // Timer has not been set. Switch to CHANNEL_STATE_BUSY.
-        case CHANNEL_STATE_IDLE:
+        // Timer has not been set. Switch to CALLS_ACTIVE.
+        case IDLE:
           // In this case, no other threads will modify the state, so we can
           // just store the value.
-          state_.Store(CHANNEL_STATE_BUSY, MemoryOrder::RELAXED);
-          finished = true;
-          break;
+          state_.Store(CALLS_ACTIVE, MemoryOrder::RELAXED);
+          return;
         default:
-          // The state has not been switched to LEISURE/IDLE yet, try again.
+          // The state has not been switched to desired value yet, try again.
           state = state_.Load(MemoryOrder::RELAXED);
           break;
       }
@@ -216,35 +241,34 @@ void ChannelData::DecreaseCallCount() {
   GRPC_IDLE_FILTER_LOG("call counter has decreased to %" PRIuPTR,
                        previous_value - 1);
   if (previous_value == 1) {
-    // If this call is the one makes the channel leisure, switch the state from
-    // BUSY to LEISURE.
+    // This call is the one makes the channel idle.
     last_idle_time_ = ExecCtx::Get()->Now();
-    bool finished = false;
-    // Loop here to make sure the previous increase operation has finished.
     ChannelState state = state_.Load(MemoryOrder::RELAXED);
-    while (!finished) {
+    while (true) {
       switch (state) {
-        // Timer has been set. Switch to CHANNEL_STATE_LEISURE_FROM_BUSY
-        case CHANNEL_STATE_BUSY_FROM_LEISURE:
-          // At this point, the state may have been switched to BUSY by the
-          // idle timer callback. Therefore, use CAS operation to change the
+        // Timer has been set. Switch to
+        // TIMER_PENDING_CALLS_SEEN_SINCE_TIMER_START
+        case TIMER_PENDING_CALLS_ACTIVE:
+          // At this point, the state may have been switched to CALLS_ACTIVE by
+          // the idle timer callback. Therefore, use CAS operation to change the
           // state atomically.
-          //
           // Release store here to make the idle timer callback see the updated
           // value of last_idle_time_ to properly reset the idle timer.
-          finished = state_.CompareExchangeWeak(
-              &state, CHANNEL_STATE_LEISURE_FROM_BUSY, MemoryOrder::RELEASE,
-              MemoryOrder::RELAXED);
+          if (state_.CompareExchangeWeak(
+                  &state, TIMER_PENDING_CALLS_SEEN_SINCE_TIMER_START,
+                  MemoryOrder::RELEASE, MemoryOrder::RELAXED)) {
+            return;
+          }
           break;
-        // Timer has not been set. Set the timer and switch to
-        // CHANNEL_STATE_LEISURE
-        case CHANNEL_STATE_BUSY:
-          state_.Store(CHANNEL_STATE_LEISURE, MemoryOrder::RELAXED);
+        // Timer has not been set. Set the timer and switch to TIMER_PENDING
+        case CALLS_ACTIVE:
+          // Release store here to make other threads see the updated value of
+          // last_idle_time_.
+          state_.Store(TIMER_PENDING, MemoryOrder::RELEASE);
           StartIdleTimer();
-          finished = true;
-          break;
+          return;
         default:
-          // The state has not been switched to BUSY yet, try again.
+          // The state has not been switched to desired value yet, try again.
           state = state_.Load(MemoryOrder::RELAXED);
           break;
       }
@@ -258,7 +282,7 @@ ChannelData::ChannelData(grpc_channel_element* elem,
       channel_stack_(args->channel_stack),
       client_idle_timeout_(GetClientIdleTimeout(args->channel_args)),
       call_count_(0),
-      state_(CHANNEL_STATE_IDLE) {
+      state_(IDLE) {
   // If the idle filter is explicitly disabled in channel args, this ctor should
   // not get called.
   GPR_ASSERT(client_idle_timeout_ != GRPC_MILLIS_INF_FUTURE);
@@ -287,29 +311,26 @@ void ChannelData::IdleTimerCallback(void* arg, grpc_error* error) {
   ChannelState state = chand->state_.Load(MemoryOrder::RELAXED);
   while (!finished) {
     switch (state) {
-      case CHANNEL_STATE_BUSY_FROM_LEISURE:
-        finished = chand->state_.CompareExchangeWeak(&state, CHANNEL_STATE_BUSY,
-                                                     MemoryOrder::RELAXED,
-                                                     MemoryOrder::RELAXED);
-        break;
-      case CHANNEL_STATE_LEISURE_FROM_BUSY:
+      case TIMER_PENDING_CALLS_ACTIVE:
         finished = chand->state_.CompareExchangeWeak(
-            &state, CHANNEL_STATE_LEISURE, MemoryOrder::ACQUIRE,
-            MemoryOrder::RELAXED);
+            &state, CALLS_ACTIVE, MemoryOrder::RELAXED, MemoryOrder::RELAXED);
+        break;
+      case TIMER_PENDING_CALLS_SEEN_SINCE_TIMER_START:
+        finished = chand->state_.CompareExchangeWeak(
+            &state, TIMER_PENDING, MemoryOrder::ACQUIRE, MemoryOrder::RELAXED);
         if (finished) {
           chand->StartIdleTimer();
         }
         break;
-      case CHANNEL_STATE_LEISURE:
-        finished = chand->state_.CompareExchangeWeak(&state, CHANNEL_STATE_IDLE,
-                                                     MemoryOrder::RELAXED,
-                                                     MemoryOrder::RELAXED);
+      case TIMER_PENDING:
+        finished = chand->state_.CompareExchangeWeak(
+            &state, IDLE, MemoryOrder::RELAXED, MemoryOrder::RELAXED);
         if (finished) {
           chand->EnterIdle();
         }
         break;
       default:
-        // The state has not been set properly yet, try again.
+        // The state has not been switched to desired value yet, try again.
         chand->state_.Load(MemoryOrder::RELAXED);
         break;
     }
