@@ -21,13 +21,13 @@
 #import <GRPCClient/GRPCCall+Tests.h>
 #import <GRPCClient/internal_testing/GRPCCall+InternalTests.h>
 #import <ProtoRPC/ProtoRPC.h>
-#import "src/objective-c/tests/RemoteTestClient/Messages.pbobjc.h"
-#import "src/objective-c/tests/RemoteTestClient/Test.pbobjc.h"
-#import "src/objective-c/tests/RemoteTestClient/Test.pbrpc.h"
 #import <RxLibrary/GRXBufferedPipe.h>
 #import <RxLibrary/GRXWriter+Immediate.h>
 #import <grpc/grpc.h>
 #import <grpc/support/log.h>
+#import "src/objective-c/tests/RemoteTestClient/Messages.pbobjc.h"
+#import "src/objective-c/tests/RemoteTestClient/Test.pbobjc.h"
+#import "src/objective-c/tests/RemoteTestClient/Test.pbrpc.h"
 
 #define TEST_TIMEOUT 32
 

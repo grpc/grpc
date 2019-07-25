@@ -29,8 +29,8 @@
 using ::google::protobuf::compiler::objectivec::
     IsProtobufLibraryBundledProtoFile;
 using ::google::protobuf::compiler::objectivec::ProtobufLibraryFrameworkName;
-using ::grpc_objective_c_generator::LocalImport;
 using ::grpc_objective_c_generator::FrameworkImport;
+using ::grpc_objective_c_generator::LocalImport;
 using ::grpc_objective_c_generator::PreprocIfElse;
 using ::grpc_objective_c_generator::PreprocIfNot;
 using ::grpc_objective_c_generator::SystemImport;
@@ -38,7 +38,8 @@ using ::grpc_objective_c_generator::SystemImport;
 namespace {
 
 inline ::grpc::string ImportProtoHeaders(
-    const grpc::protobuf::FileDescriptor* dep, const char* indent, const ::grpc::string &framework) {
+    const grpc::protobuf::FileDescriptor* dep, const char* indent,
+    const ::grpc::string& framework) {
   ::grpc::string header = grpc_objective_c_generator::MessageHeaderName(dep);
 
   // cerr << header << endl;
@@ -81,9 +82,12 @@ class ObjectiveCGrpcGenerator : public grpc::protobuf::compiler::CodeGenerator {
     }
 
     ::grpc::string framework;
-    std::vector<::grpc::string> params_list = grpc_generator::tokenize(parameter, ",");
-    for (auto param_str = params_list.begin(); param_str != params_list.end(); ++param_str) {
-      std::vector<::grpc::string> param = grpc_generator::tokenize(*param_str, "=");
+    std::vector<::grpc::string> params_list =
+        grpc_generator::tokenize(parameter, ",");
+    for (auto param_str = params_list.begin(); param_str != params_list.end();
+         ++param_str) {
+      std::vector<::grpc::string> param =
+          grpc_generator::tokenize(*param_str, "=");
       if (param[0] == "generate_for_named_framework") {
         framework = param[1];
       }
@@ -100,7 +104,7 @@ class ObjectiveCGrpcGenerator : public grpc::protobuf::compiler::CodeGenerator {
 
     {
       // Generate .pbrpc.h
-      
+
       ::grpc::string imports;
       if (framework.empty()) {
         imports = LocalImport(file_name + ".pbobjc.h");
@@ -126,7 +130,8 @@ class ObjectiveCGrpcGenerator : public grpc::protobuf::compiler::CodeGenerator {
 
       ::grpc::string class_imports;
       for (int i = 0; i < file->dependency_count(); i++) {
-        class_imports += ImportProtoHeaders(file->dependency(i), "  ", framework);
+        class_imports +=
+            ImportProtoHeaders(file->dependency(i), "  ", framework);
       }
 
       ::grpc::string ng_protocols;
@@ -164,14 +169,14 @@ class ObjectiveCGrpcGenerator : public grpc::protobuf::compiler::CodeGenerator {
       ::grpc::string imports;
       if (framework.empty()) {
         imports = LocalImport(file_name + ".pbrpc.h") +
-                                LocalImport(file_name + ".pbobjc.h") +
-                                SystemImport("ProtoRPC/ProtoRPC.h") +
-                                SystemImport("RxLibrary/GRXWriter+Immediate.h");
+                  LocalImport(file_name + ".pbobjc.h") +
+                  SystemImport("ProtoRPC/ProtoRPC.h") +
+                  SystemImport("RxLibrary/GRXWriter+Immediate.h");
       } else {
         imports = FrameworkImport(file_name + ".pbrpc.h", framework) +
-                                FrameworkImport(file_name + ".pbobjc.h", framework) +
-                                SystemImport("ProtoRPC/ProtoRPC.h") +
-                                SystemImport("RxLibrary/GRXWriter+Immediate.h");
+                  FrameworkImport(file_name + ".pbobjc.h", framework) +
+                  SystemImport("ProtoRPC/ProtoRPC.h") +
+                  SystemImport("RxLibrary/GRXWriter+Immediate.h");
       }
 
       ::grpc::string class_imports;

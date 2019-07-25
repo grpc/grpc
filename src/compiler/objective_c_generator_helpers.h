@@ -22,7 +22,6 @@
 #include <iostream>
 using namespace std;
 
-
 #include <map>
 #include "src/compiler/config.h"
 #include "src/compiler/generator_helpers.h"
@@ -49,7 +48,8 @@ inline ::grpc::string LocalImport(const ::grpc::string& import) {
   return ::grpc::string("#import \"" + import + "\"\n");
 }
 
-inline ::grpc::string FrameworkImport(const ::grpc::string& import, const ::grpc::string& framework) {
+inline ::grpc::string FrameworkImport(const ::grpc::string& import,
+                                      const ::grpc::string& framework) {
   // Flattens the directory structure
   std::size_t pos = import.rfind("/");
   ::grpc::string filename = import.substr(pos + 1, import.size() - pos);

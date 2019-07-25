@@ -21,10 +21,10 @@
 #ifdef GRPC_COMPILE_WITH_CRONET
 #import <Cronet/Cronet.h>
 #endif
+#import <RxLibrary/GRXBufferedPipe.h>
 #import "src/objective-c/tests/RemoteTestClient/Messages.pbobjc.h"
 #import "src/objective-c/tests/RemoteTestClient/Test.pbobjc.h"
 #import "src/objective-c/tests/RemoteTestClient/Test.pbrpc.h"
-#import <RxLibrary/GRXBufferedPipe.h>
 
 #import "../ConfigureCronet.h"
 #import "InteropTestsBlockCallbacks.h"
