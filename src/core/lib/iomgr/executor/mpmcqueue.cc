@@ -81,11 +81,11 @@ InfLenFIFOQueue::InfLenFIFOQueue() {
   delete_list_ =
       static_cast<Node**>(gpr_zalloc(sizeof(Node*) * delete_list_size_));
 
-  Node* new_chunk = AllocateNodes(kDeleteListInitSize);
+  Node* new_chunk = AllocateNodes(kQueueInitNumNodes);
   delete_list_[delete_list_count_++] = new_chunk;
   queue_head_ = queue_tail_ = new_chunk;
-  new_chunk[0].prev = &new_chunk[1023];
-  new_chunk[1023].next = &new_chunk[0];
+  new_chunk[0].prev = &new_chunk[kQueueInitNumNodes - 1];
+  new_chunk[kQueueInitNumNodes - 1].next = &new_chunk[0];
 
   waiters_.next = &waiters_;
   waiters_.prev = &waiters_;

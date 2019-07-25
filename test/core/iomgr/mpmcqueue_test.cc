@@ -127,7 +127,7 @@ static void test_space_efficiency(void) {
   for (int i = 0; i < queue.init_num_nodes(); ++i) {
     queue.Put(static_cast<void*>(grpc_core::New<WorkItem>(i)));
   }
-  // List should not have been expanded at this time.
+  // Queue should not have been expanded at this time.
   GPR_ASSERT(queue.num_nodes() == queue.init_num_nodes());
   for (int i = 0; i < queue.init_num_nodes(); ++i) {
     WorkItem* item = static_cast<WorkItem*>(queue.Get());
@@ -138,6 +138,7 @@ static void test_space_efficiency(void) {
     WorkItem* item = static_cast<WorkItem*>(queue.Get());
     grpc_core::Delete(item);
   }
+  // Queue never shrinks even it is empty.
   GPR_ASSERT(queue.num_nodes() == queue.init_num_nodes());
   GPR_ASSERT(queue.count() == 0);
   // queue empty now
@@ -145,20 +146,20 @@ static void test_space_efficiency(void) {
     queue.Put(static_cast<void*>(grpc_core::New<WorkItem>(i)));
   }
   GPR_ASSERT(queue.count() == queue.init_num_nodes() * 2);
-  // List should have been expanded once.
+  // Queue should have been expanded once.
   GPR_ASSERT(queue.num_nodes() == queue.init_num_nodes() * 2);
   for (int i = 0; i < queue.init_num_nodes(); ++i) {
     WorkItem* item = static_cast<WorkItem*>(queue.Get());
     grpc_core::Delete(item);
   }
   GPR_ASSERT(queue.count() == queue.init_num_nodes());
-  // List will never shrink, should keep same number of node as before.
+  // Queue will never shrink, should keep same number of node as before.
   GPR_ASSERT(queue.num_nodes() == queue.init_num_nodes() * 2);
   for (int i = 0; i < queue.init_num_nodes() + 1; ++i) {
     queue.Put(static_cast<void*>(grpc_core::New<WorkItem>(i)));
   }
   GPR_ASSERT(queue.count() == queue.init_num_nodes() * 2 + 1);
-  // List should have been expanded twice.
+  // Queue should have been expanded twice.
   GPR_ASSERT(queue.num_nodes() == queue.init_num_nodes() * 4);
   for (int i = 0; i < queue.init_num_nodes() * 2 + 1; ++i) {
     WorkItem* item = static_cast<WorkItem*>(queue.Get());

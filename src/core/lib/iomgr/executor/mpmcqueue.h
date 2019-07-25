@@ -88,7 +88,7 @@ class InfLenFIFOQueue : public MPMCQueueInterface {
   };
 
   // For test purpose only. Returns number of nodes allocated in queue.
-  // All allocated nodes will not be free until destruction of queue.
+  // Any allocated node will be alive until the destruction of the queue.
   int num_nodes() const { return num_nodes_; }
 
   // For test purpose only. Returns the initial number of nodes in queue.
@@ -147,8 +147,10 @@ class InfLenFIFOQueue : public MPMCQueueInterface {
   Mutex mu_;        // Protecting lock
   Waiter waiters_;  // Head of waiting thread queue
 
-  const int kDeleteListInitSize = 1024;  // Initial size for delete list
-  const int kQueueInitNumNodes = 1024;   // Initial number of nodes allocated
+  // Initial size for delete list
+  static const int kDeleteListInitSize = 1024;
+  // Initial number of nodes allocated
+  static const int kQueueInitNumNodes = 1024;
 
   Node** delete_list_ = nullptr;  // Keeps track of all allocated array entries
                                   // for deleting on destruction
