@@ -41,13 +41,18 @@ Pod::Spec.new do |s|
   s.module_name = name
   s.header_dir = name
 
-  src_dir = 'src/objective-c/ProtoRPC'
+  s.default_subspec = 'Main', 'Legacy', 'Legacy-Header'
 
-  s.default_subspec = 'Main', 'Legacy'
+  s.subspec 'Legacy-Header' do |ss|
+    ss.header_mappings_dir = "src/objective-c/ProtoRPC"
+    ss.public_header_files = "src/objective-c/ProtoRPC/ProtoRPCLegacy.h"
+    ss.source_files = "src/objective-c/ProtoRPC/ProtoRPCLegacy.h"
+  end
 
   s.subspec 'Main' do |ss|
-    ss.header_mappings_dir = "#{src_dir}"
-    ss.dependency 'gRPC', version
+    ss.header_mappings_dir = "src/objective-c/ProtoRPC"
+    ss.dependency "#{s.name}/Legacy-Header", version
+    ss.dependency 'gRPC/Interface', version
     ss.dependency 'Protobuf', '~> 3.0'
 
     ss.source_files = "src/objective-c/ProtoRPC/ProtoMethod.{h,m}",
@@ -56,13 +61,14 @@ Pod::Spec.new do |s|
   end
 
   s.subspec 'Legacy' do |ss|
-    ss.header_mappings_dir = "#{src_dir}"
+    ss.header_mappings_dir = "src/objective-c/ProtoRPC"
     ss.dependency "#{s.name}/Main", version
+    ss.dependency "#{s.name}/Legacy-Header", version
     ss.dependency 'gRPC/GRPCCore', version
     ss.dependency 'gRPC-RxLibrary', version
     ss.dependency 'Protobuf', '~> 3.0'
 
-    ss.source_files = "src/objective-c/ProtoRPC/ProtoRPCLegacy.{h,m}",
+    ss.source_files = "src/objective-c/ProtoRPC/ProtoRPCLegacy.m",
                       "src/objective-c/ProtoRPC/ProtoServiceLegacy.{h,m}"
   end
 

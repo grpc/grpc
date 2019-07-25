@@ -1,5 +1,7 @@
 #import "ProtoRPCLegacy.h"
 
+#import "ProtoMethod.h"
+
 #if GPB_USE_PROTOBUF_FRAMEWORK_IMPORTS
 #import <Protobuf/GPBProtocolBuffers.h>
 #else

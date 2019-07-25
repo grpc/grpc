@@ -42,14 +42,19 @@ Pod::Spec.new do |s|
 
   s.default_subspec = 'Interface', 'GRPCCore'
 
-  # Certificates, to be able to establish TLS connections:
-  s.resource_bundles = { 'gRPCCertificates' => ['etc/roots.pem'] }
-
   s.pod_target_xcconfig = {
     # This is needed by all pods that depend on gRPC-RxLibrary:
     'CLANG_ALLOW_NON_MODULAR_INCLUDES_IN_FRAMEWORK_MODULES' => 'YES',
     'CLANG_WARN_STRICT_PROTOTYPES' => 'NO',
   }
+
+  s.subspec 'Interface-Legacy' do |ss|
+    ss.header_mappings_dir = 'src/objective-c/GRPCClient'
+
+    ss.public_header_files = "src/objective-c/GRPCClient/GRPCCallLegacy.h"
+
+    ss.source_files = "src/objective-c/GRPCClient/GRPCCallLegacy.h"
+  end
 
   s.subspec 'Interface' do |ss|
     ss.header_mappings_dir = 'src/objective-c/GRPCClient'
@@ -75,6 +80,8 @@ Pod::Spec.new do |s|
                       'src/objective-c/GRPCClient/GRPCTransport.m',
                       'src/objective-c/GRPCClient/private/GRPCTransport+Private.h',
                       'src/objective-c/GRPCClient/private/GRPCTransport+Private.m'
+
+    ss.dependency "#{s.name}/Interface-Legacy", version
   end
 
   s.subspec 'GRPCCore' do |ss|
@@ -84,7 +91,6 @@ Pod::Spec.new do |s|
                              'src/objective-c/GRPCClient/GRPCCall+Cronet.h',
                              'src/objective-c/GRPCClient/GRPCCall+OAuth2.h',
                              'src/objective-c/GRPCClient/GRPCCall+Tests.h',
-                             'src/objective-c/GRPCClient/GRPCCallLegacy.h',
                              'src/objective-c/GRPCClient/GRPCCall+ChannelArg.h',
                              'src/objective-c/GRPCClient/internal_testing/*.h'
     ss.private_header_files = 'src/objective-c/GRPCClient/private/GRPCCore/*.h'
@@ -100,11 +106,13 @@ Pod::Spec.new do |s|
                       'src/objective-c/GRPCClient/GRPCCall+OAuth2.m',
                       'src/objective-c/GRPCClient/GRPCCall+Tests.h',
                       'src/objective-c/GRPCClient/GRPCCall+Tests.m',
-                      'src/objective-c/GRPCClient/GRPCCallLegacy.h',
                       'src/objective-c/GRPCClient/GRPCCallLegacy.m'
 
-    ss.dependency 'gRPC-Core', version
+    # Certificates, to be able to establish TLS connections:
+    ss.resource_bundles = { 'gRPCCertificates' => ['etc/roots.pem'] }
+
     ss.dependency "#{s.name}/Interface", version
+    ss.dependency 'gRPC-Core', version
     ss.dependency 'gRPC-RxLibrary', version
   end
 
@@ -114,8 +122,9 @@ Pod::Spec.new do |s|
     ss.source_files = 'src/objective-c/GRPCClient/GRPCCall+Cronet.h',
                       'src/objective-c/GRPCClient/GRPCCall+Cronet.m',
                       'src/objective-c/GRPCClient/private/GRPCCore/GRPCCoreCronet/*.{h,m}'
-    ss.dependency 'CronetFramework'
+    ss.dependency "#{s.name}/GRPCCore", version
     ss.dependency 'gRPC-Core/Cronet-Implementation', version
+    ss.dependency 'CronetFramework'
   end
 
   # CFStream is now default. Leaving this subspec only for compatibility purpose.
