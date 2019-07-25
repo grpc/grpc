@@ -82,3 +82,22 @@
 @implementation GRPCProtoCall
 
 @end
+
+/**
+ * Generate an NSError object that represents a failure in parsing a proto class.
+ */
+NSError *ErrorForBadProto(id proto, Class expectedClass, NSError *parsingError) {
+  NSDictionary *info = @{
+    NSLocalizedDescriptionKey : @"Unable to parse response from the server",
+    NSLocalizedRecoverySuggestionErrorKey :
+        @"If this RPC is idempotent, retry "
+        @"with exponential backoff. Otherwise, query the server status before "
+        @"retrying.",
+    NSUnderlyingErrorKey : parsingError,
+    @"Expected class" : expectedClass,
+    @"Received value" : proto,
+  };
+  // TODO(jcanizales): Use kGRPCErrorDomain and GRPCErrorCodeInternal when they're public.
+  return [NSError errorWithDomain:@"io.grpc" code:13 userInfo:info];
+}
+

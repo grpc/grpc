@@ -1,4 +1,3 @@
-#import "ProtoRPC.h"
 #import <GRPCClient/GRPCCallLegacy.h>
 
 @class GRPCProtoMethod;
@@ -31,4 +30,10 @@ __attribute__((deprecated("Please use GRPCProtoCall."))) @interface ProtoRPC
 #pragma clang diagnostic pop
 
 @end
+
+/**
+ * Generate an NSError object that represents a failure in parsing a proto class. For gRPC internal
+ * use only.
+ */
+NSError *ErrorForBadProto(id proto, Class expectedClass, NSError *parsingError);
 

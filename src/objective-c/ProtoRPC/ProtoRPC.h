@@ -18,6 +18,9 @@
 
 #import <Foundation/Foundation.h>
 
+// import legacy header for compatibility with users using the ProtoRPC interface
+#import "ProtoRPCLegacy.h"
+
 #import "ProtoMethod.h"
 
 NS_ASSUME_NONNULL_BEGIN
@@ -159,11 +162,5 @@ NS_ASSUME_NONNULL_BEGIN
 - (void)receiveNextMessages:(NSUInteger)numberOfMessages;
 
 @end
-
-/**
- * Generate an NSError object that represents a failure in parsing a proto class. For gRPC internal
- * use only.
- */
-NSError *ErrorForBadProto(id proto, Class expectedClass, NSError *parsingError);
 
 NS_ASSUME_NONNULL_END
