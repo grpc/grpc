@@ -38,6 +38,7 @@
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/gprpp/arena.h"
+#include "src/core/lib/gprpp/atomic.h"
 #include "src/core/lib/gprpp/manual_constructor.h"
 #include "src/core/lib/gprpp/ref_counted.h"
 #include "src/core/lib/iomgr/timer.h"
@@ -157,7 +158,7 @@ struct grpc_call {
   gpr_timespec start_time = gpr_now(GPR_CLOCK_MONOTONIC);
   /* parent_call* */ gpr_atm parent_call_atm = 0;
   child_call* child = nullptr;
-  intptr_t batches_completed = 0;
+  grpc_core::Atomic<intptr_t> batches_completed;
 
   /* client or server call */
   bool is_client;
@@ -570,7 +571,8 @@ void grpc_call_unref(grpc_call* c) {
   if (GPR_LIKELY(!c->ext_ref.Unref())) return;
 
   GPR_TIMER_SCOPE("grpc_call_unref", 0);
-  intptr_t unrefs_needed = 1 + c->batches_completed;
+  intptr_t unrefs_needed =
+      1 + c->batches_completed.Load(grpc_core::MemoryOrder::RELAXED);
 
   child_call* cc = c->child;
   grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
@@ -1161,7 +1163,7 @@ static void finish_batch_completion(void* user_data,
   grpc_call* call = bctl->call;
   bctl->call = nullptr;
   // In lieu of GRPC_CALL_INTERNAL_UNREF(call, "completion");
-  call->batches_completed++;
+  call->batches_completed.FetchAdd(1, grpc_core::MemoryOrder::RELAXED);
 }
 
 static void reset_batch_errors(batch_control* bctl) {
@@ -1229,7 +1231,7 @@ static void post_batch_completion(batch_control* bctl) {
     GRPC_CLOSURE_SCHED((grpc_closure*)bctl->completion_data.notify_tag.tag,
                        error);
     // In lieu of GRPC_CALL_INTERNAL_UNREF(call, "completion");
-    call->batches_completed++;
+    call->batches_completed.FetchAdd(1, grpc_core::MemoryOrder::RELAXED);
   } else {
     /* unrefs error */
     grpc_cq_end_op(bctl->call->cq, bctl->completion_data.notify_tag.tag, error,
