@@ -60,13 +60,18 @@ namespace Grpc.Core.Internal
         public RequestCallCompletionDelegate CompletionCallback { get; set; }
 
         // Gets data of server_rpc_new completion.
-        public ServerRpcNew GetServerRpcNew(Server server)
+        public ServerRpcNew GetServerRpcNew(Server server, BinaryKeyDictionary methodLookup)
         {
             var call = Native.grpcsharp_request_call_context_call(this);
 
             UIntPtr methodLen;
             IntPtr methodPtr = Native.grpcsharp_request_call_context_method(this, out methodLen);
-            var method = Marshal.PtrToStringAnsi(methodPtr, (int) methodLen.ToUInt32());
+
+            var method = methodLookup.Lookup(methodPtr, (int) methodLen);
+            if (method == null)
+            {
+                method = Marshal.PtrToStringAnsi(methodPtr, (int) methodLen.ToUInt32());
+            }
 
             UIntPtr hostLen;
             IntPtr hostPtr = Native.grpcsharp_request_call_context_host(this, out hostLen);

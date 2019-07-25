@@ -48,6 +48,7 @@ namespace Grpc.Core
         readonly List<ServerServiceDefinition> serviceDefinitionsList = new List<ServerServiceDefinition>();
         readonly List<ServerPort> serverPortList = new List<ServerPort>();
         readonly Dictionary<string, IServerCallHandler> callHandlers = new Dictionary<string, IServerCallHandler>();
+        readonly BinaryKeyDictionary methodLookup = new BinaryKeyDictionary();
         readonly TaskCompletionSource<object> shutdownTcs = new TaskCompletionSource<object>();
 
         bool startRequested;
@@ -260,6 +261,7 @@ namespace Grpc.Core
                 foreach (var entry in serviceDefinition.GetCallHandlers())
                 {
                     callHandlers.Add(entry.Key, entry.Value);
+                    methodLookup.Add(entry.Key);
                 }
                 serviceDefinitionsList.Add(serviceDefinition);
             }
@@ -272,6 +274,7 @@ namespace Grpc.Core
             {
                 GrpcPreconditions.CheckState(!startRequested);
                 callHandlers.Add(methodName, handler);
+                methodLookup.Add(methodName);
             }
         }
 
@@ -373,7 +376,7 @@ namespace Grpc.Core
             bool nextRpcRequested = false;
             if (success)
             {
-                var newRpc = ctx.GetServerRpcNew(this);
+                var newRpc = ctx.GetServerRpcNew(this, methodLookup);
 
                 // after server shutdown, the callback returns with null call
                 if (!newRpc.Call.IsInvalid)
