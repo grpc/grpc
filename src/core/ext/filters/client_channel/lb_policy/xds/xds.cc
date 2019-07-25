@@ -1102,13 +1102,12 @@ void XdsLb::LbChannelState::EdsCallState::OnResponseReceivedLocked(
       GRPC_ERROR_UNREF(parse_error);
       return;
     }
-    if (update.locality_list.empty() &&
-        update.drop_config->drop_category_list().empty()) {
+    if (update.locality_list.empty() && !update.drop_all) {
       char* response_slice_str =
           grpc_dump_slice(response_slice, GPR_DUMP_ASCII | GPR_DUMP_HEX);
       gpr_log(GPR_ERROR,
               "[xdslb %p] EDS response '%s' doesn't contain any valid locality "
-              "or drop update. Ignoring.",
+              "but doesn't require to drop all calls. Ignoring.",
               xdslb_policy, response_slice_str);
       gpr_free(response_slice_str);
       return;
