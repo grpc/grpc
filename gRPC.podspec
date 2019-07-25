@@ -78,6 +78,7 @@ Pod::Spec.new do |s|
                       'src/objective-c/GRPCClient/GRPCInterceptor.m',
                       'src/objective-c/GRPCClient/GRPCTransport.h',
                       'src/objective-c/GRPCClient/GRPCTransport.m',
+                      'src/objective-c/GRPCClient/internal/*.h',
                       'src/objective-c/GRPCClient/private/GRPCTransport+Private.h',
                       'src/objective-c/GRPCClient/private/GRPCTransport+Private.m'
 
