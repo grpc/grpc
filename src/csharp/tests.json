@@ -10,6 +10,7 @@
     "Grpc.Core.Internal.Tests.DefaultDeserializationContextTest",
     "Grpc.Core.Internal.Tests.DefaultObjectPoolTest",
     "Grpc.Core.Internal.Tests.FakeBufferReaderManagerTest",
+    "Grpc.Core.Internal.Tests.MarshalUtilsTest",
     "Grpc.Core.Internal.Tests.MetadataArraySafeHandleTest",
     "Grpc.Core.Internal.Tests.ReusableSliceBufferTest",
     "Grpc.Core.Internal.Tests.SliceTest",

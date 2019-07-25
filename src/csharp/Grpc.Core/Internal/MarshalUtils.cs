@@ -29,6 +29,7 @@ namespace Grpc.Core.Internal
     internal static class MarshalUtils
     {
         static readonly Encoding EncodingUTF8 = System.Text.Encoding.UTF8;
+        static readonly Encoding EncodingASCII = System.Text.Encoding.ASCII;
 
         /// <summary>
         /// Converts <c>IntPtr</c> pointing to a UTF-8 encoded byte array to <c>string</c>.
@@ -37,6 +38,19 @@ namespace Grpc.Core.Internal
         public static string PtrToStringUTF8(IntPtr ptr, int len)
         {
             return EncodingUTF8.GetString(ptr, len);
+        }
+
+        /// <summary>
+        /// Converts <c>IntPtr</c> pointing to a ASCII encoded byte array to <c>string</c>.
+        /// </summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static string PtrToStringASCII(IntPtr ptr, int len)
+        {
+            if (ptr == IntPtr.Zero)
+            {
+                throw new ArgumentNullException(nameof(ptr));
+            }
+            return EncodingASCII.GetString(ptr, len);
         }
 
         /// <summary>
