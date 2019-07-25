@@ -1173,23 +1173,21 @@ void XdsLb::LbChannelState::EdsCallState::OnResponseReceivedLocked(
     // load reporting.
     LrsCallState* lrs_calld = lb_chand->lrs_calld_->lb_calld();
     if (lrs_calld != nullptr) lrs_calld->MaybeStartReportingLocked();
-    // Ignore identical update.
-    if (xdslb_policy->locality_list_ == update.locality_list &&
-        xdslb_policy->drop_config_ == update.drop_config) {
-      if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_xds_trace)) {
-        gpr_log(GPR_INFO,
-                "[xdslb %p] Incoming server list and drop config identical to "
-                "current, "
-                "ignoring.",
-                xdslb_policy);
-      }
-      return;
-    }
     // If the balancer tells us to drop all the calls, we should exit fallback
     // mode immediately.
     if (update.drop_all) xdslb_policy->MaybeExitFallbackMode();
     // Update the drop config.
     xdslb_policy->drop_config_ = std::move(update.drop_config);
+    // Ignore identical locality update.
+    if (xdslb_policy->locality_list_ == update.locality_list) {
+      if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_xds_trace)) {
+        gpr_log(
+            GPR_INFO,
+            "[xdslb %p] Incoming locality list identical to current, ignoring.",
+            xdslb_policy);
+      }
+      return;
+    }
     // Update the locality list.
     xdslb_policy->locality_list_ = std::move(update.locality_list);
     // Update the locality map.
