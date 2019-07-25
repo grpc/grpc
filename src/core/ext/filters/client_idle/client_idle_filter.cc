@@ -153,8 +153,8 @@ class ChannelData {
 
   // Member data used to track the state of channel.
   grpc_millis last_idle_time_;
-  Atomic<size_t> call_count_;
-  Atomic<ChannelState> state_;
+  Atomic<size_t> call_count_{0};
+  Atomic<ChannelState> state_{IDLE};
 
   // Idle timer and its callback closure.
   grpc_timer idle_timer_;
@@ -280,9 +280,7 @@ ChannelData::ChannelData(grpc_channel_element* elem,
                          grpc_channel_element_args* args, grpc_error** error)
     : elem_(elem),
       channel_stack_(args->channel_stack),
-      client_idle_timeout_(GetClientIdleTimeout(args->channel_args)),
-      call_count_(0),
-      state_(IDLE) {
+      client_idle_timeout_(GetClientIdleTimeout(args->channel_args)) {
   // If the idle filter is explicitly disabled in channel args, this ctor should
   // not get called.
   GPR_ASSERT(client_idle_timeout_ != GRPC_MILLIS_INF_FUTURE);
