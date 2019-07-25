@@ -165,38 +165,38 @@ class RefCount {
   }
 
   // Decrements the ref-count and returns true if the ref-count reaches 0.
-  bool Unref() {
+  bool Unref(Value n = 1) {
 #ifndef NDEBUG
     // Grab a copy of the trace flag before the atomic change, since we
     // can't safely access it afterwards if we're going to be freed.
     auto* trace_flag = trace_flag_;
 #endif
-    const Value prior = value_.FetchSub(1, MemoryOrder::ACQ_REL);
+    const Value prior = value_.FetchSub(n, MemoryOrder::ACQ_REL);
 #ifndef NDEBUG
     if (trace_flag != nullptr && trace_flag->enabled()) {
       gpr_log(GPR_INFO, "%s:%p unref %" PRIdPTR " -> %" PRIdPTR,
-              trace_flag->name(), this, prior, prior - 1);
+              trace_flag->name(), this, prior, prior - n);
     }
     GPR_DEBUG_ASSERT(prior > 0);
 #endif
-    return prior == 1;
+    return prior == n;
   }
-  bool Unref(const DebugLocation& location, const char* reason) {
+  bool Unref(const DebugLocation& location, const char* reason, Value n = 1) {
 #ifndef NDEBUG
     // Grab a copy of the trace flag before the atomic change, since we
     // can't safely access it afterwards if we're going to be freed.
     auto* trace_flag = trace_flag_;
 #endif
-    const Value prior = value_.FetchSub(1, MemoryOrder::ACQ_REL);
+    const Value prior = value_.FetchSub(n, MemoryOrder::ACQ_REL);
 #ifndef NDEBUG
     if (trace_flag != nullptr && trace_flag->enabled()) {
       gpr_log(GPR_INFO, "%s:%p %s:%d unref %" PRIdPTR " -> %" PRIdPTR " %s",
               trace_flag->name(), this, location.file(), location.line(), prior,
-              prior - 1, reason);
+              prior - n, reason);
     }
     GPR_DEBUG_ASSERT(prior > 0);
 #endif
-    return prior == 1;
+    return prior == n;
   }
 
  private:

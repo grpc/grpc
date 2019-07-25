@@ -228,6 +228,8 @@ void grpc_call_stack_set_pollset_or_pollset_set(grpc_call_stack* call_stack,
   grpc_stream_ref(&(call_stack)->refcount, reason)
 #define GRPC_CALL_STACK_UNREF(call_stack, reason) \
   grpc_stream_unref(&(call_stack)->refcount, reason)
+#define GRPC_CALL_STACK_UNREF_N(call_stack, reason, n) \
+  grpc_stream_unref(&(call_stack)->refcount, reason, (n))
 #define GRPC_CHANNEL_STACK_REF(channel_stack, reason) \
   grpc_stream_ref(&(channel_stack)->refcount, reason)
 #define GRPC_CHANNEL_STACK_UNREF(channel_stack, reason) \
@@ -237,6 +239,8 @@ void grpc_call_stack_set_pollset_or_pollset_set(grpc_call_stack* call_stack,
   grpc_stream_ref(&(call_stack)->refcount)
 #define GRPC_CALL_STACK_UNREF(call_stack, reason) \
   grpc_stream_unref(&(call_stack)->refcount)
+#define GRPC_CALL_STACK_UNREF_N(call_stack, reason, n) \
+  grpc_stream_unref(&(call_stack)->refcount, (n))
 #define GRPC_CHANNEL_STACK_REF(channel_stack, reason) \
   grpc_stream_ref(&(channel_stack)->refcount)
 #define GRPC_CHANNEL_STACK_UNREF(channel_stack, reason) \

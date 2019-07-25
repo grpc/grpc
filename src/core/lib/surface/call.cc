@@ -157,6 +157,7 @@ struct grpc_call {
   gpr_timespec start_time = gpr_now(GPR_CLOCK_MONOTONIC);
   /* parent_call* */ gpr_atm parent_call_atm = 0;
   child_call* child = nullptr;
+  intptr_t batches_completed = 0;
 
   /* client or server call */
   bool is_client;
@@ -498,16 +499,20 @@ void grpc_call_set_completion_queue(grpc_call* call,
 
 #ifndef NDEBUG
 #define REF_REASON reason
+#define REF_REASON_UNREF reason
 #define REF_ARG , const char* reason
+#define REF_ARG_UNREF , const char *reason,
 #else
 #define REF_REASON ""
+#define REF_REASON_UNREF ""
 #define REF_ARG
+#define REF_ARG_UNREF ,
 #endif
 void grpc_call_internal_ref(grpc_call* c REF_ARG) {
   GRPC_CALL_STACK_REF(CALL_STACK_FROM_CALL(c), REF_REASON);
 }
-void grpc_call_internal_unref(grpc_call* c REF_ARG) {
-  GRPC_CALL_STACK_UNREF(CALL_STACK_FROM_CALL(c), REF_REASON);
+void grpc_call_internal_unref(grpc_call* c REF_ARG_UNREF intptr_t n) {
+  GRPC_CALL_STACK_UNREF_N(CALL_STACK_FROM_CALL(c), REF_REASON_UNREF, n);
 }
 
 static void release_call(void* call, grpc_error* error) {
@@ -565,6 +570,7 @@ void grpc_call_unref(grpc_call* c) {
   if (GPR_LIKELY(!c->ext_ref.Unref())) return;
 
   GPR_TIMER_SCOPE("grpc_call_unref", 0);
+  intptr_t unrefs_needed = 1 + c->batches_completed;
 
   child_call* cc = c->child;
   grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
@@ -603,7 +609,7 @@ void grpc_call_unref(grpc_call* c) {
     c->call_combiner.SetNotifyOnCancel(nullptr);
     grpc_core::ExecCtx::Get()->Flush();
   }
-  GRPC_CALL_INTERNAL_UNREF(c, "destroy");
+  GRPC_CALL_INTERNAL_UNREF_N(c, "destroy", unrefs_needed);
 }
 
 grpc_call_error grpc_call_cancel(grpc_call* call, void* reserved) {
@@ -1154,7 +1160,8 @@ static void finish_batch_completion(void* user_data,
   batch_control* bctl = static_cast<batch_control*>(user_data);
   grpc_call* call = bctl->call;
   bctl->call = nullptr;
-  GRPC_CALL_INTERNAL_UNREF(call, "completion");
+  // In lieu of GRPC_CALL_INTERNAL_UNREF(call, "completion");
+  call->batches_completed++;
 }
 
 static void reset_batch_errors(batch_control* bctl) {
@@ -1221,7 +1228,8 @@ static void post_batch_completion(batch_control* bctl) {
      */
     GRPC_CLOSURE_SCHED((grpc_closure*)bctl->completion_data.notify_tag.tag,
                        error);
-    GRPC_CALL_INTERNAL_UNREF(call, "completion");
+    // In lieu of GRPC_CALL_INTERNAL_UNREF(call, "completion");
+    call->batches_completed++;
   } else {
     /* unrefs error */
     grpc_cq_end_op(bctl->call->cq, bctl->completion_data.notify_tag.tag, error,

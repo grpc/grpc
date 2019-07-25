@@ -61,16 +61,22 @@ void grpc_call_set_completion_queue(grpc_call* call, grpc_completion_queue* cq);
 
 #ifndef NDEBUG
 void grpc_call_internal_ref(grpc_call* call, const char* reason);
-void grpc_call_internal_unref(grpc_call* call, const char* reason);
+void grpc_call_internal_unref(grpc_call* call, const char* reason,
+                              intptr_t n = 1);
 #define GRPC_CALL_INTERNAL_REF(call, reason) \
   grpc_call_internal_ref(call, reason)
 #define GRPC_CALL_INTERNAL_UNREF(call, reason) \
   grpc_call_internal_unref(call, reason)
+#define GRPC_CALL_INTERNAL_UNREF_N(call, reason, n) \
+  grpc_call_internal_unref(call, reason, (n))
 #else
 void grpc_call_internal_ref(grpc_call* call);
-void grpc_call_internal_unref(grpc_call* call);
+void grpc_call_internal_unref(grpc_call* call, intptr_t n = 1);
 #define GRPC_CALL_INTERNAL_REF(call, reason) grpc_call_internal_ref(call)
 #define GRPC_CALL_INTERNAL_UNREF(call, reason) grpc_call_internal_unref(call)
+#define GRPC_CALL_INTERNAL_UNREF_N(call, reason, n) \
+  grpc_call_internal_unref(call, (n))
+
 #endif
 
 grpc_core::Arena* grpc_call_get_arena(grpc_call* call);

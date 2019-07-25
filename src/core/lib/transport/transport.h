@@ -92,18 +92,18 @@ void grpc_stream_destroy(grpc_stream_refcount* refcount);
 
 #ifndef NDEBUG
 inline void grpc_stream_unref(grpc_stream_refcount* refcount,
-                              const char* reason) {
+                              const char* reason, intptr_t n = 1) {
   if (grpc_trace_stream_refcount.enabled()) {
     gpr_log(GPR_DEBUG, "%s %p:%p UNREF %s", refcount->object_type, refcount,
             refcount->destroy.cb_arg, reason);
   }
-  if (GPR_UNLIKELY(refcount->refs.Unref(DEBUG_LOCATION, reason))) {
+  if (GPR_UNLIKELY(refcount->refs.Unref(DEBUG_LOCATION, reason, n))) {
     grpc_stream_destroy(refcount);
   }
 }
 #else
-inline void grpc_stream_unref(grpc_stream_refcount* refcount) {
-  if (GPR_UNLIKELY(refcount->refs.Unref())) {
+inline void grpc_stream_unref(grpc_stream_refcount* refcount, intptr_t n = 1) {
+  if (GPR_UNLIKELY(refcount->refs.Unref(n))) {
     grpc_stream_destroy(refcount);
   }
 }
