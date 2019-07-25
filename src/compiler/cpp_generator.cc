@@ -1245,7 +1245,7 @@ void PrintHeaderServerMethodGeneric(
                  "class WithGenericMethod_$Method$ : public BaseClass {\n");
   printer->Print(
       " private:\n"
-      "  void BaseClassMustBeDerivedFromService(const Service * /*service*/) {}\n");
+      "  void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}\n");
   printer->Print(" public:\n");
   printer->Indent();
   printer->Print(*vars,
