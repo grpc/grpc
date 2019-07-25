@@ -25,9 +25,11 @@ export DYLD_LIBRARY_PATH=$root/libs/$CONFIG
 $(which php) $extension_dir -d max_execution_time=300 $(which phpunit) -v --debug \
   --exclude-group persistent_list_bound_tests ../tests/unit_tests
   
-if [ "$1" != "skip-persistent-channel-tests" ]; then
+if [ "$@" == "--skip-persistent-channel-tests" ]; then
+  echo "Skipped Persistent Channel Tests"
+else
 $(which php) $extension_dir -d max_execution_time=300 $(which phpunit) -v --debug \
-  ../tests/unit_tests/PersistentChannelTests
+  ../tests/unit_tests/PersistentChannelTests 
 fi
 
 export ZEND_DONT_UNLOAD_MODULES=1
