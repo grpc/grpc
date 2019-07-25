@@ -19,15 +19,26 @@ Pod::Spec.new do |s|
   protoc = "#{bin_dir}/protobuf/protoc"
   well_known_types_dir = "#{repo_root}/third_party/protobuf/src"
   plugin = "#{bin_dir}/grpc_objective_c_plugin"
-
+  
   s.prepare_command = <<-CMD
-    #{protoc} \
-        --plugin=protoc-gen-grpc=#{plugin} \
-        --objc_out=. \
-        --grpc_out=. \
-        -I #{repo_root} \
-        -I #{well_known_types_dir} \
-        #{repo_root}/src/objective-c/examples/RemoteTestClient/*.proto
+    if [ "$FRAMEWORKS" == "" ]; then
+      #{protoc} \
+          --plugin=protoc-gen-grpc=#{plugin} \
+          --objc_out=. \
+          --grpc_out=. \
+          -I #{repo_root} \
+          -I #{well_known_types_dir} \
+          #{repo_root}/src/objective-c/examples/RemoteTestClient/*.proto
+    else
+      #{protoc} \
+          --plugin=protoc-gen-grpc=#{plugin} \
+          --objc_out=. \
+          --grpc_out=. \
+          --objc_opt=generate_for_named_framework=#{s.name} \
+          -I #{repo_root} \
+          -I #{well_known_types_dir} \
+          #{repo_root}/src/objective-c/examples/RemoteTestClient/*.proto
+    fi
   CMD
 
   s.subspec 'Messages' do |ms|
