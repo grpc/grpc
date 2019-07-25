@@ -1164,8 +1164,8 @@ void PrintHeaderServerMethodStreamedUnary(
         *vars,
         "// disable regular version of this method\n"
         "::grpc::Status $Method$("
-        "::grpc::ServerContext* /* context */, const $Request$* /* request */, "
-        "$Response$* /* response */) override {\n"
+        "::grpc::ServerContext* /*context*/, const $Request$* /*request*/, "
+        "$Response$* /*response*/) override {\n"
         "  abort();\n"
         "  return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, \"\");\n"
         "}\n");
@@ -1216,8 +1216,8 @@ void PrintHeaderServerMethodSplitStreaming(
         *vars,
         "// disable regular version of this method\n"
         "::grpc::Status $Method$("
-        "::grpc::ServerContext* /* context */, const $Request$* /* request */, "
-        "::grpc::ServerWriter< $Response$>* /* writer */) override "
+        "::grpc::ServerContext* /*context*/, const $Request$* /*request*/, "
+        "::grpc::ServerWriter< $Response$>* /*writer*/) override "
         "{\n"
         "  abort();\n"
         "  return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, \"\");\n"
