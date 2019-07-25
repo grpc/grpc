@@ -1143,6 +1143,10 @@ void XdsLb::LbChannelState::EdsCallState::OnResponseReceivedLocked(
       // response results a READY locality map.
       xdslb_policy->lb_chand_ = std::move(xdslb_policy->pending_lb_chand_);
     }
+    // At this point, lb_chand must be the current LB channel, so try to start
+    // load reporting.
+    LrsCallState* lrs_calld = lb_chand->lrs_calld_->lb_calld();
+    if (lrs_calld != nullptr) lrs_calld->MaybeStartReportingLocked();
     // Ignore identical update.
     if (xdslb_policy->locality_list_ == update.locality_list) {
       if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_xds_trace)) {
@@ -1152,12 +1156,6 @@ void XdsLb::LbChannelState::EdsCallState::OnResponseReceivedLocked(
                 xdslb_policy);
       }
       return;
-    }
-    // At this point, lb_chand must be the current LB channel, so try to start
-    // load reporting.
-    {
-      LrsCallState* lrs_calld = lb_chand->lrs_calld_->lb_calld();
-      if (lrs_calld != nullptr) lrs_calld->MaybeStartReportingLocked();
     }
     // If the balancer tells us to drop all the calls, we should exit fallback
     // mode immediately.
