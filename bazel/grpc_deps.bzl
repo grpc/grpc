@@ -206,9 +206,9 @@ def grpc_deps():
     if "upb" not in native.existing_rules():
         http_archive(
             name = "upb",
-            sha256 = "1107ca1ea9aef3880b60ffb2179d06970394f1d6b62d0565e72b544b4924468d",
-            strip_prefix = "upb-1ee1e362565f681fdd46f16bf9f70f51c905ddd4",
-            url = "https://github.com/protocolbuffers/upb/archive/1ee1e362565f681fdd46f16bf9f70f51c905ddd4.tar.gz",
+            sha256 = "73deded75313f80779eba109c32f3c59a813addf5064bf6e7c213fca1e7d8e32",
+            strip_prefix = "upb-423ea5ca9ce8da69611e6e95559efcb3a1ba8ad8",
+            url = "https://github.com/protocolbuffers/upb/archive/423ea5ca9ce8da69611e6e95559efcb3a1ba8ad8.tar.gz",
         )
     if "envoy_api" not in native.existing_rules():
         http_archive(
