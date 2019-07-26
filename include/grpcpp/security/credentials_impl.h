@@ -63,7 +63,7 @@ std::shared_ptr<Channel> CreateCustomChannelWithInterceptors(
 // class.
 bool AttachControlPlaneChannelCredentials(
     ChannelCredentials* credentials, const grpc::string_ref& authority,
-    std::shared_ptr<ChannelCredentials> control_plane_creds);
+    const std::shared_ptr<ChannelCredentials>& control_plane_creds);
 
 /// Registers \a control_plane_creds in the global map
 /// under the key \a authority.  Returns false if \a authority
@@ -72,7 +72,7 @@ bool AttachControlPlaneChannelCredentials(
 // out of the experimental namespace.
 bool RegisterControlPlaneChannelCreds(
     const grpc::string_ref& authority,
-    std::shared_ptr<ChannelCredentials> control_plane_creds);
+    const std::shared_ptr<ChannelCredentials>& control_plane_creds);
 }  // namespace experimental
 
 /// A channel credentials object encapsulates all the state needed by a client
@@ -93,11 +93,11 @@ class ChannelCredentials : private grpc::GrpcLibraryCodegen {
 
   friend bool grpc_impl::experimental::AttachControlPlaneChannelCredentials(
       ChannelCredentials* credentials, const grpc::string_ref& authority,
-      std::shared_ptr<ChannelCredentials> control_plane_creds);
+      const std::shared_ptr<ChannelCredentials>& control_plane_creds);
 
   friend bool grpc_impl::experimental::RegisterControlPlaneChannelCreds(
       const grpc::string_ref& authority,
-      std::shared_ptr<ChannelCredentials> control_plane_creds);
+      const std::shared_ptr<ChannelCredentials>& control_plane_creds);
 
   virtual SecureChannelCredentials* AsSecureCredentials() = 0;
 

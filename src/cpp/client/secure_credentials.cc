@@ -282,7 +282,7 @@ std::shared_ptr<ChannelCredentials> LocalCredentials(
 
 bool AttachControlPlaneChannelCredentials(
     ChannelCredentials* credentials, const grpc::string_ref& authority,
-    std::shared_ptr<ChannelCredentials> control_plane_creds) {
+    const std::shared_ptr<ChannelCredentials>& control_plane_creds) {
   grpc::GrpcLibraryCodegen init;  // To call grpc_init().
   if (credentials == nullptr || control_plane_creds == nullptr) {
     return false;
@@ -304,7 +304,7 @@ bool AttachControlPlaneChannelCredentials(
 
 bool RegisterControlPlaneChannelCreds(
     const grpc::string_ref& authority,
-    std::shared_ptr<ChannelCredentials> control_plane_creds) {
+    const std::shared_ptr<ChannelCredentials>& control_plane_creds) {
   grpc::GrpcLibraryCodegen init;  // To call grpc_init().
   if (control_plane_creds == nullptr) {
     return false;

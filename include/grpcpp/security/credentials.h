@@ -134,14 +134,14 @@ static inline std::shared_ptr<grpc_impl::ChannelCredentials> LocalCredentials(
 
 static inline bool AttachControlPlaneChannelCredentials(
     ChannelCredentials* credentials, const grpc::string_ref& authority,
-    std::shared_ptr<ChannelCredentials> control_plane_creds) {
+    const std::shared_ptr<ChannelCredentials>& control_plane_creds) {
   return ::grpc_impl::experimental::AttachControlPlaneChannelCredentials(
       credentials, authority, control_plane_creds);
 }
 
 static inline bool RegisterControlPlaneChannelCreds(
     const grpc::string_ref& authority,
-    std::shared_ptr<ChannelCredentials> control_plane_creds) {
+    const std::shared_ptr<ChannelCredentials>& control_plane_creds) {
   return ::grpc_impl::experimental::RegisterControlPlaneChannelCreds(
       authority, control_plane_creds);
 }
