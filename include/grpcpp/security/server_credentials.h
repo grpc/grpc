@@ -69,6 +69,8 @@ namespace experimental {
 typedef ::grpc_impl::experimental::AltsServerCredentialsOptions
     AltsServerCredentialsOptions;
 
+typedef ::grpc_impl::experimental::TlsCredentialsOptions TlsCredentialsOptions;
+
 static inline std::shared_ptr<ServerCredentials> AltsServerCredentials(
     const AltsServerCredentialsOptions& options) {
   return ::grpc_impl::experimental::AltsServerCredentials(options);
@@ -77,6 +79,12 @@ static inline std::shared_ptr<ServerCredentials> AltsServerCredentials(
 static inline std::shared_ptr<ServerCredentials> LocalServerCredentials(
     grpc_local_connect_type type) {
   return ::grpc_impl::experimental::LocalServerCredentials(type);
+}
+
+/// Builds SPIFFE ServerCredentials given TLS options.
+static inline std::shared_ptr<ServerCredentials> SpiffeServerCredentials(
+    const TlsCredentialsOptions& options) {
+  return ::grpc_impl::experimental::SpiffeServerCredentials(options);
 }
 
 }  // namespace experimental

@@ -31,6 +31,7 @@
 #include <grpcpp/support/channel_arguments_impl.h>
 #include <grpcpp/support/status.h>
 #include <grpcpp/support/string_ref.h>
+#include <grpcpp/security/tls_credentials_options.h>
 
 struct grpc_call;
 
@@ -338,6 +339,10 @@ std::shared_ptr<ChannelCredentials> AltsCredentials(
 /// Builds Local Credentials.
 std::shared_ptr<ChannelCredentials> LocalCredentials(
     grpc_local_connect_type type);
+
+/// Builds SPIFFE Credentials given TLS options.
+std::shared_ptr<ChannelCredentials> SpiffeCredentials(
+    const TlsCredentialsOptions& options);
 
 }  // namespace experimental
 }  // namespace grpc_impl

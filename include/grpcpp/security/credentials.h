@@ -127,6 +127,8 @@ static inline std::shared_ptr<grpc_impl::CallCredentials> StsCredentials(
 typedef ::grpc_impl::experimental::AltsCredentialsOptions
     AltsCredentialsOptions;
 
+typedef ::grpc_impl::experimental::TlsCredentialsOptions TlsCredentialsOptions;
+
 static inline std::shared_ptr<grpc_impl::ChannelCredentials> AltsCredentials(
     const AltsCredentialsOptions& options) {
   return ::grpc_impl::experimental::AltsCredentials(options);
@@ -135,6 +137,11 @@ static inline std::shared_ptr<grpc_impl::ChannelCredentials> AltsCredentials(
 static inline std::shared_ptr<grpc_impl::ChannelCredentials> LocalCredentials(
     grpc_local_connect_type type) {
   return ::grpc_impl::experimental::LocalCredentials(type);
+}
+
+static inline std::shared_ptr<grpc_impl::ChannelCredentials> SpiffeCredentials(
+    const TlsCredentialsOptions& options) {
+  return ::grpc_impl::experimental::SpiffeCredentials(options);
 }
 
 }  // namespace experimental
