@@ -1454,6 +1454,7 @@
         'src/cpp/common/secure_auth_context.cc',
         'src/cpp/common/secure_channel_arguments.cc',
         'src/cpp/common/secure_create_auth_context.cc',
+        'src/cpp/common/tls_credentials_options.cc',
         'src/cpp/server/insecure_server_credentials.cc',
         'src/cpp/server/secure_server_credentials.cc',
         'src/cpp/client/channel_cc.cc',
