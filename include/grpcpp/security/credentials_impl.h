@@ -62,7 +62,7 @@ std::shared_ptr<Channel> CreateCustomChannelWithInterceptors(
 // standalone function with a new method on the ChannelCredentials
 // class.
 bool AttachControlPlaneChannelCredentials(
-    ChannelCredentials* credentials, grpc::string_ref authority,
+    ChannelCredentials* credentials, const grpc::string_ref& authority,
     std::shared_ptr<ChannelCredentials> control_plane_creds);
 
 /// Registers \a control_plane_creds in the global map
@@ -71,7 +71,7 @@ bool AttachControlPlaneChannelCredentials(
 // TODO: Once this functionality is deemed mature, move this
 // out of the experimental namespace.
 bool RegisterControlPlaneChannelCreds(
-    grpc::string_ref authority,
+    const grpc::string_ref& authority,
     std::shared_ptr<ChannelCredentials> control_plane_creds);
 }  // namespace experimental
 
@@ -92,11 +92,11 @@ class ChannelCredentials : private grpc::GrpcLibraryCodegen {
       const std::shared_ptr<CallCredentials>& call_creds);
 
   friend bool grpc_impl::experimental::AttachControlPlaneChannelCredentials(
-      ChannelCredentials* credentials, grpc::string_ref authority,
+      ChannelCredentials* credentials, const grpc::string_ref& authority,
       std::shared_ptr<ChannelCredentials> control_plane_creds);
 
   friend bool grpc_impl::experimental::RegisterControlPlaneChannelCreds(
-      grpc::string_ref authority,
+      const grpc::string_ref& authority,
       std::shared_ptr<ChannelCredentials> control_plane_creds);
 
   virtual SecureChannelCredentials* AsSecureCredentials() = 0;
