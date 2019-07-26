@@ -1396,13 +1396,13 @@ void grpc_server_destroy(grpc_server* server) {
 }
 
 void grpc_server_add_listener(
-    grpc_server* server, void* listener,
+    grpc_server* server, void* listener_arg,
     void (*start)(grpc_server* server, void* arg, grpc_pollset** pollsets,
                   size_t pollset_count),
     void (*destroy)(grpc_server* server, void* arg, grpc_closure* on_done),
     grpc_core::RefCountedPtr<grpc_core::channelz::ListenSocketNode> node) {
   listener* l = static_cast<listener*>(gpr_malloc(sizeof(listener)));
-  l->arg = arg;
+  l->arg = listener_arg;
   l->start = start;
   l->destroy = destroy;
   if (node != nullptr) {
