@@ -2317,6 +2317,21 @@ grpc_cc_library(
     tags = ["no_windows"],
 )
 
+grpc_upb_proto_library(
+    name = "grpc_health_upb",
+    deps = ["//src/proto/grpc/health/v1:health_proto_descriptor"]
+)
+
+grpc_upb_proto_library(
+    name = "grpc_lb_upb",
+    deps = ["//src/proto/grpc/lb/v1:load_balancer_proto_descriptor"]
+)
+
+grpc_upb_proto_library(
+    name = "alts_upb",
+    deps = ["//src/proto/grpc/gcp:alts_handshaker_proto"]
+)
+
 grpc_generate_one_off_targets()
 
 filegroup(
