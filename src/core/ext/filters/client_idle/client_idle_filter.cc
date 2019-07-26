@@ -153,7 +153,7 @@ class ChannelData {
 
   // Member data used to track the state of channel.
   grpc_millis last_idle_time_;
-  Atomic<size_t> call_count_{0};
+  Atomic<intptr_t> call_count_{0};
   Atomic<ChannelState> state_{IDLE};
 
   // Idle timer and its callback closure.
@@ -195,7 +195,7 @@ void ChannelData::StartTransportOp(grpc_channel_element* elem,
 }
 
 void ChannelData::IncreaseCallCount() {
-  const size_t previous_value = call_count_.FetchAdd(1, MemoryOrder::RELAXED);
+  const intptr_t previous_value = call_count_.FetchAdd(1, MemoryOrder::RELAXED);
   GRPC_IDLE_FILTER_LOG("call counter has increased to %" PRIuPTR,
                        previous_value + 1);
   if (previous_value == 0) {
@@ -234,7 +234,7 @@ void ChannelData::IncreaseCallCount() {
 }
 
 void ChannelData::DecreaseCallCount() {
-  const size_t previous_value = call_count_.FetchSub(1, MemoryOrder::RELAXED);
+  const intptr_t previous_value = call_count_.FetchSub(1, MemoryOrder::RELAXED);
   GRPC_IDLE_FILTER_LOG("call counter has decreased to %" PRIuPTR,
                        previous_value - 1);
   if (previous_value == 1) {
