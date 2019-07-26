@@ -16,6 +16,7 @@
  *
  */
 
+#include <grpc/grpc_security_constants.h>
 #include <grpcpp/security/credentials.h>
 
 #include <memory>
@@ -27,6 +28,8 @@
 #include "src/core/lib/gpr/env.h"
 #include "src/core/lib/gpr/tmpfile.h"
 #include "src/cpp/client/secure_credentials.h"
+
+#include "test/core/end2end/data/ssl_test_data.h"
 
 namespace grpc {
 namespace testing {
@@ -194,6 +197,75 @@ TEST_F(CredentialsTest, StsCredentialsOptionsFromEnv) {
 
   // Cleanup.
   gpr_unsetenv("STS_CREDENTIALS");
+}
+
+namespace {
+
+std::shared_ptr<grpc::ChannelCredentials> CreateTestSslCreds(
+    const grpc::string& token) {
+  SslCredentialsOptions ssl_opts = {test_root_cert, "", ""};
+  auto ssl_creds = grpc::SslCredentials(ssl_opts);
+  auto call_creds = grpc::AccessTokenCredentials(token);
+  return grpc::CompositeChannelCredentials(ssl_creds, call_creds);
+}
+
+}  // namespace
+
+TEST_F(CredentialsTest, AttachControlPlaneChannelCredentials) {
+  auto main_creds = CreateTestSslCreds("main");
+  auto control_plane_foo = CreateTestSslCreds("foo");
+  auto control_plane_bar = grpc::experimental::LocalCredentials(LOCAL_TCP);
+  EXPECT_TRUE(grpc::experimental::AttachControlPlaneChannelCredentials(
+      main_creds.get(), "foo", control_plane_foo));
+  EXPECT_FALSE(grpc::experimental::AttachControlPlaneChannelCredentials(
+      main_creds.get(), "foo", control_plane_foo));
+  EXPECT_TRUE(grpc::experimental::AttachControlPlaneChannelCredentials(
+      main_creds.get(), "bar", control_plane_bar));
+  EXPECT_FALSE(grpc::experimental::AttachControlPlaneChannelCredentials(
+      main_creds.get(), "bar", control_plane_bar));
+}
+
+TEST_F(CredentialsTest, AttachControlPlaneChannelCredentialsInvalidTypes) {
+  auto ssl_creds = CreateTestSslCreds("main");
+  auto insecure_creds = grpc::InsecureChannelCredentials();
+  // Check null checks
+  EXPECT_FALSE(grpc::experimental::AttachControlPlaneChannelCredentials(
+      nullptr, "foo", nullptr));
+  EXPECT_FALSE(grpc::experimental::AttachControlPlaneChannelCredentials(
+      ssl_creds.get(), "foo", nullptr));
+  EXPECT_FALSE(grpc::experimental::AttachControlPlaneChannelCredentials(
+      nullptr, "foo", ssl_creds));
+  // Check invalid types, notably InsecureChannelCredentials
+  EXPECT_FALSE(grpc::experimental::AttachControlPlaneChannelCredentials(
+      ssl_creds.get(), "insecure", insecure_creds));
+  EXPECT_FALSE(grpc::experimental::AttachControlPlaneChannelCredentials(
+      insecure_creds.get(), "insecure", ssl_creds));
+  // Sanity check
+  EXPECT_TRUE(grpc::experimental::AttachControlPlaneChannelCredentials(
+      ssl_creds.get(), "local",
+      grpc::experimental::LocalCredentials(LOCAL_TCP)));
+  EXPECT_FALSE(grpc::experimental::AttachControlPlaneChannelCredentials(
+      ssl_creds.get(), "local",
+      grpc::experimental::LocalCredentials(LOCAL_TCP)));
+}
+
+TEST_F(CredentialsTest, RegisterControlPlaneChannelCreds) {
+  auto creds = CreateTestSslCreds("random");
+  EXPECT_TRUE(
+      grpc::experimental::RegisterControlPlaneChannelCreds("random", creds));
+  EXPECT_FALSE(
+      grpc::experimental::RegisterControlPlaneChannelCreds("random", creds));
+  EXPECT_TRUE(
+      grpc::experimental::RegisterControlPlaneChannelCreds("random2", creds));
+  EXPECT_FALSE(
+      grpc::experimental::RegisterControlPlaneChannelCreds("random2", creds));
+}
+
+TEST_F(CredentialsTest, RegisterControlPlaneChannelCredsInvalidTypes) {
+  EXPECT_FALSE(
+      grpc::experimental::RegisterControlPlaneChannelCreds("random", nullptr));
+  EXPECT_FALSE(grpc::experimental::RegisterControlPlaneChannelCreds(
+      "foo", grpc::InsecureChannelCredentials()));
 }
 
 }  // namespace testing

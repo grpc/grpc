@@ -4746,6 +4746,7 @@ targets:
   src:
   - test/cpp/client/credentials_test.cc
   deps:
+  - grpc_test_util
   - grpc++
   - grpc
   - gpr

@@ -12864,6 +12864,7 @@ target_include_directories(credentials_test
 target_link_libraries(credentials_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
+  grpc_test_util
   grpc++
   grpc
   gpr

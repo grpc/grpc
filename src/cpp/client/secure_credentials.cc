@@ -280,6 +280,47 @@ std::shared_ptr<ChannelCredentials> LocalCredentials(
   return WrapChannelCredentials(grpc_local_credentials_create(type));
 }
 
+bool AttachControlPlaneChannelCredentials(
+    ChannelCredentials* credentials, grpc::string_ref authority,
+    std::shared_ptr<ChannelCredentials> control_plane_creds) {
+  grpc::GrpcLibraryCodegen init;  // To call grpc_init().
+  if (credentials == nullptr || control_plane_creds == nullptr) {
+    return false;
+  }
+  grpc::SecureChannelCredentials* secure_creds =
+      credentials->AsSecureCredentials();
+  grpc::SecureChannelCredentials* secure_control_plan_creds =
+      control_plane_creds->AsSecureCredentials();
+  if (secure_creds == nullptr || secure_control_plan_creds == nullptr) {
+    gpr_log(GPR_ERROR,
+            "Attaching control plane creds with incompatible source or target. "
+            "Both must be SecureChannelCredentials objects.");
+    return false;
+  }
+  return grpc_channel_credentials_attach_credentials(
+      secure_creds->GetRawCreds(), authority.data(),
+      secure_control_plan_creds->GetRawCreds());
+}
+
+bool RegisterControlPlaneChannelCreds(
+    grpc::string_ref authority,
+    std::shared_ptr<ChannelCredentials> control_plane_creds) {
+  grpc::GrpcLibraryCodegen init;  // To call grpc_init().
+  if (control_plane_creds == nullptr) {
+    return false;
+  }
+  grpc::SecureChannelCredentials* secure_creds =
+      control_plane_creds->AsSecureCredentials();
+  if (secure_creds == nullptr) {
+    gpr_log(GPR_ERROR,
+            "Registering control plane creds with incompatible creds. It must "
+            "be a SecureChannelCredentials object.");
+    return false;
+  }
+  return grpc_control_plane_credentials_register(authority.data(),
+                                                 secure_creds->GetRawCreds());
+}
+
 }  // namespace experimental
 
 // Builds credentials for use when running in GCE

@@ -3587,7 +3587,8 @@
     "deps": [
       "gpr", 
       "grpc", 
-      "grpc++"
+      "grpc++", 
+      "grpc_test_util"
     ], 
     "headers": [], 
     "is_filegroup": false, 
