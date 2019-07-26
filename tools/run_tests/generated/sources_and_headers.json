@@ -8186,6 +8186,27 @@
     "type": "filegroup"
   }, 
   {
+    "deps": [], 
+    "headers": [
+      "src/core/ext/upb-generated/altscontext.upb.h", 
+      "src/core/ext/upb-generated/handshaker.upb.h", 
+      "src/core/ext/upb-generated/transport_security_common.upb.h"
+    ], 
+    "is_filegroup": true, 
+    "language": "c", 
+    "name": "alts_upb", 
+    "src": [
+      "src/core/ext/upb-generated/altscontext.upb.c", 
+      "src/core/ext/upb-generated/altscontext.upb.h", 
+      "src/core/ext/upb-generated/handshaker.upb.c", 
+      "src/core/ext/upb-generated/handshaker.upb.h", 
+      "src/core/ext/upb-generated/transport_security_common.upb.c", 
+      "src/core/ext/upb-generated/transport_security_common.upb.h"
+    ], 
+    "third_party": false, 
+    "type": "filegroup"
+  }, 
+  {
     "deps": [
       "alts_proto", 
       "gpr", 
@@ -8259,6 +8280,39 @@
     "src": [
       "test/core/util/cmdline.cc", 
       "test/core/util/cmdline.h"
+    ], 
+    "third_party": false, 
+    "type": "filegroup"
+  }, 
+  {
+    "deps": [], 
+    "headers": [
+      "src/core/ext/upb-generated/google/protobuf/any.upb.h", 
+      "src/core/ext/upb-generated/google/protobuf/descriptor.upb.h", 
+      "src/core/ext/upb-generated/google/protobuf/duration.upb.h", 
+      "src/core/ext/upb-generated/google/protobuf/empty.upb.h", 
+      "src/core/ext/upb-generated/google/protobuf/struct.upb.h", 
+      "src/core/ext/upb-generated/google/protobuf/timestamp.upb.h", 
+      "src/core/ext/upb-generated/google/protobuf/wrappers.upb.h"
+    ], 
+    "is_filegroup": true, 
+    "language": "c", 
+    "name": "google_api_upb", 
+    "src": [
+      "src/core/ext/upb-generated/google/protobuf/any.upb.c", 
+      "src/core/ext/upb-generated/google/protobuf/any.upb.h", 
+      "src/core/ext/upb-generated/google/protobuf/descriptor.upb.c", 
+      "src/core/ext/upb-generated/google/protobuf/descriptor.upb.h", 
+      "src/core/ext/upb-generated/google/protobuf/duration.upb.c", 
+      "src/core/ext/upb-generated/google/protobuf/duration.upb.h", 
+      "src/core/ext/upb-generated/google/protobuf/empty.upb.c", 
+      "src/core/ext/upb-generated/google/protobuf/empty.upb.h", 
+      "src/core/ext/upb-generated/google/protobuf/struct.upb.c", 
+      "src/core/ext/upb-generated/google/protobuf/struct.upb.h", 
+      "src/core/ext/upb-generated/google/protobuf/timestamp.upb.c", 
+      "src/core/ext/upb-generated/google/protobuf/timestamp.upb.h", 
+      "src/core/ext/upb-generated/google/protobuf/wrappers.upb.c", 
+      "src/core/ext/upb-generated/google/protobuf/wrappers.upb.h"
     ], 
     "third_party": false, 
     "type": "filegroup"
@@ -9174,6 +9228,21 @@
     "type": "filegroup"
   }, 
   {
+    "deps": [], 
+    "headers": [
+      "src/core/ext/upb-generated/grpc/health/v1/health.upb.c"
+    ], 
+    "is_filegroup": true, 
+    "language": "c", 
+    "name": "grpc_health_upb", 
+    "src": [
+      "src/core/ext/upb-generated/grpc/health/v1/health.upb.c", 
+      "src/core/ext/upb-generated/grpc/health/v1/health.upb.h"
+    ], 
+    "third_party": false, 
+    "type": "filegroup"
+  }, 
+  {
     "deps": [
       "gpr", 
       "grpc_base"
@@ -9378,6 +9447,23 @@
     "name": "grpc_lb_subchannel_list", 
     "src": [
       "src/core/ext/filters/client_channel/lb_policy/subchannel_list.h"
+    ], 
+    "third_party": false, 
+    "type": "filegroup"
+  }, 
+  {
+    "deps": [
+      "google_api_upb"
+    ], 
+    "headers": [
+      "src/core/ext/upb-generated/grpc/lb/v1/load_balancer.upb.h"
+    ], 
+    "is_filegroup": true, 
+    "language": "c", 
+    "name": "grpc_lb_upb", 
+    "src": [
+      "src/core/ext/upb-generated/grpc/lb/v1/load_balancer.upb.c", 
+      "src/core/ext/upb-generated/grpc/lb/v1/load_balancer.upb.h"
     ], 
     "third_party": false, 
     "type": "filegroup"
