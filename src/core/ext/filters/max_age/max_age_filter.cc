@@ -122,8 +122,8 @@ struct channel_data {
 
      MAX_IDLE_STATE_SEEN_ENTER_IDLE: The state after the timer is set and the at
      least one call has arrived after the timer is set, BUT the channel
-     currently has 1 or 1+ active calls. If the timer is fired in this state, we
-     will reschudle it.
+     currently has 0 active calls. If the timer is fired in this state, we will
+     reschudle it.
 
      max_idle_timer will not be cancelled (unless the channel is shutting down).
      If the timer callback is called when the max_idle_timer is valid (i.e.
