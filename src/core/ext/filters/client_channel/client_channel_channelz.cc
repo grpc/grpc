@@ -42,8 +42,9 @@ void SubchannelNode::UpdateConnectivityState(grpc_connectivity_state state) {
   connectivity_state_.Store(state, MemoryOrder::RELAXED);
 }
 
-void SubchannelNode::SetChildSocketUuid(intptr_t uuid) {
-  child_socket_uuid_.Store(uuid, MemoryOrder::RELAXED);
+void SubchannelNode::SetChildSocket(RefCountedPtr<SocketNode> socket) {
+  MutexLock lock(&socket_mu_);
+  child_socket_ = socket;
 }
 
 void SubchannelNode::PopulateConnectivityState(grpc_json* json) {
@@ -88,14 +89,16 @@ grpc_json* SubchannelNode::RenderJson() {
   call_counter_.PopulateCallCounts(json);
   json = top_level_json;
   // populate the child socket.
-  intptr_t socket_uuid = child_socket_uuid_.Load(MemoryOrder::RELAXED);
-  if (socket_uuid != 0) {
+  MutexLock lock(&socket_mu_);
+  if (child_socket_ != nullptr && child_socket_->uuid() != 0) {
     grpc_json* array_parent = grpc_json_create_child(
         nullptr, json, "socketRef", nullptr, GRPC_JSON_ARRAY, false);
     json_iterator = grpc_json_create_child(json_iterator, array_parent, nullptr,
                                            nullptr, GRPC_JSON_OBJECT, false);
     grpc_json_add_number_string_child(json_iterator, nullptr, "socketId",
-                                      socket_uuid);
+                                      child_socket_->uuid());
+    grpc_json_create_child(nullptr, json_iterator, "name",
+                           child_socket_->name(), GRPC_JSON_STRING, false);
   }
   return top_level_json;
 }

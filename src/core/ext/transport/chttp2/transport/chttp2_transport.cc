@@ -16,20 +16,18 @@
  *
  */
 
-#include <grpc/support/port_platform.h>
-
 #include "src/core/ext/transport/chttp2/transport/chttp2_transport.h"
 
+#include <grpc/slice_buffer.h>
+#include <grpc/support/alloc.h>
+#include <grpc/support/log.h>
+#include <grpc/support/port_platform.h>
+#include <grpc/support/string_util.h>
 #include <inttypes.h>
 #include <limits.h>
 #include <math.h>
 #include <stdio.h>
 #include <string.h>
-
-#include <grpc/slice_buffer.h>
-#include <grpc/support/alloc.h>
-#include <grpc/support/log.h>
-#include <grpc/support/string_util.h>
 
 #include "src/core/ext/transport/chttp2/transport/context_list.h"
 #include "src/core/ext/transport/chttp2/transport/frame_data.h"
@@ -378,10 +376,16 @@ static bool read_channel_args(grpc_chttp2_transport* t,
   if (channelz_enabled) {
     // TODO(ncteisen): add an API to endpoint to query for local addr, and pass
     // it in here, so SocketNode knows its own address.
+    char socket_name[sizeof(t->peer_string) + sizeof("_") +
+                     sizeof(get_vtable()->name)];
+    strcpy(socket_name, get_vtable()->name);
+    strcat(socket_name, "_");
+    strcat(socket_name, t->peer_string);
     t->channelz_socket =
         grpc_core::MakeRefCounted<grpc_core::channelz::SocketNode>(
             grpc_core::UniquePtr<char>(),
-            grpc_core::UniquePtr<char>(gpr_strdup(t->peer_string)));
+            grpc_core::UniquePtr<char>(gpr_strdup(t->peer_string)),
+            grpc_core::UniquePtr<char>(gpr_strdup(socket_name)));
   }
   return enable_bdp;
 }

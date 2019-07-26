@@ -85,7 +85,7 @@ DebugOnlyTraceFlag grpc_trace_subchannel_refcount(false, "subchannel_refcount");
 ConnectedSubchannel::ConnectedSubchannel(
     grpc_channel_stack* channel_stack, const grpc_channel_args* args,
     RefCountedPtr<channelz::SubchannelNode> channelz_subchannel)
-    : RefCounted<ConnectedSubchannel>(&grpc_trace_subchannel_refcount),
+    : ConnectedSubchannelInterface(&grpc_trace_subchannel_refcount),
       channel_stack_(channel_stack),
       args_(grpc_channel_args_copy(args)),
       channelz_subchannel_(std::move(channelz_subchannel)) {}
@@ -349,7 +349,7 @@ class Subchannel::ConnectedSubchannelStateWatcher {
             }
             c->connected_subchannel_.reset();
             if (c->channelz_node() != nullptr) {
-              c->channelz_node()->SetChildSocketUuid(0);
+              c->channelz_node()->SetChildSocket(nullptr);
             }
             c->SetConnectivityStateLocked(GRPC_CHANNEL_TRANSIENT_FAILURE);
             c->backoff_begun_ = false;
@@ -385,12 +385,12 @@ class Subchannel::ConnectedSubchannelStateWatcher {
 //
 
 void Subchannel::ConnectivityStateWatcherList::AddWatcherLocked(
-    OrphanablePtr<ConnectivityStateWatcherInterface> watcher) {
+    UniquePtr<ConnectivityStateWatcher> watcher) {
   watchers_.insert(MakePair(watcher.get(), std::move(watcher)));
 }
 
 void Subchannel::ConnectivityStateWatcherList::RemoveWatcherLocked(
-    ConnectivityStateWatcherInterface* watcher) {
+    ConnectivityStateWatcher* watcher) {
   watchers_.erase(watcher);
 }
 
@@ -445,9 +445,8 @@ class Subchannel::HealthWatcherMap::HealthWatcher
 
   grpc_connectivity_state state() const { return state_; }
 
-  void AddWatcherLocked(
-      grpc_connectivity_state initial_state,
-      OrphanablePtr<ConnectivityStateWatcherInterface> watcher) {
+  void AddWatcherLocked(grpc_connectivity_state initial_state,
+                        UniquePtr<ConnectivityStateWatcher> watcher) {
     if (state_ != initial_state) {
       RefCountedPtr<ConnectedSubchannel> connected_subchannel;
       if (state_ == GRPC_CHANNEL_READY) {
@@ -459,7 +458,7 @@ class Subchannel::HealthWatcherMap::HealthWatcher
     watcher_list_.AddWatcherLocked(std::move(watcher));
   }
 
-  void RemoveWatcherLocked(ConnectivityStateWatcherInterface* watcher) {
+  void RemoveWatcherLocked(ConnectivityStateWatcher* watcher) {
     watcher_list_.RemoveWatcherLocked(watcher);
   }
 
@@ -535,7 +534,7 @@ class Subchannel::HealthWatcherMap::HealthWatcher
 void Subchannel::HealthWatcherMap::AddWatcherLocked(
     Subchannel* subchannel, grpc_connectivity_state initial_state,
     UniquePtr<char> health_check_service_name,
-    OrphanablePtr<ConnectivityStateWatcherInterface> watcher) {
+    UniquePtr<ConnectivityStateWatcher> watcher) {
   // If the health check service name is not already present in the map,
   // add it.
   auto it = map_.find(health_check_service_name.get());
@@ -554,8 +553,7 @@ void Subchannel::HealthWatcherMap::AddWatcherLocked(
 }
 
 void Subchannel::HealthWatcherMap::RemoveWatcherLocked(
-    const char* health_check_service_name,
-    ConnectivityStateWatcherInterface* watcher) {
+    const char* health_check_service_name, ConnectivityStateWatcher* watcher) {
   auto it = map_.find(health_check_service_name);
   GPR_ASSERT(it != map_.end());
   it->second->RemoveWatcherLocked(watcher);
@@ -819,7 +817,7 @@ grpc_connectivity_state Subchannel::CheckConnectivityState(
 void Subchannel::WatchConnectivityState(
     grpc_connectivity_state initial_state,
     UniquePtr<char> health_check_service_name,
-    OrphanablePtr<ConnectivityStateWatcherInterface> watcher) {
+    UniquePtr<ConnectivityStateWatcher> watcher) {
   MutexLock lock(&mu_);
   grpc_pollset_set* interested_parties = watcher->interested_parties();
   if (interested_parties != nullptr) {
@@ -838,8 +836,7 @@ void Subchannel::WatchConnectivityState(
 }
 
 void Subchannel::CancelConnectivityStateWatch(
-    const char* health_check_service_name,
-    ConnectivityStateWatcherInterface* watcher) {
+    const char* health_check_service_name, ConnectivityStateWatcher* watcher) {
   MutexLock lock(&mu_);
   grpc_pollset_set* interested_parties = watcher->interested_parties();
   if (interested_parties != nullptr) {
@@ -1072,7 +1069,7 @@ bool Subchannel::PublishTransportLocked() {
     GRPC_ERROR_UNREF(error);
     return false;
   }
-  intptr_t socket_uuid = connecting_result_.socket_uuid;
+  RefCountedPtr<channelz::SocketNode> socket = connecting_result_.socket;
   memset(&connecting_result_, 0, sizeof(connecting_result_));
   if (disconnected_) {
     grpc_channel_stack_destroy(stk);
@@ -1085,7 +1082,7 @@ bool Subchannel::PublishTransportLocked() {
   gpr_log(GPR_INFO, "New connected subchannel at %p for subchannel %p",
           connected_subchannel_.get(), this);
   if (channelz_node_ != nullptr) {
-    channelz_node_->SetChildSocketUuid(socket_uuid);
+    channelz_node_->SetChildSocket(socket);
   }
   // Instantiate state watcher.  Will clean itself up.
   New<ConnectedSubchannelStateWatcher>(this);

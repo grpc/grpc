@@ -16,11 +16,10 @@
  *
  */
 
-#include <grpc/impl/codegen/port_platform.h>
-
 #include "src/core/lib/channel/channelz.h"
 
 #include <grpc/grpc.h>
+#include <grpc/impl/codegen/port_platform.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
@@ -334,9 +333,9 @@ void ServerNode::RemoveChildSocket(intptr_t child_uuid) {
   child_sockets_.erase(child_uuid);
 }
 
-void ServerNode::AddChildListenSocket(intptr_t child_uuid) {
+void ServerNode::AddChildListenSocket(RefCountedPtr<ListenSocketNode> node) {
   MutexLock lock(&child_mu_);
-  child_listen_sockets_.insert(MakePair(child_uuid, true));
+  child_listen_sockets_.insert(MakePair(node->uuid(), std::move(node)));
 }
 
 void ServerNode::RemoveChildListenSocket(intptr_t child_uuid) {
@@ -366,7 +365,7 @@ char* ServerNode::RenderServerSockets(intptr_t start_socket_id,
       json_iterator = grpc_json_add_number_string_child(
           socket_ref_json, nullptr, "socketId", it->first);
       grpc_json_create_child(json_iterator, socket_ref_json, "name",
-                             it->second->remote(), GRPC_JSON_STRING, false);
+                             it->second->name(), GRPC_JSON_STRING, false);
     }
   }
   if (sockets_rendered == child_sockets_.size()) {
@@ -418,6 +417,8 @@ grpc_json* ServerNode::RenderJson() {
                                  GRPC_JSON_OBJECT, false);
       grpc_json_add_number_string_child(json_iterator, nullptr, "socketId",
                                         it.first);
+      grpc_json_create_child(nullptr, json_iterator, "name", it.second->name(),
+                             GRPC_JSON_STRING, false);
     }
   }
   return top_level_json;
@@ -480,10 +481,13 @@ void PopulateSocketAddressJson(grpc_json* json, const char* name,
 
 }  // namespace
 
-SocketNode::SocketNode(UniquePtr<char> local, UniquePtr<char> remote)
+SocketNode::SocketNode(UniquePtr<char> local, UniquePtr<char> remote,
+                       UniquePtr<char> name)
     : BaseNode(EntityType::kSocket),
       local_(std::move(local)),
-      remote_(std::move(remote)) {}
+      remote_(std::move(remote)) {
+  SetName(std::move(name));
+}
 
 void SocketNode::RecordStreamStartedFromLocal() {
   gpr_atm_no_barrier_fetch_add(&streams_started_, static_cast<gpr_atm>(1));
@@ -521,6 +525,8 @@ grpc_json* SocketNode::RenderJson() {
   json_iterator = nullptr;
   json_iterator = grpc_json_add_number_string_child(json, json_iterator,
                                                     "socketId", uuid());
+  json_iterator = grpc_json_create_child(json_iterator, json, "name", name(),
+                                         GRPC_JSON_STRING, false);
   json = top_level_json;
   PopulateSocketAddressJson(json, "remote", remote_.get());
   PopulateSocketAddressJson(json, "local", local_.get());
@@ -600,8 +606,11 @@ grpc_json* SocketNode::RenderJson() {
 // ListenSocketNode
 //
 
-ListenSocketNode::ListenSocketNode(UniquePtr<char> local_addr)
-    : BaseNode(EntityType::kSocket), local_addr_(std::move(local_addr)) {}
+ListenSocketNode::ListenSocketNode(UniquePtr<char> local_addr,
+                                   UniquePtr<char> name)
+    : BaseNode(EntityType::kSocket), local_addr_(std::move(local_addr)) {
+  SetName(std::move(name));
+}
 
 grpc_json* ListenSocketNode::RenderJson() {
   // We need to track these three json objects to build our object
@@ -615,6 +624,8 @@ grpc_json* ListenSocketNode::RenderJson() {
   json_iterator = nullptr;
   json_iterator = grpc_json_add_number_string_child(json, json_iterator,
                                                     "socketId", uuid());
+  json_iterator = grpc_json_create_child(json_iterator, json, "name", name(),
+                                         GRPC_JSON_STRING, false);
   json = top_level_json;
   PopulateSocketAddressJson(json, "local", local_addr_.get());
 

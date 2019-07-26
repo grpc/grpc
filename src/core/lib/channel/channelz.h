@@ -59,6 +59,7 @@ grpc_arg MakeParentUuidArg(intptr_t parent_uuid);
 intptr_t GetParentUuidFromArgs(const grpc_channel_args& args);
 
 class SocketNode;
+class ListenSocketNode;
 
 namespace testing {
 class CallCountingHelperPeer;
@@ -89,14 +90,17 @@ class BaseNode : public RefCounted<BaseNode> {
   // caller.
   char* RenderJsonString();
 
+  void SetName(UniquePtr<char> name) { name_ = std::move(name); }
   EntityType type() const { return type_; }
   intptr_t uuid() const { return uuid_; }
+  char* name() const { return name_.get(); }
 
  private:
   // to allow the ChannelzRegistry to set uuid_ under its lock.
   friend class ChannelzRegistry;
   const EntityType type_;
   intptr_t uuid_;
+  UniquePtr<char> name_;
 };
 
 // This class is a helper class for channelz entities that deal with Channels,
@@ -172,9 +176,13 @@ class ChannelNode : public BaseNode {
 
   void SetConnectivityState(grpc_connectivity_state state);
 
+  // TODO(roth): take in a RefCountedPtr to the child channel so we can retrieve
+  // the human-readable name.
   void AddChildChannel(intptr_t child_uuid);
   void RemoveChildChannel(intptr_t child_uuid);
 
+  // TODO(roth): take in a RefCountedPtr to the child subchannel so we can
+  // retrieve the human-readable name.
   void AddChildSubchannel(intptr_t child_uuid);
   void RemoveChildSubchannel(intptr_t child_uuid);
 
@@ -212,14 +220,11 @@ class ServerNode : public BaseNode {
 
   char* RenderServerSockets(intptr_t start_socket_id, intptr_t max_results);
 
-  void AddChildSocket(RefCountedPtr<SocketNode>);
+  void AddChildSocket(RefCountedPtr<SocketNode> node);
 
   void RemoveChildSocket(intptr_t child_uuid);
 
-  // TODO(ncteisen): This only takes in the uuid of the child socket for now,
-  // since that is all that is strictly needed. In a future enhancement we will
-  // add human readable names as in the channelz.proto
-  void AddChildListenSocket(intptr_t child_uuid);
+  void AddChildListenSocket(RefCountedPtr<ListenSocketNode> node);
 
   void RemoveChildListenSocket(intptr_t child_uuid);
 
@@ -242,16 +247,14 @@ class ServerNode : public BaseNode {
   ChannelTrace trace_;
   Mutex child_mu_;  // Guards child maps below.
   Map<intptr_t, RefCountedPtr<SocketNode>> child_sockets_;
-  // TODO(roth): We don't actually use the values here, only the keys, so
-  // these should be sets instead of maps, but we don't currently have a set
-  // implementation.  Change this if/when we have one.
-  Map<intptr_t, bool> child_listen_sockets_;
+  Map<intptr_t, RefCountedPtr<ListenSocketNode>> child_listen_sockets_;
 };
 
 // Handles channelz bookkeeping for sockets
 class SocketNode : public BaseNode {
  public:
-  SocketNode(UniquePtr<char> local, UniquePtr<char> remote);
+  SocketNode(UniquePtr<char> local, UniquePtr<char> remote,
+             UniquePtr<char> name);
   ~SocketNode() override {}
 
   grpc_json* RenderJson() override;
@@ -290,8 +293,7 @@ class SocketNode : public BaseNode {
 // Handles channelz bookkeeping for listen sockets
 class ListenSocketNode : public BaseNode {
  public:
-  // ListenSocketNode takes ownership of host.
-  explicit ListenSocketNode(UniquePtr<char> local_addr);
+  explicit ListenSocketNode(UniquePtr<char> local_addr, UniquePtr<char> name);
   ~ListenSocketNode() override {}
 
   grpc_json* RenderJson() override;
