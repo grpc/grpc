@@ -76,7 +76,7 @@ namespace {
   it.
 
   TIMER_PENDING_CALLS_SEEN_SINCE_TIMER_START: The state after the timer is set
-  and the at least one call has arrived after the timer is set, BUT the channel
+  and at least one call has arrived after the timer is set, BUT the channel
   currently has 0 active call. If the timer is fired in this state, we will
   reschudle it according to the finish time of the latest call.
 
@@ -153,7 +153,7 @@ class ChannelData {
 
   // Member data used to track the state of channel.
   grpc_millis last_idle_time_;
-  Atomic<intptr_t> call_count_{0};
+  Atomic<size_t> call_count_{0};
   Atomic<ChannelState> state_{IDLE};
 
   // Idle timer and its callback closure.
@@ -186,23 +186,20 @@ void ChannelData::StartTransportOp(grpc_channel_element* elem,
     // being reset by other threads.
     chand->IncreaseCallCount();
     // If the timer has been set, cancel the timer.
-    if (chand->state_.Load(MemoryOrder::RELAXED) ==
-        TIMER_PENDING_CALLS_ACTIVE) {
-      // No synchronization issues here. grpc_timer_cancel() is valid as long as
-      // grpc_timer_init() has been called on the given timer before.
-      grpc_timer_cancel(&chand->idle_timer_);
-    }
+    // No synchronization issues here. grpc_timer_cancel() is valid as long as
+    // the timer has been init()ed before.
+    grpc_timer_cancel(&chand->idle_timer_);
   }
   // Pass the op to the next filter.
   grpc_channel_next_op(elem, op);
 }
 
 void ChannelData::IncreaseCallCount() {
-  const intptr_t previous_value = call_count_.FetchAdd(1, MemoryOrder::RELAXED);
+  const size_t previous_value = call_count_.FetchAdd(1, MemoryOrder::RELAXED);
   GRPC_IDLE_FILTER_LOG("call counter has increased to %" PRIuPTR,
                        previous_value + 1);
   if (previous_value == 0) {
-    // This call is the one makes the channel busy.
+    // This call is the one that makes the channel busy.
     // Loop here to make sure the previous decrease operation has finished.
     ChannelState state = state_.Load(MemoryOrder::RELAXED);
     while (true) {
@@ -237,11 +234,11 @@ void ChannelData::IncreaseCallCount() {
 }
 
 void ChannelData::DecreaseCallCount() {
-  const intptr_t previous_value = call_count_.FetchSub(1, MemoryOrder::RELAXED);
+  const size_t previous_value = call_count_.FetchSub(1, MemoryOrder::RELAXED);
   GRPC_IDLE_FILTER_LOG("call counter has decreased to %" PRIuPTR,
                        previous_value - 1);
   if (previous_value == 1) {
-    // This call is the one makes the channel idle.
+    // This call is the one that makes the channel idle.
     // last_idle_time_ does not need to be Atomic<> because busy-loops in
     // IncreaseCallCount(), DecreaseCallCount() and IdleTimerCallback() will
     // prevent multiple threads from simultaneously accessing this variable.
@@ -332,7 +329,7 @@ void ChannelData::IdleTimerCallback(void* arg, grpc_error* error) {
         break;
       default:
         // The state has not been switched to desired value yet, try again.
-        chand->state_.Load(MemoryOrder::RELAXED);
+        state = chand->state_.Load(MemoryOrder::RELAXED);
         break;
     }
   }
