@@ -40,12 +40,25 @@ namespace grpc_core {
 
 // Archtypes: a slice is either extern or not.
 // An extern slice is any slice where:
-// 1) refcount is null, OR
+// 1) refcount is null (i.e. inlined slice), OR
 // 2) refcount is not null and
 //                not grpc_slice_refcount::Type::STATIC and
 //                not grpc_slice_refcount::Type::INTERNED
+// An Inlined slice is an ExternSlice.
+//
+// Conversely, an internal slice is a slice where grpc_core manages the memory.
+// This is either through static allocation (StaticSlice) or internally-managed
+// interned heap allocation (InternedSlice).
 //
 // Hierarchy:
+//
+// - grpc_slice
+//   - ExternSlice
+//   - InternalSlice
+//     - InternedSlice
+//     - StaticSlice
+//
+// Or, alternatively,
 // ----------------------------------
 // |          grpc_slice            |
 // |--------------------------------|
@@ -55,27 +68,31 @@ namespace grpc_core {
 // |   StaticSlice |                |
 // ----------------------------------
 //
-struct StaticSlice;
-struct ExternSlice;
 struct InternalSlice : public grpc_slice {
-  explicit InternalSlice(const grpc_slice* slice);
-  explicit InternalSlice(const char* string);
-  InternalSlice(const char* buf, size_t len);
   InternalSlice() {
     refcount = nullptr;
     data.refcounted.bytes = nullptr;
     data.refcounted.length = 0;
   }
+  explicit InternalSlice(const char* string);
+  InternalSlice(const char* buf, size_t len);
+  explicit InternalSlice(const grpc_slice* slice);
 };
 struct ExternSlice : public grpc_slice {
+  enum class ForceHeapAllocation {};
   ExternSlice() {
     refcount = nullptr;
     data.inlined.length = 0;
   }
   explicit ExternSlice(const char* source);
   ExternSlice(const char* source, size_t length);
+  // The following two constructors create slices using malloc - like
+  // MALLOC_SLICE used to. The first variant creates a heap allocated slice or
+  // possibly an inlined slice. The second variant forces heap allocation.
   explicit ExternSlice(size_t length);
-  explicit ExternSlice(size_t length, bool);
+  explicit ExternSlice(size_t length, const ForceHeapAllocation&) {
+    HeapInit(length);
+  }
 
  private:
   void HeapInit(size_t length);

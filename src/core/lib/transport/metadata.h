@@ -126,8 +126,7 @@ grpc_mdelem grpc_mdelem_from_slices(const grpc_slice& key,
                                     const grpc_slice& value);
 
 /* Like grpc_mdelem_from_slices, but we know that key is a static slice. This
-   saves us a few branches and a no-op call to md_unref() for the key.
-   Precondition: key *must* be a static slice. */
+   saves us a few branches and a no-op call to md_unref() for the key. */
 grpc_mdelem grpc_mdelem_from_slices(const grpc_core::StaticSlice& key,
                                     const grpc_slice& value);
 
