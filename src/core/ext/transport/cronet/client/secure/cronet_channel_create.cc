@@ -21,11 +21,10 @@
 #include <stdio.h>
 #include <string.h>
 
-#include <grpc/grpc_cronet.h>
-
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 
+#include "src/core/ext/transport/cronet/client/secure/cronet_channel_create.h"
 #include "src/core/ext/transport/cronet/transport/cronet_transport.h"
 #include "src/core/lib/surface/channel.h"
 #include "src/core/lib/transport/transport_impl.h"

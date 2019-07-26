@@ -28,6 +28,13 @@
       if lib.name in expect_libs:
         for group in groups:
           out += lib.get(group, [])
+    # Add cronet-related files manually since they're not in BUILD.yaml.
+    if "grpc++" in expect_libs:
+      if "public_headers" in groups:
+        out += ["include/grpcpp/security/cronet_credentials.h",
+                "include/grpcpp/security/cronet_credentials_impl.h"]
+      if "src" in groups:
+        out += ["src/cpp/client/cronet_credentials.cc"]
     return out
 
   def filter_grpcpp(files):
@@ -65,7 +72,6 @@
     out += [file for file in grpc_private_headers(libs) if not file.startswith("third_party/nanopb/")]
 
     out = filter_grpcpp(out)
-
     return out
 
   def grpcpp_private_headers(libs, filegroups):

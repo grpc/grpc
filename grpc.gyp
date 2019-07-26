@@ -2160,7 +2160,7 @@
       'dependencies': [
       ],
       'sources': [
-        'third_party/upb/google/protobuf/descriptor.upb.c',
+        'third_party/upb/generated_for_cmake/google/protobuf/descriptor.upb.c',
         'third_party/upb/upb/decode.c',
         'third_party/upb/upb/def.c',
         'third_party/upb/upb/encode.c',

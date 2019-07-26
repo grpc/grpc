@@ -24,6 +24,7 @@
 #
 
 load("//bazel:cc_grpc_library.bzl", "cc_grpc_library")
+load("@upb//bazel:upb_proto_library.bzl", "upb_proto_library")
 
 # The set of pollers to test against if a test exercises polling
 POLLERS = ["epollex", "epoll1", "poll"]
@@ -51,20 +52,10 @@ def _get_external_deps(external_deps):
                 "//:grpc_no_ares": [],
                 "//conditions:default": ["//external:cares"],
             })
+        elif dep == "cronet_c_for_grpc":
+            ret += ["//third_party/objective_c/Cronet:cronet_c_for_grpc"]
         else:
             ret += ["//external:" + dep]
-    return ret
-
-def _maybe_update_cc_library_hdrs(hdrs):
-    ret = []
-    hdrs_to_update = {
-        "third_party/objective_c/Cronet/bidirectional_stream_c.h": "//third_party:objective_c/Cronet/bidirectional_stream_c.h",
-    }
-    for h in hdrs:
-        if h in hdrs_to_update.keys():
-            ret.append(hdrs_to_update[h])
-        else:
-            ret.append(h)
     return ret
 
 def grpc_cc_library(
@@ -106,7 +97,7 @@ def grpc_cc_library(
                       "//:grpc_disallow_exceptions": ["GRPC_ALLOW_EXCEPTIONS=0"],
                       "//conditions:default": [],
                   }),
-        hdrs = _maybe_update_cc_library_hdrs(hdrs + public_hdrs),
+        hdrs = hdrs + public_hdrs,
         deps = deps + _get_external_deps(external_deps),
         copts = copts,
         visibility = visibility,
@@ -248,3 +239,7 @@ def grpc_package(name, visibility = "private", features = []):
             default_visibility = visibility,
             features = features,
         )
+
+def grpc_upb_proto_library(name, deps):
+    upb_proto_library(name = name, deps = deps)
+
