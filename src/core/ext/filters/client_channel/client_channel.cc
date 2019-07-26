@@ -1717,10 +1717,10 @@ void ChannelData::StartTransportOpLocked(void* arg, grpc_error* ignored) {
       GRPC_ERROR_UNREF(op->disconnect_with_error);
     } else {
       // Disconnect.
-      grpc_error* error = GRPC_ERROR_NONE;
-      GPR_ASSERT(chand->disconnect_error_.CompareExchangeStrong(
-          &error, op->disconnect_with_error, MemoryOrder::ACQ_REL,
-          MemoryOrder::ACQUIRE));
+      GPR_ASSERT(chand->disconnect_error_.Load(MemoryOrder::RELAXED) ==
+                 GRPC_ERROR_NONE);
+      chand->disconnect_error_.Store(op->disconnect_with_error,
+                                     MemoryOrder::RELEASE);
       New<ConnectivityStateAndPickerSetter>(
           chand, GRPC_CHANNEL_SHUTDOWN, "shutdown from API",
           UniquePtr<LoadBalancingPolicy::SubchannelPicker>(
