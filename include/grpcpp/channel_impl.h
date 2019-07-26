@@ -56,7 +56,7 @@ class Channel : public ::grpc::ChannelInterface,
                 public std::enable_shared_from_this<Channel>,
                 private ::grpc::GrpcLibraryCodegen {
  public:
-  ~Channel();
+  virtual ~Channel();
 
   /// Get the current channel state. If the channel is in IDLE and
   /// \a try_to_connect is set to true, try to connect.
@@ -69,6 +69,13 @@ class Channel : public ::grpc::ChannelInterface,
   /// not available.
   grpc::string GetServiceConfigJSON() const;
 
+ protected:
+  // This is not part of the public API for this class
+  Channel(const grpc::string& host, grpc_channel* c_channel,
+          std::vector<std::unique_ptr<
+              ::grpc::experimental::ClientInterceptorFactoryInterface>>
+              interceptor_creators);
+
  private:
   template <class InputMessage, class OutputMessage>
   friend class ::grpc::internal::BlockingUnaryCallImpl;
@@ -79,10 +86,6 @@ class Channel : public ::grpc::ChannelInterface,
           ::grpc::experimental::ClientInterceptorFactoryInterface>>
           interceptor_creators);
   friend class ::grpc::internal::InterceptedChannel;
-  Channel(const grpc::string& host, grpc_channel* c_channel,
-          std::vector<std::unique_ptr<
-              ::grpc::experimental::ClientInterceptorFactoryInterface>>
-              interceptor_creators);
 
   ::grpc::internal::Call CreateCall(const ::grpc::internal::RpcMethod& method,
                                     ::grpc_impl::ClientContext* context,
