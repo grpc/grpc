@@ -22,7 +22,7 @@
  */
 
 #import <RxLibrary/GRXWriter.h>
-#import "GRPCCallOptions.h"
+#import "GRPCTypes.h"
 
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wnullability-completeness"

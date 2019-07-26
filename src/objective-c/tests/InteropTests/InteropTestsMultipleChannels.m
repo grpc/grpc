@@ -23,6 +23,7 @@
 #import <RemoteTest/Test.pbobjc.h>
 #import <RemoteTest/Test.pbrpc.h>
 #import <RxLibrary/GRXBufferedPipe.h>
+#import <GRPCClient/GRPCCallOptions.h>
 
 #import "../ConfigureCronet.h"
 #import "InteropTestsBlockCallbacks.h"

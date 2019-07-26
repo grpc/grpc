@@ -40,7 +40,7 @@ Pod::Spec.new do |s|
   s.module_name = name
   s.header_dir = name
 
-  s.default_subspec = 'Interface', 'GRPCCore'
+  s.default_subspec = 'Interface', 'GRPCCore', 'Interface-Legacy'
 
   s.pod_target_xcconfig = {
     # This is needed by all pods that depend on gRPC-RxLibrary:
@@ -51,9 +51,11 @@ Pod::Spec.new do |s|
   s.subspec 'Interface-Legacy' do |ss|
     ss.header_mappings_dir = 'src/objective-c/GRPCClient'
 
-    ss.public_header_files = "src/objective-c/GRPCClient/GRPCCallLegacy.h"
+    ss.public_header_files = "src/objective-c/GRPCClient/GRPCCallLegacy.h",
+                             "src/objective-c/GRPCClient/GRPCTypes.h"
 
-    ss.source_files = "src/objective-c/GRPCClient/GRPCCallLegacy.h"
+    ss.source_files = "src/objective-c/GRPCClient/GRPCCallLegacy.h",
+                      "src/objective-c/GRPCClient/GRPCTypes.h"
   end
 
   s.subspec 'Interface' do |ss|
@@ -64,8 +66,7 @@ Pod::Spec.new do |s|
                              'src/objective-c/GRPCClient/GRPCCallOptions.h',
                              'src/objective-c/GRPCClient/GRPCInterceptor.h',
                              'src/objective-c/GRPCClient/GRPCTransport.h',
-                             'src/objective-c/GRPCClient/GRPCDispatchable.h',
-                             'src/objective-c/GRPCClient/internal/*.h'
+                             'src/objective-c/GRPCClient/GRPCDispatchable.h'
 
     ss.source_files = 'src/objective-c/GRPCClient/GRPCCall.h',
                       'src/objective-c/GRPCClient/GRPCCall.m',
@@ -112,6 +113,7 @@ Pod::Spec.new do |s|
     # Certificates, to be able to establish TLS connections:
     ss.resource_bundles = { 'gRPCCertificates' => ['etc/roots.pem'] }
 
+    ss.dependency "#{s.name}/Interface-Legacy", version
     ss.dependency "#{s.name}/Interface", version
     ss.dependency 'gRPC-Core', version
     ss.dependency 'gRPC-RxLibrary', version
