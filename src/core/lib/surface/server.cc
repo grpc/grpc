@@ -1396,7 +1396,7 @@ void grpc_server_destroy(grpc_server* server) {
 }
 
 void grpc_server_add_listener(
-    grpc_server* server, void* arg,
+    grpc_server* server, void* listener,
     void (*start)(grpc_server* server, void* arg, grpc_pollset** pollsets,
                   size_t pollset_count),
     void (*destroy)(grpc_server* server, void* arg, grpc_closure* on_done),
