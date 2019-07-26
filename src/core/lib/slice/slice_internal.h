@@ -96,6 +96,8 @@ extern uint32_t g_hash_seed;
 // In total, this saves us roughly 1-2% latency for unary calls, with smaller
 // calls benefitting. The effect is present, but not as useful, for larger calls
 // where the cost of sending the data dominates.
+// TODO(arjunroy): Investigate if this can be removed with strongly typed
+// grpc_slices.
 struct grpc_slice_refcount {
  public:
   enum class Type {
@@ -315,7 +317,7 @@ grpc_slice grpc_slice_from_moved_string(grpc_core::UniquePtr<char> p);
 // 0. All other slices will return the size of the allocated chars.
 size_t grpc_slice_memory_usage(grpc_slice s);
 
-grpc_core::ExternSlice grpc_slice_sub_no_ref_internal(
+grpc_core::ExternSlice grpc_slice_sub_no_ref(
     const grpc_core::ExternSlice& source, size_t begin, size_t end);
 
 #endif /* GRPC_CORE_LIB_SLICE_SLICE_INTERNAL_H */

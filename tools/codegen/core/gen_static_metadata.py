@@ -400,13 +400,14 @@ def slice_def(i):
     ) % (i, len(all_strs[i]), id2strofs[i])
 
 
-#    return ('{&grpc_static_metadata_refcounts[%d],'
-#            ' {{%d, g_bytes+%d}}}') % (i, len(all_strs[i]), id2strofs[i])
-
 # validate configuration
 for elem in METADATA_BATCH_CALLOUTS:
     assert elem in all_strs
-
+static_slice_dest_assert = (
+    'static_assert(std::is_trivially_destructible' +
+    '<grpc_core::StaticSlice>::value, '
+    '"grpc_core::StaticSlice must be trivially destructible.");')
+print >> H, static_slice_dest_assert
 print >> H, '#define GRPC_STATIC_MDSTR_COUNT %d' % len(all_strs)
 print >> H, ('extern const grpc_core::StaticSlice '
              'grpc_static_slice_table[GRPC_STATIC_MDSTR_COUNT];')

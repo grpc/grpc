@@ -33,6 +33,8 @@
 
 #include "src/core/lib/transport/metadata.h"
 
+static_assert(std::is_trivially_destructible<grpc_core::StaticSlice>::value,
+              "grpc_core::StaticSlice must be trivially destructible.");
 #define GRPC_STATIC_MDSTR_COUNT 107
 extern const grpc_core::StaticSlice
     grpc_static_slice_table[GRPC_STATIC_MDSTR_COUNT];

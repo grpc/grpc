@@ -323,7 +323,7 @@ static grpc_error* update_path_for_get(grpc_call_element* elem,
   char* t = reinterpret_cast<char*> GRPC_SLICE_START_PTR(path_with_query_slice);
   /* safe to use strlen since base64_encode will always add '\0' */
   path_with_query_slice =
-      grpc_slice_sub_no_ref_internal(path_with_query_slice, 0, strlen(t));
+      grpc_slice_sub_no_ref(path_with_query_slice, 0, strlen(t));
   /* substitute previous path with the new path+query */
   grpc_mdelem mdelem_path_and_query =
       grpc_mdelem_from_slices(GRPC_MDSTR_PATH, path_with_query_slice);

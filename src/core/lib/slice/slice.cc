@@ -268,10 +268,9 @@ class MallocRefCount {
 }  // namespace
 
 grpc_slice grpc_slice_malloc_large(size_t length) {
-  return grpc_core::ExternSlice(length, true);
+  return grpc_core::ExternSlice(length,
+                                grpc_core::ExternSlice::ForceHeapAllocation());
 }
-
-grpc_core::ExternSlice::ExternSlice(size_t length, bool) { HeapInit(length); }
 
 void grpc_core::ExternSlice::HeapInit(size_t length) {
   /* Memory layout used by the slice created here:
@@ -343,7 +342,7 @@ grpc_slice grpc_slice_sub_no_ref(grpc_slice source, size_t begin, size_t end) {
   return sub_no_ref(source, begin, end);
 }
 
-grpc_core::ExternSlice grpc_slice_sub_no_ref_internal(
+grpc_core::ExternSlice grpc_slice_sub_no_ref(
     const grpc_core::ExternSlice& source, size_t begin, size_t end) {
   return sub_no_ref(source, begin, end);
 }

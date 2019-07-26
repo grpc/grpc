@@ -159,6 +159,24 @@ static bool slice_eq_buf(const grpc_slice& slice, const char* buf,
          memcmp(buf, slice.data.refcounted.bytes, len) == 0;
 }
 
+static InternedSliceRefcount* InternNewStringLocked(const void* string,
+                                                    size_t len, uint32_t hash,
+                                                    slice_shard* shard,
+                                                    size_t shard_idx) {
+  /* string data goes after the internal_string header */
+  InternedSliceRefcount* s =
+      static_cast<InternedSliceRefcount*>(gpr_malloc(sizeof(*s) + len));
+
+  new (s) grpc_core::InternedSliceRefcount(len, hash, shard->strs[shard_idx]);
+  memcpy(reinterpret_cast<char*>(s + 1), string, len);
+  shard->strs[shard_idx] = s;
+  shard->count++;
+  if (shard->count > shard->capacity * 2) {
+    grow_shard(shard);
+  }
+  return s;
+}
+
 grpc_core::InternalSlice::InternalSlice(const char* string, size_t len) {
   GPR_TIMER_SCOPE("grpc_slice_intern", 0);
   const uint32_t hash = gpr_murmur_hash3(string, len, g_hash_seed);
@@ -177,7 +195,7 @@ grpc_core::InternalSlice::InternalSlice(const char* string, size_t len) {
   gpr_mu_lock(&shard->mu);
 
   /* search for an existing string */
-  size_t idx = TABLE_IDX(hash, shard->capacity);
+  const size_t idx = TABLE_IDX(hash, shard->capacity);
   for (s = shard->strs[idx]; s; s = s->bucket_next) {
     if (s->hash == hash &&
         slice_eq_buf(grpc_core::InternedSlice(s), string, len)) {
@@ -190,17 +208,7 @@ grpc_core::InternalSlice::InternalSlice(const char* string, size_t len) {
   }
 
   /* not found: create a new string */
-  /* string data goes after the internal_string header */
-  s = static_cast<InternedSliceRefcount*>(gpr_malloc(sizeof(*s) + len));
-
-  new (s) grpc_core::InternedSliceRefcount(len, hash, shard->strs[idx]);
-  memcpy(reinterpret_cast<char*>(s + 1), string, len);
-  shard->strs[idx] = s;
-  shard->count++;
-  if (shard->count > shard->capacity * 2) {
-    grow_shard(shard);
-  }
-
+  s = InternNewStringLocked(string, len, hash, shard, idx);
   gpr_mu_unlock(&shard->mu);
   *this = grpc_core::InternedSlice(s);
 }
@@ -208,8 +216,8 @@ grpc_core::InternalSlice::InternalSlice(const char* string, size_t len) {
 grpc_core::InternalSlice::InternalSlice(const char* string)
     : grpc_core::InternalSlice::InternalSlice(string, strlen(string)) {}
 
-grpc_core::InternalSlice::InternalSlice(const grpc_slice* pSlice) {
-  const grpc_slice& slice = *pSlice;
+grpc_core::InternalSlice::InternalSlice(const grpc_slice* slice_ptr) {
+  const grpc_slice& slice = *slice_ptr;
   GPR_TIMER_SCOPE("grpc_slice_intern", 0);
   if (GRPC_IS_STATIC_METADATA_STRING(slice)) {
     *this = static_cast<const grpc_core::StaticSlice&>(slice);
@@ -235,7 +243,7 @@ grpc_core::InternalSlice::InternalSlice(const grpc_slice* pSlice) {
   gpr_mu_lock(&shard->mu);
 
   /* search for an existing string */
-  size_t idx = TABLE_IDX(hash, shard->capacity);
+  const size_t idx = TABLE_IDX(hash, shard->capacity);
   for (s = shard->strs[idx]; s; s = s->bucket_next) {
     if (s->hash == hash &&
         grpc_slice_eq_static_interned(slice, grpc_core::InternedSlice(s))) {
@@ -248,20 +256,8 @@ grpc_core::InternalSlice::InternalSlice(const grpc_slice* pSlice) {
   }
 
   /* not found: create a new string */
-  /* string data goes after the internal_string header */
-  s = static_cast<InternedSliceRefcount*>(
-      gpr_malloc(sizeof(*s) + GRPC_SLICE_LENGTH(slice)));
-
-  new (s) grpc_core::InternedSliceRefcount(GRPC_SLICE_LENGTH(slice), hash,
-                                           shard->strs[idx]);
-  memcpy(reinterpret_cast<char*>(s + 1), GRPC_SLICE_START_PTR(slice),
-         GRPC_SLICE_LENGTH(slice));
-  shard->strs[idx] = s;
-  shard->count++;
-  if (shard->count > shard->capacity * 2) {
-    grow_shard(shard);
-  }
-
+  s = InternNewStringLocked(GRPC_SLICE_START_PTR(slice),
+                            GRPC_SLICE_LENGTH(slice), hash, shard, idx);
   gpr_mu_unlock(&shard->mu);
   *this = grpc_core::InternedSlice(s);
 }
