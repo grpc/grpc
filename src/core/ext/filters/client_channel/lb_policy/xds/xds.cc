@@ -1986,6 +1986,9 @@ void XdsLb::LocalityMap::LocalityEntry::ShutdownLocked() {
         parent_->interested_parties());
     pending_child_policy_.reset();
   }
+  // Drop our ref to the child's picker, in case it's holding a ref to
+  // the child.
+  picker_ref_.reset();
 }
 
 void XdsLb::LocalityMap::LocalityEntry::ResetBackoffLocked() {
