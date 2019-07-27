@@ -245,6 +245,7 @@ static void custom_accept_callback(grpc_custom_socket* socket,
 static void custom_accept_callback(grpc_custom_socket* socket,
                                    grpc_custom_socket* client,
                                    grpc_error* error) {
+  grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
   grpc_core::ExecCtx exec_ctx;
   grpc_tcp_listener* sp = socket->listener;
   if (error != GRPC_ERROR_NONE) {
