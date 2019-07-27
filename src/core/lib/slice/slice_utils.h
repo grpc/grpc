@@ -25,6 +25,26 @@
 
 #include <grpc/slice.h>
 
+// When we compare two slices, and we know the latter is not inlined, we can
+// short circuit our comparison operator. We specifically use differs()
+// semantics instead of equals() semantics due to more favourable code
+// generation when using differs(). Specifically, we may use the output of
+// grpc_slice_differs_refcounted for control flow. If we use differs()
+// semantics, we end with a tailcall to memcmp(). If we use equals() semantics,
+// we need to invert the result that memcmp provides us, which costs several
+// instructions to do so. If we're using the result for control flow (i.e.
+// branching based on the output) then we're just performing the extra
+// operations to invert the result pointlessly. Concretely, we save 6 ops on
+// x86-64/clang with differs().
+int grpc_slice_differs_refcounted(const grpc_slice& a,
+                                  const grpc_slice& b_not_inline);
+
+// TODO(arjunroy): These type declarations ought to be in
+// src/core/lib/slice/slice_internal.h instead; they are here due to a circular
+// header depedency between slice_internal.h and
+// src/core/lib/transport/metadata.h. We need to fix this circular reference and
+// when we do, move these type declarations.
+//
 // Internal slice type declarations.
 // Externally, a grpc_slice is a grpc_slice is a grpc_slice.
 // Internally, we may have heap allocated slices, static slices, interned
@@ -44,7 +64,7 @@ namespace grpc_core {
 // 2) refcount is not null and
 //                not grpc_slice_refcount::Type::STATIC and
 //                not grpc_slice_refcount::Type::INTERNED
-// An Inlined slice is an ExternSlice.
+// An Inlined slice is an UnmanagedMemorySlice.
 //
 // Conversely, an internal slice is a slice where grpc_core manages the memory.
 // This is either through static allocation (StaticSlice) or internally-managed
@@ -53,8 +73,8 @@ namespace grpc_core {
 // Hierarchy:
 //
 // - grpc_slice
-//   - ExternSlice
-//   - InternalSlice
+//   - UnmanagedMemorySlice
+//   - ManagedMemorySlice
 //     - InternedSlice
 //     - StaticSlice
 //
@@ -62,35 +82,45 @@ namespace grpc_core {
 // ----------------------------------
 // |          grpc_slice            |
 // |--------------------------------|
-// | InternalSlice |    ExternSlice |
+// | ManagedMemorySlice |    UnmanagedMemorySlice |
 // | --------------|                |
 // | InternedSlice |                |
 // |   StaticSlice |                |
 // ----------------------------------
 //
-struct InternalSlice : public grpc_slice {
-  InternalSlice() {
+struct ManagedMemorySlice : public grpc_slice {
+  ManagedMemorySlice() {
     refcount = nullptr;
     data.refcounted.bytes = nullptr;
     data.refcounted.length = 0;
   }
-  explicit InternalSlice(const char* string);
-  InternalSlice(const char* buf, size_t len);
-  explicit InternalSlice(const grpc_slice* slice);
+  explicit ManagedMemorySlice(const char* string);
+  ManagedMemorySlice(const char* buf, size_t len);
+  explicit ManagedMemorySlice(const grpc_slice* slice);
+  bool Equals(const grpc_slice& other) const {
+    if (refcount == other.refcount) {
+      return true;
+    }
+    return !grpc_slice_differs_refcounted(other, *this);
+  }
+  bool Equals(const char* buf, const size_t len) const {
+    return data.refcounted.length == len &&
+           memcmp(buf, data.refcounted.bytes, len) == 0;
+  }
 };
-struct ExternSlice : public grpc_slice {
+struct UnmanagedMemorySlice : public grpc_slice {
   enum class ForceHeapAllocation {};
-  ExternSlice() {
+  UnmanagedMemorySlice() {
     refcount = nullptr;
     data.inlined.length = 0;
   }
-  explicit ExternSlice(const char* source);
-  ExternSlice(const char* source, size_t length);
-  // The following two constructors create slices using malloc - like
-  // MALLOC_SLICE used to. The first variant creates a heap allocated slice or
-  // possibly an inlined slice. The second variant forces heap allocation.
-  explicit ExternSlice(size_t length);
-  explicit ExternSlice(size_t length, const ForceHeapAllocation&) {
+  explicit UnmanagedMemorySlice(const char* source);
+  UnmanagedMemorySlice(const char* source, size_t length);
+  // The first constructor creates a slice that may be heap allocated, or
+  // inlined in the slice structure if length is small enough
+  // (< GRPC_SLICE_INLINED_SIZE). The second constructor forces heap alloc.
+  explicit UnmanagedMemorySlice(size_t length);
+  explicit UnmanagedMemorySlice(size_t length, const ForceHeapAllocation&) {
     HeapInit(length);
   }
 
@@ -100,39 +130,26 @@ struct ExternSlice : public grpc_slice {
 
 extern grpc_slice_refcount kNoopRefcount;
 
-struct StaticSlice : public InternalSlice {
+struct StaticSlice : public ManagedMemorySlice {
+  StaticSlice() : StaticSlice(&kNoopRefcount, 0, nullptr) {}
+  explicit StaticSlice(const char* s) : StaticSlice(s, strlen(s)) {}
+  StaticSlice(const void* s, size_t len)
+      : StaticSlice(&kNoopRefcount, len,
+                    reinterpret_cast<uint8_t*>(const_cast<void*>(s))) {}
   StaticSlice(grpc_slice_refcount* ref, size_t length, uint8_t* bytes) {
     refcount = ref;
     data.refcounted.length = length;
     data.refcounted.bytes = bytes;
   }
-  StaticSlice(const void* s, size_t len)
-      : StaticSlice(&kNoopRefcount, len,
-                    reinterpret_cast<uint8_t*>(const_cast<void*>(s))) {}
-  StaticSlice(const char* s) : StaticSlice(s, strlen(s)) {}
-  StaticSlice() : StaticSlice(&kNoopRefcount, 0, nullptr) {}
 };
 
 struct InternedSliceRefcount;
-struct InternedSlice : public InternalSlice {
+struct InternedSlice : public ManagedMemorySlice {
   explicit InternedSlice(InternedSliceRefcount* s);
 };
 
 }  // namespace grpc_core
 
-// When we compare two slices, and we know the latter is not inlined, we can
-// short circuit our comparison operator. We specifically use differs()
-// semantics instead of equals() semantics due to more favourable code
-// generation when using differs(). Specifically, we may use the output of
-// grpc_slice_differs_refcounted for control flow. If we use differs()
-// semantics, we end with a tailcall to memcmp(). If we use equals() semantics,
-// we need to invert the result that memcmp provides us, which costs several
-// instructions to do so. If we're using the result for control flow (i.e.
-// branching based on the output) then we're just performing the extra
-// operations to invert the result pointlessly. Concretely, we save 6 ops on
-// x86-64/clang with differs().
-int grpc_slice_differs_refcounted(const grpc_slice& a,
-                                  const grpc_slice& b_not_inline);
 // When we compare two slices, and we *know* that one of them is static or
 // interned, we can short circuit our slice equality function. The second slice
 // here must be static or interned; slice a can be any slice, inlined or not.

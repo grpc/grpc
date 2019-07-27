@@ -514,8 +514,9 @@ grpc_mdelem grpc_mdelem_from_slices(const grpc_core::StaticSlice& key,
   return out;
 }
 
-grpc_mdelem grpc_mdelem_from_slices(const grpc_core::StaticSlice& key,
-                                    const grpc_core::InternalSlice& value) {
+grpc_mdelem grpc_mdelem_from_slices(
+    const grpc_core::StaticSlice& key,
+    const grpc_core::ManagedMemorySlice& value) {
   // TODO(arjunroy): We can save the unref if md_create_maybe_static ended up
   // creating a new interned metadata. But otherwise - we need this here.
   grpc_mdelem out = md_create_maybe_static<true>(key, value);
@@ -523,8 +524,9 @@ grpc_mdelem grpc_mdelem_from_slices(const grpc_core::StaticSlice& key,
   return out;
 }
 
-grpc_mdelem grpc_mdelem_from_slices(const grpc_core::InternalSlice& key,
-                                    const grpc_core::InternalSlice& value) {
+grpc_mdelem grpc_mdelem_from_slices(
+    const grpc_core::ManagedMemorySlice& key,
+    const grpc_core::ManagedMemorySlice& value) {
   grpc_mdelem out = md_create_maybe_static<false>(key, value);
   // TODO(arjunroy): We can save the unref if md_create_maybe_static ended up
   // creating a new interned metadata. But otherwise - we need this here.

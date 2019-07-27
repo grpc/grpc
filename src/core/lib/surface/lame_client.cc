@@ -60,10 +60,11 @@ static void fill_metadata(grpc_call_element* elem, grpc_metadata_batch* mdb) {
   ChannelData* chand = static_cast<ChannelData*>(elem->channel_data);
   char tmp[GPR_LTOA_MIN_BUFSIZE];
   gpr_ltoa(chand->error_code, tmp);
-  calld->status.md = grpc_mdelem_from_slices(GRPC_MDSTR_GRPC_STATUS,
-                                             grpc_core::ExternSlice(tmp));
+  calld->status.md = grpc_mdelem_from_slices(
+      GRPC_MDSTR_GRPC_STATUS, grpc_core::UnmanagedMemorySlice(tmp));
   calld->details.md = grpc_mdelem_from_slices(
-      GRPC_MDSTR_GRPC_MESSAGE, grpc_core::ExternSlice(chand->error_message));
+      GRPC_MDSTR_GRPC_MESSAGE,
+      grpc_core::UnmanagedMemorySlice(chand->error_message));
   calld->status.prev = calld->details.next = nullptr;
   calld->status.next = &calld->details;
   calld->details.prev = &calld->status;

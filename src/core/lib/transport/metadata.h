@@ -136,11 +136,11 @@ grpc_mdelem grpc_mdelem_from_slices(const grpc_core::StaticSlice& key,
 
 /* Like grpc_mdelem_from_slices, but key is static and val is interned. */
 grpc_mdelem grpc_mdelem_from_slices(const grpc_core::StaticSlice& key,
-                                    const grpc_core::InternalSlice& value);
+                                    const grpc_core::ManagedMemorySlice& value);
 
 /* Like grpc_mdelem_from_slices, but key and val are interned. */
-grpc_mdelem grpc_mdelem_from_slices(const grpc_core::InternalSlice& key,
-                                    const grpc_core::InternalSlice& value);
+grpc_mdelem grpc_mdelem_from_slices(const grpc_core::ManagedMemorySlice& key,
+                                    const grpc_core::ManagedMemorySlice& value);
 
 /* Cheaply convert a grpc_metadata to a grpc_mdelem; may use the grpc_metadata
    object as backing storage (so lifetimes should align) */
@@ -425,7 +425,8 @@ void grpc_mdctx_global_shutdown();
    2) We're guaranteed to create a new Allocated slice, thus meaning the
       ref can be considered 'transferred'.*/
 inline grpc_mdelem grpc_mdelem_from_slices(
-    const grpc_core::InternalSlice& key, const grpc_core::ExternSlice& value) {
+    const grpc_core::ManagedMemorySlice& key,
+    const grpc_core::UnmanagedMemorySlice& value) {
   using grpc_core::AllocatedMetadata;
   return GRPC_MAKE_MDELEM(
       grpc_core::New<AllocatedMetadata>(
@@ -435,7 +436,8 @@ inline grpc_mdelem grpc_mdelem_from_slices(
 }
 
 inline grpc_mdelem grpc_mdelem_from_slices(
-    const grpc_core::StaticSlice& key, const grpc_core::ExternSlice& value) {
+    const grpc_core::StaticSlice& key,
+    const grpc_core::UnmanagedMemorySlice& value) {
   using grpc_core::AllocatedMetadata;
   return GRPC_MAKE_MDELEM(
       grpc_core::New<AllocatedMetadata>(

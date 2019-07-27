@@ -506,7 +506,8 @@ ServerAddressList GrpcLb::Serverlist::GetServerAddressList(
           strnlen(server->load_balance_token, lb_token_max_length);
       lb_token = grpc_mdelem_from_slices(
           GRPC_MDSTR_LB_TOKEN,
-          grpc_core::ExternSlice(server->load_balance_token, lb_token_length));
+          grpc_core::UnmanagedMemorySlice(server->load_balance_token,
+                                          lb_token_length));
       if (client_stats != nullptr) {
         GPR_ASSERT(grpc_mdelem_set_user_data(
                        lb_token, GrpcLbClientStats::Destroy,
