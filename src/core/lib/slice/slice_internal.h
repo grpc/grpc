@@ -317,7 +317,7 @@ grpc_slice grpc_slice_from_moved_string(grpc_core::UniquePtr<char> p);
 // 0. All other slices will return the size of the allocated chars.
 size_t grpc_slice_memory_usage(grpc_slice s);
 
-grpc_core::ExternSlice grpc_slice_sub_no_ref(
-    const grpc_core::ExternSlice& source, size_t begin, size_t end);
+grpc_core::UnmanagedMemorySlice grpc_slice_sub_no_ref(
+    const grpc_core::UnmanagedMemorySlice& source, size_t begin, size_t end);
 
 #endif /* GRPC_CORE_LIB_SLICE_SLICE_INTERNAL_H */

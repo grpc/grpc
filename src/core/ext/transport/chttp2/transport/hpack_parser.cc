@@ -660,31 +660,33 @@ static grpc_error* on_hdr(grpc_chttp2_hpack_parser* p, grpc_mdelem md) {
   return GRPC_ERROR_NONE;
 }
 
-static grpc_core::ExternSlice take_string_extern(
+static grpc_core::UnmanagedMemorySlice take_string_extern(
     grpc_chttp2_hpack_parser* p, grpc_chttp2_hpack_parser_string* str) {
-  grpc_core::ExternSlice s;
+  grpc_core::UnmanagedMemorySlice s;
   if (!str->copied) {
     GPR_DEBUG_ASSERT(!grpc_slice_is_interned(str->data.referenced));
-    s = static_cast<grpc_core::ExternSlice&>(str->data.referenced);
+    s = static_cast<grpc_core::UnmanagedMemorySlice&>(str->data.referenced);
     str->copied = true;
-    str->data.referenced = grpc_core::ExternSlice();
+    str->data.referenced = grpc_core::UnmanagedMemorySlice();
   } else {
-    s = grpc_core::ExternSlice(str->data.copied.str, str->data.copied.length);
+    s = grpc_core::UnmanagedMemorySlice(str->data.copied.str,
+                                        str->data.copied.length);
   }
   str->data.copied.length = 0;
   return s;
 }
 
-static grpc_core::InternalSlice take_string_intern(
+static grpc_core::ManagedMemorySlice take_string_intern(
     grpc_chttp2_hpack_parser* p, grpc_chttp2_hpack_parser_string* str) {
-  grpc_core::InternalSlice s;
+  grpc_core::ManagedMemorySlice s;
   if (!str->copied) {
-    s = grpc_core::InternalSlice(&str->data.referenced);
+    s = grpc_core::ManagedMemorySlice(&str->data.referenced);
     grpc_slice_unref_internal(str->data.referenced);
     str->copied = true;
     str->data.referenced = grpc_empty_slice();
   } else {
-    s = grpc_core::InternalSlice(str->data.copied.str, str->data.copied.length);
+    s = grpc_core::ManagedMemorySlice(str->data.copied.str,
+                                      str->data.copied.length);
   }
   str->data.copied.length = 0;
   return s;
@@ -818,9 +820,9 @@ static grpc_mdelem get_precomputed_md_for_idx(grpc_chttp2_hpack_parser* p) {
   return md;
 }
 
-static const grpc_core::InternalSlice& get_indexed_key(grpc_mdelem md) {
+static const grpc_core::ManagedMemorySlice& get_indexed_key(grpc_mdelem md) {
   GPR_DEBUG_ASSERT(GRPC_MDELEM_IS_INTERNED(md));
-  return static_cast<const grpc_core::InternalSlice&>(
+  return static_cast<const grpc_core::ManagedMemorySlice&>(
       grpc_slice_ref_internal(GRPC_MDKEY(md)));
 }
 

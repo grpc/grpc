@@ -37,7 +37,7 @@ char* grpc_slice_to_c_string(grpc_slice slice) {
   return out;
 }
 
-grpc_slice grpc_empty_slice(void) { return grpc_core::ExternSlice(); }
+grpc_slice grpc_empty_slice(void) { return grpc_core::UnmanagedMemorySlice(); }
 
 grpc_slice grpc_slice_copy(grpc_slice s) {
   grpc_slice out = GRPC_SLICE_MALLOC(GRPC_SLICE_LENGTH(s));
@@ -197,7 +197,8 @@ grpc_slice grpc_slice_new_with_len(void* p, size_t len,
   return slice;
 }
 
-grpc_core::ExternSlice::ExternSlice(const char* source, size_t length) {
+grpc_core::UnmanagedMemorySlice::UnmanagedMemorySlice(const char* source,
+                                                      size_t length) {
   if (length <= sizeof(data.inlined.bytes)) {
     refcount = nullptr;
     data.inlined.length = static_cast<uint8_t>(length);
@@ -209,15 +210,16 @@ grpc_core::ExternSlice::ExternSlice(const char* source, size_t length) {
   }
 }
 
-grpc_core::ExternSlice::ExternSlice(const char* source)
-    : grpc_core::ExternSlice::ExternSlice(source, strlen(source)) {}
+grpc_core::UnmanagedMemorySlice::UnmanagedMemorySlice(const char* source)
+    : grpc_core::UnmanagedMemorySlice::UnmanagedMemorySlice(source,
+                                                            strlen(source)) {}
 
 grpc_slice grpc_slice_from_copied_buffer(const char* source, size_t length) {
-  return grpc_core::ExternSlice(source, length);
+  return grpc_core::UnmanagedMemorySlice(source, length);
 }
 
 grpc_slice grpc_slice_from_copied_string(const char* source) {
-  return grpc_core::ExternSlice(source, strlen(source));
+  return grpc_core::UnmanagedMemorySlice(source, strlen(source));
 }
 
 grpc_slice grpc_slice_from_moved_buffer(grpc_core::UniquePtr<char> p,
@@ -268,11 +270,11 @@ class MallocRefCount {
 }  // namespace
 
 grpc_slice grpc_slice_malloc_large(size_t length) {
-  return grpc_core::ExternSlice(length,
-                                grpc_core::ExternSlice::ForceHeapAllocation());
+  return grpc_core::UnmanagedMemorySlice(
+      length, grpc_core::UnmanagedMemorySlice::ForceHeapAllocation());
 }
 
-void grpc_core::ExternSlice::HeapInit(size_t length) {
+void grpc_core::UnmanagedMemorySlice::HeapInit(size_t length) {
   /* Memory layout used by the slice created here:
 
      +-----------+----------------------------------------------------------+
@@ -299,10 +301,10 @@ void grpc_core::ExternSlice::HeapInit(size_t length) {
 }
 
 grpc_slice grpc_slice_malloc(size_t length) {
-  return grpc_core::ExternSlice(length);
+  return grpc_core::UnmanagedMemorySlice(length);
 }
 
-grpc_core::ExternSlice::ExternSlice(size_t length) {
+grpc_core::UnmanagedMemorySlice::UnmanagedMemorySlice(size_t length) {
   if (length > sizeof(data.inlined.bytes)) {
     HeapInit(length);
   } else {
@@ -342,8 +344,8 @@ grpc_slice grpc_slice_sub_no_ref(grpc_slice source, size_t begin, size_t end) {
   return sub_no_ref(source, begin, end);
 }
 
-grpc_core::ExternSlice grpc_slice_sub_no_ref(
-    const grpc_core::ExternSlice& source, size_t begin, size_t end) {
+grpc_core::UnmanagedMemorySlice grpc_slice_sub_no_ref(
+    const grpc_core::UnmanagedMemorySlice& source, size_t begin, size_t end) {
   return sub_no_ref(source, begin, end);
 }
 
