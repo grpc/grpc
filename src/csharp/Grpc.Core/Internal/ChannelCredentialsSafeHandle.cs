@@ -50,6 +50,11 @@ namespace Grpc.Core.Internal
             }
         }
 
+        public static ChannelCredentialsSafeHandle CreateLocal(LocalCredentialsType type)
+        {
+            return Native.grpcsharp_local_credentials_create(type);
+        }
+
         public static ChannelCredentialsSafeHandle CreateComposite(ChannelCredentialsSafeHandle channelCreds, CallCredentialsSafeHandle callCreds)
         {
             return Native.grpcsharp_composite_channel_credentials_create(channelCreds, callCreds);
