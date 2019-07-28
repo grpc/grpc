@@ -45,14 +45,14 @@ Pod::Spec.new do |s|
   CMD
 
   s.subspec "Messages" do |ms|
-    ms.source_files = "**/*.pbobjc.{h,m}"
+    ms.source_files = "src/objective-c/tests/RemoteTestClient/*.pbobjc.{h,m}"
     ms.header_mappings_dir = "."
     ms.requires_arc = false
     ms.dependency "Protobuf"
   end
 
   s.subspec "Services" do |ss|
-    ss.source_files = "**/*.pbrpc.{h,m}"
+    ss.source_files = "src/objective-c/tests/RemoteTestClient/*.pbrpc.{h,m}"
     ss.header_mappings_dir = "."
     ss.requires_arc = true
     ss.dependency "gRPC-ProtoRPC"

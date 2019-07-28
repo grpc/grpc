@@ -45,20 +45,20 @@ Pod::Spec.new do |s|
   end
 
   s.subspec 'Messages' do |ms|
-    ms.source_files = '**/*.pbobjc.{h,m}'
+    ms.source_files = 'src/objective-c/examples/RemoteTestClient/*.pbobjc.{h,m}'
     ms.header_mappings_dir = '.'
     ms.requires_arc = false
     ms.dependency 'Protobuf'
   end
 
   s.subspec 'Services' do |ss|
-    ss.source_files = '**/*.pbrpc.{h,m}'
+    ss.source_files = 'src/objective-c/examples/RemoteTestClient/*.pbrpc.{h,m}'
     ss.header_mappings_dir = '.'
     ss.requires_arc = true
     ss.dependency 'gRPC-ProtoRPC'
     ss.dependency "#{s.name}/Messages"
   end
-  
+
   s.pod_target_xcconfig = {
     # This is needed by all pods that depend on Protobuf:
     'GCC_PREPROCESSOR_DEFINITIONS' => '$(inherited) GPB_USE_PROTOBUF_FRAMEWORK_IMPORTS=1',
