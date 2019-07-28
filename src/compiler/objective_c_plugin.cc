@@ -89,7 +89,9 @@ class ObjectiveCGrpcGenerator : public grpc::protobuf::compiler::CodeGenerator {
           grpc_generator::tokenize(*param_str, "=");
       if (param[0] == "generate_for_named_framework") {
         if (param[1].empty()) {
-          *error = grpc::string("Name of framework cannot be empty for parameter: ") + param[0];
+          *error = grpc::string(
+                       "Name of framework cannot be empty for parameter: ") +
+                   param[0];
           return false;
         }
         framework = param[1];
