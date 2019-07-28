@@ -66,5 +66,37 @@ namespace Grpc.Core.Internal.Tests
               Assert.AreEqual("A???", str);
             }
         }
+
+        [Test]
+        public unsafe void CStringToStringASCII_Null()
+        {
+            Assert.IsNull(MarshalUtils.CStringPtrToStringASCII(IntPtr.Zero));
+        }
+
+        [Test]
+        public unsafe void CStringToStringASCII_ReturnsCachedEmptyString()
+        {
+            var data = new byte[] { 0x00 };
+            fixed (byte* dataPtr = data)
+            {
+                var emptyString1 = MarshalUtils.CStringPtrToStringASCII((IntPtr) dataPtr);
+                var emptyString2 = MarshalUtils.CStringPtrToStringASCII((IntPtr) dataPtr);
+
+                Assert.IsEmpty(emptyString1);
+                Assert.IsEmpty(emptyString2);
+                Assert.AreSame(emptyString1, emptyString2);
+            }
+        }
+
+        [Test]
+        public unsafe void CStringToStringASCII_ValidASCII()
+        {
+            var data = new byte[] { 0x41, 0x42, 0x43, 0x00 };
+            fixed (byte* dataPtr = data)
+            {
+                var str = MarshalUtils.CStringPtrToStringASCII((IntPtr) dataPtr);
+                Assert.AreEqual("ABC", str);
+            }
+        }
     }
 }

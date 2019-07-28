@@ -18,6 +18,7 @@
 
 using System;
 using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 using System.Text;
 using Grpc.Core.Api.Utils;
 
@@ -41,7 +42,7 @@ namespace Grpc.Core.Internal
         }
 
         /// <summary>
-        /// Converts <c>IntPtr</c> pointing to a ASCII encoded byte array to <c>string</c>.
+        /// Converts <c>IntPtr</c> pointing to an ASCII encoded byte array to <c>string</c>.
         /// </summary>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static string PtrToStringASCII(IntPtr ptr, int len)
@@ -51,6 +52,20 @@ namespace Grpc.Core.Internal
                 throw new ArgumentNullException(nameof(ptr));
             }
             return EncodingASCII.GetString(ptr, len);
+        }
+
+        /// <summary>
+        /// Converts <c>IntPtr</c> pointing to an ASCII encoded null terminated string to <c>string</c>.
+        /// </summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static string CStringPtrToStringASCII(IntPtr ptr)
+        {
+            // TODO: return empty string if first byte is zero == 0;
+
+            // TODO: use specific encoding!!!
+            return Marshal.PtrToStringAnsi(ptr);
+            // TODO: parse UTF string from C-string
+            //https://referencesource.microsoft.com/#mscorlib/system/runtime/interopservices/marshal.cs,124
         }
 
         /// <summary>
