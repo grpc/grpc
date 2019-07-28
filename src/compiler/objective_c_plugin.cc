@@ -42,7 +42,6 @@ inline ::grpc::string ImportProtoHeaders(
     const ::grpc::string& framework) {
   ::grpc::string header = grpc_objective_c_generator::MessageHeaderName(dep);
 
-  // cerr << header << endl;
   if (!IsProtobufLibraryBundledProtoFile(dep)) {
     if (framework.empty()) {
       return indent + LocalImport(header);
@@ -89,6 +88,10 @@ class ObjectiveCGrpcGenerator : public grpc::protobuf::compiler::CodeGenerator {
       std::vector<::grpc::string> param =
           grpc_generator::tokenize(*param_str, "=");
       if (param[0] == "generate_for_named_framework") {
+        if (param[1].empty()) {
+          *error = grpc::string("Name of framework cannot be empty for parameter: ") + param[0];
+          return false;
+        }
         framework = param[1];
       }
     }
