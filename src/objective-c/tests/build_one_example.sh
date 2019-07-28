@@ -30,7 +30,6 @@ cd `dirname $0`/../../..
 cd $EXAMPLE_PATH
 
 # clean the directory
-rm -rf Build/*
 rm -rf Pods
 rm -rf $SCHEME.xcworkspace
 rm -f Podfile.lock
