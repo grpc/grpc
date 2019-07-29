@@ -17,6 +17,14 @@
 # REQUIRES: Bazel
 set -ex
 
+if [ $# -eq 0 ]; then
+  UPB_OUTPUT_DIR=$PWD/src/core/ext/upb-generated
+  rm -rf $UPB_OUTPUT_DIR
+  mkdir $UPB_OUTPUT_DIR
+else
+  UPB_OUTPUT_DIR=$1
+fi
+
 pushd third_party/protobuf
 bazel build :protoc
 PROTOC=$PWD/bazel-bin/protoc
@@ -26,10 +34,6 @@ pushd third_party/upb
 bazel build :protoc-gen-upb
 UPB_PLUGIN=$PWD/bazel-bin/protoc-gen-upb
 popd
-
-UPB_OUTPUT_DIR=$PWD/src/core/ext/upb-generated
-rm -rf $UPB_OUTPUT_DIR
-mkdir $UPB_OUTPUT_DIR
 
 proto_files=( \
   "envoy/api/v2/auth/cert.proto" \
