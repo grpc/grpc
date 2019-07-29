@@ -1066,7 +1066,8 @@ class ObjCLanguage(object):
                 cpu_cost=1e6,
                 environ={
                     'SCHEME': 'Sample',
-                    'EXAMPLE_PATH': 'src/objective-c/examples/Sample'
+                    'EXAMPLE_PATH': 'src/objective-c/examples/Sample',
+                    'FRAMEWORKS': 'NO'
                 }))
         out.append(
             self.config.job_spec(
