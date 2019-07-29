@@ -210,7 +210,6 @@ void EncodeRequest(const char* service_name,
       request_struct, arena.ptr(), &buf_length);
   grpc_slice request_slice = GRPC_SLICE_MALLOC(buf_length);
   memcpy(GRPC_SLICE_START_PTR(request_slice), buf, buf_length);
-
   grpc_slice_buffer slice_buffer;
   grpc_slice_buffer_init(&slice_buffer);
   grpc_slice_buffer_add(&slice_buffer, request_slice);

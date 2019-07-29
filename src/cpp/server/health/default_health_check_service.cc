@@ -202,7 +202,6 @@ bool DefaultHealthCheckService::HealthCheckServiceImpl::DecodeRequest(
   if (!request.Dump(&slices).ok()) return false;
   uint8_t* request_bytes = nullptr;
   size_t request_size = 0;
-
   if (slices.size() == 1) {
     request_bytes = const_cast<uint8_t*>(slices[0].begin());
     request_size = slices[0].size();
