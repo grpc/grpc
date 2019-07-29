@@ -29,22 +29,24 @@ const upb_msglayout envoy_api_v2_cluster_CircuitBreakers_msginit = {
   UPB_SIZE(4, 8), 1, false,
 };
 
-static const upb_msglayout *const envoy_api_v2_cluster_CircuitBreakers_Thresholds_submsgs[4] = {
+static const upb_msglayout *const envoy_api_v2_cluster_CircuitBreakers_Thresholds_submsgs[5] = {
   &google_protobuf_UInt32Value_msginit,
 };
 
-static const upb_msglayout_field envoy_api_v2_cluster_CircuitBreakers_Thresholds__fields[5] = {
+static const upb_msglayout_field envoy_api_v2_cluster_CircuitBreakers_Thresholds__fields[7] = {
   {1, UPB_SIZE(0, 0), 0, 0, 14, 1},
-  {2, UPB_SIZE(8, 8), 0, 0, 11, 1},
-  {3, UPB_SIZE(12, 16), 0, 0, 11, 1},
-  {4, UPB_SIZE(16, 24), 0, 0, 11, 1},
-  {5, UPB_SIZE(20, 32), 0, 0, 11, 1},
+  {2, UPB_SIZE(12, 16), 0, 0, 11, 1},
+  {3, UPB_SIZE(16, 24), 0, 0, 11, 1},
+  {4, UPB_SIZE(20, 32), 0, 0, 11, 1},
+  {5, UPB_SIZE(24, 40), 0, 0, 11, 1},
+  {6, UPB_SIZE(8, 8), 0, 0, 8, 1},
+  {7, UPB_SIZE(28, 48), 0, 0, 11, 1},
 };
 
 const upb_msglayout envoy_api_v2_cluster_CircuitBreakers_Thresholds_msginit = {
   &envoy_api_v2_cluster_CircuitBreakers_Thresholds_submsgs[0],
   &envoy_api_v2_cluster_CircuitBreakers_Thresholds__fields[0],
-  UPB_SIZE(24, 40), 5, false,
+  UPB_SIZE(32, 56), 7, false,
 };
 
 #include "upb/port_undef.inc"

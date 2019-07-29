@@ -816,6 +816,7 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/ext/filters/client_channel/resolver/dns/native/dns_resolver.cc )
   s.files += %w( src/core/ext/filters/client_channel/resolver/sockaddr/sockaddr_resolver.cc )
   s.files += %w( src/core/ext/filters/census/grpc_context.cc )
+  s.files += %w( src/core/ext/filters/client_idle/client_idle_filter.cc )
   s.files += %w( src/core/ext/filters/max_age/max_age_filter.cc )
   s.files += %w( src/core/ext/filters/message_size/message_size_filter.cc )
   s.files += %w( src/core/ext/filters/http/client_authority_filter.cc )

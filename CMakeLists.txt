@@ -1326,6 +1326,7 @@ add_library(grpc
   src/core/ext/filters/client_channel/resolver/dns/native/dns_resolver.cc
   src/core/ext/filters/client_channel/resolver/sockaddr/sockaddr_resolver.cc
   src/core/ext/filters/census/grpc_context.cc
+  src/core/ext/filters/client_idle/client_idle_filter.cc
   src/core/ext/filters/max_age/max_age_filter.cc
   src/core/ext/filters/message_size/message_size_filter.cc
   src/core/ext/filters/http/client_authority_filter.cc
@@ -1433,6 +1434,7 @@ endif()
 
 
 add_library(grpc_cronet
+  src/core/ext/transport/cronet/plugin_registry/grpc_cronet_plugin_registry.cc
   src/core/lib/surface/init.cc
   src/core/lib/avl/avl.cc
   src/core/lib/backoff/backoff.cc
@@ -1734,7 +1736,6 @@ add_library(grpc_cronet
   src/core/tsi/ssl/session_cache/ssl_session_openssl.cc
   src/core/tsi/ssl_transport_security.cc
   src/core/tsi/transport_security_grpc.cc
-  src/core/plugin_registry/grpc_cronet_plugin_registry.cc
 )
 
 if(WIN32 AND MSVC)
@@ -2757,6 +2758,7 @@ add_library(grpc_unsecure
   src/core/ext/filters/client_channel/lb_policy/pick_first/pick_first.cc
   src/core/ext/filters/client_channel/lb_policy/round_robin/round_robin.cc
   src/core/ext/filters/census/grpc_context.cc
+  src/core/ext/filters/client_idle/client_idle_filter.cc
   src/core/ext/filters/max_age/max_age_filter.cc
   src/core/ext/filters/message_size/message_size_filter.cc
   src/core/ext/filters/http/client_authority_filter.cc
@@ -3474,6 +3476,7 @@ endif (gRPC_BUILD_CODEGEN)
 
 endif (gRPC_BUILD_TESTS)
 
+<<<<<<< HEAD
 add_library(grpc++_cronet
   src/cpp/client/cronet_credentials.cc
   src/cpp/client/insecure_credentials.cc
@@ -4054,6 +4057,8 @@ if (gRPC_INSTALL)
 endif()
 
 
+=======
+>>>>>>> upstream/master
 if (gRPC_BUILD_CODEGEN)
 add_library(grpc++_error_details
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/status/status.pb.cc

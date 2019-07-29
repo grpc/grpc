@@ -348,6 +348,7 @@ config("grpc_config") {
         "src/core/ext/filters/client_channel/subchannel_interface.h",
         "src/core/ext/filters/client_channel/subchannel_pool_interface.cc",
         "src/core/ext/filters/client_channel/subchannel_pool_interface.h",
+        "src/core/ext/filters/client_idle/client_idle_filter.cc",
         "src/core/ext/filters/deadline/deadline_filter.cc",
         "src/core/ext/filters/deadline/deadline_filter.h",
         "src/core/ext/filters/http/client/http_client_filter.cc",

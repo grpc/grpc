@@ -172,9 +172,9 @@ def grpc_deps():
     if "com_google_absl" not in native.existing_rules():
         http_archive(
             name = "com_google_absl",
-            sha256 = "7ddf863ddced6fa5bf7304103f9c7aa619c20a2fcf84475512c8d3834b9d14fa",
-            strip_prefix = "abseil-cpp-61c9bf3e3e1c28a4aa6d7f1be4b37fd473bb5529",
-            url = "https://github.com/abseil/abseil-cpp/archive/61c9bf3e3e1c28a4aa6d7f1be4b37fd473bb5529.tar.gz",
+            sha256 = "fd4edc10767c28b23bf9f41114c6bcd9625c165a31baa0e6939f01058029a912",
+            strip_prefix = "abseil-cpp-74d91756c11bc22f9b0108b94da9326f7f9e376f",
+            url = "https://github.com/abseil/abseil-cpp/archive/74d91756c11bc22f9b0108b94da9326f7f9e376f.tar.gz",
         )
 
     if "bazel_toolchains" not in native.existing_rules():
@@ -203,15 +203,27 @@ def grpc_deps():
             strip_prefix = "opencensus-cpp-c9a4da319bc669a772928ffc55af4a61be1a1176",
             url = "https://github.com/census-instrumentation/opencensus-cpp/archive/c9a4da319bc669a772928ffc55af4a61be1a1176.tar.gz",
         )
-
     if "upb" not in native.existing_rules():
         http_archive(
             name = "upb",
-            sha256 = "0e749a8973968397f849a3b42e28ee9c85dc418c2477954c2a6a4495f323241d",
-            strip_prefix = "upb-ed9faae0993704b033c594b072d65e1bf19207fa",
-            url = "https://github.com/google/upb/archive/ed9faae0993704b033c594b072d65e1bf19207fa.tar.gz",
+            sha256 = "73deded75313f80779eba109c32f3c59a813addf5064bf6e7c213fca1e7d8e32",
+            strip_prefix = "upb-423ea5ca9ce8da69611e6e95559efcb3a1ba8ad8",
+            url = "https://github.com/protocolbuffers/upb/archive/423ea5ca9ce8da69611e6e95559efcb3a1ba8ad8.tar.gz",
+        )
+    if "envoy_api" not in native.existing_rules():
+        http_archive(
+            name = "envoy_api",
+            sha256 = "a2c6e854fa9653b0ed6510e31ec7c51eac43d578b54cd75c0bc1898f7515c60d",
+            strip_prefix = "data-plane-api-a83394157ad97f4dadbc8ed81f56ad5b3a72e542",
+            url = "https://github.com/envoyproxy/data-plane-api/archive/a83394157ad97f4dadbc8ed81f56ad5b3a72e542.tar.gz",
         )
 
+    if "io_bazel_rules_go" not in native.existing_rules():
+        http_archive(
+            name = "io_bazel_rules_go",
+            urls = ["https://github.com/bazelbuild/rules_go/releases/download/0.18.5/rules_go-0.18.5.tar.gz"],
+            sha256 = "a82a352bffae6bee4e95f68a8d80a70e87f42c4741e6a448bec11998fcc82329",
+        )
 # TODO: move some dependencies from "grpc_deps" here?
 def grpc_test_only_deps():
     """Internal, not intended for use by packages that are consuming grpc.

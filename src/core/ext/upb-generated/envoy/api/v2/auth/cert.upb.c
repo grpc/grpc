@@ -124,20 +124,22 @@ const upb_msglayout envoy_api_v2_auth_CommonTlsContext_CombinedCertificateValida
   UPB_SIZE(8, 16), 2, false,
 };
 
-static const upb_msglayout *const envoy_api_v2_auth_UpstreamTlsContext_submsgs[1] = {
+static const upb_msglayout *const envoy_api_v2_auth_UpstreamTlsContext_submsgs[2] = {
   &envoy_api_v2_auth_CommonTlsContext_msginit,
+  &google_protobuf_UInt32Value_msginit,
 };
 
-static const upb_msglayout_field envoy_api_v2_auth_UpstreamTlsContext__fields[3] = {
+static const upb_msglayout_field envoy_api_v2_auth_UpstreamTlsContext__fields[4] = {
   {1, UPB_SIZE(12, 24), 0, 0, 11, 1},
   {2, UPB_SIZE(4, 8), 0, 0, 9, 1},
   {3, UPB_SIZE(0, 0), 0, 0, 8, 1},
+  {4, UPB_SIZE(16, 32), 0, 1, 11, 1},
 };
 
 const upb_msglayout envoy_api_v2_auth_UpstreamTlsContext_msginit = {
   &envoy_api_v2_auth_UpstreamTlsContext_submsgs[0],
   &envoy_api_v2_auth_UpstreamTlsContext__fields[0],
-  UPB_SIZE(16, 32), 3, false,
+  UPB_SIZE(24, 48), 4, false,
 };
 
 static const upb_msglayout *const envoy_api_v2_auth_DownstreamTlsContext_submsgs[5] = {
