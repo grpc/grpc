@@ -1373,6 +1373,7 @@ target_link_libraries(grpc
   ${_gRPC_ADDRESS_SORTING_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gpr
+  upb
 )
 if (_gRPC_PLATFORM_IOS OR _gRPC_PLATFORM_MAC)
   target_link_libraries(grpc "-framework CoreFoundation")
@@ -1776,6 +1777,7 @@ target_link_libraries(grpc_cronet
   ${_gRPC_ADDRESS_SORTING_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gpr
+  upb
 )
 if (_gRPC_PLATFORM_IOS OR _gRPC_PLATFORM_MAC)
   target_link_libraries(grpc_cronet "-framework CoreFoundation")
@@ -2110,6 +2112,7 @@ target_link_libraries(grpc_test_util
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gpr
   grpc
+  upb
 )
 if (_gRPC_PLATFORM_IOS OR _gRPC_PLATFORM_MAC)
   target_link_libraries(grpc_test_util "-framework CoreFoundation")
@@ -2445,6 +2448,7 @@ target_link_libraries(grpc_test_util_unsecure
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gpr
   grpc_unsecure
+  upb
 )
 if (_gRPC_PLATFORM_IOS OR _gRPC_PLATFORM_MAC)
   target_link_libraries(grpc_test_util_unsecure "-framework CoreFoundation")
@@ -2804,6 +2808,7 @@ target_link_libraries(grpc_unsecure
   ${_gRPC_ADDRESS_SORTING_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gpr
+  upb
 )
 if (_gRPC_PLATFORM_IOS OR _gRPC_PLATFORM_MAC)
   target_link_libraries(grpc_unsecure "-framework CoreFoundation")

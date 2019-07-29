@@ -423,6 +423,7 @@ filegroups:
   - src/core/lib/uri/uri_parser.cc
   deps:
   - gpr
+  - upb
   filegroups:
   - grpc_base_headers
   uses:
