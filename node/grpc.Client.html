@@ -230,7 +230,210 @@
 
             
 
-            <td class="description last"><p>Options to apply to channel creation</p></td>
+            <td class="description last"><p>Options to apply to channel creation. Any of
+    <a href="https://grpc.github.io/grpc/core/group__grpc__arg__keys.html">the channel arguments</a>
+    can be used here in addition to specific client options.</p>
+                <h6 class="method-params-label method-subparams-label">Properties</h6>
+                
+
+<table class="params table table-striped">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+        <th>Argument</th>
+        
+
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>interceptors</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">Array.&lt;grpc~Interceptor></span>
+
+
+
+            
+            </td>
+
+            
+                <td class="attributes">
+                
+                    &lt;optional><br>
+                
+
+                
+
+                
+                </td>
+            
+
+            
+
+            <td class="description last"><p>Interceptors to apply to each request</p></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>interceptor_providers</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">Array.&lt;grpc~InterceptorProvider></span>
+
+
+
+            
+            </td>
+
+            
+                <td class="attributes">
+                
+                    &lt;optional><br>
+                
+
+                
+
+                
+                </td>
+            
+
+            
+
+            <td class="description last"><p>Interceptor providers
+    to apply interceptors to each request depending on the method definition. At most
+    one of the interceptors and interceptor_providers options may be set.</p></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>callInvocationTransformer</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type"><a href="grpc.Client.html#~callInvocationTransformer">grpc.Client~callInvocationTransformer</a></span>
+
+
+
+            
+            </td>
+
+            
+                <td class="attributes">
+                
+                    &lt;optional><br>
+                
+
+                
+
+                
+                </td>
+            
+
+            
+
+            <td class="description last"></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>channelOverride</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type"><a href="grpc.Channel.html">grpc.Channel</a></span>
+
+
+
+            
+            </td>
+
+            
+                <td class="attributes">
+                
+                    &lt;optional><br>
+                
+
+                
+
+                
+                </td>
+            
+
+            
+
+            <td class="description last"><p>Channel to use instead of constructing a new one.
+    If set, the address, credentials, channel arguments options, and channelFactoryOverride
+    option will all be ignored.</p></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>channelFactoryOverride</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type"><a href="grpc.Client.html#~channelFactory">grpc.Client~channelFactory</a></span>
+
+
+
+            
+            </td>
+
+            
+                <td class="attributes">
+                
+
+                
+
+                
+                </td>
+            
+
+            
+
+            <td class="description last"><p>Function to use instead of
+    the Channel constructor when creating the Client's channel.</p></td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
+            </td>
         </tr>
 
     
@@ -1971,6 +2174,363 @@ start connecting if it has not already done so.</p>
     
 </dd>
 
+        
+            
+<hr>
+<dt>
+    <h4 class="name" id="~callInvocationTransformer"><span class="type-signature">&lt;inner> </span>callInvocationTransformer(callProperties)</h4>
+    
+    
+</dt>
+<dd>
+
+    
+    <div class="description">
+        <p>Call invocation transformer. Has access to the full call properties before a
+call is processed and can modify most of those properties. Some modifications
+will have no effect or may cause problems.</p>
+    </div>
+    
+
+    
+
+    
+
+    
+    
+        <h5>Parameters:</h5>
+        
+
+<table class="params table table-striped">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>callProperties</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type"><a href="grpc.Client.html#~CallProperties">grpc.Client~CallProperties</a></span>
+
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"><p>The original call properties</p></td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
+    
+
+    
+<dl class="details">
+    
+
+	
+
+	
+
+	
+
+    
+
+    
+
+    
+
+    
+
+	
+
+	
+
+	
+
+	
+
+	
+
+
+
+	
+
+	
+
+	
+
+	
+</dl>
+
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <h5>Returns:</h5>
+    
+            
+<div class="param-desc">
+    <p>The modified call properties.</p>
+</div>
+
+
+
+<dl>
+    <dt>
+        Type
+    </dt>
+    <dd>
+        
+<span class="param-type"><a href="grpc.Client.html#~CallProperties">grpc.Client~CallProperties</a></span>
+
+
+
+    </dd>
+</dl>
+
+
+        
+
+    
+</dd>
+
+        
+            
+<hr>
+<dt>
+    <h4 class="name" id="~channelFactory"><span class="type-signature">&lt;inner> </span>channelFactory(target, credentials, options)</h4>
+    
+    
+</dt>
+<dd>
+
+    
+    <div class="description">
+        <p>A function that functionally replaces the Channel constructor.</p>
+    </div>
+    
+
+    
+
+    
+
+    
+    
+        <h5>Parameters:</h5>
+        
+
+<table class="params table table-striped">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>target</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">string</span>
+
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"><p>The address of the server to connect to</p></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>credentials</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">grpc.ChannelCredentials</span>
+
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"><p>Channel credentials to use when connecting</p></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>options</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type"><a href="grpc.html#~ChannelOptions">grpc~ChannelOptions</a></span>
+
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"><p>A map of channel options that will be passed to the core.
+    The available options are listed in
+    <a href="https://grpc.github.io/grpc/core/group__grpc__arg__keys.html">this document</a>.</p></td>
+        </tr>
+
+    
+    </tbody>
+</table>
+
+    
+
+    
+<dl class="details">
+    
+
+	
+
+	
+
+	
+
+    
+
+    
+
+    
+
+    
+
+	
+
+	
+
+	
+
+	
+
+	
+
+
+
+	
+
+	
+
+	
+
+	
+</dl>
+
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+    <h5>Returns:</h5>
+    
+            
+<div class="param-desc">
+    <p>This can either be an actual channel object, or an object with the
+    same API.</p>
+</div>
+
+
+
+<dl>
+    <dt>
+        Type
+    </dt>
+    <dd>
+        
+<span class="param-type"><a href="grpc.Channel.html">grpc.Channel</a></span>
+
+
+
+    </dd>
+</dl>
+
+
+        
+
+    
+</dd>
+
         </dl>
     
 
@@ -2288,6 +2848,275 @@ start connecting if it has not already done so.</p>
             
                 
 <hr>
+<dt class="name" id="~CallProperties">
+    <h4 id="~CallProperties">CallProperties</h4>
+
+    
+</dt>
+<dd>
+    
+    <div class="description">
+        <p>Properties of a call, for use with a <a href="grpc.Client.html#~callInvocationTransformer">grpc.Client~callInvocationTransformer</a>.</p>
+    </div>
+    
+
+    
+        <h5>Type:</h5>
+        <ul>
+            <li>
+                
+<span class="param-type">Object</span>
+
+
+
+            </li>
+        </ul>
+    
+
+    
+<dl class="details">
+    
+
+    <h5 class="subsection-title">Properties:</h5>
+
+    <dl>
+
+<table class="props table table-striped">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>argument</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type">*</span>
+
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"><p>The call argument. Only preset if the method is unary or server streaming.</p></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>metadata</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type"><a href="grpc.Metadata.html">grpc.Metadata</a></span>
+
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"><p>The request metadata</p></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>call</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type"><a href="grpc-Call.html">grpc~Call</a></span>
+
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"><p>The call object that will be returned by the client method</p></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>channel</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type"><a href="grpc.Channel.html">grpc.Channel</a></span>
+
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"><p>The channel that will be used to make a request</p></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>methodDefinition</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type"><a href="grpc.html#~MethodDefinition">grpc~MethodDefinition</a></span>
+
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"><p>The MethodDefinition object that describes this method</p></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>options</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type"><a href="grpc.Client.html#~CallOptions">grpc.Client~CallOptions</a></span>
+
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"><p>The call options passed when making this request</p></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>callback</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type"><a href="grpc.Client.html#~requestCallback">grpc.Client~requestCallback</a></span>
+
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"><p>The callback that will handle the response.
+    Only present if this method is unary or client streaming.</p></td>
+        </tr>
+
+    
+    </tbody>
+</table>
+</dl>
+
+    
+
+	
+
+	
+
+	
+
+    
+
+    
+
+    
+
+    
+
+	
+
+	
+
+	
+
+	
+
+	
+
+
+
+	
+
+	
+
+	
+
+	
+</dl>
+
+
+    
+</dd>
+
+            
+                
+<hr>
 <dt>
     <h4 class="name" id="~requestCallback"><span class="type-signature"></span>requestCallback(error, value)</h4>
     
@@ -2502,7 +3331,7 @@ start connecting if it has not already done so.</p>
 <span class="jsdoc-message">
 	Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.5.5</a>
 	
-		on 2018-11-29T11:16:28-08:00
+		on 2019-07-15T16:38:16-07:00
 	
 	using the <a href="https://github.com/docstrap/docstrap">DocStrap template</a>.
 </span>
