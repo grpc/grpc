@@ -378,10 +378,13 @@ static bool read_channel_args(grpc_chttp2_transport* t,
   if (channelz_enabled) {
     // TODO(ncteisen): add an API to endpoint to query for local addr, and pass
     // it in here, so SocketNode knows its own address.
+    char* socket_name = nullptr;
+    gpr_asprintf(&socket_name, "%s %s", get_vtable()->name, t->peer_string);
     t->channelz_socket =
         grpc_core::MakeRefCounted<grpc_core::channelz::SocketNode>(
             grpc_core::UniquePtr<char>(),
-            grpc_core::UniquePtr<char>(gpr_strdup(t->peer_string)));
+            grpc_core::UniquePtr<char>(gpr_strdup(t->peer_string)),
+            grpc_core::UniquePtr<char>(socket_name));
   }
   return enable_bdp;
 }
