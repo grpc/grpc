@@ -90,16 +90,16 @@ class AddAnotherFunctor : public grpc_experimental_completion_queue_functor {
   int num_add_;
 };
 
-void ThreadPoolAddAnotherHelper(benchmark::State& state,
-                                int concurrent_functor) {
+template <int kConcurrentFunctor>
+static void ThreadPoolAddAnother(benchmark::State& state) {
   const int num_iterations = state.range(0);
   const int num_threads = state.range(1);
   // Number of adds done by each closure.
-  const int num_add = num_iterations / concurrent_functor;
+  const int num_add = num_iterations / kConcurrentFunctor;
   grpc_core::ThreadPool pool(num_threads);
   while (state.KeepRunningBatch(num_iterations)) {
-    BlockingCounter counter(concurrent_functor);
-    for (int i = 0; i < concurrent_functor; ++i) {
+    BlockingCounter counter(kConcurrentFunctor);
+    for (int i = 0; i < kConcurrentFunctor; ++i) {
       pool.Add(new AddAnotherFunctor(&pool, &counter, num_add));
     }
     counter.Wait();
@@ -107,52 +107,23 @@ void ThreadPoolAddAnotherHelper(benchmark::State& state,
   state.SetItemsProcessed(state.iterations());
 }
 
-static void BM_ThreadPool1AddAnother(benchmark::State& state) {
-  ThreadPoolAddAnotherHelper(state, 1);
-}
-// First pair is range for number of iterations (num_iterations).
-// Second pair is range for thread pool size (num_threads).
-BENCHMARK(BM_ThreadPool1AddAnother)->RangePair(524288, 524288, 1, 1024);
-
-static void BM_ThreadPool4AddAnother(benchmark::State& state) {
-  ThreadPoolAddAnotherHelper(state, 4);
-}
-BENCHMARK(BM_ThreadPool4AddAnother)->RangePair(524288, 524288, 1, 1024);
-
-static void BM_ThreadPool8AddAnother(benchmark::State& state) {
-  ThreadPoolAddAnotherHelper(state, 8);
-}
-BENCHMARK(BM_ThreadPool8AddAnother)->RangePair(524288, 524288, 1, 1024);
-
-static void BM_ThreadPool16AddAnother(benchmark::State& state) {
-  ThreadPoolAddAnotherHelper(state, 16);
-}
-BENCHMARK(BM_ThreadPool16AddAnother)->RangePair(524288, 524288, 1, 1024);
-
-static void BM_ThreadPool32AddAnother(benchmark::State& state) {
-  ThreadPoolAddAnotherHelper(state, 32);
-}
-BENCHMARK(BM_ThreadPool32AddAnother)->RangePair(524288, 524288, 1, 1024);
-
-static void BM_ThreadPool64AddAnother(benchmark::State& state) {
-  ThreadPoolAddAnotherHelper(state, 64);
-}
-BENCHMARK(BM_ThreadPool64AddAnother)->RangePair(524288, 524288, 1, 1024);
-
-static void BM_ThreadPool128AddAnother(benchmark::State& state) {
-  ThreadPoolAddAnotherHelper(state, 128);
-}
-BENCHMARK(BM_ThreadPool128AddAnother)->RangePair(524288, 524288, 1, 1024);
-
-static void BM_ThreadPool512AddAnother(benchmark::State& state) {
-  ThreadPoolAddAnotherHelper(state, 512);
-}
-BENCHMARK(BM_ThreadPool512AddAnother)->RangePair(524288, 524288, 1, 1024);
-
-static void BM_ThreadPool2048AddAnother(benchmark::State& state) {
-  ThreadPoolAddAnotherHelper(state, 2048);
-}
-BENCHMARK(BM_ThreadPool2048AddAnother)->RangePair(524288, 524288, 1, 1024);
+// First pair of arguments is range for number of iterations (num_iterations).
+// Second pair of arguments is range for thread pool size (num_threads).
+BENCHMARK_TEMPLATE(ThreadPoolAddAnother, 1)->RangePair(524288, 524288, 1, 1024);
+BENCHMARK_TEMPLATE(ThreadPoolAddAnother, 4)->RangePair(524288, 524288, 1, 1024);
+BENCHMARK_TEMPLATE(ThreadPoolAddAnother, 8)->RangePair(524288, 524288, 1, 1024);
+BENCHMARK_TEMPLATE(ThreadPoolAddAnother, 16)
+    ->RangePair(524288, 524288, 1, 1024);
+BENCHMARK_TEMPLATE(ThreadPoolAddAnother, 32)
+    ->RangePair(524288, 524288, 1, 1024);
+BENCHMARK_TEMPLATE(ThreadPoolAddAnother, 64)
+    ->RangePair(524288, 524288, 1, 1024);
+BENCHMARK_TEMPLATE(ThreadPoolAddAnother, 128)
+    ->RangePair(524288, 524288, 1, 1024);
+BENCHMARK_TEMPLATE(ThreadPoolAddAnother, 512)
+    ->RangePair(524288, 524288, 1, 1024);
+BENCHMARK_TEMPLATE(ThreadPoolAddAnother, 2048)
+    ->RangePair(524288, 524288, 1, 1024);
 
 // A functor class that will delete self on end of running.
 class SuicideFunctorForAdd : public grpc_experimental_completion_queue_functor {
@@ -233,15 +204,16 @@ class AddSelfFunctor : public grpc_experimental_completion_queue_functor {
   int num_add_;
 };
 
-void ThreadPoolAddSelfHelper(benchmark::State& state, int concurrent_functor) {
+template <int kConcurrentFunctor>
+static void ThreadPoolAddSelf(benchmark::State& state) {
   const int num_iterations = state.range(0);
   const int num_threads = state.range(1);
   // Number of adds done by each closure.
-  const int num_add = num_iterations / concurrent_functor;
+  const int num_add = num_iterations / kConcurrentFunctor;
   grpc_core::ThreadPool pool(num_threads);
   while (state.KeepRunningBatch(num_iterations)) {
-    BlockingCounter counter(concurrent_functor);
-    for (int i = 0; i < concurrent_functor; ++i) {
+    BlockingCounter counter(kConcurrentFunctor);
+    for (int i = 0; i < kConcurrentFunctor; ++i) {
       pool.Add(new AddSelfFunctor(&pool, &counter, num_add));
     }
     counter.Wait();
@@ -249,52 +221,17 @@ void ThreadPoolAddSelfHelper(benchmark::State& state, int concurrent_functor) {
   state.SetItemsProcessed(state.iterations());
 }
 
-static void BM_ThreadPool1AddSelf(benchmark::State& state) {
-  ThreadPoolAddSelfHelper(state, 1);
-}
-// First pair is range for number of iterations (num_iterations).
-// Second pair is range for thread pool size (num_threads).
-BENCHMARK(BM_ThreadPool1AddSelf)->RangePair(524288, 524288, 1, 1024);
-
-static void BM_ThreadPool4AddSelf(benchmark::State& state) {
-  ThreadPoolAddSelfHelper(state, 4);
-}
-BENCHMARK(BM_ThreadPool4AddSelf)->RangePair(524288, 524288, 1, 1024);
-
-static void BM_ThreadPool8AddSelf(benchmark::State& state) {
-  ThreadPoolAddSelfHelper(state, 8);
-}
-BENCHMARK(BM_ThreadPool8AddSelf)->RangePair(524288, 524288, 1, 1024);
-
-static void BM_ThreadPool16AddSelf(benchmark::State& state) {
-  ThreadPoolAddSelfHelper(state, 16);
-}
-BENCHMARK(BM_ThreadPool16AddSelf)->RangePair(524288, 524288, 1, 1024);
-
-static void BM_ThreadPool32AddSelf(benchmark::State& state) {
-  ThreadPoolAddSelfHelper(state, 32);
-}
-BENCHMARK(BM_ThreadPool32AddSelf)->RangePair(524288, 524288, 1, 1024);
-
-static void BM_ThreadPool64AddSelf(benchmark::State& state) {
-  ThreadPoolAddSelfHelper(state, 64);
-}
-BENCHMARK(BM_ThreadPool64AddSelf)->RangePair(524288, 524288, 1, 1024);
-
-static void BM_ThreadPool128AddSelf(benchmark::State& state) {
-  ThreadPoolAddSelfHelper(state, 128);
-}
-BENCHMARK(BM_ThreadPool128AddSelf)->RangePair(524288, 524288, 1, 1024);
-
-static void BM_ThreadPool512AddSelf(benchmark::State& state) {
-  ThreadPoolAddSelfHelper(state, 512);
-}
-BENCHMARK(BM_ThreadPool512AddSelf)->RangePair(524288, 524288, 1, 1024);
-
-static void BM_ThreadPool2048AddSelf(benchmark::State& state) {
-  ThreadPoolAddSelfHelper(state, 2048);
-}
-BENCHMARK(BM_ThreadPool2048AddSelf)->RangePair(524288, 524288, 1, 1024);
+// First pair of arguments is range for number of iterations (num_iterations).
+// Second pair of arguments is range for thread pool size (num_threads).
+BENCHMARK_TEMPLATE(ThreadPoolAddSelf, 1)->RangePair(524288, 524288, 1, 1024);
+BENCHMARK_TEMPLATE(ThreadPoolAddSelf, 4)->RangePair(524288, 524288, 1, 1024);
+BENCHMARK_TEMPLATE(ThreadPoolAddSelf, 8)->RangePair(524288, 524288, 1, 1024);
+BENCHMARK_TEMPLATE(ThreadPoolAddSelf, 16)->RangePair(524288, 524288, 1, 1024);
+BENCHMARK_TEMPLATE(ThreadPoolAddSelf, 32)->RangePair(524288, 524288, 1, 1024);
+BENCHMARK_TEMPLATE(ThreadPoolAddSelf, 64)->RangePair(524288, 524288, 1, 1024);
+BENCHMARK_TEMPLATE(ThreadPoolAddSelf, 128)->RangePair(524288, 524288, 1, 1024);
+BENCHMARK_TEMPLATE(ThreadPoolAddSelf, 512)->RangePair(524288, 524288, 1, 1024);
+BENCHMARK_TEMPLATE(ThreadPoolAddSelf, 2048)->RangePair(524288, 524288, 1, 1024);
 
 #if defined(__GNUC__) && !defined(SWIG)
 #if defined(__i386__) || defined(__x86_64__)
