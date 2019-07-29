@@ -23,7 +23,7 @@ Unity and provide feedback!
 
 How to test gRPC in a Unity project
 
-1. Create a Unity project that targets .NET 4.x (Edit -> Project Settings -> Editor -> Scripting Runtime Version). gRPC uses APIs that are only available in .NET4.5+ so this is a requirement.
+1. Create a Unity project that targets .NET 4.x Equivalent (Edit -> Project Settings -> Player -> Configuration -> Scripting Runtime Version). gRPC uses APIs that are only available in .NET4.5+ so this is a requirement.
 
 2. Download the latest development build of `grpc_unity_package.VERSION.zip` from
    [daily builds](https://packages.grpc.io/)
