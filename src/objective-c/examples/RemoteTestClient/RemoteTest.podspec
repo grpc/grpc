@@ -19,10 +19,13 @@ Pod::Spec.new do |s|
   protoc = "#{bin_dir}/protobuf/protoc"
   well_known_types_dir = "#{repo_root}/third_party/protobuf/src"
   plugin = "#{bin_dir}/grpc_objective_c_plugin"
-  
+
+  # Since we switched to importing full path, -I needs to be set to the directory
+  # from which the imported file can be found, which is the grpc's root here
   if ENV['FRAMEWORKS'] != 'NO' then
     s.user_target_xcconfig = { 'GCC_PREPROCESSOR_DEFINITIONS' => 'USE_FRAMEWORKS=1' }
     s.prepare_command = <<-CMD
+    # Cannot find file if using *.proto. Maybe files' paths must match the -I flags
       #{protoc} \
           --plugin=protoc-gen-grpc=#{plugin} \
           --objc_out=. \

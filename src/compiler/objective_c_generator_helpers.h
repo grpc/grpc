@@ -19,9 +19,6 @@
 #ifndef GRPC_INTERNAL_COMPILER_OBJECTIVE_C_GENERATOR_HELPERS_H
 #define GRPC_INTERNAL_COMPILER_OBJECTIVE_C_GENERATOR_HELPERS_H
 
-#include <iostream>
-using namespace std;
-
 #include <map>
 #include "src/compiler/config.h"
 #include "src/compiler/generator_helpers.h"
