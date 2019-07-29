@@ -213,7 +213,6 @@ bool DefaultHealthCheckService::HealthCheckServiceImpl::DecodeRequest(
       copy_to += slices[i].size();
     }
   }
-
   upb::Arena arena;
   grpc_health_v1_HealthCheckRequest* request_struct =
       grpc_health_v1_HealthCheckRequest_parse(
@@ -241,7 +240,6 @@ bool DefaultHealthCheckService::HealthCheckServiceImpl::EncodeResponse(
           ? grpc_health_v1_HealthCheckResponse_SERVICE_UNKNOWN
           : status == SERVING ? grpc_health_v1_HealthCheckResponse_SERVING
                               : grpc_health_v1_HealthCheckResponse_NOT_SERVING);
-
   size_t buf_length;
   char* buf = grpc_health_v1_HealthCheckResponse_serialize(
       response_struct, arena.ptr(), &buf_length);
