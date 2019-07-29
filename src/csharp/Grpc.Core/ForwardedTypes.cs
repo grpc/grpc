@@ -38,6 +38,8 @@ using Grpc.Core.Utils;
 [assembly:TypeForwardedToAttribute(typeof(CallInvoker))]
 [assembly:TypeForwardedToAttribute(typeof(CallInvokerExtensions))]
 [assembly:TypeForwardedToAttribute(typeof(CallOptions))]
+[assembly:TypeForwardedToAttribute(typeof(ClientBase))]
+[assembly:TypeForwardedToAttribute(typeof(ClientBase<>))]
 [assembly:TypeForwardedToAttribute(typeof(ClientInterceptorContext<,>))]
 [assembly:TypeForwardedToAttribute(typeof(ContextPropagationOptions))]
 [assembly:TypeForwardedToAttribute(typeof(ContextPropagationToken))]

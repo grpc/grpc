@@ -51,7 +51,7 @@ namespace Grpc.Core
         /// Initializes a new instance of <c>ClientBase</c> class.
         /// </summary>
         /// <param name="channel">The channel to use for remote call invocation.</param>
-        public ClientBase(Channel channel) : base(channel)
+        public ClientBase(ChannelBase channel) : base(channel)
         {
         }
 
@@ -113,7 +113,7 @@ namespace Grpc.Core
         /// Initializes a new instance of <c>ClientBase</c> class.
         /// </summary>
         /// <param name="channel">The channel to use for remote call invocation.</param>
-        public ClientBase(Channel channel) : this(new DefaultCallInvoker(channel))
+        public ClientBase(ChannelBase channel) : this(channel.CreateCallInvoker())
         {
         }
 
