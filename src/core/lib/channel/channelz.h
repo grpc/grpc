@@ -80,7 +80,7 @@ class BaseNode : public RefCounted<BaseNode> {
     kSocket,
   };
 
-  explicit BaseNode(EntityType type, UniquePtr<char> name);
+  BaseNode(EntityType type, UniquePtr<char> name);
   virtual ~BaseNode();
 
   // All children must implement this function.
