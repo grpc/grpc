@@ -28,7 +28,8 @@ NS_ASSUME_NONNULL_BEGIN
 
 /**
  * Get a transport implementation's factory by its transport id. If the transport id was not
- * registered with the registry, nil is returned.
+ * registered with the registry, the default transport factory (core + secure) is returned. If the
+ * default transport does not exist, an exception is thrown.
  */
 - (id<GRPCTransportFactory>)getTransportFactoryWithId:(GRPCTransportId)transportId;
 
