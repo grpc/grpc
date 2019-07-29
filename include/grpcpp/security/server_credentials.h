@@ -79,6 +79,12 @@ static inline std::shared_ptr<ServerCredentials> LocalServerCredentials(
   return ::grpc_impl::experimental::LocalServerCredentials(type);
 }
 
+/// Builds SPIFFE ServerCredentials given TLS options.
+static inline std::shared_ptr<ServerCredentials> SpiffeServerCredentials(
+    const TlsCredentialsOptions& options) {
+  return ::grpc_impl::experimental::SpiffeServerCredentials(options);
+}
+
 }  // namespace experimental
 }  // namespace grpc
 

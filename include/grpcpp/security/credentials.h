@@ -132,6 +132,11 @@ static inline std::shared_ptr<grpc_impl::ChannelCredentials> LocalCredentials(
   return ::grpc_impl::experimental::LocalCredentials(type);
 }
 
+static inline std::shared_ptr<grpc_impl::ChannelCredentials> SpiffeCredentials(
+    const TlsCredentialsOptions& options) {
+  return ::grpc_impl::experimental::SpiffeCredentials(options);
+}
+
 }  // namespace experimental
 }  // namespace grpc
 

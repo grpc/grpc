@@ -25,6 +25,7 @@
 #include <grpc/grpc_security_constants.h>
 #include <grpcpp/security/auth_metadata_processor.h>
 #include <grpcpp/support/config.h>
+#include <grpcpp/security/tls_credentials_options.h>
 
 struct grpc_server;
 
@@ -78,6 +79,10 @@ std::shared_ptr<ServerCredentials> AltsServerCredentials(
 /// Builds Local ServerCredentials.
 std::shared_ptr<ServerCredentials> LocalServerCredentials(
     grpc_local_connect_type type);
+
+/// Builds SPIFFE ServerCredentials given TLS options.
+std::shared_ptr<ServerCredentials> SpiffeServerCredentials(
+    const TlsCredentialsOptions& options);
 
 }  // namespace experimental
 }  // namespace grpc_impl

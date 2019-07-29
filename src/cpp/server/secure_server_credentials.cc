@@ -150,5 +150,12 @@ std::shared_ptr<ServerCredentials> LocalServerCredentials(
       new SecureServerCredentials(grpc_local_server_credentials_create(type)));
 }
 
+std::shared_ptr<ServerCredentials> SpiffeServerCredentials(
+    const TlsCredentialsOptions& options) {
+  return std::shared_ptr<ServerCredentials>(
+      new SecureServerCredentials(grpc_tls_spiffe_server_credentials_create(
+          options.c_credentials_options())));
+}
+
 }  // namespace experimental
 }  // namespace grpc_impl
