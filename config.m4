@@ -6,10 +6,12 @@ if test "$PHP_GRPC" != "no"; then
 
   dnl # --with-grpc -> add include path
   PHP_ADD_INCLUDE(PHP_EXT_SRCDIR()/include)
+  PHP_ADD_INCLUDE(PHP_EXT_SRCDIR()/src/core/ext/upb-generated)
   PHP_ADD_INCLUDE(PHP_EXT_SRCDIR()/src/php/ext/grpc)
-  PHP_ADD_INCLUDE(PHP_EXT_SRCDIR()/third_party/boringssl/include)
   PHP_ADD_INCLUDE(PHP_EXT_SRCDIR()/third_party/address_sorting/include)
+  PHP_ADD_INCLUDE(PHP_EXT_SRCDIR()/third_party/boringssl/include)
   PHP_ADD_INCLUDE(PHP_EXT_SRCDIR()/third_party/nanopb)
+  PHP_ADD_INCLUDE(PHP_EXT_SRCDIR()/third_party/upb)
 
   LIBS="-lpthread $LIBS"
 
@@ -681,6 +683,16 @@ if test "$PHP_GRPC" != "no"; then
     third_party/boringssl/ssl/tls_method.cc \
     third_party/boringssl/ssl/tls_record.cc \
     third_party/boringssl/third_party/fiat/curve25519.c \
+    third_party/upb/generated_for_cmake/google/protobuf/descriptor.upb.c \
+    third_party/upb/upb/decode.c \
+    third_party/upb/upb/def.c \
+    third_party/upb/upb/encode.c \
+    third_party/upb/upb/handlers.c \
+    third_party/upb/upb/msg.c \
+    third_party/upb/upb/msgfactory.c \
+    third_party/upb/upb/sink.c \
+    third_party/upb/upb/table.c \
+    third_party/upb/upb/upb.c \
     , $ext_shared, , -fvisibility=hidden \
     -DOPENSSL_NO_ASM -D_GNU_SOURCE -DWIN32_LEAN_AND_MEAN \
     -D_HAS_EXCEPTIONS=0 -DNOMINMAX -DGRPC_ARES=0 \
@@ -806,4 +818,6 @@ if test "$PHP_GRPC" != "no"; then
   PHP_ADD_BUILD_DIR($ext_builddir/third_party/boringssl/ssl)
   PHP_ADD_BUILD_DIR($ext_builddir/third_party/boringssl/third_party/fiat)
   PHP_ADD_BUILD_DIR($ext_builddir/third_party/nanopb)
+  PHP_ADD_BUILD_DIR($ext_builddir/third_party/upb/generated_for_cmake/google/protobuf)
+  PHP_ADD_BUILD_DIR($ext_builddir/third_party/upb/upb)
 fi

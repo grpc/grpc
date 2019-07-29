@@ -656,6 +656,16 @@ if (PHP_GRPC != "no") {
     "third_party\\boringssl\\ssl\\tls_method.cc " +
     "third_party\\boringssl\\ssl\\tls_record.cc " +
     "third_party\\boringssl\\third_party\\fiat\\curve25519.c " +
+    "third_party\\upb\\generated_for_cmake\\google\\protobuf\\descriptor.upb.c " +
+    "third_party\\upb\\upb\\decode.c " +
+    "third_party\\upb\\upb\\def.c " +
+    "third_party\\upb\\upb\\encode.c " +
+    "third_party\\upb\\upb\\handlers.c " +
+    "third_party\\upb\\upb\\msg.c " +
+    "third_party\\upb\\upb\\msgfactory.c " +
+    "third_party\\upb\\upb\\sink.c " +
+    "third_party\\upb\\upb\\table.c " +
+    "third_party\\upb\\upb\\upb.c " +
     "third_party\\zlib\\adler32.c " +
     "third_party\\zlib\\compress.c " +
     "third_party\\zlib\\crc32.c " +
@@ -679,11 +689,13 @@ if (PHP_GRPC != "no") {
     "/DPB_FIELD_32BIT "+
     "/I"+configure_module_dirname+" "+
     "/I"+configure_module_dirname+"\\include "+
+    "/I"+configure_module_dirname+"\\src\\core\\ext\\upb-generated "+
     "/I"+configure_module_dirname+"\\src\\php\\ext\\grpc "+
-    "/I"+configure_module_dirname+"\\third_party\\boringssl\\include "+
-    "/I"+configure_module_dirname+"\\third_party\\zlib "+
     "/I"+configure_module_dirname+"\\third_party\\address_sorting\\include "+
-    "/I"+configure_module_dirname+"\\third_party\\nanopb");
+    "/I"+configure_module_dirname+"\\third_party\\boringssl\\include "+
+    "/I"+configure_module_dirname+"\\third_party\\nanopb "+
+    "/I"+configure_module_dirname+"\\third_party\\upb "+
+    "/I"+configure_module_dirname+"\\third_party\\zlib");
 
   base_dir = get_define('BUILD_DIR');
   FSO.CreateFolder(base_dir+"\\ext");
@@ -833,6 +845,11 @@ if (PHP_GRPC != "no") {
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\third_party\\boringssl\\third_party");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\third_party\\boringssl\\third_party\\fiat");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\third_party\\nanopb");
+  FSO.CreateFolder(base_dir+"\\ext\\grpc\\third_party\\upb");
+  FSO.CreateFolder(base_dir+"\\ext\\grpc\\third_party\\upb\\generated_for_cmake");
+  FSO.CreateFolder(base_dir+"\\ext\\grpc\\third_party\\upb\\generated_for_cmake\\google");
+  FSO.CreateFolder(base_dir+"\\ext\\grpc\\third_party\\upb\\generated_for_cmake\\google\\protobuf");
+  FSO.CreateFolder(base_dir+"\\ext\\grpc\\third_party\\upb\\upb");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\third_party\\zlib");
   _build_dirs = new Array();
   for (i = 0; i < build_dirs.length; i++) {
