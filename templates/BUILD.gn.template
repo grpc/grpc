@@ -54,6 +54,8 @@
       deps.append(":address_sorting")
     if needs_nanopb(target_dict.src) and target_dict.name != "nanopb":
       deps.append(":nanopb")
+    if needs_upb(target_dict.src) and target_dict.name != "upb":
+      deps.append(":upb")
     if needs_health_proto(target_dict.src) and target_dict.name != "health_proto":
       deps.append(":health_proto")
     return deps
@@ -73,6 +75,13 @@
                for f in srcs)
 
   %><%!
+  def needs_upb(srcs):
+    return any(f.startswith("third_party/upb")
+               or f.endswith(".upb.h")
+               or f.endswith(".upb.c")
+               for f in srcs)
+
+  %><%!
   def needs_address_sorting(sources):
     return needs_ares(sources) or any("address_sorting" in s for s in sources)
 
@@ -89,6 +98,8 @@
       dirs.append("third_party/address_sorting/include")
     if needs_nanopb(sources):
       dirs.append("third_party/nanopb")
+    if needs_upb(sources):
+      dirs.append("third_party/upb")
     return dirs
 
   %><%!

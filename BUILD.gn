@@ -866,6 +866,7 @@ config("grpc_config") {
         "//third_party/cares",
         ":address_sorting",
         ":nanopb",
+        ":upb",
     ]
     
     public_configs = [
@@ -875,6 +876,7 @@ config("grpc_config") {
         "third_party/cares",
         "third_party/address_sorting/include",
         "third_party/nanopb",
+        "third_party/upb",
     ]
   }
 
@@ -1381,6 +1383,7 @@ config("grpc_config") {
         "//third_party/protobuf:protobuf_lite",
         ":grpc",
         ":gpr",
+        ":upb",
     ]
     
     public_configs = [
@@ -1388,6 +1391,7 @@ config("grpc_config") {
     ]
     include_dirs = [
         "third_party/nanopb",
+        "third_party/upb",
     ]
   }
 
