@@ -53,7 +53,7 @@ class ChannelzRegistryTest : public ::testing::Test {
 
 TEST_F(ChannelzRegistryTest, UuidStartsAboveZeroTest) {
   RefCountedPtr<BaseNode> channelz_channel =
-      MakeRefCounted<BaseNode>(BaseNode::EntityType::kTopLevelChannel);
+      MakeRefCounted<BaseNode>(BaseNode::EntityType::kTopLevelChannel, nullptr);
   intptr_t uuid = channelz_channel->uuid();
   EXPECT_GT(uuid, 0) << "First uuid chose must be greater than zero. Zero if "
                         "reserved according to "
