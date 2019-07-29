@@ -291,8 +291,8 @@ static void BM_SpikyLoad(benchmark::State& state) {
   const int kNumSpikes = 1000;
   const int batch_size = 3 * num_threads;
   std::vector<ShortWorkFunctorForAdd> work_vector(batch_size);
+  grpc_core::ThreadPool pool(num_threads);
   while (state.KeepRunningBatch(kNumSpikes * batch_size)) {
-    grpc_core::ThreadPool pool(num_threads);
     for (int i = 0; i != kNumSpikes; ++i) {
       BlockingCounter counter(batch_size);
       for (auto& w : work_vector) {
