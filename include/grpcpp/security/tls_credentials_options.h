@@ -16,8 +16,8 @@
  *
  */
 
-#ifndef GRPCPP_TLS_CREDENTIALS_OPTIONS_H
-#define GRPCPP_TLS_CREDENTIALS_OPTIONS_H
+#ifndef GRPCPP_SECURITY_TLS_CREDENTIALS_OPTIONS_H
+#define GRPCPP_SECURITY_TLS_CREDENTIALS_OPTIONS_H
 
 #include <vector>
 #include <memory>
@@ -90,5 +90,5 @@ class TlsCredentialsOptions {
 
 } // namespace experimental
 } // namespace grpc_impl
-#endif /** GRPCPP_TLS_CREDENTIALS_OPTIONS_H **/
+#endif /** GRPCPP_SECURITY_TLS_CREDENTIALS_OPTIONS_H **/
 
