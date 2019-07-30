@@ -32,7 +32,7 @@ namespace channelz {
 
 SubchannelNode::SubchannelNode(const char* target_address,
                                size_t channel_tracer_max_nodes)
-    : BaseNode(EntityType::kSubchannel, /* name */ nullptr),
+    : BaseNode(EntityType::kSubchannel, target_address),
       target_(UniquePtr<char>(gpr_strdup(target_address))),
       trace_(channel_tracer_max_nodes) {}
 
