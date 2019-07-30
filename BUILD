@@ -1300,7 +1300,6 @@ grpc_cc_library(
     ],
     language = "c++",
     deps = [
-        "envoy_ads_upb",
         "grpc_base",
         "grpc_client_channel",
         "grpc_resolver_fake",
@@ -1327,7 +1326,6 @@ grpc_cc_library(
     ],
     language = "c++",
     deps = [
-        "envoy_ads_upb",
         "grpc_base",
         "grpc_client_channel",
         "grpc_resolver_fake",
@@ -2298,7 +2296,6 @@ grpc_cc_library(
     external_deps = [
         "upb_lib",
     ],
-    language = "c++",
     language = "c++",
     tags = ["no_windows"],
     deps = [
