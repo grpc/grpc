@@ -37,6 +37,7 @@ namespace Grpc.Core.Internal
         // We rely on finalizer to clean up the native portion of ChannelCredentialsSafeHandle after the ChannelCredentials
         // instance becomes unused.
         static readonly ConditionalWeakTable<ChannelCredentials, Lazy<ChannelCredentialsSafeHandle>> CachedNativeCredentials = new ConditionalWeakTable<ChannelCredentials, Lazy<ChannelCredentialsSafeHandle>>();
+        static readonly object StaticLock = new object();
 
         bool configured;
         ChannelCredentialsSafeHandle nativeCredentials;
@@ -93,22 +94,11 @@ namespace Grpc.Core.Internal
         private ChannelCredentialsSafeHandle GetOrCreateNativeCredentials(ChannelCredentials key, Func<ChannelCredentialsSafeHandle> nativeCredentialsFactory)
         {
             Lazy<ChannelCredentialsSafeHandle> lazyValue;
-            while (true)
-            {
-                if (CachedNativeCredentials.TryGetValue(key, out lazyValue))
+            lock (StaticLock) {
+                if (!CachedNativeCredentials.TryGetValue(key, out lazyValue))
                 {
-                    break;
-                }
-
-                lazyValue = new Lazy<ChannelCredentialsSafeHandle>(nativeCredentialsFactory);
-                try
-                {
+                    lazyValue = new Lazy<ChannelCredentialsSafeHandle>(nativeCredentialsFactory);
                     CachedNativeCredentials.Add(key, lazyValue);
-                    break;
-                }
-                catch (ArgumentException)
-                {
-                    // key exists, next TryGetValue should fetch the value
                 }
             }
             return lazyValue.Value;
