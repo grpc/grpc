@@ -133,6 +133,15 @@ AllocatedMetadata::AllocatedMetadata(
 #endif
 }
 
+AllocatedMetadata::AllocatedMetadata(
+    const grpc_core::ExternallyManagedSlice& key,
+    const grpc_core::UnmanagedMemorySlice& value)
+    : RefcountedMdBase(key, value) {
+#ifndef NDEBUG
+  TraceAtStart("ALLOC_MD_NOREF_KEY_VAL");
+#endif
+}
+
 AllocatedMetadata::~AllocatedMetadata() {
   grpc_slice_unref_internal(key());
   grpc_slice_unref_internal(value());

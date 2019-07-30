@@ -316,7 +316,8 @@ class AllocatedMetadata : public RefcountedMdBase {
   AllocatedMetadata(const grpc_slice& key, const grpc_slice& value);
   AllocatedMetadata(const grpc_core::ManagedMemorySlice& key,
                     const grpc_core::UnmanagedMemorySlice& value);
-
+  AllocatedMetadata(const grpc_core::ExternallyManagedSlice& key,
+                    const grpc_core::UnmanagedMemorySlice& value);
   AllocatedMetadata(const grpc_slice& key, const grpc_slice& value,
                     const NoRefKey*);
   ~AllocatedMetadata();
