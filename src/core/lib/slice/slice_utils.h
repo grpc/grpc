@@ -39,6 +39,17 @@
 int grpc_slice_differs_refcounted(const grpc_slice& a,
                                   const grpc_slice& b_not_inline);
 
+// When we compare two slices, and we *know* that one of them is static or
+// interned, we can short circuit our slice equality function. The second slice
+// here must be static or interned; slice a can be any slice, inlined or not.
+inline bool grpc_slice_eq_static_interned(const grpc_slice& a,
+                                          const grpc_slice& b_static_interned) {
+  if (a.refcount == b_static_interned.refcount) {
+    return true;
+  }
+  return !grpc_slice_differs_refcounted(a, b_static_interned);
+}
+
 // TODO(arjunroy): These type declarations ought to be in
 // src/core/lib/slice/slice_internal.h instead; they are here due to a circular
 // header depedency between slice_internal.h and
@@ -58,35 +69,24 @@ int grpc_slice_differs_refcounted(const grpc_slice& a,
 // change; this is purely type-system information.
 namespace grpc_core {
 
-// Archtypes: a slice is either extern or not.
-// An extern slice is any slice where:
-// 1) refcount is null (i.e. inlined slice), OR
-// 2) refcount is not null and
-//                not grpc_slice_refcount::Type::STATIC and
-//                not grpc_slice_refcount::Type::INTERNED
-// An Inlined slice is an UnmanagedMemorySlice.
+// There are two main types of slices: those that have their memory
+// managed by the slice library and those that do not.
 //
-// Conversely, an internal slice is a slice where grpc_core manages the memory.
-// This is either through static allocation (StaticSlice) or internally-managed
-// interned heap allocation (InternedSlice).
+// The following types of slices are not managed:
+// - inlined slices (i.e., refcount is null)
+// - slices that have a custom refcount type (i.e., not STATIC or INTERNED)
 //
-// Hierarchy:
+// The following types of slices are managed:
+// - static slices (i.e., refcount type is STATIC)
+// - interned slices (i.e., refcount type is INTERNED)
+//
+// This categorization is reflected in the following hierarchy:
 //
 // - grpc_slice
-//   - UnmanagedMemorySlice
+// > - UnmanagedMemorySlice
 //   - ManagedMemorySlice
-//     - InternedSlice
+//   > - InternedSlice
 //     - StaticSlice
-//
-// Or, alternatively,
-// ----------------------------------
-// |          grpc_slice            |
-// |--------------------------------|
-// | ManagedMemorySlice |    UnmanagedMemorySlice |
-// | --------------|                |
-// | InternedSlice |                |
-// |   StaticSlice |                |
-// ----------------------------------
 //
 struct ManagedMemorySlice : public grpc_slice {
   ManagedMemorySlice() {
@@ -109,6 +109,7 @@ struct ManagedMemorySlice : public grpc_slice {
   }
 };
 struct UnmanagedMemorySlice : public grpc_slice {
+  // TODO(arjunroy): Can we use a default=false param instead of this enum?
   enum class ForceHeapAllocation {};
   UnmanagedMemorySlice() {
     refcount = nullptr;
@@ -149,16 +150,5 @@ struct InternedSlice : public ManagedMemorySlice {
 };
 
 }  // namespace grpc_core
-
-// When we compare two slices, and we *know* that one of them is static or
-// interned, we can short circuit our slice equality function. The second slice
-// here must be static or interned; slice a can be any slice, inlined or not.
-inline bool grpc_slice_eq_static_interned(const grpc_slice& a,
-                                          const grpc_slice& b_static_interned) {
-  if (a.refcount == b_static_interned.refcount) {
-    return true;
-  }
-  return !grpc_slice_differs_refcounted(a, b_static_interned);
-}
 
 #endif /* GRPC_CORE_LIB_SLICE_SLICE_UTILS_H */

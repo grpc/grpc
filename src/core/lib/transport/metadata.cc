@@ -124,9 +124,9 @@ AllocatedMetadata::AllocatedMetadata(const grpc_slice& key,
 #endif
 }
 
-AllocatedMetadata::AllocatedMetadata(const grpc_slice& key,
-                                     const grpc_slice& value,
-                                     const NoRefKeyVal*)
+AllocatedMetadata::AllocatedMetadata(
+    const grpc_core::ManagedMemorySlice& key,
+    const grpc_core::UnmanagedMemorySlice& value)
     : RefcountedMdBase(key, value) {
 #ifndef NDEBUG
   TraceAtStart("ALLOC_MD_NOREF_KEY_VAL");
@@ -174,15 +174,6 @@ InternedMetadata::InternedMetadata(const grpc_slice& key,
     : RefcountedMdBase(key, grpc_slice_ref_internal(value), hash), link_(next) {
 #ifndef NDEBUG
   TraceAtStart("INTERNED_MD_NOREF_KEY");
-#endif
-}
-
-InternedMetadata::InternedMetadata(const grpc_slice& key,
-                                   const grpc_slice& value, uint32_t hash,
-                                   InternedMetadata* next, const NoRefKeyVal*)
-    : RefcountedMdBase(key, value, hash), link_(next) {
-#ifndef NDEBUG
-  TraceAtStart("INTERNED_MD_NOREF_KEY_VAL");
 #endif
 }
 

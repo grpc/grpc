@@ -282,24 +282,19 @@ class RefcountedMdBase {
 
 class InternedMetadata : public RefcountedMdBase {
  public:
+  // TODO(arjunroy): Change to use strongly typed slices instead.
   struct NoRefKey {};
-  struct NoRefKeyVal {};
-
   struct BucketLink {
     explicit BucketLink(InternedMetadata* md) : next(md) {}
 
     InternedMetadata* next = nullptr;
   };
-
   InternedMetadata(const grpc_slice& key, const grpc_slice& value,
                    uint32_t hash, InternedMetadata* next);
   InternedMetadata(const grpc_slice& key, const grpc_slice& value,
                    uint32_t hash, InternedMetadata* next, const NoRefKey*);
-  InternedMetadata(const grpc_slice& key, const grpc_slice& value,
-                   uint32_t hash, InternedMetadata* next, const NoRefKeyVal*);
 
   ~InternedMetadata();
-
   void RefWithShardLocked(mdtab_shard* shard);
   UserData* user_data() { return &user_data_; }
   InternedMetadata* bucket_next() { return link_.next; }
@@ -315,11 +310,12 @@ class InternedMetadata : public RefcountedMdBase {
 /* Shadow structure for grpc_mdelem_data for allocated elements */
 class AllocatedMetadata : public RefcountedMdBase {
  public:
+  // TODO(arjunroy): Change to use strongly typed slices instead.
   struct NoRefKey {};
-  struct NoRefKeyVal {};
   AllocatedMetadata(const grpc_slice& key, const grpc_slice& value);
-  AllocatedMetadata(const grpc_slice& key, const grpc_slice& value,
-                    const NoRefKeyVal*);
+  AllocatedMetadata(const grpc_core::ManagedMemorySlice& key,
+                    const grpc_core::UnmanagedMemorySlice& value);
+
   AllocatedMetadata(const grpc_slice& key, const grpc_slice& value,
                     const NoRefKey*);
   ~AllocatedMetadata();
@@ -428,22 +424,16 @@ inline grpc_mdelem grpc_mdelem_from_slices(
     const grpc_core::ManagedMemorySlice& key,
     const grpc_core::UnmanagedMemorySlice& value) {
   using grpc_core::AllocatedMetadata;
-  return GRPC_MAKE_MDELEM(
-      grpc_core::New<AllocatedMetadata>(
-          key, value,
-          static_cast<const AllocatedMetadata::NoRefKeyVal*>(nullptr)),
-      GRPC_MDELEM_STORAGE_ALLOCATED);
+  return GRPC_MAKE_MDELEM(grpc_core::New<AllocatedMetadata>(key, value),
+                          GRPC_MDELEM_STORAGE_ALLOCATED);
 }
 
 inline grpc_mdelem grpc_mdelem_from_slices(
     const grpc_core::StaticSlice& key,
     const grpc_core::UnmanagedMemorySlice& value) {
   using grpc_core::AllocatedMetadata;
-  return GRPC_MAKE_MDELEM(
-      grpc_core::New<AllocatedMetadata>(
-          key, value,
-          static_cast<const AllocatedMetadata::NoRefKeyVal*>(nullptr)),
-      GRPC_MDELEM_STORAGE_ALLOCATED);
+  return GRPC_MAKE_MDELEM(grpc_core::New<AllocatedMetadata>(key, value),
+                          GRPC_MDELEM_STORAGE_ALLOCATED);
 }
 
 #endif /* GRPC_CORE_LIB_TRANSPORT_METADATA_H */

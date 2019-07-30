@@ -157,6 +157,11 @@ grpc_slice grpc_slice_intern(grpc_slice slice) {
   return grpc_core::ManagedMemorySlice(&slice);
 }
 
+// Attempt to see if the provided slice or string matches a static slice.
+// SliceArgs... is either a const grpc_slice& or a string and length. In either
+// case, hash is the pre-computed hash value.
+//
+// Returns: a matching static slice, or null.
 template <class... SliceArgs>
 static const grpc_core::StaticSlice* MatchStaticSlice(uint32_t hash,
                                                       SliceArgs... args) {
@@ -171,6 +176,9 @@ static const grpc_core::StaticSlice* MatchStaticSlice(uint32_t hash,
   return nullptr;
 }
 
+// Helper methods to enable us to select appropriately overloaded slice methods
+// whether we're dealing with a slice, or a buffer with length, when interning
+// strings. Helpers for FindOrCreateInternedSlice().
 static const void* GetBuffer(const void* buf, size_t len) { return buf; }
 static size_t GetLength(const void* buf, size_t len) { return len; }
 static const void* GetBuffer(const grpc_slice& slice) {
@@ -180,6 +188,13 @@ static size_t GetLength(const grpc_slice& slice) {
   return GRPC_SLICE_LENGTH(slice);
 }
 
+// Since we could not match with an existing static slice, and since there were
+// no matching already interned slices, we must intern the provided slice or
+// string. SliceArgs... is either a const grpc_slice& or a string and length. In
+// either case, hash is the pre-computed hash value. We must already hold the
+// shard lock. Helper for FindOrCreateInternedSlice().
+//
+// Returns: a newly interned slice.
 template <class... SliceArgs>
 static InternedSliceRefcount* InternNewStringLocked(slice_shard* shard,
                                                     size_t shard_idx,
@@ -200,14 +215,18 @@ static InternedSliceRefcount* InternNewStringLocked(slice_shard* shard,
   return s;
 }
 
+// Attempt to see if the provided slice or string matches an existing interned
+// slice. SliceArgs... is either a const grpc_slice& or a string and length. In
+// either case, hash is the pre-computed hash value.  We must already hold the
+// shard lock. Helper for FindOrCreateInternedSlice().
+//
+// Returns: a pre-existing matching static slice, or null.
 template <class... SliceArgs>
 static InternedSliceRefcount* MatchInternedSliceLocked(uint32_t hash,
                                                        size_t idx,
                                                        SliceArgs... args) {
   InternedSliceRefcount* s;
   slice_shard* shard = &g_shards[SHARD_IDX(hash)];
-  /* Didn't find a matching static slice; lock shard and look there. */
-  gpr_mu_lock(&shard->mu);
   /* search for an existing string */
   for (s = shard->strs[idx]; s; s = s->bucket_next) {
     if (s->hash == hash && grpc_core::InternedSlice(s).Equals(args...)) {
@@ -219,6 +238,13 @@ static InternedSliceRefcount* MatchInternedSliceLocked(uint32_t hash,
   return nullptr;
 }
 
+// Since we could not match with an existing static slice, attempt to see if the
+// provided slice or string matches an existing interned slice, and failing
+// that, create an interned slice with its contents. SliceArgs... is either a
+// const grpc_slice& or a string and length. In either case, hash is the
+// pre-computed hash value. We do not hold the shard lock here, but do take it.
+//
+// Returns: an interned slice, either pre-existing/matched or newly created.
 template <class... SliceArgs>
 static InternedSliceRefcount* FindOrCreateInternedSlice(uint32_t hash,
                                                         SliceArgs... args) {
@@ -226,7 +252,7 @@ static InternedSliceRefcount* FindOrCreateInternedSlice(uint32_t hash,
   gpr_mu_lock(&shard->mu);
   const size_t idx = TABLE_IDX(hash, shard->capacity);
   InternedSliceRefcount* s = MatchInternedSliceLocked(hash, idx, args...);
-  if (!s) {
+  if (s == nullptr) {
     s = InternNewStringLocked(shard, idx, hash, args...);
   }
   gpr_mu_unlock(&shard->mu);
