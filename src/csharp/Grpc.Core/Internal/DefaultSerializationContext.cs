@@ -17,6 +17,8 @@
 #endregion
 
 using Grpc.Core.Utils;
+using System;
+using System.Buffers;
 using System.Threading;
 
 namespace Grpc.Core.Internal
@@ -27,7 +29,8 @@ namespace Grpc.Core.Internal
             new ThreadLocal<DefaultSerializationContext>(() => new DefaultSerializationContext(), false);
 
         bool isComplete;
-        byte[] payload;
+        //byte[] payload;
+        NativeBufferWriter bufferWriter;
 
         public DefaultSerializationContext()
         {
@@ -38,18 +41,48 @@ namespace Grpc.Core.Internal
         {
             GrpcPreconditions.CheckState(!isComplete);
             this.isComplete = true;
-            this.payload = payload;
+
+            GetBufferWriter();
+            var destSpan = bufferWriter.GetSpan(payload.Length);
+            payload.AsSpan().CopyTo(destSpan);
+            bufferWriter.Advance(payload.Length);
+            bufferWriter.Complete();
+            //this.payload = payload;
         }
 
-        internal byte[] GetPayload()
+        /// <summary>
+        /// Expose serializer as buffer writer
+        /// </summary>
+        public override IBufferWriter<byte> GetBufferWriter()
         {
-            return this.payload;
+            if (bufferWriter == null)
+            {
+                // TODO: avoid allocation..
+                bufferWriter = new NativeBufferWriter();
+            }
+            return bufferWriter;
+        }
+
+        /// <summary>
+        /// Complete the payload written so far.
+        /// </summary>
+        public override void Complete()
+        {
+            GrpcPreconditions.CheckState(!isComplete);
+            bufferWriter.Complete();
+            this.isComplete = true;
+        }
+
+        internal SliceBufferSafeHandle GetPayload()
+        {
+            return bufferWriter.GetSliceBuffer();
         }
 
         public void Reset()
         {
             this.isComplete = false;
-            this.payload = null;
+            //this.payload = null;
+            this.bufferWriter = null;
         }
 
         public static DefaultSerializationContext GetInitializedThreadLocal()
@@ -57,6 +90,37 @@ namespace Grpc.Core.Internal
             var instance = threadLocalInstance.Value;
             instance.Reset();
             return instance;
+        }
+
+        private class NativeBufferWriter : IBufferWriter<byte>
+        {
+            private SliceBufferSafeHandle sliceBuffer = SliceBufferSafeHandle.Create();
+
+            public void Advance(int count)
+            {
+                sliceBuffer.Advance(count);
+            }
+
+            public Memory<byte> GetMemory(int sizeHint = 0)
+            {
+                // TODO: implement
+                throw new NotImplementedException();
+            }
+
+            public Span<byte> GetSpan(int sizeHint = 0)
+            {
+                return sliceBuffer.GetSpan(sizeHint);
+            }
+
+            public void Complete()
+            {
+                sliceBuffer.Complete();
+            }
+
+            public SliceBufferSafeHandle GetSliceBuffer()
+            {
+                return sliceBuffer;
+            }
         }
     }
 }

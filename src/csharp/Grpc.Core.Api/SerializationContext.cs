@@ -17,6 +17,7 @@
 #endregion
 
 using System;
+using System.Buffers;
 
 namespace Grpc.Core
 {
@@ -34,6 +35,23 @@ namespace Grpc.Core
         public virtual void Complete(byte[] payload)
         {
             throw new NotImplementedException();
+        }
+
+        /// <summary>
+        /// Expose serializer as buffer writer
+        /// </summary>
+        public virtual IBufferWriter<byte> GetBufferWriter()
+        {
+            throw new NotImplementedException();
+        }
+
+        /// <summary>
+        /// Complete the payload written so far.
+        /// </summary>
+        public virtual void Complete()
+        {
+            throw new NotImplementedException();
+
         }
     }
 }

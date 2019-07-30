@@ -1182,6 +1182,67 @@ GPR_EXPORT void GPR_CALLTYPE grpcsharp_redirect_log(grpcsharp_log_func func) {
 
 typedef void(GPR_CALLTYPE* test_callback_funcptr)(int32_t success);
 
+/* Slice buffer functionality */
+GPR_EXPORT grpc_slice_buffer* GPR_CALLTYPE
+grpcsharp_slice_buffer_create() {
+  grpc_slice_buffer* slice_buffer = (grpc_slice_buffer*)gpr_malloc(sizeof(grpc_slice_buffer));
+  grpc_slice_buffer_init(slice_buffer);
+  return slice_buffer;
+}
+
+GPR_EXPORT void GPR_CALLTYPE
+grpcsharp_slice_buffer_destroy(grpc_slice_buffer* buffer) {
+  grpc_slice_buffer_destroy(buffer);
+  gpr_free(buffer);
+}
+
+GPR_EXPORT grpc_byte_buffer* GPR_CALLTYPE
+grpcsharp_create_byte_buffer_from_stolen_slices(grpc_slice_buffer* slice_buffer) {
+  grpc_byte_buffer* bb =
+      (grpc_byte_buffer*)gpr_malloc(sizeof(grpc_byte_buffer));
+  memset(bb, 0, sizeof(grpc_byte_buffer));
+  bb->type = GRPC_BB_RAW;
+  bb->data.raw.compression = GRPC_COMPRESS_NONE;
+  bb->data.raw.slice_buffer = *slice_buffer;
+  // TODO: just use move slice_buffer...
+
+  // we transferred the ownership of members from the slice buffer to the
+  // the internals of byte buffer, so we just overwrite the original slice buffer with
+  // default values.
+  grpc_slice_buffer_init(slice_buffer);  // TODO: need to reset available_tail_space after this..
+  return bb;
+}
+
+GPR_EXPORT void* GPR_CALLTYPE
+grpcsharp_slice_buffer_adjust_tail_space(grpc_slice_buffer* buffer, size_t available_tail_space,
+    size_t requested_tail_space) {
+
+    // TODO: what if available_tail_space == requested_tail_space == 0
+
+    if (available_tail_space >= requested_tail_space)
+    {
+      // TODO: should this be allowed at all?
+      grpc_slice_buffer garbage;
+      grpc_slice_buffer_trim_end(buffer, available_tail_space - requested_tail_space, &garbage);
+      grpc_slice_buffer_reset_and_unref(&garbage);
+    }
+    else
+    {
+      if (available_tail_space > 0)
+      {
+        grpc_slice_buffer garbage;
+        grpc_slice_buffer_trim_end(buffer, available_tail_space, &garbage);
+        grpc_slice_buffer_reset_and_unref(&garbage);
+      }
+
+      grpc_slice new_slice = grpc_slice_malloc(requested_tail_space);
+      grpc_slice_buffer_add(buffer, new_slice);
+    }
+    
+    grpc_slice* last_slice = &(buffer->slices[buffer->count - 1]);
+    return GRPC_SLICE_END_PTR(*last_slice) - requested_tail_space;
+}
+
 /* Version info */
 GPR_EXPORT const char* GPR_CALLTYPE grpcsharp_version_string() {
   return grpc_version_string();

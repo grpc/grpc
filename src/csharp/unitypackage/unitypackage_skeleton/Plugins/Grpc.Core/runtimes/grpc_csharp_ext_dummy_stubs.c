@@ -374,6 +374,18 @@ void grpcsharp_auth_context_release() {
   fprintf(stderr, "Should never reach here");
   abort();
 }
+void grpcsharp_slice_buffer_create() {
+  fprintf(stderr, "Should never reach here");
+  abort();
+}
+void grpcsharp_slice_buffer_adjust_tail_space() {
+  fprintf(stderr, "Should never reach here");
+  abort();
+}
+void grpcsharp_slice_buffer_destroy() {
+  fprintf(stderr, "Should never reach here");
+  abort();
+}
 void gprsharp_now() {
   fprintf(stderr, "Should never reach here");
   abort();

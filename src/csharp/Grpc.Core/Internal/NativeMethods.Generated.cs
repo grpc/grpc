@@ -122,6 +122,9 @@ namespace Grpc.Core.Internal
         public readonly Delegates.grpcsharp_auth_context_property_iterator_delegate grpcsharp_auth_context_property_iterator;
         public readonly Delegates.grpcsharp_auth_property_iterator_next_delegate grpcsharp_auth_property_iterator_next;
         public readonly Delegates.grpcsharp_auth_context_release_delegate grpcsharp_auth_context_release;
+        public readonly Delegates.grpcsharp_slice_buffer_create_delegate grpcsharp_slice_buffer_create;
+        public readonly Delegates.grpcsharp_slice_buffer_adjust_tail_space_delegate grpcsharp_slice_buffer_adjust_tail_space;
+        public readonly Delegates.grpcsharp_slice_buffer_destroy_delegate grpcsharp_slice_buffer_destroy;
         public readonly Delegates.gprsharp_now_delegate gprsharp_now;
         public readonly Delegates.gprsharp_inf_future_delegate gprsharp_inf_future;
         public readonly Delegates.gprsharp_inf_past_delegate gprsharp_inf_past;
@@ -224,6 +227,9 @@ namespace Grpc.Core.Internal
             this.grpcsharp_auth_context_property_iterator = GetMethodDelegate<Delegates.grpcsharp_auth_context_property_iterator_delegate>(library);
             this.grpcsharp_auth_property_iterator_next = GetMethodDelegate<Delegates.grpcsharp_auth_property_iterator_next_delegate>(library);
             this.grpcsharp_auth_context_release = GetMethodDelegate<Delegates.grpcsharp_auth_context_release_delegate>(library);
+            this.grpcsharp_slice_buffer_create = GetMethodDelegate<Delegates.grpcsharp_slice_buffer_create_delegate>(library);
+            this.grpcsharp_slice_buffer_adjust_tail_space = GetMethodDelegate<Delegates.grpcsharp_slice_buffer_adjust_tail_space_delegate>(library);
+            this.grpcsharp_slice_buffer_destroy = GetMethodDelegate<Delegates.grpcsharp_slice_buffer_destroy_delegate>(library);
             this.gprsharp_now = GetMethodDelegate<Delegates.gprsharp_now_delegate>(library);
             this.gprsharp_inf_future = GetMethodDelegate<Delegates.gprsharp_inf_future_delegate>(library);
             this.gprsharp_inf_past = GetMethodDelegate<Delegates.gprsharp_inf_past_delegate>(library);
@@ -325,6 +331,9 @@ namespace Grpc.Core.Internal
             this.grpcsharp_auth_context_property_iterator = DllImportsFromStaticLib.grpcsharp_auth_context_property_iterator;
             this.grpcsharp_auth_property_iterator_next = DllImportsFromStaticLib.grpcsharp_auth_property_iterator_next;
             this.grpcsharp_auth_context_release = DllImportsFromStaticLib.grpcsharp_auth_context_release;
+            this.grpcsharp_slice_buffer_create = DllImportsFromStaticLib.grpcsharp_slice_buffer_create;
+            this.grpcsharp_slice_buffer_adjust_tail_space = DllImportsFromStaticLib.grpcsharp_slice_buffer_adjust_tail_space;
+            this.grpcsharp_slice_buffer_destroy = DllImportsFromStaticLib.grpcsharp_slice_buffer_destroy;
             this.gprsharp_now = DllImportsFromStaticLib.gprsharp_now;
             this.gprsharp_inf_future = DllImportsFromStaticLib.gprsharp_inf_future;
             this.gprsharp_inf_past = DllImportsFromStaticLib.gprsharp_inf_past;
@@ -426,6 +435,9 @@ namespace Grpc.Core.Internal
             this.grpcsharp_auth_context_property_iterator = DllImportsFromSharedLib.grpcsharp_auth_context_property_iterator;
             this.grpcsharp_auth_property_iterator_next = DllImportsFromSharedLib.grpcsharp_auth_property_iterator_next;
             this.grpcsharp_auth_context_release = DllImportsFromSharedLib.grpcsharp_auth_context_release;
+            this.grpcsharp_slice_buffer_create = DllImportsFromSharedLib.grpcsharp_slice_buffer_create;
+            this.grpcsharp_slice_buffer_adjust_tail_space = DllImportsFromSharedLib.grpcsharp_slice_buffer_adjust_tail_space;
+            this.grpcsharp_slice_buffer_destroy = DllImportsFromSharedLib.grpcsharp_slice_buffer_destroy;
             this.gprsharp_now = DllImportsFromSharedLib.gprsharp_now;
             this.gprsharp_inf_future = DllImportsFromSharedLib.gprsharp_inf_future;
             this.gprsharp_inf_past = DllImportsFromSharedLib.gprsharp_inf_past;
@@ -530,6 +542,9 @@ namespace Grpc.Core.Internal
             public delegate AuthContextSafeHandle.NativeAuthPropertyIterator grpcsharp_auth_context_property_iterator_delegate(AuthContextSafeHandle authContext);
             public delegate IntPtr grpcsharp_auth_property_iterator_next_delegate(ref AuthContextSafeHandle.NativeAuthPropertyIterator iterator);  // returns const auth_property*
             public delegate void grpcsharp_auth_context_release_delegate(IntPtr authContext);
+            public delegate SliceBufferSafeHandle grpcsharp_slice_buffer_create_delegate();
+            public delegate IntPtr grpcsharp_slice_buffer_adjust_tail_space_delegate(SliceBufferSafeHandle sliceBuffer, UIntPtr availableTailSpace, UIntPtr requestedTailSpace);
+            public delegate void grpcsharp_slice_buffer_destroy_delegate(IntPtr sliceBuffer);
             public delegate Timespec gprsharp_now_delegate(ClockType clockType);
             public delegate Timespec gprsharp_inf_future_delegate(ClockType clockType);
             public delegate Timespec gprsharp_inf_past_delegate(ClockType clockType);
@@ -811,6 +826,15 @@ namespace Grpc.Core.Internal
             
             [DllImport(ImportName)]
             public static extern void grpcsharp_auth_context_release(IntPtr authContext);
+            
+            [DllImport(ImportName)]
+            public static extern SliceBufferSafeHandle grpcsharp_slice_buffer_create();
+            
+            [DllImport(ImportName)]
+            public static extern IntPtr grpcsharp_slice_buffer_adjust_tail_space(SliceBufferSafeHandle sliceBuffer, UIntPtr availableTailSpace, UIntPtr requestedTailSpace);
+            
+            [DllImport(ImportName)]
+            public static extern void grpcsharp_slice_buffer_destroy(IntPtr sliceBuffer);
             
             [DllImport(ImportName)]
             public static extern Timespec gprsharp_now(ClockType clockType);
@@ -1110,6 +1134,15 @@ namespace Grpc.Core.Internal
             
             [DllImport(ImportName)]
             public static extern void grpcsharp_auth_context_release(IntPtr authContext);
+            
+            [DllImport(ImportName)]
+            public static extern SliceBufferSafeHandle grpcsharp_slice_buffer_create();
+            
+            [DllImport(ImportName)]
+            public static extern IntPtr grpcsharp_slice_buffer_adjust_tail_space(SliceBufferSafeHandle sliceBuffer, UIntPtr availableTailSpace, UIntPtr requestedTailSpace);
+            
+            [DllImport(ImportName)]
+            public static extern void grpcsharp_slice_buffer_destroy(IntPtr sliceBuffer);
             
             [DllImport(ImportName)]
             public static extern Timespec gprsharp_now(ClockType clockType);
