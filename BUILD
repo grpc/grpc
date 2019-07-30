@@ -1066,6 +1066,7 @@ grpc_cc_library(
         "grpc_client_authority_filter",
         "grpc_deadline_filter",
         "health_proto",
+        "grpc_health_upb",
         "inlined_vector",
         "orphanable",
         "ref_counted",
@@ -2002,6 +2003,7 @@ grpc_cc_library(
     deps = [
         "grpc",
         "grpc++_codegen_base",
+        "grpc_health_upb",
         "health_proto",
     ],
 )
@@ -2015,6 +2017,7 @@ grpc_cc_library(
     deps = [
         "grpc++_codegen_base",
         "grpc_unsecure",
+        "grpc_health_upb",
         "health_proto",
     ],
 )
