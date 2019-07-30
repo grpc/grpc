@@ -4482,6 +4482,27 @@ targets:
   - mac
   - linux
   - posix
+- name: bm_threadpool
+  build: test
+  language: c++
+  src:
+  - test/cpp/microbenchmarks/bm_threadpool.cc
+  deps:
+  - grpc_benchmark
+  - benchmark
+  - grpc++_test_util_unsecure
+  - grpc_test_util_unsecure
+  - grpc++_unsecure
+  - grpc_unsecure
+  - gpr
+  - grpc++_test_config
+  benchmark: true
+  defaults: benchmark
+  platforms:
+  - mac
+  - linux
+  - posix
+  uses_polling: false
 - name: bm_timer
   build: test
   language: c++

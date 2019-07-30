@@ -1181,6 +1181,7 @@ bm_fullstack_trickle: $(BINDIR)/$(CONFIG)/bm_fullstack_trickle
 bm_fullstack_unary_ping_pong: $(BINDIR)/$(CONFIG)/bm_fullstack_unary_ping_pong
 bm_metadata: $(BINDIR)/$(CONFIG)/bm_metadata
 bm_pollset: $(BINDIR)/$(CONFIG)/bm_pollset
+bm_threadpool: $(BINDIR)/$(CONFIG)/bm_threadpool
 bm_timer: $(BINDIR)/$(CONFIG)/bm_timer
 byte_stream_test: $(BINDIR)/$(CONFIG)/byte_stream_test
 channel_arguments_test: $(BINDIR)/$(CONFIG)/channel_arguments_test
@@ -1660,6 +1661,7 @@ buildtests_cxx: privatelibs_cxx \
   $(BINDIR)/$(CONFIG)/bm_fullstack_unary_ping_pong \
   $(BINDIR)/$(CONFIG)/bm_metadata \
   $(BINDIR)/$(CONFIG)/bm_pollset \
+  $(BINDIR)/$(CONFIG)/bm_threadpool \
   $(BINDIR)/$(CONFIG)/bm_timer \
   $(BINDIR)/$(CONFIG)/byte_stream_test \
   $(BINDIR)/$(CONFIG)/channel_arguments_test \
@@ -1826,6 +1828,7 @@ buildtests_cxx: privatelibs_cxx \
   $(BINDIR)/$(CONFIG)/bm_fullstack_unary_ping_pong \
   $(BINDIR)/$(CONFIG)/bm_metadata \
   $(BINDIR)/$(CONFIG)/bm_pollset \
+  $(BINDIR)/$(CONFIG)/bm_threadpool \
   $(BINDIR)/$(CONFIG)/bm_timer \
   $(BINDIR)/$(CONFIG)/byte_stream_test \
   $(BINDIR)/$(CONFIG)/channel_arguments_test \
@@ -2299,6 +2302,8 @@ test_cxx: buildtests_cxx
 	$(Q) $(BINDIR)/$(CONFIG)/bm_metadata || ( echo test bm_metadata failed ; exit 1 )
 	$(E) "[RUN]     Testing bm_pollset"
 	$(Q) $(BINDIR)/$(CONFIG)/bm_pollset || ( echo test bm_pollset failed ; exit 1 )
+	$(E) "[RUN]     Testing bm_threadpool"
+	$(Q) $(BINDIR)/$(CONFIG)/bm_threadpool || ( echo test bm_threadpool failed ; exit 1 )
 	$(E) "[RUN]     Testing bm_timer"
 	$(Q) $(BINDIR)/$(CONFIG)/bm_timer || ( echo test bm_timer failed ; exit 1 )
 	$(E) "[RUN]     Testing byte_stream_test"
@@ -14847,6 +14852,50 @@ deps_bm_pollset: $(BM_POLLSET_OBJS:.o=.dep)
 ifneq ($(NO_SECURE),true)
 ifneq ($(NO_DEPS),true)
 -include $(BM_POLLSET_OBJS:.o=.dep)
+endif
+endif
+
+
+BM_THREADPOOL_SRC = \
+    test/cpp/microbenchmarks/bm_threadpool.cc \
+
+BM_THREADPOOL_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(BM_THREADPOOL_SRC))))
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL.
+
+$(BINDIR)/$(CONFIG)/bm_threadpool: openssl_dep_error
+
+else
+
+
+
+
+ifeq ($(NO_PROTOBUF),true)
+
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
+
+$(BINDIR)/$(CONFIG)/bm_threadpool: protobuf_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/bm_threadpool: $(PROTOBUF_DEP) $(BM_THREADPOOL_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_benchmark.a $(LIBDIR)/$(CONFIG)/libbenchmark.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc++_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_config.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LDXX) $(LDFLAGS) $(BM_THREADPOOL_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_benchmark.a $(LIBDIR)/$(CONFIG)/libbenchmark.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc++_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_config.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(LDLIBS_SECURE) $(GTEST_LIB) -o $(BINDIR)/$(CONFIG)/bm_threadpool
+
+endif
+
+endif
+
+$(BM_THREADPOOL_OBJS): CPPFLAGS += -Ithird_party/benchmark/include -DHAVE_POSIX_REGEX
+$(OBJDIR)/$(CONFIG)/test/cpp/microbenchmarks/bm_threadpool.o:  $(LIBDIR)/$(CONFIG)/libgrpc_benchmark.a $(LIBDIR)/$(CONFIG)/libbenchmark.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc++_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_config.a
+
+deps_bm_threadpool: $(BM_THREADPOOL_OBJS:.o=.dep)
+
+ifneq ($(NO_SECURE),true)
+ifneq ($(NO_DEPS),true)
+-include $(BM_THREADPOOL_OBJS:.o=.dep)
 endif
 endif
 
