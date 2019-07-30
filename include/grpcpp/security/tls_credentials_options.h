@@ -30,7 +30,7 @@
 namespace grpc_impl {
 namespace experimental {
 
-/** TLS key materials config, wrapper for grpc_tls_key_materials_config. **/
+/** TLS key materials config, wraps grpc_tls_key_materials_config. **/
 class TlsKeyMaterialsConfig {
  public:
   struct PemKeyCertPair {
@@ -58,7 +58,43 @@ class TlsKeyMaterialsConfig {
   ::grpc::string pem_root_certs_;
 };
 
-/** TLS credentials options, wrapper for grpc_tls_credentials_options. **/
+/** TLS credential reload arguments, wraps grpc_tls_credential_reload_arg. **/
+class TlsCredentialReloadArg {
+ public:
+
+ private:
+};
+
+/** TLS credential reloag config, wraps grpc_tls_credential_reload_config. **/
+class TlsCredentialReloadConfig {
+ public:
+  // should this whole discussion use smart pointers?
+  TlsCredentialReloadConfig(
+      const void* config_user_data,
+      int (*schedule)(void* config_user_data, TlsCredentialReloadArg* arg),
+      void (*cancel)(void* config_user_data, TlsCredentialReloadArg* arg),
+      void (*destruct)(void* config_user_data));
+  ~TlsCredentialReloadConfig();
+
+  int Schedule(TlsCredentialReloadArg* arg) const {
+    return schedule_(config_user_data_, arg);
+  }
+
+  void Cancel(TlsCredentialReloadArg* arg) const {
+    if (cancel_ == nullptr) {
+      // log info
+    }
+    cancel_(config_user_data_, arg);
+  }
+
+ private:
+  void* config_user_data_;
+  int (*schedule_)(void* config_user_data, TlsCredentialReloadArg* arg);
+  void (*cancel_)(void* config_user_data, TlsCredentialReloadArg* arg);
+  void (*destruct_)(void* config_user_data);
+};
+
+/** TLS credentials options, wraps grpc_tls_credentials_options. **/
 class TlsCredentialsOptions {
  public:
   /** Getters for member fields. **/
