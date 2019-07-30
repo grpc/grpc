@@ -75,10 +75,9 @@ namespace grpc_core {
 // The following types of slices are not managed:
 // - inlined slices (i.e., refcount is null)
 // - slices that have a custom refcount type (i.e., not STATIC or INTERNED)
-// - a slice pointing to a const char*
-// - a slice pointing to data provided by the user but where no reference is
-//   taken. The user is responsible for ensuring the data is valid for the
-//   duration of the period that grpc may access it.
+// - slices where the memory is managed by some external agent. No reference is
+//   taken, and the programmer is responsible for ensuring the data is valid for
+//   the duration of the period that grpc may access it.
 //
 // The following types of slices are managed:
 // - static metadata slices (i.e., refcount type is STATIC)
@@ -88,7 +87,7 @@ namespace grpc_core {
 //
 // - grpc_slice
 // > - UnmanagedMemorySlice
-//   > - UnreferenceableSlice
+//   > - ExternallyManagedSlice
 //   - ManagedMemorySlice
 //   > - InternedSlice
 //     - StaticMetadataSlice
@@ -136,16 +135,17 @@ struct UnmanagedMemorySlice : public grpc_slice {
 
 extern grpc_slice_refcount kNoopRefcount;
 
-struct UnreferenceableSlice : public grpc_slice {
-  UnreferenceableSlice() : UnreferenceableSlice(&kNoopRefcount, 0, nullptr) {}
-  explicit UnreferenceableSlice(const char* s)
-      : UnreferenceableSlice(s, strlen(s)) {}
-  UnreferenceableSlice(const void* s, size_t len)
-      : UnreferenceableSlice(&kNoopRefcount, len,
-                             reinterpret_cast<uint8_t*>(const_cast<void*>(s))) {
-  }
-  UnreferenceableSlice(grpc_slice_refcount* ref, size_t length,
-                       uint8_t* bytes) {
+struct ExternallyManagedSlice : public UnmanagedMemorySlice {
+  ExternallyManagedSlice()
+      : ExternallyManagedSlice(&kNoopRefcount, 0, nullptr) {}
+  explicit ExternallyManagedSlice(const char* s)
+      : ExternallyManagedSlice(s, strlen(s)) {}
+  ExternallyManagedSlice(const void* s, size_t len)
+      : ExternallyManagedSlice(
+            &kNoopRefcount, len,
+            reinterpret_cast<uint8_t*>(const_cast<void*>(s))) {}
+  ExternallyManagedSlice(grpc_slice_refcount* ref, size_t length,
+                         uint8_t* bytes) {
     refcount = ref;
     data.refcounted.length = length;
     data.refcounted.bytes = bytes;

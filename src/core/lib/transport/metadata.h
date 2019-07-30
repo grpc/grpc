@@ -430,7 +430,7 @@ inline grpc_mdelem grpc_mdelem_from_slices(
 }
 
 inline grpc_mdelem grpc_mdelem_from_slices(
-    const grpc_core::UnreferenceableSlice& key,
+    const grpc_core::ExternallyManagedSlice& key,
     const grpc_core::UnmanagedMemorySlice& value) {
   using grpc_core::AllocatedMetadata;
   return GRPC_MAKE_MDELEM(grpc_core::New<AllocatedMetadata>(key, value),
