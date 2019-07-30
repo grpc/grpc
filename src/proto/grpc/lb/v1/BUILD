@@ -29,6 +29,15 @@ grpc_proto_library(
     well_known_protos = True,
 )
 
+proto_library(
+    name = "load_balancer_proto_descriptor",
+    srcs = ["load_balancer.proto"],
+    deps = [
+        "@com_google_protobuf//:duration_proto",
+        "@com_google_protobuf//:timestamp_proto",
+    ],
+)
+
 grpc_proto_library(
     name = "load_reporter_proto",
     srcs = ["load_reporter.proto"],

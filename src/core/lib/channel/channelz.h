@@ -58,13 +58,7 @@ namespace channelz {
 grpc_arg MakeParentUuidArg(intptr_t parent_uuid);
 intptr_t GetParentUuidFromArgs(const grpc_channel_args& args);
 
-// TODO(ncteisen), this only contains the uuids of the children for now,
-// since that is all that is strictly needed. In a future enhancement we will
-// add human readable names as in the channelz.proto
-typedef InlinedVector<intptr_t, 10> ChildRefsList;
-
 class SocketNode;
-typedef InlinedVector<SocketNode*, 10> ChildSocketsList;
 
 namespace testing {
 class CallCountingHelperPeer;
@@ -154,6 +148,10 @@ class ChannelNode : public BaseNode {
   ChannelNode(UniquePtr<char> target, size_t channel_tracer_max_nodes,
               intptr_t parent_uuid);
 
+  // Returns the string description of the given connectivity state.
+  static const char* GetChannelConnectivityStateChangeString(
+      grpc_connectivity_state state);
+
   intptr_t parent_uuid() const { return parent_uuid_; }
 
   grpc_json* RenderJson() override;
@@ -207,12 +205,23 @@ class ChannelNode : public BaseNode {
 class ServerNode : public BaseNode {
  public:
   ServerNode(grpc_server* server, size_t channel_tracer_max_nodes);
+
   ~ServerNode() override;
 
   grpc_json* RenderJson() override;
 
-  char* RenderServerSockets(intptr_t start_socket_id,
-                            intptr_t pagination_limit);
+  char* RenderServerSockets(intptr_t start_socket_id, intptr_t max_results);
+
+  void AddChildSocket(RefCountedPtr<SocketNode>);
+
+  void RemoveChildSocket(intptr_t child_uuid);
+
+  // TODO(ncteisen): This only takes in the uuid of the child socket for now,
+  // since that is all that is strictly needed. In a future enhancement we will
+  // add human readable names as in the channelz.proto
+  void AddChildListenSocket(intptr_t child_uuid);
+
+  void RemoveChildListenSocket(intptr_t child_uuid);
 
   // proxy methods to composed classes.
   void AddTraceEvent(ChannelTrace::Severity severity, const grpc_slice& data) {
@@ -229,9 +238,14 @@ class ServerNode : public BaseNode {
   void RecordCallSucceeded() { call_counter_.RecordCallSucceeded(); }
 
  private:
-  grpc_server* server_;
   CallCountingHelper call_counter_;
   ChannelTrace trace_;
+  Mutex child_mu_;  // Guards child maps below.
+  Map<intptr_t, RefCountedPtr<SocketNode>> child_sockets_;
+  // TODO(roth): We don't actually use the values here, only the keys, so
+  // these should be sets instead of maps, but we don't currently have a set
+  // implementation.  Change this if/when we have one.
+  Map<intptr_t, bool> child_listen_sockets_;
 };
 
 // Handles channelz bookkeeping for sockets

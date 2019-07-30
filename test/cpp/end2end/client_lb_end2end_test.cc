@@ -209,7 +209,6 @@ class ClientLbEnd2endTest : public ::testing::Test {
     // Explicitly destroy all the members so that we can make sure grpc_shutdown
     // has finished by the end of this function, and thus all the registered
     // LB policy factories are removed.
-    stub_.reset();
     servers_.clear();
     creds_.reset();
     grpc_shutdown_blocking();
@@ -421,7 +420,6 @@ class ClientLbEnd2endTest : public ::testing::Test {
   }
 
   const grpc::string server_host_;
-  std::unique_ptr<grpc::testing::EchoTestService::Stub> stub_;
   std::vector<std::unique_ptr<ServerData>> servers_;
   const grpc::string kRequestMessage_;
   std::shared_ptr<ChannelCredentials> creds_;
@@ -1465,6 +1463,32 @@ TEST_F(ClientLbEnd2endTest, RoundRobinWithHealthCheckingServiceNamePerChannel) {
   EXPECT_EQ(1UL, servers_[0]->service_.clients().size());
   // Clean up.
   EnableDefaultHealthCheckService(false);
+}
+
+TEST_F(ClientLbEnd2endTest, ChannelIdleness) {
+  // Start server.
+  const int kNumServers = 1;
+  StartServers(kNumServers);
+  // Set max idle time and build the channel.
+  ChannelArguments args;
+  args.SetInt(GRPC_ARG_CLIENT_IDLE_TIMEOUT_MS, 100);
+  auto response_generator = BuildResolverResponseGenerator();
+  auto channel = BuildChannel("", response_generator, args);
+  auto stub = BuildStub(channel);
+  // The initial channel state should be IDLE.
+  EXPECT_EQ(channel->GetState(false), GRPC_CHANNEL_IDLE);
+  // After sending RPC, channel state should be READY.
+  response_generator.SetNextResolution(GetServersPorts());
+  CheckRpcSendOk(stub, DEBUG_LOCATION);
+  EXPECT_EQ(channel->GetState(false), GRPC_CHANNEL_READY);
+  // After a period time not using the channel, the channel state should switch
+  // to IDLE.
+  gpr_sleep_until(grpc_timeout_milliseconds_to_deadline(120));
+  EXPECT_EQ(channel->GetState(false), GRPC_CHANNEL_IDLE);
+  // Sending a new RPC should awake the IDLE channel.
+  response_generator.SetNextResolution(GetServersPorts());
+  CheckRpcSendOk(stub, DEBUG_LOCATION);
+  EXPECT_EQ(channel->GetState(false), GRPC_CHANNEL_READY);
 }
 
 class ClientLbInterceptTrailingMetadataTest : public ClientLbEnd2endTest {

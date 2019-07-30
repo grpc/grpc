@@ -103,7 +103,7 @@ uint8_t* grpc_slice_buffer_tiny_add(grpc_slice_buffer* sb, size_t n) {
 
   sb->length += n;
 
-  if (sb->count == 0) goto add_new;
+  if (sb->count == 0) goto add_first;
   back = &sb->slices[sb->count - 1];
   if (back->refcount) goto add_new;
   if ((back->data.inlined.length + n) > sizeof(back->data.inlined.bytes))
@@ -115,6 +115,7 @@ uint8_t* grpc_slice_buffer_tiny_add(grpc_slice_buffer* sb, size_t n) {
 
 add_new:
   maybe_embiggen(sb);
+add_first:
   back = &sb->slices[sb->count];
   sb->count++;
   back->refcount = nullptr;

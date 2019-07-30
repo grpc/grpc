@@ -30,7 +30,7 @@ load(
     "//bazel:grpc_build_system.bzl",
     "grpc_cc_library",
     "grpc_generate_one_off_targets",
-    "grpc_proto_plugin",
+    "grpc_upb_proto_library",
 )
 
 config_setting(
@@ -137,7 +137,7 @@ GRPCXX_SRCS = [
     "src/cpp/common/resource_quota_cc.cc",
     "src/cpp/common/rpc_method.cc",
     "src/cpp/common/version_cc.cc",
-    "src/cpp/common/validate_service_config.cc",    
+    "src/cpp/common/validate_service_config.cc",
     "src/cpp/server/async_generic_service.cc",
     "src/cpp/server/channel_argument_option.cc",
     "src/cpp/server/create_default_thread_pool.cc",
@@ -293,7 +293,7 @@ GRPCXX_PUBLIC_HDRS = [
     "include/grpcpp/support/sync_stream.h",
     "include/grpcpp/support/sync_stream_impl.h",
     "include/grpcpp/support/time.h",
-    "include/grpcpp/support/validate_service_config.h",    
+    "include/grpcpp/support/validate_service_config.h",
 ]
 
 grpc_cc_library(
@@ -339,21 +339,6 @@ grpc_cc_library(
         "grpc_secure",
         "grpc_transport_chttp2_client_secure",
         "grpc_transport_chttp2_server_secure",
-    ],
-)
-
-grpc_cc_library(
-    name = "grpc_cronet",
-    srcs = [
-        "src/core/lib/surface/init.cc",
-        "src/core/plugin_registry/grpc_cronet_plugin_registry.cc",
-    ],
-    language = "c++",
-    deps = [
-        "grpc_base",
-        "grpc_http_filters",
-        "grpc_transport_chttp2_client_secure",
-        "grpc_transport_cronet_client_secure",
     ],
 )
 
@@ -427,92 +412,6 @@ grpc_cc_library(
         "grpc++",
         "//src/proto/grpc/status:status_proto",
     ],
-)
-
-grpc_cc_library(
-    name = "grpc_plugin_support",
-    srcs = [
-        "src/compiler/cpp_generator.cc",
-        "src/compiler/csharp_generator.cc",
-        "src/compiler/node_generator.cc",
-        "src/compiler/objective_c_generator.cc",
-        "src/compiler/php_generator.cc",
-        "src/compiler/python_generator.cc",
-        "src/compiler/ruby_generator.cc",
-    ],
-    hdrs = [
-        "src/compiler/config.h",
-        "src/compiler/cpp_generator.h",
-        "src/compiler/cpp_generator_helpers.h",
-        "src/compiler/cpp_plugin.h",
-        "src/compiler/csharp_generator.h",
-        "src/compiler/csharp_generator_helpers.h",
-        "src/compiler/generator_helpers.h",
-        "src/compiler/node_generator.h",
-        "src/compiler/node_generator_helpers.h",
-        "src/compiler/objective_c_generator.h",
-        "src/compiler/objective_c_generator_helpers.h",
-        "src/compiler/php_generator.h",
-        "src/compiler/php_generator_helpers.h",
-        "src/compiler/protobuf_plugin.h",
-        "src/compiler/python_generator.h",
-        "src/compiler/python_generator_helpers.h",
-        "src/compiler/python_private_generator.h",
-        "src/compiler/ruby_generator.h",
-        "src/compiler/ruby_generator_helpers-inl.h",
-        "src/compiler/ruby_generator_map-inl.h",
-        "src/compiler/ruby_generator_string-inl.h",
-        "src/compiler/schema_interface.h",
-    ],
-    external_deps = [
-        "protobuf_clib",
-    ],
-    language = "c++",
-    deps = [
-        "grpc++_config_proto",
-    ],
-)
-
-grpc_proto_plugin(
-    name = "grpc_cpp_plugin",
-    srcs = ["src/compiler/cpp_plugin.cc"],
-    deps = [":grpc_plugin_support"],
-)
-
-grpc_proto_plugin(
-    name = "grpc_csharp_plugin",
-    srcs = ["src/compiler/csharp_plugin.cc"],
-    deps = [":grpc_plugin_support"],
-)
-
-grpc_proto_plugin(
-    name = "grpc_node_plugin",
-    srcs = ["src/compiler/node_plugin.cc"],
-    deps = [":grpc_plugin_support"],
-)
-
-grpc_proto_plugin(
-    name = "grpc_objective_c_plugin",
-    srcs = ["src/compiler/objective_c_plugin.cc"],
-    deps = [":grpc_plugin_support"],
-)
-
-grpc_proto_plugin(
-    name = "grpc_php_plugin",
-    srcs = ["src/compiler/php_plugin.cc"],
-    deps = [":grpc_plugin_support"],
-)
-
-grpc_proto_plugin(
-    name = "grpc_python_plugin",
-    srcs = ["src/compiler/python_plugin.cc"],
-    deps = [":grpc_plugin_support"],
-)
-
-grpc_proto_plugin(
-    name = "grpc_ruby_plugin",
-    srcs = ["src/compiler/ruby_plugin.cc"],
-    deps = [":grpc_plugin_support"],
 )
 
 grpc_cc_library(
@@ -791,6 +690,7 @@ grpc_cc_library(
         "src/core/lib/iomgr/exec_ctx.cc",
         "src/core/lib/iomgr/executor.cc",
         "src/core/lib/iomgr/executor/mpmcqueue.cc",
+        "src/core/lib/iomgr/executor/threadpool.cc",
         "src/core/lib/iomgr/fork_posix.cc",
         "src/core/lib/iomgr/fork_windows.cc",
         "src/core/lib/iomgr/gethostname_fallback.cc",
@@ -949,6 +849,7 @@ grpc_cc_library(
         "src/core/lib/iomgr/exec_ctx.h",
         "src/core/lib/iomgr/executor.h",
         "src/core/lib/iomgr/executor/mpmcqueue.h",
+        "src/core/lib/iomgr/executor/threadpool.h",
         "src/core/lib/iomgr/gethostname.h",
         "src/core/lib/iomgr/gevent_util.h",
         "src/core/lib/iomgr/grpc_if_nametoindex.h",
@@ -1083,6 +984,7 @@ grpc_cc_library(
         "grpc_client_authority_filter",
         "grpc_lb_policy_pick_first",
         "grpc_lb_policy_round_robin",
+        "grpc_client_idle_filter",
         "grpc_max_age_filter",
         "grpc_message_size_filter",
         "grpc_resolver_dns_ares",
@@ -1167,6 +1069,17 @@ grpc_cc_library(
         "orphanable",
         "ref_counted",
         "ref_counted_ptr",
+    ],
+)
+
+grpc_cc_library(
+    name = "grpc_client_idle_filter",
+    srcs = [
+        "src/core/ext/filters/client_idle/client_idle_filter.cc",
+    ],
+    language = "c++",
+    deps = [
+        "grpc_base",
     ],
 )
 
@@ -1911,29 +1824,6 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
-    name = "grpc_transport_cronet_client_secure",
-    srcs = [
-        "src/core/ext/transport/cronet/client/secure/cronet_channel_create.cc",
-        "src/core/ext/transport/cronet/transport/cronet_api_dummy.cc",
-        "src/core/ext/transport/cronet/transport/cronet_transport.cc",
-    ],
-    hdrs = [
-        "src/core/ext/transport/cronet/transport/cronet_transport.h",
-        "third_party/objective_c/Cronet/bidirectional_stream_c.h",
-    ],
-    language = "c++",
-    public_hdrs = [
-        "include/grpc/grpc_cronet.h",
-        "include/grpc/grpc_security.h",
-        "include/grpc/grpc_security_constants.h",
-    ],
-    deps = [
-        "grpc_base",
-        "grpc_transport_chttp2",
-    ],
-)
-
-grpc_cc_library(
     name = "grpc_transport_inproc",
     srcs = [
         "src/core/ext/transport/inproc/inproc_plugin.cc",
@@ -2387,166 +2277,61 @@ grpc_cc_library(
     ],
 )
 
+grpc_upb_proto_library(
+    name = "upb_load_report",
+    deps = ["@envoy_api//envoy/api/v2/endpoint:load_report_export"],
+)
+
+grpc_upb_proto_library(
+    name = "upb_lrs",
+    deps = ["@envoy_api//envoy/service/load_stats/v2:lrs_export"],
+)
+
+grpc_upb_proto_library(
+    name = "upb_cds",
+    deps = ["@envoy_api//envoy/api/v2:cds_export"],
+)
+
 #TODO: Get this into build.yaml once we start using it.
 grpc_cc_library(
     name = "envoy_lrs_upb",
-    srcs = [
-        "src/core/ext/upb-generated/envoy/api/v2/endpoint/load_report.upb.c",
-        "src/core/ext/upb-generated/envoy/service/load_stats/v2/lrs.upb.c",
-    ],
-    hdrs = [
-        "src/core/ext/upb-generated/envoy/api/v2/endpoint/load_report.upb.h",
-        "src/core/ext/upb-generated/envoy/service/load_stats/v2/lrs.upb.h",
-    ],
     external_deps = [
         "upb_lib",
     ],
     language = "c++",
+    language = "c++",
     tags = ["no_windows"],
     deps = [
-        ":envoy_core_upb",
-        ":google_api_upb",
-        ":proto_gen_validate_upb",
+        ":upb_load_report",
+        ":upb_lrs",
     ],
 )
 
 grpc_cc_library(
     name = "envoy_ads_upb",
-    srcs = [
-        "src/core/ext/upb-generated/envoy/api/v2/auth/cert.upb.c",
-        "src/core/ext/upb-generated/envoy/api/v2/cds.upb.c",
-        "src/core/ext/upb-generated/envoy/api/v2/cluster/circuit_breaker.upb.c",
-        "src/core/ext/upb-generated/envoy/api/v2/cluster/outlier_detection.upb.c",
-        "src/core/ext/upb-generated/envoy/api/v2/discovery.upb.c",
-        "src/core/ext/upb-generated/envoy/api/v2/eds.upb.c",
-        "src/core/ext/upb-generated/envoy/api/v2/endpoint/endpoint.upb.c",
-        "src/core/ext/upb-generated/envoy/service/discovery/v2/ads.upb.c",
-    ],
-    hdrs = [
-        "src/core/ext/upb-generated/envoy/api/v2/auth/cert.upb.h",
-        "src/core/ext/upb-generated/envoy/api/v2/cds.upb.h",
-        "src/core/ext/upb-generated/envoy/api/v2/cluster/circuit_breaker.upb.h",
-        "src/core/ext/upb-generated/envoy/api/v2/cluster/outlier_detection.upb.h",
-        "src/core/ext/upb-generated/envoy/api/v2/discovery.upb.h",
-        "src/core/ext/upb-generated/envoy/api/v2/eds.upb.h",
-        "src/core/ext/upb-generated/envoy/api/v2/endpoint/endpoint.upb.h",
-        "src/core/ext/upb-generated/envoy/service/discovery/v2/ads.upb.h",
-    ],
     external_deps = [
         "upb_lib",
     ],
     language = "c++",
     tags = ["no_windows"],
     deps = [
-        ":envoy_core_upb",
-        ":envoy_type_upb",
-        ":google_api_upb",
-        ":proto_gen_validate_upb",
+        ":upb_cds",
     ],
 )
 
-grpc_cc_library(
-    name = "envoy_core_upb",
-    srcs = [
-        "src/core/ext/upb-generated/envoy/api/v2/core/address.upb.c",
-        "src/core/ext/upb-generated/envoy/api/v2/core/base.upb.c",
-        "src/core/ext/upb-generated/envoy/api/v2/core/config_source.upb.c",
-        "src/core/ext/upb-generated/envoy/api/v2/core/grpc_service.upb.c",
-        "src/core/ext/upb-generated/envoy/api/v2/core/health_check.upb.c",
-        "src/core/ext/upb-generated/envoy/api/v2/core/protocol.upb.c",
-    ],
-    hdrs = [
-        "src/core/ext/upb-generated/envoy/api/v2/core/address.upb.h",
-        "src/core/ext/upb-generated/envoy/api/v2/core/base.upb.h",
-        "src/core/ext/upb-generated/envoy/api/v2/core/config_source.upb.h",
-        "src/core/ext/upb-generated/envoy/api/v2/core/grpc_service.upb.h",
-        "src/core/ext/upb-generated/envoy/api/v2/core/health_check.upb.h",
-        "src/core/ext/upb-generated/envoy/api/v2/core/protocol.upb.h",
-    ],
-    external_deps = [
-        "upb_lib",
-    ],
-    language = "c++",
-    tags = ["no_windows"],
-    deps = [
-        ":envoy_type_upb",
-        ":google_api_upb",
-        ":proto_gen_validate_upb",
-    ],
+grpc_upb_proto_library(
+    name = "grpc_health_upb",
+    deps = ["//src/proto/grpc/health/v1:health_proto_descriptor"],
 )
 
-grpc_cc_library(
-    name = "envoy_type_upb",
-    srcs = [
-        "src/core/ext/upb-generated/envoy/type/percent.upb.c",
-        "src/core/ext/upb-generated/envoy/type/range.upb.c",
-    ],
-    hdrs = [
-        "src/core/ext/upb-generated/envoy/type/percent.upb.h",
-        "src/core/ext/upb-generated/envoy/type/range.upb.h",
-    ],
-    external_deps = [
-        "upb_lib",
-    ],
-    language = "c++",
-    tags = ["no_windows"],
-    deps = [
-        ":google_api_upb",
-        ":proto_gen_validate_upb",
-    ],
+grpc_upb_proto_library(
+    name = "grpc_lb_upb",
+    deps = ["//src/proto/grpc/lb/v1:load_balancer_proto_descriptor"],
 )
 
-grpc_cc_library(
-    name = "proto_gen_validate_upb",
-    srcs = [
-        "src/core/ext/upb-generated/gogoproto/gogo.upb.c",
-        "src/core/ext/upb-generated/validate/validate.upb.c",
-    ],
-    hdrs = [
-        "src/core/ext/upb-generated/gogoproto/gogo.upb.h",
-        "src/core/ext/upb-generated/validate/validate.upb.h",
-    ],
-    external_deps = [
-        "upb_lib",
-    ],
-    language = "c++",
-    tags = ["no_windows"],
-    deps = [
-        ":google_api_upb",
-    ],
-)
-
-grpc_cc_library(
-    name = "google_api_upb",
-    srcs = [
-        "src/core/ext/upb-generated/google/api/annotations.upb.c",
-        "src/core/ext/upb-generated/google/api/http.upb.c",
-        "src/core/ext/upb-generated/google/protobuf/any.upb.c",
-        "src/core/ext/upb-generated/google/protobuf/descriptor.upb.c",
-        "src/core/ext/upb-generated/google/protobuf/duration.upb.c",
-        "src/core/ext/upb-generated/google/protobuf/empty.upb.c",
-        "src/core/ext/upb-generated/google/protobuf/struct.upb.c",
-        "src/core/ext/upb-generated/google/protobuf/timestamp.upb.c",
-        "src/core/ext/upb-generated/google/protobuf/wrappers.upb.c",
-        "src/core/ext/upb-generated/google/rpc/status.upb.c",
-    ],
-    hdrs = [
-        "src/core/ext/upb-generated/google/api/annotations.upb.h",
-        "src/core/ext/upb-generated/google/api/http.upb.h",
-        "src/core/ext/upb-generated/google/protobuf/any.upb.h",
-        "src/core/ext/upb-generated/google/protobuf/descriptor.upb.h",
-        "src/core/ext/upb-generated/google/protobuf/duration.upb.h",
-        "src/core/ext/upb-generated/google/protobuf/empty.upb.h",
-        "src/core/ext/upb-generated/google/protobuf/struct.upb.h",
-        "src/core/ext/upb-generated/google/protobuf/timestamp.upb.h",
-        "src/core/ext/upb-generated/google/protobuf/wrappers.upb.h",
-        "src/core/ext/upb-generated/google/rpc/status.upb.h",
-    ],
-    external_deps = [
-        "upb_lib",
-    ],
-    language = "c++",
-    tags = ["no_windows"],
+grpc_upb_proto_library(
+    name = "alts_upb",
+    deps = ["//src/proto/grpc/gcp:alts_handshaker_proto"],
 )
 
 grpc_generate_one_off_targets()

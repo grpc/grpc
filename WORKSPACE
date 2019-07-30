@@ -15,7 +15,7 @@ register_execution_platforms(
 )
 
 register_toolchains(
-    "//third_party/toolchains/bazel_0.23.2_rbe_windows:cc-toolchain-x64_windows",
+    "//third_party/toolchains/bazel_0.26.0_rbe_windows:cc-toolchain-x64_windows",
 )
 
 git_repository(
@@ -66,26 +66,16 @@ rbe_autoconfig(
     ),
 )
 
-http_archive(
-    name = "io_bazel_rules_go",
-    sha256 = "45409e6c4f748baa9e05f8f6ab6efaa05739aa064e3ab94e5a1a09849c51806a",
-    urls = ["https://github.com/bazelbuild/rules_go/releases/download/0.18.7/rules_go-0.18.7.tar.gz"],
-)
+load("@upb//bazel:workspace_deps.bzl", "upb_deps")
+
+upb_deps()
 
 load("@envoy_api//bazel:repositories.bzl", "api_dependencies")
 
 api_dependencies()
-
-load("@io_bazel_rules_go//go/private:repositories.bzl", "go_rules_dependencies")
-
-go_rules_dependencies()
 
 load("@io_bazel_rules_go//go:deps.bzl", "go_rules_dependencies", "go_register_toolchains")
 
 go_rules_dependencies()
 
 go_register_toolchains()
-
-load("@bazel_gazelle//:deps.bzl", "gazelle_dependencies")
-
-gazelle_dependencies()
