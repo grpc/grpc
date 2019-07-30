@@ -206,8 +206,6 @@ static InternedSliceRefcount* MatchInternedSliceLocked(uint32_t hash,
                                                        SliceArgs... args) {
   InternedSliceRefcount* s;
   slice_shard* shard = &g_shards[SHARD_IDX(hash)];
-  /* Didn't find a matching static slice; lock shard and look there. */
-  gpr_mu_lock(&shard->mu);
   /* search for an existing string */
   for (s = shard->strs[idx]; s; s = s->bucket_next) {
     if (s->hash == hash && grpc_core::InternedSlice(s).Equals(args...)) {
@@ -226,7 +224,7 @@ static InternedSliceRefcount* FindOrCreateInternedSlice(uint32_t hash,
   gpr_mu_lock(&shard->mu);
   const size_t idx = TABLE_IDX(hash, shard->capacity);
   InternedSliceRefcount* s = MatchInternedSliceLocked(hash, idx, args...);
-  if (!s) {
+  if (s == nullptr) {
     s = InternNewStringLocked(shard, idx, hash, args...);
   }
   gpr_mu_unlock(&shard->mu);
