@@ -417,7 +417,7 @@ grpc_error* grpc_chttp2_server_add_port(grpc_server* server, const char* addr,
     state->channelz_listen_socket =
         grpc_core::MakeRefCounted<grpc_core::channelz::ListenSocketNode>(
             grpc_core::UniquePtr<char>(gpr_strdup(addr)),
-            grpc_core::UniquePtr<char>(gpr_strdup(socket_name)));
+            grpc_core::UniquePtr<char>(socket_name));
   }
 
   /* Register with the server only upon success */
