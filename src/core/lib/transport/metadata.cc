@@ -399,7 +399,6 @@ static grpc_mdelem md_create_maybe_static(const grpc_slice& key,
   const intptr_t kidx = GRPC_STATIC_METADATA_INDEX(key);
 
   // Not all static slice input yields a statically stored metadata element.
-  // It may be worth documenting why.
   if (key_is_static_mdstr && value_is_static_mdstr) {
     grpc_mdelem static_elem = grpc_static_mdelem_for_static_strings(
         kidx, GRPC_STATIC_METADATA_INDEX(value));
@@ -472,7 +471,7 @@ grpc_mdelem grpc_mdelem_create(
 }
 
 grpc_mdelem grpc_mdelem_create(
-    const grpc_core::StaticSlice& key, const grpc_slice& value,
+    const grpc_core::StaticMetadataSlice& key, const grpc_slice& value,
     grpc_mdelem_data* compatible_external_backing_store) {
   return md_create<true>(key, value, compatible_external_backing_store);
 }
@@ -499,19 +498,20 @@ grpc_mdelem grpc_mdelem_from_slices(const grpc_slice& key,
   return md_from_slices</*key_definitely_static=*/false>(key, value);
 }
 
-grpc_mdelem grpc_mdelem_from_slices(const grpc_core::StaticSlice& key,
+grpc_mdelem grpc_mdelem_from_slices(const grpc_core::StaticMetadataSlice& key,
                                     const grpc_slice& value) {
   return md_from_slices</*key_definitely_static=*/true>(key, value);
 }
 
-grpc_mdelem grpc_mdelem_from_slices(const grpc_core::StaticSlice& key,
-                                    const grpc_core::StaticSlice& value) {
+grpc_mdelem grpc_mdelem_from_slices(
+    const grpc_core::StaticMetadataSlice& key,
+    const grpc_core::StaticMetadataSlice& value) {
   grpc_mdelem out = md_create_maybe_static<true, true>(key, value);
   return out;
 }
 
 grpc_mdelem grpc_mdelem_from_slices(
-    const grpc_core::StaticSlice& key,
+    const grpc_core::StaticMetadataSlice& key,
     const grpc_core::ManagedMemorySlice& value) {
   // TODO(arjunroy): We can save the unref if md_create_maybe_static ended up
   // creating a new interned metadata. But otherwise - we need this here.

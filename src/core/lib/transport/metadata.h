@@ -127,15 +127,16 @@ grpc_mdelem grpc_mdelem_from_slices(const grpc_slice& key,
 
 /* Like grpc_mdelem_from_slices, but we know that key is a static slice. This
    saves us a few branches and a no-op call to md_unref() for the key. */
-grpc_mdelem grpc_mdelem_from_slices(const grpc_core::StaticSlice& key,
+grpc_mdelem grpc_mdelem_from_slices(const grpc_core::StaticMetadataSlice& key,
                                     const grpc_slice& value);
 
 /* Like grpc_mdelem_from_slices, but key is static and val is static. */
-grpc_mdelem grpc_mdelem_from_slices(const grpc_core::StaticSlice& key,
-                                    const grpc_core::StaticSlice& value);
+grpc_mdelem grpc_mdelem_from_slices(
+    const grpc_core::StaticMetadataSlice& key,
+    const grpc_core::StaticMetadataSlice& value);
 
 /* Like grpc_mdelem_from_slices, but key is static and val is interned. */
-grpc_mdelem grpc_mdelem_from_slices(const grpc_core::StaticSlice& key,
+grpc_mdelem grpc_mdelem_from_slices(const grpc_core::StaticMetadataSlice& key,
                                     const grpc_core::ManagedMemorySlice& value);
 
 /* Like grpc_mdelem_from_slices, but key and val are interned. */
@@ -156,7 +157,7 @@ grpc_mdelem grpc_mdelem_create(
 
 /* Like grpc_mdelem_create, but we know that key is static. */
 grpc_mdelem grpc_mdelem_create(
-    const grpc_core::StaticSlice& key, const grpc_slice& value,
+    const grpc_core::StaticMetadataSlice& key, const grpc_slice& value,
     grpc_mdelem_data* compatible_external_backing_store);
 
 #define GRPC_MDKEY(md) (GRPC_MDELEM_DATA(md)->key)
@@ -429,7 +430,15 @@ inline grpc_mdelem grpc_mdelem_from_slices(
 }
 
 inline grpc_mdelem grpc_mdelem_from_slices(
-    const grpc_core::StaticSlice& key,
+    const grpc_core::UnreferenceableSlice& key,
+    const grpc_core::UnmanagedMemorySlice& value) {
+  using grpc_core::AllocatedMetadata;
+  return GRPC_MAKE_MDELEM(grpc_core::New<AllocatedMetadata>(key, value),
+                          GRPC_MDELEM_STORAGE_ALLOCATED);
+}
+
+inline grpc_mdelem grpc_mdelem_from_slices(
+    const grpc_core::StaticMetadataSlice& key,
     const grpc_core::UnmanagedMemorySlice& value) {
   using grpc_core::AllocatedMetadata;
   return GRPC_MAKE_MDELEM(grpc_core::New<AllocatedMetadata>(key, value),

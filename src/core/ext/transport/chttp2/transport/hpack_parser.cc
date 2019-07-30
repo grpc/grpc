@@ -1529,8 +1529,8 @@ static bool is_binary_literal_header(grpc_chttp2_hpack_parser* p) {
    *    which occurs in begin_parse_string() - where the refcount is set to
    *    p->current_slice_refcount, which is not null. */
   return grpc_is_refcounted_slice_binary_header(
-      p->key.copied ? grpc_core::StaticSlice(p->key.data.copied.str,
-                                             p->key.data.copied.length)
+      p->key.copied ? grpc_core::UnreferenceableSlice(p->key.data.copied.str,
+                                                      p->key.data.copied.length)
                     : p->key.data.referenced);
 }
 

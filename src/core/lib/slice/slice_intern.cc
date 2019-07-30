@@ -153,7 +153,7 @@ grpc_slice grpc_slice_intern(grpc_slice slice) {
   /* TODO(arjunroy): At present, this is capable of returning either a static or
      an interned slice. This yields weirdness like the constructor for
      ManagedMemorySlice instantiating itself as an instance of a derived type
-     (StaticSlice or InternedSlice). Should reexamine. */
+     (StaticMetadataSlice or InternedSlice). Should reexamine. */
   return grpc_core::ManagedMemorySlice(&slice);
 }
 
@@ -163,8 +163,8 @@ grpc_slice grpc_slice_intern(grpc_slice slice) {
 //
 // Returns: a matching static slice, or null.
 template <class... SliceArgs>
-static const grpc_core::StaticSlice* MatchStaticSlice(uint32_t hash,
-                                                      SliceArgs... args) {
+static const grpc_core::StaticMetadataSlice* MatchStaticSlice(
+    uint32_t hash, SliceArgs... args) {
   for (uint32_t i = 0; i <= max_static_metadata_hash_probe; i++) {
     static_metadata_hash_ent ent =
         static_metadata_hash[(hash + i) % GPR_ARRAY_SIZE(static_metadata_hash)];
@@ -267,7 +267,7 @@ grpc_core::ManagedMemorySlice::ManagedMemorySlice(const char* string,
                                                   size_t len) {
   GPR_TIMER_SCOPE("grpc_slice_intern", 0);
   const uint32_t hash = gpr_murmur_hash3(string, len, g_hash_seed);
-  const StaticSlice* static_slice = MatchStaticSlice(hash, string, len);
+  const StaticMetadataSlice* static_slice = MatchStaticSlice(hash, string, len);
   if (static_slice) {
     *this = *static_slice;
   } else {
@@ -280,11 +280,11 @@ grpc_core::ManagedMemorySlice::ManagedMemorySlice(const grpc_slice* slice_ptr) {
   GPR_TIMER_SCOPE("grpc_slice_intern", 0);
   const grpc_slice& slice = *slice_ptr;
   if (GRPC_IS_STATIC_METADATA_STRING(slice)) {
-    *this = static_cast<const grpc_core::StaticSlice&>(slice);
+    *this = static_cast<const grpc_core::StaticMetadataSlice&>(slice);
     return;
   }
   const uint32_t hash = grpc_slice_hash_internal(slice);
-  const StaticSlice* static_slice = MatchStaticSlice(hash, slice);
+  const StaticMetadataSlice* static_slice = MatchStaticSlice(hash, slice);
   if (static_slice) {
     *this = *static_slice;
   } else {

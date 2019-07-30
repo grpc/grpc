@@ -393,7 +393,7 @@ for i, elem in enumerate(all_strs):
 
 def slice_def(i):
     return (
-        'grpc_core::StaticSlice(&grpc_static_metadata_refcounts[%d], %d, g_bytes+%d)'
+        'grpc_core::StaticMetadataSlice(&grpc_static_metadata_refcounts[%d], %d, g_bytes+%d)'
     ) % (i, len(all_strs[i]), id2strofs[i])
 
 
@@ -402,11 +402,11 @@ for elem in METADATA_BATCH_CALLOUTS:
     assert elem in all_strs
 static_slice_dest_assert = (
     'static_assert(std::is_trivially_destructible' +
-    '<grpc_core::StaticSlice>::value, '
-    '"grpc_core::StaticSlice must be trivially destructible.");')
+    '<grpc_core::StaticMetadataSlice>::value, '
+    '"grpc_core::StaticMetadataSlice must be trivially destructible.");')
 print >> H, static_slice_dest_assert
 print >> H, '#define GRPC_STATIC_MDSTR_COUNT %d' % len(all_strs)
-print >> H, ('extern const grpc_core::StaticSlice '
+print >> H, ('extern const grpc_core::StaticMetadataSlice '
              'grpc_static_slice_table[GRPC_STATIC_MDSTR_COUNT];')
 for i, elem in enumerate(all_strs):
     print >> H, '/* "%s" */' % elem
@@ -431,7 +431,7 @@ print >> H, ('  ((slice).refcount != NULL && (slice).refcount->GetType() == '
              'grpc_slice_refcount::Type::STATIC)')
 print >> H
 print >> C, (
-    'const grpc_core::StaticSlice grpc_static_slice_table[GRPC_STATIC_MDSTR_COUNT]'
+    'const grpc_core::StaticMetadataSlice grpc_static_slice_table[GRPC_STATIC_MDSTR_COUNT]'
     ' = {')
 for i, elem in enumerate(all_strs):
     print >> C, slice_def(i) + ','
