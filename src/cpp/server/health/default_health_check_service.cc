@@ -27,6 +27,8 @@
 #include "src/cpp/server/health/default_health_check_service.h"
 #include "src/proto/grpc/health/v1/health.upb.h"
 
+#define MAX_SERVICE_NAME_LENGTH 200
+
 namespace grpc {
 
 //
@@ -225,6 +227,9 @@ bool DefaultHealthCheckService::HealthCheckServiceImpl::DecodeRequest(
   }
   upb_strview service =
       grpc_health_v1_HealthCheckRequest_service(request_struct);
+  if (service.size > MAX_SERVICE_NAME_LENGTH) {
+    return false;
+  }
   service_name->assign(service.data, service.size);
   return true;
 }
