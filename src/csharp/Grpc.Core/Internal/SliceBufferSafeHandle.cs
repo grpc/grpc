@@ -79,7 +79,9 @@ namespace Grpc.Core.Internal
             AdjustTailSpace(0);
         }
 
-        public byte[] GetPayload()
+        // copies the content of the slice buffer to a newly allocated byte array
+        // due to its overhead, this method should only be used for testing.
+        public byte[] ToByteArray()
         {
             ulong sliceCount = Native.grpcsharp_slice_buffer_slice_count(this).ToUInt64();
 
@@ -102,7 +104,6 @@ namespace Grpc.Core.Internal
             GrpcPreconditions.CheckState(totalLen == offset);
             return result;
         }
-        // TODO: converting contents to byte[]
 
         // Gets data of server_rpc_new completion.
         private void AdjustTailSpace(int requestedSize)
@@ -112,7 +113,6 @@ namespace Grpc.Core.Internal
             tailSpacePtr = Native.grpcsharp_slice_buffer_adjust_tail_space(this, tailSpaceLen, requestedTailSpaceLen);
             tailSpaceLen = requestedTailSpaceLen;
         }
-
         protected override bool ReleaseHandle()
         {
             Native.grpcsharp_slice_buffer_destroy(handle);
