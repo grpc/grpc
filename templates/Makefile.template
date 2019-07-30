@@ -36,7 +36,7 @@
     sources_that_don_t_need_openssl = set()
 
     # warnings we'd like, but that dont exist in all compilers
-    PREFERRED_WARNINGS=['shadow', 'extra-semi']
+    PREFERRED_WARNINGS=['extra-semi']
     CHECK_WARNINGS=PREFERRED_WARNINGS + ['no-shift-negative-value', 'no-unused-but-set-variable', 'no-maybe-uninitialized']
 
     def warning_var(fmt, warning):
@@ -216,7 +216,7 @@
   HOST_LD ?= $(LD)
   HOST_LDXX ?= $(LDXX)
 
-  CFLAGS += -std=c99 -Wsign-conversion -Wconversion ${' '.join(warning_var('$(W_%s)', warning) for warning in PREFERRED_WARNINGS)}
+  CFLAGS += -std=c99 ${' '.join(warning_var('$(W_%s)', warning) for warning in PREFERRED_WARNINGS)}
   CXXFLAGS += -std=c++11
   ifeq ($(SYSTEM),Darwin)
   CXXFLAGS += -stdlib=libc++
@@ -240,7 +240,7 @@
   LDFLAGS += -fPIC
   endif
 
-  INCLUDES = . include $(GENDIR) third_party/upb third_party/upb/generated_for_cmake src/core/ext/upb-generated
+  INCLUDES = . include $(GENDIR)
   LDFLAGS += -Llibs/$(CONFIG)
 
   ifeq ($(SYSTEM),Darwin)
