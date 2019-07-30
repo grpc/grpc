@@ -384,7 +384,7 @@ static bool read_channel_args(grpc_chttp2_transport* t,
         grpc_core::MakeRefCounted<grpc_core::channelz::SocketNode>(
             grpc_core::UniquePtr<char>(),
             grpc_core::UniquePtr<char>(gpr_strdup(t->peer_string)),
-            grpc_core::UniquePtr<char>(gpr_strdup(socket_name)));
+            grpc_core::UniquePtr<char>(socket_name));
   }
   return enable_bdp;
 }
