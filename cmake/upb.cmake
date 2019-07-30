@@ -1,5 +1,4 @@
-#!/bin/sh
-# Copyright 2017 gRPC authors.
+# Copyright 2019 gRPC authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -13,12 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-set -ex
+set(UPB_ROOT_DIR ${CMAKE_CURRENT_SOURCE_DIR}/third_party/upb)
 
-# clang format command
-CLANG_TIDY=${CLANG_TIDY:-clang-tidy-5.0}
-
-cd ${CLANG_TIDY_ROOT}
-
-find src/core src/cpp test/core test/cpp ! -path 'src/core/ext/upb-generated/*' -name '*.h' -or -name '*.cc' -print0 \
-  | xargs -0 tools/distrib/run_clang_tidy.py "$@"
+set(_gRPC_UPB_INCLUDE_DIR "${UPB_ROOT_DIR}")
+set(_gRPC_UPB_GENERATED_DIR "${UPB_ROOT_DIR}/generated_for_cmake")
+set(_gRPC_UPB_GRPC_GENERATED_DIR "${CMAKE_CURRENT_SOURCE_DIR}/src/core/ext/upb-generated")
