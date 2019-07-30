@@ -33,10 +33,10 @@ void TlsKeyMaterialsConfig::set_key_materials(
 grpc_tls_credentials_options* TlsCredentialsOptions::c_credentials_options() const {
   grpc_tls_credentials_options* c_options = grpc_tls_credentials_options_create();
   c_options->set_cert_request_type(cert_request_type_);
-  // TODO: put in C configs into functions below.
-  c_options->set_key_materials_config(nullptr);
-  c_options->set_credential_reload_config(nullptr);
-  c_options->set_server_authorization_check_config(nullptr);
+  c_options->set_key_materials_config(key_materials_config_->c_key_materials());
+  c_options->set_credential_reload_config(credential_reload_config_->c_credential_reload());
+  c_options->set_server_authorization_check_config(
+      server_authorization_check_config_->c_server_authorization_check());
   return c_options;
 }
 

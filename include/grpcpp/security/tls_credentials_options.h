@@ -87,11 +87,53 @@ class TlsCredentialReloadConfig {
     cancel_(config_user_data_, arg);
   }
 
+  grpc_core::RefCountedPtr<grpc_tls_credential_reload_config>
+      c_credential_reload() const;
+
  private:
   void* config_user_data_;
   int (*schedule_)(void* config_user_data, TlsCredentialReloadArg* arg);
   void (*cancel_)(void* config_user_data, TlsCredentialReloadArg* arg);
   void (*destruct_)(void* config_user_data);
+};
+
+/** TLS server authorization check  arguments, wraps
+ * grpc_tls_server_authorization_check_arg. **/
+class TlsServerAuthorizationCheckArg {
+ public:
+ private:
+};
+
+/** TLS server authorization check config, wraps
+ * grps_tls_server_authorization_check_config. **/
+class TlsServerAuthorizationCheckConfig {
+ public:
+  TlsServerAuthorizationCheckConfig(
+      const void* config_user_data,
+      int (*schedule)(void* config_user_data, TlsServerAuthorizationCheckArg* arg),
+      void (*cancel)(void* config_user_data, TlsServerAuthorizationCheckArg* arg),
+      void (*destruct)(void* config_user_data));
+  ~TlsServerAuthorizationCheckConfig();
+
+  int Schedule(TlsServerAuthorizationCheckArg* arg) const {
+    return schedule_(config_user_data_, arg);
+  }
+
+  void Cancel(TlsServerAuthorizationCheckArg* arg) const {
+    if (cancel_ == nullptr) {
+      // log info
+    }
+    cancel_(config_user_data_, arg);
+  }
+
+  grpc_core::RefCountedPtr<grpc_tls_server_authorization_check_config>
+      c_server_authorization_check() const;
+
+ private:
+    void* config_user_data_;
+    int (*schedule_)(void* config_user_data, TlsServerAuthorizationCheckArg* arg);
+    void (*cancel_)(void* config_user_data, TlsServerAuthorizationCheckArg* arg);
+    void (*destruct_)(void* config_user_data);
 };
 
 /** TLS credentials options, wraps grpc_tls_credentials_options. **/
@@ -104,16 +146,29 @@ class TlsCredentialsOptions {
   std::shared_ptr<TlsKeyMaterialsConfig> key_materials_config() const {
     return key_materials_config_;
   }
+  std::shared_ptr<TlsCredentialReloadConfig> credential_reload_config() const {
+    return credential_reload_config_;
+  }
+  std::shared_ptr<TlsServerAuthorizationConfig> server_authorization_check_config() const {
+    return server_authorization_check_config_;
+  }
 
   /** Setters for member fields. **/
   void set_cert_request_type(
       const grpc_ssl_client_certificate_request_type type) {
     cert_request_type_ = type;
   }
-
   void set_key_materials_config(
       std::shared_ptr<TlsKeyMaterialsConfig> config) {
     key_materials_config_ = config;
+  }
+  void set_credential_reload_config(
+      std::shared_ptr<TlsCredentialReloadConfig> config) {
+    credential_reload_config_ = config;
+  }
+  void set_server_authorization_check_config(
+      std::shared_ptr<TlsServerAuthorizationCheckConfig> config) {
+    server_authorization_check_config_ = config;
   }
 
   /** Creates C struct for TLS credential options. **/
@@ -122,6 +177,8 @@ class TlsCredentialsOptions {
  private:
   grpc_ssl_client_certificate_request_type cert_request_type_;
   std::shared_ptr<TlsKeyMaterialsConfig> key_materials_config_;
+  std::shared_ptr<TlsCredentialReloadConfig> credential_reload_config_;
+  std::shared_ptr<TlsServerAuthorizationCheckConfig> server_authorization_check_config_;
 };
 
 } // namespace experimental
