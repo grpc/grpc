@@ -1196,6 +1196,19 @@ grpcsharp_slice_buffer_destroy(grpc_slice_buffer* buffer) {
   gpr_free(buffer);
 }
 
+GPR_EXPORT size_t GPR_CALLTYPE
+grpcsharp_slice_buffer_slice_count(grpc_slice_buffer* buffer) {
+  return buffer->count;
+}
+
+GPR_EXPORT void GPR_CALLTYPE
+grpcsharp_slice_buffer_slice_peek(grpc_slice_buffer* buffer, size_t index, size_t* slice_len, uint8_t** slice_data_ptr) {
+  GPR_ASSERT(buffer->count > index);
+  grpc_slice* slice_ptr = &buffer->slices[index];
+  *slice_len = GRPC_SLICE_LENGTH(*slice_ptr);
+  *slice_data_ptr = GRPC_SLICE_START_PTR(*slice_ptr);
+}
+
 GPR_EXPORT grpc_byte_buffer* GPR_CALLTYPE
 grpcsharp_create_byte_buffer_from_stolen_slices(grpc_slice_buffer* slice_buffer) {
   grpc_byte_buffer* bb =
@@ -1217,6 +1230,10 @@ GPR_EXPORT void* GPR_CALLTYPE
 grpcsharp_slice_buffer_adjust_tail_space(grpc_slice_buffer* buffer, size_t available_tail_space,
     size_t requested_tail_space) {
 
+    if (available_tail_space == 0 && requested_tail_space == 0)
+    {
+      return NULL;
+    }
     // TODO: what if available_tail_space == requested_tail_space == 0
 
     if (available_tail_space >= requested_tail_space)

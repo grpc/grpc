@@ -382,6 +382,14 @@ void grpcsharp_slice_buffer_adjust_tail_space() {
   fprintf(stderr, "Should never reach here");
   abort();
 }
+void grpcsharp_slice_buffer_slice_count() {
+  fprintf(stderr, "Should never reach here");
+  abort();
+}
+void grpcsharp_slice_buffer_slice_peek() {
+  fprintf(stderr, "Should never reach here");
+  abort();
+}
 void grpcsharp_slice_buffer_destroy() {
   fprintf(stderr, "Should never reach here");
   abort();

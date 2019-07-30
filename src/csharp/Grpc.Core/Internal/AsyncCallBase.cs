@@ -220,7 +220,7 @@ namespace Grpc.Core.Internal
             {
                 context = DefaultSerializationContext.GetInitializedThreadLocal();
                 serializer(msg, context);
-                return context.GetPayload();
+                return context.GetPayload().GetPayload();
             }
             finally
             {
