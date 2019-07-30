@@ -17,20 +17,18 @@
 #include <grpc/support/port_platform.h>
 
 #include "src/core/ext/filters/client_channel/backend_metric.h"
-#include "src/core/ext/upb-generated/udpa/data/orca/v1/orca_load_report.upb.h"
+#include "udpa/data/orca/v1/orca_load_report.upb.h"
 
 namespace grpc_core {
 
 const LoadBalancingPolicy::BackendMetricData* ParseBackendMetricData(
     const grpc_slice& serialized_load_report, Arena* arena) {
   upb::Arena upb_arena;
-  upb_strview serialized_data = {
-      reinterpret_cast<const char*>(
-          GRPC_SLICE_START_PTR(serialized_load_report)),
-      GRPC_SLICE_LENGTH(serialized_load_report)};
   udpa_data_orca_v1_OrcaLoadReport* msg =
-      udpa_data_orca_v1_OrcaLoadReport_parsenew(serialized_data,
-                                                upb_arena.ptr());
+      udpa_data_orca_v1_OrcaLoadReport_parse(
+          reinterpret_cast<const char*>(
+              GRPC_SLICE_START_PTR(serialized_load_report)),
+          GRPC_SLICE_LENGTH(serialized_load_report), upb_arena.ptr());
   if (msg == nullptr) return nullptr;
   Map<const char*, double, StringLess> request_cost_or_utilization;
   size_t size;

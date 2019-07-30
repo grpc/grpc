@@ -322,6 +322,7 @@ if (PHP_GRPC != "no") {
     "src\\core\\ext\\transport\\chttp2\\client\\insecure\\channel_create_posix.cc " +
     "src\\core\\ext\\transport\\chttp2\\client\\authority.cc " +
     "src\\core\\ext\\transport\\chttp2\\client\\chttp2_connector.cc " +
+    "src\\core\\ext\\filters\\client_channel\\backend_metric.cc " +
     "src\\core\\ext\\filters\\client_channel\\backup_poller.cc " +
     "src\\core\\ext\\filters\\client_channel\\channel_connectivity.cc " +
     "src\\core\\ext\\filters\\client_channel\\client_channel.cc " +
@@ -350,6 +351,7 @@ if (PHP_GRPC != "no") {
     "src\\core\\ext\\filters\\client_channel\\subchannel_pool_interface.cc " +
     "src\\core\\ext\\filters\\deadline\\deadline_filter.cc " +
     "src\\core\\ext\\filters\\client_channel\\health\\health.pb.c " +
+    "src\\core\\ext\\upb-generated\\udpa\\data\\orca\\v1\\orca_load_report.upb.c " +
     "src\\core\\tsi\\fake_transport_security.cc " +
     "src\\core\\tsi\\local_transport_security.cc " +
     "src\\core\\tsi\\ssl\\session_cache\\ssl_session_boringssl.cc " +
@@ -733,6 +735,11 @@ if (PHP_GRPC != "no") {
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\transport\\chttp2\\server\\secure");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\transport\\chttp2\\transport");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\transport\\inproc");
+  FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\upb-generated");
+  FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\upb-generated\\udpa");
+  FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\upb-generated\\udpa\\data");
+  FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\upb-generated\\udpa\\data\\orca");
+  FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\upb-generated\\udpa\\data\\orca\\v1");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\lib");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\lib\\avl");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\lib\\backoff");

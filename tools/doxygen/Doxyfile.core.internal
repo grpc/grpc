@@ -875,6 +875,8 @@ src/core/README.md \
 src/core/ext/README.md \
 src/core/ext/filters/census/grpc_context.cc \
 src/core/ext/filters/client_channel/README.md \
+src/core/ext/filters/client_channel/backend_metric.cc \
+src/core/ext/filters/client_channel/backend_metric.h \
 src/core/ext/filters/client_channel/backup_poller.cc \
 src/core/ext/filters/client_channel/backup_poller.h \
 src/core/ext/filters/client_channel/channel_connectivity.cc \
@@ -1066,6 +1068,8 @@ src/core/ext/transport/chttp2/transport/writing.cc \
 src/core/ext/transport/inproc/inproc_plugin.cc \
 src/core/ext/transport/inproc/inproc_transport.cc \
 src/core/ext/transport/inproc/inproc_transport.h \
+src/core/ext/upb-generated/udpa/data/orca/v1/orca_load_report.upb.c \
+src/core/ext/upb-generated/udpa/data/orca/v1/orca_load_report.upb.h \
 src/core/lib/README.md \
 src/core/lib/avl/avl.cc \
 src/core/lib/avl/avl.h \

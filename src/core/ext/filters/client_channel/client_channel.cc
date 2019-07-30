@@ -381,9 +381,8 @@ class CallData {
         grpc_linked_mdelem* md = calld_->recv_trailing_metadata_->idx.named
                                      .x_endpoint_load_metrics_bin;
         if (md != nullptr) {
-          // TODO(roth): Enable this as soon as we can build upb with make.
-          // calld_->backend_metric_data_ =
-          //    ParseBackendMetricData(GRPC_MDVALUE(md->md), calld_->arena_);
+          calld_->backend_metric_data_ =
+              ParseBackendMetricData(GRPC_MDVALUE(md->md), calld_->arena_);
         }
       }
       return calld_->backend_metric_data_;

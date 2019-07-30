@@ -2296,24 +2296,6 @@ grpc_upb_proto_library(
 
 #TODO: Get this into build.yaml once we start using it.
 grpc_cc_library(
-    name = "envoy_orca_upb",
-    srcs = [
-        "src/core/ext/upb-generated/udpa/data/orca/v1/orca_load_report.upb.c",
-    ],
-    hdrs = [
-        "src/core/ext/upb-generated/udpa/data/orca/v1/orca_load_report.upb.h",
-    ],
-    language = "c++",
-    external_deps = [
-        "upb_lib",
-    ],
-    deps = [
-        ":proto_gen_validate_upb",
-    ],
-    tags = ["no_windows"],
-)
-
-grpc_cc_library(
     name = "envoy_lrs_upb",
     language = "c++",
     external_deps = [
@@ -2336,6 +2318,11 @@ grpc_cc_library(
         ":upb_cds",
     ],
     tags = ["no_windows"],
+)
+
+grpc_upb_proto_library(
+    name = "envoy_orca_upb",
+    deps = ["@envoy_api//udpa/data/orca/v1:orca_load_report"]
 )
 
 grpc_upb_proto_library(

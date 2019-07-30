@@ -120,6 +120,11 @@ filegroups:
   - test/core/util/cmdline.cc
   uses:
   - gpr_base_headers
+- name: envoy_orca_upb
+  headers:
+  - src/core/ext/upb-generated/udpa/data/orca/v1/orca_load_report.upb.h
+  src:
+  - src/core/ext/upb-generated/udpa/data/orca/v1/orca_load_report.upb.c
 - name: google_api_upb
   headers:
   - src/core/ext/upb-generated/google/protobuf/any.upb.h
@@ -423,6 +428,7 @@ filegroups:
   - src/core/lib/uri/uri_parser.cc
   deps:
   - gpr
+  - upb
   filegroups:
   - grpc_base_headers
   uses:
@@ -601,6 +607,7 @@ filegroups:
   - grpc_base
 - name: grpc_client_channel
   headers:
+  - src/core/ext/filters/client_channel/backend_metric.h
   - src/core/ext/filters/client_channel/backup_poller.h
   - src/core/ext/filters/client_channel/client_channel.h
   - src/core/ext/filters/client_channel/client_channel_channelz.h
@@ -629,6 +636,7 @@ filegroups:
   - src/core/ext/filters/client_channel/subchannel_interface.h
   - src/core/ext/filters/client_channel/subchannel_pool_interface.h
   src:
+  - src/core/ext/filters/client_channel/backend_metric.cc
   - src/core/ext/filters/client_channel/backup_poller.cc
   - src/core/ext/filters/client_channel/channel_connectivity.cc
   - src/core/ext/filters/client_channel/client_channel.cc
@@ -660,6 +668,7 @@ filegroups:
   - grpc_base
   - grpc_deadline_filter
   - health_proto
+  - envoy_orca_upb
 - name: grpc_client_idle_filter
   src:
   - src/core/ext/filters/client_idle/client_idle_filter.cc
@@ -6182,7 +6191,8 @@ defaults:
   global:
     COREFLAGS: -fno-rtti -fno-exceptions
     CPPFLAGS: -g -Wall -Wextra -Werror -Wno-long-long -Wno-unused-parameter -DOSATOMIC_USE_INLINED=1
-      -Wno-deprecated-declarations -Ithird_party/nanopb -DPB_FIELD_32BIT
+      -Wno-deprecated-declarations -Ithird_party/nanopb -Ithird_party/upb -Isrc/core/ext/upb-generated
+      -DPB_FIELD_32BIT
     CXXFLAGS: -Wnon-virtual-dtor
     LDFLAGS: -g
   upb:

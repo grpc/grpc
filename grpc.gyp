@@ -60,6 +60,8 @@
       '-DOSATOMIC_USE_INLINED=1',
       '-Wno-deprecated-declarations',
       '-Ithird_party/nanopb',
+      '-Ithird_party/upb',
+      '-Isrc/core/ext/upb-generated',
       '-DPB_FIELD_32BIT',
     ],
     'ldflags': [
@@ -141,6 +143,8 @@
             '-DOSATOMIC_USE_INLINED=1',
             '-Wno-deprecated-declarations',
             '-Ithird_party/nanopb',
+            '-Ithird_party/upb',
+            '-Isrc/core/ext/upb-generated',
             '-DPB_FIELD_32BIT',
           ],
           'OTHER_CPLUSPLUSFLAGS': [
@@ -153,6 +157,8 @@
             '-DOSATOMIC_USE_INLINED=1',
             '-Wno-deprecated-declarations',
             '-Ithird_party/nanopb',
+            '-Ithird_party/upb',
+            '-Isrc/core/ext/upb-generated',
             '-DPB_FIELD_32BIT',
             '-stdlib=libc++',
             '-std=c++11',
@@ -264,6 +270,7 @@
       'type': 'static_library',
       'dependencies': [
         'gpr',
+        'upb',
       ],
       'sources': [
         'src/core/lib/surface/init.cc',
@@ -529,6 +536,7 @@
         'src/core/ext/transport/chttp2/client/insecure/channel_create_posix.cc',
         'src/core/ext/transport/chttp2/client/authority.cc',
         'src/core/ext/transport/chttp2/client/chttp2_connector.cc',
+        'src/core/ext/filters/client_channel/backend_metric.cc',
         'src/core/ext/filters/client_channel/backup_poller.cc',
         'src/core/ext/filters/client_channel/channel_connectivity.cc',
         'src/core/ext/filters/client_channel/client_channel.cc',
@@ -557,6 +565,7 @@
         'src/core/ext/filters/client_channel/subchannel_pool_interface.cc',
         'src/core/ext/filters/deadline/deadline_filter.cc',
         'src/core/ext/filters/client_channel/health/health.pb.c',
+        'src/core/ext/upb-generated/udpa/data/orca/v1/orca_load_report.upb.c',
         'src/core/tsi/fake_transport_security.cc',
         'src/core/tsi/local_transport_security.cc',
         'src/core/tsi/ssl/session_cache/ssl_session_boringssl.cc',
@@ -614,6 +623,7 @@
       'dependencies': [
         'gpr',
         'grpc',
+        'upb',
       ],
       'sources': [
         'test/core/end2end/data/client_certs.cc',
@@ -804,6 +814,7 @@
         'src/core/lib/transport/transport_op_string.cc',
         'src/core/lib/uri/uri_parser.cc',
         'src/core/lib/debug/trace.cc',
+        'src/core/ext/filters/client_channel/backend_metric.cc',
         'src/core/ext/filters/client_channel/backup_poller.cc',
         'src/core/ext/filters/client_channel/channel_connectivity.cc',
         'src/core/ext/filters/client_channel/client_channel.cc',
@@ -835,6 +846,7 @@
         'third_party/nanopb/pb_common.c',
         'third_party/nanopb/pb_decode.c',
         'third_party/nanopb/pb_encode.c',
+        'src/core/ext/upb-generated/udpa/data/orca/v1/orca_load_report.upb.c',
         'src/core/ext/transport/chttp2/transport/bin_decoder.cc',
         'src/core/ext/transport/chttp2/transport/bin_encoder.cc',
         'src/core/ext/transport/chttp2/transport/chttp2_plugin.cc',
@@ -871,6 +883,7 @@
       'dependencies': [
         'gpr',
         'grpc_unsecure',
+        'upb',
       ],
       'sources': [
         'src/core/ext/filters/client_channel/resolver/fake/fake_resolver.cc',
@@ -1056,6 +1069,7 @@
         'src/core/lib/transport/transport_op_string.cc',
         'src/core/lib/uri/uri_parser.cc',
         'src/core/lib/debug/trace.cc',
+        'src/core/ext/filters/client_channel/backend_metric.cc',
         'src/core/ext/filters/client_channel/backup_poller.cc',
         'src/core/ext/filters/client_channel/channel_connectivity.cc',
         'src/core/ext/filters/client_channel/client_channel.cc',
@@ -1087,6 +1101,7 @@
         'third_party/nanopb/pb_common.c',
         'third_party/nanopb/pb_decode.c',
         'third_party/nanopb/pb_encode.c',
+        'src/core/ext/upb-generated/udpa/data/orca/v1/orca_load_report.upb.c',
         'src/core/ext/transport/chttp2/transport/bin_decoder.cc',
         'src/core/ext/transport/chttp2/transport/bin_encoder.cc',
         'src/core/ext/transport/chttp2/transport/chttp2_plugin.cc',
@@ -1122,6 +1137,7 @@
       'type': 'static_library',
       'dependencies': [
         'gpr',
+        'upb',
       ],
       'sources': [
         'src/core/lib/surface/init.cc',
@@ -1319,6 +1335,7 @@
         'src/core/ext/transport/chttp2/client/insecure/channel_create_posix.cc',
         'src/core/ext/transport/chttp2/client/authority.cc',
         'src/core/ext/transport/chttp2/client/chttp2_connector.cc',
+        'src/core/ext/filters/client_channel/backend_metric.cc',
         'src/core/ext/filters/client_channel/backup_poller.cc',
         'src/core/ext/filters/client_channel/channel_connectivity.cc',
         'src/core/ext/filters/client_channel/client_channel.cc',
@@ -1350,6 +1367,7 @@
         'third_party/nanopb/pb_common.c',
         'third_party/nanopb/pb_decode.c',
         'third_party/nanopb/pb_encode.c',
+        'src/core/ext/upb-generated/udpa/data/orca/v1/orca_load_report.upb.c',
         'src/core/ext/transport/inproc/inproc_plugin.cc',
         'src/core/ext/transport/inproc/inproc_transport.cc',
         'src/core/ext/filters/client_channel/resolver/dns/c_ares/dns_resolver_ares.cc',
