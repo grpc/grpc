@@ -14,24 +14,26 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# REQUIRES: Bazel
 set -ex
+
+cd $(dirname $0)/../../..
+bazel=`pwd`/tools/bazel
 
 if [ $# -eq 0 ]; then
   UPB_OUTPUT_DIR=$PWD/src/core/ext/upb-generated
   rm -rf $UPB_OUTPUT_DIR
-  mkdir $UPB_OUTPUT_DIR
+  mkdir -p $UPB_OUTPUT_DIR
 else
   UPB_OUTPUT_DIR=$1
 fi
 
 pushd third_party/protobuf
-bazel build :protoc
+$bazel build :protoc
 PROTOC=$PWD/bazel-bin/protoc
 popd
 
 pushd third_party/upb
-bazel build :protoc-gen-upb
+$bazel build :protoc-gen-upb
 UPB_PLUGIN=$PWD/bazel-bin/protoc-gen-upb
 popd
 
