@@ -133,7 +133,7 @@ static inline std::shared_ptr<grpc_impl::ChannelCredentials> LocalCredentials(
 }
 
 static inline std::shared_ptr<grpc_impl::ChannelCredentials> SpiffeCredentials(
-    const TlsCredentialsOptions& options) {
+    const ::grpc_impl::experimental::TlsCredentialsOptions& options) {
   return ::grpc_impl::experimental::SpiffeCredentials(options);
 }
 

@@ -81,7 +81,7 @@ static inline std::shared_ptr<ServerCredentials> LocalServerCredentials(
 
 /// Builds SPIFFE ServerCredentials given TLS options.
 static inline std::shared_ptr<ServerCredentials> SpiffeServerCredentials(
-    const TlsCredentialsOptions& options) {
+    const ::grpc_impl::experimental::TlsCredentialsOptions& options) {
   return ::grpc_impl::experimental::SpiffeServerCredentials(options);
 }
 
