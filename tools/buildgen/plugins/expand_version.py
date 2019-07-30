@@ -38,7 +38,9 @@ class Version:
         self.tag = None
         if '-' in version_str:
             version_str, self.tag = version_str.split('-')
-        self.major, self.minor, self.patch = [int(x) for x in version_str.split('.')]
+        self.major, self.minor, self.patch = [
+            int(x) for x in version_str.split('.')
+        ]
         if override_major:
             self.major = override_major
 
@@ -114,6 +116,8 @@ def mako_plugin(dictionary):
         version_tag = '%s_version' % language
         override_major = settings.get('%s_major_version' % language, None)
         if version_tag in settings:
-            settings[version_tag] = Version(settings[version_tag], override_major=override_major)
+            settings[version_tag] = Version(
+                settings[version_tag], override_major=override_major)
         else:
-            settings[version_tag] = Version(version_str, override_major=override_major)
+            settings[version_tag] = Version(
+                version_str, override_major=override_major)
