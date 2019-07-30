@@ -43,23 +43,8 @@ LoadBalancingPolicy::~LoadBalancingPolicy() {
 }
 
 void LoadBalancingPolicy::Orphan() {
-  // Invoke ShutdownAndUnrefLocked() inside of the combiner.
-  // TODO(roth): Is this actually needed?  We should already be in the
-  // combiner here.  Note that if we directly call ShutdownLocked(),
-  // then we can probably remove the hack whereby the helper is
-  // destroyed at shutdown instead of at destruction.
-  GRPC_CLOSURE_SCHED(
-      GRPC_CLOSURE_CREATE(&LoadBalancingPolicy::ShutdownAndUnrefLocked, this,
-                          grpc_combiner_scheduler(combiner_)),
-      GRPC_ERROR_NONE);
-}
-
-void LoadBalancingPolicy::ShutdownAndUnrefLocked(void* arg,
-                                                 grpc_error* ignored) {
-  LoadBalancingPolicy* policy = static_cast<LoadBalancingPolicy*>(arg);
-  policy->ShutdownLocked();
-  policy->channel_control_helper_.reset();
-  policy->Unref();
+  ShutdownLocked();
+  Unref();
 }
 
 //
