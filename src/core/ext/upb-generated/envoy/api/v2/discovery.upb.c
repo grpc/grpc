@@ -93,17 +93,18 @@ static const upb_msglayout *const envoy_api_v2_DeltaDiscoveryResponse_submsgs[1]
   &envoy_api_v2_Resource_msginit,
 };
 
-static const upb_msglayout_field envoy_api_v2_DeltaDiscoveryResponse__fields[4] = {
+static const upb_msglayout_field envoy_api_v2_DeltaDiscoveryResponse__fields[5] = {
   {1, UPB_SIZE(0, 0), 0, 0, 9, 1},
-  {2, UPB_SIZE(16, 32), 0, 0, 11, 3},
-  {5, UPB_SIZE(8, 16), 0, 0, 9, 1},
-  {6, UPB_SIZE(20, 40), 0, 0, 9, 3},
+  {2, UPB_SIZE(24, 48), 0, 0, 11, 3},
+  {4, UPB_SIZE(8, 16), 0, 0, 9, 1},
+  {5, UPB_SIZE(16, 32), 0, 0, 9, 1},
+  {6, UPB_SIZE(28, 56), 0, 0, 9, 3},
 };
 
 const upb_msglayout envoy_api_v2_DeltaDiscoveryResponse_msginit = {
   &envoy_api_v2_DeltaDiscoveryResponse_submsgs[0],
   &envoy_api_v2_DeltaDiscoveryResponse__fields[0],
-  UPB_SIZE(24, 48), 4, false,
+  UPB_SIZE(32, 64), 5, false,
 };
 
 static const upb_msglayout *const envoy_api_v2_Resource_submsgs[1] = {

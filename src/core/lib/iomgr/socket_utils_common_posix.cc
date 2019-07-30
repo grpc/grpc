@@ -46,7 +46,6 @@
 #include <grpc/support/sync.h>
 
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/gpr/host_port.h"
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/iomgr/sockaddr.h"
 #include "src/core/lib/iomgr/sockaddr_utils.h"

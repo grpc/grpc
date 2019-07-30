@@ -33,7 +33,7 @@
 #include <grpc/support/log.h>
 #include <grpc/support/time.h>
 
-#include "src/core/lib/gpr/host_port.h"
+#include "src/core/lib/gprpp/host_port.h"
 #include "src/core/lib/profiling/timers.h"
 #include "test/core/end2end/data/ssl_test_data.h"
 #include "test/core/util/cmdline.h"
@@ -172,7 +172,7 @@ static void sigint_handler(int x) { _exit(0); }
 int main(int argc, char** argv) {
   grpc_event ev;
   call_state* s;
-  char* addr_buf = nullptr;
+  grpc_core::UniquePtr<char> addr_buf;
   gpr_cmdline* cl;
   grpc_completion_queue* shutdown_cq;
   int shutdown_started = 0;
@@ -199,8 +199,8 @@ int main(int argc, char** argv) {
   gpr_cmdline_destroy(cl);
 
   if (addr == nullptr) {
-    gpr_join_host_port(&addr_buf, "::", grpc_pick_unused_port_or_die());
-    addr = addr_buf;
+    grpc_core::JoinHostPort(&addr_buf, "::", grpc_pick_unused_port_or_die());
+    addr = addr_buf.get();
   }
   gpr_log(GPR_INFO, "creating server on: %s", addr);
 
@@ -220,8 +220,8 @@ int main(int argc, char** argv) {
   grpc_server_register_completion_queue(server, cq, nullptr);
   grpc_server_start(server);
 
-  gpr_free(addr_buf);
-  addr = addr_buf = nullptr;
+  addr = nullptr;
+  addr_buf.reset();
 
   grpc_call_details_init(&call_details);
 

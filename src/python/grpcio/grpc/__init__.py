@@ -339,8 +339,7 @@ class RpcContext(six.with_metaclass(abc.ABCMeta)):
           callback: A no-parameter callable to be called on RPC termination.
 
         Returns:
-          bool:
-            True if the callback was added and will be called later; False if
+          True if the callback was added and will be called later; False if
             the callback was not added and will not be called (because the RPC
             already terminated or some other reason).
         """
@@ -584,6 +583,9 @@ class ChannelCredentials(object):
 class CallCredentials(object):
     """An encapsulation of the data required to assert an identity over a call.
 
+    A CallCredentials has to be used with secure Channel, otherwise the
+    metadata will not be transmitted to the server.
+
     A CallCredentials may be composed with ChannelCredentials to always assert
     identity for every call over that Channel.
 
@@ -682,7 +684,8 @@ class UnaryUnaryMultiCallable(six.with_metaclass(abc.ABCMeta)):
             for the RPC.
           metadata: Optional :term:`metadata` to be transmitted to the
             service-side of the RPC.
-          credentials: An optional CallCredentials for the RPC.
+          credentials: An optional CallCredentials for the RPC. Only valid for
+            secure Channel.
           wait_for_ready: This is an EXPERIMENTAL argument. An optional
             flag to enable wait for ready mechanism
           compression: An element of grpc.compression, e.g.
@@ -714,7 +717,8 @@ class UnaryUnaryMultiCallable(six.with_metaclass(abc.ABCMeta)):
             the RPC.
           metadata: Optional :term:`metadata` to be transmitted to the
             service-side of the RPC.
-          credentials: An optional CallCredentials for the RPC.
+          credentials: An optional CallCredentials for the RPC. Only valid for
+            secure Channel.
           wait_for_ready: This is an EXPERIMENTAL argument. An optional
             flag to enable wait for ready mechanism
           compression: An element of grpc.compression, e.g.
@@ -746,7 +750,8 @@ class UnaryUnaryMultiCallable(six.with_metaclass(abc.ABCMeta)):
             the RPC.
           metadata: Optional :term:`metadata` to be transmitted to the
             service-side of the RPC.
-          credentials: An optional CallCredentials for the RPC.
+          credentials: An optional CallCredentials for the RPC. Only valid for
+            secure Channel.
           wait_for_ready: This is an EXPERIMENTAL argument. An optional
             flag to enable wait for ready mechanism
           compression: An element of grpc.compression, e.g.
@@ -781,7 +786,8 @@ class UnaryStreamMultiCallable(six.with_metaclass(abc.ABCMeta)):
             the RPC. If None, the timeout is considered infinite.
           metadata: An optional :term:`metadata` to be transmitted to the
             service-side of the RPC.
-          credentials: An optional CallCredentials for the RPC.
+          credentials: An optional CallCredentials for the RPC. Only valid for
+            secure Channel.
           wait_for_ready: This is an EXPERIMENTAL argument. An optional
             flag to enable wait for ready mechanism
           compression: An element of grpc.compression, e.g.
@@ -816,7 +822,8 @@ class StreamUnaryMultiCallable(six.with_metaclass(abc.ABCMeta)):
             the RPC. If None, the timeout is considered infinite.
           metadata: Optional :term:`metadata` to be transmitted to the
             service-side of the RPC.
-          credentials: An optional CallCredentials for the RPC.
+          credentials: An optional CallCredentials for the RPC. Only valid for
+            secure Channel.
           wait_for_ready: This is an EXPERIMENTAL argument. An optional
             flag to enable wait for ready mechanism
           compression: An element of grpc.compression, e.g.
@@ -849,7 +856,8 @@ class StreamUnaryMultiCallable(six.with_metaclass(abc.ABCMeta)):
             the RPC. If None, the timeout is considered infinite.
           metadata: Optional :term:`metadata` to be transmitted to the
             service-side of the RPC.
-          credentials: An optional CallCredentials for the RPC.
+          credentials: An optional CallCredentials for the RPC. Only valid for
+            secure Channel.
           wait_for_ready: This is an EXPERIMENTAL argument. An optional
             flag to enable wait for ready mechanism
           compression: An element of grpc.compression, e.g.
@@ -881,7 +889,8 @@ class StreamUnaryMultiCallable(six.with_metaclass(abc.ABCMeta)):
             the RPC. If None, the timeout is considered infinite.
           metadata: Optional :term:`metadata` to be transmitted to the
             service-side of the RPC.
-          credentials: An optional CallCredentials for the RPC.
+          credentials: An optional CallCredentials for the RPC. Only valid for
+            secure Channel.
           wait_for_ready: This is an EXPERIMENTAL argument. An optional
             flag to enable wait for ready mechanism
           compression: An element of grpc.compression, e.g.
@@ -916,7 +925,8 @@ class StreamStreamMultiCallable(six.with_metaclass(abc.ABCMeta)):
             the RPC. If not specified, the timeout is considered infinite.
           metadata: Optional :term:`metadata` to be transmitted to the
             service-side of the RPC.
-          credentials: An optional CallCredentials for the RPC.
+          credentials: An optional CallCredentials for the RPC. Only valid for
+            secure Channel.
           wait_for_ready: This is an EXPERIMENTAL argument. An optional
             flag to enable wait for ready mechanism
           compression: An element of grpc.compression, e.g.
@@ -1274,6 +1284,7 @@ class RpcMethodHandler(six.with_metaclass(abc.ABCMeta)):
 
 class HandlerCallDetails(six.with_metaclass(abc.ABCMeta)):
     """Describes an RPC that has just arrived for service.
+
     Attributes:
       method: The method name of the RPC.
       invocation_metadata: The :term:`metadata` sent by the client.
@@ -1370,12 +1381,10 @@ class Server(six.with_metaclass(abc.ABCMeta)):
         This method may only be called before starting the server.
 
         Args:
-          address: The address for which to open a port.
-          if the port is 0, or not specified in the address, then gRPC runtime
-          will choose a port.
+          address: The address for which to open a port. If the port is 0,
+            or not specified in the address, then gRPC runtime will choose a port.
 
         Returns:
-          integer:
           An integer port on which server will accept RPC requests.
         """
         raise NotImplementedError()
@@ -1393,7 +1402,6 @@ class Server(six.with_metaclass(abc.ABCMeta)):
           server_credentials: A ServerCredentials object.
 
         Returns:
-          integer:
           An integer port on which server will accept RPC requests.
         """
         raise NotImplementedError()
@@ -1845,10 +1853,16 @@ def _create_servicer_context(rpc_event, state, request_deserializer):
     context._finalize_state()  # pylint: disable=protected-access
 
 
+@enum.unique
 class Compression(enum.IntEnum):
     """Indicates the compression method to be used for an RPC.
 
        This enumeration is part of an EXPERIMENTAL API.
+
+       Attributes:
+        NoCompression: Do not use compression algorithm.
+        Deflate: Use "Deflate" compression algorithm.
+        Gzip: Use "Gzip" compression algorithm.
     """
     NoCompression = _compression.NoCompression
     Deflate = _compression.Deflate

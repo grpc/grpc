@@ -26,7 +26,9 @@
 #include <grpc/support/sync.h>
 #include "src/core/lib/transport/metadata_batch.h"
 
+#include "src/core/lib/gprpp/map.h"
 #include "src/core/lib/gprpp/ref_counted.h"
+#include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/http/httpcli.h"
 #include "src/core/lib/http/parser.h"
 #include "src/core/lib/iomgr/polling_entity.h"
@@ -64,8 +66,8 @@ typedef enum {
 #define GRPC_COMPUTE_ENGINE_METADATA_TOKEN_PATH \
   "/computeMetadata/v1/instance/service-accounts/default/token"
 
-#define GRPC_GOOGLE_OAUTH2_SERVICE_HOST "www.googleapis.com"
-#define GRPC_GOOGLE_OAUTH2_SERVICE_TOKEN_PATH "/oauth2/v3/token"
+#define GRPC_GOOGLE_OAUTH2_SERVICE_HOST "oauth2.googleapis.com"
+#define GRPC_GOOGLE_OAUTH2_SERVICE_TOKEN_PATH "/token"
 
 #define GRPC_SERVICE_ACCOUNT_POST_BODY_PREFIX                         \
   "grant_type=urn%3Aietf%3Aparams%3Aoauth%3Agrant-type%3Ajwt-bearer&" \
@@ -131,12 +133,31 @@ struct grpc_channel_credentials
     return args;
   }
 
+  // Attaches control_plane_creds to the local registry, under authority,
+  // if no other creds are currently registered under authority. Returns
+  // true if registered successfully and false if not.
+  bool attach_credentials(
+      const char* authority,
+      grpc_core::RefCountedPtr<grpc_channel_credentials> control_plane_creds);
+
+  // Gets the control plane credentials registered under authority. This
+  // prefers the local control plane creds registry but falls back to the
+  // global registry. Lastly, this returns self but with any attached
+  // call credentials stripped off, in the case that neither the local
+  // registry nor the global registry have an entry for authority.
+  grpc_core::RefCountedPtr<grpc_channel_credentials>
+  get_control_plane_credentials(const char* authority);
+
   const char* type() const { return type_; }
 
   GRPC_ABSTRACT_BASE_CLASS
 
  private:
   const char* type_;
+  grpc_core::Map<grpc_core::UniquePtr<char>,
+                 grpc_core::RefCountedPtr<grpc_channel_credentials>,
+                 grpc_core::StringLess>
+      local_control_plane_creds_;
 };
 
 /* Util to encapsulate the channel credentials in a channel arg. */
@@ -149,6 +170,41 @@ grpc_channel_credentials* grpc_channel_credentials_from_arg(
 /* Util to find the channel credentials from channel args. */
 grpc_channel_credentials* grpc_channel_credentials_find_in_args(
     const grpc_channel_args* args);
+
+/** EXPERIMENTAL.  API MAY CHANGE IN THE FUTURE.
+    Attaches \a control_plane_creds to \a credentials
+    under the key \a authority. Returns false if \a authority
+    is already present, in which case no changes are made.
+    Note that this API is not thread safe. Only one thread may
+    attach control plane creds to a given credentials object at
+    any one time, and new control plane creds must not be
+    attached after \a credentials has been used to create a channel. */
+bool grpc_channel_credentials_attach_credentials(
+    grpc_channel_credentials* credentials, const char* authority,
+    grpc_channel_credentials* control_plane_creds);
+
+/** EXPERIMENTAL.  API MAY CHANGE IN THE FUTURE.
+    Registers \a control_plane_creds in the global registry
+    under the key \a authority. Returns false if \a authority
+    is already present, in which case no changes are made. */
+bool grpc_control_plane_credentials_register(
+    const char* authority, grpc_channel_credentials* control_plane_creds);
+
+/* Initializes global control plane credentials data. */
+void grpc_control_plane_credentials_init();
+
+/* Test only: destroy global control plane credentials data.
+ * This API is meant for use by a few tests that need to
+ * satisdy grpc_core::LeakDetector. */
+void grpc_test_only_control_plane_credentials_destroy();
+
+/* Test only: force re-initialization of global control
+ * plane credentials data if it was previously destroyed.
+ * This API is meant to be used in
+ * tandem with the
+ * grpc_test_only_control_plane_credentials_destroy, for
+ * the few tests that need it. */
+void grpc_test_only_control_plane_credentials_force_init();
 
 /* --- grpc_credentials_mdelem_array. --- */
 

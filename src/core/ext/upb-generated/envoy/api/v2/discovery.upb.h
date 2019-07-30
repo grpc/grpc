@@ -10,12 +10,12 @@
 #define ENVOY_API_V2_DISCOVERY_PROTO_UPB_H_
 
 #include "upb/generated_util.h"
-
 #include "upb/msg.h"
-
 #include "upb/decode.h"
 #include "upb/encode.h"
+
 #include "upb/port_def.inc"
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -47,17 +47,16 @@ extern const upb_msglayout envoy_api_v2_core_Node_msginit;
 extern const upb_msglayout google_protobuf_Any_msginit;
 extern const upb_msglayout google_rpc_Status_msginit;
 
-/* Enums */
-
 
 /* envoy.api.v2.DiscoveryRequest */
 
 UPB_INLINE envoy_api_v2_DiscoveryRequest *envoy_api_v2_DiscoveryRequest_new(upb_arena *arena) {
   return (envoy_api_v2_DiscoveryRequest *)upb_msg_new(&envoy_api_v2_DiscoveryRequest_msginit, arena);
 }
-UPB_INLINE envoy_api_v2_DiscoveryRequest *envoy_api_v2_DiscoveryRequest_parsenew(upb_strview buf, upb_arena *arena) {
+UPB_INLINE envoy_api_v2_DiscoveryRequest *envoy_api_v2_DiscoveryRequest_parse(const char *buf, size_t size,
+                        upb_arena *arena) {
   envoy_api_v2_DiscoveryRequest *ret = envoy_api_v2_DiscoveryRequest_new(arena);
-  return (ret && upb_decode(buf, ret, &envoy_api_v2_DiscoveryRequest_msginit)) ? ret : NULL;
+  return (ret && upb_decode(buf, size, ret, &envoy_api_v2_DiscoveryRequest_msginit, arena)) ? ret : NULL;
 }
 UPB_INLINE char *envoy_api_v2_DiscoveryRequest_serialize(const envoy_api_v2_DiscoveryRequest *msg, upb_arena *arena, size_t *len) {
   return upb_encode(msg, &envoy_api_v2_DiscoveryRequest_msginit, arena, len);
@@ -114,15 +113,15 @@ UPB_INLINE struct google_rpc_Status* envoy_api_v2_DiscoveryRequest_mutable_error
   return sub;
 }
 
-
 /* envoy.api.v2.DiscoveryResponse */
 
 UPB_INLINE envoy_api_v2_DiscoveryResponse *envoy_api_v2_DiscoveryResponse_new(upb_arena *arena) {
   return (envoy_api_v2_DiscoveryResponse *)upb_msg_new(&envoy_api_v2_DiscoveryResponse_msginit, arena);
 }
-UPB_INLINE envoy_api_v2_DiscoveryResponse *envoy_api_v2_DiscoveryResponse_parsenew(upb_strview buf, upb_arena *arena) {
+UPB_INLINE envoy_api_v2_DiscoveryResponse *envoy_api_v2_DiscoveryResponse_parse(const char *buf, size_t size,
+                        upb_arena *arena) {
   envoy_api_v2_DiscoveryResponse *ret = envoy_api_v2_DiscoveryResponse_new(arena);
-  return (ret && upb_decode(buf, ret, &envoy_api_v2_DiscoveryResponse_msginit)) ? ret : NULL;
+  return (ret && upb_decode(buf, size, ret, &envoy_api_v2_DiscoveryResponse_msginit, arena)) ? ret : NULL;
 }
 UPB_INLINE char *envoy_api_v2_DiscoveryResponse_serialize(const envoy_api_v2_DiscoveryResponse *msg, upb_arena *arena, size_t *len) {
   return upb_encode(msg, &envoy_api_v2_DiscoveryResponse_msginit, arena, len);
@@ -173,15 +172,15 @@ UPB_INLINE struct envoy_api_v2_core_ControlPlane* envoy_api_v2_DiscoveryResponse
   return sub;
 }
 
-
 /* envoy.api.v2.DeltaDiscoveryRequest */
 
 UPB_INLINE envoy_api_v2_DeltaDiscoveryRequest *envoy_api_v2_DeltaDiscoveryRequest_new(upb_arena *arena) {
   return (envoy_api_v2_DeltaDiscoveryRequest *)upb_msg_new(&envoy_api_v2_DeltaDiscoveryRequest_msginit, arena);
 }
-UPB_INLINE envoy_api_v2_DeltaDiscoveryRequest *envoy_api_v2_DeltaDiscoveryRequest_parsenew(upb_strview buf, upb_arena *arena) {
+UPB_INLINE envoy_api_v2_DeltaDiscoveryRequest *envoy_api_v2_DeltaDiscoveryRequest_parse(const char *buf, size_t size,
+                        upb_arena *arena) {
   envoy_api_v2_DeltaDiscoveryRequest *ret = envoy_api_v2_DeltaDiscoveryRequest_new(arena);
-  return (ret && upb_decode(buf, ret, &envoy_api_v2_DeltaDiscoveryRequest_msginit)) ? ret : NULL;
+  return (ret && upb_decode(buf, size, ret, &envoy_api_v2_DeltaDiscoveryRequest_msginit, arena)) ? ret : NULL;
 }
 UPB_INLINE char *envoy_api_v2_DeltaDiscoveryRequest_serialize(const envoy_api_v2_DeltaDiscoveryRequest *msg, upb_arena *arena, size_t *len) {
   return upb_encode(msg, &envoy_api_v2_DeltaDiscoveryRequest_msginit, arena, len);
@@ -259,15 +258,15 @@ UPB_INLINE struct google_rpc_Status* envoy_api_v2_DeltaDiscoveryRequest_mutable_
   return sub;
 }
 
-
 /* envoy.api.v2.DeltaDiscoveryRequest.InitialResourceVersionsEntry */
 
 UPB_INLINE envoy_api_v2_DeltaDiscoveryRequest_InitialResourceVersionsEntry *envoy_api_v2_DeltaDiscoveryRequest_InitialResourceVersionsEntry_new(upb_arena *arena) {
   return (envoy_api_v2_DeltaDiscoveryRequest_InitialResourceVersionsEntry *)upb_msg_new(&envoy_api_v2_DeltaDiscoveryRequest_InitialResourceVersionsEntry_msginit, arena);
 }
-UPB_INLINE envoy_api_v2_DeltaDiscoveryRequest_InitialResourceVersionsEntry *envoy_api_v2_DeltaDiscoveryRequest_InitialResourceVersionsEntry_parsenew(upb_strview buf, upb_arena *arena) {
+UPB_INLINE envoy_api_v2_DeltaDiscoveryRequest_InitialResourceVersionsEntry *envoy_api_v2_DeltaDiscoveryRequest_InitialResourceVersionsEntry_parse(const char *buf, size_t size,
+                        upb_arena *arena) {
   envoy_api_v2_DeltaDiscoveryRequest_InitialResourceVersionsEntry *ret = envoy_api_v2_DeltaDiscoveryRequest_InitialResourceVersionsEntry_new(arena);
-  return (ret && upb_decode(buf, ret, &envoy_api_v2_DeltaDiscoveryRequest_InitialResourceVersionsEntry_msginit)) ? ret : NULL;
+  return (ret && upb_decode(buf, size, ret, &envoy_api_v2_DeltaDiscoveryRequest_InitialResourceVersionsEntry_msginit, arena)) ? ret : NULL;
 }
 UPB_INLINE char *envoy_api_v2_DeltaDiscoveryRequest_InitialResourceVersionsEntry_serialize(const envoy_api_v2_DeltaDiscoveryRequest_InitialResourceVersionsEntry *msg, upb_arena *arena, size_t *len) {
   return upb_encode(msg, &envoy_api_v2_DeltaDiscoveryRequest_InitialResourceVersionsEntry_msginit, arena, len);
@@ -283,64 +282,68 @@ UPB_INLINE void envoy_api_v2_DeltaDiscoveryRequest_InitialResourceVersionsEntry_
   UPB_FIELD_AT(msg, upb_strview, UPB_SIZE(8, 16)) = value;
 }
 
-
 /* envoy.api.v2.DeltaDiscoveryResponse */
 
 UPB_INLINE envoy_api_v2_DeltaDiscoveryResponse *envoy_api_v2_DeltaDiscoveryResponse_new(upb_arena *arena) {
   return (envoy_api_v2_DeltaDiscoveryResponse *)upb_msg_new(&envoy_api_v2_DeltaDiscoveryResponse_msginit, arena);
 }
-UPB_INLINE envoy_api_v2_DeltaDiscoveryResponse *envoy_api_v2_DeltaDiscoveryResponse_parsenew(upb_strview buf, upb_arena *arena) {
+UPB_INLINE envoy_api_v2_DeltaDiscoveryResponse *envoy_api_v2_DeltaDiscoveryResponse_parse(const char *buf, size_t size,
+                        upb_arena *arena) {
   envoy_api_v2_DeltaDiscoveryResponse *ret = envoy_api_v2_DeltaDiscoveryResponse_new(arena);
-  return (ret && upb_decode(buf, ret, &envoy_api_v2_DeltaDiscoveryResponse_msginit)) ? ret : NULL;
+  return (ret && upb_decode(buf, size, ret, &envoy_api_v2_DeltaDiscoveryResponse_msginit, arena)) ? ret : NULL;
 }
 UPB_INLINE char *envoy_api_v2_DeltaDiscoveryResponse_serialize(const envoy_api_v2_DeltaDiscoveryResponse *msg, upb_arena *arena, size_t *len) {
   return upb_encode(msg, &envoy_api_v2_DeltaDiscoveryResponse_msginit, arena, len);
 }
 
 UPB_INLINE upb_strview envoy_api_v2_DeltaDiscoveryResponse_system_version_info(const envoy_api_v2_DeltaDiscoveryResponse *msg) { return UPB_FIELD_AT(msg, upb_strview, UPB_SIZE(0, 0)); }
-UPB_INLINE const envoy_api_v2_Resource* const* envoy_api_v2_DeltaDiscoveryResponse_resources(const envoy_api_v2_DeltaDiscoveryResponse *msg, size_t *len) { return (const envoy_api_v2_Resource* const*)_upb_array_accessor(msg, UPB_SIZE(16, 32), len); }
-UPB_INLINE upb_strview envoy_api_v2_DeltaDiscoveryResponse_nonce(const envoy_api_v2_DeltaDiscoveryResponse *msg) { return UPB_FIELD_AT(msg, upb_strview, UPB_SIZE(8, 16)); }
-UPB_INLINE upb_strview const* envoy_api_v2_DeltaDiscoveryResponse_removed_resources(const envoy_api_v2_DeltaDiscoveryResponse *msg, size_t *len) { return (upb_strview const*)_upb_array_accessor(msg, UPB_SIZE(20, 40), len); }
+UPB_INLINE const envoy_api_v2_Resource* const* envoy_api_v2_DeltaDiscoveryResponse_resources(const envoy_api_v2_DeltaDiscoveryResponse *msg, size_t *len) { return (const envoy_api_v2_Resource* const*)_upb_array_accessor(msg, UPB_SIZE(24, 48), len); }
+UPB_INLINE upb_strview envoy_api_v2_DeltaDiscoveryResponse_type_url(const envoy_api_v2_DeltaDiscoveryResponse *msg) { return UPB_FIELD_AT(msg, upb_strview, UPB_SIZE(8, 16)); }
+UPB_INLINE upb_strview envoy_api_v2_DeltaDiscoveryResponse_nonce(const envoy_api_v2_DeltaDiscoveryResponse *msg) { return UPB_FIELD_AT(msg, upb_strview, UPB_SIZE(16, 32)); }
+UPB_INLINE upb_strview const* envoy_api_v2_DeltaDiscoveryResponse_removed_resources(const envoy_api_v2_DeltaDiscoveryResponse *msg, size_t *len) { return (upb_strview const*)_upb_array_accessor(msg, UPB_SIZE(28, 56), len); }
 
 UPB_INLINE void envoy_api_v2_DeltaDiscoveryResponse_set_system_version_info(envoy_api_v2_DeltaDiscoveryResponse *msg, upb_strview value) {
   UPB_FIELD_AT(msg, upb_strview, UPB_SIZE(0, 0)) = value;
 }
 UPB_INLINE envoy_api_v2_Resource** envoy_api_v2_DeltaDiscoveryResponse_mutable_resources(envoy_api_v2_DeltaDiscoveryResponse *msg, size_t *len) {
-  return (envoy_api_v2_Resource**)_upb_array_mutable_accessor(msg, UPB_SIZE(16, 32), len);
+  return (envoy_api_v2_Resource**)_upb_array_mutable_accessor(msg, UPB_SIZE(24, 48), len);
 }
 UPB_INLINE envoy_api_v2_Resource** envoy_api_v2_DeltaDiscoveryResponse_resize_resources(envoy_api_v2_DeltaDiscoveryResponse *msg, size_t len, upb_arena *arena) {
-  return (envoy_api_v2_Resource**)_upb_array_resize_accessor(msg, UPB_SIZE(16, 32), len, UPB_SIZE(4, 8), UPB_TYPE_MESSAGE, arena);
+  return (envoy_api_v2_Resource**)_upb_array_resize_accessor(msg, UPB_SIZE(24, 48), len, UPB_SIZE(4, 8), UPB_TYPE_MESSAGE, arena);
 }
 UPB_INLINE struct envoy_api_v2_Resource* envoy_api_v2_DeltaDiscoveryResponse_add_resources(envoy_api_v2_DeltaDiscoveryResponse *msg, upb_arena *arena) {
   struct envoy_api_v2_Resource* sub = (struct envoy_api_v2_Resource*)upb_msg_new(&envoy_api_v2_Resource_msginit, arena);
   bool ok = _upb_array_append_accessor(
-      msg, UPB_SIZE(16, 32), UPB_SIZE(4, 8), UPB_TYPE_MESSAGE, &sub, arena);
+      msg, UPB_SIZE(24, 48), UPB_SIZE(4, 8), UPB_TYPE_MESSAGE, &sub, arena);
   if (!ok) return NULL;
   return sub;
 }
-UPB_INLINE void envoy_api_v2_DeltaDiscoveryResponse_set_nonce(envoy_api_v2_DeltaDiscoveryResponse *msg, upb_strview value) {
+UPB_INLINE void envoy_api_v2_DeltaDiscoveryResponse_set_type_url(envoy_api_v2_DeltaDiscoveryResponse *msg, upb_strview value) {
   UPB_FIELD_AT(msg, upb_strview, UPB_SIZE(8, 16)) = value;
 }
+UPB_INLINE void envoy_api_v2_DeltaDiscoveryResponse_set_nonce(envoy_api_v2_DeltaDiscoveryResponse *msg, upb_strview value) {
+  UPB_FIELD_AT(msg, upb_strview, UPB_SIZE(16, 32)) = value;
+}
 UPB_INLINE upb_strview* envoy_api_v2_DeltaDiscoveryResponse_mutable_removed_resources(envoy_api_v2_DeltaDiscoveryResponse *msg, size_t *len) {
-  return (upb_strview*)_upb_array_mutable_accessor(msg, UPB_SIZE(20, 40), len);
+  return (upb_strview*)_upb_array_mutable_accessor(msg, UPB_SIZE(28, 56), len);
 }
 UPB_INLINE upb_strview* envoy_api_v2_DeltaDiscoveryResponse_resize_removed_resources(envoy_api_v2_DeltaDiscoveryResponse *msg, size_t len, upb_arena *arena) {
-  return (upb_strview*)_upb_array_resize_accessor(msg, UPB_SIZE(20, 40), len, UPB_SIZE(8, 16), UPB_TYPE_STRING, arena);
+  return (upb_strview*)_upb_array_resize_accessor(msg, UPB_SIZE(28, 56), len, UPB_SIZE(8, 16), UPB_TYPE_STRING, arena);
 }
 UPB_INLINE bool envoy_api_v2_DeltaDiscoveryResponse_add_removed_resources(envoy_api_v2_DeltaDiscoveryResponse *msg, upb_strview val, upb_arena *arena) {
   return _upb_array_append_accessor(
-      msg, UPB_SIZE(20, 40), UPB_SIZE(8, 16), UPB_TYPE_STRING, &val, arena);
+      msg, UPB_SIZE(28, 56), UPB_SIZE(8, 16), UPB_TYPE_STRING, &val, arena);
 }
-
 
 /* envoy.api.v2.Resource */
 
 UPB_INLINE envoy_api_v2_Resource *envoy_api_v2_Resource_new(upb_arena *arena) {
   return (envoy_api_v2_Resource *)upb_msg_new(&envoy_api_v2_Resource_msginit, arena);
 }
-UPB_INLINE envoy_api_v2_Resource *envoy_api_v2_Resource_parsenew(upb_strview buf, upb_arena *arena) {
+UPB_INLINE envoy_api_v2_Resource *envoy_api_v2_Resource_parse(const char *buf, size_t size,
+                        upb_arena *arena) {
   envoy_api_v2_Resource *ret = envoy_api_v2_Resource_new(arena);
-  return (ret && upb_decode(buf, ret, &envoy_api_v2_Resource_msginit)) ? ret : NULL;
+  return (ret && upb_decode(buf, size, ret, &envoy_api_v2_Resource_msginit, arena)) ? ret : NULL;
 }
 UPB_INLINE char *envoy_api_v2_Resource_serialize(const envoy_api_v2_Resource *msg, upb_arena *arena, size_t *len) {
   return upb_encode(msg, &envoy_api_v2_Resource_msginit, arena, len);
@@ -379,7 +382,6 @@ UPB_INLINE bool envoy_api_v2_Resource_add_aliases(envoy_api_v2_Resource *msg, up
   return _upb_array_append_accessor(
       msg, UPB_SIZE(20, 40), UPB_SIZE(8, 16), UPB_TYPE_STRING, &val, arena);
 }
-
 
 #ifdef __cplusplus
 }  /* extern "C" */

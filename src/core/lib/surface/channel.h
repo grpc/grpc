@@ -88,7 +88,7 @@ struct grpc_channel {
   gpr_mu registered_call_mu;
   registered_call* registered_calls;
 
-  grpc_core::RefCountedPtr<grpc_core::channelz::ChannelNode> channelz_channel;
+  grpc_core::RefCountedPtr<grpc_core::channelz::ChannelNode> channelz_node;
 
   char* target;
 };
@@ -106,7 +106,7 @@ inline grpc_channel_stack* grpc_channel_get_channel_stack(
 
 inline grpc_core::channelz::ChannelNode* grpc_channel_get_channelz_node(
     grpc_channel* channel) {
-  return channel->channelz_channel.get();
+  return channel->channelz_node.get();
 }
 
 #ifndef NDEBUG

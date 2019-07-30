@@ -10,12 +10,12 @@
 #define GOOGLE_RPC_STATUS_PROTO_UPB_H_
 
 #include "upb/generated_util.h"
-
 #include "upb/msg.h"
-
 #include "upb/decode.h"
 #include "upb/encode.h"
+
 #include "upb/port_def.inc"
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -26,17 +26,16 @@ extern const upb_msglayout google_rpc_Status_msginit;
 struct google_protobuf_Any;
 extern const upb_msglayout google_protobuf_Any_msginit;
 
-/* Enums */
-
 
 /* google.rpc.Status */
 
 UPB_INLINE google_rpc_Status *google_rpc_Status_new(upb_arena *arena) {
   return (google_rpc_Status *)upb_msg_new(&google_rpc_Status_msginit, arena);
 }
-UPB_INLINE google_rpc_Status *google_rpc_Status_parsenew(upb_strview buf, upb_arena *arena) {
+UPB_INLINE google_rpc_Status *google_rpc_Status_parse(const char *buf, size_t size,
+                        upb_arena *arena) {
   google_rpc_Status *ret = google_rpc_Status_new(arena);
-  return (ret && upb_decode(buf, ret, &google_rpc_Status_msginit)) ? ret : NULL;
+  return (ret && upb_decode(buf, size, ret, &google_rpc_Status_msginit, arena)) ? ret : NULL;
 }
 UPB_INLINE char *google_rpc_Status_serialize(const google_rpc_Status *msg, upb_arena *arena, size_t *len) {
   return upb_encode(msg, &google_rpc_Status_msginit, arena, len);
@@ -65,7 +64,6 @@ UPB_INLINE struct google_protobuf_Any* google_rpc_Status_add_details(google_rpc_
   if (!ok) return NULL;
   return sub;
 }
-
 
 #ifdef __cplusplus
 }  /* extern "C" */

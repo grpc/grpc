@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
   <Import Project="..\Grpc.Core\Common.csproj.include" />
 
@@ -11,6 +11,7 @@
     <PackageProjectUrl>https://github.com/grpc/grpc</PackageProjectUrl>
     <PackageTags>gRPC RPC HTTP/2</PackageTags>
     <VersionPrefix>$(GrpcCsharpVersion)</VersionPrefix>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
 
   <PropertyGroup>
@@ -19,18 +20,10 @@
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
   </PropertyGroup>
 
-  <PropertyGroup Condition=" '$(TargetFramework)' == 'netstandard2.0' ">
-    <DefineConstants>$(DefineConstants);GRPC_CSHARP_SUPPORT_SYSTEM_MEMORY</DefineConstants>
-  </PropertyGroup>
-
   <Import Project="..\Grpc.Core\SourceLink.csproj.include" />
 
   <ItemGroup>
-    <PackageReference Include="System.Interactive.Async" Version="3.2.0" />
-  </ItemGroup>
-
-  <ItemGroup Condition=" '$(TargetFramework)' == 'netstandard2.0' ">
-    <PackageReference Include="System.Memory" Version="4.5.2" />
+    <PackageReference Include="System.Memory" Version="4.5.3" />
   </ItemGroup>
 
   <ItemGroup Condition=" '$(TargetFramework)' == 'net45' ">

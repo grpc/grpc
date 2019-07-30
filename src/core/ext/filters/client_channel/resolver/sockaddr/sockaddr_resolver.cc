@@ -30,7 +30,6 @@
 #include "src/core/ext/filters/client_channel/resolver_registry.h"
 #include "src/core/ext/filters/client_channel/server_address.h"
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/gpr/host_port.h"
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/iomgr/combiner.h"
 #include "src/core/lib/iomgr/resolve_address.h"
@@ -81,24 +80,23 @@ void SockaddrResolver::StartLocked() {
 
 void DoNothing(void* ignored) {}
 
-OrphanablePtr<Resolver> CreateSockaddrResolver(
-    ResolverArgs args,
-    bool parse(const grpc_uri* uri, grpc_resolved_address* dst)) {
-  if (0 != strcmp(args.uri->authority, "")) {
+bool ParseUri(const grpc_uri* uri,
+              bool parse(const grpc_uri* uri, grpc_resolved_address* dst),
+              ServerAddressList* addresses) {
+  if (0 != strcmp(uri->authority, "")) {
     gpr_log(GPR_ERROR, "authority-based URIs not supported by the %s scheme",
-            args.uri->scheme);
-    return nullptr;
+            uri->scheme);
+    return false;
   }
   // Construct addresses.
   grpc_slice path_slice =
-      grpc_slice_new(args.uri->path, strlen(args.uri->path), DoNothing);
+      grpc_slice_new(uri->path, strlen(uri->path), DoNothing);
   grpc_slice_buffer path_parts;
   grpc_slice_buffer_init(&path_parts);
   grpc_slice_split(path_slice, ",", &path_parts);
-  ServerAddressList addresses;
   bool errors_found = false;
   for (size_t i = 0; i < path_parts.count; i++) {
-    grpc_uri ith_uri = *args.uri;
+    grpc_uri ith_uri = *uri;
     UniquePtr<char> part_str(grpc_slice_to_c_string(path_parts.slices[i]));
     ith_uri.path = part_str.get();
     grpc_resolved_address addr;
@@ -106,13 +104,20 @@ OrphanablePtr<Resolver> CreateSockaddrResolver(
       errors_found = true;
       break;
     }
-    addresses.emplace_back(addr, nullptr /* args */);
+    if (addresses != nullptr) {
+      addresses->emplace_back(addr, nullptr /* args */);
+    }
   }
   grpc_slice_buffer_destroy_internal(&path_parts);
   grpc_slice_unref_internal(path_slice);
-  if (errors_found) {
-    return OrphanablePtr<Resolver>(nullptr);
-  }
+  return !errors_found;
+}
+
+OrphanablePtr<Resolver> CreateSockaddrResolver(
+    ResolverArgs args,
+    bool parse(const grpc_uri* uri, grpc_resolved_address* dst)) {
+  ServerAddressList addresses;
+  if (!ParseUri(args.uri, parse, &addresses)) return nullptr;
   // Instantiate resolver.
   return OrphanablePtr<Resolver>(
       New<SockaddrResolver>(std::move(addresses), std::move(args)));
@@ -120,6 +125,10 @@ OrphanablePtr<Resolver> CreateSockaddrResolver(
 
 class IPv4ResolverFactory : public ResolverFactory {
  public:
+  bool IsValidUri(const grpc_uri* uri) const override {
+    return ParseUri(uri, grpc_parse_ipv4, nullptr);
+  }
+
   OrphanablePtr<Resolver> CreateResolver(ResolverArgs args) const override {
     return CreateSockaddrResolver(std::move(args), grpc_parse_ipv4);
   }
@@ -129,6 +138,10 @@ class IPv4ResolverFactory : public ResolverFactory {
 
 class IPv6ResolverFactory : public ResolverFactory {
  public:
+  bool IsValidUri(const grpc_uri* uri) const override {
+    return ParseUri(uri, grpc_parse_ipv6, nullptr);
+  }
+
   OrphanablePtr<Resolver> CreateResolver(ResolverArgs args) const override {
     return CreateSockaddrResolver(std::move(args), grpc_parse_ipv6);
   }
@@ -139,6 +152,10 @@ class IPv6ResolverFactory : public ResolverFactory {
 #ifdef GRPC_HAVE_UNIX_SOCKET
 class UnixResolverFactory : public ResolverFactory {
  public:
+  bool IsValidUri(const grpc_uri* uri) const override {
+    return ParseUri(uri, grpc_parse_unix, nullptr);
+  }
+
   OrphanablePtr<Resolver> CreateResolver(ResolverArgs args) const override {
     return CreateSockaddrResolver(std::move(args), grpc_parse_unix);
   }

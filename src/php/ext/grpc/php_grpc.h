@@ -70,6 +70,8 @@ ZEND_BEGIN_MODULE_GLOBALS(grpc)
   char *poll_strategy;
 ZEND_END_MODULE_GLOBALS(grpc)
 
+ZEND_EXTERN_MODULE_GLOBALS(grpc);
+
 /* In every utility function you add that needs to use variables
    in php_grpc_globals, call TSRMLS_FETCH(); after declaring other
    variables used by that function, or better yet, pass in TSRMLS_CC

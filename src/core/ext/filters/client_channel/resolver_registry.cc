@@ -132,6 +132,17 @@ ResolverFactory* ResolverRegistry::LookupResolverFactory(const char* scheme) {
   return g_state->LookupResolverFactory(scheme);
 }
 
+bool ResolverRegistry::IsValidTarget(const char* target) {
+  grpc_uri* uri = nullptr;
+  char* canonical_target = nullptr;
+  ResolverFactory* factory =
+      g_state->FindResolverFactory(target, &uri, &canonical_target);
+  bool result = factory == nullptr ? false : factory->IsValidUri(uri);
+  grpc_uri_destroy(uri);
+  gpr_free(canonical_target);
+  return result;
+}
+
 OrphanablePtr<Resolver> ResolverRegistry::CreateResolver(
     const char* target, const grpc_channel_args* args,
     grpc_pollset_set* pollset_set, grpc_combiner* combiner,

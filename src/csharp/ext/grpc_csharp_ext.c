@@ -632,6 +632,26 @@ GPR_EXPORT grpc_call_error GPR_CALLTYPE grpcsharp_call_start_unary(
                                     ctx, NULL);
 }
 
+/* Only for testing. Shortcircuits the unary call logic and only echoes the
+   message as if it was received from the server */
+GPR_EXPORT grpc_call_error GPR_CALLTYPE grpcsharp_test_call_start_unary_echo(
+    grpc_call* call, grpcsharp_batch_context* ctx, const char* send_buffer,
+    size_t send_buffer_len, uint32_t write_flags,
+    grpc_metadata_array* initial_metadata, uint32_t initial_metadata_flags) {
+  // prepare as if we were performing a normal RPC.
+  grpc_byte_buffer* send_message =
+      string_to_byte_buffer(send_buffer, send_buffer_len);
+
+  ctx->recv_message = send_message;  // echo message sent by the client as if
+                                     // received from server.
+  ctx->recv_status_on_client.status = GRPC_STATUS_OK;
+  ctx->recv_status_on_client.status_details = grpc_empty_slice();
+  // echo initial metadata as if received from server (as trailing metadata)
+  grpcsharp_metadata_array_move(&(ctx->recv_status_on_client.trailing_metadata),
+                                initial_metadata);
+  return GRPC_CALL_OK;
+}
+
 GPR_EXPORT grpc_call_error GPR_CALLTYPE grpcsharp_call_start_client_streaming(
     grpc_call* call, grpcsharp_batch_context* ctx,
     grpc_metadata_array* initial_metadata, uint32_t initial_metadata_flags) {

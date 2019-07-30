@@ -1,4 +1,4 @@
-#!/usr/bin/env python2.7
+#!/usr/bin/env python
 
 # Copyright 2017 gRPC authors.
 #
@@ -27,4 +27,4 @@ import python_utils.start_port_server as start_port_server
 
 start_port_server.start_port_server()
 
-print "Port server started successfully"
+print("Port server started successfully")

@@ -30,7 +30,7 @@ static inline void RegisterOpenCensusViewsForExport() {
   ::grpc_impl::RegisterOpenCensusViewsForExport();
 }
 static inline ::opencensus::trace::Span GetSpanFromServerContext(
-    ServerContext* context) {
+    ::grpc_impl::ServerContext* context) {
   return ::grpc_impl::GetSpanFromServerContext(context);
 }
 

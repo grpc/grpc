@@ -20,7 +20,7 @@
 
 #include "upb/port_def.inc"
 
-static const upb_msglayout *const envoy_api_v2_core_HealthCheck_submsgs[15] = {
+static const upb_msglayout *const envoy_api_v2_core_HealthCheck_submsgs[16] = {
   &envoy_api_v2_core_HealthCheck_CustomHealthCheck_msginit,
   &envoy_api_v2_core_HealthCheck_GrpcHealthCheck_msginit,
   &envoy_api_v2_core_HealthCheck_HttpHealthCheck_msginit,
@@ -30,7 +30,7 @@ static const upb_msglayout *const envoy_api_v2_core_HealthCheck_submsgs[15] = {
   &google_protobuf_UInt32Value_msginit,
 };
 
-static const upb_msglayout_field envoy_api_v2_core_HealthCheck__fields[18] = {
+static const upb_msglayout_field envoy_api_v2_core_HealthCheck__fields[19] = {
   {1, UPB_SIZE(16, 24), 0, 5, 11, 1},
   {2, UPB_SIZE(20, 32), 0, 5, 11, 1},
   {3, UPB_SIZE(24, 40), 0, 5, 11, 1},
@@ -38,23 +38,24 @@ static const upb_msglayout_field envoy_api_v2_core_HealthCheck__fields[18] = {
   {5, UPB_SIZE(32, 56), 0, 6, 11, 1},
   {6, UPB_SIZE(36, 64), 0, 6, 11, 1},
   {7, UPB_SIZE(40, 72), 0, 4, 11, 1},
-  {8, UPB_SIZE(60, 112), UPB_SIZE(-65, -121), 2, 11, 1},
-  {9, UPB_SIZE(60, 112), UPB_SIZE(-65, -121), 3, 11, 1},
-  {11, UPB_SIZE(60, 112), UPB_SIZE(-65, -121), 1, 11, 1},
+  {8, UPB_SIZE(64, 120), UPB_SIZE(-69, -129), 2, 11, 1},
+  {9, UPB_SIZE(64, 120), UPB_SIZE(-69, -129), 3, 11, 1},
+  {11, UPB_SIZE(64, 120), UPB_SIZE(-69, -129), 1, 11, 1},
   {12, UPB_SIZE(44, 80), 0, 5, 11, 1},
-  {13, UPB_SIZE(60, 112), UPB_SIZE(-65, -121), 0, 11, 1},
+  {13, UPB_SIZE(64, 120), UPB_SIZE(-69, -129), 0, 11, 1},
   {14, UPB_SIZE(48, 88), 0, 5, 11, 1},
   {15, UPB_SIZE(52, 96), 0, 5, 11, 1},
   {16, UPB_SIZE(56, 104), 0, 5, 11, 1},
   {17, UPB_SIZE(8, 8), 0, 0, 9, 1},
   {18, UPB_SIZE(0, 0), 0, 0, 13, 1},
   {19, UPB_SIZE(4, 4), 0, 0, 8, 1},
+  {20, UPB_SIZE(60, 112), 0, 5, 11, 1},
 };
 
 const upb_msglayout envoy_api_v2_core_HealthCheck_msginit = {
   &envoy_api_v2_core_HealthCheck_submsgs[0],
   &envoy_api_v2_core_HealthCheck__fields[0],
-  UPB_SIZE(72, 128), 18, false,
+  UPB_SIZE(72, 144), 19, false,
 };
 
 static const upb_msglayout_field envoy_api_v2_core_HealthCheck_Payload__fields[2] = {

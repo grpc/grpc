@@ -224,11 +224,11 @@ static NSError *ErrorForBadProto(id proto, Class expectedClass, NSError *parsing
   }
 }
 
-- (void)didReceiveRawMessage:(NSData *)message {
-  if (message == nil) return;
+- (void)didReceiveData:(id)data {
+  if (data == nil) return;
 
   NSError *error = nil;
-  GPBMessage *parsed = [_responseClass parseFromData:message error:&error];
+  GPBMessage *parsed = [_responseClass parseFromData:data error:&error];
   @synchronized(self) {
     if (parsed && [_handler respondsToSelector:@selector(didReceiveProtoMessage:)]) {
       dispatch_async(_dispatchQueue, ^{
@@ -248,7 +248,7 @@ static NSError *ErrorForBadProto(id proto, Class expectedClass, NSError *parsing
         }
         [copiedHandler
             didCloseWithTrailingMetadata:nil
-                                   error:ErrorForBadProto(message, self->_responseClass, error)];
+                                   error:ErrorForBadProto(data, self->_responseClass, error)];
       });
       [_call cancel];
       _call = nil;

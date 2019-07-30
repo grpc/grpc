@@ -77,6 +77,19 @@ grpc_cc_test(
 )
 
 grpc_cc_test(
+    name = "control_plane_credentials_test",
+    srcs = ["control_plane_credentials_test.cc"],
+    language = "C++",
+    deps = [
+        "//:gpr",
+        "//:grpc",
+        "//test/core/end2end:cq_verifier",
+        "//test/core/end2end:ssl_test_data",
+        "//test/core/util:grpc_test_util",
+    ],
+)
+
+grpc_cc_test(
     name = "json_token_test",
     srcs = ["json_token_test.cc"],
     language = "C++",
@@ -171,6 +184,7 @@ grpc_cc_binary(
         ":oauth2_utils",
         "//:gpr",
         "//:grpc",
+        "//:grpc++",
         "//test/core/util:grpc_test_util",
     ],
 )

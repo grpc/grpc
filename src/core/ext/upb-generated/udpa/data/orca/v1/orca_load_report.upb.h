@@ -10,12 +10,12 @@
 #define UDPA_DATA_ORCA_V1_ORCA_LOAD_REPORT_PROTO_UPB_H_
 
 #include "upb/generated_util.h"
-
 #include "upb/msg.h"
-
 #include "upb/decode.h"
 #include "upb/encode.h"
+
 #include "upb/port_def.inc"
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -27,17 +27,16 @@ typedef struct udpa_data_orca_v1_OrcaLoadReport_RequestCostOrUtilizationEntry ud
 extern const upb_msglayout udpa_data_orca_v1_OrcaLoadReport_msginit;
 extern const upb_msglayout udpa_data_orca_v1_OrcaLoadReport_RequestCostOrUtilizationEntry_msginit;
 
-/* Enums */
-
 
 /* udpa.data.orca.v1.OrcaLoadReport */
 
 UPB_INLINE udpa_data_orca_v1_OrcaLoadReport *udpa_data_orca_v1_OrcaLoadReport_new(upb_arena *arena) {
   return (udpa_data_orca_v1_OrcaLoadReport *)upb_msg_new(&udpa_data_orca_v1_OrcaLoadReport_msginit, arena);
 }
-UPB_INLINE udpa_data_orca_v1_OrcaLoadReport *udpa_data_orca_v1_OrcaLoadReport_parsenew(upb_strview buf, upb_arena *arena) {
+UPB_INLINE udpa_data_orca_v1_OrcaLoadReport *udpa_data_orca_v1_OrcaLoadReport_parse(const char *buf, size_t size,
+                        upb_arena *arena) {
   udpa_data_orca_v1_OrcaLoadReport *ret = udpa_data_orca_v1_OrcaLoadReport_new(arena);
-  return (ret && upb_decode(buf, ret, &udpa_data_orca_v1_OrcaLoadReport_msginit)) ? ret : NULL;
+  return (ret && upb_decode(buf, size, ret, &udpa_data_orca_v1_OrcaLoadReport_msginit, arena)) ? ret : NULL;
 }
 UPB_INLINE char *udpa_data_orca_v1_OrcaLoadReport_serialize(const udpa_data_orca_v1_OrcaLoadReport *msg, upb_arena *arena, size_t *len) {
   return upb_encode(msg, &udpa_data_orca_v1_OrcaLoadReport_msginit, arena, len);
@@ -71,15 +70,15 @@ UPB_INLINE struct udpa_data_orca_v1_OrcaLoadReport_RequestCostOrUtilizationEntry
   return sub;
 }
 
-
 /* udpa.data.orca.v1.OrcaLoadReport.RequestCostOrUtilizationEntry */
 
 UPB_INLINE udpa_data_orca_v1_OrcaLoadReport_RequestCostOrUtilizationEntry *udpa_data_orca_v1_OrcaLoadReport_RequestCostOrUtilizationEntry_new(upb_arena *arena) {
   return (udpa_data_orca_v1_OrcaLoadReport_RequestCostOrUtilizationEntry *)upb_msg_new(&udpa_data_orca_v1_OrcaLoadReport_RequestCostOrUtilizationEntry_msginit, arena);
 }
-UPB_INLINE udpa_data_orca_v1_OrcaLoadReport_RequestCostOrUtilizationEntry *udpa_data_orca_v1_OrcaLoadReport_RequestCostOrUtilizationEntry_parsenew(upb_strview buf, upb_arena *arena) {
+UPB_INLINE udpa_data_orca_v1_OrcaLoadReport_RequestCostOrUtilizationEntry *udpa_data_orca_v1_OrcaLoadReport_RequestCostOrUtilizationEntry_parse(const char *buf, size_t size,
+                        upb_arena *arena) {
   udpa_data_orca_v1_OrcaLoadReport_RequestCostOrUtilizationEntry *ret = udpa_data_orca_v1_OrcaLoadReport_RequestCostOrUtilizationEntry_new(arena);
-  return (ret && upb_decode(buf, ret, &udpa_data_orca_v1_OrcaLoadReport_RequestCostOrUtilizationEntry_msginit)) ? ret : NULL;
+  return (ret && upb_decode(buf, size, ret, &udpa_data_orca_v1_OrcaLoadReport_RequestCostOrUtilizationEntry_msginit, arena)) ? ret : NULL;
 }
 UPB_INLINE char *udpa_data_orca_v1_OrcaLoadReport_RequestCostOrUtilizationEntry_serialize(const udpa_data_orca_v1_OrcaLoadReport_RequestCostOrUtilizationEntry *msg, upb_arena *arena, size_t *len) {
   return upb_encode(msg, &udpa_data_orca_v1_OrcaLoadReport_RequestCostOrUtilizationEntry_msginit, arena, len);
@@ -94,7 +93,6 @@ UPB_INLINE void udpa_data_orca_v1_OrcaLoadReport_RequestCostOrUtilizationEntry_s
 UPB_INLINE void udpa_data_orca_v1_OrcaLoadReport_RequestCostOrUtilizationEntry_set_value(udpa_data_orca_v1_OrcaLoadReport_RequestCostOrUtilizationEntry *msg, double value) {
   UPB_FIELD_AT(msg, double, UPB_SIZE(0, 0)) = value;
 }
-
 
 #ifdef __cplusplus
 }  /* extern "C" */

@@ -49,7 +49,7 @@ class InterceptedChannel : public ChannelInterface {
   InterceptedChannel(ChannelInterface* channel, size_t pos)
       : channel_(channel), interceptor_pos_(pos) {}
 
-  Call CreateCall(const RpcMethod& method, ClientContext* context,
+  Call CreateCall(const RpcMethod& method, ::grpc_impl::ClientContext* context,
                   ::grpc_impl::CompletionQueue* cq) override {
     return channel_->CreateCallInternal(method, context, cq, interceptor_pos_);
   }

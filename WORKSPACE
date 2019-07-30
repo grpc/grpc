@@ -15,12 +15,12 @@ register_execution_platforms(
 )
 
 register_toolchains(
-    "//third_party/toolchains/bazel_0.23.2_rbe_windows:cc-toolchain-x64_windows",
+    "//third_party/toolchains/bazel_0.26.0_rbe_windows:cc-toolchain-x64_windows",
 )
 
 git_repository(
     name = "io_bazel_rules_python",
-    commit = "8b5d0683a7d878b28fffe464779c8a53659fc645",
+    commit = "fdbb17a4118a1728d19e638a5291b4c4266ea5b8",
     remote = "https://github.com/bazelbuild/rules_python.git",
 )
 
@@ -65,3 +65,14 @@ rbe_autoconfig(
         },
     ),
 )
+
+
+load("@upb//bazel:workspace_deps.bzl", "upb_deps")
+upb_deps()
+
+load("@envoy_api//bazel:repositories.bzl", "api_dependencies")
+api_dependencies()
+
+load("@io_bazel_rules_go//go:deps.bzl", "go_rules_dependencies", "go_register_toolchains")
+go_rules_dependencies()
+go_register_toolchains()

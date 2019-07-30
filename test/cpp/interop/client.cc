@@ -222,6 +222,8 @@ int main(int argc, char** argv) {
       &grpc::testing::InteropClient::DoTimeoutOnSleepingServer, &client);
   actions["empty_stream"] =
       std::bind(&grpc::testing::InteropClient::DoEmptyStream, &client);
+  actions["pick_first_unary"] =
+      std::bind(&grpc::testing::InteropClient::DoPickFirstUnary, &client);
   if (FLAGS_use_tls) {
     actions["compute_engine_creds"] =
         std::bind(&grpc::testing::InteropClient::DoComputeEngineCreds, &client,
