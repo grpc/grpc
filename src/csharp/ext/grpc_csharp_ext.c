@@ -41,26 +41,15 @@
 #define GPR_CALLTYPE
 #endif
 
-//grpc_byte_buffer* string_to_byte_buffer(const char* buffer, size_t len) {
-//  grpc_slice slice = grpc_slice_from_copied_buffer(buffer, len);
-//  grpc_byte_buffer* bb = grpc_raw_byte_buffer_create(&slice, 1);
-//  grpc_slice_unref(slice);
-//  return bb;
-//}
-
 static grpc_byte_buffer* grpcsharp_create_byte_buffer_from_stolen_slices(grpc_slice_buffer* slice_buffer) {
   grpc_byte_buffer* bb =
-      (grpc_byte_buffer*)gpr_malloc(sizeof(grpc_byte_buffer));
+       (grpc_byte_buffer*)gpr_malloc(sizeof(grpc_byte_buffer));
   memset(bb, 0, sizeof(grpc_byte_buffer));
   bb->type = GRPC_BB_RAW;
   bb->data.raw.compression = GRPC_COMPRESS_NONE;
-  bb->data.raw.slice_buffer = *slice_buffer;
-  // TODO: just use move slice_buffer...
+  grpc_slice_buffer_init(&bb->data.raw.slice_buffer);
 
-  // we transferred the ownership of members from the slice buffer to the
-  // the internals of byte buffer, so we just overwrite the original slice buffer with
-  // default values.
-  grpc_slice_buffer_init(slice_buffer);  // TODO: need to reset available_tail_space after this..
+  grpc_slice_buffer_swap(&bb->data.raw.slice_buffer, slice_buffer);
   return bb;
 }
 
