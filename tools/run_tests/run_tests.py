@@ -1140,6 +1140,16 @@ class ObjCLanguage(object):
                     'SCHEME': 'MacTests',
                     'PLATFORM': 'macos'
                 }))
+        out.append(
+            self.config.job_spec(
+                ['src/objective-c/tests/run_one_test.sh'],
+                timeout_seconds=30 * 60,
+                shortname='tvos-test-basictests',
+                cpu_cost=1e6,
+                environ={
+                    'SCHEME': 'TvTests',
+                    'PLATFORM': 'tvos'
+                }))
 
         return sorted(out)
 
