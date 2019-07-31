@@ -390,6 +390,10 @@ void grpcsharp_slice_buffer_slice_peek() {
   fprintf(stderr, "Should never reach here");
   abort();
 }
+void grpcsharp_slice_buffer_reset_and_unref() {
+  fprintf(stderr, "Should never reach here");
+  abort();
+}
 void grpcsharp_slice_buffer_destroy() {
   fprintf(stderr, "Should never reach here");
   abort();

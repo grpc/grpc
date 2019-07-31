@@ -126,6 +126,7 @@ namespace Grpc.Core.Internal
         public readonly Delegates.grpcsharp_slice_buffer_adjust_tail_space_delegate grpcsharp_slice_buffer_adjust_tail_space;
         public readonly Delegates.grpcsharp_slice_buffer_slice_count_delegate grpcsharp_slice_buffer_slice_count;
         public readonly Delegates.grpcsharp_slice_buffer_slice_peek_delegate grpcsharp_slice_buffer_slice_peek;
+        public readonly Delegates.grpcsharp_slice_buffer_reset_and_unref_delegate grpcsharp_slice_buffer_reset_and_unref;
         public readonly Delegates.grpcsharp_slice_buffer_destroy_delegate grpcsharp_slice_buffer_destroy;
         public readonly Delegates.gprsharp_now_delegate gprsharp_now;
         public readonly Delegates.gprsharp_inf_future_delegate gprsharp_inf_future;
@@ -233,6 +234,7 @@ namespace Grpc.Core.Internal
             this.grpcsharp_slice_buffer_adjust_tail_space = GetMethodDelegate<Delegates.grpcsharp_slice_buffer_adjust_tail_space_delegate>(library);
             this.grpcsharp_slice_buffer_slice_count = GetMethodDelegate<Delegates.grpcsharp_slice_buffer_slice_count_delegate>(library);
             this.grpcsharp_slice_buffer_slice_peek = GetMethodDelegate<Delegates.grpcsharp_slice_buffer_slice_peek_delegate>(library);
+            this.grpcsharp_slice_buffer_reset_and_unref = GetMethodDelegate<Delegates.grpcsharp_slice_buffer_reset_and_unref_delegate>(library);
             this.grpcsharp_slice_buffer_destroy = GetMethodDelegate<Delegates.grpcsharp_slice_buffer_destroy_delegate>(library);
             this.gprsharp_now = GetMethodDelegate<Delegates.gprsharp_now_delegate>(library);
             this.gprsharp_inf_future = GetMethodDelegate<Delegates.gprsharp_inf_future_delegate>(library);
@@ -339,6 +341,7 @@ namespace Grpc.Core.Internal
             this.grpcsharp_slice_buffer_adjust_tail_space = DllImportsFromStaticLib.grpcsharp_slice_buffer_adjust_tail_space;
             this.grpcsharp_slice_buffer_slice_count = DllImportsFromStaticLib.grpcsharp_slice_buffer_slice_count;
             this.grpcsharp_slice_buffer_slice_peek = DllImportsFromStaticLib.grpcsharp_slice_buffer_slice_peek;
+            this.grpcsharp_slice_buffer_reset_and_unref = DllImportsFromStaticLib.grpcsharp_slice_buffer_reset_and_unref;
             this.grpcsharp_slice_buffer_destroy = DllImportsFromStaticLib.grpcsharp_slice_buffer_destroy;
             this.gprsharp_now = DllImportsFromStaticLib.gprsharp_now;
             this.gprsharp_inf_future = DllImportsFromStaticLib.gprsharp_inf_future;
@@ -445,6 +448,7 @@ namespace Grpc.Core.Internal
             this.grpcsharp_slice_buffer_adjust_tail_space = DllImportsFromSharedLib.grpcsharp_slice_buffer_adjust_tail_space;
             this.grpcsharp_slice_buffer_slice_count = DllImportsFromSharedLib.grpcsharp_slice_buffer_slice_count;
             this.grpcsharp_slice_buffer_slice_peek = DllImportsFromSharedLib.grpcsharp_slice_buffer_slice_peek;
+            this.grpcsharp_slice_buffer_reset_and_unref = DllImportsFromSharedLib.grpcsharp_slice_buffer_reset_and_unref;
             this.grpcsharp_slice_buffer_destroy = DllImportsFromSharedLib.grpcsharp_slice_buffer_destroy;
             this.gprsharp_now = DllImportsFromSharedLib.gprsharp_now;
             this.gprsharp_inf_future = DllImportsFromSharedLib.gprsharp_inf_future;
@@ -554,6 +558,7 @@ namespace Grpc.Core.Internal
             public delegate IntPtr grpcsharp_slice_buffer_adjust_tail_space_delegate(SliceBufferSafeHandle sliceBuffer, UIntPtr availableTailSpace, UIntPtr requestedTailSpace);
             public delegate UIntPtr grpcsharp_slice_buffer_slice_count_delegate(SliceBufferSafeHandle sliceBuffer);
             public delegate void grpcsharp_slice_buffer_slice_peek_delegate(SliceBufferSafeHandle sliceBuffer, UIntPtr index, out UIntPtr sliceLen, out IntPtr sliceDataPtr);
+            public delegate void grpcsharp_slice_buffer_reset_and_unref_delegate(SliceBufferSafeHandle sliceBuffer);
             public delegate void grpcsharp_slice_buffer_destroy_delegate(IntPtr sliceBuffer);
             public delegate Timespec gprsharp_now_delegate(ClockType clockType);
             public delegate Timespec gprsharp_inf_future_delegate(ClockType clockType);
@@ -848,6 +853,9 @@ namespace Grpc.Core.Internal
             
             [DllImport(ImportName)]
             public static extern void grpcsharp_slice_buffer_slice_peek(SliceBufferSafeHandle sliceBuffer, UIntPtr index, out UIntPtr sliceLen, out IntPtr sliceDataPtr);
+            
+            [DllImport(ImportName)]
+            public static extern void grpcsharp_slice_buffer_reset_and_unref(SliceBufferSafeHandle sliceBuffer);
             
             [DllImport(ImportName)]
             public static extern void grpcsharp_slice_buffer_destroy(IntPtr sliceBuffer);
@@ -1162,6 +1170,9 @@ namespace Grpc.Core.Internal
             
             [DllImport(ImportName)]
             public static extern void grpcsharp_slice_buffer_slice_peek(SliceBufferSafeHandle sliceBuffer, UIntPtr index, out UIntPtr sliceLen, out IntPtr sliceDataPtr);
+            
+            [DllImport(ImportName)]
+            public static extern void grpcsharp_slice_buffer_reset_and_unref(SliceBufferSafeHandle sliceBuffer);
             
             [DllImport(ImportName)]
             public static extern void grpcsharp_slice_buffer_destroy(IntPtr sliceBuffer);

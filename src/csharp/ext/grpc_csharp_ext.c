@@ -1196,6 +1196,11 @@ grpcsharp_slice_buffer_create() {
 }
 
 GPR_EXPORT void GPR_CALLTYPE
+grpcsharp_slice_buffer_reset_and_unref(grpc_slice_buffer* buffer) {
+  grpc_slice_buffer_reset_and_unref(buffer);
+}
+
+GPR_EXPORT void GPR_CALLTYPE
 grpcsharp_slice_buffer_destroy(grpc_slice_buffer* buffer) {
   grpc_slice_buffer_destroy(buffer);
   gpr_free(buffer);
@@ -1213,8 +1218,6 @@ grpcsharp_slice_buffer_slice_peek(grpc_slice_buffer* buffer, size_t index, size_
   *slice_len = GRPC_SLICE_LENGTH(*slice_ptr);
   *slice_data_ptr = GRPC_SLICE_START_PTR(*slice_ptr);
 }
-
-
 
 GPR_EXPORT void* GPR_CALLTYPE
 grpcsharp_slice_buffer_adjust_tail_space(grpc_slice_buffer* buffer, size_t available_tail_space,

@@ -30,7 +30,7 @@ namespace Grpc.Core.Internal
 
         bool isComplete;
         //byte[] payload;
-        NativeBufferWriter bufferWriter;
+        SliceBufferSafeHandle sliceBuffer;
 
         public DefaultSerializationContext()
         {
@@ -43,10 +43,10 @@ namespace Grpc.Core.Internal
             this.isComplete = true;
 
             GetBufferWriter();
-            var destSpan = bufferWriter.GetSpan(payload.Length);
+            var destSpan = sliceBuffer.GetSpan(payload.Length);
             payload.AsSpan().CopyTo(destSpan);
-            bufferWriter.Advance(payload.Length);
-            bufferWriter.Complete();
+            sliceBuffer.Advance(payload.Length);
+            sliceBuffer.Complete();
             //this.payload = payload;
         }
 
@@ -55,12 +55,12 @@ namespace Grpc.Core.Internal
         /// </summary>
         public override IBufferWriter<byte> GetBufferWriter()
         {
-            if (bufferWriter == null)
+            if (sliceBuffer == null)
             {
                 // TODO: avoid allocation..
-                bufferWriter = new NativeBufferWriter();
+                sliceBuffer = SliceBufferSafeHandle.Create();
             }
-            return bufferWriter;
+            return sliceBuffer;
         }
 
         /// <summary>
@@ -69,20 +69,20 @@ namespace Grpc.Core.Internal
         public override void Complete()
         {
             GrpcPreconditions.CheckState(!isComplete);
-            bufferWriter.Complete();
+            sliceBuffer.Complete();
             this.isComplete = true;
         }
 
         internal SliceBufferSafeHandle GetPayload()
         {
-            return bufferWriter.GetSliceBuffer();
+            return sliceBuffer;
         }
 
         public void Reset()
         {
             this.isComplete = false;
             //this.payload = null;
-            this.bufferWriter = null;
+            this.sliceBuffer = null;  // reset instead...
         }
 
         public static DefaultSerializationContext GetInitializedThreadLocal()
@@ -92,35 +92,6 @@ namespace Grpc.Core.Internal
             return instance;
         }
 
-        private class NativeBufferWriter : IBufferWriter<byte>
-        {
-            private SliceBufferSafeHandle sliceBuffer = SliceBufferSafeHandle.Create();
-
-            public void Advance(int count)
-            {
-                sliceBuffer.Advance(count);
-            }
-
-            public Memory<byte> GetMemory(int sizeHint = 0)
-            {
-                // TODO: implement
-                throw new NotImplementedException();
-            }
-
-            public Span<byte> GetSpan(int sizeHint = 0)
-            {
-                return sliceBuffer.GetSpan(sizeHint);
-            }
-
-            public void Complete()
-            {
-                sliceBuffer.Complete();
-            }
-
-            public SliceBufferSafeHandle GetSliceBuffer()
-            {
-                return sliceBuffer;
-            }
-        }
+        
     }
 }

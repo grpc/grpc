@@ -92,6 +92,7 @@ native_method_signatures = [
     'IntPtr grpcsharp_slice_buffer_adjust_tail_space(SliceBufferSafeHandle sliceBuffer, UIntPtr availableTailSpace, UIntPtr requestedTailSpace)',
     'UIntPtr grpcsharp_slice_buffer_slice_count(SliceBufferSafeHandle sliceBuffer)',
     'void grpcsharp_slice_buffer_slice_peek(SliceBufferSafeHandle sliceBuffer, UIntPtr index, out UIntPtr sliceLen, out IntPtr sliceDataPtr)',
+    'void grpcsharp_slice_buffer_reset_and_unref(SliceBufferSafeHandle sliceBuffer)',
     'void grpcsharp_slice_buffer_destroy(IntPtr sliceBuffer)',
     'Timespec gprsharp_now(ClockType clockType)',
     'Timespec gprsharp_inf_future(ClockType clockType)',
