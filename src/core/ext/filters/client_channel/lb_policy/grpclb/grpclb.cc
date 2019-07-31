@@ -946,10 +946,8 @@ bool GrpcLb::BalancerCallState::LoadReportCountersAreZero(
   if (cstats == nullptr) {
     return true;
   }
-
   size_t drop_count;
   grpc_lb_v1_ClientStats_calls_finished_with_drop(cstats, &drop_count);
-
   return grpc_lb_v1_ClientStats_num_calls_started(cstats) == 0 &&
          grpc_lb_v1_ClientStats_num_calls_finished(cstats) == 0 &&
          grpc_lb_v1_ClientStats_num_calls_finished_with_client_failed_to_send(

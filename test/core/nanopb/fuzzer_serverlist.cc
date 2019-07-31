@@ -33,8 +33,8 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
   grpc_init();
   if (squelch) gpr_set_log_function(dont_log);
   grpc_slice slice = grpc_slice_from_copied_buffer((const char*)data, size);
-  grpc_grpclb_serverlist* serverlist;
-  if ((serverlist = grpc_grpclb_response_parse_serverlist(slice))) {
+  grpc_core::grpc_grpclb_serverlist* serverlist;
+  if ((serverlist = grpc_core::grpc_grpclb_response_parse_serverlist(slice))) {
     grpc_grpclb_destroy_serverlist(serverlist);
   }
   grpc_slice_unref(slice);
