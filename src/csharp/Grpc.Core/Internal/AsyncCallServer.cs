@@ -129,7 +129,7 @@ namespace Grpc.Core.Internal
         /// </summary>
         public Task SendStatusFromServerAsync(Status status, Metadata trailers, ResponseWithFlags? optionalWrite)
         {
-            byte[] payload = optionalWrite.HasValue ? UnsafeSerialize(optionalWrite.Value.Response) : null;
+            var payload = optionalWrite.HasValue ? UnsafeSerialize(optionalWrite.Value.Response) : null;
             var writeFlags = optionalWrite.HasValue ? optionalWrite.Value.WriteFlags : default(WriteFlags);
 
             lock (myLock)

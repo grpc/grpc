@@ -41,10 +41,26 @@
 #define GPR_CALLTYPE
 #endif
 
-grpc_byte_buffer* string_to_byte_buffer(const char* buffer, size_t len) {
-  grpc_slice slice = grpc_slice_from_copied_buffer(buffer, len);
-  grpc_byte_buffer* bb = grpc_raw_byte_buffer_create(&slice, 1);
-  grpc_slice_unref(slice);
+//grpc_byte_buffer* string_to_byte_buffer(const char* buffer, size_t len) {
+//  grpc_slice slice = grpc_slice_from_copied_buffer(buffer, len);
+//  grpc_byte_buffer* bb = grpc_raw_byte_buffer_create(&slice, 1);
+//  grpc_slice_unref(slice);
+//  return bb;
+//}
+
+static grpc_byte_buffer* grpcsharp_create_byte_buffer_from_stolen_slices(grpc_slice_buffer* slice_buffer) {
+  grpc_byte_buffer* bb =
+      (grpc_byte_buffer*)gpr_malloc(sizeof(grpc_byte_buffer));
+  memset(bb, 0, sizeof(grpc_byte_buffer));
+  bb->type = GRPC_BB_RAW;
+  bb->data.raw.compression = GRPC_COMPRESS_NONE;
+  bb->data.raw.slice_buffer = *slice_buffer;
+  // TODO: just use move slice_buffer...
+
+  // we transferred the ownership of members from the slice buffer to the
+  // the internals of byte buffer, so we just overwrite the original slice buffer with
+  // default values.
+  grpc_slice_buffer_init(slice_buffer);  // TODO: need to reset available_tail_space after this..
   return bb;
 }
 
@@ -582,8 +598,8 @@ static grpc_call_error grpcsharp_call_start_batch(grpc_call* call,
 }
 
 GPR_EXPORT grpc_call_error GPR_CALLTYPE grpcsharp_call_start_unary(
-    grpc_call* call, grpcsharp_batch_context* ctx, const char* send_buffer,
-    size_t send_buffer_len, uint32_t write_flags,
+    grpc_call* call, grpcsharp_batch_context* ctx, grpc_slice_buffer* send_buffer,
+    uint32_t write_flags,
     grpc_metadata_array* initial_metadata, uint32_t initial_metadata_flags) {
   /* TODO: don't use magic number */
   grpc_op ops[6];
@@ -598,7 +614,7 @@ GPR_EXPORT grpc_call_error GPR_CALLTYPE grpcsharp_call_start_unary(
   ops[0].reserved = NULL;
 
   ops[1].op = GRPC_OP_SEND_MESSAGE;
-  ctx->send_message = string_to_byte_buffer(send_buffer, send_buffer_len);
+  ctx->send_message = grpcsharp_create_byte_buffer_from_stolen_slices(send_buffer);
   ops[1].data.send_message.send_message = ctx->send_message;
   ops[1].flags = write_flags;
   ops[1].reserved = NULL;
@@ -635,12 +651,12 @@ GPR_EXPORT grpc_call_error GPR_CALLTYPE grpcsharp_call_start_unary(
 /* Only for testing. Shortcircuits the unary call logic and only echoes the
    message as if it was received from the server */
 GPR_EXPORT grpc_call_error GPR_CALLTYPE grpcsharp_test_call_start_unary_echo(
-    grpc_call* call, grpcsharp_batch_context* ctx, const char* send_buffer,
-    size_t send_buffer_len, uint32_t write_flags,
+    grpc_call* call, grpcsharp_batch_context* ctx, grpc_slice_buffer* send_buffer,
+    uint32_t write_flags,
     grpc_metadata_array* initial_metadata, uint32_t initial_metadata_flags) {
   // prepare as if we were performing a normal RPC.
   grpc_byte_buffer* send_message =
-      string_to_byte_buffer(send_buffer, send_buffer_len);
+      grpcsharp_create_byte_buffer_from_stolen_slices(send_buffer);
 
   ctx->recv_message = send_message;  // echo message sent by the client as if
                                      // received from server.
@@ -693,8 +709,8 @@ GPR_EXPORT grpc_call_error GPR_CALLTYPE grpcsharp_call_start_client_streaming(
 }
 
 GPR_EXPORT grpc_call_error GPR_CALLTYPE grpcsharp_call_start_server_streaming(
-    grpc_call* call, grpcsharp_batch_context* ctx, const char* send_buffer,
-    size_t send_buffer_len, uint32_t write_flags,
+    grpc_call* call, grpcsharp_batch_context* ctx, grpc_slice_buffer* send_buffer,
+     uint32_t write_flags,
     grpc_metadata_array* initial_metadata, uint32_t initial_metadata_flags) {
   /* TODO: don't use magic number */
   grpc_op ops[4];
@@ -709,7 +725,7 @@ GPR_EXPORT grpc_call_error GPR_CALLTYPE grpcsharp_call_start_server_streaming(
   ops[0].reserved = NULL;
 
   ops[1].op = GRPC_OP_SEND_MESSAGE;
-  ctx->send_message = string_to_byte_buffer(send_buffer, send_buffer_len);
+  ctx->send_message = grpcsharp_create_byte_buffer_from_stolen_slices(send_buffer);
   ops[1].data.send_message.send_message = ctx->send_message;
   ops[1].flags = write_flags;
   ops[1].reserved = NULL;
@@ -776,15 +792,15 @@ GPR_EXPORT grpc_call_error GPR_CALLTYPE grpcsharp_call_recv_initial_metadata(
 }
 
 GPR_EXPORT grpc_call_error GPR_CALLTYPE grpcsharp_call_send_message(
-    grpc_call* call, grpcsharp_batch_context* ctx, const char* send_buffer,
-    size_t send_buffer_len, uint32_t write_flags,
+    grpc_call* call, grpcsharp_batch_context* ctx, grpc_slice_buffer* send_buffer,
+    uint32_t write_flags,
     int32_t send_empty_initial_metadata) {
   /* TODO: don't use magic number */
   grpc_op ops[2];
   memset(ops, 0, sizeof(ops));
   size_t nops = send_empty_initial_metadata ? 2 : 1;
   ops[0].op = GRPC_OP_SEND_MESSAGE;
-  ctx->send_message = string_to_byte_buffer(send_buffer, send_buffer_len);
+  ctx->send_message = grpcsharp_create_byte_buffer_from_stolen_slices(send_buffer);
   ops[0].data.send_message.send_message = ctx->send_message;
   ops[0].flags = write_flags;
   ops[0].reserved = NULL;
@@ -811,7 +827,7 @@ GPR_EXPORT grpc_call_error GPR_CALLTYPE grpcsharp_call_send_status_from_server(
     grpc_call* call, grpcsharp_batch_context* ctx, grpc_status_code status_code,
     const char* status_details, size_t status_details_len,
     grpc_metadata_array* trailing_metadata, int32_t send_empty_initial_metadata,
-    const char* optional_send_buffer, size_t optional_send_buffer_len,
+    grpc_slice_buffer* optional_send_buffer,
     uint32_t write_flags) {
   /* TODO: don't use magic number */
   grpc_op ops[3];
@@ -833,7 +849,7 @@ GPR_EXPORT grpc_call_error GPR_CALLTYPE grpcsharp_call_send_status_from_server(
   if (optional_send_buffer) {
     ops[nops].op = GRPC_OP_SEND_MESSAGE;
     ctx->send_message =
-        string_to_byte_buffer(optional_send_buffer, optional_send_buffer_len);
+        grpcsharp_create_byte_buffer_from_stolen_slices(optional_send_buffer);
     ops[nops].data.send_message.send_message = ctx->send_message;
     ops[nops].flags = write_flags;
     ops[nops].reserved = NULL;
@@ -1209,22 +1225,7 @@ grpcsharp_slice_buffer_slice_peek(grpc_slice_buffer* buffer, size_t index, size_
   *slice_data_ptr = GRPC_SLICE_START_PTR(*slice_ptr);
 }
 
-GPR_EXPORT grpc_byte_buffer* GPR_CALLTYPE
-grpcsharp_create_byte_buffer_from_stolen_slices(grpc_slice_buffer* slice_buffer) {
-  grpc_byte_buffer* bb =
-      (grpc_byte_buffer*)gpr_malloc(sizeof(grpc_byte_buffer));
-  memset(bb, 0, sizeof(grpc_byte_buffer));
-  bb->type = GRPC_BB_RAW;
-  bb->data.raw.compression = GRPC_COMPRESS_NONE;
-  bb->data.raw.slice_buffer = *slice_buffer;
-  // TODO: just use move slice_buffer...
 
-  // we transferred the ownership of members from the slice buffer to the
-  // the internals of byte buffer, so we just overwrite the original slice buffer with
-  // default values.
-  grpc_slice_buffer_init(slice_buffer);  // TODO: need to reset available_tail_space after this..
-  return bb;
-}
 
 GPR_EXPORT void* GPR_CALLTYPE
 grpcsharp_slice_buffer_adjust_tail_space(grpc_slice_buffer* buffer, size_t available_tail_space,

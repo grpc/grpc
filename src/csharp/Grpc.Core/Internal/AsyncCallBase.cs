@@ -115,7 +115,7 @@ namespace Grpc.Core.Internal
         /// </summary>
         protected Task SendMessageInternalAsync(TWrite msg, WriteFlags writeFlags)
         {
-            byte[] payload = UnsafeSerialize(msg);
+            var payload = UnsafeSerialize(msg);
 
             lock (myLock)
             {
@@ -213,14 +213,14 @@ namespace Grpc.Core.Internal
         /// </summary>
         protected abstract Task CheckSendAllowedOrEarlyResult();
 
-        protected byte[] UnsafeSerialize(TWrite msg)
+        protected SliceBufferSafeHandle UnsafeSerialize(TWrite msg)
         {
             DefaultSerializationContext context = null;
             try
             {
                 context = DefaultSerializationContext.GetInitializedThreadLocal();
                 serializer(msg, context);
-                return context.GetPayload().ToByteArray();
+                return context.GetPayload();
             }
             finally
             {

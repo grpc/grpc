@@ -487,13 +487,13 @@ namespace Grpc.Core.Internal
             public delegate void grpcsharp_call_credentials_release_delegate(IntPtr credentials);
             public delegate CallError grpcsharp_call_cancel_delegate(CallSafeHandle call);
             public delegate CallError grpcsharp_call_cancel_with_status_delegate(CallSafeHandle call, StatusCode status, string description);
-            public delegate CallError grpcsharp_call_start_unary_delegate(CallSafeHandle call, BatchContextSafeHandle ctx, byte[] sendBuffer, UIntPtr sendBufferLen, WriteFlags writeFlags, MetadataArraySafeHandle metadataArray, CallFlags metadataFlags);
+            public delegate CallError grpcsharp_call_start_unary_delegate(CallSafeHandle call, BatchContextSafeHandle ctx, SliceBufferSafeHandle sendBuffer, WriteFlags writeFlags, MetadataArraySafeHandle metadataArray, CallFlags metadataFlags);
             public delegate CallError grpcsharp_call_start_client_streaming_delegate(CallSafeHandle call, BatchContextSafeHandle ctx, MetadataArraySafeHandle metadataArray, CallFlags metadataFlags);
-            public delegate CallError grpcsharp_call_start_server_streaming_delegate(CallSafeHandle call, BatchContextSafeHandle ctx, byte[] sendBuffer, UIntPtr sendBufferLen, WriteFlags writeFlags, MetadataArraySafeHandle metadataArray, CallFlags metadataFlags);
+            public delegate CallError grpcsharp_call_start_server_streaming_delegate(CallSafeHandle call, BatchContextSafeHandle ctx, SliceBufferSafeHandle sendBuffer, WriteFlags writeFlags, MetadataArraySafeHandle metadataArray, CallFlags metadataFlags);
             public delegate CallError grpcsharp_call_start_duplex_streaming_delegate(CallSafeHandle call, BatchContextSafeHandle ctx, MetadataArraySafeHandle metadataArray, CallFlags metadataFlags);
-            public delegate CallError grpcsharp_call_send_message_delegate(CallSafeHandle call, BatchContextSafeHandle ctx, byte[] sendBuffer, UIntPtr sendBufferLen, WriteFlags writeFlags, int sendEmptyInitialMetadata);
+            public delegate CallError grpcsharp_call_send_message_delegate(CallSafeHandle call, BatchContextSafeHandle ctx, SliceBufferSafeHandle sendBuffer, WriteFlags writeFlags, int sendEmptyInitialMetadata);
             public delegate CallError grpcsharp_call_send_close_from_client_delegate(CallSafeHandle call, BatchContextSafeHandle ctx);
-            public delegate CallError grpcsharp_call_send_status_from_server_delegate(CallSafeHandle call, BatchContextSafeHandle ctx, StatusCode statusCode, IntPtr statusMessage, UIntPtr statusMessageLen, MetadataArraySafeHandle metadataArray, int sendEmptyInitialMetadata, byte[] optionalSendBuffer, UIntPtr optionalSendBufferLen, WriteFlags writeFlags);
+            public delegate CallError grpcsharp_call_send_status_from_server_delegate(CallSafeHandle call, BatchContextSafeHandle ctx, StatusCode statusCode, IntPtr statusMessage, UIntPtr statusMessageLen, MetadataArraySafeHandle metadataArray, int sendEmptyInitialMetadata, SliceBufferSafeHandle optionalSendBuffer, WriteFlags writeFlags);
             public delegate CallError grpcsharp_call_recv_message_delegate(CallSafeHandle call, BatchContextSafeHandle ctx);
             public delegate CallError grpcsharp_call_recv_initial_metadata_delegate(CallSafeHandle call, BatchContextSafeHandle ctx);
             public delegate CallError grpcsharp_call_start_serverside_delegate(CallSafeHandle call, BatchContextSafeHandle ctx);
@@ -563,7 +563,7 @@ namespace Grpc.Core.Internal
             public delegate CallError grpcsharp_test_callback_delegate([MarshalAs(UnmanagedType.FunctionPtr)] NativeCallbackTestDelegate callback);
             public delegate IntPtr grpcsharp_test_nop_delegate(IntPtr ptr);
             public delegate void grpcsharp_test_override_method_delegate(string methodName, string variant);
-            public delegate CallError grpcsharp_test_call_start_unary_echo_delegate(CallSafeHandle call, BatchContextSafeHandle ctx, byte[] sendBuffer, UIntPtr sendBufferLen, WriteFlags writeFlags, MetadataArraySafeHandle metadataArray, CallFlags metadataFlags);
+            public delegate CallError grpcsharp_test_call_start_unary_echo_delegate(CallSafeHandle call, BatchContextSafeHandle ctx, SliceBufferSafeHandle sendBuffer, WriteFlags writeFlags, MetadataArraySafeHandle metadataArray, CallFlags metadataFlags);
         }
         
         /// <summary>
@@ -649,25 +649,25 @@ namespace Grpc.Core.Internal
             public static extern CallError grpcsharp_call_cancel_with_status(CallSafeHandle call, StatusCode status, string description);
             
             [DllImport(ImportName)]
-            public static extern CallError grpcsharp_call_start_unary(CallSafeHandle call, BatchContextSafeHandle ctx, byte[] sendBuffer, UIntPtr sendBufferLen, WriteFlags writeFlags, MetadataArraySafeHandle metadataArray, CallFlags metadataFlags);
+            public static extern CallError grpcsharp_call_start_unary(CallSafeHandle call, BatchContextSafeHandle ctx, SliceBufferSafeHandle sendBuffer, WriteFlags writeFlags, MetadataArraySafeHandle metadataArray, CallFlags metadataFlags);
             
             [DllImport(ImportName)]
             public static extern CallError grpcsharp_call_start_client_streaming(CallSafeHandle call, BatchContextSafeHandle ctx, MetadataArraySafeHandle metadataArray, CallFlags metadataFlags);
             
             [DllImport(ImportName)]
-            public static extern CallError grpcsharp_call_start_server_streaming(CallSafeHandle call, BatchContextSafeHandle ctx, byte[] sendBuffer, UIntPtr sendBufferLen, WriteFlags writeFlags, MetadataArraySafeHandle metadataArray, CallFlags metadataFlags);
+            public static extern CallError grpcsharp_call_start_server_streaming(CallSafeHandle call, BatchContextSafeHandle ctx, SliceBufferSafeHandle sendBuffer, WriteFlags writeFlags, MetadataArraySafeHandle metadataArray, CallFlags metadataFlags);
             
             [DllImport(ImportName)]
             public static extern CallError grpcsharp_call_start_duplex_streaming(CallSafeHandle call, BatchContextSafeHandle ctx, MetadataArraySafeHandle metadataArray, CallFlags metadataFlags);
             
             [DllImport(ImportName)]
-            public static extern CallError grpcsharp_call_send_message(CallSafeHandle call, BatchContextSafeHandle ctx, byte[] sendBuffer, UIntPtr sendBufferLen, WriteFlags writeFlags, int sendEmptyInitialMetadata);
+            public static extern CallError grpcsharp_call_send_message(CallSafeHandle call, BatchContextSafeHandle ctx, SliceBufferSafeHandle sendBuffer, WriteFlags writeFlags, int sendEmptyInitialMetadata);
             
             [DllImport(ImportName)]
             public static extern CallError grpcsharp_call_send_close_from_client(CallSafeHandle call, BatchContextSafeHandle ctx);
             
             [DllImport(ImportName)]
-            public static extern CallError grpcsharp_call_send_status_from_server(CallSafeHandle call, BatchContextSafeHandle ctx, StatusCode statusCode, IntPtr statusMessage, UIntPtr statusMessageLen, MetadataArraySafeHandle metadataArray, int sendEmptyInitialMetadata, byte[] optionalSendBuffer, UIntPtr optionalSendBufferLen, WriteFlags writeFlags);
+            public static extern CallError grpcsharp_call_send_status_from_server(CallSafeHandle call, BatchContextSafeHandle ctx, StatusCode statusCode, IntPtr statusMessage, UIntPtr statusMessageLen, MetadataArraySafeHandle metadataArray, int sendEmptyInitialMetadata, SliceBufferSafeHandle optionalSendBuffer, WriteFlags writeFlags);
             
             [DllImport(ImportName)]
             public static extern CallError grpcsharp_call_recv_message(CallSafeHandle call, BatchContextSafeHandle ctx);
@@ -877,7 +877,7 @@ namespace Grpc.Core.Internal
             public static extern void grpcsharp_test_override_method(string methodName, string variant);
             
             [DllImport(ImportName)]
-            public static extern CallError grpcsharp_test_call_start_unary_echo(CallSafeHandle call, BatchContextSafeHandle ctx, byte[] sendBuffer, UIntPtr sendBufferLen, WriteFlags writeFlags, MetadataArraySafeHandle metadataArray, CallFlags metadataFlags);
+            public static extern CallError grpcsharp_test_call_start_unary_echo(CallSafeHandle call, BatchContextSafeHandle ctx, SliceBufferSafeHandle sendBuffer, WriteFlags writeFlags, MetadataArraySafeHandle metadataArray, CallFlags metadataFlags);
         }
         
         /// <summary>
@@ -963,25 +963,25 @@ namespace Grpc.Core.Internal
             public static extern CallError grpcsharp_call_cancel_with_status(CallSafeHandle call, StatusCode status, string description);
             
             [DllImport(ImportName)]
-            public static extern CallError grpcsharp_call_start_unary(CallSafeHandle call, BatchContextSafeHandle ctx, byte[] sendBuffer, UIntPtr sendBufferLen, WriteFlags writeFlags, MetadataArraySafeHandle metadataArray, CallFlags metadataFlags);
+            public static extern CallError grpcsharp_call_start_unary(CallSafeHandle call, BatchContextSafeHandle ctx, SliceBufferSafeHandle sendBuffer, WriteFlags writeFlags, MetadataArraySafeHandle metadataArray, CallFlags metadataFlags);
             
             [DllImport(ImportName)]
             public static extern CallError grpcsharp_call_start_client_streaming(CallSafeHandle call, BatchContextSafeHandle ctx, MetadataArraySafeHandle metadataArray, CallFlags metadataFlags);
             
             [DllImport(ImportName)]
-            public static extern CallError grpcsharp_call_start_server_streaming(CallSafeHandle call, BatchContextSafeHandle ctx, byte[] sendBuffer, UIntPtr sendBufferLen, WriteFlags writeFlags, MetadataArraySafeHandle metadataArray, CallFlags metadataFlags);
+            public static extern CallError grpcsharp_call_start_server_streaming(CallSafeHandle call, BatchContextSafeHandle ctx, SliceBufferSafeHandle sendBuffer, WriteFlags writeFlags, MetadataArraySafeHandle metadataArray, CallFlags metadataFlags);
             
             [DllImport(ImportName)]
             public static extern CallError grpcsharp_call_start_duplex_streaming(CallSafeHandle call, BatchContextSafeHandle ctx, MetadataArraySafeHandle metadataArray, CallFlags metadataFlags);
             
             [DllImport(ImportName)]
-            public static extern CallError grpcsharp_call_send_message(CallSafeHandle call, BatchContextSafeHandle ctx, byte[] sendBuffer, UIntPtr sendBufferLen, WriteFlags writeFlags, int sendEmptyInitialMetadata);
+            public static extern CallError grpcsharp_call_send_message(CallSafeHandle call, BatchContextSafeHandle ctx, SliceBufferSafeHandle sendBuffer, WriteFlags writeFlags, int sendEmptyInitialMetadata);
             
             [DllImport(ImportName)]
             public static extern CallError grpcsharp_call_send_close_from_client(CallSafeHandle call, BatchContextSafeHandle ctx);
             
             [DllImport(ImportName)]
-            public static extern CallError grpcsharp_call_send_status_from_server(CallSafeHandle call, BatchContextSafeHandle ctx, StatusCode statusCode, IntPtr statusMessage, UIntPtr statusMessageLen, MetadataArraySafeHandle metadataArray, int sendEmptyInitialMetadata, byte[] optionalSendBuffer, UIntPtr optionalSendBufferLen, WriteFlags writeFlags);
+            public static extern CallError grpcsharp_call_send_status_from_server(CallSafeHandle call, BatchContextSafeHandle ctx, StatusCode statusCode, IntPtr statusMessage, UIntPtr statusMessageLen, MetadataArraySafeHandle metadataArray, int sendEmptyInitialMetadata, SliceBufferSafeHandle optionalSendBuffer, WriteFlags writeFlags);
             
             [DllImport(ImportName)]
             public static extern CallError grpcsharp_call_recv_message(CallSafeHandle call, BatchContextSafeHandle ctx);
@@ -1191,7 +1191,7 @@ namespace Grpc.Core.Internal
             public static extern void grpcsharp_test_override_method(string methodName, string variant);
             
             [DllImport(ImportName)]
-            public static extern CallError grpcsharp_test_call_start_unary_echo(CallSafeHandle call, BatchContextSafeHandle ctx, byte[] sendBuffer, UIntPtr sendBufferLen, WriteFlags writeFlags, MetadataArraySafeHandle metadataArray, CallFlags metadataFlags);
+            public static extern CallError grpcsharp_test_call_start_unary_echo(CallSafeHandle call, BatchContextSafeHandle ctx, SliceBufferSafeHandle sendBuffer, WriteFlags writeFlags, MetadataArraySafeHandle metadataArray, CallFlags metadataFlags);
         }
     }
 }

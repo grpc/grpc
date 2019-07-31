@@ -95,7 +95,7 @@ namespace Grpc.Core.Internal
                         readingDone = true;
                     }
 
-                    byte[] payload = UnsafeSerialize(msg);
+                    var payload = UnsafeSerialize(msg);
 
                     using (var metadataArray = MetadataArraySafeHandle.Create(details.Options.Headers))
                     {
@@ -160,7 +160,7 @@ namespace Grpc.Core.Internal
                     halfcloseRequested = true;
                     readingDone = true;
 
-                    byte[] payload = UnsafeSerialize(msg);
+                    var payload = UnsafeSerialize(msg);
 
                     unaryResponseTcs = new TaskCompletionSource<TResponse>();
                     using (var metadataArray = MetadataArraySafeHandle.Create(details.Options.Headers))
@@ -235,7 +235,7 @@ namespace Grpc.Core.Internal
 
                     halfcloseRequested = true;
 
-                    byte[] payload = UnsafeSerialize(msg);
+                    var payload = UnsafeSerialize(msg);
 
                     streamingResponseCallFinishedTcs = new TaskCompletionSource<object>();
                     using (var metadataArray = MetadataArraySafeHandle.Create(details.Options.Headers))

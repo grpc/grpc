@@ -50,11 +50,14 @@ namespace Grpc.Microbenchmarks
             var call = CreateFakeCall(cq);
 
             var sendCompletionCallback = new NopSendCompletionCallback();
-            var payload = new byte[PayloadSize];
+            var payload = SliceBufferSafeHandle.Create();
+            payload.GetSpan(PayloadSize);
+            payload.Advance(PayloadSize);
             var writeFlags = default(WriteFlags);
 
             for (int i = 0; i < Iterations; i++)
             {
+                // TODO: sending for the first time actually steals the slices...
                 call.StartSendMessage(sendCompletionCallback, payload, writeFlags, false);
                 var callback = completionRegistry.Extract(completionRegistry.LastRegisteredKey);
                 callback.OnComplete(true);
