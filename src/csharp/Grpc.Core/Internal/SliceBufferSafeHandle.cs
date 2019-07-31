@@ -32,6 +32,8 @@ namespace Grpc.Core.Internal
         static readonly NativeMethods Native = NativeMethods.Get();
         static readonly ILogger Logger = GrpcEnvironment.Logger.ForType<SliceBufferSafeHandle>();
 
+        public static readonly SliceBufferSafeHandle NullInstance = new SliceBufferSafeHandle();
+
         private IntPtr tailSpacePtr;
         private UIntPtr tailSpaceLen;
         

@@ -132,6 +132,12 @@ namespace Grpc.Core.Internal
             SliceBufferSafeHandle optionalPayload, WriteFlags writeFlags)
         {
             // TODO: optionalPayload == null -> pass null SliceBufferSafeHandle
+            // do this properly
+            if (optionalPayload == null)
+            {
+                optionalPayload = SliceBufferSafeHandle.NullInstance;
+            }
+            
             using (completionQueue.NewScope())
             {
                 var ctx = completionQueue.CompletionRegistry.RegisterBatchCompletion(CompletionHandler_ISendStatusFromServerCompletionCallback, callback);
