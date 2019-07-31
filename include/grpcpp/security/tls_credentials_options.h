@@ -23,9 +23,8 @@
 #include <memory>
 
 #include <grpcpp/support/config.h>
-#include <grpc/grpc_security_constants.h>
+#include <grpc/grpc_security.h>
 
-#include "src/core/lib/security/credentials/tls/grpc_tls_credentials_options.h"
 
 namespace grpc_impl {
 namespace experimental {
@@ -51,7 +50,7 @@ class TlsKeyMaterialsConfig {
                          ::std::vector<PemKeyCertPair> pem_key_cert_pair_list);
 
   /** Creates C struct for key materials. **/
-  grpc_core::RefCountedPtr<grpc_tls_key_materials_config> c_key_materials() const;
+  grpc_tls_key_materials_config* c_key_materials() const;
 
  private:
   ::std::vector<PemKeyCertPair> pem_key_cert_pair_list_;

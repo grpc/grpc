@@ -18,6 +18,8 @@
 
 #include <grpcpp/security/tls_credentials_options.h>
 
+#include "src/core/lib/security/credentials/tls/grpc_tls_credentials_options.h"
+
 namespace grpc_impl {
 namespace experimental {
 
