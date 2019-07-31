@@ -1395,20 +1395,22 @@ void grpc_server_destroy(grpc_server* server) {
   server_unref(server);
 }
 
-void grpc_server_add_listener(grpc_server* server, void* arg,
-                              void (*start)(grpc_server* server, void* arg,
-                                            grpc_pollset** pollsets,
-                                            size_t pollset_count),
-                              void (*destroy)(grpc_server* server, void* arg,
-                                              grpc_closure* on_done),
-                              intptr_t socket_uuid) {
+void grpc_server_add_listener(
+    grpc_server* server, void* listener_arg,
+    void (*start)(grpc_server* server, void* arg, grpc_pollset** pollsets,
+                  size_t pollset_count),
+    void (*destroy)(grpc_server* server, void* arg, grpc_closure* on_done),
+    grpc_core::RefCountedPtr<grpc_core::channelz::ListenSocketNode> node) {
   listener* l = static_cast<listener*>(gpr_malloc(sizeof(listener)));
-  l->arg = arg;
+  l->arg = listener_arg;
   l->start = start;
   l->destroy = destroy;
-  l->socket_uuid = socket_uuid;
-  if (server->channelz_server != nullptr && socket_uuid != 0) {
-    server->channelz_server->AddChildListenSocket(socket_uuid);
+  l->socket_uuid = 0;
+  if (node != nullptr) {
+    l->socket_uuid = node->uuid();
+    if (server->channelz_server != nullptr) {
+      server->channelz_server->AddChildListenSocket(std::move(node));
+    }
   }
   l->next = server->listeners;
   server->listeners = l;
