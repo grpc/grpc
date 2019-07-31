@@ -745,8 +745,11 @@ void grpc_chttp2_act_on_flowctl_action(
 
 /********* End of Flow Control ***************/
 
-grpc_chttp2_stream* grpc_chttp2_parsing_lookup_stream(grpc_chttp2_transport* t,
-                                                      uint32_t id);
+inline grpc_chttp2_stream* grpc_chttp2_parsing_lookup_stream(
+    grpc_chttp2_transport* t, uint32_t id) {
+  return static_cast<grpc_chttp2_stream*>(
+      grpc_chttp2_stream_map_find(&t->stream_map, id));
+}
 grpc_chttp2_stream* grpc_chttp2_parsing_accept_stream(grpc_chttp2_transport* t,
                                                       uint32_t id);
 
