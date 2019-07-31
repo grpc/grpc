@@ -31,6 +31,8 @@
 #define GRPC_GRPCLB_SERVER_IP_ADDRESS_MAX_SIZE 16
 #define GRPC_GRPCLB_SERVER_LOAD_BALANCE_TOKEN_MAX_SIZE 50
 
+namespace grpc_core {
+
 typedef grpc_lb_v1_LoadBalanceRequest grpc_grpclb_request;
 typedef grpc_lb_v1_LoadBalanceResponse grpc_grpclb_response;
 typedef grpc_lb_v1_InitialLoadBalanceResponse grpc_grpclb_initial_response;
@@ -46,9 +48,9 @@ typedef struct {
 // fields.
 typedef struct {
   grpc_grpclb_server_ip_address ip_address;
-  int32_t port = 2;
+  int32_t port;
   char load_balance_token[GRPC_GRPCLB_SERVER_LOAD_BALANCE_TOKEN_MAX_SIZE];
-  bool drop = 4;
+  bool drop;
 } grpc_grpclb_server;
 
 typedef struct {
@@ -94,6 +96,8 @@ void grpc_grpclb_destroy_serverlist(grpc_grpclb_serverlist* serverlist);
 
 grpc_millis grpc_grpclb_duration_to_millis(
     const grpc_grpclb_duration* duration_pb);
+
+}  // namespace grpc_core
 
 #endif /* GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_LB_POLICY_GRPCLB_LOAD_BALANCER_API_H \
         */

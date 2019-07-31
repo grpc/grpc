@@ -34,7 +34,7 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
   if (squelch) gpr_set_log_function(dont_log);
   grpc_slice slice = grpc_slice_from_copied_buffer((const char*)data, size);
   upb::Arena arena;
-  grpc_grpclb_initial_response_parse(slice, arena.ptr());
+  grpc_core::grpc_grpclb_initial_response_parse(slice, arena.ptr());
   grpc_slice_unref(slice);
   grpc_shutdown();
   return 0;
