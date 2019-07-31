@@ -22,8 +22,8 @@
 
 #include "google/protobuf/duration.upb.h"
 #include "src/core/ext/filters/client_channel/lb_policy/grpclb/load_balancer_api.h"
-#include "src/core/lib/iomgr/sockaddr_utils.h"
 #include "src/core/lib/iomgr/sockaddr.h"
+#include "src/core/lib/iomgr/sockaddr_utils.h"
 #include "src/proto/grpc/lb/v1/load_balancer.pb.h"  // C++ version
 
 namespace grpc {
@@ -45,7 +45,8 @@ grpc::string Ip4ToPackedString(const char* ip_str) {
   return grpc::string(reinterpret_cast<const char*>(&ip4), sizeof(ip4));
 }
 
-grpc::string PackedStringToIp(const grpc_grpclb_server_ip_address& pb_ip) {
+grpc::string PackedStringToIp(
+    const grpc_core::grpc_grpclb_server_ip_address& pb_ip) {
   char ip_str[46] = {0};
   int af = -1;
   if (pb_ip.size == 4) {
@@ -63,9 +64,9 @@ TEST_F(GrpclbTest, CreateRequest) {
   const grpc::string service_name = "AServiceName";
   LoadBalanceRequest request;
   upb::Arena arena;
-  grpc_grpclb_request* c_req =
-      grpc_grpclb_request_create(service_name.c_str(), arena.ptr());
-  grpc_slice slice = grpc_grpclb_request_encode(c_req, arena.ptr());
+  grpc_core::grpc_grpclb_request* c_req =
+      grpc_core::grpc_grpclb_request_create(service_name.c_str(), arena.ptr());
+  grpc_slice slice = grpc_core::grpc_grpclb_request_encode(c_req, arena.ptr());
   const int num_bytes_written = GRPC_SLICE_LENGTH(slice);
   EXPECT_GT(num_bytes_written, 0);
   request.ParseFromArray(GRPC_SLICE_START_PTR(slice), num_bytes_written);
@@ -85,8 +86,8 @@ TEST_F(GrpclbTest, ParseInitialResponse) {
       grpc_slice_from_copied_string(encoded_response.c_str());
 
   upb::Arena arena;
-  const grpc_grpclb_initial_response* c_initial_response =
-      grpc_grpclb_initial_response_parse(encoded_slice, arena.ptr());
+  const grpc_core::grpc_grpclb_initial_response* c_initial_response =
+      grpc_core::grpc_grpclb_initial_response_parse(encoded_slice, arena.ptr());
 
   upb_strview load_balancer_delegate =
       grpc_lb_v1_InitialLoadBalanceResponse_load_balancer_delegate(
@@ -118,8 +119,8 @@ TEST_F(GrpclbTest, ParseResponseServerList) {
   const grpc::string encoded_response = response.SerializeAsString();
   const grpc_slice encoded_slice = grpc_slice_from_copied_buffer(
       encoded_response.data(), encoded_response.size());
-  grpc_grpclb_serverlist* c_serverlist =
-      grpc_grpclb_response_parse_serverlist(encoded_slice);
+  grpc_core::grpc_grpclb_serverlist* c_serverlist =
+      grpc_core::grpc_grpclb_response_parse_serverlist(encoded_slice);
   ASSERT_EQ(c_serverlist->num_servers, 2ul);
   EXPECT_EQ(PackedStringToIp(c_serverlist->servers[0]->ip_address),
             "127.0.0.1");
