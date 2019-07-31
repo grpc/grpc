@@ -3795,7 +3795,7 @@ LIBGRPC_SRC = \
     src/core/ext/filters/client_channel/subchannel.cc \
     src/core/ext/filters/client_channel/subchannel_pool_interface.cc \
     src/core/ext/filters/deadline/deadline_filter.cc \
-    src/core/ext/filters/client_channel/health/health.pb.c \
+    src/core/ext/upb-generated/src/proto/grpc/health/v1/health.upb.c \
     src/core/tsi/fake_transport_security.cc \
     src/core/tsi/local_transport_security.cc \
     src/core/tsi/ssl/session_cache/ssl_session_boringssl.cc \
@@ -4156,10 +4156,14 @@ LIBGRPC_CRONET_SRC = \
     src/core/ext/filters/client_channel/subchannel.cc \
     src/core/ext/filters/client_channel/subchannel_pool_interface.cc \
     src/core/ext/filters/deadline/deadline_filter.cc \
-    src/core/ext/filters/client_channel/health/health.pb.c \
-    third_party/nanopb/pb_common.c \
-    third_party/nanopb/pb_decode.c \
-    third_party/nanopb/pb_encode.c \
+    src/core/ext/upb-generated/src/proto/grpc/health/v1/health.upb.c \
+    third_party/upb/generated_for_cmake/google/protobuf/descriptor.upb.c \
+    third_party/upb/upb/decode.c \
+    third_party/upb/upb/encode.c \
+    third_party/upb/upb/msg.c \
+    third_party/upb/upb/port.c \
+    third_party/upb/upb/table.c \
+    third_party/upb/upb/upb.c \
     src/core/lib/http/httpcli_security_connector.cc \
     src/core/lib/security/context/security_context.cc \
     src/core/lib/security/credentials/alts/alts_credentials.cc \
@@ -4227,14 +4231,10 @@ LIBGRPC_CRONET_SRC = \
     src/core/tsi/alts/handshaker/altscontext.pb.c \
     src/core/tsi/alts/handshaker/handshaker.pb.c \
     src/core/tsi/alts/handshaker/transport_security_common.pb.c \
+    third_party/nanopb/pb_common.c \
+    third_party/nanopb/pb_decode.c \
+    third_party/nanopb/pb_encode.c \
     src/core/tsi/transport_security.cc \
-    third_party/upb/generated_for_cmake/google/protobuf/descriptor.upb.c \
-    third_party/upb/upb/decode.c \
-    third_party/upb/upb/encode.c \
-    third_party/upb/upb/msg.c \
-    third_party/upb/upb/port.c \
-    third_party/upb/upb/table.c \
-    third_party/upb/upb/upb.c \
     src/core/ext/transport/chttp2/client/insecure/channel_create.cc \
     src/core/ext/transport/chttp2/client/insecure/channel_create_posix.cc \
     src/core/ext/transport/chttp2/client/authority.cc \
@@ -4542,10 +4542,14 @@ LIBGRPC_TEST_UTIL_SRC = \
     src/core/ext/filters/client_channel/subchannel.cc \
     src/core/ext/filters/client_channel/subchannel_pool_interface.cc \
     src/core/ext/filters/deadline/deadline_filter.cc \
-    src/core/ext/filters/client_channel/health/health.pb.c \
-    third_party/nanopb/pb_common.c \
-    third_party/nanopb/pb_decode.c \
-    third_party/nanopb/pb_encode.c \
+    src/core/ext/upb-generated/src/proto/grpc/health/v1/health.upb.c \
+    third_party/upb/generated_for_cmake/google/protobuf/descriptor.upb.c \
+    third_party/upb/upb/decode.c \
+    third_party/upb/upb/encode.c \
+    third_party/upb/upb/msg.c \
+    third_party/upb/upb/port.c \
+    third_party/upb/upb/table.c \
+    third_party/upb/upb/upb.c \
     src/core/ext/transport/chttp2/transport/bin_decoder.cc \
     src/core/ext/transport/chttp2/transport/bin_encoder.cc \
     src/core/ext/transport/chttp2/transport/chttp2_plugin.cc \
@@ -4861,10 +4865,14 @@ LIBGRPC_TEST_UTIL_UNSECURE_SRC = \
     src/core/ext/filters/client_channel/subchannel.cc \
     src/core/ext/filters/client_channel/subchannel_pool_interface.cc \
     src/core/ext/filters/deadline/deadline_filter.cc \
-    src/core/ext/filters/client_channel/health/health.pb.c \
-    third_party/nanopb/pb_common.c \
-    third_party/nanopb/pb_decode.c \
-    third_party/nanopb/pb_encode.c \
+    src/core/ext/upb-generated/src/proto/grpc/health/v1/health.upb.c \
+    third_party/upb/generated_for_cmake/google/protobuf/descriptor.upb.c \
+    third_party/upb/upb/decode.c \
+    third_party/upb/upb/encode.c \
+    third_party/upb/upb/msg.c \
+    third_party/upb/upb/port.c \
+    third_party/upb/upb/table.c \
+    third_party/upb/upb/upb.c \
     src/core/ext/transport/chttp2/transport/bin_decoder.cc \
     src/core/ext/transport/chttp2/transport/bin_encoder.cc \
     src/core/ext/transport/chttp2/transport/chttp2_plugin.cc \
@@ -5178,10 +5186,14 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/ext/filters/client_channel/subchannel.cc \
     src/core/ext/filters/client_channel/subchannel_pool_interface.cc \
     src/core/ext/filters/deadline/deadline_filter.cc \
-    src/core/ext/filters/client_channel/health/health.pb.c \
-    third_party/nanopb/pb_common.c \
-    third_party/nanopb/pb_decode.c \
-    third_party/nanopb/pb_encode.c \
+    src/core/ext/upb-generated/src/proto/grpc/health/v1/health.upb.c \
+    third_party/upb/generated_for_cmake/google/protobuf/descriptor.upb.c \
+    third_party/upb/upb/decode.c \
+    third_party/upb/upb/encode.c \
+    third_party/upb/upb/msg.c \
+    third_party/upb/upb/port.c \
+    third_party/upb/upb/table.c \
+    third_party/upb/upb/upb.c \
     src/core/ext/transport/inproc/inproc_plugin.cc \
     src/core/ext/transport/inproc/inproc_transport.cc \
     src/core/ext/filters/client_channel/resolver/dns/c_ares/dns_resolver_ares.cc \
@@ -5206,13 +5218,9 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/google/protobuf/duration.pb.c \
     src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/google/protobuf/timestamp.pb.c \
     src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/load_balancer.pb.c \
-    third_party/upb/generated_for_cmake/google/protobuf/descriptor.upb.c \
-    third_party/upb/upb/decode.c \
-    third_party/upb/upb/encode.c \
-    third_party/upb/upb/msg.c \
-    third_party/upb/upb/port.c \
-    third_party/upb/upb/table.c \
-    third_party/upb/upb/upb.c \
+    third_party/nanopb/pb_common.c \
+    third_party/nanopb/pb_decode.c \
+    third_party/nanopb/pb_encode.c \
     src/core/ext/filters/client_channel/lb_policy/xds/xds.cc \
     src/core/ext/filters/client_channel/lb_policy/xds/xds_channel.cc \
     src/core/ext/filters/client_channel/lb_policy/xds/xds_client_stats.cc \
@@ -5525,10 +5533,14 @@ LIBGRPC++_SRC = \
     src/cpp/util/status.cc \
     src/cpp/util/string_ref.cc \
     src/cpp/util/time_cc.cc \
-    src/core/ext/filters/client_channel/health/health.pb.c \
-    third_party/nanopb/pb_common.c \
-    third_party/nanopb/pb_decode.c \
-    third_party/nanopb/pb_encode.c \
+    src/core/ext/upb-generated/src/proto/grpc/health/v1/health.upb.c \
+    third_party/upb/generated_for_cmake/google/protobuf/descriptor.upb.c \
+    third_party/upb/upb/decode.c \
+    third_party/upb/upb/encode.c \
+    third_party/upb/upb/msg.c \
+    third_party/upb/upb/port.c \
+    third_party/upb/upb/table.c \
+    third_party/upb/upb/upb.c \
     src/cpp/codegen/codegen_init.cc \
 
 PUBLIC_HEADERS_CXX += \
@@ -6553,10 +6565,14 @@ LIBGRPC++_UNSECURE_SRC = \
     src/cpp/util/status.cc \
     src/cpp/util/string_ref.cc \
     src/cpp/util/time_cc.cc \
-    src/core/ext/filters/client_channel/health/health.pb.c \
-    third_party/nanopb/pb_common.c \
-    third_party/nanopb/pb_decode.c \
-    third_party/nanopb/pb_encode.c \
+    src/core/ext/upb-generated/src/proto/grpc/health/v1/health.upb.c \
+    third_party/upb/generated_for_cmake/google/protobuf/descriptor.upb.c \
+    third_party/upb/upb/decode.c \
+    third_party/upb/upb/encode.c \
+    third_party/upb/upb/msg.c \
+    third_party/upb/upb/port.c \
+    third_party/upb/upb/table.c \
+    third_party/upb/upb/upb.c \
     src/cpp/codegen/codegen_init.cc \
 
 PUBLIC_HEADERS_CXX += \

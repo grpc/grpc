@@ -1059,9 +1059,9 @@ include/grpcpp/support/sync_stream.h \
 include/grpcpp/support/sync_stream_impl.h \
 include/grpcpp/support/time.h \
 include/grpcpp/support/validate_service_config.h \
-src/core/ext/filters/client_channel/health/health.pb.c \
-src/core/ext/filters/client_channel/health/health.pb.h \
 src/core/ext/transport/inproc/inproc_transport.h \
+src/core/ext/upb-generated/src/proto/grpc/health/v1/health.upb.c \
+src/core/ext/upb-generated/src/proto/grpc/health/v1/health.upb.h \
 src/core/lib/avl/avl.h \
 src/core/lib/backoff/backoff.h \
 src/core/lib/channel/channel_args.h \
@@ -1293,12 +1293,16 @@ src/cpp/util/status.cc \
 src/cpp/util/string_ref.cc \
 src/cpp/util/time_cc.cc \
 third_party/nanopb/pb.h \
-third_party/nanopb/pb_common.c \
 third_party/nanopb/pb_common.h \
-third_party/nanopb/pb_decode.c \
 third_party/nanopb/pb_decode.h \
-third_party/nanopb/pb_encode.c \
-third_party/nanopb/pb_encode.h
+third_party/nanopb/pb_encode.h \
+third_party/upb/generated_for_cmake/google/protobuf/descriptor.upb.c \
+third_party/upb/upb/decode.c \
+third_party/upb/upb/encode.c \
+third_party/upb/upb/msg.c \
+third_party/upb/upb/port.c \
+third_party/upb/upb/table.c \
+third_party/upb/upb/upb.c
 
 # This tag can be used to specify the character encoding of the source files
 # that doxygen parses. Internally doxygen uses the UTF-8 encoding. Doxygen uses

@@ -355,7 +355,7 @@ CORE_SOURCE_FILES = [
     'src/core/ext/filters/client_channel/subchannel.cc',
     'src/core/ext/filters/client_channel/subchannel_pool_interface.cc',
     'src/core/ext/filters/deadline/deadline_filter.cc',
-    'src/core/ext/filters/client_channel/health/health.pb.c',
+    'src/core/ext/upb-generated/src/proto/grpc/health/v1/health.upb.c',
     'src/core/tsi/fake_transport_security.cc',
     'src/core/tsi/local_transport_security.cc',
     'src/core/tsi/ssl/session_cache/ssl_session_boringssl.cc',

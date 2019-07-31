@@ -659,7 +659,7 @@ filegroups:
   uses:
   - grpc_base
   - grpc_deadline_filter
-  - health_proto
+  - grpc_health_upb
 - name: grpc_client_idle_filter
   src:
   - src/core/ext/filters/client_idle/client_idle_filter.cc
@@ -1207,13 +1207,6 @@ filegroups:
   - src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/load_balancer.pb.c
   uses:
   - nanopb
-- name: health_proto
-  headers:
-  - src/core/ext/filters/client_channel/health/health.pb.h
-  src:
-  - src/core/ext/filters/client_channel/health/health.pb.c
-  uses:
-  - nanopb
 - name: nanopb
   src:
   - third_party/nanopb/pb_common.c
@@ -1545,11 +1538,11 @@ filegroups:
   uses:
   - gpr_base_headers
   - grpc_base_headers
+  - grpc_health_upb
   - grpc_transport_inproc_headers
   - grpc++_codegen_base
   - grpc++_internal_hdrs_only
   - nanopb_headers
-  - health_proto
 - name: grpc++_config_proto
   language: c++
   public_headers:
