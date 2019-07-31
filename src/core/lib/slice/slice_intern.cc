@@ -107,12 +107,10 @@ static void grow_shard(slice_shard* shard) {
   shard->capacity = capacity;
 }
 
-static grpc_slice materialize(InternedSliceRefcount* s) {
-  grpc_slice slice;
-  slice.refcount = &s->base;
-  slice.data.refcounted.bytes = reinterpret_cast<uint8_t*>(s + 1);
-  slice.data.refcounted.length = s->length;
-  return slice;
+grpc_core::InternedSlice::InternedSlice(InternedSliceRefcount* s) {
+  refcount = &s->base;
+  data.refcounted.bytes = reinterpret_cast<uint8_t*>(s + 1);
+  data.refcounted.length = s->length;
 }
 
 uint32_t grpc_slice_default_hash_impl(grpc_slice s) {
@@ -152,57 +150,150 @@ grpc_slice grpc_slice_maybe_static_intern(grpc_slice slice,
 }
 
 grpc_slice grpc_slice_intern(grpc_slice slice) {
-  GPR_TIMER_SCOPE("grpc_slice_intern", 0);
-  if (GRPC_IS_STATIC_METADATA_STRING(slice)) {
-    return slice;
-  }
+  /* TODO(arjunroy): At present, this is capable of returning either a static or
+     an interned slice. This yields weirdness like the constructor for
+     ManagedMemorySlice instantiating itself as an instance of a derived type
+     (StaticMetadataSlice or InternedSlice). Should reexamine. */
+  return grpc_core::ManagedMemorySlice(&slice);
+}
 
-  uint32_t hash = grpc_slice_hash_internal(slice);
-
+// Attempt to see if the provided slice or string matches a static slice.
+// SliceArgs... is either a const grpc_slice& or a string and length. In either
+// case, hash is the pre-computed hash value.
+//
+// Returns: a matching static slice, or null.
+template <class... SliceArgs>
+static const grpc_core::StaticMetadataSlice* MatchStaticSlice(
+    uint32_t hash, SliceArgs&&... args) {
   for (uint32_t i = 0; i <= max_static_metadata_hash_probe; i++) {
     static_metadata_hash_ent ent =
         static_metadata_hash[(hash + i) % GPR_ARRAY_SIZE(static_metadata_hash)];
     if (ent.hash == hash && ent.idx < GRPC_STATIC_MDSTR_COUNT &&
-        grpc_slice_eq_static_interned(slice,
-                                      grpc_static_slice_table[ent.idx])) {
-      return grpc_static_slice_table[ent.idx];
+        grpc_static_slice_table[ent.idx].Equals(
+            std::forward<SliceArgs>(args)...)) {
+      return &grpc_static_slice_table[ent.idx];
     }
   }
+  return nullptr;
+}
 
-  InternedSliceRefcount* s;
-  slice_shard* shard = &g_shards[SHARD_IDX(hash)];
+// Helper methods to enable us to select appropriately overloaded slice methods
+// whether we're dealing with a slice, or a buffer with length, when interning
+// strings. Helpers for FindOrCreateInternedSlice().
+static const void* GetBuffer(const void* buf, size_t len) { return buf; }
+static size_t GetLength(const void* buf, size_t len) { return len; }
+static const void* GetBuffer(const grpc_slice& slice) {
+  return GRPC_SLICE_START_PTR(slice);
+}
+static size_t GetLength(const grpc_slice& slice) {
+  return GRPC_SLICE_LENGTH(slice);
+}
 
-  gpr_mu_lock(&shard->mu);
-
-  /* search for an existing string */
-  size_t idx = TABLE_IDX(hash, shard->capacity);
-  for (s = shard->strs[idx]; s; s = s->bucket_next) {
-    if (s->hash == hash &&
-        grpc_slice_eq_static_interned(slice, materialize(s))) {
-      if (s->refcnt.RefIfNonZero()) {
-        gpr_mu_unlock(&shard->mu);
-        return materialize(s);
-      }
-    }
-  }
-
-  /* not found: create a new string */
+// Creates an interned slice for a string that does not currently exist in the
+// intern table. SliceArgs... is either a const grpc_slice& or a string and
+// length. In either case, hash is the pre-computed hash value. We must already
+// hold the shard lock. Helper for FindOrCreateInternedSlice().
+//
+// Returns: a newly interned slice.
+template <class... SliceArgs>
+static InternedSliceRefcount* InternNewStringLocked(slice_shard* shard,
+                                                    size_t shard_idx,
+                                                    uint32_t hash,
+                                                    SliceArgs&&... args) {
   /* string data goes after the internal_string header */
-  s = static_cast<InternedSliceRefcount*>(
-      gpr_malloc(sizeof(*s) + GRPC_SLICE_LENGTH(slice)));
-
-  new (s) grpc_core::InternedSliceRefcount(GRPC_SLICE_LENGTH(slice), hash,
-                                           shard->strs[idx]);
-  memcpy(reinterpret_cast<char*>(s + 1), GRPC_SLICE_START_PTR(slice),
-         GRPC_SLICE_LENGTH(slice));
-  shard->strs[idx] = s;
+  size_t len = GetLength(std::forward<SliceArgs>(args)...);
+  const void* buffer = GetBuffer(std::forward<SliceArgs>(args)...);
+  InternedSliceRefcount* s =
+      static_cast<InternedSliceRefcount*>(gpr_malloc(sizeof(*s) + len));
+  new (s) grpc_core::InternedSliceRefcount(len, hash, shard->strs[shard_idx]);
+  memcpy(reinterpret_cast<char*>(s + 1), buffer, len);
+  shard->strs[shard_idx] = s;
   shard->count++;
   if (shard->count > shard->capacity * 2) {
     grow_shard(shard);
   }
+  return s;
+}
 
+// Attempt to see if the provided slice or string matches an existing interned
+// slice. SliceArgs... is either a const grpc_slice& or a string and length. In
+// either case, hash is the pre-computed hash value.  We must already hold the
+// shard lock. Helper for FindOrCreateInternedSlice().
+//
+// Returns: a pre-existing matching static slice, or null.
+template <class... SliceArgs>
+static InternedSliceRefcount* MatchInternedSliceLocked(uint32_t hash,
+                                                       size_t idx,
+                                                       SliceArgs&&... args) {
+  InternedSliceRefcount* s;
+  slice_shard* shard = &g_shards[SHARD_IDX(hash)];
+  /* search for an existing string */
+  for (s = shard->strs[idx]; s; s = s->bucket_next) {
+    if (s->hash == hash &&
+        grpc_core::InternedSlice(s).Equals(std::forward<SliceArgs>(args)...)) {
+      if (s->refcnt.RefIfNonZero()) {
+        return s;
+      }
+    }
+  }
+  return nullptr;
+}
+
+// Attempt to see if the provided slice or string matches an existing interned
+// slice, and failing that, create an interned slice with its contents. Returns
+// either the existing matching interned slice or the newly created one.
+// SliceArgs... is either a const grpc_slice& or a string and length. In either
+// case, hash is the pre-computed hash value. We do not hold the shard lock
+// here, but do take it.
+//
+// Returns: an interned slice, either pre-existing/matched or newly created.
+template <class... SliceArgs>
+static InternedSliceRefcount* FindOrCreateInternedSlice(uint32_t hash,
+                                                        SliceArgs&&... args) {
+  slice_shard* shard = &g_shards[SHARD_IDX(hash)];
+  gpr_mu_lock(&shard->mu);
+  const size_t idx = TABLE_IDX(hash, shard->capacity);
+  InternedSliceRefcount* s =
+      MatchInternedSliceLocked(hash, idx, std::forward<SliceArgs>(args)...);
+  if (s == nullptr) {
+    s = InternNewStringLocked(shard, idx, hash,
+                              std::forward<SliceArgs>(args)...);
+  }
   gpr_mu_unlock(&shard->mu);
-  return materialize(s);
+  return s;
+}
+
+grpc_core::ManagedMemorySlice::ManagedMemorySlice(const char* string)
+    : grpc_core::ManagedMemorySlice::ManagedMemorySlice(string,
+                                                        strlen(string)) {}
+
+grpc_core::ManagedMemorySlice::ManagedMemorySlice(const char* string,
+                                                  size_t len) {
+  GPR_TIMER_SCOPE("grpc_slice_intern", 0);
+  const uint32_t hash = gpr_murmur_hash3(string, len, g_hash_seed);
+  const StaticMetadataSlice* static_slice = MatchStaticSlice(hash, string, len);
+  if (static_slice) {
+    *this = *static_slice;
+  } else {
+    *this =
+        grpc_core::InternedSlice(FindOrCreateInternedSlice(hash, string, len));
+  }
+}
+
+grpc_core::ManagedMemorySlice::ManagedMemorySlice(const grpc_slice* slice_ptr) {
+  GPR_TIMER_SCOPE("grpc_slice_intern", 0);
+  const grpc_slice& slice = *slice_ptr;
+  if (GRPC_IS_STATIC_METADATA_STRING(slice)) {
+    *this = static_cast<const grpc_core::StaticMetadataSlice&>(slice);
+    return;
+  }
+  const uint32_t hash = grpc_slice_hash_internal(slice);
+  const StaticMetadataSlice* static_slice = MatchStaticSlice(hash, slice);
+  if (static_slice) {
+    *this = *static_slice;
+  } else {
+    *this = grpc_core::InternedSlice(FindOrCreateInternedSlice(hash, slice));
+  }
 }
 
 void grpc_test_only_set_slice_hash_seed(uint32_t seed) {
@@ -259,8 +350,8 @@ void grpc_slice_intern_shutdown(void) {
               shard->count);
       for (size_t j = 0; j < shard->capacity; j++) {
         for (InternedSliceRefcount* s = shard->strs[j]; s; s = s->bucket_next) {
-          char* text =
-              grpc_dump_slice(materialize(s), GPR_DUMP_HEX | GPR_DUMP_ASCII);
+          char* text = grpc_dump_slice(grpc_core::InternedSlice(s),
+                                       GPR_DUMP_HEX | GPR_DUMP_ASCII);
           gpr_log(GPR_DEBUG, "LEAKED: %s", text);
           gpr_free(text);
         }
