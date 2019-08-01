@@ -6534,6 +6534,7 @@ LIBGRPC++_UNSECURE_SRC = \
     src/cpp/codegen/codegen_init.cc \
 
 PUBLIC_HEADERS_CXX += \
+    include/grpc/grpc_security.h \
     include/grpc++/alarm.h \
     include/grpc++/channel.h \
     include/grpc++/client_context.h \

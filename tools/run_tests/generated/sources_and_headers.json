@@ -8543,11 +8543,15 @@
       "grpc++_common", 
       "grpc_unsecure"
     ], 
-    "headers": [], 
+    "headers": [
+      "include/grpc/grpc_security.h"
+    ], 
     "is_filegroup": true, 
     "language": "c", 
     "name": "grpc++_base_unsecure", 
-    "src": [], 
+    "src": [
+      "include/grpc/grpc_security.h"
+    ], 
     "third_party": false, 
     "type": "filegroup"
   }, 

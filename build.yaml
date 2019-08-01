@@ -257,6 +257,8 @@ filegroups:
   - grpc++_common
   - grpc++_codegen_base
 - name: grpc++_base_unsecure
+  public_headers:
+  - include/grpc/grpc_security.h
   deps:
   - grpc_unsecure
   uses:
@@ -1953,6 +1955,8 @@ libs:
   - grpc++_base_unsecure
   - grpc++_codegen_base
   - grpc++_codegen_base_src
+  public headers:
+  - include/grpc/grpc_security.h
   secure: false
 - name: grpc_benchmark
   build: test
