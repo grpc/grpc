@@ -22,7 +22,8 @@
 #include <grpc/support/log.h>
 
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/gpr/host_port.h"
+#include "src/core/lib/gprpp/host_port.h"
+#include "src/core/lib/gprpp/memory.h"
 #include "src/core/lib/gprpp/thd.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "test/core/end2end/data/ssl_test_data.h"
@@ -66,13 +67,11 @@ static void channel_idle_poll_for_timeout(grpc_channel* channel,
 static void run_timeouts_test(const test_fixture* fixture) {
   gpr_log(GPR_INFO, "TEST: %s", fixture->name);
 
-  char* addr;
-
+  grpc_core::UniquePtr<char> addr;
   grpc_init();
+  grpc_core::JoinHostPort(&addr, "localhost", grpc_pick_unused_port_or_die());
 
-  gpr_join_host_port(&addr, "localhost", grpc_pick_unused_port_or_die());
-
-  grpc_channel* channel = fixture->create_channel(addr);
+  grpc_channel* channel = fixture->create_channel(addr.get());
   grpc_completion_queue* cq = grpc_completion_queue_create_for_next(nullptr);
 
   /* start 1 watcher and then let it time out */
@@ -111,7 +110,6 @@ static void run_timeouts_test(const test_fixture* fixture) {
   grpc_completion_queue_destroy(cq);
 
   grpc_shutdown();
-  gpr_free(addr);
 }
 
 /* An edge scenario; sets channel state to explicitly, and outside
@@ -120,13 +118,11 @@ static void run_channel_shutdown_before_timeout_test(
     const test_fixture* fixture) {
   gpr_log(GPR_INFO, "TEST: %s", fixture->name);
 
-  char* addr;
-
+  grpc_core::UniquePtr<char> addr;
   grpc_init();
+  grpc_core::JoinHostPort(&addr, "localhost", grpc_pick_unused_port_or_die());
 
-  gpr_join_host_port(&addr, "localhost", grpc_pick_unused_port_or_die());
-
-  grpc_channel* channel = fixture->create_channel(addr);
+  grpc_channel* channel = fixture->create_channel(addr.get());
   grpc_completion_queue* cq = grpc_completion_queue_create_for_next(nullptr);
 
   /* start 1 watcher and then shut down the channel before the timer goes off */
@@ -154,7 +150,6 @@ static void run_channel_shutdown_before_timeout_test(
   grpc_completion_queue_destroy(cq);
 
   grpc_shutdown();
-  gpr_free(addr);
 }
 
 static grpc_channel* insecure_test_create_channel(const char* addr) {

@@ -419,6 +419,53 @@ TEST_F(MapTest, RandomOpsWithIntKey) {
   EXPECT_TRUE(test_map.empty());
 }
 
+// Tests lower_bound().
+TEST_F(MapTest, LowerBound) {
+  Map<int, Payload> test_map;
+  for (int i = 0; i < 10; i += 2) {
+    test_map.emplace(i, Payload(i));
+  }
+  auto it = test_map.lower_bound(-1);
+  EXPECT_EQ(it, test_map.begin());
+  it = test_map.lower_bound(0);
+  EXPECT_EQ(it, test_map.begin());
+  it = test_map.lower_bound(2);
+  EXPECT_EQ(it->first, 2);
+  it = test_map.lower_bound(3);
+  EXPECT_EQ(it->first, 4);
+  it = test_map.lower_bound(9);
+  EXPECT_EQ(it, test_map.end());
+}
+
+// Test move ctor
+TEST_F(MapTest, MoveCtor) {
+  Map<const char*, Payload, StringLess> test_map;
+  for (int i = 0; i < 5; i++) {
+    test_map.emplace(kKeys[i], Payload(i));
+  }
+  Map<const char*, Payload, StringLess> test_map2 = std::move(test_map);
+  for (int i = 0; i < 5; i++) {
+    EXPECT_EQ(test_map.end(), test_map.find(kKeys[i]));
+    EXPECT_EQ(i, test_map2.find(kKeys[i])->second.data());
+  }
+}
+
+// Test move assignment
+TEST_F(MapTest, MoveAssignment) {
+  Map<const char*, Payload, StringLess> test_map;
+  for (int i = 0; i < 5; i++) {
+    test_map.emplace(kKeys[i], Payload(i));
+  }
+  Map<const char*, Payload, StringLess> test_map2;
+  test_map2.emplace("xxx", Payload(123));
+  test_map2 = std::move(test_map);
+  for (int i = 0; i < 5; i++) {
+    EXPECT_EQ(test_map.end(), test_map.find(kKeys[i]));
+    EXPECT_EQ(i, test_map2.find(kKeys[i])->second.data());
+  }
+  EXPECT_EQ(test_map2.end(), test_map2.find("xxx"));
+}
+
 }  // namespace testing
 }  // namespace grpc_core
 

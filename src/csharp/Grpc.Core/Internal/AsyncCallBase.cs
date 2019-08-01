@@ -394,5 +394,13 @@ namespace Grpc.Core.Internal
         {
             HandleReadFinished(success, receivedMessageReader);
         }
+
+        internal CancellationTokenRegistration RegisterCancellationCallbackForToken(CancellationToken cancellationToken)
+        {
+            if (cancellationToken.CanBeCanceled) return cancellationToken.Register(CancelCallFromToken, this);
+            return default(CancellationTokenRegistration);
+        }
+
+        private static readonly Action<object> CancelCallFromToken = state => ((AsyncCallBase<TWrite, TRead>)state).Cancel();
     }
 }

@@ -21,7 +21,6 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "src/core/ext/filters/client_channel/client_channel_channelz.h"
 #include "src/core/ext/filters/client_channel/server_address.h"
 #include "src/core/ext/filters/client_channel/service_config.h"
 #include "src/core/ext/filters/client_channel/subchannel_interface.h"
@@ -31,6 +30,7 @@
 #include "src/core/lib/iomgr/combiner.h"
 #include "src/core/lib/iomgr/polling_entity.h"
 #include "src/core/lib/transport/connectivity_state.h"
+#include "src/core/lib/transport/metadata_batch.h"
 
 namespace grpc_core {
 
@@ -128,7 +128,7 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
 
     /// Used only if type is PICK_COMPLETE.  Will be set to the selected
     /// subchannel, or nullptr if the LB policy decides to drop the call.
-    RefCountedPtr<ConnectedSubchannelInterface> connected_subchannel;
+    RefCountedPtr<SubchannelInterface> subchannel;
 
     /// Used only if type is PICK_TRANSIENT_FAILURE.
     /// Error to be set when returning a transient failure.
@@ -200,6 +200,12 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
 
     /// Requests that the resolver re-resolve.
     virtual void RequestReresolution() GRPC_ABSTRACT;
+
+    /// Adds a trace message associated with the channel.
+    /// Does NOT take ownership of \a message.
+    enum TraceSeverity { TRACE_INFO, TRACE_WARNING, TRACE_ERROR };
+    virtual void AddTraceEvent(TraceSeverity severity,
+                               const char* message) GRPC_ABSTRACT;
 
     GRPC_ABSTRACT_BASE_CLASS
   };
@@ -274,20 +280,6 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
   /// Resets connection backoff.
   virtual void ResetBackoffLocked() GRPC_ABSTRACT;
 
-  /// Populates child_subchannels and child_channels with the uuids of this
-  /// LB policy's referenced children.
-  ///
-  /// This is not invoked from the client_channel's combiner. The
-  /// implementation is responsible for providing its own synchronization.
-  virtual void FillChildRefsForChannelz(
-      channelz::ChildRefsList* child_subchannels,
-      channelz::ChildRefsList* child_channels) GRPC_ABSTRACT;
-
-  void set_channelz_node(
-      RefCountedPtr<channelz::ClientChannelNode> channelz_node) {
-    channelz_node_ = std::move(channelz_node);
-  }
-
   grpc_pollset_set* interested_parties() const { return interested_parties_; }
 
   void Orphan() override;
@@ -299,6 +291,8 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
    public:
     explicit QueuePicker(RefCountedPtr<LoadBalancingPolicy> parent)
         : parent_(std::move(parent)) {}
+
+    ~QueuePicker() { parent_.reset(DEBUG_LOCATION, "QueuePicker"); }
 
     PickResult Pick(PickArgs args) override;
 
@@ -333,10 +327,6 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
     return channel_control_helper_.get();
   }
 
-  channelz::ClientChannelNode* channelz_node() const {
-    return channelz_node_.get();
-  }
-
   /// Shuts down the policy.
   virtual void ShutdownLocked() GRPC_ABSTRACT;
 
@@ -349,8 +339,6 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
   grpc_pollset_set* interested_parties_;
   /// Channel control helper.
   UniquePtr<ChannelControlHelper> channel_control_helper_;
-  /// Channelz node.
-  RefCountedPtr<channelz::ClientChannelNode> channelz_node_;
 };
 
 }  // namespace grpc_core

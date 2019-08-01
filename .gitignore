@@ -144,3 +144,8 @@ bm_*.json
 !.vscode/launch.json
 !.vscode/extensions.json
 
+# Clion artifacts
+cmake-build-debug/
+
+# Benchmark outputs
+BenchmarkDotNet.Artifacts/

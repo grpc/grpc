@@ -28,6 +28,7 @@ typedef ::grpc_impl::CallCredentials CallCredentials;
 typedef ::grpc_impl::SslCredentialsOptions SslCredentialsOptions;
 typedef ::grpc_impl::SecureCallCredentials SecureCallCredentials;
 typedef ::grpc_impl::SecureChannelCredentials SecureChannelCredentials;
+typedef ::grpc_impl::MetadataCredentialsPlugin MetadataCredentialsPlugin;
 
 static inline std::shared_ptr<grpc_impl::ChannelCredentials>
 GoogleDefaultCredentials() {
@@ -90,11 +91,6 @@ InsecureChannelCredentials() {
   return ::grpc_impl::InsecureChannelCredentials();
 }
 
-static inline std::shared_ptr<grpc_impl::ChannelCredentials>
-CronetChannelCredentials(void* engine) {
-  return ::grpc_impl::CronetChannelCredentials(engine);
-}
-
 typedef ::grpc_impl::MetadataCredentialsPlugin MetadataCredentialsPlugin;
 
 static inline std::shared_ptr<grpc_impl::CallCredentials>
@@ -104,6 +100,24 @@ MetadataCredentialsFromPlugin(
 }
 
 namespace experimental {
+
+typedef ::grpc_impl::experimental::StsCredentialsOptions StsCredentialsOptions;
+
+static inline grpc::Status StsCredentialsOptionsFromJson(
+    const grpc::string& json_string, StsCredentialsOptions* options) {
+  return ::grpc_impl::experimental::StsCredentialsOptionsFromJson(json_string,
+                                                                  options);
+}
+
+static inline grpc::Status StsCredentialsOptionsFromEnv(
+    StsCredentialsOptions* options) {
+  return grpc_impl::experimental::StsCredentialsOptionsFromEnv(options);
+}
+
+static inline std::shared_ptr<grpc_impl::CallCredentials> StsCredentials(
+    const StsCredentialsOptions& options) {
+  return grpc_impl::experimental::StsCredentials(options);
+}
 
 typedef ::grpc_impl::experimental::AltsCredentialsOptions
     AltsCredentialsOptions;

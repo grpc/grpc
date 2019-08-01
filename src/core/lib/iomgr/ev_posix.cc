@@ -44,11 +44,11 @@ GPR_GLOBAL_CONFIG_DEFINE_STRING(
     "This is a comma-separated list of engines, which are tried in priority "
     "order first -> last.")
 
-grpc_core::TraceFlag grpc_polling_trace(false,
-                                        "polling"); /* Disabled by default */
+grpc_core::DebugOnlyTraceFlag grpc_polling_trace(
+    false, "polling"); /* Disabled by default */
 
 /* Traces fd create/close operations */
-grpc_core::TraceFlag grpc_fd_trace(false, "fd_trace");
+grpc_core::DebugOnlyTraceFlag grpc_fd_trace(false, "fd_trace");
 grpc_core::DebugOnlyTraceFlag grpc_trace_fd_refcount(false, "fd_refcount");
 grpc_core::DebugOnlyTraceFlag grpc_polling_api_trace(false, "polling_api");
 
@@ -206,7 +206,8 @@ void grpc_register_event_engine_factory(const char* name,
   GPR_ASSERT(false);
 }
 
-/* Call this only after calling grpc_event_engine_init() */
+/*If grpc_event_engine_init() has been called, returns the poll_strategy_name.
+ * Otherwise, returns nullptr. */
 const char* grpc_get_poll_strategy_name() { return g_poll_strategy_name; }
 
 void grpc_event_engine_init(void) {
@@ -246,7 +247,8 @@ bool grpc_event_engine_can_track_errors(void) {
 }
 
 bool grpc_event_engine_run_in_background(void) {
-  return g_event_engine->run_in_background;
+  // g_event_engine is nullptr when using a custom iomgr.
+  return g_event_engine != nullptr && g_event_engine->run_in_background;
 }
 
 grpc_fd* grpc_fd_create(int fd, const char* name, bool track_err) {

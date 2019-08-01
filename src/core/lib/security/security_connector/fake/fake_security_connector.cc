@@ -31,8 +31,8 @@
 #include "src/core/ext/transport/chttp2/alpn/alpn.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/handshaker.h"
-#include "src/core/lib/gpr/host_port.h"
 #include "src/core/lib/gpr/string.h"
+#include "src/core/lib/gprpp/host_port.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/security/context/security_context.h"
 #include "src/core/lib/security/credentials/credentials.h"
@@ -102,39 +102,35 @@ class grpc_fake_channel_security_connector final
         tsi_create_fake_handshaker(/*is_client=*/true), this));
   }
 
-  bool check_call_host(const char* host, grpc_auth_context* auth_context,
+  bool check_call_host(grpc_core::StringView host,
+                       grpc_auth_context* auth_context,
                        grpc_closure* on_call_host_checked,
                        grpc_error** error) override {
-    char* authority_hostname = nullptr;
-    char* authority_ignored_port = nullptr;
-    char* target_hostname = nullptr;
-    char* target_ignored_port = nullptr;
-    gpr_split_host_port(host, &authority_hostname, &authority_ignored_port);
-    gpr_split_host_port(target_, &target_hostname, &target_ignored_port);
+    grpc_core::StringView authority_hostname;
+    grpc_core::StringView authority_ignored_port;
+    grpc_core::StringView target_hostname;
+    grpc_core::StringView target_ignored_port;
+    grpc_core::SplitHostPort(host, &authority_hostname,
+                             &authority_ignored_port);
+    grpc_core::SplitHostPort(target_, &target_hostname, &target_ignored_port);
     if (target_name_override_ != nullptr) {
-      char* fake_security_target_name_override_hostname = nullptr;
-      char* fake_security_target_name_override_ignored_port = nullptr;
-      gpr_split_host_port(target_name_override_,
-                          &fake_security_target_name_override_hostname,
-                          &fake_security_target_name_override_ignored_port);
-      if (strcmp(authority_hostname,
-                 fake_security_target_name_override_hostname) != 0) {
+      grpc_core::StringView fake_security_target_name_override_hostname;
+      grpc_core::StringView fake_security_target_name_override_ignored_port;
+      grpc_core::SplitHostPort(
+          target_name_override_, &fake_security_target_name_override_hostname,
+          &fake_security_target_name_override_ignored_port);
+      if (authority_hostname != fake_security_target_name_override_hostname) {
         gpr_log(GPR_ERROR,
                 "Authority (host) '%s' != Fake Security Target override '%s'",
-                host, fake_security_target_name_override_hostname);
+                host.data(),
+                fake_security_target_name_override_hostname.data());
         abort();
       }
-      gpr_free(fake_security_target_name_override_hostname);
-      gpr_free(fake_security_target_name_override_ignored_port);
-    } else if (strcmp(authority_hostname, target_hostname) != 0) {
-      gpr_log(GPR_ERROR, "Authority (host) '%s' != Target '%s'",
-              authority_hostname, target_hostname);
+    } else if (authority_hostname != target_hostname) {
+      gpr_log(GPR_ERROR, "Authority (host) '%s' != Target '%s'", host.data(),
+              target_);
       abort();
     }
-    gpr_free(authority_hostname);
-    gpr_free(authority_ignored_port);
-    gpr_free(target_hostname);
-    gpr_free(target_ignored_port);
     return true;
   }
 

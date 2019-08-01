@@ -16,13 +16,10 @@
 
 #endregion
 
-using Grpc.Core.Utils;
 using System;
-using System.Threading;
-
-#if GRPC_CSHARP_SUPPORT_SYSTEM_MEMORY
 using System.Buffers;
-#endif
+using System.Threading;
+using Grpc.Core.Utils;
 
 namespace Grpc.Core.Internal
 {
@@ -33,9 +30,7 @@ namespace Grpc.Core.Internal
 
         IBufferReader bufferReader;
         int payloadLength;
-#if GRPC_CSHARP_SUPPORT_SYSTEM_MEMORY
         ReusableSliceBuffer cachedSliceBuffer = new ReusableSliceBuffer();
-#endif
 
         public DefaultDeserializationContext()
         {
@@ -47,18 +42,16 @@ namespace Grpc.Core.Internal
         public override byte[] PayloadAsNewBuffer()
         {
             var buffer = new byte[payloadLength];
-            FillContinguousBuffer(bufferReader, buffer);
+            PayloadAsReadOnlySequence().CopyTo(buffer);
             return buffer;
         }
 
-#if GRPC_CSHARP_SUPPORT_SYSTEM_MEMORY
         public override ReadOnlySequence<byte> PayloadAsReadOnlySequence()
         {
             var sequence = cachedSliceBuffer.PopulateFrom(bufferReader);
             GrpcPreconditions.CheckState(sequence.Length == payloadLength);
             return sequence;
         }
-#endif
 
         public void Initialize(IBufferReader bufferReader)
         {
@@ -70,9 +63,7 @@ namespace Grpc.Core.Internal
         {
             this.bufferReader = null;
             this.payloadLength = 0;
-#if GRPC_CSHARP_SUPPORT_SYSTEM_MEMORY
             this.cachedSliceBuffer.Invalidate();
-#endif
         }
 
         public static DefaultDeserializationContext GetInitializedThreadLocal(IBufferReader bufferReader)
@@ -80,22 +71,6 @@ namespace Grpc.Core.Internal
             var instance = threadLocalInstance.Value;
             instance.Initialize(bufferReader);
             return instance;
-        }
-
-        private void FillContinguousBuffer(IBufferReader reader, byte[] destination)
-        {
-#if GRPC_CSHARP_SUPPORT_SYSTEM_MEMORY
-            PayloadAsReadOnlySequence().CopyTo(new Span<byte>(destination));
-#else
-            int offset = 0;
-            while (reader.TryGetNextSlice(out Slice slice))
-            {
-                slice.CopyTo(new ArraySegment<byte>(destination, offset, (int)slice.Length));
-                offset += (int)slice.Length;
-            }
-            // check that we filled the entire destination
-            GrpcPreconditions.CheckState(offset == payloadLength);
-#endif
         }
     }
 }

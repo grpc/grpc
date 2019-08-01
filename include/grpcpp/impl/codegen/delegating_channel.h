@@ -20,7 +20,7 @@
 #define GRPCPP_IMPL_CODEGEN_DELEGATING_CHANNEL_H
 
 namespace grpc {
-namespace internal {
+namespace experimental {
 
 class DelegatingChannel : public ::grpc::ChannelInterface {
  public:
@@ -81,7 +81,7 @@ class DelegatingChannel : public ::grpc::ChannelInterface {
   std::shared_ptr<::grpc::ChannelInterface> delegate_channel_;
 };
 
-}  // namespace internal
+}  // namespace experimental
 }  // namespace grpc
 
 #endif  // GRPCPP_IMPL_CODEGEN_DELEGATING_CHANNEL_H

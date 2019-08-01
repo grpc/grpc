@@ -21,17 +21,21 @@
 
 #include <functional>
 
-#include <grpcpp/support/async_stream.h>
-#include <grpcpp/support/async_unary_call.h>
+#include <grpcpp/client_context.h>
+#include <grpcpp/support/async_stream_impl.h>
+#include <grpcpp/support/async_unary_call_impl.h>
 #include <grpcpp/support/byte_buffer.h>
-#include <grpcpp/support/client_callback.h>
+#include <grpcpp/support/client_callback_impl.h>
 #include <grpcpp/support/status.h>
+
+#include <functional>
 
 namespace grpc {
 
-typedef ClientAsyncReaderWriter<ByteBuffer, ByteBuffer>
+typedef ::grpc_impl::ClientAsyncReaderWriter<ByteBuffer, ByteBuffer>
     GenericClientAsyncReaderWriter;
-typedef ClientAsyncResponseReader<ByteBuffer> GenericClientAsyncResponseReader;
+typedef ::grpc_impl::ClientAsyncResponseReader<ByteBuffer>
+    GenericClientAsyncResponseReader;
 }  // namespace grpc
 namespace grpc_impl {
 class CompletionQueue;
@@ -49,15 +53,15 @@ class GenericStub final {
   /// succeeded (i.e. the call won't proceed if the return value is nullptr).
   std::unique_ptr<grpc::GenericClientAsyncReaderWriter> PrepareCall(
       grpc::ClientContext* context, const grpc::string& method,
-      grpc::CompletionQueue* cq);
+      CompletionQueue* cq);
 
   /// Setup a unary call to a named method \a method using \a context, and don't
   /// start it. Let it be started explicitly with StartCall.
   /// The return value only indicates whether or not registration of the call
   /// succeeded (i.e. the call won't proceed if the return value is nullptr).
   std::unique_ptr<grpc::GenericClientAsyncResponseReader> PrepareUnaryCall(
-      grpc::ClientContext* context, const grpc::string& method,
-      const grpc::ByteBuffer& request, grpc::CompletionQueue* cq);
+      grpc_impl::ClientContext* context, const grpc::string& method,
+      const grpc::ByteBuffer& request, CompletionQueue* cq);
 
   /// DEPRECATED for multi-threaded use
   /// Begin a call to a named method \a method using \a context.
@@ -66,8 +70,8 @@ class GenericStub final {
   /// The return value only indicates whether or not registration of the call
   /// succeeded (i.e. the call won't proceed if the return value is nullptr).
   std::unique_ptr<grpc::GenericClientAsyncReaderWriter> Call(
-      grpc::ClientContext* context, const grpc::string& method,
-      grpc::CompletionQueue* cq, void* tag);
+      grpc_impl::ClientContext* context, const grpc::string& method,
+      CompletionQueue* cq, void* tag);
 
   /// NOTE: class experimental_type is not part of the public API of this class
   /// TODO(vjpai): Move these contents to the public API of GenericStub when
@@ -78,23 +82,25 @@ class GenericStub final {
 
     /// Setup and start a unary call to a named method \a method using
     /// \a context and specifying the \a request and \a response buffers.
-    void UnaryCall(grpc::ClientContext* context, const grpc::string& method,
-                   const grpc::ByteBuffer* request, grpc::ByteBuffer* response,
+    void UnaryCall(grpc_impl::ClientContext* context,
+                   const grpc::string& method, const grpc::ByteBuffer* request,
+                   grpc::ByteBuffer* response,
                    std::function<void(grpc::Status)> on_completion);
 
     /// Setup and start a unary call to a named method \a method using
     /// \a context and specifying the \a request and \a response buffers.
-    void UnaryCall(grpc::ClientContext* context, const grpc::string& method,
-                   const grpc::ByteBuffer* request, grpc::ByteBuffer* response,
-                   grpc::experimental::ClientUnaryReactor* reactor);
+    void UnaryCall(grpc_impl::ClientContext* context,
+                   const grpc::string& method, const grpc::ByteBuffer* request,
+                   grpc::ByteBuffer* response,
+                   grpc_impl::experimental::ClientUnaryReactor* reactor);
 
     /// Setup a call to a named method \a method using \a context and tied to
     /// \a reactor . Like any other bidi streaming RPC, it will not be activated
     /// until StartCall is invoked on its reactor.
     void PrepareBidiStreamingCall(
-        grpc::ClientContext* context, const grpc::string& method,
-        grpc::experimental::ClientBidiReactor<grpc::ByteBuffer,
-                                              grpc::ByteBuffer>* reactor);
+        grpc_impl::ClientContext* context, const grpc::string& method,
+        grpc_impl::experimental::ClientBidiReactor<grpc::ByteBuffer,
+                                                   grpc::ByteBuffer>* reactor);
 
    private:
     GenericStub* stub_;

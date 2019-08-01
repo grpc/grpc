@@ -435,12 +435,17 @@ static void tcp_do_read(grpc_tcp* tcp) {
   GPR_TIMER_SCOPE("tcp_do_read", 0);
   struct msghdr msg;
   struct iovec iov[MAX_READ_IOVEC];
-  char cmsgbuf[24 /*CMSG_SPACE(sizeof(int))*/];
   ssize_t read_bytes;
   size_t total_read_bytes = 0;
-
   size_t iov_len =
       std::min<size_t>(MAX_READ_IOVEC, tcp->incoming_buffer->count);
+#ifdef GRPC_LINUX_ERRQUEUE
+  constexpr size_t cmsg_alloc_space =
+      CMSG_SPACE(sizeof(grpc_core::scm_timestamping)) + CMSG_SPACE(sizeof(int));
+#else
+  constexpr size_t cmsg_alloc_space = 24 /* CMSG_SPACE(sizeof(int)) */;
+#endif /* GRPC_LINUX_ERRQUEUE */
+  char cmsgbuf[cmsg_alloc_space];
   for (size_t i = 0; i < iov_len; i++) {
     iov[i].iov_base = GRPC_SLICE_START_PTR(tcp->incoming_buffer->slices[i]);
     iov[i].iov_len = GRPC_SLICE_LENGTH(tcp->incoming_buffer->slices[i]);
@@ -524,6 +529,7 @@ static void tcp_do_read(grpc_tcp* tcp) {
         if (cmsg->cmsg_level == SOL_TCP && cmsg->cmsg_type == TCP_CM_INQ &&
             cmsg->cmsg_len == CMSG_LEN(sizeof(int))) {
           tcp->inq = *reinterpret_cast<int*>(CMSG_DATA(cmsg));
+          break;
         }
       }
     }
@@ -685,7 +691,6 @@ static bool tcp_write_with_timestamps(grpc_tcp* tcp, struct msghdr* msg,
     uint32_t opt = grpc_core::kTimestampingSocketOptions;
     if (setsockopt(tcp->fd, SOL_SOCKET, SO_TIMESTAMPING,
                    static_cast<void*>(&opt), sizeof(opt)) != 0) {
-      grpc_slice_buffer_reset_and_unref_internal(tcp->outgoing_buffer);
       if (GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace)) {
         gpr_log(GPR_ERROR, "Failed to set timestamping options on the socket.");
       }

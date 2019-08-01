@@ -157,8 +157,9 @@ typedef struct {
 /** Maximum message length that the channel can send. Int valued, bytes.
     -1 means unlimited. */
 #define GRPC_ARG_MAX_SEND_MESSAGE_LENGTH "grpc.max_send_message_length"
-/** Maximum time that a channel may have no outstanding rpcs. Int valued,
-    milliseconds. INT_MAX means unlimited. */
+/** Maximum time that a channel may have no outstanding rpcs, after which the
+ * server will close the connection. Int valued, milliseconds. INT_MAX means
+ * unlimited. */
 #define GRPC_ARG_MAX_CONNECTION_IDLE_MS "grpc.max_connection_idle_ms"
 /** Maximum time that a channel may exist. Int valued, milliseconds.
  * INT_MAX means unlimited. */
@@ -166,6 +167,14 @@ typedef struct {
 /** Grace period after the channel reaches its max age. Int valued,
    milliseconds. INT_MAX means unlimited. */
 #define GRPC_ARG_MAX_CONNECTION_AGE_GRACE_MS "grpc.max_connection_age_grace_ms"
+/** Timeout after the last RPC finishes on the client channel at which the
+ * channel goes back into IDLE state. Int valued, milliseconds. INT_MAX means
+ * unlimited. */
+/** TODO(qianchengz): Currently the default value is INT_MAX, which means the
+ * client idle filter is disabled by default. After the client idle filter
+ * proves no perfomance issue, we will change the default value to a reasonable
+ * value. */
+#define GRPC_ARG_CLIENT_IDLE_TIMEOUT_MS "grpc.client_idle_timeout_ms"
 /** Enable/disable support for per-message compression. Defaults to 1, unless
     GRPC_ARG_MINIMAL_STACK is enabled, in which case it defaults to 0. */
 #define GRPC_ARG_ENABLE_PER_MESSAGE_COMPRESSION "grpc.per_message_compression"

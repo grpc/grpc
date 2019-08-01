@@ -13,8 +13,8 @@
 @rem limitations under the License.
 
 @rem TODO(jtattermusch): make this generate less output
-@rem TODO(jtattermusch): use tools/bazel.sh script to keep the versions in sync
-choco install bazel -y --version 0.24.1 --limit-output
+@rem TODO(jtattermusch): use tools/bazel script to keep the versions in sync
+choco install bazel -y --version 0.26.0 --limit-output
 
 cd github/grpc
 set PATH=C:\tools\msys64\usr\bin;C:\Python27;%PATH%

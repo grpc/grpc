@@ -451,11 +451,37 @@ print >> H, ('extern grpc_core::StaticMetadata '
              'grpc_static_mdelem_table[GRPC_STATIC_MDELEM_COUNT];')
 print >> H, ('extern uintptr_t '
              'grpc_static_mdelem_user_data[GRPC_STATIC_MDELEM_COUNT];')
+print >> H, ('extern grpc_mdelem '
+             'grpc_static_mdelem_manifested[GRPC_STATIC_MDELEM_COUNT];')
+print >> C, ('''
+/* Warning: the core static metadata currently operates under the soft constraint
+that the first GRPC_CHTTP2_LAST_STATIC_ENTRY (61) entries must contain
+metadata specified by the http2 hpack standard. The CHTTP2 transport reads the
+core metadata with this assumption in mind. If the order of the core static
+metadata is to be changed, then the CHTTP2 transport must be changed as well to
+stop relying on the core metadata. */
+''')
+print >> C, ('grpc_mdelem '
+             'grpc_static_mdelem_manifested[GRPC_STATIC_MDELEM_COUNT] = {')
+print >> C, '// clang-format off'
+static_mds = []
 for i, elem in enumerate(all_elems):
+    md_name = mangle(elem).upper()
+    md_human_readable = '"%s": "%s"' % elem
+    md_spec = '    /* %s: \n     %s */\n' % (md_name, md_human_readable)
+    md_spec += '    GRPC_MAKE_MDELEM(\n'
+    md_spec += (('        &grpc_static_mdelem_table[%d].data(),\n' % i) +
+                '        GRPC_MDELEM_STORAGE_STATIC)')
+    static_mds.append(md_spec)
+print >> C, ',\n'.join(static_mds)
+print >> C, '// clang-format on'
+print >> C, ('};')
+
+for i, elem in enumerate(all_elems):
+    md_name = mangle(elem).upper()
     print >> H, '/* "%s": "%s" */' % elem
-    print >> H, (
-        '#define %s (GRPC_MAKE_MDELEM(&grpc_static_mdelem_table[%d].data(), '
-        'GRPC_MDELEM_STORAGE_STATIC))') % (mangle(elem).upper(), i)
+    print >> H, ('#define %s (grpc_static_mdelem_manifested[%d])' % (md_name,
+                                                                     i))
 print >> H
 
 print >> C, ('uintptr_t grpc_static_mdelem_user_data[GRPC_STATIC_MDELEM_COUNT] '
@@ -550,9 +576,9 @@ print >> C, '}'
 print >> C
 
 print >> C, 'grpc_core::StaticMetadata grpc_static_mdelem_table[GRPC_STATIC_MDELEM_COUNT] = {'
-for a, b in all_elems:
-    print >> C, 'grpc_core::StaticMetadata(%s,%s),' % (slice_def(str_idx(a)),
-                                                       slice_def(str_idx(b)))
+for idx, (a, b) in enumerate(all_elems):
+    print >> C, 'grpc_core::StaticMetadata(%s,%s, %d),' % (
+        slice_def(str_idx(a)), slice_def(str_idx(b)), idx)
 print >> C, '};'
 
 print >> H, 'typedef enum {'

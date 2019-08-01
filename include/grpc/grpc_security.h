@@ -328,6 +328,31 @@ GRPCAPI grpc_call_credentials* grpc_google_iam_credentials_create(
     const char* authorization_token, const char* authority_selector,
     void* reserved);
 
+/** Options for creating STS Oauth Token Exchange credentials following the IETF
+   draft https://tools.ietf.org/html/draft-ietf-oauth-token-exchange-16.
+   Optional fields may be set to NULL or empty string. It is the responsibility
+   of the caller to ensure that the subject and actor tokens are refreshed on
+   disk at the specified paths. This API is used for experimental purposes for
+   now and may change in the future. */
+typedef struct {
+  const char* token_exchange_service_uri; /* Required. */
+  const char* resource;                   /* Optional. */
+  const char* audience;                   /* Optional. */
+  const char* scope;                      /* Optional. */
+  const char* requested_token_type;       /* Optional. */
+  const char* subject_token_path;         /* Required. */
+  const char* subject_token_type;         /* Required. */
+  const char* actor_token_path;           /* Optional. */
+  const char* actor_token_type;           /* Optional. */
+} grpc_sts_credentials_options;
+
+/** Creates an STS credentials following the STS Token Exchanged specifed in the
+   IETF draft https://tools.ietf.org/html/draft-ietf-oauth-token-exchange-16.
+   This API is used for experimental purposes for now and may change in the
+   future. */
+GRPCAPI grpc_call_credentials* grpc_sts_credentials_create(
+    const grpc_sts_credentials_options* options, void* reserved);
+
 /** Callback function to be called by the metadata credentials plugin
    implementation when the metadata is ready.
    - user_data is the opaque pointer that was passed in the get_metadata method
@@ -490,7 +515,7 @@ GRPCAPI grpc_server_credentials* grpc_ssl_server_credentials_create(
 /** Deprecated in favor of grpc_ssl_server_credentials_create_with_options.
    Same as grpc_ssl_server_credentials_create method except uses
    grpc_ssl_client_certificate_request_type enum to support more ways to
-   authenticate client cerificates.*/
+   authenticate client certificates.*/
 GRPCAPI grpc_server_credentials* grpc_ssl_server_credentials_create_ex(
     const char* pem_root_certs, grpc_ssl_pem_key_cert_pair* pem_key_cert_pairs,
     size_t num_key_cert_pairs,

@@ -171,7 +171,7 @@ int grpc_compression_algorithm_from_message_stream_compression_algorithm(
 int grpc_message_compression_algorithm_name(
     grpc_message_compression_algorithm algorithm, const char** name) {
   GRPC_API_TRACE(
-      "grpc_message_compression_algorithm_parse(algorithm=%d, name=%p)", 2,
+      "grpc_message_compression_algorithm_name(algorithm=%d, name=%p)", 2,
       ((int)algorithm, name));
   switch (algorithm) {
     case GRPC_MESSAGE_COMPRESS_NONE:

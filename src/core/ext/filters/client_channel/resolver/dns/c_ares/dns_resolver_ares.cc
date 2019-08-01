@@ -38,7 +38,6 @@
 #include "src/core/ext/filters/client_channel/service_config.h"
 #include "src/core/lib/backoff/backoff.h"
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/gpr/host_port.h"
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gprpp/manual_constructor.h"
 #include "src/core/lib/iomgr/combiner.h"
@@ -145,7 +144,7 @@ AresDnsResolver::AresDnsResolver(ResolverArgs args)
   arg = grpc_channel_args_find(channel_args_,
                                GRPC_ARG_DNS_MIN_TIME_BETWEEN_RESOLUTIONS_MS);
   min_time_between_resolutions_ =
-      grpc_channel_arg_get_integer(arg, {1000, 0, INT_MAX});
+      grpc_channel_arg_get_integer(arg, {1000 * 30, 0, INT_MAX});
   // Enable SRV queries option
   arg = grpc_channel_args_find(channel_args_, GRPC_ARG_DNS_ENABLE_SRV_QUERIES);
   enable_srv_queries_ = grpc_channel_arg_get_bool(arg, false);
@@ -401,7 +400,8 @@ void AresDnsResolver::MaybeStartResolvingLocked() {
       // new closure API is done, find a way to track this ref with the timer
       // callback as part of the type system.
       Ref(DEBUG_LOCATION, "next_resolution_timer_cooldown").release();
-      grpc_timer_init(&next_resolution_timer_, ms_until_next_resolution,
+      grpc_timer_init(&next_resolution_timer_,
+                      ExecCtx::Get()->Now() + ms_until_next_resolution,
                       &on_next_resolution_);
       return;
     }
@@ -433,6 +433,8 @@ void AresDnsResolver::StartResolvingLocked() {
 
 class AresDnsResolverFactory : public ResolverFactory {
  public:
+  bool IsValidUri(const grpc_uri* uri) const override { return true; }
+
   OrphanablePtr<Resolver> CreateResolver(ResolverArgs args) const override {
     return OrphanablePtr<Resolver>(New<AresDnsResolver>(std::move(args)));
   }

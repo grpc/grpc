@@ -30,7 +30,6 @@
 #include "src/core/ext/transport/chttp2/transport/incoming_metadata.h"
 #include "src/core/ext/transport/cronet/transport/cronet_transport.h"
 #include "src/core/lib/debug/trace.h"
-#include "src/core/lib/gpr/host_port.h"
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gprpp/manual_constructor.h"
 #include "src/core/lib/iomgr/endpoint.h"
@@ -42,6 +41,7 @@
 #include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/lib/transport/static_metadata.h"
 #include "src/core/lib/transport/transport_impl.h"
+
 #include "third_party/objective_c/Cronet/bidirectional_stream_c.h"
 
 #define GRPC_HEADER_SIZE_IN_BYTES 5

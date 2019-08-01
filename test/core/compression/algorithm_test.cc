@@ -80,20 +80,20 @@ static void test_algorithm_mesh(void) {
 }
 
 static void test_algorithm_failure(void) {
-  grpc_core::ExecCtx exec_ctx;
-  grpc_slice mdstr;
-
   gpr_log(GPR_DEBUG, "test_algorithm_failure");
-
+  // Test invalid algorithm name
+  grpc_slice mdstr =
+      grpc_slice_from_static_string("this-is-an-invalid-algorithm");
+  GPR_ASSERT(grpc_compression_algorithm_from_slice(mdstr) ==
+             GRPC_COMPRESS_ALGORITHMS_COUNT);
+  grpc_slice_unref_internal(mdstr);
+  // Test invalid algorithm enum entry.
   GPR_ASSERT(grpc_compression_algorithm_name(GRPC_COMPRESS_ALGORITHMS_COUNT,
                                              nullptr) == 0);
   GPR_ASSERT(
       grpc_compression_algorithm_name(static_cast<grpc_compression_algorithm>(
                                           GRPC_COMPRESS_ALGORITHMS_COUNT + 1),
                                       nullptr) == 0);
-  mdstr = grpc_slice_from_static_string("this-is-an-invalid-algorithm");
-  GPR_ASSERT(grpc_compression_algorithm_from_slice(mdstr) ==
-             GRPC_COMPRESS_ALGORITHMS_COUNT);
   GPR_ASSERT(grpc_slice_eq(
       grpc_compression_algorithm_slice(GRPC_COMPRESS_ALGORITHMS_COUNT),
       grpc_empty_slice()));
@@ -101,7 +101,6 @@ static void test_algorithm_failure(void) {
       grpc_compression_algorithm_slice(static_cast<grpc_compression_algorithm>(
           static_cast<int>(GRPC_COMPRESS_ALGORITHMS_COUNT) + 1)),
       grpc_empty_slice()));
-  grpc_slice_unref_internal(mdstr);
 }
 
 int main(int argc, char** argv) {

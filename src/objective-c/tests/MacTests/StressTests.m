@@ -118,6 +118,11 @@ extern const char *kCFStreamVarName;
 
   [GRPCCall resetHostSettings];
 
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
+  [GRPCCall closeOpenConnections];
+#pragma clang diagnostic pop
+
   GRPCMutableCallOptions *options = [[GRPCMutableCallOptions alloc] init];
   options.transportType = [[self class] transportType];
   options.PEMRootCertificates = [[self class] PEMRootCertificates];

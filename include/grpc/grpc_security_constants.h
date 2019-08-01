@@ -96,7 +96,7 @@ typedef enum {
   /** Server requests client certificate and enforces that the client presents a
      certificate.
 
-     The cerificate presented by the client is verified by the gRPC framework.
+     The certificate presented by the client is verified by the gRPC framework.
      (For a successful connection the client needs to present a certificate that
      can be verified against the root certificate configured by the server)
 

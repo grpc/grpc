@@ -26,6 +26,7 @@ else
   docker build -t bazel_local_img tools/dockerfile/test/sanity
   docker run -v "$(realpath .):/src/grpc/:ro" \
     -w /src/grpc/third_party/protobuf         \
+    --rm=true                                 \
     bazel_local_img                           \
     bazel query 'deps('$1')'
 fi

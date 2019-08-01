@@ -196,17 +196,17 @@ static void on_read(void* tcpp, grpc_error* error) {
       gpr_free(utf8_message);
       grpc_slice_buffer_reset_and_unref_internal(tcp->read_slices);
     } else {
-      if (info->bytes_transfered != 0 && !tcp->shutting_down) {
-        GPR_ASSERT((size_t)info->bytes_transfered <= tcp->read_slices->length);
-        if (static_cast<size_t>(info->bytes_transfered) !=
+      if (info->bytes_transferred != 0 && !tcp->shutting_down) {
+        GPR_ASSERT((size_t)info->bytes_transferred <= tcp->read_slices->length);
+        if (static_cast<size_t>(info->bytes_transferred) !=
             tcp->read_slices->length) {
           grpc_slice_buffer_trim_end(
               tcp->read_slices,
               tcp->read_slices->length -
-                  static_cast<size_t>(info->bytes_transfered),
+                  static_cast<size_t>(info->bytes_transferred),
               &tcp->last_read_buffer);
         }
-        GPR_ASSERT((size_t)info->bytes_transfered == tcp->read_slices->length);
+        GPR_ASSERT((size_t)info->bytes_transferred == tcp->read_slices->length);
 
         if (grpc_tcp_trace.enabled()) {
           size_t i;
@@ -288,7 +288,7 @@ static void win_read(grpc_endpoint* ep, grpc_slice_buffer* read_slices,
 
   /* Did we get data immediately ? Yay. */
   if (info->wsa_error != WSAEWOULDBLOCK) {
-    info->bytes_transfered = bytes_read;
+    info->bytes_transferred = bytes_read;
     GRPC_CLOSURE_SCHED(&tcp->on_read, GRPC_ERROR_NONE);
     return;
   }
@@ -333,7 +333,7 @@ static void on_write(void* tcpp, grpc_error* error) {
     if (info->wsa_error != 0) {
       error = GRPC_WSA_ERROR(info->wsa_error, "WSASend");
     } else {
-      GPR_ASSERT(info->bytes_transfered == tcp->write_slices->length);
+      GPR_ASSERT(info->bytes_transferred == tcp->write_slices->length);
     }
   }
 

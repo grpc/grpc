@@ -17,6 +17,7 @@
  */
 
 #import "GRPCCall.h"
+#import "GRPCCall+Interceptor.h"
 #import "GRPCCall+OAuth2.h"
 #import "GRPCCallOptions.h"
 #import "GRPCInterceptor.h"
@@ -32,7 +33,6 @@
 #import "private/GRPCCallInternal.h"
 #import "private/GRPCChannelPool.h"
 #import "private/GRPCCompletionQueue.h"
-#import "private/GRPCConnectivityMonitor.h"
 #import "private/GRPCHost.h"
 #import "private/GRPCRequestHeaders.h"
 #import "private/GRPCWrappedCall.h"
@@ -141,33 +141,52 @@ const char *kCFStreamVarName = "grpc_cfstream";
     _responseHandler = responseHandler;
 
     // Initialize the interceptor chain
+
+    // First initialize the internal call
     GRPCCall2Internal *internalCall = [[GRPCCall2Internal alloc] init];
     id<GRPCInterceptorInterface> nextInterceptor = internalCall;
     GRPCInterceptorManager *nextManager = nil;
-    NSArray *interceptorFactories = _actualCallOptions.interceptorFactories;
-    if (interceptorFactories.count == 0) {
-      [internalCall setResponseHandler:_responseHandler];
-    } else {
-      for (int i = (int)interceptorFactories.count - 1; i >= 0; i--) {
-        GRPCInterceptorManager *manager =
-            [[GRPCInterceptorManager alloc] initWithNextInterceptor:nextInterceptor];
-        GRPCInterceptor *interceptor =
-            [interceptorFactories[i] createInterceptorWithManager:manager];
-        NSAssert(interceptor != nil, @"Failed to create interceptor");
-        if (interceptor == nil) {
-          return nil;
-        }
-        if (i == (int)interceptorFactories.count - 1) {
-          [internalCall setResponseHandler:interceptor];
-        } else {
-          [nextManager setPreviousInterceptor:interceptor];
-        }
+
+    // Then initialize the global interceptor, if applicable
+    id<GRPCInterceptorFactory> globalInterceptorFactory = [GRPCCall2 globalInterceptorFactory];
+    if (globalInterceptorFactory) {
+      GRPCInterceptorManager *manager =
+          [[GRPCInterceptorManager alloc] initWithNextInterceptor:nextInterceptor];
+      GRPCInterceptor *interceptor =
+          [globalInterceptorFactory createInterceptorWithManager:manager];
+      if (interceptor != nil) {
+        [internalCall setResponseHandler:interceptor];
         nextInterceptor = interceptor;
         nextManager = manager;
       }
+    }
 
+    // Finally initialize the interceptors in the chain
+    NSArray *interceptorFactories = _actualCallOptions.interceptorFactories;
+    for (int i = (int)interceptorFactories.count - 1; i >= 0; i--) {
+      GRPCInterceptorManager *manager =
+          [[GRPCInterceptorManager alloc] initWithNextInterceptor:nextInterceptor];
+      GRPCInterceptor *interceptor = [interceptorFactories[i] createInterceptorWithManager:manager];
+      NSAssert(interceptor != nil, @"Failed to create interceptor from factory: %@",
+               interceptorFactories[i]);
+      if (interceptor == nil) {
+        NSLog(@"Failed to create interceptor from factory: %@", interceptorFactories[i]);
+        continue;
+      }
+      if (nextManager == nil) {
+        [internalCall setResponseHandler:interceptor];
+      } else {
+        [nextManager setPreviousInterceptor:interceptor];
+      }
+      nextInterceptor = interceptor;
+      nextManager = manager;
+    }
+    if (nextManager == nil) {
+      [internalCall setResponseHandler:_responseHandler];
+    } else {
       [nextManager setPreviousInterceptor:_responseHandler];
     }
+
     _firstInterceptor = nextInterceptor;
   }
 
@@ -268,7 +287,6 @@ const char *kCFStreamVarName = "grpc_cfstream";
   GRPCCallSafety _callSafety;
   GRPCCallOptions *_callOptions;
   GRPCWrappedCall *_wrappedCall;
-  GRPCConnectivityMonitor *_connectivityMonitor;
 
   // The C gRPC library has less guarantees on the ordering of events than we
   // do. Particularly, in the face of errors, there's no ordering guarantee at
@@ -322,9 +340,6 @@ const char *kCFStreamVarName = "grpc_cfstream";
   // Guarantees the code in {} block is invoked only once. See ref at:
   // https://developer.apple.com/documentation/objectivec/nsobject/1418639-initialize?language=objc
   if (self == [GRPCCall self]) {
-    // Enable CFStream by default by do not overwrite if the user explicitly disables CFStream with
-    // environment variable "grpc_cfstream=0"
-    setenv(kCFStreamVarName, "1", 0);
     grpc_init();
     callFlags = [NSMutableDictionary dictionary];
   }
@@ -477,8 +492,6 @@ const char *kCFStreamVarName = "grpc_cfstream";
 }
 
 - (void)dealloc {
-  [GRPCConnectivityMonitor unregisterObserver:self];
-
   __block GRPCWrappedCall *wrappedCall = _wrappedCall;
   dispatch_async(_callQueue, ^{
     wrappedCall = nil;
@@ -714,7 +727,12 @@ const char *kCFStreamVarName = "grpc_cfstream";
     __strong GRPCCall *strongSelf = weakSelf;
     if (strongSelf) {
       @synchronized(strongSelf) {
-        strongSelf.responseHeaders = headers;
+        // it is ok to set nil because headers are only received once
+        strongSelf.responseHeaders = nil;
+        // copy the header so that the GRPCOpRecvMetadata object may be dealloc'ed
+        NSDictionary *copiedHeaders =
+            [[NSDictionary alloc] initWithDictionary:headers copyItems:YES];
+        strongSelf.responseHeaders = copiedHeaders;
         strongSelf->_pendingCoreRead = NO;
         [strongSelf maybeStartNextRead];
       }
@@ -772,12 +790,6 @@ const char *kCFStreamVarName = "grpc_cfstream";
 
     [self sendHeaders];
     [self invokeCall];
-
-    // Connectivity monitor is not required for CFStream
-    char *enableCFStream = getenv(kCFStreamVarName);
-    if (enableCFStream == nil || enableCFStream[0] != '1') {
-      [GRPCConnectivityMonitor registerObserver:self selector:@selector(connectivityChanged:)];
-    }
   }
 
   // Now that the RPC has been initiated, request writes can start.
@@ -877,25 +889,6 @@ const char *kCFStreamVarName = "grpc_cfstream";
       case GRXWriterStateNotStarted:
         return;
     }
-  }
-}
-
-- (void)connectivityChanged:(NSNotification *)note {
-  // Cancel underlying call upon this notification.
-
-  // Retain because connectivity manager only keeps weak reference to GRPCCall.
-  __strong GRPCCall *strongSelf = self;
-  if (strongSelf) {
-    @synchronized(strongSelf) {
-      [_wrappedCall cancel];
-      [strongSelf
-          finishWithError:[NSError errorWithDomain:kGRPCErrorDomain
-                                              code:GRPCErrorCodeUnavailable
-                                          userInfo:@{
-                                            NSLocalizedDescriptionKey : @"Connectivity lost."
-                                          }]];
-    }
-    strongSelf->_requestWriter.state = GRXWriterStateFinished;
   }
 }
 
