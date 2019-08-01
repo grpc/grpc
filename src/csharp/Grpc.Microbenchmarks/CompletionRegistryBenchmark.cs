@@ -27,7 +27,7 @@ namespace Grpc.Microbenchmarks
         [Params(false, true)]
         public bool UseSharedRegistry { get; set; }
 
-        const int Iterations = 1000000;  // High number to make the overhead of RunConcurrent negligible.
+        const int Iterations = 5 * 1000 * 1000;  // High number to make the overhead of RunConcurrent negligible.
         [Benchmark(OperationsPerInvoke = Iterations)]
         public void RegisterExtract()
         {
