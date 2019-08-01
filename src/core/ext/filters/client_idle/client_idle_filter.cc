@@ -32,7 +32,7 @@
 // in channel args.
 // TODO(qianchengz): Find a reasonable default value. Maybe check what deault
 // value Java uses.
-#define DEFAULT_IDLE_TIMEOUT_MS INT_MAX
+#define DEFAULT_IDLE_TIMEOUT_MS (5 * 60 * 1000)
 
 namespace grpc_core {
 
@@ -90,6 +90,8 @@ class ChannelData {
   size_t call_count_;
 
   // Idle timer and its callback closure.
+  bool timer_on_ = false;
+  grpc_millis last_idle_time_;
   grpc_timer idle_timer_;
   grpc_closure idle_timer_callback_;
 
@@ -119,6 +121,10 @@ void ChannelData::StartTransportOp(grpc_channel_element* elem,
     // IncreaseCallCount() introduces a dummy call. It will cancel the timer and
     // prevent the timer from being reset by other threads.
     chand->IncreaseCallCount();
+    MutexLock lock(&chand->call_count_mu_);
+    if (chand->timer_on_) {
+      grpc_timer_cancel(&chand->idle_timer_);
+    }
   }
   // Pass the op to the next filter.
   grpc_channel_next_op(elem, op);
@@ -126,16 +132,17 @@ void ChannelData::StartTransportOp(grpc_channel_element* elem,
 
 void ChannelData::IncreaseCallCount() {
   MutexLock lock(&call_count_mu_);
-  if (call_count_++ == 0) {
-    grpc_timer_cancel(&idle_timer_);
-  }
+  call_count_++;
   GRPC_IDLE_FILTER_LOG("call counter has increased to %" PRIuPTR, call_count_);
 }
 
 void ChannelData::DecreaseCallCount() {
   MutexLock lock(&call_count_mu_);
   if (call_count_-- == 1) {
-    StartIdleTimer();
+    last_idle_time_ = ExecCtx::Get()->Now();
+    if (!timer_on_) {
+      StartIdleTimer();
+    }
   }
   GRPC_IDLE_FILTER_LOG("call counter has decreased to %" PRIuPTR, call_count_);
 }
@@ -167,8 +174,13 @@ void ChannelData::IdleTimerCallback(void* arg, grpc_error* error) {
   ChannelData* chand = static_cast<ChannelData*>(arg);
   {
     MutexLock lock(&chand->call_count_mu_);
+    chand->timer_on_ = false;
     if (error == GRPC_ERROR_NONE && chand->call_count_ == 0) {
-      chand->EnterIdle();
+      if (ExecCtx::Get()->Now() >= chand->last_idle_time_ + chand->client_idle_timeout_) {
+        chand->EnterIdle();
+      } else {
+        chand->StartIdleTimer();
+      }
     }
   }
   GRPC_IDLE_FILTER_LOG("timer finishes");
@@ -185,8 +197,9 @@ void ChannelData::StartIdleTimer() {
   GRPC_IDLE_FILTER_LOG("timer has started");
   // Hold a ref to the channel stack for the timer callback.
   GRPC_CHANNEL_STACK_REF(channel_stack_, "max idle timer callback");
-  grpc_timer_init(&idle_timer_, ExecCtx::Get()->Now() + client_idle_timeout_,
+  grpc_timer_init(&idle_timer_, last_idle_time_ + client_idle_timeout_,
                   &idle_timer_callback_);
+  timer_on_ = true;
 }
 
 void ChannelData::EnterIdle() {
