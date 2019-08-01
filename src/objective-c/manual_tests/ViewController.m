@@ -20,8 +20,8 @@
 
 #import <GRPCClient/GRPCCall.h>
 #import <GRPCClient/GRPCCallOptions.h>
-#import <RemoteTest/Messages.pbobjc.h>
-#import <RemoteTest/Test.pbrpc.h>
+#import "src/objective-c/tests/RemoteTestClient/Messages.pbobjc.h"
+#import "src/objective-c/tests/RemoteTestClient/Test.pbrpc.h"
 
 NSString *const kRemoteHost = @"grpc-test.sandbox.googleapis.com";
 const int32_t kMessageSize = 100;
