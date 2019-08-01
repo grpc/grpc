@@ -20,8 +20,13 @@ from __future__ import print_function
 import logging
 import argparse
 import grpc
-from grpc_channelz.v1 import channelz_pb2
-from grpc_channelz.v1 import channelz_pb2_grpc
+
+try:
+    from src.python.grpcio_channelz.grpc_channelz.v1 import channelz_pb2
+    from src.python.grpcio_channelz.grpc_channelz.v1 import channelz_pb2_grpc
+except ImportError:
+    from grpc_channelz.v1 import channelz_pb2
+    from grpc_channelz.v1 import channelz_pb2_grpc
 
 
 def run(addr):
