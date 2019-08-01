@@ -91,11 +91,6 @@ InsecureChannelCredentials() {
   return ::grpc_impl::InsecureChannelCredentials();
 }
 
-static inline std::shared_ptr<grpc_impl::ChannelCredentials>
-CronetChannelCredentials(void* engine) {
-  return ::grpc_impl::CronetChannelCredentials(engine);
-}
-
 typedef ::grpc_impl::MetadataCredentialsPlugin MetadataCredentialsPlugin;
 
 static inline std::shared_ptr<grpc_impl::CallCredentials>

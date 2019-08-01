@@ -185,13 +185,23 @@ int main(int argc, char** argv) {
   char* addr;
 
   grpc_channel_args client_args;
-  grpc_arg arg_array[1];
+  grpc_arg arg_array[2];
   arg_array[0].type = GRPC_ARG_INTEGER;
   arg_array[0].key =
       const_cast<char*>("grpc.testing.fixed_reconnect_backoff_ms");
   arg_array[0].value.integer = 1000;
+  /* When this test brings down server1 and then brings up server2,
+   * the targetted server port number changes, and the client channel
+   * needs to re-resolve to pick this up. This test requires that
+   * happen within 10 seconds, but gRPC's DNS resolvers rate limit
+   * resolution attempts to at most once every 30 seconds by default.
+   * So we tweak it for this test. */
+  arg_array[1].type = GRPC_ARG_INTEGER;
+  arg_array[1].key =
+      const_cast<char*>(GRPC_ARG_DNS_MIN_TIME_BETWEEN_RESOLUTIONS_MS);
+  arg_array[1].value.integer = 1000;
   client_args.args = arg_array;
-  client_args.num_args = 1;
+  client_args.num_args = 2;
 
   /* create a channel that picks first amongst the servers */
   grpc_channel* chan =

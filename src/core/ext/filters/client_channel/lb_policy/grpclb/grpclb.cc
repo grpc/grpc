@@ -108,10 +108,14 @@
 #define GRPC_GRPCLB_DEFAULT_FALLBACK_TIMEOUT_MS 10000
 
 #define GRPC_ARG_GRPCLB_ADDRESS_LB_TOKEN "grpc.grpclb_address_lb_token"
+#define GRPC_ARG_GRPCLB_ADDRESS_CLIENT_STATS "grpc.grpclb_address_client_stats"
 
 namespace grpc_core {
 
 TraceFlag grpc_lb_glb_trace(false, "glb");
+
+const char kGrpcLbClientStatsMetadataKey[] = "grpclb_client_stats";
+const char kGrpcLbLbTokenMetadataKey[] = "lb-token";
 
 namespace {
 
@@ -445,24 +449,44 @@ UniquePtr<char> GrpcLb::Serverlist::AsText() const {
   return result;
 }
 
-// vtable for LB token channel arg.
+// vtables for channel args for LB token and client stats.
 void* lb_token_copy(void* token) {
-  return token == nullptr
-             ? nullptr
-             : (void*)GRPC_MDELEM_REF(grpc_mdelem{(uintptr_t)token}).payload;
+  return gpr_strdup(static_cast<char*>(token));
 }
-void lb_token_destroy(void* token) {
-  if (token != nullptr) {
-    GRPC_MDELEM_UNREF(grpc_mdelem{(uintptr_t)token});
-  }
+void lb_token_destroy(void* token) { gpr_free(token); }
+void* client_stats_copy(void* p) {
+  GrpcLbClientStats* client_stats = static_cast<GrpcLbClientStats*>(p);
+  client_stats->Ref().release();
+  return p;
 }
-int lb_token_cmp(void* token1, void* token2) {
+void client_stats_destroy(void* p) {
+  GrpcLbClientStats* client_stats = static_cast<GrpcLbClientStats*>(p);
+  client_stats->Unref();
+}
+int equal_cmp(void* p1, void* p2) {
   // Always indicate a match, since we don't want this channel arg to
   // affect the subchannel's key in the index.
+  // TODO(roth): Is this right?  This does prevent us from needlessly
+  // recreating the subchannel whenever the LB token or client stats
+  // changes (i.e., when the balancer call is terminated and reestablished).
+  // However, it means that we don't actually recreate the subchannel,
+  // which means that we won't ever switch over to using the new LB
+  // token or client stats.  A better approach might be to find somewhere
+  // other than the subchannel args to store the LB token and client
+  // stats.  They could be stored in a map and then looked up for each
+  // call (although we'd need to make sure our Map<> implementation is
+  // performant enough).  Or we could do something more complicated whereby
+  // we create our own subchannel wrapper to store them, although that would
+  // involve a lot of refcounting overhead.
+  // Given that we're trying to move from grpclb to xds at this point,
+  // and that no one has actually reported any problems with this, we
+  // probably won't bother fixing this at this point.
   return 0;
 }
 const grpc_arg_pointer_vtable lb_token_arg_vtable = {
-    lb_token_copy, lb_token_destroy, lb_token_cmp};
+    lb_token_copy, lb_token_destroy, equal_cmp};
+const grpc_arg_pointer_vtable client_stats_arg_vtable = {
+    client_stats_copy, client_stats_destroy, equal_cmp};
 
 bool IsServerValid(const grpc_grpclb_server* server, size_t idx, bool log) {
   if (server->drop) return false;
@@ -498,20 +522,14 @@ ServerAddressList GrpcLb::Serverlist::GetServerAddressList(
     grpc_resolved_address addr;
     ParseServer(server, &addr);
     // LB token processing.
-    grpc_mdelem lb_token;
+    char lb_token[GPR_ARRAY_SIZE(server->load_balance_token) + 1];
     if (server->has_load_balance_token) {
       const size_t lb_token_max_length =
           GPR_ARRAY_SIZE(server->load_balance_token);
       const size_t lb_token_length =
           strnlen(server->load_balance_token, lb_token_max_length);
-      grpc_slice lb_token_mdstr = grpc_slice_from_copied_buffer(
-          server->load_balance_token, lb_token_length);
-      lb_token = grpc_mdelem_from_slices(GRPC_MDSTR_LB_TOKEN, lb_token_mdstr);
-      if (client_stats != nullptr) {
-        GPR_ASSERT(grpc_mdelem_set_user_data(
-                       lb_token, GrpcLbClientStats::Destroy,
-                       client_stats->Ref().release()) == client_stats);
-      }
+      memcpy(lb_token, server->load_balance_token, lb_token_length);
+      lb_token[lb_token_length] = '\0';
     } else {
       char* uri = grpc_sockaddr_to_uri(&addr);
       gpr_log(GPR_INFO,
@@ -519,16 +537,21 @@ ServerAddressList GrpcLb::Serverlist::GetServerAddressList(
               "be used instead",
               uri);
       gpr_free(uri);
-      lb_token = GRPC_MDELEM_LB_TOKEN_EMPTY;
+      lb_token[0] = '\0';
     }
     // Add address.
-    grpc_arg arg = grpc_channel_arg_pointer_create(
-        const_cast<char*>(GRPC_ARG_GRPCLB_ADDRESS_LB_TOKEN),
-        (void*)lb_token.payload, &lb_token_arg_vtable);
-    grpc_channel_args* args = grpc_channel_args_copy_and_add(nullptr, &arg, 1);
+    InlinedVector<grpc_arg, 2> args_to_add;
+    args_to_add.emplace_back(grpc_channel_arg_pointer_create(
+        const_cast<char*>(GRPC_ARG_GRPCLB_ADDRESS_LB_TOKEN), lb_token,
+        &lb_token_arg_vtable));
+    if (client_stats != nullptr) {
+      args_to_add.emplace_back(grpc_channel_arg_pointer_create(
+          const_cast<char*>(GRPC_ARG_GRPCLB_ADDRESS_CLIENT_STATS), client_stats,
+          &client_stats_arg_vtable));
+    }
+    grpc_channel_args* args = grpc_channel_args_copy_and_add(
+        nullptr, args_to_add.data(), args_to_add.size());
     addresses.emplace_back(addr, args);
-    // Clean up.
-    GRPC_MDELEM_UNREF(lb_token);
   }
   return addresses;
 }
@@ -572,27 +595,36 @@ GrpcLb::PickResult GrpcLb::Picker::Pick(PickArgs args) {
   result = child_picker_->Pick(args);
   // If pick succeeded, add LB token to initial metadata.
   if (result.type == PickResult::PICK_COMPLETE &&
-      result.connected_subchannel != nullptr) {
-    const grpc_arg* arg = grpc_channel_args_find(
-        result.connected_subchannel->args(), GRPC_ARG_GRPCLB_ADDRESS_LB_TOKEN);
-    if (arg == nullptr) {
-      gpr_log(GPR_ERROR,
-              "[grpclb %p picker %p] No LB token for connected subchannel %p",
-              parent_, this, result.connected_subchannel.get());
-      abort();
-    }
-    grpc_mdelem lb_token = {reinterpret_cast<uintptr_t>(arg->value.pointer.p)};
-    GPR_ASSERT(!GRPC_MDISNULL(lb_token));
-    grpc_linked_mdelem* mdelem_storage = static_cast<grpc_linked_mdelem*>(
-        args.call_state->Alloc(sizeof(grpc_linked_mdelem)));
-    GPR_ASSERT(grpc_metadata_batch_add_tail(
-                   args.initial_metadata, mdelem_storage,
-                   GRPC_MDELEM_REF(lb_token)) == GRPC_ERROR_NONE);
-    GrpcLbClientStats* client_stats = static_cast<GrpcLbClientStats*>(
-        grpc_mdelem_get_user_data(lb_token, GrpcLbClientStats::Destroy));
-    if (client_stats != nullptr) {
+      result.subchannel != nullptr) {
+    // Encode client stats object into metadata for use by
+    // client_load_reporting filter.
+    const grpc_arg* arg =
+        grpc_channel_args_find(result.subchannel->channel_args(),
+                               GRPC_ARG_GRPCLB_ADDRESS_CLIENT_STATS);
+    if (arg != nullptr && arg->type == GRPC_ARG_POINTER &&
+        arg->value.pointer.p != nullptr) {
+      GrpcLbClientStats* client_stats =
+          static_cast<GrpcLbClientStats*>(arg->value.pointer.p);
+      client_stats->Ref().release();  // Ref passed via metadata.
+      // The metadata value is a hack: we pretend the pointer points to
+      // a string and rely on the client_load_reporting filter to know
+      // how to interpret it.
+      args.initial_metadata->Add(
+          kGrpcLbClientStatsMetadataKey,
+          StringView(reinterpret_cast<const char*>(client_stats), 0));
+      // Update calls-started.
       client_stats->AddCallStarted();
     }
+    // Encode the LB token in metadata.
+    arg = grpc_channel_args_find(result.subchannel->channel_args(),
+                                 GRPC_ARG_GRPCLB_ADDRESS_LB_TOKEN);
+    if (arg == nullptr) {
+      gpr_log(GPR_ERROR, "[grpclb %p picker %p] No LB token for subchannel %p",
+              parent_, this, result.subchannel.get());
+      abort();
+    }
+    args.initial_metadata->Add(kGrpcLbLbTokenMetadataKey,
+                               static_cast<char*>(arg->value.pointer.p));
   }
   return result;
 }
@@ -1412,10 +1444,10 @@ void GrpcLb::UpdateLocked(UpdateArgs args) {
 
 // Returns the backend addresses extracted from the given addresses.
 ServerAddressList ExtractBackendAddresses(const ServerAddressList& addresses) {
-  void* lb_token = (void*)GRPC_MDELEM_LB_TOKEN_EMPTY.payload;
+  static const char* lb_token = "";
   grpc_arg arg = grpc_channel_arg_pointer_create(
-      const_cast<char*>(GRPC_ARG_GRPCLB_ADDRESS_LB_TOKEN), lb_token,
-      &lb_token_arg_vtable);
+      const_cast<char*>(GRPC_ARG_GRPCLB_ADDRESS_LB_TOKEN),
+      const_cast<char*>(lb_token), &lb_token_arg_vtable);
   ServerAddressList backend_addresses;
   for (size_t i = 0; i < addresses.size(); ++i) {
     if (!addresses[i].IsBalancer()) {
@@ -1827,7 +1859,12 @@ bool maybe_add_client_load_reporting_filter(grpc_channel_stack_builder* builder,
       grpc_channel_args_find(args, GRPC_ARG_LB_POLICY_NAME);
   if (channel_arg != nullptr && channel_arg->type == GRPC_ARG_STRING &&
       strcmp(channel_arg->value.string, "grpclb") == 0) {
-    return grpc_channel_stack_builder_append_filter(
+    // TODO(roth): When we get around to re-attempting
+    // https://github.com/grpc/grpc/pull/16214, we should try to keep
+    // this filter at the very top of the subchannel stack, since that
+    // will minimize the number of metadata elements that the filter
+    // needs to iterate through to find the ClientStats object.
+    return grpc_channel_stack_builder_prepend_filter(
         builder, (const grpc_channel_filter*)arg, nullptr, nullptr);
   }
   return true;

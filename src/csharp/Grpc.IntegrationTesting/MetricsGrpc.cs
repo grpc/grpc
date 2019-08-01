@@ -92,7 +92,7 @@ namespace Grpc.Testing {
     {
       /// <summary>Creates a new client for MetricsService</summary>
       /// <param name="channel">The channel to use to make remote calls.</param>
-      public MetricsServiceClient(grpc::Channel channel) : base(channel)
+      public MetricsServiceClient(grpc::ChannelBase channel) : base(channel)
       {
       }
       /// <summary>Creates a new client for MetricsService that uses a custom <c>CallInvoker</c>.</summary>

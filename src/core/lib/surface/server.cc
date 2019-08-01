@@ -711,8 +711,10 @@ static void maybe_finish_shutdown(grpc_server* server) {
     return;
   }
 
+  gpr_mu_lock(&server->mu_call);
   kill_pending_work_locked(
       server, GRPC_ERROR_CREATE_FROM_STATIC_STRING("Server Shutdown"));
+  gpr_mu_unlock(&server->mu_call);
 
   if (server->root_channel_data.next != &server->root_channel_data ||
       server->listeners_destroyed < num_listeners(server)) {
@@ -1252,15 +1254,6 @@ void grpc_server_setup_transport(
   grpc_transport_perform_op(transport, op);
 }
 
-void grpc_server_populate_listen_sockets(
-    grpc_server* server, grpc_core::channelz::ChildRefsList* listen_sockets) {
-  gpr_mu_lock(&server->mu_global);
-  for (listener* l = server->listeners; l != nullptr; l = l->next) {
-    listen_sockets->push_back(l->socket_uuid);
-  }
-  gpr_mu_unlock(&server->mu_global);
-}
-
 void done_published_shutdown(void* done_arg, grpc_cq_completion* storage) {
   (void)done_arg;
   gpr_free(storage);
@@ -1348,6 +1341,9 @@ void grpc_server_shutdown_and_notify(grpc_server* server,
     GRPC_CLOSURE_INIT(&l->destroy_done, listener_destroy_done, server,
                       grpc_schedule_on_exec_ctx);
     l->destroy(server, l->arg, &l->destroy_done);
+    if (server->channelz_server != nullptr && l->socket_uuid != 0) {
+      server->channelz_server->RemoveChildListenSocket(l->socket_uuid);
+    }
   }
 
   channel_broadcaster_shutdown(&broadcaster, true /* send_goaway */,
@@ -1399,18 +1395,23 @@ void grpc_server_destroy(grpc_server* server) {
   server_unref(server);
 }
 
-void grpc_server_add_listener(grpc_server* server, void* arg,
-                              void (*start)(grpc_server* server, void* arg,
-                                            grpc_pollset** pollsets,
-                                            size_t pollset_count),
-                              void (*destroy)(grpc_server* server, void* arg,
-                                              grpc_closure* on_done),
-                              intptr_t socket_uuid) {
+void grpc_server_add_listener(
+    grpc_server* server, void* listener_arg,
+    void (*start)(grpc_server* server, void* arg, grpc_pollset** pollsets,
+                  size_t pollset_count),
+    void (*destroy)(grpc_server* server, void* arg, grpc_closure* on_done),
+    grpc_core::RefCountedPtr<grpc_core::channelz::ListenSocketNode> node) {
   listener* l = static_cast<listener*>(gpr_malloc(sizeof(listener)));
-  l->arg = arg;
+  l->arg = listener_arg;
   l->start = start;
   l->destroy = destroy;
-  l->socket_uuid = socket_uuid;
+  l->socket_uuid = 0;
+  if (node != nullptr) {
+    l->socket_uuid = node->uuid();
+    if (server->channelz_server != nullptr) {
+      server->channelz_server->AddChildListenSocket(std::move(node));
+    }
+  }
   l->next = server->listeners;
   server->listeners = l;
 }

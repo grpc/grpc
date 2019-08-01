@@ -378,10 +378,13 @@ static bool read_channel_args(grpc_chttp2_transport* t,
   if (channelz_enabled) {
     // TODO(ncteisen): add an API to endpoint to query for local addr, and pass
     // it in here, so SocketNode knows its own address.
+    char* socket_name = nullptr;
+    gpr_asprintf(&socket_name, "%s %s", get_vtable()->name, t->peer_string);
     t->channelz_socket =
         grpc_core::MakeRefCounted<grpc_core::channelz::SocketNode>(
             grpc_core::UniquePtr<char>(),
-            grpc_core::UniquePtr<char>(gpr_strdup(t->peer_string)));
+            grpc_core::UniquePtr<char>(gpr_strdup(t->peer_string)),
+            grpc_core::UniquePtr<char>(socket_name));
   }
   return enable_bdp;
 }
@@ -780,12 +783,6 @@ static void destroy_stream(grpc_transport* gt, grpc_stream* gs,
       GRPC_CLOSURE_INIT(&s->destroy_stream, destroy_stream_locked, s,
                         grpc_combiner_scheduler(t->combiner)),
       GRPC_ERROR_NONE);
-}
-
-grpc_chttp2_stream* grpc_chttp2_parsing_lookup_stream(grpc_chttp2_transport* t,
-                                                      uint32_t id) {
-  return static_cast<grpc_chttp2_stream*>(
-      grpc_chttp2_stream_map_find(&t->stream_map, id));
 }
 
 grpc_chttp2_stream* grpc_chttp2_parsing_accept_stream(grpc_chttp2_transport* t,
@@ -2066,7 +2063,7 @@ static void remove_stream(grpc_chttp2_transport* t, uint32_t id,
                           grpc_error* error) {
   grpc_chttp2_stream* s = static_cast<grpc_chttp2_stream*>(
       grpc_chttp2_stream_map_delete(&t->stream_map, id));
-  GPR_ASSERT(s);
+  GPR_DEBUG_ASSERT(s);
   if (t->incoming_stream == s) {
     t->incoming_stream = nullptr;
     grpc_chttp2_parsing_become_skip_parser(t);
@@ -2152,7 +2149,7 @@ void grpc_chttp2_fake_status(grpc_chttp2_transport* t, grpc_chttp2_stream* s,
                           &s->metadata_buffer[1],
                           grpc_mdelem_from_slices(
                               GRPC_MDSTR_GRPC_STATUS,
-                              grpc_slice_from_copied_string(status_string))));
+                              grpc_core::UnmanagedMemorySlice(status_string))));
     if (!GRPC_SLICE_IS_EMPTY(slice)) {
       GRPC_LOG_IF_ERROR(
           "add_status_message",

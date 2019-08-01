@@ -3,7 +3,10 @@ platform :ios, '8.0'
 
 install! 'cocoapods', :deterministic_uuids => false
 
-use_frameworks! if ENV['FRAMEWORKS'] == 'YES'
+# Default to use framework, so that providing no 'FRAMEWORK' env parameter works consistently
+# for all Samples, specifically because Swift only supports framework.
+# Only effective for examples/
+use_frameworks! if ENV['FRAMEWORKS'] != 'NO'
 
 # Location of gRPC's repo root relative to this file.
 GRPC_LOCAL_SRC = '../../../..'

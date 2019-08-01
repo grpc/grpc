@@ -438,6 +438,7 @@ Pod::Spec.new do |s|
                       'src/core/lib/iomgr/exec_ctx.h',
                       'src/core/lib/iomgr/executor.h',
                       'src/core/lib/iomgr/executor/mpmcqueue.h',
+                      'src/core/lib/iomgr/executor/threadpool.h',
                       'src/core/lib/iomgr/gethostname.h',
                       'src/core/lib/iomgr/grpc_if_nametoindex.h',
                       'src/core/lib/iomgr/internal_errqueue.h',
@@ -592,6 +593,7 @@ Pod::Spec.new do |s|
                       'src/core/lib/iomgr/exec_ctx.cc',
                       'src/core/lib/iomgr/executor.cc',
                       'src/core/lib/iomgr/executor/mpmcqueue.cc',
+                      'src/core/lib/iomgr/executor/threadpool.cc',
                       'src/core/lib/iomgr/fork_posix.cc',
                       'src/core/lib/iomgr/fork_windows.cc',
                       'src/core/lib/iomgr/gethostname_fallback.cc',
@@ -877,6 +879,7 @@ Pod::Spec.new do |s|
                       'src/core/ext/filters/client_channel/resolver/dns/native/dns_resolver.cc',
                       'src/core/ext/filters/client_channel/resolver/sockaddr/sockaddr_resolver.cc',
                       'src/core/ext/filters/census/grpc_context.cc',
+                      'src/core/ext/filters/client_idle/client_idle_filter.cc',
                       'src/core/ext/filters/max_age/max_age_filter.cc',
                       'src/core/ext/filters/message_size/message_size_filter.cc',
                       'src/core/ext/filters/http/client_authority_filter.cc',
@@ -1094,6 +1097,7 @@ Pod::Spec.new do |s|
                               'src/core/lib/iomgr/exec_ctx.h',
                               'src/core/lib/iomgr/executor.h',
                               'src/core/lib/iomgr/executor/mpmcqueue.h',
+                              'src/core/lib/iomgr/executor/threadpool.h',
                               'src/core/lib/iomgr/gethostname.h',
                               'src/core/lib/iomgr/grpc_if_nametoindex.h',
                               'src/core/lib/iomgr/internal_errqueue.h',
@@ -1228,6 +1232,7 @@ Pod::Spec.new do |s|
                       'third_party/nanopb/pb_common.c',
                       'third_party/nanopb/pb_decode.c',
                       'third_party/nanopb/pb_encode.c',
+                      'src/core/ext/transport/cronet/client/secure/cronet_channel_create.h',
                       'src/core/ext/transport/cronet/transport/cronet_transport.h',
                       'third_party/objective_c/Cronet/bidirectional_stream_c.h',
                       'third_party/nanopb/pb.h',
@@ -1387,7 +1392,7 @@ Pod::Spec.new do |s|
 
   # TODO (mxyan): Instead of this hack, add include path "third_party" to C core's include path?
   s.prepare_command = <<-END_OF_COMMAND
-    find src/core/ -type f -print0 | xargs -0 -L1 sed -E -i '' 's;#include "(pb(_.*)?\\.h)";#if COCOAPODS\\\n  #include <nanopb/\\1>\\\n#else\\\n  #include "\\1"\\\n#endif;g'
-    find src/core/ -type f \\( -path '*.h' -or -path '*.cc' \\) -print0 | xargs -0 -L1 sed -E -i '' 's;#include <openssl/(.*)>;#if COCOAPODS\\\n  #include <openssl_grpc/\\1>\\\n#else\\\n  #include <openssl/\\1>\\\n#endif;g'
+    sed -E -i '' 's;#include "(pb(_.*)?\\.h)";#if COCOAPODS==1\\\n  #include <nanopb/\\1>\\\n#else\\\n  #include "\\1"\\\n#endif;g' $(find src/core -type f -print | xargs grep -H -c '#include <nanopb/' | grep 0$ | cut -d':' -f1)
+    sed -E -i '' 's;#include <openssl/(.*)>;#if COCOAPODS==1\\\n  #include <openssl_grpc/\\1>\\\n#else\\\n  #include <openssl/\\1>\\\n#endif;g' $(find src/core -type f \\( -path '*.h' -or -path '*.cc' \\) -print | xargs grep -H -c '#include <openssl_grpc/' | grep 0$ | cut -d':' -f1)
   END_OF_COMMAND
 end

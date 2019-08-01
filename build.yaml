@@ -13,6 +13,7 @@ settings:
   '#09': Per-language overrides are possible with (eg) ruby_version tag here
   '#10': See the expand_version.py for all the quirks here
   core_version: 7.0.0
+  csharp_major_version: 2
   g_stands_for: gangnam
   version: 1.23.0-dev
 filegroups:
@@ -70,6 +71,15 @@ filegroups:
   - tsi_interface
   - tsi
   - grpc_shadow_boringssl
+- name: alts_upb
+  headers:
+  - src/core/ext/upb-generated/altscontext.upb.h
+  - src/core/ext/upb-generated/handshaker.upb.h
+  - src/core/ext/upb-generated/transport_security_common.upb.h
+  src:
+  - src/core/ext/upb-generated/altscontext.upb.c
+  - src/core/ext/upb-generated/handshaker.upb.c
+  - src/core/ext/upb-generated/transport_security_common.upb.c
 - name: alts_util
   public_headers:
   - include/grpc/grpc_security.h
@@ -111,6 +121,23 @@ filegroups:
   - test/core/util/cmdline.cc
   uses:
   - gpr_base_headers
+- name: google_api_upb
+  headers:
+  - src/core/ext/upb-generated/google/protobuf/any.upb.h
+  - src/core/ext/upb-generated/google/protobuf/descriptor.upb.h
+  - src/core/ext/upb-generated/google/protobuf/duration.upb.h
+  - src/core/ext/upb-generated/google/protobuf/empty.upb.h
+  - src/core/ext/upb-generated/google/protobuf/struct.upb.h
+  - src/core/ext/upb-generated/google/protobuf/timestamp.upb.h
+  - src/core/ext/upb-generated/google/protobuf/wrappers.upb.h
+  src:
+  - src/core/ext/upb-generated/google/protobuf/any.upb.c
+  - src/core/ext/upb-generated/google/protobuf/descriptor.upb.c
+  - src/core/ext/upb-generated/google/protobuf/duration.upb.c
+  - src/core/ext/upb-generated/google/protobuf/empty.upb.c
+  - src/core/ext/upb-generated/google/protobuf/struct.upb.c
+  - src/core/ext/upb-generated/google/protobuf/timestamp.upb.c
+  - src/core/ext/upb-generated/google/protobuf/wrappers.upb.c
 - name: gpr_base
   src:
   - src/core/lib/gpr/alloc.cc
@@ -281,6 +308,7 @@ filegroups:
   - src/core/lib/iomgr/exec_ctx.cc
   - src/core/lib/iomgr/executor.cc
   - src/core/lib/iomgr/executor/mpmcqueue.cc
+  - src/core/lib/iomgr/executor/threadpool.cc
   - src/core/lib/iomgr/fork_posix.cc
   - src/core/lib/iomgr/fork_windows.cc
   - src/core/lib/iomgr/gethostname_fallback.cc
@@ -469,6 +497,7 @@ filegroups:
   - src/core/lib/iomgr/exec_ctx.h
   - src/core/lib/iomgr/executor.h
   - src/core/lib/iomgr/executor/mpmcqueue.h
+  - src/core/lib/iomgr/executor/threadpool.h
   - src/core/lib/iomgr/gethostname.h
   - src/core/lib/iomgr/grpc_if_nametoindex.h
   - src/core/lib/iomgr/internal_errqueue.h
@@ -632,6 +661,12 @@ filegroups:
   - grpc_base
   - grpc_deadline_filter
   - health_proto
+- name: grpc_client_idle_filter
+  src:
+  - src/core/ext/filters/client_idle/client_idle_filter.cc
+  plugin: grpc_client_idle_filter
+  uses:
+  - grpc_base
 - name: grpc_codegen
   public_headers:
   - include/grpc/impl/codegen/byte_buffer.h
@@ -652,6 +687,11 @@ filegroups:
   plugin: grpc_deadline_filter
   uses:
   - grpc_base
+- name: grpc_health_upb
+  headers:
+  - src/core/ext/upb-generated/grpc/health/v1/health.upb.c
+  src:
+  - src/core/ext/upb-generated/grpc/health/v1/health.upb.h
 - name: grpc_http_filters
   headers:
   - src/core/ext/filters/http/client/http_client_filter.h
@@ -765,6 +805,13 @@ filegroups:
   uses:
   - grpc_base
   - grpc_client_channel
+- name: grpc_lb_upb
+  headers:
+  - src/core/ext/upb-generated/grpc/lb/v1/load_balancer.upb.h
+  src:
+  - src/core/ext/upb-generated/grpc/lb/v1/load_balancer.upb.c
+  uses:
+  - google_api_upb
 - name: grpc_max_age_filter
   headers:
   - src/core/ext/filters/max_age/max_age_filter.h
@@ -1111,6 +1158,7 @@ filegroups:
   - include/grpc/grpc_security.h
   - include/grpc/grpc_security_constants.h
   headers:
+  - src/core/ext/transport/cronet/client/secure/cronet_channel_create.h
   - src/core/ext/transport/cronet/transport/cronet_transport.h
   - third_party/objective_c/Cronet/bidirectional_stream_c.h
   src:
@@ -1604,6 +1652,7 @@ libs:
   - grpc_resolver_fake
   - grpc_secure
   - census
+  - grpc_client_idle_filter
   - grpc_max_age_filter
   - grpc_message_size_filter
   - grpc_deadline_filter
@@ -1616,6 +1665,7 @@ libs:
   build: all
   language: c
   src:
+  - src/core/ext/transport/cronet/plugin_registry/grpc_cronet_plugin_registry.cc
   - src/core/lib/surface/init.cc
   baselib: true
   deps_linkage: static
@@ -1624,7 +1674,6 @@ libs:
   - grpc_base
   - grpc_transport_cronet_client_secure
   - grpc_transport_chttp2_client_secure
-  generate_plugin_registry: true
   platforms:
   - linux
   secure: true
@@ -1677,6 +1726,7 @@ libs:
   - grpc_lb_policy_pick_first
   - grpc_lb_policy_round_robin
   - census
+  - grpc_client_idle_filter
   - grpc_max_age_filter
   - grpc_message_size_filter
   - grpc_deadline_filter
@@ -1771,29 +1821,6 @@ libs:
   - src/cpp/util/core_stats.cc
   deps:
   - grpc++
-- name: grpc++_cronet
-  build: all
-  language: c++
-  src:
-  - src/cpp/client/cronet_credentials.cc
-  - src/cpp/client/insecure_credentials.cc
-  - src/cpp/common/insecure_create_auth_context.cc
-  - src/cpp/server/insecure_server_credentials.cc
-  deps:
-  - gpr
-  - grpc_cronet
-  baselib: true
-  dll: true
-  filegroups:
-  - grpc++_base
-  - grpc++_codegen_base
-  - grpc++_codegen_base_src
-  - grpc_transport_chttp2_client_insecure
-  - grpc_transport_chttp2_server_insecure
-  - census
-  platforms:
-  - linux
-  secure: true
 - name: grpc++_error_details
   build: all
   language: c++
@@ -2843,6 +2870,15 @@ targets:
   - gpr
   exclude_iomgrs:
   - uv
+- name: grpc_control_plane_credentials_test
+  build: test
+  language: c
+  src:
+  - test/core/security/control_plane_credentials_test.cc
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr
 - name: grpc_create_jwt
   build: tool
   language: c
@@ -3734,6 +3770,16 @@ targets:
   - gpr
   exclude_iomgrs:
   - native
+- name: threadpool_test
+  build: test
+  language: c
+  src:
+  - test/core/iomgr/threadpool_test.cc
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr
+  uses_polling: false
 - name: time_averaged_stats_test
   build: test
   language: c
@@ -4437,6 +4483,27 @@ targets:
   - mac
   - linux
   - posix
+- name: bm_threadpool
+  build: test
+  language: c++
+  src:
+  - test/cpp/microbenchmarks/bm_threadpool.cc
+  deps:
+  - grpc_benchmark
+  - benchmark
+  - grpc++_test_util_unsecure
+  - grpc_test_util_unsecure
+  - grpc++_unsecure
+  - grpc_unsecure
+  - gpr
+  - grpc++_test_config
+  benchmark: true
+  defaults: benchmark
+  platforms:
+  - mac
+  - linux
+  - posix
+  uses_polling: false
 - name: bm_timer
   build: test
   language: c++
@@ -6120,7 +6187,7 @@ defaults:
     CXXFLAGS: -Wnon-virtual-dtor
     LDFLAGS: -g
   upb:
-    CFLAGS: -Ithird_party/upb -Wno-sign-conversion -Wno-shadow -Wno-conversion -Wno-implicit-fallthrough
+    CFLAGS: -Wno-sign-conversion -Wno-shadow -Wno-conversion -Wno-implicit-fallthrough
       -Wno-sign-compare -Wno-missing-field-initializers
   zlib:
     CFLAGS: -Wno-sign-conversion -Wno-conversion -Wno-unused-value -Wno-implicit-function-declaration

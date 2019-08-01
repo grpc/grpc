@@ -794,6 +794,7 @@ doc/ssl-performance.md \
 doc/status_ordering.md \
 doc/statuscodes.md \
 doc/unit_testing.md \
+doc/versioning.md \
 doc/wait-for-ready.md \
 doc/workarounds.md \
 include/grpc++/alarm.h \

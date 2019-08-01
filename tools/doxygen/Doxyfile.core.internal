@@ -801,6 +801,7 @@ doc/ssl-performance.md \
 doc/status_ordering.md \
 doc/statuscodes.md \
 doc/unit_testing.md \
+doc/versioning.md \
 doc/wait-for-ready.md \
 doc/workarounds.md \
 include/grpc/byte_buffer.h \
@@ -977,6 +978,7 @@ src/core/ext/filters/client_channel/subchannel.h \
 src/core/ext/filters/client_channel/subchannel_interface.h \
 src/core/ext/filters/client_channel/subchannel_pool_interface.cc \
 src/core/ext/filters/client_channel/subchannel_pool_interface.h \
+src/core/ext/filters/client_idle/client_idle_filter.cc \
 src/core/ext/filters/deadline/deadline_filter.cc \
 src/core/ext/filters/deadline/deadline_filter.h \
 src/core/ext/filters/http/client/http_client_filter.cc \
@@ -1236,6 +1238,8 @@ src/core/lib/iomgr/executor.cc \
 src/core/lib/iomgr/executor.h \
 src/core/lib/iomgr/executor/mpmcqueue.cc \
 src/core/lib/iomgr/executor/mpmcqueue.h \
+src/core/lib/iomgr/executor/threadpool.cc \
+src/core/lib/iomgr/executor/threadpool.h \
 src/core/lib/iomgr/fork_posix.cc \
 src/core/lib/iomgr/fork_windows.cc \
 src/core/lib/iomgr/gethostname.h \

@@ -994,6 +994,22 @@
   }, 
   {
     "deps": [
+      "gpr", 
+      "grpc", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "is_filegroup": false, 
+    "language": "c", 
+    "name": "grpc_control_plane_credentials_test", 
+    "src": [
+      "test/core/security/control_plane_credentials_test.cc"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
       "cmdline", 
       "gpr", 
       "grpc"
@@ -2260,6 +2276,22 @@
     "headers": [], 
     "is_filegroup": false, 
     "language": "c", 
+    "name": "threadpool_test", 
+    "src": [
+      "test/core/iomgr/threadpool_test.cc"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "grpc", 
+      "grpc_test_util"
+    ], 
+    "headers": [], 
+    "is_filegroup": false, 
+    "language": "c", 
     "name": "time_averaged_stats_test", 
     "src": [
       "test/core/iomgr/time_averaged_stats_test.cc"
@@ -3120,6 +3152,27 @@
     "name": "bm_pollset", 
     "src": [
       "test/cpp/microbenchmarks/bm_pollset.cc"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "benchmark", 
+      "gpr", 
+      "grpc++_test_config", 
+      "grpc++_test_util_unsecure", 
+      "grpc++_unsecure", 
+      "grpc_benchmark", 
+      "grpc_test_util_unsecure", 
+      "grpc_unsecure"
+    ], 
+    "headers": [], 
+    "is_filegroup": false, 
+    "language": "c++", 
+    "name": "bm_threadpool", 
+    "src": [
+      "test/cpp/microbenchmarks/bm_threadpool.cc"
     ], 
     "third_party": false, 
     "type": "target"
@@ -6648,6 +6701,7 @@
       "gpr", 
       "grpc_base", 
       "grpc_client_authority_filter", 
+      "grpc_client_idle_filter", 
       "grpc_deadline_filter", 
       "grpc_lb_policy_grpclb_secure", 
       "grpc_lb_policy_pick_first", 
@@ -6690,6 +6744,7 @@
     "language": "c", 
     "name": "grpc_cronet", 
     "src": [
+      "src/core/ext/transport/cronet/plugin_registry/grpc_cronet_plugin_registry.cc", 
       "src/core/lib/surface/init.cc"
     ], 
     "third_party": false, 
@@ -6740,6 +6795,7 @@
       "gpr", 
       "grpc_base", 
       "grpc_client_authority_filter", 
+      "grpc_client_idle_filter", 
       "grpc_deadline_filter", 
       "grpc_lb_policy_grpclb", 
       "grpc_lb_policy_pick_first", 
@@ -6902,31 +6958,6 @@
     "src": [
       "src/cpp/util/core_stats.cc", 
       "src/cpp/util/core_stats.h"
-    ], 
-    "third_party": false, 
-    "type": "lib"
-  }, 
-  {
-    "deps": [
-      "census", 
-      "gpr", 
-      "grpc", 
-      "grpc++_base", 
-      "grpc++_codegen_base", 
-      "grpc++_codegen_base_src", 
-      "grpc_cronet", 
-      "grpc_transport_chttp2_client_insecure", 
-      "grpc_transport_chttp2_server_insecure"
-    ], 
-    "headers": [], 
-    "is_filegroup": false, 
-    "language": "c++", 
-    "name": "grpc++_cronet", 
-    "src": [
-      "src/cpp/client/cronet_credentials.cc", 
-      "src/cpp/client/insecure_credentials.cc", 
-      "src/cpp/common/insecure_create_auth_context.cc", 
-      "src/cpp/server/insecure_server_credentials.cc"
     ], 
     "third_party": false, 
     "type": "lib"
@@ -7769,7 +7800,7 @@
   {
     "deps": [], 
     "headers": [
-      "third_party/upb/google/protobuf/descriptor.upb.h", 
+      "third_party/upb/generated_for_cmake/google/protobuf/descriptor.upb.h", 
       "third_party/upb/upb/decode.h", 
       "third_party/upb/upb/def.h", 
       "third_party/upb/upb/encode.h", 
@@ -8176,6 +8207,27 @@
     "type": "filegroup"
   }, 
   {
+    "deps": [], 
+    "headers": [
+      "src/core/ext/upb-generated/altscontext.upb.h", 
+      "src/core/ext/upb-generated/handshaker.upb.h", 
+      "src/core/ext/upb-generated/transport_security_common.upb.h"
+    ], 
+    "is_filegroup": true, 
+    "language": "c", 
+    "name": "alts_upb", 
+    "src": [
+      "src/core/ext/upb-generated/altscontext.upb.c", 
+      "src/core/ext/upb-generated/altscontext.upb.h", 
+      "src/core/ext/upb-generated/handshaker.upb.c", 
+      "src/core/ext/upb-generated/handshaker.upb.h", 
+      "src/core/ext/upb-generated/transport_security_common.upb.c", 
+      "src/core/ext/upb-generated/transport_security_common.upb.h"
+    ], 
+    "third_party": false, 
+    "type": "filegroup"
+  }, 
+  {
     "deps": [
       "alts_proto", 
       "gpr", 
@@ -8249,6 +8301,39 @@
     "src": [
       "test/core/util/cmdline.cc", 
       "test/core/util/cmdline.h"
+    ], 
+    "third_party": false, 
+    "type": "filegroup"
+  }, 
+  {
+    "deps": [], 
+    "headers": [
+      "src/core/ext/upb-generated/google/protobuf/any.upb.h", 
+      "src/core/ext/upb-generated/google/protobuf/descriptor.upb.h", 
+      "src/core/ext/upb-generated/google/protobuf/duration.upb.h", 
+      "src/core/ext/upb-generated/google/protobuf/empty.upb.h", 
+      "src/core/ext/upb-generated/google/protobuf/struct.upb.h", 
+      "src/core/ext/upb-generated/google/protobuf/timestamp.upb.h", 
+      "src/core/ext/upb-generated/google/protobuf/wrappers.upb.h"
+    ], 
+    "is_filegroup": true, 
+    "language": "c", 
+    "name": "google_api_upb", 
+    "src": [
+      "src/core/ext/upb-generated/google/protobuf/any.upb.c", 
+      "src/core/ext/upb-generated/google/protobuf/any.upb.h", 
+      "src/core/ext/upb-generated/google/protobuf/descriptor.upb.c", 
+      "src/core/ext/upb-generated/google/protobuf/descriptor.upb.h", 
+      "src/core/ext/upb-generated/google/protobuf/duration.upb.c", 
+      "src/core/ext/upb-generated/google/protobuf/duration.upb.h", 
+      "src/core/ext/upb-generated/google/protobuf/empty.upb.c", 
+      "src/core/ext/upb-generated/google/protobuf/empty.upb.h", 
+      "src/core/ext/upb-generated/google/protobuf/struct.upb.c", 
+      "src/core/ext/upb-generated/google/protobuf/struct.upb.h", 
+      "src/core/ext/upb-generated/google/protobuf/timestamp.upb.c", 
+      "src/core/ext/upb-generated/google/protobuf/timestamp.upb.h", 
+      "src/core/ext/upb-generated/google/protobuf/wrappers.upb.c", 
+      "src/core/ext/upb-generated/google/protobuf/wrappers.upb.h"
     ], 
     "third_party": false, 
     "type": "filegroup"
@@ -8541,6 +8626,7 @@
       "src/core/lib/iomgr/exec_ctx.cc", 
       "src/core/lib/iomgr/executor.cc", 
       "src/core/lib/iomgr/executor/mpmcqueue.cc", 
+      "src/core/lib/iomgr/executor/threadpool.cc", 
       "src/core/lib/iomgr/fork_posix.cc", 
       "src/core/lib/iomgr/fork_windows.cc", 
       "src/core/lib/iomgr/gethostname_fallback.cc", 
@@ -8730,6 +8816,7 @@
       "src/core/lib/iomgr/exec_ctx.h", 
       "src/core/lib/iomgr/executor.h", 
       "src/core/lib/iomgr/executor/mpmcqueue.h", 
+      "src/core/lib/iomgr/executor/threadpool.h", 
       "src/core/lib/iomgr/gethostname.h", 
       "src/core/lib/iomgr/grpc_if_nametoindex.h", 
       "src/core/lib/iomgr/internal_errqueue.h", 
@@ -8889,6 +8976,7 @@
       "src/core/lib/iomgr/exec_ctx.h", 
       "src/core/lib/iomgr/executor.h", 
       "src/core/lib/iomgr/executor/mpmcqueue.h", 
+      "src/core/lib/iomgr/executor/threadpool.h", 
       "src/core/lib/iomgr/gethostname.h", 
       "src/core/lib/iomgr/grpc_if_nametoindex.h", 
       "src/core/lib/iomgr/internal_errqueue.h", 
@@ -9099,6 +9187,21 @@
   }, 
   {
     "deps": [
+      "gpr", 
+      "grpc_base"
+    ], 
+    "headers": [], 
+    "is_filegroup": true, 
+    "language": "c", 
+    "name": "grpc_client_idle_filter", 
+    "src": [
+      "src/core/ext/filters/client_idle/client_idle_filter.cc"
+    ], 
+    "third_party": false, 
+    "type": "filegroup"
+  }, 
+  {
+    "deps": [
       "gpr_codegen"
     ], 
     "headers": [
@@ -9141,6 +9244,21 @@
     "src": [
       "src/core/ext/filters/deadline/deadline_filter.cc", 
       "src/core/ext/filters/deadline/deadline_filter.h"
+    ], 
+    "third_party": false, 
+    "type": "filegroup"
+  }, 
+  {
+    "deps": [], 
+    "headers": [
+      "src/core/ext/upb-generated/grpc/health/v1/health.upb.c"
+    ], 
+    "is_filegroup": true, 
+    "language": "c", 
+    "name": "grpc_health_upb", 
+    "src": [
+      "src/core/ext/upb-generated/grpc/health/v1/health.upb.c", 
+      "src/core/ext/upb-generated/grpc/health/v1/health.upb.h"
     ], 
     "third_party": false, 
     "type": "filegroup"
@@ -9350,6 +9468,23 @@
     "name": "grpc_lb_subchannel_list", 
     "src": [
       "src/core/ext/filters/client_channel/lb_policy/subchannel_list.h"
+    ], 
+    "third_party": false, 
+    "type": "filegroup"
+  }, 
+  {
+    "deps": [
+      "google_api_upb"
+    ], 
+    "headers": [
+      "src/core/ext/upb-generated/grpc/lb/v1/load_balancer.upb.h"
+    ], 
+    "is_filegroup": true, 
+    "language": "c", 
+    "name": "grpc_lb_upb", 
+    "src": [
+      "src/core/ext/upb-generated/grpc/lb/v1/load_balancer.upb.c", 
+      "src/core/ext/upb-generated/grpc/lb/v1/load_balancer.upb.h"
     ], 
     "third_party": false, 
     "type": "filegroup"
@@ -9989,6 +10124,7 @@
       "include/grpc/grpc_cronet.h", 
       "include/grpc/grpc_security.h", 
       "include/grpc/grpc_security_constants.h", 
+      "src/core/ext/transport/cronet/client/secure/cronet_channel_create.h", 
       "src/core/ext/transport/cronet/transport/cronet_transport.h", 
       "third_party/objective_c/Cronet/bidirectional_stream_c.h"
     ], 
@@ -10000,6 +10136,7 @@
       "include/grpc/grpc_security.h", 
       "include/grpc/grpc_security_constants.h", 
       "src/core/ext/transport/cronet/client/secure/cronet_channel_create.cc", 
+      "src/core/ext/transport/cronet/client/secure/cronet_channel_create.h", 
       "src/core/ext/transport/cronet/transport/cronet_api_dummy.cc", 
       "src/core/ext/transport/cronet/transport/cronet_transport.cc", 
       "src/core/ext/transport/cronet/transport/cronet_transport.h"

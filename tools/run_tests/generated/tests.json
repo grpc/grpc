@@ -1356,6 +1356,30 @@
     "flaky": false, 
     "gtest": false, 
     "language": "c", 
+    "name": "grpc_control_plane_credentials_test", 
+    "platforms": [
+      "linux", 
+      "mac", 
+      "posix", 
+      "windows"
+    ], 
+    "uses_polling": true
+  }, 
+  {
+    "args": [], 
+    "benchmark": false, 
+    "ci_platforms": [
+      "linux", 
+      "mac", 
+      "posix", 
+      "windows"
+    ], 
+    "cpu_cost": 1.0, 
+    "exclude_configs": [], 
+    "exclude_iomgrs": [], 
+    "flaky": false, 
+    "gtest": false, 
+    "language": "c", 
     "name": "grpc_credentials_test", 
     "platforms": [
       "linux", 
@@ -2808,6 +2832,30 @@
     "flaky": false, 
     "gtest": false, 
     "language": "c", 
+    "name": "threadpool_test", 
+    "platforms": [
+      "linux", 
+      "mac", 
+      "posix", 
+      "windows"
+    ], 
+    "uses_polling": false
+  }, 
+  {
+    "args": [], 
+    "benchmark": false, 
+    "ci_platforms": [
+      "linux", 
+      "mac", 
+      "posix", 
+      "windows"
+    ], 
+    "cpu_cost": 1.0, 
+    "exclude_configs": [], 
+    "exclude_iomgrs": [], 
+    "flaky": false, 
+    "gtest": false, 
+    "language": "c", 
     "name": "time_averaged_stats_test", 
     "platforms": [
       "linux", 
@@ -3878,6 +3926,28 @@
       "posix"
     ], 
     "uses_polling": true
+  }, 
+  {
+    "args": [], 
+    "benchmark": true, 
+    "ci_platforms": [
+      "linux", 
+      "mac", 
+      "posix"
+    ], 
+    "cpu_cost": 1.0, 
+    "exclude_configs": [], 
+    "exclude_iomgrs": [], 
+    "flaky": false, 
+    "gtest": false, 
+    "language": "c++", 
+    "name": "bm_threadpool", 
+    "platforms": [
+      "linux", 
+      "mac", 
+      "posix"
+    ], 
+    "uses_polling": false
   }, 
   {
     "args": [], 
