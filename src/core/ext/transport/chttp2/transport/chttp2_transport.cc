@@ -1179,6 +1179,17 @@ void grpc_chttp2_add_incoming_goaway(grpc_chttp2_transport* t,
   /* lie: use transient failure from the transport to indicate goaway has been
    * received */
   connectivity_state_set(t, GRPC_CHANNEL_TRANSIENT_FAILURE, "got_goaway");
+
+  /* Cancel streams with id larger than last_stream_id. */
+  if (grpc_chttp2_stream_map_size(&t->stream_map) != 0 &&
+      last_stream_id < t->next_stream_id - 2) {
+    for (uint32_t id = last_stream_id + 2; id < t->next_stream_id; id += 2) {
+      grpc_chttp2_stream* s = grpc_chttp2_parsing_lookup_stream(t, id);
+      if (s != nullptr) {
+        grpc_chttp2_cancel_stream(t, s, GRPC_ERROR_REF(t->goaway_error));
+      }
+    }
+  }
 }
 
 static void maybe_start_some_streams(grpc_chttp2_transport* t) {
