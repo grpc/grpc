@@ -1821,6 +1821,23 @@ libs:
   - src/cpp/util/core_stats.cc
   deps:
   - grpc++
+- name: grpc++_cronet
+  build: all
+  language: c++
+  src:
+  - src/cpp/client/cronet_credentials.cc
+  deps:
+  - gpr
+  - grpc_cronet
+  baselib: true
+  dll: true
+  filegroups:
+  - grpc++_base
+  - grpc++_codegen_base
+  - grpc++_codegen_base_src
+  platforms:
+  - linux
+  secure: true
 - name: grpc++_error_details
   build: all
   language: c++

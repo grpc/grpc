@@ -6964,6 +6964,25 @@
   }, 
   {
     "deps": [
+      "gpr", 
+      "grpc", 
+      "grpc++_base", 
+      "grpc++_codegen_base", 
+      "grpc++_codegen_base_src", 
+      "grpc_cronet"
+    ], 
+    "headers": [], 
+    "is_filegroup": false, 
+    "language": "c++", 
+    "name": "grpc++_cronet", 
+    "src": [
+      "src/cpp/client/cronet_credentials.cc"
+    ], 
+    "third_party": false, 
+    "type": "lib"
+  }, 
+  {
+    "deps": [
       "grpc++"
     ], 
     "headers": [
