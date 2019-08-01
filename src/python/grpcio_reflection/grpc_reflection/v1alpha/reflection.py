@@ -18,8 +18,10 @@ from google.protobuf import descriptor_pb2
 from google.protobuf import descriptor_pool
 
 try:
-    from src.python.grpcio_reflection.grpc_reflection.v1alpha import reflection_pb2 as _reflection_pb2
-    from src.python.grpcio_reflection.grpc_reflection.v1alpha import reflection_pb2_grpc as _reflection_pb2_grpc
+    from src.python.grpcio_reflection.grpc_reflection.v1alpha \
+        import reflection_pb2 as _reflection_pb2
+    from src.python.grpcio_reflection.grpc_reflection.v1alpha \
+        import reflection_pb2_grpc as _reflection_pb2_grpc
 except ImportError:
     from grpc_reflection.v1alpha import reflection_pb2 as _reflection_pb2
     from grpc_reflection.v1alpha import reflection_pb2_grpc as _reflection_pb2_grpc
