@@ -1,5 +1,7 @@
 install! 'cocoapods', :deterministic_uuids => false
 
+use_frameworks! if ENV['FRAMEWORKS'] != 'NO'
+
 ROOT_DIR = '../../../..'
 
 def grpc_deps

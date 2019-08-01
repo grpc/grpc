@@ -18,8 +18,6 @@
 
 #import "ViewController.h"
 
-#import <RemoteTest/Messages.pbobjc.h>
-
 @interface ViewController ()
 
 @end

@@ -7,15 +7,15 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		8E4F1CA090367C7618548546 /* libPods-tvOS-sample.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 65430D45E5C272C975E4CCCA /* libPods-tvOS-sample.a */; };
 		ABB17D3A22D8FB8B00C26D6E /* AppDelegate.m in Sources */ = {isa = PBXBuildFile; fileRef = ABB17D3922D8FB8B00C26D6E /* AppDelegate.m */; };
 		ABB17D3D22D8FB8B00C26D6E /* ViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = ABB17D3C22D8FB8B00C26D6E /* ViewController.m */; };
 		ABB17D4022D8FB8B00C26D6E /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = ABB17D3E22D8FB8B00C26D6E /* Main.storyboard */; };
 		ABB17D4522D8FB8D00C26D6E /* main.m in Sources */ = {isa = PBXBuildFile; fileRef = ABB17D4422D8FB8D00C26D6E /* main.m */; };
-		F9B775DB1DDCBD39DF92BFA8 /* libPods-tvOS-sample.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 40071025CBF9E79B9522398F /* libPods-tvOS-sample.a */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
-		40071025CBF9E79B9522398F /* libPods-tvOS-sample.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = "libPods-tvOS-sample.a"; sourceTree = BUILT_PRODUCTS_DIR; };
+		65430D45E5C272C975E4CCCA /* libPods-tvOS-sample.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = "libPods-tvOS-sample.a"; sourceTree = BUILT_PRODUCTS_DIR; };
 		93F3CF0DB110860F8E180685 /* Pods-tvOS-sample.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-tvOS-sample.release.xcconfig"; path = "Target Support Files/Pods-tvOS-sample/Pods-tvOS-sample.release.xcconfig"; sourceTree = "<group>"; };
 		ABB17D3522D8FB8B00C26D6E /* tvOS-sample.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "tvOS-sample.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 		ABB17D3822D8FB8B00C26D6E /* AppDelegate.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = AppDelegate.h; sourceTree = "<group>"; };
@@ -33,7 +33,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				F9B775DB1DDCBD39DF92BFA8 /* libPods-tvOS-sample.a in Frameworks */,
+				8E4F1CA090367C7618548546 /* libPods-tvOS-sample.a in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -84,7 +84,7 @@
 		D280E557B55AAB044C083DB5 /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
-				40071025CBF9E79B9522398F /* libPods-tvOS-sample.a */,
+				65430D45E5C272C975E4CCCA /* libPods-tvOS-sample.a */,
 			);
 			name = Frameworks;
 			sourceTree = "<group>";
@@ -100,7 +100,7 @@
 				ABB17D3122D8FB8B00C26D6E /* Sources */,
 				ABB17D3222D8FB8B00C26D6E /* Frameworks */,
 				ABB17D3322D8FB8B00C26D6E /* Resources */,
-				340B0470EBFB87C5242C058E /* [CP] Copy Pods Resources */,
+				53B9CBB782EEE8A7572F10EC /* [CP] Copy Pods Resources */,
 			);
 			buildRules = (
 			);
@@ -156,16 +156,20 @@
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXShellScriptBuildPhase section */
-		340B0470EBFB87C5242C058E /* [CP] Copy Pods Resources */ = {
+		53B9CBB782EEE8A7572F10EC /* [CP] Copy Pods Resources */ = {
 			isa = PBXShellScriptBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+			);
+			inputFileListPaths = (
 			);
 			inputPaths = (
 				"${PODS_ROOT}/Target Support Files/Pods-tvOS-sample/Pods-tvOS-sample-resources.sh",
 				"${PODS_CONFIGURATION_BUILD_DIR}/gRPC/gRPCCertificates.bundle",
 			);
 			name = "[CP] Copy Pods Resources";
+			outputFileListPaths = (
+			);
 			outputPaths = (
 				"${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/gRPCCertificates.bundle",
 			);
