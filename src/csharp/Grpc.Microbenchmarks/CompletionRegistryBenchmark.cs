@@ -31,8 +31,9 @@ namespace Grpc.Microbenchmarks
         [Benchmark(OperationsPerInvoke = Iterations)]
         public void RegisterExtract()
         {
-            RunConcurrent(() => {
-                CompletionRegistry sharedRegistry = UseSharedRegistry ? new CompletionRegistry(Environment, () => BatchContextSafeHandle.Create(), () => RequestCallContextSafeHandle.Create()) : null;
+            CompletionRegistry sharedRegistry = UseSharedRegistry ? new CompletionRegistry(Environment, () => BatchContextSafeHandle.Create(), () => RequestCallContextSafeHandle.Create()) : null;
+            RunConcurrent(() =>
+            {
                 RunBody(sharedRegistry);
             });
         }
