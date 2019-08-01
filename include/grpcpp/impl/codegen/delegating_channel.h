@@ -40,16 +40,16 @@ class DelegatingChannel : public ::grpc::ChannelInterface {
  private:
   internal::Call CreateCall(const internal::RpcMethod& method,
                             ClientContext* context,
-                            ::grpc_impl::CompletionQueue* cq) override {
+                            ::grpc_impl::CompletionQueue* cq) final {
     return delegate_channel()->CreateCall(method, context, cq);
   }
 
   void PerformOpsOnCall(internal::CallOpSetInterface* ops,
-                        internal::Call* call) override {
+                        internal::Call* call) final {
     delegate_channel()->PerformOpsOnCall(ops, call);
   }
 
-  void* RegisterMethod(const char* method) override {
+  void* RegisterMethod(const char* method) final {
     return delegate_channel()->RegisterMethod(method);
   }
 
@@ -69,12 +69,12 @@ class DelegatingChannel : public ::grpc::ChannelInterface {
   internal::Call CreateCallInternal(const internal::RpcMethod& method,
                                     ClientContext* context,
                                     ::grpc_impl::CompletionQueue* cq,
-                                    size_t interceptor_pos) override {
+                                    size_t interceptor_pos) final {
     return delegate_channel()->CreateCallInternal(method, context, cq,
                                                   interceptor_pos);
   }
 
-  ::grpc_impl::CompletionQueue* CallbackCQ() override {
+  ::grpc_impl::CompletionQueue* CallbackCQ() final {
     return delegate_channel()->CallbackCQ();
   }
 
