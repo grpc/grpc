@@ -29,8 +29,7 @@ namespace Grpc.Core.Internal
             new ThreadLocal<DefaultSerializationContext>(() => new DefaultSerializationContext(), false);
 
         bool isComplete;
-        //byte[] payload;
-        SliceBufferSafeHandle sliceBuffer;
+        SliceBufferSafeHandle sliceBuffer = SliceBufferSafeHandle.Create();
 
         public DefaultSerializationContext()
         {
@@ -42,12 +41,10 @@ namespace Grpc.Core.Internal
             GrpcPreconditions.CheckState(!isComplete);
             this.isComplete = true;
 
-            GetBufferWriter();
             var destSpan = sliceBuffer.GetSpan(payload.Length);
             payload.AsSpan().CopyTo(destSpan);
             sliceBuffer.Advance(payload.Length);
             sliceBuffer.Complete();
-            //this.payload = payload;
         }
 
         /// <summary>
@@ -55,11 +52,6 @@ namespace Grpc.Core.Internal
         /// </summary>
         public override IBufferWriter<byte> GetBufferWriter()
         {
-            if (sliceBuffer == null)
-            {
-                // TODO: avoid allocation..
-                sliceBuffer = SliceBufferSafeHandle.Create();
-            }
             return sliceBuffer;
         }
 
@@ -81,17 +73,35 @@ namespace Grpc.Core.Internal
         public void Reset()
         {
             this.isComplete = false;
-            //this.payload = null;
-            this.sliceBuffer = null;  // reset instead...
+            this.sliceBuffer.Reset();
         }
 
-        public static DefaultSerializationContext GetInitializedThreadLocal()
+        // Get a cached thread local instance of deserialization context
+        // and wrap it in a disposable struct that allows easy resetting
+        // via "using" statement.
+        public static UsageScope GetInitializedThreadLocalScope()
         {
             var instance = threadLocalInstance.Value;
-            instance.Reset();
-            return instance;
+            return new UsageScope(instance);
         }
 
-        
+        public struct UsageScope : IDisposable
+        {
+            readonly DefaultSerializationContext context;
+
+            public UsageScope(DefaultSerializationContext context)
+            {
+                this.context = context;
+            }
+
+            public DefaultSerializationContext Context => context;
+
+            // TODO: add Serialize method...
+
+            public void Dispose()
+            {
+                context.Reset();
+            }
+        }
     }
 }

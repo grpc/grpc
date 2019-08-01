@@ -95,10 +95,10 @@ namespace Grpc.Core.Internal
                         readingDone = true;
                     }
 
-                    var payload = UnsafeSerialize(msg);
-
+                    using (var serializationScope = DefaultSerializationContext.GetInitializedThreadLocalScope())
                     using (var metadataArray = MetadataArraySafeHandle.Create(details.Options.Headers))
                     {
+                        var payload = UnsafeSerialize(msg, serializationScope.Context); // do before metadata array?
                         var ctx = details.Channel.Environment.BatchContextPool.Lease();
                         try
                         {
@@ -160,11 +160,14 @@ namespace Grpc.Core.Internal
                     halfcloseRequested = true;
                     readingDone = true;
 
-                    var payload = UnsafeSerialize(msg);
+                    //var payload = UnsafeSerialize(msg);
 
                     unaryResponseTcs = new TaskCompletionSource<TResponse>();
+                    using (var serializationScope = DefaultSerializationContext.GetInitializedThreadLocalScope())
                     using (var metadataArray = MetadataArraySafeHandle.Create(details.Options.Headers))
                     {
+                        var payload = UnsafeSerialize(msg, serializationScope.Context); // do before metadata array?
+
                         call.StartUnary(UnaryResponseClientCallback, payload, GetWriteFlagsForCall(), metadataArray, details.Options.Flags);
                         callStartedOk = true;
                     }
@@ -235,11 +238,15 @@ namespace Grpc.Core.Internal
 
                     halfcloseRequested = true;
 
-                    var payload = UnsafeSerialize(msg);
+                    //var payload = UnsafeSerialize(msg);
 
                     streamingResponseCallFinishedTcs = new TaskCompletionSource<object>();
+                    
+                    using (var serializationScope = DefaultSerializationContext.GetInitializedThreadLocalScope())
                     using (var metadataArray = MetadataArraySafeHandle.Create(details.Options.Headers))
                     {
+                        var payload = UnsafeSerialize(msg, serializationScope.Context); // do before metadata array?
+                        
                         call.StartServerStreaming(ReceivedStatusOnClientCallback, payload, GetWriteFlagsForCall(), metadataArray, details.Options.Flags);
                         callStartedOk = true;
                     }

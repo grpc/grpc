@@ -52,6 +52,8 @@ namespace Grpc.Core.Tests
                     }
                     if (str == "SERIALIZE_TO_NULL")
                     {
+                        // TODO: test for not calling complete Complete() (that resulted in null payload before...)
+                        // TODO: test for calling Complete(null byte array)
                         return;
                     }
                     var bytes = System.Text.Encoding.UTF8.GetBytes(str);
