@@ -180,10 +180,10 @@ static bool wait_until(grpc_millis next) {
         g_has_timed_waiter = true;
         g_timed_waiter_deadline = next;
 
-        if (GRPC_TRACE_FLAG_ENABLED(grpc_timer_check_trace)) {
+        //if (GRPC_TRACE_FLAG_ENABLED(grpc_timer_check_trace)) {
           grpc_millis wait_time = next - grpc_core::ExecCtx::Get()->Now();
-          gpr_log(GPR_INFO, "sleep for a %" PRId64 " milliseconds", wait_time);
-        }
+          gpr_log(GPR_ERROR, "sleep for a %" PRId64 " milliseconds", wait_time);
+        //}
       } else {  // g_timed_waiter == true && next >= g_timed_waiter_deadline
         next = GRPC_MILLIS_INF_FUTURE;
       }
@@ -197,11 +197,11 @@ static bool wait_until(grpc_millis next) {
     gpr_cv_wait(&g_cv_wait, &g_mu,
                 grpc_millis_to_timespec(next, GPR_CLOCK_MONOTONIC));
 
-    if (GRPC_TRACE_FLAG_ENABLED(grpc_timer_check_trace)) {
-      gpr_log(GPR_INFO, "wait ended: was_timed:%d kicked:%d",
+    //if (GRPC_TRACE_FLAG_ENABLED(grpc_timer_check_trace)) {
+      gpr_log(GPR_ERROR, "wait ended: was_timed:%d kicked:%d",
               my_timed_waiter_generation == g_timed_waiter_generation,
               g_kicked);
-    }
+    //}
     // if this was the timed waiter, then we need to check timers, and flag
     // that there's now no timed waiter... we'll look for a replacement if
     // there's work to do after checking timers (code above)
