@@ -116,6 +116,20 @@ const upb_msglayout envoy_api_v2_core_HeaderValueOption_msginit = {
   UPB_SIZE(8, 16), 2, false,
 };
 
+static const upb_msglayout *const envoy_api_v2_core_HeaderMap_submsgs[1] = {
+  &envoy_api_v2_core_HeaderValue_msginit,
+};
+
+static const upb_msglayout_field envoy_api_v2_core_HeaderMap__fields[1] = {
+  {1, UPB_SIZE(0, 0), 0, 0, 11, 3},
+};
+
+const upb_msglayout envoy_api_v2_core_HeaderMap_msginit = {
+  &envoy_api_v2_core_HeaderMap_submsgs[0],
+  &envoy_api_v2_core_HeaderMap__fields[0],
+  UPB_SIZE(4, 8), 1, false,
+};
+
 static const upb_msglayout_field envoy_api_v2_core_DataSource__fields[3] = {
   {1, UPB_SIZE(0, 0), UPB_SIZE(-9, -17), 0, 9, 1},
   {2, UPB_SIZE(0, 0), UPB_SIZE(-9, -17), 0, 12, 1},
@@ -173,6 +187,16 @@ const upb_msglayout envoy_api_v2_core_RuntimeFractionalPercent_msginit = {
   &envoy_api_v2_core_RuntimeFractionalPercent_submsgs[0],
   &envoy_api_v2_core_RuntimeFractionalPercent__fields[0],
   UPB_SIZE(16, 32), 2, false,
+};
+
+static const upb_msglayout_field envoy_api_v2_core_ControlPlane__fields[1] = {
+  {1, UPB_SIZE(0, 0), 0, 0, 9, 1},
+};
+
+const upb_msglayout envoy_api_v2_core_ControlPlane_msginit = {
+  NULL,
+  &envoy_api_v2_core_ControlPlane__fields[0],
+  UPB_SIZE(8, 16), 1, false,
 };
 
 #include "upb/port_undef.inc"

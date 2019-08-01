@@ -32,5 +32,12 @@
 #define GRPC_ARG_ADDRESS_IS_BACKEND_FROM_GRPCLB_LOAD_BALANCER \
   "grpc.address_is_backend_from_grpclb_load_balancer"
 
+namespace grpc_core {
+
+extern const char kGrpcLbClientStatsMetadataKey[];
+extern const char kGrpcLbLbTokenMetadataKey[];
+
+}  // namespace grpc_core
+
 #endif /* GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_LB_POLICY_GRPCLB_GRPCLB_H \
         */

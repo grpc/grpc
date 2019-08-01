@@ -47,7 +47,7 @@
     excl = grpc_private_files(libs)
     excl += [
         # We do not need cronet dedicated plugin registry
-        "src/core/plugin_registry/grpc_cronet_plugin_registry.cc",
+        "src/core/ext/transport/cronet/plugin_registry/grpc_cronet_plugin_registry.cc",
         # We do not need dummy cronet API for ObjC
         "src/core/ext/transport/cronet/transport/cronet_api_dummy.cc",
     ]

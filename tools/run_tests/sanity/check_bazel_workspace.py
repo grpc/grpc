@@ -54,6 +54,7 @@ _GRPC_DEP_NAMES = [
     'com_github_cares_cares',
     'com_google_absl',
     'io_opencensus_cpp',
+    'envoy_api',
     _BAZEL_SKYLIB_DEP_NAME,
     _BAZEL_TOOLCHAINS_DEP_NAME,
     _TWISTED_TWISTED_DEP_NAME,
@@ -61,9 +62,12 @@ _GRPC_DEP_NAMES = [
     _TWISTED_INCREMENTAL_DEP_NAME,
     _ZOPEFOUNDATION_ZOPE_INTERFACE_DEP_NAME,
     _TWISTED_CONSTANTLY_DEP_NAME,
+    'io_bazel_rules_go',
 ]
 
 _GRPC_BAZEL_ONLY_DEPS = [
+    'com_google_absl',
+    'io_opencensus_cpp',
     _BAZEL_SKYLIB_DEP_NAME,
     _BAZEL_TOOLCHAINS_DEP_NAME,
     _TWISTED_TWISTED_DEP_NAME,
@@ -71,6 +75,7 @@ _GRPC_BAZEL_ONLY_DEPS = [
     _TWISTED_INCREMENTAL_DEP_NAME,
     _ZOPEFOUNDATION_ZOPE_INTERFACE_DEP_NAME,
     _TWISTED_CONSTANTLY_DEP_NAME,
+    'io_bazel_rules_go',
 ]
 
 

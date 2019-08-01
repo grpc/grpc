@@ -46,6 +46,8 @@ void grpc_lb_policy_pick_first_init(void);
 void grpc_lb_policy_pick_first_shutdown(void);
 void grpc_lb_policy_round_robin_init(void);
 void grpc_lb_policy_round_robin_shutdown(void);
+void grpc_client_idle_filter_init(void);
+void grpc_client_idle_filter_shutdown(void);
 void grpc_max_age_filter_init(void);
 void grpc_max_age_filter_shutdown(void);
 void grpc_message_size_filter_init(void);
@@ -82,6 +84,8 @@ void grpc_register_built_in_plugins(void) {
                        grpc_lb_policy_pick_first_shutdown);
   grpc_register_plugin(grpc_lb_policy_round_robin_init,
                        grpc_lb_policy_round_robin_shutdown);
+  grpc_register_plugin(grpc_client_idle_filter_init,
+                       grpc_client_idle_filter_shutdown);
   grpc_register_plugin(grpc_max_age_filter_init,
                        grpc_max_age_filter_shutdown);
   grpc_register_plugin(grpc_message_size_filter_init,

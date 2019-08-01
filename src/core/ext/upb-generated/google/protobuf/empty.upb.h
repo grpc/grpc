@@ -10,12 +10,12 @@
 #define GOOGLE_PROTOBUF_EMPTY_PROTO_UPB_H_
 
 #include "upb/generated_util.h"
-
 #include "upb/msg.h"
-
 #include "upb/decode.h"
 #include "upb/encode.h"
+
 #include "upb/port_def.inc"
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -24,22 +24,20 @@ struct google_protobuf_Empty;
 typedef struct google_protobuf_Empty google_protobuf_Empty;
 extern const upb_msglayout google_protobuf_Empty_msginit;
 
-/* Enums */
-
 
 /* google.protobuf.Empty */
 
 UPB_INLINE google_protobuf_Empty *google_protobuf_Empty_new(upb_arena *arena) {
   return (google_protobuf_Empty *)upb_msg_new(&google_protobuf_Empty_msginit, arena);
 }
-UPB_INLINE google_protobuf_Empty *google_protobuf_Empty_parsenew(upb_strview buf, upb_arena *arena) {
+UPB_INLINE google_protobuf_Empty *google_protobuf_Empty_parse(const char *buf, size_t size,
+                        upb_arena *arena) {
   google_protobuf_Empty *ret = google_protobuf_Empty_new(arena);
-  return (ret && upb_decode(buf, ret, &google_protobuf_Empty_msginit)) ? ret : NULL;
+  return (ret && upb_decode(buf, size, ret, &google_protobuf_Empty_msginit, arena)) ? ret : NULL;
 }
 UPB_INLINE char *google_protobuf_Empty_serialize(const google_protobuf_Empty *msg, upb_arena *arena, size_t *len) {
   return upb_encode(msg, &google_protobuf_Empty_msginit, arena, len);
 }
-
 
 
 

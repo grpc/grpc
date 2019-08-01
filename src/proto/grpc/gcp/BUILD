@@ -1,5 +1,4 @@
-#!/bin/sh
-# Copyright 2018 gRPC authors.
+# Copyright 2019 gRPC authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -13,20 +12,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# Builds an experimental .unitypackage file to be imported into Unity projects.
+licenses(["notice"])  # Apache v2
 
-set -ex
-
-cd "$(dirname "$0")/.."
-
-dotnet restore Grpc.sln
-
-mkdir -p GrpcUnity
-dotnet build --configuration Release --framework net45 Grpc.Core --output ../GrpcUnity
-
-#TODO: add ThirdParty/Grpc.Core:
-# - assembly
-# - native libraries (mac dylib need to be renamed to grpc_csharp_ext.bundle)
-
-#TODO: add ThirdParty/Grpc.Tools:
-# - protoc and grpc plugin
+proto_library(
+    name = "alts_handshaker_proto",
+    srcs = [
+        "altscontext.proto",
+        "handshaker.proto",
+        "transport_security_common.proto",
+    ],
+    visibility = ["//visibility:public"],
+)

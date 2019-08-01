@@ -595,6 +595,9 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 add_dependencies(buildtests_cxx bm_pollset)
 endif()
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
+add_dependencies(buildtests_cxx bm_threadpool)
+endif()
+if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 add_dependencies(buildtests_cxx bm_timer)
 endif()
 add_dependencies(buildtests_cxx byte_stream_test)
@@ -1326,6 +1329,7 @@ add_library(grpc
   src/core/ext/filters/client_channel/resolver/dns/native/dns_resolver.cc
   src/core/ext/filters/client_channel/resolver/sockaddr/sockaddr_resolver.cc
   src/core/ext/filters/census/grpc_context.cc
+  src/core/ext/filters/client_idle/client_idle_filter.cc
   src/core/ext/filters/max_age/max_age_filter.cc
   src/core/ext/filters/message_size/message_size_filter.cc
   src/core/ext/filters/http/client_authority_filter.cc
@@ -1433,6 +1437,7 @@ endif()
 
 
 add_library(grpc_cronet
+  src/core/ext/transport/cronet/plugin_registry/grpc_cronet_plugin_registry.cc
   src/core/lib/surface/init.cc
   src/core/lib/avl/avl.cc
   src/core/lib/backoff/backoff.cc
@@ -1734,7 +1739,6 @@ add_library(grpc_cronet
   src/core/tsi/ssl/session_cache/ssl_session_openssl.cc
   src/core/tsi/ssl_transport_security.cc
   src/core/tsi/transport_security_grpc.cc
-  src/core/plugin_registry/grpc_cronet_plugin_registry.cc
 )
 
 if(WIN32 AND MSVC)
@@ -2757,6 +2761,7 @@ add_library(grpc_unsecure
   src/core/ext/filters/client_channel/lb_policy/pick_first/pick_first.cc
   src/core/ext/filters/client_channel/lb_policy/round_robin/round_robin.cc
   src/core/ext/filters/census/grpc_context.cc
+  src/core/ext/filters/client_idle/client_idle_filter.cc
   src/core/ext/filters/max_age/max_age_filter.cc
   src/core/ext/filters/message_size/message_size_filter.cc
   src/core/ext/filters/http/client_authority_filter.cc
@@ -3471,585 +3476,6 @@ target_link_libraries(grpc++_core_stats
 endif (gRPC_BUILD_CODEGEN)
 
 endif (gRPC_BUILD_TESTS)
-
-add_library(grpc++_cronet
-  src/cpp/client/cronet_credentials.cc
-  src/cpp/client/insecure_credentials.cc
-  src/cpp/common/insecure_create_auth_context.cc
-  src/cpp/server/insecure_server_credentials.cc
-  src/cpp/client/channel_cc.cc
-  src/cpp/client/client_context.cc
-  src/cpp/client/client_interceptor.cc
-  src/cpp/client/create_channel.cc
-  src/cpp/client/create_channel_internal.cc
-  src/cpp/client/create_channel_posix.cc
-  src/cpp/client/credentials_cc.cc
-  src/cpp/client/generic_stub.cc
-  src/cpp/common/alarm.cc
-  src/cpp/common/channel_arguments.cc
-  src/cpp/common/channel_filter.cc
-  src/cpp/common/completion_queue_cc.cc
-  src/cpp/common/core_codegen.cc
-  src/cpp/common/resource_quota_cc.cc
-  src/cpp/common/rpc_method.cc
-  src/cpp/common/validate_service_config.cc
-  src/cpp/common/version_cc.cc
-  src/cpp/server/async_generic_service.cc
-  src/cpp/server/channel_argument_option.cc
-  src/cpp/server/create_default_thread_pool.cc
-  src/cpp/server/dynamic_thread_pool.cc
-  src/cpp/server/external_connection_acceptor_impl.cc
-  src/cpp/server/health/default_health_check_service.cc
-  src/cpp/server/health/health_check_service.cc
-  src/cpp/server/health/health_check_service_server_builder_option.cc
-  src/cpp/server/server_builder.cc
-  src/cpp/server/server_cc.cc
-  src/cpp/server/server_context.cc
-  src/cpp/server/server_credentials.cc
-  src/cpp/server/server_posix.cc
-  src/cpp/thread_manager/thread_manager.cc
-  src/cpp/util/byte_buffer_cc.cc
-  src/cpp/util/status.cc
-  src/cpp/util/string_ref.cc
-  src/cpp/util/time_cc.cc
-  src/core/ext/filters/client_channel/health/health.pb.c
-  third_party/nanopb/pb_common.c
-  third_party/nanopb/pb_decode.c
-  third_party/nanopb/pb_encode.c
-  src/cpp/codegen/codegen_init.cc
-  src/core/ext/transport/chttp2/client/insecure/channel_create.cc
-  src/core/ext/transport/chttp2/client/insecure/channel_create_posix.cc
-  src/core/ext/transport/chttp2/client/authority.cc
-  src/core/ext/transport/chttp2/client/chttp2_connector.cc
-  src/core/ext/transport/chttp2/transport/bin_decoder.cc
-  src/core/ext/transport/chttp2/transport/bin_encoder.cc
-  src/core/ext/transport/chttp2/transport/chttp2_plugin.cc
-  src/core/ext/transport/chttp2/transport/chttp2_transport.cc
-  src/core/ext/transport/chttp2/transport/context_list.cc
-  src/core/ext/transport/chttp2/transport/flow_control.cc
-  src/core/ext/transport/chttp2/transport/frame_data.cc
-  src/core/ext/transport/chttp2/transport/frame_goaway.cc
-  src/core/ext/transport/chttp2/transport/frame_ping.cc
-  src/core/ext/transport/chttp2/transport/frame_rst_stream.cc
-  src/core/ext/transport/chttp2/transport/frame_settings.cc
-  src/core/ext/transport/chttp2/transport/frame_window_update.cc
-  src/core/ext/transport/chttp2/transport/hpack_encoder.cc
-  src/core/ext/transport/chttp2/transport/hpack_parser.cc
-  src/core/ext/transport/chttp2/transport/hpack_table.cc
-  src/core/ext/transport/chttp2/transport/http2_settings.cc
-  src/core/ext/transport/chttp2/transport/huffsyms.cc
-  src/core/ext/transport/chttp2/transport/incoming_metadata.cc
-  src/core/ext/transport/chttp2/transport/parsing.cc
-  src/core/ext/transport/chttp2/transport/stream_lists.cc
-  src/core/ext/transport/chttp2/transport/stream_map.cc
-  src/core/ext/transport/chttp2/transport/varint.cc
-  src/core/ext/transport/chttp2/transport/writing.cc
-  src/core/lib/avl/avl.cc
-  src/core/lib/backoff/backoff.cc
-  src/core/lib/channel/channel_args.cc
-  src/core/lib/channel/channel_stack.cc
-  src/core/lib/channel/channel_stack_builder.cc
-  src/core/lib/channel/channel_trace.cc
-  src/core/lib/channel/channelz.cc
-  src/core/lib/channel/channelz_registry.cc
-  src/core/lib/channel/connected_channel.cc
-  src/core/lib/channel/handshaker.cc
-  src/core/lib/channel/handshaker_registry.cc
-  src/core/lib/channel/status_util.cc
-  src/core/lib/compression/compression.cc
-  src/core/lib/compression/compression_args.cc
-  src/core/lib/compression/compression_internal.cc
-  src/core/lib/compression/message_compress.cc
-  src/core/lib/compression/stream_compression.cc
-  src/core/lib/compression/stream_compression_gzip.cc
-  src/core/lib/compression/stream_compression_identity.cc
-  src/core/lib/debug/stats.cc
-  src/core/lib/debug/stats_data.cc
-  src/core/lib/http/format_request.cc
-  src/core/lib/http/httpcli.cc
-  src/core/lib/http/parser.cc
-  src/core/lib/iomgr/buffer_list.cc
-  src/core/lib/iomgr/call_combiner.cc
-  src/core/lib/iomgr/cfstream_handle.cc
-  src/core/lib/iomgr/combiner.cc
-  src/core/lib/iomgr/endpoint.cc
-  src/core/lib/iomgr/endpoint_cfstream.cc
-  src/core/lib/iomgr/endpoint_pair_posix.cc
-  src/core/lib/iomgr/endpoint_pair_uv.cc
-  src/core/lib/iomgr/endpoint_pair_windows.cc
-  src/core/lib/iomgr/error.cc
-  src/core/lib/iomgr/error_cfstream.cc
-  src/core/lib/iomgr/ev_epoll1_linux.cc
-  src/core/lib/iomgr/ev_epollex_linux.cc
-  src/core/lib/iomgr/ev_poll_posix.cc
-  src/core/lib/iomgr/ev_posix.cc
-  src/core/lib/iomgr/ev_windows.cc
-  src/core/lib/iomgr/exec_ctx.cc
-  src/core/lib/iomgr/executor.cc
-  src/core/lib/iomgr/executor/mpmcqueue.cc
-  src/core/lib/iomgr/executor/threadpool.cc
-  src/core/lib/iomgr/fork_posix.cc
-  src/core/lib/iomgr/fork_windows.cc
-  src/core/lib/iomgr/gethostname_fallback.cc
-  src/core/lib/iomgr/gethostname_host_name_max.cc
-  src/core/lib/iomgr/gethostname_sysconf.cc
-  src/core/lib/iomgr/grpc_if_nametoindex_posix.cc
-  src/core/lib/iomgr/grpc_if_nametoindex_unsupported.cc
-  src/core/lib/iomgr/internal_errqueue.cc
-  src/core/lib/iomgr/iocp_windows.cc
-  src/core/lib/iomgr/iomgr.cc
-  src/core/lib/iomgr/iomgr_custom.cc
-  src/core/lib/iomgr/iomgr_internal.cc
-  src/core/lib/iomgr/iomgr_posix.cc
-  src/core/lib/iomgr/iomgr_posix_cfstream.cc
-  src/core/lib/iomgr/iomgr_uv.cc
-  src/core/lib/iomgr/iomgr_windows.cc
-  src/core/lib/iomgr/is_epollexclusive_available.cc
-  src/core/lib/iomgr/load_file.cc
-  src/core/lib/iomgr/lockfree_event.cc
-  src/core/lib/iomgr/polling_entity.cc
-  src/core/lib/iomgr/pollset.cc
-  src/core/lib/iomgr/pollset_custom.cc
-  src/core/lib/iomgr/pollset_set.cc
-  src/core/lib/iomgr/pollset_set_custom.cc
-  src/core/lib/iomgr/pollset_set_windows.cc
-  src/core/lib/iomgr/pollset_uv.cc
-  src/core/lib/iomgr/pollset_windows.cc
-  src/core/lib/iomgr/resolve_address.cc
-  src/core/lib/iomgr/resolve_address_custom.cc
-  src/core/lib/iomgr/resolve_address_posix.cc
-  src/core/lib/iomgr/resolve_address_windows.cc
-  src/core/lib/iomgr/resource_quota.cc
-  src/core/lib/iomgr/sockaddr_utils.cc
-  src/core/lib/iomgr/socket_factory_posix.cc
-  src/core/lib/iomgr/socket_mutator.cc
-  src/core/lib/iomgr/socket_utils_common_posix.cc
-  src/core/lib/iomgr/socket_utils_linux.cc
-  src/core/lib/iomgr/socket_utils_posix.cc
-  src/core/lib/iomgr/socket_utils_uv.cc
-  src/core/lib/iomgr/socket_utils_windows.cc
-  src/core/lib/iomgr/socket_windows.cc
-  src/core/lib/iomgr/tcp_client.cc
-  src/core/lib/iomgr/tcp_client_cfstream.cc
-  src/core/lib/iomgr/tcp_client_custom.cc
-  src/core/lib/iomgr/tcp_client_posix.cc
-  src/core/lib/iomgr/tcp_client_windows.cc
-  src/core/lib/iomgr/tcp_custom.cc
-  src/core/lib/iomgr/tcp_posix.cc
-  src/core/lib/iomgr/tcp_server.cc
-  src/core/lib/iomgr/tcp_server_custom.cc
-  src/core/lib/iomgr/tcp_server_posix.cc
-  src/core/lib/iomgr/tcp_server_utils_posix_common.cc
-  src/core/lib/iomgr/tcp_server_utils_posix_ifaddrs.cc
-  src/core/lib/iomgr/tcp_server_utils_posix_noifaddrs.cc
-  src/core/lib/iomgr/tcp_server_windows.cc
-  src/core/lib/iomgr/tcp_uv.cc
-  src/core/lib/iomgr/tcp_windows.cc
-  src/core/lib/iomgr/time_averaged_stats.cc
-  src/core/lib/iomgr/timer.cc
-  src/core/lib/iomgr/timer_custom.cc
-  src/core/lib/iomgr/timer_generic.cc
-  src/core/lib/iomgr/timer_heap.cc
-  src/core/lib/iomgr/timer_manager.cc
-  src/core/lib/iomgr/timer_uv.cc
-  src/core/lib/iomgr/udp_server.cc
-  src/core/lib/iomgr/unix_sockets_posix.cc
-  src/core/lib/iomgr/unix_sockets_posix_noop.cc
-  src/core/lib/iomgr/wakeup_fd_eventfd.cc
-  src/core/lib/iomgr/wakeup_fd_nospecial.cc
-  src/core/lib/iomgr/wakeup_fd_pipe.cc
-  src/core/lib/iomgr/wakeup_fd_posix.cc
-  src/core/lib/json/json.cc
-  src/core/lib/json/json_reader.cc
-  src/core/lib/json/json_string.cc
-  src/core/lib/json/json_writer.cc
-  src/core/lib/slice/b64.cc
-  src/core/lib/slice/percent_encoding.cc
-  src/core/lib/slice/slice.cc
-  src/core/lib/slice/slice_buffer.cc
-  src/core/lib/slice/slice_intern.cc
-  src/core/lib/slice/slice_string_helpers.cc
-  src/core/lib/surface/api_trace.cc
-  src/core/lib/surface/byte_buffer.cc
-  src/core/lib/surface/byte_buffer_reader.cc
-  src/core/lib/surface/call.cc
-  src/core/lib/surface/call_details.cc
-  src/core/lib/surface/call_log_batch.cc
-  src/core/lib/surface/channel.cc
-  src/core/lib/surface/channel_init.cc
-  src/core/lib/surface/channel_ping.cc
-  src/core/lib/surface/channel_stack_type.cc
-  src/core/lib/surface/completion_queue.cc
-  src/core/lib/surface/completion_queue_factory.cc
-  src/core/lib/surface/event_string.cc
-  src/core/lib/surface/lame_client.cc
-  src/core/lib/surface/metadata_array.cc
-  src/core/lib/surface/server.cc
-  src/core/lib/surface/validate_metadata.cc
-  src/core/lib/surface/version.cc
-  src/core/lib/transport/bdp_estimator.cc
-  src/core/lib/transport/byte_stream.cc
-  src/core/lib/transport/connectivity_state.cc
-  src/core/lib/transport/error_utils.cc
-  src/core/lib/transport/metadata.cc
-  src/core/lib/transport/metadata_batch.cc
-  src/core/lib/transport/pid_controller.cc
-  src/core/lib/transport/static_metadata.cc
-  src/core/lib/transport/status_conversion.cc
-  src/core/lib/transport/status_metadata.cc
-  src/core/lib/transport/timeout_encoding.cc
-  src/core/lib/transport/transport.cc
-  src/core/lib/transport/transport_op_string.cc
-  src/core/lib/uri/uri_parser.cc
-  src/core/lib/debug/trace.cc
-  src/core/ext/transport/chttp2/alpn/alpn.cc
-  src/core/ext/filters/http/client/http_client_filter.cc
-  src/core/ext/filters/http/http_filters_plugin.cc
-  src/core/ext/filters/http/message_compress/message_compress_filter.cc
-  src/core/ext/filters/http/server/http_server_filter.cc
-  src/core/ext/filters/client_channel/backup_poller.cc
-  src/core/ext/filters/client_channel/channel_connectivity.cc
-  src/core/ext/filters/client_channel/client_channel.cc
-  src/core/ext/filters/client_channel/client_channel_channelz.cc
-  src/core/ext/filters/client_channel/client_channel_factory.cc
-  src/core/ext/filters/client_channel/client_channel_plugin.cc
-  src/core/ext/filters/client_channel/connector.cc
-  src/core/ext/filters/client_channel/global_subchannel_pool.cc
-  src/core/ext/filters/client_channel/health/health_check_client.cc
-  src/core/ext/filters/client_channel/http_connect_handshaker.cc
-  src/core/ext/filters/client_channel/http_proxy.cc
-  src/core/ext/filters/client_channel/lb_policy.cc
-  src/core/ext/filters/client_channel/lb_policy_registry.cc
-  src/core/ext/filters/client_channel/local_subchannel_pool.cc
-  src/core/ext/filters/client_channel/parse_address.cc
-  src/core/ext/filters/client_channel/proxy_mapper.cc
-  src/core/ext/filters/client_channel/proxy_mapper_registry.cc
-  src/core/ext/filters/client_channel/resolver.cc
-  src/core/ext/filters/client_channel/resolver_registry.cc
-  src/core/ext/filters/client_channel/resolver_result_parsing.cc
-  src/core/ext/filters/client_channel/resolving_lb_policy.cc
-  src/core/ext/filters/client_channel/retry_throttle.cc
-  src/core/ext/filters/client_channel/server_address.cc
-  src/core/ext/filters/client_channel/service_config.cc
-  src/core/ext/filters/client_channel/subchannel.cc
-  src/core/ext/filters/client_channel/subchannel_pool_interface.cc
-  src/core/ext/filters/deadline/deadline_filter.cc
-  src/core/ext/transport/chttp2/server/insecure/server_chttp2.cc
-  src/core/ext/transport/chttp2/server/insecure/server_chttp2_posix.cc
-  src/core/ext/transport/chttp2/server/chttp2_server.cc
-  src/core/ext/filters/census/grpc_context.cc
-)
-
-if(WIN32 AND MSVC)
-  set_target_properties(grpc++_cronet PROPERTIES COMPILE_PDB_NAME "grpc++_cronet"
-    COMPILE_PDB_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}"
-  )
-  if (gRPC_INSTALL)
-    install(FILES ${CMAKE_CURRENT_BINARY_DIR}/grpc++_cronet.pdb
-      DESTINATION ${gRPC_INSTALL_LIBDIR} OPTIONAL
-    )
-  endif()
-endif()
-
-
-target_include_directories(grpc++_cronet
-  PUBLIC $<INSTALL_INTERFACE:${gRPC_INSTALL_INCLUDEDIR}> $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
-  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
-  PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
-  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
-  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
-  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
-  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
-  PRIVATE ${_gRPC_PROTO_GENS_DIR}
-)
-target_link_libraries(grpc++_cronet
-  ${_gRPC_BASELIB_LIBRARIES}
-  ${_gRPC_SSL_LIBRARIES}
-  ${_gRPC_PROTOBUF_LIBRARIES}
-  ${_gRPC_ALLTARGETS_LIBRARIES}
-  gpr
-  grpc_cronet
-  grpc
-)
-if (_gRPC_PLATFORM_IOS OR _gRPC_PLATFORM_MAC)
-  target_link_libraries(grpc++_cronet "-framework CoreFoundation")
-endif()
-
-foreach(_hdr
-  include/grpc++/alarm.h
-  include/grpc++/channel.h
-  include/grpc++/client_context.h
-  include/grpc++/completion_queue.h
-  include/grpc++/create_channel.h
-  include/grpc++/create_channel_posix.h
-  include/grpc++/ext/health_check_service_server_builder_option.h
-  include/grpc++/generic/async_generic_service.h
-  include/grpc++/generic/generic_stub.h
-  include/grpc++/grpc++.h
-  include/grpc++/health_check_service_interface.h
-  include/grpc++/impl/call.h
-  include/grpc++/impl/channel_argument_option.h
-  include/grpc++/impl/client_unary_call.h
-  include/grpc++/impl/codegen/core_codegen.h
-  include/grpc++/impl/grpc_library.h
-  include/grpc++/impl/method_handler_impl.h
-  include/grpc++/impl/rpc_method.h
-  include/grpc++/impl/rpc_service_method.h
-  include/grpc++/impl/serialization_traits.h
-  include/grpc++/impl/server_builder_option.h
-  include/grpc++/impl/server_builder_plugin.h
-  include/grpc++/impl/server_initializer.h
-  include/grpc++/impl/service_type.h
-  include/grpc++/resource_quota.h
-  include/grpc++/security/auth_context.h
-  include/grpc++/security/auth_metadata_processor.h
-  include/grpc++/security/credentials.h
-  include/grpc++/security/server_credentials.h
-  include/grpc++/server.h
-  include/grpc++/server_builder.h
-  include/grpc++/server_context.h
-  include/grpc++/server_posix.h
-  include/grpc++/support/async_stream.h
-  include/grpc++/support/async_unary_call.h
-  include/grpc++/support/byte_buffer.h
-  include/grpc++/support/channel_arguments.h
-  include/grpc++/support/config.h
-  include/grpc++/support/slice.h
-  include/grpc++/support/status.h
-  include/grpc++/support/status_code_enum.h
-  include/grpc++/support/string_ref.h
-  include/grpc++/support/stub_options.h
-  include/grpc++/support/sync_stream.h
-  include/grpc++/support/time.h
-  include/grpcpp/alarm.h
-  include/grpcpp/alarm_impl.h
-  include/grpcpp/channel.h
-  include/grpcpp/channel_impl.h
-  include/grpcpp/client_context.h
-  include/grpcpp/completion_queue.h
-  include/grpcpp/completion_queue_impl.h
-  include/grpcpp/create_channel.h
-  include/grpcpp/create_channel_impl.h
-  include/grpcpp/create_channel_posix.h
-  include/grpcpp/create_channel_posix_impl.h
-  include/grpcpp/ext/health_check_service_server_builder_option.h
-  include/grpcpp/generic/async_generic_service.h
-  include/grpcpp/generic/generic_stub.h
-  include/grpcpp/generic/generic_stub_impl.h
-  include/grpcpp/grpcpp.h
-  include/grpcpp/health_check_service_interface.h
-  include/grpcpp/health_check_service_interface_impl.h
-  include/grpcpp/impl/call.h
-  include/grpcpp/impl/channel_argument_option.h
-  include/grpcpp/impl/client_unary_call.h
-  include/grpcpp/impl/codegen/core_codegen.h
-  include/grpcpp/impl/grpc_library.h
-  include/grpcpp/impl/method_handler_impl.h
-  include/grpcpp/impl/rpc_method.h
-  include/grpcpp/impl/rpc_service_method.h
-  include/grpcpp/impl/serialization_traits.h
-  include/grpcpp/impl/server_builder_option.h
-  include/grpcpp/impl/server_builder_option_impl.h
-  include/grpcpp/impl/server_builder_plugin.h
-  include/grpcpp/impl/server_initializer.h
-  include/grpcpp/impl/server_initializer_impl.h
-  include/grpcpp/impl/service_type.h
-  include/grpcpp/resource_quota.h
-  include/grpcpp/resource_quota_impl.h
-  include/grpcpp/security/auth_context.h
-  include/grpcpp/security/auth_metadata_processor.h
-  include/grpcpp/security/auth_metadata_processor_impl.h
-  include/grpcpp/security/credentials.h
-  include/grpcpp/security/credentials_impl.h
-  include/grpcpp/security/server_credentials.h
-  include/grpcpp/security/server_credentials_impl.h
-  include/grpcpp/server.h
-  include/grpcpp/server_builder.h
-  include/grpcpp/server_builder_impl.h
-  include/grpcpp/server_context.h
-  include/grpcpp/server_impl.h
-  include/grpcpp/server_posix.h
-  include/grpcpp/server_posix_impl.h
-  include/grpcpp/support/async_stream.h
-  include/grpcpp/support/async_stream_impl.h
-  include/grpcpp/support/async_unary_call.h
-  include/grpcpp/support/async_unary_call_impl.h
-  include/grpcpp/support/byte_buffer.h
-  include/grpcpp/support/channel_arguments.h
-  include/grpcpp/support/channel_arguments_impl.h
-  include/grpcpp/support/client_callback.h
-  include/grpcpp/support/client_callback_impl.h
-  include/grpcpp/support/client_interceptor.h
-  include/grpcpp/support/config.h
-  include/grpcpp/support/interceptor.h
-  include/grpcpp/support/message_allocator.h
-  include/grpcpp/support/proto_buffer_reader.h
-  include/grpcpp/support/proto_buffer_writer.h
-  include/grpcpp/support/server_callback.h
-  include/grpcpp/support/server_callback_impl.h
-  include/grpcpp/support/server_interceptor.h
-  include/grpcpp/support/slice.h
-  include/grpcpp/support/status.h
-  include/grpcpp/support/status_code_enum.h
-  include/grpcpp/support/string_ref.h
-  include/grpcpp/support/stub_options.h
-  include/grpcpp/support/sync_stream.h
-  include/grpcpp/support/sync_stream_impl.h
-  include/grpcpp/support/time.h
-  include/grpcpp/support/validate_service_config.h
-  include/grpc/support/alloc.h
-  include/grpc/support/atm.h
-  include/grpc/support/atm_gcc_atomic.h
-  include/grpc/support/atm_gcc_sync.h
-  include/grpc/support/atm_windows.h
-  include/grpc/support/cpu.h
-  include/grpc/support/log.h
-  include/grpc/support/log_windows.h
-  include/grpc/support/port_platform.h
-  include/grpc/support/string_util.h
-  include/grpc/support/sync.h
-  include/grpc/support/sync_custom.h
-  include/grpc/support/sync_generic.h
-  include/grpc/support/sync_posix.h
-  include/grpc/support/sync_windows.h
-  include/grpc/support/thd_id.h
-  include/grpc/support/time.h
-  include/grpc/impl/codegen/atm.h
-  include/grpc/impl/codegen/atm_gcc_atomic.h
-  include/grpc/impl/codegen/atm_gcc_sync.h
-  include/grpc/impl/codegen/atm_windows.h
-  include/grpc/impl/codegen/fork.h
-  include/grpc/impl/codegen/gpr_slice.h
-  include/grpc/impl/codegen/gpr_types.h
-  include/grpc/impl/codegen/log.h
-  include/grpc/impl/codegen/port_platform.h
-  include/grpc/impl/codegen/sync.h
-  include/grpc/impl/codegen/sync_custom.h
-  include/grpc/impl/codegen/sync_generic.h
-  include/grpc/impl/codegen/sync_posix.h
-  include/grpc/impl/codegen/sync_windows.h
-  include/grpc/byte_buffer.h
-  include/grpc/byte_buffer_reader.h
-  include/grpc/compression.h
-  include/grpc/fork.h
-  include/grpc/grpc.h
-  include/grpc/grpc_posix.h
-  include/grpc/grpc_security_constants.h
-  include/grpc/load_reporting.h
-  include/grpc/slice.h
-  include/grpc/slice_buffer.h
-  include/grpc/status.h
-  include/grpc/support/workaround_list.h
-  include/grpc/impl/codegen/byte_buffer.h
-  include/grpc/impl/codegen/byte_buffer_reader.h
-  include/grpc/impl/codegen/compression_types.h
-  include/grpc/impl/codegen/connectivity_state.h
-  include/grpc/impl/codegen/grpc_types.h
-  include/grpc/impl/codegen/propagation_bits.h
-  include/grpc/impl/codegen/slice.h
-  include/grpc/impl/codegen/status.h
-  include/grpc++/impl/codegen/async_stream.h
-  include/grpc++/impl/codegen/async_unary_call.h
-  include/grpc++/impl/codegen/byte_buffer.h
-  include/grpc++/impl/codegen/call.h
-  include/grpc++/impl/codegen/call_hook.h
-  include/grpc++/impl/codegen/channel_interface.h
-  include/grpc++/impl/codegen/client_context.h
-  include/grpc++/impl/codegen/client_unary_call.h
-  include/grpc++/impl/codegen/completion_queue.h
-  include/grpc++/impl/codegen/completion_queue_tag.h
-  include/grpc++/impl/codegen/config.h
-  include/grpc++/impl/codegen/core_codegen_interface.h
-  include/grpc++/impl/codegen/create_auth_context.h
-  include/grpc++/impl/codegen/grpc_library.h
-  include/grpc++/impl/codegen/metadata_map.h
-  include/grpc++/impl/codegen/method_handler_impl.h
-  include/grpc++/impl/codegen/rpc_method.h
-  include/grpc++/impl/codegen/rpc_service_method.h
-  include/grpc++/impl/codegen/security/auth_context.h
-  include/grpc++/impl/codegen/serialization_traits.h
-  include/grpc++/impl/codegen/server_context.h
-  include/grpc++/impl/codegen/server_interface.h
-  include/grpc++/impl/codegen/service_type.h
-  include/grpc++/impl/codegen/slice.h
-  include/grpc++/impl/codegen/status.h
-  include/grpc++/impl/codegen/status_code_enum.h
-  include/grpc++/impl/codegen/string_ref.h
-  include/grpc++/impl/codegen/stub_options.h
-  include/grpc++/impl/codegen/sync_stream.h
-  include/grpc++/impl/codegen/time.h
-  include/grpcpp/impl/codegen/async_generic_service.h
-  include/grpcpp/impl/codegen/async_stream.h
-  include/grpcpp/impl/codegen/async_stream_impl.h
-  include/grpcpp/impl/codegen/async_unary_call.h
-  include/grpcpp/impl/codegen/async_unary_call_impl.h
-  include/grpcpp/impl/codegen/byte_buffer.h
-  include/grpcpp/impl/codegen/call.h
-  include/grpcpp/impl/codegen/call_hook.h
-  include/grpcpp/impl/codegen/call_op_set.h
-  include/grpcpp/impl/codegen/call_op_set_interface.h
-  include/grpcpp/impl/codegen/callback_common.h
-  include/grpcpp/impl/codegen/channel_interface.h
-  include/grpcpp/impl/codegen/client_callback.h
-  include/grpcpp/impl/codegen/client_callback_impl.h
-  include/grpcpp/impl/codegen/client_context.h
-  include/grpcpp/impl/codegen/client_context_impl.h
-  include/grpcpp/impl/codegen/client_interceptor.h
-  include/grpcpp/impl/codegen/client_unary_call.h
-  include/grpcpp/impl/codegen/completion_queue.h
-  include/grpcpp/impl/codegen/completion_queue_impl.h
-  include/grpcpp/impl/codegen/completion_queue_tag.h
-  include/grpcpp/impl/codegen/config.h
-  include/grpcpp/impl/codegen/core_codegen_interface.h
-  include/grpcpp/impl/codegen/create_auth_context.h
-  include/grpcpp/impl/codegen/grpc_library.h
-  include/grpcpp/impl/codegen/intercepted_channel.h
-  include/grpcpp/impl/codegen/interceptor.h
-  include/grpcpp/impl/codegen/interceptor_common.h
-  include/grpcpp/impl/codegen/message_allocator.h
-  include/grpcpp/impl/codegen/metadata_map.h
-  include/grpcpp/impl/codegen/method_handler_impl.h
-  include/grpcpp/impl/codegen/rpc_method.h
-  include/grpcpp/impl/codegen/rpc_service_method.h
-  include/grpcpp/impl/codegen/security/auth_context.h
-  include/grpcpp/impl/codegen/serialization_traits.h
-  include/grpcpp/impl/codegen/server_callback.h
-  include/grpcpp/impl/codegen/server_callback_impl.h
-  include/grpcpp/impl/codegen/server_context.h
-  include/grpcpp/impl/codegen/server_context_impl.h
-  include/grpcpp/impl/codegen/server_interceptor.h
-  include/grpcpp/impl/codegen/server_interface.h
-  include/grpcpp/impl/codegen/service_type.h
-  include/grpcpp/impl/codegen/slice.h
-  include/grpcpp/impl/codegen/status.h
-  include/grpcpp/impl/codegen/status_code_enum.h
-  include/grpcpp/impl/codegen/string_ref.h
-  include/grpcpp/impl/codegen/stub_options.h
-  include/grpcpp/impl/codegen/sync_stream.h
-  include/grpcpp/impl/codegen/sync_stream_impl.h
-  include/grpcpp/impl/codegen/time.h
-  include/grpcpp/impl/codegen/sync.h
-  include/grpc/census.h
-)
-  string(REPLACE "include/" "" _path ${_hdr})
-  get_filename_component(_path ${_path} PATH)
-  install(FILES ${_hdr}
-    DESTINATION "${gRPC_INSTALL_INCLUDEDIR}/${_path}"
-  )
-endforeach()
-
-
-if (gRPC_INSTALL)
-  install(TARGETS grpc++_cronet EXPORT gRPCTargets
-    RUNTIME DESTINATION ${gRPC_INSTALL_BINDIR}
-    LIBRARY DESTINATION ${gRPC_INSTALL_LIBDIR}
-    ARCHIVE DESTINATION ${gRPC_INSTALL_LIBDIR}
-  )
-endif()
-
 
 if (gRPC_BUILD_CODEGEN)
 add_library(grpc++_error_details
@@ -12435,6 +11861,51 @@ target_include_directories(bm_pollset
 )
 
 target_link_libraries(bm_pollset
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  grpc_benchmark
+  ${_gRPC_BENCHMARK_LIBRARIES}
+  grpc++_test_util_unsecure
+  grpc_test_util_unsecure
+  grpc++_unsecure
+  grpc_unsecure
+  gpr
+  grpc++_test_config
+  ${_gRPC_GFLAGS_LIBRARIES}
+)
+
+
+endif()
+endif (gRPC_BUILD_TESTS)
+if (gRPC_BUILD_TESTS)
+if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
+
+add_executable(bm_threadpool
+  test/cpp/microbenchmarks/bm_threadpool.cc
+  third_party/googletest/googletest/src/gtest-all.cc
+  third_party/googletest/googlemock/src/gmock-all.cc
+)
+
+
+target_include_directories(bm_threadpool
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
+  PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
+  PRIVATE third_party/googletest/googletest/include
+  PRIVATE third_party/googletest/googletest
+  PRIVATE third_party/googletest/googlemock/include
+  PRIVATE third_party/googletest/googlemock
+  PRIVATE ${_gRPC_PROTO_GENS_DIR}
+)
+
+target_link_libraries(bm_threadpool
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_benchmark
