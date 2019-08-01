@@ -3,14 +3,13 @@
 	archiveVersion = 1;
 	classes = {
 	};
-	objectVersion = 51;
+	objectVersion = 48;
 	objects = {
 
 /* Begin PBXBuildFile section */
 		ABB17D3A22D8FB8B00C26D6E /* AppDelegate.m in Sources */ = {isa = PBXBuildFile; fileRef = ABB17D3922D8FB8B00C26D6E /* AppDelegate.m */; };
 		ABB17D3D22D8FB8B00C26D6E /* ViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = ABB17D3C22D8FB8B00C26D6E /* ViewController.m */; };
 		ABB17D4022D8FB8B00C26D6E /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = ABB17D3E22D8FB8B00C26D6E /* Main.storyboard */; };
-		ABB17D4222D8FB8D00C26D6E /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = ABB17D4122D8FB8D00C26D6E /* Assets.xcassets */; };
 		ABB17D4522D8FB8D00C26D6E /* main.m in Sources */ = {isa = PBXBuildFile; fileRef = ABB17D4422D8FB8D00C26D6E /* main.m */; };
 		F9B775DB1DDCBD39DF92BFA8 /* libPods-tvOS-sample.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 40071025CBF9E79B9522398F /* libPods-tvOS-sample.a */; };
 /* End PBXBuildFile section */
@@ -24,7 +23,6 @@
 		ABB17D3B22D8FB8B00C26D6E /* ViewController.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = ViewController.h; sourceTree = "<group>"; };
 		ABB17D3C22D8FB8B00C26D6E /* ViewController.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = ViewController.m; sourceTree = "<group>"; };
 		ABB17D3F22D8FB8B00C26D6E /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/Main.storyboard; sourceTree = "<group>"; };
-		ABB17D4122D8FB8D00C26D6E /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		ABB17D4322D8FB8D00C26D6E /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		ABB17D4422D8FB8D00C26D6E /* main.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = main.m; sourceTree = "<group>"; };
 		D2D1C60CE9BD00C1371BC913 /* Pods-tvOS-sample.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-tvOS-sample.debug.xcconfig"; path = "Target Support Files/Pods-tvOS-sample/Pods-tvOS-sample.debug.xcconfig"; sourceTree = "<group>"; };
@@ -77,7 +75,6 @@
 				ABB17D3B22D8FB8B00C26D6E /* ViewController.h */,
 				ABB17D3C22D8FB8B00C26D6E /* ViewController.m */,
 				ABB17D3E22D8FB8B00C26D6E /* Main.storyboard */,
-				ABB17D4122D8FB8D00C26D6E /* Assets.xcassets */,
 				ABB17D4322D8FB8D00C26D6E /* Info.plist */,
 				ABB17D4422D8FB8D00C26D6E /* main.m */,
 			);
@@ -125,11 +122,12 @@
 				TargetAttributes = {
 					ABB17D3422D8FB8B00C26D6E = {
 						CreatedOnToolsVersion = 10.1;
+						ProvisioningStyle = Automatic;
 					};
 				};
 			};
 			buildConfigurationList = ABB17D3022D8FB8B00C26D6E /* Build configuration list for PBXProject "tvOS-sample" */;
-			compatibilityVersion = "Xcode 9.3";
+			compatibilityVersion = "Xcode 8.0";
 			developmentRegion = en;
 			hasScannedForEncodings = 0;
 			knownRegions = (
@@ -151,7 +149,6 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				ABB17D4222D8FB8D00C26D6E /* Assets.xcassets in Resources */,
 				ABB17D4022D8FB8B00C26D6E /* Main.storyboard in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -164,12 +161,13 @@
 			buildActionMask = 2147483647;
 			files = (
 			);
-			inputFileListPaths = (
-				"${PODS_ROOT}/Target Support Files/Pods-tvOS-sample/Pods-tvOS-sample-resources-${CONFIGURATION}-input-files.xcfilelist",
+			inputPaths = (
+				"${PODS_ROOT}/Target Support Files/Pods-tvOS-sample/Pods-tvOS-sample-resources.sh",
+				"${PODS_CONFIGURATION_BUILD_DIR}/gRPC/gRPCCertificates.bundle",
 			);
 			name = "[CP] Copy Pods Resources";
-			outputFileListPaths = (
-				"${PODS_ROOT}/Target Support Files/Pods-tvOS-sample/Pods-tvOS-sample-resources-${CONFIGURATION}-output-files.xcfilelist",
+			outputPaths = (
+				"${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/gRPCCertificates.bundle",
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
@@ -181,15 +179,11 @@
 			buildActionMask = 2147483647;
 			files = (
 			);
-			inputFileListPaths = (
-			);
 			inputPaths = (
 				"${PODS_PODFILE_DIR_PATH}/Podfile.lock",
 				"${PODS_ROOT}/Manifest.lock",
 			);
 			name = "[CP] Check Pods Manifest.lock";
-			outputFileListPaths = (
-			);
 			outputPaths = (
 				"$(DERIVED_FILE_DIR)/Pods-tvOS-sample-checkManifestLockResult.txt",
 			);
@@ -344,10 +338,7 @@
 				CODE_SIGN_STYLE = Automatic;
 				DEVELOPMENT_TEAM = 6T98ZJNPG5;
 				INFOPLIST_FILE = "tvOS-sample/Info.plist";
-				LD_RUNPATH_SEARCH_PATHS = (
-					"$(inherited)",
-					"@executable_path/Frameworks",
-				);
+				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks";
 				PRODUCT_BUNDLE_IDENTIFIER = "com.google.tvOS-grpc-sample";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				TARGETED_DEVICE_FAMILY = 3;
@@ -364,10 +355,7 @@
 				CODE_SIGN_STYLE = Automatic;
 				DEVELOPMENT_TEAM = 6T98ZJNPG5;
 				INFOPLIST_FILE = "tvOS-sample/Info.plist";
-				LD_RUNPATH_SEARCH_PATHS = (
-					"$(inherited)",
-					"@executable_path/Frameworks",
-				);
+				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks";
 				PRODUCT_BUNDLE_IDENTIFIER = "com.google.tvOS-grpc-sample";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				TARGETED_DEVICE_FAMILY = 3;

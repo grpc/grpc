@@ -3,7 +3,7 @@
 	archiveVersion = 1;
 	classes = {
 	};
-	objectVersion = 51;
+	objectVersion = 48;
 	objects = {
 
 /* Begin PBXBuildFile section */
@@ -138,8 +138,8 @@
 			isa = PBXGroup;
 			children = (
 				ABB17D5622D93BAB00C26D6E /* watchOS-sample */,
-				ABB17D6E22D93BAC00C26D6E /* watchOS-sample WatchKit App */,
-				ABB17D7D22D93BAC00C26D6E /* watchOS-sample-WatchKit-Extension */,
+				ABB17D6E22D93BAC00C26D6E /* WatchKit-App */,
+				ABB17D7D22D93BAC00C26D6E /* WatchKit-Extension */,
 				ABB17D5522D93BAB00C26D6E /* Products */,
 				2C4A0708747AAA7298F757DA /* Pods */,
 				FDB2CA47351660A961DBE458 /* Frameworks */,
@@ -172,17 +172,17 @@
 			path = "watchOS-sample";
 			sourceTree = "<group>";
 		};
-		ABB17D6E22D93BAC00C26D6E /* watchOS-sample WatchKit App */ = {
+		ABB17D6E22D93BAC00C26D6E /* WatchKit-App */ = {
 			isa = PBXGroup;
 			children = (
 				ABB17D6F22D93BAC00C26D6E /* Interface.storyboard */,
 				ABB17D7222D93BAC00C26D6E /* Assets.xcassets */,
 				ABB17D7422D93BAC00C26D6E /* Info.plist */,
 			);
-			path = "watchOS-sample WatchKit App";
+			path = "WatchKit-App";
 			sourceTree = "<group>";
 		};
-		ABB17D7D22D93BAC00C26D6E /* watchOS-sample-WatchKit-Extension */ = {
+		ABB17D7D22D93BAC00C26D6E /* WatchKit-Extension */ = {
 			isa = PBXGroup;
 			children = (
 				ABB17D7E22D93BAC00C26D6E /* InterfaceController.h */,
@@ -192,7 +192,7 @@
 				ABB17D8422D93BAD00C26D6E /* Assets.xcassets */,
 				ABB17D8622D93BAD00C26D6E /* Info.plist */,
 			);
-			path = "watchOS-sample-WatchKit-Extension";
+			path = "WatchKit-Extension";
 			sourceTree = "<group>";
 		};
 		FDB2CA47351660A961DBE458 /* Frameworks */ = {
@@ -276,17 +276,20 @@
 				TargetAttributes = {
 					ABB17D5322D93BAB00C26D6E = {
 						CreatedOnToolsVersion = 10.1;
+						ProvisioningStyle = Automatic;
 					};
 					ABB17D6922D93BAC00C26D6E = {
 						CreatedOnToolsVersion = 10.1;
+						ProvisioningStyle = Automatic;
 					};
 					ABB17D7822D93BAC00C26D6E = {
 						CreatedOnToolsVersion = 10.1;
+						ProvisioningStyle = Automatic;
 					};
 				};
 			};
 			buildConfigurationList = ABB17D4F22D93BAB00C26D6E /* Build configuration list for PBXProject "watchOS-sample" */;
-			compatibilityVersion = "Xcode 9.3";
+			compatibilityVersion = "Xcode 8.0";
 			developmentRegion = en;
 			hasScannedForEncodings = 0;
 			knownRegions = (
@@ -341,15 +344,11 @@
 			buildActionMask = 2147483647;
 			files = (
 			);
-			inputFileListPaths = (
-			);
 			inputPaths = (
 				"${PODS_PODFILE_DIR_PATH}/Podfile.lock",
 				"${PODS_ROOT}/Manifest.lock",
 			);
 			name = "[CP] Check Pods Manifest.lock";
-			outputFileListPaths = (
-			);
 			outputPaths = (
 				"$(DERIVED_FILE_DIR)/Pods-watchOS-sample WatchKit Extension-checkManifestLockResult.txt",
 			);
@@ -363,15 +362,11 @@
 			buildActionMask = 2147483647;
 			files = (
 			);
-			inputFileListPaths = (
-			);
 			inputPaths = (
 				"${PODS_PODFILE_DIR_PATH}/Podfile.lock",
 				"${PODS_ROOT}/Manifest.lock",
 			);
 			name = "[CP] Check Pods Manifest.lock";
-			outputFileListPaths = (
-			);
 			outputPaths = (
 				"$(DERIVED_FILE_DIR)/Pods-watchOS-sample-checkManifestLockResult.txt",
 			);
@@ -385,12 +380,13 @@
 			buildActionMask = 2147483647;
 			files = (
 			);
-			inputFileListPaths = (
-				"${PODS_ROOT}/Target Support Files/Pods-watchOS-sample WatchKit Extension/Pods-watchOS-sample WatchKit Extension-resources-${CONFIGURATION}-input-files.xcfilelist",
+			inputPaths = (
+				"${PODS_ROOT}/Target Support Files/Pods-watchOS-sample WatchKit Extension/Pods-watchOS-sample WatchKit Extension-resources.sh",
+				"${PODS_CONFIGURATION_BUILD_DIR}/gRPC-watchOS/gRPCCertificates.bundle",
 			);
 			name = "[CP] Copy Pods Resources";
-			outputFileListPaths = (
-				"${PODS_ROOT}/Target Support Files/Pods-watchOS-sample WatchKit Extension/Pods-watchOS-sample WatchKit Extension-resources-${CONFIGURATION}-output-files.xcfilelist",
+			outputPaths = (
+				"${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/gRPCCertificates.bundle",
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
@@ -402,12 +398,13 @@
 			buildActionMask = 2147483647;
 			files = (
 			);
-			inputFileListPaths = (
-				"${PODS_ROOT}/Target Support Files/Pods-watchOS-sample/Pods-watchOS-sample-resources-${CONFIGURATION}-input-files.xcfilelist",
+			inputPaths = (
+				"${PODS_ROOT}/Target Support Files/Pods-watchOS-sample/Pods-watchOS-sample-resources.sh",
+				"${PODS_CONFIGURATION_BUILD_DIR}/gRPC-iOS/gRPCCertificates.bundle",
 			);
 			name = "[CP] Copy Pods Resources";
-			outputFileListPaths = (
-				"${PODS_ROOT}/Target Support Files/Pods-watchOS-sample/Pods-watchOS-sample-resources-${CONFIGURATION}-output-files.xcfilelist",
+			outputPaths = (
+				"${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/gRPCCertificates.bundle",
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
@@ -530,7 +527,7 @@
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
-				IPHONEOS_DEPLOYMENT_TARGET = 12.1;
+				IPHONEOS_DEPLOYMENT_TARGET = 10.0;
 				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
 				MTL_FAST_MATH = YES;
 				ONLY_ACTIVE_ARCH = YES;
@@ -583,7 +580,7 @@
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
-				IPHONEOS_DEPLOYMENT_TARGET = 12.1;
+				IPHONEOS_DEPLOYMENT_TARGET = 10.0;
 				MTL_ENABLE_DEBUG_INFO = NO;
 				MTL_FAST_MATH = YES;
 				SDKROOT = iphoneos;
@@ -599,11 +596,7 @@
 				CODE_SIGN_STYLE = Automatic;
 				DEVELOPMENT_TEAM = 6T98ZJNPG5;
 				INFOPLIST_FILE = "$(SRCROOT)/watchOS-sample-WatchKit-Extension/Info.plist";
-				LD_RUNPATH_SEARCH_PATHS = (
-					"$(inherited)",
-					"@executable_path/Frameworks",
-					"@executable_path/../../Frameworks",
-				);
+				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks @executable_path/../../Frameworks";
 				PRODUCT_BUNDLE_IDENTIFIER = "com.google.watchOS-grpc-sample.watchkitapp.watchkitextension";
 				PRODUCT_NAME = "${TARGET_NAME}";
 				SDKROOT = watchos;
@@ -621,11 +614,7 @@
 				CODE_SIGN_STYLE = Automatic;
 				DEVELOPMENT_TEAM = 6T98ZJNPG5;
 				INFOPLIST_FILE = "$(SRCROOT)/watchOS-sample-WatchKit-Extension/Info.plist";
-				LD_RUNPATH_SEARCH_PATHS = (
-					"$(inherited)",
-					"@executable_path/Frameworks",
-					"@executable_path/../../Frameworks",
-				);
+				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks @executable_path/../../Frameworks";
 				PRODUCT_BUNDLE_IDENTIFIER = "com.google.watchOS-grpc-sample.watchkitapp.watchkitextension";
 				PRODUCT_NAME = "${TARGET_NAME}";
 				SDKROOT = watchos;
@@ -677,10 +666,7 @@
 				CODE_SIGN_STYLE = Automatic;
 				DEVELOPMENT_TEAM = 6T98ZJNPG5;
 				INFOPLIST_FILE = "watchOS-sample/Info.plist";
-				LD_RUNPATH_SEARCH_PATHS = (
-					"$(inherited)",
-					"@executable_path/Frameworks",
-				);
+				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks";
 				PRODUCT_BUNDLE_IDENTIFIER = "com.google.watchOS-grpc-sample";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				TARGETED_DEVICE_FAMILY = "1,2";
@@ -695,10 +681,7 @@
 				CODE_SIGN_STYLE = Automatic;
 				DEVELOPMENT_TEAM = 6T98ZJNPG5;
 				INFOPLIST_FILE = "watchOS-sample/Info.plist";
-				LD_RUNPATH_SEARCH_PATHS = (
-					"$(inherited)",
-					"@executable_path/Frameworks",
-				);
+				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks";
 				PRODUCT_BUNDLE_IDENTIFIER = "com.google.watchOS-grpc-sample";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				TARGETED_DEVICE_FAMILY = "1,2";
