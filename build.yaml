@@ -15,7 +15,7 @@ settings:
   core_version: 7.0.0
   csharp_major_version: 2
   g_stands_for: gangnam
-  version: 1.23.0-dev
+  version: 1.23.0-pre1
 filegroups:
 - name: alts_proto
   headers:
