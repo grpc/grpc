@@ -24,8 +24,8 @@
 
 #include <grpc/grpc_security_constants.h>
 #include <grpcpp/security/auth_metadata_processor.h>
-#include <grpcpp/support/config.h>
 #include <grpcpp/security/tls_credentials_options.h>
+#include <grpcpp/support/config.h>
 
 struct grpc_server;
 
