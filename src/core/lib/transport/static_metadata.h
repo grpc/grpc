@@ -260,15 +260,18 @@ extern const grpc_core::StaticMetadataSlice
 #define GRPC_MDSTR_IDENTITY_COMMA_DEFLATE_COMMA_GZIP \
   (grpc_static_slice_table[105])
 
-extern grpc_slice_refcount
+namespace grpc_core {
+struct StaticSliceRefcount;
+}
+extern grpc_core::StaticSliceRefcount
     grpc_static_metadata_refcounts[GRPC_STATIC_MDSTR_COUNT];
 #define GRPC_IS_STATIC_METADATA_STRING(slice) \
   ((slice).refcount != NULL &&                \
    (slice).refcount->GetType() == grpc_slice_refcount::Type::STATIC)
 
-#define GRPC_STATIC_METADATA_INDEX(static_slice) \
-  (static_cast<intptr_t>(                        \
-      ((static_slice).refcount - grpc_static_metadata_refcounts)))
+#define GRPC_STATIC_METADATA_INDEX(static_slice)                              \
+  (reinterpret_cast<grpc_core::StaticSliceRefcount*>((static_slice).refcount) \
+       ->index)
 
 #define GRPC_STATIC_MDELEM_COUNT 85
 extern grpc_core::StaticMetadata
@@ -519,11 +522,14 @@ typedef union {
   } named;
 } grpc_metadata_batch_callouts;
 
-#define GRPC_BATCH_INDEX_OF(slice)                                        \
-  (GRPC_IS_STATIC_METADATA_STRING((slice))                                \
-       ? static_cast<grpc_metadata_batch_callouts_index>(                 \
-             GPR_CLAMP(GRPC_STATIC_METADATA_INDEX((slice)), 0,            \
-                       static_cast<intptr_t>(GRPC_BATCH_CALLOUTS_COUNT))) \
+#define GRPC_BATCH_INDEX_OF(slice)                                             \
+  (GRPC_IS_STATIC_METADATA_STRING((slice)) &&                                  \
+           reinterpret_cast<grpc_core::StaticSliceRefcount*>((slice).refcount) \
+                   ->index <= static_cast<uint32_t>(GRPC_BATCH_CALLOUTS_COUNT) \
+       ? static_cast<grpc_metadata_batch_callouts_index>(                      \
+             reinterpret_cast<grpc_core::StaticSliceRefcount*>(                \
+                 (slice).refcount)                                             \
+                 ->index)                                                      \
        : GRPC_BATCH_CALLOUTS_COUNT)
 
 extern const uint8_t grpc_static_accept_encoding_metadata[8];

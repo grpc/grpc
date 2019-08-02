@@ -174,6 +174,17 @@ struct grpc_slice_refcount {
 
 namespace grpc_core {
 
+struct StaticSliceRefcount {
+  static grpc_slice_refcount kStaticSubRefcount;
+
+  StaticSliceRefcount(uint32_t index)
+      : base(&kStaticSubRefcount, grpc_slice_refcount::Type::STATIC),
+        index(index) {}
+
+  grpc_slice_refcount base;
+  uint32_t index;
+};
+
 extern grpc_slice_refcount kNoopRefcount;
 
 struct InternedSliceRefcount {
