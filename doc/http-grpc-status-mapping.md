@@ -13,11 +13,12 @@ are neither symmetric nor 1-to-1.
 
 | HTTP Status Code           | gRPC Status Code   |
 |----------------------------|--------------------|
-| 400 Bad Request            | INTERNAL           |
+| 400 Bad Request            | INVALID_ARGUMENT   |
 | 401 Unauthorized           | UNAUTHENTICATED    |
 | 403 Forbidden              | PERMISSION\_DENIED |
 | 404 Not Found              | UNIMPLEMENTED      |
 | 429 Too Many Requests      | UNAVAILABLE        |
+| 500 Internal Server Error  | INTERNAL           |
 | 502 Bad Gateway            | UNAVAILABLE        |
 | 503 Service Unavailable    | UNAVAILABLE        |
 | 504 Gateway Timeout        | UNAVAILABLE        |
