@@ -74,11 +74,11 @@ config_setting(
 )
 
 # This should be updated along with build.yaml
-g_stands_for = "gangnam"
+g_stands_for = "ganges"
 
 core_version = "7.0.0"
 
-version = "1.23.0-dev"
+version = "1.24.0-dev"
 
 GPR_PUBLIC_HDRS = [
     "include/grpc/support/alloc.h",
