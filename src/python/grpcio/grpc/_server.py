@@ -961,12 +961,13 @@ class _Server(grpc.Server):
         _start(self._state)
 
     def wait_for_termination(self, timeout=None):
-        # TODO(https://bugs.python.org/issue35935)
+        # NOTE(https://bugs.python.org/issue35935)
         # Remove this workaround once threading.Event.wait() is working with
         # CTRL+C across platforms.
-        if timeout is None:
-            timeout = _INF_TIMEOUT
-        return self._state.termination_event.wait(timeout=timeout)
+        return _common.wait(
+            self._state.termination_event.wait,
+            self._state.termination_event.is_set,
+            timeout=timeout)
 
     def stop(self, grace):
         return _stop(self._state, grace)
