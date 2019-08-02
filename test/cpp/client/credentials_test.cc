@@ -17,6 +17,7 @@
  */
 
 #include <grpcpp/security/credentials.h>
+#include <grpcpp/security/tls_credentials_options.h>
 
 #include <memory>
 
@@ -28,7 +29,6 @@
 #include "src/core/lib/gpr/tmpfile.h"
 #include "src/core/lib/security/credentials/tls/grpc_tls_credentials_options.h"
 #include "src/cpp/client/secure_credentials.h"
-#include "src/cpp/common/tls_credentials_options.cc"
 
 namespace grpc {
 namespace testing {
