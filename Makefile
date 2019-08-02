@@ -370,7 +370,7 @@ CPPFLAGS += -fPIC
 LDFLAGS += -fPIC
 endif
 
-INCLUDES = . include $(GENDIR) third_party/upb third_party/upb/generated_for_cmake
+INCLUDES = . include $(GENDIR) third_party/upb third_party/upb/generated_for_cmake src/core/ext/upb-generated
 LDFLAGS += -Llibs/$(CONFIG)
 
 ifeq ($(SYSTEM),Darwin)
