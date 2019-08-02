@@ -66,20 +66,7 @@ rbe_autoconfig(
     ),
 )
 
+# NOTE: Do not add new invocations of workspace rules here. Add them to the
+# grpc_deps() macro so downstream Bazel users will not have missing
+# dependencies.
 
-load("@upb//bazel:workspace_deps.bzl", "upb_deps")
-upb_deps()
-
-load("@envoy_api//bazel:repositories.bzl", "api_dependencies")
-api_dependencies()
-
-load("@io_bazel_rules_go//go:deps.bzl", "go_rules_dependencies", "go_register_toolchains")
-go_rules_dependencies()
-go_register_toolchains()
-
-
-load("@build_bazel_rules_apple//apple:repositories.bzl", "apple_rules_dependencies")
-apple_rules_dependencies()
-
-load("@build_bazel_apple_support//lib:repositories.bzl", "apple_support_dependencies")
-apple_support_dependencies()

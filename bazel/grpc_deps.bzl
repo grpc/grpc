@@ -210,6 +210,10 @@ def grpc_deps():
             strip_prefix = "upb-423ea5ca9ce8da69611e6e95559efcb3a1ba8ad8",
             url = "https://github.com/protocolbuffers/upb/archive/423ea5ca9ce8da69611e6e95559efcb3a1ba8ad8.tar.gz",
         )
+
+    load("@upb//bazel:workspace_deps.bzl", "upb_deps")
+    upb_deps()
+
     if "envoy_api" not in native.existing_rules():
         http_archive(
             name = "envoy_api",
@@ -217,6 +221,16 @@ def grpc_deps():
             strip_prefix = "data-plane-api-a83394157ad97f4dadbc8ed81f56ad5b3a72e542",
             url = "https://github.com/envoyproxy/data-plane-api/archive/a83394157ad97f4dadbc8ed81f56ad5b3a72e542.tar.gz",
         )
+    load("@envoy_api//bazel:repositories.bzl", "api_dependencies")
+    api_dependencies()
+
+    # TODO(https://github.com/grpc/grpc/issues/19835): These are transitive-only
+    # dependencies. These should be pulled in by calling api_dependencies()
+    # above envoy_api via protoc-gen-validate but protoc-gen-validate does not
+    # currently offer a deps() function.
+    load("@io_bazel_rules_go//go:deps.bzl", "go_rules_dependencies", "go_register_toolchains")
+    go_rules_dependencies()
+    go_register_toolchains()
 
     if "io_bazel_rules_go" not in native.existing_rules():
         http_archive(
@@ -231,7 +245,17 @@ def grpc_deps():
             remote = "https://github.com/bazelbuild/rules_apple.git",
             tag = "0.17.2",
         )
-    
+
+    load("@build_bazel_rules_apple//apple:repositories.bzl", "apple_rules_dependencies")
+    apple_rules_dependencies()
+
+    # TODO(https://github.com/grpc/grpc/issues/19835): This is a transitive-only
+    # dependency. It should be added by the invocation of
+    # apple_rules_dependencies() above.
+    load("@build_bazel_apple_support//lib:repositories.bzl", "apple_support_dependencies")
+    apple_support_dependencies()
+
+
 # TODO: move some dependencies from "grpc_deps" here?
 def grpc_test_only_deps():
     """Internal, not intended for use by packages that are consuming grpc.
