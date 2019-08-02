@@ -1119,7 +1119,7 @@ class ObjCLanguage(object):
                 shortname='ios-buildtest-example-watchOS-sample',
                 cpu_cost=1e6,
                 environ={
-                    'SCHEME': 'watchOS-sample',
+                    'SCHEME': 'watchOS-sample-WatchKit-App',
                     'EXAMPLE_PATH': 'src/objective-c/examples/watchOS-sample',
                     'FRAMEWORKS': 'NO'
                 }))
@@ -1130,7 +1130,7 @@ class ObjCLanguage(object):
                 shortname='ios-buildtest-example-watchOS-sample-framework',
                 cpu_cost=1e6,
                 environ={
-                    'SCHEME': 'watchOS-sample',
+                    'SCHEME': 'watchOS-sample-WatchKit-App',
                     'EXAMPLE_PATH': 'src/objective-c/examples/watchOS-sample',
                     'FRAMEWORKS': 'YES'
                 }))
