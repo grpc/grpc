@@ -21,4 +21,3 @@
 @interface ExtensionDelegate : NSObject<WKExtensionDelegate>
 
 @end
-

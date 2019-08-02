@@ -22,4 +22,3 @@
 @interface InterfaceController : WKInterfaceController
 
 @end
-
