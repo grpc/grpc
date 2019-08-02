@@ -36,12 +36,12 @@
 
 - (void)awakeWithContext:(id)context {
   [super awakeWithContext:context];
-
+  
   // Configure interface objects here.
-
+  
   GRPCMutableCallOptions *options = [[GRPCMutableCallOptions alloc] init];
   _options = options;
-
+  
   _service = [[RMTTestService alloc] initWithHost:@"grpc-test.sandbox.googleapis.com"
                                       callOptions:_options];
 }
@@ -50,7 +50,7 @@
   RMTSimpleRequest *request = [RMTSimpleRequest message];
   request.responseSize = 100;
   GRPCUnaryProtoCall *call =
-      [_service unaryCallWithMessage:request responseHandler:self callOptions:nil];
+  [_service unaryCallWithMessage:request responseHandler:self callOptions:nil];
   [call start];
 }
 
