@@ -174,7 +174,7 @@ for name in _GRPC_DEP_NAMES:
         'load': lambda a, b: None,
         'git_repository': lambda **args: state.git_repository(**args),
     }
-    exec bazel_file in rules
+    exec(bazel_file in rules)
     assert name not in names_and_urls_with_overridden_name.keys()
 
 sys.exit(0)
