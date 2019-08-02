@@ -38,7 +38,8 @@ grpc_error* grpc_chttp2_incoming_metadata_buffer_add(
     storage = static_cast<grpc_linked_mdelem*>(
         buffer->arena->Alloc(sizeof(grpc_linked_mdelem)));
   }
-  return grpc_metadata_batch_add_tail(&buffer->batch, storage, elem);
+  storage->md = elem;
+  return grpc_metadata_batch_link_tail(&buffer->batch, storage);
 }
 
 grpc_error* grpc_chttp2_incoming_metadata_buffer_replace_or_add(

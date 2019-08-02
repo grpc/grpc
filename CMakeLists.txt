@@ -24,7 +24,7 @@
 cmake_minimum_required(VERSION 3.5.1)
 
 set(PACKAGE_NAME      "grpc")
-set(PACKAGE_VERSION   "1.23.0-dev")
+set(PACKAGE_VERSION   "1.24.0-dev")
 set(PACKAGE_STRING    "${PACKAGE_NAME} ${PACKAGE_VERSION}")
 set(PACKAGE_TARNAME   "${PACKAGE_NAME}-${PACKAGE_VERSION}")
 set(PACKAGE_BUGREPORT "https://github.com/grpc/grpc/issues/")
@@ -627,6 +627,7 @@ add_dependencies(buildtests_cxx cxx_byte_buffer_test)
 add_dependencies(buildtests_cxx cxx_slice_test)
 add_dependencies(buildtests_cxx cxx_string_ref_test)
 add_dependencies(buildtests_cxx cxx_time_test)
+add_dependencies(buildtests_cxx delegating_channel_test)
 add_dependencies(buildtests_cxx end2end_test)
 add_dependencies(buildtests_cxx error_details_test)
 add_dependencies(buildtests_cxx exception_test)
@@ -3373,6 +3374,7 @@ foreach(_hdr
   include/grpcpp/impl/codegen/config.h
   include/grpcpp/impl/codegen/core_codegen_interface.h
   include/grpcpp/impl/codegen/create_auth_context.h
+  include/grpcpp/impl/codegen/delegating_channel.h
   include/grpcpp/impl/codegen/grpc_library.h
   include/grpcpp/impl/codegen/intercepted_channel.h
   include/grpcpp/impl/codegen/interceptor.h
@@ -3873,6 +3875,7 @@ foreach(_hdr
   include/grpcpp/impl/codegen/config.h
   include/grpcpp/impl/codegen/core_codegen_interface.h
   include/grpcpp/impl/codegen/create_auth_context.h
+  include/grpcpp/impl/codegen/delegating_channel.h
   include/grpcpp/impl/codegen/grpc_library.h
   include/grpcpp/impl/codegen/intercepted_channel.h
   include/grpcpp/impl/codegen/interceptor.h
@@ -4079,6 +4082,7 @@ foreach(_hdr
   include/grpcpp/impl/codegen/config.h
   include/grpcpp/impl/codegen/core_codegen_interface.h
   include/grpcpp/impl/codegen/create_auth_context.h
+  include/grpcpp/impl/codegen/delegating_channel.h
   include/grpcpp/impl/codegen/grpc_library.h
   include/grpcpp/impl/codegen/intercepted_channel.h
   include/grpcpp/impl/codegen/interceptor.h
@@ -4451,6 +4455,7 @@ foreach(_hdr
   include/grpcpp/impl/codegen/config.h
   include/grpcpp/impl/codegen/core_codegen_interface.h
   include/grpcpp/impl/codegen/create_auth_context.h
+  include/grpcpp/impl/codegen/delegating_channel.h
   include/grpcpp/impl/codegen/grpc_library.h
   include/grpcpp/impl/codegen/intercepted_channel.h
   include/grpcpp/impl/codegen/interceptor.h
@@ -13065,6 +13070,46 @@ target_include_directories(cxx_time_test
 target_link_libraries(cxx_time_test
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
+  grpc_test_util
+  grpc++
+  grpc
+  gpr
+  ${_gRPC_GFLAGS_LIBRARIES}
+)
+
+
+endif (gRPC_BUILD_TESTS)
+if (gRPC_BUILD_TESTS)
+
+add_executable(delegating_channel_test
+  test/cpp/end2end/delegating_channel_test.cc
+  third_party/googletest/googletest/src/gtest-all.cc
+  third_party/googletest/googlemock/src/gmock-all.cc
+)
+
+
+target_include_directories(delegating_channel_test
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
+  PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
+  PRIVATE third_party/googletest/googletest/include
+  PRIVATE third_party/googletest/googletest
+  PRIVATE third_party/googletest/googlemock/include
+  PRIVATE third_party/googletest/googlemock
+  PRIVATE ${_gRPC_PROTO_GENS_DIR}
+)
+
+target_link_libraries(delegating_channel_test
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  grpc++_test_util
   grpc_test_util
   grpc++
   grpc

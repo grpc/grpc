@@ -224,6 +224,14 @@ def grpc_deps():
             urls = ["https://github.com/bazelbuild/rules_go/releases/download/0.18.5/rules_go-0.18.5.tar.gz"],
             sha256 = "a82a352bffae6bee4e95f68a8d80a70e87f42c4741e6a448bec11998fcc82329",
         )
+
+    if "build_bazel_rules_apple" not in native.existing_rules():
+        git_repository(
+            name = "build_bazel_rules_apple",
+            remote = "https://github.com/bazelbuild/rules_apple.git",
+            tag = "0.17.2",
+        )
+    
 # TODO: move some dependencies from "grpc_deps" here?
 def grpc_test_only_deps():
     """Internal, not intended for use by packages that are consuming grpc.

@@ -74,11 +74,11 @@ config_setting(
 )
 
 # This should be updated along with build.yaml
-g_stands_for = "gangnam"
+g_stands_for = "ganges"
 
 core_version = "7.0.0"
 
-version = "1.23.0-dev"
+version = "1.24.0-dev"
 
 GPR_PUBLIC_HDRS = [
     "include/grpc/support/alloc.h",
@@ -2077,6 +2077,7 @@ grpc_cc_library(
         "include/grpcpp/impl/codegen/config.h",
         "include/grpcpp/impl/codegen/core_codegen_interface.h",
         "include/grpcpp/impl/codegen/create_auth_context.h",
+        "include/grpcpp/impl/codegen/delegating_channel.h",        
         "include/grpcpp/impl/codegen/grpc_library.h",
         "include/grpcpp/impl/codegen/intercepted_channel.h",
         "include/grpcpp/impl/codegen/interceptor.h",

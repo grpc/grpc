@@ -24,6 +24,7 @@
 #
 
 load("//bazel:cc_grpc_library.bzl", "cc_grpc_library")
+load("@build_bazel_rules_apple//apple:resources.bzl", "apple_resource_bundle")
 load("@upb//bazel:upb_proto_library.bzl", "upb_proto_library")
 
 # The set of pollers to test against if a test exercises polling
@@ -198,6 +199,19 @@ def grpc_cc_binary(name, srcs = [], deps = [], external_deps = [], args = [], da
     )
 
 def grpc_generate_one_off_targets():
+    apple_resource_bundle(
+        # The choice of name is signicant here, since it determines the bundle name.
+        name = "gRPCCertificates",
+        resources = ["etc/roots.pem"],
+    )
+
+    # In open-source, grpc_objc* libraries depend directly on //:grpc
+    native.alias(
+        name = "grpc_objc",
+        actual = "//:grpc",
+    )
+
+def grpc_objc_use_cronet_config():
     pass
 
 def grpc_sh_test(name, srcs, args = [], data = []):
@@ -240,6 +254,42 @@ def grpc_package(name, visibility = "private", features = []):
             features = features,
         )
 
+def grpc_objc_library(
+        name,
+        srcs,
+        hdrs = [],
+        textual_hdrs = [],
+        data = [],
+        deps = [],
+        defines = [],
+        includes = [],
+        visibility = ["//visibility:public"]):
+    """The grpc version of objc_library, only used for the Objective-C library compilation
+
+    Args:
+        name: name of target
+        hdrs: public headers
+        srcs: all source files (.m)
+        textual_hdrs: private headers
+        data: any other bundle resources
+        defines: preprocessors
+        includes: added to search path, always [the path to objc directory]
+        deps: dependencies
+        visibility: visibility, default to public
+    """
+    
+    native.objc_library(
+        name = name,
+        hdrs = hdrs,
+        srcs = srcs,
+        textual_hdrs = textual_hdrs,
+        data = data,
+        deps = deps,
+        defines = defines,
+        includes = includes,
+        visibility = visibility,
+    )
+    
 def grpc_upb_proto_library(name, deps):
     upb_proto_library(name = name, deps = deps)
 

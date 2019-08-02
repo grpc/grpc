@@ -23,7 +23,7 @@
 Pod::Spec.new do |s|
   s.name     = 'gRPC-C++'
   # TODO (mxyan): use version that match gRPC version when pod is stabilized
-  # version = '1.23.0-dev'
+  # version = '1.24.0-dev'
   version = '0.0.9-dev'
   s.version  = version
   s.summary  = 'gRPC C++ library'
@@ -31,7 +31,7 @@ Pod::Spec.new do |s|
   s.license  = 'Apache License, Version 2.0'
   s.authors  = { 'The gRPC contributors' => 'grpc-packages@google.com' }
 
-  grpc_version = '1.23.0-dev'
+  grpc_version = '1.24.0-dev'
 
   s.source = {
     :git => 'https://github.com/grpc/grpc.git',
@@ -179,6 +179,7 @@ Pod::Spec.new do |s|
                       'include/grpcpp/impl/codegen/config.h',
                       'include/grpcpp/impl/codegen/core_codegen_interface.h',
                       'include/grpcpp/impl/codegen/create_auth_context.h',
+                      'include/grpcpp/impl/codegen/delegating_channel.h',
                       'include/grpcpp/impl/codegen/grpc_library.h',
                       'include/grpcpp/impl/codegen/intercepted_channel.h',
                       'include/grpcpp/impl/codegen/interceptor.h',

@@ -63,6 +63,7 @@ _GRPC_DEP_NAMES = [
     _ZOPEFOUNDATION_ZOPE_INTERFACE_DEP_NAME,
     _TWISTED_CONSTANTLY_DEP_NAME,
     'io_bazel_rules_go',
+    'build_bazel_rules_apple',
 ]
 
 _GRPC_BAZEL_ONLY_DEPS = [
@@ -76,6 +77,7 @@ _GRPC_BAZEL_ONLY_DEPS = [
     _ZOPEFOUNDATION_ZOPE_INTERFACE_DEP_NAME,
     _TWISTED_CONSTANTLY_DEP_NAME,
     'io_bazel_rules_go',
+    'build_bazel_rules_apple',
 ]
 
 
@@ -106,6 +108,13 @@ class BazelEvalState(object):
             return
         self.names_and_urls[args['name']] = args['url']
 
+    def git_repository(self, **args):
+        assert self.names_and_urls.get(args['name']) is None
+        if args['name'] in _GRPC_BAZEL_ONLY_DEPS:
+            self.names_and_urls[args['name']] = 'dont care'
+            return
+        self.names_and_urls[args['name']] = args['remote']
+
 
 # Parse git hashes from bazel/grpc_deps.bzl {new_}http_archive rules
 with open(os.path.join('bazel', 'grpc_deps.bzl'), 'r') as f:
@@ -121,6 +130,7 @@ build_rules = {
     'native': eval_state,
     'http_archive': lambda **args: eval_state.http_archive(**args),
     'load': lambda a, b: None,
+    'git_repository': lambda **args: eval_state.git_repository(**args),
 }
 exec bazel_file in build_rules
 for name in _GRPC_DEP_NAMES:
@@ -162,6 +172,7 @@ for name in _GRPC_DEP_NAMES:
         'native': state,
         'http_archive': lambda **args: state.http_archive(**args),
         'load': lambda a, b: None,
+        'git_repository': lambda **args: state.git_repository(**args),
     }
     exec bazel_file in rules
     assert name not in names_and_urls_with_overridden_name.keys()
