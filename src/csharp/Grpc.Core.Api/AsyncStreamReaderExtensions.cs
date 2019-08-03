@@ -17,6 +17,8 @@
 #endregion
 
 using System;
+using System.Collections.Generic;
+using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -46,5 +48,27 @@ namespace Grpc.Core
 
             return streamReader.MoveNext(CancellationToken.None);
         }
+
+#if NETSTANDARD2_0
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="streamReader"></param>
+        /// <param name="cancellationToken"></param>
+        /// <returns></returns>
+        public async static IAsyncEnumerable<T> ReadAllAsync<T>(this IAsyncStreamReader<T> streamReader, [EnumeratorCancellation]CancellationToken cancellationToken = default)
+        {
+            if (streamReader == null)
+            {
+                throw new System.ArgumentNullException(nameof(streamReader));
+            }
+
+            while (await streamReader.MoveNext(cancellationToken))
+            {
+                yield return streamReader.Current;
+            }
+        }
+#endif
     }
 }

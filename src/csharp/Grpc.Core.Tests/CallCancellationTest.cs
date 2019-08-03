@@ -122,6 +122,7 @@ namespace Grpc.Core.Tests
             Assert.AreEqual("SUCCESS", await successTcs.Task);
         }
 
+#if NETCOREAPP2_1
         [Test]
         public async Task ClientStreamingCall_CancelServerSideRead()
         {
@@ -131,6 +132,35 @@ namespace Grpc.Core.Tests
                 var moveNextTask = requestStream.MoveNext(cts.Token);
                 cts.Cancel();
                 await moveNextTask;
+                return "";
+            });
+
+            var call = Calls.AsyncClientStreamingCall(helper.CreateClientStreamingCall());
+            try
+            {
+                // cannot use Assert.ThrowsAsync because it uses Task.Wait and would deadlock.
+                await call.ResponseAsync;
+                Assert.Fail();
+            }
+            catch (RpcException ex)
+            {
+                Assert.AreEqual(StatusCode.Cancelled, ex.Status.StatusCode);
+            }
+        }
+#endif
+
+        [Test]
+        public async Task ClientStreamingCall_CancelServerSideReadAllAsync()
+        {
+            helper.ClientStreamingHandler = new ClientStreamingServerMethod<string, string>(async (requestStream, context) =>
+            {
+                var cts = new CancellationTokenSource();
+                var readAllEnumerable = requestStream.ReadAllAsync().WithCancellation(cts.Token);
+                cts.Cancel();
+                await foreach (var item in readAllEnumerable)
+                {
+                }
+                Assert.Fail();
                 return "";
             });
 
@@ -178,6 +208,42 @@ namespace Grpc.Core.Tests
                 Assert.AreEqual(StatusCode.Cancelled, ex.Status.StatusCode);
             }
         }
+
+#if NETCOREAPP2_1
+        [Test]
+        public async Task ServerStreamingCall_CancelClientSideReadAllAsync()
+        {
+            helper.ServerStreamingHandler = new ServerStreamingServerMethod<string, string>(async (request, responseStream, context) =>
+            {
+                await responseStream.WriteAsync("abc");
+                while (!context.CancellationToken.IsCancellationRequested)
+                {
+                    await Task.Delay(10);
+                }
+            });
+
+            var call = Calls.AsyncServerStreamingCall(helper.CreateServerStreamingCall(), "");
+            await call.ResponseStream.MoveNext();
+            Assert.AreEqual("abc", call.ResponseStream.Current);
+
+            var cts = new CancellationTokenSource();
+            var readAllEnumerable = call.ResponseStream.ReadAllAsync().WithCancellation(cts.Token);
+            cts.Cancel();
+
+            try
+            {
+                // cannot use Assert.ThrowsAsync because it uses Task.Wait and would deadlock.
+                await foreach (var item in readAllEnumerable)
+                {
+                }
+                Assert.Fail();
+            }
+            catch (RpcException ex)
+            {
+                Assert.AreEqual(StatusCode.Cancelled, ex.Status.StatusCode);
+            }
+        }
+#endif
 
         [Test]
         public void CanDisposeDefaultCancellationRegistration()
