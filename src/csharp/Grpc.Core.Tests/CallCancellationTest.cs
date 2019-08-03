@@ -122,7 +122,6 @@ namespace Grpc.Core.Tests
             Assert.AreEqual("SUCCESS", await successTcs.Task);
         }
 
-#if NETCOREAPP2_1
         [Test]
         public async Task ClientStreamingCall_CancelServerSideRead()
         {
@@ -147,8 +146,8 @@ namespace Grpc.Core.Tests
                 Assert.AreEqual(StatusCode.Cancelled, ex.Status.StatusCode);
             }
         }
-#endif
 
+#if NETCOREAPP2_1
         [Test]
         public async Task ClientStreamingCall_CancelServerSideReadAllAsync()
         {
@@ -176,6 +175,7 @@ namespace Grpc.Core.Tests
                 Assert.AreEqual(StatusCode.Cancelled, ex.Status.StatusCode);
             }
         }
+#endif
 
         [Test]
         public async Task ServerStreamingCall_CancelClientSideRead()
