@@ -2591,7 +2591,6 @@ static void read_action_locked(void* tp, grpc_error* error) {
     t->endpoint_reading = 0;
   } else if (t->closed_with_error == GRPC_ERROR_NONE) {
     keep_reading = true;
-    GRPC_CHTTP2_REF_TRANSPORT(t, "keep_reading");
     /* Since we have read a byte, reset the keepalive timer */
     if (t->keepalive_state == GRPC_CHTTP2_KEEPALIVE_STATE_WAITING) {
       grpc_timer_cancel(&t->keepalive_ping_timer);
@@ -2604,7 +2603,6 @@ static void read_action_locked(void* tp, grpc_error* error) {
     grpc_endpoint_read(t->ep, &t->read_buffer, &t->read_action_locked, urgent);
     grpc_chttp2_act_on_flowctl_action(t->flow_control->MakeAction(), t,
                                       nullptr);
-    GRPC_CHTTP2_UNREF_TRANSPORT(t, "keep_reading");
   } else {
     GRPC_CHTTP2_UNREF_TRANSPORT(t, "reading_action");
   }
