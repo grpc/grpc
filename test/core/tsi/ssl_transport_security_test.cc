@@ -790,6 +790,26 @@ void ssl_tsi_test_duplicate_root_certificates() {
   gpr_free(dup_root_cert);
 }
 
+void ssl_tsi_test_uri_email_subject_alt_names() {
+  char* cert = load_file(SSL_TSI_TEST_CREDENTIALS_DIR, "multi-domain.pem");
+  tsi_peer peer;
+  GPR_ASSERT(extract_x509_subject_names_from_pem_cert(cert, &peer) == TSI_OK);
+  // One for common name, one for certificate, and six for SAN fields.
+  size_t expected_property_count = 8;
+  GPR_ASSERT(peer.property_count == expected_property_count);
+  // Check DNS
+  GPR_ASSERT(check_subject_alt_name(&peer, "foo.test.domain.com") == 1);
+  GPR_ASSERT(check_subject_alt_name(&peer, "bar.test.domain.com") == 1);
+  // Check URI
+  GPR_ASSERT(
+      check_subject_alt_name(&peer, "https://foo.test.domain.com/test") == 1);
+  GPR_ASSERT(
+      check_subject_alt_name(&peer, "https://bar.test.domain.com/test") == 1);
+  // Check email address
+  GPR_ASSERT(check_subject_alt_name(&peer, "foo@test.domain.com") == 1);
+  GPR_ASSERT(check_subject_alt_name(&peer, "bar@test.domain.com") == 1);
+}
+
 int main(int argc, char** argv) {
   grpc::testing::TestEnvironment env(argc, argv);
   grpc_init();
@@ -815,6 +835,7 @@ int main(int argc, char** argv) {
   ssl_tsi_test_do_round_trip_odd_buffer_size();
   ssl_tsi_test_handshaker_factory_internals();
   ssl_tsi_test_duplicate_root_certificates();
+  ssl_tsi_test_uri_email_subject_alt_names();
   grpc_shutdown();
   return 0;
 }
