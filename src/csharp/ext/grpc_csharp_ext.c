@@ -943,6 +943,18 @@ grpcsharp_server_request_call(grpc_server* server, grpc_completion_queue* cq,
                                   &(ctx->request_metadata), cq, cq, ctx);
 }
 
+GPR_EXPORT grpc_call_error GPR_CALLTYPE grpcsharp_test_server_request_call_fake(
+    grpc_server* server, grpc_completion_queue* cq,
+    grpcsharp_request_call_context* ctx) {
+  ctx->call = (grpc_call*)0xdeadbeef;  // fake pointer, tests will need to mock
+                                       // grpcsharp_call_destroy
+  ctx->call_details.method =
+      grpc_slice_from_copied_string("/someservice/somemethod");
+  ctx->call_details.host = grpc_slice_from_copied_string("localhost:1234");
+  ctx->call_details.deadline = gpr_inf_future(GPR_CLOCK_REALTIME);
+  return GRPC_CALL_OK;
+}
+
 /* Native callback dispatcher */
 
 typedef int(GPR_CALLTYPE* grpcsharp_native_callback_dispatcher_func)(

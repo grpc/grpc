@@ -114,6 +114,7 @@ namespace Grpc.Core.Internal
         public readonly Delegates.grpcsharp_server_add_secure_http2_port_delegate grpcsharp_server_add_secure_http2_port;
         public readonly Delegates.grpcsharp_server_start_delegate grpcsharp_server_start;
         public readonly Delegates.grpcsharp_server_request_call_delegate grpcsharp_server_request_call;
+        public readonly Delegates.grpcsharp_test_server_request_call_fake_delegate grpcsharp_test_server_request_call_fake;
         public readonly Delegates.grpcsharp_server_cancel_all_calls_delegate grpcsharp_server_cancel_all_calls;
         public readonly Delegates.grpcsharp_server_shutdown_and_notify_callback_delegate grpcsharp_server_shutdown_and_notify_callback;
         public readonly Delegates.grpcsharp_server_destroy_delegate grpcsharp_server_destroy;
@@ -216,6 +217,7 @@ namespace Grpc.Core.Internal
             this.grpcsharp_server_add_secure_http2_port = GetMethodDelegate<Delegates.grpcsharp_server_add_secure_http2_port_delegate>(library);
             this.grpcsharp_server_start = GetMethodDelegate<Delegates.grpcsharp_server_start_delegate>(library);
             this.grpcsharp_server_request_call = GetMethodDelegate<Delegates.grpcsharp_server_request_call_delegate>(library);
+            this.grpcsharp_test_server_request_call_fake = GetMethodDelegate<Delegates.grpcsharp_test_server_request_call_fake_delegate>(library);
             this.grpcsharp_server_cancel_all_calls = GetMethodDelegate<Delegates.grpcsharp_server_cancel_all_calls_delegate>(library);
             this.grpcsharp_server_shutdown_and_notify_callback = GetMethodDelegate<Delegates.grpcsharp_server_shutdown_and_notify_callback_delegate>(library);
             this.grpcsharp_server_destroy = GetMethodDelegate<Delegates.grpcsharp_server_destroy_delegate>(library);
@@ -317,6 +319,7 @@ namespace Grpc.Core.Internal
             this.grpcsharp_server_add_secure_http2_port = DllImportsFromStaticLib.grpcsharp_server_add_secure_http2_port;
             this.grpcsharp_server_start = DllImportsFromStaticLib.grpcsharp_server_start;
             this.grpcsharp_server_request_call = DllImportsFromStaticLib.grpcsharp_server_request_call;
+            this.grpcsharp_test_server_request_call_fake = DllImportsFromStaticLib.grpcsharp_test_server_request_call_fake;
             this.grpcsharp_server_cancel_all_calls = DllImportsFromStaticLib.grpcsharp_server_cancel_all_calls;
             this.grpcsharp_server_shutdown_and_notify_callback = DllImportsFromStaticLib.grpcsharp_server_shutdown_and_notify_callback;
             this.grpcsharp_server_destroy = DllImportsFromStaticLib.grpcsharp_server_destroy;
@@ -418,6 +421,7 @@ namespace Grpc.Core.Internal
             this.grpcsharp_server_add_secure_http2_port = DllImportsFromSharedLib.grpcsharp_server_add_secure_http2_port;
             this.grpcsharp_server_start = DllImportsFromSharedLib.grpcsharp_server_start;
             this.grpcsharp_server_request_call = DllImportsFromSharedLib.grpcsharp_server_request_call;
+            this.grpcsharp_test_server_request_call_fake = DllImportsFromSharedLib.grpcsharp_test_server_request_call_fake;
             this.grpcsharp_server_cancel_all_calls = DllImportsFromSharedLib.grpcsharp_server_cancel_all_calls;
             this.grpcsharp_server_shutdown_and_notify_callback = DllImportsFromSharedLib.grpcsharp_server_shutdown_and_notify_callback;
             this.grpcsharp_server_destroy = DllImportsFromSharedLib.grpcsharp_server_destroy;
@@ -522,6 +526,7 @@ namespace Grpc.Core.Internal
             public delegate int grpcsharp_server_add_secure_http2_port_delegate(ServerSafeHandle server, string addr, ServerCredentialsSafeHandle creds);
             public delegate void grpcsharp_server_start_delegate(ServerSafeHandle server);
             public delegate CallError grpcsharp_server_request_call_delegate(ServerSafeHandle server, CompletionQueueSafeHandle cq, RequestCallContextSafeHandle ctx);
+            public delegate CallError grpcsharp_test_server_request_call_fake_delegate(ServerSafeHandle server, CompletionQueueSafeHandle cq, RequestCallContextSafeHandle ctx);
             public delegate void grpcsharp_server_cancel_all_calls_delegate(ServerSafeHandle server);
             public delegate void grpcsharp_server_shutdown_and_notify_callback_delegate(ServerSafeHandle server, CompletionQueueSafeHandle cq, BatchContextSafeHandle ctx);
             public delegate void grpcsharp_server_destroy_delegate(IntPtr server);
@@ -787,6 +792,9 @@ namespace Grpc.Core.Internal
             
             [DllImport(ImportName)]
             public static extern CallError grpcsharp_server_request_call(ServerSafeHandle server, CompletionQueueSafeHandle cq, RequestCallContextSafeHandle ctx);
+            
+            [DllImport(ImportName)]
+            public static extern CallError grpcsharp_test_server_request_call_fake(ServerSafeHandle server, CompletionQueueSafeHandle cq, RequestCallContextSafeHandle ctx);
             
             [DllImport(ImportName)]
             public static extern void grpcsharp_server_cancel_all_calls(ServerSafeHandle server);
@@ -1086,6 +1094,9 @@ namespace Grpc.Core.Internal
             
             [DllImport(ImportName)]
             public static extern CallError grpcsharp_server_request_call(ServerSafeHandle server, CompletionQueueSafeHandle cq, RequestCallContextSafeHandle ctx);
+            
+            [DllImport(ImportName)]
+            public static extern CallError grpcsharp_test_server_request_call_fake(ServerSafeHandle server, CompletionQueueSafeHandle cq, RequestCallContextSafeHandle ctx);
             
             [DllImport(ImportName)]
             public static extern void grpcsharp_server_cancel_all_calls(ServerSafeHandle server);

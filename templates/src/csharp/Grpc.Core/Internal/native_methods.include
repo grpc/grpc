@@ -80,6 +80,7 @@ native_method_signatures = [
     'int grpcsharp_server_add_secure_http2_port(ServerSafeHandle server, string addr, ServerCredentialsSafeHandle creds)',
     'void grpcsharp_server_start(ServerSafeHandle server)',
     'CallError grpcsharp_server_request_call(ServerSafeHandle server, CompletionQueueSafeHandle cq, RequestCallContextSafeHandle ctx)',
+    'CallError grpcsharp_test_server_request_call_fake(ServerSafeHandle server, CompletionQueueSafeHandle cq, RequestCallContextSafeHandle ctx)',
     'void grpcsharp_server_cancel_all_calls(ServerSafeHandle server)',
     'void grpcsharp_server_shutdown_and_notify_callback(ServerSafeHandle server, CompletionQueueSafeHandle cq, BatchContextSafeHandle ctx)',
     'void grpcsharp_server_destroy(IntPtr server)',

@@ -265,6 +265,16 @@ namespace Grpc.Core
             }
         }
 
+        // only for testing.
+        internal void AddCallHandlerInternal(string methodName, IServerCallHandler handler)
+        {
+            lock (myLock)
+            {
+                GrpcPreconditions.CheckState(!startRequested);
+                callHandlers.Add(methodName, handler);
+            }
+        }
+
         /// <summary>
         /// Adds a listening port.
         /// </summary>

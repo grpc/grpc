@@ -342,6 +342,10 @@ void grpcsharp_server_request_call() {
   fprintf(stderr, "Should never reach here");
   abort();
 }
+void grpcsharp_test_server_request_call_fake() {
+  fprintf(stderr, "Should never reach here");
+  abort();
+}
 void grpcsharp_server_cancel_all_calls() {
   fprintf(stderr, "Should never reach here");
   abort();
