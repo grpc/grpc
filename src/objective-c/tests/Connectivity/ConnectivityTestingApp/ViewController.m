@@ -24,8 +24,6 @@
 #import <RxLibrary/GRXWriter+Immediate.h>
 #import <RxLibrary/GRXWriter+Transformations.h>
 
-#import "src/objective-c/GRPCClient/private/GRPCConnectivityMonitor.h"
-
 NSString *host = @"grpc-test.sandbox.googleapis.com";
 
 @interface ViewController : UIViewController
@@ -34,10 +32,6 @@ NSString *host = @"grpc-test.sandbox.googleapis.com";
 @implementation ViewController
 - (void)viewDidLoad {
   [super viewDidLoad];
-
-#ifndef GRPC_CFSTREAM
-  [GRPCConnectivityMonitor registerObserver:self selector:@selector(reachabilityChanged:)];
-#endif
 }
 
 - (void)reachabilityChanged:(NSNotification *)note {
