@@ -2,6 +2,8 @@
 
 load("@bazel_tools//tools/build_defs/repo:git.bzl", "git_repository")
 load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
+load("@com_github_grpc_grpc//bazel:grpc_python_deps.bzl", "grpc_python_deps")
+
 
 def grpc_deps():
     """Loads dependencies need to compile and test the grpc library."""
@@ -231,7 +233,10 @@ def grpc_deps():
             remote = "https://github.com/bazelbuild/rules_apple.git",
             tag = "0.17.2",
         )
-    
+
+    grpc_python_deps()
+
+
 # TODO: move some dependencies from "grpc_deps" here?
 def grpc_test_only_deps():
     """Internal, not intended for use by packages that are consuming grpc.
@@ -290,3 +295,4 @@ def grpc_test_only_deps():
             url = "https://github.com/twisted/constantly/archive/15.1.0.zip",
             build_file = "@com_github_grpc_grpc//third_party:constantly.BUILD",
         )
+

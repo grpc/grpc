@@ -39,10 +39,6 @@ rbe_autoconfig(
     ),
 )
 
-load("@com_github_grpc_grpc//bazel:grpc_python_deps.bzl", "grpc_python_deps")
-grpc_python_deps()
-
-
 load("@io_bazel_rules_python//python:pip.bzl", "pip_repositories", "pip_import")
 
 pip_import(
