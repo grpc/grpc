@@ -15,6 +15,7 @@
 licenses(["notice"])  # Apache v2
 
 load("//bazel:grpc_build_system.bzl", "grpc_cc_binary", "grpc_cc_library", "grpc_cc_test", "grpc_package")
+load("//bazel:cc_grpc_library.bzl", "cc_grpc_library")
 
 grpc_package(
     name = "test/cpp/end2end",
@@ -89,6 +90,7 @@ grpc_cc_test(
     external_deps = [
         "gtest",
     ],
+    tags = ["no_windows"],
     deps = [
         ":test_service_impl",
         "//:gpr",
@@ -99,7 +101,6 @@ grpc_cc_test(
         "//test/core/util:grpc_test_util",
         "//test/cpp/util:test_util",
     ],
-    tags = ["no_windows"],
 )
 
 grpc_cc_test(
@@ -492,6 +493,7 @@ grpc_cc_test(
         "//:grpc++",
         "//:grpc_resolver_fake",
         "//src/proto/grpc/lb/v1:load_balancer_proto",
+        "//src/proto/grpc/lb/v2:xds_proto",
         "//src/proto/grpc/testing:echo_messages_proto",
         "//src/proto/grpc/testing:echo_proto",
         "//src/proto/grpc/testing/duplicate:echo_duplicate_proto",
@@ -658,6 +660,7 @@ grpc_cc_test(
     external_deps = [
         "gtest",
     ],
+    tags = ["no_windows"],
     deps = [
         "//:gpr",
         "//:grpc",
@@ -668,7 +671,6 @@ grpc_cc_test(
         "//test/core/util:grpc_test_util",
         "//test/cpp/util:test_util",
     ],
-    tags = ["no_windows"],
 )
 
 grpc_cc_test(
@@ -718,8 +720,8 @@ grpc_cc_test(
     ],
     deps = [
         ":test_service_impl",
-        "//:grpc",
         "//:gpr",
+        "//:grpc",
         "//:grpc++",
         "//src/proto/grpc/testing:echo_messages_proto",
         "//src/proto/grpc/testing:echo_proto",
@@ -746,4 +748,3 @@ grpc_cc_test(
         "//test/cpp/util:test_util",
     ],
 )
-

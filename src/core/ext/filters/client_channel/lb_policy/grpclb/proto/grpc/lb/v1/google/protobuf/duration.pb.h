@@ -20,7 +20,7 @@ typedef struct _google_protobuf_Duration {
     bool has_nanos;
     int32_t nanos;
 /* @@protoc_insertion_point(struct:google_protobuf_Duration) */
-} google_protobuf_Duration;
+} google_protobuf_Duration_nanopb;
 
 /* Default values for struct fields */
 

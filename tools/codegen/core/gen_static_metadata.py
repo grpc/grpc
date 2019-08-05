@@ -63,6 +63,7 @@ CONFIG = [
     'grpc.max_response_message_bytes',
     # well known method names
     '/grpc.lb.v1.LoadBalancer/BalanceLoad',
+    '/envoy.api.v2.EndpointDiscoveryService/StreamEndpoints',
     '/grpc.health.v1.Health/Watch',
     '/envoy.service.discovery.v2.AggregatedDiscoveryService/StreamAggregatedResources',
     # compression algorithm names

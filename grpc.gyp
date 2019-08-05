@@ -264,6 +264,7 @@
       'type': 'static_library',
       'dependencies': [
         'gpr',
+        'upb',
       ],
       'sources': [
         'src/core/lib/surface/init.cc',
@@ -614,6 +615,7 @@
       'dependencies': [
         'gpr',
         'grpc',
+        'upb',
       ],
       'sources': [
         'test/core/end2end/data/client_certs.cc',
@@ -871,6 +873,7 @@
       'dependencies': [
         'gpr',
         'grpc_unsecure',
+        'upb',
       ],
       'sources': [
         'src/core/ext/filters/client_channel/resolver/fake/fake_resolver.cc',
@@ -1122,6 +1125,7 @@
       'type': 'static_library',
       'dependencies': [
         'gpr',
+        'upb',
       ],
       'sources': [
         'src/core/lib/surface/init.cc',

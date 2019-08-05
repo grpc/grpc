@@ -203,7 +203,7 @@ int grpc_sockaddr_to_string(char** out,
 void grpc_string_to_sockaddr(grpc_resolved_address* out, char* addr, int port) {
   grpc_sockaddr_in6* addr6 = (grpc_sockaddr_in6*)out->addr;
   grpc_sockaddr_in* addr4 = (grpc_sockaddr_in*)out->addr;
-
+  memset(out, 0, sizeof(grpc_resolved_address));
   if (grpc_inet_pton(GRPC_AF_INET6, addr, &addr6->sin6_addr) == 1) {
     addr6->sin6_family = GRPC_AF_INET6;
     addr6->sin6_flowinfo = 0;

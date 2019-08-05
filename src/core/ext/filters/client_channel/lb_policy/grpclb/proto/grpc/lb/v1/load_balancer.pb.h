@@ -53,7 +53,7 @@ typedef struct _grpc_lb_v1_InitialLoadBalanceResponse {
     bool has_load_balancer_delegate;
     char load_balancer_delegate[64];
     bool has_client_stats_report_interval;
-    google_protobuf_Duration client_stats_report_interval;
+    google_protobuf_Duration_nanopb client_stats_report_interval;
 /* @@protoc_insertion_point(struct:grpc_lb_v1_InitialLoadBalanceResponse) */
 } grpc_lb_v1_InitialLoadBalanceResponse;
 

@@ -101,6 +101,12 @@ def grpc_deps():
         actual = "@io_opencensus_cpp//opencensus/stats:test_utils",
     )
 
+    # FIXME
+    native.bind(
+        name = "envoy-cds",
+        actual = "@envoy_api//envoy/api/v2:cds_export",
+    )
+
     if "boringssl" not in native.existing_rules():
         http_archive(
             name = "boringssl",
@@ -231,7 +237,7 @@ def grpc_deps():
             remote = "https://github.com/bazelbuild/rules_apple.git",
             tag = "0.17.2",
         )
-    
+
 # TODO: move some dependencies from "grpc_deps" here?
 def grpc_test_only_deps():
     """Internal, not intended for use by packages that are consuming grpc.

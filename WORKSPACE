@@ -66,15 +66,18 @@ rbe_autoconfig(
     ),
 )
 
-
 load("@upb//bazel:workspace_deps.bzl", "upb_deps")
+
 upb_deps()
 
 load("@envoy_api//bazel:repositories.bzl", "api_dependencies")
+
 api_dependencies()
 
 load("@io_bazel_rules_go//go:deps.bzl", "go_rules_dependencies", "go_register_toolchains")
+
 go_rules_dependencies()
+
 go_register_toolchains()
 
 

@@ -10,8 +10,8 @@
 
 
 const pb_field_t google_protobuf_Duration_fields[3] = {
-    PB_FIELD(  1, INT64   , OPTIONAL, STATIC  , FIRST, google_protobuf_Duration, seconds, seconds, 0),
-    PB_FIELD(  2, INT32   , OPTIONAL, STATIC  , OTHER, google_protobuf_Duration, nanos, seconds, 0),
+    PB_FIELD(  1, INT64   , OPTIONAL, STATIC  , FIRST, google_protobuf_Duration_nanopb, seconds, seconds, 0),
+    PB_FIELD(  2, INT32   , OPTIONAL, STATIC  , OTHER, google_protobuf_Duration_nanopb, nanos, seconds, 0),
     PB_LAST_FIELD
 };
 

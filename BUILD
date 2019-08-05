@@ -342,7 +342,6 @@ grpc_cc_library(
     ],
 )
 
-
 grpc_cc_library(
     name = "grpc++_public_hdrs",
     hdrs = GRPCXX_PUBLIC_HDRS,
@@ -1301,10 +1300,12 @@ grpc_cc_library(
     ],
     language = "c++",
     deps = [
+        "envoy_ads_upb",
         "grpc_base",
         "grpc_client_channel",
         "grpc_resolver_fake",
         "grpclb_proto",
+        "upb_google_any",
     ],
 )
 
@@ -1327,11 +1328,13 @@ grpc_cc_library(
     ],
     language = "c++",
     deps = [
+        "envoy_ads_upb",
         "grpc_base",
         "grpc_client_channel",
         "grpc_resolver_fake",
         "grpc_secure",
         "grpclb_proto",
+        "upb_google_any",
     ],
 )
 
@@ -2077,7 +2080,7 @@ grpc_cc_library(
         "include/grpcpp/impl/codegen/config.h",
         "include/grpcpp/impl/codegen/core_codegen_interface.h",
         "include/grpcpp/impl/codegen/create_auth_context.h",
-        "include/grpcpp/impl/codegen/delegating_channel.h",        
+        "include/grpcpp/impl/codegen/delegating_channel.h",
         "include/grpcpp/impl/codegen/grpc_library.h",
         "include/grpcpp/impl/codegen/intercepted_channel.h",
         "include/grpcpp/impl/codegen/interceptor.h",
@@ -2279,31 +2282,36 @@ grpc_cc_library(
 
 grpc_upb_proto_library(
     name = "upb_load_report",
-    deps = ["@envoy_api//envoy/api/v2/endpoint:load_report_export"]
+    deps = ["@envoy_api//envoy/api/v2/endpoint:load_report_export"],
 )
 
 grpc_upb_proto_library(
     name = "upb_lrs",
-    deps = ["@envoy_api//envoy/service/load_stats/v2:lrs_export"]
+    deps = ["@envoy_api//envoy/service/load_stats/v2:lrs_export"],
 )
 
 grpc_upb_proto_library(
     name = "upb_cds",
-    deps = ["@envoy_api//envoy/api/v2:cds_export"]
+    deps = ["@envoy_api//envoy/api/v2:cds_export"],
+)
+
+grpc_upb_proto_library(
+    name = "upb_google_any",
+    deps = ["@com_google_protobuf//:any_proto"],
 )
 
 #TODO: Get this into build.yaml once we start using it.
 grpc_cc_library(
     name = "envoy_lrs_upb",
-    language = "c++",
     external_deps = [
         "upb_lib",
     ],
+    language = "c++",
+    tags = ["no_windows"],
     deps = [
         ":upb_load_report",
-        ":upb_lrs"
+        ":upb_lrs",
     ],
-    tags = ["no_windows"],
 )
 
 grpc_cc_library(
@@ -2312,25 +2320,25 @@ grpc_cc_library(
         "upb_lib",
     ],
     language = "c++",
+    tags = ["no_windows"],
     deps = [
         ":upb_cds",
     ],
-    tags = ["no_windows"],
 )
 
 grpc_upb_proto_library(
     name = "grpc_health_upb",
-    deps = ["//src/proto/grpc/health/v1:health_proto_descriptor"]
+    deps = ["//src/proto/grpc/health/v1:health_proto_descriptor"],
 )
 
 grpc_upb_proto_library(
     name = "grpc_lb_upb",
-    deps = ["//src/proto/grpc/lb/v1:load_balancer_proto_descriptor"]
+    deps = ["//src/proto/grpc/lb/v1:load_balancer_proto_descriptor"],
 )
 
 grpc_upb_proto_library(
     name = "alts_upb",
-    deps = ["//src/proto/grpc/gcp:alts_handshaker_proto"]
+    deps = ["//src/proto/grpc/gcp:alts_handshaker_proto"],
 )
 
 grpc_generate_one_off_targets()

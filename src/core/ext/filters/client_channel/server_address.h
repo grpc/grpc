@@ -68,6 +68,7 @@ class ServerAddress {
   }
   ServerAddress& operator=(ServerAddress&& other) {
     address_ = other.address_;
+    grpc_channel_args_destroy(args_);
     args_ = other.args_;
     other.args_ = nullptr;
     return *this;
