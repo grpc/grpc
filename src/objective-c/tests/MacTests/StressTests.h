@@ -22,6 +22,12 @@
 
 @interface StressTests : XCTestCase
 /**
+ * The test suite to run, checking if the current XCTestCase instance is the base class.
+ * If so, run no tests (disabled). Otherwise, proceed to normal execution.
+ */
+@property(class, readonly) XCTestSuite *defaultTestSuite;
+
+/**
  * Host to send the RPCs to. The base implementation returns nil, which would make all tests to
  * fail.
  * Override in a subclass to perform these tests against a specific address.
