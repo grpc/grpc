@@ -78,4 +78,7 @@ void grpc_register_security_filters(void) {
                                    maybe_prepend_server_auth_filter, nullptr);
 }
 
-void grpc_security_init() { grpc_core::SecurityRegisterHandshakerFactories(); }
+void grpc_security_init() {
+  grpc_core::SecurityRegisterHandshakerFactories();
+  grpc_control_plane_credentials_init();
+}

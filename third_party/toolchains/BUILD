@@ -32,7 +32,7 @@ platform(
     remote_execution_properties = """
         properties: {
           name: "container-image"
-          value:"docker://gcr.io/grpc-testing/rbe_windows_toolchain@sha256:689b177e4a157c431c7077d19d043de27922c37de835031f29c9093b8d5c6370"
+          value:"docker://gcr.io/grpc-testing/rbe_windows_toolchain@sha256:75728e7d6d804090f71095e5fec627b18cfa1f47adc52096c209f2a687e06b2e"
         }
         properties: {
           name: "gceMachineType"  # Small machines for majority of tests.

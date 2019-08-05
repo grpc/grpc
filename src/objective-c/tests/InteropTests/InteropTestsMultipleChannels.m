@@ -20,9 +20,9 @@
 
 #import <Cronet/Cronet.h>
 #import <GRPCClient/GRPCCallOptions.h>
-#import <RemoteTest/Messages.pbobjc.h>
-#import <RemoteTest/Test.pbobjc.h>
-#import <RemoteTest/Test.pbrpc.h>
+#import "src/objective-c/tests/RemoteTestClient/Messages.pbobjc.h"
+#import "src/objective-c/tests/RemoteTestClient/Test.pbobjc.h"
+#import "src/objective-c/tests/RemoteTestClient/Test.pbrpc.h"
 #import <RxLibrary/GRXBufferedPipe.h>
 
 #import "../ConfigureCronet.h"

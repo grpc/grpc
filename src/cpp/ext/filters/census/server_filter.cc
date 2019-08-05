@@ -155,7 +155,7 @@ void CensusServerCallData::StartTransportStreamOpBatch(
               op->send_trailing_metadata()->batch(), &census_bin_,
               grpc_mdelem_from_slices(
                   GRPC_MDSTR_GRPC_SERVER_STATS_BIN,
-                  grpc_slice_from_copied_buffer(stats_buf_, len))));
+                  grpc_core::UnmanagedMemorySlice(stats_buf_, len))));
     }
   }
   // Call next op.

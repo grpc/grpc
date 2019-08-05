@@ -117,12 +117,10 @@ class Resolver : public InternallyRefCounted<Resolver> {
   /// implementations.  At that point, this method can go away.
   virtual void ResetBackoffLocked() {}
 
+  // Note: This must be invoked while holding the combiner.
   void Orphan() override {
-    // Invoke ShutdownAndUnrefLocked() inside of the combiner.
-    GRPC_CLOSURE_SCHED(
-        GRPC_CLOSURE_CREATE(&Resolver::ShutdownAndUnrefLocked, this,
-                            grpc_combiner_scheduler(combiner_)),
-        GRPC_ERROR_NONE);
+    ShutdownLocked();
+    Unref();
   }
 
   GRPC_ABSTRACT_BASE_CLASS
@@ -147,12 +145,6 @@ class Resolver : public InternallyRefCounted<Resolver> {
   ResultHandler* result_handler() const { return result_handler_.get(); }
 
  private:
-  static void ShutdownAndUnrefLocked(void* arg, grpc_error* ignored) {
-    Resolver* resolver = static_cast<Resolver*>(arg);
-    resolver->ShutdownLocked();
-    resolver->Unref();
-  }
-
   UniquePtr<ResultHandler> result_handler_;
   grpc_combiner* combiner_;
 };

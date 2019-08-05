@@ -37,12 +37,7 @@ char* grpc_slice_to_c_string(grpc_slice slice) {
   return out;
 }
 
-grpc_slice grpc_empty_slice(void) {
-  grpc_slice out;
-  out.refcount = nullptr;
-  out.data.inlined.length = 0;
-  return out;
-}
+grpc_slice grpc_empty_slice(void) { return grpc_core::UnmanagedMemorySlice(); }
 
 grpc_slice grpc_slice_copy(grpc_slice s) {
   grpc_slice out = GRPC_SLICE_MALLOC(GRPC_SLICE_LENGTH(s));
@@ -112,11 +107,11 @@ size_t grpc_slice_memory_usage(grpc_slice s) {
 }
 
 grpc_slice grpc_slice_from_static_buffer(const void* s, size_t len) {
-  return grpc_slice_from_static_buffer_internal(s, len);
+  return grpc_core::ExternallyManagedSlice(s, len);
 }
 
 grpc_slice grpc_slice_from_static_string(const char* s) {
-  return grpc_slice_from_static_buffer_internal(s, strlen(s));
+  return grpc_core::ExternallyManagedSlice(s, strlen(s));
 }
 
 grpc_slice grpc_slice_new_with_user_data(void* p, size_t len,
@@ -202,15 +197,29 @@ grpc_slice grpc_slice_new_with_len(void* p, size_t len,
   return slice;
 }
 
+grpc_core::UnmanagedMemorySlice::UnmanagedMemorySlice(const char* source,
+                                                      size_t length) {
+  if (length <= sizeof(data.inlined.bytes)) {
+    refcount = nullptr;
+    data.inlined.length = static_cast<uint8_t>(length);
+  } else {
+    HeapInit(length);
+  }
+  if (length > 0) {
+    memcpy(GRPC_SLICE_START_PTR(*this), source, length);
+  }
+}
+
+grpc_core::UnmanagedMemorySlice::UnmanagedMemorySlice(const char* source)
+    : grpc_core::UnmanagedMemorySlice::UnmanagedMemorySlice(source,
+                                                            strlen(source)) {}
+
 grpc_slice grpc_slice_from_copied_buffer(const char* source, size_t length) {
-  if (length == 0) return grpc_empty_slice();
-  grpc_slice slice = GRPC_SLICE_MALLOC(length);
-  memcpy(GRPC_SLICE_START_PTR(slice), source, length);
-  return slice;
+  return grpc_core::UnmanagedMemorySlice(source, length);
 }
 
 grpc_slice grpc_slice_from_copied_string(const char* source) {
-  return grpc_slice_from_copied_buffer(source, strlen(source));
+  return grpc_core::UnmanagedMemorySlice(source, strlen(source));
 }
 
 grpc_slice grpc_slice_from_moved_buffer(grpc_core::UniquePtr<char> p,
@@ -261,8 +270,11 @@ class MallocRefCount {
 }  // namespace
 
 grpc_slice grpc_slice_malloc_large(size_t length) {
-  grpc_slice slice;
+  return grpc_core::UnmanagedMemorySlice(
+      length, grpc_core::UnmanagedMemorySlice::ForceHeapAllocation());
+}
 
+void grpc_core::UnmanagedMemorySlice::HeapInit(size_t length) {
   /* Memory layout used by the slice created here:
 
      +-----------+----------------------------------------------------------+
@@ -281,29 +293,30 @@ grpc_slice grpc_slice_malloc_large(size_t length) {
 
   /* Build up the slice to be returned. */
   /* The slices refcount points back to the allocated block. */
-  slice.refcount = rc->base_refcount();
+  refcount = rc->base_refcount();
   /* The data bytes are placed immediately after the refcount struct */
-  slice.data.refcounted.bytes = reinterpret_cast<uint8_t*>(rc + 1);
+  data.refcounted.bytes = reinterpret_cast<uint8_t*>(rc + 1);
   /* And the length of the block is set to the requested length */
-  slice.data.refcounted.length = length;
-  return slice;
+  data.refcounted.length = length;
 }
 
 grpc_slice grpc_slice_malloc(size_t length) {
-  grpc_slice slice;
-
-  if (length > sizeof(slice.data.inlined.bytes)) {
-    return grpc_slice_malloc_large(length);
-  } else {
-    /* small slice: just inline the data */
-    slice.refcount = nullptr;
-    slice.data.inlined.length = static_cast<uint8_t>(length);
-  }
-  return slice;
+  return grpc_core::UnmanagedMemorySlice(length);
 }
 
-grpc_slice grpc_slice_sub_no_ref(grpc_slice source, size_t begin, size_t end) {
-  grpc_slice subset;
+grpc_core::UnmanagedMemorySlice::UnmanagedMemorySlice(size_t length) {
+  if (length > sizeof(data.inlined.bytes)) {
+    HeapInit(length);
+  } else {
+    /* small slice: just inline the data */
+    refcount = nullptr;
+    data.inlined.length = static_cast<uint8_t>(length);
+  }
+}
+
+template <typename Slice>
+static Slice sub_no_ref(const Slice& source, size_t begin, size_t end) {
+  Slice subset;
 
   GPR_ASSERT(end >= begin);
 
@@ -325,6 +338,15 @@ grpc_slice grpc_slice_sub_no_ref(grpc_slice source, size_t begin, size_t end) {
            end - begin);
   }
   return subset;
+}
+
+grpc_slice grpc_slice_sub_no_ref(grpc_slice source, size_t begin, size_t end) {
+  return sub_no_ref(source, begin, end);
+}
+
+grpc_core::UnmanagedMemorySlice grpc_slice_sub_no_ref(
+    const grpc_core::UnmanagedMemorySlice& source, size_t begin, size_t end) {
+  return sub_no_ref(source, begin, end);
 }
 
 grpc_slice grpc_slice_sub(grpc_slice source, size_t begin, size_t end) {

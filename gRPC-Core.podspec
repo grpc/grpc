@@ -22,7 +22,7 @@
 
 Pod::Spec.new do |s|
   s.name     = 'gRPC-Core'
-  version = '1.23.0-dev'
+  version = '1.24.0-dev'
   s.version  = version
   s.summary  = 'Core cross-platform gRPC library, written in C'
   s.homepage = 'https://grpc.io'
@@ -879,6 +879,7 @@ Pod::Spec.new do |s|
                       'src/core/ext/filters/client_channel/resolver/dns/native/dns_resolver.cc',
                       'src/core/ext/filters/client_channel/resolver/sockaddr/sockaddr_resolver.cc',
                       'src/core/ext/filters/census/grpc_context.cc',
+                      'src/core/ext/filters/client_idle/client_idle_filter.cc',
                       'src/core/ext/filters/max_age/max_age_filter.cc',
                       'src/core/ext/filters/message_size/message_size_filter.cc',
                       'src/core/ext/filters/http/client_authority_filter.cc',
@@ -1231,6 +1232,7 @@ Pod::Spec.new do |s|
                       'third_party/nanopb/pb_common.c',
                       'third_party/nanopb/pb_decode.c',
                       'third_party/nanopb/pb_encode.c',
+                      'src/core/ext/transport/cronet/client/secure/cronet_channel_create.h',
                       'src/core/ext/transport/cronet/transport/cronet_transport.h',
                       'third_party/objective_c/Cronet/bidirectional_stream_c.h',
                       'third_party/nanopb/pb.h',

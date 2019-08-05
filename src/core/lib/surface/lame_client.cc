@@ -61,10 +61,10 @@ static void fill_metadata(grpc_call_element* elem, grpc_metadata_batch* mdb) {
   char tmp[GPR_LTOA_MIN_BUFSIZE];
   gpr_ltoa(chand->error_code, tmp);
   calld->status.md = grpc_mdelem_from_slices(
-      GRPC_MDSTR_GRPC_STATUS, grpc_slice_from_copied_string(tmp));
+      GRPC_MDSTR_GRPC_STATUS, grpc_core::UnmanagedMemorySlice(tmp));
   calld->details.md = grpc_mdelem_from_slices(
       GRPC_MDSTR_GRPC_MESSAGE,
-      grpc_slice_from_copied_string(chand->error_message));
+      grpc_core::UnmanagedMemorySlice(chand->error_message));
   calld->status.prev = calld->details.next = nullptr;
   calld->status.next = &calld->details;
   calld->details.prev = &calld->status;

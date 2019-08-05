@@ -146,38 +146,35 @@ CONFIG = [
     ('accept-encoding', ''),
     ('content-encoding', 'identity'),
     ('content-encoding', 'gzip'),
-    ('lb-token', ''),
     ('lb-cost-bin', ''),
 ]
 
 # All entries here are ignored when counting non-default initial metadata that
 # prevents the chttp2 server from sending a Trailers-Only response.
 METADATA_BATCH_CALLOUTS = [
-    # (name)
-    (':path'),
-    (':method'),
-    (':status'),
-    (':authority'),
-    (':scheme'),
-    ('te'),
-    ('grpc-message'),
-    ('grpc-status'),
-    ('grpc-payload-bin'),
-    ('grpc-encoding'),
-    ('grpc-accept-encoding'),
-    ('grpc-server-stats-bin'),
-    ('grpc-tags-bin'),
-    ('grpc-trace-bin'),
-    ('content-type'),
-    ('content-encoding'),
-    ('accept-encoding'),
-    ('grpc-internal-encoding-request'),
-    ('grpc-internal-stream-encoding-request'),
-    ('user-agent'),
-    ('host'),
-    ('lb-token'),
-    ('grpc-previous-rpc-attempts'),
-    ('grpc-retry-pushback-ms'),
+    ':path',
+    ':method',
+    ':status',
+    ':authority',
+    ':scheme',
+    'te',
+    'grpc-message',
+    'grpc-status',
+    'grpc-payload-bin',
+    'grpc-encoding',
+    'grpc-accept-encoding',
+    'grpc-server-stats-bin',
+    'grpc-tags-bin',
+    'grpc-trace-bin',
+    'content-type',
+    'content-encoding',
+    'accept-encoding',
+    'grpc-internal-encoding-request',
+    'grpc-internal-stream-encoding-request',
+    'user-agent',
+    'host',
+    'grpc-previous-rpc-attempts',
+    'grpc-retry-pushback-ms',
 ]
 
 COMPRESSION_ALGORITHMS = [
@@ -395,16 +392,21 @@ for i, elem in enumerate(all_strs):
 
 
 def slice_def(i):
-    return ('{&grpc_static_metadata_refcounts[%d],'
-            ' {{%d, g_bytes+%d}}}') % (i, len(all_strs[i]), id2strofs[i])
+    return (
+        'grpc_core::StaticMetadataSlice(&grpc_static_metadata_refcounts[%d].base, %d, g_bytes+%d)'
+    ) % (i, len(all_strs[i]), id2strofs[i])
 
 
 # validate configuration
 for elem in METADATA_BATCH_CALLOUTS:
     assert elem in all_strs
-
+static_slice_dest_assert = (
+    'static_assert(std::is_trivially_destructible' +
+    '<grpc_core::StaticMetadataSlice>::value, '
+    '"grpc_core::StaticMetadataSlice must be trivially destructible.");')
+print >> H, static_slice_dest_assert
 print >> H, '#define GRPC_STATIC_MDSTR_COUNT %d' % len(all_strs)
-print >> H, ('extern const grpc_slice '
+print >> H, ('extern const grpc_core::StaticMetadataSlice '
              'grpc_static_slice_table[GRPC_STATIC_MDSTR_COUNT];')
 for i, elem in enumerate(all_strs):
     print >> H, '/* "%s" */' % elem
@@ -414,29 +416,29 @@ print >> H
 print >> C, 'static uint8_t g_bytes[] = {%s};' % (','.join(
     '%d' % ord(c) for c in ''.join(all_strs)))
 print >> C
-print >> C, ('static grpc_slice_refcount static_sub_refcnt;')
-print >> H, ('extern grpc_slice_refcount '
+print >> H, ('namespace grpc_core { struct StaticSliceRefcount; }')
+print >> H, ('extern grpc_core::StaticSliceRefcount '
              'grpc_static_metadata_refcounts[GRPC_STATIC_MDSTR_COUNT];')
-print >> C, ('grpc_slice_refcount '
+print >> C, 'grpc_slice_refcount grpc_core::StaticSliceRefcount::kStaticSubRefcount;'
+print >> C, ('grpc_core::StaticSliceRefcount '
              'grpc_static_metadata_refcounts[GRPC_STATIC_MDSTR_COUNT] = {')
 for i, elem in enumerate(all_strs):
-    print >> C, ('  grpc_slice_refcount(&static_sub_refcnt, '
-                 'grpc_slice_refcount::Type::STATIC), ')
+    print >> C, '  grpc_core::StaticSliceRefcount(%d), ' % i
 print >> C, '};'
 print >> C
 print >> H, '#define GRPC_IS_STATIC_METADATA_STRING(slice) \\'
 print >> H, ('  ((slice).refcount != NULL && (slice).refcount->GetType() == '
              'grpc_slice_refcount::Type::STATIC)')
 print >> H
-print >> C, ('const grpc_slice grpc_static_slice_table[GRPC_STATIC_MDSTR_COUNT]'
-             ' = {')
+print >> C, (
+    'const grpc_core::StaticMetadataSlice grpc_static_slice_table[GRPC_STATIC_MDSTR_COUNT]'
+    ' = {')
 for i, elem in enumerate(all_strs):
     print >> C, slice_def(i) + ','
 print >> C, '};'
 print >> C
 print >> H, '#define GRPC_STATIC_METADATA_INDEX(static_slice) \\'
-print >> H, ('  (static_cast<intptr_t>(((static_slice).refcount - '
-             'grpc_static_metadata_refcounts)))')
+print >> H, '(reinterpret_cast<grpc_core::StaticSliceRefcount*>((static_slice).refcount)->index)'
 print >> H
 
 print >> D, '# hpack fuzzing dictionary'
@@ -595,8 +597,26 @@ for elem in METADATA_BATCH_CALLOUTS:
 print >> H, '  } named;'
 print >> H, '} grpc_metadata_batch_callouts;'
 print >> H
-print >> H, '#define GRPC_BATCH_INDEX_OF(slice) \\'
-print >> H, '  (GRPC_IS_STATIC_METADATA_STRING((slice)) ? static_cast<grpc_metadata_batch_callouts_index>(GPR_CLAMP(GRPC_STATIC_METADATA_INDEX((slice)), 0, static_cast<intptr_t>(GRPC_BATCH_CALLOUTS_COUNT))) : GRPC_BATCH_CALLOUTS_COUNT)'
+
+batch_idx_of_hdr = '#define GRPC_BATCH_INDEX_OF(slice) \\'
+static_slice = 'GRPC_IS_STATIC_METADATA_STRING((slice))'
+slice_to_slice_ref = '(slice).refcount'
+static_slice_ref_type = 'grpc_core::StaticSliceRefcount*'
+slice_ref_as_static = ('reinterpret_cast<' + static_slice_ref_type + '>(' +
+                       slice_to_slice_ref + ')')
+slice_ref_idx = slice_ref_as_static + '->index'
+batch_idx_type = 'grpc_metadata_batch_callouts_index'
+slice_ref_idx_to_batch_idx = (
+    'static_cast<' + batch_idx_type + '>(' + slice_ref_idx + ')')
+batch_invalid_idx = 'GRPC_BATCH_CALLOUTS_COUNT'
+batch_invalid_u32 = 'static_cast<uint32_t>(' + batch_invalid_idx + ')'
+# Assemble GRPC_BATCH_INDEX_OF(slice) macro as a join for ease of reading.
+batch_idx_of_pieces = [
+    batch_idx_of_hdr, '\n', '(', static_slice, '&&', slice_ref_idx, '<=',
+    batch_invalid_u32, '?', slice_ref_idx_to_batch_idx, ':', batch_invalid_idx,
+    ')'
+]
+print >> H, ''.join(batch_idx_of_pieces)
 print >> H
 
 print >> H, 'extern const uint8_t grpc_static_accept_encoding_metadata[%d];' % (
