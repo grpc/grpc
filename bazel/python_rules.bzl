@@ -208,6 +208,9 @@ def py_grpc_library(
     if len(srcs) > 1:
         fail("Can only compile a single proto at a time.")
 
+    if len(deps) > 1:
+        fail("Deps must have length 1.")
+
     _generate_pb2_grpc_src(
         name = codegen_grpc_target,
         deps = srcs,
