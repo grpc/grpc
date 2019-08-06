@@ -15,55 +15,83 @@
 # limitations under the License.
 
 
+load("//src/objective-c:grpc_objc_internal_library.bzl", "local_objc_grpc_library")
 load("@build_bazel_rules_apple//apple:ios.bzl", "ios_application")
-load(
-    "@com_github_grpc_grpc//bazel:objc_grpc_library.bzl",
-    "objc_grpc_library",
-)
+load("@build_bazel_rules_apple//apple:tvos.bzl", "tvos_application")
+load("@build_bazel_rules_apple//apple:watchos.bzl", "watchos_application")
 
 proto_library(
     name = "messages_proto",
-    srcs = ["BazelBuildSamples/messages.proto"],
-    visibility = ["//visibility:public"],
+    srcs = ["RemoteTestClient/messages.proto"],
 )
 
-objc_grpc_library(
+proto_library(
+    name = "test_proto",
+    srcs = ["RemoteTestClient/test.proto"],
+    deps = [":messages_proto"],
+)
+
+# use objc_grpc_library in bazel:objc_grpc_library.bzl when developing outside the repo
+local_objc_grpc_library(
     name = "test_grpc_objc",
-    srcs = ["BazelBuildSamples/rmt/test.proto"],
+    srcs = ["RemoteTestClient/test.proto"],
     use_well_known_protos = True,
     deps = [
-        "//src/objective-c/examples/BazelBuildSamples/rmt:test_proto",
+        "//src/objective-c/examples:test_proto",
     ],
 )
 
 # Proof that without this works without srcs
-objc_grpc_library(
+local_objc_grpc_library(
     name = "test_objc",
     use_well_known_protos = True,
     deps = [
-        "//src/objective-c/examples/BazelBuildSamples/rmt:test_proto",
-    ]
+        "//src/objective-c/examples:test_proto",
+    ],
 )
 
 objc_library(
-    name = "ios-sample-lib",
-    srcs = glob(["BazelBuildSamples/ios-sample/ios-sample/**/*.m"]),
-    hdrs = glob(["BazelBuildSamples/ios-sample/ios-sample/**/*.h"]),
+    name = "Sample-lib",
+    srcs = glob(["Sample/**/*.m"]),
+    hdrs = glob(["Sample/**/*.h"]),
     data = glob([
-        "BazelBuildSamples/ios-sample/ios-sample/Assets.xcassets/**/*",
-        "BazelBuildSamples/ios-sample/ios-sample/Base.lproj/**/*"
+        "Sample/Sample/Base.lproj/**",
+        "Sample/Sample/Images.xcassets/**",
     ]),
-    deps = [
-        ":test_grpc_objc",
-    ]
+    deps = [":test_grpc_objc"],
 )
 
 ios_application(
-    name = "ios-sample",
-    bundle_id = "com.google.ios-sample-objc-bazel",
-    families = ["iphone"],
-    minimum_os_version = "9.0",
-    infoplists = ["BazelBuildSamples/ios-sample/ios-sample/Info.plist"],
-    visibility = ["//visibility:public"],
-    deps = [":ios-sample-lib"],
+    name = "Sample",
+    bundle_id = "grpc.objc.examples.Sample",
+    minimum_os_version = "8.0",
+    infoplists = ["Sample/Sample/Info.plist"],
+    families = [
+        "iphone",
+        "ipad",
+    ],
+    deps = ["Sample-lib"],
+)
+
+objc_library(
+    name = "InterceptorSample-lib",
+    srcs = glob(["InterceptorSample/**/*.m"]),
+    hdrs = glob(["InterceptorSample/**/*.h"]),
+    data = glob([
+        "InterceptorSample/InterceptorSample/Base.lproj/**",
+        "InterceptorSample/InterceptorSample/Images.xcassets/**",
+    ]),
+    deps = [":test_grpc_objc"],
+)
+
+ios_application(
+    name = "InterceptorSample",
+    bundle_id = "grpc.objc.examples.InterceptorSample",
+    minimum_os_version = "9.0", # Safe Area Layout Guide used
+    infoplists = ["InterceptorSample/InterceptorSample/Info.plist"],
+    families = [
+        "iphone",
+        "ipad",
+    ],
+    deps = ["InterceptorSample-lib"],
 )
