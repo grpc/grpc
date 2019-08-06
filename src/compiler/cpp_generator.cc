@@ -896,7 +896,7 @@ void PrintHeaderServerMethodAsync(grpc_generator::Printer* printer,
                  "class WithAsyncMethod_$Method$ : public BaseClass {\n");
   printer->Print(
       " private:\n"
-      "  void BaseClassMustBeDerivedFromService(const Service * /*service*/) "
+      "  void BaseClassMustBeDerivedFromService(const Service* /*service*/) "
       "{}\n");
   printer->Print(" public:\n");
   printer->Indent();
@@ -1007,7 +1007,7 @@ void PrintHeaderServerMethodCallback(
       "class ExperimentalWithCallbackMethod_$Method$ : public BaseClass {\n");
   printer->Print(
       " private:\n"
-      "  void BaseClassMustBeDerivedFromService(const Service * /*service*/) "
+      "  void BaseClassMustBeDerivedFromService(const Service* /*service*/) "
       "{}\n");
   printer->Print(" public:\n");
   printer->Indent();
@@ -1082,7 +1082,7 @@ void PrintHeaderServerMethodRawCallback(
                  "BaseClass {\n");
   printer->Print(
       " private:\n"
-      "  void BaseClassMustBeDerivedFromService(const Service * /*service*/) "
+      "  void BaseClassMustBeDerivedFromService(const Service* /*service*/) "
       "{}\n");
   printer->Print(" public:\n");
   printer->Indent();
@@ -1322,7 +1322,7 @@ void PrintHeaderServerMethodRaw(grpc_generator::Printer* printer,
   printer->Print(*vars, "class WithRawMethod_$Method$ : public BaseClass {\n");
   printer->Print(
       " private:\n"
-      "  void BaseClassMustBeDerivedFromService(const Service * /*service*/) "
+      "  void BaseClassMustBeDerivedFromService(const Service* /*service*/) "
       "{}\n");
   printer->Print(" public:\n");
   printer->Indent();

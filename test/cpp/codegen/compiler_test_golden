@@ -252,7 +252,7 @@ class ServiceA final {
   template <class BaseClass>
   class WithAsyncMethod_MethodA1 : public BaseClass {
    private:
-    void BaseClassMustBeDerivedFromService(const Service * /*service*/) {}
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
    public:
     WithAsyncMethod_MethodA1() {
       ::grpc::Service::MarkMethodAsync(0);
@@ -272,7 +272,7 @@ class ServiceA final {
   template <class BaseClass>
   class WithAsyncMethod_MethodA2 : public BaseClass {
    private:
-    void BaseClassMustBeDerivedFromService(const Service * /*service*/) {}
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
    public:
     WithAsyncMethod_MethodA2() {
       ::grpc::Service::MarkMethodAsync(1);
@@ -292,7 +292,7 @@ class ServiceA final {
   template <class BaseClass>
   class WithAsyncMethod_MethodA3 : public BaseClass {
    private:
-    void BaseClassMustBeDerivedFromService(const Service * /*service*/) {}
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
    public:
     WithAsyncMethod_MethodA3() {
       ::grpc::Service::MarkMethodAsync(2);
@@ -312,7 +312,7 @@ class ServiceA final {
   template <class BaseClass>
   class WithAsyncMethod_MethodA4 : public BaseClass {
    private:
-    void BaseClassMustBeDerivedFromService(const Service * /*service*/) {}
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
    public:
     WithAsyncMethod_MethodA4() {
       ::grpc::Service::MarkMethodAsync(3);
@@ -333,7 +333,7 @@ class ServiceA final {
   template <class BaseClass>
   class ExperimentalWithCallbackMethod_MethodA1 : public BaseClass {
    private:
-    void BaseClassMustBeDerivedFromService(const Service * /*service*/) {}
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
    public:
     ExperimentalWithCallbackMethod_MethodA1() {
       ::grpc::Service::experimental().MarkMethodCallback(0,
@@ -364,7 +364,7 @@ class ServiceA final {
   template <class BaseClass>
   class ExperimentalWithCallbackMethod_MethodA2 : public BaseClass {
    private:
-    void BaseClassMustBeDerivedFromService(const Service * /*service*/) {}
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
    public:
     ExperimentalWithCallbackMethod_MethodA2() {
       ::grpc::Service::experimental().MarkMethodCallback(1,
@@ -386,7 +386,7 @@ class ServiceA final {
   template <class BaseClass>
   class ExperimentalWithCallbackMethod_MethodA3 : public BaseClass {
    private:
-    void BaseClassMustBeDerivedFromService(const Service * /*service*/) {}
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
    public:
     ExperimentalWithCallbackMethod_MethodA3() {
       ::grpc::Service::experimental().MarkMethodCallback(2,
@@ -408,7 +408,7 @@ class ServiceA final {
   template <class BaseClass>
   class ExperimentalWithCallbackMethod_MethodA4 : public BaseClass {
    private:
-    void BaseClassMustBeDerivedFromService(const Service * /*service*/) {}
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
    public:
     ExperimentalWithCallbackMethod_MethodA4() {
       ::grpc::Service::experimental().MarkMethodCallback(3,
@@ -499,7 +499,7 @@ class ServiceA final {
   template <class BaseClass>
   class WithRawMethod_MethodA1 : public BaseClass {
    private:
-    void BaseClassMustBeDerivedFromService(const Service * /*service*/) {}
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
    public:
     WithRawMethod_MethodA1() {
       ::grpc::Service::MarkMethodRaw(0);
@@ -519,7 +519,7 @@ class ServiceA final {
   template <class BaseClass>
   class WithRawMethod_MethodA2 : public BaseClass {
    private:
-    void BaseClassMustBeDerivedFromService(const Service * /*service*/) {}
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
    public:
     WithRawMethod_MethodA2() {
       ::grpc::Service::MarkMethodRaw(1);
@@ -539,7 +539,7 @@ class ServiceA final {
   template <class BaseClass>
   class WithRawMethod_MethodA3 : public BaseClass {
    private:
-    void BaseClassMustBeDerivedFromService(const Service * /*service*/) {}
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
    public:
     WithRawMethod_MethodA3() {
       ::grpc::Service::MarkMethodRaw(2);
@@ -559,7 +559,7 @@ class ServiceA final {
   template <class BaseClass>
   class WithRawMethod_MethodA4 : public BaseClass {
    private:
-    void BaseClassMustBeDerivedFromService(const Service * /*service*/) {}
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
    public:
     WithRawMethod_MethodA4() {
       ::grpc::Service::MarkMethodRaw(3);
@@ -579,7 +579,7 @@ class ServiceA final {
   template <class BaseClass>
   class ExperimentalWithRawCallbackMethod_MethodA1 : public BaseClass {
    private:
-    void BaseClassMustBeDerivedFromService(const Service * /*service*/) {}
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
    public:
     ExperimentalWithRawCallbackMethod_MethodA1() {
       ::grpc::Service::experimental().MarkMethodRawCallback(0,
@@ -604,7 +604,7 @@ class ServiceA final {
   template <class BaseClass>
   class ExperimentalWithRawCallbackMethod_MethodA2 : public BaseClass {
    private:
-    void BaseClassMustBeDerivedFromService(const Service * /*service*/) {}
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
    public:
     ExperimentalWithRawCallbackMethod_MethodA2() {
       ::grpc::Service::experimental().MarkMethodRawCallback(1,
@@ -626,7 +626,7 @@ class ServiceA final {
   template <class BaseClass>
   class ExperimentalWithRawCallbackMethod_MethodA3 : public BaseClass {
    private:
-    void BaseClassMustBeDerivedFromService(const Service * /*service*/) {}
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
    public:
     ExperimentalWithRawCallbackMethod_MethodA3() {
       ::grpc::Service::experimental().MarkMethodRawCallback(2,
@@ -648,7 +648,7 @@ class ServiceA final {
   template <class BaseClass>
   class ExperimentalWithRawCallbackMethod_MethodA4 : public BaseClass {
    private:
-    void BaseClassMustBeDerivedFromService(const Service * /*service*/) {}
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
    public:
     ExperimentalWithRawCallbackMethod_MethodA4() {
       ::grpc::Service::experimental().MarkMethodRawCallback(3,
@@ -790,7 +790,7 @@ class ServiceB final {
   template <class BaseClass>
   class WithAsyncMethod_MethodB1 : public BaseClass {
    private:
-    void BaseClassMustBeDerivedFromService(const Service * /*service*/) {}
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
    public:
     WithAsyncMethod_MethodB1() {
       ::grpc::Service::MarkMethodAsync(0);
@@ -811,7 +811,7 @@ class ServiceB final {
   template <class BaseClass>
   class ExperimentalWithCallbackMethod_MethodB1 : public BaseClass {
    private:
-    void BaseClassMustBeDerivedFromService(const Service * /*service*/) {}
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
    public:
     ExperimentalWithCallbackMethod_MethodB1() {
       ::grpc::Service::experimental().MarkMethodCallback(0,
@@ -860,7 +860,7 @@ class ServiceB final {
   template <class BaseClass>
   class WithRawMethod_MethodB1 : public BaseClass {
    private:
-    void BaseClassMustBeDerivedFromService(const Service * /*service*/) {}
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
    public:
     WithRawMethod_MethodB1() {
       ::grpc::Service::MarkMethodRaw(0);
@@ -880,7 +880,7 @@ class ServiceB final {
   template <class BaseClass>
   class ExperimentalWithRawCallbackMethod_MethodB1 : public BaseClass {
    private:
-    void BaseClassMustBeDerivedFromService(const Service * /*service*/) {}
+    void BaseClassMustBeDerivedFromService(const Service* /*service*/) {}
    public:
     ExperimentalWithRawCallbackMethod_MethodB1() {
       ::grpc::Service::experimental().MarkMethodRawCallback(0,
