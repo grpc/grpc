@@ -1154,7 +1154,8 @@ void grpc_chttp2_add_incoming_goaway(grpc_chttp2_transport* t,
   GRPC_CHTTP2_IF_TRACING(
       gpr_log(GPR_INFO, "transport %p got goaway with last stream id %d", t,
               last_stream_id));
-  /* We want to log this irrespective of whether http tracing is enabled */
+  /* We want to log this irrespective of whether http tracing is enabled if we
+   * received a GOAWAY with a non NO_ERROR code. */
   if (goaway_error != GRPC_HTTP2_NO_ERROR) {
     gpr_log(GPR_INFO, "%s: Got goaway [%d] err=%s", t->peer_string,
             goaway_error, grpc_error_string(t->goaway_error));
