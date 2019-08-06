@@ -20,7 +20,7 @@ import unittest
 
 import grpc
 
-# Import using an absolute path to ensure no duplicate loaded modules.
+# TODO(https://github.com/grpc/grpc/issues/19863): Remove.
 try:
     from src.python.grpcio_health_checking.grpc_health.v1 import health
     from src.python.grpcio_health_checking.grpc_health.v1 import health_pb2

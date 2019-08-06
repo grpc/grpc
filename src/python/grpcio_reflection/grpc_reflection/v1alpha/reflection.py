@@ -17,6 +17,7 @@ import grpc
 from google.protobuf import descriptor_pb2
 from google.protobuf import descriptor_pool
 
+# TODO(https://github.com/grpc/grpc/issues/19863): Remove.
 try:
     from src.python.grpcio_reflection.grpc_reflection.v1alpha \
         import reflection_pb2 as _reflection_pb2

@@ -16,6 +16,8 @@
 import unittest
 
 import grpc
+
+# TODO(https://github.com/grpc/grpc/issues/19863): Remove.
 try:
     from src.python.grpcio_reflection.grpc_reflection.v1alpha import reflection
     from src.python.grpcio_reflection.grpc_reflection.v1alpha import reflection_pb2

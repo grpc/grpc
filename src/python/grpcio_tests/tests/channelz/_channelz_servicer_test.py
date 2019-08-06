@@ -18,6 +18,8 @@ import unittest
 from concurrent import futures
 
 import grpc
+
+# TODO(https://github.com/grpc/grpc/issues/19863): Remove.
 try:
     from src.python.grpcio_channelz.grpc_channelz.v1 import channelz
     from src.python.grpcio_channelz.grpc_channelz.v1 import channelz_pb2
