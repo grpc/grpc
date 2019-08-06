@@ -193,8 +193,6 @@ void ChannelData::EnterIdle() {
   GRPC_IDLE_FILTER_LOG("the channel will enter IDLE");
   // Hold a ref to the channel stack for the transport op.
   GRPC_CHANNEL_STACK_REF(channel_stack_, "idle transport op");
-  // Initialize the transport op.
-  memset(&idle_transport_op_, 0, sizeof(idle_transport_op_));
   idle_transport_op_.disconnect_with_error = grpc_error_set_int(
       GRPC_ERROR_CREATE_FROM_STATIC_STRING("enter idle"),
       GRPC_ERROR_INT_CHANNEL_CONNECTIVITY_STATE, GRPC_CHANNEL_IDLE);
