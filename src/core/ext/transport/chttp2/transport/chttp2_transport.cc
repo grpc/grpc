@@ -785,12 +785,6 @@ static void destroy_stream(grpc_transport* gt, grpc_stream* gs,
       GRPC_ERROR_NONE);
 }
 
-grpc_chttp2_stream* grpc_chttp2_parsing_lookup_stream(grpc_chttp2_transport* t,
-                                                      uint32_t id) {
-  return static_cast<grpc_chttp2_stream*>(
-      grpc_chttp2_stream_map_find(&t->stream_map, id));
-}
-
 grpc_chttp2_stream* grpc_chttp2_parsing_accept_stream(grpc_chttp2_transport* t,
                                                       uint32_t id) {
   if (t->channel_callback.accept_stream == nullptr) {
@@ -2069,7 +2063,7 @@ static void remove_stream(grpc_chttp2_transport* t, uint32_t id,
                           grpc_error* error) {
   grpc_chttp2_stream* s = static_cast<grpc_chttp2_stream*>(
       grpc_chttp2_stream_map_delete(&t->stream_map, id));
-  GPR_ASSERT(s);
+  GPR_DEBUG_ASSERT(s);
   if (t->incoming_stream == s) {
     t->incoming_stream = nullptr;
     grpc_chttp2_parsing_become_skip_parser(t);
@@ -2597,7 +2591,6 @@ static void read_action_locked(void* tp, grpc_error* error) {
     t->endpoint_reading = 0;
   } else if (t->closed_with_error == GRPC_ERROR_NONE) {
     keep_reading = true;
-    GRPC_CHTTP2_REF_TRANSPORT(t, "keep_reading");
     /* Since we have read a byte, reset the keepalive timer */
     if (t->keepalive_state == GRPC_CHTTP2_KEEPALIVE_STATE_WAITING) {
       grpc_timer_cancel(&t->keepalive_ping_timer);
@@ -2610,7 +2603,6 @@ static void read_action_locked(void* tp, grpc_error* error) {
     grpc_endpoint_read(t->ep, &t->read_buffer, &t->read_action_locked, urgent);
     grpc_chttp2_act_on_flowctl_action(t->flow_control->MakeAction(), t,
                                       nullptr);
-    GRPC_CHTTP2_UNREF_TRANSPORT(t, "keep_reading");
   } else {
     GRPC_CHTTP2_UNREF_TRANSPORT(t, "reading_action");
   }

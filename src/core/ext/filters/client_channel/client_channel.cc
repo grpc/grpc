@@ -1510,7 +1510,7 @@ void ChannelData::CreateResolvingLoadBalancingPolicyLocked() {
       UniquePtr<LoadBalancingPolicy::ChannelControlHelper>(
           New<ClientChannelControlHelper>(this));
   lb_args.args = channel_args_;
-  UniquePtr<char> target_uri(strdup(target_uri_.get()));
+  UniquePtr<char> target_uri(gpr_strdup(target_uri_.get()));
   resolving_lb_policy_.reset(New<ResolvingLoadBalancingPolicy>(
       std::move(lb_args), &grpc_client_channel_routing_trace,
       std::move(target_uri), ProcessResolverResultLocked, this));
