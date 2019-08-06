@@ -82,7 +82,7 @@ def run_server(port):
 
     server.start()
     try:
-        yield server, port,
+        yield server, port
     finally:
         server.stop(0)
 
