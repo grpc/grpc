@@ -60,7 +60,7 @@ namespace Grpc.Core.Internal
         public RequestCallCompletionDelegate CompletionCallback { get; set; }
 
         // Gets data of server_rpc_new completion.
-        public ServerRpcNew GetServerRpcNew(Server server, BinaryKeyDictionary methodLookup)
+        public ServerRpcNew GetServerRpcNew(Server server, BinaryStringDictionary methodLookup)
         {
             var call = Native.grpcsharp_request_call_context_call(this);
 

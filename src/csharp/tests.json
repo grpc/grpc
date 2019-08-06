@@ -4,6 +4,7 @@
     "Grpc.Core.Interceptors.Tests.ServerInterceptorTest",
     "Grpc.Core.Internal.Tests.AsyncCallServerTest",
     "Grpc.Core.Internal.Tests.AsyncCallTest",
+    "Grpc.Core.Internal.Tests.BinaryStringDictionaryTest",
     "Grpc.Core.Internal.Tests.ChannelArgsSafeHandleTest",
     "Grpc.Core.Internal.Tests.CompletionQueueEventTest",
     "Grpc.Core.Internal.Tests.CompletionQueueSafeHandleTest",

@@ -48,7 +48,7 @@ namespace Grpc.Core
         readonly List<ServerServiceDefinition> serviceDefinitionsList = new List<ServerServiceDefinition>();
         readonly List<ServerPort> serverPortList = new List<ServerPort>();
         readonly Dictionary<string, IServerCallHandler> callHandlers = new Dictionary<string, IServerCallHandler>();
-        readonly BinaryKeyDictionary methodLookup = new BinaryKeyDictionary();
+        readonly BinaryStringDictionary methodLookup = new BinaryStringDictionary();
         readonly TaskCompletionSource<object> shutdownTcs = new TaskCompletionSource<object>();
 
         bool startRequested;

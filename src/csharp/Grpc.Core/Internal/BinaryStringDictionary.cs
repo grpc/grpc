@@ -25,16 +25,15 @@ using Grpc.Core.Utils;
 namespace Grpc.Core.Internal
 {
     /// <summary>
-    /// Read only cache of string instances that can be looked up by their binary
-    /// representation.
+    /// Dictionary of string instances that can be looked up by their binary
+    /// representation (ASCII encoded).
     /// </summary>
-    internal class BinaryKeyDictionary
+    internal class BinaryStringDictionary
     {
-        // TODO: use same encoding as RequestCallContextSafeHandle
         static readonly Encoding EncodingACII = System.Text.Encoding.ASCII;
         Dictionary<BinaryKey, string> dict = new Dictionary<BinaryKey, string>();
 
-        public BinaryKeyDictionary()
+        public BinaryStringDictionary()
         {
         }
 
@@ -43,6 +42,9 @@ namespace Grpc.Core.Internal
             dict.Add(new BinaryKey(EncodingACII.GetBytes(str)), str);
         }
 
+        /// <summary>
+        /// Looks up the string based on its ASCII-encoded binary form.
+        /// </summary>
         public string Lookup(IntPtr nativeData, int nativeDataLen)
         {
             var key = new BinaryKey(nativeData, nativeDataLen);
