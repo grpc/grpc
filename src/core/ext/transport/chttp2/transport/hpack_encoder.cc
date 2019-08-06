@@ -130,8 +130,9 @@ static void begin_frame(framer_state* st) {
    space to add at least about_to_add bytes -- finishes the current frame if
    needed */
 static void ensure_space(framer_state* st, size_t need_bytes) {
-  if (st->output->length - st->output_length_at_start_of_frame + need_bytes <=
-      st->max_frame_size) {
+  if (GPR_LIKELY(st->output->length - st->output_length_at_start_of_frame +
+                     need_bytes <=
+                 st->max_frame_size)) {
     return;
   }
   finish_frame(st, 0, 0);
@@ -380,10 +381,11 @@ static void emit_lithdr_incidx(grpc_chttp2_hpack_compressor* c,
   uint32_t len_val_len;
   GPR_ASSERT(len_val <= UINT32_MAX);
   len_val_len = GRPC_CHTTP2_VARINT_LENGTH((uint32_t)len_val, 1);
-  GRPC_CHTTP2_WRITE_VARINT(key_index, 2, 0x40,
-                           add_tiny_header_data(st, len_pfx), len_pfx);
+  GPR_DEBUG_ASSERT(len_pfx + len_val_len < GRPC_SLICE_INLINED_SIZE);
+  uint8_t* data = add_tiny_header_data(st, len_pfx + len_val_len);
+  GRPC_CHTTP2_WRITE_VARINT(key_index, 2, 0x40, data, len_pfx);
   GRPC_CHTTP2_WRITE_VARINT((uint32_t)len_val, 1, value.huffman_prefix,
-                           add_tiny_header_data(st, len_val_len), len_val_len);
+                           &data[len_pfx], len_val_len);
   add_wire_value(st, value);
 }
 
@@ -397,10 +399,11 @@ static void emit_lithdr_noidx(grpc_chttp2_hpack_compressor* c,
   uint32_t len_val_len;
   GPR_ASSERT(len_val <= UINT32_MAX);
   len_val_len = GRPC_CHTTP2_VARINT_LENGTH((uint32_t)len_val, 1);
-  GRPC_CHTTP2_WRITE_VARINT(key_index, 4, 0x00,
-                           add_tiny_header_data(st, len_pfx), len_pfx);
+  GPR_DEBUG_ASSERT(len_pfx + len_val_len < GRPC_SLICE_INLINED_SIZE);
+  uint8_t* data = add_tiny_header_data(st, len_pfx + len_val_len);
+  GRPC_CHTTP2_WRITE_VARINT(key_index, 4, 0x00, data, len_pfx);
   GRPC_CHTTP2_WRITE_VARINT((uint32_t)len_val, 1, value.huffman_prefix,
-                           add_tiny_header_data(st, len_val_len), len_val_len);
+                           &data[len_pfx], len_val_len);
   add_wire_value(st, value);
 }
 
@@ -417,9 +420,10 @@ static void emit_lithdr_incidx_v(grpc_chttp2_hpack_compressor* c,
   uint32_t len_val_len = GRPC_CHTTP2_VARINT_LENGTH(len_val, 1);
   GPR_ASSERT(len_key <= UINT32_MAX);
   GPR_ASSERT(wire_value_length(value) <= UINT32_MAX);
-  *add_tiny_header_data(st, 1) = 0x40;
-  GRPC_CHTTP2_WRITE_VARINT(len_key, 1, 0x00,
-                           add_tiny_header_data(st, len_key_len), len_key_len);
+  GPR_DEBUG_ASSERT(1 + len_key_len < GRPC_SLICE_INLINED_SIZE);
+  uint8_t* data = add_tiny_header_data(st, 1 + len_key_len);
+  data[0] = 0x40;
+  GRPC_CHTTP2_WRITE_VARINT(len_key, 1, 0x00, &data[1], len_key_len);
   add_header_data(st, grpc_slice_ref_internal(GRPC_MDKEY(elem)));
   GRPC_CHTTP2_WRITE_VARINT(len_val, 1, value.huffman_prefix,
                            add_tiny_header_data(st, len_val_len), len_val_len);
@@ -439,9 +443,10 @@ static void emit_lithdr_noidx_v(grpc_chttp2_hpack_compressor* c,
   uint32_t len_val_len = GRPC_CHTTP2_VARINT_LENGTH(len_val, 1);
   GPR_ASSERT(len_key <= UINT32_MAX);
   GPR_ASSERT(wire_value_length(value) <= UINT32_MAX);
-  *add_tiny_header_data(st, 1) = 0x00;
-  GRPC_CHTTP2_WRITE_VARINT(len_key, 1, 0x00,
-                           add_tiny_header_data(st, len_key_len), len_key_len);
+  /* Preconditions passed; emit header. */
+  uint8_t* data = add_tiny_header_data(st, 1 + len_key_len);
+  data[0] = 0x00;
+  GRPC_CHTTP2_WRITE_VARINT(len_key, 1, 0x00, &data[1], len_key_len);
   add_header_data(st, grpc_slice_ref_internal(GRPC_MDKEY(elem)));
   GRPC_CHTTP2_WRITE_VARINT(len_val, 1, value.huffman_prefix,
                            add_tiny_header_data(st, len_val_len), len_val_len);
@@ -599,8 +604,8 @@ static void deadline_enc(grpc_chttp2_hpack_compressor* c, grpc_millis deadline,
   grpc_mdelem mdelem;
   grpc_http2_encode_timeout(deadline - grpc_core::ExecCtx::Get()->Now(),
                             timeout_str);
-  mdelem = grpc_mdelem_from_slices(GRPC_MDSTR_GRPC_TIMEOUT,
-                                   grpc_slice_from_copied_string(timeout_str));
+  mdelem = grpc_mdelem_from_slices(
+      GRPC_MDSTR_GRPC_TIMEOUT, grpc_core::UnmanagedMemorySlice(timeout_str));
   hpack_enc(c, mdelem, st);
   GRPC_MDELEM_UNREF(mdelem);
 }
@@ -711,18 +716,28 @@ void grpc_chttp2_encode_header(grpc_chttp2_hpack_compressor* c,
   }
   for (size_t i = 0; i < extra_headers_size; ++i) {
     grpc_mdelem md = *extra_headers[i];
-    uintptr_t static_index = grpc_chttp2_get_static_hpack_table_index(md);
-    if (static_index) {
-      emit_indexed(c, static_cast<uint32_t>(static_index), &st);
+    const bool is_static =
+        GRPC_MDELEM_STORAGE(md) == GRPC_MDELEM_STORAGE_STATIC;
+    uintptr_t static_index;
+    if (is_static &&
+        (static_index =
+             reinterpret_cast<grpc_core::StaticMetadata*>(GRPC_MDELEM_DATA(md))
+                 ->StaticIndex()) < GRPC_CHTTP2_LAST_STATIC_ENTRY) {
+      emit_indexed(c, static_cast<uint32_t>(static_index + 1), &st);
     } else {
       hpack_enc(c, md, &st);
     }
   }
   grpc_metadata_batch_assert_ok(metadata);
   for (grpc_linked_mdelem* l = metadata->list.head; l; l = l->next) {
-    uintptr_t static_index = grpc_chttp2_get_static_hpack_table_index(l->md);
-    if (static_index) {
-      emit_indexed(c, static_cast<uint32_t>(static_index), &st);
+    const bool is_static =
+        GRPC_MDELEM_STORAGE(l->md) == GRPC_MDELEM_STORAGE_STATIC;
+    uintptr_t static_index;
+    if (is_static &&
+        (static_index = reinterpret_cast<grpc_core::StaticMetadata*>(
+                            GRPC_MDELEM_DATA(l->md))
+                            ->StaticIndex()) < GRPC_CHTTP2_LAST_STATIC_ENTRY) {
+      emit_indexed(c, static_cast<uint32_t>(static_index + 1), &st);
     } else {
       hpack_enc(c, l->md, &st);
     }

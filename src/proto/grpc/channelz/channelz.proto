@@ -165,7 +165,7 @@ message ChannelRef {
   reserved 3, 4, 5, 6, 7, 8;
 }
 
-// ChannelRef is a reference to a Subchannel.
+// SubchannelRef is a reference to a Subchannel.
 message SubchannelRef {
   // The globally unique id for this subchannel.  Must be a positive number.
   int64 subchannel_id = 7;

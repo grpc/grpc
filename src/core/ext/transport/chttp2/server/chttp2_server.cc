@@ -37,7 +37,6 @@
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/handshaker.h"
 #include "src/core/lib/channel/handshaker_registry.h"
-#include "src/core/lib/gpr/host_port.h"
 #include "src/core/lib/iomgr/endpoint.h"
 #include "src/core/lib/iomgr/resolve_address.h"
 #include "src/core/lib/iomgr/resource_quota.h"
@@ -318,7 +317,7 @@ static grpc_error* chttp2_server_add_acceptor(grpc_server* server,
   *arg_val = grpc_tcp_server_create_fd_handler(tcp_server);
 
   grpc_server_add_listener(server, state, server_start_listener,
-                           server_destroy_listener, /* socket_uuid */ 0);
+                           server_destroy_listener, /* node */ nullptr);
   return err;
 
 /* Error path: cleanup and return */
@@ -346,7 +345,6 @@ grpc_error* grpc_chttp2_server_add_port(grpc_server* server, const char* addr,
   grpc_error** errors = nullptr;
   size_t naddrs = 0;
   const grpc_arg* arg = nullptr;
-  intptr_t socket_uuid = 0;
 
   *port_num = -1;
 
@@ -414,15 +412,18 @@ grpc_error* grpc_chttp2_server_add_port(grpc_server* server, const char* addr,
 
   arg = grpc_channel_args_find(args, GRPC_ARG_ENABLE_CHANNELZ);
   if (grpc_channel_arg_get_bool(arg, GRPC_ENABLE_CHANNELZ_DEFAULT)) {
+    char* socket_name = nullptr;
+    gpr_asprintf(&socket_name, "chttp2 listener %s", addr);
     state->channelz_listen_socket =
         grpc_core::MakeRefCounted<grpc_core::channelz::ListenSocketNode>(
-            grpc_core::UniquePtr<char>(gpr_strdup(addr)));
-    socket_uuid = state->channelz_listen_socket->uuid();
+            grpc_core::UniquePtr<char>(gpr_strdup(addr)),
+            grpc_core::UniquePtr<char>(socket_name));
   }
 
   /* Register with the server only upon success */
   grpc_server_add_listener(server, state, server_start_listener,
-                           server_destroy_listener, socket_uuid);
+                           server_destroy_listener,
+                           state->channelz_listen_socket);
   goto done;
 
 /* Error path: cleanup and return */

@@ -25,10 +25,12 @@ namespace grpc_core {
 // No-op for non-debug builds.
 // Callers can use the DEBUG_LOCATION macro in either case.
 #ifndef NDEBUG
+// TODO(roth): See if there's a way to automatically populate this,
+// similarly to how absl::SourceLocation::current() works, so that
+// callers don't need to explicitly pass DEBUG_LOCATION anywhere.
 class DebugLocation {
  public:
   DebugLocation(const char* file, int line) : file_(file), line_(line) {}
-  bool Log() const { return true; }
   const char* file() const { return file_; }
   int line() const { return line_; }
 
@@ -40,7 +42,6 @@ class DebugLocation {
 #else
 class DebugLocation {
  public:
-  bool Log() const { return false; }
   const char* file() const { return nullptr; }
   int line() const { return -1; }
 };

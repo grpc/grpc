@@ -183,50 +183,27 @@ class ResolvingLoadBalancingPolicy::ResolvingControlHelper
 
 ResolvingLoadBalancingPolicy::ResolvingLoadBalancingPolicy(
     Args args, TraceFlag* tracer, UniquePtr<char> target_uri,
-    UniquePtr<char> child_policy_name,
-    RefCountedPtr<LoadBalancingPolicy::Config> child_lb_config,
-    grpc_error** error)
-    : LoadBalancingPolicy(std::move(args)),
-      tracer_(tracer),
-      target_uri_(std::move(target_uri)),
-      child_policy_name_(std::move(child_policy_name)),
-      child_lb_config_(std::move(child_lb_config)) {
-  GPR_ASSERT(child_policy_name_ != nullptr);
-  // Don't fetch service config, since this ctor is for use in nested LB
-  // policies, not at the top level, and we only fetch the service
-  // config at the top level.
-  grpc_arg arg = grpc_channel_arg_integer_create(
-      const_cast<char*>(GRPC_ARG_SERVICE_CONFIG_DISABLE_RESOLUTION), 0);
-  grpc_channel_args* new_args =
-      grpc_channel_args_copy_and_add(args.args, &arg, 1);
-  *error = Init(*new_args);
-  grpc_channel_args_destroy(new_args);
-}
-
-ResolvingLoadBalancingPolicy::ResolvingLoadBalancingPolicy(
-    Args args, TraceFlag* tracer, UniquePtr<char> target_uri,
     ProcessResolverResultCallback process_resolver_result,
-    void* process_resolver_result_user_data, grpc_error** error)
+    void* process_resolver_result_user_data)
     : LoadBalancingPolicy(std::move(args)),
       tracer_(tracer),
       target_uri_(std::move(target_uri)),
       process_resolver_result_(process_resolver_result),
       process_resolver_result_user_data_(process_resolver_result_user_data) {
   GPR_ASSERT(process_resolver_result != nullptr);
-  *error = Init(*args.args);
-}
-
-grpc_error* ResolvingLoadBalancingPolicy::Init(const grpc_channel_args& args) {
   resolver_ = ResolverRegistry::CreateResolver(
-      target_uri_.get(), &args, interested_parties(), combiner(),
+      target_uri_.get(), args.args, interested_parties(), combiner(),
       UniquePtr<Resolver::ResultHandler>(New<ResolverResultHandler>(Ref())));
-  if (resolver_ == nullptr) {
-    return GRPC_ERROR_CREATE_FROM_STATIC_STRING("resolver creation failed");
+  // Since the validity of args has been checked when create the channel,
+  // CreateResolver() must return a non-null result.
+  GPR_ASSERT(resolver_ != nullptr);
+  if (GRPC_TRACE_FLAG_ENABLED(*tracer_)) {
+    gpr_log(GPR_INFO, "resolving_lb=%p: starting name resolution", this);
   }
-  // Return our picker to the channel.
   channel_control_helper()->UpdateState(
-      GRPC_CHANNEL_IDLE, UniquePtr<SubchannelPicker>(New<QueuePicker>(Ref())));
-  return GRPC_ERROR_NONE;
+      GRPC_CHANNEL_CONNECTING,
+      UniquePtr<SubchannelPicker>(New<QueuePicker>(Ref())));
+  resolver_->StartLocked();
 }
 
 ResolvingLoadBalancingPolicy::~ResolvingLoadBalancingPolicy() {
@@ -262,10 +239,6 @@ void ResolvingLoadBalancingPolicy::ExitIdleLocked() {
   if (lb_policy_ != nullptr) {
     lb_policy_->ExitIdleLocked();
     if (pending_lb_policy_ != nullptr) pending_lb_policy_->ExitIdleLocked();
-  } else {
-    if (!started_resolving_ && resolver_ != nullptr) {
-      StartResolvingLocked();
-    }
   }
 }
 
@@ -276,18 +249,6 @@ void ResolvingLoadBalancingPolicy::ResetBackoffLocked() {
   }
   if (lb_policy_ != nullptr) lb_policy_->ResetBackoffLocked();
   if (pending_lb_policy_ != nullptr) pending_lb_policy_->ResetBackoffLocked();
-}
-
-void ResolvingLoadBalancingPolicy::StartResolvingLocked() {
-  if (GRPC_TRACE_FLAG_ENABLED(*tracer_)) {
-    gpr_log(GPR_INFO, "resolving_lb=%p: starting name resolution", this);
-  }
-  GPR_ASSERT(!started_resolving_);
-  started_resolving_ = true;
-  channel_control_helper()->UpdateState(
-      GRPC_CHANNEL_CONNECTING,
-      UniquePtr<SubchannelPicker>(New<QueuePicker>(Ref())));
-  resolver_->StartLocked();
 }
 
 void ResolvingLoadBalancingPolicy::OnResolverError(grpc_error* error) {

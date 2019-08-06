@@ -17,8 +17,9 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Runtime.InteropServices;
 using System.Text;
-using System.Text.RegularExpressions;
+using Grpc.Core.Api.Utils;
 
 using Grpc.Core.Utils;
 
@@ -345,14 +346,30 @@ namespace Grpc.Core
             /// Creates a binary value or ascii value metadata entry from data received from the native layer.
             /// We trust C core to give us well-formed data, so we don't perform any checks or defensive copying.
             /// </summary>
-            internal static Entry CreateUnsafe(string key, byte[] valueBytes)
+            internal static Entry CreateUnsafe(string key, IntPtr source, int length)
             {
                 if (HasBinaryHeaderSuffix(key))
                 {
-                    return new Entry(key, null, valueBytes);
+                    byte[] arr;
+                    if (length == 0)
+                    {
+                        arr = EmptyByteArray;
+                    }
+                    else
+                    {   // create a local copy in a fresh array
+                        arr = new byte[length];
+                        Marshal.Copy(source, arr, 0, length);
+                    }
+                    return new Entry(key, null, arr);
                 }
-                return new Entry(key, EncodingASCII.GetString(valueBytes), null);
+                else
+                {
+                    string s = EncodingASCII.GetString(source, length);
+                    return new Entry(key, s, null);
+                }
             }
+
+            static readonly byte[] EmptyByteArray = new byte[0];
 
             private static string NormalizeKey(string key)
             {

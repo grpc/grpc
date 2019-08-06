@@ -28,12 +28,12 @@ def _get_staged_proto_file(context, source_file):
 def _generate_py_impl(context):
     protos = []
     for src in context.attr.deps:
-        for file in src.proto.direct_sources:
+        for file in src[ProtoInfo].direct_sources:
             protos.append(_get_staged_proto_file(context, file))
     includes = [
         file
         for src in context.attr.deps
-        for file in src.proto.transitive_imports.to_list()
+        for file in src[ProtoInfo].transitive_imports.to_list()
     ]
     proto_root = get_proto_root(context.label.workspace_root)
     format_str = (_GENERATED_GRPC_PROTO_FORMAT if context.executable.plugin else _GENERATED_PROTO_FORMAT)
@@ -99,7 +99,7 @@ __generate_py = rule(
         "deps": attr.label_list(
             mandatory = True,
             allow_empty = False,
-            providers = ["proto"],
+            providers = [ProtoInfo],
         ),
         "plugin": attr.label(
             executable = True,
@@ -163,7 +163,7 @@ def py_proto_library(
         _generate_py(
             name = codegen_grpc_target,
             deps = deps,
-            plugin = "//:grpc_python_plugin",
+            plugin = "//src/compiler:grpc_python_plugin",
             well_known_protos = well_known_protos,
             **kwargs
         )

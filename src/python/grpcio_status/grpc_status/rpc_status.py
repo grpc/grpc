@@ -52,6 +52,8 @@ def from_call(call):
       ValueError: If the gRPC call's code or details are inconsistent with the
         status code and message inside of the google.rpc.status.Status.
     """
+    if call.trailing_metadata() is None:
+        return None
     for key, value in call.trailing_metadata():
         if key == _GRPC_DETAILS_METADATA_KEY:
             rich_status = status_pb2.Status.FromString(value)
