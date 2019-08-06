@@ -56,15 +56,15 @@ namespace Grpc.Reflection.V1Alpha {
             "LlNlcnZlclJlZmxlY3Rpb25SZXNwb25zZSgBMAFiBnByb3RvMw=="));
       descriptor = pbr::FileDescriptor.FromGeneratedCode(descriptorData,
           new pbr::FileDescriptor[] { },
-          new pbr::GeneratedClrTypeInfo(null, new pbr::GeneratedClrTypeInfo[] {
-            new pbr::GeneratedClrTypeInfo(typeof(global::Grpc.Reflection.V1Alpha.ServerReflectionRequest), global::Grpc.Reflection.V1Alpha.ServerReflectionRequest.Parser, new[]{ "Host", "FileByFilename", "FileContainingSymbol", "FileContainingExtension", "AllExtensionNumbersOfType", "ListServices" }, new[]{ "MessageRequest" }, null, null),
-            new pbr::GeneratedClrTypeInfo(typeof(global::Grpc.Reflection.V1Alpha.ExtensionRequest), global::Grpc.Reflection.V1Alpha.ExtensionRequest.Parser, new[]{ "ContainingType", "ExtensionNumber" }, null, null, null),
-            new pbr::GeneratedClrTypeInfo(typeof(global::Grpc.Reflection.V1Alpha.ServerReflectionResponse), global::Grpc.Reflection.V1Alpha.ServerReflectionResponse.Parser, new[]{ "ValidHost", "OriginalRequest", "FileDescriptorResponse", "AllExtensionNumbersResponse", "ListServicesResponse", "ErrorResponse" }, new[]{ "MessageResponse" }, null, null),
-            new pbr::GeneratedClrTypeInfo(typeof(global::Grpc.Reflection.V1Alpha.FileDescriptorResponse), global::Grpc.Reflection.V1Alpha.FileDescriptorResponse.Parser, new[]{ "FileDescriptorProto" }, null, null, null),
-            new pbr::GeneratedClrTypeInfo(typeof(global::Grpc.Reflection.V1Alpha.ExtensionNumberResponse), global::Grpc.Reflection.V1Alpha.ExtensionNumberResponse.Parser, new[]{ "BaseTypeName", "ExtensionNumber" }, null, null, null),
-            new pbr::GeneratedClrTypeInfo(typeof(global::Grpc.Reflection.V1Alpha.ListServiceResponse), global::Grpc.Reflection.V1Alpha.ListServiceResponse.Parser, new[]{ "Service" }, null, null, null),
-            new pbr::GeneratedClrTypeInfo(typeof(global::Grpc.Reflection.V1Alpha.ServiceResponse), global::Grpc.Reflection.V1Alpha.ServiceResponse.Parser, new[]{ "Name" }, null, null, null),
-            new pbr::GeneratedClrTypeInfo(typeof(global::Grpc.Reflection.V1Alpha.ErrorResponse), global::Grpc.Reflection.V1Alpha.ErrorResponse.Parser, new[]{ "ErrorCode", "ErrorMessage" }, null, null, null)
+          new pbr::GeneratedClrTypeInfo(null, null, new pbr::GeneratedClrTypeInfo[] {
+            new pbr::GeneratedClrTypeInfo(typeof(global::Grpc.Reflection.V1Alpha.ServerReflectionRequest), global::Grpc.Reflection.V1Alpha.ServerReflectionRequest.Parser, new[]{ "Host", "FileByFilename", "FileContainingSymbol", "FileContainingExtension", "AllExtensionNumbersOfType", "ListServices" }, new[]{ "MessageRequest" }, null, null, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::Grpc.Reflection.V1Alpha.ExtensionRequest), global::Grpc.Reflection.V1Alpha.ExtensionRequest.Parser, new[]{ "ContainingType", "ExtensionNumber" }, null, null, null, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::Grpc.Reflection.V1Alpha.ServerReflectionResponse), global::Grpc.Reflection.V1Alpha.ServerReflectionResponse.Parser, new[]{ "ValidHost", "OriginalRequest", "FileDescriptorResponse", "AllExtensionNumbersResponse", "ListServicesResponse", "ErrorResponse" }, new[]{ "MessageResponse" }, null, null, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::Grpc.Reflection.V1Alpha.FileDescriptorResponse), global::Grpc.Reflection.V1Alpha.FileDescriptorResponse.Parser, new[]{ "FileDescriptorProto" }, null, null, null, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::Grpc.Reflection.V1Alpha.ExtensionNumberResponse), global::Grpc.Reflection.V1Alpha.ExtensionNumberResponse.Parser, new[]{ "BaseTypeName", "ExtensionNumber" }, null, null, null, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::Grpc.Reflection.V1Alpha.ListServiceResponse), global::Grpc.Reflection.V1Alpha.ListServiceResponse.Parser, new[]{ "Service" }, null, null, null, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::Grpc.Reflection.V1Alpha.ServiceResponse), global::Grpc.Reflection.V1Alpha.ServiceResponse.Parser, new[]{ "Name" }, null, null, null, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::Grpc.Reflection.V1Alpha.ErrorResponse), global::Grpc.Reflection.V1Alpha.ErrorResponse.Parser, new[]{ "ErrorCode", "ErrorMessage" }, null, null, null, null)
           }));
     }
     #endregion

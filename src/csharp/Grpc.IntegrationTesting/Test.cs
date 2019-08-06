@@ -50,7 +50,7 @@ namespace Grpc.Testing {
             "RW1wdHkaGy5ncnBjLnRlc3RpbmcuUmVjb25uZWN0SW5mb2IGcHJvdG8z"));
       descriptor = pbr::FileDescriptor.FromGeneratedCode(descriptorData,
           new pbr::FileDescriptor[] { global::Grpc.Testing.EmptyReflection.Descriptor, global::Grpc.Testing.MessagesReflection.Descriptor, },
-          new pbr::GeneratedClrTypeInfo(null, null));
+          new pbr::GeneratedClrTypeInfo(null, null, null));
     }
     #endregion
 

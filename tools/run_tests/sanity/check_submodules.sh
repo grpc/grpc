@@ -38,7 +38,7 @@ cat << EOF | awk '{ print $1 }' | sort > "$want_submodules"
  2fe3bd994b3189899d93f1d5a881e725e046fdc2 third_party/googletest (release-1.8.1)
  6599cac0965be8e5a835ab7a5684bbef033d5ad0 third_party/libcxx (heads/release_60)
  9245d481eb3e890f708ff2d7dadf2a10c04748ba third_party/libcxxabi (heads/release_60)
- 09745575a923640154bcf307fba8aedff47f240a third_party/protobuf (v3.7.0-rc.2-247-g09745575)
+ 655310ca192a6e3a050e0ca0b7084a2968072260 third_party/protobuf (v3.7.0-rc.2-394-g655310ca)
  e143189bf6f37b3957fb31743df6a1bcf4a8c685 third_party/protoc-gen-validate (v0.0.10)
  423ea5ca9ce8da69611e6e95559efcb3a1ba8ad8 third_party/upb (heads/master)
  cacf7f1d4e3d44d871b605da3b647f07d718623f third_party/zlib (v1.2.11)

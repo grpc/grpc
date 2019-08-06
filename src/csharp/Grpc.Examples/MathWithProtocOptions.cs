@@ -39,12 +39,12 @@ namespace MathWithProtocOptions {
             "dGlvbnMuTnVtIgAoAWIGcHJvdG8z"));
       descriptor = pbr::FileDescriptor.FromGeneratedCode(descriptorData,
           new pbr::FileDescriptor[] { },
-          new pbr::GeneratedClrTypeInfo(null, new pbr::GeneratedClrTypeInfo[] {
-            new pbr::GeneratedClrTypeInfo(typeof(global::MathWithProtocOptions.DivArgs), global::MathWithProtocOptions.DivArgs.Parser, new[]{ "Dividend", "Divisor" }, null, null, null),
-            new pbr::GeneratedClrTypeInfo(typeof(global::MathWithProtocOptions.DivReply), global::MathWithProtocOptions.DivReply.Parser, new[]{ "Quotient", "Remainder" }, null, null, null),
-            new pbr::GeneratedClrTypeInfo(typeof(global::MathWithProtocOptions.FibArgs), global::MathWithProtocOptions.FibArgs.Parser, new[]{ "Limit" }, null, null, null),
-            new pbr::GeneratedClrTypeInfo(typeof(global::MathWithProtocOptions.Num), global::MathWithProtocOptions.Num.Parser, new[]{ "Num_" }, null, null, null),
-            new pbr::GeneratedClrTypeInfo(typeof(global::MathWithProtocOptions.FibReply), global::MathWithProtocOptions.FibReply.Parser, new[]{ "Count" }, null, null, null)
+          new pbr::GeneratedClrTypeInfo(null, null, new pbr::GeneratedClrTypeInfo[] {
+            new pbr::GeneratedClrTypeInfo(typeof(global::MathWithProtocOptions.DivArgs), global::MathWithProtocOptions.DivArgs.Parser, new[]{ "Dividend", "Divisor" }, null, null, null, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::MathWithProtocOptions.DivReply), global::MathWithProtocOptions.DivReply.Parser, new[]{ "Quotient", "Remainder" }, null, null, null, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::MathWithProtocOptions.FibArgs), global::MathWithProtocOptions.FibArgs.Parser, new[]{ "Limit" }, null, null, null, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::MathWithProtocOptions.Num), global::MathWithProtocOptions.Num.Parser, new[]{ "Num_" }, null, null, null, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::MathWithProtocOptions.FibReply), global::MathWithProtocOptions.FibReply.Parser, new[]{ "Count" }, null, null, null, null)
           }));
     }
     #endregion

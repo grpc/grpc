@@ -32,11 +32,11 @@ namespace Grpc.Core {
             "EiIKB21ldHJpY3MYASADKAsyES5ncnBjLmNvcmUuTWV0cmljYgZwcm90bzM="));
       descriptor = pbr::FileDescriptor.FromGeneratedCode(descriptorData,
           new pbr::FileDescriptor[] { },
-          new pbr::GeneratedClrTypeInfo(null, new pbr::GeneratedClrTypeInfo[] {
-            new pbr::GeneratedClrTypeInfo(typeof(global::Grpc.Core.Bucket), global::Grpc.Core.Bucket.Parser, new[]{ "Start", "Count" }, null, null, null),
-            new pbr::GeneratedClrTypeInfo(typeof(global::Grpc.Core.Histogram), global::Grpc.Core.Histogram.Parser, new[]{ "Buckets" }, null, null, null),
-            new pbr::GeneratedClrTypeInfo(typeof(global::Grpc.Core.Metric), global::Grpc.Core.Metric.Parser, new[]{ "Name", "Count", "Histogram" }, new[]{ "Value" }, null, null),
-            new pbr::GeneratedClrTypeInfo(typeof(global::Grpc.Core.Stats), global::Grpc.Core.Stats.Parser, new[]{ "Metrics" }, null, null, null)
+          new pbr::GeneratedClrTypeInfo(null, null, new pbr::GeneratedClrTypeInfo[] {
+            new pbr::GeneratedClrTypeInfo(typeof(global::Grpc.Core.Bucket), global::Grpc.Core.Bucket.Parser, new[]{ "Start", "Count" }, null, null, null, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::Grpc.Core.Histogram), global::Grpc.Core.Histogram.Parser, new[]{ "Buckets" }, null, null, null, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::Grpc.Core.Metric), global::Grpc.Core.Metric.Parser, new[]{ "Name", "Count", "Histogram" }, new[]{ "Value" }, null, null, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::Grpc.Core.Stats), global::Grpc.Core.Stats.Parser, new[]{ "Metrics" }, null, null, null, null)
           }));
     }
     #endregion
