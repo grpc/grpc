@@ -6,44 +6,20 @@ load(
     "get_plugin_args",
     "get_proto_root",
     "proto_path_to_generated_filename",
+    "protos_from_context",
+    "includes_from_deps",
+    "get_proto_arguments",
+    "declare_out_files",
 )
 
 _GENERATED_PROTO_FORMAT = "{}_pb2.py"
 _GENERATED_GRPC_PROTO_FORMAT = "{}_pb2_grpc.py"
 
-def _get_staged_proto_file(context, source_file):
-    if source_file.dirname == context.label.package:
-        return source_file
-    else:
-        copied_proto = context.actions.declare_file(source_file.basename)
-        context.actions.run_shell(
-            inputs = [source_file],
-            outputs = [copied_proto],
-            command = "cp {} {}".format(source_file.path, copied_proto.path),
-            mnemonic = "CopySourceProto",
-        )
-        return copied_proto
-
 def _generate_py_impl(context):
-    protos = []
-    for src in context.attr.deps:
-        for file in src[ProtoInfo].direct_sources:
-            protos.append(_get_staged_proto_file(context, file))
-    includes = [
-        file
-        for src in context.attr.deps
-        for file in src[ProtoInfo].transitive_imports.to_list()
-    ]
+    protos = protos_from_context(context)
+    includes = includes_from_deps(context.attr.deps)
     proto_root = get_proto_root(context.label.workspace_root)
-    out_files = [
-        context.actions.declare_file(
-            proto_path_to_generated_filename(
-                proto.basename,
-                _GENERATED_PROTO_FORMAT,
-            ),
-        )
-        for proto in protos
-    ]
+    out_files = declare_out_files(protos, context, _GENERATED_PROTO_FORMAT)
 
     tools = [context.executable._protoc]
     arguments = ([
@@ -54,11 +30,7 @@ def _generate_py_impl(context):
         "--proto_path={}".format(context.genfiles_dir.path)
         for proto in protos
     ])
-    for proto in protos:
-        massaged_path = proto.path
-        if massaged_path.startswith(context.genfiles_dir.path):
-            massaged_path = proto.path[len(context.genfiles_dir.path) + 1:]
-        arguments.append(massaged_path)
+    arguments += get_proto_arguments(protos, context.genfiles_dir.path)
 
     context.actions.run(
         inputs = protos + includes,
@@ -116,25 +88,10 @@ def py_proto_library(
     )
 
 def _generate_pb2_grpc_src_impl(context):
-    protos = []
-    for src in context.attr.deps:
-        for file in src[ProtoInfo].direct_sources:
-            protos.append(_get_staged_proto_file(context, file))
-    includes = [
-        file
-        for src in context.attr.deps
-        for file in src[ProtoInfo].transitive_imports.to_list()
-    ]
+    protos = protos_from_context(context)
+    includes = includes_from_deps(context.attr.deps)
     proto_root = get_proto_root(context.label.workspace_root)
-    out_files = [
-        context.actions.declare_file(
-            proto_path_to_generated_filename(
-                proto.basename,
-                _GENERATED_GRPC_PROTO_FORMAT,
-            ),
-        )
-        for proto in protos
-    ]
+    out_files = declare_out_files(protos, context, _GENERATED_GRPC_PROTO_FORMAT)
 
     arguments = []
     tools = [context.executable._protoc, context.executable._plugin]
@@ -150,11 +107,7 @@ def _generate_pb2_grpc_src_impl(context):
         "--proto_path={}".format(context.genfiles_dir.path)
         for proto in protos
     ]
-    for proto in protos:
-        massaged_path = proto.path
-        if massaged_path.startswith(context.genfiles_dir.path):
-            massaged_path = proto.path[len(context.genfiles_dir.path) + 1:]
-        arguments.append(massaged_path)
+    arguments += get_proto_arguments(protos, context.genfiles_dir.path)
 
     context.actions.run(
         inputs = protos + includes,
