@@ -18,10 +18,10 @@
 
 #import <GRPCClient/GRPCCall.h>
 #import <GRPCClient/GRPCInterceptor.h>
-#import <RemoteTest/Messages.pbobjc.h>
 #import <XCTest/XCTest.h>
 #import "../../GRPCClient/CacheInterceptor.h"
 #import "../../GRPCClient/private/GRPCCallInternal.h"
+#import "src/objective-c/tests/RemoteTestClient/Messages.pbobjc.h"
 
 #define TEST_TIMEOUT 2
 #define TEST_DUMMY_DATA @"google"
