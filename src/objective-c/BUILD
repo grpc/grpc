@@ -157,7 +157,7 @@ grpc_objc_library(
     ],
 )
 
-native.objc_library(
+grpc_objc_library(
     name = "proto_objc_rpc",
     srcs = [
         "ProtoRPC/ProtoRPCLegacy.m",
