@@ -39,7 +39,7 @@
   [NSException raise:NSGenericException format:@"Do not call init method of ProtoService"];
   return [self initWithHost:nil packageName:nil serviceName:nil callOptions:nil];
 }
-#pragma clang diasnostic pop
+#pragma clang diagnostic pop
 
 // Designated initializer
 - (instancetype)initWithHost:(NSString *)host

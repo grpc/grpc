@@ -205,10 +205,10 @@ class ObjectiveCGrpcGenerator : public grpc::protobuf::compiler::CodeGenerator {
       ::grpc::string imports;
       if (framework.empty()) {
         imports = LocalImport(file_name + ".pbrpc.h") +
-                  LocalImport(file_name + ".pbobjc.h") +
+                  LocalImport(file_name + ".pbobjc.h");
       } else {
         imports = FrameworkImport(file_name + ".pbrpc.h", framework) +
-                  FrameworkImport(file_name + ".pbobjc.h", framework) +
+                  FrameworkImport(file_name + ".pbobjc.h", framework);
       }
       imports += (generator_params.no_v1_compatibility
                      ? SystemImport("ProtoRPC/ProtoRPC.h")

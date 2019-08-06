@@ -25,17 +25,25 @@ exports_files(["LICENSE"])
 grpc_objc_use_cronet_config()
 
 grpc_objc_library(
-    name = "rx_library",
-    srcs = glob([
-        "RxLibrary/*.m",
-        "RxLibrary/transformations/*.m",
-    ]),
+    name = "rx_library_headers",
     hdrs = glob([
         "RxLibrary/*.h",
         "RxLibrary/transformations/*.h",
     ]),
     includes = ["."],
-    deps = [":rx_library_private"],
+)
+
+grpc_objc_library(
+    name = "rx_library",
+    srcs = glob([
+        "RxLibrary/*.m",
+        "RxLibrary/transformations/*.m",
+    ]),
+    includes = ["."],
+    deps = [
+        ":rx_library_private",
+        ":rx_library_headers",
+    ],
 )
 
 grpc_objc_library(
@@ -50,47 +58,128 @@ grpc_objc_library(
 )
 
 grpc_objc_library(
-    name = "grpc_objc_client",
-    srcs = glob(
-        [
-            "GRPCClient/*.m",
-            "GRPCClient/private/*.m",
-        ],
-        exclude = ["GRPCClient/GRPCCall+GID.m"],
-    ),
-    hdrs = glob(
-        [
-            "GRPCClient/*.h",
-            "GRPCClient/internal/*.h",
-        ],
-        exclude = ["GRPCClient/GRPCCall+GID.h"],
-    ),
-    data = ["//:gRPCCertificates"],
-    includes = ["."],
-    textual_hdrs = glob([
-        "GRPCClient/private/*.h",
-    ]),
+    name = "grpc_objc_interface_legacy",
+    hdrs = [
+        "GRPCClient/GRPCCallLegacy.h",
+        "GRPCClient/GRPCTypes.h",
+    ],
     deps = [
+        "rx_library_headers",
+    ],
+)
+
+grpc_objc_library(
+    name = "grpc_objc_interface",
+    hdrs = [
+        "GRPCClient/GRPCCall.h",
+        "GRPCClient/GRPCCall+Interceptor.h",
+        "GRPCClient/GRPCCallOptions.h",
+        "GRPCClient/GRPCInterceptor.h",
+        "GRPCClient/GRPCTransport.h",
+        "GRPCClient/GRPCDispatchable.h",
+        "GRPCClient/internal/GRPCCallOptions+Internal.h",
+    ],
+    srcs = [
+        "GRPCClient/GRPCCall.m",
+        "GRPCClient/GRPCCall+Interceptor.m",
+        "GRPCClient/GRPCCallOptions.m",
+        "GRPCClient/GRPCInterceptor.m",
+        "GRPCClient/GRPCTransport.m",
+        "GRPCClient/private/GRPCTransport+Private.m",
+    ],
+    includes = ["."],
+    textual_hdrs = [
+        "GRPCClient/private/GRPCTransport+Private.h",
+    ],
+    deps = [
+        ":grpc_objc_interface_legacy",
+    ],
+)
+
+grpc_objc_library(
+    name = "grpc_objc_client_core",
+    hdrs = [
+        "GRPCClient/GRPCCall+ChannelCredentials.h",
+        "GRPCClient/GRPCCall+Cronet.h",
+        "GRPCClient/GRPCCall+OAuth2.h",
+        "GRPCClient/GRPCCall+Tests.h",
+        "GRPCClient/GRPCCall+ChannelArg.h",
+    ],
+    textual_hdrs = native.glob(["GRPCClient/private/GRPCCore/*.h"]),
+    srcs = [
+        "GRPCClient/GRPCCall+ChannelArg.m",
+        "GRPCClient/GRPCCall+ChannelCredentials.m",
+        "GRPCClient/GRPCCall+Cronet.m",
+        "GRPCClient/GRPCCall+OAuth2.m",
+        "GRPCClient/GRPCCall+Tests.m",
+        "GRPCClient/GRPCCallLegacy.m",
+    ] + native.glob(["GRPCClient/private/GRPCCore/*.m"]),
+    data = [":gRPCCertificates"],
+    includes = ["."],
+    deps = [
+        ":grpc_objc_interface",
+        ":grpc_objc_interface_legacy",
         ":rx_library",
         "//:grpc_objc",
     ],
 )
 
+alias(
+    name = "grpc_objc_client",
+    actual = "grpc_objc_client_core",
+)
+
 grpc_objc_library(
-    name = "proto_objc_rpc",
-    srcs = glob(
-        ["ProtoRPC/*.m"],
-    ),
-    hdrs = glob(
-        ["ProtoRPC/*.h"],
-    ),
-    # Different from Cocoapods, do not import as if @com_google_protobuf//:protobuf_objc is a framework,
-    # use the real paths of @com_google_protobuf//:protobuf_objc instead
-    defines = ["GPB_USE_PROTOBUF_FRAMEWORK_IMPORTS=0"],
-    includes = ["src/objective-c"],
+    name = "proto_objc_rpc_legacy_header",
+    hdrs = [
+        "ProtoRPC/ProtoRPCLegacy.h",
+    ],
+    includes = ["."],
+)
+
+grpc_objc_library(
+    name = "proto_objc_rpc_v2",
+    srcs = [
+        "ProtoRPC/ProtoMethod.m",
+        "ProtoRPC/ProtoRPC.m",
+        "ProtoRPC/ProtoService.m",
+    ],
+    hdrs = [
+        "ProtoRPC/ProtoMethod.h",
+        "ProtoRPC/ProtoRPC.h",
+        "ProtoRPC/ProtoService.h",
+    ],
+    includes = ["."],
     deps = [
-        ":grpc_objc_client",
-        ":rx_library",
+        ":grpc_objc_interface",
+        ":proto_objc_rpc_legacy_header",
         "@com_google_protobuf//:protobuf_objc",
     ],
 )
+
+native.objc_library(
+    name = "proto_objc_rpc",
+    srcs = [
+        "ProtoRPC/ProtoRPCLegacy.m",
+        "ProtoRPC/ProtoServiceLegacy.m",
+    ],
+    hdrs = [
+        "ProtoRPC/ProtoServiceLegacy.h",
+    ],
+    deps = [
+        ":rx_library",
+        ":proto_objc_rpc_v2",
+        ":proto_objc_rpc_legacy_header",
+        ":grpc_objc_client_core",
+        "@com_google_protobuf//:protobuf_objc",
+    ],
+)
+
+load("@build_bazel_rules_apple//apple:resources.bzl", "apple_resource_bundle")
+
+apple_resource_bundle(
+    # The choice of name is signicant here, since it determines the bundle name.
+    name = "gRPCCertificates",
+    resources = ["etc/roots.pem"],
+)
+
