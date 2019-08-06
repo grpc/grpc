@@ -559,9 +559,8 @@ class XdsLb : public LoadBalancingPolicy {
 
 XdsLb::PickResult XdsLb::Picker::Pick(PickArgs args) {
   // TODO(roth): Add support for drop handling.
-  // Generate a random number between 0 and the total weight
-  const uint32_t key =
-      (rand() * pickers_[pickers_.size() - 1].first) / RAND_MAX;
+  // Generate a random number in [0, total weight).
+  const uint32_t key = rand() % pickers_[pickers_.size() - 1].first;
   // Forward pick to whichever locality maps to the range in which the
   // random number falls in.
   PickResult result = PickFromLocality(key, args);
