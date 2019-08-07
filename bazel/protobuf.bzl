@@ -102,3 +102,63 @@ def get_plugin_args(plugin, flags, dir_out, generate_mocks):
         "--plugin=protoc-gen-PLUGIN=" + plugin.path,
         "--PLUGIN_out=" + ",".join(augmented_flags) + ":" + dir_out,
     ]
+
+def _get_staged_proto_file(context, source_file):
+    if source_file.dirname == context.label.package:
+        return source_file
+    else:
+        copied_proto = context.actions.declare_file(source_file.basename)
+        context.actions.run_shell(
+            inputs = [source_file],
+            outputs = [copied_proto],
+            command = "cp {} {}".format(source_file.path, copied_proto.path),
+            mnemonic = "CopySourceProto",
+        )
+        return copied_proto
+
+
+def protos_from_context(context):
+    """Copies proto files to the appropriate location.
+
+    Args:
+      context: The ctx object for the rule.
+
+    Returns:
+      A list of the protos.
+    """
+    protos = []
+    for src in context.attr.deps:
+        for file in src[ProtoInfo].direct_sources:
+            protos.append(_get_staged_proto_file(context, file))
+    return protos
+
+
+def includes_from_deps(deps):
+    """Get includes from rule dependencies."""
+    return [
+        file
+        for src in deps
+        for file in src[ProtoInfo].transitive_imports.to_list()
+    ]
+
+def get_proto_arguments(protos, genfiles_dir_path):
+    """Get the protoc arguments specifying which protos to compile."""
+    arguments = []
+    for proto in protos:
+        massaged_path = proto.path
+        if massaged_path.startswith(genfiles_dir_path):
+            massaged_path = proto.path[len(genfiles_dir_path) + 1:]
+        arguments.append(massaged_path)
+    return arguments
+
+def declare_out_files(protos, context, generated_file_format):
+    """Declares and returns the files to be generated."""
+    return [
+        context.actions.declare_file(
+            proto_path_to_generated_filename(
+                proto.basename,
+                generated_file_format,
+            ),
+        )
+        for proto in protos
+    ]
