@@ -317,7 +317,6 @@ CORE_SOURCE_FILES = [
     'third_party/nanopb/pb_decode.c',
     'third_party/nanopb/pb_encode.c',
     'src/core/tsi/transport_security.cc',
-    'third_party/upb/generated_for_cmake/google/protobuf/descriptor.upb.c',
     'third_party/upb/upb/decode.c',
     'third_party/upb/upb/encode.c',
     'third_party/upb/upb/msg.c',

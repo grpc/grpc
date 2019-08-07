@@ -32,7 +32,6 @@
       "/I"+configure_module_dirname+"\\third_party\\boringssl\\include "+
       "/I"+configure_module_dirname+"\\third_party\\nanopb "+
       "/I"+configure_module_dirname+"\\third_party\\upb "+
-      "/I"+configure_module_dirname+"\\third_party\\upb\\generated_for_cmake "+
       "/I"+configure_module_dirname+"\\third_party\\zlib ");
   <%
     dirs = {}

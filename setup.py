@@ -50,7 +50,6 @@ if 'openbsd' in sys.platform:
 NANOPB_INCLUDE = (os.path.join('third_party', 'nanopb'),)
 SSL_INCLUDE = (os.path.join('third_party', 'boringssl', 'include'),)
 UPB_INCLUDE = (os.path.join('third_party', 'upb'),)
-UPB_GENERATED_INCLUDE = (os.path.join('third_party','upb', 'generated_for_cmake'),)
 UPB_GRPC_GENERATED_INCLUDE = (os.path.join('src', 'core', 'ext', 'upb-generated'),)
 ZLIB_INCLUDE = (os.path.join('third_party', 'zlib'),)
 README = os.path.join(PYTHON_STEM, 'README.rst')
@@ -213,7 +212,6 @@ EXTENSION_INCLUDE_DIRECTORIES = (
     NANOPB_INCLUDE +
     SSL_INCLUDE +
     UPB_INCLUDE +
-    UPB_GENERATED_INCLUDE +
     UPB_GRPC_GENERATED_INCLUDE +
     ZLIB_INCLUDE)
 

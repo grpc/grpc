@@ -22,7 +22,6 @@ import sys
 import yaml
 
 hdrs = [
-  "third_party/upb/generated_for_cmake/google/protobuf/descriptor.upb.h",
   "third_party/upb/upb/decode.h",
   "third_party/upb/upb/encode.h",
   "third_party/upb/upb/generated_util.h",
@@ -34,7 +33,6 @@ hdrs = [
 ]
 
 srcs = [
-  "third_party/upb/generated_for_cmake/google/protobuf/descriptor.upb.c",
   "third_party/upb/upb/decode.c",
   "third_party/upb/upb/encode.c",
   "third_party/upb/upb/msg.c",

@@ -2329,6 +2329,7 @@ grpc_cc_library(
     srcs = [
         "src/core/ext/upb-generated/google/protobuf/any.upb.c",
         "src/core/ext/upb-generated/google/protobuf/duration.upb.c",
+        "src/core/ext/upb-generated/google/protobuf/descriptor.upb.c",
         "src/core/ext/upb-generated/google/protobuf/empty.upb.c",
         "src/core/ext/upb-generated/google/protobuf/struct.upb.c",
         "src/core/ext/upb-generated/google/protobuf/timestamp.upb.c",
@@ -2337,6 +2338,7 @@ grpc_cc_library(
     hdrs = [
         "src/core/ext/upb-generated/google/protobuf/any.upb.h",
         "src/core/ext/upb-generated/google/protobuf/duration.upb.h",
+        "src/core/ext/upb-generated/google/protobuf/descriptor.upb.h",
         "src/core/ext/upb-generated/google/protobuf/empty.upb.h",
         "src/core/ext/upb-generated/google/protobuf/struct.upb.h",
         "src/core/ext/upb-generated/google/protobuf/timestamp.upb.h",

@@ -125,6 +125,7 @@ filegroups:
 - name: google_api_upb
   headers:
   - src/core/ext/upb-generated/google/protobuf/any.upb.h
+  - src/core/ext/upb-generated/google/protobuf/descriptor.upb.h
   - src/core/ext/upb-generated/google/protobuf/duration.upb.h
   - src/core/ext/upb-generated/google/protobuf/empty.upb.h
   - src/core/ext/upb-generated/google/protobuf/struct.upb.h
@@ -132,6 +133,7 @@ filegroups:
   - src/core/ext/upb-generated/google/protobuf/wrappers.upb.h
   src:
   - src/core/ext/upb-generated/google/protobuf/any.upb.c
+  - src/core/ext/upb-generated/google/protobuf/descriptor.upb.c
   - src/core/ext/upb-generated/google/protobuf/duration.upb.c
   - src/core/ext/upb-generated/google/protobuf/empty.upb.c
   - src/core/ext/upb-generated/google/protobuf/struct.upb.c
@@ -6197,7 +6199,7 @@ defaults:
       -Wno-unused-parameter -Wno-deprecated-declarations -Wno-sign-conversion -Wno-shadow
       -Wno-conversion -Wno-implicit-fallthrough -Wno-sign-compare -Wno-missing-field-initializers
       -Wno-maybe-uninitialized -DPB_FIELD_32BIT -DOSATOMIC_USE_INLINED=1 -Ithird_party/nanopb
-      -Ithird_party/upb -Ithird_party/upb/generated_for_cmake -Isrc/core/ext/upb-generated
+      -Ithird_party/upb -Isrc/core/ext/upb-generated
     CXXFLAGS: -Wnon-virtual-dtor
     LDFLAGS: -g
   zlib:

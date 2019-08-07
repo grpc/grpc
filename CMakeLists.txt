@@ -1266,7 +1266,6 @@ add_library(grpc
   third_party/nanopb/pb_decode.c
   third_party/nanopb/pb_encode.c
   src/core/tsi/transport_security.cc
-  third_party/upb/generated_for_cmake/google/protobuf/descriptor.upb.c
   third_party/upb/upb/decode.c
   third_party/upb/upb/encode.c
   third_party/upb/upb/msg.c
@@ -1678,7 +1677,6 @@ add_library(grpc_cronet
   src/core/ext/filters/client_channel/subchannel_pool_interface.cc
   src/core/ext/filters/deadline/deadline_filter.cc
   src/core/ext/upb-generated/src/proto/grpc/health/v1/health.upb.c
-  third_party/upb/generated_for_cmake/google/protobuf/descriptor.upb.c
   third_party/upb/upb/decode.c
   third_party/upb/upb/encode.c
   third_party/upb/upb/msg.c
@@ -2077,7 +2075,6 @@ add_library(grpc_test_util
   src/core/ext/filters/client_channel/subchannel_pool_interface.cc
   src/core/ext/filters/deadline/deadline_filter.cc
   src/core/ext/upb-generated/src/proto/grpc/health/v1/health.upb.c
-  third_party/upb/generated_for_cmake/google/protobuf/descriptor.upb.c
   third_party/upb/upb/decode.c
   third_party/upb/upb/encode.c
   third_party/upb/upb/msg.c
@@ -2419,7 +2416,6 @@ add_library(grpc_test_util_unsecure
   src/core/ext/filters/client_channel/subchannel_pool_interface.cc
   src/core/ext/filters/deadline/deadline_filter.cc
   src/core/ext/upb-generated/src/proto/grpc/health/v1/health.upb.c
-  third_party/upb/generated_for_cmake/google/protobuf/descriptor.upb.c
   third_party/upb/upb/decode.c
   third_party/upb/upb/encode.c
   third_party/upb/upb/msg.c
@@ -2772,7 +2768,6 @@ add_library(grpc_unsecure
   src/core/ext/filters/client_channel/subchannel_pool_interface.cc
   src/core/ext/filters/deadline/deadline_filter.cc
   src/core/ext/upb-generated/src/proto/grpc/health/v1/health.upb.c
-  third_party/upb/generated_for_cmake/google/protobuf/descriptor.upb.c
   third_party/upb/upb/decode.c
   third_party/upb/upb/encode.c
   third_party/upb/upb/msg.c
@@ -3173,7 +3168,6 @@ add_library(grpc++
   src/cpp/util/string_ref.cc
   src/cpp/util/time_cc.cc
   src/core/ext/upb-generated/src/proto/grpc/health/v1/health.upb.c
-  third_party/upb/generated_for_cmake/google/protobuf/descriptor.upb.c
   third_party/upb/upb/decode.c
   third_party/upb/upb/encode.c
   third_party/upb/upb/msg.c
@@ -4283,7 +4277,6 @@ add_library(grpc++_unsecure
   src/cpp/util/string_ref.cc
   src/cpp/util/time_cc.cc
   src/core/ext/upb-generated/src/proto/grpc/health/v1/health.upb.c
-  third_party/upb/generated_for_cmake/google/protobuf/descriptor.upb.c
   third_party/upb/upb/decode.c
   third_party/upb/upb/encode.c
   third_party/upb/upb/msg.c

@@ -742,7 +742,6 @@ Gem::Specification.new do |s|
   s.files += %w( third_party/nanopb/pb_decode.c )
   s.files += %w( third_party/nanopb/pb_encode.c )
   s.files += %w( src/core/tsi/transport_security.cc )
-  s.files += %w( third_party/upb/generated_for_cmake/google/protobuf/descriptor.upb.c )
   s.files += %w( third_party/upb/upb/decode.c )
   s.files += %w( third_party/upb/upb/encode.c )
   s.files += %w( third_party/upb/upb/msg.c )
