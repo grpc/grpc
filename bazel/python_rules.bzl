@@ -70,7 +70,7 @@ def py_proto_library(
       srcs: A list of proto_library dependencies. Must contain a single element.
     """
     codegen_target = "_{}_codegen".format(name)
-    if len(srcs) > 1:
+    if len(srcs) != 1:
         fail("Can only compile a single proto at a time.")
 
 
@@ -158,10 +158,10 @@ def py_grpc_library(
         proto_library in `srcs`.
     """
     codegen_grpc_target = "_{}_grpc_codegen".format(name)
-    if len(srcs) > 1:
+    if len(srcs) != 1:
         fail("Can only compile a single proto at a time.")
 
-    if len(deps) > 1:
+    if len(deps) != 1:
         fail("Deps must have length 1.")
 
     _generate_pb2_grpc_src(
