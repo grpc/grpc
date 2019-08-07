@@ -348,7 +348,7 @@ CXXFLAGS += -stdlib=libc++
 LDFLAGS += -framework CoreFoundation
 endif
 CXXFLAGS += -Wnon-virtual-dtor
-CPPFLAGS += -g -Wall -Wextra -Werror -Wno-unknown-warning-option -Wno-long-long -Wno-unused-parameter -Wno-deprecated-declarations -Wno-sign-conversion -Wno-shadow -Wno-conversion -Wno-implicit-fallthrough -Wno-sign-compare -Wno-missing-field-initializers -Wno-maybe-uninitialized -DPB_FIELD_32BIT -DOSATOMIC_USE_INLINED=1 -Ithird_party/nanopb -Ithird_party/upb -Ithird_party/upb/generated_for_cmake -Isrc/core/ext/upb-generated
+CPPFLAGS += -g -Wall -Wextra -Werror -Wno-unknown-warning-option -Wno-long-long -Wno-unused-parameter -Wno-deprecated-declarations -Wno-sign-conversion -Wno-shadow -Wno-conversion -Wno-implicit-fallthrough -Wno-sign-compare -Wno-missing-field-initializers -Wno-maybe-uninitialized -DPB_FIELD_32BIT -DOSATOMIC_USE_INLINED=1 -Ithird_party/nanopb -Ithird_party/upb -Isrc/core/ext/upb-generated
 COREFLAGS += -fno-rtti -fno-exceptions
 LDFLAGS += -g
 
@@ -3757,7 +3757,6 @@ LIBGRPC_SRC = \
     third_party/nanopb/pb_decode.c \
     third_party/nanopb/pb_encode.c \
     src/core/tsi/transport_security.cc \
-    third_party/upb/generated_for_cmake/google/protobuf/descriptor.upb.c \
     third_party/upb/upb/decode.c \
     third_party/upb/upb/encode.c \
     third_party/upb/upb/msg.c \
@@ -4157,7 +4156,6 @@ LIBGRPC_CRONET_SRC = \
     src/core/ext/filters/client_channel/subchannel_pool_interface.cc \
     src/core/ext/filters/deadline/deadline_filter.cc \
     src/core/ext/upb-generated/src/proto/grpc/health/v1/health.upb.c \
-    third_party/upb/generated_for_cmake/google/protobuf/descriptor.upb.c \
     third_party/upb/upb/decode.c \
     third_party/upb/upb/encode.c \
     third_party/upb/upb/msg.c \
@@ -4543,7 +4541,6 @@ LIBGRPC_TEST_UTIL_SRC = \
     src/core/ext/filters/client_channel/subchannel_pool_interface.cc \
     src/core/ext/filters/deadline/deadline_filter.cc \
     src/core/ext/upb-generated/src/proto/grpc/health/v1/health.upb.c \
-    third_party/upb/generated_for_cmake/google/protobuf/descriptor.upb.c \
     third_party/upb/upb/decode.c \
     third_party/upb/upb/encode.c \
     third_party/upb/upb/msg.c \
@@ -4866,7 +4863,6 @@ LIBGRPC_TEST_UTIL_UNSECURE_SRC = \
     src/core/ext/filters/client_channel/subchannel_pool_interface.cc \
     src/core/ext/filters/deadline/deadline_filter.cc \
     src/core/ext/upb-generated/src/proto/grpc/health/v1/health.upb.c \
-    third_party/upb/generated_for_cmake/google/protobuf/descriptor.upb.c \
     third_party/upb/upb/decode.c \
     third_party/upb/upb/encode.c \
     third_party/upb/upb/msg.c \
@@ -5187,7 +5183,6 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/ext/filters/client_channel/subchannel_pool_interface.cc \
     src/core/ext/filters/deadline/deadline_filter.cc \
     src/core/ext/upb-generated/src/proto/grpc/health/v1/health.upb.c \
-    third_party/upb/generated_for_cmake/google/protobuf/descriptor.upb.c \
     third_party/upb/upb/decode.c \
     third_party/upb/upb/encode.c \
     third_party/upb/upb/msg.c \
@@ -5534,7 +5529,6 @@ LIBGRPC++_SRC = \
     src/cpp/util/string_ref.cc \
     src/cpp/util/time_cc.cc \
     src/core/ext/upb-generated/src/proto/grpc/health/v1/health.upb.c \
-    third_party/upb/generated_for_cmake/google/protobuf/descriptor.upb.c \
     third_party/upb/upb/decode.c \
     third_party/upb/upb/encode.c \
     third_party/upb/upb/msg.c \
@@ -6566,7 +6560,6 @@ LIBGRPC++_UNSECURE_SRC = \
     src/cpp/util/string_ref.cc \
     src/cpp/util/time_cc.cc \
     src/core/ext/upb-generated/src/proto/grpc/health/v1/health.upb.c \
-    third_party/upb/generated_for_cmake/google/protobuf/descriptor.upb.c \
     third_party/upb/upb/decode.c \
     third_party/upb/upb/encode.c \
     third_party/upb/upb/msg.c \

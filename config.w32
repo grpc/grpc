@@ -318,7 +318,6 @@ if (PHP_GRPC != "no") {
     "third_party\\nanopb\\pb_decode.c " +
     "third_party\\nanopb\\pb_encode.c " +
     "src\\core\\tsi\\transport_security.cc " +
-    "third_party\\upb\\generated_for_cmake\\google\\protobuf\\descriptor.upb.c " +
     "third_party\\upb\\upb\\decode.c " +
     "third_party\\upb\\upb\\encode.c " +
     "third_party\\upb\\upb\\msg.c " +
@@ -692,7 +691,6 @@ if (PHP_GRPC != "no") {
     "/I"+configure_module_dirname+"\\third_party\\boringssl\\include "+
     "/I"+configure_module_dirname+"\\third_party\\nanopb "+
     "/I"+configure_module_dirname+"\\third_party\\upb "+
-    "/I"+configure_module_dirname+"\\third_party\\upb\\generated_for_cmake "+
     "/I"+configure_module_dirname+"\\third_party\\zlib ");
 
   base_dir = get_define('BUILD_DIR');
@@ -844,9 +842,6 @@ if (PHP_GRPC != "no") {
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\third_party\\boringssl\\third_party\\fiat");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\third_party\\nanopb");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\third_party\\upb");
-  FSO.CreateFolder(base_dir+"\\ext\\grpc\\third_party\\upb\\generated_for_cmake");
-  FSO.CreateFolder(base_dir+"\\ext\\grpc\\third_party\\upb\\generated_for_cmake\\google");
-  FSO.CreateFolder(base_dir+"\\ext\\grpc\\third_party\\upb\\generated_for_cmake\\google\\protobuf");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\third_party\\upb\\upb");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\third_party\\zlib");
   _build_dirs = new Array();

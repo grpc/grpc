@@ -805,7 +805,5 @@ Pod::Spec.new do |s|
     find src/core/ third_party/upb/ -type f -name '*.grpc_back' -print0 | xargs -0 rm
     find src/core/ src/cpp/ -type f \\( -name '*.h' -or -name '*.c' -or -name '*.cc' \\) -print0 | xargs -0 -L1 sed -E -i'.grpc_back' 's;#include "(.*).upb.h";#if COCOAPODS==1\\\n  #include  "src/core/ext/upb-generated/\\1.upb.h"\\\n#else\\\n  #include  "\\1.upb.h"\\\n#endif;g'
     find src/core/ src/cpp/ -type f -name '*.grpc_back' -print0 | xargs -0 rm
-    find third_party/upb/ -type f \\( -name '*.h' -or -name '*.c' -or -name '*.cc' \\) -print0 | xargs -0 -L1 sed -E -i'.grpc_back' 's;#include "(.*).upb.h";#if COCOAPODS==1\\\n  #include  "third_party/upb/generated_for_cmake/\\1.upb.h"\\\n#else\\\n  #include  "\\1.upb.h"\\\n#endif;g'
-    find third_party/upb/ -type f -name '*.grpc_back' -print0 | xargs -0 rm
   END_OF_COMMAND
 end

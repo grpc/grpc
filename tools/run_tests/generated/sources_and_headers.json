@@ -8308,6 +8308,7 @@
     "deps": [], 
     "headers": [
       "src/core/ext/upb-generated/google/protobuf/any.upb.h", 
+      "src/core/ext/upb-generated/google/protobuf/descriptor.upb.h", 
       "src/core/ext/upb-generated/google/protobuf/duration.upb.h", 
       "src/core/ext/upb-generated/google/protobuf/empty.upb.h", 
       "src/core/ext/upb-generated/google/protobuf/struct.upb.h", 
@@ -8320,6 +8321,8 @@
     "src": [
       "src/core/ext/upb-generated/google/protobuf/any.upb.c", 
       "src/core/ext/upb-generated/google/protobuf/any.upb.h", 
+      "src/core/ext/upb-generated/google/protobuf/descriptor.upb.c", 
+      "src/core/ext/upb-generated/google/protobuf/descriptor.upb.h", 
       "src/core/ext/upb-generated/google/protobuf/duration.upb.c", 
       "src/core/ext/upb-generated/google/protobuf/duration.upb.h", 
       "src/core/ext/upb-generated/google/protobuf/empty.upb.c", 
@@ -10947,7 +10950,6 @@
   {
     "deps": [], 
     "headers": [
-      "third_party/upb/generated_for_cmake/google/protobuf/descriptor.upb.h", 
       "third_party/upb/upb/decode.h", 
       "third_party/upb/upb/encode.h", 
       "third_party/upb/upb/generated_util.h", 

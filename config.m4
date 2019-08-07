@@ -12,7 +12,6 @@ if test "$PHP_GRPC" != "no"; then
   PHP_ADD_INCLUDE(PHP_EXT_SRCDIR()/third_party/boringssl/include)
   PHP_ADD_INCLUDE(PHP_EXT_SRCDIR()/third_party/nanopb)
   PHP_ADD_INCLUDE(PHP_EXT_SRCDIR()/third_party/upb)
-  PHP_ADD_INCLUDE(PHP_EXT_SRCDIR()/third_party/upb/generated_for_cmake)
 
   LIBS="-lpthread $LIBS"
 
@@ -346,7 +345,6 @@ if test "$PHP_GRPC" != "no"; then
     third_party/nanopb/pb_decode.c \
     third_party/nanopb/pb_encode.c \
     src/core/tsi/transport_security.cc \
-    third_party/upb/generated_for_cmake/google/protobuf/descriptor.upb.c \
     third_party/upb/upb/decode.c \
     third_party/upb/upb/encode.c \
     third_party/upb/upb/msg.c \
@@ -816,6 +814,5 @@ if test "$PHP_GRPC" != "no"; then
   PHP_ADD_BUILD_DIR($ext_builddir/third_party/boringssl/ssl)
   PHP_ADD_BUILD_DIR($ext_builddir/third_party/boringssl/third_party/fiat)
   PHP_ADD_BUILD_DIR($ext_builddir/third_party/nanopb)
-  PHP_ADD_BUILD_DIR($ext_builddir/third_party/upb/generated_for_cmake/google/protobuf)
   PHP_ADD_BUILD_DIR($ext_builddir/third_party/upb/upb)
 fi

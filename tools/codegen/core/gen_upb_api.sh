@@ -60,6 +60,7 @@ proto_files=( \
   "google/api/annotations.proto" \
   "google/api/http.proto" \
   "google/protobuf/any.proto" \
+  "google/protobuf/descriptor.proto" \
   "google/protobuf/duration.proto" \
   "google/protobuf/empty.proto" \
   "google/protobuf/struct.proto" \

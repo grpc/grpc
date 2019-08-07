@@ -747,7 +747,6 @@
     <file baseinstalldir="/" name="third_party/nanopb/pb_decode.c" role="src" />
     <file baseinstalldir="/" name="third_party/nanopb/pb_encode.c" role="src" />
     <file baseinstalldir="/" name="src/core/tsi/transport_security.cc" role="src" />
-    <file baseinstalldir="/" name="third_party/upb/generated_for_cmake/google/protobuf/descriptor.upb.c" role="src" />
     <file baseinstalldir="/" name="third_party/upb/upb/decode.c" role="src" />
     <file baseinstalldir="/" name="third_party/upb/upb/encode.c" role="src" />
     <file baseinstalldir="/" name="third_party/upb/upb/msg.c" role="src" />
