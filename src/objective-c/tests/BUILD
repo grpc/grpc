@@ -24,9 +24,9 @@ load(
     "testing_objc_grpc_library"
 )
 load("@build_bazel_rules_apple//apple:resources.bzl", "apple_resource_bundle")
-load("@build_bazel_rules_apple//apple:ios.bzl", "ios_unit_test")
+load("@build_bazel_rules_apple//apple:ios.bzl", "ios_application", "ios_unit_test")
 load("@build_bazel_rules_apple//apple:macos.bzl", "macos_unit_test")
-load("@build_bazel_rules_apple//apple:tvos.bzl", "tvos_unit_test")
+load("@build_bazel_rules_apple//apple:tvos.bzl", "tvos_application", "tvos_unit_test")
 
 exports_files(["LICENSE"])
 
@@ -59,10 +59,40 @@ grpc_objc_testing_library(
     hdrs = ["version.h"],
     data = [":TestCertificates"],
     defines = [
+        "DEBUG=1",
+        "PB_FIELD_32BIT=1",
+        "PB_NO_PACKED_STRUCTS=1",
+        "PB_ENABLE_MALLOC=1",
         "HOST_PORT_LOCALSSL=localhost:5051",
         "HOST_PORT_LOCAL=localhost:5050",
         "HOST_PORT_REMOTE=grpc-test.sandbox.googleapis.com",
     ],
+)
+
+objc_library(
+    name = "host-lib",
+    srcs = glob(["Hosts/ios-host/*.m"]),
+    hdrs = glob(["Hosts/ios-host/*.h"]),
+)
+
+ios_application(
+    name = "ios-host",
+    bundle_id = "grpc.objc.tests.ios-host",
+    infoplists = ["Hosts/ios-host/Info.plist"],
+    minimum_os_version = "9.0",
+    families = [
+        "iphone",
+        "ipad",
+    ],
+    deps = ["host-lib"],
+)
+
+tvos_application(
+    name = "tvos-host",
+    bundle_id = "grpc.objc.tests.tvos-host",
+    infoplists = ["Hosts/ios-host/Info.plist"],
+    minimum_os_version = "10.0",
+    deps = ["host-lib"],
 )
 
 grpc_objc_testing_library(
@@ -159,7 +189,8 @@ ios_unit_test(
         ":ChannelPoolTest-lib",
         ":ChannelTests-lib",
         ":NSErrorUnitTests-lib",
-    ]
+    ],
+    test_host = ":ios-host",
 )
 
 ios_unit_test(
@@ -169,8 +200,9 @@ ios_unit_test(
         ":InteropTestsRemote-lib",
         ":InteropTestsLocalSSL-lib",
         ":InteropTestsLocalCleartext-lib",
-        # ":InteropTestsMultipleChannels-lib", #??????? Cronet must be used?
+        # ":InteropTestsMulitpleChannels-lib", # needs Cronet
     ],
+    test_host = ":ios-host",
 )
 
 macos_unit_test(
@@ -187,7 +219,7 @@ macos_unit_test(
     ]
 )
 
-# cares does not support tvOS CPU architecture with Bazel yet
+# c-ares does not support tvOS CPU architecture with Bazel yet
 tvos_unit_test(
     name = "TvTests",
     minimum_os_version = "10.0",
@@ -198,5 +230,6 @@ tvos_unit_test(
         ":InteropTestsRemote-lib",
         ":InteropTestsLocalSSL-lib",
         ":InteropTestsLocalCleartext-lib",
-    ]
+    ],
+    test_host = ":tvos-host",
 )
