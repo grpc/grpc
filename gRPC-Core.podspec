@@ -41,7 +41,8 @@ Pod::Spec.new do |s|
   s.ios.deployment_target = '7.0'
   s.osx.deployment_target = '10.9'
   s.tvos.deployment_target = '10.0'
-  
+  s.watchos.deployment_target = '4.0'
+
   s.requires_arc = false
 
   name = 'grpc'
@@ -374,7 +375,7 @@ Pod::Spec.new do |s|
                       'src/core/ext/filters/client_channel/subchannel_interface.h',
                       'src/core/ext/filters/client_channel/subchannel_pool_interface.h',
                       'src/core/ext/filters/deadline/deadline_filter.h',
-                      'src/core/ext/filters/client_channel/health/health.pb.h',
+                      'src/core/ext/upb-generated/src/proto/grpc/health/v1/health.upb.h',
                       'src/core/tsi/fake_transport_security.h',
                       'src/core/tsi/local_transport_security.h',
                       'src/core/tsi/ssl/session_cache/ssl_session.h',
@@ -805,6 +806,12 @@ Pod::Spec.new do |s|
                       'src/core/tsi/alts/handshaker/handshaker.pb.c',
                       'src/core/tsi/alts/handshaker/transport_security_common.pb.c',
                       'src/core/tsi/transport_security.cc',
+                      'third_party/upb/upb/decode.c',
+                      'third_party/upb/upb/encode.c',
+                      'third_party/upb/upb/msg.c',
+                      'third_party/upb/upb/port.c',
+                      'third_party/upb/upb/table.c',
+                      'third_party/upb/upb/upb.c',
                       'src/core/ext/transport/chttp2/client/insecure/channel_create.cc',
                       'src/core/ext/transport/chttp2/client/insecure/channel_create_posix.cc',
                       'src/core/ext/transport/chttp2/client/authority.cc',
@@ -836,7 +843,7 @@ Pod::Spec.new do |s|
                       'src/core/ext/filters/client_channel/subchannel.cc',
                       'src/core/ext/filters/client_channel/subchannel_pool_interface.cc',
                       'src/core/ext/filters/deadline/deadline_filter.cc',
-                      'src/core/ext/filters/client_channel/health/health.pb.c',
+                      'src/core/ext/upb-generated/src/proto/grpc/health/v1/health.upb.c',
                       'src/core/tsi/fake_transport_security.cc',
                       'src/core/tsi/local_transport_security.cc',
                       'src/core/tsi/ssl/session_cache/ssl_session_boringssl.cc',
@@ -1033,7 +1040,7 @@ Pod::Spec.new do |s|
                               'src/core/ext/filters/client_channel/subchannel_interface.h',
                               'src/core/ext/filters/client_channel/subchannel_pool_interface.h',
                               'src/core/ext/filters/deadline/deadline_filter.h',
-                              'src/core/ext/filters/client_channel/health/health.pb.h',
+                              'src/core/ext/upb-generated/src/proto/grpc/health/v1/health.upb.h',
                               'src/core/tsi/fake_transport_security.h',
                               'src/core/tsi/local_transport_security.h',
                               'src/core/tsi/ssl/session_cache/ssl_session.h',
@@ -1275,9 +1282,6 @@ Pod::Spec.new do |s|
                       'test/core/util/tracer_util.cc',
                       'test/core/util/trickle_endpoint.cc',
                       'test/core/util/cmdline.cc',
-                      'third_party/nanopb/pb_common.c',
-                      'third_party/nanopb/pb_decode.c',
-                      'third_party/nanopb/pb_encode.c',
                       'test/core/end2end/data/ssl_test_data.h',
                       'test/core/security/oauth2_utils.h',
                       'test/core/end2end/cq_verifier.h',
@@ -1394,5 +1398,9 @@ Pod::Spec.new do |s|
   s.prepare_command = <<-END_OF_COMMAND
     sed -E -i '' 's;#include "(pb(_.*)?\\.h)";#if COCOAPODS==1\\\n  #include <nanopb/\\1>\\\n#else\\\n  #include "\\1"\\\n#endif;g' $(find src/core -type f -print | xargs grep -H -c '#include <nanopb/' | grep 0$ | cut -d':' -f1)
     sed -E -i '' 's;#include <openssl/(.*)>;#if COCOAPODS==1\\\n  #include <openssl_grpc/\\1>\\\n#else\\\n  #include <openssl/\\1>\\\n#endif;g' $(find src/core -type f \\( -path '*.h' -or -path '*.cc' \\) -print | xargs grep -H -c '#include <openssl_grpc/' | grep 0$ | cut -d':' -f1)
+    find src/core/ third_party/upb/ -type f \\( -name '*.h' -or -name '*.c' -or -name '*.cc' \\) -print0 | xargs -0 -L1 sed -E -i'.grpc_back' 's;#include "upb/(.*)";#if COCOAPODS==1\\\n  #include  "third_party/upb/upb/\\1"\\\n#else\\\n  #include  "upb/\\1"\\\n#endif;g'
+    find src/core/ third_party/upb/ -type f -name '*.grpc_back' -print0 | xargs -0 rm
+    find src/core/ src/cpp/ -type f \\( -name '*.h' -or -name '*.c' -or -name '*.cc' \\) -print0 | xargs -0 -L1 sed -E -i'.grpc_back' 's;#include "(.*).upb.h";#if COCOAPODS==1\\\n  #include  "src/core/ext/upb-generated/\\1.upb.h"\\\n#else\\\n  #include  "\\1.upb.h"\\\n#endif;g'
+    find src/core/ src/cpp/ -type f -name '*.grpc_back' -print0 | xargs -0 rm
   END_OF_COMMAND
 end

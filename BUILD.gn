@@ -33,25 +33,6 @@ config("grpc_config") {
 
     
   
-  source_set("health_proto") {
-    sources = [
-        "src/core/ext/filters/client_channel/health/health.pb.c",
-        "src/core/ext/filters/client_channel/health/health.pb.h",
-    ]
-    deps = [
-        ":nanopb",
-    ]
-    
-    public_configs = [
-      ":grpc_config",
-    ]
-    include_dirs = [
-        "third_party/nanopb",
-    ]
-  }
-
-    
-  
   source_set("nanopb") {
     sources = [
         "third_party/nanopb/pb.h",
@@ -429,6 +410,8 @@ config("grpc_config") {
         "src/core/ext/transport/inproc/inproc_plugin.cc",
         "src/core/ext/transport/inproc/inproc_transport.cc",
         "src/core/ext/transport/inproc/inproc_transport.h",
+        "src/core/ext/upb-generated/src/proto/grpc/health/v1/health.upb.c",
+        "src/core/ext/upb-generated/src/proto/grpc/health/v1/health.upb.h",
         "src/core/lib/avl/avl.cc",
         "src/core/lib/avl/avl.h",
         "src/core/lib/backoff/backoff.cc",
@@ -874,6 +857,12 @@ config("grpc_config") {
         "src/core/tsi/transport_security_grpc.cc",
         "src/core/tsi/transport_security_grpc.h",
         "src/core/tsi/transport_security_interface.h",
+        "third_party/upb/upb/decode.c",
+        "third_party/upb/upb/encode.c",
+        "third_party/upb/upb/msg.c",
+        "third_party/upb/upb/port.c",
+        "third_party/upb/upb/table.c",
+        "third_party/upb/upb/upb.c",
     ]
     deps = [
         "//third_party/boringssl",
@@ -882,7 +871,6 @@ config("grpc_config") {
         "//third_party/cares",
         ":address_sorting",
         ":nanopb",
-        ":health_proto",
     ]
     
     public_configs = [
@@ -1162,6 +1150,8 @@ config("grpc_config") {
         "include/grpcpp/support/time.h",
         "include/grpcpp/support/validate_service_config.h",
         "src/core/ext/transport/inproc/inproc_transport.h",
+        "src/core/ext/upb-generated/src/proto/grpc/health/v1/health.upb.c",
+        "src/core/ext/upb-generated/src/proto/grpc/health/v1/health.upb.h",
         "src/core/lib/avl/avl.h",
         "src/core/lib/backoff/backoff.h",
         "src/core/lib/channel/channel_args.h",
@@ -1391,14 +1381,18 @@ config("grpc_config") {
         "src/cpp/util/status.cc",
         "src/cpp/util/string_ref.cc",
         "src/cpp/util/time_cc.cc",
+        "third_party/upb/upb/decode.c",
+        "third_party/upb/upb/encode.c",
+        "third_party/upb/upb/msg.c",
+        "third_party/upb/upb/port.c",
+        "third_party/upb/upb/table.c",
+        "third_party/upb/upb/upb.c",
     ]
     deps = [
         "//third_party/boringssl",
         "//third_party/protobuf:protobuf_lite",
         ":grpc",
         ":gpr",
-        ":nanopb",
-        ":health_proto",
     ]
     
     public_configs = [

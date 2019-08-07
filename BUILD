@@ -342,7 +342,6 @@ grpc_cc_library(
     ],
 )
 
-
 grpc_cc_library(
     name = "grpc++_public_hdrs",
     hdrs = GRPCXX_PUBLIC_HDRS,
@@ -1065,7 +1064,7 @@ grpc_cc_library(
         "grpc_base",
         "grpc_client_authority_filter",
         "grpc_deadline_filter",
-        "health_proto",
+        "grpc_health_upb",
         "inlined_vector",
         "orphanable",
         "ref_counted",
@@ -1191,20 +1190,6 @@ grpc_cc_library(
     deps = [
         "gpr_codegen",
     ],
-)
-
-grpc_cc_library(
-    name = "health_proto",
-    srcs = [
-        "src/core/ext/filters/client_channel/health/health.pb.c",
-    ],
-    hdrs = [
-        "src/core/ext/filters/client_channel/health/health.pb.h",
-    ],
-    external_deps = [
-        "nanopb",
-    ],
-    language = "c++",
 )
 
 grpc_cc_library(
@@ -2000,9 +1985,9 @@ grpc_cc_library(
     language = "c++",
     public_hdrs = GRPCXX_PUBLIC_HDRS,
     deps = [
-        "grpc",
         "grpc++_codegen_base",
-        "health_proto",
+        "grpc",
+        "grpc_health_upb",
     ],
 )
 
@@ -2015,7 +2000,7 @@ grpc_cc_library(
     deps = [
         "grpc++_codegen_base",
         "grpc_unsecure",
-        "health_proto",
+        "grpc_health_upb",
     ],
 )
 
@@ -2077,7 +2062,7 @@ grpc_cc_library(
         "include/grpcpp/impl/codegen/config.h",
         "include/grpcpp/impl/codegen/core_codegen_interface.h",
         "include/grpcpp/impl/codegen/create_auth_context.h",
-        "include/grpcpp/impl/codegen/delegating_channel.h",        
+        "include/grpcpp/impl/codegen/delegating_channel.h",
         "include/grpcpp/impl/codegen/grpc_library.h",
         "include/grpcpp/impl/codegen/intercepted_channel.h",
         "include/grpcpp/impl/codegen/interceptor.h",
@@ -2277,60 +2262,139 @@ grpc_cc_library(
     ],
 )
 
-grpc_upb_proto_library(
-    name = "upb_load_report",
-    deps = ["@envoy_api//envoy/api/v2/endpoint:load_report_export"]
-)
+# Once upb code-gen issue is resolved, use this.
+# grpc_upb_proto_library(
+#     name = "upb_load_report",
+#     deps = ["@envoy_api//envoy/api/v2/endpoint:load_report_export"],
+# )
+#
+# grpc_upb_proto_library(
+#     name = "upb_lrs",
+#     deps = ["@envoy_api//envoy/service/load_stats/v2:lrs_export"],
+# )
+#
+# grpc_upb_proto_library(
+#     name = "upb_cds",
+#     deps = ["@envoy_api//envoy/api/v2:cds_export"],
+# )
 
-grpc_upb_proto_library(
-    name = "upb_lrs",
-    deps = ["@envoy_api//envoy/service/load_stats/v2:lrs_export"]
-)
+# grpc_cc_library(
+#    name = "envoy_lrs_upb",
+#    external_deps = [
+#        "upb_lib",
+#    ],
+#    language = "c++",
+#    tags = ["no_windows"],
+#    deps = [
+#        ":upb_load_report",
+#        ":upb_lrs",
+#    ],
+# )
 
-grpc_upb_proto_library(
-    name = "upb_cds",
-    deps = ["@envoy_api//envoy/api/v2:cds_export"]
-)
+# grpc_cc_library(
+#    name = "envoy_ads_upb",
+#    external_deps = [
+#        "upb_lib",
+#    ],
+#    language = "c++",
+#    tags = ["no_windows"],
+#    deps = [
+#        ":upb_cds",
+#    ],
+# )
 
-#TODO: Get this into build.yaml once we start using it.
+# Once upb code-gen issue is resolved, replace grpc_health_upb with this.
+# grpc_upb_proto_library(
+#     name = "grpc_health_upb",
+#     deps = ["//src/proto/grpc/health/v1:health_proto_descriptor"],
+# )
+
 grpc_cc_library(
-    name = "envoy_lrs_upb",
-    language = "c++",
-    external_deps = [
-        "upb_lib",
-    ],
-    deps = [
-        ":upb_load_report",
-        ":upb_lrs"
-    ],
-    tags = ["no_windows"],
-)
-
-grpc_cc_library(
-    name = "envoy_ads_upb",
-    external_deps = [
-        "upb_lib",
-    ],
-    language = "c++",
-    deps = [
-        ":upb_cds",
-    ],
-    tags = ["no_windows"],
-)
-
-grpc_upb_proto_library(
     name = "grpc_health_upb",
-    deps = ["//src/proto/grpc/health/v1:health_proto_descriptor"]
+    srcs = [
+        "src/core/ext/upb-generated/src/proto/grpc/health/v1/health.upb.c",
+    ],
+    hdrs = [
+        "src/core/ext/upb-generated/src/proto/grpc/health/v1/health.upb.h",
+    ],
+    external_deps = [
+        "upb_lib",
+    ],
+    language = "c++",
 )
 
-grpc_upb_proto_library(
+# Once upb code-gen issue is resolved, remove this.
+grpc_cc_library(
+    name = "google_api_upb",
+    srcs = [
+        "src/core/ext/upb-generated/google/protobuf/any.upb.c",
+        "src/core/ext/upb-generated/google/protobuf/duration.upb.c",
+        "src/core/ext/upb-generated/google/protobuf/descriptor.upb.c",
+        "src/core/ext/upb-generated/google/protobuf/empty.upb.c",
+        "src/core/ext/upb-generated/google/protobuf/struct.upb.c",
+        "src/core/ext/upb-generated/google/protobuf/timestamp.upb.c",
+        "src/core/ext/upb-generated/google/protobuf/wrappers.upb.c",
+    ],
+    hdrs = [
+        "src/core/ext/upb-generated/google/protobuf/any.upb.h",
+        "src/core/ext/upb-generated/google/protobuf/duration.upb.h",
+        "src/core/ext/upb-generated/google/protobuf/descriptor.upb.h",
+        "src/core/ext/upb-generated/google/protobuf/empty.upb.h",
+        "src/core/ext/upb-generated/google/protobuf/struct.upb.h",
+        "src/core/ext/upb-generated/google/protobuf/timestamp.upb.h",
+        "src/core/ext/upb-generated/google/protobuf/wrappers.upb.h",
+    ],
+    external_deps = [
+        "upb_lib",
+    ],
+    language = "c++",
+)
+
+# Once upb code-gen issue is resolved, replace grpc_lb_upb with this.
+# grpc_upb_proto_library(
+#     name = "grpc_lb_upb",
+#     deps = ["//src/proto/grpc/lb/v1:load_balancer_proto_descriptor"],
+# )
+
+grpc_cc_library(
     name = "grpc_lb_upb",
-    deps = ["//src/proto/grpc/lb/v1:load_balancer_proto_descriptor"]
+    srcs = [
+        "src/core/ext/upb-generated/src/proto/grpc/lb/v1/load_balancer.upb.c",
+    ],
+    hdrs = [
+        "src/core/ext/upb-generated/src/proto/grpc/lb/v1/load_balancer.upb.h",
+    ],
+    external_deps = [
+        "upb_lib",
+    ],
+    language = "c++",
+    deps = [
+        "google_api_upb",
+    ],
 )
 
-grpc_upb_proto_library(
+# Once upb code-gen issue is resolved, replace alts_upb with this.
+# grpc_upb_proto_library(
+#     name = "alts_upb",
+#     deps = ["//src/proto/grpc/gcp:alts_handshaker_proto"],
+# )
+
+grpc_cc_library(
     name = "alts_upb",
-    deps = ["//src/proto/grpc/gcp:alts_handshaker_proto"]
+    srcs = [
+        "src/core/ext/upb-generated/src/proto/grpc/gcp/altscontext.upb.c",
+        "src/core/ext/upb-generated/src/proto/grpc/gcp/handshaker.upb.c",
+        "src/core/ext/upb-generated/src/proto/grpc/gcp/transport_security_common.upb.c",
+    ],
+    hdrs = [
+        "src/core/ext/upb-generated/src/proto/grpc/gcp/altscontext.upb.h",
+        "src/core/ext/upb-generated/src/proto/grpc/gcp/handshaker.upb.h",
+        "src/core/ext/upb-generated/src/proto/grpc/gcp/transport_security_common.upb.h",
+    ],
+    external_deps = [
+        "upb_lib",
+    ],
+    language = "c++",
 )
 
 grpc_generate_one_off_targets()
