@@ -1223,32 +1223,30 @@ GPR_EXPORT void* GPR_CALLTYPE
 grpcsharp_slice_buffer_adjust_tail_space(grpc_slice_buffer* buffer, size_t available_tail_space,
     size_t requested_tail_space) {
 
-    if (available_tail_space == 0 && requested_tail_space == 0)
-    {
-      return NULL;
+    if (available_tail_space == requested_tail_space) {
+      // nothing to do
     }
-    // TODO: what if available_tail_space == requested_tail_space == 0
-
-    if (available_tail_space >= requested_tail_space)
+    else if (available_tail_space >= requested_tail_space)
     {
-      // TODO: should this be allowed at all?
-      grpc_slice_buffer garbage;
-      grpc_slice_buffer_trim_end(buffer, available_tail_space - requested_tail_space, &garbage);
-      grpc_slice_buffer_reset_and_unref(&garbage);
+      grpc_slice_buffer_trim_end(buffer, available_tail_space - requested_tail_space, NULL);
     }
     else
     {
       if (available_tail_space > 0)
       {
-        grpc_slice_buffer garbage;
-        grpc_slice_buffer_trim_end(buffer, available_tail_space, &garbage);
-        grpc_slice_buffer_reset_and_unref(&garbage);
+        grpc_slice_buffer_trim_end(buffer, available_tail_space, NULL);
       }
 
       grpc_slice new_slice = grpc_slice_malloc(requested_tail_space);
-      grpc_slice_buffer_add(buffer, new_slice);
+      // TODO: this always adds as a new slice entry into the sb, but it doesn't have the problem of
+      // sometimes splitting the continguous new_slice across two different slices (like grpc_slice_buffer_add would)
+      grpc_slice_buffer_add_indexed(buffer, new_slice);
     }
     
+    if (buffer->count == 0)
+    {
+      return NULL;
+    }
     grpc_slice* last_slice = &(buffer->slices[buffer->count - 1]);
     return GRPC_SLICE_END_PTR(*last_slice) - requested_tail_space;
 }
