@@ -306,12 +306,6 @@ ifeq ($(HAS_WORKING_NO_CXX14_COMPAT),true)
 W_NO_CXX14_COMPAT=-Wno-c++14-compat
 endif
 
-CHECK_SHADOW_WORKS_CMD = $(CC) -std=c99 -Werror -Wshadow -o $(TMPOUT) -c test/build/shadow.c
-HAS_WORKING_SHADOW = $(shell $(CHECK_SHADOW_WORKS_CMD) 2> /dev/null && echo true || echo false)
-ifeq ($(HAS_WORKING_SHADOW),true)
-W_SHADOW=-Wshadow
-NO_W_SHADOW=-Wno-shadow
-endif
 CHECK_EXTRA_SEMI_WORKS_CMD = $(CC) -std=c99 -Werror -Wextra-semi -o $(TMPOUT) -c test/build/extra-semi.c
 HAS_WORKING_EXTRA_SEMI = $(shell $(CHECK_EXTRA_SEMI_WORKS_CMD) 2> /dev/null && echo true || echo false)
 ifeq ($(HAS_WORKING_EXTRA_SEMI),true)
@@ -347,14 +341,14 @@ HOST_CXX ?= $(CXX)
 HOST_LD ?= $(LD)
 HOST_LDXX ?= $(LDXX)
 
-CFLAGS += -std=c99 -Wsign-conversion -Wconversion $(W_SHADOW) $(W_EXTRA_SEMI)
+CFLAGS += -std=c99 $(W_EXTRA_SEMI)
 CXXFLAGS += -std=c++11
 ifeq ($(SYSTEM),Darwin)
 CXXFLAGS += -stdlib=libc++
 LDFLAGS += -framework CoreFoundation
 endif
 CXXFLAGS += -Wnon-virtual-dtor
-CPPFLAGS += -g -Wall -Wextra -Werror -Wno-long-long -Wno-unused-parameter -DOSATOMIC_USE_INLINED=1 -Wno-deprecated-declarations -Ithird_party/nanopb -DPB_FIELD_32BIT
+CPPFLAGS += -g -Wall -Wextra -Werror -Wno-unknown-warning-option -Wno-long-long -Wno-unused-parameter -Wno-deprecated-declarations -Wno-sign-conversion -Wno-shadow -Wno-conversion -Wno-implicit-fallthrough -Wno-sign-compare -Wno-missing-field-initializers -Wno-maybe-uninitialized -DPB_FIELD_32BIT -DOSATOMIC_USE_INLINED=1 -Ithird_party/nanopb -Ithird_party/upb -Isrc/core/ext/upb-generated
 COREFLAGS += -fno-rtti -fno-exceptions
 LDFLAGS += -g
 
@@ -370,7 +364,7 @@ CPPFLAGS += -fPIC
 LDFLAGS += -fPIC
 endif
 
-INCLUDES = . include $(GENDIR) third_party/upb third_party/upb/generated_for_cmake
+INCLUDES = . include $(GENDIR)
 LDFLAGS += -Llibs/$(CONFIG)
 
 ifeq ($(SYSTEM),Darwin)
@@ -1208,6 +1202,7 @@ cxx_byte_buffer_test: $(BINDIR)/$(CONFIG)/cxx_byte_buffer_test
 cxx_slice_test: $(BINDIR)/$(CONFIG)/cxx_slice_test
 cxx_string_ref_test: $(BINDIR)/$(CONFIG)/cxx_string_ref_test
 cxx_time_test: $(BINDIR)/$(CONFIG)/cxx_time_test
+delegating_channel_test: $(BINDIR)/$(CONFIG)/delegating_channel_test
 end2end_test: $(BINDIR)/$(CONFIG)/end2end_test
 error_details_test: $(BINDIR)/$(CONFIG)/error_details_test
 exception_test: $(BINDIR)/$(CONFIG)/exception_test
@@ -1415,7 +1410,7 @@ plugins: $(PROTOC_PLUGINS)
 
 privatelibs: privatelibs_c privatelibs_cxx
 
-privatelibs_c:  $(LIBDIR)/$(CONFIG)/libalts_test_util.a $(LIBDIR)/$(CONFIG)/libcxxabi.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libreconnect_server.a $(LIBDIR)/$(CONFIG)/libtest_tcp_server.a $(LIBDIR)/$(CONFIG)/libupb.a $(LIBDIR)/$(CONFIG)/libz.a $(LIBDIR)/$(CONFIG)/libares.a $(LIBDIR)/$(CONFIG)/libbad_ssl_test_server.a $(LIBDIR)/$(CONFIG)/libend2end_tests.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_tests.a
+privatelibs_c:  $(LIBDIR)/$(CONFIG)/libalts_test_util.a $(LIBDIR)/$(CONFIG)/libcxxabi.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libreconnect_server.a $(LIBDIR)/$(CONFIG)/libtest_tcp_server.a $(LIBDIR)/$(CONFIG)/libz.a $(LIBDIR)/$(CONFIG)/libares.a $(LIBDIR)/$(CONFIG)/libbad_ssl_test_server.a $(LIBDIR)/$(CONFIG)/libend2end_tests.a $(LIBDIR)/$(CONFIG)/libend2end_nosec_tests.a
 pc_c: $(LIBDIR)/$(CONFIG)/pkgconfig/grpc.pc $(LIBDIR)/$(CONFIG)/pkgconfig/gpr.pc
 
 pc_c_unsecure: $(LIBDIR)/$(CONFIG)/pkgconfig/grpc_unsecure.pc $(LIBDIR)/$(CONFIG)/pkgconfig/gpr.pc
@@ -1688,6 +1683,7 @@ buildtests_cxx: privatelibs_cxx \
   $(BINDIR)/$(CONFIG)/cxx_slice_test \
   $(BINDIR)/$(CONFIG)/cxx_string_ref_test \
   $(BINDIR)/$(CONFIG)/cxx_time_test \
+  $(BINDIR)/$(CONFIG)/delegating_channel_test \
   $(BINDIR)/$(CONFIG)/end2end_test \
   $(BINDIR)/$(CONFIG)/error_details_test \
   $(BINDIR)/$(CONFIG)/exception_test \
@@ -1855,6 +1851,7 @@ buildtests_cxx: privatelibs_cxx \
   $(BINDIR)/$(CONFIG)/cxx_slice_test \
   $(BINDIR)/$(CONFIG)/cxx_string_ref_test \
   $(BINDIR)/$(CONFIG)/cxx_time_test \
+  $(BINDIR)/$(CONFIG)/delegating_channel_test \
   $(BINDIR)/$(CONFIG)/end2end_test \
   $(BINDIR)/$(CONFIG)/error_details_test \
   $(BINDIR)/$(CONFIG)/exception_test \
@@ -2354,6 +2351,8 @@ test_cxx: buildtests_cxx
 	$(Q) $(BINDIR)/$(CONFIG)/cxx_string_ref_test || ( echo test cxx_string_ref_test failed ; exit 1 )
 	$(E) "[RUN]     Testing cxx_time_test"
 	$(Q) $(BINDIR)/$(CONFIG)/cxx_time_test || ( echo test cxx_time_test failed ; exit 1 )
+	$(E) "[RUN]     Testing delegating_channel_test"
+	$(Q) $(BINDIR)/$(CONFIG)/delegating_channel_test || ( echo test delegating_channel_test failed ; exit 1 )
 	$(E) "[RUN]     Testing end2end_test"
 	$(Q) $(BINDIR)/$(CONFIG)/end2end_test || ( echo test end2end_test failed ; exit 1 )
 	$(E) "[RUN]     Testing error_details_test"
@@ -3758,6 +3757,12 @@ LIBGRPC_SRC = \
     third_party/nanopb/pb_decode.c \
     third_party/nanopb/pb_encode.c \
     src/core/tsi/transport_security.cc \
+    third_party/upb/upb/decode.c \
+    third_party/upb/upb/encode.c \
+    third_party/upb/upb/msg.c \
+    third_party/upb/upb/port.c \
+    third_party/upb/upb/table.c \
+    third_party/upb/upb/upb.c \
     src/core/ext/transport/chttp2/client/insecure/channel_create.cc \
     src/core/ext/transport/chttp2/client/insecure/channel_create_posix.cc \
     src/core/ext/transport/chttp2/client/authority.cc \
@@ -3789,7 +3794,7 @@ LIBGRPC_SRC = \
     src/core/ext/filters/client_channel/subchannel.cc \
     src/core/ext/filters/client_channel/subchannel_pool_interface.cc \
     src/core/ext/filters/deadline/deadline_filter.cc \
-    src/core/ext/filters/client_channel/health/health.pb.c \
+    src/core/ext/upb-generated/src/proto/grpc/health/v1/health.upb.c \
     src/core/tsi/fake_transport_security.cc \
     src/core/tsi/local_transport_security.cc \
     src/core/tsi/ssl/session_cache/ssl_session_boringssl.cc \
@@ -4150,10 +4155,13 @@ LIBGRPC_CRONET_SRC = \
     src/core/ext/filters/client_channel/subchannel.cc \
     src/core/ext/filters/client_channel/subchannel_pool_interface.cc \
     src/core/ext/filters/deadline/deadline_filter.cc \
-    src/core/ext/filters/client_channel/health/health.pb.c \
-    third_party/nanopb/pb_common.c \
-    third_party/nanopb/pb_decode.c \
-    third_party/nanopb/pb_encode.c \
+    src/core/ext/upb-generated/src/proto/grpc/health/v1/health.upb.c \
+    third_party/upb/upb/decode.c \
+    third_party/upb/upb/encode.c \
+    third_party/upb/upb/msg.c \
+    third_party/upb/upb/port.c \
+    third_party/upb/upb/table.c \
+    third_party/upb/upb/upb.c \
     src/core/lib/http/httpcli_security_connector.cc \
     src/core/lib/security/context/security_context.cc \
     src/core/lib/security/credentials/alts/alts_credentials.cc \
@@ -4221,6 +4229,9 @@ LIBGRPC_CRONET_SRC = \
     src/core/tsi/alts/handshaker/altscontext.pb.c \
     src/core/tsi/alts/handshaker/handshaker.pb.c \
     src/core/tsi/alts/handshaker/transport_security_common.pb.c \
+    third_party/nanopb/pb_common.c \
+    third_party/nanopb/pb_decode.c \
+    third_party/nanopb/pb_encode.c \
     src/core/tsi/transport_security.cc \
     src/core/ext/transport/chttp2/client/insecure/channel_create.cc \
     src/core/ext/transport/chttp2/client/insecure/channel_create_posix.cc \
@@ -4529,10 +4540,13 @@ LIBGRPC_TEST_UTIL_SRC = \
     src/core/ext/filters/client_channel/subchannel.cc \
     src/core/ext/filters/client_channel/subchannel_pool_interface.cc \
     src/core/ext/filters/deadline/deadline_filter.cc \
-    src/core/ext/filters/client_channel/health/health.pb.c \
-    third_party/nanopb/pb_common.c \
-    third_party/nanopb/pb_decode.c \
-    third_party/nanopb/pb_encode.c \
+    src/core/ext/upb-generated/src/proto/grpc/health/v1/health.upb.c \
+    third_party/upb/upb/decode.c \
+    third_party/upb/upb/encode.c \
+    third_party/upb/upb/msg.c \
+    third_party/upb/upb/port.c \
+    third_party/upb/upb/table.c \
+    third_party/upb/upb/upb.c \
     src/core/ext/transport/chttp2/transport/bin_decoder.cc \
     src/core/ext/transport/chttp2/transport/bin_encoder.cc \
     src/core/ext/transport/chttp2/transport/chttp2_plugin.cc \
@@ -4848,10 +4862,13 @@ LIBGRPC_TEST_UTIL_UNSECURE_SRC = \
     src/core/ext/filters/client_channel/subchannel.cc \
     src/core/ext/filters/client_channel/subchannel_pool_interface.cc \
     src/core/ext/filters/deadline/deadline_filter.cc \
-    src/core/ext/filters/client_channel/health/health.pb.c \
-    third_party/nanopb/pb_common.c \
-    third_party/nanopb/pb_decode.c \
-    third_party/nanopb/pb_encode.c \
+    src/core/ext/upb-generated/src/proto/grpc/health/v1/health.upb.c \
+    third_party/upb/upb/decode.c \
+    third_party/upb/upb/encode.c \
+    third_party/upb/upb/msg.c \
+    third_party/upb/upb/port.c \
+    third_party/upb/upb/table.c \
+    third_party/upb/upb/upb.c \
     src/core/ext/transport/chttp2/transport/bin_decoder.cc \
     src/core/ext/transport/chttp2/transport/bin_encoder.cc \
     src/core/ext/transport/chttp2/transport/chttp2_plugin.cc \
@@ -5165,10 +5182,13 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/ext/filters/client_channel/subchannel.cc \
     src/core/ext/filters/client_channel/subchannel_pool_interface.cc \
     src/core/ext/filters/deadline/deadline_filter.cc \
-    src/core/ext/filters/client_channel/health/health.pb.c \
-    third_party/nanopb/pb_common.c \
-    third_party/nanopb/pb_decode.c \
-    third_party/nanopb/pb_encode.c \
+    src/core/ext/upb-generated/src/proto/grpc/health/v1/health.upb.c \
+    third_party/upb/upb/decode.c \
+    third_party/upb/upb/encode.c \
+    third_party/upb/upb/msg.c \
+    third_party/upb/upb/port.c \
+    third_party/upb/upb/table.c \
+    third_party/upb/upb/upb.c \
     src/core/ext/transport/inproc/inproc_plugin.cc \
     src/core/ext/transport/inproc/inproc_transport.cc \
     src/core/ext/filters/client_channel/resolver/dns/c_ares/dns_resolver_ares.cc \
@@ -5193,6 +5213,9 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/google/protobuf/duration.pb.c \
     src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/google/protobuf/timestamp.pb.c \
     src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/load_balancer.pb.c \
+    third_party/nanopb/pb_common.c \
+    third_party/nanopb/pb_decode.c \
+    third_party/nanopb/pb_encode.c \
     src/core/ext/filters/client_channel/lb_policy/xds/xds.cc \
     src/core/ext/filters/client_channel/lb_policy/xds/xds_channel.cc \
     src/core/ext/filters/client_channel/lb_policy/xds/xds_client_stats.cc \
@@ -5505,10 +5528,13 @@ LIBGRPC++_SRC = \
     src/cpp/util/status.cc \
     src/cpp/util/string_ref.cc \
     src/cpp/util/time_cc.cc \
-    src/core/ext/filters/client_channel/health/health.pb.c \
-    third_party/nanopb/pb_common.c \
-    third_party/nanopb/pb_decode.c \
-    third_party/nanopb/pb_encode.c \
+    src/core/ext/upb-generated/src/proto/grpc/health/v1/health.upb.c \
+    third_party/upb/upb/decode.c \
+    third_party/upb/upb/encode.c \
+    third_party/upb/upb/msg.c \
+    third_party/upb/upb/port.c \
+    third_party/upb/upb/table.c \
+    third_party/upb/upb/upb.c \
     src/cpp/codegen/codegen_init.cc \
 
 PUBLIC_HEADERS_CXX += \
@@ -5738,6 +5764,7 @@ PUBLIC_HEADERS_CXX += \
     include/grpcpp/impl/codegen/config.h \
     include/grpcpp/impl/codegen/core_codegen_interface.h \
     include/grpcpp/impl/codegen/create_auth_context.h \
+    include/grpcpp/impl/codegen/delegating_channel.h \
     include/grpcpp/impl/codegen/grpc_library.h \
     include/grpcpp/impl/codegen/intercepted_channel.h \
     include/grpcpp/impl/codegen/interceptor.h \
@@ -6208,6 +6235,7 @@ PUBLIC_HEADERS_CXX += \
     include/grpcpp/impl/codegen/config.h \
     include/grpcpp/impl/codegen/core_codegen_interface.h \
     include/grpcpp/impl/codegen/create_auth_context.h \
+    include/grpcpp/impl/codegen/delegating_channel.h \
     include/grpcpp/impl/codegen/grpc_library.h \
     include/grpcpp/impl/codegen/intercepted_channel.h \
     include/grpcpp/impl/codegen/interceptor.h \
@@ -6385,6 +6413,7 @@ PUBLIC_HEADERS_CXX += \
     include/grpcpp/impl/codegen/config.h \
     include/grpcpp/impl/codegen/core_codegen_interface.h \
     include/grpcpp/impl/codegen/create_auth_context.h \
+    include/grpcpp/impl/codegen/delegating_channel.h \
     include/grpcpp/impl/codegen/grpc_library.h \
     include/grpcpp/impl/codegen/intercepted_channel.h \
     include/grpcpp/impl/codegen/interceptor.h \
@@ -6530,10 +6559,13 @@ LIBGRPC++_UNSECURE_SRC = \
     src/cpp/util/status.cc \
     src/cpp/util/string_ref.cc \
     src/cpp/util/time_cc.cc \
-    src/core/ext/filters/client_channel/health/health.pb.c \
-    third_party/nanopb/pb_common.c \
-    third_party/nanopb/pb_decode.c \
-    third_party/nanopb/pb_encode.c \
+    src/core/ext/upb-generated/src/proto/grpc/health/v1/health.upb.c \
+    third_party/upb/upb/decode.c \
+    third_party/upb/upb/encode.c \
+    third_party/upb/upb/msg.c \
+    third_party/upb/upb/port.c \
+    third_party/upb/upb/table.c \
+    third_party/upb/upb/upb.c \
     src/cpp/codegen/codegen_init.cc \
 
 PUBLIC_HEADERS_CXX += \
@@ -6763,6 +6795,7 @@ PUBLIC_HEADERS_CXX += \
     include/grpcpp/impl/codegen/config.h \
     include/grpcpp/impl/codegen/core_codegen_interface.h \
     include/grpcpp/impl/codegen/create_auth_context.h \
+    include/grpcpp/impl/codegen/delegating_channel.h \
     include/grpcpp/impl/codegen/grpc_library.h \
     include/grpcpp/impl/codegen/intercepted_channel.h \
     include/grpcpp/impl/codegen/interceptor.h \
@@ -7891,41 +7924,6 @@ endif
 
 ifneq ($(NO_DEPS),true)
 -include $(LIBBENCHMARK_OBJS:.o=.dep)
-endif
-
-
-LIBUPB_SRC = \
-    third_party/upb/generated_for_cmake/google/protobuf/descriptor.upb.c \
-    third_party/upb/upb/decode.c \
-    third_party/upb/upb/def.c \
-    third_party/upb/upb/encode.c \
-    third_party/upb/upb/handlers.c \
-    third_party/upb/upb/msg.c \
-    third_party/upb/upb/msgfactory.c \
-    third_party/upb/upb/sink.c \
-    third_party/upb/upb/table.c \
-    third_party/upb/upb/upb.c \
-
-PUBLIC_HEADERS_C += \
-
-LIBUPB_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(LIBUPB_SRC))))
-
-$(LIBUPB_OBJS): CFLAGS += -Wno-sign-conversion -Wno-shadow -Wno-conversion -Wno-implicit-fallthrough -Wno-sign-compare -Wno-missing-field-initializers
-
-$(LIBDIR)/$(CONFIG)/libupb.a: $(ZLIB_DEP) $(CARES_DEP) $(ADDRESS_SORTING_DEP)  $(LIBUPB_OBJS) 
-	$(E) "[AR]      Creating $@"
-	$(Q) mkdir -p `dirname $@`
-	$(Q) rm -f $(LIBDIR)/$(CONFIG)/libupb.a
-	$(Q) $(AR) $(AROPTS) $(LIBDIR)/$(CONFIG)/libupb.a $(LIBUPB_OBJS) 
-ifeq ($(SYSTEM),Darwin)
-	$(Q) ranlib -no_warning_for_no_symbols $(LIBDIR)/$(CONFIG)/libupb.a
-endif
-
-
-
-
-ifneq ($(NO_DEPS),true)
--include $(LIBUPB_OBJS:.o=.dep)
 endif
 
 
@@ -16085,6 +16083,49 @@ deps_cxx_time_test: $(CXX_TIME_TEST_OBJS:.o=.dep)
 ifneq ($(NO_SECURE),true)
 ifneq ($(NO_DEPS),true)
 -include $(CXX_TIME_TEST_OBJS:.o=.dep)
+endif
+endif
+
+
+DELEGATING_CHANNEL_TEST_SRC = \
+    test/cpp/end2end/delegating_channel_test.cc \
+
+DELEGATING_CHANNEL_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(DELEGATING_CHANNEL_TEST_SRC))))
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL.
+
+$(BINDIR)/$(CONFIG)/delegating_channel_test: openssl_dep_error
+
+else
+
+
+
+
+ifeq ($(NO_PROTOBUF),true)
+
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
+
+$(BINDIR)/$(CONFIG)/delegating_channel_test: protobuf_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/delegating_channel_test: $(PROTOBUF_DEP) $(DELEGATING_CHANNEL_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LDXX) $(LDFLAGS) $(DELEGATING_CHANNEL_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(LDLIBS_SECURE) $(GTEST_LIB) -o $(BINDIR)/$(CONFIG)/delegating_channel_test
+
+endif
+
+endif
+
+$(OBJDIR)/$(CONFIG)/test/cpp/end2end/delegating_channel_test.o:  $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a
+
+deps_delegating_channel_test: $(DELEGATING_CHANNEL_TEST_OBJS:.o=.dep)
+
+ifneq ($(NO_SECURE),true)
+ifneq ($(NO_DEPS),true)
+-include $(DELEGATING_CHANNEL_TEST_OBJS:.o=.dep)
 endif
 endif
 

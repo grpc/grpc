@@ -313,7 +313,7 @@
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/subchannel_interface.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/subchannel_pool_interface.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/deadline/deadline_filter.h" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/filters/client_channel/health/health.pb.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upb-generated/src/proto/grpc/health/v1/health.upb.h" role="src" />
     <file baseinstalldir="/" name="src/core/tsi/fake_transport_security.h" role="src" />
     <file baseinstalldir="/" name="src/core/tsi/local_transport_security.h" role="src" />
     <file baseinstalldir="/" name="src/core/tsi/ssl/session_cache/ssl_session.h" role="src" />
@@ -747,6 +747,12 @@
     <file baseinstalldir="/" name="third_party/nanopb/pb_decode.c" role="src" />
     <file baseinstalldir="/" name="third_party/nanopb/pb_encode.c" role="src" />
     <file baseinstalldir="/" name="src/core/tsi/transport_security.cc" role="src" />
+    <file baseinstalldir="/" name="third_party/upb/upb/decode.c" role="src" />
+    <file baseinstalldir="/" name="third_party/upb/upb/encode.c" role="src" />
+    <file baseinstalldir="/" name="third_party/upb/upb/msg.c" role="src" />
+    <file baseinstalldir="/" name="third_party/upb/upb/port.c" role="src" />
+    <file baseinstalldir="/" name="third_party/upb/upb/table.c" role="src" />
+    <file baseinstalldir="/" name="third_party/upb/upb/upb.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/client/insecure/channel_create.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/client/insecure/channel_create_posix.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/client/authority.cc" role="src" />
@@ -778,7 +784,7 @@
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/subchannel.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/subchannel_pool_interface.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/deadline/deadline_filter.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/filters/client_channel/health/health.pb.c" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upb-generated/src/proto/grpc/health/v1/health.upb.c" role="src" />
     <file baseinstalldir="/" name="src/core/tsi/fake_transport_security.cc" role="src" />
     <file baseinstalldir="/" name="src/core/tsi/local_transport_security.cc" role="src" />
     <file baseinstalldir="/" name="src/core/tsi/ssl/session_cache/ssl_session_boringssl.cc" role="src" />

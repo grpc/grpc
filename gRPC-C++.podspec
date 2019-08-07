@@ -179,6 +179,7 @@ Pod::Spec.new do |s|
                       'include/grpcpp/impl/codegen/config.h',
                       'include/grpcpp/impl/codegen/core_codegen_interface.h',
                       'include/grpcpp/impl/codegen/create_auth_context.h',
+                      'include/grpcpp/impl/codegen/delegating_channel.h',
                       'include/grpcpp/impl/codegen/grpc_library.h',
                       'include/grpcpp/impl/codegen/intercepted_channel.h',
                       'include/grpcpp/impl/codegen/interceptor.h',
@@ -418,7 +419,7 @@ Pod::Spec.new do |s|
                       'src/core/ext/filters/client_channel/subchannel_interface.h',
                       'src/core/ext/filters/client_channel/subchannel_pool_interface.h',
                       'src/core/ext/filters/deadline/deadline_filter.h',
-                      'src/core/ext/filters/client_channel/health/health.pb.h',
+                      'src/core/ext/upb-generated/src/proto/grpc/health/v1/health.upb.h',
                       'src/core/tsi/fake_transport_security.h',
                       'src/core/tsi/local_transport_security.h',
                       'src/core/tsi/ssl/session_cache/ssl_session.h',
@@ -780,8 +781,8 @@ Pod::Spec.new do |s|
                               'src/core/lib/transport/transport_impl.h',
                               'src/core/lib/uri/uri_parser.h',
                               'src/core/lib/debug/trace.h',
-                              'src/core/ext/transport/inproc/inproc_transport.h',
-                              'src/core/ext/filters/client_channel/health/health.pb.h'
+                              'src/core/ext/upb-generated/src/proto/grpc/health/v1/health.upb.h',
+                              'src/core/ext/transport/inproc/inproc_transport.h'
   end
 
   s.subspec 'Protobuf' do |ss|
@@ -800,5 +801,9 @@ Pod::Spec.new do |s|
     find src/cpp/ -type f -path '*.grpc_back' -print0 | xargs -0 rm
     find src/core/ -type f ! -path '*.grpc_back' -print0 | xargs -0 -L1 sed -E -i'.grpc_back' 's;#include "(pb(_.*)?\\.h)";#include <nanopb/\\1>;g'
     find src/core/ -type f -path '*.grpc_back' -print0 | xargs -0 rm
+    find src/core/ third_party/upb/ -type f \\( -name '*.h' -or -name '*.c' -or -name '*.cc' \\) -print0 | xargs -0 -L1 sed -E -i'.grpc_back' 's;#include "upb/(.*)";#if COCOAPODS==1\\\n  #include  "third_party/upb/upb/\\1"\\\n#else\\\n  #include  "upb/\\1"\\\n#endif;g'
+    find src/core/ third_party/upb/ -type f -name '*.grpc_back' -print0 | xargs -0 rm
+    find src/core/ src/cpp/ -type f \\( -name '*.h' -or -name '*.c' -or -name '*.cc' \\) -print0 | xargs -0 -L1 sed -E -i'.grpc_back' 's;#include "(.*).upb.h";#if COCOAPODS==1\\\n  #include  "src/core/ext/upb-generated/\\1.upb.h"\\\n#else\\\n  #include  "\\1.upb.h"\\\n#endif;g'
+    find src/core/ src/cpp/ -type f -name '*.grpc_back' -print0 | xargs -0 rm
   END_OF_COMMAND
 end

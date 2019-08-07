@@ -3694,6 +3694,24 @@
       "grpc++_test_util", 
       "grpc_test_util"
     ], 
+    "headers": [], 
+    "is_filegroup": false, 
+    "language": "c++", 
+    "name": "delegating_channel_test", 
+    "src": [
+      "test/cpp/end2end/delegating_channel_test.cc"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "grpc", 
+      "grpc++", 
+      "grpc++_test_util", 
+      "grpc_test_util"
+    ], 
     "headers": [
       "test/cpp/end2end/interceptors_util.h"
     ], 
@@ -7800,26 +7818,6 @@
   {
     "deps": [], 
     "headers": [
-      "third_party/upb/generated_for_cmake/google/protobuf/descriptor.upb.h", 
-      "third_party/upb/upb/decode.h", 
-      "third_party/upb/upb/def.h", 
-      "third_party/upb/upb/encode.h", 
-      "third_party/upb/upb/handlers.h", 
-      "third_party/upb/upb/msg.h", 
-      "third_party/upb/upb/msgfactory.h", 
-      "third_party/upb/upb/sink.h", 
-      "third_party/upb/upb/upb.h"
-    ], 
-    "is_filegroup": false, 
-    "language": "c", 
-    "name": "upb", 
-    "src": [], 
-    "third_party": false, 
-    "type": "lib"
-  }, 
-  {
-    "deps": [], 
-    "headers": [
       "third_party/zlib/crc32.h", 
       "third_party/zlib/deflate.h", 
       "third_party/zlib/gzguts.h", 
@@ -8209,20 +8207,20 @@
   {
     "deps": [], 
     "headers": [
-      "src/core/ext/upb-generated/altscontext.upb.h", 
-      "src/core/ext/upb-generated/handshaker.upb.h", 
-      "src/core/ext/upb-generated/transport_security_common.upb.h"
+      "src/core/ext/upb-generated/src/proto/grpc/gcp/altscontext.upb.h", 
+      "src/core/ext/upb-generated/src/proto/grpc/gcp/handshaker.upb.h", 
+      "src/core/ext/upb-generated/src/proto/grpc/gcp/transport_security_common.upb.h"
     ], 
     "is_filegroup": true, 
     "language": "c", 
     "name": "alts_upb", 
     "src": [
-      "src/core/ext/upb-generated/altscontext.upb.c", 
-      "src/core/ext/upb-generated/altscontext.upb.h", 
-      "src/core/ext/upb-generated/handshaker.upb.c", 
-      "src/core/ext/upb-generated/handshaker.upb.h", 
-      "src/core/ext/upb-generated/transport_security_common.upb.c", 
-      "src/core/ext/upb-generated/transport_security_common.upb.h"
+      "src/core/ext/upb-generated/src/proto/grpc/gcp/altscontext.upb.c", 
+      "src/core/ext/upb-generated/src/proto/grpc/gcp/altscontext.upb.h", 
+      "src/core/ext/upb-generated/src/proto/grpc/gcp/handshaker.upb.c", 
+      "src/core/ext/upb-generated/src/proto/grpc/gcp/handshaker.upb.h", 
+      "src/core/ext/upb-generated/src/proto/grpc/gcp/transport_security_common.upb.c", 
+      "src/core/ext/upb-generated/src/proto/grpc/gcp/transport_security_common.upb.h"
     ], 
     "third_party": false, 
     "type": "filegroup"
@@ -8233,7 +8231,8 @@
       "gpr", 
       "grpc_base", 
       "nanopb", 
-      "tsi_interface"
+      "tsi_interface", 
+      "upb"
     ], 
     "headers": [
       "include/grpc/grpc_security.h", 
@@ -9093,7 +9092,7 @@
       "gpr", 
       "grpc_base", 
       "grpc_deadline_filter", 
-      "health_proto"
+      "grpc_health_upb"
     ], 
     "headers": [
       "src/core/ext/filters/client_channel/backup_poller.h", 
@@ -9249,16 +9248,18 @@
     "type": "filegroup"
   }, 
   {
-    "deps": [], 
+    "deps": [
+      "upb"
+    ], 
     "headers": [
-      "src/core/ext/upb-generated/grpc/health/v1/health.upb.c"
+      "src/core/ext/upb-generated/src/proto/grpc/health/v1/health.upb.h"
     ], 
     "is_filegroup": true, 
     "language": "c", 
     "name": "grpc_health_upb", 
     "src": [
-      "src/core/ext/upb-generated/grpc/health/v1/health.upb.c", 
-      "src/core/ext/upb-generated/grpc/health/v1/health.upb.h"
+      "src/core/ext/upb-generated/src/proto/grpc/health/v1/health.upb.c", 
+      "src/core/ext/upb-generated/src/proto/grpc/health/v1/health.upb.h"
     ], 
     "third_party": false, 
     "type": "filegroup"
@@ -9295,7 +9296,8 @@
       "grpc_client_channel", 
       "grpc_resolver_fake", 
       "grpclb_proto", 
-      "nanopb"
+      "nanopb", 
+      "upb"
     ], 
     "headers": [
       "src/core/ext/filters/client_channel/lb_policy/grpclb/client_load_reporting_filter.h", 
@@ -9330,7 +9332,8 @@
       "grpc_resolver_fake", 
       "grpc_secure", 
       "grpclb_proto", 
-      "nanopb"
+      "nanopb", 
+      "upb"
     ], 
     "headers": [
       "src/core/ext/filters/client_channel/lb_policy/grpclb/client_load_reporting_filter.h", 
@@ -9398,7 +9401,8 @@
       "grpc_client_channel", 
       "grpc_resolver_fake", 
       "grpclb_proto", 
-      "nanopb"
+      "nanopb", 
+      "upb"
     ], 
     "headers": [
       "src/core/ext/filters/client_channel/lb_policy/xds/xds.h", 
@@ -9430,7 +9434,8 @@
       "grpc_resolver_fake", 
       "grpc_secure", 
       "grpclb_proto", 
-      "nanopb"
+      "nanopb", 
+      "upb"
     ], 
     "headers": [
       "src/core/ext/filters/client_channel/lb_policy/xds/xds.h", 
@@ -9477,14 +9482,14 @@
       "google_api_upb"
     ], 
     "headers": [
-      "src/core/ext/upb-generated/grpc/lb/v1/load_balancer.upb.h"
+      "src/core/ext/upb-generated/src/proto/grpc/lb/v1/load_balancer.upb.h"
     ], 
     "is_filegroup": true, 
     "language": "c", 
     "name": "grpc_lb_upb", 
     "src": [
-      "src/core/ext/upb-generated/grpc/lb/v1/load_balancer.upb.c", 
-      "src/core/ext/upb-generated/grpc/lb/v1/load_balancer.upb.h"
+      "src/core/ext/upb-generated/src/proto/grpc/lb/v1/load_balancer.upb.c", 
+      "src/core/ext/upb-generated/src/proto/grpc/lb/v1/load_balancer.upb.h"
     ], 
     "third_party": false, 
     "type": "filegroup"
@@ -10222,23 +10227,6 @@
   }, 
   {
     "deps": [
-      "nanopb"
-    ], 
-    "headers": [
-      "src/core/ext/filters/client_channel/health/health.pb.h"
-    ], 
-    "is_filegroup": true, 
-    "language": "c", 
-    "name": "health_proto", 
-    "src": [
-      "src/core/ext/filters/client_channel/health/health.pb.c", 
-      "src/core/ext/filters/client_channel/health/health.pb.h"
-    ], 
-    "third_party": false, 
-    "type": "filegroup"
-  }, 
-  {
-    "deps": [
       "nanopb_headers"
     ], 
     "headers": [], 
@@ -10400,6 +10388,7 @@
       "include/grpcpp/impl/codegen/config.h", 
       "include/grpcpp/impl/codegen/core_codegen_interface.h", 
       "include/grpcpp/impl/codegen/create_auth_context.h", 
+      "include/grpcpp/impl/codegen/delegating_channel.h", 
       "include/grpcpp/impl/codegen/grpc_library.h", 
       "include/grpcpp/impl/codegen/intercepted_channel.h", 
       "include/grpcpp/impl/codegen/interceptor.h", 
@@ -10485,6 +10474,7 @@
       "include/grpcpp/impl/codegen/config.h", 
       "include/grpcpp/impl/codegen/core_codegen_interface.h", 
       "include/grpcpp/impl/codegen/create_auth_context.h", 
+      "include/grpcpp/impl/codegen/delegating_channel.h", 
       "include/grpcpp/impl/codegen/grpc_library.h", 
       "include/grpcpp/impl/codegen/intercepted_channel.h", 
       "include/grpcpp/impl/codegen/interceptor.h", 
@@ -10559,8 +10549,8 @@
       "grpc++_codegen_base", 
       "grpc++_internal_hdrs_only", 
       "grpc_base_headers", 
+      "grpc_health_upb", 
       "grpc_transport_inproc_headers", 
-      "health_proto", 
       "nanopb_headers"
     ], 
     "headers": [
@@ -10941,6 +10931,37 @@
     "is_filegroup": true, 
     "language": "c++", 
     "name": "grpcpp_channelz_proto", 
+    "src": [], 
+    "third_party": false, 
+    "type": "filegroup"
+  }, 
+  {
+    "deps": [
+      "nanopb_headers"
+    ], 
+    "headers": [], 
+    "is_filegroup": true, 
+    "language": "c", 
+    "name": "upb", 
+    "src": [], 
+    "third_party": false, 
+    "type": "filegroup"
+  }, 
+  {
+    "deps": [], 
+    "headers": [
+      "third_party/upb/upb/decode.h", 
+      "third_party/upb/upb/encode.h", 
+      "third_party/upb/upb/generated_util.h", 
+      "third_party/upb/upb/msg.h", 
+      "third_party/upb/upb/port_def.inc", 
+      "third_party/upb/upb/port_undef.inc", 
+      "third_party/upb/upb/table.int.h", 
+      "third_party/upb/upb/upb.h"
+    ], 
+    "is_filegroup": true, 
+    "language": "c", 
+    "name": "upb_headers", 
     "src": [], 
     "third_party": false, 
     "type": "filegroup"
