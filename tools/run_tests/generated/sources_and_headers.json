@@ -9089,7 +9089,7 @@
       "gpr", 
       "grpc_base", 
       "grpc_deadline_filter", 
-      "health_proto"
+      "grpc_health_upb"
     ], 
     "headers": [
       "src/core/ext/filters/client_channel/backup_poller.h", 
@@ -10224,23 +10224,6 @@
   }, 
   {
     "deps": [
-      "nanopb"
-    ], 
-    "headers": [
-      "src/core/ext/filters/client_channel/health/health.pb.h"
-    ], 
-    "is_filegroup": true, 
-    "language": "c", 
-    "name": "health_proto", 
-    "src": [
-      "src/core/ext/filters/client_channel/health/health.pb.c", 
-      "src/core/ext/filters/client_channel/health/health.pb.h"
-    ], 
-    "third_party": false, 
-    "type": "filegroup"
-  }, 
-  {
-    "deps": [
       "nanopb_headers"
     ], 
     "headers": [], 
@@ -10563,8 +10546,8 @@
       "grpc++_codegen_base", 
       "grpc++_internal_hdrs_only", 
       "grpc_base_headers", 
+      "grpc_health_upb", 
       "grpc_transport_inproc_headers", 
-      "health_proto", 
       "nanopb_headers"
     ], 
     "headers": [
