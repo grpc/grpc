@@ -711,8 +711,8 @@ static tsi_result populate_ssl_context(
 }
 
 /* Extracts the CN and the SANs from an X509 cert as a peer object. */
-tsi_result extract_x509_subject_names_from_pem_cert(const char* pem_cert,
-                                                    tsi_peer* peer) {
+tsi_result tsi_ssl_extract_x509_subject_names_from_pem_cert(
+    const char* pem_cert, tsi_peer* peer) {
   tsi_result result = TSI_OK;
   X509* cert = nullptr;
   BIO* pem;
@@ -1890,7 +1890,7 @@ tsi_result tsi_create_ssl_server_handshaker_factory_with_options(
       }
       /* TODO(jboeuf): Add revocation verification. */
 
-      result = extract_x509_subject_names_from_pem_cert(
+      result = tsi_ssl_extract_x509_subject_names_from_pem_cert(
           options->pem_key_cert_pairs[i].cert_chain,
           &impl->ssl_context_x509_subject_names[i]);
       if (result != TSI_OK) break;
