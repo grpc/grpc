@@ -18,7 +18,7 @@
 load("//src/objective-c:grpc_objc_internal_library.bzl", "local_objc_grpc_library")
 load("@build_bazel_rules_apple//apple:ios.bzl", "ios_application")
 load("@build_bazel_rules_apple//apple:tvos.bzl", "tvos_application")
-load("@build_bazel_rules_apple//apple:watchos.bzl", "watchos_application")
+load("@build_bazel_rules_apple//apple:watchos.bzl", "watchos_application", "watchos_extension")
 
 proto_library(
     name = "messages_proto",
@@ -95,4 +95,74 @@ ios_application(
         "ipad",
     ],
     deps = ["InterceptorSample-lib"],
+)
+
+objc_library(
+    name = "tvOS-sample-lib",
+    srcs = glob(["tvOS-sample/tvOS-sample/**/*.m"]),
+    hdrs = glob(["tvOS-sample/tvOS-sample/**/*.h"]),
+    data = glob([
+        "tvOS-sample/tvOS-sample/Base.lproj/**",
+        "tvOS-sample/tvOS-sample/Images.xcassets/**",
+    ]),
+    deps = [":test_grpc_objc"],
+)
+
+# c-ares does not support tvOS CPU architecture with Bazel yet
+tvos_application(
+    name = "tvOS-sample",
+    bundle_id = "grpc.objc.examples.tvOS-sample",
+    minimum_os_version = "10.0",
+    infoplists = ["tvOS-sample/tvOS-sample/Info.plist"],
+    deps = [":tvOS-sample-lib"],
+)
+
+objc_library(
+    name = "watchOS-sample-iOS-lib",
+    srcs = glob(["watchOS-sample/watchOS-sample/**/*.m"]),
+    hdrs = glob(["watchOS-sample/watchOS-sample/**/*.h"]),
+    data = glob([
+        "watchOS-sample/watchOS-sample/Base.lproj/**",
+        "watchOS-sample/watchOS-sample/Images.xcassets/**",
+    ]),
+    deps = [":test_grpc_objc"],
+)
+
+objc_library(
+    name = "watchOS-sample-extension-lib",
+    srcs = glob(["watchOS-sample/WatchKit-Extention/**/*.m"]),
+    hdrs = glob(["watchOS-sample/WatchKit-Extension/**/*.h"]),
+    deps = [":test_grpc_objc"],
+    sdk_frameworks = [
+        "WatchConnectivity",
+        "WatchKit",
+    ],
+)
+
+ios_application(
+    name = "watchOS-sample",
+    bundle_id = "com.google.watchOS-sample",
+    minimum_os_version = "9.0", # Safe Area Layout Guide used
+    families = ["iphone"],
+    infoplists = ["watchOS-sample/watchOS-sample/Info.plist"],
+    deps = [":watchOS-sample-iOS-lib"],
+    watch_application = "watchOS-sample-watchApp",
+)
+
+# c-ares does not support watchOS CPU architecture with Bazel yet
+watchos_application(
+    name = "watchOS-sample-watchApp",
+    bundle_id = "com.google.watchOS-sample.watchkitapp",
+    minimum_os_version = "4.0",
+    storyboards = ["watchOS-sample/WatchKit-App/Base.lproj/Interface.storyboard"],
+    infoplists = ["watchOS-sample/WatchKit-App/Info.plist"],
+    extension = ":watchOS-sample-extension",
+)
+
+watchos_extension(
+    name = "watchOS-sample-extension",
+    bundle_id = "com.google.watchOS-sample.watchkitapp.watchkitextension",
+    minimum_os_version = "4.0",
+    infoplists = ["watchOS-sample/WatchKit-Extension/Info.plist"],
+    deps = [":watchOS-sample-extension-lib"],
 )
