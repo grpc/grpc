@@ -1092,6 +1092,50 @@ class ObjCLanguage(object):
                 }))
         out.append(
             self.config.job_spec(
+                ['src/objective-c/tests/build_one_example.sh'],
+                timeout_seconds=10 * 60,
+                shortname='ios-buildtest-example-tvOS-sample',
+                cpu_cost=1e6,
+                environ={
+                    'SCHEME': 'tvOS-sample',
+                    'EXAMPLE_PATH': 'src/objective-c/examples/tvOS-sample',
+                    'FRAMEWORKS': 'NO'
+                }))
+        # out.append(
+        #     self.config.job_spec(
+        #         ['src/objective-c/tests/build_one_example.sh'],
+        #         timeout_seconds=10 * 60,
+        #         shortname='ios-buildtest-example-tvOS-sample-framework',
+        #         cpu_cost=1e6,
+        #         environ={
+        #             'SCHEME': 'tvOS-sample',
+        #             'EXAMPLE_PATH': 'src/objective-c/examples/tvOS-sample',
+        #             'FRAMEWORKS': 'YES'
+        #         }))
+        out.append(
+            self.config.job_spec(
+                ['src/objective-c/tests/build_one_example.sh'],
+                timeout_seconds=20 * 60,
+                shortname='ios-buildtest-example-watchOS-sample',
+                cpu_cost=1e6,
+                environ={
+                    'SCHEME': 'watchOS-sample-WatchKit-App',
+                    'EXAMPLE_PATH': 'src/objective-c/examples/watchOS-sample',
+                    'FRAMEWORKS': 'NO'
+                }))
+        # out.append(
+        #     self.config.job_spec(
+        #         ['src/objective-c/tests/build_one_example.sh'],
+        #         timeout_seconds=20 * 60,
+        #         shortname='ios-buildtest-example-watchOS-sample-framework',
+        #         cpu_cost=1e6,
+        #         environ={
+        #             'SCHEME': 'watchOS-sample-WatchKit-App',
+        #             'EXAMPLE_PATH': 'src/objective-c/examples/watchOS-sample',
+        #             'FRAMEWORKS': 'YES'
+        #         }))
+        out.append(
+            self.config.job_spec(
                 ['src/objective-c/tests/run_plugin_tests.sh'],
                 timeout_seconds=60 * 60,
                 shortname='ios-test-plugintest',
@@ -1147,6 +1191,16 @@ class ObjCLanguage(object):
                 environ={
                     'SCHEME': 'MacTests',
                     'PLATFORM': 'macos'
+                }))
+        out.append(
+            self.config.job_spec(
+                ['src/objective-c/tests/run_one_test.sh'],
+                timeout_seconds=30 * 60,
+                shortname='tvos-test-basictests',
+                cpu_cost=1e6,
+                environ={
+                    'SCHEME': 'TvTests',
+                    'PLATFORM': 'tvos'
                 }))
 
         return sorted(out)
