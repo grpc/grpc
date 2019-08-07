@@ -130,5 +130,4 @@ grpc_objc_library(
         "//:grpc_objc",
         "@com_google_protobuf//:protobuf_objc",
     ],
-    visibility = ["//visibility:public"],
 )

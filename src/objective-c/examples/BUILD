@@ -52,8 +52,8 @@ local_objc_grpc_library(
 
 objc_library(
     name = "Sample-lib",
-    srcs = glob(["Sample/**/*.m"]),
-    hdrs = glob(["Sample/**/*.h"]),
+    srcs = glob(["Sample/Sample/**/*.m"]),
+    hdrs = glob(["Sample/Sample/**/*.h"]),
     data = glob([
         "Sample/Sample/Base.lproj/**",
         "Sample/Sample/Images.xcassets/**",
@@ -71,12 +71,13 @@ ios_application(
         "ipad",
     ],
     deps = ["Sample-lib"],
+    visibility = ["//visibility:public"],
 )
 
 objc_library(
     name = "InterceptorSample-lib",
-    srcs = glob(["InterceptorSample/**/*.m"]),
-    hdrs = glob(["InterceptorSample/**/*.h"]),
+    srcs = glob(["InterceptorSample/InterceptorSample/**/*.m"]),
+    hdrs = glob(["InterceptorSample/InterceptorSample/**/*.h"]),
     data = glob([
         "InterceptorSample/InterceptorSample/Base.lproj/**",
         "InterceptorSample/InterceptorSample/Images.xcassets/**",
