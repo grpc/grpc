@@ -387,6 +387,9 @@ Pod::Spec.new do |s|
                       'src/core/tsi/alts/handshaker/altscontext.pb.h',
                       'src/core/tsi/alts/handshaker/handshaker.pb.h',
                       'src/core/tsi/alts/handshaker/transport_security_common.pb.h',
+                      'src/core/ext/upb-generated/src/proto/grpc/gcp/altscontext.upb.h',
+                      'src/core/ext/upb-generated/src/proto/grpc/gcp/handshaker.upb.h',
+                      'src/core/ext/upb-generated/src/proto/grpc/gcp/transport_security_common.upb.h',
                       'src/core/tsi/transport_security.h',
                       'src/core/tsi/transport_security_interface.h',
                       'src/core/ext/transport/chttp2/client/authority.h',
@@ -419,6 +422,7 @@ Pod::Spec.new do |s|
                       'src/core/ext/filters/client_channel/subchannel_interface.h',
                       'src/core/ext/filters/client_channel/subchannel_pool_interface.h',
                       'src/core/ext/filters/deadline/deadline_filter.h',
+                      'src/core/ext/upb-generated/src/proto/grpc/health/v1/health.upb.h',
                       'src/core/ext/filters/client_channel/health/health.pb.h',
                       'src/core/tsi/fake_transport_security.h',
                       'src/core/tsi/local_transport_security.h',
@@ -578,6 +582,13 @@ Pod::Spec.new do |s|
                       'src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_channel.h',
                       'src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_client_stats.h',
                       'src/core/ext/filters/client_channel/lb_policy/grpclb/load_balancer_api.h',
+                      'src/core/ext/upb-generated/src/proto/grpc/lb/v1/load_balancer.upb.h',
+                      'src/core/ext/upb-generated/google/protobuf/any.upb.h',
+                      'src/core/ext/upb-generated/google/protobuf/duration.upb.h',
+                      'src/core/ext/upb-generated/google/protobuf/empty.upb.h',
+                      'src/core/ext/upb-generated/google/protobuf/struct.upb.h',
+                      'src/core/ext/upb-generated/google/protobuf/timestamp.upb.h',
+                      'src/core/ext/upb-generated/google/protobuf/wrappers.upb.h',
                       'src/core/ext/filters/client_channel/resolver/fake/fake_resolver.h',
                       'src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/google/protobuf/duration.pb.h',
                       'src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/google/protobuf/timestamp.pb.h',
@@ -782,6 +793,7 @@ Pod::Spec.new do |s|
                               'src/core/lib/uri/uri_parser.h',
                               'src/core/lib/debug/trace.h',
                               'src/core/ext/transport/inproc/inproc_transport.h',
+                              'src/core/ext/upb-generated/src/proto/grpc/health/v1/health.upb.h',
                               'src/core/ext/filters/client_channel/health/health.pb.h'
   end
 
@@ -801,5 +813,11 @@ Pod::Spec.new do |s|
     find src/cpp/ -type f -path '*.grpc_back' -print0 | xargs -0 rm
     find src/core/ -type f ! -path '*.grpc_back' -print0 | xargs -0 -L1 sed -E -i'.grpc_back' 's;#include "(pb(_.*)?\\.h)";#include <nanopb/\\1>;g'
     find src/core/ -type f -path '*.grpc_back' -print0 | xargs -0 rm
+    find src/core/ third_party/upb/ -type f \\( -name '*.h' -or -name '*.c' -or -name '*.cc' \\) -print0 | xargs -0 -L1 sed -E -i'.grpc_back' 's;#include "upb/(.*)";#if COCOAPODS==1\\\n  #include  "third_party/upb/upb/\\1"\\\n#else\\\n  #include  "upb/\\1"\\\n#endif;g'
+    find src/core/ third_party/upb/ -type f -name '*.grpc_back' -print0 | xargs -0 rm
+    find src/core/ src/cpp/ -type f \\( -name '*.h' -or -name '*.c' -or -name '*.cc' \\) -print0 | xargs -0 -L1 sed -E -i'.grpc_back' 's;#include "(.*).upb.h";#if COCOAPODS==1\\\n  #include  "src/core/ext/upb-generated/\\1.upb.h"\\\n#else\\\n  #include  "\\1.upb.h"\\\n#endif;g'
+    find src/core/ src/cpp/ -type f -name '*.grpc_back' -print0 | xargs -0 rm
+    find third_party/upb/ -type f \\( -name '*.h' -or -name '*.c' -or -name '*.cc' \\) -print0 | xargs -0 -L1 sed -E -i'.grpc_back' 's;#include "(.*).upb.h";#if COCOAPODS==1\\\n  #include  "third_party/upb/generated_for_cmake/\\1.upb.h"\\\n#else\\\n  #include  "\\1.upb.h"\\\n#endif;g'
+    find third_party/upb/ -type f -name '*.grpc_back' -print0 | xargs -0 rm
   END_OF_COMMAND
 end

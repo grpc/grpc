@@ -7818,26 +7818,6 @@
   {
     "deps": [], 
     "headers": [
-      "third_party/upb/generated_for_cmake/google/protobuf/descriptor.upb.h", 
-      "third_party/upb/upb/decode.h", 
-      "third_party/upb/upb/def.h", 
-      "third_party/upb/upb/encode.h", 
-      "third_party/upb/upb/handlers.h", 
-      "third_party/upb/upb/msg.h", 
-      "third_party/upb/upb/msgfactory.h", 
-      "third_party/upb/upb/sink.h", 
-      "third_party/upb/upb/upb.h"
-    ], 
-    "is_filegroup": false, 
-    "language": "c", 
-    "name": "upb", 
-    "src": [], 
-    "third_party": false, 
-    "type": "lib"
-  }, 
-  {
-    "deps": [], 
-    "headers": [
       "third_party/zlib/crc32.h", 
       "third_party/zlib/deflate.h", 
       "third_party/zlib/gzguts.h", 
@@ -8227,20 +8207,20 @@
   {
     "deps": [], 
     "headers": [
-      "src/core/ext/upb-generated/altscontext.upb.h", 
-      "src/core/ext/upb-generated/handshaker.upb.h", 
-      "src/core/ext/upb-generated/transport_security_common.upb.h"
+      "src/core/ext/upb-generated/src/proto/grpc/gcp/altscontext.upb.h", 
+      "src/core/ext/upb-generated/src/proto/grpc/gcp/handshaker.upb.h", 
+      "src/core/ext/upb-generated/src/proto/grpc/gcp/transport_security_common.upb.h"
     ], 
     "is_filegroup": true, 
     "language": "c", 
     "name": "alts_upb", 
     "src": [
-      "src/core/ext/upb-generated/altscontext.upb.c", 
-      "src/core/ext/upb-generated/altscontext.upb.h", 
-      "src/core/ext/upb-generated/handshaker.upb.c", 
-      "src/core/ext/upb-generated/handshaker.upb.h", 
-      "src/core/ext/upb-generated/transport_security_common.upb.c", 
-      "src/core/ext/upb-generated/transport_security_common.upb.h"
+      "src/core/ext/upb-generated/src/proto/grpc/gcp/altscontext.upb.c", 
+      "src/core/ext/upb-generated/src/proto/grpc/gcp/altscontext.upb.h", 
+      "src/core/ext/upb-generated/src/proto/grpc/gcp/handshaker.upb.c", 
+      "src/core/ext/upb-generated/src/proto/grpc/gcp/handshaker.upb.h", 
+      "src/core/ext/upb-generated/src/proto/grpc/gcp/transport_security_common.upb.c", 
+      "src/core/ext/upb-generated/src/proto/grpc/gcp/transport_security_common.upb.h"
     ], 
     "third_party": false, 
     "type": "filegroup"
@@ -8248,10 +8228,12 @@
   {
     "deps": [
       "alts_proto", 
+      "alts_upb", 
       "gpr", 
       "grpc_base", 
       "nanopb", 
-      "tsi_interface"
+      "tsi_interface", 
+      "upb"
     ], 
     "headers": [
       "include/grpc/grpc_security.h", 
@@ -8327,7 +8309,6 @@
     "deps": [], 
     "headers": [
       "src/core/ext/upb-generated/google/protobuf/any.upb.h", 
-      "src/core/ext/upb-generated/google/protobuf/descriptor.upb.h", 
       "src/core/ext/upb-generated/google/protobuf/duration.upb.h", 
       "src/core/ext/upb-generated/google/protobuf/empty.upb.h", 
       "src/core/ext/upb-generated/google/protobuf/struct.upb.h", 
@@ -8340,8 +8321,6 @@
     "src": [
       "src/core/ext/upb-generated/google/protobuf/any.upb.c", 
       "src/core/ext/upb-generated/google/protobuf/any.upb.h", 
-      "src/core/ext/upb-generated/google/protobuf/descriptor.upb.c", 
-      "src/core/ext/upb-generated/google/protobuf/descriptor.upb.h", 
       "src/core/ext/upb-generated/google/protobuf/duration.upb.c", 
       "src/core/ext/upb-generated/google/protobuf/duration.upb.h", 
       "src/core/ext/upb-generated/google/protobuf/empty.upb.c", 
@@ -9111,6 +9090,7 @@
       "gpr", 
       "grpc_base", 
       "grpc_deadline_filter", 
+      "grpc_health_upb", 
       "health_proto"
     ], 
     "headers": [
@@ -9267,16 +9247,18 @@
     "type": "filegroup"
   }, 
   {
-    "deps": [], 
+    "deps": [
+      "upb"
+    ], 
     "headers": [
-      "src/core/ext/upb-generated/grpc/health/v1/health.upb.c"
+      "src/core/ext/upb-generated/src/proto/grpc/health/v1/health.upb.h"
     ], 
     "is_filegroup": true, 
     "language": "c", 
     "name": "grpc_health_upb", 
     "src": [
-      "src/core/ext/upb-generated/grpc/health/v1/health.upb.c", 
-      "src/core/ext/upb-generated/grpc/health/v1/health.upb.h"
+      "src/core/ext/upb-generated/src/proto/grpc/health/v1/health.upb.c", 
+      "src/core/ext/upb-generated/src/proto/grpc/health/v1/health.upb.h"
     ], 
     "third_party": false, 
     "type": "filegroup"
@@ -9311,9 +9293,11 @@
       "gpr", 
       "grpc_base", 
       "grpc_client_channel", 
+      "grpc_lb_upb", 
       "grpc_resolver_fake", 
       "grpclb_proto", 
-      "nanopb"
+      "nanopb", 
+      "upb"
     ], 
     "headers": [
       "src/core/ext/filters/client_channel/lb_policy/grpclb/client_load_reporting_filter.h", 
@@ -9345,10 +9329,12 @@
       "gpr", 
       "grpc_base", 
       "grpc_client_channel", 
+      "grpc_lb_upb", 
       "grpc_resolver_fake", 
       "grpc_secure", 
       "grpclb_proto", 
-      "nanopb"
+      "nanopb", 
+      "upb"
     ], 
     "headers": [
       "src/core/ext/filters/client_channel/lb_policy/grpclb/client_load_reporting_filter.h", 
@@ -9414,9 +9400,11 @@
       "gpr", 
       "grpc_base", 
       "grpc_client_channel", 
+      "grpc_lb_upb", 
       "grpc_resolver_fake", 
       "grpclb_proto", 
-      "nanopb"
+      "nanopb", 
+      "upb"
     ], 
     "headers": [
       "src/core/ext/filters/client_channel/lb_policy/xds/xds.h", 
@@ -9445,10 +9433,12 @@
       "gpr", 
       "grpc_base", 
       "grpc_client_channel", 
+      "grpc_lb_upb", 
       "grpc_resolver_fake", 
       "grpc_secure", 
       "grpclb_proto", 
-      "nanopb"
+      "nanopb", 
+      "upb"
     ], 
     "headers": [
       "src/core/ext/filters/client_channel/lb_policy/xds/xds.h", 
@@ -9495,14 +9485,14 @@
       "google_api_upb"
     ], 
     "headers": [
-      "src/core/ext/upb-generated/grpc/lb/v1/load_balancer.upb.h"
+      "src/core/ext/upb-generated/src/proto/grpc/lb/v1/load_balancer.upb.h"
     ], 
     "is_filegroup": true, 
     "language": "c", 
     "name": "grpc_lb_upb", 
     "src": [
-      "src/core/ext/upb-generated/grpc/lb/v1/load_balancer.upb.c", 
-      "src/core/ext/upb-generated/grpc/lb/v1/load_balancer.upb.h"
+      "src/core/ext/upb-generated/src/proto/grpc/lb/v1/load_balancer.upb.c", 
+      "src/core/ext/upb-generated/src/proto/grpc/lb/v1/load_balancer.upb.h"
     ], 
     "third_party": false, 
     "type": "filegroup"
@@ -10579,6 +10569,7 @@
       "grpc++_codegen_base", 
       "grpc++_internal_hdrs_only", 
       "grpc_base_headers", 
+      "grpc_health_upb", 
       "grpc_transport_inproc_headers", 
       "health_proto", 
       "nanopb_headers"
@@ -10961,6 +10952,38 @@
     "is_filegroup": true, 
     "language": "c++", 
     "name": "grpcpp_channelz_proto", 
+    "src": [], 
+    "third_party": false, 
+    "type": "filegroup"
+  }, 
+  {
+    "deps": [
+      "nanopb_headers"
+    ], 
+    "headers": [], 
+    "is_filegroup": true, 
+    "language": "c", 
+    "name": "upb", 
+    "src": [], 
+    "third_party": false, 
+    "type": "filegroup"
+  }, 
+  {
+    "deps": [], 
+    "headers": [
+      "third_party/upb/generated_for_cmake/google/protobuf/descriptor.upb.h", 
+      "third_party/upb/upb/decode.h", 
+      "third_party/upb/upb/encode.h", 
+      "third_party/upb/upb/generated_util.h", 
+      "third_party/upb/upb/msg.h", 
+      "third_party/upb/upb/port_def.inc", 
+      "third_party/upb/upb/port_undef.inc", 
+      "third_party/upb/upb/table.int.h", 
+      "third_party/upb/upb/upb.h"
+    ], 
+    "is_filegroup": true, 
+    "language": "c", 
+    "name": "upb_headers", 
     "src": [], 
     "third_party": false, 
     "type": "filegroup"
