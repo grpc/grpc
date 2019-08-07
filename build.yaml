@@ -104,7 +104,6 @@ filegroups:
   - src/core/tsi/alts/handshaker/transport_security_common_api.cc
   uses:
   - alts_proto
-  - alts_upb
   - grpc_base
   - nanopb
   - tsi_interface
@@ -660,7 +659,6 @@ filegroups:
   uses:
   - grpc_base
   - grpc_deadline_filter
-  - grpc_health_upb
   - health_proto
 - name: grpc_client_idle_filter
   src:
@@ -725,7 +723,6 @@ filegroups:
   uses:
   - grpc_base
   - grpc_client_channel
-  - grpc_lb_upb
   - grpc_resolver_fake
   - grpclb_proto
   - nanopb
@@ -747,7 +744,6 @@ filegroups:
   uses:
   - grpc_base
   - grpc_client_channel
-  - grpc_lb_upb
   - grpc_resolver_fake
   - grpc_secure
   - grpclb_proto
@@ -784,7 +780,6 @@ filegroups:
   uses:
   - grpc_base
   - grpc_client_channel
-  - grpc_lb_upb
   - grpc_resolver_fake
   - grpclb_proto
   - nanopb
@@ -804,7 +799,6 @@ filegroups:
   uses:
   - grpc_base
   - grpc_client_channel
-  - grpc_lb_upb
   - grpc_resolver_fake
   - grpc_secure
   - grpclb_proto
@@ -1554,7 +1548,6 @@ filegroups:
   - grpc_transport_inproc_headers
   - grpc++_codegen_base
   - grpc++_internal_hdrs_only
-  - grpc_health_upb
   - nanopb_headers
   - health_proto
 - name: grpc++_config_proto

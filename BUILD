@@ -1064,7 +1064,6 @@ grpc_cc_library(
         "grpc_base",
         "grpc_client_authority_filter",
         "grpc_deadline_filter",
-        "grpc_health_upb",
         "health_proto",
         "inlined_vector",
         "orphanable",
@@ -2002,7 +2001,6 @@ grpc_cc_library(
     deps = [
         "grpc",
         "grpc++_codegen_base",
-        "grpc_health_upb",
         "health_proto",
     ],
 )
@@ -2015,7 +2013,6 @@ grpc_cc_library(
     public_hdrs = GRPCXX_PUBLIC_HDRS,
     deps = [
         "grpc++_codegen_base",
-        "grpc_health_upb",
         "grpc_unsecure",
         "health_proto",
     ],
