@@ -8228,7 +8228,6 @@
   {
     "deps": [
       "alts_proto", 
-      "alts_upb", 
       "gpr", 
       "grpc_base", 
       "nanopb", 
@@ -9090,7 +9089,6 @@
       "gpr", 
       "grpc_base", 
       "grpc_deadline_filter", 
-      "grpc_health_upb", 
       "health_proto"
     ], 
     "headers": [
@@ -9293,7 +9291,6 @@
       "gpr", 
       "grpc_base", 
       "grpc_client_channel", 
-      "grpc_lb_upb", 
       "grpc_resolver_fake", 
       "grpclb_proto", 
       "nanopb", 
@@ -9329,7 +9326,6 @@
       "gpr", 
       "grpc_base", 
       "grpc_client_channel", 
-      "grpc_lb_upb", 
       "grpc_resolver_fake", 
       "grpc_secure", 
       "grpclb_proto", 
@@ -9400,7 +9396,6 @@
       "gpr", 
       "grpc_base", 
       "grpc_client_channel", 
-      "grpc_lb_upb", 
       "grpc_resolver_fake", 
       "grpclb_proto", 
       "nanopb", 
@@ -9433,7 +9428,6 @@
       "gpr", 
       "grpc_base", 
       "grpc_client_channel", 
-      "grpc_lb_upb", 
       "grpc_resolver_fake", 
       "grpc_secure", 
       "grpclb_proto", 
@@ -10569,7 +10563,6 @@
       "grpc++_codegen_base", 
       "grpc++_internal_hdrs_only", 
       "grpc_base_headers", 
-      "grpc_health_upb", 
       "grpc_transport_inproc_headers", 
       "health_proto", 
       "nanopb_headers"
