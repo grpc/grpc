@@ -18,9 +18,9 @@
 
 #import <objc/runtime.h>
 
-#import "ProtoServiceLegacy.h"
 #import "ProtoMethod.h"
 #import "ProtoRPCLegacy.h"
+#import "ProtoServiceLegacy.h"
 
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wdeprecated-implementations"
@@ -60,7 +60,7 @@
   NSString *serviceName = object_getIvar(self, serviceNameIvar);
 
   GRPCProtoMethod *methodName =
-  [[GRPCProtoMethod alloc] initWithPackage:packageName service:serviceName method:method];
+      [[GRPCProtoMethod alloc] initWithPackage:packageName service:serviceName method:method];
   return [[GRPCProtoCall alloc] initWithHost:host
                                       method:methodName
                               requestsWriter:requestsWriter

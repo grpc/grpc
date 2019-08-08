@@ -211,8 +211,8 @@ class ObjectiveCGrpcGenerator : public grpc::protobuf::compiler::CodeGenerator {
                   FrameworkImport(file_name + ".pbobjc.h", framework);
       }
       imports += (generator_params.no_v1_compatibility
-                     ? SystemImport("ProtoRPC/ProtoRPC.h")
-                     : SystemImport("ProtoRPC/ProtoRPCLegacy.h"));
+                      ? SystemImport("ProtoRPC/ProtoRPC.h")
+                      : SystemImport("ProtoRPC/ProtoRPCLegacy.h"));
       if (!generator_params.no_v1_compatibility) {
         imports += SystemImport("RxLibrary/GRXWriter+Immediate.h");
       }
