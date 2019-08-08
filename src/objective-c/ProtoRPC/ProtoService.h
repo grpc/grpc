@@ -30,11 +30,7 @@
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wnullability-completeness"
 
-__attribute__((deprecated("Please use GRPCProtoService."))) @interface ProtoService : NSObject {
-  NSString *_host;
-  NSString *_packageName;
-  NSString *_serviceName;
-}
+__attribute__((deprecated("Please use GRPCProtoService."))) @interface ProtoService : NSObject
 
 - (nullable instancetype)initWithHost:(nonnull NSString *)host
                           packageName:(nonnull NSString *)packageName

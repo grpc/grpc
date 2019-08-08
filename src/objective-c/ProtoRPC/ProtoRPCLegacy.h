@@ -18,6 +18,13 @@
 
 #import <GRPCClient/GRPCCallLegacy.h>
 
+// Import category headers for Swift build
+#import <GRPCClient/GRPCCall+ChannelArg.h>
+#import <GRPCClient/GRPCCall+ChannelCredentials.h>
+#import <GRPCClient/GRPCCall+Cronet.h>
+#import <GRPCClient/GRPCCall+OAuth2.h>
+#import <GRPCClient/GRPCCall+Tests.h>
+
 @class GRPCProtoMethod;
 @class GRXWriter;
 @protocol GRXWriteable;
@@ -36,6 +43,7 @@ __attribute__((deprecated("Please use GRPCProtoCall."))) @interface ProtoRPC
     : (id<GRXWriteable>)responsesWriteable NS_DESIGNATED_INITIALIZER;
 
 - (void)start;
+
 @end
 
 /**

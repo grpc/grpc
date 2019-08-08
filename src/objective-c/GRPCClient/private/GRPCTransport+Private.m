@@ -83,7 +83,7 @@
 
 /** Forward initial metadata to the previous interceptor in the chain */
 - (void)forwardPreviousInterceptorWithInitialMetadata:(NSDictionary *)initialMetadata {
-  if (_previousInterceptor == nil) {
+  if (initialMetadata == nil || _previousInterceptor == nil) {
     return;
   }
   id<GRPCResponseHandler> copiedPreviousInterceptor = _previousInterceptor;
@@ -94,7 +94,7 @@
 
 /** Forward a received message to the previous interceptor in the chain */
 - (void)forwardPreviousInterceptorWithData:(id)data {
-  if (_previousInterceptor == nil) {
+  if (data == nil || _previousInterceptor == nil) {
     return;
   }
   id<GRPCResponseHandler> copiedPreviousInterceptor = _previousInterceptor;

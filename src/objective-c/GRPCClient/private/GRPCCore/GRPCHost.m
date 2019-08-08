@@ -21,6 +21,7 @@
 #import <GRPCClient/GRPCCall+Cronet.h>
 #import <GRPCClient/GRPCCall.h>
 #import <GRPCClient/GRPCCallOptions.h>
+#import <GRPCClient/GRPCTransport.h>
 
 #include <grpc/grpc.h>
 #include <grpc/grpc_security.h>

@@ -29,7 +29,11 @@
 #pragma clang diagnostic ignored "-Wdeprecated-implementations"
 @implementation ProtoService {
 #pragma clang diagnostic pop
+
   GRPCCallOptions *_callOptions;
+  NSString *_host;
+  NSString *_packageName;
+  NSString *_serviceName;
 }
 
 #pragma clang diagnostic push
@@ -59,8 +63,6 @@
   }
   return self;
 }
-
-#pragma clang diagnostic pop
 
 - (GRPCUnaryProtoCall *)RPCToMethod:(NSString *)method
                             message:(id)message

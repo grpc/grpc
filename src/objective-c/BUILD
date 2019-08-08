@@ -18,11 +18,11 @@ licenses(["notice"])  # Apache v2
 
 package(default_visibility = ["//visibility:public"])
 
-load("//bazel:grpc_build_system.bzl", "grpc_objc_library", "grpc_objc_use_cronet_config")
+load("//bazel:grpc_build_system.bzl", "grpc_objc_library", "grpc_generate_objc_one_off_targets")
 
 exports_files(["LICENSE"])
 
-grpc_objc_use_cronet_config()
+grpc_generate_objc_one_off_targets()
 
 grpc_objc_library(
     name = "rx_library_headers",
@@ -41,8 +41,8 @@ grpc_objc_library(
     ]),
     includes = ["."],
     deps = [
-        ":rx_library_private",
         ":rx_library_headers",
+        ":rx_library_private",
     ],
 )
 
@@ -60,6 +60,11 @@ grpc_objc_library(
 grpc_objc_library(
     name = "grpc_objc_interface_legacy",
     hdrs = [
+        "GRPCClient/GRPCCall+ChannelArg.h",
+        "GRPCClient/GRPCCall+ChannelCredentials.h",
+        "GRPCClient/GRPCCall+Cronet.h",
+        "GRPCClient/GRPCCall+OAuth2.h",
+        "GRPCClient/GRPCCall+Tests.h",
         "GRPCClient/GRPCCallLegacy.h",
         "GRPCClient/GRPCTypes.h",
     ],

@@ -16,6 +16,8 @@
  *
  */
 
+#import <objc/runtime.h>
+
 #import "ProtoServiceLegacy.h"
 #import "ProtoMethod.h"
 #import "ProtoRPCLegacy.h"
@@ -34,20 +36,32 @@
                  packageName:(NSString *)packageName
                  serviceName:(NSString *)serviceName {
   if ((self = [super init])) {
-    _host = [host copy];
-    _packageName = [packageName copy];
-    _serviceName = [serviceName copy];
+    Ivar hostIvar = class_getInstanceVariable([ProtoService class], "_host");
+    Ivar packageNameIvar = class_getInstanceVariable([ProtoService class], "_packageName");
+    Ivar serviceNameIvar = class_getInstanceVariable([ProtoService class], "_serviceName");
+
+    object_setIvar(self, hostIvar, [host copy]);
+    object_setIvar(self, packageNameIvar, [packageName copy]);
+    object_setIvar(self, serviceNameIvar, [serviceName copy]);
   }
   return self;
 }
+#pragma clang diagnostic pop
 
 - (GRPCProtoCall *)RPCToMethod:(NSString *)method
                 requestsWriter:(GRXWriter *)requestsWriter
                  responseClass:(Class)responseClass
             responsesWriteable:(id<GRXWriteable>)responsesWriteable {
+  Ivar hostIvar = class_getInstanceVariable([ProtoService class], "_host");
+  Ivar packageNameIvar = class_getInstanceVariable([ProtoService class], "_packageName");
+  Ivar serviceNameIvar = class_getInstanceVariable([ProtoService class], "_serviceName");
+  NSString *host = object_getIvar(self, hostIvar);
+  NSString *packageName = object_getIvar(self, packageNameIvar);
+  NSString *serviceName = object_getIvar(self, serviceNameIvar);
+
   GRPCProtoMethod *methodName =
-      [[GRPCProtoMethod alloc] initWithPackage:_packageName service:_serviceName method:method];
-  return [[GRPCProtoCall alloc] initWithHost:_host
+  [[GRPCProtoMethod alloc] initWithPackage:packageName service:serviceName method:method];
+  return [[GRPCProtoCall alloc] initWithHost:host
                                       method:methodName
                               requestsWriter:requestsWriter
                                responseClass:responseClass

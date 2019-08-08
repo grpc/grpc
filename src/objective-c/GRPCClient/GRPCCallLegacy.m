@@ -21,6 +21,7 @@
 #import "GRPCCall+Cronet.h"
 #import "GRPCCall+OAuth2.h"
 #import "GRPCCallOptions.h"
+#import "GRPCTypes.h"
 
 #import "private/GRPCCore/GRPCChannelPool.h"
 #import "private/GRPCCore/GRPCCompletionQueue.h"
