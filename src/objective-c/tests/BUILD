@@ -219,7 +219,7 @@ macos_unit_test(
     ]
 )
 
-# c-ares does not support tvOS CPU architecture with Bazel yet
+# bazel run tvos_unit_test is not yet supported by xctestrunner
 tvos_unit_test(
     name = "TvTests",
     minimum_os_version = "10.0",
