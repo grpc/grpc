@@ -29,43 +29,36 @@ cd `dirname $0`/../../..
 
 cd $EXAMPLE_PATH
 
-if [ "$FRAMEWORKS" == "NO" ]; then
-  if [ "$SCHEME" == "watchOS-sample-WatchKit-App" ]; then
-    SCHEME="watchOS-sample"
-  fi
-  cd ..
-  ../../../tools/bazel build $SCHEME
+# clean the directory
+rm -rf Pods
+rm -rf *.xcworkspace
+rm -f Podfile.lock
+
+pod install
+
+set -o pipefail
+XCODEBUILD_FILTER='(^CompileC |^Ld |^.*clang |^ *cd |^ *export |^Libtool |^.*libtool |^CpHeader |^ *builtin-copy )'
+if [ "$SCHEME" == "tvOS-sample" ]; then
+  xcodebuild \
+    build \
+    -workspace *.xcworkspace \
+    -scheme $SCHEME \
+    -destination generic/platform=tvOS \
+    -derivedDataPath Build/Build \
+    CODE_SIGN_IDENTITY="" \
+    CODE_SIGNING_REQUIRED=NO \
+    | egrep -v "$XCODEBUILD_FILTER" \
+    | egrep -v "^$" -
 else
-  # clean the directory
-  rm -rf Pods
-  rm -rf *.xcworkspace
-  rm -f Podfile.lock
-
-  pod install
-
-  set -o pipefail
-  XCODEBUILD_FILTER='(^CompileC |^Ld |^.*clang |^ *cd |^ *export |^Libtool |^.*libtool |^CpHeader |^ *builtin-copy )'
-  if [ "$SCHEME" == "tvOS-sample" ]; then
-    xcodebuild \
-      build \
-      -workspace *.xcworkspace \
-      -scheme $SCHEME \
-      -destination generic/platform=tvOS \
-      -derivedDataPath Build/Build \
-      CODE_SIGN_IDENTITY="" \
-      CODE_SIGNING_REQUIRED=NO \
-      | egrep -v "$XCODEBUILD_FILTER" \
-      | egrep -v "^$" -
-  else
-    xcodebuild \
-      build \
-      -workspace *.xcworkspace \
-      -scheme $SCHEME \
-      -destination generic/platform=iOS \
-      -derivedDataPath Build/Build \
-      CODE_SIGN_IDENTITY="" \
-      CODE_SIGNING_REQUIRED=NO \
-      | egrep -v "$XCODEBUILD_FILTER" \
-      | egrep -v "^$" -
-  fi
+  xcodebuild \
+    build \
+    -workspace *.xcworkspace \
+    -scheme $SCHEME \
+    -destination generic/platform=iOS \
+    -derivedDataPath Build/Build \
+    CODE_SIGN_IDENTITY="" \
+    CODE_SIGNING_REQUIRED=NO \
+    | egrep -v "$XCODEBUILD_FILTER" \
+    | egrep -v "^$" -
 fi
+

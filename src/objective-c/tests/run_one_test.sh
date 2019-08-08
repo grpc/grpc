@@ -22,6 +22,10 @@ cd $(dirname $0)
 
 BINDIR=../../../bins/$CONFIG
 
+[ -d Tests.xcworkspace/ ] || {
+    ./build_tests.sh
+}
+
 [ -f $BINDIR/interop_server ] || {
     echo >&2 "Can't find the test server. Make sure run_tests.py is making" \
              "interop_server before calling this script."

@@ -1060,7 +1060,7 @@ class ObjCLanguage(object):
         out = []
         out.append(
             self.config.job_spec(
-                ['src/objective-c/tests/build_one_example.sh'],
+                ['src/objective-c/tests/build_one_example_bazel.sh'],
                 timeout_seconds=10 * 60,
                 shortname='ios-buildtest-example-sample',
                 cpu_cost=1e6,
@@ -1092,7 +1092,7 @@ class ObjCLanguage(object):
                 }))
         out.append(
             self.config.job_spec(
-                ['src/objective-c/tests/build_one_example.sh'],
+                ['src/objective-c/tests/build_one_example_bazel.sh'],
                 timeout_seconds=10 * 60,
                 shortname='ios-buildtest-example-tvOS-sample',
                 cpu_cost=1e6,
@@ -1114,7 +1114,7 @@ class ObjCLanguage(object):
         #         }))
         out.append(
             self.config.job_spec(
-                ['src/objective-c/tests/build_one_example.sh'],
+                ['src/objective-c/tests/build_one_example_bazel.sh'],
                 timeout_seconds=20 * 60,
                 shortname='ios-buildtest-example-watchOS-sample',
                 cpu_cost=1e6,
@@ -1143,7 +1143,7 @@ class ObjCLanguage(object):
                 environ=_FORCE_ENVIRON_FOR_WRAPPERS))
         out.append(
             self.config.job_spec(
-                ['test/core/iomgr/ios/CFStreamTests/run_tests.sh'],
+                ['test/core/iomgr/ios/CFStreamTests/build_and_run_tests.sh'],
                 timeout_seconds=20 * 60,
                 shortname='ios-test-cfstream-tests',
                 cpu_cost=1e6,
@@ -1177,14 +1177,14 @@ class ObjCLanguage(object):
                 }))
         out.append(
             self.config.job_spec(
-                ['test/cpp/ios/run_tests.sh'],
+                ['test/cpp/ios/build_and_run_tests.sh'],
                 timeout_seconds=20 * 60,
                 shortname='ios-cpp-test-cronet',
                 cpu_cost=1e6,
                 environ=_FORCE_ENVIRON_FOR_WRAPPERS))
         out.append(
             self.config.job_spec(
-                ['src/objective-c/tests/run_one_test_bazel.sh'],
+                ['src/objective-c/tests/run_one_test.sh'],
                 timeout_seconds=60 * 60,
                 shortname='mac-test-basictests',
                 cpu_cost=1e6,
@@ -1215,11 +1215,7 @@ class ObjCLanguage(object):
         return []
 
     def build_steps(self):
-        return [
-            ['src/objective-c/tests/build_tests.sh'],
-            ['test/core/iomgr/ios/CFStreamTests/build_tests.sh'],
-            ['test/cpp/ios/build_tests.sh'],
-        ]
+        return []
 
     def post_tests_steps(self):
         return []

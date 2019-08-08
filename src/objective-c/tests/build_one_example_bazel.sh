@@ -1,5 +1,5 @@
 #!/bin/bash
-# Copyright 2019 gRPC authors.
+# Copyright 2016 gRPC authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -14,26 +14,22 @@
 # limitations under the License.
 
 # Don't run this script standalone. Instead, run from the repository root:
-# ./tools/run_tests/run_tests.py -l c++
+# ./tools/run_tests/run_tests.py -l objc
 
 set -ev
 
-cd "$(dirname "$0")"
+# Params:
+# EXAMPLE_PATH - directory of the example
+# SCHEME - scheme of the example, used by xcodebuild
 
-echo "TIME:  $(date)"
+# CocoaPods requires the terminal to be using UTF-8 encoding.
+export LANG=en_US.UTF-8
 
-./build_tests.sh
+cd `dirname $0`/../../..
 
-echo "TIME:  $(date)"
+cd $EXAMPLE_PATH/..
 
-set -o pipefail
-
-XCODEBUILD_FILTER='(^CompileC |^Ld |^ *[^ ]*clang |^ *cd |^ *export |^Libtool |^ *[^ ]*libtool |^CpHeader |^ *builtin-copy )'
-
-xcodebuild \
-    -workspace Tests.xcworkspace \
-    -scheme CronetTests \
-    -destination name="iPhone 8" \
-    test \
-    | egrep -v "$XCODEBUILD_FILTER" \
-    | egrep -v '^$' -
+if [ "$SCHEME" == "watchOS-sample-WatchKit-App" ]; then
+  SCHEME="watchOS-sample watchOS-sample-watchApp"
+fi
+../../../tools/bazel build $SCHEME

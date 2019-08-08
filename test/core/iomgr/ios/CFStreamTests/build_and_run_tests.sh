@@ -23,6 +23,10 @@ cd "$(dirname "$0")"
 
 echo "TIME:  $(date)"
 
+./build_tests.sh
+
+echo "TIME:  $(date)"
+
 XCODEBUILD_FILTER='(^CompileC |^Ld |^ *[^ ]*clang |^ *cd |^ *export |^Libtool |^ *[^ ]*libtool |^CpHeader |^ *builtin-copy )'
 
 xcodebuild \
