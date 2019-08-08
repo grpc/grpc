@@ -122,8 +122,67 @@ filegroups:
   - test/core/util/cmdline.cc
   uses:
   - gpr_base_headers
+- name: envoy_ads_upb
+  headers:
+  - src/core/ext/upb-generated/envoy/api/v2/auth/cert.upb.h
+  - src/core/ext/upb-generated/envoy/api/v2/cds.upb.h
+  - src/core/ext/upb-generated/envoy/api/v2/cluster/circuit_breaker.upb.h
+  - src/core/ext/upb-generated/envoy/api/v2/cluster/outlier_detection.upb.h
+  - src/core/ext/upb-generated/envoy/api/v2/discovery.upb.h
+  - src/core/ext/upb-generated/envoy/api/v2/eds.upb.h
+  - src/core/ext/upb-generated/envoy/api/v2/endpoint/endpoint.upb.h
+  - src/core/ext/upb-generated/envoy/api/v2/endpoint/load_report.upb.h
+  - src/core/ext/upb-generated/envoy/service/discovery/v2/ads.upb.h
+  - src/core/ext/upb-generated/envoy/service/load_stats/v2/lrs.upb.h
+  src:
+  - src/core/ext/upb-generated/envoy/api/v2/auth/cert.upb.c
+  - src/core/ext/upb-generated/envoy/api/v2/cds.upb.c
+  - src/core/ext/upb-generated/envoy/api/v2/cluster/circuit_breaker.upb.c
+  - src/core/ext/upb-generated/envoy/api/v2/cluster/outlier_detection.upb.c
+  - src/core/ext/upb-generated/envoy/api/v2/discovery.upb.c
+  - src/core/ext/upb-generated/envoy/api/v2/eds.upb.c
+  - src/core/ext/upb-generated/envoy/api/v2/endpoint/endpoint.upb.c
+  - src/core/ext/upb-generated/envoy/api/v2/endpoint/load_report.upb.c
+  - src/core/ext/upb-generated/envoy/service/discovery/v2/ads.upb.c
+  - src/core/ext/upb-generated/envoy/service/load_stats/v2/lrs.upb.c
+  uses:
+  - envoy_core_upb
+  - envoy_type_upb
+  - google_api_upb
+  - proto_gen_validate_upb
+- name: envoy_core_upb
+  headers:
+  - src/core/ext/upb-generated/envoy/api/v2/core/address.upb.h
+  - src/core/ext/upb-generated/envoy/api/v2/core/base.upb.h
+  - src/core/ext/upb-generated/envoy/api/v2/core/config_source.upb.h
+  - src/core/ext/upb-generated/envoy/api/v2/core/grpc_service.upb.h
+  - src/core/ext/upb-generated/envoy/api/v2/core/health_check.upb.h
+  - src/core/ext/upb-generated/envoy/api/v2/core/protocol.upb.h
+  src:
+  - src/core/ext/upb-generated/envoy/api/v2/core/address.upb.c
+  - src/core/ext/upb-generated/envoy/api/v2/core/base.upb.c
+  - src/core/ext/upb-generated/envoy/api/v2/core/config_source.upb.c
+  - src/core/ext/upb-generated/envoy/api/v2/core/grpc_service.upb.c
+  - src/core/ext/upb-generated/envoy/api/v2/core/health_check.upb.c
+  - src/core/ext/upb-generated/envoy/api/v2/core/protocol.upb.c
+  uses:
+  - envoy_type_upb
+  - google_api_upb
+  - proto_gen_validate_upb
+- name: envoy_type_upb
+  headers:
+  - src/core/ext/upb-generated/envoy/type/percent.upb.h
+  - src/core/ext/upb-generated/envoy/type/range.upb.h
+  src:
+  - src/core/ext/upb-generated/envoy/type/percent.upb.c
+  - src/core/ext/upb-generated/envoy/type/range.upb.c
+  uses:
+  - google_api_upb
+  - proto_gen_validate_upb
 - name: google_api_upb
   headers:
+  - src/core/ext/upb-generated/google/api/annotations.upb.h
+  - src/core/ext/upb-generated/google/api/http.upb.h
   - src/core/ext/upb-generated/google/protobuf/any.upb.h
   - src/core/ext/upb-generated/google/protobuf/descriptor.upb.h
   - src/core/ext/upb-generated/google/protobuf/duration.upb.h
@@ -131,7 +190,10 @@ filegroups:
   - src/core/ext/upb-generated/google/protobuf/struct.upb.h
   - src/core/ext/upb-generated/google/protobuf/timestamp.upb.h
   - src/core/ext/upb-generated/google/protobuf/wrappers.upb.h
+  - src/core/ext/upb-generated/google/rpc/status.upb.h
   src:
+  - src/core/ext/upb-generated/google/api/annotations.upb.c
+  - src/core/ext/upb-generated/google/api/http.upb.c
   - src/core/ext/upb-generated/google/protobuf/any.upb.c
   - src/core/ext/upb-generated/google/protobuf/descriptor.upb.c
   - src/core/ext/upb-generated/google/protobuf/duration.upb.c
@@ -139,6 +201,7 @@ filegroups:
   - src/core/ext/upb-generated/google/protobuf/struct.upb.c
   - src/core/ext/upb-generated/google/protobuf/timestamp.upb.c
   - src/core/ext/upb-generated/google/protobuf/wrappers.upb.c
+  - src/core/ext/upb-generated/google/rpc/status.upb.c
 - name: gpr_base
   src:
   - src/core/lib/gpr/alloc.cc
@@ -778,11 +841,11 @@ filegroups:
   - src/core/ext/filters/client_channel/lb_policy/xds/xds_load_balancer_api.cc
   plugin: grpc_lb_policy_xds
   uses:
+  - envoy_ads_upb
   - grpc_base
   - grpc_client_channel
   - grpc_resolver_fake
-  - grpclb_proto
-  - nanopb
+  - grpc_lb_upb
 - name: grpc_lb_policy_xds_secure
   headers:
   - src/core/ext/filters/client_channel/lb_policy/xds/xds.h
@@ -796,12 +859,12 @@ filegroups:
   - src/core/ext/filters/client_channel/lb_policy/xds/xds_load_balancer_api.cc
   plugin: grpc_lb_policy_xds
   uses:
+  - envoy_ads_upb
   - grpc_base
   - grpc_client_channel
   - grpc_resolver_fake
   - grpc_secure
-  - grpclb_proto
-  - nanopb
+  - grpc_lb_upb
 - name: grpc_lb_subchannel_list
   headers:
   - src/core/ext/filters/client_channel/lb_policy/subchannel_list.h
@@ -1194,17 +1257,6 @@ filegroups:
   uses:
   - grpc_base
   - grpc_server_backward_compatibility
-- name: grpclb_proto
-  headers:
-  - src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/google/protobuf/duration.pb.h
-  - src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/google/protobuf/timestamp.pb.h
-  - src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/load_balancer.pb.h
-  src:
-  - src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/google/protobuf/duration.pb.c
-  - src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/google/protobuf/timestamp.pb.c
-  - src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/load_balancer.pb.c
-  uses:
-  - nanopb
 - name: nanopb
   src:
   - third_party/nanopb/pb_common.c
@@ -1218,6 +1270,15 @@ filegroups:
   - third_party/nanopb/pb_common.h
   - third_party/nanopb/pb_decode.h
   - third_party/nanopb/pb_encode.h
+- name: proto_gen_validate_upb
+  headers:
+  - src/core/ext/upb-generated/gogoproto/gogo.upb.h
+  - src/core/ext/upb-generated/validate/validate.upb.h
+  src:
+  - src/core/ext/upb-generated/gogoproto/gogo.upb.c
+  - src/core/ext/upb-generated/validate/validate.upb.c
+  uses:
+  - google_api_upb
 - name: transport_security_test_lib
   build: test
   headers:
@@ -5986,7 +6047,7 @@ targets:
   build: test
   language: c++
   src:
-  - src/proto/grpc/lb/v1/load_balancer.proto
+  - src/proto/grpc/lb/v2/xds_for_test.proto
   - test/cpp/end2end/xds_end2end_test.cc
   deps:
   - grpc++_test_util
