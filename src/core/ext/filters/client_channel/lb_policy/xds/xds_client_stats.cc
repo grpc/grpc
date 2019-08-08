@@ -89,8 +89,9 @@ XdsLbClientStats::LocalityStats::GetSnapshotAndReset() {
     for (auto& p : load_metric_stats_) {
       const char* metric_name = p.first.get();
       LoadMetric& metric_value = p.second;
-      snapshot.load_metric_stats.emplace(gpr_strdup(metric_name),
-                                         metric_value.GetSnapshotAndReset());
+      snapshot.load_metric_stats.emplace(
+          UniquePtr<char>(gpr_strdup(metric_name)),
+          metric_value.GetSnapshotAndReset());
     }
   }
   return snapshot;
@@ -129,9 +130,9 @@ bool XdsLbClientStats::Snapshot::IsAllZero() {
 XdsLbClientStats::Snapshot XdsLbClientStats::GetSnapshotAndReset() {
   grpc_millis now = ExecCtx::Get()->Now();
   // Record total_dropped_requests and reporting interval in the snapshot.
-  Snapshot snapshot = {
-      .total_dropped_requests = GetAndResetCounter(&total_dropped_requests_),
-      .load_report_interval = now - last_report_time_};
+  Snapshot snapshot;
+  snapshot.total_dropped_requests = GetAndResetCounter(&total_dropped_requests_);
+  snapshot.load_report_interval = now - last_report_time_;
   // Update last report time.
   last_report_time_ = now;
   // Snapshot all the other stats.
@@ -141,8 +142,7 @@ XdsLbClientStats::Snapshot XdsLbClientStats::GetSnapshotAndReset() {
   }
   {
     MutexLock lock(&dropped_requests_mu_);
-    snapshot.dropped_requests = dropped_requests_;
-    for (auto& p : dropped_requests_) p.second = 0;
+    snapshot.dropped_requests = std::move(dropped_requests_);
   }
   return snapshot;
 }

@@ -339,8 +339,7 @@ class RpcContext(six.with_metaclass(abc.ABCMeta)):
           callback: A no-parameter callable to be called on RPC termination.
 
         Returns:
-          bool:
-            True if the callback was added and will be called later; False if
+          True if the callback was added and will be called later; False if
             the callback was not added and will not be called (because the RPC
             already terminated or some other reason).
         """
@@ -1285,6 +1284,7 @@ class RpcMethodHandler(six.with_metaclass(abc.ABCMeta)):
 
 class HandlerCallDetails(six.with_metaclass(abc.ABCMeta)):
     """Describes an RPC that has just arrived for service.
+
     Attributes:
       method: The method name of the RPC.
       invocation_metadata: The :term:`metadata` sent by the client.
@@ -1381,12 +1381,10 @@ class Server(six.with_metaclass(abc.ABCMeta)):
         This method may only be called before starting the server.
 
         Args:
-          address: The address for which to open a port.
-          if the port is 0, or not specified in the address, then gRPC runtime
-          will choose a port.
+          address: The address for which to open a port. If the port is 0,
+            or not specified in the address, then gRPC runtime will choose a port.
 
         Returns:
-          integer:
           An integer port on which server will accept RPC requests.
         """
         raise NotImplementedError()
@@ -1404,7 +1402,6 @@ class Server(six.with_metaclass(abc.ABCMeta)):
           server_credentials: A ServerCredentials object.
 
         Returns:
-          integer:
           An integer port on which server will accept RPC requests.
         """
         raise NotImplementedError()
@@ -1444,6 +1441,29 @@ class Server(six.with_metaclass(abc.ABCMeta)):
           A threading.Event that will be set when this Server has completely
           stopped, i.e. when running RPCs either complete or are aborted and
           all handlers have terminated.
+        """
+        raise NotImplementedError()
+
+    def wait_for_termination(self, timeout=None):
+        """Block current thread until the server stops.
+
+        This is an EXPERIMENTAL API.
+
+        The wait will not consume computational resources during blocking, and
+        it will block until one of the two following conditions are met:
+
+        1) The server is stopped or terminated;
+        2) A timeout occurs if timeout is not `None`.
+
+        The timeout argument works in the same way as `threading.Event.wait()`.
+        https://docs.python.org/3/library/threading.html#threading.Event.wait
+
+        Args:
+          timeout: A floating point number specifying a timeout for the
+            operation in seconds.
+
+        Returns:
+          A bool indicates if the operation times out.
         """
         raise NotImplementedError()
 
@@ -1856,10 +1876,16 @@ def _create_servicer_context(rpc_event, state, request_deserializer):
     context._finalize_state()  # pylint: disable=protected-access
 
 
+@enum.unique
 class Compression(enum.IntEnum):
     """Indicates the compression method to be used for an RPC.
 
        This enumeration is part of an EXPERIMENTAL API.
+
+       Attributes:
+        NoCompression: Do not use compression algorithm.
+        Deflate: Use "Deflate" compression algorithm.
+        Gzip: Use "Gzip" compression algorithm.
     """
     NoCompression = _compression.NoCompression
     Deflate = _compression.Deflate

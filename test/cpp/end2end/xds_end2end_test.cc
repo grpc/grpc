@@ -50,7 +50,8 @@
 #include "test/core/util/test_config.h"
 #include "test/cpp/end2end/test_service_impl.h"
 
-#include "src/proto/grpc/lb/v2/eds.grpc.pb.h"
+#include "src/proto/grpc/lb/v2/eds_for_test.grpc.pb.h"
+#include "src/proto/grpc/lb/v2/lrs_for_test.grpc.pb.h"
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
 
 #include <gmock/gmock.h>
@@ -79,18 +80,18 @@ namespace {
 
 using std::chrono::system_clock;
 
-using grpc::lb::v2::ClusterLoadAssignment;
-using grpc::lb::v2::ClusterStats;
-using grpc::lb::v2::DiscoveryRequest;
-using grpc::lb::v2::DiscoveryResponse;
-using grpc::lb::v2::EndpointDiscoveryService;
-using grpc::lb::v2::LoadReportingService;
-using grpc::lb::v2::LoadStatsRequest;
-using grpc::lb::v2::LoadStatsResponse;
-using grpc::lb::v2::UpstreamLocalityStats;
+using ::envoy::api::v2::ClusterLoadAssignment;
+using ::envoy::api::v2::DiscoveryRequest;
+using ::envoy::api::v2::DiscoveryResponse;
+using ::envoy::api::v2::EndpointDiscoveryService;
+using ::envoy::service::load_stats::v2::ClusterStats;
+using ::envoy::service::load_stats::v2::LoadReportingService;
+using ::envoy::service::load_stats::v2::LoadStatsRequest;
+using ::envoy::service::load_stats::v2::LoadStatsResponse;
+using ::envoy::service::load_stats::v2::UpstreamLocalityStats;
 
 constexpr char kEdsTypeUrl[] =
-    "type.googleapis.com/grpc.lb.v2.ClusterLoadAssignment";
+    "type.googleapis.com/envoy.api.v2.ClusterLoadAssignment";
 constexpr char kDefaultLocalityRegion[] = "xds_default_locality_region";
 constexpr char kDefaultLocalityZone[] = "xds_default_locality_zone";
 constexpr char kDefaultLocalitySubzone[] = "xds_default_locality_subzone";
@@ -391,8 +392,9 @@ class LrsServiceImpl : public LrsService {
                   this, request.DebugString().c_str());
           GPR_ASSERT(request.cluster_stats().size() == 1);
           const ClusterStats& cluster_stats = request.cluster_stats()[0];
-          // We need to acquire the lock here in order to prevent the notify_one
-          // below from firing before its corresponding wait is executed.
+          // We need to acquire the lock here in order to prevent the
+          // notify_one below from firing before its corresponding wait is
+          // executed.
           grpc_core::MutexLock lock(&load_report_mu_);
           GPR_ASSERT(client_stats_ == nullptr);
           client_stats_.reset(new ClientStats(cluster_stats));
@@ -1113,8 +1115,8 @@ TEST_F(SingleBalancerTest, FallbackUpdate) {
   gpr_log(GPR_INFO, "========= BEFORE SECOND BATCH ==========");
   CheckRpcSendOk(kNumBackendsInResolutionUpdate);
   gpr_log(GPR_INFO, "========= DONE WITH SECOND BATCH ==========");
-  // The resolution update is used: each backend in the resolution update should
-  // have gotten one request.
+  // The resolution update is used: each backend in the resolution update
+  // should have gotten one request.
   for (size_t i = 0; i < kNumBackendsInResolution; ++i) {
     EXPECT_EQ(0U, backends_[i]->backend_service()->request_count());
   }
@@ -1181,14 +1183,14 @@ TEST_F(SingleBalancerTest, FallbackIfResponseReceivedButChildNotReady) {
   ResetStub(kFallbackTimeoutMs);
   SetNextResolution({backends_[0]->port()}, kDefaultServiceConfig_.c_str());
   SetNextResolutionForLbChannelAllBalancers();
-  // Send a serverlist that only contains an unreachable backend before fallback
-  // timeout.
+  // Send a serverlist that only contains an unreachable backend before
+  // fallback timeout.
   ScheduleResponseForBalancer(0,
                               EdsServiceImpl::BuildResponseForBackends(
                                   {{grpc_pick_unused_port_or_die()}}),
                               0);
-  // Because no child policy is ready before fallback timeout, we enter fallback
-  // mode.
+  // Because no child policy is ready before fallback timeout, we enter
+  // fallback mode.
   WaitForBackend(0);
 }
 
@@ -1223,16 +1225,16 @@ TEST_F(SingleBalancerTest, FallbackModeIsExitedAfterChildRready) {
   ScheduleResponseForBalancer(
       0, EdsServiceImpl::BuildResponseForBackends({{backends_[1]->port()}}), 0);
   SetNextResolutionForLbChannelAllBalancers();
-  // The state (TRANSIENT_FAILURE) update from the child policy will be ignored
-  // because we are still in fallback mode.
+  // The state (TRANSIENT_FAILURE) update from the child policy will be
+  // ignored because we are still in fallback mode.
   gpr_timespec deadline = gpr_time_add(
       gpr_now(GPR_CLOCK_REALTIME), gpr_time_from_millis(5000, GPR_TIMESPAN));
   // Send 5 seconds worth of RPCs.
   do {
     CheckRpcSendOk();
   } while (gpr_time_cmp(gpr_now(GPR_CLOCK_REALTIME), deadline) < 0);
-  // After the backend is restarted, the child policy will eventually be READY,
-  // and we will exit fallback mode.
+  // After the backend is restarted, the child policy will eventually be
+  // READY, and we will exit fallback mode.
   StartBackend(1);
   WaitForBackend(1);
   // We have exited fallback mode, so calls will go to the child policy
@@ -1526,15 +1528,16 @@ TEST_F(UpdatesTest, UpdateBalancersDeadUpdate) {
   EXPECT_EQ(0U, balancers_[2]->eds_service()->response_count());
 }
 
-// The re-resolution tests are deferred because they rely on the fallback mode,
-// which hasn't been supported.
+// The re-resolution tests are deferred because they rely on the fallback
+// mode, which hasn't been supported.
 
 // TODO(juanlishen): Add TEST_F(UpdatesTest, ReresolveDeadBackend).
 
 // TODO(juanlishen): Add TEST_F(UpdatesWithClientLoadReportingTest,
 // ReresolveDeadBalancer)
 
-// The drop tests are deferred because the drop handling hasn't been added yet.
+// The drop tests are deferred because the drop handling hasn't been added
+// yet.
 
 // TODO(roth): Add TEST_F(SingleBalancerTest, Drop)
 
@@ -1602,9 +1605,9 @@ TEST_F(SingleBalancerWithClientLoadReportingTest, BalancerRestart) {
   int num_ok = 0;
   int num_failure = 0;
   int num_drops = 0;
-  std::tie(num_ok, num_failure, num_drops) =
-      WaitForAllBackends(/* num_requests_multiple_of */ 1, /* start_index */ 0,
-                         /* stop_index */ kNumBackendsFirstPass);
+  std::tie(num_ok, num_failure, num_drops) = WaitForAllBackends(
+      /* num_requests_multiple_of */ 1, /* start_index */ 0,
+      /* stop_index */ kNumBackendsFirstPass);
   ClientStats* client_stats = balancers_[0]->lrs_service()->WaitForLoadReport();
   EXPECT_EQ(static_cast<size_t>(num_ok),
             client_stats->total_successful_requests());
@@ -1646,7 +1649,8 @@ TEST_F(SingleBalancerWithClientLoadReportingTest, BalancerRestart) {
   EXPECT_EQ(0U, client_stats->total_dropped_requests());
 }
 
-// TODO(juanlishen): Add TEST_F(SingleBalancerWithClientLoadReportingTest, Drop)
+// TODO(juanlishen): Add TEST_F(SingleBalancerWithClientLoadReportingTest,
+// Drop)
 
 }  // namespace
 }  // namespace testing

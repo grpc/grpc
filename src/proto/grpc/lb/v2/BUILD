@@ -22,10 +22,20 @@ grpc_package(
 )
 
 grpc_proto_library(
-    name = "eds_proto",
+    name = "eds_for_test_proto",
     srcs = [
-        "eds.proto",
+        "eds_for_test.proto",
     ],
     has_services = True,
     well_known_protos = True,
+)
+
+grpc_proto_library(
+    name = "lrs_for_test_proto",
+    srcs = [
+        "lrs_for_test.proto",
+    ],
+    has_services = True,
+    well_known_protos = True,
+    deps = [":eds_for_test_proto"],
 )

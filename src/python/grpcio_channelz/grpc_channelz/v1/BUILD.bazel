@@ -1,17 +1,23 @@
-load("//bazel:python_rules.bzl", "py_proto_library")
+load("//bazel:python_rules.bzl", "py_proto_library", "py_grpc_library")
 package(default_visibility = ["//visibility:public"])
 
 py_proto_library(
-    name = "py_channelz_proto",
-    well_known_protos = True,
-    deps = ["//src/proto/grpc/channelz:channelz_proto_descriptors"],
+    name = "channelz_py_pb2",
+    srcs = ["//src/proto/grpc/channelz:channelz_proto_descriptors"],
+)
+
+py_grpc_library(
+    name = "channelz_py_pb2_grpc",
+    srcs = ["//src/proto/grpc/channelz:channelz_proto_descriptors"],
+    deps = [":channelz_py_pb2"],
 )
 
 py_library(
     name = "grpc_channelz",
     srcs = ["channelz.py",],
     deps = [
-        ":py_channelz_proto",
+        ":channelz_py_pb2",
+        ":channelz_py_pb2_grpc",
         "//src/python/grpcio/grpc:grpcio",
     ],
     imports=["../../",],

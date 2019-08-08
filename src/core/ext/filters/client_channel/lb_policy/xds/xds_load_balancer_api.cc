@@ -23,34 +23,41 @@
 #include <grpc/impl/codegen/log.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/string_util.h>
-#include <grpc/support/time.h>
-
-#include "pb_decode.h"
-#include "pb_encode.h"
 
 #include "src/core/ext/filters/client_channel/lb_policy/xds/xds_load_balancer_api.h"
-#include "src/core/ext/upb-generated/envoy/api/v2/endpoint/load_report.upb.h"
-#include "src/core/ext/upb-generated/google/protobuf/duration.upb.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/sockaddr_utils.h"
+
+#include "envoy/api/v2/core/address.upb.h"
+#include "envoy/api/v2/core/base.upb.h"
+#include "envoy/api/v2/discovery.upb.h"
+#include "envoy/api/v2/eds.upb.h"
+#include "envoy/api/v2/endpoint/endpoint.upb.h"
+#include "envoy/api/v2/endpoint/load_report.upb.h"
+#include "envoy/service/load_stats/v2/lrs.upb.h"
+#include "google/protobuf/any.upb.h"
+#include "google/protobuf/duration.upb.h"
+#include "google/protobuf/struct.upb.h"
+#include "google/protobuf/timestamp.upb.h"
+#include "google/protobuf/wrappers.upb.h"
+#include "upb/upb.h"
 
 namespace grpc_core {
 
 namespace {
 
 constexpr char kEdsTypeUrl[] =
-    "type.googleapis.com/grpc.lb.v2.ClusterLoadAssignment";
+    "type.googleapis.com/envoy.api.v2.ClusterLoadAssignment";
 constexpr char kEndpointRequired[] = "endpointRequired";
-
-using LocalityStats = envoy_api_v2_endpoint_UpstreamLocalityStats;
 
 }  // namespace
 
 grpc_slice XdsEdsRequestCreateAndEncode(const char* service_name) {
   upb::Arena arena;
   // Create a request.
-  XdsDiscoveryRequest* request = envoy_api_v2_DiscoveryRequest_new(arena.ptr());
-  XdsNode* node =
+  envoy_api_v2_DiscoveryRequest* request =
+      envoy_api_v2_DiscoveryRequest_new(arena.ptr());
+  envoy_api_v2_core_Node* node =
       envoy_api_v2_DiscoveryRequest_mutable_node(request, arena.ptr());
   google_protobuf_Struct* metadata =
       envoy_api_v2_core_Node_mutable_metadata(node, arena.ptr());
@@ -74,13 +81,15 @@ grpc_slice XdsEdsRequestCreateAndEncode(const char* service_name) {
 
 namespace {
 
-grpc_error* ServerAddressParseAndAppend(const XdsLbEndpoint* lb_endpoint,
-                                        ServerAddressList* list) {
+grpc_error* ServerAddressParseAndAppend(
+    const envoy_api_v2_endpoint_LbEndpoint* lb_endpoint,
+    ServerAddressList* list) {
   // Find the ip:port.
-  const XdsEndpoint* endpoint =
+  const envoy_api_v2_endpoint_Endpoint* endpoint =
       envoy_api_v2_endpoint_LbEndpoint_endpoint(lb_endpoint);
-  const XdsAddress* address = envoy_api_v2_endpoint_Endpoint_address(endpoint);
-  const XdsSocketAddress* socket_address =
+  const envoy_api_v2_core_Address* address =
+      envoy_api_v2_endpoint_Endpoint_address(endpoint);
+  const envoy_api_v2_core_SocketAddress* socket_address =
       envoy_api_v2_core_Address_socket_address(address);
   upb_strview address_strview =
       envoy_api_v2_core_SocketAddress_address(socket_address);
@@ -111,10 +120,11 @@ UniquePtr<char> StringCopy(const upb_strview& strview) {
 
 }  // namespace
 
-grpc_error* LocalityParse(const XdsLocalityLbEndpoints* locality_lb_endpoints,
-                          XdsLocalityInfo* locality_info) {
+grpc_error* LocalityParse(
+    const envoy_api_v2_endpoint_LocalityLbEndpoints* locality_lb_endpoints,
+    XdsLocalityInfo* locality_info) {
   // Parse locality name.
-  const XdsLocality* locality =
+  const envoy_api_v2_core_Locality* locality =
       envoy_api_v2_endpoint_LocalityLbEndpoints_locality(locality_lb_endpoints);
   locality_info->locality_name = MakeRefCounted<XdsLocalityName>(
       StringCopy(envoy_api_v2_core_Locality_region(locality)),
@@ -122,7 +132,7 @@ grpc_error* LocalityParse(const XdsLocalityLbEndpoints* locality_lb_endpoints,
       StringCopy(envoy_api_v2_core_Locality_sub_zone(locality)));
   // Parse the addresses.
   size_t size;
-  const XdsLbEndpoint* const* lb_endpoints =
+  const envoy_api_v2_endpoint_LbEndpoint* const* lb_endpoints =
       envoy_api_v2_endpoint_LocalityLbEndpoints_lb_endpoints(
           locality_lb_endpoints, &size);
   for (size_t i = 0; i < size; ++i) {
@@ -149,9 +159,10 @@ grpc_error* XdsEdsResponseDecodeAndParse(const grpc_slice& encoded_response,
                                          XdsUpdate* update) {
   upb::Arena arena;
   // Decode the response.
-  const XdsDiscoveryResponse* response = envoy_api_v2_DiscoveryResponse_parse(
-      reinterpret_cast<const char*>(GRPC_SLICE_START_PTR(encoded_response)),
-      GRPC_SLICE_LENGTH(encoded_response), arena.ptr());
+  const envoy_api_v2_DiscoveryResponse* response =
+      envoy_api_v2_DiscoveryResponse_parse(
+          reinterpret_cast<const char*>(GRPC_SLICE_START_PTR(encoded_response)),
+          GRPC_SLICE_LENGTH(encoded_response), arena.ptr());
   // Parse the response.
   if (response == nullptr) {
     return GRPC_ERROR_CREATE_FROM_STATIC_STRING("No response found.");
@@ -178,11 +189,11 @@ grpc_error* XdsEdsResponseDecodeAndParse(const grpc_slice& encoded_response,
   // Get the cluster_load_assignment.
   upb_strview encoded_cluster_load_assignment =
       google_protobuf_Any_value(resources[0]);
-  XdsClusterLoadAssignment* cluster_load_assignment =
+  envoy_api_v2_ClusterLoadAssignment* cluster_load_assignment =
       envoy_api_v2_ClusterLoadAssignment_parse(
           encoded_cluster_load_assignment.data,
           encoded_cluster_load_assignment.size, arena.ptr());
-  const XdsLocalityLbEndpoints* const* endpoints =
+  const envoy_api_v2_endpoint_LocalityLbEndpoints* const* endpoints =
       envoy_api_v2_ClusterLoadAssignment_endpoints(cluster_load_assignment,
                                                    &size);
   for (size_t i = 0; i < size; ++i) {
@@ -201,8 +212,9 @@ grpc_error* XdsEdsResponseDecodeAndParse(const grpc_slice& encoded_response,
 
 namespace {
 
-grpc_slice LrsRequestEncode(const XdsLoadStatsRequest* request,
-                            upb_arena* arena) {
+grpc_slice LrsRequestEncode(
+    const envoy_service_load_stats_v2_LoadStatsRequest* request,
+    upb_arena* arena) {
   size_t output_length;
   char* output = envoy_service_load_stats_v2_LoadStatsRequest_serialize(
       request, arena, &output_length);
@@ -214,10 +226,10 @@ grpc_slice LrsRequestEncode(const XdsLoadStatsRequest* request,
 grpc_slice XdsLrsRequestCreateAndEncode(const char* server_name) {
   upb::Arena arena;
   // Create a request.
-  XdsLoadStatsRequest* request =
+  envoy_service_load_stats_v2_LoadStatsRequest* request =
       envoy_service_load_stats_v2_LoadStatsRequest_new(arena.ptr());
-  // Add cluster stats. There is only one because we only use one server name in
-  // one channel.
+  // Add cluster stats. There is only one because we only use one server name
+  // in one channel.
   envoy_api_v2_endpoint_ClusterStats* cluster_stats =
       envoy_service_load_stats_v2_LoadStatsRequest_add_cluster_stats(
           request, arena.ptr());
@@ -230,12 +242,12 @@ grpc_slice XdsLrsRequestCreateAndEncode(const char* server_name) {
 namespace {
 
 void LocalityStatsPopulate(
-    LocalityStats* output,
+    envoy_api_v2_endpoint_UpstreamLocalityStats* output,
     Pair<RefCountedPtr<XdsLocalityName>,
          XdsLbClientStats::LocalityStats::Snapshot>& input,
     upb_arena* arena) {
   // Set sub_zone.
-  XdsLocality* locality =
+  envoy_api_v2_core_Locality* locality =
       envoy_api_v2_endpoint_UpstreamLocalityStats_mutable_locality(output,
                                                                    arena);
   envoy_api_v2_core_Locality_set_sub_zone(
@@ -279,10 +291,10 @@ grpc_slice XdsLrsRequestCreateAndEncode(const char* server_name,
   // When all the counts are zero, return empty slice.
   if (snapshot.IsAllZero()) return grpc_empty_slice();
   // Create a request.
-  XdsLoadStatsRequest* request =
+  envoy_service_load_stats_v2_LoadStatsRequest* request =
       envoy_service_load_stats_v2_LoadStatsRequest_new(arena.ptr());
-  // Add cluster stats. There is only one because we only use one server name in
-  // one channel.
+  // Add cluster stats. There is only one because we only use one server name
+  // in one channel.
   envoy_api_v2_endpoint_ClusterStats* cluster_stats =
       envoy_service_load_stats_v2_LoadStatsRequest_add_cluster_stats(
           request, arena.ptr());
@@ -291,7 +303,7 @@ grpc_slice XdsLrsRequestCreateAndEncode(const char* server_name,
       cluster_stats, upb_strview_makez(server_name));
   // Add locality stats.
   for (auto& p : snapshot.upstream_locality_stats) {
-    LocalityStats* locality_stats =
+    envoy_api_v2_endpoint_UpstreamLocalityStats* locality_stats =
         envoy_api_v2_endpoint_ClusterStats_add_upstream_locality_stats(
             cluster_stats, arena.ptr());
     LocalityStatsPopulate(locality_stats, p, arena.ptr());
@@ -327,7 +339,7 @@ grpc_error* XdsLrsResponseDecodeAndParse(const grpc_slice& encoded_response,
                                          const char* expected_server_name) {
   upb::Arena arena;
   // Decode the response.
-  const XdsLoadStatsResponse* decoded_response =
+  const envoy_service_load_stats_v2_LoadStatsResponse* decoded_response =
       envoy_service_load_stats_v2_LoadStatsResponse_parse(
           reinterpret_cast<const char*>(GRPC_SLICE_START_PTR(encoded_response)),
           GRPC_SLICE_LENGTH(encoded_response), arena.ptr());

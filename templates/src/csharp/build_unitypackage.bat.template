@@ -66,7 +66,9 @@
 
   @rem add gRPC dependencies
   @rem TODO(jtattermusch): also include XMLdoc
-  copy /Y Grpc.Core\bin\Release\net45\System.Interactive.Async.dll unitypackage\unitypackage_skeleton\Plugins\System.Interactive.Async\lib\net45\System.Interactive.Async.dll || goto :error
+  copy /Y Grpc.Core\bin\Release\net45\System.Runtime.CompilerServices.Unsafe.dll unitypackage\unitypackage_skeleton\Plugins\System.Runtime.CompilerServices.Unsafe\lib\net45\System.Runtime.CompilerServices.Unsafe.dll || goto :error
+  copy /Y Grpc.Core\bin\Release\net45\System.Buffers.dll unitypackage\unitypackage_skeleton\Plugins\System.Buffers\lib\net45\System.Buffers.dll || goto :error
+  copy /Y Grpc.Core\bin\Release\net45\System.Memory.dll unitypackage\unitypackage_skeleton\Plugins\System.Memory\lib\net45\System.Memory.dll || goto :error
 
   @rem add Google.Protobuf
   @rem TODO(jtattermusch): also include XMLdoc

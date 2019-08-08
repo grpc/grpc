@@ -21,7 +21,6 @@ from concurrent import futures
 import argparse
 import logging
 import threading
-import time
 import grpc
 
 from examples import helloworld_pb2
@@ -36,7 +35,6 @@ _COMPRESSION_OPTIONS = {
 _LOGGER = logging.getLogger(__name__)
 
 _SERVER_HOST = 'localhost'
-_ONE_DAY_IN_SECONDS = 60 * 60 * 24
 
 
 class Greeter(helloworld_pb2_grpc.GreeterServicer):
@@ -72,11 +70,7 @@ def run_server(server_compression, no_compress_every_n, port):
     server.add_insecure_port(address)
     server.start()
     print("Server listening at '{}'".format(address))
-    try:
-        while True:
-            time.sleep(_ONE_DAY_IN_SECONDS)
-    except KeyboardInterrupt:
-        server.stop(None)
+    server.wait_for_termination()
 
 
 def main():

@@ -409,7 +409,7 @@ static grpc_error* add_socket_to_server(grpc_tcp_server* s, SOCKET sock,
     gpr_log(GPR_ERROR, "on_connect error: %s", utf8_message);
     gpr_free(utf8_message);
     closesocket(sock);
-    return NULL;
+    return GRPC_ERROR_NONE;
   }
 
   error = prepare_socket(sock, addr, &port);

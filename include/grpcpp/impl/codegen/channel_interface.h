@@ -57,6 +57,10 @@ class ClientCallbackUnaryFactory;
 namespace grpc {
 class ChannelInterface;
 
+namespace experimental {
+class DelegatingChannel;
+}
+
 namespace internal {
 class Call;
 class CallOpSetInterface;
@@ -128,6 +132,7 @@ class ChannelInterface {
   template <class InputMessage, class OutputMessage>
   friend class ::grpc_impl::internal::CallbackUnaryCallImpl;
   friend class ::grpc::internal::RpcMethod;
+  friend class ::grpc::experimental::DelegatingChannel;
   friend class ::grpc::internal::InterceptedChannel;
   virtual internal::Call CreateCall(const internal::RpcMethod& method,
                                     ::grpc_impl::ClientContext* context,

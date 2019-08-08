@@ -387,7 +387,7 @@ class XdsLb : public LoadBalancingPolicy {
    private:
     static void RecordCallCompletion(
         void* arg, grpc_error* error,
-        grpc_metadata_batch* recv_trailing_metadata,
+        LoadBalancingPolicy::MetadataInterface* recv_trailing_metadata,
         LoadBalancingPolicy::CallState* call_state);
 
     UniquePtr<SubchannelPicker> picker_;
@@ -606,7 +606,7 @@ LoadBalancingPolicy::PickResult XdsLb::PickerWrapper::Pick(
   // Forward the pick to the picker returned from the child policy.
   PickResult result = picker_->Pick(args);
   if (result.type != PickResult::PICK_COMPLETE ||
-      result.connected_subchannel == nullptr || locality_stats_ == nullptr) {
+      result.subchannel == nullptr || locality_stats_ == nullptr) {
     return result;
   }
   // Record a call started.
@@ -620,7 +620,8 @@ LoadBalancingPolicy::PickResult XdsLb::PickerWrapper::Pick(
 // Note that the following callback does not run in either the control plane
 // combiner or the data plane combiner.
 void XdsLb::PickerWrapper::RecordCallCompletion(
-    void* arg, grpc_error* error, grpc_metadata_batch* recv_trailing_metadata,
+    void* arg, grpc_error* error,
+    LoadBalancingPolicy::MetadataInterface* recv_trailing_metadata,
     grpc_core::LoadBalancingPolicy::CallState* call_state) {
   XdsLbClientStats::LocalityStats* locality_stats =
       static_cast<XdsLbClientStats::LocalityStats*>(arg);
@@ -948,10 +949,11 @@ XdsLb::LbChannelState::EdsCallState::EdsCallState(
       xdslb_policy()->lb_call_timeout_ms_ == 0
           ? GRPC_MILLIS_INF_FUTURE
           : ExecCtx::Get()->Now() + xdslb_policy()->lb_call_timeout_ms_;
+  // Create an LB call with the specified method name.
   lb_call_ = grpc_channel_create_pollset_set_call(
       lb_chand()->channel_, nullptr, GRPC_PROPAGATE_DEFAULTS,
       xdslb_policy()->interested_parties(),
-      GRPC_MDSTR_SLASH_GRPC_DOT_LB_DOT_V2_DOT_ENDPOINTDISCOVERYSERVICE_SLASH_STREAMENDPOINTS,
+      GRPC_MDSTR_SLASH_ENVOY_DOT_API_DOT_V2_DOT_ENDPOINTDISCOVERYSERVICE_SLASH_STREAMENDPOINTS,
       nullptr, deadline, nullptr);
   GPR_ASSERT(lb_call_ != nullptr);
   // Init the LB call request payload.
@@ -1106,24 +1108,21 @@ void XdsLb::LbChannelState::EdsCallState::OnResponseReceivedLocked(
               xdslb_policy, update.locality_list.size());
       for (size_t i = 0; i < update.locality_list.size(); ++i) {
         const XdsLocalityInfo& locality = update.locality_list[i];
-        const XdsLocalityName* locality_name = locality.locality_name.get();
         gpr_log(GPR_INFO,
-                "[xdslb %p] Locality %" PRIuPTR
-                " (region: %s, zone: %s, sub_zone: %s) contains %" PRIuPTR
+                "[xdslb %p] Locality %" PRIuPTR " %s contains %" PRIuPTR
                 " server addresses",
-                xdslb_policy, i, locality_name->region(), locality_name->zone(),
-                locality_name->sub_zone(), locality.serverlist.size());
+                xdslb_policy, i,
+                locality.locality_name->AsHumanReadableString(),
+                locality.serverlist.size());
         for (size_t j = 0; j < locality.serverlist.size(); ++j) {
           char* ipport;
           grpc_sockaddr_to_string(&ipport, &locality.serverlist[j].address(),
                                   false);
-          gpr_log(
-              GPR_INFO,
-              "[xdslb %p] Locality %" PRIuPTR
-              " (region: %s, zone: %s, sub_zone: %s), server address %" PRIuPTR
-              ": %s",
-              xdslb_policy, i, locality_name->region(), locality_name->zone(),
-              locality_name->sub_zone(), j, ipport);
+          gpr_log(GPR_INFO,
+                  "[xdslb %p] Locality %" PRIuPTR
+                  " %s, server address %" PRIuPTR ": %s",
+                  xdslb_policy, i,
+                  locality.locality_name->AsHumanReadableString(), j, ipport);
           gpr_free(ipport);
         }
       }
@@ -1346,7 +1345,7 @@ XdsLb::LbChannelState::LrsCallState::LrsCallState(
   lb_call_ = grpc_channel_create_pollset_set_call(
       lb_chand()->channel_, nullptr, GRPC_PROPAGATE_DEFAULTS,
       xdslb_policy()->interested_parties(),
-      GRPC_MDSTR_SLASH_GRPC_DOT_LB_DOT_V2_DOT_LOADREPORTINGSERVICE_SLASH_STREAMLOADSTATS,
+      GRPC_MDSTR_SLASH_ENVOY_DOT_SERVICE_DOT_LOAD_STATS_DOT_V2_DOT_LOADREPORTINGSERVICE_SLASH_STREAMLOADSTATS,
       nullptr, deadline, nullptr);
   GPR_ASSERT(lb_call_ != nullptr);
   // Init the LB call request payload.
@@ -2243,6 +2242,9 @@ void XdsLb::LocalityMap::LocalityEntry::ShutdownLocked() {
         parent_->interested_parties());
     pending_child_policy_.reset();
   }
+  // Drop our ref to the child's picker, in case it's holding a ref to
+  // the child.
+  picker_wrapper_.reset();
 }
 
 void XdsLb::LocalityMap::LocalityEntry::ResetBackoffLocked() {
