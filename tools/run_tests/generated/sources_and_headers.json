@@ -5323,9 +5323,9 @@
       "grpc_test_util"
     ], 
     "headers": [
-      "src/proto/grpc/lb/v1/load_balancer.grpc.pb.h", 
-      "src/proto/grpc/lb/v1/load_balancer.pb.h", 
-      "src/proto/grpc/lb/v1/load_balancer_mock.grpc.pb.h"
+      "src/proto/grpc/lb/v2/xds_for_test.grpc.pb.h", 
+      "src/proto/grpc/lb/v2/xds_for_test.pb.h", 
+      "src/proto/grpc/lb/v2/xds_for_test_mock.grpc.pb.h"
     ], 
     "is_filegroup": false, 
     "language": "c++", 
@@ -8305,20 +8305,129 @@
     "type": "filegroup"
   }, 
   {
+    "deps": [
+      "envoy_core_upb", 
+      "envoy_type_upb", 
+      "google_api_upb", 
+      "proto_gen_validate_upb"
+    ], 
+    "headers": [
+      "src/core/ext/upb-generated/envoy/api/v2/auth/cert.upb.h", 
+      "src/core/ext/upb-generated/envoy/api/v2/cds.upb.h", 
+      "src/core/ext/upb-generated/envoy/api/v2/cluster/circuit_breaker.upb.h", 
+      "src/core/ext/upb-generated/envoy/api/v2/cluster/outlier_detection.upb.h", 
+      "src/core/ext/upb-generated/envoy/api/v2/discovery.upb.h", 
+      "src/core/ext/upb-generated/envoy/api/v2/eds.upb.h", 
+      "src/core/ext/upb-generated/envoy/api/v2/endpoint/endpoint.upb.h", 
+      "src/core/ext/upb-generated/envoy/api/v2/endpoint/load_report.upb.h", 
+      "src/core/ext/upb-generated/envoy/service/discovery/v2/ads.upb.h", 
+      "src/core/ext/upb-generated/envoy/service/load_stats/v2/lrs.upb.h"
+    ], 
+    "is_filegroup": true, 
+    "language": "c", 
+    "name": "envoy_ads_upb", 
+    "src": [
+      "src/core/ext/upb-generated/envoy/api/v2/auth/cert.upb.c", 
+      "src/core/ext/upb-generated/envoy/api/v2/auth/cert.upb.h", 
+      "src/core/ext/upb-generated/envoy/api/v2/cds.upb.c", 
+      "src/core/ext/upb-generated/envoy/api/v2/cds.upb.h", 
+      "src/core/ext/upb-generated/envoy/api/v2/cluster/circuit_breaker.upb.c", 
+      "src/core/ext/upb-generated/envoy/api/v2/cluster/circuit_breaker.upb.h", 
+      "src/core/ext/upb-generated/envoy/api/v2/cluster/outlier_detection.upb.c", 
+      "src/core/ext/upb-generated/envoy/api/v2/cluster/outlier_detection.upb.h", 
+      "src/core/ext/upb-generated/envoy/api/v2/discovery.upb.c", 
+      "src/core/ext/upb-generated/envoy/api/v2/discovery.upb.h", 
+      "src/core/ext/upb-generated/envoy/api/v2/eds.upb.c", 
+      "src/core/ext/upb-generated/envoy/api/v2/eds.upb.h", 
+      "src/core/ext/upb-generated/envoy/api/v2/endpoint/endpoint.upb.c", 
+      "src/core/ext/upb-generated/envoy/api/v2/endpoint/endpoint.upb.h", 
+      "src/core/ext/upb-generated/envoy/api/v2/endpoint/load_report.upb.c", 
+      "src/core/ext/upb-generated/envoy/api/v2/endpoint/load_report.upb.h", 
+      "src/core/ext/upb-generated/envoy/service/discovery/v2/ads.upb.c", 
+      "src/core/ext/upb-generated/envoy/service/discovery/v2/ads.upb.h", 
+      "src/core/ext/upb-generated/envoy/service/load_stats/v2/lrs.upb.c", 
+      "src/core/ext/upb-generated/envoy/service/load_stats/v2/lrs.upb.h"
+    ], 
+    "third_party": false, 
+    "type": "filegroup"
+  }, 
+  {
+    "deps": [
+      "envoy_type_upb", 
+      "google_api_upb", 
+      "proto_gen_validate_upb"
+    ], 
+    "headers": [
+      "src/core/ext/upb-generated/envoy/api/v2/core/address.upb.h", 
+      "src/core/ext/upb-generated/envoy/api/v2/core/base.upb.h", 
+      "src/core/ext/upb-generated/envoy/api/v2/core/config_source.upb.h", 
+      "src/core/ext/upb-generated/envoy/api/v2/core/grpc_service.upb.h", 
+      "src/core/ext/upb-generated/envoy/api/v2/core/health_check.upb.h", 
+      "src/core/ext/upb-generated/envoy/api/v2/core/protocol.upb.h"
+    ], 
+    "is_filegroup": true, 
+    "language": "c", 
+    "name": "envoy_core_upb", 
+    "src": [
+      "src/core/ext/upb-generated/envoy/api/v2/core/address.upb.c", 
+      "src/core/ext/upb-generated/envoy/api/v2/core/address.upb.h", 
+      "src/core/ext/upb-generated/envoy/api/v2/core/base.upb.c", 
+      "src/core/ext/upb-generated/envoy/api/v2/core/base.upb.h", 
+      "src/core/ext/upb-generated/envoy/api/v2/core/config_source.upb.c", 
+      "src/core/ext/upb-generated/envoy/api/v2/core/config_source.upb.h", 
+      "src/core/ext/upb-generated/envoy/api/v2/core/grpc_service.upb.c", 
+      "src/core/ext/upb-generated/envoy/api/v2/core/grpc_service.upb.h", 
+      "src/core/ext/upb-generated/envoy/api/v2/core/health_check.upb.c", 
+      "src/core/ext/upb-generated/envoy/api/v2/core/health_check.upb.h", 
+      "src/core/ext/upb-generated/envoy/api/v2/core/protocol.upb.c", 
+      "src/core/ext/upb-generated/envoy/api/v2/core/protocol.upb.h"
+    ], 
+    "third_party": false, 
+    "type": "filegroup"
+  }, 
+  {
+    "deps": [
+      "google_api_upb", 
+      "proto_gen_validate_upb"
+    ], 
+    "headers": [
+      "src/core/ext/upb-generated/envoy/type/percent.upb.h", 
+      "src/core/ext/upb-generated/envoy/type/range.upb.h"
+    ], 
+    "is_filegroup": true, 
+    "language": "c", 
+    "name": "envoy_type_upb", 
+    "src": [
+      "src/core/ext/upb-generated/envoy/type/percent.upb.c", 
+      "src/core/ext/upb-generated/envoy/type/percent.upb.h", 
+      "src/core/ext/upb-generated/envoy/type/range.upb.c", 
+      "src/core/ext/upb-generated/envoy/type/range.upb.h"
+    ], 
+    "third_party": false, 
+    "type": "filegroup"
+  }, 
+  {
     "deps": [], 
     "headers": [
+      "src/core/ext/upb-generated/google/api/annotations.upb.h", 
+      "src/core/ext/upb-generated/google/api/http.upb.h", 
       "src/core/ext/upb-generated/google/protobuf/any.upb.h", 
       "src/core/ext/upb-generated/google/protobuf/descriptor.upb.h", 
       "src/core/ext/upb-generated/google/protobuf/duration.upb.h", 
       "src/core/ext/upb-generated/google/protobuf/empty.upb.h", 
       "src/core/ext/upb-generated/google/protobuf/struct.upb.h", 
       "src/core/ext/upb-generated/google/protobuf/timestamp.upb.h", 
-      "src/core/ext/upb-generated/google/protobuf/wrappers.upb.h"
+      "src/core/ext/upb-generated/google/protobuf/wrappers.upb.h", 
+      "src/core/ext/upb-generated/google/rpc/status.upb.h"
     ], 
     "is_filegroup": true, 
     "language": "c", 
     "name": "google_api_upb", 
     "src": [
+      "src/core/ext/upb-generated/google/api/annotations.upb.c", 
+      "src/core/ext/upb-generated/google/api/annotations.upb.h", 
+      "src/core/ext/upb-generated/google/api/http.upb.c", 
+      "src/core/ext/upb-generated/google/api/http.upb.h", 
       "src/core/ext/upb-generated/google/protobuf/any.upb.c", 
       "src/core/ext/upb-generated/google/protobuf/any.upb.h", 
       "src/core/ext/upb-generated/google/protobuf/descriptor.upb.c", 
@@ -8332,7 +8441,9 @@
       "src/core/ext/upb-generated/google/protobuf/timestamp.upb.c", 
       "src/core/ext/upb-generated/google/protobuf/timestamp.upb.h", 
       "src/core/ext/upb-generated/google/protobuf/wrappers.upb.c", 
-      "src/core/ext/upb-generated/google/protobuf/wrappers.upb.h"
+      "src/core/ext/upb-generated/google/protobuf/wrappers.upb.h", 
+      "src/core/ext/upb-generated/google/rpc/status.upb.c", 
+      "src/core/ext/upb-generated/google/rpc/status.upb.h"
     ], 
     "third_party": false, 
     "type": "filegroup"
@@ -9394,12 +9505,12 @@
   }, 
   {
     "deps": [
+      "envoy_ads_upb", 
       "gpr", 
       "grpc_base", 
       "grpc_client_channel", 
-      "grpc_resolver_fake", 
-      "grpclb_proto", 
-      "nanopb"
+      "grpc_lb_upb", 
+      "grpc_resolver_fake"
     ], 
     "headers": [
       "src/core/ext/filters/client_channel/lb_policy/xds/xds.h", 
@@ -9425,13 +9536,13 @@
   }, 
   {
     "deps": [
+      "envoy_ads_upb", 
       "gpr", 
       "grpc_base", 
       "grpc_client_channel", 
+      "grpc_lb_upb", 
       "grpc_resolver_fake", 
-      "grpc_secure", 
-      "grpclb_proto", 
-      "nanopb"
+      "grpc_secure"
     ], 
     "headers": [
       "src/core/ext/filters/client_channel/lb_policy/xds/xds.h", 
@@ -10200,29 +10311,6 @@
   }, 
   {
     "deps": [
-      "nanopb"
-    ], 
-    "headers": [
-      "src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/google/protobuf/duration.pb.h", 
-      "src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/google/protobuf/timestamp.pb.h", 
-      "src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/load_balancer.pb.h"
-    ], 
-    "is_filegroup": true, 
-    "language": "c", 
-    "name": "grpclb_proto", 
-    "src": [
-      "src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/google/protobuf/duration.pb.c", 
-      "src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/google/protobuf/duration.pb.h", 
-      "src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/google/protobuf/timestamp.pb.c", 
-      "src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/google/protobuf/timestamp.pb.h", 
-      "src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/load_balancer.pb.c", 
-      "src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/load_balancer.pb.h"
-    ], 
-    "third_party": false, 
-    "type": "filegroup"
-  }, 
-  {
-    "deps": [
       "nanopb_headers"
     ], 
     "headers": [], 
@@ -10245,6 +10333,26 @@
     "language": "c", 
     "name": "nanopb_headers", 
     "src": [], 
+    "third_party": false, 
+    "type": "filegroup"
+  }, 
+  {
+    "deps": [
+      "google_api_upb"
+    ], 
+    "headers": [
+      "src/core/ext/upb-generated/gogoproto/gogo.upb.h", 
+      "src/core/ext/upb-generated/validate/validate.upb.h"
+    ], 
+    "is_filegroup": true, 
+    "language": "c", 
+    "name": "proto_gen_validate_upb", 
+    "src": [
+      "src/core/ext/upb-generated/gogoproto/gogo.upb.c", 
+      "src/core/ext/upb-generated/gogoproto/gogo.upb.h", 
+      "src/core/ext/upb-generated/validate/validate.upb.c", 
+      "src/core/ext/upb-generated/validate/validate.upb.h"
+    ], 
     "third_party": false, 
     "type": "filegroup"
   }, 

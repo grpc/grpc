@@ -89,6 +89,7 @@ grpc_cc_test(
     external_deps = [
         "gtest",
     ],
+    tags = ["no_windows"],
     deps = [
         ":test_service_impl",
         "//:gpr",
@@ -99,7 +100,6 @@ grpc_cc_test(
         "//test/core/util:grpc_test_util",
         "//test/cpp/util:test_util",
     ],
-    tags = ["no_windows"],
 )
 
 grpc_cc_test(
@@ -492,6 +492,7 @@ grpc_cc_test(
         "//:grpc++",
         "//:grpc_resolver_fake",
         "//src/proto/grpc/lb/v1:load_balancer_proto",
+        "//src/proto/grpc/lb/v2:xds_for_test_proto",
         "//src/proto/grpc/testing:echo_messages_proto",
         "//src/proto/grpc/testing:echo_proto",
         "//src/proto/grpc/testing/duplicate:echo_duplicate_proto",
@@ -658,6 +659,7 @@ grpc_cc_test(
     external_deps = [
         "gtest",
     ],
+    tags = ["no_windows"],
     deps = [
         "//:gpr",
         "//:grpc",
@@ -668,7 +670,6 @@ grpc_cc_test(
         "//test/core/util:grpc_test_util",
         "//test/cpp/util:test_util",
     ],
-    tags = ["no_windows"],
 )
 
 grpc_cc_test(
@@ -718,8 +719,8 @@ grpc_cc_test(
     ],
     deps = [
         ":test_service_impl",
-        "//:grpc",
         "//:gpr",
+        "//:grpc",
         "//:grpc++",
         "//src/proto/grpc/testing:echo_messages_proto",
         "//src/proto/grpc/testing:echo_proto",
@@ -746,4 +747,3 @@ grpc_cc_test(
         "//test/cpp/util:test_util",
     ],
 )
-

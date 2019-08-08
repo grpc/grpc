@@ -402,6 +402,8 @@ if test "$PHP_GRPC" != "no"; then
     src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_client_stats.cc \
     src/core/ext/filters/client_channel/lb_policy/grpclb/load_balancer_api.cc \
     src/core/ext/upb-generated/src/proto/grpc/lb/v1/load_balancer.upb.c \
+    src/core/ext/upb-generated/google/api/annotations.upb.c \
+    src/core/ext/upb-generated/google/api/http.upb.c \
     src/core/ext/upb-generated/google/protobuf/any.upb.c \
     src/core/ext/upb-generated/google/protobuf/descriptor.upb.c \
     src/core/ext/upb-generated/google/protobuf/duration.upb.c \
@@ -409,14 +411,32 @@ if test "$PHP_GRPC" != "no"; then
     src/core/ext/upb-generated/google/protobuf/struct.upb.c \
     src/core/ext/upb-generated/google/protobuf/timestamp.upb.c \
     src/core/ext/upb-generated/google/protobuf/wrappers.upb.c \
+    src/core/ext/upb-generated/google/rpc/status.upb.c \
     src/core/ext/filters/client_channel/resolver/fake/fake_resolver.cc \
     src/core/ext/filters/client_channel/lb_policy/xds/xds.cc \
     src/core/ext/filters/client_channel/lb_policy/xds/xds_channel_secure.cc \
     src/core/ext/filters/client_channel/lb_policy/xds/xds_client_stats.cc \
     src/core/ext/filters/client_channel/lb_policy/xds/xds_load_balancer_api.cc \
-    src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/google/protobuf/duration.pb.c \
-    src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/google/protobuf/timestamp.pb.c \
-    src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/load_balancer.pb.c \
+    src/core/ext/upb-generated/envoy/api/v2/auth/cert.upb.c \
+    src/core/ext/upb-generated/envoy/api/v2/cds.upb.c \
+    src/core/ext/upb-generated/envoy/api/v2/cluster/circuit_breaker.upb.c \
+    src/core/ext/upb-generated/envoy/api/v2/cluster/outlier_detection.upb.c \
+    src/core/ext/upb-generated/envoy/api/v2/discovery.upb.c \
+    src/core/ext/upb-generated/envoy/api/v2/eds.upb.c \
+    src/core/ext/upb-generated/envoy/api/v2/endpoint/endpoint.upb.c \
+    src/core/ext/upb-generated/envoy/api/v2/endpoint/load_report.upb.c \
+    src/core/ext/upb-generated/envoy/service/discovery/v2/ads.upb.c \
+    src/core/ext/upb-generated/envoy/service/load_stats/v2/lrs.upb.c \
+    src/core/ext/upb-generated/envoy/api/v2/core/address.upb.c \
+    src/core/ext/upb-generated/envoy/api/v2/core/base.upb.c \
+    src/core/ext/upb-generated/envoy/api/v2/core/config_source.upb.c \
+    src/core/ext/upb-generated/envoy/api/v2/core/grpc_service.upb.c \
+    src/core/ext/upb-generated/envoy/api/v2/core/health_check.upb.c \
+    src/core/ext/upb-generated/envoy/api/v2/core/protocol.upb.c \
+    src/core/ext/upb-generated/envoy/type/percent.upb.c \
+    src/core/ext/upb-generated/envoy/type/range.upb.c \
+    src/core/ext/upb-generated/gogoproto/gogo.upb.c \
+    src/core/ext/upb-generated/validate/validate.upb.c \
     src/core/ext/filters/client_channel/lb_policy/pick_first/pick_first.cc \
     src/core/ext/filters/client_channel/lb_policy/round_robin/round_robin.cc \
     src/core/ext/filters/client_channel/resolver/dns/c_ares/dns_resolver_ares.cc \
@@ -709,8 +729,6 @@ if test "$PHP_GRPC" != "no"; then
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/filters/client_channel)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/filters/client_channel/health)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/filters/client_channel/lb_policy/grpclb)
-  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1)
-  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/google/protobuf)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/filters/client_channel/lb_policy/pick_first)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/filters/client_channel/lb_policy/round_robin)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/filters/client_channel/lb_policy/xds)
@@ -737,9 +755,21 @@ if test "$PHP_GRPC" != "no"; then
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/transport/chttp2/server/secure)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/transport/chttp2/transport)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/transport/inproc)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upb-generated/envoy/api/v2)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upb-generated/envoy/api/v2/auth)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upb-generated/envoy/api/v2/cluster)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upb-generated/envoy/api/v2/core)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upb-generated/envoy/api/v2/endpoint)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upb-generated/envoy/service/discovery/v2)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upb-generated/envoy/service/load_stats/v2)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upb-generated/envoy/type)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upb-generated/gogoproto)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upb-generated/google/api)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upb-generated/google/protobuf)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upb-generated/google/rpc)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upb-generated/src/proto/grpc/health/v1)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upb-generated/src/proto/grpc/lb/v1)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/upb-generated/validate)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/avl)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/backoff)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/lib/channel)

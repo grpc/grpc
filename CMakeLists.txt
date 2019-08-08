@@ -1323,6 +1323,8 @@ add_library(grpc
   src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_client_stats.cc
   src/core/ext/filters/client_channel/lb_policy/grpclb/load_balancer_api.cc
   src/core/ext/upb-generated/src/proto/grpc/lb/v1/load_balancer.upb.c
+  src/core/ext/upb-generated/google/api/annotations.upb.c
+  src/core/ext/upb-generated/google/api/http.upb.c
   src/core/ext/upb-generated/google/protobuf/any.upb.c
   src/core/ext/upb-generated/google/protobuf/descriptor.upb.c
   src/core/ext/upb-generated/google/protobuf/duration.upb.c
@@ -1330,14 +1332,32 @@ add_library(grpc
   src/core/ext/upb-generated/google/protobuf/struct.upb.c
   src/core/ext/upb-generated/google/protobuf/timestamp.upb.c
   src/core/ext/upb-generated/google/protobuf/wrappers.upb.c
+  src/core/ext/upb-generated/google/rpc/status.upb.c
   src/core/ext/filters/client_channel/resolver/fake/fake_resolver.cc
   src/core/ext/filters/client_channel/lb_policy/xds/xds.cc
   src/core/ext/filters/client_channel/lb_policy/xds/xds_channel_secure.cc
   src/core/ext/filters/client_channel/lb_policy/xds/xds_client_stats.cc
   src/core/ext/filters/client_channel/lb_policy/xds/xds_load_balancer_api.cc
-  src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/google/protobuf/duration.pb.c
-  src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/google/protobuf/timestamp.pb.c
-  src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/load_balancer.pb.c
+  src/core/ext/upb-generated/envoy/api/v2/auth/cert.upb.c
+  src/core/ext/upb-generated/envoy/api/v2/cds.upb.c
+  src/core/ext/upb-generated/envoy/api/v2/cluster/circuit_breaker.upb.c
+  src/core/ext/upb-generated/envoy/api/v2/cluster/outlier_detection.upb.c
+  src/core/ext/upb-generated/envoy/api/v2/discovery.upb.c
+  src/core/ext/upb-generated/envoy/api/v2/eds.upb.c
+  src/core/ext/upb-generated/envoy/api/v2/endpoint/endpoint.upb.c
+  src/core/ext/upb-generated/envoy/api/v2/endpoint/load_report.upb.c
+  src/core/ext/upb-generated/envoy/service/discovery/v2/ads.upb.c
+  src/core/ext/upb-generated/envoy/service/load_stats/v2/lrs.upb.c
+  src/core/ext/upb-generated/envoy/api/v2/core/address.upb.c
+  src/core/ext/upb-generated/envoy/api/v2/core/base.upb.c
+  src/core/ext/upb-generated/envoy/api/v2/core/config_source.upb.c
+  src/core/ext/upb-generated/envoy/api/v2/core/grpc_service.upb.c
+  src/core/ext/upb-generated/envoy/api/v2/core/health_check.upb.c
+  src/core/ext/upb-generated/envoy/api/v2/core/protocol.upb.c
+  src/core/ext/upb-generated/envoy/type/percent.upb.c
+  src/core/ext/upb-generated/envoy/type/range.upb.c
+  src/core/ext/upb-generated/gogoproto/gogo.upb.c
+  src/core/ext/upb-generated/validate/validate.upb.c
   src/core/ext/filters/client_channel/lb_policy/pick_first/pick_first.cc
   src/core/ext/filters/client_channel/lb_policy/round_robin/round_robin.cc
   src/core/ext/filters/client_channel/resolver/dns/c_ares/dns_resolver_ares.cc
@@ -2804,6 +2824,8 @@ add_library(grpc_unsecure
   src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_client_stats.cc
   src/core/ext/filters/client_channel/lb_policy/grpclb/load_balancer_api.cc
   src/core/ext/upb-generated/src/proto/grpc/lb/v1/load_balancer.upb.c
+  src/core/ext/upb-generated/google/api/annotations.upb.c
+  src/core/ext/upb-generated/google/api/http.upb.c
   src/core/ext/upb-generated/google/protobuf/any.upb.c
   src/core/ext/upb-generated/google/protobuf/descriptor.upb.c
   src/core/ext/upb-generated/google/protobuf/duration.upb.c
@@ -2811,16 +2833,31 @@ add_library(grpc_unsecure
   src/core/ext/upb-generated/google/protobuf/struct.upb.c
   src/core/ext/upb-generated/google/protobuf/timestamp.upb.c
   src/core/ext/upb-generated/google/protobuf/wrappers.upb.c
+  src/core/ext/upb-generated/google/rpc/status.upb.c
   src/core/ext/filters/client_channel/lb_policy/xds/xds.cc
   src/core/ext/filters/client_channel/lb_policy/xds/xds_channel.cc
   src/core/ext/filters/client_channel/lb_policy/xds/xds_client_stats.cc
   src/core/ext/filters/client_channel/lb_policy/xds/xds_load_balancer_api.cc
-  src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/google/protobuf/duration.pb.c
-  src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/google/protobuf/timestamp.pb.c
-  src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/load_balancer.pb.c
-  third_party/nanopb/pb_common.c
-  third_party/nanopb/pb_decode.c
-  third_party/nanopb/pb_encode.c
+  src/core/ext/upb-generated/envoy/api/v2/auth/cert.upb.c
+  src/core/ext/upb-generated/envoy/api/v2/cds.upb.c
+  src/core/ext/upb-generated/envoy/api/v2/cluster/circuit_breaker.upb.c
+  src/core/ext/upb-generated/envoy/api/v2/cluster/outlier_detection.upb.c
+  src/core/ext/upb-generated/envoy/api/v2/discovery.upb.c
+  src/core/ext/upb-generated/envoy/api/v2/eds.upb.c
+  src/core/ext/upb-generated/envoy/api/v2/endpoint/endpoint.upb.c
+  src/core/ext/upb-generated/envoy/api/v2/endpoint/load_report.upb.c
+  src/core/ext/upb-generated/envoy/service/discovery/v2/ads.upb.c
+  src/core/ext/upb-generated/envoy/service/load_stats/v2/lrs.upb.c
+  src/core/ext/upb-generated/envoy/api/v2/core/address.upb.c
+  src/core/ext/upb-generated/envoy/api/v2/core/base.upb.c
+  src/core/ext/upb-generated/envoy/api/v2/core/config_source.upb.c
+  src/core/ext/upb-generated/envoy/api/v2/core/grpc_service.upb.c
+  src/core/ext/upb-generated/envoy/api/v2/core/health_check.upb.c
+  src/core/ext/upb-generated/envoy/api/v2/core/protocol.upb.c
+  src/core/ext/upb-generated/envoy/type/percent.upb.c
+  src/core/ext/upb-generated/envoy/type/range.upb.c
+  src/core/ext/upb-generated/gogoproto/gogo.upb.c
+  src/core/ext/upb-generated/validate/validate.upb.c
   src/core/ext/filters/client_channel/lb_policy/pick_first/pick_first.cc
   src/core/ext/filters/client_channel/lb_policy/round_robin/round_robin.cc
   src/core/ext/filters/census/grpc_context.cc
@@ -17689,17 +17726,17 @@ endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
 add_executable(xds_end2end_test
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/lb/v1/load_balancer.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/lb/v1/load_balancer.grpc.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/lb/v1/load_balancer.pb.h
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/lb/v1/load_balancer.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/lb/v2/xds_for_test.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/lb/v2/xds_for_test.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/lb/v2/xds_for_test.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/lb/v2/xds_for_test.grpc.pb.h
   test/cpp/end2end/xds_end2end_test.cc
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
 
 protobuf_generate_grpc_cpp(
-  src/proto/grpc/lb/v1/load_balancer.proto
+  src/proto/grpc/lb/v2/xds_for_test.proto
 )
 
 target_include_directories(xds_end2end_test

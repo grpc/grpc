@@ -23,67 +23,100 @@
 
 #include <grpc/slice_buffer.h>
 
-#include "src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/load_balancer.pb.h"
 #include "src/core/ext/filters/client_channel/lb_policy/xds/xds_client_stats.h"
-#include "src/core/lib/iomgr/exec_ctx.h"
+#include "src/core/ext/filters/client_channel/server_address.h"
+#include "src/proto/grpc/lb/v1/load_balancer.upb.h"
 
-#define XDS_SERVICE_NAME_MAX_LENGTH 128
+namespace grpc_core {
 
-typedef grpc_lb_v1_Server_ip_address_t xds_grpclb_ip_address;
 typedef grpc_lb_v1_LoadBalanceRequest xds_grpclb_request;
-typedef grpc_lb_v1_InitialLoadBalanceResponse xds_grpclb_initial_response;
-typedef grpc_lb_v1_Server xds_grpclb_server;
-typedef google_protobuf_Duration xds_grpclb_duration;
-typedef google_protobuf_Timestamp xds_grpclb_timestamp;
 
-typedef struct {
-  xds_grpclb_server** servers;
-  size_t num_servers;
-} xds_grpclb_serverlist;
+class XdsLocalityName : public RefCounted<XdsLocalityName> {
+ public:
+  struct Less {
+    bool operator()(const RefCountedPtr<XdsLocalityName>& lhs,
+                    const RefCountedPtr<XdsLocalityName>& rhs) {
+      int cmp_result = strcmp(lhs->region_.get(), rhs->region_.get());
+      if (cmp_result != 0) return cmp_result < 0;
+      cmp_result = strcmp(lhs->zone_.get(), rhs->zone_.get());
+      if (cmp_result != 0) return cmp_result < 0;
+      return strcmp(lhs->sub_zone_.get(), rhs->sub_zone_.get()) < 0;
+    }
+  };
 
-/** Create a request for a gRPC LB service under \a lb_service_name */
-xds_grpclb_request* xds_grpclb_request_create(const char* lb_service_name);
+  XdsLocalityName(UniquePtr<char> region, UniquePtr<char> zone,
+                  UniquePtr<char> sub_zone)
+      : region_(std::move(region)),
+        zone_(std::move(zone)),
+        sub_zone_(std::move(sub_zone)) {}
+
+  bool operator==(const XdsLocalityName& other) const {
+    return strcmp(region_.get(), other.region_.get()) == 0 &&
+           strcmp(zone_.get(), other.zone_.get()) == 0 &&
+           strcmp(sub_zone_.get(), other.sub_zone_.get()) == 0;
+  }
+
+  const char* region() const { return region_.get(); }
+  const char* zone() const { return zone_.get(); }
+  const char* sub_zone() const { return sub_zone_.get(); }
+
+  const char* AsHumanReadableString() {
+    if (human_readable_string_ == nullptr) {
+      char* tmp;
+      gpr_asprintf(&tmp, "{region=\"%s\", zone=\"%s\", sub_zone=\"%s\"}",
+                   region_.get(), zone_.get(), sub_zone_.get());
+      human_readable_string_.reset(tmp);
+    }
+    return human_readable_string_.get();
+  }
+
+ private:
+  UniquePtr<char> region_;
+  UniquePtr<char> zone_;
+  UniquePtr<char> sub_zone_;
+  UniquePtr<char> human_readable_string_;
+};
+
+struct XdsLocalityInfo {
+  bool operator==(const XdsLocalityInfo& other) const {
+    return *locality_name == *other.locality_name &&
+           serverlist == other.serverlist && lb_weight == other.lb_weight &&
+           priority == other.priority;
+  }
+
+  // This comparator only compares the locality names.
+  struct Less {
+    bool operator()(const XdsLocalityInfo& lhs, const XdsLocalityInfo& rhs) {
+      return XdsLocalityName::Less()(lhs.locality_name, rhs.locality_name);
+    }
+  };
+
+  RefCountedPtr<XdsLocalityName> locality_name;
+  ServerAddressList serverlist;
+  uint32_t lb_weight;
+  uint32_t priority;
+};
+
+using XdsLocalityList = InlinedVector<XdsLocalityInfo, 1>;
+
+struct XdsUpdate {
+  XdsLocalityList locality_list;
+  // TODO(juanlishen): Pass drop_per_million when adding drop support.
+};
+
+// Creates an EDS request querying \a service_name.
+grpc_slice XdsEdsRequestCreateAndEncode(const char* service_name);
+
+// Parses the EDS response and returns the args to update locality map. If there
+// is any error, the output update is invalid.
+grpc_error* XdsEdsResponseDecodeAndParse(const grpc_slice& encoded_response,
+                                         XdsUpdate* update);
+
+// TODO(juanlishen): Delete these when LRS is added.
 xds_grpclb_request* xds_grpclb_load_report_request_create_locked(
-    grpc_core::XdsLbClientStats* client_stats);
+    grpc_core::XdsLbClientStats* client_stats, upb_arena* arena);
 
-/** Protocol Buffers v3-encode \a request */
-grpc_slice xds_grpclb_request_encode(const xds_grpclb_request* request);
-
-/** Destroy \a request */
-void xds_grpclb_request_destroy(xds_grpclb_request* request);
-
-/** Parse (ie, decode) the bytes in \a encoded_xds_grpclb_response as a \a
- * xds_grpclb_initial_response */
-xds_grpclb_initial_response* xds_grpclb_initial_response_parse(
-    const grpc_slice& encoded_xds_grpclb_response);
-
-/** Parse the list of servers from an encoded \a xds_grpclb_response */
-xds_grpclb_serverlist* xds_grpclb_response_parse_serverlist(
-    const grpc_slice& encoded_xds_grpclb_response);
-
-/** Return a copy of \a sl. The caller is responsible for calling \a
- * xds_grpclb_destroy_serverlist on the returned copy. */
-xds_grpclb_serverlist* xds_grpclb_serverlist_copy(
-    const xds_grpclb_serverlist* sl);
-
-bool xds_grpclb_serverlist_equals(const xds_grpclb_serverlist* lhs,
-                                  const xds_grpclb_serverlist* rhs);
-
-bool xds_grpclb_server_equals(const xds_grpclb_server* lhs,
-                              const xds_grpclb_server* rhs);
-
-/** Destroy \a serverlist */
-void xds_grpclb_destroy_serverlist(xds_grpclb_serverlist* serverlist);
-
-/** Compare \a lhs against \a rhs and return 0 if \a lhs and \a rhs are equal,
- * < 0 if \a lhs represents a duration shorter than \a rhs and > 0 otherwise */
-int xds_grpclb_duration_compare(const xds_grpclb_duration* lhs,
-                                const xds_grpclb_duration* rhs);
-
-grpc_millis xds_grpclb_duration_to_millis(xds_grpclb_duration* duration_pb);
-
-/** Destroy \a initial_response */
-void xds_grpclb_initial_response_destroy(xds_grpclb_initial_response* response);
+}  // namespace grpc_core
 
 #endif /* GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_LB_POLICY_XDS_XDS_LOAD_BALANCER_API_H \
         */
