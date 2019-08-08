@@ -797,10 +797,8 @@ Pod::Spec.new do |s|
   end
 
   s.prepare_command = <<-END_OF_COMMAND
-    find src/cpp/ -type f ! -path '*.grpc_back' -print0 | xargs -0 -L1 sed -E -i'.grpc_back' 's;#include "(pb(_.*)?\\.h)";#include <nanopb/\\1>;g'
-    find src/cpp/ -type f -path '*.grpc_back' -print0 | xargs -0 rm
-    find src/core/ -type f ! -path '*.grpc_back' -print0 | xargs -0 -L1 sed -E -i'.grpc_back' 's;#include "(pb(_.*)?\\.h)";#include <nanopb/\\1>;g'
-    find src/core/ -type f -path '*.grpc_back' -print0 | xargs -0 rm
+    sed -E -i '' 's;#include "(pb(_.*)?\\.h)";#if COCOAPODS==1\\\n  #include <nanopb/\\1>\\\n#else\\\n  #include "\\1"\\\n#endif;g' $(find src/core -type f -print | xargs grep -H -c '#include <nanopb/' | grep 0$ | cut -d':' -f1)
+    sed -E -i '' 's;#include "(pb(_.*)?\\.h)";#if COCOAPODS==1\\\n  #include <nanopb/\\1>\\\n#else\\\n  #include "\\1"\\\n#endif;g' $(find src/cpp -type f -print | xargs grep -H -c '#include <nanopb/' | grep 0$ | cut -d':' -f1)
     find src/core/ third_party/upb/ -type f \\( -name '*.h' -or -name '*.c' -or -name '*.cc' \\) -print0 | xargs -0 -L1 sed -E -i'.grpc_back' 's;#include "upb/(.*)";#if COCOAPODS==1\\\n  #include  "third_party/upb/upb/\\1"\\\n#else\\\n  #include  "upb/\\1"\\\n#endif;g'
     find src/core/ third_party/upb/ -type f -name '*.grpc_back' -print0 | xargs -0 rm
     find src/core/ src/cpp/ -type f \\( -name '*.h' -or -name '*.c' -or -name '*.cc' \\) -print0 | xargs -0 -L1 sed -E -i'.grpc_back' 's;#include "(.*).upb.h";#if COCOAPODS==1\\\n  #include  "src/core/ext/upb-generated/\\1.upb.h"\\\n#else\\\n  #include  "\\1.upb.h"\\\n#endif;g'
