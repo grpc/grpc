@@ -22,15 +22,14 @@ cd $(dirname $0)
 
 # Run the tests server.
 
-BINDIR=../../../bins/$CONFIG
+BAZEL=../../../tools/bazel
 
-[ -f $BINDIR/interop_server ] || {
-    echo >&2 "Can't find the test server. Make sure run_tests.py is making" \
-             "interop_server before calling this script."
-    exit 1
+[ -d Tests.xcworkspace ] || {
+    ./build_tests.sh
 }
-$BINDIR/interop_server --port=5050 --max_send_message_size=8388608 &
-$BINDIR/interop_server --port=5051 --max_send_message_size=8388608 --use_tls &
+BAZEL run -- //test/cpp/interop:interop_server --port=5050 --max_send_message_size=8388608 &
+BAZEL run -- //test/cpp/interop:interop_server --port=5051 --max_send_message_size=8388608 --use_tls &
+
 # Kill them when this script exits.
 trap 'kill -9 `jobs -p` ; echo "EXIT TIME:  $(date)"' EXIT
 

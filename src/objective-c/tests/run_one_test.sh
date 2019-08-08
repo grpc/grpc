@@ -20,16 +20,10 @@ set -ev
 
 cd $(dirname $0)
 
-BINDIR=../../../bins/$CONFIG
+BAZEL=../../../tools/bazel
 
-[ -d Tests.xcworkspace/ ] || {
+[ -d Tests.xcworkspace ] || {
     ./build_tests.sh
-}
-
-[ -f $BINDIR/interop_server ] || {
-    echo >&2 "Can't find the test server. Make sure run_tests.py is making" \
-             "interop_server before calling this script."
-    exit 1
 }
 
 [ -z "$(ps aux |egrep 'port_server\.py.*-p\s32766')" ] && {
@@ -40,8 +34,8 @@ BINDIR=../../../bins/$CONFIG
 PLAIN_PORT=$(curl localhost:32766/get)
 TLS_PORT=$(curl localhost:32766/get)
 
-$BINDIR/interop_server --port=$PLAIN_PORT --max_send_message_size=8388608 &
-$BINDIR/interop_server --port=$TLS_PORT --max_send_message_size=8388608 --use_tls &
+BAZEL run -- //test/cpp/interop:interop_server --port=$PLAIN_PORT --max_send_message_size=8388608 &
+BAZEL run -- //test/cpp/interop:interop_server --port=$TLS_PORT --max_send_message_size=8388608 --use_tls &
 
 trap 'kill -9 `jobs -p` ; echo "EXIT TIME:  $(date)"' EXIT
 
