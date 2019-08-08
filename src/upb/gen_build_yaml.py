@@ -47,7 +47,7 @@ try:
   out['filegroups'] = [{
       'name': 'upb',
       'src': srcs,
-      'uses': [ 'nanopb_headers' ],
+      'uses': [ 'upb_headers' ],
   }, {
       'name': 'upb_headers',
       'headers': hdrs,

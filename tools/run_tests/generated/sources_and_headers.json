@@ -10933,7 +10933,7 @@
   }, 
   {
     "deps": [
-      "nanopb_headers"
+      "upb_headers"
     ], 
     "headers": [], 
     "is_filegroup": true, 
