@@ -16,39 +16,41 @@
 
 #endregion
 
+using System;
 using System.Runtime.InteropServices;
 using BenchmarkDotNet.Attributes;
 using Grpc.Core.Internal;
 
 namespace Grpc.Microbenchmarks
 {
-    public class PInvokeByteArrayBenchmark : CommonThreadedBase
+    public class ScalabilityExampleBenchmark : CommonThreadedBase
     {
-        static readonly NativeMethods Native = NativeMethods.Get();
-
         protected override bool NeedsEnvironment => false;
 
-
-        [Params(0)]
-        public int PayloadSize { get; set; }
-
-        const int Iterations = 5 * 1000 * 1000;  // High number to make the overhead of RunConcurrent negligible.
+        // An example of testing scalability of a method that scales perfectly.
+        // This method provides a baseline for how well can CommonThreadedBase
+        // measure scalability.
+        const int Iterations = 50 * 1000 * 1000;  // High number to make the overhead of RunConcurrent negligible.
         [Benchmark(OperationsPerInvoke = Iterations)]
-        public void AllocFree()
+        public void PerfectScalingExample()
         {
-            RunConcurrent(RunBody);
+            RunConcurrent(() => { RunBody(); });
         }
 
-        private void RunBody()
+        private int RunBody()
         {
-            var payload = new byte[PayloadSize];
+            int result = 0;
             for (int i = 0; i < Iterations; i++)
             {
-                var gcHandle = GCHandle.Alloc(payload, GCHandleType.Pinned);
-                var payloadPtr = gcHandle.AddrOfPinnedObject();
-                Native.grpcsharp_test_nop(payloadPtr);
-                gcHandle.Free();
+                // perform some operation that is completely independent from
+                // other threads and therefore should scale perfectly if given
+                // a dedicated thread.
+                for (int j = 0; j < 100; j++)
+                {
+                   result = result ^ i ^ j ;
+                }
             }
+            return result;
         }
     }
 }

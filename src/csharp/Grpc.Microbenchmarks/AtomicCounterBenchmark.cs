@@ -16,39 +16,37 @@
 
 #endregion
 
+using System;
 using System.Runtime.InteropServices;
 using BenchmarkDotNet.Attributes;
 using Grpc.Core.Internal;
 
 namespace Grpc.Microbenchmarks
 {
-    public class PInvokeByteArrayBenchmark : CommonThreadedBase
+    public class AtomicCounterBenchmark : CommonThreadedBase
     {
-        static readonly NativeMethods Native = NativeMethods.Get();
-
         protected override bool NeedsEnvironment => false;
 
-
-        [Params(0)]
-        public int PayloadSize { get; set; }
-
-        const int Iterations = 5 * 1000 * 1000;  // High number to make the overhead of RunConcurrent negligible.
+        // An example of testing scalability of a method that scales perfectly.
+        // This method provides a baseline for how well can CommonThreadedBase
+        // measure scalability.
+        const int Iterations = 20 * 1000 * 1000;  // High number to make the overhead of RunConcurrent negligible.
         [Benchmark(OperationsPerInvoke = Iterations)]
-        public void AllocFree()
+        
+        public void SharedAtomicCounterIncrement()
         {
-            RunConcurrent(RunBody);
+            RunConcurrent(() => { RunBody(); });
         }
 
-        private void RunBody()
+        readonly AtomicCounter sharedCounter = new AtomicCounter();
+
+        private int RunBody()
         {
-            var payload = new byte[PayloadSize];
             for (int i = 0; i < Iterations; i++)
             {
-                var gcHandle = GCHandle.Alloc(payload, GCHandleType.Pinned);
-                var payloadPtr = gcHandle.AddrOfPinnedObject();
-                Native.grpcsharp_test_nop(payloadPtr);
-                gcHandle.Free();
+                sharedCounter.Increment();
             }
+            return (int) sharedCounter.Count;
         }
     }
 }
