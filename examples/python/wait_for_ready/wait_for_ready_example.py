@@ -28,8 +28,6 @@ from examples import helloworld_pb2_grpc
 _LOGGER = logging.getLogger(__name__)
 _LOGGER.setLevel(logging.INFO)
 
-_ONE_DAY_IN_SECONDS = 60 * 60 * 24
-
 
 @contextmanager
 def get_free_loopback_tcp_port():

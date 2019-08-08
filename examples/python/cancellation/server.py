@@ -19,9 +19,7 @@ from __future__ import print_function
 
 from concurrent import futures
 import argparse
-import contextlib
 import logging
-import time
 import threading
 
 import grpc
@@ -32,7 +30,6 @@ from examples.python.cancellation import hash_name_pb2_grpc
 
 _LOGGER = logging.getLogger(__name__)
 _SERVER_HOST = 'localhost'
-_ONE_DAY_IN_SECONDS = 60 * 60 * 24
 
 _DESCRIPTION = "A server for finding hashes similar to names."
 
@@ -88,7 +85,6 @@ class HashFinder(hash_name_pb2_grpc.HashFinderServicer):
         _LOGGER.debug("Regained servicer thread.")
 
 
-@contextlib.contextmanager
 def _running_server(port, maximum_hashes):
     # We use only a single servicer thread here to demonstrate that, if managed
     # carefully, cancelled RPCs can need not continue occupying servicers
@@ -101,12 +97,7 @@ def _running_server(port, maximum_hashes):
     actual_port = server.add_insecure_port(address)
     server.start()
     print("Server listening at '{}'".format(address))
-    try:
-        yield actual_port
-    except KeyboardInterrupt:
-        pass
-    finally:
-        server.stop(None)
+    return server
 
 
 def main():
@@ -124,9 +115,8 @@ def main():
         nargs='?',
         help='The maximum number of hashes to search before cancelling.')
     args = parser.parse_args()
-    with _running_server(args.port, args.maximum_hashes):
-        while True:
-            time.sleep(_ONE_DAY_IN_SECONDS)
+    server = _running_server(args.port, args.maximum_hashes)
+    server.wait_for_termination()
 
 
 if __name__ == "__main__":
