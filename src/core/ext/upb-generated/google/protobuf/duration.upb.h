@@ -10,12 +10,12 @@
 #define GOOGLE_PROTOBUF_DURATION_PROTO_UPB_H_
 
 #include "upb/generated_util.h"
-
 #include "upb/msg.h"
-
 #include "upb/decode.h"
 #include "upb/encode.h"
+
 #include "upb/port_def.inc"
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -23,8 +23,6 @@ extern "C" {
 struct google_protobuf_Duration;
 typedef struct google_protobuf_Duration google_protobuf_Duration;
 extern const upb_msglayout google_protobuf_Duration_msginit;
-
-/* Enums */
 
 
 /* google.protobuf.Duration */
@@ -35,7 +33,7 @@ UPB_INLINE google_protobuf_Duration *google_protobuf_Duration_new(upb_arena *are
 UPB_INLINE google_protobuf_Duration *google_protobuf_Duration_parse(const char *buf, size_t size,
                         upb_arena *arena) {
   google_protobuf_Duration *ret = google_protobuf_Duration_new(arena);
-  return (ret && upb_decode(buf, size, ret, &google_protobuf_Duration_msginit)) ? ret : NULL;
+  return (ret && upb_decode(buf, size, ret, &google_protobuf_Duration_msginit, arena)) ? ret : NULL;
 }
 UPB_INLINE char *google_protobuf_Duration_serialize(const google_protobuf_Duration *msg, upb_arena *arena, size_t *len) {
   return upb_encode(msg, &google_protobuf_Duration_msginit, arena, len);
@@ -50,7 +48,6 @@ UPB_INLINE void google_protobuf_Duration_set_seconds(google_protobuf_Duration *m
 UPB_INLINE void google_protobuf_Duration_set_nanos(google_protobuf_Duration *msg, int32_t value) {
   UPB_FIELD_AT(msg, int32_t, UPB_SIZE(8, 8)) = value;
 }
-
 
 #ifdef __cplusplus
 }  /* extern "C" */

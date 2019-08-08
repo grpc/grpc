@@ -10,12 +10,12 @@
 #define ENVOY_TYPE_RANGE_PROTO_UPB_H_
 
 #include "upb/generated_util.h"
-
 #include "upb/msg.h"
-
 #include "upb/decode.h"
 #include "upb/encode.h"
+
 #include "upb/port_def.inc"
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -27,8 +27,6 @@ typedef struct envoy_type_DoubleRange envoy_type_DoubleRange;
 extern const upb_msglayout envoy_type_Int64Range_msginit;
 extern const upb_msglayout envoy_type_DoubleRange_msginit;
 
-/* Enums */
-
 
 /* envoy.type.Int64Range */
 
@@ -38,7 +36,7 @@ UPB_INLINE envoy_type_Int64Range *envoy_type_Int64Range_new(upb_arena *arena) {
 UPB_INLINE envoy_type_Int64Range *envoy_type_Int64Range_parse(const char *buf, size_t size,
                         upb_arena *arena) {
   envoy_type_Int64Range *ret = envoy_type_Int64Range_new(arena);
-  return (ret && upb_decode(buf, size, ret, &envoy_type_Int64Range_msginit)) ? ret : NULL;
+  return (ret && upb_decode(buf, size, ret, &envoy_type_Int64Range_msginit, arena)) ? ret : NULL;
 }
 UPB_INLINE char *envoy_type_Int64Range_serialize(const envoy_type_Int64Range *msg, upb_arena *arena, size_t *len) {
   return upb_encode(msg, &envoy_type_Int64Range_msginit, arena, len);
@@ -54,7 +52,6 @@ UPB_INLINE void envoy_type_Int64Range_set_end(envoy_type_Int64Range *msg, int64_
   UPB_FIELD_AT(msg, int64_t, UPB_SIZE(8, 8)) = value;
 }
 
-
 /* envoy.type.DoubleRange */
 
 UPB_INLINE envoy_type_DoubleRange *envoy_type_DoubleRange_new(upb_arena *arena) {
@@ -63,7 +60,7 @@ UPB_INLINE envoy_type_DoubleRange *envoy_type_DoubleRange_new(upb_arena *arena) 
 UPB_INLINE envoy_type_DoubleRange *envoy_type_DoubleRange_parse(const char *buf, size_t size,
                         upb_arena *arena) {
   envoy_type_DoubleRange *ret = envoy_type_DoubleRange_new(arena);
-  return (ret && upb_decode(buf, size, ret, &envoy_type_DoubleRange_msginit)) ? ret : NULL;
+  return (ret && upb_decode(buf, size, ret, &envoy_type_DoubleRange_msginit, arena)) ? ret : NULL;
 }
 UPB_INLINE char *envoy_type_DoubleRange_serialize(const envoy_type_DoubleRange *msg, upb_arena *arena, size_t *len) {
   return upb_encode(msg, &envoy_type_DoubleRange_msginit, arena, len);
@@ -78,7 +75,6 @@ UPB_INLINE void envoy_type_DoubleRange_set_start(envoy_type_DoubleRange *msg, do
 UPB_INLINE void envoy_type_DoubleRange_set_end(envoy_type_DoubleRange *msg, double value) {
   UPB_FIELD_AT(msg, double, UPB_SIZE(8, 8)) = value;
 }
-
 
 #ifdef __cplusplus
 }  /* extern "C" */

@@ -10,12 +10,12 @@
 #define GOOGLE_API_HTTP_PROTO_UPB_H_
 
 #include "upb/generated_util.h"
-
 #include "upb/msg.h"
-
 #include "upb/decode.h"
 #include "upb/encode.h"
+
 #include "upb/port_def.inc"
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -30,8 +30,6 @@ extern const upb_msglayout google_api_Http_msginit;
 extern const upb_msglayout google_api_HttpRule_msginit;
 extern const upb_msglayout google_api_CustomHttpPattern_msginit;
 
-/* Enums */
-
 
 /* google.api.Http */
 
@@ -41,7 +39,7 @@ UPB_INLINE google_api_Http *google_api_Http_new(upb_arena *arena) {
 UPB_INLINE google_api_Http *google_api_Http_parse(const char *buf, size_t size,
                         upb_arena *arena) {
   google_api_Http *ret = google_api_Http_new(arena);
-  return (ret && upb_decode(buf, size, ret, &google_api_Http_msginit)) ? ret : NULL;
+  return (ret && upb_decode(buf, size, ret, &google_api_Http_msginit, arena)) ? ret : NULL;
 }
 UPB_INLINE char *google_api_Http_serialize(const google_api_Http *msg, upb_arena *arena, size_t *len) {
   return upb_encode(msg, &google_api_Http_msginit, arena, len);
@@ -67,7 +65,6 @@ UPB_INLINE void google_api_Http_set_fully_decode_reserved_expansion(google_api_H
   UPB_FIELD_AT(msg, bool, UPB_SIZE(0, 0)) = value;
 }
 
-
 /* google.api.HttpRule */
 
 UPB_INLINE google_api_HttpRule *google_api_HttpRule_new(upb_arena *arena) {
@@ -76,7 +73,7 @@ UPB_INLINE google_api_HttpRule *google_api_HttpRule_new(upb_arena *arena) {
 UPB_INLINE google_api_HttpRule *google_api_HttpRule_parse(const char *buf, size_t size,
                         upb_arena *arena) {
   google_api_HttpRule *ret = google_api_HttpRule_new(arena);
-  return (ret && upb_decode(buf, size, ret, &google_api_HttpRule_msginit)) ? ret : NULL;
+  return (ret && upb_decode(buf, size, ret, &google_api_HttpRule_msginit, arena)) ? ret : NULL;
 }
 UPB_INLINE char *google_api_HttpRule_serialize(const google_api_HttpRule *msg, upb_arena *arena, size_t *len) {
   return upb_encode(msg, &google_api_HttpRule_msginit, arena, len);
@@ -160,7 +157,6 @@ UPB_INLINE void google_api_HttpRule_set_response_body(google_api_HttpRule *msg, 
   UPB_FIELD_AT(msg, upb_strview, UPB_SIZE(16, 32)) = value;
 }
 
-
 /* google.api.CustomHttpPattern */
 
 UPB_INLINE google_api_CustomHttpPattern *google_api_CustomHttpPattern_new(upb_arena *arena) {
@@ -169,7 +165,7 @@ UPB_INLINE google_api_CustomHttpPattern *google_api_CustomHttpPattern_new(upb_ar
 UPB_INLINE google_api_CustomHttpPattern *google_api_CustomHttpPattern_parse(const char *buf, size_t size,
                         upb_arena *arena) {
   google_api_CustomHttpPattern *ret = google_api_CustomHttpPattern_new(arena);
-  return (ret && upb_decode(buf, size, ret, &google_api_CustomHttpPattern_msginit)) ? ret : NULL;
+  return (ret && upb_decode(buf, size, ret, &google_api_CustomHttpPattern_msginit, arena)) ? ret : NULL;
 }
 UPB_INLINE char *google_api_CustomHttpPattern_serialize(const google_api_CustomHttpPattern *msg, upb_arena *arena, size_t *len) {
   return upb_encode(msg, &google_api_CustomHttpPattern_msginit, arena, len);
@@ -184,7 +180,6 @@ UPB_INLINE void google_api_CustomHttpPattern_set_kind(google_api_CustomHttpPatte
 UPB_INLINE void google_api_CustomHttpPattern_set_path(google_api_CustomHttpPattern *msg, upb_strview value) {
   UPB_FIELD_AT(msg, upb_strview, UPB_SIZE(8, 16)) = value;
 }
-
 
 #ifdef __cplusplus
 }  /* extern "C" */
