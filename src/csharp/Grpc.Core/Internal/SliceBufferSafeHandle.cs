@@ -39,6 +39,8 @@ namespace Grpc.Core.Internal
         private IntPtr tailSpacePtr;
         private int tailSpaceLen;
 
+        private SliceMemoryManager memoryManagerLazy;
+
         private SliceBufferSafeHandle()
         {
         }
@@ -63,14 +65,20 @@ namespace Grpc.Core.Internal
             GrpcPreconditions.CheckArgument(tailSpaceLen >= count);
             tailSpaceLen = tailSpaceLen - count;
             tailSpacePtr += count;
+            memoryManagerLazy?.Reset();
         }
 
         // provides access to the "tail space" of this buffer.
         // Use GetSpan when possible for better efficiency.
         public Memory<byte> GetMemory(int sizeHint = 0)
         {
-            // TODO: implement
-            throw new NotImplementedException();
+            GetSpan(sizeHint);
+            if (memoryManagerLazy == null)
+            {
+                memoryManagerLazy = new SliceMemoryManager();
+            }
+            memoryManagerLazy.Reset(new Slice(tailSpacePtr, tailSpaceLen));
+            return memoryManagerLazy.Memory;
         }
 
         // provides access to the "tail space" of this buffer.
@@ -97,6 +105,7 @@ namespace Grpc.Core.Internal
             // deletes all the data in the slice buffer
             tailSpacePtr = IntPtr.Zero;
             tailSpaceLen = 0;
+            memoryManagerLazy?.Reset();
             Native.grpcsharp_slice_buffer_reset_and_unref(this);
         }
 
