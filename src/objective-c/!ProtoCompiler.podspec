@@ -134,5 +134,5 @@ Pod::Spec.new do |s|
       mv bin/protoc .
       mv include/google .
     fi
-  CMD 
+  CMD
 end
