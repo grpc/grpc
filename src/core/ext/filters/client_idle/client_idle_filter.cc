@@ -72,13 +72,13 @@ namespace {
 
   TIMER_PENDING_CALLS_ACTIVE: The state after the timer is set and at least one
   call has arrived after the timer is set. The channel must have 1 or 1+ active
-  calls in this state. If the timer is fired in this state, we won't reschudle
+  calls in this state. If the timer is fired in this state, we won't reschedule
   it.
 
   TIMER_PENDING_CALLS_SEEN_SINCE_TIMER_START: The state after the timer is set
   and at least one call has arrived after the timer is set, BUT the channel
   currently has 0 active call. If the timer is fired in this state, we will
-  reschudle it according to the finish time of the latest call.
+  reschedule it according to the finish time of the latest call.
 
   idle_timer_ will not be cancelled (unless the channel is shutting down).
   If the timer callback is called when the idle_timer_ is valid (i.e. idle_state
