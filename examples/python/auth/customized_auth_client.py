@@ -29,8 +29,6 @@ from examples.python.auth import _credentials
 _LOGGER = logging.getLogger(__name__)
 _LOGGER.setLevel(logging.INFO)
 
-_ONE_DAY_IN_SECONDS = 60 * 60 * 24
-
 _SERVER_ADDR_TEMPLATE = 'localhost:%d'
 _SIGNATURE_HEADER_KEY = 'x-signature'
 

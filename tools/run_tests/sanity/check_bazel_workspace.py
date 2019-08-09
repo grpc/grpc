@@ -115,6 +115,9 @@ class BazelEvalState(object):
             return
         self.names_and_urls[args['name']] = args['remote']
 
+    def grpc_python_deps(self):
+        pass
+
 
 # Parse git hashes from bazel/grpc_deps.bzl {new_}http_archive rules
 with open(os.path.join('bazel', 'grpc_deps.bzl'), 'r') as f:
@@ -131,6 +134,7 @@ build_rules = {
     'http_archive': lambda **args: eval_state.http_archive(**args),
     'load': lambda a, b: None,
     'git_repository': lambda **args: eval_state.git_repository(**args),
+    'grpc_python_deps': lambda: None,
 }
 exec (bazel_file) in build_rules
 for name in _GRPC_DEP_NAMES:
@@ -173,6 +177,7 @@ for name in _GRPC_DEP_NAMES:
         'http_archive': lambda **args: state.http_archive(**args),
         'load': lambda a, b: None,
         'git_repository': lambda **args: state.git_repository(**args),
+        'grpc_python_deps': lambda *args, **kwargs: None,
     }
     exec (bazel_file) in rules
     assert name not in names_and_urls_with_overridden_name.keys()

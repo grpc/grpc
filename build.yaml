@@ -17,17 +17,6 @@ settings:
   g_stands_for: ganges
   version: 1.24.0-dev
 filegroups:
-- name: alts_proto
-  headers:
-  - src/core/tsi/alts/handshaker/altscontext.pb.h
-  - src/core/tsi/alts/handshaker/handshaker.pb.h
-  - src/core/tsi/alts/handshaker/transport_security_common.pb.h
-  src:
-  - src/core/tsi/alts/handshaker/altscontext.pb.c
-  - src/core/tsi/alts/handshaker/handshaker.pb.c
-  - src/core/tsi/alts/handshaker/transport_security_common.pb.c
-  uses:
-  - nanopb
 - name: alts_tsi
   headers:
   - src/core/tsi/alts/crypt/gsec.h
@@ -73,21 +62,21 @@ filegroups:
   - grpc_shadow_boringssl
 - name: alts_upb
   headers:
-  - src/core/ext/upb-generated/altscontext.upb.h
-  - src/core/ext/upb-generated/handshaker.upb.h
-  - src/core/ext/upb-generated/transport_security_common.upb.h
+  - src/core/ext/upb-generated/src/proto/grpc/gcp/altscontext.upb.h
+  - src/core/ext/upb-generated/src/proto/grpc/gcp/handshaker.upb.h
+  - src/core/ext/upb-generated/src/proto/grpc/gcp/transport_security_common.upb.h
   src:
-  - src/core/ext/upb-generated/altscontext.upb.c
-  - src/core/ext/upb-generated/handshaker.upb.c
-  - src/core/ext/upb-generated/transport_security_common.upb.c
+  - src/core/ext/upb-generated/src/proto/grpc/gcp/altscontext.upb.c
+  - src/core/ext/upb-generated/src/proto/grpc/gcp/handshaker.upb.c
+  - src/core/ext/upb-generated/src/proto/grpc/gcp/transport_security_common.upb.c
+  uses:
+  - upb
 - name: alts_util
   public_headers:
   - include/grpc/grpc_security.h
   headers:
   - src/core/lib/security/credentials/alts/check_gcp_environment.h
   - src/core/lib/security/credentials/alts/grpc_alts_credentials_options.h
-  - src/core/tsi/alts/handshaker/alts_handshaker_service_api.h
-  - src/core/tsi/alts/handshaker/alts_handshaker_service_api_util.h
   - src/core/tsi/alts/handshaker/alts_tsi_utils.h
   - src/core/tsi/alts/handshaker/transport_security_common_api.h
   src:
@@ -98,15 +87,13 @@ filegroups:
   - src/core/lib/security/credentials/alts/grpc_alts_credentials_client_options.cc
   - src/core/lib/security/credentials/alts/grpc_alts_credentials_options.cc
   - src/core/lib/security/credentials/alts/grpc_alts_credentials_server_options.cc
-  - src/core/tsi/alts/handshaker/alts_handshaker_service_api.cc
-  - src/core/tsi/alts/handshaker/alts_handshaker_service_api_util.cc
   - src/core/tsi/alts/handshaker/alts_tsi_utils.cc
   - src/core/tsi/alts/handshaker/transport_security_common_api.cc
   uses:
-  - alts_proto
+  - alts_upb
   - grpc_base
   - tsi_interface
-  - nanopb
+  - upb
 - name: census
   public_headers:
   - include/grpc/census.h
@@ -121,8 +108,67 @@ filegroups:
   - test/core/util/cmdline.cc
   uses:
   - gpr_base_headers
+- name: envoy_ads_upb
+  headers:
+  - src/core/ext/upb-generated/envoy/api/v2/auth/cert.upb.h
+  - src/core/ext/upb-generated/envoy/api/v2/cds.upb.h
+  - src/core/ext/upb-generated/envoy/api/v2/cluster/circuit_breaker.upb.h
+  - src/core/ext/upb-generated/envoy/api/v2/cluster/outlier_detection.upb.h
+  - src/core/ext/upb-generated/envoy/api/v2/discovery.upb.h
+  - src/core/ext/upb-generated/envoy/api/v2/eds.upb.h
+  - src/core/ext/upb-generated/envoy/api/v2/endpoint/endpoint.upb.h
+  - src/core/ext/upb-generated/envoy/api/v2/endpoint/load_report.upb.h
+  - src/core/ext/upb-generated/envoy/service/discovery/v2/ads.upb.h
+  - src/core/ext/upb-generated/envoy/service/load_stats/v2/lrs.upb.h
+  src:
+  - src/core/ext/upb-generated/envoy/api/v2/auth/cert.upb.c
+  - src/core/ext/upb-generated/envoy/api/v2/cds.upb.c
+  - src/core/ext/upb-generated/envoy/api/v2/cluster/circuit_breaker.upb.c
+  - src/core/ext/upb-generated/envoy/api/v2/cluster/outlier_detection.upb.c
+  - src/core/ext/upb-generated/envoy/api/v2/discovery.upb.c
+  - src/core/ext/upb-generated/envoy/api/v2/eds.upb.c
+  - src/core/ext/upb-generated/envoy/api/v2/endpoint/endpoint.upb.c
+  - src/core/ext/upb-generated/envoy/api/v2/endpoint/load_report.upb.c
+  - src/core/ext/upb-generated/envoy/service/discovery/v2/ads.upb.c
+  - src/core/ext/upb-generated/envoy/service/load_stats/v2/lrs.upb.c
+  uses:
+  - envoy_core_upb
+  - envoy_type_upb
+  - google_api_upb
+  - proto_gen_validate_upb
+- name: envoy_core_upb
+  headers:
+  - src/core/ext/upb-generated/envoy/api/v2/core/address.upb.h
+  - src/core/ext/upb-generated/envoy/api/v2/core/base.upb.h
+  - src/core/ext/upb-generated/envoy/api/v2/core/config_source.upb.h
+  - src/core/ext/upb-generated/envoy/api/v2/core/grpc_service.upb.h
+  - src/core/ext/upb-generated/envoy/api/v2/core/health_check.upb.h
+  - src/core/ext/upb-generated/envoy/api/v2/core/protocol.upb.h
+  src:
+  - src/core/ext/upb-generated/envoy/api/v2/core/address.upb.c
+  - src/core/ext/upb-generated/envoy/api/v2/core/base.upb.c
+  - src/core/ext/upb-generated/envoy/api/v2/core/config_source.upb.c
+  - src/core/ext/upb-generated/envoy/api/v2/core/grpc_service.upb.c
+  - src/core/ext/upb-generated/envoy/api/v2/core/health_check.upb.c
+  - src/core/ext/upb-generated/envoy/api/v2/core/protocol.upb.c
+  uses:
+  - envoy_type_upb
+  - google_api_upb
+  - proto_gen_validate_upb
+- name: envoy_type_upb
+  headers:
+  - src/core/ext/upb-generated/envoy/type/percent.upb.h
+  - src/core/ext/upb-generated/envoy/type/range.upb.h
+  src:
+  - src/core/ext/upb-generated/envoy/type/percent.upb.c
+  - src/core/ext/upb-generated/envoy/type/range.upb.c
+  uses:
+  - google_api_upb
+  - proto_gen_validate_upb
 - name: google_api_upb
   headers:
+  - src/core/ext/upb-generated/google/api/annotations.upb.h
+  - src/core/ext/upb-generated/google/api/http.upb.h
   - src/core/ext/upb-generated/google/protobuf/any.upb.h
   - src/core/ext/upb-generated/google/protobuf/descriptor.upb.h
   - src/core/ext/upb-generated/google/protobuf/duration.upb.h
@@ -130,7 +176,10 @@ filegroups:
   - src/core/ext/upb-generated/google/protobuf/struct.upb.h
   - src/core/ext/upb-generated/google/protobuf/timestamp.upb.h
   - src/core/ext/upb-generated/google/protobuf/wrappers.upb.h
+  - src/core/ext/upb-generated/google/rpc/status.upb.h
   src:
+  - src/core/ext/upb-generated/google/api/annotations.upb.c
+  - src/core/ext/upb-generated/google/api/http.upb.c
   - src/core/ext/upb-generated/google/protobuf/any.upb.c
   - src/core/ext/upb-generated/google/protobuf/descriptor.upb.c
   - src/core/ext/upb-generated/google/protobuf/duration.upb.c
@@ -138,6 +187,9 @@ filegroups:
   - src/core/ext/upb-generated/google/protobuf/struct.upb.c
   - src/core/ext/upb-generated/google/protobuf/timestamp.upb.c
   - src/core/ext/upb-generated/google/protobuf/wrappers.upb.c
+  - src/core/ext/upb-generated/google/rpc/status.upb.c
+  uses:
+  - upb
 - name: gpr_base
   src:
   - src/core/lib/gpr/alloc.cc
@@ -660,7 +712,7 @@ filegroups:
   uses:
   - grpc_base
   - grpc_deadline_filter
-  - health_proto
+  - grpc_health_upb
 - name: grpc_client_idle_filter
   src:
   - src/core/ext/filters/client_idle/client_idle_filter.cc
@@ -689,9 +741,11 @@ filegroups:
   - grpc_base
 - name: grpc_health_upb
   headers:
-  - src/core/ext/upb-generated/grpc/health/v1/health.upb.c
+  - src/core/ext/upb-generated/src/proto/grpc/health/v1/health.upb.h
   src:
-  - src/core/ext/upb-generated/grpc/health/v1/health.upb.h
+  - src/core/ext/upb-generated/src/proto/grpc/health/v1/health.upb.c
+  uses:
+  - upb
 - name: grpc_http_filters
   headers:
   - src/core/ext/filters/http/client/http_client_filter.h
@@ -722,9 +776,9 @@ filegroups:
   uses:
   - grpc_base
   - grpc_client_channel
-  - nanopb
+  - grpc_lb_upb
   - grpc_resolver_fake
-  - grpclb_proto
+  - upb
 - name: grpc_lb_policy_grpclb_secure
   headers:
   - src/core/ext/filters/client_channel/lb_policy/grpclb/client_load_reporting_filter.h
@@ -741,11 +795,11 @@ filegroups:
   plugin: grpc_lb_policy_grpclb
   uses:
   - grpc_base
-  - grpc_secure
   - grpc_client_channel
-  - nanopb
+  - grpc_lb_upb
   - grpc_resolver_fake
-  - grpclb_proto
+  - grpc_secure
+  - upb
 - name: grpc_lb_policy_pick_first
   src:
   - src/core/ext/filters/client_channel/lb_policy/pick_first/pick_first.cc
@@ -775,11 +829,11 @@ filegroups:
   - src/core/ext/filters/client_channel/lb_policy/xds/xds_load_balancer_api.cc
   plugin: grpc_lb_policy_xds
   uses:
+  - envoy_ads_upb
   - grpc_base
   - grpc_client_channel
-  - nanopb
   - grpc_resolver_fake
-  - grpclb_proto
+  - grpc_lb_upb
 - name: grpc_lb_policy_xds_secure
   headers:
   - src/core/ext/filters/client_channel/lb_policy/xds/xds.h
@@ -793,12 +847,12 @@ filegroups:
   - src/core/ext/filters/client_channel/lb_policy/xds/xds_load_balancer_api.cc
   plugin: grpc_lb_policy_xds
   uses:
+  - envoy_ads_upb
   - grpc_base
-  - grpc_secure
   - grpc_client_channel
-  - nanopb
   - grpc_resolver_fake
-  - grpclb_proto
+  - grpc_secure
+  - grpc_lb_upb
 - name: grpc_lb_subchannel_list
   headers:
   - src/core/ext/filters/client_channel/lb_policy/subchannel_list.h
@@ -807,11 +861,12 @@ filegroups:
   - grpc_client_channel
 - name: grpc_lb_upb
   headers:
-  - src/core/ext/upb-generated/grpc/lb/v1/load_balancer.upb.h
+  - src/core/ext/upb-generated/src/proto/grpc/lb/v1/load_balancer.upb.h
   src:
-  - src/core/ext/upb-generated/grpc/lb/v1/load_balancer.upb.c
+  - src/core/ext/upb-generated/src/proto/grpc/lb/v1/load_balancer.upb.c
   uses:
   - google_api_upb
+  - upb
 - name: grpc_max_age_filter
   headers:
   - src/core/ext/filters/max_age/max_age_filter.h
@@ -1191,24 +1246,6 @@ filegroups:
   uses:
   - grpc_base
   - grpc_server_backward_compatibility
-- name: grpclb_proto
-  headers:
-  - src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/google/protobuf/duration.pb.h
-  - src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/google/protobuf/timestamp.pb.h
-  - src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/load_balancer.pb.h
-  src:
-  - src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/google/protobuf/duration.pb.c
-  - src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/google/protobuf/timestamp.pb.c
-  - src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/load_balancer.pb.c
-  uses:
-  - nanopb
-- name: health_proto
-  headers:
-  - src/core/ext/filters/client_channel/health/health.pb.h
-  src:
-  - src/core/ext/filters/client_channel/health/health.pb.c
-  uses:
-  - nanopb
 - name: nanopb
   src:
   - third_party/nanopb/pb_common.c
@@ -1222,6 +1259,15 @@ filegroups:
   - third_party/nanopb/pb_common.h
   - third_party/nanopb/pb_decode.h
   - third_party/nanopb/pb_encode.h
+- name: proto_gen_validate_upb
+  headers:
+  - src/core/ext/upb-generated/gogoproto/gogo.upb.h
+  - src/core/ext/upb-generated/validate/validate.upb.h
+  src:
+  - src/core/ext/upb-generated/gogoproto/gogo.upb.c
+  - src/core/ext/upb-generated/validate/validate.upb.c
+  uses:
+  - google_api_upb
 - name: transport_security_test_lib
   build: test
   headers:
@@ -1540,11 +1586,11 @@ filegroups:
   uses:
   - gpr_base_headers
   - grpc_base_headers
+  - grpc_health_upb
   - grpc_transport_inproc_headers
   - grpc++_codegen_base
   - grpc++_internal_hdrs_only
   - nanopb_headers
-  - health_proto
 - name: grpc++_config_proto
   language: c++
   public_headers:
@@ -3970,15 +4016,6 @@ targets:
   - alts_test_util
   - gpr
   - grpc
-- name: alts_handshaker_service_api_test
-  build: test
-  language: c++
-  src:
-  - test/core/tsi/alts/handshaker/alts_handshaker_service_api_test.cc
-  deps:
-  - alts_test_util
-  - gpr
-  - grpc
 - name: alts_iovec_record_protocol_test
   build: test
   language: c++
@@ -5990,7 +6027,7 @@ targets:
   build: test
   language: c++
   src:
-  - src/proto/grpc/lb/v1/load_balancer.proto
+  - src/proto/grpc/lb/v2/xds_for_test.proto
   - test/cpp/end2end/xds_end2end_test.cc
   deps:
   - grpc++_test_util
@@ -6195,13 +6232,13 @@ defaults:
     CXXFLAGS: $(W_NO_CXX14_COMPAT)
   global:
     COREFLAGS: -fno-rtti -fno-exceptions
-    CPPFLAGS: -g -Wall -Wextra -Werror -Wno-long-long -Wno-unused-parameter -DOSATOMIC_USE_INLINED=1
-      -Wno-deprecated-declarations -Ithird_party/nanopb -DPB_FIELD_32BIT
+    CPPFLAGS: -g -Wall -Wextra -Werror -Wno-unknown-warning-option -Wno-long-long
+      -Wno-unused-parameter -Wno-deprecated-declarations -Wno-sign-conversion -Wno-shadow
+      -Wno-conversion -Wno-implicit-fallthrough -Wno-sign-compare -Wno-missing-field-initializers
+      -Wno-maybe-uninitialized -DPB_FIELD_32BIT -DOSATOMIC_USE_INLINED=1 -Ithird_party/nanopb
+      -Ithird_party/upb -Isrc/core/ext/upb-generated
     CXXFLAGS: -Wnon-virtual-dtor
     LDFLAGS: -g
-  upb:
-    CFLAGS: -Wno-sign-conversion -Wno-shadow -Wno-conversion -Wno-implicit-fallthrough
-      -Wno-sign-compare -Wno-missing-field-initializers
   zlib:
     CFLAGS: -Wno-sign-conversion -Wno-conversion -Wno-unused-value -Wno-implicit-function-declaration
       -Wno-implicit-fallthrough $(W_NO_SHIFT_NEGATIVE_VALUE) -fvisibility=hidden

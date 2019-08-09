@@ -10,9 +10,7 @@ proto_library(
 
 py_proto_library(
     name = "empty2_proto",
-    deps = [
-        ":empty2_proto_descriptor",
-    ],
+    srcs = [":empty2_proto_descriptor"],
 )
 
 proto_library(
@@ -25,8 +23,6 @@ proto_library(
 
 py_proto_library(
     name = "empty2_extensions_proto",
-    deps = [
-        ":empty2_extensions_proto_descriptor",
-    ],
+    srcs = [":empty2_extensions_proto_descriptor"],
 )
 

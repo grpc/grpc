@@ -16,7 +16,6 @@
   cpu_cost: 3
 - script: tools/distrib/check_copyright.py
 - script: tools/distrib/check_include_guards.py
-- script: tools/distrib/check_nanopb_output.sh
 - script: tools/distrib/check_trailing_newlines.sh
 - script: tools/distrib/check_upb_output.sh
 - script: tools/distrib/clang_format_code.sh

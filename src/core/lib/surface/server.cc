@@ -256,7 +256,7 @@ struct grpc_server {
 
   listener* listeners;
   int listeners_destroyed;
-  gpr_refcount internal_refcount;
+  grpc_core::RefCount internal_refcount;
 
   /** when did we print the last shutdown progress message */
   gpr_timespec last_shutdown_message_time;
@@ -400,9 +400,7 @@ static void request_matcher_kill_requests(grpc_server* server,
  * server proper
  */
 
-static void server_ref(grpc_server* server) {
-  gpr_ref(&server->internal_refcount);
-}
+static void server_ref(grpc_server* server) { server->internal_refcount.Ref(); }
 
 static void server_delete(grpc_server* server) {
   registered_method* rm;
@@ -434,7 +432,7 @@ static void server_delete(grpc_server* server) {
 }
 
 static void server_unref(grpc_server* server) {
-  if (gpr_unref(&server->internal_refcount)) {
+  if (GPR_UNLIKELY(server->internal_refcount.Unref())) {
     server_delete(server);
   }
 }
@@ -1031,7 +1029,7 @@ grpc_server* grpc_server_create(const grpc_channel_args* args, void* reserved) {
   gpr_cv_init(&server->starting_cv);
 
   /* decremented by grpc_server_destroy */
-  gpr_ref_init(&server->internal_refcount, 1);
+  new (&server->internal_refcount) grpc_core::RefCount();
   server->root_channel_data.next = server->root_channel_data.prev =
       &server->root_channel_data;
 
