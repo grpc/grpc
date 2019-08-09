@@ -17,6 +17,7 @@
  */
 
 #import <GRPCClient/GRPCCall.h>
+#import <GRPCClient/version.h>
 #import <ProtoRPC/ProtoMethod.h>
 #import <XCTest/XCTest.h>
 #import "src/objective-c/tests/RemoteTestClient/Messages.pbobjc.h"
@@ -24,7 +25,6 @@
 #include <grpc/grpc.h>
 #include <grpc/support/port_platform.h>
 
-#import "../version.h"
 
 // The server address is derived from preprocessor macro, which is
 // in turn derived from environment variable of the same name.

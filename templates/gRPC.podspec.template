@@ -79,7 +79,8 @@
                                'src/objective-c/GRPCClient/GRPCCallOptions.h',
                                'src/objective-c/GRPCClient/GRPCInterceptor.h',
                                'src/objective-c/GRPCClient/GRPCTransport.h',
-                               'src/objective-c/GRPCClient/GRPCDispatchable.h'
+                               'src/objective-c/GRPCClient/GRPCDispatchable.h',
+                               'src/objective-c/GRPCClient/version.h'
 
       ss.source_files = 'src/objective-c/GRPCClient/GRPCCall.h',
                         'src/objective-c/GRPCClient/GRPCCall.m',
@@ -94,7 +95,8 @@
                         'src/objective-c/GRPCClient/GRPCTransport.m',
                         'src/objective-c/GRPCClient/internal/*.h',
                         'src/objective-c/GRPCClient/private/GRPCTransport+Private.h',
-                        'src/objective-c/GRPCClient/private/GRPCTransport+Private.m'
+                        'src/objective-c/GRPCClient/private/GRPCTransport+Private.m',
+                        'src/objective-c/GRPCClient/version.h'
 
       ss.dependency "#{s.name}/Interface-Legacy", version
     end

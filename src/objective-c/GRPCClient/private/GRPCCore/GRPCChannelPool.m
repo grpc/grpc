@@ -27,7 +27,6 @@
 #import "GRPCInsecureChannelFactory.h"
 #import "GRPCSecureChannelFactory.h"
 #import "GRPCWrappedCall.h"
-#import "version.h"
 
 #include <grpc/support/log.h>
 

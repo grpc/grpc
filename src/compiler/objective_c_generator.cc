@@ -297,7 +297,7 @@ void PrintMethodImplementations(Printer* printer,
                 "that have been deprecated. They do not\n"
                 " * recognize call options provided in the initializer. Using "
                 "the v2 protocol is recommended.\n"
-                " */\n\n");
+                " */\n");
   printer.Print(vars, "@protocol $service_class$ <NSObject>\n\n");
   for (int i = 0; i < service->method_count(); i++) {
     PrintMethodDeclarations(&printer, service->method(i));

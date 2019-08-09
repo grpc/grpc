@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015 gRPC authors.
+ * Copyright 2019 gRPC authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,4 +22,4 @@
 // instead. This file can be regenerated from the template by running
 // `tools/buildgen/generate_projects.sh`.
 
-#define GRPC_OBJC_VERSION_STRING @"1.23.0-dev"
+#define GRPC_OBJC_VERSION_STRING @"1.24.0-dev"

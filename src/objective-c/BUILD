@@ -28,7 +28,6 @@ grpc_objc_library(
     name = "rx_library_headers",
     hdrs = glob([
         "RxLibrary/*.h",
-        "RxLibrary/transformations/*.h",
     ]),
     includes = ["."],
 )
@@ -37,7 +36,6 @@ grpc_objc_library(
     name = "rx_library",
     srcs = glob([
         "RxLibrary/*.m",
-        "RxLibrary/transformations/*.m",
     ]),
     includes = ["."],
     deps = [
@@ -83,6 +81,7 @@ grpc_objc_library(
         "GRPCClient/GRPCTransport.h",
         "GRPCClient/GRPCDispatchable.h",
         "GRPCClient/internal/GRPCCallOptions+Internal.h",
+        "GRPCClient/version.h",
     ],
     srcs = [
         "GRPCClient/GRPCCall.m",

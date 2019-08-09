@@ -31,7 +31,6 @@
 #import "GRPCCompletionQueue.h"
 #import "GRPCSecureChannelFactory.h"
 #import "NSDictionary+GRPC.h"
-#import "version.h"
 
 NS_ASSUME_NONNULL_BEGIN
 
@@ -115,6 +114,8 @@ static NSMutableDictionary *gHostCache;
   options.hostNameOverride = _hostNameOverride;
   if (_transportType == GRPCTransportTypeInsecure) {
     options.transport = GRPCDefaultTransportImplList.core_insecure;
+  } else if ([GRPCCall isUsingCronet]){
+    options.transport = gGRPCCoreCronetId;
   } else {
     options.transport = GRPCDefaultTransportImplList.core_secure;
   }
@@ -132,9 +133,15 @@ static NSMutableDictionary *gHostCache;
 
   GRPCCallOptions *callOptions = nil;
   @synchronized(gHostCache) {
-    callOptions = [gHostCache[host] callOptions];
+    GRPCHost *hostConfig = gHostCache[host];
+    if (hostConfig == nil) {
+      hostConfig = [GRPCHost hostWithAddress:host];
+    }
+    callOptions = [hostConfig callOptions];
   }
+  NSAssert(callOptions != nil, @"Unable to create call options object");
   if (callOptions == nil) {
+    NSLog(@"Unable to create call options object");
     callOptions = [[GRPCCallOptions alloc] init];
   }
   return callOptions;

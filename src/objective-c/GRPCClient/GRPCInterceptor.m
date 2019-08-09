@@ -174,10 +174,7 @@
 
 /** Forward initial metadata to the previous interceptor in the chain */
 - (void)forwardPreviousInterceptorWithInitialMetadata:(NSDictionary *)initialMetadata {
-  if (_nextInterceptor == nil && !_shutDown) {
-    [self createNextInterceptor];
-  }
-  if (_nextInterceptor == nil) {
+  if (_previousInterceptor == nil) {
     return;
   }
   id<GRPCResponseHandler> copiedPreviousInterceptor = _previousInterceptor;

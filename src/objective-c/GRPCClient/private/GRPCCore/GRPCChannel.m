@@ -29,10 +29,10 @@
 #import "GRPCCoreFactory.h"
 #import "GRPCInsecureChannelFactory.h"
 #import "GRPCSecureChannelFactory.h"
-#import "version.h"
 
 #import <GRPCClient/GRPCCall+Cronet.h>
 #import <GRPCClient/GRPCCallOptions.h>
+#import <GRPCClient/version.h>
 
 @implementation GRPCChannelConfiguration
 
