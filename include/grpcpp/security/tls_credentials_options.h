@@ -56,6 +56,10 @@ class TlsKeyMaterialsConfig {
   ::grpc::string pem_root_certs_;
 };
 
+/** Creates smart pointer to a C++ version of the C key materials. **/
+::std::shared_ptr<TlsKeyMaterialsConfig> tls_key_materials_c_to_cpp(
+    const grpc_tls_key_materials_config* config);
+
 /** TLS credential reload arguments, wraps grpc_tls_credential_reload_arg. **/
 typedef class TlsCredentialReloadArg TlsCredentialReloadArg;
 
@@ -95,6 +99,11 @@ class TlsCredentialReloadArg {
   ::grpc::string error_details_;
 };
 
+/** Creates a smart pointer to a C++ version of the credential reload argument,
+ * with the callback function set to a nullptr. **/
+::std::unique_ptr<TlsCredentialReloadArg> tls_credential_reload_arg_c_to_cpp(
+    const grpc_tls_credential_reload_arg* arg);
+
 /** TLS credential reloag config, wraps grpc_tls_credential_reload_config. **/
 class TlsCredentialReloadConfig {
  public:
@@ -117,7 +126,7 @@ class TlsCredentialReloadConfig {
     }
     cancel_(config_user_data_, arg);
   }
-
+  /** Creates C struct for the credential reload config. **/
   grpc_tls_credential_reload_config* c_credential_reload() const;
 
  private:
@@ -177,6 +186,12 @@ class TlsServerAuthorizationCheckArg {
   ::grpc::string error_details_;
 };
 
+/** Creates a smart pointer to a C++ version of the server authorization check
+ * argument, with the callback function set to a nullptr. **/
+::std::unique_ptr<TlsServerAuthorizationCheckArg>
+tls_server_authorization_check_arg_c_to_cpp(
+    const grpc_tls_server_authorization_check_arg* arg);
+
 /** TLS server authorization check config, wraps
  *  grps_tls_server_authorization_check_config. **/
 class TlsServerAuthorizationCheckConfig {
@@ -202,6 +217,7 @@ class TlsServerAuthorizationCheckConfig {
     cancel_(config_user_data_, arg);
   }
 
+  /** Creates C struct for the server authorization check config. **/
   grpc_tls_server_authorization_check_config* c_server_authorization_check()
       const;
 

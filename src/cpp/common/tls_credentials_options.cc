@@ -38,10 +38,9 @@ grpc_tls_key_materials_config* TlsKeyMaterialsConfig::c_key_materials() const {
       c_pem_key_cert_pair_list;
   for (auto key_cert_pair = pem_key_cert_pair_list_.begin();
        key_cert_pair != pem_key_cert_pair_list_.end(); key_cert_pair++) {
-    grpc_ssl_pem_key_cert_pair p = {key_cert_pair->private_key.c_str(),
-                                    key_cert_pair->cert_chain.c_str()};
     ::grpc_core::PemKeyCertPair c_pem_key_cert_pair =
-        ::grpc_core::PemKeyCertPair(&p);
+        ::grpc_core::PemKeyCertPair(key_cert_pair->private_key.c_str(),
+                                    key_cert_pair->cert_chain.c_str());
     c_pem_key_cert_pair_list.push_back(::std::move(c_pem_key_cert_pair));
   }
   ::grpc_core::UniquePtr<char> c_pem_root_certs(
@@ -51,21 +50,12 @@ grpc_tls_key_materials_config* TlsKeyMaterialsConfig::c_key_materials() const {
   return c_config;
 }
 
-/** Creates smart pointer to a C++ version of the C key materials. **/
-::std::shared_ptr<TlsKeyMaterialsConfig> cpp_key_materials(
+::std::shared_ptr<TlsKeyMaterialsConfig> tls_key_materials_c_to_cpp(
     const grpc_tls_key_materials_config* config) {
   ::std::shared_ptr<TlsKeyMaterialsConfig> cpp_config(
       new TlsKeyMaterialsConfig());
   ::std::vector<TlsKeyMaterialsConfig::PemKeyCertPair>
       cpp_pem_key_cert_pair_list;
-  /** for (auto key_cert_pair = config->pem_key_cert_pair_list().begin();
-       key_cert_pair != config->pem_key_cert_pair_list().end(); key_cert_pair++)
-  { TlsKeyMaterialsConfig::PemKeyCertPair p = {key_cert_pair->private_key,
-  key_cert_pair->cert_chain};
-    cpp_pem_key_cert_pair_list.push_back(::std::move(p));
-  }
-  **/
-  // TODO: add begin() and end() to InlinedVector so above for loop works
   grpc_tls_key_materials_config::PemKeyCertPairList pem_key_cert_pair_list =
       config->pem_key_cert_pair_list();
   for (size_t i = 0; i < pem_key_cert_pair_list.size(); i++) {
@@ -105,16 +95,15 @@ void TlsCredentialReloadArg::set_error_details(::grpc::string error_details) {
   error_details_ = ::std::move(error_details);
 }
 
-/** Creates a smart pointer to a C++ version of the credential reload argument,
- * with the callback function set to a nullptr. **/
 ::std::unique_ptr<TlsCredentialReloadArg> tls_credential_reload_arg_c_to_cpp(
     const grpc_tls_credential_reload_arg* arg) {
   ::std::unique_ptr<TlsCredentialReloadArg> cpp_arg(
       new TlsCredentialReloadArg());
-  cpp_arg->set_cb(nullptr);
+  cpp_arg->set_cb(
+      static_cast<grpcpp_tls_on_credential_reload_done_cb>(nullptr));
   cpp_arg->set_cb_user_data(arg->cb_user_data);
   cpp_arg->set_key_materials_config(
-      cpp_key_materials(arg->key_materials_config));
+      tls_key_materials_c_to_cpp(arg->key_materials_config));
   cpp_arg->set_status(arg->status);
   cpp_arg->set_error_details(arg->error_details);
   return cpp_arg;
@@ -190,14 +179,13 @@ TlsCredentialReloadConfig::c_credential_reload() const {
 
 /** gRPC TLS server authorization check arg API implementation **/
 
-/** Creates a smart pointer to a C++ version of the credential reload argument,
- * with the callback function set to a nullptr. **/
 ::std::unique_ptr<TlsServerAuthorizationCheckArg>
 tls_server_authorization_check_arg_c_to_cpp(
     const grpc_tls_server_authorization_check_arg* arg) {
   ::std::unique_ptr<TlsServerAuthorizationCheckArg> cpp_arg(
       new TlsServerAuthorizationCheckArg());
-  cpp_arg->set_cb(nullptr);
+  cpp_arg->set_cb(
+      static_cast<grpcpp_tls_on_server_authorization_check_done_cb>(nullptr));
   cpp_arg->set_cb_user_data(arg->cb_user_data);
   cpp_arg->set_success(arg->success);
   cpp_arg->set_target_name(arg->target_name);
