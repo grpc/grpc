@@ -69,7 +69,7 @@ Pod::Spec.new do |s|
     ss.dependency 'Protobuf', '~> 3.0'
 
     ss.source_files = "src/objective-c/ProtoRPC/ProtoRPCLegacy.m",
-                      "src/objective-c/ProtoRPC/ProtoServiceLegacy.{h,m}"
+                      "src/objective-c/ProtoRPC/ProtoServiceLegacy.m"
   end
 
   # CFStream is now default. Leaving this subspec only for compatibility purpose.

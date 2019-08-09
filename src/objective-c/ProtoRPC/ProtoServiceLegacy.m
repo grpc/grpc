@@ -20,7 +20,7 @@
 
 #import "ProtoMethod.h"
 #import "ProtoRPCLegacy.h"
-#import "ProtoServiceLegacy.h"
+#import "ProtoService.h"
 
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wdeprecated-implementations"

@@ -138,9 +138,7 @@ class ObjectiveCGrpcGenerator : public grpc::protobuf::compiler::CodeGenerator {
       }
 
       ::grpc::string system_imports =
-          (generator_params.no_v1_compatibility
-               ? SystemImport("ProtoRPC/ProtoService.h")
-               : SystemImport("ProtoRPC/ProtoServiceLegacy.h")) +
+          SystemImport("ProtoRPC/ProtoService.h") +
           (generator_params.no_v1_compatibility
                ? SystemImport("ProtoRPC/ProtoRPC.h")
                : SystemImport("ProtoRPC/ProtoRPCLegacy.h"));
