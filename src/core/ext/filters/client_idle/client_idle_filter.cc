@@ -110,7 +110,8 @@ enum ChannelState {
   CALLS_ACTIVE,
   TIMER_PENDING,
   TIMER_PENDING_CALLS_ACTIVE,
-  TIMER_PENDING_CALLS_SEEN_SINCE_TIMER_START
+  TIMER_PENDING_CALLS_SEEN_SINCE_TIMER_START,
+  PROCESSING
 };
 
 grpc_millis GetClientIdleTimeout(const grpc_channel_args* args) {
@@ -264,8 +265,8 @@ void ChannelData::DecreaseCallCount() {
         case CALLS_ACTIVE:
           // Release store here to make other threads see the updated value of
           // last_idle_time_.
-          state_.Store(TIMER_PENDING, MemoryOrder::RELEASE);
           StartIdleTimer();
+          state_.Store(TIMER_PENDING, MemoryOrder::RELEASE);
           return;
         default:
           // The state has not been switched to desired value yet, try again.
@@ -315,16 +316,18 @@ void ChannelData::IdleTimerCallback(void* arg, grpc_error* error) {
         break;
       case TIMER_PENDING_CALLS_SEEN_SINCE_TIMER_START:
         finished = chand->state_.CompareExchangeWeak(
-            &state, TIMER_PENDING, MemoryOrder::ACQUIRE, MemoryOrder::RELAXED);
+            &state, PROCESSING, MemoryOrder::ACQUIRE, MemoryOrder::RELAXED);
         if (finished) {
           chand->StartIdleTimer();
+          chand->state_.Store(TIMER_PENDING, MemoryOrder::RELAXED);
         }
         break;
       case TIMER_PENDING:
         finished = chand->state_.CompareExchangeWeak(
-            &state, IDLE, MemoryOrder::RELAXED, MemoryOrder::RELAXED);
+            &state, PROCESSING, MemoryOrder::RELAXED, MemoryOrder::RELAXED);
         if (finished) {
           chand->EnterIdle();
+          chand->state_.Store(IDLE, MemoryOrder::RELAXED);
         }
         break;
       default:
