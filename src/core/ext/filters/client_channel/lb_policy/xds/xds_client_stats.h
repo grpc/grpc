@@ -222,7 +222,7 @@ class XdsLbClientStats {
   DroppedRequestsMap dropped_requests_;
   // The timestamp of last reporting. For the LB-policy-wide first report, the
   // last_report_time is the time we scheduled the first reporting timer.
-  grpc_millis last_report_time_;
+  grpc_millis last_report_time_ = -1;
 };
 
 }  // namespace grpc_core

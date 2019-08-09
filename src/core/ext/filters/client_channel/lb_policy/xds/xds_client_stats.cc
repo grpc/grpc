@@ -149,10 +149,7 @@ XdsLbClientStats::Snapshot XdsLbClientStats::GetSnapshotAndReset() {
 }
 
 void XdsLbClientStats::MaybeInitLastReportTime() {
-  static bool inited = false;
-  if (inited) return;
-  last_report_time_ = ExecCtx::Get()->Now();
-  inited = true;
+  if (last_report_time_ == -1) last_report_time_ = ExecCtx::Get()->Now();
 }
 
 XdsLbClientStats::LocalityStats* XdsLbClientStats::FindLocalityStats(
