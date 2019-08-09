@@ -17,9 +17,6 @@
 #endregion
 
 using System;
-using System.Buffers;
-using System.Collections.Generic;
-using System.Runtime.InteropServices;
 using Grpc.Core;
 using Grpc.Core.Internal;
 using Grpc.Core.Utils;
@@ -32,22 +29,28 @@ namespace Grpc.Core.Internal.Tests
         [TestCase]
         public void CompleteAllowedOnlyOnce()
         {
-            var context = new DefaultSerializationContext();
-            var buffer = GetTestBuffer(10);
+            using (var scope = NewDefaultSerializationContextScope())
+            {
+                var context = scope.Context;
+                var buffer = GetTestBuffer(10);
 
-            context.Complete(buffer);
-            Assert.Throws(typeof(InvalidOperationException), () => context.Complete(buffer));
-            Assert.Throws(typeof(InvalidOperationException), () => context.Complete());
+                context.Complete(buffer);
+                Assert.Throws(typeof(InvalidOperationException), () => context.Complete(buffer));
+                Assert.Throws(typeof(InvalidOperationException), () => context.Complete());
+            }
         }
 
         [TestCase]
         public void CompleteAllowedOnlyOnce2()
         {
-            var context = new DefaultSerializationContext();
+            using (var scope = NewDefaultSerializationContextScope())
+            {
+                var context = scope.Context;
 
-            context.Complete();
-            Assert.Throws(typeof(InvalidOperationException), () => context.Complete(GetTestBuffer(10)));
-            Assert.Throws(typeof(InvalidOperationException), () => context.Complete());
+                context.Complete();
+                Assert.Throws(typeof(InvalidOperationException), () => context.Complete(GetTestBuffer(10)));
+                Assert.Throws(typeof(InvalidOperationException), () => context.Complete());
+            }
         }
 
         [TestCase(0)]
@@ -57,13 +60,16 @@ namespace Grpc.Core.Internal.Tests
         [TestCase(1000)]
         public void ByteArrayPayload(int payloadSize)
         {
-            var context = new DefaultSerializationContext();
-            var origPayload = GetTestBuffer(payloadSize);
+            using (var scope = NewDefaultSerializationContextScope())
+            {
+                var context = scope.Context;
+                var origPayload = GetTestBuffer(payloadSize);
 
-            context.Complete(origPayload);
+                context.Complete(origPayload);
 
-            var nativePayload = context.GetPayload().ToByteArray();
-            CollectionAssert.AreEqual(origPayload, nativePayload);
+                var nativePayload = context.GetPayload().ToByteArray();
+                CollectionAssert.AreEqual(origPayload, nativePayload);
+            }
         }
 
         [TestCase(0)]
@@ -73,16 +79,40 @@ namespace Grpc.Core.Internal.Tests
         [TestCase(1000)]
         public void BufferWriter_OneSegment(int payloadSize)
         {
-            var context = new DefaultSerializationContext();
-            var origPayload = GetTestBuffer(payloadSize);
+            using (var scope = NewDefaultSerializationContextScope())
+            {
+                var context = scope.Context;
+                var origPayload = GetTestBuffer(payloadSize);
 
-            var bufferWriter = context.GetBufferWriter();
-            origPayload.AsSpan().CopyTo(bufferWriter.GetSpan(payloadSize));
-            bufferWriter.Advance(payloadSize);
-            // TODO: test that call to Complete() is required.
+                var bufferWriter = context.GetBufferWriter();
+                origPayload.AsSpan().CopyTo(bufferWriter.GetSpan(payloadSize));
+                bufferWriter.Advance(payloadSize);
+                // TODO: test that call to Complete() is required.
 
-            var nativePayload = context.GetPayload().ToByteArray();
-            CollectionAssert.AreEqual(origPayload, nativePayload);
+                var nativePayload = context.GetPayload().ToByteArray();
+                CollectionAssert.AreEqual(origPayload, nativePayload);
+            }
+        }
+
+        [TestCase(0)]
+        [TestCase(1)]
+        [TestCase(10)]
+        [TestCase(100)]
+        [TestCase(1000)]
+        public void BufferWriter_OneSegment_GetMemory(int payloadSize)
+        {
+            using (var scope = NewDefaultSerializationContextScope())
+            {
+                var context = scope.Context;
+                var origPayload = GetTestBuffer(payloadSize);
+
+                var bufferWriter = context.GetBufferWriter();
+                origPayload.AsSpan().CopyTo(bufferWriter.GetMemory(payloadSize).Span);
+                bufferWriter.Advance(payloadSize);
+
+                var nativePayload = context.GetPayload().ToByteArray();
+                CollectionAssert.AreEqual(origPayload, nativePayload);
+            }
         }
 
         [TestCase(1, 4)]  // small slice size tests grpc_slice with inline data
@@ -95,41 +125,68 @@ namespace Grpc.Core.Internal.Tests
         [TestCase(1000, 64)]
         public void BufferWriter_MultipleSegments(int payloadSize, int maxSliceSize)
         {
-            var context = new DefaultSerializationContext();
-            var origPayload = GetTestBuffer(payloadSize);
-
-            var bufferWriter = context.GetBufferWriter();
-            for (int offset = 0; offset < payloadSize; offset += maxSliceSize)
+            using (var scope = NewDefaultSerializationContextScope())
             {
-                var sliceSize = Math.Min(maxSliceSize, payloadSize - offset);
-                // we allocate last slice as too big intentionally to test that shrinking works
-                var dest = bufferWriter.GetSpan(maxSliceSize);
-                
-                origPayload.AsSpan(offset, sliceSize).CopyTo(dest);
-                bufferWriter.Advance(sliceSize);
-            }
-            context.Complete();
-            
-            var nativePayload = context.GetPayload().ToByteArray();
-            CollectionAssert.AreEqual(origPayload, nativePayload);
+                var context = scope.Context;
+                var origPayload = GetTestBuffer(payloadSize);
 
-            context.GetPayload().Dispose(); // TODO: do it better.. (use the scope...)
+                var bufferWriter = context.GetBufferWriter();
+                for (int offset = 0; offset < payloadSize; offset += maxSliceSize)
+                {
+                    var sliceSize = Math.Min(maxSliceSize, payloadSize - offset);
+                    // we allocate last slice as too big intentionally to test that shrinking works
+                    var dest = bufferWriter.GetSpan(maxSliceSize);
+                    
+                    origPayload.AsSpan(offset, sliceSize).CopyTo(dest);
+                    bufferWriter.Advance(sliceSize);
+                }
+                context.Complete();
+                
+                var nativePayload = context.GetPayload().ToByteArray();
+                CollectionAssert.AreEqual(origPayload, nativePayload);
+            }
         }
 
-        // AdjustTailSpace(0) if previous tail size is 0....
+        [TestCase]
+        public void ContextIsReusable()
+        {
+            using (var scope = NewDefaultSerializationContextScope())
+            {
+                var context = scope.Context;
+
+                var origPayload1 = GetTestBuffer(10);
+                context.Complete(origPayload1);
+                CollectionAssert.AreEqual(origPayload1, context.GetPayload().ToByteArray());
+
+                context.Reset();
+
+                var origPayload2 = GetTestBuffer(20);
+    
+                var bufferWriter = context.GetBufferWriter();
+                origPayload2.AsSpan().CopyTo(bufferWriter.GetMemory(origPayload2.Length).Span);
+                bufferWriter.Advance(origPayload2.Length);
+                CollectionAssert.AreEqual(origPayload2, context.GetPayload().ToByteArray());
+
+                context.Reset();
+
+                // TODO: that's should be a null payload...
+                CollectionAssert.AreEqual(new byte[0], context.GetPayload().ToByteArray());
+            }
+        }
+
+        //test ideas:
 
         // test that context.Complete() call is required...
 
-        // BufferWriter.GetMemory... (add refs to the original memory?)
+        // set payload with Complete([]) and then get IBufferWriter should throw (because it's been completed already?)
 
-        // TODO: set payload and then get IBufferWriter should throw?
+        // other ideas:
+        // AdjustTailSpace(0) if previous tail size is 0... (better for SliceBufferSafeHandle)
 
-        // TODO: test Reset()...
-
-        // TODO: destroy SliceBufferSafeHandles... (use usagescope...)
-
-
-
+        private DefaultSerializationContext.UsageScope NewDefaultSerializationContextScope()
+        {
+            return new DefaultSerializationContext.UsageScope(new DefaultSerializationContext());
+        }
 
         private byte[] GetTestBuffer(int length)
         {
