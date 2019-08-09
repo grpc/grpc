@@ -36,7 +36,7 @@ Pod::Spec.new do |s|
   # exclamation mark ensures that other "regular" pods will be able to find it as it'll be installed
   # before them.
   s.name     = '!ProtoCompiler'
-  v = '3.8.0'
+  v = '3.9.1'
   s.version  = v
   s.summary  = 'The Protobuf Compiler (protoc) generates Objective-C files from .proto files'
   s.description = <<-DESC
@@ -134,5 +134,5 @@ Pod::Spec.new do |s|
       mv bin/protoc .
       mv include/google .
     fi
-  CMD
+  CMD 
 end
