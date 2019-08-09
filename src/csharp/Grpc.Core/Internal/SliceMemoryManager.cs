@@ -83,24 +83,5 @@ namespace Grpc.Core.Internal
             }
             populatedSegmentCount = 0;
         }
-
-        // Represents a segment in ReadOnlySequence
-        // Segment is backed by Slice and the instances are reusable.
-        private class SliceSegment : ReadOnlySequenceSegment<byte>
-        {
-            readonly SliceMemoryManager pointerMemoryManager = new SliceMemoryManager();
-
-            public void Reset(Slice slice, long runningIndex)
-            {
-                pointerMemoryManager.Reset(slice);
-                Memory = pointerMemoryManager.Memory;  // maybe not always necessary
-                RunningIndex = runningIndex;
-            }
-
-            public void SetNext(ReadOnlySequenceSegment<byte> next)
-            {
-                Next = next;
-            }        
-        }     
     }
 }
