@@ -52,6 +52,7 @@ namespace Grpc.Core.Internal
         /// </summary>
         public override IBufferWriter<byte> GetBufferWriter()
         {
+            GrpcPreconditions.CheckState(!isComplete);
             return sliceBuffer;
         }
 
@@ -67,6 +68,11 @@ namespace Grpc.Core.Internal
 
         internal SliceBufferSafeHandle GetPayload()
         {
+            if (!isComplete)
+            {
+                // mimic the legacy behavior when byte[] was used to represent the payload.
+                throw new NullReferenceException("No payload was set. Complete() needs to be called before payload can be used.");
+            }
             return sliceBuffer;
         }
 
@@ -95,9 +101,6 @@ namespace Grpc.Core.Internal
             }
 
             public DefaultSerializationContext Context => context;
-
-            // TODO: add Serialize method...
-
             public void Dispose()
             {
                 context.Reset();

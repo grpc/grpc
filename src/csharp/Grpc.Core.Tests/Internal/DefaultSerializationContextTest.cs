@@ -87,7 +87,7 @@ namespace Grpc.Core.Internal.Tests
                 var bufferWriter = context.GetBufferWriter();
                 origPayload.AsSpan().CopyTo(bufferWriter.GetSpan(payloadSize));
                 bufferWriter.Advance(payloadSize);
-                // TODO: test that call to Complete() is required.
+                context.Complete();
 
                 var nativePayload = context.GetPayload().ToByteArray();
                 CollectionAssert.AreEqual(origPayload, nativePayload);
@@ -109,6 +109,7 @@ namespace Grpc.Core.Internal.Tests
                 var bufferWriter = context.GetBufferWriter();
                 origPayload.AsSpan().CopyTo(bufferWriter.GetMemory(payloadSize).Span);
                 bufferWriter.Advance(payloadSize);
+                context.Complete();
 
                 var nativePayload = context.GetPayload().ToByteArray();
                 CollectionAssert.AreEqual(origPayload, nativePayload);
@@ -154,6 +155,8 @@ namespace Grpc.Core.Internal.Tests
             {
                 var context = scope.Context;
 
+                Assert.Throws(typeof(NullReferenceException), () => context.GetPayload());
+
                 var origPayload1 = GetTestBuffer(10);
                 context.Complete(origPayload1);
                 CollectionAssert.AreEqual(origPayload1, context.GetPayload().ToByteArray());
@@ -165,20 +168,26 @@ namespace Grpc.Core.Internal.Tests
                 var bufferWriter = context.GetBufferWriter();
                 origPayload2.AsSpan().CopyTo(bufferWriter.GetMemory(origPayload2.Length).Span);
                 bufferWriter.Advance(origPayload2.Length);
+                context.Complete();
                 CollectionAssert.AreEqual(origPayload2, context.GetPayload().ToByteArray());
 
                 context.Reset();
 
-                // TODO: that's should be a null payload...
-                CollectionAssert.AreEqual(new byte[0], context.GetPayload().ToByteArray());
+                Assert.Throws(typeof(NullReferenceException), () => context.GetPayload());
             }
         }
 
-        //test ideas:
+        [TestCase]
+        public void GetBufferWriterThrowsForCompletedContext()
+        {
+            using (var scope = NewDefaultSerializationContextScope())
+            {
+                var context = scope.Context;
+                context.Complete(GetTestBuffer(10));
 
-        // test that context.Complete() call is required...
-
-        // set payload with Complete([]) and then get IBufferWriter should throw (because it's been completed already?)
+                Assert.Throws(typeof(InvalidOperationException), () => context.GetBufferWriter());
+            }
+        }
 
         // other ideas:
         // AdjustTailSpace(0) if previous tail size is 0... (better for SliceBufferSafeHandle)
