@@ -1257,9 +1257,6 @@ grpc_cc_library(
         "src/core/ext/filters/client_channel/lb_policy/xds/xds_client_stats.h",
         "src/core/ext/filters/client_channel/lb_policy/xds/xds_load_balancer_api.h",
     ],
-    external_deps = [
-        "nanopb",
-    ],
     language = "c++",
     deps = [
         "envoy_ads_upb",
@@ -1283,9 +1280,6 @@ grpc_cc_library(
         "src/core/ext/filters/client_channel/lb_policy/xds/xds_channel.h",
         "src/core/ext/filters/client_channel/lb_policy/xds/xds_client_stats.h",
         "src/core/ext/filters/client_channel/lb_policy/xds/xds_load_balancer_api.h",
-    ],
-    external_deps = [
-        "nanopb",
     ],
     language = "c++",
     deps = [
