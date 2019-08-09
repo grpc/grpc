@@ -150,13 +150,6 @@ void alts_handshaker_client_handle_response(alts_handshaker_client* c,
     cb(TSI_DATA_CORRUPTED, user_data, nullptr, 0, nullptr);
     return;
   }
-  const grpc_gcp_HandshakerStatus* resp_status =
-      grpc_gcp_HandshakerResp_status(resp);
-  if (resp_status == nullptr) {
-    gpr_log(GPR_ERROR, "No status in HandshakerResp");
-    cb(TSI_DATA_CORRUPTED, user_data, nullptr, 0, nullptr);
-    return;
-  }
   upb_strview out_frames = grpc_gcp_HandshakerResp_out_frames(resp);
   unsigned char* bytes_to_send = nullptr;
   size_t bytes_to_send_size = 0;
@@ -177,8 +170,12 @@ void alts_handshaker_client_handle_response(alts_handshaker_client* c,
         result, &client->recv_bytes,
         grpc_gcp_HandshakerResp_bytes_consumed(resp));
   }
-  grpc_status_code code = static_cast<grpc_status_code>(
-      grpc_gcp_HandshakerStatus_code(resp_status));
+  const grpc_gcp_HandshakerStatus* resp_status =
+      grpc_gcp_HandshakerResp_status(resp);
+  grpc_status_code code = resp_status != nullptr
+                              ? static_cast<grpc_status_code>(
+                                    grpc_gcp_HandshakerStatus_code(resp_status))
+                              : GRPC_STATUS_OK;
   if (code != GRPC_STATUS_OK) {
     upb_strview details = grpc_gcp_HandshakerStatus_details(resp_status);
     if (details.size > 0) {
