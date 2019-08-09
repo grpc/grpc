@@ -105,10 +105,52 @@ namespace Grpc.Core.Internal.Tests
             }
         }
 
-        // Advance() - multiple chunks...
+        [TestCase(0)]
+        [TestCase(1000)]
+        public void SliceBuffer_BigPayload(int sizeHint)
+        {
+            using (var sliceBuffer = SliceBufferSafeHandle.Create())
+            {
+                var bigPayload = GetTestBuffer(4 * 1024 * 1024);
 
-        // other TODOS:
+                int offset = 0;
+                while (offset < bigPayload.Length)
+                {
+                    var destSpan = sliceBuffer.GetSpan(sizeHint);
+                    int copySize = Math.Min(destSpan.Length, bigPayload.Length - offset);
+                    bigPayload.AsSpan(offset, copySize).CopyTo(destSpan);
+                    sliceBuffer.Advance(copySize);
+                    offset += copySize;
+                }
+                
+                sliceBuffer.Complete();
+                CollectionAssert.AreEqual(bigPayload, sliceBuffer.ToByteArray());
+            }
+        }
 
+        [TestCase]
+        public void SliceBuffer_NegativeSizeHint()
+        {
+            using (var sliceBuffer = SliceBufferSafeHandle.Create())
+            {
+                Assert.Throws(typeof(ArgumentException), () => sliceBuffer.GetSpan(-1));
+                Assert.Throws(typeof(ArgumentException), () => sliceBuffer.GetMemory(-1));
+            }
+        }
+
+        [TestCase]
+        public void SliceBuffer_AdvanceBadArg()
+        {
+            using (var sliceBuffer = SliceBufferSafeHandle.Create())
+            {
+                int size = 10;
+                var destSpan = sliceBuffer.GetSpan(size);
+                Assert.Throws(typeof(ArgumentException), () => sliceBuffer.Advance(size + 1));
+                Assert.Throws(typeof(ArgumentException), () => sliceBuffer.Advance(-1));
+            }
+        }
+
+        // TODO: other TODOs
         // -- provide a null instance of SliceBufferSafeHandle
         //-- order of UnsafeSerialize in AsyncCall methods...
 
