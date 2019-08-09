@@ -22,8 +22,14 @@ cd $(dirname $0)
 
 BAZEL=../../../tools/bazel
 
+INTEROP=../../../bazel-out/darwin-fastbuild/bin/test/cpp/interop/interop_server
+
 [ -d Tests.xcworkspace ] || {
     ./build_tests.sh
+}
+
+[ -f $INTEROP ] || {
+    BAZEL build //test/cpp/interop:interop_server
 }
 
 [ -z "$(ps aux |egrep 'port_server\.py.*-p\s32766')" ] && {
@@ -34,8 +40,8 @@ BAZEL=../../../tools/bazel
 PLAIN_PORT=$(curl localhost:32766/get)
 TLS_PORT=$(curl localhost:32766/get)
 
-BAZEL run -- //test/cpp/interop:interop_server --port=$PLAIN_PORT --max_send_message_size=8388608 &
-BAZEL run -- //test/cpp/interop:interop_server --port=$TLS_PORT --max_send_message_size=8388608 --use_tls &
+$INTEROP --port=$PLAIN_PORT --max_send_message_size=8388608 &
+$INTEROP --port=$TLS_PORT --max_send_message_size=8388608 --use_tls &
 
 trap 'kill -9 `jobs -p` ; echo "EXIT TIME:  $(date)"' EXIT
 

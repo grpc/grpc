@@ -24,11 +24,26 @@ cd $(dirname $0)
 
 BAZEL=../../../tools/bazel
 
+INTEROP=../../../bazel-out/darwin-fastbuild/bin/test/cpp/interop/interop_server
+
 [ -d Tests.xcworkspace ] || {
     ./build_tests.sh
 }
-BAZEL run -- //test/cpp/interop:interop_server --port=5050 --max_send_message_size=8388608 &
-BAZEL run -- //test/cpp/interop:interop_server --port=5051 --max_send_message_size=8388608 --use_tls &
+
+[ -f $INTEROP ] || {
+    BAZEL build //test/cpp/interop:interop_server
+}
+
+[ -z "$(ps aux |egrep 'port_server\.py.*-p\s32766')" ] && {
+    echo >&2 "Can't find the port server. Start port server with tools/run_tests/start_port_server.py."
+    exit 1
+}
+
+PLAIN_PORT=$(curl localhost:32766/get)
+TLS_PORT=$(curl localhost:32766/get)
+
+$INTEROP --port=$PLAIN_PORT --max_send_message_size=8388608 &
+$INTEROP --port=$TLS_PORT --max_send_message_size=8388608 --use_tls &
 
 # Kill them when this script exits.
 trap 'kill -9 `jobs -p` ; echo "EXIT TIME:  $(date)"' EXIT
