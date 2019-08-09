@@ -31,6 +31,7 @@ namespace Grpc.Core.Internal
     /// </summary>
     internal class SliceBufferSafeHandle : SafeHandleZeroIsInvalid, IBufferWriter<byte>
     {
+        const int DefaultTailSpaceSize = 4096;  // default buffer to allocate if no size hint is provided
         static readonly NativeMethods Native = NativeMethods.Get();
         static readonly ILogger Logger = GrpcEnvironment.Logger.ForType<SliceBufferSafeHandle>();
 
@@ -72,7 +73,7 @@ namespace Grpc.Core.Internal
         // Use GetSpan when possible for better efficiency.
         public Memory<byte> GetMemory(int sizeHint = 0)
         {
-            GetSpan(sizeHint);
+            EnsureBufferSpace(sizeHint);
             if (memoryManagerLazy == null)
             {
                 memoryManagerLazy = new SliceMemoryManager();
@@ -84,13 +85,7 @@ namespace Grpc.Core.Internal
         // provides access to the "tail space" of this buffer.
         public unsafe Span<byte> GetSpan(int sizeHint = 0)
         {
-            GrpcPreconditions.CheckArgument(sizeHint >= 0);
-            if (tailSpaceLen < sizeHint)
-            {
-                // TODO: should we ignore the hint sometimes when
-                // available tail space is close enough to the sizeHint?
-                AdjustTailSpace(sizeHint);
-            }
+            EnsureBufferSpace(sizeHint);
             return new Span<byte>(tailSpacePtr.ToPointer(), tailSpaceLen);
         }
 
@@ -135,7 +130,27 @@ namespace Grpc.Core.Internal
             return result;
         }
 
-        // Gets data of server_rpc_new completion.
+        private void EnsureBufferSpace(int sizeHint)
+        {
+            GrpcPreconditions.CheckArgument(sizeHint >= 0);
+            if (sizeHint == 0)
+            {
+                // if no hint is provided, keep the available space within some "reasonable" boundaries.
+                // This is quite a naive approach which could use some fine-tuning, but currently in most case we know
+                // the required buffer size in advance anyway, so this approach seems good enough for now.
+                if (tailSpaceLen < DefaultTailSpaceSize /2 )
+                {
+                    AdjustTailSpace(DefaultTailSpaceSize);
+                }
+            }
+            else if (tailSpaceLen < sizeHint)
+            {
+                // if hint is provided, always make sure we provide at least that much space
+                AdjustTailSpace(sizeHint);
+            }
+        }
+
+        // make sure there's exactly requestedSize bytes of continguous buffer space at the end of this slice buffer
         private void AdjustTailSpace(int requestedSize)
         {
             GrpcPreconditions.CheckArgument(requestedSize >= 0);
