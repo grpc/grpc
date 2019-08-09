@@ -24,64 +24,42 @@ using System.Buffers;
 
 namespace Grpc.Core.Internal
 {
-    internal class ReusableSliceBuffer
+    // Allow creating instances of Memory<byte> from Slice.
+    // Represents a chunk of native memory, but doesn't manage its lifetime.
+    // Instances of this class are reuseable - they can be reset to point to a different memory chunk.
+    // That is important to make the instances cacheable (rather then creating new instances
+    // the old ones will be reused to reduce GC pressure).
+    internal class SliceMemoryManager : MemoryManager<byte>
     {
-        public const int MaxCachedSegments = 1024;  // ~4MB payload for 4K slices
+        private Slice slice;
 
-        readonly SliceSegment[] cachedSegments = new SliceSegment[MaxCachedSegments];
-        int populatedSegmentCount;
-
-        public ReadOnlySequence<byte> PopulateFrom(IBufferReader bufferReader)
+        public void Reset(Slice slice)
         {
-            populatedSegmentCount = 0;
-            long offset = 0;
-            SliceSegment prevSegment = null;
-            while (bufferReader.TryGetNextSlice(out Slice slice))
-            {
-                // Initialize cached segment if still null or just allocate a new segment if we already reached MaxCachedSegments
-                var current = populatedSegmentCount < cachedSegments.Length ? cachedSegments[populatedSegmentCount] : new SliceSegment();
-                if (current == null)
-                {
-                    current = cachedSegments[populatedSegmentCount] = new SliceSegment();
-                }
-
-                current.Reset(slice, offset);
-                prevSegment?.SetNext(current);
-
-                populatedSegmentCount ++;
-                offset += slice.Length;
-                prevSegment = current;
-            }
-
-            // Not necessary for ending the ReadOnlySequence, but for making sure we
-            // don't keep more than MaxCachedSegments alive.
-            prevSegment?.SetNext(null);
-
-            if (populatedSegmentCount == 0)
-            {
-                return ReadOnlySequence<byte>.Empty;
-            }
-
-            var firstSegment = cachedSegments[0];
-            var lastSegment = prevSegment;
-            return new ReadOnlySequence<byte>(firstSegment, 0, lastSegment, lastSegment.Memory.Length);
+            this.slice = slice;
         }
 
-        public void Invalidate()
+        public void Reset()
         {
-            if (populatedSegmentCount == 0)
-            {
-                return;
-            }
-            var segment = cachedSegments[0];
-            while (segment != null)
-            {
-                segment.Reset(new Slice(IntPtr.Zero, 0), 0);
-                var nextSegment = (SliceSegment) segment.Next;
-                segment.SetNext(null);
-                segment = nextSegment;
-            }
-            populatedSegmentCount = 0;
+            Reset(new Slice(IntPtr.Zero, 0));
+        }
+
+        public override Span<byte> GetSpan()
+        {
+            return slice.ToSpanUnsafe();
+        }
+
+        public override MemoryHandle Pin(int elementIndex = 0)
+        {
+            throw new NotSupportedException();
+        }
+
+        public override void Unpin()
+        {
+        }
+
+        protected override void Dispose(bool disposing)
+        {
+            // NOP
         }
     }
 }
