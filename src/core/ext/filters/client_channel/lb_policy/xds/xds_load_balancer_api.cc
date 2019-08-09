@@ -33,7 +33,10 @@
 #include "envoy/api/v2/discovery.upb.h"
 #include "envoy/api/v2/eds.upb.h"
 #include "envoy/api/v2/endpoint/endpoint.upb.h"
+#include "envoy/api/v2/endpoint/load_report.upb.h"
+#include "envoy/service/load_stats/v2/lrs.upb.h"
 #include "google/protobuf/any.upb.h"
+#include "google/protobuf/duration.upb.h"
 #include "google/protobuf/struct.upb.h"
 #include "google/protobuf/timestamp.upb.h"
 #include "google/protobuf/wrappers.upb.h"
@@ -209,54 +212,163 @@ grpc_error* XdsEdsResponseDecodeAndParse(const grpc_slice& encoded_response,
 
 namespace {
 
-void google_protobuf_Timestamp_assign(google_protobuf_Timestamp* timestamp,
-                                      const gpr_timespec& value) {
-  google_protobuf_Timestamp_set_seconds(timestamp, value.tv_sec);
-  google_protobuf_Timestamp_set_nanos(timestamp, value.tv_nsec);
+grpc_slice LrsRequestEncode(
+    const envoy_service_load_stats_v2_LoadStatsRequest* request,
+    upb_arena* arena) {
+  size_t output_length;
+  char* output = envoy_service_load_stats_v2_LoadStatsRequest_serialize(
+      request, arena, &output_length);
+  return grpc_slice_from_copied_buffer(output, output_length);
 }
 
 }  // namespace
 
-xds_grpclb_request* xds_grpclb_load_report_request_create_locked(
-    grpc_core::XdsLbClientStats* client_stats, upb_arena* arena) {
-  xds_grpclb_request* req = grpc_lb_v1_LoadBalanceRequest_new(arena);
-  grpc_lb_v1_ClientStats* req_stats =
-      grpc_lb_v1_LoadBalanceRequest_mutable_client_stats(req, arena);
-  google_protobuf_Timestamp_assign(
-      grpc_lb_v1_ClientStats_mutable_timestamp(req_stats, arena),
-      gpr_now(GPR_CLOCK_REALTIME));
+grpc_slice XdsLrsRequestCreateAndEncode(const char* server_name) {
+  upb::Arena arena;
+  // Create a request.
+  envoy_service_load_stats_v2_LoadStatsRequest* request =
+      envoy_service_load_stats_v2_LoadStatsRequest_new(arena.ptr());
+  // Add cluster stats. There is only one because we only use one server name in
+  // one channel.
+  envoy_api_v2_endpoint_ClusterStats* cluster_stats =
+      envoy_service_load_stats_v2_LoadStatsRequest_add_cluster_stats(
+          request, arena.ptr());
+  // Set the cluster name.
+  envoy_api_v2_endpoint_ClusterStats_set_cluster_name(
+      cluster_stats, upb_strview_makez(server_name));
+  return LrsRequestEncode(request, arena.ptr());
+}
 
-  int64_t num_calls_started;
-  int64_t num_calls_finished;
-  int64_t num_calls_finished_with_client_failed_to_send;
-  int64_t num_calls_finished_known_received;
-  UniquePtr<XdsLbClientStats::DroppedCallCounts> drop_token_counts;
-  client_stats->GetLocked(&num_calls_started, &num_calls_finished,
-                          &num_calls_finished_with_client_failed_to_send,
-                          &num_calls_finished_known_received,
-                          &drop_token_counts);
-  grpc_lb_v1_ClientStats_set_num_calls_started(req_stats, num_calls_started);
-  grpc_lb_v1_ClientStats_set_num_calls_finished(req_stats, num_calls_finished);
-  grpc_lb_v1_ClientStats_set_num_calls_finished_with_client_failed_to_send(
-      req_stats, num_calls_finished_with_client_failed_to_send);
-  grpc_lb_v1_ClientStats_set_num_calls_finished_known_received(
-      req_stats, num_calls_finished_known_received);
-  if (drop_token_counts != nullptr) {
-    for (size_t i = 0; i < drop_token_counts->size(); ++i) {
-      XdsLbClientStats::DropTokenCount& cur = (*drop_token_counts)[i];
-      grpc_lb_v1_ClientStatsPerToken* cur_msg =
-          grpc_lb_v1_ClientStats_add_calls_finished_with_drop(req_stats, arena);
+namespace {
 
-      const size_t token_len = strlen(cur.token.get());
-      char* token = reinterpret_cast<char*>(upb_arena_malloc(arena, token_len));
-      memcpy(token, cur.token.get(), token_len);
-
-      grpc_lb_v1_ClientStatsPerToken_set_load_balance_token(
-          cur_msg, upb_strview_make(token, token_len));
-      grpc_lb_v1_ClientStatsPerToken_set_num_calls(cur_msg, cur.count);
-    }
+void LocalityStatsPopulate(envoy_api_v2_endpoint_UpstreamLocalityStats* output,
+                           Pair<RefCountedPtr<XdsLocalityName>,
+                                XdsClientStats::LocalityStats::Snapshot>& input,
+                           upb_arena* arena) {
+  // Set sub_zone.
+  envoy_api_v2_core_Locality* locality =
+      envoy_api_v2_endpoint_UpstreamLocalityStats_mutable_locality(output,
+                                                                   arena);
+  envoy_api_v2_core_Locality_set_sub_zone(
+      locality, upb_strview_makez(input.first->sub_zone()));
+  // Set total counts.
+  XdsClientStats::LocalityStats::Snapshot& snapshot = input.second;
+  envoy_api_v2_endpoint_UpstreamLocalityStats_set_total_successful_requests(
+      output, snapshot.total_successful_requests);
+  envoy_api_v2_endpoint_UpstreamLocalityStats_set_total_requests_in_progress(
+      output, snapshot.total_requests_in_progress);
+  envoy_api_v2_endpoint_UpstreamLocalityStats_set_total_error_requests(
+      output, snapshot.total_error_requests);
+  envoy_api_v2_endpoint_UpstreamLocalityStats_set_total_issued_requests(
+      output, snapshot.total_issued_requests);
+  // Add load metric stats.
+  for (auto& p : snapshot.load_metric_stats) {
+    const char* metric_name = p.first.get();
+    const XdsClientStats::LocalityStats::LoadMetric::Snapshot& metric_value =
+        p.second;
+    envoy_api_v2_endpoint_EndpointLoadMetricStats* load_metric =
+        envoy_api_v2_endpoint_UpstreamLocalityStats_add_load_metric_stats(
+            output, arena);
+    envoy_api_v2_endpoint_EndpointLoadMetricStats_set_metric_name(
+        load_metric, upb_strview_makez(metric_name));
+    envoy_api_v2_endpoint_EndpointLoadMetricStats_set_num_requests_finished_with_metric(
+        load_metric, metric_value.num_requests_finished_with_metric);
+    envoy_api_v2_endpoint_EndpointLoadMetricStats_set_total_metric_value(
+        load_metric, metric_value.total_metric_value);
   }
-  return req;
+}
+
+}  // namespace
+
+grpc_slice XdsLrsRequestCreateAndEncode(const char* server_name,
+                                        XdsClientStats* client_stats) {
+  upb::Arena arena;
+  XdsClientStats::Snapshot snapshot = client_stats->GetSnapshotAndReset();
+  // Prune unused locality stats.
+  client_stats->PruneLocalityStats();
+  // When all the counts are zero, return empty slice.
+  if (snapshot.IsAllZero()) return grpc_empty_slice();
+  // Create a request.
+  envoy_service_load_stats_v2_LoadStatsRequest* request =
+      envoy_service_load_stats_v2_LoadStatsRequest_new(arena.ptr());
+  // Add cluster stats. There is only one because we only use one server name in
+  // one channel.
+  envoy_api_v2_endpoint_ClusterStats* cluster_stats =
+      envoy_service_load_stats_v2_LoadStatsRequest_add_cluster_stats(
+          request, arena.ptr());
+  // Set the cluster name.
+  envoy_api_v2_endpoint_ClusterStats_set_cluster_name(
+      cluster_stats, upb_strview_makez(server_name));
+  // Add locality stats.
+  for (auto& p : snapshot.upstream_locality_stats) {
+    envoy_api_v2_endpoint_UpstreamLocalityStats* locality_stats =
+        envoy_api_v2_endpoint_ClusterStats_add_upstream_locality_stats(
+            cluster_stats, arena.ptr());
+    LocalityStatsPopulate(locality_stats, p, arena.ptr());
+  }
+  // Add dropped requests.
+  for (auto& p : snapshot.dropped_requests) {
+    const char* category = p.first.get();
+    const uint64_t count = p.second;
+    envoy_api_v2_endpoint_ClusterStats_DroppedRequests* dropped_requests =
+        envoy_api_v2_endpoint_ClusterStats_add_dropped_requests(cluster_stats,
+                                                                arena.ptr());
+    envoy_api_v2_endpoint_ClusterStats_DroppedRequests_set_category(
+        dropped_requests, upb_strview_makez(category));
+    envoy_api_v2_endpoint_ClusterStats_DroppedRequests_set_dropped_count(
+        dropped_requests, count);
+  }
+  // Set total dropped requests.
+  envoy_api_v2_endpoint_ClusterStats_set_total_dropped_requests(
+      cluster_stats, snapshot.total_dropped_requests);
+  // Set real load report interval.
+  gpr_timespec timespec =
+      grpc_millis_to_timespec(snapshot.load_report_interval, GPR_TIMESPAN);
+  google_protobuf_Duration* load_report_interval =
+      envoy_api_v2_endpoint_ClusterStats_mutable_load_report_interval(
+          cluster_stats, arena.ptr());
+  google_protobuf_Duration_set_seconds(load_report_interval, timespec.tv_sec);
+  google_protobuf_Duration_set_nanos(load_report_interval, timespec.tv_nsec);
+  return LrsRequestEncode(request, arena.ptr());
+}
+
+grpc_error* XdsLrsResponseDecodeAndParse(const grpc_slice& encoded_response,
+                                         grpc_millis* load_reporting_interval,
+                                         const char* expected_server_name) {
+  upb::Arena arena;
+  // Decode the response.
+  const envoy_service_load_stats_v2_LoadStatsResponse* decoded_response =
+      envoy_service_load_stats_v2_LoadStatsResponse_parse(
+          reinterpret_cast<const char*>(GRPC_SLICE_START_PTR(encoded_response)),
+          GRPC_SLICE_LENGTH(encoded_response), arena.ptr());
+  // Parse the response.
+  if (decoded_response == nullptr) {
+    return GRPC_ERROR_CREATE_FROM_STATIC_STRING("No response found.");
+  }
+  // Check the cluster size in the response.
+  size_t size;
+  const upb_strview* clusters =
+      envoy_service_load_stats_v2_LoadStatsResponse_clusters(decoded_response,
+                                                             &size);
+  if (size != 1) {
+    return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+        "The number of clusters (server names) is not 1.");
+  }
+  // Check the cluster name in the response
+  if (strncmp(expected_server_name, clusters[0].data, clusters[0].size) != 0) {
+    return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+        "Unexpected cluster (server name).");
+  }
+  // Get the load report interval.
+  const google_protobuf_Duration* load_reporting_interval_duration =
+      envoy_service_load_stats_v2_LoadStatsResponse_load_reporting_interval(
+          decoded_response);
+  gpr_timespec timespec{
+      google_protobuf_Duration_seconds(load_reporting_interval_duration),
+      google_protobuf_Duration_nanos(load_reporting_interval_duration),
+      GPR_TIMESPAN};
+  *load_reporting_interval = gpr_time_to_millis(timespec);
+  return GRPC_ERROR_NONE;
 }
 
 }  // namespace grpc_core

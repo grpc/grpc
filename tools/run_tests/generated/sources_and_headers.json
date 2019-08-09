@@ -5307,9 +5307,12 @@
       "grpc_test_util"
     ], 
     "headers": [
-      "src/proto/grpc/lb/v2/xds_for_test.grpc.pb.h", 
-      "src/proto/grpc/lb/v2/xds_for_test.pb.h", 
-      "src/proto/grpc/lb/v2/xds_for_test_mock.grpc.pb.h"
+      "src/proto/grpc/lb/v2/eds_for_test.grpc.pb.h", 
+      "src/proto/grpc/lb/v2/eds_for_test.pb.h", 
+      "src/proto/grpc/lb/v2/eds_for_test_mock.grpc.pb.h", 
+      "src/proto/grpc/lb/v2/lrs_for_test.grpc.pb.h", 
+      "src/proto/grpc/lb/v2/lrs_for_test.pb.h", 
+      "src/proto/grpc/lb/v2/lrs_for_test_mock.grpc.pb.h"
     ], 
     "is_filegroup": false, 
     "language": "c++", 

@@ -6027,7 +6027,8 @@ targets:
   build: test
   language: c++
   src:
-  - src/proto/grpc/lb/v2/xds_for_test.proto
+  - src/proto/grpc/lb/v2/eds_for_test.proto
+  - src/proto/grpc/lb/v2/lrs_for_test.proto
   - test/cpp/end2end/xds_end2end_test.cc
   deps:
   - grpc++_test_util

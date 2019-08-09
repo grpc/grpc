@@ -17674,17 +17674,24 @@ endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
 add_executable(xds_end2end_test
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/lb/v2/xds_for_test.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/lb/v2/xds_for_test.grpc.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/lb/v2/xds_for_test.pb.h
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/lb/v2/xds_for_test.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/lb/v2/eds_for_test.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/lb/v2/eds_for_test.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/lb/v2/eds_for_test.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/lb/v2/eds_for_test.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/lb/v2/lrs_for_test.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/lb/v2/lrs_for_test.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/lb/v2/lrs_for_test.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/lb/v2/lrs_for_test.grpc.pb.h
   test/cpp/end2end/xds_end2end_test.cc
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
 
 protobuf_generate_grpc_cpp(
-  src/proto/grpc/lb/v2/xds_for_test.proto
+  src/proto/grpc/lb/v2/eds_for_test.proto
+)
+protobuf_generate_grpc_cpp(
+  src/proto/grpc/lb/v2/lrs_for_test.proto
 )
 
 target_include_directories(xds_end2end_test
