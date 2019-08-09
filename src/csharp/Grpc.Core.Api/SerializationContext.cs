@@ -28,7 +28,7 @@ namespace Grpc.Core
     {
         /// <summary>
         /// Use the byte array as serialized form of current message and mark serialization process as complete.
-        /// Complete() can only be called once. By calling this method the caller gives up the ownership of the
+        /// <c>Complete()</c> can only be called once. By calling this method the caller gives up the ownership of the
         /// payload which must not be accessed afterwards.
         /// </summary>
         /// <param name="payload">the serialized form of current message</param>
@@ -38,7 +38,8 @@ namespace Grpc.Core
         }
 
         /// <summary>
-        /// Expose serializer as buffer writer
+        /// Gets buffer writer that can be used to write the serialized data. Once serialization is finished,
+        /// <c>Complete()</c> needs to be called.
         /// </summary>
         public virtual IBufferWriter<byte> GetBufferWriter()
         {
@@ -46,7 +47,7 @@ namespace Grpc.Core
         }
 
         /// <summary>
-        /// Complete the payload written so far.
+        /// Complete the payload written to the buffer writer. Complete() can only be called once.
         /// </summary>
         public virtual void Complete()
         {
