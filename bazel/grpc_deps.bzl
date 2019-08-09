@@ -2,6 +2,8 @@
 
 load("@bazel_tools//tools/build_defs/repo:git.bzl", "git_repository")
 load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
+load("@com_github_grpc_grpc//bazel:grpc_python_deps.bzl", "grpc_python_deps")
+
 
 def grpc_deps():
     """Loads dependencies need to compile and test the grpc library."""
@@ -206,9 +208,9 @@ def grpc_deps():
     if "upb" not in native.existing_rules():
         http_archive(
             name = "upb",
-            sha256 = "73deded75313f80779eba109c32f3c59a813addf5064bf6e7c213fca1e7d8e32",
-            strip_prefix = "upb-423ea5ca9ce8da69611e6e95559efcb3a1ba8ad8",
-            url = "https://github.com/protocolbuffers/upb/archive/423ea5ca9ce8da69611e6e95559efcb3a1ba8ad8.tar.gz",
+            sha256 = "6e3c81c9e6c609d918b399110a88d10efeab73b2c8eb3131de15658b1ec86141",
+            strip_prefix = "upb-b70f68269a7d51c5ce372a93742bf6960215ffef",
+            url = "https://github.com/protocolbuffers/upb/archive/b70f68269a7d51c5ce372a93742bf6960215ffef.tar.gz",
         )
     if "envoy_api" not in native.existing_rules():
         http_archive(
@@ -231,7 +233,10 @@ def grpc_deps():
             remote = "https://github.com/bazelbuild/rules_apple.git",
             tag = "0.17.2",
         )
-    
+
+    grpc_python_deps()
+
+
 # TODO: move some dependencies from "grpc_deps" here?
 def grpc_test_only_deps():
     """Internal, not intended for use by packages that are consuming grpc.
@@ -290,3 +295,4 @@ def grpc_test_only_deps():
             url = "https://github.com/twisted/constantly/archive/15.1.0.zip",
             build_file = "@com_github_grpc_grpc//third_party:constantly.BUILD",
         )
+

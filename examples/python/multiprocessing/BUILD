@@ -14,8 +14,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-load("@grpc_python_dependencies//:requirements.bzl", "requirement")
-load("//bazel:python_rules.bzl", "py_proto_library")
+load("//bazel:python_rules.bzl", "py_proto_library", "py_grpc_library")
 
 proto_library(
     name = "prime_proto",
@@ -24,8 +23,13 @@ proto_library(
 
 py_proto_library(
     name = "prime_proto_pb2",
-    deps = [":prime_proto"],
-    well_known_protos = False,
+    srcs = [":prime_proto"],
+)
+
+py_grpc_library(
+    name = "prime_proto_pb2_grpc",
+    srcs = [":prime_proto"],
+    deps = [":prime_proto_pb2"],
 )
 
 py_binary(
@@ -35,6 +39,7 @@ py_binary(
     deps = [
         "//src/python/grpcio/grpc:grpcio",
         ":prime_proto_pb2",
+        ":prime_proto_pb2_grpc",
     ],
     srcs_version = "PY3",
 )
@@ -45,9 +50,10 @@ py_binary(
     srcs = ["server.py"],
     deps = [
         "//src/python/grpcio/grpc:grpcio",
-        ":prime_proto_pb2"
+        ":prime_proto_pb2",
+        ":prime_proto_pb2_grpc",
     ] + select({
-        "//conditions:default": [requirement("futures")],
+        "//conditions:default": ["@futures//:futures"],
         "//:python3": [],
     }),
     srcs_version = "PY3",

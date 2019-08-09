@@ -38,6 +38,9 @@
 #include "src/core/lib/surface/validate_metadata.h"
 #include "src/core/lib/transport/http2_errors.h"
 
+grpc_core::DebugOnlyTraceFlag grpc_trace_chttp2_hpack_parser(
+    false, "chttp2_hpack_parser");
+
 typedef enum {
   NOT_BINARY,
   BINARY_BEGIN,
@@ -643,7 +646,7 @@ static void GPR_ATTRIBUTE_NOINLINE on_hdr_log(grpc_mdelem md) {
 /* emission helpers */
 template <bool do_add>
 static grpc_error* on_hdr(grpc_chttp2_hpack_parser* p, grpc_mdelem md) {
-  if (GRPC_TRACE_FLAG_ENABLED(grpc_http_trace)) {
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_trace_chttp2_hpack_parser)) {
     on_hdr_log(md);
   }
   if (do_add) {
@@ -1021,7 +1024,7 @@ static grpc_error* parse_lithdr_nvridx_v(grpc_chttp2_hpack_parser* p,
 /* finish parsing a max table size change */
 static grpc_error* finish_max_tbl_size(grpc_chttp2_hpack_parser* p,
                                        const uint8_t* cur, const uint8_t* end) {
-  if (GRPC_TRACE_FLAG_ENABLED(grpc_http_trace)) {
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_trace_chttp2_hpack_parser)) {
     gpr_log(GPR_INFO, "MAX TABLE SIZE: %d", p->index);
   }
   grpc_error* err =

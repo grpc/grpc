@@ -214,6 +214,8 @@ void grpc_channel_args_destroy(grpc_channel_args* a) {
 
 int grpc_channel_args_compare(const grpc_channel_args* a,
                               const grpc_channel_args* b) {
+  if (a == nullptr && b == nullptr) return 0;
+  if (a == nullptr || b == nullptr) return a == nullptr ? -1 : 1;
   int c = GPR_ICMP(a->num_args, b->num_args);
   if (c != 0) return c;
   for (size_t i = 0; i < a->num_args; i++) {
