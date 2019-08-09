@@ -1513,7 +1513,8 @@ void XdsLb::LbChannelState::LrsCallState::OnResponseReceivedLocked(
     lrs_calld->seen_response_ = true;
     if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_xds_trace)) {
       gpr_log(GPR_INFO,
-              "[xdslb %p] LRS response received, load_report_interval=%ldms",
+              "[xdslb %p] LRS response received, load_report_interval=%" PRId64
+              "ms",
               xdslb_policy, new_load_reporting_interval);
     }
     if (new_load_reporting_interval <

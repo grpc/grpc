@@ -131,7 +131,8 @@ XdsLbClientStats::Snapshot XdsLbClientStats::GetSnapshotAndReset() {
   grpc_millis now = ExecCtx::Get()->Now();
   // Record total_dropped_requests and reporting interval in the snapshot.
   Snapshot snapshot;
-  snapshot.total_dropped_requests = GetAndResetCounter(&total_dropped_requests_);
+  snapshot.total_dropped_requests =
+      GetAndResetCounter(&total_dropped_requests_);
   snapshot.load_report_interval = now - last_report_time_;
   // Update last report time.
   last_report_time_ = now;
