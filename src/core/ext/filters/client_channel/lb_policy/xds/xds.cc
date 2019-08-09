@@ -375,9 +375,9 @@ class XdsLb : public LoadBalancingPolicy {
   // references to it by the xds picker and the locality entry.
   class PickerWrapper : public RefCounted<PickerWrapper> {
    public:
-    PickerWrapper(UniquePtr<SubchannelPicker> picker,
+    PickerWrapper(RefCountedPtr<XdsLb> xds_policy, UniquePtr<SubchannelPicker> picker,
                   XdsClientStats::LocalityStats* locality_stats)
-        : picker_(std::move(picker)), locality_stats_(locality_stats) {
+        : xds_policy_(std::move(xds_policy)), picker_(std::move(picker)), locality_stats_(locality_stats) {
       locality_stats_->RefByPicker();
     }
     ~PickerWrapper() { locality_stats_->UnrefByPicker(); }
@@ -390,6 +390,7 @@ class XdsLb : public LoadBalancingPolicy {
         LoadBalancingPolicy::MetadataInterface* recv_trailing_metadata,
         LoadBalancingPolicy::CallState* call_state);
 
+RefCountedPtr<XdsLb> xds_policy_;
     UniquePtr<SubchannelPicker> picker_;
     XdsClientStats::LocalityStats* locality_stats_;
   };
@@ -2320,7 +2321,7 @@ void XdsLb::LocalityMap::LocalityEntry::Helper::UpdateState(
   if (entry_->parent_->fallback_policy_ != nullptr) return;
   GPR_ASSERT(entry_->parent_->lb_chand_ != nullptr);
   // Cache the picker and its state in the entry.
-  entry_->picker_wrapper_ = MakeRefCounted<PickerWrapper>(
+  entry_->picker_wrapper_ = MakeRefCounted<PickerWrapper>(entry_->parent_,
       std::move(picker),
       entry_->parent_->client_stats_.FindLocalityStats(entry_->name_));
   entry_->connectivity_state_ = state;
