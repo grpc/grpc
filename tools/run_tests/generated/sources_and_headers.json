@@ -2584,22 +2584,6 @@
     "headers": [], 
     "is_filegroup": false, 
     "language": "c++", 
-    "name": "alts_handshaker_service_api_test", 
-    "src": [
-      "test/core/tsi/alts/handshaker/alts_handshaker_service_api_test.cc"
-    ], 
-    "third_party": false, 
-    "type": "target"
-  }, 
-  {
-    "deps": [
-      "alts_test_util", 
-      "gpr", 
-      "grpc"
-    ], 
-    "headers": [], 
-    "is_filegroup": false, 
-    "language": "c++", 
     "name": "alts_iovec_record_protocol_test", 
     "src": [
       "test/core/tsi/alts/zero_copy_frame_protector/alts_iovec_record_protocol_test.cc"
@@ -8114,29 +8098,6 @@
   }, 
   {
     "deps": [
-      "nanopb"
-    ], 
-    "headers": [
-      "src/core/tsi/alts/handshaker/altscontext.pb.h", 
-      "src/core/tsi/alts/handshaker/handshaker.pb.h", 
-      "src/core/tsi/alts/handshaker/transport_security_common.pb.h"
-    ], 
-    "is_filegroup": true, 
-    "language": "c", 
-    "name": "alts_proto", 
-    "src": [
-      "src/core/tsi/alts/handshaker/altscontext.pb.c", 
-      "src/core/tsi/alts/handshaker/altscontext.pb.h", 
-      "src/core/tsi/alts/handshaker/handshaker.pb.c", 
-      "src/core/tsi/alts/handshaker/handshaker.pb.h", 
-      "src/core/tsi/alts/handshaker/transport_security_common.pb.c", 
-      "src/core/tsi/alts/handshaker/transport_security_common.pb.h"
-    ], 
-    "third_party": false, 
-    "type": "filegroup"
-  }, 
-  {
-    "deps": [
       "alts_util", 
       "gpr", 
       "grpc_base", 
@@ -8205,7 +8166,9 @@
     "type": "filegroup"
   }, 
   {
-    "deps": [], 
+    "deps": [
+      "upb"
+    ], 
     "headers": [
       "src/core/ext/upb-generated/src/proto/grpc/gcp/altscontext.upb.h", 
       "src/core/ext/upb-generated/src/proto/grpc/gcp/handshaker.upb.h", 
@@ -8227,10 +8190,9 @@
   }, 
   {
     "deps": [
-      "alts_proto", 
+      "alts_upb", 
       "gpr", 
       "grpc_base", 
-      "nanopb", 
       "tsi_interface", 
       "upb"
     ], 
@@ -8238,8 +8200,6 @@
       "include/grpc/grpc_security.h", 
       "src/core/lib/security/credentials/alts/check_gcp_environment.h", 
       "src/core/lib/security/credentials/alts/grpc_alts_credentials_options.h", 
-      "src/core/tsi/alts/handshaker/alts_handshaker_service_api.h", 
-      "src/core/tsi/alts/handshaker/alts_handshaker_service_api_util.h", 
       "src/core/tsi/alts/handshaker/alts_tsi_utils.h", 
       "src/core/tsi/alts/handshaker/transport_security_common_api.h"
     ], 
@@ -8257,10 +8217,6 @@
       "src/core/lib/security/credentials/alts/grpc_alts_credentials_options.cc", 
       "src/core/lib/security/credentials/alts/grpc_alts_credentials_options.h", 
       "src/core/lib/security/credentials/alts/grpc_alts_credentials_server_options.cc", 
-      "src/core/tsi/alts/handshaker/alts_handshaker_service_api.cc", 
-      "src/core/tsi/alts/handshaker/alts_handshaker_service_api.h", 
-      "src/core/tsi/alts/handshaker/alts_handshaker_service_api_util.cc", 
-      "src/core/tsi/alts/handshaker/alts_handshaker_service_api_util.h", 
       "src/core/tsi/alts/handshaker/alts_tsi_utils.cc", 
       "src/core/tsi/alts/handshaker/alts_tsi_utils.h", 
       "src/core/tsi/alts/handshaker/transport_security_common_api.cc", 
@@ -8407,7 +8363,9 @@
     "type": "filegroup"
   }, 
   {
-    "deps": [], 
+    "deps": [
+      "upb"
+    ], 
     "headers": [
       "src/core/ext/upb-generated/google/api/annotations.upb.h", 
       "src/core/ext/upb-generated/google/api/http.upb.h", 
@@ -9586,7 +9544,8 @@
   }, 
   {
     "deps": [
-      "google_api_upb"
+      "google_api_upb", 
+      "upb"
     ], 
     "headers": [
       "src/core/ext/upb-generated/src/proto/grpc/lb/v1/load_balancer.upb.h"

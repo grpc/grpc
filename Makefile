@@ -1146,7 +1146,6 @@ alts_frame_handler_test: $(BINDIR)/$(CONFIG)/alts_frame_handler_test
 alts_frame_protector_test: $(BINDIR)/$(CONFIG)/alts_frame_protector_test
 alts_grpc_record_protocol_test: $(BINDIR)/$(CONFIG)/alts_grpc_record_protocol_test
 alts_handshaker_client_test: $(BINDIR)/$(CONFIG)/alts_handshaker_client_test
-alts_handshaker_service_api_test: $(BINDIR)/$(CONFIG)/alts_handshaker_service_api_test
 alts_iovec_record_protocol_test: $(BINDIR)/$(CONFIG)/alts_iovec_record_protocol_test
 alts_security_connector_test: $(BINDIR)/$(CONFIG)/alts_security_connector_test
 alts_tsi_handshaker_test: $(BINDIR)/$(CONFIG)/alts_tsi_handshaker_test
@@ -1627,7 +1626,6 @@ buildtests_cxx: privatelibs_cxx \
   $(BINDIR)/$(CONFIG)/alts_frame_protector_test \
   $(BINDIR)/$(CONFIG)/alts_grpc_record_protocol_test \
   $(BINDIR)/$(CONFIG)/alts_handshaker_client_test \
-  $(BINDIR)/$(CONFIG)/alts_handshaker_service_api_test \
   $(BINDIR)/$(CONFIG)/alts_iovec_record_protocol_test \
   $(BINDIR)/$(CONFIG)/alts_security_connector_test \
   $(BINDIR)/$(CONFIG)/alts_tsi_handshaker_test \
@@ -1795,7 +1793,6 @@ buildtests_cxx: privatelibs_cxx \
   $(BINDIR)/$(CONFIG)/alts_frame_protector_test \
   $(BINDIR)/$(CONFIG)/alts_grpc_record_protocol_test \
   $(BINDIR)/$(CONFIG)/alts_handshaker_client_test \
-  $(BINDIR)/$(CONFIG)/alts_handshaker_service_api_test \
   $(BINDIR)/$(CONFIG)/alts_iovec_record_protocol_test \
   $(BINDIR)/$(CONFIG)/alts_security_connector_test \
   $(BINDIR)/$(CONFIG)/alts_tsi_handshaker_test \
@@ -2241,8 +2238,6 @@ test_cxx: buildtests_cxx
 	$(Q) $(BINDIR)/$(CONFIG)/alts_grpc_record_protocol_test || ( echo test alts_grpc_record_protocol_test failed ; exit 1 )
 	$(E) "[RUN]     Testing alts_handshaker_client_test"
 	$(Q) $(BINDIR)/$(CONFIG)/alts_handshaker_client_test || ( echo test alts_handshaker_client_test failed ; exit 1 )
-	$(E) "[RUN]     Testing alts_handshaker_service_api_test"
-	$(Q) $(BINDIR)/$(CONFIG)/alts_handshaker_service_api_test || ( echo test alts_handshaker_service_api_test failed ; exit 1 )
 	$(E) "[RUN]     Testing alts_iovec_record_protocol_test"
 	$(Q) $(BINDIR)/$(CONFIG)/alts_iovec_record_protocol_test || ( echo test alts_iovec_record_protocol_test failed ; exit 1 )
 	$(E) "[RUN]     Testing alts_security_connector_test"
@@ -3762,23 +3757,18 @@ LIBGRPC_SRC = \
     src/core/lib/security/credentials/alts/grpc_alts_credentials_client_options.cc \
     src/core/lib/security/credentials/alts/grpc_alts_credentials_options.cc \
     src/core/lib/security/credentials/alts/grpc_alts_credentials_server_options.cc \
-    src/core/tsi/alts/handshaker/alts_handshaker_service_api.cc \
-    src/core/tsi/alts/handshaker/alts_handshaker_service_api_util.cc \
     src/core/tsi/alts/handshaker/alts_tsi_utils.cc \
     src/core/tsi/alts/handshaker/transport_security_common_api.cc \
-    src/core/tsi/alts/handshaker/altscontext.pb.c \
-    src/core/tsi/alts/handshaker/handshaker.pb.c \
-    src/core/tsi/alts/handshaker/transport_security_common.pb.c \
-    third_party/nanopb/pb_common.c \
-    third_party/nanopb/pb_decode.c \
-    third_party/nanopb/pb_encode.c \
-    src/core/tsi/transport_security.cc \
+    src/core/ext/upb-generated/src/proto/grpc/gcp/altscontext.upb.c \
+    src/core/ext/upb-generated/src/proto/grpc/gcp/handshaker.upb.c \
+    src/core/ext/upb-generated/src/proto/grpc/gcp/transport_security_common.upb.c \
     third_party/upb/upb/decode.c \
     third_party/upb/upb/encode.c \
     third_party/upb/upb/msg.c \
     third_party/upb/upb/port.c \
     third_party/upb/upb/table.c \
     third_party/upb/upb/upb.c \
+    src/core/tsi/transport_security.cc \
     src/core/ext/transport/chttp2/client/insecure/channel_create.cc \
     src/core/ext/transport/chttp2/client/insecure/channel_create_posix.cc \
     src/core/ext/transport/chttp2/client/authority.cc \
@@ -4266,16 +4256,11 @@ LIBGRPC_CRONET_SRC = \
     src/core/lib/security/credentials/alts/grpc_alts_credentials_client_options.cc \
     src/core/lib/security/credentials/alts/grpc_alts_credentials_options.cc \
     src/core/lib/security/credentials/alts/grpc_alts_credentials_server_options.cc \
-    src/core/tsi/alts/handshaker/alts_handshaker_service_api.cc \
-    src/core/tsi/alts/handshaker/alts_handshaker_service_api_util.cc \
     src/core/tsi/alts/handshaker/alts_tsi_utils.cc \
     src/core/tsi/alts/handshaker/transport_security_common_api.cc \
-    src/core/tsi/alts/handshaker/altscontext.pb.c \
-    src/core/tsi/alts/handshaker/handshaker.pb.c \
-    src/core/tsi/alts/handshaker/transport_security_common.pb.c \
-    third_party/nanopb/pb_common.c \
-    third_party/nanopb/pb_decode.c \
-    third_party/nanopb/pb_encode.c \
+    src/core/ext/upb-generated/src/proto/grpc/gcp/altscontext.upb.c \
+    src/core/ext/upb-generated/src/proto/grpc/gcp/handshaker.upb.c \
+    src/core/ext/upb-generated/src/proto/grpc/gcp/transport_security_common.upb.c \
     src/core/tsi/transport_security.cc \
     src/core/ext/transport/chttp2/client/insecure/channel_create.cc \
     src/core/ext/transport/chttp2/client/insecure/channel_create_posix.cc \
@@ -13657,49 +13642,6 @@ endif
 endif
 
 
-ALTS_HANDSHAKER_SERVICE_API_TEST_SRC = \
-    test/core/tsi/alts/handshaker/alts_handshaker_service_api_test.cc \
-
-ALTS_HANDSHAKER_SERVICE_API_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(ALTS_HANDSHAKER_SERVICE_API_TEST_SRC))))
-ifeq ($(NO_SECURE),true)
-
-# You can't build secure targets if you don't have OpenSSL.
-
-$(BINDIR)/$(CONFIG)/alts_handshaker_service_api_test: openssl_dep_error
-
-else
-
-
-
-
-ifeq ($(NO_PROTOBUF),true)
-
-# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
-
-$(BINDIR)/$(CONFIG)/alts_handshaker_service_api_test: protobuf_dep_error
-
-else
-
-$(BINDIR)/$(CONFIG)/alts_handshaker_service_api_test: $(PROTOBUF_DEP) $(ALTS_HANDSHAKER_SERVICE_API_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libalts_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libgrpc.a
-	$(E) "[LD]      Linking $@"
-	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LDXX) $(LDFLAGS) $(ALTS_HANDSHAKER_SERVICE_API_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libalts_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(LDLIBS_SECURE) $(GTEST_LIB) -o $(BINDIR)/$(CONFIG)/alts_handshaker_service_api_test
-
-endif
-
-endif
-
-$(OBJDIR)/$(CONFIG)/test/core/tsi/alts/handshaker/alts_handshaker_service_api_test.o:  $(LIBDIR)/$(CONFIG)/libalts_test_util.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libgrpc.a
-
-deps_alts_handshaker_service_api_test: $(ALTS_HANDSHAKER_SERVICE_API_TEST_OBJS:.o=.dep)
-
-ifneq ($(NO_SECURE),true)
-ifneq ($(NO_DEPS),true)
--include $(ALTS_HANDSHAKER_SERVICE_API_TEST_OBJS:.o=.dep)
-endif
-endif
-
-
 ALTS_IOVEC_RECORD_PROTOCOL_TEST_SRC = \
     test/core/tsi/alts/zero_copy_frame_protector/alts_iovec_record_protocol_test.cc \
 
@@ -22480,6 +22422,9 @@ src/core/ext/transport/cronet/client/secure/cronet_channel_create.cc: $(OPENSSL_
 src/core/ext/transport/cronet/plugin_registry/grpc_cronet_plugin_registry.cc: $(OPENSSL_DEP)
 src/core/ext/transport/cronet/transport/cronet_api_dummy.cc: $(OPENSSL_DEP)
 src/core/ext/transport/cronet/transport/cronet_transport.cc: $(OPENSSL_DEP)
+src/core/ext/upb-generated/src/proto/grpc/gcp/altscontext.upb.c: $(OPENSSL_DEP)
+src/core/ext/upb-generated/src/proto/grpc/gcp/handshaker.upb.c: $(OPENSSL_DEP)
+src/core/ext/upb-generated/src/proto/grpc/gcp/transport_security_common.upb.c: $(OPENSSL_DEP)
 src/core/lib/http/httpcli_security_connector.cc: $(OPENSSL_DEP)
 src/core/lib/security/context/security_context.cc: $(OPENSSL_DEP)
 src/core/lib/security/credentials/alts/alts_credentials.cc: $(OPENSSL_DEP)
@@ -22534,14 +22479,9 @@ src/core/tsi/alts/frame_protector/alts_seal_privacy_integrity_crypter.cc: $(OPEN
 src/core/tsi/alts/frame_protector/alts_unseal_privacy_integrity_crypter.cc: $(OPENSSL_DEP)
 src/core/tsi/alts/frame_protector/frame_handler.cc: $(OPENSSL_DEP)
 src/core/tsi/alts/handshaker/alts_handshaker_client.cc: $(OPENSSL_DEP)
-src/core/tsi/alts/handshaker/alts_handshaker_service_api.cc: $(OPENSSL_DEP)
-src/core/tsi/alts/handshaker/alts_handshaker_service_api_util.cc: $(OPENSSL_DEP)
 src/core/tsi/alts/handshaker/alts_shared_resource.cc: $(OPENSSL_DEP)
 src/core/tsi/alts/handshaker/alts_tsi_handshaker.cc: $(OPENSSL_DEP)
 src/core/tsi/alts/handshaker/alts_tsi_utils.cc: $(OPENSSL_DEP)
-src/core/tsi/alts/handshaker/altscontext.pb.c: $(OPENSSL_DEP)
-src/core/tsi/alts/handshaker/handshaker.pb.c: $(OPENSSL_DEP)
-src/core/tsi/alts/handshaker/transport_security_common.pb.c: $(OPENSSL_DEP)
 src/core/tsi/alts/handshaker/transport_security_common_api.cc: $(OPENSSL_DEP)
 src/core/tsi/alts/zero_copy_frame_protector/alts_grpc_integrity_only_record_protocol.cc: $(OPENSSL_DEP)
 src/core/tsi/alts/zero_copy_frame_protector/alts_grpc_privacy_integrity_record_protocol.cc: $(OPENSSL_DEP)
@@ -22620,9 +22560,6 @@ test/cpp/util/string_ref_helper.cc: $(OPENSSL_DEP)
 test/cpp/util/subprocess.cc: $(OPENSSL_DEP)
 test/cpp/util/test_config_cc.cc: $(OPENSSL_DEP)
 test/cpp/util/test_credentials_provider.cc: $(OPENSSL_DEP)
-third_party/nanopb/pb_common.c: $(OPENSSL_DEP)
-third_party/nanopb/pb_decode.c: $(OPENSSL_DEP)
-third_party/nanopb/pb_encode.c: $(OPENSSL_DEP)
 endif
 
 .PHONY: all strip tools dep_error openssl_dep_error openssl_dep_message git_update stop buildtests buildtests_c buildtests_cxx test test_c test_cxx install install_c install_cxx install-headers install-headers_c install-headers_cxx install-shared install-shared_c install-shared_cxx install-static install-static_c install-static_cxx strip strip-shared strip-static strip_c strip-shared_c strip-static_c strip_cxx strip-shared_cxx strip-static_cxx dep_c dep_cxx bins_dep_c bins_dep_cxx clean

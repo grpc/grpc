@@ -17,17 +17,6 @@ settings:
   g_stands_for: ganges
   version: 1.24.0-dev
 filegroups:
-- name: alts_proto
-  headers:
-  - src/core/tsi/alts/handshaker/altscontext.pb.h
-  - src/core/tsi/alts/handshaker/handshaker.pb.h
-  - src/core/tsi/alts/handshaker/transport_security_common.pb.h
-  src:
-  - src/core/tsi/alts/handshaker/altscontext.pb.c
-  - src/core/tsi/alts/handshaker/handshaker.pb.c
-  - src/core/tsi/alts/handshaker/transport_security_common.pb.c
-  uses:
-  - nanopb
 - name: alts_tsi
   headers:
   - src/core/tsi/alts/crypt/gsec.h
@@ -80,14 +69,14 @@ filegroups:
   - src/core/ext/upb-generated/src/proto/grpc/gcp/altscontext.upb.c
   - src/core/ext/upb-generated/src/proto/grpc/gcp/handshaker.upb.c
   - src/core/ext/upb-generated/src/proto/grpc/gcp/transport_security_common.upb.c
+  uses:
+  - upb
 - name: alts_util
   public_headers:
   - include/grpc/grpc_security.h
   headers:
   - src/core/lib/security/credentials/alts/check_gcp_environment.h
   - src/core/lib/security/credentials/alts/grpc_alts_credentials_options.h
-  - src/core/tsi/alts/handshaker/alts_handshaker_service_api.h
-  - src/core/tsi/alts/handshaker/alts_handshaker_service_api_util.h
   - src/core/tsi/alts/handshaker/alts_tsi_utils.h
   - src/core/tsi/alts/handshaker/transport_security_common_api.h
   src:
@@ -98,14 +87,11 @@ filegroups:
   - src/core/lib/security/credentials/alts/grpc_alts_credentials_client_options.cc
   - src/core/lib/security/credentials/alts/grpc_alts_credentials_options.cc
   - src/core/lib/security/credentials/alts/grpc_alts_credentials_server_options.cc
-  - src/core/tsi/alts/handshaker/alts_handshaker_service_api.cc
-  - src/core/tsi/alts/handshaker/alts_handshaker_service_api_util.cc
   - src/core/tsi/alts/handshaker/alts_tsi_utils.cc
   - src/core/tsi/alts/handshaker/transport_security_common_api.cc
   uses:
-  - alts_proto
+  - alts_upb
   - grpc_base
-  - nanopb
   - tsi_interface
   - upb
 - name: census
@@ -202,6 +188,8 @@ filegroups:
   - src/core/ext/upb-generated/google/protobuf/timestamp.upb.c
   - src/core/ext/upb-generated/google/protobuf/wrappers.upb.c
   - src/core/ext/upb-generated/google/rpc/status.upb.c
+  uses:
+  - upb
 - name: gpr_base
   src:
   - src/core/lib/gpr/alloc.cc
@@ -878,6 +866,7 @@ filegroups:
   - src/core/ext/upb-generated/src/proto/grpc/lb/v1/load_balancer.upb.c
   uses:
   - google_api_upb
+  - upb
 - name: grpc_max_age_filter
   headers:
   - src/core/ext/filters/max_age/max_age_filter.h
@@ -4023,15 +4012,6 @@ targets:
   language: c++
   src:
   - test/core/tsi/alts/handshaker/alts_handshaker_client_test.cc
-  deps:
-  - alts_test_util
-  - gpr
-  - grpc
-- name: alts_handshaker_service_api_test
-  build: test
-  language: c++
-  src:
-  - test/core/tsi/alts/handshaker/alts_handshaker_service_api_test.cc
   deps:
   - alts_test_util
   - gpr
