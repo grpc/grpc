@@ -1262,7 +1262,6 @@ grpc_cc_library(
         "envoy_ads_upb",
         "grpc_base",
         "grpc_client_channel",
-        "grpc_lb_upb",
         "grpc_resolver_fake",
     ],
 )
@@ -1286,7 +1285,6 @@ grpc_cc_library(
         "envoy_ads_upb",
         "grpc_base",
         "grpc_client_channel",
-        "grpc_lb_upb",
         "grpc_resolver_fake",
         "grpc_secure",
     ],

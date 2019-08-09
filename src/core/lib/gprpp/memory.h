@@ -30,6 +30,9 @@
 
 // Add this to a class that want to use Delete(), but has a private or
 // protected destructor.
+// Should not be used in new code.
+// TODO(juanlishen): Remove this macro, and instead comment that the public dtor
+// should not be used directly.
 #define GRPC_ALLOW_CLASS_TO_USE_NON_PUBLIC_DELETE         \
   template <typename _Delete_T, bool _Delete_can_be_null> \
   friend void ::grpc_core::Delete(_Delete_T*);            \
@@ -38,6 +41,9 @@
 
 // Add this to a class that want to use New(), but has a private or
 // protected constructor.
+// Should not be used in new code.
+// TODO(juanlishen): Remove this macro, and instead comment that the public dtor
+// should not be used directly.
 #define GRPC_ALLOW_CLASS_TO_USE_NON_PUBLIC_NEW      \
   template <typename _New_T, typename... _New_Args> \
   friend _New_T* grpc_core::New(_New_Args&&...);

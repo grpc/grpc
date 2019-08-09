@@ -833,7 +833,6 @@ filegroups:
   - grpc_base
   - grpc_client_channel
   - grpc_resolver_fake
-  - grpc_lb_upb
 - name: grpc_lb_policy_xds_secure
   headers:
   - src/core/ext/filters/client_channel/lb_policy/xds/xds.h
@@ -852,7 +851,6 @@ filegroups:
   - grpc_client_channel
   - grpc_resolver_fake
   - grpc_secure
-  - grpc_lb_upb
 - name: grpc_lb_subchannel_list
   headers:
   - src/core/ext/filters/client_channel/lb_policy/subchannel_list.h
@@ -6027,7 +6025,8 @@ targets:
   build: test
   language: c++
   src:
-  - src/proto/grpc/lb/v2/xds_for_test.proto
+  - src/proto/grpc/lb/v2/eds_for_test.proto
+  - src/proto/grpc/lb/v2/lrs_for_test.proto
   - test/cpp/end2end/xds_end2end_test.cc
   deps:
   - grpc++_test_util
