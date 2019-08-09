@@ -25,57 +25,8 @@
 
 #include "src/core/ext/filters/client_channel/lb_policy/xds/xds_client_stats.h"
 #include "src/core/ext/filters/client_channel/server_address.h"
-#include "src/proto/grpc/lb/v1/load_balancer.upb.h"
 
 namespace grpc_core {
-
-typedef grpc_lb_v1_LoadBalanceRequest xds_grpclb_request;
-
-class XdsLocalityName : public RefCounted<XdsLocalityName> {
- public:
-  struct Less {
-    bool operator()(const RefCountedPtr<XdsLocalityName>& lhs,
-                    const RefCountedPtr<XdsLocalityName>& rhs) {
-      int cmp_result = strcmp(lhs->region_.get(), rhs->region_.get());
-      if (cmp_result != 0) return cmp_result < 0;
-      cmp_result = strcmp(lhs->zone_.get(), rhs->zone_.get());
-      if (cmp_result != 0) return cmp_result < 0;
-      return strcmp(lhs->sub_zone_.get(), rhs->sub_zone_.get()) < 0;
-    }
-  };
-
-  XdsLocalityName(UniquePtr<char> region, UniquePtr<char> zone,
-                  UniquePtr<char> sub_zone)
-      : region_(std::move(region)),
-        zone_(std::move(zone)),
-        sub_zone_(std::move(sub_zone)) {}
-
-  bool operator==(const XdsLocalityName& other) const {
-    return strcmp(region_.get(), other.region_.get()) == 0 &&
-           strcmp(zone_.get(), other.zone_.get()) == 0 &&
-           strcmp(sub_zone_.get(), other.sub_zone_.get()) == 0;
-  }
-
-  const char* region() const { return region_.get(); }
-  const char* zone() const { return zone_.get(); }
-  const char* sub_zone() const { return sub_zone_.get(); }
-
-  const char* AsHumanReadableString() {
-    if (human_readable_string_ == nullptr) {
-      char* tmp;
-      gpr_asprintf(&tmp, "{region=\"%s\", zone=\"%s\", sub_zone=\"%s\"}",
-                   region_.get(), zone_.get(), sub_zone_.get());
-      human_readable_string_.reset(tmp);
-    }
-    return human_readable_string_.get();
-  }
-
- private:
-  UniquePtr<char> region_;
-  UniquePtr<char> zone_;
-  UniquePtr<char> sub_zone_;
-  UniquePtr<char> human_readable_string_;
-};
 
 struct XdsLocalityInfo {
   bool operator==(const XdsLocalityInfo& other) const {
@@ -112,9 +63,20 @@ grpc_slice XdsEdsRequestCreateAndEncode(const char* service_name);
 grpc_error* XdsEdsResponseDecodeAndParse(const grpc_slice& encoded_response,
                                          XdsUpdate* update);
 
-// TODO(juanlishen): Delete these when LRS is added.
-xds_grpclb_request* xds_grpclb_load_report_request_create_locked(
-    grpc_core::XdsLbClientStats* client_stats, upb_arena* arena);
+// Creates an LRS request querying \a server_name.
+grpc_slice XdsLrsRequestCreateAndEncode(const char* server_name);
+
+// Creates an LRS request sending client-side load reports. If all the counters
+// in \a client_stats are zero, returns empty slice.
+grpc_slice XdsLrsRequestCreateAndEncode(const char* server_name,
+                                        XdsClientStats* client_stats);
+
+// Parses the LRS response and returns the client-side load reporting interval.
+// If there is any error (e.g., the found server name doesn't match \a
+// expected_server_name), the output config is invalid.
+grpc_error* XdsLrsResponseDecodeAndParse(const grpc_slice& encoded_response,
+                                         grpc_millis* load_reporting_interval,
+                                         const char* expected_server_name);
 
 }  // namespace grpc_core
 
