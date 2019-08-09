@@ -33,8 +33,6 @@
 
 namespace grpc_core {
 
-constexpr char kCpuUtilization[] = "cpu_utilization";
-
 class XdsLocalityName : public RefCounted<XdsLocalityName> {
  public:
   struct Less {
@@ -81,7 +79,7 @@ class XdsLocalityName : public RefCounted<XdsLocalityName> {
   UniquePtr<char> human_readable_string_;
 };
 
-// The stats classes (i.e., XdsLbClientStats, LocalityStats, and LoadMetric) can
+// The stats classes (i.e., XdsClientStats, LocalityStats, and LoadMetric) can
 // be taken a snapshot (and reset) to populate the load report. The snapshots
 // are contained in the respective Snapshot structs. The Snapshot structs have
 // no synchronization. The stats classes use several different synchronization
@@ -91,7 +89,7 @@ class XdsLocalityName : public RefCounted<XdsLocalityName> {
 // are already synchronized by the callers do not have additional
 // synchronization here. Note that the Map<>s we mentioned in 2 and 3 refer to
 // the map's tree structure rather than the content in each tree node.
-class XdsLbClientStats {
+class XdsClientStats {
  public:
   class LocalityStats {
    public:

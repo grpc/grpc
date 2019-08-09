@@ -241,11 +241,10 @@ grpc_slice XdsLrsRequestCreateAndEncode(const char* server_name) {
 
 namespace {
 
-void LocalityStatsPopulate(
-    envoy_api_v2_endpoint_UpstreamLocalityStats* output,
-    Pair<RefCountedPtr<XdsLocalityName>,
-         XdsLbClientStats::LocalityStats::Snapshot>& input,
-    upb_arena* arena) {
+void LocalityStatsPopulate(envoy_api_v2_endpoint_UpstreamLocalityStats* output,
+                           Pair<RefCountedPtr<XdsLocalityName>,
+                                XdsClientStats::LocalityStats::Snapshot>& input,
+                           upb_arena* arena) {
   // Set sub_zone.
   envoy_api_v2_core_Locality* locality =
       envoy_api_v2_endpoint_UpstreamLocalityStats_mutable_locality(output,
@@ -253,20 +252,19 @@ void LocalityStatsPopulate(
   envoy_api_v2_core_Locality_set_sub_zone(
       locality, upb_strview_makez(input.first->sub_zone()));
   // Set total counts.
-  XdsLbClientStats::LocalityStats::Snapshot& snapshot = input.second;
+  XdsClientStats::LocalityStats::Snapshot& snapshot = input.second;
   envoy_api_v2_endpoint_UpstreamLocalityStats_set_total_successful_requests(
       output, snapshot.total_successful_requests);
   envoy_api_v2_endpoint_UpstreamLocalityStats_set_total_requests_in_progress(
       output, snapshot.total_requests_in_progress);
   envoy_api_v2_endpoint_UpstreamLocalityStats_set_total_error_requests(
       output, snapshot.total_error_requests);
-  // FIXME: uncomment after regenerating.
-  //  envoy_api_v2_endpoint_UpstreamLocalityStats_set_total_issued_requests(
-  //      output, stats.total_issued_requests);
+  envoy_api_v2_endpoint_UpstreamLocalityStats_set_total_issued_requests(
+      output, snapshot.total_issued_requests);
   // Add load metric stats.
   for (auto& p : snapshot.load_metric_stats) {
     const char* metric_name = p.first.get();
-    const XdsLbClientStats::LocalityStats::LoadMetric::Snapshot& metric_value =
+    const XdsClientStats::LocalityStats::LoadMetric::Snapshot& metric_value =
         p.second;
     envoy_api_v2_endpoint_EndpointLoadMetricStats* load_metric =
         envoy_api_v2_endpoint_UpstreamLocalityStats_add_load_metric_stats(
@@ -283,9 +281,9 @@ void LocalityStatsPopulate(
 }  // namespace
 
 grpc_slice XdsLrsRequestCreateAndEncode(const char* server_name,
-                                        XdsLbClientStats* client_stats) {
+                                        XdsClientStats* client_stats) {
   upb::Arena arena;
-  XdsLbClientStats::Snapshot snapshot = client_stats->GetSnapshotAndReset();
+  XdsClientStats::Snapshot snapshot = client_stats->GetSnapshotAndReset();
   // Prune unused locality stats.
   client_stats->PruneLocalityStats();
   // When all the counts are zero, return empty slice.
