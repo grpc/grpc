@@ -37,5 +37,5 @@ grpc_proto_library(
     ],
     has_services = True,
     well_known_protos = True,
-    deps = [":eds_for_test_proto"],
+    deps = ["eds_for_test_proto"],
 )
