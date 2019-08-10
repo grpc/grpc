@@ -208,7 +208,7 @@ class XdsClientStats {
   RefCountedPtr<LocalityStats> FindLocalityStats(
       const RefCountedPtr<XdsLocalityName>& locality_name);
   void PruneLocalityStats();
-  void AddCallDropped(UniquePtr<char> category);
+  void AddCallDropped(const UniquePtr<char>& category);
 
  private:
   // The stats for each locality.
