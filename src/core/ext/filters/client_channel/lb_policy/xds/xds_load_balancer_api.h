@@ -50,9 +50,51 @@ struct XdsLocalityInfo {
 
 using XdsLocalityList = InlinedVector<XdsLocalityInfo, 1>;
 
+// There are two phases of accessing this class's content:
+// 1. to initialize in the control plane combiner;
+// 2. to use in the data plane combiner.
+// So no additional synchronization is needed.
+class XdsDropConfig : public RefCounted<XdsDropConfig> {
+ public:
+  struct DropCategory {
+    bool operator==(const DropCategory& other) const {
+      return strcmp(name.get(), other.name.get()) == 0 &&
+             parts_per_million == other.parts_per_million;
+    }
+
+    UniquePtr<char> name;
+    const uint32_t parts_per_million;
+  };
+
+  using DropCategoryList = InlinedVector<DropCategory, 2>;
+
+  void AddCategory(UniquePtr<char> name, uint32_t parts_per_million) {
+    drop_category_list_.emplace_back(
+        DropCategory{std::move(name), parts_per_million});
+  }
+
+  // The only method invoked from the data plane combiner.
+  bool ShouldDrop(const UniquePtr<char>** category_name) const;
+
+  const DropCategoryList& drop_category_list() const {
+    return drop_category_list_;
+  }
+
+  bool operator==(const XdsDropConfig& other) const {
+    return drop_category_list_ == other.drop_category_list_;
+  }
+  bool operator!=(const XdsDropConfig& other) const {
+    return !(*this == other);
+  }
+
+ private:
+  DropCategoryList drop_category_list_;
+};
+
 struct XdsUpdate {
   XdsLocalityList locality_list;
-  // TODO(juanlishen): Pass drop_per_million when adding drop support.
+  RefCountedPtr<XdsDropConfig> drop_config;
+  bool drop_all = false;
 };
 
 // Creates an EDS request querying \a service_name.
