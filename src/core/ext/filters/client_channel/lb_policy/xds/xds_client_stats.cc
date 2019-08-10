@@ -36,19 +36,19 @@ T GetAndResetCounter(Atomic<T>* from) {
 }  // namespace
 
 //
-// XdsLbClientStats::LocalityStats::LoadMetric::Snapshot
+// XdsClientStats::LocalityStats::LoadMetric::Snapshot
 //
 
-bool XdsLbClientStats::LocalityStats::LoadMetric::Snapshot::IsAllZero() const {
+bool XdsClientStats::LocalityStats::LoadMetric::Snapshot::IsAllZero() const {
   return total_metric_value == 0 && num_requests_finished_with_metric == 0;
 }
 
 //
-// XdsLbClientStats::LocalityStats::LoadMetric
+// XdsClientStats::LocalityStats::LoadMetric
 //
 
-XdsLbClientStats::LocalityStats::LoadMetric::Snapshot
-XdsLbClientStats::LocalityStats::LoadMetric::GetSnapshotAndReset() {
+XdsClientStats::LocalityStats::LoadMetric::Snapshot
+XdsClientStats::LocalityStats::LoadMetric::GetSnapshotAndReset() {
   Snapshot metric = {num_requests_finished_with_metric_, total_metric_value_};
   num_requests_finished_with_metric_ = 0;
   total_metric_value_ = 0;
@@ -56,10 +56,10 @@ XdsLbClientStats::LocalityStats::LoadMetric::GetSnapshotAndReset() {
 }
 
 //
-// XdsLbClientStats::LocalityStats::Snapshot
+// XdsClientStats::LocalityStats::Snapshot
 //
 
-bool XdsLbClientStats::LocalityStats::Snapshot::IsAllZero() {
+bool XdsClientStats::LocalityStats::Snapshot::IsAllZero() {
   if (total_successful_requests != 0 || total_requests_in_progress != 0 ||
       total_error_requests != 0 || total_issued_requests != 0) {
     return false;
@@ -72,11 +72,11 @@ bool XdsLbClientStats::LocalityStats::Snapshot::IsAllZero() {
 }
 
 //
-// XdsLbClientStats::LocalityStats
+// XdsClientStats::LocalityStats
 //
 
-XdsLbClientStats::LocalityStats::Snapshot
-XdsLbClientStats::LocalityStats::GetSnapshotAndReset() {
+XdsClientStats::LocalityStats::Snapshot
+XdsClientStats::LocalityStats::GetSnapshotAndReset() {
   Snapshot snapshot = {
       GetAndResetCounter(&total_successful_requests_),
       // Don't reset total_requests_in_progress because it's not
@@ -89,19 +89,20 @@ XdsLbClientStats::LocalityStats::GetSnapshotAndReset() {
     for (auto& p : load_metric_stats_) {
       const char* metric_name = p.first.get();
       LoadMetric& metric_value = p.second;
-      snapshot.load_metric_stats.emplace(gpr_strdup(metric_name),
-                                         metric_value.GetSnapshotAndReset());
+      snapshot.load_metric_stats.emplace(
+          UniquePtr<char>(gpr_strdup(metric_name)),
+          metric_value.GetSnapshotAndReset());
     }
   }
   return snapshot;
 }
 
-void XdsLbClientStats::LocalityStats::AddCallStarted() {
+void XdsClientStats::LocalityStats::AddCallStarted() {
   total_issued_requests_.FetchAdd(1, MemoryOrder::RELAXED);
   total_requests_in_progress_.FetchAdd(1, MemoryOrder::RELAXED);
 }
 
-void XdsLbClientStats::LocalityStats::AddCallFinished(bool fail) {
+void XdsClientStats::LocalityStats::AddCallFinished(bool fail) {
   Atomic<uint64_t>& to_increment =
       fail ? total_error_requests_ : total_successful_requests_;
   to_increment.FetchAdd(1, MemoryOrder::RELAXED);
@@ -109,10 +110,10 @@ void XdsLbClientStats::LocalityStats::AddCallFinished(bool fail) {
 }
 
 //
-// XdsLbClientStats::Snapshot
+// XdsClientStats::Snapshot
 //
 
-bool XdsLbClientStats::Snapshot::IsAllZero() {
+bool XdsClientStats::Snapshot::IsAllZero() {
   for (auto& p : upstream_locality_stats) {
     if (!p.second.IsAllZero()) return false;
   }
@@ -123,15 +124,16 @@ bool XdsLbClientStats::Snapshot::IsAllZero() {
 }
 
 //
-// XdsLbClientStats
+// XdsClientStats
 //
 
-XdsLbClientStats::Snapshot XdsLbClientStats::GetSnapshotAndReset() {
+XdsClientStats::Snapshot XdsClientStats::GetSnapshotAndReset() {
   grpc_millis now = ExecCtx::Get()->Now();
   // Record total_dropped_requests and reporting interval in the snapshot.
-  Snapshot snapshot = {
-      .total_dropped_requests = GetAndResetCounter(&total_dropped_requests_),
-      .load_report_interval = now - last_report_time_};
+  Snapshot snapshot;
+  snapshot.total_dropped_requests =
+      GetAndResetCounter(&total_dropped_requests_);
+  snapshot.load_report_interval = now - last_report_time_;
   // Update last report time.
   last_report_time_ = now;
   // Snapshot all the other stats.
@@ -146,25 +148,22 @@ XdsLbClientStats::Snapshot XdsLbClientStats::GetSnapshotAndReset() {
   return snapshot;
 }
 
-void XdsLbClientStats::MaybeInitLastReportTime() {
-  static bool inited = false;
-  if (inited) return;
-  last_report_time_ = ExecCtx::Get()->Now();
-  inited = true;
+void XdsClientStats::MaybeInitLastReportTime() {
+  if (last_report_time_ == -1) last_report_time_ = ExecCtx::Get()->Now();
 }
 
-XdsLbClientStats::LocalityStats* XdsLbClientStats::FindLocalityStats(
+RefCountedPtr<XdsClientStats::LocalityStats> XdsClientStats::FindLocalityStats(
     const RefCountedPtr<XdsLocalityName>& locality_name) {
   auto iter = upstream_locality_stats_.find(locality_name);
   if (iter == upstream_locality_stats_.end()) {
     iter = upstream_locality_stats_
-               .emplace(locality_name, MakeUnique<LocalityStats>())
+               .emplace(locality_name, MakeRefCounted<LocalityStats>())
                .first;
   }
-  return iter->second.get();
+  return iter->second;
 }
 
-void XdsLbClientStats::PruneLocalityStats() {
+void XdsClientStats::PruneLocalityStats() {
   auto iter = upstream_locality_stats_.begin();
   while (iter != upstream_locality_stats_.end()) {
     if (iter->second->IsSafeToDelete()) {
@@ -175,7 +174,7 @@ void XdsLbClientStats::PruneLocalityStats() {
   }
 }
 
-void XdsLbClientStats::AddCallDropped(const UniquePtr<char>& category) {
+void XdsClientStats::AddCallDropped(const UniquePtr<char>& category) {
   total_dropped_requests_.FetchAdd(1, MemoryOrder::RELAXED);
   MutexLock lock(&dropped_requests_mu_);
   auto iter = dropped_requests_.find(category);

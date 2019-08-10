@@ -104,7 +104,7 @@ static grpc_error* maybe_link_callout(grpc_metadata_batch* batch,
   if (idx == GRPC_BATCH_CALLOUTS_COUNT) {
     return GRPC_ERROR_NONE;
   }
-  if (batch->idx.array[idx] == nullptr) {
+  if (GPR_LIKELY(batch->idx.array[idx] == nullptr)) {
     ++batch->list.default_count;
     batch->idx.array[idx] = storage;
     return GRPC_ERROR_NONE;

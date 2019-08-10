@@ -33,8 +33,6 @@
 
 namespace grpc_core {
 
-constexpr char kCpuUtilization[] = "cpu_utilization";
-
 class XdsLocalityName : public RefCounted<XdsLocalityName> {
  public:
   struct Less {
@@ -81,7 +79,7 @@ class XdsLocalityName : public RefCounted<XdsLocalityName> {
   UniquePtr<char> human_readable_string_;
 };
 
-// The stats classes (i.e., XdsLbClientStats, LocalityStats, and LoadMetric) can
+// The stats classes (i.e., XdsClientStats, LocalityStats, and LoadMetric) can
 // be taken a snapshot (and reset) to populate the load report. The snapshots
 // are contained in the respective Snapshot structs. The Snapshot structs have
 // no synchronization. The stats classes use several different synchronization
@@ -91,9 +89,9 @@ class XdsLocalityName : public RefCounted<XdsLocalityName> {
 // are already synchronized by the callers do not have additional
 // synchronization here. Note that the Map<>s we mentioned in 2 and 3 refer to
 // the map's tree structure rather than the content in each tree node.
-class XdsLbClientStats {
+class XdsClientStats {
  public:
-  class LocalityStats {
+  class LocalityStats : public RefCounted<LocalityStats> {
    public:
     class LoadMetric {
      public:
@@ -181,8 +179,9 @@ class XdsLbClientStats {
   // implementation. To avoid making LocalityStats movable, we wrap it by
   // UniquePtr<>. We should remove this wrapper if the value type of Map<>
   // doesn't have to be movable.
-  using LocalityStatsMap = Map<RefCountedPtr<XdsLocalityName>,
-                               UniquePtr<LocalityStats>, XdsLocalityName::Less>;
+  using LocalityStatsMap =
+      Map<RefCountedPtr<XdsLocalityName>, RefCountedPtr<LocalityStats>,
+          XdsLocalityName::Less>;
   using LocalityStatsSnapshotMap =
       Map<RefCountedPtr<XdsLocalityName>, LocalityStats::Snapshot,
           XdsLocalityName::Less>;
@@ -206,7 +205,7 @@ class XdsLbClientStats {
   Snapshot GetSnapshotAndReset();
 
   void MaybeInitLastReportTime();
-  LocalityStats* FindLocalityStats(
+  RefCountedPtr<LocalityStats> FindLocalityStats(
       const RefCountedPtr<XdsLocalityName>& locality_name);
   void PruneLocalityStats();
   void AddCallDropped(const UniquePtr<char>& category);
@@ -222,7 +221,7 @@ class XdsLbClientStats {
   DroppedRequestsMap dropped_requests_;
   // The timestamp of last reporting. For the LB-policy-wide first report, the
   // last_report_time is the time we scheduled the first reporting timer.
-  grpc_millis last_report_time_;
+  grpc_millis last_report_time_ = -1;
 };
 
 }  // namespace grpc_core

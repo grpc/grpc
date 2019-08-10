@@ -1066,7 +1066,8 @@ class ObjCLanguage(object):
                 cpu_cost=1e6,
                 environ={
                     'SCHEME': 'Sample',
-                    'EXAMPLE_PATH': 'src/objective-c/examples/Sample'
+                    'EXAMPLE_PATH': 'src/objective-c/examples/Sample',
+                    'FRAMEWORKS': 'NO'
                 }))
         out.append(
             self.config.job_spec(
@@ -1089,6 +1090,50 @@ class ObjCLanguage(object):
                     'SCHEME': 'SwiftSample',
                     'EXAMPLE_PATH': 'src/objective-c/examples/SwiftSample'
                 }))
+        out.append(
+            self.config.job_spec(
+                ['src/objective-c/tests/build_one_example.sh'],
+                timeout_seconds=10 * 60,
+                shortname='ios-buildtest-example-tvOS-sample',
+                cpu_cost=1e6,
+                environ={
+                    'SCHEME': 'tvOS-sample',
+                    'EXAMPLE_PATH': 'src/objective-c/examples/tvOS-sample',
+                    'FRAMEWORKS': 'NO'
+                }))
+        # out.append(
+        #     self.config.job_spec(
+        #         ['src/objective-c/tests/build_one_example.sh'],
+        #         timeout_seconds=10 * 60,
+        #         shortname='ios-buildtest-example-tvOS-sample-framework',
+        #         cpu_cost=1e6,
+        #         environ={
+        #             'SCHEME': 'tvOS-sample',
+        #             'EXAMPLE_PATH': 'src/objective-c/examples/tvOS-sample',
+        #             'FRAMEWORKS': 'YES'
+        #         }))
+        out.append(
+            self.config.job_spec(
+                ['src/objective-c/tests/build_one_example.sh'],
+                timeout_seconds=20 * 60,
+                shortname='ios-buildtest-example-watchOS-sample',
+                cpu_cost=1e6,
+                environ={
+                    'SCHEME': 'watchOS-sample-WatchKit-App',
+                    'EXAMPLE_PATH': 'src/objective-c/examples/watchOS-sample',
+                    'FRAMEWORKS': 'NO'
+                }))
+        # out.append(
+        #     self.config.job_spec(
+        #         ['src/objective-c/tests/build_one_example.sh'],
+        #         timeout_seconds=20 * 60,
+        #         shortname='ios-buildtest-example-watchOS-sample-framework',
+        #         cpu_cost=1e6,
+        #         environ={
+        #             'SCHEME': 'watchOS-sample-WatchKit-App',
+        #             'EXAMPLE_PATH': 'src/objective-c/examples/watchOS-sample',
+        #             'FRAMEWORKS': 'YES'
+        #         }))
         out.append(
             self.config.job_spec(
                 ['src/objective-c/tests/run_plugin_tests.sh'],
@@ -1132,6 +1177,13 @@ class ObjCLanguage(object):
                 }))
         out.append(
             self.config.job_spec(
+                ['test/cpp/ios/run_tests.sh'],
+                timeout_seconds=20 * 60,
+                shortname='ios-cpp-test-cronet',
+                cpu_cost=1e6,
+                environ=_FORCE_ENVIRON_FOR_WRAPPERS))
+        out.append(
+            self.config.job_spec(
                 ['src/objective-c/tests/run_one_test.sh'],
                 timeout_seconds=60 * 60,
                 shortname='mac-test-basictests',
@@ -1139,6 +1191,16 @@ class ObjCLanguage(object):
                 environ={
                     'SCHEME': 'MacTests',
                     'PLATFORM': 'macos'
+                }))
+        out.append(
+            self.config.job_spec(
+                ['src/objective-c/tests/run_one_test.sh'],
+                timeout_seconds=30 * 60,
+                shortname='tvos-test-basictests',
+                cpu_cost=1e6,
+                environ={
+                    'SCHEME': 'TvTests',
+                    'PLATFORM': 'tvos'
                 }))
 
         return sorted(out)
@@ -1156,6 +1218,7 @@ class ObjCLanguage(object):
         return [
             ['src/objective-c/tests/build_tests.sh'],
             ['test/core/iomgr/ios/CFStreamTests/build_tests.sh'],
+            ['test/cpp/ios/build_tests.sh'],
         ]
 
     def post_tests_steps(self):

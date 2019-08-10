@@ -10,12 +10,12 @@
 #define ENVOY_TYPE_PERCENT_PROTO_UPB_H_
 
 #include "upb/generated_util.h"
-
 #include "upb/msg.h"
-
 #include "upb/decode.h"
 #include "upb/encode.h"
+
 #include "upb/port_def.inc"
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -26,8 +26,6 @@ typedef struct envoy_type_Percent envoy_type_Percent;
 typedef struct envoy_type_FractionalPercent envoy_type_FractionalPercent;
 extern const upb_msglayout envoy_type_Percent_msginit;
 extern const upb_msglayout envoy_type_FractionalPercent_msginit;
-
-/* Enums */
 
 typedef enum {
   envoy_type_FractionalPercent_HUNDRED = 0,
@@ -44,7 +42,7 @@ UPB_INLINE envoy_type_Percent *envoy_type_Percent_new(upb_arena *arena) {
 UPB_INLINE envoy_type_Percent *envoy_type_Percent_parse(const char *buf, size_t size,
                         upb_arena *arena) {
   envoy_type_Percent *ret = envoy_type_Percent_new(arena);
-  return (ret && upb_decode(buf, size, ret, &envoy_type_Percent_msginit)) ? ret : NULL;
+  return (ret && upb_decode(buf, size, ret, &envoy_type_Percent_msginit, arena)) ? ret : NULL;
 }
 UPB_INLINE char *envoy_type_Percent_serialize(const envoy_type_Percent *msg, upb_arena *arena, size_t *len) {
   return upb_encode(msg, &envoy_type_Percent_msginit, arena, len);
@@ -56,7 +54,6 @@ UPB_INLINE void envoy_type_Percent_set_value(envoy_type_Percent *msg, double val
   UPB_FIELD_AT(msg, double, UPB_SIZE(0, 0)) = value;
 }
 
-
 /* envoy.type.FractionalPercent */
 
 UPB_INLINE envoy_type_FractionalPercent *envoy_type_FractionalPercent_new(upb_arena *arena) {
@@ -65,7 +62,7 @@ UPB_INLINE envoy_type_FractionalPercent *envoy_type_FractionalPercent_new(upb_ar
 UPB_INLINE envoy_type_FractionalPercent *envoy_type_FractionalPercent_parse(const char *buf, size_t size,
                         upb_arena *arena) {
   envoy_type_FractionalPercent *ret = envoy_type_FractionalPercent_new(arena);
-  return (ret && upb_decode(buf, size, ret, &envoy_type_FractionalPercent_msginit)) ? ret : NULL;
+  return (ret && upb_decode(buf, size, ret, &envoy_type_FractionalPercent_msginit, arena)) ? ret : NULL;
 }
 UPB_INLINE char *envoy_type_FractionalPercent_serialize(const envoy_type_FractionalPercent *msg, upb_arena *arena, size_t *len) {
   return upb_encode(msg, &envoy_type_FractionalPercent_msginit, arena, len);
@@ -80,7 +77,6 @@ UPB_INLINE void envoy_type_FractionalPercent_set_numerator(envoy_type_Fractional
 UPB_INLINE void envoy_type_FractionalPercent_set_denominator(envoy_type_FractionalPercent *msg, int32_t value) {
   UPB_FIELD_AT(msg, int32_t, UPB_SIZE(0, 0)) = value;
 }
-
 
 #ifdef __cplusplus
 }  /* extern "C" */

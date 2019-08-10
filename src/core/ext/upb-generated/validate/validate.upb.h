@@ -10,12 +10,12 @@
 #define VALIDATE_VALIDATE_PROTO_UPB_H_
 
 #include "upb/generated_util.h"
-
 #include "upb/msg.h"
-
 #include "upb/decode.h"
 #include "upb/encode.h"
+
 #include "upb/port_def.inc"
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -94,8 +94,6 @@ struct google_protobuf_Timestamp;
 extern const upb_msglayout google_protobuf_Duration_msginit;
 extern const upb_msglayout google_protobuf_Timestamp_msginit;
 
-/* Enums */
-
 
 /* validate.FieldRules */
 
@@ -105,7 +103,7 @@ UPB_INLINE validate_FieldRules *validate_FieldRules_new(upb_arena *arena) {
 UPB_INLINE validate_FieldRules *validate_FieldRules_parse(const char *buf, size_t size,
                         upb_arena *arena) {
   validate_FieldRules *ret = validate_FieldRules_new(arena);
-  return (ret && upb_decode(buf, size, ret, &validate_FieldRules_msginit)) ? ret : NULL;
+  return (ret && upb_decode(buf, size, ret, &validate_FieldRules_msginit, arena)) ? ret : NULL;
 }
 UPB_INLINE char *validate_FieldRules_serialize(const validate_FieldRules *msg, upb_arena *arena, size_t *len) {
   return upb_encode(msg, &validate_FieldRules_msginit, arena, len);
@@ -448,7 +446,6 @@ UPB_INLINE struct validate_TimestampRules* validate_FieldRules_mutable_timestamp
   return sub;
 }
 
-
 /* validate.FloatRules */
 
 UPB_INLINE validate_FloatRules *validate_FloatRules_new(upb_arena *arena) {
@@ -457,7 +454,7 @@ UPB_INLINE validate_FloatRules *validate_FloatRules_new(upb_arena *arena) {
 UPB_INLINE validate_FloatRules *validate_FloatRules_parse(const char *buf, size_t size,
                         upb_arena *arena) {
   validate_FloatRules *ret = validate_FloatRules_new(arena);
-  return (ret && upb_decode(buf, size, ret, &validate_FloatRules_msginit)) ? ret : NULL;
+  return (ret && upb_decode(buf, size, ret, &validate_FloatRules_msginit, arena)) ? ret : NULL;
 }
 UPB_INLINE char *validate_FloatRules_serialize(const validate_FloatRules *msg, upb_arena *arena, size_t *len) {
   return upb_encode(msg, &validate_FloatRules_msginit, arena, len);
@@ -517,7 +514,6 @@ UPB_INLINE bool validate_FloatRules_add_not_in(validate_FloatRules *msg, float v
       msg, UPB_SIZE(28, 32), UPB_SIZE(4, 4), UPB_TYPE_FLOAT, &val, arena);
 }
 
-
 /* validate.DoubleRules */
 
 UPB_INLINE validate_DoubleRules *validate_DoubleRules_new(upb_arena *arena) {
@@ -526,7 +522,7 @@ UPB_INLINE validate_DoubleRules *validate_DoubleRules_new(upb_arena *arena) {
 UPB_INLINE validate_DoubleRules *validate_DoubleRules_parse(const char *buf, size_t size,
                         upb_arena *arena) {
   validate_DoubleRules *ret = validate_DoubleRules_new(arena);
-  return (ret && upb_decode(buf, size, ret, &validate_DoubleRules_msginit)) ? ret : NULL;
+  return (ret && upb_decode(buf, size, ret, &validate_DoubleRules_msginit, arena)) ? ret : NULL;
 }
 UPB_INLINE char *validate_DoubleRules_serialize(const validate_DoubleRules *msg, upb_arena *arena, size_t *len) {
   return upb_encode(msg, &validate_DoubleRules_msginit, arena, len);
@@ -586,7 +582,6 @@ UPB_INLINE bool validate_DoubleRules_add_not_in(validate_DoubleRules *msg, doubl
       msg, UPB_SIZE(52, 56), UPB_SIZE(8, 8), UPB_TYPE_DOUBLE, &val, arena);
 }
 
-
 /* validate.Int32Rules */
 
 UPB_INLINE validate_Int32Rules *validate_Int32Rules_new(upb_arena *arena) {
@@ -595,7 +590,7 @@ UPB_INLINE validate_Int32Rules *validate_Int32Rules_new(upb_arena *arena) {
 UPB_INLINE validate_Int32Rules *validate_Int32Rules_parse(const char *buf, size_t size,
                         upb_arena *arena) {
   validate_Int32Rules *ret = validate_Int32Rules_new(arena);
-  return (ret && upb_decode(buf, size, ret, &validate_Int32Rules_msginit)) ? ret : NULL;
+  return (ret && upb_decode(buf, size, ret, &validate_Int32Rules_msginit, arena)) ? ret : NULL;
 }
 UPB_INLINE char *validate_Int32Rules_serialize(const validate_Int32Rules *msg, upb_arena *arena, size_t *len) {
   return upb_encode(msg, &validate_Int32Rules_msginit, arena, len);
@@ -655,7 +650,6 @@ UPB_INLINE bool validate_Int32Rules_add_not_in(validate_Int32Rules *msg, int32_t
       msg, UPB_SIZE(28, 32), UPB_SIZE(4, 4), UPB_TYPE_INT32, &val, arena);
 }
 
-
 /* validate.Int64Rules */
 
 UPB_INLINE validate_Int64Rules *validate_Int64Rules_new(upb_arena *arena) {
@@ -664,7 +658,7 @@ UPB_INLINE validate_Int64Rules *validate_Int64Rules_new(upb_arena *arena) {
 UPB_INLINE validate_Int64Rules *validate_Int64Rules_parse(const char *buf, size_t size,
                         upb_arena *arena) {
   validate_Int64Rules *ret = validate_Int64Rules_new(arena);
-  return (ret && upb_decode(buf, size, ret, &validate_Int64Rules_msginit)) ? ret : NULL;
+  return (ret && upb_decode(buf, size, ret, &validate_Int64Rules_msginit, arena)) ? ret : NULL;
 }
 UPB_INLINE char *validate_Int64Rules_serialize(const validate_Int64Rules *msg, upb_arena *arena, size_t *len) {
   return upb_encode(msg, &validate_Int64Rules_msginit, arena, len);
@@ -724,7 +718,6 @@ UPB_INLINE bool validate_Int64Rules_add_not_in(validate_Int64Rules *msg, int64_t
       msg, UPB_SIZE(52, 56), UPB_SIZE(8, 8), UPB_TYPE_INT64, &val, arena);
 }
 
-
 /* validate.UInt32Rules */
 
 UPB_INLINE validate_UInt32Rules *validate_UInt32Rules_new(upb_arena *arena) {
@@ -733,7 +726,7 @@ UPB_INLINE validate_UInt32Rules *validate_UInt32Rules_new(upb_arena *arena) {
 UPB_INLINE validate_UInt32Rules *validate_UInt32Rules_parse(const char *buf, size_t size,
                         upb_arena *arena) {
   validate_UInt32Rules *ret = validate_UInt32Rules_new(arena);
-  return (ret && upb_decode(buf, size, ret, &validate_UInt32Rules_msginit)) ? ret : NULL;
+  return (ret && upb_decode(buf, size, ret, &validate_UInt32Rules_msginit, arena)) ? ret : NULL;
 }
 UPB_INLINE char *validate_UInt32Rules_serialize(const validate_UInt32Rules *msg, upb_arena *arena, size_t *len) {
   return upb_encode(msg, &validate_UInt32Rules_msginit, arena, len);
@@ -793,7 +786,6 @@ UPB_INLINE bool validate_UInt32Rules_add_not_in(validate_UInt32Rules *msg, uint3
       msg, UPB_SIZE(28, 32), UPB_SIZE(4, 4), UPB_TYPE_UINT32, &val, arena);
 }
 
-
 /* validate.UInt64Rules */
 
 UPB_INLINE validate_UInt64Rules *validate_UInt64Rules_new(upb_arena *arena) {
@@ -802,7 +794,7 @@ UPB_INLINE validate_UInt64Rules *validate_UInt64Rules_new(upb_arena *arena) {
 UPB_INLINE validate_UInt64Rules *validate_UInt64Rules_parse(const char *buf, size_t size,
                         upb_arena *arena) {
   validate_UInt64Rules *ret = validate_UInt64Rules_new(arena);
-  return (ret && upb_decode(buf, size, ret, &validate_UInt64Rules_msginit)) ? ret : NULL;
+  return (ret && upb_decode(buf, size, ret, &validate_UInt64Rules_msginit, arena)) ? ret : NULL;
 }
 UPB_INLINE char *validate_UInt64Rules_serialize(const validate_UInt64Rules *msg, upb_arena *arena, size_t *len) {
   return upb_encode(msg, &validate_UInt64Rules_msginit, arena, len);
@@ -862,7 +854,6 @@ UPB_INLINE bool validate_UInt64Rules_add_not_in(validate_UInt64Rules *msg, uint6
       msg, UPB_SIZE(52, 56), UPB_SIZE(8, 8), UPB_TYPE_UINT64, &val, arena);
 }
 
-
 /* validate.SInt32Rules */
 
 UPB_INLINE validate_SInt32Rules *validate_SInt32Rules_new(upb_arena *arena) {
@@ -871,7 +862,7 @@ UPB_INLINE validate_SInt32Rules *validate_SInt32Rules_new(upb_arena *arena) {
 UPB_INLINE validate_SInt32Rules *validate_SInt32Rules_parse(const char *buf, size_t size,
                         upb_arena *arena) {
   validate_SInt32Rules *ret = validate_SInt32Rules_new(arena);
-  return (ret && upb_decode(buf, size, ret, &validate_SInt32Rules_msginit)) ? ret : NULL;
+  return (ret && upb_decode(buf, size, ret, &validate_SInt32Rules_msginit, arena)) ? ret : NULL;
 }
 UPB_INLINE char *validate_SInt32Rules_serialize(const validate_SInt32Rules *msg, upb_arena *arena, size_t *len) {
   return upb_encode(msg, &validate_SInt32Rules_msginit, arena, len);
@@ -931,7 +922,6 @@ UPB_INLINE bool validate_SInt32Rules_add_not_in(validate_SInt32Rules *msg, int32
       msg, UPB_SIZE(28, 32), UPB_SIZE(4, 4), UPB_TYPE_INT32, &val, arena);
 }
 
-
 /* validate.SInt64Rules */
 
 UPB_INLINE validate_SInt64Rules *validate_SInt64Rules_new(upb_arena *arena) {
@@ -940,7 +930,7 @@ UPB_INLINE validate_SInt64Rules *validate_SInt64Rules_new(upb_arena *arena) {
 UPB_INLINE validate_SInt64Rules *validate_SInt64Rules_parse(const char *buf, size_t size,
                         upb_arena *arena) {
   validate_SInt64Rules *ret = validate_SInt64Rules_new(arena);
-  return (ret && upb_decode(buf, size, ret, &validate_SInt64Rules_msginit)) ? ret : NULL;
+  return (ret && upb_decode(buf, size, ret, &validate_SInt64Rules_msginit, arena)) ? ret : NULL;
 }
 UPB_INLINE char *validate_SInt64Rules_serialize(const validate_SInt64Rules *msg, upb_arena *arena, size_t *len) {
   return upb_encode(msg, &validate_SInt64Rules_msginit, arena, len);
@@ -1000,7 +990,6 @@ UPB_INLINE bool validate_SInt64Rules_add_not_in(validate_SInt64Rules *msg, int64
       msg, UPB_SIZE(52, 56), UPB_SIZE(8, 8), UPB_TYPE_INT64, &val, arena);
 }
 
-
 /* validate.Fixed32Rules */
 
 UPB_INLINE validate_Fixed32Rules *validate_Fixed32Rules_new(upb_arena *arena) {
@@ -1009,7 +998,7 @@ UPB_INLINE validate_Fixed32Rules *validate_Fixed32Rules_new(upb_arena *arena) {
 UPB_INLINE validate_Fixed32Rules *validate_Fixed32Rules_parse(const char *buf, size_t size,
                         upb_arena *arena) {
   validate_Fixed32Rules *ret = validate_Fixed32Rules_new(arena);
-  return (ret && upb_decode(buf, size, ret, &validate_Fixed32Rules_msginit)) ? ret : NULL;
+  return (ret && upb_decode(buf, size, ret, &validate_Fixed32Rules_msginit, arena)) ? ret : NULL;
 }
 UPB_INLINE char *validate_Fixed32Rules_serialize(const validate_Fixed32Rules *msg, upb_arena *arena, size_t *len) {
   return upb_encode(msg, &validate_Fixed32Rules_msginit, arena, len);
@@ -1069,7 +1058,6 @@ UPB_INLINE bool validate_Fixed32Rules_add_not_in(validate_Fixed32Rules *msg, uin
       msg, UPB_SIZE(28, 32), UPB_SIZE(4, 4), UPB_TYPE_UINT32, &val, arena);
 }
 
-
 /* validate.Fixed64Rules */
 
 UPB_INLINE validate_Fixed64Rules *validate_Fixed64Rules_new(upb_arena *arena) {
@@ -1078,7 +1066,7 @@ UPB_INLINE validate_Fixed64Rules *validate_Fixed64Rules_new(upb_arena *arena) {
 UPB_INLINE validate_Fixed64Rules *validate_Fixed64Rules_parse(const char *buf, size_t size,
                         upb_arena *arena) {
   validate_Fixed64Rules *ret = validate_Fixed64Rules_new(arena);
-  return (ret && upb_decode(buf, size, ret, &validate_Fixed64Rules_msginit)) ? ret : NULL;
+  return (ret && upb_decode(buf, size, ret, &validate_Fixed64Rules_msginit, arena)) ? ret : NULL;
 }
 UPB_INLINE char *validate_Fixed64Rules_serialize(const validate_Fixed64Rules *msg, upb_arena *arena, size_t *len) {
   return upb_encode(msg, &validate_Fixed64Rules_msginit, arena, len);
@@ -1138,7 +1126,6 @@ UPB_INLINE bool validate_Fixed64Rules_add_not_in(validate_Fixed64Rules *msg, uin
       msg, UPB_SIZE(52, 56), UPB_SIZE(8, 8), UPB_TYPE_UINT64, &val, arena);
 }
 
-
 /* validate.SFixed32Rules */
 
 UPB_INLINE validate_SFixed32Rules *validate_SFixed32Rules_new(upb_arena *arena) {
@@ -1147,7 +1134,7 @@ UPB_INLINE validate_SFixed32Rules *validate_SFixed32Rules_new(upb_arena *arena) 
 UPB_INLINE validate_SFixed32Rules *validate_SFixed32Rules_parse(const char *buf, size_t size,
                         upb_arena *arena) {
   validate_SFixed32Rules *ret = validate_SFixed32Rules_new(arena);
-  return (ret && upb_decode(buf, size, ret, &validate_SFixed32Rules_msginit)) ? ret : NULL;
+  return (ret && upb_decode(buf, size, ret, &validate_SFixed32Rules_msginit, arena)) ? ret : NULL;
 }
 UPB_INLINE char *validate_SFixed32Rules_serialize(const validate_SFixed32Rules *msg, upb_arena *arena, size_t *len) {
   return upb_encode(msg, &validate_SFixed32Rules_msginit, arena, len);
@@ -1207,7 +1194,6 @@ UPB_INLINE bool validate_SFixed32Rules_add_not_in(validate_SFixed32Rules *msg, i
       msg, UPB_SIZE(28, 32), UPB_SIZE(4, 4), UPB_TYPE_INT32, &val, arena);
 }
 
-
 /* validate.SFixed64Rules */
 
 UPB_INLINE validate_SFixed64Rules *validate_SFixed64Rules_new(upb_arena *arena) {
@@ -1216,7 +1202,7 @@ UPB_INLINE validate_SFixed64Rules *validate_SFixed64Rules_new(upb_arena *arena) 
 UPB_INLINE validate_SFixed64Rules *validate_SFixed64Rules_parse(const char *buf, size_t size,
                         upb_arena *arena) {
   validate_SFixed64Rules *ret = validate_SFixed64Rules_new(arena);
-  return (ret && upb_decode(buf, size, ret, &validate_SFixed64Rules_msginit)) ? ret : NULL;
+  return (ret && upb_decode(buf, size, ret, &validate_SFixed64Rules_msginit, arena)) ? ret : NULL;
 }
 UPB_INLINE char *validate_SFixed64Rules_serialize(const validate_SFixed64Rules *msg, upb_arena *arena, size_t *len) {
   return upb_encode(msg, &validate_SFixed64Rules_msginit, arena, len);
@@ -1276,7 +1262,6 @@ UPB_INLINE bool validate_SFixed64Rules_add_not_in(validate_SFixed64Rules *msg, i
       msg, UPB_SIZE(52, 56), UPB_SIZE(8, 8), UPB_TYPE_INT64, &val, arena);
 }
 
-
 /* validate.BoolRules */
 
 UPB_INLINE validate_BoolRules *validate_BoolRules_new(upb_arena *arena) {
@@ -1285,7 +1270,7 @@ UPB_INLINE validate_BoolRules *validate_BoolRules_new(upb_arena *arena) {
 UPB_INLINE validate_BoolRules *validate_BoolRules_parse(const char *buf, size_t size,
                         upb_arena *arena) {
   validate_BoolRules *ret = validate_BoolRules_new(arena);
-  return (ret && upb_decode(buf, size, ret, &validate_BoolRules_msginit)) ? ret : NULL;
+  return (ret && upb_decode(buf, size, ret, &validate_BoolRules_msginit, arena)) ? ret : NULL;
 }
 UPB_INLINE char *validate_BoolRules_serialize(const validate_BoolRules *msg, upb_arena *arena, size_t *len) {
   return upb_encode(msg, &validate_BoolRules_msginit, arena, len);
@@ -1299,7 +1284,6 @@ UPB_INLINE void validate_BoolRules_set_const(validate_BoolRules *msg, bool value
   UPB_FIELD_AT(msg, bool, UPB_SIZE(1, 1)) = value;
 }
 
-
 /* validate.StringRules */
 
 UPB_INLINE validate_StringRules *validate_StringRules_new(upb_arena *arena) {
@@ -1308,7 +1292,7 @@ UPB_INLINE validate_StringRules *validate_StringRules_new(upb_arena *arena) {
 UPB_INLINE validate_StringRules *validate_StringRules_parse(const char *buf, size_t size,
                         upb_arena *arena) {
   validate_StringRules *ret = validate_StringRules_new(arena);
-  return (ret && upb_decode(buf, size, ret, &validate_StringRules_msginit)) ? ret : NULL;
+  return (ret && upb_decode(buf, size, ret, &validate_StringRules_msginit, arena)) ? ret : NULL;
 }
 UPB_INLINE char *validate_StringRules_serialize(const validate_StringRules *msg, upb_arena *arena, size_t *len) {
   return upb_encode(msg, &validate_StringRules_msginit, arena, len);
@@ -1451,7 +1435,6 @@ UPB_INLINE void validate_StringRules_set_len_bytes(validate_StringRules *msg, ui
   UPB_FIELD_AT(msg, uint64_t, UPB_SIZE(48, 48)) = value;
 }
 
-
 /* validate.BytesRules */
 
 UPB_INLINE validate_BytesRules *validate_BytesRules_new(upb_arena *arena) {
@@ -1460,7 +1443,7 @@ UPB_INLINE validate_BytesRules *validate_BytesRules_new(upb_arena *arena) {
 UPB_INLINE validate_BytesRules *validate_BytesRules_parse(const char *buf, size_t size,
                         upb_arena *arena) {
   validate_BytesRules *ret = validate_BytesRules_new(arena);
-  return (ret && upb_decode(buf, size, ret, &validate_BytesRules_msginit)) ? ret : NULL;
+  return (ret && upb_decode(buf, size, ret, &validate_BytesRules_msginit, arena)) ? ret : NULL;
 }
 UPB_INLINE char *validate_BytesRules_serialize(const validate_BytesRules *msg, upb_arena *arena, size_t *len) {
   return upb_encode(msg, &validate_BytesRules_msginit, arena, len);
@@ -1561,7 +1544,6 @@ UPB_INLINE void validate_BytesRules_set_len(validate_BytesRules *msg, uint64_t v
   UPB_FIELD_AT(msg, uint64_t, UPB_SIZE(24, 24)) = value;
 }
 
-
 /* validate.EnumRules */
 
 UPB_INLINE validate_EnumRules *validate_EnumRules_new(upb_arena *arena) {
@@ -1570,7 +1552,7 @@ UPB_INLINE validate_EnumRules *validate_EnumRules_new(upb_arena *arena) {
 UPB_INLINE validate_EnumRules *validate_EnumRules_parse(const char *buf, size_t size,
                         upb_arena *arena) {
   validate_EnumRules *ret = validate_EnumRules_new(arena);
-  return (ret && upb_decode(buf, size, ret, &validate_EnumRules_msginit)) ? ret : NULL;
+  return (ret && upb_decode(buf, size, ret, &validate_EnumRules_msginit, arena)) ? ret : NULL;
 }
 UPB_INLINE char *validate_EnumRules_serialize(const validate_EnumRules *msg, upb_arena *arena, size_t *len) {
   return upb_encode(msg, &validate_EnumRules_msginit, arena, len);
@@ -1612,7 +1594,6 @@ UPB_INLINE bool validate_EnumRules_add_not_in(validate_EnumRules *msg, int32_t v
       msg, UPB_SIZE(16, 24), UPB_SIZE(4, 4), UPB_TYPE_INT32, &val, arena);
 }
 
-
 /* validate.MessageRules */
 
 UPB_INLINE validate_MessageRules *validate_MessageRules_new(upb_arena *arena) {
@@ -1621,7 +1602,7 @@ UPB_INLINE validate_MessageRules *validate_MessageRules_new(upb_arena *arena) {
 UPB_INLINE validate_MessageRules *validate_MessageRules_parse(const char *buf, size_t size,
                         upb_arena *arena) {
   validate_MessageRules *ret = validate_MessageRules_new(arena);
-  return (ret && upb_decode(buf, size, ret, &validate_MessageRules_msginit)) ? ret : NULL;
+  return (ret && upb_decode(buf, size, ret, &validate_MessageRules_msginit, arena)) ? ret : NULL;
 }
 UPB_INLINE char *validate_MessageRules_serialize(const validate_MessageRules *msg, upb_arena *arena, size_t *len) {
   return upb_encode(msg, &validate_MessageRules_msginit, arena, len);
@@ -1641,7 +1622,6 @@ UPB_INLINE void validate_MessageRules_set_required(validate_MessageRules *msg, b
   UPB_FIELD_AT(msg, bool, UPB_SIZE(2, 2)) = value;
 }
 
-
 /* validate.RepeatedRules */
 
 UPB_INLINE validate_RepeatedRules *validate_RepeatedRules_new(upb_arena *arena) {
@@ -1650,7 +1630,7 @@ UPB_INLINE validate_RepeatedRules *validate_RepeatedRules_new(upb_arena *arena) 
 UPB_INLINE validate_RepeatedRules *validate_RepeatedRules_parse(const char *buf, size_t size,
                         upb_arena *arena) {
   validate_RepeatedRules *ret = validate_RepeatedRules_new(arena);
-  return (ret && upb_decode(buf, size, ret, &validate_RepeatedRules_msginit)) ? ret : NULL;
+  return (ret && upb_decode(buf, size, ret, &validate_RepeatedRules_msginit, arena)) ? ret : NULL;
 }
 UPB_INLINE char *validate_RepeatedRules_serialize(const validate_RepeatedRules *msg, upb_arena *arena, size_t *len) {
   return upb_encode(msg, &validate_RepeatedRules_msginit, arena, len);
@@ -1691,7 +1671,6 @@ UPB_INLINE struct validate_FieldRules* validate_RepeatedRules_mutable_items(vali
   return sub;
 }
 
-
 /* validate.MapRules */
 
 UPB_INLINE validate_MapRules *validate_MapRules_new(upb_arena *arena) {
@@ -1700,7 +1679,7 @@ UPB_INLINE validate_MapRules *validate_MapRules_new(upb_arena *arena) {
 UPB_INLINE validate_MapRules *validate_MapRules_parse(const char *buf, size_t size,
                         upb_arena *arena) {
   validate_MapRules *ret = validate_MapRules_new(arena);
-  return (ret && upb_decode(buf, size, ret, &validate_MapRules_msginit)) ? ret : NULL;
+  return (ret && upb_decode(buf, size, ret, &validate_MapRules_msginit, arena)) ? ret : NULL;
 }
 UPB_INLINE char *validate_MapRules_serialize(const validate_MapRules *msg, upb_arena *arena, size_t *len) {
   return upb_encode(msg, &validate_MapRules_msginit, arena, len);
@@ -1756,7 +1735,6 @@ UPB_INLINE struct validate_FieldRules* validate_MapRules_mutable_values(validate
   return sub;
 }
 
-
 /* validate.AnyRules */
 
 UPB_INLINE validate_AnyRules *validate_AnyRules_new(upb_arena *arena) {
@@ -1765,7 +1743,7 @@ UPB_INLINE validate_AnyRules *validate_AnyRules_new(upb_arena *arena) {
 UPB_INLINE validate_AnyRules *validate_AnyRules_parse(const char *buf, size_t size,
                         upb_arena *arena) {
   validate_AnyRules *ret = validate_AnyRules_new(arena);
-  return (ret && upb_decode(buf, size, ret, &validate_AnyRules_msginit)) ? ret : NULL;
+  return (ret && upb_decode(buf, size, ret, &validate_AnyRules_msginit, arena)) ? ret : NULL;
 }
 UPB_INLINE char *validate_AnyRules_serialize(const validate_AnyRules *msg, upb_arena *arena, size_t *len) {
   return upb_encode(msg, &validate_AnyRules_msginit, arena, len);
@@ -1801,7 +1779,6 @@ UPB_INLINE bool validate_AnyRules_add_not_in(validate_AnyRules *msg, upb_strview
       msg, UPB_SIZE(8, 16), UPB_SIZE(8, 16), UPB_TYPE_STRING, &val, arena);
 }
 
-
 /* validate.DurationRules */
 
 UPB_INLINE validate_DurationRules *validate_DurationRules_new(upb_arena *arena) {
@@ -1810,7 +1787,7 @@ UPB_INLINE validate_DurationRules *validate_DurationRules_new(upb_arena *arena) 
 UPB_INLINE validate_DurationRules *validate_DurationRules_parse(const char *buf, size_t size,
                         upb_arena *arena) {
   validate_DurationRules *ret = validate_DurationRules_new(arena);
-  return (ret && upb_decode(buf, size, ret, &validate_DurationRules_msginit)) ? ret : NULL;
+  return (ret && upb_decode(buf, size, ret, &validate_DurationRules_msginit, arena)) ? ret : NULL;
 }
 UPB_INLINE char *validate_DurationRules_serialize(const validate_DurationRules *msg, upb_arena *arena, size_t *len) {
   return upb_encode(msg, &validate_DurationRules_msginit, arena, len);
@@ -1927,7 +1904,6 @@ UPB_INLINE struct google_protobuf_Duration* validate_DurationRules_add_not_in(va
   return sub;
 }
 
-
 /* validate.TimestampRules */
 
 UPB_INLINE validate_TimestampRules *validate_TimestampRules_new(upb_arena *arena) {
@@ -1936,7 +1912,7 @@ UPB_INLINE validate_TimestampRules *validate_TimestampRules_new(upb_arena *arena
 UPB_INLINE validate_TimestampRules *validate_TimestampRules_parse(const char *buf, size_t size,
                         upb_arena *arena) {
   validate_TimestampRules *ret = validate_TimestampRules_new(arena);
-  return (ret && upb_decode(buf, size, ret, &validate_TimestampRules_msginit)) ? ret : NULL;
+  return (ret && upb_decode(buf, size, ret, &validate_TimestampRules_msginit, arena)) ? ret : NULL;
 }
 UPB_INLINE char *validate_TimestampRules_serialize(const validate_TimestampRules *msg, upb_arena *arena, size_t *len) {
   return upb_encode(msg, &validate_TimestampRules_msginit, arena, len);
@@ -2051,7 +2027,6 @@ UPB_INLINE struct google_protobuf_Duration* validate_TimestampRules_mutable_with
   }
   return sub;
 }
-
 
 #ifdef __cplusplus
 }  /* extern "C" */

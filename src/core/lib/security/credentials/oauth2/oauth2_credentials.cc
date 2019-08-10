@@ -18,6 +18,7 @@
 
 #include <grpc/support/port_platform.h>
 
+#include "src/core/lib/json/json.h"
 #include "src/core/lib/security/credentials/oauth2/oauth2_credentials.h"
 
 #include <string.h>
@@ -198,8 +199,8 @@ grpc_oauth2_token_fetcher_credentials_parse_server_response(
     *token_lifetime = strtol(expires_in->value, nullptr, 10) * GPR_MS_PER_SEC;
     if (!GRPC_MDISNULL(*token_md)) GRPC_MDELEM_UNREF(*token_md);
     *token_md = grpc_mdelem_from_slices(
-        grpc_slice_from_static_string(GRPC_AUTHORIZATION_METADATA_KEY),
-        grpc_slice_from_copied_string(new_access_token));
+        grpc_core::ExternallyManagedSlice(GRPC_AUTHORIZATION_METADATA_KEY),
+        grpc_core::UnmanagedMemorySlice(new_access_token));
     status = GRPC_CREDENTIALS_OK;
   }
 
@@ -641,8 +642,8 @@ grpc_error* ValidateStsCredentialsOptions(
   *sts_url_out = nullptr;
   InlinedVector<grpc_error*, 3> error_list;
   UniquePtr<grpc_uri, GrpcUriDeleter> sts_url(
-      options->sts_endpoint_url != nullptr
-          ? grpc_uri_parse(options->sts_endpoint_url, false)
+      options->token_exchange_service_uri != nullptr
+          ? grpc_uri_parse(options->token_exchange_service_uri, false)
           : nullptr);
   if (sts_url == nullptr) {
     error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
@@ -720,8 +721,8 @@ grpc_access_token_credentials::grpc_access_token_credentials(
   gpr_asprintf(&token_md_value, "Bearer %s", access_token);
   grpc_core::ExecCtx exec_ctx;
   access_token_md_ = grpc_mdelem_from_slices(
-      grpc_slice_from_static_string(GRPC_AUTHORIZATION_METADATA_KEY),
-      grpc_slice_from_copied_string(token_md_value));
+      grpc_core::ExternallyManagedSlice(GRPC_AUTHORIZATION_METADATA_KEY),
+      grpc_core::UnmanagedMemorySlice(token_md_value));
   gpr_free(token_md_value);
 }
 

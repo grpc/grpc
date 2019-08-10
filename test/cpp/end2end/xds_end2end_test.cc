@@ -50,7 +50,8 @@
 #include "test/core/util/test_config.h"
 #include "test/cpp/end2end/test_service_impl.h"
 
-#include "src/proto/grpc/lb/v2/eds.grpc.pb.h"
+#include "src/proto/grpc/lb/v2/eds_for_test.grpc.pb.h"
+#include "src/proto/grpc/lb/v2/lrs_for_test.grpc.pb.h"
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
 
 #include <gmock/gmock.h>
@@ -79,19 +80,19 @@ namespace {
 
 using std::chrono::system_clock;
 
-using grpc::lb::v2::ClusterLoadAssignment;
-using grpc::lb::v2::ClusterStats;
-using grpc::lb::v2::DiscoveryRequest;
-using grpc::lb::v2::DiscoveryResponse;
-using grpc::lb::v2::EndpointDiscoveryService;
-using grpc::lb::v2::FractionalPercent;
-using grpc::lb::v2::LoadReportingService;
-using grpc::lb::v2::LoadStatsRequest;
-using grpc::lb::v2::LoadStatsResponse;
-using grpc::lb::v2::UpstreamLocalityStats;
+using ::envoy::api::v2::ClusterLoadAssignment;
+using ::envoy::api::v2::DiscoveryRequest;
+using ::envoy::api::v2::DiscoveryResponse;
+using ::envoy::api::v2::EndpointDiscoveryService;
+using ::envoy::api::v2::FractionalPercent;
+using ::envoy::service::load_stats::v2::ClusterStats;
+using ::envoy::service::load_stats::v2::LoadReportingService;
+using ::envoy::service::load_stats::v2::LoadStatsRequest;
+using ::envoy::service::load_stats::v2::LoadStatsResponse;
+using ::envoy::service::load_stats::v2::UpstreamLocalityStats;
 
 constexpr char kEdsTypeUrl[] =
-    "type.googleapis.com/grpc.lb.v2.ClusterLoadAssignment";
+    "type.googleapis.com/envoy.api.v2.ClusterLoadAssignment";
 constexpr char kDefaultLocalityRegion[] = "xds_default_locality_region";
 constexpr char kDefaultLocalityZone[] = "xds_default_locality_zone";
 constexpr char kDefaultLocalitySubzone[] = "xds_default_locality_subzone";
@@ -1844,9 +1845,8 @@ TEST_F(SingleBalancerWithClientLoadReportingTest, Vanilla) {
   EXPECT_EQ(kNumRpcsPerAddress * num_backends_ + num_ok,
             client_stats->total_successful_requests());
   EXPECT_EQ(0U, client_stats->total_requests_in_progress());
-  // FIXME: uncomment when this field is available in new proto.
-  //  EXPECT_EQ(kNumRpcsPerAddress * num_backends_ + num_ok,
-  //            client_stats->total_issued_requests);
+  EXPECT_EQ(kNumRpcsPerAddress * num_backends_ + num_ok,
+            client_stats->total_issued_requests());
   EXPECT_EQ(0U, client_stats->total_error_requests());
   EXPECT_EQ(0U, client_stats->total_dropped_requests());
 }

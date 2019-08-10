@@ -394,6 +394,18 @@
 #endif
 #endif /* GPR_NO_AUTODETECT_PLATFORM */
 
+#if defined(GPR_BACKWARDS_COMPATIBILITY_MODE)
+/*
+ * For backward compatibility mode, reset _FORTIFY_SOURCE to prevent
+ * a library from having non-standard symbols such as __asprintf_chk.
+ * This helps non-glibc systems such as alpine using musl to find symbols.
+ */
+#if defined(_FORTIFY_SOURCE) && _FORTIFY_SOURCE > 0
+#undef _FORTIFY_SOURCE
+#define _FORTIFY_SOURCE 0
+#endif
+#endif
+
 /*
  *  There are platforms for which TLS should not be used even though the
  * compiler makes it seem like it's supported (Android NDK < r12b for example).
@@ -450,6 +462,23 @@ typedef unsigned __int64 uint64_t;
 #else
 #include <stdint.h>
 #endif /* _MSC_VER */
+
+/* Type of cycle clock implementation */
+#ifdef GPR_LINUX
+/* Disable cycle clock by default.
+   TODO(soheil): enable when we support fallback for unstable cycle clocks.
+#if defined(__i386__)
+#define GPR_CYCLE_COUNTER_RDTSC_32 1
+#elif defined(__x86_64__) || defined(__amd64__)
+#define GPR_CYCLE_COUNTER_RDTSC_64 1
+#else
+#define GPR_CYCLE_COUNTER_FALLBACK 1
+#endif
+*/
+#define GPR_CYCLE_COUNTER_FALLBACK 1
+#else
+#define GPR_CYCLE_COUNTER_FALLBACK 1
+#endif /* GPR_LINUX */
 
 /* Cache line alignment */
 #ifndef GPR_CACHELINE_SIZE_LOG

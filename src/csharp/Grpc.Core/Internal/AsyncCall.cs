@@ -38,7 +38,7 @@ namespace Grpc.Core.Internal
         bool registeredWithChannel;
 
         // Dispose of to de-register cancellation token registration
-        IDisposable cancellationTokenRegistration;
+        CancellationTokenRegistration cancellationTokenRegistration;
 
         // Completion of a pending unary response if not null.
         TaskCompletionSource<TResponse> unaryResponseTcs;
@@ -409,7 +409,7 @@ namespace Grpc.Core.Internal
             // deadlock.
             // See https://github.com/grpc/grpc/issues/14777
             // See https://github.com/dotnet/corefx/issues/14903
-            cancellationTokenRegistration?.Dispose();
+            cancellationTokenRegistration.Dispose();
         }
 
         protected override bool IsClient
@@ -509,11 +509,7 @@ namespace Grpc.Core.Internal
         // Make sure that once cancellationToken for this call is cancelled, Cancel() will be called.
         private void RegisterCancellationCallback()
         {
-            var token = details.Options.CancellationToken;
-            if (token.CanBeCanceled)
-            {
-                cancellationTokenRegistration = token.Register(() => this.Cancel());
-            }
+            cancellationTokenRegistration = RegisterCancellationCallbackForToken(details.Options.CancellationToken);
         }
 
         /// <summary>

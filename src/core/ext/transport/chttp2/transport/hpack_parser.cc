@@ -38,6 +38,9 @@
 #include "src/core/lib/surface/validate_metadata.h"
 #include "src/core/lib/transport/http2_errors.h"
 
+grpc_core::DebugOnlyTraceFlag grpc_trace_chttp2_hpack_parser(
+    false, "chttp2_hpack_parser");
+
 typedef enum {
   NOT_BINARY,
   BINARY_BEGIN,
@@ -643,7 +646,7 @@ static void GPR_ATTRIBUTE_NOINLINE on_hdr_log(grpc_mdelem md) {
 /* emission helpers */
 template <bool do_add>
 static grpc_error* on_hdr(grpc_chttp2_hpack_parser* p, grpc_mdelem md) {
-  if (GRPC_TRACE_FLAG_ENABLED(grpc_http_trace)) {
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_trace_chttp2_hpack_parser)) {
     on_hdr_log(md);
   }
   if (do_add) {
@@ -660,24 +663,32 @@ static grpc_error* on_hdr(grpc_chttp2_hpack_parser* p, grpc_mdelem md) {
   return GRPC_ERROR_NONE;
 }
 
-static grpc_slice take_string(grpc_chttp2_hpack_parser* p,
-                              grpc_chttp2_hpack_parser_string* str,
-                              bool intern) {
-  grpc_slice s;
+static grpc_core::UnmanagedMemorySlice take_string_extern(
+    grpc_chttp2_hpack_parser* p, grpc_chttp2_hpack_parser_string* str) {
+  grpc_core::UnmanagedMemorySlice s;
   if (!str->copied) {
-    if (intern) {
-      s = grpc_slice_intern(str->data.referenced);
-      grpc_slice_unref_internal(str->data.referenced);
-    } else {
-      s = str->data.referenced;
-    }
+    GPR_DEBUG_ASSERT(!grpc_slice_is_interned(str->data.referenced));
+    s = static_cast<grpc_core::UnmanagedMemorySlice&>(str->data.referenced);
+    str->copied = true;
+    str->data.referenced = grpc_core::UnmanagedMemorySlice();
+  } else {
+    s = grpc_core::UnmanagedMemorySlice(str->data.copied.str,
+                                        str->data.copied.length);
+  }
+  str->data.copied.length = 0;
+  return s;
+}
+
+static grpc_core::ManagedMemorySlice take_string_intern(
+    grpc_chttp2_hpack_parser* p, grpc_chttp2_hpack_parser_string* str) {
+  grpc_core::ManagedMemorySlice s;
+  if (!str->copied) {
+    s = grpc_core::ManagedMemorySlice(&str->data.referenced);
+    grpc_slice_unref_internal(str->data.referenced);
     str->copied = true;
     str->data.referenced = grpc_empty_slice();
-  } else if (intern) {
-    s = grpc_slice_intern(grpc_slice_from_static_buffer_internal(
-        str->data.copied.str, str->data.copied.length));
   } else {
-    s = grpc_slice_from_copied_buffer(str->data.copied.str,
+    s = grpc_core::ManagedMemorySlice(str->data.copied.str,
                                       str->data.copied.length);
   }
   str->data.copied.length = 0;
@@ -779,6 +790,7 @@ static grpc_error* parse_indexed_field(grpc_chttp2_hpack_parser* p,
                                        const uint8_t* cur, const uint8_t* end) {
   p->dynamic_table_update_allowed = 0;
   p->index = (*cur) & 0x7f;
+  p->md_for_index.payload = 0; /* Invalidate cached md when index changes. */
   return finish_indexed_field(p, cur + 1, end);
 }
 
@@ -791,20 +803,41 @@ static grpc_error* parse_indexed_field_x(grpc_chttp2_hpack_parser* p,
   p->dynamic_table_update_allowed = 0;
   p->next_state = and_then;
   p->index = 0x7f;
+  p->md_for_index.payload = 0; /* Invalidate cached md when index changes. */
   p->parsing.value = &p->index;
   return parse_value0(p, cur + 1, end);
+}
+
+/* When finishing with a header, get the cached md element for this index.
+   This is set in parse_value_string(). We ensure (in debug mode) that the
+   cached metadata corresponds with the index we are examining. */
+static grpc_mdelem get_precomputed_md_for_idx(grpc_chttp2_hpack_parser* p) {
+  GPR_DEBUG_ASSERT(p->md_for_index.payload != 0);
+  GPR_DEBUG_ASSERT(static_cast<int64_t>(p->index) == p->precomputed_md_index);
+  grpc_mdelem md = p->md_for_index;
+  GPR_DEBUG_ASSERT(!GRPC_MDISNULL(md)); /* handled in string parsing */
+  p->md_for_index.payload = 0; /* Invalidate cached md when index changes. */
+#ifndef NDEBUG
+  p->precomputed_md_index = -1;
+#endif
+  return md;
+}
+
+static const grpc_core::ManagedMemorySlice& get_indexed_key(grpc_mdelem md) {
+  GPR_DEBUG_ASSERT(GRPC_MDELEM_IS_INTERNED(md));
+  return static_cast<const grpc_core::ManagedMemorySlice&>(
+      grpc_slice_ref_internal(GRPC_MDKEY(md)));
 }
 
 /* finish a literal header with incremental indexing */
 static grpc_error* finish_lithdr_incidx(grpc_chttp2_hpack_parser* p,
                                         const uint8_t* cur,
                                         const uint8_t* end) {
-  grpc_mdelem md = grpc_chttp2_hptbl_lookup(&p->table, p->index);
-  GPR_ASSERT(!GRPC_MDISNULL(md)); /* handled in string parsing */
   GRPC_STATS_INC_HPACK_RECV_LITHDR_INCIDX();
+  grpc_mdelem md = get_precomputed_md_for_idx(p);
   grpc_error* err = on_hdr<true>(
-      p, grpc_mdelem_from_slices(grpc_slice_ref_internal(GRPC_MDKEY(md)),
-                                 take_string(p, &p->value, true)));
+      p, grpc_mdelem_from_slices(get_indexed_key(md),
+                                 take_string_intern(p, &p->value)));
   if (err != GRPC_ERROR_NONE) return parse_error(p, cur, end, err);
   return parse_begin(p, cur, end);
 }
@@ -814,9 +847,9 @@ static grpc_error* finish_lithdr_incidx_v(grpc_chttp2_hpack_parser* p,
                                           const uint8_t* cur,
                                           const uint8_t* end) {
   GRPC_STATS_INC_HPACK_RECV_LITHDR_INCIDX_V();
-  grpc_error* err =
-      on_hdr<true>(p, grpc_mdelem_from_slices(take_string(p, &p->key, true),
-                                              take_string(p, &p->value, true)));
+  grpc_error* err = on_hdr<true>(
+      p, grpc_mdelem_from_slices(take_string_intern(p, &p->key),
+                                 take_string_intern(p, &p->value)));
   if (err != GRPC_ERROR_NONE) return parse_error(p, cur, end, err);
   return parse_begin(p, cur, end);
 }
@@ -829,6 +862,7 @@ static grpc_error* parse_lithdr_incidx(grpc_chttp2_hpack_parser* p,
   p->dynamic_table_update_allowed = 0;
   p->next_state = and_then;
   p->index = (*cur) & 0x3f;
+  p->md_for_index.payload = 0; /* Invalidate cached md when index changes. */
   return parse_string_prefix(p, cur + 1, end);
 }
 
@@ -842,6 +876,7 @@ static grpc_error* parse_lithdr_incidx_x(grpc_chttp2_hpack_parser* p,
   p->dynamic_table_update_allowed = 0;
   p->next_state = and_then;
   p->index = 0x3f;
+  p->md_for_index.payload = 0; /* Invalidate cached md when index changes. */
   p->parsing.value = &p->index;
   return parse_value0(p, cur + 1, end);
 }
@@ -862,12 +897,11 @@ static grpc_error* parse_lithdr_incidx_v(grpc_chttp2_hpack_parser* p,
 static grpc_error* finish_lithdr_notidx(grpc_chttp2_hpack_parser* p,
                                         const uint8_t* cur,
                                         const uint8_t* end) {
-  grpc_mdelem md = grpc_chttp2_hptbl_lookup(&p->table, p->index);
-  GPR_ASSERT(!GRPC_MDISNULL(md)); /* handled in string parsing */
   GRPC_STATS_INC_HPACK_RECV_LITHDR_NOTIDX();
+  grpc_mdelem md = get_precomputed_md_for_idx(p);
   grpc_error* err = on_hdr<false>(
-      p, grpc_mdelem_from_slices(grpc_slice_ref_internal(GRPC_MDKEY(md)),
-                                 take_string(p, &p->value, false)));
+      p, grpc_mdelem_from_slices(get_indexed_key(md),
+                                 take_string_extern(p, &p->value)));
   if (err != GRPC_ERROR_NONE) return parse_error(p, cur, end, err);
   return parse_begin(p, cur, end);
 }
@@ -878,8 +912,8 @@ static grpc_error* finish_lithdr_notidx_v(grpc_chttp2_hpack_parser* p,
                                           const uint8_t* end) {
   GRPC_STATS_INC_HPACK_RECV_LITHDR_NOTIDX_V();
   grpc_error* err = on_hdr<false>(
-      p, grpc_mdelem_from_slices(take_string(p, &p->key, true),
-                                 take_string(p, &p->value, false)));
+      p, grpc_mdelem_from_slices(take_string_intern(p, &p->key),
+                                 take_string_extern(p, &p->value)));
   if (err != GRPC_ERROR_NONE) return parse_error(p, cur, end, err);
   return parse_begin(p, cur, end);
 }
@@ -892,6 +926,7 @@ static grpc_error* parse_lithdr_notidx(grpc_chttp2_hpack_parser* p,
   p->dynamic_table_update_allowed = 0;
   p->next_state = and_then;
   p->index = (*cur) & 0xf;
+  p->md_for_index.payload = 0; /* Invalidate cached md when index changes. */
   return parse_string_prefix(p, cur + 1, end);
 }
 
@@ -905,6 +940,7 @@ static grpc_error* parse_lithdr_notidx_x(grpc_chttp2_hpack_parser* p,
   p->dynamic_table_update_allowed = 0;
   p->next_state = and_then;
   p->index = 0xf;
+  p->md_for_index.payload = 0; /* Invalidate cached md when index changes. */
   p->parsing.value = &p->index;
   return parse_value0(p, cur + 1, end);
 }
@@ -925,12 +961,11 @@ static grpc_error* parse_lithdr_notidx_v(grpc_chttp2_hpack_parser* p,
 static grpc_error* finish_lithdr_nvridx(grpc_chttp2_hpack_parser* p,
                                         const uint8_t* cur,
                                         const uint8_t* end) {
-  grpc_mdelem md = grpc_chttp2_hptbl_lookup(&p->table, p->index);
-  GPR_ASSERT(!GRPC_MDISNULL(md)); /* handled in string parsing */
   GRPC_STATS_INC_HPACK_RECV_LITHDR_NVRIDX();
+  grpc_mdelem md = get_precomputed_md_for_idx(p);
   grpc_error* err = on_hdr<false>(
-      p, grpc_mdelem_from_slices(grpc_slice_ref_internal(GRPC_MDKEY(md)),
-                                 take_string(p, &p->value, false)));
+      p, grpc_mdelem_from_slices(get_indexed_key(md),
+                                 take_string_extern(p, &p->value)));
   if (err != GRPC_ERROR_NONE) return parse_error(p, cur, end, err);
   return parse_begin(p, cur, end);
 }
@@ -941,8 +976,8 @@ static grpc_error* finish_lithdr_nvridx_v(grpc_chttp2_hpack_parser* p,
                                           const uint8_t* end) {
   GRPC_STATS_INC_HPACK_RECV_LITHDR_NVRIDX_V();
   grpc_error* err = on_hdr<false>(
-      p, grpc_mdelem_from_slices(take_string(p, &p->key, true),
-                                 take_string(p, &p->value, false)));
+      p, grpc_mdelem_from_slices(take_string_intern(p, &p->key),
+                                 take_string_extern(p, &p->value)));
   if (err != GRPC_ERROR_NONE) return parse_error(p, cur, end, err);
   return parse_begin(p, cur, end);
 }
@@ -955,6 +990,7 @@ static grpc_error* parse_lithdr_nvridx(grpc_chttp2_hpack_parser* p,
   p->dynamic_table_update_allowed = 0;
   p->next_state = and_then;
   p->index = (*cur) & 0xf;
+  p->md_for_index.payload = 0; /* Invalidate cached md when index changes. */
   return parse_string_prefix(p, cur + 1, end);
 }
 
@@ -968,6 +1004,7 @@ static grpc_error* parse_lithdr_nvridx_x(grpc_chttp2_hpack_parser* p,
   p->dynamic_table_update_allowed = 0;
   p->next_state = and_then;
   p->index = 0xf;
+  p->md_for_index.payload = 0; /* Invalidate cached md when index changes. */
   p->parsing.value = &p->index;
   return parse_value0(p, cur + 1, end);
 }
@@ -987,7 +1024,7 @@ static grpc_error* parse_lithdr_nvridx_v(grpc_chttp2_hpack_parser* p,
 /* finish parsing a max table size change */
 static grpc_error* finish_max_tbl_size(grpc_chttp2_hpack_parser* p,
                                        const uint8_t* cur, const uint8_t* end) {
-  if (GRPC_TRACE_FLAG_ENABLED(grpc_http_trace)) {
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_trace_chttp2_hpack_parser)) {
     gpr_log(GPR_INFO, "MAX TABLE SIZE: %d", p->index);
   }
   grpc_error* err =
@@ -1007,6 +1044,7 @@ static grpc_error* parse_max_tbl_size(grpc_chttp2_hpack_parser* p,
   }
   p->dynamic_table_update_allowed--;
   p->index = (*cur) & 0x1f;
+  p->md_for_index.payload = 0; /* Invalidate cached md when index changes. */
   return finish_max_tbl_size(p, cur + 1, end);
 }
 
@@ -1025,6 +1063,7 @@ static grpc_error* parse_max_tbl_size_x(grpc_chttp2_hpack_parser* p,
   p->dynamic_table_update_allowed--;
   p->next_state = and_then;
   p->index = 0x1f;
+  p->md_for_index.payload = 0; /* Invalidate cached md when index changes. */
   p->parsing.value = &p->index;
   return parse_value0(p, cur + 1, end);
 }
@@ -1488,17 +1527,33 @@ static grpc_error* parse_key_string(grpc_chttp2_hpack_parser* p,
 
 static bool is_binary_literal_header(grpc_chttp2_hpack_parser* p) {
   /* We know that either argument here is a reference counter slice.
-   * 1. If a result of grpc_slice_from_static_buffer_internal, the refcount is
-   *    set to kNoopRefcount.
+   * 1. If it is a grpc_core::StaticSlice, the refcount is set to kNoopRefcount.
    * 2. If it's p->key.data.referenced, then p->key.copied was set to false,
    *    which occurs in begin_parse_string() - where the refcount is set to
    *    p->current_slice_refcount, which is not null. */
   return grpc_is_refcounted_slice_binary_header(
-      p->key.copied ? grpc_slice_from_static_buffer_internal(
+      p->key.copied ? grpc_core::ExternallyManagedSlice(
                           p->key.data.copied.str, p->key.data.copied.length)
                     : p->key.data.referenced);
 }
 
+/* Cache the metadata for the given index during initial parsing. This avoids a
+   pointless recomputation of the metadata when finishing a header. We read the
+   cached value in get_precomputed_md_for_idx(). */
+static void set_precomputed_md_idx(grpc_chttp2_hpack_parser* p,
+                                   grpc_mdelem md) {
+  GPR_DEBUG_ASSERT(p->md_for_index.payload == 0);
+  GPR_DEBUG_ASSERT(p->precomputed_md_index == -1);
+  p->md_for_index = md;
+#ifndef NDEBUG
+  p->precomputed_md_index = p->index;
+#endif
+}
+
+/* Determines if a metadata element key associated with the current parser index
+   is a binary indexed header during string parsing. We'll need to revisit this
+   metadata when we're done parsing, so we cache the metadata for this index
+   here using set_precomputed_md_idx(). */
 static grpc_error* is_binary_indexed_header(grpc_chttp2_hpack_parser* p,
                                             bool* is) {
   grpc_mdelem elem = grpc_chttp2_hptbl_lookup(&p->table, p->index);
@@ -1519,6 +1574,7 @@ static grpc_error* is_binary_indexed_header(grpc_chttp2_hpack_parser* p,
    *    interned.
    * 4. Both static and interned element slices have non-null refcounts. */
   *is = grpc_is_refcounted_slice_binary_header(GRPC_MDKEY(elem));
+  set_precomputed_md_idx(p, elem);
   return GRPC_ERROR_NONE;
 }
 
@@ -1557,9 +1613,20 @@ void grpc_chttp2_hpack_parser_init(grpc_chttp2_hpack_parser* p) {
   p->value.data.copied.str = nullptr;
   p->value.data.copied.capacity = 0;
   p->value.data.copied.length = 0;
+  /* Cached metadata for the current index the parser is handling. This is set
+     to 0 initially, invalidated when the index changes, and invalidated when it
+     is read (by get_precomputed_md_for_idx()). It is set during string parsing,
+     by set_precomputed_md_idx() - which is called by parse_value_string().
+     The goal here is to avoid recomputing the metadata for the index when
+     finishing with a header as well as the initial parse. */
+  p->md_for_index.payload = 0;
+#ifndef NDEBUG
+  /* In debug mode, this ensures that the cached metadata we're reading is in
+   * fact correct for the index we are examining. */
+  p->precomputed_md_index = -1;
+#endif
   p->dynamic_table_update_allowed = 2;
   p->last_error = GRPC_ERROR_NONE;
-  grpc_chttp2_hptbl_init(&p->table);
 }
 
 void grpc_chttp2_hpack_parser_set_has_priority(grpc_chttp2_hpack_parser* p) {

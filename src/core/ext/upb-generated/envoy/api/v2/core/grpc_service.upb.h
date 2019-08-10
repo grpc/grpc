@@ -10,12 +10,12 @@
 #define ENVOY_API_V2_CORE_GRPC_SERVICE_PROTO_UPB_H_
 
 #include "upb/generated_util.h"
-
 #include "upb/msg.h"
-
 #include "upb/decode.h"
 #include "upb/encode.h"
+
 #include "upb/port_def.inc"
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -63,8 +63,6 @@ extern const upb_msglayout google_protobuf_Duration_msginit;
 extern const upb_msglayout google_protobuf_Empty_msginit;
 extern const upb_msglayout google_protobuf_Struct_msginit;
 
-/* Enums */
-
 
 /* envoy.api.v2.core.GrpcService */
 
@@ -74,7 +72,7 @@ UPB_INLINE envoy_api_v2_core_GrpcService *envoy_api_v2_core_GrpcService_new(upb_
 UPB_INLINE envoy_api_v2_core_GrpcService *envoy_api_v2_core_GrpcService_parse(const char *buf, size_t size,
                         upb_arena *arena) {
   envoy_api_v2_core_GrpcService *ret = envoy_api_v2_core_GrpcService_new(arena);
-  return (ret && upb_decode(buf, size, ret, &envoy_api_v2_core_GrpcService_msginit)) ? ret : NULL;
+  return (ret && upb_decode(buf, size, ret, &envoy_api_v2_core_GrpcService_msginit, arena)) ? ret : NULL;
 }
 UPB_INLINE char *envoy_api_v2_core_GrpcService_serialize(const envoy_api_v2_core_GrpcService *msg, upb_arena *arena, size_t *len) {
   return upb_encode(msg, &envoy_api_v2_core_GrpcService_msginit, arena, len);
@@ -144,7 +142,6 @@ UPB_INLINE struct envoy_api_v2_core_HeaderValue* envoy_api_v2_core_GrpcService_a
   return sub;
 }
 
-
 /* envoy.api.v2.core.GrpcService.EnvoyGrpc */
 
 UPB_INLINE envoy_api_v2_core_GrpcService_EnvoyGrpc *envoy_api_v2_core_GrpcService_EnvoyGrpc_new(upb_arena *arena) {
@@ -153,7 +150,7 @@ UPB_INLINE envoy_api_v2_core_GrpcService_EnvoyGrpc *envoy_api_v2_core_GrpcServic
 UPB_INLINE envoy_api_v2_core_GrpcService_EnvoyGrpc *envoy_api_v2_core_GrpcService_EnvoyGrpc_parse(const char *buf, size_t size,
                         upb_arena *arena) {
   envoy_api_v2_core_GrpcService_EnvoyGrpc *ret = envoy_api_v2_core_GrpcService_EnvoyGrpc_new(arena);
-  return (ret && upb_decode(buf, size, ret, &envoy_api_v2_core_GrpcService_EnvoyGrpc_msginit)) ? ret : NULL;
+  return (ret && upb_decode(buf, size, ret, &envoy_api_v2_core_GrpcService_EnvoyGrpc_msginit, arena)) ? ret : NULL;
 }
 UPB_INLINE char *envoy_api_v2_core_GrpcService_EnvoyGrpc_serialize(const envoy_api_v2_core_GrpcService_EnvoyGrpc *msg, upb_arena *arena, size_t *len) {
   return upb_encode(msg, &envoy_api_v2_core_GrpcService_EnvoyGrpc_msginit, arena, len);
@@ -165,7 +162,6 @@ UPB_INLINE void envoy_api_v2_core_GrpcService_EnvoyGrpc_set_cluster_name(envoy_a
   UPB_FIELD_AT(msg, upb_strview, UPB_SIZE(0, 0)) = value;
 }
 
-
 /* envoy.api.v2.core.GrpcService.GoogleGrpc */
 
 UPB_INLINE envoy_api_v2_core_GrpcService_GoogleGrpc *envoy_api_v2_core_GrpcService_GoogleGrpc_new(upb_arena *arena) {
@@ -174,7 +170,7 @@ UPB_INLINE envoy_api_v2_core_GrpcService_GoogleGrpc *envoy_api_v2_core_GrpcServi
 UPB_INLINE envoy_api_v2_core_GrpcService_GoogleGrpc *envoy_api_v2_core_GrpcService_GoogleGrpc_parse(const char *buf, size_t size,
                         upb_arena *arena) {
   envoy_api_v2_core_GrpcService_GoogleGrpc *ret = envoy_api_v2_core_GrpcService_GoogleGrpc_new(arena);
-  return (ret && upb_decode(buf, size, ret, &envoy_api_v2_core_GrpcService_GoogleGrpc_msginit)) ? ret : NULL;
+  return (ret && upb_decode(buf, size, ret, &envoy_api_v2_core_GrpcService_GoogleGrpc_msginit, arena)) ? ret : NULL;
 }
 UPB_INLINE char *envoy_api_v2_core_GrpcService_GoogleGrpc_serialize(const envoy_api_v2_core_GrpcService_GoogleGrpc *msg, upb_arena *arena, size_t *len) {
   return upb_encode(msg, &envoy_api_v2_core_GrpcService_GoogleGrpc_msginit, arena, len);
@@ -234,7 +230,6 @@ UPB_INLINE struct google_protobuf_Struct* envoy_api_v2_core_GrpcService_GoogleGr
   return sub;
 }
 
-
 /* envoy.api.v2.core.GrpcService.GoogleGrpc.SslCredentials */
 
 UPB_INLINE envoy_api_v2_core_GrpcService_GoogleGrpc_SslCredentials *envoy_api_v2_core_GrpcService_GoogleGrpc_SslCredentials_new(upb_arena *arena) {
@@ -243,7 +238,7 @@ UPB_INLINE envoy_api_v2_core_GrpcService_GoogleGrpc_SslCredentials *envoy_api_v2
 UPB_INLINE envoy_api_v2_core_GrpcService_GoogleGrpc_SslCredentials *envoy_api_v2_core_GrpcService_GoogleGrpc_SslCredentials_parse(const char *buf, size_t size,
                         upb_arena *arena) {
   envoy_api_v2_core_GrpcService_GoogleGrpc_SslCredentials *ret = envoy_api_v2_core_GrpcService_GoogleGrpc_SslCredentials_new(arena);
-  return (ret && upb_decode(buf, size, ret, &envoy_api_v2_core_GrpcService_GoogleGrpc_SslCredentials_msginit)) ? ret : NULL;
+  return (ret && upb_decode(buf, size, ret, &envoy_api_v2_core_GrpcService_GoogleGrpc_SslCredentials_msginit, arena)) ? ret : NULL;
 }
 UPB_INLINE char *envoy_api_v2_core_GrpcService_GoogleGrpc_SslCredentials_serialize(const envoy_api_v2_core_GrpcService_GoogleGrpc_SslCredentials *msg, upb_arena *arena, size_t *len) {
   return upb_encode(msg, &envoy_api_v2_core_GrpcService_GoogleGrpc_SslCredentials_msginit, arena, len);
@@ -290,7 +285,6 @@ UPB_INLINE struct envoy_api_v2_core_DataSource* envoy_api_v2_core_GrpcService_Go
   return sub;
 }
 
-
 /* envoy.api.v2.core.GrpcService.GoogleGrpc.GoogleLocalCredentials */
 
 UPB_INLINE envoy_api_v2_core_GrpcService_GoogleGrpc_GoogleLocalCredentials *envoy_api_v2_core_GrpcService_GoogleGrpc_GoogleLocalCredentials_new(upb_arena *arena) {
@@ -299,12 +293,11 @@ UPB_INLINE envoy_api_v2_core_GrpcService_GoogleGrpc_GoogleLocalCredentials *envo
 UPB_INLINE envoy_api_v2_core_GrpcService_GoogleGrpc_GoogleLocalCredentials *envoy_api_v2_core_GrpcService_GoogleGrpc_GoogleLocalCredentials_parse(const char *buf, size_t size,
                         upb_arena *arena) {
   envoy_api_v2_core_GrpcService_GoogleGrpc_GoogleLocalCredentials *ret = envoy_api_v2_core_GrpcService_GoogleGrpc_GoogleLocalCredentials_new(arena);
-  return (ret && upb_decode(buf, size, ret, &envoy_api_v2_core_GrpcService_GoogleGrpc_GoogleLocalCredentials_msginit)) ? ret : NULL;
+  return (ret && upb_decode(buf, size, ret, &envoy_api_v2_core_GrpcService_GoogleGrpc_GoogleLocalCredentials_msginit, arena)) ? ret : NULL;
 }
 UPB_INLINE char *envoy_api_v2_core_GrpcService_GoogleGrpc_GoogleLocalCredentials_serialize(const envoy_api_v2_core_GrpcService_GoogleGrpc_GoogleLocalCredentials *msg, upb_arena *arena, size_t *len) {
   return upb_encode(msg, &envoy_api_v2_core_GrpcService_GoogleGrpc_GoogleLocalCredentials_msginit, arena, len);
 }
-
 
 
 
@@ -316,7 +309,7 @@ UPB_INLINE envoy_api_v2_core_GrpcService_GoogleGrpc_ChannelCredentials *envoy_ap
 UPB_INLINE envoy_api_v2_core_GrpcService_GoogleGrpc_ChannelCredentials *envoy_api_v2_core_GrpcService_GoogleGrpc_ChannelCredentials_parse(const char *buf, size_t size,
                         upb_arena *arena) {
   envoy_api_v2_core_GrpcService_GoogleGrpc_ChannelCredentials *ret = envoy_api_v2_core_GrpcService_GoogleGrpc_ChannelCredentials_new(arena);
-  return (ret && upb_decode(buf, size, ret, &envoy_api_v2_core_GrpcService_GoogleGrpc_ChannelCredentials_msginit)) ? ret : NULL;
+  return (ret && upb_decode(buf, size, ret, &envoy_api_v2_core_GrpcService_GoogleGrpc_ChannelCredentials_msginit, arena)) ? ret : NULL;
 }
 UPB_INLINE char *envoy_api_v2_core_GrpcService_GoogleGrpc_ChannelCredentials_serialize(const envoy_api_v2_core_GrpcService_GoogleGrpc_ChannelCredentials *msg, upb_arena *arena, size_t *len) {
   return upb_encode(msg, &envoy_api_v2_core_GrpcService_GoogleGrpc_ChannelCredentials_msginit, arena, len);
@@ -374,7 +367,6 @@ UPB_INLINE struct envoy_api_v2_core_GrpcService_GoogleGrpc_GoogleLocalCredential
   return sub;
 }
 
-
 /* envoy.api.v2.core.GrpcService.GoogleGrpc.CallCredentials */
 
 UPB_INLINE envoy_api_v2_core_GrpcService_GoogleGrpc_CallCredentials *envoy_api_v2_core_GrpcService_GoogleGrpc_CallCredentials_new(upb_arena *arena) {
@@ -383,7 +375,7 @@ UPB_INLINE envoy_api_v2_core_GrpcService_GoogleGrpc_CallCredentials *envoy_api_v
 UPB_INLINE envoy_api_v2_core_GrpcService_GoogleGrpc_CallCredentials *envoy_api_v2_core_GrpcService_GoogleGrpc_CallCredentials_parse(const char *buf, size_t size,
                         upb_arena *arena) {
   envoy_api_v2_core_GrpcService_GoogleGrpc_CallCredentials *ret = envoy_api_v2_core_GrpcService_GoogleGrpc_CallCredentials_new(arena);
-  return (ret && upb_decode(buf, size, ret, &envoy_api_v2_core_GrpcService_GoogleGrpc_CallCredentials_msginit)) ? ret : NULL;
+  return (ret && upb_decode(buf, size, ret, &envoy_api_v2_core_GrpcService_GoogleGrpc_CallCredentials_msginit, arena)) ? ret : NULL;
 }
 UPB_INLINE char *envoy_api_v2_core_GrpcService_GoogleGrpc_CallCredentials_serialize(const envoy_api_v2_core_GrpcService_GoogleGrpc_CallCredentials *msg, upb_arena *arena, size_t *len) {
   return upb_encode(msg, &envoy_api_v2_core_GrpcService_GoogleGrpc_CallCredentials_msginit, arena, len);
@@ -468,7 +460,6 @@ UPB_INLINE struct envoy_api_v2_core_GrpcService_GoogleGrpc_CallCredentials_Metad
   return sub;
 }
 
-
 /* envoy.api.v2.core.GrpcService.GoogleGrpc.CallCredentials.ServiceAccountJWTAccessCredentials */
 
 UPB_INLINE envoy_api_v2_core_GrpcService_GoogleGrpc_CallCredentials_ServiceAccountJWTAccessCredentials *envoy_api_v2_core_GrpcService_GoogleGrpc_CallCredentials_ServiceAccountJWTAccessCredentials_new(upb_arena *arena) {
@@ -477,7 +468,7 @@ UPB_INLINE envoy_api_v2_core_GrpcService_GoogleGrpc_CallCredentials_ServiceAccou
 UPB_INLINE envoy_api_v2_core_GrpcService_GoogleGrpc_CallCredentials_ServiceAccountJWTAccessCredentials *envoy_api_v2_core_GrpcService_GoogleGrpc_CallCredentials_ServiceAccountJWTAccessCredentials_parse(const char *buf, size_t size,
                         upb_arena *arena) {
   envoy_api_v2_core_GrpcService_GoogleGrpc_CallCredentials_ServiceAccountJWTAccessCredentials *ret = envoy_api_v2_core_GrpcService_GoogleGrpc_CallCredentials_ServiceAccountJWTAccessCredentials_new(arena);
-  return (ret && upb_decode(buf, size, ret, &envoy_api_v2_core_GrpcService_GoogleGrpc_CallCredentials_ServiceAccountJWTAccessCredentials_msginit)) ? ret : NULL;
+  return (ret && upb_decode(buf, size, ret, &envoy_api_v2_core_GrpcService_GoogleGrpc_CallCredentials_ServiceAccountJWTAccessCredentials_msginit, arena)) ? ret : NULL;
 }
 UPB_INLINE char *envoy_api_v2_core_GrpcService_GoogleGrpc_CallCredentials_ServiceAccountJWTAccessCredentials_serialize(const envoy_api_v2_core_GrpcService_GoogleGrpc_CallCredentials_ServiceAccountJWTAccessCredentials *msg, upb_arena *arena, size_t *len) {
   return upb_encode(msg, &envoy_api_v2_core_GrpcService_GoogleGrpc_CallCredentials_ServiceAccountJWTAccessCredentials_msginit, arena, len);
@@ -493,7 +484,6 @@ UPB_INLINE void envoy_api_v2_core_GrpcService_GoogleGrpc_CallCredentials_Service
   UPB_FIELD_AT(msg, uint64_t, UPB_SIZE(0, 0)) = value;
 }
 
-
 /* envoy.api.v2.core.GrpcService.GoogleGrpc.CallCredentials.GoogleIAMCredentials */
 
 UPB_INLINE envoy_api_v2_core_GrpcService_GoogleGrpc_CallCredentials_GoogleIAMCredentials *envoy_api_v2_core_GrpcService_GoogleGrpc_CallCredentials_GoogleIAMCredentials_new(upb_arena *arena) {
@@ -502,7 +492,7 @@ UPB_INLINE envoy_api_v2_core_GrpcService_GoogleGrpc_CallCredentials_GoogleIAMCre
 UPB_INLINE envoy_api_v2_core_GrpcService_GoogleGrpc_CallCredentials_GoogleIAMCredentials *envoy_api_v2_core_GrpcService_GoogleGrpc_CallCredentials_GoogleIAMCredentials_parse(const char *buf, size_t size,
                         upb_arena *arena) {
   envoy_api_v2_core_GrpcService_GoogleGrpc_CallCredentials_GoogleIAMCredentials *ret = envoy_api_v2_core_GrpcService_GoogleGrpc_CallCredentials_GoogleIAMCredentials_new(arena);
-  return (ret && upb_decode(buf, size, ret, &envoy_api_v2_core_GrpcService_GoogleGrpc_CallCredentials_GoogleIAMCredentials_msginit)) ? ret : NULL;
+  return (ret && upb_decode(buf, size, ret, &envoy_api_v2_core_GrpcService_GoogleGrpc_CallCredentials_GoogleIAMCredentials_msginit, arena)) ? ret : NULL;
 }
 UPB_INLINE char *envoy_api_v2_core_GrpcService_GoogleGrpc_CallCredentials_GoogleIAMCredentials_serialize(const envoy_api_v2_core_GrpcService_GoogleGrpc_CallCredentials_GoogleIAMCredentials *msg, upb_arena *arena, size_t *len) {
   return upb_encode(msg, &envoy_api_v2_core_GrpcService_GoogleGrpc_CallCredentials_GoogleIAMCredentials_msginit, arena, len);
@@ -518,7 +508,6 @@ UPB_INLINE void envoy_api_v2_core_GrpcService_GoogleGrpc_CallCredentials_GoogleI
   UPB_FIELD_AT(msg, upb_strview, UPB_SIZE(8, 16)) = value;
 }
 
-
 /* envoy.api.v2.core.GrpcService.GoogleGrpc.CallCredentials.MetadataCredentialsFromPlugin */
 
 UPB_INLINE envoy_api_v2_core_GrpcService_GoogleGrpc_CallCredentials_MetadataCredentialsFromPlugin *envoy_api_v2_core_GrpcService_GoogleGrpc_CallCredentials_MetadataCredentialsFromPlugin_new(upb_arena *arena) {
@@ -527,7 +516,7 @@ UPB_INLINE envoy_api_v2_core_GrpcService_GoogleGrpc_CallCredentials_MetadataCred
 UPB_INLINE envoy_api_v2_core_GrpcService_GoogleGrpc_CallCredentials_MetadataCredentialsFromPlugin *envoy_api_v2_core_GrpcService_GoogleGrpc_CallCredentials_MetadataCredentialsFromPlugin_parse(const char *buf, size_t size,
                         upb_arena *arena) {
   envoy_api_v2_core_GrpcService_GoogleGrpc_CallCredentials_MetadataCredentialsFromPlugin *ret = envoy_api_v2_core_GrpcService_GoogleGrpc_CallCredentials_MetadataCredentialsFromPlugin_new(arena);
-  return (ret && upb_decode(buf, size, ret, &envoy_api_v2_core_GrpcService_GoogleGrpc_CallCredentials_MetadataCredentialsFromPlugin_msginit)) ? ret : NULL;
+  return (ret && upb_decode(buf, size, ret, &envoy_api_v2_core_GrpcService_GoogleGrpc_CallCredentials_MetadataCredentialsFromPlugin_msginit, arena)) ? ret : NULL;
 }
 UPB_INLINE char *envoy_api_v2_core_GrpcService_GoogleGrpc_CallCredentials_MetadataCredentialsFromPlugin_serialize(const envoy_api_v2_core_GrpcService_GoogleGrpc_CallCredentials_MetadataCredentialsFromPlugin *msg, upb_arena *arena, size_t *len) {
   return upb_encode(msg, &envoy_api_v2_core_GrpcService_GoogleGrpc_CallCredentials_MetadataCredentialsFromPlugin_msginit, arena, len);
@@ -573,7 +562,6 @@ UPB_INLINE struct google_protobuf_Any* envoy_api_v2_core_GrpcService_GoogleGrpc_
   }
   return sub;
 }
-
 
 #ifdef __cplusplus
 }  /* extern "C" */

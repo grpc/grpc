@@ -40,14 +40,6 @@ namespace Grpc.Core.Internal
 
         public int Length => length;
 
-        // copies data of the slice to given span.
-        // there needs to be enough space in the destination buffer
-        public void CopyTo(ArraySegment<byte> destination)
-        {
-            Marshal.Copy(dataPtr, destination.Array, destination.Offset, length);
-        }
-
-#if GRPC_CSHARP_SUPPORT_SYSTEM_MEMORY
         public Span<byte> ToSpanUnsafe()
         {
             unsafe
@@ -55,7 +47,6 @@ namespace Grpc.Core.Internal
                 return new Span<byte>((byte*) dataPtr, length);
             }
         }
-#endif
 
         /// <summary>
         /// Returns a <see cref="System.String"/> that represents the current <see cref="Grpc.Core.Internal.Slice"/>.

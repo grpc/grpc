@@ -29,9 +29,6 @@ bool grpc_gcp_rpc_protocol_versions_set_max(
             "grpc_gcp_rpc_protocol_versions_set_max().");
     return false;
   }
-  versions->has_max_rpc_version = true;
-  versions->max_rpc_version.has_major = true;
-  versions->max_rpc_version.has_minor = true;
   versions->max_rpc_version.major = max_major;
   versions->max_rpc_version.minor = max_minor;
   return true;
@@ -46,46 +43,8 @@ bool grpc_gcp_rpc_protocol_versions_set_min(
             "grpc_gcp_rpc_protocol_versions_set_min().");
     return false;
   }
-  versions->has_min_rpc_version = true;
-  versions->min_rpc_version.has_major = true;
-  versions->min_rpc_version.has_minor = true;
   versions->min_rpc_version.major = min_major;
   versions->min_rpc_version.minor = min_minor;
-  return true;
-}
-
-size_t grpc_gcp_rpc_protocol_versions_encode_length(
-    const grpc_gcp_rpc_protocol_versions* versions) {
-  if (versions == nullptr) {
-    gpr_log(GPR_ERROR,
-            "Invalid nullptr arguments to "
-            "grpc_gcp_rpc_protocol_versions_encode_length().");
-    return 0;
-  }
-  pb_ostream_t size_stream;
-  memset(&size_stream, 0, sizeof(pb_ostream_t));
-  if (!pb_encode(&size_stream, grpc_gcp_RpcProtocolVersions_fields, versions)) {
-    gpr_log(GPR_ERROR, "nanopb error: %s", PB_GET_ERROR(&size_stream));
-    return 0;
-  }
-  return size_stream.bytes_written;
-}
-
-bool grpc_gcp_rpc_protocol_versions_encode_to_raw_bytes(
-    const grpc_gcp_rpc_protocol_versions* versions, uint8_t* bytes,
-    size_t bytes_length) {
-  if (versions == nullptr || bytes == nullptr || bytes_length == 0) {
-    gpr_log(GPR_ERROR,
-            "Invalid nullptr arguments to "
-            "grpc_gcp_rpc_protocol_versions_encode_to_raw_bytes().");
-    return false;
-  }
-  pb_ostream_t output_stream = pb_ostream_from_buffer(bytes, bytes_length);
-  if (!pb_encode(&output_stream, grpc_gcp_RpcProtocolVersions_fields,
-                 versions)) {
-    gpr_log(GPR_ERROR, "nanopb error: %s", PB_GET_ERROR(&output_stream));
-    return false;
-  }
   return true;
 }
 
@@ -97,12 +56,32 @@ bool grpc_gcp_rpc_protocol_versions_encode(
             "grpc_gcp_rpc_protocol_versions_encode().");
     return false;
   }
-  size_t encoded_length =
-      grpc_gcp_rpc_protocol_versions_encode_length(versions);
-  if (encoded_length == 0) return false;
-  *slice = grpc_slice_malloc(encoded_length);
-  return grpc_gcp_rpc_protocol_versions_encode_to_raw_bytes(
-      versions, GRPC_SLICE_START_PTR(*slice), encoded_length);
+  upb::Arena arena;
+  grpc_gcp_RpcProtocolVersions* versions_msg =
+      grpc_gcp_RpcProtocolVersions_new(arena.ptr());
+  grpc_gcp_RpcProtocolVersions_assign_from_struct(versions_msg, arena.ptr(),
+                                                  versions);
+  return grpc_gcp_rpc_protocol_versions_encode(versions_msg, arena.ptr(),
+                                               slice);
+}
+
+bool grpc_gcp_rpc_protocol_versions_encode(
+    const grpc_gcp_RpcProtocolVersions* versions, upb_arena* arena,
+    grpc_slice* slice) {
+  if (versions == nullptr || arena == nullptr || slice == nullptr) {
+    gpr_log(GPR_ERROR,
+            "Invalid nullptr arguments to "
+            "grpc_gcp_rpc_protocol_versions_encode().");
+    return false;
+  }
+  size_t buf_length;
+  char* buf =
+      grpc_gcp_RpcProtocolVersions_serialize(versions, arena, &buf_length);
+  if (buf == nullptr) {
+    return false;
+  }
+  *slice = grpc_slice_from_copied_buffer(buf, buf_length);
+  return true;
 }
 
 bool grpc_gcp_rpc_protocol_versions_decode(
@@ -113,14 +92,61 @@ bool grpc_gcp_rpc_protocol_versions_decode(
             "grpc_gcp_rpc_protocol_versions_decode().");
     return false;
   }
-  pb_istream_t stream =
-      pb_istream_from_buffer(const_cast<uint8_t*>(GRPC_SLICE_START_PTR(slice)),
-                             GRPC_SLICE_LENGTH(slice));
-  if (!pb_decode(&stream, grpc_gcp_RpcProtocolVersions_fields, versions)) {
-    gpr_log(GPR_ERROR, "nanopb error: %s", PB_GET_ERROR(&stream));
+  upb::Arena arena;
+  grpc_gcp_RpcProtocolVersions* versions_msg =
+      grpc_gcp_RpcProtocolVersions_parse(
+          reinterpret_cast<const char*>(GRPC_SLICE_START_PTR(slice)),
+          GRPC_SLICE_LENGTH(slice), arena.ptr());
+  if (versions_msg == nullptr) {
+    gpr_log(GPR_ERROR, "cannot deserialize RpcProtocolVersions message");
     return false;
   }
+  grpc_gcp_rpc_protocol_versions_assign_from_upb(versions, versions_msg);
   return true;
+}
+
+void grpc_gcp_rpc_protocol_versions_assign_from_upb(
+    grpc_gcp_rpc_protocol_versions* versions,
+    const grpc_gcp_RpcProtocolVersions* value) {
+  const grpc_gcp_RpcProtocolVersions_Version* max_version_msg =
+      grpc_gcp_RpcProtocolVersions_max_rpc_version(value);
+  if (max_version_msg != nullptr) {
+    versions->max_rpc_version.major =
+        grpc_gcp_RpcProtocolVersions_Version_major(max_version_msg);
+    versions->max_rpc_version.minor =
+        grpc_gcp_RpcProtocolVersions_Version_minor(max_version_msg);
+  } else {
+    versions->max_rpc_version.major = 0;
+    versions->max_rpc_version.minor = 0;
+  }
+  const grpc_gcp_RpcProtocolVersions_Version* min_version_msg =
+      grpc_gcp_RpcProtocolVersions_min_rpc_version(value);
+  if (min_version_msg != nullptr) {
+    versions->min_rpc_version.major =
+        grpc_gcp_RpcProtocolVersions_Version_major(min_version_msg);
+    versions->min_rpc_version.minor =
+        grpc_gcp_RpcProtocolVersions_Version_minor(min_version_msg);
+  } else {
+    versions->min_rpc_version.major = 0;
+    versions->min_rpc_version.minor = 0;
+  }
+}
+
+void grpc_gcp_RpcProtocolVersions_assign_from_struct(
+    grpc_gcp_RpcProtocolVersions* versions, upb_arena* arena,
+    const grpc_gcp_rpc_protocol_versions* value) {
+  grpc_gcp_RpcProtocolVersions_Version* max_version_msg =
+      grpc_gcp_RpcProtocolVersions_mutable_max_rpc_version(versions, arena);
+  grpc_gcp_RpcProtocolVersions_Version_set_major(max_version_msg,
+                                                 value->max_rpc_version.major);
+  grpc_gcp_RpcProtocolVersions_Version_set_minor(max_version_msg,
+                                                 value->max_rpc_version.minor);
+  grpc_gcp_RpcProtocolVersions_Version* min_version_msg =
+      grpc_gcp_RpcProtocolVersions_mutable_min_rpc_version(versions, arena);
+  grpc_gcp_RpcProtocolVersions_Version_set_major(min_version_msg,
+                                                 value->min_rpc_version.major);
+  grpc_gcp_RpcProtocolVersions_Version_set_minor(min_version_msg,
+                                                 value->min_rpc_version.minor);
 }
 
 bool grpc_gcp_rpc_protocol_versions_copy(

@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
   <Import Project="..\Grpc.Core\Common.csproj.include" />
 
@@ -10,6 +10,7 @@
 
   <ItemGroup>
     <ProjectReference Include="../Grpc.Reflection/Grpc.Reflection.csproj" />
+    <ProjectReference Include="../Grpc.Core/Grpc.Core.csproj" />
   </ItemGroup>
 
   <ItemGroup>

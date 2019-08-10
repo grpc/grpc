@@ -96,6 +96,7 @@ native_method_signatures = [
     'CallError grpcsharp_test_callback([MarshalAs(UnmanagedType.FunctionPtr)] NativeCallbackTestDelegate callback)',
     'IntPtr grpcsharp_test_nop(IntPtr ptr)',
     'void grpcsharp_test_override_method(string methodName, string variant)',
+    'CallError grpcsharp_test_call_start_unary_echo(CallSafeHandle call, BatchContextSafeHandle ctx, byte[] sendBuffer, UIntPtr sendBufferLen, WriteFlags writeFlags, MetadataArraySafeHandle metadataArray, CallFlags metadataFlags)',
 ]
 
 import re

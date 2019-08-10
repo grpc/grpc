@@ -42,7 +42,7 @@
 // Add this to a class that want to use New(), but has a private or
 // protected constructor.
 // Should not be used in new code.
-// TODO(juanlishen): Remove this macro, and instead comment that the public ctor
+// TODO(juanlishen): Remove this macro, and instead comment that the public dtor
 // should not be used directly.
 #define GRPC_ALLOW_CLASS_TO_USE_NON_PUBLIC_NEW      \
   template <typename _New_T, typename... _New_Args> \

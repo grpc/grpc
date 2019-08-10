@@ -19,8 +19,13 @@
 #import "ViewController.h"
 
 #import <GRPCClient/GRPCCall.h>
+#if USE_FRAMEWORKS
 #import <RemoteTest/Messages.pbobjc.h>
 #import <RemoteTest/Test.pbrpc.h>
+#else
+#import "src/objective-c/examples/RemoteTestClient/Messages.pbobjc.h"
+#import "src/objective-c/examples/RemoteTestClient/Test.pbrpc.h"
+#endif
 
 #import "CacheInterceptor.h"
 

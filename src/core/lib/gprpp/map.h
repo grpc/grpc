@@ -30,6 +30,7 @@
 #include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/gprpp/memory.h"
 #include "src/core/lib/gprpp/pair.h"
+#include "src/core/lib/gprpp/ref_counted_ptr.h"
 
 namespace grpc_core {
 struct StringLess {
@@ -38,6 +39,13 @@ struct StringLess {
   }
   bool operator()(const UniquePtr<char>& k1, const UniquePtr<char>& k2) {
     return strcmp(k1.get(), k2.get()) < 0;
+  }
+};
+
+template <typename T>
+struct RefCountedPtrLess {
+  bool operator()(const RefCountedPtr<T>& p1, const RefCountedPtr<T>& p2) {
+    return p1.get() < p2.get();
   }
 };
 

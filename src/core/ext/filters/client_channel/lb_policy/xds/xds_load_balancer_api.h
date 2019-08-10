@@ -23,36 +23,10 @@
 
 #include <grpc/slice_buffer.h>
 
-#include "src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/load_balancer.pb.h"
 #include "src/core/ext/filters/client_channel/lb_policy/xds/xds_client_stats.h"
 #include "src/core/ext/filters/client_channel/server_address.h"
-#include "src/core/ext/upb-generated/envoy/api/v2/core/address.upb.h"
-#include "src/core/ext/upb-generated/envoy/api/v2/core/base.upb.h"
-#include "src/core/ext/upb-generated/envoy/api/v2/discovery.upb.h"
-#include "src/core/ext/upb-generated/envoy/api/v2/eds.upb.h"
-#include "src/core/ext/upb-generated/envoy/api/v2/endpoint/endpoint.upb.h"
-#include "src/core/ext/upb-generated/envoy/service/load_stats/v2/lrs.upb.h"
-#include "src/core/ext/upb-generated/google/protobuf/any.upb.h"
-#include "src/core/ext/upb-generated/google/protobuf/struct.upb.h"
-#include "src/core/ext/upb-generated/google/protobuf/wrappers.upb.h"
-#include "src/core/lib/gprpp/ref_counted.h"
-#include "src/core/lib/iomgr/exec_ctx.h"
-#include "upb/upb.h"
 
 namespace grpc_core {
-
-using XdsDiscoveryRequest = envoy_api_v2_DiscoveryRequest;
-using XdsDiscoveryResponse = envoy_api_v2_DiscoveryResponse;
-using XdsClusterLoadAssignment = envoy_api_v2_ClusterLoadAssignment;
-using XdsLocalityLbEndpoints = envoy_api_v2_endpoint_LocalityLbEndpoints;
-using XdsLocality = envoy_api_v2_core_Locality;
-using XdsLbEndpoint = envoy_api_v2_endpoint_LbEndpoint;
-using XdsEndpoint = envoy_api_v2_endpoint_Endpoint;
-using XdsAddress = envoy_api_v2_core_Address;
-using XdsSocketAddress = envoy_api_v2_core_SocketAddress;
-using XdsNode = envoy_api_v2_core_Node;
-using XdsLoadStatsRequest = envoy_service_load_stats_v2_LoadStatsRequest;
-using XdsLoadStatsResponse = envoy_service_load_stats_v2_LoadStatsResponse;
 
 struct XdsLocalityInfo {
   bool operator==(const XdsLocalityInfo& other) const {
@@ -124,7 +98,7 @@ grpc_slice XdsLrsRequestCreateAndEncode(const char* server_name);
 // Creates an LRS request sending client-side load reports. If all the counters
 // in \a client_stats are zero, returns empty slice.
 grpc_slice XdsLrsRequestCreateAndEncode(const char* server_name,
-                                        XdsLbClientStats* client_stats);
+                                        XdsClientStats* client_stats);
 
 // Parses the LRS response and returns the client-side load reporting interval.
 // If there is any error (e.g., the found server name doesn't match \a

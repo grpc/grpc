@@ -138,7 +138,7 @@ namespace Grpc.Testing {
     {
       /// <summary>Creates a new client for WorkerService</summary>
       /// <param name="channel">The channel to use to make remote calls.</param>
-      public WorkerServiceClient(grpc::Channel channel) : base(channel)
+      public WorkerServiceClient(grpc::ChannelBase channel) : base(channel)
       {
       }
       /// <summary>Creates a new client for WorkerService that uses a custom <c>CallInvoker</c>.</summary>
