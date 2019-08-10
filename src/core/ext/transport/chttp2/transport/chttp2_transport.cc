@@ -1535,19 +1535,13 @@ static void perform_stream_op_locked(void* stream_op,
     on_complete->next_data.scratch |= CLOSURE_BARRIER_MAY_COVER_WRITE;
     s->fetching_send_message_finished = add_closure_barrier(op->on_complete);
     if (s->write_closed) {
-      // Return an error unless the client has already received trailing
-      // metadata from the server, since an application using a
-      // streaming call might send another message before getting a
-      // recv_message failure, breaking out of its loop, and then
-      // starting recv_trailing_metadata.
+      op->payload->send_message.stream_write_closed = true;
+      // We should NOT return an error here, so as to avoid a cancel OP being
+      // started. The surface layer will notice that the stream has been closed
+      // for writes and fail the send message op.
       op->payload->send_message.send_message.reset();
       grpc_chttp2_complete_closure_step(
-          t, s, &s->fetching_send_message_finished,
-          t->is_client && s->received_trailing_metadata
-              ? GRPC_ERROR_NONE
-              : GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
-                    "Attempt to send message after stream was closed",
-                    &s->write_closed_error, 1),
+          t, s, &s->fetching_send_message_finished, GRPC_ERROR_NONE,
           "fetching_send_message_finished");
     } else {
       GPR_ASSERT(s->fetching_send_message == nullptr);
