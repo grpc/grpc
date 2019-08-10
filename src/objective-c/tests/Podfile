@@ -114,7 +114,7 @@ post_install do |installer|
     end
 
     # Enable NSAssert on gRPC
-    if /(gRPC|ProtoRPC|RxLibrary)-(mac|i)OS/.match(target.name)
+    if /(gRPC|ProtoRPC|RxLibrary)-(mac|i|tv)OS/.match(target.name)
       target.build_configurations.each do |config|
         if config.name != 'Release'
           config.build_settings['ENABLE_NS_ASSERTIONS'] = 'YES'
