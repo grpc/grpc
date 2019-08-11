@@ -167,6 +167,10 @@ grpc_objc_library(
         "ProtoRPC/ProtoRPCLegacy.m",
         "ProtoRPC/ProtoServiceLegacy.m",
     ],
+    hdrs = [
+        "ProtoRPC/ProtoRPCLegacy.h",
+        "ProtoRPC/ProtoService.h",
+    ],
     deps = [
         ":rx_library",
         ":proto_objc_rpc_v2",

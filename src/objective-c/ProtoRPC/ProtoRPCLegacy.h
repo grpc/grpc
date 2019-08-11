@@ -24,6 +24,7 @@
 #import <GRPCClient/GRPCCall+Cronet.h>
 #import <GRPCClient/GRPCCall+OAuth2.h>
 #import <GRPCClient/GRPCCall+Tests.h>
+#import <RxLibrary/GRXWriteable.h>
 
 @class GRPCProtoMethod;
 @class GRXWriter;
