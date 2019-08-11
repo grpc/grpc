@@ -168,6 +168,7 @@ grpc_objc_library(
         "ProtoRPC/ProtoServiceLegacy.m",
     ],
     hdrs = [
+        "ProtoRPC/ProtoMethod.h",
         "ProtoRPC/ProtoRPCLegacy.h",
         "ProtoRPC/ProtoService.h",
     ],
