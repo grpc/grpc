@@ -126,17 +126,9 @@ static NSMutableDictionary *gHostCache;
 
 + (GRPCCallOptions *)callOptionsForHost:(NSString *)host {
   // TODO (mxyan): Remove when old API is deprecated
-  NSURL *hostURL = [NSURL URLWithString:[@"https://" stringByAppendingString:host]];
-  if (hostURL.host && hostURL.port == nil) {
-    host = [hostURL.host stringByAppendingString:@":443"];
-  }
-
   GRPCCallOptions *callOptions = nil;
   @synchronized(gHostCache) {
-    GRPCHost *hostConfig = gHostCache[host];
-    if (hostConfig == nil) {
-      hostConfig = [GRPCHost hostWithAddress:host];
-    }
+    GRPCHost *hostConfig = [GRPCHost hostWithAddress:host];
     callOptions = [hostConfig callOptions];
   }
   NSAssert(callOptions != nil, @"Unable to create call options object");

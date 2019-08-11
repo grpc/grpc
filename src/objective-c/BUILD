@@ -109,7 +109,7 @@ grpc_objc_library(
         "GRPCClient/GRPCCall+Tests.h",
         "GRPCClient/GRPCCall+ChannelArg.h",
     ],
-    textual_hdrs = native.glob(["GRPCClient/private/GRPCCore/*.h"]),
+    textual_hdrs = glob(["GRPCClient/private/GRPCCore/*.h"]),
     srcs = [
         "GRPCClient/GRPCCall+ChannelArg.m",
         "GRPCClient/GRPCCall+ChannelCredentials.m",
@@ -117,7 +117,7 @@ grpc_objc_library(
         "GRPCClient/GRPCCall+OAuth2.m",
         "GRPCClient/GRPCCall+Tests.m",
         "GRPCClient/GRPCCallLegacy.m",
-    ] + native.glob(["GRPCClient/private/GRPCCore/*.m"]),
+    ] + glob(["GRPCClient/private/GRPCCore/*.m"]),
     data = [":gRPCCertificates"],
     includes = ["."],
     deps = [
