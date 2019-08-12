@@ -36,6 +36,7 @@
 #include "src/core/lib/debug/stats.h"
 #include "src/core/lib/gpr/alloc.h"
 #include "src/core/lib/gpr/string.h"
+#include "src/core/lib/gpr/time_precise.h"
 #include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/gprpp/arena.h"
 #include "src/core/lib/gprpp/manual_constructor.h"
@@ -154,7 +155,7 @@ struct grpc_call {
   grpc_completion_queue* cq;
   grpc_polling_entity pollent;
   grpc_channel* channel;
-  gpr_timespec start_time = gpr_now(GPR_CLOCK_MONOTONIC);
+  gpr_cycle_counter start_time = gpr_get_cycle_counter();
   /* parent_call* */ gpr_atm parent_call_atm = 0;
   child_call* child = nullptr;
 
@@ -552,8 +553,7 @@ static void destroy_call(void* call, grpc_error* error) {
                         &(c->final_info.error_string));
   GRPC_ERROR_UNREF(status_error);
   c->final_info.stats.latency =
-      gpr_time_sub(gpr_now(GPR_CLOCK_MONOTONIC), c->start_time);
-
+      gpr_cycle_counter_sub(gpr_get_cycle_counter(), c->start_time);
   grpc_call_stack_destroy(CALL_STACK_FROM_CALL(c), &c->final_info,
                           GRPC_CLOSURE_INIT(&c->release_call, release_call, c,
                                             grpc_schedule_on_exec_ctx));
