@@ -509,7 +509,7 @@ class XdsLb : public LoadBalancingPolicy {
       OrphanablePtr<LoadBalancingPolicy> child_policy_;
       OrphanablePtr<LoadBalancingPolicy> pending_child_policy_;
       RefCountedPtr<PickerWrapper> picker_wrapper_;
-      grpc_connectivity_state connectivity_state_;
+      grpc_connectivity_state connectivity_state_ = GRPC_CHANNEL_IDLE;
       uint32_t locality_weight_;
     };
 
