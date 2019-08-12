@@ -222,14 +222,6 @@ grpc_cc_binary(
     deps = [":helpers"],
 )
 
-grpc_cc_binary(
-    name = "bm_threadpool",
-    testonly = 1,
-    srcs = ["bm_threadpool.cc"],
-    tags = ["no_windows"],
-    deps = [":helpers"],
-)
-
 grpc_cc_library(
     name = "bm_callback_test_service_impl",
     testonly = 1,
