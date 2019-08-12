@@ -1190,13 +1190,16 @@ TEST_F(SingleBalancerTest, DropUpdate) {
                                     {{kLbDropType, kDropPerMillionForLb}}),
       0);
   // The second EDS response contains two drop categories.
+  // TODO(juanlishen): Change the EDS response sending to deterministic style
+  // (e.g., by using condition variable) so that we can shorten the test
+  // duration.
   ScheduleResponseForBalancer(
       0,
       EdsServiceImpl::BuildResponse(
           GetBackendPortsInGroups(),
           {{kLbDropType, kDropPerMillionForLb},
            {kThrottleDropType, kDropPerMillionForThrottle}}),
-      5000);
+      10000);
   WaitForAllBackends();
   // Send kNumRpcs RPCs and count the drops.
   size_t num_drops = 0;
