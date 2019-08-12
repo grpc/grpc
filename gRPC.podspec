@@ -67,6 +67,7 @@ Pod::Spec.new do |s|
                       "GRPCClient/GRPCCall+Tests.h",
                       "src/objective-c/GRPCClient/GRPCCallLegacy.h",
                       "src/objective-c/GRPCClient/GRPCTypes.h"
+    ss.dependency "gRPC-RxLibrary/Interface", version
   end
 
   s.subspec 'Interface' do |ss|

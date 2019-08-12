@@ -24,8 +24,8 @@
 #import "src/objective-c/examples/RemoteTestClient/Messages.pbobjc.h"
 #import "src/objective-c/examples/RemoteTestClient/Test.pbrpc.h"
 #endif
-#import <ProtoRPC/ProtoRPC.h>
 #import <GRPCClient/GRPCCallOptions.h>
+#import <ProtoRPC/ProtoRPC.h>
 
 @interface InterfaceController ()<GRPCProtoResponseHandler>
 
