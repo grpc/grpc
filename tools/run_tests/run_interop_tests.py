@@ -207,8 +207,7 @@ class AspNetCoreLanguage:
         return {}
 
     def unimplemented_test_cases(self):
-        return _SKIP_GOOGLE_DEFAULT_CREDS + \
-            _SKIP_COMPUTE_ENGINE_CHANNEL_CREDS
+        return []
 
     def unimplemented_test_cases_server(self):
         return _SKIP_SERVER_COMPRESSION
