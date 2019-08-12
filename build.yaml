@@ -5112,6 +5112,20 @@ targets:
   deps:
   - grpc_plugin_support
   secure: false
+- name: grpc_spiffe_security_connector_test
+  gtest: true
+  build: test
+  language: c++
+  src:
+  - test/core/security/spiffe_security_connector_test.cc
+  deps:
+  - grpc_test_util
+  - grpc++_test_util
+  - grpc++
+  - grpc
+  - gpr
+  uses:
+  - grpc++_test
 - name: grpc_tool_test
   gtest: true
   build: test
