@@ -114,7 +114,7 @@ static NSMutableDictionary *gHostCache;
   options.hostNameOverride = _hostNameOverride;
   if (_transportType == GRPCTransportTypeInsecure) {
     options.transport = GRPCDefaultTransportImplList.core_insecure;
-  } else if ([GRPCCall isUsingCronet]){
+  } else if ([GRPCCall isUsingCronet]) {
     options.transport = gGRPCCoreCronetId;
   } else {
     options.transport = GRPCDefaultTransportImplList.core_secure;
