@@ -19,8 +19,7 @@
 #import "NSError+GRPC.h"
 
 #include <grpc/grpc.h>
-
-NSString *const kGRPCErrorDomain = @"io.grpc";
+#import <GRPCClient/GRPCTypes.h>
 
 @implementation NSError (GRPC)
 + (instancetype)grpc_errorFromStatusCode:(grpc_status_code)statusCode
