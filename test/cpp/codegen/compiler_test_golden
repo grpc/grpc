@@ -21,8 +21,8 @@
 // File detached comment 2
 //
 // File leading comment 1
-#ifndef GRPC_src_2fproto_2fgrpc_2ftesting_2fcompiler_5ftest_2eproto__INCLUDED
-#define GRPC_src_2fproto_2fgrpc_2ftesting_2fcompiler_5ftest_2eproto__INCLUDED
+#ifndef GRPC_test_2fproto_2fcompiler_5ftest_2eproto__INCLUDED
+#define GRPC_test_2fproto_2fcompiler_5ftest_2eproto__INCLUDED
 
 #include "test/proto/compiler_test.pb.h"
 
@@ -932,4 +932,4 @@ class ServiceB final {
 }  // namespace grpc
 
 
-#endif  // GRPC_src_2fproto_2fgrpc_2ftesting_2fcompiler_5ftest_2eproto__INCLUDED
+#endif  // GRPC_test_2fproto_2fcompiler_5ftest_2eproto__INCLUDED
