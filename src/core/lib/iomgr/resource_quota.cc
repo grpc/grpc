@@ -583,16 +583,19 @@ static void ru_destroy(void* ru, grpc_error* error) {
   gpr_free(resource_user);
 }
 
+static void ru_alloc_slices(
+    grpc_resource_user_slice_allocator* slice_allocator) {
+  for (size_t i = 0; i < slice_allocator->count; i++) {
+    grpc_slice_buffer_add_indexed(
+        slice_allocator->dest, ru_slice_create(slice_allocator->resource_user,
+                                               slice_allocator->length));
+  }
+}
+
 static void ru_allocated_slices(void* arg, grpc_error* error) {
   grpc_resource_user_slice_allocator* slice_allocator =
       static_cast<grpc_resource_user_slice_allocator*>(arg);
-  if (error == GRPC_ERROR_NONE) {
-    for (size_t i = 0; i < slice_allocator->count; i++) {
-      grpc_slice_buffer_add_indexed(
-          slice_allocator->dest, ru_slice_create(slice_allocator->resource_user,
-                                                 slice_allocator->length));
-    }
-  }
+  if (error == GRPC_ERROR_NONE) ru_alloc_slices(slice_allocator);
   GRPC_CLOSURE_RUN(&slice_allocator->on_done, GRPC_ERROR_REF(error));
 }
 
@@ -880,7 +883,7 @@ void grpc_resource_user_free_threads(grpc_resource_user* resource_user,
   gpr_mu_unlock(&resource_user->resource_quota->thread_count_mu);
 }
 
-static void resource_user_alloc_locked(grpc_resource_user* resource_user,
+static bool resource_user_alloc_locked(grpc_resource_user* resource_user,
                                        size_t size,
                                        grpc_closure* optional_on_done) {
   ru_ref_by(resource_user, static_cast<gpr_atm>(size));
@@ -890,19 +893,18 @@ static void resource_user_alloc_locked(grpc_resource_user* resource_user,
             resource_user->resource_quota->name, resource_user->name, size,
             resource_user->free_pool);
   }
-  if (resource_user->free_pool < 0) {
-    if (optional_on_done != nullptr) {
-      resource_user->outstanding_allocations += static_cast<int64_t>(size);
-      grpc_closure_list_append(&resource_user->on_allocated, optional_on_done,
-                               GRPC_ERROR_NONE);
-    }
-    if (!resource_user->allocating) {
-      resource_user->allocating = true;
-      GRPC_CLOSURE_SCHED(&resource_user->allocate_closure, GRPC_ERROR_NONE);
-    }
-  } else {
-    GRPC_CLOSURE_SCHED(optional_on_done, GRPC_ERROR_NONE);
+  if (GPR_LIKELY(resource_user->free_pool >= 0)) return true;
+  // Slow path: We need to wait for the free pool to refill.
+  if (optional_on_done != nullptr) {
+    resource_user->outstanding_allocations += static_cast<int64_t>(size);
+    grpc_closure_list_append(&resource_user->on_allocated, optional_on_done,
+                             GRPC_ERROR_NONE);
   }
+  if (!resource_user->allocating) {
+    resource_user->allocating = true;
+    GRPC_CLOSURE_SCHED(&resource_user->allocate_closure, GRPC_ERROR_NONE);
+  }
+  return false;
 }
 
 bool grpc_resource_user_safe_alloc(grpc_resource_user* resource_user,
@@ -926,15 +928,17 @@ bool grpc_resource_user_safe_alloc(grpc_resource_user* resource_user,
   return true;
 }
 
-void grpc_resource_user_alloc(grpc_resource_user* resource_user, size_t size,
+bool grpc_resource_user_alloc(grpc_resource_user* resource_user, size_t size,
                               grpc_closure* optional_on_done) {
   // TODO(juanlishen): Maybe return immediately if shutting down. Deferring this
   // because some tests become flaky after the change.
   gpr_mu_lock(&resource_user->mu);
   grpc_resource_quota* resource_quota = resource_user->resource_quota;
   gpr_atm_no_barrier_fetch_add(&resource_quota->used, size);
-  resource_user_alloc_locked(resource_user, size, optional_on_done);
+  const bool ret =
+      resource_user_alloc_locked(resource_user, size, optional_on_done);
   gpr_mu_unlock(&resource_user->mu);
+  return ret;
 }
 
 void grpc_resource_user_free(grpc_resource_user* resource_user, size_t size) {
@@ -989,18 +993,22 @@ void grpc_resource_user_slice_allocator_init(
   slice_allocator->resource_user = resource_user;
 }
 
-void grpc_resource_user_alloc_slices(
+bool grpc_resource_user_alloc_slices(
     grpc_resource_user_slice_allocator* slice_allocator, size_t length,
     size_t count, grpc_slice_buffer* dest) {
-  if (gpr_atm_no_barrier_load(&slice_allocator->resource_user->shutdown)) {
+  if (GPR_UNLIKELY(
+          gpr_atm_no_barrier_load(&slice_allocator->resource_user->shutdown))) {
     GRPC_CLOSURE_SCHED(
         &slice_allocator->on_allocated,
         GRPC_ERROR_CREATE_FROM_STATIC_STRING("Resource user shutdown"));
-    return;
+    return false;
   }
   slice_allocator->length = length;
   slice_allocator->count = count;
   slice_allocator->dest = dest;
-  grpc_resource_user_alloc(slice_allocator->resource_user, count * length,
-                           &slice_allocator->on_allocated);
+  const bool ret =
+      grpc_resource_user_alloc(slice_allocator->resource_user, count * length,
+                               &slice_allocator->on_allocated);
+  if (ret) ru_alloc_slices(slice_allocator);
+  return ret;
 }
