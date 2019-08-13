@@ -14,26 +14,27 @@
 # limitations under the License.
 
 # Don't run this script standalone. Instead, run from the repository root:
-# ./tools/run_tests/run_tests.py -l c++
+# ./tools/run_tests/run_tests.py -l objc
 
-set -ev
+set -e
+
+# CocoaPods requires the terminal to be using UTF-8 encoding.
+export LANG=en_US.UTF-8
 
 cd "$(dirname "$0")"
 
+hash pod 2>/dev/null || { echo >&2 "Cocoapods needs to be installed."; exit 1; }
+hash xcodebuild 2>/dev/null || {
+    echo >&2 "XCode command-line tools need to be installed."
+    exit 1
+}
+
+# clean the directory
+rm -rf Pods
+rm -rf Tests.xcworkspace
+rm -f Podfile.lock
+rm -rf RemoteTestClientCpp/src
+
 echo "TIME:  $(date)"
+pod install
 
-./build_tests.sh
-
-echo "TIME:  $(date)"
-
-set -o pipefail
-
-XCODEBUILD_FILTER='(^CompileC |^Ld |^ *[^ ]*clang |^ *cd |^ *export |^Libtool |^ *[^ ]*libtool |^CpHeader |^ *builtin-copy )'
-
-xcodebuild \
-    -workspace Tests.xcworkspace \
-    -scheme CronetTests \
-    -destination name="iPhone 8" \
-    test \
-    | egrep -v "$XCODEBUILD_FILTER" \
-    | egrep -v '^$' -
