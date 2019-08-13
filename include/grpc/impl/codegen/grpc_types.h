@@ -333,7 +333,8 @@ typedef struct {
 /* Time in milliseconds to wait before a locality is deleted after it's removed
    from the received EDS update. If 0, delete the locality immediately. Default
    value is 15 minutes. */
-#define GRPC_ARG_XDS_LOCALITY_RETAIN_TIME_MS "grpc.xds_locality_retain_time_ms"
+#define GRPC_ARG_LOCALITY_RETENTION_INTERVAL_MS \
+  "grpc.xds_locality_retention_interval_ms"
 /** If non-zero, grpc server's cronet compression workaround will be enabled */
 #define GRPC_ARG_WORKAROUND_CRONET_COMPRESSION \
   "grpc.workaround.cronet_compression"

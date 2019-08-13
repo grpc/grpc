@@ -109,7 +109,7 @@
 #define GRPC_XDS_RECONNECT_JITTER 0.2
 #define GRPC_XDS_DEFAULT_FALLBACK_TIMEOUT_MS 10000
 #define GRPC_XDS_MIN_CLIENT_LOAD_REPORTING_INTERVAL_MS 1000
-#define GRPC_XDS_DEFAULT_LOCALITY_RETAIN_TIME_MS (15 * 60 * 1000)
+#define GRPC_XDS_DEFAULT_LOCALITY_RETENTION_INTERVAL_MS (15 * 60 * 1000)
 
 namespace grpc_core {
 
@@ -612,7 +612,7 @@ class XdsLb : public LoadBalancingPolicy {
   // TODO(mhaidry) : Add support for multiple maps of localities
   // with different priorities
   XdsLocalityList locality_list_;
-  grpc_millis locality_retain_time_ms_;
+  grpc_millis locality_retention_interval_ms_;
   // TODO(mhaidry) : Add a pending locality map that may be swapped with the
   // the current one when new localities in the pending map are ready
   // to accept connections
@@ -1733,9 +1733,10 @@ XdsLb::XdsLb(Args args)
   lb_fallback_timeout_ms_ = grpc_channel_arg_get_integer(
       arg, {GRPC_XDS_DEFAULT_FALLBACK_TIMEOUT_MS, 0, INT_MAX});
   // Record the time to retain a removed locality.
-  arg = grpc_channel_args_find(args.args, GRPC_ARG_XDS_LOCALITY_RETAIN_TIME_MS);
-  locality_retain_time_ms_ = grpc_channel_arg_get_integer(
-      arg, {GRPC_XDS_DEFAULT_LOCALITY_RETAIN_TIME_MS, 0, INT_MAX});
+  arg = grpc_channel_args_find(args.args,
+                               GRPC_ARG_LOCALITY_RETENTION_INTERVAL_MS);
+  locality_retention_interval_ms_ = grpc_channel_arg_get_integer(
+      arg, {GRPC_XDS_DEFAULT_LOCALITY_RETENTION_INTERVAL_MS, 0, INT_MAX});
 }
 
 XdsLb::~XdsLb() {
@@ -2243,8 +2244,6 @@ void XdsLb::LocalityMap::LocalityEntry::UpdateLocked(
   if (parent_->shutting_down_) return;
   // Update locality weight.
   locality_weight_ = locality_weight;
-  // If the new LB weight is 0, don't bother continuing the update.
-  if (locality_weight_ == 0) return;
   if (delayed_removal_timer_callback_pending_) {
     grpc_timer_cancel(&delayed_removal_timer_);
   }
@@ -2391,7 +2390,7 @@ void XdsLb::LocalityMap::LocalityEntry::Orphan() {
 
 void XdsLb::LocalityMap::LocalityEntry::DeactivateLocked() {
   // If locality retaining is disabled, delete the locality immediately.
-  if (parent_->locality_retain_time_ms_ == 0) {
+  if (parent_->locality_retention_interval_ms_ == 0) {
     parent_->locality_map_.map_.erase(name_);
     return;
   }
@@ -2400,18 +2399,20 @@ void XdsLb::LocalityMap::LocalityEntry::DeactivateLocked() {
   locality_weight_ = 0;
   // Start a timer to delete the locality.
   Ref(DEBUG_LOCATION, "LocalityEntry+timer").release();
-  grpc_timer_init(&delayed_removal_timer_, parent_->locality_retain_time_ms_,
-                  &on_delayed_removal_timer_);
+  grpc_timer_init(
+      &delayed_removal_timer_,
+      ExecCtx::Get()->Now() + parent_->locality_retention_interval_ms_,
+      &on_delayed_removal_timer_);
   delayed_removal_timer_callback_pending_ = true;
 }
 
 void XdsLb::LocalityMap::LocalityEntry::OnDelayedRemovalTimerLocked(
     void* arg, grpc_error* error) {
   LocalityEntry* self = static_cast<LocalityEntry*>(arg);
+  self->delayed_removal_timer_callback_pending_ = false;
   if (error == GRPC_ERROR_NONE && self->locality_weight_ == 0) {
     self->parent_->locality_map_.map_.erase(self->name_);
   }
-  self->delayed_removal_timer_callback_pending_ = false;
   self->Unref(DEBUG_LOCATION, "LocalityEntry+timer");
 }
 

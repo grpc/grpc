@@ -1068,7 +1068,7 @@ TEST_F(SingleBalancerTest, LocalityMapUpdate) {
     locality_weight_rate_0.push_back(weight / kTotalLocalityWeight0);
   }
   // Delete the first locality, keep the second locality, change the third
-  // locality's weight from 5 to 2, and add a new locality with weight 6.
+  // locality's weight from 4 to 2, and add a new locality with weight 6.
   const std::vector<int> kLocalityWeights1 = {3, 2, 6};
   const double kTotalLocalityWeight1 =
       std::accumulate(kLocalityWeights1.begin(), kLocalityWeights1.end(), 0);
