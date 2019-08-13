@@ -924,7 +924,6 @@ TEST_F(SingleBalancerTest, Vanilla) {
     EXPECT_EQ(kNumRpcsPerAddress,
               backends_[i]->backend_service()->request_count());
   }
-  balancers_[0]->eds_service()->NotifyDoneWithEdsCall();
   // The EDS service got a single request, and sent a single response.
   EXPECT_EQ(1U, balancers_[0]->eds_service()->request_count());
   EXPECT_EQ(1U, balancers_[0]->eds_service()->response_count());
@@ -951,7 +950,6 @@ TEST_F(SingleBalancerTest, SameBackendListedMultipleTimes) {
   // And they should have come from a single client port, because of
   // subchannel sharing.
   EXPECT_EQ(1UL, backends_[0]->backend_service()->clients().size());
-  balancers_[0]->eds_service()->NotifyDoneWithEdsCall();
 }
 
 TEST_F(SingleBalancerTest, SecureNaming) {
@@ -1022,7 +1020,6 @@ TEST_F(SingleBalancerTest, InitiallyEmptyServerlist) {
   // populated serverlist but under the call's deadline (which is enforced by
   // the call's deadline).
   EXPECT_GT(ellapsed_ms.count(), kServerlistDelayMs);
-  balancers_[0]->eds_service()->NotifyDoneWithEdsCall();
   // The EDS service got a single request.
   EXPECT_EQ(1U, balancers_[0]->eds_service()->request_count());
   // and sent two responses.
@@ -1041,7 +1038,6 @@ TEST_F(SingleBalancerTest, AllServersUnreachableFailFast) {
   const Status status = SendRpc();
   // The error shouldn't be DEADLINE_EXCEEDED.
   EXPECT_EQ(StatusCode::UNAVAILABLE, status.error_code());
-  balancers_[0]->eds_service()->NotifyDoneWithEdsCall();
   // The EDS service got a single request, and sent a single response.
   EXPECT_EQ(1U, balancers_[0]->eds_service()->request_count());
   EXPECT_EQ(1U, balancers_[0]->eds_service()->response_count());
