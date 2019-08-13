@@ -16,28 +16,30 @@ require 'forwardable'
 require 'weakref'
 require_relative 'bidi_call'
 
-class Struct
-  # BatchResult is the struct returned by calls to call#start_batch.
-  class BatchResult
-    # check_status returns the status, raising an error if the status
-    # is non-nil and not OK.
-    def check_status
-      return nil if status.nil?
-      fail GRPC::Cancelled if status.code == GRPC::Core::StatusCodes::CANCELLED
-      if status.code != GRPC::Core::StatusCodes::OK
-        GRPC.logger.debug("Failing with status #{status}")
-        # raise BadStatus, propagating the metadata if present.
-        md = status.metadata
-        fail GRPC::BadStatus.new_status_exception(
-          status.code, status.details, md)
-      end
-      status
-    end
-  end
-end
-
 # GRPC contains the General RPC module.
 module GRPC
+  module Core
+    # BatchResult is the struct returned by calls to call#start_batch.
+    class BatchResult
+      # check_status returns the status, raising an error if the status
+      # is non-nil and not OK.
+      def check_status
+        return nil if status.nil?
+        if status.code == GRPC::Core::StatusCodes::CANCELLED
+          fail GRPC::Cancelled
+        end
+        if status.code != GRPC::Core::StatusCodes::OK
+          GRPC.logger.debug("Failing with status #{status}")
+          # raise BadStatus, propagating the metadata if present.
+          md = status.metadata
+          fail GRPC::BadStatus.new_status_exception(
+            status.code, status.details, md)
+        end
+        status
+      end
+    end
+  end
+
   # The ActiveCall class provides simple methods for sending marshallable
   # data to a call
   class ActiveCall # rubocop:disable Metrics/ClassLength
