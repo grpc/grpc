@@ -50,18 +50,21 @@ namespace Grpc.Microbenchmarks
             var call = CreateFakeCall(cq);
 
             var sendCompletionCallback = new NopSendCompletionCallback();
-            var payload = SliceBufferSafeHandle.Create();
-            payload.GetSpan(PayloadSize);
-            payload.Advance(PayloadSize);
+            var sliceBuffer = SliceBufferSafeHandle.Create();
             var writeFlags = default(WriteFlags);
 
             for (int i = 0; i < Iterations; i++)
             {
-                // TODO: sending for the first time actually steals the slices...
-                call.StartSendMessage(sendCompletionCallback, payload, writeFlags, false);
+                // SendMessage steals the slices from the slice buffer, so we need to repopulate in each iteration.
+                sliceBuffer.Reset();
+                sliceBuffer.GetSpan(PayloadSize);
+                sliceBuffer.Advance(PayloadSize);
+
+                call.StartSendMessage(sendCompletionCallback, sliceBuffer, writeFlags, false);
                 var callback = completionRegistry.Extract(completionRegistry.LastRegisteredKey);
                 callback.OnComplete(true);
             }
+            sliceBuffer.Dispose();
             cq.Dispose();
         }
 
