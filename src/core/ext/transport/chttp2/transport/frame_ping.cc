@@ -118,6 +118,7 @@ grpc_error* grpc_chttp2_ping_parser_parse(void* parser,
           t->ping_acks = static_cast<uint64_t*>(gpr_realloc(
               t->ping_acks, t->ping_ack_capacity * sizeof(*t->ping_acks)));
         }
+        t->num_pending_induced_frames++;
         t->ping_acks[t->ping_ack_count++] = p->opaque_8bytes;
         grpc_chttp2_initiate_write(t, GRPC_CHTTP2_INITIATE_WRITE_PING_RESPONSE);
       }
