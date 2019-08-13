@@ -1049,12 +1049,12 @@ static void write_action_begin_locked(void* gt, grpc_error* error_ignored) {
     if (t->reading_paused_on_pending_induced_frames) {
       GPR_ASSERT(t->num_pending_induced_frames == 0);
       /* We had paused reading, because we had many induced frames (SETTINGS
-       * ACK, RST_STREAMS) pending in t->qbuf. Now that we have been able to
-       * flush qbuf, we can resume reading. */
+       * ACK, PINGS ACK and RST_STREAMS) pending in t->qbuf. Now that we have
+       * been able to flush qbuf, we can resume reading. */
       GRPC_CHTTP2_IF_TRACING(gpr_log(
           GPR_INFO,
           "transport %p : Resuming reading after being paused due to too "
-          "many unwritten SETTINGS ACK and RST_STREAM frames",
+          "many unwritten SETTINGS ACK, PINGS ACK and RST_STREAM frames",
           t));
       t->reading_paused_on_pending_induced_frames = false;
       continue_read_action_locked(t);

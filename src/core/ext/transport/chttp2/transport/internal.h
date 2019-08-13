@@ -493,8 +493,8 @@ struct grpc_chttp2_transport {
   grpc_core::ContextList* cl = nullptr;
   grpc_core::RefCountedPtr<grpc_core::channelz::SocketNode> channelz_socket;
   uint32_t num_messages_in_next_write = 0;
-  /** The number of pending induced frames (SETTINGS_ACK and RST_STREAM) in the
-   * outgoing buffer (t->qbuf). If this number goes beyond
+  /** The number of pending induced frames (SETTINGS_ACK, PINGS_ACK and
+   * RST_STREAM) in the outgoing buffer (t->qbuf). If this number goes beyond
    * DEFAULT_MAX_PENDING_INDUCED_FRAMES, we pause reading new frames. We would
    * only continue reading when we are able to write to the socket again,
    * thereby reducing the number of induced frames. */
