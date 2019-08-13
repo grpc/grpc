@@ -41,7 +41,7 @@ using keyvaluestore::KeyValueStore;
 using keyvaluestore::Request;
 using keyvaluestore::Response;
 
-class KeyValueStoreClient /*: public EventHandler */ {
+class KeyValueStoreClient {
  public:
   KeyValueStoreClient(std::shared_ptr<Channel> channel)
       : stub_(KeyValueStore::NewStub(channel)), index_(0) {}
@@ -94,7 +94,6 @@ class KeyValueStoreClient /*: public EventHandler */ {
       // Verify that the request was completed successfully. Note that "ok"
       // corresponds solely to the request for updates introduced by
       // Finish().
-      //   GPR_ASSERT(ok);
       if (ok) {
         // The tag in this example is the enum Event
         Proceed(tag);
