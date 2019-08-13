@@ -152,7 +152,6 @@ namespace Grpc.Core.Internal.Tests
 
         // TODO: other TODOs
         // -- provide a null instance of SliceBufferSafeHandle
-        //-- order of UnsafeSerialize in AsyncCall methods...
 
         private byte[] GetTestBuffer(int length)
         {

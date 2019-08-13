@@ -117,7 +117,7 @@ namespace Grpc.Core.Internal
         {
             using (var serializationScope = DefaultSerializationContext.GetInitializedThreadLocalScope())
             {
-                var payload = UnsafeSerialize(msg, serializationScope.Context); // do before metadata array?
+                var payload = UnsafeSerialize(msg, serializationScope.Context);
                 lock (myLock)
                 {
                     GrpcPreconditions.CheckState(started);
