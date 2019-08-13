@@ -1,4 +1,4 @@
-// Copyright 2017 gRPC authors.
+// Copyright 2016 gRPC authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,20 +12,17 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-syntax = "proto3";
+syntax = "proto2";
 
-import "src/proto/grpc/testing/control.proto";
-import "src/proto/grpc/testing/stats.proto";
+import "test/proto/proto2/empty2.proto";
 
-package grpc.testing;
+package grpc.testing.proto2;
 
-message ProxyStat {
-  double latency = 1;
+// Fill emptiness with music.
+extend grpc.testing.proto2.EmptyWithExtensions {
+  optional int64 Deadmau5 = 124;
+  optional float Madeon = 125;
+  optional string AboveAndBeyond = 126;
+  optional bool Tycho = 127;
+  optional fixed64 Pendulum = 128;
 }
-
-service ProxyClientService {
-  rpc GetConfig(Void) returns (ClientConfig);
-  rpc ReportTime(stream ProxyStat) returns (Void);
-  rpc ReportHist(stream HistogramData) returns (Void);
-}
-

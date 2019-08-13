@@ -21,8 +21,8 @@
 
 #include <memory>
 
-#include "src/proto/grpc/testing/control.pb.h"
 #include "test/cpp/qps/histogram.h"
+#include "test/proto/control.pb.h"
 
 namespace grpc {
 namespace testing {

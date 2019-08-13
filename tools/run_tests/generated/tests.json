@@ -4715,7 +4715,7 @@
   }, 
   {
     "args": [
-      "--generated_file_path=gens/src/proto/grpc/testing/"
+      "--generated_file_path=gens/test/proto/"
     ], 
     "benchmark": false, 
     "ci_platforms": [

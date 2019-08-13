@@ -29,8 +29,8 @@
 #include "opencensus/stats/stats.h"
 #include "opencensus/stats/testing/test_utils.h"
 #include "src/cpp/ext/filters/census/grpc_plugin.h"
-#include "src/proto/grpc/testing/echo.grpc.pb.h"
 #include "test/core/util/test_config.h"
+#include "test/proto/echo.grpc.pb.h"
 
 namespace grpc {
 namespace testing {

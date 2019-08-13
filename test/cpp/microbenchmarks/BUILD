@@ -42,7 +42,7 @@ grpc_cc_library(
     tags = ["no_windows"],
     deps = [
         "//:grpc++_unsecure",
-        "//src/proto/grpc/testing:echo_proto",
+        "//test/proto:echo_proto",
         "//test/core/util:grpc_test_util_unsecure",
         "//test/cpp/util:test_config",
     ],
@@ -210,7 +210,7 @@ grpc_cc_binary(
     deps = [
         ":helpers",
         "//:grpc_opencensus_plugin",
-        "//src/proto/grpc/testing:echo_proto",
+        "//test/proto:echo_proto",
     ],
 )
 
@@ -240,7 +240,7 @@ grpc_cc_library(
     ],
     deps = [
         ":helpers",
-        "//src/proto/grpc/testing:echo_proto",
+        "//test/proto:echo_proto",
         "//test/cpp/util:test_util",
     ],
 )

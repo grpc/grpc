@@ -43,9 +43,9 @@
 #include "src/core/lib/transport/transport_impl.h"
 
 #include "src/cpp/client/create_channel_internal.h"
-#include "src/proto/grpc/testing/echo.grpc.pb.h"
 #include "test/cpp/microbenchmarks/helpers.h"
 #include "test/cpp/util/test_config.h"
+#include "test/proto/echo.grpc.pb.h"
 
 void BM_Zalloc(benchmark::State& state) {
   // speed of light for call creation is zalloc, so benchmark a few interesting

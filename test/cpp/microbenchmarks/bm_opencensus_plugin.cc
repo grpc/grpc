@@ -26,8 +26,8 @@
 #include "include/grpcpp/opencensus.h"
 #include "opencensus/stats/stats.h"
 #include "src/cpp/ext/filters/census/grpc_plugin.h"
-#include "src/proto/grpc/testing/echo.grpc.pb.h"
 #include "test/cpp/microbenchmarks/helpers.h"
+#include "test/proto/echo.grpc.pb.h"
 
 using ::grpc::RegisterOpenCensusPlugin;
 using ::grpc::RegisterOpenCensusViewsForExport;

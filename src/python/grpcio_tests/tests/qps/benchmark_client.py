@@ -103,7 +103,7 @@ class UnarySyncBenchmarkClient(BenchmarkClient):
 
     def send_request(self):
         # Send requests in seperate threads to support multiple outstanding rpcs
-        # (See src/proto/grpc/testing/control.proto)
+        # (See test/proto/control.proto)
         self._pool.submit(self._dispatch_request)
 
     def stop(self):

@@ -14,8 +14,8 @@
 
 syntax = "proto3";
 
-import "src/proto/grpc/testing/payloads.proto";
-import "src/proto/grpc/testing/stats.proto";
+import "test/proto/payloads.proto";
+import "test/proto/stats.proto";
 
 package grpc.testing;
 

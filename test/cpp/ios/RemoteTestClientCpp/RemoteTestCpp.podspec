@@ -14,7 +14,7 @@ Pod::Spec.new do |s|
   s.dependency "!ProtoCompiler-gRPCCppPlugin"
   s.dependency "Protobuf-C++"
   s.dependency "gRPC-C++"
-  s.source_files = "src/proto/grpc/testing/*.pb.{h,cc}"
+  s.source_files = "test/proto/*.pb.{h,cc}"
   s.header_mappings_dir = "RemoteTestCpp"
   s.requires_arc = false
 
@@ -25,7 +25,7 @@ Pod::Spec.new do |s|
   protoc = "#{bin_dir}/protobuf/protoc"
   well_known_types_dir = "#{repo_root}/third_party/protobuf/src"
   plugin = "#{bin_dir}/grpc_cpp_plugin"
-  proto_dir = "#{repo_root}/src/proto/grpc/testing"
+  proto_dir = "#{repo_root}/test/proto"
 
   s.prepare_command = <<-CMD
     if [ -f #{protoc} ]; then

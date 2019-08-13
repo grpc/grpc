@@ -52,7 +52,7 @@
 
 #include "src/proto/grpc/lb/v2/eds_for_test.grpc.pb.h"
 #include "src/proto/grpc/lb/v2/lrs_for_test.grpc.pb.h"
-#include "src/proto/grpc/testing/echo.grpc.pb.h"
+#include "test/proto/echo.grpc.pb.h"
 
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>

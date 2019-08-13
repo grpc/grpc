@@ -26,7 +26,7 @@ $PROTOC -I src/proto src/proto/grpc/health/v1/health.proto \
     --plugin=$PLUGIN
 
 $PROTOC -I . \
-    src/proto/grpc/testing/{messages,test,empty}.proto \
+    test/proto/{messages,test,empty}.proto \
     --grpc_out=src/ruby/pb \
     --ruby_out=src/ruby/pb \
     --plugin=$PLUGIN
@@ -38,7 +38,7 @@ $PROTOC -I . \
     --plugin=$PLUGIN
 
 $PROTOC -I . \
-    src/proto/grpc/testing/{messages,payloads,stats,benchmark_service,report_qps_scenario_service,worker_service,control}.proto \
+    test/proto/{messages,payloads,stats,benchmark_service,report_qps_scenario_service,worker_service,control}.proto \
     --grpc_out=src/ruby/qps \
     --ruby_out=src/ruby/qps \
     --plugin=$PLUGIN

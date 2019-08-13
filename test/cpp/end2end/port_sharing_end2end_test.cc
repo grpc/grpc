@@ -39,12 +39,12 @@
 #include "src/core/lib/iomgr/port.h"
 #include "src/core/lib/iomgr/tcp_server.h"
 #include "src/core/lib/security/credentials/credentials.h"
-#include "src/proto/grpc/testing/echo.grpc.pb.h"
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
 #include "test/core/util/test_tcp_server.h"
 #include "test/cpp/end2end/test_service_impl.h"
 #include "test/cpp/util/test_credentials_provider.h"
+#include "test/proto/echo.grpc.pb.h"
 
 #ifdef GRPC_POSIX_SOCKET_TCP_SERVER
 

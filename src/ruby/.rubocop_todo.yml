@@ -51,9 +51,9 @@ Layout/EmptyLinesAroundClassBody:
   Exclude:
     - 'pb/grpc/testing/duplicate/echo_duplicate_services_pb.rb'
     - 'pb/grpc/testing/metrics_services_pb.rb'
-    - 'pb/src/proto/grpc/testing/test_services_pb.rb'
-    - 'qps/src/proto/grpc/testing/proxy-service_services_pb.rb'
-    - 'qps/src/proto/grpc/testing/services_services_pb.rb'
+    - 'pb/test/proto/test_services_pb.rb'
+    - 'qps/test/proto/proxy-service_services_pb.rb'
+    - 'qps/test/proto/services_services_pb.rb'
 
 # Offense count: 28
 # Cop supports --auto-correct.
@@ -327,14 +327,14 @@ Style/Documentation:
     - 'test/**/*'
     - 'pb/grpc/testing/duplicate/echo_duplicate_services_pb.rb'
     - 'pb/grpc/testing/metrics_services_pb.rb'
-    - 'pb/src/proto/grpc/testing/test_pb.rb'
+    - 'pb/test/proto/test_pb.rb'
     - 'qps/client.rb'
     - 'qps/histogram.rb'
     - 'qps/proxy-worker.rb'
     - 'qps/server.rb'
-    - 'qps/src/proto/grpc/testing/proxy-service_services_pb.rb'
-    - 'qps/src/proto/grpc/testing/services_pb.rb'
-    - 'qps/src/proto/grpc/testing/services_services_pb.rb'
+    - 'qps/test/proto/proxy-service_services_pb.rb'
+    - 'qps/test/proto/services_pb.rb'
+    - 'qps/test/proto/services_services_pb.rb'
     - 'qps/worker.rb'
     - 'stress/metrics_server.rb'
     - 'stress/stress_client.rb'
@@ -355,8 +355,8 @@ Style/EmptyMethod:
 # AllowedAcronyms: CLI, DSL, ACL, API, ASCII, CPU, CSS, DNS, EOF, GUID, HTML, HTTP, HTTPS, ID, IP, JSON, LHS, QPS, RAM, RHS, RPC, SLA, SMTP, SQL, SSH, TCP, TLS, TTL, UDP, UI, UID, UUID, URI, URL, UTF8, VM, XML, XMPP, XSRF, XSS
 Style/FileName:
   Exclude:
-    - 'qps/src/proto/grpc/testing/proxy-service_pb.rb'
-    - 'qps/src/proto/grpc/testing/proxy-service_services_pb.rb'
+    - 'qps/test/proto/proxy-service_pb.rb'
+    - 'qps/test/proto/proxy-service_services_pb.rb'
 
 # Offense count: 12
 # Configuration parameters: AllowedVariables.
@@ -502,15 +502,15 @@ Style/SpecialGlobalVars:
 Style/StringLiterals:
   Exclude:
     - 'pb/grpc/testing/metrics_pb.rb'
-    - 'pb/src/proto/grpc/testing/empty_pb.rb'
-    - 'pb/src/proto/grpc/testing/messages_pb.rb'
+    - 'pb/test/proto/empty_pb.rb'
+    - 'pb/test/proto/messages_pb.rb'
     - 'qps/proxy-worker.rb'
     - 'qps/server.rb'
-    - 'qps/src/proto/grpc/testing/control_pb.rb'
-    - 'qps/src/proto/grpc/testing/messages_pb.rb'
-    - 'qps/src/proto/grpc/testing/payloads_pb.rb'
-    - 'qps/src/proto/grpc/testing/proxy-service_pb.rb'
-    - 'qps/src/proto/grpc/testing/stats_pb.rb'
+    - 'qps/test/proto/control_pb.rb'
+    - 'qps/test/proto/messages_pb.rb'
+    - 'qps/test/proto/payloads_pb.rb'
+    - 'qps/test/proto/proxy-service_pb.rb'
+    - 'qps/test/proto/stats_pb.rb'
     - 'qps/worker.rb'
 
 # Offense count: 1

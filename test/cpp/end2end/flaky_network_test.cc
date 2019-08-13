@@ -39,12 +39,12 @@
 
 #include "src/core/lib/backoff/backoff.h"
 #include "src/core/lib/gpr/env.h"
-#include "src/proto/grpc/testing/echo.grpc.pb.h"
 #include "test/core/util/debugger_macros.h"
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
 #include "test/cpp/end2end/test_service_impl.h"
 #include "test/cpp/util/test_credentials_provider.h"
+#include "test/proto/echo.grpc.pb.h"
 
 #ifdef GPR_LINUX
 using grpc::testing::EchoRequest;

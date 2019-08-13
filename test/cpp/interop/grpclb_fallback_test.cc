@@ -43,10 +43,10 @@
 
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/iomgr/socket_mutator.h"
-#include "src/proto/grpc/testing/empty.pb.h"
-#include "src/proto/grpc/testing/messages.pb.h"
-#include "src/proto/grpc/testing/test.grpc.pb.h"
-#include "src/proto/grpc/testing/test.pb.h"
+#include "test/proto/empty.pb.h"
+#include "test/proto/messages.pb.h"
+#include "test/proto/test.grpc.pb.h"
+#include "test/proto/test.pb.h"
 
 #include "test/cpp/util/test_config.h"
 #include "test/cpp/util/test_credentials_provider.h"

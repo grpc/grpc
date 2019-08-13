@@ -24,8 +24,8 @@
 #include <memory>
 #include <mutex>
 #include <sstream>
-#include "src/proto/grpc/testing/echo.grpc.pb.h"
 #include "test/cpp/util/string_ref_helper.h"
+#include "test/proto/echo.grpc.pb.h"
 
 namespace grpc {
 namespace testing {

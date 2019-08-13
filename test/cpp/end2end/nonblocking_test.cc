@@ -27,9 +27,9 @@
 
 #include "src/core/lib/gpr/tls.h"
 #include "src/core/lib/iomgr/port.h"
-#include "src/proto/grpc/testing/echo.grpc.pb.h"
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
+#include "test/proto/echo.grpc.pb.h"
 
 #ifdef GRPC_POSIX_SOCKET
 #include "src/core/lib/iomgr/ev_posix.h"

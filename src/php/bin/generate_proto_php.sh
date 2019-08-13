@@ -26,25 +26,25 @@ protoc --proto_path=src/proto/math \
 # because Empty is a PHP reserved word
 output_file=$(mktemp)
 sed 's/message Empty/message EmptyMessage/g' \
-  src/proto/grpc/testing/empty.proto > $output_file
-mv $output_file ./src/proto/grpc/testing/empty.proto
+  test/proto/empty.proto > $output_file
+mv $output_file ./test/proto/empty.proto
 sed 's/grpc\.testing\.Empty/grpc\.testing\.EmptyMessage/g' \
-  src/proto/grpc/testing/test.proto > $output_file
-mv $output_file ./src/proto/grpc/testing/test.proto
+  test/proto/test.proto > $output_file
+mv $output_file ./test/proto/test.proto
 
 protoc --proto_path=. \
        --php_out=src/php/tests/interop \
        --grpc_out=src/php/tests/interop \
        --plugin=protoc-gen-grpc=bins/opt/grpc_php_plugin \
-       src/proto/grpc/testing/messages.proto \
-       src/proto/grpc/testing/empty.proto \
-       src/proto/grpc/testing/test.proto
+       test/proto/messages.proto \
+       test/proto/empty.proto \
+       test/proto/test.proto
 
 # change it back
 sed 's/message EmptyMessage/message Empty/g' \
-  src/proto/grpc/testing/empty.proto > $output_file
-mv $output_file ./src/proto/grpc/testing/empty.proto
+  test/proto/empty.proto > $output_file
+mv $output_file ./test/proto/empty.proto
 sed 's/grpc\.testing\.EmptyMessage/grpc\.testing\.Empty/g' \
-  src/proto/grpc/testing/test.proto > $output_file
-mv $output_file ./src/proto/grpc/testing/test.proto
+  test/proto/test.proto > $output_file
+mv $output_file ./test/proto/test.proto
 

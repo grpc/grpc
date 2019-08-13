@@ -21,5 +21,5 @@ grpc_package(name = "duplicate", visibility = "public")
 grpc_proto_library(
     name = "echo_duplicate_proto",
     srcs = ["echo_duplicate.proto"],
-    deps = ["//src/proto/grpc/testing:echo_messages_proto"],
+    deps = ["//test/proto:echo_messages_proto"],
 )

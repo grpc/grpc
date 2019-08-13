@@ -14,8 +14,8 @@
 
 require 'spec_helper'
 require_relative '../lib/grpc/google_rpc_status_utils'
-require_relative '../pb/src/proto/grpc/testing/messages_pb'
-require_relative '../pb/src/proto/grpc/testing/messages_pb'
+require_relative '../pb/test/proto/messages_pb'
+require_relative '../pb/test/proto/messages_pb'
 require 'google/protobuf/well_known_types'
 
 include GRPC::Core

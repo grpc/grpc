@@ -34,10 +34,10 @@
 #include <grpcpp/support/slice.h>
 
 #include "src/cpp/common/channel_filter.h"
-#include "src/proto/grpc/testing/echo.grpc.pb.h"
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
 #include "test/cpp/util/byte_buffer_proto_helper.h"
+#include "test/proto/echo.grpc.pb.h"
 
 #include <gtest/gtest.h>
 

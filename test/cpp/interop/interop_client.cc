@@ -31,11 +31,11 @@
 #include <grpcpp/security/credentials.h>
 
 #include "src/core/lib/transport/byte_stream.h"
-#include "src/proto/grpc/testing/empty.pb.h"
-#include "src/proto/grpc/testing/messages.pb.h"
-#include "src/proto/grpc/testing/test.grpc.pb.h"
 #include "test/cpp/interop/client_helper.h"
 #include "test/cpp/interop/interop_client.h"
+#include "test/proto/empty.pb.h"
+#include "test/proto/messages.pb.h"
+#include "test/proto/test.grpc.pb.h"
 
 namespace grpc {
 namespace testing {

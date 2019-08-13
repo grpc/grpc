@@ -25,7 +25,7 @@
 #include <grpcpp/alarm.h>
 #include <grpcpp/server_context.h>
 
-#include "src/proto/grpc/testing/echo.grpc.pb.h"
+#include "test/proto/echo.grpc.pb.h"
 
 namespace grpc {
 namespace testing {

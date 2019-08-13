@@ -33,8 +33,8 @@
 #include <grpcpp/support/channel_arguments.h>
 #include <grpcpp/support/slice.h>
 
-#include "src/proto/grpc/testing/benchmark_service.grpc.pb.h"
-#include "src/proto/grpc/testing/payloads.pb.h"
+#include "test/proto/benchmark_service.grpc.pb.h"
+#include "test/proto/payloads.pb.h"
 
 #include "src/core/lib/gpr/env.h"
 #include "src/cpp/util/core_stats.h"

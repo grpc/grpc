@@ -47,7 +47,7 @@
 #include "test/cpp/end2end/test_service_impl.h"
 
 #include "src/proto/grpc/lb/v1/load_balancer.grpc.pb.h"
-#include "src/proto/grpc/testing/echo.grpc.pb.h"
+#include "test/proto/echo.grpc.pb.h"
 
 using grpc::lb::v1::LoadBalanceRequest;
 using grpc::lb::v1::LoadBalanceResponse;

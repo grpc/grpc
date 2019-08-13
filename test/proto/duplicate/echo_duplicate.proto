@@ -1,4 +1,5 @@
-// Copyright 2016 gRPC authors.
+
+// Copyright 2015 gRPC authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,17 +13,15 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-syntax = "proto2";
+// This is a partial copy of echo.proto with a different package name.
 
-import "src/proto/grpc/testing/proto2/empty2.proto";
+syntax = "proto3";
 
-package grpc.testing.proto2;
+import "test/proto/echo_messages.proto";
 
-// Fill emptiness with music.
-extend grpc.testing.proto2.EmptyWithExtensions {
-  optional int64 Deadmau5 = 124;
-  optional float Madeon = 125;
-  optional string AboveAndBeyond = 126;
-  optional bool Tycho = 127;
-  optional fixed64 Pendulum = 128;
+package grpc.testing.duplicate;
+
+service EchoTestService {
+  rpc Echo(grpc.testing.EchoRequest) returns (grpc.testing.EchoResponse);
+  rpc ResponseStream(EchoRequest) returns (stream EchoResponse);
 }

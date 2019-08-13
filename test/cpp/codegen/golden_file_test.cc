@@ -71,7 +71,7 @@ int main(int argc, char** argv) {
   ::testing::InitGoogleTest(&argc, argv);
   grpc::testing::InitTest(&argc, &argv, true);
   if (FLAGS_generated_file_path.empty()) {
-    FLAGS_generated_file_path = "gens/src/proto/grpc/testing/";
+    FLAGS_generated_file_path = "gens/test/proto/";
   }
   if (FLAGS_generated_file_path.back() != '/')
     FLAGS_generated_file_path.append("/");

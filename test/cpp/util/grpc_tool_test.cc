@@ -33,13 +33,13 @@
 #include <gtest/gtest.h>
 
 #include "src/core/lib/gpr/env.h"
-#include "src/proto/grpc/testing/echo.grpc.pb.h"
-#include "src/proto/grpc/testing/echo.pb.h"
 #include "test/core/end2end/data/ssl_test_data.h"
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
 #include "test/cpp/util/cli_credentials.h"
 #include "test/cpp/util/string_ref_helper.h"
+#include "test/proto/echo.grpc.pb.h"
+#include "test/proto/echo.pb.h"
 
 using grpc::testing::EchoRequest;
 using grpc::testing::EchoResponse;
@@ -55,7 +55,7 @@ using grpc::testing::EchoResponse;
   "Unimplemented\n"
 
 #define ECHO_TEST_SERVICE_DESCRIPTION                                         \
-  "filename: src/proto/grpc/testing/echo.proto\n"                             \
+  "filename: test/proto/echo.proto\n"                                         \
   "package: grpc.testing;\n"                                                  \
   "service EchoTestService {\n"                                               \
   "  rpc Echo(grpc.testing.EchoRequest) returns (grpc.testing.EchoResponse) " \
@@ -1105,7 +1105,7 @@ TEST_F(GrpcToolTest, CallCommandWithBadMetadata) {
   // Test input "grpc_cli call localhost:10000 Echo "message: 'Hello'"
   const char* argv[] = {"grpc_cli", "call", "localhost:10000", "Echo",
                         "message: 'Hello'"};
-  FLAGS_protofiles = "src/proto/grpc/testing/echo.proto";
+  FLAGS_protofiles = "test/proto/echo.proto";
   char* test_srcdir = gpr_getenv("TEST_SRCDIR");
   if (test_srcdir != nullptr) {
     FLAGS_proto_path = test_srcdir + std::string("/com_github_grpc_grpc");
