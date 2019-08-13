@@ -63,7 +63,7 @@ objc_library(
 
 ios_application(
     name = "Sample",
-    bundle_id = "grpc.objc.examples.Sample",
+    bundle_id = "io.grpc.Sample",
     minimum_os_version = "8.0",
     infoplists = ["Sample/Sample/Info.plist"],
     families = [
@@ -87,7 +87,7 @@ objc_library(
 
 ios_application(
     name = "InterceptorSample",
-    bundle_id = "grpc.objc.examples.InterceptorSample",
+    bundle_id = "io.grpc.InterceptorSample",
     minimum_os_version = "9.0", # Safe Area Layout Guide used
     infoplists = ["InterceptorSample/InterceptorSample/Info.plist"],
     families = [
@@ -111,7 +111,7 @@ objc_library(
 # c-ares does not support tvOS CPU architecture with Bazel yet
 tvos_application(
     name = "tvOS-sample",
-    bundle_id = "grpc.objc.examples.tvOS-sample",
+    bundle_id = "io.grpc.tvOS-sample",
     minimum_os_version = "10.0",
     infoplists = ["tvOS-sample/tvOS-sample/Info.plist"],
     deps = [":tvOS-sample-lib"],
@@ -141,7 +141,7 @@ objc_library(
 
 ios_application(
     name = "watchOS-sample",
-    bundle_id = "com.google.watchOS-sample",
+    bundle_id = "io.grpc.watchOS-sample",
     minimum_os_version = "9.0", # Safe Area Layout Guide used
     families = ["iphone"],
     infoplists = ["watchOS-sample/watchOS-sample/Info.plist"],
@@ -152,7 +152,7 @@ ios_application(
 # c-ares does not support watchOS CPU architecture with Bazel yet
 watchos_application(
     name = "watchOS-sample-watchApp",
-    bundle_id = "com.google.watchOS-sample.watchkitapp",
+    bundle_id = "io.grpc.watchOS-sample.watchkitapp",
     minimum_os_version = "4.0",
     storyboards = ["watchOS-sample/WatchKit-App/Base.lproj/Interface.storyboard"],
     infoplists = ["watchOS-sample/WatchKit-App/Info.plist"],
@@ -161,7 +161,7 @@ watchos_application(
 
 watchos_extension(
     name = "watchOS-sample-extension",
-    bundle_id = "com.google.watchOS-sample.watchkitapp.watchkitextension",
+    bundle_id = "io.grpc.watchOS-sample.watchkitapp.watchkitextension",
     minimum_os_version = "4.0",
     infoplists = ["watchOS-sample/WatchKit-Extension/Info.plist"],
     deps = [":watchOS-sample-extension-lib"],
