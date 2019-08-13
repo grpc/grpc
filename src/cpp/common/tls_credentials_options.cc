@@ -25,7 +25,7 @@ namespace experimental {
 
 /** gRPC TLS key materials config API implementation **/
 void TlsKeyMaterialsConfig::set_key_materials(
-    ::grpc::string pem_root_certs,
+    grpc::string pem_root_certs,
     ::std::vector<PemKeyCertPair> pem_key_cert_pair_list) {
   pem_key_cert_pair_list_ = ::std::move(pem_key_cert_pair_list);
   pem_root_certs_ = ::std::move(pem_root_certs);
@@ -91,7 +91,7 @@ void TlsCredentialReloadArg::set_status(
   status_ = status;
 }
 
-void TlsCredentialReloadArg::set_error_details(::grpc::string error_details) {
+void TlsCredentialReloadArg::set_error_details(grpc::string error_details) {
   error_details_ = ::std::move(error_details);
 }
 

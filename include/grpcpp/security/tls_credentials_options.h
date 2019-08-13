@@ -34,18 +34,18 @@ namespace experimental {
 class TlsKeyMaterialsConfig {
  public:
   struct PemKeyCertPair {
-    ::grpc::string private_key;
-    ::grpc::string cert_chain;
+    grpc::string private_key;
+    grpc::string cert_chain;
   };
 
   /** Getters for member fields. **/
-  const ::grpc::string pem_root_certs() const { return pem_root_certs_; }
+  const grpc::string pem_root_certs() const { return pem_root_certs_; }
   const ::std::vector<PemKeyCertPair>& pem_key_cert_pair_list() const {
     return pem_key_cert_pair_list_;
   }
 
   /**Setter for member fields. **/
-  void set_key_materials(::grpc::string pem_root_certs,
+  void set_key_materials(grpc::string pem_root_certs,
                          ::std::vector<PemKeyCertPair> pem_key_cert_pair_list);
 
   /** Creates C struct for key materials. **/
@@ -53,7 +53,7 @@ class TlsKeyMaterialsConfig {
 
  private:
   ::std::vector<PemKeyCertPair> pem_key_cert_pair_list_;
-  ::grpc::string pem_root_certs_;
+  grpc::string pem_root_certs_;
 };
 
 /** Creates smart pointer to a C++ version of the C key materials. **/
@@ -75,7 +75,7 @@ class TlsCredentialReloadArg {
     return key_materials_config_;
   }
   grpc_ssl_certificate_config_reload_status status() const { return status_; }
-  ::grpc::string error_details() const { return error_details_; }
+  grpc::string error_details() const { return error_details_; }
 
   /** Setters for member fields. **/
   void set_cb(grpcpp_tls_on_credential_reload_done_cb cb);
@@ -83,7 +83,7 @@ class TlsCredentialReloadArg {
   void set_key_materials_config(
       ::std::shared_ptr<TlsKeyMaterialsConfig> key_materials_config);
   void set_status(grpc_ssl_certificate_config_reload_status status);
-  void set_error_details(::grpc::string error_details);
+  void set_error_details(grpc::string error_details);
 
   /** Creates C struct for credential reload arg. **/
   grpc_tls_credential_reload_arg* c_credential_reload_arg() const;
@@ -96,7 +96,7 @@ class TlsCredentialReloadArg {
   void* cb_user_data_;
   ::std::shared_ptr<TlsKeyMaterialsConfig> key_materials_config_;
   grpc_ssl_certificate_config_reload_status status_;
-  ::grpc::string error_details_;
+  grpc::string error_details_;
 };
 
 /** Creates a smart pointer to a C++ version of the credential reload argument,
@@ -149,23 +149,21 @@ class TlsServerAuthorizationCheckArg {
   grpcpp_tls_on_server_authorization_check_done_cb cb() const { return cb_; }
   void* cb_user_data() const { return cb_user_data_; }
   int success() const { return success_; }
-  ::grpc::string target_name() const { return target_name_; }
-  ::grpc::string peer_cert() const { return peer_cert_; }
+  grpc::string target_name() const { return target_name_; }
+  grpc::string peer_cert() const { return peer_cert_; }
   grpc_status_code status() const { return status_; }
-  ::grpc::string error_details() const { return error_details_; }
+  grpc::string error_details() const { return error_details_; }
 
   /** Setters for member fields. **/
   void set_cb(grpcpp_tls_on_server_authorization_check_done_cb cb) { cb_ = cb; }
   void set_cb_user_data(void* cb_user_data) { cb_user_data_ = cb_user_data; }
   void set_success(int success) { success_ = success; };
-  void set_target_name(::grpc::string target_name) {
-    target_name_ = target_name;
-  }
-  void set_peer_cert(::grpc::string peer_cert) {
+  void set_target_name(grpc::string target_name) { target_name_ = target_name; }
+  void set_peer_cert(grpc::string peer_cert) {
     peer_cert_ = ::std::move(peer_cert);
   }
   void set_status(grpc_status_code status) { status_ = status; }
-  void set_error_details(::grpc::string error_details) {
+  void set_error_details(grpc::string error_details) {
     error_details_ = ::std::move(error_details);
   }
 
@@ -180,10 +178,10 @@ class TlsServerAuthorizationCheckArg {
   grpcpp_tls_on_server_authorization_check_done_cb cb_;
   void* cb_user_data_;
   int success_;
-  ::grpc::string target_name_;
-  ::grpc::string peer_cert_;
+  grpc::string target_name_;
+  grpc::string peer_cert_;
   grpc_status_code status_;
-  ::grpc::string error_details_;
+  grpc::string error_details_;
 };
 
 /** Creates a smart pointer to a C++ version of the server authorization check

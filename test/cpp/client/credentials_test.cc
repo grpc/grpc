@@ -250,9 +250,11 @@ TEST_F(CredentialsTest, TlsCredentialReloadArgCppToC) {
   arg.set_cb_user_data(nullptr);
   ::std::shared_ptr<TlsKeyMaterialsConfig> key_materials_config;
   struct TlsKeyMaterialsConfig::PemKeyCertPair pair1 = {"private_key1",
-                                                       "cert_chain1"};
-  struct TlsKeyMaterialsConfig::PemKeyCertPair pair2 = {"private_key2", "cert_chain2"};
-  ::std::vector<TlsKeyMaterialsConfig::PemKeyCertPair> pair_list = {pair1, pair2};
+                                                        "cert_chain1"};
+  struct TlsKeyMaterialsConfig::PemKeyCertPair pair2 = {"private_key2",
+                                                        "cert_chain2"};
+  ::std::vector<TlsKeyMaterialsConfig::PemKeyCertPair> pair_list = {pair1,
+                                                                    pair2};
   key_materials_config->set_key_materials("pem_root_certs", pair_list);
   arg.set_key_materials_config(key_materials_config);
   arg.set_status(GRPC_SSL_CERTIFICATE_CONFIG_RELOAD_NEW);
@@ -262,10 +264,18 @@ TEST_F(CredentialsTest, TlsCredentialReloadArgCppToC) {
             static_cast<grpc_tls_on_credential_reload_done_cb>(nullptr));
   EXPECT_EQ(c_arg->cb_user_data, nullptr);
   EXPECT_EQ(c_arg->key_materials_config->pem_root_certs(), "pem_root_certs");
-  EXPECT_EQ(c_arg->key_materials_config->pem_key_cert_pair_list()[0].private_key(), "private_key1");
-  EXPECT_EQ(c_arg->key_materials_config->pem_key_cert_pair_list()[1].private_key(), "private_key2");
-  EXPECT_EQ(c_arg->key_materials_config->pem_key_cert_pair_list()[0].cert_chain(), "cert_chain1");
-  EXPECT_EQ(c_arg->key_materials_config->pem_key_cert_pair_list()[1].cert_chain(), "cert_chain2");
+  EXPECT_EQ(
+      c_arg->key_materials_config->pem_key_cert_pair_list()[0].private_key(),
+      "private_key1");
+  EXPECT_EQ(
+      c_arg->key_materials_config->pem_key_cert_pair_list()[1].private_key(),
+      "private_key2");
+  EXPECT_EQ(
+      c_arg->key_materials_config->pem_key_cert_pair_list()[0].cert_chain(),
+      "cert_chain1");
+  EXPECT_EQ(
+      c_arg->key_materials_config->pem_key_cert_pair_list()[1].cert_chain(),
+      "cert_chain2");
   EXPECT_EQ(c_arg->status, GRPC_SSL_CERTIFICATE_CONFIG_RELOAD_NEW);
   EXPECT_STREQ(c_arg->error_details, "error_details");
 }
