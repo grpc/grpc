@@ -1069,6 +1069,7 @@ class ObjCLanguage(object):
                     'EXAMPLE_PATH': 'src/objective-c/examples/Sample',
                     'FRAMEWORKS': 'NO'
                 }))
+        # Currently not supporting compiling as frameworks in Bazel
         out.append(
             self.config.job_spec(
                 ['src/objective-c/tests/build_one_example.sh'],
@@ -1126,6 +1127,7 @@ class ObjCLanguage(object):
                 shortname='ios-test-cfstream-tests',
                 cpu_cost=1e6,
                 environ=_FORCE_ENVIRON_FOR_WRAPPERS))
+        # TODO: replace with run_one_test_bazel.sh when Bazel is stable
         out.append(
             self.config.job_spec(
                 ['src/objective-c/tests/run_one_test.sh'],

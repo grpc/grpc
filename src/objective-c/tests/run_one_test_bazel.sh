@@ -16,6 +16,9 @@
 # Don't run this script standalone. Instead, run from the repository root:
 # ./tools/run_tests/run_tests.py -l objc
 
+# TODO(tonyzhehaolu):
+# For future use when Xcode is upgraded and tvos_unit_test is fully functional
+
 set -ev
 
 cd $(dirname $0)
