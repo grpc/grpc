@@ -54,8 +54,7 @@ static void exec_ctx_sched(grpc_closure* closure, grpc_error* error) {
 static gpr_timespec g_start_time;
 static gpr_cycle_counter g_start_cycle;
 
-static grpc_millis timespec_to_millis_round_down(gpr_timespec ts) {
-  ts = gpr_time_sub(ts, g_start_time);
+static grpc_millis timespan_to_millis_round_down(gpr_timespec ts) {
   double x = GPR_MS_PER_SEC * static_cast<double>(ts.tv_sec) +
              static_cast<double>(ts.tv_nsec) / GPR_NS_PER_MS;
   if (x < 0) return 0;
@@ -63,8 +62,11 @@ static grpc_millis timespec_to_millis_round_down(gpr_timespec ts) {
   return static_cast<grpc_millis>(x);
 }
 
-static grpc_millis timespec_to_millis_round_up(gpr_timespec ts) {
-  ts = gpr_time_sub(ts, g_start_time);
+static grpc_millis timespec_to_millis_round_down(gpr_timespec ts) {
+  return timespan_to_millis_round_down(gpr_time_sub(ts, g_start_time));
+}
+
+static grpc_millis timespan_to_millis_round_up(gpr_timespec ts) {
   double x = GPR_MS_PER_SEC * static_cast<double>(ts.tv_sec) +
              static_cast<double>(ts.tv_nsec) / GPR_NS_PER_MS +
              static_cast<double>(GPR_NS_PER_SEC - 1) /
@@ -72,6 +74,10 @@ static grpc_millis timespec_to_millis_round_up(gpr_timespec ts) {
   if (x < 0) return 0;
   if (x > GRPC_MILLIS_INF_FUTURE) return GRPC_MILLIS_INF_FUTURE;
   return static_cast<grpc_millis>(x);
+}
+
+static grpc_millis timespec_to_millis_round_up(gpr_timespec ts) {
+  return timespan_to_millis_round_up(gpr_time_sub(ts, g_start_time));
 }
 
 gpr_timespec grpc_millis_to_timespec(grpc_millis millis,
@@ -103,13 +109,13 @@ grpc_millis grpc_timespec_to_millis_round_up(gpr_timespec ts) {
 }
 
 grpc_millis grpc_cycle_counter_to_millis_round_down(gpr_cycle_counter cycles) {
-  return timespec_to_millis_round_down(
-      gpr_time_add(g_start_time, gpr_cycle_counter_sub(cycles, g_start_cycle)));
+  return timespan_to_millis_round_down(
+      gpr_cycle_counter_sub(cycles, g_start_cycle));
 }
 
 grpc_millis grpc_cycle_counter_to_millis_round_up(gpr_cycle_counter cycles) {
-  return timespec_to_millis_round_up(
-      gpr_time_add(g_start_time, gpr_cycle_counter_sub(cycles, g_start_cycle)));
+  return timespan_to_millis_round_up(
+      gpr_cycle_counter_sub(cycles, g_start_cycle));
 }
 
 static const grpc_closure_scheduler_vtable exec_ctx_scheduler_vtable = {
