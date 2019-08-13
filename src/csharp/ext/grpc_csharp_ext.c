@@ -41,9 +41,10 @@
 #define GPR_CALLTYPE
 #endif
 
-static grpc_byte_buffer* grpcsharp_create_byte_buffer_from_stolen_slices(grpc_slice_buffer* slice_buffer) {
+static grpc_byte_buffer* grpcsharp_create_byte_buffer_from_stolen_slices(
+    grpc_slice_buffer* slice_buffer) {
   grpc_byte_buffer* bb =
-       (grpc_byte_buffer*)gpr_malloc(sizeof(grpc_byte_buffer));
+      (grpc_byte_buffer*)gpr_malloc(sizeof(grpc_byte_buffer));
   memset(bb, 0, sizeof(grpc_byte_buffer));
   bb->type = GRPC_BB_RAW;
   bb->data.raw.compression = GRPC_COMPRESS_NONE;
@@ -587,8 +588,8 @@ static grpc_call_error grpcsharp_call_start_batch(grpc_call* call,
 }
 
 GPR_EXPORT grpc_call_error GPR_CALLTYPE grpcsharp_call_start_unary(
-    grpc_call* call, grpcsharp_batch_context* ctx, grpc_slice_buffer* send_buffer,
-    uint32_t write_flags,
+    grpc_call* call, grpcsharp_batch_context* ctx,
+    grpc_slice_buffer* send_buffer, uint32_t write_flags,
     grpc_metadata_array* initial_metadata, uint32_t initial_metadata_flags) {
   /* TODO: don't use magic number */
   grpc_op ops[6];
@@ -603,7 +604,8 @@ GPR_EXPORT grpc_call_error GPR_CALLTYPE grpcsharp_call_start_unary(
   ops[0].reserved = NULL;
 
   ops[1].op = GRPC_OP_SEND_MESSAGE;
-  ctx->send_message = grpcsharp_create_byte_buffer_from_stolen_slices(send_buffer);
+  ctx->send_message =
+      grpcsharp_create_byte_buffer_from_stolen_slices(send_buffer);
   ops[1].data.send_message.send_message = ctx->send_message;
   ops[1].flags = write_flags;
   ops[1].reserved = NULL;
@@ -640,8 +642,8 @@ GPR_EXPORT grpc_call_error GPR_CALLTYPE grpcsharp_call_start_unary(
 /* Only for testing. Shortcircuits the unary call logic and only echoes the
    message as if it was received from the server */
 GPR_EXPORT grpc_call_error GPR_CALLTYPE grpcsharp_test_call_start_unary_echo(
-    grpc_call* call, grpcsharp_batch_context* ctx, grpc_slice_buffer* send_buffer,
-    uint32_t write_flags,
+    grpc_call* call, grpcsharp_batch_context* ctx,
+    grpc_slice_buffer* send_buffer, uint32_t write_flags,
     grpc_metadata_array* initial_metadata, uint32_t initial_metadata_flags) {
   // prepare as if we were performing a normal RPC.
   grpc_byte_buffer* send_message =
@@ -698,8 +700,8 @@ GPR_EXPORT grpc_call_error GPR_CALLTYPE grpcsharp_call_start_client_streaming(
 }
 
 GPR_EXPORT grpc_call_error GPR_CALLTYPE grpcsharp_call_start_server_streaming(
-    grpc_call* call, grpcsharp_batch_context* ctx, grpc_slice_buffer* send_buffer,
-     uint32_t write_flags,
+    grpc_call* call, grpcsharp_batch_context* ctx,
+    grpc_slice_buffer* send_buffer, uint32_t write_flags,
     grpc_metadata_array* initial_metadata, uint32_t initial_metadata_flags) {
   /* TODO: don't use magic number */
   grpc_op ops[4];
@@ -714,7 +716,8 @@ GPR_EXPORT grpc_call_error GPR_CALLTYPE grpcsharp_call_start_server_streaming(
   ops[0].reserved = NULL;
 
   ops[1].op = GRPC_OP_SEND_MESSAGE;
-  ctx->send_message = grpcsharp_create_byte_buffer_from_stolen_slices(send_buffer);
+  ctx->send_message =
+      grpcsharp_create_byte_buffer_from_stolen_slices(send_buffer);
   ops[1].data.send_message.send_message = ctx->send_message;
   ops[1].flags = write_flags;
   ops[1].reserved = NULL;
@@ -781,15 +784,16 @@ GPR_EXPORT grpc_call_error GPR_CALLTYPE grpcsharp_call_recv_initial_metadata(
 }
 
 GPR_EXPORT grpc_call_error GPR_CALLTYPE grpcsharp_call_send_message(
-    grpc_call* call, grpcsharp_batch_context* ctx, grpc_slice_buffer* send_buffer,
-    uint32_t write_flags,
+    grpc_call* call, grpcsharp_batch_context* ctx,
+    grpc_slice_buffer* send_buffer, uint32_t write_flags,
     int32_t send_empty_initial_metadata) {
   /* TODO: don't use magic number */
   grpc_op ops[2];
   memset(ops, 0, sizeof(ops));
   size_t nops = send_empty_initial_metadata ? 2 : 1;
   ops[0].op = GRPC_OP_SEND_MESSAGE;
-  ctx->send_message = grpcsharp_create_byte_buffer_from_stolen_slices(send_buffer);
+  ctx->send_message =
+      grpcsharp_create_byte_buffer_from_stolen_slices(send_buffer);
   ops[0].data.send_message.send_message = ctx->send_message;
   ops[0].flags = write_flags;
   ops[0].reserved = NULL;
@@ -816,8 +820,7 @@ GPR_EXPORT grpc_call_error GPR_CALLTYPE grpcsharp_call_send_status_from_server(
     grpc_call* call, grpcsharp_batch_context* ctx, grpc_status_code status_code,
     const char* status_details, size_t status_details_len,
     grpc_metadata_array* trailing_metadata, int32_t send_empty_initial_metadata,
-    grpc_slice_buffer* optional_send_buffer,
-    uint32_t write_flags) {
+    grpc_slice_buffer* optional_send_buffer, uint32_t write_flags) {
   /* TODO: don't use magic number */
   grpc_op ops[3];
   memset(ops, 0, sizeof(ops));
@@ -1188,9 +1191,9 @@ GPR_EXPORT void GPR_CALLTYPE grpcsharp_redirect_log(grpcsharp_log_func func) {
 typedef void(GPR_CALLTYPE* test_callback_funcptr)(int32_t success);
 
 /* Slice buffer functionality */
-GPR_EXPORT grpc_slice_buffer* GPR_CALLTYPE
-grpcsharp_slice_buffer_create() {
-  grpc_slice_buffer* slice_buffer = (grpc_slice_buffer*)gpr_malloc(sizeof(grpc_slice_buffer));
+GPR_EXPORT grpc_slice_buffer* GPR_CALLTYPE grpcsharp_slice_buffer_create() {
+  grpc_slice_buffer* slice_buffer =
+      (grpc_slice_buffer*)gpr_malloc(sizeof(grpc_slice_buffer));
   grpc_slice_buffer_init(slice_buffer);
   return slice_buffer;
 }
@@ -1212,44 +1215,40 @@ grpcsharp_slice_buffer_slice_count(grpc_slice_buffer* buffer) {
 }
 
 GPR_EXPORT void GPR_CALLTYPE
-grpcsharp_slice_buffer_slice_peek(grpc_slice_buffer* buffer, size_t index, size_t* slice_len, uint8_t** slice_data_ptr) {
+grpcsharp_slice_buffer_slice_peek(grpc_slice_buffer* buffer, size_t index,
+                                  size_t* slice_len, uint8_t** slice_data_ptr) {
   GPR_ASSERT(buffer->count > index);
   grpc_slice* slice_ptr = &buffer->slices[index];
   *slice_len = GRPC_SLICE_LENGTH(*slice_ptr);
   *slice_data_ptr = GRPC_SLICE_START_PTR(*slice_ptr);
 }
 
-GPR_EXPORT void* GPR_CALLTYPE
-grpcsharp_slice_buffer_adjust_tail_space(grpc_slice_buffer* buffer, size_t available_tail_space,
+GPR_EXPORT void* GPR_CALLTYPE grpcsharp_slice_buffer_adjust_tail_space(
+    grpc_slice_buffer* buffer, size_t available_tail_space,
     size_t requested_tail_space) {
+  if (available_tail_space == requested_tail_space) {
+    // nothing to do
+  } else if (available_tail_space >= requested_tail_space) {
+    grpc_slice_buffer_trim_end(
+        buffer, available_tail_space - requested_tail_space, NULL);
+  } else {
+    if (available_tail_space > 0) {
+      grpc_slice_buffer_trim_end(buffer, available_tail_space, NULL);
+    }
 
-    if (available_tail_space == requested_tail_space) {
-      // nothing to do
-    }
-    else if (available_tail_space >= requested_tail_space)
-    {
-      grpc_slice_buffer_trim_end(buffer, available_tail_space - requested_tail_space, NULL);
-    }
-    else
-    {
-      if (available_tail_space > 0)
-      {
-        grpc_slice_buffer_trim_end(buffer, available_tail_space, NULL);
-      }
+    grpc_slice new_slice = grpc_slice_malloc(requested_tail_space);
+    // grpc_slice_buffer_add_indexed always adds as a new slice entry into the
+    // sb (which is suboptimal in some cases) but it doesn't have the problem of
+    // sometimes splitting the continguous new_slice across two different slices
+    // (like grpc_slice_buffer_add would)
+    grpc_slice_buffer_add_indexed(buffer, new_slice);
+  }
 
-      grpc_slice new_slice = grpc_slice_malloc(requested_tail_space);
-      // grpc_slice_buffer_add_indexed always adds as a new slice entry into the sb (which is suboptimal in some cases)
-      // but it doesn't have the problem of sometimes splitting the continguous new_slice across two different slices
-      // (like grpc_slice_buffer_add would)
-      grpc_slice_buffer_add_indexed(buffer, new_slice);
-    }
-    
-    if (buffer->count == 0)
-    {
-      return NULL;
-    }
-    grpc_slice* last_slice = &(buffer->slices[buffer->count - 1]);
-    return GRPC_SLICE_END_PTR(*last_slice) - requested_tail_space;
+  if (buffer->count == 0) {
+    return NULL;
+  }
+  grpc_slice* last_slice = &(buffer->slices[buffer->count - 1]);
+  return GRPC_SLICE_END_PTR(*last_slice) - requested_tail_space;
 }
 
 /* Version info */
