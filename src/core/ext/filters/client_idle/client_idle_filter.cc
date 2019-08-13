@@ -205,6 +205,12 @@ void ChannelData::IncreaseCallCount() {
     ChannelState state = state_.Load(MemoryOrder::RELAXED);
     while (true) {
       switch (state) {
+        // Timer has not been set. Switch to CALLS_ACTIVE.
+        case IDLE:
+          // In this case, no other threads will modify the state, so we can
+          // just store the value.
+          state_.Store(CALLS_ACTIVE, MemoryOrder::RELAXED);
+          return;
         // Timer has been set. Switch to TIMER_PENDING_CALLS_ACTIVE.
         case TIMER_PENDING:
         case TIMER_PENDING_CALLS_SEEN_SINCE_TIMER_START:
@@ -219,12 +225,6 @@ void ChannelData::IncreaseCallCount() {
             return;
           }
           break;
-        // Timer has not been set. Switch to CALLS_ACTIVE.
-        case IDLE:
-          // In this case, no other threads will modify the state, so we can
-          // just store the value.
-          state_.Store(CALLS_ACTIVE, MemoryOrder::RELAXED);
-          return;
         default:
           // The state has not been switched to desired value yet, try again.
           state = state_.Load(MemoryOrder::RELAXED);
@@ -247,6 +247,13 @@ void ChannelData::DecreaseCallCount() {
     ChannelState state = state_.Load(MemoryOrder::RELAXED);
     while (true) {
       switch (state) {
+        // Timer has not been set. Set the timer and switch to TIMER_PENDING
+        case CALLS_ACTIVE:
+          // Release store here to make other threads see the updated value of
+          // last_idle_time_.
+          StartIdleTimer();
+          state_.Store(TIMER_PENDING, MemoryOrder::RELEASE);
+          return;
         // Timer has been set. Switch to
         // TIMER_PENDING_CALLS_SEEN_SINCE_TIMER_START
         case TIMER_PENDING_CALLS_ACTIVE:
@@ -261,13 +268,6 @@ void ChannelData::DecreaseCallCount() {
             return;
           }
           break;
-        // Timer has not been set. Set the timer and switch to TIMER_PENDING
-        case CALLS_ACTIVE:
-          // Release store here to make other threads see the updated value of
-          // last_idle_time_.
-          StartIdleTimer();
-          state_.Store(TIMER_PENDING, MemoryOrder::RELEASE);
-          return;
         default:
           // The state has not been switched to desired value yet, try again.
           state = state_.Load(MemoryOrder::RELAXED);
@@ -310,6 +310,14 @@ void ChannelData::IdleTimerCallback(void* arg, grpc_error* error) {
   ChannelState state = chand->state_.Load(MemoryOrder::RELAXED);
   while (!finished) {
     switch (state) {
+      case TIMER_PENDING:
+        finished = chand->state_.CompareExchangeWeak(
+            &state, PROCESSING, MemoryOrder::RELAXED, MemoryOrder::RELAXED);
+        if (finished) {
+          chand->EnterIdle();
+          chand->state_.Store(IDLE, MemoryOrder::RELAXED);
+        }
+        break;
       case TIMER_PENDING_CALLS_ACTIVE:
         finished = chand->state_.CompareExchangeWeak(
             &state, CALLS_ACTIVE, MemoryOrder::RELAXED, MemoryOrder::RELAXED);
@@ -320,14 +328,6 @@ void ChannelData::IdleTimerCallback(void* arg, grpc_error* error) {
         if (finished) {
           chand->StartIdleTimer();
           chand->state_.Store(TIMER_PENDING, MemoryOrder::RELAXED);
-        }
-        break;
-      case TIMER_PENDING:
-        finished = chand->state_.CompareExchangeWeak(
-            &state, PROCESSING, MemoryOrder::RELAXED, MemoryOrder::RELAXED);
-        if (finished) {
-          chand->EnterIdle();
-          chand->state_.Store(IDLE, MemoryOrder::RELAXED);
         }
         break;
       default:
