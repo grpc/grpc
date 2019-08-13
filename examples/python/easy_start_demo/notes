@@ -1,0 +1,3 @@
+//自动生成代码
+//Automatic code generation
+>>> python -m grpc_tools.protoc -I ./ ./demo.proto --python_out=./customGrpcPackages --grpc_python_out=./customGrpcPackages
