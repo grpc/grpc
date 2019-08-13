@@ -23,7 +23,7 @@ describe GRPC::ActiveCall do
   WriteFlags = GRPC::Core::WriteFlags
 
   def ok_status
-    Struct::Status.new(OK, 'OK')
+    GRPC::Core::Status.new(OK, 'OK')
   end
 
   def send_and_receive_close_and_status(client_call, server_call)

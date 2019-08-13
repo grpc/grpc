@@ -42,12 +42,12 @@ module GRPC
       @metadata = metadata
     end
 
-    # Converts the exception to a {Struct::Status} for use in the networking
+    # Converts the exception to a {GRPC::Core::Status} for use in the networking
     # wrapper layer.
     #
-    # @return [Struct::Status] with the same code and details
+    # @return [GRPC::Core::Status] with the same code and details
     def to_status
-      Struct::Status.new(code, details, metadata)
+      GRPC::Core::Status.new(code, details, metadata)
     end
 
     # Converts the exception to a deserialized {Google::Rpc::Status} object.

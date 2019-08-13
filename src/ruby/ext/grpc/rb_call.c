@@ -280,7 +280,7 @@ static VALUE grpc_rb_call_get_status(VALUE self) {
   Saves a status object on the call.  */
 static VALUE grpc_rb_call_set_status(VALUE self, VALUE status) {
   if (!NIL_P(status) && rb_obj_class(status) != grpc_rb_sStatus) {
-    rb_raise(rb_eTypeError, "bad status: got:<%s> want: <Struct::Status>",
+    rb_raise(rb_eTypeError, "bad status: got:<%s> want: <GRPC::Core::Status>",
              rb_obj_classname(status));
     return Qnil;
   }
@@ -1012,7 +1012,7 @@ void Init_grpc_call() {
   sym_cancelled = ID2SYM(rb_intern("cancelled"));
 
   /* The Struct used to return the run_batch result. */
-  grpc_rb_sBatchResult = rb_struct_define(
+  grpc_rb_sBatchResult = rb_struct_define_under(grpc_rb_mGrpcCore,
       "BatchResult", "send_message", "send_metadata", "send_close",
       "send_status", "message", "metadata", "status", "cancelled", NULL);
 

@@ -39,7 +39,7 @@ shared_context 'setup: tags' do
   end
 
   def ok_status
-    Struct::Status.new(StatusCodes::OK, 'OK')
+    GRPC::Core::Status.new(StatusCodes::OK, 'OK')
   end
 end
 
@@ -209,7 +209,7 @@ shared_examples 'basic GRPC message delivery is OK' do
     expect(client_batch.send_close).to be true
 
     # confirm the server can read the inbound message
-    the_status = Struct::Status.new(StatusCodes::OK, 'OK')
+    the_status = GRPC::Core::Status.new(StatusCodes::OK, 'OK')
     server_thread.join
     server_ops = {
       CallOps::SEND_STATUS_FROM_SERVER => the_status
@@ -242,7 +242,7 @@ shared_examples 'basic GRPC message delivery is OK' do
     expect(client_batch.send_message).to be true
 
     # confirm the server can read the inbound message and respond
-    the_status = Struct::Status.new(StatusCodes::OK, 'OK', {})
+    the_status = GRPC::Core::Status.new(StatusCodes::OK, 'OK', {})
     server_thread.join
     server_ops = {
       CallOps::RECV_MESSAGE => nil,

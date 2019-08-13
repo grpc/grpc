@@ -26,7 +26,7 @@ module GRPC
   # but they fail to deseriliaze into a GoogleRpcStatus protobuf.
   class GoogleRpcStatusUtils
     def self.extract_google_rpc_status(status)
-      fail ArgumentError, 'bad type' unless status.is_a? Struct::Status
+      fail ArgumentError, 'bad type' unless status.is_a? GRPC::Core::Status
       grpc_status_details_bin_trailer = 'grpc-status-details-bin'
       return nil if status.metadata[grpc_status_details_bin_trailer].nil?
       Google::Rpc::Status.decode(status.metadata[grpc_status_details_bin_trailer])

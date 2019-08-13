@@ -207,7 +207,7 @@ module GRPC
                     metadata: {})
       send_initial_metadata
       ops = {
-        SEND_STATUS_FROM_SERVER => Struct::Status.new(code, details, metadata)
+        SEND_STATUS_FROM_SERVER => GRPC::Core::Status.new(code, details, metadata)
       }
       ops[RECV_CLOSE_ON_SERVER] = nil if assert_finished
       @call.run_batch(ops)
@@ -234,7 +234,7 @@ module GRPC
 
       payload = @marshal.call(req)
       ops[SEND_MESSAGE] = payload
-      ops[SEND_STATUS_FROM_SERVER] = Struct::Status.new(
+      ops[SEND_STATUS_FROM_SERVER] = GRPC::Core::Status.new(
         code, details, trailing_metadata)
       ops[RECV_CLOSE_ON_SERVER] = nil
 

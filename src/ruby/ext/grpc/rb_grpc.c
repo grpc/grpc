@@ -310,10 +310,10 @@ void Init_grpc_c() {
 
   grpc_rb_mGRPC = rb_define_module("GRPC");
   grpc_rb_mGrpcCore = rb_define_module_under(grpc_rb_mGRPC, "Core");
-  grpc_rb_sNewServerRpc = rb_struct_define(
+  grpc_rb_sNewServerRpc = rb_struct_define_under(grpc_rb_mGrpcCore,
       "NewServerRpc", "method", "host", "deadline", "metadata", "call", NULL);
-  grpc_rb_sStatus =
-      rb_struct_define("Status", "code", "details", "metadata", NULL);
+  grpc_rb_sStatus = rb_struct_define_under(grpc_rb_mGrpcCore,
+      "Status", "code", "details", "metadata", NULL);
   sym_code = ID2SYM(rb_intern("code"));
   sym_details = ID2SYM(rb_intern("details"));
   sym_metadata = ID2SYM(rb_intern("metadata"));

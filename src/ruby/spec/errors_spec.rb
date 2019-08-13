@@ -71,7 +71,7 @@ describe GRPC::BadStatus do
       metadata = { 'key' => 'val' }
 
       exception = GRPC::BadStatus.new(code, details, metadata)
-      status = Struct::Status.new(code, details, metadata)
+      status = GRPC::Core::Status.new(code, details, metadata)
 
       expect(exception.to_status).to eq status
     end

@@ -91,7 +91,7 @@ describe GRPC::Core::Call do
   describe '#status' do
     it 'can save the status and read it back' do
       call = make_test_call
-      sts = Struct::Status.new(OK, 'OK')
+      sts = GRPC::Core::Status.new(OK, 'OK')
       expect { call.status = sts }.not_to raise_error
       expect(call.status).to eq(sts)
     end

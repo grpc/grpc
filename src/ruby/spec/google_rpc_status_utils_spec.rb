@@ -33,14 +33,14 @@ describe 'conversion from a status struct to a google protobuf status' do
   end
 
   it 'returns nil if the header key is missing' do
-    status = Struct::Status.new(1, 'details', key: 'val')
+    status = GRPC::Core::Status.new(1, 'details', key: 'val')
     expect(status.metadata.nil?).to be false
     expect(GRPC::GoogleRpcStatusUtils.extract_google_rpc_status(
              status)).to be(nil)
   end
 
   it 'fails with some error if the header key fails to deserialize' do
-    status = Struct::Status.new(1, 'details',
+    status = GRPC::Core::Status.new(1, 'details',
                                 'grpc-status-details-bin' => 'string_val')
     expect do
       GRPC::GoogleRpcStatusUtils.extract_google_rpc_status(status)
@@ -51,7 +51,7 @@ describe 'conversion from a status struct to a google protobuf status' do
     'status struct and protobuf status' do
     proto = Google::Rpc::Status.new(code: 1, message: 'proto message')
     encoded_proto = Google::Rpc::Status.encode(proto)
-    status = Struct::Status.new(1, 'struct message',
+    status = GRPC::Core::Status.new(1, 'struct message',
                                 'grpc-status-details-bin' => encoded_proto)
     rpc_status = GRPC::GoogleRpcStatusUtils.extract_google_rpc_status(status)
     expect(rpc_status).to eq(proto)
@@ -61,7 +61,7 @@ describe 'conversion from a status struct to a google protobuf status' do
     'and protobuf status' do
     proto = Google::Rpc::Status.new(code: 1, message: 'matching message')
     encoded_proto = Google::Rpc::Status.encode(proto)
-    status = Struct::Status.new(2, 'matching message',
+    status = GRPC::Core::Status.new(2, 'matching message',
                                 'grpc-status-details-bin' => encoded_proto)
     rpc_status = GRPC::GoogleRpcStatusUtils.extract_google_rpc_status(status)
     expect(rpc_status).to eq(proto)
@@ -71,7 +71,7 @@ describe 'conversion from a status struct to a google protobuf status' do
     'when there are no rpcstatus details' do
     proto = Google::Rpc::Status.new(code: 1, message: 'matching message')
     encoded_proto = Google::Rpc::Status.encode(proto)
-    status = Struct::Status.new(1, 'matching message',
+    status = GRPC::Core::Status.new(1, 'matching message',
                                 'grpc-status-details-bin' => encoded_proto)
     out = GRPC::GoogleRpcStatusUtils.extract_google_rpc_status(status)
     expect(out.code).to eq(1)
@@ -100,7 +100,7 @@ describe 'conversion from a status struct to a google protobuf status' do
                                       payload_any
                                     ])
     encoded_proto = Google::Rpc::Status.encode(proto)
-    status = Struct::Status.new(1, 'matching message',
+    status = GRPC::Core::Status.new(1, 'matching message',
                                 'grpc-status-details-bin' => encoded_proto)
     out = GRPC::GoogleRpcStatusUtils.extract_google_rpc_status(status)
     expect(out.code).to eq(1)
