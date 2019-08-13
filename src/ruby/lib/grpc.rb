@@ -34,3 +34,8 @@ begin
 ensure
   file.close
 end
+
+# Add aliases for backwards compatibility
+Struct::BatchResult  = GRPC::Core::BatchResult
+Struct::NewServerRpc = GRPC::Core::NewServerRpc
+Struct::Status       = GRPC::Core::Status
