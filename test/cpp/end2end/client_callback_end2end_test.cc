@@ -33,7 +33,6 @@
 #include <grpcpp/support/client_callback.h>
 
 #include "src/core/lib/iomgr/iomgr.h"
-#include "src/proto/grpc/testing/echo.grpc.pb.h"
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
 #include "test/cpp/end2end/interceptors_util.h"
@@ -41,6 +40,7 @@
 #include "test/cpp/util/byte_buffer_proto_helper.h"
 #include "test/cpp/util/string_ref_helper.h"
 #include "test/cpp/util/test_credentials_provider.h"
+#include "test/proto/echo.grpc.pb.h"
 
 #include <gtest/gtest.h>
 

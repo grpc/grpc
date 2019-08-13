@@ -26,8 +26,8 @@
 #include <grpcpp/server_builder.h>
 #include <grpcpp/server_context.h>
 
-#include "src/proto/grpc/testing/echo.grpc.pb.h"
 #include "test/core/util/test_config.h"
+#include "test/proto/echo.grpc.pb.h"
 
 #include <gtest/gtest.h>
 

@@ -28,12 +28,12 @@
 #include <vector>
 
 #include "src/cpp/util/core_stats.h"
-#include "src/proto/grpc/testing/control.pb.h"
-#include "src/proto/grpc/testing/messages.pb.h"
 #include "test/core/end2end/data/ssl_test_data.h"
 #include "test/core/util/port.h"
 #include "test/cpp/qps/usage_timer.h"
 #include "test/cpp/util/test_credentials_provider.h"
+#include "test/proto/control.pb.h"
+#include "test/proto/messages.pb.h"
 
 namespace grpc {
 namespace testing {

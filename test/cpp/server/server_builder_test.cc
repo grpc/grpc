@@ -24,8 +24,8 @@
 
 #include <grpc/grpc.h>
 
-#include "src/proto/grpc/testing/echo.grpc.pb.h"
 #include "test/core/util/port.h"
+#include "test/proto/echo.grpc.pb.h"
 
 namespace grpc {
 namespace {

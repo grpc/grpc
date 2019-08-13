@@ -44,7 +44,7 @@ describe 'Ping protobuf code generation' do
         pid = spawn(
           'protoc',
           '-I.',
-          'src/proto/grpc/testing/duplicate/echo_duplicate.proto',
+          'test/proto/duplicate/echo_duplicate.proto',
           "--grpc_out=#{tmp_dir}",
           "--plugin=protoc-gen-grpc=#{plugin}",
           chdir: root_dir)

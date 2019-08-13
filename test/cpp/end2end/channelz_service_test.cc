@@ -30,10 +30,10 @@
 
 #include <grpcpp/ext/channelz_service_plugin.h>
 #include "src/proto/grpc/channelz/channelz.grpc.pb.h"
-#include "src/proto/grpc/testing/echo.grpc.pb.h"
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
 #include "test/cpp/end2end/test_service_impl.h"
+#include "test/proto/echo.grpc.pb.h"
 
 #include <gtest/gtest.h>
 

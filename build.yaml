@@ -1809,7 +1809,7 @@ libs:
   headers:
   - test/cpp/microbenchmarks/callback_test_service.h
   src:
-  - src/proto/grpc/testing/echo.proto
+  - test/proto/echo.proto
   - test/cpp/microbenchmarks/callback_test_service.cc
   deps:
   - grpc_benchmark
@@ -1931,10 +1931,10 @@ libs:
   src:
   - src/proto/grpc/channelz/channelz.proto
   - src/proto/grpc/health/v1/health.proto
-  - src/proto/grpc/testing/echo_messages.proto
-  - src/proto/grpc/testing/echo.proto
-  - src/proto/grpc/testing/duplicate/echo_duplicate.proto
-  - src/proto/grpc/testing/simple_messages.proto
+  - test/proto/echo_messages.proto
+  - test/proto/echo.proto
+  - test/proto/duplicate/echo_duplicate.proto
+  - test/proto/simple_messages.proto
   - test/cpp/end2end/test_health_check_service_impl.cc
   - test/cpp/end2end/test_service_impl.cc
   - test/cpp/util/byte_buffer_proto_helper.cc
@@ -1963,10 +1963,10 @@ libs:
   - test/cpp/util/subprocess.h
   src:
   - src/proto/grpc/health/v1/health.proto
-  - src/proto/grpc/testing/echo_messages.proto
-  - src/proto/grpc/testing/echo.proto
-  - src/proto/grpc/testing/duplicate/echo_duplicate.proto
-  - src/proto/grpc/testing/simple_messages.proto
+  - test/proto/echo_messages.proto
+  - test/proto/echo.proto
+  - test/proto/duplicate/echo_duplicate.proto
+  - test/proto/simple_messages.proto
   - test/cpp/end2end/test_health_check_service_impl.cc
   - test/cpp/end2end/test_service_impl.cc
   - test/cpp/util/byte_buffer_proto_helper.cc
@@ -2095,9 +2095,9 @@ libs:
   headers:
   - test/cpp/interop/http2_client.h
   src:
-  - src/proto/grpc/testing/empty.proto
-  - src/proto/grpc/testing/messages.proto
-  - src/proto/grpc/testing/test.proto
+  - test/proto/empty.proto
+  - test/proto/messages.proto
+  - test/proto/test.proto
   - test/cpp/interop/http2_client.cc
   deps:
   - grpc++_test_util
@@ -2111,7 +2111,7 @@ libs:
   headers:
   - test/cpp/interop/client_helper.h
   src:
-  - src/proto/grpc/testing/messages.proto
+  - test/proto/messages.proto
   - test/cpp/interop/client_helper.cc
   deps:
   - grpc++_test_util
@@ -2125,9 +2125,9 @@ libs:
   headers:
   - test/cpp/interop/interop_client.h
   src:
-  - src/proto/grpc/testing/empty.proto
-  - src/proto/grpc/testing/messages.proto
-  - src/proto/grpc/testing/test.proto
+  - test/proto/empty.proto
+  - test/proto/messages.proto
+  - test/proto/test.proto
   - test/cpp/interop/client.cc
   - test/cpp/interop/interop_client.cc
   deps:
@@ -2155,9 +2155,9 @@ libs:
   build: private
   language: c++
   src:
-  - src/proto/grpc/testing/empty.proto
-  - src/proto/grpc/testing/messages.proto
-  - src/proto/grpc/testing/test.proto
+  - test/proto/empty.proto
+  - test/proto/messages.proto
+  - test/proto/test.proto
   - test/cpp/interop/interop_server.cc
   deps:
   - interop_server_helper
@@ -2191,13 +2191,13 @@ libs:
   - test/cpp/qps/stats.h
   - test/cpp/qps/usage_timer.h
   src:
-  - src/proto/grpc/testing/messages.proto
-  - src/proto/grpc/testing/payloads.proto
-  - src/proto/grpc/testing/stats.proto
-  - src/proto/grpc/testing/control.proto
-  - src/proto/grpc/testing/benchmark_service.proto
-  - src/proto/grpc/testing/report_qps_scenario_service.proto
-  - src/proto/grpc/testing/worker_service.proto
+  - test/proto/messages.proto
+  - test/proto/payloads.proto
+  - test/proto/stats.proto
+  - test/proto/control.proto
+  - test/proto/benchmark_service.proto
+  - test/proto/report_qps_scenario_service.proto
+  - test/proto/worker_service.proto
   - test/cpp/qps/benchmark_config.cc
   - test/cpp/qps/client_async.cc
   - test/cpp/qps/client_callback.cc
@@ -4787,13 +4787,13 @@ targets:
   build: test
   language: c++
   src:
-  - src/proto/grpc/testing/control.proto
-  - src/proto/grpc/testing/messages.proto
-  - src/proto/grpc/testing/payloads.proto
-  - src/proto/grpc/testing/benchmark_service.proto
-  - src/proto/grpc/testing/report_qps_scenario_service.proto
-  - src/proto/grpc/testing/worker_service.proto
-  - src/proto/grpc/testing/stats.proto
+  - test/proto/control.proto
+  - test/proto/messages.proto
+  - test/proto/payloads.proto
+  - test/proto/benchmark_service.proto
+  - test/proto/report_qps_scenario_service.proto
+  - test/proto/worker_service.proto
+  - test/proto/stats.proto
   - test/cpp/codegen/codegen_test_full.cc
   deps:
   - grpc++_core_stats
@@ -4808,13 +4808,13 @@ targets:
   build: test
   language: c++
   src:
-  - src/proto/grpc/testing/control.proto
-  - src/proto/grpc/testing/messages.proto
-  - src/proto/grpc/testing/payloads.proto
-  - src/proto/grpc/testing/benchmark_service.proto
-  - src/proto/grpc/testing/report_qps_scenario_service.proto
-  - src/proto/grpc/testing/worker_service.proto
-  - src/proto/grpc/testing/stats.proto
+  - test/proto/control.proto
+  - test/proto/messages.proto
+  - test/proto/payloads.proto
+  - test/proto/benchmark_service.proto
+  - test/proto/report_qps_scenario_service.proto
+  - test/proto/worker_service.proto
+  - test/proto/stats.proto
   - test/cpp/codegen/codegen_test_minimal.cc
   deps:
   - grpc++_core_stats
@@ -4924,7 +4924,7 @@ targets:
   build: test
   language: c++
   src:
-  - src/proto/grpc/testing/echo_messages.proto
+  - test/proto/echo_messages.proto
   - test/cpp/util/error_details_test.cc
   deps:
   - grpc++_error_details
@@ -4988,7 +4988,7 @@ targets:
   build: test
   language: c++
   src:
-  - src/proto/grpc/testing/compiler_test.proto
+  - test/proto/compiler_test.proto
   - test/cpp/codegen/golden_file_test.cc
   deps:
   - grpc++_test_config
@@ -4996,7 +4996,7 @@ targets:
   - grpc
   - gpr
   args:
-  - --generated_file_path=gens/src/proto/grpc/testing/
+  - --generated_file_path=gens/test/proto/
   uses_polling: false
 - name: grpc_alts_credentials_options_test
   build: test
@@ -5131,8 +5131,8 @@ targets:
   build: test
   language: c++
   src:
-  - src/proto/grpc/testing/echo.proto
-  - src/proto/grpc/testing/echo_messages.proto
+  - test/proto/echo.proto
+  - test/proto/echo_messages.proto
   - test/cpp/util/grpc_tool_test.cc
   deps:
   - grpc_cli_libs
@@ -5174,9 +5174,9 @@ targets:
   build: test
   language: c++
   src:
-  - src/proto/grpc/testing/empty.proto
-  - src/proto/grpc/testing/messages.proto
-  - src/proto/grpc/testing/test.proto
+  - test/proto/empty.proto
+  - test/proto/messages.proto
+  - test/proto/test.proto
   - test/cpp/interop/grpclb_fallback_test.cc
   deps:
   - grpc++_test_util
@@ -5391,7 +5391,7 @@ targets:
   headers:
   - test/cpp/util/metrics_server.h
   src:
-  - src/proto/grpc/testing/metrics.proto
+  - test/proto/metrics.proto
   - test/cpp/interop/metrics_client.cc
   deps:
   - grpc++
@@ -5587,9 +5587,9 @@ targets:
   run: false
   language: c++
   src:
-  - src/proto/grpc/testing/empty.proto
-  - src/proto/grpc/testing/messages.proto
-  - src/proto/grpc/testing/test.proto
+  - test/proto/empty.proto
+  - test/proto/messages.proto
+  - test/proto/test.proto
   - test/cpp/interop/reconnect_interop_client.cc
   deps:
   - grpc++_test_util
@@ -5603,9 +5603,9 @@ targets:
   run: false
   language: c++
   src:
-  - src/proto/grpc/testing/empty.proto
-  - src/proto/grpc/testing/messages.proto
-  - src/proto/grpc/testing/test.proto
+  - test/proto/empty.proto
+  - test/proto/messages.proto
+  - test/proto/test.proto
   - test/cpp/interop/reconnect_interop_server.cc
   deps:
   - reconnect_server
@@ -5700,8 +5700,8 @@ targets:
   build: test
   language: c++
   src:
-  - src/proto/grpc/testing/echo_messages.proto
-  - src/proto/grpc/testing/echo.proto
+  - test/proto/echo_messages.proto
+  - test/proto/echo.proto
   - test/cpp/server/server_builder_test.cc
   deps:
   - grpc++_test_util_unsecure
@@ -5714,8 +5714,8 @@ targets:
   build: test
   language: c++
   src:
-  - src/proto/grpc/testing/echo_messages.proto
-  - src/proto/grpc/testing/echo.proto
+  - test/proto/echo_messages.proto
+  - test/proto/echo.proto
   - test/cpp/server/server_builder_with_socket_mutator_test.cc
   deps:
   - grpc++_test_util_unsecure
@@ -5801,8 +5801,8 @@ targets:
   build: test
   language: c++
   src:
-  - src/proto/grpc/testing/echo_messages.proto
-  - src/proto/grpc/testing/echo.proto
+  - test/proto/echo_messages.proto
+  - test/proto/echo.proto
   - test/cpp/server/server_request_call_test.cc
   deps:
   - grpc++_test_util_unsecure
@@ -5930,10 +5930,10 @@ targets:
   - test/cpp/util/create_test_channel.h
   - test/cpp/util/metrics_server.h
   src:
-  - src/proto/grpc/testing/empty.proto
-  - src/proto/grpc/testing/messages.proto
-  - src/proto/grpc/testing/metrics.proto
-  - src/proto/grpc/testing/test.proto
+  - test/proto/empty.proto
+  - test/proto/messages.proto
+  - test/proto/metrics.proto
+  - test/proto/test.proto
   - test/cpp/interop/interop_client.cc
   - test/cpp/interop/stress_interop_client.cc
   - test/cpp/interop/stress_test.cc

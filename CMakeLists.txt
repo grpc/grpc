@@ -3059,11 +3059,11 @@ if (gRPC_BUILD_TESTS)
 
 if (gRPC_BUILD_CODEGEN)
 add_library(bm_callback_test_service_impl
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo.grpc.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo.pb.h
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo.grpc.pb.h
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo_mock.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/proto/echo.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/proto/echo.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/proto/echo.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/proto/echo.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/proto/echo_mock.grpc.pb.h
   test/cpp/microbenchmarks/callback_test_service.cc
 )
 
@@ -3079,7 +3079,7 @@ if(WIN32 AND MSVC)
 endif()
 
 protobuf_generate_grpc_cpp(
-  src/proto/grpc/testing/echo.proto
+  test/proto/echo.proto
 )
 
 target_include_directories(bm_callback_test_service_impl
@@ -3861,23 +3861,23 @@ add_library(grpc++_test_util
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/health/v1/health.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/health/v1/health.pb.h
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/health/v1/health.grpc.pb.h
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo_messages.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo_messages.grpc.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo_messages.pb.h
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo_messages.grpc.pb.h
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo.grpc.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo.pb.h
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo.grpc.pb.h
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo_mock.grpc.pb.h
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/duplicate/echo_duplicate.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/duplicate/echo_duplicate.grpc.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/duplicate/echo_duplicate.pb.h
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/duplicate/echo_duplicate.grpc.pb.h
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.grpc.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.pb.h
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/proto/echo_messages.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/proto/echo_messages.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/proto/echo_messages.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/proto/echo_messages.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/proto/echo.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/proto/echo.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/proto/echo.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/proto/echo.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/proto/echo_mock.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/proto/duplicate/echo_duplicate.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/proto/duplicate/echo_duplicate.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/proto/duplicate/echo_duplicate.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/proto/duplicate/echo_duplicate.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/proto/simple_messages.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/proto/simple_messages.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/proto/simple_messages.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/proto/simple_messages.grpc.pb.h
   test/cpp/end2end/test_health_check_service_impl.cc
   test/cpp/end2end/test_service_impl.cc
   test/cpp/util/byte_buffer_proto_helper.cc
@@ -3907,16 +3907,16 @@ protobuf_generate_grpc_cpp(
   src/proto/grpc/health/v1/health.proto
 )
 protobuf_generate_grpc_cpp(
-  src/proto/grpc/testing/echo_messages.proto
+  test/proto/echo_messages.proto
 )
 protobuf_generate_grpc_cpp(
-  src/proto/grpc/testing/echo.proto
+  test/proto/echo.proto
 )
 protobuf_generate_grpc_cpp(
-  src/proto/grpc/testing/duplicate/echo_duplicate.proto
+  test/proto/duplicate/echo_duplicate.proto
 )
 protobuf_generate_grpc_cpp(
-  src/proto/grpc/testing/simple_messages.proto
+  test/proto/simple_messages.proto
 )
 
 target_include_directories(grpc++_test_util
@@ -4077,23 +4077,23 @@ add_library(grpc++_test_util_unsecure
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/health/v1/health.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/health/v1/health.pb.h
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/health/v1/health.grpc.pb.h
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo_messages.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo_messages.grpc.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo_messages.pb.h
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo_messages.grpc.pb.h
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo.grpc.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo.pb.h
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo.grpc.pb.h
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo_mock.grpc.pb.h
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/duplicate/echo_duplicate.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/duplicate/echo_duplicate.grpc.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/duplicate/echo_duplicate.pb.h
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/duplicate/echo_duplicate.grpc.pb.h
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.grpc.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.pb.h
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/simple_messages.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/proto/echo_messages.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/proto/echo_messages.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/proto/echo_messages.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/proto/echo_messages.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/proto/echo.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/proto/echo.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/proto/echo.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/proto/echo.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/proto/echo_mock.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/proto/duplicate/echo_duplicate.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/proto/duplicate/echo_duplicate.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/proto/duplicate/echo_duplicate.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/proto/duplicate/echo_duplicate.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/proto/simple_messages.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/proto/simple_messages.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/proto/simple_messages.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/proto/simple_messages.grpc.pb.h
   test/cpp/end2end/test_health_check_service_impl.cc
   test/cpp/end2end/test_service_impl.cc
   test/cpp/util/byte_buffer_proto_helper.cc
@@ -4117,16 +4117,16 @@ protobuf_generate_grpc_cpp(
   src/proto/grpc/health/v1/health.proto
 )
 protobuf_generate_grpc_cpp(
-  src/proto/grpc/testing/echo_messages.proto
+  test/proto/echo_messages.proto
 )
 protobuf_generate_grpc_cpp(
-  src/proto/grpc/testing/echo.proto
+  test/proto/echo.proto
 )
 protobuf_generate_grpc_cpp(
-  src/proto/grpc/testing/duplicate/echo_duplicate.proto
+  test/proto/duplicate/echo_duplicate.proto
 )
 protobuf_generate_grpc_cpp(
-  src/proto/grpc/testing/simple_messages.proto
+  test/proto/simple_messages.proto
 )
 
 target_include_directories(grpc++_test_util_unsecure
@@ -4900,18 +4900,18 @@ if (gRPC_BUILD_TESTS)
 
 if (gRPC_BUILD_CODEGEN)
 add_library(http2_client_main
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/empty.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/empty.grpc.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/empty.pb.h
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/empty.grpc.pb.h
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/messages.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/messages.grpc.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/messages.pb.h
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/messages.grpc.pb.h
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/test.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/test.grpc.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/test.pb.h
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/test.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/proto/empty.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/proto/empty.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/proto/empty.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/proto/empty.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/proto/messages.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/proto/messages.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/proto/messages.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/proto/messages.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/proto/test.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/proto/test.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/proto/test.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/proto/test.grpc.pb.h
   test/cpp/interop/http2_client.cc
 )
 
@@ -4927,13 +4927,13 @@ if(WIN32 AND MSVC)
 endif()
 
 protobuf_generate_grpc_cpp(
-  src/proto/grpc/testing/empty.proto
+  test/proto/empty.proto
 )
 protobuf_generate_grpc_cpp(
-  src/proto/grpc/testing/messages.proto
+  test/proto/messages.proto
 )
 protobuf_generate_grpc_cpp(
-  src/proto/grpc/testing/test.proto
+  test/proto/test.proto
 )
 
 target_include_directories(http2_client_main
@@ -4974,10 +4974,10 @@ if (gRPC_BUILD_TESTS)
 
 if (gRPC_BUILD_CODEGEN)
 add_library(interop_client_helper
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/messages.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/messages.grpc.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/messages.pb.h
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/messages.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/proto/messages.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/proto/messages.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/proto/messages.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/proto/messages.grpc.pb.h
   test/cpp/interop/client_helper.cc
 )
 
@@ -4993,7 +4993,7 @@ if(WIN32 AND MSVC)
 endif()
 
 protobuf_generate_grpc_cpp(
-  src/proto/grpc/testing/messages.proto
+  test/proto/messages.proto
 )
 
 target_include_directories(interop_client_helper
@@ -5034,18 +5034,18 @@ if (gRPC_BUILD_TESTS)
 
 if (gRPC_BUILD_CODEGEN)
 add_library(interop_client_main
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/empty.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/empty.grpc.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/empty.pb.h
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/empty.grpc.pb.h
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/messages.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/messages.grpc.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/messages.pb.h
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/messages.grpc.pb.h
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/test.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/test.grpc.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/test.pb.h
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/test.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/proto/empty.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/proto/empty.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/proto/empty.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/proto/empty.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/proto/messages.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/proto/messages.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/proto/messages.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/proto/messages.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/proto/test.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/proto/test.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/proto/test.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/proto/test.grpc.pb.h
   test/cpp/interop/client.cc
   test/cpp/interop/interop_client.cc
 )
@@ -5062,13 +5062,13 @@ if(WIN32 AND MSVC)
 endif()
 
 protobuf_generate_grpc_cpp(
-  src/proto/grpc/testing/empty.proto
+  test/proto/empty.proto
 )
 protobuf_generate_grpc_cpp(
-  src/proto/grpc/testing/messages.proto
+  test/proto/messages.proto
 )
 protobuf_generate_grpc_cpp(
-  src/proto/grpc/testing/test.proto
+  test/proto/test.proto
 )
 
 target_include_directories(interop_client_main
@@ -5162,18 +5162,18 @@ if (gRPC_BUILD_TESTS)
 
 if (gRPC_BUILD_CODEGEN)
 add_library(interop_server_lib
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/empty.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/empty.grpc.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/empty.pb.h
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/empty.grpc.pb.h
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/messages.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/messages.grpc.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/messages.pb.h
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/messages.grpc.pb.h
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/test.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/test.grpc.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/test.pb.h
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/test.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/proto/empty.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/proto/empty.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/proto/empty.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/proto/empty.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/proto/messages.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/proto/messages.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/proto/messages.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/proto/messages.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/proto/test.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/proto/test.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/proto/test.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/proto/test.grpc.pb.h
   test/cpp/interop/interop_server.cc
 )
 
@@ -5189,13 +5189,13 @@ if(WIN32 AND MSVC)
 endif()
 
 protobuf_generate_grpc_cpp(
-  src/proto/grpc/testing/empty.proto
+  test/proto/empty.proto
 )
 protobuf_generate_grpc_cpp(
-  src/proto/grpc/testing/messages.proto
+  test/proto/messages.proto
 )
 protobuf_generate_grpc_cpp(
-  src/proto/grpc/testing/test.proto
+  test/proto/test.proto
 )
 
 target_include_directories(interop_server_lib
@@ -5285,34 +5285,34 @@ if (gRPC_BUILD_TESTS)
 
 if (gRPC_BUILD_CODEGEN)
 add_library(qps
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/messages.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/messages.grpc.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/messages.pb.h
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/messages.grpc.pb.h
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/payloads.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/payloads.grpc.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/payloads.pb.h
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/payloads.grpc.pb.h
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/stats.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/stats.grpc.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/stats.pb.h
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/stats.grpc.pb.h
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/control.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/control.grpc.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/control.pb.h
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/control.grpc.pb.h
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/benchmark_service.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/benchmark_service.grpc.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/benchmark_service.pb.h
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/benchmark_service.grpc.pb.h
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/report_qps_scenario_service.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/report_qps_scenario_service.grpc.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/report_qps_scenario_service.pb.h
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/report_qps_scenario_service.grpc.pb.h
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/worker_service.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/worker_service.grpc.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/worker_service.pb.h
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/worker_service.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/proto/messages.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/proto/messages.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/proto/messages.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/proto/messages.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/proto/payloads.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/proto/payloads.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/proto/payloads.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/proto/payloads.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/proto/stats.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/proto/stats.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/proto/stats.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/proto/stats.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/proto/control.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/proto/control.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/proto/control.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/proto/control.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/proto/benchmark_service.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/proto/benchmark_service.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/proto/benchmark_service.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/proto/benchmark_service.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/proto/report_qps_scenario_service.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/proto/report_qps_scenario_service.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/proto/report_qps_scenario_service.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/proto/report_qps_scenario_service.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/proto/worker_service.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/proto/worker_service.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/proto/worker_service.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/proto/worker_service.grpc.pb.h
   test/cpp/qps/benchmark_config.cc
   test/cpp/qps/client_async.cc
   test/cpp/qps/client_callback.cc
@@ -5340,25 +5340,25 @@ if(WIN32 AND MSVC)
 endif()
 
 protobuf_generate_grpc_cpp(
-  src/proto/grpc/testing/messages.proto
+  test/proto/messages.proto
 )
 protobuf_generate_grpc_cpp(
-  src/proto/grpc/testing/payloads.proto
+  test/proto/payloads.proto
 )
 protobuf_generate_grpc_cpp(
-  src/proto/grpc/testing/stats.proto
+  test/proto/stats.proto
 )
 protobuf_generate_grpc_cpp(
-  src/proto/grpc/testing/control.proto
+  test/proto/control.proto
 )
 protobuf_generate_grpc_cpp(
-  src/proto/grpc/testing/benchmark_service.proto
+  test/proto/benchmark_service.proto
 )
 protobuf_generate_grpc_cpp(
-  src/proto/grpc/testing/report_qps_scenario_service.proto
+  test/proto/report_qps_scenario_service.proto
 )
 protobuf_generate_grpc_cpp(
-  src/proto/grpc/testing/worker_service.proto
+  test/proto/worker_service.proto
 )
 
 target_include_directories(qps
@@ -13399,59 +13399,59 @@ endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
 add_executable(codegen_test_full
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/control.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/control.grpc.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/control.pb.h
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/control.grpc.pb.h
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/messages.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/messages.grpc.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/messages.pb.h
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/messages.grpc.pb.h
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/payloads.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/payloads.grpc.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/payloads.pb.h
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/payloads.grpc.pb.h
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/benchmark_service.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/benchmark_service.grpc.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/benchmark_service.pb.h
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/benchmark_service.grpc.pb.h
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/report_qps_scenario_service.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/report_qps_scenario_service.grpc.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/report_qps_scenario_service.pb.h
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/report_qps_scenario_service.grpc.pb.h
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/worker_service.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/worker_service.grpc.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/worker_service.pb.h
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/worker_service.grpc.pb.h
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/stats.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/stats.grpc.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/stats.pb.h
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/stats.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/proto/control.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/proto/control.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/proto/control.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/proto/control.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/proto/messages.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/proto/messages.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/proto/messages.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/proto/messages.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/proto/payloads.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/proto/payloads.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/proto/payloads.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/proto/payloads.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/proto/benchmark_service.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/proto/benchmark_service.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/proto/benchmark_service.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/proto/benchmark_service.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/proto/report_qps_scenario_service.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/proto/report_qps_scenario_service.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/proto/report_qps_scenario_service.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/proto/report_qps_scenario_service.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/proto/worker_service.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/proto/worker_service.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/proto/worker_service.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/proto/worker_service.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/proto/stats.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/proto/stats.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/proto/stats.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/proto/stats.grpc.pb.h
   test/cpp/codegen/codegen_test_full.cc
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
 
 protobuf_generate_grpc_cpp(
-  src/proto/grpc/testing/control.proto
+  test/proto/control.proto
 )
 protobuf_generate_grpc_cpp(
-  src/proto/grpc/testing/messages.proto
+  test/proto/messages.proto
 )
 protobuf_generate_grpc_cpp(
-  src/proto/grpc/testing/payloads.proto
+  test/proto/payloads.proto
 )
 protobuf_generate_grpc_cpp(
-  src/proto/grpc/testing/benchmark_service.proto
+  test/proto/benchmark_service.proto
 )
 protobuf_generate_grpc_cpp(
-  src/proto/grpc/testing/report_qps_scenario_service.proto
+  test/proto/report_qps_scenario_service.proto
 )
 protobuf_generate_grpc_cpp(
-  src/proto/grpc/testing/worker_service.proto
+  test/proto/worker_service.proto
 )
 protobuf_generate_grpc_cpp(
-  src/proto/grpc/testing/stats.proto
+  test/proto/stats.proto
 )
 
 target_include_directories(codegen_test_full
@@ -13490,34 +13490,34 @@ endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
 add_executable(codegen_test_minimal
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/control.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/control.grpc.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/control.pb.h
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/control.grpc.pb.h
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/messages.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/messages.grpc.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/messages.pb.h
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/messages.grpc.pb.h
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/payloads.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/payloads.grpc.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/payloads.pb.h
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/payloads.grpc.pb.h
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/benchmark_service.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/benchmark_service.grpc.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/benchmark_service.pb.h
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/benchmark_service.grpc.pb.h
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/report_qps_scenario_service.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/report_qps_scenario_service.grpc.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/report_qps_scenario_service.pb.h
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/report_qps_scenario_service.grpc.pb.h
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/worker_service.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/worker_service.grpc.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/worker_service.pb.h
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/worker_service.grpc.pb.h
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/stats.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/stats.grpc.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/stats.pb.h
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/stats.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/proto/control.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/proto/control.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/proto/control.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/proto/control.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/proto/messages.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/proto/messages.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/proto/messages.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/proto/messages.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/proto/payloads.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/proto/payloads.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/proto/payloads.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/proto/payloads.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/proto/benchmark_service.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/proto/benchmark_service.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/proto/benchmark_service.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/proto/benchmark_service.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/proto/report_qps_scenario_service.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/proto/report_qps_scenario_service.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/proto/report_qps_scenario_service.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/proto/report_qps_scenario_service.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/proto/worker_service.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/proto/worker_service.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/proto/worker_service.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/proto/worker_service.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/proto/stats.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/proto/stats.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/proto/stats.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/proto/stats.grpc.pb.h
   test/cpp/codegen/codegen_test_minimal.cc
   src/cpp/codegen/codegen_init.cc
   third_party/googletest/googletest/src/gtest-all.cc
@@ -13525,25 +13525,25 @@ add_executable(codegen_test_minimal
 )
 
 protobuf_generate_grpc_cpp(
-  src/proto/grpc/testing/control.proto
+  test/proto/control.proto
 )
 protobuf_generate_grpc_cpp(
-  src/proto/grpc/testing/messages.proto
+  test/proto/messages.proto
 )
 protobuf_generate_grpc_cpp(
-  src/proto/grpc/testing/payloads.proto
+  test/proto/payloads.proto
 )
 protobuf_generate_grpc_cpp(
-  src/proto/grpc/testing/benchmark_service.proto
+  test/proto/benchmark_service.proto
 )
 protobuf_generate_grpc_cpp(
-  src/proto/grpc/testing/report_qps_scenario_service.proto
+  test/proto/report_qps_scenario_service.proto
 )
 protobuf_generate_grpc_cpp(
-  src/proto/grpc/testing/worker_service.proto
+  test/proto/worker_service.proto
 )
 protobuf_generate_grpc_cpp(
-  src/proto/grpc/testing/stats.proto
+  test/proto/stats.proto
 )
 
 target_include_directories(codegen_test_minimal
@@ -13916,17 +13916,17 @@ endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
 add_executable(error_details_test
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo_messages.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo_messages.grpc.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo_messages.pb.h
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo_messages.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/proto/echo_messages.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/proto/echo_messages.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/proto/echo_messages.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/proto/echo_messages.grpc.pb.h
   test/cpp/util/error_details_test.cc
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
 
 protobuf_generate_grpc_cpp(
-  src/proto/grpc/testing/echo_messages.proto
+  test/proto/echo_messages.proto
 )
 
 target_include_directories(error_details_test
@@ -14172,17 +14172,17 @@ endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
 add_executable(golden_file_test
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/compiler_test.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/compiler_test.grpc.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/compiler_test.pb.h
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/compiler_test.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/proto/compiler_test.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/proto/compiler_test.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/proto/compiler_test.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/proto/compiler_test.grpc.pb.h
   test/cpp/codegen/golden_file_test.cc
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
 
 protobuf_generate_grpc_cpp(
-  src/proto/grpc/testing/compiler_test.proto
+  test/proto/compiler_test.proto
 )
 
 target_include_directories(golden_file_test
@@ -14767,24 +14767,24 @@ endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
 add_executable(grpc_tool_test
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo.grpc.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo.pb.h
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo.grpc.pb.h
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo_messages.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo_messages.grpc.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo_messages.pb.h
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo_messages.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/proto/echo.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/proto/echo.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/proto/echo.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/proto/echo.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/proto/echo_messages.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/proto/echo_messages.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/proto/echo_messages.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/proto/echo_messages.grpc.pb.h
   test/cpp/util/grpc_tool_test.cc
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
 
 protobuf_generate_grpc_cpp(
-  src/proto/grpc/testing/echo.proto
+  test/proto/echo.proto
 )
 protobuf_generate_grpc_cpp(
-  src/proto/grpc/testing/echo_messages.proto
+  test/proto/echo_messages.proto
 )
 
 target_include_directories(grpc_tool_test
@@ -14927,31 +14927,31 @@ if (gRPC_BUILD_TESTS)
 if(_gRPC_PLATFORM_LINUX)
 
 add_executable(grpclb_fallback_test
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/empty.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/empty.grpc.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/empty.pb.h
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/empty.grpc.pb.h
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/messages.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/messages.grpc.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/messages.pb.h
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/messages.grpc.pb.h
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/test.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/test.grpc.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/test.pb.h
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/test.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/proto/empty.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/proto/empty.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/proto/empty.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/proto/empty.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/proto/messages.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/proto/messages.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/proto/messages.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/proto/messages.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/proto/test.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/proto/test.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/proto/test.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/proto/test.grpc.pb.h
   test/cpp/interop/grpclb_fallback_test.cc
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
 
 protobuf_generate_grpc_cpp(
-  src/proto/grpc/testing/empty.proto
+  test/proto/empty.proto
 )
 protobuf_generate_grpc_cpp(
-  src/proto/grpc/testing/messages.proto
+  test/proto/messages.proto
 )
 protobuf_generate_grpc_cpp(
-  src/proto/grpc/testing/test.proto
+  test/proto/test.proto
 )
 
 target_include_directories(grpclb_fallback_test
@@ -15568,17 +15568,17 @@ endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
 add_executable(metrics_client
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/metrics.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/metrics.grpc.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/metrics.pb.h
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/metrics.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/proto/metrics.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/proto/metrics.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/proto/metrics.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/proto/metrics.grpc.pb.h
   test/cpp/interop/metrics_client.cc
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
 
 protobuf_generate_grpc_cpp(
-  src/proto/grpc/testing/metrics.proto
+  test/proto/metrics.proto
 )
 
 target_include_directories(metrics_client
@@ -16185,31 +16185,31 @@ endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
 add_executable(reconnect_interop_client
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/empty.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/empty.grpc.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/empty.pb.h
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/empty.grpc.pb.h
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/messages.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/messages.grpc.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/messages.pb.h
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/messages.grpc.pb.h
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/test.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/test.grpc.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/test.pb.h
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/test.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/proto/empty.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/proto/empty.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/proto/empty.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/proto/empty.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/proto/messages.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/proto/messages.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/proto/messages.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/proto/messages.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/proto/test.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/proto/test.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/proto/test.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/proto/test.grpc.pb.h
   test/cpp/interop/reconnect_interop_client.cc
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
 
 protobuf_generate_grpc_cpp(
-  src/proto/grpc/testing/empty.proto
+  test/proto/empty.proto
 )
 protobuf_generate_grpc_cpp(
-  src/proto/grpc/testing/messages.proto
+  test/proto/messages.proto
 )
 protobuf_generate_grpc_cpp(
-  src/proto/grpc/testing/test.proto
+  test/proto/test.proto
 )
 
 target_include_directories(reconnect_interop_client
@@ -16250,31 +16250,31 @@ endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
 add_executable(reconnect_interop_server
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/empty.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/empty.grpc.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/empty.pb.h
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/empty.grpc.pb.h
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/messages.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/messages.grpc.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/messages.pb.h
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/messages.grpc.pb.h
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/test.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/test.grpc.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/test.pb.h
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/test.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/proto/empty.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/proto/empty.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/proto/empty.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/proto/empty.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/proto/messages.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/proto/messages.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/proto/messages.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/proto/messages.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/proto/test.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/proto/test.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/proto/test.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/proto/test.grpc.pb.h
   test/cpp/interop/reconnect_interop_server.cc
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
 
 protobuf_generate_grpc_cpp(
-  src/proto/grpc/testing/empty.proto
+  test/proto/empty.proto
 )
 protobuf_generate_grpc_cpp(
-  src/proto/grpc/testing/messages.proto
+  test/proto/messages.proto
 )
 protobuf_generate_grpc_cpp(
-  src/proto/grpc/testing/test.proto
+  test/proto/test.proto
 )
 
 target_include_directories(reconnect_interop_server
@@ -16576,24 +16576,24 @@ endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
 add_executable(server_builder_test
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo_messages.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo_messages.grpc.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo_messages.pb.h
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo_messages.grpc.pb.h
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo.grpc.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo.pb.h
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/proto/echo_messages.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/proto/echo_messages.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/proto/echo_messages.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/proto/echo_messages.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/proto/echo.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/proto/echo.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/proto/echo.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/proto/echo.grpc.pb.h
   test/cpp/server/server_builder_test.cc
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
 
 protobuf_generate_grpc_cpp(
-  src/proto/grpc/testing/echo_messages.proto
+  test/proto/echo_messages.proto
 )
 protobuf_generate_grpc_cpp(
-  src/proto/grpc/testing/echo.proto
+  test/proto/echo.proto
 )
 
 target_include_directories(server_builder_test
@@ -16634,24 +16634,24 @@ if (gRPC_BUILD_TESTS)
 if(_gRPC_PLATFORM_POSIX)
 
 add_executable(server_builder_with_socket_mutator_test
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo_messages.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo_messages.grpc.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo_messages.pb.h
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo_messages.grpc.pb.h
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo.grpc.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo.pb.h
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/proto/echo_messages.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/proto/echo_messages.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/proto/echo_messages.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/proto/echo_messages.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/proto/echo.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/proto/echo.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/proto/echo.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/proto/echo.grpc.pb.h
   test/cpp/server/server_builder_with_socket_mutator_test.cc
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
 
 protobuf_generate_grpc_cpp(
-  src/proto/grpc/testing/echo_messages.proto
+  test/proto/echo_messages.proto
 )
 protobuf_generate_grpc_cpp(
-  src/proto/grpc/testing/echo.proto
+  test/proto/echo.proto
 )
 
 target_include_directories(server_builder_with_socket_mutator_test
@@ -16910,24 +16910,24 @@ endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
 add_executable(server_request_call_test
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo_messages.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo_messages.grpc.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo_messages.pb.h
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo_messages.grpc.pb.h
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo.grpc.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo.pb.h
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/proto/echo_messages.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/proto/echo_messages.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/proto/echo_messages.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/proto/echo_messages.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/proto/echo.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/proto/echo.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/proto/echo.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/proto/echo.grpc.pb.h
   test/cpp/server/server_request_call_test.cc
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
 
 protobuf_generate_grpc_cpp(
-  src/proto/grpc/testing/echo_messages.proto
+  test/proto/echo_messages.proto
 )
 protobuf_generate_grpc_cpp(
-  src/proto/grpc/testing/echo.proto
+  test/proto/echo.proto
 )
 
 target_include_directories(server_request_call_test
@@ -17342,22 +17342,22 @@ endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
 add_executable(stress_test
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/empty.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/empty.grpc.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/empty.pb.h
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/empty.grpc.pb.h
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/messages.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/messages.grpc.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/messages.pb.h
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/messages.grpc.pb.h
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/metrics.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/metrics.grpc.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/metrics.pb.h
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/metrics.grpc.pb.h
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/test.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/test.grpc.pb.cc
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/test.pb.h
-  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/test.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/proto/empty.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/proto/empty.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/proto/empty.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/proto/empty.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/proto/messages.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/proto/messages.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/proto/messages.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/proto/messages.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/proto/metrics.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/proto/metrics.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/proto/metrics.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/proto/metrics.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/proto/test.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/proto/test.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/proto/test.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/proto/test.grpc.pb.h
   test/cpp/interop/interop_client.cc
   test/cpp/interop/stress_interop_client.cc
   test/cpp/interop/stress_test.cc
@@ -17367,16 +17367,16 @@ add_executable(stress_test
 )
 
 protobuf_generate_grpc_cpp(
-  src/proto/grpc/testing/empty.proto
+  test/proto/empty.proto
 )
 protobuf_generate_grpc_cpp(
-  src/proto/grpc/testing/messages.proto
+  test/proto/messages.proto
 )
 protobuf_generate_grpc_cpp(
-  src/proto/grpc/testing/metrics.proto
+  test/proto/metrics.proto
 )
 protobuf_generate_grpc_cpp(
-  src/proto/grpc/testing/test.proto
+  test/proto/test.proto
 )
 
 target_include_directories(stress_test

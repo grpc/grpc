@@ -33,7 +33,6 @@
 #include "src/core/lib/gpr/env.h"
 #include "src/core/lib/gprpp/host_port.h"
 #include "src/core/lib/profiling/timers.h"
-#include "src/proto/grpc/testing/worker_service.grpc.pb.h"
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
 #include "test/cpp/qps/client.h"
@@ -42,6 +41,7 @@
 #include "test/cpp/qps/qps_worker.h"
 #include "test/cpp/qps/stats.h"
 #include "test/cpp/util/test_credentials_provider.h"
+#include "test/proto/worker_service.grpc.pb.h"
 
 using std::deque;
 using std::list;

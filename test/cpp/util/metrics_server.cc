@@ -22,8 +22,8 @@
 #include <grpcpp/server.h>
 #include <grpcpp/server_builder.h>
 
-#include "src/proto/grpc/testing/metrics.grpc.pb.h"
-#include "src/proto/grpc/testing/metrics.pb.h"
+#include "test/proto/metrics.grpc.pb.h"
+#include "test/proto/metrics.pb.h"
 
 namespace grpc {
 namespace testing {

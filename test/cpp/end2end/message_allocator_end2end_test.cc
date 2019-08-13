@@ -38,10 +38,10 @@
 #include <grpcpp/support/message_allocator.h>
 
 #include "src/core/lib/iomgr/iomgr.h"
-#include "src/proto/grpc/testing/echo.grpc.pb.h"
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
 #include "test/cpp/util/test_credentials_provider.h"
+#include "test/proto/echo.grpc.pb.h"
 
 // MAYBE_SKIP_TEST is a macro to determine if this particular test configuration
 // should be skipped based on a decision made at SetUp time. In particular, any

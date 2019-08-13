@@ -398,7 +398,7 @@
     ${proto_replace_ext(src, '.grpc.pb.cc')}
     ${proto_replace_ext(src, '.pb.h')}
     ${proto_replace_ext(src, '.grpc.pb.h')}
-    % if src in ["src/proto/grpc/testing/compiler_test.proto", "src/proto/grpc/testing/echo.proto"]:
+    % if src in ["test/proto/compiler_test.proto", "test/proto/echo.proto"]:
     ${proto_replace_ext(src, '_mock.grpc.pb.h')}
     % endif
   % endif

@@ -20,7 +20,7 @@
 #include <gtest/gtest.h>
 
 #include "src/proto/grpc/status/status.pb.h"
-#include "src/proto/grpc/testing/echo_messages.pb.h"
+#include "test/proto/echo_messages.pb.h"
 
 namespace grpc {
 namespace {

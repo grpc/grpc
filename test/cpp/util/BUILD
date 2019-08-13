@@ -170,7 +170,7 @@ grpc_cc_library(
     ],
     deps = [
         "//:grpc++",
-        "//src/proto/grpc/testing:metrics_proto",
+        "//test/proto:metrics_proto",
     ],
 )
 
@@ -180,9 +180,9 @@ grpc_cc_test(
         "grpc_tool_test.cc",
     ],
     data = [
-        "//src/proto/grpc/testing:echo.proto",
-        "//src/proto/grpc/testing:echo_messages.proto",
-        "//src/proto/grpc/testing:simple_messages.proto",
+        "//test/proto:echo.proto",
+        "//test/proto:echo_messages.proto",
+        "//test/proto:simple_messages.proto",
     ],
     external_deps = [
         "gtest",
@@ -192,9 +192,9 @@ grpc_cc_test(
         ":grpc_cli_libs",
         ":test_util",
         "//:grpc++_reflection",
-        "//src/proto/grpc/testing:echo_messages_proto",
-        "//src/proto/grpc/testing:echo_proto",
-        "//src/proto/grpc/testing:simple_messages_proto",
+        "//test/proto:echo_messages_proto",
+        "//test/proto:echo_proto",
+        "//test/proto:simple_messages_proto",
         "//test/core/end2end:ssl_test_data",
         "//test/core/util:grpc_test_util",
     ],
@@ -264,7 +264,7 @@ grpc_cc_test(
     deps = [
         ":grpc_cli_libs",
         ":test_util",
-        "//src/proto/grpc/testing:echo_proto",
+        "//test/proto:echo_proto",
         "//test/core/util:grpc_test_util",
     ],
 )
@@ -279,7 +279,7 @@ grpc_cc_test(
     ],
     deps = [
         "//:grpc++_error_details",
-        "//src/proto/grpc/testing:echo_messages_proto",
+        "//test/proto:echo_messages_proto",
         "//test/core/util:grpc_test_util",
     ],
 )

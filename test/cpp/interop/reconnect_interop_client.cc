@@ -25,11 +25,11 @@
 #include <grpcpp/channel.h>
 #include <grpcpp/client_context.h>
 #include <grpcpp/support/channel_arguments.h>
-#include "src/proto/grpc/testing/empty.pb.h"
-#include "src/proto/grpc/testing/messages.pb.h"
-#include "src/proto/grpc/testing/test.grpc.pb.h"
 #include "test/cpp/util/create_test_channel.h"
 #include "test/cpp/util/test_config.h"
+#include "test/proto/empty.pb.h"
+#include "test/proto/messages.pb.h"
+#include "test/proto/test.grpc.pb.h"
 
 DEFINE_int32(server_control_port, 0, "Server port for control rpcs.");
 DEFINE_int32(server_retry_port, 0, "Server port for testing reconnection.");

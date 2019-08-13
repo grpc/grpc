@@ -15,8 +15,8 @@
 
 syntax = "proto3";
 
-import "src/proto/grpc/testing/echo_messages.proto";
-import "src/proto/grpc/testing/simple_messages.proto";
+import "test/proto/echo_messages.proto";
+import "test/proto/simple_messages.proto";
 
 package grpc.testing;
 

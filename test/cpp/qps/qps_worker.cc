@@ -35,7 +35,6 @@
 #include <grpcpp/server_builder.h>
 
 #include "src/core/lib/gprpp/host_port.h"
-#include "src/proto/grpc/testing/worker_service.grpc.pb.h"
 #include "test/core/util/grpc_profiler.h"
 #include "test/core/util/histogram.h"
 #include "test/cpp/qps/client.h"
@@ -43,6 +42,7 @@
 #include "test/cpp/qps/server.h"
 #include "test/cpp/util/create_test_channel.h"
 #include "test/cpp/util/test_credentials_provider.h"
+#include "test/proto/worker_service.grpc.pb.h"
 
 namespace grpc {
 namespace testing {

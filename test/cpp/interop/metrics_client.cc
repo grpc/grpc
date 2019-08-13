@@ -23,10 +23,10 @@
 #include <grpc/support/log.h>
 #include <grpcpp/grpcpp.h>
 
-#include "src/proto/grpc/testing/metrics.grpc.pb.h"
-#include "src/proto/grpc/testing/metrics.pb.h"
 #include "test/cpp/util/metrics_server.h"
 #include "test/cpp/util/test_config.h"
+#include "test/proto/metrics.grpc.pb.h"
+#include "test/proto/metrics.pb.h"
 
 int kDeadlineSecs = 10;
 

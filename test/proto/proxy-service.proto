@@ -1,5 +1,4 @@
-
-// Copyright 2015 gRPC authors.
+// Copyright 2017 gRPC authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -13,15 +12,20 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// This is a partial copy of echo.proto with a different package name.
-
 syntax = "proto3";
 
-import "src/proto/grpc/testing/echo_messages.proto";
+import "test/proto/control.proto";
+import "test/proto/stats.proto";
 
-package grpc.testing.duplicate;
+package grpc.testing;
 
-service EchoTestService {
-  rpc Echo(grpc.testing.EchoRequest) returns (grpc.testing.EchoResponse);
-  rpc ResponseStream(EchoRequest) returns (stream EchoResponse);
+message ProxyStat {
+  double latency = 1;
 }
+
+service ProxyClientService {
+  rpc GetConfig(Void) returns (ClientConfig);
+  rpc ReportTime(stream ProxyStat) returns (Void);
+  rpc ReportHist(stream HistogramData) returns (Void);
+}
+

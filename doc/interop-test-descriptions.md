@@ -2,7 +2,7 @@ Interoperability Test Case Descriptions
 =======================================
 
 Client and server use
-[test.proto](../src/proto/grpc/testing/test.proto)
+[test.proto](../test/proto/test.proto)
 and the [gRPC over HTTP/2 v2 protocol](./PROTOCOL-HTTP2.md).
 
 Client

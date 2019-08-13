@@ -45,9 +45,9 @@ grpc_cc_binary(
     ],
     language = "C++",
     deps = [
-        "//src/proto/grpc/testing:empty_proto",
-        "//src/proto/grpc/testing:messages_proto",
-        "//src/proto/grpc/testing:test_proto",
+        "//test/proto:empty_proto",
+        "//test/proto:messages_proto",
+        "//test/proto:test_proto",
         "//test/cpp/util:test_config",
         "//test/cpp/util:test_util",
         "//:grpc++",
@@ -74,9 +74,9 @@ grpc_cc_library(
     language = "C++",
     deps = [
         ":server_helper_lib",
-        "//src/proto/grpc/testing:empty_proto",
-        "//src/proto/grpc/testing:messages_proto",
-        "//src/proto/grpc/testing:test_proto",
+        "//test/proto:empty_proto",
+        "//test/proto:messages_proto",
+        "//test/proto:test_proto",
         "//test/cpp/util:test_config",
     ],
 )
@@ -93,9 +93,9 @@ grpc_cc_library(
     ],
     language = "C++",
     deps = [
-        "//src/proto/grpc/testing:empty_proto",
-        "//src/proto/grpc/testing:messages_proto",
-        "//src/proto/grpc/testing:test_proto",
+        "//test/proto:empty_proto",
+        "//test/proto:messages_proto",
+        "//test/proto:test_proto",
         "//test/core/security:oauth2_utils",
         "//test/cpp/util:test_config",
         "//test/cpp/util:test_util",

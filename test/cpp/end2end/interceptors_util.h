@@ -20,8 +20,8 @@
 
 #include <grpcpp/channel.h>
 
-#include "src/proto/grpc/testing/echo.grpc.pb.h"
 #include "test/cpp/util/string_ref_helper.h"
+#include "test/proto/echo.grpc.pb.h"
 
 #include <gtest/gtest.h>
 

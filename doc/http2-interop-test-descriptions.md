@@ -2,7 +2,7 @@ Negative HTTP/2 Interop Test Case Descriptions
 =======================================
 
 Client and server use
-[test.proto](../src/proto/grpc/testing/test.proto).
+[test.proto](../test/proto/test.proto).
 
 Server
 ------

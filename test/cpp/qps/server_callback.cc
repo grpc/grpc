@@ -22,10 +22,10 @@
 #include <grpcpp/server_context.h>
 
 #include "src/core/lib/gprpp/host_port.h"
-#include "src/proto/grpc/testing/benchmark_service.grpc.pb.h"
 #include "test/cpp/qps/qps_server_builder.h"
 #include "test/cpp/qps/server.h"
 #include "test/cpp/qps/usage_timer.h"
+#include "test/proto/benchmark_service.grpc.pb.h"
 
 namespace grpc {
 namespace testing {

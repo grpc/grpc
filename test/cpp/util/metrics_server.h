@@ -23,12 +23,12 @@
 
 #include <grpcpp/server.h>
 
-#include "src/proto/grpc/testing/metrics.grpc.pb.h"
-#include "src/proto/grpc/testing/metrics.pb.h"
+#include "test/proto/metrics.grpc.pb.h"
+#include "test/proto/metrics.pb.h"
 
 /*
  * This implements a Metrics server defined in
- * src/proto/grpc/testing/metrics.proto. Any
+ * test/proto/metrics.proto. Any
  * test service can use this to export Metrics (TODO (sreek): Only Gauges for
  * now).
  *

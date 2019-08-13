@@ -34,10 +34,10 @@
 #include <grpcpp/server_builder.h>
 
 #include "src/core/lib/profiling/timers.h"
-#include "src/proto/grpc/testing/benchmark_service.grpc.pb.h"
 #include "test/cpp/qps/client.h"
 #include "test/cpp/qps/interarrival.h"
 #include "test/cpp/qps/usage_timer.h"
+#include "test/proto/benchmark_service.grpc.pb.h"
 
 namespace grpc {
 namespace testing {
