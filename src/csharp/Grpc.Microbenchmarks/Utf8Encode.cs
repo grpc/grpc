@@ -117,7 +117,7 @@ namespace Grpc.Microbenchmarks
         {
             for (int i = 0; i < Iterations; i++)
             {
-                call.StartSendStatusFromServer(this, status, metadata, false, null, WriteFlags.NoCompress);
+                call.StartSendStatusFromServer(this, status, metadata, false, SliceBufferSafeHandle.NullInstance, WriteFlags.NoCompress);
             }
         }
 

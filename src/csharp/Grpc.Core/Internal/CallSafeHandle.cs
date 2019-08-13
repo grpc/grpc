@@ -131,13 +131,6 @@ namespace Grpc.Core.Internal
         public void StartSendStatusFromServer(ISendStatusFromServerCompletionCallback callback, Status status, MetadataArraySafeHandle metadataArray, bool sendEmptyInitialMetadata,
             SliceBufferSafeHandle optionalPayload, WriteFlags writeFlags)
         {
-            // TODO: optionalPayload == null -> pass null SliceBufferSafeHandle
-            // do this properly
-            if (optionalPayload == null)
-            {
-                optionalPayload = SliceBufferSafeHandle.NullInstance;
-            }
-            
             using (completionQueue.NewScope())
             {
                 var ctx = completionQueue.CompletionRegistry.RegisterBatchCompletion(CompletionHandler_ISendStatusFromServerCompletionCallback, callback);

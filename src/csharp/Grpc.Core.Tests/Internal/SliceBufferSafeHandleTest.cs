@@ -150,9 +150,6 @@ namespace Grpc.Core.Internal.Tests
             }
         }
 
-        // TODO: other TODOs
-        // -- provide a null instance of SliceBufferSafeHandle
-
         private byte[] GetTestBuffer(int length)
         {
             var testBuffer = new byte[length];

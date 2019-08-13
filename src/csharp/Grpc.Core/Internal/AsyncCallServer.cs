@@ -131,7 +131,7 @@ namespace Grpc.Core.Internal
         {
             using (var serializationScope = DefaultSerializationContext.GetInitializedThreadLocalScope())
             {
-                var payload = optionalWrite.HasValue ? UnsafeSerialize(optionalWrite.Value.Response, serializationScope.Context) : null;
+                var payload = optionalWrite.HasValue ? UnsafeSerialize(optionalWrite.Value.Response, serializationScope.Context) : SliceBufferSafeHandle.NullInstance;
                 var writeFlags = optionalWrite.HasValue ? optionalWrite.Value.WriteFlags : default(WriteFlags);
 
                 lock (myLock)
