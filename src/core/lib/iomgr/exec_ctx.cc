@@ -52,6 +52,7 @@ static void exec_ctx_sched(grpc_closure* closure, grpc_error* error) {
 }
 
 static gpr_timespec g_start_time;
+static gpr_cycle_counter g_start_cycle;
 
 static grpc_millis timespec_to_millis_round_down(gpr_timespec ts) {
   ts = gpr_time_sub(ts, g_start_time);
@@ -101,6 +102,16 @@ grpc_millis grpc_timespec_to_millis_round_up(gpr_timespec ts) {
       gpr_convert_clock_type(ts, g_start_time.clock_type));
 }
 
+grpc_millis grpc_cycle_counter_to_millis_round_down(gpr_cycle_counter cycles) {
+  return timespec_to_millis_round_down(
+      gpr_time_add(g_start_time, gpr_cycle_counter_sub(cycles, g_start_cycle)));
+}
+
+grpc_millis grpc_cycle_counter_to_millis_round_up(gpr_cycle_counter cycles) {
+  return timespec_to_millis_round_up(
+      gpr_time_add(g_start_time, gpr_cycle_counter_sub(cycles, g_start_cycle)));
+}
+
 static const grpc_closure_scheduler_vtable exec_ctx_scheduler_vtable = {
     exec_ctx_run, exec_ctx_sched, "exec_ctx"};
 static grpc_closure_scheduler exec_ctx_scheduler = {&exec_ctx_scheduler_vtable};
@@ -117,7 +128,13 @@ void ExecCtx::TestOnlyGlobalInit(gpr_timespec new_val) {
 }
 
 void ExecCtx::GlobalInit(void) {
+  // gpr_now(GPR_CLOCK_MONOTONIC) incurs a syscall. We don't actually know the
+  // exact cycle the time was captured, so we use the average of cycles before
+  // and after the syscall as the starting cycle.
+  const gpr_cycle_counter cycle_before = gpr_get_cycle_counter();
   g_start_time = gpr_now(GPR_CLOCK_MONOTONIC);
+  const gpr_cycle_counter cycle_after = gpr_get_cycle_counter();
+  g_start_cycle = (cycle_before + cycle_after) / 2;
   gpr_tls_init(&exec_ctx_);
 }
 

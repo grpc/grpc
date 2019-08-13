@@ -3730,8 +3730,7 @@ void CallData::ApplyServiceConfigToCallLocked(grpc_call_element* elem) {
     // from the client API, reset the deadline timer.
     if (chand->deadline_checking_enabled() && method_params_->timeout() != 0) {
       const grpc_millis per_method_deadline =
-          grpc_timespec_to_millis_round_up(
-              gpr_cycle_counter_to_time(call_start_time_)) +
+          grpc_cycle_counter_to_millis_round_up(call_start_time_) +
           method_params_->timeout();
       if (per_method_deadline < deadline_) {
         deadline_ = per_method_deadline;
