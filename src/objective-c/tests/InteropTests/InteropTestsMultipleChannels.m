@@ -86,9 +86,7 @@ dispatch_once_t initCronet;
   self.continueAfterFailure = NO;
 
   _remoteService = [RMTTestService serviceWithHost:kRemoteSSLHost callOptions:nil];
-#ifdef GRPC_COMPILE_WITH_CRONET
   configureCronet();
-#endif
 
   // Default stack with remote host
   GRPCMutableCallOptions *options = [[GRPCMutableCallOptions alloc] init];
