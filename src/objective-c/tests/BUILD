@@ -21,7 +21,7 @@ package(default_visibility = ["//visibility:private"])
 load(
     "//src/objective-c:grpc_objc_internal_library.bzl",
     "grpc_objc_testing_library",
-    "testing_objc_grpc_library"
+    "local_objc_grpc_library"
 )
 load("@build_bazel_rules_apple//apple:resources.bzl", "apple_resource_bundle")
 load("@build_bazel_rules_apple//apple:ios.bzl", "ios_application", "ios_unit_test")
@@ -41,10 +41,11 @@ proto_library(
     deps = [":messages_proto"],
 )
 
-testing_objc_grpc_library(
+local_objc_grpc_library(
     name = "RemoteTest",
     srcs = ["RemoteTestClient/test.proto"],
     use_well_known_protos = True,
+    testing = True,
     deps = [":test_proto"],
 )
 

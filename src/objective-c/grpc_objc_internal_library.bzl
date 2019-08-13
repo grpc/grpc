@@ -73,7 +73,7 @@ def grpc_objc_testing_library(
         deps = deps + additional_deps,
     )
 
-def local_objc_grpc_library(name, deps, srcs = [], use_well_known_protos = False, **kwargs):
+def local_objc_grpc_library(name, deps, testing = True, srcs = [], use_well_known_protos = False, **kwargs):
     """!!For local targets within the gRPC repository only!! Will not work outside of the repo
     """
     objc_grpc_library_name = "_" + name + "_objc_grpc_library"
@@ -104,55 +104,11 @@ def local_objc_grpc_library(name, deps, srcs = [], use_well_known_protos = False
         )
         arc_srcs = [":" + objc_grpc_library_name + "_srcs"]
 
-    native.objc_library(
-        name = name,
-        hdrs = [":" + objc_grpc_library_name + "_hdrs"],
-        non_arc_srcs = [":" + objc_grpc_library_name + "_non_arc_srcs"],
-        srcs = arc_srcs,
-        defines = [
-            "GPB_USE_PROTOBUF_FRAMEWORK_IMPORTS=0",
-            "GPB_GRPC_FORWARD_DECLARE_MESSAGE_PROTO=0",
-        ],
-        includes = [
-            "_generated_protos",
-            "src/objective-c",
-        ],
-        deps = [
-            "//src/objective-c:proto_objc_rpc",
-            "@com_google_protobuf//:protobuf_objc",
-        ],
-    )
-
-def testing_objc_grpc_library(name, deps, srcs = [], use_well_known_protos = False, **kwargs):
-    """!!For testing within the gRPC repository only!! Will not work outside of the repo
-    """
-    objc_grpc_library_name = "_" + name + "_objc_grpc_library"
-
-    generate_objc(
-        name = objc_grpc_library_name,
-        srcs = srcs,
-        deps = deps,
-        use_well_known_protos = use_well_known_protos,
-        **kwargs
-    )
-
-    generate_objc_hdrs(
-        name = objc_grpc_library_name + "_hdrs",
-        src = ":" + objc_grpc_library_name,
-    )
-
-    generate_objc_non_arc_srcs(
-        name = objc_grpc_library_name + "_non_arc_srcs",
-        src = ":" + objc_grpc_library_name,
-    )
-
-    arc_srcs = None
-    if len(srcs) > 0:
-        generate_objc_srcs(
-            name = objc_grpc_library_name + "_srcs",
-            src = ":" + objc_grpc_library_name,
-        )
-        arc_srcs = [":" + objc_grpc_library_name + "_srcs"]
+    library_deps = ["@com_google_protobuf//:protobuf_objc"]
+    if testing:
+        library_deps += ["//src/objective-c:grpc_objc_client_internal_testing"]
+    else:
+        library_deps += ["//src/objective-c:proto_objc_rpc"]
 
     native.objc_library(
         name = name,
@@ -163,12 +119,6 @@ def testing_objc_grpc_library(name, deps, srcs = [], use_well_known_protos = Fal
             "GPB_USE_PROTOBUF_FRAMEWORK_IMPORTS=0",
             "GPB_GRPC_FORWARD_DECLARE_MESSAGE_PROTO=0",
         ],
-        includes = [
-            "_generated_protos",
-            "src/objective-c",
-        ],
-        deps = [
-            "//src/objective-c:grpc_objc_client_internal_testing",
-            "@com_google_protobuf//:protobuf_objc",
-        ],
+        includes = ["_generated_protos"],
+        deps = library_deps,
     )
