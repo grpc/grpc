@@ -47,8 +47,10 @@
 }
 
 - (void)shutDown {
-  _transport = nil;
-  _previousInterceptor = nil;
+  dispatch_async(_dispatchQueue, ^{
+    self->_transport = nil;
+    self->_previousInterceptor = nil;
+  });
 }
 
 - (dispatch_queue_t)dispatchQueue {

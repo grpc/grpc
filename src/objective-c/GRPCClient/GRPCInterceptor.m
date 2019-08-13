@@ -68,10 +68,12 @@
 }
 
 - (void)shutDown {
-  _nextInterceptor = nil;
-  _previousInterceptor = nil;
-  _thisInterceptor = nil;
-  _shutDown = YES;
+  dispatch_async(_dispatchQueue, ^{
+    self->_nextInterceptor = nil;
+    self->_previousInterceptor = nil;
+    self->_thisInterceptor = nil;
+    self->_shutDown = YES;
+  });
 }
 
 - (void)createNextInterceptor {
