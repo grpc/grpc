@@ -59,6 +59,13 @@ def proto_path_to_generated_filename(proto_path, fmt_str):
 def _get_include_directory(include):
     directory = include.path
     prefix_len = 0
+
+    virtual_imports = "/_virtual_imports/"
+    if not include.is_source and virtual_imports in include.path:
+        root, relative = include.path.split(virtual_imports, 2)
+        result = root + virtual_imports + relative.split("/", 1)[0]
+        return result
+
     if not include.is_source and directory.startswith(include.root.path):
         prefix_len = len(include.root.path) + 1
 

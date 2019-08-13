@@ -174,7 +174,7 @@ void XdsClientStats::PruneLocalityStats() {
   }
 }
 
-void XdsClientStats::AddCallDropped(UniquePtr<char> category) {
+void XdsClientStats::AddCallDropped(const UniquePtr<char>& category) {
   total_dropped_requests_.FetchAdd(1, MemoryOrder::RELAXED);
   MutexLock lock(&dropped_requests_mu_);
   auto iter = dropped_requests_.find(category);
