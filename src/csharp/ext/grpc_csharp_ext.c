@@ -1238,8 +1238,9 @@ grpcsharp_slice_buffer_adjust_tail_space(grpc_slice_buffer* buffer, size_t avail
       }
 
       grpc_slice new_slice = grpc_slice_malloc(requested_tail_space);
-      // TODO: this always adds as a new slice entry into the sb, but it doesn't have the problem of
-      // sometimes splitting the continguous new_slice across two different slices (like grpc_slice_buffer_add would)
+      // grpc_slice_buffer_add_indexed always adds as a new slice entry into the sb (which is suboptimal in some cases)
+      // but it doesn't have the problem of sometimes splitting the continguous new_slice across two different slices
+      // (like grpc_slice_buffer_add would)
       grpc_slice_buffer_add_indexed(buffer, new_slice);
     }
     
