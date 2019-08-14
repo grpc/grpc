@@ -44,6 +44,8 @@ config_setting(
     values = {"cpu": "ios_arm64"},
 )
 
+# The following architectures are found in 
+# https://github.com/bazelbuild/bazel/blob/master/src/main/java/com/google/devtools/build/lib/rules/apple/ApplePlatform.java
 config_setting(
     name = "tvos_x86_64",
     values = {"cpu": "tvos_x86_64"},
