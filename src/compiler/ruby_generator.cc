@@ -40,13 +40,11 @@ namespace {
 // Prints out the method using the ruby gRPC DSL.
 void PrintMethod(const MethodDescriptor* method, const grpc::string& package,
                  Printer* out) {
-  grpc::string input_type =
-      RubyTypeOf(method->input_type()->full_name(), package);
+  grpc::string input_type = RubyTypeOf(method->input_type(), package);
   if (method->client_streaming()) {
     input_type = "stream(" + input_type + ")";
   }
-  grpc::string output_type =
-      RubyTypeOf(method->output_type()->full_name(), package);
+  grpc::string output_type = RubyTypeOf(method->output_type(), package);
   if (method->server_streaming()) {
     output_type = "stream(" + output_type + ")";
   }
@@ -160,13 +158,7 @@ grpc::string GetServices(const FileDescriptor* file) {
       return output;
     }
 
-    std::string package_name;
-
-    if (file->options().has_ruby_package()) {
-      package_name = file->options().ruby_package();
-    } else {
-      package_name = file->package();
-    }
+    std::string package_name = RubyPackage(file);
 
     // Write out a file header.
     std::map<grpc::string, grpc::string> header_comment_vars = ListToDict({
