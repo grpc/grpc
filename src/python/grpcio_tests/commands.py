@@ -34,7 +34,7 @@ PYTHON_STEM = os.path.dirname(os.path.abspath(__file__))
 GRPC_STEM = os.path.abspath(PYTHON_STEM + '../../../../')
 GRPC_PROTO_STEM = [os.path.join(GRPC_STEM, 'src', 'proto'), os.path.join(GRPC_STEM, 'test', 'proto')]
 PROTO_STEM = [os.path.join(PYTHON_STEM, 'src', 'proto'), os.path.join(PYTHON_STEM, 'test', 'proto')]
-PYTHON_PROTO_TOP_LEVEL = os.path.join(PYTHON_STEM, 'src')
+PYTHON_PROTO_TOP_LEVEL = [os.path.join(PYTHON_STEM, 'src'), os.path.join(PYTHON_STEM, 'test')]
 
 
 class CommandError(object):
@@ -63,9 +63,10 @@ class GatherProto(setuptools.Command):
             pass
         for src, dest in zip(GRPC_PROTO_STEM, PROTO_STEM):
             shutil.copytree(src, dest)
-        for root, _, _ in os.walk(PYTHON_PROTO_TOP_LEVEL):
-            path = os.path.join(root, '__init__.py')
-            open(path, 'a').close()
+        for folder in PYTHON_PROTO_TOP_LEVEL:
+            for root, _, _ in os.walk(folder):
+                path = os.path.join(root, '__init__.py')
+                open(path, 'a').close()
 
 
 class BuildPy(build_py.build_py):
