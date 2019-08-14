@@ -5973,6 +5973,17 @@ targets:
   - mac
   - linux
   - posix
+- name: timer_test
+  gtest: true
+  build: test
+  language: c++
+  src:
+  - test/cpp/common/timer_test.cc
+  deps:
+  - grpc_test_util
+  - grpc++
+  - grpc
+  - gpr
 - name: transport_pid_controller_test
   build: test
   language: c++
