@@ -163,7 +163,6 @@ grpc_chttp2_transport::~grpc_chttp2_transport() {
   if (channelz_socket != nullptr) {
     channelz_socket.reset();
   }
-
   grpc_endpoint_destroy(ep);
 
   grpc_slice_buffer_destroy_internal(&qbuf);
