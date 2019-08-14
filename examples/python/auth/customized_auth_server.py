@@ -20,7 +20,6 @@ from __future__ import print_function
 import argparse
 import contextlib
 import logging
-import time
 from concurrent import futures
 
 import grpc
@@ -30,8 +29,6 @@ from examples.python.auth import _credentials
 
 _LOGGER = logging.getLogger(__name__)
 _LOGGER.setLevel(logging.INFO)
-
-_ONE_DAY_IN_SECONDS = 60 * 60 * 24
 
 _LISTEN_ADDRESS_TEMPLATE = 'localhost:%d'
 _SIGNATURE_HEADER_KEY = 'x-signature'
@@ -85,7 +82,7 @@ def run_server(port):
 
     server.start()
     try:
-        yield port
+        yield server, port
     finally:
         server.stop(0)
 
@@ -96,13 +93,9 @@ def main():
         '--port', nargs='?', type=int, default=50051, help='the listening port')
     args = parser.parse_args()
 
-    with run_server(args.port) as port:
+    with run_server(args.port) as (server, port):
         logging.info('Server is listening at port :%d', port)
-        try:
-            while True:
-                time.sleep(_ONE_DAY_IN_SECONDS)
-        except KeyboardInterrupt:
-            pass
+        server.wait_for_termination()
 
 
 if __name__ == '__main__':

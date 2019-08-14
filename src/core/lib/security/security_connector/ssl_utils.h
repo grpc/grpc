@@ -149,9 +149,15 @@ class PemKeyCertPair {
     return *this;
   }
 
-  // Not copyable.
-  PemKeyCertPair(const PemKeyCertPair&) = delete;
-  PemKeyCertPair& operator=(const PemKeyCertPair&) = delete;
+  // Copyable.
+  PemKeyCertPair(const PemKeyCertPair& other)
+      : private_key_(gpr_strdup(other.private_key())),
+        cert_chain_(gpr_strdup(other.cert_chain())) {}
+  PemKeyCertPair& operator=(const PemKeyCertPair& other) {
+    private_key_ = grpc_core::UniquePtr<char>(gpr_strdup(other.private_key()));
+    cert_chain_ = grpc_core::UniquePtr<char>(gpr_strdup(other.cert_chain()));
+    return *this;
+  }
 
   char* private_key() const { return private_key_.get(); }
   char* cert_chain() const { return cert_chain_.get(); }

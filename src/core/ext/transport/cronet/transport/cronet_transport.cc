@@ -40,6 +40,7 @@
 #include "src/core/lib/surface/validate_metadata.h"
 #include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/lib/transport/static_metadata.h"
+#include "src/core/lib/transport/timeout_encoding.h"
 #include "src/core/lib/transport/transport_impl.h"
 
 #include "third_party/objective_c/Cronet/bidirectional_stream_c.h"
@@ -718,14 +719,18 @@ static void create_grpc_frame(grpc_slice_buffer* write_slice_buffer,
  Convert metadata in a format that Cronet can consume
 */
 static void convert_metadata_to_cronet_headers(
-    grpc_linked_mdelem* head, const char* host, char** pp_url,
+    grpc_metadata_batch* metadata, const char* host, char** pp_url,
     bidirectional_stream_header** pp_headers, size_t* p_num_headers,
     const char** method) {
-  grpc_linked_mdelem* curr = head;
+  grpc_linked_mdelem* curr = metadata->list.head;
   /* Walk the linked list and get number of header fields */
   size_t num_headers_available = 0;
   while (curr != nullptr) {
     curr = curr->next;
+    num_headers_available++;
+  }
+  grpc_millis deadline = metadata->deadline;
+  if (deadline != GRPC_MILLIS_INF_FUTURE) {
     num_headers_available++;
   }
   /* Allocate enough memory. It is freed in the on_stream_ready callback
@@ -740,7 +745,7 @@ static void convert_metadata_to_cronet_headers(
     are not used for cronet.
     TODO (makdharma): Eliminate need to traverse the LL second time for perf.
    */
-  curr = head;
+  curr = metadata->list.head;
   size_t num_headers = 0;
   while (num_headers < num_headers_available) {
     grpc_mdelem mdelem = curr->md;
@@ -788,6 +793,18 @@ static void convert_metadata_to_cronet_headers(
       break;
     }
   }
+  if (deadline != GRPC_MILLIS_INF_FUTURE) {
+    char* key = grpc_slice_to_c_string(GRPC_MDSTR_GRPC_TIMEOUT);
+    char* value =
+        static_cast<char*>(gpr_malloc(GRPC_HTTP2_TIMEOUT_ENCODE_MIN_BUFSIZE));
+    grpc_http2_encode_timeout(deadline - grpc_core::ExecCtx::Get()->Now(),
+                              value);
+    headers[num_headers].key = key;
+    headers[num_headers].value = value;
+
+    num_headers++;
+  }
+
   *p_num_headers = num_headers;
 }
 
@@ -1028,10 +1045,10 @@ static enum e_op_result execute_stream_op(struct op_and_state* oas) {
     char* url = nullptr;
     const char* method = "POST";
     s->header_array.headers = nullptr;
-    convert_metadata_to_cronet_headers(stream_op->payload->send_initial_metadata
-                                           .send_initial_metadata->list.head,
-                                       t->host, &url, &s->header_array.headers,
-                                       &s->header_array.count, &method);
+    convert_metadata_to_cronet_headers(
+        stream_op->payload->send_initial_metadata.send_initial_metadata,
+        t->host, &url, &s->header_array.headers, &s->header_array.count,
+        &method);
     s->header_array.capacity = s->header_array.count;
     CRONET_LOG(GPR_DEBUG, "bidirectional_stream_start(%p, %s)", s->cbs, url);
     bidirectional_stream_start(s->cbs, url, 0, method, &s->header_array, false);

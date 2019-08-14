@@ -26,11 +26,13 @@
       "/DPB_FIELD_32BIT "+
       "/I"+configure_module_dirname+" "+
       "/I"+configure_module_dirname+"\\include "+
+      "/I"+configure_module_dirname+"\\src\\core\\ext\\upb-generated "+
       "/I"+configure_module_dirname+"\\src\\php\\ext\\grpc "+
-      "/I"+configure_module_dirname+"\\third_party\\boringssl\\include "+
-      "/I"+configure_module_dirname+"\\third_party\\zlib "+
       "/I"+configure_module_dirname+"\\third_party\\address_sorting\\include "+
-      "/I"+configure_module_dirname+"\\third_party\\nanopb");
+      "/I"+configure_module_dirname+"\\third_party\\boringssl\\include "+
+      "/I"+configure_module_dirname+"\\third_party\\nanopb "+
+      "/I"+configure_module_dirname+"\\third_party\\upb "+
+      "/I"+configure_module_dirname+"\\third_party\\zlib ");
   <%
     dirs = {}
     for lib in libs:

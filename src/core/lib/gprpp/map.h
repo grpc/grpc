@@ -89,7 +89,7 @@ class Map {
   // Removes the current entry and points to the next one
   iterator erase(iterator iter);
 
-  size_t size() { return size_; }
+  size_t size() const { return size_; }
 
   template <class... Args>
   Pair<iterator, bool> emplace(Args&&... args);

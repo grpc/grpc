@@ -330,8 +330,8 @@ class CallData {
       grpc_linked_mdelem* linked_mdelem = static_cast<grpc_linked_mdelem*>(
           calld_->arena_->Alloc(sizeof(grpc_linked_mdelem)));
       linked_mdelem->md = grpc_mdelem_from_slices(
-          grpc_slice_from_static_buffer_internal(key.data(), key.size()),
-          grpc_slice_from_static_buffer_internal(value.data(), value.size()));
+          grpc_core::ExternallyManagedSlice(key.data(), key.size()),
+          grpc_core::ExternallyManagedSlice(value.data(), value.size()));
       GPR_ASSERT(grpc_metadata_batch_link_tail(batch_, linked_mdelem) ==
                  GRPC_ERROR_NONE);
     }
@@ -723,7 +723,7 @@ class CallData {
   const LoadBalancingPolicy::BackendMetricData* backend_metric_data_ = nullptr;
   RefCountedPtr<ConnectedSubchannel> connected_subchannel_;
   void (*lb_recv_trailing_metadata_ready_)(
-      void* user_data,
+      void* user_data, grpc_error* error,
       LoadBalancingPolicy::MetadataInterface* recv_trailing_metadata,
       LoadBalancingPolicy::CallState* call_state) = nullptr;
   void* lb_recv_trailing_metadata_ready_user_data_ = nullptr;
@@ -1525,7 +1525,7 @@ void ChannelData::CreateResolvingLoadBalancingPolicyLocked() {
       UniquePtr<LoadBalancingPolicy::ChannelControlHelper>(
           New<ClientChannelControlHelper>(this));
   lb_args.args = channel_args_;
-  UniquePtr<char> target_uri(strdup(target_uri_.get()));
+  UniquePtr<char> target_uri(gpr_strdup(target_uri_.get()));
   resolving_lb_policy_.reset(New<ResolvingLoadBalancingPolicy>(
       std::move(lb_args), &grpc_client_channel_routing_trace,
       std::move(target_uri), ProcessResolverResultLocked, this));
@@ -2179,8 +2179,8 @@ void CallData::RecvTrailingMetadataReadyForLoadBalancingPolicy(
   // Invoke callback to LB policy.
   Metadata trailing_metadata(calld, calld->recv_trailing_metadata_);
   calld->lb_recv_trailing_metadata_ready_(
-      calld->lb_recv_trailing_metadata_ready_user_data_, &trailing_metadata,
-      &calld->lb_call_state_);
+      calld->lb_recv_trailing_metadata_ready_user_data_, error,
+      &trailing_metadata, &calld->lb_call_state_);
   // Chain to original callback.
   GRPC_CLOSURE_RUN(calld->original_recv_trailing_metadata_ready_,
                    GRPC_ERROR_REF(error));

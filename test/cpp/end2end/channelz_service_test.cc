@@ -571,6 +571,8 @@ TEST_F(ChannelzServerTest, ManySubchannelsAndSockets) {
         get_subchannel_resp.subchannel().socket_ref(0).socket_id());
     s = channelz_stub_->GetSocket(&get_socket_ctx, get_socket_req,
                                   &get_socket_resp);
+    EXPECT_TRUE(
+        get_subchannel_resp.subchannel().socket_ref(0).name().find("http"));
     EXPECT_TRUE(s.ok()) << s.error_message();
     // calls started == streams started AND stream succeeded. Since none of
     // these RPCs were canceled, all of the streams will succeeded even though
@@ -626,6 +628,8 @@ TEST_F(ChannelzServerTest, StreamingRPC) {
   ClientContext get_socket_context;
   get_socket_request.set_socket_id(
       get_subchannel_response.subchannel().socket_ref(0).socket_id());
+  EXPECT_TRUE(
+      get_subchannel_response.subchannel().socket_ref(0).name().find("http"));
   s = channelz_stub_->GetSocket(&get_socket_context, get_socket_request,
                                 &get_socket_response);
   EXPECT_TRUE(s.ok()) << "s.error_message() = " << s.error_message();
@@ -659,6 +663,7 @@ TEST_F(ChannelzServerTest, GetServerSocketsTest) {
                                        &get_server_sockets_response);
   EXPECT_TRUE(s.ok()) << "s.error_message() = " << s.error_message();
   EXPECT_EQ(get_server_sockets_response.socket_ref_size(), 1);
+  EXPECT_TRUE(get_server_sockets_response.socket_ref(0).name().find("http"));
 }
 
 TEST_F(ChannelzServerTest, GetServerSocketsPaginationTest) {
@@ -738,6 +743,8 @@ TEST_F(ChannelzServerTest, GetServerListenSocketsTest) {
   GetSocketResponse get_socket_response;
   get_socket_request.set_socket_id(
       get_server_response.server(0).listen_socket(0).socket_id());
+  EXPECT_TRUE(
+      get_server_response.server(0).listen_socket(0).name().find("http"));
   ClientContext get_socket_context;
   s = channelz_stub_->GetSocket(&get_socket_context, get_socket_request,
                                 &get_socket_response);

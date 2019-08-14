@@ -1175,6 +1175,12 @@ static void post_batch_completion(batch_control* bctl) {
         &call->metadata_batch[0 /* is_receiving */][0 /* is_trailing */]);
   }
   if (bctl->op.send_message) {
+    if (bctl->op.payload->send_message.stream_write_closed &&
+        error == GRPC_ERROR_NONE) {
+      error = grpc_error_add_child(
+          error, GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+                     "Attempt to send message after stream was closed."));
+    }
     call->sending_message = false;
   }
   if (bctl->op.send_trailing_metadata) {

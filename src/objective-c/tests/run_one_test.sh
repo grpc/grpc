@@ -51,6 +51,8 @@ elif [ $PLATFORM == ios ]; then
 DESTINATION='name=iPhone 8'
 elif [ $PLATFORM == macos ]; then
 DESTINATION='platform=macOS'
+elif [ $PLATFORM == tvos ]; then
+DESTINATION='platform=tvOS Simulator,name=Apple TV'
 fi
 
 xcodebuild \

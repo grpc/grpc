@@ -35,9 +35,7 @@ egg_info.manifest_maker.template = 'PYTHON-MANIFEST.in'
 PY3 = sys.version_info.major == 3
 PYTHON_STEM = os.path.join('src', 'python', 'grpcio')
 CORE_INCLUDE = ('include', '.',)
-SSL_INCLUDE = (os.path.join('third_party', 'boringssl', 'include'),)
-ZLIB_INCLUDE = (os.path.join('third_party', 'zlib'),)
-NANOPB_INCLUDE = (os.path.join('third_party', 'nanopb'),)
+ADDRESS_SORTING_INCLUDE = (os.path.join('third_party', 'address_sorting', 'include'),)
 CARES_INCLUDE = (
     os.path.join('third_party', 'cares'),
     os.path.join('third_party', 'cares', 'cares'),)
@@ -49,7 +47,11 @@ if 'linux' in sys.platform:
   CARES_INCLUDE += (os.path.join('third_party', 'cares', 'config_linux'),)
 if 'openbsd' in sys.platform:
   CARES_INCLUDE += (os.path.join('third_party', 'cares', 'config_openbsd'),)
-ADDRESS_SORTING_INCLUDE = (os.path.join('third_party', 'address_sorting', 'include'),)
+NANOPB_INCLUDE = (os.path.join('third_party', 'nanopb'),)
+SSL_INCLUDE = (os.path.join('third_party', 'boringssl', 'include'),)
+UPB_INCLUDE = (os.path.join('third_party', 'upb'),)
+UPB_GRPC_GENERATED_INCLUDE = (os.path.join('src', 'core', 'ext', 'upb-generated'),)
+ZLIB_INCLUDE = (os.path.join('third_party', 'zlib'),)
 README = os.path.join(PYTHON_STEM, 'README.rst')
 
 # Ensure we're in the proper directory whether or not we're being used by pip.
@@ -203,8 +205,15 @@ if BUILD_WITH_SYSTEM_CARES:
   CARES_INCLUDE = (os.path.join('/usr', 'include'),)
 
 EXTENSION_INCLUDE_DIRECTORIES = (
-    (PYTHON_STEM,) + CORE_INCLUDE + SSL_INCLUDE + ZLIB_INCLUDE +
-    NANOPB_INCLUDE + CARES_INCLUDE + ADDRESS_SORTING_INCLUDE)
+    (PYTHON_STEM,) +
+    CORE_INCLUDE +
+    ADDRESS_SORTING_INCLUDE +
+    CARES_INCLUDE +
+    NANOPB_INCLUDE +
+    SSL_INCLUDE +
+    UPB_INCLUDE +
+    UPB_GRPC_GENERATED_INCLUDE +
+    ZLIB_INCLUDE)
 
 EXTENSION_LIBRARIES = ()
 if "linux" in sys.platform:

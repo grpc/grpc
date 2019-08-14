@@ -46,7 +46,9 @@ void ContextList::Execute(void* arg, grpc_core::Timestamps* ts,
   ContextList* to_be_freed;
   while (head != nullptr) {
     if (write_timestamps_callback_g) {
-      ts->byte_offset = static_cast<uint32_t>(head->byte_offset_);
+      if (ts) {
+        ts->byte_offset = static_cast<uint32_t>(head->byte_offset_);
+      }
       write_timestamps_callback_g(head->trace_context_, ts, error);
     }
     to_be_freed = head;
