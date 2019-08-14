@@ -575,7 +575,7 @@ class XdsLb : public LoadBalancingPolicy {
   OrphanablePtr<LbChannelState> pending_lb_chand_;
 
   // Timeout in milliseconds for the LB call. 0 means no deadline.
-  int lb_call_timeout_ms_ = 0;
+  const grpc_millis lb_call_timeout_ms_;
 
   // Whether the checks for fallback at startup are ALL pending. There are
   // several cases where this can be reset:
@@ -587,7 +587,7 @@ class XdsLb : public LoadBalancingPolicy {
   bool fallback_at_startup_checks_pending_ = false;
   // Timeout in milliseconds for before using fallback backend addresses.
   // 0 means not using fallback.
-  int lb_fallback_timeout_ms_ = 0;
+  const grpc_millis lb_fallback_timeout_ms_;
   // The backend addresses from the resolver.
   ServerAddressList fallback_backend_addresses_;
   // Fallback timer.
@@ -1705,7 +1705,13 @@ grpc_channel_args* BuildBalancerChannelArgs(const grpc_channel_args* args) {
 //
 
 XdsLb::XdsLb(Args args)
-    : LoadBalancingPolicy(std::move(args)), locality_map_(this) {
+    : LoadBalancingPolicy(std::move(args)),
+      lb_call_timeout_ms_(grpc_channel_args_find_integer(
+          args.args, GRPC_ARG_GRPCLB_CALL_TIMEOUT_MS, {0, 0, INT_MAX})),
+      lb_fallback_timeout_ms_(grpc_channel_args_find_integer(
+          args.args, GRPC_ARG_XDS_FALLBACK_TIMEOUT_MS,
+          {GRPC_XDS_DEFAULT_FALLBACK_TIMEOUT_MS, 0, INT_MAX})),
+      locality_map_(this) {
   // Record server name.
   const grpc_arg* arg = grpc_channel_args_find(args.args, GRPC_ARG_SERVER_URI);
   const char* server_uri = grpc_channel_arg_get_string(arg);
@@ -1719,13 +1725,6 @@ XdsLb::XdsLb(Args args)
             server_name_);
   }
   grpc_uri_destroy(uri);
-  // Record LB call timeout.
-  arg = grpc_channel_args_find(args.args, GRPC_ARG_GRPCLB_CALL_TIMEOUT_MS);
-  lb_call_timeout_ms_ = grpc_channel_arg_get_integer(arg, {0, 0, INT_MAX});
-  // Record fallback timeout.
-  arg = grpc_channel_args_find(args.args, GRPC_ARG_XDS_FALLBACK_TIMEOUT_MS);
-  lb_fallback_timeout_ms_ = grpc_channel_arg_get_integer(
-      arg, {GRPC_XDS_DEFAULT_FALLBACK_TIMEOUT_MS, 0, INT_MAX});
 }
 
 XdsLb::~XdsLb() {

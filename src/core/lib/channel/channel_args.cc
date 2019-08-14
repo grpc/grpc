@@ -257,6 +257,13 @@ int grpc_channel_arg_get_integer(const grpc_arg* arg,
   return arg->value.integer;
 }
 
+int grpc_channel_args_find_integer(const grpc_channel_args* args,
+                                   const char* name,
+                                   const grpc_integer_options options) {
+  const grpc_arg* arg = grpc_channel_args_find(args, name);
+  return grpc_channel_arg_get_integer(arg, options);
+}
+
 char* grpc_channel_arg_get_string(const grpc_arg* arg) {
   if (arg == nullptr) return nullptr;
   if (arg->type != GRPC_ARG_STRING) {
@@ -264,6 +271,12 @@ char* grpc_channel_arg_get_string(const grpc_arg* arg) {
     return nullptr;
   }
   return arg->value.string;
+}
+
+char* grpc_channel_args_find_string(const grpc_channel_args* args,
+                                    const char* name) {
+  const grpc_arg* arg = grpc_channel_args_find(args, name);
+  return grpc_channel_arg_get_string(arg);
 }
 
 bool grpc_channel_arg_get_bool(const grpc_arg* arg, bool default_value) {
@@ -282,6 +295,12 @@ bool grpc_channel_arg_get_bool(const grpc_arg* arg, bool default_value) {
               arg->key, arg->value.integer);
       return true;
   }
+}
+
+bool grpc_channel_args_find_bool(const grpc_channel_args* args,
+                                 const char* name, bool default_value) {
+  const grpc_arg* arg = grpc_channel_args_find(args, name);
+  return grpc_channel_arg_get_bool(arg, default_value);
 }
 
 bool grpc_channel_args_want_minimal_stack(const grpc_channel_args* args) {
