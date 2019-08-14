@@ -24,7 +24,7 @@
 cmake_minimum_required(VERSION 3.5.1)
 
 set(PACKAGE_NAME      "grpc")
-set(PACKAGE_VERSION   "1.23.0-pre1")
+set(PACKAGE_VERSION   "1.23.0")
 set(PACKAGE_STRING    "${PACKAGE_NAME} ${PACKAGE_VERSION}")
 set(PACKAGE_TARNAME   "${PACKAGE_NAME}-${PACKAGE_VERSION}")
 set(PACKAGE_BUGREPORT "https://github.com/grpc/grpc/issues/")
