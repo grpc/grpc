@@ -120,7 +120,7 @@ def _symlink_genrule_for_dir(repository_ctx,
         # Create a list with the src_dir stripped to use for outputs.
         dest_files = files.replace(src_dir, '').splitlines()
         src_files = files.splitlines()
-    command = []
+    command = ["ls {}".format(src_dir), "ls {}/..".format(src_dir)]
     outs = []
     for i in range(len(dest_files)):
         if dest_files[i] != "":
