@@ -21,7 +21,8 @@ package(default_visibility = ["//visibility:private"])
 load(
     "//src/objective-c:grpc_objc_internal_library.bzl",
     "grpc_objc_testing_library",
-    "local_objc_grpc_library"
+    "local_objc_grpc_library",
+    "proto_library_objc_wrapper",
 )
 load("@build_bazel_rules_apple//apple:resources.bzl", "apple_resource_bundle")
 load("@build_bazel_rules_apple//apple:ios.bzl", "ios_application", "ios_unit_test")
@@ -30,15 +31,16 @@ load("@build_bazel_rules_apple//apple:tvos.bzl", "tvos_application", "tvos_unit_
 
 exports_files(["LICENSE"])
 
-proto_library(
+proto_library_objc_wrapper(
     name = "messages_proto",
     srcs = ["RemoteTestClient/messages.proto"],
 )
 
-proto_library(
+proto_library_objc_wrapper(
     name = "test_proto",
     srcs = ["RemoteTestClient/test.proto"],
     deps = [":messages_proto"],
+    use_well_known_protos = True,
 )
 
 local_objc_grpc_library(

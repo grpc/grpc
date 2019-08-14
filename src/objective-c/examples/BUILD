@@ -15,20 +15,25 @@
 # limitations under the License.
 
 
-load("//src/objective-c:grpc_objc_internal_library.bzl", "local_objc_grpc_library")
+load(
+    "//src/objective-c:grpc_objc_internal_library.bzl", 
+    "local_objc_grpc_library",
+    "proto_library_objc_wrapper",
+)
 load("@build_bazel_rules_apple//apple:ios.bzl", "ios_application")
 load("@build_bazel_rules_apple//apple:tvos.bzl", "tvos_application")
 load("@build_bazel_rules_apple//apple:watchos.bzl", "watchos_application", "watchos_extension")
 
-proto_library(
+proto_library_objc_wrapper(
     name = "messages_proto",
     srcs = ["RemoteTestClient/messages.proto"],
 )
 
-proto_library(
+proto_library_objc_wrapper(
     name = "test_proto",
     srcs = ["RemoteTestClient/test.proto"],
     deps = [":messages_proto"],
+    use_well_known_protos = True,
 )
 
 # use objc_grpc_library in bazel:objc_grpc_library.bzl when developing outside the repo

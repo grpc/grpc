@@ -30,7 +30,20 @@ load(
     "generate_objc_srcs",
     "generate_objc_non_arc_srcs"
 )
-load("//bazel:protobuf.bzl", "well_known_proto_libs")
+
+def proto_library_objc_wrapper(
+    name,
+    srcs,
+    deps = [],
+    use_well_known_protos = False):
+    """proto_library for adding dependencies to google/protobuf protos
+    use_well_known_protos - ignored in open source version
+    """
+    native.proto_library(
+        name = name,
+        srcs = srcs,
+        deps = deps,
+    )
 
 def grpc_objc_testing_library(
         name,
@@ -53,7 +66,7 @@ def grpc_objc_testing_library(
         includes: added to search path, always [the path to objc directory]
         deps: dependencies
     """
-    
+
     additional_deps = [
         ":RemoteTest",
         "//src/objective-c:grpc_objc_client_internal_testing",
@@ -61,7 +74,7 @@ def grpc_objc_testing_library(
 
     if not name == "TestConfigs":
         additional_deps += [":TestConfigs"]
-    
+
     native.objc_library(
         name = name,
         hdrs = hdrs,
