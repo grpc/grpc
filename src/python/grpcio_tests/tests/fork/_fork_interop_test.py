@@ -55,7 +55,7 @@ class ForkInteropTest(unittest.TestCase):
             import time
 
             import grpc
-            from src.proto.grpc.testing import test_pb2_grpc
+            from test.proto import test_pb2_grpc
             from tests.interop import service as interop_service
             from tests.unit import test_common
 

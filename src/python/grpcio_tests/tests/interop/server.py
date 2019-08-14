@@ -18,7 +18,7 @@ from concurrent import futures
 import logging
 
 import grpc
-from src.proto.grpc.testing import test_pb2_grpc
+from test.proto import test_pb2_grpc
 
 from tests.interop import service
 from tests.interop import resources

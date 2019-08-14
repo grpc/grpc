@@ -25,9 +25,9 @@ import grpc
 
 from six.moves import queue
 
-from src.proto.grpc.testing import empty_pb2
-from src.proto.grpc.testing import messages_pb2
-from src.proto.grpc.testing import test_pb2_grpc
+from test.proto import empty_pb2
+from test.proto import messages_pb2
+from test.proto import test_pb2_grpc
 
 _LOGGER = logging.getLogger(__name__)
 _RPC_TIMEOUT_S = 10

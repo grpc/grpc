@@ -21,8 +21,8 @@ from concurrent import futures
 from six.moves import queue
 
 import grpc
-from src.proto.grpc.testing import messages_pb2
-from src.proto.grpc.testing import benchmark_service_pb2_grpc
+from test.proto import messages_pb2
+from test.proto import benchmark_service_pb2_grpc
 from tests.unit import resources
 from tests.unit import test_common
 

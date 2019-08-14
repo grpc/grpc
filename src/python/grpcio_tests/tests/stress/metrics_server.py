@@ -15,8 +15,8 @@
 
 import time
 
-from src.proto.grpc.testing import metrics_pb2
-from src.proto.grpc.testing import metrics_pb2_grpc
+from test.proto import metrics_pb2
+from test.proto import metrics_pb2_grpc
 
 GAUGE_NAME = 'python_overall_qps'
 

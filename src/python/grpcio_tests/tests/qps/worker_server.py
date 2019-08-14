@@ -19,10 +19,10 @@ import time
 
 from concurrent import futures
 import grpc
-from src.proto.grpc.testing import control_pb2
-from src.proto.grpc.testing import benchmark_service_pb2_grpc
-from src.proto.grpc.testing import worker_service_pb2_grpc
-from src.proto.grpc.testing import stats_pb2
+from test.proto import control_pb2
+from test.proto import benchmark_service_pb2_grpc
+from test.proto import worker_service_pb2_grpc
+from test.proto import stats_pb2
 
 from tests.qps import benchmark_client
 from tests.qps import benchmark_server

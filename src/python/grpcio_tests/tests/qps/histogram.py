@@ -15,7 +15,7 @@
 import math
 import threading
 
-from src.proto.grpc.testing import stats_pb2
+from test.proto import stats_pb2
 
 
 class Histogram(object):
