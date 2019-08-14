@@ -32,8 +32,8 @@ from setuptools.command import test
 
 PYTHON_STEM = os.path.dirname(os.path.abspath(__file__))
 GRPC_STEM = os.path.abspath(PYTHON_STEM + '../../../../')
-GRPC_PROTO_STEM = os.path.join(GRPC_STEM, 'src', 'proto')
-PROTO_STEM = os.path.join(PYTHON_STEM, 'src', 'proto')
+GRPC_PROTO_STEM = [os.path.join(GRPC_STEM, 'src', 'proto'), os.path.join(GRPC_STEM, 'test', 'proto')]
+PROTO_STEM = [os.path.join(PYTHON_STEM, 'src', 'proto'), os.path.join(PYTHON_STEM, 'test', 'proto')]
 PYTHON_PROTO_TOP_LEVEL = os.path.join(PYTHON_STEM, 'src')
 
 
@@ -56,11 +56,13 @@ class GatherProto(setuptools.Command):
         # TODO(atash) ensure that we're running from the repository directory when
         # this command is used
         try:
-            shutil.rmtree(PROTO_STEM)
+            for dest in PROTO_STEM:
+                shutil.rmtree(dest)
         except Exception as error:
             # We don't care if this command fails
             pass
-        shutil.copytree(GRPC_PROTO_STEM, PROTO_STEM)
+        for src, dest in zip(GRPC_PROTO_STEM, PROTO_STEM):
+            shutil.copytree(src, dest)
         for root, _, _ in os.walk(PYTHON_PROTO_TOP_LEVEL):
             path = os.path.join(root, '__init__.py')
             open(path, 'a').close()

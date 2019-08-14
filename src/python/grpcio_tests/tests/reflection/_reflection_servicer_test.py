@@ -31,7 +31,7 @@ from google.protobuf import descriptor_pool
 from google.protobuf import descriptor_pb2
 
 from test.proto import empty_pb2
-from test.proto import empty2_extensions_pb2
+from test.proto.proto2 import empty2_extensions_pb2
 
 from tests.unit import test_common
 
