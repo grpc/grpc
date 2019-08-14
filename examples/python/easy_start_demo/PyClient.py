@@ -15,7 +15,7 @@ ClientId = 1
 
 
 # 简单模式
-# Unary
+# Simple
 def simple_method(stub):
     print("--------------Call SimpleMethod Begin--------------")
     req = demo_pb2.Request(Cid=ClientId, ReqMsg="called by Python client")
@@ -25,7 +25,7 @@ def simple_method(stub):
 
 
 # 客户端流模式（在一次调用中, 客户端可以多次向服务器传输数据, 但是服务器只能返回一次响应）
-# Client Streaming (In a single call, the client can transfer data to the server several times,
+# Request-streaming (In a single call, the client can transfer data to the server several times,
 # but the server can only return a response once.)
 def c_stream_method(stub):
     print("--------------Call CStreamMethod Begin--------------")
@@ -43,7 +43,7 @@ def c_stream_method(stub):
 
 
 # 服务端流模式（在一次调用中, 客户端只能一次向服务器传输数据, 但是服务器可以多次返回响应）
-# Server Streaming (In a single call, the client can only transmit data to the server at one time,
+# Response-streaming (In a single call, the client can only transmit data to the server at one time,
 # but the server can return the response many times.)
 def s_stream_method(stub):
     print("--------------Call SStreamMethod Begin--------------")

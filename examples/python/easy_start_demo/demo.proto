@@ -30,21 +30,21 @@ message Response {
 // `service` is used to define methods for GRPC services in a fixed format, similar to defining an interface in Golang
 service GRPCDemo {
     // 简单模式
-    // Unary
+    // Simple
     rpc SimpleMethod (Request) returns (Response);
 
     // 客户端流模式（在一次调用中, 客户端可以多次向服务器传输数据, 但是服务器只能返回一次响应）
-    // Client Streaming (In a single call, the client can transfer data to the server several times,
+    // Request-streaming (In a single call, the client can transfer data to the server several times,
     // but the server can only return a response once.)
     rpc CStreamMethod (stream Request) returns (Response);
 
     // 服务端流模式（在一次调用中, 客户端只能一次向服务器传输数据, 但是服务器可以多次返回响应）
-    // Server Streaming (In a single call, the client can only transmit data to the server at one time,
+    // Response-streaming (In a single call, the client can only transmit data to the server at one time,
     // but the server can return the response many times.)
     rpc SStreamMethod (Request) returns (stream Response);
 
     // 双向流模式 (在一次调用中, 客户端和服务器都可以向对方多次收发数据)
-    // Bidirectional Streaming (In a single call, both client and server can send and receive data
+    // Bidirectional streaming (In a single call, both client and server can send and receive data
     // to each other multiple times.)
     rpc TWFMethod (stream Request) returns (stream Response);
 }
