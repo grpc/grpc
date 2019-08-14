@@ -198,6 +198,7 @@ TEST_F(CredentialsTest, StsCredentialsOptionsFromEnv) {
   gpr_unsetenv("STS_CREDENTIALS");
 }
 
+/**
 typedef class ::grpc_impl::experimental::TlsKeyMaterialsConfig
     TlsKeyMaterialsConfig;
 
@@ -216,7 +217,9 @@ TEST_F(CredentialsTest, TlsKeyMaterialsConfigCppToC) {
                c_config->pem_key_cert_pair_list()[0].cert_chain());
   gpr_free(c_config);
 }
+**/
 
+/**
 TEST_F(CredentialsTest, TlsKeyMaterialsCtoCpp) {
   grpc_tls_key_materials_config c_config;
   ::grpc_core::PemKeyCertPair pem_key_cert_pair =
@@ -236,17 +239,18 @@ TEST_F(CredentialsTest, TlsKeyMaterialsCtoCpp) {
   EXPECT_STREQ("private_key", cpp_pair_list[0].private_key.c_str());
   EXPECT_STREQ("cert_chain", cpp_pair_list[0].cert_chain.c_str());
 }
+**/
 
-typedef class ::grpc_impl::experimental::TlsCredentialReloadArg
-    TlsCredentialReloadArg;
-typedef class ::grpc_impl::experimental::TlsCredentialReloadConfig
-    TlsCredentialReloadConfig;
-typedef void (*grpcpp_tls_on_credential_reload_done_cb)(
-    TlsCredentialReloadArg* arg);
+//typedef class ::grpc_impl::experimental::TlsCredentialReloadArg
+//    TlsCredentialReloadArg;
+//typedef class ::grpc_impl::experimental::TlsCredentialReloadConfig
+//    TlsCredentialReloadConfig;
+//typedef void (*grpcpp_tls_on_credential_reload_done_cb)(
+//    TlsCredentialReloadArg* arg);
 
+/**
 TEST_F(CredentialsTest, TlsCredentialReloadArgCppToC) {
   TlsCredentialReloadArg arg;
-  arg.set_cb(static_cast<grpcpp_tls_on_credential_reload_done_cb>(nullptr));
   arg.set_cb_user_data(nullptr);
   ::std::shared_ptr<TlsKeyMaterialsConfig> key_materials_config;
   struct TlsKeyMaterialsConfig::PemKeyCertPair pair1 = {"private_key1",
@@ -279,6 +283,8 @@ TEST_F(CredentialsTest, TlsCredentialReloadArgCppToC) {
   EXPECT_EQ(c_arg->status, GRPC_SSL_CERTIFICATE_CONFIG_RELOAD_NEW);
   EXPECT_STREQ(c_arg->error_details, "error_details");
 }
+
+**/
 
 /**
 TEST_F(CredentialsTest, TlsCredentialReloadConfigCppToC) {

@@ -44,65 +44,38 @@ class TlsKeyMaterialsConfig {
     return pem_key_cert_pair_list_;
   }
 
-  /**Setter for member fields. **/
+  /** Setter for key materials that will be called by the user. The setter
+   * transfers ownership of the arguments to the config. **/
   void set_key_materials(grpc::string pem_root_certs,
                          ::std::vector<PemKeyCertPair> pem_key_cert_pair_list);
-
-  /** Creates C struct for key materials. **/
-  grpc_tls_key_materials_config* c_key_materials() const;
 
  private:
   ::std::vector<PemKeyCertPair> pem_key_cert_pair_list_;
   grpc::string pem_root_certs_;
 };
 
-/** Creates smart pointer to a C++ version of the C key materials. **/
-::std::shared_ptr<TlsKeyMaterialsConfig> tls_key_materials_c_to_cpp(
-    const grpc_tls_key_materials_config* config);
-
 /** TLS credential reload arguments, wraps grpc_tls_credential_reload_arg. **/
-typedef class TlsCredentialReloadArg TlsCredentialReloadArg;
-
-typedef void (*grpcpp_tls_on_credential_reload_done_cb)(
-    TlsCredentialReloadArg* arg);
-
 class TlsCredentialReloadArg {
  public:
-  /** Getters for member fields. **/
-  grpcpp_tls_on_credential_reload_done_cb cb() const { return cb_; }
-  void* cb_user_data() const { return cb_user_data_; }
-  ::std::shared_ptr<TlsKeyMaterialsConfig> key_materials_config() const {
-    return key_materials_config_;
-  }
-  grpc_ssl_certificate_config_reload_status status() const { return status_; }
-  grpc::string error_details() const { return error_details_; }
+  /** Getters for member fields. The callback function is not exposed. **/
+  void* cb_user_data() const;
+  ::std::shared_ptr<TlsKeyMaterialsConfig> key_materials_config() const;
+  grpc_ssl_certificate_config_reload_status status() const;
+  grpc::string error_details() const;
 
   /** Setters for member fields. **/
-  void set_cb(grpcpp_tls_on_credential_reload_done_cb cb);
   void set_cb_user_data(void* cb_user_data);
   void set_key_materials_config(
       ::std::shared_ptr<TlsKeyMaterialsConfig> key_materials_config);
   void set_status(grpc_ssl_certificate_config_reload_status status);
   void set_error_details(grpc::string error_details);
 
-  /** Creates C struct for credential reload arg. **/
-  grpc_tls_credential_reload_arg* c_credential_reload_arg() const;
-
-  /** Creates C callback function from C++ callback function. **/
-  grpc_tls_on_credential_reload_done_cb c_callback() const;
+  /** Calls the C arg's callback function. **/
+  void callback() ;
 
  private:
-  grpcpp_tls_on_credential_reload_done_cb cb_;
-  void* cb_user_data_;
-  ::std::shared_ptr<TlsKeyMaterialsConfig> key_materials_config_;
-  grpc_ssl_certificate_config_reload_status status_;
-  grpc::string error_details_;
+  grpc_tls_credential_reload_arg* c_arg_;
 };
-
-/** Creates a smart pointer to a C++ version of the credential reload argument,
- * with the callback function set to a nullptr. **/
-::std::unique_ptr<TlsCredentialReloadArg> tls_credential_reload_arg_c_to_cpp(
-    const grpc_tls_credential_reload_arg* arg);
 
 /** TLS credential reloag config, wraps grpc_tls_credential_reload_config. **/
 class TlsCredentialReloadConfig {
