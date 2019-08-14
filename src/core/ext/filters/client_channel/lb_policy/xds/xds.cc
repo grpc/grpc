@@ -1709,7 +1709,8 @@ XdsLb::XdsLb(Args args)
   // Record server name.
   const grpc_arg* arg = grpc_channel_args_find(args.args, GRPC_ARG_SERVER_URI);
   const char* server_uri = grpc_channel_arg_get_string(arg);
-  GPR_ASSERT(server_uri != nullptr);
+  // TODO(juanlishen): Read the server_uri from bootstrap file.
+  if (server_uri == nullptr) server_uri = "fake:///default_server_uri";
   grpc_uri* uri = grpc_uri_parse(server_uri, true);
   GPR_ASSERT(uri->path[0] != '\0');
   server_name_ = gpr_strdup(uri->path[0] == '/' ? uri->path + 1 : uri->path);
@@ -2562,10 +2563,6 @@ class XdsFactory : public LoadBalancingPolicyFactory {
           error_list.push_back(parse_error);
         }
       }
-    }
-    if (balancer_name == nullptr) {
-      error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-          "field:balancerName error:not found"));
     }
     if (error_list.empty()) {
       return RefCountedPtr<LoadBalancingPolicy::Config>(New<ParsedXdsConfig>(

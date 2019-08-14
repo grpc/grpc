@@ -6737,6 +6737,7 @@
       "grpc_resolver_dns_native", 
       "grpc_resolver_fake", 
       "grpc_resolver_sockaddr", 
+      "grpc_resolver_xds", 
       "grpc_secure", 
       "grpc_server_backward_compatibility", 
       "grpc_transport_chttp2_client_insecure", 
@@ -6831,6 +6832,7 @@
       "grpc_resolver_dns_native", 
       "grpc_resolver_fake", 
       "grpc_resolver_sockaddr", 
+      "grpc_resolver_xds", 
       "grpc_server_backward_compatibility", 
       "grpc_transport_chttp2_client_insecure", 
       "grpc_transport_chttp2_server_insecure", 
@@ -9713,6 +9715,22 @@
     "name": "grpc_resolver_sockaddr", 
     "src": [
       "src/core/ext/filters/client_channel/resolver/sockaddr/sockaddr_resolver.cc"
+    ], 
+    "third_party": false, 
+    "type": "filegroup"
+  }, 
+  {
+    "deps": [
+      "gpr", 
+      "grpc_base", 
+      "grpc_client_channel"
+    ], 
+    "headers": [], 
+    "is_filegroup": true, 
+    "language": "c", 
+    "name": "grpc_resolver_xds", 
+    "src": [
+      "src/core/ext/filters/client_channel/resolver/xds/xds_resolver.cc"
     ], 
     "third_party": false, 
     "type": "filegroup"

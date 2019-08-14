@@ -211,6 +211,7 @@ grpc_uri* grpc_uri_parse(const char* uri_text, bool suppress_errors) {
       if (uri_text[i] == '+') continue;
       if (uri_text[i] == '-') continue;
       if (uri_text[i] == '.') continue;
+      if (uri_text[i] == '_') continue;
     }
     break;
   }
