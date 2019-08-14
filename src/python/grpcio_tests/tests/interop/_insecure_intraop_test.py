@@ -16,7 +16,7 @@
 import unittest
 
 import grpc
-from src.proto.grpc.testing import test_pb2_grpc
+from test.proto import test_pb2_grpc
 
 from tests.interop import _intraop_test_case
 from tests.interop import service
