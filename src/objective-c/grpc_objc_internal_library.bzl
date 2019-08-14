@@ -45,6 +45,41 @@ def proto_library_objc_wrapper(
         deps = deps,
     )
 
+def grpc_objc_examples_library(
+        name,
+        srcs = [],
+        hdrs = [],
+        textual_hdrs = [],
+        data = [],
+        deps = [],
+        defines = [],
+        sdk_frameworks = [],
+        includes = []):
+    """objc_library for testing, only works in //src/objective-c/exmaples
+
+    Args:
+        name: name of target
+        hdrs: public headers
+        srcs: all source files (.m)
+        textual_hdrs: private headers
+        data: any other bundle resources
+        defines: preprocessors
+        sdk_frameworks: sdks
+        includes: added to search path, always [the path to objc directory]
+        deps: dependencies
+    """
+    native.objc_library(
+        name = name,
+        srcs = srcs,
+        hdrs = hdrs,
+        textual_hdrs = textual_hdrs,
+        data = data,
+        defines = defines,
+        includes = includes,
+        sdk_frameworks = sdk_frameworks,
+        deps = deps + [":RemoteTest"],
+    )
+
 def grpc_objc_testing_library(
         name,
         srcs = [],

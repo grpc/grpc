@@ -20,6 +20,7 @@ package(default_visibility = ["//visibility:public"])
 
 load(
     "//src/objective-c:grpc_objc_internal_library.bzl", 
+    "grpc_objc_examples_library",
     "local_objc_grpc_library",
     "proto_library_objc_wrapper",
 )
@@ -41,7 +42,7 @@ proto_library_objc_wrapper(
 
 # use objc_grpc_library in bazel:objc_grpc_library.bzl when developing outside the repo
 local_objc_grpc_library(
-    name = "test_grpc_objc",
+    name = "RemoteTest",
     srcs = ["RemoteTestClient/test.proto"],
     use_well_known_protos = True,
     deps = [
@@ -58,7 +59,7 @@ local_objc_grpc_library(
     ],
 )
 
-objc_library(
+grpc_objc_examples_library(
     name = "Sample-lib",
     srcs = glob(["Sample/Sample/**/*.m"]),
     hdrs = glob(["Sample/Sample/**/*.h"]),
@@ -66,7 +67,6 @@ objc_library(
         "Sample/Sample/Base.lproj/**",
         "Sample/Sample/Images.xcassets/**",
     ]),
-    deps = [":test_grpc_objc"],
 )
 
 ios_application(
@@ -82,7 +82,7 @@ ios_application(
     visibility = ["//visibility:public"],
 )
 
-objc_library(
+grpc_objc_examples_library(
     name = "InterceptorSample-lib",
     srcs = glob(["InterceptorSample/InterceptorSample/**/*.m"]),
     hdrs = glob(["InterceptorSample/InterceptorSample/**/*.h"]),
@@ -90,7 +90,6 @@ objc_library(
         "InterceptorSample/InterceptorSample/Base.lproj/**",
         "InterceptorSample/InterceptorSample/Images.xcassets/**",
     ]),
-    deps = [":test_grpc_objc"],
 )
 
 ios_application(
@@ -105,7 +104,7 @@ ios_application(
     deps = ["InterceptorSample-lib"],
 )
 
-objc_library(
+grpc_objc_examples_library(
     name = "tvOS-sample-lib",
     srcs = glob(["tvOS-sample/tvOS-sample/**/*.m"]),
     hdrs = glob(["tvOS-sample/tvOS-sample/**/*.h"]),
@@ -113,7 +112,6 @@ objc_library(
         "tvOS-sample/tvOS-sample/Base.lproj/**",
         "tvOS-sample/tvOS-sample/Images.xcassets/**",
     ]),
-    deps = [":test_grpc_objc"],
 )
 
 # c-ares does not support tvOS CPU architecture with Bazel yet
@@ -125,7 +123,7 @@ tvos_application(
     deps = [":tvOS-sample-lib"],
 )
 
-objc_library(
+grpc_objc_examples_library(
     name = "watchOS-sample-iOS-lib",
     srcs = glob(["watchOS-sample/watchOS-sample/**/*.m"]),
     hdrs = glob(["watchOS-sample/watchOS-sample/**/*.h"]),
@@ -133,14 +131,12 @@ objc_library(
         "watchOS-sample/watchOS-sample/Base.lproj/**",
         "watchOS-sample/watchOS-sample/Images.xcassets/**",
     ]),
-    deps = [":test_grpc_objc"],
 )
 
-objc_library(
+grpc_objc_examples_library(
     name = "watchOS-sample-extension-lib",
     srcs = glob(["watchOS-sample/WatchKit-Extention/**/*.m"]),
     hdrs = glob(["watchOS-sample/WatchKit-Extension/**/*.h"]),
-    deps = [":test_grpc_objc"],
     sdk_frameworks = [
         "WatchConnectivity",
         "WatchKit",
