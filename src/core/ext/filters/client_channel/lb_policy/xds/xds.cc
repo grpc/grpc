@@ -2242,6 +2242,11 @@ void XdsLb::LocalityMap::LocalityEntry::UpdateLocked(
     LoadBalancingPolicy::Config* child_policy_config,
     const grpc_channel_args* args_in) {
   if (parent_->shutting_down_) return;
+  // If the new LB weight is 0, deactivate the locality.
+  if (locality_weight_ == 0) {
+    DeactivateLocked();
+    return;
+  }
   // Update locality weight.
   locality_weight_ = locality_weight;
   if (delayed_removal_timer_callback_pending_) {
