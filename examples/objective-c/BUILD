@@ -18,6 +18,7 @@ package(default_visibility = ["//visibility:public"])
 
 load("@com_github_grpc_grpc//bazel:objc_grpc_library.bzl", "objc_grpc_library")
 load("@build_bazel_rules_apple//apple:ios.bzl", "ios_application")
+load("@build_bazel_rules_apple//apple:macos.bzl", "macos_application")
 
 objc_grpc_library(
     name = "HelloWorld_grpc_proto",
@@ -57,5 +58,62 @@ ios_application(
     minimum_os_version = "8.0",
     infoplists = ["helloworld/HelloWorld/Info.plist"],
     deps = [":HelloWorld-lib"],
+    tags = ["manual"],
+)
+
+objc_library(
+    name = "HelloWorldMacos-lib",
+    srcs = glob(["helloworld_macos/**/*.m",]),
+    hdrs = glob(["helloworld_macos/**/*.h"]),
+    data = glob([
+        "helloworld_macos/HelloWorld/Base.lproj/**",
+        "helloworld_macos/HelloWorld/Images.xcassets/**",
+    ]),
+    includes = ["helloworld_macos/HelloWorld"],
+    deps = [":HelloWorld_grpc_proto"],
+    tags = ["manual"],
+)
+
+macos_application(
+    name = "HelloWorldMacos",
+    bundle_id = "io.grpc.HelloWorld",
+    minimum_os_version = "10.13",
+    entitlements = "helloworld_macos/HelloWorld/Helloworld.entitlements",
+    infoplists = ["helloworld_macos/HelloWorld/Info.plist"],
+    deps = [":HelloWorldMacos-lib"],
+    tags = ["manual"],
+)
+
+objc_grpc_library(
+    name = "RouteGuide",
+    srcs = ["//examples:protos/route_guide.proto"],
+    deps = ["//examples:route_guide_proto"],
+    tags = ["manual"],
+)
+
+objc_library(
+    name = "RouteGuideClient-lib",
+    srcs = glob(["route_guide/**/*.m"]),
+    hdrs = glob(["route_guide/**/*.h"]),
+    data = glob([
+        "route_guide/Misc/Base.lproj/**",
+        "route_guide/Misc/Images.xcassets/**",
+        "route_guide/route_guide_db.json",
+    ]),
+    includes = ["route_guide/Misc"],
+    deps = [":RouteGuide"],
+    tags = ["manual"],
+)
+
+ios_application(
+    name = "RouteGuideClient",
+    bundle_id = "gRPC.RouteGuideClient",
+    families = [
+        "iphone",
+        "ipad",
+    ],
+    minimum_os_version = "8.0",
+    infoplists = ["route_guide/Misc/Info.plist"],
+    deps = [":RouteGuideClient-lib"],
     tags = ["manual"],
 )
