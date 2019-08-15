@@ -20,7 +20,7 @@ DESCRIPTOR = _descriptor.FileDescriptor(
   package='demo',
   syntax='proto3',
   serialized_options=None,
-  serialized_pb=_b('\n\ndemo.proto\x12\x04\x64\x65mo\"&\n\x07Request\x12\x0b\n\x03\x43id\x18\x01 \x01(\x03\x12\x0e\n\x06ReqMsg\x18\x02 \x01(\t\"(\n\x08Response\x12\x0b\n\x03Sid\x18\x01 \x01(\x03\x12\x0f\n\x07RespMsg\x18\x02 \x01(\t2\xcd\x01\n\x08GRPCDemo\x12-\n\x0cSimpleMethod\x12\r.demo.Request\x1a\x0e.demo.Response\x12\x30\n\rCStreamMethod\x12\r.demo.Request\x1a\x0e.demo.Response(\x01\x12\x30\n\rSStreamMethod\x12\r.demo.Request\x1a\x0e.demo.Response0\x01\x12.\n\tTWFMethod\x12\r.demo.Request\x1a\x0e.demo.Response(\x01\x30\x01\x62\x06proto3')
+  serialized_pb=_b('\n\ndemo.proto\x12\x04\x64\x65mo\"&\n\x07Request\x12\x0b\n\x03\x43id\x18\x01 \x01(\x03\x12\x0e\n\x06ReqMsg\x18\x02 \x01(\t\"(\n\x08Response\x12\x0b\n\x03Sid\x18\x01 \x01(\x03\x12\x0f\n\x07RespMsg\x18\x02 \x01(\t2\xf0\x01\n\x08GRPCDemo\x12-\n\x0cSimpleMethod\x12\r.demo.Request\x1a\x0e.demo.Response\x12\x38\n\x15\x43lientStreamingMethod\x12\r.demo.Request\x1a\x0e.demo.Response(\x01\x12\x38\n\x15ServerStreamingMethod\x12\r.demo.Request\x1a\x0e.demo.Response0\x01\x12\x41\n\x1c\x42idirectionalStreamingMethod\x12\r.demo.Request\x1a\x0e.demo.Response(\x01\x30\x01\x62\x06proto3')
 )
 
 
@@ -128,7 +128,7 @@ _GRPCDEMO = _descriptor.ServiceDescriptor(
   index=0,
   serialized_options=None,
   serialized_start=103,
-  serialized_end=308,
+  serialized_end=343,
   methods=[
   _descriptor.MethodDescriptor(
     name='SimpleMethod',
@@ -140,8 +140,8 @@ _GRPCDEMO = _descriptor.ServiceDescriptor(
     serialized_options=None,
   ),
   _descriptor.MethodDescriptor(
-    name='CStreamMethod',
-    full_name='demo.GRPCDemo.CStreamMethod',
+    name='ClientStreamingMethod',
+    full_name='demo.GRPCDemo.ClientStreamingMethod',
     index=1,
     containing_service=None,
     input_type=_REQUEST,
@@ -149,8 +149,8 @@ _GRPCDEMO = _descriptor.ServiceDescriptor(
     serialized_options=None,
   ),
   _descriptor.MethodDescriptor(
-    name='SStreamMethod',
-    full_name='demo.GRPCDemo.SStreamMethod',
+    name='ServerStreamingMethod',
+    full_name='demo.GRPCDemo.ServerStreamingMethod',
     index=2,
     containing_service=None,
     input_type=_REQUEST,
@@ -158,8 +158,8 @@ _GRPCDEMO = _descriptor.ServiceDescriptor(
     serialized_options=None,
   ),
   _descriptor.MethodDescriptor(
-    name='TWFMethod',
-    full_name='demo.GRPCDemo.TWFMethod',
+    name='BidirectionalStreamingMethod',
+    full_name='demo.GRPCDemo.BidirectionalStreamingMethod',
     index=3,
     containing_service=None,
     input_type=_REQUEST,

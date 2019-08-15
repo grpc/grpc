@@ -30,8 +30,6 @@ Author: Zhongying Wang
 
 Email: kerbalwzy@gmail.com
 
-License: MPL2
-
 DateTime: 2019-08-13T23:30:00Z
 
 PythonVersion: Python3.6.3
