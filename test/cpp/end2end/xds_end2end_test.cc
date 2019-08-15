@@ -1118,9 +1118,10 @@ TEST_F(SingleBalancerTest, LocalityMapStressTest) {
   // Wait until backend 1 is ready, before which kNumLocalities localities are
   // removed by the xds policy.
   WaitForBackend(1);
-  // The EDS service got a single request, and sent a single response.
+  // The EDS service got a single request.
   EXPECT_EQ(1U, balancers_[0]->eds_service()->request_count());
-  EXPECT_EQ(1U, balancers_[0]->eds_service()->response_count());
+  // and sent two responses.
+  EXPECT_EQ(2U, balancers_[0]->eds_service()->response_count());
 }
 
 TEST_F(SingleBalancerTest, LocalityMapUpdate) {

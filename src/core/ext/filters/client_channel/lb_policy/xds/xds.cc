@@ -2240,7 +2240,7 @@ void XdsLb::LocalityMap::LocalityEntry::UpdateLocked(
     const grpc_channel_args* args_in) {
   if (parent_->shutting_down_) return;
   // If the new LB weight is 0, deactivate the locality.
-  if (locality_weight_ == 0) {
+  if (locality_weight == 0) {
     DeactivateLocked();
     return;
   }
@@ -2396,6 +2396,8 @@ void XdsLb::LocalityMap::LocalityEntry::DeactivateLocked() {
     parent_->locality_map_.map_.erase(name_);
     return;
   }
+  // If already deactivated, don't do that again.
+  if (locality_weight_ == 0) return;
   // Set the locality weight to 0 so that future xds picker won't contain this
   // locality.
   locality_weight_ = 0;
