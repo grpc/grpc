@@ -16,6 +16,9 @@
 # Don't run this script standalone. Instead, run from the repository root:
 # ./tools/run_tests/run_tests.py -l objc
 
+# TODO(tonyzhehaolu):
+# For future use when Xcode is upgraded and tvos_unit_test is fully functional
+
 set -ev
 
 cd $(dirname $0)
@@ -45,28 +48,4 @@ $INTEROP --port=$TLS_PORT --max_send_message_size=8388608 --use_tls &
 
 trap 'kill -9 `jobs -p` ; echo "EXIT TIME:  $(date)"' EXIT
 
-set -o pipefail
-
-XCODEBUILD_FILTER='(^CompileC |^Ld |^ *[^ ]*clang |^ *cd |^ *export |^Libtool |^ *[^ ]*libtool |^CpHeader |^ *builtin-copy )'
-
-if [ -z $PLATFORM ]; then
-DESTINATION='name=iPhone 8'
-elif [ $PLATFORM == ios ]; then
-DESTINATION='name=iPhone 8'
-elif [ $PLATFORM == macos ]; then
-DESTINATION='platform=macOS'
-elif [ $PLATFORM == tvos ]; then
-DESTINATION='platform=tvOS Simulator,name=Apple TV'
-fi
-
-xcodebuild \
-    -workspace Tests.xcworkspace \
-    -scheme $SCHEME \
-    -destination "$DESTINATION" \
-    HOST_PORT_LOCALSSL=localhost:$TLS_PORT \
-    HOST_PORT_LOCAL=localhost:$PLAIN_PORT \
-    HOST_PORT_REMOTE=grpc-test.sandbox.googleapis.com \
-    test \
-    | egrep -v "$XCODEBUILD_FILTER" \
-    | egrep -v '^$' \
-    | egrep -v "(GPBDictionary|GPBArray)" -
+../../../tools/bazel run $SCHEME

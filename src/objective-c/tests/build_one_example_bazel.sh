@@ -14,21 +14,22 @@
 # limitations under the License.
 
 # Don't run this script standalone. Instead, run from the repository root:
-# ./tools/run_tests/run_tests.py -l c++
+# ./tools/run_tests/run_tests.py -l objc
 
 set -ev
 
-cd "$(dirname "$0")"
+# Params:
+# EXAMPLE_PATH - directory of the example
+# SCHEME - scheme of the example, used by xcodebuild
 
+# CocoaPods requires the terminal to be using UTF-8 encoding.
+export LANG=en_US.UTF-8
 
-set -o pipefail
+cd `dirname $0`/../../..
 
-XCODEBUILD_FILTER='(^CompileC |^Ld |^ *[^ ]*clang |^ *cd |^ *export |^Libtool |^ *[^ ]*libtool |^CpHeader |^ *builtin-copy )'
+cd $EXAMPLE_PATH/..
 
-xcodebuild \
-    -workspace Tests.xcworkspace \
-    -scheme CronetTests \
-    -destination name="iPhone 8" \
-    test \
-    | egrep -v "$XCODEBUILD_FILTER" \
-    | egrep -v '^$' -
+if [ "$SCHEME" == "watchOS-sample-WatchKit-App" ]; then
+  SCHEME="watchOS-sample watchOS-sample-watchApp"
+fi
+../../../tools/bazel build $SCHEME

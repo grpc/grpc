@@ -16,34 +16,20 @@ Pod::Spec.new do |s|
   s.dependency "!ProtoCompiler-gRPCPlugin"
 
   repo_root = '../../../..'
-  config = ENV['CONFIG'] || 'opt'
-  bin_dir = "#{repo_root}/bins/#{config}"
+  bazel_exec_root = "#{repo_root}/bazel-out/darwin-fastbuild/bin"
 
-  protoc = "#{bin_dir}/protobuf/protoc"
+  protoc = "#{bazel_exec_root}/external/com_google_protobuf/protoc"
   well_known_types_dir = "#{repo_root}/third_party/protobuf/src"
-  plugin = "#{bin_dir}/grpc_objective_c_plugin"
+  plugin = "#{bazel_exec_root}/src/compiler/grpc_objective_c_plugin"
 
   s.prepare_command = <<-CMD
-    if [ -f #{protoc} ]; then
-      #{protoc} \
-          --plugin=protoc-gen-grpc=#{plugin} \
-          --objc_out=. \
-          --grpc_out=. \
-          -I #{repo_root} \
-          -I #{well_known_types_dir} \
-          #{repo_root}/src/objective-c/tests/RemoteTestClient/*.proto
-    else
-      # protoc was not found bin_dir, use installed version instead
-      (>&2 echo "\nWARNING: Using installed version of protoc. It might be incompatible with gRPC")
-
-      protoc \
-          --plugin=protoc-gen-grpc=#{plugin} \
-          --objc_out=. \
-          --grpc_out=. \
-          -I #{repo_root} \
-          -I #{well_known_types_dir} \
-          #{repo_root}/src/objective-c/tests/RemoteTestClient/*.proto
-    fi
+    #{protoc} \
+        --plugin=protoc-gen-grpc=#{plugin} \
+        --objc_out=. \
+        --grpc_out=. \
+        -I #{repo_root} \
+        -I #{well_known_types_dir} \
+        #{repo_root}/src/objective-c/tests/RemoteTestClient/*.proto
   CMD
 
   s.subspec "Messages" do |ms|

@@ -89,6 +89,14 @@ extern const char *kCFStreamVarName;
   RMTTestService *_service;
 }
 
++ (XCTestSuite *)defaultTestSuite {
+  if (self == [StressTests class]) {
+    return [XCTestSuite testSuiteWithName:@"StressTestsEmptySuite"];
+  } else {
+    return super.defaultTestSuite;
+  }
+}
+
 + (NSString *)host {
   return nil;
 }

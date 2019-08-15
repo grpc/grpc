@@ -16,8 +16,12 @@
  *
  */
 
-#import <UIKit/UIKit.h>
+#import "AppDelegate.h"
 
-@interface ViewController : UIViewController
+@interface AppDelegate ()
+
+@end
+
+@implementation AppDelegate
 
 @end
