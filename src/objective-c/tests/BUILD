@@ -16,7 +16,7 @@
 
 licenses(["notice"])  # Apache v2
 
-package(default_visibility = ["//visibility:private"])
+package(default_visibility = ["//visibility:public"])
 
 load(
     "//src/objective-c:grpc_objc_internal_library.bzl",
