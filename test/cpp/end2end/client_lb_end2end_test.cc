@@ -1506,16 +1506,32 @@ class ClientLbInterceptTrailingMetadataTest : public ClientLbEnd2endTest {
     return trailers_intercepted_;
   }
 
+  const grpc_core::LoadBalancingPolicy::BackendMetricData*
+      backend_metric_data() {
+    grpc::internal::MutexLock lock(&mu_);
+    return backend_metric_data_.get();
+  }
+
  private:
-  static void ReportTrailerIntercepted(void* arg) {
+  static void ReportTrailerIntercepted(
+      void* arg,
+      const grpc_core::LoadBalancingPolicy::BackendMetricData*
+          backend_metric_data) {
     ClientLbInterceptTrailingMetadataTest* self =
         static_cast<ClientLbInterceptTrailingMetadataTest*>(arg);
     grpc::internal::MutexLock lock(&self->mu_);
     self->trailers_intercepted_++;
+    if (backend_metric_data != nullptr) {
+      self->backend_metric_data_.reset(
+          new grpc_core::LoadBalancingPolicy::BackendMetricData);
+      *self->backend_metric_data_ = *backend_metric_data;
+    }
   }
 
   grpc::internal::Mutex mu_;
   int trailers_intercepted_ = 0;
+  std::unique_ptr<grpc_core::LoadBalancingPolicy::BackendMetricData>
+      backend_metric_data_;
 };
 
 TEST_F(ClientLbInterceptTrailingMetadataTest, InterceptsRetriesDisabled) {

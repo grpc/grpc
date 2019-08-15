@@ -83,7 +83,8 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
     double cpu_utilization;
     double mem_utilization;
     uint64_t rps;
-    Map<const char*, double, StringLess> request_cost_or_utilization;
+    Map<const char*, double, StringLess> request_cost;
+    Map<const char*, double, StringLess> utilization;
   };
 
   /// Interface for accessing per-call state.

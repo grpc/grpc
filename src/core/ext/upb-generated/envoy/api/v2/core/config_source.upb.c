@@ -23,19 +23,20 @@ static const upb_msglayout *const envoy_api_v2_core_ApiConfigSource_submsgs[4] =
   &google_protobuf_Duration_msginit,
 };
 
-static const upb_msglayout_field envoy_api_v2_core_ApiConfigSource__fields[6] = {
+static const upb_msglayout_field envoy_api_v2_core_ApiConfigSource__fields[7] = {
   {1, UPB_SIZE(0, 0), 0, 0, 14, 1},
-  {2, UPB_SIZE(20, 32), 0, 0, 9, 3},
-  {3, UPB_SIZE(8, 8), 0, 2, 11, 1},
-  {4, UPB_SIZE(24, 40), 0, 0, 11, 3},
-  {5, UPB_SIZE(12, 16), 0, 2, 11, 1},
-  {6, UPB_SIZE(16, 24), 0, 1, 11, 1},
+  {2, UPB_SIZE(24, 40), 0, 0, 9, 3},
+  {3, UPB_SIZE(12, 16), 0, 2, 11, 1},
+  {4, UPB_SIZE(28, 48), 0, 0, 11, 3},
+  {5, UPB_SIZE(16, 24), 0, 2, 11, 1},
+  {6, UPB_SIZE(20, 32), 0, 1, 11, 1},
+  {7, UPB_SIZE(8, 8), 0, 0, 8, 1},
 };
 
 const upb_msglayout envoy_api_v2_core_ApiConfigSource_msginit = {
   &envoy_api_v2_core_ApiConfigSource_submsgs[0],
   &envoy_api_v2_core_ApiConfigSource__fields[0],
-  UPB_SIZE(32, 48), 6, false,
+  UPB_SIZE(32, 56), 7, false,
 };
 
 const upb_msglayout envoy_api_v2_core_AggregatedConfigSource_msginit = {
