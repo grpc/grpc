@@ -80,6 +80,9 @@ namespace {
   currently has 0 active call. If the timer is fired in this state, we will
   reschedule it according to the finish time of the latest call.
 
+  PROCESSING: The state set to block other threads when the setting thread is
+  doing some work to keep state consistency.
+
   idle_timer_ will not be cancelled (unless the channel is shutting down).
   If the timer callback is called when the idle_timer_ is valid (i.e. idle_state
   is TIMER_PENDING), the channel will enter IDLE, otherwise the channel won't be
