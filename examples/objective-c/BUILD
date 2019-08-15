@@ -23,6 +23,7 @@ objc_grpc_library(
     name = "HelloWorld_grpc_proto",
     srcs = ["//examples:protos/helloworld.proto"],
     deps = ["//examples:helloworld_proto"],
+    tags = ["manual"],
 )
 
 # This one works with import "external/com_github_grpc_grpc/examples/protos/Helloworld.pbrpc.h"
@@ -30,6 +31,7 @@ objc_grpc_library(
     name = "HelloWorld_grpc_proto_external",
     srcs = ["//external/com_github_grpc_grpc/examples:protos/helloworld.proto"],
     deps = ["@com_github_grpc_grpc//examples:helloworld_proto"],
+    tags = ["manual"],
 )
 
 objc_library(
@@ -42,6 +44,7 @@ objc_library(
     ]),
     includes = ["helloworld/HelloWorld"],
     deps = [":HelloWorld_grpc_proto"],
+    tags = ["manual"],
 )
 
 ios_application(
@@ -54,4 +57,5 @@ ios_application(
     minimum_os_version = "8.0",
     infoplists = ["helloworld/HelloWorld/Info.plist"],
     deps = [":HelloWorld-lib"],
+    tags = ["manual"],
 )
