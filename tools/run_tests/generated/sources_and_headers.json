@@ -3768,6 +3768,45 @@
   {
     "deps": [
       "gpr", 
+      "grpc"
+    ], 
+    "headers": [], 
+    "is_filegroup": false, 
+    "language": "c++", 
+    "name": "gen_hpack_tables", 
+    "src": [
+      "tools/codegen/core/gen_hpack_tables.cc"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [], 
+    "headers": [], 
+    "is_filegroup": false, 
+    "language": "c++", 
+    "name": "gen_legal_metadata_characters", 
+    "src": [
+      "tools/codegen/core/gen_legal_metadata_characters.cc"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [], 
+    "headers": [], 
+    "is_filegroup": false, 
+    "language": "c++", 
+    "name": "gen_percent_encoding_tables", 
+    "src": [
+      "tools/codegen/core/gen_percent_encoding_tables.cc"
+    ], 
+    "third_party": false, 
+    "type": "target"
+  }, 
+  {
+    "deps": [
+      "gpr", 
       "grpc", 
       "grpc++", 
       "grpc++_test_util", 
@@ -5353,45 +5392,6 @@
     "name": "public_headers_must_be_c89", 
     "src": [
       "test/core/surface/public_headers_must_be_c89.c"
-    ], 
-    "third_party": false, 
-    "type": "target"
-  }, 
-  {
-    "deps": [
-      "gpr", 
-      "grpc"
-    ], 
-    "headers": [], 
-    "is_filegroup": false, 
-    "language": "cc", 
-    "name": "gen_hpack_tables", 
-    "src": [
-      "tools/codegen/core/gen_hpack_tables.cc"
-    ], 
-    "third_party": false, 
-    "type": "target"
-  }, 
-  {
-    "deps": [], 
-    "headers": [], 
-    "is_filegroup": false, 
-    "language": "cc", 
-    "name": "gen_legal_metadata_characters", 
-    "src": [
-      "tools/codegen/core/gen_legal_metadata_characters.cc"
-    ], 
-    "third_party": false, 
-    "type": "target"
-  }, 
-  {
-    "deps": [], 
-    "headers": [], 
-    "is_filegroup": false, 
-    "language": "cc", 
-    "name": "gen_percent_encoding_tables", 
-    "src": [
-      "tools/codegen/core/gen_percent_encoding_tables.cc"
     ], 
     "third_party": false, 
     "type": "target"
