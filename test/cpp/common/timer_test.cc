@@ -16,7 +16,6 @@
  *
  */
 
-
 #include <grpc/grpc.h>
 #include <grpc/support/log.h>
 #include <gtest/gtest.h>
@@ -24,9 +23,9 @@
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
+#include "src/core/lib/iomgr/timer.h"
 #include "src/core/lib/iomgr/timer_manager.h"
 #include "test/core/util/test_config.h"
-#include "src/core/lib/iomgr/timer.h"
 
 // MAYBE_SKIP_TEST is a macro to determine if this particular test configuration
 // should be skipped based on a decision made at SetUp time.
