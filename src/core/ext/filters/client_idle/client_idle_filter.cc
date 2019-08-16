@@ -317,6 +317,9 @@ void ChannelData::IdleTimerCallback(void* arg, grpc_error* error) {
   while (!finished) {
     switch (state) {
       case TIMER_PENDING:
+        // Change the state to PROCESSING to block IncreaseCallCout() until the
+        // EnterIdle() operation finishes, preventing mistakenly entering IDLE
+        // when active RPC exists.
         finished = chand->state_.CompareExchangeWeak(
             &state, PROCESSING, MemoryOrder::RELAXED, MemoryOrder::RELAXED);
         if (finished) {
@@ -329,6 +332,9 @@ void ChannelData::IdleTimerCallback(void* arg, grpc_error* error) {
             &state, CALLS_ACTIVE, MemoryOrder::RELAXED, MemoryOrder::RELAXED);
         break;
       case TIMER_PENDING_CALLS_SEEN_SINCE_TIMER_START:
+        // Change the state to PROCESSING to block IncreaseCallCount() until the
+        // StartIdleTimer() operation finishes, preventing mistakenly restarting
+        // the timer after grpc_timer_cancel() when shutdown.
         finished = chand->state_.CompareExchangeWeak(
             &state, PROCESSING, MemoryOrder::ACQUIRE, MemoryOrder::RELAXED);
         if (finished) {
