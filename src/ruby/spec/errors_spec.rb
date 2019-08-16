@@ -14,6 +14,7 @@
 
 require 'spec_helper'
 require 'google/protobuf/well_known_types'
+require 'google/rpc/status_pb'
 require_relative '../pb/src/proto/grpc/testing/messages_pb'
 
 describe GRPC::BadStatus do
