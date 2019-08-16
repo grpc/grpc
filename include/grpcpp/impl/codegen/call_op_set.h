@@ -91,6 +91,9 @@ class WriteOptions {
   /// Clear all flags.
   inline void Clear() { flags_ = 0; }
 
+  /// Default copy assignment.
+  inline WriteOptions &operator=(const WriteOptions &) = default;
+
   /// Returns raw flags bitset.
   inline uint32_t flags() const { return flags_; }
 
