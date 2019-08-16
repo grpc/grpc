@@ -1746,21 +1746,29 @@ def dynamic_ssl_server_credentials(initial_certificate_configuration,
 
 @enum.unique
 class LocalConnectionType(enum.Enum):
-    """Type of local connections for which local channel/server credentials will be applied.
+    """Types of local connection for local credential creation.
 
     Attributes:
       UDS: Unix domain socket connections
       LOCAL_TCP: Local TCP connections.
     """
-    UDS = _cygrpc.LocalConnectType.uds
-    LOCAL_TCP = _cygrpc.LocalConnectType.local_tcp
+    UDS = _cygrpc.LocalConnectionType.uds
+    LOCAL_TCP = _cygrpc.LocalConnectionType.local_tcp
 
 
 def local_channel_credentials(local_connect_type=LocalConnectionType.LOCAL_TCP):
     """Creates a local ChannelCredentials used for local connections.
 
+    Local credentials are used by local TCP endpoints (e.g. localhost:10000)
+    also UDS connections. It allows them to create secure channel, hence
+    transmitting call credentials become possible.
+
+    It is useful for 1) eliminating insecure_channel usage; 2) enable unit
+    testing for call credentials without setting up secrets.
+
     Args:
-      local_connect_type: Local connection type (either UDS or LOCAL_TCP)
+      local_connect_type: Local connection type (either
+        grpc.LocalConnectionType.UDS or grpc.LocalConnectionType.LOCAL_TCP)
 
     Returns:
       A ChannelCredentials for use with a local Channel
@@ -1772,8 +1780,16 @@ def local_channel_credentials(local_connect_type=LocalConnectionType.LOCAL_TCP):
 def local_server_credentials(local_connect_type=LocalConnectionType.LOCAL_TCP):
     """Creates a local ServerCredentials used for local connections.
 
+    Local credentials are used by local TCP endpoints (e.g. localhost:10000)
+    also UDS connections. It allows them to create secure channel, hence
+    transmitting call credentials become possible.
+
+    It is useful for 1) eliminating insecure_channel usage; 2) enable unit
+    testing for call credentials without setting up secrets.
+
     Args:
-      local_connect_type: Local connection type (either UDS or LOCAL_TCP)
+      local_connect_type: Local connection type (either
+        grpc.LocalConnectionType.UDS or grpc.LocalConnectionType.LOCAL_TCP)
 
     Returns:
       A ServerCredentials for use with a local Server

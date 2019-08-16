@@ -329,7 +329,7 @@ cdef grpc_ssl_certificate_config_reload_status _server_cert_config_fetcher_wrapp
   return GRPC_SSL_CERTIFICATE_CONFIG_RELOAD_NEW
 
 
-class LocalConnectType:
+class LocalConnectionType:
   uds = UDS
   local_tcp = LOCAL_TCP
 

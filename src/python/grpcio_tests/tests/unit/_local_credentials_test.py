@@ -33,18 +33,20 @@ class LocalCredentialsTest(unittest.TestCase):
         return server
 
     def test_local_tcp(self):
-        server_addr = '[::1]:{}'
+        server_addr = 'localhost:{}'
         channel_creds = grpc.local_channel_credentials(
             grpc.LocalConnectionType.LOCAL_TCP)
         server_creds = grpc.local_server_credentials(
             grpc.LocalConnectionType.LOCAL_TCP)
+
         server = self._create_server()
         port = server.add_secure_port(server_addr.format(0), server_creds)
         server.start()
-        channel = grpc.secure_channel(server_addr.format(port), channel_creds)
-        self.assertEqual(b'abc',
-                         channel.unary_unary('/test/method')(
-                             b'abc', wait_for_ready=True))
+        with grpc.secure_channel(server_addr.format(port),
+                                 channel_creds) as channel:
+            self.assertEqual(b'abc',
+                             channel.unary_unary('/test/method')(
+                                 b'abc', wait_for_ready=True))
         server.stop(None)
 
     def test_uds(self):
@@ -53,13 +55,14 @@ class LocalCredentialsTest(unittest.TestCase):
             grpc.LocalConnectionType.UDS)
         server_creds = grpc.local_server_credentials(
             grpc.LocalConnectionType.UDS)
+
         server = self._create_server()
         server.add_secure_port(server_addr, server_creds)
         server.start()
-        channel = grpc.secure_channel(server_addr, channel_creds)
-        self.assertEqual(b'abc',
-                         channel.unary_unary('/test/method')(
-                             b'abc', wait_for_ready=True))
+        with grpc.secure_channel(server_addr, channel_creds) as channel:
+            self.assertEqual(b'abc',
+                             channel.unary_unary('/test/method')(
+                                 b'abc', wait_for_ready=True))
         server.stop(None)
 
 
