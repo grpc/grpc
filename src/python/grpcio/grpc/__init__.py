@@ -22,7 +22,6 @@ import six
 
 from grpc._cython import cygrpc as _cygrpc
 from grpc import _compression
-from grpc import local_credentials
 
 logging.getLogger(__name__).addHandler(logging.NullHandler())
 
