@@ -56,7 +56,7 @@ CONFIG = [
     '3',
     '4',
     '',
-    'X-Endpoint-Load-Metrics-bin',
+    'x-endpoint-load-metrics-bin',
     # channel arg keys
     'grpc.wait_for_ready',
     'grpc.timeout',
@@ -178,7 +178,7 @@ METADATA_BATCH_CALLOUTS = [
     'host',
     'grpc-previous-rpc-attempts',
     'grpc-retry-pushback-ms',
-    'X-Endpoint-Load-Metrics-bin',
+    'x-endpoint-load-metrics-bin',
 ]
 
 COMPRESSION_ALGORITHMS = [

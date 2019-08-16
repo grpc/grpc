@@ -86,7 +86,7 @@ extern const grpc_core::StaticMetadataSlice
 #define GRPC_MDSTR_GRPC_PREVIOUS_RPC_ATTEMPTS (grpc_static_slice_table[21])
 /* "grpc-retry-pushback-ms" */
 #define GRPC_MDSTR_GRPC_RETRY_PUSHBACK_MS (grpc_static_slice_table[22])
-/* "X-Endpoint-Load-Metrics-bin" */
+/* "x-endpoint-load-metrics-bin" */
 #define GRPC_MDSTR_X_ENDPOINT_LOAD_METRICS_BIN (grpc_static_slice_table[23])
 /* "grpc-timeout" */
 #define GRPC_MDSTR_GRPC_TIMEOUT (grpc_static_slice_table[24])

@@ -4790,6 +4790,7 @@ targets:
   build: test
   language: c++
   src:
+  - src/proto/grpc/lb/v2/orca_load_report_for_test.proto
   - test/cpp/end2end/client_lb_end2end_test.cc
   deps:
   - grpc++_test_util

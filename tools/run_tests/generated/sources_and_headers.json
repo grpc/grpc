@@ -3482,7 +3482,11 @@
       "grpc++_test_util", 
       "grpc_test_util"
     ], 
-    "headers": [], 
+    "headers": [
+      "src/proto/grpc/lb/v2/orca_load_report_for_test.grpc.pb.h", 
+      "src/proto/grpc/lb/v2/orca_load_report_for_test.pb.h", 
+      "src/proto/grpc/lb/v2/orca_load_report_for_test_mock.grpc.pb.h"
+    ], 
     "is_filegroup": false, 
     "language": "c++", 
     "name": "client_lb_end2end_test", 

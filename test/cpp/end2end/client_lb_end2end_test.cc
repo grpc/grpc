@@ -51,6 +51,7 @@
 #include "src/cpp/client/secure_credentials.h"
 #include "src/cpp/server/secure_server_credentials.h"
 
+#include "src/proto/grpc/lb/v2/orca_load_report_for_test.pb.h"
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
@@ -94,15 +95,23 @@ grpc_tcp_client_vtable delayed_connect = {tcp_client_connect_with_delay};
 // every call to the Echo RPC.
 class MyTestServiceImpl : public TestServiceImpl {
  public:
-  MyTestServiceImpl() : request_count_(0) {}
-
   Status Echo(ServerContext* context, const EchoRequest* request,
               EchoResponse* response) override {
+    bool send_backend_stats = false;
     {
       grpc::internal::MutexLock lock(&mu_);
       ++request_count_;
+      send_backend_stats = send_backend_stats_;
     }
     AddClient(context->peer());
+    if (send_backend_stats) {
+      // TODO(roth): Once we provide a more standard server-side API for
+      // populating this data, use that API here.
+      udpa::data::orca::v1::OrcaLoadReport load_report;
+      load_report.set_cpu_utilization(0.5);
+      context->AddTrailingMetadata("x-endpoint-load-metrics-bin",
+                                   load_report.SerializeAsString());
+    }
     return TestServiceImpl::Echo(context, request, response);
   }
 
@@ -121,6 +130,11 @@ class MyTestServiceImpl : public TestServiceImpl {
     return clients_;
   }
 
+  void set_send_backend_stats(bool enable) {
+    grpc::internal::MutexLock lock(&mu_);
+    send_backend_stats_ = enable;
+  }
+
  private:
   void AddClient(const grpc::string& client) {
     grpc::internal::MutexLock lock(&clients_mu_);
@@ -128,7 +142,8 @@ class MyTestServiceImpl : public TestServiceImpl {
   }
 
   grpc::internal::Mutex mu_;
-  int request_count_;
+  int request_count_ = 0;
+  bool send_backend_stats_ = false;
   grpc::internal::Mutex clients_mu_;
   std::set<grpc::string> clients_;
 };
@@ -1507,16 +1522,15 @@ class ClientLbInterceptTrailingMetadataTest : public ClientLbEnd2endTest {
   }
 
   const grpc_core::LoadBalancingPolicy::BackendMetricData*
-      backend_metric_data() {
+  backend_metric_data() {
     grpc::internal::MutexLock lock(&mu_);
     return backend_metric_data_.get();
   }
 
  private:
   static void ReportTrailerIntercepted(
-      void* arg,
-      const grpc_core::LoadBalancingPolicy::BackendMetricData*
-          backend_metric_data) {
+      void* arg, const grpc_core::LoadBalancingPolicy::BackendMetricData*
+                     backend_metric_data) {
     ClientLbInterceptTrailingMetadataTest* self =
         static_cast<ClientLbInterceptTrailingMetadataTest*>(arg);
     grpc::internal::MutexLock lock(&self->mu_);
@@ -1579,6 +1593,30 @@ TEST_F(ClientLbInterceptTrailingMetadataTest, InterceptsRetriesEnabled) {
   response_generator.SetNextResolution(GetServersPorts());
   for (size_t i = 0; i < kNumRpcs; ++i) {
     CheckRpcSendOk(stub, DEBUG_LOCATION);
+  }
+  // Check LB policy name for the channel.
+  EXPECT_EQ("intercept_trailing_metadata_lb",
+            channel->GetLoadBalancingPolicyName());
+  EXPECT_EQ(kNumRpcs, trailers_intercepted());
+}
+
+TEST_F(ClientLbInterceptTrailingMetadataTest, BackendMetricData) {
+  const int kNumServers = 1;
+  const int kNumRpcs = 10;
+  StartServers(kNumServers);
+  for (const auto& server : servers_) {
+    server->service_.set_send_backend_stats(true);
+  }
+  auto response_generator = BuildResolverResponseGenerator();
+  auto channel =
+      BuildChannel("intercept_trailing_metadata_lb", response_generator);
+  auto stub = BuildStub(channel);
+  response_generator.SetNextResolution(GetServersPorts());
+  for (size_t i = 0; i < kNumRpcs; ++i) {
+    CheckRpcSendOk(stub, DEBUG_LOCATION);
+    auto* bm = backend_metric_data();
+    ASSERT_NE(bm, nullptr);
+    EXPECT_EQ(bm->cpu_utilization, 0.5);
   }
   // Check LB policy name for the channel.
   EXPECT_EQ("intercept_trailing_metadata_lb",

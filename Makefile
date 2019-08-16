@@ -2737,6 +2737,22 @@ $(GENDIR)/src/proto/grpc/lb/v2/lrs_for_test.grpc.pb.cc: src/proto/grpc/lb/v2/lrs
 endif
 
 ifeq ($(NO_PROTOC),true)
+$(GENDIR)/src/proto/grpc/lb/v2/orca_load_report_for_test.pb.cc: protoc_dep_error
+$(GENDIR)/src/proto/grpc/lb/v2/orca_load_report_for_test.grpc.pb.cc: protoc_dep_error
+else
+
+$(GENDIR)/src/proto/grpc/lb/v2/orca_load_report_for_test.pb.cc: src/proto/grpc/lb/v2/orca_load_report_for_test.proto $(PROTOBUF_DEP) $(PROTOC_PLUGINS) 
+	$(E) "[PROTOC]  Generating protobuf CC file from $<"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(PROTOC) -Ithird_party/protobuf/src -I. --cpp_out=$(GENDIR) $<
+
+$(GENDIR)/src/proto/grpc/lb/v2/orca_load_report_for_test.grpc.pb.cc: src/proto/grpc/lb/v2/orca_load_report_for_test.proto $(GENDIR)/src/proto/grpc/lb/v2/orca_load_report_for_test.pb.cc $(PROTOBUF_DEP) $(PROTOC_PLUGINS) 
+	$(E) "[GRPC]    Generating gRPC's protobuf service CC file from $<"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(PROTOC) -Ithird_party/protobuf/src -I. --grpc_out=$(GENDIR) --plugin=protoc-gen-grpc=$(PROTOC_PLUGINS_DIR)/grpc_cpp_plugin$(EXECUTABLE_SUFFIX) $<
+endif
+
+ifeq ($(NO_PROTOC),true)
 $(GENDIR)/src/proto/grpc/reflection/v1alpha/reflection.pb.cc: protoc_dep_error
 $(GENDIR)/src/proto/grpc/reflection/v1alpha/reflection.grpc.pb.cc: protoc_dep_error
 else
@@ -15735,6 +15751,7 @@ endif
 
 
 CLIENT_LB_END2END_TEST_SRC = \
+    $(GENDIR)/src/proto/grpc/lb/v2/orca_load_report_for_test.pb.cc $(GENDIR)/src/proto/grpc/lb/v2/orca_load_report_for_test.grpc.pb.cc \
     test/cpp/end2end/client_lb_end2end_test.cc \
 
 CLIENT_LB_END2END_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(CLIENT_LB_END2END_TEST_SRC))))
@@ -15766,6 +15783,8 @@ endif
 
 endif
 
+$(OBJDIR)/$(CONFIG)/src/proto/grpc/lb/v2/orca_load_report_for_test.o:  $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a
+
 $(OBJDIR)/$(CONFIG)/test/cpp/end2end/client_lb_end2end_test.o:  $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a
 
 deps_client_lb_end2end_test: $(CLIENT_LB_END2END_TEST_OBJS:.o=.dep)
@@ -15775,6 +15794,7 @@ ifneq ($(NO_DEPS),true)
 -include $(CLIENT_LB_END2END_TEST_OBJS:.o=.dep)
 endif
 endif
+$(OBJDIR)/$(CONFIG)/test/cpp/end2end/client_lb_end2end_test.o: $(GENDIR)/src/proto/grpc/lb/v2/orca_load_report_for_test.pb.cc $(GENDIR)/src/proto/grpc/lb/v2/orca_load_report_for_test.grpc.pb.cc
 
 
 CODEGEN_TEST_FULL_SRC = \

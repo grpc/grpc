@@ -28,8 +28,7 @@ Map<const char*, double, StringLess> ParseMap(
     udpa_data_orca_v1_OrcaLoadReport* msg,
     EntryType** (*entry_func)(udpa_data_orca_v1_OrcaLoadReport*, size_t*),
     upb_strview (*key_func)(const EntryType*),
-    double (*value_func)(const EntryType*),
-    Arena* arena) {
+    double (*value_func)(const EntryType*), Arena* arena) {
   Map<const char*, double, StringLess> result;
   size_t size;
   const auto* const* entries = entry_func(msg, &size);
