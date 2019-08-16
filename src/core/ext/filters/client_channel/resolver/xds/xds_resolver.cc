@@ -38,7 +38,7 @@ void XdsResolver::StartLocked() {
   static const char* service_config =
       "{\n"
       "  \"loadBalancingConfig\":[\n"
-      "    { \"xds-experimental\":{} }\n"
+      "    { \"xds_experimental\":{} }\n"
       "  ]\n"
       "}";
   Result result;
@@ -66,7 +66,7 @@ class XdsResolverFactory : public ResolverFactory {
     return OrphanablePtr<Resolver>(New<XdsResolver>(std::move(args)));
   }
 
-  const char* scheme() const override { return "xds_experimental"; }
+  const char* scheme() const override { return "xds-experimental"; }
 };
 
 }  // namespace
