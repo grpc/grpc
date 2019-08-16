@@ -1,4 +1,4 @@
-# Copyright 2019 The gRPC authors
+# Copyright 2019 The gRPC Authors
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -16,7 +16,6 @@
 import unittest
 from concurrent.futures import ThreadPoolExecutor
 import grpc
-from grpc import local_credentials
 
 
 class _GenericHandler(grpc.GenericRpcHandler):
@@ -35,10 +34,10 @@ class LocalCredentialsTest(unittest.TestCase):
 
     def test_local_tcp(self):
         server_addr = '[::1]:{}'
-        channel_creds = local_credentials.local_channel_credentials(
-            local_credentials.LocalConnectType.LOCAL_TCP)
-        server_creds = local_credentials.local_server_credentials(
-            local_credentials.LocalConnectType.LOCAL_TCP)
+        channel_creds = grpc.local_channel_credentials(
+            grpc.LocalConnectionType.LOCAL_TCP)
+        server_creds = grpc.local_server_credentials(
+            grpc.LocalConnectionType.LOCAL_TCP)
         server = self._create_server()
         port = server.add_secure_port(server_addr.format(0), server_creds)
         server.start()
@@ -48,10 +47,10 @@ class LocalCredentialsTest(unittest.TestCase):
 
     def test_uds(self):
         server_addr = 'unix:/tmp/grpc_fullstack_test'
-        channel_creds = local_credentials.local_channel_credentials(
-            local_credentials.LocalConnectType.UDS)
-        server_creds = local_credentials.local_server_credentials(
-            local_credentials.LocalConnectType.UDS)
+        channel_creds = grpc.local_channel_credentials(
+            grpc.LocalConnectionType.UDS)
+        server_creds = grpc.local_server_credentials(
+            grpc.LocalConnectionType.UDS)
         server = self._create_server()
         server.add_secure_port(server_addr, server_creds)
         server.start()

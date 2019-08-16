@@ -22,6 +22,7 @@ import six
 
 from grpc._cython import cygrpc as _cygrpc
 from grpc import _compression
+from grpc import local_credentials
 
 logging.getLogger(__name__).addHandler(logging.NullHandler())
 
@@ -1744,6 +1745,44 @@ def dynamic_ssl_server_credentials(initial_certificate_configuration,
             certificate_configuration_fetcher, require_client_authentication))
 
 
+@enum.unique
+class LocalConnectionType(enum.Enum):
+    """Type of local connections for which local channel/server credentials will be applied.
+
+    Attributes:
+      UDS: Unix domain socket connections
+      LOCAL_TCP: Local TCP connections.
+    """
+    UDS = _cygrpc.LocalConnectType.uds
+    LOCAL_TCP = _cygrpc.LocalConnectType.local_tcp
+
+
+def local_channel_credentials(local_connect_type=LocalConnectionType.LOCAL_TCP):
+    """Creates a local ChannelCredentials used for local connections.
+
+    Args:
+      local_connect_type: Local connection type (either UDS or LOCAL_TCP)
+
+    Returns:
+      A ChannelCredentials for use with a local Channel
+    """
+    return ChannelCredentials(
+        _cygrpc.channel_credentials_local(local_connect_type.value))
+
+
+def local_server_credentials(local_connect_type=LocalConnectionType.LOCAL_TCP):
+    """Creates a local ServerCredentials used for local connections.
+
+    Args:
+      local_connect_type: Local connection type (either UDS or LOCAL_TCP)
+
+    Returns:
+      A ServerCredentials for use with a local Server
+    """
+    return ServerCredentials(
+        _cygrpc.server_credentials_local(local_connect_type.value))
+
+
 def channel_ready_future(channel):
     """Creates a Future that tracks when a Channel is ready.
 
@@ -1913,6 +1952,7 @@ __all__ = (
     'ClientCallDetails',
     'ServerCertificateConfiguration',
     'ServerCredentials',
+    'LocalConnectionType',
     'UnaryUnaryMultiCallable',
     'UnaryStreamMultiCallable',
     'StreamUnaryMultiCallable',
@@ -1939,6 +1979,8 @@ __all__ = (
     'access_token_call_credentials',
     'composite_call_credentials',
     'composite_channel_credentials',
+    'local_channel_credentials',
+    'local_server_credentials',
     'ssl_server_credentials',
     'ssl_server_certificate_configuration',
     'dynamic_ssl_server_credentials',

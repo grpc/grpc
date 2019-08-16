@@ -101,4 +101,4 @@ cdef class ServerCredentials:
 
 cdef class LocalChannelCredentials(ChannelCredentials):
 
-  cdef readonly object _local_connect_type
+  cdef grpc_local_connect_type _local_connect_type
