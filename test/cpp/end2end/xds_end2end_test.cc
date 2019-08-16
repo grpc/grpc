@@ -551,7 +551,8 @@ class XdsEnd2endTest : public ::testing::Test {
   void ShutdownBackend(size_t index) { backends_[index]->Shutdown(); }
 
   void ResetStub(int fallback_timeout = 0,
-                 const grpc::string& expected_targets = "") {
+                 const grpc::string& expected_targets = "",
+                 grpc::string scheme = "") {
     ChannelArguments args;
     // TODO(juanlishen): Add setter to ChannelArguments.
     if (fallback_timeout > 0) {
@@ -562,8 +563,9 @@ class XdsEnd2endTest : public ::testing::Test {
     if (!expected_targets.empty()) {
       args.SetString(GRPC_ARG_FAKE_SECURITY_EXPECTED_TARGETS, expected_targets);
     }
+    if (scheme.empty()) scheme = "fake";
     std::ostringstream uri;
-    uri << "fake:///" << kApplicationTargetName_;
+    uri << scheme << ":///" << kApplicationTargetName_;
     // TODO(dgq): templatize tests to run everything using both secure and
     // insecure channel credentials.
     grpc_channel_credentials* channel_creds =
@@ -912,6 +914,20 @@ class XdsEnd2endTest : public ::testing::Test {
       "  ]\n"
       "}";
 };
+
+class XdsResolverTest : public XdsEnd2endTest {
+ public:
+  XdsResolverTest() : XdsEnd2endTest(0, 0, 0) {}
+};
+
+TEST_F(XdsResolverTest, XdsResolverIsUsed) {
+  // Use xds-experimental scheme in URI.
+  ResetStub(0, "", "xds-experimental");
+  // Send an RPC to trigger resolution.
+  SendRpc();
+  // Xds resolver returns xds_experimental as the LB policy.
+  EXPECT_EQ("xds_experimental", channel_->GetLoadBalancingPolicyName());
+}
 
 class SingleBalancerTest : public XdsEnd2endTest {
  public:

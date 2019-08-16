@@ -991,6 +991,7 @@ grpc_cc_library(
         "grpc_resolver_fake",
         "grpc_resolver_dns_native",
         "grpc_resolver_sockaddr",
+        "grpc_resolver_xds",
         "grpc_transport_chttp2_client_insecure",
         "grpc_transport_chttp2_server_insecure",
         "grpc_transport_inproc",
@@ -1521,6 +1522,18 @@ grpc_cc_library(
     hdrs = ["src/core/ext/filters/client_channel/resolver/fake/fake_resolver.h"],
     language = "c++",
     visibility = ["//test:__subpackages__"],
+    deps = [
+        "grpc_base",
+        "grpc_client_channel",
+    ],
+)
+
+grpc_cc_library(
+    name = "grpc_resolver_xds",
+    srcs = [
+        "src/core/ext/filters/client_channel/resolver/xds/xds_resolver.cc",
+    ],
+    language = "c++",
     deps = [
         "grpc_base",
         "grpc_client_channel",
