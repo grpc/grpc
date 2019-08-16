@@ -20,7 +20,7 @@ DESCRIPTOR = _descriptor.FileDescriptor(
   package='demo',
   syntax='proto3',
   serialized_options=None,
-  serialized_pb=_b('\n\ndemo.proto\x12\x04\x64\x65mo\"&\n\x07Request\x12\x0b\n\x03\x43id\x18\x01 \x01(\x03\x12\x0e\n\x06ReqMsg\x18\x02 \x01(\t\"(\n\x08Response\x12\x0b\n\x03Sid\x18\x01 \x01(\x03\x12\x0f\n\x07RespMsg\x18\x02 \x01(\t2\xf0\x01\n\x08GRPCDemo\x12-\n\x0cSimpleMethod\x12\r.demo.Request\x1a\x0e.demo.Response\x12\x38\n\x15\x43lientStreamingMethod\x12\r.demo.Request\x1a\x0e.demo.Response(\x01\x12\x38\n\x15ServerStreamingMethod\x12\r.demo.Request\x1a\x0e.demo.Response0\x01\x12\x41\n\x1c\x42idirectionalStreamingMethod\x12\r.demo.Request\x1a\x0e.demo.Response(\x01\x30\x01\x62\x06proto3')
+  serialized_pb=_b('\n\ndemo.proto\x12\x04\x64\x65mo\"2\n\x07Request\x12\x11\n\tclient_id\x18\x01 \x01(\x03\x12\x14\n\x0crequest_data\x18\x02 \x01(\t\"4\n\x08Response\x12\x11\n\tserver_id\x18\x01 \x01(\x03\x12\x15\n\rresponse_data\x18\x02 \x01(\t2\xf0\x01\n\x08GRPCDemo\x12-\n\x0cSimpleMethod\x12\r.demo.Request\x1a\x0e.demo.Response\x12\x38\n\x15\x43lientStreamingMethod\x12\r.demo.Request\x1a\x0e.demo.Response(\x01\x12\x38\n\x15ServerStreamingMethod\x12\r.demo.Request\x1a\x0e.demo.Response0\x01\x12\x41\n\x1c\x42idirectionalStreamingMethod\x12\r.demo.Request\x1a\x0e.demo.Response(\x01\x30\x01\x62\x06proto3')
 )
 
 
@@ -34,14 +34,14 @@ _REQUEST = _descriptor.Descriptor(
   containing_type=None,
   fields=[
     _descriptor.FieldDescriptor(
-      name='Cid', full_name='demo.Request.Cid', index=0,
+      name='client_id', full_name='demo.Request.client_id', index=0,
       number=1, type=3, cpp_type=2, label=1,
       has_default_value=False, default_value=0,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       serialized_options=None, file=DESCRIPTOR),
     _descriptor.FieldDescriptor(
-      name='ReqMsg', full_name='demo.Request.ReqMsg', index=1,
+      name='request_data', full_name='demo.Request.request_data', index=1,
       number=2, type=9, cpp_type=9, label=1,
       has_default_value=False, default_value=_b("").decode('utf-8'),
       message_type=None, enum_type=None, containing_type=None,
@@ -60,7 +60,7 @@ _REQUEST = _descriptor.Descriptor(
   oneofs=[
   ],
   serialized_start=20,
-  serialized_end=58,
+  serialized_end=70,
 )
 
 
@@ -72,14 +72,14 @@ _RESPONSE = _descriptor.Descriptor(
   containing_type=None,
   fields=[
     _descriptor.FieldDescriptor(
-      name='Sid', full_name='demo.Response.Sid', index=0,
+      name='server_id', full_name='demo.Response.server_id', index=0,
       number=1, type=3, cpp_type=2, label=1,
       has_default_value=False, default_value=0,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       serialized_options=None, file=DESCRIPTOR),
     _descriptor.FieldDescriptor(
-      name='RespMsg', full_name='demo.Response.RespMsg', index=1,
+      name='response_data', full_name='demo.Response.response_data', index=1,
       number=2, type=9, cpp_type=9, label=1,
       has_default_value=False, default_value=_b("").decode('utf-8'),
       message_type=None, enum_type=None, containing_type=None,
@@ -97,8 +97,8 @@ _RESPONSE = _descriptor.Descriptor(
   extension_ranges=[],
   oneofs=[
   ],
-  serialized_start=60,
-  serialized_end=100,
+  serialized_start=72,
+  serialized_end=124,
 )
 
 DESCRIPTOR.message_types_by_name['Request'] = _REQUEST
@@ -127,8 +127,8 @@ _GRPCDEMO = _descriptor.ServiceDescriptor(
   file=DESCRIPTOR,
   index=0,
   serialized_options=None,
-  serialized_start=103,
-  serialized_end=343,
+  serialized_start=127,
+  serialized_end=367,
   methods=[
   _descriptor.MethodDescriptor(
     name='SimpleMethod',

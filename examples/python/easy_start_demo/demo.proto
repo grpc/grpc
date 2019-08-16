@@ -1,9 +1,9 @@
 // 语法版本声明，必须放在非注释的第一行
-// Syntax version declaration, Must be placed on the first line of non-commentary
+// Syntax version declaration. Must be placed on the first line of non-commentary.
 syntax = "proto3";
 
 // 包名定义, Python中使用时可以省略不写(PS:我还要再Go中使用,所以留在这里了)
-// Package name definition, which can be omitted in Python (PS: I'll use it again in Go, so stay here)
+// Package name definition, which can be omitted in Python. (PS: I'll use it again in Go, so stay here)
 package demo;
 
 /*
@@ -17,34 +17,34 @@ Each field in the message definition has a unique number.
 The overall format is similar to defining a class in Python or a structure in Golang.
 */
 message Request {
-    int64 Cid = 1;
-    string ReqMsg = 2;
+    int64 client_id = 1;
+    string request_data = 2;
 }
 
 message Response {
-    int64 Sid = 1;
-    string RespMsg = 2;
+    int64 server_id = 1;
+    string response_data = 2;
 }
 
 // service是用来给GRPC服务定义方法的, 格式固定, 类似于Golang中定义一个接口
 // `service` is used to define methods for GRPC services in a fixed format, similar to defining an interface in Golang
 service GRPCDemo {
     // 简单模式
-    // Simple
+    // unary-unary
     rpc SimpleMethod (Request) returns (Response);
 
     // 客户端流模式（在一次调用中, 客户端可以多次向服务器传输数据, 但是服务器只能返回一次响应）
-    // Request-streaming (In a single call, the client can transfer data to the server several times,
+    // stream-unary (In a single call, the client can transfer data to the server several times,
     // but the server can only return a response once.)
     rpc ClientStreamingMethod (stream Request) returns (Response);
 
     // 服务端流模式（在一次调用中, 客户端只能一次向服务器传输数据, 但是服务器可以多次返回响应）
-    // Response-streaming (In a single call, the client can only transmit data to the server at one time,
+    // unary-stream (In a single call, the client can only transmit data to the server at one time,
     // but the server can return the response many times.)
     rpc ServerStreamingMethod (Request) returns (stream Response);
 
     // 双向流模式 (在一次调用中, 客户端和服务器都可以向对方多次收发数据)
-    // Bidirectional streaming (In a single call, both client and server can send and receive data
+    // stream-stream (In a single call, both client and server can send and receive data
     // to each other multiple times.)
     rpc BidirectionalStreamingMethod (stream Request) returns (stream Response);
 }

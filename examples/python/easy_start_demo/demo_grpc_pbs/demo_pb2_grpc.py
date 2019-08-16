@@ -44,7 +44,7 @@ class GRPCDemoServicer(object):
 
   def SimpleMethod(self, request, context):
     """简单模式
-    Simple
+    unary-unary
     """
     context.set_code(grpc.StatusCode.UNIMPLEMENTED)
     context.set_details('Method not implemented!')
@@ -52,7 +52,7 @@ class GRPCDemoServicer(object):
 
   def ClientStreamingMethod(self, request_iterator, context):
     """客户端流模式（在一次调用中, 客户端可以多次向服务器传输数据, 但是服务器只能返回一次响应）
-    Request-streaming (In a single call, the client can transfer data to the server several times,
+    stream-unary (In a single call, the client can transfer data to the server several times,
     but the server can only return a response once.)
     """
     context.set_code(grpc.StatusCode.UNIMPLEMENTED)
@@ -61,7 +61,7 @@ class GRPCDemoServicer(object):
 
   def ServerStreamingMethod(self, request, context):
     """服务端流模式（在一次调用中, 客户端只能一次向服务器传输数据, 但是服务器可以多次返回响应）
-    Response-streaming (In a single call, the client can only transmit data to the server at one time,
+    unary-stream (In a single call, the client can only transmit data to the server at one time,
     but the server can return the response many times.)
     """
     context.set_code(grpc.StatusCode.UNIMPLEMENTED)
@@ -70,7 +70,7 @@ class GRPCDemoServicer(object):
 
   def BidirectionalStreamingMethod(self, request_iterator, context):
     """双向流模式 (在一次调用中, 客户端和服务器都可以向对方多次收发数据)
-    Bidirectional streaming (In a single call, both client and server can send and receive data
+    stream-stream (In a single call, both client and server can send and receive data
     to each other multiple times.)
     """
     context.set_code(grpc.StatusCode.UNIMPLEMENTED)
