@@ -28,7 +28,6 @@ class XdsResolver : public Resolver {
  public:
   explicit XdsResolver(ResolverArgs args)
       : Resolver(args.combiner, std::move(args.result_handler)) {}
-  ~XdsResolver() override{};
 
   void StartLocked() override;
 
@@ -36,10 +35,10 @@ class XdsResolver : public Resolver {
 };
 
 void XdsResolver::StartLocked() {
-  const char* service_config =
+  static const char* service_config =
       "{\n"
       "  \"loadBalancingConfig\":[\n"
-      "    { \"xds_experimental\":{} }\n"
+      "    { \"xds-experimental\":{} }\n"
       "  ]\n"
       "}";
   Result result;
