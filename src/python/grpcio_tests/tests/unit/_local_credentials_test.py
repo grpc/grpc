@@ -42,7 +42,9 @@ class LocalCredentialsTest(unittest.TestCase):
         port = server.add_secure_port(server_addr.format(0), server_creds)
         server.start()
         channel = grpc.secure_channel(server_addr.format(port), channel_creds)
-        self.assertEqual(b'abc', channel.unary_unary('/test/method')(b'abc'))
+        self.assertEqual(b'abc',
+                         channel.unary_unary('/test/method')(
+                             b'abc', wait_for_ready=True))
         server.stop(None)
 
     def test_uds(self):
@@ -55,7 +57,9 @@ class LocalCredentialsTest(unittest.TestCase):
         server.add_secure_port(server_addr, server_creds)
         server.start()
         channel = grpc.secure_channel(server_addr, channel_creds)
-        self.assertEqual(b'abc', channel.unary_unary('/test/method')(b'abc'))
+        self.assertEqual(b'abc',
+                         channel.unary_unary('/test/method')(
+                             b'abc', wait_for_ready=True))
         server.stop(None)
 
 
