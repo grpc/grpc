@@ -32,7 +32,8 @@
 // in channel args.
 // TODO(qianchengz): Find a reasonable default value. Maybe check what deault
 // value Java uses.
-#define DEFAULT_IDLE_TIMEOUT_MS (5 /*minutes*/ * 60 * 1000)
+#define DEFAULT_IDLE_TIMEOUT_MS (30 /*minutes*/ * 60 * 1000)
+#define MIN_IDLE_TIMEOUT_MS (1 /*second*/ * 1000)
 
 namespace grpc_core {
 
@@ -118,9 +119,11 @@ enum ChannelState {
 };
 
 grpc_millis GetClientIdleTimeout(const grpc_channel_args* args) {
-  return grpc_channel_arg_get_integer(
-      grpc_channel_args_find(args, GRPC_ARG_CLIENT_IDLE_TIMEOUT_MS),
-      {DEFAULT_IDLE_TIMEOUT_MS, 0, INT_MAX});
+  return GPR_MAX(
+      grpc_channel_arg_get_integer(
+          grpc_channel_args_find(args, GRPC_ARG_CLIENT_IDLE_TIMEOUT_MS),
+          {DEFAULT_IDLE_TIMEOUT_MS, 0, INT_MAX}),
+      MIN_IDLE_TIMEOUT_MS);
 }
 
 class ChannelData {
