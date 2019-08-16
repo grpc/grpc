@@ -1,5 +1,4 @@
-# gRPC Bazel BUILD file.
-#
+#!/bin/bash
 # Copyright 2019 gRPC authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -14,15 +13,27 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-licenses(["notice"])  # Apache v2
+# Don't run this script standalone. Instead, run from the repository root:
+# ./tools/run_tests/run_tests.py -l c++
 
-package(default_visibility = ["//visibility:public"])
+set -ev
 
-exports_files(["LICENSE"])
+cd "$(dirname "$0")"
 
-proto_library(
-    name = "test_proto",
-    srcs = ["test.proto"],
-    deps = ["//src/objective-c/examples:messages_proto"],
-    visibility = ["//visibility:public"],
-)
+echo "TIME:  $(date)"
+
+./build_tests.sh
+
+echo "TIME:  $(date)"
+
+set -o pipefail
+
+XCODEBUILD_FILTER='(^CompileC |^Ld |^ *[^ ]*clang |^ *cd |^ *export |^Libtool |^ *[^ ]*libtool |^CpHeader |^ *builtin-copy )'
+
+xcodebuild \
+    -workspace Tests.xcworkspace \
+    -scheme CronetTests \
+    -destination name="iPhone 8" \
+    test \
+    | egrep -v "$XCODEBUILD_FILTER" \
+    | egrep -v '^$' -

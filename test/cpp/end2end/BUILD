@@ -78,6 +78,7 @@ grpc_cc_test(
         "//test/core/util:grpc_test_util",
         "//test/cpp/util:test_util",
     ],
+    tags = ["no_test_ios"],
 )
 
 grpc_cc_test(
@@ -89,7 +90,7 @@ grpc_cc_test(
     external_deps = [
         "gtest",
     ],
-    tags = ["no_windows"],
+    tags = ["no_windows", "no_test_ios"],
     deps = [
         ":test_service_impl",
         "//:gpr",
@@ -121,6 +122,7 @@ grpc_cc_test(
         "//test/core/util:grpc_test_util",
         "//test/cpp/util:test_util",
     ],
+    tags = ["no_test_ios"],
 )
 
 grpc_cc_binary(
@@ -163,6 +165,7 @@ grpc_cc_test(
         "//test/core/util:grpc_test_util",
         "//test/cpp/util:test_util",
     ],
+    tags = ["no_test_ios"],
 )
 
 grpc_cc_test(
@@ -438,6 +441,7 @@ grpc_cc_test(
         "//test/core/util:test_lb_policies",
         "//test/cpp/util:test_util",
     ],
+    tags = ["no_test_ios"],
 )
 
 grpc_cc_test(
@@ -478,6 +482,7 @@ grpc_cc_test(
         "//test/core/util:grpc_test_util",
         "//test/cpp/util:test_util",
     ],
+    tags = ["no_test_ios"],
 )
 
 grpc_cc_test(
@@ -500,6 +505,7 @@ grpc_cc_test(
         "//test/core/util:grpc_test_util",
         "//test/cpp/util:test_util",
     ],
+    tags = ["no_test_ios"],
 )
 
 grpc_cc_test(
@@ -562,6 +568,7 @@ grpc_cc_test(
         "//test/core/util:grpc_test_util",
         "//test/cpp/util:test_util",
     ],
+    tags = ["no_test_ios"],
 )
 
 grpc_cc_binary(
@@ -615,6 +622,7 @@ grpc_cc_test(
         "//src/proto/grpc/testing:echo_proto",
         "//test/cpp/util:test_util",
     ],
+    tags = ["no_test_ios"],
 )
 
 grpc_cc_test(
@@ -623,7 +631,7 @@ grpc_cc_test(
     external_deps = [
         "gtest",
     ],
-    tags = ["manual"],
+    tags = ["manual", "no_test_ios"],
     deps = [
         ":test_service_impl",
         "//:gpr",
@@ -690,6 +698,7 @@ grpc_cc_test(
         "//test/core/util:grpc_test_util",
         "//test/cpp/util:test_util",
     ],
+    tags = ["no_test_ios"],
 )
 
 grpc_cc_test(
@@ -698,7 +707,7 @@ grpc_cc_test(
     external_deps = [
         "gtest",
     ],
-    tags = ["manual"],  # test requires root, won't work with bazel RBE
+    tags = ["manual", "no_test_ios"],  # test requires root, won't work with bazel RBE
     deps = [
         ":test_service_impl",
         "//:gpr",
@@ -747,4 +756,5 @@ grpc_cc_test(
         "//test/core/util:grpc_test_util",
         "//test/cpp/util:test_util",
     ],
+    tags = ["no_test_ios"],
 )

@@ -15,6 +15,7 @@
 ssl_roots_path = File.expand_path('../../../../etc/roots.pem', __FILE__)
 
 require_relative 'grpc/errors'
+require_relative 'grpc/structs'
 require_relative 'grpc/grpc'
 require_relative 'grpc/logconfig'
 require_relative 'grpc/notifier'
