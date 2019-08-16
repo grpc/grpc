@@ -18,15 +18,15 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "src/core/lib/iomgr/timer_manager.h"
+#include <inttypes.h>
 
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
-#include <inttypes.h>
 
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/gprpp/thd.h"
 #include "src/core/lib/iomgr/timer.h"
+#include "src/core/lib/iomgr/timer_manager.h"
 
 struct completed_thread {
   grpc_core::Thread thd;
@@ -359,4 +359,4 @@ void grpc_kick_poller(void) {
   gpr_mu_unlock(&g_mu);
 }
 
-int64_t grpc_timer_manager_get_wakeups_testonly(void) { return g_wakeups; }
+uint64_t grpc_timer_manager_get_wakeups_testonly(void) { return g_wakeups; }

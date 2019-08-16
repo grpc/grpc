@@ -16,7 +16,6 @@
  *
  */
 
-#include "src/core/lib/iomgr/timer.h"
 
 #include <grpc/grpc.h>
 #include <grpc/support/log.h>
@@ -27,6 +26,7 @@
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/timer_manager.h"
 #include "test/core/util/test_config.h"
+#include "src/core/lib/iomgr/timer.h"
 
 // MAYBE_SKIP_TEST is a macro to determine if this particular test configuration
 // should be skipped based on a decision made at SetUp time.
@@ -69,8 +69,8 @@ TEST_F(TimerTest, OneTimerExpires) {
   int timer_fired = 0;
   grpc_timer_init(&timer, 500,
                   GRPC_CLOSURE_CREATE(
-                      [](void* param, grpc_error*) {
-                        int* timer_fired = static_cast<int*>(param);
+                      [](void* arg, grpc_error*) {
+                        int* timer_fired = static_cast<int*>(arg);
                         ++*timer_fired;
                       },
                       &timer_fired, grpc_schedule_on_exec_ctx));
@@ -97,8 +97,8 @@ TEST_F(TimerTest, MultipleTimersExpire) {
   for (int i = 0; i < kNumTimers; ++i) {
     grpc_timer_init(&timers[i], 500 + i,
                     GRPC_CLOSURE_CREATE(
-                        [](void* param, grpc_error*) {
-                          int* timer_fired = static_cast<int*>(param);
+                        [](void* arg, grpc_error*) {
+                          int* timer_fired = static_cast<int*>(arg);
                           ++*timer_fired;
                         },
                         &timer_fired, grpc_schedule_on_exec_ctx));
@@ -127,11 +127,11 @@ TEST_F(TimerTest, CancelSomeTimers) {
   for (int i = 0; i < kNumTimers; ++i) {
     grpc_timer_init(&timers[i], 500 + i,
                     GRPC_CLOSURE_CREATE(
-                        [](void* param, grpc_error* error) {
+                        [](void* arg, grpc_error* error) {
                           if (error == GRPC_ERROR_CANCELLED) {
                             return;
                           }
-                          int* timer_fired = static_cast<int*>(param);
+                          int* timer_fired = static_cast<int*>(arg);
                           ++*timer_fired;
                         },
                         &timer_fired, grpc_schedule_on_exec_ctx));
