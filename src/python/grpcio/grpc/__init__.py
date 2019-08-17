@@ -1759,6 +1759,8 @@ class LocalConnectionType(enum.Enum):
 def local_channel_credentials(local_connect_type=LocalConnectionType.LOCAL_TCP):
     """Creates a local ChannelCredentials used for local connections.
 
+    This is an EXPERIMENTAL API.
+
     Local credentials are used by local TCP endpoints (e.g. localhost:10000)
     also UDS connections. It allows them to create secure channel, hence
     transmitting call credentials become possible.
@@ -1779,6 +1781,8 @@ def local_channel_credentials(local_connect_type=LocalConnectionType.LOCAL_TCP):
 
 def local_server_credentials(local_connect_type=LocalConnectionType.LOCAL_TCP):
     """Creates a local ServerCredentials used for local connections.
+
+    This is an EXPERIMENTAL API.
 
     Local credentials are used by local TCP endpoints (e.g. localhost:10000)
     also UDS connections. It allows them to create secure channel, hence
