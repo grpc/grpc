@@ -13,7 +13,6 @@
 -Ithird_party/googletest/googlemock/include
 -Ithird_party/googletest/googletest/include
 -Ithird_party/googletest/include
--Ithird_party/nanopb
 -Ithird_party/protobuf/src
 -Ithird_party/upb
 -Ithird_party/zlib

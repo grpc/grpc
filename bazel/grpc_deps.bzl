@@ -9,11 +9,6 @@ def grpc_deps():
     """Loads dependencies need to compile and test the grpc library."""
 
     native.bind(
-        name = "nanopb",
-        actual = "@com_github_nanopb_nanopb//:nanopb",
-    )
-
-    native.bind(
         name = "upb_lib",
         actual = "@upb//:upb",
     )
@@ -127,15 +122,6 @@ def grpc_deps():
             sha256 = "416212e14481cff8fd4849b1c1c1200a7f34808a54377e22d7447efdf54ad758",
             strip_prefix = "protobuf-09745575a923640154bcf307fba8aedff47f240a",
             url = "https://github.com/google/protobuf/archive/09745575a923640154bcf307fba8aedff47f240a.tar.gz",
-        )
-
-    if "com_github_nanopb_nanopb" not in native.existing_rules():
-        http_archive(
-            name = "com_github_nanopb_nanopb",
-            build_file = "@com_github_grpc_grpc//third_party:nanopb.BUILD",
-            sha256 = "8bbbb1e78d4ddb0a1919276924ab10d11b631df48b657d960e0c795a25515735",
-            strip_prefix = "nanopb-f8ac463766281625ad710900479130c7fcb4d63b",
-            url = "https://github.com/nanopb/nanopb/archive/f8ac463766281625ad710900479130c7fcb4d63b.tar.gz",
         )
 
     if "com_github_google_googletest" not in native.existing_rules():
