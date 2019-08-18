@@ -23,6 +23,7 @@
 
 #include <grpc/slice_buffer.h>
 
+#include <stdint.h>
 #include "src/core/ext/filters/client_channel/lb_policy/xds/xds_client_stats.h"
 #include "src/core/ext/filters/client_channel/server_address.h"
 
@@ -48,7 +49,127 @@ struct XdsLocalityInfo {
   uint32_t priority;
 };
 
-using XdsLocalityList = InlinedVector<XdsLocalityInfo, 1>;
+struct XdsLocalityList {
+  InlinedVector<XdsLocalityInfo, 1> list;
+  bool applied = false;
+};
+
+class XdsLocalityListPriorityMap {
+ public:
+  bool operator==(XdsLocalityListPriorityMap& other) {
+    if (sorted_priorities_ != other.sorted_priorities_) return false;
+    for (auto& p : map_) {
+      const uint32_t priority = p.first;
+      XdsLocalityList& locality_list = p.second;
+      if (locality_list.list != other.map_.find(priority)->second.list) {
+        return false;
+      }
+    }
+    return true;
+  }
+
+  void Add(XdsLocalityInfo locality_info) {
+    auto iter = map_.find(locality_info.priority);
+    if (iter == map_.end()) {
+      iter = map_.emplace(locality_info.priority, XdsLocalityList()).first;
+    }
+    XdsLocalityList& locality_list = iter->second;
+    locality_list.list.push_back(std::move(locality_info));
+  }
+
+  const XdsLocalityList* First(uint32_t* priority) {
+    if (sorted_priorities_.empty()) return nullptr;
+    *priority = sorted_priorities_[0];
+    return &map_.find(sorted_priorities_[0])->second;
+  }
+
+  //  const XdsLocalityList* Next(uint32_t priority) {
+  //    for (size_t i = 0; i < sorted_priorities_.size() - 1; ++i) {
+  //      if (sorted_priorities_[i] == priority) {
+  //        return &map_.find(sorted_priorities_[i + 1])->second;
+  //      }
+  //    }
+  //    return nullptr;
+  //  }
+
+  uint32_t Next(uint32_t priority) {
+    for (size_t i = 0; i < sorted_priorities_.size() - 1; ++i) {
+      if (sorted_priorities_[i] == priority) {
+        return sorted_priorities_[i + 1];
+      }
+    }
+    return UINT32_MAX;
+  }
+
+  bool Has(uint32_t priority) { return map_.find(priority) != map_.end(); }
+  bool Has(const XdsLocalityName& locality_name) {
+    for (auto& p : map_) {
+      const XdsLocalityList& locality_list = p.second;
+      for (size_t i = 0; i < locality_list.list.size(); ++i) {
+        if (*locality_list.list[i].locality_name == locality_name) {
+          return true;
+        }
+      }
+    }
+    return false;
+  }
+  bool Empty() const { return sorted_priorities_.empty(); }
+  size_t Size() const { return sorted_priorities_.size(); }
+  //  bool Size() const {
+  //    size_t num_localities = 0;
+  //    for (auto )
+  //  }
+
+  void Sort() {
+    for (auto& p : map_) {
+      const uint32_t priority = p.first;
+      XdsLocalityList& locality_list = p.second;
+      // Sort each locality list.
+      std::sort(locality_list.list.data(),
+                locality_list.list.data() + locality_list.list.size(),
+                XdsLocalityInfo::Less());
+      sorted_priorities_.push_back(priority);
+    }
+    // Sort priority
+    std::sort(sorted_priorities_.data(),
+              sorted_priorities_.data() + sorted_priorities_.size());
+  }
+
+  void UpdateApplied(XdsLocalityListPriorityMap& old) {
+    for (auto& p : map_) {
+      const uint32_t priority = p.first;
+      XdsLocalityList& locality_list = p.second;
+      auto iter = old.map_.find(priority);
+      // New priority.
+      if (iter == old.map_.end()) continue;
+      const XdsLocalityList& old_locality_list = iter->second;
+      if (old_locality_list.applied &&
+          old_locality_list.list == locality_list.list) {
+        locality_list.applied = true;
+      }
+    }
+  }
+
+  InlinedVector<uint32_t, 1> FindPriorities(uint32_t highest_exclusive,
+                                            uint32_t lowest_inclusive) const {
+    InlinedVector<uint32_t, 1> priorities;
+    for (size_t i = 0; i < sorted_priorities_.size(); ++i) {
+      if (sorted_priorities_[i] <= highest_exclusive) continue;
+      if (sorted_priorities_[i] > lowest_inclusive) break;
+      priorities.push_back(sorted_priorities_[i]);
+    }
+    return priorities;
+  }
+
+  const InlinedVector<uint32_t, 1>& sorted_priorities() const {
+    return sorted_priorities_;
+  }
+  Map<uint32_t, XdsLocalityList>& map() { return map_; }
+
+ private:
+  Map<uint32_t, XdsLocalityList> map_;
+  InlinedVector<uint32_t, 1> sorted_priorities_;
+};
 
 // There are two phases of accessing this class's content:
 // 1. to initialize in the control plane combiner;
@@ -92,7 +213,7 @@ class XdsDropConfig : public RefCounted<XdsDropConfig> {
 };
 
 struct XdsUpdate {
-  XdsLocalityList locality_list;
+  XdsLocalityListPriorityMap locality_list_map;
   RefCountedPtr<XdsDropConfig> drop_config;
   bool drop_all = false;
 };

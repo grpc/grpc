@@ -42,6 +42,7 @@
 #include "google/protobuf/timestamp.upb.h"
 #include "google/protobuf/wrappers.upb.h"
 #include "upb/upb.h"
+#include "xds_load_balancer_api.h"
 
 namespace grpc_core {
 
@@ -258,13 +259,11 @@ grpc_error* XdsEdsResponseDecodeAndParse(const grpc_slice& encoded_response,
     if (error != GRPC_ERROR_NONE) return error;
     // Filter out locality with weight 0.
     if (locality_info.lb_weight == 0) continue;
-    update->locality_list.push_back(std::move(locality_info));
+    update->locality_list_map.Add(locality_info);
   }
   // The locality list is sorted here into deterministic order so that it's
   // easier to check if two locality lists contain the same set of localities.
-  std::sort(update->locality_list.data(),
-            update->locality_list.data() + update->locality_list.size(),
-            XdsLocalityInfo::Less());
+  update->locality_list_map.Sort();
   // Get the drop config.
   update->drop_config = MakeRefCounted<XdsDropConfig>();
   const envoy_api_v2_ClusterLoadAssignment_Policy* policy =
