@@ -259,11 +259,16 @@ grpc_error* XdsEdsResponseDecodeAndParse(const grpc_slice& encoded_response,
     // Filter out locality with weight 0.
     if (locality_info.lb_weight == 0) continue;
     update->locality_list.push_back(std::move(locality_info));
+    auto iter = update->locality_list_map.find(locality_info.priority);
+    if (iter == update->locality_list_map.end()) {
+      iter = update->locality_list_map.emplace(locality_info.priority).first;
+    }
+    iter->second.push_back(std::move(locality_info));
   }
   // The locality list is sorted here into deterministic order so that it's
   // easier to check if two locality lists contain the same set of localities.
-  std::sort(update->locality_list.data(),
-            update->locality_list.data() + update->locality_list.size(),
+  std::sort(update->locality_list_map.data(),
+            update->locality_list_map.data() + update->locality_list_map.size(),
             XdsLocalityInfo::Less());
   // Get the drop config.
   update->drop_config = MakeRefCounted<XdsDropConfig>();

@@ -50,6 +50,45 @@ struct XdsLocalityInfo {
 
 using XdsLocalityList = InlinedVector<XdsLocalityInfo, 1>;
 
+class XdsLocalityListPriorityMap {
+ public:
+  void Add(uint32_t priority, XdsLocalityList locality_list) {
+    map_.emplace(priority, std::move(locality_list));
+    sorted_priorities_.push_back(priority);
+  }
+
+  const XdsLocalityList* First(uint32_t* priority) {
+    if (sorted_priorities_.empty()) return nullptr;
+    *priority = sorted_priorities_[0];
+    return &map_.find(sorted_priorities_[0])->second;
+  }
+
+  const XdsLocalityList* Next(uint32_t priority) {
+    for (size_t i = 0; i < sorted_priorities_.size() - 1; ++i) {
+      if (sorted_priorities_[i] == priority) {
+        return &map_.find(sorted_priorities_[i + 1])->second;
+      }
+    }
+    return nullptr;
+  }
+
+  bool Has(uint32_t priority) { return map_.find(priority) != map_.end(); }
+  bool Empty() const { return map_.empty();}
+//  bool Size() const {
+//    size_t num_localities = 0;
+//    for (auto )
+//  }
+
+  void Sort() {
+    std::sort(sorted_priorities_.data(),
+              sorted_priorities_.data() + sorted_priorities_.size());
+  }
+
+ private:
+  Map<uint32_t, XdsLocalityList> map_;
+  InlinedVector<uint32_t, 1> sorted_priorities_;
+};
+
 // There are two phases of accessing this class's content:
 // 1. to initialize in the control plane combiner;
 // 2. to use in the data plane combiner.
@@ -92,7 +131,7 @@ class XdsDropConfig : public RefCounted<XdsDropConfig> {
 };
 
 struct XdsUpdate {
-  XdsLocalityList locality_list;
+  XdsLocalityListPriorityMap locality_list_map;
   RefCountedPtr<XdsDropConfig> drop_config;
   bool drop_all = false;
 };

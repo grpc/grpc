@@ -448,92 +448,106 @@ class XdsLb : public LoadBalancingPolicy {
     LoadBalancingPolicy* child_ = nullptr;
   };
 
-  class LocalityMap {
+  class LocalityMapPriorityMap {
    public:
-    class LocalityEntry : public InternallyRefCounted<LocalityEntry> {
+    class LocalityMap : public InternallyRefCounted<LocalityMap> {
      public:
-      LocalityEntry(RefCountedPtr<XdsLb> parent,
-                    RefCountedPtr<XdsLocalityName> name);
-      ~LocalityEntry();
+      class LocalityEntry : public InternallyRefCounted<LocalityEntry> {
+       public:
+        LocalityEntry(RefCountedPtr<LocalityMap> locality_map,
+                      RefCountedPtr<XdsLocalityName> name,
+                      uint32_t locality_weight);
+        ~LocalityEntry();
 
-      void UpdateLocked(uint32_t locality_weight, ServerAddressList serverlist,
+        void UpdateLocked(ServerAddressList serverlist,
+                          LoadBalancingPolicy::Config* child_policy_config,
+                          const grpc_channel_args* args);
+        void ShutdownLocked();
+        void ResetBackoffLocked();
+        void Orphan() override;
+
+       private:
+        class Helper : public ChannelControlHelper {
+         public:
+          explicit Helper(RefCountedPtr<LocalityEntry> entry)
+              : entry_(std::move(entry)) {}
+
+          ~Helper() { entry_.reset(DEBUG_LOCATION, "Helper"); }
+
+          RefCountedPtr<SubchannelInterface> CreateSubchannel(
+              const grpc_channel_args& args) override;
+          grpc_channel* CreateChannel(const char* target,
+                                      const grpc_channel_args& args) override;
+          void UpdateState(grpc_connectivity_state state,
+                           UniquePtr<SubchannelPicker> picker) override;
+          void RequestReresolution() override;
+          void AddTraceEvent(TraceSeverity severity,
+                             const char* message) override;
+          void set_child(LoadBalancingPolicy* child) { child_ = child; }
+
+         private:
+          bool CalledByPendingChild() const;
+          bool CalledByCurrentChild() const;
+
+          RefCountedPtr<LocalityEntry> entry_;
+          LoadBalancingPolicy* child_ = nullptr;
+        };
+
+        XdsLb* xds_policy() const { return locality_map_->xds_policy(); }
+
+        // Methods for dealing with the child policy.
+        OrphanablePtr<LoadBalancingPolicy> CreateChildPolicyLocked(
+            const char* name, const grpc_channel_args* args);
+        grpc_channel_args* CreateChildPolicyArgsLocked(
+            const grpc_channel_args* args);
+
+        RefCountedPtr<LocalityMap> locality_map_;
+        RefCountedPtr<XdsLocalityName> name_;
+        OrphanablePtr<LoadBalancingPolicy> child_policy_;
+        OrphanablePtr<LoadBalancingPolicy> pending_child_policy_;
+        RefCountedPtr<PickerWrapper> picker_wrapper_;
+        grpc_connectivity_state connectivity_state_;
+        uint32_t locality_weight_;
+      };
+
+      LocalityMap(uint32_t priority, RefCountedPtr<XdsLb> xds_policy)
+          : priority_(priority), xds_policy_(std::move(xds_policy)) {
+        GRPC_CLOSURE_INIT(&on_update_timeout_, OnUpdateTimeout, this,
+                          grpc_combiner_scheduler(xds_policy_->combiner()));
+      }
+
+      void UpdateLocked(const XdsLocalityList& locality_list,
                         LoadBalancingPolicy::Config* child_policy_config,
                         const grpc_channel_args* args);
       void ShutdownLocked();
       void ResetBackoffLocked();
-      void DeactivateLocked();
-      void Orphan() override;
 
-      grpc_connectivity_state connectivity_state() const {
-        return connectivity_state_;
-      }
-      uint32_t locality_weight() const { return locality_weight_; }
-      RefCountedPtr<PickerWrapper> picker_wrapper() const {
-        return picker_wrapper_;
-      }
+      XdsLb* xds_policy() const { return xds_policy_.get(); }
 
      private:
-      class Helper : public ChannelControlHelper {
-       public:
-        explicit Helper(RefCountedPtr<LocalityEntry> entry)
-            : entry_(std::move(entry)) {}
+      static void OnUpdateTimeout(void* arg, grpc_error* error);
 
-        ~Helper() { entry_.reset(DEBUG_LOCATION, "Helper"); }
-
-        RefCountedPtr<SubchannelInterface> CreateSubchannel(
-            const grpc_channel_args& args) override;
-        grpc_channel* CreateChannel(const char* target,
-                                    const grpc_channel_args& args) override;
-        void UpdateState(grpc_connectivity_state state,
-                         UniquePtr<SubchannelPicker> picker) override;
-        void RequestReresolution() override;
-        void AddTraceEvent(TraceSeverity severity,
-                           const char* message) override;
-        void set_child(LoadBalancingPolicy* child) { child_ = child; }
-
-       private:
-        bool CalledByPendingChild() const;
-        bool CalledByCurrentChild() const;
-
-        RefCountedPtr<LocalityEntry> entry_;
-        LoadBalancingPolicy* child_ = nullptr;
-      };
-
-      // Methods for dealing with the child policy.
-      OrphanablePtr<LoadBalancingPolicy> CreateChildPolicyLocked(
-          const char* name, const grpc_channel_args* args);
-      grpc_channel_args* CreateChildPolicyArgsLocked(
-          const grpc_channel_args* args);
-
-      static void OnDelayedRemovalTimerLocked(void* arg, grpc_error* error);
-
-      RefCountedPtr<XdsLb> parent_;
-      RefCountedPtr<XdsLocalityName> name_;
-      OrphanablePtr<LoadBalancingPolicy> child_policy_;
-      OrphanablePtr<LoadBalancingPolicy> pending_child_policy_;
-      RefCountedPtr<PickerWrapper> picker_wrapper_;
-      grpc_connectivity_state connectivity_state_ = GRPC_CHANNEL_IDLE;
-      uint32_t locality_weight_;
-      grpc_closure on_delayed_removal_timer_;
-      grpc_timer delayed_removal_timer_;
-      bool delayed_removal_timer_callback_pending_ = false;
+      Map<RefCountedPtr<XdsLocalityName>, OrphanablePtr<LocalityEntry>,
+          XdsLocalityName::Less>
+          map_;
+      uint32_t priority_;
+      grpc_closure on_update_timeout_;
+      grpc_timer on_update;
+      RefCountedPtr<XdsLb> xds_policy_;
     };
 
-    explicit LocalityMap(XdsLb* xds_policy) : xds_policy_(xds_policy) {}
-
-    void UpdateLocked(const XdsLocalityList& locality_list,
+    void UpdateLocked(XdsLocalityListPriorityMap locality_list_map,
                       LoadBalancingPolicy::Config* child_policy_config,
-                      const grpc_channel_args* args, XdsLb* parent,
-                      bool is_initial_update = false);
-    void UpdateXdsPickerLocked();
-    void ShutdownLocked();
-    void ResetBackoffLocked();
+                      const grpc_channel_args* args, XdsLb* parent);
+
+    const XdsLocalityListPriorityMap& locality_list_map() const {
+      return locality_list_map_;
+    }
 
    private:
-    XdsLb* xds_policy_;
-    Map<RefCountedPtr<XdsLocalityName>, OrphanablePtr<LocalityEntry>,
-        XdsLocalityName::Less>
-        map_;
+    Map<uint32_t, OrphanablePtr<LocalityMap>> map_;
+    uint32_t current_priority_ = UINT32_MAX;
+    XdsLocalityListPriorityMap locality_list_map_;
   };
 
   ~XdsLb();
@@ -609,10 +623,7 @@ class XdsLb : public LoadBalancingPolicy {
   RefCountedPtr<LoadBalancingPolicy::Config> child_policy_config_;
   const grpc_millis locality_retention_interval_ms_;
   // Map of policies to use in the backend
-  LocalityMap locality_map_;
-  // TODO(mhaidry) : Add support for multiple maps of localities
-  // with different priorities
-  XdsLocalityList locality_list_;
+  LocalityMapPriorityMap priority_map_;
   // TODO(mhaidry) : Add a pending locality map that may be swapped with the
   // the current one when new localities in the pending map are ready
   // to accept connections
@@ -1125,7 +1136,7 @@ void XdsLb::LbChannelState::EdsCallState::OnResponseReceivedLocked(
       GRPC_ERROR_UNREF(parse_error);
       return;
     }
-    if (update.locality_list.empty() && !update.drop_all) {
+    if (update.locality_list_map.empty() && !update.drop_all) {
       char* response_slice_str =
           grpc_dump_slice(response_slice, GPR_DUMP_ASCII | GPR_DUMP_HEX);
       gpr_log(GPR_ERROR,
@@ -1141,10 +1152,11 @@ void XdsLb::LbChannelState::EdsCallState::OnResponseReceivedLocked(
               "[xdslb %p] EDS response with %" PRIuPTR
               " localities and %" PRIuPTR
               " drop categories received (drop_all=%d)",
-              xdslb_policy, update.locality_list.size(),
+              xdslb_policy, update.locality_list_map.size(),
               update.drop_config->drop_category_list().size(), update.drop_all);
-      for (size_t i = 0; i < update.locality_list.size(); ++i) {
-        const XdsLocalityInfo& locality = update.locality_list[i];
+      for (size_t i = 0; i < update.locality_list_map.size(); ++i) {
+        const XdsLocalityInfo& locality = update.locality_list_map[i];
+        const XdsLocalityName* locality_name = locality.locality_name.get();
         gpr_log(GPR_INFO,
                 "[xdslb %p] Locality %" PRIuPTR " %s contains %" PRIuPTR
                 " server addresses",
@@ -1201,7 +1213,8 @@ void XdsLb::LbChannelState::EdsCallState::OnResponseReceivedLocked(
         *xdslb_policy->drop_config_ != *update.drop_config;
     xdslb_policy->drop_config_ = std::move(update.drop_config);
     // Ignore identical locality update.
-    if (xdslb_policy->locality_list_ == update.locality_list) {
+    if (xdslb_policy->priority_map_.locality_list_map() ==
+        update.locality_list_map) {
       if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_xds_trace)) {
         gpr_log(GPR_INFO,
                 "[xdslb %p] Incoming locality list identical to current, "
@@ -1213,12 +1226,11 @@ void XdsLb::LbChannelState::EdsCallState::OnResponseReceivedLocked(
       }
       return;
     }
-    // Update the locality list.
-    xdslb_policy->locality_list_ = std::move(update.locality_list);
     // Update the locality map.
-    xdslb_policy->locality_map_.UpdateLocked(
-        xdslb_policy->locality_list_, xdslb_policy->child_policy_config_.get(),
-        xdslb_policy->args_, xdslb_policy);
+    xdslb_policy->priority_map_.UpdateLocked(
+        std::move(update.locality_list_map),
+        xdslb_policy->child_policy_config_.get(), xdslb_policy->args_,
+        xdslb_policy);
   }();
   grpc_slice_unref_internal(response_slice);
   if (xdslb_policy->shutting_down_) {
@@ -1753,7 +1765,7 @@ void XdsLb::ShutdownLocked() {
   if (fallback_at_startup_checks_pending_) {
     grpc_timer_cancel(&lb_fallback_timer_);
   }
-  locality_map_.ShutdownLocked();
+  priority_map_.ShutdownLocked();
   if (fallback_policy_ != nullptr) {
     grpc_pollset_set_del_pollset_set(fallback_policy_->interested_parties(),
                                      interested_parties());
@@ -1781,7 +1793,7 @@ void XdsLb::ResetBackoffLocked() {
   if (pending_lb_chand_ != nullptr) {
     grpc_channel_reset_connect_backoff(pending_lb_chand_->channel());
   }
-  locality_map_.ResetBackoffLocked();
+  priority_map_.ResetBackoffLocked();
   if (fallback_policy_ != nullptr) {
     fallback_policy_->ResetBackoffLocked();
   }
@@ -1845,7 +1857,7 @@ void XdsLb::UpdateLocked(UpdateArgs args) {
     return;
   }
   ProcessAddressesAndChannelArgsLocked(std::move(args.addresses), *args.args);
-  locality_map_.UpdateLocked(locality_list_, child_policy_config_.get(), args_,
+  priority_map_.UpdateLocked(locality_list_, child_policy_config_.get(), args_,
                              this, is_initial_update);
   // Update the existing fallback policy. The fallback policy config and/or the
   // fallback addresses may be new.
@@ -2041,14 +2053,61 @@ void XdsLb::MaybeExitFallbackMode() {
 }
 
 //
-// XdsLb::LocalityMap
+// XdsLb::LocalityMapPriorityMap
 //
 
-void XdsLb::LocalityMap::UpdateLocked(
+void XdsLb::LocalityMapPriorityMap::UpdateLocked(
+    grpc_core::XdsLocalityListPriorityMap locality_list_map,
+    grpc_core::LoadBalancingPolicy::Config* child_policy_config,
+    const grpc_channel_args* args, grpc_core::XdsLb* parent) {
+  // Store the locality list map so that we can create a locality map for a given priority on demand
+  // later.
+  locality_list_map_ = std::move(locality_list_map);
+  // Create or update the locality map for the highest priority.
+  uint32_t first_priority;
+  const XdsLocalityList* first_locality_list =
+      locality_list_map_.First(&first_priority);
+  auto iter = map_.find(first_priority);
+  if (iter == map_.end()) iter = map_.emplace(first_priority).first;
+  iter->second->UpdateLocked(*first_locality_list, child_policy_config, args);
+  // Remove the locality maps that are not in the update.
+  for (iter = map_.begin(); iter != map_.end();) {
+    const uint32_t priority = iter->first;
+    OrphanablePtr<LocalityMap>& locality_map = iter->second;
+    if (!locality_list_map_.Has(priority)) {
+      iter = map_.erase(iter);
+    } else {
+      ++iter;
+    }
+  }
+}
+
+//
+// XdsLb::LocalityMapPriorityList::LocalityMap
+//
+
+void XdsLb::LocalityMapPriorityMap::LocalityMap::PruneLocalities(
+    const XdsLocalityList& locality_list) {
+  for (auto iter = map_.begin(); iter != map_.end();) {
+    bool found = false;
+    for (size_t i = 0; i < locality_list.size(); i++) {
+      if (*locality_list[i].locality_name == *iter->first) {
+        found = true;
+        break;
+      }
+    }
+    if (!found) {  // Remove entries not present in the locality list.
+      iter = map_.erase(iter);
+    } else
+      iter++;
+  }
+}
+
+void XdsLb::LocalityMapPriorityMap::LocalityMap::UpdateLocked(
     const XdsLocalityList& locality_list,
     LoadBalancingPolicy::Config* child_policy_config,
-    const grpc_channel_args* args, XdsLb* parent, bool is_initial_update) {
-  if (parent->shutting_down_) return;
+    const grpc_channel_args* args, bool is_initial_update) {
+  if (xds_policy_->shutting_down_) return;
   // Add or update the localities in locality_list.
   for (size_t i = 0; i < locality_list.size(); i++) {
     auto& locality_name = locality_list[i].locality_name;
@@ -2057,7 +2116,8 @@ void XdsLb::LocalityMap::UpdateLocked(
     // locality list.
     if (iter == map_.end()) {
       OrphanablePtr<LocalityEntry> new_entry = MakeOrphanable<LocalityEntry>(
-          parent->Ref(DEBUG_LOCATION, "LocalityEntry"), locality_name);
+          Ref(DEBUG_LOCATION, "LocalityEntry"), locality_name,
+          locality_list[i].lb_weight);
       iter = map_.emplace(locality_name, std::move(new_entry)).first;
     }
     // Keep a copy of serverlist in locality_list_ so that we can compare it
@@ -2151,41 +2211,45 @@ void XdsLb::LocalityMap::UpdateXdsPickerLocked() {
   }
 }
 
-void XdsLb::LocalityMap::ShutdownLocked() { map_.clear(); }
+void XdsLb::LocalityMapPriorityMap::LocalityMap::ShutdownLocked() {
+  map_.clear();
+}
 
-void XdsLb::LocalityMap::ResetBackoffLocked() {
+void XdsLb::LocalityMapPriorityMap::LocalityMap::ResetBackoffLocked() {
   for (auto& p : map_) {
     p.second->ResetBackoffLocked();
   }
 }
 
 //
-// XdsLb::LocalityMap::LocalityEntry
+// XdsLb::LocalityMapPriorityList::LocalityMap::LocalityEntry
 //
 
-XdsLb::LocalityMap::LocalityEntry::LocalityEntry(
-    RefCountedPtr<XdsLb> parent, RefCountedPtr<XdsLocalityName> name)
-    : parent_(std::move(parent)), name_(std::move(name)) {
+XdsLb::LocalityMapPriorityMap::LocalityMap::LocalityEntry::LocalityEntry(
+    RefCountedPtr<LocalityMap> locality_map,
+    RefCountedPtr<XdsLocalityName> name, uint32_t locality_weight)
+    : locality_map_(std::move(locality_map)),
+      name_(std::move(name)),
+      locality_weight_(locality_weight) {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_xds_trace)) {
     gpr_log(GPR_INFO, "[xdslb %p] created LocalityEntry %p for %s",
-            parent_.get(), this, name_->AsHumanReadableString());
+            xds_policy(), this, name_->AsHumanReadableString());
   }
   GRPC_CLOSURE_INIT(&on_delayed_removal_timer_, OnDelayedRemovalTimerLocked,
                     this, grpc_combiner_scheduler(parent_->combiner()));
 }
 
-XdsLb::LocalityMap::LocalityEntry::~LocalityEntry() {
+XdsLb::LocalityMapPriorityMap::LocalityMap::LocalityEntry::~LocalityEntry() {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_xds_trace)) {
     gpr_log(GPR_INFO,
             "[xdslb %p] LocalityEntry %p %s: destroying locality entry",
-            parent_.get(), this, name_->AsHumanReadableString());
+            xds_policy(), this, name_->AsHumanReadableString());
   }
-  parent_.reset(DEBUG_LOCATION, "LocalityEntry");
+  locality_map_.reset(DEBUG_LOCATION, "LocalityEntry");
 }
 
-grpc_channel_args*
-XdsLb::LocalityMap::LocalityEntry::CreateChildPolicyArgsLocked(
-    const grpc_channel_args* args_in) {
+grpc_channel_args* XdsLb::LocalityMapPriorityMap::LocalityMap::LocalityEntry::
+    CreateChildPolicyArgsLocked(const grpc_channel_args* args_in) {
   const grpc_arg args_to_add[] = {
       // A channel arg indicating if the target is a backend inferred from a
       // grpclb load balancer.
@@ -2201,12 +2265,12 @@ XdsLb::LocalityMap::LocalityEntry::CreateChildPolicyArgsLocked(
                                         GPR_ARRAY_SIZE(args_to_add));
 }
 
-OrphanablePtr<LoadBalancingPolicy>
-XdsLb::LocalityMap::LocalityEntry::CreateChildPolicyLocked(
-    const char* name, const grpc_channel_args* args) {
+OrphanablePtr<LoadBalancingPolicy> XdsLb::LocalityMapPriorityMap::LocalityMap::
+    LocalityEntry::CreateChildPolicyLocked(const char* name,
+                                           const grpc_channel_args* args) {
   Helper* helper = New<Helper>(this->Ref(DEBUG_LOCATION, "Helper"));
   LoadBalancingPolicy::Args lb_policy_args;
-  lb_policy_args.combiner = parent_->combiner();
+  lb_policy_args.combiner = locality_map_->combiner();
   lb_policy_args.args = args;
   lb_policy_args.channel_control_helper =
       UniquePtr<ChannelControlHelper>(helper);
@@ -2216,29 +2280,29 @@ XdsLb::LocalityMap::LocalityEntry::CreateChildPolicyLocked(
   if (GPR_UNLIKELY(lb_policy == nullptr)) {
     gpr_log(GPR_ERROR,
             "[xdslb %p] LocalityEntry %p %s: failure creating child policy %s",
-            parent_.get(), this, name_->AsHumanReadableString(), name);
+            locality_map_.get(), this, name_->AsHumanReadableString(), name);
     return nullptr;
   }
   helper->set_child(lb_policy.get());
   if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_xds_trace)) {
     gpr_log(GPR_INFO,
             "[xdslb %p] LocalityEntry %p %s: Created new child policy %s (%p)",
-            parent_.get(), this, name_->AsHumanReadableString(), name,
+            locality_map_.get(), this, name_->AsHumanReadableString(), name,
             lb_policy.get());
   }
   // Add the xDS's interested_parties pollset_set to that of the newly created
   // child policy. This will make the child policy progress upon activity on xDS
   // LB, which in turn is tied to the application's call.
   grpc_pollset_set_add_pollset_set(lb_policy->interested_parties(),
-                                   parent_->interested_parties());
+                                   locality_map_->interested_parties());
   return lb_policy;
 }
 
-void XdsLb::LocalityMap::LocalityEntry::UpdateLocked(
-    uint32_t locality_weight, ServerAddressList serverlist,
+void XdsLb::LocalityMapPriorityMap::LocalityMap::LocalityEntry::UpdateLocked(
+    ServerAddressList serverlist,
     LoadBalancingPolicy::Config* child_policy_config,
     const grpc_channel_args* args_in) {
-  if (parent_->shutting_down_) return;
+  if (locality_map_->shutting_down_) return;
   // Update locality weight.
   locality_weight_ = locality_weight;
   if (delayed_removal_timer_callback_pending_) {
@@ -2321,7 +2385,7 @@ void XdsLb::LocalityMap::LocalityEntry::UpdateLocked(
     if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_xds_trace)) {
       gpr_log(GPR_INFO,
               "[xdslb %p] LocalityEntry %p %s: Creating new %schild policy %s",
-              parent_.get(), this, name_->AsHumanReadableString(),
+              locality_map_.get(), this, name_->AsHumanReadableString(),
               child_policy_ == nullptr ? "" : "pending ", child_policy_name);
     }
     auto& lb_policy =
@@ -2341,28 +2405,29 @@ void XdsLb::LocalityMap::LocalityEntry::UpdateLocked(
   if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_xds_trace)) {
     gpr_log(GPR_INFO,
             "[xdslb %p] LocalityEntry %p %s: Updating %schild policy %p",
-            parent_.get(), this, name_->AsHumanReadableString(),
+            locality_map_.get(), this, name_->AsHumanReadableString(),
             policy_to_update == pending_child_policy_.get() ? "pending " : "",
             policy_to_update);
   }
   policy_to_update->UpdateLocked(std::move(update_args));
 }
 
-void XdsLb::LocalityMap::LocalityEntry::ShutdownLocked() {
+void XdsLb::LocalityMapPriorityMap::LocalityMap::LocalityEntry::
+    ShutdownLocked() {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_xds_trace)) {
     gpr_log(GPR_INFO,
             "[xdslb %p] LocalityEntry %p %s: shutting down locality entry",
-            parent_.get(), this, name_->AsHumanReadableString());
+            locality_map_.get(), this, name_->AsHumanReadableString());
   }
   // Remove the child policy's interested_parties pollset_set from the
   // xDS policy.
   grpc_pollset_set_del_pollset_set(child_policy_->interested_parties(),
-                                   parent_->interested_parties());
+                                   locality_map_->interested_parties());
   child_policy_.reset();
   if (pending_child_policy_ != nullptr) {
     grpc_pollset_set_del_pollset_set(
         pending_child_policy_->interested_parties(),
-        parent_->interested_parties());
+        locality_map_->interested_parties());
     pending_child_policy_.reset();
   }
   // Drop our ref to the child's picker, in case it's holding a ref to
@@ -2373,14 +2438,15 @@ void XdsLb::LocalityMap::LocalityEntry::ShutdownLocked() {
   }
 }
 
-void XdsLb::LocalityMap::LocalityEntry::ResetBackoffLocked() {
+void XdsLb::LocalityMapPriorityMap::LocalityMap::LocalityEntry::
+    ResetBackoffLocked() {
   child_policy_->ResetBackoffLocked();
   if (pending_child_policy_ != nullptr) {
     pending_child_policy_->ResetBackoffLocked();
   }
 }
 
-void XdsLb::LocalityMap::LocalityEntry::Orphan() {
+void XdsLb::LocalityMapPriorityMap::LocalityMap::LocalityEntry::Orphan() {
   ShutdownLocked();
   Unref();
 }
@@ -2419,51 +2485,56 @@ void XdsLb::LocalityMap::LocalityEntry::OnDelayedRemovalTimerLocked(
 // XdsLb::LocalityEntry::Helper
 //
 
-bool XdsLb::LocalityMap::LocalityEntry::Helper::CalledByPendingChild() const {
+bool XdsLb::LocalityMapPriorityMap::LocalityMap::LocalityEntry::Helper::
+    CalledByPendingChild() const {
   GPR_ASSERT(child_ != nullptr);
   return child_ == entry_->pending_child_policy_.get();
 }
 
-bool XdsLb::LocalityMap::LocalityEntry::Helper::CalledByCurrentChild() const {
+bool XdsLb::LocalityMapPriorityMap::LocalityMap::LocalityEntry::Helper::
+    CalledByCurrentChild() const {
   GPR_ASSERT(child_ != nullptr);
   return child_ == entry_->child_policy_.get();
 }
 
-RefCountedPtr<SubchannelInterface>
-XdsLb::LocalityMap::LocalityEntry::Helper::CreateSubchannel(
-    const grpc_channel_args& args) {
-  if (entry_->parent_->shutting_down_ ||
+RefCountedPtr<SubchannelInterface> XdsLb::LocalityMapPriorityMap::LocalityMap::
+    LocalityEntry::Helper::CreateSubchannel(const grpc_channel_args& args) {
+  if (entry_->locality_map_->shutting_down_ ||
       (!CalledByPendingChild() && !CalledByCurrentChild())) {
     return nullptr;
   }
-  return entry_->parent_->channel_control_helper()->CreateSubchannel(args);
+  return entry_->locality_map_->channel_control_helper()->CreateSubchannel(
+      args);
 }
 
-grpc_channel* XdsLb::LocalityMap::LocalityEntry::Helper::CreateChannel(
-    const char* target, const grpc_channel_args& args) {
-  if (entry_->parent_->shutting_down_ ||
+grpc_channel* XdsLb::LocalityMapPriorityMap::LocalityMap::LocalityEntry::
+    Helper::CreateChannel(const char* target, const grpc_channel_args& args) {
+  if (entry_->locality_map_->shutting_down_ ||
       (!CalledByPendingChild() && !CalledByCurrentChild())) {
     return nullptr;
   }
-  return entry_->parent_->channel_control_helper()->CreateChannel(target, args);
+  return entry_->locality_map_->channel_control_helper()->CreateChannel(target,
+                                                                        args);
 }
 
-void XdsLb::LocalityMap::LocalityEntry::Helper::UpdateState(
-    grpc_connectivity_state state, UniquePtr<SubchannelPicker> picker) {
-  if (entry_->parent_->shutting_down_) return;
+void XdsLb::LocalityMapPriorityMap::LocalityMap::LocalityEntry::Helper::
+    UpdateState(grpc_connectivity_state state,
+                UniquePtr<SubchannelPicker> picker) {
+  if (entry_->locality_map_->shutting_down_) return;
   // If this request is from the pending child policy, ignore it until
   // it reports READY, at which point we swap it into place.
   if (CalledByPendingChild()) {
     if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_xds_trace)) {
       gpr_log(GPR_INFO,
               "[xdslb %p helper %p] pending child policy %p reports state=%s",
-              entry_->parent_.get(), this, entry_->pending_child_policy_.get(),
+              entry_->locality_map_.get(), this,
+              entry_->pending_child_policy_.get(),
               grpc_connectivity_state_name(state));
     }
     if (state != GRPC_CHANNEL_READY) return;
     grpc_pollset_set_del_pollset_set(
         entry_->child_policy_->interested_parties(),
-        entry_->parent_->interested_parties());
+        entry_->locality_map_->interested_parties());
     entry_->child_policy_ = std::move(entry_->pending_child_policy_);
   } else if (!CalledByCurrentChild()) {
     // This request is from an outdated child, so ignore it.
@@ -2471,21 +2542,24 @@ void XdsLb::LocalityMap::LocalityEntry::Helper::UpdateState(
   }
   // At this point, child_ must be the current child policy.
   if (state == GRPC_CHANNEL_READY) {
-    entry_->parent_->MaybeCancelFallbackAtStartupChecks();
-    entry_->parent_->MaybeExitFallbackMode();
+    entry_->locality_map_->MaybeCancelFallbackAtStartupChecks();
+    entry_->locality_map_->MaybeExitFallbackMode();
   }
-  GPR_ASSERT(entry_->parent_->lb_chand_ != nullptr);
+  // If we are in fallback mode, ignore update request from the child policy.
+  if (entry_->locality_map_->fallback_policy_ != nullptr) return;
+  GPR_ASSERT(entry_->locality_map_->lb_chand_ != nullptr);
   // Cache the picker and its state in the entry.
   entry_->picker_wrapper_ = MakeRefCounted<PickerWrapper>(
       std::move(picker),
-      entry_->parent_->client_stats_.FindLocalityStats(entry_->name_));
+      entry_->locality_map_->client_stats_.FindLocalityStats(entry_->name_));
   entry_->connectivity_state_ = state;
   // Construct a new xds picker and pass it to the channel.
   entry_->parent_->locality_map_.UpdateXdsPickerLocked();
 }
 
-void XdsLb::LocalityMap::LocalityEntry::Helper::RequestReresolution() {
-  if (entry_->parent_->shutting_down_) return;
+void XdsLb::LocalityMapPriorityMap::LocalityMap::LocalityEntry::Helper::
+    RequestReresolution() {
+  if (entry_->locality_map_->shutting_down_) return;
   // If there is a pending child policy, ignore re-resolution requests
   // from the current child policy (or any outdated child).
   if (entry_->pending_child_policy_ != nullptr && !CalledByPendingChild()) {
@@ -2495,26 +2569,27 @@ void XdsLb::LocalityMap::LocalityEntry::Helper::RequestReresolution() {
     gpr_log(GPR_INFO,
             "[xdslb %p] Re-resolution requested from the internal RR policy "
             "(%p).",
-            entry_->parent_.get(), entry_->child_policy_.get());
+            entry_->locality_map_.get(), entry_->child_policy_.get());
   }
-  GPR_ASSERT(entry_->parent_->lb_chand_ != nullptr);
+  GPR_ASSERT(entry_->locality_map_->lb_chand_ != nullptr);
   // If we are talking to a balancer, we expect to get updated addresses
   // from the balancer, so we can ignore the re-resolution request from
   // the child policy. Otherwise, pass the re-resolution request up to the
   // channel.
-  if (entry_->parent_->lb_chand_->eds_calld() == nullptr ||
-      !entry_->parent_->lb_chand_->eds_calld()->seen_response()) {
-    entry_->parent_->channel_control_helper()->RequestReresolution();
+  if (entry_->locality_map_->lb_chand_->eds_calld() == nullptr ||
+      !entry_->locality_map_->lb_chand_->eds_calld()->seen_response()) {
+    entry_->locality_map_->channel_control_helper()->RequestReresolution();
   }
 }
 
-void XdsLb::LocalityMap::LocalityEntry::Helper::AddTraceEvent(
-    TraceSeverity severity, const char* message) {
-  if (entry_->parent_->shutting_down_ ||
+void XdsLb::LocalityMapPriorityMap::LocalityMap::LocalityEntry::Helper::
+    AddTraceEvent(TraceSeverity severity, const char* message) {
+  if (entry_->locality_map_->shutting_down_ ||
       (!CalledByPendingChild() && !CalledByCurrentChild())) {
     return;
   }
-  entry_->parent_->channel_control_helper()->AddTraceEvent(severity, message);
+  entry_->locality_map_->channel_control_helper()->AddTraceEvent(severity,
+                                                                 message);
 }
 
 //
