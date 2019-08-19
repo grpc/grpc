@@ -165,6 +165,8 @@ cdef _next_call_event(
   """
   try:
     tag, event = _latent_event(c_completion_queue, deadline)
+  # NOTE(rbellevi): This broad except enables us to clean up resources before
+  # propagating any exceptions raised by signal handlers to the application.
   except:
     if on_failure is not None:
       on_failure()
