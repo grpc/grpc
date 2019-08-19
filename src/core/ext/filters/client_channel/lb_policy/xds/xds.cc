@@ -1832,6 +1832,7 @@ void XdsLb::ProcessAddressesAndChannelArgsLocked(
 void XdsLb::ParseLbConfig(const ParsedXdsConfig* xds_config) {
   if (xds_config == nullptr || xds_config->balancer_name() == nullptr) return;
   // TODO(yashykt) : does this need to be a gpr_strdup
+  // TODO(juanlishen): Read balancer name from bootstrap file.
   balancer_name_ = UniquePtr<char>(gpr_strdup(xds_config->balancer_name()));
   child_policy_config_ = xds_config->child_policy();
   fallback_policy_config_ = xds_config->fallback_policy();
@@ -2587,10 +2588,6 @@ class XdsFactory : public LoadBalancingPolicyFactory {
           error_list.push_back(parse_error);
         }
       }
-    }
-    if (balancer_name == nullptr) {
-      error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-          "field:balancerName error:not found"));
     }
     if (error_list.empty()) {
       return RefCountedPtr<LoadBalancingPolicy::Config>(New<ParsedXdsConfig>(
