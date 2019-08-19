@@ -99,8 +99,8 @@ struct channel_registered_method {
   registered_method* server_registered_method;
   uint32_t flags;
   bool has_host;
-  grpc_slice method;
-  grpc_slice host;
+  grpc_core::ExternallyManagedSlice method;
+  grpc_core::ExternallyManagedSlice host;
 };
 
 struct channel_data {
@@ -630,8 +630,8 @@ static void start_new_rpc(grpc_call_element* elem) {
                                       chand->registered_method_slots];
       if (rm->server_registered_method == nullptr) break;
       if (!rm->has_host) continue;
-      if (!grpc_slice_eq(rm->host, calld->host)) continue;
-      if (!grpc_slice_eq(rm->method, calld->path)) continue;
+      if (rm->host != calld->host) continue;
+      if (rm->method != calld->path) continue;
       if ((rm->flags & GRPC_INITIAL_METADATA_IDEMPOTENT_REQUEST) &&
           0 == (calld->recv_initial_metadata_flags &
                 GRPC_INITIAL_METADATA_IDEMPOTENT_REQUEST)) {
@@ -648,7 +648,7 @@ static void start_new_rpc(grpc_call_element* elem) {
                                       chand->registered_method_slots];
       if (rm->server_registered_method == nullptr) break;
       if (rm->has_host) continue;
-      if (!grpc_slice_eq(rm->method, calld->path)) continue;
+      if (rm->method != calld->path) continue;
       if ((rm->flags & GRPC_INITIAL_METADATA_IDEMPOTENT_REQUEST) &&
           0 == (calld->recv_initial_metadata_flags &
                 GRPC_INITIAL_METADATA_IDEMPOTENT_REQUEST)) {
@@ -921,8 +921,14 @@ static void server_destroy_channel_elem(grpc_channel_element* elem) {
   if (chand->registered_methods) {
     for (i = 0; i < chand->registered_method_slots; i++) {
       grpc_slice_unref_internal(chand->registered_methods[i].method);
+      GPR_DEBUG_ASSERT(chand->registered_methods[i].method.refcount ==
+                           &grpc_core::kNoopRefcount ||
+                       chand->registered_methods[i].method.refcount == nullptr);
       if (chand->registered_methods[i].has_host) {
         grpc_slice_unref_internal(chand->registered_methods[i].host);
+        GPR_DEBUG_ASSERT(chand->registered_methods[i].host.refcount ==
+                             &grpc_core::kNoopRefcount ||
+                         chand->registered_methods[i].host.refcount == nullptr);
       }
     }
     gpr_free(chand->registered_methods);
@@ -1202,18 +1208,13 @@ void grpc_server_setup_transport(
     chand->registered_methods =
         static_cast<channel_registered_method*>(gpr_zalloc(alloc));
     for (rm = s->registered_methods; rm; rm = rm->next) {
-      grpc_slice host;
-      bool has_host;
-      grpc_slice method;
-      if (rm->host != nullptr) {
-        host = grpc_slice_from_static_string(rm->host);
-        has_host = true;
-      } else {
-        has_host = false;
+      grpc_core::ExternallyManagedSlice host;
+      grpc_core::ExternallyManagedSlice method(rm->method);
+      const bool has_host = rm->host != nullptr;
+      if (has_host) {
+        host = grpc_core::ExternallyManagedSlice(rm->host);
       }
-      method = grpc_slice_from_static_string(rm->method);
-      hash = GRPC_MDSTR_KV_HASH(has_host ? grpc_slice_hash_internal(host) : 0,
-                                grpc_slice_hash_internal(method));
+      hash = GRPC_MDSTR_KV_HASH(has_host ? host.Hash() : 0, method.Hash());
       for (probes = 0; chand->registered_methods[(hash + probes) % slots]
                            .server_registered_method != nullptr;
            probes++)
