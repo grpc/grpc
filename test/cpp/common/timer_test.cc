@@ -39,7 +39,7 @@
 class TimerTest : public ::testing::Test {
  protected:
   void SetUp() override {
-    // Skip test if it's build under a sanitizer
+    // Skip test if slowdown factor > 1.
     do_not_test_ = (grpc_test_slowdown_factor() != 1);
   }
 
