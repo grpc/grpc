@@ -320,7 +320,7 @@ void ChannelData::IdleTimerCallback(void* arg, grpc_error* error) {
         // EnterIdle() operation finishes, preventing mistakenly entering IDLE
         // when active RPC exists.
         finished = chand->state_.CompareExchangeWeak(
-            &state, PROCESSING, MemoryOrder::RELAXED, MemoryOrder::RELAXED);
+            &state, PROCESSING, MemoryOrder::ACQUIRE, MemoryOrder::RELAXED);
         if (finished) {
           chand->EnterIdle();
           chand->state_.Store(IDLE, MemoryOrder::RELAXED);
