@@ -924,7 +924,7 @@ TEST_F(XdsResolverTest, XdsResolverIsUsed) {
   // Use xds-experimental scheme in URI.
   ResetStub(0, "", "xds-experimental");
   // Send an RPC to trigger resolution.
-  SendRpc();
+  auto unused_result = SendRpc();
   // Xds resolver returns xds_experimental as the LB policy.
   EXPECT_EQ("xds_experimental", channel_->GetLoadBalancingPolicyName());
 }
