@@ -74,7 +74,7 @@ def main_streaming(server_target):
 
 
 def main_unary_with_exception(server_target):
-    """Initiate an RPC with wait_for_ready set and no server backing the RPC."""
+    """Initiate a unary RPC with a signal handler that will raise."""
     channel = grpc.insecure_channel(server_target)
     try:
         channel.unary_unary(UNARY_UNARY)(_MESSAGE, wait_for_ready=True)
@@ -87,7 +87,7 @@ def main_unary_with_exception(server_target):
 
 
 def main_streaming_with_exception(server_target):
-    """Initiate an RPC with wait_for_ready set and no server backing the RPC."""
+    """Initiate a streaming RPC with a signal handler that will raise."""
     channel = grpc.insecure_channel(server_target)
     try:
         channel.unary_stream(UNARY_STREAM)(_MESSAGE, wait_for_ready=True)
