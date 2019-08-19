@@ -147,10 +147,27 @@ cdef _cancel(
 cdef _next_call_event(
     _ChannelState channel_state, grpc_completion_queue *c_completion_queue,
     on_success, on_failure, deadline):
+  """Block on the next event out of the completion queue.
+
+  On success, `on_success` will be invoked with the tag taken from the CQ.
+  In the case of a failure due to an exception raised in a signal handler,
+  `on_failure` will be invoked with no arguments. Note that this situation
+  can only occur on the main thread.
+
+  Args:
+    channel_state: The state for the channel on which the RPC is running.
+    c_completion_queue: The CQ which will be polled.
+    on_success: A callable object to be invoked upon successful receipt of a
+      tag from the CQ.
+    on_failure: A callable object to be invoked in case a Python exception is
+      raised from a signal handler during polling.
+    deadline: The point after which the RPC will time out.
+  """
   try:
     tag, event = _latent_event(c_completion_queue, deadline)
   except:
-    on_failure()
+    if on_failure is not None:
+      on_failure()
     raise
   else:
     with channel_state.condition:
