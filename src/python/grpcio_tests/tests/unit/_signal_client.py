@@ -90,7 +90,8 @@ def main_streaming_with_exception(server_target):
     """Initiate a streaming RPC with a signal handler that will raise."""
     channel = grpc.insecure_channel(server_target)
     try:
-        channel.unary_stream(UNARY_STREAM)(_MESSAGE, wait_for_ready=True)
+        for _ in channel.unary_stream(UNARY_STREAM)(_MESSAGE, wait_for_ready=True):
+            pass
     except KeyboardInterrupt:
         sys.stderr.write("Running signal handler.\n")
         sys.stderr.flush()
