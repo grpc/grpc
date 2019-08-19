@@ -27,7 +27,7 @@ out['libs'] = [{
     'name': 'benchmark',
     'build': 'private',
     'language': 'c++',
-    'secure': 'no',
+    'secure': False,
     'defaults': 'benchmark',
     'src': sorted(glob.glob('third_party/benchmark/src/*.cc')),
     'headers': sorted(

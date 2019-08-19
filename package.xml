@@ -316,6 +316,7 @@
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/subchannel_interface.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/subchannel_pool_interface.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/deadline/deadline_filter.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upb-generated/src/proto/grpc/health/v1/health.upb.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upb-generated/udpa/data/orca/v1/orca_load_report.upb.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upb-generated/gogoproto/gogo.upb.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upb-generated/validate/validate.upb.h" role="src" />
@@ -329,7 +330,6 @@
     <file baseinstalldir="/" name="src/core/ext/upb-generated/google/protobuf/timestamp.upb.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upb-generated/google/protobuf/wrappers.upb.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upb-generated/google/rpc/status.upb.h" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/upb-generated/src/proto/grpc/health/v1/health.upb.h" role="src" />
     <file baseinstalldir="/" name="src/core/tsi/fake_transport_security.h" role="src" />
     <file baseinstalldir="/" name="src/core/tsi/local_transport_security.h" role="src" />
     <file baseinstalldir="/" name="src/core/tsi/ssl/session_cache/ssl_session.h" role="src" />
@@ -814,6 +814,7 @@
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/subchannel.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/subchannel_pool_interface.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/deadline/deadline_filter.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upb-generated/src/proto/grpc/health/v1/health.upb.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upb-generated/udpa/data/orca/v1/orca_load_report.upb.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upb-generated/gogoproto/gogo.upb.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upb-generated/validate/validate.upb.c" role="src" />
@@ -827,7 +828,6 @@
     <file baseinstalldir="/" name="src/core/ext/upb-generated/google/protobuf/timestamp.upb.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upb-generated/google/protobuf/wrappers.upb.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upb-generated/google/rpc/status.upb.c" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/upb-generated/src/proto/grpc/health/v1/health.upb.c" role="src" />
     <file baseinstalldir="/" name="src/core/tsi/fake_transport_security.cc" role="src" />
     <file baseinstalldir="/" name="src/core/tsi/local_transport_security.cc" role="src" />
     <file baseinstalldir="/" name="src/core/tsi/ssl/session_cache/ssl_session_boringssl.cc" role="src" />

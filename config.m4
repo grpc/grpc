@@ -378,6 +378,7 @@ if test "$PHP_GRPC" != "no"; then
     src/core/ext/filters/client_channel/subchannel.cc \
     src/core/ext/filters/client_channel/subchannel_pool_interface.cc \
     src/core/ext/filters/deadline/deadline_filter.cc \
+    src/core/ext/upb-generated/src/proto/grpc/health/v1/health.upb.c \
     src/core/ext/upb-generated/udpa/data/orca/v1/orca_load_report.upb.c \
     src/core/ext/upb-generated/gogoproto/gogo.upb.c \
     src/core/ext/upb-generated/validate/validate.upb.c \
@@ -391,7 +392,6 @@ if test "$PHP_GRPC" != "no"; then
     src/core/ext/upb-generated/google/protobuf/timestamp.upb.c \
     src/core/ext/upb-generated/google/protobuf/wrappers.upb.c \
     src/core/ext/upb-generated/google/rpc/status.upb.c \
-    src/core/ext/upb-generated/src/proto/grpc/health/v1/health.upb.c \
     src/core/tsi/fake_transport_security.cc \
     src/core/tsi/local_transport_security.cc \
     src/core/tsi/ssl/session_cache/ssl_session_boringssl.cc \

@@ -3838,6 +3838,7 @@ LIBGRPC_SRC = \
     src/core/ext/filters/client_channel/subchannel.cc \
     src/core/ext/filters/client_channel/subchannel_pool_interface.cc \
     src/core/ext/filters/deadline/deadline_filter.cc \
+    src/core/ext/upb-generated/src/proto/grpc/health/v1/health.upb.c \
     src/core/ext/upb-generated/udpa/data/orca/v1/orca_load_report.upb.c \
     src/core/ext/upb-generated/gogoproto/gogo.upb.c \
     src/core/ext/upb-generated/validate/validate.upb.c \
@@ -3851,7 +3852,6 @@ LIBGRPC_SRC = \
     src/core/ext/upb-generated/google/protobuf/timestamp.upb.c \
     src/core/ext/upb-generated/google/protobuf/wrappers.upb.c \
     src/core/ext/upb-generated/google/rpc/status.upb.c \
-    src/core/ext/upb-generated/src/proto/grpc/health/v1/health.upb.c \
     src/core/tsi/fake_transport_security.cc \
     src/core/tsi/local_transport_security.cc \
     src/core/tsi/ssl/session_cache/ssl_session_boringssl.cc \
@@ -4231,6 +4231,13 @@ LIBGRPC_CRONET_SRC = \
     src/core/ext/filters/client_channel/subchannel.cc \
     src/core/ext/filters/client_channel/subchannel_pool_interface.cc \
     src/core/ext/filters/deadline/deadline_filter.cc \
+    src/core/ext/upb-generated/src/proto/grpc/health/v1/health.upb.c \
+    third_party/upb/upb/decode.c \
+    third_party/upb/upb/encode.c \
+    third_party/upb/upb/msg.c \
+    third_party/upb/upb/port.c \
+    third_party/upb/upb/table.c \
+    third_party/upb/upb/upb.c \
     src/core/ext/upb-generated/udpa/data/orca/v1/orca_load_report.upb.c \
     src/core/ext/upb-generated/gogoproto/gogo.upb.c \
     src/core/ext/upb-generated/validate/validate.upb.c \
@@ -4244,13 +4251,6 @@ LIBGRPC_CRONET_SRC = \
     src/core/ext/upb-generated/google/protobuf/timestamp.upb.c \
     src/core/ext/upb-generated/google/protobuf/wrappers.upb.c \
     src/core/ext/upb-generated/google/rpc/status.upb.c \
-    third_party/upb/upb/decode.c \
-    third_party/upb/upb/encode.c \
-    third_party/upb/upb/msg.c \
-    third_party/upb/upb/port.c \
-    third_party/upb/upb/table.c \
-    third_party/upb/upb/upb.c \
-    src/core/ext/upb-generated/src/proto/grpc/health/v1/health.upb.c \
     src/core/lib/http/httpcli_security_connector.cc \
     src/core/lib/security/context/security_context.cc \
     src/core/lib/security/credentials/alts/alts_credentials.cc \
@@ -4625,6 +4625,13 @@ LIBGRPC_TEST_UTIL_SRC = \
     src/core/ext/filters/client_channel/subchannel.cc \
     src/core/ext/filters/client_channel/subchannel_pool_interface.cc \
     src/core/ext/filters/deadline/deadline_filter.cc \
+    src/core/ext/upb-generated/src/proto/grpc/health/v1/health.upb.c \
+    third_party/upb/upb/decode.c \
+    third_party/upb/upb/encode.c \
+    third_party/upb/upb/msg.c \
+    third_party/upb/upb/port.c \
+    third_party/upb/upb/table.c \
+    third_party/upb/upb/upb.c \
     src/core/ext/upb-generated/udpa/data/orca/v1/orca_load_report.upb.c \
     src/core/ext/upb-generated/gogoproto/gogo.upb.c \
     src/core/ext/upb-generated/validate/validate.upb.c \
@@ -4638,13 +4645,6 @@ LIBGRPC_TEST_UTIL_SRC = \
     src/core/ext/upb-generated/google/protobuf/timestamp.upb.c \
     src/core/ext/upb-generated/google/protobuf/wrappers.upb.c \
     src/core/ext/upb-generated/google/rpc/status.upb.c \
-    third_party/upb/upb/decode.c \
-    third_party/upb/upb/encode.c \
-    third_party/upb/upb/msg.c \
-    third_party/upb/upb/port.c \
-    third_party/upb/upb/table.c \
-    third_party/upb/upb/upb.c \
-    src/core/ext/upb-generated/src/proto/grpc/health/v1/health.upb.c \
     src/core/ext/transport/chttp2/transport/bin_decoder.cc \
     src/core/ext/transport/chttp2/transport/bin_encoder.cc \
     src/core/ext/transport/chttp2/transport/chttp2_plugin.cc \
@@ -4961,6 +4961,13 @@ LIBGRPC_TEST_UTIL_UNSECURE_SRC = \
     src/core/ext/filters/client_channel/subchannel.cc \
     src/core/ext/filters/client_channel/subchannel_pool_interface.cc \
     src/core/ext/filters/deadline/deadline_filter.cc \
+    src/core/ext/upb-generated/src/proto/grpc/health/v1/health.upb.c \
+    third_party/upb/upb/decode.c \
+    third_party/upb/upb/encode.c \
+    third_party/upb/upb/msg.c \
+    third_party/upb/upb/port.c \
+    third_party/upb/upb/table.c \
+    third_party/upb/upb/upb.c \
     src/core/ext/upb-generated/udpa/data/orca/v1/orca_load_report.upb.c \
     src/core/ext/upb-generated/gogoproto/gogo.upb.c \
     src/core/ext/upb-generated/validate/validate.upb.c \
@@ -4974,13 +4981,6 @@ LIBGRPC_TEST_UTIL_UNSECURE_SRC = \
     src/core/ext/upb-generated/google/protobuf/timestamp.upb.c \
     src/core/ext/upb-generated/google/protobuf/wrappers.upb.c \
     src/core/ext/upb-generated/google/rpc/status.upb.c \
-    third_party/upb/upb/decode.c \
-    third_party/upb/upb/encode.c \
-    third_party/upb/upb/msg.c \
-    third_party/upb/upb/port.c \
-    third_party/upb/upb/table.c \
-    third_party/upb/upb/upb.c \
-    src/core/ext/upb-generated/src/proto/grpc/health/v1/health.upb.c \
     src/core/ext/transport/chttp2/transport/bin_decoder.cc \
     src/core/ext/transport/chttp2/transport/bin_encoder.cc \
     src/core/ext/transport/chttp2/transport/chttp2_plugin.cc \
@@ -5295,6 +5295,13 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/ext/filters/client_channel/subchannel.cc \
     src/core/ext/filters/client_channel/subchannel_pool_interface.cc \
     src/core/ext/filters/deadline/deadline_filter.cc \
+    src/core/ext/upb-generated/src/proto/grpc/health/v1/health.upb.c \
+    third_party/upb/upb/decode.c \
+    third_party/upb/upb/encode.c \
+    third_party/upb/upb/msg.c \
+    third_party/upb/upb/port.c \
+    third_party/upb/upb/table.c \
+    third_party/upb/upb/upb.c \
     src/core/ext/upb-generated/udpa/data/orca/v1/orca_load_report.upb.c \
     src/core/ext/upb-generated/gogoproto/gogo.upb.c \
     src/core/ext/upb-generated/validate/validate.upb.c \
@@ -5308,13 +5315,6 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/ext/upb-generated/google/protobuf/timestamp.upb.c \
     src/core/ext/upb-generated/google/protobuf/wrappers.upb.c \
     src/core/ext/upb-generated/google/rpc/status.upb.c \
-    third_party/upb/upb/decode.c \
-    third_party/upb/upb/encode.c \
-    third_party/upb/upb/msg.c \
-    third_party/upb/upb/port.c \
-    third_party/upb/upb/table.c \
-    third_party/upb/upb/upb.c \
-    src/core/ext/upb-generated/src/proto/grpc/health/v1/health.upb.c \
     src/core/ext/transport/inproc/inproc_plugin.cc \
     src/core/ext/transport/inproc/inproc_transport.cc \
     src/core/ext/filters/client_channel/resolver/dns/c_ares/dns_resolver_ares.cc \

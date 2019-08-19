@@ -174,6 +174,16 @@ v1.4.0 | 3.3.0
 v1.6.0 | 3.4.0
 v1.8.0 | 3.5.0
 v1.12.0 | 3.5.2
+v1.13.1 | 3.5.2
+v1.14.2 | 3.5.2
+v1.15.1 | 3.6.1
+v1.16.1 | 3.6.1
+v1.17.2 | 3.6.1
+v1.18.0 | 3.6.1
+v1.19.1 | 3.6.1
+v1.20.1 | 3.7.0
+v1.21.3 | 3.7.0
+v1.22.0 | 3.8.0
 
 If `protoc` hasn't been installed, you can download the `protoc` binaries from
 [the protocol buffers Github repository](https://github.com/google/protobuf/releases).

@@ -61,7 +61,7 @@ class Grpc(object):
             'name': 'boringssl',
             'build': 'private',
             'language': 'c',
-            'secure': 'no',
+            'secure': False,
             'src': sorted(
               map_dir(f)
               for f in files['ssl'] + files['crypto']
@@ -79,7 +79,7 @@ class Grpc(object):
             'name': 'boringssl_test_util',
             'build': 'private',
             'language': 'c++',
-            'secure': 'no',
+            'secure': False,
             'boringssl': True,
             'defaults': 'boringssl',
             'src': [
@@ -93,7 +93,7 @@ class Grpc(object):
             'name': 'boringssl_%s' % test,
             'build': 'test',
             'run': False,
-            'secure': 'no',
+            'secure': False,
             'language': 'c++',
             'src': sorted(map_dir(f) for f in files[test]),
             'vs_proj_dir': 'test/boringssl',

@@ -1299,6 +1299,7 @@ add_library(grpc
   src/core/ext/filters/client_channel/subchannel.cc
   src/core/ext/filters/client_channel/subchannel_pool_interface.cc
   src/core/ext/filters/deadline/deadline_filter.cc
+  src/core/ext/upb-generated/src/proto/grpc/health/v1/health.upb.c
   src/core/ext/upb-generated/udpa/data/orca/v1/orca_load_report.upb.c
   src/core/ext/upb-generated/gogoproto/gogo.upb.c
   src/core/ext/upb-generated/validate/validate.upb.c
@@ -1312,7 +1313,6 @@ add_library(grpc
   src/core/ext/upb-generated/google/protobuf/timestamp.upb.c
   src/core/ext/upb-generated/google/protobuf/wrappers.upb.c
   src/core/ext/upb-generated/google/rpc/status.upb.c
-  src/core/ext/upb-generated/src/proto/grpc/health/v1/health.upb.c
   src/core/tsi/fake_transport_security.cc
   src/core/tsi/local_transport_security.cc
   src/core/tsi/ssl/session_cache/ssl_session_boringssl.cc
@@ -1704,6 +1704,13 @@ add_library(grpc_cronet
   src/core/ext/filters/client_channel/subchannel.cc
   src/core/ext/filters/client_channel/subchannel_pool_interface.cc
   src/core/ext/filters/deadline/deadline_filter.cc
+  src/core/ext/upb-generated/src/proto/grpc/health/v1/health.upb.c
+  third_party/upb/upb/decode.c
+  third_party/upb/upb/encode.c
+  third_party/upb/upb/msg.c
+  third_party/upb/upb/port.c
+  third_party/upb/upb/table.c
+  third_party/upb/upb/upb.c
   src/core/ext/upb-generated/udpa/data/orca/v1/orca_load_report.upb.c
   src/core/ext/upb-generated/gogoproto/gogo.upb.c
   src/core/ext/upb-generated/validate/validate.upb.c
@@ -1717,13 +1724,6 @@ add_library(grpc_cronet
   src/core/ext/upb-generated/google/protobuf/timestamp.upb.c
   src/core/ext/upb-generated/google/protobuf/wrappers.upb.c
   src/core/ext/upb-generated/google/rpc/status.upb.c
-  third_party/upb/upb/decode.c
-  third_party/upb/upb/encode.c
-  third_party/upb/upb/msg.c
-  third_party/upb/upb/port.c
-  third_party/upb/upb/table.c
-  third_party/upb/upb/upb.c
-  src/core/ext/upb-generated/src/proto/grpc/health/v1/health.upb.c
   src/core/lib/http/httpcli_security_connector.cc
   src/core/lib/security/context/security_context.cc
   src/core/lib/security/credentials/alts/alts_credentials.cc
@@ -2111,6 +2111,13 @@ add_library(grpc_test_util
   src/core/ext/filters/client_channel/subchannel.cc
   src/core/ext/filters/client_channel/subchannel_pool_interface.cc
   src/core/ext/filters/deadline/deadline_filter.cc
+  src/core/ext/upb-generated/src/proto/grpc/health/v1/health.upb.c
+  third_party/upb/upb/decode.c
+  third_party/upb/upb/encode.c
+  third_party/upb/upb/msg.c
+  third_party/upb/upb/port.c
+  third_party/upb/upb/table.c
+  third_party/upb/upb/upb.c
   src/core/ext/upb-generated/udpa/data/orca/v1/orca_load_report.upb.c
   src/core/ext/upb-generated/gogoproto/gogo.upb.c
   src/core/ext/upb-generated/validate/validate.upb.c
@@ -2124,13 +2131,6 @@ add_library(grpc_test_util
   src/core/ext/upb-generated/google/protobuf/timestamp.upb.c
   src/core/ext/upb-generated/google/protobuf/wrappers.upb.c
   src/core/ext/upb-generated/google/rpc/status.upb.c
-  third_party/upb/upb/decode.c
-  third_party/upb/upb/encode.c
-  third_party/upb/upb/msg.c
-  third_party/upb/upb/port.c
-  third_party/upb/upb/table.c
-  third_party/upb/upb/upb.c
-  src/core/ext/upb-generated/src/proto/grpc/health/v1/health.upb.c
   src/core/ext/transport/chttp2/transport/bin_decoder.cc
   src/core/ext/transport/chttp2/transport/bin_encoder.cc
   src/core/ext/transport/chttp2/transport/chttp2_plugin.cc
@@ -2466,6 +2466,13 @@ add_library(grpc_test_util_unsecure
   src/core/ext/filters/client_channel/subchannel.cc
   src/core/ext/filters/client_channel/subchannel_pool_interface.cc
   src/core/ext/filters/deadline/deadline_filter.cc
+  src/core/ext/upb-generated/src/proto/grpc/health/v1/health.upb.c
+  third_party/upb/upb/decode.c
+  third_party/upb/upb/encode.c
+  third_party/upb/upb/msg.c
+  third_party/upb/upb/port.c
+  third_party/upb/upb/table.c
+  third_party/upb/upb/upb.c
   src/core/ext/upb-generated/udpa/data/orca/v1/orca_load_report.upb.c
   src/core/ext/upb-generated/gogoproto/gogo.upb.c
   src/core/ext/upb-generated/validate/validate.upb.c
@@ -2479,13 +2486,6 @@ add_library(grpc_test_util_unsecure
   src/core/ext/upb-generated/google/protobuf/timestamp.upb.c
   src/core/ext/upb-generated/google/protobuf/wrappers.upb.c
   src/core/ext/upb-generated/google/rpc/status.upb.c
-  third_party/upb/upb/decode.c
-  third_party/upb/upb/encode.c
-  third_party/upb/upb/msg.c
-  third_party/upb/upb/port.c
-  third_party/upb/upb/table.c
-  third_party/upb/upb/upb.c
-  src/core/ext/upb-generated/src/proto/grpc/health/v1/health.upb.c
   src/core/ext/transport/chttp2/transport/bin_decoder.cc
   src/core/ext/transport/chttp2/transport/bin_encoder.cc
   src/core/ext/transport/chttp2/transport/chttp2_plugin.cc
@@ -2832,6 +2832,13 @@ add_library(grpc_unsecure
   src/core/ext/filters/client_channel/subchannel.cc
   src/core/ext/filters/client_channel/subchannel_pool_interface.cc
   src/core/ext/filters/deadline/deadline_filter.cc
+  src/core/ext/upb-generated/src/proto/grpc/health/v1/health.upb.c
+  third_party/upb/upb/decode.c
+  third_party/upb/upb/encode.c
+  third_party/upb/upb/msg.c
+  third_party/upb/upb/port.c
+  third_party/upb/upb/table.c
+  third_party/upb/upb/upb.c
   src/core/ext/upb-generated/udpa/data/orca/v1/orca_load_report.upb.c
   src/core/ext/upb-generated/gogoproto/gogo.upb.c
   src/core/ext/upb-generated/validate/validate.upb.c
@@ -2845,13 +2852,6 @@ add_library(grpc_unsecure
   src/core/ext/upb-generated/google/protobuf/timestamp.upb.c
   src/core/ext/upb-generated/google/protobuf/wrappers.upb.c
   src/core/ext/upb-generated/google/rpc/status.upb.c
-  third_party/upb/upb/decode.c
-  third_party/upb/upb/encode.c
-  third_party/upb/upb/msg.c
-  third_party/upb/upb/port.c
-  third_party/upb/upb/table.c
-  third_party/upb/upb/upb.c
-  src/core/ext/upb-generated/src/proto/grpc/health/v1/health.upb.c
   src/core/ext/transport/inproc/inproc_plugin.cc
   src/core/ext/transport/inproc/inproc_transport.cc
   src/core/ext/filters/client_channel/resolver/dns/c_ares/dns_resolver_ares.cc
@@ -17980,7 +17980,6 @@ target_include_directories(bad_streaming_id_bad_client_test
 )
 
 target_link_libraries(bad_streaming_id_bad_client_test
-  ${_gRPC_SSL_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   bad_client_test
@@ -18023,7 +18022,6 @@ target_include_directories(badreq_bad_client_test
 )
 
 target_link_libraries(badreq_bad_client_test
-  ${_gRPC_SSL_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   bad_client_test
@@ -18066,7 +18064,6 @@ target_include_directories(connection_prefix_bad_client_test
 )
 
 target_link_libraries(connection_prefix_bad_client_test
-  ${_gRPC_SSL_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   bad_client_test
@@ -18109,7 +18106,6 @@ target_include_directories(duplicate_header_bad_client_test
 )
 
 target_link_libraries(duplicate_header_bad_client_test
-  ${_gRPC_SSL_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   bad_client_test
@@ -18152,7 +18148,6 @@ target_include_directories(head_of_line_blocking_bad_client_test
 )
 
 target_link_libraries(head_of_line_blocking_bad_client_test
-  ${_gRPC_SSL_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   bad_client_test
@@ -18195,7 +18190,6 @@ target_include_directories(headers_bad_client_test
 )
 
 target_link_libraries(headers_bad_client_test
-  ${_gRPC_SSL_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   bad_client_test
@@ -18238,7 +18232,6 @@ target_include_directories(initial_settings_frame_bad_client_test
 )
 
 target_link_libraries(initial_settings_frame_bad_client_test
-  ${_gRPC_SSL_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   bad_client_test
@@ -18281,7 +18274,6 @@ target_include_directories(large_metadata_bad_client_test
 )
 
 target_link_libraries(large_metadata_bad_client_test
-  ${_gRPC_SSL_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   bad_client_test
@@ -18324,7 +18316,6 @@ target_include_directories(out_of_bounds_bad_client_test
 )
 
 target_link_libraries(out_of_bounds_bad_client_test
-  ${_gRPC_SSL_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   bad_client_test
@@ -18367,7 +18358,6 @@ target_include_directories(server_registered_method_bad_client_test
 )
 
 target_link_libraries(server_registered_method_bad_client_test
-  ${_gRPC_SSL_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   bad_client_test
@@ -18410,7 +18400,6 @@ target_include_directories(simple_request_bad_client_test
 )
 
 target_link_libraries(simple_request_bad_client_test
-  ${_gRPC_SSL_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   bad_client_test
@@ -18453,7 +18442,6 @@ target_include_directories(unknown_frame_bad_client_test
 )
 
 target_link_libraries(unknown_frame_bad_client_test
-  ${_gRPC_SSL_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   bad_client_test
@@ -18496,7 +18484,6 @@ target_include_directories(window_overflow_bad_client_test
 )
 
 target_link_libraries(window_overflow_bad_client_test
-  ${_gRPC_SSL_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   bad_client_test
