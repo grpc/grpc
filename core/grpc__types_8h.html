@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC Core
-   &#160;<span id="projectnumber">7.0.0</span>
+   &#160;<span id="projectnumber">8.0.0</span>
    </div>
   </td>
  </tr>
@@ -167,7 +167,7 @@ Macros</h2></td></tr>
 <tr class="memdesc:gab4defdabac3610ef8a5946848592458c"><td class="mdescLeft">&#160;</td><td class="mdescRight">Maximum message length that the channel can send.  <a href="group__grpc__arg__keys.html#gab4defdabac3610ef8a5946848592458c">More...</a><br /></td></tr>
 <tr class="separator:gab4defdabac3610ef8a5946848592458c"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ga8a7a3d98f39302c7859aa09e3f35a12a"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__grpc__arg__keys.html#ga8a7a3d98f39302c7859aa09e3f35a12a">GRPC_ARG_MAX_CONNECTION_IDLE_MS</a>&#160;&#160;&#160;&quot;grpc.max_connection_idle_ms&quot;</td></tr>
-<tr class="memdesc:ga8a7a3d98f39302c7859aa09e3f35a12a"><td class="mdescLeft">&#160;</td><td class="mdescRight">Maximum time that a channel may have no outstanding rpcs.  <a href="group__grpc__arg__keys.html#ga8a7a3d98f39302c7859aa09e3f35a12a">More...</a><br /></td></tr>
+<tr class="memdesc:ga8a7a3d98f39302c7859aa09e3f35a12a"><td class="mdescLeft">&#160;</td><td class="mdescRight">Maximum time that a channel may have no outstanding rpcs, after which the server will close the connection.  <a href="group__grpc__arg__keys.html#ga8a7a3d98f39302c7859aa09e3f35a12a">More...</a><br /></td></tr>
 <tr class="separator:ga8a7a3d98f39302c7859aa09e3f35a12a"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:gabd3a16f46ad2cb5f06064bb607df7b5b"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__grpc__arg__keys.html#gabd3a16f46ad2cb5f06064bb607df7b5b">GRPC_ARG_MAX_CONNECTION_AGE_MS</a>&#160;&#160;&#160;&quot;grpc.max_connection_age_ms&quot;</td></tr>
 <tr class="memdesc:gabd3a16f46ad2cb5f06064bb607df7b5b"><td class="mdescLeft">&#160;</td><td class="mdescRight">Maximum time that a channel may exist.  <a href="group__grpc__arg__keys.html#gabd3a16f46ad2cb5f06064bb607df7b5b">More...</a><br /></td></tr>
@@ -175,6 +175,9 @@ Macros</h2></td></tr>
 <tr class="memitem:gaf4574abe94c339c6f21163bca6e7b6b7"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__grpc__arg__keys.html#gaf4574abe94c339c6f21163bca6e7b6b7">GRPC_ARG_MAX_CONNECTION_AGE_GRACE_MS</a>&#160;&#160;&#160;&quot;grpc.max_connection_age_grace_ms&quot;</td></tr>
 <tr class="memdesc:gaf4574abe94c339c6f21163bca6e7b6b7"><td class="mdescLeft">&#160;</td><td class="mdescRight">Grace period after the channel reaches its max age.  <a href="group__grpc__arg__keys.html#gaf4574abe94c339c6f21163bca6e7b6b7">More...</a><br /></td></tr>
 <tr class="separator:gaf4574abe94c339c6f21163bca6e7b6b7"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ga51ab062269cd81298f5adb6fd9a45e99"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__grpc__arg__keys.html#ga51ab062269cd81298f5adb6fd9a45e99">GRPC_ARG_CLIENT_IDLE_TIMEOUT_MS</a>&#160;&#160;&#160;&quot;grpc.client_idle_timeout_ms&quot;</td></tr>
+<tr class="memdesc:ga51ab062269cd81298f5adb6fd9a45e99"><td class="mdescLeft">&#160;</td><td class="mdescRight">Timeout after the last RPC finishes on the client channel at which the channel goes back into IDLE state.  <a href="group__grpc__arg__keys.html#ga51ab062269cd81298f5adb6fd9a45e99">More...</a><br /></td></tr>
+<tr class="separator:ga51ab062269cd81298f5adb6fd9a45e99"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:gab195665836ae27c45748f5c4e5dc4057"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__grpc__arg__keys.html#gab195665836ae27c45748f5c4e5dc4057">GRPC_ARG_ENABLE_PER_MESSAGE_COMPRESSION</a>&#160;&#160;&#160;&quot;grpc.per_message_compression&quot;</td></tr>
 <tr class="memdesc:gab195665836ae27c45748f5c4e5dc4057"><td class="mdescLeft">&#160;</td><td class="mdescRight">Enable/disable support for per-message compression.  <a href="group__grpc__arg__keys.html#gab195665836ae27c45748f5c4e5dc4057">More...</a><br /></td></tr>
 <tr class="separator:gab195665836ae27c45748f5c4e5dc4057"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -311,6 +314,8 @@ Macros</h2></td></tr>
 <tr class="separator:gaaaf4ebe91111ede7ee09a2bc790caa21"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:gabe5b41f89f0017e0f89c5945fe1e0470"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__grpc__arg__keys.html#gabe5b41f89f0017e0f89c5945fe1e0470">GRPC_ARG_XDS_FALLBACK_TIMEOUT_MS</a>&#160;&#160;&#160;&quot;grpc.xds_fallback_timeout_ms&quot;</td></tr>
 <tr class="separator:gabe5b41f89f0017e0f89c5945fe1e0470"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ga4c78436839c4f7398a38fb0732435b66"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__grpc__arg__keys.html#ga4c78436839c4f7398a38fb0732435b66">GRPC_ARG_LOCALITY_RETENTION_INTERVAL_MS</a>&#160;&#160;&#160;&quot;grpc.xds_locality_retention_interval_ms&quot;</td></tr>
+<tr class="separator:ga4c78436839c4f7398a38fb0732435b66"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ga618ddbf19fdd38d8f90b8f3d7cb5d481"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__grpc__arg__keys.html#ga618ddbf19fdd38d8f90b8f3d7cb5d481">GRPC_ARG_WORKAROUND_CRONET_COMPRESSION</a>&#160;&#160;&#160;&quot;grpc.workaround.cronet_compression&quot;</td></tr>
 <tr class="memdesc:ga618ddbf19fdd38d8f90b8f3d7cb5d481"><td class="mdescLeft">&#160;</td><td class="mdescRight">If non-zero, grpc server's cronet compression workaround will be enabled.  <a href="group__grpc__arg__keys.html#ga618ddbf19fdd38d8f90b8f3d7cb5d481">More...</a><br /></td></tr>
 <tr class="separator:ga618ddbf19fdd38d8f90b8f3d7cb5d481"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -634,8 +639,8 @@ Enumerations</h2></td></tr>
         </tr>
       </table>
 </div><div class="memdoc">
-<b>Value:</b><div class="fragment"><div class="line">(<a class="code" href="grpc__types_8h.html#a3b9e262e1a797030f62bccfe7b42ce01">GRPC_INITIAL_METADATA_IDEMPOTENT_REQUEST</a> |            \</div><div class="line">   GRPC_INITIAL_METADATA_WAIT_FOR_READY |                \</div><div class="line">   GRPC_INITIAL_METADATA_CACHEABLE_REQUEST |             \</div><div class="line">   GRPC_INITIAL_METADATA_WAIT_FOR_READY_EXPLICITLY_SET | \</div><div class="line">   GRPC_INITIAL_METADATA_CORKED | <a class="code" href="grpc__types_8h.html#a5de65995b1101bba3652f9d2ae51cc23">GRPC_WRITE_THROUGH</a>)</div><div class="ttc" id="grpc__types_8h_html_a5de65995b1101bba3652f9d2ae51cc23"><div class="ttname"><a href="grpc__types_8h.html#a5de65995b1101bba3652f9d2ae51cc23">GRPC_WRITE_THROUGH</a></div><div class="ttdeci">#define GRPC_WRITE_THROUGH</div><div class="ttdoc">Force this message to be written to the socket before completing it. </div><div class="ttdef"><b>Definition:</b> grpc_types.h:433</div></div>
-<div class="ttc" id="grpc__types_8h_html_a3b9e262e1a797030f62bccfe7b42ce01"><div class="ttname"><a href="grpc__types_8h.html#a3b9e262e1a797030f62bccfe7b42ce01">GRPC_INITIAL_METADATA_IDEMPOTENT_REQUEST</a></div><div class="ttdeci">#define GRPC_INITIAL_METADATA_IDEMPOTENT_REQUEST</div><div class="ttdoc">Initial metadata flags. </div><div class="ttdef"><b>Definition:</b> grpc_types.h:440</div></div>
+<b>Value:</b><div class="fragment"><div class="line">(<a class="code" href="grpc__types_8h.html#a3b9e262e1a797030f62bccfe7b42ce01">GRPC_INITIAL_METADATA_IDEMPOTENT_REQUEST</a> |            \</div><div class="line">   GRPC_INITIAL_METADATA_WAIT_FOR_READY |                \</div><div class="line">   GRPC_INITIAL_METADATA_CACHEABLE_REQUEST |             \</div><div class="line">   GRPC_INITIAL_METADATA_WAIT_FOR_READY_EXPLICITLY_SET | \</div><div class="line">   GRPC_INITIAL_METADATA_CORKED | <a class="code" href="grpc__types_8h.html#a5de65995b1101bba3652f9d2ae51cc23">GRPC_WRITE_THROUGH</a>)</div><div class="ttc" id="grpc__types_8h_html_a5de65995b1101bba3652f9d2ae51cc23"><div class="ttname"><a href="grpc__types_8h.html#a5de65995b1101bba3652f9d2ae51cc23">GRPC_WRITE_THROUGH</a></div><div class="ttdeci">#define GRPC_WRITE_THROUGH</div><div class="ttdoc">Force this message to be written to the socket before completing it. </div><div class="ttdef"><b>Definition:</b> grpc_types.h:443</div></div>
+<div class="ttc" id="grpc__types_8h_html_a3b9e262e1a797030f62bccfe7b42ce01"><div class="ttname"><a href="grpc__types_8h.html#a3b9e262e1a797030f62bccfe7b42ce01">GRPC_INITIAL_METADATA_IDEMPOTENT_REQUEST</a></div><div class="ttdeci">#define GRPC_INITIAL_METADATA_IDEMPOTENT_REQUEST</div><div class="ttdoc">Initial metadata flags. </div><div class="ttdef"><b>Definition:</b> grpc_types.h:450</div></div>
 </div><!-- fragment -->
 <p>Mask of all valid flags. </p>
 
@@ -1233,7 +1238,7 @@ Enumerations</h2></td></tr>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Wed Jul 3 2019 14:51:26 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Mon Aug 19 2019 11:57:21 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.13
 </small></address>

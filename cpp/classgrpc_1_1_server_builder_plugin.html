@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.22.0</span>
+   &#160;<span id="projectnumber">1.24.0-dev</span>
    </div>
   </td>
  </tr>
@@ -93,9 +93,9 @@ Public Member Functions</h2></td></tr>
 <tr class="memitem:af1a9c6d18ab78065f7e755b61a778635"><td class="memItemLeft" align="right" valign="top">virtual void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_server_builder_plugin.html#af1a9c6d18ab78065f7e755b61a778635">ChangeArguments</a> (const <a class="el" href="namespacegrpc.html#ab04a87625da3bf85cdaf5e7856b00203">grpc::string</a> &amp;<a class="el" href="classgrpc_1_1_server_builder_plugin.html#ac337c61dcb4d6c41e669e510f1faca48">name</a>, void *value)=0</td></tr>
 <tr class="memdesc:af1a9c6d18ab78065f7e755b61a778635"><td class="mdescLeft">&#160;</td><td class="mdescRight">ChangeArguments is an interface that can be used in <a class="el" href="classgrpc__impl_1_1_server_builder_option.html#a491c4fd3611efa69a189f1708a450ccc" title="Alter the ServerBuilderPlugin map that will be added into ServerBuilder. ">ServerBuilderOption::UpdatePlugins</a>.  <a href="#af1a9c6d18ab78065f7e755b61a778635">More...</a><br /></td></tr>
 <tr class="separator:af1a9c6d18ab78065f7e755b61a778635"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:aa91db83f71b41361d9ad24fdcafd26b5"><td class="memItemLeft" align="right" valign="top">virtual void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_server_builder_plugin.html#aa91db83f71b41361d9ad24fdcafd26b5">UpdateChannelArguments</a> (<a class="el" href="classgrpc__impl_1_1_channel_arguments.html">grpc_impl::ChannelArguments</a> *args)</td></tr>
-<tr class="memdesc:aa91db83f71b41361d9ad24fdcafd26b5"><td class="mdescLeft">&#160;</td><td class="mdescRight">UpdateChannelArguments will be called in <a class="el" href="classgrpc__impl_1_1_server_builder.html#aa24bf474b499f8a98c3686eb01d90b30" title="Return a running server which is ready for processing calls. ">ServerBuilder::BuildAndStart()</a>, before the Server instance is created.  <a href="#aa91db83f71b41361d9ad24fdcafd26b5">More...</a><br /></td></tr>
-<tr class="separator:aa91db83f71b41361d9ad24fdcafd26b5"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a616e24edf3859bb1feb9ec1d4db8dbe7"><td class="memItemLeft" align="right" valign="top">virtual void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_server_builder_plugin.html#a616e24edf3859bb1feb9ec1d4db8dbe7">UpdateChannelArguments</a> (<a class="el" href="namespacegrpc.html#a0fb985b4797b9d239bc8164ed1bad223">ChannelArguments</a> *args)</td></tr>
+<tr class="memdesc:a616e24edf3859bb1feb9ec1d4db8dbe7"><td class="mdescLeft">&#160;</td><td class="mdescRight">UpdateChannelArguments will be called in <a class="el" href="classgrpc__impl_1_1_server_builder.html#aa24bf474b499f8a98c3686eb01d90b30" title="Return a running server which is ready for processing calls. ">ServerBuilder::BuildAndStart()</a>, before the Server instance is created.  <a href="#a616e24edf3859bb1feb9ec1d4db8dbe7">More...</a><br /></td></tr>
+<tr class="separator:a616e24edf3859bb1feb9ec1d4db8dbe7"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a89727883dd80f7a5f8e3d07e7df13f28"><td class="memItemLeft" align="right" valign="top">virtual bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_server_builder_plugin.html#a89727883dd80f7a5f8e3d07e7df13f28">has_sync_methods</a> () const</td></tr>
 <tr class="separator:a89727883dd80f7a5f8e3d07e7df13f28"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a3b62f84342dec96521e69071d9a63988"><td class="memItemLeft" align="right" valign="top">virtual bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1_server_builder_plugin.html#a3b62f84342dec96521e69071d9a63988">has_async_methods</a> () const</td></tr>
@@ -300,8 +300,8 @@ Public Member Functions</h2></td></tr>
 
 </div>
 </div>
-<a id="aa91db83f71b41361d9ad24fdcafd26b5"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#aa91db83f71b41361d9ad24fdcafd26b5">&#9670;&nbsp;</a></span>UpdateChannelArguments()</h2>
+<a id="a616e24edf3859bb1feb9ec1d4db8dbe7"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a616e24edf3859bb1feb9ec1d4db8dbe7">&#9670;&nbsp;</a></span>UpdateChannelArguments()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -312,7 +312,7 @@ Public Member Functions</h2></td></tr>
         <tr>
           <td class="memname">virtual void grpc::ServerBuilderPlugin::UpdateChannelArguments </td>
           <td>(</td>
-          <td class="paramtype"><a class="el" href="classgrpc__impl_1_1_channel_arguments.html">grpc_impl::ChannelArguments</a> *&#160;</td>
+          <td class="paramtype"><a class="el" href="namespacegrpc.html#a0fb985b4797b9d239bc8164ed1bad223">ChannelArguments</a> *&#160;</td>
           <td class="paramname"><em>args</em></td><td>)</td>
           <td></td>
         </tr>
@@ -362,7 +362,7 @@ Public Member Functions</h2></td></tr>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Wed Jul 3 2019 14:51:27 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Mon Aug 19 2019 11:57:23 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.13
 </small></address>

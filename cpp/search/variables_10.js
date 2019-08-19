@@ -1,5 +1,6 @@
 var searchData=
 [
+  ['scope',['scope',['../structgrpc__impl_1_1experimental_1_1_sts_credentials_options.html#a0ad4710e90fde220a91b825d4853d6eb',1,'grpc_impl::experimental::StsCredentialsOptions']]],
   ['selected_5fport',['selected_port',['../structgrpc__impl_1_1_server_builder_1_1_port.html#adf95173d7c1d72fab39adc6d414a221a',1,'grpc_impl::ServerBuilder::Port']]],
   ['send_5f',['send_',['../classgrpc_1_1internal_1_1_call_op_send_initial_metadata.html#a20cdbc5d2db285e523f700ff4f535268',1,'grpc::internal::CallOpSendInitialMetadata']]],
   ['send_5finitial_5fmetadata',['send_initial_metadata',['../uniongrpc__op_1_1grpc__op__data.html#ae6ef97451e551478d4e4e5c74f0ece2f',1,'grpc_op::grpc_op_data']]],
@@ -17,5 +18,7 @@ var searchData=
   ['status_5fdetails',['status_details',['../structgrpc__op_1_1grpc__op__data_1_1grpc__op__send__status__from__server.html#aa2c7d136d26d0ed523239f911681f431',1,'grpc_op::grpc_op_data::grpc_op_send_status_from_server::status_details()'],['../structgrpc__op_1_1grpc__op__data_1_1grpc__op__recv__status__on__client.html#ac91a0142a9f4a7dc2bc4a186b08d237f',1,'grpc_op::grpc_op_data::grpc_op_recv_status_on_client::status_details()']]],
   ['stream_5f',['stream_',['../classgrpc_1_1_server_interface_1_1_base_async_request.html#add862faed53637cbaee7fc0fb2f146a9',1,'grpc::ServerInterface::BaseAsyncRequest']]],
   ['string',['string',['../uniongrpc__arg_1_1grpc__arg__value.html#afd7cc41a1d8dd36aba15faa4a6c426e2',1,'grpc_arg::grpc_arg_value']]],
+  ['subject_5ftoken_5fpath',['subject_token_path',['../structgrpc__impl_1_1experimental_1_1_sts_credentials_options.html#ae66e9ae746202d4838785084d10b7f8a',1,'grpc_impl::experimental::StsCredentialsOptions']]],
+  ['subject_5ftoken_5ftype',['subject_token_type',['../structgrpc__impl_1_1experimental_1_1_sts_credentials_options.html#abffb23437a4eea82f5c017edc114aeb8',1,'grpc_impl::experimental::StsCredentialsOptions']]],
   ['success',['success',['../structgrpc__event.html#a99d4215e5df50869af320b1cca5540db',1,'grpc_event']]]
 ];

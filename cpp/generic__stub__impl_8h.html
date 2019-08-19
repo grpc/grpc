@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.22.0</span>
+   &#160;<span id="projectnumber">1.24.0-dev</span>
    </div>
   </td>
  </tr>
@@ -72,10 +72,11 @@ $(function() {
 </div><!--header-->
 <div class="contents">
 <div class="textblock"><code>#include &lt;functional&gt;</code><br />
-<code>#include &lt;<a class="el" href="grpcpp_2support_2async__stream_8h_source.html">grpcpp/support/async_stream.h</a>&gt;</code><br />
-<code>#include &lt;<a class="el" href="grpcpp_2support_2async__unary__call_8h_source.html">grpcpp/support/async_unary_call.h</a>&gt;</code><br />
+<code>#include &lt;<a class="el" href="grpcpp_2client__context_8h_source.html">grpcpp/client_context.h</a>&gt;</code><br />
+<code>#include &lt;<a class="el" href="support_2async__stream__impl_8h_source.html">grpcpp/support/async_stream_impl.h</a>&gt;</code><br />
+<code>#include &lt;<a class="el" href="support_2async__unary__call__impl_8h_source.html">grpcpp/support/async_unary_call_impl.h</a>&gt;</code><br />
 <code>#include &lt;<a class="el" href="grpcpp_2support_2byte__buffer_8h_source.html">grpcpp/support/byte_buffer.h</a>&gt;</code><br />
-<code>#include &lt;<a class="el" href="support_2client__callback_8h_source.html">grpcpp/support/client_callback.h</a>&gt;</code><br />
+<code>#include &lt;<a class="el" href="support_2client__callback__impl_8h_source.html">grpcpp/support/client_callback_impl.h</a>&gt;</code><br />
 <code>#include &lt;<a class="el" href="grpcpp_2support_2status_8h_source.html">grpcpp/support/status.h</a>&gt;</code><br />
 </div>
 <p><a href="generic__stub__impl_8h_source.html">Go to the source code of this file.</a></p>
@@ -100,15 +101,15 @@ Namespaces</h2></td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="typedef-members"></a>
 Typedefs</h2></td></tr>
-<tr class="memitem:aba53fb6f2502caa167e9528e5c560539"><td class="memItemLeft" align="right" valign="top">typedef ClientAsyncReaderWriter&lt; ByteBuffer, ByteBuffer &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacegrpc.html#aba53fb6f2502caa167e9528e5c560539">grpc::GenericClientAsyncReaderWriter</a></td></tr>
-<tr class="separator:aba53fb6f2502caa167e9528e5c560539"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a7ee9bd108774bc00defacc5b4fb695df"><td class="memItemLeft" align="right" valign="top">typedef ClientAsyncResponseReader&lt; ByteBuffer &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacegrpc.html#a7ee9bd108774bc00defacc5b4fb695df">grpc::GenericClientAsyncResponseReader</a></td></tr>
-<tr class="separator:a7ee9bd108774bc00defacc5b4fb695df"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a32fd0a2ccd1ad46eebf2fb7ad580684d"><td class="memItemLeft" align="right" valign="top">typedef ::<a class="el" href="classgrpc__impl_1_1_client_async_reader_writer.html">grpc_impl::ClientAsyncReaderWriter</a>&lt; ByteBuffer, ByteBuffer &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacegrpc.html#a32fd0a2ccd1ad46eebf2fb7ad580684d">grpc::GenericClientAsyncReaderWriter</a></td></tr>
+<tr class="separator:a32fd0a2ccd1ad46eebf2fb7ad580684d"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a0f6449923a71f91fcb5689834e17d650"><td class="memItemLeft" align="right" valign="top">typedef ::<a class="el" href="classgrpc__impl_1_1_client_async_response_reader.html">grpc_impl::ClientAsyncResponseReader</a>&lt; ByteBuffer &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacegrpc.html#a0f6449923a71f91fcb5689834e17d650">grpc::GenericClientAsyncResponseReader</a></td></tr>
+<tr class="separator:a0f6449923a71f91fcb5689834e17d650"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Wed Jul 3 2019 14:51:27 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Mon Aug 19 2019 11:57:22 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.13
 </small></address>

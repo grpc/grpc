@@ -3,6 +3,7 @@ var searchData=
   ['tag',['tag',['../structgrpc__event.html#a883ab15e862db582116c72cdcdc4c201',1,'grpc_event']]],
   ['tag_5f',['tag_',['../classgrpc_1_1_server_interface_1_1_base_async_request.html#ace41bf173c28a84f9f9311cc4fafef9d',1,'grpc::ServerInterface::BaseAsyncRequest']]],
   ['target_5fservice_5faccounts',['target_service_accounts',['../structgrpc__impl_1_1experimental_1_1_alts_credentials_options.html#a51caf7edc34ec2f5c30c6d7aca619e75',1,'grpc_impl::experimental::AltsCredentialsOptions']]],
+  ['token_5fexchange_5fservice_5furi',['token_exchange_service_uri',['../structgrpc__impl_1_1experimental_1_1_sts_credentials_options.html#a073a29a09dab122fbf5786410b9f99be',1,'grpc_impl::experimental::StsCredentialsOptions']]],
   ['trailing_5fmetadata',['trailing_metadata',['../structgrpc__op_1_1grpc__op__data_1_1grpc__op__send__status__from__server.html#a9725188c1ad2a9a27b5b6c643085d38f',1,'grpc_op::grpc_op_data::grpc_op_send_status_from_server::trailing_metadata()'],['../structgrpc__op_1_1grpc__op__data_1_1grpc__op__recv__status__on__client.html#ac9335d5e1ce9d7accc13364e1f772253',1,'grpc_op::grpc_op_data::grpc_op_recv_status_on_client::trailing_metadata()']]],
   ['trailing_5fmetadata_5fcount',['trailing_metadata_count',['../structgrpc__op_1_1grpc__op__data_1_1grpc__op__send__status__from__server.html#aa33b27b5379b47e32202ccb420d1f87b',1,'grpc_op::grpc_op_data::grpc_op_send_status_from_server']]],
   ['tv_5fnsec',['tv_nsec',['../structgpr__timespec.html#afff378cc8cba33300d81f4a406240ff0',1,'gpr_timespec']]],

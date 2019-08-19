@@ -7,5 +7,6 @@ var searchData=
   ['verify_5fpeer_5fdestruct',['verify_peer_destruct',['../structverify__peer__options.html#a7dd670d8234469ba71e25a76f07caa68',1,'verify_peer_options::verify_peer_destruct()'],['../structgrpc__ssl__verify__peer__options.html#a3c2e0c9f822bf4f55a105006ab6d9de4',1,'grpc_ssl_verify_peer_options::verify_peer_destruct()']]],
   ['verify_5fpeer_5foptions',['verify_peer_options',['../structverify__peer__options.html',1,'']]],
   ['version',['version',['../structgrpc__completion__queue__attributes.html#a77193c57fac60071d907ceda3be64f72',1,'grpc_completion_queue_attributes']]],
+  ['versioning_2emd',['versioning.md',['../versioning_8md.html',1,'']]],
   ['vtable',['vtable',['../structgrpc__arg_1_1grpc__arg__value_1_1grpc__arg__pointer.html#a9ac50b325433ccb4c4a6f617ad4fdd8f',1,'grpc_arg::grpc_arg_value::grpc_arg_pointer']]]
 ];

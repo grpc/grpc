@@ -1,7 +1,7 @@
 var searchData=
 [
-  ['readerinterface',['ReaderInterface',['../classgrpc_1_1internal_1_1_reader_interface.html',1,'grpc::internal']]],
-  ['readerinterface_3c_20requesttype_20_3e',['ReaderInterface&lt; RequestType &gt;',['../classgrpc_1_1internal_1_1_reader_interface.html',1,'grpc::internal']]],
+  ['readerinterface',['ReaderInterface',['../classgrpc__impl_1_1internal_1_1_reader_interface.html',1,'grpc_impl::internal']]],
+  ['readerinterface_3c_20requesttype_20_3e',['ReaderInterface&lt; RequestType &gt;',['../classgrpc__impl_1_1internal_1_1_reader_interface.html',1,'grpc_impl::internal']]],
   ['registeredasyncrequest',['RegisteredAsyncRequest',['../classgrpc_1_1_server_interface_1_1_registered_async_request.html',1,'grpc::ServerInterface']]],
   ['releasablemutexlock',['ReleasableMutexLock',['../classgrpc_1_1internal_1_1_releasable_mutex_lock.html',1,'grpc::internal']]],
   ['resourcequota',['ResourceQuota',['../classgrpc__impl_1_1_resource_quota.html',1,'grpc_impl']]],

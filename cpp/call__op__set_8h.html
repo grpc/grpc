@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.22.0</span>
+   &#160;<span id="projectnumber">1.24.0-dev</span>
    </div>
   </td>
  </tr>
@@ -66,7 +66,8 @@ $(function() {
   <div class="summary">
 <a href="#nested-classes">Data Structures</a> &#124;
 <a href="#namespaces">Namespaces</a> &#124;
-<a href="#func-members">Functions</a>  </div>
+<a href="#func-members">Functions</a> &#124;
+<a href="#var-members">Variables</a>  </div>
   <div class="headertitle">
 <div class="title">call_op_set.h File Reference</div>  </div>
 </div><!--header-->
@@ -82,8 +83,8 @@ $(function() {
 <code>#include &lt;<a class="el" href="grpcpp_2impl_2codegen_2call_8h_source.html">grpcpp/impl/codegen/call.h</a>&gt;</code><br />
 <code>#include &lt;<a class="el" href="grpcpp_2impl_2codegen_2call__hook_8h_source.html">grpcpp/impl/codegen/call_hook.h</a>&gt;</code><br />
 <code>#include &lt;<a class="el" href="call__op__set__interface_8h_source.html">grpcpp/impl/codegen/call_op_set_interface.h</a>&gt;</code><br />
-<code>#include &lt;<a class="el" href="grpcpp_2impl_2codegen_2client__context_8h_source.html">grpcpp/impl/codegen/client_context.h</a>&gt;</code><br />
-<code>#include &lt;<a class="el" href="grpcpp_2impl_2codegen_2completion__queue_8h_source.html">grpcpp/impl/codegen/completion_queue.h</a>&gt;</code><br />
+<code>#include &lt;<a class="el" href="client__context__impl_8h_source.html">grpcpp/impl/codegen/client_context_impl.h</a>&gt;</code><br />
+<code>#include &lt;<a class="el" href="impl_2codegen_2completion__queue__impl_8h_source.html">grpcpp/impl/codegen/completion_queue_impl.h</a>&gt;</code><br />
 <code>#include &lt;<a class="el" href="grpcpp_2impl_2codegen_2completion__queue__tag_8h_source.html">grpcpp/impl/codegen/completion_queue_tag.h</a>&gt;</code><br />
 <code>#include &lt;<a class="el" href="grpcpp_2impl_2codegen_2config_8h_source.html">grpcpp/impl/codegen/config.h</a>&gt;</code><br />
 <code>#include &lt;<a class="el" href="grpcpp_2impl_2codegen_2core__codegen__interface_8h_source.html">grpcpp/impl/codegen/core_codegen_interface.h</a>&gt;</code><br />
@@ -146,11 +147,16 @@ Namespaces</h2></td></tr>
 Functions</h2></td></tr>
 <tr class="memitem:a900d5ee6cc959546ec7345704339243a"><td class="memItemLeft" align="right" valign="top"><a class="el" href="structgrpc__metadata.html">grpc_metadata</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacegrpc_1_1internal.html#a900d5ee6cc959546ec7345704339243a">grpc::internal::FillMetadataArray</a> (const std::multimap&lt; <a class="el" href="namespacegrpc.html#ab04a87625da3bf85cdaf5e7856b00203">grpc::string</a>, <a class="el" href="namespacegrpc.html#ab04a87625da3bf85cdaf5e7856b00203">grpc::string</a> &gt; &amp;metadata, size_t *metadata_count, const <a class="el" href="namespacegrpc.html#ab04a87625da3bf85cdaf5e7856b00203">grpc::string</a> &amp;optional_error_details)</td></tr>
 <tr class="separator:a900d5ee6cc959546ec7345704339243a"><td class="memSeparator" colspan="2">&#160;</td></tr>
+</table><table class="memberdecls">
+<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="var-members"></a>
+Variables</h2></td></tr>
+<tr class="memitem:abbcecc18dae64c65df0b6d9aa8bf67a8"><td class="memItemLeft" align="right" valign="top">CoreCodegenInterface *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacegrpc.html#abbcecc18dae64c65df0b6d9aa8bf67a8">grpc::g_core_codegen_interface</a></td></tr>
+<tr class="separator:abbcecc18dae64c65df0b6d9aa8bf67a8"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Wed Jul 3 2019 14:51:27 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Mon Aug 19 2019 11:57:22 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.13
 </small></address>

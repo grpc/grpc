@@ -1,5 +1,6 @@
 var searchData=
 [
+  ['scope',['scope',['../structgrpc__sts__credentials__options.html#a1da17c75496e5debe7b89d3f43fc511b',1,'grpc_sts_credentials_options']]],
   ['send_5finitial_5fmetadata',['send_initial_metadata',['../uniongrpc__op_1_1grpc__op__data.html#ae6ef97451e551478d4e4e5c74f0ece2f',1,'grpc_op::grpc_op_data']]],
   ['send_5fmessage',['send_message',['../structgrpc__op_1_1grpc__op__data_1_1grpc__op__send__message.html#ac5710965e63672497b156855e096a759',1,'grpc_op::grpc_op_data::grpc_op_send_message::send_message()'],['../uniongrpc__op_1_1grpc__op__data.html#a475ece8579e74caec4338c3e9221702c',1,'grpc_op::grpc_op_data::send_message()']]],
   ['send_5fstatus_5ffrom_5fserver',['send_status_from_server',['../uniongrpc__op_1_1grpc__op__data.html#adc789e7a8a91b5f20a16a989e9150a0d',1,'grpc_op::grpc_op_data']]],
@@ -12,5 +13,7 @@ var searchData=
   ['status',['status',['../structgrpc__tls__credential__reload__arg.html#a4d7f7be6bb3a174e289eafe75526ae9d',1,'grpc_tls_credential_reload_arg::status()'],['../structgrpc__tls__server__authorization__check__arg.html#ad5947a871b4a54e5562d4419f7dafc56',1,'grpc_tls_server_authorization_check_arg::status()'],['../structgrpc__op_1_1grpc__op__data_1_1grpc__op__send__status__from__server.html#ab4f0d42f69e3920aea595fd1e02da398',1,'grpc_op::grpc_op_data::grpc_op_send_status_from_server::status()'],['../structgrpc__op_1_1grpc__op__data_1_1grpc__op__recv__status__on__client.html#a2118d693bf827b6098f6963ffedc0758',1,'grpc_op::grpc_op_data::grpc_op_recv_status_on_client::status()']]],
   ['status_5fdetails',['status_details',['../structgrpc__op_1_1grpc__op__data_1_1grpc__op__send__status__from__server.html#aa2c7d136d26d0ed523239f911681f431',1,'grpc_op::grpc_op_data::grpc_op_send_status_from_server::status_details()'],['../structgrpc__op_1_1grpc__op__data_1_1grpc__op__recv__status__on__client.html#ac91a0142a9f4a7dc2bc4a186b08d237f',1,'grpc_op::grpc_op_data::grpc_op_recv_status_on_client::status_details()']]],
   ['string',['string',['../uniongrpc__arg_1_1grpc__arg__value.html#afd7cc41a1d8dd36aba15faa4a6c426e2',1,'grpc_arg::grpc_arg_value']]],
+  ['subject_5ftoken_5fpath',['subject_token_path',['../structgrpc__sts__credentials__options.html#a26907053e134770f20c2e3506a7b3979',1,'grpc_sts_credentials_options']]],
+  ['subject_5ftoken_5ftype',['subject_token_type',['../structgrpc__sts__credentials__options.html#a467b1184da37adc95e8180b66a3a628f',1,'grpc_sts_credentials_options']]],
   ['success',['success',['../structgrpc__tls__server__authorization__check__arg.html#a4b61309fca075f7d93d3a4325728bb7f',1,'grpc_tls_server_authorization_check_arg::success()'],['../structgrpc__event.html#a99d4215e5df50869af320b1cca5540db',1,'grpc_event::success()']]]
 ];

@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.22.0</span>
+   &#160;<span id="projectnumber">1.24.0-dev</span>
    </div>
   </td>
  </tr>
@@ -71,11 +71,11 @@ $(function() {
 : <a class="el" href="classgrpc_1_1_channel_interface.html#a31d360cd218614814d68e01e07ce55cc">grpc::ChannelInterface</a>
 </li>
 <li>WaitForInitialMetadata()
-: <a class="el" href="classgrpc_1_1_client_reader.html#a8fd52f51ae4f67cc86c36419acc505c5">grpc::ClientReader&lt; R &gt;</a>
-, <a class="el" href="classgrpc_1_1_client_reader_interface.html#aee87dd6e3e8a40853207ceb53b590b19">grpc::ClientReaderInterface&lt; R &gt;</a>
-, <a class="el" href="classgrpc_1_1_client_reader_writer.html#ab6f436ca034fbc2e5e8035e637f7f5fc">grpc::ClientReaderWriter&lt; W, R &gt;</a>
-, <a class="el" href="classgrpc_1_1_client_reader_writer_interface.html#a6ead554cc1b991f2289b26fb80fdde5e">grpc::ClientReaderWriterInterface&lt; W, R &gt;</a>
-, <a class="el" href="classgrpc_1_1_client_writer.html#a814a24b9a0348055195b3d9e837ae0a1">grpc::ClientWriter&lt; W &gt;</a>
+: <a class="el" href="classgrpc__impl_1_1_client_reader.html#af7916c43398e295545bcb6371e8c4fb8">grpc_impl::ClientReader&lt; R &gt;</a>
+, <a class="el" href="classgrpc__impl_1_1_client_reader_interface.html#abb7e5badfc96904b3ce5932a0706a075">grpc_impl::ClientReaderInterface&lt; R &gt;</a>
+, <a class="el" href="classgrpc__impl_1_1_client_reader_writer.html#a886356d92a33a962ffe76c4c14e97c29">grpc_impl::ClientReaderWriter&lt; W, R &gt;</a>
+, <a class="el" href="classgrpc__impl_1_1_client_reader_writer_interface.html#ad2d7a3e9d3ffeb92c0d0fc0fcf121aca">grpc_impl::ClientReaderWriterInterface&lt; W, R &gt;</a>
+, <a class="el" href="classgrpc__impl_1_1_client_writer.html#a7cc9e278acc9cd6a26edc3da0ecd1fc6">grpc_impl::ClientWriter&lt; W &gt;</a>
 </li>
 <li>WaitForStateChange()
 : <a class="el" href="classgrpc_1_1_channel_interface.html#a70567e7ea3d1a967ecf5ecdc220ac27e">grpc::ChannelInterface</a>
@@ -84,61 +84,61 @@ $(function() {
 : <a class="el" href="classgrpc_1_1internal_1_1_cond_var.html#ad7f1985510b62bda2f58ce0f872e265d">grpc::internal::CondVar</a>
 </li>
 <li>Write()
-: <a class="el" href="classgrpc_1_1_client_async_reader_writer.html#a07bcc3a0737c3bee3ef50def89af5fc7">grpc::ClientAsyncReaderWriter&lt; W, R &gt;</a>
-, <a class="el" href="classgrpc_1_1_client_async_writer.html#a3f3d8e3e47b7181f7312fd6e3eb32674">grpc::ClientAsyncWriter&lt; W &gt;</a>
-, <a class="el" href="classgrpc_1_1_client_reader_writer.html#ae30b0e18622f4132b1c7654e24605d53">grpc::ClientReaderWriter&lt; W, R &gt;</a>
-, <a class="el" href="classgrpc_1_1_client_writer.html#ad6b1906d4f9cb0a14431aeb310e6674b">grpc::ClientWriter&lt; W &gt;</a>
-, <a class="el" href="classgrpc_1_1experimental_1_1_client_callback_reader_writer.html#ada238d8a75d01a38850f9d177369a5a5">grpc::experimental::ClientCallbackReaderWriter&lt; Request, Response &gt;</a>
-, <a class="el" href="classgrpc_1_1experimental_1_1_client_callback_writer.html#aa13374f0da03eafb808fc0b77888e837">grpc::experimental::ClientCallbackWriter&lt; Request &gt;</a>
-, <a class="el" href="classgrpc_1_1experimental_1_1_server_callback_reader_writer.html#a1b5744874ff3a29b85f841dbdddc8780">grpc::experimental::ServerCallbackReaderWriter&lt; Request, Response &gt;</a>
-, <a class="el" href="classgrpc_1_1experimental_1_1_server_callback_writer.html#a54602c198c8b5d519a0c50739f186753">grpc::experimental::ServerCallbackWriter&lt; Response &gt;</a>
-, <a class="el" href="classgrpc_1_1internal_1_1_async_writer_interface.html#aa61e21fdfef0a4fb34f595bef767e6a8">grpc::internal::AsyncWriterInterface&lt; W &gt;</a>
-, <a class="el" href="classgrpc_1_1internal_1_1_client_callback_reader_writer_impl.html#a8879d05d49fe72cf8b0ec4a2dd5d0b28">grpc::internal::ClientCallbackReaderWriterImpl&lt; Request, Response &gt;</a>
-, <a class="el" href="classgrpc_1_1internal_1_1_client_callback_writer_impl.html#a3f9865b1233ddfd3115533d3e285593a">grpc::internal::ClientCallbackWriterImpl&lt; Request &gt;</a>
-, <a class="el" href="classgrpc_1_1internal_1_1_server_reader_writer_body.html#a875cf46b617b954e2dc8f8b9b0a83740">grpc::internal::ServerReaderWriterBody&lt; W, R &gt;</a>
-, <a class="el" href="classgrpc_1_1internal_1_1_writer_interface.html#add3e3940ba338ab08705ea69d017a80b">grpc::internal::WriterInterface&lt; W &gt;</a>
-, <a class="el" href="classgrpc_1_1_server_async_reader_writer.html#a816fd9065473a24d4ab613ee2ecb19e1">grpc::ServerAsyncReaderWriter&lt; W, R &gt;</a>
-, <a class="el" href="classgrpc_1_1_server_async_writer.html#a467f70c7460ceb7738fb938b3bf93c85">grpc::ServerAsyncWriter&lt; W &gt;</a>
-, <a class="el" href="classgrpc_1_1_server_reader_writer.html#a12e60107e7b98f024903d56e7be8e6af">grpc::ServerReaderWriter&lt; W, R &gt;</a>
-, <a class="el" href="classgrpc_1_1_server_split_streamer.html#a3dbab04817791c65c8222daee9f6f46f">grpc::ServerSplitStreamer&lt; RequestType, ResponseType &gt;</a>
-, <a class="el" href="classgrpc_1_1_server_unary_streamer.html#a68d093b4506bfcac59f5996157867d62">grpc::ServerUnaryStreamer&lt; RequestType, ResponseType &gt;</a>
-, <a class="el" href="classgrpc_1_1_server_writer.html#a877af2459a53cf8cdbff0952748594f8">grpc::ServerWriter&lt; W &gt;</a>
+: <a class="el" href="classgrpc__impl_1_1_client_async_reader_writer.html#a14cef3c5d9d057e8c672700869cfc7a3">grpc_impl::ClientAsyncReaderWriter&lt; W, R &gt;</a>
+, <a class="el" href="classgrpc__impl_1_1_client_async_writer.html#a2d4f04e9e37879524463f9c5e3c88365">grpc_impl::ClientAsyncWriter&lt; W &gt;</a>
+, <a class="el" href="classgrpc__impl_1_1_client_reader_writer.html#ad50a2cc981c1dbef6f53e319d3156a7d">grpc_impl::ClientReaderWriter&lt; W, R &gt;</a>
+, <a class="el" href="classgrpc__impl_1_1_client_writer.html#a4fa098e77e418bbc678f4ac84b068596">grpc_impl::ClientWriter&lt; W &gt;</a>
+, <a class="el" href="classgrpc__impl_1_1experimental_1_1_client_callback_reader_writer.html#af8f06e1f41866861fa6d34df2a6a8453">grpc_impl::experimental::ClientCallbackReaderWriter&lt; Request, Response &gt;</a>
+, <a class="el" href="classgrpc__impl_1_1experimental_1_1_client_callback_writer.html#a7ee792103c84b50fd752ac640083568e">grpc_impl::experimental::ClientCallbackWriter&lt; Request &gt;</a>
+, <a class="el" href="classgrpc__impl_1_1experimental_1_1_server_callback_reader_writer.html#a7108bf5fab52a91a0e03e79d6e4c3a2d">grpc_impl::experimental::ServerCallbackReaderWriter&lt; Request, Response &gt;</a>
+, <a class="el" href="classgrpc__impl_1_1experimental_1_1_server_callback_writer.html#a45ae2aa4b1ee034ffab986230e4105be">grpc_impl::experimental::ServerCallbackWriter&lt; Response &gt;</a>
+, <a class="el" href="classgrpc__impl_1_1internal_1_1_async_writer_interface.html#a9c4e4ce91569478b6656992a35c5ece1">grpc_impl::internal::AsyncWriterInterface&lt; W &gt;</a>
+, <a class="el" href="classgrpc__impl_1_1internal_1_1_client_callback_reader_writer_impl.html#a6da65d5742cc795f0fc5e891477e21b2">grpc_impl::internal::ClientCallbackReaderWriterImpl&lt; Request, Response &gt;</a>
+, <a class="el" href="classgrpc__impl_1_1internal_1_1_client_callback_writer_impl.html#a3987e8e0f877e341dd1dfad2a1b455d6">grpc_impl::internal::ClientCallbackWriterImpl&lt; Request &gt;</a>
+, <a class="el" href="classgrpc__impl_1_1internal_1_1_server_reader_writer_body.html#adc886c6be4e24421f6338d25958a5920">grpc_impl::internal::ServerReaderWriterBody&lt; W, R &gt;</a>
+, <a class="el" href="classgrpc__impl_1_1internal_1_1_writer_interface.html#a289bb880cfc060c6105fe8ca84198a5c">grpc_impl::internal::WriterInterface&lt; W &gt;</a>
+, <a class="el" href="classgrpc__impl_1_1_server_async_reader_writer.html#a1f6ce8f029b65160bbf26937257547c5">grpc_impl::ServerAsyncReaderWriter&lt; W, R &gt;</a>
+, <a class="el" href="classgrpc__impl_1_1_server_async_writer.html#a05daf326ddaeee486dcd771b69329b98">grpc_impl::ServerAsyncWriter&lt; W &gt;</a>
+, <a class="el" href="classgrpc__impl_1_1_server_reader_writer.html#af440a2bd3b1ff7e2e2c1b6e4aa14a66a">grpc_impl::ServerReaderWriter&lt; W, R &gt;</a>
+, <a class="el" href="classgrpc__impl_1_1_server_split_streamer.html#a4f99f9a385235c82762edff8fbe55d1c">grpc_impl::ServerSplitStreamer&lt; RequestType, ResponseType &gt;</a>
+, <a class="el" href="classgrpc__impl_1_1_server_unary_streamer.html#a3dc42505cd224f5599e88638b1aaba53">grpc_impl::ServerUnaryStreamer&lt; RequestType, ResponseType &gt;</a>
+, <a class="el" href="classgrpc__impl_1_1_server_writer.html#abbd266154ab8a67d17fedc8d310d3a87">grpc_impl::ServerWriter&lt; W &gt;</a>
 </li>
 <li>WriteAndFinish()
-: <a class="el" href="classgrpc_1_1experimental_1_1_server_callback_reader_writer.html#a9bfa80fbd8f24d2f3d5b9937579aa03b">grpc::experimental::ServerCallbackReaderWriter&lt; Request, Response &gt;</a>
-, <a class="el" href="classgrpc_1_1experimental_1_1_server_callback_writer.html#abc7687b634cf3c863b7f6628a9440639">grpc::experimental::ServerCallbackWriter&lt; Response &gt;</a>
-, <a class="el" href="classgrpc_1_1_server_async_reader_writer.html#a0b682431b5045eb62adff98d33a78f46">grpc::ServerAsyncReaderWriter&lt; W, R &gt;</a>
-, <a class="el" href="classgrpc_1_1_server_async_reader_writer_interface.html#ae0c34bdc113287e1937f653b8d3c3116">grpc::ServerAsyncReaderWriterInterface&lt; W, R &gt;</a>
-, <a class="el" href="classgrpc_1_1_server_async_writer.html#a80866b79d44c03e3ad73199dbe91a21d">grpc::ServerAsyncWriter&lt; W &gt;</a>
-, <a class="el" href="classgrpc_1_1_server_async_writer_interface.html#a6ef0f1e5f548977e0e98671b46fd80eb">grpc::ServerAsyncWriterInterface&lt; W &gt;</a>
+: <a class="el" href="classgrpc__impl_1_1experimental_1_1_server_callback_reader_writer.html#abcaaad4fafb7d3378b66931351d48b0b">grpc_impl::experimental::ServerCallbackReaderWriter&lt; Request, Response &gt;</a>
+, <a class="el" href="classgrpc__impl_1_1experimental_1_1_server_callback_writer.html#a7aec8f5f21df9bfcdfd5d56bcb51bb43">grpc_impl::experimental::ServerCallbackWriter&lt; Response &gt;</a>
+, <a class="el" href="classgrpc__impl_1_1_server_async_reader_writer.html#a3d3267808b776bce5936b32d58edc9ab">grpc_impl::ServerAsyncReaderWriter&lt; W, R &gt;</a>
+, <a class="el" href="classgrpc__impl_1_1_server_async_reader_writer_interface.html#a10995d9b1f2fff99acb2a349b5f91023">grpc_impl::ServerAsyncReaderWriterInterface&lt; W, R &gt;</a>
+, <a class="el" href="classgrpc__impl_1_1_server_async_writer.html#a85bb275404d45a0a3bfcd53e7b44593e">grpc_impl::ServerAsyncWriter&lt; W &gt;</a>
+, <a class="el" href="classgrpc__impl_1_1_server_async_writer_interface.html#af457dc1e137016870f17e7c60dd3d912">grpc_impl::ServerAsyncWriterInterface&lt; W &gt;</a>
 </li>
 <li>WriteLast()
-: <a class="el" href="classgrpc_1_1experimental_1_1_client_callback_writer.html#a95902946f849604aa5db1df9e65d2f89">grpc::experimental::ClientCallbackWriter&lt; Request &gt;</a>
-, <a class="el" href="classgrpc_1_1internal_1_1_async_writer_interface.html#a02565abb7c6b4a7a49c0b29159194b66">grpc::internal::AsyncWriterInterface&lt; W &gt;</a>
-, <a class="el" href="classgrpc_1_1internal_1_1_writer_interface.html#a3308bfe1558e317e5fa3530f74c63ce6">grpc::internal::WriterInterface&lt; W &gt;</a>
+: <a class="el" href="classgrpc__impl_1_1experimental_1_1_client_callback_writer.html#a3ae83f93065e445dce94bd072c70b0c6">grpc_impl::experimental::ClientCallbackWriter&lt; Request &gt;</a>
+, <a class="el" href="classgrpc__impl_1_1internal_1_1_async_writer_interface.html#a05ab1b1965def7cec0324fe27b0fa67f">grpc_impl::internal::AsyncWriterInterface&lt; W &gt;</a>
+, <a class="el" href="classgrpc__impl_1_1internal_1_1_writer_interface.html#a6dcc2c52401f3bfc7f87072954ec6808">grpc_impl::internal::WriterInterface&lt; W &gt;</a>
 </li>
 <li>WriteOptions()
 : <a class="el" href="classgrpc_1_1_write_options.html#a4d7753bbd8d9d61e2c6d3e49e29be021">grpc::WriteOptions</a>
 </li>
 <li>WritesDone()
-: <a class="el" href="classgrpc_1_1_client_async_reader_writer.html#af3e090a0801f6bc524f959cd93e4cddc">grpc::ClientAsyncReaderWriter&lt; W, R &gt;</a>
-, <a class="el" href="classgrpc_1_1_client_async_reader_writer_interface.html#a878193880df68ab969b697f1fcd7dbc3">grpc::ClientAsyncReaderWriterInterface&lt; W, R &gt;</a>
-, <a class="el" href="classgrpc_1_1_client_async_writer.html#ab9fd5cd7dedd73d878a86de84c58e8ff">grpc::ClientAsyncWriter&lt; W &gt;</a>
-, <a class="el" href="classgrpc_1_1_client_async_writer_interface.html#a488d42d85f8e34902401e013572ff822">grpc::ClientAsyncWriterInterface&lt; W &gt;</a>
-, <a class="el" href="classgrpc_1_1_client_reader_writer.html#a183f35c478b847e939c76cb20c69a359">grpc::ClientReaderWriter&lt; W, R &gt;</a>
-, <a class="el" href="classgrpc_1_1_client_reader_writer_interface.html#a52f4e5d5ac7fe0e4995cb337aa0ecfc8">grpc::ClientReaderWriterInterface&lt; W, R &gt;</a>
-, <a class="el" href="classgrpc_1_1_client_writer.html#ab77b5d10da6bd85684bffad7bf32ea63">grpc::ClientWriter&lt; W &gt;</a>
-, <a class="el" href="classgrpc_1_1_client_writer_interface.html#aff19574252338e9ac1b5446e82ed8ac5">grpc::ClientWriterInterface&lt; W &gt;</a>
-, <a class="el" href="classgrpc_1_1experimental_1_1_client_callback_reader_writer.html#a2909310b707f27218de246aa453333b2">grpc::experimental::ClientCallbackReaderWriter&lt; Request, Response &gt;</a>
-, <a class="el" href="classgrpc_1_1experimental_1_1_client_callback_writer.html#ad5acd44d2d0337ed2c4fee2d6a102e22">grpc::experimental::ClientCallbackWriter&lt; Request &gt;</a>
-, <a class="el" href="classgrpc_1_1internal_1_1_client_callback_reader_writer_impl.html#a618bf8ffa888846a489431fd4bded2db">grpc::internal::ClientCallbackReaderWriterImpl&lt; Request, Response &gt;</a>
-, <a class="el" href="classgrpc_1_1internal_1_1_client_callback_writer_impl.html#ae10b243f157cb60635d895babc44257a">grpc::internal::ClientCallbackWriterImpl&lt; Request &gt;</a>
+: <a class="el" href="classgrpc__impl_1_1_client_async_reader_writer.html#ab3ca11e723b3c8d434edc37b0b6c696e">grpc_impl::ClientAsyncReaderWriter&lt; W, R &gt;</a>
+, <a class="el" href="classgrpc__impl_1_1_client_async_reader_writer_interface.html#aec02073e13a7d60f903432a995aacac0">grpc_impl::ClientAsyncReaderWriterInterface&lt; W, R &gt;</a>
+, <a class="el" href="classgrpc__impl_1_1_client_async_writer.html#a209864790dbafefb34f6ad00871e296c">grpc_impl::ClientAsyncWriter&lt; W &gt;</a>
+, <a class="el" href="classgrpc__impl_1_1_client_async_writer_interface.html#aff9c2dbe2b6775111e48ba5341b5929a">grpc_impl::ClientAsyncWriterInterface&lt; W &gt;</a>
+, <a class="el" href="classgrpc__impl_1_1_client_reader_writer.html#ac717ee1b9b2c146d7cdfa435177c7e03">grpc_impl::ClientReaderWriter&lt; W, R &gt;</a>
+, <a class="el" href="classgrpc__impl_1_1_client_reader_writer_interface.html#a21c5c1bc448fe27771223050079a6116">grpc_impl::ClientReaderWriterInterface&lt; W, R &gt;</a>
+, <a class="el" href="classgrpc__impl_1_1_client_writer.html#a2b5f7c2b2b337cef9a00d49d8b57962b">grpc_impl::ClientWriter&lt; W &gt;</a>
+, <a class="el" href="classgrpc__impl_1_1_client_writer_interface.html#ae2dd3619258aeed3e1478d3c1bfadd8d">grpc_impl::ClientWriterInterface&lt; W &gt;</a>
+, <a class="el" href="classgrpc__impl_1_1experimental_1_1_client_callback_reader_writer.html#aab2efc6e64720de08ccff75c3a772553">grpc_impl::experimental::ClientCallbackReaderWriter&lt; Request, Response &gt;</a>
+, <a class="el" href="classgrpc__impl_1_1experimental_1_1_client_callback_writer.html#a92722305689bdbfe2f1d7f4a767ef754">grpc_impl::experimental::ClientCallbackWriter&lt; Request &gt;</a>
+, <a class="el" href="classgrpc__impl_1_1internal_1_1_client_callback_reader_writer_impl.html#a2db36816ce78ba8712ff15e01b1cec59">grpc_impl::internal::ClientCallbackReaderWriterImpl&lt; Request, Response &gt;</a>
+, <a class="el" href="classgrpc__impl_1_1internal_1_1_client_callback_writer_impl.html#a4c87b15935d0144bb41d3d7e31a89075">grpc_impl::internal::ClientCallbackWriterImpl&lt; Request &gt;</a>
 </li>
 </ul>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Wed Jul 3 2019 14:51:27 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Mon Aug 19 2019 11:57:23 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.13
 </small></address>

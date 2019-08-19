@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC Core
-   &#160;<span id="projectnumber">7.0.0</span>
+   &#160;<span id="projectnumber">8.0.0</span>
    </div>
   </td>
  </tr>
@@ -70,9 +70,15 @@ $(function() {
 <p>The goal now is to make the gRPC core implementation true idiomatic C++ compatible with <a href="https://google.github.io/styleguide/cppguide.html">Google's C++ style guide</a>.</p>
 <h2>Constraints</h2>
 <ul>
-<li>No use of standard library<ul>
+<li>No use of standard library if it requires link-time dependency<ul>
 <li>Standard library makes wrapping difficult/impossible and also reduces platform portability</li>
 <li>This takes precedence over using C++ style guide</li>
+</ul>
+</li>
+<li>Limited use of standard library if it does not require link-time dependency<ul>
+<li>We can use things from <code>std::</code> as long as they are header-only implementations.</li>
+<li>Since the standard library API does not specify whether any given part of the API is implemented header-only, the only way to know is to try using something and see if our tests fail.</li>
+<li>Since there is no guarantee that some header-only implementation in the standard library will remain header-only in the future, we should define our own API in lib/gprpp that is an alias for the thing we want to use in <code>std::</code> and use the gprpp API in core. That way, if we later need to stop using the thing from <code>std::</code>, we can replace the alias with our own implementation.</li>
 </ul>
 </li>
 <li>But lambdas are ok</li>
@@ -128,7 +134,7 @@ $(function() {
 </div></div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Wed Jul 3 2019 14:51:26 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Mon Aug 19 2019 11:57:21 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.13
 </small></address>

@@ -49,6 +49,7 @@ var searchData=
   ['grpc_5fslice_5frefcounted',['grpc_slice_refcounted',['../structgrpc__slice_1_1grpc__slice__data_1_1grpc__slice__refcounted.html',1,'grpc_slice::grpc_slice_data']]],
   ['grpc_5fssl_5fpem_5fkey_5fcert_5fpair',['grpc_ssl_pem_key_cert_pair',['../structgrpc__ssl__pem__key__cert__pair.html',1,'']]],
   ['grpc_5fssl_5fverify_5fpeer_5foptions',['grpc_ssl_verify_peer_options',['../structgrpc__ssl__verify__peer__options.html',1,'']]],
+  ['grpc_5fsts_5fcredentials_5foptions',['grpc_sts_credentials_options',['../structgrpc__sts__credentials__options.html',1,'']]],
   ['grpc_5ftls_5fcredential_5freload_5farg',['grpc_tls_credential_reload_arg',['../structgrpc__tls__credential__reload__arg.html',1,'']]],
   ['grpc_5ftls_5fserver_5fauthorization_5fcheck_5farg',['grpc_tls_server_authorization_check_arg',['../structgrpc__tls__server__authorization__check__arg.html',1,'']]]
 ];

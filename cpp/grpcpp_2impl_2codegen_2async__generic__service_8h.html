@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.22.0</span>
+   &#160;<span id="projectnumber">1.24.0-dev</span>
    </div>
   </td>
  </tr>
@@ -71,9 +71,9 @@ $(function() {
 <div class="title">async_generic_service.h File Reference</div>  </div>
 </div><!--header-->
 <div class="contents">
-<div class="textblock"><code>#include &lt;<a class="el" href="grpcpp_2impl_2codegen_2async__stream_8h_source.html">grpcpp/impl/codegen/async_stream.h</a>&gt;</code><br />
+<div class="textblock"><code>#include &lt;<a class="el" href="impl_2codegen_2async__stream__impl_8h_source.html">grpcpp/impl/codegen/async_stream_impl.h</a>&gt;</code><br />
 <code>#include &lt;<a class="el" href="grpcpp_2impl_2codegen_2byte__buffer_8h_source.html">grpcpp/impl/codegen/byte_buffer.h</a>&gt;</code><br />
-<code>#include &lt;<a class="el" href="impl_2codegen_2server__callback_8h_source.html">grpcpp/impl/codegen/server_callback.h</a>&gt;</code><br />
+<code>#include &lt;<a class="el" href="impl_2codegen_2server__callback__impl_8h_source.html">grpcpp/impl/codegen/server_callback_impl.h</a>&gt;</code><br />
 </div>
 <p><a href="grpcpp_2impl_2codegen_2async__generic__service_8h_source.html">Go to the source code of this file.</a></p>
 <table class="memberdecls">
@@ -106,19 +106,19 @@ Namespaces</h2></td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="typedef-members"></a>
 Typedefs</h2></td></tr>
-<tr class="memitem:a7b3db9e9e4d0c7faf701c9ebd455196a"><td class="memItemLeft" align="right" valign="top">typedef ServerAsyncReaderWriter&lt; ByteBuffer, ByteBuffer &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacegrpc.html#a7b3db9e9e4d0c7faf701c9ebd455196a">grpc::GenericServerAsyncReaderWriter</a></td></tr>
-<tr class="separator:a7b3db9e9e4d0c7faf701c9ebd455196a"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ad31a4cf505207152c0ffacd00d2120c8"><td class="memItemLeft" align="right" valign="top">typedef ServerAsyncResponseWriter&lt; ByteBuffer &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacegrpc.html#ad31a4cf505207152c0ffacd00d2120c8">grpc::GenericServerAsyncResponseWriter</a></td></tr>
-<tr class="separator:ad31a4cf505207152c0ffacd00d2120c8"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a0ab7f966b77578bc8033dd1198ef4ca0"><td class="memItemLeft" align="right" valign="top">typedef ServerAsyncReader&lt; ByteBuffer, ByteBuffer &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacegrpc.html#a0ab7f966b77578bc8033dd1198ef4ca0">grpc::GenericServerAsyncReader</a></td></tr>
-<tr class="separator:a0ab7f966b77578bc8033dd1198ef4ca0"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a881afd211852397742952ee4058e0f8b"><td class="memItemLeft" align="right" valign="top">typedef ServerAsyncWriter&lt; ByteBuffer &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacegrpc.html#a881afd211852397742952ee4058e0f8b">grpc::GenericServerAsyncWriter</a></td></tr>
-<tr class="separator:a881afd211852397742952ee4058e0f8b"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:acca8b61d9b3306a849c17929c6c928b4"><td class="memItemLeft" align="right" valign="top">typedef ::<a class="el" href="classgrpc__impl_1_1_server_async_reader_writer.html">grpc_impl::ServerAsyncReaderWriter</a>&lt; ByteBuffer, ByteBuffer &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacegrpc.html#acca8b61d9b3306a849c17929c6c928b4">grpc::GenericServerAsyncReaderWriter</a></td></tr>
+<tr class="separator:acca8b61d9b3306a849c17929c6c928b4"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a378eb25a236184c9a3da2002073524cb"><td class="memItemLeft" align="right" valign="top">typedef ::<a class="el" href="classgrpc__impl_1_1_server_async_response_writer.html">grpc_impl::ServerAsyncResponseWriter</a>&lt; ByteBuffer &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacegrpc.html#a378eb25a236184c9a3da2002073524cb">grpc::GenericServerAsyncResponseWriter</a></td></tr>
+<tr class="separator:a378eb25a236184c9a3da2002073524cb"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a92ce91f73d0a113f8ce9ab7bc33fea99"><td class="memItemLeft" align="right" valign="top">typedef ::<a class="el" href="classgrpc__impl_1_1_server_async_reader.html">grpc_impl::ServerAsyncReader</a>&lt; ByteBuffer, ByteBuffer &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacegrpc.html#a92ce91f73d0a113f8ce9ab7bc33fea99">grpc::GenericServerAsyncReader</a></td></tr>
+<tr class="separator:a92ce91f73d0a113f8ce9ab7bc33fea99"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:abbd10e3302de0a7deba6b076a5b795e9"><td class="memItemLeft" align="right" valign="top">typedef ::<a class="el" href="classgrpc__impl_1_1_server_async_writer.html">grpc_impl::ServerAsyncWriter</a>&lt; ByteBuffer &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="namespacegrpc.html#abbd10e3302de0a7deba6b076a5b795e9">grpc::GenericServerAsyncWriter</a></td></tr>
+<tr class="separator:abbd10e3302de0a7deba6b076a5b795e9"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Wed Jul 3 2019 14:51:27 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Mon Aug 19 2019 11:57:22 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.13
 </small></address>
