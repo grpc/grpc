@@ -472,6 +472,9 @@ cdef class Channel:
       queue_deadline = time.time() + 1.0
     else:
       queue_deadline = None
+    # NOTE(gnossen): It is acceptable for on_failure to be None here because
+    # failure conditions can only ever happen on the main thread and this
+    # method is only ever invoked on the channel spin thread.
     return _next_call_event(self._state, self._state.c_call_completion_queue,
                             on_success, None, queue_deadline)
 
