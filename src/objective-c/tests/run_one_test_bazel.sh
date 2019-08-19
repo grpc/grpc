@@ -48,4 +48,7 @@ $INTEROP --port=$TLS_PORT --max_send_message_size=8388608 --use_tls &
 
 trap 'kill -9 `jobs -p` ; echo "EXIT TIME:  $(date)"' EXIT
 
-../../../tools/bazel run $SCHEME
+../../../tools/bazel run $SCHEME \
+    --copt=-DHOST_PORT_LOCAL=localhost:$PLAIN_PORT \
+    --copt=-DHOST_PORT_LOCALSSL=localhost:$TLS_PORT \
+    --copt=-Wno-macro-redefined # Overriding macros defined in BUILD
