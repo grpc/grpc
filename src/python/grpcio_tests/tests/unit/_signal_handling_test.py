@@ -191,3 +191,8 @@ class SignalHandlingTest(unittest.TestCase):
                 client.wait()
                 print(_read_stream(client_stderr))
                 self.assertEqual(0, client.returncode)
+
+
+if __name__ == '__main__':
+    logging.basicConfig()
+    unittest.main(verbosity=2)
