@@ -79,11 +79,12 @@ def main_unary_with_exception(server_target):
     try:
         channel.unary_unary(UNARY_UNARY)(_MESSAGE, wait_for_ready=True)
     except KeyboardInterrupt:
-        sys.stderr.write("Running signal handler.\n"); sys.stderr.flush()
+        sys.stderr.write("Running signal handler.\n")
+        sys.stderr.flush()
 
-    sys.stderr.write("Calling Channel.close()"); sys.stderr.flush()
     # This call should not hang.
     channel.close()
+
 
 def main_streaming_with_exception(server_target):
     """Initiate an RPC with wait_for_ready set and no server backing the RPC."""
@@ -91,19 +92,20 @@ def main_streaming_with_exception(server_target):
     try:
         channel.unary_stream(UNARY_STREAM)(_MESSAGE, wait_for_ready=True)
     except KeyboardInterrupt:
-        sys.stderr.write("Running signal handler.\n"); sys.stderr.flush()
+        sys.stderr.write("Running signal handler.\n")
+        sys.stderr.flush()
 
-    sys.stderr.write("Calling Channel.close()"); sys.stderr.flush()
     # This call should not hang.
     channel.close()
+
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Signal test client.')
     parser.add_argument('server', help='Server target')
+    parser.add_argument('arity', help='Arity', choices=('unary', 'streaming'))
     parser.add_argument(
-        'arity', help='Arity', choices=('unary', 'streaming'))
-    parser.add_argument(
-        '--exception', help='Whether the signal throws an exception',
+        '--exception',
+        help='Whether the signal throws an exception',
         action='store_true')
     args = parser.parse_args()
     if args.arity == 'unary' and not args.exception:

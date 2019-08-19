@@ -13,7 +13,6 @@
 # limitations under the License.
 """Test of responsiveness to signals."""
 
-import contextlib
 import logging
 import os
 import signal
@@ -21,7 +20,6 @@ import subprocess
 import tempfile
 import threading
 import unittest
-import socket
 import sys
 
 import grpc
@@ -185,8 +183,9 @@ class SignalHandlingTest(unittest.TestCase):
         server_target = '{}:{}'.format(_HOST, self._port)
         with tempfile.TemporaryFile(mode='r') as client_stdout:
             with tempfile.TemporaryFile(mode='r') as client_stderr:
-                client = _start_client(('--exception', server_target, 'streaming'),
-                                       client_stdout, client_stderr)
+                client = _start_client(
+                    ('--exception', server_target, 'streaming'), client_stdout,
+                    client_stderr)
                 self._handler.await_connected_client()
                 client.send_signal(signal.SIGINT)
                 client.wait()
