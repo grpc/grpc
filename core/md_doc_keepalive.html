@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC Core
-   &#160;<span id="projectnumber">8.0.0</span>
+   &#160;<span id="projectnumber">7.0.0</span>
    </div>
   </td>
  </tr>
@@ -87,11 +87,11 @@ $(function() {
 </ul>
 </li>
 <li><b>GRPC_ARG_HTTP2_MIN_SENT_PING_INTERVAL_WITHOUT_DATA_MS</b><ul>
-<li>If there are no data frames being received on the transport, this channel argument controls the minimum time (in milliseconds) gRPC Core will wait between successive pings.</li>
+<li>If there is no data being sent on the transport, this channel argument controls the minimum time (in milliseconds) gRPC Core will wait between successive pings.</li>
 </ul>
 </li>
 <li><b>GRPC_ARG_HTTP2_MIN_RECV_PING_INTERVAL_WITHOUT_DATA_MS</b><ul>
-<li>If there are no data frames being sent on the transport, this channel argument on the server side controls the minimum time (in milliseconds) that gRPC Core would expect between receiving successive pings. If the time between successive pings is less that than this time, then the ping will be considered a bad ping from the peer. Such a ping counts as a ‘ping strike’. On the client side, this does not have any effect.</li>
+<li>If there is no data being sent on the transport, this channel argument on the server side controls the minimum time (in milliseconds) that gRPC Core would expect between receiving successive pings. If the time between successive pings is less that than this time, then the ping will be considered a bad ping from the peer. Such a ping counts as a ‘ping strike’. On the client side, this does not have any effect.</li>
 </ul>
 </li>
 <li><b>GRPC_ARG_HTTP2_MAX_PING_STRIKES</b><ul>
@@ -146,7 +146,7 @@ $(function() {
 </div></div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Mon Aug 19 2019 11:57:21 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Mon Aug 19 2019 12:05:22 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.13
 </small></address>

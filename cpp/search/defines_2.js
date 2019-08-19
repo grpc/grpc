@@ -27,7 +27,6 @@ var searchData=
   ['gpr_5fcacheline_5fsize_5flog',['GPR_CACHELINE_SIZE_LOG',['../impl_2codegen_2port__platform_8h.html#a4e8b19add0d8d0be9464f748be985576',1,'port_platform.h']]],
   ['gpr_5fcodegen_5fassert',['GPR_CODEGEN_ASSERT',['../grpcpp_2impl_2codegen_2core__codegen__interface_8h.html#a39c1421e7081b57c503487659e2653a5',1,'core_codegen_interface.h']]],
   ['gpr_5fcodegen_5fdebug_5fassert',['GPR_CODEGEN_DEBUG_ASSERT',['../grpcpp_2impl_2codegen_2core__codegen__interface_8h.html#a6fb226b396826c0da32ee421603c9c1e',1,'core_codegen_interface.h']]],
-  ['gpr_5fcycle_5fcounter_5ffallback',['GPR_CYCLE_COUNTER_FALLBACK',['../impl_2codegen_2port__platform_8h.html#a8f9c49f95979f343a14efb834b5c2056',1,'port_platform.h']]],
   ['gpr_5fdebug',['GPR_DEBUG',['../impl_2codegen_2log_8h.html#a3e793245091f13bb7318a18b1166a773',1,'log.h']]],
   ['gpr_5fdebug_5fassert',['GPR_DEBUG_ASSERT',['../impl_2codegen_2log_8h.html#a4720a11176c735c4456815394edb6bff',1,'log.h']]],
   ['gpr_5ferror',['GPR_ERROR',['../impl_2codegen_2log_8h.html#a63faedb3eefd93d1c0e79974be80cc36',1,'log.h']]],

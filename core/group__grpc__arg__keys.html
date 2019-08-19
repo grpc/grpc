@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC Core
-   &#160;<span id="projectnumber">8.0.0</span>
+   &#160;<span id="projectnumber">7.0.0</span>
    </div>
   </td>
  </tr>
@@ -248,8 +248,6 @@ Macros</h2></td></tr>
 <tr class="separator:gaaaf4ebe91111ede7ee09a2bc790caa21"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:gabe5b41f89f0017e0f89c5945fe1e0470"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__grpc__arg__keys.html#gabe5b41f89f0017e0f89c5945fe1e0470">GRPC_ARG_XDS_FALLBACK_TIMEOUT_MS</a>&#160;&#160;&#160;&quot;grpc.xds_fallback_timeout_ms&quot;</td></tr>
 <tr class="separator:gabe5b41f89f0017e0f89c5945fe1e0470"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ga4c78436839c4f7398a38fb0732435b66"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__grpc__arg__keys.html#ga4c78436839c4f7398a38fb0732435b66">GRPC_ARG_LOCALITY_RETENTION_INTERVAL_MS</a>&#160;&#160;&#160;&quot;grpc.xds_locality_retention_interval_ms&quot;</td></tr>
-<tr class="separator:ga4c78436839c4f7398a38fb0732435b66"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ga618ddbf19fdd38d8f90b8f3d7cb5d481"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__grpc__arg__keys.html#ga618ddbf19fdd38d8f90b8f3d7cb5d481">GRPC_ARG_WORKAROUND_CRONET_COMPRESSION</a>&#160;&#160;&#160;&quot;grpc.workaround.cronet_compression&quot;</td></tr>
 <tr class="memdesc:ga618ddbf19fdd38d8f90b8f3d7cb5d481"><td class="mdescLeft">&#160;</td><td class="mdescRight">If non-zero, grpc server's cronet compression workaround will be enabled.  <a href="#ga618ddbf19fdd38d8f90b8f3d7cb5d481">More...</a><br /></td></tr>
 <tr class="separator:ga618ddbf19fdd38d8f90b8f3d7cb5d481"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -358,7 +356,7 @@ Macros</h2></td></tr>
 </div><div class="memdoc">
 
 <p>Timeout after the last RPC finishes on the client channel at which the channel goes back into IDLE state. </p>
-<p>Int valued, milliseconds. INT_MAX means unlimited. The default value is 30 minutes and the min value is 1 second. </p>
+<p>Int valued, milliseconds. INT_MAX means unlimited. TODO(qianchengz): Currently the default value is INT_MAX, which means the client idle filter is disabled by default. After the client idle filter proves no perfomance issue, we will change the default value to a reasonable value. </p>
 
 </div>
 </div>
@@ -916,20 +914,6 @@ Macros</h2></td></tr>
 </div><div class="memdoc">
 
 <p>LB policy name. </p>
-
-</div>
-</div>
-<a id="ga4c78436839c4f7398a38fb0732435b66"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#ga4c78436839c4f7398a38fb0732435b66">&#9670;&nbsp;</a></span>GRPC_ARG_LOCALITY_RETENTION_INTERVAL_MS</h2>
-
-<div class="memitem">
-<div class="memproto">
-      <table class="memname">
-        <tr>
-          <td class="memname">#define GRPC_ARG_LOCALITY_RETENTION_INTERVAL_MS&#160;&#160;&#160;&quot;grpc.xds_locality_retention_interval_ms&quot;</td>
-        </tr>
-      </table>
-</div><div class="memdoc">
 
 </div>
 </div>
@@ -1547,7 +1531,7 @@ Macros</h2></td></tr>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Mon Aug 19 2019 11:57:21 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Mon Aug 19 2019 12:05:22 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.13
 </small></address>
