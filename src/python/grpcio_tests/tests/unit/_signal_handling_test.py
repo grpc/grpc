@@ -168,54 +168,27 @@ class SignalHandlingTest(unittest.TestCase):
                 self.assertIn(_signal_client.SIGTERM_MESSAGE,
                               client_stdout.read())
 
-
-@contextlib.contextmanager
-def _get_free_loopback_tcp_port():
-    sock = socket.socket(socket.AF_INET6)
-    sock.bind(('', 0))
-    address_tuple = sock.getsockname()
-    try:
-        yield "[::1]:%s" % (address_tuple[1])
-    finally:
-        sock.close()
-
-
-# TODO(gnossen): Consider combining classes.
-class SignalHandlingTestWithoutServer(unittest.TestCase):
-
     @unittest.skipIf(os.name == 'nt', 'SIGINT not supported on windows')
-    def testUnaryHandlerWithException(self):
-        with _get_free_loopback_tcp_port() as server_target:
-            with tempfile.TemporaryFile(mode='r') as client_stdout:
-                with tempfile.TemporaryFile(mode='r') as client_stderr:
-                    client = _start_client(('--exception', server_target, 'unary'),
-                                           client_stdout, client_stderr)
-                    # TODO(rbellevi): Figure out a way to determininstically hook
-                    # in here.
-                    import time; time.sleep(1)
-                    client.send_signal(signal.SIGINT)
-                    client.wait()
-                    print(_read_stream(client_stderr))
-                    self.assertEqual(0, client.returncode)
+    def testUnaryWithException(self):
+        server_target = '{}:{}'.format(_HOST, self._port)
+        with tempfile.TemporaryFile(mode='r') as client_stdout:
+            with tempfile.TemporaryFile(mode='r') as client_stderr:
+                client = _start_client(('--exception', server_target, 'unary'),
+                                       client_stdout, client_stderr)
+                self._handler.await_connected_client()
+                client.send_signal(signal.SIGINT)
+                client.wait()
+                self.assertEqual(0, client.returncode)
 
     @unittest.skipIf(os.name == 'nt', 'SIGINT not supported on windows')
     def testStreamingHandlerWithException(self):
-        with _get_free_loopback_tcp_port() as server_target:
-            with tempfile.TemporaryFile(mode='r') as client_stdout:
-                with tempfile.TemporaryFile(mode='r') as client_stderr:
-                    client = _start_client(('--exception', server_target, 'streaming'),
-                                           client_stdout, client_stderr)
-                    # TODO(rbellevi): Figure out a way to deterministically hook
-                    # in here.
-                    import time; time.sleep(1)
-                    client.send_signal(signal.SIGINT)
-                    client.wait()
-                    print(_read_stream(client_stderr))
-                    self.assertEqual(0, client.returncode)
-
-
-
-
-if __name__ == '__main__':
-    logging.basicConfig()
-    unittest.main(verbosity=2)
+        server_target = '{}:{}'.format(_HOST, self._port)
+        with tempfile.TemporaryFile(mode='r') as client_stdout:
+            with tempfile.TemporaryFile(mode='r') as client_stderr:
+                client = _start_client(('--exception', server_target, 'streaming'),
+                                       client_stdout, client_stderr)
+                self._handler.await_connected_client()
+                client.send_signal(signal.SIGINT)
+                client.wait()
+                print(_read_stream(client_stderr))
+                self.assertEqual(0, client.returncode)
