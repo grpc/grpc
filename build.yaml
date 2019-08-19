@@ -5170,6 +5170,7 @@ targets:
   - gpr
 - name: grpclb_fallback_test
   build: test
+  run: false
   language: c++
   src:
   - src/proto/grpc/testing/empty.proto
