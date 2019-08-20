@@ -296,10 +296,8 @@ TEST_F(CredentialsTest, TlsKeyMaterialsCtoCpp) {
   EXPECT_STREQ("cert_chain", cpp_pair_list[0].cert_chain.c_str());
 }
 
-typedef class ::grpc_impl::experimental::TlsCredentialReloadArg
-    TlsCredentialReloadArg;
-typedef class ::grpc_impl::experimental::TlsCredentialReloadConfig
-    TlsCredentialReloadConfig;
+typedef class ::grpc_impl::experimental::TlsCredentialReloadArg TlsCredentialReloadArg;
+typedef class ::grpc_impl::experimental::TlsCredentialReloadConfig TlsCredentialReloadConfig;
 
 TEST_F(CredentialsTest, TlsCredentialReloadArgCallback) {
   grpc_tls_credential_reload_arg c_arg;
@@ -321,7 +319,8 @@ TEST_F(CredentialsTest, TlsCredentialReloadConfigSchedule) {
                                                         "cert_chain1"};
   struct TlsKeyMaterialsConfig::PemKeyCertPair pair2 = {"private_key2",
                                                         "cert_chain2"};
-  std::vector<TlsKeyMaterialsConfig::PemKeyCertPair> pair_list = {pair1, pair2};
+  std::vector<TlsKeyMaterialsConfig::PemKeyCertPair> pair_list = {pair1,
+                                                                    pair2};
   key_materials_config->set_key_materials("pem_root_certs", pair_list);
   arg.set_key_materials_config(key_materials_config);
   arg.set_status(GRPC_SSL_CERTIFICATE_CONFIG_RELOAD_NEW);

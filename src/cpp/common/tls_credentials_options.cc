@@ -32,15 +32,13 @@ void TlsKeyMaterialsConfig::set_key_materials(
 }
 
 /** Creates a new C struct for the key materials. **/
-grpc_tls_key_materials_config* c_key_materials(
-    const std::shared_ptr<TlsKeyMaterialsConfig>& config) {
+grpc_tls_key_materials_config* c_key_materials(const std::shared_ptr<TlsKeyMaterialsConfig>& config) {
   grpc_tls_key_materials_config* c_config =
       grpc_tls_key_materials_config_create();
   ::grpc_core::InlinedVector<::grpc_core::PemKeyCertPair, 1>
       c_pem_key_cert_pair_list;
   for (auto key_cert_pair = config->pem_key_cert_pair_list().begin();
-       key_cert_pair != config->pem_key_cert_pair_list().end();
-       key_cert_pair++) {
+       key_cert_pair != config->pem_key_cert_pair_list().end(); key_cert_pair++) {
     grpc_ssl_pem_key_cert_pair* ssl_pair =
         (grpc_ssl_pem_key_cert_pair*)gpr_malloc(
             sizeof(grpc_ssl_pem_key_cert_pair));
@@ -50,8 +48,7 @@ grpc_tls_key_materials_config* c_key_materials(
         ::grpc_core::PemKeyCertPair(ssl_pair);
     c_pem_key_cert_pair_list.push_back(::std::move(c_pem_key_cert_pair));
   }
-  ::grpc_core::UniquePtr<char> c_pem_root_certs(
-      gpr_strdup(config->pem_root_certs().c_str()));
+  ::grpc_core::UniquePtr<char> c_pem_root_certs(gpr_strdup(config->pem_root_certs().c_str()));
   c_config->set_key_materials(std::move(c_pem_root_certs),
                               std::move(c_pem_key_cert_pair_list));
   c_config->set_version(config->version());
@@ -63,7 +60,8 @@ std::shared_ptr<TlsKeyMaterialsConfig> tls_key_materials_c_to_cpp(
     const grpc_tls_key_materials_config* config) {
   std::shared_ptr<TlsKeyMaterialsConfig> cpp_config(
       new TlsKeyMaterialsConfig());
-  std::vector<TlsKeyMaterialsConfig::PemKeyCertPair> cpp_pem_key_cert_pair_list;
+  std::vector<TlsKeyMaterialsConfig::PemKeyCertPair>
+      cpp_pem_key_cert_pair_list;
   grpc_tls_key_materials_config::PemKeyCertPairList pem_key_cert_pair_list =
       config->pem_key_cert_pair_list();
   for (size_t i = 0; i < pem_key_cert_pair_list.size(); i++) {
@@ -73,8 +71,9 @@ std::shared_ptr<TlsKeyMaterialsConfig> tls_key_materials_c_to_cpp(
         gpr_strdup(key_cert_pair.cert_chain())};
     cpp_pem_key_cert_pair_list.push_back(::std::move(p));
   }
-  cpp_config->set_key_materials(std::move(gpr_strdup(config->pem_root_certs())),
-                                std::move(cpp_pem_key_cert_pair_list));
+  cpp_config->set_key_materials(
+      std::move(gpr_strdup(config->pem_root_certs())),
+      std::move(cpp_pem_key_cert_pair_list));
   cpp_config->set_version(config->version());
   return cpp_config;
 }
@@ -96,19 +95,16 @@ void* TlsCredentialReloadArg::cb_user_data() const {
 /** This function creates a new TlsKeyMaterialsConfig instance whose fields are
  * not shared with the corresponding key materials config fields of the
  * TlsCredentialReloadArg instance. **/
-std::shared_ptr<TlsKeyMaterialsConfig>
-TlsCredentialReloadArg::key_materials_config() const {
+std::shared_ptr<TlsKeyMaterialsConfig> TlsCredentialReloadArg::key_materials_config() const {
   return tls_key_materials_c_to_cpp(c_arg_.key_materials_config);
 }
 
-grpc_ssl_certificate_config_reload_status TlsCredentialReloadArg::status()
-    const {
+grpc_ssl_certificate_config_reload_status TlsCredentialReloadArg::status() const {
   return c_arg_.status;
 }
 
 std::shared_ptr<grpc::string> TlsCredentialReloadArg::error_details() const {
-  std::shared_ptr<grpc::string> cpp_error_details(
-      new grpc::string(c_arg_.error_details));
+  std::shared_ptr<grpc::string> cpp_error_details(new grpc::string(c_arg_.error_details));
   return cpp_error_details;
 }
 
@@ -117,7 +113,7 @@ void TlsCredentialReloadArg::set_cb_user_data(void* cb_user_data) {
 }
 
 void TlsCredentialReloadArg::set_key_materials_config(
-    const std::shared_ptr<TlsKeyMaterialsConfig>& key_materials_config) {
+    std::shared_ptr<TlsKeyMaterialsConfig> key_materials_config) {
   c_arg_.key_materials_config = c_key_materials(key_materials_config);
 }
 
@@ -126,12 +122,13 @@ void TlsCredentialReloadArg::set_status(
   c_arg_.status = status;
 }
 
-void TlsCredentialReloadArg::set_error_details(
-    const grpc::string& error_details) {
+void TlsCredentialReloadArg::set_error_details(const grpc::string& error_details) {
   c_arg_.error_details = gpr_strdup(error_details.c_str());
 }
 
-void TlsCredentialReloadArg::callback() { c_arg_.cb(&c_arg_); }
+void TlsCredentialReloadArg::callback() {
+  c_arg_.cb(&c_arg_);
+}
 
 /** The C schedule and cancel functions for the credential reload config. **/
 int tls_credential_reload_config_c_schedule(
@@ -214,7 +211,7 @@ grpc_status_code TlsServerAuthorizationCheckArg::status() const {
 std::shared_ptr<grpc::string> TlsServerAuthorizationCheckArg::error_details()
     const {
   std::shared_ptr<grpc::string> cpp_error_details(
-      new grpc::string(c_arg_.error_details));
+new grpc::string(c_arg_.error_details));
   return cpp_error_details;
 }
 
@@ -285,12 +282,13 @@ TlsServerAuthorizationCheckConfig::TlsServerAuthorizationCheckConfig(
   config_user_data_ = const_cast<void*>(config_user_data);
   schedule_ = schedule;
   cancel_ = cancel;
-  destruct_ = destruct;
+destruct_ = destruct;
   c_config_ = grpc_tls_server_authorization_check_config_create(
       config_user_data_, &tls_server_authorization_check_config_c_schedule,
       &tls_server_authorization_check_config_c_cancel, destruct_);
   c_config_->set_context(static_cast<void*>(this));
 }
+
 
 TlsServerAuthorizationCheckConfig::~TlsServerAuthorizationCheckConfig() {}
 
@@ -301,8 +299,7 @@ grpc_tls_credentials_options* TlsCredentialsOptions::c_credentials_options()
       grpc_tls_credentials_options_create();
   c_options->set_cert_request_type(cert_request_type_);
   c_options->set_key_materials_config(
-      ::grpc_core::RefCountedPtr<grpc_tls_key_materials_config>(
-          c_key_materials(key_materials_config_)));
+      ::grpc_core::RefCountedPtr<grpc_tls_key_materials_config>(c_key_materials(key_materials_config_)));
   c_options->set_credential_reload_config(
       ::grpc_core::RefCountedPtr<grpc_tls_credential_reload_config>(
           credential_reload_config_->c_credential_reload()));

@@ -48,7 +48,7 @@ class TlsKeyMaterialsConfig {
    * transfers ownership of the arguments to the config. **/
   void set_key_materials(grpc::string pem_root_certs,
                          std::vector<PemKeyCertPair> pem_key_cert_pair_list);
-  void set_version(int version) { version_ = version; };
+  void set_version(int version) { version_ = version;};
 
  private:
   int version_;
@@ -62,6 +62,7 @@ grpc_tls_key_materials_config* c_key_materials(
 
 std::shared_ptr<TlsKeyMaterialsConfig> tls_key_materials_c_to_cpp(
     const grpc_tls_key_materials_config* config);
+
 
 /** TLS credential reload arguments, wraps grpc_tls_credential_reload_arg. **/
 class TlsCredentialReloadArg {
@@ -166,8 +167,9 @@ class TlsServerAuthorizationCheckArg {
 // Exposed for testing purposes.
 int tls_server_authorization_check_config_c_schedule(
     void* config_user_data, grpc_tls_server_authorization_check_arg* arg);
-void tls_server_authorization_check_config_c_cancel(
-    void* config_user_data, grpc_tls_server_authorization_check_arg* arg);
+void tls_server_authorization_check_config_c_cancel(void* config_user_data,
+                                           grpc_tls_server_authorization_check_arg* arg);
+
 
 /** TLS server authorization check config, wraps
  *  grps_tls_server_authorization_check_config. **/
@@ -195,8 +197,7 @@ class TlsServerAuthorizationCheckConfig {
   }
 
   /** Creates C struct for the credential reload config. **/
-  grpc_tls_server_authorization_check_config* c_server_authorization_check()
-      const {
+  grpc_tls_server_authorization_check_config* c_server_authorization_check() const {
     return c_config_;
   }
 
@@ -218,7 +219,8 @@ class TlsCredentialsOptions {
   std::shared_ptr<TlsKeyMaterialsConfig> key_materials_config() const {
     return key_materials_config_;
   }
-  std::shared_ptr<TlsCredentialReloadConfig> credential_reload_config() const {
+  std::shared_ptr<TlsCredentialReloadConfig> credential_reload_config()
+      const {
     return credential_reload_config_;
   }
   std::shared_ptr<TlsServerAuthorizationCheckConfig>
