@@ -23,7 +23,7 @@
 Pod::Spec.new do |s|
   s.name     = 'gRPC-C++'
   # TODO (mxyan): use version that match gRPC version when pod is stabilized
-  # version = '1.22.0-dev'
+  # version = '1.24.0-dev'
   version = '0.0.9-dev'
   s.version  = version
   s.summary  = 'gRPC C++ library'
@@ -31,7 +31,7 @@ Pod::Spec.new do |s|
   s.license  = 'Apache License, Version 2.0'
   s.authors  = { 'The gRPC contributors' => 'grpc-packages@google.com' }
 
-  grpc_version = '1.22.0-dev'
+  grpc_version = '1.24.0-dev'
 
   s.source = {
     :git => 'https://github.com/grpc/grpc.git',
@@ -85,6 +85,7 @@ Pod::Spec.new do |s|
                       'include/grpcpp/channel_impl.h',
                       'include/grpcpp/client_context.h',
                       'include/grpcpp/completion_queue.h',
+                      'include/grpcpp/completion_queue_impl.h',
                       'include/grpcpp/create_channel.h',
                       'include/grpcpp/create_channel_impl.h',
                       'include/grpcpp/create_channel_posix.h',
@@ -128,11 +129,14 @@ Pod::Spec.new do |s|
                       'include/grpcpp/server_posix.h',
                       'include/grpcpp/server_posix_impl.h',
                       'include/grpcpp/support/async_stream.h',
+                      'include/grpcpp/support/async_stream_impl.h',
                       'include/grpcpp/support/async_unary_call.h',
+                      'include/grpcpp/support/async_unary_call_impl.h',
                       'include/grpcpp/support/byte_buffer.h',
                       'include/grpcpp/support/channel_arguments.h',
                       'include/grpcpp/support/channel_arguments_impl.h',
                       'include/grpcpp/support/client_callback.h',
+                      'include/grpcpp/support/client_callback_impl.h',
                       'include/grpcpp/support/client_interceptor.h',
                       'include/grpcpp/support/config.h',
                       'include/grpcpp/support/interceptor.h',
@@ -140,6 +144,7 @@ Pod::Spec.new do |s|
                       'include/grpcpp/support/proto_buffer_reader.h',
                       'include/grpcpp/support/proto_buffer_writer.h',
                       'include/grpcpp/support/server_callback.h',
+                      'include/grpcpp/support/server_callback_impl.h',
                       'include/grpcpp/support/server_interceptor.h',
                       'include/grpcpp/support/slice.h',
                       'include/grpcpp/support/status.h',
@@ -147,11 +152,14 @@ Pod::Spec.new do |s|
                       'include/grpcpp/support/string_ref.h',
                       'include/grpcpp/support/stub_options.h',
                       'include/grpcpp/support/sync_stream.h',
+                      'include/grpcpp/support/sync_stream_impl.h',
                       'include/grpcpp/support/time.h',
                       'include/grpcpp/support/validate_service_config.h',
                       'include/grpcpp/impl/codegen/async_generic_service.h',
                       'include/grpcpp/impl/codegen/async_stream.h',
+                      'include/grpcpp/impl/codegen/async_stream_impl.h',
                       'include/grpcpp/impl/codegen/async_unary_call.h',
+                      'include/grpcpp/impl/codegen/async_unary_call_impl.h',
                       'include/grpcpp/impl/codegen/byte_buffer.h',
                       'include/grpcpp/impl/codegen/call.h',
                       'include/grpcpp/impl/codegen/call_hook.h',
@@ -160,7 +168,9 @@ Pod::Spec.new do |s|
                       'include/grpcpp/impl/codegen/callback_common.h',
                       'include/grpcpp/impl/codegen/channel_interface.h',
                       'include/grpcpp/impl/codegen/client_callback.h',
+                      'include/grpcpp/impl/codegen/client_callback_impl.h',
                       'include/grpcpp/impl/codegen/client_context.h',
+                      'include/grpcpp/impl/codegen/client_context_impl.h',
                       'include/grpcpp/impl/codegen/client_interceptor.h',
                       'include/grpcpp/impl/codegen/client_unary_call.h',
                       'include/grpcpp/impl/codegen/completion_queue.h',
@@ -169,6 +179,7 @@ Pod::Spec.new do |s|
                       'include/grpcpp/impl/codegen/config.h',
                       'include/grpcpp/impl/codegen/core_codegen_interface.h',
                       'include/grpcpp/impl/codegen/create_auth_context.h',
+                      'include/grpcpp/impl/codegen/delegating_channel.h',
                       'include/grpcpp/impl/codegen/grpc_library.h',
                       'include/grpcpp/impl/codegen/intercepted_channel.h',
                       'include/grpcpp/impl/codegen/interceptor.h',
@@ -181,7 +192,9 @@ Pod::Spec.new do |s|
                       'include/grpcpp/impl/codegen/security/auth_context.h',
                       'include/grpcpp/impl/codegen/serialization_traits.h',
                       'include/grpcpp/impl/codegen/server_callback.h',
+                      'include/grpcpp/impl/codegen/server_callback_impl.h',
                       'include/grpcpp/impl/codegen/server_context.h',
+                      'include/grpcpp/impl/codegen/server_context_impl.h',
                       'include/grpcpp/impl/codegen/server_interceptor.h',
                       'include/grpcpp/impl/codegen/server_interface.h',
                       'include/grpcpp/impl/codegen/service_type.h',
@@ -191,8 +204,11 @@ Pod::Spec.new do |s|
                       'include/grpcpp/impl/codegen/string_ref.h',
                       'include/grpcpp/impl/codegen/stub_options.h',
                       'include/grpcpp/impl/codegen/sync_stream.h',
+                      'include/grpcpp/impl/codegen/sync_stream_impl.h',
                       'include/grpcpp/impl/codegen/time.h',
-                      'include/grpcpp/impl/codegen/sync.h'
+                      'include/grpcpp/impl/codegen/sync.h',
+                      'include/grpcpp/security/cronet_credentials.h',
+                      'include/grpcpp/security/cronet_credentials_impl.h'
   end
 
   s.subspec 'Implementation' do |ss|
@@ -212,6 +228,10 @@ Pod::Spec.new do |s|
                       'src/cpp/server/health/default_health_check_service.h',
                       'src/cpp/server/thread_pool_interface.h',
                       'src/cpp/thread_manager/thread_manager.h',
+                      'third_party/nanopb/pb.h',
+                      'third_party/nanopb/pb_common.h',
+                      'third_party/nanopb/pb_decode.h',
+                      'third_party/nanopb/pb_encode.h',
                       'src/cpp/client/insecure_credentials.cc',
                       'src/cpp/client/secure_credentials.cc',
                       'src/cpp/common/auth_property_iterator.cc',
@@ -256,10 +276,10 @@ Pod::Spec.new do |s|
                       'src/cpp/util/string_ref.cc',
                       'src/cpp/util/time_cc.cc',
                       'src/cpp/codegen/codegen_init.cc',
+                      'src/cpp/client/cronet_credentials.cc',
                       'src/core/lib/gpr/alloc.h',
                       'src/core/lib/gpr/arena.h',
                       'src/core/lib/gpr/env.h',
-                      'src/core/lib/gpr/host_port.h',
                       'src/core/lib/gpr/mpscq.h',
                       'src/core/lib/gpr/murmur_hash.h',
                       'src/core/lib/gpr/spinlock.h',
@@ -280,6 +300,7 @@ Pod::Spec.new do |s|
                       'src/core/lib/gprpp/global_config_custom.h',
                       'src/core/lib/gprpp/global_config_env.h',
                       'src/core/lib/gprpp/global_config_generic.h',
+                      'src/core/lib/gprpp/host_port.h',
                       'src/core/lib/gprpp/manual_constructor.h',
                       'src/core/lib/gprpp/map.h',
                       'src/core/lib/gprpp/memory.h',
@@ -363,13 +384,19 @@ Pod::Spec.new do |s|
                       'src/core/tsi/alts/zero_copy_frame_protector/alts_zero_copy_grpc_protector.h',
                       'src/core/lib/security/credentials/alts/check_gcp_environment.h',
                       'src/core/lib/security/credentials/alts/grpc_alts_credentials_options.h',
-                      'src/core/tsi/alts/handshaker/alts_handshaker_service_api.h',
-                      'src/core/tsi/alts/handshaker/alts_handshaker_service_api_util.h',
                       'src/core/tsi/alts/handshaker/alts_tsi_utils.h',
                       'src/core/tsi/alts/handshaker/transport_security_common_api.h',
-                      'src/core/tsi/alts/handshaker/altscontext.pb.h',
-                      'src/core/tsi/alts/handshaker/handshaker.pb.h',
-                      'src/core/tsi/alts/handshaker/transport_security_common.pb.h',
+                      'src/core/ext/upb-generated/src/proto/grpc/gcp/altscontext.upb.h',
+                      'src/core/ext/upb-generated/src/proto/grpc/gcp/handshaker.upb.h',
+                      'src/core/ext/upb-generated/src/proto/grpc/gcp/transport_security_common.upb.h',
+                      'third_party/upb/upb/decode.h',
+                      'third_party/upb/upb/encode.h',
+                      'third_party/upb/upb/generated_util.h',
+                      'third_party/upb/upb/msg.h',
+                      'third_party/upb/upb/port_def.inc',
+                      'third_party/upb/upb/port_undef.inc',
+                      'third_party/upb/upb/table.int.h',
+                      'third_party/upb/upb/upb.h',
                       'src/core/tsi/transport_security.h',
                       'src/core/tsi/transport_security_interface.h',
                       'src/core/ext/transport/chttp2/client/authority.h',
@@ -402,7 +429,7 @@ Pod::Spec.new do |s|
                       'src/core/ext/filters/client_channel/subchannel_interface.h',
                       'src/core/ext/filters/client_channel/subchannel_pool_interface.h',
                       'src/core/ext/filters/deadline/deadline_filter.h',
-                      'src/core/ext/filters/client_channel/health/health.pb.h',
+                      'src/core/ext/upb-generated/src/proto/grpc/health/v1/health.upb.h',
                       'src/core/tsi/fake_transport_security.h',
                       'src/core/tsi/local_transport_security.h',
                       'src/core/tsi/ssl/session_cache/ssl_session.h',
@@ -442,6 +469,7 @@ Pod::Spec.new do |s|
                       'src/core/lib/gprpp/orphanable.h',
                       'src/core/lib/gprpp/ref_counted.h',
                       'src/core/lib/gprpp/ref_counted_ptr.h',
+                      'src/core/lib/gprpp/string_view.h',
                       'src/core/lib/http/format_request.h',
                       'src/core/lib/http/httpcli.h',
                       'src/core/lib/http/parser.h',
@@ -464,6 +492,8 @@ Pod::Spec.new do |s|
                       'src/core/lib/iomgr/ev_posix.h',
                       'src/core/lib/iomgr/exec_ctx.h',
                       'src/core/lib/iomgr/executor.h',
+                      'src/core/lib/iomgr/executor/mpmcqueue.h',
+                      'src/core/lib/iomgr/executor/threadpool.h',
                       'src/core/lib/iomgr/gethostname.h',
                       'src/core/lib/iomgr/grpc_if_nametoindex.h',
                       'src/core/lib/iomgr/internal_errqueue.h',
@@ -558,13 +588,41 @@ Pod::Spec.new do |s|
                       'src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_channel.h',
                       'src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_client_stats.h',
                       'src/core/ext/filters/client_channel/lb_policy/grpclb/load_balancer_api.h',
+                      'src/core/ext/upb-generated/src/proto/grpc/lb/v1/load_balancer.upb.h',
+                      'src/core/ext/upb-generated/google/api/annotations.upb.h',
+                      'src/core/ext/upb-generated/google/api/http.upb.h',
+                      'src/core/ext/upb-generated/google/protobuf/any.upb.h',
+                      'src/core/ext/upb-generated/google/protobuf/descriptor.upb.h',
+                      'src/core/ext/upb-generated/google/protobuf/duration.upb.h',
+                      'src/core/ext/upb-generated/google/protobuf/empty.upb.h',
+                      'src/core/ext/upb-generated/google/protobuf/struct.upb.h',
+                      'src/core/ext/upb-generated/google/protobuf/timestamp.upb.h',
+                      'src/core/ext/upb-generated/google/protobuf/wrappers.upb.h',
+                      'src/core/ext/upb-generated/google/rpc/status.upb.h',
                       'src/core/ext/filters/client_channel/resolver/fake/fake_resolver.h',
-                      'src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/google/protobuf/duration.pb.h',
-                      'src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/google/protobuf/timestamp.pb.h',
-                      'src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/load_balancer.pb.h',
                       'src/core/ext/filters/client_channel/lb_policy/xds/xds_channel.h',
                       'src/core/ext/filters/client_channel/lb_policy/xds/xds_client_stats.h',
                       'src/core/ext/filters/client_channel/lb_policy/xds/xds_load_balancer_api.h',
+                      'src/core/ext/upb-generated/envoy/api/v2/auth/cert.upb.h',
+                      'src/core/ext/upb-generated/envoy/api/v2/cds.upb.h',
+                      'src/core/ext/upb-generated/envoy/api/v2/cluster/circuit_breaker.upb.h',
+                      'src/core/ext/upb-generated/envoy/api/v2/cluster/outlier_detection.upb.h',
+                      'src/core/ext/upb-generated/envoy/api/v2/discovery.upb.h',
+                      'src/core/ext/upb-generated/envoy/api/v2/eds.upb.h',
+                      'src/core/ext/upb-generated/envoy/api/v2/endpoint/endpoint.upb.h',
+                      'src/core/ext/upb-generated/envoy/api/v2/endpoint/load_report.upb.h',
+                      'src/core/ext/upb-generated/envoy/service/discovery/v2/ads.upb.h',
+                      'src/core/ext/upb-generated/envoy/service/load_stats/v2/lrs.upb.h',
+                      'src/core/ext/upb-generated/envoy/api/v2/core/address.upb.h',
+                      'src/core/ext/upb-generated/envoy/api/v2/core/base.upb.h',
+                      'src/core/ext/upb-generated/envoy/api/v2/core/config_source.upb.h',
+                      'src/core/ext/upb-generated/envoy/api/v2/core/grpc_service.upb.h',
+                      'src/core/ext/upb-generated/envoy/api/v2/core/health_check.upb.h',
+                      'src/core/ext/upb-generated/envoy/api/v2/core/protocol.upb.h',
+                      'src/core/ext/upb-generated/envoy/type/percent.upb.h',
+                      'src/core/ext/upb-generated/envoy/type/range.upb.h',
+                      'src/core/ext/upb-generated/gogoproto/gogo.upb.h',
+                      'src/core/ext/upb-generated/validate/validate.upb.h',
                       'src/core/ext/filters/client_channel/lb_policy/subchannel_list.h',
                       'src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver.h',
                       'src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper.h',
@@ -589,7 +647,6 @@ Pod::Spec.new do |s|
                               'src/core/lib/gpr/alloc.h',
                               'src/core/lib/gpr/arena.h',
                               'src/core/lib/gpr/env.h',
-                              'src/core/lib/gpr/host_port.h',
                               'src/core/lib/gpr/mpscq.h',
                               'src/core/lib/gpr/murmur_hash.h',
                               'src/core/lib/gpr/spinlock.h',
@@ -610,6 +667,7 @@ Pod::Spec.new do |s|
                               'src/core/lib/gprpp/global_config_custom.h',
                               'src/core/lib/gprpp/global_config_env.h',
                               'src/core/lib/gprpp/global_config_generic.h',
+                              'src/core/lib/gprpp/host_port.h',
                               'src/core/lib/gprpp/manual_constructor.h',
                               'src/core/lib/gprpp/map.h',
                               'src/core/lib/gprpp/memory.h',
@@ -646,6 +704,7 @@ Pod::Spec.new do |s|
                               'src/core/lib/gprpp/orphanable.h',
                               'src/core/lib/gprpp/ref_counted.h',
                               'src/core/lib/gprpp/ref_counted_ptr.h',
+                              'src/core/lib/gprpp/string_view.h',
                               'src/core/lib/http/format_request.h',
                               'src/core/lib/http/httpcli.h',
                               'src/core/lib/http/parser.h',
@@ -668,6 +727,8 @@ Pod::Spec.new do |s|
                               'src/core/lib/iomgr/ev_posix.h',
                               'src/core/lib/iomgr/exec_ctx.h',
                               'src/core/lib/iomgr/executor.h',
+                              'src/core/lib/iomgr/executor/mpmcqueue.h',
+                              'src/core/lib/iomgr/executor/threadpool.h',
                               'src/core/lib/iomgr/gethostname.h',
                               'src/core/lib/iomgr/grpc_if_nametoindex.h',
                               'src/core/lib/iomgr/internal_errqueue.h',
@@ -758,8 +819,16 @@ Pod::Spec.new do |s|
                               'src/core/lib/transport/transport_impl.h',
                               'src/core/lib/uri/uri_parser.h',
                               'src/core/lib/debug/trace.h',
-                              'src/core/ext/transport/inproc/inproc_transport.h',
-                              'src/core/ext/filters/client_channel/health/health.pb.h'
+                              'src/core/ext/upb-generated/src/proto/grpc/health/v1/health.upb.h',
+                              'third_party/upb/upb/decode.h',
+                              'third_party/upb/upb/encode.h',
+                              'third_party/upb/upb/generated_util.h',
+                              'third_party/upb/upb/msg.h',
+                              'third_party/upb/upb/port_def.inc',
+                              'third_party/upb/upb/port_undef.inc',
+                              'third_party/upb/upb/table.int.h',
+                              'third_party/upb/upb/upb.h',
+                              'src/core/ext/transport/inproc/inproc_transport.h'
   end
 
   s.subspec 'Protobuf' do |ss|
@@ -774,9 +843,11 @@ Pod::Spec.new do |s|
   end
 
   s.prepare_command = <<-END_OF_COMMAND
-    find src/cpp/ -type f ! -path '*.grpc_back' -print0 | xargs -0 -L1 sed -E -i'.grpc_back' 's;#include "(pb(_.*)?\\.h)";#include <nanopb/\\1>;g'
-    find src/cpp/ -type f -path '*.grpc_back' -print0 | xargs -0 rm
-    find src/core/ -type f ! -path '*.grpc_back' -print0 | xargs -0 -L1 sed -E -i'.grpc_back' 's;#include "(pb(_.*)?\\.h)";#include <nanopb/\\1>;g'
-    find src/core/ -type f -path '*.grpc_back' -print0 | xargs -0 rm
+    sed -E -i '' 's;#include "(pb(_.*)?\\.h)";#if COCOAPODS==1\\\n  #include <nanopb/\\1>\\\n#else\\\n  #include "\\1"\\\n#endif;g' $(find src/core -type f -print | xargs grep -H -c '#include <nanopb/' | grep 0$ | cut -d':' -f1)
+    sed -E -i '' 's;#include "(pb(_.*)?\\.h)";#if COCOAPODS==1\\\n  #include <nanopb/\\1>\\\n#else\\\n  #include "\\1"\\\n#endif;g' $(find src/cpp -type f -print | xargs grep -H -c '#include <nanopb/' | grep 0$ | cut -d':' -f1)
+    find src/core/ third_party/upb/ -type f \\( -name '*.h' -or -name '*.c' -or -name '*.cc' \\) -print0 | xargs -0 -L1 sed -E -i'.grpc_back' 's;#include "upb/(.*)";#if COCOAPODS==1\\\n  #include  "third_party/upb/upb/\\1"\\\n#else\\\n  #include  "upb/\\1"\\\n#endif;g'
+    find src/core/ third_party/upb/ -type f -name '*.grpc_back' -print0 | xargs -0 rm
+    find src/core/ src/cpp/ -type f \\( -name '*.h' -or -name '*.c' -or -name '*.cc' \\) -print0 | xargs -0 -L1 sed -E -i'.grpc_back' 's;#include "(.*).upb.h";#if COCOAPODS==1\\\n  #include  "src/core/ext/upb-generated/\\1.upb.h"\\\n#else\\\n  #include  "\\1.upb.h"\\\n#endif;g'
+    find src/core/ src/cpp/ -type f -name '*.grpc_back' -print0 | xargs -0 rm
   END_OF_COMMAND
 end

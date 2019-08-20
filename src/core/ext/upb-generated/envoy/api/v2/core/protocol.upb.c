@@ -56,18 +56,19 @@ static const upb_msglayout *const envoy_api_v2_core_Http2ProtocolOptions_submsgs
   &google_protobuf_UInt32Value_msginit,
 };
 
-static const upb_msglayout_field envoy_api_v2_core_Http2ProtocolOptions__fields[5] = {
+static const upb_msglayout_field envoy_api_v2_core_Http2ProtocolOptions__fields[6] = {
   {1, UPB_SIZE(4, 8), 0, 0, 11, 1},
   {2, UPB_SIZE(8, 16), 0, 0, 11, 1},
   {3, UPB_SIZE(12, 24), 0, 0, 11, 1},
   {4, UPB_SIZE(16, 32), 0, 0, 11, 1},
   {5, UPB_SIZE(0, 0), 0, 0, 8, 1},
+  {6, UPB_SIZE(1, 1), 0, 0, 8, 1},
 };
 
 const upb_msglayout envoy_api_v2_core_Http2ProtocolOptions_msginit = {
   &envoy_api_v2_core_Http2ProtocolOptions_submsgs[0],
   &envoy_api_v2_core_Http2ProtocolOptions__fields[0],
-  UPB_SIZE(20, 40), 5, false,
+  UPB_SIZE(20, 40), 6, false,
 };
 
 static const upb_msglayout *const envoy_api_v2_core_GrpcProtocolOptions_submsgs[1] = {

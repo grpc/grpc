@@ -94,6 +94,7 @@ DerivedData
 # Objective-C generated files
 *.pbobjc.*
 *.pbrpc.*
+src/objective-c/**/Build
 
 # Cocoapods artifacts
 Pods/
@@ -144,3 +145,8 @@ bm_*.json
 !.vscode/launch.json
 !.vscode/extensions.json
 
+# Clion artifacts
+cmake-build-debug/
+
+# Benchmark outputs
+BenchmarkDotNet.Artifacts/

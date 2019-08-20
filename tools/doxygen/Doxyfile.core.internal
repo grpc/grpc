@@ -40,7 +40,7 @@ PROJECT_NAME           = "GRPC Core"
 # could be handy for archiving the generated documentation or if some version
 # control system is used.
 
-PROJECT_NUMBER         = 7.0.0
+PROJECT_NUMBER         = 8.0.0
 
 # Using the PROJECT_BRIEF tag one can provide an optional one line description
 # for a project that appears at the top of each page and should give viewer a
@@ -801,6 +801,7 @@ doc/ssl-performance.md \
 doc/status_ordering.md \
 doc/statuscodes.md \
 doc/unit_testing.md \
+doc/versioning.md \
 doc/wait-for-ready.md \
 doc/workarounds.md \
 include/grpc/byte_buffer.h \
@@ -888,8 +889,6 @@ src/core/ext/filters/client_channel/connector.cc \
 src/core/ext/filters/client_channel/connector.h \
 src/core/ext/filters/client_channel/global_subchannel_pool.cc \
 src/core/ext/filters/client_channel/global_subchannel_pool.h \
-src/core/ext/filters/client_channel/health/health.pb.c \
-src/core/ext/filters/client_channel/health/health.pb.h \
 src/core/ext/filters/client_channel/health/health_check_client.cc \
 src/core/ext/filters/client_channel/health/health_check_client.h \
 src/core/ext/filters/client_channel/http_connect_handshaker.cc \
@@ -908,12 +907,6 @@ src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_client_stats.cc \
 src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_client_stats.h \
 src/core/ext/filters/client_channel/lb_policy/grpclb/load_balancer_api.cc \
 src/core/ext/filters/client_channel/lb_policy/grpclb/load_balancer_api.h \
-src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/google/protobuf/duration.pb.c \
-src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/google/protobuf/duration.pb.h \
-src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/google/protobuf/timestamp.pb.c \
-src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/google/protobuf/timestamp.pb.h \
-src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/load_balancer.pb.c \
-src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/load_balancer.pb.h \
 src/core/ext/filters/client_channel/lb_policy/pick_first/pick_first.cc \
 src/core/ext/filters/client_channel/lb_policy/round_robin/round_robin.cc \
 src/core/ext/filters/client_channel/lb_policy/subchannel_list.h \
@@ -959,6 +952,7 @@ src/core/ext/filters/client_channel/resolver/fake/fake_resolver.cc \
 src/core/ext/filters/client_channel/resolver/fake/fake_resolver.h \
 src/core/ext/filters/client_channel/resolver/sockaddr/README.md \
 src/core/ext/filters/client_channel/resolver/sockaddr/sockaddr_resolver.cc \
+src/core/ext/filters/client_channel/resolver/xds/xds_resolver.cc \
 src/core/ext/filters/client_channel/resolver_factory.h \
 src/core/ext/filters/client_channel/resolver_registry.cc \
 src/core/ext/filters/client_channel/resolver_registry.h \
@@ -977,6 +971,7 @@ src/core/ext/filters/client_channel/subchannel.h \
 src/core/ext/filters/client_channel/subchannel_interface.h \
 src/core/ext/filters/client_channel/subchannel_pool_interface.cc \
 src/core/ext/filters/client_channel/subchannel_pool_interface.h \
+src/core/ext/filters/client_idle/client_idle_filter.cc \
 src/core/ext/filters/deadline/deadline_filter.cc \
 src/core/ext/filters/deadline/deadline_filter.h \
 src/core/ext/filters/http/client/http_client_filter.cc \
@@ -1064,6 +1059,76 @@ src/core/ext/transport/chttp2/transport/writing.cc \
 src/core/ext/transport/inproc/inproc_plugin.cc \
 src/core/ext/transport/inproc/inproc_transport.cc \
 src/core/ext/transport/inproc/inproc_transport.h \
+src/core/ext/upb-generated/envoy/api/v2/auth/cert.upb.c \
+src/core/ext/upb-generated/envoy/api/v2/auth/cert.upb.h \
+src/core/ext/upb-generated/envoy/api/v2/cds.upb.c \
+src/core/ext/upb-generated/envoy/api/v2/cds.upb.h \
+src/core/ext/upb-generated/envoy/api/v2/cluster/circuit_breaker.upb.c \
+src/core/ext/upb-generated/envoy/api/v2/cluster/circuit_breaker.upb.h \
+src/core/ext/upb-generated/envoy/api/v2/cluster/outlier_detection.upb.c \
+src/core/ext/upb-generated/envoy/api/v2/cluster/outlier_detection.upb.h \
+src/core/ext/upb-generated/envoy/api/v2/core/address.upb.c \
+src/core/ext/upb-generated/envoy/api/v2/core/address.upb.h \
+src/core/ext/upb-generated/envoy/api/v2/core/base.upb.c \
+src/core/ext/upb-generated/envoy/api/v2/core/base.upb.h \
+src/core/ext/upb-generated/envoy/api/v2/core/config_source.upb.c \
+src/core/ext/upb-generated/envoy/api/v2/core/config_source.upb.h \
+src/core/ext/upb-generated/envoy/api/v2/core/grpc_service.upb.c \
+src/core/ext/upb-generated/envoy/api/v2/core/grpc_service.upb.h \
+src/core/ext/upb-generated/envoy/api/v2/core/health_check.upb.c \
+src/core/ext/upb-generated/envoy/api/v2/core/health_check.upb.h \
+src/core/ext/upb-generated/envoy/api/v2/core/protocol.upb.c \
+src/core/ext/upb-generated/envoy/api/v2/core/protocol.upb.h \
+src/core/ext/upb-generated/envoy/api/v2/discovery.upb.c \
+src/core/ext/upb-generated/envoy/api/v2/discovery.upb.h \
+src/core/ext/upb-generated/envoy/api/v2/eds.upb.c \
+src/core/ext/upb-generated/envoy/api/v2/eds.upb.h \
+src/core/ext/upb-generated/envoy/api/v2/endpoint/endpoint.upb.c \
+src/core/ext/upb-generated/envoy/api/v2/endpoint/endpoint.upb.h \
+src/core/ext/upb-generated/envoy/api/v2/endpoint/load_report.upb.c \
+src/core/ext/upb-generated/envoy/api/v2/endpoint/load_report.upb.h \
+src/core/ext/upb-generated/envoy/service/discovery/v2/ads.upb.c \
+src/core/ext/upb-generated/envoy/service/discovery/v2/ads.upb.h \
+src/core/ext/upb-generated/envoy/service/load_stats/v2/lrs.upb.c \
+src/core/ext/upb-generated/envoy/service/load_stats/v2/lrs.upb.h \
+src/core/ext/upb-generated/envoy/type/percent.upb.c \
+src/core/ext/upb-generated/envoy/type/percent.upb.h \
+src/core/ext/upb-generated/envoy/type/range.upb.c \
+src/core/ext/upb-generated/envoy/type/range.upb.h \
+src/core/ext/upb-generated/gogoproto/gogo.upb.c \
+src/core/ext/upb-generated/gogoproto/gogo.upb.h \
+src/core/ext/upb-generated/google/api/annotations.upb.c \
+src/core/ext/upb-generated/google/api/annotations.upb.h \
+src/core/ext/upb-generated/google/api/http.upb.c \
+src/core/ext/upb-generated/google/api/http.upb.h \
+src/core/ext/upb-generated/google/protobuf/any.upb.c \
+src/core/ext/upb-generated/google/protobuf/any.upb.h \
+src/core/ext/upb-generated/google/protobuf/descriptor.upb.c \
+src/core/ext/upb-generated/google/protobuf/descriptor.upb.h \
+src/core/ext/upb-generated/google/protobuf/duration.upb.c \
+src/core/ext/upb-generated/google/protobuf/duration.upb.h \
+src/core/ext/upb-generated/google/protobuf/empty.upb.c \
+src/core/ext/upb-generated/google/protobuf/empty.upb.h \
+src/core/ext/upb-generated/google/protobuf/struct.upb.c \
+src/core/ext/upb-generated/google/protobuf/struct.upb.h \
+src/core/ext/upb-generated/google/protobuf/timestamp.upb.c \
+src/core/ext/upb-generated/google/protobuf/timestamp.upb.h \
+src/core/ext/upb-generated/google/protobuf/wrappers.upb.c \
+src/core/ext/upb-generated/google/protobuf/wrappers.upb.h \
+src/core/ext/upb-generated/google/rpc/status.upb.c \
+src/core/ext/upb-generated/google/rpc/status.upb.h \
+src/core/ext/upb-generated/src/proto/grpc/gcp/altscontext.upb.c \
+src/core/ext/upb-generated/src/proto/grpc/gcp/altscontext.upb.h \
+src/core/ext/upb-generated/src/proto/grpc/gcp/handshaker.upb.c \
+src/core/ext/upb-generated/src/proto/grpc/gcp/handshaker.upb.h \
+src/core/ext/upb-generated/src/proto/grpc/gcp/transport_security_common.upb.c \
+src/core/ext/upb-generated/src/proto/grpc/gcp/transport_security_common.upb.h \
+src/core/ext/upb-generated/src/proto/grpc/health/v1/health.upb.c \
+src/core/ext/upb-generated/src/proto/grpc/health/v1/health.upb.h \
+src/core/ext/upb-generated/src/proto/grpc/lb/v1/load_balancer.upb.c \
+src/core/ext/upb-generated/src/proto/grpc/lb/v1/load_balancer.upb.h \
+src/core/ext/upb-generated/validate/validate.upb.c \
+src/core/ext/upb-generated/validate/validate.upb.h \
 src/core/lib/README.md \
 src/core/lib/avl/avl.cc \
 src/core/lib/avl/avl.h \
@@ -1125,8 +1190,6 @@ src/core/lib/gpr/env.h \
 src/core/lib/gpr/env_linux.cc \
 src/core/lib/gpr/env_posix.cc \
 src/core/lib/gpr/env_windows.cc \
-src/core/lib/gpr/host_port.cc \
-src/core/lib/gpr/host_port.h \
 src/core/lib/gpr/log.cc \
 src/core/lib/gpr/log_android.cc \
 src/core/lib/gpr/log_linux.cc \
@@ -1175,6 +1238,8 @@ src/core/lib/gprpp/global_config_custom.h \
 src/core/lib/gprpp/global_config_env.cc \
 src/core/lib/gprpp/global_config_env.h \
 src/core/lib/gprpp/global_config_generic.h \
+src/core/lib/gprpp/host_port.cc \
+src/core/lib/gprpp/host_port.h \
 src/core/lib/gprpp/inlined_vector.h \
 src/core/lib/gprpp/manual_constructor.h \
 src/core/lib/gprpp/map.h \
@@ -1184,6 +1249,7 @@ src/core/lib/gprpp/orphanable.h \
 src/core/lib/gprpp/pair.h \
 src/core/lib/gprpp/ref_counted.h \
 src/core/lib/gprpp/ref_counted_ptr.h \
+src/core/lib/gprpp/string_view.h \
 src/core/lib/gprpp/sync.h \
 src/core/lib/gprpp/thd.h \
 src/core/lib/gprpp/thd_posix.cc \
@@ -1233,6 +1299,10 @@ src/core/lib/iomgr/exec_ctx.cc \
 src/core/lib/iomgr/exec_ctx.h \
 src/core/lib/iomgr/executor.cc \
 src/core/lib/iomgr/executor.h \
+src/core/lib/iomgr/executor/mpmcqueue.cc \
+src/core/lib/iomgr/executor/mpmcqueue.h \
+src/core/lib/iomgr/executor/threadpool.cc \
+src/core/lib/iomgr/executor/threadpool.h \
 src/core/lib/iomgr/fork_posix.cc \
 src/core/lib/iomgr/fork_windows.cc \
 src/core/lib/iomgr/gethostname.h \
@@ -1535,10 +1605,6 @@ src/core/tsi/alts/frame_protector/frame_handler.cc \
 src/core/tsi/alts/frame_protector/frame_handler.h \
 src/core/tsi/alts/handshaker/alts_handshaker_client.cc \
 src/core/tsi/alts/handshaker/alts_handshaker_client.h \
-src/core/tsi/alts/handshaker/alts_handshaker_service_api.cc \
-src/core/tsi/alts/handshaker/alts_handshaker_service_api.h \
-src/core/tsi/alts/handshaker/alts_handshaker_service_api_util.cc \
-src/core/tsi/alts/handshaker/alts_handshaker_service_api_util.h \
 src/core/tsi/alts/handshaker/alts_shared_resource.cc \
 src/core/tsi/alts/handshaker/alts_shared_resource.h \
 src/core/tsi/alts/handshaker/alts_tsi_handshaker.cc \
@@ -1546,12 +1612,6 @@ src/core/tsi/alts/handshaker/alts_tsi_handshaker.h \
 src/core/tsi/alts/handshaker/alts_tsi_handshaker_private.h \
 src/core/tsi/alts/handshaker/alts_tsi_utils.cc \
 src/core/tsi/alts/handshaker/alts_tsi_utils.h \
-src/core/tsi/alts/handshaker/altscontext.pb.c \
-src/core/tsi/alts/handshaker/altscontext.pb.h \
-src/core/tsi/alts/handshaker/handshaker.pb.c \
-src/core/tsi/alts/handshaker/handshaker.pb.h \
-src/core/tsi/alts/handshaker/transport_security_common.pb.c \
-src/core/tsi/alts/handshaker/transport_security_common.pb.h \
 src/core/tsi/alts/handshaker/transport_security_common_api.cc \
 src/core/tsi/alts/handshaker/transport_security_common_api.h \
 src/core/tsi/alts/zero_copy_frame_protector/alts_grpc_integrity_only_record_protocol.cc \
@@ -1583,13 +1643,20 @@ src/core/tsi/transport_security.h \
 src/core/tsi/transport_security_grpc.cc \
 src/core/tsi/transport_security_grpc.h \
 src/core/tsi/transport_security_interface.h \
-third_party/nanopb/pb.h \
-third_party/nanopb/pb_common.c \
-third_party/nanopb/pb_common.h \
-third_party/nanopb/pb_decode.c \
-third_party/nanopb/pb_decode.h \
-third_party/nanopb/pb_encode.c \
-third_party/nanopb/pb_encode.h
+third_party/upb/upb/decode.c \
+third_party/upb/upb/decode.h \
+third_party/upb/upb/encode.c \
+third_party/upb/upb/encode.h \
+third_party/upb/upb/generated_util.h \
+third_party/upb/upb/msg.c \
+third_party/upb/upb/msg.h \
+third_party/upb/upb/port.c \
+third_party/upb/upb/port_def.inc \
+third_party/upb/upb/port_undef.inc \
+third_party/upb/upb/table.c \
+third_party/upb/upb/table.int.h \
+third_party/upb/upb/upb.c \
+third_party/upb/upb/upb.h
 
 # This tag can be used to specify the character encoding of the source files
 # that doxygen parses. Internally doxygen uses the UTF-8 encoding. Doxygen uses

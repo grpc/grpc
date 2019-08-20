@@ -97,6 +97,8 @@ LANG_RELEASE_MATRIX = {
         ('v1.18.0', ReleaseInfo(testcases_file='cxx__v1.0.1')),
         ('v1.19.0', ReleaseInfo(testcases_file='cxx__v1.0.1')),
         ('v1.20.0', ReleaseInfo()),
+        ('v1.21.4', ReleaseInfo()),
+        ('v1.22.0', ReleaseInfo()),
     ]),
     'go':
     OrderedDict(
@@ -140,7 +142,8 @@ LANG_RELEASE_MATRIX = {
             ('v1.19.0',
              ReleaseInfo(runtimes=['go1.11'], testcases_file='go__v1.0.5')),
             ('v1.20.0', ReleaseInfo(runtimes=['go1.11'])),
-            ('v1.21.0', ReleaseInfo(runtimes=['go1.11'])),
+            ('v1.21.2', ReleaseInfo(runtimes=['go1.11'])),
+            ('v1.22.1', ReleaseInfo(runtimes=['go1.11'])),
         ]),
     'java':
     OrderedDict([
@@ -209,6 +212,8 @@ LANG_RELEASE_MATRIX = {
         ('v1.18.0', ReleaseInfo()),
         ('v1.19.0', ReleaseInfo()),
         ('v1.20.0', ReleaseInfo()),
+        ('v1.21.4', ReleaseInfo()),
+        ('v1.22.0', ReleaseInfo()),
     ]),
     'node':
     OrderedDict([
@@ -257,6 +262,8 @@ LANG_RELEASE_MATRIX = {
          ])),
         ('v1.19.0', ReleaseInfo()),
         ('v1.20.0', ReleaseInfo()),
+        ('v1.21.4', ReleaseInfo()),
+        ('v1.22.0', ReleaseInfo()),
         # TODO: https://github.com/grpc/grpc/issues/18262.
         # If you are not encountering the error in above issue
         # go ahead and upload the docker image for new releases.
@@ -281,8 +288,10 @@ LANG_RELEASE_MATRIX = {
         ('v1.16.0', ReleaseInfo(testcases_file='php__v1.0.1')),
         ('v1.17.1', ReleaseInfo(testcases_file='php__v1.0.1')),
         ('v1.18.0', ReleaseInfo()),
-        # TODO:https://github.com/grpc/grpc/issues/18264
-        # Error in above issues needs to be resolved.
+        # v1.19 and v1.20 were deliberately omitted here because of an issue.
+        # See https://github.com/grpc/grpc/issues/18264
+        ('v1.21.4', ReleaseInfo()),
+        ('v1.22.0', ReleaseInfo()),
     ]),
     'csharp':
     OrderedDict([
@@ -312,5 +321,7 @@ LANG_RELEASE_MATRIX = {
         ('v1.18.0', ReleaseInfo(testcases_file='csharp__v1.18.0')),
         ('v1.19.0', ReleaseInfo(testcases_file='csharp__v1.18.0')),
         ('v1.20.0', ReleaseInfo()),
+        ('v1.21.4', ReleaseInfo()),
+        ('v1.22.0', ReleaseInfo()),
     ]),
 }

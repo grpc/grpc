@@ -28,7 +28,6 @@ if (PHP_GRPC != "no") {
     "src\\core\\lib\\gpr\\env_linux.cc " +
     "src\\core\\lib\\gpr\\env_posix.cc " +
     "src\\core\\lib\\gpr\\env_windows.cc " +
-    "src\\core\\lib\\gpr\\host_port.cc " +
     "src\\core\\lib\\gpr\\log.cc " +
     "src\\core\\lib\\gpr\\log_android.cc " +
     "src\\core\\lib\\gpr\\log_linux.cc " +
@@ -55,6 +54,7 @@ if (PHP_GRPC != "no") {
     "src\\core\\lib\\gprpp\\arena.cc " +
     "src\\core\\lib\\gprpp\\fork.cc " +
     "src\\core\\lib\\gprpp\\global_config_env.cc " +
+    "src\\core\\lib\\gprpp\\host_port.cc " +
     "src\\core\\lib\\gprpp\\thd_posix.cc " +
     "src\\core\\lib\\gprpp\\thd_windows.cc " +
     "src\\core\\lib\\profiling\\basic_timers.cc " +
@@ -102,6 +102,8 @@ if (PHP_GRPC != "no") {
     "src\\core\\lib\\iomgr\\ev_windows.cc " +
     "src\\core\\lib\\iomgr\\exec_ctx.cc " +
     "src\\core\\lib\\iomgr\\executor.cc " +
+    "src\\core\\lib\\iomgr\\executor\\mpmcqueue.cc " +
+    "src\\core\\lib\\iomgr\\executor\\threadpool.cc " +
     "src\\core\\lib\\iomgr\\fork_posix.cc " +
     "src\\core\\lib\\iomgr\\fork_windows.cc " +
     "src\\core\\lib\\iomgr\\gethostname_fallback.cc " +
@@ -305,16 +307,17 @@ if (PHP_GRPC != "no") {
     "src\\core\\lib\\security\\credentials\\alts\\grpc_alts_credentials_client_options.cc " +
     "src\\core\\lib\\security\\credentials\\alts\\grpc_alts_credentials_options.cc " +
     "src\\core\\lib\\security\\credentials\\alts\\grpc_alts_credentials_server_options.cc " +
-    "src\\core\\tsi\\alts\\handshaker\\alts_handshaker_service_api.cc " +
-    "src\\core\\tsi\\alts\\handshaker\\alts_handshaker_service_api_util.cc " +
     "src\\core\\tsi\\alts\\handshaker\\alts_tsi_utils.cc " +
     "src\\core\\tsi\\alts\\handshaker\\transport_security_common_api.cc " +
-    "src\\core\\tsi\\alts\\handshaker\\altscontext.pb.c " +
-    "src\\core\\tsi\\alts\\handshaker\\handshaker.pb.c " +
-    "src\\core\\tsi\\alts\\handshaker\\transport_security_common.pb.c " +
-    "third_party\\nanopb\\pb_common.c " +
-    "third_party\\nanopb\\pb_decode.c " +
-    "third_party\\nanopb\\pb_encode.c " +
+    "src\\core\\ext\\upb-generated\\src\\proto\\grpc\\gcp\\altscontext.upb.c " +
+    "src\\core\\ext\\upb-generated\\src\\proto\\grpc\\gcp\\handshaker.upb.c " +
+    "src\\core\\ext\\upb-generated\\src\\proto\\grpc\\gcp\\transport_security_common.upb.c " +
+    "third_party\\upb\\upb\\decode.c " +
+    "third_party\\upb\\upb\\encode.c " +
+    "third_party\\upb\\upb\\msg.c " +
+    "third_party\\upb\\upb\\port.c " +
+    "third_party\\upb\\upb\\table.c " +
+    "third_party\\upb\\upb\\upb.c " +
     "src\\core\\tsi\\transport_security.cc " +
     "src\\core\\ext\\transport\\chttp2\\client\\insecure\\channel_create.cc " +
     "src\\core\\ext\\transport\\chttp2\\client\\insecure\\channel_create_posix.cc " +
@@ -347,7 +350,7 @@ if (PHP_GRPC != "no") {
     "src\\core\\ext\\filters\\client_channel\\subchannel.cc " +
     "src\\core\\ext\\filters\\client_channel\\subchannel_pool_interface.cc " +
     "src\\core\\ext\\filters\\deadline\\deadline_filter.cc " +
-    "src\\core\\ext\\filters\\client_channel\\health\\health.pb.c " +
+    "src\\core\\ext\\upb-generated\\src\\proto\\grpc\\health\\v1\\health.upb.c " +
     "src\\core\\tsi\\fake_transport_security.cc " +
     "src\\core\\tsi\\local_transport_security.cc " +
     "src\\core\\tsi\\ssl\\session_cache\\ssl_session_boringssl.cc " +
@@ -366,14 +369,42 @@ if (PHP_GRPC != "no") {
     "src\\core\\ext\\filters\\client_channel\\lb_policy\\grpclb\\grpclb_channel_secure.cc " +
     "src\\core\\ext\\filters\\client_channel\\lb_policy\\grpclb\\grpclb_client_stats.cc " +
     "src\\core\\ext\\filters\\client_channel\\lb_policy\\grpclb\\load_balancer_api.cc " +
+    "src\\core\\ext\\upb-generated\\src\\proto\\grpc\\lb\\v1\\load_balancer.upb.c " +
+    "src\\core\\ext\\upb-generated\\google\\api\\annotations.upb.c " +
+    "src\\core\\ext\\upb-generated\\google\\api\\http.upb.c " +
+    "src\\core\\ext\\upb-generated\\google\\protobuf\\any.upb.c " +
+    "src\\core\\ext\\upb-generated\\google\\protobuf\\descriptor.upb.c " +
+    "src\\core\\ext\\upb-generated\\google\\protobuf\\duration.upb.c " +
+    "src\\core\\ext\\upb-generated\\google\\protobuf\\empty.upb.c " +
+    "src\\core\\ext\\upb-generated\\google\\protobuf\\struct.upb.c " +
+    "src\\core\\ext\\upb-generated\\google\\protobuf\\timestamp.upb.c " +
+    "src\\core\\ext\\upb-generated\\google\\protobuf\\wrappers.upb.c " +
+    "src\\core\\ext\\upb-generated\\google\\rpc\\status.upb.c " +
     "src\\core\\ext\\filters\\client_channel\\resolver\\fake\\fake_resolver.cc " +
-    "src\\core\\ext\\filters\\client_channel\\lb_policy\\grpclb\\proto\\grpc\\lb\\v1\\google\\protobuf\\duration.pb.c " +
-    "src\\core\\ext\\filters\\client_channel\\lb_policy\\grpclb\\proto\\grpc\\lb\\v1\\google\\protobuf\\timestamp.pb.c " +
-    "src\\core\\ext\\filters\\client_channel\\lb_policy\\grpclb\\proto\\grpc\\lb\\v1\\load_balancer.pb.c " +
     "src\\core\\ext\\filters\\client_channel\\lb_policy\\xds\\xds.cc " +
     "src\\core\\ext\\filters\\client_channel\\lb_policy\\xds\\xds_channel_secure.cc " +
     "src\\core\\ext\\filters\\client_channel\\lb_policy\\xds\\xds_client_stats.cc " +
     "src\\core\\ext\\filters\\client_channel\\lb_policy\\xds\\xds_load_balancer_api.cc " +
+    "src\\core\\ext\\upb-generated\\envoy\\api\\v2\\auth\\cert.upb.c " +
+    "src\\core\\ext\\upb-generated\\envoy\\api\\v2\\cds.upb.c " +
+    "src\\core\\ext\\upb-generated\\envoy\\api\\v2\\cluster\\circuit_breaker.upb.c " +
+    "src\\core\\ext\\upb-generated\\envoy\\api\\v2\\cluster\\outlier_detection.upb.c " +
+    "src\\core\\ext\\upb-generated\\envoy\\api\\v2\\discovery.upb.c " +
+    "src\\core\\ext\\upb-generated\\envoy\\api\\v2\\eds.upb.c " +
+    "src\\core\\ext\\upb-generated\\envoy\\api\\v2\\endpoint\\endpoint.upb.c " +
+    "src\\core\\ext\\upb-generated\\envoy\\api\\v2\\endpoint\\load_report.upb.c " +
+    "src\\core\\ext\\upb-generated\\envoy\\service\\discovery\\v2\\ads.upb.c " +
+    "src\\core\\ext\\upb-generated\\envoy\\service\\load_stats\\v2\\lrs.upb.c " +
+    "src\\core\\ext\\upb-generated\\envoy\\api\\v2\\core\\address.upb.c " +
+    "src\\core\\ext\\upb-generated\\envoy\\api\\v2\\core\\base.upb.c " +
+    "src\\core\\ext\\upb-generated\\envoy\\api\\v2\\core\\config_source.upb.c " +
+    "src\\core\\ext\\upb-generated\\envoy\\api\\v2\\core\\grpc_service.upb.c " +
+    "src\\core\\ext\\upb-generated\\envoy\\api\\v2\\core\\health_check.upb.c " +
+    "src\\core\\ext\\upb-generated\\envoy\\api\\v2\\core\\protocol.upb.c " +
+    "src\\core\\ext\\upb-generated\\envoy\\type\\percent.upb.c " +
+    "src\\core\\ext\\upb-generated\\envoy\\type\\range.upb.c " +
+    "src\\core\\ext\\upb-generated\\gogoproto\\gogo.upb.c " +
+    "src\\core\\ext\\upb-generated\\validate\\validate.upb.c " +
     "src\\core\\ext\\filters\\client_channel\\lb_policy\\pick_first\\pick_first.cc " +
     "src\\core\\ext\\filters\\client_channel\\lb_policy\\round_robin\\round_robin.cc " +
     "src\\core\\ext\\filters\\client_channel\\resolver\\dns\\c_ares\\dns_resolver_ares.cc " +
@@ -389,7 +420,9 @@ if (PHP_GRPC != "no") {
     "src\\core\\ext\\filters\\client_channel\\resolver\\dns\\dns_resolver_selection.cc " +
     "src\\core\\ext\\filters\\client_channel\\resolver\\dns\\native\\dns_resolver.cc " +
     "src\\core\\ext\\filters\\client_channel\\resolver\\sockaddr\\sockaddr_resolver.cc " +
+    "src\\core\\ext\\filters\\client_channel\\resolver\\xds\\xds_resolver.cc " +
     "src\\core\\ext\\filters\\census\\grpc_context.cc " +
+    "src\\core\\ext\\filters\\client_idle\\client_idle_filter.cc " +
     "src\\core\\ext\\filters\\max_age\\max_age_filter.cc " +
     "src\\core\\ext\\filters\\message_size\\message_size_filter.cc " +
     "src\\core\\ext\\filters\\http\\client_authority_filter.cc " +
@@ -676,11 +709,13 @@ if (PHP_GRPC != "no") {
     "/DPB_FIELD_32BIT "+
     "/I"+configure_module_dirname+" "+
     "/I"+configure_module_dirname+"\\include "+
+    "/I"+configure_module_dirname+"\\src\\core\\ext\\upb-generated "+
     "/I"+configure_module_dirname+"\\src\\php\\ext\\grpc "+
-    "/I"+configure_module_dirname+"\\third_party\\boringssl\\include "+
-    "/I"+configure_module_dirname+"\\third_party\\zlib "+
     "/I"+configure_module_dirname+"\\third_party\\address_sorting\\include "+
-    "/I"+configure_module_dirname+"\\third_party\\nanopb");
+    "/I"+configure_module_dirname+"\\third_party\\boringssl\\include "+
+    "/I"+configure_module_dirname+"\\third_party\\nanopb "+
+    "/I"+configure_module_dirname+"\\third_party\\upb "+
+    "/I"+configure_module_dirname+"\\third_party\\zlib ");
 
   base_dir = get_define('BUILD_DIR');
   FSO.CreateFolder(base_dir+"\\ext");
@@ -695,12 +730,6 @@ if (PHP_GRPC != "no") {
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\filters\\client_channel\\health");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\filters\\client_channel\\lb_policy");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\filters\\client_channel\\lb_policy\\grpclb");
-  FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\filters\\client_channel\\lb_policy\\grpclb\\proto");
-  FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\filters\\client_channel\\lb_policy\\grpclb\\proto\\grpc");
-  FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\filters\\client_channel\\lb_policy\\grpclb\\proto\\grpc\\lb");
-  FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\filters\\client_channel\\lb_policy\\grpclb\\proto\\grpc\\lb\\v1");
-  FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\filters\\client_channel\\lb_policy\\grpclb\\proto\\grpc\\lb\\v1\\google");
-  FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\filters\\client_channel\\lb_policy\\grpclb\\proto\\grpc\\lb\\v1\\google\\protobuf");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\filters\\client_channel\\lb_policy\\pick_first");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\filters\\client_channel\\lb_policy\\round_robin");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\filters\\client_channel\\lb_policy\\xds");
@@ -710,6 +739,8 @@ if (PHP_GRPC != "no") {
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\filters\\client_channel\\resolver\\dns\\native");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\filters\\client_channel\\resolver\\fake");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\filters\\client_channel\\resolver\\sockaddr");
+  FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\filters\\client_channel\\resolver\\xds");
+  FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\filters\\client_idle");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\filters\\deadline");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\filters\\http");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\filters\\http\\client");
@@ -729,6 +760,34 @@ if (PHP_GRPC != "no") {
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\transport\\chttp2\\server\\secure");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\transport\\chttp2\\transport");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\transport\\inproc");
+  FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\upb-generated");
+  FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\upb-generated\\envoy");
+  FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\upb-generated\\envoy\\api");
+  FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\upb-generated\\envoy\\api\\v2");
+  FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\upb-generated\\envoy\\api\\v2\\auth");
+  FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\upb-generated\\envoy\\api\\v2\\cluster");
+  FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\upb-generated\\envoy\\api\\v2\\core");
+  FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\upb-generated\\envoy\\api\\v2\\endpoint");
+  FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\upb-generated\\envoy\\service");
+  FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\upb-generated\\envoy\\service\\discovery");
+  FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\upb-generated\\envoy\\service\\discovery\\v2");
+  FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\upb-generated\\envoy\\service\\load_stats");
+  FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\upb-generated\\envoy\\service\\load_stats\\v2");
+  FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\upb-generated\\envoy\\type");
+  FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\upb-generated\\gogoproto");
+  FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\upb-generated\\google");
+  FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\upb-generated\\google\\api");
+  FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\upb-generated\\google\\protobuf");
+  FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\upb-generated\\google\\rpc");
+  FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\upb-generated\\src");
+  FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\upb-generated\\src\\proto");
+  FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\upb-generated\\src\\proto\\grpc");
+  FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\upb-generated\\src\\proto\\grpc\\gcp");
+  FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\upb-generated\\src\\proto\\grpc\\health");
+  FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\upb-generated\\src\\proto\\grpc\\health\\v1");
+  FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\upb-generated\\src\\proto\\grpc\\lb");
+  FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\upb-generated\\src\\proto\\grpc\\lb\\v1");
+  FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\upb-generated\\validate");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\lib");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\lib\\avl");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\lib\\backoff");
@@ -739,6 +798,7 @@ if (PHP_GRPC != "no") {
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\lib\\gprpp");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\lib\\http");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\lib\\iomgr");
+  FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\lib\\iomgr\\executor");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\lib\\json");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\lib\\profiling");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\lib\\security");
@@ -821,7 +881,8 @@ if (PHP_GRPC != "no") {
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\third_party\\boringssl\\ssl");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\third_party\\boringssl\\third_party");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\third_party\\boringssl\\third_party\\fiat");
-  FSO.CreateFolder(base_dir+"\\ext\\grpc\\third_party\\nanopb");
+  FSO.CreateFolder(base_dir+"\\ext\\grpc\\third_party\\upb");
+  FSO.CreateFolder(base_dir+"\\ext\\grpc\\third_party\\upb\\upb");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\third_party\\zlib");
   _build_dirs = new Array();
   for (i = 0; i < build_dirs.length; i++) {

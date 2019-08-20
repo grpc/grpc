@@ -20,9 +20,12 @@
 
 #include "src/core/ext/filters/client_channel/lb_policy/grpclb/client_load_reporting_filter.h"
 
+#include <string.h>
+
 #include <grpc/support/atm.h>
 #include <grpc/support/log.h>
 
+#include "src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb.h"
 #include "src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_client_stats.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/profiling/timers.h"
@@ -95,22 +98,33 @@ static void start_transport_stream_op_batch(
   GPR_TIMER_SCOPE("clr_start_transport_stream_op_batch", 0);
   // Handle send_initial_metadata.
   if (batch->send_initial_metadata) {
-    // Grab client stats object from user_data for LB token metadata.
-    grpc_linked_mdelem* lb_token =
-        batch->payload->send_initial_metadata.send_initial_metadata->idx.named
-            .lb_token;
-    if (lb_token != nullptr) {
+    // Grab client stats object from metadata.
+    grpc_linked_mdelem* client_stats_md =
+        batch->payload->send_initial_metadata.send_initial_metadata->list.head;
+    for (; client_stats_md != nullptr;
+         client_stats_md = client_stats_md->next) {
+      if (GRPC_SLICE_START_PTR(GRPC_MDKEY(client_stats_md->md)) ==
+          static_cast<const void*>(grpc_core::kGrpcLbClientStatsMetadataKey)) {
+        break;
+      }
+    }
+    if (client_stats_md != nullptr) {
       grpc_core::GrpcLbClientStats* client_stats =
-          static_cast<grpc_core::GrpcLbClientStats*>(grpc_mdelem_get_user_data(
-              lb_token->md, grpc_core::GrpcLbClientStats::Destroy));
+          const_cast<grpc_core::GrpcLbClientStats*>(
+              reinterpret_cast<const grpc_core::GrpcLbClientStats*>(
+                  GRPC_SLICE_START_PTR(GRPC_MDVALUE(client_stats_md->md))));
       if (client_stats != nullptr) {
-        calld->client_stats = client_stats->Ref();
+        calld->client_stats.reset(client_stats);
         // Intercept completion.
         calld->original_on_complete_for_send = batch->on_complete;
         GRPC_CLOSURE_INIT(&calld->on_complete_for_send, on_complete_for_send,
                           calld, grpc_schedule_on_exec_ctx);
         batch->on_complete = &calld->on_complete_for_send;
       }
+      // Remove metadata so it doesn't go out on the wire.
+      grpc_metadata_batch_remove(
+          batch->payload->send_initial_metadata.send_initial_metadata,
+          client_stats_md);
     }
   }
   // Intercept completion of recv_initial_metadata.

@@ -25,12 +25,14 @@ def test_options():
 # maps test names to options
 BAD_CLIENT_TESTS = {
     'badreq': test_options(),
+    'bad_streaming_id': test_options(),
     'connection_prefix': test_options(),
     'duplicate_header': test_options(),
     'headers': test_options(),
     'initial_settings_frame': test_options(),
     'head_of_line_blocking': test_options(),
     'large_metadata': test_options(),
+    'out_of_bounds': test_options(),
     'server_registered_method': test_options(),
     'simple_request': test_options(),
     'window_overflow': test_options(),
@@ -42,6 +44,7 @@ def grpc_bad_client_tests():
       name = 'bad_client_test',
       srcs = ['bad_client.cc'],
       hdrs = ['bad_client.h'],
+      language = "C++",
       deps = ['//test/core/util:grpc_test_util', '//:grpc', '//:gpr', '//test/core/end2end:cq_verifier']
   )
   for t, topt in BAD_CLIENT_TESTS.items():
@@ -49,5 +52,8 @@ def grpc_bad_client_tests():
         name = '%s_bad_client_test' % t,
         srcs = ['tests/%s.cc' % t],
         deps = [':bad_client_test'],
+        external_deps = [
+          "gtest",
+        ],        
     )
 

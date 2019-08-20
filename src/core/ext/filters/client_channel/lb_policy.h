@@ -21,13 +21,13 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "src/core/ext/filters/client_channel/client_channel_channelz.h"
 #include "src/core/ext/filters/client_channel/server_address.h"
 #include "src/core/ext/filters/client_channel/service_config.h"
 #include "src/core/ext/filters/client_channel/subchannel_interface.h"
 #include "src/core/lib/gprpp/abstract.h"
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
+#include "src/core/lib/gprpp/string_view.h"
 #include "src/core/lib/iomgr/combiner.h"
 #include "src/core/lib/iomgr/polling_entity.h"
 #include "src/core/lib/transport/connectivity_state.h"
@@ -92,14 +92,44 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
     GRPC_ABSTRACT_BASE_CLASS
   };
 
+  /// Interface for accessing metadata.
+  class MetadataInterface {
+   public:
+    // Implementations whose iterators fit in intptr_t may internally
+    // cast this directly to their iterator type.  Otherwise, they may
+    // dynamically allocate their iterators and store the address here.
+    typedef intptr_t Iterator;
+
+    virtual ~MetadataInterface() = default;
+
+    /// Adds a key/value pair.
+    /// Does NOT take ownership of \a key or \a value.
+    /// Implementations must ensure that the key and value remain alive
+    /// until the call ends.  If desired, they may be allocated via
+    /// CallState::Alloc().
+    virtual void Add(StringView key, StringView value) GRPC_ABSTRACT;
+
+    /// Iteration interface.
+    virtual Iterator Begin() const GRPC_ABSTRACT;
+    virtual bool IsEnd(Iterator it) const GRPC_ABSTRACT;
+    virtual void Next(Iterator* it) const GRPC_ABSTRACT;
+    virtual StringView Key(Iterator it) const GRPC_ABSTRACT;
+    virtual StringView Value(Iterator it) const GRPC_ABSTRACT;
+
+    /// Removes the element pointed to by \a it, which is modified to
+    /// point to the next element.
+    virtual void Erase(Iterator* it) GRPC_ABSTRACT;
+
+    GRPC_ABSTRACT_BASE_CLASS
+  };
+
   /// Arguments used when picking a subchannel for an RPC.
   struct PickArgs {
     /// Initial metadata associated with the picking call.
     /// The LB policy may use the existing metadata to influence its routing
     /// decision, and it may add new metadata elements to be sent with the
     /// call to the chosen backend.
-    // TODO(roth): Provide a more generic metadata API here.
-    grpc_metadata_batch* initial_metadata = nullptr;
+    MetadataInterface* initial_metadata;
     /// An interface for accessing call state.  Can be used to allocate
     /// data associated with the call in an efficient way.
     CallState* call_state;
@@ -128,7 +158,7 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
 
     /// Used only if type is PICK_COMPLETE.  Will be set to the selected
     /// subchannel, or nullptr if the LB policy decides to drop the call.
-    RefCountedPtr<ConnectedSubchannelInterface> connected_subchannel;
+    RefCountedPtr<SubchannelInterface> subchannel;
 
     /// Used only if type is PICK_TRANSIENT_FAILURE.
     /// Error to be set when returning a transient failure.
@@ -144,8 +174,11 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
     /// modified by the callback.  The callback does not take ownership,
     /// however, so any data that needs to be used after returning must
     /// be copied.
+    // TODO(roth): Replace grpc_error with something better before we allow
+    // people outside of gRPC team to use this API.
     void (*recv_trailing_metadata_ready)(
-        void* user_data, grpc_metadata_batch* recv_trailing_metadata,
+        void* user_data, grpc_error* error,
+        MetadataInterface* recv_trailing_metadata,
         CallState* call_state) = nullptr;
     void* recv_trailing_metadata_ready_user_data = nullptr;
   };
@@ -194,6 +227,12 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
 
     /// Requests that the resolver re-resolve.
     virtual void RequestReresolution() GRPC_ABSTRACT;
+
+    /// Adds a trace message associated with the channel.
+    /// Does NOT take ownership of \a message.
+    enum TraceSeverity { TRACE_INFO, TRACE_WARNING, TRACE_ERROR };
+    virtual void AddTraceEvent(TraceSeverity severity,
+                               const char* message) GRPC_ABSTRACT;
 
     GRPC_ABSTRACT_BASE_CLASS
   };
@@ -268,22 +307,9 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
   /// Resets connection backoff.
   virtual void ResetBackoffLocked() GRPC_ABSTRACT;
 
-  /// Populates child_subchannels and child_channels with the uuids of this
-  /// LB policy's referenced children.
-  ///
-  /// This is not invoked from the client_channel's combiner. The
-  /// implementation is responsible for providing its own synchronization.
-  virtual void FillChildRefsForChannelz(
-      channelz::ChildRefsList* child_subchannels,
-      channelz::ChildRefsList* child_channels) GRPC_ABSTRACT;
-
-  void set_channelz_node(
-      RefCountedPtr<channelz::ClientChannelNode> channelz_node) {
-    channelz_node_ = std::move(channelz_node);
-  }
-
   grpc_pollset_set* interested_parties() const { return interested_parties_; }
 
+  // Note: This must be invoked while holding the combiner.
   void Orphan() override;
 
   // A picker that returns PICK_QUEUE for all picks.
@@ -293,6 +319,8 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
    public:
     explicit QueuePicker(RefCountedPtr<LoadBalancingPolicy> parent)
         : parent_(std::move(parent)) {}
+
+    ~QueuePicker() { parent_.reset(DEBUG_LOCATION, "QueuePicker"); }
 
     PickResult Pick(PickArgs args) override;
 
@@ -322,29 +350,20 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
 
   // Note: LB policies MUST NOT call any method on the helper from their
   // constructor.
-  // Note: This will return null after ShutdownLocked() has been called.
   ChannelControlHelper* channel_control_helper() const {
     return channel_control_helper_.get();
-  }
-
-  channelz::ClientChannelNode* channelz_node() const {
-    return channelz_node_.get();
   }
 
   /// Shuts down the policy.
   virtual void ShutdownLocked() GRPC_ABSTRACT;
 
  private:
-  static void ShutdownAndUnrefLocked(void* arg, grpc_error* ignored);
-
   /// Combiner under which LB policy actions take place.
   grpc_combiner* combiner_;
   /// Owned pointer to interested parties in load balancing decisions.
   grpc_pollset_set* interested_parties_;
   /// Channel control helper.
   UniquePtr<ChannelControlHelper> channel_control_helper_;
-  /// Channelz node.
-  RefCountedPtr<channelz::ClientChannelNode> channelz_node_;
 };
 
 }  // namespace grpc_core

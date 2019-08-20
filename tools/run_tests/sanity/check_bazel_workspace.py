@@ -45,13 +45,28 @@ _TWISTED_CONSTANTLY_DEP_NAME = 'com_github_twisted_constantly'
 _GRPC_DEP_NAMES = [
     'upb',
     'boringssl',
-    'com_github_madler_zlib',
+    'zlib',
     'com_google_protobuf',
     'com_github_google_googletest',
     'com_github_gflags_gflags',
     'com_github_nanopb_nanopb',
     'com_github_google_benchmark',
     'com_github_cares_cares',
+    'com_google_absl',
+    'io_opencensus_cpp',
+    'envoy_api',
+    _BAZEL_SKYLIB_DEP_NAME,
+    _BAZEL_TOOLCHAINS_DEP_NAME,
+    _TWISTED_TWISTED_DEP_NAME,
+    _YAML_PYYAML_DEP_NAME,
+    _TWISTED_INCREMENTAL_DEP_NAME,
+    _ZOPEFOUNDATION_ZOPE_INTERFACE_DEP_NAME,
+    _TWISTED_CONSTANTLY_DEP_NAME,
+    'io_bazel_rules_go',
+    'build_bazel_rules_apple',
+]
+
+_GRPC_BAZEL_ONLY_DEPS = [
     'com_google_absl',
     'io_opencensus_cpp',
     _BAZEL_SKYLIB_DEP_NAME,
@@ -61,16 +76,8 @@ _GRPC_DEP_NAMES = [
     _TWISTED_INCREMENTAL_DEP_NAME,
     _ZOPEFOUNDATION_ZOPE_INTERFACE_DEP_NAME,
     _TWISTED_CONSTANTLY_DEP_NAME,
-]
-
-_GRPC_BAZEL_ONLY_DEPS = [
-    _BAZEL_SKYLIB_DEP_NAME,
-    _BAZEL_TOOLCHAINS_DEP_NAME,
-    _TWISTED_TWISTED_DEP_NAME,
-    _YAML_PYYAML_DEP_NAME,
-    _TWISTED_INCREMENTAL_DEP_NAME,
-    _ZOPEFOUNDATION_ZOPE_INTERFACE_DEP_NAME,
-    _TWISTED_CONSTANTLY_DEP_NAME,
+    'io_bazel_rules_go',
+    'build_bazel_rules_apple',
 ]
 
 
@@ -101,6 +108,16 @@ class BazelEvalState(object):
             return
         self.names_and_urls[args['name']] = args['url']
 
+    def git_repository(self, **args):
+        assert self.names_and_urls.get(args['name']) is None
+        if args['name'] in _GRPC_BAZEL_ONLY_DEPS:
+            self.names_and_urls[args['name']] = 'dont care'
+            return
+        self.names_and_urls[args['name']] = args['remote']
+
+    def grpc_python_deps(self):
+        pass
+
 
 # Parse git hashes from bazel/grpc_deps.bzl {new_}http_archive rules
 with open(os.path.join('bazel', 'grpc_deps.bzl'), 'r') as f:
@@ -116,8 +133,10 @@ build_rules = {
     'native': eval_state,
     'http_archive': lambda **args: eval_state.http_archive(**args),
     'load': lambda a, b: None,
+    'git_repository': lambda **args: eval_state.git_repository(**args),
+    'grpc_python_deps': lambda: None,
 }
-exec bazel_file in build_rules
+exec (bazel_file) in build_rules
 for name in _GRPC_DEP_NAMES:
     assert name in names_and_urls.keys()
 assert len(_GRPC_DEP_NAMES) == len(names_and_urls.keys())
@@ -157,8 +176,10 @@ for name in _GRPC_DEP_NAMES:
         'native': state,
         'http_archive': lambda **args: state.http_archive(**args),
         'load': lambda a, b: None,
+        'git_repository': lambda **args: state.git_repository(**args),
+        'grpc_python_deps': lambda *args, **kwargs: None,
     }
-    exec bazel_file in rules
+    exec (bazel_file) in rules
     assert name not in names_and_urls_with_overridden_name.keys()
 
 sys.exit(0)

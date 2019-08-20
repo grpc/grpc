@@ -23,6 +23,7 @@
 
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
+#include <grpc/support/string_util.h>
 
 #include "src/core/lib/channel/channel_trace.h"
 #include "src/core/lib/channel/channelz.h"
@@ -174,7 +175,7 @@ TEST(ChannelTracerTest, ComplexTest) {
   AddSimpleTrace(&tracer);
   ChannelFixture channel1(kEventListMemoryLimit);
   RefCountedPtr<ChannelNode> sc1 = MakeRefCounted<ChannelNode>(
-      channel1.channel(), kEventListMemoryLimit, true);
+      UniquePtr<char>(gpr_strdup("fake_target")), kEventListMemoryLimit, 0);
   ChannelNodePeer sc1_peer(sc1.get());
   tracer.AddTraceEventWithReference(
       ChannelTrace::Severity::Info,
@@ -193,7 +194,7 @@ TEST(ChannelTracerTest, ComplexTest) {
   ValidateChannelTrace(&tracer, 5);
   ChannelFixture channel2(kEventListMemoryLimit);
   RefCountedPtr<ChannelNode> sc2 = MakeRefCounted<ChannelNode>(
-      channel2.channel(), kEventListMemoryLimit, true);
+      UniquePtr<char>(gpr_strdup("fake_target")), kEventListMemoryLimit, 0);
   tracer.AddTraceEventWithReference(
       ChannelTrace::Severity::Info,
       grpc_slice_from_static_string("LB channel two created"), sc2);
@@ -222,7 +223,7 @@ TEST(ChannelTracerTest, TestNesting) {
   ValidateChannelTrace(&tracer, 2);
   ChannelFixture channel1(kEventListMemoryLimit);
   RefCountedPtr<ChannelNode> sc1 = MakeRefCounted<ChannelNode>(
-      channel1.channel(), kEventListMemoryLimit, true);
+      UniquePtr<char>(gpr_strdup("fake_target")), kEventListMemoryLimit, 0);
   ChannelNodePeer sc1_peer(sc1.get());
   tracer.AddTraceEventWithReference(
       ChannelTrace::Severity::Info,
@@ -231,7 +232,7 @@ TEST(ChannelTracerTest, TestNesting) {
   AddSimpleTrace(sc1_peer.trace());
   ChannelFixture channel2(kEventListMemoryLimit);
   RefCountedPtr<ChannelNode> conn1 = MakeRefCounted<ChannelNode>(
-      channel2.channel(), kEventListMemoryLimit, true);
+      UniquePtr<char>(gpr_strdup("fake_target")), kEventListMemoryLimit, 0);
   ChannelNodePeer conn1_peer(conn1.get());
   // nesting one level deeper.
   sc1_peer.trace()->AddTraceEventWithReference(
@@ -245,7 +246,7 @@ TEST(ChannelTracerTest, TestNesting) {
   ValidateChannelTrace(conn1_peer.trace(), 1);
   ChannelFixture channel3(kEventListMemoryLimit);
   RefCountedPtr<ChannelNode> sc2 = MakeRefCounted<ChannelNode>(
-      channel3.channel(), kEventListMemoryLimit, true);
+      UniquePtr<char>(gpr_strdup("fake_target")), kEventListMemoryLimit, 0);
   tracer.AddTraceEventWithReference(
       ChannelTrace::Severity::Info,
       grpc_slice_from_static_string("subchannel two created"), sc2);

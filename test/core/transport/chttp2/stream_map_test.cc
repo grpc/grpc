@@ -43,29 +43,6 @@ static void test_empty_find(void) {
   grpc_chttp2_stream_map_destroy(&map);
 }
 
-/* test it's safe to delete twice */
-static void test_double_deletion(void) {
-  grpc_chttp2_stream_map map;
-
-  LOG_TEST("test_double_deletion");
-
-  grpc_chttp2_stream_map_init(&map, 8);
-  GPR_ASSERT(0 == grpc_chttp2_stream_map_size(&map));
-  grpc_chttp2_stream_map_add(&map, 1, (void*)1);
-  GPR_ASSERT((void*)1 == grpc_chttp2_stream_map_find(&map, 1));
-  GPR_ASSERT(1 == grpc_chttp2_stream_map_size(&map));
-  GPR_ASSERT((void*)1 == grpc_chttp2_stream_map_delete(&map, 1));
-  GPR_ASSERT(0 == grpc_chttp2_stream_map_size(&map));
-  GPR_ASSERT(nullptr == grpc_chttp2_stream_map_find(&map, 1));
-  GPR_ASSERT(nullptr == grpc_chttp2_stream_map_delete(&map, 1));
-  GPR_ASSERT(nullptr == grpc_chttp2_stream_map_find(&map, 1));
-  GPR_ASSERT(nullptr == grpc_chttp2_stream_map_delete(&map, 1));
-  GPR_ASSERT(nullptr == grpc_chttp2_stream_map_find(&map, 1));
-  GPR_ASSERT(nullptr == grpc_chttp2_stream_map_delete(&map, 1));
-  GPR_ASSERT(nullptr == grpc_chttp2_stream_map_find(&map, 1));
-  grpc_chttp2_stream_map_destroy(&map);
-}
-
 /* test add & lookup */
 static void test_basic_add_find(uint32_t n) {
   grpc_chttp2_stream_map map;
@@ -197,7 +174,6 @@ int main(int argc, char** argv) {
 
   test_no_op();
   test_empty_find();
-  test_double_deletion();
 
   while (n < 100000) {
     test_basic_add_find(n);

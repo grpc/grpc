@@ -1007,13 +1007,13 @@ static void recv_initial_filter(grpc_call* call, grpc_metadata_batch* b) {
     GPR_TIMER_SCOPE("incoming_stream_compression_algorithm", 0);
     set_incoming_stream_compression_algorithm(
         call, decode_stream_compression(b->idx.named.content_encoding->md));
-    grpc_metadata_batch_remove(b, b->idx.named.content_encoding);
+    grpc_metadata_batch_remove(b, GRPC_BATCH_CONTENT_ENCODING);
   }
   if (b->idx.named.grpc_encoding != nullptr) {
     GPR_TIMER_SCOPE("incoming_message_compression_algorithm", 0);
     set_incoming_message_compression_algorithm(
         call, decode_message_compression(b->idx.named.grpc_encoding->md));
-    grpc_metadata_batch_remove(b, b->idx.named.grpc_encoding);
+    grpc_metadata_batch_remove(b, GRPC_BATCH_GRPC_ENCODING);
   }
   uint32_t message_encodings_accepted_by_peer = 1u;
   uint32_t stream_encodings_accepted_by_peer = 1u;
@@ -1021,13 +1021,13 @@ static void recv_initial_filter(grpc_call* call, grpc_metadata_batch* b) {
     GPR_TIMER_SCOPE("encodings_accepted_by_peer", 0);
     set_encodings_accepted_by_peer(call, b->idx.named.grpc_accept_encoding->md,
                                    &message_encodings_accepted_by_peer, false);
-    grpc_metadata_batch_remove(b, b->idx.named.grpc_accept_encoding);
+    grpc_metadata_batch_remove(b, GRPC_BATCH_GRPC_ACCEPT_ENCODING);
   }
   if (b->idx.named.accept_encoding != nullptr) {
     GPR_TIMER_SCOPE("stream_encodings_accepted_by_peer", 0);
     set_encodings_accepted_by_peer(call, b->idx.named.accept_encoding->md,
                                    &stream_encodings_accepted_by_peer, true);
-    grpc_metadata_batch_remove(b, b->idx.named.accept_encoding);
+    grpc_metadata_batch_remove(b, GRPC_BATCH_ACCEPT_ENCODING);
   }
   call->encodings_accepted_by_peer =
       grpc_compression_bitset_from_message_stream_compression_bitset(
@@ -1059,13 +1059,13 @@ static void recv_trailing_filter(void* args, grpc_metadata_batch* b,
       error = grpc_error_set_str(
           error, GRPC_ERROR_STR_GRPC_MESSAGE,
           grpc_slice_ref_internal(GRPC_MDVALUE(b->idx.named.grpc_message->md)));
-      grpc_metadata_batch_remove(b, b->idx.named.grpc_message);
+      grpc_metadata_batch_remove(b, GRPC_BATCH_GRPC_MESSAGE);
     } else if (error != GRPC_ERROR_NONE) {
       error = grpc_error_set_str(error, GRPC_ERROR_STR_GRPC_MESSAGE,
                                  grpc_empty_slice());
     }
     set_final_status(call, GRPC_ERROR_REF(error));
-    grpc_metadata_batch_remove(b, b->idx.named.grpc_status);
+    grpc_metadata_batch_remove(b, GRPC_BATCH_GRPC_STATUS);
     GRPC_ERROR_UNREF(error);
   } else if (!call->is_client) {
     set_final_status(call, GRPC_ERROR_NONE);
@@ -1175,6 +1175,12 @@ static void post_batch_completion(batch_control* bctl) {
         &call->metadata_batch[0 /* is_receiving */][0 /* is_trailing */]);
   }
   if (bctl->op.send_message) {
+    if (bctl->op.payload->send_message.stream_write_closed &&
+        error == GRPC_ERROR_NONE) {
+      error = grpc_error_add_child(
+          error, GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+                     "Attempt to send message after stream was closed."));
+    }
     call->sending_message = false;
   }
   if (bctl->op.send_trailing_metadata) {
@@ -1568,6 +1574,10 @@ static grpc_call_error call_start_batch(grpc_call* call, const grpc_op* ops,
           error = GRPC_CALL_ERROR_TOO_MANY_OPERATIONS;
           goto done_with_error;
         }
+        // TODO(juanlishen): If the user has already specified a compression
+        // algorithm by setting the initial metadata with key of
+        // GRPC_COMPRESSION_REQUEST_ALGORITHM_MD_KEY, we shouldn't override that
+        // with the compression algorithm mapped from compression level.
         /* process compression level */
         grpc_metadata& compression_md = call->compression_md;
         compression_md.key = grpc_empty_slice();
@@ -1589,17 +1599,18 @@ static grpc_call_error call_start_batch(grpc_call* call, const grpc_op* ops,
             effective_compression_level = copts.default_level.level;
           }
         }
+        // Currently, only server side supports compression level setting.
         if (level_set && !call->is_client) {
           const grpc_compression_algorithm calgo =
               compression_algorithm_for_level_locked(
                   call, effective_compression_level);
-          /* the following will be picked up by the compress filter and used
-           * as the call's compression algorithm. */
+          // The following metadata will be checked and removed by the message
+          // compression filter. It will be used as the call's compression
+          // algorithm.
           compression_md.key = GRPC_MDSTR_GRPC_INTERNAL_ENCODING_REQUEST;
           compression_md.value = grpc_compression_algorithm_slice(calgo);
           additional_metadata_count++;
         }
-
         if (op->data.send_initial_metadata.count + additional_metadata_count >
             INT_MAX) {
           error = GRPC_CALL_ERROR_INVALID_METADATA;

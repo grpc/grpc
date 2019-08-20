@@ -17,6 +17,7 @@
  */
 
 #ifdef GRPC_TEST_OBJC
+#import <Foundation/Foundation.h>
 
 /**
  * Logs the op batches of a client. Used for testing.

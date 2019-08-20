@@ -13,7 +13,7 @@
 @rem limitations under the License.
 
 @rem Current package versions
-set VERSION=1.22.0-dev
+set VERSION=2.24.0-dev
 
 @rem Adjust the location of nuget.exe
 set NUGET=C:\nuget\nuget.exe
@@ -64,7 +64,9 @@ copy /Y nativelibs\csharp_ext_macos_ios\libgrpc.a unitypackage\unitypackage_skel
 
 @rem add gRPC dependencies
 @rem TODO(jtattermusch): also include XMLdoc
-copy /Y Grpc.Core\bin\Release\net45\System.Interactive.Async.dll unitypackage\unitypackage_skeleton\Plugins\System.Interactive.Async\lib\net45\System.Interactive.Async.dll || goto :error
+copy /Y Grpc.Core\bin\Release\net45\System.Runtime.CompilerServices.Unsafe.dll unitypackage\unitypackage_skeleton\Plugins\System.Runtime.CompilerServices.Unsafe\lib\net45\System.Runtime.CompilerServices.Unsafe.dll || goto :error
+copy /Y Grpc.Core\bin\Release\net45\System.Buffers.dll unitypackage\unitypackage_skeleton\Plugins\System.Buffers\lib\net45\System.Buffers.dll || goto :error
+copy /Y Grpc.Core\bin\Release\net45\System.Memory.dll unitypackage\unitypackage_skeleton\Plugins\System.Memory\lib\net45\System.Memory.dll || goto :error
 
 @rem add Google.Protobuf
 @rem TODO(jtattermusch): also include XMLdoc

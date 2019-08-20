@@ -80,7 +80,7 @@ namespace Grpc.Core.Tests
                 // A fairly relaxed check that the deadline set by client and deadline seen by server
                 // are in agreement. C core takes care of the work with transferring deadline over the wire,
                 // so we don't need an exact check here.
-                Assert.IsTrue(Math.Abs((clientDeadline - context.Deadline).TotalMilliseconds) < 5000);
+                Assert.IsTrue(Math.Abs((clientDeadline - context.Deadline).TotalHours) < 1);
                 return Task.FromResult("PASS");
             });
             Calls.BlockingUnaryCall(helper.CreateUnaryCall(new CallOptions(deadline: clientDeadline)), "abc");

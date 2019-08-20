@@ -38,7 +38,7 @@ namespace Grpc.Core
         private readonly Metadata responseTrailers;
         private Status status;
         private readonly IServerResponseStream serverResponseStream;
-        private readonly Lazy<AuthContext> authContext;
+        private AuthContext lazyAuthContext;
 
         /// <summary>
         /// Creates a new instance of <c>ServerCallContext</c>.
@@ -57,8 +57,6 @@ namespace Grpc.Core
             this.responseTrailers = new Metadata();
             this.status = Status.DefaultSuccess;
             this.serverResponseStream = serverResponseStream;
-            // TODO(jtattermusch): avoid unnecessary allocation of factory function and the lazy object
-            this.authContext = new Lazy<AuthContext>(GetAuthContextEager);
         }
 
         protected override ContextPropagationToken CreatePropagationTokenCore(ContextPropagationOptions options)
@@ -97,7 +95,7 @@ namespace Grpc.Core
             set => serverResponseStream.WriteOptions = value;
         }
 
-        protected override AuthContext AuthContextCore => authContext.Value;
+        protected override AuthContext AuthContextCore => lazyAuthContext ?? (lazyAuthContext = GetAuthContextEager());
 
         private AuthContext GetAuthContextEager()
         {

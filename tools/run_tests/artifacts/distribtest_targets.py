@@ -336,7 +336,6 @@ def targets():
         PythonDistribTest('linux', 'x64', 'ubuntu1404', source=True),
         PythonDistribTest('linux', 'x64', 'ubuntu1604', source=True),
         RubyDistribTest('linux', 'x64', 'wheezy'),
-        RubyDistribTest('linux', 'x64', 'jessie', ruby_version='ruby_2_2'),
         RubyDistribTest('linux', 'x64', 'jessie', ruby_version='ruby_2_3'),
         RubyDistribTest('linux', 'x64', 'jessie', ruby_version='ruby_2_4'),
         RubyDistribTest('linux', 'x64', 'jessie', ruby_version='ruby_2_5'),

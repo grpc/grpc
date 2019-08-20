@@ -53,7 +53,7 @@ typedef struct uv_socket_t {
   char* read_buf;
   size_t read_len;
 
-  bool pending_connection;
+  int pending_connections;
   grpc_custom_socket* accept_socket;
   grpc_error* accept_error;
 
@@ -206,7 +206,7 @@ static grpc_error* uv_socket_init_helper(uv_socket_t* uv_socket, int domain) {
   // Node uses a garbage collector to call destructors, so we don't
   // want to hold the uv loop open with active gRPC objects.
   uv_unref((uv_handle_t*)uv_socket->handle);
-  uv_socket->pending_connection = false;
+  uv_socket->pending_connections = 0;
   uv_socket->accept_socket = nullptr;
   uv_socket->accept_error = GRPC_ERROR_NONE;
   return GRPC_ERROR_NONE;
@@ -243,14 +243,14 @@ static grpc_error* uv_socket_getsockname(grpc_custom_socket* socket,
 
 static void accept_new_connection(grpc_custom_socket* socket) {
   uv_socket_t* uv_socket = (uv_socket_t*)socket->impl;
-  if (!uv_socket->pending_connection || !uv_socket->accept_socket) {
+  if (uv_socket->pending_connections == 0 || !uv_socket->accept_socket) {
     return;
   }
   grpc_custom_socket* new_socket = uv_socket->accept_socket;
   grpc_error* error = uv_socket->accept_error;
   uv_socket->accept_socket = nullptr;
   uv_socket->accept_error = GRPC_ERROR_NONE;
-  uv_socket->pending_connection = false;
+  uv_socket->pending_connections -= 1;
   if (uv_socket->accept_error != GRPC_ERROR_NONE) {
     uv_stream_t dummy_handle;
     uv_accept((uv_stream_t*)uv_socket->handle, &dummy_handle);
@@ -270,8 +270,6 @@ static void accept_new_connection(grpc_custom_socket* socket) {
 static void uv_on_connect(uv_stream_t* server, int status) {
   grpc_custom_socket* socket = (grpc_custom_socket*)server->data;
   uv_socket_t* uv_socket = (uv_socket_t*)socket->impl;
-  GPR_ASSERT(!uv_socket->pending_connection);
-  uv_socket->pending_connection = true;
   if (status < 0) {
     switch (status) {
       case UV_EINTR:
@@ -281,6 +279,7 @@ static void uv_on_connect(uv_stream_t* server, int status) {
         uv_socket->accept_error = tcp_error_create("accept failed", status);
     }
   }
+  uv_socket->pending_connections += 1;
   accept_new_connection(socket);
 }
 

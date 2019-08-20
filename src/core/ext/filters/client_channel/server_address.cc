@@ -20,8 +20,6 @@
 
 #include "src/core/ext/filters/client_channel/server_address.h"
 
-#include <string.h>
-
 namespace grpc_core {
 
 //
@@ -39,12 +37,10 @@ ServerAddress::ServerAddress(const void* address, size_t address_len,
   address_.len = static_cast<socklen_t>(address_len);
 }
 
-int ServerAddress::Cmp(const ServerAddress& other) const {
-  if (address_.len > other.address_.len) return 1;
-  if (address_.len < other.address_.len) return -1;
-  int retval = memcmp(address_.addr, other.address_.addr, address_.len);
-  if (retval != 0) return retval;
-  return grpc_channel_args_compare(args_, other.args_);
+bool ServerAddress::operator==(const ServerAddress& other) const {
+  return address_.len == other.address_.len &&
+         memcmp(address_.addr, other.address_.addr, address_.len) == 0 &&
+         grpc_channel_args_compare(args_, other.args_) == 0;
 }
 
 bool ServerAddress::IsBalancer() const {

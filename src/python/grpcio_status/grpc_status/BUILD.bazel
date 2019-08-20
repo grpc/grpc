@@ -7,7 +7,7 @@ py_library(
     srcs = ["rpc_status.py",],
     deps = [
         "//src/python/grpcio/grpc:grpcio",
-        requirement('protobuf'),
+        "@com_google_protobuf//:protobuf_python",
         requirement('googleapis-common-protos'),
     ],
     imports=["../",],

@@ -28,7 +28,9 @@
 #include <string.h>
 
 #include "src/core/lib/gpr/murmur_hash.h"
+#include "src/core/lib/gprpp/memory.h"
 #include "src/core/lib/gprpp/ref_counted.h"
+#include "src/core/lib/slice/slice_utils.h"
 #include "src/core/lib/transport/static_metadata.h"
 
 // Interned slices have specific fast-path operations for hashing. To inline
@@ -94,6 +96,8 @@ extern uint32_t g_hash_seed;
 // In total, this saves us roughly 1-2% latency for unary calls, with smaller
 // calls benefitting. The effect is present, but not as useful, for larger calls
 // where the cost of sending the data dominates.
+// TODO(arjunroy): Investigate if this can be removed with strongly typed
+// grpc_slices.
 struct grpc_slice_refcount {
  public:
   enum class Type {
@@ -169,6 +173,19 @@ struct grpc_slice_refcount {
 };
 
 namespace grpc_core {
+
+struct StaticSliceRefcount {
+  static grpc_slice_refcount kStaticSubRefcount;
+
+  StaticSliceRefcount(uint32_t index)
+      : base(&kStaticSubRefcount, grpc_slice_refcount::Type::STATIC),
+        index(index) {}
+
+  grpc_slice_refcount base;
+  uint32_t index;
+};
+
+extern grpc_slice_refcount kNoopRefcount;
 
 struct InternedSliceRefcount {
   static void Destroy(void* arg) {
@@ -302,9 +319,16 @@ inline uint32_t grpc_slice_hash_internal(const grpc_slice& s) {
                                : grpc_slice_hash_refcounted(s);
 }
 
+grpc_slice grpc_slice_from_moved_buffer(grpc_core::UniquePtr<char> p,
+                                        size_t len);
+grpc_slice grpc_slice_from_moved_string(grpc_core::UniquePtr<char> p);
+
 // Returns the memory used by this slice, not counting the slice structure
 // itself. This means that inlined and slices from static strings will return
 // 0. All other slices will return the size of the allocated chars.
 size_t grpc_slice_memory_usage(grpc_slice s);
+
+grpc_core::UnmanagedMemorySlice grpc_slice_sub_no_ref(
+    const grpc_core::UnmanagedMemorySlice& source, size_t begin, size_t end);
 
 #endif /* GRPC_CORE_LIB_SLICE_SLICE_INTERNAL_H */

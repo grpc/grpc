@@ -20,6 +20,8 @@
 
 #include <string>
 
+#include <grpc/support/log.h>
+
 #include "src/core/ext/filters/client_channel/lb_policy.h"
 #include "src/core/ext/filters/client_channel/lb_policy_registry.h"
 #include "src/core/lib/channel/channel_args.h"
@@ -72,12 +74,6 @@ class ForwardingLoadBalancingPolicy : public LoadBalancingPolicy {
 
   void ResetBackoffLocked() override { delegate_->ResetBackoffLocked(); }
 
-  void FillChildRefsForChannelz(
-      channelz::ChildRefsList* child_subchannels,
-      channelz::ChildRefsList* child_channels) override {
-    delegate_->FillChildRefsForChannelz(child_subchannels, child_channels);
-  }
-
  private:
   void ShutdownLocked() override { delegate_.reset(); }
 
@@ -121,9 +117,15 @@ class InterceptRecvTrailingMetadataLoadBalancingPolicy
           user_data_(user_data) {}
 
     PickResult Pick(PickArgs args) override {
+      // Check that we can read initial metadata.
+      gpr_log(GPR_INFO, "initial metadata:");
+      InterceptRecvTrailingMetadataLoadBalancingPolicy::LogMetadata(
+          args.initial_metadata);
+      // Do pick.
       PickResult result = delegate_picker_->Pick(args);
+      // Intercept trailing metadata.
       if (result.type == PickResult::PICK_COMPLETE &&
-          result.connected_subchannel != nullptr) {
+          result.subchannel != nullptr) {
         new (args.call_state->Alloc(sizeof(TrailingMetadataHandler)))
             TrailingMetadataHandler(&result, cb_, user_data_);
       }
@@ -159,6 +161,10 @@ class InterceptRecvTrailingMetadataLoadBalancingPolicy
       parent_->channel_control_helper()->RequestReresolution();
     }
 
+    void AddTraceEvent(TraceSeverity severity, const char* message) override {
+      parent_->channel_control_helper()->AddTraceEvent(severity, message);
+    }
+
    private:
     RefCountedPtr<InterceptRecvTrailingMetadataLoadBalancingPolicy> parent_;
     InterceptRecvTrailingMetadataCallback cb_;
@@ -177,11 +183,14 @@ class InterceptRecvTrailingMetadataLoadBalancingPolicy
 
    private:
     static void RecordRecvTrailingMetadata(
-        void* arg, grpc_metadata_batch* recv_trailing_metadata,
+        void* arg, grpc_error* error, MetadataInterface* recv_trailing_metadata,
         CallState* call_state) {
       TrailingMetadataHandler* self =
           static_cast<TrailingMetadataHandler*>(arg);
       GPR_ASSERT(recv_trailing_metadata != nullptr);
+      gpr_log(GPR_INFO, "trailing metadata:");
+      InterceptRecvTrailingMetadataLoadBalancingPolicy::LogMetadata(
+          recv_trailing_metadata);
       self->cb_(self->user_data_);
       self->~TrailingMetadataHandler();
     }
@@ -189,6 +198,17 @@ class InterceptRecvTrailingMetadataLoadBalancingPolicy
     InterceptRecvTrailingMetadataCallback cb_;
     void* user_data_;
   };
+
+  static void LogMetadata(MetadataInterface* metadata) {
+    for (MetadataInterface::Iterator it = metadata->Begin();
+         !metadata->IsEnd(it); metadata->Next(&it)) {
+      gpr_log(GPR_INFO, "  \"%.*s\"=>\"%.*s\"",
+              static_cast<int>(metadata->Key(it).size()),
+              metadata->Key(it).data(),
+              static_cast<int>(metadata->Value(it).size()),
+              metadata->Value(it).data());
+    }
+  }
 };
 
 class InterceptTrailingFactory : public LoadBalancingPolicyFactory {

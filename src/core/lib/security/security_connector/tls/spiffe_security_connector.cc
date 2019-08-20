@@ -28,7 +28,7 @@
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
 
-#include "src/core/lib/gpr/host_port.h"
+#include "src/core/lib/gprpp/host_port.h"
 #include "src/core/lib/security/credentials/ssl/ssl_credentials.h"
 #include "src/core/lib/security/credentials/tls/spiffe_credentials.h"
 #include "src/core/lib/security/security_connector/ssl_utils.h"
@@ -37,6 +37,8 @@
 #include "src/core/lib/transport/transport.h"
 #include "src/core/tsi/ssl_transport_security.h"
 #include "src/core/tsi/transport_security.h"
+
+namespace grpc_core {
 
 namespace {
 
@@ -58,41 +60,54 @@ tsi_ssl_pem_key_cert_pair* ConvertToTsiPemKeyCertPair(
   return tsi_pairs;
 }
 
-/** -- Util function to populate SPIFFE server/channel credentials. -- */
-grpc_core::RefCountedPtr<grpc_tls_key_materials_config>
-PopulateSpiffeCredentials(const grpc_tls_credentials_options& options) {
-  GPR_ASSERT(options.credential_reload_config() != nullptr ||
-             options.key_materials_config() != nullptr);
-  grpc_core::RefCountedPtr<grpc_tls_key_materials_config> key_materials_config;
+}  // namespace
+
+/** -- Util function to fetch SPIFFE server/channel credentials. -- */
+grpc_status_code TlsFetchKeyMaterials(
+    const grpc_core::RefCountedPtr<grpc_tls_key_materials_config>&
+        key_materials_config,
+    const grpc_tls_credentials_options& options,
+    grpc_ssl_certificate_config_reload_status* reload_status) {
+  GPR_ASSERT(key_materials_config != nullptr);
+  bool is_key_materials_empty =
+      key_materials_config->pem_key_cert_pair_list().empty();
+  if (options.credential_reload_config() == nullptr && is_key_materials_empty) {
+    gpr_log(GPR_ERROR,
+            "Either credential reload config or key materials should be "
+            "provisioned.");
+    return GRPC_STATUS_FAILED_PRECONDITION;
+  }
+  grpc_status_code status = GRPC_STATUS_OK;
   /* Use credential reload config to fetch credentials. */
   if (options.credential_reload_config() != nullptr) {
     grpc_tls_credential_reload_arg* arg =
         grpc_core::New<grpc_tls_credential_reload_arg>();
-    key_materials_config = grpc_tls_key_materials_config_create()->Ref();
     arg->key_materials_config = key_materials_config.get();
     int result = options.credential_reload_config()->Schedule(arg);
     if (result) {
       /* Do not support async credential reload. */
       gpr_log(GPR_ERROR, "Async credential reload is unsupported now.");
+      status =
+          is_key_materials_empty ? GRPC_STATUS_UNIMPLEMENTED : GRPC_STATUS_OK;
     } else {
-      grpc_ssl_certificate_config_reload_status status = arg->status;
-      if (status == GRPC_SSL_CERTIFICATE_CONFIG_RELOAD_UNCHANGED) {
+      GPR_ASSERT(reload_status != nullptr);
+      *reload_status = arg->status;
+      if (arg->status == GRPC_SSL_CERTIFICATE_CONFIG_RELOAD_UNCHANGED) {
+        /* Key materials is not empty. */
         gpr_log(GPR_DEBUG, "Credential does not change after reload.");
-      } else if (status == GRPC_SSL_CERTIFICATE_CONFIG_RELOAD_FAIL) {
-        gpr_log(GPR_ERROR, "Credential reload failed with an error: %s",
-                arg->error_details);
+      } else if (arg->status == GRPC_SSL_CERTIFICATE_CONFIG_RELOAD_FAIL) {
+        gpr_log(GPR_ERROR, "Credential reload failed with an error:");
+        if (arg->error_details != nullptr) {
+          gpr_log(GPR_ERROR, "%s", arg->error_details);
+        }
+        status = is_key_materials_empty ? GRPC_STATUS_INTERNAL : GRPC_STATUS_OK;
       }
     }
     gpr_free((void*)arg->error_details);
     grpc_core::Delete(arg);
-    /* Use existing key materials config. */
-  } else {
-    key_materials_config = options.key_materials_config()->Ref();
   }
-  return key_materials_config;
+  return status;
 }
-
-}  // namespace
 
 SpiffeChannelSecurityConnector::SpiffeChannelSecurityConnector(
     grpc_core::RefCountedPtr<grpc_channel_credentials> channel_creds,
@@ -104,21 +119,20 @@ SpiffeChannelSecurityConnector::SpiffeChannelSecurityConnector(
       overridden_target_name_(overridden_target_name == nullptr
                                   ? nullptr
                                   : gpr_strdup(overridden_target_name)) {
+  key_materials_config_ = grpc_tls_key_materials_config_create()->Ref();
   check_arg_ = ServerAuthorizationCheckArgCreate(this);
-  char* port;
-  gpr_split_host_port(target_name, &target_name_, &port);
-  gpr_free(port);
+  grpc_core::StringView host;
+  grpc_core::StringView port;
+  grpc_core::SplitHostPort(target_name, &host, &port);
+  target_name_ = host.dup();
 }
 
 SpiffeChannelSecurityConnector::~SpiffeChannelSecurityConnector() {
-  if (target_name_ != nullptr) {
-    gpr_free(target_name_);
-  }
-  if (overridden_target_name_ != nullptr) {
-    gpr_free(overridden_target_name_);
-  }
   if (client_handshaker_factory_ != nullptr) {
     tsi_ssl_client_handshaker_factory_unref(client_handshaker_factory_);
+  }
+  if (key_materials_config_.get() != nullptr) {
+    key_materials_config_.get()->Unref();
   }
   ServerAuthorizationCheckArgDestroy(check_arg_);
 }
@@ -126,12 +140,16 @@ SpiffeChannelSecurityConnector::~SpiffeChannelSecurityConnector() {
 void SpiffeChannelSecurityConnector::add_handshakers(
     grpc_pollset_set* interested_parties,
     grpc_core::HandshakeManager* handshake_mgr) {
+  if (RefreshHandshakerFactory() != GRPC_SECURITY_OK) {
+    gpr_log(GPR_ERROR, "Handshaker factory refresh failed.");
+    return;
+  }
   // Instantiate TSI handshaker.
   tsi_handshaker* tsi_hs = nullptr;
   tsi_result result = tsi_ssl_client_handshaker_factory_create_handshaker(
       client_handshaker_factory_,
-      overridden_target_name_ != nullptr ? overridden_target_name_
-                                         : target_name_,
+      overridden_target_name_ != nullptr ? overridden_target_name_.get()
+                                         : target_name_.get(),
       &tsi_hs);
   if (result != TSI_OK) {
     gpr_log(GPR_ERROR, "Handshaker creation failed with error %s.",
@@ -147,8 +165,8 @@ void SpiffeChannelSecurityConnector::check_peer(
     grpc_core::RefCountedPtr<grpc_auth_context>* auth_context,
     grpc_closure* on_peer_checked) {
   const char* target_name = overridden_target_name_ != nullptr
-                                ? overridden_target_name_
-                                : target_name_;
+                                ? overridden_target_name_.get()
+                                : target_name_.get();
   grpc_error* error = grpc_ssl_check_alpn(&peer);
   if (error != GRPC_ERROR_NONE) {
     GRPC_CLOSURE_SCHED(on_peer_checked, error);
@@ -203,16 +221,17 @@ int SpiffeChannelSecurityConnector::cmp(
   if (c != 0) {
     return c;
   }
-  return grpc_ssl_cmp_target_name(target_name_, other->target_name_,
-                                  overridden_target_name_,
-                                  other->overridden_target_name_);
+  return grpc_ssl_cmp_target_name(target_name_.get(), other->target_name_.get(),
+                                  overridden_target_name_.get(),
+                                  other->overridden_target_name_.get());
 }
 
 bool SpiffeChannelSecurityConnector::check_call_host(
-    const char* host, grpc_auth_context* auth_context,
+    grpc_core::StringView host, grpc_auth_context* auth_context,
     grpc_closure* on_call_host_checked, grpc_error** error) {
-  return grpc_ssl_check_call_host(host, target_name_, overridden_target_name_,
-                                  auth_context, on_call_host_checked, error);
+  return grpc_ssl_check_call_host(host, target_name_.get(),
+                                  overridden_target_name_.get(), auth_context,
+                                  on_call_host_checked, error);
 }
 
 void SpiffeChannelSecurityConnector::cancel_check_call_host(
@@ -243,30 +262,73 @@ SpiffeChannelSecurityConnector::CreateSpiffeChannelSecurityConnector(
           std::move(channel_creds), std::move(request_metadata_creds),
           target_name, overridden_target_name);
   if (c->InitializeHandshakerFactory(ssl_session_cache) != GRPC_SECURITY_OK) {
+    gpr_log(GPR_ERROR, "Could not initialize client handshaker factory.");
     return nullptr;
   }
   return c;
 }
 
+grpc_security_status SpiffeChannelSecurityConnector::ReplaceHandshakerFactory(
+    tsi_ssl_session_cache* ssl_session_cache) {
+  /* Free the client handshaker factory if exists. */
+  if (client_handshaker_factory_) {
+    tsi_ssl_client_handshaker_factory_unref(client_handshaker_factory_);
+  }
+  GPR_ASSERT(!key_materials_config_->pem_key_cert_pair_list().empty());
+  tsi_ssl_pem_key_cert_pair* pem_key_cert_pair = ConvertToTsiPemKeyCertPair(
+      key_materials_config_->pem_key_cert_pair_list());
+  grpc_security_status status = grpc_ssl_tsi_client_handshaker_factory_init(
+      pem_key_cert_pair, key_materials_config_->pem_root_certs(),
+      ssl_session_cache, &client_handshaker_factory_);
+  /* Free memory. */
+  grpc_tsi_ssl_pem_key_cert_pairs_destroy(pem_key_cert_pair, 1);
+  return status;
+}
+
 grpc_security_status
 SpiffeChannelSecurityConnector::InitializeHandshakerFactory(
     tsi_ssl_session_cache* ssl_session_cache) {
+  grpc_core::MutexLock lock(&mu_);
   const SpiffeCredentials* creds =
       static_cast<const SpiffeCredentials*>(channel_creds());
-  auto key_materials_config = PopulateSpiffeCredentials(creds->options());
-  if (key_materials_config->pem_key_cert_pair_list().empty()) {
-    key_materials_config->Unref();
+  grpc_tls_key_materials_config* key_materials_config =
+      creds->options().key_materials_config();
+  /* Copy key materials config from credential options. */
+  if (key_materials_config != nullptr) {
+    grpc_tls_key_materials_config::PemKeyCertPairList cert_pair_list =
+        key_materials_config->pem_key_cert_pair_list();
+    auto pem_root_certs = grpc_core::UniquePtr<char>(
+        gpr_strdup(key_materials_config->pem_root_certs()));
+    key_materials_config_->set_key_materials(std::move(pem_root_certs),
+                                             std::move(cert_pair_list));
+  }
+  grpc_ssl_certificate_config_reload_status reload_status =
+      GRPC_SSL_CERTIFICATE_CONFIG_RELOAD_UNCHANGED;
+  if (TlsFetchKeyMaterials(key_materials_config_, creds->options(),
+                           &reload_status) != GRPC_STATUS_OK) {
+    /* Raise an error if key materials are not populated. */
     return GRPC_SECURITY_ERROR;
   }
-  tsi_ssl_pem_key_cert_pair* pem_key_cert_pair = ConvertToTsiPemKeyCertPair(
-      key_materials_config->pem_key_cert_pair_list());
-  grpc_security_status status = grpc_ssl_tsi_client_handshaker_factory_init(
-      pem_key_cert_pair, key_materials_config->pem_root_certs(),
-      ssl_session_cache, &client_handshaker_factory_);
-  // Free memory.
-  key_materials_config->Unref();
-  grpc_tsi_ssl_pem_key_cert_pairs_destroy(pem_key_cert_pair, 1);
-  return status;
+  return ReplaceHandshakerFactory(ssl_session_cache);
+}
+
+grpc_security_status
+SpiffeChannelSecurityConnector::RefreshHandshakerFactory() {
+  grpc_core::MutexLock lock(&mu_);
+  const SpiffeCredentials* creds =
+      static_cast<const SpiffeCredentials*>(channel_creds());
+  grpc_ssl_certificate_config_reload_status reload_status =
+      GRPC_SSL_CERTIFICATE_CONFIG_RELOAD_UNCHANGED;
+  if (TlsFetchKeyMaterials(key_materials_config_, creds->options(),
+                           &reload_status) != GRPC_STATUS_OK) {
+    return GRPC_SECURITY_ERROR;
+  }
+  if (reload_status != GRPC_SSL_CERTIFICATE_CONFIG_RELOAD_NEW) {
+    // Re-use existing handshaker factory.
+    return GRPC_SECURITY_OK;
+  } else {
+    return ReplaceHandshakerFactory(nullptr);
+  }
 }
 
 void SpiffeChannelSecurityConnector::ServerAuthorizationCheckDone(
@@ -336,19 +398,28 @@ void SpiffeChannelSecurityConnector::ServerAuthorizationCheckArgDestroy(
 SpiffeServerSecurityConnector::SpiffeServerSecurityConnector(
     grpc_core::RefCountedPtr<grpc_server_credentials> server_creds)
     : grpc_server_security_connector(GRPC_SSL_URL_SCHEME,
-                                     std::move(server_creds)) {}
+                                     std::move(server_creds)) {
+  key_materials_config_ = grpc_tls_key_materials_config_create()->Ref();
+}
 
 SpiffeServerSecurityConnector::~SpiffeServerSecurityConnector() {
   if (server_handshaker_factory_ != nullptr) {
     tsi_ssl_server_handshaker_factory_unref(server_handshaker_factory_);
+  }
+  if (key_materials_config_.get() != nullptr) {
+    key_materials_config_.get()->Unref();
   }
 }
 
 void SpiffeServerSecurityConnector::add_handshakers(
     grpc_pollset_set* interested_parties,
     grpc_core::HandshakeManager* handshake_mgr) {
+  /* Refresh handshaker factory if needed. */
+  if (RefreshHandshakerFactory() != GRPC_SECURITY_OK) {
+    gpr_log(GPR_ERROR, "Handshaker factory refresh failed.");
+    return;
+  }
   /* Create a TLS SPIFFE TSI handshaker for server. */
-  RefreshServerHandshakerFactory();
   tsi_handshaker* tsi_hs = nullptr;
   tsi_result result = tsi_ssl_server_handshaker_factory_create_handshaker(
       server_handshaker_factory_, &tsi_hs);
@@ -388,39 +459,76 @@ SpiffeServerSecurityConnector::CreateSpiffeServerSecurityConnector(
   grpc_core::RefCountedPtr<SpiffeServerSecurityConnector> c =
       grpc_core::MakeRefCounted<SpiffeServerSecurityConnector>(
           std::move(server_creds));
-  if (c->RefreshServerHandshakerFactory() != GRPC_SECURITY_OK) {
+  if (c->InitializeHandshakerFactory() != GRPC_SECURITY_OK) {
+    gpr_log(GPR_ERROR, "Could not initialize server handshaker factory.");
     return nullptr;
   }
   return c;
 }
 
-grpc_security_status
-SpiffeServerSecurityConnector::RefreshServerHandshakerFactory() {
+grpc_security_status SpiffeServerSecurityConnector::ReplaceHandshakerFactory() {
   const SpiffeServerCredentials* creds =
       static_cast<const SpiffeServerCredentials*>(server_creds());
-  auto key_materials_config = PopulateSpiffeCredentials(creds->options());
-  /* Credential reload does NOT take effect and we need to keep using
-   * the existing handshaker factory. */
-  if (key_materials_config->pem_key_cert_pair_list().empty()) {
-    key_materials_config->Unref();
-    return GRPC_SECURITY_ERROR;
-  }
-  /* Credential reload takes effect and we need to free the existing
-   * handshaker library. */
+  /* Free the server handshaker factory if exists. */
   if (server_handshaker_factory_) {
     tsi_ssl_server_handshaker_factory_unref(server_handshaker_factory_);
   }
+  GPR_ASSERT(!key_materials_config_->pem_key_cert_pair_list().empty());
   tsi_ssl_pem_key_cert_pair* pem_key_cert_pairs = ConvertToTsiPemKeyCertPair(
-      key_materials_config->pem_key_cert_pair_list());
+      key_materials_config_->pem_key_cert_pair_list());
   size_t num_key_cert_pairs =
-      key_materials_config->pem_key_cert_pair_list().size();
+      key_materials_config_->pem_key_cert_pair_list().size();
   grpc_security_status status = grpc_ssl_tsi_server_handshaker_factory_init(
       pem_key_cert_pairs, num_key_cert_pairs,
-      key_materials_config->pem_root_certs(),
+      key_materials_config_->pem_root_certs(),
       creds->options().cert_request_type(), &server_handshaker_factory_);
-  // Free memory.
-  key_materials_config->Unref();
+  /* Free memory. */
   grpc_tsi_ssl_pem_key_cert_pairs_destroy(pem_key_cert_pairs,
                                           num_key_cert_pairs);
   return status;
 }
+
+grpc_security_status
+SpiffeServerSecurityConnector::InitializeHandshakerFactory() {
+  grpc_core::MutexLock lock(&mu_);
+  const SpiffeServerCredentials* creds =
+      static_cast<const SpiffeServerCredentials*>(server_creds());
+  grpc_tls_key_materials_config* key_materials_config =
+      creds->options().key_materials_config();
+  if (key_materials_config != nullptr) {
+    grpc_tls_key_materials_config::PemKeyCertPairList cert_pair_list =
+        key_materials_config->pem_key_cert_pair_list();
+    auto pem_root_certs = grpc_core::UniquePtr<char>(
+        gpr_strdup(key_materials_config->pem_root_certs()));
+    key_materials_config_->set_key_materials(std::move(pem_root_certs),
+                                             std::move(cert_pair_list));
+  }
+  grpc_ssl_certificate_config_reload_status reload_status =
+      GRPC_SSL_CERTIFICATE_CONFIG_RELOAD_UNCHANGED;
+  if (TlsFetchKeyMaterials(key_materials_config_, creds->options(),
+                           &reload_status) != GRPC_STATUS_OK) {
+    /* Raise an error if key materials are not populated. */
+    return GRPC_SECURITY_ERROR;
+  }
+  return ReplaceHandshakerFactory();
+}
+
+grpc_security_status SpiffeServerSecurityConnector::RefreshHandshakerFactory() {
+  grpc_core::MutexLock lock(&mu_);
+  const SpiffeServerCredentials* creds =
+      static_cast<const SpiffeServerCredentials*>(server_creds());
+  grpc_ssl_certificate_config_reload_status reload_status =
+      GRPC_SSL_CERTIFICATE_CONFIG_RELOAD_UNCHANGED;
+  if (TlsFetchKeyMaterials(key_materials_config_, creds->options(),
+                           &reload_status) != GRPC_STATUS_OK) {
+    return GRPC_SECURITY_ERROR;
+  }
+  if (reload_status != GRPC_SSL_CERTIFICATE_CONFIG_RELOAD_NEW) {
+    /* At this point, we should have key materials populated. */
+    return GRPC_SECURITY_OK;
+  } else {
+    return ReplaceHandshakerFactory();
+  }
+}
+
+}  // namespace grpc_core

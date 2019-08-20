@@ -216,7 +216,7 @@ namespace Grpc.Testing {
     {
       /// <summary>Creates a new client for TestService</summary>
       /// <param name="channel">The channel to use to make remote calls.</param>
-      public TestServiceClient(grpc::Channel channel) : base(channel)
+      public TestServiceClient(grpc::ChannelBase channel) : base(channel)
       {
       }
       /// <summary>Creates a new client for TestService that uses a custom <c>CallInvoker</c>.</summary>
@@ -602,7 +602,7 @@ namespace Grpc.Testing {
     {
       /// <summary>Creates a new client for UnimplementedService</summary>
       /// <param name="channel">The channel to use to make remote calls.</param>
-      public UnimplementedServiceClient(grpc::Channel channel) : base(channel)
+      public UnimplementedServiceClient(grpc::ChannelBase channel) : base(channel)
       {
       }
       /// <summary>Creates a new client for UnimplementedService that uses a custom <c>CallInvoker</c>.</summary>
@@ -741,7 +741,7 @@ namespace Grpc.Testing {
     {
       /// <summary>Creates a new client for ReconnectService</summary>
       /// <param name="channel">The channel to use to make remote calls.</param>
-      public ReconnectServiceClient(grpc::Channel channel) : base(channel)
+      public ReconnectServiceClient(grpc::ChannelBase channel) : base(channel)
       {
       }
       /// <summary>Creates a new client for ReconnectService that uses a custom <c>CallInvoker</c>.</summary>
