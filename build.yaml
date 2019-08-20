@@ -6199,7 +6199,7 @@ defaults:
     CXXFLAGS: $(W_NO_CXX14_COMPAT)
   global:
     COREFLAGS: -fno-rtti -fno-exceptions
-    CPPFLAGS: -g -Wall -Wextra -Werror -Wno-unknown-warning-option -Wno-long-long
+    CPPFLAGS: -g -Wall -Wextra -Werror $(W_NO_UNKNOWN_WARNING_OPTION) -Wno-long-long
       -Wno-unused-parameter -Wno-deprecated-declarations -Wno-sign-conversion -Wno-shadow
       -Wno-conversion -Wno-implicit-fallthrough -Wno-sign-compare -Wno-missing-field-initializers
       -Wno-maybe-uninitialized -DPB_FIELD_32BIT -DOSATOMIC_USE_INLINED=1 -Ithird_party/nanopb
