@@ -819,6 +819,7 @@ struct grpc_tls_credential_reload_arg {
   grpc_tls_key_materials_config* key_materials_config;
   grpc_ssl_certificate_config_reload_status status;
   const char* error_details;
+  grpc_tls_credential_reload_config* config;
 };
 
 /** Create a grpc_tls_credential_reload_config instance.
@@ -881,6 +882,7 @@ struct grpc_tls_server_authorization_check_arg {
   const char* peer_cert;
   grpc_status_code status;
   const char* error_details;
+  grpc_tls_server_authorization_check_arg* config;
 };
 
 /** Create a grpc_tls_server_authorization_check_config instance.

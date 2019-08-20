@@ -75,7 +75,7 @@ class TlsCredentialReloadArg {
   void* cb_user_data() const;
   ::std::shared_ptr<TlsKeyMaterialsConfig> key_materials_config() const;
   grpc_ssl_certificate_config_reload_status status() const;
-  grpc::string error_details() const;
+  ::std::shared_ptr<grpc::string> error_details() const;
 
   /** Setters for member fields. **/
   void set_cb_user_data(void* cb_user_data);
@@ -144,10 +144,10 @@ class TlsServerAuthorizationCheckArg {
   /** Getters for member fields. **/
   void* cb_user_data() const;
   int success() const;
-  grpc::string target_name() const;
-  grpc::string peer_cert() const;
+  ::std::shared_ptr<grpc::string> target_name() const;
+  ::std::shared_ptr<grpc::string> peer_cert() const;
   grpc_status_code status() const;
-  grpc::string error_details() const;
+  ::std::shared_ptr<grpc::string> error_details() const;
 
   /** Setters for member fields. **/
   void set_cb_user_data(void* cb_user_data);
@@ -216,7 +216,7 @@ class TlsCredentialsOptions {
   grpc_ssl_client_certificate_request_type cert_request_type() const {
     return cert_request_type_;
   }
-  std::shared_ptr<TlsKeyMaterialsConfig> key_materials_config() const {
+  ::std::shared_ptr<TlsKeyMaterialsConfig> key_materials_config() const {
     return key_materials_config_;
   }
   ::std::shared_ptr<TlsCredentialReloadConfig> credential_reload_config()

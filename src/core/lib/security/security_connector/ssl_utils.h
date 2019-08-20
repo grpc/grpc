@@ -137,10 +137,6 @@ class PemKeyCertPair {
         cert_chain_(const_cast<char*>(pair->cert_chain)) {
     gpr_free(pair);
   }
-  // Construct directly from the two strings.
-  explicit PemKeyCertPair(const char* private_key, const char* cert_chain)
-      : private_key_(grpc_core::UniquePtr<char>(gpr_strdup(private_key))),
-        cert_chain_(grpc_core::UniquePtr<char>(gpr_strdup(cert_chain))) {}
 
   // Movable.
   PemKeyCertPair(PemKeyCertPair&& other) {
