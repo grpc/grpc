@@ -30,13 +30,13 @@
 #import <GRPCClient/GRPCInterceptor.h>
 #import <GRPCClient/internal_testing/GRPCCall+InternalTests.h>
 #import <ProtoRPC/ProtoRPC.h>
-#import <RemoteTest/Messages.pbobjc.h>
-#import <RemoteTest/Test.pbobjc.h>
-#import <RemoteTest/Test.pbrpc.h>
 #import <RxLibrary/GRXBufferedPipe.h>
 #import <RxLibrary/GRXWriter+Immediate.h>
 #import <grpc/grpc.h>
 #import <grpc/support/log.h>
+#import "src/objective-c/tests/RemoteTestClient/Messages.pbobjc.h"
+#import "src/objective-c/tests/RemoteTestClient/Test.pbobjc.h"
+#import "src/objective-c/tests/RemoteTestClient/Test.pbrpc.h"
 
 #import "../ConfigureCronet.h"
 #import "InteropTestsBlockCallbacks.h"
@@ -404,6 +404,14 @@ static dispatch_once_t initGlobalInterceptorFactory;
 
 @implementation InteropTests {
   RMTTestService *_service;
+}
+
++ (XCTestSuite *)defaultTestSuite {
+  if (self == [InteropTests class]) {
+    return [XCTestSuite testSuiteWithName:@"InteropTestsEmptySuite"];
+  } else {
+    return super.defaultTestSuite;
+  }
 }
 
 + (NSString *)host {

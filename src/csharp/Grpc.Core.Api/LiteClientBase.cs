@@ -17,6 +17,7 @@
 #endregion
 
 using System;
+using Grpc.Core.Internal;
 using Grpc.Core.Utils;
 
 namespace Grpc.Core
@@ -57,41 +58,6 @@ namespace Grpc.Core
         protected CallInvoker CallInvoker
         {
             get { return this.callInvoker; }
-        }
-
-        /// <summary>
-        /// Call invoker that throws <c>NotImplementedException</c> for all requests.
-        /// </summary>
-        private class UnimplementedCallInvoker : CallInvoker
-        {
-            public UnimplementedCallInvoker()
-            {
-            }
-
-            public override TResponse BlockingUnaryCall<TRequest, TResponse>(Method<TRequest, TResponse> method, string host, CallOptions options, TRequest request)
-            {
-                throw new NotImplementedException();
-            }
-
-            public override AsyncUnaryCall<TResponse> AsyncUnaryCall<TRequest, TResponse>(Method<TRequest, TResponse> method, string host, CallOptions options, TRequest request)
-            {
-                throw new NotImplementedException();
-            }
-
-            public override AsyncServerStreamingCall<TResponse> AsyncServerStreamingCall<TRequest, TResponse>(Method<TRequest, TResponse> method, string host, CallOptions options, TRequest request)
-            {
-                throw new NotImplementedException();
-            }
-
-            public override AsyncClientStreamingCall<TRequest, TResponse> AsyncClientStreamingCall<TRequest, TResponse>(Method<TRequest, TResponse> method, string host, CallOptions options)
-            {
-                throw new NotImplementedException();
-            }
-
-            public override AsyncDuplexStreamingCall<TRequest, TResponse> AsyncDuplexStreamingCall<TRequest, TResponse>(Method<TRequest, TResponse> method, string host, CallOptions options)
-            {
-                throw new NotImplementedException();
-            }
         }
     }
 }

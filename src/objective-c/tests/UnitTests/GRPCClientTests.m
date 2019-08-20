@@ -26,10 +26,10 @@
 #import <GRPCClient/GRPCCall.h>
 #import <GRPCClient/internal_testing/GRPCCall+InternalTests.h>
 #import <ProtoRPC/ProtoMethod.h>
-#import <RemoteTest/Messages.pbobjc.h>
 #import <RxLibrary/GRXBufferedPipe.h>
 #import <RxLibrary/GRXWriteable.h>
 #import <RxLibrary/GRXWriter+Immediate.h>
+#import "src/objective-c/tests/RemoteTestClient/Messages.pbobjc.h"
 
 #include <netinet/in.h>
 

@@ -2,6 +2,8 @@
 
 load("@bazel_tools//tools/build_defs/repo:git.bzl", "git_repository")
 load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
+load("@com_github_grpc_grpc//bazel:grpc_python_deps.bzl", "grpc_python_deps")
+
 
 def grpc_deps():
     """Loads dependencies need to compile and test the grpc library."""
@@ -189,11 +191,10 @@ def grpc_deps():
         )
 
     if "bazel_skylib" not in native.existing_rules():
-        http_archive(
+        git_repository(
             name = "bazel_skylib",
-            sha256 = "ba5d15ca230efca96320085d8e4d58da826d1f81b444ef8afccd8b23e0799b52",
-            strip_prefix = "bazel-skylib-f83cb8dd6f5658bc574ccd873e25197055265d1c",
-            url = "https://github.com/bazelbuild/bazel-skylib/archive/f83cb8dd6f5658bc574ccd873e25197055265d1c.tar.gz",
+            remote = "https://github.com/bazelbuild/bazel-skylib",
+            tag = "0.9.0",
         )
 
     if "io_opencensus_cpp" not in native.existing_rules():
@@ -206,9 +207,9 @@ def grpc_deps():
     if "upb" not in native.existing_rules():
         http_archive(
             name = "upb",
-            sha256 = "73deded75313f80779eba109c32f3c59a813addf5064bf6e7c213fca1e7d8e32",
-            strip_prefix = "upb-423ea5ca9ce8da69611e6e95559efcb3a1ba8ad8",
-            url = "https://github.com/protocolbuffers/upb/archive/423ea5ca9ce8da69611e6e95559efcb3a1ba8ad8.tar.gz",
+            sha256 = "95150db57b51b65f3422c38953956e0f786945d842d76f8ab685fbcd93ab5caa",
+            strip_prefix = "upb-931bbecbd3230ae7f22efa5d203639facc47f719",
+            url = "https://github.com/protocolbuffers/upb/archive/931bbecbd3230ae7f22efa5d203639facc47f719.tar.gz",
         )
     if "envoy_api" not in native.existing_rules():
         http_archive(
@@ -224,6 +225,17 @@ def grpc_deps():
             urls = ["https://github.com/bazelbuild/rules_go/releases/download/0.18.5/rules_go-0.18.5.tar.gz"],
             sha256 = "a82a352bffae6bee4e95f68a8d80a70e87f42c4741e6a448bec11998fcc82329",
         )
+
+    if "build_bazel_rules_apple" not in native.existing_rules():
+        git_repository(
+            name = "build_bazel_rules_apple",
+            remote = "https://github.com/bazelbuild/rules_apple.git",
+            tag = "0.17.2",
+        )
+
+    grpc_python_deps()
+
+
 # TODO: move some dependencies from "grpc_deps" here?
 def grpc_test_only_deps():
     """Internal, not intended for use by packages that are consuming grpc.
@@ -282,3 +294,4 @@ def grpc_test_only_deps():
             url = "https://github.com/twisted/constantly/archive/15.1.0.zip",
             build_file = "@com_github_grpc_grpc//third_party:constantly.BUILD",
         )
+

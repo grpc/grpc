@@ -25,6 +25,7 @@
 #import <CoreFoundation/CoreFoundation.h>
 #import "src/core/lib/iomgr/cfstream_handle.h"
 
+#include <grpc/grpc.h>
 #include <grpc/support/atm.h>
 #include <grpc/support/sync.h>
 
@@ -34,6 +35,10 @@
 #include "src/core/lib/iomgr/exec_ctx.h"
 
 extern grpc_core::TraceFlag grpc_tcp_trace;
+
+GrpcLibraryInitHolder::GrpcLibraryInitHolder() { grpc_init(); }
+
+GrpcLibraryInitHolder::~GrpcLibraryInitHolder() { grpc_shutdown(); }
 
 void* CFStreamHandle::Retain(void* info) {
   CFStreamHandle* handle = static_cast<CFStreamHandle*>(info);

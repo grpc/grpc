@@ -320,6 +320,54 @@ class CallData {
  private:
   class QueuedPickCanceller;
 
+  class Metadata : public LoadBalancingPolicy::MetadataInterface {
+   public:
+    Metadata(CallData* calld, grpc_metadata_batch* batch)
+        : calld_(calld), batch_(batch) {}
+
+    void Add(StringView key, StringView value) override {
+      grpc_linked_mdelem* linked_mdelem = static_cast<grpc_linked_mdelem*>(
+          calld_->arena_->Alloc(sizeof(grpc_linked_mdelem)));
+      linked_mdelem->md = grpc_mdelem_from_slices(
+          grpc_core::ExternallyManagedSlice(key.data(), key.size()),
+          grpc_core::ExternallyManagedSlice(value.data(), value.size()));
+      GPR_ASSERT(grpc_metadata_batch_link_tail(batch_, linked_mdelem) ==
+                 GRPC_ERROR_NONE);
+    }
+
+    Iterator Begin() const override {
+      static_assert(sizeof(grpc_linked_mdelem*) <= sizeof(Iterator),
+                    "iterator size too large");
+      return reinterpret_cast<Iterator>(batch_->list.head);
+    }
+    bool IsEnd(Iterator it) const override {
+      return reinterpret_cast<grpc_linked_mdelem*>(it) == nullptr;
+    }
+    void Next(Iterator* it) const override {
+      *it = reinterpret_cast<Iterator>(
+          reinterpret_cast<grpc_linked_mdelem*>(*it)->next);
+    }
+    StringView Key(Iterator it) const override {
+      return StringView(
+          GRPC_MDKEY(reinterpret_cast<grpc_linked_mdelem*>(it)->md));
+    }
+    StringView Value(Iterator it) const override {
+      return StringView(
+          GRPC_MDVALUE(reinterpret_cast<grpc_linked_mdelem*>(it)->md));
+    }
+
+    void Erase(Iterator* it) override {
+      grpc_linked_mdelem* linked_mdelem =
+          reinterpret_cast<grpc_linked_mdelem*>(*it);
+      *it = reinterpret_cast<Iterator>(linked_mdelem->next);
+      grpc_metadata_batch_remove(batch_, linked_mdelem);
+    }
+
+   private:
+    CallData* calld_;
+    grpc_metadata_batch* batch_;
+  };
+
   class LbCallState : public LoadBalancingPolicy::CallState {
    public:
     explicit LbCallState(CallData* calld) : calld_(calld) {}
@@ -660,7 +708,8 @@ class CallData {
   LbCallState lb_call_state_;
   RefCountedPtr<ConnectedSubchannel> connected_subchannel_;
   void (*lb_recv_trailing_metadata_ready_)(
-      void* user_data, grpc_metadata_batch* recv_trailing_metadata,
+      void* user_data, grpc_error* error,
+      LoadBalancingPolicy::MetadataInterface* recv_trailing_metadata,
       LoadBalancingPolicy::CallState* call_state) = nullptr;
   void* lb_recv_trailing_metadata_ready_user_data_ = nullptr;
   grpc_closure pick_closure_;
@@ -1461,7 +1510,7 @@ void ChannelData::CreateResolvingLoadBalancingPolicyLocked() {
       UniquePtr<LoadBalancingPolicy::ChannelControlHelper>(
           New<ClientChannelControlHelper>(this));
   lb_args.args = channel_args_;
-  UniquePtr<char> target_uri(strdup(target_uri_.get()));
+  UniquePtr<char> target_uri(gpr_strdup(target_uri_.get()));
   resolving_lb_policy_.reset(New<ResolvingLoadBalancingPolicy>(
       std::move(lb_args), &grpc_client_channel_routing_trace,
       std::move(target_uri), ProcessResolverResultLocked, this));
@@ -2109,9 +2158,10 @@ void CallData::RecvTrailingMetadataReadyForLoadBalancingPolicy(
     void* arg, grpc_error* error) {
   CallData* calld = static_cast<CallData*>(arg);
   // Invoke callback to LB policy.
+  Metadata trailing_metadata(calld, calld->recv_trailing_metadata_);
   calld->lb_recv_trailing_metadata_ready_(
-      calld->lb_recv_trailing_metadata_ready_user_data_,
-      calld->recv_trailing_metadata_, &calld->lb_call_state_);
+      calld->lb_recv_trailing_metadata_ready_user_data_, error,
+      &trailing_metadata, &calld->lb_call_state_);
   // Chain to original callback.
   GRPC_CLOSURE_RUN(calld->original_recv_trailing_metadata_ready_,
                    GRPC_ERROR_REF(error));
@@ -3136,8 +3186,7 @@ void CallData::AddRetriableSendInitialMetadataOp(
   if (GPR_UNLIKELY(retry_state->send_initial_metadata.idx.named
                        .grpc_previous_rpc_attempts != nullptr)) {
     grpc_metadata_batch_remove(&retry_state->send_initial_metadata,
-                               retry_state->send_initial_metadata.idx.named
-                                   .grpc_previous_rpc_attempts);
+                               GRPC_BATCH_GRPC_PREVIOUS_RPC_ATTEMPTS);
   }
   if (GPR_UNLIKELY(num_attempts_completed_ > 0)) {
     grpc_mdelem retry_md = grpc_mdelem_create(
@@ -3147,7 +3196,7 @@ void CallData::AddRetriableSendInitialMetadataOp(
         &retry_state->send_initial_metadata,
         &retry_state
              ->send_initial_metadata_storage[send_initial_metadata_.list.count],
-        retry_md);
+        retry_md, GRPC_BATCH_GRPC_PREVIOUS_RPC_ATTEMPTS);
     if (GPR_UNLIKELY(error != GRPC_ERROR_NONE)) {
       gpr_log(GPR_ERROR, "error adding retry metadata: %s",
               grpc_error_string(error));
@@ -3716,11 +3765,13 @@ void CallData::StartPickLocked(void* arg, grpc_error* error) {
   // attempt) to the LB policy instead the one from the parent channel.
   LoadBalancingPolicy::PickArgs pick_args;
   pick_args.call_state = &calld->lb_call_state_;
-  pick_args.initial_metadata =
+  Metadata initial_metadata(
+      calld,
       calld->seen_send_initial_metadata_
           ? &calld->send_initial_metadata_
           : calld->pending_batches_[0]
-                .batch->payload->send_initial_metadata.send_initial_metadata;
+                .batch->payload->send_initial_metadata.send_initial_metadata);
+  pick_args.initial_metadata = &initial_metadata;
   // Grab initial metadata flags so that we can check later if the call has
   // wait_for_ready enabled.
   const uint32_t send_initial_metadata_flags =

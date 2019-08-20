@@ -252,3 +252,19 @@ grpc_cc_test(
         "//test/core/util:grpc_test_util",
     ],
 )
+
+grpc_cc_test(
+    name = "spiffe_security_connector_test",
+    srcs = ["spiffe_security_connector_test.cc"],
+    language = "C++",
+    external_deps = [
+      "gtest",
+    ],
+    deps = [
+        "//:gpr",
+        "//:grpc",
+        "//:grpc_secure",
+        "//test/core/util:grpc_test_util",
+        "//test/core/end2end:ssl_test_data",
+    ],
+)

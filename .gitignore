@@ -94,6 +94,7 @@ DerivedData
 # Objective-C generated files
 *.pbobjc.*
 *.pbrpc.*
+src/objective-c/**/Build
 
 # Cocoapods artifacts
 Pods/

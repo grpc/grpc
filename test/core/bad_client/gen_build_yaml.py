@@ -68,7 +68,7 @@ def main():
               'cpu_cost': BAD_CLIENT_TESTS[t].cpu_cost,
               'build': 'test',
               'language': 'c++',
-              'secure': 'no',
+              'secure': False,
               'src': ['test/core/bad_client/tests/%s.cc' % t],
               'vs_proj_dir': 'test',
               'exclude_iomgrs': ['uv'],
