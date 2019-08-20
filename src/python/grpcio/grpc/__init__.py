@@ -192,6 +192,9 @@ class Future(six.with_metaclass(abc.ABCMeta)):
         If the computation has already completed, the callback will be called
         immediately.
 
+        Exceptions raised in the callback will be logged at ERROR level, but
+        will not terminate any threads of execution.
+
         Args:
           fn: A callable taking this Future object as its single parameter.
         """
