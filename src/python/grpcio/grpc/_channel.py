@@ -159,7 +159,6 @@ def _event_handler(state, response_deserializer):
             state.condition.notify_all()
             done = not state.due
         for callback in callbacks:
-            # TODO(gnossen): Are these *only* user callbacks?
             try:
                 callback()
             except Exception as e:  # pylint: disable=broad-except
