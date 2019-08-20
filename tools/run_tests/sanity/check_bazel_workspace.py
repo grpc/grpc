@@ -136,7 +136,7 @@ build_rules = {
     'git_repository': lambda **args: eval_state.git_repository(**args),
     'grpc_python_deps': lambda: None,
 }
-exec (bazel_file) in build_rules
+exec(bazel_file) in build_rules
 for name in _GRPC_DEP_NAMES:
     assert name in names_and_urls.keys()
 assert len(_GRPC_DEP_NAMES) == len(names_and_urls.keys())
@@ -179,7 +179,7 @@ for name in _GRPC_DEP_NAMES:
         'git_repository': lambda **args: state.git_repository(**args),
         'grpc_python_deps': lambda *args, **kwargs: None,
     }
-    exec (bazel_file) in rules
+    exec(bazel_file) in rules
     assert name not in names_and_urls_with_overridden_name.keys()
 
 sys.exit(0)
