@@ -23,6 +23,8 @@ set -ev
 
 cd $(dirname $0)
 
+sudo xcode-select -switch /Applications/Xcode_10.1.app/Contents/Developer
+
 BAZEL=../../../tools/bazel
 
 INTEROP=../../../bazel-out/darwin-fastbuild/bin/test/cpp/interop/interop_server
@@ -48,3 +50,5 @@ trap 'kill -9 `jobs -p` ; echo "EXIT TIME:  $(date)"' EXIT
     --copt=-DHOST_PORT_LOCAL=localhost:$PLAIN_PORT \
     --copt=-DHOST_PORT_LOCALSSL=localhost:$TLS_PORT \
     --copt=-Wno-macro-redefined # Overriding macros defined in BUILD
+
+sudo xcode-select -switch /Applications/Xcode_9.2.app/Contents/Developer/
