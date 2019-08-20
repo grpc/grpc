@@ -27,10 +27,6 @@ BAZEL=../../../tools/bazel
 
 INTEROP=../../../bazel-out/darwin-fastbuild/bin/test/cpp/interop/interop_server
 
-[ -d Tests.xcworkspace ] || {
-    ./build_tests.sh
-}
-
 [ -f $INTEROP ] || {
     BAZEL build //test/cpp/interop:interop_server
 }
