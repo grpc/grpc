@@ -221,7 +221,6 @@ class ChannelCloseTest(unittest.TestCase):
         with grpc.insecure_channel('localhost:{}'.format(
                 self._port)) as channel:
             stream_multi_callable = channel.stream_stream(_STREAM_URI)
-            request_iterator = (str(i).encode('ascii') for i in range(9999))
             endless_iterator = EndlessIterator(b'abc')
             stream_response_iterator = stream_multi_callable(endless_iterator)
             future = channel.unary_unary(_UNARY_URI).future(b'abc')
