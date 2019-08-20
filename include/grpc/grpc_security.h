@@ -882,7 +882,7 @@ struct grpc_tls_server_authorization_check_arg {
   const char* peer_cert;
   grpc_status_code status;
   const char* error_details;
-  grpc_tls_server_authorization_check_arg* config;
+  grpc_tls_server_authorization_check_config* config;
 };
 
 /** Create a grpc_tls_server_authorization_check_config instance.

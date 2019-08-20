@@ -26,14 +26,13 @@ namespace experimental {
 /** TLS key materials config API implementation **/
 void TlsKeyMaterialsConfig::set_key_materials(
     grpc::string pem_root_certs,
-    ::std::vector<PemKeyCertPair> pem_key_cert_pair_list) {
-  pem_key_cert_pair_list_ = ::std::move(pem_key_cert_pair_list);
-  pem_root_certs_ = ::std::move(pem_root_certs);
+    std::vector<PemKeyCertPair> pem_key_cert_pair_list) {
+  pem_key_cert_pair_list_ = std::move(pem_key_cert_pair_list);
+  pem_root_certs_ = std::move(pem_root_certs);
 }
 
-namespace {
 /** Creates a new C struct for the key materials. **/
-grpc_tls_key_materials_config* c_key_materials(const ::std::shared_ptr<TlsKeyMaterialsConfig>& config) {
+grpc_tls_key_materials_config* c_key_materials(const std::shared_ptr<TlsKeyMaterialsConfig>& config) {
   grpc_tls_key_materials_config* c_config =
       grpc_tls_key_materials_config_create();
   ::grpc_core::InlinedVector<::grpc_core::PemKeyCertPair, 1>
@@ -50,18 +49,18 @@ grpc_tls_key_materials_config* c_key_materials(const ::std::shared_ptr<TlsKeyMat
     c_pem_key_cert_pair_list.push_back(::std::move(c_pem_key_cert_pair));
   }
   ::grpc_core::UniquePtr<char> c_pem_root_certs(gpr_strdup(config->pem_root_certs().c_str()));
-  c_config->set_key_materials(::std::move(c_pem_root_certs),
-                              ::std::move(c_pem_key_cert_pair_list));
+  c_config->set_key_materials(std::move(c_pem_root_certs),
+                              std::move(c_pem_key_cert_pair_list));
   c_config->set_version(config->version());
   return c_config;
 }
 
 /** Creates a new TlsKeyMaterialsConfig from a C struct config. **/
-::std::shared_ptr<TlsKeyMaterialsConfig> tls_key_materials_c_to_cpp(
+std::shared_ptr<TlsKeyMaterialsConfig> tls_key_materials_c_to_cpp(
     const grpc_tls_key_materials_config* config) {
-  ::std::shared_ptr<TlsKeyMaterialsConfig> cpp_config(
+  std::shared_ptr<TlsKeyMaterialsConfig> cpp_config(
       new TlsKeyMaterialsConfig());
-  ::std::vector<TlsKeyMaterialsConfig::PemKeyCertPair>
+  std::vector<TlsKeyMaterialsConfig::PemKeyCertPair>
       cpp_pem_key_cert_pair_list;
   grpc_tls_key_materials_config::PemKeyCertPairList pem_key_cert_pair_list =
       config->pem_key_cert_pair_list();
@@ -73,12 +72,11 @@ grpc_tls_key_materials_config* c_key_materials(const ::std::shared_ptr<TlsKeyMat
     cpp_pem_key_cert_pair_list.push_back(::std::move(p));
   }
   cpp_config->set_key_materials(
-      ::std::move(gpr_strdup(config->pem_root_certs())),
-      ::std::move(cpp_pem_key_cert_pair_list));
+      std::move(gpr_strdup(config->pem_root_certs())),
+      std::move(cpp_pem_key_cert_pair_list));
   cpp_config->set_version(config->version());
   return cpp_config;
 }
-} // namespace
 
 /** TLS credential reload arg API implementation **/
 TlsCredentialReloadArg::TlsCredentialReloadArg() {}
@@ -97,7 +95,7 @@ void* TlsCredentialReloadArg::cb_user_data() const {
 /** This function creates a new TlsKeyMaterialsConfig instance whose fields are
  * not shared with the corresponding key materials config fields of the
  * TlsCredentialReloadArg instance. **/
-::std::shared_ptr<TlsKeyMaterialsConfig> TlsCredentialReloadArg::key_materials_config() const {
+std::shared_ptr<TlsKeyMaterialsConfig> TlsCredentialReloadArg::key_materials_config() const {
   return tls_key_materials_c_to_cpp(c_arg_.key_materials_config);
 }
 
@@ -105,8 +103,8 @@ grpc_ssl_certificate_config_reload_status TlsCredentialReloadArg::status() const
   return c_arg_.status;
 }
 
-::std::shared_ptr<grpc::string> TlsCredentialReloadArg::error_details() const {
-  ::std::shared_ptr<grpc::string> cpp_error_details(new grpc::string(c_arg_.error_details));
+std::shared_ptr<grpc::string> TlsCredentialReloadArg::error_details() const {
+  std::shared_ptr<grpc::string> cpp_error_details(new grpc::string(c_arg_.error_details));
   return cpp_error_details;
 }
 
@@ -115,7 +113,7 @@ void TlsCredentialReloadArg::set_cb_user_data(void* cb_user_data) {
 }
 
 void TlsCredentialReloadArg::set_key_materials_config(
-    ::std::shared_ptr<TlsKeyMaterialsConfig> key_materials_config) {
+    std::shared_ptr<TlsKeyMaterialsConfig> key_materials_config) {
   c_arg_.key_materials_config = c_key_materials(key_materials_config);
 }
 
@@ -124,7 +122,7 @@ void TlsCredentialReloadArg::set_status(
   c_arg_.status = status;
 }
 
-void TlsCredentialReloadArg::set_error_details(grpc::string error_details) {
+void TlsCredentialReloadArg::set_error_details(const grpc::string& error_details) {
   c_arg_.error_details = gpr_strdup(error_details.c_str());
 }
 
@@ -132,11 +130,6 @@ void TlsCredentialReloadArg::callback() {
   c_arg_.cb(&c_arg_);
 }
 
-void TlsCredentialReloadArg::callback() {
-  c_arg_.cb(c_arg_);
-}
-
-namespace {
 /** The C schedule and cancel functions for the credential reload config. **/
 int tls_credential_reload_config_c_schedule(
     void* config_user_data, grpc_tls_credential_reload_arg* arg) {
@@ -162,7 +155,6 @@ void tls_credential_reload_config_c_cancel(
   arg->status = cpp_arg.status();
   arg->error_details = cpp_arg.error_details()->c_str();
 }
-} // namespace
 
 /** gRPC TLS credential reload config API implementation **/
 TlsCredentialReloadConfig::TlsCredentialReloadConfig(
@@ -198,16 +190,16 @@ void* TlsServerAuthorizationCheckArg::cb_user_data() const {
 
 int TlsServerAuthorizationCheckArg::success() const { return c_arg_.success; }
 
-::std::shared_ptr<grpc::string> TlsServerAuthorizationCheckArg::target_name()
+std::shared_ptr<grpc::string> TlsServerAuthorizationCheckArg::target_name()
     const {
-  ::std::shared_ptr<grpc::string> cpp_target_name(
+  std::shared_ptr<grpc::string> cpp_target_name(
       new grpc::string(c_arg_.target_name));
   return cpp_target_name;
 }
 
-::std::shared_ptr<grpc::string> TlsServerAuthorizationCheckArg::peer_cert()
+std::shared_ptr<grpc::string> TlsServerAuthorizationCheckArg::peer_cert()
     const {
-  ::std::shared_ptr<grpc::string> cpp_peer_cert(
+  std::shared_ptr<grpc::string> cpp_peer_cert(
       new grpc::string(c_arg_.peer_cert));
   return cpp_peer_cert;
 }
@@ -216,9 +208,9 @@ grpc_status_code TlsServerAuthorizationCheckArg::status() const {
   return c_arg_.status;
 }
 
-::std::shared_ptr<grpc::string> TlsServerAuthorizationCheckArg::error_details()
+std::shared_ptr<grpc::string> TlsServerAuthorizationCheckArg::error_details()
     const {
-  ::std::shared_ptr<grpc::string> cpp_error_details(
+  std::shared_ptr<grpc::string> cpp_error_details(
 new grpc::string(c_arg_.error_details));
   return cpp_error_details;
 }
@@ -250,7 +242,6 @@ void TlsServerAuthorizationCheckArg::set_error_details(
   c_arg_.error_details = gpr_strdup(error_details.c_str());
 }
 
-namespace {
 /** The C schedule and cancel functions for the credential reload config. **/
 int tls_server_authorization_check_config_c_schedule(
     void* config_user_data, grpc_tls_server_authorization_check_arg* arg) {
@@ -280,7 +271,6 @@ void tls_server_authorization_check_config_c_cancel(
   arg->status = cpp_arg.status();
   arg->error_details = gpr_strdup(cpp_arg.error_details()->c_str());
 }
-} // namespace
 
 /** gRPC TLS server authorization check config API implementation **/
 TlsServerAuthorizationCheckConfig::TlsServerAuthorizationCheckConfig(

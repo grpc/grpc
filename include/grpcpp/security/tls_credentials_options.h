@@ -39,28 +39,28 @@ class TlsKeyMaterialsConfig {
 
   /** Getters for member fields. **/
   const grpc::string pem_root_certs() const { return pem_root_certs_; }
-  const ::std::vector<PemKeyCertPair>& pem_key_cert_pair_list() const {
+  const std::vector<PemKeyCertPair>& pem_key_cert_pair_list() const {
     return pem_key_cert_pair_list_;
   }
-  const int version() const { return version_; }
+  int version() const { return version_; }
 
   /** Setter for key materials that will be called by the user. The setter
    * transfers ownership of the arguments to the config. **/
   void set_key_materials(grpc::string pem_root_certs,
-                         ::std::vector<PemKeyCertPair> pem_key_cert_pair_list);
+                         std::vector<PemKeyCertPair> pem_key_cert_pair_list);
   void set_version(int version) { version_ = version;};
 
  private:
   int version_;
-  ::std::vector<PemKeyCertPair> pem_key_cert_pair_list_;
+  std::vector<PemKeyCertPair> pem_key_cert_pair_list_;
   grpc::string pem_root_certs_;
 };
 
 /** The following 2 functions are exposed for testing purposes. **/
 grpc_tls_key_materials_config* c_key_materials(
-    const ::std::shared_ptr<TlsKeyMaterialsConfig>& config);
+    const std::shared_ptr<TlsKeyMaterialsConfig>& config);
 
-::std::shared_ptr<TlsKeyMaterialsConfig> tls_key_materials_c_to_cpp(
+std::shared_ptr<TlsKeyMaterialsConfig> tls_key_materials_c_to_cpp(
     const grpc_tls_key_materials_config* config);
 
 
@@ -73,19 +73,19 @@ class TlsCredentialReloadArg {
 
   /** Getters for member fields. The callback function is not exposed. **/
   void* cb_user_data() const;
-  ::std::shared_ptr<TlsKeyMaterialsConfig> key_materials_config() const;
+  std::shared_ptr<TlsKeyMaterialsConfig> key_materials_config() const;
   grpc_ssl_certificate_config_reload_status status() const;
-  ::std::shared_ptr<grpc::string> error_details() const;
+  std::shared_ptr<grpc::string> error_details() const;
 
   /** Setters for member fields. **/
   void set_cb_user_data(void* cb_user_data);
   void set_key_materials_config(
-      ::std::shared_ptr<TlsKeyMaterialsConfig> key_materials_config);
+      std::shared_ptr<TlsKeyMaterialsConfig> key_materials_config);
   void set_status(grpc_ssl_certificate_config_reload_status status);
   void set_error_details(const grpc::string& error_details);
 
   /** Calls the C arg's callback function. **/
-  void callback() ;
+  void callback();
 
  private:
   grpc_tls_credential_reload_arg c_arg_;
@@ -144,10 +144,10 @@ class TlsServerAuthorizationCheckArg {
   /** Getters for member fields. **/
   void* cb_user_data() const;
   int success() const;
-  ::std::shared_ptr<grpc::string> target_name() const;
-  ::std::shared_ptr<grpc::string> peer_cert() const;
+  std::shared_ptr<grpc::string> target_name() const;
+  std::shared_ptr<grpc::string> peer_cert() const;
   grpc_status_code status() const;
-  ::std::shared_ptr<grpc::string> error_details() const;
+  std::shared_ptr<grpc::string> error_details() const;
 
   /** Setters for member fields. **/
   void set_cb_user_data(void* cb_user_data);
@@ -202,7 +202,7 @@ class TlsServerAuthorizationCheckConfig {
   }
 
  private:
-  grpc_tls_server_authorization_check_arg* c_config_;
+  grpc_tls_server_authorization_check_config* c_config_;
   void* config_user_data_;
   int (*schedule_)(void* config_user_data, TlsServerAuthorizationCheckArg* arg);
   void (*cancel_)(void* config_user_data, TlsServerAuthorizationCheckArg* arg);
@@ -216,14 +216,14 @@ class TlsCredentialsOptions {
   grpc_ssl_client_certificate_request_type cert_request_type() const {
     return cert_request_type_;
   }
-  ::std::shared_ptr<TlsKeyMaterialsConfig> key_materials_config() const {
+  std::shared_ptr<TlsKeyMaterialsConfig> key_materials_config() const {
     return key_materials_config_;
   }
-  ::std::shared_ptr<TlsCredentialReloadConfig> credential_reload_config()
+  std::shared_ptr<TlsCredentialReloadConfig> credential_reload_config()
       const {
     return credential_reload_config_;
   }
-  ::std::shared_ptr<TlsServerAuthorizationCheckConfig>
+  std::shared_ptr<TlsServerAuthorizationCheckConfig>
   server_authorization_check_config() const {
     return server_authorization_check_config_;
   }
@@ -234,15 +234,15 @@ class TlsCredentialsOptions {
     cert_request_type_ = type;
   }
   void set_key_materials_config(std::shared_ptr<TlsKeyMaterialsConfig> config) {
-    key_materials_config_ = ::std::move(config);
+    key_materials_config_ = std::move(config);
   }
   void set_credential_reload_config(
-      ::std::shared_ptr<TlsCredentialReloadConfig> config) {
-    credential_reload_config_ = ::std::move(config);
+      std::shared_ptr<TlsCredentialReloadConfig> config) {
+    credential_reload_config_ = std::move(config);
   }
   void set_server_authorization_check_config(
-      ::std::shared_ptr<TlsServerAuthorizationCheckConfig> config) {
-    server_authorization_check_config_ = ::std::move(config);
+      std::shared_ptr<TlsServerAuthorizationCheckConfig> config) {
+    server_authorization_check_config_ = std::move(config);
   }
 
   /** Creates C struct for TLS credential options. **/
@@ -250,9 +250,9 @@ class TlsCredentialsOptions {
 
  private:
   grpc_ssl_client_certificate_request_type cert_request_type_;
-  ::std::shared_ptr<TlsKeyMaterialsConfig> key_materials_config_;
-  ::std::shared_ptr<TlsCredentialReloadConfig> credential_reload_config_;
-  ::std::shared_ptr<TlsServerAuthorizationCheckConfig>
+  std::shared_ptr<TlsKeyMaterialsConfig> key_materials_config_;
+  std::shared_ptr<TlsCredentialReloadConfig> credential_reload_config_;
+  std::shared_ptr<TlsServerAuthorizationCheckConfig>
       server_authorization_check_config_;
 };
 
