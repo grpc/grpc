@@ -13,6 +13,7 @@
 # limitations under the License.
 """Tests server and client side compression."""
 
+import itertools
 import logging
 import threading
 import time
@@ -112,24 +113,6 @@ class _Pipe(object):
         self.close()
 
 
-class EndlessIterator(object):
-
-    def __init__(self, msg):
-        self._msg = msg
-
-    def __iter__(self):
-        return self
-
-    def _next(self):
-        return self._msg
-
-    def __next__(self):
-        return self._next()
-
-    def next(self):
-        return self._next()
-
-
 class ChannelCloseTest(unittest.TestCase):
 
     def setUp(self):
@@ -221,7 +204,7 @@ class ChannelCloseTest(unittest.TestCase):
         with grpc.insecure_channel('localhost:{}'.format(
                 self._port)) as channel:
             stream_multi_callable = channel.stream_stream(_STREAM_URI)
-            endless_iterator = EndlessIterator(b'abc')
+            endless_iterator = itertools.repeat(b'abc')
             stream_response_iterator = stream_multi_callable(endless_iterator)
             future = channel.unary_unary(_UNARY_URI).future(b'abc')
 
