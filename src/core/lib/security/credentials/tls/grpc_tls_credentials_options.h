@@ -65,6 +65,9 @@ struct grpc_tls_credential_reload_config
       void (*destruct)(void* config_user_data));
   ~grpc_tls_credential_reload_config();
 
+  void* context() const { return context_; }
+  void set_context(void* context) { context_ = context; }
+
   int Schedule(grpc_tls_credential_reload_arg* arg) const {
     return schedule_(config_user_data_, arg);
   }
@@ -77,6 +80,7 @@ struct grpc_tls_credential_reload_config
   }
 
  private:
+  void* context_;
   /** config-specific, read-only user data that works for all channels created
      with a credential using the config. */
   void* config_user_data_;
@@ -113,6 +117,9 @@ struct grpc_tls_server_authorization_check_config
       void (*destruct)(void* config_user_data));
   ~grpc_tls_server_authorization_check_config();
 
+  void* context() const { return context_; }
+  void set_context(void* context) { context_ = context; }
+
   int Schedule(grpc_tls_server_authorization_check_arg* arg) const {
     return schedule_(config_user_data_, arg);
   }
@@ -125,6 +132,7 @@ struct grpc_tls_server_authorization_check_config
   }
 
  private:
+  void* context_;
   /** config-specific, read-only user data that works for all channels created
      with a Credential using the config. */
   void* config_user_data_;
