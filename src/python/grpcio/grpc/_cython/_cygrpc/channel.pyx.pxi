@@ -455,9 +455,7 @@ cdef class Channel:
     self._state.c_connectivity_completion_queue = (
         grpc_completion_queue_create_for_next(NULL))
     self._arguments = arguments
-    self._vtable = _VTable()
-    cdef _ChannelArgs channel_args = _ChannelArgs(
-        arguments, self._vtable)
+    cdef _ChannelArgs channel_args = _ChannelArgs(arguments)
     if channel_credentials is None:
       self._state.c_channel = grpc_insecure_channel_create(
           <char *>target, channel_args.c_args(), NULL)
