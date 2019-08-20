@@ -166,6 +166,32 @@ class SignalHandlingTest(unittest.TestCase):
                 self.assertIn(_signal_client.SIGTERM_MESSAGE,
                               client_stdout.read())
 
+    @unittest.skipIf(os.name == 'nt', 'SIGINT not supported on windows')
+    def testUnaryWithException(self):
+        server_target = '{}:{}'.format(_HOST, self._port)
+        with tempfile.TemporaryFile(mode='r') as client_stdout:
+            with tempfile.TemporaryFile(mode='r') as client_stderr:
+                client = _start_client(('--exception', server_target, 'unary'),
+                                       client_stdout, client_stderr)
+                self._handler.await_connected_client()
+                client.send_signal(signal.SIGINT)
+                client.wait()
+                self.assertEqual(0, client.returncode)
+
+    @unittest.skipIf(os.name == 'nt', 'SIGINT not supported on windows')
+    def testStreamingHandlerWithException(self):
+        server_target = '{}:{}'.format(_HOST, self._port)
+        with tempfile.TemporaryFile(mode='r') as client_stdout:
+            with tempfile.TemporaryFile(mode='r') as client_stderr:
+                client = _start_client(
+                    ('--exception', server_target, 'streaming'), client_stdout,
+                    client_stderr)
+                self._handler.await_connected_client()
+                client.send_signal(signal.SIGINT)
+                client.wait()
+                print(_read_stream(client_stderr))
+                self.assertEqual(0, client.returncode)
+
 
 if __name__ == '__main__':
     logging.basicConfig()
