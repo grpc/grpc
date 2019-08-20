@@ -19,6 +19,20 @@ load("//bazel:grpc_build_system.bzl", "grpc_cc_test", "grpc_package")
 grpc_package(name = "test/cpp/common")
 
 grpc_cc_test(
+    name = "demo_test",
+    srcs = ["demo_test.cc"],
+    external_deps = [
+        "gtest",
+    ],
+    deps = [
+        "//:gpr",
+        "//:grpc",
+        "//:grpc++",
+        "//test/core/util:grpc_test_util",
+    ],
+)
+
+grpc_cc_test(
     name = "alarm_test",
     srcs = ["alarm_test.cc"],
     external_deps = [
