@@ -19,7 +19,6 @@
 #ifndef GRPCPP_SECURITY_TLS_CREDENTIALS_OPTIONS_H
 #define GRPCPP_SECURITY_TLS_CREDENTIALS_OPTIONS_H
 
-#include <functional>
 #include <memory>
 #include <vector>
 
@@ -43,20 +42,35 @@ class TlsKeyMaterialsConfig {
   const ::std::vector<PemKeyCertPair>& pem_key_cert_pair_list() const {
     return pem_key_cert_pair_list_;
   }
+  const int version() const { return version_; }
 
   /** Setter for key materials that will be called by the user. The setter
    * transfers ownership of the arguments to the config. **/
   void set_key_materials(grpc::string pem_root_certs,
                          ::std::vector<PemKeyCertPair> pem_key_cert_pair_list);
+  void set_version(int version) { version_ = version;};
 
  private:
+  int version_;
   ::std::vector<PemKeyCertPair> pem_key_cert_pair_list_;
   grpc::string pem_root_certs_;
 };
 
+/** The following 2 functions are exposed for testing purposes. **/
+grpc_tls_key_materials_config* c_key_materials(
+    const ::std::shared_ptr<TlsKeyMaterialsConfig>& config);
+
+::std::shared_ptr<TlsKeyMaterialsConfig> tls_key_materials_c_to_cpp(
+    const grpc_tls_key_materials_config* config);
+
+
 /** TLS credential reload arguments, wraps grpc_tls_credential_reload_arg. **/
 class TlsCredentialReloadArg {
  public:
+  TlsCredentialReloadArg();
+  TlsCredentialReloadArg(grpc_tls_credential_reload_arg arg);
+  ~TlsCredentialReloadArg();
+
   /** Getters for member fields. The callback function is not exposed. **/
   void* cb_user_data() const;
   ::std::shared_ptr<TlsKeyMaterialsConfig> key_materials_config() const;
@@ -68,14 +82,20 @@ class TlsCredentialReloadArg {
   void set_key_materials_config(
       ::std::shared_ptr<TlsKeyMaterialsConfig> key_materials_config);
   void set_status(grpc_ssl_certificate_config_reload_status status);
-  void set_error_details(grpc::string error_details);
+  void set_error_details(const grpc::string& error_details);
 
   /** Calls the C arg's callback function. **/
   void callback() ;
 
  private:
-  grpc_tls_credential_reload_arg* c_arg_;
+  grpc_tls_credential_reload_arg c_arg_;
 };
+
+// Exposed for testing purposes.
+int tls_credential_reload_config_c_schedule(
+    void* config_user_data, grpc_tls_credential_reload_arg* arg);
+void tls_credential_reload_config_c_cancel(void* config_user_data,
+                                           grpc_tls_credential_reload_arg* arg);
 
 /** TLS credential reloag config, wraps grpc_tls_credential_reload_config. **/
 class TlsCredentialReloadConfig {
@@ -99,10 +119,13 @@ class TlsCredentialReloadConfig {
     }
     cancel_(config_user_data_, arg);
   }
-  /** Creates C struct for the credential reload config. **/
-  grpc_tls_credential_reload_config* c_credential_reload() const;
+  /** Returns a C struct for the credential reload config. **/
+  grpc_tls_credential_reload_config* c_credential_reload() const {
+    return c_config_;
+  }
 
  private:
+  grpc_tls_credential_reload_config* c_config_;
   void* config_user_data_;
   int (*schedule_)(void* config_user_data, TlsCredentialReloadArg* arg);
   void (*cancel_)(void* config_user_data, TlsCredentialReloadArg* arg);
@@ -111,57 +134,42 @@ class TlsCredentialReloadConfig {
 
 /** TLS server authorization check arguments, wraps
  *  grpc_tls_server_authorization_check_arg. **/
-typedef class TlsServerAuthorizationCheckArg TlsServerAuthorizationCheckArg;
-
-typedef void (*grpcpp_tls_on_server_authorization_check_done_cb)(
-    TlsServerAuthorizationCheckArg* arg);
 
 class TlsServerAuthorizationCheckArg {
  public:
+  TlsServerAuthorizationCheckArg();
+  TlsServerAuthorizationCheckArg(grpc_tls_server_authorization_check_arg arg);
+  ~TlsServerAuthorizationCheckArg();
+
   /** Getters for member fields. **/
-  grpcpp_tls_on_server_authorization_check_done_cb cb() const { return cb_; }
-  void* cb_user_data() const { return cb_user_data_; }
-  int success() const { return success_; }
-  grpc::string target_name() const { return target_name_; }
-  grpc::string peer_cert() const { return peer_cert_; }
-  grpc_status_code status() const { return status_; }
-  grpc::string error_details() const { return error_details_; }
+  void* cb_user_data() const;
+  int success() const;
+  grpc::string target_name() const;
+  grpc::string peer_cert() const;
+  grpc_status_code status() const;
+  grpc::string error_details() const;
 
   /** Setters for member fields. **/
-  void set_cb(grpcpp_tls_on_server_authorization_check_done_cb cb) { cb_ = cb; }
-  void set_cb_user_data(void* cb_user_data) { cb_user_data_ = cb_user_data; }
-  void set_success(int success) { success_ = success; };
-  void set_target_name(grpc::string target_name) { target_name_ = target_name; }
-  void set_peer_cert(grpc::string peer_cert) {
-    peer_cert_ = ::std::move(peer_cert);
-  }
-  void set_status(grpc_status_code status) { status_ = status; }
-  void set_error_details(grpc::string error_details) {
-    error_details_ = ::std::move(error_details);
-  }
+  void set_cb_user_data(void* cb_user_data);
+  void set_success(int success);
+  void set_target_name(const grpc::string& target_name);
+  void set_peer_cert(const grpc::string& peer_cert);
+  void set_status(grpc_status_code status);
+  void set_error_details(const grpc::string& error_details);
 
-  /** Creates C struct for server authorization check arg. **/
-  grpc_tls_server_authorization_check_arg* c_server_authorization_check_arg()
-      const;
-
-  /** Creates C callback function from C++ callback function. **/
-  grpc_tls_on_server_authorization_check_done_cb c_callback() const;
+  /** Calls the C arg's callback function. **/
+  void callback();
 
  private:
-  grpcpp_tls_on_server_authorization_check_done_cb cb_;
-  void* cb_user_data_;
-  int success_;
-  grpc::string target_name_;
-  grpc::string peer_cert_;
-  grpc_status_code status_;
-  grpc::string error_details_;
+  grpc_tls_server_authorization_check_arg c_arg_;
 };
 
-/** Creates a smart pointer to a C++ version of the server authorization check
- * argument, with the callback function set to a nullptr. **/
-::std::unique_ptr<TlsServerAuthorizationCheckArg>
-tls_server_authorization_check_arg_c_to_cpp(
-    const grpc_tls_server_authorization_check_arg* arg);
+// Exposed for testing purposes.
+int tls_server_authorization_check_config_c_schedule(
+    void* config_user_data, grpc_tls_server_authorization_check_arg* arg);
+void tls_server_authorization_check_config_c_cancel(void* config_user_data,
+                                           grpc_tls_server_authorization_check_arg* arg);
+
 
 /** TLS server authorization check config, wraps
  *  grps_tls_server_authorization_check_config. **/
@@ -188,11 +196,13 @@ class TlsServerAuthorizationCheckConfig {
     cancel_(config_user_data_, arg);
   }
 
-  /** Creates C struct for the server authorization check config. **/
-  grpc_tls_server_authorization_check_config* c_server_authorization_check()
-      const;
+  /** Creates C struct for the credential reload config. **/
+  grpc_tls_server_authorization_check_config* c_server_authorization_check() const {
+    return c_config_;
+  }
 
  private:
+  grpc_tls_server_authorization_check_arg* c_config_;
   void* config_user_data_;
   int (*schedule_)(void* config_user_data, TlsServerAuthorizationCheckArg* arg);
   void (*cancel_)(void* config_user_data, TlsServerAuthorizationCheckArg* arg);
