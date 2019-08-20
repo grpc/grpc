@@ -42,7 +42,7 @@ try:
       'defaults': 'zlib',
       'build': 'private',
       'language': 'c',
-      'secure': 'no',
+      'secure': False,
       'src': sorted(cmvar('ZLIB_SRCS')),
       'headers': sorted(cmvar('ZLIB_PUBLIC_HDRS') + cmvar('ZLIB_PRIVATE_HDRS')),
   }]

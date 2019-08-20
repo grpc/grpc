@@ -417,10 +417,10 @@ void* grpc_channel_register_call(grpc_channel* channel, const char* method,
   grpc_core::ExecCtx exec_ctx;
 
   rc->path = grpc_mdelem_from_slices(GRPC_MDSTR_PATH,
-                                     grpc_core::ManagedMemorySlice(method));
+                                     grpc_core::ExternallyManagedSlice(method));
   rc->authority =
       host ? grpc_mdelem_from_slices(GRPC_MDSTR_AUTHORITY,
-                                     grpc_core::ManagedMemorySlice(host))
+                                     grpc_core::ExternallyManagedSlice(host))
            : GRPC_MDNULL;
   gpr_mu_lock(&channel->registered_call_mu);
   rc->next = channel->registered_calls;

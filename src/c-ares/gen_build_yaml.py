@@ -53,7 +53,7 @@ try:
       'defaults': 'ares',
       'build': 'private',
       'language': 'c',
-      'secure': 'no',
+      'secure': False,
       'src': [
         "third_party/cares/cares/ares__close_sockets.c",
         "third_party/cares/cares/ares__get_hostent.c",

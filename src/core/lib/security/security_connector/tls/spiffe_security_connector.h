@@ -21,10 +21,13 @@
 
 #include <grpc/support/port_platform.h>
 
+#include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/security/context/security_context.h"
 #include "src/core/lib/security/credentials/tls/grpc_tls_credentials_options.h"
 
 #define GRPC_TLS_SPIFFE_TRANSPORT_SECURITY_TYPE "spiffe"
+
+namespace grpc_core {
 
 // Spiffe channel security connector.
 class SpiffeChannelSecurityConnector final
@@ -66,6 +69,11 @@ class SpiffeChannelSecurityConnector final
   grpc_security_status InitializeHandshakerFactory(
       tsi_ssl_session_cache* ssl_session_cache);
 
+  // A util function to create a new client handshaker factory to replace
+  // the existing one if exists.
+  grpc_security_status ReplaceHandshakerFactory(
+      tsi_ssl_session_cache* ssl_session_cache);
+
   // gRPC-provided callback executed by application, which servers to bring the
   // control back to gRPC core.
   static void ServerAuthorizationCheckDone(
@@ -83,11 +91,17 @@ class SpiffeChannelSecurityConnector final
   static void ServerAuthorizationCheckArgDestroy(
       grpc_tls_server_authorization_check_arg* arg);
 
+  // A util function to refresh SSL TSI client handshaker factory with a valid
+  // credential.
+  grpc_security_status RefreshHandshakerFactory();
+
+  grpc_core::Mutex mu_;
   grpc_closure* on_peer_checked_;
   grpc_core::UniquePtr<char> target_name_;
   grpc_core::UniquePtr<char> overridden_target_name_;
   tsi_ssl_client_handshaker_factory* client_handshaker_factory_ = nullptr;
   grpc_tls_server_authorization_check_arg* check_arg_;
+  grpc_core::RefCountedPtr<grpc_tls_key_materials_config> key_materials_config_;
 };
 
 // Spiffe server security connector.
@@ -113,11 +127,30 @@ class SpiffeServerSecurityConnector final
   int cmp(const grpc_security_connector* other) const override;
 
  private:
+  // Initialize SSL TSI server handshaker factory.
+  grpc_security_status InitializeHandshakerFactory();
+
+  // A util function to create a new server handshaker factory to replace the
+  // existing once if exists.
+  grpc_security_status ReplaceHandshakerFactory();
+
   // A util function to refresh SSL TSI server handshaker factory with a valid
   // credential.
-  grpc_security_status RefreshServerHandshakerFactory();
+  grpc_security_status RefreshHandshakerFactory();
+
+  grpc_core::Mutex mu_;
   tsi_ssl_server_handshaker_factory* server_handshaker_factory_ = nullptr;
+  grpc_core::RefCountedPtr<grpc_tls_key_materials_config> key_materials_config_;
 };
+
+// Exposed for testing only.
+grpc_status_code TlsFetchKeyMaterials(
+    const grpc_core::RefCountedPtr<grpc_tls_key_materials_config>&
+        key_materials_config,
+    const grpc_tls_credentials_options& options,
+    grpc_ssl_certificate_config_reload_status* status);
+
+}  // namespace grpc_core
 
 #endif /* GRPC_CORE_LIB_SECURITY_SECURITY_CONNECTOR_TLS_SPIFFE_SECURITY_CONNECTOR_H \
         */

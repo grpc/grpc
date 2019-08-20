@@ -36,7 +36,8 @@ py_binary(
     deps = [
         ":_credentials",
         "//src/python/grpcio/grpc:grpcio",
-        "//examples:py_helloworld",
+        "//examples:helloworld_py_pb2",
+        "//examples:helloworld_py_pb2_grpc",
     ],
 )
 
@@ -47,8 +48,8 @@ py_binary(
     deps = [
         ":_credentials",
         "//src/python/grpcio/grpc:grpcio",
-        "//examples:py_helloworld",
-        
+        "//examples:helloworld_py_pb2",
+        "//examples:helloworld_py_pb2_grpc",
     ],
 )
 
@@ -57,7 +58,7 @@ py_test(
     srcs = ["test/_auth_example_test.py"],
     deps = [
         "//src/python/grpcio/grpc:grpcio",
-        "//examples:py_helloworld",
+        "//examples:helloworld_py_pb2",
         ":customized_auth_client",
         ":customized_auth_server",
         ":_credentials",

@@ -26,9 +26,9 @@
 #include "src/core/lib/iomgr/pollset_set.h"
 #include "src/core/lib/security/credentials/alts/grpc_alts_credentials_options.h"
 #include "src/core/tsi/alts/handshaker/alts_handshaker_client.h"
-#include "src/core/tsi/alts/handshaker/alts_handshaker_service_api_util.h"
 #include "src/core/tsi/transport_security.h"
 #include "src/core/tsi/transport_security_interface.h"
+#include "src/proto/grpc/gcp/handshaker.upb.h"
 
 #define TSI_ALTS_SERVICE_ACCOUNT_PEER_PROPERTY "service_accont"
 #define TSI_ALTS_CERTIFICATE_TYPE "ALTS"
@@ -70,7 +70,7 @@ tsi_result alts_tsi_handshaker_create(
  *   client or not.
  * - result: address of ALTS TSI handshaker result instance.
  */
-tsi_result alts_tsi_handshaker_result_create(grpc_gcp_handshaker_resp* resp,
+tsi_result alts_tsi_handshaker_result_create(grpc_gcp_HandshakerResp* resp,
                                              bool is_client,
                                              tsi_handshaker_result** result);
 
