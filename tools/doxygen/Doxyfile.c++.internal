@@ -1292,10 +1292,6 @@ src/cpp/util/byte_buffer_cc.cc \
 src/cpp/util/status.cc \
 src/cpp/util/string_ref.cc \
 src/cpp/util/time_cc.cc \
-third_party/nanopb/pb.h \
-third_party/nanopb/pb_common.h \
-third_party/nanopb/pb_decode.h \
-third_party/nanopb/pb_encode.h \
 third_party/upb/upb/decode.c \
 third_party/upb/upb/decode.h \
 third_party/upb/upb/encode.c \

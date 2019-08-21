@@ -52,8 +52,6 @@
     if needs_ares(target_dict.src):
       deps.append("//third_party/cares")
       deps.append(":address_sorting")
-    if needs_nanopb(target_dict.src) and target_dict.name != "nanopb":
-      deps.append(":nanopb")
     if needs_health_proto(target_dict.src) and target_dict.name != "health_proto":
       deps.append(":health_proto")
     return deps
@@ -61,16 +59,6 @@
   %><%!
   def needs_ares(srcs):
     return any("/c_ares/" in f for f in srcs) if srcs else False
-
-  %><%!
-  def needs_nanopb(srcs):
-    return any(f.startswith("third_party/nanopb")
-               or f.endswith(".pb.h")
-               or f.endswith(".pb.c")
-               or f.endswith(".pb.cc")
-               or f.endswith("load_balancer_api.h")
-               or f.endswith("load_balancer_api.c")
-               for f in srcs)
 
   %><%!
   def needs_address_sorting(sources):
@@ -87,15 +75,12 @@
       dirs = ["third_party/cares"]
     if needs_address_sorting(sources):
       dirs.append("third_party/address_sorting/include")
-    if needs_nanopb(sources):
-      dirs.append("third_party/nanopb")
     return dirs
 
   %><%!
   def strip_sources(sources, name):
     return [f for f in sources
             if "ruby_generator" not in f
-            and ("third_party/nanopb" not in f or name == "nanopb")
             and ("health.pb" not in f or name == "health_proto")]
 
   %><%!
@@ -126,7 +111,7 @@
 
   %>
   % for lib in filegroups:
-    % if lib.name in ("nanopb", "health_proto"):
+    % if lib.name in ("health_proto"):
       ${cc_library(lib)}
     %endif
   %endfor
