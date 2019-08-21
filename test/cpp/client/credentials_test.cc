@@ -36,8 +36,8 @@ typedef class ::grpc_impl::experimental::TlsKeyMaterialsConfig
     TlsKeyMaterialsConfig;
 typedef class ::grpc_impl::experimental::TlsCredentialReloadArg
     TlsCredentialReloadArg;
-typedef class ::grpc_impl::experimental::TlsCredentialReloadConfig
-    TlsCredentialReloadConfig;
+typedef class ::grpc_impl::experimental::TlsServerAuthorizationCheckArg
+    TlsServerAuthorizationCheckArg;
 
 static void tls_credential_reload_callback(
     grpc_tls_credential_reload_arg* arg) {
@@ -72,12 +72,12 @@ static void tls_server_authorization_check_callback(
     grpc_tls_server_authorization_check_arg* arg) {
   GPR_ASSERT(arg != nullptr);
   grpc::string cb_user_data = "cb_user_data";
-  arg->cb_user_data(static_cast<void*>(gpr_strdup(cb_user_data.c_str())));
-  arg->success(1);
-  arg->target_name("callback_target_name");
-  arg->peer_cert("callback_peer_cert");
-  arg->status(GRPC_STATUS_OK);
-  arg->error_details("callback_error_details");
+  arg->cb_user_data = static_cast<void*>(gpr_strdup(cb_user_data.c_str()));
+  arg->success = 1;
+  arg->target_name = "callback_target_name";
+  arg->peer_cert = "callback_peer_cert";
+  arg->status = GRPC_STATUS_OK;
+  arg->error_details = "callback_error_details";
 }
 
 static int tls_server_authorization_check_sync(void* config_user_data, TlsServerAuthorizationCheckArg* arg) {
@@ -405,7 +405,7 @@ TEST_F(CredentialsTest, TlsCredentialReloadConfigCppToC) {
   EXPECT_EQ(c_arg.status, GRPC_SSL_CERTIFICATE_CONFIG_RELOAD_NEW);
   EXPECT_STREQ(c_arg.error_details, test_error_details.c_str());
 
-  c_config->(&c_arg);
+  c_config->Cancel(&c_arg);
   EXPECT_EQ(c_arg.status, GRPC_SSL_CERTIFICATE_CONFIG_RELOAD_FAIL);
   EXPECT_STREQ(c_arg.error_details, "cancelled");
 }
@@ -444,12 +444,13 @@ TEST_F(CredentialsTest, TlsServerAuthorizationCheckConfigSchedule) {
   arg.set_status(GRPC_STATUS_PERMISSION_DENIED);
   arg.set_error_details("error_details");
   int schedule_output = config.Schedule(&arg);
+  EXPECT_EQ(schedule_output, 0);
   EXPECT_STREQ(static_cast<char*>(arg.cb_user_data()), "cb_user_data");
   EXPECT_EQ(arg.success(), 1);
   EXPECT_STREQ(arg.target_name()->c_str(), "sync_target_name");
   EXPECT_STREQ(arg.peer_cert()->c_str(), "sync_peer_cert");
   EXPECT_EQ(arg.status(), GRPC_STATUS_OK);
-  EXPECT_STREQ(arg.error_details(), "sync_error_details");
+  EXPECT_STREQ(arg.error_details()->c_str(), "sync_error_details");
 }
 
 TEST_F(CredentialsTest, TlsServerAuthorizationCheckConfigCppToC) {
@@ -507,7 +508,7 @@ TEST_F(CredentialsTest, TlsCredentialsOptionsCppToC) {
             GRPC_SSL_REQUEST_CLIENT_CERTIFICATE_AND_VERIFY);
   grpc_tls_key_materials_config* c_key_materials_config = c_options->key_materials_config();
   grpc_tls_credential_reload_config* c_credential_reload_config = c_options->credential_reload_config();
-  grpc_tls_credential_reload_arg* c_credential_reload_arg;
+  grpc_tls_credential_reload_arg c_credential_reload_arg;
   c_credential_reload_arg.key_materials_config = c_key_materials_config;
   c_credential_reload_arg.status = GRPC_SSL_CERTIFICATE_CONFIG_RELOAD_UNCHANGED;
   grpc::string test_error_details = "error_details";
@@ -531,13 +532,13 @@ TEST_F(CredentialsTest, TlsCredentialsOptionsCppToC) {
   EXPECT_EQ(c_credential_reload_schedule_output, 0);
   EXPECT_EQ(c_credential_reload_arg.cb_user_data, nullptr);
   EXPECT_STREQ(c_credential_reload_arg.key_materials_config->pem_root_certs(), "new_pem_root_certs");
-  ::grpc_core::InlinedVector<::grpc_core::PemKeyCertPair, 1> pair_list =
+  ::grpc_core::InlinedVector<::grpc_core::PemKeyCertPair, 1> c_pair_list =
       c_credential_reload_arg.key_materials_config->pem_key_cert_pair_list();
-  EXPECT_EQ(static_cast<int>(pair_list.size()), 2);
-  EXPECT_STREQ(pair_list[0].private_key(), "private_key");
-  EXPECT_STREQ(pair_list[0].cert_chain(), "cert_chain");
-  EXPECT_STREQ(pair_list[1].private_key(), "private_key3");
-  EXPECT_STREQ(pair_list[1].cert_chain(), "cert_chain3");
+  EXPECT_EQ(static_cast<int>(c_pair_list.size()), 2);
+  EXPECT_STREQ(c_pair_list[0].private_key(), "private_key");
+  EXPECT_STREQ(c_pair_list[0].cert_chain(), "cert_chain");
+  EXPECT_STREQ(c_pair_list[1].private_key(), "private_key3");
+  EXPECT_STREQ(c_pair_list[1].cert_chain(), "cert_chain3");
   EXPECT_EQ(c_credential_reload_arg.status, GRPC_SSL_CERTIFICATE_CONFIG_RELOAD_NEW);
   EXPECT_STREQ(c_credential_reload_arg.error_details, test_error_details.c_str());
 
