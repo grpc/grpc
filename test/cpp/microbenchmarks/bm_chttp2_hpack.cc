@@ -77,7 +77,7 @@ static void BM_HpackEncoderEncodeDeadline(benchmark::State& state) {
       new grpc_chttp2_hpack_compressor);
   grpc_chttp2_hpack_compressor_init(c.get());
   grpc_transport_one_way_stats stats;
-  memset(&stats, 0, sizeof(stats));
+  stats = {};
   grpc_slice_buffer outbuf;
   grpc_slice_buffer_init(&outbuf);
   while (state.KeepRunning()) {
@@ -127,7 +127,7 @@ static void BM_HpackEncoderEncodeHeader(benchmark::State& state) {
       new grpc_chttp2_hpack_compressor);
   grpc_chttp2_hpack_compressor_init(c.get());
   grpc_transport_one_way_stats stats;
-  memset(&stats, 0, sizeof(stats));
+  stats = {};
   grpc_slice_buffer outbuf;
   grpc_slice_buffer_init(&outbuf);
   while (state.KeepRunning()) {
