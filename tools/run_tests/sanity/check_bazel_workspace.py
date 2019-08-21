@@ -55,6 +55,7 @@ _GRPC_DEP_NAMES = [
     'com_google_absl',
     'io_opencensus_cpp',
     'envoy_api',
+    'grpc-proto',
     _BAZEL_SKYLIB_DEP_NAME,
     _BAZEL_TOOLCHAINS_DEP_NAME,
     _TWISTED_TWISTED_DEP_NAME,

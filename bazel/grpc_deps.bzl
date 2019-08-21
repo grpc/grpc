@@ -204,6 +204,7 @@ def grpc_deps():
             strip_prefix = "opencensus-cpp-c9a4da319bc669a772928ffc55af4a61be1a1176",
             url = "https://github.com/census-instrumentation/opencensus-cpp/archive/c9a4da319bc669a772928ffc55af4a61be1a1176.tar.gz",
         )
+
     if "upb" not in native.existing_rules():
         http_archive(
             name = "upb",
@@ -211,12 +212,21 @@ def grpc_deps():
             strip_prefix = "upb-931bbecbd3230ae7f22efa5d203639facc47f719",
             url = "https://github.com/protocolbuffers/upb/archive/931bbecbd3230ae7f22efa5d203639facc47f719.tar.gz",
         )
+
     if "envoy_api" not in native.existing_rules():
         http_archive(
             name = "envoy_api",
             sha256 = "a2c6e854fa9653b0ed6510e31ec7c51eac43d578b54cd75c0bc1898f7515c60d",
             strip_prefix = "data-plane-api-a83394157ad97f4dadbc8ed81f56ad5b3a72e542",
             url = "https://github.com/envoyproxy/data-plane-api/archive/a83394157ad97f4dadbc8ed81f56ad5b3a72e542.tar.gz",
+        )
+
+    if "grpc-proto" not in native.existing_rules():
+        http_archive(
+            name = "grpc-proto",
+            sha256 = "48ab204cd7709df757ee25d99855a1ca15111807f0aa23d38d47885f730f42b4",
+            strip_prefix = "grpc-proto-5ce8e3e598b805a1e0372062913f24b0715fdefc",
+            url = "https://github.com/grpc/grpc-proto/archive/5ce8e3e598b805a1e0372062913f24b0715fdefc.tar.gz",
         )
 
     if "io_bazel_rules_go" not in native.existing_rules():
