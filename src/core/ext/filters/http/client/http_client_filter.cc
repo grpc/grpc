@@ -109,7 +109,7 @@ static grpc_error* client_filter_incoming_metadata(grpc_call_element* elem,
     if (b->idx.named.grpc_status != nullptr ||
         grpc_mdelem_static_value_eq(b->idx.named.status->md,
                                     GRPC_MDELEM_STATUS_200)) {
-      grpc_metadata_batch_remove(b, b->idx.named.status);
+      grpc_metadata_batch_remove(b, GRPC_BATCH_STATUS);
     } else {
       char* val = grpc_dump_slice(GRPC_MDVALUE(b->idx.named.status->md),
                                   GPR_DUMP_ASCII);
@@ -167,7 +167,7 @@ static grpc_error* client_filter_incoming_metadata(grpc_call_element* elem,
         gpr_free(val);
       }
     }
-    grpc_metadata_batch_remove(b, b->idx.named.content_type);
+    grpc_metadata_batch_remove(b, GRPC_BATCH_CONTENT_TYPE);
   }
 
   return GRPC_ERROR_NONE;
@@ -336,7 +336,7 @@ static grpc_error* update_path_for_get(grpc_call_element* elem,
 static void remove_if_present(grpc_metadata_batch* batch,
                               grpc_metadata_batch_callouts_index idx) {
   if (batch->idx.array[idx] != nullptr) {
-    grpc_metadata_batch_remove(batch, batch->idx.array[idx]);
+    grpc_metadata_batch_remove(batch, idx);
   }
 }
 
@@ -433,23 +433,25 @@ static void hc_start_transport_stream_op_batch(
        layer headers. */
     error = grpc_metadata_batch_add_head(
         batch->payload->send_initial_metadata.send_initial_metadata,
-        &calld->method, method);
+        &calld->method, method, GRPC_BATCH_METHOD);
     if (error != GRPC_ERROR_NONE) goto done;
     error = grpc_metadata_batch_add_head(
         batch->payload->send_initial_metadata.send_initial_metadata,
-        &calld->scheme, channeld->static_scheme);
+        &calld->scheme, channeld->static_scheme, GRPC_BATCH_SCHEME);
     if (error != GRPC_ERROR_NONE) goto done;
     error = grpc_metadata_batch_add_tail(
         batch->payload->send_initial_metadata.send_initial_metadata,
-        &calld->te_trailers, GRPC_MDELEM_TE_TRAILERS);
+        &calld->te_trailers, GRPC_MDELEM_TE_TRAILERS, GRPC_BATCH_TE);
     if (error != GRPC_ERROR_NONE) goto done;
     error = grpc_metadata_batch_add_tail(
         batch->payload->send_initial_metadata.send_initial_metadata,
-        &calld->content_type, GRPC_MDELEM_CONTENT_TYPE_APPLICATION_SLASH_GRPC);
+        &calld->content_type, GRPC_MDELEM_CONTENT_TYPE_APPLICATION_SLASH_GRPC,
+        GRPC_BATCH_CONTENT_TYPE);
     if (error != GRPC_ERROR_NONE) goto done;
     error = grpc_metadata_batch_add_tail(
         batch->payload->send_initial_metadata.send_initial_metadata,
-        &calld->user_agent, GRPC_MDELEM_REF(channeld->user_agent));
+        &calld->user_agent, GRPC_MDELEM_REF(channeld->user_agent),
+        GRPC_BATCH_USER_AGENT);
     if (error != GRPC_ERROR_NONE) goto done;
   }
 

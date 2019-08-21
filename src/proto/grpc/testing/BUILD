@@ -50,7 +50,6 @@ grpc_proto_library(
 grpc_proto_library(
     name = "echo_messages_proto",
     srcs = ["echo_messages.proto"],
-    has_services = False,
 )
 
 grpc_proto_library(
@@ -145,7 +144,6 @@ grpc_proto_library(
 grpc_proto_library(
     name = "simple_messages_proto",
     srcs = ["simple_messages.proto"],
-    has_services = False,
 )
 
 grpc_proto_library(

@@ -9,11 +9,6 @@ def grpc_deps():
     """Loads dependencies need to compile and test the grpc library."""
 
     native.bind(
-        name = "nanopb",
-        actual = "@com_github_nanopb_nanopb//:nanopb",
-    )
-
-    native.bind(
         name = "upb_lib",
         actual = "@upb//:upb",
     )
@@ -129,15 +124,6 @@ def grpc_deps():
             url = "https://github.com/google/protobuf/archive/09745575a923640154bcf307fba8aedff47f240a.tar.gz",
         )
 
-    if "com_github_nanopb_nanopb" not in native.existing_rules():
-        http_archive(
-            name = "com_github_nanopb_nanopb",
-            build_file = "@com_github_grpc_grpc//third_party:nanopb.BUILD",
-            sha256 = "8bbbb1e78d4ddb0a1919276924ab10d11b631df48b657d960e0c795a25515735",
-            strip_prefix = "nanopb-f8ac463766281625ad710900479130c7fcb4d63b",
-            url = "https://github.com/nanopb/nanopb/archive/f8ac463766281625ad710900479130c7fcb4d63b.tar.gz",
-        )
-
     if "com_github_google_googletest" not in native.existing_rules():
         http_archive(
             name = "com_github_google_googletest",
@@ -191,11 +177,10 @@ def grpc_deps():
         )
 
     if "bazel_skylib" not in native.existing_rules():
-        http_archive(
+        git_repository(
             name = "bazel_skylib",
-            sha256 = "ba5d15ca230efca96320085d8e4d58da826d1f81b444ef8afccd8b23e0799b52",
-            strip_prefix = "bazel-skylib-f83cb8dd6f5658bc574ccd873e25197055265d1c",
-            url = "https://github.com/bazelbuild/bazel-skylib/archive/f83cb8dd6f5658bc574ccd873e25197055265d1c.tar.gz",
+            remote = "https://github.com/bazelbuild/bazel-skylib",
+            tag = "0.9.0",
         )
 
     if "io_opencensus_cpp" not in native.existing_rules():
@@ -208,9 +193,9 @@ def grpc_deps():
     if "upb" not in native.existing_rules():
         http_archive(
             name = "upb",
-            sha256 = "6e3c81c9e6c609d918b399110a88d10efeab73b2c8eb3131de15658b1ec86141",
-            strip_prefix = "upb-b70f68269a7d51c5ce372a93742bf6960215ffef",
-            url = "https://github.com/protocolbuffers/upb/archive/b70f68269a7d51c5ce372a93742bf6960215ffef.tar.gz",
+            sha256 = "95150db57b51b65f3422c38953956e0f786945d842d76f8ab685fbcd93ab5caa",
+            strip_prefix = "upb-931bbecbd3230ae7f22efa5d203639facc47f719",
+            url = "https://github.com/protocolbuffers/upb/archive/931bbecbd3230ae7f22efa5d203639facc47f719.tar.gz",
         )
     if "envoy_api" not in native.existing_rules():
         http_archive(

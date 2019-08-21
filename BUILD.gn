@@ -31,29 +31,6 @@ config("grpc_config") {
   ]
 }
 
-    
-  
-  source_set("nanopb") {
-    sources = [
-        "third_party/nanopb/pb.h",
-        "third_party/nanopb/pb_common.c",
-        "third_party/nanopb/pb_common.h",
-        "third_party/nanopb/pb_decode.c",
-        "third_party/nanopb/pb_decode.h",
-        "third_party/nanopb/pb_encode.c",
-        "third_party/nanopb/pb_encode.h",
-    ]
-    deps = [
-    ]
-    
-    public_configs = [
-      ":grpc_config",
-    ]
-    include_dirs = [
-        "third_party/nanopb",
-    ]
-  }
-
       
   
   source_set("address_sorting") {
@@ -305,6 +282,7 @@ config("grpc_config") {
         "src/core/ext/filters/client_channel/resolver/fake/fake_resolver.cc",
         "src/core/ext/filters/client_channel/resolver/fake/fake_resolver.h",
         "src/core/ext/filters/client_channel/resolver/sockaddr/sockaddr_resolver.cc",
+        "src/core/ext/filters/client_channel/resolver/xds/xds_resolver.cc",
         "src/core/ext/filters/client_channel/resolver_factory.h",
         "src/core/ext/filters/client_channel/resolver_registry.cc",
         "src/core/ext/filters/client_channel/resolver_registry.h",
@@ -938,7 +916,6 @@ config("grpc_config") {
     include_dirs = [
         "third_party/cares",
         "third_party/address_sorting/include",
-        "third_party/nanopb",
     ]
   }
 
@@ -1464,9 +1441,6 @@ config("grpc_config") {
     
     public_configs = [
       ":grpc_config",
-    ]
-    include_dirs = [
-        "third_party/nanopb",
     ]
   }
 

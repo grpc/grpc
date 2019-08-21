@@ -382,10 +382,9 @@ error_handler:
     if (s != nullptr) {
       grpc_chttp2_mark_stream_closed(t, s, true, false, err);
     }
-    grpc_slice_buffer_add(
-        &t->qbuf, grpc_chttp2_rst_stream_create(t->incoming_stream_id,
-                                                GRPC_HTTP2_PROTOCOL_ERROR,
-                                                &s->stats.outgoing));
+    grpc_chttp2_add_rst_stream_to_next_write(t, t->incoming_stream_id,
+                                             GRPC_HTTP2_PROTOCOL_ERROR,
+                                             &s->stats.outgoing);
     return init_skip_frame_parser(t, 0);
   } else {
     return err;
@@ -648,7 +647,6 @@ static grpc_error* init_header_frame_parser(grpc_chttp2_transport* t,
           *s->trailing_metadata_available = true;
         }
         t->hpack_parser.on_header = on_trailing_header;
-        s->received_trailing_metadata = true;
       } else {
         GRPC_CHTTP2_IF_TRACING(gpr_log(GPR_INFO, "parsing initial_metadata"));
         t->hpack_parser.on_header = on_initial_header;
@@ -657,7 +655,6 @@ static grpc_error* init_header_frame_parser(grpc_chttp2_transport* t,
     case 1:
       GRPC_CHTTP2_IF_TRACING(gpr_log(GPR_INFO, "parsing trailing_metadata"));
       t->hpack_parser.on_header = on_trailing_header;
-      s->received_trailing_metadata = true;
       break;
     case 2:
       gpr_log(GPR_ERROR, "too many header frames received");
@@ -765,10 +762,9 @@ static grpc_error* parse_frame_slice(grpc_chttp2_transport* t,
     grpc_chttp2_parsing_become_skip_parser(t);
     if (s) {
       s->forced_close_error = err;
-      grpc_slice_buffer_add(
-          &t->qbuf, grpc_chttp2_rst_stream_create(t->incoming_stream_id,
-                                                  GRPC_HTTP2_PROTOCOL_ERROR,
-                                                  &s->stats.outgoing));
+      grpc_chttp2_add_rst_stream_to_next_write(t, t->incoming_stream_id,
+                                               GRPC_HTTP2_PROTOCOL_ERROR,
+                                               &s->stats.outgoing);
     } else {
       GRPC_ERROR_UNREF(err);
     }

@@ -3,7 +3,7 @@
 <plist version="1.0">
 <dict>
 	<key>CFBundleDevelopmentRegion</key>
-	<string>$(DEVELOPMENT_LANGUAGE)</string>
+	<string>en_US</string>
 	<key>CFBundleDisplayName</key>
 	<string>WatchKit-App</string>
 	<key>CFBundleExecutable</key>
@@ -26,7 +26,7 @@
 		<string>UIInterfaceOrientationPortraitUpsideDown</string>
 	</array>
 	<key>WKCompanionAppBundleIdentifier</key>
-	<string>com.google.watchOS-sample</string>
+	<string>io.grpc.watchOS-sample</string>
 	<key>WKWatchKitApp</key>
 	<true/>
 </dict>

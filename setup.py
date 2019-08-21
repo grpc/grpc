@@ -47,7 +47,6 @@ if 'linux' in sys.platform:
   CARES_INCLUDE += (os.path.join('third_party', 'cares', 'config_linux'),)
 if 'openbsd' in sys.platform:
   CARES_INCLUDE += (os.path.join('third_party', 'cares', 'config_openbsd'),)
-NANOPB_INCLUDE = (os.path.join('third_party', 'nanopb'),)
 SSL_INCLUDE = (os.path.join('third_party', 'boringssl', 'include'),)
 UPB_INCLUDE = (os.path.join('third_party', 'upb'),)
 UPB_GRPC_GENERATED_INCLUDE = (os.path.join('src', 'core', 'ext', 'upb-generated'),)
@@ -209,7 +208,6 @@ EXTENSION_INCLUDE_DIRECTORIES = (
     CORE_INCLUDE +
     ADDRESS_SORTING_INCLUDE +
     CARES_INCLUDE +
-    NANOPB_INCLUDE +
     SSL_INCLUDE +
     UPB_INCLUDE +
     UPB_GRPC_GENERATED_INCLUDE +

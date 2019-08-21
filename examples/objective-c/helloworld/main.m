@@ -21,7 +21,11 @@
 
 #import <GRPCClient/GRPCCall+ChannelArg.h>
 #import <GRPCClient/GRPCCall+Tests.h>
+#if COCOAPODS
 #import <HelloWorld/Helloworld.pbrpc.h>
+#else
+#import "examples/protos/Helloworld.pbrpc.h"
+#endif
 
 static NSString * const kHostAddress = @"localhost:50051";
 
