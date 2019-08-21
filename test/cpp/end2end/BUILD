@@ -165,7 +165,6 @@ grpc_cc_test(
         "//test/core/util:grpc_test_util",
         "//test/cpp/util:test_util",
     ],
-    tags = ["no_test_ios"],
 )
 
 grpc_cc_test(
@@ -224,6 +223,7 @@ grpc_cc_library(
         "//test/core/util:grpc_test_util",
         "//test/cpp/util:test_util",
     ],
+    alwayslink = 1,
 )
 
 grpc_cc_test(
@@ -272,6 +272,7 @@ grpc_cc_test(
         # system uses it to specialize targets
         "//:grpc++",
     ],
+    tags = ["no_test_ios"],
 )
 
 grpc_cc_test(
@@ -441,7 +442,6 @@ grpc_cc_test(
         "//test/core/util:test_lb_policies",
         "//test/cpp/util:test_util",
     ],
-    tags = ["no_test_ios"],
 )
 
 grpc_cc_test(
@@ -482,7 +482,6 @@ grpc_cc_test(
         "//test/core/util:grpc_test_util",
         "//test/cpp/util:test_util",
     ],
-    tags = ["no_test_ios"],
 )
 
 grpc_cc_test(
@@ -505,7 +504,6 @@ grpc_cc_test(
         "//test/core/util:grpc_test_util",
         "//test/cpp/util:test_util",
     ],
-    tags = ["no_test_ios"],
 )
 
 grpc_cc_test(
@@ -698,7 +696,6 @@ grpc_cc_test(
         "//test/core/util:grpc_test_util",
         "//test/cpp/util:test_util",
     ],
-    tags = ["no_test_ios"],
 )
 
 grpc_cc_test(
@@ -756,5 +753,4 @@ grpc_cc_test(
         "//test/core/util:grpc_test_util",
         "//test/cpp/util:test_util",
     ],
-    tags = ["no_test_ios"],
 )

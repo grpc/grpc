@@ -33,6 +33,7 @@
 #include <mutex>
 #include <thread>
 
+#include "src/core/lib/gpr/env.h"
 #include "src/core/lib/iomgr/endpoint.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/pollset.h"
@@ -310,6 +311,12 @@ static void SendRpc(EchoTestService::Stub* stub, int num_rpcs) {
 std::vector<TestScenario> CreateTestScenarios() {
   std::vector<TestScenario> scenarios;
   std::vector<grpc::string> credentials_types;
+
+#if TARGET_OS_IPHONE
+  // Workaround Apple CFStream bug
+  gpr_setenv("grpc_cfstream", "0");
+#endif
+
   credentials_types = GetCredentialsProvider()->GetSecureCredentialsTypeList();
   // Only allow insecure credentials type when it is registered with the
   // provider. User may create providers that do not have insecure.
