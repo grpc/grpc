@@ -15,12 +15,9 @@
 
 cdef void* _copy_pointer(void* pointer)
 
-
 cdef void _destroy_pointer(void* pointer)
-
 
 cdef int _compare_pointer(void* first_pointer, void* second_pointer)
 
 
-cdef class _VTable:
-  cdef grpc_arg_pointer_vtable c_vtable
+cdef grpc_arg_pointer_vtable default_vtable

@@ -159,7 +159,13 @@ def _event_handler(state, response_deserializer):
             state.condition.notify_all()
             done = not state.due
         for callback in callbacks:
-            callback()
+            try:
+                callback()
+            except Exception as e:  # pylint: disable=broad-except
+                # NOTE(rbellevi): We suppress but log errors here so as not to
+                # kill the channel spin thread.
+                logging.error('Exception in callback %s: %s', repr(
+                    callback.func), repr(e))
         return done and state.fork_epoch >= cygrpc.get_fork_epoch()
 
     return handle_event
@@ -338,7 +344,7 @@ class _Rendezvous(grpc.RpcError, grpc.Future, grpc.Call):  # pylint: disable=too
     def add_done_callback(self, fn):
         with self._state.condition:
             if self._state.code is None:
-                self._state.callbacks.append(lambda: fn(self))
+                self._state.callbacks.append(functools.partial(fn, self))
                 return
 
         fn(self)

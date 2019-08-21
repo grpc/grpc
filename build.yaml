@@ -1224,6 +1224,13 @@ filegroups:
   uses:
   - grpc_base
   - grpc_client_channel
+- name: grpc_resolver_xds
+  src:
+  - src/core/ext/filters/client_channel/resolver/xds/xds_resolver.cc
+  plugin: grpc_resolver_xds
+  uses:
+  - grpc_base
+  - grpc_client_channel
 - name: grpc_secure
   public_headers:
   - include/grpc/grpc_security.h
@@ -1672,6 +1679,7 @@ libs:
   - grpc_resolver_dns_native
   - grpc_resolver_sockaddr
   - grpc_resolver_fake
+  - grpc_resolver_xds
   - grpc_secure
   - census
   - grpc_client_idle_filter
@@ -1743,6 +1751,7 @@ libs:
   - grpc_resolver_dns_native
   - grpc_resolver_sockaddr
   - grpc_resolver_fake
+  - grpc_resolver_xds
   - grpc_lb_policy_grpclb
   - grpc_lb_policy_xds
   - grpc_lb_policy_pick_first
@@ -6190,7 +6199,7 @@ defaults:
     CXXFLAGS: $(W_NO_CXX14_COMPAT)
   global:
     COREFLAGS: -fno-rtti -fno-exceptions
-    CPPFLAGS: -g -Wall -Wextra -Werror -Wno-unknown-warning-option -Wno-long-long
+    CPPFLAGS: -g -Wall -Wextra -Werror $(W_NO_UNKNOWN_WARNING_OPTION) -Wno-long-long
       -Wno-unused-parameter -Wno-deprecated-declarations -Wno-sign-conversion -Wno-shadow
       -Wno-conversion -Wno-implicit-fallthrough -Wno-sign-compare -Wno-missing-field-initializers
       -Wno-maybe-uninitialized -DPB_FIELD_32BIT -DOSATOMIC_USE_INLINED=1 -Ithird_party/nanopb

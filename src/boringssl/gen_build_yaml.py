@@ -13,6 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from __future__ import print_function
 import shutil
 import sys
 import os
@@ -28,7 +29,7 @@ sys.path.append(os.path.join(boring_ssl_root, 'util'))
 try:
   import generate_build_files
 except ImportError:
-  print yaml.dump({})
+  print(yaml.dump({}))
   sys.exit()
 
 def map_dir(filename):
@@ -135,7 +136,7 @@ try:
   g = Grpc()
   generate_build_files.main([g])
 
-  print yaml.dump(g.yaml)
+  print(yaml.dump(g.yaml))
 
 finally:
   shutil.rmtree('src')
