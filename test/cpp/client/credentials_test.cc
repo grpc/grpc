@@ -80,7 +80,8 @@ static void tls_server_authorization_check_callback(
   arg->error_details = "callback_error_details";
 }
 
-static int tls_server_authorization_check_sync(void* config_user_data, TlsServerAuthorizationCheckArg* arg) {
+static int tls_server_authorization_check_sync(
+    void* config_user_data, TlsServerAuthorizationCheckArg* arg) {
   GPR_ASSERT(arg != nullptr);
   grpc::string cb_user_data = "cb_user_data";
   arg->set_cb_user_data(static_cast<void*>(gpr_strdup(cb_user_data.c_str())));
@@ -92,7 +93,8 @@ static int tls_server_authorization_check_sync(void* config_user_data, TlsServer
   return 1;
 }
 
-static void tls_server_authorization_check_cancel(void* config_user_data, TlsServerAuthorizationCheckArg* arg) {
+static void tls_server_authorization_check_cancel(
+    void* config_user_data, TlsServerAuthorizationCheckArg* arg) {
   GPR_ASSERT(arg != nullptr);
   arg->set_status(GRPC_STATUS_PERMISSION_DENIED);
   arg->set_error_details("cancelled");
@@ -314,8 +316,10 @@ TEST_F(CredentialsTest, TlsKeyMaterialsCtoCpp) {
   EXPECT_STREQ("cert_chain", cpp_pair_list[0].cert_chain.c_str());
 }
 
-typedef class ::grpc_impl::experimental::TlsCredentialReloadArg TlsCredentialReloadArg;
-typedef class ::grpc_impl::experimental::TlsCredentialReloadConfig TlsCredentialReloadConfig;
+typedef class ::grpc_impl::experimental::TlsCredentialReloadArg
+    TlsCredentialReloadArg;
+typedef class ::grpc_impl::experimental::TlsCredentialReloadConfig
+    TlsCredentialReloadConfig;
 
 TEST_F(CredentialsTest, TlsCredentialReloadArgCallback) {
   grpc_tls_credential_reload_arg c_arg;
@@ -337,8 +341,7 @@ TEST_F(CredentialsTest, TlsCredentialReloadConfigSchedule) {
                                                         "cert_chain1"};
   struct TlsKeyMaterialsConfig::PemKeyCertPair pair2 = {"private_key2",
                                                         "cert_chain2"};
-  std::vector<TlsKeyMaterialsConfig::PemKeyCertPair> pair_list = {pair1,
-                                                                    pair2};
+  std::vector<TlsKeyMaterialsConfig::PemKeyCertPair> pair_list = {pair1, pair2};
   key_materials_config->set_key_materials("pem_root_certs", pair_list);
   arg.set_key_materials_config(key_materials_config);
   arg.set_status(GRPC_SSL_CERTIFICATE_CONFIG_RELOAD_NEW);
@@ -435,7 +438,8 @@ TEST_F(CredentialsTest, TlsServerAuthorizationCheckArgCallback) {
 }
 
 TEST_F(CredentialsTest, TlsServerAuthorizationCheckConfigSchedule) {
-  TlsServerAuthorizationCheckConfig config = TlsServerAuthorizationCheckConfig(nullptr, &tls_server_authorization_check_sync, nullptr, nullptr);
+  TlsServerAuthorizationCheckConfig config = TlsServerAuthorizationCheckConfig(
+      nullptr, &tls_server_authorization_check_sync, nullptr, nullptr);
   TlsServerAuthorizationCheckArg arg;
   arg.set_cb_user_data(nullptr);
   arg.set_success(0);
@@ -455,7 +459,8 @@ TEST_F(CredentialsTest, TlsServerAuthorizationCheckConfigSchedule) {
 
 TEST_F(CredentialsTest, TlsServerAuthorizationCheckConfigCppToC) {
   TlsServerAuthorizationCheckConfig config = TlsServerAuthorizationCheckConfig(
-      nullptr, &tls_server_authorization_check_sync, &tls_server_authorization_check_cancel, nullptr);
+      nullptr, &tls_server_authorization_check_sync,
+      &tls_server_authorization_check_cancel, nullptr);
   grpc_tls_server_authorization_check_arg c_arg;
   c_arg.cb = tls_server_authorization_check_callback;
   c_arg.cb_user_data = nullptr;
@@ -465,7 +470,8 @@ TEST_F(CredentialsTest, TlsServerAuthorizationCheckConfigCppToC) {
   c_arg.status = GRPC_STATUS_UNAUTHENTICATED;
   c_arg.error_details = "error_details";
 
-  grpc_tls_server_authorization_check_config* c_config = config.c_server_authorization_check();
+  grpc_tls_server_authorization_check_config* c_config =
+      config.c_server_authorization_check();
   c_arg.config = c_config;
   int c_schedule_output = c_config->Schedule(&c_arg);
   EXPECT_EQ(c_schedule_output, 1);
@@ -495,25 +501,33 @@ TEST_F(CredentialsTest, TlsCredentialsOptionsCppToC) {
   key_materials_config->set_key_materials("pem_root_certs", pair_list);
   options.set_key_materials_config(key_materials_config);
 
-  std::shared_ptr<TlsCredentialReloadConfig> credential_reload_config(new TlsCredentialReloadConfig(
-      nullptr, &tls_credential_reload_sync, &tls_credential_reload_cancel, nullptr));
+  std::shared_ptr<TlsCredentialReloadConfig> credential_reload_config(
+      new TlsCredentialReloadConfig(nullptr, &tls_credential_reload_sync,
+                                    &tls_credential_reload_cancel, nullptr));
   options.set_credential_reload_config(credential_reload_config);
 
-  std::shared_ptr<TlsServerAuthorizationCheckConfig> server_authorization_check_config(new TlsServerAuthorizationCheckConfig(
-      nullptr, &tls_server_authorization_check_sync, &tls_server_authorization_check_cancel, nullptr));
-  options.set_server_authorization_check_config(server_authorization_check_config);
+  std::shared_ptr<TlsServerAuthorizationCheckConfig>
+      server_authorization_check_config(new TlsServerAuthorizationCheckConfig(
+          nullptr, &tls_server_authorization_check_sync,
+          &tls_server_authorization_check_cancel, nullptr));
+  options.set_server_authorization_check_config(
+      server_authorization_check_config);
 
   grpc_tls_credentials_options* c_options = options.c_credentials_options();
   EXPECT_EQ(c_options->cert_request_type(),
             GRPC_SSL_REQUEST_CLIENT_CERTIFICATE_AND_VERIFY);
-  grpc_tls_key_materials_config* c_key_materials_config = c_options->key_materials_config();
-  grpc_tls_credential_reload_config* c_credential_reload_config = c_options->credential_reload_config();
+  grpc_tls_key_materials_config* c_key_materials_config =
+      c_options->key_materials_config();
+  grpc_tls_credential_reload_config* c_credential_reload_config =
+      c_options->credential_reload_config();
   grpc_tls_credential_reload_arg c_credential_reload_arg;
   c_credential_reload_arg.key_materials_config = c_key_materials_config;
   c_credential_reload_arg.status = GRPC_SSL_CERTIFICATE_CONFIG_RELOAD_UNCHANGED;
   grpc::string test_error_details = "error_details";
   c_credential_reload_arg.error_details = test_error_details.c_str();
-  grpc_tls_server_authorization_check_config* c_server_authorization_check_config = c_options->server_authorization_check_config();
+  grpc_tls_server_authorization_check_config*
+      c_server_authorization_check_config =
+          c_options->server_authorization_check_config();
   grpc_tls_server_authorization_check_arg c_server_authorization_check_arg;
   c_server_authorization_check_arg.cb = tls_server_authorization_check_callback;
   c_server_authorization_check_arg.cb_user_data = nullptr;
@@ -524,14 +538,21 @@ TEST_F(CredentialsTest, TlsCredentialsOptionsCppToC) {
   c_server_authorization_check_arg.error_details = "error_details";
 
   EXPECT_STREQ(c_key_materials_config->pem_root_certs(), "pem_root_certs");
-  EXPECT_EQ(static_cast<int>(c_key_materials_config->pem_key_cert_pair_list().size()), 1);
-  EXPECT_STREQ(c_key_materials_config->pem_key_cert_pair_list()[0].private_key(), "private_key");
-  EXPECT_STREQ(c_key_materials_config->pem_key_cert_pair_list()[0].cert_chain(), "cert_chain");
+  EXPECT_EQ(
+      static_cast<int>(c_key_materials_config->pem_key_cert_pair_list().size()),
+      1);
+  EXPECT_STREQ(
+      c_key_materials_config->pem_key_cert_pair_list()[0].private_key(),
+      "private_key");
+  EXPECT_STREQ(c_key_materials_config->pem_key_cert_pair_list()[0].cert_chain(),
+               "cert_chain");
 
-  int c_credential_reload_schedule_output = c_credential_reload_config->Schedule(&c_credential_reload_arg);
+  int c_credential_reload_schedule_output =
+      c_credential_reload_config->Schedule(&c_credential_reload_arg);
   EXPECT_EQ(c_credential_reload_schedule_output, 0);
   EXPECT_EQ(c_credential_reload_arg.cb_user_data, nullptr);
-  EXPECT_STREQ(c_credential_reload_arg.key_materials_config->pem_root_certs(), "new_pem_root_certs");
+  EXPECT_STREQ(c_credential_reload_arg.key_materials_config->pem_root_certs(),
+               "new_pem_root_certs");
   ::grpc_core::InlinedVector<::grpc_core::PemKeyCertPair, 1> c_pair_list =
       c_credential_reload_arg.key_materials_config->pem_key_cert_pair_list();
   EXPECT_EQ(static_cast<int>(c_pair_list.size()), 2);
@@ -539,17 +560,25 @@ TEST_F(CredentialsTest, TlsCredentialsOptionsCppToC) {
   EXPECT_STREQ(c_pair_list[0].cert_chain(), "cert_chain");
   EXPECT_STREQ(c_pair_list[1].private_key(), "private_key3");
   EXPECT_STREQ(c_pair_list[1].cert_chain(), "cert_chain3");
-  EXPECT_EQ(c_credential_reload_arg.status, GRPC_SSL_CERTIFICATE_CONFIG_RELOAD_NEW);
-  EXPECT_STREQ(c_credential_reload_arg.error_details, test_error_details.c_str());
+  EXPECT_EQ(c_credential_reload_arg.status,
+            GRPC_SSL_CERTIFICATE_CONFIG_RELOAD_NEW);
+  EXPECT_STREQ(c_credential_reload_arg.error_details,
+               test_error_details.c_str());
 
-  int c_server_authorization_check_schedule_output = c_server_authorization_check_config->Schedule(&c_server_authorization_check_arg);
+  int c_server_authorization_check_schedule_output =
+      c_server_authorization_check_config->Schedule(
+          &c_server_authorization_check_arg);
   EXPECT_EQ(c_server_authorization_check_schedule_output, 1);
-  EXPECT_STREQ(static_cast<char*>(c_server_authorization_check_arg.cb_user_data), "cb_user_data");
+  EXPECT_STREQ(
+      static_cast<char*>(c_server_authorization_check_arg.cb_user_data),
+      "cb_user_data");
   EXPECT_EQ(c_server_authorization_check_arg.success, 1);
-  EXPECT_STREQ(c_server_authorization_check_arg.target_name, "sync_target_name");
+  EXPECT_STREQ(c_server_authorization_check_arg.target_name,
+               "sync_target_name");
   EXPECT_STREQ(c_server_authorization_check_arg.peer_cert, "sync_peer_cert");
   EXPECT_EQ(c_server_authorization_check_arg.status, GRPC_STATUS_OK);
-  EXPECT_STREQ(c_server_authorization_check_arg.error_details, "sync_error_details");
+  EXPECT_STREQ(c_server_authorization_check_arg.error_details,
+               "sync_error_details");
 
   gpr_free(c_options);
 }
