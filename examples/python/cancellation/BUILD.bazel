@@ -26,7 +26,7 @@ proto_library(
 
 py_proto_library(
     name = "hash_name_py_pb2",
-    srcs = [":hash_name_proto"],
+    deps = [":hash_name_proto"],
 )
 
 py_grpc_library(
