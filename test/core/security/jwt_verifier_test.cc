@@ -310,7 +310,7 @@ static char* good_google_email_keys(void) {
 
 static grpc_httpcli_response http_response(int status, char* body) {
   grpc_httpcli_response response;
-  memset(&response, 0, sizeof(grpc_httpcli_response));
+  response = {};
   response.status = status;
   response.body = body;
   response.body_length = strlen(body);
