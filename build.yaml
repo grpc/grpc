@@ -1986,8 +1986,6 @@ libs:
   - grpc++_base_unsecure
   - grpc++_codegen_base
   - grpc++_codegen_base_src
-  public headers:
-  - include/grpc/grpc_security.h
   secure: false
 - name: grpc_benchmark
   build: test

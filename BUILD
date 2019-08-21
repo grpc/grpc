@@ -387,7 +387,6 @@ grpc_cc_library(
         "src/cpp/server/insecure_server_credentials.cc",
     ],
     language = "c++",
-    public_hdrs= GRPC_SECURE_PUBLIC_HDRS,
     standalone = True,
     deps = [
         "gpr",
