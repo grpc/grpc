@@ -3480,6 +3480,7 @@ foreach(_hdr
   include/grpcpp/impl/codegen/interceptor_common.h
   include/grpcpp/impl/codegen/message_allocator.h
   include/grpcpp/impl/codegen/metadata_map.h
+  include/grpcpp/impl/codegen/method_handler.h
   include/grpcpp/impl/codegen/method_handler_impl.h
   include/grpcpp/impl/codegen/rpc_method.h
   include/grpcpp/impl/codegen/rpc_service_method.h
@@ -3993,6 +3994,7 @@ foreach(_hdr
   include/grpcpp/impl/codegen/interceptor_common.h
   include/grpcpp/impl/codegen/message_allocator.h
   include/grpcpp/impl/codegen/metadata_map.h
+  include/grpcpp/impl/codegen/method_handler.h
   include/grpcpp/impl/codegen/method_handler_impl.h
   include/grpcpp/impl/codegen/rpc_method.h
   include/grpcpp/impl/codegen/rpc_service_method.h
@@ -4202,6 +4204,7 @@ foreach(_hdr
   include/grpcpp/impl/codegen/interceptor_common.h
   include/grpcpp/impl/codegen/message_allocator.h
   include/grpcpp/impl/codegen/metadata_map.h
+  include/grpcpp/impl/codegen/method_handler.h
   include/grpcpp/impl/codegen/method_handler_impl.h
   include/grpcpp/impl/codegen/rpc_method.h
   include/grpcpp/impl/codegen/rpc_service_method.h
@@ -4580,6 +4583,7 @@ foreach(_hdr
   include/grpcpp/impl/codegen/interceptor_common.h
   include/grpcpp/impl/codegen/message_allocator.h
   include/grpcpp/impl/codegen/metadata_map.h
+  include/grpcpp/impl/codegen/method_handler.h
   include/grpcpp/impl/codegen/method_handler_impl.h
   include/grpcpp/impl/codegen/rpc_method.h
   include/grpcpp/impl/codegen/rpc_service_method.h
@@ -17370,7 +17374,6 @@ target_include_directories(timer_test
   PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
   PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
   PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
   PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
   PRIVATE ${_gRPC_UPB_GENERATED_DIR}
