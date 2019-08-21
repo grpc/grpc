@@ -527,7 +527,8 @@ TEST_F(CredentialsTest, TlsCredentialsOptionsCppToC) {
   c_credential_reload_arg.status = GRPC_SSL_CERTIFICATE_CONFIG_RELOAD_UNCHANGED;
   grpc::string test_error_details = "error_details";
   c_credential_reload_arg.error_details = test_error_details.c_str();
-  grpc_tls_server_authorization_check_config* c_server_authorization_check_config =
+  grpc_tls_server_authorization_check_config*
+      c_server_authorization_check_config =
           c_options->server_authorization_check_config();
   grpc_tls_server_authorization_check_arg c_server_authorization_check_arg;
   c_server_authorization_check_arg.config = c_server_authorization_check_config;
@@ -549,7 +550,8 @@ TEST_F(CredentialsTest, TlsCredentialsOptionsCppToC) {
   EXPECT_STREQ(c_key_materials_config->pem_key_cert_pair_list()[0].cert_chain(),
                "cert_chain");
 
-  int c_credential_reload_schedule_output = c_credential_reload_config->Schedule(&c_credential_reload_arg);
+  int c_credential_reload_schedule_output =
+      c_credential_reload_config->Schedule(&c_credential_reload_arg);
   EXPECT_EQ(c_credential_reload_schedule_output, 0);
   EXPECT_EQ(c_credential_reload_arg.cb_user_data, nullptr);
   EXPECT_STREQ(c_credential_reload_arg.key_materials_config->pem_root_certs(),
