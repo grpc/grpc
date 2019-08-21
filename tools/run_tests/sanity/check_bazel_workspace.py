@@ -48,6 +48,7 @@ _GRPC_DEP_NAMES = [
     'zlib',
     'com_google_protobuf',
     'com_github_google_googletest',
+    'rules_cc',
     'com_github_gflags_gflags',
     'com_github_nanopb_nanopb',
     'com_github_google_benchmark',
@@ -67,6 +68,7 @@ _GRPC_DEP_NAMES = [
 ]
 
 _GRPC_BAZEL_ONLY_DEPS = [
+    'rules_cc',
     'com_google_absl',
     'io_opencensus_cpp',
     _BAZEL_SKYLIB_DEP_NAME,
