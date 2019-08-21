@@ -448,7 +448,7 @@ TEST_F(CredentialsTest, TlsServerAuthorizationCheckConfigSchedule) {
   arg.set_status(GRPC_STATUS_PERMISSION_DENIED);
   arg.set_error_details("error_details");
   int schedule_output = config.Schedule(&arg);
-  EXPECT_EQ(schedule_output, 0);
+  EXPECT_EQ(schedule_output, 1);
   EXPECT_STREQ(static_cast<char*>(arg.cb_user_data()), "cb_user_data");
   EXPECT_EQ(arg.success(), 1);
   EXPECT_STREQ(arg.target_name()->c_str(), "sync_target_name");
@@ -521,14 +521,16 @@ TEST_F(CredentialsTest, TlsCredentialsOptionsCppToC) {
   grpc_tls_credential_reload_config* c_credential_reload_config =
       c_options->credential_reload_config();
   grpc_tls_credential_reload_arg c_credential_reload_arg;
+  c_credential_reload_arg.config = c_credential_reload_config;
+  c_credential_reload_arg.cb_user_data = nullptr;
   c_credential_reload_arg.key_materials_config = c_key_materials_config;
   c_credential_reload_arg.status = GRPC_SSL_CERTIFICATE_CONFIG_RELOAD_UNCHANGED;
   grpc::string test_error_details = "error_details";
   c_credential_reload_arg.error_details = test_error_details.c_str();
-  grpc_tls_server_authorization_check_config*
-      c_server_authorization_check_config =
+  grpc_tls_server_authorization_check_config* c_server_authorization_check_config =
           c_options->server_authorization_check_config();
   grpc_tls_server_authorization_check_arg c_server_authorization_check_arg;
+  c_server_authorization_check_arg.config = c_server_authorization_check_config;
   c_server_authorization_check_arg.cb = tls_server_authorization_check_callback;
   c_server_authorization_check_arg.cb_user_data = nullptr;
   c_server_authorization_check_arg.success = 0;
@@ -547,8 +549,7 @@ TEST_F(CredentialsTest, TlsCredentialsOptionsCppToC) {
   EXPECT_STREQ(c_key_materials_config->pem_key_cert_pair_list()[0].cert_chain(),
                "cert_chain");
 
-  int c_credential_reload_schedule_output =
-      c_credential_reload_config->Schedule(&c_credential_reload_arg);
+  int c_credential_reload_schedule_output = c_credential_reload_config->Schedule(&c_credential_reload_arg);
   EXPECT_EQ(c_credential_reload_schedule_output, 0);
   EXPECT_EQ(c_credential_reload_arg.cb_user_data, nullptr);
   EXPECT_STREQ(c_credential_reload_arg.key_materials_config->pem_root_certs(),
@@ -579,7 +580,6 @@ TEST_F(CredentialsTest, TlsCredentialsOptionsCppToC) {
   EXPECT_EQ(c_server_authorization_check_arg.status, GRPC_STATUS_OK);
   EXPECT_STREQ(c_server_authorization_check_arg.error_details,
                "sync_error_details");
-
   gpr_free(c_options);
 }
 
