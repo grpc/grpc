@@ -34,13 +34,12 @@ extern grpc_core::TraceFlag grpc_server_channel_trace;
 
 /* Add a listener to the server: when the server starts, it will call start,
    and when it shuts down, it will call destroy */
-void grpc_server_add_listener(grpc_server* server, void* listener,
-                              void (*start)(grpc_server* server, void* arg,
-                                            grpc_pollset** pollsets,
-                                            size_t npollsets),
-                              void (*destroy)(grpc_server* server, void* arg,
-                                              grpc_closure* on_done),
-                              intptr_t socket_uuid);
+void grpc_server_add_listener(
+    grpc_server* server, void* listener_arg,
+    void (*start)(grpc_server* server, void* arg, grpc_pollset** pollsets,
+                  size_t npollsets),
+    void (*destroy)(grpc_server* server, void* arg, grpc_closure* on_done),
+    grpc_core::RefCountedPtr<grpc_core::channelz::ListenSocketNode> node);
 
 /* Setup a transport - creates a channel stack, binds the transport to the
    server */

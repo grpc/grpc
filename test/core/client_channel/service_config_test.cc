@@ -457,28 +457,6 @@ TEST_F(ClientChannelParserTest, InvalidGrpclbLoadBalancingConfig) {
   VerifyRegexMatch(error, e);
 }
 
-TEST_F(ClientChannelParserTest, InalidLoadBalancingConfigXds) {
-  const char* test_json =
-      "{\n"
-      "  \"loadBalancingConfig\":[\n"
-      "    { \"does_not_exist\":{} },\n"
-      "    { \"xds_experimental\":{} }\n"
-      "  ]\n"
-      "}";
-  grpc_error* error = GRPC_ERROR_NONE;
-  auto svc_cfg = ServiceConfig::Create(test_json, &error);
-  gpr_log(GPR_ERROR, "%s", grpc_error_string(error));
-  ASSERT_TRUE(error != GRPC_ERROR_NONE);
-  std::regex e(
-      std::string("(Service config parsing "
-                  "error)(.*)(referenced_errors)(.*)(Global "
-                  "Params)(.*)(referenced_errors)(.*)(Client channel global "
-                  "parser)(.*)(referenced_errors)(.*)(Xds "
-                  "Parser)(.*)(referenced_errors)(.*)(field:balancerName "
-                  "error:not found)"));
-  VerifyRegexMatch(error, e);
-}
-
 TEST_F(ClientChannelParserTest, ValidLoadBalancingPolicy) {
   const char* test_json = "{\"loadBalancingPolicy\":\"pick_first\"}";
   grpc_error* error = GRPC_ERROR_NONE;

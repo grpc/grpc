@@ -332,4 +332,8 @@ const tsi_ssl_handshaker_factory_vtable* tsi_ssl_handshaker_factory_swap_vtable(
     tsi_ssl_handshaker_factory* factory,
     tsi_ssl_handshaker_factory_vtable* new_vtable);
 
+/* Exposed for testing only. */
+tsi_result tsi_ssl_extract_x509_subject_names_from_pem_cert(
+    const char* pem_cert, tsi_peer* peer);
+
 #endif /* GRPC_CORE_TSI_SSL_TRANSPORT_SECURITY_H */

@@ -78,6 +78,7 @@ grpc_cc_test(
         "//test/core/util:grpc_test_util",
         "//test/cpp/util:test_util",
     ],
+    tags = ["no_test_ios"],
 )
 
 grpc_cc_test(
@@ -89,6 +90,7 @@ grpc_cc_test(
     external_deps = [
         "gtest",
     ],
+    tags = ["no_windows", "no_test_ios"],
     deps = [
         ":test_service_impl",
         "//:gpr",
@@ -99,7 +101,6 @@ grpc_cc_test(
         "//test/core/util:grpc_test_util",
         "//test/cpp/util:test_util",
     ],
-    tags = ["no_windows"],
 )
 
 grpc_cc_test(
@@ -121,6 +122,7 @@ grpc_cc_test(
         "//test/core/util:grpc_test_util",
         "//test/cpp/util:test_util",
     ],
+    tags = ["no_test_ios"],
 )
 
 grpc_cc_binary(
@@ -160,6 +162,25 @@ grpc_cc_test(
         "//src/proto/grpc/testing:echo_messages_proto",
         "//src/proto/grpc/testing:echo_proto",
         "//src/proto/grpc/testing:simple_messages_proto",
+        "//test/core/util:grpc_test_util",
+        "//test/cpp/util:test_util",
+    ],
+    tags = ["no_test_ios"],
+)
+
+grpc_cc_test(
+    name = "delegating_channel_test",
+    srcs = ["delegating_channel_test.cc"],
+    external_deps = [
+        "gtest",
+    ],
+    deps = [
+        ":test_service_impl",
+        "//:gpr",
+        "//:grpc",
+        "//:grpc++",
+        "//src/proto/grpc/testing:echo_messages_proto",
+        "//src/proto/grpc/testing:echo_proto",
         "//test/core/util:grpc_test_util",
         "//test/cpp/util:test_util",
     ],
@@ -419,6 +440,7 @@ grpc_cc_test(
         "//test/core/util:test_lb_policies",
         "//test/cpp/util:test_util",
     ],
+    tags = ["no_test_ios"],
 )
 
 grpc_cc_test(
@@ -459,6 +481,7 @@ grpc_cc_test(
         "//test/core/util:grpc_test_util",
         "//test/cpp/util:test_util",
     ],
+    tags = ["no_test_ios"],
 )
 
 grpc_cc_test(
@@ -473,13 +496,15 @@ grpc_cc_test(
         "//:grpc",
         "//:grpc++",
         "//:grpc_resolver_fake",
-        "//src/proto/grpc/lb/v1:load_balancer_proto",
+        "//src/proto/grpc/lb/v2:eds_for_test_proto",
+        "//src/proto/grpc/lb/v2:lrs_for_test_proto",
         "//src/proto/grpc/testing:echo_messages_proto",
         "//src/proto/grpc/testing:echo_proto",
         "//src/proto/grpc/testing/duplicate:echo_duplicate_proto",
         "//test/core/util:grpc_test_util",
         "//test/cpp/util:test_util",
     ],
+    tags = ["no_test_ios"],
 )
 
 grpc_cc_test(
@@ -542,6 +567,7 @@ grpc_cc_test(
         "//test/core/util:grpc_test_util",
         "//test/cpp/util:test_util",
     ],
+    tags = ["no_test_ios"],
 )
 
 grpc_cc_binary(
@@ -595,6 +621,7 @@ grpc_cc_test(
         "//src/proto/grpc/testing:echo_proto",
         "//test/cpp/util:test_util",
     ],
+    tags = ["no_test_ios"],
 )
 
 grpc_cc_test(
@@ -603,7 +630,7 @@ grpc_cc_test(
     external_deps = [
         "gtest",
     ],
-    tags = ["manual"],
+    tags = ["manual", "no_test_ios"],
     deps = [
         ":test_service_impl",
         "//:gpr",
@@ -640,6 +667,7 @@ grpc_cc_test(
     external_deps = [
         "gtest",
     ],
+    tags = ["no_windows"],
     deps = [
         "//:gpr",
         "//:grpc",
@@ -650,7 +678,6 @@ grpc_cc_test(
         "//test/core/util:grpc_test_util",
         "//test/cpp/util:test_util",
     ],
-    tags = ["no_windows"],
 )
 
 grpc_cc_test(
@@ -670,6 +697,7 @@ grpc_cc_test(
         "//test/core/util:grpc_test_util",
         "//test/cpp/util:test_util",
     ],
+    tags = ["no_test_ios"],
 )
 
 grpc_cc_test(
@@ -678,7 +706,7 @@ grpc_cc_test(
     external_deps = [
         "gtest",
     ],
-    tags = ["manual"],  # test requires root, won't work with bazel RBE
+    tags = ["manual", "no_test_ios"],  # test requires root, won't work with bazel RBE
     deps = [
         ":test_service_impl",
         "//:gpr",
@@ -700,8 +728,8 @@ grpc_cc_test(
     ],
     deps = [
         ":test_service_impl",
-        "//:grpc",
         "//:gpr",
+        "//:grpc",
         "//:grpc++",
         "//src/proto/grpc/testing:echo_messages_proto",
         "//src/proto/grpc/testing:echo_proto",
@@ -727,5 +755,5 @@ grpc_cc_test(
         "//test/core/util:grpc_test_util",
         "//test/cpp/util:test_util",
     ],
+    tags = ["no_test_ios"],
 )
-

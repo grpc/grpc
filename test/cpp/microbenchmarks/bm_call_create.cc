@@ -456,7 +456,7 @@ class NoOp {
 class SendEmptyMetadata {
  public:
   SendEmptyMetadata() : op_payload_(nullptr) {
-    memset(&op_, 0, sizeof(op_));
+    op_ = {};
     op_.on_complete = GRPC_CLOSURE_INIT(&closure_, DoNothing, nullptr,
                                         grpc_schedule_on_exec_ctx);
     op_.send_initial_metadata = true;
@@ -686,6 +686,12 @@ static const grpc_channel_filter isolated_call_filter = {
 class IsolatedCallFixture : public TrackCounters {
  public:
   IsolatedCallFixture() {
+    // We are calling grpc_channel_stack_builder_create() instead of
+    // grpc_channel_create() here, which means we're not getting the
+    // grpc_init() called by grpc_channel_create(), but we are getting
+    // the grpc_shutdown() run by grpc_channel_destroy().  So we need to
+    // call grpc_init() manually here to balance things out.
+    grpc_init();
     grpc_channel_stack_builder* builder = grpc_channel_stack_builder_create();
     grpc_channel_stack_builder_set_name(builder, "dummy");
     grpc_channel_stack_builder_set_target(builder, "dummy_target");

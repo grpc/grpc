@@ -28,41 +28,42 @@ namespace Grpc.Testing {
             "LnRlc3RpbmciGgoJQm9vbFZhbHVlEg0KBXZhbHVlGAEgASgIIkAKB1BheWxv",
             "YWQSJwoEdHlwZRgBIAEoDjIZLmdycGMudGVzdGluZy5QYXlsb2FkVHlwZRIM",
             "CgRib2R5GAIgASgMIisKCkVjaG9TdGF0dXMSDAoEY29kZRgBIAEoBRIPCgdt",
-            "ZXNzYWdlGAIgASgJIs4CCg1TaW1wbGVSZXF1ZXN0EjAKDXJlc3BvbnNlX3R5",
+            "ZXNzYWdlGAIgASgJIuYCCg1TaW1wbGVSZXF1ZXN0EjAKDXJlc3BvbnNlX3R5",
             "cGUYASABKA4yGS5ncnBjLnRlc3RpbmcuUGF5bG9hZFR5cGUSFQoNcmVzcG9u",
             "c2Vfc2l6ZRgCIAEoBRImCgdwYXlsb2FkGAMgASgLMhUuZ3JwYy50ZXN0aW5n",
             "LlBheWxvYWQSFQoNZmlsbF91c2VybmFtZRgEIAEoCBIYChBmaWxsX29hdXRo",
             "X3Njb3BlGAUgASgIEjQKE3Jlc3BvbnNlX2NvbXByZXNzZWQYBiABKAsyFy5n",
             "cnBjLnRlc3RpbmcuQm9vbFZhbHVlEjEKD3Jlc3BvbnNlX3N0YXR1cxgHIAEo",
             "CzIYLmdycGMudGVzdGluZy5FY2hvU3RhdHVzEjIKEWV4cGVjdF9jb21wcmVz",
-            "c2VkGAggASgLMhcuZ3JwYy50ZXN0aW5nLkJvb2xWYWx1ZSJfCg5TaW1wbGVS",
-            "ZXNwb25zZRImCgdwYXlsb2FkGAEgASgLMhUuZ3JwYy50ZXN0aW5nLlBheWxv",
-            "YWQSEAoIdXNlcm5hbWUYAiABKAkSEwoLb2F1dGhfc2NvcGUYAyABKAkidwoZ",
-            "U3RyZWFtaW5nSW5wdXRDYWxsUmVxdWVzdBImCgdwYXlsb2FkGAEgASgLMhUu",
-            "Z3JwYy50ZXN0aW5nLlBheWxvYWQSMgoRZXhwZWN0X2NvbXByZXNzZWQYAiAB",
-            "KAsyFy5ncnBjLnRlc3RpbmcuQm9vbFZhbHVlIj0KGlN0cmVhbWluZ0lucHV0",
-            "Q2FsbFJlc3BvbnNlEh8KF2FnZ3JlZ2F0ZWRfcGF5bG9hZF9zaXplGAEgASgF",
-            "ImQKElJlc3BvbnNlUGFyYW1ldGVycxIMCgRzaXplGAEgASgFEhMKC2ludGVy",
-            "dmFsX3VzGAIgASgFEisKCmNvbXByZXNzZWQYAyABKAsyFy5ncnBjLnRlc3Rp",
-            "bmcuQm9vbFZhbHVlIugBChpTdHJlYW1pbmdPdXRwdXRDYWxsUmVxdWVzdBIw",
-            "Cg1yZXNwb25zZV90eXBlGAEgASgOMhkuZ3JwYy50ZXN0aW5nLlBheWxvYWRU",
-            "eXBlEj0KE3Jlc3BvbnNlX3BhcmFtZXRlcnMYAiADKAsyIC5ncnBjLnRlc3Rp",
-            "bmcuUmVzcG9uc2VQYXJhbWV0ZXJzEiYKB3BheWxvYWQYAyABKAsyFS5ncnBj",
-            "LnRlc3RpbmcuUGF5bG9hZBIxCg9yZXNwb25zZV9zdGF0dXMYByABKAsyGC5n",
-            "cnBjLnRlc3RpbmcuRWNob1N0YXR1cyJFChtTdHJlYW1pbmdPdXRwdXRDYWxs",
-            "UmVzcG9uc2USJgoHcGF5bG9hZBgBIAEoCzIVLmdycGMudGVzdGluZy5QYXls",
-            "b2FkIjMKD1JlY29ubmVjdFBhcmFtcxIgChhtYXhfcmVjb25uZWN0X2JhY2tv",
-            "ZmZfbXMYASABKAUiMwoNUmVjb25uZWN0SW5mbxIOCgZwYXNzZWQYASABKAgS",
-            "EgoKYmFja29mZl9tcxgCIAMoBSofCgtQYXlsb2FkVHlwZRIQCgxDT01QUkVT",
-            "U0FCTEUQAGIGcHJvdG8z"));
+            "c2VkGAggASgLMhcuZ3JwYy50ZXN0aW5nLkJvb2xWYWx1ZRIWCg5maWxsX3Nl",
+            "cnZlcl9pZBgJIAEoCCJyCg5TaW1wbGVSZXNwb25zZRImCgdwYXlsb2FkGAEg",
+            "ASgLMhUuZ3JwYy50ZXN0aW5nLlBheWxvYWQSEAoIdXNlcm5hbWUYAiABKAkS",
+            "EwoLb2F1dGhfc2NvcGUYAyABKAkSEQoJc2VydmVyX2lkGAQgASgJIncKGVN0",
+            "cmVhbWluZ0lucHV0Q2FsbFJlcXVlc3QSJgoHcGF5bG9hZBgBIAEoCzIVLmdy",
+            "cGMudGVzdGluZy5QYXlsb2FkEjIKEWV4cGVjdF9jb21wcmVzc2VkGAIgASgL",
+            "MhcuZ3JwYy50ZXN0aW5nLkJvb2xWYWx1ZSI9ChpTdHJlYW1pbmdJbnB1dENh",
+            "bGxSZXNwb25zZRIfChdhZ2dyZWdhdGVkX3BheWxvYWRfc2l6ZRgBIAEoBSJk",
+            "ChJSZXNwb25zZVBhcmFtZXRlcnMSDAoEc2l6ZRgBIAEoBRITCgtpbnRlcnZh",
+            "bF91cxgCIAEoBRIrCgpjb21wcmVzc2VkGAMgASgLMhcuZ3JwYy50ZXN0aW5n",
+            "LkJvb2xWYWx1ZSLoAQoaU3RyZWFtaW5nT3V0cHV0Q2FsbFJlcXVlc3QSMAoN",
+            "cmVzcG9uc2VfdHlwZRgBIAEoDjIZLmdycGMudGVzdGluZy5QYXlsb2FkVHlw",
+            "ZRI9ChNyZXNwb25zZV9wYXJhbWV0ZXJzGAIgAygLMiAuZ3JwYy50ZXN0aW5n",
+            "LlJlc3BvbnNlUGFyYW1ldGVycxImCgdwYXlsb2FkGAMgASgLMhUuZ3JwYy50",
+            "ZXN0aW5nLlBheWxvYWQSMQoPcmVzcG9uc2Vfc3RhdHVzGAcgASgLMhguZ3Jw",
+            "Yy50ZXN0aW5nLkVjaG9TdGF0dXMiRQobU3RyZWFtaW5nT3V0cHV0Q2FsbFJl",
+            "c3BvbnNlEiYKB3BheWxvYWQYASABKAsyFS5ncnBjLnRlc3RpbmcuUGF5bG9h",
+            "ZCIzCg9SZWNvbm5lY3RQYXJhbXMSIAoYbWF4X3JlY29ubmVjdF9iYWNrb2Zm",
+            "X21zGAEgASgFIjMKDVJlY29ubmVjdEluZm8SDgoGcGFzc2VkGAEgASgIEhIK",
+            "CmJhY2tvZmZfbXMYAiADKAUqHwoLUGF5bG9hZFR5cGUSEAoMQ09NUFJFU1NB",
+            "QkxFEABiBnByb3RvMw=="));
       descriptor = pbr::FileDescriptor.FromGeneratedCode(descriptorData,
           new pbr::FileDescriptor[] { },
           new pbr::GeneratedClrTypeInfo(new[] {typeof(global::Grpc.Testing.PayloadType), }, new pbr::GeneratedClrTypeInfo[] {
             new pbr::GeneratedClrTypeInfo(typeof(global::Grpc.Testing.BoolValue), global::Grpc.Testing.BoolValue.Parser, new[]{ "Value" }, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Grpc.Testing.Payload), global::Grpc.Testing.Payload.Parser, new[]{ "Type", "Body" }, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Grpc.Testing.EchoStatus), global::Grpc.Testing.EchoStatus.Parser, new[]{ "Code", "Message" }, null, null, null),
-            new pbr::GeneratedClrTypeInfo(typeof(global::Grpc.Testing.SimpleRequest), global::Grpc.Testing.SimpleRequest.Parser, new[]{ "ResponseType", "ResponseSize", "Payload", "FillUsername", "FillOauthScope", "ResponseCompressed", "ResponseStatus", "ExpectCompressed" }, null, null, null),
-            new pbr::GeneratedClrTypeInfo(typeof(global::Grpc.Testing.SimpleResponse), global::Grpc.Testing.SimpleResponse.Parser, new[]{ "Payload", "Username", "OauthScope" }, null, null, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::Grpc.Testing.SimpleRequest), global::Grpc.Testing.SimpleRequest.Parser, new[]{ "ResponseType", "ResponseSize", "Payload", "FillUsername", "FillOauthScope", "ResponseCompressed", "ResponseStatus", "ExpectCompressed", "FillServerId" }, null, null, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::Grpc.Testing.SimpleResponse), global::Grpc.Testing.SimpleResponse.Parser, new[]{ "Payload", "Username", "OauthScope", "ServerId" }, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Grpc.Testing.StreamingInputCallRequest), global::Grpc.Testing.StreamingInputCallRequest.Parser, new[]{ "Payload", "ExpectCompressed" }, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Grpc.Testing.StreamingInputCallResponse), global::Grpc.Testing.StreamingInputCallResponse.Parser, new[]{ "AggregatedPayloadSize" }, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Grpc.Testing.ResponseParameters), global::Grpc.Testing.ResponseParameters.Parser, new[]{ "Size", "IntervalUs", "Compressed" }, null, null, null),
@@ -589,6 +590,7 @@ namespace Grpc.Testing {
       responseCompressed_ = other.responseCompressed_ != null ? other.responseCompressed_.Clone() : null;
       responseStatus_ = other.responseStatus_ != null ? other.responseStatus_.Clone() : null;
       expectCompressed_ = other.expectCompressed_ != null ? other.expectCompressed_.Clone() : null;
+      fillServerId_ = other.fillServerId_;
       _unknownFields = pb::UnknownFieldSet.Clone(other._unknownFields);
     }
 
@@ -713,6 +715,20 @@ namespace Grpc.Testing {
       }
     }
 
+    /// <summary>Field number for the "fill_server_id" field.</summary>
+    public const int FillServerIdFieldNumber = 9;
+    private bool fillServerId_;
+    /// <summary>
+    /// Whether SimpleResponse should include server_id.
+    /// </summary>
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public bool FillServerId {
+      get { return fillServerId_; }
+      set {
+        fillServerId_ = value;
+      }
+    }
+
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public override bool Equals(object other) {
       return Equals(other as SimpleRequest);
@@ -734,6 +750,7 @@ namespace Grpc.Testing {
       if (!object.Equals(ResponseCompressed, other.ResponseCompressed)) return false;
       if (!object.Equals(ResponseStatus, other.ResponseStatus)) return false;
       if (!object.Equals(ExpectCompressed, other.ExpectCompressed)) return false;
+      if (FillServerId != other.FillServerId) return false;
       return Equals(_unknownFields, other._unknownFields);
     }
 
@@ -748,6 +765,7 @@ namespace Grpc.Testing {
       if (responseCompressed_ != null) hash ^= ResponseCompressed.GetHashCode();
       if (responseStatus_ != null) hash ^= ResponseStatus.GetHashCode();
       if (expectCompressed_ != null) hash ^= ExpectCompressed.GetHashCode();
+      if (FillServerId != false) hash ^= FillServerId.GetHashCode();
       if (_unknownFields != null) {
         hash ^= _unknownFields.GetHashCode();
       }
@@ -793,6 +811,10 @@ namespace Grpc.Testing {
         output.WriteRawTag(66);
         output.WriteMessage(ExpectCompressed);
       }
+      if (FillServerId != false) {
+        output.WriteRawTag(72);
+        output.WriteBool(FillServerId);
+      }
       if (_unknownFields != null) {
         _unknownFields.WriteTo(output);
       }
@@ -824,6 +846,9 @@ namespace Grpc.Testing {
       }
       if (expectCompressed_ != null) {
         size += 1 + pb::CodedOutputStream.ComputeMessageSize(ExpectCompressed);
+      }
+      if (FillServerId != false) {
+        size += 1 + 1;
       }
       if (_unknownFields != null) {
         size += _unknownFields.CalculateSize();
@@ -871,6 +896,9 @@ namespace Grpc.Testing {
           ExpectCompressed = new global::Grpc.Testing.BoolValue();
         }
         ExpectCompressed.MergeFrom(other.ExpectCompressed);
+      }
+      if (other.FillServerId != false) {
+        FillServerId = other.FillServerId;
       }
       _unknownFields = pb::UnknownFieldSet.MergeFrom(_unknownFields, other._unknownFields);
     }
@@ -927,6 +955,10 @@ namespace Grpc.Testing {
             input.ReadMessage(ExpectCompressed);
             break;
           }
+          case 72: {
+            FillServerId = input.ReadBool();
+            break;
+          }
         }
       }
     }
@@ -964,6 +996,7 @@ namespace Grpc.Testing {
       payload_ = other.payload_ != null ? other.payload_.Clone() : null;
       username_ = other.username_;
       oauthScope_ = other.oauthScope_;
+      serverId_ = other.serverId_;
       _unknownFields = pb::UnknownFieldSet.Clone(other._unknownFields);
     }
 
@@ -1015,6 +1048,21 @@ namespace Grpc.Testing {
       }
     }
 
+    /// <summary>Field number for the "server_id" field.</summary>
+    public const int ServerIdFieldNumber = 4;
+    private string serverId_ = "";
+    /// <summary>
+    /// Server ID. This must be unique among different server instances,
+    /// but the same across all RPC's made to a particular server instance.
+    /// </summary>
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public string ServerId {
+      get { return serverId_; }
+      set {
+        serverId_ = pb::ProtoPreconditions.CheckNotNull(value, "value");
+      }
+    }
+
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public override bool Equals(object other) {
       return Equals(other as SimpleResponse);
@@ -1031,6 +1079,7 @@ namespace Grpc.Testing {
       if (!object.Equals(Payload, other.Payload)) return false;
       if (Username != other.Username) return false;
       if (OauthScope != other.OauthScope) return false;
+      if (ServerId != other.ServerId) return false;
       return Equals(_unknownFields, other._unknownFields);
     }
 
@@ -1040,6 +1089,7 @@ namespace Grpc.Testing {
       if (payload_ != null) hash ^= Payload.GetHashCode();
       if (Username.Length != 0) hash ^= Username.GetHashCode();
       if (OauthScope.Length != 0) hash ^= OauthScope.GetHashCode();
+      if (ServerId.Length != 0) hash ^= ServerId.GetHashCode();
       if (_unknownFields != null) {
         hash ^= _unknownFields.GetHashCode();
       }
@@ -1065,6 +1115,10 @@ namespace Grpc.Testing {
         output.WriteRawTag(26);
         output.WriteString(OauthScope);
       }
+      if (ServerId.Length != 0) {
+        output.WriteRawTag(34);
+        output.WriteString(ServerId);
+      }
       if (_unknownFields != null) {
         _unknownFields.WriteTo(output);
       }
@@ -1081,6 +1135,9 @@ namespace Grpc.Testing {
       }
       if (OauthScope.Length != 0) {
         size += 1 + pb::CodedOutputStream.ComputeStringSize(OauthScope);
+      }
+      if (ServerId.Length != 0) {
+        size += 1 + pb::CodedOutputStream.ComputeStringSize(ServerId);
       }
       if (_unknownFields != null) {
         size += _unknownFields.CalculateSize();
@@ -1104,6 +1161,9 @@ namespace Grpc.Testing {
       }
       if (other.OauthScope.Length != 0) {
         OauthScope = other.OauthScope;
+      }
+      if (other.ServerId.Length != 0) {
+        ServerId = other.ServerId;
       }
       _unknownFields = pb::UnknownFieldSet.MergeFrom(_unknownFields, other._unknownFields);
     }
@@ -1129,6 +1189,10 @@ namespace Grpc.Testing {
           }
           case 26: {
             OauthScope = input.ReadString();
+            break;
+          }
+          case 34: {
+            ServerId = input.ReadString();
             break;
           }
         }

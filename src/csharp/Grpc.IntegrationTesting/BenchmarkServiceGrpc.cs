@@ -148,7 +148,7 @@ namespace Grpc.Testing {
     {
       /// <summary>Creates a new client for BenchmarkService</summary>
       /// <param name="channel">The channel to use to make remote calls.</param>
-      public BenchmarkServiceClient(grpc::Channel channel) : base(channel)
+      public BenchmarkServiceClient(grpc::ChannelBase channel) : base(channel)
       {
       }
       /// <summary>Creates a new client for BenchmarkService that uses a custom <c>CallInvoker</c>.</summary>

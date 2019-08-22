@@ -14,6 +14,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from __future__ import print_function
 import os
 import sys
 import glob
@@ -27,7 +28,7 @@ out['libs'] = [{
     'name': 'benchmark',
     'build': 'private',
     'language': 'c++',
-    'secure': 'no',
+    'secure': False,
     'defaults': 'benchmark',
     'src': sorted(glob.glob('third_party/benchmark/src/*.cc')),
     'headers': sorted(
@@ -35,4 +36,4 @@ out['libs'] = [{
         glob.glob('third_party/benchmark/include/benchmark/*.h')),
 }]
 
-print yaml.dump(out)
+print(yaml.dump(out))

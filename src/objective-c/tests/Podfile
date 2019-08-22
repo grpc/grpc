@@ -5,15 +5,14 @@ install! 'cocoapods', :deterministic_uuids => false
 # Location of gRPC's repo root relative to this file.
 GRPC_LOCAL_SRC = '../../..'
 
-target 'MacTests' do
-  platform :osx, '10.13'
+def grpc_deps
   pod 'Protobuf', :path => "#{GRPC_LOCAL_SRC}/third_party/protobuf", :inhibit_warnings => true
-
+  
   pod '!ProtoCompiler',            :path => "#{GRPC_LOCAL_SRC}/src/objective-c"
   pod '!ProtoCompiler-gRPCPlugin', :path => "#{GRPC_LOCAL_SRC}/src/objective-c"
-
+  
   pod 'BoringSSL-GRPC',       :podspec => "#{GRPC_LOCAL_SRC}/src/objective-c", :inhibit_warnings => true
-
+  
   pod 'gRPC',           :path => GRPC_LOCAL_SRC
   pod 'gRPC-Core',      :path => GRPC_LOCAL_SRC
   pod 'gRPC-RxLibrary', :path => GRPC_LOCAL_SRC
@@ -21,20 +20,19 @@ target 'MacTests' do
   pod 'RemoteTest', :path => "RemoteTestClient", :inhibit_warnings => true
 end
 
+target 'TvTests' do
+  platform :tvos, '10.0'
+  grpc_deps
+end
+
+target 'MacTests' do
+  platform :osx, '10.13'
+  grpc_deps
+end
+
 target 'UnitTests' do 
   platform :ios, '8.0'
-  pod 'Protobuf', :path => "#{GRPC_LOCAL_SRC}/third_party/protobuf", :inhibit_warnings => true
-
-  pod '!ProtoCompiler',            :path => "#{GRPC_LOCAL_SRC}/src/objective-c"
-  pod '!ProtoCompiler-gRPCPlugin', :path => "#{GRPC_LOCAL_SRC}/src/objective-c"
-
-  pod 'BoringSSL-GRPC',       :podspec => "#{GRPC_LOCAL_SRC}/src/objective-c", :inhibit_warnings => true
-
-  pod 'gRPC',           :path => GRPC_LOCAL_SRC
-  pod 'gRPC-Core',      :path => GRPC_LOCAL_SRC
-  pod 'gRPC-RxLibrary', :path => GRPC_LOCAL_SRC
-  pod 'gRPC-ProtoRPC',  :path => GRPC_LOCAL_SRC, :inhibit_warnings => true
-  pod 'RemoteTest', :path => "RemoteTestClient", :inhibit_warnings => true
+  grpc_deps
 end
 
 %w(
@@ -43,18 +41,7 @@ end
 ).each do |target_name|
   target target_name do
     platform :ios, '8.0'
-    pod 'Protobuf', :path => "#{GRPC_LOCAL_SRC}/third_party/protobuf", :inhibit_warnings => true
-
-    pod '!ProtoCompiler',            :path => "#{GRPC_LOCAL_SRC}/src/objective-c"
-    pod '!ProtoCompiler-gRPCPlugin', :path => "#{GRPC_LOCAL_SRC}/src/objective-c"
-
-    pod 'BoringSSL-GRPC',       :podspec => "#{GRPC_LOCAL_SRC}/src/objective-c", :inhibit_warnings => true
-
-    pod 'gRPC',           :path => GRPC_LOCAL_SRC
-    pod 'gRPC-Core',      :path => GRPC_LOCAL_SRC
-    pod 'gRPC-RxLibrary', :path => GRPC_LOCAL_SRC
-    pod 'gRPC-ProtoRPC',  :path => GRPC_LOCAL_SRC, :inhibit_warnings => true
-    pod 'RemoteTest', :path => "RemoteTestClient", :inhibit_warnings => true
+    grpc_deps
 
     pod 'gRPC-Core/Cronet-Implementation', :path => GRPC_LOCAL_SRC
     pod 'CronetFramework', :podspec => "#{GRPC_LOCAL_SRC}/src/objective-c"
@@ -116,7 +103,7 @@ post_install do |installer|
     # the test target 'InteropTestsRemoteWithCronet'
     # Activate GRPCCall+InternalTests functions for the dedicated build configuration 'Test', which will
     # be used by all test targets using it.
-    if /gRPC-(mac|i)OS/.match(target.name)
+    if /gRPC-(mac|i|tv)OS/.match(target.name)
       target.build_configurations.each do |config|
         if config.name == 'Cronet'
           config.build_settings['GCC_PREPROCESSOR_DEFINITIONS'] = '$(inherited) COCOAPODS=1 GRPC_COMPILE_WITH_CRONET=1 GRPC_TEST_OBJC=1'
@@ -127,7 +114,7 @@ post_install do |installer|
     end
 
     # Enable NSAssert on gRPC
-    if /(gRPC|ProtoRPC|RxLibrary)-(mac|i)OS/.match(target.name)
+    if /(gRPC|ProtoRPC|RxLibrary)-(mac|i|tv)OS/.match(target.name)
       target.build_configurations.each do |config|
         if config.name != 'Release'
           config.build_settings['ENABLE_NS_ASSERTIONS'] = 'YES'

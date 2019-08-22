@@ -21,10 +21,10 @@
 #ifdef GRPC_COMPILE_WITH_CRONET
 #import <Cronet/Cronet.h>
 #endif
-#import <RemoteTest/Messages.pbobjc.h>
-#import <RemoteTest/Test.pbobjc.h>
-#import <RemoteTest/Test.pbrpc.h>
 #import <RxLibrary/GRXBufferedPipe.h>
+#import "src/objective-c/tests/RemoteTestClient/Messages.pbobjc.h"
+#import "src/objective-c/tests/RemoteTestClient/Test.pbobjc.h"
+#import "src/objective-c/tests/RemoteTestClient/Test.pbrpc.h"
 
 #import "../ConfigureCronet.h"
 #import "InteropTestsBlockCallbacks.h"
@@ -86,7 +86,6 @@ dispatch_once_t initCronet;
   self.continueAfterFailure = NO;
 
   _remoteService = [RMTTestService serviceWithHost:kRemoteSSLHost callOptions:nil];
-
   configureCronet();
 
   // Default stack with remote host
