@@ -160,17 +160,6 @@ class XdsLocalityListPriorityMap {
     }
   }
 
-  InlinedVector<uint32_t, 1> FindPriorities(uint32_t highest_exclusive,
-                                            uint32_t lowest_inclusive) const {
-    InlinedVector<uint32_t, 1> priorities;
-    for (size_t i = 0; i < sorted_priorities_.size(); ++i) {
-      if (sorted_priorities_[i] <= highest_exclusive) continue;
-      if (sorted_priorities_[i] > lowest_inclusive) break;
-      priorities.push_back(sorted_priorities_[i]);
-    }
-    return priorities;
-  }
-
   const InlinedVector<uint32_t, 1>& sorted_priorities() const {
     return sorted_priorities_;
   }
