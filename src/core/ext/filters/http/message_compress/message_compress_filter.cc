@@ -137,9 +137,8 @@ static grpc_compression_algorithm find_compression_algorithm(
                                               &compression_algorithm));
   // Remove this metadata since it's an internal one (i.e., it won't be
   // transmitted out).
-  grpc_metadata_batch_remove(
-      initial_metadata,
-      initial_metadata->idx.named.grpc_internal_encoding_request);
+  grpc_metadata_batch_remove(initial_metadata,
+                             GRPC_BATCH_GRPC_INTERNAL_ENCODING_REQUEST);
   // Check if that algorithm is enabled. Note that GRPC_COMPRESS_NONE is always
   // enabled.
   // TODO(juanlishen): Maybe use channel default or abort() if the algorithm
@@ -195,19 +194,22 @@ static grpc_error* process_send_initial_metadata(
     error = grpc_metadata_batch_add_tail(
         initial_metadata, &calld->message_compression_algorithm_storage,
         grpc_message_compression_encoding_mdelem(
-            calld->message_compression_algorithm));
+            calld->message_compression_algorithm),
+        GRPC_BATCH_GRPC_ENCODING);
   } else if (stream_compression_algorithm != GRPC_STREAM_COMPRESS_NONE) {
     initialize_state(elem, calld);
     error = grpc_metadata_batch_add_tail(
         initial_metadata, &calld->stream_compression_algorithm_storage,
-        grpc_stream_compression_encoding_mdelem(stream_compression_algorithm));
+        grpc_stream_compression_encoding_mdelem(stream_compression_algorithm),
+        GRPC_BATCH_CONTENT_ENCODING);
   }
   if (error != GRPC_ERROR_NONE) return error;
   // Convey supported compression algorithms.
   error = grpc_metadata_batch_add_tail(
       initial_metadata, &calld->accept_encoding_storage,
       GRPC_MDELEM_ACCEPT_ENCODING_FOR_ALGORITHMS(
-          channeld->enabled_message_compression_algorithms_bitset));
+          channeld->enabled_message_compression_algorithms_bitset),
+      GRPC_BATCH_GRPC_ACCEPT_ENCODING);
   if (error != GRPC_ERROR_NONE) return error;
   // Do not overwrite accept-encoding header if it already presents (e.g., added
   // by some proxy).
@@ -215,7 +217,8 @@ static grpc_error* process_send_initial_metadata(
     error = grpc_metadata_batch_add_tail(
         initial_metadata, &calld->accept_stream_encoding_storage,
         GRPC_MDELEM_ACCEPT_STREAM_ENCODING_FOR_ALGORITHMS(
-            channeld->enabled_stream_compression_algorithms_bitset));
+            channeld->enabled_stream_compression_algorithms_bitset),
+        GRPC_BATCH_ACCEPT_ENCODING);
   }
   return error;
 }

@@ -15,78 +15,25 @@ Pod::Spec.new do |s|
   s.dependency "Protobuf-C++"
   s.dependency "gRPC-C++"
   s.source_files = "src/proto/grpc/testing/*.pb.{h,cc}"
-  s.header_mappings_dir = "RemoteTestCpp"
+  s.header_mappings_dir = "."
   s.requires_arc = false
 
   repo_root = '../../../..'
-  config = ENV['CONFIG'] || 'opt'
-  bin_dir = "#{repo_root}/bins/#{config}"
+  bazel_exec_root = "#{repo_root}/bazel-out/darwin-fastbuild/bin"
 
-  protoc = "#{bin_dir}/protobuf/protoc"
+  protoc = "#{bazel_exec_root}/external/com_google_protobuf/protoc"
   well_known_types_dir = "#{repo_root}/third_party/protobuf/src"
-  plugin = "#{bin_dir}/grpc_cpp_plugin"
+  plugin = "#{bazel_exec_root}/src/compiler/grpc_cpp_plugin"
   proto_dir = "#{repo_root}/src/proto/grpc/testing"
 
   s.prepare_command = <<-CMD
-    if [ -f #{protoc} ]; then
-      #{protoc} \
-          --plugin=protoc-gen-grpc=#{plugin} \
-          --cpp_out=. \
-          --grpc_out=. \
-          -I #{repo_root} \
-          -I #{proto_dir} \
-          -I #{well_known_types_dir} \
-          #{proto_dir}/echo.proto
-      #{protoc} \
-          --plugin=protoc-gen-grpc=#{plugin} \
-          --cpp_out=. \
-          --grpc_out=. \
-          -I #{repo_root} \
-          -I #{proto_dir} \
-          -I #{well_known_types_dir} \
-          #{proto_dir}/echo_messages.proto
-      #{protoc} \
-          --plugin=protoc-gen-grpc=#{plugin} \
-          --cpp_out=. \
-          --grpc_out=. \
-          -I #{repo_root} \
-          -I #{proto_dir} \
-          -I #{well_known_types_dir} \
-          #{proto_dir}/simple_messages.proto
-    else
-      # protoc was not found bin_dir, use installed version instead
-
-      if ! [ -x "$(command -v protoc)" ]; then
-        (>&2 echo "\nERROR: protoc not found")
-        exit 1
-      fi
-      (>&2 echo "\nWARNING: Using installed version of protoc. It might be incompatible with gRPC")
-
-      protoc \
-          --plugin=protoc-gen-grpc=#{plugin} \
-          --cpp_out=. \
-          --grpc_out=. \
-          -I #{repo_root} \
-          -I #{proto_dir} \
-          -I #{well_known_types_dir} \
-          #{proto_dir}/echo.proto
-      protoc \
-          --plugin=protoc-gen-grpc=#{plugin} \
-          --cpp_out=. \
-          --grpc_out=. \
-          -I #{repo_root} \
-          -I #{proto_dir} \
-          -I #{well_known_types_dir} \
-          #{proto_dir}/echo_messages.proto
-      protoc \
-          --plugin=protoc-gen-grpc=#{plugin} \
-          --cpp_out=. \
-          --grpc_out=. \
-          -I #{repo_root} \
-          -I #{proto_dir} \
-          -I #{well_known_types_dir} \
-          #{proto_dir}/simple_messages.proto
-    fi
+    #{protoc} \
+        --plugin=protoc-gen-grpc=#{plugin} \
+        --cpp_out=. \
+        --grpc_out=. \
+        -I #{repo_root} \
+        -I #{well_known_types_dir} \
+        #{proto_dir}/echo.proto #{proto_dir}/echo_messages.proto #{proto_dir}/simple_messages.proto
   CMD
 
   s.pod_target_xcconfig = {

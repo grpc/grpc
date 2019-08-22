@@ -18,6 +18,8 @@
 
 #include <grpc/support/port_platform.h>
 
+#include "src/core/lib/iomgr/timer_manager.h"
+
 #include <inttypes.h>
 
 #include <grpc/support/alloc.h>
@@ -26,7 +28,6 @@
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/gprpp/thd.h"
 #include "src/core/lib/iomgr/timer.h"
-#include "src/core/lib/iomgr/timer_manager.h"
 
 struct completed_thread {
   grpc_core::Thread thd;
@@ -58,6 +59,8 @@ static bool g_has_timed_waiter;
 static grpc_millis g_timed_waiter_deadline;
 // generation counter to track which thread is waiting for the next timer
 static uint64_t g_timed_waiter_generation;
+// number of timer wakeups
+static uint64_t g_wakeups;
 
 static void timer_thread(void* completed_thread_ptr);
 
@@ -206,6 +209,7 @@ static bool wait_until(grpc_millis next) {
     // that there's now no timed waiter... we'll look for a replacement if
     // there's work to do after checking timers (code above)
     if (my_timed_waiter_generation == g_timed_waiter_generation) {
+      ++g_wakeups;
       g_has_timed_waiter = false;
       g_timed_waiter_deadline = GRPC_MILLIS_INF_FUTURE;
     }
@@ -326,6 +330,7 @@ static void stop_threads(void) {
       gc_completed_threads();
     }
   }
+  g_wakeups = 0;
   gpr_mu_unlock(&g_mu);
 }
 
@@ -354,3 +359,5 @@ void grpc_kick_poller(void) {
   gpr_cv_signal(&g_cv_wait);
   gpr_mu_unlock(&g_mu);
 }
+
+uint64_t grpc_timer_manager_get_wakeups_testonly(void) { return g_wakeups; }

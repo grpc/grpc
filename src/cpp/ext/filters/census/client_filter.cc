@@ -94,7 +94,8 @@ void CensusClientCallData::StartTransportStreamOpBatch(
               op->send_initial_metadata()->batch(), &tracing_bin_,
               grpc_mdelem_from_slices(
                   GRPC_MDSTR_GRPC_TRACE_BIN,
-                  grpc_core::UnmanagedMemorySlice(tracing_buf_, tracing_len))));
+                  grpc_core::UnmanagedMemorySlice(tracing_buf_, tracing_len)),
+              GRPC_BATCH_GRPC_TRACE_BIN));
     }
     grpc_slice tags = grpc_empty_slice();
     // TODO: Add in tagging serialization.
@@ -104,7 +105,8 @@ void CensusClientCallData::StartTransportStreamOpBatch(
           "census grpc_filter",
           grpc_metadata_batch_add_tail(
               op->send_initial_metadata()->batch(), &stats_bin_,
-              grpc_mdelem_from_slices(GRPC_MDSTR_GRPC_TAGS_BIN, tags)));
+              grpc_mdelem_from_slices(GRPC_MDSTR_GRPC_TAGS_BIN, tags),
+              GRPC_BATCH_GRPC_TAGS_BIN));
     }
   }
 

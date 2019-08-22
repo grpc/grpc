@@ -75,18 +75,6 @@ _EXEMPT = frozenset((
     'examples/python/multiplex/route_guide_pb2_grpc.py',
     'examples/python/route_guide/route_guide_pb2.py',
     'examples/python/route_guide/route_guide_pb2_grpc.py',
-    'src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/load_balancer.pb.h',
-    'src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/load_balancer.pb.c',
-    'src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/google/protobuf/duration.pb.h',
-    'src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/google/protobuf/duration.pb.c',
-    'src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/google/protobuf/timestamp.pb.h',
-    'src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/google/protobuf/timestamp.pb.c',
-    'src/core/tsi/alts/handshaker/altscontext.pb.h',
-    'src/core/tsi/alts/handshaker/altscontext.pb.c',
-    'src/core/tsi/alts/handshaker/handshaker.pb.h',
-    'src/core/tsi/alts/handshaker/handshaker.pb.c',
-    'src/core/tsi/alts/handshaker/transport_security_common.pb.h',
-    'src/core/tsi/alts/handshaker/transport_security_common.pb.c',
 
     # An older file originally from outside gRPC.
     'src/php/tests/bootstrap.php',

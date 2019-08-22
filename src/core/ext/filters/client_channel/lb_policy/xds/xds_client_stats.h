@@ -37,7 +37,7 @@ class XdsLocalityName : public RefCounted<XdsLocalityName> {
  public:
   struct Less {
     bool operator()(const RefCountedPtr<XdsLocalityName>& lhs,
-                    const RefCountedPtr<XdsLocalityName>& rhs) {
+                    const RefCountedPtr<XdsLocalityName>& rhs) const {
       int cmp_result = strcmp(lhs->region_.get(), rhs->region_.get());
       if (cmp_result != 0) return cmp_result < 0;
       cmp_result = strcmp(lhs->zone_.get(), rhs->zone_.get());

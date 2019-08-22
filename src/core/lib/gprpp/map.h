@@ -37,14 +37,15 @@ struct StringLess {
   bool operator()(const char* a, const char* b) const {
     return strcmp(a, b) < 0;
   }
-  bool operator()(const UniquePtr<char>& k1, const UniquePtr<char>& k2) {
+  bool operator()(const UniquePtr<char>& k1, const UniquePtr<char>& k2) const {
     return strcmp(k1.get(), k2.get()) < 0;
   }
 };
 
 template <typename T>
 struct RefCountedPtrLess {
-  bool operator()(const RefCountedPtr<T>& p1, const RefCountedPtr<T>& p2) {
+  bool operator()(const RefCountedPtr<T>& p1,
+                  const RefCountedPtr<T>& p2) const {
     return p1.get() < p2.get();
   }
 };
@@ -117,7 +118,11 @@ class Map {
   iterator end() { return iterator(this, nullptr); }
 
   iterator lower_bound(const Key& k) {
-    key_compare compare;
+    // This is a workaround for "const key_compare compare;"
+    // because some versions of compilers cannot build this by requiring
+    // a user-provided constructor. (ref: https://stackoverflow.com/q/7411515)
+    key_compare compare_tmp;
+    const key_compare& compare = compare_tmp;
     return std::find_if(begin(), end(), [&k, &compare](const value_type& v) {
       return !compare(v.first, k);
     });
@@ -448,7 +453,11 @@ Map<Key, T, Compare>::RemoveRecursive(Entry* root, const key_type& k) {
 template <class Key, class T, class Compare>
 int Map<Key, T, Compare>::CompareKeys(const key_type& lhs,
                                       const key_type& rhs) {
-  key_compare compare;
+  // This is a workaround for "const key_compare compare;"
+  // because some versions of compilers cannot build this by requiring
+  // a user-provided constructor. (ref: https://stackoverflow.com/q/7411515)
+  key_compare compare_tmp;
+  const key_compare& compare = compare_tmp;
   bool left_comparison = compare(lhs, rhs);
   bool right_comparison = compare(rhs, lhs);
   // Both values are equal

@@ -85,7 +85,6 @@ dispatch_once_t initCronet;
   self.continueAfterFailure = NO;
 
   _remoteService = [RMTTestService serviceWithHost:kRemoteSSLHost callOptions:nil];
-
   configureCronet();
 
   // Default stack with remote host

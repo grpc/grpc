@@ -233,6 +233,11 @@ class InterceptTrailingFactory : public LoadBalancingPolicyFactory {
     return kInterceptRecvTrailingMetadataLbPolicyName;
   }
 
+  RefCountedPtr<LoadBalancingPolicy::Config> ParseLoadBalancingConfig(
+      const grpc_json* json, grpc_error** error) const override {
+    return nullptr;
+  }
+
  private:
   InterceptRecvTrailingMetadataCallback cb_;
   void* user_data_;

@@ -154,6 +154,7 @@ grpc_objc_library(
         "ProtoRPC/ProtoService.h",
     ],
     includes = ["."],
+    defines = ["GPB_USE_PROTOBUF_FRAMEWORK_IMPORTS=0"],
     deps = [
         ":grpc_objc_interface",
         ":proto_objc_rpc_legacy_header",
@@ -189,3 +190,61 @@ apple_resource_bundle(
     resources = ["//:etc/roots.pem"],
 )
 
+# Internal target combining grpc_objc_client_core and proto_objc_rpc for testing
+grpc_objc_library(
+    name = "grpc_objc_client_core_internal_testing",
+    hdrs = [
+        "GRPCClient/GRPCCall+ChannelCredentials.h",
+        "GRPCClient/GRPCCall+Cronet.h",
+        "GRPCClient/GRPCCall+OAuth2.h",
+        "GRPCClient/GRPCCall+Tests.h",
+        "GRPCClient/GRPCCall+ChannelArg.h",
+        "GRPCClient/internal_testing/GRPCCall+InternalTests.h",
+    ],
+    textual_hdrs = glob(["GRPCClient/private/GRPCCore/*.h"]),
+    srcs = [
+        "GRPCClient/GRPCCall+ChannelArg.m",
+        "GRPCClient/GRPCCall+ChannelCredentials.m",
+        "GRPCClient/GRPCCall+Cronet.m",
+        "GRPCClient/GRPCCall+OAuth2.m",
+        "GRPCClient/GRPCCall+Tests.m",
+        "GRPCClient/GRPCCallLegacy.m",
+        "GRPCClient/internal_testing/GRPCCall+InternalTests.m",
+    ] + glob(["GRPCClient/private/GRPCCore/*.m"]),
+    data = [":gRPCCertificates"],
+    includes = ["."],
+    defines = [
+        "GRPC_TEST_OBJC=1",
+    ],
+    deps = [
+        ":grpc_objc_interface",
+        ":grpc_objc_interface_legacy",
+        ":rx_library",
+        "//:grpc_objc",
+    ],
+)
+
+grpc_objc_library(
+    name = "proto_objc_rpc_internal_testing",
+    srcs = [
+        "ProtoRPC/ProtoRPCLegacy.m",
+        "ProtoRPC/ProtoServiceLegacy.m",
+    ],
+    hdrs = [
+        "ProtoRPC/ProtoMethod.h",
+        "ProtoRPC/ProtoRPCLegacy.h",
+        "ProtoRPC/ProtoService.h",
+    ],
+    deps = [
+        ":rx_library",
+        ":proto_objc_rpc_v2",
+        ":proto_objc_rpc_legacy_header",
+        ":grpc_objc_client_core_internal_testing",
+        "@com_google_protobuf//:protobuf_objc",
+    ],
+)
+
+alias(
+    name = "grpc_objc_client_internal_testing",
+    actual = "proto_objc_rpc_internal_testing",
+)

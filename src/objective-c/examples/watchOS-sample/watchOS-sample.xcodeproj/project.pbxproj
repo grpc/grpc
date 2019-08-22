@@ -342,15 +342,11 @@
 			buildActionMask = 2147483647;
 			files = (
 			);
-			inputFileListPaths = (
-			);
 			inputPaths = (
 				"${SRCROOT}/Pods/Target Support Files/Pods-watchOS-sample/Pods-watchOS-sample-resources.sh",
 				"$PODS_CONFIGURATION_BUILD_DIR/gRPC-iOS/gRPCCertificates.bundle",
 			);
 			name = "[CP] Copy Pods Resources";
-			outputFileListPaths = (
-			);
 			outputPaths = (
 				"${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}",
 			);
@@ -364,8 +360,6 @@
 			buildActionMask = 2147483647;
 			files = (
 			);
-			inputFileListPaths = (
-			);
 			inputPaths = (
 				"${SRCROOT}/Pods/Target Support Files/Pods-watchOS-sample/Pods-watchOS-sample-frameworks.sh",
 				"${BUILT_PRODUCTS_DIR}/BoringSSL-GRPC-iOS/openssl_grpc.framework",
@@ -375,11 +369,8 @@
 				"${BUILT_PRODUCTS_DIR}/gRPC-Core-iOS/grpc.framework",
 				"${BUILT_PRODUCTS_DIR}/gRPC-ProtoRPC-iOS/ProtoRPC.framework",
 				"${BUILT_PRODUCTS_DIR}/gRPC-RxLibrary-iOS/RxLibrary.framework",
-				"${BUILT_PRODUCTS_DIR}/nanopb-iOS/nanopb.framework",
 			);
 			name = "[CP] Embed Pods Frameworks";
-			outputFileListPaths = (
-			);
 			outputPaths = (
 				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/openssl_grpc.framework",
 				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/Protobuf.framework",
@@ -388,7 +379,6 @@
 				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/grpc.framework",
 				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/ProtoRPC.framework",
 				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/RxLibrary.framework",
-				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/nanopb.framework",
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
@@ -400,15 +390,11 @@
 			buildActionMask = 2147483647;
 			files = (
 			);
-			inputFileListPaths = (
-			);
 			inputPaths = (
 				"${PODS_PODFILE_DIR_PATH}/Podfile.lock",
 				"${PODS_ROOT}/Manifest.lock",
 			);
 			name = "[CP] Check Pods Manifest.lock";
-			outputFileListPaths = (
-			);
 			outputPaths = (
 				"$(DERIVED_FILE_DIR)/Pods-watchOS-sample-checkManifestLockResult.txt",
 			);
@@ -422,15 +408,11 @@
 			buildActionMask = 2147483647;
 			files = (
 			);
-			inputFileListPaths = (
-			);
 			inputPaths = (
 				"${PODS_PODFILE_DIR_PATH}/Podfile.lock",
 				"${PODS_ROOT}/Manifest.lock",
 			);
 			name = "[CP] Check Pods Manifest.lock";
-			outputFileListPaths = (
-			);
 			outputPaths = (
 				"$(DERIVED_FILE_DIR)/Pods-watchOS-sample WatchKit Extension-checkManifestLockResult.txt",
 			);
@@ -444,15 +426,11 @@
 			buildActionMask = 2147483647;
 			files = (
 			);
-			inputFileListPaths = (
-			);
 			inputPaths = (
 				"${SRCROOT}/Pods/Target Support Files/Pods-watchOS-sample WatchKit Extension/Pods-watchOS-sample WatchKit Extension-resources.sh",
 				"$PODS_CONFIGURATION_BUILD_DIR/gRPC-watchOS/gRPCCertificates.bundle",
 			);
 			name = "[CP] Copy Pods Resources";
-			outputFileListPaths = (
-			);
 			outputPaths = (
 				"${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}",
 			);
@@ -466,8 +444,6 @@
 			buildActionMask = 2147483647;
 			files = (
 			);
-			inputFileListPaths = (
-			);
 			inputPaths = (
 				"${SRCROOT}/Pods/Target Support Files/Pods-watchOS-sample WatchKit Extension/Pods-watchOS-sample WatchKit Extension-frameworks.sh",
 				"${BUILT_PRODUCTS_DIR}/BoringSSL-GRPC-watchOS/openssl_grpc.framework",
@@ -477,11 +453,8 @@
 				"${BUILT_PRODUCTS_DIR}/gRPC-Core-watchOS/grpc.framework",
 				"${BUILT_PRODUCTS_DIR}/gRPC-ProtoRPC-watchOS/ProtoRPC.framework",
 				"${BUILT_PRODUCTS_DIR}/gRPC-RxLibrary-watchOS/RxLibrary.framework",
-				"${BUILT_PRODUCTS_DIR}/nanopb-watchOS/nanopb.framework",
 			);
 			name = "[CP] Embed Pods Frameworks";
-			outputFileListPaths = (
-			);
 			outputPaths = (
 				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/openssl_grpc.framework",
 				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/Protobuf.framework",
@@ -490,7 +463,6 @@
 				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/grpc.framework",
 				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/ProtoRPC.framework",
 				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/RxLibrary.framework",
-				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/nanopb.framework",
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
@@ -675,7 +647,7 @@
 				DEVELOPMENT_TEAM = 6T98ZJNPG5;
 				INFOPLIST_FILE = "$(SRCROOT)/WatchKit-Extension/Info.plist";
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks @executable_path/../../Frameworks";
-				PRODUCT_BUNDLE_IDENTIFIER = "com.google.watchOS-sample.watchkitapp.watchkitextension";
+				PRODUCT_BUNDLE_IDENTIFIER = "io.grpc.watchOS-sample.watchkitapp.watchkitextension";
 				PRODUCT_NAME = "${TARGET_NAME}";
 				SDKROOT = watchos;
 				SKIP_INSTALL = YES;
@@ -693,7 +665,7 @@
 				DEVELOPMENT_TEAM = 6T98ZJNPG5;
 				INFOPLIST_FILE = "$(SRCROOT)/WatchKit-Extension/Info.plist";
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks @executable_path/../../Frameworks";
-				PRODUCT_BUNDLE_IDENTIFIER = "com.google.watchOS-sample.watchkitapp.watchkitextension";
+				PRODUCT_BUNDLE_IDENTIFIER = "io.grpc.watchOS-sample.watchkitapp.watchkitextension";
 				PRODUCT_NAME = "${TARGET_NAME}";
 				SDKROOT = watchos;
 				SKIP_INSTALL = YES;
@@ -710,7 +682,7 @@
 				DEVELOPMENT_TEAM = 6T98ZJNPG5;
 				IBSC_MODULE = watchOS_sample_WatchKit_Extension;
 				INFOPLIST_FILE = "$(SRCROOT)/WatchKit-App/Info.plist";
-				PRODUCT_BUNDLE_IDENTIFIER = "com.google.watchOS-sample.watchkitapp";
+				PRODUCT_BUNDLE_IDENTIFIER = "io.grpc.watchOS-sample.watchkitapp";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = watchos;
 				SKIP_INSTALL = YES;
@@ -727,7 +699,7 @@
 				DEVELOPMENT_TEAM = 6T98ZJNPG5;
 				IBSC_MODULE = watchOS_sample_WatchKit_Extension;
 				INFOPLIST_FILE = "$(SRCROOT)/WatchKit-App/Info.plist";
-				PRODUCT_BUNDLE_IDENTIFIER = "com.google.watchOS-sample.watchkitapp";
+				PRODUCT_BUNDLE_IDENTIFIER = "io.grpc.watchOS-sample.watchkitapp";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = watchos;
 				SKIP_INSTALL = YES;
@@ -745,7 +717,7 @@
 				DEVELOPMENT_TEAM = 6T98ZJNPG5;
 				INFOPLIST_FILE = "watchOS-sample/Info.plist";
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks";
-				PRODUCT_BUNDLE_IDENTIFIER = "com.google.watchOS-sample";
+				PRODUCT_BUNDLE_IDENTIFIER = "io.grpc.watchOS-sample";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				TARGETED_DEVICE_FAMILY = "1,2";
 			};
@@ -760,7 +732,7 @@
 				DEVELOPMENT_TEAM = 6T98ZJNPG5;
 				INFOPLIST_FILE = "watchOS-sample/Info.plist";
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks";
-				PRODUCT_BUNDLE_IDENTIFIER = "com.google.watchOS-sample";
+				PRODUCT_BUNDLE_IDENTIFIER = "io.grpc.watchOS-sample";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				TARGETED_DEVICE_FAMILY = "1,2";
 			};

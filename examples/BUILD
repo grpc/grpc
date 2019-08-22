@@ -238,3 +238,8 @@ cc_binary(
         "//:grpc++",
     ],
 )
+
+proto_library(
+    name = "route_guide_proto",
+    srcs = ["protos/route_guide.proto"],
+)

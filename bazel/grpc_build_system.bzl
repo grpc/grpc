@@ -25,6 +25,8 @@
 
 load("//bazel:cc_grpc_library.bzl", "cc_grpc_library")
 load("@upb//bazel:upb_proto_library.bzl", "upb_proto_library")
+load("@build_bazel_rules_apple//apple:ios.bzl", "ios_unit_test")
+
 
 # The set of pollers to test against if a test exercises polling
 POLLERS = ["epollex", "epoll1", "poll"]
@@ -136,6 +138,32 @@ def grpc_proto_library(
         use_external = use_external,
         generate_mocks = generate_mocks,
     )
+def ios_cc_test(
+        name,
+        tags = [],
+        **kwargs):
+    ios_test_adapter = "//third_party/objective_c/google_toolbox_for_mac:GTM_GoogleTestRunner_GTM_USING_XCTEST";
+
+    test_lib_ios = name + "_test_lib_ios"
+    ios_tags = tags + ["manual", "ios_cc_test"]
+    if not any([t for t in tags if t.startswith("no_test_ios")]):
+        native.objc_library(
+            name = test_lib_ios,
+            srcs = kwargs.get("srcs"),
+            deps = kwargs.get("deps"),
+            copts = kwargs.get("copts"),
+            tags = ios_tags,
+            alwayslink = 1,
+            testonly = 1,
+        )
+        ios_test_deps = [ios_test_adapter, ":" + test_lib_ios]
+        ios_unit_test(
+            name = name + "_on_ios",
+            size = kwargs.get("size"),
+            tags = ios_tags,
+            minimum_os_version = "9.0",
+            deps = ios_test_deps,
+        )
 
 def grpc_cc_test(name, srcs = [], deps = [], external_deps = [], args = [], data = [], uses_polling = True, language = "C++", size = "medium", timeout = None, tags = [], exec_compatible_with = []):
     copts = if_mac(["-DGRPC_CFSTREAM"])
@@ -182,6 +210,12 @@ def grpc_cc_test(name, srcs = [], deps = [], external_deps = [], args = [], data
             )
     else:
         native.cc_test(tags = tags, **args)
+    ios_cc_test(
+        name = name,
+        tags = tags,
+        **args
+    )
+
 
 def grpc_cc_binary(name, srcs = [], deps = [], external_deps = [], args = [], data = [], language = "C++", testonly = False, linkshared = False, linkopts = [], tags = []):
     copts = []
@@ -207,7 +241,7 @@ def grpc_generate_one_off_targets():
         actual = "//:grpc",
     )
 
-def grpc_objc_use_cronet_config():
+def grpc_generate_objc_one_off_targets():
     pass
 
 def grpc_sh_test(name, srcs, args = [], data = []):

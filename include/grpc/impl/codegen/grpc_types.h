@@ -169,11 +169,7 @@ typedef struct {
 #define GRPC_ARG_MAX_CONNECTION_AGE_GRACE_MS "grpc.max_connection_age_grace_ms"
 /** Timeout after the last RPC finishes on the client channel at which the
  * channel goes back into IDLE state. Int valued, milliseconds. INT_MAX means
- * unlimited. */
-/** TODO(qianchengz): Currently the default value is INT_MAX, which means the
- * client idle filter is disabled by default. After the client idle filter
- * proves no perfomance issue, we will change the default value to a reasonable
- * value. */
+ * unlimited. The default value is 30 minutes and the min value is 1 second. */
 #define GRPC_ARG_CLIENT_IDLE_TIMEOUT_MS "grpc.client_idle_timeout_ms"
 /** Enable/disable support for per-message compression. Defaults to 1, unless
     GRPC_ARG_MINIMAL_STACK is enabled, in which case it defaults to 0. */
@@ -330,6 +326,11 @@ typedef struct {
    balancer before using fallback backend addresses from the resolver.
    If 0, enter fallback mode immediately. Default value is 10000. */
 #define GRPC_ARG_XDS_FALLBACK_TIMEOUT_MS "grpc.xds_fallback_timeout_ms"
+/* Time in milliseconds to wait before a locality is deleted after it's removed
+   from the received EDS update. If 0, delete the locality immediately. Default
+   value is 15 minutes. */
+#define GRPC_ARG_LOCALITY_RETENTION_INTERVAL_MS \
+  "grpc.xds_locality_retention_interval_ms"
 /** If non-zero, grpc server's cronet compression workaround will be enabled */
 #define GRPC_ARG_WORKAROUND_CRONET_COMPRESSION \
   "grpc.workaround.cronet_compression"

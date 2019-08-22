@@ -74,6 +74,8 @@
 #define DEFAULT_MAX_PINGS_BETWEEN_DATA 2
 #define DEFAULT_MAX_PING_STRIKES 2
 
+#define DEFAULT_MAX_PENDING_INDUCED_FRAMES 10000
+
 static int g_default_client_keepalive_time_ms =
     DEFAULT_CLIENT_KEEPALIVE_TIME_MS;
 static int g_default_client_keepalive_timeout_ms =
@@ -105,6 +107,7 @@ static void write_action(void* t, grpc_error* error);
 static void write_action_end_locked(void* t, grpc_error* error);
 
 static void read_action_locked(void* t, grpc_error* error);
+static void continue_read_action_locked(grpc_chttp2_transport* t);
 
 static void complete_fetch_locked(void* gs, grpc_error* error);
 /** Set a transport level setting, and push it to our peer */
@@ -797,10 +800,8 @@ grpc_chttp2_stream* grpc_chttp2_parsing_accept_stream(grpc_chttp2_transport* t,
       !grpc_resource_user_safe_alloc(t->resource_user,
                                      GRPC_RESOURCE_QUOTA_CALL_SIZE)) {
     gpr_log(GPR_ERROR, "Memory exhausted, rejecting the stream.");
-    grpc_slice_buffer_add(
-        &t->qbuf,
-        grpc_chttp2_rst_stream_create(
-            id, static_cast<uint32_t>(GRPC_HTTP2_REFUSED_STREAM), nullptr));
+    grpc_chttp2_add_rst_stream_to_next_write(t, id, GRPC_HTTP2_REFUSED_STREAM,
+                                             nullptr);
     grpc_chttp2_initiate_write(t, GRPC_CHTTP2_INITIATE_WRITE_RST_STREAM);
     return nullptr;
   }
@@ -1045,6 +1046,19 @@ static void write_action_begin_locked(void* gt, grpc_error* error_ignored) {
     GRPC_CLOSURE_SCHED(
         GRPC_CLOSURE_INIT(&t->write_action, write_action, t, scheduler),
         GRPC_ERROR_NONE);
+    if (t->reading_paused_on_pending_induced_frames) {
+      GPR_ASSERT(t->num_pending_induced_frames == 0);
+      /* We had paused reading, because we had many induced frames (SETTINGS
+       * ACK, PINGS ACK and RST_STREAMS) pending in t->qbuf. Now that we have
+       * been able to flush qbuf, we can resume reading. */
+      GRPC_CHTTP2_IF_TRACING(gpr_log(
+          GPR_INFO,
+          "transport %p : Resuming reading after being paused due to too "
+          "many unwritten SETTINGS ACK, PINGS ACK and RST_STREAM frames",
+          t));
+      t->reading_paused_on_pending_induced_frames = false;
+      continue_read_action_locked(t);
+    }
   } else {
     GRPC_STATS_INC_HTTP2_SPURIOUS_WRITES_BEGUN();
     set_write_state(t, GRPC_CHTTP2_WRITE_STATE_IDLE, "begin writing nothing");
@@ -1114,7 +1128,6 @@ static void write_action_end_locked(void* tp, grpc_error* error) {
   }
 
   grpc_chttp2_end_write(t, GRPC_ERROR_REF(error));
-
   GRPC_CHTTP2_UNREF_TRANSPORT(t, "writing");
 }
 
@@ -1160,7 +1173,6 @@ void grpc_chttp2_add_incoming_goaway(grpc_chttp2_transport* t,
     gpr_log(GPR_INFO, "%s: Got goaway [%d] err=%s", t->peer_string,
             goaway_error, grpc_error_string(t->goaway_error));
   }
-
   /* When a client receives a GOAWAY with error code ENHANCE_YOUR_CALM and debug
    * data equal to "too_many_pings", it should log the occurrence at a log level
    * that is enabled by default and double the configured KEEPALIVE_TIME used
@@ -1186,6 +1198,17 @@ void grpc_chttp2_add_incoming_goaway(grpc_chttp2_transport* t,
 
 static void maybe_start_some_streams(grpc_chttp2_transport* t) {
   grpc_chttp2_stream* s;
+  /* cancel out streams that haven't yet started if we have received a GOAWAY */
+  if (t->goaway_error != GRPC_ERROR_NONE) {
+    while (grpc_chttp2_list_pop_waiting_for_concurrency(t, &s)) {
+      grpc_chttp2_cancel_stream(
+          t, s,
+          grpc_error_set_int(
+              GRPC_ERROR_CREATE_FROM_STATIC_STRING("GOAWAY received"),
+              GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_UNAVAILABLE));
+    }
+    return;
+  }
   /* start streams where we have free grpc_chttp2_stream ids and free
    * concurrency */
   while (t->next_stream_id <= MAX_CLIENT_STREAM_ID &&
@@ -1214,13 +1237,14 @@ static void maybe_start_some_streams(grpc_chttp2_transport* t) {
     grpc_chttp2_initiate_write(t, GRPC_CHTTP2_INITIATE_WRITE_START_NEW_STREAM);
   }
   /* cancel out streams that will never be started */
-  while (t->next_stream_id >= MAX_CLIENT_STREAM_ID &&
-         grpc_chttp2_list_pop_waiting_for_concurrency(t, &s)) {
-    grpc_chttp2_cancel_stream(
-        t, s,
-        grpc_error_set_int(
-            GRPC_ERROR_CREATE_FROM_STATIC_STRING("Stream IDs exhausted"),
-            GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_UNAVAILABLE));
+  if (t->next_stream_id >= MAX_CLIENT_STREAM_ID) {
+    while (grpc_chttp2_list_pop_waiting_for_concurrency(t, &s)) {
+      grpc_chttp2_cancel_stream(
+          t, s,
+          grpc_error_set_int(
+              GRPC_ERROR_CREATE_FROM_STATIC_STRING("Stream IDs exhausted"),
+              GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_UNAVAILABLE));
+    }
   }
 }
 
@@ -2110,10 +2134,8 @@ void grpc_chttp2_cancel_stream(grpc_chttp2_transport* t, grpc_chttp2_stream* s,
       grpc_http2_error_code http_error;
       grpc_error_get_status(due_to_error, s->deadline, nullptr, nullptr,
                             &http_error, nullptr);
-      grpc_slice_buffer_add(
-          &t->qbuf,
-          grpc_chttp2_rst_stream_create(
-              s->id, static_cast<uint32_t>(http_error), &s->stats.outgoing));
+      grpc_chttp2_add_rst_stream_to_next_write(
+          t, s->id, static_cast<uint32_t>(http_error), &s->stats.outgoing);
       grpc_chttp2_initiate_write(t, GRPC_CHTTP2_INITIATE_WRITE_RST_STREAM);
     }
   }
@@ -2424,9 +2446,8 @@ static void close_from_api(grpc_chttp2_transport* t, grpc_chttp2_stream* s,
   grpc_slice_buffer_add(&t->qbuf, status_hdr);
   grpc_slice_buffer_add(&t->qbuf, message_pfx);
   grpc_slice_buffer_add(&t->qbuf, grpc_slice_ref_internal(slice));
-  grpc_slice_buffer_add(
-      &t->qbuf, grpc_chttp2_rst_stream_create(s->id, GRPC_HTTP2_NO_ERROR,
-                                              &s->stats.outgoing));
+  grpc_chttp2_add_rst_stream_to_next_write(t, s->id, GRPC_HTTP2_NO_ERROR,
+                                           &s->stats.outgoing);
 
   grpc_chttp2_mark_stream_closed(t, s, 1, 1, error);
   grpc_chttp2_initiate_write(t, GRPC_CHTTP2_INITIATE_WRITE_CLOSE_FROM_API);
@@ -2596,15 +2617,27 @@ static void read_action_locked(void* tp, grpc_error* error) {
   grpc_slice_buffer_reset_and_unref_internal(&t->read_buffer);
 
   if (keep_reading) {
-    const bool urgent = t->goaway_error != GRPC_ERROR_NONE;
-    grpc_endpoint_read(t->ep, &t->read_buffer, &t->read_action_locked, urgent);
-    grpc_chttp2_act_on_flowctl_action(t->flow_control->MakeAction(), t,
-                                      nullptr);
+    if (t->num_pending_induced_frames >= DEFAULT_MAX_PENDING_INDUCED_FRAMES) {
+      t->reading_paused_on_pending_induced_frames = true;
+      GRPC_CHTTP2_IF_TRACING(
+          gpr_log(GPR_INFO,
+                  "transport %p : Pausing reading due to too "
+                  "many unwritten SETTINGS ACK and RST_STREAM frames",
+                  t));
+    } else {
+      continue_read_action_locked(t);
+    }
   } else {
     GRPC_CHTTP2_UNREF_TRANSPORT(t, "reading_action");
   }
 
   GRPC_ERROR_UNREF(error);
+}
+
+static void continue_read_action_locked(grpc_chttp2_transport* t) {
+  const bool urgent = t->goaway_error != GRPC_ERROR_NONE;
+  grpc_endpoint_read(t->ep, &t->read_buffer, &t->read_action_locked, urgent);
+  grpc_chttp2_act_on_flowctl_action(t->flow_control->MakeAction(), t, nullptr);
 }
 
 // t is reffed prior to calling the first time, and once the callback chain

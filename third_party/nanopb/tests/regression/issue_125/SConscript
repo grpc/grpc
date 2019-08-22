@@ -1,9 +1,0 @@
-# Regression test for Issue 125: Wrong identifier name for extension fields
-
-Import("env")
-
-env.NanopbProto(["extensionbug", "extensionbug.options"])
-env.Object('extensionbug.pb.c')
-
-env.Match(['extensionbug.pb.h', 'extensionbug.expected'])
-
