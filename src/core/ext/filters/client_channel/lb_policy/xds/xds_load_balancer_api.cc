@@ -151,7 +151,7 @@ grpc_error* LocalityParse(
   // Parse locality name.
   const envoy_api_v2_core_Locality* locality =
       envoy_api_v2_endpoint_LocalityLbEndpoints_locality(locality_lb_endpoints);
-  locality_info->locality_name = MakeRefCounted<XdsLocalityName>(
+  locality_info->name = MakeRefCounted<XdsLocalityName>(
       StringCopy(envoy_api_v2_core_Locality_region(locality)),
       StringCopy(envoy_api_v2_core_Locality_zone(locality)),
       StringCopy(envoy_api_v2_core_Locality_sub_zone(locality)));

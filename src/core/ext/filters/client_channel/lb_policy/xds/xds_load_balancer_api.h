@@ -31,33 +31,34 @@ namespace grpc_core {
 
 struct XdsLocalityInfo {
   bool operator==(const XdsLocalityInfo& other) const {
-    return *locality_name == *other.locality_name &&
-           serverlist == other.serverlist && lb_weight == other.lb_weight &&
-           priority == other.priority;
+    return *name == *other.name && serverlist == other.serverlist &&
+           lb_weight == other.lb_weight && priority == other.priority;
   }
 
   // This comparator only compares the locality names.
   struct Less {
     bool operator()(const XdsLocalityInfo& lhs, const XdsLocalityInfo& rhs) {
-      return XdsLocalityName::Less()(lhs.locality_name, rhs.locality_name);
+      return XdsLocalityName::Less()(lhs.name, rhs.name);
     }
   };
 
-  RefCountedPtr<XdsLocalityName> locality_name;
+  RefCountedPtr<XdsLocalityName> name;
   ServerAddressList serverlist;
   uint32_t lb_weight;
   uint32_t priority;
 };
 
 struct XdsLocalityList {
-  bool Has(const XdsLocalityName& locality_name) const {
+  bool Has(const XdsLocalityName& name) const {
     for (size_t i = 0; i < list.size(); ++i) {
-      if (*list[i].locality_name == locality_name) {
+      if (*list[i].name == name) {
         return true;
       }
     }
     return false;
   }
+  size_t Size() const { return list.size(); }
+
   InlinedVector<XdsLocalityInfo, 1> list;
   bool applied = false;
 };
@@ -69,6 +70,7 @@ class XdsLocalityListPriorityMap {
     for (auto& p : map_) {
       const uint32_t priority = p.first;
       XdsLocalityList& locality_list = p.second;
+      // Only compare the list of localities.
       if (locality_list.list != other.map_.find(priority)->second.list) {
         return false;
       }
@@ -110,11 +112,11 @@ class XdsLocalityListPriorityMap {
   }
 
   bool Has(uint32_t priority) { return map_.find(priority) != map_.end(); }
-  bool Has(const XdsLocalityName& locality_name) {
+  bool Has(const XdsLocalityName& name) {
     for (auto& p : map_) {
       const XdsLocalityList& locality_list = p.second;
       for (size_t i = 0; i < locality_list.list.size(); ++i) {
-        if (*locality_list.list[i].locality_name == locality_name) {
+        if (*locality_list.list[i].name == name) {
           return true;
         }
       }
@@ -143,7 +145,7 @@ class XdsLocalityListPriorityMap {
               sorted_priorities_.data() + sorted_priorities_.size());
   }
 
-  void UpdateApplied(XdsLocalityListPriorityMap& old) {
+  void UpdateAppliedLocked(XdsLocalityListPriorityMap& old) {
     for (auto& p : map_) {
       const uint32_t priority = p.first;
       XdsLocalityList& locality_list = p.second;
