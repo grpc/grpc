@@ -34,6 +34,7 @@
 #include <string>
 #include <thread>
 
+#include <grpc/impl/codegen/gpr_types.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpcpp/channel.h>
@@ -77,24 +78,13 @@ using grpc::testing::TestService;
 
 namespace {
 
-enum RpcMode {
-  FailFast,
-  WaitForReady,
-};
-
-GrpclbRouteType DoRPCAndGetPath(TestService::Stub* stub, int deadline_seconds,
-                                RpcMode rpc_mode) {
-  gpr_log(GPR_INFO, "DoRPCAndGetPath deadline_seconds:%d rpc_mode:%d",
-          deadline_seconds, rpc_mode);
+GrpclbRouteType DoRPCAndGetPath(TestService::Stub* stub,
+                                gpr_timespec deadline) {
+  gpr_log(GPR_INFO, "DoRPCAndGetPath");
   SimpleRequest request;
   SimpleResponse response;
   grpc::ClientContext context;
-  if (rpc_mode == WaitForReady) {
-    context.set_wait_for_ready(true);
-  }
   request.set_fill_grpclb_route_type(true);
-  std::chrono::system_clock::time_point deadline =
-      std::chrono::system_clock::now() + std::chrono::seconds(deadline_seconds);
   context.set_deadline(deadline);
   grpc::Status s = stub->UnaryCall(&context, request, &response);
   if (!s.ok()) {
@@ -109,15 +99,6 @@ GrpclbRouteType DoRPCAndGetPath(TestService::Stub* stub, int deadline_seconds,
   gpr_log(GPR_INFO, "DoRPCAndGetPath done. grpclb_route_type:%d",
           response.grpclb_route_type());
   return response.grpclb_route_type();
-}
-
-GrpclbRouteType DoRPCAndGetPath(TestService::Stub* stub, int deadline_seconds) {
-  return DoRPCAndGetPath(stub, deadline_seconds, FailFast);
-}
-
-GrpclbRouteType DoWaitForReadyRPCAndGetPath(TestService::Stub* stub,
-                                            int deadline_seconds) {
-  return DoRPCAndGetPath(stub, deadline_seconds, WaitForReady);
 }
 
 bool TcpUserTimeoutMutateFd(int fd, grpc_socket_mutator* mutator) {
@@ -184,14 +165,40 @@ void RunCommand(const std::string& command) {
   }
 }
 
-void RunFallbackBeforeStartupTest(
-    const std::string& break_lb_and_backend_conns_cmd,
-    int per_rpc_deadline_seconds) {
-  std::unique_ptr<TestService::Stub> stub = CreateFallbackTestStub();
-  RunCommand(break_lb_and_backend_conns_cmd);
+void WaitForFallbackAndDoRPCs(std::unique_ptr<TestService::Stub> stub,
+                              gpr_timespec fallback_deadline) {
+  int fallback_retry_count = 0;
+  bool fell_back = false;
+  while (gpr_time_cmp(gpr_now(GPR_CLOCK_MONOTONIC), fallback_deadline) < 0) {
+    GrpclbRouteType grpclb_route_type = DoRPCAndGetPath(
+        stub.get(), gpr_time_add(gpr_now(GPR_CLOCK_MONOTONIC),
+                                 gpr_time_from_seconds(1, GPR_TIMESPAN)));
+    if (grpclb_route_type == GrpclbRouteType::GRPCLB_ROUTE_TYPE_FALLBACK) {
+      gpr_log(GPR_INFO,
+              "Made one successful RPC to a fallback. Now expect the same for "
+              "the rest.");
+      fell_back = true;
+      break;
+    } else if (grpclb_route_type ==
+               GrpclbRouteType::GRPCLB_ROUTE_TYPE_BACKEND) {
+      gpr_log(GPR_ERROR,
+              "Got RPC type backend. This suggests an error in test "
+              "implementation.");
+      abort();
+    } else {
+      gpr_log(GPR_INFO, "Retryable RPC failure on iteration: %d",
+              fallback_retry_count);
+    }
+    fallback_retry_count++;
+  }
+  if (!fell_back) {
+    gpr_log(GPR_ERROR, "Didn't fall back before deadline");
+    abort();
+  }
   for (size_t i = 0; i < 30; i++) {
-    GrpclbRouteType grpclb_route_type =
-        DoRPCAndGetPath(stub.get(), per_rpc_deadline_seconds);
+    GrpclbRouteType grpclb_route_type = DoRPCAndGetPath(
+        stub.get(), gpr_time_add(gpr_now(GPR_CLOCK_MONOTONIC),
+                                 gpr_time_from_seconds(20, GPR_TIMESPAN)));
     if (grpclb_route_type != GrpclbRouteType::GRPCLB_ROUTE_TYPE_FALLBACK) {
       gpr_log(GPR_ERROR, "Expected grpclb route type: FALLBACK. Got: %d",
               grpclb_route_type);
@@ -202,54 +209,51 @@ void RunFallbackBeforeStartupTest(
 }
 
 void DoFastFallbackBeforeStartup() {
-  RunFallbackBeforeStartupTest(FLAGS_unroute_lb_and_backend_addrs_cmd, 9);
+  RunCommand(FLAGS_unroute_lb_and_backend_addrs_cmd);
+  auto fallback_deadline = gpr_time_add(gpr_now(GPR_CLOCK_MONOTONIC),
+                                        gpr_time_from_seconds(9, GPR_TIMESPAN));
+  std::unique_ptr<TestService::Stub> stub = CreateFallbackTestStub();
+  WaitForFallbackAndDoRPCs(std::move(stub), fallback_deadline);
 }
 
 void DoSlowFallbackBeforeStartup() {
-  RunFallbackBeforeStartupTest(FLAGS_blackhole_lb_and_backend_addrs_cmd, 20);
+  RunCommand(FLAGS_blackhole_lb_and_backend_addrs_cmd);
+  auto fallback_deadline = gpr_time_add(
+      gpr_now(GPR_CLOCK_MONOTONIC), gpr_time_from_seconds(20, GPR_TIMESPAN));
+  std::unique_ptr<TestService::Stub> stub = CreateFallbackTestStub();
+  WaitForFallbackAndDoRPCs(std::move(stub), fallback_deadline);
 }
 
-void RunFallbackAfterStartupTest(
-    const std::string& break_lb_and_backend_conns_cmd) {
+void DoFastFallbackAfterStartup() {
   std::unique_ptr<TestService::Stub> stub = CreateFallbackTestStub();
-  GrpclbRouteType grpclb_route_type = DoRPCAndGetPath(stub.get(), 20);
+  GrpclbRouteType grpclb_route_type = DoRPCAndGetPath(
+      stub.get(), gpr_time_add(gpr_now(GPR_CLOCK_MONOTONIC),
+                               gpr_time_from_seconds(20, GPR_TIMESPAN)));
   if (grpclb_route_type != GrpclbRouteType::GRPCLB_ROUTE_TYPE_BACKEND) {
     gpr_log(GPR_ERROR, "Expected grpclb route type: BACKEND. Got: %d",
             grpclb_route_type);
     abort();
   }
-  RunCommand(break_lb_and_backend_conns_cmd);
-  for (size_t i = 0; i < 40; i++) {
-    GrpclbRouteType grpclb_route_type =
-        DoWaitForReadyRPCAndGetPath(stub.get(), 1);
-    // Backends should be unreachable by now, otherwise the test is broken.
-    GPR_ASSERT(grpclb_route_type != GrpclbRouteType::GRPCLB_ROUTE_TYPE_BACKEND);
-    if (grpclb_route_type == GrpclbRouteType::GRPCLB_ROUTE_TYPE_FALLBACK) {
-      gpr_log(GPR_INFO,
-              "Made one successul RPC to a fallback. Now expect the same for "
-              "the rest.");
-      break;
-    } else {
-      gpr_log(GPR_ERROR, "Retryable RPC failure on iteration: %" PRIdPTR, i);
-    }
-  }
-  for (size_t i = 0; i < 30; i++) {
-    GrpclbRouteType grpclb_route_type = DoRPCAndGetPath(stub.get(), 20);
-    if (grpclb_route_type != GrpclbRouteType::GRPCLB_ROUTE_TYPE_FALLBACK) {
-      gpr_log(GPR_ERROR, "Expected grpclb route type: FALLBACK. Got: %d",
-              grpclb_route_type);
-      abort();
-    }
-    std::this_thread::sleep_for(std::chrono::seconds(1));
-  }
-}
-
-void DoFastFallbackAfterStartup() {
-  RunFallbackAfterStartupTest(FLAGS_unroute_lb_and_backend_addrs_cmd);
+  RunCommand(FLAGS_unroute_lb_and_backend_addrs_cmd);
+  auto fallback_deadline = gpr_time_add(
+      gpr_now(GPR_CLOCK_MONOTONIC), gpr_time_from_seconds(40, GPR_TIMESPAN));
+  WaitForFallbackAndDoRPCs(std::move(stub), fallback_deadline);
 }
 
 void DoSlowFallbackAfterStartup() {
-  RunFallbackAfterStartupTest(FLAGS_blackhole_lb_and_backend_addrs_cmd);
+  std::unique_ptr<TestService::Stub> stub = CreateFallbackTestStub();
+  GrpclbRouteType grpclb_route_type = DoRPCAndGetPath(
+      stub.get(), gpr_time_add(gpr_now(GPR_CLOCK_MONOTONIC),
+                               gpr_time_from_seconds(20, GPR_TIMESPAN)));
+  if (grpclb_route_type != GrpclbRouteType::GRPCLB_ROUTE_TYPE_BACKEND) {
+    gpr_log(GPR_ERROR, "Expected grpclb route type: BACKEND. Got: %d",
+            grpclb_route_type);
+    abort();
+  }
+  RunCommand(FLAGS_blackhole_lb_and_backend_addrs_cmd);
+  auto fallback_deadline = gpr_time_add(
+      gpr_now(GPR_CLOCK_MONOTONIC), gpr_time_from_seconds(40, GPR_TIMESPAN));
+  WaitForFallbackAndDoRPCs(std::move(stub), fallback_deadline);
 }
 }  // namespace
 
