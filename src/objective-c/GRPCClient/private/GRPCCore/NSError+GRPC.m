@@ -18,8 +18,8 @@
 
 #import "NSError+GRPC.h"
 
-#include <grpc/grpc.h>
 #import <GRPCClient/GRPCTypes.h>
+#include <grpc/grpc.h>
 
 @implementation NSError (GRPC)
 + (instancetype)grpc_errorFromStatusCode:(grpc_status_code)statusCode

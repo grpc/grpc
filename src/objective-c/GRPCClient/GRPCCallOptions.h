@@ -158,6 +158,8 @@ NS_ASSUME_NONNULL_BEGIN
  * identifier defined in \a GRPCTransport or provided by a non-native transport
  * implementation. If the option is left to be NULL, gRPC will use its default
  * transport.
+ *
+ * This is currently an experimental option.
  */
 @property(readonly) GRPCTransportId transport;
 
