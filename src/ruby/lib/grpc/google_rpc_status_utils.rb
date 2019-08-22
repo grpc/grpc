@@ -12,8 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-require_relative './grpc'
-require 'google/rpc/status_pb'
+require_relative './structs'
 
 # GRPC contains the General RPC module.
 module GRPC
@@ -28,8 +27,14 @@ module GRPC
     def self.extract_google_rpc_status(status)
       fail ArgumentError, 'bad type' unless status.is_a? Struct::Status
       grpc_status_details_bin_trailer = 'grpc-status-details-bin'
-      return nil if status.metadata[grpc_status_details_bin_trailer].nil?
-      Google::Rpc::Status.decode(status.metadata[grpc_status_details_bin_trailer])
+      binstatus = status.metadata[grpc_status_details_bin_trailer]
+      return nil if binstatus.nil?
+
+      # Lazily load grpc_c and protobuf_c.so for users of this method.
+      require_relative './grpc'
+      require 'google/rpc/status_pb'
+
+      Google::Rpc::Status.decode(binstatus)
     end
   end
 end

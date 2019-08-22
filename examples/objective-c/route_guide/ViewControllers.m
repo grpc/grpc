@@ -17,7 +17,11 @@
  */
 
 #import <UIKit/UIKit.h>
+#if COCOAPODS
 #import <RouteGuide/RouteGuide.pbrpc.h>
+#else
+#import "examples/protos/RouteGuide.pbrpc.h"
+#endif
 
 static NSString * const kHostAddress = @"localhost:50051";
 

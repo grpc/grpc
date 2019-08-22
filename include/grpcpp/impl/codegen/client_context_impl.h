@@ -85,6 +85,7 @@ class ClientCallbackReaderImpl;
 template <class Request>
 class ClientCallbackWriterImpl;
 class ClientCallbackUnaryImpl;
+class ClientContextAccessor;
 }  // namespace internal
 
 class CallCredentials;
@@ -424,6 +425,7 @@ class ClientContext {
   template <class Request>
   friend class ::grpc_impl::internal::ClientCallbackWriterImpl;
   friend class ::grpc_impl::internal::ClientCallbackUnaryImpl;
+  friend class ::grpc_impl::internal::ClientContextAccessor;
 
   // Used by friend class CallOpClientRecvStatus
   void set_debug_error_string(const grpc::string& debug_error_string) {

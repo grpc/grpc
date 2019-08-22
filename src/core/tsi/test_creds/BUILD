@@ -26,4 +26,6 @@ exports_files([
         "badserver.pem",
         "badclient.key",
         "badclient.pem",
+        "multi-domain.key",
+        "multi-domain.pem",
 ])

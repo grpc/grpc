@@ -536,6 +536,32 @@ using grpc::ClientContext;
   XCTAssertEqual(response.param().request_deadline(), gpr_inf_future(GPR_CLOCK_REALTIME).tv_sec);
 }
 
+- (void)testEchoDeadline {
+  auto stub = [self getStub];
+  EchoRequest request;
+  EchoResponse response;
+  request.set_message("Hello");
+  request.mutable_param()->set_echo_deadline(true);
+
+  ClientContext context;
+  std::chrono::system_clock::time_point deadline =
+      std::chrono::system_clock::now() + std::chrono::seconds(100);
+  context.set_deadline(deadline);
+  Status s = stub->Echo(&context, request, &response);
+  XCTAssertEqual(response.message(), request.message());
+  XCTAssertTrue(s.ok());
+  gpr_timespec sent_deadline;
+  grpc::Timepoint2Timespec(deadline, &sent_deadline);
+  // We want to allow some reasonable error given:
+  // - request_deadline() only has 1sec resolution so the best we can do is +-1
+  // - if sent_deadline.tv_nsec is very close to the next second's boundary we
+  // can end up being off by 2 in one direction.
+  XCTAssertLessThanOrEqual(response.param().request_deadline() - sent_deadline.tv_sec, 2);
+  XCTAssertGreaterThanOrEqual(response.param().request_deadline() - sent_deadline.tv_sec, -1);
+  NSLog(@"request deadline: %d sent_deadline: %d", response.param().request_deadline(),
+        sent_deadline.tv_sec);
+}
+
 - (void)testPeer {
   auto stub = [self getStub];
   EchoRequest request;

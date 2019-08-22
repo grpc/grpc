@@ -30,7 +30,7 @@ namespace Grpc.Core
     /// More client objects can reuse the same channel. Creating a channel is an expensive operation compared to invoking
     /// a remote call so in general you should reuse a single channel for as many calls as possible.
     /// </summary>
-    public class Channel
+    public class Channel : ChannelBase
     {
         static readonly ILogger Logger = GrpcEnvironment.Logger.ForType<Channel>();
 
@@ -38,7 +38,6 @@ namespace Grpc.Core
         readonly AtomicCounter activeCallCounter = new AtomicCounter();
         readonly CancellationTokenSource shutdownTokenSource = new CancellationTokenSource();
 
-        readonly string target;
         readonly GrpcEnvironment environment;
         readonly CompletionQueueSafeHandle completionQueue;
         readonly ChannelSafeHandle handle;
@@ -64,9 +63,8 @@ namespace Grpc.Core
         /// <param name="target">Target of the channel.</param>
         /// <param name="credentials">Credentials to secure the channel.</param>
         /// <param name="options">Channel options.</param>
-        public Channel(string target, ChannelCredentials credentials, IEnumerable<ChannelOption> options)
+        public Channel(string target, ChannelCredentials credentials, IEnumerable<ChannelOption> options) : base(target)
         {
-            this.target = GrpcPreconditions.CheckNotNull(target, "target");
             this.options = CreateOptionsDictionary(options);
             EnsureUserAgentChannelOption(this.options);
             this.environment = GrpcEnvironment.AddRef();
@@ -74,7 +72,7 @@ namespace Grpc.Core
             this.completionQueue = this.environment.PickCompletionQueue();
             using (var nativeChannelArgs = ChannelOptions.CreateChannelArgs(this.options.Values))
             {
-                var nativeCredentials = credentials.GetNativeCredentials();
+                var nativeCredentials = credentials.ToNativeCredentials();
                 if (nativeCredentials != null)
                 {
                     this.handle = ChannelSafeHandle.CreateSecure(nativeCredentials, target, nativeChannelArgs);
@@ -179,15 +177,6 @@ namespace Grpc.Core
             }
         }
 
-        /// <summary>The original target used to create the channel.</summary>
-        public string Target
-        {
-            get
-            {
-                return this.target;
-            }
-        }
-
         /// <summary>
         /// Returns a token that gets cancelled once <c>ShutdownAsync</c> is invoked.
         /// </summary>
@@ -255,6 +244,15 @@ namespace Grpc.Core
             }
 
             await GrpcEnvironment.ReleaseAsync().ConfigureAwait(false);
+        }
+
+        /// <summary>
+        /// Create a new <see cref="CallInvoker"/> for the channel.
+        /// </summary>
+        /// <returns>A new <see cref="CallInvoker"/>.</returns>
+        public override CallInvoker CreateCallInvoker()
+        {
+            return new DefaultCallInvoker(this);
         }
 
         internal ChannelSafeHandle Handle

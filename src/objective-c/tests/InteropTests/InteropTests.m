@@ -406,6 +406,14 @@ static dispatch_once_t initGlobalInterceptorFactory;
   RMTTestService *_service;
 }
 
++ (XCTestSuite *)defaultTestSuite {
+  if (self == [InteropTests class]) {
+    return [XCTestSuite testSuiteWithName:@"InteropTestsEmptySuite"];
+  } else {
+    return super.defaultTestSuite;
+  }
+}
+
 + (NSString *)host {
   return nil;
 }

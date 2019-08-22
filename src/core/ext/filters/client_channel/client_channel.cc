@@ -329,8 +329,8 @@ class CallData {
       grpc_linked_mdelem* linked_mdelem = static_cast<grpc_linked_mdelem*>(
           calld_->arena_->Alloc(sizeof(grpc_linked_mdelem)));
       linked_mdelem->md = grpc_mdelem_from_slices(
-          grpc_slice_from_static_buffer_internal(key.data(), key.size()),
-          grpc_slice_from_static_buffer_internal(value.data(), value.size()));
+          grpc_core::ExternallyManagedSlice(key.data(), key.size()),
+          grpc_core::ExternallyManagedSlice(value.data(), value.size()));
       GPR_ASSERT(grpc_metadata_batch_link_tail(batch_, linked_mdelem) ==
                  GRPC_ERROR_NONE);
     }
@@ -708,7 +708,7 @@ class CallData {
   LbCallState lb_call_state_;
   RefCountedPtr<ConnectedSubchannel> connected_subchannel_;
   void (*lb_recv_trailing_metadata_ready_)(
-      void* user_data,
+      void* user_data, grpc_error* error,
       LoadBalancingPolicy::MetadataInterface* recv_trailing_metadata,
       LoadBalancingPolicy::CallState* call_state) = nullptr;
   void* lb_recv_trailing_metadata_ready_user_data_ = nullptr;
@@ -1510,7 +1510,7 @@ void ChannelData::CreateResolvingLoadBalancingPolicyLocked() {
       UniquePtr<LoadBalancingPolicy::ChannelControlHelper>(
           New<ClientChannelControlHelper>(this));
   lb_args.args = channel_args_;
-  UniquePtr<char> target_uri(strdup(target_uri_.get()));
+  UniquePtr<char> target_uri(gpr_strdup(target_uri_.get()));
   resolving_lb_policy_.reset(New<ResolvingLoadBalancingPolicy>(
       std::move(lb_args), &grpc_client_channel_routing_trace,
       std::move(target_uri), ProcessResolverResultLocked, this));
@@ -2160,8 +2160,8 @@ void CallData::RecvTrailingMetadataReadyForLoadBalancingPolicy(
   // Invoke callback to LB policy.
   Metadata trailing_metadata(calld, calld->recv_trailing_metadata_);
   calld->lb_recv_trailing_metadata_ready_(
-      calld->lb_recv_trailing_metadata_ready_user_data_, &trailing_metadata,
-      &calld->lb_call_state_);
+      calld->lb_recv_trailing_metadata_ready_user_data_, error,
+      &trailing_metadata, &calld->lb_call_state_);
   // Chain to original callback.
   GRPC_CLOSURE_RUN(calld->original_recv_trailing_metadata_ready_,
                    GRPC_ERROR_REF(error));
@@ -3186,8 +3186,7 @@ void CallData::AddRetriableSendInitialMetadataOp(
   if (GPR_UNLIKELY(retry_state->send_initial_metadata.idx.named
                        .grpc_previous_rpc_attempts != nullptr)) {
     grpc_metadata_batch_remove(&retry_state->send_initial_metadata,
-                               retry_state->send_initial_metadata.idx.named
-                                   .grpc_previous_rpc_attempts);
+                               GRPC_BATCH_GRPC_PREVIOUS_RPC_ATTEMPTS);
   }
   if (GPR_UNLIKELY(num_attempts_completed_ > 0)) {
     grpc_mdelem retry_md = grpc_mdelem_create(
@@ -3197,7 +3196,7 @@ void CallData::AddRetriableSendInitialMetadataOp(
         &retry_state->send_initial_metadata,
         &retry_state
              ->send_initial_metadata_storage[send_initial_metadata_.list.count],
-        retry_md);
+        retry_md, GRPC_BATCH_GRPC_PREVIOUS_RPC_ATTEMPTS);
     if (GPR_UNLIKELY(error != GRPC_ERROR_NONE)) {
       gpr_log(GPR_ERROR, "error adding retry metadata: %s",
               grpc_error_string(error));
