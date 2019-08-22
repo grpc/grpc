@@ -175,7 +175,8 @@ void ChannelData::IdleTimerCallback(void* arg, grpc_error* error) {
     MutexLock lock(&chand->call_count_mu_);
     chand->timer_on_ = false;
     if (error == GRPC_ERROR_NONE && chand->call_count_ == 0) {
-      if (ExecCtx::Get()->Now() >= chand->last_idle_time_ + chand->client_idle_timeout_) {
+      if (ExecCtx::Get()->Now() >=
+          chand->last_idle_time_ + chand->client_idle_timeout_) {
         chand->EnterIdle();
       } else {
         chand->StartIdleTimer();
