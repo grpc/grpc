@@ -42,6 +42,7 @@
 #include "src/core/ext/filters/client_channel/parse_address.h"
 #include "src/core/ext/filters/client_channel/resolver/fake/fake_resolver.h"
 #include "src/core/ext/filters/client_channel/server_address.h"
+#include "src/core/ext/filters/client_channel/service_config.h"
 #include "src/core/lib/backoff/backoff.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gprpp/debug_location.h"
@@ -144,9 +145,11 @@ class FakeResolverResponseGeneratorWrapper {
     response_generator_ = std::move(other.response_generator_);
   }
 
-  void SetNextResolution(const std::vector<int>& ports) {
+  void SetNextResolution(const std::vector<int>& ports,
+                         const char* service_config_json = nullptr) {
     grpc_core::ExecCtx exec_ctx;
-    response_generator_->SetResponse(BuildFakeResults(ports));
+    response_generator_->SetResponse(
+        BuildFakeResults(ports, service_config_json));
   }
 
   void SetNextResolutionUponError(const std::vector<int>& ports) {
@@ -165,7 +168,8 @@ class FakeResolverResponseGeneratorWrapper {
 
  private:
   static grpc_core::Resolver::Result BuildFakeResults(
-      const std::vector<int>& ports) {
+      const std::vector<int>& ports,
+      const char* service_config_json = nullptr) {
     grpc_core::Resolver::Result result;
     for (const int& port : ports) {
       char* lb_uri_str;
@@ -178,6 +182,11 @@ class FakeResolverResponseGeneratorWrapper {
                                     nullptr /* args */);
       grpc_uri_destroy(lb_uri);
       gpr_free(lb_uri_str);
+    }
+    if (service_config_json != nullptr) {
+      result.service_config = grpc_core::ServiceConfig::Create(
+          service_config_json, &result.service_config_error);
+      GPR_ASSERT(result.service_config != nullptr);
     }
     return result;
   }
@@ -1461,6 +1470,34 @@ TEST_F(ClientLbEnd2endTest, RoundRobinWithHealthCheckingServiceNamePerChannel) {
   CheckRpcSendOk(stub1, DEBUG_LOCATION, true /* wait_for_ready */);
   // Check that we created only one subchannel to the backend.
   EXPECT_EQ(1UL, servers_[0]->service_.clients().size());
+  // Clean up.
+  EnableDefaultHealthCheckService(false);
+}
+
+TEST_F(ClientLbEnd2endTest,
+       RoundRobinWithHealthCheckingServiceNameChangesAfterSubchannelsCreated) {
+  EnableDefaultHealthCheckService(true);
+  // Start server.
+  const int kNumServers = 1;
+  StartServers(kNumServers);
+  // Create a channel with health-checking enabled.
+  const char* kServiceConfigJson =
+      "{\"healthCheckConfig\": "
+      "{\"serviceName\": \"health_check_service_name\"}}";
+  auto response_generator = BuildResolverResponseGenerator();
+  auto channel = BuildChannel("round_robin", response_generator);
+  auto stub = BuildStub(channel);
+  std::vector<int> ports = GetServersPorts();
+  response_generator.SetNextResolution(ports, kServiceConfigJson);
+  servers_[0]->SetServingStatus("health_check_service_name", true);
+  EXPECT_TRUE(WaitForChannelReady(channel.get(), 1 /* timeout_seconds */));
+  // Send an update on the channel to change it to use a health checking
+  // service name that is not being reported as healthy.
+  const char* kServiceConfigJson2 =
+      "{\"healthCheckConfig\": "
+      "{\"serviceName\": \"health_check_service_name2\"}}";
+  response_generator.SetNextResolution(ports, kServiceConfigJson2);
+  EXPECT_TRUE(WaitForChannelNotReady(channel.get()));
   // Clean up.
   EnableDefaultHealthCheckService(false);
 }
