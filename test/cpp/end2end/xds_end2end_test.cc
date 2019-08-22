@@ -1115,7 +1115,7 @@ TEST_F(SingleBalancerTest, LocalityMapWeightedRoundRobin) {
 TEST_F(SingleBalancerTest, LocalityMapStressTest) {
   SetNextResolution({}, kDefaultServiceConfig_.c_str());
   SetNextResolutionForLbChannelAllBalancers();
-  const size_t kNumLocalities = 100;
+  const size_t kNumLocalities = 5;
   // The first EDS response contains kNumLocalities localities, each of which
   // contains backend 0.
   const std::vector<std::vector<int>> locality_list_0(kNumLocalities,
@@ -1126,7 +1126,7 @@ TEST_F(SingleBalancerTest, LocalityMapStressTest) {
   ScheduleResponseForBalancer(0, EdsServiceImpl::BuildResponse(locality_list_0),
                               0);
   ScheduleResponseForBalancer(0, EdsServiceImpl::BuildResponse(locality_list_1),
-                              60 * 1000);
+                              2 * 1000);
   // Wait until backend 0 is ready, before which kNumLocalities localities are
   // received and handled by the xds policy.
   WaitForBackend(0, /*reset_counters=*/false);
@@ -1688,9 +1688,9 @@ TEST_F(SingleBalancerTest, FallbackModeIsExitedAfterChildRready) {
   SetNextResolutionForLbChannelAllBalancers();
   // The state (TRANSIENT_FAILURE) update from the child policy will be ignored
   // because we are still in fallback mode.
-  gpr_timespec deadline = gpr_time_add(
-      gpr_now(GPR_CLOCK_REALTIME), gpr_time_from_millis(5000, GPR_TIMESPAN));
-  // Send 5 seconds worth of RPCs.
+  gpr_timespec deadline = gpr_time_add(gpr_now(GPR_CLOCK_REALTIME),
+                                       gpr_time_from_millis(500, GPR_TIMESPAN));
+  // Send 0.5 second worth of RPCs.
   do {
     CheckRpcSendOk();
   } while (gpr_time_cmp(gpr_now(GPR_CLOCK_REALTIME), deadline) < 0);

@@ -50,6 +50,14 @@ struct XdsLocalityInfo {
 };
 
 struct XdsLocalityList {
+  bool Has(const XdsLocalityName& locality_name) const {
+    for (size_t i = 0; i < list.size(); ++i) {
+      if (*list[i].locality_name == locality_name) {
+        return true;
+      }
+    }
+    return false;
+  }
   InlinedVector<XdsLocalityInfo, 1> list;
   bool applied = false;
 };
