@@ -415,9 +415,6 @@ TEST_F(CredentialsTest, TlsCredentialReloadConfigCppToC) {
   EXPECT_EQ(c_arg.status, GRPC_SSL_CERTIFICATE_CONFIG_RELOAD_FAIL);
   EXPECT_STREQ(c_arg.error_details, "cancelled");
 
-  gpr_free(const_cast<char*>(ssl_pair->private_key));
-  gpr_free(const_cast<char*>(ssl_pair->cert_chain));
-  gpr_free(ssl_pair);
   gpr_free(c_config);
 }
 
