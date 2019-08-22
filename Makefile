@@ -451,7 +451,7 @@ USE_BUILT_PROTOC = false
 endif
 
 GTEST_LIB = -Ithird_party/googletest/googletest/include -Ithird_party/googletest/googletest third_party/googletest/googletest/src/gtest-all.cc -Ithird_party/googletest/googlemock/include -Ithird_party/googletest/googlemock third_party/googletest/googlemock/src/gmock-all.cc
-GTEST_LIB += -lgflags
+GTEST_LIB += -lgflags -std=c++11
 ifeq ($(V),1)
 E = @:
 Q =
