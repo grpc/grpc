@@ -3,6 +3,7 @@
   <PropertyGroup>
     <MSBuildAllProjects>$(MSBuildAllProjects);$(MSBuildThisFileFullPath)</MSBuildAllProjects>
     <gRPC_PluginFileName Condition=" '$(gRPC_PluginFileName)' == '' and '$(Language)' == 'C#' ">grpc_csharp_plugin</gRPC_PluginFileName>
+    <PackOnlyProtos/>
   </PropertyGroup>
 
   <ItemGroup Condition=" '$(Protobuf_ProjectSupported)' == 'true' and '$(Language)' == 'C#' ">
@@ -14,6 +15,7 @@
 
   <ItemDefinitionGroup Condition=" '$(Protobuf_ProjectSupported)' == 'true' and '$(Language)' == 'C#' ">
     <Protobuf>
+      <GrpcPackAs/>
       <GrpcServices Condition=" '%(Protobuf.GrpcServices)' == '' ">Both</GrpcServices>
     </Protobuf>
   </ItemDefinitionGroup>
@@ -27,6 +29,101 @@
       <gRPC_PluginFullPath Condition=" '$(gRPC_PluginFullPath)' == '' "
            >$(Protobuf_PackagedToolsPath)/$(Protobuf_ToolsOs)_$(Protobuf_ToolsCpu)/$(gRPC_PluginFileName)</gRPC_PluginFullPath>
     </PropertyGroup>
+  </Target>
+
+  <!-- 
+    Automatically includes proto files in referenced nuget packages for compilation 
+    Convention based:
+    [Nuget package root]/protobuf/grpc/*.proto          = Generate server & client
+    [Nuget package root]/protobuf/grpc/server/*.proto   = Generate server only
+    [Nuget package root]/protobuf/grpc/client/*.proto   = Generate client only
+    Only works for PackageReference (not packages.config)
+  -->
+  <Target Name="_includeNugetProtoFiles" BeforeTargets="_Protobuf_SelectFiles">
+    <ItemGroup>
+      <_PackageReferencePaths Include="$([MSBuild]::NormalizeDirectory($(NuGetPackageRoot), %(PackageReference.Identity),%(PackageReference.Version),'Protobuf','Grpc'))" />
+            
+      <!-- Server search paths and found files -->
+      <_ServerProtoNugetSearchPaths Include="$([MSBuild]::NormalizeDirectory(%(_PackageReferencePaths.FullPath),'Server'))" Condition="Exists($([MSBuild]::NormalizeDirectory(%(_PackageReferencePaths.FullPath),'Server')))" />
+      <_ServerProtoNugetFilesFound Include="%(_ServerProtoNugetSearchPaths.FullPath)*.proto" />
+      <Protobuf Remove="@(_ServerProtoNugetFilesFound)" />
+      <Protobuf Include="@(_ServerProtoNugetFilesFound)" GrpcPackAs="None" GrpcServices="Server" ClientBaseType="$(Proto_DefaultAccess)" Access="$(Proto_DefaultAccess)" OutputDir="$(Protobuf_OutputPath)\PackagedProtos" />
+
+      <!-- Client search paths and found files -->
+      <_ClientProtoNugetSearchPaths Include="$([MSBuild]::NormalizeDirectory(%(_PackageReferencePaths.FullPath),'Client'))" Condition="Exists($([MSBuild]::NormalizeDirectory(%(_PackageReferencePaths.FullPath),'Client')))" />
+      <_ClientProtoNugetFilesFound Include="%(_ClientProtoNugetSearchPaths.FullPath)*.proto" />
+      <Protobuf Remove="@(_ClientProtoNugetFilesFound)" />
+      <Protobuf Include="@(_ClientProtoNugetFilesFound)" GrpcPackAs="None" GrpcServices="Client" ClientBaseType="$(Proto_DefaultAccess)" Access="$(Proto_DefaultAccess)" OutputDir="$(Protobuf_OutputPath)\PackagedProtos" />
+
+      <!-- Server + Client search paths and found files -->
+      <_BothProtoNugetSearchPaths Include="%(_PackageReferencePaths.FullPath)" Condition="Exists('%(_PackageReferencePaths.FullPath)')" />
+      <_BothProtoNugetFilesFound Include="%(_BothProtoNugetSearchPaths.FullPath)*.proto" />
+      <Protobuf Remove="@(_BothProtoNugetFilesFound)" />
+      <Protobuf Include="@(_BothProtoNugetFilesFound)" GrpcPackAs="None" GrpcServices="Both" ClientBaseType="$(Proto_DefaultAccess)" Access="$(Proto_DefaultAccess)" OutputDir="$(Protobuf_OutputPath)\PackagedProtos" />
+            
+      <_ProtoNugetSearchPaths Include="@(_BothProtoNugetSearchPaths)" />
+      <_ProtoNugetSearchPaths Include="@(_ServerProtoNugetSearchPaths)" />
+      <_ProtoNugetSearchPaths Include="@(_ClientProtoNugetSearchPaths)" />
+    </ItemGroup>
+    <PropertyGroup>
+      <_FoundNugetProtoSearchPaths Condition="'@(_BothProtoNugetSearchPaths-&gt;Count())' &gt;= 1">True</_FoundNugetProtoSearchPaths>
+      <_FoundClientProtoFiles Condition="'@(_ClientProtoNugetFilesFound-&gt;Count())' &gt;= 1">True</_FoundClientProtoFiles>
+      <_FoundServerProtoFiles Condition="'@(_ServerProtoNugetFilesFound-&gt;Count())' &gt;= 1">True</_FoundServerProtoFiles>
+      <_FoundBothProtoFiles Condition="'@(_BothProtoNugetFilesFound-&gt;Count())' &gt;= 1">True</_FoundBothProtoFiles>
+      <_FoundAnyPackagedProtoFiles Condition="'$(_FoundClientProtoFiles)' == 'True' OR '$(_FoundServerProtoFiles)' == 'True' OR '$(_FoundBothProtoFiles)' == 'True'">True</_FoundAnyPackagedProtoFiles>
+    </PropertyGroup>
+    <Message Text="Searched for proto files in:" Importance="Normal" Condition="'$(_FoundNugetProtoSearchPaths)' == 'True'" />
+    <Message Text="	%(_ProtoNugetSearchPaths.FullPath)" Importance="Normal" Condition="'$(_FoundNugetProtoSearchPaths)' == 'True'" />
+    <Message Text="Including packaged protos with the following settings:" Importance="Low" Condition="'$(_FoundAnyPackagedProtoFiles)' == 'True'" />
+    <Message Text=" Protobuf_DefaultAccess: $(Proto_DefaultAccess)" Importance="Low" Condition="'$(_FoundAnyPackagedProtoFiles)' == 'True'" />
+    <Message Text=" Protobuf_DefaultClientBaseType: $(Proto_DefaultClientBaseType)" Importance="Low" Condition="'$(_FoundAnyPackagedProtoFiles)' == 'True'" />
+    <Message Text="Found @(_ClientProtoNugetFilesFound-&gt;Count()) packaged client proto(s):" Importance="Normal" Condition="'$(_FoundClientProtoFiles)' == 'True'" />
+    <Message Text="	%(_ClientProtoNugetFilesFound.Identity)" Importance="Normal" Condition="'$(_FoundClientProtoFiles)' == 'True'" />
+    <Message Text="Found @(_ServerProtoNugetFilesFound-&gt;Count()) packaged server proto(s):" Importance="Normal" Condition="'$(_FoundServerProtoFiles)' == 'True'" />
+    <Message Text="	%(_ServerProtoNugetFilesFound.Identity)" Importance="Normal" Condition="'$(_FoundServerProtoFiles)' == 'True'" />
+    <Message Text="Found @(_BothProtoNugetFilesFound-&gt;Count()) packaged client &amp; server proto(s):" Importance="Normal" Condition="'$(_FoundBothProtoFiles)' == 'True'" />
+    <Message Text="	%(_BothProtoNugetFilesFound.Identity)" Importance="Normal" Condition="'$(_FoundBothProtoFiles)' == 'True'" />
+  </Target>
+
+  <!-- 
+    This target will mark any Protobuf with GrpcPackAs set to Server, Client or Both as packable
+    and will set the path in the nuget package to one of the following:
+    protobuf/grpc
+    protobuf/grpc/server
+    protobuf/grpc/client
+
+    To pack the project with only protos (no other files): 
+      dotnet pack /p:PackOnlyProtos="true"
+    With a different package id:
+      dotnet pack /p:PackOnlyProtos="true" /p:PackageId="YourPackage.Protos"
+   -->
+  <Target Name="_ApplyAttributesToPackedProtos" BeforeTargets="GenerateNuspec">
+    <ItemGroup>
+      <!-- Apply nuget packing properties for all protos which specify that they want to be packaged -->
+      <Protobuf Update="$(ProjectDir)**\*.proto">
+        <Pack Condition="'%(Protobuf.GrpcPackAs)' == 'Both' OR '%(Protobuf.GrpcPackAs)' == 'Client' OR '%(Protobuf.GrpcPackAs)' == 'Server'">True</Pack>
+        <PackagePath Condition="'%(Protobuf.GrpcPackAs)' == 'Both'">Protobuf\Grpc\</PackagePath>
+        <PackagePath Condition="'%(Protobuf.GrpcPackAs)' == 'Client'">Protobuf\Grpc\Client</PackagePath>
+        <PackagePath Condition="'%(Protobuf.GrpcPackAs)' == 'Server'">Protobuf\Grpc\Server</PackagePath>
+      </Protobuf>
+      <_PackagedProtoFiles Include="%(Protobuf.FullPath)" Pack="%(Protobuf.Pack)" PackagePath="%(Protobuf.PackagePath)" Condition="'%(Protobuf.Pack)' == 'True'" />
+      <_PackageFiles Include="%(_PackagedProtoFiles.FullPath)" PackagePath="%(_PackagedProtoFiles.PackagePath)"/>
+    </ItemGroup>
+    <!-- 
+      Disable implicit inclusion of other files, this package will contain only 
+      Proto files and files with pack set explicitly to true
+    -->
+    <PropertyGroup Condition="'$(PackOnlyProtos)' == 'true'">
+      <IncludeSource>false</IncludeSource>
+      <IncludeBuildOutput>false</IncludeBuildOutput>
+      <IncludeContentInPack>false</IncludeContentInPack>
+    </PropertyGroup>
+    <Warning Text="PackOnlyProtos was specified but there are no proto files in the project with the GrpcPackAs property set"
+      Condition="'@(_PackagedProtoFiles-&gt;Count())' == 0 AND '$(PackOnlyProtos)' == 'true'"/>
+
+    <Message Importance="Normal" Text="Packing only .proto files and files explicitly parked with Pack=&quot;true&quot;" Condition="'$(PackOnlyProtos)' == 'true'"/>
+    <Message Importance="Normal" Text="Packing Proto files:" />
+    <Message Importance="Normal" Text="   %(_PackagedProtoFiles.Identity) => %(_PackagedProtoFiles.PackagePath)" />
   </Target>
 
   <Target Name="_gRPC_PrepareCompileOptions" AfterTargets="Protobuf_PrepareCompileOptions">

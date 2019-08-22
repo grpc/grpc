@@ -26,6 +26,19 @@
       </EnumProperty.DataSource>
     </EnumProperty>
 
+    <EnumProperty Name="GrpcPackAs" DisplayName="gRPC Nuget Package Type"
+                  Category="gRPC" Default="None"
+                  Description="Determines what services proto should generate when imported from a nuget package.">
+      <EnumValue Name="Both" DisplayName="Package Client &amp; Server"  />
+      <EnumValue Name="Client" DisplayName="Package Client only" />
+      <EnumValue Name="Server" DisplayName="Package Server only" />
+      <EnumValue Name="None" DisplayName="Do Not Package" IsDefault="true" />
+      <EnumProperty.DataSource>
+        <DataSource ItemType="Protobuf" SourceOfDefaultValue="AfterContext"
+                    PersistenceStyle="Attribute" />
+      </EnumProperty.DataSource>
+    </EnumProperty>
+
     <EnumProperty Name="ClientBaseType" DisplayName="gRPC Client Base Type"
                   Category="gRPC" Default="ClientBase"
                   Description="The base type to use for the client. This is an experimental feature.">
