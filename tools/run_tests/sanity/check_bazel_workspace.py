@@ -49,7 +49,6 @@ _GRPC_DEP_NAMES = [
     'com_google_protobuf',
     'com_github_google_googletest',
     'com_github_gflags_gflags',
-    'com_github_nanopb_nanopb',
     'com_github_google_benchmark',
     'com_github_cares_cares',
     'com_google_absl',
@@ -136,7 +135,7 @@ build_rules = {
     'git_repository': lambda **args: eval_state.git_repository(**args),
     'grpc_python_deps': lambda: None,
 }
-exec (bazel_file) in build_rules
+exec(bazel_file) in build_rules
 for name in _GRPC_DEP_NAMES:
     assert name in names_and_urls.keys()
 assert len(_GRPC_DEP_NAMES) == len(names_and_urls.keys())
@@ -147,12 +146,9 @@ names_without_bazel_only_deps = names_and_urls.keys()
 for dep_name in _GRPC_BAZEL_ONLY_DEPS:
     names_without_bazel_only_deps.remove(dep_name)
 archive_urls = [names_and_urls[name] for name in names_without_bazel_only_deps]
-# Exclude nanopb from the check: it's not a submodule for distribution reasons,
-# but it's a workspace dependency to enable users to use their own version.
 workspace_git_hashes = {
     re.search(git_hash_pattern, url).group()
     for url in archive_urls
-    if 'nanopb' not in url
 }
 if len(workspace_git_hashes) == 0:
     print("(Likely) parse error, did not find any bazel git dependencies.")
@@ -179,7 +175,7 @@ for name in _GRPC_DEP_NAMES:
         'git_repository': lambda **args: state.git_repository(**args),
         'grpc_python_deps': lambda *args, **kwargs: None,
     }
-    exec (bazel_file) in rules
+    exec(bazel_file) in rules
     assert name not in names_and_urls_with_overridden_name.keys()
 
 sys.exit(0)

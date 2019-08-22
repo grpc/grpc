@@ -99,6 +99,8 @@ LANG_RELEASE_MATRIX = {
         ('v1.20.0', ReleaseInfo()),
         ('v1.21.4', ReleaseInfo()),
         ('v1.22.0', ReleaseInfo()),
+        ('v1.22.1', ReleaseInfo()),
+        ('v1.23.0', ReleaseInfo()),
     ]),
     'go':
     OrderedDict(
@@ -214,6 +216,8 @@ LANG_RELEASE_MATRIX = {
         ('v1.20.0', ReleaseInfo()),
         ('v1.21.4', ReleaseInfo()),
         ('v1.22.0', ReleaseInfo()),
+        ('v1.22.1', ReleaseInfo()),
+        ('v1.23.0', ReleaseInfo()),
     ]),
     'node':
     OrderedDict([
@@ -264,6 +268,8 @@ LANG_RELEASE_MATRIX = {
         ('v1.20.0', ReleaseInfo()),
         ('v1.21.4', ReleaseInfo()),
         ('v1.22.0', ReleaseInfo()),
+        ('v1.22.1', ReleaseInfo()),
+        ('v1.23.0', ReleaseInfo()),
         # TODO: https://github.com/grpc/grpc/issues/18262.
         # If you are not encountering the error in above issue
         # go ahead and upload the docker image for new releases.
@@ -292,6 +298,8 @@ LANG_RELEASE_MATRIX = {
         # See https://github.com/grpc/grpc/issues/18264
         ('v1.21.4', ReleaseInfo()),
         ('v1.22.0', ReleaseInfo()),
+        ('v1.22.1', ReleaseInfo()),
+        ('v1.23.0', ReleaseInfo()),
     ]),
     'csharp':
     OrderedDict([
@@ -323,5 +331,7 @@ LANG_RELEASE_MATRIX = {
         ('v1.20.0', ReleaseInfo()),
         ('v1.21.4', ReleaseInfo()),
         ('v1.22.0', ReleaseInfo()),
+        ('v1.22.1', ReleaseInfo()),
+        ('v1.23.0', ReleaseInfo()),
     ]),
 }

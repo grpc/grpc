@@ -45,6 +45,7 @@ def handle_sigint(unused_signum, unused_frame):
     if per_process_rpc_future is not None:
         per_process_rpc_future.cancel()
     sys.stderr.flush()
+    # This sys.exit(0) avoids an exception caused by the cancelled RPC.
     sys.exit(0)
 
 
@@ -72,13 +73,48 @@ def main_streaming(server_target):
         assert False, _ASSERTION_MESSAGE
 
 
+def main_unary_with_exception(server_target):
+    """Initiate a unary RPC with a signal handler that will raise."""
+    channel = grpc.insecure_channel(server_target)
+    try:
+        channel.unary_unary(UNARY_UNARY)(_MESSAGE, wait_for_ready=True)
+    except KeyboardInterrupt:
+        sys.stderr.write("Running signal handler.\n")
+        sys.stderr.flush()
+
+    # This call should not hang.
+    channel.close()
+
+
+def main_streaming_with_exception(server_target):
+    """Initiate a streaming RPC with a signal handler that will raise."""
+    channel = grpc.insecure_channel(server_target)
+    try:
+        for _ in channel.unary_stream(UNARY_STREAM)(
+                _MESSAGE, wait_for_ready=True):
+            pass
+    except KeyboardInterrupt:
+        sys.stderr.write("Running signal handler.\n")
+        sys.stderr.flush()
+
+    # This call should not hang.
+    channel.close()
+
+
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Signal test client.')
     parser.add_argument('server', help='Server target')
+    parser.add_argument('arity', help='Arity', choices=('unary', 'streaming'))
     parser.add_argument(
-        'arity', help='RPC arity', choices=('unary', 'streaming'))
+        '--exception',
+        help='Whether the signal throws an exception',
+        action='store_true')
     args = parser.parse_args()
-    if args.arity == 'unary':
+    if args.arity == 'unary' and not args.exception:
         main_unary(args.server)
-    else:
+    elif args.arity == 'streaming' and not args.exception:
         main_streaming(args.server)
+    elif args.arity == 'unary' and args.exception:
+        main_unary_with_exception(args.server)
+    else:
+        main_streaming_with_exception(args.server)

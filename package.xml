@@ -879,6 +879,7 @@
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/resolver/dns/dns_resolver_selection.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/resolver/dns/native/dns_resolver.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/resolver/sockaddr/sockaddr_resolver.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/filters/client_channel/resolver/xds/xds_resolver.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/census/grpc_context.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_idle/client_idle_filter.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/max_age/max_age_filter.cc" role="src" />
