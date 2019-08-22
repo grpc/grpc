@@ -27,12 +27,12 @@
 #include "src/core/lib/surface/channel_init.h"
 #include "src/core/lib/transport/http2_errors.h"
 
-// The idle filter is disabled in client channel by default.
-// To enable the idle filte, set GRPC_ARG_CLIENT_IDLE_TIMEOUT_MS to [0, INT_MAX)
-// in channel args.
-// TODO(qianchengz): Find a reasonable default value. Maybe check what deault
-// value Java uses.
-#define DEFAULT_IDLE_TIMEOUT_MS (5 * 60 * 1000)
+// The idle filter is enabled in client channel by default.
+// Set GRPC_ARG_CLIENT_IDLE_TIMEOUT_MS to [1000, INT_MAX) in channel args to
+// configure the idle timeout.
+#define DEFAULT_IDLE_TIMEOUT_MS (30 /*minutes*/ * 60 * 1000)
+// The user input idle timeout smaller than this would be capped to it.
+#define MIN_IDLE_TIMEOUT_MS (1 /*second*/ * 1000)
 
 namespace grpc_core {
 
@@ -48,9 +48,11 @@ TraceFlag grpc_trace_client_idle_filter(false, "client_idle_filter");
 namespace {
 
 grpc_millis GetClientIdleTimeout(const grpc_channel_args* args) {
-  return grpc_channel_arg_get_integer(
-      grpc_channel_args_find(args, GRPC_ARG_CLIENT_IDLE_TIMEOUT_MS),
-      {DEFAULT_IDLE_TIMEOUT_MS, 0, INT_MAX});
+  return GPR_MAX(
+      grpc_channel_arg_get_integer(
+          grpc_channel_args_find(args, GRPC_ARG_CLIENT_IDLE_TIMEOUT_MS),
+          {DEFAULT_IDLE_TIMEOUT_MS, 0, INT_MAX}),
+      MIN_IDLE_TIMEOUT_MS);
 }
 
 class ChannelData {
@@ -118,13 +120,10 @@ void ChannelData::StartTransportOp(grpc_channel_element* elem,
   // Catch the disconnect_with_error transport op.
   if (op->disconnect_with_error != nullptr) {
     // Disconnect. Cancel the timer if we set it before.
-    // IncreaseCallCount() introduces a dummy call. It will cancel the timer and
-    // prevent the timer from being reset by other threads.
-    chand->IncreaseCallCount();
     MutexLock lock(&chand->call_count_mu_);
-    if (chand->timer_on_) {
-      grpc_timer_cancel(&chand->idle_timer_);
-    }
+    // Introduce a dummy call to prevent the timer being restarted.
+    chand->call_count_++;
+    grpc_timer_cancel(&chand->idle_timer_);
   }
   // Pass the op to the next filter.
   grpc_channel_next_op(elem, op);
@@ -207,7 +206,7 @@ void ChannelData::EnterIdle() {
   // Hold a ref to the channel stack for the transport op.
   GRPC_CHANNEL_STACK_REF(channel_stack_, "idle transport op");
   // Initialize the transport op.
-  memset(&idle_transport_op_, 0, sizeof(idle_transport_op_));
+  idle_transport_op_ = {};
   idle_transport_op_.disconnect_with_error = grpc_error_set_int(
       GRPC_ERROR_CREATE_FROM_STATIC_STRING("enter idle"),
       GRPC_ERROR_INT_CHANNEL_CONNECTIVITY_STATE, GRPC_CHANNEL_IDLE);
