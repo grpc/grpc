@@ -31,7 +31,10 @@ void TlsKeyMaterialsConfig::set_key_materials(
   pem_root_certs_ = std::move(pem_root_certs);
 }
 
-/** Creates a new C struct for the key materials. **/
+/** Creates a new C struct for the key materials. Note that the user must free
+ * the underlying pointer to private key and cert chain duplicates; they are not
+ * freed when the UniquePtr<char> member variables of PemKeyCertPair are unused.
+ * Similarly, the user must free the underlying pointer to c_pem_root_certs. **/
 grpc_tls_key_materials_config* c_key_materials(
     const std::shared_ptr<TlsKeyMaterialsConfig>& config) {
   grpc_tls_key_materials_config* c_config =

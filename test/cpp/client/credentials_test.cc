@@ -286,6 +286,9 @@ TEST_F(CredentialsTest, TlsKeyMaterialsConfigCppToC) {
                c_config->pem_key_cert_pair_list()[0].private_key());
   EXPECT_STREQ(pair.cert_chain.c_str(),
                c_config->pem_key_cert_pair_list()[0].cert_chain());
+  gpr_free(c_config->pem_key_cert_pair_list()[0].private_key());
+  gpr_free(c_config->pem_key_cert_pair_list()[0].cert_chain());
+  gpr_free(const_cast<char*>(c_config->pem_root_certs()));
   gpr_free(c_config);
 }
 
@@ -411,6 +414,11 @@ TEST_F(CredentialsTest, TlsCredentialReloadConfigCppToC) {
   c_config->Cancel(&c_arg);
   EXPECT_EQ(c_arg.status, GRPC_SSL_CERTIFICATE_CONFIG_RELOAD_FAIL);
   EXPECT_STREQ(c_arg.error_details, "cancelled");
+
+  gpr_free(const_cast<char*>(ssl_pair->private_key));
+  gpr_free(const_cast<char*>(ssl_pair->cert_chain));
+  gpr_free(ssl_pair);
+  gpr_free(c_config);
 }
 
 typedef class ::grpc_impl::experimental::TlsServerAuthorizationCheckArg
@@ -430,6 +438,7 @@ TEST_F(CredentialsTest, TlsServerAuthorizationCheckArgCallback) {
   TlsServerAuthorizationCheckArg arg(c_arg);
   arg.callback();
   EXPECT_STREQ(static_cast<char*>(arg.cb_user_data()), "cb_user_data");
+  gpr_free(arg.cb_user_data());
   EXPECT_EQ(arg.success(), 1);
   EXPECT_STREQ(arg.target_name()->c_str(), "callback_target_name");
   EXPECT_STREQ(arg.peer_cert()->c_str(), "callback_peer_cert");
@@ -450,6 +459,7 @@ TEST_F(CredentialsTest, TlsServerAuthorizationCheckConfigSchedule) {
   int schedule_output = config.Schedule(&arg);
   EXPECT_EQ(schedule_output, 1);
   EXPECT_STREQ(static_cast<char*>(arg.cb_user_data()), "cb_user_data");
+  gpr_free(arg.cb_user_data());
   EXPECT_EQ(arg.success(), 1);
   EXPECT_STREQ(arg.target_name()->c_str(), "sync_target_name");
   EXPECT_STREQ(arg.peer_cert()->c_str(), "sync_peer_cert");
@@ -476,6 +486,7 @@ TEST_F(CredentialsTest, TlsServerAuthorizationCheckConfigCppToC) {
   int c_schedule_output = c_config->Schedule(&c_arg);
   EXPECT_EQ(c_schedule_output, 1);
   EXPECT_STREQ(static_cast<char*>(c_arg.cb_user_data), "cb_user_data");
+  gpr_free(c_arg.cb_user_data);
   EXPECT_EQ(c_arg.success, 1);
   EXPECT_STREQ(c_arg.target_name, "sync_target_name");
   EXPECT_STREQ(c_arg.peer_cert, "sync_peer_cert");
@@ -575,6 +586,7 @@ TEST_F(CredentialsTest, TlsCredentialsOptionsCppToC) {
   EXPECT_STREQ(
       static_cast<char*>(c_server_authorization_check_arg.cb_user_data),
       "cb_user_data");
+  gpr_free(c_server_authorization_check_arg.cb_user_data);
   EXPECT_EQ(c_server_authorization_check_arg.success, 1);
   EXPECT_STREQ(c_server_authorization_check_arg.target_name,
                "sync_target_name");
