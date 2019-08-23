@@ -72,11 +72,12 @@ std::shared_ptr<TlsKeyMaterialsConfig> tls_key_materials_c_to_cpp(
   for (size_t i = 0; i < pem_key_cert_pair_list.size(); i++) {
     ::grpc_core::PemKeyCertPair key_cert_pair = pem_key_cert_pair_list[i];
     TlsKeyMaterialsConfig::PemKeyCertPair p = {
-        gpr_strdup(key_cert_pair.private_key()),
-        gpr_strdup(key_cert_pair.cert_chain())};
+        //gpr_strdup(key_cert_pair.private_key()),
+        //gpr_strdup(key_cert_pair.cert_chain())};
+        key_cert_pair.private_key(), key_cert_pair.cert_chain()};
     cpp_pem_key_cert_pair_list.push_back(::std::move(p));
   }
-  cpp_config->set_key_materials(std::move(gpr_strdup(config->pem_root_certs())),
+  cpp_config->set_key_materials(std::move(config->pem_root_certs()),
                                 std::move(cpp_pem_key_cert_pair_list));
   cpp_config->set_version(config->version());
   return cpp_config;
@@ -188,7 +189,8 @@ TlsServerAuthorizationCheckArg::TlsServerAuthorizationCheckArg(
   c_arg_ = arg;
 }
 
-TlsServerAuthorizationCheckArg::~TlsServerAuthorizationCheckArg() {}
+TlsServerAuthorizationCheckArg::~TlsServerAuthorizationCheckArg() {
+}
 
 void* TlsServerAuthorizationCheckArg::cb_user_data() const {
   return c_arg_.cb_user_data;

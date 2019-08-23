@@ -55,6 +55,8 @@ static int tls_credential_reload_sync(void* config_user_data,
   std::vector<TlsKeyMaterialsConfig::PemKeyCertPair> pair_list =
       key_materials_config->pem_key_cert_pair_list();
   pair_list.push_back(pair3);
+  pair_list[0].private_key = "private_key01";
+  pair_list[0].cert_chain = "cert_chain01";
   key_materials_config->set_key_materials("new_pem_root_certs", pair_list);
   arg->set_key_materials_config(key_materials_config);
   arg->set_status(GRPC_SSL_CERTIFICATE_CONFIG_RELOAD_NEW);
@@ -356,8 +358,8 @@ TEST_F(CredentialsTest, TlsCredentialReloadConfigSchedule) {
                "new_pem_root_certs");
   pair_list = arg.key_materials_config()->pem_key_cert_pair_list();
   EXPECT_EQ(static_cast<int>(pair_list.size()), 3);
-  EXPECT_STREQ(pair_list[0].private_key.c_str(), "private_key1");
-  EXPECT_STREQ(pair_list[0].cert_chain.c_str(), "cert_chain1");
+  EXPECT_STREQ(pair_list[0].private_key.c_str(), "private_key01");
+  EXPECT_STREQ(pair_list[0].cert_chain.c_str(), "cert_chain01");
   EXPECT_STREQ(pair_list[1].private_key.c_str(), "private_key2");
   EXPECT_STREQ(pair_list[1].cert_chain.c_str(), "cert_chain2");
   EXPECT_STREQ(pair_list[2].private_key.c_str(), "private_key3");
@@ -404,8 +406,8 @@ TEST_F(CredentialsTest, TlsCredentialReloadConfigCppToC) {
   ::grpc_core::InlinedVector<::grpc_core::PemKeyCertPair, 1> pair_list =
       c_arg.key_materials_config->pem_key_cert_pair_list();
   EXPECT_EQ(static_cast<int>(pair_list.size()), 2);
-  EXPECT_STREQ(pair_list[0].private_key(), "private_key");
-  EXPECT_STREQ(pair_list[0].cert_chain(), "cert_chain");
+  EXPECT_STREQ(pair_list[0].private_key(), "private_key01");
+  EXPECT_STREQ(pair_list[0].cert_chain(), "cert_chain01");
   EXPECT_STREQ(pair_list[1].private_key(), "private_key3");
   EXPECT_STREQ(pair_list[1].cert_chain(), "cert_chain3");
   EXPECT_EQ(c_arg.status, GRPC_SSL_CERTIFICATE_CONFIG_RELOAD_NEW);
@@ -426,13 +428,19 @@ typedef class ::grpc_impl::experimental::TlsServerAuthorizationCheckConfig
 TEST_F(CredentialsTest, TlsServerAuthorizationCheckArgCallback) {
   grpc_tls_server_authorization_check_arg c_arg;
   c_arg.cb = tls_server_authorization_check_callback;
-  c_arg.cb_user_data = nullptr;
-  c_arg.success = 0;
-  c_arg.target_name = "target_name";
-  c_arg.peer_cert = "peer_cert";
-  c_arg.status = GRPC_STATUS_UNAUTHENTICATED;
-  c_arg.error_details = "error_details";
+  //c_arg.cb_user_data = nullptr;
+  //c_arg.success = 0;
+  //c_arg.target_name = "target_name";
+  //c_arg.peer_cert = "peer_cert";
+  //c_arg.status = GRPC_STATUS_UNAUTHENTICATED;
+  //c_arg.error_details = "error_details";
   TlsServerAuthorizationCheckArg arg(c_arg);
+  arg.set_cb_user_data(nullptr);
+  arg.set_success(0);
+  arg.set_target_name("target_name");
+  arg.set_peer_cert("peer_cert");
+  arg.set_status(GRPC_STATUS_UNAUTHENTICATED);
+  arg.set_error_details("error_details");
   arg.callback();
   EXPECT_STREQ(static_cast<char*>(arg.cb_user_data()), "cb_user_data");
   gpr_free(arg.cb_user_data());
@@ -567,8 +575,8 @@ TEST_F(CredentialsTest, TlsCredentialsOptionsCppToC) {
   ::grpc_core::InlinedVector<::grpc_core::PemKeyCertPair, 1> c_pair_list =
       c_credential_reload_arg.key_materials_config->pem_key_cert_pair_list();
   EXPECT_EQ(static_cast<int>(c_pair_list.size()), 2);
-  EXPECT_STREQ(c_pair_list[0].private_key(), "private_key");
-  EXPECT_STREQ(c_pair_list[0].cert_chain(), "cert_chain");
+  EXPECT_STREQ(c_pair_list[0].private_key(), "private_key01");
+  EXPECT_STREQ(c_pair_list[0].cert_chain(), "cert_chain01");
   EXPECT_STREQ(c_pair_list[1].private_key(), "private_key3");
   EXPECT_STREQ(c_pair_list[1].cert_chain(), "cert_chain3");
   EXPECT_EQ(c_credential_reload_arg.status,
