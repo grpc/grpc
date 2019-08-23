@@ -3163,8 +3163,8 @@ void CallData::AddRetriableSendInitialMetadataOp(
     SubchannelCallRetryState* retry_state,
     SubchannelCallBatchData* batch_data) {
   // Maps the number of retries to the corresponding metadata value slice.
-  static const grpc_slice* retry_count_strings[] = {
-      &GRPC_MDSTR_1, &GRPC_MDSTR_2, &GRPC_MDSTR_3, &GRPC_MDSTR_4};
+  const grpc_slice* retry_count_strings[] = {&GRPC_MDSTR_1, &GRPC_MDSTR_2,
+                                             &GRPC_MDSTR_3, &GRPC_MDSTR_4};
   // We need to make a copy of the metadata batch for each attempt, since
   // the filters in the subchannel stack may modify this batch, and we don't
   // want those modifications to be passed forward to subsequent attempts.

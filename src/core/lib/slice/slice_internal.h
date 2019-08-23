@@ -182,7 +182,7 @@ struct StaticSliceRefcount {
         index(index) {}
 
   grpc_slice_refcount base;
-  uint32_t index;
+  const uint32_t index;
 };
 
 extern grpc_slice_refcount kNoopRefcount;
