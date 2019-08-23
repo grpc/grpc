@@ -2186,7 +2186,6 @@ void XdsLb::LocalityMapPriorityMap::FailoverLocked(uint32_t from_priority) {
     LocalityMap* candidate = map_.find(priority)->second.get();
     if (candidate->connectivity_state() != GRPC_CHANNEL_READY) continue;
     current_locality_map_ = candidate;
-    UpdateXdsPickerLocked();
   }
   StartTryingLocalityMapLocked(next_priority);
 }
@@ -2209,11 +2208,7 @@ void XdsLb::LocalityMapPriorityMap::PruneLocalityMapsLocked() {
 
 void XdsLb::LocalityMapPriorityMap::StartTryingLocalityMapLocked(
     uint32_t priority) {
-  if (priority == UINT32_MAX) {
-    // If we have exhausted all the priorities, re
-    UpdateXdsPickerLocked();
-    return;
-  }
+  if (priority == UINT32_MAX) return;
   if (priority > current_priority()) return;
   if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_xds_trace)) {
     gpr_log(GPR_INFO, "[xdslb %p] Start trying priority %" PRIu32, xds_policy_,
@@ -2436,12 +2431,11 @@ void XdsLb::LocalityMapPriorityMap::LocalityMap::OnLocalityStateUpdateLocked() {
     return;
   }
   // current map
-  if (connectivity_state_ == GRPC_CHANNEL_READY) {
-    priority_map.UpdateXdsPickerLocked();
-  } else {
+  if (connectivity_state_ != GRPC_CHANNEL_READY) {
     priority_map.current_locality_map_ = nullptr;
     priority_map.FailoverLocked(priority_);
   }
+  priority_map.UpdateXdsPickerLocked();
 }
 
 void XdsLb::LocalityMapPriorityMap::LocalityMap::
