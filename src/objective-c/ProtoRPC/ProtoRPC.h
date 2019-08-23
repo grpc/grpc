@@ -17,12 +17,16 @@
  */
 
 #import <Foundation/Foundation.h>
-#import <GRPCClient/GRPCCall.h>
+
+// import legacy header for compatibility with users using the ProtoRPC interface
+#import "ProtoRPCLegacy.h"
 
 #import "ProtoMethod.h"
 
 NS_ASSUME_NONNULL_BEGIN
 
+@class GRPCRequestOptions;
+@class GRPCCallOptions;
 @class GPBMessage;
 
 /** An object can implement this protocol to receive responses from server from a call. */
@@ -160,35 +164,3 @@ NS_ASSUME_NONNULL_BEGIN
 @end
 
 NS_ASSUME_NONNULL_END
-
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wnullability-completeness"
-
-__attribute__((deprecated("Please use GRPCProtoCall."))) @interface ProtoRPC
-    : GRPCCall
-
-      /**
-       * host parameter should not contain the scheme (http:// or https://), only the name or IP
-       * addr and the port number, for example @"localhost:5050".
-       */
-      -
-      (instancetype)initWithHost : (NSString *)host method
-    : (GRPCProtoMethod *)method requestsWriter : (GRXWriter *)requestsWriter responseClass
-    : (Class)responseClass responsesWriteable
-    : (id<GRXWriteable>)responsesWriteable NS_DESIGNATED_INITIALIZER;
-
-- (void)start;
-@end
-
-/**
- * This subclass is empty now. Eventually we'll remove ProtoRPC class
- * to avoid potential naming conflict
- */
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wdeprecated-declarations"
-    @interface GRPCProtoCall : ProtoRPC
-#pragma clang diagnostic pop
-
-                               @end
-
-#pragma clang diagnostic pop

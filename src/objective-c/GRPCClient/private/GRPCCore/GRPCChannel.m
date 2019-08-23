@@ -20,18 +20,19 @@
 
 #include <grpc/support/log.h>
 
-#import "../internal/GRPCCallOptions+Internal.h"
+#import "../../internal/GRPCCallOptions+Internal.h"
+#import "../GRPCTransport+Private.h"
 #import "ChannelArgsUtil.h"
 #import "GRPCChannelFactory.h"
 #import "GRPCChannelPool.h"
 #import "GRPCCompletionQueue.h"
-#import "GRPCCronetChannelFactory.h"
+#import "GRPCCoreFactory.h"
 #import "GRPCInsecureChannelFactory.h"
 #import "GRPCSecureChannelFactory.h"
-#import "version.h"
 
 #import <GRPCClient/GRPCCall+Cronet.h>
 #import <GRPCClient/GRPCCallOptions.h>
+#import <GRPCClient/version.h>
 
 @implementation GRPCChannelConfiguration
 
@@ -50,32 +51,48 @@
 }
 
 - (id<GRPCChannelFactory>)channelFactory {
-  GRPCTransportType type = _callOptions.transportType;
-  switch (type) {
-    case GRPCTransportTypeChttp2BoringSSL:
-      // TODO (mxyan): Remove when the API is deprecated
-#ifdef GRPC_COMPILE_WITH_CRONET
-      if (![GRPCCall isUsingCronet]) {
-#else
-    {
-#endif
-        NSError *error;
-        id<GRPCChannelFactory> factory = [GRPCSecureChannelFactory
-            factoryWithPEMRootCertificates:_callOptions.PEMRootCertificates
-                                privateKey:_callOptions.PEMPrivateKey
-                                 certChain:_callOptions.PEMCertificateChain
-                                     error:&error];
-        NSAssert(factory != nil, @"Failed to create secure channel factory");
-        if (factory == nil) {
-          NSLog(@"Error creating secure channel factory: %@", error);
+  if (_callOptions.transport != NULL) {
+    id<GRPCTransportFactory> transportFactory =
+        [[GRPCTransportRegistry sharedInstance] getTransportFactoryWithId:_callOptions.transport];
+    if (!
+        [transportFactory respondsToSelector:@selector(createCoreChannelFactoryWithCallOptions:)]) {
+      // impossible because we are using GRPCCore now
+      [NSException raise:NSInternalInconsistencyException
+                  format:@"Transport factory type is wrong"];
+    }
+    id<GRPCCoreTransportFactory> coreTransportFactory =
+        (id<GRPCCoreTransportFactory>)transportFactory;
+    return [coreTransportFactory createCoreChannelFactoryWithCallOptions:_callOptions];
+  } else {
+    // To maintain backwards compatibility with tranportType
+    GRPCTransportType type = _callOptions.transportType;
+    switch (type) {
+      case GRPCTransportTypeChttp2BoringSSL:
+        // TODO (mxyan): Remove when the API is deprecated
+        {
+          NSError *error;
+          id<GRPCChannelFactory> factory = [GRPCSecureChannelFactory
+              factoryWithPEMRootCertificates:_callOptions.PEMRootCertificates
+                                  privateKey:_callOptions.PEMPrivateKey
+                                   certChain:_callOptions.PEMCertificateChain
+                                       error:&error];
+          NSAssert(factory != nil, @"Failed to create secure channel factory");
+          if (factory == nil) {
+            NSLog(@"Error creating secure channel factory: %@", error);
+          }
+          return factory;
         }
-        return factory;
+      case GRPCTransportTypeCronet: {
+        id<GRPCCoreTransportFactory> transportFactory = (id<GRPCCoreTransportFactory>)[
+            [GRPCTransportRegistry sharedInstance] getTransportFactoryWithId:gGRPCCoreCronetId];
+        return [transportFactory createCoreChannelFactoryWithCallOptions:_callOptions];
       }
-      // fallthrough
-    case GRPCTransportTypeCronet:
-      return [GRPCCronetChannelFactory sharedInstance];
-    case GRPCTransportTypeInsecure:
-      return [GRPCInsecureChannelFactory sharedInstance];
+      case GRPCTransportTypeInsecure:
+        return [GRPCInsecureChannelFactory sharedInstance];
+      default:
+        NSLog(@"Unrecognized transport type");
+        return nil;
+    }
   }
 }
 
@@ -198,6 +215,7 @@
     } else {
       channelArgs = channelConfiguration.channelArgs;
     }
+
     id<GRPCChannelFactory> factory = channelConfiguration.channelFactory;
     _unmanagedChannel = [factory createChannelWithHost:host channelArgs:channelArgs];
     NSAssert(_unmanagedChannel != NULL, @"Failed to create channel");
