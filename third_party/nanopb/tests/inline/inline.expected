@@ -1,3 +1,0 @@
-pb_byte_t data\[32\];
-bool has_data;
-pb_byte_t data\[64\];

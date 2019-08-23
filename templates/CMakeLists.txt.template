@@ -190,7 +190,6 @@
   include(cmake/benchmark.cmake)
   include(cmake/cares.cmake)
   include(cmake/gflags.cmake)
-  include(cmake/nanopb.cmake)
   include(cmake/protobuf.cmake)
   include(cmake/ssl.cmake)
   include(cmake/upb.cmake)
@@ -431,7 +430,6 @@
     PRIVATE <%text>${_gRPC_BENCHMARK_INCLUDE_DIR}</%text>
     PRIVATE <%text>${_gRPC_CARES_INCLUDE_DIR}</%text>
     PRIVATE <%text>${_gRPC_GFLAGS_INCLUDE_DIR}</%text>
-    PRIVATE <%text>${_gRPC_NANOPB_INCLUDE_DIR}</%text>
     PRIVATE <%text>${_gRPC_PROTOBUF_INCLUDE_DIR}</%text>
     PRIVATE <%text>${_gRPC_SSL_INCLUDE_DIR}</%text>
     PRIVATE <%text>${_gRPC_UPB_GENERATED_DIR}</%text>
@@ -530,7 +528,6 @@
     PRIVATE <%text>${_gRPC_BENCHMARK_INCLUDE_DIR}</%text>
     PRIVATE <%text>${_gRPC_CARES_INCLUDE_DIR}</%text>
     PRIVATE <%text>${_gRPC_GFLAGS_INCLUDE_DIR}</%text>
-    PRIVATE <%text>${_gRPC_NANOPB_INCLUDE_DIR}</%text>
     PRIVATE <%text>${_gRPC_PROTOBUF_INCLUDE_DIR}</%text>
     PRIVATE <%text>${_gRPC_SSL_INCLUDE_DIR}</%text>
     PRIVATE <%text>${_gRPC_UPB_GENERATED_DIR}</%text>

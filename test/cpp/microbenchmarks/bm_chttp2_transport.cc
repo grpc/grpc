@@ -262,7 +262,7 @@ static void BM_StreamCreateDestroy(benchmark::State& state) {
   auto* s = new Stream(&f);
   grpc_transport_stream_op_batch op;
   grpc_transport_stream_op_batch_payload op_payload(nullptr);
-  memset(&op, 0, sizeof(op));
+  op = {};
   op.cancel_stream = true;
   op.payload = &op_payload;
   op_payload.cancel_stream.cancel_error = GRPC_ERROR_CANCELLED;
@@ -315,7 +315,7 @@ static void BM_StreamCreateSendInitialMetadataDestroy(benchmark::State& state) {
   std::unique_ptr<Closure> done;
 
   auto reset_op = [&]() {
-    memset(&op, 0, sizeof(op));
+    op = {};
     op.payload = &op_payload;
   };
 
@@ -366,7 +366,7 @@ static void BM_TransportEmptyOp(benchmark::State& state) {
   grpc_transport_stream_op_batch op;
   grpc_transport_stream_op_batch_payload op_payload(nullptr);
   auto reset_op = [&]() {
-    memset(&op, 0, sizeof(op));
+    op = {};
     op.payload = &op_payload;
   };
   std::unique_ptr<Closure> c = MakeClosure([&](grpc_error* error) {
@@ -398,7 +398,7 @@ static void BM_TransportStreamSend(benchmark::State& state) {
   grpc_transport_stream_op_batch op;
   grpc_transport_stream_op_batch_payload op_payload(nullptr);
   auto reset_op = [&]() {
-    memset(&op, 0, sizeof(op));
+    op = {};
     op.payload = &op_payload;
   };
   // Create the send_message payload slice.
@@ -533,7 +533,7 @@ static void BM_TransportStreamRecv(benchmark::State& state) {
   grpc_slice incoming_data = CreateIncomingDataSlice(state.range(0), 16384);
 
   auto reset_op = [&]() {
-    memset(&op, 0, sizeof(op));
+    op = {};
     op.payload = &op_payload;
   };
 

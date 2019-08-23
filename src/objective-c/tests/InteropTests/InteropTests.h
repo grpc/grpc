@@ -48,10 +48,18 @@
 - (int32_t)encodingOverhead;
 
 /**
+ * DEPRECATED: \a transportType is a deprecated option. Please use \a transport instead.
+ *
  * The type of transport to be used. The base implementation returns default. Subclasses should
  * override to appropriate settings.
  */
 + (GRPCTransportType)transportType;
+
+/*
+ * The transport to be used. The base implementation returns NULL. Subclasses should override to
+ * appropriate settings.
+ */
++ (GRPCTransportId)transport;
 
 /**
  * The root certificates to be used. The base implementation returns nil. Subclasses should override
@@ -64,10 +72,5 @@
  * to appropriate settings.
  */
 + (NSString *)hostNameOverride;
-
-/**
- * Whether to use Cronet for all the v1 API tests in the test suite.
- */
-+ (BOOL)useCronet;
 
 @end

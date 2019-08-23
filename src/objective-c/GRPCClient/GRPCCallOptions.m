@@ -17,13 +17,14 @@
  */
 
 #import "GRPCCallOptions.h"
+#import "GRPCTransport.h"
 #import "internal/GRPCCallOptions+Internal.h"
 
 // The default values for the call options.
 static NSString *const kDefaultServerAuthority = nil;
 static const NSTimeInterval kDefaultTimeout = 0;
 static const BOOL kDefaultFlowControlEnabled = NO;
-static NSArray *const kDefaultInterceptorFactories = nil;
+static NSArray<id<GRPCInterceptorFactory>> *const kDefaultInterceptorFactories = nil;
 static NSDictionary *const kDefaultInitialMetadata = nil;
 static NSString *const kDefaultUserAgentPrefix = nil;
 static const NSUInteger kDefaultResponseSizeLimit = 0;
@@ -41,6 +42,7 @@ static NSString *const kDefaultPEMCertificateChain = nil;
 static NSString *const kDefaultOauth2AccessToken = nil;
 static const id<GRPCAuthorizationProtocol> kDefaultAuthTokenProvider = nil;
 static const GRPCTransportType kDefaultTransportType = GRPCTransportTypeChttp2BoringSSL;
+static const GRPCTransportId kDefaultTransport = NULL;
 static NSString *const kDefaultHostNameOverride = nil;
 static const id kDefaultLogContext = nil;
 static NSString *const kDefaultChannelPoolDomain = nil;
@@ -62,7 +64,7 @@ static BOOL areObjectsEqual(id obj1, id obj2) {
   NSString *_serverAuthority;
   NSTimeInterval _timeout;
   BOOL _flowControlEnabled;
-  NSArray *_interceptorFactories;
+  NSArray<id<GRPCInterceptorFactory>> *_interceptorFactories;
   NSString *_oauth2AccessToken;
   id<GRPCAuthorizationProtocol> _authTokenProvider;
   NSDictionary *_initialMetadata;
@@ -80,6 +82,7 @@ static BOOL areObjectsEqual(id obj1, id obj2) {
   NSString *_PEMPrivateKey;
   NSString *_PEMCertificateChain;
   GRPCTransportType _transportType;
+  GRPCTransportId _transport;
   NSString *_hostNameOverride;
   id<NSObject> _logContext;
   NSString *_channelPoolDomain;
@@ -107,6 +110,7 @@ static BOOL areObjectsEqual(id obj1, id obj2) {
 @synthesize PEMPrivateKey = _PEMPrivateKey;
 @synthesize PEMCertificateChain = _PEMCertificateChain;
 @synthesize transportType = _transportType;
+@synthesize transport = _transport;
 @synthesize hostNameOverride = _hostNameOverride;
 @synthesize logContext = _logContext;
 @synthesize channelPoolDomain = _channelPoolDomain;
@@ -134,6 +138,7 @@ static BOOL areObjectsEqual(id obj1, id obj2) {
                          PEMPrivateKey:kDefaultPEMPrivateKey
                    PEMCertificateChain:kDefaultPEMCertificateChain
                          transportType:kDefaultTransportType
+                             transport:kDefaultTransport
                       hostNameOverride:kDefaultHostNameOverride
                             logContext:kDefaultLogContext
                      channelPoolDomain:kDefaultChannelPoolDomain
@@ -143,7 +148,7 @@ static BOOL areObjectsEqual(id obj1, id obj2) {
 - (instancetype)initWithServerAuthority:(NSString *)serverAuthority
                                 timeout:(NSTimeInterval)timeout
                      flowControlEnabled:(BOOL)flowControlEnabled
-                   interceptorFactories:(NSArray *)interceptorFactories
+                   interceptorFactories:(NSArray<id<GRPCInterceptorFactory>> *)interceptorFactories
                       oauth2AccessToken:(NSString *)oauth2AccessToken
                       authTokenProvider:(id<GRPCAuthorizationProtocol>)authTokenProvider
                         initialMetadata:(NSDictionary *)initialMetadata
@@ -161,6 +166,7 @@ static BOOL areObjectsEqual(id obj1, id obj2) {
                           PEMPrivateKey:(NSString *)PEMPrivateKey
                     PEMCertificateChain:(NSString *)PEMCertificateChain
                           transportType:(GRPCTransportType)transportType
+                              transport:(GRPCTransportId)transport
                        hostNameOverride:(NSString *)hostNameOverride
                              logContext:(id)logContext
                       channelPoolDomain:(NSString *)channelPoolDomain
@@ -193,6 +199,7 @@ static BOOL areObjectsEqual(id obj1, id obj2) {
     _PEMPrivateKey = [PEMPrivateKey copy];
     _PEMCertificateChain = [PEMCertificateChain copy];
     _transportType = transportType;
+    _transport = transport;
     _hostNameOverride = [hostNameOverride copy];
     _logContext = logContext;
     _channelPoolDomain = [channelPoolDomain copy];
@@ -224,6 +231,7 @@ static BOOL areObjectsEqual(id obj1, id obj2) {
                                                       PEMPrivateKey:_PEMPrivateKey
                                                 PEMCertificateChain:_PEMCertificateChain
                                                       transportType:_transportType
+                                                          transport:_transport
                                                    hostNameOverride:_hostNameOverride
                                                          logContext:_logContext
                                                   channelPoolDomain:_channelPoolDomain
@@ -256,6 +264,7 @@ static BOOL areObjectsEqual(id obj1, id obj2) {
                 PEMPrivateKey:[_PEMPrivateKey copy]
           PEMCertificateChain:[_PEMCertificateChain copy]
                 transportType:_transportType
+                    transport:_transport
              hostNameOverride:[_hostNameOverride copy]
                    logContext:_logContext
             channelPoolDomain:[_channelPoolDomain copy]
@@ -280,6 +289,7 @@ static BOOL areObjectsEqual(id obj1, id obj2) {
   if (!areObjectsEqual(callOptions.PEMCertificateChain, _PEMCertificateChain)) return NO;
   if (!areObjectsEqual(callOptions.hostNameOverride, _hostNameOverride)) return NO;
   if (!(callOptions.transportType == _transportType)) return NO;
+  if (!(TransportIdIsEqual(callOptions.transport, _transport))) return NO;
   if (!areObjectsEqual(callOptions.logContext, _logContext)) return NO;
   if (!areObjectsEqual(callOptions.channelPoolDomain, _channelPoolDomain)) return NO;
   if (!(callOptions.channelID == _channelID)) return NO;
@@ -304,6 +314,7 @@ static BOOL areObjectsEqual(id obj1, id obj2) {
   result ^= _PEMCertificateChain.hash;
   result ^= _hostNameOverride.hash;
   result ^= _transportType;
+  result ^= TransportIdHash(_transport);
   result ^= _logContext.hash;
   result ^= _channelPoolDomain.hash;
   result ^= _channelID;
@@ -336,6 +347,7 @@ static BOOL areObjectsEqual(id obj1, id obj2) {
 @dynamic PEMPrivateKey;
 @dynamic PEMCertificateChain;
 @dynamic transportType;
+@dynamic transport;
 @dynamic hostNameOverride;
 @dynamic logContext;
 @dynamic channelPoolDomain;
@@ -363,6 +375,7 @@ static BOOL areObjectsEqual(id obj1, id obj2) {
                          PEMPrivateKey:kDefaultPEMPrivateKey
                    PEMCertificateChain:kDefaultPEMCertificateChain
                          transportType:kDefaultTransportType
+                             transport:kDefaultTransport
                       hostNameOverride:kDefaultHostNameOverride
                             logContext:kDefaultLogContext
                      channelPoolDomain:kDefaultChannelPoolDomain
@@ -392,6 +405,7 @@ static BOOL areObjectsEqual(id obj1, id obj2) {
                                                       PEMPrivateKey:_PEMPrivateKey
                                                 PEMCertificateChain:_PEMCertificateChain
                                                       transportType:_transportType
+                                                          transport:_transport
                                                    hostNameOverride:_hostNameOverride
                                                          logContext:_logContext
                                                   channelPoolDomain:_channelPoolDomain
@@ -422,6 +436,7 @@ static BOOL areObjectsEqual(id obj1, id obj2) {
                 PEMPrivateKey:_PEMPrivateKey
           PEMCertificateChain:_PEMCertificateChain
                 transportType:_transportType
+                    transport:_transport
              hostNameOverride:_hostNameOverride
                    logContext:_logContext
             channelPoolDomain:_channelPoolDomain
@@ -445,7 +460,7 @@ static BOOL areObjectsEqual(id obj1, id obj2) {
   _flowControlEnabled = flowControlEnabled;
 }
 
-- (void)setInterceptorFactories:(NSArray *)interceptorFactories {
+- (void)setInterceptorFactories:(NSArray<id<GRPCInterceptorFactory>> *)interceptorFactories {
   _interceptorFactories = interceptorFactories;
 }
 
@@ -536,6 +551,10 @@ static BOOL areObjectsEqual(id obj1, id obj2) {
 
 - (void)setTransportType:(GRPCTransportType)transportType {
   _transportType = transportType;
+}
+
+- (void)setTransport:(GRPCTransportId)transport {
+  _transport = transport;
 }
 
 - (void)setHostNameOverride:(NSString *)hostNameOverride {

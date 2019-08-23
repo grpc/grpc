@@ -330,6 +330,12 @@ ifeq ($(HAS_WORKING_NO_MAYBE_UNINITIALIZED),true)
 W_NO_MAYBE_UNINITIALIZED=-Wno-maybe-uninitialized
 NO_W_NO_MAYBE_UNINITIALIZED=-Wmaybe-uninitialized
 endif
+CHECK_NO_UNKNOWN_WARNING_OPTION_WORKS_CMD = $(CC) -std=c99 -Werror -Wno-unknown-warning-option -o $(TMPOUT) -c test/build/no-unknown-warning-option.c
+HAS_WORKING_NO_UNKNOWN_WARNING_OPTION = $(shell $(CHECK_NO_UNKNOWN_WARNING_OPTION_WORKS_CMD) 2> /dev/null && echo true || echo false)
+ifeq ($(HAS_WORKING_NO_UNKNOWN_WARNING_OPTION),true)
+W_NO_UNKNOWN_WARNING_OPTION=-Wno-unknown-warning-option
+NO_W_NO_UNKNOWN_WARNING_OPTION=-Wunknown-warning-option
+endif
 
 # The HOST compiler settings are used to compile the protoc plugins.
 # In most cases, you won't have to change anything, but if you are
@@ -348,7 +354,7 @@ CXXFLAGS += -stdlib=libc++
 LDFLAGS += -framework CoreFoundation
 endif
 CXXFLAGS += -Wnon-virtual-dtor
-CPPFLAGS += -g -Wall -Wextra -Werror -Wno-unknown-warning-option -Wno-long-long -Wno-unused-parameter -Wno-deprecated-declarations -Wno-sign-conversion -Wno-shadow -Wno-conversion -Wno-implicit-fallthrough -Wno-sign-compare -Wno-missing-field-initializers -Wno-maybe-uninitialized -DPB_FIELD_32BIT -DOSATOMIC_USE_INLINED=1 -Ithird_party/nanopb -Ithird_party/upb -Isrc/core/ext/upb-generated
+CPPFLAGS += -g -Wall -Wextra -Werror $(W_NO_UNKNOWN_WARNING_OPTION) -Wno-long-long -Wno-unused-parameter -Wno-deprecated-declarations -Wno-sign-conversion -Wno-shadow -Wno-conversion -Wno-implicit-fallthrough -Wno-sign-compare -Wno-missing-field-initializers -Wno-maybe-uninitialized -DPB_FIELD_32BIT -DOSATOMIC_USE_INLINED=1 -Ithird_party/upb -Isrc/core/ext/upb-generated
 COREFLAGS += -fno-rtti -fno-exceptions
 LDFLAGS += -g
 
@@ -445,7 +451,7 @@ USE_BUILT_PROTOC = false
 endif
 
 GTEST_LIB = -Ithird_party/googletest/googletest/include -Ithird_party/googletest/googletest third_party/googletest/googletest/src/gtest-all.cc -Ithird_party/googletest/googlemock/include -Ithird_party/googletest/googlemock third_party/googletest/googlemock/src/gmock-all.cc
-GTEST_LIB += -lgflags
+GTEST_LIB += -lgflags -std=c++11
 ifeq ($(V),1)
 E = @:
 Q =
@@ -1287,6 +1293,7 @@ string_view_test: $(BINDIR)/$(CONFIG)/string_view_test
 thread_manager_test: $(BINDIR)/$(CONFIG)/thread_manager_test
 thread_stress_test: $(BINDIR)/$(CONFIG)/thread_stress_test
 time_change_test: $(BINDIR)/$(CONFIG)/time_change_test
+timer_test: $(BINDIR)/$(CONFIG)/timer_test
 transport_pid_controller_test: $(BINDIR)/$(CONFIG)/transport_pid_controller_test
 transport_security_common_api_test: $(BINDIR)/$(CONFIG)/transport_security_common_api_test
 writes_per_rpc_test: $(BINDIR)/$(CONFIG)/writes_per_rpc_test
@@ -1758,6 +1765,7 @@ buildtests_cxx: privatelibs_cxx \
   $(BINDIR)/$(CONFIG)/thread_manager_test \
   $(BINDIR)/$(CONFIG)/thread_stress_test \
   $(BINDIR)/$(CONFIG)/time_change_test \
+  $(BINDIR)/$(CONFIG)/timer_test \
   $(BINDIR)/$(CONFIG)/transport_pid_controller_test \
   $(BINDIR)/$(CONFIG)/transport_security_common_api_test \
   $(BINDIR)/$(CONFIG)/writes_per_rpc_test \
@@ -1926,6 +1934,7 @@ buildtests_cxx: privatelibs_cxx \
   $(BINDIR)/$(CONFIG)/thread_manager_test \
   $(BINDIR)/$(CONFIG)/thread_stress_test \
   $(BINDIR)/$(CONFIG)/time_change_test \
+  $(BINDIR)/$(CONFIG)/timer_test \
   $(BINDIR)/$(CONFIG)/transport_pid_controller_test \
   $(BINDIR)/$(CONFIG)/transport_security_common_api_test \
   $(BINDIR)/$(CONFIG)/writes_per_rpc_test \
@@ -2381,8 +2390,6 @@ test_cxx: buildtests_cxx
 	$(Q) $(BINDIR)/$(CONFIG)/grpclb_api_test || ( echo test grpclb_api_test failed ; exit 1 )
 	$(E) "[RUN]     Testing grpclb_end2end_test"
 	$(Q) $(BINDIR)/$(CONFIG)/grpclb_end2end_test || ( echo test grpclb_end2end_test failed ; exit 1 )
-	$(E) "[RUN]     Testing grpclb_fallback_test"
-	$(Q) $(BINDIR)/$(CONFIG)/grpclb_fallback_test || ( echo test grpclb_fallback_test failed ; exit 1 )
 	$(E) "[RUN]     Testing h2_ssl_cert_test"
 	$(Q) $(BINDIR)/$(CONFIG)/h2_ssl_cert_test || ( echo test h2_ssl_cert_test failed ; exit 1 )
 	$(E) "[RUN]     Testing h2_ssl_session_reuse_test"
@@ -2471,6 +2478,8 @@ test_cxx: buildtests_cxx
 	$(Q) $(BINDIR)/$(CONFIG)/thread_stress_test || ( echo test thread_stress_test failed ; exit 1 )
 	$(E) "[RUN]     Testing time_change_test"
 	$(Q) $(BINDIR)/$(CONFIG)/time_change_test || ( echo test time_change_test failed ; exit 1 )
+	$(E) "[RUN]     Testing timer_test"
+	$(Q) $(BINDIR)/$(CONFIG)/timer_test || ( echo test timer_test failed ; exit 1 )
 	$(E) "[RUN]     Testing transport_pid_controller_test"
 	$(Q) $(BINDIR)/$(CONFIG)/transport_pid_controller_test || ( echo test transport_pid_controller_test failed ; exit 1 )
 	$(E) "[RUN]     Testing transport_security_common_api_test"
@@ -3911,6 +3920,7 @@ LIBGRPC_SRC = \
     src/core/ext/filters/client_channel/resolver/dns/dns_resolver_selection.cc \
     src/core/ext/filters/client_channel/resolver/dns/native/dns_resolver.cc \
     src/core/ext/filters/client_channel/resolver/sockaddr/sockaddr_resolver.cc \
+    src/core/ext/filters/client_channel/resolver/xds/xds_resolver.cc \
     src/core/ext/filters/census/grpc_context.cc \
     src/core/ext/filters/client_idle/client_idle_filter.cc \
     src/core/ext/filters/max_age/max_age_filter.cc \
@@ -5331,6 +5341,7 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/ext/filters/client_channel/resolver/dns/native/dns_resolver.cc \
     src/core/ext/filters/client_channel/resolver/sockaddr/sockaddr_resolver.cc \
     src/core/ext/filters/client_channel/resolver/fake/fake_resolver.cc \
+    src/core/ext/filters/client_channel/resolver/xds/xds_resolver.cc \
     src/core/ext/filters/client_channel/lb_policy/grpclb/client_load_reporting_filter.cc \
     src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb.cc \
     src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_channel.cc \
@@ -19873,6 +19884,49 @@ deps_time_change_test: $(TIME_CHANGE_TEST_OBJS:.o=.dep)
 ifneq ($(NO_SECURE),true)
 ifneq ($(NO_DEPS),true)
 -include $(TIME_CHANGE_TEST_OBJS:.o=.dep)
+endif
+endif
+
+
+TIMER_TEST_SRC = \
+    test/cpp/common/timer_test.cc \
+
+TIMER_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(TIMER_TEST_SRC))))
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL.
+
+$(BINDIR)/$(CONFIG)/timer_test: openssl_dep_error
+
+else
+
+
+
+
+ifeq ($(NO_PROTOBUF),true)
+
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
+
+$(BINDIR)/$(CONFIG)/timer_test: protobuf_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/timer_test: $(PROTOBUF_DEP) $(TIMER_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LDXX) $(LDFLAGS) $(TIMER_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(LDLIBS_SECURE) $(GTEST_LIB) -o $(BINDIR)/$(CONFIG)/timer_test
+
+endif
+
+endif
+
+$(OBJDIR)/$(CONFIG)/test/cpp/common/timer_test.o:  $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a
+
+deps_timer_test: $(TIMER_TEST_OBJS:.o=.dep)
+
+ifneq ($(NO_SECURE),true)
+ifneq ($(NO_DEPS),true)
+-include $(TIMER_TEST_OBJS:.o=.dep)
 endif
 endif
 
