@@ -63,9 +63,6 @@ grpc_objc_testing_library(
     data = [":TestCertificates"],
     defines = [
         "DEBUG=1",
-        "PB_FIELD_32BIT=1",
-        "PB_NO_PACKED_STRUCTS=1",
-        "PB_ENABLE_MALLOC=1",
         "HOST_PORT_LOCALSSL=localhost:5051",
         "HOST_PORT_LOCAL=localhost:5050",
         "HOST_PORT_REMOTE=grpc-test.sandbox.googleapis.com",
