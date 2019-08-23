@@ -100,6 +100,7 @@ constexpr char kDefaultLocalitySubzone[] = "xds_default_locality_subzone";
 constexpr char kLbDropType[] = "lb";
 constexpr char kThrottleDropType[] = "throttle";
 constexpr int kDefaultLocalityWeight = 3;
+constexpr int kDefaultLocalityPriority = 0;
 
 template <typename ServiceType>
 class CountedService : public ServiceType {
@@ -324,7 +325,8 @@ class EdsServiceImpl : public EdsService {
       size_t first_locality_name_index = 0,
       const std::map<grpc::string, uint32_t>& drop_categories = {},
       const FractionalPercent::DenominatorType denominator =
-          FractionalPercent::MILLION) {
+          FractionalPercent::MILLION,
+      const std::vector<int>& priorities = {}) {
     ClusterLoadAssignment assignment;
     assignment.set_cluster_name("service name");
     for (size_t i = 0; i < backend_ports.size(); ++i) {
@@ -332,7 +334,9 @@ class EdsServiceImpl : public EdsService {
       const int lb_weight =
           lb_weights.empty() ? kDefaultLocalityWeight : lb_weights[i];
       endpoints->mutable_load_balancing_weight()->set_value(lb_weight);
-      endpoints->set_priority(0);
+      const int priority =
+          priorities.empty() ? kDefaultLocalityPriority : priorities[i];
+      endpoints->set_priority(priority);
       endpoints->mutable_locality()->set_region(kDefaultLocalityRegion);
       endpoints->mutable_locality()->set_zone(kDefaultLocalityZone);
       std::ostringstream sub_zone;
@@ -552,7 +556,7 @@ class XdsEnd2endTest : public ::testing::Test {
 
   void ResetStub(int fallback_timeout = 0,
                  const grpc::string& expected_targets = "",
-                 grpc::string scheme = "") {
+                 grpc::string scheme = "", int failover_timeout = 10) {
     ChannelArguments args;
     // TODO(juanlishen): Add setter to ChannelArguments.
     if (fallback_timeout > 0) {
@@ -1233,6 +1237,78 @@ TEST_F(SingleBalancerTest, LocalityMapUpdate) {
   EXPECT_EQ(2U, balancers_[0]->eds_service()->response_count());
 }
 
+class FailoverTest : public SingleBalancerTest {
+ public:
+  FailoverTest() { ResetStub(0, "", "", 1); }
+};
+
+// Localities with the highest priority are used when multiple priority exist.
+TEST_F(FailoverTest, ChooseHighestPriority) {
+  SetNextResolution({}, kDefaultServiceConfig_.c_str());
+  SetNextResolutionForLbChannelAllBalancers();
+  ScheduleResponseForBalancer(
+      0,
+      EdsServiceImpl::BuildResponse(GetBackendPortsInGroups(0, 4, 4), {}, 0, {},
+                                    FractionalPercent::MILLION, {1, 2, 3, 0}),
+      0);
+  WaitForBackend(3, false);
+  for (size_t i = 0; i < 3; ++i) {
+    EXPECT_EQ(0, backends_[i]->backend_service()->request_count());
+  }
+  // The EDS service got a single request, and sent a single response.
+  EXPECT_EQ(1U, balancers_[0]->eds_service()->request_count());
+  EXPECT_EQ(1U, balancers_[0]->eds_service()->response_count());
+}
+
+// If the higher priority localities are not reachable, failover to the highest
+// priority among the rest.
+TEST_F(FailoverTest, Failover) {
+  SetNextResolution({}, kDefaultServiceConfig_.c_str());
+  SetNextResolutionForLbChannelAllBalancers();
+  ScheduleResponseForBalancer(
+      0,
+      EdsServiceImpl::BuildResponse(GetBackendPortsInGroups(0, 4, 4), {}, 0, {},
+                                    FractionalPercent::MILLION, {1, 2, 3, 0}),
+      0);
+  ShutdownBackend(3);
+  ShutdownBackend(0);
+  WaitForBackend(1, false);
+  for (size_t i = 0; i < 4; ++i) {
+    if (i == 1) continue;
+    EXPECT_EQ(0, backends_[i]->backend_service()->request_count());
+  }
+  // The EDS service got a single request, and sent a single response.
+  EXPECT_EQ(1U, balancers_[0]->eds_service()->request_count());
+  EXPECT_EQ(1U, balancers_[0]->eds_service()->response_count());
+}
+
+// If a locality with higher priority than the current one becomes ready,
+// failback to it.
+TEST_F(FailoverTest, Failback) {
+  SetNextResolution({}, kDefaultServiceConfig_.c_str());
+  SetNextResolutionForLbChannelAllBalancers();
+  const size_t kNumRpcs = 100;
+  ScheduleResponseForBalancer(
+      0,
+      EdsServiceImpl::BuildResponse(GetBackendPortsInGroups(0, 4, 4), {}, 0, {},
+                                    FractionalPercent::MILLION, {1, 2, 3, 0}),
+      0);
+  ShutdownBackend(3);
+  ShutdownBackend(0);
+  WaitForBackend(1, false);
+  for (size_t i = 0; i < 4; ++i) {
+    if (i == 1) continue;
+    EXPECT_EQ(0, backends_[i]->backend_service()->request_count());
+  }
+  StartBackend(0);
+  WaitForBackend(0);
+  CheckRpcSendOk(kNumRpcs);
+  EXPECT_EQ(kNumRpcs, backends_[0]->backend_service()->request_count());
+  // The EDS service got a single request, and sent a single response.
+  EXPECT_EQ(1U, balancers_[0]->eds_service()->request_count());
+  EXPECT_EQ(1U, balancers_[0]->eds_service()->response_count());
+}
+
 TEST_F(SingleBalancerTest, Drop) {
   SetNextResolution({}, kDefaultServiceConfig_.c_str());
   SetNextResolutionForLbChannelAllBalancers();
@@ -1688,9 +1764,9 @@ TEST_F(SingleBalancerTest, FallbackModeIsExitedAfterChildRready) {
   SetNextResolutionForLbChannelAllBalancers();
   // The state (TRANSIENT_FAILURE) update from the child policy will be ignored
   // because we are still in fallback mode.
-  gpr_timespec deadline = gpr_time_add(
-      gpr_now(GPR_CLOCK_REALTIME), gpr_time_from_millis(5000, GPR_TIMESPAN));
-  // Send 5 seconds worth of RPCs.
+  gpr_timespec deadline = gpr_time_add(gpr_now(GPR_CLOCK_REALTIME),
+                                       gpr_time_from_millis(500, GPR_TIMESPAN));
+  // Send 0.5 second worth of RPCs.
   do {
     CheckRpcSendOk();
   } while (gpr_time_cmp(gpr_now(GPR_CLOCK_REALTIME), deadline) < 0);

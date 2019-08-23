@@ -23,6 +23,7 @@
 
 #include <grpc/slice_buffer.h>
 
+#include <stdint.h>
 #include "src/core/ext/filters/client_channel/lb_policy/xds/xds_client_stats.h"
 #include "src/core/ext/filters/client_channel/server_address.h"
 
@@ -30,25 +31,68 @@ namespace grpc_core {
 
 struct XdsLocalityInfo {
   bool operator==(const XdsLocalityInfo& other) const {
-    return *locality_name == *other.locality_name &&
-           serverlist == other.serverlist && lb_weight == other.lb_weight &&
-           priority == other.priority;
+    return *name == *other.name && serverlist == other.serverlist &&
+           lb_weight == other.lb_weight && priority == other.priority;
   }
 
   // This comparator only compares the locality names.
   struct Less {
     bool operator()(const XdsLocalityInfo& lhs, const XdsLocalityInfo& rhs) {
-      return XdsLocalityName::Less()(lhs.locality_name, rhs.locality_name);
+      return XdsLocalityName::Less()(lhs.name, rhs.name);
     }
   };
 
-  RefCountedPtr<XdsLocalityName> locality_name;
+  RefCountedPtr<XdsLocalityName> name;
   ServerAddressList serverlist;
   uint32_t lb_weight;
   uint32_t priority;
 };
 
-using XdsLocalityList = InlinedVector<XdsLocalityInfo, 1>;
+struct XdsLocalityList {
+  bool Has(const XdsLocalityName& name) const {
+    for (size_t i = 0; i < list.size(); ++i) {
+      if (*list[i].name == name) return true;
+    }
+    return false;
+  }
+
+  size_t Size() const { return list.size(); }
+
+  InlinedVector<XdsLocalityInfo, 1> list;
+  bool applied = false;
+};
+
+class XdsLocalityListPriorityMap {
+ public:
+  bool operator==(XdsLocalityListPriorityMap& other);
+
+  void Add(XdsLocalityInfo locality_info);
+
+  // If a locality list has already been applied and doesn't change the content,
+  // then it's still applied.
+  void UpdateAppliedLocked(XdsLocalityListPriorityMap& old);
+
+  void Sort();
+
+  uint32_t NextPriority(uint32_t priority) const;
+
+  XdsLocalityList* Find(uint32_t priority);
+
+  bool Has(uint32_t priority) { return map_.find(priority) != map_.end(); }
+  bool Has(const XdsLocalityName& name);
+
+  bool Empty() const { return sorted_priorities_.empty(); }
+  size_t Size() const { return sorted_priorities_.size(); }
+
+  const InlinedVector<uint32_t, 1>& sorted_priorities() const {
+    return sorted_priorities_;
+  }
+  Map<uint32_t, XdsLocalityList>& map() { return map_; }
+
+ private:
+  Map<uint32_t, XdsLocalityList> map_;
+  InlinedVector<uint32_t, 1> sorted_priorities_;
+};
 
 // There are two phases of accessing this class's content:
 // 1. to initialize in the control plane combiner;
@@ -92,7 +136,7 @@ class XdsDropConfig : public RefCounted<XdsDropConfig> {
 };
 
 struct XdsUpdate {
-  XdsLocalityList locality_list;
+  XdsLocalityListPriorityMap locality_list_map;
   RefCountedPtr<XdsDropConfig> drop_config;
   bool drop_all = false;
 };

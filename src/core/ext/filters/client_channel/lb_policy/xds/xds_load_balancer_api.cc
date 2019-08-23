@@ -53,6 +53,95 @@ constexpr char kEndpointRequired[] = "endpointRequired";
 
 }  // namespace
 
+bool XdsLocalityListPriorityMap::operator==(XdsLocalityListPriorityMap& other) {
+  if (sorted_priorities_ != other.sorted_priorities_) return false;
+  for (auto& p : map_) {
+    const uint32_t priority = p.first;
+    const XdsLocalityList& locality_list = p.second;
+    // Only compare the list of localities.
+    if (locality_list.list != other.map_.find(priority)->second.list) {
+      return false;
+    }
+  }
+  return true;
+}
+
+void XdsLocalityListPriorityMap::Add(XdsLocalityInfo locality_info) {
+  auto iter = map_.find(locality_info.priority);
+  if (iter == map_.end()) {
+    iter = map_.emplace(locality_info.priority, XdsLocalityList()).first;
+  }
+  XdsLocalityList& locality_list = iter->second;
+  locality_list.list.push_back(std::move(locality_info));
+}
+
+void XdsLocalityListPriorityMap::UpdateAppliedLocked(
+    XdsLocalityListPriorityMap& old) {
+  for (auto& p : map_) {
+    const uint32_t priority = p.first;
+    XdsLocalityList& locality_list = p.second;
+    auto iter = old.map_.find(priority);
+    // New priority.
+    if (iter == old.map_.end()) continue;
+    const XdsLocalityList& old_locality_list = iter->second;
+    if (old_locality_list.applied &&
+        old_locality_list.list == locality_list.list) {
+      locality_list.applied = true;
+    }
+  }
+}
+
+void XdsLocalityListPriorityMap::Sort() {
+  for (auto& p : map_) {
+    const uint32_t priority = p.first;
+    XdsLocalityList& locality_list = p.second;
+    // Sort each locality list.
+    std::sort(locality_list.list.data(),
+              locality_list.list.data() + locality_list.list.size(),
+              XdsLocalityInfo::Less());
+    sorted_priorities_.push_back(priority);
+  }
+  // Sort priority
+  std::sort(sorted_priorities_.data(),
+            sorted_priorities_.data() + sorted_priorities_.size());
+}
+
+uint32_t XdsLocalityListPriorityMap::NextPriority(uint32_t priority) const {
+  size_t left = 0;
+  size_t right = sorted_priorities_.size() - 1;
+  while (left <= right) {
+    size_t mid = (left + right) / 2;
+    if (sorted_priorities_[mid] == priority) {
+      if (mid == sorted_priorities_.size() - 1) {
+        return UINT32_MAX;
+      } else {
+        return sorted_priorities_[mid + 1];
+      }
+    } else if (sorted_priorities_[mid] > priority) {
+      right = mid - 1;
+    } else {
+      left = mid + 1;
+    }
+  }
+  GPR_UNREACHABLE_CODE(return UINT32_MAX);
+}
+
+XdsLocalityList* XdsLocalityListPriorityMap::Find(uint32_t priority) {
+  auto iter = map_.find(priority);
+  if (iter == map_.end()) return nullptr;
+  return &iter->second;
+}
+
+bool XdsLocalityListPriorityMap::Has(const XdsLocalityName& name) {
+  for (auto& p : map_) {
+    const XdsLocalityList& locality_list = p.second;
+    for (size_t i = 0; i < locality_list.list.size(); ++i) {
+      if (*locality_list.list[i].name == name) return true;
+    }
+  }
+  return false;
+}
+
 bool XdsDropConfig::ShouldDrop(const UniquePtr<char>** category_name) const {
   for (size_t i = 0; i < drop_category_list_.size(); ++i) {
     const auto& drop_category = drop_category_list_[i];
@@ -150,7 +239,7 @@ grpc_error* LocalityParse(
   // Parse locality name.
   const envoy_api_v2_core_Locality* locality =
       envoy_api_v2_endpoint_LocalityLbEndpoints_locality(locality_lb_endpoints);
-  locality_info->locality_name = MakeRefCounted<XdsLocalityName>(
+  locality_info->name = MakeRefCounted<XdsLocalityName>(
       StringCopy(envoy_api_v2_core_Locality_region(locality)),
       StringCopy(envoy_api_v2_core_Locality_zone(locality)),
       StringCopy(envoy_api_v2_core_Locality_sub_zone(locality)));
@@ -258,13 +347,11 @@ grpc_error* XdsEdsResponseDecodeAndParse(const grpc_slice& encoded_response,
     if (error != GRPC_ERROR_NONE) return error;
     // Filter out locality with weight 0.
     if (locality_info.lb_weight == 0) continue;
-    update->locality_list.push_back(std::move(locality_info));
+    update->locality_list_map.Add(locality_info);
   }
   // The locality list is sorted here into deterministic order so that it's
   // easier to check if two locality lists contain the same set of localities.
-  std::sort(update->locality_list.data(),
-            update->locality_list.data() + update->locality_list.size(),
-            XdsLocalityInfo::Less());
+  update->locality_list_map.Sort();
   // Get the drop config.
   update->drop_config = MakeRefCounted<XdsDropConfig>();
   const envoy_api_v2_ClusterLoadAssignment_Policy* policy =
