@@ -51,6 +51,8 @@ class HijackingInterceptor : public experimental::Interceptor {
     // Make sure it is the right method
     EXPECT_EQ(strcmp("/grpc.testing.EchoTestService/Echo", info->method()), 0);
     EXPECT_EQ(info->type(), experimental::ClientRpcInfo::Type::UNARY);
+    metadata_key_ = "testkey";
+    metadata_value_ = "testvalue";
   }
 
   virtual void Intercept(experimental::InterceptorBatchMethods* methods) {
@@ -100,8 +102,8 @@ class HijackingInterceptor : public experimental::Interceptor {
       bool found = false;
       // Check that we received the metadata as an echo
       for (const auto& pair : *map) {
-        found = pair.first.starts_with("testkey") &&
-                pair.second.starts_with("testvalue");
+        found = pair.first.starts_with(metadata_key_) &&
+                pair.second.starts_with(metadata_value_);
         if (found) break;
       }
       EXPECT_EQ(found, true);
@@ -124,9 +126,13 @@ class HijackingInterceptor : public experimental::Interceptor {
     if (methods->QueryInterceptionHookPoint(
             experimental::InterceptionHookPoints::PRE_RECV_STATUS)) {
       auto* map = methods->GetRecvTrailingMetadata();
-      // insert the metadata that we want
       EXPECT_EQ(map->size(), static_cast<unsigned>(0));
-      map->insert(std::make_pair("testkey", "testvalue"));
+      // Insert the metadata that we want. The map takes string_ref for keys and
+      // values, so we need to make sure that we are owning the ref to the
+      // metadata key and value that we are adding. The ref needs to be
+      // maintained for the duration of the call.
+      map->insert(std::make_pair(grpc::string_ref(metadata_key_),
+                                 grpc::string_ref(metadata_value_)));
       auto* status = methods->GetRecvStatus();
       *status = Status(StatusCode::OK, "");
     }
@@ -139,6 +145,8 @@ class HijackingInterceptor : public experimental::Interceptor {
 
  private:
   experimental::ClientRpcInfo* info_;
+  grpc::string metadata_key_;
+  grpc::string metadata_value_;
 };
 
 class HijackingInterceptorFactory
@@ -242,7 +250,9 @@ class HijackingInterceptorMakesAnotherCall : public experimental::Interceptor {
     if (methods->QueryInterceptionHookPoint(
             experimental::InterceptionHookPoints::PRE_RECV_STATUS)) {
       auto* map = methods->GetRecvTrailingMetadata();
-      // insert the metadata that we want
+      // Insert the metadata that we want. If we are using static strings, we do
+      // not need to worry about maintaining the references to the metadata key
+      // value pair that we are adding.
       EXPECT_EQ(map->size(), static_cast<unsigned>(0));
       map->insert(std::make_pair("testkey", "testvalue"));
       auto* status = methods->GetRecvStatus();
@@ -274,13 +284,16 @@ class BidiStreamingRpcHijackingInterceptor : public experimental::Interceptor {
  public:
   BidiStreamingRpcHijackingInterceptor(experimental::ClientRpcInfo* info) {
     info_ = info;
+    metadata_key_ = "testkey";
+    metadata_value_ = "testvalue";
   }
 
   virtual void Intercept(experimental::InterceptorBatchMethods* methods) {
     bool hijack = false;
     if (methods->QueryInterceptionHookPoint(
             experimental::InterceptionHookPoints::PRE_SEND_INITIAL_METADATA)) {
-      CheckMetadata(*methods->GetSendInitialMetadata(), "testkey", "testvalue");
+      CheckMetadata(*methods->GetSendInitialMetadata(), metadata_key_,
+                    metadata_value_);
       hijack = true;
     }
     if (methods->QueryInterceptionHookPoint(
@@ -300,8 +313,8 @@ class BidiStreamingRpcHijackingInterceptor : public experimental::Interceptor {
     }
     if (methods->QueryInterceptionHookPoint(
             experimental::InterceptionHookPoints::POST_RECV_STATUS)) {
-      CheckMetadata(*methods->GetRecvTrailingMetadata(), "testkey",
-                    "testvalue");
+      CheckMetadata(*methods->GetRecvTrailingMetadata(), metadata_key_,
+                    metadata_value_);
       auto* status = methods->GetRecvStatus();
       EXPECT_EQ(status->ok(), true);
     }
@@ -321,9 +334,13 @@ class BidiStreamingRpcHijackingInterceptor : public experimental::Interceptor {
     if (methods->QueryInterceptionHookPoint(
             experimental::InterceptionHookPoints::PRE_RECV_STATUS)) {
       auto* map = methods->GetRecvTrailingMetadata();
-      // insert the metadata that we want
       EXPECT_EQ(map->size(), static_cast<unsigned>(0));
-      map->insert(std::make_pair("testkey", "testvalue"));
+      // Insert the metadata that we want. The map takes string_ref for keys and
+      // values, so we need to make sure that we are owning the ref to the
+      // metadata key and value that we are adding. The ref needs to be
+      // maintained for the duration of the call.
+      map->insert(std::make_pair(grpc::string_ref(metadata_key_),
+                                 grpc::string_ref(metadata_value_)));
       auto* status = methods->GetRecvStatus();
       *status = Status(StatusCode::OK, "");
     }
@@ -337,6 +354,8 @@ class BidiStreamingRpcHijackingInterceptor : public experimental::Interceptor {
  private:
   experimental::ClientRpcInfo* info_;
   grpc::string msg;
+  grpc::string metadata_key_;
+  grpc::string metadata_value_;
 };
 
 class ClientStreamingRpcHijackingInterceptor
@@ -398,6 +417,8 @@ class ServerStreamingRpcHijackingInterceptor
  public:
   ServerStreamingRpcHijackingInterceptor(experimental::ClientRpcInfo* info) {
     info_ = info;
+    metadata_key_ = "testkey";
+    metadata_value_ = "testvalue";
   }
 
   virtual void Intercept(experimental::InterceptorBatchMethods* methods) {
@@ -408,8 +429,8 @@ class ServerStreamingRpcHijackingInterceptor
       // Check that we can see the test metadata
       ASSERT_EQ(map->size(), static_cast<unsigned>(1));
       auto iterator = map->begin();
-      EXPECT_EQ("testkey", iterator->first);
-      EXPECT_EQ("testvalue", iterator->second);
+      EXPECT_EQ(metadata_key_, iterator->first);
+      EXPECT_EQ(metadata_value_, iterator->second);
       hijack = true;
     }
     if (methods->QueryInterceptionHookPoint(
@@ -432,8 +453,8 @@ class ServerStreamingRpcHijackingInterceptor
       bool found = false;
       // Check that we received the metadata as an echo
       for (const auto& pair : *map) {
-        found = pair.first.starts_with("testkey") &&
-                pair.second.starts_with("testvalue");
+        found = pair.first.starts_with(metadata_key_) &&
+                pair.second.starts_with(metadata_value_);
         if (found) break;
       }
       EXPECT_EQ(found, true);
@@ -458,9 +479,13 @@ class ServerStreamingRpcHijackingInterceptor
     if (methods->QueryInterceptionHookPoint(
             experimental::InterceptionHookPoints::PRE_RECV_STATUS)) {
       auto* map = methods->GetRecvTrailingMetadata();
-      // insert the metadata that we want
       EXPECT_EQ(map->size(), static_cast<unsigned>(0));
-      map->insert(std::make_pair("testkey", "testvalue"));
+      // Insert the metadata that we want. The map takes string_ref for keys and
+      // values, so we need to make sure that we are owning the ref to the
+      // metadata key and value that we are adding. The ref needs to be
+      // maintained for the duration of the call.
+      map->insert(std::make_pair(grpc::string_ref(metadata_key_),
+                                 grpc::string_ref(metadata_value_)));
       auto* status = methods->GetRecvStatus();
       *status = Status(StatusCode::OK, "");
     }
@@ -477,6 +502,8 @@ class ServerStreamingRpcHijackingInterceptor
   experimental::ClientRpcInfo* info_;
   static bool got_failed_message_;
   int count_ = 0;
+  grpc::string metadata_key_;
+  grpc::string metadata_value_;
 };
 
 bool ServerStreamingRpcHijackingInterceptor::got_failed_message_ = false;
