@@ -102,13 +102,30 @@ class XdsLocalityListPriorityMap {
   //    return nullptr;
   //  }
 
-  uint32_t Next(uint32_t priority) {
-    for (size_t i = 0; i < sorted_priorities_.size() - 1; ++i) {
-      if (sorted_priorities_[i] == priority) {
-        return sorted_priorities_[i + 1];
+  uint32_t NextPriority(uint32_t priority) {
+    size_t left = 0;
+    size_t right = sorted_priorities_.size() - 1;
+    while (left <= right) {
+      size_t mid = (left + right) / 2;
+      if (sorted_priorities_[mid] == priority) {
+        if (mid == sorted_priorities_.size() - 1) {
+          return UINT32_MAX;
+        } else {
+          return sorted_priorities_[mid + 1];
+        }
+      } else if (sorted_priorities_[mid] > priority) {
+        right = mid - 1;
+      } else {
+        left = mid + 1;
       }
     }
-    return UINT32_MAX;
+    GPR_UNREACHABLE_CODE(return UINT32_MAX);
+  }
+
+  XdsLocalityList* Find(uint32_t priority) {
+    auto iter = map_.find(priority);
+    if (iter == map_.end()) return nullptr;
+    return &iter->second;
   }
 
   bool Has(uint32_t priority) { return map_.find(priority) != map_.end(); }
@@ -125,10 +142,6 @@ class XdsLocalityListPriorityMap {
   }
   bool Empty() const { return sorted_priorities_.empty(); }
   size_t Size() const { return sorted_priorities_.size(); }
-  //  bool Size() const {
-  //    size_t num_localities = 0;
-  //    for (auto )
-  //  }
 
   void Sort() {
     for (auto& p : map_) {
