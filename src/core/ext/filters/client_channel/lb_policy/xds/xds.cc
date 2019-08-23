@@ -2181,6 +2181,13 @@ void XdsLb::LocalityMapPriorityMap::FailbackLocked(
     LocalityMap* new_locality_map) {
   first_connection_attempt_done_ = true;
   current_locality_map_ = new_locality_map;
+  // If the currently trying one has lower or equal priority than the new
+  // priority, cancel its failover timer.
+  if (trying_priority_ != UINT32_MAX &&
+      trying_priority_ >= current_priority()) {
+    map_.find(trying_priority_)->second->MaybeCancelFailoverTimerLocked();
+    trying_priority_ = UINT32_MAX;
+  }
   PruneLocalityMapsLocked();
   UpdateXdsPickerLocked();
 }
@@ -2213,6 +2220,7 @@ void XdsLb::LocalityMapPriorityMap::FailoverOnDisconnectionLocked(
     current_locality_map_ = candidate;
     break;
   }
+  // Don't trigger another pass of connection attempts if there is already one.
   if (trying_priority_ != UINT32_MAX) return;
   StartTryingLocalityMapLocked(
       locality_list_map_.NextPriority(failed_priority));
@@ -2238,6 +2246,7 @@ void XdsLb::LocalityMapPriorityMap::PruneLocalityMapsLocked() {
 void XdsLb::LocalityMapPriorityMap::StartTryingLocalityMapLocked(
     uint32_t priority) {
   if (priority == UINT32_MAX || priority > current_priority()) return;
+  trying_priority_ = priority;
   if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_xds_trace)) {
     gpr_log(GPR_INFO, "[xdslb %p] Start trying priority %" PRIu32, xds_policy_,
             priority);
@@ -2262,7 +2271,6 @@ void XdsLb::LocalityMapPriorityMap::StartTryingLocalityMapLocked(
     }
     return;
   }
-  trying_priority_ = priority;
   // Apply the locality list update.
   locality_map->UpdateLocked(*locality_list);
   locality_list->applied = true;
@@ -2448,7 +2456,7 @@ void XdsLb::LocalityMapPriorityMap::LocalityMap::OnLocalityStateUpdateLocked() {
     switch (connectivity_state_) {
       case GRPC_CHANNEL_READY:
         // If a higher priority becomes READY, use it.
-        MaybeCancelFailoverTimerLocked();
+        //        MaybeCancelFailoverTimerLocked();
         priority_map()->FailbackLocked(this);
         break;
       case GRPC_CHANNEL_TRANSIENT_FAILURE:
@@ -2528,10 +2536,9 @@ void XdsLb::LocalityMapPriorityMap::LocalityMap::OnDelayedRemovalTimerLocked(
     void* arg, grpc_error* error) {
   LocalityMap* self = static_cast<LocalityMap*>(arg);
   self->delayed_removal_timer_callback_pending_ = false;
-  const bool is_useful =
-      self->locality_list_map()->Has(self->priority_) &&
-      self->priority_ <= self->priority_map()->current_priority();
-  if (error == GRPC_ERROR_NONE && !is_useful) {
+  const bool keep = self->locality_list_map()->Has(self->priority_) &&
+                    self->priority_ <= self->priority_map()->current_priority();
+  if (error == GRPC_ERROR_NONE && !keep) {
     self->priority_map()->map_.erase(self->priority_);
   }
   self->Unref(DEBUG_LOCATION, "LocalityMap+timer");
@@ -2542,23 +2549,6 @@ void XdsLb::LocalityMapPriorityMap::LocalityMap::OnFailoverTimerLocked(
   LocalityMap* self = static_cast<LocalityMap*>(arg);
   if (error == GRPC_ERROR_NONE && !self->xds_policy_->shutting_down_ &&
       self->priority_ == self->priority_map()->trying_priority_) {
-    //    // The locality map currently being tried failed to connect.
-    //    if (!self->first_connection_attempt_done_) {
-    //      self->first_connection_attempt_done_ = true;
-    //      grpc_error* local_error = grpc_error_set_int(
-    //          GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-    //              "can't connect to first locality map"),
-    //          GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_UNAVAILABLE);
-    //      self->xds_policy_->channel_control_helper()->UpdateState(
-    //          GRPC_CHANNEL_TRANSIENT_FAILURE,
-    //          UniquePtr<SubchannelPicker>(
-    //              New<TransientFailurePicker>(local_error)));
-    //    }
-    //    const uint32_t next_priority =
-    //        self->locality_list_map_.Next(self->trying_priority_);
-    //  gpr_log(GPR_ERROR, "===TIMER, FAIL OVER");
-    //    self->StartTryingLocalityMapLocked(next_priority);
-    // FIXME no arg
     self->priority_map()->FailoverOnConnectionFailureLocked(self->priority_);
   }
   self->Unref(DEBUG_LOCATION, "LocalityMap+OnFailoverTimerLocked");
