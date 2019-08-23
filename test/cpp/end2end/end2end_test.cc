@@ -420,6 +420,7 @@ static void SendRpc(grpc::testing::EchoTestService::Stub* stub, int num_rpcs,
 
   for (int i = 0; i < num_rpcs; ++i) {
     ClientContext context;
+    context.set_wait_for_ready(true);
     if (with_binary_metadata) {
       char bytes[8] = {'\0', '\1', '\2', '\3',
                        '\4', '\5', '\6', static_cast<char>(i)};

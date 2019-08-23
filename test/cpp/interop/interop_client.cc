@@ -410,6 +410,7 @@ bool InteropClient::DoRequestStreaming() {
   gpr_log(GPR_DEBUG, "Sending request steaming rpc ...");
 
   ClientContext context;
+  context.set_wait_for_ready(true);
   StreamingInputCallRequest request;
   StreamingInputCallResponse response;
 
