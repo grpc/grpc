@@ -600,7 +600,8 @@ class XdsLb : public LoadBalancingPolicy {
 
    private:
     void StartTryingLocalityMapLocked(uint32_t priority);
-    void FailoverLocked(uint32_t failed_priority);
+    void FailoverOnConnectionFailureLocked(uint32_t failed_priority);
+    void FailoverOnDisconnectionLocked(uint32_t failed_priority);
     void FailbackLocked(LocalityMap* new_locality_map);
     void PruneLocalityMapsLocked();
     OrphanablePtr<LocalityMap::Locality> ExtractLocalityLocked(
@@ -2184,17 +2185,18 @@ void XdsLb::LocalityMapPriorityMap::FailbackLocked(
   UpdateXdsPickerLocked();
 }
 
-void XdsLb::LocalityMapPriorityMap::FailoverLocked(uint32_t failed_priority) {
-  // Failover can only happen on the current priority or the currently trying
-  // priority.
-  if (failed_priority != current_priority() &&
-      failed_priority != trying_priority_) {
-    return;
-  }
+void XdsLb::LocalityMapPriorityMap::FailoverOnConnectionFailureLocked(
+    uint32_t failed_priority) {
   // If the locality map fails to connect for the first time, report
   // TRANSIENT_FAILURE.
   if (!first_connection_attempt_done_) UpdateXdsPickerLocked();
   first_connection_attempt_done_ = true;
+  StartTryingLocalityMapLocked(
+      locality_list_map_.NextPriority(failed_priority));
+}
+
+void XdsLb::LocalityMapPriorityMap::FailoverOnDisconnectionLocked(
+    uint32_t failed_priority) {
   // Quick failover: if there is a READY locality map with the latest locality
   // list update applied, switch to it immediately.
   // Below are the benefits.
@@ -2211,6 +2213,7 @@ void XdsLb::LocalityMapPriorityMap::FailoverLocked(uint32_t failed_priority) {
     current_locality_map_ = candidate;
     break;
   }
+  if (trying_priority_ != UINT32_MAX) return;
   StartTryingLocalityMapLocked(
       locality_list_map_.NextPriority(failed_priority));
 }
@@ -2453,7 +2456,7 @@ void XdsLb::LocalityMapPriorityMap::LocalityMap::OnLocalityStateUpdateLocked() {
         // trying one.
         if (priority_ == priority_map()->trying_priority_) {
           MaybeCancelFailoverTimerLocked();
-          priority_map()->FailoverLocked(priority_);
+          priority_map()->FailoverOnConnectionFailureLocked(priority_);
         }
         break;
       default:
@@ -2464,7 +2467,7 @@ void XdsLb::LocalityMapPriorityMap::LocalityMap::OnLocalityStateUpdateLocked() {
   // Fail over if the current priority is no longer READY.
   if (connectivity_state_ != GRPC_CHANNEL_READY) {
     priority_map()->current_locality_map_ = nullptr;
-    priority_map()->FailoverLocked(priority_);
+    priority_map()->FailoverOnDisconnectionLocked(priority_);
   }
   // The current priority may (1) remain the same (2) become a new one by quick
   // failover (3) or null if quick failover is not available. In any case,
@@ -2556,7 +2559,7 @@ void XdsLb::LocalityMapPriorityMap::LocalityMap::OnFailoverTimerLocked(
     //  gpr_log(GPR_ERROR, "===TIMER, FAIL OVER");
     //    self->StartTryingLocalityMapLocked(next_priority);
     // FIXME no arg
-    self->priority_map()->FailoverLocked(self->priority_);
+    self->priority_map()->FailoverOnConnectionFailureLocked(self->priority_);
   }
   self->Unref(DEBUG_LOCATION, "LocalityMap+OnFailoverTimerLocked");
 }
