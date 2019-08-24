@@ -157,17 +157,69 @@ TEST_F(TimerTest, CancelSomeTimers) {
 
 // Enable the following test after
 // https://github.com/grpc/grpc/issues/20049 has been fixed.
-#if 0
-TEST_F(TimerTest, TimerNotCanceled) {
+TEST_F(TimerTest, DISABLED_TimerNotCanceled) {
   grpc_core::ExecCtx exec_ctx;
   grpc_timer timer;
   grpc_timer_init(&timer, 10000,
-                  GRPC_CLOSURE_CREATE(
-                      [](void*, grpc_error*) {
-                      },
-                      nullptr, grpc_schedule_on_exec_ctx));
+                  GRPC_CLOSURE_CREATE([](void*, grpc_error*) {}, nullptr,
+                                      grpc_schedule_on_exec_ctx));
 }
-#endif
+
+// Enable the following test after
+// https://github.com/grpc/grpc/issues/20064 has been fixed.
+TEST_F(TimerTest, DISABLED_CancelRace) {
+  MAYBE_SKIP_TEST;
+  grpc_core::ExecCtx exec_ctx;
+  const int kNumTimers = 10;
+  grpc_timer timers[kNumTimers];
+  for (int i = 0; i < kNumTimers; ++i) {
+    grpc_timer* arg = nullptr;
+    if (i != 0) {
+      arg = &timers[i - 1];
+    }
+    grpc_timer_init(&timers[i], 100,
+                    GRPC_CLOSURE_CREATE(
+                        [](void* arg, grpc_error* error) {
+                          grpc_timer* timer = static_cast<grpc_timer*>(arg);
+                          if (timer) {
+                            grpc_timer_cancel(timer);
+                          }
+                        },
+                        arg, grpc_schedule_on_exec_ctx));
+  }
+  gpr_sleep_until(grpc_timeout_milliseconds_to_deadline(100));
+}
+
+// Enable the following test after
+// https://github.com/grpc/grpc/issues/20066 has been fixed.
+TEST_F(TimerTest, DISABLED_CancelNextTimer) {
+  MAYBE_SKIP_TEST;
+  grpc_core::ExecCtx exec_ctx;
+  const int kNumTimers = 10;
+  grpc_timer timers[kNumTimers];
+
+  for (int i = 0; i < kNumTimers; ++i) {
+    grpc_timer_init_unset(&timers[i]);
+  }
+
+  for (int i = 0; i < kNumTimers; ++i) {
+    grpc_timer* arg = nullptr;
+    if (i < kNumTimers + 1) {
+      arg = &timers[i + 1];
+    }
+    grpc_timer_init(&timers[i], 100,
+                    GRPC_CLOSURE_CREATE(
+                        [](void* arg, grpc_error* error) {
+                          grpc_timer* timer = static_cast<grpc_timer*>(arg);
+                          if (timer) {
+                            grpc_timer_cancel(timer);
+                          }
+                        },
+                        arg, grpc_schedule_on_exec_ctx));
+  }
+  grpc_timer_cancel(&timers[0]);
+  gpr_sleep_until(grpc_timeout_milliseconds_to_deadline(100));
+}
 
 int main(int argc, char** argv) {
   grpc::testing::TestEnvironment env(argc, argv);
