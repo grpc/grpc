@@ -2441,8 +2441,10 @@ void XdsLb::LocalityMapPriorityMap::LocalityMap::Orphan() {
 
 void XdsLb::LocalityMapPriorityMap::LocalityMap::OnLocalityStateUpdateLocked() {
   UpdateConnectivityStateLocked();
-  // Ignore deactivated priority.
+  // Ignore if deactivated.
   if (!locality_list_map()->Has(priority_)) return;
+  // Ignore if new update is not applied yet.
+  if (!locality_list_map()->Find(priority_)->applied) return;
   const uint32_t current_priority = priority_map()->current_priority();
   // Ignore lower-than-current priority.
   if (priority_ > current_priority) return;
@@ -2454,7 +2456,6 @@ void XdsLb::LocalityMapPriorityMap::LocalityMap::OnLocalityStateUpdateLocked() {
     switch (connectivity_state_) {
       case GRPC_CHANNEL_READY:
         // If a higher priority becomes READY, use it.
-        //        MaybeCancelFailoverTimerLocked();
         priority_map()->FailbackLocked(this);
         break;
       case GRPC_CHANNEL_TRANSIENT_FAILURE:
