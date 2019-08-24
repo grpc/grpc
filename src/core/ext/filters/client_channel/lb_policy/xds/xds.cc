@@ -2454,7 +2454,6 @@ void XdsLb::LocalityMapPriorityMap::LocalityMap::OnLocalityStateUpdateLocked() {
     switch (connectivity_state_) {
       case GRPC_CHANNEL_READY:
         // If a higher priority becomes READY, use it.
-        //        MaybeCancelFailoverTimerLocked();
         priority_map()->FailbackLocked(this);
         break;
       case GRPC_CHANNEL_TRANSIENT_FAILURE:
