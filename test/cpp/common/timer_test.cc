@@ -173,7 +173,7 @@ TEST_F(TimerTest, DISABLED_CancelRace) {
   const int kNumTimers = 10;
   grpc_timer timers[kNumTimers];
   for (int i = 0; i < kNumTimers; ++i) {
-    grpc_timer* arg = (i != 0) ? &timers[i-1] : nullptr;
+    grpc_timer* arg = (i != 0) ? &timers[i - 1] : nullptr;
     grpc_timer_init(&timers[i], grpc_core::ExecCtx::Get()->Now() + 100,
                     GRPC_CLOSURE_CREATE(
                         [](void* arg, grpc_error* error) {
