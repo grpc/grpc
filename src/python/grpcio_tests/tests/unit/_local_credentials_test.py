@@ -49,6 +49,8 @@ class LocalCredentialsTest(unittest.TestCase):
                                  b'abc', wait_for_ready=True))
         server.stop(None)
 
+    @unittest.skipIf(os.name == 'nt',
+                     'Unix Domain Socket is not supported on Windows')
     def test_uds(self):
         server_addr = 'unix:/tmp/grpc_fullstack_test'
         channel_creds = grpc.local_channel_credentials(
