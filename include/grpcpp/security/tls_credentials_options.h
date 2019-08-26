@@ -84,6 +84,10 @@ class TlsCredentialReloadArg {
 
  private:
   grpc_tls_credential_reload_arg c_arg_;
+  /** These boolean variables record whether the corresponding field of the C
+   * arg was dynamically allocated. This occurs e.g. if one of the above setter functions was
+   * used, or if the C arg's callback function does so. **/
+  bool key_materials_config_alloc_ = false;
   bool error_details_alloc_ = false;
 };
 

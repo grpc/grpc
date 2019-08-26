@@ -53,7 +53,10 @@ TlsCredentialReloadArg::TlsCredentialReloadArg(
   c_arg_ = arg;
 }
 
-TlsCredentialReloadArg::~TlsCredentialReloadArg() { }
+TlsCredentialReloadArg::~TlsCredentialReloadArg() {
+  if (key_materials_config_alloc_) { gpr_free(c_arg_.key_materials_config); }
+  if (error_details_alloc_) { gpr_free(const_cast<char*>(c_arg_.error_details)); }
+}
 
 void* TlsCredentialReloadArg::cb_user_data() const {
   return c_arg_.cb_user_data;
@@ -83,8 +86,12 @@ void TlsCredentialReloadArg::set_cb_user_data(void* cb_user_data) {
 
 void TlsCredentialReloadArg::set_key_materials_config(
     const std::shared_ptr<TlsKeyMaterialsConfig>& key_materials_config) {
+  if (key_materials_config_alloc_) {
+    gpr_free(c_arg_.key_materials_config);
+  }
   c_arg_.key_materials_config =
       ConvertToCKeyMaterialsConfig(key_materials_config);
+  key_materials_config_alloc_ = true;
 }
 
 void TlsCredentialReloadArg::set_status(
@@ -99,7 +106,6 @@ void TlsCredentialReloadArg::set_error_details(
   }
   c_arg_.error_details = gpr_strdup(error_details.c_str());
   error_details_alloc_ = true;
-  c_arg_.error_details = gpr_strdup(error_details.c_str());
 }
 
 void TlsCredentialReloadArg::OnCredentialReloadDoneCallback() {
