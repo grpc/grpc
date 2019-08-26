@@ -1,3 +1,4 @@
+
 /*
  *
  * Copyright 2019 gRPC authors.
@@ -16,27 +17,14 @@
  *
  */
 
-#import <GRPCClient/GRPCInterceptor.h>
+/**
+ * An object that processes its methods with a dispatch queue.
+ */
+@protocol GRPCDispatchable
 
-NS_ASSUME_NONNULL_BEGIN
-
-@interface GRPCCall2Internal : NSObject<GRPCInterceptorInterface>
-
-- (instancetype)init;
-
-- (void)setResponseHandler:(id<GRPCResponseHandler>)responseHandler;
-
-- (void)startWithRequestOptions:(GRPCRequestOptions *)requestOptions
-                    callOptions:(nullable GRPCCallOptions *)callOptions;
-
-- (void)writeData:(NSData *)data;
-
-- (void)finish;
-
-- (void)cancel;
-
-- (void)receiveNextMessages:(NSUInteger)numberOfMessages;
+/**
+ * The dispatch queue where the object's methods should be run on.
+ */
+@property(atomic, readonly) dispatch_queue_t dispatchQueue;
 
 @end
-
-NS_ASSUME_NONNULL_END

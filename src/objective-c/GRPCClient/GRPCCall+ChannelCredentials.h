@@ -16,7 +16,7 @@
  *
  */
 
-#import "GRPCCall.h"
+#import "GRPCCallLegacy.h"
 
 // Deprecated interface. Please use GRPCCallOptions instead.
 @interface GRPCCall (ChannelCredentials)

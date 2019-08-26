@@ -160,6 +160,8 @@ class ResolvingLoadBalancingPolicy::ResolvingControlHelper
     }
   }
 
+  void AddTraceEvent(TraceSeverity severity, const char* message) override {}
+
   void set_child(LoadBalancingPolicy* child) { child_ = child; }
 
  private:

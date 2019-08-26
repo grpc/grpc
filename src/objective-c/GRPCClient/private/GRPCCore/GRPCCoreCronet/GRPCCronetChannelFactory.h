@@ -15,7 +15,7 @@
  * limitations under the License.
  *
  */
-#import "GRPCChannelFactory.h"
+#import "../GRPCChannelFactory.h"
 
 @class GRPCChannel;
 typedef struct stream_engine stream_engine;

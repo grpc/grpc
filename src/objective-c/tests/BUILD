@@ -63,9 +63,6 @@ grpc_objc_testing_library(
     data = [":TestCertificates"],
     defines = [
         "DEBUG=1",
-        "PB_FIELD_32BIT=1",
-        "PB_NO_PACKED_STRUCTS=1",
-        "PB_ENABLE_MALLOC=1",
         "HOST_PORT_LOCALSSL=localhost:5051",
         "HOST_PORT_LOCAL=localhost:5050",
         "HOST_PORT_REMOTE=grpc-test.sandbox.googleapis.com",
@@ -99,18 +96,11 @@ tvos_application(
 )
 
 grpc_objc_testing_library(
-    name = "CronetConfig",
-    srcs = ["ConfigureCronet.m"],
-    hdrs = ["ConfigureCronet.h"],
-)
-
-grpc_objc_testing_library(
     name = "InteropTests-lib",
     hdrs = ["InteropTests/InteropTests.h"],
     srcs = ["InteropTests/InteropTests.m"],
     deps = [
         ":InteropTestsBlockCallbacks-lib",
-        ":CronetConfig",
     ],
 )
 
@@ -203,7 +193,6 @@ ios_unit_test(
         ":InteropTestsRemote-lib",
         ":InteropTestsLocalSSL-lib",
         ":InteropTestsLocalCleartext-lib",
-        # ":InteropTestsMulitpleChannels-lib", # needs Cronet
     ],
     test_host = ":ios-host",
 )

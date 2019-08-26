@@ -584,6 +584,12 @@ cdef extern from "grpc/grpc_security.h":
 
   void grpc_auth_context_release(grpc_auth_context *context)
 
+  grpc_channel_credentials *grpc_local_credentials_create(
+    grpc_local_connect_type type)
+  grpc_server_credentials *grpc_local_server_credentials_create(
+    grpc_local_connect_type type)
+
+
 cdef extern from "grpc/compression.h":
 
   ctypedef enum grpc_compression_algorithm:
@@ -624,3 +630,9 @@ cdef extern from "grpc/impl/codegen/compression_types.h":
 
   const char *_GRPC_COMPRESSION_REQUEST_ALGORITHM_MD_KEY \
     "GRPC_COMPRESSION_REQUEST_ALGORITHM_MD_KEY"
+
+
+cdef extern from "grpc/grpc_security_constants.h":
+  ctypedef enum grpc_local_connect_type:
+    UDS
+    LOCAL_TCP
