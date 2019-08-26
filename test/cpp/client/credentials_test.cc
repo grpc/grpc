@@ -415,11 +415,16 @@ TEST_F(CredentialsTest, TlsCredentialReloadConfigCppToC) {
   EXPECT_STREQ(pair_list[1].cert_chain(), "cert_chain3");
   EXPECT_EQ(c_arg.status, GRPC_SSL_CERTIFICATE_CONFIG_RELOAD_NEW);
   EXPECT_STREQ(c_arg.error_details, test_error_details.c_str());
+  const char* error_details_after_schedule = c_arg.error_details;
 
   c_config->Cancel(&c_arg);
   EXPECT_EQ(c_arg.status, GRPC_SSL_CERTIFICATE_CONFIG_RELOAD_FAIL);
   EXPECT_STREQ(c_arg.error_details, "cancelled");
 
+  // Must free the fields of the C arg afterwards, regardless
+  // of whether or not they were changed.
+  gpr_free(const_cast<char*>(c_arg.error_details));
+  gpr_free(const_cast<char*>(error_details_after_schedule));
   gpr_free(c_config);
 }
 
@@ -495,9 +500,22 @@ TEST_F(CredentialsTest, TlsServerAuthorizationCheckConfigCppToC) {
   EXPECT_EQ(c_arg.status, GRPC_STATUS_OK);
   EXPECT_STREQ(c_arg.error_details, "sync_error_details");
 
+  const char* target_name_after_schedule = c_arg.target_name;
+  const char* peer_cert_after_schedule = c_arg.peer_cert;
+  const char* error_details_after_schedule = c_arg.error_details;
+
   c_config->Cancel(&c_arg);
   EXPECT_EQ(c_arg.status, GRPC_STATUS_PERMISSION_DENIED);
   EXPECT_STREQ(c_arg.error_details, "cancelled");
+
+  // Must free the fields of the C arg afterwards, regardless
+  // of whether or not they were changed.
+  gpr_free(const_cast<char*>(c_arg.target_name));
+  gpr_free(const_cast<char*>(c_arg.peer_cert));
+  gpr_free(const_cast<char*>(c_arg.error_details));
+  gpr_free(const_cast<char*>(target_name_after_schedule));
+  gpr_free(const_cast<char*>(peer_cert_after_schedule));
+  gpr_free(const_cast<char*>(error_details_after_schedule));
 }
 
 typedef class ::grpc_impl::experimental::TlsCredentialsOptions
@@ -580,6 +598,7 @@ TEST_F(CredentialsTest, TlsCredentialsOptionsCppToC) {
             GRPC_SSL_CERTIFICATE_CONFIG_RELOAD_NEW);
   EXPECT_STREQ(c_credential_reload_arg.error_details,
                test_error_details.c_str());
+  gpr_free(const_cast<char*>(c_credential_reload_arg.error_details));
 
   int c_server_authorization_check_schedule_output =
       c_server_authorization_check_config->Schedule(
@@ -596,6 +615,10 @@ TEST_F(CredentialsTest, TlsCredentialsOptionsCppToC) {
   EXPECT_EQ(c_server_authorization_check_arg.status, GRPC_STATUS_OK);
   EXPECT_STREQ(c_server_authorization_check_arg.error_details,
                "sync_error_details");
+  gpr_free(const_cast<char*>(c_server_authorization_check_arg.target_name));
+  gpr_free(const_cast<char*>(c_server_authorization_check_arg.peer_cert));
+  gpr_free(const_cast<char*>(c_server_authorization_check_arg.error_details));
+
   gpr_free(c_options);
 }
 
