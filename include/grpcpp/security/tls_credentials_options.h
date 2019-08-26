@@ -59,7 +59,6 @@ class TlsKeyMaterialsConfig {
 /** TLS credential reload arguments, wraps grpc_tls_credential_reload_arg. **/
 class TlsCredentialReloadArg {
  public:
-  // TlsCredentialReloadArg();
   TlsCredentialReloadArg(grpc_tls_credential_reload_arg arg);
   ~TlsCredentialReloadArg();
 
@@ -131,7 +130,6 @@ class TlsCredentialReloadConfig {
 
 class TlsServerAuthorizationCheckArg {
  public:
-  // TlsServerAuthorizationCheckArg();
   TlsServerAuthorizationCheckArg(grpc_tls_server_authorization_check_arg arg);
   ~TlsServerAuthorizationCheckArg();
 
