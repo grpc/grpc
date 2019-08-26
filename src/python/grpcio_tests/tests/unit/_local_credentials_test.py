@@ -33,7 +33,7 @@ class LocalCredentialsTest(unittest.TestCase):
         return server
 
     def test_local_tcp(self):
-        server_addr = 'localhost:{}'
+        server_addr = '[::]:{}'
         channel_creds = grpc.local_channel_credentials(
             grpc.LocalConnectionType.LOCAL_TCP)
         server_creds = grpc.local_server_credentials(
