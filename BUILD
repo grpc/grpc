@@ -73,6 +73,11 @@ config_setting(
     values = {"cpu": "darwin"},
 )
 
+config_setting(
+    name = "grpc_use_cpp_std_lib",
+    values = {"define": "GRPC_USE_CPP_STD_LIB=1"},
+)
+
 # This should be updated along with build.yaml
 g_stands_for = "ganges"
 
