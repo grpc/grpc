@@ -33,6 +33,8 @@ class LocalCredentialsTest(unittest.TestCase):
         server.add_generic_rpc_handlers((_GenericHandler(),))
         return server
 
+    @unittest.skipIf(os.name == 'nt',
+                     'TODO(https://github.com/grpc/grpc/issues/20078)')
     def test_local_tcp(self):
         server_addr = 'localhost:{}'
         channel_creds = grpc.local_channel_credentials(
