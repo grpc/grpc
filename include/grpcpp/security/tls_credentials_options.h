@@ -85,6 +85,7 @@ class TlsCredentialReloadArg {
 
  private:
   grpc_tls_credential_reload_arg c_arg_;
+  bool error_details_alloc_ = false;
 };
 
 /** TLS credential reloag config, wraps grpc_tls_credential_reload_config. **/
@@ -157,6 +158,12 @@ class TlsServerAuthorizationCheckArg {
 
  private:
   grpc_tls_server_authorization_check_arg c_arg_;
+  /** These boolean variables record whether the corresponding field of the C
+   * arg was dynamically allocated. This occurs e.g. if one of the above setter functions was
+   * used, or if the C arg's callback function does so. **/
+  bool target_name_alloc_ = false;
+  bool peer_cert_alloc_ = false;
+  bool error_details_alloc_ = false;
 };
 
 /** TLS server authorization check config, wraps
@@ -173,6 +180,10 @@ class TlsServerAuthorizationCheckConfig {
   ~TlsServerAuthorizationCheckConfig();
 
   int Schedule(TlsServerAuthorizationCheckArg* arg) const {
+    if (schedule_ == nullptr) {
+      gpr_log(GPR_ERROR, "schedule API is nullptr");
+      return 1;
+    }
     return schedule_(config_user_data_, arg);
   }
 

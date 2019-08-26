@@ -77,10 +77,10 @@ static void tls_server_authorization_check_callback(
   grpc::string cb_user_data = "cb_user_data";
   arg->cb_user_data = static_cast<void*>(gpr_strdup(cb_user_data.c_str()));
   arg->success = 1;
-  arg->target_name = "callback_target_name";
-  arg->peer_cert = "callback_peer_cert";
+  arg->target_name = gpr_strdup("callback_target_name");
+  arg->peer_cert = gpr_strdup("callback_peer_cert");
   arg->status = GRPC_STATUS_OK;
-  arg->error_details = "callback_error_details";
+  arg->error_details = gpr_strdup("callback_error_details");
 }
 
 static int tls_server_authorization_check_sync(

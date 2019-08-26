@@ -21,6 +21,21 @@
 #include "src/core/lib/security/credentials/tls/grpc_tls_credentials_options.h"
 #include "src/cpp/common/tls_credentials_options_util.h"
 
+namespace {
+  /** This function returns True and frees old_string if old_string and
+   * new_string are different, and frees the memory allocated to old_string if it was dynamically allocated.
+   * Otherwise, it whether or not the old_string was dynamically allocated. **/
+  bool cleanup_string(const char* old_string, const char* new_string, bool old_string_alloc) {
+    if (old_string != new_string) {
+      if (old_string_alloc) {
+        gpr_free(const_cast<char*>(old_string));
+      }
+      return true;
+    }
+    return old_string_alloc;
+  }
+}
+
 namespace grpc_impl {
 namespace experimental {
 
@@ -38,7 +53,7 @@ TlsCredentialReloadArg::TlsCredentialReloadArg(
   c_arg_ = arg;
 }
 
-TlsCredentialReloadArg::~TlsCredentialReloadArg() {}
+TlsCredentialReloadArg::~TlsCredentialReloadArg() { }
 
 void* TlsCredentialReloadArg::cb_user_data() const {
   return c_arg_.cb_user_data;
@@ -79,11 +94,18 @@ void TlsCredentialReloadArg::set_status(
 
 void TlsCredentialReloadArg::set_error_details(
     const grpc::string& error_details) {
+  if (error_details_alloc_) {
+    gpr_free(const_cast<char*>(c_arg_.error_details));
+  }
+  c_arg_.error_details = gpr_strdup(error_details.c_str());
+  error_details_alloc_ = true;
   c_arg_.error_details = gpr_strdup(error_details.c_str());
 }
 
 void TlsCredentialReloadArg::OnCredentialReloadDoneCallback() {
+  const char* error_details = c_arg_.error_details;
   c_arg_.cb(&c_arg_);
+  error_details_alloc_ = cleanup_string(error_details, c_arg_.error_details, error_details_alloc_);
 }
 
 /** gRPC TLS credential reload config API implementation **/
@@ -102,7 +124,9 @@ TlsCredentialReloadConfig::TlsCredentialReloadConfig(
   c_config_->set_context(static_cast<void*>(this));
 }
 
-TlsCredentialReloadConfig::~TlsCredentialReloadConfig() {}
+TlsCredentialReloadConfig::~TlsCredentialReloadConfig() {
+  ::grpc_core::Delete(c_config_);
+}
 
 /** gRPC TLS server authorization check arg API implementation **/
 TlsServerAuthorizationCheckArg::TlsServerAuthorizationCheckArg(
@@ -110,7 +134,11 @@ TlsServerAuthorizationCheckArg::TlsServerAuthorizationCheckArg(
   c_arg_ = arg;
 }
 
-TlsServerAuthorizationCheckArg::~TlsServerAuthorizationCheckArg() {}
+TlsServerAuthorizationCheckArg::~TlsServerAuthorizationCheckArg() {
+  if (target_name_alloc_) { gpr_free(const_cast<char*>(c_arg_.target_name)); }
+  if (peer_cert_alloc_) { gpr_free(const_cast<char*>(c_arg_.peer_cert)); }
+  if (error_details_alloc_) { gpr_free(const_cast<char*>(c_arg_.error_details)); }
+}
 
 void* TlsServerAuthorizationCheckArg::cb_user_data() const {
   return c_arg_.cb_user_data;
@@ -147,12 +175,20 @@ void TlsServerAuthorizationCheckArg::set_success(int success) {
 
 void TlsServerAuthorizationCheckArg::set_target_name(
     const grpc::string& target_name) {
+  if (target_name_alloc_) {
+    gpr_free(const_cast<char*>(c_arg_.target_name));
+  }
   c_arg_.target_name = gpr_strdup(target_name.c_str());
+  target_name_alloc_ = true;
 }
 
 void TlsServerAuthorizationCheckArg::set_peer_cert(
     const grpc::string& peer_cert) {
+  if (peer_cert_alloc_) {
+    gpr_free(const_cast<char*>(c_arg_.peer_cert));
+  }
   c_arg_.peer_cert = gpr_strdup(peer_cert.c_str());
+  peer_cert_alloc_ = true;
 }
 
 void TlsServerAuthorizationCheckArg::set_status(grpc_status_code status) {
@@ -161,11 +197,21 @@ void TlsServerAuthorizationCheckArg::set_status(grpc_status_code status) {
 
 void TlsServerAuthorizationCheckArg::set_error_details(
     const grpc::string& error_details) {
+  if (error_details_alloc_) {
+    gpr_free(const_cast<char*>(c_arg_.error_details));
+  }
   c_arg_.error_details = gpr_strdup(error_details.c_str());
+  error_details_alloc_ = true;
 }
 
 void TlsServerAuthorizationCheckArg::OnServerAuthorizationCheckDoneCallback() {
+  const char* target_name = c_arg_.target_name;
+  const char* peer_cert = c_arg_.peer_cert;
+  const char* error_details = c_arg_.error_details;
   c_arg_.cb(&c_arg_);
+  target_name_alloc_ = cleanup_string(target_name, c_arg_.target_name, target_name_alloc_);
+  peer_cert_alloc_ = cleanup_string(peer_cert, c_arg_.peer_cert, peer_cert_alloc_);
+  error_details_alloc_ = cleanup_string(error_details, c_arg_.error_details, error_details_alloc_);
 }
 
 /** gRPC TLS server authorization check config API implementation **/
@@ -185,7 +231,9 @@ TlsServerAuthorizationCheckConfig::TlsServerAuthorizationCheckConfig(
   c_config_->set_context(static_cast<void*>(this));
 }
 
-TlsServerAuthorizationCheckConfig::~TlsServerAuthorizationCheckConfig() {}
+TlsServerAuthorizationCheckConfig::~TlsServerAuthorizationCheckConfig() {
+  ::grpc_core::Delete(c_config_);
+}
 
 /** gRPC TLS credential options API implementation **/
 grpc_tls_credentials_options* TlsCredentialsOptions::c_credentials_options()
