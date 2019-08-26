@@ -75,7 +75,7 @@ std::shared_ptr<TlsKeyMaterialsConfig> ConvertToCppKeyMaterialsConfig(
 }
 
 /** The C schedule and cancel functions for the credential reload config. **/
-int tls_credential_reload_config_c_schedule(
+int TlsCredentialReloadConfigCSchedule(
     void* config_user_data, grpc_tls_credential_reload_arg* arg) {
   TlsCredentialReloadConfig* cpp_config =
       static_cast<TlsCredentialReloadConfig*>(arg->config->context());
@@ -89,7 +89,7 @@ int tls_credential_reload_config_c_schedule(
   return schedule_output;
 }
 
-void tls_credential_reload_config_c_cancel(
+void TlsCredentialReloadConfigCCancel(
     void* config_user_data, grpc_tls_credential_reload_arg* arg) {
   TlsCredentialReloadConfig* cpp_config =
       static_cast<TlsCredentialReloadConfig*>(arg->config->context());
@@ -104,7 +104,7 @@ void tls_credential_reload_config_c_cancel(
 
 /** The C schedule and cancel functions for the server authorization check
  * config. **/
-int tls_server_authorization_check_config_c_schedule(
+int TlsServerAuthorizationCheckConfigCSchedule(
     void* config_user_data, grpc_tls_server_authorization_check_arg* arg) {
   TlsServerAuthorizationCheckConfig* cpp_config =
       static_cast<TlsServerAuthorizationCheckConfig*>(arg->config->context());
@@ -119,7 +119,7 @@ int tls_server_authorization_check_config_c_schedule(
   return schedule_output;
 }
 
-void tls_server_authorization_check_config_c_cancel(
+void TlsServerAuthorizationCheckConfigCCancel(
     void* config_user_data, grpc_tls_server_authorization_check_arg* arg) {
   TlsServerAuthorizationCheckConfig* cpp_config =
       static_cast<TlsServerAuthorizationCheckConfig*>(arg->config->context());

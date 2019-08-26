@@ -119,8 +119,8 @@ TlsCredentialReloadConfig::TlsCredentialReloadConfig(
   cancel_ = cancel;
   destruct_ = destruct;
   c_config_ = grpc_tls_credential_reload_config_create(
-      config_user_data_, &tls_credential_reload_config_c_schedule,
-      &tls_credential_reload_config_c_cancel, destruct_);
+      config_user_data_, &TlsCredentialReloadConfigCSchedule,
+      &TlsCredentialReloadConfigCCancel, destruct_);
   c_config_->set_context(static_cast<void*>(this));
 }
 
@@ -226,8 +226,8 @@ TlsServerAuthorizationCheckConfig::TlsServerAuthorizationCheckConfig(
   cancel_ = cancel;
   destruct_ = destruct;
   c_config_ = grpc_tls_server_authorization_check_config_create(
-      config_user_data_, &tls_server_authorization_check_config_c_schedule,
-      &tls_server_authorization_check_config_c_cancel, destruct_);
+      config_user_data_, &TlsServerAuthorizationCheckConfigCSchedule,
+      &TlsServerAuthorizationCheckConfigCCancel, destruct_);
   c_config_->set_context(static_cast<void*>(this));
 }
 
