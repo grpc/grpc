@@ -166,7 +166,6 @@ filegroups:
   - src/core/ext/upb-generated/udpa/data/orca/v1/orca_load_report.upb.c
   uses:
   - proto_gen_validate_upb
-  - upb
 - name: envoy_type_upb
   headers:
   - src/core/ext/upb-generated/envoy/type/percent.upb.h

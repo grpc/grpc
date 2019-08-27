@@ -97,7 +97,7 @@ class MyTestServiceImpl : public TestServiceImpl {
  public:
   Status Echo(ServerContext* context, const EchoRequest* request,
               EchoResponse* response) override {
-    udpa::data::orca::v1::OrcaLoadReport* load_report = nullptr;
+    const udpa::data::orca::v1::OrcaLoadReport* load_report = nullptr;
     {
       grpc::internal::MutexLock lock(&mu_);
       ++request_count_;
@@ -141,7 +141,7 @@ class MyTestServiceImpl : public TestServiceImpl {
 
   grpc::internal::Mutex mu_;
   int request_count_ = 0;
-  udpa::data::orca::v1::OrcaLoadReport* load_report_ = nullptr;
+  const udpa::data::orca::v1::OrcaLoadReport* load_report_ = nullptr;
   grpc::internal::Mutex clients_mu_;
   std::set<grpc::string> clients_;
 };
@@ -1571,6 +1571,7 @@ TEST_F(ClientLbInterceptTrailingMetadataTest, InterceptsRetriesDisabled) {
   EXPECT_EQ("intercept_trailing_metadata_lb",
             channel->GetLoadBalancingPolicyName());
   EXPECT_EQ(kNumRpcs, trailers_intercepted());
+  EXPECT_EQ(nullptr, backend_load_report());
 }
 
 TEST_F(ClientLbInterceptTrailingMetadataTest, InterceptsRetriesEnabled) {
@@ -1605,6 +1606,7 @@ TEST_F(ClientLbInterceptTrailingMetadataTest, InterceptsRetriesEnabled) {
   EXPECT_EQ("intercept_trailing_metadata_lb",
             channel->GetLoadBalancingPolicyName());
   EXPECT_EQ(kNumRpcs, trailers_intercepted());
+  EXPECT_EQ(nullptr, backend_load_report());
 }
 
 TEST_F(ClientLbInterceptTrailingMetadataTest, BackendMetricData) {
