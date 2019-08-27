@@ -59,7 +59,7 @@ class TlsKeyMaterialsConfig {
 /** TLS credential reload arguments, wraps grpc_tls_credential_reload_arg. **/
 class TlsCredentialReloadArg {
  public:
-  TlsCredentialReloadArg(grpc_tls_credential_reload_arg arg);
+  TlsCredentialReloadArg(grpc_tls_credential_reload_arg* arg) : c_arg_(arg) { }
   ~TlsCredentialReloadArg();
 
   /** Getters for member fields. The callback function is not exposed.
@@ -83,12 +83,7 @@ class TlsCredentialReloadArg {
   void OnCredentialReloadDoneCallback();
 
  private:
-  grpc_tls_credential_reload_arg c_arg_;
-  /** These boolean variables record whether the corresponding field of the C
-   * arg was dynamically allocated. This occurs e.g. if one of the above setter functions was
-   * used, or if the C arg's callback function does so. **/
-  bool key_materials_config_alloc_ = false;
-  bool error_details_alloc_ = false;
+  grpc_tls_credential_reload_arg* c_arg_;
 };
 
 /** TLS credential reloag config, wraps grpc_tls_credential_reload_config. **/
@@ -134,7 +129,7 @@ class TlsCredentialReloadConfig {
 
 class TlsServerAuthorizationCheckArg {
  public:
-  TlsServerAuthorizationCheckArg(grpc_tls_server_authorization_check_arg arg);
+  TlsServerAuthorizationCheckArg(grpc_tls_server_authorization_check_arg* arg) : c_arg_(arg) { }
   ~TlsServerAuthorizationCheckArg();
 
   /** Getters for member fields. They return the corresponding fields of the
@@ -159,13 +154,7 @@ class TlsServerAuthorizationCheckArg {
   void OnServerAuthorizationCheckDoneCallback();
 
  private:
-  grpc_tls_server_authorization_check_arg c_arg_;
-  /** These boolean variables record whether the corresponding field of the C
-   * arg was dynamically allocated. This occurs e.g. if one of the above setter functions was
-   * used, or if the C arg's callback function does so. **/
-  bool target_name_alloc_ = false;
-  bool peer_cert_alloc_ = false;
-  bool error_details_alloc_ = false;
+  grpc_tls_server_authorization_check_arg* c_arg_;
 };
 
 /** TLS server authorization check config, wraps
@@ -213,6 +202,12 @@ class TlsServerAuthorizationCheckConfig {
 /** TLS credentials options, wrapper for grpc_tls_credentials_options. **/
 class TlsCredentialsOptions {
  public:
+  TlsCredentialsOptions(grpc_ssl_client_certificate_request_type cert_request_type,
+                        std::shared_ptr<TlsKeyMaterialsConfig> key_materials_config,
+                        std::shared_ptr<TlsCredentialReloadConfig> credential_reload_config,
+                        std::shared_ptr<TlsServerAuthorizationCheckConfig> server_authorization_check_config);
+  ~TlsCredentialsOptions();
+
   /** Getters for member fields. **/
   grpc_ssl_client_certificate_request_type cert_request_type() const {
     return cert_request_type_;
@@ -227,26 +222,9 @@ class TlsCredentialsOptions {
   server_authorization_check_config() const {
     return server_authorization_check_config_;
   }
-
-  /** Setters for member fields. **/
-  void set_cert_request_type(
-      const grpc_ssl_client_certificate_request_type type) {
-    cert_request_type_ = type;
+  grpc_tls_credentials_options* c_credentials_options() const {
+    return c_credentials_options_;
   }
-  void set_key_materials_config(std::shared_ptr<TlsKeyMaterialsConfig> config) {
-    key_materials_config_ = std::move(config);
-  }
-  void set_credential_reload_config(
-      std::shared_ptr<TlsCredentialReloadConfig> config) {
-    credential_reload_config_ = std::move(config);
-  }
-  void set_server_authorization_check_config(
-      std::shared_ptr<TlsServerAuthorizationCheckConfig> config) {
-    server_authorization_check_config_ = std::move(config);
-  }
-
-  /** Creates C struct for TLS credential options. **/
-  grpc_tls_credentials_options* c_credentials_options() const;
 
  private:
   grpc_ssl_client_certificate_request_type cert_request_type_;
@@ -254,6 +232,7 @@ class TlsCredentialsOptions {
   std::shared_ptr<TlsCredentialReloadConfig> credential_reload_config_;
   std::shared_ptr<TlsServerAuthorizationCheckConfig>
       server_authorization_check_config_;
+  grpc_tls_credentials_options* c_credentials_options_;
 };
 
 }  // namespace experimental

@@ -22,7 +22,8 @@
 namespace grpc_impl {
 namespace experimental {
 
-/** Creates a new C struct for the key materials. Note that the user must free
+/** Converts the Cpp key materials to C key materials; this allocates memory for
+ * the C key materials. Note that the user must free
  * the underlying pointer to private key and cert chain duplicates; they are not
  * freed when the UniquePtr<char> member variables of PemKeyCertPair are unused.
  * Similarly, the user must free the underlying pointer to c_pem_root_certs. **/
@@ -52,7 +53,8 @@ grpc_tls_key_materials_config* ConvertToCKeyMaterialsConfig(
   return c_config;
 }
 
-/** Creates a new TlsKeyMaterialsConfig from a C struct config. **/
+/** Converts the C key materials config to a Cpp key materials config; it
+ * allocates memory for the Cpp config. **/
 std::shared_ptr<TlsKeyMaterialsConfig> ConvertToCppKeyMaterialsConfig(
     const grpc_tls_key_materials_config* config) {
   std::shared_ptr<TlsKeyMaterialsConfig> cpp_config(
@@ -63,8 +65,6 @@ std::shared_ptr<TlsKeyMaterialsConfig> ConvertToCppKeyMaterialsConfig(
   for (size_t i = 0; i < pem_key_cert_pair_list.size(); i++) {
     ::grpc_core::PemKeyCertPair key_cert_pair = pem_key_cert_pair_list[i];
     TlsKeyMaterialsConfig::PemKeyCertPair p = {
-        // gpr_strdup(key_cert_pair.private_key()),
-        // gpr_strdup(key_cert_pair.cert_chain())};
         key_cert_pair.private_key(), key_cert_pair.cert_chain()};
     cpp_pem_key_cert_pair_list.push_back(::std::move(p));
   }
@@ -74,63 +74,42 @@ std::shared_ptr<TlsKeyMaterialsConfig> ConvertToCppKeyMaterialsConfig(
   return cpp_config;
 }
 
-/** The C schedule and cancel functions for the credential reload config. **/
+/** The C schedule and cancel functions for the credential reload config.
+ * They populate a C credential reload arg with the result of a C++ credential
+ * reload schedule/cancel API. **/
 int TlsCredentialReloadConfigCSchedule(
     void* config_user_data, grpc_tls_credential_reload_arg* arg) {
   TlsCredentialReloadConfig* cpp_config =
       static_cast<TlsCredentialReloadConfig*>(arg->config->context());
-  TlsCredentialReloadArg cpp_arg(*arg);
-  int schedule_output = cpp_config->Schedule(&cpp_arg);
-  arg->cb_user_data = cpp_arg.cb_user_data();
-  arg->key_materials_config =
-      ConvertToCKeyMaterialsConfig(cpp_arg.key_materials_config());
-  arg->status = cpp_arg.status();
-  arg->error_details = gpr_strdup(cpp_arg.error_details().c_str());
-  return schedule_output;
+  TlsCredentialReloadArg cpp_arg(arg);
+  return cpp_config->Schedule(&cpp_arg);
 }
 
 void TlsCredentialReloadConfigCCancel(
     void* config_user_data, grpc_tls_credential_reload_arg* arg) {
   TlsCredentialReloadConfig* cpp_config =
       static_cast<TlsCredentialReloadConfig*>(arg->config->context());
-  TlsCredentialReloadArg cpp_arg(*arg);
+  TlsCredentialReloadArg cpp_arg(arg);
   cpp_config->Cancel(&cpp_arg);
-  arg->cb_user_data = cpp_arg.cb_user_data();
-  arg->key_materials_config =
-      ConvertToCKeyMaterialsConfig(cpp_arg.key_materials_config());
-  arg->status = cpp_arg.status();
-  arg->error_details = gpr_strdup(cpp_arg.error_details().c_str());
 }
 
 /** The C schedule and cancel functions for the server authorization check
- * config. **/
+ * config. They populate a C server authorization check arg with the result
+ * of a C++ server authorization check schedule/cancel API. **/
 int TlsServerAuthorizationCheckConfigCSchedule(
     void* config_user_data, grpc_tls_server_authorization_check_arg* arg) {
   TlsServerAuthorizationCheckConfig* cpp_config =
       static_cast<TlsServerAuthorizationCheckConfig*>(arg->config->context());
-  TlsServerAuthorizationCheckArg cpp_arg(*arg);
-  int schedule_output = cpp_config->Schedule(&cpp_arg);
-  arg->cb_user_data = cpp_arg.cb_user_data();
-  arg->success = cpp_arg.success();
-  arg->target_name = gpr_strdup(cpp_arg.target_name().c_str());
-  arg->peer_cert = gpr_strdup(cpp_arg.peer_cert().c_str());
-  arg->status = cpp_arg.status();
-  arg->error_details = gpr_strdup(cpp_arg.error_details().c_str());
-  return schedule_output;
+  TlsServerAuthorizationCheckArg cpp_arg(arg);
+  return cpp_config->Schedule(&cpp_arg);
 }
 
 void TlsServerAuthorizationCheckConfigCCancel(
     void* config_user_data, grpc_tls_server_authorization_check_arg* arg) {
   TlsServerAuthorizationCheckConfig* cpp_config =
       static_cast<TlsServerAuthorizationCheckConfig*>(arg->config->context());
-  TlsServerAuthorizationCheckArg cpp_arg(*arg);
+  TlsServerAuthorizationCheckArg cpp_arg(arg);
   cpp_config->Cancel(&cpp_arg);
-  arg->cb_user_data = cpp_arg.cb_user_data();
-  arg->success = cpp_arg.success();
-  arg->target_name = gpr_strdup(cpp_arg.target_name().c_str());
-  arg->peer_cert = gpr_strdup(cpp_arg.peer_cert().c_str());
-  arg->status = cpp_arg.status();
-  arg->error_details = gpr_strdup(cpp_arg.error_details().c_str());
 }
 
 }  // namespace experimental
