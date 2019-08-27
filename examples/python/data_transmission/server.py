@@ -1,4 +1,3 @@
-import time
 import grpc
 
 from threading import Thread
@@ -68,17 +67,21 @@ class DemoServer(demo_pb2_grpc.GRPCDemoServicer):
 
 
 def main():
-    server = grpc.server(futures.ThreadPoolExecutor(max_workers=10))
+    server = grpc.server(futures.ThreadPoolExecutor())
 
     demo_pb2_grpc.add_GRPCDemoServicer_to_server(DemoServer(), server)
 
     server.add_insecure_port(SERVER_ADDRESS)
     print("------------------start Python GRPC server")
     server.start()
+    server.wait_for_termination()
 
-    # In python3, `server` have no attribute `wait_for_termination`
-    while 1:
-        time.sleep(10)
+    # If raise Error:
+    #   AttributeError: '_Server' object has no attribute 'wait_for_termination'
+    # You can use the following code instead:
+    # import time
+    # while 1:
+    #     time.sleep(10)
 
 
 if __name__ == '__main__':
