@@ -36,11 +36,11 @@ std::shared_ptr<TlsKeyMaterialsConfig> ConvertToCppKeyMaterialsConfig(
 
 /** The following 4 functions convert the user-provided schedule or cancel
  * functions into C style schedule or cancel functions. **/
-int TlsCredentialReloadConfigCSchedule(
-    void* config_user_data, grpc_tls_credential_reload_arg* arg);
+int TlsCredentialReloadConfigCSchedule(void* config_user_data,
+                                       grpc_tls_credential_reload_arg* arg);
 
 void TlsCredentialReloadConfigCCancel(void* config_user_data,
-                                           grpc_tls_credential_reload_arg* arg);
+                                      grpc_tls_credential_reload_arg* arg);
 
 int TlsServerAuthorizationCheckConfigCSchedule(
     void* config_user_data, grpc_tls_server_authorization_check_arg* arg);

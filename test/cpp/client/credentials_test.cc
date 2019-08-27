@@ -71,7 +71,8 @@ static void tls_credential_reload_cancel(void* config_user_data,
   arg->set_error_details("cancelled");
 }
 
-static void tls_server_authorization_check_callback(grpc_tls_server_authorization_check_arg* arg) {
+static void tls_server_authorization_check_callback(
+    grpc_tls_server_authorization_check_arg* arg) {
   GPR_ASSERT(arg != nullptr);
   grpc::string cb_user_data = "cb_user_data";
   arg->cb_user_data = static_cast<void*>(gpr_strdup(cb_user_data.c_str()));
@@ -353,7 +354,8 @@ TEST_F(CredentialsTest, TlsCredentialReloadConfigSchedule) {
   arg.set_key_materials_config(key_materials_config);
   arg.set_status(GRPC_SSL_CERTIFICATE_CONFIG_RELOAD_NEW);
   arg.set_error_details("error_details");
-  grpc_tls_key_materials_config* key_materials_config_before_schedule = c_arg.key_materials_config;
+  grpc_tls_key_materials_config* key_materials_config_before_schedule =
+      c_arg.key_materials_config;
   const char* error_details_before_schedule = c_arg.error_details;
 
   int schedule_output = config.Schedule(&arg);
@@ -422,7 +424,8 @@ TEST_F(CredentialsTest, TlsCredentialReloadConfigCppToC) {
   EXPECT_STREQ(pair_list[1].cert_chain(), "cert_chain3");
   EXPECT_EQ(c_arg.status, GRPC_SSL_CERTIFICATE_CONFIG_RELOAD_NEW);
   EXPECT_STREQ(c_arg.error_details, test_error_details.c_str());
-  grpc_tls_key_materials_config* key_materials_config_after_schedule = c_arg.key_materials_config;
+  grpc_tls_key_materials_config* key_materials_config_after_schedule =
+      c_arg.key_materials_config;
 
   c_config->Cancel(&c_arg);
   EXPECT_EQ(c_arg.status, GRPC_SSL_CERTIFICATE_CONFIG_RELOAD_FAIL);
@@ -502,7 +505,6 @@ TEST_F(CredentialsTest, TlsServerAuthorizationCheckConfigSchedule) {
   gpr_free(const_cast<char*>(c_arg.target_name));
   gpr_free(const_cast<char*>(c_arg.peer_cert));
   gpr_free(const_cast<char*>(c_arg.error_details));
-
 }
 
 TEST_F(CredentialsTest, TlsServerAuthorizationCheckConfigCppToC) {
@@ -561,12 +563,12 @@ TEST_F(CredentialsTest, TlsCredentialsOptionsCppToC) {
       server_authorization_check_config(new TlsServerAuthorizationCheckConfig(
           nullptr, &tls_server_authorization_check_sync,
           &tls_server_authorization_check_cancel, nullptr));
-  TlsCredentialsOptions options = TlsCredentialsOptions(GRPC_SSL_REQUEST_CLIENT_CERTIFICATE_AND_VERIFY,
-                                                        key_materials_config,
-                                                        credential_reload_config,
-                                                        server_authorization_check_config);
+  TlsCredentialsOptions options = TlsCredentialsOptions(
+      GRPC_SSL_REQUEST_CLIENT_CERTIFICATE_AND_VERIFY, key_materials_config,
+      credential_reload_config, server_authorization_check_config);
   grpc_tls_credentials_options* c_options = options.c_credentials_options();
-  EXPECT_EQ(c_options->cert_request_type(), GRPC_SSL_REQUEST_CLIENT_CERTIFICATE_AND_VERIFY);
+  EXPECT_EQ(c_options->cert_request_type(),
+            GRPC_SSL_REQUEST_CLIENT_CERTIFICATE_AND_VERIFY);
   grpc_tls_key_materials_config* c_key_materials_config =
       c_options->key_materials_config();
   grpc_tls_credential_reload_config* c_credential_reload_config =
@@ -574,7 +576,8 @@ TEST_F(CredentialsTest, TlsCredentialsOptionsCppToC) {
   grpc_tls_credential_reload_arg c_credential_reload_arg;
   c_credential_reload_arg.config = c_credential_reload_config;
   c_credential_reload_arg.cb_user_data = nullptr;
-  c_credential_reload_arg.key_materials_config = c_options->key_materials_config();
+  c_credential_reload_arg.key_materials_config =
+      c_options->key_materials_config();
   c_credential_reload_arg.status = GRPC_SSL_CERTIFICATE_CONFIG_RELOAD_UNCHANGED;
   grpc::string test_error_details = "error_details";
   c_credential_reload_arg.error_details = test_error_details.c_str();

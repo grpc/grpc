@@ -59,7 +59,7 @@ class TlsKeyMaterialsConfig {
 /** TLS credential reload arguments, wraps grpc_tls_credential_reload_arg. **/
 class TlsCredentialReloadArg {
  public:
-  TlsCredentialReloadArg(grpc_tls_credential_reload_arg* arg) : c_arg_(arg) { }
+  TlsCredentialReloadArg(grpc_tls_credential_reload_arg* arg) : c_arg_(arg) {}
   ~TlsCredentialReloadArg();
 
   /** Getters for member fields. The callback function is not exposed.
@@ -129,7 +129,8 @@ class TlsCredentialReloadConfig {
 
 class TlsServerAuthorizationCheckArg {
  public:
-  TlsServerAuthorizationCheckArg(grpc_tls_server_authorization_check_arg* arg) : c_arg_(arg) { }
+  TlsServerAuthorizationCheckArg(grpc_tls_server_authorization_check_arg* arg)
+      : c_arg_(arg) {}
   ~TlsServerAuthorizationCheckArg();
 
   /** Getters for member fields. They return the corresponding fields of the
@@ -202,10 +203,12 @@ class TlsServerAuthorizationCheckConfig {
 /** TLS credentials options, wrapper for grpc_tls_credentials_options. **/
 class TlsCredentialsOptions {
  public:
-  TlsCredentialsOptions(grpc_ssl_client_certificate_request_type cert_request_type,
-                        std::shared_ptr<TlsKeyMaterialsConfig> key_materials_config,
-                        std::shared_ptr<TlsCredentialReloadConfig> credential_reload_config,
-                        std::shared_ptr<TlsServerAuthorizationCheckConfig> server_authorization_check_config);
+  TlsCredentialsOptions(
+      grpc_ssl_client_certificate_request_type cert_request_type,
+      std::shared_ptr<TlsKeyMaterialsConfig> key_materials_config,
+      std::shared_ptr<TlsCredentialReloadConfig> credential_reload_config,
+      std::shared_ptr<TlsServerAuthorizationCheckConfig>
+          server_authorization_check_config);
   ~TlsCredentialsOptions();
 
   /** Getters for member fields. **/

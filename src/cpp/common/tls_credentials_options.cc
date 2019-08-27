@@ -33,7 +33,7 @@ void TlsKeyMaterialsConfig::set_key_materials(
 }
 
 /** TLS credential reload arg API implementation **/
-TlsCredentialReloadArg::~TlsCredentialReloadArg() { }
+TlsCredentialReloadArg::~TlsCredentialReloadArg() {}
 
 void* TlsCredentialReloadArg::cb_user_data() const {
   return c_arg_->cb_user_data;
@@ -86,10 +86,11 @@ TlsCredentialReloadConfig::TlsCredentialReloadConfig(
     const void* config_user_data,
     int (*schedule)(void* config_user_data, TlsCredentialReloadArg* arg),
     void (*cancel)(void* config_user_data, TlsCredentialReloadArg* arg),
-    void (*destruct)(void* config_user_data)) : config_user_data_(const_cast<void*>(config_user_data)),
-  schedule_(schedule),
-  cancel_(cancel),
-  destruct_(destruct) {
+    void (*destruct)(void* config_user_data))
+    : config_user_data_(const_cast<void*>(config_user_data)),
+      schedule_(schedule),
+      cancel_(cancel),
+      destruct_(destruct) {
   c_config_ = grpc_tls_credential_reload_config_create(
       config_user_data_, &TlsCredentialReloadConfigCSchedule,
       &TlsCredentialReloadConfigCCancel, destruct_);
@@ -101,8 +102,7 @@ TlsCredentialReloadConfig::~TlsCredentialReloadConfig() {
 }
 
 /** gRPC TLS server authorization check arg API implementation **/
-TlsServerAuthorizationCheckArg::~TlsServerAuthorizationCheckArg() {
-}
+TlsServerAuthorizationCheckArg::~TlsServerAuthorizationCheckArg() {}
 
 void* TlsServerAuthorizationCheckArg::cb_user_data() const {
   return c_arg_->cb_user_data;
@@ -166,10 +166,11 @@ TlsServerAuthorizationCheckConfig::TlsServerAuthorizationCheckConfig(
     int (*schedule)(void* config_user_data,
                     TlsServerAuthorizationCheckArg* arg),
     void (*cancel)(void* config_user_data, TlsServerAuthorizationCheckArg* arg),
-    void (*destruct)(void* config_user_data)) : config_user_data_(const_cast<void*>(config_user_data)),
-  schedule_(schedule),
-  cancel_(cancel),
-  destruct_(destruct) {
+    void (*destruct)(void* config_user_data))
+    : config_user_data_(const_cast<void*>(config_user_data)),
+      schedule_(schedule),
+      cancel_(cancel),
+      destruct_(destruct) {
   c_config_ = grpc_tls_server_authorization_check_config_create(
       config_user_data_, &TlsServerAuthorizationCheckConfigCSchedule,
       &TlsServerAuthorizationCheckConfigCCancel, destruct_);
@@ -181,18 +182,25 @@ TlsServerAuthorizationCheckConfig::~TlsServerAuthorizationCheckConfig() {
 }
 
 /** gRPC TLS credential options API implementation **/
-TlsCredentialsOptions::TlsCredentialsOptions(grpc_ssl_client_certificate_request_type cert_request_type,
-                                             std::shared_ptr<TlsKeyMaterialsConfig> key_materials_config,
-                                             std::shared_ptr<TlsCredentialReloadConfig> credential_reload_config,
-                                             std::shared_ptr<TlsServerAuthorizationCheckConfig> server_authorization_check_config) :
-  cert_request_type_(cert_request_type),
-  key_materials_config_(key_materials_config),
-  credential_reload_config_(credential_reload_config),
-  server_authorization_check_config_(server_authorization_check_config) {
+TlsCredentialsOptions::TlsCredentialsOptions(
+    grpc_ssl_client_certificate_request_type cert_request_type,
+    std::shared_ptr<TlsKeyMaterialsConfig> key_materials_config,
+    std::shared_ptr<TlsCredentialReloadConfig> credential_reload_config,
+    std::shared_ptr<TlsServerAuthorizationCheckConfig>
+        server_authorization_check_config)
+    : cert_request_type_(cert_request_type),
+      key_materials_config_(std::move(key_materials_config)),
+      credential_reload_config_(std::move(credential_reload_config)),
+      server_authorization_check_config_(
+          std::move(server_authorization_check_config)) {
   c_credentials_options_ = grpc_tls_credentials_options_create();
-  grpc_tls_credentials_options_set_cert_request_type(c_credentials_options_, cert_request_type_);
-  grpc_tls_credentials_options_set_key_materials_config(c_credentials_options_, ConvertToCKeyMaterialsConfig(key_materials_config_));
-  grpc_tls_credentials_options_set_credential_reload_config(c_credentials_options_, credential_reload_config_->c_config());
+  grpc_tls_credentials_options_set_cert_request_type(c_credentials_options_,
+                                                     cert_request_type_);
+  grpc_tls_credentials_options_set_key_materials_config(
+      c_credentials_options_,
+      ConvertToCKeyMaterialsConfig(key_materials_config_));
+  grpc_tls_credentials_options_set_credential_reload_config(
+      c_credentials_options_, credential_reload_config_->c_config());
   grpc_tls_credentials_options_set_server_authorization_check_config(
       c_credentials_options_, server_authorization_check_config_->c_config());
 }

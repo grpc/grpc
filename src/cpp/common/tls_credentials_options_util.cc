@@ -64,8 +64,8 @@ std::shared_ptr<TlsKeyMaterialsConfig> ConvertToCppKeyMaterialsConfig(
       config->pem_key_cert_pair_list();
   for (size_t i = 0; i < pem_key_cert_pair_list.size(); i++) {
     ::grpc_core::PemKeyCertPair key_cert_pair = pem_key_cert_pair_list[i];
-    TlsKeyMaterialsConfig::PemKeyCertPair p = {
-        key_cert_pair.private_key(), key_cert_pair.cert_chain()};
+    TlsKeyMaterialsConfig::PemKeyCertPair p = {key_cert_pair.private_key(),
+                                               key_cert_pair.cert_chain()};
     cpp_pem_key_cert_pair_list.push_back(::std::move(p));
   }
   cpp_config->set_key_materials(std::move(config->pem_root_certs()),
@@ -77,16 +77,16 @@ std::shared_ptr<TlsKeyMaterialsConfig> ConvertToCppKeyMaterialsConfig(
 /** The C schedule and cancel functions for the credential reload config.
  * They populate a C credential reload arg with the result of a C++ credential
  * reload schedule/cancel API. **/
-int TlsCredentialReloadConfigCSchedule(
-    void* config_user_data, grpc_tls_credential_reload_arg* arg) {
+int TlsCredentialReloadConfigCSchedule(void* config_user_data,
+                                       grpc_tls_credential_reload_arg* arg) {
   TlsCredentialReloadConfig* cpp_config =
       static_cast<TlsCredentialReloadConfig*>(arg->config->context());
   TlsCredentialReloadArg cpp_arg(arg);
   return cpp_config->Schedule(&cpp_arg);
 }
 
-void TlsCredentialReloadConfigCCancel(
-    void* config_user_data, grpc_tls_credential_reload_arg* arg) {
+void TlsCredentialReloadConfigCCancel(void* config_user_data,
+                                      grpc_tls_credential_reload_arg* arg) {
   TlsCredentialReloadConfig* cpp_config =
       static_cast<TlsCredentialReloadConfig*>(arg->config->context());
   TlsCredentialReloadArg cpp_arg(arg);
