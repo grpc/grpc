@@ -1,22 +1,11 @@
-"""
-Author: Zhongying Wang
-Email: kerbalwzy@gmail.com
-DateTime: 2019-08-13T23:30:00Z
-PythonVersion: Python3.6.3
-"""
-import os
-import sys
 import time
 import grpc
 
 from threading import Thread
 from concurrent import futures
 
-# add the `demo_grpc_dps` dir into python package search paths
-BaseDir = os.path.dirname(os.path.abspath(__file__))
-sys.path.insert(0, os.path.join(BaseDir, "demo_grpc_pbs"))
-
-from demo_grpc_pbs import demo_pb2, demo_pb2_grpc
+import demo_pb2_grpc
+import demo_pb2
 
 SERVER_ADDRESS = 'localhost:23334'
 SERVER_ID = 1
@@ -51,7 +40,8 @@ class DemoServer(demo_pb2_grpc.GRPCDemoServicer):
         # create a generator
         def response_messages():
             for i in range(5):
-                response = demo_pb2.Response(server_id=SERVER_ID, response_data=("send by Python server, message=%d" % i))
+                response = demo_pb2.Response(server_id=SERVER_ID,
+                                             response_data=("send by Python server, message=%d" % i))
                 yield response
 
         return response_messages()
