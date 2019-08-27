@@ -9,7 +9,7 @@ There are currently two ways to build projects with the gRPC Objective-C library
 
 The [helloworld](helloworld) sample is the entry point for the Cocoapods way of building projects. More is documented on grpc.io, including [installation](https://grpc.io/docs/quickstart/objective-c/) and some [tutorials](https://grpc.io/docs/tutorials/basic/objective-c/). They will not be reiterated here and they are not mandatory for the Bazel way.
 
-A good place to get started with Bazel is their official [website](https://bazel.build). And the documentation of using Bazel with gRPC Objective-C library is [here](https://github.com/grpc/proposal/blob/master/L56-objc-bazel-support.md).
+A good place to get started with Bazel is their official [website](https://bazel.build). The documentation of using gRPC Objective-C library with Bazel is [here](https://github.com/grpc/proposal/blob/master/L56-objc-bazel-support.md).
 
 ## Installation
 To run the examples in Bazel, you should have [Bazel](https://docs.bazel.build/versions/master/install-os-x.html) installed.
@@ -21,8 +21,6 @@ The code for the Hello World example and others live in the `examples` directory
 ```shell
 $ git clone --recursive https://github.com/grpc/grpc
 ```
-
-Bazel support for gRPC Objective-C is not yet released, so we need to work on the master branch.
 
 Next, change your directory to `examples/objective-c`
 ```shell
@@ -46,15 +44,15 @@ Now compile the sample:
 ```shell
 $ bazel build :HelloWorld
 ```
-To run the sample, you need to know the available simulator runtimes in your machine. You could either list the available runtimes yourself:
+To run the sample, you need to know the available simulator runtimes in your machine. You could either list the available runtimes yourself by running:
 ```shell
 $ xcrun simctl list
 ```
-Or just try running the app and it will let you know what is available:
+Or just try running the app and it will let you know what is available in the error messages:
 ```shell
 $ bazel run :HelloWorld
 ```
-Note that running this command will build the project even if you forget to build it beforehand.
+Note that running this command will build the project even if it is not built beforehand.
 
 Finally, launch the app with one of the available runtimes:
 ```shell
