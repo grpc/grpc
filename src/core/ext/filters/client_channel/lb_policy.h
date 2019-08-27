@@ -80,11 +80,22 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
  public:
   // Represents backend metrics reported by the backend to the client.
   struct BackendMetricData {
+    /// CPU utilization expressed as a fraction of available CPU resources.
     double cpu_utilization;
+    /// Memory utilization expressed as a fraction of available memory
+    /// resources.
     double mem_utilization;
-    uint64_t rps;
-    Map<const char*, double, StringLess> request_cost;
-    Map<const char*, double, StringLess> utilization;
+    /// Total requests per second being served by the backend.  This
+    /// should include all services that a backend is responsible for.
+    uint64_t requests_per_second;
+    /// Application-specific requests cost metrics.  Metric names are
+    /// determined by the application.  Each value is an absolute cost
+    /// (e.g. 3487 bytes of storage) associated with the request.
+    Map<StringView, double, StringLess> request_cost;
+    /// Application-specific resource utilization metrics.  Metric names
+    /// are determined by the application.  Each value is expressed as a
+    /// fraction of total resources available.
+    Map<StringView, double, StringLess> utilization;
   };
 
   /// Interface for accessing per-call state.

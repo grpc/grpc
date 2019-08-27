@@ -1538,12 +1538,14 @@ class ClientLbInterceptTrailingMetadataTest : public ClientLbEnd2endTest {
           backend_metric_data->cpu_utilization);
       self->load_report_->set_mem_utilization(
           backend_metric_data->mem_utilization);
-      self->load_report_->set_rps(backend_metric_data->rps);
+      self->load_report_->set_rps(backend_metric_data->requests_per_second);
       for (const auto& p : backend_metric_data->request_cost) {
-        (*self->load_report_->mutable_request_cost())[p.first] = p.second;
+        grpc_core::UniquePtr<char> name = p.first.dup();
+        (*self->load_report_->mutable_request_cost())[name.get()] = p.second;
       }
       for (const auto& p : backend_metric_data->utilization) {
-        (*self->load_report_->mutable_utilization())[p.first] = p.second;
+        grpc_core::UniquePtr<char> name = p.first.dup();
+        (*self->load_report_->mutable_utilization())[name.get()] = p.second;
       }
     }
   }
@@ -1612,7 +1614,7 @@ TEST_F(ClientLbInterceptTrailingMetadataTest, BackendMetricData) {
   udpa::data::orca::v1::OrcaLoadReport load_report;
   load_report.set_cpu_utilization(0.5);
   load_report.set_mem_utilization(0.75);
-  load_report.set_rps(0.25);
+  load_report.set_rps(25);
   auto* request_cost = load_report.mutable_request_cost();
   (*request_cost)["foo"] = 0.8;
   (*request_cost)["bar"] = 1.4;

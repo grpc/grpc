@@ -17,6 +17,7 @@
 #include <grpc/support/port_platform.h>
 
 #include "src/core/ext/filters/client_channel/backend_metric.h"
+#include "src/core/lib/gprpp/string_view.h"
 #include "udpa/data/orca/v1/orca_load_report.upb.h"
 
 namespace grpc_core {
@@ -24,20 +25,19 @@ namespace grpc_core {
 namespace {
 
 template <typename EntryType>
-Map<const char*, double, StringLess> ParseMap(
+Map<StringView, double, StringLess> ParseMap(
     udpa_data_orca_v1_OrcaLoadReport* msg,
     EntryType** (*entry_func)(udpa_data_orca_v1_OrcaLoadReport*, size_t*),
     upb_strview (*key_func)(const EntryType*),
     double (*value_func)(const EntryType*), Arena* arena) {
-  Map<const char*, double, StringLess> result;
+  Map<StringView, double, StringLess> result;
   size_t size;
   const auto* const* entries = entry_func(msg, &size);
   for (size_t i = 0; i < size; ++i) {
     upb_strview key_view = key_func(entries[i]);
     char* key = static_cast<char*>(arena->Alloc(key_view.size + 1));
     memcpy(key, key_view.data, key_view.size);
-    key[key_view.size] = '\0';
-    result[key] = value_func(entries[i]);
+    result[StringView(key, key_view.size)] = value_func(entries[i]);
   }
   return result;
 }
@@ -53,25 +53,24 @@ const LoadBalancingPolicy::BackendMetricData* ParseBackendMetricData(
               GRPC_SLICE_START_PTR(serialized_load_report)),
           GRPC_SLICE_LENGTH(serialized_load_report), upb_arena.ptr());
   if (msg == nullptr) return nullptr;
-  Map<const char*, double, StringLess> request_cost =
-      ParseMap<udpa_data_orca_v1_OrcaLoadReport_RequestCostEntry>(
-          msg, udpa_data_orca_v1_OrcaLoadReport_mutable_request_cost,
-          udpa_data_orca_v1_OrcaLoadReport_RequestCostEntry_key,
-          udpa_data_orca_v1_OrcaLoadReport_RequestCostEntry_value, arena);
-  Map<const char*, double, StringLess> utilization =
-      ParseMap<udpa_data_orca_v1_OrcaLoadReport_UtilizationEntry>(
-          msg, udpa_data_orca_v1_OrcaLoadReport_mutable_utilization,
-          udpa_data_orca_v1_OrcaLoadReport_UtilizationEntry_key,
-          udpa_data_orca_v1_OrcaLoadReport_UtilizationEntry_value, arena);
   LoadBalancingPolicy::BackendMetricData* backend_metric_data =
       arena->New<LoadBalancingPolicy::BackendMetricData>();
   backend_metric_data->cpu_utilization =
       udpa_data_orca_v1_OrcaLoadReport_cpu_utilization(msg);
   backend_metric_data->mem_utilization =
       udpa_data_orca_v1_OrcaLoadReport_mem_utilization(msg);
-  backend_metric_data->rps = udpa_data_orca_v1_OrcaLoadReport_rps(msg);
-  backend_metric_data->request_cost = std::move(request_cost);
-  backend_metric_data->utilization = std::move(utilization);
+  backend_metric_data->requests_per_second =
+      udpa_data_orca_v1_OrcaLoadReport_rps(msg);
+  backend_metric_data->request_cost =
+      ParseMap<udpa_data_orca_v1_OrcaLoadReport_RequestCostEntry>(
+          msg, udpa_data_orca_v1_OrcaLoadReport_mutable_request_cost,
+          udpa_data_orca_v1_OrcaLoadReport_RequestCostEntry_key,
+          udpa_data_orca_v1_OrcaLoadReport_RequestCostEntry_value, arena);
+  backend_metric_data->utilization =
+      ParseMap<udpa_data_orca_v1_OrcaLoadReport_UtilizationEntry>(
+          msg, udpa_data_orca_v1_OrcaLoadReport_mutable_utilization,
+          udpa_data_orca_v1_OrcaLoadReport_UtilizationEntry_key,
+          udpa_data_orca_v1_OrcaLoadReport_UtilizationEntry_value, arena);
   return backend_metric_data;
 }
 
