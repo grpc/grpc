@@ -1,5 +1,7 @@
 # gRPC in 3 minutes (Objective-C with Bazel)
 
+To save you from reading, if you use Cocoapods and Xcode, the right reference for you is in the [Hello World](helloworld) example directory.
+
 ## Background
 There are currently two ways to build projects with the gRPC Objective-C library:
 * Cocoapods & Xcode
