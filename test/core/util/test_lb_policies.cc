@@ -150,11 +150,6 @@ class InterceptRecvTrailingMetadataLoadBalancingPolicy
       return parent_->channel_control_helper()->CreateSubchannel(args);
     }
 
-    grpc_channel* CreateChannel(const char* target,
-                                const grpc_channel_args& args) override {
-      return parent_->channel_control_helper()->CreateChannel(target, args);
-    }
-
     void UpdateState(grpc_connectivity_state state,
                      UniquePtr<SubchannelPicker> picker) override {
       parent_->channel_control_helper()->UpdateState(
@@ -231,6 +226,11 @@ class InterceptTrailingFactory : public LoadBalancingPolicyFactory {
 
   const char* name() const override {
     return kInterceptRecvTrailingMetadataLbPolicyName;
+  }
+
+  RefCountedPtr<LoadBalancingPolicy::Config> ParseLoadBalancingConfig(
+      const grpc_json* json, grpc_error** error) const override {
+    return nullptr;
   }
 
  private:

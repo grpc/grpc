@@ -37,7 +37,8 @@ struct XdsLocalityInfo {
 
   // This comparator only compares the locality names.
   struct Less {
-    bool operator()(const XdsLocalityInfo& lhs, const XdsLocalityInfo& rhs) {
+    bool operator()(const XdsLocalityInfo& lhs,
+                    const XdsLocalityInfo& rhs) const {
       return XdsLocalityName::Less()(lhs.locality_name, rhs.locality_name);
     }
   };

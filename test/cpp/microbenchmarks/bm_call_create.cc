@@ -322,10 +322,6 @@ class FakeClientChannelFactory : public grpc_core::ClientChannelFactory {
       const grpc_channel_args* args) override {
     return nullptr;
   }
-  grpc_channel* CreateChannel(const char* target,
-                              const grpc_channel_args* args) override {
-    return nullptr;
-  }
 };
 
 static grpc_arg StringArg(const char* key, const char* value) {
@@ -456,7 +452,7 @@ class NoOp {
 class SendEmptyMetadata {
  public:
   SendEmptyMetadata() : op_payload_(nullptr) {
-    memset(&op_, 0, sizeof(op_));
+    op_ = {};
     op_.on_complete = GRPC_CLOSURE_INIT(&closure_, DoNothing, nullptr,
                                         grpc_schedule_on_exec_ctx);
     op_.send_initial_metadata = true;

@@ -7,7 +7,6 @@ graft include/grpc
 graft third_party/address_sorting
 graft third_party/boringssl
 graft third_party/cares
-graft third_party/nanopb
 graft third_party/upb
 graft third_party/zlib
 include src/python/grpcio/_parallel_compile_patch.py

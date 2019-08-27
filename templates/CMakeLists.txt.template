@@ -145,8 +145,6 @@
   ## Some libraries are shared even with BUILD_SHARED_LIBRARIES=OFF
   set(CMAKE_POSITION_INDEPENDENT_CODE TRUE)
   
-  add_definitions(-DPB_FIELD_32BIT)
-
   if (MSVC)
     include(cmake/msvc_static_runtime.cmake)
     add_definitions(-D_WIN32_WINNT=0x600 -D_SCL_SECURE_NO_WARNINGS -D_CRT_SECURE_NO_WARNINGS -D_WINSOCK_DEPRECATED_NO_WARNINGS)
@@ -190,7 +188,6 @@
   include(cmake/benchmark.cmake)
   include(cmake/cares.cmake)
   include(cmake/gflags.cmake)
-  include(cmake/nanopb.cmake)
   include(cmake/protobuf.cmake)
   include(cmake/ssl.cmake)
   include(cmake/upb.cmake)
@@ -431,7 +428,6 @@
     PRIVATE <%text>${_gRPC_BENCHMARK_INCLUDE_DIR}</%text>
     PRIVATE <%text>${_gRPC_CARES_INCLUDE_DIR}</%text>
     PRIVATE <%text>${_gRPC_GFLAGS_INCLUDE_DIR}</%text>
-    PRIVATE <%text>${_gRPC_NANOPB_INCLUDE_DIR}</%text>
     PRIVATE <%text>${_gRPC_PROTOBUF_INCLUDE_DIR}</%text>
     PRIVATE <%text>${_gRPC_SSL_INCLUDE_DIR}</%text>
     PRIVATE <%text>${_gRPC_UPB_GENERATED_DIR}</%text>
@@ -530,7 +526,6 @@
     PRIVATE <%text>${_gRPC_BENCHMARK_INCLUDE_DIR}</%text>
     PRIVATE <%text>${_gRPC_CARES_INCLUDE_DIR}</%text>
     PRIVATE <%text>${_gRPC_GFLAGS_INCLUDE_DIR}</%text>
-    PRIVATE <%text>${_gRPC_NANOPB_INCLUDE_DIR}</%text>
     PRIVATE <%text>${_gRPC_PROTOBUF_INCLUDE_DIR}</%text>
     PRIVATE <%text>${_gRPC_SSL_INCLUDE_DIR}</%text>
     PRIVATE <%text>${_gRPC_UPB_GENERATED_DIR}</%text>

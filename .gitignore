@@ -140,10 +140,7 @@ bm_*.json
 
 # Visual Studio Code artifacts
 .vscode/*
-!.vscode/settings.json
-!.vscode/tasks.json
-!.vscode/launch.json
-!.vscode/extensions.json
+.history/
 
 # Clion artifacts
 cmake-build-debug/

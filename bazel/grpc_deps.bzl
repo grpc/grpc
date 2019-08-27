@@ -9,11 +9,6 @@ def grpc_deps():
     """Loads dependencies need to compile and test the grpc library."""
 
     native.bind(
-        name = "nanopb",
-        actual = "@com_github_nanopb_nanopb//:nanopb",
-    )
-
-    native.bind(
         name = "upb_lib",
         actual = "@upb//:upb",
     )
@@ -67,7 +62,7 @@ def grpc_deps():
         name = "gtest",
         actual = "@com_github_google_googletest//:gtest",
     )
-
+    
     native.bind(
         name = "benchmark",
         actual = "@com_github_google_benchmark//:benchmark",
@@ -129,21 +124,20 @@ def grpc_deps():
             url = "https://github.com/google/protobuf/archive/09745575a923640154bcf307fba8aedff47f240a.tar.gz",
         )
 
-    if "com_github_nanopb_nanopb" not in native.existing_rules():
-        http_archive(
-            name = "com_github_nanopb_nanopb",
-            build_file = "@com_github_grpc_grpc//third_party:nanopb.BUILD",
-            sha256 = "8bbbb1e78d4ddb0a1919276924ab10d11b631df48b657d960e0c795a25515735",
-            strip_prefix = "nanopb-f8ac463766281625ad710900479130c7fcb4d63b",
-            url = "https://github.com/nanopb/nanopb/archive/f8ac463766281625ad710900479130c7fcb4d63b.tar.gz",
-        )
-
     if "com_github_google_googletest" not in native.existing_rules():
         http_archive(
             name = "com_github_google_googletest",
-            sha256 = "d0d447b4feeedca837a0d46a289d4223089b32ac2f84545fa4982755cc8919be",
-            strip_prefix = "googletest-2fe3bd994b3189899d93f1d5a881e725e046fdc2",
-            url = "https://github.com/google/googletest/archive/2fe3bd994b3189899d93f1d5a881e725e046fdc2.tar.gz",
+            sha256 = "443d383db648ebb8e391382c0ab63263b7091d03197f304390baac10f178a468",
+            strip_prefix = "googletest-c9ccac7cb7345901884aabf5d1a786cfa6e2f397",
+            url = "https://github.com/google/googletest/archive/c9ccac7cb7345901884aabf5d1a786cfa6e2f397.tar.gz", # 2019-08-19
+        )
+
+    if "rules_cc" not in native.existing_rules():
+        http_archive(
+            name = "rules_cc",
+            sha256 = "35f2fb4ea0b3e61ad64a369de284e4fbbdcdba71836a5555abb5e194cf119509",
+            strip_prefix = "rules_cc-624b5d59dfb45672d4239422fa1e3de1822ee110",
+            url = "https://github.com/bazelbuild/rules_cc/archive/624b5d59dfb45672d4239422fa1e3de1822ee110.tar.gz", #2019-08-15
         )
 
     if "com_github_gflags_gflags" not in native.existing_rules():

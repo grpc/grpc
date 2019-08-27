@@ -47,7 +47,6 @@ if 'linux' in sys.platform:
   CARES_INCLUDE += (os.path.join('third_party', 'cares', 'config_linux'),)
 if 'openbsd' in sys.platform:
   CARES_INCLUDE += (os.path.join('third_party', 'cares', 'config_openbsd'),)
-NANOPB_INCLUDE = (os.path.join('third_party', 'nanopb'),)
 SSL_INCLUDE = (os.path.join('third_party', 'boringssl', 'include'),)
 UPB_INCLUDE = (os.path.join('third_party', 'upb'),)
 UPB_GRPC_GENERATED_INCLUDE = (os.path.join('src', 'core', 'ext', 'upb-generated'),)
@@ -162,7 +161,6 @@ if EXTRA_ENV_COMPILE_ARGS is None:
     EXTRA_ENV_COMPILE_ARGS += ' -std=gnu99 -fvisibility=hidden -fno-wrapv -fno-exceptions'
   elif "darwin" in sys.platform:
     EXTRA_ENV_COMPILE_ARGS += ' -stdlib=libc++ -fvisibility=hidden -fno-wrapv -fno-exceptions'
-EXTRA_ENV_COMPILE_ARGS += ' -DPB_FIELD_32BIT'
 
 if EXTRA_ENV_LINK_ARGS is None:
   EXTRA_ENV_LINK_ARGS = ''
@@ -209,7 +207,6 @@ EXTENSION_INCLUDE_DIRECTORIES = (
     CORE_INCLUDE +
     ADDRESS_SORTING_INCLUDE +
     CARES_INCLUDE +
-    NANOPB_INCLUDE +
     SSL_INCLUDE +
     UPB_INCLUDE +
     UPB_GRPC_GENERATED_INCLUDE +

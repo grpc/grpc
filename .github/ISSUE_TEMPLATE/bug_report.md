@@ -1,8 +1,8 @@
 ---
 name: Report a bug
 about: Create a report to help us improve
-labels: kind/bug
-assignees: AspirinSJL
+labels: kind/bug, priority/P2
+assignees: mhaidrygoog
 
 ---
 
