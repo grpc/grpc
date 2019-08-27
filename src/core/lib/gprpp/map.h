@@ -43,7 +43,8 @@ struct StringLess {
   }
   bool operator()(const StringView& a, const StringView& b) const {
     const size_t min_size = std::min(a.size(), b.size());
-    if (strncmp(a.data(), b.data(), min_size) < 0) return true;
+    int c = strncmp(a.data(), b.data(), min_size);
+    if (c != 0) return c < 0;
     return a.size() < b.size();
   }
 };
