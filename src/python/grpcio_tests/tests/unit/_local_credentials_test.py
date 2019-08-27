@@ -14,6 +14,7 @@
 """Test of RPCs made using local credentials."""
 
 import unittest
+import os
 from concurrent.futures import ThreadPoolExecutor
 import grpc
 
@@ -32,6 +33,8 @@ class LocalCredentialsTest(unittest.TestCase):
         server.add_generic_rpc_handlers((_GenericHandler(),))
         return server
 
+    @unittest.skipIf(os.name == 'nt',
+                     'TODO(https://github.com/grpc/grpc/issues/20078)')
     def test_local_tcp(self):
         server_addr = 'localhost:{}'
         channel_creds = grpc.local_channel_credentials(
@@ -49,6 +52,8 @@ class LocalCredentialsTest(unittest.TestCase):
                                  b'abc', wait_for_ready=True))
         server.stop(None)
 
+    @unittest.skipIf(os.name == 'nt',
+                     'Unix Domain Socket is not supported on Windows')
     def test_uds(self):
         server_addr = 'unix:/tmp/grpc_fullstack_test'
         channel_creds = grpc.local_channel_credentials(

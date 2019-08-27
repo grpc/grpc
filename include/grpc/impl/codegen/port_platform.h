@@ -27,6 +27,15 @@
  *  - some syscalls to be made directly
  */
 
+/*
+ * Defines GRPC_USE_CPP_STD_LIB to use standard C++ library instead of
+ * in-house library if possible. (e.g. std::map)
+ */
+#ifndef GRPC_USE_CPP_STD_LIB
+/* Default value will be 1 once all tests become green. */
+#define GRPC_USE_CPP_STD_LIB 0
+#endif
+
 /* Get windows.h included everywhere (we need it) */
 #if defined(_WIN64) || defined(WIN64) || defined(_WIN32) || defined(WIN32)
 #ifndef WIN32_LEAN_AND_MEAN

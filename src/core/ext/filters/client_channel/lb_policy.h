@@ -220,12 +220,6 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
     virtual RefCountedPtr<SubchannelInterface> CreateSubchannel(
         const grpc_channel_args& args) GRPC_ABSTRACT;
 
-    /// Creates a channel with the specified target and channel args.
-    /// This can be used in cases where the LB policy needs to create a
-    /// channel for its own use (e.g., to talk to an external load balancer).
-    virtual grpc_channel* CreateChannel(
-        const char* target, const grpc_channel_args& args) GRPC_ABSTRACT;
-
     /// Sets the connectivity state and returns a new picker to be used
     /// by the client channel.
     virtual void UpdateState(grpc_connectivity_state state,

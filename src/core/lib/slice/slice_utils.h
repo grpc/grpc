@@ -108,7 +108,7 @@ struct ManagedMemorySlice : public grpc_slice {
     return !grpc_slice_differs_refcounted(other, *this);
   }
   bool Equals(const char* buf, const size_t len) const {
-    return data.refcounted.length == len &&
+    return data.refcounted.length == len && buf != nullptr &&
            memcmp(buf, data.refcounted.bytes, len) == 0;
   }
 };

@@ -18,15 +18,12 @@
 
 #import <Foundation/Foundation.h>
 
-@class GRPCProtoCall;
+#import <GRPCClient/GRPCCallOptions.h>
+#import "ProtoRPC.h"
+
 @protocol GRXWriteable;
 @class GRXWriter;
 @class GRPCCallOptions;
-@class GRPCProtoCall;
-@class GRPCUnaryProtoCall;
-@class GRPCStreamingProtoCall;
-@protocol GRPCProtoResponseHandler;
-@protocol GRXWriteable;
 
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wnullability-completeness"
