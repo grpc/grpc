@@ -1345,11 +1345,11 @@ class ChannelData::ClientChannelControlHelper
   // No-op -- we should never get this from ResolvingLoadBalancingPolicy.
   void RequestReresolution() override {}
 
-  void AddTraceEvent(TraceSeverity severity, const char* message) override {
+  void AddTraceEvent(TraceSeverity severity, StringView message) override {
     if (chand_->channelz_node_ != nullptr) {
       chand_->channelz_node_->AddTraceEvent(
           ConvertSeverityEnum(severity),
-          grpc_slice_from_copied_string(message));
+          grpc_slice_from_copied_buffer(message.data(), message.size()));
     }
   }
 
@@ -3730,8 +3730,8 @@ const char* PickResultTypeName(
       return "COMPLETE";
     case LoadBalancingPolicy::PickResult::PICK_QUEUE:
       return "QUEUE";
-    case LoadBalancingPolicy::PickResult::PICK_TRANSIENT_FAILURE:
-      return "TRANSIENT_FAILURE";
+    case LoadBalancingPolicy::PickResult::PICK_FAILED:
+      return "FAILED";
   }
   GPR_UNREACHABLE_CODE(return "UNKNOWN");
 }
@@ -3792,7 +3792,7 @@ void CallData::StartPickLocked(void* arg, grpc_error* error) {
             result.subchannel.get(), grpc_error_string(result.error));
   }
   switch (result.type) {
-    case LoadBalancingPolicy::PickResult::PICK_TRANSIENT_FAILURE: {
+    case LoadBalancingPolicy::PickResult::PICK_FAILED: {
       // If we're shutting down, fail all RPCs.
       grpc_error* disconnect_error = chand->disconnect_error();
       if (disconnect_error != GRPC_ERROR_NONE) {

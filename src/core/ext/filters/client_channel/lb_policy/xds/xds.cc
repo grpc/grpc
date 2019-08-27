@@ -436,7 +436,7 @@ class XdsLb : public LoadBalancingPolicy {
     void UpdateState(grpc_connectivity_state state,
                      UniquePtr<SubchannelPicker> picker) override;
     void RequestReresolution() override;
-    void AddTraceEvent(TraceSeverity severity, const char* message) override;
+    void AddTraceEvent(TraceSeverity severity, StringView message) override;
 
     void set_child(LoadBalancingPolicy* child) { child_ = child; }
 
@@ -487,8 +487,7 @@ class XdsLb : public LoadBalancingPolicy {
         void UpdateState(grpc_connectivity_state state,
                          UniquePtr<SubchannelPicker> picker) override;
         void RequestReresolution() override;
-        void AddTraceEvent(TraceSeverity severity,
-                           const char* message) override;
+        void AddTraceEvent(TraceSeverity severity, StringView message) override;
         void set_child(LoadBalancingPolicy* child) { child_ = child; }
 
        private:
@@ -774,7 +773,7 @@ void XdsLb::FallbackHelper::RequestReresolution() {
 }
 
 void XdsLb::FallbackHelper::AddTraceEvent(TraceSeverity severity,
-                                          const char* message) {
+                                          StringView message) {
   if (parent_->shutting_down_ ||
       (!CalledByPendingFallback() && !CalledByCurrentFallback())) {
     return;
@@ -2510,7 +2509,7 @@ void XdsLb::LocalityMap::LocalityEntry::Helper::RequestReresolution() {
 }
 
 void XdsLb::LocalityMap::LocalityEntry::Helper::AddTraceEvent(
-    TraceSeverity severity, const char* message) {
+    TraceSeverity severity, StringView message) {
   if (entry_->parent_->shutting_down_ ||
       (!CalledByPendingChild() && !CalledByCurrentChild())) {
     return;
