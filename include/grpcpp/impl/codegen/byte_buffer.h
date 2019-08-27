@@ -173,8 +173,6 @@ class ByteBuffer final {
   friend class ::grpc_impl::internal::RpcMethodHandler;
   template <class ServiceType, class RequestType, class ResponseType>
   friend class ::grpc_impl::internal::ServerStreamingHandler;
-  template <class ServiceType, class RequestType, class ResponseType>
-  friend class ::grpc_impl::internal::RpcMethodHandler;
   template <class RequestType, class ResponseType>
   friend class ::grpc_impl::internal::CallbackUnaryHandler;
   template <class RequestType, class ResponseType>
