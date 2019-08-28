@@ -75,7 +75,7 @@ proto_library(
 
 py_proto_library(
     name = "empty_py_pb2",
-    srcs = [":empty_proto_descriptor"],
+    deps = [":empty_proto_descriptor"],
 )
 
 py_grpc_library(
@@ -97,7 +97,7 @@ proto_library(
 
 py_proto_library(
     name = "py_messages_proto",
-    srcs = [":messages_proto_descriptor"],
+    deps = [":messages_proto_descriptor"],
 )
 
 py_grpc_library(
@@ -206,7 +206,7 @@ proto_library(
 
 py_proto_library(
     name = "py_test_proto",
-    srcs = [":test_proto_descriptor"],
+    deps = [":test_proto_descriptor"],
 )
 
 py_grpc_library(

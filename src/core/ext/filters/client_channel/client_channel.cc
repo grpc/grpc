@@ -1318,11 +1318,6 @@ class ChannelData::ClientChannelControlHelper
         chand_, subchannel, std::move(health_check_service_name));
   }
 
-  grpc_channel* CreateChannel(const char* target,
-                              const grpc_channel_args& args) override {
-    return chand_->client_channel_factory_->CreateChannel(target, &args);
-  }
-
   void UpdateState(
       grpc_connectivity_state state,
       UniquePtr<LoadBalancingPolicy::SubchannelPicker> picker) override {
@@ -1345,11 +1340,11 @@ class ChannelData::ClientChannelControlHelper
   // No-op -- we should never get this from ResolvingLoadBalancingPolicy.
   void RequestReresolution() override {}
 
-  void AddTraceEvent(TraceSeverity severity, const char* message) override {
+  void AddTraceEvent(TraceSeverity severity, StringView message) override {
     if (chand_->channelz_node_ != nullptr) {
       chand_->channelz_node_->AddTraceEvent(
           ConvertSeverityEnum(severity),
-          grpc_slice_from_copied_string(message));
+          grpc_slice_from_copied_buffer(message.data(), message.size()));
     }
   }
 
@@ -3168,8 +3163,8 @@ void CallData::AddRetriableSendInitialMetadataOp(
     SubchannelCallRetryState* retry_state,
     SubchannelCallBatchData* batch_data) {
   // Maps the number of retries to the corresponding metadata value slice.
-  static const grpc_slice* retry_count_strings[] = {
-      &GRPC_MDSTR_1, &GRPC_MDSTR_2, &GRPC_MDSTR_3, &GRPC_MDSTR_4};
+  const grpc_slice* retry_count_strings[] = {&GRPC_MDSTR_1, &GRPC_MDSTR_2,
+                                             &GRPC_MDSTR_3, &GRPC_MDSTR_4};
   // We need to make a copy of the metadata batch for each attempt, since
   // the filters in the subchannel stack may modify this batch, and we don't
   // want those modifications to be passed forward to subsequent attempts.
@@ -3730,8 +3725,8 @@ const char* PickResultTypeName(
       return "COMPLETE";
     case LoadBalancingPolicy::PickResult::PICK_QUEUE:
       return "QUEUE";
-    case LoadBalancingPolicy::PickResult::PICK_TRANSIENT_FAILURE:
-      return "TRANSIENT_FAILURE";
+    case LoadBalancingPolicy::PickResult::PICK_FAILED:
+      return "FAILED";
   }
   GPR_UNREACHABLE_CODE(return "UNKNOWN");
 }
@@ -3792,7 +3787,7 @@ void CallData::StartPickLocked(void* arg, grpc_error* error) {
             result.subchannel.get(), grpc_error_string(result.error));
   }
   switch (result.type) {
-    case LoadBalancingPolicy::PickResult::PICK_TRANSIENT_FAILURE: {
+    case LoadBalancingPolicy::PickResult::PICK_FAILED: {
       // If we're shutting down, fail all RPCs.
       grpc_error* disconnect_error = chand->disconnect_error();
       if (disconnect_error != GRPC_ERROR_NONE) {

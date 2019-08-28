@@ -431,12 +431,10 @@ class XdsLb : public LoadBalancingPolicy {
 
     RefCountedPtr<SubchannelInterface> CreateSubchannel(
         const grpc_channel_args& args) override;
-    grpc_channel* CreateChannel(const char* target,
-                                const grpc_channel_args& args) override;
     void UpdateState(grpc_connectivity_state state,
                      UniquePtr<SubchannelPicker> picker) override;
     void RequestReresolution() override;
-    void AddTraceEvent(TraceSeverity severity, const char* message) override;
+    void AddTraceEvent(TraceSeverity severity, StringView message) override;
 
     void set_child(LoadBalancingPolicy* child) { child_ = child; }
 
@@ -482,13 +480,10 @@ class XdsLb : public LoadBalancingPolicy {
 
         RefCountedPtr<SubchannelInterface> CreateSubchannel(
             const grpc_channel_args& args) override;
-        grpc_channel* CreateChannel(const char* target,
-                                    const grpc_channel_args& args) override;
         void UpdateState(grpc_connectivity_state state,
                          UniquePtr<SubchannelPicker> picker) override;
         void RequestReresolution() override;
-        void AddTraceEvent(TraceSeverity severity,
-                           const char* message) override;
+        void AddTraceEvent(TraceSeverity severity, StringView message) override;
         void set_child(LoadBalancingPolicy* child) { child_ = child; }
 
        private:
@@ -723,15 +718,6 @@ RefCountedPtr<SubchannelInterface> XdsLb::FallbackHelper::CreateSubchannel(
   return parent_->channel_control_helper()->CreateSubchannel(args);
 }
 
-grpc_channel* XdsLb::FallbackHelper::CreateChannel(
-    const char* target, const grpc_channel_args& args) {
-  if (parent_->shutting_down_ ||
-      (!CalledByPendingFallback() && !CalledByCurrentFallback())) {
-    return nullptr;
-  }
-  return parent_->channel_control_helper()->CreateChannel(target, args);
-}
-
 void XdsLb::FallbackHelper::UpdateState(grpc_connectivity_state state,
                                         UniquePtr<SubchannelPicker> picker) {
   if (parent_->shutting_down_) return;
@@ -774,7 +760,7 @@ void XdsLb::FallbackHelper::RequestReresolution() {
 }
 
 void XdsLb::FallbackHelper::AddTraceEvent(TraceSeverity severity,
-                                          const char* message) {
+                                          StringView message) {
   if (parent_->shutting_down_ ||
       (!CalledByPendingFallback() && !CalledByCurrentFallback())) {
     return;
@@ -793,8 +779,7 @@ XdsLb::LbChannelState::LbChannelState(RefCountedPtr<XdsLb> xdslb_policy,
       xdslb_policy_(std::move(xdslb_policy)) {
   GRPC_CLOSURE_INIT(&on_connectivity_changed_, OnConnectivityChangedLocked,
                     this, grpc_combiner_scheduler(xdslb_policy_->combiner()));
-  channel_ = xdslb_policy_->channel_control_helper()->CreateChannel(
-      balancer_name, args);
+  channel_ = CreateXdsBalancerChannel(balancer_name, args);
   GPR_ASSERT(channel_ != nullptr);
   eds_calld_.reset(New<RetryableLbCall<EdsCallState>>(
       Ref(DEBUG_LOCATION, "LbChannelState+eds")));
@@ -1672,7 +1657,7 @@ grpc_channel_args* BuildBalancerChannelArgs(const grpc_channel_args* args) {
       // factory will re-add this arg with the right value.
       GRPC_ARG_SERVER_URI,
       // The LB channel should use the authority indicated by the target
-      // authority table (see \a grpc_lb_policy_xds_modify_lb_channel_args),
+      // authority table (see \a ModifyXdsBalancerChannelArgs),
       // as opposed to the authority from the parent channel.
       GRPC_ARG_DEFAULT_AUTHORITY,
       // Just as for \a GRPC_ARG_DEFAULT_AUTHORITY, the LB channel should be
@@ -1703,7 +1688,7 @@ grpc_channel_args* BuildBalancerChannelArgs(const grpc_channel_args* args) {
       args, args_to_remove, GPR_ARRAY_SIZE(args_to_remove), args_to_add.data(),
       args_to_add.size());
   // Make any necessary modifications for security.
-  return grpc_lb_policy_xds_modify_lb_channel_args(new_args);
+  return ModifyXdsBalancerChannelArgs(new_args);
 }
 
 //
@@ -2440,15 +2425,6 @@ XdsLb::LocalityMap::LocalityEntry::Helper::CreateSubchannel(
   return entry_->parent_->channel_control_helper()->CreateSubchannel(args);
 }
 
-grpc_channel* XdsLb::LocalityMap::LocalityEntry::Helper::CreateChannel(
-    const char* target, const grpc_channel_args& args) {
-  if (entry_->parent_->shutting_down_ ||
-      (!CalledByPendingChild() && !CalledByCurrentChild())) {
-    return nullptr;
-  }
-  return entry_->parent_->channel_control_helper()->CreateChannel(target, args);
-}
-
 void XdsLb::LocalityMap::LocalityEntry::Helper::UpdateState(
     grpc_connectivity_state state, UniquePtr<SubchannelPicker> picker) {
   if (entry_->parent_->shutting_down_) return;
@@ -2510,7 +2486,7 @@ void XdsLb::LocalityMap::LocalityEntry::Helper::RequestReresolution() {
 }
 
 void XdsLb::LocalityMap::LocalityEntry::Helper::AddTraceEvent(
-    TraceSeverity severity, const char* message) {
+    TraceSeverity severity, StringView message) {
   if (entry_->parent_->shutting_down_ ||
       (!CalledByPendingChild() && !CalledByCurrentChild())) {
     return;

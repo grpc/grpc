@@ -27,6 +27,10 @@
 #include "src/core/lib/iomgr/timer_manager.h"
 #include "test/core/util/test_config.h"
 
+#ifdef GRPC_POSIX_SOCKET
+#include "src/core/lib/iomgr/ev_posix.h"
+#endif
+
 // MAYBE_SKIP_TEST is a macro to determine if this particular test configuration
 // should be skipped based on a decision made at SetUp time.
 #define MAYBE_SKIP_TEST \
@@ -39,9 +43,17 @@
 class TimerTest : public ::testing::Test {
  protected:
   void SetUp() override {
-    // Skip test if slowdown factor > 1.
-    do_not_test_ = (grpc_test_slowdown_factor() != 1);
     grpc_init();
+    // Skip test if slowdown factor > 1, or we are
+    // using event manager.
+#ifdef GRPC_POSIX_SOCKET
+    if (grpc_test_slowdown_factor() != 1 ||
+        grpc_event_engine_run_in_background()) {
+#else
+    if (grpc_test_slowdown_factor() != 1) {
+#endif
+      do_not_test_ = true;
+    }
   }
 
   void TearDown() override { grpc_shutdown_blocking(); }
@@ -142,6 +154,20 @@ TEST_F(TimerTest, CancelSomeTimers) {
   int64_t wakeups = grpc_timer_manager_get_wakeups_testonly();
   gpr_log(GPR_DEBUG, "wakeups: %" PRId64 "", wakeups);
 }
+
+// Enable the following test after
+// https://github.com/grpc/grpc/issues/20049 has been fixed.
+#if 0
+TEST_F(TimerTest, TimerNotCanceled) {
+  grpc_core::ExecCtx exec_ctx;
+  grpc_timer timer;
+  grpc_timer_init(&timer, 10000,
+                  GRPC_CLOSURE_CREATE(
+                      [](void*, grpc_error*) {
+                      },
+                      nullptr, grpc_schedule_on_exec_ctx));
+}
+#endif
 
 int main(int argc, char** argv) {
   grpc::testing::TestEnvironment env(argc, argv);
