@@ -61,22 +61,22 @@ _generate_pb2_src = rule(
 
 def py_proto_library(
         name,
-        srcs,
+        deps,
         **kwargs):
     """Generate python code for a protobuf.
 
     Args:
       name: The name of the target.
-      srcs: A list of proto_library dependencies. Must contain a single element.
+      deps: A list of proto_library dependencies. Must contain a single element.
     """
     codegen_target = "_{}_codegen".format(name)
-    if len(srcs) != 1:
+    if len(deps) != 1:
         fail("Can only compile a single proto at a time.")
 
 
     _generate_pb2_src(
         name = codegen_target,
-        deps = srcs,
+        deps = deps,
         **kwargs
     )
 
