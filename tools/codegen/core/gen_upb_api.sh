@@ -81,6 +81,7 @@ for i in "${proto_files[@]}"
 do
   echo "Compiling: ${i}"
   $PROTOC \
+    -I=$PWD/third_party/udpa \
     -I=$PWD/third_party/envoy-api \
     -I=$PWD/third_party/googleapis \
     -I=$PWD/third_party/protobuf/src \

@@ -245,18 +245,19 @@ static const upb_msglayout *const envoy_api_v2_Cluster_CommonLbConfig_submsgs[4]
   &google_protobuf_Duration_msginit,
 };
 
-static const upb_msglayout_field envoy_api_v2_Cluster_CommonLbConfig__fields[5] = {
+static const upb_msglayout_field envoy_api_v2_Cluster_CommonLbConfig__fields[6] = {
   {1, UPB_SIZE(4, 8), 0, 2, 11, 1},
   {2, UPB_SIZE(12, 24), UPB_SIZE(-17, -33), 1, 11, 1},
   {3, UPB_SIZE(12, 24), UPB_SIZE(-17, -33), 0, 11, 1},
   {4, UPB_SIZE(8, 16), 0, 3, 11, 1},
   {5, UPB_SIZE(0, 0), 0, 0, 8, 1},
+  {6, UPB_SIZE(1, 1), 0, 0, 8, 1},
 };
 
 const upb_msglayout envoy_api_v2_Cluster_CommonLbConfig_msginit = {
   &envoy_api_v2_Cluster_CommonLbConfig_submsgs[0],
   &envoy_api_v2_Cluster_CommonLbConfig__fields[0],
-  UPB_SIZE(20, 40), 5, false,
+  UPB_SIZE(20, 40), 6, false,
 };
 
 static const upb_msglayout *const envoy_api_v2_Cluster_CommonLbConfig_ZoneAwareLbConfig_submsgs[2] = {
