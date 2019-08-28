@@ -51,6 +51,7 @@
 #include "src/cpp/client/secure_credentials.h"
 #include "src/cpp/server/secure_server_credentials.h"
 
+#include "src/proto/grpc/lb/v2/orca_load_report_for_test.pb.h"
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
@@ -94,15 +95,21 @@ grpc_tcp_client_vtable delayed_connect = {tcp_client_connect_with_delay};
 // every call to the Echo RPC.
 class MyTestServiceImpl : public TestServiceImpl {
  public:
-  MyTestServiceImpl() : request_count_(0) {}
-
   Status Echo(ServerContext* context, const EchoRequest* request,
               EchoResponse* response) override {
+    const udpa::data::orca::v1::OrcaLoadReport* load_report = nullptr;
     {
       grpc::internal::MutexLock lock(&mu_);
       ++request_count_;
+      load_report = load_report_;
     }
     AddClient(context->peer());
+    if (load_report != nullptr) {
+      // TODO(roth): Once we provide a more standard server-side API for
+      // populating this data, use that API here.
+      context->AddTrailingMetadata("x-endpoint-load-metrics-bin",
+                                   load_report->SerializeAsString());
+    }
     return TestServiceImpl::Echo(context, request, response);
   }
 
@@ -121,6 +128,11 @@ class MyTestServiceImpl : public TestServiceImpl {
     return clients_;
   }
 
+  void set_load_report(udpa::data::orca::v1::OrcaLoadReport* load_report) {
+    grpc::internal::MutexLock lock(&mu_);
+    load_report_ = load_report;
+  }
+
  private:
   void AddClient(const grpc::string& client) {
     grpc::internal::MutexLock lock(&clients_mu_);
@@ -128,7 +140,8 @@ class MyTestServiceImpl : public TestServiceImpl {
   }
 
   grpc::internal::Mutex mu_;
-  int request_count_;
+  int request_count_ = 0;
+  const udpa::data::orca::v1::OrcaLoadReport* load_report_ = nullptr;
   grpc::internal::Mutex clients_mu_;
   std::set<grpc::string> clients_;
 };
@@ -1506,16 +1519,40 @@ class ClientLbInterceptTrailingMetadataTest : public ClientLbEnd2endTest {
     return trailers_intercepted_;
   }
 
+  const udpa::data::orca::v1::OrcaLoadReport* backend_load_report() {
+    grpc::internal::MutexLock lock(&mu_);
+    return load_report_.get();
+  }
+
  private:
-  static void ReportTrailerIntercepted(void* arg) {
+  static void ReportTrailerIntercepted(
+      void* arg, const grpc_core::LoadBalancingPolicy::BackendMetricData*
+                     backend_metric_data) {
     ClientLbInterceptTrailingMetadataTest* self =
         static_cast<ClientLbInterceptTrailingMetadataTest*>(arg);
     grpc::internal::MutexLock lock(&self->mu_);
     self->trailers_intercepted_++;
+    if (backend_metric_data != nullptr) {
+      self->load_report_.reset(new udpa::data::orca::v1::OrcaLoadReport);
+      self->load_report_->set_cpu_utilization(
+          backend_metric_data->cpu_utilization);
+      self->load_report_->set_mem_utilization(
+          backend_metric_data->mem_utilization);
+      self->load_report_->set_rps(backend_metric_data->requests_per_second);
+      for (const auto& p : backend_metric_data->request_cost) {
+        grpc_core::UniquePtr<char> name = p.first.dup();
+        (*self->load_report_->mutable_request_cost())[name.get()] = p.second;
+      }
+      for (const auto& p : backend_metric_data->utilization) {
+        grpc_core::UniquePtr<char> name = p.first.dup();
+        (*self->load_report_->mutable_utilization())[name.get()] = p.second;
+      }
+    }
   }
 
   grpc::internal::Mutex mu_;
   int trailers_intercepted_ = 0;
+  std::unique_ptr<udpa::data::orca::v1::OrcaLoadReport> load_report_;
 };
 
 TEST_F(ClientLbInterceptTrailingMetadataTest, InterceptsRetriesDisabled) {
@@ -1534,6 +1571,7 @@ TEST_F(ClientLbInterceptTrailingMetadataTest, InterceptsRetriesDisabled) {
   EXPECT_EQ("intercept_trailing_metadata_lb",
             channel->GetLoadBalancingPolicyName());
   EXPECT_EQ(kNumRpcs, trailers_intercepted());
+  EXPECT_EQ(nullptr, backend_load_report());
 }
 
 TEST_F(ClientLbInterceptTrailingMetadataTest, InterceptsRetriesEnabled) {
@@ -1563,6 +1601,57 @@ TEST_F(ClientLbInterceptTrailingMetadataTest, InterceptsRetriesEnabled) {
   response_generator.SetNextResolution(GetServersPorts());
   for (size_t i = 0; i < kNumRpcs; ++i) {
     CheckRpcSendOk(stub, DEBUG_LOCATION);
+  }
+  // Check LB policy name for the channel.
+  EXPECT_EQ("intercept_trailing_metadata_lb",
+            channel->GetLoadBalancingPolicyName());
+  EXPECT_EQ(kNumRpcs, trailers_intercepted());
+  EXPECT_EQ(nullptr, backend_load_report());
+}
+
+TEST_F(ClientLbInterceptTrailingMetadataTest, BackendMetricData) {
+  const int kNumServers = 1;
+  const int kNumRpcs = 10;
+  StartServers(kNumServers);
+  udpa::data::orca::v1::OrcaLoadReport load_report;
+  load_report.set_cpu_utilization(0.5);
+  load_report.set_mem_utilization(0.75);
+  load_report.set_rps(25);
+  auto* request_cost = load_report.mutable_request_cost();
+  (*request_cost)["foo"] = 0.8;
+  (*request_cost)["bar"] = 1.4;
+  auto* utilization = load_report.mutable_utilization();
+  (*utilization)["baz"] = 1.1;
+  (*utilization)["quux"] = 0.9;
+  for (const auto& server : servers_) {
+    server->service_.set_load_report(&load_report);
+  }
+  auto response_generator = BuildResolverResponseGenerator();
+  auto channel =
+      BuildChannel("intercept_trailing_metadata_lb", response_generator);
+  auto stub = BuildStub(channel);
+  response_generator.SetNextResolution(GetServersPorts());
+  for (size_t i = 0; i < kNumRpcs; ++i) {
+    CheckRpcSendOk(stub, DEBUG_LOCATION);
+    auto* actual = backend_load_report();
+    ASSERT_NE(actual, nullptr);
+    // TODO(roth): Change this to use EqualsProto() once that becomes
+    // available in OSS.
+    EXPECT_EQ(actual->cpu_utilization(), load_report.cpu_utilization());
+    EXPECT_EQ(actual->mem_utilization(), load_report.mem_utilization());
+    EXPECT_EQ(actual->rps(), load_report.rps());
+    EXPECT_EQ(actual->request_cost().size(), load_report.request_cost().size());
+    for (const auto& p : actual->request_cost()) {
+      auto it = load_report.request_cost().find(p.first);
+      ASSERT_NE(it, load_report.request_cost().end());
+      EXPECT_EQ(it->second, p.second);
+    }
+    EXPECT_EQ(actual->utilization().size(), load_report.utilization().size());
+    for (const auto& p : actual->utilization()) {
+      auto it = load_report.utilization().find(p.first);
+      ASSERT_NE(it, load_report.utilization().end());
+      EXPECT_EQ(it->second, p.second);
+    }
   }
   // Check LB policy name for the channel.
   EXPECT_EQ("intercept_trailing_metadata_lb",

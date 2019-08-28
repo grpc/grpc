@@ -191,7 +191,7 @@ class InterceptRecvTrailingMetadataLoadBalancingPolicy
       gpr_log(GPR_INFO, "trailing metadata:");
       InterceptRecvTrailingMetadataLoadBalancingPolicy::LogMetadata(
           recv_trailing_metadata);
-      self->cb_(self->user_data_);
+      self->cb_(self->user_data_, call_state->GetBackendMetricData());
       self->~TrailingMetadataHandler();
     }
 
