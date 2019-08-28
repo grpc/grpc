@@ -208,7 +208,11 @@ static InternedSliceRefcount* InternNewStringLocked(slice_shard* shard,
   InternedSliceRefcount* s =
       static_cast<InternedSliceRefcount*>(gpr_malloc(sizeof(*s) + len));
   new (s) grpc_core::InternedSliceRefcount(len, hash, shard->strs[shard_idx]);
-  memcpy(reinterpret_cast<char*>(s + 1), buffer, len);
+  // TODO(arjunroy): Investigate why hpack tried to intern the nullptr string.
+  // https://github.com/grpc/grpc/pull/20110#issuecomment-526729282
+  if (len > 0) {
+    memcpy(reinterpret_cast<char*>(s + 1), buffer, len);
+  }
   shard->strs[shard_idx] = s;
   shard->count++;
   if (shard->count > shard->capacity * 2) {
