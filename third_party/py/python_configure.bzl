@@ -292,14 +292,24 @@ def _python_autoconf_impl(repository_ctx):
 
 
 python_configure = repository_rule(
-    implementation=_python_autoconf_impl,
-    environ=[
+    implementation = _python_autoconf_impl,
+    environ = [
         _BAZEL_SH,
         _PYTHON2_BIN_PATH,
         _PYTHON2_LIB_PATH,
         _PYTHON3_BIN_PATH,
         _PYTHON3_LIB_PATH,
     ],
+    attrs={
+        "_build_tpl": attr.label(
+            default = Label("//third_party/py:BUILD.tpl"),
+            allow_single_file = True,
+        ),
+        "_variety_tpl": attr.label(
+            default = Label("//third_party/py:variety.tpl"),
+            allow_single_file = True,
+        ),
+    },
 )
 """Detects and configures the local Python.
 
