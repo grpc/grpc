@@ -18,19 +18,16 @@
 
 #import <Foundation/Foundation.h>
 
-#import "../internal/GRPCCallOptions+Internal.h"
+#import "../../internal/GRPCCallOptions+Internal.h"
 #import "GRPCChannel.h"
 #import "GRPCChannelFactory.h"
 #import "GRPCChannelPool+Test.h"
 #import "GRPCChannelPool.h"
 #import "GRPCCompletionQueue.h"
-#import "GRPCCronetChannelFactory.h"
 #import "GRPCInsecureChannelFactory.h"
 #import "GRPCSecureChannelFactory.h"
 #import "GRPCWrappedCall.h"
-#import "version.h"
 
-#import <GRPCClient/GRPCCall+Cronet.h>
 #include <grpc/support/log.h>
 
 extern const char *kCFStreamVarName;

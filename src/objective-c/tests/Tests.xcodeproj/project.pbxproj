@@ -8,15 +8,14 @@
 
 /* Begin PBXBuildFile section */
 		5E0282E9215AA697007AC99D /* NSErrorUnitTests.m in Sources */ = {isa = PBXBuildFile; fileRef = 5E0282E8215AA697007AC99D /* NSErrorUnitTests.m */; };
+		5E08D07023021E3B006D76EA /* InteropTestsMultipleChannels.m in Sources */ = {isa = PBXBuildFile; fileRef = 5E7F487722778226006656AD /* InteropTestsMultipleChannels.m */; };
 		5E3F14842278B461007C6D90 /* InteropTestsBlockCallbacks.m in Sources */ = {isa = PBXBuildFile; fileRef = 5E3F14832278B461007C6D90 /* InteropTestsBlockCallbacks.m */; };
 		5E3F14852278BF5D007C6D90 /* InteropTestsBlockCallbacks.m in Sources */ = {isa = PBXBuildFile; fileRef = 5E3F14832278B461007C6D90 /* InteropTestsBlockCallbacks.m */; };
 		5E3F14862278BFFF007C6D90 /* InteropTestsBlockCallbacks.m in Sources */ = {isa = PBXBuildFile; fileRef = 5E3F14832278B461007C6D90 /* InteropTestsBlockCallbacks.m */; };
 		5E3F148D22792856007C6D90 /* ConfigureCronet.m in Sources */ = {isa = PBXBuildFile; fileRef = 5E3F1487227918AA007C6D90 /* ConfigureCronet.m */; };
-		5E3F148E22792AF5007C6D90 /* ConfigureCronet.m in Sources */ = {isa = PBXBuildFile; fileRef = 5E3F1487227918AA007C6D90 /* ConfigureCronet.m */; };
 		5E7F486422775B37006656AD /* InteropTestsRemoteWithCronet.m in Sources */ = {isa = PBXBuildFile; fileRef = 5EE84BF31D4717E40050C6CC /* InteropTestsRemoteWithCronet.m */; };
 		5E7F486522775B41006656AD /* CronetUnitTests.mm in Sources */ = {isa = PBXBuildFile; fileRef = 5EAD6D261E27047400002378 /* CronetUnitTests.mm */; };
 		5E7F486E22778086006656AD /* CoreCronetEnd2EndTests.mm in Sources */ = {isa = PBXBuildFile; fileRef = 5E7F486D22778086006656AD /* CoreCronetEnd2EndTests.mm */; };
-		5E7F487922778226006656AD /* InteropTestsMultipleChannels.m in Sources */ = {isa = PBXBuildFile; fileRef = 5E7F487722778226006656AD /* InteropTestsMultipleChannels.m */; };
 		5E7F487D22778256006656AD /* ChannelPoolTest.m in Sources */ = {isa = PBXBuildFile; fileRef = 5E7F487B22778256006656AD /* ChannelPoolTest.m */; };
 		5E7F487E22778256006656AD /* ChannelTests.m in Sources */ = {isa = PBXBuildFile; fileRef = 5E7F487C22778256006656AD /* ChannelTests.m */; };
 		5E7F4880227782C1006656AD /* APIv2Tests.m in Sources */ = {isa = PBXBuildFile; fileRef = 5E7F487F227782C1006656AD /* APIv2Tests.m */; };
@@ -34,6 +33,7 @@
 		5EA4770322736178000F72FC /* InteropTestsLocalSSL.m in Sources */ = {isa = PBXBuildFile; fileRef = 63E240CD1B6C4E2B005F3B0E /* InteropTestsLocalSSL.m */; };
 		5EA477042273617B000F72FC /* InteropTestsLocalCleartext.m in Sources */ = {isa = PBXBuildFile; fileRef = 63715F551B780C020029CB0B /* InteropTestsLocalCleartext.m */; };
 		5EA4770522736AC4000F72FC /* TestCertificates.bundle in Resources */ = {isa = PBXBuildFile; fileRef = 63E240CF1B6C63DC005F3B0E /* TestCertificates.bundle */; };
+		5ECFED8623030DCC00626501 /* TestCertificates.bundle in Resources */ = {isa = PBXBuildFile; fileRef = 63E240CF1B6C63DC005F3B0E /* TestCertificates.bundle */; };
 		65EB19E418B39A8374D407BB /* libPods-CronetTests.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 1B1511C20E16A8422B58D61A /* libPods-CronetTests.a */; };
 		903163C7FE885838580AEC7A /* libPods-InteropTests.a in Frameworks */ = {isa = PBXBuildFile; fileRef = D457AD9797664CFA191C3280 /* libPods-InteropTests.a */; };
 		953CD2942A3A6D6CE695BE87 /* libPods-MacTests.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 276873A05AC5479B60DF6079 /* libPods-MacTests.a */; };
@@ -515,7 +515,6 @@
 				5EA476F12272816A000F72FC /* Frameworks */,
 				5EA476F22272816A000F72FC /* Resources */,
 				D11CB94CF56A1E53760D29D8 /* [CP] Copy Pods Resources */,
-				0FEFD5FC6B323AC95549AE4A /* [CP] Embed Pods Frameworks */,
 			);
 			buildRules = (
 			);
@@ -630,6 +629,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				5ECFED8623030DCC00626501 /* TestCertificates.bundle in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -678,24 +678,6 @@
 			shellScript = "diff \"${PODS_PODFILE_DIR_PATH}/Podfile.lock\" \"${PODS_ROOT}/Manifest.lock\" > /dev/null\nif [ $? != 0 ] ; then\n    # print error to STDERR\n    echo \"error: The sandbox is not in sync with the Podfile.lock. Run 'pod install' or update your CocoaPods installation.\" >&2\n    exit 1\nfi\n# This output is used by Xcode 'outputs' to avoid re-running this script phase.\necho \"SUCCESS\" > \"${SCRIPT_OUTPUT_FILE_0}\"\n";
 			showEnvVarsInLog = 0;
 		};
-		0FEFD5FC6B323AC95549AE4A /* [CP] Embed Pods Frameworks */ = {
-			isa = PBXShellScriptBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			inputPaths = (
-				"${PODS_ROOT}/Target Support Files/Pods-InteropTests/Pods-InteropTests-frameworks.sh",
-				"${PODS_ROOT}/CronetFramework/Cronet.framework",
-			);
-			name = "[CP] Embed Pods Frameworks";
-			outputPaths = (
-				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/Cronet.framework",
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-			shellPath = /bin/sh;
-			shellScript = "\"${PODS_ROOT}/Target Support Files/Pods-InteropTests/Pods-InteropTests-frameworks.sh\"\n";
-			showEnvVarsInLog = 0;
-		};
 		292EA42A76AC7933A37235FD /* [CP] Embed Pods Frameworks */ = {
 			isa = PBXShellScriptBuildPhase;
 			buildActionMask = 2147483647;
@@ -721,7 +703,7 @@
 			);
 			inputPaths = (
 				"${PODS_ROOT}/Target Support Files/Pods-CronetTests/Pods-CronetTests-resources.sh",
-				"${PODS_CONFIGURATION_BUILD_DIR}/gRPC-iOS/gRPCCertificates.bundle",
+				"${PODS_CONFIGURATION_BUILD_DIR}/gRPC.default-GRPCCoreCronet/gRPCCertificates.bundle",
 			);
 			name = "[CP] Copy Pods Resources";
 			outputPaths = (
@@ -898,6 +880,7 @@
 			files = (
 				5E3F14852278BF5D007C6D90 /* InteropTestsBlockCallbacks.m in Sources */,
 				5E3F148D22792856007C6D90 /* ConfigureCronet.m in Sources */,
+				5E08D07023021E3B006D76EA /* InteropTestsMultipleChannels.m in Sources */,
 				5E7F486E22778086006656AD /* CoreCronetEnd2EndTests.mm in Sources */,
 				5E7F488522778A88006656AD /* InteropTests.m in Sources */,
 				5E7F486422775B37006656AD /* InteropTestsRemoteWithCronet.m in Sources */,
@@ -910,9 +893,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				5E3F14842278B461007C6D90 /* InteropTestsBlockCallbacks.m in Sources */,
-				5E3F148E22792AF5007C6D90 /* ConfigureCronet.m in Sources */,
 				5E7F488922778B04006656AD /* InteropTestsRemote.m in Sources */,
-				5E7F487922778226006656AD /* InteropTestsMultipleChannels.m in Sources */,
 				5EA477042273617B000F72FC /* InteropTestsLocalCleartext.m in Sources */,
 				5EA4770322736178000F72FC /* InteropTestsLocalSSL.m in Sources */,
 				5E7F488422778A88006656AD /* InteropTests.m in Sources */,

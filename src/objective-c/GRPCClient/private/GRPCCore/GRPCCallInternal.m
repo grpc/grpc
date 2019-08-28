@@ -19,8 +19,10 @@
 #import "GRPCCallInternal.h"
 
 #import <GRPCClient/GRPCCall.h>
+#import <GRPCClient/GRPCInterceptor.h>
 #import <RxLibrary/GRXBufferedPipe.h>
 
+#import "../GRPCTransport+Private.h"
 #import "GRPCCall+V2API.h"
 
 @implementation GRPCCall2Internal {
@@ -28,8 +30,8 @@
   GRPCRequestOptions *_requestOptions;
   /** Options for the call. */
   GRPCCallOptions *_callOptions;
-  /** The handler of responses. */
-  id<GRPCResponseHandler> _handler;
+  /** The interceptor manager to process responses. */
+  GRPCTransportManager *_transportManager;
 
   /**
    * Make use of legacy GRPCCall to make calls. Nullified when call is finished.
@@ -51,40 +53,28 @@
   NSUInteger _pendingReceiveNextMessages;
 }
 
-- (instancetype)init {
-  if ((self = [super init])) {
+- (instancetype)initWithTransportManager:(GRPCTransportManager *)transportManager {
+  dispatch_queue_t dispatchQueue;
   // Set queue QoS only when iOS version is 8.0 or above and Xcode version is 9.0 or above
 #if __IPHONE_OS_VERSION_MAX_ALLOWED >= 110000 || __MAC_OS_X_VERSION_MAX_ALLOWED >= 101300
-    if (@available(iOS 8.0, macOS 10.10, *)) {
-      _dispatchQueue = dispatch_queue_create(
-          NULL,
-          dispatch_queue_attr_make_with_qos_class(DISPATCH_QUEUE_SERIAL, QOS_CLASS_DEFAULT, 0));
-    } else {
+  if (@available(iOS 8.0, macOS 10.10, *)) {
+    dispatchQueue = dispatch_queue_create(
+        NULL, dispatch_queue_attr_make_with_qos_class(DISPATCH_QUEUE_SERIAL, QOS_CLASS_DEFAULT, 0));
+  } else {
 #else
-    {
+  {
 #endif
-      _dispatchQueue = dispatch_queue_create(NULL, DISPATCH_QUEUE_SERIAL);
-    }
+    dispatchQueue = dispatch_queue_create(NULL, DISPATCH_QUEUE_SERIAL);
+  }
+  if ((self = [super init])) {
     _pipe = [GRXBufferedPipe pipe];
+    _transportManager = transportManager;
+    _dispatchQueue = dispatchQueue;
   }
   return self;
 }
 
-- (void)setResponseHandler:(id<GRPCResponseHandler>)responseHandler {
-  @synchronized(self) {
-    NSAssert(!_started, @"Call already started.");
-    if (_started) {
-      return;
-    }
-    _handler = responseHandler;
-    _initialMetadataPublished = NO;
-    _started = NO;
-    _canceled = NO;
-    _finished = NO;
-  }
-}
-
-- (dispatch_queue_t)requestDispatchQueue {
+- (dispatch_queue_t)dispatchQueue {
   return _dispatchQueue;
 }
 
@@ -102,26 +92,15 @@
     return;
   }
 
+  GRPCCall *copiedCall = nil;
   @synchronized(self) {
-    NSAssert(_handler != nil, @"Response handler required.");
-    if (_handler == nil) {
-      NSLog(@"Invalid response handler.");
-      return;
-    }
     _requestOptions = requestOptions;
     if (callOptions == nil) {
       _callOptions = [[GRPCCallOptions alloc] init];
     } else {
       _callOptions = [callOptions copy];
     }
-  }
 
-  [self start];
-}
-
-- (void)start {
-  GRPCCall *copiedCall = nil;
-  @synchronized(self) {
     NSAssert(!_started, @"Call already started.");
     NSAssert(!_canceled, @"Call already canceled.");
     if (_started) {
@@ -140,7 +119,7 @@
                                callOptions:_callOptions
                                  writeDone:^{
                                    @synchronized(self) {
-                                     if (self->_handler) {
+                                     if (self->_transportManager) {
                                        [self issueDidWriteData];
                                      }
                                    }
@@ -158,7 +137,7 @@
 
   void (^valueHandler)(id value) = ^(id value) {
     @synchronized(self) {
-      if (self->_handler) {
+      if (self->_transportManager) {
         if (!self->_initialMetadataPublished) {
           self->_initialMetadataPublished = YES;
           [self issueInitialMetadata:self->_call.responseHeaders];
@@ -171,7 +150,7 @@
   };
   void (^completionHandler)(NSError *errorOrNil) = ^(NSError *errorOrNil) {
     @synchronized(self) {
-      if (self->_handler) {
+      if (self->_transportManager) {
         if (!self->_initialMetadataPublished) {
           self->_initialMetadataPublished = YES;
           [self issueInitialMetadata:self->_call.responseHeaders];
@@ -207,20 +186,19 @@
     _call = nil;
     _pipe = nil;
 
-    if ([_handler respondsToSelector:@selector(didCloseWithTrailingMetadata:error:)]) {
-      id<GRPCResponseHandler> copiedHandler = _handler;
-      _handler = nil;
-      dispatch_async(copiedHandler.dispatchQueue, ^{
-        [copiedHandler didCloseWithTrailingMetadata:nil
-                                              error:[NSError errorWithDomain:kGRPCErrorDomain
-                                                                        code:GRPCErrorCodeCancelled
-                                                                    userInfo:@{
-                                                                      NSLocalizedDescriptionKey :
-                                                                          @"Canceled by app"
-                                                                    }]];
-      });
-    } else {
-      _handler = nil;
+    if (_transportManager != nil) {
+      [_transportManager
+          forwardPreviousInterceptorCloseWithTrailingMetadata:nil
+                                                        error:
+                                                            [NSError
+                                                                errorWithDomain:kGRPCErrorDomain
+                                                                           code:
+                                                                               GRPCErrorCodeCancelled
+                                                                       userInfo:@{
+                                                                         NSLocalizedDescriptionKey :
+                                                                             @"Canceled by app"
+                                                                       }]];
+      [_transportManager shutDown];
     }
   }
   [copiedCall cancel];
@@ -271,59 +249,25 @@
 }
 
 - (void)issueInitialMetadata:(NSDictionary *)initialMetadata {
-  @synchronized(self) {
-    if (initialMetadata != nil &&
-        [_handler respondsToSelector:@selector(didReceiveInitialMetadata:)]) {
-      id<GRPCResponseHandler> copiedHandler = _handler;
-      dispatch_async(_handler.dispatchQueue, ^{
-        [copiedHandler didReceiveInitialMetadata:initialMetadata];
-      });
-    }
+  if (initialMetadata != nil) {
+    [_transportManager forwardPreviousInterceptorWithInitialMetadata:initialMetadata];
   }
 }
 
 - (void)issueMessage:(id)message {
-  @synchronized(self) {
-    if (message != nil) {
-      if ([_handler respondsToSelector:@selector(didReceiveData:)]) {
-        id<GRPCResponseHandler> copiedHandler = _handler;
-        dispatch_async(_handler.dispatchQueue, ^{
-          [copiedHandler didReceiveData:message];
-        });
-      } else if ([_handler respondsToSelector:@selector(didReceiveRawMessage:)]) {
-        id<GRPCResponseHandler> copiedHandler = _handler;
-        dispatch_async(_handler.dispatchQueue, ^{
-          [copiedHandler didReceiveRawMessage:message];
-        });
-      }
-    }
+  if (message != nil) {
+    [_transportManager forwardPreviousInterceptorWithData:message];
   }
 }
 
 - (void)issueClosedWithTrailingMetadata:(NSDictionary *)trailingMetadata error:(NSError *)error {
-  @synchronized(self) {
-    if ([_handler respondsToSelector:@selector(didCloseWithTrailingMetadata:error:)]) {
-      id<GRPCResponseHandler> copiedHandler = _handler;
-      // Clean up _handler so that no more responses are reported to the handler.
-      _handler = nil;
-      dispatch_async(copiedHandler.dispatchQueue, ^{
-        [copiedHandler didCloseWithTrailingMetadata:trailingMetadata error:error];
-      });
-    } else {
-      _handler = nil;
-    }
-  }
+  [_transportManager forwardPreviousInterceptorCloseWithTrailingMetadata:trailingMetadata
+                                                                   error:error];
+  [_transportManager shutDown];
 }
 
 - (void)issueDidWriteData {
-  @synchronized(self) {
-    if (_callOptions.flowControlEnabled && [_handler respondsToSelector:@selector(didWriteData)]) {
-      id<GRPCResponseHandler> copiedHandler = _handler;
-      dispatch_async(copiedHandler.dispatchQueue, ^{
-        [copiedHandler didWriteData];
-      });
-    }
-  }
+  [_transportManager forwardPreviousInterceptorDidWriteData];
 }
 
 - (void)receiveNextMessages:(NSUInteger)numberOfMessages {

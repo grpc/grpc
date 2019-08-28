@@ -18,8 +18,6 @@
 
 #import <GRPCClient/GRPCCallOptions.h>
 
-#import "GRPCChannelFactory.h"
-
 NS_ASSUME_NONNULL_BEGIN
 
 @protocol GRPCChannel;

@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2017 gRPC authors.
+ * Copyright 2019 gRPC authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,14 +16,17 @@
  *
  */
 
-#import "GRPCCall+OAuth2.h"
-#import "GRPCCallLegacy.h"
-
-#import <Google/SignIn.h>
+#import "../GRPCCoreFactory.h"
 
 /**
- * Extend GIDSignIn class to comply GRPCAuthorizationProtocol
+ * The factory for gRPC Core + Cronet transport implementation. The
+ * implementation is not part of the default transports of gRPC and is for
+ * testing purpose only on Github.
+ *
+ * To use this transport, a user must include the GRPCCoreCronet module as a
+ * dependency of the project and use gGRPCCoreCronetId in call options to
+ * specify that this is the transport to be used for a call.
  */
-@interface GIDSignIn (GRPC)<GRPCAuthorizationProtocol>
-- (void)getTokenWithHandler:(void (^)(NSString *token))hander;
+@interface GRPCCoreCronetFactory : NSObject<GRPCCoreTransportFactory>
+
 @end

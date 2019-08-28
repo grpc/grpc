@@ -21,17 +21,16 @@
 #import <GRPCClient/GRPCCall+Cronet.h>
 #import <GRPCClient/GRPCCall.h>
 #import <GRPCClient/GRPCCallOptions.h>
+#import <GRPCClient/GRPCTransport.h>
 
 #include <grpc/grpc.h>
 #include <grpc/grpc_security.h>
 
-#import "../internal/GRPCCallOptions+Internal.h"
+#import "../../internal/GRPCCallOptions+Internal.h"
 #import "GRPCChannelFactory.h"
 #import "GRPCCompletionQueue.h"
-#import "GRPCCronetChannelFactory.h"
 #import "GRPCSecureChannelFactory.h"
 #import "NSDictionary+GRPC.h"
-#import "version.h"
 
 NS_ASSUME_NONNULL_BEGIN
 
@@ -113,20 +112,12 @@ static NSMutableDictionary *gHostCache;
   options.PEMPrivateKey = _PEMPrivateKey;
   options.PEMCertificateChain = _PEMCertificateChain;
   options.hostNameOverride = _hostNameOverride;
-#ifdef GRPC_COMPILE_WITH_CRONET
-  // By old API logic, insecure channel precedes Cronet channel; Cronet channel preceeds default
-  // channel.
-  if ([GRPCCall isUsingCronet]) {
-    if (_transportType == GRPCTransportTypeInsecure) {
-      options.transportType = GRPCTransportTypeInsecure;
-    } else {
-      NSAssert(_transportType == GRPCTransportTypeDefault, @"Invalid transport type");
-      options.transportType = GRPCTransportTypeCronet;
-    }
-  } else
-#endif
-  {
-    options.transportType = _transportType;
+  if (_transportType == GRPCTransportTypeInsecure) {
+    options.transport = GRPCDefaultTransportImplList.core_insecure;
+  } else if ([GRPCCall isUsingCronet]) {
+    options.transport = gGRPCCoreCronetId;
+  } else {
+    options.transport = GRPCDefaultTransportImplList.core_secure;
   }
   options.logContext = _logContext;
 
@@ -135,16 +126,14 @@ static NSMutableDictionary *gHostCache;
 
 + (GRPCCallOptions *)callOptionsForHost:(NSString *)host {
   // TODO (mxyan): Remove when old API is deprecated
-  NSURL *hostURL = [NSURL URLWithString:[@"https://" stringByAppendingString:host]];
-  if (hostURL.host && hostURL.port == nil) {
-    host = [hostURL.host stringByAppendingString:@":443"];
-  }
-
   GRPCCallOptions *callOptions = nil;
   @synchronized(gHostCache) {
-    callOptions = [gHostCache[host] callOptions];
+    GRPCHost *hostConfig = [GRPCHost hostWithAddress:host];
+    callOptions = [hostConfig callOptions];
   }
+  NSAssert(callOptions != nil, @"Unable to create call options object");
   if (callOptions == nil) {
+    NSLog(@"Unable to create call options object");
     callOptions = [[GRPCCallOptions alloc] init];
   }
   return callOptions;
