@@ -241,12 +241,11 @@ def _get_python_import_lib_name(repository_ctx, python_bin, bin_path_key):
     return result.stdout.splitlines()[0]
 
 
-# TODO(rbellevi): Rename.
-def _create_local_python_repository(repository_ctx,
-                                    variety_name,
-                                    bin_path_key,
-                                    default_bin_path,
-                                    lib_path_key):
+def _create_single_version_package(repository_ctx,
+                                   variety_name,
+                                   bin_path_key,
+                                   default_bin_path,
+                                   lib_path_key):
     """Creates the repository containing files set up to build with Python."""
     python_bin = _get_python_bin(repository_ctx, bin_path_key, default_bin_path)
     _check_python_bin(repository_ctx, python_bin, bin_path_key)
@@ -279,16 +278,16 @@ def _create_local_python_repository(repository_ctx,
 
 def _python_autoconf_impl(repository_ctx):
     """Implementation of the python_autoconf repository rule."""
-    _create_local_python_repository(repository_ctx,
-                                    "_python2",
-                                    _PYTHON2_BIN_PATH,
-                                    "python",
-                                    _PYTHON2_LIB_PATH)
-    _create_local_python_repository(repository_ctx,
-                                    "_python3",
-                                    _PYTHON3_BIN_PATH,
-                                    "python3",
-                                    _PYTHON3_LIB_PATH)
+    _create_single_version_package(repository_ctx,
+                                   "_python2",
+                                   _PYTHON2_BIN_PATH,
+                                   "python",
+                                   _PYTHON2_LIB_PATH)
+    _create_single_version_package(repository_ctx,
+                                   "_python3",
+                                   _PYTHON3_BIN_PATH,
+                                   "python3",
+                                   _PYTHON3_LIB_PATH)
     _tpl(repository_ctx, "BUILD")
 
 
