@@ -15,7 +15,7 @@
  * limitations under the License.
  *
  */
-#import "GRPCCallLegacy.h"
+#import "GRPCCall.h"
 
 #include <AvailabilityMacros.h>
 

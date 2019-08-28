@@ -22,7 +22,6 @@
 #import <Cronet/Cronet.h>
 #import <GRPCClient/GRPCCall+Cronet.h>
 
-#import "../ConfigureCronet.h"
 #import "InteropTests.h"
 
 // The server address is derived from preprocessor macro, which is
@@ -41,19 +40,12 @@ static int32_t kRemoteInteropServerOverhead = 12;
 
 @implementation InteropTestsRemoteWithCronet
 
-+ (void)setUp {
-  configureCronet();
-  [GRPCCall useCronetWithEngine:[Cronet getGlobalEngine]];
-
-  [super setUp];
-}
-
 + (NSString *)host {
   return kRemoteSSLHost;
 }
 
-+ (GRPCTransportId)transport {
-  return gGRPCCoreCronetId;
++ (BOOL)useCronet {
+  return YES;
 }
 
 - (int32_t)encodingOverhead {

@@ -18,7 +18,7 @@
 
 #import <Foundation/Foundation.h>
 
-#import <GRPCClient/GRPCCallLegacy.h>
+#import "../GRPCCall.h"
 
 @interface GRPCRequestHeaders : NSMutableDictionary
 
