@@ -16,9 +16,9 @@
  *
  */
 
-#import "GRPCCallLegacy.h"
+#import "GRPCCall.h"
 
-@protocol GRPCAuthorizationProtocol;
+#import "GRPCCallOptions.h"
 
 // Deprecated interface. Please use GRPCCallOptions instead.
 @interface GRPCCall (OAuth2)

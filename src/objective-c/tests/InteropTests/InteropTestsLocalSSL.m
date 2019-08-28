@@ -17,7 +17,6 @@
  */
 
 #import <GRPCClient/GRPCCall+Tests.h>
-#import <GRPCClient/GRPCTransport.h>
 #import <GRPCClient/internal_testing/GRPCCall+InternalTests.h>
 
 #import "InteropTests.h"
@@ -57,8 +56,8 @@ static int32_t kLocalInteropServerOverhead = 10;
   return kLocalInteropServerOverhead;  // bytes
 }
 
-+ (GRPCTransportId)transport {
-  return GRPCDefaultTransportImplList.core_secure;
++ (GRPCTransportType)transportType {
+  return GRPCTransportTypeChttp2BoringSSL;
 }
 
 - (void)setUp {

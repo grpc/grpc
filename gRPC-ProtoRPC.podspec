@@ -42,40 +42,22 @@ Pod::Spec.new do |s|
   s.module_name = name
   s.header_dir = name
 
-  s.default_subspec = 'Main', 'Legacy', 'Legacy-Header'
+  src_dir = 'src/objective-c/ProtoRPC'
 
-  s.subspec 'Legacy-Header' do |ss|
-    ss.header_mappings_dir = "src/objective-c/ProtoRPC"
-    ss.public_header_files = "src/objective-c/ProtoRPC/ProtoRPCLegacy.h"
-    ss.source_files = "src/objective-c/ProtoRPC/ProtoRPCLegacy.h"
-  end
+  s.default_subspec = 'Main'
 
   s.subspec 'Main' do |ss|
-    ss.header_mappings_dir = "src/objective-c/ProtoRPC"
-    ss.dependency "#{s.name}/Legacy-Header", version
-    ss.dependency 'gRPC/Interface', version
-    ss.dependency 'Protobuf', '~> 3.0'
-
-    ss.source_files = "src/objective-c/ProtoRPC/ProtoMethod.{h,m}",
-                      "src/objective-c/ProtoRPC/ProtoRPC.{h,m}",
-                      "src/objective-c/ProtoRPC/ProtoService.{h,m}"
-  end
-
-  s.subspec 'Legacy' do |ss|
-    ss.header_mappings_dir = "src/objective-c/ProtoRPC"
-    ss.dependency "#{s.name}/Main", version
-    ss.dependency "#{s.name}/Legacy-Header", version
-    ss.dependency 'gRPC/GRPCCore', version
+    ss.header_mappings_dir = "#{src_dir}"
+    ss.dependency 'gRPC', version
     ss.dependency 'gRPC-RxLibrary', version
     ss.dependency 'Protobuf', '~> 3.0'
 
-    ss.source_files = "src/objective-c/ProtoRPC/ProtoRPCLegacy.m",
-                      "src/objective-c/ProtoRPC/ProtoServiceLegacy.m"
+    ss.source_files = "#{src_dir}/*.{h,m}"
   end
 
   # CFStream is now default. Leaving this subspec only for compatibility purpose.
   s.subspec 'CFStream' do |ss|
-    ss.dependency "#{s.name}/Legacy", version
+    ss.dependency "#{s.name}/Main", version
   end
 
   s.pod_target_xcconfig = {

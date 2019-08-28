@@ -18,8 +18,10 @@
 
 #import "GRPCCronetChannelFactory.h"
 
-#import "../ChannelArgsUtil.h"
-#import "../GRPCChannel.h"
+#import "ChannelArgsUtil.h"
+#import "GRPCChannel.h"
+
+#ifdef GRPC_COMPILE_WITH_CRONET
 
 #import <Cronet/Cronet.h>
 #include <grpc/grpc_cronet.h>
@@ -57,3 +59,21 @@
 }
 
 @end
+
+#else
+
+@implementation GRPCCronetChannelFactory
+
++ (instancetype)sharedInstance {
+  NSAssert(NO, @"Must enable macro GRPC_COMPILE_WITH_CRONET to build Cronet channel.");
+  return nil;
+}
+
+- (grpc_channel *)createChannelWithHost:(NSString *)host channelArgs:(NSDictionary *)args {
+  NSAssert(NO, @"Must enable macro GRPC_COMPILE_WITH_CRONET to build Cronet channel.");
+  return NULL;
+}
+
+@end
+
+#endif
