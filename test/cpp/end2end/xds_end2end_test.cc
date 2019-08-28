@@ -933,7 +933,7 @@ TEST_F(SingleBalancerTest, Vanilla) {
   SetNextResolutionForLbChannelAllBalancers();
   const size_t kNumRpcsPerAddress = 100;
   EdsServiceImpl::ResponseArgs args({
-      {"locality1", GetBackendPorts()},
+      {"locality0", GetBackendPorts()},
   });
   ScheduleResponseForBalancer(0, EdsServiceImpl::BuildResponse(args), 0);
   // Make sure that trying to connect works without a call.
@@ -960,7 +960,7 @@ TEST_F(SingleBalancerTest, SameBackendListedMultipleTimes) {
   // Same backend listed twice.
   std::vector<int> ports(2, backends_[0]->port());
   EdsServiceImpl::ResponseArgs args({
-      {"locality1", ports},
+      {"locality0", ports},
   });
   const size_t kNumRpcsPerAddress = 10;
   ScheduleResponseForBalancer(0, EdsServiceImpl::BuildResponse(args), 0);
@@ -983,7 +983,7 @@ TEST_F(SingleBalancerTest, SecureNaming) {
   SetNextResolutionForLbChannel({balancers_[0]->port()});
   const size_t kNumRpcsPerAddress = 100;
   EdsServiceImpl::ResponseArgs args({
-      {"locality1", GetBackendPorts()},
+      {"locality0", GetBackendPorts()},
   });
   ScheduleResponseForBalancer(0, EdsServiceImpl::BuildResponse(args), 0);
   // Make sure that trying to connect works without a call.
@@ -1030,14 +1030,14 @@ TEST_F(SingleBalancerTest, InitiallyEmptyServerlist) {
   const int kServerlistDelayMs = 500 * grpc_test_slowdown_factor();
   const int kCallDeadlineMs = kServerlistDelayMs * 2;
   // First response is an empty serverlist, sent right away.
-  EdsServiceImpl::ResponseArgs::Locality empty_locality("locality1", {});
+  EdsServiceImpl::ResponseArgs::Locality empty_locality("locality0", {});
   EdsServiceImpl::ResponseArgs args({
       empty_locality,
   });
   ScheduleResponseForBalancer(0, EdsServiceImpl::BuildResponse(args), 0);
   // Send non-empty serverlist only after kServerlistDelayMs.
   args = EdsServiceImpl::ResponseArgs({
-      {"locality1", GetBackendPorts()},
+      {"locality0", GetBackendPorts()},
   });
   ScheduleResponseForBalancer(0, EdsServiceImpl::BuildResponse(args),
                               kServerlistDelayMs);
@@ -1067,7 +1067,7 @@ TEST_F(SingleBalancerTest, AllServersUnreachableFailFast) {
     ports.push_back(grpc_pick_unused_port_or_die());
   }
   EdsServiceImpl::ResponseArgs args({
-      {"locality1", ports},
+      {"locality0", ports},
   });
   ScheduleResponseForBalancer(0, EdsServiceImpl::BuildResponse(args), 0);
   const Status status = SendRpc();
@@ -1091,11 +1091,9 @@ TEST_F(SingleBalancerTest, LocalityMapWeightedRoundRobin) {
       static_cast<double>(kLocalityWeight1) / kTotalLocalityWeight;
   // EDS response contains 2 localities, each of which contains 1 backend.
   EdsServiceImpl::ResponseArgs args({
-      {"locality1", GetBackendPorts(0, 1), kLocalityWeight0},
-      {"locality2", GetBackendPorts(1, 2), kLocalityWeight1},
+      {"locality0", GetBackendPorts(0, 1), kLocalityWeight0},
+      {"locality1", GetBackendPorts(1, 2), kLocalityWeight1},
   });
-  args.locality_list[0].lb_weight = kLocalityWeight0;
-  args.locality_list[1].lb_weight = kLocalityWeight1;
   ScheduleResponseForBalancer(0, EdsServiceImpl::BuildResponse(args), 0);
   // Wait for both backends to be ready.
   WaitForAllBackends(1, 0, 2);
@@ -1138,7 +1136,7 @@ TEST_F(SingleBalancerTest, LocalityMapStressTest) {
   ScheduleResponseForBalancer(0, EdsServiceImpl::BuildResponse(args), 0);
   // The second EDS response contains 1 locality, which contains backend 1.
   args = EdsServiceImpl::ResponseArgs({
-      {"locality1", GetBackendPorts(1, 2)},
+      {"locality0", GetBackendPorts(1, 2)},
   });
   ScheduleResponseForBalancer(0, EdsServiceImpl::BuildResponse(args),
                               60 * 1000);
@@ -1178,15 +1176,15 @@ TEST_F(SingleBalancerTest, LocalityMapUpdate) {
     locality_weight_rate_1.push_back(weight / kTotalLocalityWeight1);
   }
   EdsServiceImpl::ResponseArgs args({
-      {"locality1", GetBackendPorts(0, 1), 2},
-      {"locality2", GetBackendPorts(1, 2), 3},
-      {"locality3", GetBackendPorts(2, 3), 4},
+      {"locality0", GetBackendPorts(0, 1), 2},
+      {"locality1", GetBackendPorts(1, 2), 3},
+      {"locality2", GetBackendPorts(2, 3), 4},
   });
   ScheduleResponseForBalancer(0, EdsServiceImpl::BuildResponse(args), 0);
   args = EdsServiceImpl::ResponseArgs({
-      {"locality2", GetBackendPorts(1, 2), 3},
-      {"locality3", GetBackendPorts(2, 3), 2},
-      {"locality4", GetBackendPorts(3, 4), 6},
+      {"locality1", GetBackendPorts(1, 2), 3},
+      {"locality2", GetBackendPorts(2, 3), 2},
+      {"locality3", GetBackendPorts(3, 4), 6},
   });
   ScheduleResponseForBalancer(0, EdsServiceImpl::BuildResponse(args), 5000);
   // Wait for the first 3 backends to be ready.
@@ -1258,7 +1256,7 @@ TEST_F(SingleBalancerTest, Drop) {
       kDropRateForLb + (1 - kDropRateForLb) * kDropRateForThrottle;
   // The EDS response contains two drop categories.
   EdsServiceImpl::ResponseArgs args({
-      {"locality1", GetBackendPorts()},
+      {"locality0", GetBackendPorts()},
   });
   args.drop_categories = {{kLbDropType, kDropPerMillionForLb},
                           {kThrottleDropType, kDropPerMillionForThrottle}};
@@ -1299,7 +1297,7 @@ TEST_F(SingleBalancerTest, DropPerHundred) {
   const double kDropRateForLb = kDropPerHundredForLb / 100.0;
   // The EDS response contains one drop category.
   EdsServiceImpl::ResponseArgs args({
-      {"locality1", GetBackendPorts()},
+      {"locality0", GetBackendPorts()},
   });
   args.drop_categories = {{kLbDropType, kDropPerHundredForLb}};
   args.drop_denominator = FractionalPercent::HUNDRED;
@@ -1339,7 +1337,7 @@ TEST_F(SingleBalancerTest, DropPerTenThousand) {
   const double kDropRateForLb = kDropPerTenThousandForLb / 10000.0;
   // The EDS response contains one drop category.
   EdsServiceImpl::ResponseArgs args({
-      {"locality1", GetBackendPorts()},
+      {"locality0", GetBackendPorts()},
   });
   args.drop_categories = {{kLbDropType, kDropPerTenThousandForLb}};
   args.drop_denominator = FractionalPercent::TEN_THOUSAND;
@@ -1383,7 +1381,7 @@ TEST_F(SingleBalancerTest, DropUpdate) {
       kDropRateForLb + (1 - kDropRateForLb) * kDropRateForThrottle;
   // The first EDS response contains one drop category.
   EdsServiceImpl::ResponseArgs args({
-      {"locality1", GetBackendPorts()},
+      {"locality0", GetBackendPorts()},
   });
   args.drop_categories = {{kLbDropType, kDropPerMillionForLb}};
   ScheduleResponseForBalancer(0, EdsServiceImpl::BuildResponse(args), 0);
@@ -1474,7 +1472,7 @@ TEST_F(SingleBalancerTest, DropAll) {
   const uint32_t kDropPerMillionForThrottle = 1000000;
   // The EDS response contains two drop categories.
   EdsServiceImpl::ResponseArgs args({
-      {"locality1", GetBackendPorts()},
+      {"locality0", GetBackendPorts()},
   });
   args.drop_categories = {{kLbDropType, kDropPerMillionForLb},
                           {kThrottleDropType, kDropPerMillionForThrottle}};
@@ -1501,7 +1499,7 @@ TEST_F(SingleBalancerTest, Fallback) {
   SetNextResolutionForLbChannelAllBalancers();
   // Send non-empty serverlist only after kServerlistDelayMs.
   EdsServiceImpl::ResponseArgs args({
-      {"locality1", GetBackendPorts(kNumBackendsInResolution)},
+      {"locality0", GetBackendPorts(kNumBackendsInResolution)},
   });
   ScheduleResponseForBalancer(0, EdsServiceImpl::BuildResponse(args),
                               kServerlistDelayMs);
@@ -1550,7 +1548,7 @@ TEST_F(SingleBalancerTest, FallbackUpdate) {
   SetNextResolutionForLbChannelAllBalancers();
   // Send non-empty serverlist only after kServerlistDelayMs.
   EdsServiceImpl::ResponseArgs args({
-      {"locality1", GetBackendPorts(kNumBackendsInResolution +
+      {"locality0", GetBackendPorts(kNumBackendsInResolution +
                                     kNumBackendsInResolutionUpdate)},
   });
   ScheduleResponseForBalancer(0, EdsServiceImpl::BuildResponse(args),
@@ -1653,7 +1651,7 @@ TEST_F(SingleBalancerTest, FallbackIfResponseReceivedButChildNotReady) {
   // Send a serverlist that only contains an unreachable backend before fallback
   // timeout.
   EdsServiceImpl::ResponseArgs args({
-      {"locality1", {grpc_pick_unused_port_or_die()}},
+      {"locality0", {grpc_pick_unused_port_or_die()}},
   });
   ScheduleResponseForBalancer(0, EdsServiceImpl::BuildResponse(args), 0);
   // Because no child policy is ready before fallback timeout, we enter fallback
@@ -1669,7 +1667,7 @@ TEST_F(SingleBalancerTest, FallbackModeIsExitedWhenBalancerSaysToDropAllCalls) {
   WaitForBackend(0);
   // Return a new balancer that sends a response to drop all calls.
   EdsServiceImpl::ResponseArgs args({
-      {"locality1", GetBackendPorts()},
+      {"locality0", GetBackendPorts()},
   });
   args.drop_categories = {{kLbDropType, 1000000}};
   ScheduleResponseForBalancer(0, EdsServiceImpl::BuildResponse(args), 0);
@@ -1693,7 +1691,7 @@ TEST_F(SingleBalancerTest, FallbackModeIsExitedAfterChildRready) {
   // Return a new balancer that sends a dead backend.
   ShutdownBackend(1);
   EdsServiceImpl::ResponseArgs args({
-      {"locality1", {backends_[1]->port()}},
+      {"locality0", {backends_[1]->port()}},
   });
   ScheduleResponseForBalancer(0, EdsServiceImpl::BuildResponse(args), 0);
   SetNextResolutionForLbChannelAllBalancers();
@@ -1720,7 +1718,7 @@ TEST_F(SingleBalancerTest, BackendsRestart) {
   SetNextResolution({}, kDefaultServiceConfig_.c_str());
   SetNextResolutionForLbChannelAllBalancers();
   EdsServiceImpl::ResponseArgs args({
-      {"locality1", GetBackendPorts()},
+      {"locality0", GetBackendPorts()},
   });
   ScheduleResponseForBalancer(0, EdsServiceImpl::BuildResponse(args), 0);
   WaitForAllBackends();
@@ -1742,11 +1740,11 @@ TEST_F(UpdatesTest, UpdateBalancersButKeepUsingOriginalBalancer) {
   SetNextResolution({}, kDefaultServiceConfig_.c_str());
   SetNextResolutionForLbChannelAllBalancers();
   EdsServiceImpl::ResponseArgs args({
-      {"locality1", {backends_[0]->port()}},
+      {"locality0", {backends_[0]->port()}},
   });
   ScheduleResponseForBalancer(0, EdsServiceImpl::BuildResponse(args), 0);
   args = EdsServiceImpl::ResponseArgs({
-      {"locality1", {backends_[1]->port()}},
+      {"locality0", {backends_[1]->port()}},
   });
   ScheduleResponseForBalancer(1, EdsServiceImpl::BuildResponse(args), 0);
 
@@ -1797,11 +1795,11 @@ TEST_F(UpdatesTest, UpdateBalancerName) {
   SetNextResolution({}, kDefaultServiceConfig_.c_str());
   SetNextResolutionForLbChannelAllBalancers();
   EdsServiceImpl::ResponseArgs args({
-      {"locality1", {backends_[0]->port()}},
+      {"locality0", {backends_[0]->port()}},
   });
   ScheduleResponseForBalancer(0, EdsServiceImpl::BuildResponse(args), 0);
   args = EdsServiceImpl::ResponseArgs({
-      {"locality1", {backends_[1]->port()}},
+      {"locality0", {backends_[1]->port()}},
   });
   ScheduleResponseForBalancer(1, EdsServiceImpl::BuildResponse(args), 0);
 
@@ -1870,11 +1868,11 @@ TEST_F(UpdatesTest, UpdateBalancersRepeated) {
   SetNextResolution({}, kDefaultServiceConfig_.c_str());
   SetNextResolutionForLbChannelAllBalancers();
   EdsServiceImpl::ResponseArgs args({
-      {"locality1", {backends_[0]->port()}},
+      {"locality0", {backends_[0]->port()}},
   });
   ScheduleResponseForBalancer(0, EdsServiceImpl::BuildResponse(args), 0);
   args = EdsServiceImpl::ResponseArgs({
-      {"locality1", {backends_[1]->port()}},
+      {"locality0", {backends_[1]->port()}},
   });
   ScheduleResponseForBalancer(1, EdsServiceImpl::BuildResponse(args), 0);
 
@@ -1940,11 +1938,11 @@ TEST_F(UpdatesTest, UpdateBalancersDeadUpdate) {
   SetNextResolution({}, kDefaultServiceConfig_.c_str());
   SetNextResolutionForLbChannel({balancers_[0]->port()});
   EdsServiceImpl::ResponseArgs args({
-      {"locality1", {backends_[0]->port()}},
+      {"locality0", {backends_[0]->port()}},
   });
   ScheduleResponseForBalancer(0, EdsServiceImpl::BuildResponse(args), 0);
   args = EdsServiceImpl::ResponseArgs({
-      {"locality1", {backends_[1]->port()}},
+      {"locality0", {backends_[1]->port()}},
   });
   ScheduleResponseForBalancer(1, EdsServiceImpl::BuildResponse(args), 0);
 
@@ -2029,7 +2027,7 @@ TEST_F(SingleBalancerWithClientLoadReportingTest, Vanilla) {
   // TODO(juanlishen): Partition the backends after multiple localities is
   // tested.
   EdsServiceImpl::ResponseArgs args({
-      {"locality1", GetBackendPorts()},
+      {"locality0", GetBackendPorts()},
   });
   ScheduleResponseForBalancer(0, EdsServiceImpl::BuildResponse(args), 0);
   // Wait until all backends are ready.
@@ -2068,7 +2066,7 @@ TEST_F(SingleBalancerWithClientLoadReportingTest, BalancerRestart) {
   const size_t kNumBackendsSecondPass =
       backends_.size() - kNumBackendsFirstPass;
   EdsServiceImpl::ResponseArgs args({
-      {"locality1", GetBackendPorts(0, kNumBackendsFirstPass)},
+      {"locality0", GetBackendPorts(0, kNumBackendsFirstPass)},
   });
   ScheduleResponseForBalancer(0, EdsServiceImpl::BuildResponse(args), 0);
   // Wait until all backends returned by the balancer are ready.
@@ -2098,7 +2096,7 @@ TEST_F(SingleBalancerWithClientLoadReportingTest, BalancerRestart) {
   // Now restart the balancer, this time pointing to the new backends.
   balancers_[0]->Start(server_host_);
   args = EdsServiceImpl::ResponseArgs({
-      {"locality1", GetBackendPorts(kNumBackendsFirstPass)},
+      {"locality0", GetBackendPorts(kNumBackendsFirstPass)},
   });
   ScheduleResponseForBalancer(0, EdsServiceImpl::BuildResponse(args), 0);
   // Wait for queries to start going to one of the new backends.
@@ -2136,7 +2134,7 @@ TEST_F(SingleBalancerWithClientLoadReportingAndDropTest, Vanilla) {
       kDropRateForLb + (1 - kDropRateForLb) * kDropRateForThrottle;
   // The EDS response contains two drop categories.
   EdsServiceImpl::ResponseArgs args({
-      {"locality1", GetBackendPorts()},
+      {"locality0", GetBackendPorts()},
   });
   args.drop_categories = {{kLbDropType, kDropPerMillionForLb},
                           {kThrottleDropType, kDropPerMillionForThrottle}};
