@@ -277,7 +277,6 @@ def _create_local_python_repository(repository_ctx,
         out="{}/BUILD".format(variety_name))
 
 
-# TODO(rbellevi): Remove
 def _python_autoconf_impl(repository_ctx):
     """Implementation of the python_autoconf repository rule."""
     _create_local_python_repository(repository_ctx,
