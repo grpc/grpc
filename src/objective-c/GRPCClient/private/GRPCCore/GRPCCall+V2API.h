@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2017 gRPC authors.
+ * Copyright 2019 gRPC authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,14 +16,15 @@
  *
  */
 
-#import "GRPCCall+OAuth2.h"
-#import "GRPCCallLegacy.h"
+@interface GRPCCall (V2API)
 
-#import <Google/SignIn.h>
+- (instancetype)initWithHost:(NSString *)host
+                        path:(NSString *)path
+                  callSafety:(GRPCCallSafety)safety
+              requestsWriter:(GRXWriter *)requestsWriter
+                 callOptions:(GRPCCallOptions *)callOptions
+                   writeDone:(void (^)(void))writeDone;
 
-/**
- * Extend GIDSignIn class to comply GRPCAuthorizationProtocol
- */
-@interface GIDSignIn (GRPC)<GRPCAuthorizationProtocol>
-- (void)getTokenWithHandler:(void (^)(NSString *token))hander;
+- (void)receiveNextMessages:(NSUInteger)numberOfMessages;
+
 @end

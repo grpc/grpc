@@ -42,6 +42,23 @@ Pod::Spec.new do |s|
   s.module_name = name
   s.header_dir = name
 
+  s.default_subspec = 'Interface', 'Implementation'
+
+  src_dir = 'src/objective-c/RxLibrary'
+  s.subspec 'Interface' do |ss|
+    ss.header_mappings_dir = "#{src_dir}"
+    ss.source_files = "#{src_dir}/*.h"
+    ss.public_header_files = "#{src_dir}/*.h"
+  end
+
+  s.subspec 'Implementation' do |ss|
+    ss.header_mappings_dir = "#{src_dir}"
+    ss.source_files = "#{src_dir}/*.m", "#{src_dir}/**/*.{h,m}"
+    ss.private_header_files = "#{src_dir}/**/*.h"
+
+    ss.dependency "#{s.name}/Interface"
+  end
+
   src_dir = 'src/objective-c/RxLibrary'
   s.source_files = "#{src_dir}/*.{h,m}", "#{src_dir}/**/*.{h,m}"
   s.private_header_files = "#{src_dir}/private/*.h"
