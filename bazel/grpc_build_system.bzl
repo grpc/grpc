@@ -277,7 +277,7 @@ def grpc_py_binary(name,
         data = data,
         deps = deps + _get_external_deps(external_deps),
         python_version = python_version,
-        **kwargs,
+        **kwargs
     )
 
 def grpc_package(name, visibility = "private", features = []):
