@@ -1702,9 +1702,6 @@
 					"$(inherited)",
 					"COCOAPODS=1",
 					"GPB_USE_PROTOBUF_FRAMEWORK_IMPORTS=1",
-					"PB_FIELD_32BIT=1",
-					"PB_NO_PACKED_STRUCTS=1",
-					"PB_ENABLE_MALLOC=1",
 					"GRPC_TEST_OBJC=1",
 				);
 				INFOPLIST_FILE = MacTests/Info.plist;

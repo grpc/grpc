@@ -27,6 +27,10 @@
 #include <functional>
 #include <iterator>
 
+#if GRPC_USE_CPP_STD_LIB
+#include <map>
+#endif
+
 #include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/gprpp/memory.h"
 #include "src/core/lib/gprpp/pair.h"
@@ -34,6 +38,7 @@
 #include "src/core/lib/gprpp/string_view.h"
 
 namespace grpc_core {
+
 struct StringLess {
   bool operator()(const char* a, const char* b) const {
     return strcmp(a, b) < 0;
@@ -56,6 +61,13 @@ struct RefCountedPtrLess {
     return p1.get() < p2.get();
   }
 };
+
+#if GRPC_USE_CPP_STD_LIB
+
+template <class Key, class T, class Compare = std::less<Key>>
+using Map = std::map<Key, T, Compare>;
+
+#else  // GRPC_USE_CPP_STD_LIB
 
 namespace testing {
 class MapTest;
@@ -544,5 +556,9 @@ int Map<Key, T, Compare>::CompareKeys(const key_type& lhs,
   }
   return left_comparison ? -1 : 1;
 }
+
+#endif  // GRPC_USE_CPP_STD_LIB
+
 }  // namespace grpc_core
+
 #endif /* GRPC_CORE_LIB_GPRPP_MAP_H */

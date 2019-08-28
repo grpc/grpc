@@ -155,6 +155,20 @@ TEST_F(TimerTest, CancelSomeTimers) {
   gpr_log(GPR_DEBUG, "wakeups: %" PRId64 "", wakeups);
 }
 
+// Enable the following test after
+// https://github.com/grpc/grpc/issues/20049 has been fixed.
+#if 0
+TEST_F(TimerTest, TimerNotCanceled) {
+  grpc_core::ExecCtx exec_ctx;
+  grpc_timer timer;
+  grpc_timer_init(&timer, 10000,
+                  GRPC_CLOSURE_CREATE(
+                      [](void*, grpc_error*) {
+                      },
+                      nullptr, grpc_schedule_on_exec_ctx));
+}
+#endif
+
 int main(int argc, char** argv) {
   grpc::testing::TestEnvironment env(argc, argv);
   ::testing::InitGoogleTest(&argc, argv);

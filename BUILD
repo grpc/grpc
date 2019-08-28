@@ -73,6 +73,11 @@ config_setting(
     values = {"cpu": "darwin"},
 )
 
+config_setting(
+    name = "grpc_use_cpp_std_lib",
+    values = {"define": "GRPC_USE_CPP_STD_LIB=1"},
+)
+
 # This should be updated along with build.yaml
 g_stands_for = "ganges"
 
@@ -1218,6 +1223,7 @@ grpc_cc_library(
         "grpc_client_channel",
         "grpc_lb_upb",
         "grpc_resolver_fake",
+        "grpc_transport_chttp2_client_insecure",
     ],
 )
 
@@ -1244,6 +1250,7 @@ grpc_cc_library(
         "grpc_lb_upb",
         "grpc_resolver_fake",
         "grpc_secure",
+        "grpc_transport_chttp2_client_secure",
     ],
 )
 
@@ -1267,6 +1274,7 @@ grpc_cc_library(
         "grpc_base",
         "grpc_client_channel",
         "grpc_resolver_fake",
+        "grpc_transport_chttp2_client_insecure",
     ],
 )
 
@@ -1291,6 +1299,7 @@ grpc_cc_library(
         "grpc_client_channel",
         "grpc_resolver_fake",
         "grpc_secure",
+        "grpc_transport_chttp2_client_secure",
     ],
 )
 

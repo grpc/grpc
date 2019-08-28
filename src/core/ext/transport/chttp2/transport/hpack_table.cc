@@ -189,7 +189,7 @@ grpc_chttp2_hptbl_find_result grpc_chttp2_hptbl_find(
 
   /* See if the string is in the static table */
   for (i = 0; i < GRPC_CHTTP2_LAST_STATIC_ENTRY; i++) {
-    grpc_mdelem ent = grpc_static_mdelem_manifested[i];
+    grpc_mdelem ent = grpc_static_mdelem_manifested()[i];
     if (!grpc_slice_eq(GRPC_MDKEY(md), GRPC_MDKEY(ent))) continue;
     r.index = i + 1u;
     r.has_value = grpc_slice_eq(GRPC_MDVALUE(md), GRPC_MDVALUE(ent));

@@ -29,7 +29,7 @@ proto_library(
 
 py_proto_library(
     name = "helloworld_py_pb2",
-    srcs = [":helloworld_proto"],
+    deps = [":helloworld_proto"],
 )
 
 py_grpc_library(
@@ -40,12 +40,12 @@ py_grpc_library(
 
 py_proto_library(
     name = "duration_py_pb2",
-    srcs = ["@com_google_protobuf//:duration_proto"],
+    deps = ["@com_google_protobuf//:duration_proto"],
 )
 
 py_proto_library(
     name = "timestamp_py_pb2",
-    srcs = ["@com_google_protobuf//:timestamp_proto"],
+    deps = ["@com_google_protobuf//:timestamp_proto"],
 )
 
 py_test(

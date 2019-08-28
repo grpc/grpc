@@ -105,6 +105,7 @@ task 'dlls' do
     env_comp = "CC=#{opt[:cross]}-gcc "
     env_comp += "CXX=#{opt[:cross]}-g++ "
     env_comp += "LD=#{opt[:cross]}-gcc "
+    env_comp += "LDXX=#{opt[:cross]}-g++ "
     docker_for_windows "gem update --system --no-document && #{env} #{env_comp} make -j #{out} && #{opt[:cross]}-strip -x -S #{out} && cp #{out} #{opt[:out]}"
   end
 
