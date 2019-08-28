@@ -176,11 +176,11 @@ def grpc_deps():
     if "bazel_toolchains" not in native.existing_rules():
         http_archive(
             name = "bazel_toolchains",
-            sha256 = "d968b414b32aa99c86977e1171645d31da2b52ac88060de3ac1e49932d5dcbf1",
-            strip_prefix = "bazel-toolchains-4bd5df80d77aa7f4fb943dfdfad5c9056a62fb47",
+            sha256 = "872955b658113924eb1a3594b04d43238da47f4f90c17b76e8785709490dc041",
+            strip_prefix = "bazel-toolchains-1083686fde6032378d52b4c98044922cebde364e",
             urls = [
-                "https://mirror.bazel.build/github.com/bazelbuild/bazel-toolchains/archive/4bd5df80d77aa7f4fb943dfdfad5c9056a62fb47.tar.gz",
-                "https://github.com/bazelbuild/bazel-toolchains/archive/4bd5df80d77aa7f4fb943dfdfad5c9056a62fb47.tar.gz",
+                "https://mirror.bazel.build/github.com/bazelbuild/bazel-toolchains/archive/1083686fde6032378d52b4c98044922cebde364e.tar.gz",
+                "https://github.com/bazelbuild/bazel-toolchains/archive/1083686fde6032378d52b4c98044922cebde364e.tar.gz",
             ],
         )
 
@@ -221,10 +221,11 @@ def grpc_deps():
         )
 
     if "build_bazel_rules_apple" not in native.existing_rules():
-        git_repository(
+        http_archive(
             name = "build_bazel_rules_apple",
-            remote = "https://github.com/bazelbuild/rules_apple.git",
-            tag = "0.17.2",
+            url = "https://github.com/bazelbuild/rules_apple/archive/b869b0d3868d78a1d4ffd866ccb304fb68aa12c3.tar.gz",
+            strip_prefix = "rules_apple-b869b0d3868d78a1d4ffd866ccb304fb68aa12c3",
+            sha256 = "bdc8e66e70b8a75da23b79f1f8c6207356df07d041d96d2189add7ee0780cf4e",
         )
 
     grpc_python_deps()
