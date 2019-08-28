@@ -208,8 +208,6 @@ class AspNetCoreLanguage:
 
     def unimplemented_test_cases(self):
         return _SKIP_COMPRESSION + \
-            ['compute_engine_creds']  + \
-            ['jwt_token_creds'] + \
             _SKIP_GOOGLE_DEFAULT_CREDS + \
             _SKIP_COMPUTE_ENGINE_CHANNEL_CREDS
 
