@@ -104,7 +104,7 @@ def grpc_deps():
             # on the chromium-stable-with-bazel branch
             # NOTE: This URL generates a tarball containing dynamic date
             # information, so the sha256 is not consistent.
-            url = "https://boringssl.googlesource.com/boringssl/+archive/afc30d43eef92979b05776ec0963c9cede5fb80f.tar.gz",
+            url = "https://boringssl.googlesource.com/boringssl/+archive/a21f78d24bf645ccd6774b2c7e52e3c0514f7f29.tar.gz",
         )
 
     if "zlib" not in native.existing_rules():

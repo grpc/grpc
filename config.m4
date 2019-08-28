@@ -513,6 +513,7 @@ if test "$PHP_GRPC" != "no"; then
     third_party/boringssl/crypto/bytestring/ber.c \
     third_party/boringssl/crypto/bytestring/cbb.c \
     third_party/boringssl/crypto/bytestring/cbs.c \
+    third_party/boringssl/crypto/bytestring/unicode.c \
     third_party/boringssl/crypto/chacha/chacha.c \
     third_party/boringssl/crypto/cipher_extra/cipher_extra.c \
     third_party/boringssl/crypto/cipher_extra/derive_key.c \
@@ -523,7 +524,6 @@ if test "$PHP_GRPC" != "no"; then
     third_party/boringssl/crypto/cipher_extra/e_null.c \
     third_party/boringssl/crypto/cipher_extra/e_rc2.c \
     third_party/boringssl/crypto/cipher_extra/e_rc4.c \
-    third_party/boringssl/crypto/cipher_extra/e_ssl3.c \
     third_party/boringssl/crypto/cipher_extra/e_tls.c \
     third_party/boringssl/crypto/cipher_extra/tls_cbc.c \
     third_party/boringssl/crypto/cmac/cmac.c \
@@ -544,7 +544,7 @@ if test "$PHP_GRPC" != "no"; then
     third_party/boringssl/crypto/dsa/dsa.c \
     third_party/boringssl/crypto/dsa/dsa_asn1.c \
     third_party/boringssl/crypto/ec_extra/ec_asn1.c \
-    third_party/boringssl/crypto/ecdh/ecdh.c \
+    third_party/boringssl/crypto/ecdh_extra/ecdh_extra.c \
     third_party/boringssl/crypto/ecdsa_extra/ecdsa_asn1.c \
     third_party/boringssl/crypto/engine/engine.c \
     third_party/boringssl/crypto/err/err.c \
@@ -567,6 +567,7 @@ if test "$PHP_GRPC" != "no"; then
     third_party/boringssl/crypto/fipsmodule/bcm.c \
     third_party/boringssl/crypto/fipsmodule/is_fips.c \
     third_party/boringssl/crypto/hkdf/hkdf.c \
+    third_party/boringssl/crypto/hrss/hrss.c \
     third_party/boringssl/crypto/lhash/lhash.c \
     third_party/boringssl/crypto/mem.c \
     third_party/boringssl/crypto/obj/obj.c \
@@ -597,6 +598,7 @@ if test "$PHP_GRPC" != "no"; then
     third_party/boringssl/crypto/refcount_c11.c \
     third_party/boringssl/crypto/refcount_lock.c \
     third_party/boringssl/crypto/rsa_extra/rsa_asn1.c \
+    third_party/boringssl/crypto/rsa_extra/rsa_print.c \
     third_party/boringssl/crypto/stack/stack.c \
     third_party/boringssl/crypto/thread.c \
     third_party/boringssl/crypto/thread_none.c \
@@ -673,6 +675,7 @@ if test "$PHP_GRPC" != "no"; then
     third_party/boringssl/crypto/x509v3/v3_int.c \
     third_party/boringssl/crypto/x509v3/v3_lib.c \
     third_party/boringssl/crypto/x509v3/v3_ncons.c \
+    third_party/boringssl/crypto/x509v3/v3_ocsp.c \
     third_party/boringssl/crypto/x509v3/v3_pci.c \
     third_party/boringssl/crypto/x509v3/v3_pcia.c \
     third_party/boringssl/crypto/x509v3/v3_pcons.c \
@@ -684,7 +687,6 @@ if test "$PHP_GRPC" != "no"; then
     third_party/boringssl/crypto/x509v3/v3_sxnet.c \
     third_party/boringssl/crypto/x509v3/v3_utl.c \
     third_party/boringssl/ssl/bio_ssl.cc \
-    third_party/boringssl/ssl/custom_extensions.cc \
     third_party/boringssl/ssl/d1_both.cc \
     third_party/boringssl/ssl/d1_lib.cc \
     third_party/boringssl/ssl/d1_pkt.cc \
@@ -721,6 +723,11 @@ if test "$PHP_GRPC" != "no"; then
     third_party/boringssl/ssl/tls_method.cc \
     third_party/boringssl/ssl/tls_record.cc \
     third_party/boringssl/third_party/fiat/curve25519.c \
+    third_party/boringssl/third_party/sike/P503.c \
+    third_party/boringssl/third_party/sike/asm/fp_generic.c \
+    third_party/boringssl/third_party/sike/fpx.c \
+    third_party/boringssl/third_party/sike/isogeny.c \
+    third_party/boringssl/third_party/sike/sike.c \
     , $ext_shared, , -fvisibility=hidden \
     -DOPENSSL_NO_ASM -D_GNU_SOURCE -DWIN32_LEAN_AND_MEAN \
     -D_HAS_EXCEPTIONS=0 -DNOMINMAX -DGRPC_ARES=0 \
@@ -838,13 +845,14 @@ if test "$PHP_GRPC" != "no"; then
   PHP_ADD_BUILD_DIR($ext_builddir/third_party/boringssl/crypto/digest_extra)
   PHP_ADD_BUILD_DIR($ext_builddir/third_party/boringssl/crypto/dsa)
   PHP_ADD_BUILD_DIR($ext_builddir/third_party/boringssl/crypto/ec_extra)
-  PHP_ADD_BUILD_DIR($ext_builddir/third_party/boringssl/crypto/ecdh)
+  PHP_ADD_BUILD_DIR($ext_builddir/third_party/boringssl/crypto/ecdh_extra)
   PHP_ADD_BUILD_DIR($ext_builddir/third_party/boringssl/crypto/ecdsa_extra)
   PHP_ADD_BUILD_DIR($ext_builddir/third_party/boringssl/crypto/engine)
   PHP_ADD_BUILD_DIR($ext_builddir/third_party/boringssl/crypto/err)
   PHP_ADD_BUILD_DIR($ext_builddir/third_party/boringssl/crypto/evp)
   PHP_ADD_BUILD_DIR($ext_builddir/third_party/boringssl/crypto/fipsmodule)
   PHP_ADD_BUILD_DIR($ext_builddir/third_party/boringssl/crypto/hkdf)
+  PHP_ADD_BUILD_DIR($ext_builddir/third_party/boringssl/crypto/hrss)
   PHP_ADD_BUILD_DIR($ext_builddir/third_party/boringssl/crypto/lhash)
   PHP_ADD_BUILD_DIR($ext_builddir/third_party/boringssl/crypto/obj)
   PHP_ADD_BUILD_DIR($ext_builddir/third_party/boringssl/crypto/pem)
@@ -860,5 +868,7 @@ if test "$PHP_GRPC" != "no"; then
   PHP_ADD_BUILD_DIR($ext_builddir/third_party/boringssl/crypto/x509v3)
   PHP_ADD_BUILD_DIR($ext_builddir/third_party/boringssl/ssl)
   PHP_ADD_BUILD_DIR($ext_builddir/third_party/boringssl/third_party/fiat)
+  PHP_ADD_BUILD_DIR($ext_builddir/third_party/boringssl/third_party/sike)
+  PHP_ADD_BUILD_DIR($ext_builddir/third_party/boringssl/third_party/sike/asm)
   PHP_ADD_BUILD_DIR($ext_builddir/third_party/upb/upb)
 fi
