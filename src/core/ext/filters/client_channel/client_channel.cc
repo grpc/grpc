@@ -1450,32 +1450,35 @@ void ChannelData::UpdateStateAndPickerLocked(
                 state)));
   }
   // Grab data plane lock to do subchannel updates and update the picker.
-  MutexLock lock(&data_plane_mu_);
-  // Handle subchannel updates.
-  for (auto it = pending_subchannel_updates_.begin();
-       it != pending_subchannel_updates_.end();
-       it = pending_subchannel_updates_.erase(it)) {
-    if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_routing_trace)) {
-      gpr_log(GPR_INFO,
-              "chand=%p: updating subchannel wrapper %p data plane "
-              "connected_subchannel to %p",
-              this, it->first.get(), it->second.get());
+  {
+    MutexLock lock(&data_plane_mu_);
+    // Handle subchannel updates.
+    for (auto& p : pending_subchannel_updates_) {
+      if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_routing_trace)) {
+        gpr_log(GPR_INFO,
+                "chand=%p: updating subchannel wrapper %p data plane "
+                "connected_subchannel to %p",
+                this, p.first.get(), p.second.get());
+      }
+      p.first->set_connected_subchannel_in_data_plane(std::move(p.second));
     }
-    it->first->set_connected_subchannel_in_data_plane(std::move(it->second));
+    // Update picker.
+    picker_ = std::move(picker);
+    // Clean the data plane if the updated picker is nullptr.
+    if (picker_ == nullptr) {
+      received_service_config_data_ = false;
+      retry_throttle_data_.reset();
+      service_config_.reset();
+    }
+    // Re-process queued picks.
+    for (QueuedPick* pick = queued_picks_; pick != nullptr; pick = pick->next) {
+      CallData* calld = static_cast<CallData*>(pick->elem->call_data);
+      calld->PickSubchannelLocked(pick->elem, true /* yield_combiner */);
+    }
   }
-  // Update picker.
-  picker_ = std::move(picker);
-  // Clean the data plane if the updated picker is nullptr.
-  if (picker_ == nullptr) {
-    received_service_config_data_ = false;
-    retry_throttle_data_.reset();
-    service_config_.reset();
-  }
-  // Re-process queued picks.
-  for (QueuedPick* pick = queued_picks_; pick != nullptr; pick = pick->next) {
-    CallData* calld = static_cast<CallData*>(pick->elem->call_data);
-    calld->PickSubchannelLocked(pick->elem, true /* yield_combiner */);
-  }
+  // Clear the pending update map after releasing the lock, to keep the
+  // critical section small.
+  pending_subchannel_updates_.clear();
 }
 
 void ChannelData::UpdateServiceConfigLocked(
