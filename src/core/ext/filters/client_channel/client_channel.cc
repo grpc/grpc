@@ -1473,7 +1473,7 @@ void ChannelData::UpdateStateAndPickerLocked(
     // Re-process queued picks.
     for (QueuedPick* pick = queued_picks_; pick != nullptr; pick = pick->next) {
       CallData* calld = static_cast<CallData*>(pick->elem->call_data);
-      calld->PickSubchannelLocked(pick->elem, true /* yield_combiner */);
+      calld->PickSubchannelLocked(pick->elem, /*yield_combiner=*/true);
     }
   }
   // Clear the pending update map after releasing the lock, to keep the
@@ -3745,7 +3745,7 @@ void CallData::PickSubchannel(void* arg, grpc_error* error) {
   CallData* calld = static_cast<CallData*>(elem->call_data);
   ChannelData* chand = static_cast<ChannelData*>(elem->channel_data);
   MutexLock lock(chand->data_plane_mu());
-  calld->PickSubchannelLocked(elem, false /* yield_combiner */);
+  calld->PickSubchannelLocked(elem, /*yield_combiner=*/false);
 }
 
 void CallData::PickSubchannelLocked(grpc_call_element* elem,
