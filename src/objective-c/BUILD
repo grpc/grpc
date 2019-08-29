@@ -101,7 +101,7 @@ grpc_objc_library(
 )
 
 grpc_objc_library(
-    name = "grpc_objc_client_core",
+    name = "grpc_objc_client",
     hdrs = [
         "GRPCClient/GRPCCall+ChannelCredentials.h",
         "GRPCClient/GRPCCall+Cronet.h",
@@ -128,9 +128,11 @@ grpc_objc_library(
     ],
 )
 
+# TODO (mxyan): Switch "name" and "actual" when import is done
+# Some internal Swift projects will need to be updated with the new name
 alias(
-    name = "grpc_objc_client",
-    actual = "grpc_objc_client_core",
+    name = "grpc_objc_client_core",
+    actual = "grpc_objc_client",
 )
 
 grpc_objc_library(
@@ -170,6 +172,7 @@ grpc_objc_library(
     ],
     hdrs = [
         "ProtoRPC/ProtoMethod.h",
+        "ProtoRPC/ProtoRPC.h",
         "ProtoRPC/ProtoRPCLegacy.h",
         "ProtoRPC/ProtoService.h",
     ],
