@@ -1450,6 +1450,18 @@ void ChannelData::UpdateStateAndPickerLocked(
                 state)));
   }
   // Grab data plane lock to do subchannel updates and update the picker.
+  //
+  // Note that we want to minimize the work done while holding the data
+  // plane lock, to keep the critical section small.  So, for all of the
+  // objects that we might wind up unreffing here, we actually hold onto
+  // the refs until after we release the lock, and then unref them at
+  // that point.  This includes the following:
+  // - refs to subchannel wrappers in the keys of pending_subchannel_updates_
+  // - ref stored in retry_throttle_data_
+  // - ref stored in service_config_
+  // - ownership of the existing picker in picker_
+  RefCountedPtr<ServerRetryThrottleData> retry_throttle_data_to_unref;
+  RefCountedPtr<ServiceConfig> service_config_to_unref;
   {
     MutexLock lock(&data_plane_mu_);
     // Handle subchannel updates.
@@ -1460,15 +1472,20 @@ void ChannelData::UpdateStateAndPickerLocked(
                 "connected_subchannel to %p",
                 this, p.first.get(), p.second.get());
       }
+      // Note: We do not remove the entry from pending_subchannel_updates_
+      // here, since this would unref the subchannel wrapper; instead,
+      // we wait until we've released the lock to clear the map.
       p.first->set_connected_subchannel_in_data_plane(std::move(p.second));
     }
-    // Update picker.
-    picker_ = std::move(picker);
+    // Swap out the picker.
+    // Note: Original value will be destroyed after the lock is released.
+    picker_.swap(picker);
     // Clean the data plane if the updated picker is nullptr.
     if (picker_ == nullptr) {
       received_service_config_data_ = false;
-      retry_throttle_data_.reset();
-      service_config_.reset();
+      // Note: We save the objects to unref until after the lock is released.
+      retry_throttle_data_to_unref = std::move(retry_throttle_data_);
+      service_config_to_unref = std::move(service_config_);
     }
     // Re-process queued picks.
     for (QueuedPick* pick = queued_picks_; pick != nullptr; pick = pick->next) {
