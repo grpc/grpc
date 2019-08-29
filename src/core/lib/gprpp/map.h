@@ -35,6 +35,7 @@
 #include "src/core/lib/gprpp/memory.h"
 #include "src/core/lib/gprpp/pair.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
+#include "src/core/lib/gprpp/string_view.h"
 
 namespace grpc_core {
 
@@ -42,8 +43,14 @@ struct StringLess {
   bool operator()(const char* a, const char* b) const {
     return strcmp(a, b) < 0;
   }
-  bool operator()(const UniquePtr<char>& k1, const UniquePtr<char>& k2) const {
-    return strcmp(k1.get(), k2.get()) < 0;
+  bool operator()(const UniquePtr<char>& a, const UniquePtr<char>& b) const {
+    return strcmp(a.get(), b.get()) < 0;
+  }
+  bool operator()(const StringView& a, const StringView& b) const {
+    const size_t min_size = std::min(a.size(), b.size());
+    int c = strncmp(a.data(), b.data(), min_size);
+    if (c != 0) return c < 0;
+    return a.size() < b.size();
   }
 };
 

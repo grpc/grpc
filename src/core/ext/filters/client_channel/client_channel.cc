@@ -31,6 +31,7 @@
 #include <grpc/support/string_util.h>
 #include <grpc/support/sync.h>
 
+#include "src/core/ext/filters/client_channel/backend_metric.h"
 #include "src/core/ext/filters/client_channel/backup_poller.h"
 #include "src/core/ext/filters/client_channel/global_subchannel_pool.h"
 #include "src/core/ext/filters/client_channel/http_connect_handshaker.h"
@@ -380,6 +381,19 @@ class CallData {
 
     void* Alloc(size_t size) override { return calld_->arena_->Alloc(size); }
 
+    const LoadBalancingPolicy::BackendMetricData* GetBackendMetricData()
+        override {
+      if (calld_->backend_metric_data_ == nullptr) {
+        grpc_linked_mdelem* md = calld_->recv_trailing_metadata_->idx.named
+                                     .x_endpoint_load_metrics_bin;
+        if (md != nullptr) {
+          calld_->backend_metric_data_ =
+              ParseBackendMetricData(GRPC_MDVALUE(md->md), calld_->arena_);
+        }
+      }
+      return calld_->backend_metric_data_;
+    }
+
    private:
     CallData* calld_;
   };
@@ -712,6 +726,7 @@ class CallData {
   bool service_config_applied_ = false;
   QueuedPickCanceller* pick_canceller_ = nullptr;
   LbCallState lb_call_state_;
+  const LoadBalancingPolicy::BackendMetricData* backend_metric_data_ = nullptr;
   RefCountedPtr<ConnectedSubchannel> connected_subchannel_;
   void (*lb_recv_trailing_metadata_ready_)(
       void* user_data, grpc_error* error,
@@ -1995,6 +2010,10 @@ CallData::CallData(grpc_call_element* elem, const ChannelData& chand,
 CallData::~CallData() {
   grpc_slice_unref_internal(path_);
   GRPC_ERROR_UNREF(cancel_error_);
+  if (backend_metric_data_ != nullptr) {
+    backend_metric_data_
+        ->LoadBalancingPolicy::BackendMetricData::~BackendMetricData();
+  }
   // Make sure there are no remaining pending batches.
   for (size_t i = 0; i < GPR_ARRAY_SIZE(pending_batches_); ++i) {
     GPR_ASSERT(pending_batches_[i].batch == nullptr);

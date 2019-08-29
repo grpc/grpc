@@ -25,6 +25,7 @@
 #include "src/core/ext/filters/client_channel/service_config.h"
 #include "src/core/ext/filters/client_channel/subchannel_interface.h"
 #include "src/core/lib/gprpp/abstract.h"
+#include "src/core/lib/gprpp/map.h"
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/gprpp/string_view.h"
@@ -77,6 +78,26 @@ extern DebugOnlyTraceFlag grpc_trace_lb_policy_refcount;
 // interested_parties() hooks from the API.
 class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
  public:
+  // Represents backend metrics reported by the backend to the client.
+  struct BackendMetricData {
+    /// CPU utilization expressed as a fraction of available CPU resources.
+    double cpu_utilization;
+    /// Memory utilization expressed as a fraction of available memory
+    /// resources.
+    double mem_utilization;
+    /// Total requests per second being served by the backend.  This
+    /// should include all services that a backend is responsible for.
+    uint64_t requests_per_second;
+    /// Application-specific requests cost metrics.  Metric names are
+    /// determined by the application.  Each value is an absolute cost
+    /// (e.g. 3487 bytes of storage) associated with the request.
+    Map<StringView, double, StringLess> request_cost;
+    /// Application-specific resource utilization metrics.  Metric names
+    /// are determined by the application.  Each value is expressed as a
+    /// fraction of total resources available.
+    Map<StringView, double, StringLess> utilization;
+  };
+
   /// Interface for accessing per-call state.
   /// Implemented by the client channel and used by the SubchannelPicker.
   class CallState {
@@ -89,6 +110,10 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
     /// It is more efficient to use this than to allocate memory directly
     /// for allocations that need to be made on a per-call basis.
     virtual void* Alloc(size_t size) GRPC_ABSTRACT;
+
+    /// Returns the backend metric data returned by the server for the call,
+    /// or null if no backend metric data was returned.
+    virtual const BackendMetricData* GetBackendMetricData() GRPC_ABSTRACT;
 
     GRPC_ABSTRACT_BASE_CLASS
   };
@@ -175,6 +200,7 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
     /// modified by the callback.  The callback does not take ownership,
     /// however, so any data that needs to be used after returning must
     /// be copied.
+    /// call_state can be used to obtain backend metric data.
     // TODO(roth): Replace grpc_error with something better before we allow
     // people outside of gRPC team to use this API.
     void (*recv_trailing_metadata_ready)(
