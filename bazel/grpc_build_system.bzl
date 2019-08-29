@@ -342,3 +342,10 @@ def grpc_objc_library(
 def grpc_upb_proto_library(name, deps):
     upb_proto_library(name = name, deps = deps)
 
+
+def python_config_settings():
+    native.config_setting(
+        name = "python3",
+        flag_values = {"@bazel_tools//tools/python:python_version": "PY3"},
+    )
+
