@@ -157,9 +157,9 @@ def grpc_deps():
     if "com_github_google_benchmark" not in native.existing_rules():
         http_archive(
             name = "com_github_google_benchmark",
-            sha256 = "c7682e9007ddfd94072647abab3e89ffd9084089460ae47d67060974467b58bf",
-            strip_prefix = "benchmark-e776aa0275e293707b6a0901e0e8d8a8a3679508",
-            url = "https://github.com/google/benchmark/archive/e776aa0275e293707b6a0901e0e8d8a8a3679508.tar.gz",
+            sha256 = "f68aec93154d010324c05bcd8c5cc53468b87af88d87acb5ddcfaa1bba044837",
+            strip_prefix = "benchmark-090faecb454fbd6e6e17a75ef8146acb037118d4",
+            url = "https://github.com/google/benchmark/archive/090faecb454fbd6e6e17a75ef8146acb037118d4.tar.gz",
         )
 
     if "com_github_cares_cares" not in native.existing_rules():
