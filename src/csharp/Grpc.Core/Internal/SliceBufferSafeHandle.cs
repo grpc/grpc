@@ -138,7 +138,7 @@ namespace Grpc.Core.Internal
                 // if no hint is provided, keep the available space within some "reasonable" boundaries.
                 // This is quite a naive approach which could use some fine-tuning, but currently in most case we know
                 // the required buffer size in advance anyway, so this approach seems good enough for now.
-                if (tailSpaceLen < DefaultTailSpaceSize /2 )
+                if (tailSpaceLen < DefaultTailSpaceSize / 2)
                 {
                     AdjustTailSpace(DefaultTailSpaceSize);
                 }

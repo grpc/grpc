@@ -44,8 +44,7 @@
 static grpc_byte_buffer* grpcsharp_create_byte_buffer_from_stolen_slices(
     grpc_slice_buffer* slice_buffer) {
   grpc_byte_buffer* bb =
-      (grpc_byte_buffer*)gpr_malloc(sizeof(grpc_byte_buffer));
-  memset(bb, 0, sizeof(grpc_byte_buffer));
+      (grpc_byte_buffer*)gpr_zalloc(sizeof(grpc_byte_buffer));
   bb->type = GRPC_BB_RAW;
   bb->data.raw.compression = GRPC_COMPRESS_NONE;
   grpc_slice_buffer_init(&bb->data.raw.slice_buffer);
