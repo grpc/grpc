@@ -45,7 +45,6 @@ py_binary(
         "//external:six"
     ],
     srcs_version = "PY2AND3",
-    python_version = "PY3",
 )
 
 py_library(
@@ -69,7 +68,6 @@ py_binary(
         "//:python3": [],
     }),
     srcs_version = "PY2AND3",
-    python_version = "PY3",
 )
 
 py_test(
@@ -80,5 +78,4 @@ py_test(
         ":server"
     ],
     size = "small",
-    python_version = "PY3",
 )

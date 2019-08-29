@@ -1,9 +1,8 @@
 load("@grpc_python_dependencies//:requirements.bzl", "requirement")
-load("//bazel:python_rules.bzl", "py2and3_test")
 
 package(default_visibility = ["//visibility:public"])
 
-py2and3_test(
+py_test(
     name="_reflection_servicer_test",
     size="small",
     timeout="moderate",
