@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-    <title>grpc &#8212; gRPC Python 1.22.0 documentation</title>
+    <title>grpc &#8212; gRPC Python 1.23.0 documentation</title>
     <link rel="stylesheet" href="../_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
     <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
@@ -31,7 +31,7 @@
 
 
 
-<p class="blurb">1.22.0</p>
+<p class="blurb">1.23.0</p>
 
 
 
@@ -429,8 +429,7 @@
 <span class="sd">          callback: A no-parameter callable to be called on RPC termination.</span>
 
 <span class="sd">        Returns:</span>
-<span class="sd">          bool:</span>
-<span class="sd">            True if the callback was added and will be called later; False if</span>
+<span class="sd">          True if the callback was added and will be called later; False if</span>
 <span class="sd">            the callback was not added and will not be called (because the RPC</span>
 <span class="sd">            already terminated or some other reason).</span>
 <span class="sd">        &quot;&quot;&quot;</span>
@@ -1375,6 +1374,7 @@
 
 <div class="viewcode-block" id="HandlerCallDetails"><a class="viewcode-back" href="../grpc.html#grpc.HandlerCallDetails">[docs]</a><span class="k">class</span> <span class="nc">HandlerCallDetails</span><span class="p">(</span><span class="n">six</span><span class="o">.</span><span class="n">with_metaclass</span><span class="p">(</span><span class="n">abc</span><span class="o">.</span><span class="n">ABCMeta</span><span class="p">)):</span>
     <span class="sd">&quot;&quot;&quot;Describes an RPC that has just arrived for service.</span>
+
 <span class="sd">    Attributes:</span>
 <span class="sd">      method: The method name of the RPC.</span>
 <span class="sd">      invocation_metadata: The :term:`metadata` sent by the client.</span>
@@ -1471,12 +1471,10 @@
 <span class="sd">        This method may only be called before starting the server.</span>
 
 <span class="sd">        Args:</span>
-<span class="sd">          address: The address for which to open a port.</span>
-<span class="sd">          if the port is 0, or not specified in the address, then gRPC runtime</span>
-<span class="sd">          will choose a port.</span>
+<span class="sd">          address: The address for which to open a port. If the port is 0,</span>
+<span class="sd">            or not specified in the address, then gRPC runtime will choose a port.</span>
 
 <span class="sd">        Returns:</span>
-<span class="sd">          integer:</span>
 <span class="sd">          An integer port on which server will accept RPC requests.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span></div>
@@ -1494,7 +1492,6 @@
 <span class="sd">          server_credentials: A ServerCredentials object.</span>
 
 <span class="sd">        Returns:</span>
-<span class="sd">          integer:</span>
 <span class="sd">          An integer port on which server will accept RPC requests.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span></div>
@@ -1946,10 +1943,16 @@
     <span class="n">context</span><span class="o">.</span><span class="n">_finalize_state</span><span class="p">()</span>  <span class="c1"># pylint: disable=protected-access</span>
 
 
-<div class="viewcode-block" id="Compression"><a class="viewcode-back" href="../grpc.html#grpc.Compression">[docs]</a><span class="k">class</span> <span class="nc">Compression</span><span class="p">(</span><span class="n">enum</span><span class="o">.</span><span class="n">IntEnum</span><span class="p">):</span>
+<div class="viewcode-block" id="Compression"><a class="viewcode-back" href="../grpc.html#grpc.Compression">[docs]</a><span class="nd">@enum</span><span class="o">.</span><span class="n">unique</span>
+<span class="k">class</span> <span class="nc">Compression</span><span class="p">(</span><span class="n">enum</span><span class="o">.</span><span class="n">IntEnum</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Indicates the compression method to be used for an RPC.</span>
 
 <span class="sd">       This enumeration is part of an EXPERIMENTAL API.</span>
+
+<span class="sd">       Attributes:</span>
+<span class="sd">        NoCompression: Do not use compression algorithm.</span>
+<span class="sd">        Deflate: Use &quot;Deflate&quot; compression algorithm.</span>
+<span class="sd">        Gzip: Use &quot;Gzip&quot; compression algorithm.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">NoCompression</span> <span class="o">=</span> <span class="n">_compression</span><span class="o">.</span><span class="n">NoCompression</span>
     <span class="n">Deflate</span> <span class="o">=</span> <span class="n">_compression</span><span class="o">.</span><span class="n">Deflate</span>

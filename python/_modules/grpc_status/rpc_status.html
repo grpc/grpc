@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-    <title>grpc_status.rpc_status &#8212; gRPC Python 1.22.0 documentation</title>
+    <title>grpc_status.rpc_status &#8212; gRPC Python 1.23.0 documentation</title>
     <link rel="stylesheet" href="../../_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
     <script type="text/javascript" id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
@@ -31,7 +31,7 @@
 
 
 
-<p class="blurb">1.22.0</p>
+<p class="blurb">1.23.0</p>
 
 
 
@@ -142,6 +142,8 @@
 <span class="sd">      ValueError: If the gRPC call&#39;s code or details are inconsistent with the</span>
 <span class="sd">        status code and message inside of the google.rpc.status.Status.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">call</span><span class="o">.</span><span class="n">trailing_metadata</span><span class="p">()</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">return</span> <span class="kc">None</span>
     <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">call</span><span class="o">.</span><span class="n">trailing_metadata</span><span class="p">():</span>
         <span class="k">if</span> <span class="n">key</span> <span class="o">==</span> <span class="n">_GRPC_DETAILS_METADATA_KEY</span><span class="p">:</span>
             <span class="n">rich_status</span> <span class="o">=</span> <span class="n">status_pb2</span><span class="o">.</span><span class="n">Status</span><span class="o">.</span><span class="n">FromString</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
