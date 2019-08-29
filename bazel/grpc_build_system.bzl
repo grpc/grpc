@@ -269,22 +269,13 @@ def grpc_sh_binary(name, srcs, data = []):
         data = data,
     )
 
-def grpc_py_binary(name,
-                   srcs,
-                   data = [],
-                   deps = [],
-                   external_deps = [],
-                   testonly = False,
-                   python_version = "PY2",
-                   **kwargs):
+def grpc_py_binary(name, srcs, data = [], deps = [], external_deps = [], testonly = False):
     native.py_binary(
         name = name,
         srcs = srcs,
         testonly = testonly,
         data = data,
         deps = deps + _get_external_deps(external_deps),
-        python_version = python_version,
-        **kwargs
     )
 
 def grpc_package(name, visibility = "private", features = []):

@@ -1,8 +1,6 @@
 package(default_visibility = ["//visibility:public"])
 
-load("//bazel:python_rules.bzl", "py2and3_test")
-
-py2and3_test(
+py_test(
     name = "channelz_servicer_test",
     srcs = ["_channelz_servicer_test.py"],
     main = "_channelz_servicer_test.py",
