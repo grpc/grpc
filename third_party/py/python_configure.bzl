@@ -3,14 +3,15 @@
 
 `python_configure` depends on the following environment variables:
 
-  * `PYTHON_BIN_PATH`: location of python binary.
-  * `PYTHON_LIB_PATH`: Location of python libraries.
+  * `PYTHON2_BIN_PATH`: location of python binary.
+  * `PYTHON2_LIB_PATH`: Location of python libraries.
 """
 
 _BAZEL_SH = "BAZEL_SH"
-_PYTHON_BIN_PATH = "PYTHON_BIN_PATH"
-_PYTHON_LIB_PATH = "PYTHON_LIB_PATH"
-_PYTHON_CONFIG_REPO = "PYTHON_CONFIG_REPO"
+_PYTHON2_BIN_PATH = "PYTHON2_BIN_PATH"
+_PYTHON2_LIB_PATH = "PYTHON2_LIB_PATH"
+_PYTHON3_BIN_PATH = "PYTHON3_BIN_PATH"
+_PYTHON3_LIB_PATH = "PYTHON3_LIB_PATH"
 
 
 def _tpl(repository_ctx, tpl, substitutions={}, out=None):
@@ -136,9 +137,9 @@ def _symlink_genrule_for_dir(repository_ctx,
                     "\n".join(outs))
 
 
-def _get_python_bin(repository_ctx):
+def _get_python_bin(repository_ctx, bin_path_key, default_bin_path):
     """Gets the python bin path."""
-    python_bin = repository_ctx.os.environ.get(_PYTHON_BIN_PATH, 'python')
+    python_bin = repository_ctx.os.environ.get(bin_path_key, default_bin_path)
     if not repository_ctx.path(python_bin).exists:
         # It's a command, use 'which' to find its path.
         python_bin_path = repository_ctx.which(python_bin)
@@ -150,7 +151,7 @@ def _get_python_bin(repository_ctx):
     _fail("Cannot find python in PATH, please make sure " +
           "python is installed and add its directory in PATH, or --define " +
           "%s='/something/else'.\nPATH=%s" %
-          (_PYTHON_BIN_PATH, repository_ctx.os.environ.get("PATH", "")))
+          (bin_path_key, repository_ctx.os.environ.get("PATH", "")))
 
 
 def _get_bash_bin(repository_ctx):
@@ -170,9 +171,9 @@ def _get_bash_bin(repository_ctx):
                 (_BAZEL_SH, repository_ctx.os.environ.get("PATH", "")))
 
 
-def _get_python_lib(repository_ctx, python_bin):
+def _get_python_lib(repository_ctx, python_bin, lib_path_key):
     """Gets the python lib path."""
-    python_lib = repository_ctx.os.environ.get(_PYTHON_LIB_PATH)
+    python_lib = repository_ctx.os.environ.get(lib_path_key)
     if python_lib != None:
         return python_lib
     print_lib = (
@@ -202,13 +203,13 @@ def _check_python_lib(repository_ctx, python_lib):
         _fail("Invalid python library path: %s" % python_lib)
 
 
-def _check_python_bin(repository_ctx, python_bin):
+def _check_python_bin(repository_ctx, python_bin, bin_path_key):
     """Checks the python bin path."""
     cmd = '[[ -x "%s" ]] && [[ ! -d "%s" ]]' % (python_bin, python_bin)
     result = repository_ctx.execute([_get_bash_bin(repository_ctx), "-c", cmd])
     if result.return_code == 1:
         _fail("--define %s='%s' is not executable. Is it the python binary?" %
-              (_PYTHON_BIN_PATH, python_bin))
+              (bin_path_key, python_bin))
 
 
 def _get_python_include(repository_ctx, python_bin):
@@ -222,11 +223,11 @@ def _get_python_include(repository_ctx, python_bin):
         error_msg="Problem getting python include path.",
         error_details=(
             "Is the Python binary path set up right? " + "(See ./configure or "
-            + _PYTHON_BIN_PATH + ".) " + "Is distutils installed?"))
+            + _PYTHON2_BIN_PATH + ".) " + "Is distutils installed?"))
     return result.stdout.splitlines()[0]
 
 
-def _get_python_import_lib_name(repository_ctx, python_bin):
+def _get_python_import_lib_name(repository_ctx, python_bin, bin_path_key):
     """Get Python import library name (pythonXY.lib) on Windows."""
     result = _execute(
         repository_ctx, [
@@ -236,65 +237,84 @@ def _get_python_import_lib_name(repository_ctx, python_bin):
         ],
         error_msg="Problem getting python import library.",
         error_details=("Is the Python binary path set up right? " +
-                       "(See ./configure or " + _PYTHON_BIN_PATH + ".) "))
+                       "(See ./configure or " + bin_path_key + ".) "))
     return result.stdout.splitlines()[0]
 
 
-def _create_local_python_repository(repository_ctx):
+def _create_single_version_package(repository_ctx,
+                                   variety_name,
+                                   bin_path_key,
+                                   default_bin_path,
+                                   lib_path_key):
     """Creates the repository containing files set up to build with Python."""
-    python_bin = _get_python_bin(repository_ctx)
-    _check_python_bin(repository_ctx, python_bin)
-    python_lib = _get_python_lib(repository_ctx, python_bin)
+    python_bin = _get_python_bin(repository_ctx, bin_path_key, default_bin_path)
+    _check_python_bin(repository_ctx, python_bin, bin_path_key)
+    python_lib = _get_python_lib(repository_ctx, python_bin, lib_path_key)
     _check_python_lib(repository_ctx, python_lib)
     python_include = _get_python_include(repository_ctx, python_bin)
     python_include_rule = _symlink_genrule_for_dir(
-        repository_ctx, python_include, 'python_include', 'python_include')
+        repository_ctx, python_include, '{}_include'.format(variety_name),
+        '{}_include'.format(variety_name))
     python_import_lib_genrule = ""
     # To build Python C/C++ extension on Windows, we need to link to python import library pythonXY.lib
     # See https://docs.python.org/3/extending/windows.html
     if _is_windows(repository_ctx):
         python_include = _normalize_path(python_include)
-        python_import_lib_name = _get_python_import_lib_name(
+        python_import_lib_name = _get_python_import_lib_name, bin_path_key(
             repository_ctx, python_bin)
         python_import_lib_src = python_include.rsplit(
             '/', 1)[0] + "/libs/" + python_import_lib_name
         python_import_lib_genrule = _symlink_genrule_for_dir(
-            repository_ctx, None, '', 'python_import_lib',
+            repository_ctx, None, '', '{}_import_lib'.format(variety_name),
             [python_import_lib_src], [python_import_lib_name])
     _tpl(
-        repository_ctx, "BUILD", {
+        repository_ctx, "variety", {
             "%{PYTHON_INCLUDE_GENRULE}": python_include_rule,
             "%{PYTHON_IMPORT_LIB_GENRULE}": python_import_lib_genrule,
-        })
-
-
-def _create_remote_python_repository(repository_ctx, remote_config_repo):
-    """Creates pointers to a remotely configured repo set up to build with Python.
-  """
-    _tpl(repository_ctx, "remote.BUILD", {
-        "%{REMOTE_PYTHON_REPO}": remote_config_repo,
-    }, "BUILD")
+            "%{VARIETY_NAME}": variety_name,
+        },
+        out="{}/BUILD".format(variety_name))
 
 
 def _python_autoconf_impl(repository_ctx):
     """Implementation of the python_autoconf repository rule."""
-    if _PYTHON_CONFIG_REPO in repository_ctx.os.environ:
-        _create_remote_python_repository(
-            repository_ctx, repository_ctx.os.environ[_PYTHON_CONFIG_REPO])
-    else:
-        _create_local_python_repository(repository_ctx)
+    _create_single_version_package(repository_ctx,
+                                   "_python2",
+                                   _PYTHON2_BIN_PATH,
+                                   "python",
+                                   _PYTHON2_LIB_PATH)
+    _create_single_version_package(repository_ctx,
+                                   "_python3",
+                                   _PYTHON3_BIN_PATH,
+                                   "python3",
+                                   _PYTHON3_LIB_PATH)
+    _tpl(repository_ctx, "BUILD")
 
 
 python_configure = repository_rule(
-    implementation=_python_autoconf_impl,
-    environ=[
+    implementation = _python_autoconf_impl,
+    environ = [
         _BAZEL_SH,
-        _PYTHON_BIN_PATH,
-        _PYTHON_LIB_PATH,
-        _PYTHON_CONFIG_REPO,
+        _PYTHON2_BIN_PATH,
+        _PYTHON2_LIB_PATH,
+        _PYTHON3_BIN_PATH,
+        _PYTHON3_LIB_PATH,
     ],
+    attrs={
+        "_build_tpl": attr.label(
+            default = Label("//third_party/py:BUILD.tpl"),
+            allow_single_file = True,
+        ),
+        "_variety_tpl": attr.label(
+            default = Label("//third_party/py:variety.tpl"),
+            allow_single_file = True,
+        ),
+    },
 )
 """Detects and configures the local Python.
+
+It is expected that the system have both a working Python 2 and python 3
+installation
 
 Add the following to your WORKSPACE FILE:
 
