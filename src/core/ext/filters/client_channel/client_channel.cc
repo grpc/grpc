@@ -217,8 +217,7 @@ class ChannelData {
       UniquePtr<LoadBalancingPolicy::SubchannelPicker> picker);
 
   void UpdateServiceConfigLocked(
-      Optional<internal::ClientChannelGlobalParsedConfig::RetryThrottling>
-          retry_throttle_data,
+      RefCountedPtr<ServerRetryThrottleData> retry_throttle_data,
       RefCountedPtr<ServiceConfig> service_config);
 
   void CreateResolvingLoadBalancingPolicyLocked();
@@ -1499,24 +1498,27 @@ void ChannelData::UpdateStateAndPickerLocked(
 }
 
 void ChannelData::UpdateServiceConfigLocked(
-    Optional<internal::ClientChannelGlobalParsedConfig::RetryThrottling>
-        retry_throttle_data,
+    RefCountedPtr<ServerRetryThrottleData> retry_throttle_data,
     RefCountedPtr<ServiceConfig> service_config) {
   // Grab data plane lock to update service config.
-  MutexLock lock(&data_plane_mu_);
-  // Update service config.
-  received_service_config_data_ = true;
-  if (retry_throttle_data.has_value()) {
-    retry_throttle_data_ = internal::ServerRetryThrottleMap::GetDataForServer(
-        server_name_.get(), retry_throttle_data.value().max_milli_tokens,
-        retry_throttle_data.value().milli_token_ratio);
+  //
+  // We defer unreffing the old values (and deallocating memory) until
+  // after releasing the lock to keep the critical section small.
+  {
+    MutexLock lock(&data_plane_mu_);
+    // Update service config.
+    received_service_config_data_ = true;
+    // Old values will be unreffed after lock is released.
+    retry_throttle_data_.swap(retry_throttle_data);
+    service_config_.swap(service_config);
+    // Apply service config to queued picks.
+    for (QueuedPick* pick = queued_picks_; pick != nullptr; pick = pick->next) {
+      CallData* calld = static_cast<CallData*>(pick->elem->call_data);
+      calld->MaybeApplyServiceConfigToCallLocked(pick->elem);
+    }
   }
-  service_config_ = std::move(service_config);
-  // Apply service config to queued picks.
-  for (QueuedPick* pick = queued_picks_; pick != nullptr; pick = pick->next) {
-    CallData* calld = static_cast<CallData*>(pick->elem->call_data);
-    calld->MaybeApplyServiceConfigToCallLocked(pick->elem);
-  }
+  // Old values will be unreffed after lock is released when they go out
+  // of scope.
 }
 
 void ChannelData::CreateResolvingLoadBalancingPolicyLocked() {
@@ -1690,12 +1692,19 @@ bool ChannelData::ProcessResolverResultLocked(
   // if we feel it is unnecessary.
   if (service_config_changed || !chand->received_first_resolver_result_) {
     chand->received_first_resolver_result_ = true;
-    Optional<internal::ClientChannelGlobalParsedConfig::RetryThrottling>
-        retry_throttle_data;
+    RefCountedPtr<ServerRetryThrottleData> retry_throttle_data;
     if (parsed_service_config != nullptr) {
-      retry_throttle_data = parsed_service_config->retry_throttling();
+      Optional<internal::ClientChannelGlobalParsedConfig::RetryThrottling>
+          retry_throttle_config = parsed_service_config->retry_throttling();
+      if (retry_throttle_config.has_value()) {
+        retry_throttle_data =
+            internal::ServerRetryThrottleMap::GetDataForServer(
+                chand->server_name_.get(),
+                retry_throttle_config.value().max_milli_tokens,
+                retry_throttle_config.value().milli_token_ratio);
+      }
     }
-    chand->UpdateServiceConfigLocked(retry_throttle_data,
+    chand->UpdateServiceConfigLocked(std::move(retry_throttle_data),
                                      chand->saved_service_config_);
   }
   UniquePtr<char> processed_lb_policy_name;
