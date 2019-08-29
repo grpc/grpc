@@ -31,6 +31,7 @@
 #include <grpc/support/string_util.h>
 #include <grpc/support/sync.h>
 
+#include "src/core/ext/filters/client_channel/backend_metric.h"
 #include "src/core/ext/filters/client_channel/backup_poller.h"
 #include "src/core/ext/filters/client_channel/global_subchannel_pool.h"
 #include "src/core/ext/filters/client_channel/http_connect_handshaker.h"
@@ -280,6 +281,12 @@ class ChannelData {
   bool received_first_resolver_result_ = false;
   // The number of SubchannelWrapper instances referencing a given Subchannel.
   Map<Subchannel*, int> subchannel_refcount_map_;
+  // The set of SubchannelWrappers that currently exist.
+  // No need to hold a ref, since the map is updated in the control-plane
+  // combiner when the SubchannelWrappers are created and destroyed.
+  // TODO(roth): We really want to use a set here, not a map.  Since we don't
+  // currently have a set implementation, we use a map and ignore the value.
+  Map<SubchannelWrapper*, bool> subchannel_wrappers_;
   // Pending ConnectedSubchannel updates for each SubchannelWrapper.
   // Updates are queued here in the control plane combiner and then applied
   // in the data plane mutex when the picker is updated.
@@ -381,6 +388,19 @@ class CallData {
     explicit LbCallState(CallData* calld) : calld_(calld) {}
 
     void* Alloc(size_t size) override { return calld_->arena_->Alloc(size); }
+
+    const LoadBalancingPolicy::BackendMetricData* GetBackendMetricData()
+        override {
+      if (calld_->backend_metric_data_ == nullptr) {
+        grpc_linked_mdelem* md = calld_->recv_trailing_metadata_->idx.named
+                                     .x_endpoint_load_metrics_bin;
+        if (md != nullptr) {
+          calld_->backend_metric_data_ =
+              ParseBackendMetricData(GRPC_MDVALUE(md->md), calld_->arena_);
+        }
+      }
+      return calld_->backend_metric_data_;
+    }
 
    private:
     CallData* calld_;
@@ -714,6 +734,7 @@ class CallData {
   bool service_config_applied_ = false;
   QueuedPickCanceller* pick_canceller_ = nullptr;
   LbCallState lb_call_state_;
+  const LoadBalancingPolicy::BackendMetricData* backend_metric_data_ = nullptr;
   RefCountedPtr<ConnectedSubchannel> connected_subchannel_;
   void (*lb_recv_trailing_metadata_ready_)(
       void* user_data, grpc_error* error,
@@ -807,14 +828,14 @@ class ChannelData::SubchannelWrapper : public SubchannelInterface {
     GRPC_CHANNEL_STACK_REF(chand_->owning_stack_, "SubchannelWrapper");
     auto* subchannel_node = subchannel_->channelz_node();
     if (subchannel_node != nullptr) {
-      intptr_t subchannel_uuid = subchannel_node->uuid();
       auto it = chand_->subchannel_refcount_map_.find(subchannel_);
       if (it == chand_->subchannel_refcount_map_.end()) {
-        chand_->channelz_node_->AddChildSubchannel(subchannel_uuid);
+        chand_->channelz_node_->AddChildSubchannel(subchannel_node->uuid());
         it = chand_->subchannel_refcount_map_.emplace(subchannel_, 0).first;
       }
       ++it->second;
     }
+    chand_->subchannel_wrappers_[this] = true;
   }
 
   ~SubchannelWrapper() {
@@ -823,14 +844,14 @@ class ChannelData::SubchannelWrapper : public SubchannelInterface {
               "chand=%p: destroying subchannel wrapper %p for subchannel %p",
               chand_, this, subchannel_);
     }
+    chand_->subchannel_wrappers_.erase(this);
     auto* subchannel_node = subchannel_->channelz_node();
     if (subchannel_node != nullptr) {
-      intptr_t subchannel_uuid = subchannel_node->uuid();
       auto it = chand_->subchannel_refcount_map_.find(subchannel_);
       GPR_ASSERT(it != chand_->subchannel_refcount_map_.end());
       --it->second;
       if (it->second == 0) {
-        chand_->channelz_node_->RemoveChildSubchannel(subchannel_uuid);
+        chand_->channelz_node_->RemoveChildSubchannel(subchannel_node->uuid());
         chand_->subchannel_refcount_map_.erase(it);
       }
     }
@@ -852,8 +873,9 @@ class ChannelData::SubchannelWrapper : public SubchannelInterface {
       UniquePtr<ConnectivityStateWatcherInterface> watcher) override {
     auto& watcher_wrapper = watcher_map_[watcher.get()];
     GPR_ASSERT(watcher_wrapper == nullptr);
-    watcher_wrapper = New<WatcherWrapper>(
-        std::move(watcher), Ref(DEBUG_LOCATION, "WatcherWrapper"));
+    watcher_wrapper = New<WatcherWrapper>(std::move(watcher),
+                                          Ref(DEBUG_LOCATION, "WatcherWrapper"),
+                                          initial_state);
     subchannel_->WatchConnectivityState(
         initial_state,
         UniquePtr<char>(gpr_strdup(health_check_service_name_.get())),
@@ -876,6 +898,40 @@ class ChannelData::SubchannelWrapper : public SubchannelInterface {
 
   const grpc_channel_args* channel_args() override {
     return subchannel_->channel_args();
+  }
+
+  void UpdateHealthCheckServiceName(UniquePtr<char> health_check_service_name) {
+    if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_routing_trace)) {
+      gpr_log(GPR_INFO,
+              "chand=%p: subchannel wrapper %p: updating health check service "
+              "name from \"%s\" to \"%s\"",
+              chand_, this, health_check_service_name_.get(),
+              health_check_service_name.get());
+    }
+    for (auto& p : watcher_map_) {
+      WatcherWrapper*& watcher_wrapper = p.second;
+      // Cancel the current watcher and create a new one using the new
+      // health check service name.
+      // TODO(roth): If there is not already an existing health watch
+      // call for the new name, then the watcher will initially report
+      // state CONNECTING.  If the LB policy is currently reporting
+      // state READY, this may cause it to switch to CONNECTING before
+      // switching back to READY.  This could cause a small delay for
+      // RPCs being started on the channel.  If/when this becomes a
+      // problem, we may be able to handle it by waiting for the new
+      // watcher to report READY before we use it to replace the old one.
+      WatcherWrapper* replacement = watcher_wrapper->MakeReplacement();
+      subchannel_->CancelConnectivityStateWatch(
+          health_check_service_name_.get(), watcher_wrapper);
+      watcher_wrapper = replacement;
+      subchannel_->WatchConnectivityState(
+          replacement->last_seen_state(),
+          UniquePtr<char>(gpr_strdup(health_check_service_name.get())),
+          OrphanablePtr<Subchannel::ConnectivityStateWatcherInterface>(
+              replacement));
+    }
+    // Save the new health check service name.
+    health_check_service_name_ = std::move(health_check_service_name);
   }
 
   // Caller must be holding the control-plane combiner.
@@ -912,8 +968,11 @@ class ChannelData::SubchannelWrapper : public SubchannelInterface {
     WatcherWrapper(
         UniquePtr<SubchannelInterface::ConnectivityStateWatcherInterface>
             watcher,
-        RefCountedPtr<SubchannelWrapper> parent)
-        : watcher_(std::move(watcher)), parent_(std::move(parent)) {}
+        RefCountedPtr<SubchannelWrapper> parent,
+        grpc_connectivity_state initial_state)
+        : watcher_(std::move(watcher)),
+          parent_(std::move(parent)),
+          last_seen_state_(initial_state) {}
 
     ~WatcherWrapper() { parent_.reset(DEBUG_LOCATION, "WatcherWrapper"); }
 
@@ -936,8 +995,20 @@ class ChannelData::SubchannelWrapper : public SubchannelInterface {
     }
 
     grpc_pollset_set* interested_parties() override {
-      return watcher_->interested_parties();
+      SubchannelInterface::ConnectivityStateWatcherInterface* watcher =
+          watcher_.get();
+      if (watcher_ == nullptr) watcher = replacement_->watcher_.get();
+      return watcher->interested_parties();
     }
+
+    WatcherWrapper* MakeReplacement() {
+      auto* replacement =
+          New<WatcherWrapper>(std::move(watcher_), parent_, last_seen_state_);
+      replacement_ = replacement;
+      return replacement;
+    }
+
+    grpc_connectivity_state last_seen_state() const { return last_seen_state_; }
 
    private:
     class Updater {
@@ -962,12 +1033,17 @@ class ChannelData::SubchannelWrapper : public SubchannelInterface {
           gpr_log(GPR_INFO,
                   "chand=%p: processing connectivity change in combiner "
                   "for subchannel wrapper %p subchannel %p "
-                  "(connected_subchannel=%p state=%s)",
+                  "(connected_subchannel=%p state=%s): watcher=%p",
                   self->parent_->parent_->chand_, self->parent_->parent_.get(),
                   self->parent_->parent_->subchannel_,
                   self->connected_subchannel_.get(),
-                  grpc_connectivity_state_name(self->state_));
+                  grpc_connectivity_state_name(self->state_),
+                  self->parent_->watcher_.get());
         }
+        // Ignore update if the parent WatcherWrapper has been replaced
+        // since this callback was scheduled.
+        if (self->parent_->watcher_ == nullptr) return;
+        self->parent_->last_seen_state_ = self->state_;
         self->parent_->parent_->MaybeUpdateConnectedSubchannel(
             std::move(self->connected_subchannel_));
         self->parent_->watcher_->OnConnectivityStateChange(self->state_);
@@ -982,6 +1058,8 @@ class ChannelData::SubchannelWrapper : public SubchannelInterface {
 
     UniquePtr<SubchannelInterface::ConnectivityStateWatcherInterface> watcher_;
     RefCountedPtr<SubchannelWrapper> parent_;
+    grpc_connectivity_state last_seen_state_;
+    WatcherWrapper* replacement_ = nullptr;
   };
 
   void MaybeUpdateConnectedSubchannel(
@@ -1579,6 +1657,11 @@ bool ChannelData::ProcessResolverResultLocked(
     } else {
       chand->health_check_service_name_.reset();
     }
+    // Update health check service name used by existing subchannel wrappers.
+    for (const auto& p : chand->subchannel_wrappers_) {
+      p.first->UpdateHealthCheckServiceName(
+          UniquePtr<char>(gpr_strdup(chand->health_check_service_name_.get())));
+    }
     // Save service config.
     chand->saved_service_config_ = std::move(service_config);
   }
@@ -1849,6 +1932,10 @@ CallData::CallData(grpc_call_element* elem, const ChannelData& chand,
 CallData::~CallData() {
   grpc_slice_unref_internal(path_);
   GRPC_ERROR_UNREF(cancel_error_);
+  if (backend_metric_data_ != nullptr) {
+    backend_metric_data_
+        ->LoadBalancingPolicy::BackendMetricData::~BackendMetricData();
+  }
   // Make sure there are no remaining pending batches.
   for (size_t i = 0; i < GPR_ARRAY_SIZE(pending_batches_); ++i) {
     GPR_ASSERT(pending_batches_[i].batch == nullptr);

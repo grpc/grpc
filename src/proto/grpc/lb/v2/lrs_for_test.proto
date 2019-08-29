@@ -14,9 +14,12 @@
 
 // This file contains the eds protocol and its dependency.
 //
-// TODO(juanlishen): It's a workaround and should be removed once we have a
-//  clean solution to the circular dependency between the envoy data plane APIs
-//  and gRPC. We can't check in this file due to conflict with internal code.
+// TODO(juanlishen): This file is a hack to avoid a problem we're
+// currently having where we can't depend on a proto file in an external
+// repo due to bazel limitations.  Once that's fixed, this should be
+// removed.  Until this, it should be used in the gRPC tests only, or else it
+// will cause a conflict due to the same proto messages being defined in
+// multiple files in the same binary.
 
 syntax = "proto3";
 

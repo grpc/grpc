@@ -30,4 +30,5 @@ py_test(
     srcs = ["test/_wait_for_ready_example_test.py"],
     deps = [":wait_for_ready_example",],
     size = "small",
+    python_version = "PY3",
 )
