@@ -65,12 +65,17 @@ config_setting(
 
 config_setting(
     name = "python3",
-    values = {"python_path": "python3"},
+    flag_values = {"@bazel_tools//tools/python:python_version": "PY3"},
 )
 
 config_setting(
     name = "mac_x86_64",
     values = {"cpu": "darwin"},
+)
+
+config_setting(
+    name = "grpc_use_cpp_std_lib",
+    values = {"define": "GRPC_USE_CPP_STD_LIB=1"},
 )
 
 # This should be updated along with build.yaml
@@ -1215,6 +1220,7 @@ grpc_cc_library(
         "grpc_client_channel",
         "grpc_lb_upb",
         "grpc_resolver_fake",
+        "grpc_transport_chttp2_client_insecure",
     ],
 )
 
@@ -1241,6 +1247,7 @@ grpc_cc_library(
         "grpc_lb_upb",
         "grpc_resolver_fake",
         "grpc_secure",
+        "grpc_transport_chttp2_client_secure",
     ],
 )
 
@@ -1264,6 +1271,7 @@ grpc_cc_library(
         "grpc_base",
         "grpc_client_channel",
         "grpc_resolver_fake",
+        "grpc_transport_chttp2_client_insecure",
     ],
 )
 
@@ -1288,6 +1296,7 @@ grpc_cc_library(
         "grpc_client_channel",
         "grpc_resolver_fake",
         "grpc_secure",
+        "grpc_transport_chttp2_client_secure",
     ],
 )
 

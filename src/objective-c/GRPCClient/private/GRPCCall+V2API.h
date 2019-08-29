@@ -16,29 +16,21 @@
  *
  */
 
-#import <GRPCClient/GRPCTransport.h>
+@interface GRPCCall (V2API)
 
-NS_ASSUME_NONNULL_BEGIN
+- (instancetype)initWithHost:(NSString *)host
+                        path:(NSString *)path
+                  callSafety:(GRPCCallSafety)safety
+              requestsWriter:(GRXWriter *)requestsWriter
+                 callOptions:(GRPCCallOptions *)callOptions;
 
-@protocol GRPCResponseHandler;
-@class GRPCCallOptions;
-@protocol GRPCChannelFactory;
-
-@interface GRPCCall2Internal : GRPCTransport
-
-- (instancetype)initWithTransportManager:(GRPCTransportManager *)transportManager;
-
-- (void)startWithRequestOptions:(GRPCRequestOptions *)requestOptions
-                    callOptions:(GRPCCallOptions *)callOptions;
-
-- (void)writeData:(id)data;
-
-- (void)finish;
-
-- (void)cancel;
+- (instancetype)initWithHost:(NSString *)host
+                        path:(NSString *)path
+                  callSafety:(GRPCCallSafety)safety
+              requestsWriter:(GRXWriter *)requestsWriter
+                 callOptions:(GRPCCallOptions *)callOptions
+                   writeDone:(void (^)(void))writeDone;
 
 - (void)receiveNextMessages:(NSUInteger)numberOfMessages;
 
 @end
-
-NS_ASSUME_NONNULL_END

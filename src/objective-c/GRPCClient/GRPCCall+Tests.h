@@ -16,7 +16,7 @@
  *
  */
 
-#import "GRPCCallLegacy.h"
+#import "GRPCCall.h"
 
 // Deprecated interface. Please use GRPCCallOptions instead.
 @interface GRPCCall (Tests)

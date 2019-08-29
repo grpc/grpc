@@ -61,22 +61,22 @@ _generate_pb2_src = rule(
 
 def py_proto_library(
         name,
-        srcs,
+        deps,
         **kwargs):
     """Generate python code for a protobuf.
 
     Args:
       name: The name of the target.
-      srcs: A list of proto_library dependencies. Must contain a single element.
+      deps: A list of proto_library dependencies. Must contain a single element.
     """
     codegen_target = "_{}_codegen".format(name)
-    if len(srcs) != 1:
+    if len(deps) != 1:
         fail("Can only compile a single proto at a time.")
 
 
     _generate_pb2_src(
         name = codegen_target,
-        deps = srcs,
+        deps = deps,
         **kwargs
     )
 
@@ -177,4 +177,30 @@ def py_grpc_library(
         ],
         deps = [Label("//src/python/grpcio/grpc:grpcio")] + deps,
         **kwargs
+    )
+
+
+def py2and3_test(name,
+                 py_test = native.py_test,
+                 **kwargs):
+    if "python_version" in kwargs:
+        fail("Cannot specify 'python_version' in py2and3_test.")
+
+    names = [name + suffix for suffix in (".python2", ".python3")]
+    python_versions = ["PY2", "PY3"]
+    for case_name, python_version in zip(names, python_versions):
+        py_test(
+            name = case_name,
+            python_version = python_version,
+            **kwargs
+        )
+
+    suite_kwargs = {}
+    if "visibility" in kwargs:
+        suite_kwargs["visibility"] = kwargs["visibility"]
+
+    native.test_suite(
+        name = name,
+        tests = names,
+        **suite_kwargs
     )

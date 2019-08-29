@@ -17,7 +17,6 @@
  */
 
 #import <GRPCClient/GRPCCall+Tests.h>
-#import <GRPCClient/GRPCTransport.h>
 #import <GRPCClient/internal_testing/GRPCCall+InternalTests.h>
 
 #import "InteropTests.h"
@@ -61,8 +60,8 @@ static int32_t kLocalInteropServerOverhead = 10;
   [GRPCCall useInsecureConnectionsForHost:kLocalCleartextHost];
 }
 
-+ (GRPCTransportId)transport {
-  return GRPCDefaultTransportImplList.core_insecure;
++ (GRPCTransportType)transportType {
+  return GRPCTransportTypeInsecure;
 }
 
 @end

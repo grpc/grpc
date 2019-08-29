@@ -27,6 +27,14 @@ grpc_cc_test(
     deps = ["//test/core/util:grpc_test_util"],
 )
 
+grpc_cc_binary(
+    name = "bm_chttp2_transport",
+    testonly = 1,
+    srcs = ["bm_chttp2_transport.cc"],
+    tags = ["no_windows"],
+    deps = [":helpers"],
+)
+
 grpc_cc_library(
     name = "helpers",
     testonly = 1,

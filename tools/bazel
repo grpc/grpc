@@ -32,7 +32,7 @@ then
   exec -a "$0" "${BAZEL_REAL}" "$@"
 fi
 
-VERSION=0.26.0
+VERSION=0.28.1
 
 echo "INFO: Running bazel wrapper (see //tools/bazel for details), bazel version $VERSION will be used instead of system-wide bazel installation."
 

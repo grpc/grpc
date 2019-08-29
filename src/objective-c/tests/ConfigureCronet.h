@@ -16,6 +16,8 @@
  *
  */
 
+#ifdef GRPC_COMPILE_WITH_CRONET
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -27,4 +29,6 @@ void configureCronet(void);
 
 #ifdef __cplusplus
 }
+#endif
+
 #endif

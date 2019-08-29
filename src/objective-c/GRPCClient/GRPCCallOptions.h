@@ -18,11 +18,57 @@
 
 #import <Foundation/Foundation.h>
 
-#import "GRPCTypes.h"
-
 NS_ASSUME_NONNULL_BEGIN
 
-@protocol GRPCInterceptorFactory;
+/**
+ * Safety remark of a gRPC method as defined in RFC 2616 Section 9.1
+ */
+typedef NS_ENUM(NSUInteger, GRPCCallSafety) {
+  /** Signal that there is no guarantees on how the call affects the server state. */
+  GRPCCallSafetyDefault = 0,
+  /** Signal that the call is idempotent. gRPC is free to use PUT verb. */
+  GRPCCallSafetyIdempotentRequest = 1,
+  /**
+   * Signal that the call is cacheable and will not affect server state. gRPC is free to use GET
+   * verb.
+   */
+  GRPCCallSafetyCacheableRequest = 2,
+};
+
+// Compression algorithm to be used by a gRPC call
+typedef NS_ENUM(NSUInteger, GRPCCompressionAlgorithm) {
+  GRPCCompressNone = 0,
+  GRPCCompressDeflate,
+  GRPCCompressGzip,
+  GRPCStreamCompressGzip,
+};
+
+// GRPCCompressAlgorithm is deprecated; use GRPCCompressionAlgorithm
+typedef GRPCCompressionAlgorithm GRPCCompressAlgorithm;
+
+/** The transport to be used by a gRPC call */
+typedef NS_ENUM(NSUInteger, GRPCTransportType) {
+  GRPCTransportTypeDefault = 0,
+  /** gRPC internal HTTP/2 stack with BoringSSL */
+  GRPCTransportTypeChttp2BoringSSL = 0,
+  /** Cronet stack */
+  GRPCTransportTypeCronet,
+  /** Insecure channel. FOR TEST ONLY! */
+  GRPCTransportTypeInsecure,
+};
+
+/**
+ * Implement this protocol to provide a token to gRPC when a call is initiated.
+ */
+@protocol GRPCAuthorizationProtocol
+
+/**
+ * This method is called when gRPC is about to start the call. When OAuth token is acquired,
+ * \a handler is expected to be called with \a token being the new token to be used for this call.
+ */
+- (void)getTokenWithHandler:(void (^)(NSString *_Nullable token))handler;
+
+@end
 
 @interface GRPCCallOptions : NSObject<NSCopying, NSMutableCopying>
 
@@ -58,7 +104,7 @@ NS_ASSUME_NONNULL_BEGIN
  * this array. This parameter should not be modified by any interceptor and will
  * not take effect if done so.
  */
-@property(copy, readonly) NSArray<id<GRPCInterceptorFactory>> *interceptorFactories;
+@property(copy, readonly) NSArray *interceptorFactories;
 
 // OAuth2 parameters. Users of gRPC may specify one of the following two parameters.
 
@@ -146,22 +192,9 @@ NS_ASSUME_NONNULL_BEGIN
 @property(copy, readonly, nullable) NSString *PEMCertificateChain;
 
 /**
- * Deprecated: this option is deprecated. Please use the property \a transport
- * instead.
- *
  * Select the transport type to be used for this call.
  */
 @property(readonly) GRPCTransportType transportType;
-
-/**
- * The transport to be used for this call. Users may choose a native transport
- * identifier defined in \a GRPCTransport or provided by a non-native transport
- * implementation. If the option is left to be NULL, gRPC will use its default
- * transport.
- *
- * This is currently an experimental option.
- */
-@property(readonly) GRPCTransportId transport;
 
 /**
  * Override the hostname during the TLS hostname validation process.
@@ -234,7 +267,7 @@ NS_ASSUME_NONNULL_BEGIN
  * this array. This parameter should not be modified by any interceptor and will
  * not take effect if done so.
  */
-@property(copy, readwrite) NSArray<id<GRPCInterceptorFactory>> *interceptorFactories;
+@property(copy, readwrite) NSArray *interceptorFactories;
 
 // OAuth2 parameters. Users of gRPC may specify one of the following two parameters.
 
@@ -324,22 +357,9 @@ NS_ASSUME_NONNULL_BEGIN
 @property(copy, readwrite, nullable) NSString *PEMCertificateChain;
 
 /**
- * Deprecated: this option is deprecated. Please use the property \a transport
- * instead.
- *
  * Select the transport type to be used for this call.
  */
 @property(readwrite) GRPCTransportType transportType;
-
-/**
- * The transport to be used for this call. Users may choose a native transport
- * identifier defined in \a GRPCTransport or provided by a non-native ttransport
- * implementation. If the option is left to be NULL, gRPC will use its default
- * transport.
- *
- * An interceptor must not change the value of this option.
- */
-@property(readwrite) GRPCTransportId transport;
 
 /**
  * Override the hostname during the TLS hostname validation process.

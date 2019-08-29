@@ -104,7 +104,7 @@ inline grpc_mdelem grpc_chttp2_hptbl_lookup(const grpc_chttp2_hptbl* tbl,
      reading the core static metadata table here; at that point we'd need our
      own singleton static metadata in the correct order. */
   return index <= GRPC_CHTTP2_LAST_STATIC_ENTRY
-             ? grpc_static_mdelem_manifested[index - 1]
+             ? grpc_static_mdelem_manifested()[index - 1]
              : grpc_chttp2_hptbl_lookup_dynamic_index(tbl, index);
 }
 /* add a table entry to the index */
@@ -120,7 +120,7 @@ size_t grpc_chttp2_get_size_in_hpack_table(grpc_mdelem elem,
 inline uintptr_t grpc_chttp2_get_static_hpack_table_index(grpc_mdelem md) {
   uintptr_t index =
       reinterpret_cast<grpc_core::StaticMetadata*>(GRPC_MDELEM_DATA(md)) -
-      grpc_static_mdelem_table;
+      grpc_static_mdelem_table();
   if (index < GRPC_CHTTP2_LAST_STATIC_ENTRY) {
     return index + 1;  // Hpack static metadata element indices start at 1
   }
