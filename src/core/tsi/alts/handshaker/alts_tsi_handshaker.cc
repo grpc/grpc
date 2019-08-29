@@ -251,7 +251,14 @@ static void on_handshaker_service_resp_recv(void* arg, grpc_error* error) {
     gpr_log(GPR_ERROR, "ALTS handshaker client is nullptr");
     return;
   }
-  alts_handshaker_client_handle_response(client, true);
+  bool success = true;
+  if (error != GRPC_ERROR_NONE) {
+    gpr_log(GPR_ERROR,
+            "ALTS handshaker on_handshaker_service_resp_recv error: %s",
+            grpc_error_string(error));
+    success = false;
+  }
+  alts_handshaker_client_handle_response(client, success);
 }
 
 /* gRPC provided callback used when dedicatd CQ and thread are used.
