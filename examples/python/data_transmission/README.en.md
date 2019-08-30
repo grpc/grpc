@@ -1,10 +1,10 @@
 ##  Data transmission demo for using gRPC in Python
 
-Four ways of data transmission when gRPC is used in Python.
+Four ways of data transmission when gRPC is used in Python.  [Offical Guide](<https://grpc.io/docs/guides/concepts/#unary-rpc>)
 
 - #### unary-unary
 
-  There's nothing to say. It's no different from the usual way.
+  In a single call, the client can only send request once, and the server can only respond once.
 
   `client.py - line:13 - simple_method`
 
