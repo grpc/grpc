@@ -266,7 +266,7 @@ static void tcp_server_shutdown_complete(void* arg, grpc_error* error) {
   // may do a synchronous unref.
   grpc_core::ExecCtx::Get()->Flush();
   if (destroy_done != nullptr) {
-    destroy_done->cb(destroy_done->cb_arg, GRPC_ERROR_REF(error));
+    GRPC_CLOSURE_SCHED(destroy_done, GRPC_ERROR_REF(error));
     grpc_core::ExecCtx::Get()->Flush();
   }
   grpc_channel_args_destroy(state->args);
