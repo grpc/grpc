@@ -103,11 +103,7 @@ class RefCountedPtr {
     if (value_ != nullptr) value_->Unref();
   }
 
-  void swap(RefCountedPtr& other) {
-    T* tmp = value_;
-    value_ = other.value_;
-    other.value_ = tmp;
-  }
+  void swap(RefCountedPtr& other) { std::swap(value_, other.value_); }
 
   // If value is non-null, we take ownership of a ref to it.
   void reset(T* value = nullptr) {
