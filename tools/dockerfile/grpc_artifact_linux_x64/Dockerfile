@@ -57,10 +57,10 @@ RUN \curl -sSL https://get.rvm.io | bash -s stable
 # Install Ruby 2.1
 RUN /bin/bash -l -c "rvm install ruby-2.1"
 RUN /bin/bash -l -c "rvm use --default ruby-2.1"
-RUN /bin/bash -l -c "echo 'gem: --no-ri --no-rdoc' > ~/.gemrc"
+RUN /bin/bash -l -c "echo 'gem: --no-document' > ~/.gemrc"
 RUN /bin/bash -l -c "echo 'export PATH=/usr/local/rvm/bin:$PATH' >> ~/.bashrc"
 RUN /bin/bash -l -c "echo 'rvm --default use ruby-2.1' >> ~/.bashrc"
-RUN /bin/bash -l -c "gem install bundler -v 1.17.3 --no-ri --no-rdoc"
+RUN /bin/bash -l -c "gem install bundler -v 1.17.3 --no-document"
 
 
 ##################
@@ -78,6 +78,14 @@ RUN echo "deb http://archive.debian.org/debian jessie-backports main" | tee /etc
 RUN echo 'Acquire::Check-Valid-Until "false";' > /etc/apt/apt.conf
 RUN sed -i '/deb http:\/\/deb.debian.org\/debian jessie-updates main/d' /etc/apt/sources.list
 RUN apt-get update && apt-get install -t jessie-backports -y cmake && apt-get clean
+
+
+##################
+# Python AuditWheel dependencies (needed to check manylinux1 compatibility)
+
+RUN apt-get install -y python3 python3-pip
+RUN pip3 install auditwheel==1.10.0
+
 
 RUN mkdir /var/local/jenkins
 

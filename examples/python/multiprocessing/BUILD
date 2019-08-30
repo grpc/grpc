@@ -23,7 +23,7 @@ proto_library(
 
 py_proto_library(
     name = "prime_proto_pb2",
-    srcs = [":prime_proto"],
+    deps = [":prime_proto"],
 )
 
 py_grpc_library(

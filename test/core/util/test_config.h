@@ -24,6 +24,9 @@
 extern int64_t g_fixture_slowdown_factor;
 extern int64_t g_poller_slowdown_factor;
 
+/* Returns if the test is built under TSAN or MSAN. */
+bool grpc_test_built_under_tsan_or_msan();
+
 /* Returns an appropriate scaling factor for timeouts. */
 int64_t grpc_test_slowdown_factor();
 

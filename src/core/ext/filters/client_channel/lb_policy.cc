@@ -129,7 +129,7 @@ void LoadBalancingPolicy::QueuePicker::CallExitIdle(void* arg,
 LoadBalancingPolicy::PickResult
 LoadBalancingPolicy::TransientFailurePicker::Pick(PickArgs args) {
   PickResult result;
-  result.type = PickResult::PICK_TRANSIENT_FAILURE;
+  result.type = PickResult::PICK_FAILED;
   result.error = GRPC_ERROR_REF(error_);
   return result;
 }

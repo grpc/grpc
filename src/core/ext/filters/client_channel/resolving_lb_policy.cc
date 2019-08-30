@@ -153,7 +153,7 @@ class ResolvingLoadBalancingPolicy::ResolvingControlHelper
     }
   }
 
-  void AddTraceEvent(TraceSeverity severity, const char* message) override {}
+  void AddTraceEvent(TraceSeverity severity, StringView message) override {}
 
   void set_child(LoadBalancingPolicy* child) { child_ = child; }
 
@@ -428,7 +428,7 @@ void ResolvingLoadBalancingPolicy::ConcatenateAndAddChannelTraceLocked(
     size_t len = 0;
     UniquePtr<char> message(gpr_strvec_flatten(&v, &len));
     channel_control_helper()->AddTraceEvent(ChannelControlHelper::TRACE_INFO,
-                                            message.get());
+                                            StringView(message.get()));
     gpr_strvec_destroy(&v);
   }
 }

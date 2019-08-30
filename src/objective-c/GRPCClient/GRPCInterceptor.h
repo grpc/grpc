@@ -106,20 +106,22 @@
  */
 
 #import "GRPCCall.h"
-#import "GRPCDispatchable.h"
 
 NS_ASSUME_NONNULL_BEGIN
 
 @class GRPCInterceptorManager;
 @class GRPCInterceptor;
-@class GRPCRequestOptions;
-@class GRPCCallOptions;
-@protocol GRPCResponseHandler;
 
 /**
  * The GRPCInterceptorInterface defines the request events that can occur to an interceptr.
  */
-@protocol GRPCInterceptorInterface<NSObject, GRPCDispatchable>
+@protocol GRPCInterceptorInterface<NSObject>
+
+/**
+ * The queue on which all methods of this interceptor should be dispatched on. The queue must be a
+ * serial queue.
+ */
+@property(readonly) dispatch_queue_t requestDispatchQueue;
 
 /**
  * To start the call. This method will only be called once for each instance.
@@ -169,20 +171,19 @@ NS_ASSUME_NONNULL_BEGIN
  * invoke shutDown method of its corresponding manager so that references to other interceptors can
  * be released.
  */
-@interface GRPCInterceptorManager : NSObject<GRPCInterceptorInterface, GRPCResponseHandler>
+@interface GRPCInterceptorManager : NSObject
 
 - (instancetype)init NS_UNAVAILABLE;
 
 + (instancetype) new NS_UNAVAILABLE;
 
-- (nullable instancetype)initWithFactories:(nullable NSArray<id<GRPCInterceptorFactory>> *)factories
-                       previousInterceptor:(nullable id<GRPCResponseHandler>)previousInterceptor
-                               transportId:(GRPCTransportId)transportId;
+- (nullable instancetype)initWithNextInterceptor:(id<GRPCInterceptorInterface>)nextInterceptor
+    NS_DESIGNATED_INITIALIZER;
 
-/**
- * Notify the manager that the interceptor has shut down and the manager should release references
- * to other interceptors and stop forwarding requests/responses.
- */
+/** Set the previous interceptor in the chain. Can only be set once. */
+- (void)setPreviousInterceptor:(id<GRPCResponseHandler>)previousInterceptor;
+
+/** Indicate shutdown of the interceptor; release the reference to other interceptors */
 - (void)shutDown;
 
 // Methods to forward GRPCInterceptorInterface calls to the next interceptor
@@ -234,6 +235,7 @@ NS_ASSUME_NONNULL_BEGIN
 @interface GRPCInterceptor : NSObject<GRPCInterceptorInterface, GRPCResponseHandler>
 
 - (instancetype)init NS_UNAVAILABLE;
+
 + (instancetype) new NS_UNAVAILABLE;
 
 /**
@@ -241,7 +243,9 @@ NS_ASSUME_NONNULL_BEGIN
  * that this interceptor's methods are dispatched onto.
  */
 - (nullable instancetype)initWithInterceptorManager:(GRPCInterceptorManager *)interceptorManager
-                                      dispatchQueue:(dispatch_queue_t)dispatchQueue;
+                               requestDispatchQueue:(dispatch_queue_t)requestDispatchQueue
+                              responseDispatchQueue:(dispatch_queue_t)responseDispatchQueue
+    NS_DESIGNATED_INITIALIZER;
 
 // Default implementation of GRPCInterceptorInterface
 

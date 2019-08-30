@@ -161,7 +161,7 @@ class InterceptRecvTrailingMetadataLoadBalancingPolicy
       parent_->channel_control_helper()->RequestReresolution();
     }
 
-    void AddTraceEvent(TraceSeverity severity, const char* message) override {
+    void AddTraceEvent(TraceSeverity severity, StringView message) override {
       parent_->channel_control_helper()->AddTraceEvent(severity, message);
     }
 
@@ -191,7 +191,7 @@ class InterceptRecvTrailingMetadataLoadBalancingPolicy
       gpr_log(GPR_INFO, "trailing metadata:");
       InterceptRecvTrailingMetadataLoadBalancingPolicy::LogMetadata(
           recv_trailing_metadata);
-      self->cb_(self->user_data_);
+      self->cb_(self->user_data_, call_state->GetBackendMetricData());
       self->~TrailingMetadataHandler();
     }
 
