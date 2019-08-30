@@ -1,8 +1,7 @@
-import grpc
-
 from threading import Thread
 from concurrent import futures
 
+import grpc
 import demo_pb2_grpc
 import demo_pb2
 
@@ -16,8 +15,11 @@ class DemoServer(demo_pb2_grpc.GRPCDemoServicer):
     # unary-unary(In a single call, the client can only send request once, and the server can
     # only respond once.)
     def SimpleMethod(self, request, context):
-        print("SimpleMethod called by client(%d) the message: %s" % (request.client_id, request.request_data))
-        response = demo_pb2.Response(server_id=SERVER_ID, response_data="Python server SimpleMethod Ok!!!!")
+        print("SimpleMethod called by client(%d) the message: %s" %
+              (request.client_id, request.request_data))
+        response = demo_pb2.Response(
+            server_id=SERVER_ID,
+            response_data="Python server SimpleMethod Ok!!!!")
         return response
 
     # 客户端流模式（在一次调用中, 客户端可以多次向服务器传输数据, 但是服务器只能返回一次响应）
@@ -26,22 +28,27 @@ class DemoServer(demo_pb2_grpc.GRPCDemoServicer):
     def ClientStreamingMethod(self, request_iterator, context):
         print("ClientStreamingMethod called by client...")
         for request in request_iterator:
-            print("recv from client(%d), message= %s" % (request.client_id, request.request_data))
-        response = demo_pb2.Response(server_id=SERVER_ID, response_data="Python server ClientStreamingMethod ok")
+            print("recv from client(%d), message= %s" % (request.client_id,
+                                                         request.request_data))
+        response = demo_pb2.Response(
+            server_id=SERVER_ID,
+            response_data="Python server ClientStreamingMethod ok")
         return response
 
     # 服务端流模式（在一次调用中, 客户端只能一次向服务器传输数据, 但是服务器可以多次返回响应）
     # unary-stream (In a single call, the client can only transmit data to the server at one time,
     # but the server can return the response many times.)
     def ServerStreamingMethod(self, request, context):
-        print("ServerStreamingMethod called by client(%d), message= %s" % (request.client_id, request.request_data))
+        print("ServerStreamingMethod called by client(%d), message= %s" %
+              (request.client_id, request.request_data))
 
         # 创建一个生成器
         # create a generator
         def response_messages():
             for i in range(5):
-                response = demo_pb2.Response(server_id=SERVER_ID,
-                                             response_data=("send by Python server, message=%d" % i))
+                response = demo_pb2.Response(
+                    server_id=SERVER_ID,
+                    response_data=("send by Python server, message=%d" % i))
                 yield response
 
         return response_messages()
@@ -56,13 +63,16 @@ class DemoServer(demo_pb2_grpc.GRPCDemoServicer):
         # Open a sub thread to receive data
         def parse_request():
             for request in request_iterator:
-                print("recv from client(%d), message= %s" % (request.client_id, request.request_data))
+                print("recv from client(%d), message= %s" %
+                      (request.client_id, request.request_data))
 
         t = Thread(target=parse_request)
         t.start()
 
         for i in range(5):
-            yield demo_pb2.Response(server_id=SERVER_ID, response_data=("send by Python server, message= %d" % i))
+            yield demo_pb2.Response(
+                server_id=SERVER_ID,
+                response_data=("send by Python server, message= %d" % i))
 
         t.join()
 
