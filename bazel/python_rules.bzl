@@ -93,11 +93,13 @@ def _generate_pb2_grpc_src_impl(context):
     proto_root = get_proto_root(context.label.workspace_root)
     out_files = declare_out_files(protos, context, _GENERATED_GRPC_PROTO_FORMAT)
 
+    plugin_flags = ["grpc_2_0"] + context.attr.strip_prefixes
+
     arguments = []
     tools = [context.executable._protoc, context.executable._plugin]
     arguments += get_plugin_args(
         context.executable._plugin,
-        [],
+        plugin_flags,
         context.genfiles_dir.path,
         False,
     )
@@ -127,6 +129,7 @@ _generate_pb2_grpc_src = rule(
             allow_empty = False,
             providers = [ProtoInfo],
         ),
+        "strip_prefixes": attr.string_list(),
         "_plugin": attr.label(
             executable = True,
             providers = ["files_to_run"],
@@ -147,6 +150,7 @@ def py_grpc_library(
     name,
     srcs,
     deps,
+    strip_prefixes = [],
     **kwargs):
     """Generate python code for gRPC services defined in a protobuf.
 
@@ -156,6 +160,10 @@ def py_grpc_library(
         schema of the service.
       deps: (List of `labels`) a single py_proto_library target for the
         proto_library in `srcs`.
+      strip_prefixes: (List of `strings`) If provided, this prefix will be
+        stripped from the beginning of foo_pb2 modules imported by the
+        generated stubs. This is useful in combination with the `imports`
+        attribute of the `py_library` rule.
     """
     codegen_grpc_target = "_{}_grpc_codegen".format(name)
     if len(srcs) != 1:
@@ -167,6 +175,7 @@ def py_grpc_library(
     _generate_pb2_grpc_src(
         name = codegen_grpc_target,
         deps = srcs,
+        strip_prefixes = strip_prefixes,
         **kwargs
     )
 
