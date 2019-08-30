@@ -6,7 +6,7 @@
 
   在一次调用中, 客户端只能向服务器传输一次请求数据, 服务器也只能返回一次响应
 
-  `client.py - line:13 - simple_method`
+  `client.py - line:14 - simple_method`
 
   `server.py - line:17 - SimpleMethod`
 
@@ -14,23 +14,23 @@
 
   在一次调用中, 客户端可以多次向服务器传输数据, 但是服务器只能返回一次响应
 
-  `clien.py - line:24 - client_streaming_method `
+  `clien.py - line:27 - client_streaming_method `
 
-  `server.py - line:25 - ClientStreamingMethod`
+  `server.py - line:28 - ClientStreamingMethod`
 
 - #### 服务端流模式 
 
   在一次调用中, 客户端只能向服务器传输一次请求数据, 但是服务器可以多次返回响应
 
-  `clien.py - line:42 - server_streaming_method`
+  `clien.py - line:48 - server_streaming_method`
 
-  `server.py - line:35 - ServerStreamingMethod`
+  `server.py - line:41 - ServerStreamingMethod`
 
 - #### 双向流模式
 
   在一次调用中, 客户端和服务器都可以向对方多次收发数据
 
-  `client.py - line:55 - bidirectional_streaming_method`
+  `client.py - line:63 - bidirectional_streaming_method`
 
-  `server.py - line:51 - BidirectionalStreamingMethod`
+  `server.py - line:59 - BidirectionalStreamingMethod`
 
