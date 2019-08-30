@@ -1,9 +1,11 @@
 // 语法版本声明，必须放在非注释的第一行
 // Syntax version declaration. Must be placed on the first line of non-commentary.
-syntax = "proto3";
 
-// 包名定义, Python中使用时可以省略不写(PS:我还要再Go中使用,所以留在这里了)
-// Package name definition, which can be omitted in Python. (PS: I'll use it again in Go, so stay here)
+syntax = "proto3";
+// The document of proto3: https://developers.google.com/protocol-buffers/docs/proto3
+
+// 包名定义, Python中使用时可以省略不写
+// Package name definition, which can be omitted in Python.
 package demo;
 
 /*
@@ -12,8 +14,8 @@ package demo;
 总体格式类似于Python中定义一个类或者Golang中定义一个结构体
 */
 /*
-`message` is used to define the structure of the data to be transmitted, After the equal sign is the field number.
-Each field in the message definition has a unique number.
+`message` is used to define the structure of the data to be transmitted, after the equal sign
+is the field number. Each field in the message definition has a unique number.
 The overall format is similar to defining a class in Python or a structure in Golang.
 */
 message Request {
@@ -26,11 +28,13 @@ message Response {
     string response_data = 2;
 }
 
-// service是用来给GRPC服务定义方法的, 格式固定, 类似于Golang中定义一个接口
-// `service` is used to define methods for GRPC services in a fixed format, similar to defining an interface in Golang
+// `service` 是用来给gRPC服务定义方法的, 格式固定, 类似于Golang中定义一个接口
+// `service` is used to define methods for gRPC services in a fixed format, similar to defining
+//an interface in Golang
 service GRPCDemo {
-    // 简单模式
-    // unary-unary
+    // 一元模式(在一次调用中, 客户端只能向服务器传输一次请求数据, 服务器也只能返回一次响应)
+    // unary-unary(In a single call, the client can only send request once, and the server can
+    // only respond once.)
     rpc SimpleMethod (Request) returns (Response);
 
     // 客户端流模式（在一次调用中, 客户端可以多次向服务器传输数据, 但是服务器只能返回一次响应）

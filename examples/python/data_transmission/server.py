@@ -6,14 +6,15 @@ from concurrent import futures
 import demo_pb2_grpc
 import demo_pb2
 
-SERVER_ADDRESS = 'localhost:23334'
+SERVER_ADDRESS = 'localhost:23333'
 SERVER_ID = 1
 
 
 class DemoServer(demo_pb2_grpc.GRPCDemoServicer):
 
-    # 简单模式
-    # unary-unary
+    # 一元模式(在一次调用中, 客户端只能向服务器传输一次请求数据, 服务器也只能返回一次响应)
+    # unary-unary(In a single call, the client can only send request once, and the server can
+    # only respond once.)
     def SimpleMethod(self, request, context):
         print("SimpleMethod called by client(%d) the message: %s" % (request.client_id, request.request_data))
         response = demo_pb2.Response(server_id=SERVER_ID, response_data="Python server SimpleMethod Ok!!!!")

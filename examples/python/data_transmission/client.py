@@ -4,12 +4,13 @@ import grpc
 import demo_pb2_grpc
 import demo_pb2
 
-SERVER_ADDRESS = "localhost:23334"
+SERVER_ADDRESS = "localhost:23333"
 CLIENT_ID = 1
 
 
-# 简单模式
-# unary-unary
+# 一元模式(在一次调用中, 客户端只能向服务器传输一次请求数据, 服务器也只能返回一次响应)
+# unary-unary(In a single call, the client can only send request once, and the server can
+# only respond once.)
 def simple_method(stub):
     print("--------------Call SimpleMethod Begin--------------")
     request = demo_pb2.Request(client_id=CLIENT_ID, request_data="called by Python client")
