@@ -24,7 +24,6 @@
 
 int main(int argc, char* argv[]) {
   grpc_python_generator::GeneratorConfiguration config;
-  config.prefixes_to_filter = {"src.python.grpcio_tests."};
   grpc_python_generator::PythonGrpcGenerator generator(config);
   return grpc::protobuf::compiler::PluginMain(argc, argv, &generator);
 }

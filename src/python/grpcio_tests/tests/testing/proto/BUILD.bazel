@@ -29,4 +29,5 @@ py_grpc_library(
    name = "services_proto_pb2_grpc",
    srcs = [":services_proto"],
    deps = [":services_proto_pb2"],
+   strip_prefixes = ["src.python.grpcio_tests."],
 )

@@ -84,8 +84,6 @@ def _transform(message, transformer, exception_message):
         try:
             return transformer(message)
         except Exception:  # pylint: disable=broad-except
-            print("Message: {}, {}".format(type(message), id(type(message))))
-            print("Transformer receiver: {}, {}".format(transformer.im_class, id(transformer.im_class)))
             _LOGGER.exception(exception_message)
             return None
 
