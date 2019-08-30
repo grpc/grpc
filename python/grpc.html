@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-    <title>gRPC &#8212; gRPC Python 1.22.0 documentation</title>
+    <title>gRPC &#8212; gRPC Python 1.23.0 documentation</title>
     <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
     <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
@@ -33,7 +33,7 @@
 
 
 
-<p class="blurb">1.22.0</p>
+<p class="blurb">1.23.0</p>
 
 
 
@@ -957,18 +957,10 @@ is passed.</li>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
-<li><strong>address</strong> – The address for which to open a port.</li>
-<li><strong>the port is 0</strong><strong>, or </strong><strong>not specified in the address</strong><strong>, </strong><strong>then gRPC runtime</strong> (<em>if</em>) – </li>
-<li><strong>choose a port.</strong> (<em>will</em>) – </li>
-</ul>
-</td>
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>address</strong> – The address for which to open a port. If the port is 0,
+or not specified in the address, then gRPC runtime will choose a port.</td>
 </tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">An integer port on which server will accept RPC requests.</p>
-</td>
-</tr>
-<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">integer</p>
-</td>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">An integer port on which server will accept RPC requests.</td>
 </tr>
 </tbody>
 </table>
@@ -991,10 +983,7 @@ runtime will choose a port.</li>
 </ul>
 </td>
 </tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first">An integer port on which server will accept RPC requests.</p>
-</td>
-</tr>
-<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body"><p class="first last">integer</p>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">An integer port on which server will accept RPC requests.</p>
 </td>
 </tr>
 </tbody>
@@ -1180,11 +1169,12 @@ other functions.</p>
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>callback</strong> – A no-parameter callable to be called on RPC termination.</td>
 </tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">True if the callback was added and will be called later; False if
-the callback was not added and will not be called (because the RPC
-already terminated or some other reason).</td>
-</tr>
-<tr class="field-odd field"><th class="field-name">Return type:</th><td class="field-body">bool</td>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><dl class="docutils">
+<dt>True if the callback was added and will be called later; False if</dt>
+<dd>the callback was not added and will not be called (because the RPC
+already terminated or some other reason).</dd>
+</dl>
+</td>
 </tr>
 </tbody>
 </table>
@@ -1828,10 +1818,13 @@ True.</p>
 <dl class="class">
 <dt id="grpc.HandlerCallDetails">
 <em class="property">class </em><code class="descclassname">grpc.</code><code class="descname">HandlerCallDetails</code><a class="reference internal" href="_modules/grpc.html#HandlerCallDetails"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.HandlerCallDetails" title="Permalink to this definition">¶</a></dt>
-<dd><p>Describes an RPC that has just arrived for service.
-.. attribute:: method</p>
-<blockquote>
-<div>The method name of the RPC.</div></blockquote>
+<dd><p>Describes an RPC that has just arrived for service.</p>
+<dl class="attribute">
+<dt id="grpc.HandlerCallDetails.method">
+<code class="descname">method</code><a class="headerlink" href="#grpc.HandlerCallDetails.method" title="Permalink to this definition">¶</a></dt>
+<dd><p>The method name of the RPC.</p>
+</dd></dl>
+
 <dl class="attribute">
 <dt id="grpc.HandlerCallDetails.invocation_metadata">
 <code class="descname">invocation_metadata</code><a class="headerlink" href="#grpc.HandlerCallDetails.invocation_metadata" title="Permalink to this definition">¶</a></dt>
@@ -2452,6 +2445,24 @@ does not terminate within the allotted time.</li>
 <em class="property">class </em><code class="descclassname">grpc.</code><code class="descname">Compression</code><a class="reference internal" href="_modules/grpc.html#Compression"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.Compression" title="Permalink to this definition">¶</a></dt>
 <dd><p>Indicates the compression method to be used for an RPC.</p>
 <p>This enumeration is part of an EXPERIMENTAL API.</p>
+<dl class="attribute">
+<dt id="grpc.Compression.NoCompression">
+<code class="descname">NoCompression</code><a class="headerlink" href="#grpc.Compression.NoCompression" title="Permalink to this definition">¶</a></dt>
+<dd><p>Do not use compression algorithm.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="grpc.Compression.Deflate">
+<code class="descname">Deflate</code><a class="headerlink" href="#grpc.Compression.Deflate" title="Permalink to this definition">¶</a></dt>
+<dd><p>Use “Deflate” compression algorithm.</p>
+</dd></dl>
+
+<dl class="attribute">
+<dt id="grpc.Compression.Gzip">
+<code class="descname">Gzip</code><a class="headerlink" href="#grpc.Compression.Gzip" title="Permalink to this definition">¶</a></dt>
+<dd><p>Use “Gzip” compression algorithm.</p>
+</dd></dl>
+
 </dd></dl>
 
 </div>
