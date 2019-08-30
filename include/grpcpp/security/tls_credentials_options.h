@@ -59,6 +59,9 @@ class TlsKeyMaterialsConfig {
 /** TLS credential reload arguments, wraps grpc_tls_credential_reload_arg. **/
 class TlsCredentialReloadArg {
  public:
+  /** TlsCredentialReloadArg does not take ownership of the C arg that is passed
+   * to the constructor. One must remember to free any memory allocated to the C
+   * arg after using the setter functions below. **/
   TlsCredentialReloadArg(grpc_tls_credential_reload_arg* arg) : c_arg_(arg) {}
   ~TlsCredentialReloadArg();
 
@@ -72,6 +75,10 @@ class TlsCredentialReloadArg {
   grpc::string error_details() const;
 
   /** Setters for member fields. They modify the fields of the underlying C arg.
+   * The setters for the key_materials_config and the error_details allocate
+   * memory when modifying c_arg_, so one must remember to free c_arg_'s
+   * original key_materials_config or error_details after using the appropriate
+   * setter function.
    * **/
   void set_cb_user_data(void* cb_user_data);
   void set_key_materials_config(
@@ -129,6 +136,9 @@ class TlsCredentialReloadConfig {
 
 class TlsServerAuthorizationCheckArg {
  public:
+  /** TlsServerAuthorizationCheckArg does not take ownership of the C arg passed
+   * to the constructor. One must remember to free any memory allocated to the
+   * C arg after using the setter functions below. **/
   TlsServerAuthorizationCheckArg(grpc_tls_server_authorization_check_arg* arg)
       : c_arg_(arg) {}
   ~TlsServerAuthorizationCheckArg();
@@ -143,6 +153,10 @@ class TlsServerAuthorizationCheckArg {
   grpc::string error_details() const;
 
   /** Setters for member fields. They modify the fields of the underlying C arg.
+   * The setters for target_name, peer_cert, and error_details allocate memory
+   * when modifying c_arg_, so one must remember to free c_arg_'s original
+   * target_name, peer_cert, or error_details after using the appropriate setter
+   * function.
    * **/
   void set_cb_user_data(void* cb_user_data);
   void set_success(int success);

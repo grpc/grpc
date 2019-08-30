@@ -80,6 +80,10 @@ struct grpc_tls_credential_reload_config
   }
 
  private:
+  /** This is a pointer to the wrapped language implementation of
+   * grpc_tls_credential_reload_config. It is necessary to implement the C
+   * schedule and cancel functions, given the schedule or cancel function in a
+   * wrapped language. **/
   void* context_;
   /** config-specific, read-only user data that works for all channels created
      with a credential using the config. */
@@ -132,6 +136,10 @@ struct grpc_tls_server_authorization_check_config
   }
 
  private:
+  /** This is a pointer to the wrapped language implementation of
+   * grpc_tls_server_authorization_check_config. It is necessary to implement
+   * the C schedule and cancel functions, given the schedule or cancel function
+   * in a wrapped language. **/
   void* context_;
   /** config-specific, read-only user data that works for all channels created
      with a Credential using the config. */
