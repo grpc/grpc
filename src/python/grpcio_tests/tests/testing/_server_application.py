@@ -17,9 +17,13 @@ import grpc
 
 # requests_pb2 is a semantic dependency of this module.
 from tests.testing import _application_common
+
 from tests.testing.proto import requests_pb2  # pylint: disable=unused-import
 from tests.testing.proto import services_pb2
 from tests.testing.proto import services_pb2_grpc
+
+print("server application module: {}".format(id(services_pb2.Down)))
+print("server application module: {}".format(services_pb2.__file__))
 
 
 class FirstServiceServicer(services_pb2_grpc.FirstServiceServicer):

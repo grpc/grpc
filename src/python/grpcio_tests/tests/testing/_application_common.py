@@ -13,8 +13,15 @@
 # limitations under the License.
 """An example gRPC Python-using application's common code elements."""
 
-from tests.testing.proto import requests_pb2
-from tests.testing.proto import services_pb2
+try:
+    from src.python.grpcio_tests.testing.proto import requests_pb2
+    from src.python.grpcio_tests.testing.proto import services_pb2
+except ImportError:
+    from tests.testing.proto import requests_pb2
+    from tests.testing.proto import services_pb2
+
+print("application_common module: {}".format(id(services_pb2.Down)))
+print("application_common module: {}".format(services_pb2.__file__))
 
 SERVICE_NAME = 'tests_of_grpc_testing.FirstService'
 UNARY_UNARY_METHOD_NAME = 'UnUn'

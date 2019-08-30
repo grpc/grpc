@@ -40,11 +40,12 @@ import logging
 from concurrent import futures
 
 import grpc
+
+from tests.testing.proto import services_pb2_grpc
 from tests.unit import resources
 from tests.unit import test_common
 from tests.testing import _application_common
 from tests.testing import _server_application
-from tests.testing.proto import services_pb2_grpc
 
 CA_1_PEM = resources.cert_hier_1_root_ca_cert()
 CA_2_PEM = resources.cert_hier_2_root_ca_cert()

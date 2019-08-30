@@ -1,0 +1,32 @@
+package(default_visibility = ["//src/python/grpcio_tests:__subpackages__"])
+
+load("//bazel:python_rules.bzl", "py_proto_library", "py_grpc_library")
+
+proto_library(
+    name = "requests_proto",
+    srcs = ["requests.proto"],
+    strip_import_prefix = "/src/python/grpcio_tests/",
+)
+
+py_proto_library(
+    name = "requests_proto_pb2",
+    deps = [":requests_proto"],
+)
+
+proto_library(
+    name = "services_proto",
+    srcs = ["services.proto"],
+    deps = [":requests_proto"],
+    strip_import_prefix = "/src/python/grpcio_tests/",
+)
+
+py_proto_library(
+    name = "services_proto_pb2",
+    deps = [":services_proto"],
+)
+
+py_grpc_library(
+   name = "services_proto_pb2_grpc",
+   srcs = [":services_proto"],
+   deps = [":services_proto_pb2"],
+)
