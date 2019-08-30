@@ -22,4 +22,10 @@
     </AndroidNativeLibrary>
   </ItemGroup>
 
+  <ItemGroup Condition="'$(TargetFrameworkIdentifier)' == 'MonoAndroid'">
+    <AndroidNativeLibrary Include="$(MSBuildThisFileDirectory)..\..\native\android\x86_64\libgrpc_csharp_ext.so">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      <Abi>x86_64</Abi>
+    </AndroidNativeLibrary>
+  </ItemGroup>
 </Project>
