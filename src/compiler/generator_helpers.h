@@ -168,11 +168,10 @@ inline MethodType GetMethodType(
 
 inline void Split(const grpc::string& s, char delim,
                   std::vector<grpc::string>* append_to) {
-  auto current = s.begin();
-  while (current <= s.end()) {
-    auto next = std::find(current, s.end(), delim);
-    append_to->emplace_back(current, next);
-    current = next + 1;
+  std::istringstream iss(s);
+  grpc::string piece;
+  while (std::getline(iss, piece)) {
+    append_to->push_back(piece);
   }
 }
 
