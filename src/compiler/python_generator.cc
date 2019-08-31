@@ -762,7 +762,8 @@ static bool ParseParameters(const grpc::string& parameter,
                             grpc::string* error) {
   std::vector<grpc::string> comma_delimited_parameters;
   grpc_python_generator::Split(parameter, ',', &comma_delimited_parameters);
-  if (comma_delimited_parameters.empty()) {
+  if (comma_delimited_parameters.size() == 1 &&
+      comma_delimited_parameters.empty()) {
     *grpc_version = "grpc_2_0";
   } else if (comma_delimited_parameters.size() == 1) {
     *grpc_version = comma_delimited_parameters[0];
