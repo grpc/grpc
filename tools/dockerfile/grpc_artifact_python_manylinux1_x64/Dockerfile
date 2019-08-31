@@ -14,7 +14,7 @@
 
 # Docker file for building gRPC manylinux Python artifacts.
 
-FROM quay.io/pypa/manylinux1_x86_64
+FROM quay.io/pypa/manylinux2010_x86_64
 
 # Update the package manager
 RUN yum update -y
@@ -36,3 +36,7 @@ RUN cd /usr/local/src/auditwheel && git checkout 2.1
 RUN /opt/python/cp36-cp36m/bin/pip install /usr/local/src/auditwheel
 RUN rm /usr/local/bin/auditwheel
 RUN cd /usr/local/bin && ln -s /opt/python/cp36-cp36m/bin/auditwheel
+
+##############################################
+# Change the declaraed version of glibc to 2.5
+RUN sed -i 's/__GLIBC_MINOR__\t12/__GLIBC_MINOR__\t5/g' /usr/include/features.h

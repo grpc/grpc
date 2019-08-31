@@ -161,7 +161,7 @@ class PythonArtifact:
                 environ=environ,
                 timeout_seconds=60 * 60,
                 docker_base_image='quay.io/pypa/manylinux1_i686'
-                if self.arch == 'x86' else 'quay.io/pypa/manylinux1_x86_64')
+                if self.arch == 'x86' else 'quay.io/pypa/manylinux2010_x86_64')
         elif self.platform == 'windows':
             if 'Python27' in self.py_version or 'Python34' in self.py_version:
                 environ['EXT_COMPILER'] = 'mingw32'
