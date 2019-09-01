@@ -42,7 +42,7 @@ static NSString *const kDefaultPEMCertificateChain = nil;
 static NSString *const kDefaultOauth2AccessToken = nil;
 static const id<GRPCAuthorizationProtocol> kDefaultAuthTokenProvider = nil;
 static const GRPCTransportType kDefaultTransportType = GRPCTransportTypeChttp2BoringSSL;
-static const GRPCTransportId kDefaultTransport = NULL;
+static const GRPCTransportID kDefaultTransport = NULL;
 static NSString *const kDefaultHostNameOverride = nil;
 static const id kDefaultLogContext = nil;
 static NSString *const kDefaultChannelPoolDomain = nil;
@@ -82,7 +82,7 @@ static BOOL areObjectsEqual(id obj1, id obj2) {
   NSString *_PEMPrivateKey;
   NSString *_PEMCertificateChain;
   GRPCTransportType _transportType;
-  GRPCTransportId _transport;
+  GRPCTransportID _transport;
   NSString *_hostNameOverride;
   id<NSObject> _logContext;
   NSString *_channelPoolDomain;
@@ -166,7 +166,7 @@ static BOOL areObjectsEqual(id obj1, id obj2) {
                           PEMPrivateKey:(NSString *)PEMPrivateKey
                     PEMCertificateChain:(NSString *)PEMCertificateChain
                           transportType:(GRPCTransportType)transportType
-                              transport:(GRPCTransportId)transport
+                              transport:(GRPCTransportID)transport
                        hostNameOverride:(NSString *)hostNameOverride
                              logContext:(id)logContext
                       channelPoolDomain:(NSString *)channelPoolDomain
@@ -553,7 +553,7 @@ static BOOL areObjectsEqual(id obj1, id obj2) {
   _transportType = transportType;
 }
 
-- (void)setTransport:(GRPCTransportId)transport {
+- (void)setTransport:(GRPCTransportID)transport {
   _transport = transport;
 }
 

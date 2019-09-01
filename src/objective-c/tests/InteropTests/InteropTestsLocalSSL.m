@@ -57,7 +57,7 @@ static int32_t kLocalInteropServerOverhead = 10;
   return kLocalInteropServerOverhead;  // bytes
 }
 
-+ (GRPCTransportId)transport {
++ (GRPCTransportID)transport {
   return GRPCDefaultTransportImplList.core_secure;
 }
 

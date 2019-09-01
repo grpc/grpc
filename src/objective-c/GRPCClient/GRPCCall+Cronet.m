@@ -18,7 +18,7 @@
 
 #import "GRPCCall+Cronet.h"
 
-const GRPCTransportId gGRPCCoreCronetId = "io.grpc.transport.core.cronet";
+const GRPCTransportID gGRPCCoreCronetId = "io.grpc.transport.core.cronet";
 
 static BOOL useCronet = NO;
 static stream_engine *globalCronetEngine;

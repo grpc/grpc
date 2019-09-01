@@ -31,13 +31,13 @@ NS_ASSUME_NONNULL_BEGIN
  * registered with the registry, the default transport factory (core + secure) is returned. If the
  * default transport does not exist, an exception is thrown.
  */
-- (id<GRPCTransportFactory>)getTransportFactoryWithId:(GRPCTransportId)transportId;
+- (id<GRPCTransportFactory>)getTransportFactoryWithId:(GRPCTransportID)transportId;
 
 @end
 
 @interface GRPCTransportManager : NSObject<GRPCInterceptorInterface>
 
-- (instancetype)initWithTransportId:(GRPCTransportId)transportId
+- (instancetype)initWithTransportId:(GRPCTransportID)transportId
                 previousInterceptor:(id<GRPCResponseHandler>)previousInterceptor;
 
 /**

@@ -171,7 +171,7 @@ extern NSString* _Nonnull const kGRPCHeadersKey;
 extern NSString* _Nonnull const kGRPCTrailersKey;
 
 /** The id of a transport implementation. */
-typedef char* _Nonnull GRPCTransportId;
+typedef char* _Nonnull GRPCTransportID;
 
 /**
  * Implement this protocol to provide a token to gRPC when a call is initiated.

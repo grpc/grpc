@@ -18,24 +18,24 @@
 
 #import "GRPCTransport.h"
 
-static const GRPCTransportId gGRPCCoreSecureId = "io.grpc.transport.core.secure";
-static const GRPCTransportId gGRPCCoreInsecureId = "io.grpc.transport.core.insecure";
+static const GRPCTransportID gGRPCCoreSecureId = "io.grpc.transport.core.secure";
+static const GRPCTransportID gGRPCCoreInsecureId = "io.grpc.transport.core.insecure";
 
 const struct GRPCDefaultTransportImplList GRPCDefaultTransportImplList = {
     .core_secure = gGRPCCoreSecureId, .core_insecure = gGRPCCoreInsecureId};
 
-static const GRPCTransportId gDefaultTransportId = gGRPCCoreSecureId;
+static const GRPCTransportID gDefaultTransportId = gGRPCCoreSecureId;
 
 static GRPCTransportRegistry *gTransportRegistry = nil;
 static dispatch_once_t initTransportRegistry;
 
-BOOL TransportIdIsEqual(GRPCTransportId lhs, GRPCTransportId rhs) {
+BOOL TransportIdIsEqual(GRPCTransportID lhs, GRPCTransportID rhs) {
   // Directly comparing pointers works because we require users to use the id provided by each
   // implementation, not coming up with their own string.
   return lhs == rhs;
 }
 
-NSUInteger TransportIdHash(GRPCTransportId transportId) {
+NSUInteger TransportIdHash(GRPCTransportID transportId) {
   if (transportId == NULL) {
     transportId = gDefaultTransportId;
   }
@@ -66,7 +66,7 @@ NSUInteger TransportIdHash(GRPCTransportId transportId) {
   return self;
 }
 
-- (void)registerTransportWithId:(GRPCTransportId)transportId
+- (void)registerTransportWithId:(GRPCTransportID)transportId
                         factory:(id<GRPCTransportFactory>)factory {
   NSString *nsTransportId = [NSString stringWithCString:transportId encoding:NSUTF8StringEncoding];
   NSAssert(_registry[nsTransportId] == nil, @"The transport %@ has already been registered.",
@@ -83,7 +83,7 @@ NSUInteger TransportIdHash(GRPCTransportId transportId) {
   }
 }
 
-- (id<GRPCTransportFactory>)getTransportFactoryWithId:(GRPCTransportId)transportId {
+- (id<GRPCTransportFactory>)getTransportFactoryWithId:(GRPCTransportID)transportId {
   if (transportId == NULL) {
     if (_defaultFactory == nil) {
       [NSException raise:NSInvalidArgumentException

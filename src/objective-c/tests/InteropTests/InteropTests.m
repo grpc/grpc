@@ -404,7 +404,7 @@ static dispatch_once_t initGlobalInterceptorFactory;
   return GRPCTransportTypeChttp2BoringSSL;
 }
 
-+ (GRPCTransportId)transport {
++ (GRPCTransportID)transport {
   return NULL;
 }
 

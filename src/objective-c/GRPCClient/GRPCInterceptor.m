@@ -31,13 +31,13 @@
   GRPCInterceptor *_thisInterceptor;
   dispatch_queue_t _dispatchQueue;
   NSArray<id<GRPCInterceptorFactory>> *_factories;
-  GRPCTransportId _transportId;
+  GRPCTransportID _transportId;
   BOOL _shutDown;
 }
 
 - (instancetype)initWithFactories:(NSArray<id<GRPCInterceptorFactory>> *)factories
               previousInterceptor:(id<GRPCResponseHandler>)previousInterceptor
-                      transportId:(nonnull GRPCTransportId)transportId {
+                      transportId:(nonnull GRPCTransportID)transportId {
   if ((self = [super init])) {
     if (factories.count == 0) {
       [NSException raise:NSInternalInconsistencyException

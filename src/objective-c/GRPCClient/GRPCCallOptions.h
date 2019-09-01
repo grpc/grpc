@@ -161,7 +161,7 @@ NS_ASSUME_NONNULL_BEGIN
  *
  * This is currently an experimental option.
  */
-@property(readonly) GRPCTransportId transport;
+@property(readonly) GRPCTransportID transport;
 
 /**
  * Override the hostname during the TLS hostname validation process.
@@ -339,7 +339,7 @@ NS_ASSUME_NONNULL_BEGIN
  *
  * An interceptor must not change the value of this option.
  */
-@property(readwrite) GRPCTransportId transport;
+@property(readwrite) GRPCTransportID transport;
 
 /**
  * Override the hostname during the TLS hostname validation process.

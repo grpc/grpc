@@ -29,15 +29,15 @@ NS_ASSUME_NONNULL_BEGIN
  * by gRPC by default unless explicitly excluded.
  */
 extern const struct GRPCDefaultTransportImplList {
-  const GRPCTransportId core_secure;
-  const GRPCTransportId core_insecure;
+  const GRPCTransportID core_secure;
+  const GRPCTransportID core_insecure;
 } GRPCDefaultTransportImplList;
 
 /** Returns whether two transport id's are identical. */
-BOOL TransportIdIsEqual(GRPCTransportId lhs, GRPCTransportId rhs);
+BOOL TransportIdIsEqual(GRPCTransportID lhs, GRPCTransportID rhs);
 
 /** Returns the hash value of a transport id. */
-NSUInteger TransportIdHash(GRPCTransportId);
+NSUInteger TransportIdHash(GRPCTransportID);
 
 #pragma mark Transport and factory
 
@@ -66,7 +66,7 @@ NSUInteger TransportIdHash(GRPCTransportId);
  * Parameter \a transportId is the identifier of the implementation, and \a factory is the factory
  * object to create the corresponding transport instance.
  */
-- (void)registerTransportWithId:(GRPCTransportId)transportId
+- (void)registerTransportWithId:(GRPCTransportID)transportId
                         factory:(id<GRPCTransportFactory>)factory;
 
 @end

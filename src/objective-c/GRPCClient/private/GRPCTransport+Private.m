@@ -21,13 +21,13 @@
 #import <GRPCClient/GRPCTransport.h>
 
 @implementation GRPCTransportManager {
-  GRPCTransportId _transportId;
+  GRPCTransportID _transportId;
   GRPCTransport *_transport;
   id<GRPCResponseHandler> _previousInterceptor;
   dispatch_queue_t _dispatchQueue;
 }
 
-- (instancetype)initWithTransportId:(GRPCTransportId)transportId
+- (instancetype)initWithTransportId:(GRPCTransportID)transportId
                 previousInterceptor:(id<GRPCResponseHandler>)previousInterceptor {
   if ((self = [super init])) {
     id<GRPCTransportFactory> factory =

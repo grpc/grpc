@@ -52,7 +52,7 @@ static int32_t kRemoteInteropServerOverhead = 12;
   return kRemoteSSLHost;
 }
 
-+ (GRPCTransportId)transport {
++ (GRPCTransportID)transport {
   return gGRPCCoreCronetId;
 }
 

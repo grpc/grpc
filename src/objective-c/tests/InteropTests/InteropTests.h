@@ -59,7 +59,7 @@
  * The transport to be used. The base implementation returns NULL. Subclasses should override to
  * appropriate settings.
  */
-+ (GRPCTransportId)transport;
++ (GRPCTransportID)transport;
 
 /**
  * The root certificates to be used. The base implementation returns nil. Subclasses should override
