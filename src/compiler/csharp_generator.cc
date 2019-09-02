@@ -176,8 +176,9 @@ std::string GetServiceClassName(const ServiceDescriptor* service) {
   return service->name();
 }
 
-std::string GetClientClassName(const ServiceDescriptor* service) {
-  return service->name() + "Client";
+std::string GetClientClassName(const ServiceDescriptor* service,
+                               bool lite_client) {
+  return service->name() + (lite_client ? "LiteClient" : "Client");
 }
 
 std::string GetServerClassName(const ServiceDescriptor* service) {
@@ -420,28 +421,26 @@ void GenerateClientStub(Printer* out, const ServiceDescriptor* service,
     out->Print("/// <summary>Client for $servicename$</summary>\n",
                "servicename", GetServiceClassName(service));
     out->Print("public partial class $name$ : grpc::ClientBase<$name$>\n",
-               "name", GetClientClassName(service));
+               "name", GetClientClassName(service, lite_client));
   } else {
     out->Print("/// <summary>Lite client for $servicename$</summary>\n",
                "servicename", GetServiceClassName(service));
     out->Print("public partial class $name$ : grpc::LiteClientBase\n", "name",
-               GetClientClassName(service));
+               GetClientClassName(service, lite_client));
   }
   out->Print("{\n");
   out->Indent();
 
   // constructors
-  if (!lite_client) {
-    out->Print(
-        "/// <summary>Creates a new client for $servicename$</summary>\n"
-        "/// <param name=\"channel\">The channel to use to make remote "
-        "calls.</param>\n",
-        "servicename", GetServiceClassName(service));
-    out->Print("public $name$(grpc::ChannelBase channel) : base(channel)\n",
-               "name", GetClientClassName(service));
-    out->Print("{\n");
-    out->Print("}\n");
-  }
+  out->Print(
+      "/// <summary>Creates a new client for $servicename$</summary>\n"
+      "/// <param name=\"channel\">The channel to use to make remote "
+      "calls.</param>\n",
+      "servicename", GetServiceClassName(service));
+  out->Print("public $name$(grpc::ChannelBase channel) : base(channel)\n",
+             "name", GetClientClassName(service));
+  out->Print("{\n");
+  out->Print("}\n");
   out->Print(
       "/// <summary>Creates a new client for $servicename$ that uses a custom "
       "<c>CallInvoker</c>.</summary>\n"
@@ -450,14 +449,14 @@ void GenerateClientStub(Printer* out, const ServiceDescriptor* service,
       "servicename", GetServiceClassName(service));
   out->Print(
       "public $name$(grpc::CallInvoker callInvoker) : base(callInvoker)\n",
-      "name", GetClientClassName(service));
+      "name", GetClientClassName(service, lite_client));
   out->Print("{\n");
   out->Print("}\n");
   out->Print(
       "/// <summary>Protected parameterless constructor to allow creation"
       " of test doubles.</summary>\n");
   out->Print("protected $name$() : base()\n", "name",
-             GetClientClassName(service));
+             GetClientClassName(service, lite_client));
   out->Print("{\n");
   out->Print("}\n");
   if (!lite_client) {
@@ -469,7 +468,7 @@ void GenerateClientStub(Printer* out, const ServiceDescriptor* service,
     out->Print(
         "protected $name$(ClientBaseConfiguration configuration)"
         " : base(configuration)\n",
-        "name", GetClientClassName(service));
+        "name", GetClientClassName(service, lite_client));
     out->Print("{\n");
     out->Print("}\n");
   }
@@ -598,11 +597,11 @@ void GenerateClientStub(Printer* out, const ServiceDescriptor* service,
     out->Print(
         "protected override $name$ NewInstance(ClientBaseConfiguration "
         "configuration)\n",
-        "name", GetClientClassName(service));
+        "name", GetClientClassName(service, lite_client));
     out->Print("{\n");
     out->Indent();
     out->Print("return new $name$(configuration);\n", "name",
-               GetClientClassName(service));
+               GetClientClassName(service, lite_client));
     out->Outdent();
     out->Print("}\n");
   }
@@ -686,8 +685,8 @@ void GenerateBindServiceWithBinderMethod(Printer* out,
 }
 
 void GenerateService(Printer* out, const ServiceDescriptor* service,
-                     bool generate_client, bool generate_server,
-                     bool internal_access, bool lite_client) {
+                     bool generate_client, bool generate_lite_client,
+                     bool generate_server, bool internal_access) {
   GenerateDocCommentBody(out, service);
   out->Print("$access_level$ static partial class $classname$\n",
              "access_level", GetAccessLevel(internal_access), "classname",
@@ -709,7 +708,10 @@ void GenerateService(Printer* out, const ServiceDescriptor* service,
     GenerateServerClass(out, service);
   }
   if (generate_client) {
-    GenerateClientStub(out, service, lite_client);
+    GenerateClientStub(out, service, false);
+  }
+  if (generate_lite_client) {
+    GenerateClientStub(out, service, true);
   }
 
   if (generate_server) {
@@ -724,8 +726,8 @@ void GenerateService(Printer* out, const ServiceDescriptor* service,
 }  // anonymous namespace
 
 grpc::string GetServices(const FileDescriptor* file, bool generate_client,
-                         bool generate_server, bool internal_access,
-                         bool lite_client) {
+                         bool generate_lite_client, bool generate_server,
+                         bool internal_access) {
   grpc::string output;
   {
     // Scope the output stream so it closes and finalizes output to the string.
@@ -766,8 +768,8 @@ grpc::string GetServices(const FileDescriptor* file, bool generate_client,
       out.Indent();
     }
     for (int i = 0; i < file->service_count(); i++) {
-      GenerateService(&out, file->service(i), generate_client, generate_server,
-                      internal_access, lite_client);
+      GenerateService(&out, file->service(i), generate_client,
+                      generate_lite_client, generate_server, internal_access);
     }
     if (file_namespace != "") {
       out.Outdent();
