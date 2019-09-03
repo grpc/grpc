@@ -145,12 +145,14 @@ int grpc_tls_key_materials_config_set_key_materials(
             "grpc_tls_key_materials_config_set_key_materials()");
     return 0;
   }
-  grpc_core::UniquePtr<char> pem_root(const_cast<char*>(root_certs));
+  grpc_core::UniquePtr<char> pem_root(gpr_strdup(root_certs));
   grpc_tls_key_materials_config::PemKeyCertPairList cert_pair_list;
   for (size_t i = 0; i < num; i++) {
-    grpc_core::PemKeyCertPair key_cert_pair(
-        const_cast<grpc_ssl_pem_key_cert_pair*>(key_cert_pairs[i]));
-    cert_pair_list.emplace_back(std::move(key_cert_pair));
+    auto current_pair = static_cast<grpc_ssl_pem_key_cert_pair*>(
+        gpr_zalloc(sizeof(grpc_ssl_pem_key_cert_pair)));
+    current_pair->cert_chain = gpr_strdup(key_cert_pairs[i]->cert_chain);
+    current_pair->private_key = gpr_strdup(key_cert_pairs[i]->private_key);
+    cert_pair_list.emplace_back(grpc_core::PemKeyCertPair(current_pair));
   }
   config->set_key_materials(std::move(pem_root), std::move(cert_pair_list));
   return 1;
