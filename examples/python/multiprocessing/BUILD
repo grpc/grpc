@@ -42,7 +42,6 @@ py_binary(
         ":prime_proto_pb2_grpc",
     ],
     srcs_version = "PY3",
-    python_version = "PY3",
 )
 
 py_binary(
@@ -58,7 +57,6 @@ py_binary(
         "//:python3": [],
     }),
     srcs_version = "PY3",
-    python_version = "PY3",
 )
 
 py_test(
@@ -69,5 +67,4 @@ py_test(
         ":server"
     ],
     size = "small",
-    python_version = "PY3",
 )

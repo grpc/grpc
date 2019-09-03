@@ -43,6 +43,19 @@ grpc_cc_test(
 )
 
 grpc_cc_test(
+    name = "time_jump_test",
+    srcs = ["time_jump_test.cc"],
+    external_deps = [
+        "gtest",
+    ],
+    tags = ["manual"],
+    deps = [
+        "//:grpc++",
+        "//test/core/util:grpc_test_util",
+    ],
+)
+
+grpc_cc_test(
     name = "auth_property_iterator_test",
     srcs = ["auth_property_iterator_test.cc"],
     external_deps = [

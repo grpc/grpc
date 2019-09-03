@@ -318,7 +318,10 @@ static grpc_error* skip_parser(void* parser, grpc_chttp2_transport* t,
   return GRPC_ERROR_NONE;
 }
 
-static void skip_header(void* tp, grpc_mdelem md) { GRPC_MDELEM_UNREF(md); }
+static grpc_error* skip_header(void* tp, grpc_mdelem md) {
+  GRPC_MDELEM_UNREF(md);
+  return GRPC_ERROR_NONE;
+}
 
 static grpc_error* init_skip_frame_parser(grpc_chttp2_transport* t,
                                           int is_header) {
@@ -419,7 +422,7 @@ static bool is_nonzero_status(grpc_mdelem md) {
          !md_cmp(md, GRPC_MDELEM_GRPC_STATUS_0, GRPC_MDSTR_GRPC_STATUS);
 }
 
-static void on_initial_header(void* tp, grpc_mdelem md) {
+static grpc_error* on_initial_header(void* tp, grpc_mdelem md) {
   GPR_TIMER_SCOPE("on_initial_header", 0);
 
   grpc_chttp2_transport* t = static_cast<grpc_chttp2_transport*>(tp);
@@ -465,7 +468,7 @@ static void on_initial_header(void* tp, grpc_mdelem md) {
           &s->metadata_buffer[0], grpc_core::ExecCtx::Get()->Now() + timeout);
     }
     GRPC_MDELEM_UNREF(md);
-    return;
+    return GRPC_ERROR_NONE;
   }
 
   const size_t new_size = s->metadata_buffer[0].size + GRPC_MDELEM_LENGTH(md);
@@ -496,9 +499,10 @@ static void on_initial_header(void* tp, grpc_mdelem md) {
       GRPC_MDELEM_UNREF(md);
     }
   }
+  return GRPC_ERROR_NONE;
 }
 
-static void on_trailing_header(void* tp, grpc_mdelem md) {
+static grpc_error* on_trailing_header(void* tp, grpc_mdelem md) {
   GPR_TIMER_SCOPE("on_trailing_header", 0);
 
   grpc_chttp2_transport* t = static_cast<grpc_chttp2_transport*>(tp);
@@ -547,6 +551,7 @@ static void on_trailing_header(void* tp, grpc_mdelem md) {
       GRPC_MDELEM_UNREF(md);
     }
   }
+  return GRPC_ERROR_NONE;
 }
 
 static grpc_error* init_header_frame_parser(grpc_chttp2_transport* t,

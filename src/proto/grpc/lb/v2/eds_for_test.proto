@@ -16,8 +16,12 @@
 // the gRPC library; otherwise there can be duplicate definition problems if
 // users depend on both gRPC and Envoy. It can only be used by gRPC tests.
 //
-// TODO(juanlishen): It's a workaround and should be removed once we have a
-//  clean solution to use protobuf and external proto files.
+// TODO(juanlishen): This file is a hack to avoid a problem we're
+// currently having where we can't depend on a proto file in an external
+// repo due to bazel limitations.  Once that's fixed, this should be
+// removed.  Until this, it should be used in the gRPC tests only, or else it
+// will cause a conflict due to the same proto messages being defined in
+// multiple files in the same binary.
 
 syntax = "proto3";
 

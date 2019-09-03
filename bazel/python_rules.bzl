@@ -178,29 +178,3 @@ def py_grpc_library(
         deps = [Label("//src/python/grpcio/grpc:grpcio")] + deps,
         **kwargs
     )
-
-
-def py2and3_test(name,
-                 py_test = native.py_test,
-                 **kwargs):
-    if "python_version" in kwargs:
-        fail("Cannot specify 'python_version' in py2and3_test.")
-
-    names = [name + suffix for suffix in (".python2", ".python3")]
-    python_versions = ["PY2", "PY3"]
-    for case_name, python_version in zip(names, python_versions):
-        py_test(
-            name = case_name,
-            python_version = python_version,
-            **kwargs
-        )
-
-    suite_kwargs = {}
-    if "visibility" in kwargs:
-        suite_kwargs["visibility"] = kwargs["visibility"]
-
-    native.test_suite(
-        name = name,
-        tests = names,
-        **suite_kwargs
-    )

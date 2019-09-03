@@ -26,16 +26,5 @@
       </EnumProperty.DataSource>
     </EnumProperty>
 
-    <EnumProperty Name="ClientBaseType" DisplayName="gRPC Client Base Type"
-                  Category="gRPC" Default="ClientBase"
-                  Description="The base type to use for the client. This is an experimental feature.">
-      <EnumValue Name="ClientBase" DisplayName="Use ClientBase" />
-      <EnumValue Name="LiteClientBase" DisplayName="Use LiteClientBase" />
-      <EnumProperty.DataSource>
-        <DataSource ItemType="Protobuf" SourceOfDefaultValue="AfterContext"
-                    PersistenceStyle="Attribute" />
-      </EnumProperty.DataSource>
-    </EnumProperty>
-
   </Rule>
 </ProjectSchemaDefinitions>

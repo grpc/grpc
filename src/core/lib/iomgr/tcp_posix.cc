@@ -1020,7 +1020,7 @@ static void tcp_handle_write(void* arg /* grpc_tcp */, grpc_error* error) {
   if (error != GRPC_ERROR_NONE) {
     cb = tcp->write_cb;
     tcp->write_cb = nullptr;
-    cb->cb(cb->cb_arg, error);
+    GRPC_CLOSURE_SCHED(cb, GRPC_ERROR_REF(error));
     TCP_UNREF(tcp, "write");
     return;
   }
@@ -1030,6 +1030,8 @@ static void tcp_handle_write(void* arg /* grpc_tcp */, grpc_error* error) {
       gpr_log(GPR_INFO, "write: delayed");
     }
     notify_on_write(tcp);
+    // tcp_flush does not populate error if it has returned false.
+    GPR_DEBUG_ASSERT(error == GRPC_ERROR_NONE);
   } else {
     cb = tcp->write_cb;
     tcp->write_cb = nullptr;
@@ -1037,6 +1039,7 @@ static void tcp_handle_write(void* arg /* grpc_tcp */, grpc_error* error) {
       const char* str = grpc_error_string(error);
       gpr_log(GPR_INFO, "write: %s", str);
     }
+    // No need to take a ref on error since tcp_flush provides a ref.
     GRPC_CLOSURE_SCHED(cb, error);
     TCP_UNREF(tcp, "write");
   }

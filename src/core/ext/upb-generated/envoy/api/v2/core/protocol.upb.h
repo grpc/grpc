@@ -145,6 +145,12 @@ UPB_INLINE const struct google_protobuf_UInt32Value* envoy_api_v2_core_Http2Prot
 UPB_INLINE const struct google_protobuf_UInt32Value* envoy_api_v2_core_Http2ProtocolOptions_initial_connection_window_size(const envoy_api_v2_core_Http2ProtocolOptions *msg) { return UPB_FIELD_AT(msg, const struct google_protobuf_UInt32Value*, UPB_SIZE(16, 32)); }
 UPB_INLINE bool envoy_api_v2_core_Http2ProtocolOptions_allow_connect(const envoy_api_v2_core_Http2ProtocolOptions *msg) { return UPB_FIELD_AT(msg, bool, UPB_SIZE(0, 0)); }
 UPB_INLINE bool envoy_api_v2_core_Http2ProtocolOptions_allow_metadata(const envoy_api_v2_core_Http2ProtocolOptions *msg) { return UPB_FIELD_AT(msg, bool, UPB_SIZE(1, 1)); }
+UPB_INLINE const struct google_protobuf_UInt32Value* envoy_api_v2_core_Http2ProtocolOptions_max_outbound_frames(const envoy_api_v2_core_Http2ProtocolOptions *msg) { return UPB_FIELD_AT(msg, const struct google_protobuf_UInt32Value*, UPB_SIZE(20, 40)); }
+UPB_INLINE const struct google_protobuf_UInt32Value* envoy_api_v2_core_Http2ProtocolOptions_max_outbound_control_frames(const envoy_api_v2_core_Http2ProtocolOptions *msg) { return UPB_FIELD_AT(msg, const struct google_protobuf_UInt32Value*, UPB_SIZE(24, 48)); }
+UPB_INLINE const struct google_protobuf_UInt32Value* envoy_api_v2_core_Http2ProtocolOptions_max_consecutive_inbound_frames_with_empty_payload(const envoy_api_v2_core_Http2ProtocolOptions *msg) { return UPB_FIELD_AT(msg, const struct google_protobuf_UInt32Value*, UPB_SIZE(28, 56)); }
+UPB_INLINE const struct google_protobuf_UInt32Value* envoy_api_v2_core_Http2ProtocolOptions_max_inbound_priority_frames_per_stream(const envoy_api_v2_core_Http2ProtocolOptions *msg) { return UPB_FIELD_AT(msg, const struct google_protobuf_UInt32Value*, UPB_SIZE(32, 64)); }
+UPB_INLINE const struct google_protobuf_UInt32Value* envoy_api_v2_core_Http2ProtocolOptions_max_inbound_window_update_frames_per_data_frame_sent(const envoy_api_v2_core_Http2ProtocolOptions *msg) { return UPB_FIELD_AT(msg, const struct google_protobuf_UInt32Value*, UPB_SIZE(36, 72)); }
+UPB_INLINE bool envoy_api_v2_core_Http2ProtocolOptions_stream_error_on_invalid_http_messaging(const envoy_api_v2_core_Http2ProtocolOptions *msg) { return UPB_FIELD_AT(msg, bool, UPB_SIZE(2, 2)); }
 
 UPB_INLINE void envoy_api_v2_core_Http2ProtocolOptions_set_hpack_table_size(envoy_api_v2_core_Http2ProtocolOptions *msg, struct google_protobuf_UInt32Value* value) {
   UPB_FIELD_AT(msg, struct google_protobuf_UInt32Value*, UPB_SIZE(4, 8)) = value;
@@ -199,6 +205,69 @@ UPB_INLINE void envoy_api_v2_core_Http2ProtocolOptions_set_allow_connect(envoy_a
 }
 UPB_INLINE void envoy_api_v2_core_Http2ProtocolOptions_set_allow_metadata(envoy_api_v2_core_Http2ProtocolOptions *msg, bool value) {
   UPB_FIELD_AT(msg, bool, UPB_SIZE(1, 1)) = value;
+}
+UPB_INLINE void envoy_api_v2_core_Http2ProtocolOptions_set_max_outbound_frames(envoy_api_v2_core_Http2ProtocolOptions *msg, struct google_protobuf_UInt32Value* value) {
+  UPB_FIELD_AT(msg, struct google_protobuf_UInt32Value*, UPB_SIZE(20, 40)) = value;
+}
+UPB_INLINE struct google_protobuf_UInt32Value* envoy_api_v2_core_Http2ProtocolOptions_mutable_max_outbound_frames(envoy_api_v2_core_Http2ProtocolOptions *msg, upb_arena *arena) {
+  struct google_protobuf_UInt32Value* sub = (struct google_protobuf_UInt32Value*)envoy_api_v2_core_Http2ProtocolOptions_max_outbound_frames(msg);
+  if (sub == NULL) {
+    sub = (struct google_protobuf_UInt32Value*)upb_msg_new(&google_protobuf_UInt32Value_msginit, arena);
+    if (!sub) return NULL;
+    envoy_api_v2_core_Http2ProtocolOptions_set_max_outbound_frames(msg, sub);
+  }
+  return sub;
+}
+UPB_INLINE void envoy_api_v2_core_Http2ProtocolOptions_set_max_outbound_control_frames(envoy_api_v2_core_Http2ProtocolOptions *msg, struct google_protobuf_UInt32Value* value) {
+  UPB_FIELD_AT(msg, struct google_protobuf_UInt32Value*, UPB_SIZE(24, 48)) = value;
+}
+UPB_INLINE struct google_protobuf_UInt32Value* envoy_api_v2_core_Http2ProtocolOptions_mutable_max_outbound_control_frames(envoy_api_v2_core_Http2ProtocolOptions *msg, upb_arena *arena) {
+  struct google_protobuf_UInt32Value* sub = (struct google_protobuf_UInt32Value*)envoy_api_v2_core_Http2ProtocolOptions_max_outbound_control_frames(msg);
+  if (sub == NULL) {
+    sub = (struct google_protobuf_UInt32Value*)upb_msg_new(&google_protobuf_UInt32Value_msginit, arena);
+    if (!sub) return NULL;
+    envoy_api_v2_core_Http2ProtocolOptions_set_max_outbound_control_frames(msg, sub);
+  }
+  return sub;
+}
+UPB_INLINE void envoy_api_v2_core_Http2ProtocolOptions_set_max_consecutive_inbound_frames_with_empty_payload(envoy_api_v2_core_Http2ProtocolOptions *msg, struct google_protobuf_UInt32Value* value) {
+  UPB_FIELD_AT(msg, struct google_protobuf_UInt32Value*, UPB_SIZE(28, 56)) = value;
+}
+UPB_INLINE struct google_protobuf_UInt32Value* envoy_api_v2_core_Http2ProtocolOptions_mutable_max_consecutive_inbound_frames_with_empty_payload(envoy_api_v2_core_Http2ProtocolOptions *msg, upb_arena *arena) {
+  struct google_protobuf_UInt32Value* sub = (struct google_protobuf_UInt32Value*)envoy_api_v2_core_Http2ProtocolOptions_max_consecutive_inbound_frames_with_empty_payload(msg);
+  if (sub == NULL) {
+    sub = (struct google_protobuf_UInt32Value*)upb_msg_new(&google_protobuf_UInt32Value_msginit, arena);
+    if (!sub) return NULL;
+    envoy_api_v2_core_Http2ProtocolOptions_set_max_consecutive_inbound_frames_with_empty_payload(msg, sub);
+  }
+  return sub;
+}
+UPB_INLINE void envoy_api_v2_core_Http2ProtocolOptions_set_max_inbound_priority_frames_per_stream(envoy_api_v2_core_Http2ProtocolOptions *msg, struct google_protobuf_UInt32Value* value) {
+  UPB_FIELD_AT(msg, struct google_protobuf_UInt32Value*, UPB_SIZE(32, 64)) = value;
+}
+UPB_INLINE struct google_protobuf_UInt32Value* envoy_api_v2_core_Http2ProtocolOptions_mutable_max_inbound_priority_frames_per_stream(envoy_api_v2_core_Http2ProtocolOptions *msg, upb_arena *arena) {
+  struct google_protobuf_UInt32Value* sub = (struct google_protobuf_UInt32Value*)envoy_api_v2_core_Http2ProtocolOptions_max_inbound_priority_frames_per_stream(msg);
+  if (sub == NULL) {
+    sub = (struct google_protobuf_UInt32Value*)upb_msg_new(&google_protobuf_UInt32Value_msginit, arena);
+    if (!sub) return NULL;
+    envoy_api_v2_core_Http2ProtocolOptions_set_max_inbound_priority_frames_per_stream(msg, sub);
+  }
+  return sub;
+}
+UPB_INLINE void envoy_api_v2_core_Http2ProtocolOptions_set_max_inbound_window_update_frames_per_data_frame_sent(envoy_api_v2_core_Http2ProtocolOptions *msg, struct google_protobuf_UInt32Value* value) {
+  UPB_FIELD_AT(msg, struct google_protobuf_UInt32Value*, UPB_SIZE(36, 72)) = value;
+}
+UPB_INLINE struct google_protobuf_UInt32Value* envoy_api_v2_core_Http2ProtocolOptions_mutable_max_inbound_window_update_frames_per_data_frame_sent(envoy_api_v2_core_Http2ProtocolOptions *msg, upb_arena *arena) {
+  struct google_protobuf_UInt32Value* sub = (struct google_protobuf_UInt32Value*)envoy_api_v2_core_Http2ProtocolOptions_max_inbound_window_update_frames_per_data_frame_sent(msg);
+  if (sub == NULL) {
+    sub = (struct google_protobuf_UInt32Value*)upb_msg_new(&google_protobuf_UInt32Value_msginit, arena);
+    if (!sub) return NULL;
+    envoy_api_v2_core_Http2ProtocolOptions_set_max_inbound_window_update_frames_per_data_frame_sent(msg, sub);
+  }
+  return sub;
+}
+UPB_INLINE void envoy_api_v2_core_Http2ProtocolOptions_set_stream_error_on_invalid_http_messaging(envoy_api_v2_core_Http2ProtocolOptions *msg, bool value) {
+  UPB_FIELD_AT(msg, bool, UPB_SIZE(2, 2)) = value;
 }
 
 /* envoy.api.v2.core.GrpcProtocolOptions */

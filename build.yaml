@@ -113,6 +113,7 @@ filegroups:
   - src/core/ext/upb-generated/envoy/api/v2/auth/cert.upb.h
   - src/core/ext/upb-generated/envoy/api/v2/cds.upb.h
   - src/core/ext/upb-generated/envoy/api/v2/cluster/circuit_breaker.upb.h
+  - src/core/ext/upb-generated/envoy/api/v2/cluster/filter.upb.h
   - src/core/ext/upb-generated/envoy/api/v2/cluster/outlier_detection.upb.h
   - src/core/ext/upb-generated/envoy/api/v2/discovery.upb.h
   - src/core/ext/upb-generated/envoy/api/v2/eds.upb.h
@@ -124,6 +125,7 @@ filegroups:
   - src/core/ext/upb-generated/envoy/api/v2/auth/cert.upb.c
   - src/core/ext/upb-generated/envoy/api/v2/cds.upb.c
   - src/core/ext/upb-generated/envoy/api/v2/cluster/circuit_breaker.upb.c
+  - src/core/ext/upb-generated/envoy/api/v2/cluster/filter.upb.c
   - src/core/ext/upb-generated/envoy/api/v2/cluster/outlier_detection.upb.c
   - src/core/ext/upb-generated/envoy/api/v2/discovery.upb.c
   - src/core/ext/upb-generated/envoy/api/v2/eds.upb.c
@@ -143,6 +145,7 @@ filegroups:
   - src/core/ext/upb-generated/envoy/api/v2/core/config_source.upb.h
   - src/core/ext/upb-generated/envoy/api/v2/core/grpc_service.upb.h
   - src/core/ext/upb-generated/envoy/api/v2/core/health_check.upb.h
+  - src/core/ext/upb-generated/envoy/api/v2/core/http_uri.upb.h
   - src/core/ext/upb-generated/envoy/api/v2/core/protocol.upb.h
   src:
   - src/core/ext/upb-generated/envoy/api/v2/core/address.upb.c
@@ -150,10 +153,18 @@ filegroups:
   - src/core/ext/upb-generated/envoy/api/v2/core/config_source.upb.c
   - src/core/ext/upb-generated/envoy/api/v2/core/grpc_service.upb.c
   - src/core/ext/upb-generated/envoy/api/v2/core/health_check.upb.c
+  - src/core/ext/upb-generated/envoy/api/v2/core/http_uri.upb.c
   - src/core/ext/upb-generated/envoy/api/v2/core/protocol.upb.c
   uses:
   - envoy_type_upb
   - google_api_upb
+  - proto_gen_validate_upb
+- name: envoy_orca_upb
+  headers:
+  - src/core/ext/upb-generated/udpa/data/orca/v1/orca_load_report.upb.h
+  src:
+  - src/core/ext/upb-generated/udpa/data/orca/v1/orca_load_report.upb.c
+  uses:
   - proto_gen_validate_upb
 - name: envoy_type_upb
   headers:
@@ -945,6 +956,7 @@ filegroups:
   - grpc_base
 - name: grpc_client_channel
   headers:
+  - src/core/ext/filters/client_channel/backend_metric.h
   - src/core/ext/filters/client_channel/backup_poller.h
   - src/core/ext/filters/client_channel/client_channel.h
   - src/core/ext/filters/client_channel/client_channel_channelz.h
@@ -973,6 +985,7 @@ filegroups:
   - src/core/ext/filters/client_channel/subchannel_interface.h
   - src/core/ext/filters/client_channel/subchannel_pool_interface.h
   src:
+  - src/core/ext/filters/client_channel/backend_metric.cc
   - src/core/ext/filters/client_channel/backup_poller.cc
   - src/core/ext/filters/client_channel/channel_connectivity.cc
   - src/core/ext/filters/client_channel/client_channel.cc
@@ -1004,6 +1017,7 @@ filegroups:
   - grpc_base
   - grpc_deadline_filter
   - grpc_health_upb
+  - envoy_orca_upb
 - name: grpc_client_idle_filter
   src:
   - src/core/ext/filters/client_idle/client_idle_filter.cc
@@ -4741,6 +4755,7 @@ targets:
   build: test
   language: c++
   src:
+  - src/proto/grpc/lb/v2/orca_load_report_for_test.proto
   - test/cpp/end2end/client_lb_end2end_test.cc
   deps:
   - grpc++_test_util

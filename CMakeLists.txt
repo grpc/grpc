@@ -1266,6 +1266,7 @@ add_library(grpc
   src/core/ext/transport/chttp2/client/insecure/channel_create_posix.cc
   src/core/ext/transport/chttp2/client/authority.cc
   src/core/ext/transport/chttp2/client/chttp2_connector.cc
+  src/core/ext/filters/client_channel/backend_metric.cc
   src/core/ext/filters/client_channel/backup_poller.cc
   src/core/ext/filters/client_channel/channel_connectivity.cc
   src/core/ext/filters/client_channel/client_channel.cc
@@ -1294,6 +1295,19 @@ add_library(grpc
   src/core/ext/filters/client_channel/subchannel_pool_interface.cc
   src/core/ext/filters/deadline/deadline_filter.cc
   src/core/ext/upb-generated/src/proto/grpc/health/v1/health.upb.c
+  src/core/ext/upb-generated/udpa/data/orca/v1/orca_load_report.upb.c
+  src/core/ext/upb-generated/gogoproto/gogo.upb.c
+  src/core/ext/upb-generated/validate/validate.upb.c
+  src/core/ext/upb-generated/google/api/annotations.upb.c
+  src/core/ext/upb-generated/google/api/http.upb.c
+  src/core/ext/upb-generated/google/protobuf/any.upb.c
+  src/core/ext/upb-generated/google/protobuf/descriptor.upb.c
+  src/core/ext/upb-generated/google/protobuf/duration.upb.c
+  src/core/ext/upb-generated/google/protobuf/empty.upb.c
+  src/core/ext/upb-generated/google/protobuf/struct.upb.c
+  src/core/ext/upb-generated/google/protobuf/timestamp.upb.c
+  src/core/ext/upb-generated/google/protobuf/wrappers.upb.c
+  src/core/ext/upb-generated/google/rpc/status.upb.c
   src/core/tsi/fake_transport_security.cc
   src/core/tsi/local_transport_security.cc
   src/core/tsi/ssl/session_cache/ssl_session_boringssl.cc
@@ -1313,16 +1327,6 @@ add_library(grpc
   src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_client_stats.cc
   src/core/ext/filters/client_channel/lb_policy/grpclb/load_balancer_api.cc
   src/core/ext/upb-generated/src/proto/grpc/lb/v1/load_balancer.upb.c
-  src/core/ext/upb-generated/google/api/annotations.upb.c
-  src/core/ext/upb-generated/google/api/http.upb.c
-  src/core/ext/upb-generated/google/protobuf/any.upb.c
-  src/core/ext/upb-generated/google/protobuf/descriptor.upb.c
-  src/core/ext/upb-generated/google/protobuf/duration.upb.c
-  src/core/ext/upb-generated/google/protobuf/empty.upb.c
-  src/core/ext/upb-generated/google/protobuf/struct.upb.c
-  src/core/ext/upb-generated/google/protobuf/timestamp.upb.c
-  src/core/ext/upb-generated/google/protobuf/wrappers.upb.c
-  src/core/ext/upb-generated/google/rpc/status.upb.c
   src/core/ext/filters/client_channel/resolver/fake/fake_resolver.cc
   src/core/ext/filters/client_channel/lb_policy/xds/xds.cc
   src/core/ext/filters/client_channel/lb_policy/xds/xds_channel_secure.cc
@@ -1331,6 +1335,7 @@ add_library(grpc
   src/core/ext/upb-generated/envoy/api/v2/auth/cert.upb.c
   src/core/ext/upb-generated/envoy/api/v2/cds.upb.c
   src/core/ext/upb-generated/envoy/api/v2/cluster/circuit_breaker.upb.c
+  src/core/ext/upb-generated/envoy/api/v2/cluster/filter.upb.c
   src/core/ext/upb-generated/envoy/api/v2/cluster/outlier_detection.upb.c
   src/core/ext/upb-generated/envoy/api/v2/discovery.upb.c
   src/core/ext/upb-generated/envoy/api/v2/eds.upb.c
@@ -1343,11 +1348,10 @@ add_library(grpc
   src/core/ext/upb-generated/envoy/api/v2/core/config_source.upb.c
   src/core/ext/upb-generated/envoy/api/v2/core/grpc_service.upb.c
   src/core/ext/upb-generated/envoy/api/v2/core/health_check.upb.c
+  src/core/ext/upb-generated/envoy/api/v2/core/http_uri.upb.c
   src/core/ext/upb-generated/envoy/api/v2/core/protocol.upb.c
   src/core/ext/upb-generated/envoy/type/percent.upb.c
   src/core/ext/upb-generated/envoy/type/range.upb.c
-  src/core/ext/upb-generated/gogoproto/gogo.upb.c
-  src/core/ext/upb-generated/validate/validate.upb.c
   src/core/ext/filters/client_channel/lb_policy/pick_first/pick_first.cc
   src/core/ext/filters/client_channel/lb_policy/round_robin/round_robin.cc
   src/core/ext/filters/client_channel/resolver/dns/c_ares/dns_resolver_ares.cc
@@ -1667,6 +1671,7 @@ add_library(grpc_cronet
   src/core/ext/filters/http/http_filters_plugin.cc
   src/core/ext/filters/http/message_compress/message_compress_filter.cc
   src/core/ext/filters/http/server/http_server_filter.cc
+  src/core/ext/filters/client_channel/backend_metric.cc
   src/core/ext/filters/client_channel/backup_poller.cc
   src/core/ext/filters/client_channel/channel_connectivity.cc
   src/core/ext/filters/client_channel/client_channel.cc
@@ -1701,6 +1706,19 @@ add_library(grpc_cronet
   third_party/upb/upb/port.c
   third_party/upb/upb/table.c
   third_party/upb/upb/upb.c
+  src/core/ext/upb-generated/udpa/data/orca/v1/orca_load_report.upb.c
+  src/core/ext/upb-generated/gogoproto/gogo.upb.c
+  src/core/ext/upb-generated/validate/validate.upb.c
+  src/core/ext/upb-generated/google/api/annotations.upb.c
+  src/core/ext/upb-generated/google/api/http.upb.c
+  src/core/ext/upb-generated/google/protobuf/any.upb.c
+  src/core/ext/upb-generated/google/protobuf/descriptor.upb.c
+  src/core/ext/upb-generated/google/protobuf/duration.upb.c
+  src/core/ext/upb-generated/google/protobuf/empty.upb.c
+  src/core/ext/upb-generated/google/protobuf/struct.upb.c
+  src/core/ext/upb-generated/google/protobuf/timestamp.upb.c
+  src/core/ext/upb-generated/google/protobuf/wrappers.upb.c
+  src/core/ext/upb-generated/google/rpc/status.upb.c
   src/core/lib/http/httpcli_security_connector.cc
   src/core/lib/security/context/security_context.cc
   src/core/lib/security/credentials/alts/alts_credentials.cc
@@ -2059,6 +2077,7 @@ add_library(grpc_test_util
   src/core/lib/transport/transport_op_string.cc
   src/core/lib/uri/uri_parser.cc
   src/core/lib/debug/trace.cc
+  src/core/ext/filters/client_channel/backend_metric.cc
   src/core/ext/filters/client_channel/backup_poller.cc
   src/core/ext/filters/client_channel/channel_connectivity.cc
   src/core/ext/filters/client_channel/client_channel.cc
@@ -2093,6 +2112,19 @@ add_library(grpc_test_util
   third_party/upb/upb/port.c
   third_party/upb/upb/table.c
   third_party/upb/upb/upb.c
+  src/core/ext/upb-generated/udpa/data/orca/v1/orca_load_report.upb.c
+  src/core/ext/upb-generated/gogoproto/gogo.upb.c
+  src/core/ext/upb-generated/validate/validate.upb.c
+  src/core/ext/upb-generated/google/api/annotations.upb.c
+  src/core/ext/upb-generated/google/api/http.upb.c
+  src/core/ext/upb-generated/google/protobuf/any.upb.c
+  src/core/ext/upb-generated/google/protobuf/descriptor.upb.c
+  src/core/ext/upb-generated/google/protobuf/duration.upb.c
+  src/core/ext/upb-generated/google/protobuf/empty.upb.c
+  src/core/ext/upb-generated/google/protobuf/struct.upb.c
+  src/core/ext/upb-generated/google/protobuf/timestamp.upb.c
+  src/core/ext/upb-generated/google/protobuf/wrappers.upb.c
+  src/core/ext/upb-generated/google/rpc/status.upb.c
   src/core/ext/transport/chttp2/transport/bin_decoder.cc
   src/core/ext/transport/chttp2/transport/bin_encoder.cc
   src/core/ext/transport/chttp2/transport/chttp2_plugin.cc
@@ -2399,6 +2431,7 @@ add_library(grpc_test_util_unsecure
   src/core/lib/transport/transport_op_string.cc
   src/core/lib/uri/uri_parser.cc
   src/core/lib/debug/trace.cc
+  src/core/ext/filters/client_channel/backend_metric.cc
   src/core/ext/filters/client_channel/backup_poller.cc
   src/core/ext/filters/client_channel/channel_connectivity.cc
   src/core/ext/filters/client_channel/client_channel.cc
@@ -2433,6 +2466,19 @@ add_library(grpc_test_util_unsecure
   third_party/upb/upb/port.c
   third_party/upb/upb/table.c
   third_party/upb/upb/upb.c
+  src/core/ext/upb-generated/udpa/data/orca/v1/orca_load_report.upb.c
+  src/core/ext/upb-generated/gogoproto/gogo.upb.c
+  src/core/ext/upb-generated/validate/validate.upb.c
+  src/core/ext/upb-generated/google/api/annotations.upb.c
+  src/core/ext/upb-generated/google/api/http.upb.c
+  src/core/ext/upb-generated/google/protobuf/any.upb.c
+  src/core/ext/upb-generated/google/protobuf/descriptor.upb.c
+  src/core/ext/upb-generated/google/protobuf/duration.upb.c
+  src/core/ext/upb-generated/google/protobuf/empty.upb.c
+  src/core/ext/upb-generated/google/protobuf/struct.upb.c
+  src/core/ext/upb-generated/google/protobuf/timestamp.upb.c
+  src/core/ext/upb-generated/google/protobuf/wrappers.upb.c
+  src/core/ext/upb-generated/google/rpc/status.upb.c
   src/core/ext/transport/chttp2/transport/bin_decoder.cc
   src/core/ext/transport/chttp2/transport/bin_encoder.cc
   src/core/ext/transport/chttp2/transport/chttp2_plugin.cc
@@ -2750,6 +2796,7 @@ add_library(grpc_unsecure
   src/core/ext/transport/chttp2/client/insecure/channel_create_posix.cc
   src/core/ext/transport/chttp2/client/authority.cc
   src/core/ext/transport/chttp2/client/chttp2_connector.cc
+  src/core/ext/filters/client_channel/backend_metric.cc
   src/core/ext/filters/client_channel/backup_poller.cc
   src/core/ext/filters/client_channel/channel_connectivity.cc
   src/core/ext/filters/client_channel/client_channel.cc
@@ -2784,6 +2831,19 @@ add_library(grpc_unsecure
   third_party/upb/upb/port.c
   third_party/upb/upb/table.c
   third_party/upb/upb/upb.c
+  src/core/ext/upb-generated/udpa/data/orca/v1/orca_load_report.upb.c
+  src/core/ext/upb-generated/gogoproto/gogo.upb.c
+  src/core/ext/upb-generated/validate/validate.upb.c
+  src/core/ext/upb-generated/google/api/annotations.upb.c
+  src/core/ext/upb-generated/google/api/http.upb.c
+  src/core/ext/upb-generated/google/protobuf/any.upb.c
+  src/core/ext/upb-generated/google/protobuf/descriptor.upb.c
+  src/core/ext/upb-generated/google/protobuf/duration.upb.c
+  src/core/ext/upb-generated/google/protobuf/empty.upb.c
+  src/core/ext/upb-generated/google/protobuf/struct.upb.c
+  src/core/ext/upb-generated/google/protobuf/timestamp.upb.c
+  src/core/ext/upb-generated/google/protobuf/wrappers.upb.c
+  src/core/ext/upb-generated/google/rpc/status.upb.c
   src/core/ext/transport/inproc/inproc_plugin.cc
   src/core/ext/transport/inproc/inproc_transport.cc
   src/core/ext/filters/client_channel/resolver/dns/c_ares/dns_resolver_ares.cc
@@ -2807,16 +2867,6 @@ add_library(grpc_unsecure
   src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_client_stats.cc
   src/core/ext/filters/client_channel/lb_policy/grpclb/load_balancer_api.cc
   src/core/ext/upb-generated/src/proto/grpc/lb/v1/load_balancer.upb.c
-  src/core/ext/upb-generated/google/api/annotations.upb.c
-  src/core/ext/upb-generated/google/api/http.upb.c
-  src/core/ext/upb-generated/google/protobuf/any.upb.c
-  src/core/ext/upb-generated/google/protobuf/descriptor.upb.c
-  src/core/ext/upb-generated/google/protobuf/duration.upb.c
-  src/core/ext/upb-generated/google/protobuf/empty.upb.c
-  src/core/ext/upb-generated/google/protobuf/struct.upb.c
-  src/core/ext/upb-generated/google/protobuf/timestamp.upb.c
-  src/core/ext/upb-generated/google/protobuf/wrappers.upb.c
-  src/core/ext/upb-generated/google/rpc/status.upb.c
   src/core/ext/filters/client_channel/lb_policy/xds/xds.cc
   src/core/ext/filters/client_channel/lb_policy/xds/xds_channel.cc
   src/core/ext/filters/client_channel/lb_policy/xds/xds_client_stats.cc
@@ -2824,6 +2874,7 @@ add_library(grpc_unsecure
   src/core/ext/upb-generated/envoy/api/v2/auth/cert.upb.c
   src/core/ext/upb-generated/envoy/api/v2/cds.upb.c
   src/core/ext/upb-generated/envoy/api/v2/cluster/circuit_breaker.upb.c
+  src/core/ext/upb-generated/envoy/api/v2/cluster/filter.upb.c
   src/core/ext/upb-generated/envoy/api/v2/cluster/outlier_detection.upb.c
   src/core/ext/upb-generated/envoy/api/v2/discovery.upb.c
   src/core/ext/upb-generated/envoy/api/v2/eds.upb.c
@@ -2836,11 +2887,10 @@ add_library(grpc_unsecure
   src/core/ext/upb-generated/envoy/api/v2/core/config_source.upb.c
   src/core/ext/upb-generated/envoy/api/v2/core/grpc_service.upb.c
   src/core/ext/upb-generated/envoy/api/v2/core/health_check.upb.c
+  src/core/ext/upb-generated/envoy/api/v2/core/http_uri.upb.c
   src/core/ext/upb-generated/envoy/api/v2/core/protocol.upb.c
   src/core/ext/upb-generated/envoy/type/percent.upb.c
   src/core/ext/upb-generated/envoy/type/range.upb.c
-  src/core/ext/upb-generated/gogoproto/gogo.upb.c
-  src/core/ext/upb-generated/validate/validate.upb.c
   src/core/ext/filters/client_channel/lb_policy/pick_first/pick_first.cc
   src/core/ext/filters/client_channel/lb_policy/round_robin/round_robin.cc
   src/core/ext/filters/census/grpc_context.cc
@@ -13128,11 +13178,18 @@ endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
 add_executable(client_lb_end2end_test
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/lb/v2/orca_load_report_for_test.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/lb/v2/orca_load_report_for_test.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/lb/v2/orca_load_report_for_test.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/lb/v2/orca_load_report_for_test.grpc.pb.h
   test/cpp/end2end/client_lb_end2end_test.cc
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
 
+protobuf_generate_grpc_cpp(
+  src/proto/grpc/lb/v2/orca_load_report_for_test.proto
+)
 
 target_include_directories(client_lb_end2end_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
