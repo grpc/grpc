@@ -60,3 +60,54 @@ py_test(
     ],
     python_version = "PY3",
 )
+
+# Test compatibility of py_proto_library and py_grpc_library rules with
+# proto_library targets as deps when the latter use import_prefix and/or
+# strip_import_prefix arguments
+proto_library(
+    name = "helloworld_moved_proto",
+    srcs = ["helloworld.proto"],
+    deps = [
+        "@com_google_protobuf//:duration_proto",
+        "@com_google_protobuf//:timestamp_proto",
+    ],
+    import_prefix = "google/cloud",
+    strip_import_prefix = ""
+)
+
+py_proto_library(
+    name = "helloworld_moved_py_pb2",
+    deps = [":helloworld_moved_proto"],
+)
+
+py_grpc_library(
+    name = "helloworld_moved_py_pb2_grpc",
+    srcs = [":helloworld_moved_proto"],
+    deps = [":helloworld_moved_py_pb2"],
+)
+
+py_test(
+    name = "import_moved_test",
+    main = "helloworld.py",
+    srcs = ["helloworld.py"],
+    deps = [
+        ":helloworld_moved_py_pb2",
+        ":helloworld_moved_py_pb2_grpc",
+        ":duration_py_pb2",
+        ":timestamp_py_pb2",
+    ],
+    imports = [
+        "_virtual_imports/helloworld_moved_proto",
+        # The following line allows us to keep helloworld.py file same for both
+        # test cases ("import_test" and "import_moved_test") and reduce the code
+        # duplication.
+        #
+        # Without this line, the actual imports in hellowold.py should look
+        # like the following:
+        #     import google.cloud.helloworld_pb2 as helloworld_pb2
+        # instead of:
+        #     import helloworld_pb2
+        "_virtual_imports/helloworld_moved_proto/google/cloud"
+    ],
+    python_version = "PY3",
+)

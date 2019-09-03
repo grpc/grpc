@@ -2,7 +2,7 @@
 
 load(
     "//bazel:protobuf.bzl",
-    "get_include_protoc_args",
+    "get_include_directory",
     "get_plugin_args",
     "get_proto_root",
     "proto_path_to_generated_filename",
@@ -10,6 +10,7 @@ load(
     "includes_from_deps",
     "get_proto_arguments",
     "declare_out_files",
+    "get_out_dir",
 )
 
 _GENERATED_PROTO_FORMAT = "{}_pb2.py"
@@ -23,12 +24,12 @@ def _generate_py_impl(context):
 
     tools = [context.executable._protoc]
     arguments = ([
-        "--python_out={}".format(
-            context.genfiles_dir.path,
-        ),
-    ] + get_include_protoc_args(includes) + [
-        "--proto_path={}".format(context.genfiles_dir.path)
-        for proto in protos
+        "--python_out={}".format(get_out_dir(protos, context)),
+    ] + [
+        "--proto_path={}".format(get_include_directory(i))
+        for i in includes
+    ] + [
+        "--proto_path={}".format(context.genfiles_dir.path),
     ])
     arguments += get_proto_arguments(protos, context.genfiles_dir.path)
 
@@ -98,15 +99,15 @@ def _generate_pb2_grpc_src_impl(context):
     arguments += get_plugin_args(
         context.executable._plugin,
         [],
-        context.genfiles_dir.path,
+        get_out_dir(protos, context),
         False,
     )
 
-    arguments += get_include_protoc_args(includes)
     arguments += [
-        "--proto_path={}".format(context.genfiles_dir.path)
-        for proto in protos
+        "--proto_path={}".format(get_include_directory(i))
+        for i in includes
     ]
+    arguments += ["--proto_path={}".format(context.genfiles_dir.path)]
     arguments += get_proto_arguments(protos, context.genfiles_dir.path)
 
     context.actions.run(
@@ -118,7 +119,6 @@ def _generate_pb2_grpc_src_impl(context):
         mnemonic = "ProtocInvocation",
     )
     return struct(files = depset(out_files))
-
 
 _generate_pb2_grpc_src = rule(
     attrs = {
