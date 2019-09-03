@@ -29,7 +29,8 @@
 namespace grpc_impl {
 namespace experimental {
 
-/** TLS key materials config, wrapper for grpc_tls_key_materials_config. **/
+/** TLS key materials config, wrapper for grpc_tls_key_materials_config. It is
+ * used for experimental purposes for now and subject to change. **/
 class TlsKeyMaterialsConfig {
  public:
   struct PemKeyCertPair {
@@ -56,7 +57,14 @@ class TlsKeyMaterialsConfig {
   grpc::string pem_root_certs_;
 };
 
-/** TLS credential reload arguments, wraps grpc_tls_credential_reload_arg. **/
+/** TLS credential reload arguments, wraps grpc_tls_credential_reload_arg. It is
+ * used for experimental purposes for now and it is subject to change.
+ *
+ * The credential reload arg contains all the info necessary to schedule/cancel
+ * a credential reload request. The callback function must be called after
+ * finishing the schedule operation. See the description of the
+ * grpc_tls_credential_reload_arg struct in grpc_security.h for more details.
+ * **/
 class TlsCredentialReloadArg {
  public:
   /** TlsCredentialReloadArg does not take ownership of the C arg that is passed
@@ -93,7 +101,15 @@ class TlsCredentialReloadArg {
   grpc_tls_credential_reload_arg* c_arg_;
 };
 
-/** TLS credential reloag config, wraps grpc_tls_credential_reload_config. **/
+/** TLS credential reloag config, wraps grpc_tls_credential_reload_config. It is
+ * used for experimental purposes for now and it is subject to change.
+ *
+ * The config_user_data is read-only user data; schedule is a pointer to an
+ * application-provided callback that invokes the credential reload; cancel is a
+ * pointer to an application-provided callback that cancels a credential reload
+ * request; destruct is a pointer to an application-provided callback that
+ * cleans up any data associated to the config. See the description of the
+ * grpc_tls_credential_reload_config struct in grpc_security.h. **/
 class TlsCredentialReloadConfig {
  public:
   TlsCredentialReloadConfig(const void* config_user_data,
@@ -132,8 +148,14 @@ class TlsCredentialReloadConfig {
 };
 
 /** TLS server authorization check arguments, wraps
- *  grpc_tls_server_authorization_check_arg. **/
-
+ *  grpc_tls_server_authorization_check_arg. It is used for experimental
+ *  purposes for now and it is subject to change.
+ *
+ *  The server authorization check arg contains all the info necessary to
+ *  schedule/cancel a server authorization check request. The callback function
+ *  must be called after finishing the schedule operation. See the description
+ *  of the grpc_tls_server_authorization_check_arg struct in grpc_security.h for
+ *  more details. **/
 class TlsServerAuthorizationCheckArg {
  public:
   /** TlsServerAuthorizationCheckArg does not take ownership of the C arg passed
@@ -173,7 +195,17 @@ class TlsServerAuthorizationCheckArg {
 };
 
 /** TLS server authorization check config, wraps
- *  grps_tls_server_authorization_check_config. **/
+ *  grps_tls_server_authorization_check_config. It is used for experimental
+ *  purposes for now and it is subject to change.
+ *
+ *  The config_user_data is read-only user data; schedule is a pointer to an
+ *  application-provided callback that invokes the server authorization check;
+ *  cancel is a pointer to an application-provided callback that cancels a
+ *  server authorization check request; destruct is a pointer to an
+ *  application-provided callback that cleans up any data associated to the
+ *  config. See the description of the
+ *  grpc_tls_server_authorization_check_config struct in grpc_security.h for
+ *  more details. **/
 class TlsServerAuthorizationCheckConfig {
  public:
   TlsServerAuthorizationCheckConfig(
@@ -214,7 +246,10 @@ class TlsServerAuthorizationCheckConfig {
   void (*destruct_)(void* config_user_data);
 };
 
-/** TLS credentials options, wrapper for grpc_tls_credentials_options. **/
+/** TLS credentials options, wrapper for grpc_tls_credentials_options. It is
+ * used for experimental purposes for now and it is subject to change. See the
+ * description of the grpc_tls_credentials_options struct in grpc_security.h for
+ * more details. **/
 class TlsCredentialsOptions {
  public:
   TlsCredentialsOptions(
