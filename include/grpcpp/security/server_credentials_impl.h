@@ -80,8 +80,8 @@ std::shared_ptr<ServerCredentials> AltsServerCredentials(
 std::shared_ptr<ServerCredentials> LocalServerCredentials(
     grpc_local_connect_type type);
 
-/// Builds SPIFFE ServerCredentials given TLS options.
-std::shared_ptr<ServerCredentials> SpiffeServerCredentials(
+/// Builds TLS ServerCredentials given TLS options.
+std::shared_ptr<ServerCredentials> TlsServerCredentials(
     const TlsCredentialsOptions& options);
 
 }  // namespace experimental

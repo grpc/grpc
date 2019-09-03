@@ -337,8 +337,8 @@ std::shared_ptr<ChannelCredentials> AltsCredentials(
 std::shared_ptr<ChannelCredentials> LocalCredentials(
     grpc_local_connect_type type);
 
-/// Builds SPIFFE Credentials given TLS options.
-std::shared_ptr<ChannelCredentials> SpiffeCredentials(
+/// Builds TLS Credentials given TLS options.
+std::shared_ptr<ChannelCredentials> TlsCredentials(
     const TlsCredentialsOptions& options);
 
 }  // namespace experimental
