@@ -329,7 +329,15 @@ class CallData {
 
   // Invoked by channel for queued picks when the picker is updated.
   static void PickSubchannel(void* arg, grpc_error* error);
-  void PickSubchannelLocked(grpc_call_element* elem, bool yield_combiner);
+
+  // Helper function for performing a pick while holding the data plane
+  // mutex.  Returns true if the pick is complete, in which case the caller
+  // must invoke PickDone() or AsyncPickDone() with the returned error.
+  bool PickSubchannelLocked(grpc_call_element* elem, grpc_error** error);
+
+  // Schedules a callback to process the completed pick.  The callback
+  // will not run until after this method returns.
+  void AsyncPickDone(grpc_call_element* elem, grpc_error* error);
 
  private:
   class QueuedPickCanceller;
@@ -1488,8 +1496,12 @@ void ChannelData::UpdateStateAndPickerLocked(
     }
     // Re-process queued picks.
     for (QueuedPick* pick = queued_picks_; pick != nullptr; pick = pick->next) {
-      CallData* calld = static_cast<CallData*>(pick->elem->call_data);
-      calld->PickSubchannelLocked(pick->elem, /*yield_combiner=*/true);
+      grpc_call_element* elem = pick->elem;
+      CallData* calld = static_cast<CallData*>(elem->call_data);
+      grpc_error* error = GRPC_ERROR_NONE;
+      if (calld->PickSubchannelLocked(elem, &error)) {
+        calld->AsyncPickDone(elem, error);
+      }
     }
   }
   // Clear the pending update map after releasing the lock, to keep the
@@ -3608,6 +3620,11 @@ void CallData::CreateSubchannelCall(grpc_call_element* elem) {
   }
 }
 
+void CallData::AsyncPickDone(grpc_call_element* elem, grpc_error* error) {
+  GRPC_CLOSURE_INIT(&pick_closure_, PickDone, elem, grpc_schedule_on_exec_ctx);
+  GRPC_CLOSURE_SCHED(&pick_closure_, error);
+}
+
 void CallData::PickDone(void* arg, grpc_error* error) {
   grpc_call_element* elem = static_cast<grpc_call_element*>(arg);
   ChannelData* chand = static_cast<ChannelData*>(elem->channel_data);
@@ -3770,23 +3787,31 @@ void CallData::PickSubchannel(void* arg, grpc_error* error) {
   grpc_call_element* elem = static_cast<grpc_call_element*>(arg);
   CallData* calld = static_cast<CallData*>(elem->call_data);
   ChannelData* chand = static_cast<ChannelData*>(elem->channel_data);
-  MutexLock lock(chand->data_plane_mu());
-  calld->PickSubchannelLocked(elem, /*yield_combiner=*/false);
+  bool pick_complete;
+  {
+    MutexLock lock(chand->data_plane_mu());
+    pick_complete = calld->PickSubchannelLocked(elem, &error);
+  }
+  if (pick_complete) {
+    PickDone(elem, error);
+    GRPC_ERROR_UNREF(error);
+  }
 }
 
-void CallData::PickSubchannelLocked(grpc_call_element* elem,
-                                    bool yield_combiner) {
+bool CallData::PickSubchannelLocked(grpc_call_element* elem,
+                                    grpc_error** error) {
   ChannelData* chand = static_cast<ChannelData*>(elem->channel_data);
   GPR_ASSERT(connected_subchannel_ == nullptr);
   GPR_ASSERT(subchannel_call_ == nullptr);
-  // picker's being null means the channel is currently in IDLE state. The
-  // incoming call will make the channel exit IDLE and queue itself.
+  // The picker being null means that the channel is currently in IDLE state.
+  // The incoming call will make the channel exit IDLE.
   if (chand->picker() == nullptr) {
-    // We are currently in the data plane.
-    // Bounce into the control plane to exit IDLE.
-    chand->CheckConnectivityState(true);
+    // Bounce into the control plane combiner to exit IDLE.
+    chand->CheckConnectivityState(/*try_to_connect=*/true);
+    // Queue the pick, so that it will be attempted once the channel
+    // becomes connected.
     AddCallToQueuedPicksLocked(elem);
-    return;
+    return false;
   }
   // Apply service config to call if needed.
   MaybeApplyServiceConfigToCallLocked(elem);
@@ -3816,21 +3841,6 @@ void CallData::PickSubchannelLocked(grpc_call_element* elem,
                                   : pending_batches_[0]
                                         .batch->payload->send_initial_metadata
                                         .send_initial_metadata_flags;
-  // Function to call when we're done.
-  auto finish = [this, elem, yield_combiner](grpc_error* error) {
-    // If yield_combiner is true, run PickDone() via a closure to leave the
-    // control plane combiner.  Otherwise, invoke the callback function
-    // directly.
-    if (yield_combiner) {
-      GRPC_CLOSURE_INIT(&pick_closure_, PickDone, elem,
-                        grpc_schedule_on_exec_ctx);
-      GRPC_CLOSURE_SCHED(&pick_closure_, error);
-    } else {
-      // Manually invoking callback function; does not take ownership of error.
-      PickDone(elem, error);
-      GRPC_ERROR_UNREF(error);
-    }
-  };
   // Attempt pick.
   auto result = chand->picker()->Pick(pick_args);
   if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_routing_trace)) {
@@ -3845,9 +3855,9 @@ void CallData::PickSubchannelLocked(grpc_call_element* elem,
       grpc_error* disconnect_error = chand->disconnect_error();
       if (disconnect_error != GRPC_ERROR_NONE) {
         GRPC_ERROR_UNREF(result.error);
-        if (calld->pick_queued_) calld->RemoveCallFromQueuedPicksLocked(elem);
-        finish(GRPC_ERROR_REF(disconnect_error));
-        break;
+        if (pick_queued_) RemoveCallFromQueuedPicksLocked(elem);
+        *error = GRPC_ERROR_REF(disconnect_error);
+        return true;
       }
       // If wait_for_ready is false, then the error indicates the RPC
       // attempt's final status.
@@ -3857,17 +3867,19 @@ void CallData::PickSubchannelLocked(grpc_call_element* elem,
         grpc_status_code status = GRPC_STATUS_OK;
         grpc_error_get_status(result.error, deadline_, &status, nullptr,
                               nullptr, nullptr);
-        if (!enable_retries_ ||
-            !MaybeRetry(elem, nullptr /* batch_data */, status,
-                        nullptr /* server_pushback_md */)) {
+        const bool retried =
+            enable_retries_ &&
+            MaybeRetry(elem, nullptr /* batch_data */, status,
+                       nullptr /* server_pushback_md */);
+        if (!retried) {
           grpc_error* new_error =
               GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
                   "Failed to pick subchannel", &result.error, 1);
           GRPC_ERROR_UNREF(result.error);
-          finish(new_error);
+          *error = new_error;
         }
         if (pick_queued_) RemoveCallFromQueuedPicksLocked(elem);
-        break;
+        return !retried;
       }
       // If wait_for_ready is true, then queue to retry when we get a new
       // picker.
@@ -3876,7 +3888,7 @@ void CallData::PickSubchannelLocked(grpc_call_element* elem,
     // Fallthrough
     case LoadBalancingPolicy::PickResult::PICK_QUEUE:
       if (!pick_queued_) AddCallToQueuedPicksLocked(elem);
-      break;
+      return false;
     default:  // PICK_COMPLETE
       if (pick_queued_) RemoveCallFromQueuedPicksLocked(elem);
       // Handle drops.
@@ -3893,7 +3905,8 @@ void CallData::PickSubchannelLocked(grpc_call_element* elem,
       lb_recv_trailing_metadata_ready_ = result.recv_trailing_metadata_ready;
       lb_recv_trailing_metadata_ready_user_data_ =
           result.recv_trailing_metadata_ready_user_data;
-      finish(result.error);
+      *error = result.error;
+      return true;
   }
 }
 
