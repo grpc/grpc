@@ -22,6 +22,7 @@
 #import "GRPCCallOptions.h"
 #import "GRPCInterceptor.h"
 
+#import "GRPCTransport.h"
 #import "private/GRPCTransport+Private.h"
 
 NSString *const kGRPCHeadersKey = @"io.grpc.HeadersKey";
@@ -182,6 +183,16 @@ NSString *const kGRPCErrorDomain = @"io.grpc";
     id<GRPCInterceptorFactory> globalInterceptorFactory = [GRPCCall2 globalInterceptorFactory];
     if (globalInterceptorFactory != nil) {
       [interceptorFactories addObject:globalInterceptorFactory];
+    }
+    if (_actualCallOptions.transport != NULL) {
+      id<GRPCTransportFactory> transportFactory = [[GRPCTransportRegistry sharedInstance]
+          getTransportFactoryWithID:_actualCallOptions.transport];
+
+      NSArray<id<GRPCInterceptorFactory>> *transportInterceptorFactories =
+          transportFactory.transportInterceptorFactories;
+      if (transportInterceptorFactories != nil) {
+        [interceptorFactories addObjectsFromArray:transportInterceptorFactories];
+      }
     }
     // continuously create interceptor until one is successfully created
     while (_firstInterceptor == nil) {
