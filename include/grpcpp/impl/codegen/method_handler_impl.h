@@ -207,7 +207,7 @@ class ServerStreamingHandler : public ::grpc::internal::MethodHandler {
 
   void* Deserialize(grpc_call* call, grpc_byte_buffer* req,
                     ::grpc::Status* status, void** /*handler_data*/) final {
-    ByteBuffer buf;
+    ::grpc::ByteBuffer buf;
     buf.set_buffer(req);
     auto* request =
         new (::grpc::g_core_codegen_interface->grpc_call_arena_alloc(
