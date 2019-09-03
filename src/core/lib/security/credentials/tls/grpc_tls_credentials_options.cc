@@ -153,7 +153,6 @@ int grpc_tls_key_materials_config_set_key_materials(
     cert_pair_list.emplace_back(std::move(key_cert_pair));
   }
   config->set_key_materials(std::move(pem_root), std::move(cert_pair_list));
-  gpr_free(key_cert_pairs);
   return 1;
 }
 
