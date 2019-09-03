@@ -90,7 +90,7 @@ class RpcMethodHandler : public ::grpc::internal::MethodHandler {
   }
 
   void* Deserialize(grpc_call* call, grpc_byte_buffer* req,
-                    ::grpc::Status* status, void** handler_data) final {
+                    ::grpc::Status* status, void** /*handler_data*/) final {
     ::grpc::ByteBuffer buf;
     buf.set_buffer(req);
     auto* request =
@@ -206,8 +206,8 @@ class ServerStreamingHandler : public ::grpc::internal::MethodHandler {
   }
 
   void* Deserialize(grpc_call* call, grpc_byte_buffer* req,
-                    ::grpc::Status* status, void** handler_data) final {
-    ::grpc::ByteBuffer buf;
+                    ::grpc::Status* status, void** /*handler_data*/) final {
+    ByteBuffer buf;
     buf.set_buffer(req);
     auto* request =
         new (::grpc::g_core_codegen_interface->grpc_call_arena_alloc(
@@ -355,8 +355,8 @@ class ErrorMethodHandler : public ::grpc::internal::MethodHandler {
     param.call->cq()->Pluck(&ops);
   }
 
-  void* Deserialize(grpc_call* call, grpc_byte_buffer* req,
-                    ::grpc::Status* status, void** handler_data) final {
+  void* Deserialize(grpc_call* /*call*/, grpc_byte_buffer* req,
+                    ::grpc::Status* /*status*/, void** /*handler_data*/) final {
     // We have to destroy any request payload
     if (req != nullptr) {
       ::grpc::g_core_codegen_interface->grpc_byte_buffer_destroy(req);
