@@ -11,6 +11,8 @@
 #include "envoy/api/v2/auth/cert.upb.h"
 #include "envoy/api/v2/core/base.upb.h"
 #include "envoy/api/v2/core/config_source.upb.h"
+#include "google/protobuf/any.upb.h"
+#include "google/protobuf/struct.upb.h"
 #include "google/protobuf/wrappers.upb.h"
 #include "validate/validate.upb.h"
 #include "gogoproto/gogo.upb.h"
@@ -30,22 +32,41 @@ const upb_msglayout envoy_api_v2_auth_TlsParameters_msginit = {
   UPB_SIZE(24, 32), 4, false,
 };
 
-static const upb_msglayout *const envoy_api_v2_auth_TlsCertificate_submsgs[5] = {
+static const upb_msglayout *const envoy_api_v2_auth_PrivateKeyProvider_submsgs[2] = {
+  &google_protobuf_Any_msginit,
+  &google_protobuf_Struct_msginit,
+};
+
+static const upb_msglayout_field envoy_api_v2_auth_PrivateKeyProvider__fields[3] = {
+  {1, UPB_SIZE(0, 0), 0, 0, 9, 1},
+  {2, UPB_SIZE(8, 16), UPB_SIZE(-13, -25), 1, 11, 1},
+  {3, UPB_SIZE(8, 16), UPB_SIZE(-13, -25), 0, 11, 1},
+};
+
+const upb_msglayout envoy_api_v2_auth_PrivateKeyProvider_msginit = {
+  &envoy_api_v2_auth_PrivateKeyProvider_submsgs[0],
+  &envoy_api_v2_auth_PrivateKeyProvider__fields[0],
+  UPB_SIZE(16, 32), 3, false,
+};
+
+static const upb_msglayout *const envoy_api_v2_auth_TlsCertificate_submsgs[6] = {
+  &envoy_api_v2_auth_PrivateKeyProvider_msginit,
   &envoy_api_v2_core_DataSource_msginit,
 };
 
-static const upb_msglayout_field envoy_api_v2_auth_TlsCertificate__fields[5] = {
-  {1, UPB_SIZE(0, 0), 0, 0, 11, 1},
-  {2, UPB_SIZE(4, 8), 0, 0, 11, 1},
-  {3, UPB_SIZE(8, 16), 0, 0, 11, 1},
-  {4, UPB_SIZE(12, 24), 0, 0, 11, 1},
-  {5, UPB_SIZE(16, 32), 0, 0, 11, 3},
+static const upb_msglayout_field envoy_api_v2_auth_TlsCertificate__fields[6] = {
+  {1, UPB_SIZE(0, 0), 0, 1, 11, 1},
+  {2, UPB_SIZE(4, 8), 0, 1, 11, 1},
+  {3, UPB_SIZE(8, 16), 0, 1, 11, 1},
+  {4, UPB_SIZE(12, 24), 0, 1, 11, 1},
+  {5, UPB_SIZE(20, 40), 0, 1, 11, 3},
+  {6, UPB_SIZE(16, 32), 0, 0, 11, 1},
 };
 
 const upb_msglayout envoy_api_v2_auth_TlsCertificate_msginit = {
   &envoy_api_v2_auth_TlsCertificate_submsgs[0],
   &envoy_api_v2_auth_TlsCertificate__fields[0],
-  UPB_SIZE(20, 40), 5, false,
+  UPB_SIZE(24, 48), 6, false,
 };
 
 static const upb_msglayout *const envoy_api_v2_auth_TlsSessionTicketKeys_submsgs[1] = {

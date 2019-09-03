@@ -1010,6 +1010,7 @@ grpc_cc_library(
     name = "grpc_client_channel",
     srcs = [
         "src/core/ext/filters/client_channel/backup_poller.cc",
+        "src/core/ext/filters/client_channel/backend_metric.cc",
         "src/core/ext/filters/client_channel/channel_connectivity.cc",
         "src/core/ext/filters/client_channel/client_channel.cc",
         "src/core/ext/filters/client_channel/client_channel_channelz.cc",
@@ -1038,6 +1039,7 @@ grpc_cc_library(
     ],
     hdrs = [
         "src/core/ext/filters/client_channel/backup_poller.h",
+        "src/core/ext/filters/client_channel/backend_metric.h",
         "src/core/ext/filters/client_channel/client_channel.h",
         "src/core/ext/filters/client_channel/client_channel_channelz.h",
         "src/core/ext/filters/client_channel/client_channel_factory.h",
@@ -1067,6 +1069,7 @@ grpc_cc_library(
     ],
     language = "c++",
     deps = [
+        "envoy_orca_upb",
         "gpr_base",
         "grpc_base",
         "grpc_client_authority_filter",
@@ -2280,6 +2283,7 @@ grpc_cc_library(
         "src/core/ext/upb-generated/envoy/api/v2/auth/cert.upb.c",
         "src/core/ext/upb-generated/envoy/api/v2/cds.upb.c",
         "src/core/ext/upb-generated/envoy/api/v2/cluster/circuit_breaker.upb.c",
+        "src/core/ext/upb-generated/envoy/api/v2/cluster/filter.upb.c",
         "src/core/ext/upb-generated/envoy/api/v2/cluster/outlier_detection.upb.c",
         "src/core/ext/upb-generated/envoy/api/v2/discovery.upb.c",
         "src/core/ext/upb-generated/envoy/api/v2/eds.upb.c",
@@ -2292,6 +2296,7 @@ grpc_cc_library(
         "src/core/ext/upb-generated/envoy/api/v2/auth/cert.upb.h",
         "src/core/ext/upb-generated/envoy/api/v2/cds.upb.h",
         "src/core/ext/upb-generated/envoy/api/v2/cluster/circuit_breaker.upb.h",
+        "src/core/ext/upb-generated/envoy/api/v2/cluster/filter.upb.h",
         "src/core/ext/upb-generated/envoy/api/v2/cluster/outlier_detection.upb.h",
         "src/core/ext/upb-generated/envoy/api/v2/discovery.upb.h",
         "src/core/ext/upb-generated/envoy/api/v2/eds.upb.h",
@@ -2320,6 +2325,7 @@ grpc_cc_library(
         "src/core/ext/upb-generated/envoy/api/v2/core/config_source.upb.c",
         "src/core/ext/upb-generated/envoy/api/v2/core/grpc_service.upb.c",
         "src/core/ext/upb-generated/envoy/api/v2/core/health_check.upb.c",
+        "src/core/ext/upb-generated/envoy/api/v2/core/http_uri.upb.c",
         "src/core/ext/upb-generated/envoy/api/v2/core/protocol.upb.c",
     ],
     hdrs = [
@@ -2328,6 +2334,7 @@ grpc_cc_library(
         "src/core/ext/upb-generated/envoy/api/v2/core/config_source.upb.h",
         "src/core/ext/upb-generated/envoy/api/v2/core/grpc_service.upb.h",
         "src/core/ext/upb-generated/envoy/api/v2/core/health_check.upb.h",
+        "src/core/ext/upb-generated/envoy/api/v2/core/http_uri.upb.h",
         "src/core/ext/upb-generated/envoy/api/v2/core/protocol.upb.h",
     ],
     external_deps = [
@@ -2377,6 +2384,29 @@ grpc_cc_library(
     language = "c++",
     deps = [
         ":google_api_upb",
+    ],
+)
+
+# Once upb code-gen issue is resolved, replace envoy_orca_upb with this.
+# grpc_upb_proto_library(
+#     name = "envoy_orca_upb",
+#     deps = ["@envoy_api//udpa/data/orca/v1:orca_load_report"]
+# )
+
+grpc_cc_library(
+    name = "envoy_orca_upb",
+    srcs = [
+        "src/core/ext/upb-generated/udpa/data/orca/v1/orca_load_report.upb.c",
+    ],
+    hdrs = [
+        "src/core/ext/upb-generated/udpa/data/orca/v1/orca_load_report.upb.h",
+    ],
+    external_deps = [
+        "upb_lib",
+    ],
+    language = "c++",
+    deps = [
+        ":proto_gen_validate_upb",
     ],
 )
 
