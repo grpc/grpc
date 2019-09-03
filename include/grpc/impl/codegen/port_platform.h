@@ -32,8 +32,7 @@
  * in-house library if possible. (e.g. std::map)
  */
 #ifndef GRPC_USE_CPP_STD_LIB
-/* Default value will be 1 once all tests become green. */
-#define GRPC_USE_CPP_STD_LIB 0
+#define GRPC_USE_CPP_STD_LIB 1
 #endif
 
 /* Get windows.h included everywhere (we need it) */
