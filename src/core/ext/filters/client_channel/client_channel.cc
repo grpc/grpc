@@ -3867,10 +3867,9 @@ bool CallData::PickSubchannelLocked(grpc_call_element* elem,
         grpc_status_code status = GRPC_STATUS_OK;
         grpc_error_get_status(result.error, deadline_, &status, nullptr,
                               nullptr, nullptr);
-        const bool retried =
-            enable_retries_ &&
-            MaybeRetry(elem, nullptr /* batch_data */, status,
-                       nullptr /* server_pushback_md */);
+        const bool retried = enable_retries_ &&
+                             MaybeRetry(elem, nullptr /* batch_data */, status,
+                                        nullptr /* server_pushback_md */);
         if (!retried) {
           grpc_error* new_error =
               GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
