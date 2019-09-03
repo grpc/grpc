@@ -3881,6 +3881,7 @@ void CallData::StartPickLocked(void* arg, grpc_error* error) {
         GRPC_ERROR_UNREF(result.error);
         GRPC_CLOSURE_SCHED(&calld->pick_closure_,
                            GRPC_ERROR_REF(disconnect_error));
+        if (calld->pick_queued_) calld->RemoveCallFromQueuedPicksLocked(elem);
         break;
       }
       // If wait_for_ready is false, then the error indicates the RPC
