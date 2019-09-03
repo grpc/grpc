@@ -770,7 +770,9 @@ GRPCAPI grpc_tls_key_materials_config* grpc_tls_key_materials_config_create(
     config will take the ownership of pem_root_certs and pem_key_cert_pairs.
     It's valid for the caller to provide nullptr pem_root_certs, in which case
     the gRPC-provided root cert will be used. pem_key_cert_pairs should not be
-    NULL. It returns 1 on success and 0 on failure. It is used for
+    NULL and the ownership of the array remains with the caller and the caller
+    is free to deallocate it immediately after the call.
+    It returns 1 on success and 0 on failure. It is used for
     experimental purpose for now and subject to change.
  */
 GRPCAPI int grpc_tls_key_materials_config_set_key_materials(
@@ -809,10 +811,12 @@ typedef void (*grpc_tls_on_credential_reload_done_cb)(
     a credential reload request. cb and cb_user_data represent a gRPC-provided
     callback and an argument passed to it. key_materials is an in/output
     parameter containing currently used/newly reloaded credentials. If
-    credential reload does not result in a new credential, key_materials should
-    not be modified. status and error_details are used to hold information about
-    errors occurred when a credential reload request is scheduled/cancelled. It
-    is used for experimental purpose for now and subject to change. */
+    credential reload does not result in a new credential, key_materials_config
+    should not be modified. The same key_materials_config object can be updated
+    if new key materials is available. status and error_details are used to
+    hold information about errors occurred when a credential reload request
+    is scheduled/cancelled.
+    This API is experimental and is subject to change. */
 struct grpc_tls_credential_reload_arg {
   grpc_tls_on_credential_reload_done_cb cb;
   void* cb_user_data;
@@ -827,8 +831,9 @@ struct grpc_tls_credential_reload_arg {
     - schedule is a pointer to an application-provided callback used to invoke
       credential reload API. The implementation of this method has to be
       non-blocking, but can be performed synchronously or asynchronously.
-      1) If processing occurs synchronously, it populates arg->key_materials,
-      arg->status, and arg->error_details and returns zero.
+      1) If processing occurs synchronously, it populates
+      arg->key_materials_config, arg->status, and arg->error_details
+      and returns zero.
       2) If processing occurs asynchronously, it returns a non-zero value.
       The application then invokes arg->cb when processing is completed. Note
       that arg->cb cannot be invoked before schedule API returns.
