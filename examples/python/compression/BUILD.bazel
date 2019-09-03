@@ -21,7 +21,6 @@ py_binary(
         "//examples:helloworld_py_pb2_grpc",
     ],
     srcs_version = "PY2AND3",
-    python_version = "PY3",
 )
 
 py_binary(
@@ -33,7 +32,6 @@ py_binary(
         "//examples:helloworld_py_pb2_grpc",
     ],
     srcs_version = "PY2AND3",
-    python_version = "PY3",
 )
 
 py_test(
@@ -45,5 +43,4 @@ py_test(
       ":server",
     ],
     size = "small",
-    python_version = "PY3",
 )

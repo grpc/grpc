@@ -342,6 +342,10 @@ bool BuiltUnderUbsan() {
 #endif
 }
 
+bool grpc_test_built_under_tsan_or_msan() {
+  return BuiltUnderTsan() || BuiltUnderMsan();
+};
+
 int64_t grpc_test_sanitizer_slowdown_factor() {
   int64_t sanitizer_multiplier = 1;
   if (BuiltUnderValgrind()) {

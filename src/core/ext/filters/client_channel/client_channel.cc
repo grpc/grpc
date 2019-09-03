@@ -3845,6 +3845,7 @@ void CallData::PickSubchannelLocked(grpc_call_element* elem,
       grpc_error* disconnect_error = chand->disconnect_error();
       if (disconnect_error != GRPC_ERROR_NONE) {
         GRPC_ERROR_UNREF(result.error);
+        if (calld->pick_queued_) calld->RemoveCallFromQueuedPicksLocked(elem);
         finish(GRPC_ERROR_REF(disconnect_error));
         break;
       }

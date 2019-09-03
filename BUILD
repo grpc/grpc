@@ -65,7 +65,7 @@ config_setting(
 
 config_setting(
     name = "python3",
-    flag_values = {"@bazel_tools//tools/python:python_version": "PY3"},
+    values = {"python_path": "python3"},
 )
 
 config_setting(
