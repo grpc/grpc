@@ -176,6 +176,8 @@ def _consume_request_iterator(request_iterator, state, call, request_serializer,
                               event_handler):
     """Consume a request iterator supplied by the user."""
 
+    request_iterator = iter(request_iterator)
+
     def consume_request_iterator():  # pylint: disable=too-many-branches
         # Iterate over the request iterator until it is exhausted or an error
         # condition is encountered.
