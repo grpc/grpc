@@ -33,6 +33,8 @@ if test "$PHP_GRPC" != "no"; then
       ;;
   esac
 
+  PHP_SUBST(GRPC_SHARED_LIBADD)
+
   PHP_NEW_EXTENSION(grpc,
     src/php/ext/grpc/byte_buffer.c \
     src/php/ext/grpc/call.c \
