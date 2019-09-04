@@ -53,10 +53,20 @@ void run_cmd(const char* cmd) {
 
 class TimeJumpTest : public ::testing::TestWithParam<std::string> {
  protected:
-  void SetUp() override { grpc_init(); }
+  void SetUp() override {
+    // Skip test if slowdown factor > 1
+    if (grpc_test_slowdown_factor() != 1) {
+      GTEST_SKIP();
+    } else {
+      grpc_init();
+    }
+  }
   void TearDown() override {
-    run_cmd("sudo sntp -sS pool.ntp.org");
-    grpc_shutdown_blocking();
+    // Skip test if slowdown factor > 1
+    if (grpc_test_slowdown_factor() == 1) {
+      run_cmd("sudo sntp -sS pool.ntp.org");
+      grpc_shutdown_blocking();
+    }
   }
 
   const int kWaitTimeMs = 1500;
