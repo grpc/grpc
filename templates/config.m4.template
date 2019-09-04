@@ -35,6 +35,8 @@
         ;;
     esac
 
+    PHP_SUBST(GRPC_SHARED_LIBADD)
+
     PHP_NEW_EXTENSION(grpc,
       % for source in php_config_m4.src:
       ${source} ${"\\"}
