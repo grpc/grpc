@@ -16,7 +16,7 @@
 
 #endregion
 
-﻿using System;
+using System;
 using Grpc.Core;
 
 namespace TestGrpcPackage
