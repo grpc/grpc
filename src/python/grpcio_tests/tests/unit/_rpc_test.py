@@ -389,6 +389,48 @@ class RPCTest(unittest.TestCase):
 
         self.assertSequenceEqual(expected_responses, responses)
 
+    def testIterableStreamRequestBlockingUnaryResponse(self):
+        requests = [b'\x07\x08' for _ in range(test_constants.STREAM_LENGTH)]
+        expected_response = self._handler.handle_stream_unary(
+            iter(requests), None)
+
+        multi_callable = _stream_unary_multi_callable(self._channel)
+        response = multi_callable(
+            requests,
+            metadata=(('test',
+                       'IterableStreamRequestBlockingUnaryResponse'),))
+
+        self.assertEqual(expected_response, response)
+
+    def testIterableStreamRequestFutureUnaryResponse(self):
+        requests = [b'\x07\x08' for _ in range(test_constants.STREAM_LENGTH)]
+        expected_response = self._handler.handle_stream_unary(
+            iter(requests), None)
+
+        multi_callable = _stream_unary_multi_callable(self._channel)
+        response_future = multi_callable.future(
+            requests,
+            metadata=(('test', 'IterableStreamRequestFutureUnaryResponse'),))
+        response = response_future.result()
+
+        self.assertEqual(expected_response, response)
+        self.assertIsNone(response_future.exception())
+        self.assertIsNone(response_future.traceback())
+
+    def testIterableStreamRequestStreamResponse(self):
+        requests = [b'\x77\x58' for _ in range(test_constants.STREAM_LENGTH)]
+        expected_responses = tuple(
+            self._handler.handle_stream_stream(iter(requests), None))
+
+        multi_callable = _stream_stream_multi_callable(self._channel)
+        response_iterator = multi_callable(
+            requests,
+            metadata=(('test', 'IterableStreamRequestStreamResponse'),))
+
+        responses = tuple(response_iterator)
+
+        self.assertSequenceEqual(expected_responses, responses)
+
     def testSequentialInvocations(self):
         first_request = b'\x07\x08'
         second_request = b'\x0809'

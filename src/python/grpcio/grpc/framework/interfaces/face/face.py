@@ -492,7 +492,8 @@ class StreamUnaryMultiCallable(six.with_metaclass(abc.ABCMeta)):
         """Synchronously invokes the underlying RPC.
 
     Args:
-      request_iterator: An iterator that yields request values for the RPC.
+      request_iterator: An iterator or iterable that yields request values for
+        the RPC.
       timeout: A duration of time in seconds to allow for the RPC.
       metadata: A metadata value to be passed to the service-side of
         the RPC.
@@ -519,7 +520,8 @@ class StreamUnaryMultiCallable(six.with_metaclass(abc.ABCMeta)):
         """Asynchronously invokes the underlying RPC.
 
     Args:
-      request_iterator: An iterator that yields request values for the RPC.
+      request_iterator: An iterator or iterable that yields request values for
+        the RPC.
       timeout: A duration of time in seconds to allow for the RPC.
       metadata: A metadata value to be passed to the service-side of
         the RPC.
