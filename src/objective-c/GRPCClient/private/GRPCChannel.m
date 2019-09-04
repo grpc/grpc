@@ -103,7 +103,7 @@
 
   if (_callOptions.compressionAlgorithm != GRPC_COMPRESS_NONE) {
     args[@GRPC_COMPRESSION_CHANNEL_DEFAULT_ALGORITHM] =
-        [NSNumber numberWithInt:_callOptions.compressionAlgorithm];
+        [NSNumber numberWithInteger:_callOptions.compressionAlgorithm];
   }
 
   if (_callOptions.keepaliveInterval != 0) {
