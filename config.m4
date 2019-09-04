@@ -24,10 +24,8 @@ if test "$PHP_GRPC" != "no"; then
 
   case $host in
     *darwin*)
-      PHP_ADD_LIBRARY(c++,1,GRPC_SHARED_LIBADD)
       ;;
     *)
-      PHP_ADD_LIBRARY(stdc++,1,GRPC_SHARED_LIBADD)
       PHP_ADD_LIBRARY(rt,,GRPC_SHARED_LIBADD)
       PHP_ADD_LIBRARY(rt)
       ;;
