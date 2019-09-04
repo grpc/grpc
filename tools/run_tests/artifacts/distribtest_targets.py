@@ -305,6 +305,8 @@ def targets():
         CppDistribTest('windows', 'x86', testcase='cmake_as_externalproject'),
         CSharpDistribTest('linux', 'x64', 'jessie'),
         CSharpDistribTest('linux', 'x86', 'jessie'),
+        CSharpDistribTest('linux', 'x64', 'stretch'),
+        CSharpDistribTest('linux', 'x64', 'stretch', use_dotnet_cli=True),
         CSharpDistribTest('linux', 'x64', 'centos7'),
         CSharpDistribTest('linux', 'x64', 'ubuntu1604'),
         CSharpDistribTest('linux', 'x64', 'ubuntu1604', use_dotnet_cli=True),
