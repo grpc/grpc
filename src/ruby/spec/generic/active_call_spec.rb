@@ -86,7 +86,7 @@ describe GRPC::ActiveCall do
 
     describe '#interceptable' do
       it 'exposes a fixed subset of the ActiveCall.methods' do
-        want = %w(deadline)
+        want = %w(deadline status)
         v = @client_call.interceptable
         want.each do |w|
           expect(v.methods.include?(w))
