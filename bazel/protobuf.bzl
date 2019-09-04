@@ -154,14 +154,15 @@ def get_proto_arguments(protos, genfiles_dir_path):
     """Get the protoc arguments specifying which protos to compile."""
     arguments = []
     for proto in protos:
-        massaged_path = proto.path
+        strip_prefix_len = 0
         if is_in_virtual_imports(proto):
             incl_directory = get_include_directory(proto)
-            if massaged_path.startswith(incl_directory):
-                massaged_path = massaged_path[len(incl_directory) + 1:]
-        elif massaged_path.startswith(genfiles_dir_path):
-            massaged_path = proto.path[len(genfiles_dir_path) + 1:]
-        arguments.append(massaged_path)
+            if proto.path.startswith(incl_directory):
+                strip_prefix_len = len(incl_directory) + 1
+        elif proto.path.startswith(genfiles_dir_path):
+            strip_prefix_len = len(genfiles_dir_path) + 1
+
+        arguments.append(proto.path[strip_prefix_len:])
 
     return arguments
 
@@ -191,7 +192,7 @@ def declare_out_files(protos, context, generated_file_format):
     ]
 
 def get_out_dir(protos, context):
-    """ Returns the calcualted value for --<lang>_out= protoc argument based on
+    """ Returns the calculated value for --<lang>_out= protoc argument based on
     the input source proto files and current context.
 
     Args:
@@ -220,7 +221,7 @@ def is_in_virtual_imports(source_file, virtual_folder = _VIRTUAL_IMPORTS):
     _virtual_imports directory.
 
     Args:
-        context: A ctx object for the rule.
+        source_file: A proto file.
         virtual_folder: The virtual folder name (is set to "_virtual_imports"
             by default)
     Returns:
