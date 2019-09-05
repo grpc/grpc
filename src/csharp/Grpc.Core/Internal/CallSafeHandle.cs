@@ -67,19 +67,19 @@ namespace Grpc.Core.Internal
             Native.grpcsharp_call_set_credentials(this, credentials).CheckOk();
         }
 
-        public void StartUnary(IUnaryResponseClientCallback callback, byte[] payload, WriteFlags writeFlags, MetadataArraySafeHandle metadataArray, CallFlags callFlags)
+        public void StartUnary(IUnaryResponseClientCallback callback, SliceBufferSafeHandle payload, WriteFlags writeFlags, MetadataArraySafeHandle metadataArray, CallFlags callFlags)
         {
             using (completionQueue.NewScope())
             {
                 var ctx = completionQueue.CompletionRegistry.RegisterBatchCompletion(CompletionHandler_IUnaryResponseClientCallback, callback);
-                Native.grpcsharp_call_start_unary(this, ctx, payload, new UIntPtr((ulong)payload.Length), writeFlags, metadataArray, callFlags)
+                Native.grpcsharp_call_start_unary(this, ctx, payload, writeFlags, metadataArray, callFlags)
                     .CheckOk();
             }
         }
 
-        public void StartUnary(BatchContextSafeHandle ctx, byte[] payload, WriteFlags writeFlags, MetadataArraySafeHandle metadataArray, CallFlags callFlags)
+        public void StartUnary(BatchContextSafeHandle ctx, SliceBufferSafeHandle payload, WriteFlags writeFlags, MetadataArraySafeHandle metadataArray, CallFlags callFlags)
         {
-            Native.grpcsharp_call_start_unary(this, ctx, payload, new UIntPtr((ulong)payload.Length), writeFlags, metadataArray, callFlags)
+            Native.grpcsharp_call_start_unary(this, ctx, payload, writeFlags, metadataArray, callFlags)
                 .CheckOk();
         }
 
@@ -92,12 +92,12 @@ namespace Grpc.Core.Internal
             }
         }
 
-        public void StartServerStreaming(IReceivedStatusOnClientCallback callback, byte[] payload, WriteFlags writeFlags, MetadataArraySafeHandle metadataArray, CallFlags callFlags)
+        public void StartServerStreaming(IReceivedStatusOnClientCallback callback, SliceBufferSafeHandle payload, WriteFlags writeFlags, MetadataArraySafeHandle metadataArray, CallFlags callFlags)
         {
             using (completionQueue.NewScope())
             {
                 var ctx = completionQueue.CompletionRegistry.RegisterBatchCompletion(CompletionHandler_IReceivedStatusOnClientCallback, callback);
-                Native.grpcsharp_call_start_server_streaming(this, ctx, payload, new UIntPtr((ulong)payload.Length), writeFlags, metadataArray, callFlags).CheckOk();
+                Native.grpcsharp_call_start_server_streaming(this, ctx, payload, writeFlags, metadataArray, callFlags).CheckOk();
             }
         }
 
@@ -110,12 +110,12 @@ namespace Grpc.Core.Internal
             }
         }
 
-        public void StartSendMessage(ISendCompletionCallback callback, byte[] payload, WriteFlags writeFlags, bool sendEmptyInitialMetadata)
+        public void StartSendMessage(ISendCompletionCallback callback, SliceBufferSafeHandle payload, WriteFlags writeFlags, bool sendEmptyInitialMetadata)
         {
             using (completionQueue.NewScope())
             {
                 var ctx = completionQueue.CompletionRegistry.RegisterBatchCompletion(CompletionHandler_ISendCompletionCallback, callback);
-                Native.grpcsharp_call_send_message(this, ctx, payload, new UIntPtr((ulong)payload.Length), writeFlags, sendEmptyInitialMetadata ? 1 : 0).CheckOk();
+                Native.grpcsharp_call_send_message(this, ctx, payload, writeFlags, sendEmptyInitialMetadata ? 1 : 0).CheckOk();
             }
         }
 
@@ -129,13 +129,12 @@ namespace Grpc.Core.Internal
         }
 
         public void StartSendStatusFromServer(ISendStatusFromServerCompletionCallback callback, Status status, MetadataArraySafeHandle metadataArray, bool sendEmptyInitialMetadata,
-            byte[] optionalPayload, WriteFlags writeFlags)
+            SliceBufferSafeHandle optionalPayload, WriteFlags writeFlags)
         {
             using (completionQueue.NewScope())
             {
                 var ctx = completionQueue.CompletionRegistry.RegisterBatchCompletion(CompletionHandler_ISendStatusFromServerCompletionCallback, callback);
-                var optionalPayloadLength = optionalPayload != null ? new UIntPtr((ulong)optionalPayload.Length) : UIntPtr.Zero;
-
+                
                 const int MaxStackAllocBytes = 256;
                 int maxBytes = MarshalUtils.GetMaxByteCountUTF8(status.Detail);
                 if (maxBytes > MaxStackAllocBytes)
@@ -156,7 +155,7 @@ namespace Grpc.Core.Internal
                         byte* ptr = stackalloc byte[maxBytes];
                         int statusBytes = MarshalUtils.GetBytesUTF8(status.Detail, ptr, maxBytes);
                         Native.grpcsharp_call_send_status_from_server(this, ctx, status.StatusCode, new IntPtr(ptr), new UIntPtr((ulong)statusBytes), metadataArray, sendEmptyInitialMetadata ? 1 : 0,
-                            optionalPayload, optionalPayloadLength, writeFlags).CheckOk();
+                            optionalPayload, writeFlags).CheckOk();
                     }
                     else
                     {   // for larger status (rare), rent a buffer from the pool and
@@ -168,7 +167,7 @@ namespace Grpc.Core.Internal
                             {
                                 int statusBytes = MarshalUtils.GetBytesUTF8(status.Detail, ptr, maxBytes);
                                 Native.grpcsharp_call_send_status_from_server(this, ctx, status.StatusCode, new IntPtr(ptr), new UIntPtr((ulong)statusBytes), metadataArray, sendEmptyInitialMetadata ? 1 : 0,
-                                  optionalPayload, optionalPayloadLength, writeFlags).CheckOk();
+                                  optionalPayload, writeFlags).CheckOk();
                             }
                         }
                         finally
