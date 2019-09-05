@@ -96,7 +96,7 @@ class ClientAsyncResponseReader final
     : public ClientAsyncResponseReaderInterface<R> {
  public:
   // always allocated against a call arena, no memory free required
-  static void operator delete(void* ptr, std::size_t size) {
+  static void operator delete(void* /*ptr*/, std::size_t size) {
     assert(size == sizeof(ClientAsyncResponseReader));
   }
 
@@ -178,7 +178,7 @@ class ClientAsyncResponseReader final
 
   // disable operator new
   static void* operator new(std::size_t size);
-  static void* operator new(std::size_t size, void* p) { return p; }
+  static void* operator new(std::size_t /*size*/, void* p) { return p; }
 
   ::grpc::internal::CallOpSet<::grpc::internal::CallOpSendInitialMetadata,
                               ::grpc::internal::CallOpSendMessage,
@@ -303,12 +303,12 @@ namespace std {
 template <class R>
 class default_delete<::grpc_impl::ClientAsyncResponseReader<R>> {
  public:
-  void operator()(void* p) {}
+  void operator()(void* /*p*/) {}
 };
 template <class R>
 class default_delete<::grpc_impl::ClientAsyncResponseReaderInterface<R>> {
  public:
-  void operator()(void* p) {}
+  void operator()(void* /*p*/) {}
 };
 }  // namespace std
 

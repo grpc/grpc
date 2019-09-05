@@ -314,7 +314,7 @@ class ServerBidiReactor : public internal::ServerReactor {
   /// is a result of the client calling StartCall().
   ///
   /// \param[in] context The context object now associated with this RPC
-  virtual void OnStarted(::grpc_impl::ServerContext* context) {}
+  virtual void OnStarted(::grpc_impl::ServerContext* /*context*/) {}
 
   /// Notifies the application that an explicit StartSendInitialMetadata
   /// operation completed. Not used when the sending of initial metadata
@@ -322,20 +322,20 @@ class ServerBidiReactor : public internal::ServerReactor {
   ///
   /// \param[in] ok Was it successful? If false, no further write-side operation
   ///               will succeed.
-  virtual void OnSendInitialMetadataDone(bool ok) {}
+  virtual void OnSendInitialMetadataDone(bool /*ok*/) {}
 
   /// Notifies the application that a StartRead operation completed.
   ///
   /// \param[in] ok Was it successful? If false, no further read-side operation
   ///               will succeed.
-  virtual void OnReadDone(bool ok) {}
+  virtual void OnReadDone(bool /*ok*/) {}
 
   /// Notifies the application that a StartWrite (or StartWriteLast) operation
   /// completed.
   ///
   /// \param[in] ok Was it successful? If false, no further write-side operation
   ///               will succeed.
-  virtual void OnWriteDone(bool ok) {}
+  virtual void OnWriteDone(bool /*ok*/) {}
 
   /// Notifies the application that all operations associated with this RPC
   /// have completed. This is an override (from the internal base class) but not
@@ -376,11 +376,12 @@ class ServerReadReactor : public internal::ServerReactor {
   ///
   /// \param[in] context The context object now associated with this RPC
   /// \param[in] resp The response object to be used by this RPC
-  virtual void OnStarted(::grpc_impl::ServerContext* context, Response* resp) {}
+  virtual void OnStarted(::grpc_impl::ServerContext* /*context*/,
+                         Response* /*resp*/) {}
 
   /// The following notifications are exactly like ServerBidiReactor.
-  virtual void OnSendInitialMetadataDone(bool ok) {}
-  virtual void OnReadDone(bool ok) {}
+  virtual void OnSendInitialMetadataDone(bool /*ok*/) {}
+  virtual void OnReadDone(bool /*ok*/) {}
   void OnDone() override {}
   void OnCancel() override {}
 
@@ -423,12 +424,12 @@ class ServerWriteReactor : public internal::ServerReactor {
   ///
   /// \param[in] context The context object now associated with this RPC
   /// \param[in] req The request object sent by the client
-  virtual void OnStarted(::grpc_impl::ServerContext* context,
-                         const Request* req) {}
+  virtual void OnStarted(::grpc_impl::ServerContext* /*context*/,
+                         const Request* /*req*/) {}
 
   /// The following notifications are exactly like ServerBidiReactor.
-  virtual void OnSendInitialMetadataDone(bool ok) {}
-  virtual void OnWriteDone(bool ok) {}
+  virtual void OnSendInitialMetadataDone(bool /*ok*/) {}
+  virtual void OnWriteDone(bool /*ok*/) {}
   void OnDone() override {}
   void OnCancel() override {}
 
@@ -849,7 +850,7 @@ class CallbackServerStreamingHandler : public grpc::internal::MethodHandler {
   }
 
   void* Deserialize(grpc_call* call, grpc_byte_buffer* req,
-                    ::grpc::Status* status, void** handler_data) final {
+                    ::grpc::Status* status, void** /*handler_data*/) final {
     ::grpc::ByteBuffer buf;
     buf.set_buffer(req);
     auto* request =

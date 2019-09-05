@@ -1,8 +1,7 @@
 startup --host_jvm_args=-Dbazel.DigestFunction=SHA256
 
-build --remote_cache=remotebuildexecution.googleapis.com
-build --remote_executor=remotebuildexecution.googleapis.com
-build --tls_enabled=true
+build --remote_cache=grpcs://remotebuildexecution.googleapis.com
+build --remote_executor=grpcs://remotebuildexecution.googleapis.com
 
 build --host_crosstool_top=//third_party/toolchains/bazel_0.26.0_rbe_windows:toolchain
 build --crosstool_top=//third_party/toolchains/bazel_0.26.0_rbe_windows:toolchain
@@ -38,7 +37,7 @@ test --test_env=GRPC_VERBOSITY=debug
 
 # Set flags for uploading to BES in order to view results in the Bazel Build
 # Results UI.
-build --bes_backend="buildeventservice.googleapis.com"
+build --bes_backend=grpcs://buildeventservice.googleapis.com
 build --bes_timeout=60s
 build --bes_results_url="https://source.cloud.google.com/results/invocations/"
 build --project_id=grpc-testing

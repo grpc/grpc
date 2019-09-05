@@ -62,7 +62,7 @@ static void BM_InsecureChannelCreateDestroy(benchmark::State& state) {
   for (int i = 0; i < state.range(0); i++) {
     initial_channels[i].Init();
   }
-  while (state.KeepRunning()) {
+  for (auto _ : state) {
     Fixture channel;
     channel.Init();
   }
