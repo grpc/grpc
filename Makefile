@@ -86,8 +86,8 @@ CC_asan-trace-cmp = clang
 CXX_asan-trace-cmp = clang++
 LD_asan-trace-cmp = clang++
 LDXX_asan-trace-cmp = clang++
-CPPFLAGS_asan-trace-cmp = -O0 -fsanitize-coverage=edge,trace-pc-guard -fsanitize-coverage=trace-cmp -fsanitize=address -fno-omit-frame-pointer -Wno-unused-command-line-argument -DGPR_NO_DIRECT_SYSCALLS
-LDFLAGS_asan-trace-cmp = -fsanitize=address
+CPPFLAGS_asan-trace-cmp = -O0 -stdlib=libc++ -fsanitize-coverage=edge,trace-pc-guard -fsanitize-coverage=trace-cmp -fsanitize=address -fno-omit-frame-pointer -Wno-unused-command-line-argument -DGPR_NO_DIRECT_SYSCALLS
+LDFLAGS_asan-trace-cmp = -stdlib=libc++ -fsanitize=address
 
 VALID_CONFIG_dbg = 1
 CC_dbg = $(DEFAULT_CC)
@@ -103,8 +103,8 @@ CC_asan = clang
 CXX_asan = clang++
 LD_asan = clang++
 LDXX_asan = clang++
-CPPFLAGS_asan = -O0 -fsanitize-coverage=edge,trace-pc-guard -fsanitize=address -fno-omit-frame-pointer -Wno-unused-command-line-argument -DGPR_NO_DIRECT_SYSCALLS
-LDFLAGS_asan = -fsanitize=address
+CPPFLAGS_asan = -O0 -stdlib=libc++ -fsanitize-coverage=edge,trace-pc-guard -fsanitize=address -fno-omit-frame-pointer -Wno-unused-command-line-argument -DGPR_NO_DIRECT_SYSCALLS
+LDFLAGS_asan = -stdlib=libc++ -fsanitize=address
 
 VALID_CONFIG_msan = 1
 REQUIRE_CUSTOM_LIBRARIES_msan = 1
@@ -112,8 +112,8 @@ CC_msan = clang
 CXX_msan = clang++
 LD_msan = clang++
 LDXX_msan = clang++
-CPPFLAGS_msan = -O0 -fsanitize-coverage=edge,trace-pc-guard -fsanitize=memory -fsanitize-memory-track-origins -fsanitize-memory-use-after-dtor -fno-omit-frame-pointer -DGTEST_HAS_TR1_TUPLE=0 -DGTEST_USE_OWN_TR1_TUPLE=1 -Wno-unused-command-line-argument -fPIE -pie -DGPR_NO_DIRECT_SYSCALLS
-LDFLAGS_msan = -fsanitize=memory -DGTEST_HAS_TR1_TUPLE=0 -DGTEST_USE_OWN_TR1_TUPLE=1 -fPIE -pie $(if $(JENKINS_BUILD),-Wl$(comma)-Ttext-segment=0x7e0000000000,)
+CPPFLAGS_msan = -O0 -stdlib=libc++ -fsanitize-coverage=edge,trace-pc-guard -fsanitize=memory -fsanitize-memory-track-origins -fsanitize-memory-use-after-dtor -fno-omit-frame-pointer -DGTEST_HAS_TR1_TUPLE=0 -DGTEST_USE_OWN_TR1_TUPLE=1 -Wno-unused-command-line-argument -fPIE -pie -DGPR_NO_DIRECT_SYSCALLS
+LDFLAGS_msan = -stdlib=libc++ -fsanitize=memory -DGTEST_HAS_TR1_TUPLE=0 -DGTEST_USE_OWN_TR1_TUPLE=1 -fPIE -pie $(if $(JENKINS_BUILD),-Wl$(comma)-Ttext-segment=0x7e0000000000,)
 DEFINES_msan = NDEBUG
 
 VALID_CONFIG_basicprof = 1
@@ -139,8 +139,8 @@ CC_asan-noleaks = clang
 CXX_asan-noleaks = clang++
 LD_asan-noleaks = clang++
 LDXX_asan-noleaks = clang++
-CPPFLAGS_asan-noleaks = -O0 -fsanitize-coverage=edge,trace-pc-guard -fsanitize=address -fno-omit-frame-pointer -Wno-unused-command-line-argument -DGPR_NO_DIRECT_SYSCALLS
-LDFLAGS_asan-noleaks = -fsanitize=address
+CPPFLAGS_asan-noleaks = -O0 -stdlib=libc++ -fsanitize-coverage=edge,trace-pc-guard -fsanitize=address -fno-omit-frame-pointer -Wno-unused-command-line-argument -DGPR_NO_DIRECT_SYSCALLS
+LDFLAGS_asan-noleaks = -stdlib=libc++ -fsanitize=address
 
 VALID_CONFIG_noexcept = 1
 CC_noexcept = $(DEFAULT_CC)
@@ -157,8 +157,8 @@ CC_ubsan = clang
 CXX_ubsan = clang++
 LD_ubsan = clang++
 LDXX_ubsan = clang++
-CPPFLAGS_ubsan = -O0 -fsanitize-coverage=edge,trace-pc-guard -fsanitize=undefined -fno-omit-frame-pointer -Wno-unused-command-line-argument -Wvarargs
-LDFLAGS_ubsan = -fsanitize=undefined,unsigned-integer-overflow
+CPPFLAGS_ubsan = -O0 -stdlib=libc++ -fsanitize-coverage=edge,trace-pc-guard -fsanitize=undefined -fno-omit-frame-pointer -Wno-unused-command-line-argument -Wvarargs
+LDFLAGS_ubsan = -stdlib=libc++ -fsanitize=undefined,unsigned-integer-overflow
 DEFINES_ubsan = NDEBUG GRPC_UBSAN
 
 VALID_CONFIG_tsan = 1
@@ -167,8 +167,8 @@ CC_tsan = clang
 CXX_tsan = clang++
 LD_tsan = clang++
 LDXX_tsan = clang++
-CPPFLAGS_tsan = -O0 -fsanitize=thread -fno-omit-frame-pointer -Wno-unused-command-line-argument -DGPR_NO_DIRECT_SYSCALLS
-LDFLAGS_tsan = -fsanitize=thread
+CPPFLAGS_tsan = -O0 -stdlib=libc++ -fsanitize=thread -fno-omit-frame-pointer -Wno-unused-command-line-argument -DGPR_NO_DIRECT_SYSCALLS
+LDFLAGS_tsan = -stdlib=libc++ -fsanitize=thread
 DEFINES_tsan = GRPC_TSAN
 
 VALID_CONFIG_stapprof = 1
