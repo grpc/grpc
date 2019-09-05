@@ -531,8 +531,8 @@ class CLanguage(object):
         elif compiler == 'clang3.7':
             return ('ubuntu1604',
                     self._clang_make_options(version_suffix='-3.7'))
-        elif compiler == 'clang7.0':
-            # clang++-7.0 alias doesn't exist and there are no other clang versions
+        elif compiler == 'clang8.0':
+            # clang++-8.0 alias doesn't exist and there are no other clang versions
             # installed.
             return ('sanitizers_jessie', self._clang_make_options())
         else:
@@ -1424,7 +1424,7 @@ argp.add_argument(
     '--compiler',
     choices=[
         'default', 'gcc4.4', 'gcc4.6', 'gcc4.8', 'gcc4.9', 'gcc5.3', 'gcc7.2',
-        'gcc_musl', 'clang3.4', 'clang3.5', 'clang3.6', 'clang3.7', 'clang7.0',
+        'gcc_musl', 'clang3.4', 'clang3.5', 'clang3.6', 'clang3.7', 'clang8.0',
         'python2.7', 'python3.4', 'python3.5', 'python3.6', 'python3.7',
         'python3.8', 'pypy', 'pypy3', 'python_alpine', 'all_the_cpythons',
         'electron1.3', 'electron1.6', 'coreclr', 'cmake', 'cmake_vs2015',

@@ -259,7 +259,7 @@ def _create_test_jobs(extra_args=[], inner_jobs=_DEFAULT_INNER_JOBS):
         configs=['msan', 'asan', 'tsan', 'ubsan'],
         platforms=['linux'],
         arch='x64',
-        compiler='clang7.0',
+        compiler='clang8.0',
         labels=['sanitizers', 'corelang'],
         extra_args=extra_args,
         inner_jobs=inner_jobs,
@@ -269,7 +269,7 @@ def _create_test_jobs(extra_args=[], inner_jobs=_DEFAULT_INNER_JOBS):
         configs=['asan'],
         platforms=['linux'],
         arch='x64',
-        compiler='clang7.0',
+        compiler='clang8.0',
         labels=['sanitizers', 'corelang'],
         extra_args=extra_args,
         inner_jobs=inner_jobs,
@@ -279,7 +279,7 @@ def _create_test_jobs(extra_args=[], inner_jobs=_DEFAULT_INNER_JOBS):
         configs=['tsan'],
         platforms=['linux'],
         arch='x64',
-        compiler='clang7.0',
+        compiler='clang8.0',
         labels=['sanitizers', 'corelang'],
         extra_args=extra_args,
         inner_jobs=inner_jobs,
@@ -305,7 +305,7 @@ def _create_portability_test_jobs(extra_args=[],
     # portability C and C++ on x64
     for compiler in [
             'gcc4.8', 'gcc5.3', 'gcc7.2', 'gcc_musl', 'clang3.5', 'clang3.6',
-            'clang3.7', 'clang7.0'
+            'clang3.7', 'clang8.0'
     ]:
         test_jobs += _generate_jobs(
             languages=['c', 'c++'],

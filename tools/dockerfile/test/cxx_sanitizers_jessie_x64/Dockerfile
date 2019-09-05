@@ -13,7 +13,7 @@
 # limitations under the License.
 
 # This is the base Docker image we use for running tests on RBE
-FROM gcr.io/cloud-marketplace/google/rbe-debian8@sha256:1ede2a929b44d629ec5abe86eee6d7ffea1d5a4d247489a8867d46cfde3e38bd
+FROM gcr.io/cloud-marketplace/google/rbe-debian8@sha256:cda3a8608d0fc545dffc6c68f6cfab8eda280c7a1558bde0753ed2e8e3006224
 RUN sed -i '/deb http:\/\/httpredir.debian.org\/debian jessie-updates main/d' /etc/apt/sources.list
 
 # Install Git and basic packages.
