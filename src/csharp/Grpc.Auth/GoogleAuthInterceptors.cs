@@ -61,13 +61,25 @@ namespace Grpc.Auth
             return new AsyncAuthInterceptor((context, metadata) =>
             {
                 metadata.Add(CreateBearerTokenHeader(accessToken));
-                return TaskUtils.CompletedTask;
+                return GetCompletedTask();
             });
         }
 
         private static Metadata.Entry CreateBearerTokenHeader(string accessToken)
         {
             return new Metadata.Entry(AuthorizationHeader, Schema + " " + accessToken);
+        }
+
+        /// <summary>
+        /// Framework independent equivalent of <c>Task.CompletedTask</c>.
+        /// </summary>
+        private static Task GetCompletedTask()
+        {
+#if NETSTANDARD1_5 || NETSTANDARD2_0
+            return Task.CompletedTask;
+#else
+            return Task.FromResult<object>(null);  // for .NET45, emulate the functionality
+#endif
         }
     }
 }

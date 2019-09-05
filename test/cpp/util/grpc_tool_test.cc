@@ -122,7 +122,7 @@ class TestCliCredentials final : public grpc::testing::CliCredentials {
       return InsecureChannelCredentials();
     }
     SslCredentialsOptions ssl_opts = {test_root_cert, "", ""};
-    return SslCredentials(grpc::SslCredentialsOptions(ssl_opts));
+    return grpc::SslCredentials(grpc::SslCredentialsOptions(ssl_opts));
   }
   const grpc::string GetCredentialUsage() const override { return ""; }
 
@@ -257,14 +257,6 @@ class GrpcToolTest : public ::testing::Test {
   }
 
   void ShutdownServer() { server_->Shutdown(); }
-
-  void ExitWhenError(int argc, const char** argv, const CliCredentials& cred,
-                     GrpcToolOutputCallback callback) {
-    int result = GrpcToolMainLib(argc, argv, cred, callback);
-    if (result) {
-      exit(result);
-    }
-  }
 
   std::unique_ptr<Server> server_;
   TestServiceImpl service_;
@@ -418,11 +410,9 @@ TEST_F(GrpcToolTest, TypeNotFound) {
   const char* argv[] = {"grpc_cli", "type", server_address.c_str(),
                         "grpc.testing.DummyRequest"};
 
-  EXPECT_DEATH(ExitWhenError(ArraySize(argv), argv, TestCliCredentials(),
-                             std::bind(PrintStream, &output_stream,
-                                       std::placeholders::_1)),
-               ".*Type grpc.testing.DummyRequest not found.*");
-
+  EXPECT_TRUE(1 == GrpcToolMainLib(ArraySize(argv), argv, TestCliCredentials(),
+                                   std::bind(PrintStream, &output_stream,
+                                             std::placeholders::_1)));
   ShutdownServer();
 }
 

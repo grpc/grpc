@@ -73,7 +73,7 @@ class ProtoBufferReader : public ::grpc::protobuf::io::ZeroCopyInputStream {
     }
     /// If we have backed up previously, we need to return the backed-up slice
     if (backup_count_ > 0) {
-      *data = GRPC_SLICE_START_PTR(slice_) + GRPC_SLICE_LENGTH(slice_) -
+      *data = GRPC_SLICE_START_PTR(*slice_) + GRPC_SLICE_LENGTH(*slice_) -
               backup_count_;
       GPR_CODEGEN_ASSERT(backup_count_ <= INT_MAX);
       *size = (int)backup_count_;
@@ -81,15 +81,14 @@ class ProtoBufferReader : public ::grpc::protobuf::io::ZeroCopyInputStream {
       return true;
     }
     /// Otherwise get the next slice from the byte buffer reader
-    if (!g_core_codegen_interface->grpc_byte_buffer_reader_next(&reader_,
+    if (!g_core_codegen_interface->grpc_byte_buffer_reader_peek(&reader_,
                                                                 &slice_)) {
       return false;
     }
-    g_core_codegen_interface->grpc_slice_unref(slice_);
-    *data = GRPC_SLICE_START_PTR(slice_);
+    *data = GRPC_SLICE_START_PTR(*slice_);
     // On win x64, int is only 32bit
-    GPR_CODEGEN_ASSERT(GRPC_SLICE_LENGTH(slice_) <= INT_MAX);
-    byte_count_ += * size = (int)GRPC_SLICE_LENGTH(slice_);
+    GPR_CODEGEN_ASSERT(GRPC_SLICE_LENGTH(*slice_) <= INT_MAX);
+    byte_count_ += * size = (int)GRPC_SLICE_LENGTH(*slice_);
     return true;
   }
 
@@ -100,7 +99,7 @@ class ProtoBufferReader : public ::grpc::protobuf::io::ZeroCopyInputStream {
   /// bytes that have already been returned by the last call of Next.
   /// So do the backup and have that ready for a later Next.
   void BackUp(int count) override {
-    GPR_CODEGEN_ASSERT(count <= static_cast<int>(GRPC_SLICE_LENGTH(slice_)));
+    GPR_CODEGEN_ASSERT(count <= static_cast<int>(GRPC_SLICE_LENGTH(*slice_)));
     backup_count_ = count;
   }
 
@@ -135,14 +134,15 @@ class ProtoBufferReader : public ::grpc::protobuf::io::ZeroCopyInputStream {
   int64_t backup_count() { return backup_count_; }
   void set_backup_count(int64_t backup_count) { backup_count_ = backup_count; }
   grpc_byte_buffer_reader* reader() { return &reader_; }
-  grpc_slice* slice() { return &slice_; }
+  grpc_slice* slice() { return slice_; }
+  grpc_slice** mutable_slice_ptr() { return &slice_; }
 
  private:
   int64_t byte_count_;              ///< total bytes read since object creation
   int64_t backup_count_;            ///< how far backed up in the stream we are
   grpc_byte_buffer_reader reader_;  ///< internal object to read \a grpc_slice
                                     ///< from the \a grpc_byte_buffer
-  grpc_slice slice_;                ///< current slice passed back to the caller
+  grpc_slice* slice_;               ///< current slice passed back to the caller
   Status status_;                   ///< status of the entire object
 };
 

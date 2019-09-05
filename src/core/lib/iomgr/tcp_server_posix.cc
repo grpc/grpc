@@ -27,8 +27,6 @@
 
 #ifdef GRPC_POSIX_SOCKET_TCP_SERVER
 
-#include "src/core/lib/iomgr/tcp_server.h"
-
 #include <errno.h>
 #include <fcntl.h>
 #include <netinet/in.h>
@@ -47,11 +45,14 @@
 
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gpr/string.h"
+#include "src/core/lib/gprpp/memory.h"
+#include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/resolve_address.h"
 #include "src/core/lib/iomgr/sockaddr.h"
 #include "src/core/lib/iomgr/sockaddr_utils.h"
 #include "src/core/lib/iomgr/socket_utils_posix.h"
 #include "src/core/lib/iomgr/tcp_posix.h"
+#include "src/core/lib/iomgr/tcp_server.h"
 #include "src/core/lib/iomgr/tcp_server_utils_posix.h"
 #include "src/core/lib/iomgr/unix_sockets_posix.h"
 
@@ -96,6 +97,7 @@ static grpc_error* tcp_server_create(grpc_closure* shutdown_complete,
   s->tail = nullptr;
   s->nports = 0;
   s->channel_args = grpc_channel_args_copy(args);
+  s->fd_handler = nullptr;
   gpr_atm_no_barrier_store(&s->next_pollset_to_assign, 0);
   *server = s;
   return GRPC_ERROR_NONE;
@@ -117,6 +119,7 @@ static void finish_shutdown(grpc_tcp_server* s) {
     gpr_free(sp);
   }
   grpc_channel_args_destroy(s->channel_args);
+  grpc_core::Delete(s->fd_handler);
 
   gpr_free(s);
 }
@@ -217,12 +220,25 @@ static void on_read(void* arg, grpc_error* err) {
       }
     }
 
+    /* For UNIX sockets, the accept call might not fill up the member sun_path
+     * of sockaddr_un, so explicitly call getsockname to get it. */
+    if (grpc_is_unix_socket(&addr)) {
+      memset(&addr, 0, sizeof(addr));
+      addr.len = static_cast<socklen_t>(sizeof(struct sockaddr_storage));
+      if (getsockname(fd, reinterpret_cast<struct sockaddr*>(addr.addr),
+                      &(addr.len)) < 0) {
+        gpr_log(GPR_ERROR, "Failed getsockname: %s", strerror(errno));
+        close(fd);
+        goto error;
+      }
+    }
+
     grpc_set_socket_no_sigpipe_if_possible(fd);
 
     addr_str = grpc_sockaddr_to_uri(&addr);
     gpr_asprintf(&name, "tcp-server-connection:%s", addr_str);
 
-    if (grpc_tcp_trace.enabled()) {
+    if (GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace)) {
       gpr_log(GPR_INFO, "SERVER_CONNECT: incoming connection: %s", addr_str);
     }
 
@@ -241,6 +257,7 @@ static void on_read(void* arg, grpc_error* err) {
     acceptor->from_server = sp->server;
     acceptor->port_index = sp->port_index;
     acceptor->fd_index = sp->fd_index;
+    acceptor->external_connection = false;
 
     sp->server->on_accept_cb(
         sp->server->on_accept_cb_arg,
@@ -549,14 +566,71 @@ static void tcp_server_shutdown_listeners(grpc_tcp_server* s) {
   gpr_mu_unlock(&s->mu);
 }
 
+namespace {
+class ExternalConnectionHandler : public grpc_core::TcpServerFdHandler {
+ public:
+  explicit ExternalConnectionHandler(grpc_tcp_server* s) : s_(s) {}
+
+  // TODO(yangg) resolve duplicate code with on_read
+  void Handle(int listener_fd, int fd, grpc_byte_buffer* buf) override {
+    grpc_pollset* read_notifier_pollset;
+    grpc_resolved_address addr;
+    char* addr_str;
+    char* name;
+    memset(&addr, 0, sizeof(addr));
+    addr.len = static_cast<socklen_t>(sizeof(struct sockaddr_storage));
+    grpc_core::ExecCtx exec_ctx;
+
+    if (getpeername(fd, reinterpret_cast<struct sockaddr*>(addr.addr),
+                    &(addr.len)) < 0) {
+      gpr_log(GPR_ERROR, "Failed getpeername: %s", strerror(errno));
+      close(fd);
+      return;
+    }
+    grpc_set_socket_no_sigpipe_if_possible(fd);
+    addr_str = grpc_sockaddr_to_uri(&addr);
+    gpr_asprintf(&name, "tcp-server-connection:%s", addr_str);
+    if (grpc_tcp_trace.enabled()) {
+      gpr_log(GPR_INFO, "SERVER_CONNECT: incoming external connection: %s",
+              addr_str);
+    }
+    grpc_fd* fdobj = grpc_fd_create(fd, name, true);
+    read_notifier_pollset =
+        s_->pollsets[static_cast<size_t>(gpr_atm_no_barrier_fetch_add(
+                         &s_->next_pollset_to_assign, 1)) %
+                     s_->pollset_count];
+    grpc_pollset_add_fd(read_notifier_pollset, fdobj);
+    grpc_tcp_server_acceptor* acceptor =
+        static_cast<grpc_tcp_server_acceptor*>(gpr_malloc(sizeof(*acceptor)));
+    acceptor->from_server = s_;
+    acceptor->port_index = -1;
+    acceptor->fd_index = -1;
+    acceptor->external_connection = true;
+    acceptor->listener_fd = listener_fd;
+    acceptor->pending_data = buf;
+    s_->on_accept_cb(s_->on_accept_cb_arg,
+                     grpc_tcp_create(fdobj, s_->channel_args, addr_str),
+                     read_notifier_pollset, acceptor);
+    gpr_free(name);
+    gpr_free(addr_str);
+  }
+
+ private:
+  grpc_tcp_server* s_;
+};
+}  // namespace
+
+static grpc_core::TcpServerFdHandler* tcp_server_create_fd_handler(
+    grpc_tcp_server* s) {
+  s->fd_handler = grpc_core::New<ExternalConnectionHandler>(s);
+  return s->fd_handler;
+}
+
 grpc_tcp_server_vtable grpc_posix_tcp_server_vtable = {
-    tcp_server_create,
-    tcp_server_start,
-    tcp_server_add_port,
-    tcp_server_port_fd_count,
-    tcp_server_port_fd,
-    tcp_server_ref,
-    tcp_server_shutdown_starting_add,
-    tcp_server_unref,
-    tcp_server_shutdown_listeners};
+    tcp_server_create,        tcp_server_start,
+    tcp_server_add_port,      tcp_server_create_fd_handler,
+    tcp_server_port_fd_count, tcp_server_port_fd,
+    tcp_server_ref,           tcp_server_shutdown_starting_add,
+    tcp_server_unref,         tcp_server_shutdown_listeners};
+
 #endif /* GRPC_POSIX_SOCKET_TCP_SERVER */

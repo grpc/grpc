@@ -40,27 +40,6 @@ typedef struct grpc_slice grpc_slice;
    reference ownership semantics (who should call unref?) and mutability
    constraints (is the callee allowed to modify the slice?) */
 
-typedef struct grpc_slice_refcount_vtable {
-  void (*ref)(void*);
-  void (*unref)(void*);
-  int (*eq)(grpc_slice a, grpc_slice b);
-  uint32_t (*hash)(grpc_slice slice);
-} grpc_slice_refcount_vtable;
-
-/** Reference count container for grpc_slice. Contains function pointers to
-   increment and decrement reference counts. Implementations should cleanup
-   when the reference count drops to zero.
-   Typically client code should not touch this, and use grpc_slice_malloc,
-   grpc_slice_new, or grpc_slice_new_with_len instead. */
-typedef struct grpc_slice_refcount {
-  const grpc_slice_refcount_vtable* vtable;
-  /** If a subset of this slice is taken, use this pointer for the refcount.
-     Typically points back to the refcount itself, however iterning
-     implementations can use this to avoid a verification step on each hash
-     or equality check */
-  struct grpc_slice_refcount* sub_refcount;
-} grpc_slice_refcount;
-
 /* Inlined half of grpc_slice is allowed to expand the size of the overall type
    by this many bytes */
 #define GRPC_SLICE_INLINE_EXTRA_SIZE sizeof(void*)
@@ -68,6 +47,7 @@ typedef struct grpc_slice_refcount {
 #define GRPC_SLICE_INLINED_SIZE \
   (sizeof(size_t) + sizeof(uint8_t*) - 1 + GRPC_SLICE_INLINE_EXTRA_SIZE)
 
+struct grpc_slice_refcount;
 /** A grpc_slice s, if initialized, represents the byte range
    s.bytes[0..s.length-1].
 

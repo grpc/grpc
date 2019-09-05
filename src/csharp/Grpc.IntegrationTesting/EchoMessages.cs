@@ -28,7 +28,7 @@ namespace Grpc.Testing {
             "DGdycGMudGVzdGluZyIyCglEZWJ1Z0luZm8SFQoNc3RhY2tfZW50cmllcxgB",
             "IAMoCRIOCgZkZXRhaWwYAiABKAkiUAoLRXJyb3JTdGF0dXMSDAoEY29kZRgB",
             "IAEoBRIVCg1lcnJvcl9tZXNzYWdlGAIgASgJEhwKFGJpbmFyeV9lcnJvcl9k",
-            "ZXRhaWxzGAMgASgJIv8DCg1SZXF1ZXN0UGFyYW1zEhUKDWVjaG9fZGVhZGxp",
+            "ZXRhaWxzGAMgASgJIqAECg1SZXF1ZXN0UGFyYW1zEhUKDWVjaG9fZGVhZGxp",
             "bmUYASABKAgSHgoWY2xpZW50X2NhbmNlbF9hZnRlcl91cxgCIAEoBRIeChZz",
             "ZXJ2ZXJfY2FuY2VsX2FmdGVyX3VzGAMgASgFEhUKDWVjaG9fbWV0YWRhdGEY",
             "BCABKAgSGgoSY2hlY2tfYXV0aF9jb250ZXh0GAUgASgIEh8KF3Jlc3BvbnNl",
@@ -39,18 +39,19 @@ namespace Grpc.Testing {
             "Zy5EZWJ1Z0luZm8SEgoKc2VydmVyX2RpZRgMIAEoCBIcChRiaW5hcnlfZXJy",
             "b3JfZGV0YWlscxgNIAEoCRIxCg5leHBlY3RlZF9lcnJvchgOIAEoCzIZLmdy",
             "cGMudGVzdGluZy5FcnJvclN0YXR1cxIXCg9zZXJ2ZXJfc2xlZXBfdXMYDyAB",
-            "KAUSGwoTYmFja2VuZF9jaGFubmVsX2lkeBgQIAEoBSJKCgtFY2hvUmVxdWVz",
-            "dBIPCgdtZXNzYWdlGAEgASgJEioKBXBhcmFtGAIgASgLMhsuZ3JwYy50ZXN0",
-            "aW5nLlJlcXVlc3RQYXJhbXMiRgoOUmVzcG9uc2VQYXJhbXMSGAoQcmVxdWVz",
-            "dF9kZWFkbGluZRgBIAEoAxIMCgRob3N0GAIgASgJEgwKBHBlZXIYAyABKAki",
-            "TAoMRWNob1Jlc3BvbnNlEg8KB21lc3NhZ2UYASABKAkSKwoFcGFyYW0YAiAB",
-            "KAsyHC5ncnBjLnRlc3RpbmcuUmVzcG9uc2VQYXJhbXNiBnByb3RvMw=="));
+            "KAUSGwoTYmFja2VuZF9jaGFubmVsX2lkeBgQIAEoBRIfChdlY2hvX21ldGFk",
+            "YXRhX2luaXRpYWxseRgRIAEoCCJKCgtFY2hvUmVxdWVzdBIPCgdtZXNzYWdl",
+            "GAEgASgJEioKBXBhcmFtGAIgASgLMhsuZ3JwYy50ZXN0aW5nLlJlcXVlc3RQ",
+            "YXJhbXMiRgoOUmVzcG9uc2VQYXJhbXMSGAoQcmVxdWVzdF9kZWFkbGluZRgB",
+            "IAEoAxIMCgRob3N0GAIgASgJEgwKBHBlZXIYAyABKAkiTAoMRWNob1Jlc3Bv",
+            "bnNlEg8KB21lc3NhZ2UYASABKAkSKwoFcGFyYW0YAiABKAsyHC5ncnBjLnRl",
+            "c3RpbmcuUmVzcG9uc2VQYXJhbXNCA/gBAWIGcHJvdG8z"));
       descriptor = pbr::FileDescriptor.FromGeneratedCode(descriptorData,
           new pbr::FileDescriptor[] { },
           new pbr::GeneratedClrTypeInfo(null, new pbr::GeneratedClrTypeInfo[] {
             new pbr::GeneratedClrTypeInfo(typeof(global::Grpc.Testing.DebugInfo), global::Grpc.Testing.DebugInfo.Parser, new[]{ "StackEntries", "Detail" }, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Grpc.Testing.ErrorStatus), global::Grpc.Testing.ErrorStatus.Parser, new[]{ "Code", "ErrorMessage", "BinaryErrorDetails" }, null, null, null),
-            new pbr::GeneratedClrTypeInfo(typeof(global::Grpc.Testing.RequestParams), global::Grpc.Testing.RequestParams.Parser, new[]{ "EchoDeadline", "ClientCancelAfterUs", "ServerCancelAfterUs", "EchoMetadata", "CheckAuthContext", "ResponseMessageLength", "EchoPeer", "ExpectedClientIdentity", "SkipCancelledCheck", "ExpectedTransportSecurityType", "DebugInfo", "ServerDie", "BinaryErrorDetails", "ExpectedError", "ServerSleepUs", "BackendChannelIdx" }, null, null, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::Grpc.Testing.RequestParams), global::Grpc.Testing.RequestParams.Parser, new[]{ "EchoDeadline", "ClientCancelAfterUs", "ServerCancelAfterUs", "EchoMetadata", "CheckAuthContext", "ResponseMessageLength", "EchoPeer", "ExpectedClientIdentity", "SkipCancelledCheck", "ExpectedTransportSecurityType", "DebugInfo", "ServerDie", "BinaryErrorDetails", "ExpectedError", "ServerSleepUs", "BackendChannelIdx", "EchoMetadataInitially" }, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Grpc.Testing.EchoRequest), global::Grpc.Testing.EchoRequest.Parser, new[]{ "Message", "Param" }, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Grpc.Testing.ResponseParams), global::Grpc.Testing.ResponseParams.Parser, new[]{ "RequestDeadline", "Host", "Peer" }, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Grpc.Testing.EchoResponse), global::Grpc.Testing.EchoResponse.Parser, new[]{ "Message", "Param" }, null, null, null)
@@ -441,6 +442,7 @@ namespace Grpc.Testing {
       expectedError_ = other.expectedError_ != null ? other.expectedError_.Clone() : null;
       serverSleepUs_ = other.serverSleepUs_;
       backendChannelIdx_ = other.backendChannelIdx_;
+      echoMetadataInitially_ = other.echoMetadataInitially_;
       _unknownFields = pb::UnknownFieldSet.Clone(other._unknownFields);
     }
 
@@ -637,6 +639,17 @@ namespace Grpc.Testing {
       }
     }
 
+    /// <summary>Field number for the "echo_metadata_initially" field.</summary>
+    public const int EchoMetadataInitiallyFieldNumber = 17;
+    private bool echoMetadataInitially_;
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public bool EchoMetadataInitially {
+      get { return echoMetadataInitially_; }
+      set {
+        echoMetadataInitially_ = value;
+      }
+    }
+
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public override bool Equals(object other) {
       return Equals(other as RequestParams);
@@ -666,6 +679,7 @@ namespace Grpc.Testing {
       if (!object.Equals(ExpectedError, other.ExpectedError)) return false;
       if (ServerSleepUs != other.ServerSleepUs) return false;
       if (BackendChannelIdx != other.BackendChannelIdx) return false;
+      if (EchoMetadataInitially != other.EchoMetadataInitially) return false;
       return Equals(_unknownFields, other._unknownFields);
     }
 
@@ -688,6 +702,7 @@ namespace Grpc.Testing {
       if (expectedError_ != null) hash ^= ExpectedError.GetHashCode();
       if (ServerSleepUs != 0) hash ^= ServerSleepUs.GetHashCode();
       if (BackendChannelIdx != 0) hash ^= BackendChannelIdx.GetHashCode();
+      if (EchoMetadataInitially != false) hash ^= EchoMetadataInitially.GetHashCode();
       if (_unknownFields != null) {
         hash ^= _unknownFields.GetHashCode();
       }
@@ -765,6 +780,10 @@ namespace Grpc.Testing {
         output.WriteRawTag(128, 1);
         output.WriteInt32(BackendChannelIdx);
       }
+      if (EchoMetadataInitially != false) {
+        output.WriteRawTag(136, 1);
+        output.WriteBool(EchoMetadataInitially);
+      }
       if (_unknownFields != null) {
         _unknownFields.WriteTo(output);
       }
@@ -821,6 +840,9 @@ namespace Grpc.Testing {
       if (BackendChannelIdx != 0) {
         size += 2 + pb::CodedOutputStream.ComputeInt32Size(BackendChannelIdx);
       }
+      if (EchoMetadataInitially != false) {
+        size += 2 + 1;
+      }
       if (_unknownFields != null) {
         size += _unknownFields.CalculateSize();
       }
@@ -864,7 +886,7 @@ namespace Grpc.Testing {
       }
       if (other.debugInfo_ != null) {
         if (debugInfo_ == null) {
-          debugInfo_ = new global::Grpc.Testing.DebugInfo();
+          DebugInfo = new global::Grpc.Testing.DebugInfo();
         }
         DebugInfo.MergeFrom(other.DebugInfo);
       }
@@ -876,7 +898,7 @@ namespace Grpc.Testing {
       }
       if (other.expectedError_ != null) {
         if (expectedError_ == null) {
-          expectedError_ = new global::Grpc.Testing.ErrorStatus();
+          ExpectedError = new global::Grpc.Testing.ErrorStatus();
         }
         ExpectedError.MergeFrom(other.ExpectedError);
       }
@@ -885,6 +907,9 @@ namespace Grpc.Testing {
       }
       if (other.BackendChannelIdx != 0) {
         BackendChannelIdx = other.BackendChannelIdx;
+      }
+      if (other.EchoMetadataInitially != false) {
+        EchoMetadataInitially = other.EchoMetadataInitially;
       }
       _unknownFields = pb::UnknownFieldSet.MergeFrom(_unknownFields, other._unknownFields);
     }
@@ -939,9 +964,9 @@ namespace Grpc.Testing {
           }
           case 90: {
             if (debugInfo_ == null) {
-              debugInfo_ = new global::Grpc.Testing.DebugInfo();
+              DebugInfo = new global::Grpc.Testing.DebugInfo();
             }
-            input.ReadMessage(debugInfo_);
+            input.ReadMessage(DebugInfo);
             break;
           }
           case 96: {
@@ -954,9 +979,9 @@ namespace Grpc.Testing {
           }
           case 114: {
             if (expectedError_ == null) {
-              expectedError_ = new global::Grpc.Testing.ErrorStatus();
+              ExpectedError = new global::Grpc.Testing.ErrorStatus();
             }
-            input.ReadMessage(expectedError_);
+            input.ReadMessage(ExpectedError);
             break;
           }
           case 120: {
@@ -965,6 +990,10 @@ namespace Grpc.Testing {
           }
           case 128: {
             BackendChannelIdx = input.ReadInt32();
+            break;
+          }
+          case 136: {
+            EchoMetadataInitially = input.ReadBool();
             break;
           }
         }
@@ -1104,7 +1133,7 @@ namespace Grpc.Testing {
       }
       if (other.param_ != null) {
         if (param_ == null) {
-          param_ = new global::Grpc.Testing.RequestParams();
+          Param = new global::Grpc.Testing.RequestParams();
         }
         Param.MergeFrom(other.Param);
       }
@@ -1125,9 +1154,9 @@ namespace Grpc.Testing {
           }
           case 18: {
             if (param_ == null) {
-              param_ = new global::Grpc.Testing.RequestParams();
+              Param = new global::Grpc.Testing.RequestParams();
             }
-            input.ReadMessage(param_);
+            input.ReadMessage(Param);
             break;
           }
         }
@@ -1452,7 +1481,7 @@ namespace Grpc.Testing {
       }
       if (other.param_ != null) {
         if (param_ == null) {
-          param_ = new global::Grpc.Testing.ResponseParams();
+          Param = new global::Grpc.Testing.ResponseParams();
         }
         Param.MergeFrom(other.Param);
       }
@@ -1473,9 +1502,9 @@ namespace Grpc.Testing {
           }
           case 18: {
             if (param_ == null) {
-              param_ = new global::Grpc.Testing.ResponseParams();
+              Param = new global::Grpc.Testing.ResponseParams();
             }
-            input.ReadMessage(param_);
+            input.ReadMessage(Param);
             break;
           }
         }

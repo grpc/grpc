@@ -14,7 +14,7 @@ Xamarin.Android
   `arm64-v8a` (some newer Android devices), `x86` (for emulator)
 
 Xamarin.iOS
-- supported architectures: arm64 (iPhone 6+) and x86_64 (iPhone simulator)
+- supported architectures: armv7, arm64 (iPhone 6+) and x86_64 (iPhone simulator)
 
 # Unity
 
@@ -23,7 +23,7 @@ Unity and provide feedback!
 
 How to test gRPC in a Unity project
 
-1. Create a Unity project that targets .NET 4.x (Edit -> Project Settings -> Editor -> Scripting Runtime Version). gRPC uses APIs that are only available in .NET4.5+ so this is a requirement.
+1. Create a Unity project that targets .NET 4.x Equivalent (Edit -> Project Settings -> Player -> Configuration -> Scripting Runtime Version). gRPC uses APIs that are only available in .NET4.5+ so this is a requirement.
 
 2. Download the latest development build of `grpc_unity_package.VERSION.zip` from
    [daily builds](https://packages.grpc.io/)

@@ -31,8 +31,8 @@
 #include <grpc/support/sync.h>
 
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/gpr/host_port.h"
 #include "src/core/lib/gpr/string.h"
+#include "src/core/lib/gprpp/host_port.h"
 #include "src/core/lib/gprpp/thd.h"
 #include "src/core/lib/http/parser.h"
 #include "src/core/lib/iomgr/closure.h"
@@ -53,8 +53,7 @@
 
 struct grpc_end2end_http_proxy {
   grpc_end2end_http_proxy()
-      : proxy_name(nullptr),
-        server(nullptr),
+      : server(nullptr),
         channel_args(nullptr),
         mu(nullptr),
         pollset(nullptr),
@@ -62,7 +61,7 @@ struct grpc_end2end_http_proxy {
     gpr_ref_init(&users, 1);
     combiner = grpc_combiner_create();
   }
-  char* proxy_name;
+  grpc_core::UniquePtr<char> proxy_name;
   grpc_core::Thread thd;
   grpc_tcp_server* server;
   grpc_channel_args* channel_args;
@@ -78,7 +77,7 @@ struct grpc_end2end_http_proxy {
 //
 
 // proxy_connection structure is only accessed in the closures which are all
-// scheduled under the same combiner lock. So there is is no need for a mutex to
+// scheduled under the same combiner lock. So there is no need for a mutex to
 // protect this structure.
 typedef struct proxy_connection {
   grpc_end2end_http_proxy* proxy;
@@ -271,7 +270,7 @@ static void on_client_read_done(void* arg, grpc_error* error) {
   }
   // Read more data.
   grpc_endpoint_read(conn->client_endpoint, &conn->client_read_buffer,
-                     &conn->on_client_read_done);
+                     &conn->on_client_read_done, /*urgent=*/false);
 }
 
 // Callback for reading data from the backend server, which will be
@@ -302,7 +301,7 @@ static void on_server_read_done(void* arg, grpc_error* error) {
   }
   // Read more data.
   grpc_endpoint_read(conn->server_endpoint, &conn->server_read_buffer,
-                     &conn->on_server_read_done);
+                     &conn->on_server_read_done, /*urgent=*/false);
 }
 
 // Callback to write the HTTP response for the CONNECT request.
@@ -323,9 +322,9 @@ static void on_write_response_done(void* arg, grpc_error* error) {
   proxy_connection_ref(conn, "server_read");
   proxy_connection_unref(conn, "write_response");
   grpc_endpoint_read(conn->client_endpoint, &conn->client_read_buffer,
-                     &conn->on_client_read_done);
+                     &conn->on_client_read_done, /*urgent=*/false);
   grpc_endpoint_read(conn->server_endpoint, &conn->server_read_buffer,
-                     &conn->on_server_read_done);
+                     &conn->on_server_read_done, /*urgent=*/false);
 }
 
 // Callback to connect to the backend server specified by the HTTP
@@ -405,7 +404,7 @@ static void on_read_request_done(void* arg, grpc_error* error) {
   // If we're not done reading the request, read more data.
   if (conn->http_parser.state != GRPC_HTTP_BODY) {
     grpc_endpoint_read(conn->client_endpoint, &conn->client_read_buffer,
-                       &conn->on_read_request_done);
+                       &conn->on_read_request_done, /*urgent=*/false);
     return;
   }
   // Make sure we got a CONNECT request.
@@ -503,7 +502,7 @@ static void on_accept(void* arg, grpc_endpoint* endpoint,
   grpc_http_parser_init(&conn->http_parser, GRPC_HTTP_REQUEST,
                         &conn->http_request);
   grpc_endpoint_read(conn->client_endpoint, &conn->client_read_buffer,
-                     &conn->on_read_request_done);
+                     &conn->on_read_request_done, /*urgent=*/false);
 }
 
 //
@@ -532,8 +531,8 @@ grpc_end2end_http_proxy* grpc_end2end_http_proxy_create(
   grpc_end2end_http_proxy* proxy = grpc_core::New<grpc_end2end_http_proxy>();
   // Construct proxy address.
   const int proxy_port = grpc_pick_unused_port_or_die();
-  gpr_join_host_port(&proxy->proxy_name, "localhost", proxy_port);
-  gpr_log(GPR_INFO, "Proxy address: %s", proxy->proxy_name);
+  grpc_core::JoinHostPort(&proxy->proxy_name, "localhost", proxy_port);
+  gpr_log(GPR_INFO, "Proxy address: %s", proxy->proxy_name.get());
   // Create TCP server.
   proxy->channel_args = grpc_channel_args_copy(args);
   grpc_error* error =
@@ -573,7 +572,6 @@ void grpc_end2end_http_proxy_destroy(grpc_end2end_http_proxy* proxy) {
   proxy->thd.Join();
   grpc_tcp_server_shutdown_listeners(proxy->server);
   grpc_tcp_server_unref(proxy->server);
-  gpr_free(proxy->proxy_name);
   grpc_channel_args_destroy(proxy->channel_args);
   grpc_pollset_shutdown(proxy->pollset,
                         GRPC_CLOSURE_CREATE(destroy_pollset, proxy->pollset,
@@ -584,5 +582,5 @@ void grpc_end2end_http_proxy_destroy(grpc_end2end_http_proxy* proxy) {
 
 const char* grpc_end2end_http_proxy_get_proxy_name(
     grpc_end2end_http_proxy* proxy) {
-  return proxy->proxy_name;
+  return proxy->proxy_name.get();
 }

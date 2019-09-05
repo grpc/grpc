@@ -100,14 +100,14 @@ for frameworks in [False, True]:
             ['git', 'rev-parse', '--abbrev-ref', 'HEAD']).strip()
         subprocess.check_call(['git', 'checkout', '--', '.'])
         subprocess.check_call(['git', 'checkout', args.diff_base])
-        subprocess.check_call(['git', 'submodule', 'update'])
+        subprocess.check_call(['git', 'submodule', 'update', '--force'])
         try:
             build('old', frameworks)
             old_size = get_size('old', frameworks)
         finally:
             subprocess.check_call(['git', 'checkout', '--', '.'])
             subprocess.check_call(['git', 'checkout', where_am_i])
-            subprocess.check_call(['git', 'submodule', 'update'])
+            subprocess.check_call(['git', 'submodule', 'update', '--force'])
 
     text += ('***************FRAMEWORKS****************\n'
              if frameworks else '*****************STATIC******************\n')

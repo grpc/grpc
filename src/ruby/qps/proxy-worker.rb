@@ -48,7 +48,7 @@ class ProxyBenchmarkClientServiceImpl < Grpc::Testing::ProxyClientService::Servi
         if @use_c_ext
           puts "Use protobuf c extension"
           command = "php -d extension=" + File.expand_path(File.dirname(__FILE__)) +
-            "/../../php/tests/qps/vendor/google/protobuf/php/ext/google/protobuf/modules/protobuf.so " +
+            "/../../../third_party/protobuf/php/ext/google/protobuf/modules/protobuf.so " +
             "-d extension=" + File.expand_path(File.dirname(__FILE__)) + "/../../php/ext/grpc/modules/grpc.so " +
             File.expand_path(File.dirname(__FILE__)) + "/" + @php_client_bin + " " + @mytarget + " #{chan%@config.server_targets.length}"
         else

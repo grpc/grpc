@@ -178,6 +178,7 @@ def insert_rows(big_query, project_id, dataset_id, table_id, rows_list):
             is_success = False
     except HttpError as http_error:
         print('Error inserting rows to the table %s' % table_id)
+        print('Error message: %s' % http_error)
         is_success = False
 
     return is_success

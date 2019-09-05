@@ -32,6 +32,10 @@
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/iomgr_internal.h"
 
+#ifndef WSA_FLAG_NO_HANDLE_INHERIT
+#define WSA_FLAG_NO_HANDLE_INHERIT 0x80
+#endif
+
 /* This holds the data for an outstanding read or write on a socket.
    The mutex to protect the concurrent access to that data is the one
    inside the winsocket wrapper. */
@@ -55,7 +59,7 @@ typedef struct grpc_winsocket_callback_info {
      to hold a mutex for a long amount of time. */
   int has_pending_iocp;
   /* The results of the overlapped operation. */
-  DWORD bytes_transfered;
+  DWORD bytes_transferred;
   int wsa_error;
 } grpc_winsocket_callback_info;
 
@@ -113,6 +117,10 @@ void grpc_socket_become_ready(grpc_winsocket* winsocket,
 /* Returns true if this system can create AF_INET6 sockets bound to ::1.
    The value is probed once, and cached for the life of the process. */
 int grpc_ipv6_loopback_available(void);
+
+void grpc_wsa_socket_flags_init();
+
+DWORD grpc_get_default_wsa_socket_flags();
 
 #endif
 

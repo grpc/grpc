@@ -140,6 +140,8 @@ static void cpu_test(void) {
   }
   fprintf(stderr, "] (%d/%d)\n", cores_seen, ct.ncores);
   fflush(stderr);
+  gpr_mu_destroy(&ct.mu);
+  gpr_cv_destroy(&ct.done_cv);
   gpr_free(ct.used);
 }
 

@@ -32,7 +32,10 @@ std::pair<uint64_t, uint64_t> GetCpuStatsImpl() {
   FILE* fp;
   fp = fopen("/proc/stat", "r");
   uint64_t user, nice, system, idle;
-  fscanf(fp, "cpu %lu %lu %lu %lu", &user, &nice, &system, &idle);
+  if (fscanf(fp, "cpu %lu %lu %lu %lu", &user, &nice, &system, &idle) != 4) {
+    // Something bad happened with the information, so assume it's all invalid
+    user = nice = system = idle = 0;
+  }
   fclose(fp);
   busy = user + nice + system;
   total = busy + idle;

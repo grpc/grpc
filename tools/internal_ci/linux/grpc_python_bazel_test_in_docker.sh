@@ -25,3 +25,10 @@ git clone /var/local/jenkins/grpc /var/local/git/grpc
 ${name}')
 cd /var/local/git/grpc/test
 bazel test --spawn_strategy=standalone --genrule_strategy=standalone --test_output=errors //src/python/...
+bazel test --spawn_strategy=standalone --genrule_strategy=standalone --test_output=errors //examples/python/...
+
+# TODO(https://github.com/grpc/grpc/issues/19854): Move this to a new Kokoro
+# job.
+(cd /var/local/git/grpc/bazel/test/python_test_repo;
+  bazel test --test_output=errors //...
+)

@@ -24,7 +24,8 @@
 #include "src/core/lib/transport/transport.h"
 
 struct grpc_chttp2_incoming_metadata_buffer {
-  grpc_chttp2_incoming_metadata_buffer(gpr_arena* arena) : arena(arena) {
+  explicit grpc_chttp2_incoming_metadata_buffer(grpc_core::Arena* arena)
+      : arena(arena) {
     grpc_metadata_batch_init(&batch);
     batch.deadline = GRPC_MILLIS_INF_FUTURE;
   }
@@ -32,9 +33,14 @@ struct grpc_chttp2_incoming_metadata_buffer {
     grpc_metadata_batch_destroy(&batch);
   }
 
-  gpr_arena* arena;
+  static constexpr size_t kPreallocatedMDElem = 10;
+
+  grpc_core::Arena* arena;
+  size_t size = 0;   // total size of metadata.
+  size_t count = 0;  // minimum of count of metadata and kPreallocatedMDElem.
+  // These preallocated mdelems are used while count < kPreallocatedMDElem.
+  grpc_linked_mdelem preallocated_mdelems[kPreallocatedMDElem];
   grpc_metadata_batch batch;
-  size_t size = 0;  // total size of metadata
 };
 
 void grpc_chttp2_incoming_metadata_buffer_publish(

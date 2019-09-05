@@ -104,23 +104,21 @@ grpc_error* grpc_deframe_unprocessed_incoming_frames(
     uint8_t* end = nullptr;
     uint8_t* cur = nullptr;
 
-    grpc_slice slice = grpc_slice_buffer_take_first(slices);
-
-    beg = GRPC_SLICE_START_PTR(slice);
-    end = GRPC_SLICE_END_PTR(slice);
+    grpc_slice* slice = grpc_slice_buffer_peek_first(slices);
+    beg = GRPC_SLICE_START_PTR(*slice);
+    end = GRPC_SLICE_END_PTR(*slice);
     cur = beg;
     uint32_t message_flags;
-    char* msg;
 
     if (cur == end) {
-      grpc_slice_unref_internal(slice);
+      grpc_slice_buffer_remove_first(slices);
       continue;
     }
 
     switch (p->state) {
       case GRPC_CHTTP2_DATA_ERROR:
         p->state = GRPC_CHTTP2_DATA_ERROR;
-        grpc_slice_unref_internal(slice);
+        grpc_slice_buffer_remove_first(slices);
         return GRPC_ERROR_REF(p->error);
       case GRPC_CHTTP2_DATA_FH_0:
         s->stats.incoming.framing_bytes++;
@@ -133,24 +131,25 @@ grpc_error* grpc_deframe_unprocessed_incoming_frames(
             p->is_frame_compressed = true; /* GPR_TRUE */
             break;
           default:
+            char* msg;
             gpr_asprintf(&msg, "Bad GRPC frame type 0x%02x", p->frame_type);
             p->error = GRPC_ERROR_CREATE_FROM_COPIED_STRING(msg);
             p->error = grpc_error_set_int(p->error, GRPC_ERROR_INT_STREAM_ID,
                                           static_cast<intptr_t>(s->id));
             gpr_free(msg);
-            msg = grpc_dump_slice(slice, GPR_DUMP_HEX | GPR_DUMP_ASCII);
-            p->error = grpc_error_set_str(p->error, GRPC_ERROR_STR_RAW_BYTES,
-                                          grpc_slice_from_copied_string(msg));
-            gpr_free(msg);
+            p->error = grpc_error_set_str(
+                p->error, GRPC_ERROR_STR_RAW_BYTES,
+                grpc_slice_from_moved_string(grpc_core::UniquePtr<char>(
+                    grpc_dump_slice(*slice, GPR_DUMP_HEX | GPR_DUMP_ASCII))));
             p->error =
                 grpc_error_set_int(p->error, GRPC_ERROR_INT_OFFSET, cur - beg);
             p->state = GRPC_CHTTP2_DATA_ERROR;
-            grpc_slice_unref_internal(slice);
+            grpc_slice_buffer_remove_first(slices);
             return GRPC_ERROR_REF(p->error);
         }
         if (++cur == end) {
           p->state = GRPC_CHTTP2_DATA_FH_1;
-          grpc_slice_unref_internal(slice);
+          grpc_slice_buffer_remove_first(slices);
           continue;
         }
       /* fallthrough */
@@ -159,7 +158,7 @@ grpc_error* grpc_deframe_unprocessed_incoming_frames(
         p->frame_size = (static_cast<uint32_t>(*cur)) << 24;
         if (++cur == end) {
           p->state = GRPC_CHTTP2_DATA_FH_2;
-          grpc_slice_unref_internal(slice);
+          grpc_slice_buffer_remove_first(slices);
           continue;
         }
       /* fallthrough */
@@ -168,7 +167,7 @@ grpc_error* grpc_deframe_unprocessed_incoming_frames(
         p->frame_size |= (static_cast<uint32_t>(*cur)) << 16;
         if (++cur == end) {
           p->state = GRPC_CHTTP2_DATA_FH_3;
-          grpc_slice_unref_internal(slice);
+          grpc_slice_buffer_remove_first(slices);
           continue;
         }
       /* fallthrough */
@@ -177,7 +176,7 @@ grpc_error* grpc_deframe_unprocessed_incoming_frames(
         p->frame_size |= (static_cast<uint32_t>(*cur)) << 8;
         if (++cur == end) {
           p->state = GRPC_CHTTP2_DATA_FH_4;
-          grpc_slice_unref_internal(slice);
+          grpc_slice_buffer_remove_first(slices);
           continue;
         }
       /* fallthrough */
@@ -204,19 +203,18 @@ grpc_error* grpc_deframe_unprocessed_incoming_frames(
           p->state = GRPC_CHTTP2_DATA_FH_0;
         }
         s->pending_byte_stream = true;
-
         if (cur != end) {
-          grpc_slice_buffer_undo_take_first(
-              slices, grpc_slice_sub(slice, static_cast<size_t>(cur - beg),
-                                     static_cast<size_t>(end - beg)));
+          grpc_slice_buffer_sub_first(slices, static_cast<size_t>(cur - beg),
+                                      static_cast<size_t>(end - beg));
+        } else {
+          grpc_slice_buffer_remove_first(slices);
         }
-        grpc_slice_unref_internal(slice);
         return GRPC_ERROR_NONE;
       case GRPC_CHTTP2_DATA_FRAME: {
         GPR_ASSERT(p->parsing_frame != nullptr);
         GPR_ASSERT(slice_out != nullptr);
         if (cur == end) {
-          grpc_slice_unref_internal(slice);
+          grpc_slice_buffer_remove_first(slices);
           continue;
         }
         uint32_t remaining = static_cast<uint32_t>(end - cur);
@@ -224,32 +222,32 @@ grpc_error* grpc_deframe_unprocessed_incoming_frames(
           s->stats.incoming.data_bytes += remaining;
           if (GRPC_ERROR_NONE !=
               (error = p->parsing_frame->Push(
-                   grpc_slice_sub(slice, static_cast<size_t>(cur - beg),
+                   grpc_slice_sub(*slice, static_cast<size_t>(cur - beg),
                                   static_cast<size_t>(end - beg)),
                    slice_out))) {
-            grpc_slice_unref_internal(slice);
+            grpc_slice_buffer_remove_first(slices);
             return error;
           }
           if (GRPC_ERROR_NONE !=
               (error = p->parsing_frame->Finished(GRPC_ERROR_NONE, true))) {
-            grpc_slice_unref_internal(slice);
+            grpc_slice_buffer_remove_first(slices);
             return error;
           }
           p->parsing_frame = nullptr;
           p->state = GRPC_CHTTP2_DATA_FH_0;
-          grpc_slice_unref_internal(slice);
+          grpc_slice_buffer_remove_first(slices);
           return GRPC_ERROR_NONE;
         } else if (remaining < p->frame_size) {
           s->stats.incoming.data_bytes += remaining;
           if (GRPC_ERROR_NONE !=
               (error = p->parsing_frame->Push(
-                   grpc_slice_sub(slice, static_cast<size_t>(cur - beg),
+                   grpc_slice_sub(*slice, static_cast<size_t>(cur - beg),
                                   static_cast<size_t>(end - beg)),
                    slice_out))) {
             return error;
           }
           p->frame_size -= remaining;
-          grpc_slice_unref_internal(slice);
+          grpc_slice_buffer_remove_first(slices);
           return GRPC_ERROR_NONE;
         } else {
           GPR_ASSERT(remaining > p->frame_size);
@@ -257,37 +255,35 @@ grpc_error* grpc_deframe_unprocessed_incoming_frames(
           if (GRPC_ERROR_NONE !=
               p->parsing_frame->Push(
                   grpc_slice_sub(
-                      slice, static_cast<size_t>(cur - beg),
+                      *slice, static_cast<size_t>(cur - beg),
                       static_cast<size_t>(cur + p->frame_size - beg)),
                   slice_out)) {
-            grpc_slice_unref_internal(slice);
+            grpc_slice_buffer_remove_first(slices);
             return error;
           }
           if (GRPC_ERROR_NONE !=
               (error = p->parsing_frame->Finished(GRPC_ERROR_NONE, true))) {
-            grpc_slice_unref_internal(slice);
+            grpc_slice_buffer_remove_first(slices);
             return error;
           }
           p->parsing_frame = nullptr;
           p->state = GRPC_CHTTP2_DATA_FH_0;
           cur += p->frame_size;
-          grpc_slice_buffer_undo_take_first(
-              slices, grpc_slice_sub(slice, static_cast<size_t>(cur - beg),
-                                     static_cast<size_t>(end - beg)));
-          grpc_slice_unref_internal(slice);
+          grpc_slice_buffer_sub_first(slices, static_cast<size_t>(cur - beg),
+                                      static_cast<size_t>(end - beg));
           return GRPC_ERROR_NONE;
         }
       }
     }
   }
-
   return GRPC_ERROR_NONE;
 }
 
 grpc_error* grpc_chttp2_data_parser_parse(void* parser,
                                           grpc_chttp2_transport* t,
                                           grpc_chttp2_stream* s,
-                                          grpc_slice slice, int is_last) {
+                                          const grpc_slice& slice,
+                                          int is_last) {
   if (!s->pending_byte_stream) {
     grpc_slice_ref_internal(slice);
     grpc_slice_buffer_add(&s->frame_storage, slice);

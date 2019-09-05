@@ -285,7 +285,7 @@ int main(int argc, char** argv) {
   grpc_slice_unref(slice);
 
   grpc_completion_queue_destroy(cq);
-  grpc_shutdown();
+  grpc_shutdown_blocking();
 
   gpr_log(GPR_INFO, "---------client stats--------");
   gpr_log(

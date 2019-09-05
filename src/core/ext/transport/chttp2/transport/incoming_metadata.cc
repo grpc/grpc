@@ -30,11 +30,16 @@
 grpc_error* grpc_chttp2_incoming_metadata_buffer_add(
     grpc_chttp2_incoming_metadata_buffer* buffer, grpc_mdelem elem) {
   buffer->size += GRPC_MDELEM_LENGTH(elem);
-  return grpc_metadata_batch_add_tail(
-      &buffer->batch,
-      static_cast<grpc_linked_mdelem*>(
-          gpr_arena_alloc(buffer->arena, sizeof(grpc_linked_mdelem))),
-      elem);
+  grpc_linked_mdelem* storage;
+  if (buffer->count < buffer->kPreallocatedMDElem) {
+    storage = &buffer->preallocated_mdelems[buffer->count];
+    buffer->count++;
+  } else {
+    storage = static_cast<grpc_linked_mdelem*>(
+        buffer->arena->Alloc(sizeof(grpc_linked_mdelem)));
+  }
+  storage->md = elem;
+  return grpc_metadata_batch_link_tail(&buffer->batch, storage);
 }
 
 grpc_error* grpc_chttp2_incoming_metadata_buffer_replace_or_add(

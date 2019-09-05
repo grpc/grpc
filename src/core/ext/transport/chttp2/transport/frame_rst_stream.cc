@@ -26,6 +26,7 @@
 #include <grpc/support/string_util.h>
 
 #include "src/core/ext/transport/chttp2/transport/frame.h"
+#include "src/core/lib/gprpp/memory.h"
 #include "src/core/lib/transport/http2_errors.h"
 
 grpc_slice grpc_chttp2_rst_stream_create(uint32_t id, uint32_t code,
@@ -57,6 +58,14 @@ grpc_slice grpc_chttp2_rst_stream_create(uint32_t id, uint32_t code,
   return slice;
 }
 
+void grpc_chttp2_add_rst_stream_to_next_write(
+    grpc_chttp2_transport* t, uint32_t id, uint32_t code,
+    grpc_transport_one_way_stats* stats) {
+  t->num_pending_induced_frames++;
+  grpc_slice_buffer_add(&t->qbuf,
+                        grpc_chttp2_rst_stream_create(id, code, stats));
+}
+
 grpc_error* grpc_chttp2_rst_stream_parser_begin_frame(
     grpc_chttp2_rst_stream_parser* parser, uint32_t length, uint8_t flags) {
   if (length != 4) {
@@ -74,10 +83,11 @@ grpc_error* grpc_chttp2_rst_stream_parser_begin_frame(
 grpc_error* grpc_chttp2_rst_stream_parser_parse(void* parser,
                                                 grpc_chttp2_transport* t,
                                                 grpc_chttp2_stream* s,
-                                                grpc_slice slice, int is_last) {
-  uint8_t* const beg = GRPC_SLICE_START_PTR(slice);
-  uint8_t* const end = GRPC_SLICE_END_PTR(slice);
-  uint8_t* cur = beg;
+                                                const grpc_slice& slice,
+                                                int is_last) {
+  const uint8_t* const beg = GRPC_SLICE_START_PTR(slice);
+  const uint8_t* const end = GRPC_SLICE_END_PTR(slice);
+  const uint8_t* cur = beg;
   grpc_chttp2_rst_stream_parser* p =
       static_cast<grpc_chttp2_rst_stream_parser*>(parser);
 
@@ -101,9 +111,9 @@ grpc_error* grpc_chttp2_rst_stream_parser_parse(void* parser,
       error = grpc_error_set_int(
           grpc_error_set_str(GRPC_ERROR_CREATE_FROM_STATIC_STRING("RST_STREAM"),
                              GRPC_ERROR_STR_GRPC_MESSAGE,
-                             grpc_slice_from_copied_string(message)),
+                             grpc_slice_from_moved_string(
+                                 grpc_core::UniquePtr<char>(message))),
           GRPC_ERROR_INT_HTTP2_ERROR, static_cast<intptr_t>(reason));
-      gpr_free(message);
     }
     grpc_chttp2_mark_stream_closed(t, s, true, true, error);
   }

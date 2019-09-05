@@ -190,7 +190,7 @@ TransportFlowControl::TransportFlowControl(const grpc_chttp2_transport* t,
 uint32_t TransportFlowControl::MaybeSendUpdate(bool writing_anyway) {
   FlowControlTrace trace("t updt sent", this, nullptr);
   const uint32_t target_announced_window =
-      static_cast<const uint32_t>(target_window());
+      static_cast<uint32_t>(target_window());
   if ((writing_anyway || announced_window_ <= target_announced_window / 2) &&
       announced_window_ != target_announced_window) {
     const uint32_t announce = static_cast<uint32_t> GPR_CLAMP(

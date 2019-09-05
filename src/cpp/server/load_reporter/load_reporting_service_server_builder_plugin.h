@@ -36,13 +36,13 @@ class LoadReportingServiceServerBuilderPlugin : public ServerBuilderPlugin {
   grpc::string name() override { return "load_reporting_service"; }
 
   // Creates a load reporting service.
-  void UpdateServerBuilder(grpc::ServerBuilder* builder) override;
+  void UpdateServerBuilder(ServerBuilder* builder) override;
 
   // Registers the load reporter service.
-  void InitServer(grpc::ServerInitializer* si) override;
+  void InitServer(grpc_impl::ServerInitializer* si) override;
 
   // Starts the load reporter service.
-  void Finish(grpc::ServerInitializer* si) override;
+  void Finish(grpc_impl::ServerInitializer* si) override;
 
   void ChangeArguments(const grpc::string& name, void* value) override {}
   void UpdateChannelArguments(grpc::ChannelArguments* args) override {}

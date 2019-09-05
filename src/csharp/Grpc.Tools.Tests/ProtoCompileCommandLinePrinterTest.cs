@@ -29,7 +29,7 @@ namespace Grpc.Tools.Tests
         {
             _task.Generator = "csharp";
             _task.OutputDir = "outdir";
-            _task.ProtoBuf = Utils.MakeSimpleItems("a.proto");
+            _task.Protobuf = Utils.MakeSimpleItems("a.proto");
 
             _mockEngine
               .Setup(me => me.LogMessageEvent(It.IsAny<BuildMessageEventArgs>()))

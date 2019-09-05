@@ -31,6 +31,7 @@
 #include <grpcpp/channel.h>
 #include <grpcpp/client_context.h>
 #include <grpcpp/create_channel.h>
+#include <grpcpp/impl/codegen/sync.h>
 #include <grpcpp/server.h>
 #include <grpcpp/server_builder.h>
 
@@ -168,24 +169,24 @@ class ClientChannelStressTest {
     explicit ServerThread(const grpc::string& type,
                           const grpc::string& server_host, T* service)
         : type_(type), service_(service) {
-      std::mutex mu;
+      grpc::internal::Mutex mu;
       // We need to acquire the lock here in order to prevent the notify_one
       // by ServerThread::Start from firing before the wait below is hit.
-      std::unique_lock<std::mutex> lock(mu);
+      grpc::internal::MutexLock lock(&mu);
       port_ = grpc_pick_unused_port_or_die();
       gpr_log(GPR_INFO, "starting %s server on port %d", type_.c_str(), port_);
-      std::condition_variable cond;
+      grpc::internal::CondVar cond;
       thread_.reset(new std::thread(
           std::bind(&ServerThread::Start, this, server_host, &mu, &cond)));
-      cond.wait(lock);
+      cond.Wait(&mu);
       gpr_log(GPR_INFO, "%s server startup complete", type_.c_str());
     }
 
-    void Start(const grpc::string& server_host, std::mutex* mu,
-               std::condition_variable* cond) {
+    void Start(const grpc::string& server_host, grpc::internal::Mutex* mu,
+               grpc::internal::CondVar* cond) {
       // We need to acquire the lock here in order to prevent the notify_one
       // below from firing before its corresponding wait is executed.
-      std::lock_guard<std::mutex> lock(*mu);
+      grpc::internal::MutexLock lock(mu);
       std::ostringstream server_address;
       server_address << server_host << ":" << port_;
       ServerBuilder builder;
@@ -193,7 +194,7 @@ class ClientChannelStressTest {
                                InsecureServerCredentials());
       builder.RegisterService(service_);
       server_ = builder.BuildAndStart();
-      cond->notify_one();
+      cond->Signal();
     }
 
     void Shutdown() {
@@ -218,7 +219,7 @@ class ClientChannelStressTest {
 
   void SetNextResolution(const std::vector<AddressData>& address_data) {
     grpc_core::ExecCtx exec_ctx;
-    grpc_core::ServerAddressList addresses;
+    grpc_core::Resolver::Result result;
     for (const auto& addr : address_data) {
       char* lb_uri_str;
       gpr_asprintf(&lb_uri_str, "ipv4:127.0.0.1:%d", addr.port);
@@ -236,13 +237,11 @@ class ClientChannelStressTest {
       }
       grpc_channel_args* args = grpc_channel_args_copy_and_add(
           nullptr, args_to_add.data(), args_to_add.size());
-      addresses.emplace_back(address.addr, address.len, args);
+      result.addresses.emplace_back(address.addr, address.len, args);
       grpc_uri_destroy(lb_uri);
       gpr_free(lb_uri_str);
     }
-    grpc_arg fake_addresses = CreateServerAddressListChannelArg(&addresses);
-    grpc_channel_args fake_result = {1, &fake_addresses};
-    response_generator_->SetResponse(&fake_result);
+    response_generator_->SetResponse(std::move(result));
   }
 
   void KeepSendingRequests() {
@@ -269,8 +268,8 @@ class ClientChannelStressTest {
                     response_generator_.get());
     std::ostringstream uri;
     uri << "fake:///servername_not_used";
-    channel_ =
-        CreateCustomChannel(uri.str(), InsecureChannelCredentials(), args);
+    channel_ = ::grpc::CreateCustomChannel(uri.str(),
+                                           InsecureChannelCredentials(), args);
     stub_ = grpc::testing::EchoTestService::NewStub(channel_);
   }
 

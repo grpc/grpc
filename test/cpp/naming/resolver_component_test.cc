@@ -39,22 +39,26 @@
 #include "test/cpp/util/test_config.h"
 
 #include "src/core/ext/filters/client_channel/client_channel.h"
+#include "src/core/ext/filters/client_channel/parse_address.h"
 #include "src/core/ext/filters/client_channel/resolver.h"
+#include "src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver.h"
 #include "src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper.h"
 #include "src/core/ext/filters/client_channel/resolver_registry.h"
 #include "src/core/ext/filters/client_channel/server_address.h"
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/gpr/env.h"
-#include "src/core/lib/gpr/host_port.h"
 #include "src/core/lib/gpr/string.h"
+#include "src/core/lib/gprpp/host_port.h"
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/iomgr/combiner.h"
 #include "src/core/lib/iomgr/executor.h"
 #include "src/core/lib/iomgr/iomgr.h"
 #include "src/core/lib/iomgr/resolve_address.h"
 #include "src/core/lib/iomgr/sockaddr_utils.h"
+#include "src/core/lib/iomgr/socket_utils.h"
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
+
+#include "test/cpp/naming/dns_test_util.h"
 
 // TODO: pull in different headers when enabling this
 // test on windows. Also set BAD_SOCKET_RETURN_VAL
@@ -89,6 +93,8 @@ DEFINE_string(expected_addrs, "",
 DEFINE_string(expected_chosen_service_config, "",
               "Expected service config json string that gets chosen (no "
               "whitespace). Empty for none.");
+DEFINE_string(expected_service_config_error, "",
+              "Expected service config error. Empty for none.");
 DEFINE_string(
     local_dns_server_address, "",
     "Optional. This address is placed as the uri authority if present.");
@@ -102,6 +108,17 @@ DEFINE_string(
 DEFINE_string(
     enable_txt_queries, "",
     "Whether or not to enable TXT queries for the ares resolver instance."
+    "It would be better if this arg could be bool, but the way that we "
+    "generate "
+    "the python script runner doesn't allow us to pass a gflags bool to this "
+    "binary.");
+DEFINE_string(
+    inject_broken_nameserver_list, "",
+    "Whether or not to configure c-ares to use a broken nameserver list, in "
+    "which "
+    "the first nameserver in the list is non-responsive, but the second one "
+    "works, i.e "
+    "serves the expected DNS records; using for testing such a real scenario."
     "It would be better if this arg could be bool, but the way that we "
     "generate "
     "the python script runner doesn't allow us to pass a gflags bool to this "
@@ -146,8 +163,9 @@ vector<GrpcLBAddress> ParseExpectedAddrs(std::string expected_addrs) {
     expected_addrs = expected_addrs.substr(next_comma + 1, std::string::npos);
     // get the next is_balancer 'bool' associated with this address
     size_t next_semicolon = expected_addrs.find(';');
-    bool is_balancer =
-        gpr_is_true(expected_addrs.substr(0, next_semicolon).c_str());
+    bool is_balancer = false;
+    gpr_parse_bool_value(expected_addrs.substr(0, next_semicolon).c_str(),
+                         &is_balancer);
     out.emplace_back(GrpcLBAddress(next_addr, is_balancer));
     if (next_semicolon == std::string::npos) {
       break;
@@ -178,6 +196,7 @@ struct ArgsStruct {
   grpc_channel_args* channel_args;
   vector<GrpcLBAddress> expected_addrs;
   std::string expected_service_config_string;
+  std::string expected_service_config_error;
   std::string expected_lb_policy;
 };
 
@@ -216,7 +235,10 @@ gpr_timespec NSecondDeadline(int seconds) {
 }
 
 void PollPollsetUntilRequestDone(ArgsStruct* args) {
-  gpr_timespec deadline = NSecondDeadline(10);
+  // Use a 20-second timeout to give room for the tests that involve
+  // a non-responsive name server (c-ares uses a ~5 second query timeout
+  // for that server before succeeding with the healthy one).
+  gpr_timespec deadline = NSecondDeadline(20);
   while (true) {
     bool done = gpr_atm_acq_load(&args->done_atm) != 0;
     if (done) {
@@ -239,21 +261,23 @@ void PollPollsetUntilRequestDone(ArgsStruct* args) {
   gpr_event_set(&args->ev, (void*)1);
 }
 
-void CheckServiceConfigResultLocked(grpc_channel_args* channel_args,
+void CheckServiceConfigResultLocked(const char* service_config_json,
+                                    grpc_error* service_config_error,
                                     ArgsStruct* args) {
-  const grpc_arg* service_config_arg =
-      grpc_channel_args_find(channel_args, GRPC_ARG_SERVICE_CONFIG);
   if (args->expected_service_config_string != "") {
-    GPR_ASSERT(service_config_arg != nullptr);
-    GPR_ASSERT(service_config_arg->type == GRPC_ARG_STRING);
-    EXPECT_EQ(service_config_arg->value.string,
-              args->expected_service_config_string);
-  } else {
-    GPR_ASSERT(service_config_arg == nullptr);
+    GPR_ASSERT(service_config_json != nullptr);
+    EXPECT_EQ(service_config_json, args->expected_service_config_string);
   }
+  if (args->expected_service_config_error == "") {
+    EXPECT_EQ(service_config_error, GRPC_ERROR_NONE);
+  } else {
+    EXPECT_THAT(grpc_error_string(service_config_error),
+                testing::HasSubstr(args->expected_service_config_error));
+  }
+  GRPC_ERROR_UNREF(service_config_error);
 }
 
-void CheckLBPolicyResultLocked(grpc_channel_args* channel_args,
+void CheckLBPolicyResultLocked(const grpc_channel_args* channel_args,
                                ArgsStruct* args) {
   const grpc_arg* lb_policy_arg =
       grpc_channel_args_find(channel_args, GRPC_ARG_LB_POLICY_NAME);
@@ -394,65 +418,162 @@ void OpenAndCloseSocketsStressLoop(int dummy_port, gpr_event* done_ev) {
 }
 #endif
 
-void CheckResolverResultLocked(void* argsp, grpc_error* err) {
-  EXPECT_EQ(err, GRPC_ERROR_NONE);
-  ArgsStruct* args = (ArgsStruct*)argsp;
-  grpc_channel_args* channel_args = args->channel_args;
-  grpc_core::ServerAddressList* addresses =
-      grpc_core::FindServerAddressListChannelArg(channel_args);
-  gpr_log(GPR_INFO, "num addrs found: %" PRIdPTR ". expected %" PRIdPTR,
-          addresses->size(), args->expected_addrs.size());
-  GPR_ASSERT(addresses->size() == args->expected_addrs.size());
-  std::vector<GrpcLBAddress> found_lb_addrs;
-  for (size_t i = 0; i < addresses->size(); i++) {
-    grpc_core::ServerAddress& addr = (*addresses)[i];
-    char* str;
-    grpc_sockaddr_to_string(&str, &addr.address(), 1 /* normalize */);
-    gpr_log(GPR_INFO, "%s", str);
-    found_lb_addrs.emplace_back(
-        GrpcLBAddress(std::string(str), addr.IsBalancer()));
-    gpr_free(str);
+class ResultHandler : public grpc_core::Resolver::ResultHandler {
+ public:
+  static grpc_core::UniquePtr<grpc_core::Resolver::ResultHandler> Create(
+      ArgsStruct* args) {
+    return grpc_core::UniquePtr<grpc_core::Resolver::ResultHandler>(
+        grpc_core::New<ResultHandler>(args));
   }
-  if (args->expected_addrs.size() != found_lb_addrs.size()) {
-    gpr_log(GPR_DEBUG,
-            "found lb addrs size is: %" PRIdPTR
-            ". expected addrs size is %" PRIdPTR,
-            found_lb_addrs.size(), args->expected_addrs.size());
-    abort();
+
+  explicit ResultHandler(ArgsStruct* args) : args_(args) {}
+
+  void ReturnResult(grpc_core::Resolver::Result result) override {
+    CheckResult(result);
+    gpr_atm_rel_store(&args_->done_atm, 1);
+    gpr_mu_lock(args_->mu);
+    GRPC_LOG_IF_ERROR("pollset_kick",
+                      grpc_pollset_kick(args_->pollset, nullptr));
+    gpr_mu_unlock(args_->mu);
   }
-  EXPECT_THAT(args->expected_addrs, UnorderedElementsAreArray(found_lb_addrs));
-  CheckServiceConfigResultLocked(channel_args, args);
-  if (args->expected_service_config_string == "") {
-    CheckLBPolicyResultLocked(channel_args, args);
+
+  void ReturnError(grpc_error* error) override {
+    gpr_log(GPR_ERROR, "resolver returned error: %s", grpc_error_string(error));
+    GPR_ASSERT(false);
   }
-  gpr_atm_rel_store(&args->done_atm, 1);
-  gpr_mu_lock(args->mu);
-  GRPC_LOG_IF_ERROR("pollset_kick", grpc_pollset_kick(args->pollset, nullptr));
-  gpr_mu_unlock(args->mu);
+
+  virtual void CheckResult(const grpc_core::Resolver::Result& result) {}
+
+ protected:
+  ArgsStruct* args_struct() const { return args_; }
+
+ private:
+  ArgsStruct* args_;
+};
+
+class CheckingResultHandler : public ResultHandler {
+ public:
+  static grpc_core::UniquePtr<grpc_core::Resolver::ResultHandler> Create(
+      ArgsStruct* args) {
+    return grpc_core::UniquePtr<grpc_core::Resolver::ResultHandler>(
+        grpc_core::New<CheckingResultHandler>(args));
+  }
+
+  explicit CheckingResultHandler(ArgsStruct* args) : ResultHandler(args) {}
+
+  void CheckResult(const grpc_core::Resolver::Result& result) override {
+    ArgsStruct* args = args_struct();
+    gpr_log(GPR_INFO, "num addrs found: %" PRIdPTR ". expected %" PRIdPTR,
+            result.addresses.size(), args->expected_addrs.size());
+    GPR_ASSERT(result.addresses.size() == args->expected_addrs.size());
+    std::vector<GrpcLBAddress> found_lb_addrs;
+    for (size_t i = 0; i < result.addresses.size(); i++) {
+      const grpc_core::ServerAddress& addr = result.addresses[i];
+      char* str;
+      grpc_sockaddr_to_string(&str, &addr.address(), 1 /* normalize */);
+      gpr_log(GPR_INFO, "%s", str);
+      found_lb_addrs.emplace_back(
+          GrpcLBAddress(std::string(str), addr.IsBalancer()));
+      gpr_free(str);
+    }
+    if (args->expected_addrs.size() != found_lb_addrs.size()) {
+      gpr_log(GPR_DEBUG,
+              "found lb addrs size is: %" PRIdPTR
+              ". expected addrs size is %" PRIdPTR,
+              found_lb_addrs.size(), args->expected_addrs.size());
+      abort();
+    }
+    EXPECT_THAT(args->expected_addrs,
+                UnorderedElementsAreArray(found_lb_addrs));
+    const char* service_config_json =
+        result.service_config == nullptr
+            ? nullptr
+            : result.service_config->service_config_json();
+    CheckServiceConfigResultLocked(
+        service_config_json, GRPC_ERROR_REF(result.service_config_error), args);
+    if (args->expected_service_config_string == "") {
+      CheckLBPolicyResultLocked(result.args, args);
+    }
+  }
+};
+
+int g_fake_non_responsive_dns_server_port = -1;
+
+/* This function will configure any ares_channel created by the c-ares based
+ * resolver. This is useful to effectively mock /etc/resolv.conf settings
+ * (and equivalent on Windows), which unit tests don't have write permissions.
+ */
+void InjectBrokenNameServerList(ares_channel channel) {
+  struct ares_addr_port_node dns_server_addrs[2];
+  memset(dns_server_addrs, 0, sizeof(dns_server_addrs));
+  grpc_core::UniquePtr<char> unused_host;
+  grpc_core::UniquePtr<char> local_dns_server_port;
+  GPR_ASSERT(grpc_core::SplitHostPort(FLAGS_local_dns_server_address.c_str(),
+                                      &unused_host, &local_dns_server_port));
+  gpr_log(GPR_DEBUG,
+          "Injecting broken nameserver list. Bad server address:|[::1]:%d|. "
+          "Good server address:%s",
+          g_fake_non_responsive_dns_server_port,
+          FLAGS_local_dns_server_address.c_str());
+  // Put the non-responsive DNS server at the front of c-ares's nameserver list.
+  dns_server_addrs[0].family = AF_INET6;
+  ((char*)&dns_server_addrs[0].addr.addr6)[15] = 0x1;
+  dns_server_addrs[0].tcp_port = g_fake_non_responsive_dns_server_port;
+  dns_server_addrs[0].udp_port = g_fake_non_responsive_dns_server_port;
+  dns_server_addrs[0].next = &dns_server_addrs[1];
+  // Put the actual healthy DNS server after the first one. The expectation is
+  // that the resolver will timeout the query to the non-responsive DNS server
+  // and will skip over to this healthy DNS server, without causing any DNS
+  // resolution errors.
+  dns_server_addrs[1].family = AF_INET;
+  ((char*)&dns_server_addrs[1].addr.addr4)[0] = 0x7f;
+  ((char*)&dns_server_addrs[1].addr.addr4)[3] = 0x1;
+  dns_server_addrs[1].tcp_port = atoi(local_dns_server_port.get());
+  dns_server_addrs[1].udp_port = atoi(local_dns_server_port.get());
+  dns_server_addrs[1].next = nullptr;
+  GPR_ASSERT(ares_set_servers_ports(channel, dns_server_addrs) == ARES_SUCCESS);
 }
 
-void CheckResolvedWithoutErrorLocked(void* argsp, grpc_error* err) {
-  EXPECT_EQ(err, GRPC_ERROR_NONE);
-  ArgsStruct* args = (ArgsStruct*)argsp;
-  gpr_atm_rel_store(&args->done_atm, 1);
-  gpr_mu_lock(args->mu);
-  GRPC_LOG_IF_ERROR("pollset_kick", grpc_pollset_kick(args->pollset, nullptr));
-  gpr_mu_unlock(args->mu);
+void StartResolvingLocked(void* arg, grpc_error* unused) {
+  grpc_core::Resolver* r = static_cast<grpc_core::Resolver*>(arg);
+  r->StartLocked();
 }
 
-void RunResolvesRelevantRecordsTest(void (*OnDoneLocked)(void* arg,
-                                                         grpc_error* error)) {
+void RunResolvesRelevantRecordsTest(
+    grpc_core::UniquePtr<grpc_core::Resolver::ResultHandler> (
+        *CreateResultHandler)(ArgsStruct* args)) {
   grpc_core::ExecCtx exec_ctx;
   ArgsStruct args;
   ArgsInit(&args);
   args.expected_addrs = ParseExpectedAddrs(FLAGS_expected_addrs);
   args.expected_service_config_string = FLAGS_expected_chosen_service_config;
+  args.expected_service_config_error = FLAGS_expected_service_config_error;
   args.expected_lb_policy = FLAGS_expected_lb_policy;
   // maybe build the address with an authority
   char* whole_uri = nullptr;
-  GPR_ASSERT(gpr_asprintf(&whole_uri, "dns://%s/%s",
-                          FLAGS_local_dns_server_address.c_str(),
-                          FLAGS_target_name.c_str()));
+  gpr_log(GPR_DEBUG,
+          "resolver_component_test: --inject_broken_nameserver_list: %s",
+          FLAGS_inject_broken_nameserver_list.c_str());
+  grpc_core::UniquePtr<grpc::testing::FakeNonResponsiveDNSServer>
+      fake_non_responsive_dns_server;
+  if (FLAGS_inject_broken_nameserver_list == "True") {
+    g_fake_non_responsive_dns_server_port = grpc_pick_unused_port_or_die();
+    fake_non_responsive_dns_server.reset(
+        grpc_core::New<grpc::testing::FakeNonResponsiveDNSServer>(
+            g_fake_non_responsive_dns_server_port));
+    grpc_ares_test_only_inject_config = InjectBrokenNameServerList;
+    GPR_ASSERT(
+        gpr_asprintf(&whole_uri, "dns:///%s", FLAGS_target_name.c_str()));
+  } else if (FLAGS_inject_broken_nameserver_list == "False") {
+    gpr_log(GPR_INFO, "Specifying authority in uris to: %s",
+            FLAGS_local_dns_server_address.c_str());
+    GPR_ASSERT(gpr_asprintf(&whole_uri, "dns://%s/%s",
+                            FLAGS_local_dns_server_address.c_str(),
+                            FLAGS_target_name.c_str()));
+  } else {
+    gpr_log(GPR_DEBUG, "Invalid value for --inject_broken_nameserver_list.");
+    abort();
+  }
   gpr_log(GPR_DEBUG, "resolver_component_test: --enable_srv_queries: %s",
           FLAGS_enable_srv_queries.c_str());
   grpc_channel_args* resolver_args = nullptr;
@@ -491,20 +612,20 @@ void RunResolvesRelevantRecordsTest(void (*OnDoneLocked)(void* arg,
   // create resolver and resolve
   grpc_core::OrphanablePtr<grpc_core::Resolver> resolver =
       grpc_core::ResolverRegistry::CreateResolver(whole_uri, resolver_args,
-                                                  args.pollset_set, args.lock);
+                                                  args.pollset_set, args.lock,
+                                                  CreateResultHandler(&args));
   grpc_channel_args_destroy(resolver_args);
   gpr_free(whole_uri);
-  grpc_closure on_resolver_result_changed;
-  GRPC_CLOSURE_INIT(&on_resolver_result_changed, OnDoneLocked, (void*)&args,
-                    grpc_combiner_scheduler(args.lock));
-  resolver->NextLocked(&args.channel_args, &on_resolver_result_changed);
+  GRPC_CLOSURE_SCHED(GRPC_CLOSURE_CREATE(StartResolvingLocked, resolver.get(),
+                                         grpc_combiner_scheduler(args.lock)),
+                     GRPC_ERROR_NONE);
   grpc_core::ExecCtx::Get()->Flush();
   PollPollsetUntilRequestDone(&args);
   ArgsFinish(&args);
 }
 
 TEST(ResolverComponentTest, TestResolvesRelevantRecords) {
-  RunResolvesRelevantRecordsTest(CheckResolverResultLocked);
+  RunResolvesRelevantRecordsTest(CheckingResultHandler::Create);
 }
 
 TEST(ResolverComponentTest, TestResolvesRelevantRecordsWithConcurrentFdStress) {
@@ -515,7 +636,7 @@ TEST(ResolverComponentTest, TestResolvesRelevantRecordsWithConcurrentFdStress) {
   std::thread socket_stress_thread(OpenAndCloseSocketsStressLoop, dummy_port,
                                    &done_ev);
   // Run the resolver test
-  RunResolvesRelevantRecordsTest(CheckResolvedWithoutErrorLocked);
+  RunResolvesRelevantRecordsTest(ResultHandler::Create);
   // Shutdown and join stress thread
   gpr_event_set(&done_ev, (void*)1);
   socket_stress_thread.join();
@@ -527,14 +648,10 @@ int main(int argc, char** argv) {
   grpc_init();
   grpc::testing::TestEnvironment env(argc, argv);
   ::testing::InitGoogleTest(&argc, argv);
-  ParseCommandLineFlags(&argc, &argv, true);
+  grpc::testing::InitTest(&argc, &argv, true);
   if (FLAGS_target_name == "") {
     gpr_log(GPR_ERROR, "Missing target_name param.");
     abort();
-  }
-  if (FLAGS_local_dns_server_address != "") {
-    gpr_log(GPR_INFO, "Specifying authority in uris to: %s",
-            FLAGS_local_dns_server_address.c_str());
   }
   auto result = RUN_ALL_TESTS();
   grpc_shutdown();

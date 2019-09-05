@@ -18,19 +18,22 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <string.h>
+
 #include <grpc/grpc_security.h>
 #include <grpc/slice.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
 
+#include "src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb.h"
 #include "src/core/ext/filters/client_channel/parse_address.h"
 #include "src/core/ext/filters/load_reporting/registered_opencensus_objects.h"
 #include "src/core/ext/filters/load_reporting/server_load_reporting_filter.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/context.h"
 #include "src/core/lib/iomgr/resolve_address.h"
-#include "src/core/lib/iomgr/sockaddr_posix.h"
+#include "src/core/lib/iomgr/sockaddr.h"
 #include "src/core/lib/iomgr/socket_utils.h"
 #include "src/core/lib/security/context/security_context.h"
 #include "src/core/lib/slice/slice_internal.h"
@@ -225,7 +228,8 @@ grpc_filtered_mdelem ServerLoadReportingCallData::RecvInitialMetadataFilter(
       calld->target_host_[i] = static_cast<char>(
           tolower(GRPC_SLICE_START_PTR(target_host_slice)[i]));
     }
-  } else if (grpc_slice_eq(GRPC_MDKEY(md), GRPC_MDSTR_LB_TOKEN)) {
+  } else if (grpc_slice_str_cmp(GRPC_MDKEY(md),
+                                grpc_core::kGrpcLbLbTokenMetadataKey) == 0) {
     if (calld->client_ip_and_lr_token_ == nullptr) {
       calld->StoreClientIpAndLrToken(
           reinterpret_cast<const char*> GRPC_SLICE_START_PTR(GRPC_MDVALUE(md)),
@@ -342,8 +346,8 @@ bool MaybeAddServerLoadReportingFilter(const grpc_channel_args& args) {
 // time if we build with the filter target.
 struct ServerLoadReportingFilterStaticRegistrar {
   ServerLoadReportingFilterStaticRegistrar() {
-    static std::atomic_bool registered{false};
-    if (registered) return;
+    static grpc_core::Atomic<bool> registered{false};
+    if (registered.Load(grpc_core::MemoryOrder::ACQUIRE)) return;
     RegisterChannelFilter<ServerLoadReportingChannelData,
                           ServerLoadReportingCallData>(
         "server_load_reporting", GRPC_SERVER_CHANNEL, INT_MAX,
@@ -356,7 +360,7 @@ struct ServerLoadReportingFilterStaticRegistrar {
     ::grpc::load_reporter::MeasureEndBytesReceived();
     ::grpc::load_reporter::MeasureEndLatencyMs();
     ::grpc::load_reporter::MeasureOtherCallMetric();
-    registered = true;
+    registered.Store(true, grpc_core::MemoryOrder::RELEASE);
   }
 } server_load_reporting_filter_static_registrar;
 

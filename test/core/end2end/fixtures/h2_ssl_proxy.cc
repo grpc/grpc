@@ -25,11 +25,10 @@
 #include <grpc/support/log.h>
 
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/gpr/env.h"
-#include "src/core/lib/gpr/host_port.h"
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gpr/tmpfile.h"
 #include "src/core/lib/security/credentials/credentials.h"
+#include "src/core/lib/security/security_connector/ssl_utils.h"
 #include "test/core/end2end/data/ssl_test_data.h"
 #include "test/core/end2end/fixtures/proxy.h"
 #include "test/core/util/port.h"
@@ -208,7 +207,7 @@ int main(int argc, char** argv) {
   GPR_ASSERT(roots_file != nullptr);
   GPR_ASSERT(fwrite(test_root_cert, 1, roots_size, roots_file) == roots_size);
   fclose(roots_file);
-  gpr_setenv(GRPC_DEFAULT_SSL_ROOTS_FILE_PATH_ENV_VAR, roots_filename);
+  GPR_GLOBAL_CONFIG_SET(grpc_default_ssl_roots_file_path, roots_filename);
 
   grpc_init();
 

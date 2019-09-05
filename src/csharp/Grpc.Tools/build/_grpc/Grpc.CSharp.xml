@@ -1,11 +1,11 @@
 <ProjectSchemaDefinitions xmlns="http://schemas.microsoft.com/build/2009/properties">
-  <Rule Name="ProtoBuf"
+  <Rule Name="Protobuf"
         DisplayName="File Properties"
         PageTemplate="generic"
         Description="File Properties"
         OverrideMode="Extend">
     <Rule.DataSource>
-      <DataSource Persistence="ProjectFile" Label="Configuration" ItemType="ProtoBuf"
+      <DataSource Persistence="ProjectFile" Label="Configuration" ItemType="Protobuf"
                   HasConfigurationCondition="false" SourceOfDefaultValue="AfterContext" />
     </Rule.DataSource>
 
@@ -21,7 +21,7 @@
       <EnumValue Name="Server" DisplayName="Server only" />
       <EnumValue Name="None" DisplayName="Do not generate" />
       <EnumProperty.DataSource>
-        <DataSource ItemType="ProtoBuf" SourceOfDefaultValue="AfterContext"
+        <DataSource ItemType="Protobuf" SourceOfDefaultValue="AfterContext"
                     PersistenceStyle="Attribute" />
       </EnumProperty.DataSource>
     </EnumProperty>

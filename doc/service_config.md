@@ -12,11 +12,13 @@ The service config is a JSON string of the following form:
 
 ```
 {
-  // Load balancing policy name (case insensitive).
+  // [deprecated] Load balancing policy name (case insensitive).
   // Currently, the only selectable client-side policy provided with gRPC
   // is 'round_robin', but third parties may add their own policies.
   // This field is optional; if unset, the default behavior is to pick
-  // the first available backend.
+  // the first available backend. If set, the load balancing policy should be
+  // supported by the client, otherwise the service config is considered
+  // invalid.
   // If the policy name is set via the client API, that value overrides
   // the value specified here.
   //
@@ -61,10 +63,11 @@ The service config is a JSON string of the following form:
         }
       ],
 
-      // Whether RPCs sent to this method should wait until the connection is
-      // ready by default. If false, the RPC will abort immediately if there
-      // is a transient failure connecting to the server. Otherwise, gRPC will
-      // attempt to connect until the deadline is exceeded.
+      // Optional. Whether RPCs sent to this method should wait until the
+      // connection is ready by default. If false, the RPC will abort
+      // immediately if there is a transient failure connecting to the server.
+      // Otherwise, gRPC will attempt to connect until the deadline is
+      // exceeded.
       //
       // The value specified via the gRPC client API will override the value
       // set here. However, note that setting the value in the client API will
@@ -73,10 +76,10 @@ The service config is a JSON string of the following form:
       // is obtained by the gRPC client via name resolution.
       'waitForReady': bool,
 
-      // The default timeout in seconds for RPCs sent to this method. This can
-      // be overridden in code. If no reply is received in the specified amount
-      // of time, the request is aborted and a deadline-exceeded error status
-      // is returned to the caller.
+      // Optional. The default timeout in seconds for RPCs sent to this method.
+      // This can be overridden in code. If no reply is received in the
+      // specified amount of time, the request is aborted and a
+      // deadline-exceeded error status is returned to the caller.
       //
       // The actual deadline used will be the minimum of the value specified
       // here and the value set by the application via the gRPC client API.
@@ -87,10 +90,10 @@ The service config is a JSON string of the following form:
       // https://developers.google.com/protocol-buffers/docs/proto3#json
       'timeout': string,
 
-      // The maximum allowed payload size for an individual request or object
-      // in a stream (client->server) in bytes. The size which is measured is
-      // the serialized, uncompressed payload in bytes. This applies both
-      // to streaming and non-streaming requests.
+      // Optional. The maximum allowed payload size for an individual request
+      // or object in a stream (client->server) in bytes. The size which is
+      // measured is the serialized, uncompressed payload in bytes. This
+      // applies both to streaming and non-streaming requests.
       //
       // The actual value used is the minimum of the value specified here and
       // the value set by the application via the gRPC client API.
@@ -103,10 +106,10 @@ The service config is a JSON string of the following form:
       // be empty.
       'maxRequestMessageBytes': number,
 
-      // The maximum allowed payload size for an individual response or object
-      // in a stream (server->client) in bytes. The size which is measured is
-      // the serialized, uncompressed payload in bytes. This applies both
-      // to streaming and non-streaming requests.
+      // Optional. The maximum allowed payload size for an individual response
+      // or object in a stream (server->client) in bytes. The size which is
+      // measured is the serialized, uncompressed payload in bytes. This
+      // applies both to streaming and non-streaming requests.
       //
       // The actual value used is the minimum of the value specified here and
       // the value set by the application via the gRPC client API.

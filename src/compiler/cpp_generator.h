@@ -56,6 +56,10 @@ struct Parameters {
   grpc::string gmock_search_path;
   // *EXPERIMENTAL* Additional include files in grpc.pb.h
   std::vector<grpc::string> additional_header_includes;
+  // By default, use "pb.h"
+  grpc::string message_header_extension;
+  // Whether to include headers corresponding to imports in source file.
+  bool include_import_headers;
 };
 
 // Return the prologue of the generated header file.

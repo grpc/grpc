@@ -19,32 +19,22 @@
 #ifndef GRPCPP_EXT_SERVER_LOAD_REPORTING_H
 #define GRPCPP_EXT_SERVER_LOAD_REPORTING_H
 
-#include <grpc/support/port_platform.h>
-
-#include <grpc/load_reporting.h>
-#include <grpcpp/impl/codegen/config.h>
-#include <grpcpp/impl/codegen/server_context.h>
-#include <grpcpp/impl/server_builder_option.h>
+#include <grpcpp/ext/server_load_reporting_impl.h>
 
 namespace grpc {
 namespace load_reporter {
 namespace experimental {
 
-// The ServerBuilderOption to enable server-side load reporting feature. To
-// enable the feature, please make sure the binary builds with the
-// grpcpp_server_load_reporting library and set this option in the
-// ServerBuilder.
-class LoadReportingServiceServerBuilderOption : public ServerBuilderOption {
- public:
-  void UpdateArguments(::grpc::ChannelArguments* args) override;
-  void UpdatePlugins(std::vector<std::unique_ptr<::grpc::ServerBuilderPlugin>>*
-                         plugins) override;
-};
+typedef ::grpc_impl::load_reporter::experimental::
+    LoadReportingServiceServerBuilderOption
+        LoadReportingServiceServerBuilderOption;
 
-// Adds the load reporting cost with \a cost_name and \a cost_value in the
-// trailing metadata of the server context.
-void AddLoadReportingCost(grpc::ServerContext* ctx,
-                          const grpc::string& cost_name, double cost_value);
+static inline void AddLoadReportingCost(grpc::ServerContext* ctx,
+                                        const grpc::string& cost_name,
+                                        double cost_value) {
+  ::grpc_impl::load_reporter::experimental::AddLoadReportingCost(ctx, cost_name,
+                                                                 cost_value);
+}
 
 }  // namespace experimental
 }  // namespace load_reporter

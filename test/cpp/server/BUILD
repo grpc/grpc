@@ -29,6 +29,7 @@ grpc_cc_test(
         "//src/proto/grpc/testing:echo_proto",
         "//test/core/util:grpc_test_util_unsecure",
     ],
+    tags = ["no_windows"],
 )
 
 grpc_cc_test(
@@ -42,6 +43,7 @@ grpc_cc_test(
         "//src/proto/grpc/testing:echo_proto",
         "//test/core/util:grpc_test_util_unsecure",
     ],
+    tags = ["no_windows"],
 )
 
 grpc_cc_test(
@@ -55,4 +57,5 @@ grpc_cc_test(
         "//src/proto/grpc/testing:echo_proto",
         "//test/core/util:grpc_test_util_unsecure",
     ],
+    tags = ["no_windows"],
 )

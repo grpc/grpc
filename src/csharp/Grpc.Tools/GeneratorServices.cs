@@ -66,29 +66,28 @@ namespace Grpc.Tools
         public override string[] GetPossibleOutputs(ITaskItem protoItem)
         {
             bool doGrpc = GrpcOutputPossible(protoItem);
-            string filename = LowerUnderscoreToUpperCamel(
-                Path.GetFileNameWithoutExtension(protoItem.ItemSpec));
-
             var outputs = new string[doGrpc ? 2 : 1];
+            string basename = Path.GetFileNameWithoutExtension(protoItem.ItemSpec);
+
             string outdir = protoItem.GetMetadata(Metadata.OutputDir);
-            string fileStem = Path.Combine(outdir, filename);
-            outputs[0] = fileStem + ".cs";
+            string filename = LowerUnderscoreToUpperCamelProtocWay(basename);
+            outputs[0] = Path.Combine(outdir, filename) + ".cs";
+
             if (doGrpc)
             {
                 // Override outdir if kGrpcOutputDir present, default to proto output.
-                outdir = protoItem.GetMetadata(Metadata.GrpcOutputDir);
-                if (outdir != "")
-                {
-                    fileStem = Path.Combine(outdir, filename);
-                }
-                outputs[1] = fileStem + "Grpc.cs";
+                string grpcdir = protoItem.GetMetadata(Metadata.GrpcOutputDir);
+                filename = LowerUnderscoreToUpperCamelGrpcWay(basename);
+                outputs[1] = Path.Combine(
+                    grpcdir != "" ? grpcdir : outdir, filename) + "Grpc.cs";
             }
             return outputs;
         }
 
-        string LowerUnderscoreToUpperCamel(string str)
+        // This is how the gRPC codegen currently construct its output filename.
+        // See src/compiler/generator_helpers.h:118.
+        string LowerUnderscoreToUpperCamelGrpcWay(string str)
         {
-            // See src/compiler/generator_helpers.h:118
             var result = new StringBuilder(str.Length, str.Length);
             bool cap = true;
             foreach (char c in str)
@@ -106,6 +105,26 @@ namespace Grpc.Tools
                 {
                     result.Append(c);
                 }
+            }
+            return result.ToString();
+        }
+
+        // This is how the protoc codegen constructs its output filename.
+        // See protobuf/compiler/csharp/csharp_helpers.cc:137.
+        // Note that protoc explicitly discards non-ASCII letters.
+        string LowerUnderscoreToUpperCamelProtocWay(string str)
+        {
+            var result = new StringBuilder(str.Length, str.Length);
+            bool cap = true;
+            foreach (char c in str)
+            {
+                char upperC = char.ToUpperInvariant(c);
+                bool isAsciiLetter = 'A' <= upperC && upperC <= 'Z';
+                if (isAsciiLetter || ('0' <= c && c <= '9'))
+                {
+                    result.Append(cap ? upperC : c);
+                }
+                cap = !isAsciiLetter;
             }
             return result.ToString();
         }
@@ -164,7 +183,7 @@ namespace Grpc.Tools
             protoDir = EndWithSlash(protoDir);
             if (!protoDir.StartsWith(rootDir))
             {
-                Log.LogWarning("ProtoBuf item '{0}' has the ProtoRoot metadata '{1}' " +
+                Log.LogWarning("Protobuf item '{0}' has the ProtoRoot metadata '{1}' " +
                   "which is not prefix to its path. Cannot compute relative path.",
                   proto, root);
                 return "";

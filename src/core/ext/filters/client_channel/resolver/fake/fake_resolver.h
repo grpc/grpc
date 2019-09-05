@@ -19,6 +19,7 @@
 
 #include <grpc/support/port_platform.h>
 
+#include "src/core/ext/filters/client_channel/resolver.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gprpp/ref_counted.h"
 #include "src/core/lib/iomgr/error.h"
@@ -41,23 +42,26 @@ class FakeResolver;
 class FakeResolverResponseGenerator
     : public RefCounted<FakeResolverResponseGenerator> {
  public:
-  FakeResolverResponseGenerator() {}
+  FakeResolverResponseGenerator();
+  ~FakeResolverResponseGenerator();
 
   // Instructs the fake resolver associated with the response generator
-  // instance to trigger a new resolution with the specified response.
-  void SetResponse(grpc_channel_args* next_response);
+  // instance to trigger a new resolution with the specified result. If the
+  // resolver is not available yet, delays response setting until it is. This
+  // can be called at most once before the resolver is available.
+  void SetResponse(Resolver::Result result);
 
   // Sets the re-resolution response, which is returned by the fake resolver
   // when re-resolution is requested (via \a RequestReresolutionLocked()).
   // The new re-resolution response replaces any previous re-resolution
   // response that may have been set by a previous call.
-  // If the re-resolution response is set to NULL, then the fake
-  // resolver will not return anything when \a RequestReresolutionLocked()
-  // is called.
-  void SetReresolutionResponse(grpc_channel_args* response);
+  void SetReresolutionResponse(Resolver::Result result);
 
-  // Tells the resolver to return a transient failure (signalled by
-  // returning a null result with no error).
+  // Unsets the re-resolution response.  After this, the fake resolver will
+  // not return anything when \a RequestReresolutionLocked() is called.
+  void UnsetReresolutionResponse();
+
+  // Tells the resolver to return a transient failure.
   void SetFailure();
 
   // Same as SetFailure(), but instead of returning the error
@@ -68,17 +72,23 @@ class FakeResolverResponseGenerator
   static grpc_arg MakeChannelArg(FakeResolverResponseGenerator* generator);
 
   // Returns the response generator in \a args, or null if not found.
-  static FakeResolverResponseGenerator* GetFromArgs(
+  static RefCountedPtr<FakeResolverResponseGenerator> GetFromArgs(
       const grpc_channel_args* args);
 
  private:
   friend class FakeResolver;
+  // Set the corresponding FakeResolver to this generator.
+  void SetFakeResolver(RefCountedPtr<FakeResolver> resolver);
 
   static void SetResponseLocked(void* arg, grpc_error* error);
   static void SetReresolutionResponseLocked(void* arg, grpc_error* error);
   static void SetFailureLocked(void* arg, grpc_error* error);
 
-  FakeResolver* resolver_ = nullptr;  // Do not own.
+  // Mutex protecting the members below.
+  Mutex mu_;
+  RefCountedPtr<FakeResolver> resolver_;
+  Resolver::Result result_;
+  bool has_result_ = false;
 };
 
 }  // namespace grpc_core

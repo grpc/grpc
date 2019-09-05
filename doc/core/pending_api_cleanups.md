@@ -15,3 +15,4 @@ number:
   `include/grpc/impl/codegen/grpc_types.h` (commit `af00d8b`)
   (cannot be done until after next grpc release, so that TensorFlow can
   use the same code both internally and externally)
+- require a C++ runtime for all languages wrapping core.

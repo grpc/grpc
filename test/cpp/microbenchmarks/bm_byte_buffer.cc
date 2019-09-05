@@ -29,8 +29,6 @@
 namespace grpc {
 namespace testing {
 
-auto& force_library_initialization = Library::get();
-
 static void BM_ByteBuffer_Copy(benchmark::State& state) {
   int num_slices = state.range(0);
   size_t slice_size = state.range(1);
@@ -48,6 +46,72 @@ static void BM_ByteBuffer_Copy(benchmark::State& state) {
 }
 BENCHMARK(BM_ByteBuffer_Copy)->Ranges({{1, 64}, {1, 1024 * 1024}});
 
+static void BM_ByteBufferReader_Next(benchmark::State& state) {
+  const int num_slices = state.range(0);
+  constexpr size_t kSliceSize = 16;
+  std::vector<grpc_slice> slices;
+  for (int i = 0; i < num_slices; ++i) {
+    std::unique_ptr<char[]> buf(new char[kSliceSize]);
+    slices.emplace_back(g_core_codegen_interface->grpc_slice_from_copied_buffer(
+        buf.get(), kSliceSize));
+  }
+  grpc_byte_buffer* bb = g_core_codegen_interface->grpc_raw_byte_buffer_create(
+      slices.data(), num_slices);
+  grpc_byte_buffer_reader reader;
+  GPR_ASSERT(
+      g_core_codegen_interface->grpc_byte_buffer_reader_init(&reader, bb));
+  while (state.KeepRunning()) {
+    grpc_slice* slice;
+    if (GPR_UNLIKELY(!g_core_codegen_interface->grpc_byte_buffer_reader_peek(
+            &reader, &slice))) {
+      g_core_codegen_interface->grpc_byte_buffer_reader_destroy(&reader);
+      GPR_ASSERT(
+          g_core_codegen_interface->grpc_byte_buffer_reader_init(&reader, bb));
+      continue;
+    }
+  }
+
+  g_core_codegen_interface->grpc_byte_buffer_reader_destroy(&reader);
+  g_core_codegen_interface->grpc_byte_buffer_destroy(bb);
+  for (auto& slice : slices) {
+    g_core_codegen_interface->grpc_slice_unref(slice);
+  }
+}
+BENCHMARK(BM_ByteBufferReader_Next)->Ranges({{64 * 1024, 1024 * 1024}});
+
+static void BM_ByteBufferReader_Peek(benchmark::State& state) {
+  const int num_slices = state.range(0);
+  constexpr size_t kSliceSize = 16;
+  std::vector<grpc_slice> slices;
+  for (int i = 0; i < num_slices; ++i) {
+    std::unique_ptr<char[]> buf(new char[kSliceSize]);
+    slices.emplace_back(g_core_codegen_interface->grpc_slice_from_copied_buffer(
+        buf.get(), kSliceSize));
+  }
+  grpc_byte_buffer* bb = g_core_codegen_interface->grpc_raw_byte_buffer_create(
+      slices.data(), num_slices);
+  grpc_byte_buffer_reader reader;
+  GPR_ASSERT(
+      g_core_codegen_interface->grpc_byte_buffer_reader_init(&reader, bb));
+  while (state.KeepRunning()) {
+    grpc_slice* slice;
+    if (GPR_UNLIKELY(!g_core_codegen_interface->grpc_byte_buffer_reader_peek(
+            &reader, &slice))) {
+      g_core_codegen_interface->grpc_byte_buffer_reader_destroy(&reader);
+      GPR_ASSERT(
+          g_core_codegen_interface->grpc_byte_buffer_reader_init(&reader, bb));
+      continue;
+    }
+  }
+
+  g_core_codegen_interface->grpc_byte_buffer_reader_destroy(&reader);
+  g_core_codegen_interface->grpc_byte_buffer_destroy(bb);
+  for (auto& slice : slices) {
+    g_core_codegen_interface->grpc_slice_unref(slice);
+  }
+}
+BENCHMARK(BM_ByteBufferReader_Peek)->Ranges({{64 * 1024, 1024 * 1024}});
+
 }  // namespace testing
 }  // namespace grpc
 
@@ -58,6 +122,7 @@ void RunTheBenchmarksNamespaced() { RunSpecifiedBenchmarks(); }
 }  // namespace benchmark
 
 int main(int argc, char** argv) {
+  LibraryInitializer libInit;
   ::benchmark::Initialize(&argc, argv);
   ::grpc::testing::InitTest(&argc, &argv, false);
   benchmark::RunTheBenchmarksNamespaced();

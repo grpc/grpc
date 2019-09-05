@@ -75,5 +75,6 @@ def json_run_localhost_batch():
             ],
             tags = [
                 "json_run_localhost",
+                "no_windows",
             ],
         )

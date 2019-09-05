@@ -27,7 +27,7 @@
 
 #include <string.h>
 
-#include "src/core/lib/gpr/env.h"
+#include "src/core/ext/filters/client_channel/resolver/dns/dns_resolver_selection.h"
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/iomgr/executor.h"
 #include "src/core/lib/iomgr/iomgr.h"
@@ -83,7 +83,9 @@ static grpc_millis n_sec_deadline(int seconds) {
 
 static void poll_pollset_until_request_done(args_struct* args) {
   grpc_core::ExecCtx exec_ctx;
-  grpc_millis deadline = n_sec_deadline(10);
+  // Try to give enough time for c-ares to run through its retries
+  // a few times if needed.
+  grpc_millis deadline = n_sec_deadline(90);
   while (true) {
     bool done = gpr_atm_acq_load(&args->done_atm) != 0;
     if (done) {
@@ -323,7 +325,11 @@ static bool mock_ipv6_disabled_source_addr_factory_get_source_addr(
 }
 
 void mock_ipv6_disabled_source_addr_factory_destroy(
-    address_sorting_source_addr_factory* factory) {}
+    address_sorting_source_addr_factory* factory) {
+  mock_ipv6_disabled_source_addr_factory* f =
+      reinterpret_cast<mock_ipv6_disabled_source_addr_factory*>(factory);
+  gpr_free(f);
+}
 
 const address_sorting_source_addr_factory_vtable
     kMockIpv6DisabledSourceAddrFactoryVtable = {
@@ -341,16 +347,17 @@ int main(int argc, char** argv) {
   // --resolver will always be the first one, so only parse the first argument
   // (other arguments may be unknown to cl)
   gpr_cmdline_parse(cl, argc > 2 ? 2 : argc, argv);
-  const char* cur_resolver = gpr_getenv("GRPC_DNS_RESOLVER");
-  if (cur_resolver != nullptr && strlen(cur_resolver) != 0) {
+  grpc_core::UniquePtr<char> resolver =
+      GPR_GLOBAL_CONFIG_GET(grpc_dns_resolver);
+  if (strlen(resolver.get()) != 0) {
     gpr_log(GPR_INFO, "Warning: overriding resolver setting of %s",
-            cur_resolver);
+            resolver.get());
   }
   if (gpr_stricmp(resolver_type, "native") == 0) {
-    gpr_setenv("GRPC_DNS_RESOLVER", "native");
+    GPR_GLOBAL_CONFIG_SET(grpc_dns_resolver, "native");
   } else if (gpr_stricmp(resolver_type, "ares") == 0) {
 #ifndef GRPC_UV
-    gpr_setenv("GRPC_DNS_RESOLVER", "ares");
+    GPR_GLOBAL_CONFIG_SET(grpc_dns_resolver, "ares");
 #endif
   } else {
     gpr_log(GPR_ERROR, "--resolver_type was not set to ares or native");
@@ -367,15 +374,10 @@ int main(int argc, char** argv) {
     test_missing_default_port();
     test_ipv6_with_port();
     test_ipv6_without_port();
-    if (gpr_stricmp(resolver_type, "ares") != 0) {
-      // These tests can trigger DNS queries to the nearby nameserver
-      // that need to come back in order for the test to succeed.
-      // c-ares is prone to not using the local system caches that the
-      // native getaddrinfo implementations take advantage of, so running
-      // these unit tests under c-ares risks flakiness.
-      test_invalid_ip_addresses();
-      test_unparseable_hostports();
-    } else {
+    test_invalid_ip_addresses();
+    test_unparseable_hostports();
+    if (gpr_stricmp(resolver_type, "ares") == 0) {
+      // This behavior expectation is specific to c-ares.
       test_localhost_result_has_ipv6_first();
     }
     grpc_core::Executor::ShutdownAll();
@@ -390,9 +392,11 @@ int main(int argc, char** argv) {
     // Run a test case in which c-ares's address sorter
     // thinks that IPv4 is available and IPv6 isn't.
     grpc_init();
-    mock_ipv6_disabled_source_addr_factory factory;
-    factory.base.vtable = &kMockIpv6DisabledSourceAddrFactoryVtable;
-    address_sorting_override_source_addr_factory_for_testing(&factory.base);
+    mock_ipv6_disabled_source_addr_factory* factory =
+        static_cast<mock_ipv6_disabled_source_addr_factory*>(
+            gpr_malloc(sizeof(mock_ipv6_disabled_source_addr_factory)));
+    factory->base.vtable = &kMockIpv6DisabledSourceAddrFactoryVtable;
+    address_sorting_override_source_addr_factory_for_testing(&factory->base);
     test_localhost_result_has_ipv4_first_when_ipv6_isnt_available();
     grpc_shutdown();
   }

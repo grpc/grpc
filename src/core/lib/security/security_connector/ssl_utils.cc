@@ -27,9 +27,9 @@
 
 #include "src/core/ext/transport/chttp2/alpn/alpn.h"
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/gpr/env.h"
-#include "src/core/lib/gpr/host_port.h"
 #include "src/core/lib/gpr/string.h"
+#include "src/core/lib/gprpp/global_config.h"
+#include "src/core/lib/gprpp/host_port.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/iomgr/load_file.h"
 #include "src/core/lib/security/context/security_context.h"
@@ -45,11 +45,16 @@ static const char* installed_roots_path =
     INSTALL_PREFIX "/share/grpc/roots.pem";
 #endif
 
-/** Environment variable used as a flag to enable/disable loading system root
+/** Config variable that points to the default SSL roots file. This file
+   must be a PEM encoded file with all the roots such as the one that can be
+   downloaded from https://pki.google.com/roots.pem.  */
+GPR_GLOBAL_CONFIG_DEFINE_STRING(grpc_default_ssl_roots_file_path, "",
+                                "Path to the default SSL roots file.");
+
+/** Config variable used as a flag to enable/disable loading system root
     certificates from the OS trust store. */
-#ifndef GRPC_NOT_USE_SYSTEM_SSL_ROOTS_ENV_VAR
-#define GRPC_NOT_USE_SYSTEM_SSL_ROOTS_ENV_VAR "GRPC_NOT_USE_SYSTEM_SSL_ROOTS"
-#endif
+GPR_GLOBAL_CONFIG_DEFINE_BOOL(grpc_not_use_system_ssl_roots, false,
+                              "Disable loading system root certificates.");
 
 #ifndef TSI_OPENSSL_ALPN_SUPPORT
 #define TSI_OPENSSL_ALPN_SUPPORT 1
@@ -65,20 +70,22 @@ void grpc_set_ssl_roots_override_callback(grpc_ssl_roots_override_callback cb) {
 
 /* -- Cipher suites. -- */
 
-/* Defines the cipher suites that we accept by default. All these cipher suites
-   are compliant with HTTP2. */
-#define GRPC_SSL_CIPHER_SUITES     \
-  "ECDHE-ECDSA-AES128-GCM-SHA256:" \
-  "ECDHE-ECDSA-AES256-GCM-SHA384:" \
-  "ECDHE-RSA-AES128-GCM-SHA256:"   \
-  "ECDHE-RSA-AES256-GCM-SHA384"
-
 static gpr_once cipher_suites_once = GPR_ONCE_INIT;
 static const char* cipher_suites = nullptr;
 
+// All cipher suites for default are compliant with HTTP2.
+GPR_GLOBAL_CONFIG_DEFINE_STRING(
+    grpc_ssl_cipher_suites,
+    "ECDHE-ECDSA-AES128-GCM-SHA256:"
+    "ECDHE-ECDSA-AES256-GCM-SHA384:"
+    "ECDHE-RSA-AES128-GCM-SHA256:"
+    "ECDHE-RSA-AES256-GCM-SHA384",
+    "A colon separated list of cipher suites to use with OpenSSL")
+
 static void init_cipher_suites(void) {
-  char* overridden = gpr_getenv("GRPC_SSL_CIPHER_SUITES");
-  cipher_suites = overridden != nullptr ? overridden : GRPC_SSL_CIPHER_SUITES;
+  grpc_core::UniquePtr<char> value =
+      GPR_GLOBAL_CONFIG_GET(grpc_ssl_cipher_suites);
+  cipher_suites = value.release();
 }
 
 /* --- Util --- */
@@ -112,6 +119,57 @@ grpc_get_tsi_client_certificate_request_type(
   }
 }
 
+grpc_error* grpc_ssl_check_alpn(const tsi_peer* peer) {
+#if TSI_OPENSSL_ALPN_SUPPORT
+  /* Check the ALPN if ALPN is supported. */
+  const tsi_peer_property* p =
+      tsi_peer_get_property_by_name(peer, TSI_SSL_ALPN_SELECTED_PROTOCOL);
+  if (p == nullptr) {
+    return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+        "Cannot check peer: missing selected ALPN property.");
+  }
+  if (!grpc_chttp2_is_alpn_version_supported(p->value.data, p->value.length)) {
+    return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+        "Cannot check peer: invalid ALPN value.");
+  }
+#endif /* TSI_OPENSSL_ALPN_SUPPORT */
+  return GRPC_ERROR_NONE;
+}
+
+grpc_error* grpc_ssl_check_peer_name(grpc_core::StringView peer_name,
+                                     const tsi_peer* peer) {
+  /* Check the peer name if specified. */
+  if (!peer_name.empty() && !grpc_ssl_host_matches_name(peer, peer_name)) {
+    char* msg;
+    gpr_asprintf(&msg, "Peer name %s is not in peer certificate",
+                 peer_name.data());
+    grpc_error* error = GRPC_ERROR_CREATE_FROM_COPIED_STRING(msg);
+    gpr_free(msg);
+    return error;
+  }
+  return GRPC_ERROR_NONE;
+}
+
+bool grpc_ssl_check_call_host(grpc_core::StringView host,
+                              grpc_core::StringView target_name,
+                              grpc_core::StringView overridden_target_name,
+                              grpc_auth_context* auth_context,
+                              grpc_closure* on_call_host_checked,
+                              grpc_error** error) {
+  grpc_security_status status = GRPC_SECURITY_ERROR;
+  tsi_peer peer = grpc_shallow_peer_from_ssl_auth_context(auth_context);
+  if (grpc_ssl_host_matches_name(&peer, host)) status = GRPC_SECURITY_OK;
+  if (!overridden_target_name.empty() && host == target_name) {
+    status = GRPC_SECURITY_OK;
+  }
+  if (status != GRPC_SECURITY_OK) {
+    *error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+        "call host does not match SSL server name");
+  }
+  grpc_shallow_peer_destruct(&peer);
+  return true;
+}
+
 const char** grpc_fill_alpn_protocol_strings(size_t* num_alpn_protocols) {
   GPR_ASSERT(num_alpn_protocols != nullptr);
   *num_alpn_protocols = grpc_chttp2_num_alpn_versions();
@@ -123,23 +181,28 @@ const char** grpc_fill_alpn_protocol_strings(size_t* num_alpn_protocols) {
   return alpn_protocol_strings;
 }
 
-int grpc_ssl_host_matches_name(const tsi_peer* peer, const char* peer_name) {
-  char* allocated_name = nullptr;
-  int r;
-
-  char* ignored_port;
-  gpr_split_host_port(peer_name, &allocated_name, &ignored_port);
-  gpr_free(ignored_port);
-  peer_name = allocated_name;
-  if (!peer_name) return 0;
+int grpc_ssl_host_matches_name(const tsi_peer* peer,
+                               grpc_core::StringView peer_name) {
+  grpc_core::StringView allocated_name;
+  grpc_core::StringView ignored_port;
+  grpc_core::SplitHostPort(peer_name, &allocated_name, &ignored_port);
+  if (allocated_name.empty()) return 0;
 
   // IPv6 zone-id should not be included in comparisons.
-  char* const zone_id = strchr(allocated_name, '%');
-  if (zone_id != nullptr) *zone_id = '\0';
+  const size_t zone_id = allocated_name.find('%');
+  if (zone_id != grpc_core::StringView::npos) {
+    allocated_name.remove_suffix(allocated_name.size() - zone_id);
+  }
+  return tsi_ssl_peer_matches_name(peer, allocated_name);
+}
 
-  r = tsi_ssl_peer_matches_name(peer, peer_name);
-  gpr_free(allocated_name);
-  return r;
+int grpc_ssl_cmp_target_name(
+    grpc_core::StringView target_name, grpc_core::StringView other_target_name,
+    grpc_core::StringView overridden_target_name,
+    grpc_core::StringView other_overridden_target_name) {
+  int c = target_name.cmp(other_target_name);
+  if (c != 0) return c;
+  return overridden_target_name.cmp(other_overridden_target_name);
 }
 
 grpc_core::RefCountedPtr<grpc_auth_context> grpc_ssl_peer_to_auth_context(
@@ -230,6 +293,79 @@ void grpc_shallow_peer_destruct(tsi_peer* peer) {
   if (peer->properties != nullptr) gpr_free(peer->properties);
 }
 
+grpc_security_status grpc_ssl_tsi_client_handshaker_factory_init(
+    tsi_ssl_pem_key_cert_pair* pem_key_cert_pair, const char* pem_root_certs,
+    tsi_ssl_session_cache* ssl_session_cache,
+    tsi_ssl_client_handshaker_factory** handshaker_factory) {
+  const char* root_certs;
+  const tsi_ssl_root_certs_store* root_store;
+  if (pem_root_certs == nullptr) {
+    // Use default root certificates.
+    root_certs = grpc_core::DefaultSslRootStore::GetPemRootCerts();
+    if (root_certs == nullptr) {
+      gpr_log(GPR_ERROR, "Could not get default pem root certs.");
+      return GRPC_SECURITY_ERROR;
+    }
+    root_store = grpc_core::DefaultSslRootStore::GetRootStore();
+  } else {
+    root_certs = pem_root_certs;
+    root_store = nullptr;
+  }
+  bool has_key_cert_pair = pem_key_cert_pair != nullptr &&
+                           pem_key_cert_pair->private_key != nullptr &&
+                           pem_key_cert_pair->cert_chain != nullptr;
+  tsi_ssl_client_handshaker_options options;
+  GPR_DEBUG_ASSERT(root_certs != nullptr);
+  options.pem_root_certs = root_certs;
+  options.root_store = root_store;
+  options.alpn_protocols =
+      grpc_fill_alpn_protocol_strings(&options.num_alpn_protocols);
+  if (has_key_cert_pair) {
+    options.pem_key_cert_pair = pem_key_cert_pair;
+  }
+  options.cipher_suites = grpc_get_ssl_cipher_suites();
+  options.session_cache = ssl_session_cache;
+  const tsi_result result =
+      tsi_create_ssl_client_handshaker_factory_with_options(&options,
+                                                            handshaker_factory);
+  gpr_free((void*)options.alpn_protocols);
+  if (result != TSI_OK) {
+    gpr_log(GPR_ERROR, "Handshaker factory creation failed with %s.",
+            tsi_result_to_string(result));
+    return GRPC_SECURITY_ERROR;
+  }
+  return GRPC_SECURITY_OK;
+}
+
+grpc_security_status grpc_ssl_tsi_server_handshaker_factory_init(
+    tsi_ssl_pem_key_cert_pair* pem_key_cert_pairs, size_t num_key_cert_pairs,
+    const char* pem_root_certs,
+    grpc_ssl_client_certificate_request_type client_certificate_request,
+    tsi_ssl_server_handshaker_factory** handshaker_factory) {
+  size_t num_alpn_protocols = 0;
+  const char** alpn_protocol_strings =
+      grpc_fill_alpn_protocol_strings(&num_alpn_protocols);
+  tsi_ssl_server_handshaker_options options;
+  options.pem_key_cert_pairs = pem_key_cert_pairs;
+  options.num_key_cert_pairs = num_key_cert_pairs;
+  options.pem_client_root_certs = pem_root_certs;
+  options.client_certificate_request =
+      grpc_get_tsi_client_certificate_request_type(client_certificate_request);
+  options.cipher_suites = grpc_get_ssl_cipher_suites();
+  options.alpn_protocols = alpn_protocol_strings;
+  options.num_alpn_protocols = static_cast<uint16_t>(num_alpn_protocols);
+  const tsi_result result =
+      tsi_create_ssl_server_handshaker_factory_with_options(&options,
+                                                            handshaker_factory);
+  gpr_free((void*)alpn_protocol_strings);
+  if (result != TSI_OK) {
+    gpr_log(GPR_ERROR, "Handshaker factory creation failed with %s.",
+            tsi_result_to_string(result));
+    return GRPC_SECURITY_ERROR;
+  }
+  return GRPC_SECURITY_OK;
+}
+
 /* --- Ssl cache implementation. --- */
 
 grpc_ssl_session_cache* grpc_ssl_session_cache_create_lru(size_t capacity) {
@@ -294,17 +430,14 @@ const char* DefaultSslRootStore::GetPemRootCerts() {
 
 grpc_slice DefaultSslRootStore::ComputePemRootCerts() {
   grpc_slice result = grpc_empty_slice();
-  char* not_use_system_roots_env_value =
-      gpr_getenv(GRPC_NOT_USE_SYSTEM_SSL_ROOTS_ENV_VAR);
-  const bool not_use_system_roots = gpr_is_true(not_use_system_roots_env_value);
-  gpr_free(not_use_system_roots_env_value);
-  // First try to load the roots from the environment.
-  char* default_root_certs_path =
-      gpr_getenv(GRPC_DEFAULT_SSL_ROOTS_FILE_PATH_ENV_VAR);
-  if (default_root_certs_path != nullptr) {
-    GRPC_LOG_IF_ERROR("load_file",
-                      grpc_load_file(default_root_certs_path, 1, &result));
-    gpr_free(default_root_certs_path);
+  const bool not_use_system_roots =
+      GPR_GLOBAL_CONFIG_GET(grpc_not_use_system_ssl_roots);
+  // First try to load the roots from the configuration.
+  UniquePtr<char> default_root_certs_path =
+      GPR_GLOBAL_CONFIG_GET(grpc_default_ssl_roots_file_path);
+  if (strlen(default_root_certs_path.get()) > 0) {
+    GRPC_LOG_IF_ERROR(
+        "load_file", grpc_load_file(default_root_certs_path.get(), 1, &result));
   }
   // Try overridden roots if needed.
   grpc_ssl_roots_override_result ovrd_res = GRPC_SSL_ROOTS_OVERRIDE_FAIL;

@@ -83,6 +83,20 @@ grpc_cc_test(
 )
 
 grpc_cc_test(
+    name = "static_metadata_test",
+    srcs = ["static_metadata_test.cc"],
+    external_deps = [
+        "gtest",
+    ],
+    language = "C++",
+    deps = [
+        "//:gpr",
+        "//:grpc",
+        "//test/core/util:grpc_test_util",
+    ],
+)
+
+grpc_cc_test(
     name = "status_conversion_test",
     srcs = ["status_conversion_test.cc"],
     language = "C++",

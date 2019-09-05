@@ -20,6 +20,7 @@
 
 #include "src/core/ext/transport/chttp2/transport/chttp2_transport.h"
 #include "src/core/lib/iomgr/executor.h"
+#include "src/core/lib/security/credentials/credentials.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/surface/server.h"
 #include "test/core/util/memory_counters.h"
@@ -37,10 +38,10 @@ static void dont_log(gpr_log_func_args* args) {}
 
 extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
   grpc_test_only_set_slice_hash_seed(0);
-  struct grpc_memory_counters counters;
   if (squelch) gpr_set_log_function(dont_log);
-  if (leak_check) grpc_memory_counters_init();
+  grpc_core::testing::LeakDetector leak_detector(leak_check);
   grpc_init();
+  grpc_test_only_control_plane_credentials_force_init();
   {
     grpc_core::ExecCtx exec_ctx;
     grpc_core::Executor::SetThreadingAll(false);
@@ -135,11 +136,7 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
     grpc_server_destroy(server);
     grpc_completion_queue_destroy(cq);
   }
+  grpc_test_only_control_plane_credentials_destroy();
   grpc_shutdown();
-  if (leak_check) {
-    counters = grpc_memory_counters_snapshot();
-    grpc_memory_counters_destroy();
-    GPR_ASSERT(counters.total_size_relative == 0);
-  }
   return 0;
 }

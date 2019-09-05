@@ -43,13 +43,14 @@ namespace testing {
  * Maintains context info per RPC
  */
 struct CallbackClientRpcContext {
-  CallbackClientRpcContext(BenchmarkService::Stub* stub) : stub_(stub) {}
+  CallbackClientRpcContext(BenchmarkService::Stub* stub)
+      : alarm_(nullptr), stub_(stub) {}
 
   ~CallbackClientRpcContext() {}
 
   SimpleResponse response_;
   ClientContext context_;
-  Alarm alarm_;
+  std::unique_ptr<Alarm> alarm_;
   BenchmarkService::Stub* stub_;
 };
 
@@ -169,7 +170,10 @@ class CallbackUnaryClient final : public CallbackClient {
       gpr_timespec next_issue_time = NextRPCIssueTime();
       // Start an alarm callback to run the internal callback after
       // next_issue_time
-      ctx_[vector_idx]->alarm_.experimental().Set(
+      if (ctx_[vector_idx]->alarm_ == nullptr) {
+        ctx_[vector_idx]->alarm_.reset(new Alarm);
+      }
+      ctx_[vector_idx]->alarm_->experimental().Set(
           next_issue_time, [this, t, vector_idx](bool ok) {
             IssueUnaryCallbackRpc(t, vector_idx);
           });
@@ -221,11 +225,11 @@ class CallbackStreamingClient : public CallbackClient {
   }
   ~CallbackStreamingClient() {}
 
-  void AddHistogramEntry(double start_, bool ok, Thread* thread_ptr) {
+  void AddHistogramEntry(double start, bool ok, Thread* thread_ptr) {
     // Update Histogram with data from the callback run
     HistogramEntry entry;
     if (ok) {
-      entry.set_value((UsageTimer::Now() - start_) * 1e9);
+      entry.set_value((UsageTimer::Now() - start) * 1e9);
     }
     thread_ptr->UpdateHistogram(&entry);
   }
@@ -253,24 +257,26 @@ class CallbackStreamingPingPongReactor final
       : client_(client), ctx_(std::move(ctx)), messages_issued_(0) {}
 
   void StartNewRpc() {
-    if (client_->ThreadCompleted()) return;
-    start_ = UsageTimer::Now();
     ctx_->stub_->experimental_async()->StreamingCall(&(ctx_->context_), this);
+    write_time_ = UsageTimer::Now();
     StartWrite(client_->request());
+    writes_done_started_.clear();
     StartCall();
   }
 
   void OnWriteDone(bool ok) override {
-    if (!ok || client_->ThreadCompleted()) {
-      if (!ok) gpr_log(GPR_ERROR, "Error writing RPC");
+    if (!ok) {
+      gpr_log(GPR_ERROR, "Error writing RPC");
+    }
+    if ((!ok || client_->ThreadCompleted()) &&
+        !writes_done_started_.test_and_set()) {
       StartWritesDone();
-      return;
     }
     StartRead(&ctx_->response_);
   }
 
   void OnReadDone(bool ok) override {
-    client_->AddHistogramEntry(start_, ok, thread_ptr_);
+    client_->AddHistogramEntry(write_time_, ok, thread_ptr_);
 
     if (client_->ThreadCompleted() || !ok ||
         (client_->messages_per_stream() != 0 &&
@@ -278,10 +284,23 @@ class CallbackStreamingPingPongReactor final
       if (!ok) {
         gpr_log(GPR_ERROR, "Error reading RPC");
       }
-      StartWritesDone();
+      if (!writes_done_started_.test_and_set()) {
+        StartWritesDone();
+      }
       return;
     }
-    StartWrite(client_->request());
+    if (!client_->IsClosedLoop()) {
+      gpr_timespec next_issue_time = client_->NextRPCIssueTime();
+      // Start an alarm callback to run the internal callback after
+      // next_issue_time
+      ctx_->alarm_->experimental().Set(next_issue_time, [this](bool ok) {
+        write_time_ = UsageTimer::Now();
+        StartWrite(client_->request());
+      });
+    } else {
+      write_time_ = UsageTimer::Now();
+      StartWrite(client_->request());
+    }
   }
 
   void OnDone(const Status& s) override {
@@ -294,14 +313,15 @@ class CallbackStreamingPingPongReactor final
   }
 
   void ScheduleRpc() {
-    if (client_->ThreadCompleted()) return;
-
     if (!client_->IsClosedLoop()) {
       gpr_timespec next_issue_time = client_->NextRPCIssueTime();
       // Start an alarm callback to run the internal callback after
       // next_issue_time
-      ctx_->alarm_.experimental().Set(next_issue_time,
-                                      [this](bool ok) { StartNewRpc(); });
+      if (ctx_->alarm_ == nullptr) {
+        ctx_->alarm_.reset(new Alarm);
+      }
+      ctx_->alarm_->experimental().Set(next_issue_time,
+                                       [this](bool ok) { StartNewRpc(); });
     } else {
       StartNewRpc();
     }
@@ -311,8 +331,9 @@ class CallbackStreamingPingPongReactor final
 
   CallbackStreamingPingPongClient* client_;
   std::unique_ptr<CallbackClientRpcContext> ctx_;
+  std::atomic_flag writes_done_started_;
   Client::Thread* thread_ptr_;  // Needed to update histogram entries
-  double start_;                // Track message start time
+  double write_time_;           // Track ping-pong round start time
   int messages_issued_;         // Messages issued by this stream
 };
 

@@ -1,14 +1,12 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
-  <Import Project="..\Grpc.Core\Version.csproj.include" />
   <Import Project="..\Grpc.Core\Common.csproj.include" />
 
   <PropertyGroup>
-    <TargetFrameworks>net45;netcoreapp1.1</TargetFrameworks>
-    <AssemblyName>Grpc.Core.Tests</AssemblyName>
+    <TargetFrameworks>net45;netcoreapp2.1</TargetFrameworks>
     <OutputType>Exe</OutputType>
-    <PackageId>Grpc.Core.Tests</PackageId>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
 
   <ItemGroup>
@@ -29,7 +27,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Compile Include="..\Grpc.Core\Version.cs" />
+    <Compile Include="..\Grpc.Core.Api\Version.cs" />
   </ItemGroup>
 
 </Project>

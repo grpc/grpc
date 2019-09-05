@@ -19,6 +19,7 @@
 #ifndef GRPCPP_IMPL_CODEGEN_CORE_CODEGEN_INTERFACE_H
 #define GRPCPP_IMPL_CODEGEN_CORE_CODEGEN_INTERFACE_H
 
+#include <grpc/impl/codegen/byte_buffer.h>
 #include <grpc/impl/codegen/byte_buffer_reader.h>
 #include <grpc/impl/codegen/grpc_types.h>
 #include <grpc/impl/codegen/sync.h>
@@ -92,6 +93,8 @@ class CoreCodegenInterface {
       grpc_byte_buffer_reader* reader) = 0;
   virtual int grpc_byte_buffer_reader_next(grpc_byte_buffer_reader* reader,
                                            grpc_slice* slice) = 0;
+  virtual int grpc_byte_buffer_reader_peek(grpc_byte_buffer_reader* reader,
+                                           grpc_slice** slice) = 0;
 
   virtual grpc_byte_buffer* grpc_raw_byte_buffer_create(grpc_slice* slice,
                                                         size_t nslices) = 0;
@@ -141,7 +144,7 @@ extern CoreCodegenInterface* g_core_codegen_interface;
 /// Codegen specific version of \a GPR_ASSERT.
 #define GPR_CODEGEN_ASSERT(x)                                              \
   do {                                                                     \
-    if (!(x)) {                                                            \
+    if (GPR_UNLIKELY(!(x))) {                                              \
       grpc::g_core_codegen_interface->assert_fail(#x, __FILE__, __LINE__); \
     }                                                                      \
   } while (0)

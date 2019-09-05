@@ -128,9 +128,9 @@ static const char good_openid_config[] =
     " \"issuer\": \"https://accounts.google.com\","
     " \"authorization_endpoint\": "
     "\"https://accounts.google.com/o/oauth2/v2/auth\","
-    " \"token_endpoint\": \"https://www.googleapis.com/oauth2/v4/token\","
+    " \"token_endpoint\": \"https://oauth2.googleapis.com/token\","
     " \"userinfo_endpoint\": \"https://www.googleapis.com/oauth2/v3/userinfo\","
-    " \"revocation_endpoint\": \"https://accounts.google.com/o/oauth2/revoke\","
+    " \"revocation_endpoint\": \"https://oauth2.googleapis.com/revoke\","
     " \"jwks_uri\": \"https://www.googleapis.com/oauth2/v3/certs\""
     "}";
 
@@ -310,7 +310,7 @@ static char* good_google_email_keys(void) {
 
 static grpc_httpcli_response http_response(int status, char* body) {
   grpc_httpcli_response response;
-  memset(&response, 0, sizeof(grpc_httpcli_response));
+  response = {};
   response.status = status;
   response.body = body;
   response.body_length = strlen(body);

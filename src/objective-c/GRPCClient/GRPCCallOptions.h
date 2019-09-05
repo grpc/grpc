@@ -90,6 +90,22 @@ typedef NS_ENUM(NSUInteger, GRPCTransportType) {
  */
 @property(readonly) NSTimeInterval timeout;
 
+/**
+ * Enable flow control of a gRPC call. The option is default to NO. If set to YES, writeData: method
+ * should only be called at most once before a didWriteData callback is issued, and
+ * receiveNextMessage: must be called each time before gRPC call issues a didReceiveMessage
+ * callback.
+ */
+@property(readonly) BOOL flowControlEnabled;
+
+/**
+ * An array of interceptor factories. When a call starts, interceptors are created
+ * by these factories and chained together with the same order as the factories in
+ * this array. This parameter should not be modified by any interceptor and will
+ * not take effect if done so.
+ */
+@property(copy, readonly) NSArray *interceptorFactories;
+
 // OAuth2 parameters. Users of gRPC may specify one of the following two parameters.
 
 /**
@@ -231,6 +247,27 @@ typedef NS_ENUM(NSUInteger, GRPCTransportType) {
  * will reset the parameter to 0.
  */
 @property(readwrite) NSTimeInterval timeout;
+
+/**
+ * Enable flow control of a gRPC call. The option is default to NO. If set to YES, writeData: method
+ * should only be called at most once before a didWriteData callback is issued, and
+ * receiveNextMessage: must be called each time before gRPC call can issue a didReceiveMessage
+ * callback.
+ *
+ * If writeData: method is called more than once before issuance of a didWriteData callback, gRPC
+ * will continue to queue the message and write them to gRPC core in order. However, the user
+ * assumes their own responsibility of flow control by keeping tracking of the pending writes in
+ * the call.
+ */
+@property(readwrite) BOOL flowControlEnabled;
+
+/**
+ * An array of interceptor factories. When a call starts, interceptors are created
+ * by these factories and chained together with the same order as the factories in
+ * this array. This parameter should not be modified by any interceptor and will
+ * not take effect if done so.
+ */
+@property(copy, readwrite) NSArray *interceptorFactories;
 
 // OAuth2 parameters. Users of gRPC may specify one of the following two parameters.
 

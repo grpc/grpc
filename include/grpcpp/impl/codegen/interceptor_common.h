@@ -403,7 +403,6 @@ class InterceptorBatchMethodsImpl
   grpc_status_code* code_ = nullptr;
   grpc::string* error_details_ = nullptr;
   grpc::string* error_message_ = nullptr;
-  Status send_status_;
 
   std::multimap<grpc::string, grpc::string>* send_trailing_metadata_ = nullptr;
 
@@ -466,7 +465,7 @@ class CancelInterceptorBatchMethods
     return nullptr;
   }
 
-  void ModifySendMessage(const void* message) override {
+  void ModifySendMessage(const void* /*message*/) override {
     GPR_CODEGEN_ASSERT(
         false &&
         "It is illegal to call ModifySendMessage on a method which "
@@ -487,7 +486,7 @@ class CancelInterceptorBatchMethods
     return Status();
   }
 
-  void ModifySendStatus(const Status& status) override {
+  void ModifySendStatus(const Status& /*status*/) override {
     GPR_CODEGEN_ASSERT(false &&
                        "It is illegal to call ModifySendStatus on a method "
                        "which has a Cancel notification");

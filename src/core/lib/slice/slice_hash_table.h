@@ -25,6 +25,7 @@
 #include <grpc/support/log.h>
 
 #include "src/core/lib/gpr/useful.h"
+#include "src/core/lib/gprpp/memory.h"
 #include "src/core/lib/gprpp/ref_counted.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/slice/slice_internal.h"
@@ -77,18 +78,13 @@ class SliceHashTable : public RefCounted<SliceHashTable<T>> {
   static int Cmp(const SliceHashTable& a, const SliceHashTable& b);
 
  private:
-  // So New() can call our private ctor.
-  template <typename T2, typename... Args>
-  friend T2* New(Args&&... args);
-
-  // So Delete() can call our private dtor.
-  template <typename T2>
-  friend void Delete(T2*);
+  GRPC_ALLOW_CLASS_TO_USE_NON_PUBLIC_DELETE
+  GRPC_ALLOW_CLASS_TO_USE_NON_PUBLIC_NEW
 
   SliceHashTable(size_t num_entries, Entry* entries, ValueCmp value_cmp);
   virtual ~SliceHashTable();
 
-  void Add(grpc_slice key, T& value);
+  void Add(const grpc_slice& key, T& value);
 
   // Default value comparison function, if none specified by caller.
   static int DefaultValueCmp(const T& a, const T& b) { return GPR_ICMP(a, b); }
@@ -137,8 +133,8 @@ SliceHashTable<T>::~SliceHashTable() {
 }
 
 template <typename T>
-void SliceHashTable<T>::Add(grpc_slice key, T& value) {
-  const size_t hash = grpc_slice_hash(key);
+void SliceHashTable<T>::Add(const grpc_slice& key, T& value) {
+  const size_t hash = grpc_slice_hash_internal(key);
   for (size_t offset = 0; offset < size_; ++offset) {
     const size_t idx = (hash + offset) % size_;
     if (!entries_[idx].is_set) {
@@ -156,7 +152,7 @@ void SliceHashTable<T>::Add(grpc_slice key, T& value) {
 
 template <typename T>
 const T* SliceHashTable<T>::Get(const grpc_slice& key) const {
-  const size_t hash = grpc_slice_hash(key);
+  const size_t hash = grpc_slice_hash_internal(key);
   // We cap the number of probes at the max number recorded when
   // populating the table.
   for (size_t offset = 0; offset <= max_num_probes_; ++offset) {

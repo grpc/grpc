@@ -122,7 +122,7 @@ def _get_resultstore_data(api_key, invocation_id):
     while True:
         req = urllib2.Request(
             url=
-            'https://resultstore.googleapis.com/v2/invocations/%s/targets/-/configuredTargets/-/actions?key=%s&pageToken=%s'
+            'https://resultstore.googleapis.com/v2/invocations/%s/targets/-/configuredTargets/-/actions?key=%s&pageToken=%s&fields=next_page_token,actions.id,actions.status_attributes,actions.timing,actions.test_action'
             % (invocation_id, api_key, page_token),
             headers={
                 'Content-Type': 'application/json'
@@ -146,6 +146,8 @@ if __name__ == "__main__":
     invocation_id = args.invocation_id or _get_invocation_id()
     resultstore_actions = _get_resultstore_data(api_key, invocation_id)
 
+    # google.devtools.resultstore.v2.Action schema:
+    # https://github.com/googleapis/googleapis/blob/master/google/devtools/resultstore/v2/action.proto
     bq_rows = []
     for index, action in enumerate(resultstore_actions):
         # Filter out non-test related data, such as build results.
@@ -185,6 +187,10 @@ if __name__ == "__main__":
                 'startTime':
                 resultstore_actions[index - 1]['timing']['startTime']
             }
+        elif 'testSuite' not in action['testAction']:
+            continue
+        elif 'tests' not in action['testAction']['testSuite']:
+            continue
         else:
             test_cases = action['testAction']['testSuite']['tests'][0][
                 'testSuite']['tests']

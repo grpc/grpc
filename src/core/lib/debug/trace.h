@@ -24,7 +24,15 @@
 #include <grpc/support/atm.h>
 #include <stdbool.h>
 
+#include "src/core/lib/gprpp/global_config.h"
+
+GPR_GLOBAL_CONFIG_DECLARE_STRING(grpc_trace);
+
+// TODO(veblush): Remove this deprecated function once codes depending on this
+// function are updated in the internal repo.
 void grpc_tracer_init(const char* env_var_name);
+
+void grpc_tracer_init();
 void grpc_tracer_shutdown(void);
 
 #if defined(__has_feature)
@@ -53,7 +61,8 @@ void grpc_tracer_enable_flag(grpc_core::TraceFlag* flag);
 class TraceFlag {
  public:
   TraceFlag(bool default_enabled, const char* name);
-  // This needs to be trivially destructible as it is used as global variable.
+  // TraceFlag needs to be trivially destructible since it is used as global
+  // variable.
   ~TraceFlag() = default;
 
   const char* name() const { return name_; }
@@ -64,6 +73,8 @@ class TraceFlag {
 // wrapped language (wr don't want to force recompilation to get tracing).
 // Internally, however, for performance reasons, we compile them out by
 // default, since internal build systems make recompiling trivial.
+//
+// Prefer GRPC_TRACE_FLAG_ENABLED() macro instead of using enabled() directly.
 #define GRPC_USE_TRACERS  // tracers on by default in OSS
 #if defined(GRPC_USE_TRACERS) || !defined(NDEBUG)
   bool enabled() {
@@ -97,6 +108,8 @@ class TraceFlag {
   bool value_;
 #endif
 };
+
+#define GRPC_TRACE_FLAG_ENABLED(f) GPR_UNLIKELY((f).enabled())
 
 #ifndef NDEBUG
 typedef TraceFlag DebugOnlyTraceFlag;

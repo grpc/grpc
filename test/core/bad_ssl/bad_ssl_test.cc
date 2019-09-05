@@ -25,9 +25,10 @@
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
 
-#include "src/core/lib/gpr/env.h"
-#include "src/core/lib/gpr/host_port.h"
 #include "src/core/lib/gpr/string.h"
+#include "src/core/lib/gprpp/host_port.h"
+#include "src/core/lib/gprpp/memory.h"
+#include "src/core/lib/security/security_connector/ssl_utils.h"
 #include "test/core/end2end/cq_verifier.h"
 #include "test/core/util/port.h"
 #include "test/core/util/subprocess.h"
@@ -133,7 +134,7 @@ int main(int argc, char** argv) {
     strcpy(root, ".");
   }
   if (argc == 2) {
-    gpr_setenv("GRPC_DEFAULT_SSL_ROOTS_FILE_PATH", argv[1]);
+    GPR_GLOBAL_CONFIG_SET(grpc_default_ssl_roots_file_path, argv[1]);
   }
   /* figure out our test name */
   tmp = lunder - 1;
@@ -144,7 +145,9 @@ int main(int argc, char** argv) {
   gpr_asprintf(&args[0], "%s/bad_ssl_%s_server%s", root, test,
                gpr_subprocess_binary_extension());
   args[1] = const_cast<char*>("--bind");
-  gpr_join_host_port(&args[2], "::", port);
+  grpc_core::UniquePtr<char> joined;
+  grpc_core::JoinHostPort(&joined, "::", port);
+  args[2] = joined.get();
   svr = gpr_subprocess_create(4, (const char**)args);
   gpr_free(args[0]);
 
@@ -153,7 +156,6 @@ int main(int argc, char** argv) {
     run_test(args[2], i);
     grpc_shutdown();
   }
-  gpr_free(args[2]);
 
   gpr_subprocess_interrupt(svr);
   status = gpr_subprocess_join(svr);

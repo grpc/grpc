@@ -23,13 +23,17 @@
 #include "absl/base/call_once.h"
 #include "absl/strings/str_cat.h"
 #include "include/grpc++/grpc++.h"
+#include "include/grpcpp/opencensus.h"
 #include "opencensus/stats/stats.h"
 #include "src/cpp/ext/filters/census/grpc_plugin.h"
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
 #include "test/cpp/microbenchmarks/helpers.h"
 
+using ::grpc::RegisterOpenCensusPlugin;
+using ::grpc::RegisterOpenCensusViewsForExport;
+
 absl::once_flag once;
-void RegisterOnce() { absl::call_once(once, grpc::RegisterOpenCensusPlugin); }
+void RegisterOnce() { absl::call_once(once, RegisterOpenCensusPlugin); }
 
 class EchoServer final : public grpc::testing::EchoTestService::Service {
   grpc::Status Echo(grpc::ServerContext* context,
@@ -99,7 +103,7 @@ static void BM_E2eLatencyCensusEnabled(benchmark::State& state) {
   RegisterOnce();
   // This we can safely repeat, and doing so clears accumulated data to avoid
   // initialization costs varying between runs.
-  grpc::RegisterOpenCensusViewsForExport();
+  RegisterOpenCensusViewsForExport();
 
   EchoServerThread server;
   std::unique_ptr<grpc::testing::EchoTestService::Stub> stub =

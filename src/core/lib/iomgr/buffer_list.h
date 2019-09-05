@@ -133,7 +133,7 @@ class TracedBuffer {
                        grpc_error* shutdown_err);
 
  private:
-  GPRC_ALLOW_CLASS_TO_USE_NON_PUBLIC_NEW
+  GRPC_ALLOW_CLASS_TO_USE_NON_PUBLIC_NEW
 
   TracedBuffer(uint32_t seq_no, void* arg)
       : seq_no_(seq_no), arg_(arg), next_(nullptr) {}
@@ -160,6 +160,6 @@ void grpc_tcp_set_write_timestamps_callback(void (*fn)(void*,
                                                        grpc_core::Timestamps*,
                                                        grpc_error* error));
 
-}; /* namespace grpc_core */
+} /* namespace grpc_core */
 
 #endif /* GRPC_CORE_LIB_IOMGR_BUFFER_LIST_H */

@@ -24,11 +24,10 @@
 #include <grpc/support/string_util.h>
 
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/gpr/host_port.h"
+#include "src/core/lib/gprpp/host_port.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/transport/metadata.h"
-#include "src/core/lib/transport/service_config.h"
 
 #include "test/core/end2end/cq_verifier.h"
 #include "test/core/util/port.h"
@@ -78,18 +77,16 @@ static void run_test(bool wait_for_ready, bool use_service_config) {
 
   /* create a call, channel to a port which will refuse connection */
   int port = grpc_pick_unused_port_or_die();
-  char* addr;
-  gpr_join_host_port(&addr, "127.0.0.1", port);
-  gpr_log(GPR_INFO, "server: %s", addr);
-  chan = grpc_insecure_channel_create(addr, args, nullptr);
+  grpc_core::UniquePtr<char> addr;
+  grpc_core::JoinHostPort(&addr, "127.0.0.1", port);
+  gpr_log(GPR_INFO, "server: %s", addr.get());
+  chan = grpc_insecure_channel_create(addr.get(), args, nullptr);
   grpc_slice host = grpc_slice_from_static_string("nonexistant");
   gpr_timespec deadline = grpc_timeout_seconds_to_deadline(2);
   call =
       grpc_channel_create_call(chan, nullptr, GRPC_PROPAGATE_DEFAULTS, cq,
                                grpc_slice_from_static_string("/service/method"),
                                &host, deadline, nullptr);
-
-  gpr_free(addr);
 
   memset(ops, 0, sizeof(ops));
   op = ops;

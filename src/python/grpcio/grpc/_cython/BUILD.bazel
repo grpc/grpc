@@ -43,10 +43,12 @@ pyx_library(
         "_cygrpc/tag.pyx.pxi",
         "_cygrpc/time.pxd.pxi",
         "_cygrpc/time.pyx.pxi",
+        "_cygrpc/vtable.pxd.pxi",
+        "_cygrpc/vtable.pyx.pxi",
         "cygrpc.pxd",
         "cygrpc.pyx",
     ],
     deps = [
-       "//:grpc",
+        "//:grpc",
     ],
 )

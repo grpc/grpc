@@ -25,12 +25,15 @@
 #include <grpc/support/string_util.h>
 
 #include <grpcpp/impl/codegen/interceptor_common.h>
+#include <grpcpp/impl/codegen/sync.h>
 #include <grpcpp/impl/grpc_library.h>
 #include <grpcpp/security/credentials.h>
 #include <grpcpp/server_context.h>
 #include <grpcpp/support/time.h>
 
-namespace grpc {
+namespace grpc_impl {
+
+class Channel;
 
 class DefaultGlobalClientCallbacks final
     : public ClientContext::GlobalCallbacks {
@@ -40,7 +43,7 @@ class DefaultGlobalClientCallbacks final
   void Destructor(ClientContext* context) override {}
 };
 
-static internal::GrpcLibraryInitializer g_gli_initializer;
+static grpc::internal::GrpcLibraryInitializer g_gli_initializer;
 static DefaultGlobalClientCallbacks* g_default_client_callbacks =
     new DefaultGlobalClientCallbacks();
 static ClientContext::GlobalCallbacks* g_client_callbacks =
@@ -70,7 +73,7 @@ ClientContext::~ClientContext() {
 }
 
 std::unique_ptr<ClientContext> ClientContext::FromServerContext(
-    const ServerContext& context, PropagationOptions options) {
+    const grpc::ServerContext& context, PropagationOptions options) {
   std::unique_ptr<ClientContext> ctx(new ClientContext);
   ctx->propagate_from_call_ = context.call_;
   ctx->propagation_options_ = options;
@@ -82,9 +85,9 @@ void ClientContext::AddMetadata(const grpc::string& meta_key,
   send_initial_metadata_.insert(std::make_pair(meta_key, meta_value));
 }
 
-void ClientContext::set_call(grpc_call* call,
-                             const std::shared_ptr<Channel>& channel) {
-  std::unique_lock<std::mutex> lock(mu_);
+void ClientContext::set_call(
+    grpc_call* call, const std::shared_ptr<::grpc_impl::Channel>& channel) {
+  grpc::internal::MutexLock lock(&mu_);
   GPR_ASSERT(call_ == nullptr);
   call_ = call;
   channel_ = channel;
@@ -114,7 +117,7 @@ void ClientContext::set_compression_algorithm(
 }
 
 void ClientContext::TryCancel() {
-  std::unique_lock<std::mutex> lock(mu_);
+  grpc::internal::MutexLock lock(&mu_);
   if (call_) {
     SendCancelToInterceptors();
     grpc_call_cancel(call_, nullptr);
@@ -124,7 +127,7 @@ void ClientContext::TryCancel() {
 }
 
 void ClientContext::SendCancelToInterceptors() {
-  internal::CancelInterceptorBatchMethods cancel_methods;
+  grpc::internal::CancelInterceptorBatchMethods cancel_methods;
   for (size_t i = 0; i < rpc_info_.interceptors_.size(); i++) {
     rpc_info_.RunInterceptor(&cancel_methods, i);
   }
@@ -147,4 +150,4 @@ void ClientContext::SetGlobalCallbacks(GlobalCallbacks* client_callbacks) {
   g_client_callbacks = client_callbacks;
 }
 
-}  // namespace grpc
+}  // namespace grpc_impl

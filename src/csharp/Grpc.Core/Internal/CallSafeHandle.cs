@@ -21,6 +21,7 @@ using System.Text;
 using Grpc.Core;
 using Grpc.Core.Utils;
 using Grpc.Core.Profiling;
+using System.Buffers;
 
 namespace Grpc.Core.Internal
 {
@@ -35,11 +36,11 @@ namespace Grpc.Core.Internal
         // Completion handlers are pre-allocated to avoid unneccessary delegate allocations.
         // The "state" field is used to store the actual callback to invoke.
         static readonly BatchCompletionDelegate CompletionHandler_IUnaryResponseClientCallback =
-            (success, context, state) => ((IUnaryResponseClientCallback)state).OnUnaryResponseClient(success, context.GetReceivedStatusOnClient(), context.GetReceivedMessage(), context.GetReceivedInitialMetadata());
+            (success, context, state) => ((IUnaryResponseClientCallback)state).OnUnaryResponseClient(success, context.GetReceivedStatusOnClient(), context.GetReceivedMessageReader(), context.GetReceivedInitialMetadata());
         static readonly BatchCompletionDelegate CompletionHandler_IReceivedStatusOnClientCallback =
             (success, context, state) => ((IReceivedStatusOnClientCallback)state).OnReceivedStatusOnClient(success, context.GetReceivedStatusOnClient());
         static readonly BatchCompletionDelegate CompletionHandler_IReceivedMessageCallback =
-            (success, context, state) => ((IReceivedMessageCallback)state).OnReceivedMessage(success, context.GetReceivedMessage());
+            (success, context, state) => ((IReceivedMessageCallback)state).OnReceivedMessage(success, context.GetReceivedMessageReader());
         static readonly BatchCompletionDelegate CompletionHandler_IReceivedResponseHeadersCallback =
             (success, context, state) => ((IReceivedResponseHeadersCallback)state).OnReceivedResponseHeaders(success, context.GetReceivedInitialMetadata());
         static readonly BatchCompletionDelegate CompletionHandler_ISendCompletionCallback =
@@ -134,9 +135,48 @@ namespace Grpc.Core.Internal
             {
                 var ctx = completionQueue.CompletionRegistry.RegisterBatchCompletion(CompletionHandler_ISendStatusFromServerCompletionCallback, callback);
                 var optionalPayloadLength = optionalPayload != null ? new UIntPtr((ulong)optionalPayload.Length) : UIntPtr.Zero;
-                var statusDetailBytes = MarshalUtils.GetBytesUTF8(status.Detail);
-                Native.grpcsharp_call_send_status_from_server(this, ctx, status.StatusCode, statusDetailBytes, new UIntPtr((ulong)statusDetailBytes.Length), metadataArray, sendEmptyInitialMetadata ? 1 : 0,
-                    optionalPayload, optionalPayloadLength, writeFlags).CheckOk();
+
+                const int MaxStackAllocBytes = 256;
+                int maxBytes = MarshalUtils.GetMaxByteCountUTF8(status.Detail);
+                if (maxBytes > MaxStackAllocBytes)
+                {
+                    // pay the extra to get the *actual* size; this could mean that
+                    // it ends up fitting on the stack after all, but even if not
+                    // it will mean that we ask for a *much* smaller buffer
+                    maxBytes = MarshalUtils.GetByteCountUTF8(status.Detail);
+                }
+
+                unsafe
+                {
+                    if (maxBytes <= MaxStackAllocBytes)
+                    {   // for small status, we can encode on the stack without touching arrays
+                        // note: if init-locals is disabled, it would be more efficient
+                        // to just stackalloc[MaxStackAllocBytes]; but by default, since we
+                        // expect this to be small and it needs to wipe, just use maxBytes
+                        byte* ptr = stackalloc byte[maxBytes];
+                        int statusBytes = MarshalUtils.GetBytesUTF8(status.Detail, ptr, maxBytes);
+                        Native.grpcsharp_call_send_status_from_server(this, ctx, status.StatusCode, new IntPtr(ptr), new UIntPtr((ulong)statusBytes), metadataArray, sendEmptyInitialMetadata ? 1 : 0,
+                            optionalPayload, optionalPayloadLength, writeFlags).CheckOk();
+                    }
+                    else
+                    {   // for larger status (rare), rent a buffer from the pool and
+                        // use that for encoding
+                        var statusBuffer = ArrayPool<byte>.Shared.Rent(maxBytes);
+                        try
+                        {
+                            fixed (byte* ptr = statusBuffer)
+                            {
+                                int statusBytes = MarshalUtils.GetBytesUTF8(status.Detail, ptr, maxBytes);
+                                Native.grpcsharp_call_send_status_from_server(this, ctx, status.StatusCode, new IntPtr(ptr), new UIntPtr((ulong)statusBytes), metadataArray, sendEmptyInitialMetadata ? 1 : 0,
+                                  optionalPayload, optionalPayloadLength, writeFlags).CheckOk();
+                            }
+                        }
+                        finally
+                        {
+                            ArrayPool<byte>.Shared.Return(statusBuffer);
+                        }
+                    }
+                }
             }
         }
 

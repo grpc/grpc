@@ -30,6 +30,7 @@
 #include <grpc/support/time.h>
 
 #include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/compression/compression_args.h"
 #include "src/core/lib/surface/call.h"
 #include "src/core/lib/surface/call_test_only.h"
 #include "src/core/lib/transport/static_metadata.h"
@@ -123,10 +124,10 @@ static void request_for_disabled_algorithm(
   request_payload_slice = grpc_slice_from_copied_string(str);
   request_payload = grpc_raw_byte_buffer_create(&request_payload_slice, 1);
 
-  client_args = grpc_channel_args_set_compression_algorithm(
+  client_args = grpc_channel_args_set_channel_default_compression_algorithm(
       nullptr, requested_client_compression_algorithm);
-  server_args =
-      grpc_channel_args_set_compression_algorithm(nullptr, GRPC_COMPRESS_NONE);
+  server_args = grpc_channel_args_set_channel_default_compression_algorithm(
+      nullptr, GRPC_COMPRESS_NONE);
   {
     grpc_core::ExecCtx exec_ctx;
     server_args = grpc_channel_args_compression_algorithm_set_state(
@@ -309,13 +310,13 @@ static void request_with_payload_template(
   grpc_slice response_payload_slice =
       grpc_slice_from_copied_string(response_str);
 
-  client_args = grpc_channel_args_set_compression_algorithm(
+  client_args = grpc_channel_args_set_channel_default_compression_algorithm(
       nullptr, default_client_channel_compression_algorithm);
   if (set_default_server_message_compression_algorithm) {
-    server_args = grpc_channel_args_set_compression_algorithm(
+    server_args = grpc_channel_args_set_channel_default_compression_algorithm(
         nullptr, default_server_message_compression_algorithm);
   } else {
-    server_args = grpc_channel_args_set_compression_algorithm(
+    server_args = grpc_channel_args_set_channel_default_compression_algorithm(
         nullptr, default_server_channel_compression_algorithm);
   }
 

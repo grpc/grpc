@@ -4,6 +4,11 @@ config_setting(
 )
 
 config_setting(
+    name = "darwin_x86_64",
+    values = {"cpu": "darwin_x86_64"},
+)
+
+config_setting(
     name = "windows",
     values = {"cpu": "x64_windows"},
 )
@@ -39,6 +44,38 @@ config_setting(
     values = {"cpu": "ios_arm64"},
 )
 
+# The following architectures are found in 
+# https://github.com/bazelbuild/bazel/blob/master/src/main/java/com/google/devtools/build/lib/rules/apple/ApplePlatform.java
+config_setting(
+    name = "tvos_x86_64",
+    values = {"cpu": "tvos_x86_64"},
+)
+
+config_setting(
+    name = "tvos_arm64",
+    values = {"cpu": "tvos_arm64"}
+)
+
+config_setting(
+    name = "watchos_i386",
+    values = {"cpu": "watchos_i386"},
+)
+
+config_setting(
+    name = "watchos_x86_64",
+    values = {"cpu": "watchos_x86_64"}
+)
+
+config_setting(
+    name = "watchos_armv7k",
+    values = {"cpu": "watchos_armv7k"},
+)
+
+config_setting(
+    name = "watchos_arm64_32",
+    values = {"cpu": "watchos_arm64_32"}
+)
+
 genrule(
     name = "ares_build_h",
     srcs = ["@com_github_grpc_grpc//third_party/cares:ares_build.h"],
@@ -53,7 +90,14 @@ genrule(
         ":ios_armv7": ["@com_github_grpc_grpc//third_party/cares:config_darwin/ares_config.h"],
         ":ios_armv7s": ["@com_github_grpc_grpc//third_party/cares:config_darwin/ares_config.h"],
         ":ios_arm64": ["@com_github_grpc_grpc//third_party/cares:config_darwin/ares_config.h"],
+        ":tvos_x86_64": ["@com_github_grpc_grpc//third_party/cares:config_darwin/ares_config.h"],
+        ":tvos_arm64": ["@com_github_grpc_grpc//third_party/cares:config_darwin/ares_config.h"],
+        ":watchos_i386": ["@com_github_grpc_grpc//third_party/cares:config_darwin/ares_config.h"],
+        ":watchos_x86_64": ["@com_github_grpc_grpc//third_party/cares:config_darwin/ares_config.h"],
+        ":watchos_armv7k": ["@com_github_grpc_grpc//third_party/cares:config_darwin/ares_config.h"],
+        ":watchos_arm64_32": ["@com_github_grpc_grpc//third_party/cares:config_darwin/ares_config.h"],
         ":darwin": ["@com_github_grpc_grpc//third_party/cares:config_darwin/ares_config.h"],
+        ":darwin_x86_64": ["@com_github_grpc_grpc//third_party/cares:config_darwin/ares_config.h"],
         ":windows": ["@com_github_grpc_grpc//third_party/cares:config_windows/ares_config.h"],
         ":android": ["@com_github_grpc_grpc//third_party/cares:config_android/ares_config.h"],
         "//conditions:default": ["@com_github_grpc_grpc//third_party/cares:config_linux/ares_config.h"],
@@ -106,6 +150,7 @@ cc_library(
         "ares_send.c",
         "ares_strcasecmp.c",
         "ares_strdup.c",
+        "ares_strsplit.c",
         "ares_strerror.c",
         "ares_timeout.c",
         "ares_version.c",
@@ -135,7 +180,9 @@ cc_library(
         "ares_setup.h",
         "ares_strcasecmp.h",
         "ares_strdup.h",
+        "ares_strsplit.h",
         "ares_version.h",
+        "ares_writev.h",
         "bitncmp.h",
         "config-win32.h",
         "nameser.h",
@@ -164,4 +211,5 @@ cc_library(
     visibility = [
         "//visibility:public",
     ],
+    alwayslink = 1,
 )

@@ -68,7 +68,6 @@ cdef class SegregatedCall:
 
 cdef class Channel:
 
-  cdef grpc_arg_pointer_vtable _vtable
   cdef _ChannelState _state
 
   # TODO(https://github.com/grpc/grpc/issues/15662): Eliminate this.

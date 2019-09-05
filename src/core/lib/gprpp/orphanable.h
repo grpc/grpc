@@ -84,7 +84,7 @@ class InternallyRefCounted : public Orphanable {
   GRPC_ABSTRACT_BASE_CLASS
 
  protected:
-  GPRC_ALLOW_CLASS_TO_USE_NON_PUBLIC_DELETE
+  GRPC_ALLOW_CLASS_TO_USE_NON_PUBLIC_DELETE
 
   // Allow RefCountedPtr<> to access Unref() and IncrementRefCount().
   template <typename T>
@@ -94,8 +94,9 @@ class InternallyRefCounted : public Orphanable {
   // Note: RefCount tracing is only enabled on debug builds, even when a
   //       TraceFlag is used.
   template <typename TraceFlagT = TraceFlag>
-  explicit InternallyRefCounted(TraceFlagT* trace_flag = nullptr)
-      : refs_(1, trace_flag) {}
+  explicit InternallyRefCounted(TraceFlagT* trace_flag = nullptr,
+                                intptr_t initial_refcount = 1)
+      : refs_(initial_refcount, trace_flag) {}
   virtual ~InternallyRefCounted() = default;
 
   RefCountedPtr<Child> Ref() GRPC_MUST_USE_RESULT {
@@ -109,12 +110,12 @@ class InternallyRefCounted : public Orphanable {
   }
 
   void Unref() {
-    if (refs_.Unref()) {
+    if (GPR_UNLIKELY(refs_.Unref())) {
       Delete(static_cast<Child*>(this));
     }
   }
   void Unref(const DebugLocation& location, const char* reason) {
-    if (refs_.Unref(location, reason)) {
+    if (GPR_UNLIKELY(refs_.Unref(location, reason))) {
       Delete(static_cast<Child*>(this));
     }
   }

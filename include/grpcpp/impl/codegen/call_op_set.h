@@ -31,8 +31,8 @@
 #include <grpcpp/impl/codegen/call.h>
 #include <grpcpp/impl/codegen/call_hook.h>
 #include <grpcpp/impl/codegen/call_op_set_interface.h>
-#include <grpcpp/impl/codegen/client_context.h>
-#include <grpcpp/impl/codegen/completion_queue.h>
+#include <grpcpp/impl/codegen/client_context_impl.h>
+#include <grpcpp/impl/codegen/completion_queue_impl.h>
 #include <grpcpp/impl/codegen/completion_queue_tag.h>
 #include <grpcpp/impl/codegen/config.h>
 #include <grpcpp/impl/codegen/core_codegen_interface.h>
@@ -48,7 +48,6 @@
 
 namespace grpc {
 
-class CompletionQueue;
 extern CoreCodegenInterface* g_core_codegen_interface;
 
 namespace internal {
@@ -189,11 +188,6 @@ class WriteOptions {
   /// \sa GRPC_WRITE_LAST_MESSAGE
   bool is_last_message() const { return last_message_; }
 
-  WriteOptions& operator=(const WriteOptions& rhs) {
-    flags_ = rhs.flags_;
-    return *this;
-  }
-
  private:
   void SetBit(const uint32_t mask) { flags_ |= mask; }
 
@@ -212,13 +206,14 @@ namespace internal {
 template <int I>
 class CallNoOp {
  protected:
-  void AddOp(grpc_op* ops, size_t* nops) {}
-  void FinishOp(bool* status) {}
+  void AddOp(grpc_op* /*ops*/, size_t* /*nops*/) {}
+  void FinishOp(bool* /*status*/) {}
   void SetInterceptionHookPoint(
-      InterceptorBatchMethodsImpl* interceptor_methods) {}
+      InterceptorBatchMethodsImpl* /*interceptor_methods*/) {}
   void SetFinishInterceptionHookPoint(
-      InterceptorBatchMethodsImpl* interceptor_methods) {}
-  void SetHijackingState(InterceptorBatchMethodsImpl* interceptor_methods) {}
+      InterceptorBatchMethodsImpl* /*interceptor_methods*/) {}
+  void SetHijackingState(InterceptorBatchMethodsImpl* /*interceptor_methods*/) {
+  }
 };
 
 class CallOpSendInitialMetadata {
@@ -258,7 +253,7 @@ class CallOpSendInitialMetadata {
           maybe_compression_level_.level;
     }
   }
-  void FinishOp(bool* status) {
+  void FinishOp(bool* /*status*/) {
     if (!send_ || hijacked_) return;
     g_core_codegen_interface->gpr_free(initial_metadata_);
     send_ = false;
@@ -273,9 +268,9 @@ class CallOpSendInitialMetadata {
   }
 
   void SetFinishInterceptionHookPoint(
-      InterceptorBatchMethodsImpl* interceptor_methods) {}
+      InterceptorBatchMethodsImpl* /*interceptor_methods*/) {}
 
-  void SetHijackingState(InterceptorBatchMethodsImpl* interceptor_methods) {
+  void SetHijackingState(InterceptorBatchMethodsImpl* /*interceptor_methods*/) {
     hijacked_ = true;
   }
 
@@ -369,7 +364,7 @@ class CallOpSendMessage {
                                         nullptr);
   }
 
-  void SetHijackingState(InterceptorBatchMethodsImpl* interceptor_methods) {
+  void SetHijackingState(InterceptorBatchMethodsImpl* /*interceptor_methods*/) {
     hijacked_ = true;
   }
 
@@ -469,7 +464,6 @@ class CallOpRecvMessage {
         *status = false;
       }
     }
-    message_ = nullptr;
   }
 
   void SetInterceptionHookPoint(
@@ -566,7 +560,6 @@ class CallOpGenericRecvMessage {
         *status = false;
       }
     }
-    deserialize_.reset();
   }
 
   void SetInterceptionHookPoint(
@@ -581,6 +574,7 @@ class CallOpGenericRecvMessage {
     interceptor_methods->AddInterceptionHookPoint(
         experimental::InterceptionHookPoints::POST_RECV_MESSAGE);
     if (!got_message) interceptor_methods->SetRecvMessage(nullptr, nullptr);
+    deserialize_.reset();
   }
   void SetHijackingState(InterceptorBatchMethodsImpl* interceptor_methods) {
     hijacked_ = true;
@@ -612,7 +606,7 @@ class CallOpClientSendClose {
     op->flags = 0;
     op->reserved = NULL;
   }
-  void FinishOp(bool* status) { send_ = false; }
+  void FinishOp(bool* /*status*/) { send_ = false; }
 
   void SetInterceptionHookPoint(
       InterceptorBatchMethodsImpl* interceptor_methods) {
@@ -622,9 +616,9 @@ class CallOpClientSendClose {
   }
 
   void SetFinishInterceptionHookPoint(
-      InterceptorBatchMethodsImpl* interceptor_methods) {}
+      InterceptorBatchMethodsImpl* /*interceptor_methods*/) {}
 
-  void SetHijackingState(InterceptorBatchMethodsImpl* interceptor_methods) {
+  void SetHijackingState(InterceptorBatchMethodsImpl* /*interceptor_methods*/) {
     hijacked_ = true;
   }
 
@@ -665,7 +659,7 @@ class CallOpServerSendStatus {
     op->reserved = NULL;
   }
 
-  void FinishOp(bool* status) {
+  void FinishOp(bool* /*status*/) {
     if (!send_status_available_ || hijacked_) return;
     g_core_codegen_interface->gpr_free(trailing_metadata_);
     send_status_available_ = false;
@@ -682,9 +676,9 @@ class CallOpServerSendStatus {
   }
 
   void SetFinishInterceptionHookPoint(
-      InterceptorBatchMethodsImpl* interceptor_methods) {}
+      InterceptorBatchMethodsImpl* /*interceptor_methods*/) {}
 
-  void SetHijackingState(InterceptorBatchMethodsImpl* interceptor_methods) {
+  void SetHijackingState(InterceptorBatchMethodsImpl* /*interceptor_methods*/) {
     hijacked_ = true;
   }
 
@@ -704,7 +698,7 @@ class CallOpRecvInitialMetadata {
  public:
   CallOpRecvInitialMetadata() : metadata_map_(nullptr) {}
 
-  void RecvInitialMetadata(ClientContext* context) {
+  void RecvInitialMetadata(::grpc_impl::ClientContext* context) {
     context->initial_metadata_received_ = true;
     metadata_map_ = &context->recv_initial_metadata_;
   }
@@ -719,7 +713,7 @@ class CallOpRecvInitialMetadata {
     op->reserved = NULL;
   }
 
-  void FinishOp(bool* status) {
+  void FinishOp(bool* /*status*/) {
     if (metadata_map_ == nullptr || hijacked_) return;
   }
 
@@ -753,7 +747,7 @@ class CallOpClientRecvStatus {
   CallOpClientRecvStatus()
       : recv_status_(nullptr), debug_error_string_(nullptr) {}
 
-  void ClientRecvStatus(ClientContext* context, Status* status) {
+  void ClientRecvStatus(::grpc_impl::ClientContext* context, Status* status) {
     client_context_ = context;
     metadata_map_ = &client_context_->trailing_metadata_;
     recv_status_ = status;
@@ -773,7 +767,7 @@ class CallOpClientRecvStatus {
     op->reserved = NULL;
   }
 
-  void FinishOp(bool* status) {
+  void FinishOp(bool* /*status*/) {
     if (recv_status_ == nullptr || hijacked_) return;
     grpc::string binary_error_details = metadata_map_->GetBinaryErrorDetails();
     *recv_status_ =
@@ -814,7 +808,7 @@ class CallOpClientRecvStatus {
 
  private:
   bool hijacked_ = false;
-  ClientContext* client_context_;
+  ::grpc_impl::ClientContext* client_context_;
   MetadataMap* metadata_map_;
   Status* recv_status_;
   const char* debug_error_string_;

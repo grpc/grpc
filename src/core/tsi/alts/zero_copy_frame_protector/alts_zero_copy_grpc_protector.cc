@@ -105,7 +105,7 @@ static bool read_frame_size(const grpc_slice_buffer* sb,
  * Creates an alts_grpc_record_protocol object, given key, key size, and flags
  * to indicate whether the record_protocol object uses the rekeying AEAD,
  * whether the object is for client or server, whether the object is for
- * integrity-only or privacy-integrity mode, and whether the object is is used
+ * integrity-only or privacy-integrity mode, and whether the object is used
  * for protect or unprotect.
  */
 static tsi_result create_alts_grpc_record_protocol(

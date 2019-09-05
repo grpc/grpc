@@ -9,54 +9,61 @@ grpc_deps()
 grpc_test_only_deps()
 
 register_execution_platforms(
-    "//third_party/toolchains:rbe_ubuntu1604",
-    "//third_party/toolchains:rbe_ubuntu1604_large",
+    "//third_party/toolchains:local",
+    "//third_party/toolchains:local_large",
+    "//third_party/toolchains:rbe_windows",
 )
 
 register_toolchains(
-    "//third_party/toolchains:cc-toolchain-clang-x86_64-default",
+    "//third_party/toolchains/bazel_0.26.0_rbe_windows:cc-toolchain-x64_windows",
 )
 
-http_archive(
-    name = "cython",
-    build_file = "//third_party:cython.BUILD",
-    sha256 = "d68138a2381afbdd0876c3cb2a22389043fa01c4badede1228ee073032b07a27",
-    strip_prefix = "cython-c2b80d87658a8525ce091cbe146cb7eaa29fed5c",
-    urls = [
-        "https://github.com/cython/cython/archive/c2b80d87658a8525ce091cbe146cb7eaa29fed5c.tar.gz",
-    ],
+load("@bazel_toolchains//rules:rbe_repo.bzl", "rbe_autoconfig")
+
+# Create toolchain configuration for remote execution.
+rbe_autoconfig(
+    name = "rbe_default",
 )
 
-load("//third_party/py:python_configure.bzl", "python_configure")
+load("@bazel_toolchains//rules:environments.bzl", "clang_env")
+load("@bazel_skylib//lib:dicts.bzl", "dicts")
 
-python_configure(name = "local_config_python")
-
-git_repository(
-    name = "io_bazel_rules_python",
-    commit = "8b5d0683a7d878b28fffe464779c8a53659fc645",
-    remote = "https://github.com/bazelbuild/rules_python.git",
+# Create msan toolchain configuration for remote execution.
+rbe_autoconfig(
+    name = "rbe_msan",
+    env = dicts.add(
+        clang_env(),
+        {
+            "BAZEL_LINKOPTS": "-lc++:-lc++abi:-lm",
+        },
+    ),
 )
 
 load("@io_bazel_rules_python//python:pip.bzl", "pip_repositories", "pip_import")
 
-pip_repositories()
-
 pip_import(
     name = "grpc_python_dependencies",
-    requirements = "//:requirements.bazel.txt",
+    requirements = "@com_github_grpc_grpc//:requirements.bazel.txt",
 )
 
+load("@io_bazel_rules_python//python:pip.bzl", "pip_repositories")
 load("@grpc_python_dependencies//:requirements.bzl", "pip_install")
-
+pip_repositories()
 pip_install()
 
-# NOTE(https://github.com/pubref/rules_protobuf/pull/196): Switch to upstream repo after this gets merged.
-git_repository(
-    name = "org_pubref_rules_protobuf",
-    remote = "https://github.com/ghostwriternr/rules_protobuf",
-    tag = "v0.8.2.1-alpha",
-)
+load("@upb//bazel:workspace_deps.bzl", "upb_deps")
+upb_deps()
 
-load("@org_pubref_rules_protobuf//python:rules.bzl", "py_proto_repositories")
+load("@envoy_api//bazel:repositories.bzl", "api_dependencies")
+api_dependencies()
 
-py_proto_repositories()
+load("@io_bazel_rules_go//go:deps.bzl", "go_rules_dependencies", "go_register_toolchains")
+go_rules_dependencies()
+go_register_toolchains()
+
+
+load("@build_bazel_rules_apple//apple:repositories.bzl", "apple_rules_dependencies")
+apple_rules_dependencies()
+
+load("@build_bazel_apple_support//lib:repositories.bzl", "apple_support_dependencies")
+apple_support_dependencies()

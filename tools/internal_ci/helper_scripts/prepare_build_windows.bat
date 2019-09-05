@@ -18,10 +18,7 @@ set PATH=C:\tools\msys64\usr\bin;C:\Python27;%PATH%
 
 @rem If this is a PR using RUN_TESTS_FLAGS var, then add flags to filter tests
 if defined KOKORO_GITHUB_PULL_REQUEST_NUMBER if defined RUN_TESTS_FLAGS (
-  chocolatey install -y jq
-  for /f "usebackq delims=" %%x in (`curl -s https://api.github.com/repos/grpc/grpc/pulls/%KOKORO_GITHUB_PULL_REQUEST_NUMBER% ^| jq -r .base.ref`) do ( 
-    set RUN_TESTS_FLAGS=%RUN_TESTS_FLAGS% --filter_pr_tests --base_branch origin/%%x
-  )
+  set RUN_TESTS_FLAGS=%RUN_TESTS_FLAGS% --filter_pr_tests --base_branch origin/%KOKORO_GITHUB_PULL_REQUEST_TARGET_BRANCH%
 )
 
 @rem Update DNS settings to:
@@ -33,6 +30,10 @@ netsh interface ip add dnsservers "Local Area Connection 8" 8.8.4.4 index=3
 
 @rem Needed for big_query_utils
 python -m pip install google-api-python-client
+
+@rem C# prerequisites: Install dotnet SDK
+powershell -File src\csharp\install_dotnet_sdk.ps1
+set PATH=%LOCALAPPDATA%\Microsoft\dotnet;%PATH%
 
 @rem Disable some unwanted dotnet options
 set NUGET_XMLDOC_MODE=skip

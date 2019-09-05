@@ -85,6 +85,8 @@ class CoreCodegen final : public CoreCodegenInterface {
       grpc_byte_buffer_reader* reader) override;
   int grpc_byte_buffer_reader_next(grpc_byte_buffer_reader* reader,
                                    grpc_slice* slice) override;
+  int grpc_byte_buffer_reader_peek(grpc_byte_buffer_reader* reader,
+                                   grpc_slice** slice) override;
 
   grpc_byte_buffer* grpc_raw_byte_buffer_create(grpc_slice* slice,
                                                 size_t nslices) override;

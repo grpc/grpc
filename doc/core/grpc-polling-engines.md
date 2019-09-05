@@ -23,11 +23,9 @@ There are multiple polling engine implementations depending on the OS and the OS
   - **`epollex`** (default but requires kernel version >= 4.5),
   - `epoll1` (If `epollex` is not available and glibc version >= 2.9)
   - `poll` (If kernel does not have epoll support)
-  - `poll-cv` (If explicitly configured)
-- Mac: **`poll`** (default), `poll-cv` (If explicitly configured)
+- Mac: **`poll`** (default)
 - Windows: (no name)
 - One-off polling engines:
-  - AppEngine platform: **`poll-cv`** (default)
   - NodeJS : `libuv` polling engine implementation (requires different compile `#define`s)
 
 ## Polling Engine Interface
@@ -87,7 +85,7 @@ Add/Remove fd to the `grpc_pollset_set`
 - **grpc\_pollset\_set_[add|del]\_pollset**
   - Signature: `grpc_pollset_set_[add|del]_pollset(grpc_pollset_set* pss, grpc_pollset* ps)`
   - What does adding a pollset to a pollset_set mean ?
-    - It means that calling `grpc_pollset_work()` on the pollset will also poll all the fds in the pollset_set i.e semantically, it is similar to adding all the fds inside pollset_set to the pollset. 
+    - It means that calling `grpc_pollset_work()` on the pollset will also poll all the fds in the pollset_set i.e semantically, it is similar to adding all the fds inside pollset_set to the pollset.
     - This guarantee is no longer true once the pollset is removed from the pollset_set
 
 - **grpc\_pollset\_set_[add|del]\_pollset\_set**
@@ -137,7 +135,7 @@ Code at `src/core/lib/iomgr/ev_epollex_posix.cc`
   - The same FD can be in multiple `Pollable`s (even if one of the `Pollable`s is of type PO_FD)
   - There cannot be two `Pollable`s of type PO_FD for the same fd
 
-- Why do we need `Pollable` of type PO_FD and PO_EMTPY ?
+- Why do we need `Pollable` of type PO_FD and PO_EMPTY ?
   - The main reason is the Sync client API
     - We create one new completion queue per call. If we didn’t have PO_EMPTY and PO_FD type pollables, then every call on a given channel will effectively have to create a `Pollable` and hence an epollset. This is because every completion queue automatically creates a pollset and the channel fd will have to be put in that pollset. This clearly requires an epollset to put that fd. Creating an epollset per call (even if we delete the epollset once the call is completed) would mean a lot of sys calls to create/delete epoll fds. This is clearly not a good idea.
     - With these new types of `Pollable`s, all pollsets (corresponding to the new per-call completion queue) will initially point to PO_EMPTY global epollset. Then once the channel fd is added to the pollset, the pollset will point to the `Pollable` of type PO_FD containing just that fd (i.e it will reuse the existing `Pollable`). This way, the epoll fd creation/deletion churn is avoided.

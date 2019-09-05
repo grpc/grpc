@@ -29,9 +29,9 @@
 #include <grpc/support/string_util.h>
 #include <grpc/support/sync.h>
 
-#include "src/core/lib/gpr/env.h"
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gpr/useful.h"
+#include "src/core/lib/gprpp/global_config.h"
 #include "src/core/lib/gprpp/thd.h"
 #include "src/core/lib/iomgr/buffer_list.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
@@ -41,10 +41,15 @@
 #include "src/core/lib/iomgr/timer.h"
 #include "src/core/lib/iomgr/timer_manager.h"
 
+GPR_GLOBAL_CONFIG_DEFINE_BOOL(grpc_abort_on_leaks, false,
+                              "A debugging aid to cause a call to abort() when "
+                              "gRPC objects are leaked past grpc_shutdown()");
+
 static gpr_mu g_mu;
 static gpr_cv g_rcv;
 static int g_shutdown;
 static grpc_iomgr_object g_root_object;
+static bool g_grpc_abort_on_leaks;
 
 void grpc_iomgr_init() {
   grpc_core::ExecCtx exec_ctx;
@@ -53,11 +58,12 @@ void grpc_iomgr_init() {
   gpr_mu_init(&g_mu);
   gpr_cv_init(&g_rcv);
   grpc_core::Executor::InitAll();
-  grpc_timer_list_init();
   g_root_object.next = g_root_object.prev = &g_root_object;
   g_root_object.name = (char*)"root";
   grpc_iomgr_platform_init();
+  grpc_timer_list_init();
   grpc_core::grpc_errqueue_init();
+  g_grpc_abort_on_leaks = GPR_GLOBAL_CONFIG_GET(grpc_abort_on_leaks);
 }
 
 void grpc_iomgr_start() { grpc_timer_manager_init(); }
@@ -162,6 +168,11 @@ bool grpc_iomgr_is_any_background_poller_thread() {
   return grpc_iomgr_platform_is_any_background_poller_thread();
 }
 
+bool grpc_iomgr_add_closure_to_background_poller(grpc_closure* closure,
+                                                 grpc_error* error) {
+  return grpc_iomgr_platform_add_closure_to_background_poller(closure, error);
+}
+
 void grpc_iomgr_register_object(grpc_iomgr_object* obj, const char* name) {
   obj->name = gpr_strdup(name);
   gpr_mu_lock(&g_mu);
@@ -180,9 +191,4 @@ void grpc_iomgr_unregister_object(grpc_iomgr_object* obj) {
   gpr_free(obj->name);
 }
 
-bool grpc_iomgr_abort_on_leaks(void) {
-  char* env = gpr_getenv("GRPC_ABORT_ON_LEAKS");
-  bool should_we = gpr_is_true(env);
-  gpr_free(env);
-  return should_we;
-}
+bool grpc_iomgr_abort_on_leaks(void) { return g_grpc_abort_on_leaks; }

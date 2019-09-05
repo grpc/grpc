@@ -31,31 +31,36 @@
 #include <grpc/support/string_util.h>
 
 #include "src/core/lib/debug/trace.h"
-#include "src/core/lib/gpr/env.h"
 #include "src/core/lib/gpr/useful.h"
+#include "src/core/lib/gprpp/global_config.h"
 #include "src/core/lib/iomgr/ev_epoll1_linux.h"
 #include "src/core/lib/iomgr/ev_epollex_linux.h"
 #include "src/core/lib/iomgr/ev_poll_posix.h"
 #include "src/core/lib/iomgr/internal_errqueue.h"
 
-grpc_core::TraceFlag grpc_polling_trace(false,
-                                        "polling"); /* Disabled by default */
+GPR_GLOBAL_CONFIG_DEFINE_STRING(
+    grpc_poll_strategy, "all",
+    "Declares which polling engines to try when starting gRPC. "
+    "This is a comma-separated list of engines, which are tried in priority "
+    "order first -> last.")
+
+grpc_core::DebugOnlyTraceFlag grpc_polling_trace(
+    false, "polling"); /* Disabled by default */
 
 /* Traces fd create/close operations */
-grpc_core::TraceFlag grpc_fd_trace(false, "fd_trace");
+grpc_core::DebugOnlyTraceFlag grpc_fd_trace(false, "fd_trace");
 grpc_core::DebugOnlyTraceFlag grpc_trace_fd_refcount(false, "fd_refcount");
 grpc_core::DebugOnlyTraceFlag grpc_polling_api_trace(false, "polling_api");
 
-#ifndef NDEBUG
-
 // Polling API trace only enabled in debug builds
+#ifndef NDEBUG
 #define GRPC_POLLING_API_TRACE(format, ...)                  \
-  if (grpc_polling_api_trace.enabled()) {                    \
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_polling_api_trace)) {     \
     gpr_log(GPR_INFO, "(polling-api) " format, __VA_ARGS__); \
   }
 #else
 #define GRPC_POLLING_API_TRACE(...)
-#endif
+#endif  // NDEBUG
 
 /** Default poll() function - a pointer so that it can be overridden by some
  *  tests */
@@ -66,7 +71,7 @@ int aix_poll(struct pollfd fds[], nfds_t nfds, int timeout) {
   return poll(fds, nfds, timeout);
 }
 grpc_poll_function_type grpc_poll_function = aix_poll;
-#endif
+#endif  // GPR_AIX
 
 grpc_wakeup_fd grpc_global_wakeup_fd;
 
@@ -126,10 +131,9 @@ static event_engine_factory g_factories[] = {
     {ENGINE_HEAD_CUSTOM, nullptr},        {ENGINE_HEAD_CUSTOM, nullptr},
     {ENGINE_HEAD_CUSTOM, nullptr},        {ENGINE_HEAD_CUSTOM, nullptr},
     {"epollex", grpc_init_epollex_linux}, {"epoll1", grpc_init_epoll1_linux},
-    {"poll", grpc_init_poll_posix},       {"poll-cv", grpc_init_poll_cv_posix},
-    {"none", init_non_polling},           {ENGINE_TAIL_CUSTOM, nullptr},
+    {"poll", grpc_init_poll_posix},       {"none", init_non_polling},
     {ENGINE_TAIL_CUSTOM, nullptr},        {ENGINE_TAIL_CUSTOM, nullptr},
-    {ENGINE_TAIL_CUSTOM, nullptr},
+    {ENGINE_TAIL_CUSTOM, nullptr},        {ENGINE_TAIL_CUSTOM, nullptr},
 };
 
 static void add(const char* beg, const char* end, char*** ss, size_t* ns) {
@@ -202,18 +206,16 @@ void grpc_register_event_engine_factory(const char* name,
   GPR_ASSERT(false);
 }
 
-/* Call this only after calling grpc_event_engine_init() */
+/*If grpc_event_engine_init() has been called, returns the poll_strategy_name.
+ * Otherwise, returns nullptr. */
 const char* grpc_get_poll_strategy_name() { return g_poll_strategy_name; }
 
 void grpc_event_engine_init(void) {
-  char* s = gpr_getenv("GRPC_POLL_STRATEGY");
-  if (s == nullptr) {
-    s = gpr_strdup("all");
-  }
+  grpc_core::UniquePtr<char> value = GPR_GLOBAL_CONFIG_GET(grpc_poll_strategy);
 
   char** strings = nullptr;
   size_t nstrings = 0;
-  split(s, &strings, &nstrings);
+  split(value.get(), &strings, &nstrings);
 
   for (size_t i = 0; g_event_engine == nullptr && i < nstrings; i++) {
     try_engine(strings[i]);
@@ -225,10 +227,10 @@ void grpc_event_engine_init(void) {
   gpr_free(strings);
 
   if (g_event_engine == nullptr) {
-    gpr_log(GPR_ERROR, "No event engine could be initialized from %s", s);
+    gpr_log(GPR_ERROR, "No event engine could be initialized from %s",
+            value.get());
     abort();
   }
-  gpr_free(s);
 }
 
 void grpc_event_engine_shutdown(void) {
@@ -245,7 +247,8 @@ bool grpc_event_engine_can_track_errors(void) {
 }
 
 bool grpc_event_engine_run_in_background(void) {
-  return g_event_engine->run_in_background;
+  // g_event_engine is nullptr when using a custom iomgr.
+  return g_event_engine != nullptr && g_event_engine->run_in_background;
 }
 
 grpc_fd* grpc_fd_create(int fd, const char* name, bool track_err) {
@@ -401,6 +404,11 @@ void grpc_pollset_set_del_fd(grpc_pollset_set* pollset_set, grpc_fd* fd) {
 
 bool grpc_is_any_background_poller_thread(void) {
   return g_event_engine->is_any_background_poller_thread();
+}
+
+bool grpc_add_closure_to_background_poller(grpc_closure* closure,
+                                           grpc_error* error) {
+  return g_event_engine->add_closure_to_background_poller(closure, error);
 }
 
 void grpc_shutdown_background_closure(void) {

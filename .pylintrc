@@ -6,6 +6,8 @@ ignore=
 	src/python/grpcio/grpc/framework/foundation,
 	src/python/grpcio/grpc/framework/interfaces,
 
+extension-pkg-whitelist=grpc._cython.cygrpc
+
 [VARIABLES]
 
 # TODO(https://github.com/PyCQA/pylint/issues/1345): How does the inspection
@@ -17,7 +19,7 @@ dummy-variables-rgx=^ignored_|^unused_
 # NOTE(nathaniel): Not particularly attached to this value; it just seems to
 # be what works for us at the moment (excepting the dead-code-walking Beta
 # API).
-max-args=6
+max-args=7
 
 [MISCELLANEOUS]
 

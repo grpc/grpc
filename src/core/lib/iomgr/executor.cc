@@ -32,18 +32,23 @@
 #include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/gprpp/memory.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
+#include "src/core/lib/iomgr/iomgr.h"
 
 #define MAX_DEPTH 2
 
-#define EXECUTOR_TRACE(format, ...)                     \
-  if (executor_trace.enabled()) {                       \
-    gpr_log(GPR_INFO, "EXECUTOR " format, __VA_ARGS__); \
-  }
+#define EXECUTOR_TRACE(format, ...)                       \
+  do {                                                    \
+    if (GRPC_TRACE_FLAG_ENABLED(executor_trace)) {        \
+      gpr_log(GPR_INFO, "EXECUTOR " format, __VA_ARGS__); \
+    }                                                     \
+  } while (0)
 
-#define EXECUTOR_TRACE0(str)            \
-  if (executor_trace.enabled()) {       \
-    gpr_log(GPR_INFO, "EXECUTOR " str); \
-  }
+#define EXECUTOR_TRACE0(str)                       \
+  do {                                             \
+    if (GRPC_TRACE_FLAG_ENABLED(executor_trace)) { \
+      gpr_log(GPR_INFO, "EXECUTOR " str);          \
+    }                                              \
+  } while (0)
 
 namespace grpc_core {
 namespace {
@@ -115,7 +120,10 @@ size_t Executor::RunClosures(const char* executor_name,
   // thread itself, but this is the point where we could start seeing
   // application-level callbacks. No need to create a new ExecCtx, though,
   // since there already is one and it is flushed (but not destructed) in this
-  // function itself.
+  // function itself. The ApplicationCallbackExecCtx will have its callbacks
+  // invoked on its destruction, which will be after completing any closures in
+  // the executor's closure list (which were explicitly scheduled onto the
+  // executor).
   grpc_core::ApplicationCallbackExecCtx callback_exec_ctx(
       GRPC_APP_CALLBACK_EXEC_CTX_FLAG_IS_INTERNAL_THREAD);
 
@@ -206,6 +214,14 @@ void Executor::SetThreading(bool threading) {
 
     gpr_free(thd_state_);
     gpr_tls_destroy(&g_this_thread_state);
+
+    // grpc_iomgr_shutdown_background_closure() will close all the registered
+    // fds in the background poller, and wait for all pending closures to
+    // finish. Thus, never call Executor::SetThreading(false) in the middle of
+    // an application.
+    // TODO(guantaol): create another method to finish all the pending closures
+    // registered in the background poller by grpc_core::Executor.
+    grpc_iomgr_shutdown_background_closure();
   }
 
   EXECUTOR_TRACE("(%s) SetThreading(%d) done", name_, threading);
@@ -275,6 +291,10 @@ void Executor::Enqueue(grpc_closure* closure, grpc_error* error,
 #endif
       grpc_closure_list_append(grpc_core::ExecCtx::Get()->closure_list(),
                                closure, error);
+      return;
+    }
+
+    if (grpc_iomgr_add_closure_to_background_poller(closure, error)) {
       return;
     }
 

@@ -1,7 +1,5 @@
 exports_files([
-    "benchmark.BUILD",
     "gtest.BUILD",
-    "objective_c/Cronet/bidirectional_stream_c.h",
     "zlib.BUILD",
     "twisted.BUILD",
     "yaml.BUILD",
@@ -9,4 +7,7 @@ exports_files([
     "zope_interface.BUILD",
     "constantly.BUILD",
     "cython.BUILD",
+    "six.BUILD",
+    "enum34.BUILD",
+    "futures.BUILD",
 ])

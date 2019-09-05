@@ -1,0 +1,59 @@
+# Copyright 2019 The gRPC Authors
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+load("@grpc_python_dependencies//:requirements.bzl", "requirement")
+
+py_library(
+    name = "client",
+    testonly = 1,
+    srcs = ["client.py"],
+    deps = [
+        "//src/python/grpcio/grpc:grpcio",
+        "//src/python/grpcio_status/grpc_status:grpc_status",
+        "//examples:helloworld_py_pb2",
+        "//examples:helloworld_py_pb2_grpc",
+        requirement('googleapis-common-protos'),
+    ],
+)
+
+py_library(
+    name = "server",
+    testonly = 1,
+    srcs = ["server.py"],
+    deps = [
+        "//src/python/grpcio/grpc:grpcio",
+        "//src/python/grpcio_status/grpc_status:grpc_status",
+        "//examples:helloworld_py_pb2",
+        "//examples:helloworld_py_pb2_grpc",
+    ] + select({
+        "//conditions:default": [requirement("futures")],
+        "//:python3": [],
+    }),
+)
+
+py_test(
+    name = "test/_error_handling_example_test",
+    srcs = ["test/_error_handling_example_test.py"],
+    deps = [
+        ":client",
+        ":server",
+        "//src/python/grpcio_tests/tests:bazel_namespace_package_hack",
+    ],
+    size = "small",
+    imports = [
+        "../../../src/python/grpcio_status",
+        "../../../src/python/grpcio_tests",
+    ],
+    python_version = "PY3",
+)

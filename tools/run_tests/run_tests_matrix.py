@@ -197,10 +197,21 @@ def _create_test_jobs(extra_args=[], inner_jobs=_DEFAULT_INNER_JOBS):
         inner_jobs=inner_jobs,
         timeout_seconds=_CPP_RUNTESTS_TIMEOUT)
 
+    # C# tests on .NET desktop/mono
     test_jobs += _generate_jobs(
         languages=['csharp'],
         configs=['dbg', 'opt'],
         platforms=['linux', 'macos', 'windows'],
+        labels=['basictests', 'multilang'],
+        extra_args=extra_args,
+        inner_jobs=inner_jobs)
+    # C# tests on .NET core
+    test_jobs += _generate_jobs(
+        languages=['csharp'],
+        configs=['dbg', 'opt'],
+        platforms=['linux', 'macos', 'windows'],
+        arch='default',
+        compiler='coreclr',
         labels=['basictests', 'multilang'],
         extra_args=extra_args,
         inner_jobs=inner_jobs)
@@ -235,7 +246,7 @@ def _create_test_jobs(extra_args=[], inner_jobs=_DEFAULT_INNER_JOBS):
     # supported on mac only.
     test_jobs += _generate_jobs(
         languages=['objc'],
-        configs=['dbg', 'opt'],
+        configs=['opt'],
         platforms=['macos'],
         labels=['basictests', 'multilang'],
         extra_args=extra_args,
@@ -392,23 +403,17 @@ def _create_portability_test_jobs(extra_args=[],
         extra_args=extra_args,
         inner_jobs=inner_jobs)
 
-    test_jobs += _generate_jobs(
-        languages=['csharp'],
-        configs=['dbg'],
-        platforms=['linux'],
-        arch='default',
-        compiler='coreclr',
-        labels=['portability', 'multilang'],
-        extra_args=extra_args,
-        inner_jobs=inner_jobs)
-
+    # TODO(jtattermusch): a large portion of the libuv tests is failing,
+    # which can end up killing the kokoro job due to gigabytes of error logs
+    # generated. Remove the --build_only flag
+    # once https://github.com/grpc/grpc/issues/17556 is fixed.
     test_jobs += _generate_jobs(
         languages=['c'],
         configs=['dbg'],
         platforms=['linux'],
         iomgr_platforms=['uv'],
         labels=['portability', 'corelang'],
-        extra_args=extra_args,
+        extra_args=extra_args + ['--build_only'],
         inner_jobs=inner_jobs,
         timeout_seconds=_CPP_RUNTESTS_TIMEOUT)
 
@@ -518,6 +523,12 @@ if __name__ == "__main__":
         type=str,
         nargs='?',
         help='Upload test results to a specified BQ table.')
+    argp.add_argument(
+        '--extra_args',
+        default='',
+        type=str,
+        nargs=argparse.REMAINDER,
+        help='Extra test args passed to each sub-script.')
     args = argp.parse_args()
 
     extra_args = []
@@ -535,6 +546,8 @@ if __name__ == "__main__":
         extra_args.append('--bq_result_table')
         extra_args.append('%s' % args.bq_result_table)
         extra_args.append('--measure_cpu_costs')
+    if args.extra_args:
+        extra_args.extend(args.extra_args)
 
     all_jobs = _create_test_jobs(extra_args=extra_args, inner_jobs=args.inner_jobs) + \
                _create_portability_test_jobs(extra_args=extra_args, inner_jobs=args.inner_jobs)

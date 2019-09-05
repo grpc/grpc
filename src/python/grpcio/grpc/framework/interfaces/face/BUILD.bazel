@@ -1,4 +1,3 @@
-load("@grpc_python_dependencies//:requirements.bzl", "requirement")
 package(default_visibility = ["//visibility:public"])
 
 py_library(
@@ -16,9 +15,11 @@ py_library(
     deps = [
         "//src/python/grpcio/grpc/framework/foundation",
         "//src/python/grpcio/grpc/framework/common",
-        requirement("enum34"),
-        requirement("six"),
-    ],
+        "//external:six",
+    ] + select({
+        "//conditions:default": ["@enum34//:enum34",],
+        "//:python3": [],
+    }),
 )
 
 py_library(

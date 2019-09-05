@@ -178,6 +178,7 @@ static void test_mt_multipop(void) {
   for (auto& th : thds) {
     th.Join();
   }
+  gpr_mu_destroy(&pa.mu);
   gpr_mpscq_destroy(&q);
 }
 

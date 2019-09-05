@@ -24,16 +24,20 @@
 #include <poll.h>
 
 #include "src/core/lib/debug/trace.h"
+#include "src/core/lib/gprpp/global_config.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/iomgr/pollset.h"
 #include "src/core/lib/iomgr/pollset_set.h"
 #include "src/core/lib/iomgr/wakeup_fd_posix.h"
 
-extern grpc_core::TraceFlag grpc_fd_trace;      /* Disabled by default */
-extern grpc_core::TraceFlag grpc_polling_trace; /* Disabled by default */
+GPR_GLOBAL_CONFIG_DECLARE_STRING(grpc_poll_strategy);
+
+extern grpc_core::DebugOnlyTraceFlag grpc_fd_trace; /* Disabled by default */
+extern grpc_core::DebugOnlyTraceFlag
+    grpc_polling_trace; /* Disabled by default */
 
 #define GRPC_FD_TRACE(format, ...)                        \
-  if (grpc_fd_trace.enabled()) {                          \
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_fd_trace)) {           \
     gpr_log(GPR_INFO, "(fd-trace) " format, __VA_ARGS__); \
   }
 
@@ -83,6 +87,8 @@ typedef struct grpc_event_engine_vtable {
   bool (*is_any_background_poller_thread)(void);
   void (*shutdown_background_closure)(void);
   void (*shutdown_engine)(void);
+  bool (*add_closure_to_background_poller)(grpc_closure* closure,
+                                           grpc_error* error);
 } grpc_event_engine_vtable;
 
 /* register a new event engine factory */
@@ -184,6 +190,12 @@ void grpc_pollset_set_del_fd(grpc_pollset_set* pollset_set, grpc_fd* fd);
 
 /* Returns true if the caller is a worker thread for any background poller. */
 bool grpc_is_any_background_poller_thread();
+
+/* Returns true if the closure is registered into the background poller. Note
+ * that the closure may or may not run yet when this function returns, and the
+ * closure should not be blocking or long-running. */
+bool grpc_add_closure_to_background_poller(grpc_closure* closure,
+                                           grpc_error* error);
 
 /* Shut down all the closures registered in the background poller. */
 void grpc_shutdown_background_closure();

@@ -18,6 +18,7 @@
 
 #include <cstring>
 
+#include <grpc/grpc.h>
 #include <grpc/support/log.h>
 
 #include "src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper.h"
@@ -100,12 +101,16 @@ static grpc_ares_request* test_dns_lookup_ares_locked(
       addresses, check_grpclb, service_config_json, query_timeout_ms, combiner);
   ++g_resolution_count;
   static grpc_millis last_resolution_time = 0;
+  grpc_millis now =
+      grpc_timespec_to_millis_round_up(gpr_now(GPR_CLOCK_MONOTONIC));
+  gpr_log(GPR_DEBUG,
+          "last_resolution_time:%" PRId64 " now:%" PRId64
+          " min_time_between:%d",
+          last_resolution_time, now, kMinResolutionPeriodForCheckMs);
   if (last_resolution_time == 0) {
     last_resolution_time =
         grpc_timespec_to_millis_round_up(gpr_now(GPR_CLOCK_MONOTONIC));
   } else {
-    grpc_millis now =
-        grpc_timespec_to_millis_round_up(gpr_now(GPR_CLOCK_MONOTONIC));
     GPR_ASSERT(now - last_resolution_time >= kMinResolutionPeriodForCheckMs);
     last_resolution_time = now;
   }
@@ -169,23 +174,56 @@ static void poll_pollset_until_request_done(iomgr_args* args) {
   gpr_event_set(&args->ev, (void*)1);
 }
 
+struct OnResolutionCallbackArg;
+
+class ResultHandler : public grpc_core::Resolver::ResultHandler {
+ public:
+  using ResultCallback = void (*)(OnResolutionCallbackArg* state);
+
+  void SetCallback(ResultCallback result_cb, OnResolutionCallbackArg* state) {
+    GPR_ASSERT(result_cb_ == nullptr);
+    result_cb_ = result_cb;
+    GPR_ASSERT(state_ == nullptr);
+    state_ = state;
+  }
+
+  void ReturnResult(grpc_core::Resolver::Result result) override {
+    GPR_ASSERT(result_cb_ != nullptr);
+    GPR_ASSERT(state_ != nullptr);
+    ResultCallback cb = result_cb_;
+    OnResolutionCallbackArg* state = state_;
+    result_cb_ = nullptr;
+    state_ = nullptr;
+    cb(state);
+  }
+
+  void ReturnError(grpc_error* error) override {
+    gpr_log(GPR_ERROR, "resolver returned error: %s", grpc_error_string(error));
+    GPR_ASSERT(false);
+  }
+
+ private:
+  ResultCallback result_cb_ = nullptr;
+  OnResolutionCallbackArg* state_ = nullptr;
+};
+
 struct OnResolutionCallbackArg {
   const char* uri_str = nullptr;
   grpc_core::OrphanablePtr<grpc_core::Resolver> resolver;
-  grpc_channel_args* result = nullptr;
+  ResultHandler* result_handler;
 };
 
 // Set to true by the last callback in the resolution chain.
 static bool g_all_callbacks_invoked;
 
-static void on_second_resolution(void* arg, grpc_error* error) {
-  OnResolutionCallbackArg* cb_arg = static_cast<OnResolutionCallbackArg*>(arg);
-  grpc_channel_args_destroy(cb_arg->result);
-  GPR_ASSERT(error == GRPC_ERROR_NONE);
-  gpr_log(GPR_INFO, "2nd: g_resolution_count: %d", g_resolution_count);
-  // The resolution callback was not invoked until new data was
-  // available, which was delayed until after the cooldown period.
-  GPR_ASSERT(g_resolution_count == 2);
+// It's interesting to run a few rounds of this test because as
+// we run more rounds, the base starting time
+// (i.e. ExecCtx g_start_time) gets further and further away
+// from "Now()". Thus the more rounds ran, the more highlighted the
+// difference is between absolute and relative times values.
+static void on_fourth_resolution(OnResolutionCallbackArg* cb_arg) {
+  gpr_log(GPR_INFO, "4th: g_resolution_count: %d", g_resolution_count);
+  GPR_ASSERT(g_resolution_count == 4);
   cb_arg->resolver.reset();
   gpr_atm_rel_store(&g_iomgr_args.done_atm, 1);
   gpr_mu_lock(g_iomgr_args.mu);
@@ -196,18 +234,36 @@ static void on_second_resolution(void* arg, grpc_error* error) {
   g_all_callbacks_invoked = true;
 }
 
-static void on_first_resolution(void* arg, grpc_error* error) {
-  OnResolutionCallbackArg* cb_arg = static_cast<OnResolutionCallbackArg*>(arg);
-  grpc_channel_args_destroy(cb_arg->result);
-  GPR_ASSERT(error == GRPC_ERROR_NONE);
+static void on_third_resolution(OnResolutionCallbackArg* cb_arg) {
+  gpr_log(GPR_INFO, "3rd: g_resolution_count: %d", g_resolution_count);
+  GPR_ASSERT(g_resolution_count == 3);
+  cb_arg->result_handler->SetCallback(on_fourth_resolution, cb_arg);
+  cb_arg->resolver->RequestReresolutionLocked();
+  gpr_mu_lock(g_iomgr_args.mu);
+  GRPC_LOG_IF_ERROR("pollset_kick",
+                    grpc_pollset_kick(g_iomgr_args.pollset, nullptr));
+  gpr_mu_unlock(g_iomgr_args.mu);
+}
+
+static void on_second_resolution(OnResolutionCallbackArg* cb_arg) {
+  gpr_log(GPR_INFO, "2nd: g_resolution_count: %d", g_resolution_count);
+  // The resolution callback was not invoked until new data was
+  // available, which was delayed until after the cooldown period.
+  GPR_ASSERT(g_resolution_count == 2);
+  cb_arg->result_handler->SetCallback(on_third_resolution, cb_arg);
+  cb_arg->resolver->RequestReresolutionLocked();
+  gpr_mu_lock(g_iomgr_args.mu);
+  GRPC_LOG_IF_ERROR("pollset_kick",
+                    grpc_pollset_kick(g_iomgr_args.pollset, nullptr));
+  gpr_mu_unlock(g_iomgr_args.mu);
+}
+
+static void on_first_resolution(OnResolutionCallbackArg* cb_arg) {
   gpr_log(GPR_INFO, "1st: g_resolution_count: %d", g_resolution_count);
   // There's one initial system-level resolution and one invocation of a
   // notification callback (the current function).
   GPR_ASSERT(g_resolution_count == 1);
-  cb_arg->resolver->NextLocked(
-      &cb_arg->result,
-      GRPC_CLOSURE_CREATE(on_second_resolution, arg,
-                          grpc_combiner_scheduler(g_combiner)));
+  cb_arg->result_handler->SetCallback(on_second_resolution, cb_arg);
   cb_arg->resolver->RequestReresolutionLocked();
   gpr_mu_lock(g_iomgr_args.mu);
   GRPC_LOG_IF_ERROR("pollset_kick",
@@ -218,7 +274,7 @@ static void on_first_resolution(void* arg, grpc_error* error) {
 static void start_test_under_combiner(void* arg, grpc_error* error) {
   OnResolutionCallbackArg* res_cb_arg =
       static_cast<OnResolutionCallbackArg*>(arg);
-
+  res_cb_arg->result_handler = grpc_core::New<ResultHandler>();
   grpc_core::ResolverFactory* factory =
       grpc_core::ResolverRegistry::LookupResolverFactory("dns");
   grpc_uri* uri = grpc_uri_parse(res_cb_arg->uri_str, 0);
@@ -228,25 +284,22 @@ static void start_test_under_combiner(void* arg, grpc_error* error) {
   grpc_core::ResolverArgs args;
   args.uri = uri;
   args.combiner = g_combiner;
+  args.result_handler =
+      grpc_core::UniquePtr<grpc_core::Resolver::ResultHandler>(
+          res_cb_arg->result_handler);
   g_resolution_count = 0;
 
-  grpc_arg cooldown_arg;
-  cooldown_arg.key =
-      const_cast<char*>(GRPC_ARG_DNS_MIN_TIME_BETWEEN_RESOLUTIONS_MS);
-  cooldown_arg.type = GRPC_ARG_INTEGER;
-  cooldown_arg.value.integer = kMinResolutionPeriodMs;
-  auto* cooldown_channel_args =
-      grpc_channel_args_copy_and_add(nullptr, &cooldown_arg, 1);
-  args.args = cooldown_channel_args;
-  res_cb_arg->resolver = factory->CreateResolver(args);
-  grpc_channel_args_destroy(cooldown_channel_args);
+  grpc_arg cooldown_arg = grpc_channel_arg_integer_create(
+      const_cast<char*>(GRPC_ARG_DNS_MIN_TIME_BETWEEN_RESOLUTIONS_MS),
+      kMinResolutionPeriodMs);
+  grpc_channel_args cooldown_args = {1, &cooldown_arg};
+  args.args = &cooldown_args;
+  res_cb_arg->resolver = factory->CreateResolver(std::move(args));
   GPR_ASSERT(res_cb_arg->resolver != nullptr);
-  // First resolution, would incur in system-level resolution.
-  res_cb_arg->resolver->NextLocked(
-      &res_cb_arg->result,
-      GRPC_CLOSURE_CREATE(on_first_resolution, res_cb_arg,
-                          grpc_combiner_scheduler(g_combiner)));
   grpc_uri_destroy(uri);
+  // First resolution, would incur in system-level resolution.
+  res_cb_arg->result_handler->SetCallback(on_first_resolution, res_cb_arg);
+  res_cb_arg->resolver->StartLocked();
 }
 
 static void test_cooldown() {
@@ -276,12 +329,11 @@ int main(int argc, char** argv) {
   grpc_set_resolver_impl(&test_resolver);
 
   test_cooldown();
-
   {
     grpc_core::ExecCtx exec_ctx;
     GRPC_COMBINER_UNREF(g_combiner, "test");
   }
-  grpc_shutdown();
+  grpc_shutdown_blocking();
   GPR_ASSERT(g_all_callbacks_invoked);
   return 0;
 }

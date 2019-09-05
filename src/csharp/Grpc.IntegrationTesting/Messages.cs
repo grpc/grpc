@@ -28,41 +28,46 @@ namespace Grpc.Testing {
             "LnRlc3RpbmciGgoJQm9vbFZhbHVlEg0KBXZhbHVlGAEgASgIIkAKB1BheWxv",
             "YWQSJwoEdHlwZRgBIAEoDjIZLmdycGMudGVzdGluZy5QYXlsb2FkVHlwZRIM",
             "CgRib2R5GAIgASgMIisKCkVjaG9TdGF0dXMSDAoEY29kZRgBIAEoBRIPCgdt",
-            "ZXNzYWdlGAIgASgJIs4CCg1TaW1wbGVSZXF1ZXN0EjAKDXJlc3BvbnNlX3R5",
+            "ZXNzYWdlGAIgASgJIoYDCg1TaW1wbGVSZXF1ZXN0EjAKDXJlc3BvbnNlX3R5",
             "cGUYASABKA4yGS5ncnBjLnRlc3RpbmcuUGF5bG9hZFR5cGUSFQoNcmVzcG9u",
             "c2Vfc2l6ZRgCIAEoBRImCgdwYXlsb2FkGAMgASgLMhUuZ3JwYy50ZXN0aW5n",
             "LlBheWxvYWQSFQoNZmlsbF91c2VybmFtZRgEIAEoCBIYChBmaWxsX29hdXRo",
             "X3Njb3BlGAUgASgIEjQKE3Jlc3BvbnNlX2NvbXByZXNzZWQYBiABKAsyFy5n",
             "cnBjLnRlc3RpbmcuQm9vbFZhbHVlEjEKD3Jlc3BvbnNlX3N0YXR1cxgHIAEo",
             "CzIYLmdycGMudGVzdGluZy5FY2hvU3RhdHVzEjIKEWV4cGVjdF9jb21wcmVz",
-            "c2VkGAggASgLMhcuZ3JwYy50ZXN0aW5nLkJvb2xWYWx1ZSJfCg5TaW1wbGVS",
+            "c2VkGAggASgLMhcuZ3JwYy50ZXN0aW5nLkJvb2xWYWx1ZRIWCg5maWxsX3Nl",
+            "cnZlcl9pZBgJIAEoCBIeChZmaWxsX2dycGNsYl9yb3V0ZV90eXBlGAogASgI",
+            "IqwBCg5TaW1wbGVSZXNwb25zZRImCgdwYXlsb2FkGAEgASgLMhUuZ3JwYy50",
+            "ZXN0aW5nLlBheWxvYWQSEAoIdXNlcm5hbWUYAiABKAkSEwoLb2F1dGhfc2Nv",
+            "cGUYAyABKAkSEQoJc2VydmVyX2lkGAQgASgJEjgKEWdycGNsYl9yb3V0ZV90",
+            "eXBlGAUgASgOMh0uZ3JwYy50ZXN0aW5nLkdycGNsYlJvdXRlVHlwZSJ3ChlT",
+            "dHJlYW1pbmdJbnB1dENhbGxSZXF1ZXN0EiYKB3BheWxvYWQYASABKAsyFS5n",
+            "cnBjLnRlc3RpbmcuUGF5bG9hZBIyChFleHBlY3RfY29tcHJlc3NlZBgCIAEo",
+            "CzIXLmdycGMudGVzdGluZy5Cb29sVmFsdWUiPQoaU3RyZWFtaW5nSW5wdXRD",
+            "YWxsUmVzcG9uc2USHwoXYWdncmVnYXRlZF9wYXlsb2FkX3NpemUYASABKAUi",
+            "ZAoSUmVzcG9uc2VQYXJhbWV0ZXJzEgwKBHNpemUYASABKAUSEwoLaW50ZXJ2",
+            "YWxfdXMYAiABKAUSKwoKY29tcHJlc3NlZBgDIAEoCzIXLmdycGMudGVzdGlu",
+            "Zy5Cb29sVmFsdWUi6AEKGlN0cmVhbWluZ091dHB1dENhbGxSZXF1ZXN0EjAK",
+            "DXJlc3BvbnNlX3R5cGUYASABKA4yGS5ncnBjLnRlc3RpbmcuUGF5bG9hZFR5",
+            "cGUSPQoTcmVzcG9uc2VfcGFyYW1ldGVycxgCIAMoCzIgLmdycGMudGVzdGlu",
+            "Zy5SZXNwb25zZVBhcmFtZXRlcnMSJgoHcGF5bG9hZBgDIAEoCzIVLmdycGMu",
+            "dGVzdGluZy5QYXlsb2FkEjEKD3Jlc3BvbnNlX3N0YXR1cxgHIAEoCzIYLmdy",
+            "cGMudGVzdGluZy5FY2hvU3RhdHVzIkUKG1N0cmVhbWluZ091dHB1dENhbGxS",
             "ZXNwb25zZRImCgdwYXlsb2FkGAEgASgLMhUuZ3JwYy50ZXN0aW5nLlBheWxv",
-            "YWQSEAoIdXNlcm5hbWUYAiABKAkSEwoLb2F1dGhfc2NvcGUYAyABKAkidwoZ",
-            "U3RyZWFtaW5nSW5wdXRDYWxsUmVxdWVzdBImCgdwYXlsb2FkGAEgASgLMhUu",
-            "Z3JwYy50ZXN0aW5nLlBheWxvYWQSMgoRZXhwZWN0X2NvbXByZXNzZWQYAiAB",
-            "KAsyFy5ncnBjLnRlc3RpbmcuQm9vbFZhbHVlIj0KGlN0cmVhbWluZ0lucHV0",
-            "Q2FsbFJlc3BvbnNlEh8KF2FnZ3JlZ2F0ZWRfcGF5bG9hZF9zaXplGAEgASgF",
-            "ImQKElJlc3BvbnNlUGFyYW1ldGVycxIMCgRzaXplGAEgASgFEhMKC2ludGVy",
-            "dmFsX3VzGAIgASgFEisKCmNvbXByZXNzZWQYAyABKAsyFy5ncnBjLnRlc3Rp",
-            "bmcuQm9vbFZhbHVlIugBChpTdHJlYW1pbmdPdXRwdXRDYWxsUmVxdWVzdBIw",
-            "Cg1yZXNwb25zZV90eXBlGAEgASgOMhkuZ3JwYy50ZXN0aW5nLlBheWxvYWRU",
-            "eXBlEj0KE3Jlc3BvbnNlX3BhcmFtZXRlcnMYAiADKAsyIC5ncnBjLnRlc3Rp",
-            "bmcuUmVzcG9uc2VQYXJhbWV0ZXJzEiYKB3BheWxvYWQYAyABKAsyFS5ncnBj",
-            "LnRlc3RpbmcuUGF5bG9hZBIxCg9yZXNwb25zZV9zdGF0dXMYByABKAsyGC5n",
-            "cnBjLnRlc3RpbmcuRWNob1N0YXR1cyJFChtTdHJlYW1pbmdPdXRwdXRDYWxs",
-            "UmVzcG9uc2USJgoHcGF5bG9hZBgBIAEoCzIVLmdycGMudGVzdGluZy5QYXls",
-            "b2FkIjMKD1JlY29ubmVjdFBhcmFtcxIgChhtYXhfcmVjb25uZWN0X2JhY2tv",
-            "ZmZfbXMYASABKAUiMwoNUmVjb25uZWN0SW5mbxIOCgZwYXNzZWQYASABKAgS",
-            "EgoKYmFja29mZl9tcxgCIAMoBSofCgtQYXlsb2FkVHlwZRIQCgxDT01QUkVT",
-            "U0FCTEUQAGIGcHJvdG8z"));
+            "YWQiMwoPUmVjb25uZWN0UGFyYW1zEiAKGG1heF9yZWNvbm5lY3RfYmFja29m",
+            "Zl9tcxgBIAEoBSIzCg1SZWNvbm5lY3RJbmZvEg4KBnBhc3NlZBgBIAEoCBIS",
+            "CgpiYWNrb2ZmX21zGAIgAygFKh8KC1BheWxvYWRUeXBlEhAKDENPTVBSRVNT",
+            "QUJMRRAAKm8KD0dycGNsYlJvdXRlVHlwZRIdChlHUlBDTEJfUk9VVEVfVFlQ",
+            "RV9VTktOT1dOEAASHgoaR1JQQ0xCX1JPVVRFX1RZUEVfRkFMTEJBQ0sQARId",
+            "ChlHUlBDTEJfUk9VVEVfVFlQRV9CQUNLRU5EEAJiBnByb3RvMw=="));
       descriptor = pbr::FileDescriptor.FromGeneratedCode(descriptorData,
           new pbr::FileDescriptor[] { },
-          new pbr::GeneratedClrTypeInfo(new[] {typeof(global::Grpc.Testing.PayloadType), }, new pbr::GeneratedClrTypeInfo[] {
+          new pbr::GeneratedClrTypeInfo(new[] {typeof(global::Grpc.Testing.PayloadType), typeof(global::Grpc.Testing.GrpclbRouteType), }, new pbr::GeneratedClrTypeInfo[] {
             new pbr::GeneratedClrTypeInfo(typeof(global::Grpc.Testing.BoolValue), global::Grpc.Testing.BoolValue.Parser, new[]{ "Value" }, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Grpc.Testing.Payload), global::Grpc.Testing.Payload.Parser, new[]{ "Type", "Body" }, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Grpc.Testing.EchoStatus), global::Grpc.Testing.EchoStatus.Parser, new[]{ "Code", "Message" }, null, null, null),
-            new pbr::GeneratedClrTypeInfo(typeof(global::Grpc.Testing.SimpleRequest), global::Grpc.Testing.SimpleRequest.Parser, new[]{ "ResponseType", "ResponseSize", "Payload", "FillUsername", "FillOauthScope", "ResponseCompressed", "ResponseStatus", "ExpectCompressed" }, null, null, null),
-            new pbr::GeneratedClrTypeInfo(typeof(global::Grpc.Testing.SimpleResponse), global::Grpc.Testing.SimpleResponse.Parser, new[]{ "Payload", "Username", "OauthScope" }, null, null, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::Grpc.Testing.SimpleRequest), global::Grpc.Testing.SimpleRequest.Parser, new[]{ "ResponseType", "ResponseSize", "Payload", "FillUsername", "FillOauthScope", "ResponseCompressed", "ResponseStatus", "ExpectCompressed", "FillServerId", "FillGrpclbRouteType" }, null, null, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::Grpc.Testing.SimpleResponse), global::Grpc.Testing.SimpleResponse.Parser, new[]{ "Payload", "Username", "OauthScope", "ServerId", "GrpclbRouteType" }, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Grpc.Testing.StreamingInputCallRequest), global::Grpc.Testing.StreamingInputCallRequest.Parser, new[]{ "Payload", "ExpectCompressed" }, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Grpc.Testing.StreamingInputCallResponse), global::Grpc.Testing.StreamingInputCallResponse.Parser, new[]{ "AggregatedPayloadSize" }, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Grpc.Testing.ResponseParameters), global::Grpc.Testing.ResponseParameters.Parser, new[]{ "Size", "IntervalUs", "Compressed" }, null, null, null),
@@ -84,6 +89,29 @@ namespace Grpc.Testing {
     /// Compressable text format.
     /// </summary>
     [pbr::OriginalName("COMPRESSABLE")] Compressable = 0,
+  }
+
+  /// <summary>
+  /// The type of route that a client took to reach a server w.r.t. gRPCLB.
+  /// The server must fill in "fallback" if it detects that the RPC reached
+  /// the server via the "gRPCLB fallback" path, and "backend" if it detects
+  /// that the RPC reached the server via "gRPCLB backend" path (i.e. if it got
+  /// the address of this server from the gRPCLB server BalanceLoad RPC). Exactly
+  /// how this detection is done is context and server dependant.
+  /// </summary>
+  public enum GrpclbRouteType {
+    /// <summary>
+    /// Server didn't detect the route that a client took to reach it.
+    /// </summary>
+    [pbr::OriginalName("GRPCLB_ROUTE_TYPE_UNKNOWN")] Unknown = 0,
+    /// <summary>
+    /// Indicates that a client reached a server via gRPCLB fallback.
+    /// </summary>
+    [pbr::OriginalName("GRPCLB_ROUTE_TYPE_FALLBACK")] Fallback = 1,
+    /// <summary>
+    /// Indicates that a client reached a server as a gRPCLB-given backend.
+    /// </summary>
+    [pbr::OriginalName("GRPCLB_ROUTE_TYPE_BACKEND")] Backend = 2,
   }
 
   #endregion
@@ -379,7 +407,7 @@ namespace Grpc.Testing {
             _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, input);
             break;
           case 8: {
-            type_ = (global::Grpc.Testing.PayloadType) input.ReadEnum();
+            Type = (global::Grpc.Testing.PayloadType) input.ReadEnum();
             break;
           }
           case 18: {
@@ -589,6 +617,8 @@ namespace Grpc.Testing {
       responseCompressed_ = other.responseCompressed_ != null ? other.responseCompressed_.Clone() : null;
       responseStatus_ = other.responseStatus_ != null ? other.responseStatus_.Clone() : null;
       expectCompressed_ = other.expectCompressed_ != null ? other.expectCompressed_.Clone() : null;
+      fillServerId_ = other.fillServerId_;
+      fillGrpclbRouteType_ = other.fillGrpclbRouteType_;
       _unknownFields = pb::UnknownFieldSet.Clone(other._unknownFields);
     }
 
@@ -713,6 +743,34 @@ namespace Grpc.Testing {
       }
     }
 
+    /// <summary>Field number for the "fill_server_id" field.</summary>
+    public const int FillServerIdFieldNumber = 9;
+    private bool fillServerId_;
+    /// <summary>
+    /// Whether SimpleResponse should include server_id.
+    /// </summary>
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public bool FillServerId {
+      get { return fillServerId_; }
+      set {
+        fillServerId_ = value;
+      }
+    }
+
+    /// <summary>Field number for the "fill_grpclb_route_type" field.</summary>
+    public const int FillGrpclbRouteTypeFieldNumber = 10;
+    private bool fillGrpclbRouteType_;
+    /// <summary>
+    /// Whether SimpleResponse should include grpclb_route_type.
+    /// </summary>
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public bool FillGrpclbRouteType {
+      get { return fillGrpclbRouteType_; }
+      set {
+        fillGrpclbRouteType_ = value;
+      }
+    }
+
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public override bool Equals(object other) {
       return Equals(other as SimpleRequest);
@@ -734,6 +792,8 @@ namespace Grpc.Testing {
       if (!object.Equals(ResponseCompressed, other.ResponseCompressed)) return false;
       if (!object.Equals(ResponseStatus, other.ResponseStatus)) return false;
       if (!object.Equals(ExpectCompressed, other.ExpectCompressed)) return false;
+      if (FillServerId != other.FillServerId) return false;
+      if (FillGrpclbRouteType != other.FillGrpclbRouteType) return false;
       return Equals(_unknownFields, other._unknownFields);
     }
 
@@ -748,6 +808,8 @@ namespace Grpc.Testing {
       if (responseCompressed_ != null) hash ^= ResponseCompressed.GetHashCode();
       if (responseStatus_ != null) hash ^= ResponseStatus.GetHashCode();
       if (expectCompressed_ != null) hash ^= ExpectCompressed.GetHashCode();
+      if (FillServerId != false) hash ^= FillServerId.GetHashCode();
+      if (FillGrpclbRouteType != false) hash ^= FillGrpclbRouteType.GetHashCode();
       if (_unknownFields != null) {
         hash ^= _unknownFields.GetHashCode();
       }
@@ -793,6 +855,14 @@ namespace Grpc.Testing {
         output.WriteRawTag(66);
         output.WriteMessage(ExpectCompressed);
       }
+      if (FillServerId != false) {
+        output.WriteRawTag(72);
+        output.WriteBool(FillServerId);
+      }
+      if (FillGrpclbRouteType != false) {
+        output.WriteRawTag(80);
+        output.WriteBool(FillGrpclbRouteType);
+      }
       if (_unknownFields != null) {
         _unknownFields.WriteTo(output);
       }
@@ -825,6 +895,12 @@ namespace Grpc.Testing {
       if (expectCompressed_ != null) {
         size += 1 + pb::CodedOutputStream.ComputeMessageSize(ExpectCompressed);
       }
+      if (FillServerId != false) {
+        size += 1 + 1;
+      }
+      if (FillGrpclbRouteType != false) {
+        size += 1 + 1;
+      }
       if (_unknownFields != null) {
         size += _unknownFields.CalculateSize();
       }
@@ -844,7 +920,7 @@ namespace Grpc.Testing {
       }
       if (other.payload_ != null) {
         if (payload_ == null) {
-          payload_ = new global::Grpc.Testing.Payload();
+          Payload = new global::Grpc.Testing.Payload();
         }
         Payload.MergeFrom(other.Payload);
       }
@@ -856,21 +932,27 @@ namespace Grpc.Testing {
       }
       if (other.responseCompressed_ != null) {
         if (responseCompressed_ == null) {
-          responseCompressed_ = new global::Grpc.Testing.BoolValue();
+          ResponseCompressed = new global::Grpc.Testing.BoolValue();
         }
         ResponseCompressed.MergeFrom(other.ResponseCompressed);
       }
       if (other.responseStatus_ != null) {
         if (responseStatus_ == null) {
-          responseStatus_ = new global::Grpc.Testing.EchoStatus();
+          ResponseStatus = new global::Grpc.Testing.EchoStatus();
         }
         ResponseStatus.MergeFrom(other.ResponseStatus);
       }
       if (other.expectCompressed_ != null) {
         if (expectCompressed_ == null) {
-          expectCompressed_ = new global::Grpc.Testing.BoolValue();
+          ExpectCompressed = new global::Grpc.Testing.BoolValue();
         }
         ExpectCompressed.MergeFrom(other.ExpectCompressed);
+      }
+      if (other.FillServerId != false) {
+        FillServerId = other.FillServerId;
+      }
+      if (other.FillGrpclbRouteType != false) {
+        FillGrpclbRouteType = other.FillGrpclbRouteType;
       }
       _unknownFields = pb::UnknownFieldSet.MergeFrom(_unknownFields, other._unknownFields);
     }
@@ -884,7 +966,7 @@ namespace Grpc.Testing {
             _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, input);
             break;
           case 8: {
-            responseType_ = (global::Grpc.Testing.PayloadType) input.ReadEnum();
+            ResponseType = (global::Grpc.Testing.PayloadType) input.ReadEnum();
             break;
           }
           case 16: {
@@ -893,9 +975,9 @@ namespace Grpc.Testing {
           }
           case 26: {
             if (payload_ == null) {
-              payload_ = new global::Grpc.Testing.Payload();
+              Payload = new global::Grpc.Testing.Payload();
             }
-            input.ReadMessage(payload_);
+            input.ReadMessage(Payload);
             break;
           }
           case 32: {
@@ -908,23 +990,31 @@ namespace Grpc.Testing {
           }
           case 50: {
             if (responseCompressed_ == null) {
-              responseCompressed_ = new global::Grpc.Testing.BoolValue();
+              ResponseCompressed = new global::Grpc.Testing.BoolValue();
             }
-            input.ReadMessage(responseCompressed_);
+            input.ReadMessage(ResponseCompressed);
             break;
           }
           case 58: {
             if (responseStatus_ == null) {
-              responseStatus_ = new global::Grpc.Testing.EchoStatus();
+              ResponseStatus = new global::Grpc.Testing.EchoStatus();
             }
-            input.ReadMessage(responseStatus_);
+            input.ReadMessage(ResponseStatus);
             break;
           }
           case 66: {
             if (expectCompressed_ == null) {
-              expectCompressed_ = new global::Grpc.Testing.BoolValue();
+              ExpectCompressed = new global::Grpc.Testing.BoolValue();
             }
-            input.ReadMessage(expectCompressed_);
+            input.ReadMessage(ExpectCompressed);
+            break;
+          }
+          case 72: {
+            FillServerId = input.ReadBool();
+            break;
+          }
+          case 80: {
+            FillGrpclbRouteType = input.ReadBool();
             break;
           }
         }
@@ -964,6 +1054,8 @@ namespace Grpc.Testing {
       payload_ = other.payload_ != null ? other.payload_.Clone() : null;
       username_ = other.username_;
       oauthScope_ = other.oauthScope_;
+      serverId_ = other.serverId_;
+      grpclbRouteType_ = other.grpclbRouteType_;
       _unknownFields = pb::UnknownFieldSet.Clone(other._unknownFields);
     }
 
@@ -1015,6 +1107,35 @@ namespace Grpc.Testing {
       }
     }
 
+    /// <summary>Field number for the "server_id" field.</summary>
+    public const int ServerIdFieldNumber = 4;
+    private string serverId_ = "";
+    /// <summary>
+    /// Server ID. This must be unique among different server instances,
+    /// but the same across all RPC's made to a particular server instance.
+    /// </summary>
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public string ServerId {
+      get { return serverId_; }
+      set {
+        serverId_ = pb::ProtoPreconditions.CheckNotNull(value, "value");
+      }
+    }
+
+    /// <summary>Field number for the "grpclb_route_type" field.</summary>
+    public const int GrpclbRouteTypeFieldNumber = 5;
+    private global::Grpc.Testing.GrpclbRouteType grpclbRouteType_ = 0;
+    /// <summary>
+    /// gRPCLB Path.
+    /// </summary>
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public global::Grpc.Testing.GrpclbRouteType GrpclbRouteType {
+      get { return grpclbRouteType_; }
+      set {
+        grpclbRouteType_ = value;
+      }
+    }
+
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
     public override bool Equals(object other) {
       return Equals(other as SimpleResponse);
@@ -1031,6 +1152,8 @@ namespace Grpc.Testing {
       if (!object.Equals(Payload, other.Payload)) return false;
       if (Username != other.Username) return false;
       if (OauthScope != other.OauthScope) return false;
+      if (ServerId != other.ServerId) return false;
+      if (GrpclbRouteType != other.GrpclbRouteType) return false;
       return Equals(_unknownFields, other._unknownFields);
     }
 
@@ -1040,6 +1163,8 @@ namespace Grpc.Testing {
       if (payload_ != null) hash ^= Payload.GetHashCode();
       if (Username.Length != 0) hash ^= Username.GetHashCode();
       if (OauthScope.Length != 0) hash ^= OauthScope.GetHashCode();
+      if (ServerId.Length != 0) hash ^= ServerId.GetHashCode();
+      if (GrpclbRouteType != 0) hash ^= GrpclbRouteType.GetHashCode();
       if (_unknownFields != null) {
         hash ^= _unknownFields.GetHashCode();
       }
@@ -1065,6 +1190,14 @@ namespace Grpc.Testing {
         output.WriteRawTag(26);
         output.WriteString(OauthScope);
       }
+      if (ServerId.Length != 0) {
+        output.WriteRawTag(34);
+        output.WriteString(ServerId);
+      }
+      if (GrpclbRouteType != 0) {
+        output.WriteRawTag(40);
+        output.WriteEnum((int) GrpclbRouteType);
+      }
       if (_unknownFields != null) {
         _unknownFields.WriteTo(output);
       }
@@ -1082,6 +1215,12 @@ namespace Grpc.Testing {
       if (OauthScope.Length != 0) {
         size += 1 + pb::CodedOutputStream.ComputeStringSize(OauthScope);
       }
+      if (ServerId.Length != 0) {
+        size += 1 + pb::CodedOutputStream.ComputeStringSize(ServerId);
+      }
+      if (GrpclbRouteType != 0) {
+        size += 1 + pb::CodedOutputStream.ComputeEnumSize((int) GrpclbRouteType);
+      }
       if (_unknownFields != null) {
         size += _unknownFields.CalculateSize();
       }
@@ -1095,7 +1234,7 @@ namespace Grpc.Testing {
       }
       if (other.payload_ != null) {
         if (payload_ == null) {
-          payload_ = new global::Grpc.Testing.Payload();
+          Payload = new global::Grpc.Testing.Payload();
         }
         Payload.MergeFrom(other.Payload);
       }
@@ -1104,6 +1243,12 @@ namespace Grpc.Testing {
       }
       if (other.OauthScope.Length != 0) {
         OauthScope = other.OauthScope;
+      }
+      if (other.ServerId.Length != 0) {
+        ServerId = other.ServerId;
+      }
+      if (other.GrpclbRouteType != 0) {
+        GrpclbRouteType = other.GrpclbRouteType;
       }
       _unknownFields = pb::UnknownFieldSet.MergeFrom(_unknownFields, other._unknownFields);
     }
@@ -1118,9 +1263,9 @@ namespace Grpc.Testing {
             break;
           case 10: {
             if (payload_ == null) {
-              payload_ = new global::Grpc.Testing.Payload();
+              Payload = new global::Grpc.Testing.Payload();
             }
-            input.ReadMessage(payload_);
+            input.ReadMessage(Payload);
             break;
           }
           case 18: {
@@ -1129,6 +1274,14 @@ namespace Grpc.Testing {
           }
           case 26: {
             OauthScope = input.ReadString();
+            break;
+          }
+          case 34: {
+            ServerId = input.ReadString();
+            break;
+          }
+          case 40: {
+            GrpclbRouteType = (global::Grpc.Testing.GrpclbRouteType) input.ReadEnum();
             break;
           }
         }
@@ -1277,13 +1430,13 @@ namespace Grpc.Testing {
       }
       if (other.payload_ != null) {
         if (payload_ == null) {
-          payload_ = new global::Grpc.Testing.Payload();
+          Payload = new global::Grpc.Testing.Payload();
         }
         Payload.MergeFrom(other.Payload);
       }
       if (other.expectCompressed_ != null) {
         if (expectCompressed_ == null) {
-          expectCompressed_ = new global::Grpc.Testing.BoolValue();
+          ExpectCompressed = new global::Grpc.Testing.BoolValue();
         }
         ExpectCompressed.MergeFrom(other.ExpectCompressed);
       }
@@ -1300,16 +1453,16 @@ namespace Grpc.Testing {
             break;
           case 10: {
             if (payload_ == null) {
-              payload_ = new global::Grpc.Testing.Payload();
+              Payload = new global::Grpc.Testing.Payload();
             }
-            input.ReadMessage(payload_);
+            input.ReadMessage(Payload);
             break;
           }
           case 18: {
             if (expectCompressed_ == null) {
-              expectCompressed_ = new global::Grpc.Testing.BoolValue();
+              ExpectCompressed = new global::Grpc.Testing.BoolValue();
             }
-            input.ReadMessage(expectCompressed_);
+            input.ReadMessage(ExpectCompressed);
             break;
           }
         }
@@ -1624,7 +1777,7 @@ namespace Grpc.Testing {
       }
       if (other.compressed_ != null) {
         if (compressed_ == null) {
-          compressed_ = new global::Grpc.Testing.BoolValue();
+          Compressed = new global::Grpc.Testing.BoolValue();
         }
         Compressed.MergeFrom(other.Compressed);
       }
@@ -1649,9 +1802,9 @@ namespace Grpc.Testing {
           }
           case 26: {
             if (compressed_ == null) {
-              compressed_ = new global::Grpc.Testing.BoolValue();
+              Compressed = new global::Grpc.Testing.BoolValue();
             }
-            input.ReadMessage(compressed_);
+            input.ReadMessage(Compressed);
             break;
           }
         }
@@ -1846,13 +1999,13 @@ namespace Grpc.Testing {
       responseParameters_.Add(other.responseParameters_);
       if (other.payload_ != null) {
         if (payload_ == null) {
-          payload_ = new global::Grpc.Testing.Payload();
+          Payload = new global::Grpc.Testing.Payload();
         }
         Payload.MergeFrom(other.Payload);
       }
       if (other.responseStatus_ != null) {
         if (responseStatus_ == null) {
-          responseStatus_ = new global::Grpc.Testing.EchoStatus();
+          ResponseStatus = new global::Grpc.Testing.EchoStatus();
         }
         ResponseStatus.MergeFrom(other.ResponseStatus);
       }
@@ -1868,7 +2021,7 @@ namespace Grpc.Testing {
             _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, input);
             break;
           case 8: {
-            responseType_ = (global::Grpc.Testing.PayloadType) input.ReadEnum();
+            ResponseType = (global::Grpc.Testing.PayloadType) input.ReadEnum();
             break;
           }
           case 18: {
@@ -1877,16 +2030,16 @@ namespace Grpc.Testing {
           }
           case 26: {
             if (payload_ == null) {
-              payload_ = new global::Grpc.Testing.Payload();
+              Payload = new global::Grpc.Testing.Payload();
             }
-            input.ReadMessage(payload_);
+            input.ReadMessage(Payload);
             break;
           }
           case 58: {
             if (responseStatus_ == null) {
-              responseStatus_ = new global::Grpc.Testing.EchoStatus();
+              ResponseStatus = new global::Grpc.Testing.EchoStatus();
             }
-            input.ReadMessage(responseStatus_);
+            input.ReadMessage(ResponseStatus);
             break;
           }
         }
@@ -2008,7 +2161,7 @@ namespace Grpc.Testing {
       }
       if (other.payload_ != null) {
         if (payload_ == null) {
-          payload_ = new global::Grpc.Testing.Payload();
+          Payload = new global::Grpc.Testing.Payload();
         }
         Payload.MergeFrom(other.Payload);
       }
@@ -2025,9 +2178,9 @@ namespace Grpc.Testing {
             break;
           case 10: {
             if (payload_ == null) {
-              payload_ = new global::Grpc.Testing.Payload();
+              Payload = new global::Grpc.Testing.Payload();
             }
-            input.ReadMessage(payload_);
+            input.ReadMessage(Payload);
             break;
           }
         }

@@ -29,7 +29,7 @@ namespace Grpc.Tools
         /// of proto files cached under ProtoDepDir.
         /// </summary>
         [Required]
-        public ITaskItem[] ProtoBuf { get; set; }
+        public ITaskItem[] Protobuf { get; set; }
 
         /// <summary>
         /// Directory where protoc dependency files are cached.
@@ -55,7 +55,7 @@ namespace Grpc.Tools
             if (ProtoDepDir != null)
             {
                 var dependencies = new List<ITaskItem>();
-                foreach (var proto in ProtoBuf)
+                foreach (var proto in Protobuf)
                 {
                     string[] deps = DepFileUtil.ReadDependencyInputs(ProtoDepDir, proto.ItemSpec, Log);
                     foreach (string dep in deps)

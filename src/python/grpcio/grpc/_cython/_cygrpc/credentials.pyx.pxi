@@ -17,8 +17,6 @@ cimport cpython
 import grpc
 import threading
 
-from libc.stdint cimport uintptr_t
-
 
 def _spawn_callback_in_thread(cb_func, args):
   ForkManagedThread(target=cb_func, args=args).start()
@@ -44,7 +42,7 @@ cdef int _get_metadata(
     grpc_credentials_plugin_metadata_cb cb, void *user_data,
     grpc_metadata creds_md[GRPC_METADATA_CREDENTIALS_PLUGIN_SYNC_MAX],
     size_t *num_creds_md, grpc_status_code *status,
-    const char **error_details) with gil:
+    const char **error_details) except * with gil:
   cdef size_t metadata_count
   cdef grpc_metadata *c_metadata
   def callback(metadata, grpc_status_code status, bytes error_details):
@@ -59,9 +57,9 @@ cdef int _get_metadata(
   return 0  # Asynchronous return
 
 
-cdef void _destroy(void *state) with gil:
+cdef void _destroy(void *state) except * with gil:
   cpython.Py_DECREF(<object>state)
-  grpc_shutdown()
+  grpc_shutdown_blocking()
 
 
 cdef class MetadataPluginCallCredentials(CallCredentials):
@@ -125,7 +123,7 @@ cdef class SSLSessionCacheLRU:
   def __dealloc__(self):
     if self._cache != NULL:
         grpc_ssl_session_cache_destroy(self._cache)
-    grpc_shutdown()
+    grpc_shutdown_blocking()
 
 
 cdef class SSLChannelCredentials(ChannelCredentials):
@@ -191,7 +189,7 @@ cdef class ServerCertificateConfig:
   def __dealloc__(self):
     grpc_ssl_server_certificate_config_destroy(self.c_cert_config)
     gpr_free(self.c_ssl_pem_key_cert_pairs)
-    grpc_shutdown()
+    grpc_shutdown_blocking()
 
 
 cdef class ServerCredentials:
@@ -207,7 +205,7 @@ cdef class ServerCredentials:
   def __dealloc__(self):
     if self.c_credentials != NULL:
       grpc_server_credentials_release(self.c_credentials)
-    grpc_shutdown()
+    grpc_shutdown_blocking()
 
 cdef const char* _get_c_pem_root_certs(pem_root_certs):
   if pem_root_certs is None:
@@ -330,3 +328,25 @@ cdef grpc_ssl_certificate_config_reload_status _server_cert_config_fetcher_wrapp
       cert_config.c_ssl_pem_key_cert_pairs_count)
   return GRPC_SSL_CERTIFICATE_CONFIG_RELOAD_NEW
 
+
+class LocalConnectionType:
+  uds = UDS
+  local_tcp = LOCAL_TCP
+
+cdef class LocalChannelCredentials(ChannelCredentials):
+
+  def __cinit__(self, grpc_local_connect_type local_connect_type):
+    self._local_connect_type = local_connect_type
+
+  cdef grpc_channel_credentials *c(self) except *:
+    cdef grpc_local_connect_type local_connect_type
+    local_connect_type = self._local_connect_type
+    return grpc_local_credentials_create(local_connect_type)
+
+def channel_credentials_local(grpc_local_connect_type local_connect_type):
+  return LocalChannelCredentials(local_connect_type)
+
+def server_credentials_local(grpc_local_connect_type local_connect_type):
+  cdef ServerCredentials credentials = ServerCredentials()
+  credentials.c_credentials = grpc_local_server_credentials_create(local_connect_type)
+  return credentials

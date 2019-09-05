@@ -128,7 +128,8 @@ typedef enum {
 
   /** The service is currently unavailable.  This is a most likely a
      transient condition and may be corrected by retrying with
-     a backoff.
+     a backoff. Note that it is not always safe to retry non-idempotent
+     operations.
 
      WARNING: Although data MIGHT not have been transmitted when this
      status occurs, there is NOT A GUARANTEE that the server has not seen

@@ -36,7 +36,8 @@ typedef struct grpc_endpoint_vtable grpc_endpoint_vtable;
 class Timestamps;
 
 struct grpc_endpoint_vtable {
-  void (*read)(grpc_endpoint* ep, grpc_slice_buffer* slices, grpc_closure* cb);
+  void (*read)(grpc_endpoint* ep, grpc_slice_buffer* slices, grpc_closure* cb,
+               bool urgent);
   void (*write)(grpc_endpoint* ep, grpc_slice_buffer* slices, grpc_closure* cb,
                 void* arg);
   void (*add_to_pollset)(grpc_endpoint* ep, grpc_pollset* pollset);
@@ -56,7 +57,7 @@ struct grpc_endpoint_vtable {
    Valid slices may be placed into \a slices even when the callback is
    invoked with error != GRPC_ERROR_NONE. */
 void grpc_endpoint_read(grpc_endpoint* ep, grpc_slice_buffer* slices,
-                        grpc_closure* cb);
+                        grpc_closure* cb, bool urgent);
 
 char* grpc_endpoint_get_peer(grpc_endpoint* ep);
 

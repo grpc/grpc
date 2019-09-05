@@ -42,17 +42,6 @@ grpc_cc_test(
 )
 
 grpc_cc_test(
-    name = "alts_handshaker_service_api_test",
-    srcs = ["alts_handshaker_service_api_test.cc"],
-    language = "C++",
-    deps = [
-        ":alts_handshaker_service_api_test_lib",
-        "//:grpc",
-        "//test/core/util:grpc_test_util",
-    ],
-)
-
-grpc_cc_test(
     name = "alts_tsi_handshaker_test",
     srcs = ["alts_tsi_handshaker_test.cc"],
     language = "C++",

@@ -190,6 +190,9 @@ validator = GuardValidator()
 
 for filename in filename_list:
     if filename in KNOWN_BAD: continue
+    # Skip check for upb generated code.
+    if filename.endswith('.upb.h') or filename.endswith('.upb.c'):
+        continue
     ok = ok and validator.check(filename, args.fix)
 
 sys.exit(0 if ok else 1)

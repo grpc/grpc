@@ -90,7 +90,8 @@ static void my_cancel_ares_request_locked(grpc_ares_request* request) {
 }
 
 static grpc_core::OrphanablePtr<grpc_core::Resolver> create_resolver(
-    const char* name) {
+    const char* name,
+    grpc_core::UniquePtr<grpc_core::Resolver::ResultHandler> result_handler) {
   grpc_core::ResolverFactory* factory =
       grpc_core::ResolverRegistry::LookupResolverFactory("dns");
   grpc_uri* uri = grpc_uri_parse(name, 0);
@@ -98,15 +99,48 @@ static grpc_core::OrphanablePtr<grpc_core::Resolver> create_resolver(
   grpc_core::ResolverArgs args;
   args.uri = uri;
   args.combiner = g_combiner;
+  args.result_handler = std::move(result_handler);
   grpc_core::OrphanablePtr<grpc_core::Resolver> resolver =
-      factory->CreateResolver(args);
+      factory->CreateResolver(std::move(args));
   grpc_uri_destroy(uri);
   return resolver;
 }
 
-static void on_done(void* ev, grpc_error* error) {
-  gpr_event_set(static_cast<gpr_event*>(ev), (void*)1);
-}
+class ResultHandler : public grpc_core::Resolver::ResultHandler {
+ public:
+  struct ResolverOutput {
+    grpc_core::Resolver::Result result;
+    grpc_error* error = nullptr;
+    gpr_event ev;
+
+    ResolverOutput() { gpr_event_init(&ev); }
+    ~ResolverOutput() { GRPC_ERROR_UNREF(error); }
+  };
+
+  void SetOutput(ResolverOutput* output) {
+    gpr_atm_rel_store(&output_, reinterpret_cast<gpr_atm>(output));
+  }
+
+  void ReturnResult(grpc_core::Resolver::Result result) override {
+    ResolverOutput* output =
+        reinterpret_cast<ResolverOutput*>(gpr_atm_acq_load(&output_));
+    GPR_ASSERT(output != nullptr);
+    output->result = std::move(result);
+    output->error = GRPC_ERROR_NONE;
+    gpr_event_set(&output->ev, (void*)1);
+  }
+
+  void ReturnError(grpc_error* error) override {
+    ResolverOutput* output =
+        reinterpret_cast<ResolverOutput*>(gpr_atm_acq_load(&output_));
+    GPR_ASSERT(output != nullptr);
+    output->error = error;
+    gpr_event_set(&output->ev, (void*)1);
+  }
+
+ private:
+  gpr_atm output_ = 0;  // ResolverOutput*
+};
 
 // interleave waiting for an event with a timer check
 static bool wait_loop(int deadline_seconds, gpr_event* ev) {
@@ -121,32 +155,6 @@ static bool wait_loop(int deadline_seconds, gpr_event* ev) {
   return false;
 }
 
-typedef struct next_args {
-  grpc_core::Resolver* resolver;
-  grpc_channel_args** result;
-  grpc_closure* on_complete;
-} next_args;
-
-static void call_resolver_next_now_lock_taken(void* arg,
-                                              grpc_error* error_unused) {
-  next_args* a = static_cast<next_args*>(arg);
-  a->resolver->NextLocked(a->result, a->on_complete);
-  gpr_free(a);
-}
-
-static void call_resolver_next_after_locking(grpc_core::Resolver* resolver,
-                                             grpc_channel_args** result,
-                                             grpc_closure* on_complete,
-                                             grpc_combiner* combiner) {
-  next_args* a = static_cast<next_args*>(gpr_malloc(sizeof(*a)));
-  a->resolver = resolver;
-  a->result = result;
-  a->on_complete = on_complete;
-  GRPC_CLOSURE_SCHED(GRPC_CLOSURE_CREATE(call_resolver_next_now_lock_taken, a,
-                                         grpc_combiner_scheduler(combiner)),
-                     GRPC_ERROR_NONE);
-}
-
 int main(int argc, char** argv) {
   grpc::testing::TestEnvironment env(argc, argv);
 
@@ -156,33 +164,28 @@ int main(int argc, char** argv) {
   grpc_set_resolver_impl(&test_resolver);
   grpc_dns_lookup_ares_locked = my_dns_lookup_ares_locked;
   grpc_cancel_ares_request_locked = my_cancel_ares_request_locked;
-  grpc_channel_args* result = (grpc_channel_args*)1;
 
   {
     grpc_core::ExecCtx exec_ctx;
-    grpc_core::OrphanablePtr<grpc_core::Resolver> resolver =
-        create_resolver("dns:test");
-    gpr_event ev1;
-    gpr_event_init(&ev1);
-    call_resolver_next_after_locking(
-        resolver.get(), &result,
-        GRPC_CLOSURE_CREATE(on_done, &ev1, grpc_schedule_on_exec_ctx),
-        g_combiner);
+    ResultHandler* result_handler = grpc_core::New<ResultHandler>();
+    grpc_core::OrphanablePtr<grpc_core::Resolver> resolver = create_resolver(
+        "dns:test", grpc_core::UniquePtr<grpc_core::Resolver::ResultHandler>(
+                        result_handler));
+    ResultHandler::ResolverOutput output1;
+    result_handler->SetOutput(&output1);
+    resolver->StartLocked();
     grpc_core::ExecCtx::Get()->Flush();
-    GPR_ASSERT(wait_loop(5, &ev1));
-    GPR_ASSERT(result == nullptr);
+    GPR_ASSERT(wait_loop(5, &output1.ev));
+    GPR_ASSERT(output1.result.addresses.empty());
+    GPR_ASSERT(output1.error != GRPC_ERROR_NONE);
 
-    gpr_event ev2;
-    gpr_event_init(&ev2);
-    call_resolver_next_after_locking(
-        resolver.get(), &result,
-        GRPC_CLOSURE_CREATE(on_done, &ev2, grpc_schedule_on_exec_ctx),
-        g_combiner);
+    ResultHandler::ResolverOutput output2;
+    result_handler->SetOutput(&output2);
     grpc_core::ExecCtx::Get()->Flush();
-    GPR_ASSERT(wait_loop(30, &ev2));
-    GPR_ASSERT(result != nullptr);
+    GPR_ASSERT(wait_loop(30, &output2.ev));
+    GPR_ASSERT(!output2.result.addresses.empty());
+    GPR_ASSERT(output2.error == GRPC_ERROR_NONE);
 
-    grpc_channel_args_destroy(result);
     GRPC_COMBINER_UNREF(g_combiner, "test");
   }
 

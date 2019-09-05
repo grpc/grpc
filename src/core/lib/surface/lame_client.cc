@@ -25,10 +25,9 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 
-#include "src/core/lib/gprpp/atomic.h"
-
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/gpr/string.h"
+#include "src/core/lib/gprpp/atomic.h"
 #include "src/core/lib/surface/api_trace.h"
 #include "src/core/lib/surface/call.h"
 #include "src/core/lib/surface/channel.h"
@@ -40,10 +39,10 @@ namespace grpc_core {
 namespace {
 
 struct CallData {
-  grpc_call_combiner* call_combiner;
+  grpc_core::CallCombiner* call_combiner;
   grpc_linked_mdelem status;
   grpc_linked_mdelem details;
-  grpc_core::atomic<bool> filled_metadata;
+  grpc_core::Atomic<bool> filled_metadata;
 };
 
 struct ChannelData {
@@ -54,19 +53,18 @@ struct ChannelData {
 static void fill_metadata(grpc_call_element* elem, grpc_metadata_batch* mdb) {
   CallData* calld = static_cast<CallData*>(elem->call_data);
   bool expected = false;
-  if (!calld->filled_metadata.compare_exchange_strong(
-          expected, true, grpc_core::memory_order_relaxed,
-          grpc_core::memory_order_relaxed)) {
+  if (!calld->filled_metadata.CompareExchangeStrong(
+          &expected, true, MemoryOrder::RELAXED, MemoryOrder::RELAXED)) {
     return;
   }
   ChannelData* chand = static_cast<ChannelData*>(elem->channel_data);
   char tmp[GPR_LTOA_MIN_BUFSIZE];
   gpr_ltoa(chand->error_code, tmp);
   calld->status.md = grpc_mdelem_from_slices(
-      GRPC_MDSTR_GRPC_STATUS, grpc_slice_from_copied_string(tmp));
+      GRPC_MDSTR_GRPC_STATUS, grpc_core::UnmanagedMemorySlice(tmp));
   calld->details.md = grpc_mdelem_from_slices(
       GRPC_MDSTR_GRPC_MESSAGE,
-      grpc_slice_from_copied_string(chand->error_message));
+      grpc_core::UnmanagedMemorySlice(chand->error_message));
   calld->status.prev = calld->details.next = nullptr;
   calld->status.next = &calld->details;
   calld->details.prev = &calld->status;

@@ -61,7 +61,7 @@ _FORCE_ENVIRON_FOR_WRAPPERS = {
 }
 
 _POLLING_STRATEGIES = {
-    'linux': ['epollex', 'epoll1', 'poll', 'poll-cv'],
+    'linux': ['epollex', 'epoll1', 'poll'],
     'mac': ['poll'],
 }
 
@@ -106,6 +106,7 @@ def platform_string():
 
 
 _DEFAULT_TIMEOUT_SECONDS = 5 * 60
+_PRE_BUILD_STEP_TIMEOUT_SECONDS = 10 * 60
 
 
 def run_shell_command(cmd, env=None, cwd=None):
@@ -344,15 +345,6 @@ class CLanguage(object):
                         # Scale overall test timeout if running under various sanitizers.
                         # scaling value is based on historical data analysis
                         timeout_scaling *= 3
-                    elif polling_strategy == 'poll-cv':
-                        # scale test timeout if running with poll-cv
-                        # sanitizer and poll-cv scaling is not cumulative to ensure
-                        # reasonable timeout values.
-                        # TODO(jtattermusch): based on historical data and 5min default
-                        # test timeout poll-cv scaling is currently not useful.
-                        # Leaving here so it can be reintroduced if the default test timeout
-                        # is decreased in the future.
-                        timeout_scaling *= 1
 
                 if self.config.build_config in target['exclude_configs']:
                     continue
@@ -761,7 +753,7 @@ class PythonLanguage(object):
     def _python_manager_name(self):
         """Choose the docker image to use based on python version."""
         if self.args.compiler in [
-                'python2.7', 'python3.5', 'python3.6', 'python3.7'
+                'python2.7', 'python3.5', 'python3.6', 'python3.7', 'python3.8'
         ]:
             return 'stretch_' + self.args.compiler[len('python'):]
         elif self.args.compiler == 'python_alpine':
@@ -837,6 +829,12 @@ class PythonLanguage(object):
             minor='7',
             bits=bits,
             config_vars=config_vars)
+        python38_config = _python_config_generator(
+            name='py38',
+            major='3',
+            minor='8',
+            bits=bits,
+            config_vars=config_vars)
         pypy27_config = _pypy_config_generator(
             name='pypy', major='2', config_vars=config_vars)
         pypy32_config = _pypy_config_generator(
@@ -860,6 +858,8 @@ class PythonLanguage(object):
             return (python36_config,)
         elif args.compiler == 'python3.7':
             return (python37_config,)
+        elif args.compiler == 'python3.8':
+            return (python38_config,)
         elif args.compiler == 'pypy':
             return (pypy27_config,)
         elif args.compiler == 'pypy3':
@@ -873,6 +873,7 @@ class PythonLanguage(object):
                 python35_config,
                 python36_config,
                 python37_config,
+                # TODO: Add Python 3.8 once it's released.
             )
         else:
             raise Exception('Compiler %s not supported.' % args.compiler)
@@ -954,7 +955,7 @@ class CSharpLanguage(object):
         assembly_extension = '.exe'
 
         if self.args.compiler == 'coreclr':
-            assembly_subdir += '/netcoreapp1.1'
+            assembly_subdir += '/netcoreapp2.1'
             runtime_cmd = ['dotnet', 'exec']
             assembly_extension = '.dll'
         else:
@@ -1056,96 +1057,145 @@ class ObjCLanguage(object):
         _check_compiler(self.args.compiler, ['default'])
 
     def test_specs(self):
-        return [
+        out = []
+        out.append(
             self.config.job_spec(
-                ['src/objective-c/tests/run_tests.sh'],
-                timeout_seconds=60 * 60,
-                shortname='objc-tests',
-                cpu_cost=1e6,
-                environ=_FORCE_ENVIRON_FOR_WRAPPERS),
-            self.config.job_spec(
-                ['src/objective-c/tests/run_plugin_tests.sh'],
-                timeout_seconds=60 * 60,
-                shortname='objc-plugin-tests',
-                cpu_cost=1e6,
-                environ=_FORCE_ENVIRON_FOR_WRAPPERS),
-            self.config.job_spec(
-                ['src/objective-c/tests/build_one_example.sh'],
+                ['src/objective-c/tests/build_one_example_bazel.sh'],
                 timeout_seconds=10 * 60,
-                shortname='objc-build-example-helloworld',
-                cpu_cost=1e6,
-                environ={
-                    'SCHEME': 'HelloWorld',
-                    'EXAMPLE_PATH': 'examples/objective-c/helloworld'
-                }),
-            self.config.job_spec(
-                ['src/objective-c/tests/build_one_example.sh'],
-                timeout_seconds=10 * 60,
-                shortname='objc-build-example-routeguide',
-                cpu_cost=1e6,
-                environ={
-                    'SCHEME': 'RouteGuideClient',
-                    'EXAMPLE_PATH': 'examples/objective-c/route_guide'
-                }),
-            self.config.job_spec(
-                ['src/objective-c/tests/build_one_example.sh'],
-                timeout_seconds=10 * 60,
-                shortname='objc-build-example-authsample',
-                cpu_cost=1e6,
-                environ={
-                    'SCHEME': 'AuthSample',
-                    'EXAMPLE_PATH': 'examples/objective-c/auth_sample'
-                }),
-            self.config.job_spec(
-                ['src/objective-c/tests/build_one_example.sh'],
-                timeout_seconds=10 * 60,
-                shortname='objc-build-example-sample',
+                shortname='ios-buildtest-example-sample',
                 cpu_cost=1e6,
                 environ={
                     'SCHEME': 'Sample',
-                    'EXAMPLE_PATH': 'src/objective-c/examples/Sample'
-                }),
+                    'EXAMPLE_PATH': 'src/objective-c/examples/Sample',
+                    'FRAMEWORKS': 'NO'
+                }))
+        # Currently not supporting compiling as frameworks in Bazel
+        out.append(
             self.config.job_spec(
                 ['src/objective-c/tests/build_one_example.sh'],
-                timeout_seconds=10 * 60,
-                shortname='objc-build-example-sample-frameworks',
+                timeout_seconds=20 * 60,
+                shortname='ios-buildtest-example-sample-frameworks',
                 cpu_cost=1e6,
                 environ={
                     'SCHEME': 'Sample',
                     'EXAMPLE_PATH': 'src/objective-c/examples/Sample',
                     'FRAMEWORKS': 'YES'
-                }),
+                }))
+        out.append(
             self.config.job_spec(
                 ['src/objective-c/tests/build_one_example.sh'],
-                timeout_seconds=10 * 60,
-                shortname='objc-build-example-switftsample',
+                timeout_seconds=20 * 60,
+                shortname='ios-buildtest-example-switftsample',
                 cpu_cost=1e6,
                 environ={
                     'SCHEME': 'SwiftSample',
                     'EXAMPLE_PATH': 'src/objective-c/examples/SwiftSample'
-                }),
+                }))
+        out.append(
             self.config.job_spec(
-                ['test/core/iomgr/ios/CFStreamTests/run_tests.sh'],
-                timeout_seconds=20 * 60,
-                shortname='cfstream-tests',
+                ['src/objective-c/tests/build_one_example_bazel.sh'],
+                timeout_seconds=10 * 60,
+                shortname='ios-buildtest-example-tvOS-sample',
                 cpu_cost=1e6,
-                environ=_FORCE_ENVIRON_FOR_WRAPPERS),
-        ]
+                environ={
+                    'SCHEME': 'tvOS-sample',
+                    'EXAMPLE_PATH': 'src/objective-c/examples/tvOS-sample',
+                    'FRAMEWORKS': 'NO'
+                }))
+        out.append(
+            self.config.job_spec(
+                ['src/objective-c/tests/build_one_example_bazel.sh'],
+                timeout_seconds=20 * 60,
+                shortname='ios-buildtest-example-watchOS-sample',
+                cpu_cost=1e6,
+                environ={
+                    'SCHEME': 'watchOS-sample-WatchKit-App',
+                    'EXAMPLE_PATH': 'src/objective-c/examples/watchOS-sample',
+                    'FRAMEWORKS': 'NO'
+                }))
+        out.append(
+            self.config.job_spec(
+                ['src/objective-c/tests/run_plugin_tests.sh'],
+                timeout_seconds=60 * 60,
+                shortname='ios-test-plugintest',
+                cpu_cost=1e6,
+                environ=_FORCE_ENVIRON_FOR_WRAPPERS))
+        out.append(
+            self.config.job_spec(
+                ['test/core/iomgr/ios/CFStreamTests/build_and_run_tests.sh'],
+                timeout_seconds=20 * 60,
+                shortname='ios-test-cfstream-tests',
+                cpu_cost=1e6,
+                environ=_FORCE_ENVIRON_FOR_WRAPPERS))
+        # TODO: replace with run_one_test_bazel.sh when Bazel-Xcode is stable
+        out.append(
+            self.config.job_spec(
+                ['src/objective-c/tests/run_one_test.sh'],
+                timeout_seconds=60 * 60,
+                shortname='ios-test-unittests',
+                cpu_cost=1e6,
+                environ={
+                    'SCHEME': 'UnitTests'
+                }))
+        out.append(
+            self.config.job_spec(
+                ['src/objective-c/tests/run_one_test.sh'],
+                timeout_seconds=60 * 60,
+                shortname='ios-test-interoptests',
+                cpu_cost=1e6,
+                environ={
+                    'SCHEME': 'InteropTests'
+                }))
+        out.append(
+            self.config.job_spec(
+                ['src/objective-c/tests/run_one_test.sh'],
+                timeout_seconds=60 * 60,
+                shortname='ios-test-cronettests',
+                cpu_cost=1e6,
+                environ={
+                    'SCHEME': 'CronetTests'
+                }))
+        out.append(
+            self.config.job_spec(
+                ['test/cpp/ios/build_and_run_tests.sh'],
+                timeout_seconds=20 * 60,
+                shortname='ios-cpp-test-cronet',
+                cpu_cost=1e6,
+                environ=_FORCE_ENVIRON_FOR_WRAPPERS))
+        out.append(
+            self.config.job_spec(
+                ['src/objective-c/tests/run_one_test.sh'],
+                timeout_seconds=60 * 60,
+                shortname='mac-test-basictests',
+                cpu_cost=1e6,
+                environ={
+                    'SCHEME': 'MacTests',
+                    'PLATFORM': 'macos'
+                }))
+        out.append(
+            self.config.job_spec(
+                ['src/objective-c/tests/run_one_test.sh'],
+                timeout_seconds=30 * 60,
+                shortname='tvos-test-basictests',
+                cpu_cost=1e6,
+                environ={
+                    'SCHEME': 'TvTests',
+                    'PLATFORM': 'tvos'
+                }))
+
+        return sorted(out)
 
     def pre_build_steps(self):
         return []
 
     def make_targets(self):
-        return ['interop_server']
+        return []
 
     def make_options(self):
         return []
 
     def build_steps(self):
-        return [
-            ['src/objective-c/tests/build_tests.sh'],
-            ['test/core/iomgr/ios/CFStreamTests/build_tests.sh'],
-        ]
+        return []
 
     def post_tests_steps(self):
         return []
@@ -1375,9 +1425,10 @@ argp.add_argument(
     choices=[
         'default', 'gcc4.4', 'gcc4.6', 'gcc4.8', 'gcc4.9', 'gcc5.3', 'gcc7.2',
         'gcc_musl', 'clang3.4', 'clang3.5', 'clang3.6', 'clang3.7', 'clang7.0',
-        'python2.7', 'python3.4', 'python3.5', 'python3.6', 'python3.7', 'pypy',
-        'pypy3', 'python_alpine', 'all_the_cpythons', 'electron1.3',
-        'electron1.6', 'coreclr', 'cmake', 'cmake_vs2015', 'cmake_vs2017'
+        'python2.7', 'python3.4', 'python3.5', 'python3.6', 'python3.7',
+        'python3.8', 'pypy', 'pypy3', 'python_alpine', 'all_the_cpythons',
+        'electron1.3', 'electron1.6', 'coreclr', 'cmake', 'cmake_vs2015',
+        'cmake_vs2017'
     ],
     default='default',
     help=
@@ -1634,7 +1685,10 @@ def build_step_environ(cfg):
 build_steps = list(
     set(
         jobset.JobSpec(
-            cmdline, environ=build_step_environ(build_config), flake_retries=2)
+            cmdline,
+            environ=build_step_environ(build_config),
+            timeout_seconds=_PRE_BUILD_STEP_TIMEOUT_SECONDS,
+            flake_retries=2)
         for l in languages
         for cmdline in l.pre_build_steps()))
 if make_targets:

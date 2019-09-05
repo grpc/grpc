@@ -40,11 +40,11 @@ namespace {
 
 struct call_data {
   grpc_linked_mdelem authority_storage;
-  grpc_call_combiner* call_combiner;
+  grpc_core::CallCombiner* call_combiner;
 };
 
 struct channel_data {
-  grpc_slice default_authority;
+  grpc_core::ManagedMemorySlice default_authority;
   grpc_mdelem default_authority_mdelem;
 };
 
@@ -60,7 +60,7 @@ void authority_start_transport_stream_op_batch(
       initial_metadata->idx.named.authority == nullptr) {
     grpc_error* error = grpc_metadata_batch_add_head(
         initial_metadata, &calld->authority_storage,
-        GRPC_MDELEM_REF(chand->default_authority_mdelem));
+        GRPC_MDELEM_REF(chand->default_authority_mdelem), GRPC_BATCH_AUTHORITY);
     if (error != GRPC_ERROR_NONE) {
       grpc_transport_stream_op_batch_finish_with_failure(batch, error,
                                                          calld->call_combiner);
@@ -102,7 +102,7 @@ grpc_error* init_channel_elem(grpc_channel_element* elem,
         "GRPC_ARG_DEFAULT_AUTHORITY channel arg. must be a string");
   }
   chand->default_authority =
-      grpc_slice_intern(grpc_slice_from_static_string(default_authority_str));
+      grpc_core::ManagedMemorySlice(default_authority_str);
   chand->default_authority_mdelem = grpc_mdelem_create(
       GRPC_MDSTR_AUTHORITY, chand->default_authority, nullptr);
   GPR_ASSERT(!args->is_last);

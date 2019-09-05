@@ -23,7 +23,7 @@ python tools/run_tests/run_tests.py -l php7 -c "$CONFIG" --build_only -j 8
 cd src/php/tests/qps
 composer install
 # Install protobuf C-extension for php
-cd vendor/google/protobuf/php/ext/google/protobuf
+cd ../../../../third_party/protobuf/php/ext/google/protobuf
 phpize
 ./configure
 make

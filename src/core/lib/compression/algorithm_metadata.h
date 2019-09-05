@@ -32,7 +32,7 @@ grpc_slice grpc_compression_algorithm_slice(
 /** Find compression algorithm based on passed in mdstr - returns
  *  GRPC_COMPRESS_ALGORITHM_COUNT on failure */
 grpc_compression_algorithm grpc_compression_algorithm_from_slice(
-    grpc_slice str);
+    const grpc_slice& str);
 
 /** Return compression algorithm based metadata element */
 grpc_mdelem grpc_compression_encoding_mdelem(
@@ -51,11 +51,11 @@ grpc_mdelem grpc_stream_compression_encoding_mdelem(
 /** Find compression algorithm based on passed in mdstr - returns
  * GRPC_COMPRESS_ALGORITHM_COUNT on failure */
 grpc_message_compression_algorithm
-grpc_message_compression_algorithm_from_slice(grpc_slice str);
+grpc_message_compression_algorithm_from_slice(const grpc_slice& str);
 
 /** Find stream compression algorithm based on passed in mdstr - returns
  * GRPC_STREAM_COMPRESS_ALGORITHM_COUNT on failure */
 grpc_stream_compression_algorithm grpc_stream_compression_algorithm_from_slice(
-    grpc_slice str);
+    const grpc_slice& str);
 
 #endif /* GRPC_CORE_LIB_COMPRESSION_ALGORITHM_METADATA_H */

@@ -39,12 +39,15 @@ struct grpc_tls_key_materials_config
   const PemKeyCertPairList& pem_key_cert_pair_list() const {
     return pem_key_cert_pair_list_;
   }
+  int version() const { return version_; }
 
   /** Setters for member fields. **/
   void set_key_materials(grpc_core::UniquePtr<char> pem_root_certs,
                          PemKeyCertPairList pem_key_cert_pair_list);
+  void set_version(int version) { version_ = version; }
 
  private:
+  int version_ = 0;
   PemKeyCertPairList pem_key_cert_pair_list_;
   grpc_core::UniquePtr<char> pem_root_certs_;
 };
@@ -167,18 +170,15 @@ struct grpc_tls_credentials_options
   grpc_ssl_client_certificate_request_type cert_request_type() const {
     return cert_request_type_;
   }
-  const grpc_tls_key_materials_config* key_materials_config() const {
+  grpc_tls_key_materials_config* key_materials_config() const {
     return key_materials_config_.get();
   }
-  const grpc_tls_credential_reload_config* credential_reload_config() const {
+  grpc_tls_credential_reload_config* credential_reload_config() const {
     return credential_reload_config_.get();
   }
-  const grpc_tls_server_authorization_check_config*
+  grpc_tls_server_authorization_check_config*
   server_authorization_check_config() const {
     return server_authorization_check_config_.get();
-  }
-  grpc_tls_key_materials_config* mutable_key_materials_config() {
-    return key_materials_config_.get();
   }
 
   /* Setters for member fields. */

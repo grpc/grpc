@@ -24,7 +24,6 @@
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
 
-#include "src/core/lib/gpr/env.h"
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gpr/tmpfile.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
@@ -35,6 +34,10 @@
 #include "src/core/tsi/ssl_transport_security.h"
 #include "src/core/tsi/transport_security.h"
 #include "test/core/util/test_config.h"
+
+#ifndef TSI_OPENSSL_ALPN_SUPPORT
+#define TSI_OPENSSL_ALPN_SUPPORT 1
+#endif
 
 static int check_transport_security_type(const grpc_auth_context* ctx) {
   grpc_auth_property_iterator it = grpc_auth_context_find_properties_by_name(
@@ -390,7 +393,7 @@ static void test_default_ssl_roots(void) {
 
   /* First let's get the root through the override: set the env to an invalid
      value. */
-  gpr_setenv(GRPC_DEFAULT_SSL_ROOTS_FILE_PATH_ENV_VAR, "");
+  GPR_GLOBAL_CONFIG_SET(grpc_default_ssl_roots_file_path, "");
   grpc_set_ssl_roots_override_callback(override_roots_success);
   grpc_slice roots =
       grpc_core::TestDefaultSslRootStore::ComputePemRootCertsForTesting();
@@ -401,7 +404,8 @@ static void test_default_ssl_roots(void) {
 
   /* Now let's set the env var: We should get the contents pointed value
      instead. */
-  gpr_setenv(GRPC_DEFAULT_SSL_ROOTS_FILE_PATH_ENV_VAR, roots_env_var_file_path);
+  GPR_GLOBAL_CONFIG_SET(grpc_default_ssl_roots_file_path,
+                        roots_env_var_file_path);
   roots = grpc_core::TestDefaultSslRootStore::ComputePemRootCertsForTesting();
   roots_contents = grpc_slice_to_c_string(roots);
   grpc_slice_unref(roots);
@@ -410,7 +414,7 @@ static void test_default_ssl_roots(void) {
 
   /* Now reset the env var. We should fall back to the value overridden using
      the api. */
-  gpr_setenv(GRPC_DEFAULT_SSL_ROOTS_FILE_PATH_ENV_VAR, "");
+  GPR_GLOBAL_CONFIG_SET(grpc_default_ssl_roots_file_path, "");
   roots = grpc_core::TestDefaultSslRootStore::ComputePemRootCertsForTesting();
   roots_contents = grpc_slice_to_c_string(roots);
   grpc_slice_unref(roots);
@@ -419,7 +423,7 @@ static void test_default_ssl_roots(void) {
 
   /* Now setup a permanent failure for the overridden roots and we should get
      an empty slice. */
-  gpr_setenv("GRPC_NOT_USE_SYSTEM_SSL_ROOTS", "true");
+  GPR_GLOBAL_CONFIG_SET(grpc_not_use_system_ssl_roots, true);
   grpc_set_ssl_roots_override_callback(override_roots_permanent_failure);
   roots = grpc_core::TestDefaultSslRootStore::ComputePemRootCertsForTesting();
   GPR_ASSERT(GRPC_SLICE_IS_EMPTY(roots));
@@ -430,6 +434,43 @@ static void test_default_ssl_roots(void) {
   /* Cleanup. */
   remove(roots_env_var_file_path);
   gpr_free(roots_env_var_file_path);
+}
+
+static void test_peer_alpn_check(void) {
+#if TSI_OPENSSL_ALPN_SUPPORT
+  tsi_peer peer;
+  const char* alpn = "grpc";
+  const char* wrong_alpn = "wrong";
+  // peer does not have a TSI_SSL_ALPN_SELECTED_PROTOCOL property.
+  GPR_ASSERT(tsi_construct_peer(1, &peer) == TSI_OK);
+  GPR_ASSERT(tsi_construct_string_peer_property("wrong peer property name",
+                                                alpn, strlen(alpn),
+                                                &peer.properties[0]) == TSI_OK);
+  grpc_error* error = grpc_ssl_check_alpn(&peer);
+  GPR_ASSERT(error != GRPC_ERROR_NONE);
+  tsi_peer_destruct(&peer);
+  GRPC_ERROR_UNREF(error);
+  // peer has a TSI_SSL_ALPN_SELECTED_PROTOCOL property but with an incorrect
+  // property value.
+  GPR_ASSERT(tsi_construct_peer(1, &peer) == TSI_OK);
+  GPR_ASSERT(tsi_construct_string_peer_property(TSI_SSL_ALPN_SELECTED_PROTOCOL,
+                                                wrong_alpn, strlen(wrong_alpn),
+                                                &peer.properties[0]) == TSI_OK);
+  error = grpc_ssl_check_alpn(&peer);
+  GPR_ASSERT(error != GRPC_ERROR_NONE);
+  tsi_peer_destruct(&peer);
+  GRPC_ERROR_UNREF(error);
+  // peer has a TSI_SSL_ALPN_SELECTED_PROTOCOL property with a correct property
+  // value.
+  GPR_ASSERT(tsi_construct_peer(1, &peer) == TSI_OK);
+  GPR_ASSERT(tsi_construct_string_peer_property(TSI_SSL_ALPN_SELECTED_PROTOCOL,
+                                                alpn, strlen(alpn),
+                                                &peer.properties[0]) == TSI_OK);
+  GPR_ASSERT(grpc_ssl_check_alpn(&peer) == GRPC_ERROR_NONE);
+  tsi_peer_destruct(&peer);
+#else
+  GPR_ASSERT(grpc_ssl_check_alpn(nullptr) == GRPC_ERROR_NONE);
+#endif
 }
 
 int main(int argc, char** argv) {
@@ -443,7 +484,7 @@ int main(int argc, char** argv) {
   test_cn_and_multiple_sans_and_others_ssl_peer_to_auth_context();
   test_ipv6_address_san();
   test_default_ssl_roots();
-
+  test_peer_alpn_check();
   grpc_shutdown();
   return 0;
 }

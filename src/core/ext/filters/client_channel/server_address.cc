@@ -20,8 +20,6 @@
 
 #include "src/core/ext/filters/client_channel/server_address.h"
 
-#include <string.h>
-
 namespace grpc_core {
 
 //
@@ -39,65 +37,15 @@ ServerAddress::ServerAddress(const void* address, size_t address_len,
   address_.len = static_cast<socklen_t>(address_len);
 }
 
-int ServerAddress::Cmp(const ServerAddress& other) const {
-  if (address_.len > other.address_.len) return 1;
-  if (address_.len < other.address_.len) return -1;
-  int retval = memcmp(address_.addr, other.address_.addr, address_.len);
-  if (retval != 0) return retval;
-  return grpc_channel_args_compare(args_, other.args_);
+bool ServerAddress::operator==(const ServerAddress& other) const {
+  return address_.len == other.address_.len &&
+         memcmp(address_.addr, other.address_.addr, address_.len) == 0 &&
+         grpc_channel_args_compare(args_, other.args_) == 0;
 }
 
 bool ServerAddress::IsBalancer() const {
   return grpc_channel_arg_get_bool(
       grpc_channel_args_find(args_, GRPC_ARG_ADDRESS_IS_BALANCER), false);
-}
-
-//
-// ServerAddressList
-//
-
-namespace {
-
-void* ServerAddressListCopy(void* addresses) {
-  ServerAddressList* a = static_cast<ServerAddressList*>(addresses);
-  return New<ServerAddressList>(*a);
-}
-
-void ServerAddressListDestroy(void* addresses) {
-  ServerAddressList* a = static_cast<ServerAddressList*>(addresses);
-  Delete(a);
-}
-
-int ServerAddressListCompare(void* addresses1, void* addresses2) {
-  ServerAddressList* a1 = static_cast<ServerAddressList*>(addresses1);
-  ServerAddressList* a2 = static_cast<ServerAddressList*>(addresses2);
-  if (a1->size() > a2->size()) return 1;
-  if (a1->size() < a2->size()) return -1;
-  for (size_t i = 0; i < a1->size(); ++i) {
-    int retval = (*a1)[i].Cmp((*a2)[i]);
-    if (retval != 0) return retval;
-  }
-  return 0;
-}
-
-const grpc_arg_pointer_vtable server_addresses_arg_vtable = {
-    ServerAddressListCopy, ServerAddressListDestroy, ServerAddressListCompare};
-
-}  // namespace
-
-grpc_arg CreateServerAddressListChannelArg(const ServerAddressList* addresses) {
-  return grpc_channel_arg_pointer_create(
-      const_cast<char*>(GRPC_ARG_SERVER_ADDRESS_LIST),
-      const_cast<ServerAddressList*>(addresses), &server_addresses_arg_vtable);
-}
-
-ServerAddressList* FindServerAddressListChannelArg(
-    const grpc_channel_args* channel_args) {
-  const grpc_arg* lb_addresses_arg =
-      grpc_channel_args_find(channel_args, GRPC_ARG_SERVER_ADDRESS_LIST);
-  if (lb_addresses_arg == nullptr || lb_addresses_arg->type != GRPC_ARG_POINTER)
-    return nullptr;
-  return static_cast<ServerAddressList*>(lb_addresses_arg->value.pointer.p);
 }
 
 }  // namespace grpc_core

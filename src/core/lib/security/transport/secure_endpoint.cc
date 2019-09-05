@@ -113,7 +113,7 @@ static void destroy(secure_endpoint* ep) { grpc_core::Delete(ep); }
   secure_endpoint_ref((ep), (reason), __FILE__, __LINE__)
 static void secure_endpoint_unref(secure_endpoint* ep, const char* reason,
                                   const char* file, int line) {
-  if (grpc_trace_secure_endpoint.enabled()) {
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_trace_secure_endpoint)) {
     gpr_atm val = gpr_atm_no_barrier_load(&ep->ref.count);
     gpr_log(file, line, GPR_LOG_SEVERITY_DEBUG,
             "SECENDP unref %p : %s %" PRIdPTR " -> %" PRIdPTR, ep, reason, val,
@@ -126,7 +126,7 @@ static void secure_endpoint_unref(secure_endpoint* ep, const char* reason,
 
 static void secure_endpoint_ref(secure_endpoint* ep, const char* reason,
                                 const char* file, int line) {
-  if (grpc_trace_secure_endpoint.enabled()) {
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_trace_secure_endpoint)) {
     gpr_atm val = gpr_atm_no_barrier_load(&ep->ref.count);
     gpr_log(file, line, GPR_LOG_SEVERITY_DEBUG,
             "SECENDP   ref %p : %s %" PRIdPTR " -> %" PRIdPTR, ep, reason, val,
@@ -155,7 +155,7 @@ static void flush_read_staging_buffer(secure_endpoint* ep, uint8_t** cur,
 }
 
 static void call_read_cb(secure_endpoint* ep, grpc_error* error) {
-  if (grpc_trace_secure_endpoint.enabled()) {
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_trace_secure_endpoint)) {
     size_t i;
     for (i = 0; i < ep->read_buffer->count; i++) {
       char* data = grpc_dump_slice(ep->read_buffer->slices[i],
@@ -255,7 +255,7 @@ static void on_read(void* user_data, grpc_error* error) {
 }
 
 static void endpoint_read(grpc_endpoint* secure_ep, grpc_slice_buffer* slices,
-                          grpc_closure* cb) {
+                          grpc_closure* cb, bool urgent) {
   secure_endpoint* ep = reinterpret_cast<secure_endpoint*>(secure_ep);
   ep->read_cb = cb;
   ep->read_buffer = slices;
@@ -269,7 +269,7 @@ static void endpoint_read(grpc_endpoint* secure_ep, grpc_slice_buffer* slices,
     return;
   }
 
-  grpc_endpoint_read(ep->wrapped_ep, &ep->source_buffer, &ep->on_read);
+  grpc_endpoint_read(ep->wrapped_ep, &ep->source_buffer, &ep->on_read, urgent);
 }
 
 static void flush_write_staging_buffer(secure_endpoint* ep, uint8_t** cur,
@@ -292,7 +292,7 @@ static void endpoint_write(grpc_endpoint* secure_ep, grpc_slice_buffer* slices,
 
   grpc_slice_buffer_reset_and_unref_internal(&ep->output_buffer);
 
-  if (grpc_trace_secure_endpoint.enabled()) {
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_trace_secure_endpoint)) {
     for (i = 0; i < slices->count; i++) {
       char* data =
           grpc_dump_slice(slices->slices[i], GPR_DUMP_HEX | GPR_DUMP_ASCII);

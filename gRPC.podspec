@@ -20,7 +20,7 @@
 
 Pod::Spec.new do |s|
   s.name     = 'gRPC'
-  version = '1.19.0-dev'
+  version = '1.24.0-dev'
   s.version  = version
   s.summary  = 'gRPC client library for iOS/OSX'
   s.homepage = 'https://grpc.io'
@@ -35,6 +35,7 @@ Pod::Spec.new do |s|
   s.ios.deployment_target = '7.0'
   s.osx.deployment_target = '10.9'
   s.tvos.deployment_target = '10.0'
+  s.watchos.deployment_target = '4.0'
 
   name = 'GRPCClient'
   s.module_name = name
@@ -64,14 +65,9 @@ Pod::Spec.new do |s|
     ss.dependency 'gRPC-Core', version
   end
 
-  # This subspec is mutually exclusive with the `Main` subspec
+  # CFStream is now default. Leaving this subspec only for compatibility purpose.
   s.subspec 'CFStream' do |ss|
-    ss.dependency 'gRPC-Core/CFStream-Implementation', version
     ss.dependency "#{s.name}/Main", version
-
-    ss.pod_target_xcconfig = {
-      'GCC_PREPROCESSOR_DEFINITIONS' => 'GRPC_CFSTREAM=1'
-    }
   end
 
   s.subspec 'GID' do |ss|

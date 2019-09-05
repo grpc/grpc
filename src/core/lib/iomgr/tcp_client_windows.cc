@@ -148,7 +148,7 @@ static void tcp_connect(grpc_closure* on_done, grpc_endpoint** endpoint,
   }
 
   sock = WSASocket(AF_INET6, SOCK_STREAM, IPPROTO_TCP, NULL, 0,
-                   WSA_FLAG_OVERLAPPED);
+                   grpc_get_default_wsa_socket_flags());
   if (sock == INVALID_SOCKET) {
     error = GRPC_WSA_ERROR(WSAGetLastError(), "WSASocket");
     goto failure;
@@ -213,10 +213,12 @@ static void tcp_connect(grpc_closure* on_done, grpc_endpoint** endpoint,
 failure:
   GPR_ASSERT(error != GRPC_ERROR_NONE);
   char* target_uri = grpc_sockaddr_to_uri(addr);
-  grpc_error* final_error = grpc_error_set_str(
-      GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING("Failed to connect",
-                                                       &error, 1),
-      GRPC_ERROR_STR_TARGET_ADDRESS, grpc_slice_from_copied_string(target_uri));
+  grpc_error* final_error =
+      grpc_error_set_str(GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
+                             "Failed to connect", &error, 1),
+                         GRPC_ERROR_STR_TARGET_ADDRESS,
+                         grpc_slice_from_copied_string(
+                             target_uri == nullptr ? "NULL" : target_uri));
   GRPC_ERROR_UNREF(error);
   if (socket != NULL) {
     grpc_winsocket_destroy(socket);

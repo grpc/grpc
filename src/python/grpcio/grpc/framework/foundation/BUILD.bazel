@@ -1,4 +1,3 @@
-load("@grpc_python_dependencies//:requirements.bzl", "requirement")
 package(default_visibility = ["//visibility:public"])
 
 py_library(
@@ -23,25 +22,28 @@ py_library(
     name = "callable_util",
     srcs = ["callable_util.py"],
     deps = [
-        requirement("enum34"),
-        requirement("six"),
-    ],
+        "//external:six",
+    ] + select({
+        "//conditions:default": ["@enum34//:enum34",],
+        "//:python3": [],
+    }),
 )
 
 py_library(
     name = "future",
     srcs = ["future.py"],
     deps = [
-        requirement("six"),
+        "//external:six",
     ],
 )
 
 py_library(
     name = "logging_pool",
     srcs = ["logging_pool.py"],
-    deps = [
-        requirement("futures"),
-    ],
+    deps = select({
+        "//conditions:default": ["@futures//:futures",],
+        "//:python3": [],
+    }),
 )
 
 py_library(
@@ -56,6 +58,6 @@ py_library(
     name = "stream",
     srcs = ["stream.py"],
     deps = [
-        requirement("six"),
+        "//external:six",
     ],
 )

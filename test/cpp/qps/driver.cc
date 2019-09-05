@@ -31,7 +31,7 @@
 #include <grpcpp/create_channel.h>
 
 #include "src/core/lib/gpr/env.h"
-#include "src/core/lib/gpr/host_port.h"
+#include "src/core/lib/gprpp/host_port.h"
 #include "src/core/lib/profiling/timers.h"
 #include "src/proto/grpc/testing/worker_service.grpc.pb.h"
 #include "test/core/util/port.h"
@@ -52,15 +52,10 @@ using std::vector;
 namespace grpc {
 namespace testing {
 static std::string get_host(const std::string& worker) {
-  char* host;
-  char* port;
-
-  gpr_split_host_port(worker.c_str(), &host, &port);
-  const string s(host);
-
-  gpr_free(host);
-  gpr_free(port);
-  return s;
+  grpc_core::StringView host;
+  grpc_core::StringView port;
+  grpc_core::SplitHostPort(worker.c_str(), &host, &port);
+  return std::string(host.data(), host.size());
 }
 
 static deque<string> get_workers(const string& env_name) {
@@ -288,7 +283,7 @@ std::unique_ptr<ScenarioResult> RunScenario(
     gpr_log(GPR_INFO, "Starting server on %s (worker #%" PRIuPTR ")",
             workers[i].c_str(), i);
     if (!run_inproc) {
-      servers[i].stub = WorkerService::NewStub(CreateChannel(
+      servers[i].stub = WorkerService::NewStub(grpc::CreateChannel(
           workers[i], GetCredentialsProvider()->GetChannelCredentials(
                           GetCredType(workers[i], per_worker_credential_types,
                                       credential_type),
@@ -324,11 +319,10 @@ std::unique_ptr<ScenarioResult> RunScenario(
       client_config.add_server_targets(cli_target);
     } else {
       std::string host;
-      char* cli_target;
+      grpc_core::UniquePtr<char> cli_target;
       host = get_host(workers[i]);
-      gpr_join_host_port(&cli_target, host.c_str(), init_status.port());
-      client_config.add_server_targets(cli_target);
-      gpr_free(cli_target);
+      grpc_core::JoinHostPort(&cli_target, host.c_str(), init_status.port());
+      client_config.add_server_targets(cli_target.get());
     }
   }
 
@@ -349,7 +343,7 @@ std::unique_ptr<ScenarioResult> RunScenario(
     gpr_log(GPR_INFO, "Starting client on %s (worker #%" PRIuPTR ")",
             worker.c_str(), i + num_servers);
     if (!run_inproc) {
-      clients[i].stub = WorkerService::NewStub(CreateChannel(
+      clients[i].stub = WorkerService::NewStub(grpc::CreateChannel(
           worker,
           GetCredentialsProvider()->GetChannelCredentials(
               GetCredType(worker, per_worker_credential_types, credential_type),
@@ -557,7 +551,7 @@ bool RunQuit(
 
   ChannelArguments channel_args;
   for (size_t i = 0; i < workers.size(); i++) {
-    auto stub = WorkerService::NewStub(CreateChannel(
+    auto stub = WorkerService::NewStub(grpc::CreateChannel(
         workers[i], GetCredentialsProvider()->GetChannelCredentials(
                         GetCredType(workers[i], per_worker_credential_types,
                                     credential_type),

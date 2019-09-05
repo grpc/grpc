@@ -59,16 +59,6 @@ grpc_cc_test(
 )
 
 grpc_cc_test(
-    name = "host_port_test",
-    srcs = ["host_port_test.cc"],
-    language = "C++",
-    deps = [
-        "//:gpr",
-        "//test/core/util:grpc_test_util",
-    ],
-)
-
-grpc_cc_test(
     name = "log_test",
     srcs = ["log_test.cc"],
     language = "C++",

@@ -3,7 +3,7 @@
 This directory contains scripts that facilitate building and running gRPC interoperability tests for combinations of language/runtimes (known as matrix).
 
 The setup builds gRPC docker images for each language/runtime and upload it to Google Container Registry (GCR). These images, encapsulating gRPC stack
-from specific releases/tag, are used to test version compatiblity between gRPC release versions.
+from specific releases/tag, are used to test version compatibility between gRPC release versions.
 
 ## Step-by-step instructions for adding a GCR image for a new release for compatibility test
 We have continuous nightly test setup to test gRPC backward compatibility between old clients and latest server.  When a gRPC developer creates a new gRPC release, s/he is also responsible to add the just-released gRPC client to the nightly test.  The steps are:
@@ -12,11 +12,11 @@ We have continuous nightly test setup to test gRPC backward compatibility betwee
   - `tools/interop_matrix/create_matrix_images.py --git_checkout --release=v1.9.9 --upload_images --language cxx csharp python ruby php`
 - Verify that the new docker image was built successfully and uploaded to GCR.  For example,
   - `gcloud container images list --repository gcr.io/grpc-testing` lists available images.
-  - `gcloud container images list-tags gcr.io/grpc-testing/grpc_interop_java_oracle8` should show an image entry with tag `v1.9.9`.
+  - `gcloud container images list-tags gcr.io/grpc-testing/grpc_interop_java` should show an image entry with tag `v1.9.9`.
   - images can also be viewed in https://pantheon.corp.google.com/gcr/images/grpc-testing?project=grpc-testing
 - Verify the just-created docker client image would pass backward compatibility test (it should).  For example,
-  - `gcloud docker -- pull gcr.io/grpc-testing/grpc_interop_java_oracle8:v1.9.9` followed by
-  - `docker_image=gcr.io/grpc-testing/grpc_interop_java_oracle8:v1.9.9 tools/interop_matrix/testcases/java__master`
+  - `gcloud docker -- pull gcr.io/grpc-testing/grpc_interop_java:v1.9.9` followed by
+  - `docker_image=gcr.io/grpc-testing/grpc_interop_java:v1.9.9 tools/interop_matrix/testcases/java__master`
 - git commit the change and merge it to upstream/master.
 - (Optional) clean up the tmp directory to where grpc source is cloned at `/export/hda3/tmp/grpc_matrix/`.
 For more details on each step, refer to sections below.

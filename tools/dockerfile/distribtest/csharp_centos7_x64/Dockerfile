@@ -18,6 +18,7 @@ RUN rpm --import "https://keyserver.ubuntu.com/pks/lookup?op=get&search=0x3FA7E0
 RUN curl https://download.mono-project.com/repo/centos7-stable.repo | tee /etc/yum.repos.d/mono-centos7-stable.repo
 
 RUN yum install -y mono-devel
+RUN yum install -y msbuild
 
 RUN yum install -y nuget
 

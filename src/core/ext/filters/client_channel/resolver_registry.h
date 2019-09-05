@@ -50,6 +50,9 @@ class ResolverRegistry {
     static void RegisterResolverFactory(UniquePtr<ResolverFactory> factory);
   };
 
+  /// Checks whether the user input \a target is valid to create a resolver.
+  static bool IsValidTarget(const char* target);
+
   /// Creates a resolver given \a target.
   /// First tries to parse \a target as a URI. If this succeeds, tries
   /// to locate a registered resolver factory based on the URI scheme.
@@ -62,10 +65,11 @@ class ResolverRegistry {
   /// \a args are the channel args to be included in resolver results.
   /// \a pollset_set is used to drive I/O in the name resolution process.
   /// \a combiner is the combiner under which all resolver calls will be run.
-  static OrphanablePtr<Resolver> CreateResolver(const char* target,
-                                                const grpc_channel_args* args,
-                                                grpc_pollset_set* pollset_set,
-                                                grpc_combiner* combiner);
+  /// \a result_handler is used to return results from the resolver.
+  static OrphanablePtr<Resolver> CreateResolver(
+      const char* target, const grpc_channel_args* args,
+      grpc_pollset_set* pollset_set, grpc_combiner* combiner,
+      UniquePtr<Resolver::ResultHandler> result_handler);
 
   /// Returns the default authority to pass from a client for \a target.
   static UniquePtr<char> GetDefaultAuthority(const char* target);

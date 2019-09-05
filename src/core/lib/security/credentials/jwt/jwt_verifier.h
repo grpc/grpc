@@ -115,7 +115,8 @@ void grpc_jwt_verifier_verify(grpc_jwt_verifier* verifier,
 
 /* --- TESTING ONLY exposed functions. --- */
 
-grpc_jwt_claims* grpc_jwt_claims_from_json(grpc_json* json, grpc_slice buffer);
+grpc_jwt_claims* grpc_jwt_claims_from_json(grpc_json* json,
+                                           const grpc_slice& buffer);
 grpc_jwt_verifier_status grpc_jwt_claims_check(const grpc_jwt_claims* claims,
                                                const char* audience);
 const char* grpc_jwt_issuer_email_domain(const char* issuer);

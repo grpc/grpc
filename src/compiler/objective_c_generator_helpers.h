@@ -45,6 +45,16 @@ inline ::grpc::string LocalImport(const ::grpc::string& import) {
   return ::grpc::string("#import \"" + import + "\"\n");
 }
 
+inline ::grpc::string FrameworkImport(const ::grpc::string& import,
+                                      const ::grpc::string& framework) {
+  // Flattens the directory structure: grab the file name only
+  std::size_t pos = import.rfind("/");
+  // If pos is npos, pos + 1 is 0, which gives us the entire string,
+  // so there's no need to check that
+  ::grpc::string filename = import.substr(pos + 1, import.size() - (pos + 1));
+  return ::grpc::string("#import <" + framework + "/" + filename + ">\n");
+}
+
 inline ::grpc::string SystemImport(const ::grpc::string& import) {
   return ::grpc::string("#import <" + import + ">\n");
 }

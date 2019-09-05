@@ -23,7 +23,7 @@ def generate_resolver_component_tests():
             "address_sorting_test.cc",
         ],
         external_deps = [
-            "gmock",
+            "gtest",
         ],
         deps = [
             "//test/cpp/util:test_util%s" % unsecure_build_config_suffix,
@@ -33,6 +33,7 @@ def generate_resolver_component_tests():
             "//:gpr",
             "//test/cpp/util:test_config",
         ],
+        tags = ["no_windows"],
     )
     # meant to be invoked only through the top-level shell script driver
     grpc_cc_binary(
@@ -42,9 +43,10 @@ def generate_resolver_component_tests():
             "resolver_component_test.cc",
         ],
         external_deps = [
-            "gmock",
+            "gtest",
         ],
         deps = [
+            ":dns_test_util",
             "//test/cpp/util:test_util%s" % unsecure_build_config_suffix,
             "//test/core/util:grpc_test_util%s" % unsecure_build_config_suffix,
             "//:grpc++%s" % unsecure_build_config_suffix,
@@ -52,6 +54,7 @@ def generate_resolver_component_tests():
             "//:gpr",
             "//test/cpp/util:test_config",
         ],
+        tags = ["no_windows"],
     )
     grpc_cc_test(
         name = "resolver_component_tests_runner_invoker%s" % unsecure_build_config_suffix,
@@ -77,5 +80,6 @@ def generate_resolver_component_tests():
         args = [
             "--test_bin_name=resolver_component_test%s" % unsecure_build_config_suffix,
             "--running_under_bazel=true",
-        ]
+        ],
+        tags = ["no_windows"],
     )

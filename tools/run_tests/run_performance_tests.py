@@ -328,10 +328,10 @@ def perf_report_processor_job(worker_host, perf_base_name, output_filename,
     cmd = ''
     if worker_host != 'localhost':
         user_at_host = "%s@%s" % (_REMOTE_HOST_USERNAME, worker_host)
-        cmd = "USER_AT_HOST=%s OUTPUT_FILENAME=%s OUTPUT_DIR=%s PERF_BASE_NAME=%stools/run_tests/performance/process_remote_perf_flamegraphs.sh" % (
+        cmd = "USER_AT_HOST=%s OUTPUT_FILENAME=%s OUTPUT_DIR=%s PERF_BASE_NAME=%s tools/run_tests/performance/process_remote_perf_flamegraphs.sh" % (
             user_at_host, output_filename, flame_graph_reports, perf_base_name)
     else:
-        cmd = "OUTPUT_FILENAME=%s OUTPUT_DIR=%s PERF_BASE_NAME=%stools/run_tests/performance/process_local_perf_flamegraphs.sh" % (
+        cmd = "OUTPUT_FILENAME=%s OUTPUT_DIR=%s PERF_BASE_NAME=%s tools/run_tests/performance/process_local_perf_flamegraphs.sh" % (
             output_filename, flame_graph_reports, perf_base_name)
 
     return jobset.JobSpec(
@@ -484,7 +484,7 @@ def run_collect_perf_profile_jobs(hosts_and_base_names, scenario_name,
     failures, _ = jobset.run(
         perf_report_jobs, newline_on_success=True, maxjobs=1)
     jobset.message(
-        'END', 'Collecting perf reports from qps workers', do_newline=True)
+        'SUCCESS', 'Collecting perf reports from qps workers', do_newline=True)
     return failures
 
 

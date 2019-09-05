@@ -24,6 +24,7 @@
 #include "src/core/lib/iomgr/socket_utils_posix.h"
 
 #include <errno.h>
+#include <netinet/in.h>
 #include <netinet/ip.h>
 #include <string.h>
 

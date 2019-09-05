@@ -144,11 +144,11 @@ size_t SecurityHandshaker::MoveReadBufferIntoHandshakeBuffer() {
   }
   size_t offset = 0;
   while (args_->read_buffer->count > 0) {
-    grpc_slice next_slice = grpc_slice_buffer_take_first(args_->read_buffer);
-    memcpy(handshake_buffer_ + offset, GRPC_SLICE_START_PTR(next_slice),
-           GRPC_SLICE_LENGTH(next_slice));
-    offset += GRPC_SLICE_LENGTH(next_slice);
-    grpc_slice_unref_internal(next_slice);
+    grpc_slice* next_slice = grpc_slice_buffer_peek_first(args_->read_buffer);
+    memcpy(handshake_buffer_ + offset, GRPC_SLICE_START_PTR(*next_slice),
+           GRPC_SLICE_LENGTH(*next_slice));
+    offset += GRPC_SLICE_LENGTH(*next_slice);
+    grpc_slice_buffer_remove_first(args_->read_buffer);
   }
   return bytes_in_read_buffer;
 }
@@ -195,7 +195,7 @@ void SecurityHandshaker::HandshakeFailedLocked(grpc_error* error) {
 void SecurityHandshaker::OnPeerCheckedInner(grpc_error* error) {
   MutexLock lock(&mu_);
   if (error != GRPC_ERROR_NONE || is_shutdown_) {
-    HandshakeFailedLocked(GRPC_ERROR_REF(error));
+    HandshakeFailedLocked(error);
     return;
   }
   // Create zero-copy frame protector, if implemented.
@@ -255,7 +255,7 @@ void SecurityHandshaker::OnPeerCheckedInner(grpc_error* error) {
 
 void SecurityHandshaker::OnPeerCheckedFn(void* arg, grpc_error* error) {
   RefCountedPtr<SecurityHandshaker>(static_cast<SecurityHandshaker*>(arg))
-      ->OnPeerCheckedInner(error);
+      ->OnPeerCheckedInner(GRPC_ERROR_REF(error));
 }
 
 grpc_error* SecurityHandshaker::CheckPeerLocked() {
@@ -283,7 +283,7 @@ grpc_error* SecurityHandshaker::OnHandshakeNextDoneLocked(
   if (result == TSI_INCOMPLETE_DATA) {
     GPR_ASSERT(bytes_to_send_size == 0);
     grpc_endpoint_read(args_->endpoint, args_->read_buffer,
-                       &on_handshake_data_received_from_peer_);
+                       &on_handshake_data_received_from_peer_, /*urgent=*/true);
     return error;
   }
   if (result != TSI_OK) {
@@ -306,7 +306,7 @@ grpc_error* SecurityHandshaker::OnHandshakeNextDoneLocked(
   } else if (handshaker_result == nullptr) {
     // There is nothing to send, but need to read from peer.
     grpc_endpoint_read(args_->endpoint, args_->read_buffer,
-                       &on_handshake_data_received_from_peer_);
+                       &on_handshake_data_received_from_peer_, /*urgent=*/true);
   } else {
     // Handshake has finished, check peer and so on.
     error = CheckPeerLocked();
@@ -382,7 +382,8 @@ void SecurityHandshaker::OnHandshakeDataSentToPeerFn(void* arg,
   // We may be done.
   if (h->handshaker_result_ == nullptr) {
     grpc_endpoint_read(h->args_->endpoint, h->args_->read_buffer,
-                       &h->on_handshake_data_received_from_peer_);
+                       &h->on_handshake_data_received_from_peer_,
+                       /*urgent=*/true);
   } else {
     error = h->CheckPeerLocked();
     if (error != GRPC_ERROR_NONE) {

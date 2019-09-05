@@ -78,6 +78,7 @@ grpc_cc_test(
         "//test/core/util:grpc_test_util",
         "//test/cpp/util:test_util",
     ],
+    tags = ["no_test_ios"],
 )
 
 grpc_cc_test(
@@ -89,6 +90,7 @@ grpc_cc_test(
     external_deps = [
         "gtest",
     ],
+    tags = ["no_windows", "no_test_ios"],
     deps = [
         ":test_service_impl",
         "//:gpr",
@@ -120,6 +122,7 @@ grpc_cc_test(
         "//test/core/util:grpc_test_util",
         "//test/cpp/util:test_util",
     ],
+    tags = ["no_test_ios"],
 )
 
 grpc_cc_binary(
@@ -139,6 +142,7 @@ grpc_cc_binary(
         "//src/proto/grpc/testing:echo_proto",
         "//src/proto/grpc/testing/duplicate:echo_duplicate_proto",
         "//test/core/util:grpc_test_util",
+        "//test/cpp/util:test_config",
         "//test/cpp/util:test_util",
     ],
 )
@@ -150,6 +154,7 @@ grpc_cc_test(
         "gtest",
     ],
     deps = [
+        ":interceptors_util",
         ":test_service_impl",
         "//:gpr",
         "//:grpc",
@@ -157,6 +162,25 @@ grpc_cc_test(
         "//src/proto/grpc/testing:echo_messages_proto",
         "//src/proto/grpc/testing:echo_proto",
         "//src/proto/grpc/testing:simple_messages_proto",
+        "//test/core/util:grpc_test_util",
+        "//test/cpp/util:test_util",
+    ],
+    tags = ["no_test_ios"],
+)
+
+grpc_cc_test(
+    name = "delegating_channel_test",
+    srcs = ["delegating_channel_test.cc"],
+    external_deps = [
+        "gtest",
+    ],
+    deps = [
+        ":test_service_impl",
+        "//:gpr",
+        "//:grpc",
+        "//:grpc++",
+        "//src/proto/grpc/testing:echo_messages_proto",
+        "//src/proto/grpc/testing:echo_proto",
         "//test/core/util:grpc_test_util",
         "//test/cpp/util:test_util",
     ],
@@ -241,9 +265,12 @@ grpc_cc_test(
 
 grpc_cc_test(
     name = "end2end_test",
-    size = "large",  # with poll-cv this takes long, see #17493
+    size = "large",
     deps = [
         ":end2end_test_lib",
+        # DO NOT REMOVE THE grpc++ dependence below since the internal build
+        # system uses it to specialize targets
+        "//:grpc++",
     ],
 )
 
@@ -363,7 +390,6 @@ grpc_cc_test(
     name = "mock_test",
     srcs = ["mock_test.cc"],
     external_deps = [
-        "gmock",
         "gtest",
     ],
     deps = [
@@ -407,11 +433,32 @@ grpc_cc_test(
         "//:gpr",
         "//:grpc",
         "//:grpc++",
+        "//src/proto/grpc/lb/v2:orca_load_report_for_test_proto",
         "//src/proto/grpc/testing:echo_messages_proto",
         "//src/proto/grpc/testing:echo_proto",
         "//src/proto/grpc/testing/duplicate:echo_duplicate_proto",
         "//test/core/util:grpc_test_util",
         "//test/core/util:test_lb_policies",
+        "//test/cpp/util:test_util",
+    ],
+    tags = ["no_test_ios"],
+)
+
+grpc_cc_test(
+    name = "service_config_end2end_test",
+    srcs = ["service_config_end2end_test.cc"],
+    external_deps = [
+        "gtest",
+    ],
+    deps = [
+        ":test_service_impl",
+        "//:gpr",
+        "//:grpc",
+        "//:grpc++",
+        "//src/proto/grpc/testing:echo_messages_proto",
+        "//src/proto/grpc/testing:echo_proto",
+        "//src/proto/grpc/testing/duplicate:echo_duplicate_proto",
+        "//test/core/util:grpc_test_util",
         "//test/cpp/util:test_util",
     ],
 )
@@ -420,7 +467,6 @@ grpc_cc_test(
     name = "grpclb_end2end_test",
     srcs = ["grpclb_end2end_test.cc"],
     external_deps = [
-        "gmock",
         "gtest",
     ],
     deps = [
@@ -436,6 +482,30 @@ grpc_cc_test(
         "//test/core/util:grpc_test_util",
         "//test/cpp/util:test_util",
     ],
+    tags = ["no_test_ios"],
+)
+
+grpc_cc_test(
+    name = "xds_end2end_test",
+    srcs = ["xds_end2end_test.cc"],
+    external_deps = [
+        "gtest",
+    ],
+    deps = [
+        ":test_service_impl",
+        "//:gpr",
+        "//:grpc",
+        "//:grpc++",
+        "//:grpc_resolver_fake",
+        "//src/proto/grpc/lb/v2:eds_for_test_proto",
+        "//src/proto/grpc/lb/v2:lrs_for_test_proto",
+        "//src/proto/grpc/testing:echo_messages_proto",
+        "//src/proto/grpc/testing:echo_proto",
+        "//src/proto/grpc/testing/duplicate:echo_duplicate_proto",
+        "//test/core/util:grpc_test_util",
+        "//test/cpp/util:test_util",
+    ],
+    tags = ["no_test_ios"],
 )
 
 grpc_cc_test(
@@ -498,6 +568,7 @@ grpc_cc_test(
         "//test/core/util:grpc_test_util",
         "//test/cpp/util:test_util",
     ],
+    tags = ["no_test_ios"],
 )
 
 grpc_cc_binary(
@@ -516,6 +587,7 @@ grpc_cc_binary(
         "//src/proto/grpc/testing:echo_proto",
         "//src/proto/grpc/testing/duplicate:echo_duplicate_proto",
         "//test/core/util:grpc_test_util",
+        "//test/cpp/util:test_config",
         "//test/cpp/util:test_util",
     ],
 )
@@ -544,11 +616,30 @@ grpc_cc_test(
     srcs = ["server_load_reporting_end2end_test.cc"],
     external_deps = [
         "gtest",
-        "gmock",
     ],
     deps = [
         "//:grpcpp_server_load_reporting",
         "//src/proto/grpc/testing:echo_proto",
+        "//test/cpp/util:test_util",
+    ],
+    tags = ["no_test_ios"],
+)
+
+grpc_cc_test(
+    name = "flaky_network_test",
+    srcs = ["flaky_network_test.cc"],
+    external_deps = [
+        "gtest",
+    ],
+    tags = ["manual", "no_test_ios"],
+    deps = [
+        ":test_service_impl",
+        "//:gpr",
+        "//:grpc",
+        "//:grpc++",
+        "//src/proto/grpc/testing:echo_messages_proto",
+        "//src/proto/grpc/testing:echo_proto",
+        "//test/core/util:grpc_test_util",
         "//test/cpp/util:test_util",
     ],
 )
@@ -577,6 +668,7 @@ grpc_cc_test(
     external_deps = [
         "gtest",
     ],
+    tags = ["no_windows"],
     deps = [
         "//:gpr",
         "//:grpc",
@@ -591,6 +683,7 @@ grpc_cc_test(
 
 grpc_cc_test(
     name = "thread_stress_test",
+    timeout = "long",
     srcs = ["thread_stress_test.cc"],
     external_deps = [
         "gtest",
@@ -605,4 +698,63 @@ grpc_cc_test(
         "//test/core/util:grpc_test_util",
         "//test/cpp/util:test_util",
     ],
+    tags = ["no_test_ios"],
+)
+
+grpc_cc_test(
+    name = "cfstream_test",
+    srcs = ["cfstream_test.cc"],
+    external_deps = [
+        "gtest",
+    ],
+    tags = ["manual", "no_test_ios"],  # test requires root, won't work with bazel RBE
+    deps = [
+        ":test_service_impl",
+        "//:gpr",
+        "//:grpc",
+        "//:grpc++",
+        "//src/proto/grpc/testing:echo_messages_proto",
+        "//src/proto/grpc/testing:echo_proto",
+        "//src/proto/grpc/testing:simple_messages_proto",
+        "//test/core/util:grpc_test_util",
+        "//test/cpp/util:test_util",
+    ],
+)
+
+grpc_cc_test(
+    name = "message_allocator_end2end_test",
+    srcs = ["message_allocator_end2end_test.cc"],
+    external_deps = [
+        "gtest",
+    ],
+    deps = [
+        ":test_service_impl",
+        "//:gpr",
+        "//:grpc",
+        "//:grpc++",
+        "//src/proto/grpc/testing:echo_messages_proto",
+        "//src/proto/grpc/testing:echo_proto",
+        "//src/proto/grpc/testing:simple_messages_proto",
+        "//test/core/util:grpc_test_util",
+        "//test/cpp/util:test_util",
+    ],
+)
+
+grpc_cc_test(
+    name = "port_sharing_end2end_test",
+    srcs = ["port_sharing_end2end_test.cc"],
+    external_deps = [
+        "gtest",
+    ],
+    deps = [
+        ":test_service_impl",
+        "//:gpr",
+        "//:grpc",
+        "//:grpc++",
+        "//src/proto/grpc/testing:echo_messages_proto",
+        "//src/proto/grpc/testing:echo_proto",
+        "//test/core/util:grpc_test_util",
+        "//test/cpp/util:test_util",
+    ],
+    tags = ["no_test_ios"],
 )

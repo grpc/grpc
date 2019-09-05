@@ -22,7 +22,7 @@
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
 
-#include "src/core/lib/gpr/host_port.h"
+#include "src/core/lib/gprpp/host_port.h"
 #include "src/core/lib/iomgr/resolve_address.h"
 #include "src/core/lib/security/credentials/fake/fake_credentials.h"
 #include "test/core/util/port.h"
@@ -106,18 +106,19 @@ void test_bind_server_twice(void) {
 
 void test_bind_server_to_addr(const char* host, bool secure) {
   int port = grpc_pick_unused_port_or_die();
-  char* addr;
-  gpr_join_host_port(&addr, host, port);
-  gpr_log(GPR_INFO, "Test bind to %s", addr);
+  grpc_core::UniquePtr<char> addr;
+  grpc_core::JoinHostPort(&addr, host, port);
+  gpr_log(GPR_INFO, "Test bind to %s", addr.get());
 
   grpc_server* server = grpc_server_create(nullptr, nullptr);
   if (secure) {
     grpc_server_credentials* fake_creds =
         grpc_fake_transport_security_server_credentials_create();
-    GPR_ASSERT(grpc_server_add_secure_http2_port(server, addr, fake_creds));
+    GPR_ASSERT(
+        grpc_server_add_secure_http2_port(server, addr.get(), fake_creds));
     grpc_server_credentials_release(fake_creds);
   } else {
-    GPR_ASSERT(grpc_server_add_insecure_http2_port(server, addr));
+    GPR_ASSERT(grpc_server_add_insecure_http2_port(server, addr.get()));
   }
   grpc_completion_queue* cq = grpc_completion_queue_create_for_next(nullptr);
   grpc_server_register_completion_queue(server, cq, nullptr);
@@ -126,7 +127,6 @@ void test_bind_server_to_addr(const char* host, bool secure) {
   grpc_completion_queue_next(cq, gpr_inf_future(GPR_CLOCK_MONOTONIC), nullptr);
   grpc_server_destroy(server);
   grpc_completion_queue_destroy(cq);
-  gpr_free(addr);
 }
 
 static int external_dns_works(const char* host) {

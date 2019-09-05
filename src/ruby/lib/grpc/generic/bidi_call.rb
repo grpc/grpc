@@ -224,7 +224,7 @@ module GRPC
         set_input_stream_done.call
       end
       GRPC.logger.debug('bidi-read-loop: finished')
-      # Make sure that the write loop is done done before finishing the call.
+      # Make sure that the write loop is done before finishing the call.
       # Note that blocking is ok at this point because we've already received
       # a status
       @enq_th.join if is_client

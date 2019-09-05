@@ -75,6 +75,7 @@ grpc_cc_library(
         "test_credentials_provider.h",
     ],
     external_deps = [
+        "gflags",
         "protobuf",
     ],
     deps = [
@@ -186,7 +187,9 @@ grpc_cc_test(
     external_deps = [
         "gtest",
     ],
-    tags = ["nomsan"],  # death tests seem to be incompatible with msan
+    tags = ["nomsan",  # death tests seem to be incompatible with msan
+            "no_test_ios"
+    ],
     deps = [
         ":grpc_cli_libs",
         ":test_util",

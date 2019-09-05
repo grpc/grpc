@@ -38,7 +38,7 @@ namespace Grpc.Core.Internal
         bool registeredWithChannel;
 
         // Dispose of to de-register cancellation token registration
-        IDisposable cancellationTokenRegistration;
+        CancellationTokenRegistration cancellationTokenRegistration;
 
         // Completion of a pending unary response if not null.
         TaskCompletionSource<TResponse> unaryResponseTcs;
@@ -111,7 +111,7 @@ namespace Grpc.Core.Internal
                             {
                                 using (profiler.NewScope("AsyncCall.UnaryCall.HandleBatch"))
                                 {
-                                    HandleUnaryResponse(success, ctx.GetReceivedStatusOnClient(), ctx.GetReceivedMessage(), ctx.GetReceivedInitialMetadata());
+                                    HandleUnaryResponse(success, ctx.GetReceivedStatusOnClient(), ctx.GetReceivedMessageReader(), ctx.GetReceivedInitialMetadata());
                                 }
                             }
                             catch (Exception e)
@@ -409,7 +409,7 @@ namespace Grpc.Core.Internal
             // deadlock.
             // See https://github.com/grpc/grpc/issues/14777
             // See https://github.com/dotnet/corefx/issues/14903
-            cancellationTokenRegistration?.Dispose();
+            cancellationTokenRegistration.Dispose();
         }
 
         protected override bool IsClient
@@ -509,11 +509,7 @@ namespace Grpc.Core.Internal
         // Make sure that once cancellationToken for this call is cancelled, Cancel() will be called.
         private void RegisterCancellationCallback()
         {
-            var token = details.Options.CancellationToken;
-            if (token.CanBeCanceled)
-            {
-                cancellationTokenRegistration = token.Register(() => this.Cancel());
-            }
+            cancellationTokenRegistration = RegisterCancellationCallbackForToken(details.Options.CancellationToken);
         }
 
         /// <summary>
@@ -537,14 +533,14 @@ namespace Grpc.Core.Internal
         /// <summary>
         /// Handler for unary response completion.
         /// </summary>
-        private void HandleUnaryResponse(bool success, ClientSideStatus receivedStatus, byte[] receivedMessage, Metadata responseHeaders)
+        private void HandleUnaryResponse(bool success, ClientSideStatus receivedStatus, IBufferReader receivedMessageReader, Metadata responseHeaders)
         {
             // NOTE: because this event is a result of batch containing GRPC_OP_RECV_STATUS_ON_CLIENT,
             // success will be always set to true.
 
             TaskCompletionSource<object> delayedStreamingWriteTcs = null;
             TResponse msg = default(TResponse);
-            var deserializeException = TryDeserialize(receivedMessage, out msg);
+            var deserializeException = TryDeserialize(receivedMessageReader, out msg);
 
             bool releasedResources;
             lock (myLock)
@@ -634,9 +630,9 @@ namespace Grpc.Core.Internal
 
         IUnaryResponseClientCallback UnaryResponseClientCallback => this;
 
-        void IUnaryResponseClientCallback.OnUnaryResponseClient(bool success, ClientSideStatus receivedStatus, byte[] receivedMessage, Metadata responseHeaders)
+        void IUnaryResponseClientCallback.OnUnaryResponseClient(bool success, ClientSideStatus receivedStatus, IBufferReader receivedMessageReader, Metadata responseHeaders)
         {
-            HandleUnaryResponse(success, receivedStatus, receivedMessage, responseHeaders);
+            HandleUnaryResponse(success, receivedStatus, receivedMessageReader, responseHeaders);
         }
 
         IReceivedStatusOnClientCallback ReceivedStatusOnClientCallback => this;

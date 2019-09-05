@@ -73,10 +73,11 @@ GRPCAPI void grpc_init(void);
     Before it's called, there should haven been a matching invocation to
     grpc_init().
 
-    No memory is used by grpc after this call returns, nor are any instructions
-    executing within the grpc library.
-    Prior to calling, all application owned grpc objects must have been
-    destroyed. */
+    The last call to grpc_shutdown will initiate cleaning up of grpc library
+    internals, which can happen in another thread. Once the clean-up is done,
+    no memory is used by grpc, nor are any instructions executing within the
+    grpc library.  Prior to calling, all application owned grpc objects must
+    have been destroyed. */
 GRPCAPI void grpc_shutdown(void);
 
 /** EXPERIMENTAL. Returns 1 if the grpc library has been initialized.
@@ -84,6 +85,10 @@ GRPCAPI void grpc_shutdown(void);
     part of stabilizing the fork support API, as tracked in
     https://github.com/grpc/grpc/issues/15334 */
 GRPCAPI int grpc_is_initialized(void);
+
+/** EXPERIMENTAL. Blocking shut down grpc library.
+    This is only for wrapped language to use now. */
+GRPCAPI void grpc_shutdown_blocking(void);
 
 /** Return a string representing the current version of grpc */
 GRPCAPI const char* grpc_version_string(void);
@@ -219,7 +224,9 @@ GRPCAPI grpc_call* grpc_channel_create_call(
 GRPCAPI void grpc_channel_ping(grpc_channel* channel, grpc_completion_queue* cq,
                                void* tag, void* reserved);
 
-/** Pre-register a method/host pair on a channel. */
+/** Pre-register a method/host pair on a channel.
+    method and host are not owned and must remain alive while the server is
+    running. */
 GRPCAPI void* grpc_channel_register_call(grpc_channel* channel,
                                          const char* method, const char* host,
                                          void* reserved);
@@ -318,14 +325,14 @@ GRPCAPI void grpc_channel_destroy(grpc_channel* channel);
    If a grpc_call fails, it's guaranteed that no change to the call state
    has been made. */
 
-/** Called by clients to cancel an RPC on the server.
+/** Cancel an RPC.
     Can be called multiple times, from any thread.
     THREAD-SAFETY grpc_call_cancel and grpc_call_cancel_with_status
     are thread-safe, and can be called at any point before grpc_call_unref
     is called.*/
 GRPCAPI grpc_call_error grpc_call_cancel(grpc_call* call, void* reserved);
 
-/** Called by clients to cancel an RPC on the server.
+/** Cancel an RPC.
     Can be called multiple times, from any thread.
     If a status has not been received for the call, set it to the status code
     and description passed in.

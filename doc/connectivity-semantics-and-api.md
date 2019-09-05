@@ -43,7 +43,7 @@ connection because of a lack of new or pending RPCs. New RPCs  MAY be created
 in this state. Any attempt to start an RPC on the channel will push the channel
 out of this state to connecting. When there has been no RPC activity on a channel
 for a specified IDLE_TIMEOUT, i.e., no new or pending (active) RPCs for this
-period, channels that are READY or CONNECTING switch to IDLE. Additionaly,
+period, channels that are READY or CONNECTING switch to IDLE. Additionally,
 channels that receive a GOAWAY when there are no active or pending RPCs should
 also switch to IDLE to avoid connection overload at servers that are attempting
 to shed connections. We will use a default IDLE_TIMEOUT of 300 seconds (5 minutes).

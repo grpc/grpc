@@ -29,6 +29,7 @@
 #include "src/cpp/server/load_reporter/load_reporter.h"
 
 #include "opencensus/stats/internal/set_aggregation_window.h"
+#include "opencensus/tags/tag_key.h"
 
 namespace grpc {
 namespace load_reporter {
@@ -38,12 +39,12 @@ CpuStatsProvider::CpuStatsSample CpuStatsProviderDefaultImpl::GetCpuStats() {
 }
 
 CensusViewProvider::CensusViewProvider()
-    : tag_key_token_(::opencensus::stats::TagKey::Register(kTagKeyToken)),
-      tag_key_host_(::opencensus::stats::TagKey::Register(kTagKeyHost)),
-      tag_key_user_id_(::opencensus::stats::TagKey::Register(kTagKeyUserId)),
-      tag_key_status_(::opencensus::stats::TagKey::Register(kTagKeyStatus)),
+    : tag_key_token_(::opencensus::tags::TagKey::Register(kTagKeyToken)),
+      tag_key_host_(::opencensus::tags::TagKey::Register(kTagKeyHost)),
+      tag_key_user_id_(::opencensus::tags::TagKey::Register(kTagKeyUserId)),
+      tag_key_status_(::opencensus::tags::TagKey::Register(kTagKeyStatus)),
       tag_key_metric_name_(
-          ::opencensus::stats::TagKey::Register(kTagKeyMetricName)) {
+          ::opencensus::tags::TagKey::Register(kTagKeyMetricName)) {
   // One view related to starting a call.
   auto vd_start_count =
       ::opencensus::stats::ViewDescriptor()
@@ -239,7 +240,7 @@ grpc::string LoadReporter::GenerateLbId() {
 
 ::grpc::lb::v1::LoadBalancingFeedback
 LoadReporter::GenerateLoadBalancingFeedback() {
-  std::unique_lock<std::mutex> lock(feedback_mu_);
+  grpc_core::ReleasableMutexLock lock(&feedback_mu_);
   auto now = std::chrono::system_clock::now();
   // Discard records outside the window until there is only one record
   // outside the window, which is used as the base for difference.
@@ -277,7 +278,7 @@ LoadReporter::GenerateLoadBalancingFeedback() {
   double cpu_limit = newest->cpu_limit - oldest->cpu_limit;
   std::chrono::duration<double> duration_seconds =
       newest->end_time - oldest->end_time;
-  lock.unlock();
+  lock.Unlock();
   ::grpc::lb::v1::LoadBalancingFeedback feedback;
   feedback.set_server_utilization(static_cast<float>(cpu_usage / cpu_limit));
   feedback.set_calls_per_second(
@@ -290,7 +291,7 @@ LoadReporter::GenerateLoadBalancingFeedback() {
 ::google::protobuf::RepeatedPtrField<::grpc::lb::v1::Load>
 LoadReporter::GenerateLoads(const grpc::string& hostname,
                             const grpc::string& lb_id) {
-  std::lock_guard<std::mutex> lock(store_mu_);
+  grpc_core::MutexLock lock(&store_mu_);
   auto assigned_stores = load_data_store_.GetAssignedStores(hostname, lb_id);
   GPR_ASSERT(assigned_stores != nullptr);
   GPR_ASSERT(!assigned_stores->empty());
@@ -371,7 +372,7 @@ void LoadReporter::AppendNewFeedbackRecord(uint64_t rpcs, uint64_t errors) {
     // This will make the load balancing feedback generation a no-op.
     cpu_stats = {0, 0};
   }
-  std::unique_lock<std::mutex> lock(feedback_mu_);
+  grpc_core::MutexLock lock(&feedback_mu_);
   feedback_records_.emplace_back(std::chrono::system_clock::now(), rpcs, errors,
                                  cpu_stats.first, cpu_stats.second);
 }
@@ -379,7 +380,7 @@ void LoadReporter::AppendNewFeedbackRecord(uint64_t rpcs, uint64_t errors) {
 void LoadReporter::ReportStreamCreated(const grpc::string& hostname,
                                        const grpc::string& lb_id,
                                        const grpc::string& load_key) {
-  std::lock_guard<std::mutex> lock(store_mu_);
+  grpc_core::MutexLock lock(&store_mu_);
   load_data_store_.ReportStreamCreated(hostname, lb_id, load_key);
   gpr_log(GPR_INFO,
           "[LR %p] Report stream created (host: %s, LB ID: %s, load key: %s).",
@@ -388,7 +389,7 @@ void LoadReporter::ReportStreamCreated(const grpc::string& hostname,
 
 void LoadReporter::ReportStreamClosed(const grpc::string& hostname,
                                       const grpc::string& lb_id) {
-  std::lock_guard<std::mutex> lock(store_mu_);
+  grpc_core::MutexLock lock(&store_mu_);
   load_data_store_.ReportStreamClosed(hostname, lb_id);
   gpr_log(GPR_INFO, "[LR %p] Report stream closed (host: %s, LB ID: %s).", this,
           hostname.c_str(), lb_id.c_str());
@@ -407,7 +408,7 @@ void LoadReporter::ProcessViewDataCallStart(
       LoadRecordKey key(client_ip_and_token, user_id);
       LoadRecordValue value = LoadRecordValue(start_count);
       {
-        std::unique_lock<std::mutex> lock(store_mu_);
+        grpc_core::MutexLock lock(&store_mu_);
         load_data_store_.MergeRow(host, key, value);
       }
     }
@@ -459,7 +460,7 @@ void LoadReporter::ProcessViewDataCallEnd(
       LoadRecordValue value = LoadRecordValue(
           0, ok_count, error_count, bytes_sent, bytes_received, latency_ms);
       {
-        std::unique_lock<std::mutex> lock(store_mu_);
+        grpc_core::MutexLock lock(&store_mu_);
         load_data_store_.MergeRow(host, key, value);
       }
     }
@@ -486,7 +487,7 @@ void LoadReporter::ProcessViewDataOtherCallMetrics(
       LoadRecordValue value = LoadRecordValue(
           metric_name, static_cast<uint64_t>(num_calls), total_metric_value);
       {
-        std::unique_lock<std::mutex> lock(store_mu_);
+        grpc_core::MutexLock lock(&store_mu_);
         load_data_store_.MergeRow(host, key, value);
       }
     }

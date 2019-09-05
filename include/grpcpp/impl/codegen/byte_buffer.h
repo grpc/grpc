@@ -29,6 +29,17 @@
 
 #include <vector>
 
+namespace grpc_impl {
+namespace internal {
+
+template <class RequestType, class ResponseType>
+class CallbackUnaryHandler;
+template <class RequestType, class ResponseType>
+class CallbackServerStreamingHandler;
+
+}  // namespace internal
+}  // namespace grpc_impl
+
 namespace grpc {
 
 class ServerInterface;
@@ -45,12 +56,9 @@ template <class ServiceType, class RequestType, class ResponseType>
 class RpcMethodHandler;
 template <class ServiceType, class RequestType, class ResponseType>
 class ServerStreamingHandler;
-template <class RequestType, class ResponseType>
-class CallbackUnaryHandler;
-template <class RequestType, class ResponseType>
-class CallbackServerStreamingHandler;
 template <StatusCode code>
 class ErrorMethodHandler;
+class ExternalConnectionAcceptorImpl;
 template <class R>
 class DeserializeFuncType;
 class GrpcByteBufferPeer;
@@ -96,7 +104,7 @@ class ByteBuffer final {
   /// \a buf. Wrapper of core function grpc_byte_buffer_copy . This is not
   /// a deep copy; it is just a referencing. As a result, its performance is
   /// size-independent.
-  ByteBuffer(const ByteBuffer& buf);
+  ByteBuffer(const ByteBuffer& buf) : buffer_(nullptr) { operator=(buf); }
 
   ~ByteBuffer() {
     if (buffer_) {
@@ -107,7 +115,16 @@ class ByteBuffer final {
   /// Wrapper of core function grpc_byte_buffer_copy . This is not
   /// a deep copy; it is just a referencing. As a result, its performance is
   /// size-independent.
-  ByteBuffer& operator=(const ByteBuffer&);
+  ByteBuffer& operator=(const ByteBuffer& buf) {
+    if (this != &buf) {
+      Clear();  // first remove existing data
+    }
+    if (buf.buffer_) {
+      // then copy
+      buffer_ = g_core_codegen_interface->grpc_byte_buffer_copy(buf.buffer_);
+    }
+    return *this;
+  }
 
   /// Dump (read) the buffer contents into \a slices.
   Status Dump(std::vector<Slice>* slices) const;
@@ -166,9 +183,9 @@ class ByteBuffer final {
   template <class ServiceType, class RequestType, class ResponseType>
   friend class internal::ServerStreamingHandler;
   template <class RequestType, class ResponseType>
-  friend class internal::CallbackUnaryHandler;
+  friend class ::grpc_impl::internal::CallbackUnaryHandler;
   template <class RequestType, class ResponseType>
-  friend class ::grpc::internal::CallbackServerStreamingHandler;
+  friend class ::grpc_impl::internal::CallbackServerStreamingHandler;
   template <StatusCode code>
   friend class internal::ErrorMethodHandler;
   template <class R>
@@ -176,6 +193,7 @@ class ByteBuffer final {
   friend class ProtoBufferReader;
   friend class ProtoBufferWriter;
   friend class internal::GrpcByteBufferPeer;
+  friend class internal::ExternalConnectionAcceptorImpl;
 
   grpc_byte_buffer* buffer_;
 
@@ -215,7 +233,7 @@ class SerializationTraits<ByteBuffer, void> {
                           bool* own_buffer) {
     *buffer = source;
     *own_buffer = true;
-    return Status::OK;
+    return g_core_codegen_interface->ok();
   }
 };
 

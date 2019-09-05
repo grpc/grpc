@@ -18,7 +18,7 @@
 #include <grpc/support/port_platform.h>
 
 #include "src/core/lib/iomgr/port.h"
-#if GRPC_ARES == 1 && !defined(GRPC_UV)
+#if GRPC_ARES == 1
 
 #include <ares.h>
 #include <string.h>
@@ -84,6 +84,10 @@ struct grpc_ares_ev_driver {
   grpc_timer query_timeout;
   /** cancels queries on a timeout */
   grpc_closure on_timeout_locked;
+  /** alarm to poll ares_process on in case fd events don't happen */
+  grpc_timer ares_backup_poll_alarm;
+  /** polls ares_process on a periodic timer */
+  grpc_closure on_ares_backup_poll_alarm_locked;
 };
 
 static void grpc_ares_notify_on_event_locked(grpc_ares_ev_driver* ev_driver);
@@ -130,6 +134,13 @@ static void fd_node_shutdown_locked(fd_node* fdn, const char* reason) {
 
 static void on_timeout_locked(void* arg, grpc_error* error);
 
+static void on_ares_backup_poll_alarm_locked(void* arg, grpc_error* error);
+
+static void noop_inject_channel_config(ares_channel channel) {}
+
+void (*grpc_ares_test_only_inject_config)(ares_channel channel) =
+    noop_inject_channel_config;
+
 grpc_error* grpc_ares_ev_driver_create_locked(grpc_ares_ev_driver** ev_driver,
                                               grpc_pollset_set* pollset_set,
                                               int query_timeout_ms,
@@ -140,6 +151,7 @@ grpc_error* grpc_ares_ev_driver_create_locked(grpc_ares_ev_driver** ev_driver,
   memset(&opts, 0, sizeof(opts));
   opts.flags |= ARES_FLAG_STAYOPEN;
   int status = ares_init_options(&(*ev_driver)->channel, &opts, ARES_OPT_FLAGS);
+  grpc_ares_test_only_inject_config((*ev_driver)->channel);
   GRPC_CARES_TRACE_LOG("request:%p grpc_ares_ev_driver_create_locked", request);
   if (status != ARES_SUCCESS) {
     char* err_msg;
@@ -163,6 +175,9 @@ grpc_error* grpc_ares_ev_driver_create_locked(grpc_ares_ev_driver** ev_driver,
       ->polled_fd_factory->ConfigureAresChannelLocked((*ev_driver)->channel);
   GRPC_CLOSURE_INIT(&(*ev_driver)->on_timeout_locked, on_timeout_locked,
                     *ev_driver, grpc_combiner_scheduler(combiner));
+  GRPC_CLOSURE_INIT(&(*ev_driver)->on_ares_backup_poll_alarm_locked,
+                    on_ares_backup_poll_alarm_locked, *ev_driver,
+                    grpc_combiner_scheduler(combiner));
   (*ev_driver)->query_timeout_ms = query_timeout_ms;
   return GRPC_ERROR_NONE;
 }
@@ -174,6 +189,7 @@ void grpc_ares_ev_driver_on_queries_complete_locked(
   // fds; if it's not working, there are no fds to shut down.
   ev_driver->shutting_down = true;
   grpc_timer_cancel(&ev_driver->query_timeout);
+  grpc_timer_cancel(&ev_driver->ares_backup_poll_alarm);
   grpc_ares_ev_driver_unref(ev_driver);
 }
 
@@ -204,6 +220,21 @@ static fd_node* pop_fd_node_locked(fd_node** head, ares_socket_t as) {
   return nullptr;
 }
 
+static grpc_millis calculate_next_ares_backup_poll_alarm_ms(
+    grpc_ares_ev_driver* driver) {
+  // An alternative here could be to use ares_timeout to try to be more
+  // accurate, but that would require using "struct timeval"'s, which just makes
+  // things a bit more complicated. So just poll every second, as suggested
+  // by the c-ares code comments.
+  grpc_millis ms_until_next_ares_backup_poll_alarm = 1000;
+  GRPC_CARES_TRACE_LOG(
+      "request:%p ev_driver=%p. next ares process poll time in "
+      "%" PRId64 " ms",
+      driver->request, driver, ms_until_next_ares_backup_poll_alarm);
+  return ms_until_next_ares_backup_poll_alarm +
+         grpc_core::ExecCtx::Get()->Now();
+}
+
 static void on_timeout_locked(void* arg, grpc_error* error) {
   grpc_ares_ev_driver* driver = static_cast<grpc_ares_ev_driver*>(arg);
   GRPC_CARES_TRACE_LOG(
@@ -216,8 +247,50 @@ static void on_timeout_locked(void* arg, grpc_error* error) {
   grpc_ares_ev_driver_unref(driver);
 }
 
+/* In case of non-responsive DNS servers, dropped packets, etc., c-ares has
+ * intelligent timeout and retry logic, which we can take advantage of by
+ * polling ares_process_fd on time intervals. Overall, the c-ares library is
+ * meant to be called into and given a chance to proceed name resolution:
+ *   a) when fd events happen
+ *   b) when some time has passed without fd events having happened
+ * For the latter, we use this backup poller. Also see
+ * https://github.com/grpc/grpc/pull/17688 description for more details. */
+static void on_ares_backup_poll_alarm_locked(void* arg, grpc_error* error) {
+  grpc_ares_ev_driver* driver = static_cast<grpc_ares_ev_driver*>(arg);
+  GRPC_CARES_TRACE_LOG(
+      "request:%p ev_driver=%p on_ares_backup_poll_alarm_locked. "
+      "driver->shutting_down=%d. "
+      "err=%s",
+      driver->request, driver, driver->shutting_down, grpc_error_string(error));
+  if (!driver->shutting_down && error == GRPC_ERROR_NONE) {
+    fd_node* fdn = driver->fds;
+    while (fdn != nullptr) {
+      if (!fdn->already_shutdown) {
+        GRPC_CARES_TRACE_LOG(
+            "request:%p ev_driver=%p on_ares_backup_poll_alarm_locked; "
+            "ares_process_fd. fd=%s",
+            driver->request, driver, fdn->grpc_polled_fd->GetName());
+        ares_socket_t as = fdn->grpc_polled_fd->GetWrappedAresSocketLocked();
+        ares_process_fd(driver->channel, as, as);
+      }
+      fdn = fdn->next;
+    }
+    if (!driver->shutting_down) {
+      grpc_millis next_ares_backup_poll_alarm =
+          calculate_next_ares_backup_poll_alarm_ms(driver);
+      grpc_ares_ev_driver_ref(driver);
+      grpc_timer_init(&driver->ares_backup_poll_alarm,
+                      next_ares_backup_poll_alarm,
+                      &driver->on_ares_backup_poll_alarm_locked);
+    }
+    grpc_ares_notify_on_event_locked(driver);
+  }
+  grpc_ares_ev_driver_unref(driver);
+}
+
 static void on_readable_locked(void* arg, grpc_error* error) {
   fd_node* fdn = static_cast<fd_node*>(arg);
+  GPR_ASSERT(fdn->readable_registered);
   grpc_ares_ev_driver* ev_driver = fdn->ev_driver;
   const ares_socket_t as = fdn->grpc_polled_fd->GetWrappedAresSocketLocked();
   fdn->readable_registered = false;
@@ -242,6 +315,7 @@ static void on_readable_locked(void* arg, grpc_error* error) {
 
 static void on_writable_locked(void* arg, grpc_error* error) {
   fd_node* fdn = static_cast<fd_node*>(arg);
+  GPR_ASSERT(fdn->writable_registered);
   grpc_ares_ev_driver* ev_driver = fdn->ev_driver;
   const ares_socket_t as = fdn->grpc_polled_fd->GetWrappedAresSocketLocked();
   fdn->writable_registered = false;
@@ -351,6 +425,7 @@ void grpc_ares_ev_driver_start_locked(grpc_ares_ev_driver* ev_driver) {
   if (!ev_driver->working) {
     ev_driver->working = true;
     grpc_ares_notify_on_event_locked(ev_driver);
+    // Initialize overall DNS resolution timeout alarm
     grpc_millis timeout =
         ev_driver->query_timeout_ms == 0
             ? GRPC_MILLIS_INF_FUTURE
@@ -362,7 +437,14 @@ void grpc_ares_ev_driver_start_locked(grpc_ares_ev_driver* ev_driver) {
     grpc_ares_ev_driver_ref(ev_driver);
     grpc_timer_init(&ev_driver->query_timeout, timeout,
                     &ev_driver->on_timeout_locked);
+    // Initialize the backup poll alarm
+    grpc_millis next_ares_backup_poll_alarm =
+        calculate_next_ares_backup_poll_alarm_ms(ev_driver);
+    grpc_ares_ev_driver_ref(ev_driver);
+    grpc_timer_init(&ev_driver->ares_backup_poll_alarm,
+                    next_ares_backup_poll_alarm,
+                    &ev_driver->on_ares_backup_poll_alarm_locked);
   }
 }
 
-#endif /* GRPC_ARES == 1 && !defined(GRPC_UV) */
+#endif /* GRPC_ARES == 1 */

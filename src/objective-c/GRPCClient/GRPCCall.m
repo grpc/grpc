@@ -17,8 +17,10 @@
  */
 
 #import "GRPCCall.h"
-
+#import "GRPCCall+Interceptor.h"
 #import "GRPCCall+OAuth2.h"
+#import "GRPCCallOptions.h"
+#import "GRPCInterceptor.h"
 
 #import <RxLibrary/GRXBufferedPipe.h>
 #import <RxLibrary/GRXConcurrentWriteable.h>
@@ -27,10 +29,10 @@
 #include <grpc/grpc.h>
 #include <grpc/support/time.h>
 
-#import "GRPCCallOptions.h"
+#import "private/GRPCCall+V2API.h"
+#import "private/GRPCCallInternal.h"
 #import "private/GRPCChannelPool.h"
 #import "private/GRPCCompletionQueue.h"
-#import "private/GRPCConnectivityMonitor.h"
 #import "private/GRPCHost.h"
 #import "private/GRPCRequestHeaders.h"
 #import "private/GRPCWrappedCall.h"
@@ -57,11 +59,14 @@ const char *kCFStreamVarName = "grpc_cfstream";
 @property(atomic, strong) NSDictionary *responseHeaders;
 @property(atomic, strong) NSDictionary *responseTrailers;
 
+- (void)receiveNextMessages:(NSUInteger)numberOfMessages;
+
 - (instancetype)initWithHost:(NSString *)host
                         path:(NSString *)path
                   callSafety:(GRPCCallSafety)safety
               requestsWriter:(GRXWriter *)requestsWriter
-                 callOptions:(GRPCCallOptions *)callOptions;
+                 callOptions:(GRPCCallOptions *)callOptions
+                   writeDone:(void (^)(void))writeDone;
 
 @end
 
@@ -89,30 +94,23 @@ const char *kCFStreamVarName = "grpc_cfstream";
 
 @end
 
+/**
+ * This class acts as a wrapper for interceptors
+ */
 @implementation GRPCCall2 {
-  /** Options for the call. */
-  GRPCCallOptions *_callOptions;
   /** The handler of responses. */
-  id<GRPCResponseHandler> _handler;
-
-  // Thread safety of ivars below are protected by _dispatchQueue.
+  id<GRPCResponseHandler> _responseHandler;
 
   /**
-   * Make use of legacy GRPCCall to make calls. Nullified when call is finished.
+   * Points to the first interceptor in the interceptor chain.
    */
-  GRPCCall *_call;
-  /** Flags whether initial metadata has been published to response handler. */
-  BOOL _initialMetadataPublished;
-  /** Streaming call writeable to the underlying call. */
-  GRXBufferedPipe *_pipe;
-  /** Serial dispatch queue for tasks inside the call. */
-  dispatch_queue_t _dispatchQueue;
-  /** Flags whether call has started. */
-  BOOL _started;
-  /** Flags whether call has been canceled. */
-  BOOL _canceled;
-  /** Flags whether call has been finished. */
-  BOOL _finished;
+  id<GRPCInterceptorInterface> _firstInterceptor;
+
+  /**
+   * The actual call options being used by this call. It is different from the user-provided
+   * call options when the user provided a NULL call options object.
+   */
+  GRPCCallOptions *_actualCallOptions;
 }
 
 - (instancetype)initWithRequestOptions:(GRPCRequestOptions *)requestOptions
@@ -134,30 +132,62 @@ const char *kCFStreamVarName = "grpc_cfstream";
 
   if ((self = [super init])) {
     _requestOptions = [requestOptions copy];
-    if (callOptions == nil) {
-      _callOptions = [[GRPCCallOptions alloc] init];
+    _callOptions = [callOptions copy];
+    if (!_callOptions) {
+      _actualCallOptions = [[GRPCCallOptions alloc] init];
     } else {
-      _callOptions = [callOptions copy];
+      _actualCallOptions = [callOptions copy];
     }
-    _handler = responseHandler;
-    _initialMetadataPublished = NO;
-    _pipe = [GRXBufferedPipe pipe];
-    // Set queue QoS only when iOS version is 8.0 or above and Xcode version is 9.0 or above
-#if __IPHONE_OS_VERSION_MAX_ALLOWED >= 110000 || __MAC_OS_X_VERSION_MAX_ALLOWED >= 101300
-    if (@available(iOS 8.0, macOS 10.10, *)) {
-      _dispatchQueue = dispatch_queue_create(
-          NULL,
-          dispatch_queue_attr_make_with_qos_class(DISPATCH_QUEUE_SERIAL, QOS_CLASS_DEFAULT, 0));
+    _responseHandler = responseHandler;
+
+    // Initialize the interceptor chain
+
+    // First initialize the internal call
+    GRPCCall2Internal *internalCall = [[GRPCCall2Internal alloc] init];
+    id<GRPCInterceptorInterface> nextInterceptor = internalCall;
+    GRPCInterceptorManager *nextManager = nil;
+
+    // Then initialize the global interceptor, if applicable
+    id<GRPCInterceptorFactory> globalInterceptorFactory = [GRPCCall2 globalInterceptorFactory];
+    if (globalInterceptorFactory) {
+      GRPCInterceptorManager *manager =
+          [[GRPCInterceptorManager alloc] initWithNextInterceptor:nextInterceptor];
+      GRPCInterceptor *interceptor =
+          [globalInterceptorFactory createInterceptorWithManager:manager];
+      if (interceptor != nil) {
+        [internalCall setResponseHandler:interceptor];
+        nextInterceptor = interceptor;
+        nextManager = manager;
+      }
+    }
+
+    // Finally initialize the interceptors in the chain
+    NSArray *interceptorFactories = _actualCallOptions.interceptorFactories;
+    for (int i = (int)interceptorFactories.count - 1; i >= 0; i--) {
+      GRPCInterceptorManager *manager =
+          [[GRPCInterceptorManager alloc] initWithNextInterceptor:nextInterceptor];
+      GRPCInterceptor *interceptor = [interceptorFactories[i] createInterceptorWithManager:manager];
+      NSAssert(interceptor != nil, @"Failed to create interceptor from factory: %@",
+               interceptorFactories[i]);
+      if (interceptor == nil) {
+        NSLog(@"Failed to create interceptor from factory: %@", interceptorFactories[i]);
+        continue;
+      }
+      if (nextManager == nil) {
+        [internalCall setResponseHandler:interceptor];
+      } else {
+        [nextManager setPreviousInterceptor:interceptor];
+      }
+      nextInterceptor = interceptor;
+      nextManager = manager;
+    }
+    if (nextManager == nil) {
+      [internalCall setResponseHandler:_responseHandler];
     } else {
-#else
-    {
-#endif
-      _dispatchQueue = dispatch_queue_create(NULL, DISPATCH_QUEUE_SERIAL);
+      [nextManager setPreviousInterceptor:_responseHandler];
     }
-    dispatch_set_target_queue(_dispatchQueue, responseHandler.dispatchQueue);
-    _started = NO;
-    _canceled = NO;
-    _finished = NO;
+
+    _firstInterceptor = nextInterceptor;
   }
 
   return self;
@@ -170,196 +200,64 @@ const char *kCFStreamVarName = "grpc_cfstream";
 }
 
 - (void)start {
-  GRPCCall *copiedCall = nil;
+  id<GRPCInterceptorInterface> copiedFirstInterceptor;
   @synchronized(self) {
-    NSAssert(!_started, @"Call already started.");
-    NSAssert(!_canceled, @"Call already canceled.");
-    if (_started) {
-      return;
-    }
-    if (_canceled) {
-      return;
-    }
-
-    _started = YES;
-    if (!_callOptions) {
-      _callOptions = [[GRPCCallOptions alloc] init];
-    }
-
-    _call = [[GRPCCall alloc] initWithHost:_requestOptions.host
-                                      path:_requestOptions.path
-                                callSafety:_requestOptions.safety
-                            requestsWriter:_pipe
-                               callOptions:_callOptions];
-    if (_callOptions.initialMetadata) {
-      [_call.requestHeaders addEntriesFromDictionary:_callOptions.initialMetadata];
-    }
-    copiedCall = _call;
+    copiedFirstInterceptor = _firstInterceptor;
   }
-
-  void (^valueHandler)(id value) = ^(id value) {
-    @synchronized(self) {
-      if (self->_handler) {
-        if (!self->_initialMetadataPublished) {
-          self->_initialMetadataPublished = YES;
-          [self issueInitialMetadata:self->_call.responseHeaders];
-        }
-        if (value) {
-          [self issueMessage:value];
-        }
-      }
-    }
-  };
-  void (^completionHandler)(NSError *errorOrNil) = ^(NSError *errorOrNil) {
-    @synchronized(self) {
-      if (self->_handler) {
-        if (!self->_initialMetadataPublished) {
-          self->_initialMetadataPublished = YES;
-          [self issueInitialMetadata:self->_call.responseHeaders];
-        }
-        [self issueClosedWithTrailingMetadata:self->_call.responseTrailers error:errorOrNil];
-      }
-      // Clearing _call must happen *after* dispatching close in order to get trailing
-      // metadata from _call.
-      if (self->_call) {
-        // Clean up the request writers. This should have no effect to _call since its
-        // response writeable is already nullified.
-        [self->_pipe writesFinishedWithError:nil];
-        self->_call = nil;
-        self->_pipe = nil;
-      }
-    }
-  };
-  id<GRXWriteable> responseWriteable =
-      [[GRXWriteable alloc] initWithValueHandler:valueHandler completionHandler:completionHandler];
-  [copiedCall startWithWriteable:responseWriteable];
+  GRPCRequestOptions *requestOptions = [_requestOptions copy];
+  GRPCCallOptions *callOptions = [_actualCallOptions copy];
+  if ([copiedFirstInterceptor respondsToSelector:@selector(startWithRequestOptions:callOptions:)]) {
+    dispatch_async(copiedFirstInterceptor.requestDispatchQueue, ^{
+      [copiedFirstInterceptor startWithRequestOptions:requestOptions callOptions:callOptions];
+    });
+  }
 }
 
 - (void)cancel {
-  GRPCCall *copiedCall = nil;
+  id<GRPCInterceptorInterface> copiedFirstInterceptor;
   @synchronized(self) {
-    if (_canceled) {
-      return;
-    }
-
-    _canceled = YES;
-
-    copiedCall = _call;
-    _call = nil;
-    _pipe = nil;
-
-    if ([_handler respondsToSelector:@selector(didCloseWithTrailingMetadata:error:)]) {
-      dispatch_async(_dispatchQueue, ^{
-        // Copy to local so that block is freed after cancellation completes.
-        id<GRPCResponseHandler> copiedHandler = nil;
-        @synchronized(self) {
-          copiedHandler = self->_handler;
-          self->_handler = nil;
-        }
-
-        [copiedHandler didCloseWithTrailingMetadata:nil
-                                              error:[NSError errorWithDomain:kGRPCErrorDomain
-                                                                        code:GRPCErrorCodeCancelled
-                                                                    userInfo:@{
-                                                                      NSLocalizedDescriptionKey :
-                                                                          @"Canceled by app"
-                                                                    }]];
-      });
-    } else {
-      _handler = nil;
-    }
+    copiedFirstInterceptor = _firstInterceptor;
   }
-  [copiedCall cancel];
+  if ([copiedFirstInterceptor respondsToSelector:@selector(cancel)]) {
+    dispatch_async(copiedFirstInterceptor.requestDispatchQueue, ^{
+      [copiedFirstInterceptor cancel];
+    });
+  }
 }
 
-- (void)writeData:(NSData *)data {
-  GRXBufferedPipe *copiedPipe = nil;
+- (void)writeData:(id)data {
+  id<GRPCInterceptorInterface> copiedFirstInterceptor;
   @synchronized(self) {
-    NSAssert(!_canceled, @"Call already canceled.");
-    NSAssert(!_finished, @"Call is half-closed before sending data.");
-    if (_canceled) {
-      return;
-    }
-    if (_finished) {
-      return;
-    }
-
-    if (_pipe) {
-      copiedPipe = _pipe;
-    }
+    copiedFirstInterceptor = _firstInterceptor;
   }
-  [copiedPipe writeValue:data];
+  if ([copiedFirstInterceptor respondsToSelector:@selector(writeData:)]) {
+    dispatch_async(copiedFirstInterceptor.requestDispatchQueue, ^{
+      [copiedFirstInterceptor writeData:data];
+    });
+  }
 }
 
 - (void)finish {
-  GRXBufferedPipe *copiedPipe = nil;
+  id<GRPCInterceptorInterface> copiedFirstInterceptor;
   @synchronized(self) {
-    NSAssert(_started, @"Call not started.");
-    NSAssert(!_canceled, @"Call already canceled.");
-    NSAssert(!_finished, @"Call already half-closed.");
-    if (!_started) {
-      return;
-    }
-    if (_canceled) {
-      return;
-    }
-    if (_finished) {
-      return;
-    }
-
-    if (_pipe) {
-      copiedPipe = _pipe;
-      _pipe = nil;
-    }
-    _finished = YES;
+    copiedFirstInterceptor = _firstInterceptor;
   }
-  [copiedPipe writesFinishedWithError:nil];
-}
-
-- (void)issueInitialMetadata:(NSDictionary *)initialMetadata {
-  @synchronized(self) {
-    if (initialMetadata != nil &&
-        [_handler respondsToSelector:@selector(didReceiveInitialMetadata:)]) {
-      dispatch_async(_dispatchQueue, ^{
-        id<GRPCResponseHandler> copiedHandler = nil;
-        @synchronized(self) {
-          copiedHandler = self->_handler;
-        }
-        [copiedHandler didReceiveInitialMetadata:initialMetadata];
-      });
-    }
+  if ([copiedFirstInterceptor respondsToSelector:@selector(finish)]) {
+    dispatch_async(copiedFirstInterceptor.requestDispatchQueue, ^{
+      [copiedFirstInterceptor finish];
+    });
   }
 }
 
-- (void)issueMessage:(id)message {
+- (void)receiveNextMessages:(NSUInteger)numberOfMessages {
+  id<GRPCInterceptorInterface> copiedFirstInterceptor;
   @synchronized(self) {
-    if (message != nil && [_handler respondsToSelector:@selector(didReceiveRawMessage:)]) {
-      dispatch_async(_dispatchQueue, ^{
-        id<GRPCResponseHandler> copiedHandler = nil;
-        @synchronized(self) {
-          copiedHandler = self->_handler;
-        }
-        [copiedHandler didReceiveRawMessage:message];
-      });
-    }
+    copiedFirstInterceptor = _firstInterceptor;
   }
-}
-
-- (void)issueClosedWithTrailingMetadata:(NSDictionary *)trailingMetadata error:(NSError *)error {
-  @synchronized(self) {
-    if ([_handler respondsToSelector:@selector(didCloseWithTrailingMetadata:error:)]) {
-      dispatch_async(_dispatchQueue, ^{
-        id<GRPCResponseHandler> copiedHandler = nil;
-        @synchronized(self) {
-          copiedHandler = self->_handler;
-          // Clean up _handler so that no more responses are reported to the handler.
-          self->_handler = nil;
-        }
-        [copiedHandler didCloseWithTrailingMetadata:trailingMetadata error:error];
-      });
-    } else {
-      _handler = nil;
-    }
+  if ([copiedFirstInterceptor respondsToSelector:@selector(receiveNextMessages:)]) {
+    dispatch_async(copiedFirstInterceptor.requestDispatchQueue, ^{
+      [copiedFirstInterceptor receiveNextMessages:numberOfMessages];
+    });
   }
 }
 
@@ -389,7 +287,6 @@ const char *kCFStreamVarName = "grpc_cfstream";
   GRPCCallSafety _callSafety;
   GRPCCallOptions *_callOptions;
   GRPCWrappedCall *_wrappedCall;
-  GRPCConnectivityMonitor *_connectivityMonitor;
 
   // The C gRPC library has less guarantees on the ordering of events than we
   // do. Particularly, in the face of errors, there's no ordering guarantee at
@@ -426,6 +323,15 @@ const char *kCFStreamVarName = "grpc_cfstream";
 
   // The OAuth2 token fetched from a token provider.
   NSString *_fetchedOauth2AccessToken;
+
+  // The callback to be called when a write message op is done.
+  void (^_writeDone)(void);
+
+  // Indicate a read request to core is pending.
+  BOOL _pendingCoreRead;
+
+  // Indicate pending read message request from user.
+  NSUInteger _pendingReceiveNextMessages;
 }
 
 @synthesize state = _state;
@@ -482,12 +388,26 @@ const char *kCFStreamVarName = "grpc_cfstream";
 - (instancetype)initWithHost:(NSString *)host
                         path:(NSString *)path
                   callSafety:(GRPCCallSafety)safety
-              requestsWriter:(GRXWriter *)requestWriter
+              requestsWriter:(GRXWriter *)requestsWriter
                  callOptions:(GRPCCallOptions *)callOptions {
+  return [self initWithHost:host
+                       path:path
+                 callSafety:safety
+             requestsWriter:requestsWriter
+                callOptions:callOptions
+                  writeDone:nil];
+}
+
+- (instancetype)initWithHost:(NSString *)host
+                        path:(NSString *)path
+                  callSafety:(GRPCCallSafety)safety
+              requestsWriter:(GRXWriter *)requestsWriter
+                 callOptions:(GRPCCallOptions *)callOptions
+                   writeDone:(void (^)(void))writeDone {
   // Purposely using pointer rather than length (host.length == 0) for backwards compatibility.
   NSAssert(host != nil && path != nil, @"Neither host nor path can be nil.");
   NSAssert(safety <= GRPCCallSafetyCacheableRequest, @"Invalid call safety value.");
-  NSAssert(requestWriter.state == GRXWriterStateNotStarted,
+  NSAssert(requestsWriter.state == GRXWriterStateNotStarted,
            @"The requests writer can't be already started.");
   if (!host || !path) {
     return nil;
@@ -495,7 +415,7 @@ const char *kCFStreamVarName = "grpc_cfstream";
   if (safety > GRPCCallSafetyCacheableRequest) {
     return nil;
   }
-  if (requestWriter.state != GRXWriterStateNotStarted) {
+  if (requestsWriter.state != GRXWriterStateNotStarted) {
     return nil;
   }
 
@@ -508,16 +428,20 @@ const char *kCFStreamVarName = "grpc_cfstream";
     // Serial queue to invoke the non-reentrant methods of the grpc_call object.
     _callQueue = dispatch_queue_create("io.grpc.call", DISPATCH_QUEUE_SERIAL);
 
-    _requestWriter = requestWriter;
-
+    _requestWriter = requestsWriter;
     _requestHeaders = [[GRPCRequestHeaders alloc] initWithCall:self];
+    _writeDone = writeDone;
 
-    if ([requestWriter isKindOfClass:[GRXImmediateSingleWriter class]]) {
+    if ([requestsWriter isKindOfClass:[GRXImmediateSingleWriter class]]) {
       _unaryCall = YES;
       _unaryOpBatch = [NSMutableArray arrayWithCapacity:kMaxClientBatch];
     }
 
     _responseQueue = dispatch_get_main_queue();
+
+    // do not start a read until initial metadata is received
+    _pendingReceiveNextMessages = 0;
+    _pendingCoreRead = YES;
   }
   return self;
 }
@@ -589,11 +513,16 @@ const char *kCFStreamVarName = "grpc_cfstream";
 // If the call is currently paused, this is a noop. Restarting the call will invoke this
 // method.
 // TODO(jcanizales): Rename to readResponseIfNotPaused.
-- (void)startNextRead {
+- (void)maybeStartNextRead {
   @synchronized(self) {
     if (_state != GRXWriterStateStarted) {
       return;
     }
+    if (_callOptions.flowControlEnabled && (_pendingCoreRead || _pendingReceiveNextMessages == 0)) {
+      return;
+    }
+    _pendingCoreRead = YES;
+    _pendingReceiveNextMessages--;
   }
 
   dispatch_async(_callQueue, ^{
@@ -616,6 +545,7 @@ const char *kCFStreamVarName = "grpc_cfstream";
         // that's on the hands of any server to have. Instead we finish and ask
         // the server to cancel.
         @synchronized(strongSelf) {
+          strongSelf->_pendingCoreRead = NO;
           [strongSelf
               finishWithError:[NSError errorWithDomain:kGRPCErrorDomain
                                                   code:GRPCErrorCodeResourceExhausted
@@ -631,7 +561,13 @@ const char *kCFStreamVarName = "grpc_cfstream";
         @synchronized(strongSelf) {
           [strongSelf->_responseWriteable enqueueValue:data
                                      completionHandler:^{
-                                       [strongSelf startNextRead];
+                                       __strong GRPCCall *strongSelf = weakSelf;
+                                       if (strongSelf) {
+                                         @synchronized(strongSelf) {
+                                           strongSelf->_pendingCoreRead = NO;
+                                           [strongSelf maybeStartNextRead];
+                                         }
+                                       }
                                      }];
         }
       }
@@ -682,6 +618,20 @@ const char *kCFStreamVarName = "grpc_cfstream";
   });
 }
 
+- (void)receiveNextMessages:(NSUInteger)numberOfMessages {
+  if (numberOfMessages == 0) {
+    return;
+  }
+  @synchronized(self) {
+    _pendingReceiveNextMessages += numberOfMessages;
+
+    if (_state != GRXWriterStateStarted || !_callOptions.flowControlEnabled) {
+      return;
+    }
+    [self maybeStartNextRead];
+  }
+}
+
 #pragma mark GRXWriteable implementation
 
 // Only called from the call queue. The error handler will be called from the
@@ -695,9 +645,11 @@ const char *kCFStreamVarName = "grpc_cfstream";
     GRPCCall *strongSelf = weakSelf;
     if (strongSelf) {
       strongSelf->_requestWriter.state = GRXWriterStateStarted;
+      if (strongSelf->_writeDone) {
+        strongSelf->_writeDone();
+      }
     }
   };
-
   GRPCOpSendMessage *op =
       [[GRPCOpSendMessage alloc] initWithMessage:message handler:resumingHandler];
   if (!_unaryCall) {
@@ -774,8 +726,16 @@ const char *kCFStreamVarName = "grpc_cfstream";
     // Response headers received.
     __strong GRPCCall *strongSelf = weakSelf;
     if (strongSelf) {
-      strongSelf.responseHeaders = headers;
-      [strongSelf startNextRead];
+      @synchronized(strongSelf) {
+        // it is ok to set nil because headers are only received once
+        strongSelf.responseHeaders = nil;
+        // copy the header so that the GRPCOpRecvMetadata object may be dealloc'ed
+        NSDictionary *copiedHeaders =
+            [[NSDictionary alloc] initWithDictionary:headers copyItems:YES];
+        strongSelf.responseHeaders = copiedHeaders;
+        strongSelf->_pendingCoreRead = NO;
+        [strongSelf maybeStartNextRead];
+      }
     }
   }
       completionHandler:^(NSError *error, NSDictionary *trailers) {
@@ -830,12 +790,6 @@ const char *kCFStreamVarName = "grpc_cfstream";
 
     [self sendHeaders];
     [self invokeCall];
-
-    // Connectivity monitor is not required for CFStream
-    char *enableCFStream = getenv(kCFStreamVarName);
-    if (enableCFStream == nil || enableCFStream[0] != '1') {
-      [GRPCConnectivityMonitor registerObserver:self selector:@selector(connectivityChanged:)];
-    }
   }
 
   // Now that the RPC has been initiated, request writes can start.
@@ -929,31 +883,12 @@ const char *kCFStreamVarName = "grpc_cfstream";
       case GRXWriterStateStarted:
         if (_state == GRXWriterStatePaused) {
           _state = newState;
-          [self startNextRead];
+          [self maybeStartNextRead];
         }
         return;
       case GRXWriterStateNotStarted:
         return;
     }
-  }
-}
-
-- (void)connectivityChanged:(NSNotification *)note {
-  // Cancel underlying call upon this notification.
-
-  // Retain because connectivity manager only keeps weak reference to GRPCCall.
-  __strong GRPCCall *strongSelf = self;
-  if (strongSelf) {
-    @synchronized(strongSelf) {
-      [_wrappedCall cancel];
-      [strongSelf
-          finishWithError:[NSError errorWithDomain:kGRPCErrorDomain
-                                              code:GRPCErrorCodeUnavailable
-                                          userInfo:@{
-                                            NSLocalizedDescriptionKey : @"Connectivity lost."
-                                          }]];
-    }
-    strongSelf->_requestWriter.state = GRXWriterStateFinished;
   }
 }
 

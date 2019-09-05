@@ -29,8 +29,8 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 
-#include "src/core/lib/gpr/host_port.h"
 #include "src/core/lib/gpr/string.h"
+#include "src/core/lib/gprpp/host_port.h"
 #include "src/core/lib/gprpp/memory.h"
 #include "src/core/lib/gprpp/thd.h"
 #include "src/core/lib/iomgr/sockaddr.h"
@@ -65,13 +65,13 @@
 
 #define HTTP1_DETAIL_MSG "Trying to connect an http1.x server"
 
-/* TODO(zyc) Check the content of incomming data instead of using this length */
+/* TODO(zyc) Check the content of incoming data instead of using this length */
 /* The 'bad' server will start sending responses after reading this amount of
  * data from the client. */
 #define SERVER_INCOMING_DATA_LENGTH_LOWER_THRESHOLD (size_t)200
 
 struct rpc_state {
-  char* target;
+  grpc_core::UniquePtr<char> target;
   grpc_completion_queue* cq;
   grpc_channel* channel;
   grpc_call* call;
@@ -126,7 +126,8 @@ static void handle_read(void* arg, grpc_error* error) {
       SERVER_INCOMING_DATA_LENGTH_LOWER_THRESHOLD) {
     handle_write();
   } else {
-    grpc_endpoint_read(state.tcp, &state.temp_incoming_buffer, &on_read);
+    grpc_endpoint_read(state.tcp, &state.temp_incoming_buffer, &on_read,
+                       /*urgent=*/false);
   }
 }
 
@@ -142,7 +143,8 @@ static void on_connect(void* arg, grpc_endpoint* tcp,
   state.tcp = tcp;
   state.incoming_data_length = 0;
   grpc_endpoint_add_to_pollset(tcp, server->pollset);
-  grpc_endpoint_read(tcp, &state.temp_incoming_buffer, &on_read);
+  grpc_endpoint_read(tcp, &state.temp_incoming_buffer, &on_read,
+                     /*urgent=*/false);
 }
 
 static gpr_timespec n_sec_deadline(int seconds) {
@@ -163,8 +165,9 @@ static void start_rpc(int target_port, grpc_status_code expected_status,
 
   state.cq = grpc_completion_queue_create_for_next(nullptr);
   cqv = cq_verifier_create(state.cq);
-  gpr_join_host_port(&state.target, "127.0.0.1", target_port);
-  state.channel = grpc_insecure_channel_create(state.target, nullptr, nullptr);
+  grpc_core::JoinHostPort(&state.target, "127.0.0.1", target_port);
+  state.channel =
+      grpc_insecure_channel_create(state.target.get(), nullptr, nullptr);
   grpc_slice host = grpc_slice_from_static_string("localhost");
   state.call = grpc_channel_create_call(
       state.channel, nullptr, GRPC_PROPAGATE_DEFAULTS, state.cq,
@@ -228,7 +231,7 @@ static void cleanup_rpc() {
   } while (ev.type != GRPC_QUEUE_SHUTDOWN);
   grpc_completion_queue_destroy(state.cq);
   grpc_channel_destroy(state.channel);
-  gpr_free(state.target);
+  state.target.reset();
 }
 
 typedef struct {
@@ -248,7 +251,7 @@ static void actually_poll_server(void* arg) {
     if (done || gpr_time_cmp(time_left, gpr_time_0(GPR_TIMESPAN)) < 0) {
       break;
     }
-    test_tcp_server_poll(pa->server, 1);
+    test_tcp_server_poll(pa->server, 1000);
   }
   gpr_event_set(pa->signal_when_done, (void*)1);
   gpr_free(pa);

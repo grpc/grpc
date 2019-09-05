@@ -86,6 +86,8 @@ argp.add_argument(
     type=str,
     nargs='?',
     help='Upload test results to a specified BQ table.')
+# Requests will be routed through specified VIP by default.
+# See go/grpc-interop-tests (internal-only) for details.
 argp.add_argument(
     '--server_host',
     default='74.125.206.210',
@@ -224,7 +226,8 @@ def _pull_images_for_lang(lang, images):
             cmdline=cmdline,
             shortname='pull_image_%s' % (image),
             timeout_seconds=_PULL_IMAGE_TIMEOUT_SECONDS,
-            shell=True)
+            shell=True,
+            flake_retries=2)
         download_specs.append(spec)
     # too many image downloads at once tend to get stuck
     max_pull_jobs = min(args.jobs, _MAX_PARALLEL_DOWNLOADS)

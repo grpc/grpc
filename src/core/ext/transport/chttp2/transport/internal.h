@@ -225,27 +225,27 @@ class Chttp2IncomingByteStream : public ByteStream {
   // TODO(roth): When I converted this class to C++, I wanted to make it
   // inherit from RefCounted or InternallyRefCounted instead of continuing
   // to use its own custom ref-counting code.  However, that would require
-  // using multiple inheritence, which sucks in general.  And to make matters
+  // using multiple inheritance, which sucks in general.  And to make matters
   // worse, it causes problems with our New<> and Delete<> wrappers.
   // Specifically, unless RefCounted is first in the list of parent classes,
   // it will see a different value of the address of the object than the one
   // we actually allocated, in which case gpr_free() will be called on a
   // different address than the one we got from gpr_malloc(), thus causing a
   // crash.  Given the fragility of depending on that, as well as a desire to
-  // avoid multiple inheritence in general, I've decided to leave this
+  // avoid multiple inheritance in general, I've decided to leave this
   // alone for now.  We can revisit this once we're able to link against
   // libc++, at which point we can eliminate New<> and Delete<> and
   // switch to std::shared_ptr<>.
   void Ref() { refs_.Ref(); }
   void Unref() {
-    if (refs_.Unref()) {
+    if (GPR_UNLIKELY(refs_.Unref())) {
       grpc_core::Delete(this);
     }
   }
 
   void PublishError(grpc_error* error);
 
-  grpc_error* Push(grpc_slice slice, grpc_slice* slice_out);
+  grpc_error* Push(const grpc_slice& slice, grpc_slice* slice_out);
 
   grpc_error* Finished(grpc_error* error, bool reset_on_error);
 
@@ -438,7 +438,8 @@ struct grpc_chttp2_transport {
   void* parser_data = nullptr;
   grpc_chttp2_stream* incoming_stream = nullptr;
   grpc_error* (*parser)(void* parser_user_data, grpc_chttp2_transport* t,
-                        grpc_chttp2_stream* s, grpc_slice slice, int is_last);
+                        grpc_chttp2_stream* s, const grpc_slice& slice,
+                        int is_last);
 
   grpc_chttp2_write_cb* write_cb_pool = nullptr;
 
@@ -492,23 +493,36 @@ struct grpc_chttp2_transport {
   grpc_core::ContextList* cl = nullptr;
   grpc_core::RefCountedPtr<grpc_core::channelz::SocketNode> channelz_socket;
   uint32_t num_messages_in_next_write = 0;
+  /** The number of pending induced frames (SETTINGS_ACK, PINGS_ACK and
+   * RST_STREAM) in the outgoing buffer (t->qbuf). If this number goes beyond
+   * DEFAULT_MAX_PENDING_INDUCED_FRAMES, we pause reading new frames. We would
+   * only continue reading when we are able to write to the socket again,
+   * thereby reducing the number of induced frames. */
+  uint32_t num_pending_induced_frames = 0;
+  bool reading_paused_on_pending_induced_frames = false;
 };
 
 typedef enum {
   GRPC_METADATA_NOT_PUBLISHED,
   GRPC_METADATA_SYNTHESIZED_FROM_FAKE,
   GRPC_METADATA_PUBLISHED_FROM_WIRE,
-  GPRC_METADATA_PUBLISHED_AT_CLOSE
+  GRPC_METADATA_PUBLISHED_AT_CLOSE
 } grpc_published_metadata_method;
 
 struct grpc_chttp2_stream {
   grpc_chttp2_stream(grpc_chttp2_transport* t, grpc_stream_refcount* refcount,
-                     const void* server_data, gpr_arena* arena);
+                     const void* server_data, grpc_core::Arena* arena);
   ~grpc_chttp2_stream();
 
   void* context;
   grpc_chttp2_transport* t;
   grpc_stream_refcount* refcount;
+  // Reffer is a 0-len structure, simply reffing `t` and `refcount` in its ctor
+  // before initializing the rest of the stream, to avoid cache misses. This
+  // field MUST be right after `t` and `refcount`.
+  struct Reffer {
+    explicit Reffer(grpc_chttp2_stream* s);
+  } reffer;
 
   grpc_closure destroy_stream;
   grpc_closure* destroy_stream_arg;
@@ -557,8 +571,6 @@ struct grpc_chttp2_stream {
   /** Are we buffering writes on this stream? If yes, we won't become writable
       until there's enough queued up in the flow_controlled_buffer */
   bool write_buffering = false;
-  /** Has trailing metadata been received. */
-  bool received_trailing_metadata = false;
 
   /* have we sent or received the EOS bit? */
   bool eos_received = false;
@@ -576,10 +588,6 @@ struct grpc_chttp2_stream {
 
   grpc_slice_buffer frame_storage; /* protected by t combiner */
 
-  /* Accessed only by transport thread when stream->pending_byte_stream == false
-   * Accessed only by application thread when stream->pending_byte_stream ==
-   * true */
-  grpc_slice_buffer unprocessed_incoming_frames_buffer;
   grpc_closure* on_next = nullptr;  /* protected by t combiner */
   bool pending_byte_stream = false; /* protected by t combiner */
   // cached length of buffer to be used by the transport thread in cases where
@@ -587,6 +595,10 @@ struct grpc_chttp2_stream {
   // application threads are allowed to modify
   // unprocessed_incoming_frames_buffer
   size_t unprocessed_incoming_frames_buffer_cached_length = 0;
+  /* Accessed only by transport thread when stream->pending_byte_stream == false
+   * Accessed only by application thread when stream->pending_byte_stream ==
+   * true */
+  grpc_slice_buffer unprocessed_incoming_frames_buffer;
   grpc_closure reset_byte_stream;
   grpc_error* byte_stream_error = GRPC_ERROR_NONE; /* protected by t combiner */
   bool received_last_frame = false;                /* protected by t combiner */
@@ -626,19 +638,8 @@ struct grpc_chttp2_stream {
       GRPC_STREAM_COMPRESSION_IDENTITY_COMPRESS;
   /* Stream decompression method to be used. */
   grpc_stream_compression_method stream_decompression_method =
-      GRPC_STREAM_COMPRESSION_IDENTITY_COMPRESS;
-  /** Stream compression decompress context */
-  grpc_stream_compression_context* stream_decompression_ctx = nullptr;
-  /** Stream compression compress context */
-  grpc_stream_compression_context* stream_compression_ctx = nullptr;
+      GRPC_STREAM_COMPRESSION_IDENTITY_DECOMPRESS;
 
-  /** Buffer storing data that is compressed but not sent */
-  grpc_slice_buffer compressed_data_buffer;
-  /** Amount of uncompressed bytes sent out when compressed_data_buffer is
-   * emptied */
-  size_t uncompressed_data_size = 0;
-  /** Temporary buffer storing decompressed data */
-  grpc_slice_buffer decompressed_data_buffer;
   /** Whether bytes stored in unprocessed_incoming_byte_stream is decompressed
    */
   bool unprocessed_incoming_frames_decompressed = false;
@@ -648,6 +649,22 @@ struct grpc_chttp2_stream {
   size_t decompressed_header_bytes = 0;
   /** Byte counter for number of bytes written */
   size_t byte_counter = 0;
+
+  /** Amount of uncompressed bytes sent out when compressed_data_buffer is
+   * emptied */
+  size_t uncompressed_data_size;
+  /** Stream compression compress context */
+  grpc_stream_compression_context* stream_compression_ctx;
+  /** Buffer storing data that is compressed but not sent */
+  grpc_slice_buffer compressed_data_buffer;
+
+  /** Stream compression decompress context */
+  grpc_stream_compression_context* stream_decompression_ctx;
+  /** Temporary buffer storing decompressed data.
+   * Initialized, used, and destroyed only when stream uses (non-identity)
+   * compression.
+   */
+  grpc_slice_buffer decompressed_data_buffer;
 };
 
 /** Transport writing call flow:
@@ -681,7 +698,7 @@ void grpc_chttp2_end_write(grpc_chttp2_transport* t, grpc_error* error);
 /** Process one slice of incoming data; return 1 if the connection is still
     viable after reading, or 0 if the connection should be torn down */
 grpc_error* grpc_chttp2_perform_read(grpc_chttp2_transport* t,
-                                     grpc_slice slice);
+                                     const grpc_slice& slice);
 
 bool grpc_chttp2_list_add_writable_stream(grpc_chttp2_transport* t,
                                           grpc_chttp2_stream* s);
@@ -733,14 +750,18 @@ void grpc_chttp2_act_on_flowctl_action(
 
 /********* End of Flow Control ***************/
 
-grpc_chttp2_stream* grpc_chttp2_parsing_lookup_stream(grpc_chttp2_transport* t,
-                                                      uint32_t id);
+inline grpc_chttp2_stream* grpc_chttp2_parsing_lookup_stream(
+    grpc_chttp2_transport* t, uint32_t id) {
+  return static_cast<grpc_chttp2_stream*>(
+      grpc_chttp2_stream_map_find(&t->stream_map, id));
+}
 grpc_chttp2_stream* grpc_chttp2_parsing_accept_stream(grpc_chttp2_transport* t,
                                                       uint32_t id);
 
 void grpc_chttp2_add_incoming_goaway(grpc_chttp2_transport* t,
                                      uint32_t goaway_error,
-                                     grpc_slice goaway_text);
+                                     uint32_t last_stream_id,
+                                     const grpc_slice& goaway_text);
 
 void grpc_chttp2_parsing_become_skip_parser(grpc_chttp2_transport* t);
 
@@ -759,11 +780,12 @@ void grpc_chttp2_complete_closure_step(grpc_chttp2_transport* t,
 // extern grpc_core::TraceFlag grpc_http_trace;
 // extern grpc_core::TraceFlag grpc_flowctl_trace;
 
-#define GRPC_CHTTP2_IF_TRACING(stmt) \
-  if (!(grpc_http_trace.enabled()))  \
-    ;                                \
-  else                               \
-    stmt
+#define GRPC_CHTTP2_IF_TRACING(stmt)                \
+  do {                                              \
+    if (GRPC_TRACE_FLAG_ENABLED(grpc_http_trace)) { \
+      (stmt);                                       \
+    }                                               \
+  } while (0)
 
 void grpc_chttp2_fake_status(grpc_chttp2_transport* t,
                              grpc_chttp2_stream* stream, grpc_error* error);

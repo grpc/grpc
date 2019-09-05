@@ -66,7 +66,7 @@ static void free_chosen_ports(void) {
   for (i = 0; i < num_chosen_ports; i++) {
     grpc_free_port_using_server(chosen_ports[i]);
   }
-  grpc_shutdown();
+  grpc_shutdown_blocking();
   gpr_free(chosen_ports);
 }
 

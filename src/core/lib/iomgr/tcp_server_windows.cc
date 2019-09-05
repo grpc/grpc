@@ -255,7 +255,7 @@ static grpc_error* start_accept_locked(grpc_tcp_listener* port) {
   }
 
   sock = WSASocket(AF_INET6, SOCK_STREAM, IPPROTO_TCP, NULL, 0,
-                   WSA_FLAG_OVERLAPPED);
+                   grpc_get_default_wsa_socket_flags());
   if (sock == INVALID_SOCKET) {
     error = GRPC_WSA_ERROR(WSAGetLastError(), "WSASocket");
     goto failure;
@@ -372,6 +372,7 @@ static void on_accept(void* arg, grpc_error* error) {
     acceptor->from_server = sp->server;
     acceptor->port_index = sp->port_index;
     acceptor->fd_index = 0;
+    acceptor->external_connection = false;
     sp->server->on_accept_cb(sp->server->on_accept_cb_arg, ep, NULL, acceptor);
   }
   /* As we were notified from the IOCP of one and exactly one accept,
@@ -408,7 +409,7 @@ static grpc_error* add_socket_to_server(grpc_tcp_server* s, SOCKET sock,
     gpr_log(GPR_ERROR, "on_connect error: %s", utf8_message);
     gpr_free(utf8_message);
     closesocket(sock);
-    return NULL;
+    return GRPC_ERROR_NONE;
   }
 
   error = prepare_socket(sock, addr, &port);
@@ -493,7 +494,7 @@ static grpc_error* tcp_server_add_port(grpc_tcp_server* s,
   }
 
   sock = WSASocket(AF_INET6, SOCK_STREAM, IPPROTO_TCP, NULL, 0,
-                   WSA_FLAG_OVERLAPPED);
+                   grpc_get_default_wsa_socket_flags());
   if (sock == INVALID_SOCKET) {
     error = GRPC_WSA_ERROR(WSAGetLastError(), "WSASocket");
     goto done;
@@ -545,16 +546,17 @@ static int tcp_server_port_fd(grpc_tcp_server* s, unsigned port_index,
   return -1;
 }
 
+static grpc_core::TcpServerFdHandler* tcp_server_create_fd_handler(
+    grpc_tcp_server* s) {
+  return nullptr;
+}
+
 static void tcp_server_shutdown_listeners(grpc_tcp_server* s) {}
 
 grpc_tcp_server_vtable grpc_windows_tcp_server_vtable = {
-    tcp_server_create,
-    tcp_server_start,
-    tcp_server_add_port,
-    tcp_server_port_fd_count,
-    tcp_server_port_fd,
-    tcp_server_ref,
-    tcp_server_shutdown_starting_add,
-    tcp_server_unref,
-    tcp_server_shutdown_listeners};
+    tcp_server_create,        tcp_server_start,
+    tcp_server_add_port,      tcp_server_create_fd_handler,
+    tcp_server_port_fd_count, tcp_server_port_fd,
+    tcp_server_ref,           tcp_server_shutdown_starting_add,
+    tcp_server_unref,         tcp_server_shutdown_listeners};
 #endif /* GRPC_WINSOCK_SOCKET */

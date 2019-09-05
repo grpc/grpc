@@ -18,22 +18,40 @@
 
 using System.Runtime.CompilerServices;
 using Grpc.Core;
-using Grpc.Core.Logging;
+using Grpc.Core.Interceptors;
+using Grpc.Core.Internal;
 using Grpc.Core.Utils;
 
 // API types that used to be in Grpc.Core package, but were moved to Grpc.Core.Api
 // https://docs.microsoft.com/en-us/dotnet/framework/app-domains/type-forwarding-in-the-common-language-runtime
 
-// TODO(jtattermusch): move types needed for implementing a client
-
 [assembly:TypeForwardedToAttribute(typeof(GrpcPreconditions))]
+[assembly:TypeForwardedToAttribute(typeof(AsyncClientStreamingCall<,>))]
+[assembly:TypeForwardedToAttribute(typeof(AsyncDuplexStreamingCall<,>))]
+[assembly:TypeForwardedToAttribute(typeof(AsyncServerStreamingCall<>))]
+[assembly:TypeForwardedToAttribute(typeof(AsyncUnaryCall<>))]
 [assembly:TypeForwardedToAttribute(typeof(AuthContext))]
+[assembly:TypeForwardedToAttribute(typeof(AsyncAuthInterceptor))]
+[assembly:TypeForwardedToAttribute(typeof(AuthInterceptorContext))]
+[assembly:TypeForwardedToAttribute(typeof(CallCredentials))]
+[assembly:TypeForwardedToAttribute(typeof(CallFlags))]
+[assembly:TypeForwardedToAttribute(typeof(CallInvoker))]
+[assembly:TypeForwardedToAttribute(typeof(CallInvokerExtensions))]
+[assembly:TypeForwardedToAttribute(typeof(CallOptions))]
+[assembly:TypeForwardedToAttribute(typeof(ClientBase))]
+[assembly:TypeForwardedToAttribute(typeof(ClientBase<>))]
+[assembly:TypeForwardedToAttribute(typeof(ChannelCredentials))]
+[assembly:TypeForwardedToAttribute(typeof(ClientInterceptorContext<,>))]
 [assembly:TypeForwardedToAttribute(typeof(ContextPropagationOptions))]
 [assembly:TypeForwardedToAttribute(typeof(ContextPropagationToken))]
 [assembly:TypeForwardedToAttribute(typeof(DeserializationContext))]
 [assembly:TypeForwardedToAttribute(typeof(IAsyncStreamReader<>))]
 [assembly:TypeForwardedToAttribute(typeof(IAsyncStreamWriter<>))]
+[assembly:TypeForwardedToAttribute(typeof(IClientStreamWriter<>))]
+[assembly:TypeForwardedToAttribute(typeof(Interceptor))]
+[assembly:TypeForwardedToAttribute(typeof(InterceptingCallInvoker))]
 [assembly:TypeForwardedToAttribute(typeof(IServerStreamWriter<>))]
+[assembly:TypeForwardedToAttribute(typeof(KeyCertificatePair))]
 [assembly:TypeForwardedToAttribute(typeof(Marshaller<>))]
 [assembly:TypeForwardedToAttribute(typeof(Marshallers))]
 [assembly:TypeForwardedToAttribute(typeof(Metadata))]
@@ -49,7 +67,11 @@ using Grpc.Core.Utils;
 [assembly:TypeForwardedToAttribute(typeof(DuplexStreamingServerMethod<,>))]
 [assembly:TypeForwardedToAttribute(typeof(ServerServiceDefinition))]
 [assembly:TypeForwardedToAttribute(typeof(ServiceBinderBase))]
+[assembly:TypeForwardedToAttribute(typeof(SslCredentials))]
 [assembly:TypeForwardedToAttribute(typeof(Status))]
 [assembly:TypeForwardedToAttribute(typeof(StatusCode))]
+[assembly:TypeForwardedToAttribute(typeof(VerifyPeerCallback))]
+[assembly:TypeForwardedToAttribute(typeof(VerifyPeerContext))]
+[assembly:TypeForwardedToAttribute(typeof(VersionInfo))]
 [assembly:TypeForwardedToAttribute(typeof(WriteOptions))]
 [assembly:TypeForwardedToAttribute(typeof(WriteFlags))]

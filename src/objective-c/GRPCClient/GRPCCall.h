@@ -135,7 +135,8 @@ typedef NS_ENUM(NSUInteger, GRPCErrorCode) {
 
   /**
    * The server is currently unavailable. This is most likely a transient condition and may be
-   * corrected by retrying with a backoff.
+   * corrected by retrying with a backoff. Note that it is not always safe to retry
+   * non-idempotent operations.
    */
   GRPCErrorCodeUnavailable = 14,
 
@@ -169,10 +170,22 @@ extern NSString *const kGRPCTrailersKey;
 - (void)didReceiveInitialMetadata:(nullable NSDictionary *)initialMetadata;
 
 /**
+ * This method is deprecated and does not work with interceptors. To use GRPCCall2 interface with
+ * interceptor, implement didReceiveData: instead. To implement an interceptor, please leave this
+ * method unimplemented and implement didReceiveData: method instead. If this method and
+ * didReceiveRawMessage are implemented at the same time, implementation of this method will be
+ * ignored.
+ *
  * Issued when a message is received from the server. The message is the raw data received from the
  * server, with decompression and without proto deserialization.
  */
 - (void)didReceiveRawMessage:(nullable NSData *)message;
+
+/**
+ * Issued when a decompressed message is received from the server. The message is decompressed, and
+ * deserialized if a marshaller is provided to the call (marshaller is work in progress).
+ */
+- (void)didReceiveData:(id)data;
 
 /**
  * Issued when a call finished. If the call finished successfully, \a error is nil and \a
@@ -182,6 +195,12 @@ extern NSString *const kGRPCTrailersKey;
  */
 - (void)didCloseWithTrailingMetadata:(nullable NSDictionary *)trailingMetadata
                                error:(nullable NSError *)error;
+
+/**
+ * Issued when flow control is enabled for the call and a message written with writeData: method of
+ * GRPCCall2 is passed to gRPC core with SEND_MESSAGE operation.
+ */
+- (void)didWriteData;
 
 @end
 
@@ -253,15 +272,24 @@ extern NSString *const kGRPCTrailersKey;
 - (void)cancel;
 
 /**
- * Send a message to the server. Data are sent as raw bytes in gRPC message frames.
+ * Send a message to the server. The data is subject to marshaller serialization and compression
+ * (marshaller is work in progress).
  */
-- (void)writeData:(NSData *)data;
+- (void)writeData:(id)data;
 
 /**
  * Finish the RPC request and half-close the call. The server may still send messages and/or
  * trailers to the client. The method must only be called once and after start is called.
  */
 - (void)finish;
+
+/**
+ * Tell gRPC to receive the next N gRPC message from gRPC core.
+ *
+ * This method should only be used when flow control is enabled. When flow control is not enabled,
+ * this method is a no-op.
+ */
+- (void)receiveNextMessages:(NSUInteger)numberOfMessages;
 
 /**
  * Get a copy of the original call options.

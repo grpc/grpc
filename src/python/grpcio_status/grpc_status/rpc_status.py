@@ -17,11 +17,6 @@ import collections
 
 import grpc
 
-# TODO(https://github.com/bazelbuild/bazel/issues/6844)
-# Due to Bazel issue, the namespace packages won't resolve correctly.
-# Adding this unused-import as a workaround to avoid module-not-found error
-# under Bazel builds.
-import google.protobuf  # pylint: disable=unused-import
 from google.rpc import status_pb2
 
 _CODE_TO_GRPC_CODE_MAPPING = {x.value[0]: x for x in grpc.StatusCode}
@@ -57,6 +52,8 @@ def from_call(call):
       ValueError: If the gRPC call's code or details are inconsistent with the
         status code and message inside of the google.rpc.status.Status.
     """
+    if call.trailing_metadata() is None:
+        return None
     for key, value in call.trailing_metadata():
         if key == _GRPC_DETAILS_METADATA_KEY:
             rich_status = status_pb2.Status.FromString(value)

@@ -16,16 +16,12 @@
 
 import %workspace%/tools/remote_build/rbe_common.bazelrc
 
-build --remote_cache=remotebuildexecution.googleapis.com
-build --remote_executor=remotebuildexecution.googleapis.com
-build --tls_enabled=true
+build --remote_cache=grpcs://remotebuildexecution.googleapis.com
+build --remote_executor=grpcs://remotebuildexecution.googleapis.com
 
 build --auth_enabled=true
-# magic location where kokoro script puts the credentials
-build --auth_credentials=/tmpfs/src/keystore/4321_grpc-testing-service
-build --auth_scope=https://www.googleapis.com/auth/cloud-source-tools
 
-build --bes_backend=buildeventservice.googleapis.com
+build --bes_backend=grpcs://buildeventservice.googleapis.com
 build --bes_timeout=600s
 build --project_id=grpc-testing
 

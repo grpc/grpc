@@ -217,7 +217,8 @@ std::shared_ptr<grpc::Channel> CreateCliChannel(
   if (!cred.GetSslTargetNameOverride().empty()) {
     args.SetSslTargetNameOverride(cred.GetSslTargetNameOverride());
   }
-  return grpc::CreateCustomChannel(server_address, cred.GetCredentials(), args);
+  return ::grpc::CreateCustomChannel(server_address, cred.GetCredentials(),
+                                     args);
 }
 
 struct Command {
@@ -468,6 +469,8 @@ bool GrpcTool::CallMethod(int argc, const char** argv,
       " fallback when parsing request/response\n"
       "    --proto_path             ; The search path of proto files, valid"
       " only when --protofiles is given\n"
+      "    --noremotedb             ; Don't attempt to use reflection service"
+      " at all\n"
       "    --metadata               ; The metadata to be sent to the server\n"
       "    --infile                 ; Input filename (defaults to stdin)\n"
       "    --outfile                ; Output filename (defaults to stdout)\n"
@@ -590,6 +593,7 @@ bool GrpcTool::CallMethod(int argc, const char** argv,
 
     call.WritesDoneAndWait();
     read_thread.join();
+    gpr_mu_destroy(&parser_mu);
 
     std::multimap<grpc::string_ref, grpc::string_ref> server_trailing_metadata;
     Status status = call.Finish(&server_trailing_metadata);
@@ -808,6 +812,8 @@ bool GrpcTool::ParseMessage(int argc, const char** argv,
       " fallback when parsing request/response\n"
       "    --proto_path             ; The search path of proto files, valid"
       " only when --protofiles is given\n"
+      "    --noremotedb             ; Don't attempt to use reflection service"
+      " at all\n"
       "    --infile                 ; Input filename (defaults to stdin)\n"
       "    --outfile                ; Output filename (defaults to stdout)\n"
       "    --binary_input           ; Input in binary format\n"

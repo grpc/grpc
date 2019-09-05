@@ -30,7 +30,7 @@ namespace Grpc.Core
     /// More client objects can reuse the same channel. Creating a channel is an expensive operation compared to invoking
     /// a remote call so in general you should reuse a single channel for as many calls as possible.
     /// </summary>
-    public class Channel
+    public class Channel : ChannelBase
     {
         static readonly ILogger Logger = GrpcEnvironment.Logger.ForType<Channel>();
 
@@ -38,7 +38,6 @@ namespace Grpc.Core
         readonly AtomicCounter activeCallCounter = new AtomicCounter();
         readonly CancellationTokenSource shutdownTokenSource = new CancellationTokenSource();
 
-        readonly string target;
         readonly GrpcEnvironment environment;
         readonly CompletionQueueSafeHandle completionQueue;
         readonly ChannelSafeHandle handle;
@@ -59,14 +58,13 @@ namespace Grpc.Core
 
         /// <summary>
         /// Creates a channel that connects to a specific host.
-        /// Port will default to 80 for an unsecure channel and to 443 for a secure channel.
+        /// Port will default to 80 for an unsecure channel or to 443 for a secure channel.
         /// </summary>
         /// <param name="target">Target of the channel.</param>
         /// <param name="credentials">Credentials to secure the channel.</param>
         /// <param name="options">Channel options.</param>
-        public Channel(string target, ChannelCredentials credentials, IEnumerable<ChannelOption> options)
+        public Channel(string target, ChannelCredentials credentials, IEnumerable<ChannelOption> options) : base(target)
         {
-            this.target = GrpcPreconditions.CheckNotNull(target, "target");
             this.options = CreateOptionsDictionary(options);
             EnsureUserAgentChannelOption(this.options);
             this.environment = GrpcEnvironment.AddRef();
@@ -74,7 +72,7 @@ namespace Grpc.Core
             this.completionQueue = this.environment.PickCompletionQueue();
             using (var nativeChannelArgs = ChannelOptions.CreateChannelArgs(this.options.Values))
             {
-                var nativeCredentials = credentials.GetNativeCredentials();
+                var nativeCredentials = credentials.ToNativeCredentials();
                 if (nativeCredentials != null)
                 {
                     this.handle = ChannelSafeHandle.CreateSecure(nativeCredentials, target, nativeChannelArgs);
@@ -112,7 +110,7 @@ namespace Grpc.Core
 
         /// <summary>
         /// Gets current connectivity state of this channel.
-        /// After channel is has been shutdown, <c>ChannelState.Shutdown</c> will be returned.
+        /// After channel has been shutdown, <c>ChannelState.Shutdown</c> will be returned.
         /// </summary>
         public ChannelState State
         {
@@ -132,7 +130,7 @@ namespace Grpc.Core
         /// <summary>
         /// Returned tasks completes once channel state has become different from 
         /// given lastObservedState. 
-        /// If deadline is reached or and error occurs, returned task is cancelled.
+        /// If deadline is reached or an error occurs, returned task is cancelled.
         /// </summary>
         public async Task WaitForStateChangedAsync(ChannelState lastObservedState, DateTime? deadline = null)
         {
@@ -176,15 +174,6 @@ namespace Grpc.Core
             get
             {
                 return handle.GetTarget();
-            }
-        }
-
-        /// <summary>The original target used to create the channel.</summary>
-        public string Target
-        {
-            get
-            {
-                return this.target;
             }
         }
 
@@ -255,6 +244,15 @@ namespace Grpc.Core
             }
 
             await GrpcEnvironment.ReleaseAsync().ConfigureAwait(false);
+        }
+
+        /// <summary>
+        /// Create a new <see cref="CallInvoker"/> for the channel.
+        /// </summary>
+        /// <returns>A new <see cref="CallInvoker"/>.</returns>
+        public override CallInvoker CreateCallInvoker()
+        {
+            return new DefaultCallInvoker(this);
         }
 
         internal ChannelSafeHandle Handle

@@ -26,10 +26,13 @@
 #include <grpcpp/impl/codegen/rpc_method.h>
 #include <grpcpp/impl/codegen/string_ref.h>
 
-namespace grpc {
+namespace grpc_impl {
 
-class ClientContext;
 class Channel;
+class ClientContext;
+}  // namespace grpc_impl
+
+namespace grpc {
 
 namespace internal {
 class InterceptorBatchMethodsImpl;
@@ -76,7 +79,7 @@ class ClientRpcInfo {
     UNKNOWN  // UNKNOWN is not API and will be removed later
   };
 
-  ~ClientRpcInfo(){};
+  ~ClientRpcInfo() {}
 
   // Delete copy constructor but allow default move constructor
   ClientRpcInfo(const ClientRpcInfo&) = delete;
@@ -92,7 +95,7 @@ class ClientRpcInfo {
 
   /// Return a pointer to the underlying ClientContext structure associated
   /// with the RPC to support features that apply to it
-  grpc::ClientContext* client_context() { return ctx_; }
+  grpc_impl::ClientContext* client_context() { return ctx_; }
 
   /// Return the type of the RPC (unary or a streaming flavor)
   Type type() const { return type_; }
@@ -115,8 +118,9 @@ class ClientRpcInfo {
   ClientRpcInfo() = default;
 
   // Constructor will only be called from ClientContext
-  ClientRpcInfo(grpc::ClientContext* ctx, internal::RpcMethod::RpcType type,
-                const char* method, grpc::ChannelInterface* channel)
+  ClientRpcInfo(grpc_impl::ClientContext* ctx,
+                internal::RpcMethod::RpcType type, const char* method,
+                grpc::ChannelInterface* channel)
       : ctx_(ctx),
         type_(static_cast<Type>(type)),
         method_(method),
@@ -156,7 +160,7 @@ class ClientRpcInfo {
     }
   }
 
-  grpc::ClientContext* ctx_ = nullptr;
+  grpc_impl::ClientContext* ctx_ = nullptr;
   // TODO(yashykt): make type_ const once move-assignment is deleted
   Type type_{Type::UNKNOWN};
   const char* method_ = nullptr;
@@ -166,22 +170,21 @@ class ClientRpcInfo {
   size_t hijacked_interceptor_ = 0;
 
   friend class internal::InterceptorBatchMethodsImpl;
-  friend class grpc::ClientContext;
+  friend class grpc_impl::ClientContext;
 };
 
 // PLEASE DO NOT USE THIS. ALWAYS PREFER PER CHANNEL INTERCEPTORS OVER A GLOBAL
 // INTERCEPTOR. IF USAGE IS ABSOLUTELY NECESSARY, PLEASE READ THE SAFETY NOTES.
 // Registers a global client interceptor factory object, which is used for all
-// RPCs made in this process.  If the argument is nullptr, the global
-// interceptor factory is deregistered. The application is responsible for
-// maintaining the life of the object while gRPC operations are in progress. It
-// is unsafe to try to register/deregister if any gRPC operation is in progress.
-// For safety, it is in the best interests of the developer to register the
-// global interceptor factory once at the start of the process before any gRPC
-// operations have begun. Deregistration is optional since gRPC does not
-// maintain any references to the object.
+// RPCs made in this process. The application is responsible for maintaining the
+// life of the object while gRPC operations are in progress. The global
+// interceptor factory should only be registered once at the start of the
+// process before any gRPC operations have begun.
 void RegisterGlobalClientInterceptorFactory(
     ClientInterceptorFactoryInterface* factory);
+
+// For testing purposes only
+void TestOnlyResetGlobalClientInterceptorFactory();
 
 }  // namespace experimental
 }  // namespace grpc

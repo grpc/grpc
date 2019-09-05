@@ -27,8 +27,8 @@
 
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gprpp/inlined_vector.h"
-#include "src/core/lib/gprpp/mutex_lock.h"
 #include "src/core/lib/gprpp/ref_counted.h"
+#include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/endpoint.h"
 #include "src/core/lib/iomgr/exec_ctx.h"

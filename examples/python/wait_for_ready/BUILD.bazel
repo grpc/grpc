@@ -1,0 +1,34 @@
+# Copyright 2019 The gRPC Authors
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+load("@grpc_python_dependencies//:requirements.bzl", "requirement")
+
+py_library(
+    name = "wait_for_ready_example",
+    testonly = 1,
+    srcs = ["wait_for_ready_example.py"],
+    deps = [
+        "//src/python/grpcio/grpc:grpcio",
+        "//examples:helloworld_py_pb2",
+        "//examples:helloworld_py_pb2_grpc",
+    ],
+)
+
+py_test(
+    name = "test/_wait_for_ready_example_test",
+    srcs = ["test/_wait_for_ready_example_test.py"],
+    deps = [":wait_for_ready_example",],
+    size = "small",
+    python_version = "PY3",
+)

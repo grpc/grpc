@@ -218,7 +218,7 @@ static void test_no_op_with_port(void) {
   addr->sin_family = AF_INET;
   GPR_ASSERT(grpc_udp_server_add_port(s, &resolved_addr, rcv_buf_size,
                                       snd_buf_size, &handler_factory,
-                                      g_num_listeners));
+                                      g_num_listeners) > 0);
 
   grpc_udp_server_destroy(s, nullptr);
 
@@ -250,7 +250,7 @@ static void test_no_op_with_port_and_socket_factory(void) {
   addr->sin_family = AF_INET;
   GPR_ASSERT(grpc_udp_server_add_port(s, &resolved_addr, rcv_buf_size,
                                       snd_buf_size, &handler_factory,
-                                      g_num_listeners));
+                                      g_num_listeners) > 0);
   GPR_ASSERT(socket_factory->number_of_socket_calls == g_num_listeners);
   GPR_ASSERT(socket_factory->number_of_bind_calls == g_num_listeners);
 
@@ -278,7 +278,7 @@ static void test_no_op_with_port_and_start(void) {
   addr->sin_family = AF_INET;
   GPR_ASSERT(grpc_udp_server_add_port(s, &resolved_addr, rcv_buf_size,
                                       snd_buf_size, &handler_factory,
-                                      g_num_listeners));
+                                      g_num_listeners) > 0);
 
   grpc_udp_server_start(s, nullptr, 0, nullptr);
   GPR_ASSERT(g_number_of_starts == g_num_listeners);
@@ -312,7 +312,7 @@ static void test_receive(int number_of_clients) {
   addr->ss_family = AF_INET;
   GPR_ASSERT(grpc_udp_server_add_port(s, &resolved_addr, rcv_buf_size,
                                       snd_buf_size, &handler_factory,
-                                      g_num_listeners));
+                                      g_num_listeners) > 0);
 
   svrfd = grpc_udp_server_get_fd(s, 0);
   GPR_ASSERT(svrfd >= 0);

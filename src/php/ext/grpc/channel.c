@@ -30,6 +30,7 @@
 
 #include <grpc/grpc_security.h>
 #include <grpc/support/alloc.h>
+#include <grpc/support/log.h>
 
 #include "completion_queue.h"
 #include "channel_credentials.h"
@@ -247,12 +248,12 @@ void create_and_add_channel_to_persistent_list(
       // If no channel can be deleted from the persistent map,
       // do not persist this one.
       create_channel(channel, target, args, creds);
-      php_printf("[Warning] The number of channel for the"
+      gpr_log(GPR_INFO, "[Warning] The number of channel for the"
                  " target %s is maxed out bounded.\n", target);
-      php_printf("[Warning] Target upper bound: %d. Current size: %d.\n",
+      gpr_log(GPR_INFO, "[Warning] Target upper bound: %d. Current size: %d.\n",
                  target_bound_status->upper_bound,
                  target_bound_status->current_count);
-      php_printf("[Warning] Target %s will not be persisted.\n", target);
+      gpr_log(GPR_INFO, "[Warning] Target %s will not be persisted.\n", target);
       return;
     }
   }
@@ -329,6 +330,7 @@ PHP_METHOD(Channel, __construct) {
                            1 TSRMLS_CC);
       return;
     } else {
+      Z_ADDREF(*creds_obj);
       creds = PHP_GRPC_GET_WRAPPED_OBJECT(wrapped_grpc_channel_credentials,
                                           creds_obj);
       php_grpc_zend_hash_del(array_hash, "credentials", sizeof("credentials"));

@@ -30,7 +30,11 @@
 #include <fcntl.h>
 #include <limits.h>
 #include <netinet/in.h>
+#ifdef GRPC_LINUX_TCP_H
+#include <linux/tcp.h>
+#else
 #include <netinet/tcp.h>
+#endif
 #include <stdio.h>
 #include <string.h>
 #include <sys/socket.h>
@@ -42,7 +46,6 @@
 #include <grpc/support/sync.h>
 
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/gpr/host_port.h"
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/iomgr/sockaddr.h"
 #include "src/core/lib/iomgr/sockaddr_utils.h"
@@ -288,7 +291,7 @@ grpc_error* grpc_set_socket_tcp_user_timeout(
   }
   if (enable) {
     extern grpc_core::TraceFlag grpc_tcp_trace;
-    if (grpc_tcp_trace.enabled()) {
+    if (GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace)) {
       gpr_log(GPR_INFO, "Enabling TCP_USER_TIMEOUT with a timeout of %d ms",
               timeout);
     }
@@ -311,7 +314,7 @@ grpc_error* grpc_set_socket_tcp_user_timeout(
   }
 #else
   extern grpc_core::TraceFlag grpc_tcp_trace;
-  if (grpc_tcp_trace.enabled()) {
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace)) {
     gpr_log(GPR_INFO, "TCP_USER_TIMEOUT not supported for this platform");
   }
 #endif /* GRPC_HAVE_TCP_USER_TIMEOUT */

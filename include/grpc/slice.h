@@ -107,7 +107,7 @@ GPRAPI grpc_slice grpc_slice_sub_no_ref(grpc_slice s, size_t begin, size_t end);
 
 /** Splits s into two: modifies s to be s[0:split], and returns a new slice,
    sharing a refcount with s, that contains s[split:s.length].
-   Requires s intialized, split <= s.length */
+   Requires s initialized, split <= s.length */
 GPRAPI grpc_slice grpc_slice_split_tail(grpc_slice* s, size_t split);
 
 typedef enum {
@@ -124,7 +124,7 @@ GPRAPI grpc_slice grpc_slice_split_tail_maybe_ref(grpc_slice* s, size_t split,
 
 /** Splits s into two: modifies s to be s[split:s.length], and returns a new
    slice, sharing a refcount with s, that contains s[0:split].
-   Requires s intialized, split <= s.length */
+   Requires s initialized, split <= s.length */
 GPRAPI grpc_slice grpc_slice_split_head(grpc_slice* s, size_t split);
 
 GPRAPI grpc_slice grpc_empty_slice(void);
@@ -147,7 +147,7 @@ GPRAPI int grpc_slice_buf_start_eq(grpc_slice a, const void* b, size_t blen);
 GPRAPI int grpc_slice_rchr(grpc_slice s, char c);
 GPRAPI int grpc_slice_chr(grpc_slice s, char c);
 
-/** return the index of the first occurance of \a needle in \a haystack, or -1
+/** return the index of the first occurrence of \a needle in \a haystack, or -1
    if it's not found */
 GPRAPI int grpc_slice_slice(grpc_slice haystack, grpc_slice needle);
 

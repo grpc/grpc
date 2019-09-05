@@ -74,18 +74,16 @@ static grpc_error* set_dualstack(SOCKET sock) {
              : GRPC_WSA_ERROR(WSAGetLastError(), "setsockopt(IPV6_V6ONLY)");
 }
 
-static grpc_error* enable_loopback_fast_path(SOCKET sock) {
+static grpc_error* enable_socket_low_latency(SOCKET sock) {
   int status;
-  uint32_t param = 1;
-  DWORD ret;
-  status = WSAIoctl(sock, /*SIO_LOOPBACK_FAST_PATH==*/_WSAIOW(IOC_VENDOR, 16),
-                    &param, sizeof(param), NULL, 0, &ret, 0, 0);
+  BOOL param = TRUE;
+  status = ::setsockopt(sock, IPPROTO_TCP, TCP_NODELAY,
+                        reinterpret_cast<char*>(&param), sizeof(param));
   if (status == SOCKET_ERROR) {
     status = WSAGetLastError();
   }
-  return status == 0 || status == WSAEOPNOTSUPP
-             ? GRPC_ERROR_NONE
-             : GRPC_WSA_ERROR(status, "WSAIoctl(SIO_LOOPBACK_FAST_PATH)");
+  return status == 0 ? GRPC_ERROR_NONE
+                     : GRPC_WSA_ERROR(status, "setsockopt(TCP_NODELAY)");
 }
 
 grpc_error* grpc_tcp_prepare_socket(SOCKET sock) {
@@ -94,7 +92,7 @@ grpc_error* grpc_tcp_prepare_socket(SOCKET sock) {
   if (err != GRPC_ERROR_NONE) return err;
   err = set_dualstack(sock);
   if (err != GRPC_ERROR_NONE) return err;
-  err = enable_loopback_fast_path(sock);
+  err = enable_socket_low_latency(sock);
   if (err != GRPC_ERROR_NONE) return err;
   return GRPC_ERROR_NONE;
 }
@@ -198,17 +196,17 @@ static void on_read(void* tcpp, grpc_error* error) {
       gpr_free(utf8_message);
       grpc_slice_buffer_reset_and_unref_internal(tcp->read_slices);
     } else {
-      if (info->bytes_transfered != 0 && !tcp->shutting_down) {
-        GPR_ASSERT((size_t)info->bytes_transfered <= tcp->read_slices->length);
-        if (static_cast<size_t>(info->bytes_transfered) !=
+      if (info->bytes_transferred != 0 && !tcp->shutting_down) {
+        GPR_ASSERT((size_t)info->bytes_transferred <= tcp->read_slices->length);
+        if (static_cast<size_t>(info->bytes_transferred) !=
             tcp->read_slices->length) {
           grpc_slice_buffer_trim_end(
               tcp->read_slices,
               tcp->read_slices->length -
-                  static_cast<size_t>(info->bytes_transfered),
+                  static_cast<size_t>(info->bytes_transferred),
               &tcp->last_read_buffer);
         }
-        GPR_ASSERT((size_t)info->bytes_transfered == tcp->read_slices->length);
+        GPR_ASSERT((size_t)info->bytes_transferred == tcp->read_slices->length);
 
         if (grpc_tcp_trace.enabled()) {
           size_t i;
@@ -241,7 +239,7 @@ static void on_read(void* tcpp, grpc_error* error) {
 #define DEFAULT_TARGET_READ_SIZE 8192
 #define MAX_WSABUF_COUNT 16
 static void win_read(grpc_endpoint* ep, grpc_slice_buffer* read_slices,
-                     grpc_closure* cb) {
+                     grpc_closure* cb, bool urgent) {
   grpc_tcp* tcp = (grpc_tcp*)ep;
   grpc_winsocket* handle = tcp->socket;
   grpc_winsocket_callback_info* info = &handle->read_info;
@@ -290,7 +288,7 @@ static void win_read(grpc_endpoint* ep, grpc_slice_buffer* read_slices,
 
   /* Did we get data immediately ? Yay. */
   if (info->wsa_error != WSAEWOULDBLOCK) {
-    info->bytes_transfered = bytes_read;
+    info->bytes_transferred = bytes_read;
     GRPC_CLOSURE_SCHED(&tcp->on_read, GRPC_ERROR_NONE);
     return;
   }
@@ -335,7 +333,7 @@ static void on_write(void* tcpp, grpc_error* error) {
     if (info->wsa_error != 0) {
       error = GRPC_WSA_ERROR(info->wsa_error, "WSASend");
     } else {
-      GPR_ASSERT(info->bytes_transfered == tcp->write_slices->length);
+      GPR_ASSERT(info->bytes_transferred == tcp->write_slices->length);
     }
   }
 

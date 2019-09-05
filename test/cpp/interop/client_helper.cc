@@ -79,7 +79,10 @@ void UpdateActions(
     std::unordered_map<grpc::string, std::function<bool()>>* actions) {}
 
 std::shared_ptr<Channel> CreateChannelForTestCase(
-    const grpc::string& test_case) {
+    const grpc::string& test_case,
+    std::vector<
+        std::unique_ptr<experimental::ClientInterceptorFactoryInterface>>
+        interceptor_creators) {
   GPR_ASSERT(FLAGS_server_port);
   const int host_port_buf_size = 1024;
   char host_port[host_port_buf_size];
@@ -102,14 +105,27 @@ std::shared_ptr<Channel> CreateChannelForTestCase(
     creds = FLAGS_custom_credentials_type == "google_default_credentials"
                 ? nullptr
                 : AccessTokenCredentials(GetOauth2AccessToken());
+  } else if (test_case == "pick_first_unary") {
+    ChannelArguments channel_args;
+    // allow the LB policy to be configured with service config
+    channel_args.SetInt(GRPC_ARG_SERVICE_CONFIG_DISABLE_RESOLUTION, 0);
+    return CreateTestChannel(host_port, FLAGS_custom_credentials_type,
+                             FLAGS_server_host_override, !FLAGS_use_test_ca,
+                             creds, channel_args);
   }
   if (FLAGS_custom_credentials_type.empty()) {
     transport_security security_type =
         FLAGS_use_alts ? ALTS : (FLAGS_use_tls ? TLS : INSECURE);
     return CreateTestChannel(host_port, FLAGS_server_host_override,
-                             security_type, !FLAGS_use_test_ca, creds);
+                             security_type, !FLAGS_use_test_ca, creds,
+                             std::move(interceptor_creators));
   } else {
-    return CreateTestChannel(host_port, FLAGS_custom_credentials_type, creds);
+    if (interceptor_creators.empty()) {
+      return CreateTestChannel(host_port, FLAGS_custom_credentials_type, creds);
+    } else {
+      return CreateTestChannel(host_port, FLAGS_custom_credentials_type, creds,
+                               std::move(interceptor_creators));
+    }
   }
 }
 

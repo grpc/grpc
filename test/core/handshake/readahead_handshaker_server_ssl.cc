@@ -59,7 +59,8 @@ class ReadAheadHandshaker : public Handshaker {
   void DoHandshake(grpc_tcp_server_acceptor* acceptor,
                    grpc_closure* on_handshake_done,
                    HandshakerArgs* args) override {
-    grpc_endpoint_read(args->endpoint, args->read_buffer, on_handshake_done);
+    grpc_endpoint_read(args->endpoint, args->read_buffer, on_handshake_done,
+                       /*urgent=*/false);
   }
 };
 
@@ -83,6 +84,6 @@ int main(int argc, char* argv[]) {
       UniquePtr<HandshakerFactory>(New<ReadAheadHandshakerFactory>()));
   const char* full_alpn_list[] = {"grpc-exp", "h2"};
   GPR_ASSERT(server_ssl_test(full_alpn_list, 2, "grpc-exp"));
-  grpc_shutdown();
+  grpc_shutdown_blocking();
   return 0;
 }

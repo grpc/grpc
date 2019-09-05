@@ -28,6 +28,7 @@
 
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gpr/string.h"
+#include "src/core/lib/gprpp/memory.h"
 #include "src/core/lib/http/format_request.h"
 #include "src/core/lib/http/parser.h"
 #include "src/core/lib/iomgr/endpoint.h"
@@ -112,16 +113,15 @@ static void append_error(internal_request* req, grpc_error* error) {
         GRPC_ERROR_CREATE_FROM_STATIC_STRING("Failed HTTP/1 client request");
   }
   grpc_resolved_address* addr = &req->addresses->addrs[req->next_address - 1];
-  char* addr_text = grpc_sockaddr_to_uri(addr);
+  grpc_core::UniquePtr<char> addr_text(grpc_sockaddr_to_uri(addr));
   req->overall_error = grpc_error_add_child(
       req->overall_error,
       grpc_error_set_str(error, GRPC_ERROR_STR_TARGET_ADDRESS,
-                         grpc_slice_from_copied_string(addr_text)));
-  gpr_free(addr_text);
+                         grpc_slice_from_moved_string(std::move(addr_text))));
 }
 
 static void do_read(internal_request* req) {
-  grpc_endpoint_read(req->ep, &req->incoming, &req->on_read);
+  grpc_endpoint_read(req->ep, &req->incoming, &req->on_read, /*urgent=*/true);
 }
 
 static void on_read(void* user_data, grpc_error* error) {
@@ -229,7 +229,8 @@ static void internal_request_begin(grpc_httpcli_context* context,
                                    const grpc_httpcli_request* request,
                                    grpc_millis deadline, grpc_closure* on_done,
                                    grpc_httpcli_response* response,
-                                   const char* name, grpc_slice request_text) {
+                                   const char* name,
+                                   const grpc_slice& request_text) {
   internal_request* req =
       static_cast<internal_request*>(gpr_malloc(sizeof(internal_request)));
   memset(req, 0, sizeof(*req));

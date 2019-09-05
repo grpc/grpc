@@ -42,13 +42,15 @@ if test "$PHP_GRPC" != "no"; then
   dnl  PHP_ADD_LIBRARY(pthread,,GRPC_SHARED_LIBADD)
   GRPC_SHARED_LIBADD="-lpthread $GRPC_SHARED_LIBADD"
   PHP_ADD_LIBRARY(pthread)
-
   PHP_ADD_LIBRARY(dl,,GRPC_SHARED_LIBADD)
   PHP_ADD_LIBRARY(dl)
 
   case $host in
-    *darwin*) ;;
+    *darwin*) 
+      PHP_ADD_LIBRARY(c++,1,GRPC_SHARED_LIBADD)
+      ;;
     *)
+      PHP_ADD_LIBRARY(stdc++,1,GRPC_SHARED_LIBADD)
       PHP_ADD_LIBRARY(rt,,GRPC_SHARED_LIBADD)
       PHP_ADD_LIBRARY(rt)
       ;;
