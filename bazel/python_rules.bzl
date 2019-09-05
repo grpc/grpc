@@ -183,6 +183,12 @@ def py_grpc_library(
 def py2and3_test(name,
                  py_test = native.py_test,
                  **kwargs):
+    """Runs a Python test under both Python 2 and Python 3.
+
+    Args:
+      name: The name of the test.
+      py_test: The rule to use for each test.
+    """
     if "python_version" in kwargs:
         fail("Cannot specify 'python_version' in py2and3_test.")
 
