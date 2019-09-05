@@ -81,8 +81,7 @@ RUN apt-get update && apt-get -t buster install -y python3.7 python3-all-dev
 RUN curl https://bootstrap.pypa.io/get-pip.py | python3.7
 
 # for Python test coverage reporting
-RUN python3.7 -m ensurepip && \
-    python3.7 -m pip install coverage
+RUN python3.7 -m pip install coverage
 
 RUN python3.6 -m ensurepip && \
     python3.6 -m pip install coverage
