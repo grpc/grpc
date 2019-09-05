@@ -31,7 +31,7 @@
  * Defines GRPC_USE_ABSL to use Abseil Common Libraries (C++)
  */
 #ifndef GRPC_USE_ABSL
-#define GRPC_USE_ABSL 0
+#define GRPC_USE_ABSL 1
 #endif
 
 /* Get windows.h included everywhere (we need it) */

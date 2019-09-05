@@ -69,11 +69,6 @@ config_setting(
     values = {"cpu": "darwin"},
 )
 
-config_setting(
-    name = "grpc_use_absl",
-    values = {"define": "GRPC_USE_ABSL=1"},
-)
-
 python_config_settings()
 
 # This should be updated along with build.yaml
@@ -560,6 +555,9 @@ grpc_cc_library(
         "src/core/lib/gprpp/thd.h",
         "src/core/lib/profiling/timers.h",
     ],
+    external_deps = [
+        "absl/strings",
+    ],
     language = "c++",
     public_hdrs = GPR_PUBLIC_HDRS,
     deps = [
@@ -614,6 +612,9 @@ grpc_cc_library(
 
 grpc_cc_library(
     name = "inlined_vector",
+    external_deps = [
+        "absl/container:inlined_vector",
+    ],
     language = "c++",
     public_hdrs = [
         "src/core/lib/gprpp/inlined_vector.h",
@@ -631,6 +632,9 @@ grpc_cc_library(
 
 grpc_cc_library(
     name = "optional",
+    external_deps = [
+        "absl/types:optional",
+    ],
     language = "c++",
     public_hdrs = [
         "src/core/lib/gprpp/optional.h",
