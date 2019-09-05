@@ -86,8 +86,9 @@ NSUInteger TransportIdHash(GRPCTransportID transportId) {
 - (id<GRPCTransportFactory>)getTransportFactoryWithId:(GRPCTransportID)transportId {
   if (transportId == NULL) {
     if (_defaultFactory == nil) {
+      // fall back to default transport if no transport is provided
       [NSException raise:NSInvalidArgumentException
-                  format:@"Unable to get default transport factory"];
+                  format:@"Did not specify transport and unable to find a default transport."];
       return nil;
     }
     return _defaultFactory;
@@ -95,10 +96,16 @@ NSUInteger TransportIdHash(GRPCTransportID transportId) {
   NSString *nsTransportId = [NSString stringWithCString:transportId encoding:NSUTF8StringEncoding];
   id<GRPCTransportFactory> transportFactory = _registry[nsTransportId];
   if (transportFactory == nil) {
-    // User named a transport id that was not registered with the registry.
-    [NSException raise:NSInvalidArgumentException
-                format:@"Unable to get transport factory with id %s", transportId];
-    return nil;
+    if (_defaultFactory != nil) {
+      // fall back to default transport if no transport is found
+      NSLog(@"Unable to find transport with id %s; falling back to default transport.",
+            transportId);
+      return _defaultFactory;
+    } else {
+      [NSException raise:NSInvalidArgumentException
+                  format:@"Unable to find transport with id %s", transportId];
+      return nil;
+    }
   }
   return transportFactory;
 }
