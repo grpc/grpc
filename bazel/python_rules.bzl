@@ -188,6 +188,8 @@ def py2and3_test(name,
     Args:
       name: The name of the test.
       py_test: The rule to use for each test.
+      **kwargs: Keyword arguments passed directly to the underlying py_test
+        rule.
     """
     if "python_version" in kwargs:
         fail("Cannot specify 'python_version' in py2and3_test.")
