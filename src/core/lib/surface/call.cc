@@ -1365,64 +1365,95 @@ static void receiving_stream_ready_in_call_combiner(void* bctlp,
   receiving_stream_ready(bctlp, error);
 }
 
+static void GPR_ATTRIBUTE_NOINLINE
+handle_both_stream_and_msg_compression_set(grpc_call* call) {
+  char* error_msg = nullptr;
+  gpr_asprintf(&error_msg,
+               "Incoming stream has both stream compression (%d) and message "
+               "compression (%d).",
+               call->incoming_stream_compression_algorithm,
+               call->incoming_message_compression_algorithm);
+  gpr_log(GPR_ERROR, "%s", error_msg);
+  cancel_with_status(call, GRPC_STATUS_INTERNAL, error_msg);
+  gpr_free(error_msg);
+}
+
+static void GPR_ATTRIBUTE_NOINLINE
+handle_error_parsing_compression_algorithm(grpc_call* call) {
+  char* error_msg = nullptr;
+  gpr_asprintf(&error_msg,
+               "Error in incoming message compression (%d) or stream "
+               "compression (%d).",
+               call->incoming_stream_compression_algorithm,
+               call->incoming_message_compression_algorithm);
+  cancel_with_status(call, GRPC_STATUS_INTERNAL, error_msg);
+  gpr_free(error_msg);
+}
+
+static void GPR_ATTRIBUTE_NOINLINE handle_invalid_compression(
+    grpc_call* call, grpc_compression_algorithm compression_algorithm) {
+  char* error_msg = nullptr;
+  gpr_asprintf(&error_msg, "Invalid compression algorithm value '%d'.",
+               compression_algorithm);
+  gpr_log(GPR_ERROR, "%s", error_msg);
+  cancel_with_status(call, GRPC_STATUS_UNIMPLEMENTED, error_msg);
+  gpr_free(error_msg);
+}
+
+static void GPR_ATTRIBUTE_NOINLINE handle_compression_algorithm_disabled(
+    grpc_call* call, grpc_compression_algorithm compression_algorithm) {
+  char* error_msg = nullptr;
+  const char* algo_name = nullptr;
+  grpc_compression_algorithm_name(compression_algorithm, &algo_name);
+  gpr_asprintf(&error_msg, "Compression algorithm '%s' is disabled.",
+               algo_name);
+  gpr_log(GPR_ERROR, "%s", error_msg);
+  cancel_with_status(call, GRPC_STATUS_UNIMPLEMENTED, error_msg);
+  gpr_free(error_msg);
+}
+
+static void GPR_ATTRIBUTE_NOINLINE handle_compression_algorithm_not_accepted(
+    grpc_call* call, grpc_compression_algorithm compression_algorithm) {
+  const char* algo_name = nullptr;
+  grpc_compression_algorithm_name(compression_algorithm, &algo_name);
+  gpr_log(GPR_ERROR,
+          "Compression algorithm ('%s') not present in the bitset of "
+          "accepted encodings ('0x%x')",
+          algo_name, call->encodings_accepted_by_peer);
+}
+
 static void validate_filtered_metadata(batch_control* bctl) {
   grpc_compression_algorithm compression_algorithm;
   grpc_call* call = bctl->call;
-  if (call->incoming_stream_compression_algorithm !=
-          GRPC_STREAM_COMPRESS_NONE &&
-      call->incoming_message_compression_algorithm !=
-          GRPC_MESSAGE_COMPRESS_NONE) {
-    char* error_msg = nullptr;
-    gpr_asprintf(&error_msg,
-                 "Incoming stream has both stream compression (%d) and message "
-                 "compression (%d).",
-                 call->incoming_stream_compression_algorithm,
-                 call->incoming_message_compression_algorithm);
-    gpr_log(GPR_ERROR, "%s", error_msg);
-    cancel_with_status(call, GRPC_STATUS_INTERNAL, error_msg);
-    gpr_free(error_msg);
+  if (GPR_UNLIKELY(call->incoming_stream_compression_algorithm !=
+                       GRPC_STREAM_COMPRESS_NONE &&
+                   call->incoming_message_compression_algorithm !=
+                       GRPC_MESSAGE_COMPRESS_NONE)) {
+    handle_both_stream_and_msg_compression_set(call);
   } else if (
-      grpc_compression_algorithm_from_message_stream_compression_algorithm(
-          &compression_algorithm, call->incoming_message_compression_algorithm,
-          call->incoming_stream_compression_algorithm) == 0) {
-    char* error_msg = nullptr;
-    gpr_asprintf(&error_msg,
-                 "Error in incoming message compression (%d) or stream "
-                 "compression (%d).",
-                 call->incoming_stream_compression_algorithm,
-                 call->incoming_message_compression_algorithm);
-    cancel_with_status(call, GRPC_STATUS_INTERNAL, error_msg);
-    gpr_free(error_msg);
+      GPR_UNLIKELY(
+          grpc_compression_algorithm_from_message_stream_compression_algorithm(
+              &compression_algorithm,
+              call->incoming_message_compression_algorithm,
+              call->incoming_stream_compression_algorithm) == 0)) {
+    handle_error_parsing_compression_algorithm(call);
   } else {
-    char* error_msg = nullptr;
     const grpc_compression_options compression_options =
         grpc_channel_compression_options(call->channel);
-    if (compression_algorithm >= GRPC_COMPRESS_ALGORITHMS_COUNT) {
-      gpr_asprintf(&error_msg, "Invalid compression algorithm value '%d'.",
-                   compression_algorithm);
-      gpr_log(GPR_ERROR, "%s", error_msg);
-      cancel_with_status(call, GRPC_STATUS_UNIMPLEMENTED, error_msg);
-    } else if (grpc_compression_options_is_algorithm_enabled(
-                   &compression_options, compression_algorithm) == 0) {
+    if (GPR_UNLIKELY(compression_algorithm >= GRPC_COMPRESS_ALGORITHMS_COUNT)) {
+      handle_invalid_compression(call, compression_algorithm);
+    } else if (GPR_UNLIKELY(
+                   grpc_compression_options_is_algorithm_enabled_internal(
+                       &compression_options, compression_algorithm) == 0)) {
       /* check if algorithm is supported by current channel config */
-      const char* algo_name = nullptr;
-      grpc_compression_algorithm_name(compression_algorithm, &algo_name);
-      gpr_asprintf(&error_msg, "Compression algorithm '%s' is disabled.",
-                   algo_name);
-      gpr_log(GPR_ERROR, "%s", error_msg);
-      cancel_with_status(call, GRPC_STATUS_UNIMPLEMENTED, error_msg);
+      handle_compression_algorithm_disabled(call, compression_algorithm);
     }
-    gpr_free(error_msg);
-
-    GPR_ASSERT(call->encodings_accepted_by_peer != 0);
-    if (!GPR_BITGET(call->encodings_accepted_by_peer, compression_algorithm)) {
+    /* GRPC_COMPRESS_NONE is always set. */
+    GPR_DEBUG_ASSERT(call->encodings_accepted_by_peer != 0);
+    if (GPR_UNLIKELY(!GPR_BITGET(call->encodings_accepted_by_peer,
+                                 compression_algorithm))) {
       if (GRPC_TRACE_FLAG_ENABLED(grpc_compression_trace)) {
-        const char* algo_name = nullptr;
-        grpc_compression_algorithm_name(compression_algorithm, &algo_name);
-        gpr_log(GPR_ERROR,
-                "Compression algorithm ('%s') not present in the bitset of "
-                "accepted encodings ('0x%x')",
-                algo_name, call->encodings_accepted_by_peer);
+        handle_compression_algorithm_not_accepted(call, compression_algorithm);
       }
     }
   }
