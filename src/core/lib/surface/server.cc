@@ -34,9 +34,9 @@
 #include "src/core/lib/channel/channelz.h"
 #include "src/core/lib/channel/connected_channel.h"
 #include "src/core/lib/debug/stats.h"
-#include "src/core/lib/gpr/mpscq.h"
 #include "src/core/lib/gpr/spinlock.h"
 #include "src/core/lib/gpr/string.h"
+#include "src/core/lib/gprpp/mpscq.h"
 #include "src/core/lib/iomgr/executor.h"
 #include "src/core/lib/iomgr/iomgr.h"
 #include "src/core/lib/slice/slice_internal.h"
@@ -49,6 +49,8 @@
 #include "src/core/lib/transport/static_metadata.h"
 
 grpc_core::TraceFlag grpc_server_channel_trace(false, "server_channel");
+
+using grpc_core::LockedMultiProducerSingleConsumerQueue;
 
 static void server_on_recv_initial_metadata(void* ptr, grpc_error* error);
 static void server_recv_trailing_metadata_ready(void* user_data,
@@ -70,7 +72,9 @@ enum requested_call_type { BATCH_CALL, REGISTERED_CALL };
 struct registered_method;
 
 struct requested_call {
-  gpr_mpscq_node request_link; /* must be first */
+  grpc_core::ManualConstructor<
+      grpc_core::MultiProducerSingleConsumerQueue::Node>
+      mpscq_node;
   requested_call_type type;
   size_t cq_idx;
   void* tag;
@@ -198,7 +202,7 @@ struct request_matcher {
   grpc_server* server;
   call_data* pending_head;
   call_data* pending_tail;
-  gpr_locked_mpscq* requests_per_cq;
+  LockedMultiProducerSingleConsumerQueue* requests_per_cq;
 };
 
 struct registered_method {
@@ -350,17 +354,17 @@ static void channel_broadcaster_shutdown(channel_broadcaster* cb,
 static void request_matcher_init(request_matcher* rm, grpc_server* server) {
   rm->server = server;
   rm->pending_head = rm->pending_tail = nullptr;
-  rm->requests_per_cq = static_cast<gpr_locked_mpscq*>(
+  rm->requests_per_cq = static_cast<LockedMultiProducerSingleConsumerQueue*>(
       gpr_malloc(sizeof(*rm->requests_per_cq) * server->cq_count));
   for (size_t i = 0; i < server->cq_count; i++) {
-    gpr_locked_mpscq_init(&rm->requests_per_cq[i]);
+    new (&rm->requests_per_cq[i]) LockedMultiProducerSingleConsumerQueue();
   }
 }
 
 static void request_matcher_destroy(request_matcher* rm) {
   for (size_t i = 0; i < rm->server->cq_count; i++) {
-    GPR_ASSERT(gpr_locked_mpscq_pop(&rm->requests_per_cq[i]) == nullptr);
-    gpr_locked_mpscq_destroy(&rm->requests_per_cq[i]);
+    GPR_ASSERT(rm->requests_per_cq[i].Pop() == nullptr);
+    rm->requests_per_cq[i].~LockedMultiProducerSingleConsumerQueue();
   }
   gpr_free(rm->requests_per_cq);
 }
@@ -389,7 +393,7 @@ static void request_matcher_kill_requests(grpc_server* server,
   requested_call* rc;
   for (size_t i = 0; i < server->cq_count; i++) {
     while ((rc = reinterpret_cast<requested_call*>(
-                gpr_locked_mpscq_pop(&rm->requests_per_cq[i]))) != nullptr) {
+                rm->requests_per_cq[i].Pop())) != nullptr) {
       fail_call(server, i, rc, GRPC_ERROR_REF(error));
     }
   }
@@ -534,8 +538,8 @@ static void publish_new_rpc(void* arg, grpc_error* error) {
 
   for (size_t i = 0; i < server->cq_count; i++) {
     size_t cq_idx = (chand->cq_idx + i) % server->cq_count;
-    requested_call* rc = reinterpret_cast<requested_call*>(
-        gpr_locked_mpscq_try_pop(&rm->requests_per_cq[cq_idx]));
+    requested_call* rc =
+        reinterpret_cast<requested_call*>(rm->requests_per_cq[cq_idx].TryPop());
     if (rc == nullptr) {
       continue;
     } else {
@@ -556,8 +560,8 @@ static void publish_new_rpc(void* arg, grpc_error* error) {
   // added to the pending list.
   for (size_t i = 0; i < server->cq_count; i++) {
     size_t cq_idx = (chand->cq_idx + i) % server->cq_count;
-    requested_call* rc = reinterpret_cast<requested_call*>(
-        gpr_locked_mpscq_pop(&rm->requests_per_cq[cq_idx]));
+    requested_call* rc =
+        reinterpret_cast<requested_call*>(rm->requests_per_cq[cq_idx].Pop());
     if (rc == nullptr) {
       continue;
     } else {
@@ -1430,13 +1434,12 @@ static grpc_call_error queue_call_request(grpc_server* server, size_t cq_idx,
       rm = &rc->data.registered.method->matcher;
       break;
   }
-  if (gpr_locked_mpscq_push(&rm->requests_per_cq[cq_idx], &rc->request_link)) {
+  if (rm->requests_per_cq[cq_idx].Push(rc->mpscq_node.get())) {
     /* this was the first queued request: we need to lock and start
        matching calls */
     gpr_mu_lock(&server->mu_call);
     while ((calld = rm->pending_head) != nullptr) {
-      rc = reinterpret_cast<requested_call*>(
-          gpr_locked_mpscq_pop(&rm->requests_per_cq[cq_idx]));
+      rc = reinterpret_cast<requested_call*>(rm->requests_per_cq[cq_idx].Pop());
       if (rc == nullptr) break;
       rm->pending_head = calld->pending_next;
       gpr_mu_unlock(&server->mu_call);
