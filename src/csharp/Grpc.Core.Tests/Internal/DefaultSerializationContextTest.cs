@@ -189,9 +189,6 @@ namespace Grpc.Core.Internal.Tests
             }
         }
 
-        // other ideas:
-        // AdjustTailSpace(0) if previous tail size is 0... (better for SliceBufferSafeHandle)
-
         private DefaultSerializationContext.UsageScope NewDefaultSerializationContextScope()
         {
             return new DefaultSerializationContext.UsageScope(new DefaultSerializationContext());
