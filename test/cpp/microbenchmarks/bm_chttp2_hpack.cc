@@ -54,7 +54,7 @@ static void BM_HpackEncoderInitDestroy(benchmark::State& state) {
   grpc_core::ExecCtx exec_ctx;
   std::unique_ptr<grpc_chttp2_hpack_compressor> c(
       new grpc_chttp2_hpack_compressor);
-  while (state.KeepRunning()) {
+  for (auto _ : state) {
     grpc_chttp2_hpack_compressor_init(c.get());
     grpc_chttp2_hpack_compressor_destroy(c.get());
     grpc_core::ExecCtx::Get()->Flush();
@@ -435,7 +435,7 @@ static void BM_HpackParserInitDestroy(benchmark::State& state) {
   grpc_chttp2_hpack_parser p;
   // Initial destruction so we don't leak memory in the loop.
   grpc_chttp2_hptbl_destroy(&p.table);
-  while (state.KeepRunning()) {
+  for (auto _ : state) {
     grpc_chttp2_hpack_parser_init(&p);
     // Note that grpc_chttp2_hpack_parser_destroy frees the table dynamic
     // elements so we need to recreate it here. In actual operation,
