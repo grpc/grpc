@@ -846,6 +846,7 @@ class PythonLanguage(object):
             else:
                 return (
                     python27_config,
+                    python36_config,
                     python37_config,
                 )
         elif args.compiler == 'python2.7':
