@@ -310,7 +310,6 @@ def targets():
         CSharpDistribTest('linux', 'x64', 'centos7'),
         CSharpDistribTest('linux', 'x64', 'ubuntu1604'),
         CSharpDistribTest('linux', 'x64', 'ubuntu1604', use_dotnet_cli=True),
-        CSharpDistribTest('linux', 'x64', 'alpine', use_dotnet_cli=True),
         CSharpDistribTest('macos', 'x86'),
         CSharpDistribTest('windows', 'x86'),
         CSharpDistribTest('windows', 'x64'),
