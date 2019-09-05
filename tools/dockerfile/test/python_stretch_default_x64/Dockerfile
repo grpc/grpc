@@ -67,8 +67,8 @@ RUN mkdir /var/local/jenkins
 CMD ["bash"]
 
 
-RUN apt-get install -y jq zlib1g-dev libssl-dev
-RUN apt-get install -y jq build-essential libffi-dev
+RUN apt-get update && apt-get install -y zlib1g-dev libssl-dev
+RUN apt-get update && apt-get install -y jq build-essential libffi-dev
 
 RUN cd /tmp && \
   wget -q https://github.com/python/cpython/archive/v3.6.9.tar.gz && \
