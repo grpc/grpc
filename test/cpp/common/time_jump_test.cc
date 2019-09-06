@@ -121,7 +121,7 @@ TEST_P(TimeJumpTest, TimedWait) {
     GPR_ASSERT(1 ==
                gpr_time_similar(gpr_time_sub(after, before),
                                 gpr_time_from_millis(kWaitTimeMs, GPR_TIMESPAN),
-                                gpr_time_from_millis(10, GPR_TIMESPAN)));
+                                gpr_time_from_millis(50, GPR_TIMESPAN)));
 
     thd.join();
   }
