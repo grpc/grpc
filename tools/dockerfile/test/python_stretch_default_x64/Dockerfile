@@ -63,8 +63,6 @@ RUN echo 'APT::Default-Release "stretch";' | tee -a /etc/apt/apt.conf.d/00local
 
 RUN mkdir /var/local/jenkins
 
-# Define the default command.
-CMD ["bash"]
 
 
 RUN apt-get update && apt-get install -y zlib1g-dev libssl-dev
@@ -76,6 +74,9 @@ RUN cd /tmp && \
   cd cpython-3.6.9 && \
   ./configure && \
   make install
+
+RUN echo "ff7cdaef4846c89c1ec0d7b709bbd54d v3.6.9.tar.gz" > checksum.md5
+RUN md5sum -c checksum.md5
 
 RUN apt-get update && apt-get -t buster install -y python3.7 python3-all-dev
 RUN curl https://bootstrap.pypa.io/get-pip.py | python3.7
