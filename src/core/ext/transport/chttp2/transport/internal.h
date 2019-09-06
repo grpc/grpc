@@ -39,6 +39,7 @@
 #include "src/core/lib/channel/channelz.h"
 #include "src/core/lib/compression/stream_compression.h"
 #include "src/core/lib/gprpp/manual_constructor.h"
+#include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/iomgr/combiner.h"
 #include "src/core/lib/iomgr/endpoint.h"
 #include "src/core/lib/iomgr/timer.h"
@@ -294,13 +295,12 @@ struct grpc_chttp2_transport {
   ~grpc_chttp2_transport();
 
   grpc_transport base; /* must be first */
+  gpr_mu mu;
   grpc_core::RefCount refs;
   grpc_endpoint* ep;
   char* peer_string;
 
   grpc_resource_user* resource_user;
-
-  grpc_combiner* combiner;
 
   grpc_closure* notify_on_receive_settings = nullptr;
 
