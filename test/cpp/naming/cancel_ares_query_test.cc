@@ -19,6 +19,8 @@
 #include <stdio.h>
 #include <string.h>
 
+#include <thread>
+
 #include <gflags/gflags.h>
 #include <gmock/gmock.h>
 
@@ -271,24 +273,15 @@ typedef enum {
   NONE,
   SHORT,
   ZERO,
+  TOLERATE_DEADLINE_EXCEEDED_OR_UNAVAILABLE,
 } cancellation_test_query_timeout_setting;
 
-void TestCancelDuringActiveQuery(
-    cancellation_test_query_timeout_setting query_timeout_setting) {
-  // Start up fake non responsive DNS server
-  int fake_dns_port = grpc_pick_unused_port_or_die();
-  grpc::testing::FakeNonResponsiveDNSServer fake_dns_server(fake_dns_port);
-  // Create a call that will try to use the fake DNS server
-  char* client_target = nullptr;
-  GPR_ASSERT(gpr_asprintf(
-      &client_target,
-      "dns://[::1]:%d/dont-care-since-wont-be-resolved.test.com:1234",
-      fake_dns_port));
+void PerformFailingRPC(const char* client_target, cancellation_test_query_timeout_setting query_timeout_setting) {
   gpr_log(GPR_DEBUG, "TestCancelActiveDNSQuery. query timeout setting: %d",
           query_timeout_setting);
   grpc_channel_args* client_args = nullptr;
   grpc_status_code expected_status_code = GRPC_STATUS_OK;
-  if (query_timeout_setting == NONE) {
+  if (query_timeout_setting == NONE || query_timeout_setting == TOLERATE_DEADLINE_EXCEEDED_OR_UNAVAILABLE) {
     expected_status_code = GRPC_STATUS_DEADLINE_EXCEEDED;
     client_args = nullptr;
   } else if (query_timeout_setting == SHORT) {
@@ -311,7 +304,6 @@ void TestCancelDuringActiveQuery(
   }
   grpc_channel* client =
       grpc_insecure_channel_create(client_target, client_args, nullptr);
-  gpr_free(client_target);
   grpc_completion_queue* cq = grpc_completion_queue_create_for_next(nullptr);
   cq_verifier* cqv = cq_verifier_create(cq);
   gpr_timespec deadline = grpc_timeout_milliseconds_to_deadline(10);
@@ -362,7 +354,14 @@ void TestCancelDuringActiveQuery(
   EXPECT_EQ(GRPC_CALL_OK, error);
   CQ_EXPECT_COMPLETION(cqv, Tag(1), 1);
   cq_verify(cqv);
-  EXPECT_EQ(status, expected_status_code);
+  if (query_timeout_setting == TOLERATE_DEADLINE_EXCEEDED_OR_UNAVAILABLE) {
+    if (status != GRPC_STATUS_UNAVAILABLE && status != GRPC_STATUS_DEADLINE_EXCEEDED) {
+      gpr_log(GPR_ERROR, "Expected UNAVAILABLE or DEADLINE_EXCEEDED status. Got: %d", status);
+      abort();
+    }
+  } else {
+    EXPECT_EQ(status, expected_status_code);
+  }
   // Teardown
   grpc_channel_args_destroy(client_args);
   grpc_slice_unref(details);
@@ -376,21 +375,47 @@ void TestCancelDuringActiveQuery(
   EndTest(client, cq);
 }
 
+void TestCancelDuringActiveQuery(
+    cancellation_test_query_timeout_setting query_timeout_setting, int num_thds) {
+  // Start up fake non responsive DNS server
+  int fake_dns_port = grpc_pick_unused_port_or_die();
+  grpc::testing::FakeNonResponsiveDNSServer fake_dns_server(fake_dns_port);
+  // Create a call that will try to use the fake DNS server
+  char* client_target = nullptr;
+  GPR_ASSERT(gpr_asprintf(
+      &client_target,
+      "dns://[::1]:%d/dont-care-since-wont-be-resolved.test.com:1234",
+      fake_dns_port));
+  std::vector<std::thread> thds;
+  for (int i = 0; i < num_thds; i++) {
+    thds.push_back(std::thread(PerformFailingRPC, client_target, query_timeout_setting));
+  }
+  for (int i = 0; i < thds.size(); i++) {
+    thds[i].join();
+  }
+  gpr_free(client_target);
+}
+
 TEST_F(CancelDuringAresQuery,
        TestHitDeadlineAndDestroyChannelDuringAresResolutionIsGraceful) {
-  TestCancelDuringActiveQuery(NONE /* don't set query timeouts */);
+  TestCancelDuringActiveQuery(NONE /* don't set query timeouts */, 1 /* number of threads */);
 }
 
 TEST_F(
     CancelDuringAresQuery,
     TestHitDeadlineAndDestroyChannelDuringAresResolutionWithQueryTimeoutIsGraceful) {
-  TestCancelDuringActiveQuery(SHORT /* set short query timeout */);
+  TestCancelDuringActiveQuery(SHORT /* set short query timeout */, 1 /* number of threads */);
 }
 
 TEST_F(
     CancelDuringAresQuery,
     TestHitDeadlineAndDestroyChannelDuringAresResolutionWithZeroQueryTimeoutIsGraceful) {
-  TestCancelDuringActiveQuery(ZERO /* disable query timeouts */);
+  TestCancelDuringActiveQuery(ZERO /* disable query timeouts */, 1 /* number of threads */);
+}
+
+TEST_F(CancelDuringAresQuery,
+       TestConcurrentChannelsHitDeadlineAndDestroyDuringAresResolutionIsGraceful) {
+  TestCancelDuringActiveQuery(TOLERATE_DEADLINE_EXCEEDED_OR_UNAVAILABLE, 100 /* number of threads */);
 }
 
 }  // namespace
