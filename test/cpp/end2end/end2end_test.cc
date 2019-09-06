@@ -341,8 +341,7 @@ class End2endTest : public ::testing::TestWithParam<TestScenario> {
   void ResetChannel(
       std::vector<
           std::unique_ptr<experimental::ClientInterceptorFactoryInterface>>
-          interceptor_creators = std::vector<std::unique_ptr<
-              experimental::ClientInterceptorFactoryInterface>>()) {
+          interceptor_creators = {}) {
     if (!is_server_started_) {
       StartServer(std::shared_ptr<AuthMetadataProcessor>());
     }
@@ -380,8 +379,7 @@ class End2endTest : public ::testing::TestWithParam<TestScenario> {
   void ResetStub(
       std::vector<
           std::unique_ptr<experimental::ClientInterceptorFactoryInterface>>
-          interceptor_creators = std::vector<std::unique_ptr<
-              experimental::ClientInterceptorFactoryInterface>>()) {
+          interceptor_creators = {}) {
     ResetChannel(std::move(interceptor_creators));
     if (GetParam().use_proxy) {
       proxy_service_.reset(new Proxy(channel_));
