@@ -86,8 +86,8 @@ CC_asan-trace-cmp = clang
 CXX_asan-trace-cmp = clang++
 LD_asan-trace-cmp = clang++
 LDXX_asan-trace-cmp = clang++
-CPPFLAGS_asan-trace-cmp = -O0 -stdlib=libc++ -fsanitize-coverage=edge,trace-pc-guard -fsanitize-coverage=trace-cmp -fsanitize=address -fno-omit-frame-pointer -Wno-unused-command-line-argument -DGPR_NO_DIRECT_SYSCALLS
-LDFLAGS_asan-trace-cmp = -stdlib=libc++ -fsanitize=address
+CPPFLAGS_asan-trace-cmp = -O0 -fsanitize-coverage=edge,trace-pc-guard -fsanitize-coverage=trace-cmp -fsanitize=address -fno-omit-frame-pointer -Wno-unused-command-line-argument -DGPR_NO_DIRECT_SYSCALLS
+LDFLAGS_asan-trace-cmp = -fsanitize=address
 
 VALID_CONFIG_dbg = 1
 CC_dbg = $(DEFAULT_CC)
@@ -103,8 +103,8 @@ CC_asan = clang
 CXX_asan = clang++
 LD_asan = clang++
 LDXX_asan = clang++
-CPPFLAGS_asan = -O0 -stdlib=libc++ -fsanitize-coverage=edge,trace-pc-guard -fsanitize=address -fno-omit-frame-pointer -Wno-unused-command-line-argument -DGPR_NO_DIRECT_SYSCALLS
-LDFLAGS_asan = -stdlib=libc++ -fsanitize=address
+CPPFLAGS_asan = -O0 -fsanitize-coverage=edge,trace-pc-guard -fsanitize=address -fno-omit-frame-pointer -Wno-unused-command-line-argument -DGPR_NO_DIRECT_SYSCALLS
+LDFLAGS_asan = -fsanitize=address
 
 VALID_CONFIG_msan = 1
 REQUIRE_CUSTOM_LIBRARIES_msan = 1
@@ -139,8 +139,8 @@ CC_asan-noleaks = clang
 CXX_asan-noleaks = clang++
 LD_asan-noleaks = clang++
 LDXX_asan-noleaks = clang++
-CPPFLAGS_asan-noleaks = -O0 -stdlib=libc++ -fsanitize-coverage=edge,trace-pc-guard -fsanitize=address -fno-omit-frame-pointer -Wno-unused-command-line-argument -DGPR_NO_DIRECT_SYSCALLS
-LDFLAGS_asan-noleaks = -stdlib=libc++ -fsanitize=address
+CPPFLAGS_asan-noleaks = -O0 -fsanitize-coverage=edge,trace-pc-guard -fsanitize=address -fno-omit-frame-pointer -Wno-unused-command-line-argument -DGPR_NO_DIRECT_SYSCALLS
+LDFLAGS_asan-noleaks = fsanitize=address
 
 VALID_CONFIG_noexcept = 1
 CC_noexcept = $(DEFAULT_CC)
@@ -167,8 +167,8 @@ CC_tsan = clang
 CXX_tsan = clang++
 LD_tsan = clang++
 LDXX_tsan = clang++
-CPPFLAGS_tsan = -O0 -stdlib=libc++ -fsanitize=thread -fno-omit-frame-pointer -Wno-unused-command-line-argument -DGPR_NO_DIRECT_SYSCALLS
-LDFLAGS_tsan = -stdlib=libc++ -fsanitize=thread
+CPPFLAGS_tsan = -O0 -fsanitize=thread -fno-omit-frame-pointer -Wno-unused-command-line-argument -DGPR_NO_DIRECT_SYSCALLS
+LDFLAGS_tsan = -fsanitize=thread
 DEFINES_tsan = GRPC_TSAN
 
 VALID_CONFIG_stapprof = 1
