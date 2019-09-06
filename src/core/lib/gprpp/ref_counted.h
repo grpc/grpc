@@ -171,7 +171,7 @@ class RefCount {
     // can't safely access it afterwards if we're going to be freed.
     auto* trace_flag = trace_flag_;
 #endif
-    const Value prior = value_.FetchSub(1, MemoryOrder::ACQ_REL);
+    const Value prior = value_.FetchSub(1, MemoryOrder::RELEASE);
 #ifndef NDEBUG
     if (trace_flag != nullptr && trace_flag->enabled()) {
       gpr_log(GPR_INFO, "%s:%p unref %" PRIdPTR " -> %" PRIdPTR,
@@ -179,7 +179,11 @@ class RefCount {
     }
     GPR_DEBUG_ASSERT(prior > 0);
 #endif
-    return prior == 1;
+    if (prior == 1) {
+      AtomicThreadFence(MemoryOrder::ACQUIRE);
+      return true;
+    }
+    return false;
   }
   bool Unref(const DebugLocation& location, const char* reason) {
 #ifndef NDEBUG
@@ -187,7 +191,7 @@ class RefCount {
     // can't safely access it afterwards if we're going to be freed.
     auto* trace_flag = trace_flag_;
 #endif
-    const Value prior = value_.FetchSub(1, MemoryOrder::ACQ_REL);
+    const Value prior = value_.FetchSub(1, MemoryOrder::RELEASE);
 #ifndef NDEBUG
     if (trace_flag != nullptr && trace_flag->enabled()) {
       gpr_log(GPR_INFO, "%s:%p %s:%d unref %" PRIdPTR " -> %" PRIdPTR " %s",
@@ -196,7 +200,11 @@ class RefCount {
     }
     GPR_DEBUG_ASSERT(prior > 0);
 #endif
-    return prior == 1;
+    if (prior == 1) {
+      AtomicThreadFence(MemoryOrder::ACQUIRE);
+      return true;
+    }
+    return false;
   }
 
  private:

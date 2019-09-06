@@ -99,6 +99,10 @@ class Atomic {
   std::atomic<T> storage_;
 };
 
+inline void AtomicThreadFence(MemoryOrder order) {
+  std::atomic_thread_fence(static_cast<std::memory_order>(order));
+}
+
 }  // namespace grpc_core
 
 #endif /* GRPC_CORE_LIB_GPRPP_ATOMIC_H */
