@@ -276,12 +276,15 @@ typedef enum {
   TOLERATE_DEADLINE_EXCEEDED_OR_UNAVAILABLE,
 } cancellation_test_query_timeout_setting;
 
-void PerformFailingRPC(const char* client_target, cancellation_test_query_timeout_setting query_timeout_setting) {
+void PerformFailingRPC(
+    const char* client_target,
+    cancellation_test_query_timeout_setting query_timeout_setting) {
   gpr_log(GPR_DEBUG, "TestCancelActiveDNSQuery. query timeout setting: %d",
           query_timeout_setting);
   grpc_channel_args* client_args = nullptr;
   grpc_status_code expected_status_code = GRPC_STATUS_OK;
-  if (query_timeout_setting == NONE || query_timeout_setting == TOLERATE_DEADLINE_EXCEEDED_OR_UNAVAILABLE) {
+  if (query_timeout_setting == NONE ||
+      query_timeout_setting == TOLERATE_DEADLINE_EXCEEDED_OR_UNAVAILABLE) {
     expected_status_code = GRPC_STATUS_DEADLINE_EXCEEDED;
     client_args = nullptr;
   } else if (query_timeout_setting == SHORT) {
@@ -355,8 +358,11 @@ void PerformFailingRPC(const char* client_target, cancellation_test_query_timeou
   CQ_EXPECT_COMPLETION(cqv, Tag(1), 1);
   cq_verify(cqv);
   if (query_timeout_setting == TOLERATE_DEADLINE_EXCEEDED_OR_UNAVAILABLE) {
-    if (status != GRPC_STATUS_UNAVAILABLE && status != GRPC_STATUS_DEADLINE_EXCEEDED) {
-      gpr_log(GPR_ERROR, "Expected UNAVAILABLE or DEADLINE_EXCEEDED status. Got: %d", status);
+    if (status != GRPC_STATUS_UNAVAILABLE &&
+        status != GRPC_STATUS_DEADLINE_EXCEEDED) {
+      gpr_log(GPR_ERROR,
+              "Expected UNAVAILABLE or DEADLINE_EXCEEDED status. Got: %d",
+              status);
       abort();
     }
   } else {
@@ -376,7 +382,8 @@ void PerformFailingRPC(const char* client_target, cancellation_test_query_timeou
 }
 
 void TestCancelDuringActiveQuery(
-    cancellation_test_query_timeout_setting query_timeout_setting, int num_thds) {
+    cancellation_test_query_timeout_setting query_timeout_setting,
+    int num_thds) {
   // Start up fake non responsive DNS server
   int fake_dns_port = grpc_pick_unused_port_or_die();
   grpc::testing::FakeNonResponsiveDNSServer fake_dns_server(fake_dns_port);
@@ -388,7 +395,8 @@ void TestCancelDuringActiveQuery(
       fake_dns_port));
   std::vector<std::thread> thds;
   for (int i = 0; i < num_thds; i++) {
-    thds.push_back(std::thread(PerformFailingRPC, client_target, query_timeout_setting));
+    thds.push_back(
+        std::thread(PerformFailingRPC, client_target, query_timeout_setting));
   }
   for (int i = 0; i < thds.size(); i++) {
     thds[i].join();
@@ -398,24 +406,29 @@ void TestCancelDuringActiveQuery(
 
 TEST_F(CancelDuringAresQuery,
        TestHitDeadlineAndDestroyChannelDuringAresResolutionIsGraceful) {
-  TestCancelDuringActiveQuery(NONE /* don't set query timeouts */, 1 /* number of threads */);
+  TestCancelDuringActiveQuery(NONE /* don't set query timeouts */,
+                              1 /* number of threads */);
 }
 
 TEST_F(
     CancelDuringAresQuery,
     TestHitDeadlineAndDestroyChannelDuringAresResolutionWithQueryTimeoutIsGraceful) {
-  TestCancelDuringActiveQuery(SHORT /* set short query timeout */, 1 /* number of threads */);
+  TestCancelDuringActiveQuery(SHORT /* set short query timeout */,
+                              1 /* number of threads */);
 }
 
 TEST_F(
     CancelDuringAresQuery,
     TestHitDeadlineAndDestroyChannelDuringAresResolutionWithZeroQueryTimeoutIsGraceful) {
-  TestCancelDuringActiveQuery(ZERO /* disable query timeouts */, 1 /* number of threads */);
+  TestCancelDuringActiveQuery(ZERO /* disable query timeouts */,
+                              1 /* number of threads */);
 }
 
-TEST_F(CancelDuringAresQuery,
-       TestConcurrentChannelsHitDeadlineAndDestroyDuringAresResolutionIsGraceful) {
-  TestCancelDuringActiveQuery(TOLERATE_DEADLINE_EXCEEDED_OR_UNAVAILABLE, 100 /* number of threads */);
+TEST_F(
+    CancelDuringAresQuery,
+    TestConcurrentChannelsHitDeadlineAndDestroyDuringAresResolutionIsGraceful) {
+  TestCancelDuringActiveQuery(TOLERATE_DEADLINE_EXCEEDED_OR_UNAVAILABLE,
+                              100 /* number of threads */);
 }
 
 }  // namespace

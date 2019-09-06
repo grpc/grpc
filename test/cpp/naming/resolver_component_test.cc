@@ -506,20 +506,24 @@ class HealthCheckQueryResultHandler : public ResultHandler {
         grpc_core::New<HealthCheckQueryResultHandler>(args));
   }
 
-  explicit HealthCheckQueryResultHandler(ArgsStruct* args) : ResultHandler(args) {}
+  explicit HealthCheckQueryResultHandler(ArgsStruct* args)
+      : ResultHandler(args) {}
 
   void CheckResult(const grpc_core::Resolver::Result& result) override {
     gpr_log(GPR_INFO, "num addrs found: %" PRIdPTR ". expected 1",
             result.addresses.size());
     EXPECT_EQ(result.addresses.size(), 1);
     char* str;
-    grpc_sockaddr_to_string(&str, &result.addresses[0].address(), 1 /* normalize */);
+    grpc_sockaddr_to_string(&str, &result.addresses[0].address(),
+                            1 /* normalize */);
     gpr_log(GPR_INFO, "Got health check record result address: %s", str);
-    auto result_address = GrpcLBAddress(std::string(str), result.addresses[0].IsBalancer());
+    auto result_address =
+        GrpcLBAddress(std::string(str), result.addresses[0].IsBalancer());
     gpr_free(str);
     EXPECT_EQ(GrpcLBAddress("123.123.123.123:443", false), result_address);
     EXPECT_EQ(result.service_config, nullptr);
-    EXPECT_EQ(grpc_channel_args_find(result.args, GRPC_ARG_LB_POLICY_NAME), nullptr);
+    EXPECT_EQ(grpc_channel_args_find(result.args, GRPC_ARG_LB_POLICY_NAME),
+              nullptr);
   }
 };
 
@@ -567,7 +571,8 @@ void StartResolvingLocked(void* arg, grpc_error* unused) {
 
 void RunResolvesRelevantRecordsTest(
     grpc_core::UniquePtr<grpc_core::Resolver::ResultHandler> (
-        *CreateResultHandler)(ArgsStruct* args), const char* target_name, gpr_event* proceed_for_polling_ev) {
+        *CreateResultHandler)(ArgsStruct* args),
+    const char* target_name, gpr_event* proceed_for_polling_ev) {
   grpc_core::ExecCtx exec_ctx;
   ArgsStruct args;
   ArgsInit(&args);
@@ -588,8 +593,7 @@ void RunResolvesRelevantRecordsTest(
         grpc_core::New<grpc::testing::FakeNonResponsiveDNSServer>(
             g_fake_non_responsive_dns_server_port));
     grpc_ares_test_only_inject_config = InjectBrokenNameServerList;
-    GPR_ASSERT(
-        gpr_asprintf(&whole_uri, "dns:///%s", target_name));
+    GPR_ASSERT(gpr_asprintf(&whole_uri, "dns:///%s", target_name));
   } else if (FLAGS_inject_broken_nameserver_list == "False") {
     gpr_log(GPR_INFO, "Specifying authority in uris to: %s",
             FLAGS_local_dns_server_address.c_str());
@@ -655,7 +659,9 @@ TEST(ResolverComponentTest, TestResolvesRelevantRecords) {
   gpr_event proceed_for_polling_ev;
   gpr_event_init(&proceed_for_polling_ev);
   gpr_event_set(&proceed_for_polling_ev, (void*)1);
-  RunResolvesRelevantRecordsTest(CheckingResultHandler::Create, FLAGS_target_name.c_str(), &proceed_for_polling_ev);
+  RunResolvesRelevantRecordsTest(CheckingResultHandler::Create,
+                                 FLAGS_target_name.c_str(),
+                                 &proceed_for_polling_ev);
 }
 
 TEST(ResolverComponentTest, TestResolvesRelevantRecordsWithConcurrentFdStress) {
@@ -669,7 +675,9 @@ TEST(ResolverComponentTest, TestResolvesRelevantRecordsWithConcurrentFdStress) {
   gpr_event proceed_for_polling_ev;
   gpr_event_init(&proceed_for_polling_ev);
   gpr_event_set(&proceed_for_polling_ev, (void*)1);
-  RunResolvesRelevantRecordsTest(ResultHandler::Create, FLAGS_target_name.c_str(), &proceed_for_polling_ev);
+  RunResolvesRelevantRecordsTest(ResultHandler::Create,
+                                 FLAGS_target_name.c_str(),
+                                 &proceed_for_polling_ev);
   // Shutdown and join stress thread
   gpr_event_set(&done_ev, (void*)1);
   socket_stress_thread.join();
@@ -679,8 +687,10 @@ TEST(ResolverComponentTest, TestConcurrentResolvesRelevantRecordsSameQueries) {
   gpr_event proceed_for_polling_ev;
   gpr_event_init(&proceed_for_polling_ev);
   std::vector<std::thread> thds;
-  for (size_t i = 0; i < 10; i++) {
-    thds.push_back(std::thread(RunResolvesRelevantRecordsTest, CheckingResultHandler::Create, FLAGS_target_name.c_str(), &proceed_for_polling_ev));
+  for (size_t i = 0; i < 100; i++) {
+    thds.push_back(std::thread(
+        RunResolvesRelevantRecordsTest, CheckingResultHandler::Create,
+        FLAGS_target_name.c_str(), &proceed_for_polling_ev));
   }
   gpr_event_set(&proceed_for_polling_ev, (void*)1);
   for (size_t i = 0; i < thds.size(); i++) {
@@ -688,16 +698,22 @@ TEST(ResolverComponentTest, TestConcurrentResolvesRelevantRecordsSameQueries) {
   }
 }
 
-TEST(ResolverComponentTest, TestConcurrentResolvesRelevantRecordsNotAllQueriesSame) {
+TEST(ResolverComponentTest,
+     TestConcurrentResolvesRelevantRecordsNotAllQueriesSame) {
   gpr_event proceed_for_polling_ev;
   gpr_event_init(&proceed_for_polling_ev);
   std::vector<std::thread> thds;
-  for (size_t i = 0; i < 10; i++) {
-    thds.push_back(std::thread(RunResolvesRelevantRecordsTest, CheckingResultHandler::Create, FLAGS_target_name.c_str(), &proceed_for_polling_ev));
+  for (size_t i = 0; i < 50; i++) {
+    thds.push_back(std::thread(
+        RunResolvesRelevantRecordsTest, CheckingResultHandler::Create,
+        FLAGS_target_name.c_str(), &proceed_for_polling_ev));
   }
-  for (size_t i = 0; i < 10; i++) {
-    const char* health_check_record_name = "health-check-local-dns-server-is-alive.resolver-tests.grpctestingexp.";
-    thds.push_back(std::thread(RunResolvesRelevantRecordsTest, HealthCheckQueryResultHandler::Create, health_check_record_name, &proceed_for_polling_ev));
+  for (size_t i = 0; i < 50; i++) {
+    const char* health_check_record_name =
+        "health-check-local-dns-server-is-alive.resolver-tests.grpctestingexp.";
+    thds.push_back(std::thread(
+        RunResolvesRelevantRecordsTest, HealthCheckQueryResultHandler::Create,
+        health_check_record_name, &proceed_for_polling_ev));
   }
   gpr_event_set(&proceed_for_polling_ev, (void*)1);
   for (size_t i = 0; i < thds.size(); i++) {
