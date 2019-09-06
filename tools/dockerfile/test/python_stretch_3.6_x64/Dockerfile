@@ -64,17 +64,18 @@ RUN echo 'APT::Default-Release "stretch";' | tee -a /etc/apt/apt.conf.d/00local
 RUN mkdir /var/local/jenkins
 
 
+#=================
+# Compile CPython 3.6.9 from source
 
-RUN apt-get install -y jq zlib1g-dev libssl-dev
-
-RUN apt-get install -y jq build-essential libffi-dev
+RUN apt-get update && apt-get install -y zlib1g-dev libssl-dev
+RUN apt-get update && apt-get install -y jq build-essential libffi-dev
 
 RUN cd /tmp && \
-  wget -q https://github.com/python/cpython/archive/v3.6.9.tar.gz && \
-  tar xzvf v3.6.9.tar.gz && \
-  cd cpython-3.6.9 && \
-  ./configure && \
-  make install
+wget -q https://www.python.org/ftp/python/3.6.9/Python-3.6.9.tgz && \
+tar xzvf Python-3.6.9.tgz && \
+cd Python-3.6.9 && \
+./configure && \
+make install
 
 RUN python3.6 -m ensurepip && \
     python3.6 -m pip install coverage
