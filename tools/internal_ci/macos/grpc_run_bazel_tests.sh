@@ -18,18 +18,13 @@ set -ex
 # change to grpc repo root
 cd $(dirname $0)/../../..
 
-# Download bazel
-temp_dir="$(mktemp -d)"
-wget -q https://github.com/bazelbuild/bazel/releases/download/0.26.0/bazel-0.26.0-darwin-x86_64 -O "${temp_dir}/bazel"
-chmod 755 "${temp_dir}/bazel"
-export PATH="${temp_dir}:${PATH}"
-# This should show ${temp_dir}/bazel
-which bazel
-
 ./tools/run_tests/start_port_server.py
 
 # run cfstream_test separately because it messes with the network
-bazel test $RUN_TESTS_FLAGS --spawn_strategy=standalone --genrule_strategy=standalone --test_output=all //test/cpp/end2end:cfstream_test
+tools/bazel test $RUN_TESTS_FLAGS --spawn_strategy=standalone --genrule_strategy=standalone --test_output=all //test/cpp/end2end:cfstream_test
+
+# run time_jump_test separately because it changes system time
+tools/bazel test $RUN_TESTS_FLAGS --spawn_strategy=standalone --genrule_strategy=standalone --test_output=all //test/cpp/common:time_jump_test
 
 # kill port_server.py to prevent the build from hanging
 ps aux | grep port_server\\.py | awk '{print $2}' | xargs kill -9

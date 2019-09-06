@@ -655,12 +655,7 @@ static grpc_error* on_hdr(grpc_chttp2_hpack_parser* p, grpc_mdelem md) {
     grpc_error* err = grpc_chttp2_hptbl_add(&p->table, md);
     if (GPR_UNLIKELY(err != GRPC_ERROR_NONE)) return err;
   }
-  if (GPR_UNLIKELY(p->on_header == nullptr)) {
-    GRPC_MDELEM_UNREF(md);
-    return GRPC_ERROR_CREATE_FROM_STATIC_STRING("on_header callback not set");
-  }
-  p->on_header(p->on_header_user_data, md);
-  return GRPC_ERROR_NONE;
+  return p->on_header(p->on_header_user_data, md);
 }
 
 static grpc_core::UnmanagedMemorySlice take_string_extern(
@@ -765,23 +760,26 @@ static grpc_error* parse_stream_dep0(grpc_chttp2_hpack_parser* p,
   return parse_stream_dep1(p, cur + 1, end);
 }
 
+static grpc_error* GPR_ATTRIBUTE_NOINLINE
+on_invalid_hpack_idx(grpc_chttp2_hpack_parser* p) {
+  return grpc_error_set_int(
+      grpc_error_set_int(
+          GRPC_ERROR_CREATE_FROM_STATIC_STRING("Invalid HPACK index received"),
+          GRPC_ERROR_INT_INDEX, static_cast<intptr_t>(p->index)),
+      GRPC_ERROR_INT_SIZE, static_cast<intptr_t>(p->table.num_ents));
+}
+
 /* emit an indexed field; jumps to begin the next field on completion */
 static grpc_error* finish_indexed_field(grpc_chttp2_hpack_parser* p,
                                         const uint8_t* cur,
                                         const uint8_t* end) {
-  grpc_mdelem md = grpc_chttp2_hptbl_lookup(&p->table, p->index);
-  if (GRPC_MDISNULL(md)) {
-    return grpc_error_set_int(
-        grpc_error_set_int(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-                               "Invalid HPACK index received"),
-                           GRPC_ERROR_INT_INDEX,
-                           static_cast<intptr_t>(p->index)),
-        GRPC_ERROR_INT_SIZE, static_cast<intptr_t>(p->table.num_ents));
+  grpc_mdelem md = grpc_chttp2_hptbl_lookup<true>(&p->table, p->index);
+  if (GPR_UNLIKELY(GRPC_MDISNULL(md))) {
+    return on_invalid_hpack_idx(p);
   }
-  GRPC_MDELEM_REF(md);
   GRPC_STATS_INC_HPACK_RECV_INDEXED();
   grpc_error* err = on_hdr<false>(p, md);
-  if (err != GRPC_ERROR_NONE) return err;
+  if (GPR_UNLIKELY(err != GRPC_ERROR_NONE)) return err;
   return parse_begin(p, cur, end);
 }
 
@@ -1557,13 +1555,8 @@ static void set_precomputed_md_idx(grpc_chttp2_hpack_parser* p,
 static grpc_error* is_binary_indexed_header(grpc_chttp2_hpack_parser* p,
                                             bool* is) {
   grpc_mdelem elem = grpc_chttp2_hptbl_lookup(&p->table, p->index);
-  if (GRPC_MDISNULL(elem)) {
-    return grpc_error_set_int(
-        grpc_error_set_int(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-                               "Invalid HPACK index received"),
-                           GRPC_ERROR_INT_INDEX,
-                           static_cast<intptr_t>(p->index)),
-        GRPC_ERROR_INT_SIZE, static_cast<intptr_t>(p->table.num_ents));
+  if (GPR_UNLIKELY(GRPC_MDISNULL(elem))) {
+    return on_invalid_hpack_idx(p);
   }
   /* We know that GRPC_MDKEY(elem) points to a reference counted slice since:
    * 1. elem was a result of grpc_chttp2_hptbl_lookup
@@ -1599,10 +1592,16 @@ static grpc_error* parse_value_string_with_literal_key(
   return parse_value_string(p, cur, end, is_binary_literal_header(p));
 }
 
+/* "Uninitialized" header parser to save us a branch in on_hdr().  */
+static grpc_error* on_header_uninitialized(void* user_data, grpc_mdelem md) {
+  GRPC_MDELEM_UNREF(md);
+  return GRPC_ERROR_CREATE_FROM_STATIC_STRING("on_header callback not set");
+}
+
 /* PUBLIC INTERFACE */
 
 void grpc_chttp2_hpack_parser_init(grpc_chttp2_hpack_parser* p) {
-  p->on_header = nullptr;
+  p->on_header = on_header_uninitialized;
   p->on_header_user_data = nullptr;
   p->state = parse_begin;
   p->key.data.referenced = grpc_empty_slice();
@@ -1750,7 +1749,7 @@ grpc_error* grpc_chttp2_header_parser_parse(void* hpack_parser,
         grpc_chttp2_mark_stream_closed(t, s, true, false, GRPC_ERROR_NONE);
       }
     }
-    parser->on_header = nullptr;
+    parser->on_header = on_header_uninitialized;
     parser->on_header_user_data = nullptr;
     parser->is_boundary = 0xde;
     parser->is_eof = 0xde;

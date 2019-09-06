@@ -86,7 +86,7 @@ namespace Grpc.Microbenchmarks
             await server.ShutdownAsync();
         }
 
-        class PingClient : LiteClientBase
+        class PingClient : ClientBase
         {
             public PingClient(CallInvoker callInvoker) : base(callInvoker) { }
             public AsyncUnaryCall<string> PingAsync(string request, CallOptions options)

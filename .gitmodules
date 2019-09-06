@@ -54,3 +54,6 @@
 [submodule "third_party/upb"]
 	path = third_party/upb
 	url = https://github.com/protocolbuffers/upb.git
+[submodule "third_party/udpa"]
+	path = third_party/udpa
+	url = https://github.com/cncf/udpa.git

@@ -26,12 +26,16 @@
 
     case $host in
       *darwin*)
+        PHP_ADD_LIBRARY(c++,1,GRPC_SHARED_LIBADD)
         ;;
       *)
+        PHP_ADD_LIBRARY(stdc++,1,GRPC_SHARED_LIBADD)
         PHP_ADD_LIBRARY(rt,,GRPC_SHARED_LIBADD)
         PHP_ADD_LIBRARY(rt)
         ;;
     esac
+
+    PHP_SUBST(GRPC_SHARED_LIBADD)
 
     PHP_NEW_EXTENSION(grpc,
       % for source in php_config_m4.src:

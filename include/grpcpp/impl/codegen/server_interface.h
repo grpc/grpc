@@ -130,7 +130,7 @@ class ServerInterface : public internal::CallHook {
     virtual ~experimental_registration_interface() {}
     /// May not be abstract since this is a post-1.0 API addition
     virtual void RegisterCallbackGenericService(
-        experimental::CallbackGenericService* service) {}
+        experimental::CallbackGenericService* /*service*/) {}
   };
 
   /// NOTE: The function experimental_registration() is not stable public API.

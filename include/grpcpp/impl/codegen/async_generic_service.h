@@ -100,7 +100,7 @@ class ServerGenericBidiReactor
   /// Similar to ServerBidiReactor::OnStarted except for argument type.
   ///
   /// \param[in] context The context object associated with this RPC.
-  virtual void OnStarted(GenericServerContext* context) {}
+  virtual void OnStarted(GenericServerContext* /*context*/) {}
 
  private:
   void OnStarted(::grpc_impl::ServerContext* ctx) final {

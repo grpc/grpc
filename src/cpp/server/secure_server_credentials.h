@@ -46,7 +46,11 @@ class AuthMetadataProcessorAyncWrapper final {
 
   AuthMetadataProcessorAyncWrapper(
       const std::shared_ptr<AuthMetadataProcessor>& processor)
-      : thread_pool_(CreateDefaultThreadPool()), processor_(processor) {}
+      : processor_(processor) {
+    if (processor && processor->IsBlocking()) {
+      thread_pool_.reset(CreateDefaultThreadPool());
+    }
+  }
 
  private:
   void InvokeProcessor(grpc_auth_context* context, const grpc_metadata* md,

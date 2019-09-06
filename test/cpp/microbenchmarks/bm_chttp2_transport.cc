@@ -239,7 +239,7 @@ class Stream {
     grpc_transport_destroy_stream(stream->f_->transport(),
                                   static_cast<grpc_stream*>(stream->stream_),
                                   stream->destroy_closure_);
-    gpr_event_set(&stream->done_, (void*)1);
+    gpr_event_set(&stream->done_, (void*)(1));
   }
 
   Fixture* f_;
@@ -254,6 +254,7 @@ class Stream {
 ////////////////////////////////////////////////////////////////////////////////
 // Benchmarks
 //
+std::vector<std::unique_ptr<gpr_event>> done_events;
 
 static void BM_StreamCreateDestroy(benchmark::State& state) {
   TrackCounters track_counters;
@@ -380,14 +381,23 @@ static void BM_TransportEmptyOp(benchmark::State& state) {
   reset_op();
   op.cancel_stream = true;
   op_payload.cancel_stream.cancel_error = GRPC_ERROR_CANCELLED;
+  gpr_event* stream_cancel_done = new gpr_event;
+  gpr_event_init(stream_cancel_done);
+  std::unique_ptr<Closure> stream_cancel_closure =
+      MakeClosure([&](grpc_error* error) {
+        GPR_ASSERT(error == GRPC_ERROR_NONE);
+        gpr_event_set(stream_cancel_done, (void*)(1));
+      });
+  op.on_complete = stream_cancel_closure.get();
   s->Op(&op);
+  f.FlushExecCtx();
+  gpr_event_wait(stream_cancel_done, gpr_inf_future(GPR_CLOCK_REALTIME));
+  done_events.emplace_back(stream_cancel_done);
   s->DestroyThen(MakeOnceClosure([s](grpc_error* error) { delete s; }));
   f.FlushExecCtx();
   track_counters.Finish(state);
 }
 BENCHMARK(BM_TransportEmptyOp);
-
-std::vector<std::unique_ptr<gpr_event>> done_events;
 
 static void BM_TransportStreamSend(benchmark::State& state) {
   TrackCounters track_counters;
@@ -424,7 +434,7 @@ static void BM_TransportStreamSend(benchmark::State& state) {
 
   std::unique_ptr<Closure> c = MakeClosure([&](grpc_error* error) {
     if (!state.KeepRunning()) {
-      gpr_event_set(bm_done, (void*)1);
+      gpr_event_set(bm_done, (void*)(1));
       return;
     }
     grpc_slice_buffer send_buffer;
@@ -455,7 +465,18 @@ static void BM_TransportStreamSend(benchmark::State& state) {
   reset_op();
   op.cancel_stream = true;
   op.payload->cancel_stream.cancel_error = GRPC_ERROR_CANCELLED;
+  gpr_event* stream_cancel_done = new gpr_event;
+  gpr_event_init(stream_cancel_done);
+  std::unique_ptr<Closure> stream_cancel_closure =
+      MakeClosure([&](grpc_error* error) {
+        GPR_ASSERT(error == GRPC_ERROR_NONE);
+        gpr_event_set(stream_cancel_done, (void*)(1));
+      });
+  op.on_complete = stream_cancel_closure.get();
   s->Op(&op);
+  f.FlushExecCtx();
+  gpr_event_wait(stream_cancel_done, gpr_inf_future(GPR_CLOCK_REALTIME));
+  done_events.emplace_back(stream_cancel_done);
   s->DestroyThen(MakeOnceClosure([s](grpc_error* error) { delete s; }));
   f.FlushExecCtx();
   track_counters.Finish(state);
@@ -629,7 +650,18 @@ static void BM_TransportStreamRecv(benchmark::State& state) {
   reset_op();
   op.cancel_stream = true;
   op.payload->cancel_stream.cancel_error = GRPC_ERROR_CANCELLED;
+  gpr_event* stream_cancel_done = new gpr_event;
+  gpr_event_init(stream_cancel_done);
+  std::unique_ptr<Closure> stream_cancel_closure =
+      MakeClosure([&](grpc_error* error) {
+        GPR_ASSERT(error == GRPC_ERROR_NONE);
+        gpr_event_set(stream_cancel_done, (void*)(1));
+      });
+  op.on_complete = stream_cancel_closure.get();
   s->Op(&op);
+  f.FlushExecCtx();
+  gpr_event_wait(stream_cancel_done, gpr_inf_future(GPR_CLOCK_REALTIME));
+  done_events.emplace_back(stream_cancel_done);
   s->DestroyThen(MakeOnceClosure([s](grpc_error* error) { delete s; }));
   grpc_metadata_batch_destroy(&b);
   grpc_metadata_batch_destroy(&b_recv);

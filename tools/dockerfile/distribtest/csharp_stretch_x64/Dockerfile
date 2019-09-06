@@ -1,4 +1,4 @@
-# Copyright 2015 gRPC authors.
+# Copyright 2019 The gRPC Authors
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -12,32 +12,29 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-FROM ubuntu:14.04
+FROM debian:stretch
 
-RUN apt-get update && apt-get install -y apt-transport-https && apt-get clean
+RUN apt-get update && apt-get install -y apt-transport-https dirmngr gnupg ca-certificates && apt-get clean
 
 RUN apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys 3FA7E0328081BFF6A14DA29AA6A19B38D3D831EF
-RUN echo "deb https://download.mono-project.com/repo/ubuntu stable-trusty main" | tee /etc/apt/sources.list.d/mono-official-stable.list
+RUN echo "deb https://download.mono-project.com/repo/debian stable-stretch main" | tee /etc/apt/sources.list.d/mono-official-stable.list
 
 RUN apt-get update && apt-get install -y \
     mono-devel \
     nuget \
     && apt-get clean
 
+RUN apt-get update && apt-get install -y curl && apt-get clean
+
+# Install dotnet SDK
+ENV DOTNET_SDK_VERSION 2.1.500
+RUN curl -sSL -o dotnet.tar.gz https://dotnetcli.blob.core.windows.net/dotnet/Sdk/$DOTNET_SDK_VERSION/dotnet-sdk-$DOTNET_SDK_VERSION-linux-x64.tar.gz \
+    && mkdir -p /usr/share/dotnet \
+    && tar -zxf dotnet.tar.gz -C /usr/share/dotnet \
+    && rm dotnet.tar.gz \
+    && ln -s /usr/share/dotnet/dotnet /usr/bin/dotnet
+
 RUN apt-get update && apt-get install -y unzip && apt-get clean
-
-# Install dotnet CLI
-RUN apt-get install -y apt-transport-https
-RUN sh -c 'echo "deb [arch=amd64] https://apt-mo.trafficmanager.net/repos/dotnet-release/ trusty main" > /etc/apt/sources.list.d/dotnetdev.list'
-RUN apt-key adv --keyserver apt-mo.trafficmanager.net --recv-keys 417A0893
-RUN apt-get update && apt-get install -y dotnet-dev-1.0.4
-
-# Trigger the population of the local package cache for dotnet CLI
-RUN mkdir warmup \
-    && cd warmup \
-    && dotnet new \
-    && cd .. \
-    && rm -rf warmup
 
 # Make sure the mono certificate store is up-to-date to prevent issues with nuget restore
 RUN apt-get update && apt-get install -y curl && apt-get clean

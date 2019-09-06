@@ -269,13 +269,22 @@ def grpc_sh_binary(name, srcs, data = []):
         data = data,
     )
 
-def grpc_py_binary(name, srcs, data = [], deps = [], external_deps = [], testonly = False):
+def grpc_py_binary(name,
+                   srcs,
+                   data = [],
+                   deps = [],
+                   external_deps = [],
+                   testonly = False,
+                   python_version = "PY2",
+                   **kwargs):
     native.py_binary(
         name = name,
         srcs = srcs,
         testonly = testonly,
         data = data,
         deps = deps + _get_external_deps(external_deps),
+        python_version = python_version,
+        **kwargs
     )
 
 def grpc_package(name, visibility = "private", features = []):
@@ -332,4 +341,11 @@ def grpc_objc_library(
     
 def grpc_upb_proto_library(name, deps):
     upb_proto_library(name = name, deps = deps)
+
+
+def python_config_settings():
+    native.config_setting(
+        name = "python3",
+        flag_values = {"@bazel_tools//tools/python:python_version": "PY3"},
+    )
 
