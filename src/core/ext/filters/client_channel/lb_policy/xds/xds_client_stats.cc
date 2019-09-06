@@ -143,7 +143,15 @@ XdsClientStats::Snapshot XdsClientStats::GetSnapshotAndReset() {
   }
   {
     MutexLock lock(&dropped_requests_mu_);
+#if GRPC_USE_CPP_STD_LIB
+    // This is a workaround for the case where some compilers cannot build
+    // move-assignment of map with non-copyable but movable key.
+    // https://stackoverflow.com/questions/36475497
+    std::swap(snapshot.dropped_requests, dropped_requests_);
+    dropped_requests_.clear();
+#else
     snapshot.dropped_requests = std::move(dropped_requests_);
+#endif
   }
   return snapshot;
 }

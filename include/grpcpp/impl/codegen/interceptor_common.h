@@ -465,7 +465,7 @@ class CancelInterceptorBatchMethods
     return nullptr;
   }
 
-  void ModifySendMessage(const void* message) override {
+  void ModifySendMessage(const void* /*message*/) override {
     GPR_CODEGEN_ASSERT(
         false &&
         "It is illegal to call ModifySendMessage on a method which "
@@ -486,7 +486,7 @@ class CancelInterceptorBatchMethods
     return Status();
   }
 
-  void ModifySendStatus(const Status& status) override {
+  void ModifySendStatus(const Status& /*status*/) override {
     GPR_CODEGEN_ASSERT(false &&
                        "It is illegal to call ModifySendStatus on a method "
                        "which has a Cancel notification");

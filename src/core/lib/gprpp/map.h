@@ -27,18 +27,30 @@
 #include <functional>
 #include <iterator>
 
+#if GRPC_USE_CPP_STD_LIB
+#include <map>
+#endif
+
 #include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/gprpp/memory.h"
 #include "src/core/lib/gprpp/pair.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
+#include "src/core/lib/gprpp/string_view.h"
 
 namespace grpc_core {
+
 struct StringLess {
   bool operator()(const char* a, const char* b) const {
     return strcmp(a, b) < 0;
   }
-  bool operator()(const UniquePtr<char>& k1, const UniquePtr<char>& k2) const {
-    return strcmp(k1.get(), k2.get()) < 0;
+  bool operator()(const UniquePtr<char>& a, const UniquePtr<char>& b) const {
+    return strcmp(a.get(), b.get()) < 0;
+  }
+  bool operator()(const StringView& a, const StringView& b) const {
+    const size_t min_size = std::min(a.size(), b.size());
+    int c = strncmp(a.data(), b.data(), min_size);
+    if (c != 0) return c < 0;
+    return a.size() < b.size();
   }
 };
 
@@ -49,6 +61,13 @@ struct RefCountedPtrLess {
     return p1.get() < p2.get();
   }
 };
+
+#if GRPC_USE_CPP_STD_LIB
+
+template <class Key, class T, class Compare = std::less<Key>>
+using Map = std::map<Key, T, Compare>;
+
+#else  // GRPC_USE_CPP_STD_LIB
 
 namespace testing {
 class MapTest;
@@ -63,6 +82,7 @@ class Map {
   typedef Pair<key_type, mapped_type> value_type;
   typedef Compare key_compare;
   class iterator;
+  class const_iterator;
 
   Map() = default;
   ~Map() { clear(); }
@@ -79,6 +99,22 @@ class Map {
       size_ = other.size_;
       other.root_ = nullptr;
       other.size_ = 0;
+    }
+    return *this;
+  }
+
+  // Copyable.
+  Map(const Map& other) {
+    for (const auto& p : other) {
+      emplace(p);
+    }
+  }
+  Map& operator=(const Map& other) {
+    if (this != &other) {
+      clear();
+      for (const auto& p : other) {
+        emplace(p);
+      }
     }
     return *this;
   }
@@ -116,6 +152,13 @@ class Map {
   }
 
   iterator end() { return iterator(this, nullptr); }
+
+  const_iterator begin() const {
+    Entry* curr = GetMinEntry(root_);
+    return const_iterator(this, curr);
+  }
+
+  const_iterator end() const { return const_iterator(this, nullptr); }
 
   iterator lower_bound(const Key& k) {
     // This is a workaround for "const key_compare compare;"
@@ -207,6 +250,53 @@ class Map<Key, T, Compare>::iterator
   iterator(GrpcMap* map, Entry* curr) : curr_(curr), map_(map) {}
   Entry* curr_;
   GrpcMap* map_;
+};
+
+template <class Key, class T, class Compare>
+class Map<Key, T, Compare>::const_iterator
+    : public std::iterator<std::input_iterator_tag, Pair<Key, T>, int32_t,
+                           Pair<Key, T>*, Pair<Key, T>&> {
+ public:
+  const_iterator(const const_iterator& iter)
+      : curr_(iter.curr_), map_(iter.map_) {}
+  bool operator==(const const_iterator& rhs) const {
+    return (curr_ == rhs.curr_);
+  }
+  bool operator!=(const const_iterator& rhs) const {
+    return (curr_ != rhs.curr_);
+  }
+
+  const_iterator& operator++() {
+    curr_ = map_->InOrderSuccessor(curr_);
+    return *this;
+  }
+
+  const_iterator operator++(int) {
+    Entry* prev = curr_;
+    curr_ = map_->InOrderSuccessor(curr_);
+    return const_iterator(map_, prev);
+  }
+
+  const_iterator& operator=(const const_iterator& other) {
+    if (this != &other) {
+      this->curr_ = other.curr_;
+      this->map_ = other.map_;
+    }
+    return *this;
+  }
+
+  // operator*()
+  const value_type& operator*() const { return curr_->pair; }
+
+  // operator->()
+  const value_type* operator->() const { return &curr_->pair; }
+
+ private:
+  friend class Map<key_type, mapped_type, key_compare>;
+  using GrpcMap = typename ::grpc_core::Map<Key, T, Compare>;
+  const_iterator(const GrpcMap* map, Entry* curr) : curr_(curr), map_(map) {}
+  Entry* curr_;
+  const GrpcMap* map_;
 };
 
 template <class Key, class T, class Compare>
@@ -466,5 +556,9 @@ int Map<Key, T, Compare>::CompareKeys(const key_type& lhs,
   }
   return left_comparison ? -1 : 1;
 }
+
+#endif  // GRPC_USE_CPP_STD_LIB
+
 }  // namespace grpc_core
+
 #endif /* GRPC_CORE_LIB_GPRPP_MAP_H */

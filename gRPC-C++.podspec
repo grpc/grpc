@@ -56,7 +56,7 @@ Pod::Spec.new do |s|
   s.pod_target_xcconfig = {
     'HEADER_SEARCH_PATHS' => '"$(inherited)" "$(PODS_TARGET_SRCROOT)/include"',
     'USER_HEADER_SEARCH_PATHS' => '"$(PODS_TARGET_SRCROOT)"',
-    'GCC_PREPROCESSOR_DEFINITIONS' => '"$(inherited)" "COCOAPODS=1" "PB_NO_PACKED_STRUCTS=1"',
+    'GCC_PREPROCESSOR_DEFINITIONS' => '"$(inherited)" "COCOAPODS=1"',
     'CLANG_WARN_STRICT_PROTOTYPES' => 'NO',
     'CLANG_WARN_DOCUMENTATION_COMMENTS' => 'NO',
 

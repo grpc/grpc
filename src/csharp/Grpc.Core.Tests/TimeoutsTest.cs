@@ -96,8 +96,7 @@ namespace Grpc.Core.Tests
             });
 
             var ex = Assert.Throws<RpcException>(() => Calls.BlockingUnaryCall(helper.CreateUnaryCall(new CallOptions(deadline: DateTime.MinValue)), "abc"));
-            // We can't guarantee the status code always DeadlineExceeded. See issue #2685.
-            Assert.Contains(ex.Status.StatusCode, new[] { StatusCode.DeadlineExceeded, StatusCode.Internal });
+            Assert.AreEqual(StatusCode.DeadlineExceeded, ex.Status.StatusCode);
         }
 
         [Test]
@@ -110,8 +109,7 @@ namespace Grpc.Core.Tests
             });
 
             var ex = Assert.Throws<RpcException>(() => Calls.BlockingUnaryCall(helper.CreateUnaryCall(new CallOptions(deadline: DateTime.UtcNow.Add(TimeSpan.FromSeconds(5)))), "abc"));
-            // We can't guarantee the status code always DeadlineExceeded. See issue #2685.
-            Assert.Contains(ex.Status.StatusCode, new[] { StatusCode.DeadlineExceeded, StatusCode.Internal });
+            Assert.AreEqual(StatusCode.DeadlineExceeded, ex.Status.StatusCode);
         }
 
         [Test]
@@ -130,9 +128,7 @@ namespace Grpc.Core.Tests
             });
 
             var ex = Assert.Throws<RpcException>(() => Calls.BlockingUnaryCall(helper.CreateUnaryCall(new CallOptions(deadline: DateTime.UtcNow.Add(TimeSpan.FromSeconds(5)))), "abc"));
-            // We can't guarantee the status code always DeadlineExceeded. See issue #2685.
-            Assert.Contains(ex.Status.StatusCode, new[] { StatusCode.DeadlineExceeded, StatusCode.Internal });
-
+            Assert.AreEqual(StatusCode.DeadlineExceeded, ex.Status.StatusCode);
             Assert.IsTrue(await serverReceivedCancellationTcs.Task);
         }
     }

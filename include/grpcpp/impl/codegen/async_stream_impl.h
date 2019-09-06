@@ -197,7 +197,7 @@ template <class R>
 class ClientAsyncReader final : public ClientAsyncReaderInterface<R> {
  public:
   // always allocated against a call arena, no memory free required
-  static void operator delete(void* ptr, std::size_t size) {
+  static void operator delete(void* /*ptr*/, std::size_t size) {
     assert(size == sizeof(ClientAsyncReader));
   }
 
@@ -346,7 +346,7 @@ template <class W>
 class ClientAsyncWriter final : public ClientAsyncWriterInterface<W> {
  public:
   // always allocated against a call arena, no memory free required
-  static void operator delete(void* ptr, std::size_t size) {
+  static void operator delete(void* /*ptr*/, std::size_t size) {
     assert(size == sizeof(ClientAsyncWriter));
   }
 
@@ -514,7 +514,7 @@ class ClientAsyncReaderWriter final
     : public ClientAsyncReaderWriterInterface<W, R> {
  public:
   // always allocated against a call arena, no memory free required
-  static void operator delete(void* ptr, std::size_t size) {
+  static void operator delete(void* /*ptr*/, std::size_t size) {
     assert(size == sizeof(ClientAsyncReaderWriter));
   }
 

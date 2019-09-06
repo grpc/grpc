@@ -27,6 +27,10 @@
 #include "src/core/lib/iomgr/timer_manager.h"
 #include "test/core/util/test_config.h"
 
+#ifdef GRPC_POSIX_SOCKET
+#include "src/core/lib/iomgr/ev_posix.h"
+#endif
+
 // MAYBE_SKIP_TEST is a macro to determine if this particular test configuration
 // should be skipped based on a decision made at SetUp time.
 #define MAYBE_SKIP_TEST \
@@ -39,9 +43,17 @@
 class TimerTest : public ::testing::Test {
  protected:
   void SetUp() override {
-    // Skip test if slowdown factor > 1.
-    do_not_test_ = (grpc_test_slowdown_factor() != 1);
     grpc_init();
+    // Skip test if slowdown factor > 1, or we are
+    // using event manager.
+#ifdef GRPC_POSIX_SOCKET
+    if (grpc_test_slowdown_factor() != 1 ||
+        grpc_event_engine_run_in_background()) {
+#else
+    if (grpc_test_slowdown_factor() != 1) {
+#endif
+      do_not_test_ = true;
+    }
   }
 
   void TearDown() override { grpc_shutdown_blocking(); }
@@ -65,7 +77,7 @@ TEST_F(TimerTest, OneTimerExpires) {
   grpc_core::ExecCtx exec_ctx;
   grpc_timer timer;
   int timer_fired = 0;
-  grpc_timer_init(&timer, 500,
+  grpc_timer_init(&timer, grpc_core::ExecCtx::Get()->Now() + 500,
                   GRPC_CLOSURE_CREATE(
                       [](void* arg, grpc_error*) {
                         int* timer_fired = static_cast<int*>(arg);
@@ -90,7 +102,7 @@ TEST_F(TimerTest, MultipleTimersExpire) {
   grpc_timer timers[kNumTimers];
   int timer_fired = 0;
   for (int i = 0; i < kNumTimers; ++i) {
-    grpc_timer_init(&timers[i], 500 + i,
+    grpc_timer_init(&timers[i], grpc_core::ExecCtx::Get()->Now() + 500 + i,
                     GRPC_CLOSURE_CREATE(
                         [](void* arg, grpc_error*) {
                           int* timer_fired = static_cast<int*>(arg);
@@ -117,7 +129,7 @@ TEST_F(TimerTest, CancelSomeTimers) {
   grpc_timer timers[kNumTimers];
   int timer_fired = 0;
   for (int i = 0; i < kNumTimers; ++i) {
-    grpc_timer_init(&timers[i], 500 + i,
+    grpc_timer_init(&timers[i], grpc_core::ExecCtx::Get()->Now() + 500 + i,
                     GRPC_CLOSURE_CREATE(
                         [](void* arg, grpc_error* error) {
                           if (error == GRPC_ERROR_CANCELLED) {
@@ -141,6 +153,69 @@ TEST_F(TimerTest, CancelSomeTimers) {
   // https://github.com/grpc/grpc/issues/19947
   int64_t wakeups = grpc_timer_manager_get_wakeups_testonly();
   gpr_log(GPR_DEBUG, "wakeups: %" PRId64 "", wakeups);
+}
+
+// Enable the following test after
+// https://github.com/grpc/grpc/issues/20049 has been fixed.
+TEST_F(TimerTest, DISABLED_TimerNotCanceled) {
+  grpc_core::ExecCtx exec_ctx;
+  grpc_timer timer;
+  grpc_timer_init(&timer, grpc_core::ExecCtx::Get()->Now() + 10000,
+                  GRPC_CLOSURE_CREATE([](void*, grpc_error*) {}, nullptr,
+                                      grpc_schedule_on_exec_ctx));
+}
+
+// Enable the following test after
+// https://github.com/grpc/grpc/issues/20064 has been fixed.
+TEST_F(TimerTest, DISABLED_CancelRace) {
+  MAYBE_SKIP_TEST;
+  grpc_core::ExecCtx exec_ctx;
+  const int kNumTimers = 10;
+  grpc_timer timers[kNumTimers];
+  for (int i = 0; i < kNumTimers; ++i) {
+    grpc_timer* arg = (i != 0) ? &timers[i - 1] : nullptr;
+    grpc_timer_init(&timers[i], grpc_core::ExecCtx::Get()->Now() + 100,
+                    GRPC_CLOSURE_CREATE(
+                        [](void* arg, grpc_error* error) {
+                          grpc_timer* timer = static_cast<grpc_timer*>(arg);
+                          if (timer) {
+                            grpc_timer_cancel(timer);
+                          }
+                        },
+                        arg, grpc_schedule_on_exec_ctx));
+  }
+  gpr_sleep_until(grpc_timeout_milliseconds_to_deadline(100));
+}
+
+// Enable the following test after
+// https://github.com/grpc/grpc/issues/20066 has been fixed.
+TEST_F(TimerTest, DISABLED_CancelNextTimer) {
+  MAYBE_SKIP_TEST;
+  grpc_core::ExecCtx exec_ctx;
+  const int kNumTimers = 10;
+  grpc_timer timers[kNumTimers];
+
+  for (int i = 0; i < kNumTimers; ++i) {
+    grpc_timer_init_unset(&timers[i]);
+  }
+
+  for (int i = 0; i < kNumTimers; ++i) {
+    grpc_timer* arg = nullptr;
+    if (i < kNumTimers - 1) {
+      arg = &timers[i + 1];
+    }
+    grpc_timer_init(&timers[i], grpc_core::ExecCtx::Get()->Now() + 100,
+                    GRPC_CLOSURE_CREATE(
+                        [](void* arg, grpc_error* error) {
+                          grpc_timer* timer = static_cast<grpc_timer*>(arg);
+                          if (timer) {
+                            grpc_timer_cancel(timer);
+                          }
+                        },
+                        arg, grpc_schedule_on_exec_ctx));
+  }
+  grpc_timer_cancel(&timers[0]);
+  gpr_sleep_until(grpc_timeout_milliseconds_to_deadline(100));
 }
 
 int main(int argc, char** argv) {
