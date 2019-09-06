@@ -68,12 +68,11 @@
 }
 
 - (void)shutDown {
-  dispatch_async(_dispatchQueue, ^{
-    self->_nextInterceptor = nil;
-    self->_previousInterceptor = nil;
-    self->_thisInterceptor = nil;
-    self->_shutDown = YES;
-  });
+  // immediately releases reference; should not queue to dispatch queue.
+  _nextInterceptor = nil;
+  _previousInterceptor = nil;
+  _thisInterceptor = nil;
+  _shutDown = YES;
 }
 
 - (void)createNextInterceptor {
@@ -203,6 +202,8 @@
     return;
   }
   id<GRPCResponseHandler> copiedPreviousInterceptor = _previousInterceptor;
+  // no more callbacks should be issued to the previous interceptor
+  _previousInterceptor = nil;
   dispatch_async(copiedPreviousInterceptor.dispatchQueue, ^{
     [copiedPreviousInterceptor didCloseWithTrailingMetadata:trailingMetadata error:error];
   });

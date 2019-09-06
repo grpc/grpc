@@ -43,6 +43,8 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  * Notify the manager that the transport has shut down and the manager should release references to
  * its response handler and stop forwarding requests/responses.
+ *
+ * The method can only be called by the manager's associated transport instance.
  */
 - (void)shutDown;
 

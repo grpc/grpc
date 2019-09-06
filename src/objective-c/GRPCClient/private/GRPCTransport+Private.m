@@ -46,8 +46,8 @@
   return self;
 }
 
-// Must be called on _dispatchQueue or queues targeted by _dispatchQueue
 - (void)shutDown {
+  // immediately releases reference; should not queue to dispatch queue.
   _transport = nil;
   _previousInterceptor = nil;
 }
@@ -111,6 +111,8 @@
     return;
   }
   id<GRPCResponseHandler> copiedPreviousInterceptor = _previousInterceptor;
+  // no more callbacks should be issued to the previous interceptor
+  _previousInterceptor = nil;
   dispatch_async(copiedPreviousInterceptor.dispatchQueue, ^{
     [copiedPreviousInterceptor didCloseWithTrailingMetadata:trailingMetadata error:error];
   });

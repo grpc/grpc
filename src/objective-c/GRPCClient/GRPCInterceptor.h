@@ -182,6 +182,8 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  * Notify the manager that the interceptor has shut down and the manager should release references
  * to other interceptors and stop forwarding requests/responses.
+ *
+ * The method can only be called by the manager's associated interceptor.
  */
 - (void)shutDown;
 
