@@ -71,24 +71,22 @@ RUN apt-get update && apt-get install -y zlib1g-dev libssl-dev
 RUN apt-get update && apt-get install -y jq build-essential libffi-dev
 
 RUN cd /tmp && \
-wget -q https://www.python.org/ftp/python/3.6.9/Python-3.6.9.tgz && \
-tar xzvf Python-3.6.9.tgz && \
-cd Python-3.6.9 && \
-./configure && \
-make install
+    wget -q https://www.python.org/ftp/python/3.6.9/Python-3.6.9.tgz && \
+    tar xzvf Python-3.6.9.tgz && \
+    cd Python-3.6.9 && \
+    ./configure && \
+    make install
+
+RUN cd /tmp && \
+    echo "ff7cdaef4846c89c1ec0d7b709bbd54d Python-3.6.9.tgz" > checksum.md5 && \
+    md5sum -c checksum.md5
 
 RUN python3.6 -m ensurepip && \
     python3.6 -m pip install coverage
 
-RUN cd /tmp && \
-  echo "ff7cdaef4846c89c1ec0d7b709bbd54d Python-3.6.9.tgz" > checksum.md5 && \
-  md5sum -c checksum.md5
 
 RUN apt-get update && apt-get -t buster install -y python3.7 python3-all-dev
 RUN curl https://bootstrap.pypa.io/get-pip.py | python3.7
 
 # for Python test coverage reporting
 RUN python3.7 -m pip install coverage
-
-RUN python3.6 -m ensurepip && \
-    python3.6 -m pip install coverage
