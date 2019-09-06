@@ -31,6 +31,7 @@ load(
     "grpc_cc_library",
     "grpc_generate_one_off_targets",
     "grpc_upb_proto_library",
+    "python_config_settings",
 )
 
 config_setting(
@@ -64,11 +65,6 @@ config_setting(
 )
 
 config_setting(
-    name = "python3",
-    values = {"python_path": "python3"},
-)
-
-config_setting(
     name = "mac_x86_64",
     values = {"cpu": "darwin"},
 )
@@ -77,6 +73,8 @@ config_setting(
     name = "grpc_use_cpp_std_lib",
     values = {"define": "GRPC_USE_CPP_STD_LIB=1"},
 )
+
+python_config_settings()
 
 # This should be updated along with build.yaml
 g_stands_for = "ganges"

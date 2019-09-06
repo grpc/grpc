@@ -55,4 +55,5 @@ py_test(
         "../../../src/python/grpcio_status",
         "../../../src/python/grpcio_tests",
     ],
+    python_version = "PY3",
 )

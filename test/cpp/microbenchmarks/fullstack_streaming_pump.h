@@ -67,7 +67,7 @@ static void BM_PumpStreamClientToServer(benchmark::State& state) {
       need_tags &= ~(1 << i);
     }
     response_rw.Read(&recv_request, tag(0));
-    while (state.KeepRunning()) {
+    for (auto _ : state) {
       GPR_TIMER_SCOPE("BenchmarkCycle", 0);
       request_rw->Write(send_request, tag(1));
       while (true) {
@@ -136,7 +136,7 @@ static void BM_PumpStreamServerToClient(benchmark::State& state) {
       need_tags &= ~(1 << i);
     }
     request_rw->Read(&recv_response, tag(0));
-    while (state.KeepRunning()) {
+    for (auto _ : state) {
       GPR_TIMER_SCOPE("BenchmarkCycle", 0);
       response_rw.Write(send_response, tag(1));
       while (true) {

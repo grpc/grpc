@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015 gRPC authors.
+ * Copyright 2019 gRPC authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,15 +16,7 @@
  *
  */
 
-/* This benchmark exists to ensure that the benchmark integration is
- * working */
+#include <ruby/ruby.h>
 
-#include <benchmark/benchmark.h>
-
-static void BM_NoOp(benchmark::State& state) {
-  for (auto _ : state) {
-  }
-}
-BENCHMARK(BM_NoOp);
-
-BENCHMARK_MAIN();
+// This is a dummy C++ source file to trigger ruby extension builder to
+// pick C++ rather than C linker to link with c++ library properly.

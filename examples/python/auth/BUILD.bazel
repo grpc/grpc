@@ -39,6 +39,7 @@ py_binary(
         "//examples:helloworld_py_pb2",
         "//examples:helloworld_py_pb2_grpc",
     ],
+    python_version = "PY3",
 )
 
 py_binary(
@@ -51,6 +52,7 @@ py_binary(
         "//examples:helloworld_py_pb2",
         "//examples:helloworld_py_pb2_grpc",
     ],
+    python_version = "PY3",
 )
 
 py_test(
@@ -63,4 +65,5 @@ py_test(
         ":customized_auth_server",
         ":_credentials",
     ],
+    python_version = "PY3",
 )
