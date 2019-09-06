@@ -131,11 +131,12 @@ static void BM_HpackEncoderEncodeHeader(benchmark::State& state) {
   grpc_slice_buffer outbuf;
   grpc_slice_buffer_init(&outbuf);
   while (state.KeepRunning()) {
+    static constexpr int kEnsureMaxFrameAtLeast = 2;
     grpc_encode_header_options hopt = {
         static_cast<uint32_t>(state.iterations()),
         state.range(0) != 0,
         Fixture::kEnableTrueBinary,
-        static_cast<size_t>(state.range(1)),
+        static_cast<size_t>(state.range(1) + kEnsureMaxFrameAtLeast),
         &stats,
     };
     grpc_chttp2_encode_header(c.get(), nullptr, 0, &b, &hopt, &outbuf);

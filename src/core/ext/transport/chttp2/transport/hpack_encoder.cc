@@ -88,7 +88,19 @@ typedef struct {
  * with a data frame header */
 static void fill_header(uint8_t* p, uint8_t type, uint32_t id, size_t len,
                         uint8_t flags) {
-  GPR_ASSERT(len < 16777316);
+  /* len is the current frame size (i.e. for the frame we're finishing).
+     We finish a frame if:
+     1) We called ensure_space(), (i.e. add_tiny_header_data()) and adding
+        'need_bytes' to the frame would cause us to exceed st->max_frame_size.
+     2) We called add_header_data, and adding the slice would cause us to exceed
+        st->max_frame_size.
+     3) We're done encoding the header.
+
+     Thus, len is always <= st->max_frame_size.
+     st->max_frame_size is derived from GRPC_CHTTP2_SETTINGS_MAX_FRAME_SIZE,
+     which has a max allowable value of 16777215 (see chttp_transport.cc).
+     Thus, the following assert can be a debug assert. */
+  GPR_DEBUG_ASSERT(len < 16777316);
   *p++ = static_cast<uint8_t>(len >> 16);
   *p++ = static_cast<uint8_t>(len >> 8);
   *p++ = static_cast<uint8_t>(len);
@@ -100,6 +112,13 @@ static void fill_header(uint8_t* p, uint8_t type, uint32_t id, size_t len,
   *p++ = static_cast<uint8_t>(id);
 }
 
+static size_t current_frame_size(framer_state* st) {
+  const size_t frame_size =
+      st->output->length - st->output_length_at_start_of_frame;
+  GPR_DEBUG_ASSERT(frame_size <= st->max_frame_size);
+  return frame_size;
+}
+
 /* finish a frame - fill in the previously reserved header */
 static void finish_frame(framer_state* st, int is_header_boundary,
                          int is_last_in_stream) {
@@ -108,7 +127,7 @@ static void finish_frame(framer_state* st, int is_header_boundary,
                             : GRPC_CHTTP2_FRAME_CONTINUATION;
   fill_header(
       GRPC_SLICE_START_PTR(st->output->slices[st->header_idx]), type,
-      st->stream_id, st->output->length - st->output_length_at_start_of_frame,
+      st->stream_id, current_frame_size(st),
       static_cast<uint8_t>(
           (is_last_in_stream ? GRPC_CHTTP2_DATA_FLAG_END_STREAM : 0) |
           (is_header_boundary ? GRPC_CHTTP2_DATA_FLAG_END_HEADERS : 0)));
@@ -130,9 +149,7 @@ static void begin_frame(framer_state* st) {
    space to add at least about_to_add bytes -- finishes the current frame if
    needed */
 static void ensure_space(framer_state* st, size_t need_bytes) {
-  if (GPR_LIKELY(st->output->length - st->output_length_at_start_of_frame +
-                     need_bytes <=
-                 st->max_frame_size)) {
+  if (GPR_LIKELY(current_frame_size(st) + need_bytes <= st->max_frame_size)) {
     return;
   }
   finish_frame(st, 0, 0);
@@ -158,8 +175,7 @@ static void add_header_data(framer_state* st, grpc_slice slice) {
   size_t len = GRPC_SLICE_LENGTH(slice);
   size_t remaining;
   if (len == 0) return;
-  remaining = st->max_frame_size + st->output_length_at_start_of_frame -
-              st->output->length;
+  remaining = st->max_frame_size - current_frame_size(st);
   if (len <= remaining) {
     st->stats->header_bytes += len;
     grpc_slice_buffer_add(st->output, slice);
@@ -325,132 +341,129 @@ static void emit_indexed(grpc_chttp2_hpack_compressor* c, uint32_t elem_index,
                            len);
 }
 
-typedef struct {
-  grpc_slice data;
-  uint8_t huffman_prefix;
-  bool insert_null_before_wire_value;
-} wire_value;
+struct wire_value {
+  wire_value(uint8_t huffman_prefix, bool insert_null_before_wire_value,
+             const grpc_slice& slice)
+      : data(slice),
+        huffman_prefix(huffman_prefix),
+        insert_null_before_wire_value(insert_null_before_wire_value),
+        length(GRPC_SLICE_LENGTH(slice) +
+               (insert_null_before_wire_value ? 1 : 0)) {}
+  // While wire_value is const from the POV of hpack encoder code, actually
+  // adding it to a slice buffer will possibly split the slice.
+  const grpc_slice data;
+  const uint8_t huffman_prefix;
+  const bool insert_null_before_wire_value;
+  const size_t length;
+};
 
 template <bool mdkey_definitely_interned>
 static wire_value get_wire_value(grpc_mdelem elem, bool true_binary_enabled) {
-  wire_value wire_val;
-  bool is_bin_hdr =
+  const bool is_bin_hdr =
       mdkey_definitely_interned
           ? grpc_is_refcounted_slice_binary_header(GRPC_MDKEY(elem))
           : grpc_is_binary_header_internal(GRPC_MDKEY(elem));
+  const grpc_slice& value = GRPC_MDVALUE(elem);
   if (is_bin_hdr) {
     if (true_binary_enabled) {
       GRPC_STATS_INC_HPACK_SEND_BINARY();
-      wire_val.huffman_prefix = 0x00;
-      wire_val.insert_null_before_wire_value = true;
-      wire_val.data = grpc_slice_ref_internal(GRPC_MDVALUE(elem));
-
+      return wire_value(0x00, true, grpc_slice_ref_internal(value));
     } else {
       GRPC_STATS_INC_HPACK_SEND_BINARY_BASE64();
-      wire_val.huffman_prefix = 0x80;
-      wire_val.insert_null_before_wire_value = false;
-      wire_val.data =
-          grpc_chttp2_base64_encode_and_huffman_compress(GRPC_MDVALUE(elem));
+      return wire_value(0x80, false,
+                        grpc_chttp2_base64_encode_and_huffman_compress(value));
     }
   } else {
     /* TODO(ctiller): opportunistically compress non-binary headers */
     GRPC_STATS_INC_HPACK_SEND_UNCOMPRESSED();
-    wire_val.huffman_prefix = 0x00;
-    wire_val.insert_null_before_wire_value = false;
-    wire_val.data = grpc_slice_ref_internal(GRPC_MDVALUE(elem));
+    return wire_value(0x00, false, grpc_slice_ref_internal(value));
   }
-  return wire_val;
 }
 
-static size_t wire_value_length(wire_value v) {
-  return GPR_SLICE_LENGTH(v.data) + v.insert_null_before_wire_value;
+static uint32_t wire_value_length(const wire_value& v) {
+  GPR_DEBUG_ASSERT(v.length <= UINT32_MAX);
+  return static_cast<uint32_t>(v.length);
 }
 
-static void add_wire_value(framer_state* st, wire_value v) {
-  if (v.insert_null_before_wire_value) *add_tiny_header_data(st, 1) = 0;
-  add_header_data(st, v.data);
-}
+namespace {
+enum class EmitLitHdrType { INC_IDX, NO_IDX };
 
-static void emit_lithdr_incidx(grpc_chttp2_hpack_compressor* c,
-                               uint32_t key_index, grpc_mdelem elem,
-                               framer_state* st) {
-  GRPC_STATS_INC_HPACK_SEND_LITHDR_INCIDX();
-  uint32_t len_pfx = GRPC_CHTTP2_VARINT_LENGTH(key_index, 2);
-  wire_value value = get_wire_value<true>(elem, st->use_true_binary_metadata);
-  size_t len_val = wire_value_length(value);
-  uint32_t len_val_len;
-  GPR_ASSERT(len_val <= UINT32_MAX);
-  len_val_len = GRPC_CHTTP2_VARINT_LENGTH((uint32_t)len_val, 1);
+enum class EmitLitHdrVType { INC_IDX_V, NO_IDX_V };
+}  // namespace
+
+template <EmitLitHdrType type>
+static void emit_lithdr(grpc_chttp2_hpack_compressor* c, uint32_t key_index,
+                        grpc_mdelem elem, framer_state* st) {
+  switch (type) {
+    case EmitLitHdrType::INC_IDX:
+      GRPC_STATS_INC_HPACK_SEND_LITHDR_INCIDX();
+      break;
+    case EmitLitHdrType::NO_IDX:
+      GRPC_STATS_INC_HPACK_SEND_LITHDR_NOTIDX();
+      break;
+  }
+  const uint32_t len_pfx = type == EmitLitHdrType::INC_IDX
+                               ? GRPC_CHTTP2_VARINT_LENGTH(key_index, 2)
+                               : GRPC_CHTTP2_VARINT_LENGTH(key_index, 4);
+  const wire_value value =
+      get_wire_value<true>(elem, st->use_true_binary_metadata);
+  const uint32_t len_val = wire_value_length(value);
+  const uint32_t len_val_len = GRPC_CHTTP2_VARINT_LENGTH(len_val, 1);
   GPR_DEBUG_ASSERT(len_pfx + len_val_len < GRPC_SLICE_INLINED_SIZE);
-  uint8_t* data = add_tiny_header_data(st, len_pfx + len_val_len);
-  GRPC_CHTTP2_WRITE_VARINT(key_index, 2, 0x40, data, len_pfx);
-  GRPC_CHTTP2_WRITE_VARINT((uint32_t)len_val, 1, value.huffman_prefix,
-                           &data[len_pfx], len_val_len);
-  add_wire_value(st, value);
+  uint8_t* data = add_tiny_header_data(
+      st,
+      len_pfx + len_val_len + (value.insert_null_before_wire_value ? 1 : 0));
+  switch (type) {
+    case EmitLitHdrType::INC_IDX:
+      GRPC_CHTTP2_WRITE_VARINT(key_index, 2, 0x40, data, len_pfx);
+      break;
+    case EmitLitHdrType::NO_IDX:
+      GRPC_CHTTP2_WRITE_VARINT(key_index, 4, 0x00, data, len_pfx);
+      break;
+  }
+  GRPC_CHTTP2_WRITE_VARINT(len_val, 1, value.huffman_prefix, &data[len_pfx],
+                           len_val_len);
+  if (value.insert_null_before_wire_value) {
+    data[len_pfx + len_val_len] = 0;
+  }
+  add_header_data(st, value.data);
 }
 
-static void emit_lithdr_noidx(grpc_chttp2_hpack_compressor* c,
-                              uint32_t key_index, grpc_mdelem elem,
-                              framer_state* st) {
-  GRPC_STATS_INC_HPACK_SEND_LITHDR_NOTIDX();
-  uint32_t len_pfx = GRPC_CHTTP2_VARINT_LENGTH(key_index, 4);
-  wire_value value = get_wire_value<false>(elem, st->use_true_binary_metadata);
-  size_t len_val = wire_value_length(value);
-  uint32_t len_val_len;
-  GPR_ASSERT(len_val <= UINT32_MAX);
-  len_val_len = GRPC_CHTTP2_VARINT_LENGTH((uint32_t)len_val, 1);
-  GPR_DEBUG_ASSERT(len_pfx + len_val_len < GRPC_SLICE_INLINED_SIZE);
-  uint8_t* data = add_tiny_header_data(st, len_pfx + len_val_len);
-  GRPC_CHTTP2_WRITE_VARINT(key_index, 4, 0x00, data, len_pfx);
-  GRPC_CHTTP2_WRITE_VARINT((uint32_t)len_val, 1, value.huffman_prefix,
-                           &data[len_pfx], len_val_len);
-  add_wire_value(st, value);
-}
-
-static void emit_lithdr_incidx_v(grpc_chttp2_hpack_compressor* c,
-                                 uint32_t unused_index, grpc_mdelem elem,
-                                 framer_state* st) {
-  GPR_ASSERT(unused_index == 0);
-  GRPC_STATS_INC_HPACK_SEND_LITHDR_INCIDX_V();
+template <EmitLitHdrVType type>
+static void emit_lithdr_v(grpc_chttp2_hpack_compressor* c, grpc_mdelem elem,
+                          framer_state* st) {
+  switch (type) {
+    case EmitLitHdrVType::INC_IDX_V:
+      GRPC_STATS_INC_HPACK_SEND_LITHDR_INCIDX_V();
+      break;
+    case EmitLitHdrVType::NO_IDX_V:
+      GRPC_STATS_INC_HPACK_SEND_LITHDR_NOTIDX_V();
+      break;
+  }
   GRPC_STATS_INC_HPACK_SEND_UNCOMPRESSED();
-  uint32_t len_key = static_cast<uint32_t> GRPC_SLICE_LENGTH(GRPC_MDKEY(elem));
-  wire_value value = get_wire_value<true>(elem, st->use_true_binary_metadata);
-  uint32_t len_val = static_cast<uint32_t>(wire_value_length(value));
-  uint32_t len_key_len = GRPC_CHTTP2_VARINT_LENGTH(len_key, 1);
-  uint32_t len_val_len = GRPC_CHTTP2_VARINT_LENGTH(len_val, 1);
-  GPR_ASSERT(len_key <= UINT32_MAX);
-  GPR_ASSERT(wire_value_length(value) <= UINT32_MAX);
+  const uint32_t len_key =
+      static_cast<uint32_t>(GRPC_SLICE_LENGTH(GRPC_MDKEY(elem)));
+  const wire_value value =
+      type == EmitLitHdrVType::INC_IDX_V
+          ? get_wire_value<true>(elem, st->use_true_binary_metadata)
+          : get_wire_value<false>(elem, st->use_true_binary_metadata);
+  const uint32_t len_val = wire_value_length(value);
+  const uint32_t len_key_len = GRPC_CHTTP2_VARINT_LENGTH(len_key, 1);
+  const uint32_t len_val_len = GRPC_CHTTP2_VARINT_LENGTH(len_val, 1);
+  GPR_DEBUG_ASSERT(len_key <= UINT32_MAX);
   GPR_DEBUG_ASSERT(1 + len_key_len < GRPC_SLICE_INLINED_SIZE);
-  uint8_t* data = add_tiny_header_data(st, 1 + len_key_len);
-  data[0] = 0x40;
-  GRPC_CHTTP2_WRITE_VARINT(len_key, 1, 0x00, &data[1], len_key_len);
+  uint8_t* key_buf = add_tiny_header_data(st, 1 + len_key_len);
+  key_buf[0] = type == EmitLitHdrVType::INC_IDX_V ? 0x40 : 0x00;
+  GRPC_CHTTP2_WRITE_VARINT(len_key, 1, 0x00, &key_buf[1], len_key_len);
   add_header_data(st, grpc_slice_ref_internal(GRPC_MDKEY(elem)));
-  GRPC_CHTTP2_WRITE_VARINT(len_val, 1, value.huffman_prefix,
-                           add_tiny_header_data(st, len_val_len), len_val_len);
-  add_wire_value(st, value);
-}
-
-static void emit_lithdr_noidx_v(grpc_chttp2_hpack_compressor* c,
-                                uint32_t unused_index, grpc_mdelem elem,
-                                framer_state* st) {
-  GPR_ASSERT(unused_index == 0);
-  GRPC_STATS_INC_HPACK_SEND_LITHDR_NOTIDX_V();
-  GRPC_STATS_INC_HPACK_SEND_UNCOMPRESSED();
-  uint32_t len_key = static_cast<uint32_t> GRPC_SLICE_LENGTH(GRPC_MDKEY(elem));
-  wire_value value = get_wire_value<false>(elem, st->use_true_binary_metadata);
-  uint32_t len_val = static_cast<uint32_t>(wire_value_length(value));
-  uint32_t len_key_len = GRPC_CHTTP2_VARINT_LENGTH(len_key, 1);
-  uint32_t len_val_len = GRPC_CHTTP2_VARINT_LENGTH(len_val, 1);
-  GPR_ASSERT(len_key <= UINT32_MAX);
-  GPR_ASSERT(wire_value_length(value) <= UINT32_MAX);
-  /* Preconditions passed; emit header. */
-  uint8_t* data = add_tiny_header_data(st, 1 + len_key_len);
-  data[0] = 0x00;
-  GRPC_CHTTP2_WRITE_VARINT(len_key, 1, 0x00, &data[1], len_key_len);
-  add_header_data(st, grpc_slice_ref_internal(GRPC_MDKEY(elem)));
-  GRPC_CHTTP2_WRITE_VARINT(len_val, 1, value.huffman_prefix,
-                           add_tiny_header_data(st, len_val_len), len_val_len);
-  add_wire_value(st, value);
+  uint8_t* value_buf = add_tiny_header_data(
+      st, len_val_len + (value.insert_null_before_wire_value ? 1 : 0));
+  GRPC_CHTTP2_WRITE_VARINT(len_val, 1, value.huffman_prefix, value_buf,
+                           len_val_len);
+  if (value.insert_null_before_wire_value) {
+    value_buf[len_val_len] = 0;
+  }
+  add_header_data(st, value.data);
 }
 
 static void emit_advertise_table_size_change(grpc_chttp2_hpack_compressor* c,
@@ -461,113 +474,142 @@ static void emit_advertise_table_size_change(grpc_chttp2_hpack_compressor* c,
   c->advertise_table_size_change = 0;
 }
 
+static void GPR_ATTRIBUTE_NOINLINE hpack_enc_log(grpc_mdelem elem) {
+  char* k = grpc_slice_to_c_string(GRPC_MDKEY(elem));
+  char* v = nullptr;
+  if (grpc_is_binary_header_internal(GRPC_MDKEY(elem))) {
+    v = grpc_dump_slice(GRPC_MDVALUE(elem), GPR_DUMP_HEX);
+  } else {
+    v = grpc_slice_to_c_string(GRPC_MDVALUE(elem));
+  }
+  gpr_log(
+      GPR_INFO,
+      "Encode: '%s: %s', elem_interned=%d [%d], k_interned=%d, v_interned=%d",
+      k, v, GRPC_MDELEM_IS_INTERNED(elem), GRPC_MDELEM_STORAGE(elem),
+      grpc_slice_is_interned(GRPC_MDKEY(elem)),
+      grpc_slice_is_interned(GRPC_MDVALUE(elem)));
+  gpr_free(k);
+  gpr_free(v);
+}
+
 static uint32_t dynidx(grpc_chttp2_hpack_compressor* c, uint32_t elem_index) {
   return 1 + GRPC_CHTTP2_LAST_STATIC_ENTRY + c->tail_remote_index +
          c->table_elems - elem_index;
 }
 
+struct EmitIndexedStatus {
+  EmitIndexedStatus() = default;
+  EmitIndexedStatus(uint32_t elem_hash, bool emitted, bool can_add)
+      : elem_hash(elem_hash), emitted(emitted), can_add(can_add) {}
+  const uint32_t elem_hash = 0;
+  const bool emitted = false;
+  const bool can_add = false;
+};
+
+static EmitIndexedStatus maybe_emit_indexed(grpc_chttp2_hpack_compressor* c,
+                                            grpc_mdelem elem,
+                                            framer_state* st) {
+  const uint32_t elem_hash =
+      GRPC_MDELEM_STORAGE(elem) == GRPC_MDELEM_STORAGE_INTERNED
+          ? reinterpret_cast<grpc_core::InternedMetadata*>(
+                GRPC_MDELEM_DATA(elem))
+                ->hash()
+          : reinterpret_cast<grpc_core::StaticMetadata*>(GRPC_MDELEM_DATA(elem))
+                ->hash();
+
+  inc_filter(HASH_FRAGMENT_1(elem_hash), &c->filter_elems_sum, c->filter_elems);
+
+  /* is this elem currently in the decoders table? */
+  if (grpc_mdelem_both_interned_eq(c->entries_elems[HASH_FRAGMENT_2(elem_hash)],
+                                   elem) &&
+      c->indices_elems[HASH_FRAGMENT_2(elem_hash)] > c->tail_remote_index) {
+    /* HIT: complete element (first cuckoo hash) */
+    emit_indexed(c, dynidx(c, c->indices_elems[HASH_FRAGMENT_2(elem_hash)]),
+                 st);
+    return EmitIndexedStatus(elem_hash, true, false);
+  }
+  if (grpc_mdelem_both_interned_eq(c->entries_elems[HASH_FRAGMENT_3(elem_hash)],
+                                   elem) &&
+      c->indices_elems[HASH_FRAGMENT_3(elem_hash)] > c->tail_remote_index) {
+    /* HIT: complete element (second cuckoo hash) */
+    emit_indexed(c, dynidx(c, c->indices_elems[HASH_FRAGMENT_3(elem_hash)]),
+                 st);
+    return EmitIndexedStatus(elem_hash, true, false);
+  }
+
+  const bool can_add = c->filter_elems[HASH_FRAGMENT_1(elem_hash)] >=
+                       c->filter_elems_sum / ONE_ON_ADD_PROBABILITY;
+  return EmitIndexedStatus(elem_hash, false, can_add);
+}
+
+static void emit_maybe_add(grpc_chttp2_hpack_compressor* c, grpc_mdelem elem,
+                           framer_state* st, uint32_t indices_key,
+                           bool should_add_elem, size_t decoder_space_usage,
+                           uint32_t elem_hash, uint32_t key_hash) {
+  if (should_add_elem) {
+    emit_lithdr<EmitLitHdrType::INC_IDX>(c, dynidx(c, indices_key), elem, st);
+    add_elem(c, elem, decoder_space_usage, elem_hash, key_hash);
+  } else {
+    emit_lithdr<EmitLitHdrType::NO_IDX>(c, dynidx(c, indices_key), elem, st);
+  }
+}
+
 /* encode an mdelem */
 static void hpack_enc(grpc_chttp2_hpack_compressor* c, grpc_mdelem elem,
                       framer_state* st) {
-  GPR_ASSERT(GRPC_SLICE_LENGTH(GRPC_MDKEY(elem)) > 0);
+  /* User-provided key len validated in grpc_validate_header_key_is_legal(). */
+  GPR_DEBUG_ASSERT(GRPC_SLICE_LENGTH(GRPC_MDKEY(elem)) > 0);
+  /* Header ordering: all reserved headers (prefixed with ':') must precede
+   * regular headers. This can be a debug assert, since:
+   * 1) User cannot give us ':' headers (grpc_validate_header_key_is_legal()).
+   * 2) grpc filters/core should be checked during debug builds. */
+#ifndef NDEBUG
   if (GRPC_SLICE_START_PTR(GRPC_MDKEY(elem))[0] != ':') { /* regular header */
     st->seen_regular_header = 1;
   } else {
-    GPR_ASSERT(
+    GPR_DEBUG_ASSERT(
         st->seen_regular_header == 0 &&
         "Reserved header (colon-prefixed) happening after regular ones.");
   }
-
+#endif
   if (GRPC_TRACE_FLAG_ENABLED(grpc_http_trace)) {
-    char* k = grpc_slice_to_c_string(GRPC_MDKEY(elem));
-    char* v = nullptr;
-    if (grpc_is_binary_header_internal(GRPC_MDKEY(elem))) {
-      v = grpc_dump_slice(GRPC_MDVALUE(elem), GPR_DUMP_HEX);
-    } else {
-      v = grpc_slice_to_c_string(GRPC_MDVALUE(elem));
-    }
-    gpr_log(
-        GPR_INFO,
-        "Encode: '%s: %s', elem_interned=%d [%d], k_interned=%d, v_interned=%d",
-        k, v, GRPC_MDELEM_IS_INTERNED(elem), GRPC_MDELEM_STORAGE(elem),
-        grpc_slice_is_interned(GRPC_MDKEY(elem)),
-        grpc_slice_is_interned(GRPC_MDVALUE(elem)));
-    gpr_free(k);
-    gpr_free(v);
+    hpack_enc_log(elem);
   }
 
-  bool elem_interned = GRPC_MDELEM_IS_INTERNED(elem);
-  bool key_interned = elem_interned || grpc_slice_is_interned(GRPC_MDKEY(elem));
+  const bool elem_interned = GRPC_MDELEM_IS_INTERNED(elem);
+  const bool key_interned =
+      elem_interned || grpc_slice_is_interned(GRPC_MDKEY(elem));
 
-  // Key is not interned, emit literals.
+  /* Key is not interned, emit literals. */
   if (!key_interned) {
-    emit_lithdr_noidx_v(c, 0, elem, st);
+    emit_lithdr_v<EmitLitHdrVType::NO_IDX_V>(c, elem, st);
     return;
   }
-
-  uint32_t elem_hash = 0;
-
-  if (elem_interned) {
-    if (GRPC_MDELEM_STORAGE(elem) == GRPC_MDELEM_STORAGE_INTERNED) {
-      elem_hash =
-          reinterpret_cast<grpc_core::InternedMetadata*>(GRPC_MDELEM_DATA(elem))
-              ->hash();
-    } else {
-      elem_hash =
-          reinterpret_cast<grpc_core::StaticMetadata*>(GRPC_MDELEM_DATA(elem))
-              ->hash();
-    }
-
-    inc_filter(HASH_FRAGMENT_1(elem_hash), &c->filter_elems_sum,
-               c->filter_elems);
-
-    /* is this elem currently in the decoders table? */
-    if (grpc_mdelem_both_interned_eq(
-            c->entries_elems[HASH_FRAGMENT_2(elem_hash)], elem) &&
-        c->indices_elems[HASH_FRAGMENT_2(elem_hash)] > c->tail_remote_index) {
-      /* HIT: complete element (first cuckoo hash) */
-      emit_indexed(c, dynidx(c, c->indices_elems[HASH_FRAGMENT_2(elem_hash)]),
-                   st);
-      return;
-    }
-    if (grpc_mdelem_both_interned_eq(
-            c->entries_elems[HASH_FRAGMENT_3(elem_hash)], elem) &&
-        c->indices_elems[HASH_FRAGMENT_3(elem_hash)] > c->tail_remote_index) {
-      /* HIT: complete element (second cuckoo hash) */
-      emit_indexed(c, dynidx(c, c->indices_elems[HASH_FRAGMENT_3(elem_hash)]),
-                   st);
-      return;
-    }
+  /* Interned metadata => maybe already indexed. */
+  const EmitIndexedStatus ret =
+      elem_interned ? maybe_emit_indexed(c, elem, st) : EmitIndexedStatus();
+  if (ret.emitted) {
+    return;
   }
-
-  uint32_t indices_key;
 
   /* should this elem be in the table? */
   const size_t decoder_space_usage =
       grpc_chttp2_get_size_in_hpack_table(elem, st->use_true_binary_metadata);
-  const bool should_add_elem = elem_interned &&
-                               decoder_space_usage < MAX_DECODER_SPACE_USAGE &&
-                               c->filter_elems[HASH_FRAGMENT_1(elem_hash)] >=
-                                   c->filter_elems_sum / ONE_ON_ADD_PROBABILITY;
-
-  uint32_t key_hash = GRPC_MDKEY(elem).refcount->Hash(GRPC_MDKEY(elem));
-  auto emit_maybe_add = [&should_add_elem, &elem, &st, &c, &indices_key,
-                         &decoder_space_usage, &elem_hash, &key_hash] {
-    if (should_add_elem) {
-      emit_lithdr_incidx(c, dynidx(c, indices_key), elem, st);
-      add_elem(c, elem, decoder_space_usage, elem_hash, key_hash);
-    } else {
-      emit_lithdr_noidx(c, dynidx(c, indices_key), elem, st);
-    }
-  };
+  const bool decoder_space_available =
+      decoder_space_usage < MAX_DECODER_SPACE_USAGE;
+  const bool should_add_elem =
+      elem_interned && decoder_space_available && ret.can_add;
+  const uint32_t elem_hash = ret.elem_hash;
 
   /* no hits for the elem... maybe there's a key? */
-  indices_key = c->indices_keys[HASH_FRAGMENT_2(key_hash)];
+  const uint32_t key_hash = GRPC_MDKEY(elem).refcount->Hash(GRPC_MDKEY(elem));
+  uint32_t indices_key = c->indices_keys[HASH_FRAGMENT_2(key_hash)];
   if (grpc_slice_static_interned_equal(
           c->entries_keys[HASH_FRAGMENT_2(key_hash)], GRPC_MDKEY(elem)) &&
       indices_key > c->tail_remote_index) {
     /* HIT: key (first cuckoo hash) */
-    emit_maybe_add();
+    emit_maybe_add(c, elem, st, indices_key, should_add_elem,
+                   decoder_space_usage, elem_hash, key_hash);
     return;
   }
 
@@ -575,18 +617,18 @@ static void hpack_enc(grpc_chttp2_hpack_compressor* c, grpc_mdelem elem,
   if (grpc_slice_static_interned_equal(
           c->entries_keys[HASH_FRAGMENT_3(key_hash)], GRPC_MDKEY(elem)) &&
       indices_key > c->tail_remote_index) {
-    /* HIT: key (first cuckoo hash) */
-    emit_maybe_add();
+    /* HIT: key (second cuckoo hash) */
+    emit_maybe_add(c, elem, st, indices_key, should_add_elem,
+                   decoder_space_usage, elem_hash, key_hash);
     return;
   }
 
   /* no elem, key in the table... fall back to literal emission */
-  const bool should_add_key =
-      !elem_interned && decoder_space_usage < MAX_DECODER_SPACE_USAGE;
+  const bool should_add_key = !elem_interned && decoder_space_available;
   if (should_add_elem || should_add_key) {
-    emit_lithdr_incidx_v(c, 0, elem, st);
+    emit_lithdr_v<EmitLitHdrVType::INC_IDX_V>(c, elem, st);
   } else {
-    emit_lithdr_noidx_v(c, 0, elem, st);
+    emit_lithdr_v<EmitLitHdrVType::NO_IDX_V>(c, elem, st);
   }
   if (should_add_elem) {
     add_elem(c, elem, decoder_space_usage, elem_hash, key_hash);
@@ -695,8 +737,12 @@ void grpc_chttp2_encode_header(grpc_chttp2_hpack_compressor* c,
                                grpc_metadata_batch* metadata,
                                const grpc_encode_header_options* options,
                                grpc_slice_buffer* outbuf) {
-  GPR_ASSERT(options->stream_id != 0);
-
+  /* grpc_chttp2_encode_header is called by FlushInitial/TrailingMetadata in
+     writing.cc. Specifically, on streams returned by NextStream(), which
+     returns streams from the list GRPC_CHTTP2_LIST_WRITABLE. The only way to be
+     added to the list is via  grpc_chttp2_list_add_writable_stream(), which
+     validates that stream_id is not 0. So, this can be a debug assert. */
+  GPR_DEBUG_ASSERT(options->stream_id != 0);
   framer_state st;
   st.seen_regular_header = 0;
   st.stream_id = options->stream_id;
