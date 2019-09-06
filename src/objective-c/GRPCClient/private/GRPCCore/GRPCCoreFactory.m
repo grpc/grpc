@@ -40,7 +40,7 @@ static dispatch_once_t gInitGRPCCoreInsecureFactory;
 
 + (void)load {
   [[GRPCTransportRegistry sharedInstance]
-      registerTransportWithId:GRPCDefaultTransportImplList.core_secure
+      registerTransportWithID:GRPCDefaultTransportImplList.core_secure
                       factory:[self sharedInstance]];
 }
 
@@ -75,7 +75,7 @@ static dispatch_once_t gInitGRPCCoreInsecureFactory;
 
 + (void)load {
   [[GRPCTransportRegistry sharedInstance]
-      registerTransportWithId:GRPCDefaultTransportImplList.core_insecure
+      registerTransportWithID:GRPCDefaultTransportImplList.core_insecure
                       factory:[self sharedInstance]];
 }
 

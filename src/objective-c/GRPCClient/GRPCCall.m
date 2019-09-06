@@ -186,14 +186,14 @@ NSString *const kGRPCErrorDomain = @"io.grpc";
     // continuously create interceptor until one is successfully created
     while (_firstInterceptor == nil) {
       if (interceptorFactories.count == 0) {
-        _firstInterceptor = [[GRPCTransportManager alloc] initWithTransportId:_callOptions.transport
+        _firstInterceptor = [[GRPCTransportManager alloc] initWithTransportID:_callOptions.transport
                                                           previousInterceptor:dispatcher];
         break;
       } else {
         _firstInterceptor =
             [[GRPCInterceptorManager alloc] initWithFactories:interceptorFactories
                                           previousInterceptor:dispatcher
-                                                  transportId:_callOptions.transport];
+                                                  transportID:_callOptions.transport];
         if (_firstInterceptor == nil) {
           [interceptorFactories removeObjectAtIndex:0];
         }

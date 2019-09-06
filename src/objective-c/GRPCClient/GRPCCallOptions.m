@@ -289,7 +289,7 @@ static BOOL areObjectsEqual(id obj1, id obj2) {
   if (!areObjectsEqual(callOptions.PEMCertificateChain, _PEMCertificateChain)) return NO;
   if (!areObjectsEqual(callOptions.hostNameOverride, _hostNameOverride)) return NO;
   if (!(callOptions.transportType == _transportType)) return NO;
-  if (!(TransportIdIsEqual(callOptions.transport, _transport))) return NO;
+  if (!(TransportIDIsEqual(callOptions.transport, _transport))) return NO;
   if (!areObjectsEqual(callOptions.logContext, _logContext)) return NO;
   if (!areObjectsEqual(callOptions.channelPoolDomain, _channelPoolDomain)) return NO;
   if (!(callOptions.channelID == _channelID)) return NO;
@@ -314,7 +314,7 @@ static BOOL areObjectsEqual(id obj1, id obj2) {
   result ^= _PEMCertificateChain.hash;
   result ^= _hostNameOverride.hash;
   result ^= _transportType;
-  result ^= TransportIdHash(_transport);
+  result ^= TransportIDHash(_transport);
   result ^= _logContext.hash;
   result ^= _channelPoolDomain.hash;
   result ^= _channelID;

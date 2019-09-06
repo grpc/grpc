@@ -177,7 +177,7 @@ NS_ASSUME_NONNULL_BEGIN
 
 - (nullable instancetype)initWithFactories:(nullable NSArray<id<GRPCInterceptorFactory>> *)factories
                        previousInterceptor:(nullable id<GRPCResponseHandler>)previousInterceptor
-                               transportId:(GRPCTransportID)transportId;
+                               transportID:(GRPCTransportID)transportID;
 
 /**
  * Notify the manager that the interceptor has shut down and the manager should release references

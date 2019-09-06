@@ -34,10 +34,10 @@ extern const struct GRPCDefaultTransportImplList {
 } GRPCDefaultTransportImplList;
 
 /** Returns whether two transport id's are identical. */
-BOOL TransportIdIsEqual(GRPCTransportID lhs, GRPCTransportID rhs);
+BOOL TransportIDIsEqual(GRPCTransportID lhs, GRPCTransportID rhs);
 
 /** Returns the hash value of a transport id. */
-NSUInteger TransportIdHash(GRPCTransportID);
+NSUInteger TransportIDHash(GRPCTransportID);
 
 #pragma mark Transport and factory
 
@@ -63,10 +63,10 @@ NSUInteger TransportIdHash(GRPCTransportID);
 /**
  * Register a transport implementation with the registry. All transport implementations to be used
  * in a process must register with the registry on process start-up in its +load: class method.
- * Parameter \a transportId is the identifier of the implementation, and \a factory is the factory
+ * Parameter \a transportID is the identifier of the implementation, and \a factory is the factory
  * object to create the corresponding transport instance.
  */
-- (void)registerTransportWithId:(GRPCTransportID)transportId
+- (void)registerTransportWithID:(GRPCTransportID)transportID
                         factory:(id<GRPCTransportFactory>)factory;
 
 @end

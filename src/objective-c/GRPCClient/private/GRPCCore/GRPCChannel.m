@@ -53,7 +53,7 @@
 - (id<GRPCChannelFactory>)channelFactory {
   if (_callOptions.transport != NULL) {
     id<GRPCTransportFactory> transportFactory =
-        [[GRPCTransportRegistry sharedInstance] getTransportFactoryWithId:_callOptions.transport];
+        [[GRPCTransportRegistry sharedInstance] getTransportFactoryWithID:_callOptions.transport];
     if (!
         [transportFactory respondsToSelector:@selector(createCoreChannelFactoryWithCallOptions:)]) {
       // impossible because we are using GRPCCore now
@@ -84,7 +84,7 @@
         }
       case GRPCTransportTypeCronet: {
         id<GRPCCoreTransportFactory> transportFactory = (id<GRPCCoreTransportFactory>)[
-            [GRPCTransportRegistry sharedInstance] getTransportFactoryWithId:gGRPCCoreCronetId];
+            [GRPCTransportRegistry sharedInstance] getTransportFactoryWithID:gGRPCCoreCronetID];
         return [transportFactory createCoreChannelFactoryWithCallOptions:_callOptions];
       }
       case GRPCTransportTypeInsecure:

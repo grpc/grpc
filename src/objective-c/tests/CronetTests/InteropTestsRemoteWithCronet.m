@@ -53,7 +53,7 @@ static int32_t kRemoteInteropServerOverhead = 12;
 }
 
 + (GRPCTransportID)transport {
-  return gGRPCCoreCronetId;
+  return gGRPCCoreCronetID;
 }
 
 - (int32_t)encodingOverhead {

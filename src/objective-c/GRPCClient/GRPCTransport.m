@@ -18,28 +18,28 @@
 
 #import "GRPCTransport.h"
 
-static const GRPCTransportID gGRPCCoreSecureId = "io.grpc.transport.core.secure";
-static const GRPCTransportID gGRPCCoreInsecureId = "io.grpc.transport.core.insecure";
+static const GRPCTransportID gGRPCCoreSecureID = "io.grpc.transport.core.secure";
+static const GRPCTransportID gGRPCCoreInsecureID = "io.grpc.transport.core.insecure";
 
 const struct GRPCDefaultTransportImplList GRPCDefaultTransportImplList = {
-    .core_secure = gGRPCCoreSecureId, .core_insecure = gGRPCCoreInsecureId};
+    .core_secure = gGRPCCoreSecureID, .core_insecure = gGRPCCoreInsecureID};
 
-static const GRPCTransportID gDefaultTransportId = gGRPCCoreSecureId;
+static const GRPCTransportID gDefaultTransportID = gGRPCCoreSecureID;
 
 static GRPCTransportRegistry *gTransportRegistry = nil;
 static dispatch_once_t initTransportRegistry;
 
-BOOL TransportIdIsEqual(GRPCTransportID lhs, GRPCTransportID rhs) {
+BOOL TransportIDIsEqual(GRPCTransportID lhs, GRPCTransportID rhs) {
   // Directly comparing pointers works because we require users to use the id provided by each
   // implementation, not coming up with their own string.
   return lhs == rhs;
 }
 
-NSUInteger TransportIdHash(GRPCTransportID transportId) {
-  if (transportId == NULL) {
-    transportId = gDefaultTransportId;
+NSUInteger TransportIDHash(GRPCTransportID transportID) {
+  if (transportID == NULL) {
+    transportID = gDefaultTransportID;
   }
-  return [NSString stringWithCString:transportId encoding:NSUTF8StringEncoding].hash;
+  return [NSString stringWithCString:transportID encoding:NSUTF8StringEncoding].hash;
 }
 
 @implementation GRPCTransportRegistry {
@@ -66,25 +66,25 @@ NSUInteger TransportIdHash(GRPCTransportID transportId) {
   return self;
 }
 
-- (void)registerTransportWithId:(GRPCTransportID)transportId
+- (void)registerTransportWithID:(GRPCTransportID)transportID
                         factory:(id<GRPCTransportFactory>)factory {
-  NSString *nsTransportId = [NSString stringWithCString:transportId encoding:NSUTF8StringEncoding];
-  NSAssert(_registry[nsTransportId] == nil, @"The transport %@ has already been registered.",
-           nsTransportId);
-  if (_registry[nsTransportId] != nil) {
-    NSLog(@"The transport %@ has already been registered.", nsTransportId);
+  NSString *nsTransportID = [NSString stringWithCString:transportID encoding:NSUTF8StringEncoding];
+  NSAssert(_registry[nsTransportID] == nil, @"The transport %@ has already been registered.",
+           nsTransportID);
+  if (_registry[nsTransportID] != nil) {
+    NSLog(@"The transport %@ has already been registered.", nsTransportID);
     return;
   }
-  _registry[nsTransportId] = factory;
+  _registry[nsTransportID] = factory;
 
   // if the default transport is registered, mark it.
-  if (0 == strcmp(transportId, gDefaultTransportId)) {
+  if (0 == strcmp(transportID, gDefaultTransportID)) {
     _defaultFactory = factory;
   }
 }
 
-- (id<GRPCTransportFactory>)getTransportFactoryWithId:(GRPCTransportID)transportId {
-  if (transportId == NULL) {
+- (id<GRPCTransportFactory>)getTransportFactoryWithID:(GRPCTransportID)transportID {
+  if (transportID == NULL) {
     if (_defaultFactory == nil) {
       // fall back to default transport if no transport is provided
       [NSException raise:NSInvalidArgumentException
@@ -93,17 +93,17 @@ NSUInteger TransportIdHash(GRPCTransportID transportId) {
     }
     return _defaultFactory;
   }
-  NSString *nsTransportId = [NSString stringWithCString:transportId encoding:NSUTF8StringEncoding];
-  id<GRPCTransportFactory> transportFactory = _registry[nsTransportId];
+  NSString *nsTransportID = [NSString stringWithCString:transportID encoding:NSUTF8StringEncoding];
+  id<GRPCTransportFactory> transportFactory = _registry[nsTransportID];
   if (transportFactory == nil) {
     if (_defaultFactory != nil) {
       // fall back to default transport if no transport is found
       NSLog(@"Unable to find transport with id %s; falling back to default transport.",
-            transportId);
+            transportID);
       return _defaultFactory;
     } else {
       [NSException raise:NSInvalidArgumentException
-                  format:@"Unable to find transport with id %s", transportId];
+                  format:@"Unable to find transport with id %s", transportID];
       return nil;
     }
   }

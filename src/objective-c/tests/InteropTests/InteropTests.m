@@ -1268,7 +1268,7 @@ static dispatch_once_t initGlobalInterceptorFactory;
 
 - (void)testKeepaliveWithV2API {
   XCTAssertNotNil([[self class] host]);
-  if ([[self class] transport] == gGRPCCoreCronetId) {
+  if ([[self class] transport] == gGRPCCoreCronetID) {
     // Cronet does not support keepalive
     return;
   }

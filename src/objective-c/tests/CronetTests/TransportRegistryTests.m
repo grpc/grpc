@@ -30,9 +30,9 @@
 
 - (void)testCronetImplementationExist {
   id<GRPCTransportFactory> secureTransportFactory = [[GRPCTransportRegistry sharedInstance]
-      getTransportFactoryWithId:GRPCDefaultTransportImplList.core_secure];
+      getTransportFactoryWithID:GRPCDefaultTransportImplList.core_secure];
   id<GRPCTransportFactory> cronetTransportFactory =
-      [[GRPCTransportRegistry sharedInstance] getTransportFactoryWithId:gGRPCCoreCronetId];
+      [[GRPCTransportRegistry sharedInstance] getTransportFactoryWithID:gGRPCCoreCronetID];
   XCTAssertNotNil(secureTransportFactory);
   XCTAssertNotNil(cronetTransportFactory);
   XCTAssertNotEqual(secureTransportFactory, cronetTransportFactory);

@@ -24,7 +24,7 @@
  * testing purpose only on Github.
  *
  * To use this transport, a user must include the GRPCCoreCronet module as a
- * dependency of the project and use gGRPCCoreCronetId in call options to
+ * dependency of the project and use gGRPCCoreCronetID in call options to
  * specify that this is the transport to be used for a call.
  */
 @interface GRPCCoreCronetFactory : NSObject<GRPCCoreTransportFactory>

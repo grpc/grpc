@@ -31,13 +31,13 @@
   GRPCInterceptor *_thisInterceptor;
   dispatch_queue_t _dispatchQueue;
   NSArray<id<GRPCInterceptorFactory>> *_factories;
-  GRPCTransportID _transportId;
+  GRPCTransportID _transportID;
   BOOL _shutDown;
 }
 
 - (instancetype)initWithFactories:(NSArray<id<GRPCInterceptorFactory>> *)factories
               previousInterceptor:(id<GRPCResponseHandler>)previousInterceptor
-                      transportId:(nonnull GRPCTransportID)transportId {
+                      transportID:(nonnull GRPCTransportID)transportID {
   if ((self = [super init])) {
     if (factories.count == 0) {
       [NSException raise:NSInternalInconsistencyException
@@ -62,7 +62,7 @@
       _dispatchQueue = dispatch_queue_create(NULL, DISPATCH_QUEUE_SERIAL);
     }
     dispatch_set_target_queue(_dispatchQueue, _thisInterceptor.dispatchQueue);
-    _transportId = transportId;
+    _transportID = transportID;
   }
   return self;
 }
@@ -87,12 +87,12 @@
   while (_nextInterceptor == nil) {
     if (interceptorFactories.count == 0) {
       _nextInterceptor =
-          [[GRPCTransportManager alloc] initWithTransportId:_transportId previousInterceptor:self];
+          [[GRPCTransportManager alloc] initWithTransportID:_transportID previousInterceptor:self];
       break;
     } else {
       _nextInterceptor = [[GRPCInterceptorManager alloc] initWithFactories:interceptorFactories
                                                        previousInterceptor:self
-                                                               transportId:_transportId];
+                                                               transportID:_transportID];
       if (_nextInterceptor == nil) {
         [interceptorFactories removeObjectAtIndex:0];
       }
