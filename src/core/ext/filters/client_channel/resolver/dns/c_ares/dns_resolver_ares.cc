@@ -460,10 +460,11 @@ static grpc_address_resolver_vtable ares_resolver = {
     grpc_resolve_address_ares, blocking_resolve_address_ares};
 
 #ifdef GRPC_UV
-/* TODO(murgatroid99): Remove this when we want the cares resolver to be the
- * default when using libuv */
+/* TODO(murgatroid99): Remove this when c-ares support is no longer disabled for
+ * custom IO managers */
 static bool should_use_ares(const char* resolver_env) {
-  return resolver_env != nullptr && gpr_stricmp(resolver_env, "ares") == 0;
+  return resolver_env == nullptr || strlen(resolver_env) == 0 ||
+         gpr_stricmp(resolver_env, "ares") == 0;
 }
 #else  /* GRPC_UV */
 static bool should_use_ares(const char* resolver_env) {
