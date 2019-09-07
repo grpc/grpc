@@ -75,22 +75,6 @@ void XdsLocalityListPriorityMap::Add(XdsLocalityInfo locality_info) {
   locality_list.list.push_back(std::move(locality_info));
 }
 
-void XdsLocalityListPriorityMap::UpdateAppliedLocked(
-    XdsLocalityListPriorityMap& old) {
-  for (auto& p : map_) {
-    const uint32_t priority = p.first;
-    XdsLocalityList& locality_list = p.second;
-    auto iter = old.map_.find(priority);
-    // New priority.
-    if (iter == old.map_.end()) continue;
-    const XdsLocalityList& old_locality_list = iter->second;
-    if (old_locality_list.applied &&
-        old_locality_list.list == locality_list.list) {
-      locality_list.applied = true;
-    }
-  }
-}
-
 void XdsLocalityListPriorityMap::Sort() {
   for (auto& p : map_) {
     const uint32_t priority = p.first;
@@ -126,7 +110,8 @@ uint32_t XdsLocalityListPriorityMap::NextPriority(uint32_t priority) const {
   GPR_UNREACHABLE_CODE(return UINT32_MAX);
 }
 
-XdsLocalityList* XdsLocalityListPriorityMap::Find(uint32_t priority) {
+const XdsLocalityList* XdsLocalityListPriorityMap::Find(
+    uint32_t priority) const {
   auto iter = map_.find(priority);
   if (iter == map_.end()) return nullptr;
   return &iter->second;

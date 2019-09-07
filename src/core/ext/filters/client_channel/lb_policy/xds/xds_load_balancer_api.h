@@ -77,7 +77,7 @@ class XdsLocalityListPriorityMap {
 
   uint32_t NextPriority(uint32_t priority) const;
 
-  XdsLocalityList* Find(uint32_t priority);
+  const XdsLocalityList* Find(uint32_t priority) const;
 
   bool Has(uint32_t priority) { return map_.find(priority) != map_.end(); }
   bool Has(const XdsLocalityName& name);
@@ -88,7 +88,11 @@ class XdsLocalityListPriorityMap {
   const InlinedVector<uint32_t, 1>& sorted_priorities() const {
     return sorted_priorities_;
   }
-  Map<uint32_t, XdsLocalityList>& map() { return map_; }
+  const Map<uint32_t, XdsLocalityList>& map() const { return map_; }
+  uint32_t LowestPriority() const {
+    auto last = --map_.cend();
+    return last->first;
+  }
 
  private:
   Map<uint32_t, XdsLocalityList> map_;
