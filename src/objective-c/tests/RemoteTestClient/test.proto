@@ -54,4 +54,16 @@ service TestService {
   // first request.
   rpc HalfDuplexCall(stream StreamingOutputCallRequest)
       returns (stream StreamingOutputCallResponse);
+
+  // Test method with "Init" as prefix.
+  // This method should not be used in tests. It is to build-test the
+  // correctness of generated Objective-C stub. The generated method signature
+  // is expected to have a prefix "call".
+  rpc InitMethod(SimpleRequest) returns (SimpleResponse);
+
+  // Test method with "Initialize" as prefix.
+  // This method should not be used in tests. It is to build-test the
+  // correctness of generated Objective-C stub. The generated method signature
+  // should not have any prefix before "initialize".
+  rpc InitializeMethod(SimpleRequest) returns (SimpleResponse);
 }

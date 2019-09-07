@@ -38,6 +38,18 @@ using ::std::set;
 namespace grpc_objective_c_generator {
 namespace {
 
+// A method starting with init... becomes an initializer in ObjC. If a service's
+// method starts with init..., we prefix the method signature with "call..." to
+// avoid creating an initializer.
+::grpc::string MutateInitPrefixedMethod(::grpc::string method_name) {
+  if (method_name.find("init") == 0 &&
+      (method_name.length() == 4 || isupper(method_name[4]))) {
+    method_name = ::grpc::string("callI") +
+                  method_name.substr(1, method_name.length() - 1);
+  }
+  return method_name;
+}
+
 void PrintProtoRpcDeclarationAsPragma(
     Printer* printer, const MethodDescriptor* method,
     map< ::grpc::string, ::grpc::string> vars) {
@@ -128,8 +140,8 @@ void PrintV2Signature(Printer* printer, const MethodDescriptor* method,
   } else {
     vars["return_type"] = "GRPCUnaryProtoCall *";
   }
-  vars["method_name"] =
-      grpc_generator::LowercaseFirstLetter(vars["method_name"]);
+  vars["method_name"] = MutateInitPrefixedMethod(
+      grpc_generator::LowercaseFirstLetter(vars["method_name"]));
 
   PrintAllComments(method, printer);
 
