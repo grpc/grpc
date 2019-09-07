@@ -35,6 +35,18 @@ NS_ASSUME_NONNULL_BEGIN
 
 @end
 
+/**
+ * GRPCTransportManager is a helper class to forward messages between the last interceptor and the
+ * transport instance.
+ *
+ * All methods except the initializer of the class can only be called on the manager's dispatch
+ * queue. Since the manager's dispatch queue is the same as the transport's dispatch queue, it is
+ * also safe to call the manager's methods in the corresponding transport instance's methods that
+ * implement GRPCInterceptorInterface.
+ *
+ * When a transport instance is shutting down, it must call -shutDown method of its associated
+ * transport manager for proper clean-up.
+ */
 @interface GRPCTransportManager : NSObject<GRPCInterceptorInterface>
 
 - (instancetype)initWithTransportID:(GRPCTransportID)transportID
@@ -43,8 +55,6 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  * Notify the manager that the transport has shut down and the manager should release references to
  * its response handler and stop forwarding requests/responses.
- *
- * The method can only be called by the manager's associated transport instance.
  */
 - (void)shutDown;
 

@@ -164,10 +164,17 @@ NS_ASSUME_NONNULL_BEGIN
 @end
 
 /**
- * The interceptor manager object retains reference to the next and previous interceptor object in
- * the interceptor chain, and forward corresponding events to them. When a call terminates, it must
- * invoke shutDown method of its corresponding manager so that references to other interceptors can
- * be released.
+ * GRPCInterceptorManager is a helper class to forward messages between the interceptors. The
+ * interceptor manager object retains reference to the next and previous interceptor object in the
+ * interceptor chain, and forward corresponding events to them.
+ *
+ * All methods except the initializer of the class can only be called on the manager's dispatch
+ * queue. Since the manager's dispatch queue targets corresponding interceptor's dispatch queue, it
+ * is also safe to call the manager's methods in the corresponding interceptor instance's methods
+ * that implement GRPCInterceptorInterface.
+ *
+ * When an interceptor is shutting down, it must invoke -shutDown method of its corresponding
+ * manager so that references to other interceptors can be released and proper clean-up is made.
  */
 @interface GRPCInterceptorManager : NSObject<GRPCInterceptorInterface, GRPCResponseHandler>
 
@@ -182,8 +189,6 @@ NS_ASSUME_NONNULL_BEGIN
 /**
  * Notify the manager that the interceptor has shut down and the manager should release references
  * to other interceptors and stop forwarding requests/responses.
- *
- * The method can only be called by the manager's associated interceptor.
  */
 - (void)shutDown;
 

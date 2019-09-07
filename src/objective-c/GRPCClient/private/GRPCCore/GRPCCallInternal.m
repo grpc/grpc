@@ -155,7 +155,7 @@
           self->_initialMetadataPublished = YES;
           [self issueInitialMetadata:self->_call.responseHeaders];
         }
-        [self issueClosedWithTrailingMetadata:self->_call.responseTrailers error:errorOrNil];
+        [self issueCloseWithTrailingMetadata:self->_call.responseTrailers error:errorOrNil];
       }
       // Clearing _call must happen *after* dispatching close in order to get trailing
       // metadata from _call.
@@ -250,24 +250,40 @@
 
 - (void)issueInitialMetadata:(NSDictionary *)initialMetadata {
   if (initialMetadata != nil) {
-    [_transportManager forwardPreviousInterceptorWithInitialMetadata:initialMetadata];
+    // cannot directly call callback because this may not be running on manager's dispatch queue
+    GRPCTransportManager *copiedManager = _transportManager;
+    dispatch_async(copiedManager.dispatchQueue, ^{
+      [copiedManager forwardPreviousInterceptorWithInitialMetadata:initialMetadata];
+    });
   }
 }
 
 - (void)issueMessage:(id)message {
   if (message != nil) {
-    [_transportManager forwardPreviousInterceptorWithData:message];
+    // cannot directly call callback because this may not be running on manager's dispatch queue
+    GRPCTransportManager *copiedManager = _transportManager;
+    dispatch_async(copiedManager.dispatchQueue, ^{
+      [copiedManager forwardPreviousInterceptorWithData:message];
+    });
   }
 }
 
-- (void)issueClosedWithTrailingMetadata:(NSDictionary *)trailingMetadata error:(NSError *)error {
-  [_transportManager forwardPreviousInterceptorCloseWithTrailingMetadata:trailingMetadata
-                                                                   error:error];
-  [_transportManager shutDown];
+- (void)issueCloseWithTrailingMetadata:(NSDictionary *)trailingMetadata error:(NSError *)error {
+  // cannot directly call callback because this may not be running on manager's dispatch queue
+  GRPCTransportManager *copiedManager = _transportManager;
+  dispatch_async(copiedManager.dispatchQueue, ^{
+    [copiedManager forwardPreviousInterceptorCloseWithTrailingMetadata:trailingMetadata
+                                                                 error:error];
+    [copiedManager shutDown];
+  });
 }
 
 - (void)issueDidWriteData {
-  [_transportManager forwardPreviousInterceptorDidWriteData];
+  // cannot directly call callback because this may not be running on manager's dispatch queue
+  GRPCTransportManager *copiedManager = _transportManager;
+  dispatch_async(copiedManager.dispatchQueue, ^{
+    [copiedManager forwardPreviousInterceptorDidWriteData];
+  });
 }
 
 - (void)receiveNextMessages:(NSUInteger)numberOfMessages {

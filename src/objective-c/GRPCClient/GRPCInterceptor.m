@@ -226,47 +226,74 @@
 
 - (void)startWithRequestOptions:(GRPCRequestOptions *)requestOptions
                     callOptions:(GRPCCallOptions *)callOptions {
-  [_thisInterceptor startWithRequestOptions:requestOptions callOptions:callOptions];
+  // retain this interceptor until the method exit to prevent deallocation of the interceptor within
+  // the interceptor's method
+  GRPCInterceptor *thisInterceptor = _thisInterceptor;
+  [thisInterceptor startWithRequestOptions:requestOptions callOptions:callOptions];
 }
 
 - (void)writeData:(id)data {
-  [_thisInterceptor writeData:data];
+  // retain this interceptor until the method exit to prevent deallocation of the interceptor within
+  // the interceptor's method
+  GRPCInterceptor *thisInterceptor = _thisInterceptor;
+  [thisInterceptor writeData:data];
 }
 
 - (void)finish {
-  [_thisInterceptor finish];
+  // retain this interceptor until the method exit to prevent deallocation of the interceptor within
+  // the interceptor's method
+  GRPCInterceptor *thisInterceptor = _thisInterceptor;
+  [thisInterceptor finish];
 }
 
 - (void)cancel {
-  [_thisInterceptor cancel];
+  // retain this interceptor until the method exit to prevent deallocation of the interceptor within
+  // the interceptor's method
+  GRPCInterceptor *thisInterceptor = _thisInterceptor;
+  [thisInterceptor cancel];
 }
 
 - (void)receiveNextMessages:(NSUInteger)numberOfMessages {
-  [_thisInterceptor receiveNextMessages:numberOfMessages];
+  // retain this interceptor until the method exit to prevent deallocation of the interceptor within
+  // the interceptor's method
+  GRPCInterceptor *thisInterceptor = _thisInterceptor;
+  [thisInterceptor receiveNextMessages:numberOfMessages];
 }
 
 - (void)didReceiveInitialMetadata:(nullable NSDictionary *)initialMetadata {
   if ([_thisInterceptor respondsToSelector:@selector(didReceiveInitialMetadata:)]) {
-    [_thisInterceptor didReceiveInitialMetadata:initialMetadata];
+    // retain this interceptor until the method exit to prevent deallocation of the interceptor
+    // within the interceptor's method
+    GRPCInterceptor *thisInterceptor = _thisInterceptor;
+    [thisInterceptor didReceiveInitialMetadata:initialMetadata];
   }
 }
 
 - (void)didReceiveData:(id)data {
   if ([_thisInterceptor respondsToSelector:@selector(didReceiveData:)]) {
-    [_thisInterceptor didReceiveData:data];
+    // retain this interceptor until the method exit to prevent deallocation of the interceptor
+    // within the interceptor's method
+    GRPCInterceptor *thisInterceptor = _thisInterceptor;
+    [thisInterceptor didReceiveData:data];
   }
 }
 
 - (void)didCloseWithTrailingMetadata:(nullable NSDictionary *)trailingMetadata
                                error:(nullable NSError *)error {
   if ([_thisInterceptor respondsToSelector:@selector(didCloseWithTrailingMetadata:error:)]) {
-    [_thisInterceptor didCloseWithTrailingMetadata:trailingMetadata error:error];
+    // retain this interceptor until the method exit to prevent deallocation of the interceptor
+    // within the interceptor's method
+    GRPCInterceptor *thisInterceptor = _thisInterceptor;
+    [thisInterceptor didCloseWithTrailingMetadata:trailingMetadata error:error];
   }
 }
 
 - (void)didWriteData {
   if ([_thisInterceptor respondsToSelector:@selector(didWriteData)]) {
-    [_thisInterceptor didWriteData];
+    // retain this interceptor until the method exit to prevent deallocation of the interceptor
+    // within the interceptor's method
+    GRPCInterceptor *thisInterceptor = _thisInterceptor;
+    [thisInterceptor didWriteData];
   }
 }
 

@@ -63,23 +63,38 @@
                 format:@"Interceptors cannot change the call option 'transport'"];
     return;
   }
-  [_transport startWithRequestOptions:requestOptions callOptions:callOptions];
+  // retain the transport instance until the method exit to prevent deallocation of the transport
+  // instance within the method
+  GRPCTransport *transport = _transport;
+  [transport startWithRequestOptions:requestOptions callOptions:callOptions];
 }
 
 - (void)writeData:(id)data {
-  [_transport writeData:data];
+  // retain the transport instance until the method exit to prevent deallocation of the transport
+  // instance within the method
+  GRPCTransport *transport = _transport;
+  [transport writeData:data];
 }
 
 - (void)finish {
-  [_transport finish];
+  // retain the transport instance until the method exit to prevent deallocation of the transport
+  // instance within the method
+  GRPCTransport *transport = _transport;
+  [transport finish];
 }
 
 - (void)cancel {
-  [_transport cancel];
+  // retain the transport instance until the method exit to prevent deallocation of the transport
+  // instance within the method
+  GRPCTransport *transport = _transport;
+  [transport cancel];
 }
 
 - (void)receiveNextMessages:(NSUInteger)numberOfMessages {
-  [_transport receiveNextMessages:numberOfMessages];
+  // retain the transport instance until the method exit to prevent deallocation of the transport
+  // instance within the method
+  GRPCTransport *transport = _transport;
+  [transport receiveNextMessages:numberOfMessages];
 }
 
 /** Forward initial metadata to the previous interceptor in the chain */
