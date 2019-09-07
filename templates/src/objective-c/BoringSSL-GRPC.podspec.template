@@ -81,7 +81,7 @@
 
     s.source = {
       :git => 'https://github.com/google/boringssl.git',
-      :commit => "2e0d354690064c90ee245c715b92e2bb32492571",
+      :commit => "cf34ddfae2a167528bd28b8c30055a34b90a38f3",
     }
 
     s.ios.deployment_target = '7.0'
