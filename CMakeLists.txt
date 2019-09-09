@@ -96,9 +96,15 @@ endif()
 
 set(CMAKE_POSITION_INDEPENDENT_CODE TRUE)
 
+if(WIN32)
+  # We don't officially support mingw build on Windows, but setting _WIN32_WINNT
+  # for all Windows builds (not just MSVC) happens to make things build with mingw
+  add_definitions(-D_WIN32_WINNT=0x600)
+endif()
+
 if (MSVC)
   include(cmake/msvc_static_runtime.cmake)
-  add_definitions(-D_WIN32_WINNT=0x600 -D_SCL_SECURE_NO_WARNINGS -D_CRT_SECURE_NO_WARNINGS -D_WINSOCK_DEPRECATED_NO_WARNINGS)
+  add_definitions(-D_SCL_SECURE_NO_WARNINGS -D_CRT_SECURE_NO_WARNINGS -D_WINSOCK_DEPRECATED_NO_WARNINGS)
   # needed to compile protobuf
   add_definitions(/wd4065 /wd4506)
   # TODO(jtattermusch): revisit warnings that were silenced as part of upgrade to protobuf3.6.0
