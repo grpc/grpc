@@ -910,6 +910,9 @@ static int prepare_application_metadata(grpc_call* call, int count,
                    "validate_metadata",
                    grpc_validate_header_nonbin_value_is_legal(md->value))) {
       break;
+    } else if (GRPC_SLICE_LENGTH(md->value) >= UINT32_MAX) {
+      // HTTP2 hpack encoding has a maximum limit.
+      break;
     }
     l->md = grpc_mdelem_from_grpc_metadata(const_cast<grpc_metadata*>(md));
   }

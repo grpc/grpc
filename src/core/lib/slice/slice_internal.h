@@ -182,7 +182,7 @@ struct StaticSliceRefcount {
         index(index) {}
 
   grpc_slice_refcount base;
-  uint32_t index;
+  const uint32_t index;
 };
 
 extern grpc_slice_refcount kNoopRefcount;
@@ -214,23 +214,39 @@ struct InternedSliceRefcount {
 
 }  // namespace grpc_core
 
+inline size_t grpc_refcounted_slice_length(const grpc_slice& slice) {
+  GPR_DEBUG_ASSERT(slice.refcount != nullptr);
+  return slice.data.refcounted.length;
+}
+
+inline const uint8_t* grpc_refcounted_slice_data(const grpc_slice& slice) {
+  GPR_DEBUG_ASSERT(slice.refcount != nullptr);
+  return slice.data.refcounted.bytes;
+}
+
 inline int grpc_slice_refcount::Eq(const grpc_slice& a, const grpc_slice& b) {
+  GPR_DEBUG_ASSERT(a.refcount != nullptr);
+  GPR_DEBUG_ASSERT(a.refcount == this);
   switch (ref_type_) {
     case Type::STATIC:
-      return GRPC_STATIC_METADATA_INDEX(a) == GRPC_STATIC_METADATA_INDEX(b);
+      GPR_DEBUG_ASSERT(
+          (GRPC_STATIC_METADATA_INDEX(a) == GRPC_STATIC_METADATA_INDEX(b)) ==
+          (a.refcount == b.refcount));
     case Type::INTERNED:
       return a.refcount == b.refcount;
     case Type::NOP:
     case Type::REGULAR:
       break;
   }
-  if (GRPC_SLICE_LENGTH(a) != GRPC_SLICE_LENGTH(b)) return false;
-  if (GRPC_SLICE_LENGTH(a) == 0) return true;
-  return 0 == memcmp(GRPC_SLICE_START_PTR(a), GRPC_SLICE_START_PTR(b),
-                     GRPC_SLICE_LENGTH(a));
+  if (grpc_refcounted_slice_length(a) != GRPC_SLICE_LENGTH(b)) return false;
+  if (grpc_refcounted_slice_length(a) == 0) return true;
+  return 0 == memcmp(grpc_refcounted_slice_data(a), GRPC_SLICE_START_PTR(b),
+                     grpc_refcounted_slice_length(a));
 }
 
 inline uint32_t grpc_slice_refcount::Hash(const grpc_slice& slice) {
+  GPR_DEBUG_ASSERT(slice.refcount != nullptr);
+  GPR_DEBUG_ASSERT(slice.refcount == this);
   switch (ref_type_) {
     case Type::STATIC:
       return ::grpc_static_metadata_hash_values[GRPC_STATIC_METADATA_INDEX(
@@ -242,8 +258,8 @@ inline uint32_t grpc_slice_refcount::Hash(const grpc_slice& slice) {
     case Type::REGULAR:
       break;
   }
-  return gpr_murmur_hash3(GRPC_SLICE_START_PTR(slice), GRPC_SLICE_LENGTH(slice),
-                          g_hash_seed);
+  return gpr_murmur_hash3(grpc_refcounted_slice_data(slice),
+                          grpc_refcounted_slice_length(slice), g_hash_seed);
 }
 
 inline const grpc_slice& grpc_slice_ref_internal(const grpc_slice& slice) {

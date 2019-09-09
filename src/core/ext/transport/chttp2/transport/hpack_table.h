@@ -95,6 +95,9 @@ grpc_error* grpc_chttp2_hptbl_set_current_table_size(grpc_chttp2_hptbl* tbl,
 /* lookup a table entry based on its hpack index */
 grpc_mdelem grpc_chttp2_hptbl_lookup_dynamic_index(const grpc_chttp2_hptbl* tbl,
                                                    uint32_t tbl_index);
+grpc_mdelem grpc_chttp2_hptbl_lookup_ref_dynamic_index(
+    const grpc_chttp2_hptbl* tbl, uint32_t tbl_index);
+template <bool take_ref = false>
 inline grpc_mdelem grpc_chttp2_hptbl_lookup(const grpc_chttp2_hptbl* tbl,
                                             uint32_t index) {
   /* Static table comes first, just return an entry from it.
@@ -103,9 +106,15 @@ inline grpc_mdelem grpc_chttp2_hptbl_lookup(const grpc_chttp2_hptbl* tbl,
      must follow the hpack standard. If that changes, we *must* not rely on
      reading the core static metadata table here; at that point we'd need our
      own singleton static metadata in the correct order. */
-  return index <= GRPC_CHTTP2_LAST_STATIC_ENTRY
-             ? grpc_static_mdelem_manifested[index - 1]
-             : grpc_chttp2_hptbl_lookup_dynamic_index(tbl, index);
+  if (index <= GRPC_CHTTP2_LAST_STATIC_ENTRY) {
+    return grpc_static_mdelem_manifested()[index - 1];
+  } else {
+    if (take_ref) {
+      return grpc_chttp2_hptbl_lookup_ref_dynamic_index(tbl, index);
+    } else {
+      return grpc_chttp2_hptbl_lookup_dynamic_index(tbl, index);
+    }
+  }
 }
 /* add a table entry to the index */
 grpc_error* grpc_chttp2_hptbl_add(grpc_chttp2_hptbl* tbl,
@@ -120,7 +129,7 @@ size_t grpc_chttp2_get_size_in_hpack_table(grpc_mdelem elem,
 inline uintptr_t grpc_chttp2_get_static_hpack_table_index(grpc_mdelem md) {
   uintptr_t index =
       reinterpret_cast<grpc_core::StaticMetadata*>(GRPC_MDELEM_DATA(md)) -
-      grpc_static_mdelem_table;
+      grpc_static_mdelem_table();
   if (index < GRPC_CHTTP2_LAST_STATIC_ENTRY) {
     return index + 1;  // Hpack static metadata element indices start at 1
   }

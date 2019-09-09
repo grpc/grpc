@@ -476,8 +476,7 @@ namespace Grpc.IntegrationTesting
                 }
                 catch (RpcException ex)
                 {
-                    // We can't guarantee the status code always DeadlineExceeded. See issue #2685.
-                    Assert.Contains(ex.Status.StatusCode, new[] { StatusCode.DeadlineExceeded, StatusCode.Internal });
+                    Assert.AreEqual(StatusCode.DeadlineExceeded, ex.Status.StatusCode);
                 }
             }
             Console.WriteLine("Passed!");

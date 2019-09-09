@@ -2465,6 +2465,13 @@ static void cancel_stream_cb(void* user_data, uint32_t key, void* stream) {
 }
 
 static void end_all_the_calls(grpc_chttp2_transport* t, grpc_error* error) {
+  intptr_t http2_error;
+  // If there is no explicit grpc or HTTP/2 error, set to UNAVAILABLE on server.
+  if (!t->is_client && !grpc_error_has_clear_grpc_status(error) &&
+      !grpc_error_get_int(error, GRPC_ERROR_INT_HTTP2_ERROR, &http2_error)) {
+    error = grpc_error_set_int(error, GRPC_ERROR_INT_GRPC_STATUS,
+                               GRPC_STATUS_UNAVAILABLE);
+  }
   cancel_stream_cb_args args = {error, t};
   grpc_chttp2_stream_map_for_each(&t->stream_map, cancel_stream_cb, &args);
   GRPC_ERROR_UNREF(error);

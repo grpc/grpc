@@ -99,6 +99,9 @@ def grpc_cc_library(
                       "//:grpc_allow_exceptions": ["GRPC_ALLOW_EXCEPTIONS=1"],
                       "//:grpc_disallow_exceptions": ["GRPC_ALLOW_EXCEPTIONS=0"],
                       "//conditions:default": [],
+                  }) + select({
+                      "//:grpc_use_cpp_std_lib": ["GRPC_USE_CPP_STD_LIB=1"],
+                      "//conditions:default": [],
                   }),
         hdrs = hdrs + public_hdrs,
         deps = deps + _get_external_deps(external_deps),
@@ -266,13 +269,22 @@ def grpc_sh_binary(name, srcs, data = []):
         data = data,
     )
 
-def grpc_py_binary(name, srcs, data = [], deps = [], external_deps = [], testonly = False):
+def grpc_py_binary(name,
+                   srcs,
+                   data = [],
+                   deps = [],
+                   external_deps = [],
+                   testonly = False,
+                   python_version = "PY2",
+                   **kwargs):
     native.py_binary(
         name = name,
         srcs = srcs,
         testonly = testonly,
         data = data,
         deps = deps + _get_external_deps(external_deps),
+        python_version = python_version,
+        **kwargs
     )
 
 def grpc_package(name, visibility = "private", features = []):
@@ -329,4 +341,11 @@ def grpc_objc_library(
     
 def grpc_upb_proto_library(name, deps):
     upb_proto_library(name = name, deps = deps)
+
+
+def python_config_settings():
+    native.config_setting(
+        name = "python3",
+        flag_values = {"@bazel_tools//tools/python:python_version": "PY3"},
+    )
 

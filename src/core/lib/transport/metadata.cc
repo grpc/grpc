@@ -269,9 +269,9 @@ void grpc_mdctx_global_shutdown() {
 #ifndef NDEBUG
 static int is_mdelem_static(grpc_mdelem e) {
   return reinterpret_cast<grpc_core::StaticMetadata*>(GRPC_MDELEM_DATA(e)) >=
-             &grpc_static_mdelem_table[0] &&
+             &grpc_static_mdelem_table()[0] &&
          reinterpret_cast<grpc_core::StaticMetadata*>(GRPC_MDELEM_DATA(e)) <
-             &grpc_static_mdelem_table[GRPC_STATIC_MDELEM_COUNT];
+             &grpc_static_mdelem_table()[GRPC_STATIC_MDELEM_COUNT];
 }
 #endif
 
@@ -569,7 +569,7 @@ void* grpc_mdelem_get_user_data(grpc_mdelem md, void (*destroy_func)(void*)) {
           grpc_static_mdelem_user_data
               [reinterpret_cast<grpc_core::StaticMetadata*>(
                    GRPC_MDELEM_DATA(md)) -
-               grpc_static_mdelem_table]);
+               grpc_static_mdelem_table()]);
     case GRPC_MDELEM_STORAGE_ALLOCATED: {
       auto* am = reinterpret_cast<AllocatedMetadata*>(GRPC_MDELEM_DATA(md));
       return get_user_data(am->user_data(), destroy_func);
@@ -611,7 +611,7 @@ void* grpc_mdelem_set_user_data(grpc_mdelem md, void (*destroy_func)(void*),
           grpc_static_mdelem_user_data
               [reinterpret_cast<grpc_core::StaticMetadata*>(
                    GRPC_MDELEM_DATA(md)) -
-               grpc_static_mdelem_table]);
+               grpc_static_mdelem_table()]);
     case GRPC_MDELEM_STORAGE_ALLOCATED: {
       auto* am = reinterpret_cast<AllocatedMetadata*>(GRPC_MDELEM_DATA(md));
       return set_user_data(am->user_data(), destroy_func, data);

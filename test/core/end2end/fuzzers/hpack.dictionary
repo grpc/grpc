@@ -22,6 +22,7 @@
 "\x04host"
 "\x1Agrpc-previous-rpc-attempts"
 "\x16grpc-retry-pushback-ms"
+"\x1Bx-endpoint-load-metrics-bin"
 "\x0Cgrpc-timeout"
 "\x011"
 "\x012"

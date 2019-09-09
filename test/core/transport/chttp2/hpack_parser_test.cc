@@ -34,7 +34,7 @@ typedef struct {
   va_list args;
 } test_checker;
 
-static void onhdr(void* ud, grpc_mdelem md) {
+static grpc_error* onhdr(void* ud, grpc_mdelem md) {
   const char *ekey, *evalue;
   test_checker* chk = static_cast<test_checker*>(ud);
   ekey = va_arg(chk->args, char*);
@@ -44,6 +44,7 @@ static void onhdr(void* ud, grpc_mdelem md) {
   GPR_ASSERT(grpc_slice_str_cmp(GRPC_MDKEY(md), ekey) == 0);
   GPR_ASSERT(grpc_slice_str_cmp(GRPC_MDVALUE(md), evalue) == 0);
   GRPC_MDELEM_UNREF(md);
+  return GRPC_ERROR_NONE;
 }
 
 static void test_vector(grpc_chttp2_hpack_parser* parser,

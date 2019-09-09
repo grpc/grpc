@@ -57,10 +57,9 @@ RUN pip install --upgrade google-api-python-client oauth2client
 RUN apt-get update && apt-get install -y python2.7 python-all-dev
 RUN curl https://bootstrap.pypa.io/get-pip.py | python2.7
 
-# Add Debian 'testing' repository
-RUN echo 'deb http://ftp.de.debian.org/debian testing main' >> /etc/apt/sources.list
-RUN echo 'APT::Default-Release "stable";' | tee -a /etc/apt/apt.conf.d/00local
-
+# Add Debian 'buster' repository, we will need it for installing newer versions of python
+RUN echo 'deb http://ftp.de.debian.org/debian buster main' >> /etc/apt/sources.list
+RUN echo 'APT::Default-Release "stretch";' | tee -a /etc/apt/apt.conf.d/00local
 
 RUN mkdir /var/local/jenkins
 
@@ -69,11 +68,14 @@ CMD ["bash"]
 
 RUN apt-get install -y jq zlib1g-dev libssl-dev
 
-COPY get_cpython.sh /tmp
-RUN apt-get install -y jq build-essential libffi-dev && \
-  chmod +x /tmp/get_cpython.sh && \
-  /tmp/get_cpython.sh && \
-  rm /tmp/get_cpython.sh
+RUN apt-get install -y jq build-essential libffi-dev
+
+RUN cd /tmp && \
+  wget -q https://github.com/python/cpython/archive/v3.8.0b3.tar.gz && \
+  tar xzvf v3.8.0b3.tar.gz && \
+  cd cpython-3.8.0b3 && \
+  ./configure && \
+  make install
 
 RUN python3.8 -m ensurepip && \
     python3.8 -m pip install coverage

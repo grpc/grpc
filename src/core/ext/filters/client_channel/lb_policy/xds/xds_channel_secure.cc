@@ -20,9 +20,11 @@
 
 #include "src/core/ext/filters/client_channel/lb_policy/xds/xds_channel.h"
 
+#include <string.h>
+
+#include <grpc/grpc_security.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/string_util.h>
-#include <string.h>
 
 #include "src/core/ext/filters/client_channel/client_channel.h"
 #include "src/core/ext/filters/client_channel/server_address.h"
@@ -33,29 +35,48 @@
 #include "src/core/lib/security/transport/target_authority_table.h"
 #include "src/core/lib/slice/slice_internal.h"
 
-grpc_channel_args* grpc_lb_policy_xds_modify_lb_channel_args(
-    grpc_channel_args* args) {
-  const char* args_to_remove[1];
-  size_t num_args_to_remove = 0;
-  grpc_arg args_to_add[2];
-  size_t num_args_to_add = 0;
+namespace grpc_core {
+
+grpc_channel_args* ModifyXdsBalancerChannelArgs(grpc_channel_args* args) {
+  InlinedVector<const char*, 1> args_to_remove;
+  InlinedVector<grpc_arg, 2> args_to_add;
   // Substitute the channel credentials with a version without call
   // credentials: the load balancer is not necessarily trusted to handle
   // bearer token credentials.
   grpc_channel_credentials* channel_credentials =
       grpc_channel_credentials_find_in_args(args);
-  grpc_core::RefCountedPtr<grpc_channel_credentials> creds_sans_call_creds;
+  RefCountedPtr<grpc_channel_credentials> creds_sans_call_creds;
   if (channel_credentials != nullptr) {
     creds_sans_call_creds =
         channel_credentials->duplicate_without_call_credentials();
     GPR_ASSERT(creds_sans_call_creds != nullptr);
-    args_to_remove[num_args_to_remove++] = GRPC_ARG_CHANNEL_CREDENTIALS;
-    args_to_add[num_args_to_add++] =
-        grpc_channel_credentials_to_arg(creds_sans_call_creds.get());
+    args_to_remove.emplace_back(GRPC_ARG_CHANNEL_CREDENTIALS);
+    args_to_add.emplace_back(
+        grpc_channel_credentials_to_arg(creds_sans_call_creds.get()));
   }
   grpc_channel_args* result = grpc_channel_args_copy_and_add_and_remove(
-      args, args_to_remove, num_args_to_remove, args_to_add, num_args_to_add);
+      args, args_to_remove.data(), args_to_remove.size(), args_to_add.data(),
+      args_to_add.size());
   // Clean up.
   grpc_channel_args_destroy(args);
   return result;
 }
+
+grpc_channel* CreateXdsBalancerChannel(const char* target_uri,
+                                       const grpc_channel_args& args) {
+  grpc_channel_credentials* creds =
+      grpc_channel_credentials_find_in_args(&args);
+  if (creds == nullptr) {
+    // Build with security but parent channel is insecure.
+    return grpc_insecure_channel_create(target_uri, &args, nullptr);
+  }
+  const char* arg_to_remove = GRPC_ARG_CHANNEL_CREDENTIALS;
+  grpc_channel_args* new_args =
+      grpc_channel_args_copy_and_remove(&args, &arg_to_remove, 1);
+  grpc_channel* channel =
+      grpc_secure_channel_create(creds, target_uri, new_args, nullptr);
+  grpc_channel_args_destroy(new_args);
+  return channel;
+}
+
+}  // namespace grpc_core

@@ -328,3 +328,25 @@ cdef grpc_ssl_certificate_config_reload_status _server_cert_config_fetcher_wrapp
       cert_config.c_ssl_pem_key_cert_pairs_count)
   return GRPC_SSL_CERTIFICATE_CONFIG_RELOAD_NEW
 
+
+class LocalConnectionType:
+  uds = UDS
+  local_tcp = LOCAL_TCP
+
+cdef class LocalChannelCredentials(ChannelCredentials):
+
+  def __cinit__(self, grpc_local_connect_type local_connect_type):
+    self._local_connect_type = local_connect_type
+
+  cdef grpc_channel_credentials *c(self) except *:
+    cdef grpc_local_connect_type local_connect_type
+    local_connect_type = self._local_connect_type
+    return grpc_local_credentials_create(local_connect_type)
+
+def channel_credentials_local(grpc_local_connect_type local_connect_type):
+  return LocalChannelCredentials(local_connect_type)
+
+def server_credentials_local(grpc_local_connect_type local_connect_type):
+  cdef ServerCredentials credentials = ServerCredentials()
+  credentials.c_credentials = grpc_local_server_credentials_create(local_connect_type)
+  return credentials

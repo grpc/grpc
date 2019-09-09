@@ -70,8 +70,8 @@ namespace Grpc.Microbenchmarks
             var native = NativeMethods.Get();
 
             // replace the implementation of a native method with a fake
-            NativeMethods.Delegates.grpcsharp_call_start_unary_delegate fakeCallStartUnary = (CallSafeHandle call, BatchContextSafeHandle ctx, byte[] sendBuffer, UIntPtr sendBufferLen, WriteFlags writeFlags, MetadataArraySafeHandle metadataArray, CallFlags metadataFlags) => {
-                return native.grpcsharp_test_call_start_unary_echo(call, ctx, sendBuffer, sendBufferLen, writeFlags, metadataArray, metadataFlags);
+            NativeMethods.Delegates.grpcsharp_call_start_unary_delegate fakeCallStartUnary = (CallSafeHandle call, BatchContextSafeHandle ctx, SliceBufferSafeHandle sendBuffer, WriteFlags writeFlags, MetadataArraySafeHandle metadataArray, CallFlags metadataFlags) => {
+                return native.grpcsharp_test_call_start_unary_echo(call, ctx, sendBuffer, writeFlags, metadataArray, metadataFlags);
             };
             native.GetType().GetField(nameof(native.grpcsharp_call_start_unary)).SetValue(native, fakeCallStartUnary);
 
@@ -91,7 +91,7 @@ namespace Grpc.Microbenchmarks
             await channel.ShutdownAsync();
         }
 
-        class PingClient : LiteClientBase
+        class PingClient : ClientBase
         {
             public PingClient(CallInvoker callInvoker) : base(callInvoker) { }
 

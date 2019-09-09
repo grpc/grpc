@@ -315,7 +315,15 @@ grpc_slice XdsLrsRequestCreateAndEncode(const char* server_name) {
 namespace {
 
 void LocalityStatsPopulate(envoy_api_v2_endpoint_UpstreamLocalityStats* output,
+#if GRPC_USE_CPP_STD_LIB
+                           // TODO(veblush): Clean up this
+                           // This is to address the difference between
+                           // std::map and Map. #else block will be gone
+                           // once using stdlib is enabled by default.
+                           Pair<const RefCountedPtr<XdsLocalityName>,
+#else
                            Pair<RefCountedPtr<XdsLocalityName>,
+#endif
                                 XdsClientStats::LocalityStats::Snapshot>& input,
                            upb_arena* arena) {
   // Set sub_zone.

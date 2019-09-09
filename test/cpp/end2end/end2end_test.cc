@@ -36,6 +36,7 @@
 #include <grpcpp/server_context.h>
 
 #include "src/core/ext/filters/client_channel/backup_poller.h"
+#include "src/core/lib/gpr/env.h"
 #include "src/core/lib/iomgr/iomgr.h"
 #include "src/core/lib/security/credentials/credentials.h"
 #include "src/proto/grpc/testing/duplicate/echo_duplicate.grpc.pb.h"
@@ -254,6 +255,8 @@ void TestScenario::Log() const {
 
 class End2endTest : public ::testing::TestWithParam<TestScenario> {
  protected:
+  static void SetUpTestCase() { grpc_init(); }
+  static void TearDownTestCase() { grpc_shutdown(); }
   End2endTest()
       : is_server_started_(false),
         kMaxMessageSize_(8192),
@@ -2106,6 +2109,13 @@ std::vector<TestScenario> CreateTestScenarios(bool use_proxy,
                                               bool test_callback_server) {
   std::vector<TestScenario> scenarios;
   std::vector<grpc::string> credentials_types;
+
+  GPR_GLOBAL_CONFIG_SET(grpc_client_channel_backup_poll_interval_ms, 200);
+#if TARGET_OS_IPHONE
+  // Workaround Apple CFStream bug
+  gpr_setenv("grpc_cfstream", "0");
+#endif
+
   if (test_secure) {
     credentials_types =
         GetCredentialsProvider()->GetSecureCredentialsTypeList();
@@ -2173,12 +2183,8 @@ INSTANTIATE_TEST_CASE_P(
 }  // namespace grpc
 
 int main(int argc, char** argv) {
-  GPR_GLOBAL_CONFIG_SET(grpc_client_channel_backup_poll_interval_ms, 200);
   grpc::testing::TestEnvironment env(argc, argv);
-  // The grpc_init is to cover the MAYBE_SKIP_TEST.
-  grpc_init();
   ::testing::InitGoogleTest(&argc, argv);
   int ret = RUN_ALL_TESTS();
-  grpc_shutdown();
   return ret;
 }

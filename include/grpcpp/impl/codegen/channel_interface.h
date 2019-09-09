@@ -154,10 +154,10 @@ class ChannelInterface {
   // Returns an empty Call object (rather than being pure) since this is a new
   // method and adding a new pure method to an interface would be a breaking
   // change (even though this is private and non-API)
-  virtual internal::Call CreateCallInternal(const internal::RpcMethod& method,
-                                            ::grpc_impl::ClientContext* context,
-                                            ::grpc_impl::CompletionQueue* cq,
-                                            size_t interceptor_pos) {
+  virtual internal::Call CreateCallInternal(
+      const internal::RpcMethod& /*method*/,
+      ::grpc_impl::ClientContext* /*context*/,
+      ::grpc_impl::CompletionQueue* /*cq*/, size_t /*interceptor_pos*/) {
     return internal::Call();
   }
 

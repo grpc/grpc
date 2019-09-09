@@ -57,10 +57,9 @@ RUN pip install --upgrade google-api-python-client oauth2client
 RUN apt-get update && apt-get install -y python2.7 python-all-dev
 RUN curl https://bootstrap.pypa.io/get-pip.py | python2.7
 
-# Add Debian 'testing' repository
-RUN echo 'deb http://ftp.de.debian.org/debian testing main' >> /etc/apt/sources.list
-RUN echo 'APT::Default-Release "stable";' | tee -a /etc/apt/apt.conf.d/00local
-
+# Add Debian 'buster' repository, we will need it for installing newer versions of python
+RUN echo 'deb http://ftp.de.debian.org/debian buster main' >> /etc/apt/sources.list
+RUN echo 'APT::Default-Release "stretch";' | tee -a /etc/apt/apt.conf.d/00local
 
 RUN mkdir /var/local/jenkins
 
@@ -73,7 +72,7 @@ RUN apt-get update && apt-get -y install libgflags-dev libgtest-dev libc++-dev c
 
 #========================
 # Sanity test dependencies
-RUN apt-get update && apt-get -t testing install -y python3.7 python3-all-dev
+RUN apt-get update && apt-get -t buster install -y python3.7 python3-all-dev
 RUN curl https://bootstrap.pypa.io/get-pip.py | python3.7
 # Make Python 3.7 the default Python 3 version
 RUN update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.7 1
@@ -98,7 +97,7 @@ ENV CLANG_TIDY=clang-tidy
 # Bazel installation
 
 # Must be in sync with tools/bazel
-ENV BAZEL_VERSION 0.26.0
+ENV BAZEL_VERSION 0.28.1
 
 # The correct bazel version is already preinstalled, no need to use //tools/bazel wrapper.
 ENV DISABLE_BAZEL_WRAPPER 1
