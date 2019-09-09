@@ -245,6 +245,7 @@
     <file baseinstalldir="/" name="src/core/lib/security/security_connector/security_connector.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/security/security_connector/ssl/ssl_security_connector.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/security/security_connector/ssl_utils.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/security/security_connector/ssl_utils_config.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/security/security_connector/tls/spiffe_security_connector.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/security/transport/auth_filters.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/security/transport/secure_endpoint.h" role="src" />
@@ -737,6 +738,7 @@
     <file baseinstalldir="/" name="src/core/lib/security/security_connector/security_connector.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/security/security_connector/ssl/ssl_security_connector.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/security/security_connector/ssl_utils.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/security/security_connector/ssl_utils_config.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/security/security_connector/tls/spiffe_security_connector.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/security/transport/client_auth_filter.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/security/transport/secure_endpoint.cc" role="src" />
