@@ -478,8 +478,8 @@ grpc_chttp2_transport::grpc_chttp2_transport(
       is_client(is_client),
       next_stream_id(is_client ? 1 : 2),
       deframe_state(is_client ? GRPC_DTS_FH_0 : GRPC_DTS_CLIENT_PREFIX_0) {
-  GPR_ASSERT(strlen(GRPC_CHTTP2_CLIENT_CONNECT_STRING) ==
-             GRPC_CHTTP2_CLIENT_CONNECT_STRLEN);
+  GPR_DEBUG_ASSERT(strlen(GRPC_CHTTP2_CLIENT_CONNECT_STRING) ==
+                   GRPC_CHTTP2_CLIENT_CONNECT_STRLEN);
   base.vtable = get_vtable();
   /* 8 is a random stab in the dark as to a good initial size: it's small enough
      that it shouldn't waste memory for infrequently used connections, yet
@@ -806,7 +806,7 @@ grpc_chttp2_stream* grpc_chttp2_parsing_accept_stream(grpc_chttp2_transport* t,
     return nullptr;
   }
   grpc_chttp2_stream* accepting = nullptr;
-  GPR_ASSERT(t->accepting_stream == nullptr);
+  GPR_DEBUG_ASSERT(t->accepting_stream == nullptr);
   t->accepting_stream = &accepting;
   t->channel_callback.accept_stream(t->channel_callback.accept_stream_user_data,
                                     &t->base,
@@ -962,12 +962,24 @@ void grpc_chttp2_initiate_write(grpc_chttp2_transport* t,
   }
 }
 
+template <bool strict_checks>
+static void mark_stream_writable(grpc_chttp2_transport* t,
+                                 grpc_chttp2_stream* s) {
+  if (strict_checks) {
+    if (t->closed_with_error == GRPC_ERROR_NONE &&
+        grpc_chttp2_list_add_writable_stream(t, s)) {
+      GRPC_CHTTP2_STREAM_REF(s, "chttp2_writing:become");
+    }
+  } else {
+    if (grpc_chttp2_list_add_writable_stream<false>(t, s)) {
+      GRPC_CHTTP2_STREAM_REF(s, "chttp2_writing:become");
+    }
+  }
+}
+
 void grpc_chttp2_mark_stream_writable(grpc_chttp2_transport* t,
                                       grpc_chttp2_stream* s) {
-  if (t->closed_with_error == GRPC_ERROR_NONE &&
-      grpc_chttp2_list_add_writable_stream(t, s)) {
-    GRPC_CHTTP2_STREAM_REF(s, "chttp2_writing:become");
-  }
+  mark_stream_writable<true>(t, s);
 }
 
 static grpc_closure_scheduler* write_scheduler(grpc_chttp2_transport* t,
@@ -1415,6 +1427,150 @@ static void log_metadata(const grpc_metadata_batch* md_batch, uint32_t id,
   }
 }
 
+static void GPR_ATTRIBUTE_NOINLINE
+perform_stream_op_log(grpc_transport_stream_op_batch* op) {
+  grpc_transport_stream_op_batch_payload* op_payload = op->payload;
+  grpc_chttp2_stream* s =
+      static_cast<grpc_chttp2_stream*>(op->handler_private.extra_arg);
+  grpc_chttp2_transport* t = s->t;
+  char* str = grpc_transport_stream_op_batch_string(op);
+  gpr_log(GPR_INFO, "perform_stream_op_locked: %s; on_complete = %p", str,
+          op->on_complete);
+  gpr_free(str);
+  if (op->send_initial_metadata) {
+    log_metadata(op_payload->send_initial_metadata.send_initial_metadata, s->id,
+                 t->is_client, true);
+  }
+  if (op->send_trailing_metadata) {
+    log_metadata(op_payload->send_trailing_metadata.send_trailing_metadata,
+                 s->id, t->is_client, false);
+  }
+}
+
+static void GPR_ATTRIBUTE_NOINLINE handle_send_but_transport_closed(
+    grpc_chttp2_stream* s, grpc_chttp2_transport* t) {
+  grpc_chttp2_cancel_stream(
+      t, s,
+      grpc_error_set_int(GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
+                             "Transport closed", &t->closed_with_error, 1),
+                         GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_UNAVAILABLE));
+}
+
+static void GPR_ATTRIBUTE_NOINLINE
+handle_send_but_stream_closed(grpc_chttp2_stream* s, grpc_chttp2_transport* t) {
+  grpc_chttp2_complete_closure_step(
+      t, s, &s->send_initial_metadata_finished,
+      GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
+          "Attempt to send initial metadata after stream was closed",
+          &s->write_closed_error, 1),
+      "send_initial_metadata_finished");
+}
+
+template <bool is_trailing>
+static void GPR_ATTRIBUTE_NOINLINE
+handle_md_size_too_big(grpc_chttp2_stream* s, grpc_chttp2_transport* t,
+                       size_t metadata_size, size_t metadata_peer_limit) {
+  static const char* err_msg_initial =
+      "to-be-sent initial metadata size "
+      "exceeds peer limit";
+  static const char* err_msg_trailing =
+      "to-be-sent trailing metadata size "
+      "exceeds peer limit";
+  grpc_chttp2_cancel_stream(
+      t, s,
+      grpc_error_set_int(
+          grpc_error_set_int(
+              grpc_error_set_int(
+                  GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+                      is_trailing ? err_msg_trailing : err_msg_initial),
+                  GRPC_ERROR_INT_SIZE, static_cast<intptr_t>(metadata_size)),
+              GRPC_ERROR_INT_LIMIT, static_cast<intptr_t>(metadata_peer_limit)),
+          GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_RESOURCE_EXHAUSTED));
+}
+
+static void handle_send_initial_metadata(
+    grpc_transport_stream_op_batch* op,
+    grpc_transport_stream_op_batch_payload* op_payload, grpc_chttp2_stream* s,
+    grpc_chttp2_transport* t) {
+  grpc_closure* on_complete = op->on_complete;
+  grpc_metadata_batch* const send_init_md =
+      op_payload->send_initial_metadata.send_initial_metadata;
+  const bool is_client = t->is_client;
+
+  if (is_client && t->channelz_socket != nullptr) {
+    t->channelz_socket->RecordStreamStartedFromLocal();
+  }
+  GRPC_STATS_INC_HTTP2_OP_SEND_INITIAL_METADATA();
+  /* call_start_batch ensures we only send initital metadata once.
+     Thus, this can be a debug assertion rather than a regular one. */
+  GPR_DEBUG_ASSERT(s->send_initial_metadata_finished == nullptr);
+  on_complete->next_data.scratch |= CLOSURE_BARRIER_MAY_COVER_WRITE;
+
+  /* Identify stream compression. */
+  s->stream_compression_method =
+      send_init_md->idx.named.content_encoding
+          ? grpc_stream_compression_method_parse(
+                GRPC_MDVALUE(send_init_md->idx.named.content_encoding->md))
+          : GRPC_STREAM_COMPRESSION_IDENTITY_COMPRESS;
+  /* Only initialize these fields if compression enabled. */
+  if (s->stream_compression_method !=
+      GRPC_STREAM_COMPRESSION_IDENTITY_COMPRESS) {
+    s->uncompressed_data_size = 0;
+    s->stream_compression_ctx = nullptr;
+    grpc_slice_buffer_init(&s->compressed_data_buffer);
+  }
+  s->send_initial_metadata =
+      op_payload->send_initial_metadata.send_initial_metadata;
+  s->send_initial_metadata_finished = add_closure_barrier(on_complete);
+  if (is_client) {
+    s->deadline = GPR_MIN(s->deadline, s->send_initial_metadata->deadline);
+  }
+  /* TODO(arjunroy): Should not need to iterate md_batch to get size. */
+  const size_t metadata_size =
+      grpc_metadata_batch_size(s->send_initial_metadata);
+  const size_t metadata_peer_limit =
+      t->settings[GRPC_PEER_SETTINGS]
+                 [GRPC_CHTTP2_SETTINGS_MAX_HEADER_LIST_SIZE];
+  if (GPR_UNLIKELY(metadata_size > metadata_peer_limit)) {
+    handle_md_size_too_big<false>(s, t, metadata_size, metadata_peer_limit);
+  } else {
+    if (contains_non_ok_status(s->send_initial_metadata)) {
+      s->seen_error = true;
+    }
+    if (GPR_LIKELY(!s->write_closed)) {
+      if (is_client) {
+        if (GPR_LIKELY(t->closed_with_error == GRPC_ERROR_NONE)) {
+          /* If client, ID is set only by maybe_start_some_streams. */
+          GPR_DEBUG_ASSERT(s->id == 0);
+          grpc_chttp2_list_add_waiting_for_concurrency(t, s);
+          maybe_start_some_streams(t);
+        } else { /* Unlikely: transport is closed. */
+          handle_send_but_transport_closed(s, t);
+        }
+      } else {
+        /* If server, ID is set at stream construction time. */
+        GPR_DEBUG_ASSERT(s->id != 0);
+        mark_stream_writable<false>(t, s);
+        /* If we're not sending a message or we did not hint that we can buffer,
+         * then immediately initiate a write. */
+        if (!(op->send_message &&
+              (op->payload->send_message.send_message->flags() &
+               GRPC_WRITE_BUFFER_HINT))) {
+          grpc_chttp2_initiate_write(
+              t, GRPC_CHTTP2_INITIATE_WRITE_SEND_INITIAL_METADATA);
+        }
+      }
+    } else { /* Unlikely: stream is closed. */
+      s->send_initial_metadata = nullptr;
+      handle_send_but_stream_closed(s, t);
+    }
+  }
+  if (op_payload->send_initial_metadata.peer_string != nullptr) {
+    gpr_atm_rel_store(op_payload->send_initial_metadata.peer_string,
+                      (gpr_atm)t->peer_string);
+  }
+}
+
 static void perform_stream_op_locked(void* stream_op,
                                      grpc_error* error_ignored) {
   GPR_TIMER_SCOPE("perform_stream_op_locked", 0);
@@ -1431,18 +1587,7 @@ static void perform_stream_op_locked(void* stream_op,
   s->context = op->payload->context;
   s->traced = op->is_traced;
   if (GRPC_TRACE_FLAG_ENABLED(grpc_http_trace)) {
-    char* str = grpc_transport_stream_op_batch_string(op);
-    gpr_log(GPR_INFO, "perform_stream_op_locked: %s; on_complete = %p", str,
-            op->on_complete);
-    gpr_free(str);
-    if (op->send_initial_metadata) {
-      log_metadata(op_payload->send_initial_metadata.send_initial_metadata,
-                   s->id, t->is_client, true);
-    }
-    if (op->send_trailing_metadata) {
-      log_metadata(op_payload->send_trailing_metadata.send_trailing_metadata,
-                   s->id, t->is_client, false);
-    }
+    perform_stream_op_log(op);
   }
 
   grpc_closure* on_complete = op->on_complete;
@@ -1460,95 +1605,7 @@ static void perform_stream_op_locked(void* stream_op,
   }
 
   if (op->send_initial_metadata) {
-    if (t->is_client && t->channelz_socket != nullptr) {
-      t->channelz_socket->RecordStreamStartedFromLocal();
-    }
-    GRPC_STATS_INC_HTTP2_OP_SEND_INITIAL_METADATA();
-    GPR_ASSERT(s->send_initial_metadata_finished == nullptr);
-    on_complete->next_data.scratch |= CLOSURE_BARRIER_MAY_COVER_WRITE;
-
-    /* Identify stream compression */
-    if (op_payload->send_initial_metadata.send_initial_metadata->idx.named
-                .content_encoding == nullptr ||
-        grpc_stream_compression_method_parse(
-            GRPC_MDVALUE(
-                op_payload->send_initial_metadata.send_initial_metadata->idx
-                    .named.content_encoding->md),
-            true, &s->stream_compression_method) == 0) {
-      s->stream_compression_method = GRPC_STREAM_COMPRESSION_IDENTITY_COMPRESS;
-    }
-    if (s->stream_compression_method !=
-        GRPC_STREAM_COMPRESSION_IDENTITY_COMPRESS) {
-      s->uncompressed_data_size = 0;
-      s->stream_compression_ctx = nullptr;
-      grpc_slice_buffer_init(&s->compressed_data_buffer);
-    }
-    s->send_initial_metadata_finished = add_closure_barrier(on_complete);
-    s->send_initial_metadata =
-        op_payload->send_initial_metadata.send_initial_metadata;
-    const size_t metadata_size =
-        grpc_metadata_batch_size(s->send_initial_metadata);
-    const size_t metadata_peer_limit =
-        t->settings[GRPC_PEER_SETTINGS]
-                   [GRPC_CHTTP2_SETTINGS_MAX_HEADER_LIST_SIZE];
-    if (t->is_client) {
-      s->deadline = GPR_MIN(s->deadline, s->send_initial_metadata->deadline);
-    }
-    if (metadata_size > metadata_peer_limit) {
-      grpc_chttp2_cancel_stream(
-          t, s,
-          grpc_error_set_int(
-              grpc_error_set_int(
-                  grpc_error_set_int(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-                                         "to-be-sent initial metadata size "
-                                         "exceeds peer limit"),
-                                     GRPC_ERROR_INT_SIZE,
-                                     static_cast<intptr_t>(metadata_size)),
-                  GRPC_ERROR_INT_LIMIT,
-                  static_cast<intptr_t>(metadata_peer_limit)),
-              GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_RESOURCE_EXHAUSTED));
-    } else {
-      if (contains_non_ok_status(s->send_initial_metadata)) {
-        s->seen_error = true;
-      }
-      if (!s->write_closed) {
-        if (t->is_client) {
-          if (t->closed_with_error == GRPC_ERROR_NONE) {
-            GPR_ASSERT(s->id == 0);
-            grpc_chttp2_list_add_waiting_for_concurrency(t, s);
-            maybe_start_some_streams(t);
-          } else {
-            grpc_chttp2_cancel_stream(
-                t, s,
-                grpc_error_set_int(
-                    GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
-                        "Transport closed", &t->closed_with_error, 1),
-                    GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_UNAVAILABLE));
-          }
-        } else {
-          GPR_ASSERT(s->id != 0);
-          grpc_chttp2_mark_stream_writable(t, s);
-          if (!(op->send_message &&
-                (op->payload->send_message.send_message->flags() &
-                 GRPC_WRITE_BUFFER_HINT))) {
-            grpc_chttp2_initiate_write(
-                t, GRPC_CHTTP2_INITIATE_WRITE_SEND_INITIAL_METADATA);
-          }
-        }
-      } else {
-        s->send_initial_metadata = nullptr;
-        grpc_chttp2_complete_closure_step(
-            t, s, &s->send_initial_metadata_finished,
-            GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
-                "Attempt to send initial metadata after stream was closed",
-                &s->write_closed_error, 1),
-            "send_initial_metadata_finished");
-      }
-    }
-    if (op_payload->send_initial_metadata.peer_string != nullptr) {
-      gpr_atm_rel_store(op_payload->send_initial_metadata.peer_string,
-                        (gpr_atm)t->peer_string);
-    }
+    handle_send_initial_metadata(op, op_payload, s, t);
   }
 
   if (op->send_message) {
@@ -1598,7 +1655,8 @@ static void perform_stream_op_locked(void* stream_op,
 
   if (op->send_trailing_metadata) {
     GRPC_STATS_INC_HTTP2_OP_SEND_TRAILING_METADATA();
-    GPR_ASSERT(s->send_trailing_metadata_finished == nullptr);
+    /* Surface layer ensures this op is only called once, so debug assert. */
+    GPR_DEBUG_ASSERT(s->send_trailing_metadata_finished == nullptr);
     on_complete->next_data.scratch |= CLOSURE_BARRIER_MAY_COVER_WRITE;
     s->send_trailing_metadata_finished = add_closure_barrier(on_complete);
     s->send_trailing_metadata =
@@ -1610,23 +1668,12 @@ static void perform_stream_op_locked(void* stream_op,
         t->settings[GRPC_PEER_SETTINGS]
                    [GRPC_CHTTP2_SETTINGS_MAX_HEADER_LIST_SIZE];
     if (metadata_size > metadata_peer_limit) {
-      grpc_chttp2_cancel_stream(
-          t, s,
-          grpc_error_set_int(
-              grpc_error_set_int(
-                  grpc_error_set_int(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-                                         "to-be-sent trailing metadata size "
-                                         "exceeds peer limit"),
-                                     GRPC_ERROR_INT_SIZE,
-                                     static_cast<intptr_t>(metadata_size)),
-                  GRPC_ERROR_INT_LIMIT,
-                  static_cast<intptr_t>(metadata_peer_limit)),
-              GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_RESOURCE_EXHAUSTED));
+      handle_md_size_too_big<true>(s, t, metadata_size, metadata_peer_limit);
     } else {
       if (contains_non_ok_status(s->send_trailing_metadata)) {
         s->seen_error = true;
       }
-      if (s->write_closed) {
+      if (GPR_UNLIKELY(s->write_closed)) {
         s->send_trailing_metadata = nullptr;
         grpc_chttp2_complete_closure_step(
             t, s, &s->send_trailing_metadata_finished,
@@ -1649,7 +1696,8 @@ static void perform_stream_op_locked(void* stream_op,
 
   if (op->recv_initial_metadata) {
     GRPC_STATS_INC_HTTP2_OP_RECV_INITIAL_METADATA();
-    GPR_ASSERT(s->recv_initial_metadata_ready == nullptr);
+    /* Surface layer ensures this op is only called once, so debug assert. */
+    GPR_DEBUG_ASSERT(s->recv_initial_metadata_ready == nullptr);
     s->recv_initial_metadata_ready =
         op_payload->recv_initial_metadata.recv_initial_metadata_ready;
     s->recv_initial_metadata =
@@ -1690,9 +1738,10 @@ static void perform_stream_op_locked(void* stream_op,
 
   if (op->recv_trailing_metadata) {
     GRPC_STATS_INC_HTTP2_OP_RECV_TRAILING_METADATA();
-    GPR_ASSERT(s->collecting_stats == nullptr);
+    /* Surface layer ensures this op is only called once, so debug asserts. */
+    GPR_DEBUG_ASSERT(s->collecting_stats == nullptr);
     s->collecting_stats = op_payload->recv_trailing_metadata.collect_stats;
-    GPR_ASSERT(s->recv_trailing_metadata_finished == nullptr);
+    GPR_DEBUG_ASSERT(s->recv_trailing_metadata_finished == nullptr);
     s->recv_trailing_metadata_finished =
         op_payload->recv_trailing_metadata.recv_trailing_metadata_ready;
     s->recv_trailing_metadata =
@@ -2895,7 +2944,6 @@ static void reset_byte_stream(void* arg, grpc_error* error) {
     grpc_chttp2_maybe_complete_recv_message(s->t, s);
     grpc_chttp2_maybe_complete_recv_trailing_metadata(s->t, s);
   } else {
-    GPR_ASSERT(error != GRPC_ERROR_NONE);
     GRPC_CLOSURE_SCHED(s->on_next, GRPC_ERROR_REF(error));
     s->on_next = nullptr;
     GRPC_ERROR_UNREF(s->byte_stream_error);
@@ -3055,7 +3103,7 @@ grpc_error* Chttp2IncomingByteStream::Pull(grpc_slice* slice) {
 }
 
 void Chttp2IncomingByteStream::PublishError(grpc_error* error) {
-  GPR_ASSERT(error != GRPC_ERROR_NONE);
+  GPR_DEBUG_ASSERT(error != GRPC_ERROR_NONE);
   GRPC_CLOSURE_SCHED(stream_->on_next, GRPC_ERROR_REF(error));
   stream_->on_next = nullptr;
   GRPC_ERROR_UNREF(stream_->byte_stream_error);

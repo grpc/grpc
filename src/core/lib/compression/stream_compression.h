@@ -112,5 +112,38 @@ void grpc_stream_compression_context_destroy(
  */
 int grpc_stream_compression_method_parse(
     grpc_slice value, bool is_compress, grpc_stream_compression_method* method);
+inline grpc_stream_compression_method grpc_stream_compression_method_parse(
+    const grpc_slice& value) {
+  // At present, we only support identity and gzip compression.
+  // If we got an invalid value, we fallback to identity. So, as long as we do
+  // not add other types of compression, we only need to check for gzip.
+  // We place a debug assert to warn us when other types are added.
+  static_assert(
+      GRPC_STREAM_COMPRESSION_IDENTITY_COMPRESS ==
+          static_cast<grpc_stream_compression_method>(0),
+      "Change method if we ever support more than identity/gzip compression.");
+  static_assert(
+      GRPC_STREAM_COMPRESSION_IDENTITY_DECOMPRESS ==
+          static_cast<grpc_stream_compression_method>(1),
+      "Change method if we ever support more than identity/gzip compression.");
+  static_assert(
+      GRPC_STREAM_COMPRESSION_GZIP_COMPRESS ==
+          static_cast<grpc_stream_compression_method>(2),
+      "Change method if we ever support more than identity/gzip compression.");
+  static_assert(
+      GRPC_STREAM_COMPRESSION_GZIP_DECOMPRESS ==
+          static_cast<grpc_stream_compression_method>(3),
+      "Change method if we ever support more than identity/gzip compression.");
+  static_assert(
+      GRPC_STREAM_COMPRESSION_METHOD_COUNT ==
+          static_cast<grpc_stream_compression_method>(4),
+      "Change method if we ever support more than identity/gzip compression.");
+  if (value.refcount == GRPC_MDSTR_GZIP.refcount) {
+    return GRPC_STREAM_COMPRESSION_GZIP_COMPRESS;
+  }
+  return grpc_slice_differs_refcounted(value, GRPC_MDSTR_GZIP)
+             ? GRPC_STREAM_COMPRESSION_IDENTITY_COMPRESS
+             : GRPC_STREAM_COMPRESSION_GZIP_COMPRESS;
+}
 
 #endif

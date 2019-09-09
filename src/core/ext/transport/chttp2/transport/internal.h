@@ -700,8 +700,22 @@ void grpc_chttp2_end_write(grpc_chttp2_transport* t, grpc_error* error);
 grpc_error* grpc_chttp2_perform_read(grpc_chttp2_transport* t,
                                      const grpc_slice& slice);
 
+namespace grpc_core {
+namespace no_direct_call {
 bool grpc_chttp2_list_add_writable_stream(grpc_chttp2_transport* t,
                                           grpc_chttp2_stream* s);
+} /* namespace no_direct_call */
+} /* namespace grpc_core */
+template <bool strict_checks = true>
+inline bool grpc_chttp2_list_add_writable_stream(grpc_chttp2_transport* t,
+                                                 grpc_chttp2_stream* s) {
+  if (strict_checks) {
+    GPR_ASSERT(s->id != 0);
+  } else {
+    GPR_DEBUG_ASSERT(s->id != 0);
+  }
+  return grpc_core::no_direct_call::grpc_chttp2_list_add_writable_stream(t, s);
+}
 /** Get a writable stream
     returns non-zero if there was a stream available */
 bool grpc_chttp2_list_pop_writable_stream(grpc_chttp2_transport* t,

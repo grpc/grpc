@@ -137,12 +137,14 @@ static bool stream_list_add(grpc_chttp2_transport* t, grpc_chttp2_stream* s,
 }
 
 /* wrappers for specializations */
-
+namespace grpc_core {
+namespace no_direct_call {
 bool grpc_chttp2_list_add_writable_stream(grpc_chttp2_transport* t,
                                           grpc_chttp2_stream* s) {
-  GPR_ASSERT(s->id != 0);
   return stream_list_add(t, s, GRPC_CHTTP2_LIST_WRITABLE);
 }
+} /* namespace no_direct_call */
+} /* namespace grpc_core */
 
 bool grpc_chttp2_list_pop_writable_stream(grpc_chttp2_transport* t,
                                           grpc_chttp2_stream** s) {
