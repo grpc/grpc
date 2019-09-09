@@ -1293,11 +1293,13 @@ class FailoverTest : public BasicTest {
 TEST_F(FailoverTest, ChooseHighestPriority) {
   SetNextResolution({}, kDefaultServiceConfig_.c_str());
   SetNextResolutionForLbChannelAllBalancers();
-  ScheduleResponseForBalancer(
-      0,
-      EdsServiceImpl::BuildResponse(GetBackendPortsInGroups(0, 4, 4), {}, 0, {},
-                                    FractionalPercent::MILLION, {1, 2, 3, 0}),
-      0);
+  EdsServiceImpl::ResponseArgs args({
+      {"locality0", GetBackendPorts(0, 1), kDefaultLocalityWeight, 1},
+      {"locality1", GetBackendPorts(1, 2), kDefaultLocalityWeight, 2},
+      {"locality2", GetBackendPorts(2, 3), kDefaultLocalityWeight, 3},
+      {"locality3", GetBackendPorts(3, 4), kDefaultLocalityWeight, 0},
+  });
+  ScheduleResponseForBalancer(0, EdsServiceImpl::BuildResponse(args), 0);
   WaitForBackend(3, false);
   for (size_t i = 0; i < 3; ++i) {
     EXPECT_EQ(0, backends_[i]->backend_service()->request_count());
@@ -1312,11 +1314,13 @@ TEST_F(FailoverTest, ChooseHighestPriority) {
 TEST_F(FailoverTest, Failover) {
   SetNextResolution({}, kDefaultServiceConfig_.c_str());
   SetNextResolutionForLbChannelAllBalancers();
-  ScheduleResponseForBalancer(
-      0,
-      EdsServiceImpl::BuildResponse(GetBackendPortsInGroups(0, 4, 4), {}, 0, {},
-                                    FractionalPercent::MILLION, {1, 2, 3, 0}),
-      0);
+  EdsServiceImpl::ResponseArgs args({
+      {"locality0", GetBackendPorts(0, 1), kDefaultLocalityWeight, 1},
+      {"locality1", GetBackendPorts(1, 2), kDefaultLocalityWeight, 2},
+      {"locality2", GetBackendPorts(2, 3), kDefaultLocalityWeight, 3},
+      {"locality3", GetBackendPorts(3, 4), kDefaultLocalityWeight, 0},
+  });
+  ScheduleResponseForBalancer(0, EdsServiceImpl::BuildResponse(args), 0);
   ShutdownBackend(3);
   ShutdownBackend(0);
   WaitForBackend(1, false);
@@ -1335,11 +1339,13 @@ TEST_F(FailoverTest, Failback) {
   SetNextResolution({}, kDefaultServiceConfig_.c_str());
   SetNextResolutionForLbChannelAllBalancers();
   const size_t kNumRpcs = 100;
-  ScheduleResponseForBalancer(
-      0,
-      EdsServiceImpl::BuildResponse(GetBackendPortsInGroups(0, 4, 4), {}, 0, {},
-                                    FractionalPercent::MILLION, {1, 2, 3, 0}),
-      0);
+  EdsServiceImpl::ResponseArgs args({
+      {"locality0", GetBackendPorts(0, 1), kDefaultLocalityWeight, 1},
+      {"locality1", GetBackendPorts(1, 2), kDefaultLocalityWeight, 2},
+      {"locality2", GetBackendPorts(2, 3), kDefaultLocalityWeight, 3},
+      {"locality3", GetBackendPorts(3, 4), kDefaultLocalityWeight, 0},
+  });
+  ScheduleResponseForBalancer(0, EdsServiceImpl::BuildResponse(args), 0);
   ShutdownBackend(3);
   ShutdownBackend(0);
   WaitForBackend(1, false);

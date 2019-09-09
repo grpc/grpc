@@ -532,10 +532,11 @@ class XdsLb : public LoadBalancingPolicy {
       OrphanablePtr<Locality> ExtractLocalityLocked(
           const XdsLocalityName& name);
       void DeactivateLocked();
-      void MaybeReactivateLocked();
+      bool MaybeReactivateLocked();
       void MaybeCancelFailoverTimerLocked();
       bool HasPendingFailoverTimerLocked() const {
-          return failover_timer_callback_pending_};
+        return failover_timer_callback_pending_;
+      }
 
       void Orphan() override;
 
@@ -595,14 +596,14 @@ class XdsLb : public LoadBalancingPolicy {
     }
 
    private:
-    void UpdateLocalityMapLocked(uint32_t priority);
+    void CreateLocalityMapLocked(uint32_t priority);
     void FailoverOnConnectionFailureLocked(uint32_t failed_priority);
     void FailoverOnDisconnectionLocked(uint32_t failed_priority);
     void SwitchToHigherPriorityLocked(LocalityMap* new_locality_map);
     void PruneLocalityMapsLocked(size_t lower_than);
     OrphanablePtr<LocalityMap::Locality> ExtractLocalityLocked(
         const XdsLocalityName& name, uint32_t exclude_priority);
-    uint32_t NextPriority(uint32_t current);
+    void UpdateAppliedLocked(const XdsLocalityListPriorityMap& new_map);
 
     XdsLb* xds_policy_;
 
@@ -619,7 +620,7 @@ class XdsLb : public LoadBalancingPolicy {
     // The latest locality update received. Any action taken on the priority map
     // should respect this latest update.
     XdsLocalityListPriorityMap locality_list_map_;
-    bool* locality_list_applied_bitmask_;
+    InlinedVector<bool, 2> locality_list_applied_bitmask_;
     bool first_connection_attempt_done_ = false;
     bool started_connecting_ = false;
   };
@@ -2129,23 +2130,6 @@ void XdsLb::MaybeExitFallbackMode() {
 // XdsLb::LocalityPriorityMap
 //
 
-void UpdateAppliedLocked(
-    const XdsLocalityListPriorityMap& old_map, const XdsLocalityListPriorityMap& new_map) {
-  bool* bitmask = static_cast<bool*>(gpr_malloc(sizeof(bool) * new_map.Size()));
-  for (auto& p : new_map.map()) {
-    const uint32_t priority = p.first;
-    const XdsLocalityList& locality_list = p.second;
-    auto iter = old_map.map().find(priority);
-    // New priority.
-    if (iter == old_map.map().end()) bitmask[priority] = false;
-    const XdsLocalityList& old_locality_list = iter->second;
-    if (old_locality_list.applied &&
-        old_locality_list.list == locality_list.list) {
-      locality_list.applied = true;
-    }
-  }
-}
-
 void XdsLb::LocalityPriorityMap::UpdateLocked(
     XdsLocalityListPriorityMap locality_list_map) {
   // If this is the first connection attempt ever, report CONNECTING.
@@ -2157,8 +2141,7 @@ void XdsLb::LocalityPriorityMap::UpdateLocked(
     started_connecting_ = true;
   }
   // Update "applied" to avoid duplicate applications of the same locality list.
-  for ()
-  locality_list_applied_bitmask_ locality_list_map.UpdateAppliedLocked(locality_list_map_);
+  UpdateAppliedLocked(locality_list_map);
   // Store the locality list map for the following reasons:
   // 1. Create a locality map for a given priority on demand later.
   // 2. Skip duplicate update.
@@ -2166,8 +2149,30 @@ void XdsLb::LocalityPriorityMap::UpdateLocked(
   // Remove from the priority map the priorities that are not in the update.
   PruneLocalityMapsLocked(locality_list_map_.LowestPriority());
   // Start update from P0.
-  GPR_ASSERT(!locality_list_map_.sorted_priorities().empty());
-  UpdateLocalityMapLocked(0);
+  for (const auto& p : locality_list_map_.map()) {
+    const uint32_t priority = p.first;
+    const XdsLocalityList& locality_list = p.second;
+    auto iter = map_.find(priority);
+    // Case 1: Create a new locality map. Don't continue to create another one.
+    if (iter == map_.end()) {
+      CreateLocalityMapLocked(priority);
+      break;
+    }
+    LocalityMap* locality_map = iter->second.get();
+    // Maybe reactivate the locality map in case we don't have READY locality
+    // map.
+    locality_map->MaybeReactivateLocked();
+    // Propagate the locality list if it contains new update.
+    if (!locality_list_applied_bitmask_[priority]) {
+      locality_list_applied_bitmask_[priority] = true;
+      locality_map->UpdateLocked(locality_list);
+    }
+    // Case 2: The existing locality map is still in the failover timeout. Don't
+    // continue to create a new one.
+    if (locality_map->HasPendingFailoverTimerLocked()) break;
+    // Case 3: The existing locality map is out of failover timeout. Continue to
+    // create or update the next one.
+  }
 }
 
 void XdsLb::LocalityPriorityMap::ResetBackoffLocked() {
@@ -2200,39 +2205,16 @@ void XdsLb::LocalityPriorityMap::UpdateXdsPickerLocked() {
                               std::move(picker_list))));
 }
 
-void XdsLb::LocalityPriorityMap::UpdateLocalityMapLocked(uint32_t priority) {
-  // Completed trying all the priorities in the update.
+void XdsLb::LocalityPriorityMap::CreateLocalityMapLocked(uint32_t priority) {
+  // Exhausted priorities in the update.
   if (priority > locality_list_map_.LowestPriority()) return;
-  if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_xds_trace)) {
-    gpr_log(GPR_INFO, "[xdslb %p] Start trying priority %" PRIu32, xds_policy_,
-            priority);
-  }
+  // Never create a new locality map if we have a READY one.
+  if (current_priority() != UINT32_MAX) return;
   const XdsLocalityList* locality_list = locality_list_map_.Find(priority);
-  auto iter = map_.find(priority);
-  if (iter == map_.end()) {
-    // Never create a new locality map if we have a READY one.
-    if (current_priority() != UINT32_MAX) return;
-    // Case 1: Create a new locality map. Don't continue to create another one.
-    auto new_locality_map = MakeOrphanable<LocalityMap>(
-        xds_policy_->Ref(DEBUG_LOCATION, "XdsLb+LocalityMap"), priority);
-    iter = map_.emplace(priority, std::move(new_locality_map)).first;
-    iter->second->UpdateLocked(*locality_list);
-    return;
-  }
-  LocalityMap* locality_map = iter->second.get();
-  // Maybe reactivate the locality map in case we don't have READY locality map.
-  locality_map->MaybeReactivateLocked();
-  // Propagate the locality list if it contains new update.
-  if (!locality_list->applied) {
-    locality_list->applied = true;
-    locality_map->UpdateLocked(*locality_list);
-  }
-  // Case 2: The existing locality map is still in the failover timeout. Don't
-  // continue to create a new one.
-  if (locality_map->HasPendingFailoverTimerLocked()) return;
-  // Case 3: The existing locality map is out of failover timeout. Continue to
-  // create or update the next one.
-  UpdateLocalityMapLocked(priority + 1);
+  auto new_locality_map = MakeOrphanable<LocalityMap>(
+      xds_policy_->Ref(DEBUG_LOCATION, "XdsLb+LocalityMap"), priority);
+  auto iter = map_.emplace(priority, std::move(new_locality_map)).first;
+  iter->second->UpdateLocked(*locality_list);
 }
 
 void XdsLb::LocalityPriorityMap::FailoverOnConnectionFailureLocked(
@@ -2241,30 +2223,22 @@ void XdsLb::LocalityPriorityMap::FailoverOnConnectionFailureLocked(
   // TRANSIENT_FAILURE.
   if (!first_connection_attempt_done_) UpdateXdsPickerLocked();
   first_connection_attempt_done_ = true;
-  UpdateLocalityMapLocked(failed_priority + 1);
+  CreateLocalityMapLocked(failed_priority + 1);
 }
 
 void XdsLb::LocalityPriorityMap::FailoverOnDisconnectionLocked(
     uint32_t failed_priority) {
-  // Quick failover: if there is a READY locality map with the latest locality
-  // list update applied, switch to it immediately.
-  // Below are the benefits.
-  // (1). We can have a READY locality map to use right after the current one
-  // fails. (2). The channel can be kept READY without intermediate non-READY
-  // states.
-  uint32_t current = failed_priority;
-  while ((current = NextPriority(current)) != UINT32_MAX) {
-    // Skip priorities that have pending update.
-    if (!locality_list_map_.Find(current)->applied) continue;
-    LocalityMap* candidate = map_.find(current)->second.get();
-    // Skip priorities that are not READY.
-    if (candidate->connectivity_state() != GRPC_CHANNEL_READY) continue;
-    current_locality_map_ = candidate;
-    break;
+  uint32_t next_priority = locality_list_map_.NextPriority(failed_priority);
+  while (next_priority != UINT32_MAX) {
+    auto iter = map_.find(next_priority);
+    if (iter == map_.end()) {
+      CreateLocalityMapLocked(next_priority);
+      return;
+    }
+    LocalityMap* next_locality_map = iter->second.get();
+    if (next_locality_map->MaybeReactivateLocked()) return;
+    next_priority = locality_list_map_.NextPriority(next_priority);
   }
-  // Don't trigger another pass of connection attempts if there is already one.
-  if (trying_priority_ != UINT32_MAX) return;
-  UpdateLocalityMapLocked(failed_priority + 1);
 }
 
 void XdsLb::LocalityPriorityMap::SwitchToHigherPriorityLocked(
@@ -2312,12 +2286,24 @@ XdsLb::LocalityPriorityMap::ExtractLocalityLocked(const XdsLocalityName& name,
   return nullptr;
 }
 
-uint32_t XdsLb::LocalityPriorityMap::NextPriority(uint32_t current) {
-  uint32_t next = locality_list_map_.NextPriority(current);
-  while (next != UINT32_MAX && map_.find(next) == map_.end()) {
-    next = locality_list_map_.NextPriority(next);
+void XdsLb::LocalityPriorityMap::UpdateAppliedLocked(
+    const XdsLocalityListPriorityMap& new_map) {
+  InlinedVector<bool, 2> bitmask;
+  for (auto& p : new_map.map()) {
+    const uint32_t priority = p.first;
+    const XdsLocalityList& new_locality_list = p.second;
+    auto iter = locality_list_map_.map().find(priority);
+    // New priority.
+    if (iter == locality_list_map_.map().end()) {
+      bitmask.push_back(false);
+      continue;
+    }
+    const XdsLocalityList& old_locality_list = iter->second;
+    const bool new_applied = locality_list_applied_bitmask_[priority] &&
+                             old_locality_list.list == new_locality_list.list;
+    bitmask.push_back(new_applied);
   }
-  return next;
+  locality_list_applied_bitmask_ = std::move(bitmask);
 }
 
 //
@@ -2327,15 +2313,14 @@ uint32_t XdsLb::LocalityPriorityMap::NextPriority(uint32_t current) {
 XdsLb::LocalityPriorityMap::LocalityMap::LocalityMap(
     RefCountedPtr<XdsLb> xds_policy, uint32_t priority)
     : xds_policy_(std::move(xds_policy)), priority_(priority) {
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_xds_trace)) {
+    gpr_log(GPR_INFO, "[xdslb %p] Creating priority %" PRIu32,
+            xds_policy_.get(), priority_);
+  }
   GRPC_CLOSURE_INIT(&on_delayed_removal_timer_, OnDelayedRemovalTimerLocked,
                     this, grpc_combiner_scheduler(xds_policy_->combiner()));
   GRPC_CLOSURE_INIT(&on_failover_timer_, OnFailoverTimerLocked, this,
                     grpc_combiner_scheduler(xds_policy_->combiner()));
-}
-
-void XdsLb::LocalityPriorityMap::LocalityMap::UpdateLocked(
-    const XdsLocalityList& locality_list) {
-  if (xds_policy_->shutting_down_) return;
   // Start the failover timer.
   Ref(DEBUG_LOCATION, "LocalityMap+OnFailoverTimerLocked").release();
   grpc_timer_init(
@@ -2343,6 +2328,15 @@ void XdsLb::LocalityPriorityMap::LocalityMap::UpdateLocked(
       ExecCtx::Get()->Now() + xds_policy_->locality_map_failover_timeout_ms_,
       &on_failover_timer_);
   failover_timer_callback_pending_ = true;
+}
+
+void XdsLb::LocalityPriorityMap::LocalityMap::UpdateLocked(
+    const XdsLocalityList& locality_list) {
+  if (xds_policy_->shutting_down_) return;
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_xds_trace)) {
+    gpr_log(GPR_INFO, "[xdslb %p] Start Updating priority %" PRIu32,
+            xds_policy(), priority_);
+  }
   // Add or update the localities in locality_list.
   for (size_t i = 0; i < locality_list.Size(); ++i) {
     const RefCountedPtr<XdsLocalityName>& name = locality_list.list[i].name;
@@ -2388,10 +2382,7 @@ XdsLb::LocalityPriorityMap::LocalityMap::SelectReadyPickersLocked() {
   Picker::PickerList picker_list;
   uint32_t end = 0;
   for (auto& p : map_) {
-    const XdsLocalityName& locality_name = *p.first;
     const Locality* locality = p.second.get();
-    // Skip the localities that are not in the latest locality list.
-    if (!locality_list()->Has(locality_name)) continue;
     if (locality->connectivity_state() != GRPC_CHANNEL_READY) continue;
     end += locality->locality_weight();
     picker_list.push_back(MakePair(end, locality->picker_wrapper()));
@@ -2426,14 +2417,15 @@ void XdsLb::LocalityPriorityMap::LocalityMap::DeactivateLocked() {
   delayed_removal_timer_callback_pending_ = true;
 }
 
-void XdsLb::LocalityPriorityMap::LocalityMap::MaybeReactivateLocked() {
+bool XdsLb::LocalityPriorityMap::LocalityMap::MaybeReactivateLocked() {
   // Don't reactivate a priority that is not higher than the current one.
-  if (priority_ >= priority_map()->current_priority()) return;
+  if (priority_ >= priority_map()->current_priority()) return false;
   if (connectivity_state_ == GRPC_CHANNEL_READY) {
     priority_map()->SwitchToHigherPriorityLocked(this);
   }
-  if (!delayed_removal_timer_callback_pending_) return;
+  if (!delayed_removal_timer_callback_pending_) return false;
   grpc_timer_cancel(&delayed_removal_timer_);
+  return connectivity_state_ == GRPC_CHANNEL_READY;
 }
 
 void XdsLb::LocalityPriorityMap::LocalityMap::MaybeCancelFailoverTimerLocked() {
@@ -2456,6 +2448,7 @@ void XdsLb::LocalityPriorityMap::LocalityMap::OnLocalityStateUpdateLocked() {
   const uint32_t current_priority = priority_map()->current_priority();
   // Ignore lower-than-current priority.
   if (priority_ > current_priority) return;
+  // Maybe update fallback state.
   if (connectivity_state_ == GRPC_CHANNEL_READY) {
     xds_policy_->MaybeCancelFallbackAtStartupChecks();
     xds_policy_->MaybeExitFallbackMode();
@@ -2469,7 +2462,7 @@ void XdsLb::LocalityPriorityMap::LocalityMap::OnLocalityStateUpdateLocked() {
       case GRPC_CHANNEL_TRANSIENT_FAILURE:
         // If a higher priority fails, fail over only if it's the currently
         // trying one.
-        if (priority_ == priority_map()->trying_priority_) {
+        if (HasPendingFailoverTimerLocked()) {
           MaybeCancelFailoverTimerLocked();
           priority_map()->FailoverOnConnectionFailureLocked(priority_);
         }
@@ -2496,10 +2489,7 @@ void XdsLb::LocalityPriorityMap::LocalityMap::UpdateConnectivityStateLocked() {
   size_t num_idle = 0;
   size_t num_transient_failures = 0;
   for (auto& p : map_) {
-    const XdsLocalityName* locality_name = p.first.get();
     const Locality* locality = p.second.get();
-    // Skip the localities that are not in the latest locality list.
-    if (!locality_list()->Has(*locality_name)) continue;
     switch (locality->connectivity_state()) {
       case GRPC_CHANNEL_READY: {
         ++num_ready;

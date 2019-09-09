@@ -107,7 +107,7 @@ uint32_t XdsLocalityListPriorityMap::NextPriority(uint32_t priority) const {
       left = mid + 1;
     }
   }
-  GPR_UNREACHABLE_CODE(return UINT32_MAX);
+  return UINT32_MAX;
 }
 
 const XdsLocalityList* XdsLocalityListPriorityMap::Find(
