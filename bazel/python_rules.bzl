@@ -164,6 +164,8 @@ def py_grpc_library(
         stripped from the beginning of foo_pb2 modules imported by the
         generated stubs. This is useful in combination with the `imports`
         attribute of the `py_library` rule.
+      **kwargs: Additional arguments to be supplied to the invocation of
+        py_library.
     """
     codegen_grpc_target = "_{}_grpc_codegen".format(name)
     if len(srcs) != 1:
