@@ -1880,7 +1880,7 @@ def _build_and_run(check_cancelled,
                                  upload_extra_fields)
         if xml_report and resultset:
             report_utils.render_junit_xml_report(
-                resultset, xml_report, suite_name=args.report_suite_name)
+                resultset, xml_report, suite_name=args.report_suite_name, split_by_target=True)
 
     number_failures, _ = jobset.run(
         post_tests_steps,
