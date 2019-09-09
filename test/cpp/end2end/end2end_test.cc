@@ -1865,6 +1865,36 @@ TEST_P(SecureEnd2endTest, CallCredentialsInterception) {
                                "fake_selector"));
 }
 
+TEST_P(SecureEnd2endTest, CallCredentialsInterceptionWithSetCredentials) {
+  MAYBE_SKIP_TEST;
+  if (!GetParam().use_interceptors) {
+    return;
+  }
+  std::vector<std::unique_ptr<experimental::ClientInterceptorFactoryInterface>>
+      interceptor_creators;
+  interceptor_creators.push_back(std::unique_ptr<CredentialsInterceptorFactory>(
+      new CredentialsInterceptorFactory()));
+  ResetStub(std::move(interceptor_creators));
+  EchoRequest request;
+  EchoResponse response;
+  ClientContext context;
+  std::shared_ptr<CallCredentials> creds1 =
+      GoogleIAMCredentials("wrong_token", "wrong_selector");
+  context.set_credentials(creds1);
+  request.set_message("Hello");
+  request.mutable_param()->set_echo_metadata(true);
+
+  Status s = stub_->Echo(&context, request, &response);
+  EXPECT_EQ(request.message(), response.message());
+  EXPECT_TRUE(s.ok());
+  EXPECT_TRUE(MetadataContains(context.GetServerTrailingMetadata(),
+                               GRPC_IAM_AUTHORIZATION_TOKEN_METADATA_KEY,
+                               "fake_token"));
+  EXPECT_TRUE(MetadataContains(context.GetServerTrailingMetadata(),
+                               GRPC_IAM_AUTHORITY_SELECTOR_METADATA_KEY,
+                               "fake_selector"));
+}
+
 TEST_P(SecureEnd2endTest, OverridePerCallCredentials) {
   MAYBE_SKIP_TEST;
   ResetStub();
