@@ -310,11 +310,11 @@ class ClientContext {
   /// client’s identity, role, or whether it is authorized to make a particular
   /// call.
   ///
+  /// It is legal to call this only before initial metadata is sent.
+  ///
   /// \see  https://grpc.io/docs/guides/auth.html
   void set_credentials(
-      const std::shared_ptr<grpc_impl::CallCredentials>& creds) {
-    creds_ = creds;
-  }
+      const std::shared_ptr<grpc_impl::CallCredentials>& creds);
 
   /// Return the compression algorithm the client call will request be used.
   /// Note that the gRPC runtime may decide to ignore this request, for example,
