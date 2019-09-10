@@ -61,5 +61,6 @@ gpr_cycle_counter gpr_get_cycle_counter();
 void gpr_precise_clock_init(void);
 void gpr_precise_clock_now(gpr_timespec* clk);
 gpr_timespec gpr_cycle_counter_to_time(gpr_cycle_counter cycles);
+gpr_timespec gpr_cycle_counter_sub(gpr_cycle_counter a, gpr_cycle_counter b);
 
 #endif /* GRPC_CORE_LIB_GPR_TIME_PRECISE_H */

@@ -122,7 +122,7 @@ static void test_request(grpc_end2end_test_config config) {
   g_client_latency = gpr_time_0(GPR_TIMESPAN);
   g_server_latency = gpr_time_0(GPR_TIMESPAN);
   gpr_mu_unlock(&g_mu);
-  const gpr_timespec start_time = gpr_now(GPR_CLOCK_MONOTONIC);
+  const gpr_timespec start_time = gpr_now(GPR_CLOCK_REALTIME);
 
   gpr_timespec deadline = five_seconds_from_now();
   c = grpc_channel_create_call(f.client, nullptr, GRPC_PROPAGATE_DEFAULTS, f.cq,
@@ -224,7 +224,7 @@ static void test_request(grpc_end2end_test_config config) {
   end_test(&f);
   config.tear_down_data(&f);
 
-  const gpr_timespec end_time = gpr_now(GPR_CLOCK_MONOTONIC);
+  const gpr_timespec end_time = gpr_now(GPR_CLOCK_REALTIME);
   const gpr_timespec max_latency = gpr_time_sub(end_time, start_time);
 
   // Perform checks after test tear-down
