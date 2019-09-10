@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2016 gRPC authors.
+ * Copyright 2019 gRPC authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,26 +16,17 @@
  *
  */
 
-#import "GRPCCall+Cronet.h"
+#import "../GRPCCoreFactory.h"
 
-const GRPCTransportID gGRPCCoreCronetID = "io.grpc.transport.core.cronet";
-
-static BOOL useCronet = NO;
-static stream_engine *globalCronetEngine;
-
-@implementation GRPCCall (Cronet)
-
-+ (void)useCronetWithEngine:(stream_engine *)engine {
-  useCronet = YES;
-  globalCronetEngine = engine;
-}
-
-+ (stream_engine *)cronetEngine {
-  return globalCronetEngine;
-}
-
-+ (BOOL)isUsingCronet {
-  return useCronet;
-}
+/**
+ * The factory for gRPC Core + Cronet transport implementation. The
+ * implementation is not part of the default transports of gRPC and is for
+ * testing purpose only on Github.
+ *
+ * To use this transport, a user must include the GRPCCoreCronet module as a
+ * dependency of the project and use gGRPCCoreCronetID in call options to
+ * specify that this is the transport to be used for a call.
+ */
+@interface GRPCCoreCronetFactory : NSObject<GRPCCoreTransportFactory>
 
 @end

@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2016 gRPC authors.
+ * Copyright 2019 gRPC authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,26 +16,15 @@
  *
  */
 
-#import "GRPCCall+Cronet.h"
+@interface GRPCCall (V2API)
 
-const GRPCTransportID gGRPCCoreCronetID = "io.grpc.transport.core.cronet";
+- (instancetype)initWithHost:(NSString *)host
+                        path:(NSString *)path
+                  callSafety:(GRPCCallSafety)safety
+              requestsWriter:(GRXWriter *)requestsWriter
+                 callOptions:(GRPCCallOptions *)callOptions
+                   writeDone:(void (^)(void))writeDone;
 
-static BOOL useCronet = NO;
-static stream_engine *globalCronetEngine;
-
-@implementation GRPCCall (Cronet)
-
-+ (void)useCronetWithEngine:(stream_engine *)engine {
-  useCronet = YES;
-  globalCronetEngine = engine;
-}
-
-+ (stream_engine *)cronetEngine {
-  return globalCronetEngine;
-}
-
-+ (BOOL)isUsingCronet {
-  return useCronet;
-}
+- (void)receiveNextMessages:(NSUInteger)numberOfMessages;
 
 @end
