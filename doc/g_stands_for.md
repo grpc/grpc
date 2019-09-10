@@ -23,4 +23,4 @@
 - 1.21 'g' stands for ['gandalf'](https://github.com/grpc/grpc/tree/v1.21.x)
 - 1.22 'g' stands for ['gale'](https://github.com/grpc/grpc/tree/v1.22.x)
 - 1.23 'g' stands for ['gangnam'](https://github.com/grpc/grpc/tree/v1.23.x)
-- 1.24 'g' stands for ['ganges'](https://github.com/grpc/grpc/tree/master)
+- 1.24 'g' stands for ['ganges'](https://github.com/grpc/grpc/tree/v1.24.x)
