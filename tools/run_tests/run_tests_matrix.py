@@ -604,8 +604,8 @@ if __name__ == "__main__":
         resultset.update(skipped_results)
     report_utils.render_junit_xml_report(
         resultset,
-        _report_filename('aggregate_tests'),
-        suite_name='aggregate_tests')
+        _report_filename('run_tests_invocations'),
+        suite_name='run_tests_invocations')
 
     if num_failures == 0:
         jobset.message(
