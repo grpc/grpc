@@ -45,10 +45,10 @@ end
 
 module Grpc
   module Testing
-    ServerStats = Google::Protobuf::DescriptorPool.generated_pool.lookup("grpc.testing.ServerStats").msgclass
-    HistogramParams = Google::Protobuf::DescriptorPool.generated_pool.lookup("grpc.testing.HistogramParams").msgclass
-    HistogramData = Google::Protobuf::DescriptorPool.generated_pool.lookup("grpc.testing.HistogramData").msgclass
-    RequestResultCount = Google::Protobuf::DescriptorPool.generated_pool.lookup("grpc.testing.RequestResultCount").msgclass
-    ClientStats = Google::Protobuf::DescriptorPool.generated_pool.lookup("grpc.testing.ClientStats").msgclass
+    ServerStats = ::Google::Protobuf::DescriptorPool.generated_pool.lookup("grpc.testing.ServerStats").msgclass
+    HistogramParams = ::Google::Protobuf::DescriptorPool.generated_pool.lookup("grpc.testing.HistogramParams").msgclass
+    HistogramData = ::Google::Protobuf::DescriptorPool.generated_pool.lookup("grpc.testing.HistogramData").msgclass
+    RequestResultCount = ::Google::Protobuf::DescriptorPool.generated_pool.lookup("grpc.testing.RequestResultCount").msgclass
+    ClientStats = ::Google::Protobuf::DescriptorPool.generated_pool.lookup("grpc.testing.ClientStats").msgclass
   end
 end

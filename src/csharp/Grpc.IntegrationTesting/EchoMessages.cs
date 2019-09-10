@@ -48,13 +48,13 @@ namespace Grpc.Testing {
             "c3RpbmcuUmVzcG9uc2VQYXJhbXNCA/gBAWIGcHJvdG8z"));
       descriptor = pbr::FileDescriptor.FromGeneratedCode(descriptorData,
           new pbr::FileDescriptor[] { },
-          new pbr::GeneratedClrTypeInfo(null, new pbr::GeneratedClrTypeInfo[] {
-            new pbr::GeneratedClrTypeInfo(typeof(global::Grpc.Testing.DebugInfo), global::Grpc.Testing.DebugInfo.Parser, new[]{ "StackEntries", "Detail" }, null, null, null),
-            new pbr::GeneratedClrTypeInfo(typeof(global::Grpc.Testing.ErrorStatus), global::Grpc.Testing.ErrorStatus.Parser, new[]{ "Code", "ErrorMessage", "BinaryErrorDetails" }, null, null, null),
-            new pbr::GeneratedClrTypeInfo(typeof(global::Grpc.Testing.RequestParams), global::Grpc.Testing.RequestParams.Parser, new[]{ "EchoDeadline", "ClientCancelAfterUs", "ServerCancelAfterUs", "EchoMetadata", "CheckAuthContext", "ResponseMessageLength", "EchoPeer", "ExpectedClientIdentity", "SkipCancelledCheck", "ExpectedTransportSecurityType", "DebugInfo", "ServerDie", "BinaryErrorDetails", "ExpectedError", "ServerSleepUs", "BackendChannelIdx", "EchoMetadataInitially" }, null, null, null),
-            new pbr::GeneratedClrTypeInfo(typeof(global::Grpc.Testing.EchoRequest), global::Grpc.Testing.EchoRequest.Parser, new[]{ "Message", "Param" }, null, null, null),
-            new pbr::GeneratedClrTypeInfo(typeof(global::Grpc.Testing.ResponseParams), global::Grpc.Testing.ResponseParams.Parser, new[]{ "RequestDeadline", "Host", "Peer" }, null, null, null),
-            new pbr::GeneratedClrTypeInfo(typeof(global::Grpc.Testing.EchoResponse), global::Grpc.Testing.EchoResponse.Parser, new[]{ "Message", "Param" }, null, null, null)
+          new pbr::GeneratedClrTypeInfo(null, null, new pbr::GeneratedClrTypeInfo[] {
+            new pbr::GeneratedClrTypeInfo(typeof(global::Grpc.Testing.DebugInfo), global::Grpc.Testing.DebugInfo.Parser, new[]{ "StackEntries", "Detail" }, null, null, null, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::Grpc.Testing.ErrorStatus), global::Grpc.Testing.ErrorStatus.Parser, new[]{ "Code", "ErrorMessage", "BinaryErrorDetails" }, null, null, null, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::Grpc.Testing.RequestParams), global::Grpc.Testing.RequestParams.Parser, new[]{ "EchoDeadline", "ClientCancelAfterUs", "ServerCancelAfterUs", "EchoMetadata", "CheckAuthContext", "ResponseMessageLength", "EchoPeer", "ExpectedClientIdentity", "SkipCancelledCheck", "ExpectedTransportSecurityType", "DebugInfo", "ServerDie", "BinaryErrorDetails", "ExpectedError", "ServerSleepUs", "BackendChannelIdx", "EchoMetadataInitially" }, null, null, null, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::Grpc.Testing.EchoRequest), global::Grpc.Testing.EchoRequest.Parser, new[]{ "Message", "Param" }, null, null, null, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::Grpc.Testing.ResponseParams), global::Grpc.Testing.ResponseParams.Parser, new[]{ "RequestDeadline", "Host", "Peer" }, null, null, null, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::Grpc.Testing.EchoResponse), global::Grpc.Testing.EchoResponse.Parser, new[]{ "Message", "Param" }, null, null, null, null)
           }));
     }
     #endregion

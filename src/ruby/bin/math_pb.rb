@@ -26,9 +26,9 @@ Google::Protobuf::DescriptorPool.generated_pool.build do
 end
 
 module Math
-  DivArgs = Google::Protobuf::DescriptorPool.generated_pool.lookup("math.DivArgs").msgclass
-  DivReply = Google::Protobuf::DescriptorPool.generated_pool.lookup("math.DivReply").msgclass
-  FibArgs = Google::Protobuf::DescriptorPool.generated_pool.lookup("math.FibArgs").msgclass
-  Num = Google::Protobuf::DescriptorPool.generated_pool.lookup("math.Num").msgclass
-  FibReply = Google::Protobuf::DescriptorPool.generated_pool.lookup("math.FibReply").msgclass
+  DivArgs = ::Google::Protobuf::DescriptorPool.generated_pool.lookup("math.DivArgs").msgclass
+  DivReply = ::Google::Protobuf::DescriptorPool.generated_pool.lookup("math.DivReply").msgclass
+  FibArgs = ::Google::Protobuf::DescriptorPool.generated_pool.lookup("math.FibArgs").msgclass
+  Num = ::Google::Protobuf::DescriptorPool.generated_pool.lookup("math.Num").msgclass
+  FibReply = ::Google::Protobuf::DescriptorPool.generated_pool.lookup("math.FibReply").msgclass
 end

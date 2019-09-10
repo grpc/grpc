@@ -27,9 +27,9 @@ end
 
 module Grpc
   module Core
-    Bucket = Google::Protobuf::DescriptorPool.generated_pool.lookup("grpc.core.Bucket").msgclass
-    Histogram = Google::Protobuf::DescriptorPool.generated_pool.lookup("grpc.core.Histogram").msgclass
-    Metric = Google::Protobuf::DescriptorPool.generated_pool.lookup("grpc.core.Metric").msgclass
-    Stats = Google::Protobuf::DescriptorPool.generated_pool.lookup("grpc.core.Stats").msgclass
+    Bucket = ::Google::Protobuf::DescriptorPool.generated_pool.lookup("grpc.core.Bucket").msgclass
+    Histogram = ::Google::Protobuf::DescriptorPool.generated_pool.lookup("grpc.core.Histogram").msgclass
+    Metric = ::Google::Protobuf::DescriptorPool.generated_pool.lookup("grpc.core.Metric").msgclass
+    Stats = ::Google::Protobuf::DescriptorPool.generated_pool.lookup("grpc.core.Stats").msgclass
   end
 end
