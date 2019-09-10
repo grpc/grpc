@@ -263,7 +263,8 @@ class EdsServiceImpl : public EdsService {
   struct ResponseArgs {
     struct Locality {
       Locality(const grpc::string& sub_zone, std::vector<int> ports,
-               int lb_weight = kDefaultLocalityWeight, int priority = 0)
+               int lb_weight = kDefaultLocalityWeight,
+               int priority = kDefaultLocalityPriority)
           : sub_zone(std::move(sub_zone)),
             ports(std::move(ports)),
             lb_weight(lb_weight),

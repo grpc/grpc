@@ -2214,6 +2214,7 @@ void XdsLb::LocalityPriorityMap::FailoverOnConnectionFailureLocked(
 
 void XdsLb::LocalityPriorityMap::FailoverOnDisconnectionLocked(
     uint32_t failed_priority) {
+  current_locality_map_ = nullptr;
   for (uint32_t next_priority = failed_priority + 1;
        next_priority <= locality_list_map_.LowestPriority(); ++next_priority) {
     auto iter = map_.find(next_priority);
@@ -2452,12 +2453,11 @@ void XdsLb::LocalityPriorityMap::LocalityMap::OnLocalityStateUpdateLocked() {
   }
   // Fail over if the current priority is no longer READY.
   if (connectivity_state_ != GRPC_CHANNEL_READY) {
-    priority_map()->current_locality_map_ = nullptr;
     priority_map()->FailoverOnDisconnectionLocked(priority_);
   }
-  // The current priority may (1) remain the same (2) become a new one by quick
-  // failover (3) or null if quick failover is not available. In any case,
-  // update the xds picker.
+  // The current priority may (1) remain the same (2) become a new one after
+  // above failover (3) or null if above failover doesn't yield a READY one. In
+  // any case, update the xds picker.
   priority_map()->UpdateXdsPickerLocked();
 }
 
