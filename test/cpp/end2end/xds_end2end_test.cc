@@ -563,13 +563,16 @@ class XdsEnd2endTest : public ::testing::Test {
 
   void ShutdownBackend(size_t index) { backends_[index]->Shutdown(); }
 
-  void ResetStub(int fallback_timeout = 0,
+  void ResetStub(int fallback_timeout = 0, int failover_timeout = 0,
                  const grpc::string& expected_targets = "",
-                 grpc::string scheme = "", int failover_timeout = 10) {
+                 grpc::string scheme = "") {
     ChannelArguments args;
     // TODO(juanlishen): Add setter to ChannelArguments.
     if (fallback_timeout > 0) {
       args.SetInt(GRPC_ARG_XDS_FALLBACK_TIMEOUT_MS, fallback_timeout);
+    }
+    if (failover_timeout > 0) {
+      args.SetInt(GRPC_ARG_XDS_FAILOVER_TIMEOUT_MS, failover_timeout);
     }
     args.SetPointer(GRPC_ARG_FAKE_RESOLVER_RESPONSE_GENERATOR,
                     response_generator_.get());
@@ -919,7 +922,7 @@ class XdsResolverTest : public XdsEnd2endTest {
 // used.
 TEST_F(XdsResolverTest, XdsResolverIsUsed) {
   // Use xds-experimental scheme in URI.
-  ResetStub(0, "", "xds-experimental");
+  ResetStub(0, 0, "", "xds-experimental");
   // Send an RPC to trigger resolution.
   auto unused_result = SendRpc();
   // Xds resolver returns xds_experimental as the LB policy.
@@ -1064,7 +1067,7 @@ using SecureNamingTest = BasicTest;
 // Tests that secure naming check passes if target name is expected.
 TEST_F(SecureNamingTest, TargetNameIsExpected) {
   // TODO(juanlishen): Use separate fake creds for the balancer channel.
-  ResetStub(0, kApplicationTargetName_ + ";lb");
+  ResetStub(0, 0, kApplicationTargetName_ + ";lb");
   SetNextResolution({}, kDefaultServiceConfig_.c_str());
   SetNextResolutionForLbChannel({balancers_[0]->port()});
   const size_t kNumRpcsPerAddress = 100;
@@ -1095,7 +1098,7 @@ TEST_F(SecureNamingTest, TargetNameIsUnexpected) {
   // the name from the balancer doesn't match expectations.
   ASSERT_DEATH_IF_SUPPORTED(
       {
-        ResetStub(0, kApplicationTargetName_ + ";lb");
+        ResetStub(0, 0, kApplicationTargetName_ + ";lb");
         SetNextResolution({},
                           "{\n"
                           "  \"loadBalancingConfig\":[\n"
@@ -1286,7 +1289,7 @@ TEST_F(LocalityMapTest, UpdateMap) {
 
 class FailoverTest : public BasicTest {
  public:
-  FailoverTest() { ResetStub(0, "", "", 1); }
+  FailoverTest() { ResetStub(0, 100, "", ""); }
 };
 
 // Localities with the highest priority are used when multiple priority exist.
@@ -1334,7 +1337,7 @@ TEST_F(FailoverTest, Failover) {
 }
 
 // If a locality with higher priority than the current one becomes ready,
-// failback to it.
+// switch to it.
 TEST_F(FailoverTest, Failback) {
   SetNextResolution({}, kDefaultServiceConfig_.c_str());
   SetNextResolutionForLbChannelAllBalancers();
@@ -1360,6 +1363,73 @@ TEST_F(FailoverTest, Failback) {
   // The EDS service got a single request, and sent a single response.
   EXPECT_EQ(1U, balancers_[0]->eds_service()->request_count());
   EXPECT_EQ(1U, balancers_[0]->eds_service()->response_count());
+}
+
+// The first update only contains unavailable priorities. The second update
+// contains available priorities.
+TEST_F(FailoverTest, UpdateInitialUnavailable) {
+  SetNextResolution({}, kDefaultServiceConfig_.c_str());
+  SetNextResolutionForLbChannelAllBalancers();
+  EdsServiceImpl::ResponseArgs args({
+      {"locality0", GetBackendPorts(0, 1), kDefaultLocalityWeight, 0},
+      {"locality1", GetBackendPorts(1, 2), kDefaultLocalityWeight, 1},
+  });
+  ScheduleResponseForBalancer(0, EdsServiceImpl::BuildResponse(args), 0);
+  args = EdsServiceImpl::ResponseArgs({
+      {"locality0", GetBackendPorts(0, 1), kDefaultLocalityWeight, 0},
+      {"locality1", GetBackendPorts(1, 2), kDefaultLocalityWeight, 1},
+      {"locality2", GetBackendPorts(2, 3), kDefaultLocalityWeight, 2},
+      {"locality3", GetBackendPorts(3, 4), kDefaultLocalityWeight, 3},
+  });
+  ScheduleResponseForBalancer(0, EdsServiceImpl::BuildResponse(args), 1000);
+  ShutdownBackend(0);
+  ShutdownBackend(1);
+  gpr_timespec deadline = gpr_time_add(gpr_now(GPR_CLOCK_REALTIME),
+                                       gpr_time_from_millis(500, GPR_TIMESPAN));
+  // Send 0.5 second worth of RPCs.
+  do {
+    CheckRpcSendFailure();
+  } while (gpr_time_cmp(gpr_now(GPR_CLOCK_REALTIME), deadline) < 0);
+  WaitForBackend(2, false);
+  for (size_t i = 0; i < 4; ++i) {
+    if (i == 2) continue;
+    EXPECT_EQ(0, backends_[i]->backend_service()->request_count());
+  }
+  // The EDS service got a single request, and sent a single response.
+  EXPECT_EQ(1U, balancers_[0]->eds_service()->request_count());
+  EXPECT_EQ(2U, balancers_[0]->eds_service()->response_count());
+}
+
+// If a locality with higher priority than the current one becomes ready,
+// switch to it.
+TEST_F(FailoverTest, UpdatePriority) {
+  SetNextResolution({}, kDefaultServiceConfig_.c_str());
+  SetNextResolutionForLbChannelAllBalancers();
+  const size_t kNumRpcs = 100;
+  EdsServiceImpl::ResponseArgs args({
+      {"locality0", GetBackendPorts(0, 1), kDefaultLocalityWeight, 1},
+      {"locality1", GetBackendPorts(1, 2), kDefaultLocalityWeight, 2},
+      {"locality2", GetBackendPorts(2, 3), kDefaultLocalityWeight, 3},
+      {"locality3", GetBackendPorts(3, 4), kDefaultLocalityWeight, 0},
+  });
+  ScheduleResponseForBalancer(0, EdsServiceImpl::BuildResponse(args), 0);
+  args = EdsServiceImpl::ResponseArgs({
+      {"locality0", GetBackendPorts(0, 1), kDefaultLocalityWeight, 2},
+      {"locality1", GetBackendPorts(1, 2), kDefaultLocalityWeight, 0},
+      {"locality2", GetBackendPorts(2, 3), kDefaultLocalityWeight, 1},
+      {"locality3", GetBackendPorts(3, 4), kDefaultLocalityWeight, 3},
+  });
+  ScheduleResponseForBalancer(0, EdsServiceImpl::BuildResponse(args), 1000);
+  WaitForBackend(3, false);
+  for (size_t i = 0; i < 3; ++i) {
+    EXPECT_EQ(0, backends_[i]->backend_service()->request_count());
+  }
+  WaitForBackend(1);
+  CheckRpcSendOk(kNumRpcs);
+  EXPECT_EQ(kNumRpcs, backends_[1]->backend_service()->request_count());
+  // The EDS service got a single request, and sent a single response.
+  EXPECT_EQ(1U, balancers_[0]->eds_service()->request_count());
+  EXPECT_EQ(2U, balancers_[0]->eds_service()->response_count());
 }
 
 using DropTest = BasicTest;

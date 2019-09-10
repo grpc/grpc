@@ -53,13 +53,14 @@ constexpr char kEndpointRequired[] = "endpointRequired";
 
 }  // namespace
 
-bool XdsLocalityListPriorityMap::operator==(XdsLocalityListPriorityMap& other) {
-  if (sorted_priorities_ != other.sorted_priorities_) return false;
+bool XdsLocalityListPriorityMap::operator==(
+    XdsLocalityListPriorityMap& other) const {
+  if (map_.size() != other.map_.size()) return false;
   for (auto& p : map_) {
     const uint32_t priority = p.first;
     const XdsLocalityList& locality_list = p.second;
-    // Only compare the list of localities.
-    if (locality_list.list != other.map_.find(priority)->second.list) {
+    if (locality_list.localities !=
+        other.map_.find(priority)->second.localities) {
       return false;
     }
   }
@@ -72,42 +73,17 @@ void XdsLocalityListPriorityMap::Add(XdsLocalityInfo locality_info) {
     iter = map_.emplace(locality_info.priority, XdsLocalityList()).first;
   }
   XdsLocalityList& locality_list = iter->second;
-  locality_list.list.push_back(std::move(locality_info));
+  locality_list.localities.push_back(std::move(locality_info));
 }
 
 void XdsLocalityListPriorityMap::Sort() {
   for (auto& p : map_) {
-    const uint32_t priority = p.first;
     XdsLocalityList& locality_list = p.second;
     // Sort each locality list.
-    std::sort(locality_list.list.data(),
-              locality_list.list.data() + locality_list.list.size(),
+    std::sort(locality_list.localities.data(),
+              locality_list.localities.data() + locality_list.localities.size(),
               XdsLocalityInfo::Less());
-    sorted_priorities_.push_back(priority);
   }
-  // Sort priority
-  std::sort(sorted_priorities_.data(),
-            sorted_priorities_.data() + sorted_priorities_.size());
-}
-
-uint32_t XdsLocalityListPriorityMap::NextPriority(uint32_t priority) const {
-  size_t left = 0;
-  size_t right = sorted_priorities_.size() - 1;
-  while (left <= right) {
-    size_t mid = (left + right) / 2;
-    if (sorted_priorities_[mid] == priority) {
-      if (mid == sorted_priorities_.size() - 1) {
-        return UINT32_MAX;
-      } else {
-        return sorted_priorities_[mid + 1];
-      }
-    } else if (sorted_priorities_[mid] > priority) {
-      right = mid - 1;
-    } else {
-      left = mid + 1;
-    }
-  }
-  return UINT32_MAX;
 }
 
 const XdsLocalityList* XdsLocalityListPriorityMap::Find(
@@ -117,11 +93,11 @@ const XdsLocalityList* XdsLocalityListPriorityMap::Find(
   return &iter->second;
 }
 
-bool XdsLocalityListPriorityMap::Has(const XdsLocalityName& name) {
+bool XdsLocalityListPriorityMap::Contains(const XdsLocalityName& name) {
   for (auto& p : map_) {
     const XdsLocalityList& locality_list = p.second;
-    for (size_t i = 0; i < locality_list.list.size(); ++i) {
-      if (*locality_list.list[i].name == name) return true;
+    for (size_t i = 0; i < locality_list.localities.size(); ++i) {
+      if (*locality_list.localities[i].name == name) return true;
     }
   }
   return false;

@@ -50,44 +50,34 @@ struct XdsLocalityInfo {
 };
 
 struct XdsLocalityList {
-  bool Has(const XdsLocalityName& name) const {
-    for (size_t i = 0; i < list.size(); ++i) {
-      if (*list[i].name == name) return true;
+  bool Contains(const XdsLocalityName& name) const {
+    for (size_t i = 0; i < localities.size(); ++i) {
+      if (*localities[i].name == name) return true;
     }
     return false;
   }
 
-  size_t Size() const { return list.size(); }
+  size_t size() const { return localities.size(); }
 
-  InlinedVector<XdsLocalityInfo, 1> list;
-  bool applied = false;
+  InlinedVector<XdsLocalityInfo, 1> localities;
 };
 
 class XdsLocalityListPriorityMap {
  public:
-  bool operator==(XdsLocalityListPriorityMap& other);
+  bool operator==(XdsLocalityListPriorityMap& other) const;
 
   void Add(XdsLocalityInfo locality_info);
 
-  // If a locality list has already been applied and doesn't change the content,
-  // then it's still applied.
-  void UpdateAppliedLocked(XdsLocalityListPriorityMap& old);
-
   void Sort();
-
-  uint32_t NextPriority(uint32_t priority) const;
 
   const XdsLocalityList* Find(uint32_t priority) const;
 
   bool Has(uint32_t priority) { return map_.find(priority) != map_.end(); }
-  bool Has(const XdsLocalityName& name);
+  bool Contains(const XdsLocalityName& name);
 
-  bool Empty() const { return sorted_priorities_.empty(); }
-  size_t Size() const { return sorted_priorities_.size(); }
+  bool empty() const { return map_.empty(); }
+  size_t size() const { return map_.size(); }
 
-  const InlinedVector<uint32_t, 1>& sorted_priorities() const {
-    return sorted_priorities_;
-  }
   const Map<uint32_t, XdsLocalityList>& map() const { return map_; }
   uint32_t LowestPriority() const {
     auto last = --map_.cend();
@@ -96,7 +86,6 @@ class XdsLocalityListPriorityMap {
 
  private:
   Map<uint32_t, XdsLocalityList> map_;
-  InlinedVector<uint32_t, 1> sorted_priorities_;
 };
 
 // There are two phases of accessing this class's content:
