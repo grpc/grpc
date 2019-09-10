@@ -620,7 +620,7 @@ class XdsLb : public LoadBalancingPolicy {
     // The latest locality update received. Any action taken on the priority map
     // should respect this latest update.
     XdsLocalityListPriorityMap locality_list_map_;
-    InlinedVector<bool, 2> locality_list_applied_bitmask_;
+    InlinedVector<bool, 2> locality_list_changed_;
     bool first_connection_attempt_done_ = false;
     bool started_connecting_ = false;
   };
@@ -2144,27 +2144,32 @@ void XdsLb::LocalityPriorityMap::UpdateLocked(
   UpdateAppliedLocked(locality_list_map);
   // Store the locality list map for the following reasons:
   // 1. Create a locality map for a given priority on demand later.
-  // 2. Skip duplicate update.
-  locality_list_map_ = std::move(locality_list_map);
+  // 2. Skip future duplicate update.
+  // locality_list_map_ is updated before entering the for loop below so that
+  // recursive update to other priorities resulted from failover can use the
+  // updated locality list map.
+  std::swap(locality_list_map_, locality_list_map);
   // Remove from the priority map the priorities that are not in the update.
   PruneLocalityMapsLocked(locality_list_map_.LowestPriority());
-  // Start update from P0.
+  // Update all existing priorities, maybe create one more.
   for (const auto& p : locality_list_map_.map()) {
     const uint32_t priority = p.first;
     const XdsLocalityList& locality_list = p.second;
     auto iter = map_.find(priority);
-    // Case 1: Create a new locality map. Don't continue to create another one.
     if (iter == map_.end()) {
+      // Never create a new locality map if we have a READY one.
+      if (current_priority() != UINT32_MAX) break;
+      // Case 1: Create a new locality map. Don't continue to create another
+      // one. Note that in some rare cases (e.g., the locality map reports
+      // TRANSIENT_FAILURE synchronously due to subchannel sharing), the
+      // following invocation may result in multiple localities to be created.
       CreateLocalityMapLocked(priority);
       break;
     }
     LocalityMap* locality_map = iter->second.get();
-    // Maybe reactivate the locality map in case we don't have READY locality
-    // map.
-    locality_map->MaybeReactivateLocked();
     // Propagate the locality list if it contains new update.
-    if (!locality_list_applied_bitmask_[priority]) {
-      locality_list_applied_bitmask_[priority] = true;
+    if (locality_list_changed_[priority]) {
+      locality_list_changed_[priority] = false;
       locality_map->UpdateLocked(locality_list);
     }
     // Case 2: The existing locality map is still in the failover timeout. Don't
@@ -2208,8 +2213,7 @@ void XdsLb::LocalityPriorityMap::UpdateXdsPickerLocked() {
 void XdsLb::LocalityPriorityMap::CreateLocalityMapLocked(uint32_t priority) {
   // Exhausted priorities in the update.
   if (priority > locality_list_map_.LowestPriority()) return;
-  // Never create a new locality map if we have a READY one.
-  if (current_priority() != UINT32_MAX) return;
+  locality_list_changed_[priority] = false;
   const XdsLocalityList* locality_list = locality_list_map_.Find(priority);
   auto new_locality_map = MakeOrphanable<LocalityMap>(
       xds_policy_->Ref(DEBUG_LOCATION, "XdsLb+LocalityMap"), priority);
@@ -2299,11 +2303,11 @@ void XdsLb::LocalityPriorityMap::UpdateAppliedLocked(
       continue;
     }
     const XdsLocalityList& old_locality_list = iter->second;
-    const bool new_applied = locality_list_applied_bitmask_[priority] &&
+    const bool new_applied = !locality_list_changed_[priority] &&
                              old_locality_list.list == new_locality_list.list;
     bitmask.push_back(new_applied);
   }
-  locality_list_applied_bitmask_ = std::move(bitmask);
+  locality_list_changed_ = std::move(bitmask);
 }
 
 //
@@ -2337,6 +2341,9 @@ void XdsLb::LocalityPriorityMap::LocalityMap::UpdateLocked(
     gpr_log(GPR_INFO, "[xdslb %p] Start Updating priority %" PRIu32,
             xds_policy(), priority_);
   }
+  // Maybe reactivate the locality map in case we don't have READY locality
+  // map.
+  MaybeReactivateLocked();
   // Add or update the localities in locality_list.
   for (size_t i = 0; i < locality_list.Size(); ++i) {
     const RefCountedPtr<XdsLocalityName>& name = locality_list.list[i].name;
