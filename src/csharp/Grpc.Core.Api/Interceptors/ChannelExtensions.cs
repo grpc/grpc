@@ -38,9 +38,9 @@ namespace Grpc.Core.Interceptors
         /// building a chain like "channel.Intercept(c).Intercept(b).Intercept(a)".  Note that
         /// in this case, the last interceptor added will be the first to take control.
         /// </remarks>
-        public static CallInvoker Intercept(this Channel channel, Interceptor interceptor)
+        public static CallInvoker Intercept(this ChannelBase channel, Interceptor interceptor)
         {
-            return new DefaultCallInvoker(channel).Intercept(interceptor);
+            return channel.CreateCallInvoker().Intercept(interceptor);
         }
 
         /// <summary>
@@ -59,9 +59,9 @@ namespace Grpc.Core.Interceptors
         /// building a chain like "channel.Intercept(c).Intercept(b).Intercept(a)".  Note that
         /// in this case, the last interceptor added will be the first to take control.
         /// </remarks>
-        public static CallInvoker Intercept(this Channel channel, params Interceptor[] interceptors)
+        public static CallInvoker Intercept(this ChannelBase channel, params Interceptor[] interceptors)
         {
-            return new DefaultCallInvoker(channel).Intercept(interceptors);
+            return channel.CreateCallInvoker().Intercept(interceptors);
         }
 
         /// <summary>
@@ -79,9 +79,9 @@ namespace Grpc.Core.Interceptors
         /// building a chain like "channel.Intercept(c).Intercept(b).Intercept(a)".  Note that
         /// in this case, the last interceptor added will be the first to take control.
         /// </remarks>
-        public static CallInvoker Intercept(this Channel channel, Func<Metadata, Metadata> interceptor)
+        public static CallInvoker Intercept(this ChannelBase channel, Func<Metadata, Metadata> interceptor)
         {
-            return new DefaultCallInvoker(channel).Intercept(interceptor);
+            return channel.CreateCallInvoker().Intercept(interceptor);
         }
     }
 }
