@@ -304,8 +304,8 @@ void HealthCheckClient::CallState::StartCall() {
       health_check_client_->connected_subchannel_,
       &pollent_,
       GRPC_MDSTR_SLASH_GRPC_DOT_HEALTH_DOT_V1_DOT_HEALTH_SLASH_WATCH,
-      gpr_now(GPR_CLOCK_MONOTONIC),  // start_time
-      GRPC_MILLIS_INF_FUTURE,        // deadline
+      gpr_get_cycle_counter(),  // start_time
+      GRPC_MILLIS_INF_FUTURE,   // deadline
       arena_,
       context_,
       &call_combiner_,

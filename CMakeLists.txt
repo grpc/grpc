@@ -24,7 +24,7 @@
 cmake_minimum_required(VERSION 3.5.1)
 
 set(PACKAGE_NAME      "grpc")
-set(PACKAGE_VERSION   "1.24.0-dev")
+set(PACKAGE_VERSION   "1.25.0-dev")
 set(PACKAGE_STRING    "${PACKAGE_NAME} ${PACKAGE_VERSION}")
 set(PACKAGE_TARNAME   "${PACKAGE_NAME}-${PACKAGE_VERSION}")
 set(PACKAGE_BUGREPORT "https://github.com/grpc/grpc/issues/")
@@ -3465,6 +3465,7 @@ foreach(_hdr
   include/grpcpp/impl/codegen/interceptor_common.h
   include/grpcpp/impl/codegen/message_allocator.h
   include/grpcpp/impl/codegen/metadata_map.h
+  include/grpcpp/impl/codegen/method_handler.h
   include/grpcpp/impl/codegen/method_handler_impl.h
   include/grpcpp/impl/codegen/rpc_method.h
   include/grpcpp/impl/codegen/rpc_service_method.h
@@ -3978,6 +3979,7 @@ foreach(_hdr
   include/grpcpp/impl/codegen/interceptor_common.h
   include/grpcpp/impl/codegen/message_allocator.h
   include/grpcpp/impl/codegen/metadata_map.h
+  include/grpcpp/impl/codegen/method_handler.h
   include/grpcpp/impl/codegen/method_handler_impl.h
   include/grpcpp/impl/codegen/rpc_method.h
   include/grpcpp/impl/codegen/rpc_service_method.h
@@ -4187,6 +4189,7 @@ foreach(_hdr
   include/grpcpp/impl/codegen/interceptor_common.h
   include/grpcpp/impl/codegen/message_allocator.h
   include/grpcpp/impl/codegen/metadata_map.h
+  include/grpcpp/impl/codegen/method_handler.h
   include/grpcpp/impl/codegen/method_handler_impl.h
   include/grpcpp/impl/codegen/rpc_method.h
   include/grpcpp/impl/codegen/rpc_service_method.h
@@ -4565,6 +4568,7 @@ foreach(_hdr
   include/grpcpp/impl/codegen/interceptor_common.h
   include/grpcpp/impl/codegen/message_allocator.h
   include/grpcpp/impl/codegen/metadata_map.h
+  include/grpcpp/impl/codegen/method_handler.h
   include/grpcpp/impl/codegen/method_handler_impl.h
   include/grpcpp/impl/codegen/rpc_method.h
   include/grpcpp/impl/codegen/rpc_service_method.h

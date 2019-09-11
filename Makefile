@@ -461,8 +461,8 @@ Q = @
 endif
 
 CORE_VERSION = 8.0.0
-CPP_VERSION = 1.24.0-dev
-CSHARP_VERSION = 2.24.0-dev
+CPP_VERSION = 1.25.0-dev
+CSHARP_VERSION = 2.25.0-dev
 
 CPPFLAGS_NO_ARCH += $(addprefix -I, $(INCLUDES)) $(addprefix -D, $(DEFINES))
 CPPFLAGS += $(CPPFLAGS_NO_ARCH) $(ARCH_FLAGS)
@@ -5925,6 +5925,7 @@ PUBLIC_HEADERS_CXX += \
     include/grpcpp/impl/codegen/interceptor_common.h \
     include/grpcpp/impl/codegen/message_allocator.h \
     include/grpcpp/impl/codegen/metadata_map.h \
+    include/grpcpp/impl/codegen/method_handler.h \
     include/grpcpp/impl/codegen/method_handler_impl.h \
     include/grpcpp/impl/codegen/rpc_method.h \
     include/grpcpp/impl/codegen/rpc_service_method.h \
@@ -6396,6 +6397,7 @@ PUBLIC_HEADERS_CXX += \
     include/grpcpp/impl/codegen/interceptor_common.h \
     include/grpcpp/impl/codegen/message_allocator.h \
     include/grpcpp/impl/codegen/metadata_map.h \
+    include/grpcpp/impl/codegen/method_handler.h \
     include/grpcpp/impl/codegen/method_handler_impl.h \
     include/grpcpp/impl/codegen/rpc_method.h \
     include/grpcpp/impl/codegen/rpc_service_method.h \
@@ -6574,6 +6576,7 @@ PUBLIC_HEADERS_CXX += \
     include/grpcpp/impl/codegen/interceptor_common.h \
     include/grpcpp/impl/codegen/message_allocator.h \
     include/grpcpp/impl/codegen/metadata_map.h \
+    include/grpcpp/impl/codegen/method_handler.h \
     include/grpcpp/impl/codegen/method_handler_impl.h \
     include/grpcpp/impl/codegen/rpc_method.h \
     include/grpcpp/impl/codegen/rpc_service_method.h \
@@ -6956,6 +6959,7 @@ PUBLIC_HEADERS_CXX += \
     include/grpcpp/impl/codegen/interceptor_common.h \
     include/grpcpp/impl/codegen/message_allocator.h \
     include/grpcpp/impl/codegen/metadata_map.h \
+    include/grpcpp/impl/codegen/method_handler.h \
     include/grpcpp/impl/codegen/method_handler_impl.h \
     include/grpcpp/impl/codegen/rpc_method.h \
     include/grpcpp/impl/codegen/rpc_service_method.h \

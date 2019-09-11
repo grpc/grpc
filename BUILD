@@ -77,11 +77,11 @@ config_setting(
 python_config_settings()
 
 # This should be updated along with build.yaml
-g_stands_for = "ganges"
+g_stands_for = "game"
 
 core_version = "7.0.0"
 
-version = "1.24.0-dev"
+version = "1.25.0-dev"
 
 GPR_PUBLIC_HDRS = [
     "include/grpc/support/alloc.h",
@@ -283,6 +283,7 @@ GRPCXX_PUBLIC_HDRS = [
     "include/grpcpp/support/config.h",
     "include/grpcpp/support/interceptor.h",
     "include/grpcpp/support/message_allocator.h",
+    "include/grpcpp/support/method_handler.h",
     "include/grpcpp/support/proto_buffer_reader.h",
     "include/grpcpp/support/proto_buffer_writer.h",
     "include/grpcpp/support/server_callback.h",
@@ -2039,6 +2040,7 @@ grpc_cc_library(
         "include/grpcpp/impl/codegen/interceptor_common.h",
         "include/grpcpp/impl/codegen/message_allocator.h",
         "include/grpcpp/impl/codegen/metadata_map.h",
+        "include/grpcpp/impl/codegen/method_handler.h",
         "include/grpcpp/impl/codegen/method_handler_impl.h",
         "include/grpcpp/impl/codegen/rpc_method.h",
         "include/grpcpp/impl/codegen/rpc_service_method.h",

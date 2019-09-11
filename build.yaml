@@ -14,8 +14,8 @@ settings:
   '#10': See the expand_version.py for all the quirks here
   core_version: 8.0.0
   csharp_major_version: 2
-  g_stands_for: ganges
-  version: 1.24.0-dev
+  g_stands_for: game
+  version: 1.25.0-dev
 filegroups:
 - name: alts_tsi
   headers:
@@ -389,6 +389,7 @@ filegroups:
   - include/grpcpp/impl/codegen/interceptor_common.h
   - include/grpcpp/impl/codegen/message_allocator.h
   - include/grpcpp/impl/codegen/metadata_map.h
+  - include/grpcpp/impl/codegen/method_handler.h
   - include/grpcpp/impl/codegen/method_handler_impl.h
   - include/grpcpp/impl/codegen/rpc_method.h
   - include/grpcpp/impl/codegen/rpc_service_method.h
