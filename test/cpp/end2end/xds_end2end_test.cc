@@ -1324,9 +1324,9 @@ TEST_F(FailoverTest, Failover) {
       {"locality2", GetBackendPorts(2, 3), kDefaultLocalityWeight, 3},
       {"locality3", GetBackendPorts(3, 4), kDefaultLocalityWeight, 0},
   });
-  ScheduleResponseForBalancer(0, EdsServiceImpl::BuildResponse(args), 0);
   ShutdownBackend(3);
   ShutdownBackend(0);
+  ScheduleResponseForBalancer(0, EdsServiceImpl::BuildResponse(args), 0);
   WaitForBackend(1, false);
   for (size_t i = 0; i < 4; ++i) {
     if (i == 1) continue;
@@ -1339,7 +1339,7 @@ TEST_F(FailoverTest, Failover) {
 
 // If a locality with higher priority than the current one becomes ready,
 // switch to it.
-TEST_F(FailoverTest, Failback) {
+TEST_F(FailoverTest, SwitchBackToHigherPriority) {
   SetNextResolution({}, kDefaultServiceConfig_.c_str());
   SetNextResolutionForLbChannelAllBalancers();
   const size_t kNumRpcs = 100;
@@ -1349,9 +1349,9 @@ TEST_F(FailoverTest, Failback) {
       {"locality2", GetBackendPorts(2, 3), kDefaultLocalityWeight, 3},
       {"locality3", GetBackendPorts(3, 4), kDefaultLocalityWeight, 0},
   });
-  ScheduleResponseForBalancer(0, EdsServiceImpl::BuildResponse(args), 0);
   ShutdownBackend(3);
   ShutdownBackend(0);
+  ScheduleResponseForBalancer(0, EdsServiceImpl::BuildResponse(args), 0);
   WaitForBackend(1, false);
   for (size_t i = 0; i < 4; ++i) {
     if (i == 1) continue;
@@ -1382,9 +1382,9 @@ TEST_F(FailoverTest, UpdateInitialUnavailable) {
       {"locality2", GetBackendPorts(2, 3), kDefaultLocalityWeight, 2},
       {"locality3", GetBackendPorts(3, 4), kDefaultLocalityWeight, 3},
   });
-  ScheduleResponseForBalancer(0, EdsServiceImpl::BuildResponse(args), 1000);
   ShutdownBackend(0);
   ShutdownBackend(1);
+  ScheduleResponseForBalancer(0, EdsServiceImpl::BuildResponse(args), 1000);
   gpr_timespec deadline = gpr_time_add(gpr_now(GPR_CLOCK_REALTIME),
                                        gpr_time_from_millis(500, GPR_TIMESPAN));
   // Send 0.5 second worth of RPCs.
@@ -1401,8 +1401,8 @@ TEST_F(FailoverTest, UpdateInitialUnavailable) {
   EXPECT_EQ(2U, balancers_[0]->eds_service()->response_count());
 }
 
-// If a locality with higher priority than the current one becomes ready,
-// switch to it.
+// Tests that after the localities' priorities are updated, we still choose the
+// highest READY priority with the updated localities.
 TEST_F(FailoverTest, UpdatePriority) {
   SetNextResolution({}, kDefaultServiceConfig_.c_str());
   SetNextResolutionForLbChannelAllBalancers();
