@@ -49,6 +49,14 @@ target 'CronetTests' do
   pod 'gRPC-Core/Tests', :path => GRPC_LOCAL_SRC, :inhibit_warnings => true
 end
 
+target 'PerfTests' do
+  platform :ios, '8.0'
+  grpc_deps
+
+  pod 'gRPC/GRPCCoreCronet',           :path => GRPC_LOCAL_SRC
+  pod 'CronetFramework', :podspec => "#{GRPC_LOCAL_SRC}/src/objective-c"
+end
+
 # gRPC-Core.podspec needs to be modified to be successfully used for local development. A Podfile's
 # pre_install hook lets us do that. The block passed to it runs after the podspecs are downloaded
 # and before they are installed in the user project.

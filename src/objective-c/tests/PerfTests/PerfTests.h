@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2015 gRPC authors.
+ * Copyright 2019 gRPC authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,15 +17,11 @@
  */
 
 #import <XCTest/XCTest.h>
-
 #import "../TestBase.h"
 
 /**
- * Implements tests as described here:
- * https://github.com/grpc/grpc/blob/master/doc/interop-test-descriptions.md
- *
  * This is an abstract class that needs to be subclassed. See |+host|.
  */
-@interface InteropTests : TestBase
+@interface PerfTests : TestBase
 
 @end
