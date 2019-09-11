@@ -197,14 +197,15 @@ NSString *const kGRPCErrorDomain = @"io.grpc";
     // continuously create interceptor until one is successfully created
     while (_firstInterceptor == nil) {
       if (interceptorFactories.count == 0) {
-        _firstInterceptor = [[GRPCTransportManager alloc] initWithTransportID:_callOptions.transport
-                                                          previousInterceptor:dispatcher];
+        _firstInterceptor =
+            [[GRPCTransportManager alloc] initWithTransportID:_actualCallOptions.transport
+                                          previousInterceptor:dispatcher];
         break;
       } else {
         _firstInterceptor =
             [[GRPCInterceptorManager alloc] initWithFactories:interceptorFactories
                                           previousInterceptor:dispatcher
-                                                  transportID:_callOptions.transport];
+                                                  transportID:_actualCallOptions.transport];
         if (_firstInterceptor == nil) {
           [interceptorFactories removeObjectAtIndex:0];
         }
@@ -215,7 +216,6 @@ NSString *const kGRPCErrorDomain = @"io.grpc";
       NSLog(@"Failed to create interceptor or transport.");
     }
   }
-
   return self;
 }
 

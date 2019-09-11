@@ -76,15 +76,18 @@ static GRPCFakeTransportFactory *fakeTransportFactory;
 
 @implementation DummyInterceptor {
   GRPCInterceptorManager *_manager;
+  BOOL _passthrough;
 }
 
 - (instancetype)initWithInterceptorManager:(GRPCInterceptorManager *)interceptorManager
-                             dispatchQueue:(dispatch_queue_t)dispatchQueue {
+                             dispatchQueue:(dispatch_queue_t)dispatchQueue
+                               passthrough:(BOOL)passthrough {
   if (dispatchQueue == nil) {
     dispatchQueue = dispatch_queue_create(NULL, DISPATCH_QUEUE_SERIAL);
   }
   if ((self = [super initWithInterceptorManager:interceptorManager dispatchQueue:dispatchQueue])) {
     _manager = interceptorManager;
+    _passthrough = passthrough;
   }
   return self;
 }
@@ -92,42 +95,50 @@ static GRPCFakeTransportFactory *fakeTransportFactory;
 - (void)startWithRequestOptions:(GRPCRequestOptions *)requestOptions
                     callOptions:(GRPCCallOptions *)callOptions {
   self.hit = YES;
-  [_manager
-      forwardPreviousInterceptorCloseWithTrailingMetadata:nil
-                                                    error:[NSError
+  if (_passthrough) {
+    [super startWithRequestOptions:requestOptions callOptions:callOptions];
+  } else {
+    [_manager
+        forwardPreviousInterceptorCloseWithTrailingMetadata:nil
+                                                      error:
+                                                          [NSError
                                                               errorWithDomain:kGRPCErrorDomain
                                                                          code:GRPCErrorCodeCancelled
                                                                      userInfo:@{
                                                                        NSLocalizedDescriptionKey :
                                                                            @"Canceled."
                                                                      }]];
-  [_manager shutDown];
+    [_manager shutDown];
+  }
 }
 
 @end
 
 @interface DummyInterceptorFactory : NSObject<GRPCInterceptorFactory>
 
-+ (instancetype)sharedInstance;
+- (instancetype)initWithPassthrough:(BOOL)passthrough;
+
+@property(nonatomic, readonly) DummyInterceptor *lastInterceptor;
 
 @end
 
-static DummyInterceptorFactory *dummyInterceptorFactory;
-static dispatch_once_t initDummyInterceptorFactory;
+@implementation DummyInterceptorFactory {
+  BOOL _passthrough;
+}
 
-@implementation DummyInterceptorFactory
-
-+ (instancetype)sharedInstance {
-  dispatch_once(&initDummyInterceptorFactory, ^{
-    dummyInterceptorFactory = [[DummyInterceptorFactory alloc] init];
-  });
-  return dummyInterceptorFactory;
+- (instancetype)initWithPassthrough:(BOOL)passthrough {
+  if ((self = [super init])) {
+    _passthrough = passthrough;
+  }
+  return self;
 }
 
 - (GRPCInterceptor *)createInterceptorWithManager:(GRPCInterceptorManager *)interceptorManager {
-  return [[DummyInterceptor alloc]
+  _lastInterceptor = [[DummyInterceptor alloc]
       initWithInterceptorManager:interceptorManager
-                   dispatchQueue:dispatch_queue_create(NULL, DISPATCH_QUEUE_SERIAL)];
+                   dispatchQueue:dispatch_queue_create(NULL, DISPATCH_QUEUE_SERIAL)
+                     passthrough:_passthrough];
+  return _lastInterceptor;
 }
 
 @end
@@ -203,8 +214,10 @@ static dispatch_once_t initDummyInterceptorFactory;
       [self expectationWithDescription:@"Expect call complete"];
   [GRPCFakeTransportFactory sharedInstance].nextTransportInstance = nil;
 
+  DummyInterceptorFactory *factory = [[DummyInterceptorFactory alloc] initWithPassthrough:YES];
+  DummyInterceptorFactory *factory2 = [[DummyInterceptorFactory alloc] initWithPassthrough:NO];
   [[GRPCFakeTransportFactory sharedInstance]
-      setTransportInterceptorFactories:@[ [DummyInterceptorFactory sharedInstance] ]];
+      setTransportInterceptorFactories:@[ factory, factory2 ]];
   GRPCRequestOptions *requestOptions =
       [[GRPCRequestOptions alloc] initWithHost:kRemoteHost
                                           path:@"/UnaryCall"
@@ -227,6 +240,8 @@ static dispatch_once_t initDummyInterceptorFactory;
                  callOptions:callOptions];
   [call start];
   [self waitForExpectationsWithTimeout:TEST_TIMEOUT handler:nil];
+  XCTAssertTrue(factory.lastInterceptor.hit);
+  XCTAssertTrue(factory2.lastInterceptor.hit);
 }
 
 @end
