@@ -48,6 +48,7 @@ _DEFAULT_INNER_JOBS = 2
 # the per-test breakdown items that start with 'run_tests/' (it is more readable that way)
 _MATRIX_REPORT_NAME = 'toplevel_run_tests_invocations'
 
+
 def _safe_report_name(name):
     """Reports with '+' in target name won't show correctly in ResultStore"""
     return name.replace('+', 'p')
@@ -65,7 +66,8 @@ def _matrix_job_logfilename(shortname_for_multi_target):
     # for the corresponding 'sponge_log.xml' report.
     # the shortname_for_multi_target component must be set to match the sponge_log.xml location
     # because the top-level render_junit_xml_report is called with multi_target=True
-    s = '%s/%s/%s' % (_MATRIX_REPORT_NAME, shortname_for_multi_target, 'sponge_log.log')
+    s = '%s/%s/%s' % (_MATRIX_REPORT_NAME, shortname_for_multi_target,
+                      'sponge_log.log')
     print(s)
     return s
 
@@ -203,7 +205,8 @@ def _create_test_jobs(extra_args=[], inner_jobs=_DEFAULT_INNER_JOBS):
         configs=['dbg', 'opt'],
         platforms=['linux', 'macos', 'windows'],
         labels=['basictests', 'corelang'],
-        extra_args=extra_args,  # don't use multi_target report because C has too many test cases
+        extra_args=
+        extra_args,  # don't use multi_target report because C has too many test cases
         inner_jobs=inner_jobs,
         timeout_seconds=_CPP_RUNTESTS_TIMEOUT)
 
@@ -241,7 +244,8 @@ def _create_test_jobs(extra_args=[], inner_jobs=_DEFAULT_INNER_JOBS):
         configs=['dbg', 'opt'],
         platforms=['linux', 'macos'],
         labels=['basictests', 'corelang'],
-        extra_args=extra_args,  # don't use multi_target report because C++ has too many test cases
+        extra_args=
+        extra_args,  # don't use multi_target report because C++ has too many test cases
         inner_jobs=inner_jobs,
         timeout_seconds=_CPP_RUNTESTS_TIMEOUT)
 
@@ -615,7 +619,8 @@ if __name__ == "__main__":
     report_utils.render_junit_xml_report(
         resultset,
         _report_filename(_MATRIX_REPORT_NAME),
-        suite_name=_MATRIX_REPORT_NAME, multi_target=True)
+        suite_name=_MATRIX_REPORT_NAME,
+        multi_target=True)
 
     if num_failures == 0:
         jobset.message(
