@@ -50,14 +50,16 @@ def render_junit_xml_report(resultset,
                             suite_package='grpc',
                             suite_name='tests',
                             replace_dots=True,
-                            split_by_target=False):
+                            multi_target=False):
     """Generate JUnit-like XML report."""
-    if not split_by_target:
+    if not multi_targets:
         tree = new_junit_xml_tree()
         append_junit_xml_results(tree, resultset, suite_package, suite_name, '1',
                                  replace_dots)
         create_xml_report_file(tree, report_file)
     else:
+        # To have each test result displayed as a separate target by the Resultstore/Sponge UI,
+        # we generate a separate XML report file for each test result
         for shortname, results in six.iteritems(resultset):
             one_result = { shortname: results }
             tree = new_junit_xml_tree()

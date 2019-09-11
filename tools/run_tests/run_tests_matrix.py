@@ -175,7 +175,7 @@ def _create_test_jobs(extra_args=[], inner_jobs=_DEFAULT_INNER_JOBS):
         configs=['dbg', 'opt'],
         platforms=['linux'],
         labels=['basictests'],
-        extra_args=extra_args,
+        extra_args=extra_args + ['--report_multi_target'],
         inner_jobs=inner_jobs)
 
     # supported on linux only
@@ -184,7 +184,7 @@ def _create_test_jobs(extra_args=[], inner_jobs=_DEFAULT_INNER_JOBS):
         configs=['dbg', 'opt'],
         platforms=['linux'],
         labels=['basictests', 'multilang'],
-        extra_args=extra_args,
+        extra_args=extra_args + ['--report_multi_target'],
         inner_jobs=inner_jobs)
 
     # supported on all platforms.
@@ -193,7 +193,7 @@ def _create_test_jobs(extra_args=[], inner_jobs=_DEFAULT_INNER_JOBS):
         configs=['dbg', 'opt'],
         platforms=['linux', 'macos', 'windows'],
         labels=['basictests', 'corelang'],
-        extra_args=extra_args,
+        extra_args=extra_args,  # don't use multi_target report because C has too many test cases
         inner_jobs=inner_jobs,
         timeout_seconds=_CPP_RUNTESTS_TIMEOUT)
 
@@ -203,7 +203,7 @@ def _create_test_jobs(extra_args=[], inner_jobs=_DEFAULT_INNER_JOBS):
         configs=['dbg', 'opt'],
         platforms=['linux', 'macos', 'windows'],
         labels=['basictests', 'multilang'],
-        extra_args=extra_args,
+        extra_args=extra_args + ['--report_multi_target'],
         inner_jobs=inner_jobs)
     # C# tests on .NET core
     test_jobs += _generate_jobs(
@@ -213,7 +213,7 @@ def _create_test_jobs(extra_args=[], inner_jobs=_DEFAULT_INNER_JOBS):
         arch='default',
         compiler='coreclr',
         labels=['basictests', 'multilang'],
-        extra_args=extra_args,
+        extra_args=extra_args + ['--report_multi_target'],
         inner_jobs=inner_jobs)
 
     test_jobs += _generate_jobs(
@@ -222,7 +222,7 @@ def _create_test_jobs(extra_args=[], inner_jobs=_DEFAULT_INNER_JOBS):
         platforms=['linux', 'macos', 'windows'],
         iomgr_platforms=['native', 'gevent'],
         labels=['basictests', 'multilang'],
-        extra_args=extra_args,
+        extra_args=extra_args + ['--report_multi_target'],
         inner_jobs=inner_jobs)
 
     # supported on linux and mac.
@@ -231,7 +231,7 @@ def _create_test_jobs(extra_args=[], inner_jobs=_DEFAULT_INNER_JOBS):
         configs=['dbg', 'opt'],
         platforms=['linux', 'macos'],
         labels=['basictests', 'corelang'],
-        extra_args=extra_args,
+        extra_args=extra_args,  # don't use multi_target report because C++ has too many test cases
         inner_jobs=inner_jobs,
         timeout_seconds=_CPP_RUNTESTS_TIMEOUT)
 
@@ -240,7 +240,7 @@ def _create_test_jobs(extra_args=[], inner_jobs=_DEFAULT_INNER_JOBS):
         configs=['dbg', 'opt'],
         platforms=['linux', 'macos'],
         labels=['basictests', 'multilang'],
-        extra_args=extra_args,
+        extra_args=extra_args + ['--report_multi_target'],
         inner_jobs=inner_jobs)
 
     # supported on mac only.
@@ -249,7 +249,7 @@ def _create_test_jobs(extra_args=[], inner_jobs=_DEFAULT_INNER_JOBS):
         configs=['opt'],
         platforms=['macos'],
         labels=['basictests', 'multilang'],
-        extra_args=extra_args,
+        extra_args=extra_args + ['--report_multi_target'],
         inner_jobs=inner_jobs,
         timeout_seconds=_OBJC_RUNTESTS_TIMEOUT)
 
@@ -400,7 +400,7 @@ def _create_portability_test_jobs(extra_args=[],
         arch='default',
         compiler='python_alpine',
         labels=['portability', 'multilang'],
-        extra_args=extra_args,
+        extra_args=extra_args + ['--report_multi_target'],
         inner_jobs=inner_jobs)
 
     # TODO(jtattermusch): a large portion of the libuv tests is failing,
@@ -605,16 +605,16 @@ if __name__ == "__main__":
     report_utils.render_junit_xml_report(
         resultset,
         _report_filename('run_tests_matrix_jobs'),
-        suite_name='run_tests_matrix_jobs',  split_by_target=True)
+        suite_name='run_tests_matrix_jobs',  multi_target=True)
 
     if num_failures == 0:
         jobset.message(
             'SUCCESS',
-            'All run_tests.py instance finished successfully.',
+            'All run_tests.py instances finished successfully.',
             do_newline=True)
     else:
         jobset.message(
             'FAILED',
-            'Some run_tests.py instance have failed.',
+            'Some run_tests.py instances have failed.',
             do_newline=True)
         sys.exit(1)
