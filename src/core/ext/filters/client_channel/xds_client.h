@@ -68,7 +68,8 @@ class XdsClient : public RefCounted<XdsClient> {
   XdsClient();
   ~XdsClient();
 
-  void WatchServiceConfig(UniquePtr<ServiceConfigWatcherInterface> watcher);
+  void WatchServiceConfig(StringView server_name,
+                          UniquePtr<ServiceConfigWatcherInterface> watcher);
   void WatchClusterData(StringView cluster,
                         UniquePtr<ClusterWatcherInterface> watcher);
   void WatchEndpointData(StringView cluster,
