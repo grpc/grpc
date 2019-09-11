@@ -1473,6 +1473,13 @@ argp.add_argument(
     type=str,
     help='Test suite name to use in generated JUnit XML report')
 argp.add_argument(
+    '--report_multi_target',
+    default=False,
+    const=True,
+    action='store_const',
+    help='Generate separate XML report for each test job (Looks better in UIs).'
+)
+argp.add_argument(
     '--quiet_success',
     default=False,
     action='store_const',
@@ -1880,7 +1887,10 @@ def _build_and_run(check_cancelled,
                                  upload_extra_fields)
         if xml_report and resultset:
             report_utils.render_junit_xml_report(
-                resultset, xml_report, suite_name=args.report_suite_name)
+                resultset,
+                xml_report,
+                suite_name=args.report_suite_name,
+                multi_target=args.report_multi_target)
 
     number_failures, _ = jobset.run(
         post_tests_steps,
