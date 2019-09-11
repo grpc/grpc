@@ -52,7 +52,7 @@ def render_junit_xml_report(resultset,
                             replace_dots=True,
                             multi_target=False):
     """Generate JUnit-like XML report."""
-    if not multi_targets:
+    if not multi_target:
         tree = new_junit_xml_tree()
         append_junit_xml_results(tree, resultset, suite_package, suite_name, '1',
                                  replace_dots)
