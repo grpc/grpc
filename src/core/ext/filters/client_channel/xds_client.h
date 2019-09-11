@@ -23,6 +23,7 @@
 #include "src/core/lib/gprpp/memory.h"
 #include "src/core/lib/gprpp/ref_counted.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
+#include "src/core/lib/gprpp/string_view.h"
 
 namespace grpc_core {
 
@@ -36,9 +37,9 @@ class XdsClient : public RefCounted<XdsClient> {
   struct EndpointData {
   };
 
-  class ServiceConfigWatcher {
+  class ServiceConfigWatcherInterface {
    public:
-    virtual ~ServiceConfigWatcher() = default;
+    virtual ~ServiceConfigWatcherInterface() = default;
 
     virtual OnServiceConfigChanged(RefCountedPtr<ServiceConfig> service_config)
         GRPC_ABSTRACT;
@@ -46,18 +47,18 @@ class XdsClient : public RefCounted<XdsClient> {
     GRPC_ABSTRACT_BASE_CLASS
   };
 
-  class ClusterWatcher {
+  class ClusterWatcherInterface {
    public:
-    virtual ~ClusterWatcher() = default;
+    virtual ~ClusterWatcherInterface() = default;
 
     virtual OnClusterChanged(ClusterData cluster_data) GRPC_ABSTRACT;
 
     GRPC_ABSTRACT_BASE_CLASS
   };
 
-  class EndpointWatcher {
+  class EndpointWatcherInterface {
    public:
-    virtual ~EndpointWatcher() = default;
+    virtual ~EndpointWatcherInterface() = default;
 
     virtual OnEndpointChanged(EndpointData endpoint_data) GRPC_ABSTRACT;
 
@@ -67,13 +68,15 @@ class XdsClient : public RefCounted<XdsClient> {
   XdsClient();
   ~XdsClient();
 
-  void WatchServiceConfig(UniquePtr<ServiceConfigWatcher> watcher);
-  void WatchClusterData(const char* cluster, UniquePtr<ClusterWatcher> watcher);
-  void WatchEndpointData(const char* cluster,
-                         UniquePtr<EndpointWatcher> watcher);
+  void WatchServiceConfig(UniquePtr<ServiceConfigWatcherInterface> watcher);
+  void WatchClusterData(StringView cluster,
+                        UniquePtr<ClusterWatcherInterface> watcher);
+  void WatchEndpointData(StringView cluster,
+                         UniquePtr<EndpointWatcherInterface> watcher);
 
   grpc_arg MakeChannelArg() const;
-  static RefCountedPtr<XdsClient> GetFromChannelArgs(grpc_channel_args* args);
+  static RefCountedPtr<XdsClient> GetFromChannelArgs(
+      const grpc_channel_args& args);
 };
 
 }  // namespace grpc_core
