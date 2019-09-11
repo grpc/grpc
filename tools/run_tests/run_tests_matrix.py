@@ -44,7 +44,9 @@ _OBJC_RUNTESTS_TIMEOUT = 90 * 60
 _DEFAULT_INNER_JOBS = 2
 
 # Name of the top-level umbrella report that includes all the run_tests.py invocations
-_MATRIX_REPORT_NAME = 'run_tests_matrix_jobs'
+# Note that the starting letter 't' matters so that the targets are listed AFTER
+# the per-test breakdown items that start with 'run_tests/' (it is more readable that way)
+_MATRIX_REPORT_NAME = 'toplevel_run_tests_invocations'
 
 def _safe_report_name(name):
     """Reports with '+' in target name won't show correctly in ResultStore"""
