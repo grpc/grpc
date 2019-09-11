@@ -265,6 +265,7 @@ if 'darwin' in sys.platform and PY3:
         r'macosx-10.7-\1',
         util.get_platform())
 
+
 def cython_extensions_and_necessity():
   cython_module_files = [os.path.join(PYTHON_STEM,
                                name.replace('.', '/') + '.pyx')
@@ -295,6 +296,8 @@ def cython_extensions_and_necessity():
   need_cython = BUILD_WITH_CYTHON
   if not BUILD_WITH_CYTHON:
     need_cython = need_cython or not commands.check_and_update_cythonization(extensions)
+  # TODO: the strategy for conditional compiling and exposing the aio Cython
+  # dependencies will be revisited by https://github.com/grpc/grpc/issues/19728
   return commands.try_cythonize(extensions, linetracing=ENABLE_CYTHON_TRACING, mandatory=BUILD_WITH_CYTHON), need_cython
 
 CYTHON_EXTENSION_MODULES, need_cython = cython_extensions_and_necessity()

@@ -703,6 +703,10 @@ class PythonConfig(
 
 class PythonLanguage(object):
 
+    _DEFAULT_COMMAND = 'test_lite'
+    _TEST_SPECS_FILE = 'src/python/grpcio_tests/tests/tests.json'
+    _TEST_FOLDER = 'test'
+
     def configure(self, config, args):
         self.config = config
         self.args = args
@@ -710,8 +714,7 @@ class PythonLanguage(object):
 
     def test_specs(self):
         # load list of known test suites
-        with open(
-                'src/python/grpcio_tests/tests/tests.json') as tests_json_file:
+        with open(self._TEST_SPECS_FILE) as tests_json_file:
             tests_json = json.load(tests_json_file)
         environment = dict(_FORCE_ENVIRON_FOR_WRAPPERS)
         return [
@@ -721,7 +724,8 @@ class PythonLanguage(object):
                 environ=dict(
                     list(environment.items()) + [(
                         'GRPC_PYTHON_TESTRUNNER_FILTER', str(suite_name))]),
-                shortname='%s.test.%s' % (config.name, suite_name),
+                shortname='%s.%s.%s' % (config.name, self._TEST_FOLDER,
+                                        suite_name),
             ) for suite_name in tests_json for config in self.pythons
         ]
 
@@ -789,7 +793,7 @@ class PythonLanguage(object):
             venv_relative_python = ['bin/python']
             toolchain = ['unix']
 
-        test_command = 'test_lite'
+        test_command = self._DEFAULT_COMMAND
         if args.iomgr_platform == 'gevent':
             test_command = 'test_gevent'
         runner = [
@@ -880,6 +884,31 @@ class PythonLanguage(object):
 
     def __str__(self):
         return 'python'
+
+
+class PythonAioLanguage(PythonLanguage):
+
+    _DEFAULT_COMMAND = 'test_aio'
+    _TEST_SPECS_FILE = 'src/python/grpcio_tests/tests_aio/tests.json'
+    _TEST_FOLDER = 'test_aio'
+
+    def configure(self, config, args):
+        self.config = config
+        self.args = args
+        self.pythons = self._get_pythons(self.args)
+
+    def _get_pythons(self, args):
+        """Get python runtimes to test with, based on current platform, architecture, compiler etc."""
+
+        if args.compiler not in ('python3.6', 'python3.7', 'python3.8'):
+            raise Exception('Compiler %s not supported.' % args.compiler)
+        if args.iomgr_platform not in ('native'):
+            raise Exception(
+                'Iomgr platform %s not supported.' % args.iomgr_platform)
+        return super()._get_pythons(args)
+
+    def __str__(self):
+        return 'python_aio'
 
 
 class RubyLanguage(object):
@@ -1269,6 +1298,7 @@ _LANGUAGES = {
     'php': PhpLanguage(),
     'php7': Php7Language(),
     'python': PythonLanguage(),
+    'python-aio': PythonAioLanguage(),
     'ruby': RubyLanguage(),
     'csharp': CSharpLanguage(),
     'objc': ObjCLanguage(),
