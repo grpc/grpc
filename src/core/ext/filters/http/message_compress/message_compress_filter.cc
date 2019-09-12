@@ -441,23 +441,23 @@ static void compress_start_transport_stream_op_batch(
 }
 
 /* Constructor for call_data */
-static grpc_error* init_call_elem(grpc_call_element* elem,
-                                  const grpc_call_element_args* args) {
+static grpc_error* compress_init_call_elem(grpc_call_element* elem,
+                                           const grpc_call_element_args* args) {
   new (elem->call_data) call_data(elem, *args);
   return GRPC_ERROR_NONE;
 }
 
 /* Destructor for call_data */
-static void destroy_call_elem(grpc_call_element* elem,
-                              const grpc_call_final_info* final_info,
-                              grpc_closure* ignored) {
+static void compress_destroy_call_elem(grpc_call_element* elem,
+                                       const grpc_call_final_info* final_info,
+                                       grpc_closure* ignored) {
   call_data* calld = static_cast<call_data*>(elem->call_data);
   calld->~call_data();
 }
 
 /* Constructor for channel_data */
-static grpc_error* init_channel_elem(grpc_channel_element* elem,
-                                     grpc_channel_element_args* args) {
+static grpc_error* compress_init_channel_elem(grpc_channel_element* elem,
+                                              grpc_channel_element_args* args) {
   channel_data* channeld = static_cast<channel_data*>(elem->channel_data);
   // Get the enabled and the default algorithms from channel args.
   channeld->enabled_compression_algorithms_bitset =
@@ -487,17 +487,17 @@ static grpc_error* init_channel_elem(grpc_channel_element* elem,
 }
 
 /* Destructor for channel data */
-static void destroy_channel_elem(grpc_channel_element* elem) {}
+static void compress_destroy_channel_elem(grpc_channel_element* elem) {}
 
 const grpc_channel_filter grpc_message_compress_filter = {
     compress_start_transport_stream_op_batch,
     grpc_channel_next_op,
     sizeof(call_data),
-    init_call_elem,
+    compress_init_call_elem,
     grpc_call_stack_ignore_set_pollset_or_pollset_set,
-    destroy_call_elem,
+    compress_destroy_call_elem,
     sizeof(channel_data),
-    init_channel_elem,
-    destroy_channel_elem,
+    compress_init_channel_elem,
+    compress_destroy_channel_elem,
     grpc_channel_next_get_info,
     "message_compress"};
