@@ -2322,6 +2322,7 @@ XdsLb::PriorityList::LocalityMap::LocalityMap(RefCountedPtr<XdsLb> xds_policy,
 
 void XdsLb::PriorityList::LocalityMap::UpdateLocked(
     const XdsPriorityListUpdate::LocalityList& locality_list) {
+  if (xds_policy_->shutting_down_) return;
   if (xds_policy_->priority_list_update_applied_bitmask_[priority_]) return;
   xds_policy_->priority_list_update_applied_bitmask_[priority_] = true;
   if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_xds_trace)) {
@@ -2646,6 +2647,7 @@ XdsLb::PriorityList::LocalityMap::Locality::CreateChildPolicyLocked(
 
 void XdsLb::PriorityList::LocalityMap::Locality::UpdateLocked(
     uint32_t locality_weight, ServerAddressList serverlist) {
+  if (xds_policy()->shutting_down_) return;
   // Update locality weight.
   weight_ = locality_weight;
   if (delayed_removal_timer_callback_pending_) {
