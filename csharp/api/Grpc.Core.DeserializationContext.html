@@ -159,7 +159,7 @@ In particular, using this method usually requires copying of the entire buffer o
 Also, allocating a new buffer each time can put excessive pressure on GC, especially if
 the payload is more than 86700 bytes large (which means the newly allocated buffer will be placed in LOH,
 and LOH object can only be garbage collected via a full (&quot;stop the world&quot;) GC run).
-NOTE: Deserializers are expected not to call this method more than once per received message
+NOTE: Deserializers are expected not to call this method (or other payload accessor methods) more than once per received message
 (as there is no practical reason for doing so) and <code>DeserializationContext</code> implementations are free to assume so.</p>
 </div>
   <div class="markdown level1 conceptual"></div>
@@ -179,6 +179,37 @@ NOTE: Deserializers are expected not to call this method more than once per rece
       <tr>
         <td><span class="xref">System.Byte</span>[]</td>
         <td><p>byte array containing the entire payload.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <a id="Grpc_Core_DeserializationContext_PayloadAsReadOnlySequence_" data-uid="Grpc.Core.DeserializationContext.PayloadAsReadOnlySequence*"></a>
+  <h4 id="Grpc_Core_DeserializationContext_PayloadAsReadOnlySequence" data-uid="Grpc.Core.DeserializationContext.PayloadAsReadOnlySequence">PayloadAsReadOnlySequence()</h4>
+  <div class="markdown level1 summary"><p>Gets the entire payload as a ReadOnlySequence.
+The ReadOnlySequence is only valid for the duration of the deserializer routine and the caller must not access it after the deserializer returns.
+Using the read only sequence is the most efficient way to access the message payload. Where possible it allows directly
+accessing the received payload without needing to perform any buffer copying or buffer allocations.
+NOTE: When using this method, it is recommended to use C# 7.2 compiler to make it more useful (using Span type directly from your code requires C# 7.2).&quot;
+NOTE: Deserializers are expected not to call this method (or other payload accessor methods) more than once per received message
+(as there is no practical reason for doing so) and <code>DeserializationContext</code> implementations are free to assume so.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public virtual Buffers.ReadOnlySequence&lt;byte&gt; PayloadAsReadOnlySequence()</code></pre>
+  </div>
+  <h5 class="returns">Returns</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Buffers.ReadOnlySequence</span>&lt;<span class="xref">System.Byte</span>&gt;</td>
+        <td><p>read only sequence containing the entire payload.</p>
 </td>
       </tr>
     </tbody>

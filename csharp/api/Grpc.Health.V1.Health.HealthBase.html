@@ -120,7 +120,8 @@
   <h6><strong>Assembly</strong>: Grpc.HealthCheck.dll</h6>
   <h5 id="Grpc_Health_V1_Health_HealthBase_syntax">Syntax</h5>
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public abstract class HealthBase</code></pre>
+    <pre><code class="lang-csharp hljs">[BindServiceMethod(typeof(Health), &quot;BindService&quot;)]
+public abstract class HealthBase</code></pre>
   </div>
   <h3 id="methods">Methods
   </h3>
