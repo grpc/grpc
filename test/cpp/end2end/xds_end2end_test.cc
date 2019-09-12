@@ -1162,38 +1162,38 @@ TEST_F(LocalityMapTest, WeightedRoundRobin) {
 
 // Tests that the locality map can work properly even when it contains a large
 // number of localities.
-// TEST_F(LocalityMapTest, StressTest) {
-//  SetNextResolution({}, kDefaultServiceConfig_.c_str());
-//  SetNextResolutionForLbChannelAllBalancers();
-//  const size_t kNumLocalities = 100;
-//  // The first EDS response contains kNumLocalities localities, each of which
-//  // contains backend 0.
-//  EdsServiceImpl::ResponseArgs args;
-//  for (size_t i = 0; i < kNumLocalities; ++i) {
-//    grpc::string name = "locality" + std::to_string(i);
-//    EdsServiceImpl::ResponseArgs::Locality locality(name,
-//                                                    {backends_[0]->port()});
-//    args.locality_list.emplace_back(std::move(locality));
-//  }
-//  ScheduleResponseForBalancer(0, EdsServiceImpl::BuildResponse(args), 0);
-//  // The second EDS response contains 1 locality, which contains backend 1.
-//  args = EdsServiceImpl::ResponseArgs({
-//      {"locality0", GetBackendPorts(1, 2)},
-//  });
-//  ScheduleResponseForBalancer(0, EdsServiceImpl::BuildResponse(args),
-//                              60 * 1000);
-//  // Wait until backend 0 is ready, before which kNumLocalities localities are
-//  // received and handled by the xds policy.
-//  WaitForBackend(0, /*reset_counters=*/false);
-//  EXPECT_EQ(0U, backends_[1]->backend_service()->request_count());
-//  // Wait until backend 1 is ready, before which kNumLocalities localities are
-//  // removed by the xds policy.
-//  WaitForBackend(1);
-//  // The EDS service got a single request.
-//  EXPECT_EQ(1U, balancers_[0]->eds_service()->request_count());
-//  // and sent two responses.
-//  EXPECT_EQ(2U, balancers_[0]->eds_service()->response_count());
-//}
+TEST_F(LocalityMapTest, StressTest) {
+  SetNextResolution({}, kDefaultServiceConfig_.c_str());
+  SetNextResolutionForLbChannelAllBalancers();
+  const size_t kNumLocalities = 100;
+  // The first EDS response contains kNumLocalities localities, each of which
+  // contains backend 0.
+  EdsServiceImpl::ResponseArgs args;
+  for (size_t i = 0; i < kNumLocalities; ++i) {
+    grpc::string name = "locality" + std::to_string(i);
+    EdsServiceImpl::ResponseArgs::Locality locality(name,
+                                                    {backends_[0]->port()});
+    args.locality_list.emplace_back(std::move(locality));
+  }
+  ScheduleResponseForBalancer(0, EdsServiceImpl::BuildResponse(args), 0);
+  // The second EDS response contains 1 locality, which contains backend 1.
+  args = EdsServiceImpl::ResponseArgs({
+      {"locality0", GetBackendPorts(1, 2)},
+  });
+  ScheduleResponseForBalancer(0, EdsServiceImpl::BuildResponse(args),
+                              60 * 1000);
+  // Wait until backend 0 is ready, before which kNumLocalities localities are
+  // received and handled by the xds policy.
+  WaitForBackend(0, /*reset_counters=*/false);
+  EXPECT_EQ(0U, backends_[1]->backend_service()->request_count());
+  // Wait until backend 1 is ready, before which kNumLocalities localities are
+  // removed by the xds policy.
+  WaitForBackend(1);
+  // The EDS service got a single request.
+  EXPECT_EQ(1U, balancers_[0]->eds_service()->request_count());
+  // and sent two responses.
+  EXPECT_EQ(2U, balancers_[0]->eds_service()->response_count());
+}
 
 // Tests that the localities in a locality map are picked correctly after update
 // (addition, modification, deletion).

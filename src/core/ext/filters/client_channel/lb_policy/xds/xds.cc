@@ -582,7 +582,7 @@ class XdsLb : public LoadBalancingPolicy {
 
     explicit PriorityList(XdsLb* xds_policy) : xds_policy_(xds_policy) {}
 
-    void UpdateLocked();
+    void UpdateLocked(bool force_update_all_priorities = false);
     void ResetBackoffLocked();
     void ShutdownLocked();
     void UpdateXdsPickerLocked();
@@ -1309,7 +1309,7 @@ void XdsLb::LbChannelState::EdsCallState::OnResponseReceivedLocked(
     // Update the priority list.
     xdslb_policy->StorePriorityListUpdate(
         std::move(update.priority_list_update));
-    xdslb_policy->priority_list_.UpdateLocked();
+    xdslb_policy->priority_list_.UpdateLocked(false);
   }();
   grpc_slice_unref_internal(response_slice);
   if (xdslb_policy->shutting_down_) {
@@ -1939,7 +1939,7 @@ void XdsLb::UpdateLocked(UpdateArgs args) {
     return;
   }
   ProcessAddressesAndChannelArgsLocked(std::move(args.addresses), *args.args);
-  priority_list_.UpdateLocked();
+  priority_list_.UpdateLocked(true);
   // Update the existing fallback policy. The fallback policy config and/or the
   // fallback addresses may be new.
   if (fallback_policy_ != nullptr) UpdateFallbackPolicyLocked();
@@ -2149,7 +2149,7 @@ void XdsLb::MaybeExitFallbackMode() {
 // XdsLb::PriorityList
 //
 
-void XdsLb::PriorityList::UpdateLocked() {
+void XdsLb::PriorityList::UpdateLocked(bool force_update_all_priorities) {
   const auto& priority_list_update = xds_policy_->priority_list_update_;
   const auto& applied_bitmask =
       xds_policy_->priority_list_update_applied_bitmask_;
@@ -2172,7 +2172,9 @@ void XdsLb::PriorityList::UpdateLocked() {
     const auto* locality_list = priority_list_update.Find(priority);
     LocalityMap* locality_map = priorities_[priority].get();
     // Propagate the locality list if it contains new update.
-    if (!applied_bitmask[priority]) locality_map->UpdateLocked(*locality_list);
+    if (force_update_all_priorities || !applied_bitmask[priority]) {
+      locality_map->UpdateLocked(*locality_list);
+    }
     // Case 2: The existing locality map is still in the failover timeout. Don't
     // continue to create a new one.
     if (locality_map->priority() == trying_priority()) break;
