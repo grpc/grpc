@@ -5,10 +5,10 @@
   <head>
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
-    <title>Interface IClientStreamWriter&lt;T&gt;
+    <title>Class AsyncStreamReaderExtensions
    | gRPC C# </title>
     <meta name="viewport" content="width=device-width">
-    <meta name="title" content="Interface IClientStreamWriter&lt;T&gt;
+    <meta name="title" content="Class AsyncStreamReaderExtensions
    | gRPC C# ">
     <meta name="generator" content="docfx 2.36.0.0">
     
@@ -78,29 +78,96 @@
         </div>
         <div class="article row grid-right">
           <div class="col-md-10">
-            <article class="content wrap" id="_content" data-uid="Grpc.Core.IClientStreamWriter`1">
+            <article class="content wrap" id="_content" data-uid="Grpc.Core.AsyncStreamReaderExtensions">
   
   
-  <h1 id="Grpc_Core_IClientStreamWriter_1" data-uid="Grpc.Core.IClientStreamWriter`1" class="text-break">Interface IClientStreamWriter&lt;T&gt;
+  <h1 id="Grpc_Core_AsyncStreamReaderExtensions" data-uid="Grpc.Core.AsyncStreamReaderExtensions" class="text-break">Class AsyncStreamReaderExtensions
   </h1>
-  <div class="markdown level0 summary"><p>Client-side writable stream of messages with Close capability.</p>
+  <div class="markdown level0 summary"><p>Extension methods for <a class="xref" href="Grpc.Core.IAsyncStreamReader-1.html">IAsyncStreamReader&lt;T&gt;</a>.</p>
 </div>
   <div class="markdown level0 conceptual"></div>
+  <div class="inheritance">
+    <h5>Inheritance</h5>
+    <div class="level0"><span class="xref">System.Object</span></div>
+    <div class="level1"><span class="xref">AsyncStreamReaderExtensions</span></div>
+  </div>
   <div class="inheritedMembers">
     <h5>Inherited Members</h5>
     <div>
-      <a class="xref" href="Grpc.Core.IAsyncStreamWriter-1.html#Grpc_Core_IAsyncStreamWriter_1_WriteAsync__0_">IAsyncStreamWriter&lt;T&gt;.WriteAsync(T)</a>
+      <span class="xref">System.Object.Equals(System.Object)</span>
     </div>
     <div>
-      <a class="xref" href="Grpc.Core.IAsyncStreamWriter-1.html#Grpc_Core_IAsyncStreamWriter_1_WriteOptions">IAsyncStreamWriter&lt;T&gt;.WriteOptions</a>
+      <span class="xref">System.Object.Equals(System.Object, System.Object)</span>
+    </div>
+    <div>
+      <span class="xref">System.Object.GetHashCode()</span>
+    </div>
+    <div>
+      <span class="xref">System.Object.GetType()</span>
+    </div>
+    <div>
+      <span class="xref">System.Object.MemberwiseClone()</span>
+    </div>
+    <div>
+      <span class="xref">System.Object.ReferenceEquals(System.Object, System.Object)</span>
+    </div>
+    <div>
+      <span class="xref">System.Object.ToString()</span>
     </div>
   </div>
   <h6><strong>Namespace</strong>: <a class="xref" href="Grpc.Core.html">Grpc.Core</a></h6>
   <h6><strong>Assembly</strong>: Grpc.Core.Api.dll</h6>
-  <h5 id="Grpc_Core_IClientStreamWriter_1_syntax">Syntax</h5>
+  <h5 id="Grpc_Core_AsyncStreamReaderExtensions_syntax">Syntax</h5>
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public interface IClientStreamWriter&lt;T&gt; : IAsyncStreamWriter&lt;T&gt;</code></pre>
+    <pre><code class="lang-csharp hljs">public static class AsyncStreamReaderExtensions</code></pre>
   </div>
+  <h3 id="methods">Methods
+  </h3>
+  <a id="Grpc_Core_AsyncStreamReaderExtensions_MoveNext_" data-uid="Grpc.Core.AsyncStreamReaderExtensions.MoveNext*"></a>
+  <h4 id="Grpc_Core_AsyncStreamReaderExtensions_MoveNext__1_Grpc_Core_IAsyncStreamReader___0__" data-uid="Grpc.Core.AsyncStreamReaderExtensions.MoveNext``1(Grpc.Core.IAsyncStreamReader{``0})">MoveNext&lt;T&gt;(IAsyncStreamReader&lt;T&gt;)</h4>
+  <div class="markdown level1 summary"><p>Advances the stream reader to the next element in the sequence, returning the result asynchronously.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public static Task&lt;bool&gt; MoveNext&lt;T&gt;(this IAsyncStreamReader&lt;T&gt; streamReader)
+    where T : class</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><a class="xref" href="Grpc.Core.IAsyncStreamReader-1.html">IAsyncStreamReader</a>&lt;T&gt;</td>
+        <td><span class="parametername">streamReader</span></td>
+        <td><p>The stream reader.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="returns">Returns</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Threading.Tasks.Task</span>&lt;<span class="xref">System.Boolean</span>&gt;</td>
+        <td><p>Task containing the result of the operation: true if the reader was successfully advanced
+to the next element; false if the reader has passed the end of the sequence.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
   <h5 class="typeParameters">Type Parameters</h5>
   <table class="table table-bordered table-striped table-condensed">
     <thead>
@@ -114,32 +181,6 @@
         <td><span class="parametername">T</span></td>
         <td><p>The message type.</p>
 </td>
-      </tr>
-    </tbody>
-  </table>
-  <h3 id="methods">Methods
-  </h3>
-  <a id="Grpc_Core_IClientStreamWriter_1_CompleteAsync_" data-uid="Grpc.Core.IClientStreamWriter`1.CompleteAsync*"></a>
-  <h4 id="Grpc_Core_IClientStreamWriter_1_CompleteAsync" data-uid="Grpc.Core.IClientStreamWriter`1.CompleteAsync">CompleteAsync()</h4>
-  <div class="markdown level1 summary"><p>Completes/closes the stream. Can only be called once there is no pending write. No writes should follow calling this.</p>
-</div>
-  <div class="markdown level1 conceptual"></div>
-  <h5 class="decalaration">Declaration</h5>
-  <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">Task CompleteAsync()</code></pre>
-  </div>
-  <h5 class="returns">Returns</h5>
-  <table class="table table-bordered table-striped table-condensed">
-    <thead>
-      <tr>
-        <th>Type</th>
-        <th>Description</th>
-      </tr>
-    </thead>
-    <tbody>
-      <tr>
-        <td><span class="xref">System.Threading.Tasks.Task</span></td>
-        <td></td>
       </tr>
     </tbody>
   </table>

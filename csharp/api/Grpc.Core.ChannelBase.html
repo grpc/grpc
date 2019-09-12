@@ -5,10 +5,10 @@
   <head>
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
-    <title>Interface IClientStreamWriter&lt;T&gt;
+    <title>Class ChannelBase
    | gRPC C# </title>
     <meta name="viewport" content="width=device-width">
-    <meta name="title" content="Interface IClientStreamWriter&lt;T&gt;
+    <meta name="title" content="Class ChannelBase
    | gRPC C# ">
     <meta name="generator" content="docfx 2.36.0.0">
     
@@ -78,55 +78,115 @@
         </div>
         <div class="article row grid-right">
           <div class="col-md-10">
-            <article class="content wrap" id="_content" data-uid="Grpc.Core.IClientStreamWriter`1">
+            <article class="content wrap" id="_content" data-uid="Grpc.Core.ChannelBase">
   
   
-  <h1 id="Grpc_Core_IClientStreamWriter_1" data-uid="Grpc.Core.IClientStreamWriter`1" class="text-break">Interface IClientStreamWriter&lt;T&gt;
+  <h1 id="Grpc_Core_ChannelBase" data-uid="Grpc.Core.ChannelBase" class="text-break">Class ChannelBase
   </h1>
-  <div class="markdown level0 summary"><p>Client-side writable stream of messages with Close capability.</p>
+  <div class="markdown level0 summary"><p>Base class for gRPC channel. Channels are an abstraction of long-lived connections to remote servers.</p>
 </div>
   <div class="markdown level0 conceptual"></div>
+  <div class="inheritance">
+    <h5>Inheritance</h5>
+    <div class="level0"><span class="xref">System.Object</span></div>
+    <div class="level1"><span class="xref">ChannelBase</span></div>
+      <div class="level2"><a class="xref" href="Grpc.Core.Channel.html">Channel</a></div>
+  </div>
   <div class="inheritedMembers">
     <h5>Inherited Members</h5>
     <div>
-      <a class="xref" href="Grpc.Core.IAsyncStreamWriter-1.html#Grpc_Core_IAsyncStreamWriter_1_WriteAsync__0_">IAsyncStreamWriter&lt;T&gt;.WriteAsync(T)</a>
+      <span class="xref">System.Object.Equals(System.Object)</span>
     </div>
     <div>
-      <a class="xref" href="Grpc.Core.IAsyncStreamWriter-1.html#Grpc_Core_IAsyncStreamWriter_1_WriteOptions">IAsyncStreamWriter&lt;T&gt;.WriteOptions</a>
+      <span class="xref">System.Object.Equals(System.Object, System.Object)</span>
+    </div>
+    <div>
+      <span class="xref">System.Object.GetHashCode()</span>
+    </div>
+    <div>
+      <span class="xref">System.Object.GetType()</span>
+    </div>
+    <div>
+      <span class="xref">System.Object.MemberwiseClone()</span>
+    </div>
+    <div>
+      <span class="xref">System.Object.ReferenceEquals(System.Object, System.Object)</span>
+    </div>
+    <div>
+      <span class="xref">System.Object.ToString()</span>
     </div>
   </div>
   <h6><strong>Namespace</strong>: <a class="xref" href="Grpc.Core.html">Grpc.Core</a></h6>
   <h6><strong>Assembly</strong>: Grpc.Core.Api.dll</h6>
-  <h5 id="Grpc_Core_IClientStreamWriter_1_syntax">Syntax</h5>
+  <h5 id="Grpc_Core_ChannelBase_syntax">Syntax</h5>
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public interface IClientStreamWriter&lt;T&gt; : IAsyncStreamWriter&lt;T&gt;</code></pre>
+    <pre><code class="lang-csharp hljs">public abstract class ChannelBase</code></pre>
   </div>
-  <h5 class="typeParameters">Type Parameters</h5>
+  <h3 id="constructors">Constructors
+  </h3>
+  <a id="Grpc_Core_ChannelBase__ctor_" data-uid="Grpc.Core.ChannelBase.#ctor*"></a>
+  <h4 id="Grpc_Core_ChannelBase__ctor_System_String_" data-uid="Grpc.Core.ChannelBase.#ctor(System.String)">ChannelBase(String)</h4>
+  <div class="markdown level1 summary"><p>Initializes a new instance of <a class="xref" href="Grpc.Core.ChannelBase.html">ChannelBase</a> class that connects to a specific host.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">protected ChannelBase(string target)</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
   <table class="table table-bordered table-striped table-condensed">
     <thead>
       <tr>
+        <th>Type</th>
         <th>Name</th>
         <th>Description</th>
       </tr>
     </thead>
     <tbody>
       <tr>
-        <td><span class="parametername">T</span></td>
-        <td><p>The message type.</p>
+        <td><span class="xref">System.String</span></td>
+        <td><span class="parametername">target</span></td>
+        <td><p>Target of the channel.</p>
 </td>
+      </tr>
+    </tbody>
+  </table>
+  <h3 id="properties">Properties
+  </h3>
+  <a id="Grpc_Core_ChannelBase_Target_" data-uid="Grpc.Core.ChannelBase.Target*"></a>
+  <h4 id="Grpc_Core_ChannelBase_Target" data-uid="Grpc.Core.ChannelBase.Target">Target</h4>
+  <div class="markdown level1 summary"><p>The original target used to create the channel.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public string Target { get; }</code></pre>
+  </div>
+  <h5 class="propertyValue">Property Value</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.String</span></td>
+        <td></td>
       </tr>
     </tbody>
   </table>
   <h3 id="methods">Methods
   </h3>
-  <a id="Grpc_Core_IClientStreamWriter_1_CompleteAsync_" data-uid="Grpc.Core.IClientStreamWriter`1.CompleteAsync*"></a>
-  <h4 id="Grpc_Core_IClientStreamWriter_1_CompleteAsync" data-uid="Grpc.Core.IClientStreamWriter`1.CompleteAsync">CompleteAsync()</h4>
-  <div class="markdown level1 summary"><p>Completes/closes the stream. Can only be called once there is no pending write. No writes should follow calling this.</p>
+  <a id="Grpc_Core_ChannelBase_CreateCallInvoker_" data-uid="Grpc.Core.ChannelBase.CreateCallInvoker*"></a>
+  <h4 id="Grpc_Core_ChannelBase_CreateCallInvoker" data-uid="Grpc.Core.ChannelBase.CreateCallInvoker">CreateCallInvoker()</h4>
+  <div class="markdown level1 summary"><p>Create a new <a class="xref" href="Grpc.Core.CallInvoker.html">CallInvoker</a> for the channel.</p>
 </div>
   <div class="markdown level1 conceptual"></div>
   <h5 class="decalaration">Declaration</h5>
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">Task CompleteAsync()</code></pre>
+    <pre><code class="lang-csharp hljs">public abstract CallInvoker CreateCallInvoker()</code></pre>
   </div>
   <h5 class="returns">Returns</h5>
   <table class="table table-bordered table-striped table-condensed">
@@ -138,11 +198,22 @@
     </thead>
     <tbody>
       <tr>
-        <td><span class="xref">System.Threading.Tasks.Task</span></td>
-        <td></td>
+        <td><a class="xref" href="Grpc.Core.CallInvoker.html">CallInvoker</a></td>
+        <td><p>A new <a class="xref" href="Grpc.Core.CallInvoker.html">CallInvoker</a>.</p>
+</td>
       </tr>
     </tbody>
   </table>
+  <h3 id="extensionmethods">Extension Methods</h3>
+  <div>
+      <a class="xref" href="Grpc.Core.Interceptors.ChannelExtensions.html#Grpc_Core_Interceptors_ChannelExtensions_Intercept_Grpc_Core_ChannelBase_Grpc_Core_Interceptors_Interceptor_">ChannelExtensions.Intercept(ChannelBase, Interceptor)</a>
+  </div>
+  <div>
+      <a class="xref" href="Grpc.Core.Interceptors.ChannelExtensions.html#Grpc_Core_Interceptors_ChannelExtensions_Intercept_Grpc_Core_ChannelBase_Grpc_Core_Interceptors_Interceptor___">ChannelExtensions.Intercept(ChannelBase, Interceptor[])</a>
+  </div>
+  <div>
+      <a class="xref" href="Grpc.Core.Interceptors.ChannelExtensions.html#Grpc_Core_Interceptors_ChannelExtensions_Intercept_Grpc_Core_ChannelBase_System_Func_Grpc_Core_Metadata_Grpc_Core_Metadata__">ChannelExtensions.Intercept(ChannelBase, Func&lt;Metadata, Metadata&gt;)</a>
+  </div>
 </article>
           </div>
           

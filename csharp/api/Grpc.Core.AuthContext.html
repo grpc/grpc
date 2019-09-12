@@ -124,6 +124,41 @@ Note: experimental API that can change or be removed without any prior notice.</
   <div class="codewrapper">
     <pre><code class="lang-csharp hljs">public class AuthContext</code></pre>
   </div>
+  <h3 id="constructors">Constructors
+  </h3>
+  <a id="Grpc_Core_AuthContext__ctor_" data-uid="Grpc.Core.AuthContext.#ctor*"></a>
+  <h4 id="Grpc_Core_AuthContext__ctor_System_String_System_Collections_Generic_Dictionary_System_String_System_Collections_Generic_List_Grpc_Core_AuthProperty___" data-uid="Grpc.Core.AuthContext.#ctor(System.String,System.Collections.Generic.Dictionary{System.String,System.Collections.Generic.List{Grpc.Core.AuthProperty}})">AuthContext(String, Dictionary&lt;String, List&lt;AuthProperty&gt;&gt;)</h4>
+  <div class="markdown level1 summary"><p>Initializes a new instance of the <a class="xref" href="Grpc.Core.AuthContext.html">AuthContext</a> class.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public AuthContext(string peerIdentityPropertyName, Dictionary&lt;string, List&lt;AuthProperty&gt;&gt; properties)</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.String</span></td>
+        <td><span class="parametername">peerIdentityPropertyName</span></td>
+        <td><p>Peer identity property name.</p>
+</td>
+      </tr>
+      <tr>
+        <td><span class="xref">System.Collections.Generic.Dictionary</span>&lt;<span class="xref">System.String</span>, <span class="xref">System.Collections.Generic.List</span>&lt;<a class="xref" href="Grpc.Core.AuthProperty.html">AuthProperty</a>&gt;&gt;</td>
+        <td><span class="parametername">properties</span></td>
+        <td><p>Multimap of auth properties by name.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
   <h3 id="properties">Properties
   </h3>
   <a id="Grpc_Core_AuthContext_IsPeerAuthenticated_" data-uid="Grpc.Core.AuthContext.IsPeerAuthenticated*"></a>

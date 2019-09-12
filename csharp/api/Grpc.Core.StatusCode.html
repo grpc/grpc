@@ -197,7 +197,8 @@ perhaps the entire file system is out of space.</p>
         <td id="Grpc_Core_StatusCode_Unavailable">Unavailable</td>
         <td><p>The service is currently unavailable.  This is a most likely a
 transient condition and may be corrected by retrying with
-a backoff.</p>
+a backoff. Note that it is not always safe to retry
+non-idempotent operations.</p>
 </td>
       </tr>
       <tr>

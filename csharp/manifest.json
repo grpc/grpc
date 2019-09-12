@@ -1,6 +1,6 @@
 {
   "homepages": [],
-  "source_base_path": "/work/doc",
+  "source_base_path": "/work/docfx",
   "xrefmap": "xrefmap.yml",
   "files": [
     {
@@ -54,7 +54,7 @@
       "output": {
         ".html": {
           "relative_path": "api/Grpc.Core.AsyncAuthInterceptor.html",
-          "hash": "+ClKA8HJoFR37Q1REkRPWQ=="
+          "hash": "PTcmkC2kJsQowbg9lsyGfw=="
         }
       },
       "is_incremental": false,
@@ -66,7 +66,7 @@
       "output": {
         ".html": {
           "relative_path": "api/Grpc.Core.AsyncClientStreamingCall-2.html",
-          "hash": "ZYCL/L5tDtXdap5SNR7AnA=="
+          "hash": "2m7hquSyj+KN/oAOxrclwA=="
         }
       },
       "is_incremental": false,
@@ -78,7 +78,7 @@
       "output": {
         ".html": {
           "relative_path": "api/Grpc.Core.AsyncDuplexStreamingCall-2.html",
-          "hash": "DK+HZVIck5b10q8Wz2ZlEw=="
+          "hash": "UtljUZtjsAmzoZhHnb3lPQ=="
         }
       },
       "is_incremental": false,
@@ -90,7 +90,19 @@
       "output": {
         ".html": {
           "relative_path": "api/Grpc.Core.AsyncServerStreamingCall-1.html",
-          "hash": "VfWgsgIyq/keKdB0qTxZig=="
+          "hash": "H9J0v7M6nY7/R1Nr+BI+6w=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/api/Grpc.Core.AsyncStreamReaderExtensions.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Grpc.Core.AsyncStreamReaderExtensions.html",
+          "hash": "Tg66k+cUvCofhYdkI7kM6w=="
         }
       },
       "is_incremental": false,
@@ -102,7 +114,7 @@
       "output": {
         ".html": {
           "relative_path": "api/Grpc.Core.AsyncUnaryCall-1.html",
-          "hash": "Z2kbVSSCHjp2eumwGJVh+Q=="
+          "hash": "VVAFTg+k/Q+LvdbByooLyg=="
         }
       },
       "is_incremental": false,
@@ -114,7 +126,7 @@
       "output": {
         ".html": {
           "relative_path": "api/Grpc.Core.AuthContext.html",
-          "hash": "TV5rAWVuZ1gkU+loD+yIUA=="
+          "hash": "inCPx6thdyxDD9+K7mdR4Q=="
         }
       },
       "is_incremental": false,
@@ -126,7 +138,7 @@
       "output": {
         ".html": {
           "relative_path": "api/Grpc.Core.AuthInterceptorContext.html",
-          "hash": "jAp3Sa9kd4Av6TyfwLEtUA=="
+          "hash": "SDV79SlUAO8ex4xAP6p7GA=="
         }
       },
       "is_incremental": false,
@@ -146,11 +158,35 @@
     },
     {
       "type": "ManagedReference",
+      "source_relative_path": "obj/api/Grpc.Core.BindServiceMethodAttribute.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Grpc.Core.BindServiceMethodAttribute.html",
+          "hash": "yGeyZoQyYe0wGrhLVIBKQw=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
       "source_relative_path": "obj/api/Grpc.Core.CallCredentials.yml",
       "output": {
         ".html": {
           "relative_path": "api/Grpc.Core.CallCredentials.html",
-          "hash": "on6LJBAvdKI2FUkZJhpOfQ=="
+          "hash": "TCij7cK0aFLo9OpkzeufZg=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/api/Grpc.Core.CallCredentialsConfiguratorBase.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Grpc.Core.CallCredentialsConfiguratorBase.html",
+          "hash": "vvw9d02tw9Nxj6qimNBoYA=="
         }
       },
       "is_incremental": false,
@@ -174,7 +210,7 @@
       "output": {
         ".html": {
           "relative_path": "api/Grpc.Core.CallInvoker.html",
-          "hash": "VfHch7o52mfl9C2WW73I3g=="
+          "hash": "vUv0H5o9xNqRiLL+LtWd6w=="
         }
       },
       "is_incremental": false,
@@ -186,7 +222,7 @@
       "output": {
         ".html": {
           "relative_path": "api/Grpc.Core.CallOptions.html",
-          "hash": "yKbSmRw5CGbiAoKJDoJjpw=="
+          "hash": "pJ+s9O74y2jo5csbwhGuvQ=="
         }
       },
       "is_incremental": false,
@@ -210,7 +246,19 @@
       "output": {
         ".html": {
           "relative_path": "api/Grpc.Core.Channel.html",
-          "hash": "Tp/yUhtCzdGjQLuKKOAIZQ=="
+          "hash": "UrsVNpd5smSOc+k0VtRNGw=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/api/Grpc.Core.ChannelBase.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Grpc.Core.ChannelBase.html",
+          "hash": "XTrKTF5nS4acP7WpwILCcQ=="
         }
       },
       "is_incremental": false,
@@ -222,7 +270,19 @@
       "output": {
         ".html": {
           "relative_path": "api/Grpc.Core.ChannelCredentials.html",
-          "hash": "ErhJjfTNogxrMk3MCp9efw=="
+          "hash": "5YHdlNt1SludtkJrbPNzdQ=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/api/Grpc.Core.ChannelCredentialsConfiguratorBase.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Grpc.Core.ChannelCredentialsConfiguratorBase.html",
+          "hash": "x3Z8grGuMkRQkrGswVCzBQ=="
         }
       },
       "is_incremental": false,
@@ -282,7 +342,7 @@
       "output": {
         ".html": {
           "relative_path": "api/Grpc.Core.ClientBase-1.html",
-          "hash": "3RNGQqjjcIIXGqniqXQuBw=="
+          "hash": "Vln3oACpB4UfbwKdP2ZTzA=="
         }
       },
       "is_incremental": false,
@@ -294,7 +354,7 @@
       "output": {
         ".html": {
           "relative_path": "api/Grpc.Core.ClientBase.ClientBaseConfiguration.html",
-          "hash": "PQBNyIvDwUyt9cMKZ7et3g=="
+          "hash": "kbJUtcPiSMExeLJgEWEiZQ=="
         }
       },
       "is_incremental": false,
@@ -306,7 +366,7 @@
       "output": {
         ".html": {
           "relative_path": "api/Grpc.Core.ClientBase.html",
-          "hash": "VqLy11/QG1H8hEBN4IDJzQ=="
+          "hash": "NXp/F2g9C57B9O8Ha1D4LQ=="
         }
       },
       "is_incremental": false,
@@ -366,7 +426,7 @@
       "output": {
         ".html": {
           "relative_path": "api/Grpc.Core.DefaultCallInvoker.html",
-          "hash": "NAkJzzOF+l0XX8oFhzvRlQ=="
+          "hash": "iefuE7khgLjHlY4w2L/Chg=="
         }
       },
       "is_incremental": false,
@@ -378,7 +438,7 @@
       "output": {
         ".html": {
           "relative_path": "api/Grpc.Core.DeserializationContext.html",
-          "hash": "ubQCZ5kcvbONuL2HbfAzMg=="
+          "hash": "krtK9aIrhP0IEUHfD5jHLw=="
         }
       },
       "is_incremental": false,
@@ -414,7 +474,7 @@
       "output": {
         ".html": {
           "relative_path": "api/Grpc.Core.IAsyncStreamReader-1.html",
-          "hash": "8U8xtx2cvvazKlJ4jMky5Q=="
+          "hash": "9S44kxhScbwJVU9WbUj/4g=="
         }
       },
       "is_incremental": false,
@@ -438,7 +498,7 @@
       "output": {
         ".html": {
           "relative_path": "api/Grpc.Core.IClientStreamWriter-1.html",
-          "hash": "OGEVb7J+0Ihhpbm5JDW76w=="
+          "hash": "w8HmqoR5OmERyjHI35HGfA=="
         }
       },
       "is_incremental": false,
@@ -474,7 +534,7 @@
       "output": {
         ".html": {
           "relative_path": "api/Grpc.Core.Interceptors.CallInvokerExtensions.html",
-          "hash": "EDsFkaQW0ej8/p14uE7gOA=="
+          "hash": "y+Lx7UKOIBsK7a7s4RwOCA=="
         }
       },
       "is_incremental": false,
@@ -486,7 +546,7 @@
       "output": {
         ".html": {
           "relative_path": "api/Grpc.Core.Interceptors.ChannelExtensions.html",
-          "hash": "A9H1zLqfMeGj176dPv2YpQ=="
+          "hash": "kVCMbwR/y9c0Y5M+K+6aGQ=="
         }
       },
       "is_incremental": false,
@@ -498,7 +558,7 @@
       "output": {
         ".html": {
           "relative_path": "api/Grpc.Core.Interceptors.ClientInterceptorContext-2.html",
-          "hash": "0U4eWMIZ1xbQfj73+cJFjw=="
+          "hash": "T95AhAO3oaXbKxXP7RGEPA=="
         }
       },
       "is_incremental": false,
@@ -510,7 +570,7 @@
       "output": {
         ".html": {
           "relative_path": "api/Grpc.Core.Interceptors.Interceptor.AsyncClientStreamingCallContinuation-2.html",
-          "hash": "tghqoVIuJxdM/bQ+9gyhig=="
+          "hash": "y15m7og9uGcgpw6Mp04//Q=="
         }
       },
       "is_incremental": false,
@@ -522,7 +582,7 @@
       "output": {
         ".html": {
           "relative_path": "api/Grpc.Core.Interceptors.Interceptor.AsyncDuplexStreamingCallContinuation-2.html",
-          "hash": "quPOZiMoMF6z4zSE90KFpQ=="
+          "hash": "fDDz5ubqFCIA8QFz2gRfEw=="
         }
       },
       "is_incremental": false,
@@ -534,7 +594,7 @@
       "output": {
         ".html": {
           "relative_path": "api/Grpc.Core.Interceptors.Interceptor.AsyncServerStreamingCallContinuation-2.html",
-          "hash": "jloFf+4PbLTSla1mg0R9bA=="
+          "hash": "9eqgsjkVQZAE/W0AawofeA=="
         }
       },
       "is_incremental": false,
@@ -546,7 +606,7 @@
       "output": {
         ".html": {
           "relative_path": "api/Grpc.Core.Interceptors.Interceptor.AsyncUnaryCallContinuation-2.html",
-          "hash": "ojLqdd9XZ+V/KTjkcQh9Fw=="
+          "hash": "w7zTfAeRuVyDLcvOzVRsWA=="
         }
       },
       "is_incremental": false,
@@ -558,7 +618,7 @@
       "output": {
         ".html": {
           "relative_path": "api/Grpc.Core.Interceptors.Interceptor.BlockingUnaryCallContinuation-2.html",
-          "hash": "N+SqGTJa531vMfIZrOztPA=="
+          "hash": "NNR95UDQKqzrc6D29jcqOA=="
         }
       },
       "is_incremental": false,
@@ -570,7 +630,7 @@
       "output": {
         ".html": {
           "relative_path": "api/Grpc.Core.Interceptors.Interceptor.html",
-          "hash": "Rdat9kgUP+tSC5ZpLIoNYA=="
+          "hash": "GV6wrSt0hXByRP345zUq8w=="
         }
       },
       "is_incremental": false,
@@ -606,7 +666,19 @@
       "output": {
         ".html": {
           "relative_path": "api/Grpc.Core.KeyCertificatePair.html",
-          "hash": "mifluHWgxE8Chd+ndWn3uA=="
+          "hash": "PsS8AjF/MIDP6jRxWq3vPQ=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/api/Grpc.Core.LiteClientBase.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Grpc.Core.LiteClientBase.html",
+          "hash": "LLqPprq57nW8c/AmOdK9XQ=="
         }
       },
       "is_incremental": false,
@@ -834,7 +906,7 @@
       "output": {
         ".html": {
           "relative_path": "api/Grpc.Core.ServerCallContext.html",
-          "hash": "axXpTFnPUel5r8SCw0Ny2g=="
+          "hash": "+CpS9o4aQ7tu95C51jIvDg=="
         }
       },
       "is_incremental": false,
@@ -918,7 +990,7 @@
       "output": {
         ".html": {
           "relative_path": "api/Grpc.Core.SslClientCertificateRequestType.html",
-          "hash": "TTCS6TZibjYxDdhxDYYTLA=="
+          "hash": "jWh/7nm1s1SyEpNI/pa5TQ=="
         }
       },
       "is_incremental": false,
@@ -930,7 +1002,7 @@
       "output": {
         ".html": {
           "relative_path": "api/Grpc.Core.SslCredentials.html",
-          "hash": "69nl1dL+cY1NuxYdPJFJhA=="
+          "hash": "vCrn3Q3DBk13aK0JbjWVVw=="
         }
       },
       "is_incremental": false,
@@ -966,7 +1038,7 @@
       "output": {
         ".html": {
           "relative_path": "api/Grpc.Core.StatusCode.html",
-          "hash": "+ppjo4uChuRlAS0PKQ+Ecg=="
+          "hash": "EnDKYmp7PUw6McDyTILVgQ=="
         }
       },
       "is_incremental": false,
@@ -978,7 +1050,7 @@
       "output": {
         ".html": {
           "relative_path": "api/Grpc.Core.Testing.TestCalls.html",
-          "hash": "5ltQeTX+fef+FqtuwEJZnQ=="
+          "hash": "ODbOLICEKD3eEdwV4lguKQ=="
         }
       },
       "is_incremental": false,
@@ -1082,11 +1154,35 @@
     },
     {
       "type": "ManagedReference",
+      "source_relative_path": "obj/api/Grpc.Core.VerifyPeerCallback.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Grpc.Core.VerifyPeerCallback.html",
+          "hash": "czS01NJnsQjPCAsfGz5LrQ=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/api/Grpc.Core.VerifyPeerContext.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Grpc.Core.VerifyPeerContext.html",
+          "hash": "Ol7/8jt670uzuk9Wogfw7g=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
       "source_relative_path": "obj/api/Grpc.Core.VersionInfo.yml",
       "output": {
         ".html": {
           "relative_path": "api/Grpc.Core.VersionInfo.html",
-          "hash": "aleefZBs2SzezKvdUKCE0w=="
+          "hash": "jsupExsYZhjVvus0jYDHOg=="
         }
       },
       "is_incremental": false,
@@ -1122,7 +1218,7 @@
       "output": {
         ".html": {
           "relative_path": "api/Grpc.Core.html",
-          "hash": "4f7mt788VrjsLJbmpl5LXQ=="
+          "hash": "r5XrJUE9+5aApAxIu0LDuQ=="
         }
       },
       "is_incremental": false,
@@ -1134,7 +1230,7 @@
       "output": {
         ".html": {
           "relative_path": "api/Grpc.Health.V1.Health.HealthBase.html",
-          "hash": "aOdqCs0piSnp1tvmoSwBvA=="
+          "hash": "4cK0nP+NXpwR5ch2Jwc4YQ=="
         }
       },
       "is_incremental": false,
@@ -1146,7 +1242,7 @@
       "output": {
         ".html": {
           "relative_path": "api/Grpc.Health.V1.Health.HealthClient.html",
-          "hash": "hz+q3mMNa2zXTEmEe/KY4g=="
+          "hash": "kj2bTqxFJd9L+4sCiIN1RA=="
         }
       },
       "is_incremental": false,
@@ -1242,7 +1338,7 @@
       "output": {
         ".html": {
           "relative_path": "api/Grpc.HealthCheck.HealthServiceImpl.html",
-          "hash": "oghmT1WYauCB7BGj6oEZqg=="
+          "hash": "CHyxEwc3c8aF7U+WNpyJdg=="
         }
       },
       "is_incremental": false,
@@ -1266,7 +1362,7 @@
       "output": {
         ".html": {
           "relative_path": "api/toc.html",
-          "hash": "SElRUlPIjSdhHwAZlmOZeQ=="
+          "hash": "iLO5doLC7jmMRYjXZ1LJ/g=="
         }
       },
       "is_incremental": false,

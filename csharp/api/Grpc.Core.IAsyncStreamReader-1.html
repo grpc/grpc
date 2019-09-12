@@ -112,7 +112,7 @@ yet.
   <h6><strong>Assembly</strong>: Grpc.Core.Api.dll</h6>
   <h5 id="Grpc_Core_IAsyncStreamReader_1_syntax">Syntax</h5>
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public interface IAsyncStreamReader&lt;T&gt; : IAsyncEnumerator&lt;T&gt;</code></pre>
+    <pre><code class="lang-csharp hljs">public interface IAsyncStreamReader&lt;T&gt;</code></pre>
   </div>
   <h5 class="typeParameters">Type Parameters</h5>
   <table class="table table-bordered table-striped table-condensed">
@@ -126,6 +126,78 @@ yet.
       <tr>
         <td><span class="parametername">T</span></td>
         <td><p>The message type.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <h3 id="properties">Properties
+  </h3>
+  <a id="Grpc_Core_IAsyncStreamReader_1_Current_" data-uid="Grpc.Core.IAsyncStreamReader`1.Current*"></a>
+  <h4 id="Grpc_Core_IAsyncStreamReader_1_Current" data-uid="Grpc.Core.IAsyncStreamReader`1.Current">Current</h4>
+  <div class="markdown level1 summary"><p>Gets the current element in the iteration.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">T Current { get; }</code></pre>
+  </div>
+  <h5 class="propertyValue">Property Value</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">T</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <h3 id="methods">Methods
+  </h3>
+  <a id="Grpc_Core_IAsyncStreamReader_1_MoveNext_" data-uid="Grpc.Core.IAsyncStreamReader`1.MoveNext*"></a>
+  <h4 id="Grpc_Core_IAsyncStreamReader_1_MoveNext_System_Threading_CancellationToken_" data-uid="Grpc.Core.IAsyncStreamReader`1.MoveNext(System.Threading.CancellationToken)">MoveNext(CancellationToken)</h4>
+  <div class="markdown level1 summary"><p>Advances the reader to the next element in the sequence, returning the result asynchronously.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">Task&lt;bool&gt; MoveNext(CancellationToken cancellationToken)</code></pre>
+  </div>
+  <h5 class="parameters">Parameters</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Name</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Threading.CancellationToken</span></td>
+        <td><span class="parametername">cancellationToken</span></td>
+        <td><p>Cancellation token that can be used to cancel the operation.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <h5 class="returns">Returns</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Threading.Tasks.Task</span>&lt;<span class="xref">System.Boolean</span>&gt;</td>
+        <td><p>Task containing the result of the operation: true if the reader was successfully advanced
+to the next element; false if the reader has passed the end of the sequence.</p>
 </td>
       </tr>
     </tbody>

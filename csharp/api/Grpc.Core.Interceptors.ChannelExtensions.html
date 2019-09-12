@@ -116,7 +116,7 @@
     </div>
   </div>
   <h6><strong>Namespace</strong>: <a class="xref" href="Grpc.Core.Interceptors.html">Grpc.Core.Interceptors</a></h6>
-  <h6><strong>Assembly</strong>: Grpc.Core.dll</h6>
+  <h6><strong>Assembly</strong>: Grpc.Core.Api.dll</h6>
   <h5 id="Grpc_Core_Interceptors_ChannelExtensions_syntax">Syntax</h5>
   <div class="codewrapper">
     <pre><code class="lang-csharp hljs">public static class ChannelExtensions</code></pre>
@@ -124,14 +124,14 @@
   <h3 id="methods">Methods
   </h3>
   <a id="Grpc_Core_Interceptors_ChannelExtensions_Intercept_" data-uid="Grpc.Core.Interceptors.ChannelExtensions.Intercept*"></a>
-  <h4 id="Grpc_Core_Interceptors_ChannelExtensions_Intercept_Grpc_Core_Channel_Grpc_Core_Interceptors_Interceptor_" data-uid="Grpc.Core.Interceptors.ChannelExtensions.Intercept(Grpc.Core.Channel,Grpc.Core.Interceptors.Interceptor)">Intercept(Channel, Interceptor)</h4>
+  <h4 id="Grpc_Core_Interceptors_ChannelExtensions_Intercept_Grpc_Core_ChannelBase_Grpc_Core_Interceptors_Interceptor_" data-uid="Grpc.Core.Interceptors.ChannelExtensions.Intercept(Grpc.Core.ChannelBase,Grpc.Core.Interceptors.Interceptor)">Intercept(ChannelBase, Interceptor)</h4>
   <div class="markdown level1 summary"><p>Returns a <a class="xref" href="Grpc.Core.CallInvoker.html">CallInvoker</a> instance that intercepts
 the channel with the given interceptor.</p>
 </div>
   <div class="markdown level1 conceptual"></div>
   <h5 class="decalaration">Declaration</h5>
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public static CallInvoker Intercept(this Channel channel, Interceptor interceptor)</code></pre>
+    <pre><code class="lang-csharp hljs">public static CallInvoker Intercept(this ChannelBase channel, Interceptor interceptor)</code></pre>
   </div>
   <h5 class="parameters">Parameters</h5>
   <table class="table table-bordered table-striped table-condensed">
@@ -144,7 +144,7 @@ the channel with the given interceptor.</p>
     </thead>
     <tbody>
       <tr>
-        <td><a class="xref" href="Grpc.Core.Channel.html">Channel</a></td>
+        <td><a class="xref" href="Grpc.Core.ChannelBase.html">ChannelBase</a></td>
         <td><span class="parametername">channel</span></td>
         <td><p>The channel to intercept.</p>
 </td>
@@ -172,7 +172,7 @@ the channel with the given interceptor.</p>
       </tr>
     </tbody>
   </table>
-  <h5 id="Grpc_Core_Interceptors_ChannelExtensions_Intercept_Grpc_Core_Channel_Grpc_Core_Interceptors_Interceptor__remarks">Remarks</h5>
+  <h5 id="Grpc_Core_Interceptors_ChannelExtensions_Intercept_Grpc_Core_ChannelBase_Grpc_Core_Interceptors_Interceptor__remarks">Remarks</h5>
   <div class="markdown level1 remarks"><p>Multiple interceptors can be added on top of each other by calling
 &quot;channel.Intercept(a, b, c)&quot;.  The order of invocation will be &quot;a&quot;, &quot;b&quot;, and then &quot;c&quot;.
 Interceptors can be later added to an existing intercepted channel, effectively
@@ -180,14 +180,14 @@ building a chain like &quot;channel.Intercept(c).Intercept(b).Intercept(a)&quot;
 in this case, the last interceptor added will be the first to take control.</p>
 </div>
   <a id="Grpc_Core_Interceptors_ChannelExtensions_Intercept_" data-uid="Grpc.Core.Interceptors.ChannelExtensions.Intercept*"></a>
-  <h4 id="Grpc_Core_Interceptors_ChannelExtensions_Intercept_Grpc_Core_Channel_Grpc_Core_Interceptors_Interceptor___" data-uid="Grpc.Core.Interceptors.ChannelExtensions.Intercept(Grpc.Core.Channel,Grpc.Core.Interceptors.Interceptor[])">Intercept(Channel, Interceptor[])</h4>
+  <h4 id="Grpc_Core_Interceptors_ChannelExtensions_Intercept_Grpc_Core_ChannelBase_Grpc_Core_Interceptors_Interceptor___" data-uid="Grpc.Core.Interceptors.ChannelExtensions.Intercept(Grpc.Core.ChannelBase,Grpc.Core.Interceptors.Interceptor[])">Intercept(ChannelBase, Interceptor[])</h4>
   <div class="markdown level1 summary"><p>Returns a <a class="xref" href="Grpc.Core.CallInvoker.html">CallInvoker</a> instance that intercepts
 the channel with the given interceptors.</p>
 </div>
   <div class="markdown level1 conceptual"></div>
   <h5 class="decalaration">Declaration</h5>
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public static CallInvoker Intercept(this Channel channel, params Interceptor[] interceptors)</code></pre>
+    <pre><code class="lang-csharp hljs">public static CallInvoker Intercept(this ChannelBase channel, params Interceptor[] interceptors)</code></pre>
   </div>
   <h5 class="parameters">Parameters</h5>
   <table class="table table-bordered table-striped table-condensed">
@@ -200,7 +200,7 @@ the channel with the given interceptors.</p>
     </thead>
     <tbody>
       <tr>
-        <td><a class="xref" href="Grpc.Core.Channel.html">Channel</a></td>
+        <td><a class="xref" href="Grpc.Core.ChannelBase.html">ChannelBase</a></td>
         <td><span class="parametername">channel</span></td>
         <td><p>The channel to intercept.</p>
 </td>
@@ -229,7 +229,7 @@ Control is passed to the interceptors in the order specified.</p>
       </tr>
     </tbody>
   </table>
-  <h5 id="Grpc_Core_Interceptors_ChannelExtensions_Intercept_Grpc_Core_Channel_Grpc_Core_Interceptors_Interceptor____remarks">Remarks</h5>
+  <h5 id="Grpc_Core_Interceptors_ChannelExtensions_Intercept_Grpc_Core_ChannelBase_Grpc_Core_Interceptors_Interceptor____remarks">Remarks</h5>
   <div class="markdown level1 remarks"><p>Multiple interceptors can be added on top of each other by calling
 &quot;channel.Intercept(a, b, c)&quot;.  The order of invocation will be &quot;a&quot;, &quot;b&quot;, and then &quot;c&quot;.
 Interceptors can be later added to an existing intercepted channel, effectively
@@ -237,14 +237,14 @@ building a chain like &quot;channel.Intercept(c).Intercept(b).Intercept(a)&quot;
 in this case, the last interceptor added will be the first to take control.</p>
 </div>
   <a id="Grpc_Core_Interceptors_ChannelExtensions_Intercept_" data-uid="Grpc.Core.Interceptors.ChannelExtensions.Intercept*"></a>
-  <h4 id="Grpc_Core_Interceptors_ChannelExtensions_Intercept_Grpc_Core_Channel_System_Func_Grpc_Core_Metadata_Grpc_Core_Metadata__" data-uid="Grpc.Core.Interceptors.ChannelExtensions.Intercept(Grpc.Core.Channel,System.Func{Grpc.Core.Metadata,Grpc.Core.Metadata})">Intercept(Channel, Func&lt;Metadata, Metadata&gt;)</h4>
+  <h4 id="Grpc_Core_Interceptors_ChannelExtensions_Intercept_Grpc_Core_ChannelBase_System_Func_Grpc_Core_Metadata_Grpc_Core_Metadata__" data-uid="Grpc.Core.Interceptors.ChannelExtensions.Intercept(Grpc.Core.ChannelBase,System.Func{Grpc.Core.Metadata,Grpc.Core.Metadata})">Intercept(ChannelBase, Func&lt;Metadata, Metadata&gt;)</h4>
   <div class="markdown level1 summary"><p>Returns a <a class="xref" href="Grpc.Core.CallInvoker.html">CallInvoker</a> instance that intercepts
 the invoker with the given interceptor.</p>
 </div>
   <div class="markdown level1 conceptual"></div>
   <h5 class="decalaration">Declaration</h5>
   <div class="codewrapper">
-    <pre><code class="lang-csharp hljs">public static CallInvoker Intercept(this Channel channel, Func&lt;Metadata, Metadata&gt; interceptor)</code></pre>
+    <pre><code class="lang-csharp hljs">public static CallInvoker Intercept(this ChannelBase channel, Func&lt;Metadata, Metadata&gt; interceptor)</code></pre>
   </div>
   <h5 class="parameters">Parameters</h5>
   <table class="table table-bordered table-striped table-condensed">
@@ -257,7 +257,7 @@ the invoker with the given interceptor.</p>
     </thead>
     <tbody>
       <tr>
-        <td><a class="xref" href="Grpc.Core.Channel.html">Channel</a></td>
+        <td><a class="xref" href="Grpc.Core.ChannelBase.html">ChannelBase</a></td>
         <td><span class="parametername">channel</span></td>
         <td><p>The channel to intercept.</p>
 </td>
@@ -287,7 +287,7 @@ invocation metadata.</p>
       </tr>
     </tbody>
   </table>
-  <h5 id="Grpc_Core_Interceptors_ChannelExtensions_Intercept_Grpc_Core_Channel_System_Func_Grpc_Core_Metadata_Grpc_Core_Metadata___remarks">Remarks</h5>
+  <h5 id="Grpc_Core_Interceptors_ChannelExtensions_Intercept_Grpc_Core_ChannelBase_System_Func_Grpc_Core_Metadata_Grpc_Core_Metadata___remarks">Remarks</h5>
   <div class="markdown level1 remarks"><p>Multiple interceptors can be added on top of each other by
 building a chain like &quot;channel.Intercept(c).Intercept(b).Intercept(a)&quot;.  Note that
 in this case, the last interceptor added will be the first to take control.</p>
