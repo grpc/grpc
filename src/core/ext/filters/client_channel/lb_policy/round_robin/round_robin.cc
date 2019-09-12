@@ -88,14 +88,21 @@ class RoundRobin : public LoadBalancingPolicy {
       return last_connectivity_state_;
     }
 
+    bool seen_failure_since_ready() const { return seen_failure_since_ready_; }
+
+    // Performs connectivity state updates that need to be done both when we
+    // first start watching and when a watcher notification is received.
     void UpdateConnectivityStateLocked(
         grpc_connectivity_state connectivity_state);
 
    private:
+    // Performs connectivity state updates that need to be done only
+    // after we have started watching.
     void ProcessConnectivityChangeLocked(
         grpc_connectivity_state connectivity_state) override;
 
     grpc_connectivity_state last_connectivity_state_ = GRPC_CHANNEL_IDLE;
+    bool seen_failure_since_ready_ = false;
   };
 
   // A list of subchannels.
@@ -375,8 +382,25 @@ void RoundRobin::RoundRobinSubchannelData::UpdateConnectivityStateLocked(
         grpc_connectivity_state_name(last_connectivity_state_),
         grpc_connectivity_state_name(connectivity_state));
   }
-  subchannel_list()->UpdateStateCountersLocked(last_connectivity_state_,
-                                               connectivity_state);
+  // Decide what state to report for aggregation purposes.
+  // If we haven't seen a failure since the last time we were in state
+  // READY, then we report the state change as-is.  However, once we do see
+  // a failure, we report TRANSIENT_FAILURE and do not report any subsequent
+  // state changes until we go back into state READY.
+  if (!seen_failure_since_ready_) {
+    if (connectivity_state == GRPC_CHANNEL_TRANSIENT_FAILURE) {
+      seen_failure_since_ready_ = true;
+    }
+    subchannel_list()->UpdateStateCountersLocked(last_connectivity_state_,
+                                                 connectivity_state);
+  } else {
+    if (connectivity_state == GRPC_CHANNEL_READY) {
+      seen_failure_since_ready_ = false;
+      subchannel_list()->UpdateStateCountersLocked(
+          GRPC_CHANNEL_TRANSIENT_FAILURE, connectivity_state);
+    }
+  }
+  // Record last seen connectivity state.
   last_connectivity_state_ = connectivity_state;
 }
 
