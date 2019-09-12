@@ -48,10 +48,14 @@ NSUInteger TransportIDHash(GRPCTransportID);
 @class GRPCCallOptions;
 @class GRPCTransport;
 
-/** The factory method to create a transport. */
+/** The factory to create a transport. */
 @protocol GRPCTransportFactory<NSObject>
 
+/** Create a transport implementation. */
 - (GRPCTransport *)createTransportWithManager:(GRPCTransportManager *)transportManager;
+
+/** Get a list of factories for transport inteceptors. */
+@property(nonatomic, readonly) NSArray<id<GRPCInterceptorFactory>> *transportInterceptorFactories;
 
 @end
 

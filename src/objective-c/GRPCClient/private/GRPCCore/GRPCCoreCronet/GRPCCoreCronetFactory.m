@@ -47,6 +47,10 @@ static dispatch_once_t gInitGRPCCoreCronetFactory;
   return [[GRPCCall2Internal alloc] initWithTransportManager:transportManager];
 }
 
+- (NSArray<id<GRPCInterceptorFactory>> *)transportInterceptorFactories {
+  return nil;
+}
+
 - (id<GRPCChannelFactory>)createCoreChannelFactoryWithCallOptions:(GRPCCallOptions *)callOptions {
   return [GRPCCronetChannelFactory sharedInstance];
 }
