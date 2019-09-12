@@ -331,9 +331,9 @@ typedef struct {
    value is 15 minutes. */
 #define GRPC_ARG_LOCALITY_RETENTION_INTERVAL_MS \
   "grpc.xds_locality_retention_interval_ms"
-/* Timeout in milliseconds to wait for any locality with a specific priority to
-   complete a connection attempt before xds fails over to the next priority. If
-   0, failover happens immediately. Default value is 10 seconds. */
+/* Timeout in milliseconds to wait for a locality map of a specific priority to
+   complete its initial connection attempt before xDS fails over to the next
+   priority. If 0, failover happens immediately. Default value is 10 seconds. */
 #define GRPC_ARG_XDS_FAILOVER_TIMEOUT_MS "grpc.xds_failover_timeout_ms"
 /** If non-zero, grpc server's cronet compression workaround will be enabled */
 #define GRPC_ARG_WORKAROUND_CRONET_COMPRESSION \

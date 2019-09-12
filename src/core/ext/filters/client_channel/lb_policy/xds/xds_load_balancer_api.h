@@ -65,7 +65,7 @@ class XdsPriorityListUpdate {
 
   bool operator==(const XdsPriorityListUpdate& other) const;
 
-  void Add(LocalityList::Locality locality_info);
+  void Add(LocalityList::Locality locality);
 
   // Sorts the locality list for each priority.
   void Sort();
@@ -80,9 +80,7 @@ class XdsPriorityListUpdate {
   bool empty() const { return priority_list_.empty(); }
   size_t size() const { return priority_list_.size(); }
 
-  const InlinedVector<LocalityList, 2>& locality_lists() const {
-    return priority_list_;
-  }
+  // Callers should make sure the priority list is non-empty.
   uint32_t LowestPriority() const { return priority_list_.size() - 1; }
 
  private:
