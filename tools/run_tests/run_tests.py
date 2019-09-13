@@ -1102,17 +1102,19 @@ class ObjCLanguage(object):
                     'EXAMPLE_PATH': 'src/objective-c/examples/tvOS-sample',
                     'FRAMEWORKS': 'NO'
                 }))
-        out.append(
-            self.config.job_spec(
-                ['src/objective-c/tests/build_one_example_bazel.sh'],
-                timeout_seconds=20 * 60,
-                shortname='ios-buildtest-example-watchOS-sample',
-                cpu_cost=1e6,
-                environ={
-                    'SCHEME': 'watchOS-sample-WatchKit-App',
-                    'EXAMPLE_PATH': 'src/objective-c/examples/watchOS-sample',
-                    'FRAMEWORKS': 'NO'
-                }))
+        # Disabled due to #20258
+        # TODO (mxyan): Reenable this test when #20258 is resolved.
+        # out.append(
+        #     self.config.job_spec(
+        #         ['src/objective-c/tests/build_one_example_bazel.sh'],
+        #         timeout_seconds=20 * 60,
+        #         shortname='ios-buildtest-example-watchOS-sample',
+        #         cpu_cost=1e6,
+        #         environ={
+        #             'SCHEME': 'watchOS-sample-WatchKit-App',
+        #             'EXAMPLE_PATH': 'src/objective-c/examples/watchOS-sample',
+        #             'FRAMEWORKS': 'NO'
+        #         }))
         out.append(
             self.config.job_spec(
                 ['src/objective-c/tests/run_plugin_tests.sh'],
