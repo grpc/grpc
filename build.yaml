@@ -3859,6 +3859,7 @@ targets:
   - uv
   uses_polling: false
 - name: transport_connectivity_state_test
+  gtest: true
   build: test
   language: c
   src:

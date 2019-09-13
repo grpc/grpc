@@ -729,7 +729,7 @@ void XdsLb::FallbackHelper::UpdateState(grpc_connectivity_state state,
           GPR_INFO,
           "[xdslb %p helper %p] pending fallback policy %p reports state=%s",
           parent_.get(), this, parent_->pending_fallback_policy_.get(),
-          grpc_connectivity_state_name(state));
+          ConnectivityStateName(state));
     }
     if (state != GRPC_CHANNEL_READY) return;
     grpc_pollset_set_del_pollset_set(
@@ -2435,7 +2435,7 @@ void XdsLb::LocalityMap::LocalityEntry::Helper::UpdateState(
       gpr_log(GPR_INFO,
               "[xdslb %p helper %p] pending child policy %p reports state=%s",
               entry_->parent_.get(), this, entry_->pending_child_policy_.get(),
-              grpc_connectivity_state_name(state));
+              ConnectivityStateName(state));
     }
     if (state != GRPC_CHANNEL_READY) return;
     grpc_pollset_set_del_pollset_set(

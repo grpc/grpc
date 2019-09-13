@@ -87,10 +87,6 @@ struct channel_data {
   grpc_closure start_max_age_timer_after_init;
   /* Closure to run when the goaway op is finished and the max_age_timer */
   grpc_closure start_max_age_grace_timer_after_goaway_op;
-  /* Closure to run when the channel connectivity state changes */
-  grpc_closure channel_connectivity_changed;
-  /* Records the current connectivity state */
-  grpc_connectivity_state connectivity_state;
   /* Number of active calls */
   gpr_atm call_count;
   /* TODO(zyc): C++lize this state machine */
@@ -217,6 +213,46 @@ static void start_max_idle_timer_after_init(void* arg, grpc_error* error) {
                            "max_age start_max_idle_timer_after_init");
 }
 
+namespace grpc_core {
+
+class ConnectivityWatcher : public AsyncConnectivityStateWatcherInterface {
+ public:
+  explicit ConnectivityWatcher(channel_data* chand) : chand_(chand) {
+    GRPC_CHANNEL_STACK_REF(chand_->channel_stack, "max_age conn_watch");
+  }
+
+  ~ConnectivityWatcher() {
+    GRPC_CHANNEL_STACK_UNREF(chand_->channel_stack, "max_age conn_watch");
+  }
+
+ private:
+  void OnConnectivityStateChange(grpc_connectivity_state new_state) override {
+    if (new_state != GRPC_CHANNEL_SHUTDOWN) return;
+    gpr_mu_lock(&chand_->max_age_timer_mu);
+    if (chand_->max_age_timer_pending) {
+      grpc_timer_cancel(&chand_->max_age_timer);
+      chand_->max_age_timer_pending = false;
+    }
+    if (chand_->max_age_grace_timer_pending) {
+      grpc_timer_cancel(&chand_->max_age_grace_timer);
+      chand_->max_age_grace_timer_pending = false;
+    }
+    gpr_mu_unlock(&chand_->max_age_timer_mu);
+    /* If there are no active calls, this increasement will cancel
+       max_idle_timer, and prevent max_idle_timer from being started in the
+       future. */
+    increase_call_count(chand_);
+    if (gpr_atm_acq_load(&chand_->idle_state) ==
+        MAX_IDLE_STATE_SEEN_EXIT_IDLE) {
+      grpc_timer_cancel(&chand_->max_idle_timer);
+    }
+  }
+
+  channel_data* chand_;
+};
+
+}  // namespace grpc_core
+
 static void start_max_age_timer_after_init(void* arg, grpc_error* error) {
   channel_data* chand = static_cast<channel_data*>(arg);
   gpr_mu_lock(&chand->max_age_timer_mu);
@@ -227,8 +263,9 @@ static void start_max_age_timer_after_init(void* arg, grpc_error* error) {
                   &chand->close_max_age_channel);
   gpr_mu_unlock(&chand->max_age_timer_mu);
   grpc_transport_op* op = grpc_make_transport_op(nullptr);
-  op->on_connectivity_state_change = &chand->channel_connectivity_changed;
-  op->connectivity_state = &chand->connectivity_state;
+  op->start_connectivity_watch.reset(
+      grpc_core::New<grpc_core::ConnectivityWatcher>(chand));
+  op->start_connectivity_watch_state = GRPC_CHANNEL_IDLE;
   grpc_channel_next_op(grpc_channel_stack_element(chand->channel_stack, 0), op);
   GRPC_CHANNEL_STACK_UNREF(chand->channel_stack,
                            "max_age start_max_age_timer_after_init");
@@ -347,35 +384,6 @@ static void force_close_max_age_channel(void* arg, grpc_error* error) {
   GRPC_CHANNEL_STACK_UNREF(chand->channel_stack, "max_age max_age_grace_timer");
 }
 
-static void channel_connectivity_changed(void* arg, grpc_error* error) {
-  channel_data* chand = static_cast<channel_data*>(arg);
-  if (chand->connectivity_state != GRPC_CHANNEL_SHUTDOWN) {
-    grpc_transport_op* op = grpc_make_transport_op(nullptr);
-    op->on_connectivity_state_change = &chand->channel_connectivity_changed;
-    op->connectivity_state = &chand->connectivity_state;
-    grpc_channel_next_op(grpc_channel_stack_element(chand->channel_stack, 0),
-                         op);
-  } else {
-    gpr_mu_lock(&chand->max_age_timer_mu);
-    if (chand->max_age_timer_pending) {
-      grpc_timer_cancel(&chand->max_age_timer);
-      chand->max_age_timer_pending = false;
-    }
-    if (chand->max_age_grace_timer_pending) {
-      grpc_timer_cancel(&chand->max_age_grace_timer);
-      chand->max_age_grace_timer_pending = false;
-    }
-    gpr_mu_unlock(&chand->max_age_timer_mu);
-    /* If there are no active calls, this increasement will cancel
-       max_idle_timer, and prevent max_idle_timer from being started in the
-       future. */
-    increase_call_count(chand);
-    if (gpr_atm_acq_load(&chand->idle_state) == MAX_IDLE_STATE_SEEN_EXIT_IDLE) {
-      grpc_timer_cancel(&chand->max_idle_timer);
-    }
-  }
-}
-
 /* A random jitter of +/-10% will be added to MAX_CONNECTION_AGE to spread out
    connection storms. Note that the MAX_CONNECTION_AGE option without jitter
    would not create connection storms by itself, but if there happened to be a
@@ -468,9 +476,6 @@ static grpc_error* max_age_init_channel_elem(grpc_channel_element* elem,
                     grpc_schedule_on_exec_ctx);
   GRPC_CLOSURE_INIT(&chand->start_max_age_grace_timer_after_goaway_op,
                     start_max_age_grace_timer_after_goaway_op, chand,
-                    grpc_schedule_on_exec_ctx);
-  GRPC_CLOSURE_INIT(&chand->channel_connectivity_changed,
-                    channel_connectivity_changed, chand,
                     grpc_schedule_on_exec_ctx);
 
   if (chand->max_connection_age != GRPC_MILLIS_INF_FUTURE) {

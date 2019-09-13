@@ -32,6 +32,7 @@
 #include "src/core/lib/surface/call.h"
 #include "src/core/lib/surface/channel.h"
 #include "src/core/lib/surface/lame_client.h"
+#include "src/core/lib/transport/connectivity_state.h"
 #include "src/core/lib/transport/static_metadata.h"
 
 namespace grpc_core {
@@ -39,15 +40,19 @@ namespace grpc_core {
 namespace {
 
 struct CallData {
-  grpc_core::CallCombiner* call_combiner;
+  CallCombiner* call_combiner;
   grpc_linked_mdelem status;
   grpc_linked_mdelem details;
-  grpc_core::Atomic<bool> filled_metadata;
+  Atomic<bool> filled_metadata;
 };
 
 struct ChannelData {
+  ChannelData() : state_tracker("lame_channel", GRPC_CHANNEL_SHUTDOWN) {}
+
   grpc_status_code error_code;
   const char* error_message;
+  Mutex mu;
+  ConnectivityStateTracker state_tracker;
 };
 
 static void fill_metadata(grpc_call_element* elem, grpc_metadata_batch* mdb) {
@@ -94,10 +99,16 @@ static void lame_get_channel_info(grpc_channel_element* elem,
 
 static void lame_start_transport_op(grpc_channel_element* elem,
                                     grpc_transport_op* op) {
-  if (op->on_connectivity_state_change) {
-    GPR_ASSERT(*op->connectivity_state != GRPC_CHANNEL_SHUTDOWN);
-    *op->connectivity_state = GRPC_CHANNEL_SHUTDOWN;
-    GRPC_CLOSURE_SCHED(op->on_connectivity_state_change, GRPC_ERROR_NONE);
+  ChannelData* chand = static_cast<ChannelData*>(elem->channel_data);
+  {
+    MutexLock lock(&chand->mu);
+    if (op->start_connectivity_watch != nullptr) {
+      chand->state_tracker.AddWatcher(op->start_connectivity_watch_state,
+                                      std::move(op->start_connectivity_watch));
+    }
+    if (op->stop_connectivity_watch != nullptr) {
+      chand->state_tracker.RemoveWatcher(op->stop_connectivity_watch);
+    }
   }
   if (op->send_ping.on_initiate != nullptr) {
     GRPC_CLOSURE_SCHED(
@@ -132,10 +143,14 @@ static grpc_error* lame_init_channel_elem(grpc_channel_element* elem,
                                           grpc_channel_element_args* args) {
   GPR_ASSERT(args->is_first);
   GPR_ASSERT(args->is_last);
+  new (elem->channel_data) ChannelData;
   return GRPC_ERROR_NONE;
 }
 
-static void lame_destroy_channel_elem(grpc_channel_element* elem) {}
+static void lame_destroy_channel_elem(grpc_channel_element* elem) {
+  ChannelData* chand = static_cast<ChannelData*>(elem->channel_data);
+  chand->~ChannelData();
+}
 
 }  // namespace
 

@@ -2954,7 +2954,7 @@
     "exclude_configs": [], 
     "exclude_iomgrs": [], 
     "flaky": false, 
-    "gtest": false, 
+    "gtest": true, 
     "language": "c", 
     "name": "transport_connectivity_state_test", 
     "platforms": [
