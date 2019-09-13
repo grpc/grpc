@@ -112,6 +112,19 @@ struct call_data {
 
 }  // namespace
 
+void grpc_auth_metadata_context_copy(grpc_auth_metadata_context* from,
+                                     grpc_auth_metadata_context* to) {
+  grpc_auth_metadata_context_reset(to);
+  to->channel_auth_context = from->channel_auth_context;
+  if (to->channel_auth_context != nullptr) {
+    const_cast<grpc_auth_context*>(to->channel_auth_context)
+        ->Ref(DEBUG_LOCATION, "grpc_auth_metadata_context_copy")
+        .release();
+  }
+  to->service_url = gpr_strdup(from->service_url);
+  to->method_name = gpr_strdup(from->method_name);
+}
+
 void grpc_auth_metadata_context_reset(
     grpc_auth_metadata_context* auth_md_context) {
   if (auth_md_context->service_url != nullptr) {
@@ -311,7 +324,7 @@ static void cancel_check_call_host(void* arg, grpc_error* error) {
   }
 }
 
-static void auth_start_transport_stream_op_batch(
+static void client_auth_start_transport_stream_op_batch(
     grpc_call_element* elem, grpc_transport_stream_op_batch* batch) {
   GPR_TIMER_SCOPE("auth_start_transport_stream_op_batch", 0);
 
@@ -333,7 +346,7 @@ static void auth_start_transport_stream_op_batch(
       GRPC_CALL_STACK_REF(calld->owning_call, "check_call_host");
       GRPC_CLOSURE_INIT(&calld->async_result_closure, on_host_checked, batch,
                         grpc_schedule_on_exec_ctx);
-      char* call_host = grpc_slice_to_c_string(calld->host);
+      grpc_core::StringView call_host(calld->host);
       grpc_error* error = GRPC_ERROR_NONE;
       if (chand->security_connector->check_call_host(
               call_host, chand->auth_context.get(),
@@ -347,7 +360,6 @@ static void auth_start_transport_stream_op_batch(
             &calld->check_call_host_cancel_closure, cancel_check_call_host,
             elem, grpc_schedule_on_exec_ctx));
       }
-      gpr_free(call_host);
       return; /* early exit */
     }
   }
@@ -357,29 +369,29 @@ static void auth_start_transport_stream_op_batch(
 }
 
 /* Constructor for call_data */
-static grpc_error* init_call_elem(grpc_call_element* elem,
-                                  const grpc_call_element_args* args) {
+static grpc_error* client_auth_init_call_elem(
+    grpc_call_element* elem, const grpc_call_element_args* args) {
   new (elem->call_data) call_data(elem, *args);
   return GRPC_ERROR_NONE;
 }
 
-static void set_pollset_or_pollset_set(grpc_call_element* elem,
-                                       grpc_polling_entity* pollent) {
+static void client_auth_set_pollset_or_pollset_set(
+    grpc_call_element* elem, grpc_polling_entity* pollent) {
   call_data* calld = static_cast<call_data*>(elem->call_data);
   calld->pollent = pollent;
 }
 
 /* Destructor for call_data */
-static void destroy_call_elem(grpc_call_element* elem,
-                              const grpc_call_final_info* final_info,
-                              grpc_closure* ignored) {
+static void client_auth_destroy_call_elem(
+    grpc_call_element* elem, const grpc_call_final_info* final_info,
+    grpc_closure* ignored) {
   call_data* calld = static_cast<call_data*>(elem->call_data);
   calld->destroy();
 }
 
 /* Constructor for channel_data */
-static grpc_error* init_channel_elem(grpc_channel_element* elem,
-                                     grpc_channel_element_args* args) {
+static grpc_error* client_auth_init_channel_elem(
+    grpc_channel_element* elem, grpc_channel_element_args* args) {
   /* The first and the last filters tend to be implemented differently to
      handle the case that there's no 'next' filter to call on the up or down
      path */
@@ -402,20 +414,20 @@ static grpc_error* init_channel_elem(grpc_channel_element* elem,
 }
 
 /* Destructor for channel data */
-static void destroy_channel_elem(grpc_channel_element* elem) {
+static void client_auth_destroy_channel_elem(grpc_channel_element* elem) {
   channel_data* chand = static_cast<channel_data*>(elem->channel_data);
   chand->~channel_data();
 }
 
 const grpc_channel_filter grpc_client_auth_filter = {
-    auth_start_transport_stream_op_batch,
+    client_auth_start_transport_stream_op_batch,
     grpc_channel_next_op,
     sizeof(call_data),
-    init_call_elem,
-    set_pollset_or_pollset_set,
-    destroy_call_elem,
+    client_auth_init_call_elem,
+    client_auth_set_pollset_or_pollset_set,
+    client_auth_destroy_call_elem,
     sizeof(channel_data),
-    init_channel_elem,
-    destroy_channel_elem,
+    client_auth_init_channel_elem,
+    client_auth_destroy_channel_elem,
     grpc_channel_next_get_info,
     "client-auth"};

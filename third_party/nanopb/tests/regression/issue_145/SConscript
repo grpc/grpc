@@ -1,9 +1,0 @@
-# Regression test for Issue 145: Allow /* */ and // comments in .options files
-
-Import("env")
-
-env.NanopbProto(["comments", "comments.options"])
-env.Object('comments.pb.c')
-
-env.Match(['comments.pb.h', 'comments.expected'])
-

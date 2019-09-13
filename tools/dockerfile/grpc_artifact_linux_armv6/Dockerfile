@@ -14,11 +14,13 @@
 
 # Docker file for building gRPC Raspbian binaries
 
+# TODO(https://github.com/grpc/grpc/issues/19199): Move off of this image.
 FROM quay.io/grpc/raspbian_armv6
 
 # Place any extra build instructions between these commands
 # Recommend modifying upstream docker image (quay.io/grpc/raspbian_armv6)
 # for build steps because running them under QEMU is very slow
 # (https://github.com/kpayson64/armv7hf-debian-qemu)
-# RUN [ "cross-build-start" ]
-# RUN [ "cross-build-end" ]
+RUN [ "cross-build-start" ]
+RUN find /usr/local/bin -regex '.*python[0-9]+\.[0-9]+' | xargs -n1 -i{} bash -c "{} -m pip install --upgrade wheel setuptools"
+RUN [ "cross-build-end" ]

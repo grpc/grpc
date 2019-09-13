@@ -61,7 +61,7 @@ class HealthCheckClient : public InternallyRefCounted<HealthCheckClient> {
 
  private:
   // Contains a call to the backend and all the data related to the call.
-  class CallState : public InternallyRefCounted<CallState> {
+  class CallState : public Orphanable {
    public:
     CallState(RefCountedPtr<HealthCheckClient> health_check_client,
               grpc_pollset_set* interested_parties_);
@@ -101,8 +101,10 @@ class HealthCheckClient : public InternallyRefCounted<HealthCheckClient> {
     grpc_core::CallCombiner call_combiner_;
     grpc_call_context_element context_[GRPC_CONTEXT_COUNT] = {};
 
-    // The streaming call to the backend. Always non-NULL.
-    RefCountedPtr<SubchannelCall> call_;
+    // The streaming call to the backend. Always non-null.
+    // Refs are tracked manually; when the last ref is released, the
+    // CallState object will be automatically destroyed.
+    SubchannelCall* call_;
 
     grpc_transport_stream_op_batch_payload payload_;
     grpc_transport_stream_op_batch batch_;

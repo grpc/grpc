@@ -39,12 +39,15 @@ struct grpc_tls_key_materials_config
   const PemKeyCertPairList& pem_key_cert_pair_list() const {
     return pem_key_cert_pair_list_;
   }
+  int version() const { return version_; }
 
   /** Setters for member fields. **/
   void set_key_materials(grpc_core::UniquePtr<char> pem_root_certs,
                          PemKeyCertPairList pem_key_cert_pair_list);
+  void set_version(int version) { version_ = version; }
 
  private:
+  int version_ = 0;
   PemKeyCertPairList pem_key_cert_pair_list_;
   grpc_core::UniquePtr<char> pem_root_certs_;
 };

@@ -90,7 +90,7 @@ void grpc_stream_ref_init(grpc_stream_refcount* refcount, int initial_refs,
 #endif
   GRPC_CLOSURE_INIT(&refcount->destroy, cb, cb_arg, grpc_schedule_on_exec_ctx);
 
-  new (&refcount->refs) grpc_core::RefCount();
+  new (&refcount->refs) grpc_core::RefCount(1, &grpc_trace_stream_refcount);
   new (&refcount->slice_refcount) grpc_slice_refcount(
       grpc_slice_refcount::Type::REGULAR, &refcount->refs, slice_stream_destroy,
       refcount, &refcount->slice_refcount);
@@ -115,7 +115,7 @@ void grpc_transport_move_stats(grpc_transport_stream_stats* from,
 }
 
 size_t grpc_transport_stream_size(grpc_transport* transport) {
-  return GPR_ROUND_UP_TO_MAX_ALIGNMENT_SIZE(transport->vtable->sizeof_stream);
+  return GPR_ROUND_UP_TO_ALIGNMENT_SIZE(transport->vtable->sizeof_stream);
 }
 
 void grpc_transport_destroy(grpc_transport* transport) {

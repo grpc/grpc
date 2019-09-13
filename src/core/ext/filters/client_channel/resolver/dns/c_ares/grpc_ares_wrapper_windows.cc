@@ -19,30 +19,16 @@
 #include <grpc/support/port_platform.h>
 
 #include "src/core/lib/iomgr/port.h"
-#if GRPC_ARES == 1 && defined(GPR_WINDOWS)
+#if GRPC_ARES == 1 && defined(GRPC_WINDOWS_SOCKET_ARES_EV_DRIVER)
 
 #include <grpc/support/string_util.h>
 
 #include "src/core/ext/filters/client_channel/parse_address.h"
 #include "src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper.h"
-#include "src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper_libuv_windows.h"
 #include "src/core/ext/filters/client_channel/server_address.h"
-#include "src/core/lib/gpr/host_port.h"
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/iomgr/socket_windows.h"
 
 bool grpc_ares_query_ipv6() { return grpc_ipv6_loopback_available(); }
 
-bool grpc_ares_maybe_resolve_localhost_manually_locked(
-    const char* name, const char* default_port,
-    grpc_core::UniquePtr<grpc_core::ServerAddressList>* addrs) {
-  char* host = nullptr;
-  char* port = nullptr;
-  bool out = inner_maybe_resolve_localhost_manually_locked(name, default_port,
-                                                           addrs, &host, &port);
-  gpr_free(host);
-  gpr_free(port);
-  return out;
-}
-
-#endif /* GRPC_ARES == 1 && defined(GPR_WINDOWS) */
+#endif /* GRPC_ARES == 1 && defined(GRPC_WINDOWS_SOCKET_ARES_EV_DRIVER) */

@@ -31,8 +31,8 @@
 #include <grpc/support/sync.h>
 
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/gpr/host_port.h"
 #include "src/core/lib/gpr/string.h"
+#include "src/core/lib/gprpp/host_port.h"
 #include "src/core/lib/gprpp/thd.h"
 #include "src/core/lib/http/parser.h"
 #include "src/core/lib/iomgr/closure.h"
@@ -53,8 +53,7 @@
 
 struct grpc_end2end_http_proxy {
   grpc_end2end_http_proxy()
-      : proxy_name(nullptr),
-        server(nullptr),
+      : server(nullptr),
         channel_args(nullptr),
         mu(nullptr),
         pollset(nullptr),
@@ -62,7 +61,7 @@ struct grpc_end2end_http_proxy {
     gpr_ref_init(&users, 1);
     combiner = grpc_combiner_create();
   }
-  char* proxy_name;
+  grpc_core::UniquePtr<char> proxy_name;
   grpc_core::Thread thd;
   grpc_tcp_server* server;
   grpc_channel_args* channel_args;
@@ -532,8 +531,8 @@ grpc_end2end_http_proxy* grpc_end2end_http_proxy_create(
   grpc_end2end_http_proxy* proxy = grpc_core::New<grpc_end2end_http_proxy>();
   // Construct proxy address.
   const int proxy_port = grpc_pick_unused_port_or_die();
-  gpr_join_host_port(&proxy->proxy_name, "localhost", proxy_port);
-  gpr_log(GPR_INFO, "Proxy address: %s", proxy->proxy_name);
+  grpc_core::JoinHostPort(&proxy->proxy_name, "localhost", proxy_port);
+  gpr_log(GPR_INFO, "Proxy address: %s", proxy->proxy_name.get());
   // Create TCP server.
   proxy->channel_args = grpc_channel_args_copy(args);
   grpc_error* error =
@@ -573,7 +572,6 @@ void grpc_end2end_http_proxy_destroy(grpc_end2end_http_proxy* proxy) {
   proxy->thd.Join();
   grpc_tcp_server_shutdown_listeners(proxy->server);
   grpc_tcp_server_unref(proxy->server);
-  gpr_free(proxy->proxy_name);
   grpc_channel_args_destroy(proxy->channel_args);
   grpc_pollset_shutdown(proxy->pollset,
                         GRPC_CLOSURE_CREATE(destroy_pollset, proxy->pollset,
@@ -584,5 +582,5 @@ void grpc_end2end_http_proxy_destroy(grpc_end2end_http_proxy* proxy) {
 
 const char* grpc_end2end_http_proxy_get_proxy_name(
     grpc_end2end_http_proxy* proxy) {
-  return proxy->proxy_name;
+  return proxy->proxy_name.get();
 }

@@ -30,11 +30,6 @@
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gpr/string_windows.h"
 
-const char* gpr_getenv_silent(const char* name, char** dst) {
-  *dst = gpr_getenv(name);
-  return NULL;
-}
-
 char* gpr_getenv(const char* name) {
   char* result = NULL;
   DWORD size;

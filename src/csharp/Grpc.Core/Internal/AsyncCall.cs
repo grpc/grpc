@@ -38,7 +38,7 @@ namespace Grpc.Core.Internal
         bool registeredWithChannel;
 
         // Dispose of to de-register cancellation token registration
-        IDisposable cancellationTokenRegistration;
+        CancellationTokenRegistration cancellationTokenRegistration;
 
         // Completion of a pending unary response if not null.
         TaskCompletionSource<TResponse> unaryResponseTcs;
@@ -95,10 +95,10 @@ namespace Grpc.Core.Internal
                         readingDone = true;
                     }
 
-                    byte[] payload = UnsafeSerialize(msg);
-
+                    using (var serializationScope = DefaultSerializationContext.GetInitializedThreadLocalScope())
                     using (var metadataArray = MetadataArraySafeHandle.Create(details.Options.Headers))
                     {
+                        var payload = UnsafeSerialize(msg, serializationScope.Context); // do before metadata array?
                         var ctx = details.Channel.Environment.BatchContextPool.Lease();
                         try
                         {
@@ -111,7 +111,7 @@ namespace Grpc.Core.Internal
                             {
                                 using (profiler.NewScope("AsyncCall.UnaryCall.HandleBatch"))
                                 {
-                                    HandleUnaryResponse(success, ctx.GetReceivedStatusOnClient(), ctx.GetReceivedMessage(), ctx.GetReceivedInitialMetadata());
+                                    HandleUnaryResponse(success, ctx.GetReceivedStatusOnClient(), ctx.GetReceivedMessageReader(), ctx.GetReceivedInitialMetadata());
                                 }
                             }
                             catch (Exception e)
@@ -160,13 +160,15 @@ namespace Grpc.Core.Internal
                     halfcloseRequested = true;
                     readingDone = true;
 
-                    byte[] payload = UnsafeSerialize(msg);
-
-                    unaryResponseTcs = new TaskCompletionSource<TResponse>();
-                    using (var metadataArray = MetadataArraySafeHandle.Create(details.Options.Headers))
+                    using (var serializationScope = DefaultSerializationContext.GetInitializedThreadLocalScope())
                     {
-                        call.StartUnary(UnaryResponseClientCallback, payload, GetWriteFlagsForCall(), metadataArray, details.Options.Flags);
-                        callStartedOk = true;
+                        var payload = UnsafeSerialize(msg, serializationScope.Context);
+                        unaryResponseTcs = new TaskCompletionSource<TResponse>();
+                        using (var metadataArray = MetadataArraySafeHandle.Create(details.Options.Headers))
+                        {
+                            call.StartUnary(UnaryResponseClientCallback, payload, GetWriteFlagsForCall(), metadataArray, details.Options.Flags);
+                            callStartedOk = true;
+                        }
                     }
 
                     return unaryResponseTcs.Task;
@@ -235,13 +237,15 @@ namespace Grpc.Core.Internal
 
                     halfcloseRequested = true;
 
-                    byte[] payload = UnsafeSerialize(msg);
-
-                    streamingResponseCallFinishedTcs = new TaskCompletionSource<object>();
-                    using (var metadataArray = MetadataArraySafeHandle.Create(details.Options.Headers))
+                    using (var serializationScope = DefaultSerializationContext.GetInitializedThreadLocalScope())
                     {
-                        call.StartServerStreaming(ReceivedStatusOnClientCallback, payload, GetWriteFlagsForCall(), metadataArray, details.Options.Flags);
-                        callStartedOk = true;
+                        var payload = UnsafeSerialize(msg, serializationScope.Context);
+                        streamingResponseCallFinishedTcs = new TaskCompletionSource<object>();
+                        using (var metadataArray = MetadataArraySafeHandle.Create(details.Options.Headers))
+                        {
+                            call.StartServerStreaming(ReceivedStatusOnClientCallback, payload, GetWriteFlagsForCall(), metadataArray, details.Options.Flags);
+                            callStartedOk = true;
+                        }
                     }
                     call.StartReceiveInitialMetadata(ReceivedResponseHeadersCallback);
                 }
@@ -409,7 +413,7 @@ namespace Grpc.Core.Internal
             // deadlock.
             // See https://github.com/grpc/grpc/issues/14777
             // See https://github.com/dotnet/corefx/issues/14903
-            cancellationTokenRegistration?.Dispose();
+            cancellationTokenRegistration.Dispose();
         }
 
         protected override bool IsClient
@@ -509,11 +513,7 @@ namespace Grpc.Core.Internal
         // Make sure that once cancellationToken for this call is cancelled, Cancel() will be called.
         private void RegisterCancellationCallback()
         {
-            var token = details.Options.CancellationToken;
-            if (token.CanBeCanceled)
-            {
-                cancellationTokenRegistration = token.Register(() => this.Cancel());
-            }
+            cancellationTokenRegistration = RegisterCancellationCallbackForToken(details.Options.CancellationToken);
         }
 
         /// <summary>
@@ -537,14 +537,14 @@ namespace Grpc.Core.Internal
         /// <summary>
         /// Handler for unary response completion.
         /// </summary>
-        private void HandleUnaryResponse(bool success, ClientSideStatus receivedStatus, byte[] receivedMessage, Metadata responseHeaders)
+        private void HandleUnaryResponse(bool success, ClientSideStatus receivedStatus, IBufferReader receivedMessageReader, Metadata responseHeaders)
         {
             // NOTE: because this event is a result of batch containing GRPC_OP_RECV_STATUS_ON_CLIENT,
             // success will be always set to true.
 
             TaskCompletionSource<object> delayedStreamingWriteTcs = null;
             TResponse msg = default(TResponse);
-            var deserializeException = TryDeserialize(receivedMessage, out msg);
+            var deserializeException = TryDeserialize(receivedMessageReader, out msg);
 
             bool releasedResources;
             lock (myLock)
@@ -634,9 +634,9 @@ namespace Grpc.Core.Internal
 
         IUnaryResponseClientCallback UnaryResponseClientCallback => this;
 
-        void IUnaryResponseClientCallback.OnUnaryResponseClient(bool success, ClientSideStatus receivedStatus, byte[] receivedMessage, Metadata responseHeaders)
+        void IUnaryResponseClientCallback.OnUnaryResponseClient(bool success, ClientSideStatus receivedStatus, IBufferReader receivedMessageReader, Metadata responseHeaders)
         {
-            HandleUnaryResponse(success, receivedStatus, receivedMessage, responseHeaders);
+            HandleUnaryResponse(success, receivedStatus, receivedMessageReader, responseHeaders);
         }
 
         IReceivedStatusOnClientCallback ReceivedStatusOnClientCallback => this;

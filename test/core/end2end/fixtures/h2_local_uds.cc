@@ -30,10 +30,10 @@ static grpc_end2end_test_fixture chttp2_create_fixture_fullstack_uds(
     grpc_channel_args* client_args, grpc_channel_args* server_args) {
   grpc_end2end_test_fixture f =
       grpc_end2end_local_chttp2_create_fixture_fullstack();
-  gpr_asprintf(
-      &static_cast<grpc_end2end_local_fullstack_fixture_data*>(f.fixture_data)
-           ->localaddr,
-      "unix:/tmp/grpc_fullstack_test.%d.%d", getpid(), unique++);
+  char* out = nullptr;
+  gpr_asprintf(&out, "unix:/tmp/grpc_fullstack_test.%d.%d", getpid(), unique++);
+  static_cast<grpc_end2end_local_fullstack_fixture_data*>(f.fixture_data)
+      ->localaddr.reset(out);
   return f;
 }
 

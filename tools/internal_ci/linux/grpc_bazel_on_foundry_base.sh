@@ -15,18 +15,13 @@
 
 set -ex
 
-# Download bazel
-temp_dir="$(mktemp -d)"
-wget -q https://github.com/bazelbuild/bazel/releases/download/0.23.2/bazel-0.23.2-linux-x86_64 -O "${temp_dir}/bazel"
-chmod 755 "${temp_dir}/bazel"
-export PATH="${temp_dir}:${PATH}"
-# This should show ${temp_dir}/bazel
-which bazel
-
 # change to grpc repo root
 cd $(dirname $0)/../../..
 
 source tools/internal_ci/helper_scripts/prepare_build_linux_rc
+
+# make sure bazel is available
+tools/bazel version
 
 # to get "bazel" link for kokoro build, we need to generate
 # invocation UUID, set a flag for bazel to use it
@@ -34,7 +29,7 @@ source tools/internal_ci/helper_scripts/prepare_build_linux_rc
 BAZEL_INVOCATION_ID="$(uuidgen)"
 echo "${BAZEL_INVOCATION_ID}" >"${KOKORO_ARTIFACTS_DIR}/bazel_invocation_ids"
 
-bazel \
+tools/bazel \
   --bazelrc=tools/remote_build/kokoro.bazelrc \
   test \
   --invocation_id="${BAZEL_INVOCATION_ID}" \

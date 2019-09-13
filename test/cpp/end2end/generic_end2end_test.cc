@@ -62,6 +62,7 @@ class GenericEnd2endTest : public ::testing::Test {
   GenericEnd2endTest() : server_host_("localhost") {}
 
   void SetUp() override {
+    shut_down_ = false;
     int port = grpc_pick_unused_port_or_die();
     server_address_ << server_host_ << ":" << port;
     // Setup server
@@ -77,21 +78,26 @@ class GenericEnd2endTest : public ::testing::Test {
     server_ = builder.BuildAndStart();
   }
 
-  void TearDown() override {
-    server_->Shutdown();
-    void* ignored_tag;
-    bool ignored_ok;
-    cli_cq_.Shutdown();
-    srv_cq_->Shutdown();
-    while (cli_cq_.Next(&ignored_tag, &ignored_ok))
-      ;
-    while (srv_cq_->Next(&ignored_tag, &ignored_ok))
-      ;
+  void ShutDownServerAndCQs() {
+    if (!shut_down_) {
+      server_->Shutdown();
+      void* ignored_tag;
+      bool ignored_ok;
+      cli_cq_.Shutdown();
+      srv_cq_->Shutdown();
+      while (cli_cq_.Next(&ignored_tag, &ignored_ok))
+        ;
+      while (srv_cq_->Next(&ignored_tag, &ignored_ok))
+        ;
+      shut_down_ = true;
+    }
   }
+  void TearDown() override { ShutDownServerAndCQs(); }
 
   void ResetStub() {
     std::shared_ptr<Channel> channel = grpc::CreateChannel(
         server_address_.str(), InsecureChannelCredentials());
+    stub_ = grpc::testing::EchoTestService::NewStub(channel);
     generic_stub_.reset(new GenericStub(channel));
   }
 
@@ -124,8 +130,16 @@ class GenericEnd2endTest : public ::testing::Test {
         cli_ctx.set_deadline(deadline);
       }
 
+      // Rather than using the original kMethodName, make a short-lived
+      // copy to also confirm that we don't refer to this object beyond
+      // the initial call preparation
+      const grpc::string* method_name = new grpc::string(kMethodName);
+
       std::unique_ptr<GenericClientAsyncReaderWriter> call =
-          generic_stub_->PrepareCall(&cli_ctx, kMethodName, &cli_cq_);
+          generic_stub_->PrepareCall(&cli_ctx, *method_name, &cli_cq_);
+
+      delete method_name;  // Make sure that this is not needed after invocation
+
       call->StartCall(tag(1));
       client_ok(1);
       std::unique_ptr<ByteBuffer> send_buffer =
@@ -177,6 +191,54 @@ class GenericEnd2endTest : public ::testing::Test {
     }
   }
 
+  // Return errors to up to one call that comes in on the supplied completion
+  // queue, until the CQ is being shut down (and therefore we can no longer
+  // enqueue further events).
+  void DriveCompletionQueue() {
+    enum class Event : uintptr_t {
+      kCallReceived,
+      kResponseSent,
+    };
+    // Request the call, but only if the main thread hasn't beaten us to
+    // shutting down the CQ.
+    grpc::GenericServerContext server_context;
+    grpc::GenericServerAsyncReaderWriter reader_writer(&server_context);
+
+    {
+      std::lock_guard<std::mutex> lock(shutting_down_mu_);
+      if (!shutting_down_) {
+        generic_service_.RequestCall(
+            &server_context, &reader_writer, srv_cq_.get(), srv_cq_.get(),
+            reinterpret_cast<void*>(Event::kCallReceived));
+      }
+    }
+    // Process events.
+    {
+      Event event;
+      bool ok;
+      while (srv_cq_->Next(reinterpret_cast<void**>(&event), &ok)) {
+        std::lock_guard<std::mutex> lock(shutting_down_mu_);
+        if (shutting_down_) {
+          // The main thread has started shutting down. Simply continue to drain
+          // events.
+          continue;
+        }
+
+        switch (event) {
+          case Event::kCallReceived:
+            reader_writer.Finish(
+                ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "go away"),
+                reinterpret_cast<void*>(Event::kResponseSent));
+            break;
+
+          case Event::kResponseSent:
+            // We are done.
+            break;
+        }
+      }
+    }
+  }
+
   CompletionQueue cli_cq_;
   std::unique_ptr<ServerCompletionQueue> srv_cq_;
   std::unique_ptr<grpc::testing::EchoTestService::Stub> stub_;
@@ -185,6 +247,9 @@ class GenericEnd2endTest : public ::testing::Test {
   AsyncGenericService generic_service_;
   const grpc::string server_host_;
   std::ostringstream server_address_;
+  bool shutting_down_;
+  bool shut_down_;
+  std::mutex shutting_down_mu_;
 };
 
 TEST_F(GenericEnd2endTest, SimpleRpc) {
@@ -328,6 +393,29 @@ TEST_F(GenericEnd2endTest, Deadline) {
   SendRpc(1, true,
           gpr_time_add(gpr_now(GPR_CLOCK_MONOTONIC),
                        gpr_time_from_seconds(10, GPR_TIMESPAN)));
+}
+
+TEST_F(GenericEnd2endTest, ShortDeadline) {
+  ResetStub();
+
+  ClientContext cli_ctx;
+  EchoRequest request;
+  EchoResponse response;
+
+  shutting_down_ = false;
+  std::thread driver([this] { DriveCompletionQueue(); });
+
+  request.set_message("");
+  cli_ctx.set_deadline(gpr_time_add(gpr_now(GPR_CLOCK_MONOTONIC),
+                                    gpr_time_from_micros(500, GPR_TIMESPAN)));
+  Status s = stub_->Echo(&cli_ctx, request, &response);
+  EXPECT_FALSE(s.ok());
+  {
+    std::lock_guard<std::mutex> lock(shutting_down_mu_);
+    shutting_down_ = true;
+  }
+  ShutDownServerAndCQs();
+  driver.join();
 }
 
 }  // namespace

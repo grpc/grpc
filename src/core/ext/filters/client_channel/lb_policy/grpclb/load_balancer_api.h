@@ -24,38 +24,57 @@
 #include <grpc/slice_buffer.h>
 
 #include "src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_client_stats.h"
-#include "src/core/ext/filters/client_channel/lb_policy/grpclb/proto/grpc/lb/v1/load_balancer.pb.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
+#include "src/proto/grpc/lb/v1/load_balancer.upb.h"
 
 #define GRPC_GRPCLB_SERVICE_NAME_MAX_LENGTH 128
+#define GRPC_GRPCLB_SERVER_IP_ADDRESS_MAX_SIZE 16
+#define GRPC_GRPCLB_SERVER_LOAD_BALANCE_TOKEN_MAX_SIZE 50
 
-typedef grpc_lb_v1_Server_ip_address_t grpc_grpclb_ip_address;
+namespace grpc_core {
+
 typedef grpc_lb_v1_LoadBalanceRequest grpc_grpclb_request;
+typedef grpc_lb_v1_LoadBalanceResponse grpc_grpclb_response;
 typedef grpc_lb_v1_InitialLoadBalanceResponse grpc_grpclb_initial_response;
-typedef grpc_lb_v1_Server grpc_grpclb_server;
 typedef google_protobuf_Duration grpc_grpclb_duration;
 typedef google_protobuf_Timestamp grpc_grpclb_timestamp;
+
+typedef struct {
+  int32_t size;
+  char data[GRPC_GRPCLB_SERVER_IP_ADDRESS_MAX_SIZE];
+} grpc_grpclb_server_ip_address;
+
+// Contains server information. When the drop field is not true, use the other
+// fields.
+typedef struct {
+  grpc_grpclb_server_ip_address ip_address;
+  int32_t port;
+  char load_balance_token[GRPC_GRPCLB_SERVER_LOAD_BALANCE_TOKEN_MAX_SIZE];
+  bool drop;
+} grpc_grpclb_server;
 
 typedef struct {
   grpc_grpclb_server** servers;
   size_t num_servers;
 } grpc_grpclb_serverlist;
 
-/** Create a request for a gRPC LB service under \a lb_service_name */
-grpc_grpclb_request* grpc_grpclb_request_create(const char* lb_service_name);
+/**
+ * Create a request for a gRPC LB service under \a lb_service_name.
+ * \a lb_service_name should be alive when returned request is being used.
+ */
+grpc_grpclb_request* grpc_grpclb_request_create(const char* lb_service_name,
+                                                upb_arena* arena);
 grpc_grpclb_request* grpc_grpclb_load_report_request_create(
-    grpc_core::GrpcLbClientStats* client_stats);
+    grpc_core::GrpcLbClientStats* client_stats, upb_arena* arena);
 
 /** Protocol Buffers v3-encode \a request */
-grpc_slice grpc_grpclb_request_encode(const grpc_grpclb_request* request);
-
-/** Destroy \a request */
-void grpc_grpclb_request_destroy(grpc_grpclb_request* request);
+grpc_slice grpc_grpclb_request_encode(const grpc_grpclb_request* request,
+                                      upb_arena* arena);
 
 /** Parse (ie, decode) the bytes in \a encoded_grpc_grpclb_response as a \a
  * grpc_grpclb_initial_response */
-grpc_grpclb_initial_response* grpc_grpclb_initial_response_parse(
-    const grpc_slice& encoded_grpc_grpclb_response);
+const grpc_grpclb_initial_response* grpc_grpclb_initial_response_parse(
+    const grpc_slice& encoded_grpc_grpclb_response, upb_arena* arena);
 
 /** Parse the list of servers from an encoded \a grpc_grpclb_response */
 grpc_grpclb_serverlist* grpc_grpclb_response_parse_serverlist(
@@ -75,16 +94,10 @@ bool grpc_grpclb_server_equals(const grpc_grpclb_server* lhs,
 /** Destroy \a serverlist */
 void grpc_grpclb_destroy_serverlist(grpc_grpclb_serverlist* serverlist);
 
-/** Compare \a lhs against \a rhs and return 0 if \a lhs and \a rhs are equal,
- * < 0 if \a lhs represents a duration shorter than \a rhs and > 0 otherwise */
-int grpc_grpclb_duration_compare(const grpc_grpclb_duration* lhs,
-                                 const grpc_grpclb_duration* rhs);
+grpc_millis grpc_grpclb_duration_to_millis(
+    const grpc_grpclb_duration* duration_pb);
 
-grpc_millis grpc_grpclb_duration_to_millis(grpc_grpclb_duration* duration_pb);
-
-/** Destroy \a initial_response */
-void grpc_grpclb_initial_response_destroy(
-    grpc_grpclb_initial_response* response);
+}  // namespace grpc_core
 
 #endif /* GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_LB_POLICY_GRPCLB_LOAD_BALANCER_API_H \
         */

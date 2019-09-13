@@ -26,6 +26,7 @@
 #include <grpc/support/cpu.h>
 #include <grpc/support/log.h>
 
+#include "src/core/lib/gpr/time_precise.h"
 #include "src/core/lib/gpr/tls.h"
 #include "src/core/lib/gprpp/fork.h"
 #include "src/core/lib/iomgr/closure.h"
@@ -58,6 +59,8 @@ extern grpc_closure_scheduler* grpc_schedule_on_exec_ctx;
 gpr_timespec grpc_millis_to_timespec(grpc_millis millis, gpr_clock_type clock);
 grpc_millis grpc_timespec_to_millis_round_down(gpr_timespec timespec);
 grpc_millis grpc_timespec_to_millis_round_up(gpr_timespec timespec);
+grpc_millis grpc_cycle_counter_to_millis_round_down(gpr_cycle_counter cycles);
+grpc_millis grpc_cycle_counter_to_millis_round_up(gpr_cycle_counter cycles);
 
 namespace grpc_core {
 /** Execution context.

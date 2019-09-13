@@ -27,6 +27,14 @@
  *  - some syscalls to be made directly
  */
 
+/*
+ * Defines GRPC_USE_CPP_STD_LIB to use standard C++ library instead of
+ * in-house library if possible. (e.g. std::map)
+ */
+#ifndef GRPC_USE_CPP_STD_LIB
+#define GRPC_USE_CPP_STD_LIB 1
+#endif
+
 /* Get windows.h included everywhere (we need it) */
 #if defined(_WIN64) || defined(WIN64) || defined(_WIN32) || defined(WIN32)
 #ifndef WIN32_LEAN_AND_MEAN
@@ -77,7 +85,6 @@
 #define GPR_WINDOWS 1
 #define GPR_WINDOWS_SUBPROCESS 1
 #define GPR_WINDOWS_ENV
-#define GPR_HAS_ALIGNED_MALLOC 1
 #ifdef __MSYS__
 #define GPR_GETPID_IN_UNISTD_H 1
 #define GPR_MSYS_TMPFILE
@@ -174,7 +181,6 @@
 #define GPR_POSIX_SYNC 1
 #define GPR_POSIX_TIME 1
 #define GPR_HAS_PTHREAD_H 1
-#define GPR_HAS_ALIGNED_ALLOC 1
 #define GPR_GETPID_IN_UNISTD_H 1
 #ifdef _LP64
 #define GPR_ARCH_64 1
@@ -240,7 +246,6 @@
 #define GPR_POSIX_SUBPROCESS 1
 #define GPR_POSIX_SYNC 1
 #define GPR_POSIX_TIME 1
-#define GPR_HAS_POSIX_MEMALIGN 1
 #define GPR_HAS_PTHREAD_H 1
 #define GPR_GETPID_IN_UNISTD_H 1
 #ifndef GRPC_CFSTREAM
@@ -397,6 +402,18 @@
 #endif
 #endif /* GPR_NO_AUTODETECT_PLATFORM */
 
+#if defined(GPR_BACKWARDS_COMPATIBILITY_MODE)
+/*
+ * For backward compatibility mode, reset _FORTIFY_SOURCE to prevent
+ * a library from having non-standard symbols such as __asprintf_chk.
+ * This helps non-glibc systems such as alpine using musl to find symbols.
+ */
+#if defined(_FORTIFY_SOURCE) && _FORTIFY_SOURCE > 0
+#undef _FORTIFY_SOURCE
+#define _FORTIFY_SOURCE 0
+#endif
+#endif
+
 /*
  *  There are platforms for which TLS should not be used even though the
  * compiler makes it seem like it's supported (Android NDK < r12b for example).
@@ -453,6 +470,23 @@ typedef unsigned __int64 uint64_t;
 #else
 #include <stdint.h>
 #endif /* _MSC_VER */
+
+/* Type of cycle clock implementation */
+#ifdef GPR_LINUX
+/* Disable cycle clock by default.
+   TODO(soheil): enable when we support fallback for unstable cycle clocks.
+#if defined(__i386__)
+#define GPR_CYCLE_COUNTER_RDTSC_32 1
+#elif defined(__x86_64__) || defined(__amd64__)
+#define GPR_CYCLE_COUNTER_RDTSC_64 1
+#else
+#define GPR_CYCLE_COUNTER_FALLBACK 1
+#endif
+*/
+#define GPR_CYCLE_COUNTER_FALLBACK 1
+#else
+#define GPR_CYCLE_COUNTER_FALLBACK 1
+#endif /* GPR_LINUX */
 
 /* Cache line alignment */
 #ifndef GPR_CACHELINE_SIZE_LOG

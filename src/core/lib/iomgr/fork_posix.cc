@@ -28,7 +28,6 @@
 #include <grpc/grpc.h>
 #include <grpc/support/log.h>
 
-#include "src/core/lib/gpr/env.h"
 #include "src/core/lib/gprpp/fork.h"
 #include "src/core/lib/gprpp/thd.h"
 #include "src/core/lib/iomgr/ev_posix.h"
@@ -60,8 +59,10 @@ void grpc_prefork() {
             "environment variable GRPC_ENABLE_FORK_SUPPORT=1");
     return;
   }
-  if (strcmp(grpc_get_poll_strategy_name(), "epoll1") != 0 &&
-      strcmp(grpc_get_poll_strategy_name(), "poll") != 0) {
+  const char* poll_strategy_name = grpc_get_poll_strategy_name();
+  if (poll_strategy_name == nullptr ||
+      (strcmp(poll_strategy_name, "epoll1") != 0 &&
+       strcmp(poll_strategy_name, "poll") != 0)) {
     gpr_log(GPR_INFO,
             "Fork support is only compatible with the epoll1 and poll polling "
             "strategies");

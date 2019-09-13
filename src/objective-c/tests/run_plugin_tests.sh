@@ -22,9 +22,15 @@ cd $(dirname $0)
 
 # Run the tests server.
 
-BINDIR=../../../bins/$CONFIG
-PROTOC=$BINDIR/protobuf/protoc
-PLUGIN=$BINDIR/grpc_objective_c_plugin
+ROOT_DIR=../../..
+BAZEL=$ROOT_DIR/tools/bazel
+BAZEL_EXEC_ROOT=$ROOT_DIR/bazel-out/darwin-fastbuild/bin
+PROTOC=$BAZEL_EXEC_ROOT/external/com_google_protobuf/protoc
+PLUGIN=$BAZEL_EXEC_ROOT/src/compiler/grpc_objective_c_plugin
+
+[ -f $PROTOC ] && [ -f $PLUGIN ] || {
+    BAZEL build @com_google_protobuf//:protoc //src/compiler:grpc_objective_c_plugin
+}
 
 rm -rf PluginTest/*pb*
 

@@ -21,15 +21,12 @@
  * Not intended to be robust for main-line code, often cuts across abstraction
  * boundaries.
  */
-
 #include <stdio.h>
 
 #include "src/core/ext/filters/client_channel/client_channel.h"
 #include "src/core/ext/transport/chttp2/transport/internal.h"
 #include "src/core/lib/channel/connected_channel.h"
 #include "src/core/lib/surface/call.h"
-
-void grpc_summon_debugger_macros() {}
 
 grpc_stream* grpc_transport_stream_from_call(grpc_call* call) {
   grpc_call_stack* cs = grpc_call_get_call_stack(call);

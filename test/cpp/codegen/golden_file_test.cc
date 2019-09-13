@@ -33,7 +33,7 @@ using namespace gflags;
 
 DEFINE_string(
     generated_file_path, "",
-    "path to the directory containing generated files compiler_test.grpc.pb.h"
+    "path to the directory containing generated files compiler_test.grpc.pb.h "
     "and compiler_test_mock.grpc.pb.h");
 
 const char kGoldenFilePath[] = "test/cpp/codegen/compiler_test_golden";

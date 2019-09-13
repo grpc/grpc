@@ -213,7 +213,7 @@ static const char* ssl_error_string(int error) {
 /* TODO(jboeuf): Remove when we are past the debugging phase with this code. */
 static void ssl_log_where_info(const SSL* ssl, int where, int flag,
                                const char* msg) {
-  if ((where & flag) && tsi_tracing_enabled.enabled()) {
+  if ((where & flag) && GRPC_TRACE_FLAG_ENABLED(tsi_tracing_enabled)) {
     gpr_log(GPR_INFO, "%20.20s - %30.30s  - %5.10s", msg,
             SSL_state_string_long(ssl), SSL_state_string(ssl));
   }
@@ -233,11 +233,10 @@ static void ssl_info_callback(const SSL* ssl, int where, int ret) {
 
 /* Returns 1 if name looks like an IP address, 0 otherwise.
    This is a very rough heuristic, and only handles IPv6 in hexadecimal form. */
-static int looks_like_ip_address(const char* name) {
-  size_t i;
+static int looks_like_ip_address(grpc_core::StringView name) {
   size_t dot_count = 0;
   size_t num_size = 0;
-  for (i = 0; i < strlen(name); i++) {
+  for (size_t i = 0; i < name.size(); ++i) {
     if (name[i] == ':') {
       /* IPv6 Address in hexadecimal form, : is not allowed in DNS names. */
       return 1;
@@ -351,11 +350,19 @@ static tsi_result add_subject_alt_names_properties_to_peer(
   for (i = 0; i < subject_alt_name_count; i++) {
     GENERAL_NAME* subject_alt_name =
         sk_GENERAL_NAME_value(subject_alt_names, TSI_SIZE_AS_SIZE(i));
-    /* Filter out the non-dns entries names. */
-    if (subject_alt_name->type == GEN_DNS) {
+    if (subject_alt_name->type == GEN_DNS ||
+        subject_alt_name->type == GEN_EMAIL ||
+        subject_alt_name->type == GEN_URI) {
       unsigned char* name = nullptr;
       int name_size;
-      name_size = ASN1_STRING_to_UTF8(&name, subject_alt_name->d.dNSName);
+      if (subject_alt_name->type == GEN_DNS) {
+        name_size = ASN1_STRING_to_UTF8(&name, subject_alt_name->d.dNSName);
+      } else if (subject_alt_name->type == GEN_EMAIL) {
+        name_size = ASN1_STRING_to_UTF8(&name, subject_alt_name->d.rfc822Name);
+      } else {
+        name_size = ASN1_STRING_to_UTF8(
+            &name, subject_alt_name->d.uniformResourceIdentifier);
+      }
       if (name_size < 0) {
         gpr_log(GPR_ERROR, "Could not get utf8 from asn1 string.");
         result = TSI_INTERNAL_ERROR;
@@ -704,8 +711,8 @@ static tsi_result populate_ssl_context(
 }
 
 /* Extracts the CN and the SANs from an X509 cert as a peer object. */
-static tsi_result extract_x509_subject_names_from_pem_cert(const char* pem_cert,
-                                                           tsi_peer* peer) {
+tsi_result tsi_ssl_extract_x509_subject_names_from_pem_cert(
+    const char* pem_cert, tsi_peer* peer) {
   tsi_result result = TSI_OK;
   X509* cert = nullptr;
   BIO* pem;
@@ -1506,52 +1513,46 @@ static void tsi_ssl_server_handshaker_factory_destroy(
   gpr_free(self);
 }
 
-static int does_entry_match_name(const char* entry, size_t entry_length,
-                                 const char* name) {
-  const char* dot;
-  const char* name_subdomain = nullptr;
-  size_t name_length = strlen(name);
-  size_t name_subdomain_length;
-  if (entry_length == 0) return 0;
+static int does_entry_match_name(grpc_core::StringView entry,
+                                 grpc_core::StringView name) {
+  if (entry.empty()) return 0;
 
   /* Take care of '.' terminations. */
-  if (name[name_length - 1] == '.') {
-    name_length--;
+  if (name.back() == '.') {
+    name.remove_suffix(1);
   }
-  if (entry[entry_length - 1] == '.') {
-    entry_length--;
-    if (entry_length == 0) return 0;
+  if (entry.back() == '.') {
+    entry.remove_suffix(1);
+    if (entry.empty()) return 0;
   }
 
-  if ((name_length == entry_length) &&
-      strncmp(name, entry, entry_length) == 0) {
+  if (name == entry) {
     return 1; /* Perfect match. */
   }
-  if (entry[0] != '*') return 0;
+  if (entry.front() != '*') return 0;
 
   /* Wildchar subdomain matching. */
-  if (entry_length < 3 || entry[1] != '.') { /* At least *.x */
+  if (entry.size() < 3 || entry[1] != '.') { /* At least *.x */
     gpr_log(GPR_ERROR, "Invalid wildchar entry.");
     return 0;
   }
-  name_subdomain = strchr(name, '.');
-  if (name_subdomain == nullptr) return 0;
-  name_subdomain_length = strlen(name_subdomain);
-  if (name_subdomain_length < 2) return 0;
-  name_subdomain++; /* Starts after the dot. */
-  name_subdomain_length--;
-  entry += 2; /* Remove *. */
-  entry_length -= 2;
-  dot = strchr(name_subdomain, '.');
-  if ((dot == nullptr) || (dot == &name_subdomain[name_subdomain_length - 1])) {
-    gpr_log(GPR_ERROR, "Invalid toplevel subdomain: %s", name_subdomain);
+  size_t name_subdomain_pos = name.find('.');
+  if (name_subdomain_pos == grpc_core::StringView::npos) return 0;
+  if (name_subdomain_pos >= name.size() - 2) return 0;
+  grpc_core::StringView name_subdomain =
+      name.substr(name_subdomain_pos + 1); /* Starts after the dot. */
+  entry.remove_prefix(2);                  /* Remove *. */
+  size_t dot = name_subdomain.find('.');
+  if (dot == grpc_core::StringView::npos || dot == name_subdomain.size() - 1) {
+    grpc_core::UniquePtr<char> name_subdomain_cstr(name_subdomain.dup());
+    gpr_log(GPR_ERROR, "Invalid toplevel subdomain: %s",
+            name_subdomain_cstr.get());
     return 0;
   }
-  if (name_subdomain[name_subdomain_length - 1] == '.') {
-    name_subdomain_length--;
+  if (name_subdomain.back() == '.') {
+    name_subdomain.remove_suffix(1);
   }
-  return ((entry_length > 0) && (name_subdomain_length == entry_length) &&
-          strncmp(entry, name_subdomain, entry_length) == 0);
+  return !entry.empty() && name_subdomain == entry;
 }
 
 static int ssl_server_handshaker_factory_servername_callback(SSL* ssl, int* ap,
@@ -1889,7 +1890,7 @@ tsi_result tsi_create_ssl_server_handshaker_factory_with_options(
       }
       /* TODO(jboeuf): Add revocation verification. */
 
-      result = extract_x509_subject_names_from_pem_cert(
+      result = tsi_ssl_extract_x509_subject_names_from_pem_cert(
           options->pem_key_cert_pairs[i].cert_chain,
           &impl->ssl_context_x509_subject_names[i]);
       if (result != TSI_OK) break;
@@ -1919,7 +1920,8 @@ tsi_result tsi_create_ssl_server_handshaker_factory_with_options(
 
 /* --- tsi_ssl utils. --- */
 
-int tsi_ssl_peer_matches_name(const tsi_peer* peer, const char* name) {
+int tsi_ssl_peer_matches_name(const tsi_peer* peer,
+                              grpc_core::StringView name) {
   size_t i = 0;
   size_t san_count = 0;
   const tsi_peer_property* cn_property = nullptr;
@@ -1933,13 +1935,10 @@ int tsi_ssl_peer_matches_name(const tsi_peer* peer, const char* name) {
                TSI_X509_SUBJECT_ALTERNATIVE_NAME_PEER_PROPERTY) == 0) {
       san_count++;
 
-      if (!like_ip && does_entry_match_name(property->value.data,
-                                            property->value.length, name)) {
+      grpc_core::StringView entry(property->value.data, property->value.length);
+      if (!like_ip && does_entry_match_name(entry, name)) {
         return 1;
-      } else if (like_ip &&
-                 strncmp(name, property->value.data, property->value.length) ==
-                     0 &&
-                 strlen(name) == property->value.length) {
+      } else if (like_ip && name == entry) {
         /* IP Addresses are exact matches only. */
         return 1;
       }
@@ -1951,8 +1950,9 @@ int tsi_ssl_peer_matches_name(const tsi_peer* peer, const char* name) {
 
   /* If there's no SAN, try the CN, but only if its not like an IP Address */
   if (san_count == 0 && cn_property != nullptr && !like_ip) {
-    if (does_entry_match_name(cn_property->value.data,
-                              cn_property->value.length, name)) {
+    if (does_entry_match_name(grpc_core::StringView(cn_property->value.data,
+                                                    cn_property->value.length),
+                              name)) {
       return 1;
     }
   }

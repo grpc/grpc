@@ -144,11 +144,11 @@ size_t SecurityHandshaker::MoveReadBufferIntoHandshakeBuffer() {
   }
   size_t offset = 0;
   while (args_->read_buffer->count > 0) {
-    grpc_slice next_slice = grpc_slice_buffer_take_first(args_->read_buffer);
-    memcpy(handshake_buffer_ + offset, GRPC_SLICE_START_PTR(next_slice),
-           GRPC_SLICE_LENGTH(next_slice));
-    offset += GRPC_SLICE_LENGTH(next_slice);
-    grpc_slice_unref_internal(next_slice);
+    grpc_slice* next_slice = grpc_slice_buffer_peek_first(args_->read_buffer);
+    memcpy(handshake_buffer_ + offset, GRPC_SLICE_START_PTR(*next_slice),
+           GRPC_SLICE_LENGTH(*next_slice));
+    offset += GRPC_SLICE_LENGTH(*next_slice);
+    grpc_slice_buffer_remove_first(args_->read_buffer);
   }
   return bytes_in_read_buffer;
 }
@@ -195,7 +195,7 @@ void SecurityHandshaker::HandshakeFailedLocked(grpc_error* error) {
 void SecurityHandshaker::OnPeerCheckedInner(grpc_error* error) {
   MutexLock lock(&mu_);
   if (error != GRPC_ERROR_NONE || is_shutdown_) {
-    HandshakeFailedLocked(GRPC_ERROR_REF(error));
+    HandshakeFailedLocked(error);
     return;
   }
   // Create zero-copy frame protector, if implemented.
@@ -255,7 +255,7 @@ void SecurityHandshaker::OnPeerCheckedInner(grpc_error* error) {
 
 void SecurityHandshaker::OnPeerCheckedFn(void* arg, grpc_error* error) {
   RefCountedPtr<SecurityHandshaker>(static_cast<SecurityHandshaker*>(arg))
-      ->OnPeerCheckedInner(error);
+      ->OnPeerCheckedInner(GRPC_ERROR_REF(error));
 }
 
 grpc_error* SecurityHandshaker::CheckPeerLocked() {

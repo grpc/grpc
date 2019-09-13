@@ -71,6 +71,33 @@ abstract class AbstractGeneratedCodeTest extends PHPUnit_Framework_TestCase
         $call = self::$client->Div($div_arg, [' ' => 'abc123']);
     }
 
+    public function testMetadata()
+    {
+        $div_arg = new Math\DivArgs();
+        $call = self::$client->Div($div_arg, ['somekey' => ['abc123']]);
+    }
+
+    public function testMetadataKey()
+    {
+        $div_arg = new Math\DivArgs();
+        $call = self::$client->Div($div_arg, ['somekey_-1' => ['abc123']]);
+    }
+
+    public function testMetadataKeyWithDot()
+    {
+        $div_arg = new Math\DivArgs();
+        $call = self::$client->Div($div_arg, ['someKEY._-1' => ['abc123']]);
+    }
+
+    /**
+     * @expectedException InvalidArgumentException
+     */
+    public function testMetadataInvalidKey()
+    {
+        $div_arg = new Math\DivArgs();
+        $call = self::$client->Div($div_arg, ['(somekey)' => ['abc123']]);
+    }
+
     public function testGetCallMetadata()
     {
         $div_arg = new Math\DivArgs();
@@ -81,6 +108,8 @@ abstract class AbstractGeneratedCodeTest extends PHPUnit_Framework_TestCase
     public function testTimeout()
     {
         $div_arg = new Math\DivArgs();
+        $div_arg->setDividend(7);
+        $div_arg->setDivisor(4);
         $call = self::$client->Div($div_arg, [], ['timeout' => 1]);
         list($response, $status) = $call->wait();
         $this->assertSame(\Grpc\STATUS_DEADLINE_EXCEEDED, $status->code);

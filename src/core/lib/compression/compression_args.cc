@@ -32,21 +32,25 @@
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gpr/useful.h"
 
-grpc_compression_algorithm grpc_channel_args_get_compression_algorithm(
+grpc_compression_algorithm
+grpc_channel_args_get_channel_default_compression_algorithm(
     const grpc_channel_args* a) {
   size_t i;
   if (a == nullptr) return GRPC_COMPRESS_NONE;
   for (i = 0; i < a->num_args; ++i) {
     if (a->args[i].type == GRPC_ARG_INTEGER &&
         !strcmp(GRPC_COMPRESSION_CHANNEL_DEFAULT_ALGORITHM, a->args[i].key)) {
-      return static_cast<grpc_compression_algorithm>(a->args[i].value.integer);
-      break;
+      grpc_compression_algorithm default_algorithm =
+          static_cast<grpc_compression_algorithm>(a->args[i].value.integer);
+      return default_algorithm < GRPC_COMPRESS_ALGORITHMS_COUNT
+                 ? default_algorithm
+                 : GRPC_COMPRESS_NONE;
     }
   }
   return GRPC_COMPRESS_NONE;
 }
 
-grpc_channel_args* grpc_channel_args_set_compression_algorithm(
+grpc_channel_args* grpc_channel_args_set_channel_default_compression_algorithm(
     grpc_channel_args* a, grpc_compression_algorithm algorithm) {
   GPR_ASSERT(algorithm < GRPC_COMPRESS_ALGORITHMS_COUNT);
   grpc_arg tmp;
@@ -68,7 +72,9 @@ static int find_compression_algorithm_states_bitset(const grpc_channel_args* a,
           !strcmp(GRPC_COMPRESSION_CHANNEL_ENABLED_ALGORITHMS_BITSET,
                   a->args[i].key)) {
         *states_arg = &a->args[i].value.integer;
-        **states_arg |= 0x1; /* forcefully enable support for no compression */
+        **states_arg =
+            (**states_arg & ((1 << GRPC_COMPRESS_ALGORITHMS_COUNT) - 1)) |
+            0x1; /* forcefully enable support for no compression */
         return 1;
       }
     }
@@ -83,7 +89,8 @@ grpc_channel_args* grpc_channel_args_compression_algorithm_set_state(
   const int states_arg_found =
       find_compression_algorithm_states_bitset(*a, &states_arg);
 
-  if (grpc_channel_args_get_compression_algorithm(*a) == algorithm &&
+  if (grpc_channel_args_get_channel_default_compression_algorithm(*a) ==
+          algorithm &&
       state == 0) {
     const char* algo_name = nullptr;
     GPR_ASSERT(grpc_compression_algorithm_name(algorithm, &algo_name) != 0);

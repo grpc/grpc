@@ -18,12 +18,15 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <string.h>
+
 #include <grpc/grpc_security.h>
 #include <grpc/slice.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
 
+#include "src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb.h"
 #include "src/core/ext/filters/client_channel/parse_address.h"
 #include "src/core/ext/filters/load_reporting/registered_opencensus_objects.h"
 #include "src/core/ext/filters/load_reporting/server_load_reporting_filter.h"
@@ -225,7 +228,8 @@ grpc_filtered_mdelem ServerLoadReportingCallData::RecvInitialMetadataFilter(
       calld->target_host_[i] = static_cast<char>(
           tolower(GRPC_SLICE_START_PTR(target_host_slice)[i]));
     }
-  } else if (grpc_slice_eq(GRPC_MDKEY(md), GRPC_MDSTR_LB_TOKEN)) {
+  } else if (grpc_slice_str_cmp(GRPC_MDKEY(md),
+                                grpc_core::kGrpcLbLbTokenMetadataKey) == 0) {
     if (calld->client_ip_and_lr_token_ == nullptr) {
       calld->StoreClientIpAndLrToken(
           reinterpret_cast<const char*> GRPC_SLICE_START_PTR(GRPC_MDVALUE(md)),

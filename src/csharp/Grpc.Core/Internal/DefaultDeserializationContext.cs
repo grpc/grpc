@@ -16,9 +16,10 @@
 
 #endregion
 
-using Grpc.Core.Utils;
 using System;
+using System.Buffers;
 using System.Threading;
+using Grpc.Core.Utils;
 
 namespace Grpc.Core.Internal
 {
@@ -27,39 +28,48 @@ namespace Grpc.Core.Internal
         static readonly ThreadLocal<DefaultDeserializationContext> threadLocalInstance =
             new ThreadLocal<DefaultDeserializationContext>(() => new DefaultDeserializationContext(), false);
 
-        byte[] payload;
-        bool alreadyCalledPayloadAsNewBuffer;
+        IBufferReader bufferReader;
+        int payloadLength;
+        ReusableSliceBuffer cachedSliceBuffer = new ReusableSliceBuffer();
 
         public DefaultDeserializationContext()
         {
             Reset();
         }
 
-        public override int PayloadLength => payload.Length;
+        public override int PayloadLength => payloadLength;
 
         public override byte[] PayloadAsNewBuffer()
         {
-            GrpcPreconditions.CheckState(!alreadyCalledPayloadAsNewBuffer);
-            alreadyCalledPayloadAsNewBuffer = true;
-            return payload;
+            var buffer = new byte[payloadLength];
+            PayloadAsReadOnlySequence().CopyTo(buffer);
+            return buffer;
         }
 
-        public void Initialize(byte[] payload)
+        public override ReadOnlySequence<byte> PayloadAsReadOnlySequence()
         {
-            this.payload = GrpcPreconditions.CheckNotNull(payload);
-            this.alreadyCalledPayloadAsNewBuffer = false;
+            var sequence = cachedSliceBuffer.PopulateFrom(bufferReader);
+            GrpcPreconditions.CheckState(sequence.Length == payloadLength);
+            return sequence;
+        }
+
+        public void Initialize(IBufferReader bufferReader)
+        {
+            this.bufferReader = GrpcPreconditions.CheckNotNull(bufferReader);
+            this.payloadLength = bufferReader.TotalLength.Value;  // payload must not be null
         }
 
         public void Reset()
         {
-            this.payload = null;
-            this.alreadyCalledPayloadAsNewBuffer = true;  // mark payload as read
+            this.bufferReader = null;
+            this.payloadLength = 0;
+            this.cachedSliceBuffer.Invalidate();
         }
 
-        public static DefaultDeserializationContext GetInitializedThreadLocal(byte[] payload)
+        public static DefaultDeserializationContext GetInitializedThreadLocal(IBufferReader bufferReader)
         {
             var instance = threadLocalInstance.Value;
-            instance.Initialize(payload);
+            instance.Initialize(bufferReader);
             return instance;
         }
     }

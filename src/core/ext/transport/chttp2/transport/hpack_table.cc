@@ -29,190 +29,47 @@
 
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/gpr/murmur_hash.h"
+#include "src/core/lib/slice/slice_internal.h"
+#include "src/core/lib/surface/validate_metadata.h"
 #include "src/core/lib/transport/static_metadata.h"
 
 extern grpc_core::TraceFlag grpc_http_trace;
 
-static struct {
-  const char* key;
-  const char* value;
-} static_table[] = {
-    /* 0: */
-    {nullptr, nullptr},
-    /* 1: */
-    {":authority", ""},
-    /* 2: */
-    {":method", "GET"},
-    /* 3: */
-    {":method", "POST"},
-    /* 4: */
-    {":path", "/"},
-    /* 5: */
-    {":path", "/index.html"},
-    /* 6: */
-    {":scheme", "http"},
-    /* 7: */
-    {":scheme", "https"},
-    /* 8: */
-    {":status", "200"},
-    /* 9: */
-    {":status", "204"},
-    /* 10: */
-    {":status", "206"},
-    /* 11: */
-    {":status", "304"},
-    /* 12: */
-    {":status", "400"},
-    /* 13: */
-    {":status", "404"},
-    /* 14: */
-    {":status", "500"},
-    /* 15: */
-    {"accept-charset", ""},
-    /* 16: */
-    {"accept-encoding", "gzip, deflate"},
-    /* 17: */
-    {"accept-language", ""},
-    /* 18: */
-    {"accept-ranges", ""},
-    /* 19: */
-    {"accept", ""},
-    /* 20: */
-    {"access-control-allow-origin", ""},
-    /* 21: */
-    {"age", ""},
-    /* 22: */
-    {"allow", ""},
-    /* 23: */
-    {"authorization", ""},
-    /* 24: */
-    {"cache-control", ""},
-    /* 25: */
-    {"content-disposition", ""},
-    /* 26: */
-    {"content-encoding", ""},
-    /* 27: */
-    {"content-language", ""},
-    /* 28: */
-    {"content-length", ""},
-    /* 29: */
-    {"content-location", ""},
-    /* 30: */
-    {"content-range", ""},
-    /* 31: */
-    {"content-type", ""},
-    /* 32: */
-    {"cookie", ""},
-    /* 33: */
-    {"date", ""},
-    /* 34: */
-    {"etag", ""},
-    /* 35: */
-    {"expect", ""},
-    /* 36: */
-    {"expires", ""},
-    /* 37: */
-    {"from", ""},
-    /* 38: */
-    {"host", ""},
-    /* 39: */
-    {"if-match", ""},
-    /* 40: */
-    {"if-modified-since", ""},
-    /* 41: */
-    {"if-none-match", ""},
-    /* 42: */
-    {"if-range", ""},
-    /* 43: */
-    {"if-unmodified-since", ""},
-    /* 44: */
-    {"last-modified", ""},
-    /* 45: */
-    {"link", ""},
-    /* 46: */
-    {"location", ""},
-    /* 47: */
-    {"max-forwards", ""},
-    /* 48: */
-    {"proxy-authenticate", ""},
-    /* 49: */
-    {"proxy-authorization", ""},
-    /* 50: */
-    {"range", ""},
-    /* 51: */
-    {"referer", ""},
-    /* 52: */
-    {"refresh", ""},
-    /* 53: */
-    {"retry-after", ""},
-    /* 54: */
-    {"server", ""},
-    /* 55: */
-    {"set-cookie", ""},
-    /* 56: */
-    {"strict-transport-security", ""},
-    /* 57: */
-    {"transfer-encoding", ""},
-    /* 58: */
-    {"user-agent", ""},
-    /* 59: */
-    {"vary", ""},
-    /* 60: */
-    {"via", ""},
-    /* 61: */
-    {"www-authenticate", ""},
-};
-
-static uint32_t entries_for_bytes(uint32_t bytes) {
-  return (bytes + GRPC_CHTTP2_HPACK_ENTRY_OVERHEAD - 1) /
-         GRPC_CHTTP2_HPACK_ENTRY_OVERHEAD;
-}
-
-void grpc_chttp2_hptbl_init(grpc_chttp2_hptbl* tbl) {
-  size_t i;
-
-  memset(tbl, 0, sizeof(*tbl));
-  tbl->current_table_bytes = tbl->max_bytes =
-      GRPC_CHTTP2_INITIAL_HPACK_TABLE_SIZE;
-  tbl->max_entries = tbl->cap_entries =
-      entries_for_bytes(tbl->current_table_bytes);
-  tbl->ents = static_cast<grpc_mdelem*>(
-      gpr_malloc(sizeof(*tbl->ents) * tbl->cap_entries));
-  memset(tbl->ents, 0, sizeof(*tbl->ents) * tbl->cap_entries);
-  for (i = 1; i <= GRPC_CHTTP2_LAST_STATIC_ENTRY; i++) {
-    tbl->static_ents[i - 1] = grpc_mdelem_from_slices(
-        grpc_slice_intern(grpc_slice_from_static_string(static_table[i].key)),
-        grpc_slice_intern(
-            grpc_slice_from_static_string(static_table[i].value)));
-  }
-}
-
 void grpc_chttp2_hptbl_destroy(grpc_chttp2_hptbl* tbl) {
   size_t i;
-  for (i = 0; i < GRPC_CHTTP2_LAST_STATIC_ENTRY; i++) {
-    GRPC_MDELEM_UNREF(tbl->static_ents[i]);
-  }
   for (i = 0; i < tbl->num_ents; i++) {
     GRPC_MDELEM_UNREF(tbl->ents[(tbl->first_ent + i) % tbl->cap_entries]);
   }
   gpr_free(tbl->ents);
+  tbl->ents = nullptr;
 }
 
-grpc_mdelem grpc_chttp2_hptbl_lookup(const grpc_chttp2_hptbl* tbl,
-                                     uint32_t tbl_index) {
-  /* Static table comes first, just return an entry from it */
-  if (tbl_index <= GRPC_CHTTP2_LAST_STATIC_ENTRY) {
-    return tbl->static_ents[tbl_index - 1];
-  }
-  /* Otherwise, find the value in the list of valid entries */
+template <bool take_ref>
+static grpc_mdelem lookup_dynamic_index(const grpc_chttp2_hptbl* tbl,
+                                        uint32_t tbl_index) {
+  /* Not static - find the value in the list of valid entries */
   tbl_index -= (GRPC_CHTTP2_LAST_STATIC_ENTRY + 1);
   if (tbl_index < tbl->num_ents) {
     uint32_t offset =
         (tbl->num_ents - 1u - tbl_index + tbl->first_ent) % tbl->cap_entries;
-    return tbl->ents[offset];
+    grpc_mdelem md = tbl->ents[offset];
+    if (take_ref) {
+      GRPC_MDELEM_REF(md);
+    }
+    return md;
   }
   /* Invalid entry: return error */
   return GRPC_MDNULL;
+}
+
+grpc_mdelem grpc_chttp2_hptbl_lookup_dynamic_index(const grpc_chttp2_hptbl* tbl,
+                                                   uint32_t tbl_index) {
+  return lookup_dynamic_index<false>(tbl, tbl_index);
+}
+
+grpc_mdelem grpc_chttp2_hptbl_lookup_ref_dynamic_index(
+    const grpc_chttp2_hptbl* tbl, uint32_t tbl_index) {
+  return lookup_dynamic_index<true>(tbl, tbl_index);
 }
 
 /* Evict one element from the table */
@@ -247,7 +104,7 @@ void grpc_chttp2_hptbl_set_max_bytes(grpc_chttp2_hptbl* tbl,
   if (tbl->max_bytes == max_bytes) {
     return;
   }
-  if (grpc_http_trace.enabled()) {
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_http_trace)) {
     gpr_log(GPR_INFO, "Update hpack parser max size to %d", max_bytes);
   }
   while (tbl->mem_used > max_bytes) {
@@ -270,14 +127,14 @@ grpc_error* grpc_chttp2_hptbl_set_current_table_size(grpc_chttp2_hptbl* tbl,
     gpr_free(msg);
     return err;
   }
-  if (grpc_http_trace.enabled()) {
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_http_trace)) {
     gpr_log(GPR_INFO, "Update hpack parser table size to %d", bytes);
   }
   while (tbl->mem_used > bytes) {
     evict1(tbl);
   }
   tbl->current_table_bytes = bytes;
-  tbl->max_entries = entries_for_bytes(bytes);
+  tbl->max_entries = grpc_chttp2_hptbl::entries_for_bytes(bytes);
   if (tbl->max_entries > tbl->cap_entries) {
     rebuild_ents(tbl, GPR_MAX(tbl->max_entries, 2 * tbl->cap_entries));
   } else if (tbl->max_entries < tbl->cap_entries / 3) {
@@ -347,7 +204,7 @@ grpc_chttp2_hptbl_find_result grpc_chttp2_hptbl_find(
 
   /* See if the string is in the static table */
   for (i = 0; i < GRPC_CHTTP2_LAST_STATIC_ENTRY; i++) {
-    grpc_mdelem ent = tbl->static_ents[i];
+    grpc_mdelem ent = grpc_static_mdelem_manifested()[i];
     if (!grpc_slice_eq(GRPC_MDKEY(md), GRPC_MDKEY(ent))) continue;
     r.index = i + 1u;
     r.has_value = grpc_slice_eq(GRPC_MDVALUE(md), GRPC_MDVALUE(ent));
@@ -375,23 +232,15 @@ static size_t get_base64_encoded_size(size_t raw_length) {
 
 size_t grpc_chttp2_get_size_in_hpack_table(grpc_mdelem elem,
                                            bool use_true_binary_metadata) {
-  size_t overhead_and_key = 32 + GRPC_SLICE_LENGTH(GRPC_MDKEY(elem));
+  const uint8_t* key_buf = GRPC_SLICE_START_PTR(GRPC_MDKEY(elem));
+  size_t key_len = GRPC_SLICE_LENGTH(GRPC_MDKEY(elem));
+  size_t overhead_and_key = 32 + key_len;
   size_t value_len = GRPC_SLICE_LENGTH(GRPC_MDVALUE(elem));
-  if (grpc_is_binary_header(GRPC_MDKEY(elem))) {
+  if (grpc_key_is_binary_header(key_buf, key_len)) {
     return overhead_and_key + (use_true_binary_metadata
                                    ? value_len + 1
                                    : get_base64_encoded_size(value_len));
   } else {
     return overhead_and_key + value_len;
   }
-}
-
-uint8_t grpc_chttp2_get_static_hpack_table_index(grpc_mdelem md) {
-  if (GRPC_MDELEM_STORAGE(md) == GRPC_MDELEM_STORAGE_STATIC) {
-    uint8_t index = GRPC_MDELEM_DATA(md) - grpc_static_mdelem_table;
-    if (index < GRPC_CHTTP2_LAST_STATIC_ENTRY) {
-      return index + 1;  // Hpack static metadata element indices start at 1
-    }
-  }
-  return 0;
 }

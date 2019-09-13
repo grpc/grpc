@@ -23,6 +23,7 @@
 
 #include <stdbool.h>
 
+#include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/json/json.h"
 
 // Constants.
@@ -32,7 +33,8 @@
 
 // Gets a child property from a json node.
 const char* grpc_json_get_string_property(const grpc_json* json,
-                                          const char* prop_name);
+                                          const char* prop_name,
+                                          grpc_error** error);
 
 // Copies the value of the json child property specified by prop_name.
 // Returns false if the property was not found.
