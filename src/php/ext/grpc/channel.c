@@ -105,7 +105,7 @@ static bool php_grpc_not_channel_arg_key(const char* key) {
     "grpc_target_persist_bound",
   };
 
-  for (int i = 0; i < sizeof(ignoredKeys)/sizeof(ignoredKeys[0]); ++i) {
+  for (int i = 0; i < sizeof(ignoredKeys) / sizeof(ignoredKeys[0]); i++) {
     if (strcmp(key, ignoredKeys[i]) == 0) {
       return true;
     }
@@ -390,9 +390,9 @@ PHP_METHOD(Channel, __construct) {
   unsigned char digest[20] = { 0 };
   PHP_SHA1_CTX context;
   PHP_SHA1Init(&context);
-  for (int i = 0; i < args.num_args; ++i) {
+  for (int i = 0; i < args.num_args; i++) {
     PHP_GRPC_SHA1Update(&context, args.args[i].key, strlen(args.args[i].key) + 1);
-    switch(args.args[i].type) {
+    switch (args.args[i].type) {
     case GRPC_ARG_INTEGER:
       PHP_GRPC_SHA1Update(&context, &args.args[i].value.integer, 4);
       break;
