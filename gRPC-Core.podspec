@@ -32,6 +32,7 @@ Pod::Spec.new do |s|
   s.source = {
     :git => 'https://github.com/grpc/grpc.git',
     :tag => "v#{version}",
+    :submodules => true,
   }
 
   # gRPC podspecs depend on fix for https://github.com/CocoaPods/CocoaPods/issues/6024,
@@ -184,10 +185,9 @@ Pod::Spec.new do |s|
     ss.header_mappings_dir = '.'
     ss.libraries = 'z'
     ss.dependency "#{s.name}/Interface", version
-    ss.dependency 'BoringSSL-GRPC', '0.0.3'
+    ss.dependency 'BoringSSL-GRPC', '0.0.4'
     ss.compiler_flags = '-DGRPC_SHADOW_BORINGSSL_SYMBOLS'
 
-    # To save you from scrolling, this is the last part of the podspec.
     ss.source_files = 'src/core/lib/gpr/alloc.h',
                       'src/core/lib/gpr/arena.h',
                       'src/core/lib/gpr/env.h',

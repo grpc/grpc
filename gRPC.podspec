@@ -32,11 +32,6 @@ Pod::Spec.new do |s|
     :tag => "v#{version}",
   }
 
-  s.ios.deployment_target = '7.0'
-  s.osx.deployment_target = '10.9'
-  s.tvos.deployment_target = '10.0'
-  s.watchos.deployment_target = '4.0'
-
   name = 'GRPCClient'
   s.module_name = name
   s.header_dir = name
@@ -49,25 +44,35 @@ Pod::Spec.new do |s|
     'CLANG_WARN_STRICT_PROTOTYPES' => 'NO',
   }
 
+  s.ios.deployment_target = '7.0'
+  s.osx.deployment_target = '10.9'
+  s.tvos.deployment_target = '10.0'
+  s.watchos.deployment_target = '4.0'
+
   s.subspec 'Interface-Legacy' do |ss|
     ss.header_mappings_dir = 'src/objective-c/GRPCClient'
 
-    ss.public_header_files = "GRPCClient/GRPCCall+ChannelArg.h",
-                             "GRPCClient/GRPCCall+ChannelCredentials.h",
-                             "GRPCClient/GRPCCall+Cronet.h",
-                             "GRPCClient/GRPCCall+OAuth2.h",
-                             "GRPCClient/GRPCCall+Tests.h",
+    ss.public_header_files = "src/objective-c/GRPCClient/GRPCCall+ChannelArg.h",
+                             "src/objective-c/GRPCClient/GRPCCall+ChannelCredentials.h",
+                             "src/objective-c/GRPCClient/GRPCCall+Cronet.h",
+                             "src/objective-c/GRPCClient/GRPCCall+OAuth2.h",
+                             "src/objective-c/GRPCClient/GRPCCall+Tests.h",
                              "src/objective-c/GRPCClient/GRPCCallLegacy.h",
                              "src/objective-c/GRPCClient/GRPCTypes.h"
 
-    ss.source_files = "GRPCClient/GRPCCall+ChannelArg.h",
-                      "GRPCClient/GRPCCall+ChannelCredentials.h",
-                      "GRPCClient/GRPCCall+Cronet.h",
-                      "GRPCClient/GRPCCall+OAuth2.h",
-                      "GRPCClient/GRPCCall+Tests.h",
+    ss.source_files = "src/objective-c/GRPCClient/GRPCCall+ChannelArg.h",
+                      "src/objective-c/GRPCClient/GRPCCall+ChannelCredentials.h",
+                      "src/objective-c/GRPCClient/GRPCCall+Cronet.h",
+                      "src/objective-c/GRPCClient/GRPCCall+OAuth2.h",
+                      "src/objective-c/GRPCClient/GRPCCall+Tests.h",
                       "src/objective-c/GRPCClient/GRPCCallLegacy.h",
                       "src/objective-c/GRPCClient/GRPCTypes.h"
     ss.dependency "gRPC-RxLibrary/Interface", version
+
+    ss.ios.deployment_target = '7.0'
+    ss.osx.deployment_target = '10.9'
+    ss.tvos.deployment_target = '10.0'
+    ss.watchos.deployment_target = '4.0'
   end
 
   s.subspec 'Interface' do |ss|
@@ -98,6 +103,11 @@ Pod::Spec.new do |s|
                       'src/objective-c/GRPCClient/version.h'
 
     ss.dependency "#{s.name}/Interface-Legacy", version
+
+    ss.ios.deployment_target = '7.0'
+    ss.osx.deployment_target = '10.9'
+    ss.tvos.deployment_target = '10.0'
+    ss.watchos.deployment_target = '4.0'
   end
 
   s.subspec 'GRPCCore' do |ss|
@@ -131,6 +141,11 @@ Pod::Spec.new do |s|
     ss.dependency "#{s.name}/Interface", version
     ss.dependency 'gRPC-Core', version
     ss.dependency 'gRPC-RxLibrary', version
+
+    ss.ios.deployment_target = '7.0'
+    ss.osx.deployment_target = '10.9'
+    ss.tvos.deployment_target = '10.0'
+    ss.watchos.deployment_target = '4.0'
   end
 
   s.subspec 'GRPCCoreCronet' do |ss|
@@ -142,10 +157,17 @@ Pod::Spec.new do |s|
     ss.dependency "#{s.name}/GRPCCore", version
     ss.dependency 'gRPC-Core/Cronet-Implementation', version
     ss.dependency 'CronetFramework'
+
+    ss.ios.deployment_target = '8.0'
   end
 
   # CFStream is now default. Leaving this subspec only for compatibility purpose.
   s.subspec 'CFStream' do |ss|
     ss.dependency "#{s.name}/GRPCCore", version
+
+    ss.ios.deployment_target = '7.0'
+    ss.osx.deployment_target = '10.9'
+    ss.tvos.deployment_target = '10.0'
+    ss.watchos.deployment_target = '4.0'
   end
 end
