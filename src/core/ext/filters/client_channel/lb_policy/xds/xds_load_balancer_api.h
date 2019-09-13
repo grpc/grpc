@@ -73,18 +73,18 @@ class XdsPriorityListUpdate {
   const LocalityList* Find(uint32_t priority) const;
 
   bool Contains(uint32_t priority) const {
-    return priority < priority_list_.size();
+    return priority < priorities_.size();
   }
   bool Contains(const XdsLocalityName& name);
 
-  bool empty() const { return priority_list_.empty(); }
-  size_t size() const { return priority_list_.size(); }
+  bool empty() const { return priorities_.empty(); }
+  size_t size() const { return priorities_.size(); }
 
   // Callers should make sure the priority list is non-empty.
-  uint32_t LowestPriority() const { return priority_list_.size() - 1; }
+  uint32_t LowestPriority() const { return priorities_.size() - 1; }
 
  private:
-  InlinedVector<LocalityList, 2> priority_list_;
+  InlinedVector<LocalityList, 2> priorities_;
 };
 
 // There are two phases of accessing this class's content:

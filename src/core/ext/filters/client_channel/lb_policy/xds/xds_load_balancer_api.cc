@@ -55,9 +55,9 @@ constexpr char kEndpointRequired[] = "endpointRequired";
 
 bool XdsPriorityListUpdate::operator==(
     const XdsPriorityListUpdate& other) const {
-  if (priority_list_.size() != other.priority_list_.size()) return false;
-  for (size_t i = 0; i < priority_list_.size(); ++i) {
-    if (priority_list_[i].localities != other.priority_list_[i].localities) {
+  if (priorities_.size() != other.priorities_.size()) return false;
+  for (size_t i = 0; i < priorities_.size(); ++i) {
+    if (priorities_[i].localities != other.priorities_[i].localities) {
       return false;
     }
   }
@@ -68,30 +68,30 @@ void XdsPriorityListUpdate::Add(
     XdsPriorityListUpdate::LocalityList::Locality locality) {
   // Pad the missing priorities in case the localities are not ordered by
   // priority.
-  while (!Contains(locality.priority)) priority_list_.emplace_back();
-  LocalityList& locality_list = priority_list_[locality.priority];
+  while (!Contains(locality.priority)) priorities_.emplace_back();
+  LocalityList& locality_list = priorities_[locality.priority];
   locality_list.localities.push_back(std::move(locality));
 }
 
 void XdsPriorityListUpdate::Sort() {
-  for (size_t i = 0; i < priority_list_.size(); ++i) {
+  for (size_t i = 0; i < priorities_.size(); ++i) {
     // Sort each locality list.
-    std::sort(priority_list_[i].localities.data(),
-              priority_list_[i].localities.data() +
-                  priority_list_[i].localities.size(),
-              XdsPriorityListUpdate::LocalityList::Locality::Less());
+    std::sort(
+        priorities_[i].localities.data(),
+        priorities_[i].localities.data() + priorities_[i].localities.size(),
+        XdsPriorityListUpdate::LocalityList::Locality::Less());
   }
 }
 
 const XdsPriorityListUpdate::LocalityList* XdsPriorityListUpdate::Find(
     uint32_t priority) const {
   if (!Contains(priority)) return nullptr;
-  return &priority_list_[priority];
+  return &priorities_[priority];
 }
 
 bool XdsPriorityListUpdate::Contains(const XdsLocalityName& name) {
-  for (size_t i = 0; i < priority_list_.size(); ++i) {
-    const LocalityList& locality_list = priority_list_[i];
+  for (size_t i = 0; i < priorities_.size(); ++i) {
+    const LocalityList& locality_list = priorities_[i];
     for (size_t j = 0; j < locality_list.localities.size(); ++j) {
       if (*locality_list.localities[j].name == name) return true;
     }
