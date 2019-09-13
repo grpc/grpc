@@ -104,12 +104,17 @@
     s.preserve_paths = plugin
 
     # Restrict the protoc version to the one supported by this plugin.
-    s.dependency '!ProtoCompiler', '3.8.1'
+    s.dependency '!ProtoCompiler', '3.8.0'
     # For the Protobuf dependency not to complain:
     s.ios.deployment_target = '7.0'
     s.osx.deployment_target = '10.9'
     s.tvos.deployment_target = '10.0'
-    s.watchos.deployment_target = '4.0'
+
+    # watchOS is disabled due to #20258.
+    # TODO (mxyan): Enable watchos when !ProtoCompiler.podspec is updated for
+    # support of watchos in the next release
+    # s.watchos.deployment_target = '4.0'
+
     # Restrict the gRPC runtime version to the one supported by this plugin.
     s.dependency 'gRPC-ProtoRPC', v
 
