@@ -765,7 +765,7 @@ class PythonLanguage(object):
         elif self.args.compiler == 'python3.4':
             return 'jessie'
         else:
-            return 'stretch_3.7'
+            return 'stretch_default'
 
     def _get_pythons(self, args):
         """Get python runtimes to test with, based on current platform, architecture, compiler etc."""
@@ -850,6 +850,7 @@ class PythonLanguage(object):
             else:
                 return (
                     python27_config,
+                    python36_config,
                     python37_config,
                 )
         elif args.compiler == 'python2.7':
