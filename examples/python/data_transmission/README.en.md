@@ -6,32 +6,32 @@ Four ways of data transmission when gRPC is used in Python.  [Offical Guide](<ht
 
   In a single call, the client can only send request once, and the server can only respond once.
 
-  `client.py - line:14 - simple_method`
+  `client.py : simple_method`
 
-  `server.py - line:17 - SimpleMethod`
+  `server.py : SimpleMethod`
 
 - #### stream-unary
 
   In a single call, the client can transfer data to the server an arbitrary number of times, but the server can only return a response once.
 
-  `clien.py - line:27 - client_streaming_method`
+  `client.py : client_streaming_method`
 
-  `server.py - line:28 - ClientStreamingMethod`
+  `server.py : ClientStreamingMethod`
 
 - #### unary-stream
 
   In a single call, the client can only transmit data to the server at one time, but the server can return the response many times.
 
-  `clien.py - line:48 - server_streaming_method`
+  `client.py : server_streaming_method`
 
-  `server.py - line:41 - ServerStreamingMethod`
+  `server.py : ServerStreamingMethod`
 
 - #### stream-stream
 
   In a single call, both client and server can send and receive data 
   to each other multiple times.
 
-  `client.py - line:63 - bidirectional_streaming_method`
+  `client.py : bidirectional_streaming_method`
 
-  `server.py - line:59 - BidirectionalStreamingMethod`
+  `server.py : BidirectionalStreamingMethod`
 
