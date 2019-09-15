@@ -67,7 +67,7 @@ proto_library(
 
 py_proto_library(
     name = "helloworld_py_pb2",
-    srcs = [":protos/helloworld_proto"],
+    deps = [":protos/helloworld_proto"],
 )
 
 py_grpc_library(
@@ -237,4 +237,9 @@ cc_binary(
         ":route_guide",
         "//:grpc++",
     ],
+)
+
+proto_library(
+    name = "route_guide_proto",
+    srcs = ["protos/route_guide.proto"],
 )

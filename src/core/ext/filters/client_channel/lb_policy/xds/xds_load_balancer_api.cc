@@ -137,6 +137,16 @@ UniquePtr<char> StringCopy(const upb_strview& strview) {
 grpc_error* LocalityParse(
     const envoy_api_v2_endpoint_LocalityLbEndpoints* locality_lb_endpoints,
     XdsLocalityInfo* locality_info) {
+  // Parse LB weight.
+  const google_protobuf_UInt32Value* lb_weight =
+      envoy_api_v2_endpoint_LocalityLbEndpoints_load_balancing_weight(
+          locality_lb_endpoints);
+  // If LB weight is not specified, it means this locality is assigned no load.
+  // TODO(juanlishen): When we support CDS to configure the inter-locality
+  // policy, we should change the LB weight handling.
+  locality_info->lb_weight =
+      lb_weight != nullptr ? google_protobuf_UInt32Value_value(lb_weight) : 0;
+  if (locality_info->lb_weight == 0) return GRPC_ERROR_NONE;
   // Parse locality name.
   const envoy_api_v2_core_Locality* locality =
       envoy_api_v2_endpoint_LocalityLbEndpoints_locality(locality_lb_endpoints);
@@ -154,14 +164,7 @@ grpc_error* LocalityParse(
                                                     &locality_info->serverlist);
     if (error != GRPC_ERROR_NONE) return error;
   }
-  // Parse the lb_weight and priority.
-  const google_protobuf_UInt32Value* lb_weight =
-      envoy_api_v2_endpoint_LocalityLbEndpoints_load_balancing_weight(
-          locality_lb_endpoints);
-  // If LB weight is not specified, the default weight 0 is used, which means
-  // this locality is assigned no load.
-  locality_info->lb_weight =
-      lb_weight != nullptr ? google_protobuf_UInt32Value_value(lb_weight) : 0;
+  // Parse the priority.
   locality_info->priority =
       envoy_api_v2_endpoint_LocalityLbEndpoints_priority(locality_lb_endpoints);
   return GRPC_ERROR_NONE;
@@ -253,6 +256,8 @@ grpc_error* XdsEdsResponseDecodeAndParse(const grpc_slice& encoded_response,
     XdsLocalityInfo locality_info;
     grpc_error* error = LocalityParse(endpoints[i], &locality_info);
     if (error != GRPC_ERROR_NONE) return error;
+    // Filter out locality with weight 0.
+    if (locality_info.lb_weight == 0) continue;
     update->locality_list.push_back(std::move(locality_info));
   }
   // The locality list is sorted here into deterministic order so that it's
@@ -310,7 +315,15 @@ grpc_slice XdsLrsRequestCreateAndEncode(const char* server_name) {
 namespace {
 
 void LocalityStatsPopulate(envoy_api_v2_endpoint_UpstreamLocalityStats* output,
+#if GRPC_USE_CPP_STD_LIB
+                           // TODO(veblush): Clean up this
+                           // This is to address the difference between
+                           // std::map and Map. #else block will be gone
+                           // once using stdlib is enabled by default.
+                           Pair<const RefCountedPtr<XdsLocalityName>,
+#else
                            Pair<RefCountedPtr<XdsLocalityName>,
+#endif
                                 XdsClientStats::LocalityStats::Snapshot>& input,
                            upb_arena* arena) {
   // Set sub_zone.

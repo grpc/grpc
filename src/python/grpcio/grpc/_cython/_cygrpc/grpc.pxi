@@ -41,6 +41,11 @@ cdef extern from "grpc/byte_buffer_reader.h":
     pass
 
 
+cdef extern from "grpc/impl/codegen/grpc_types.h":
+    ctypedef struct grpc_experimental_completion_queue_functor:
+        void (*functor_run)(grpc_experimental_completion_queue_functor*, int);
+
+
 cdef extern from "grpc/grpc.h":
 
   ctypedef struct grpc_slice:
@@ -325,6 +330,7 @@ cdef extern from "grpc/grpc.h":
   ctypedef struct grpc_op:
     grpc_op_type type "op"
     uint32_t flags
+    void * reserved
     grpc_op_data data
 
   void grpc_init() nogil
@@ -349,6 +355,10 @@ cdef extern from "grpc/grpc.h":
                                          void *reserved) nogil
   void grpc_completion_queue_shutdown(grpc_completion_queue *cq) nogil
   void grpc_completion_queue_destroy(grpc_completion_queue *cq) nogil
+
+  grpc_completion_queue *grpc_completion_queue_create_for_callback(
+    grpc_experimental_completion_queue_functor* shutdown_callback,
+    void *reserved) nogil
 
   grpc_call_error grpc_call_start_batch(
       grpc_call *call, const grpc_op *ops, size_t nops, void *tag,
@@ -584,6 +594,12 @@ cdef extern from "grpc/grpc_security.h":
 
   void grpc_auth_context_release(grpc_auth_context *context)
 
+  grpc_channel_credentials *grpc_local_credentials_create(
+    grpc_local_connect_type type)
+  grpc_server_credentials *grpc_local_server_credentials_create(
+    grpc_local_connect_type type)
+
+
 cdef extern from "grpc/compression.h":
 
   ctypedef enum grpc_compression_algorithm:
@@ -624,3 +640,9 @@ cdef extern from "grpc/impl/codegen/compression_types.h":
 
   const char *_GRPC_COMPRESSION_REQUEST_ALGORITHM_MD_KEY \
     "GRPC_COMPRESSION_REQUEST_ALGORITHM_MD_KEY"
+
+
+cdef extern from "grpc/grpc_security_constants.h":
+  ctypedef enum grpc_local_connect_type:
+    UDS
+    LOCAL_TCP

@@ -12,13 +12,12 @@
     PHP_ADD_INCLUDE(PHP_EXT_SRCDIR()/src/php/ext/grpc)
     PHP_ADD_INCLUDE(PHP_EXT_SRCDIR()/third_party/address_sorting/include)
     PHP_ADD_INCLUDE(PHP_EXT_SRCDIR()/third_party/boringssl/include)
-    PHP_ADD_INCLUDE(PHP_EXT_SRCDIR()/third_party/nanopb)
     PHP_ADD_INCLUDE(PHP_EXT_SRCDIR()/third_party/upb)
 
     LIBS="-lpthread $LIBS"
 
-    CFLAGS="-Wall -Werror -Wno-parentheses-equality -Wno-unused-value -std=c11 -g -O2 -D PB_FIELD_32BIT=1"
-    CXXFLAGS="-std=c++11 -fno-exceptions -fno-rtti -g -O2 -D PB_FIELD_32BIT=1"
+    CFLAGS="-Wall -Werror -Wno-parentheses-equality -Wno-unused-value -std=c11 -g -O2"
+    CXXFLAGS="-std=c++11 -fno-exceptions -fno-rtti -g -O2"
     GRPC_SHARED_LIBADD="-lpthread $GRPC_SHARED_LIBADD"
     PHP_REQUIRE_CXX()
     PHP_ADD_LIBRARY(pthread)
@@ -27,12 +26,16 @@
 
     case $host in
       *darwin*)
+        PHP_ADD_LIBRARY(c++,1,GRPC_SHARED_LIBADD)
         ;;
       *)
+        PHP_ADD_LIBRARY(stdc++,1,GRPC_SHARED_LIBADD)
         PHP_ADD_LIBRARY(rt,,GRPC_SHARED_LIBADD)
         PHP_ADD_LIBRARY(rt)
         ;;
     esac
+
+    PHP_SUBST(GRPC_SHARED_LIBADD)
 
     PHP_NEW_EXTENSION(grpc,
       % for source in php_config_m4.src:

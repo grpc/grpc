@@ -34,7 +34,7 @@ namespace testing {
 
 static void BM_CreateDestroyCpp(benchmark::State& state) {
   TrackCounters track_counters;
-  while (state.KeepRunning()) {
+  for (auto _ : state) {
     CompletionQueue cq;
   }
   track_counters.Finish(state);
@@ -44,7 +44,7 @@ BENCHMARK(BM_CreateDestroyCpp);
 /* Create cq using a different constructor */
 static void BM_CreateDestroyCpp2(benchmark::State& state) {
   TrackCounters track_counters;
-  while (state.KeepRunning()) {
+  for (auto _ : state) {
     grpc_completion_queue* core_cq =
         grpc_completion_queue_create_for_next(nullptr);
     CompletionQueue cq(core_cq);
@@ -55,7 +55,7 @@ BENCHMARK(BM_CreateDestroyCpp2);
 
 static void BM_CreateDestroyCore(benchmark::State& state) {
   TrackCounters track_counters;
-  while (state.KeepRunning()) {
+  for (auto _ : state) {
     // TODO: sreek Templatize this benchmark and pass completion type and
     // polling type as parameters
     grpc_completion_queue_destroy(
@@ -77,7 +77,7 @@ static void BM_Pass1Cpp(benchmark::State& state) {
   TrackCounters track_counters;
   CompletionQueue cq;
   grpc_completion_queue* c_cq = cq.cq();
-  while (state.KeepRunning()) {
+  for (auto _ : state) {
     grpc_cq_completion completion;
     DummyTag dummy_tag;
     grpc_core::ExecCtx exec_ctx;
@@ -98,7 +98,7 @@ static void BM_Pass1Core(benchmark::State& state) {
   // TODO: sreek Templatize this benchmark and pass polling_type as a param
   grpc_completion_queue* cq = grpc_completion_queue_create_for_next(nullptr);
   gpr_timespec deadline = gpr_inf_future(GPR_CLOCK_MONOTONIC);
-  while (state.KeepRunning()) {
+  for (auto _ : state) {
     grpc_cq_completion completion;
     grpc_core::ExecCtx exec_ctx;
     GPR_ASSERT(grpc_cq_begin_op(cq, nullptr));
@@ -117,7 +117,7 @@ static void BM_Pluck1Core(benchmark::State& state) {
   // TODO: sreek Templatize this benchmark and pass polling_type as a param
   grpc_completion_queue* cq = grpc_completion_queue_create_for_pluck(nullptr);
   gpr_timespec deadline = gpr_inf_future(GPR_CLOCK_MONOTONIC);
-  while (state.KeepRunning()) {
+  for (auto _ : state) {
     grpc_cq_completion completion;
     grpc_core::ExecCtx exec_ctx;
     GPR_ASSERT(grpc_cq_begin_op(cq, nullptr));
@@ -136,7 +136,7 @@ static void BM_EmptyCore(benchmark::State& state) {
   // TODO: sreek Templatize this benchmark and pass polling_type as a param
   grpc_completion_queue* cq = grpc_completion_queue_create_for_next(nullptr);
   gpr_timespec deadline = gpr_inf_past(GPR_CLOCK_MONOTONIC);
-  while (state.KeepRunning()) {
+  for (auto _ : state) {
     grpc_completion_queue_next(cq, deadline, nullptr);
   }
   grpc_completion_queue_destroy(cq);
@@ -202,7 +202,7 @@ static void BM_Callback_CQ_Pass1Core(benchmark::State& state) {
   ShutdownCallback shutdown_cb(&got_shutdown);
   grpc_completion_queue* cc =
       grpc_completion_queue_create_for_callback(&shutdown_cb, nullptr);
-  while (state.KeepRunning()) {
+  for (auto _ : state) {
     grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
     grpc_core::ExecCtx exec_ctx;
     grpc_cq_completion completion;

@@ -50,7 +50,6 @@ grpc_proto_library(
 grpc_proto_library(
     name = "echo_messages_proto",
     srcs = ["echo_messages.proto"],
-    has_services = False,
 )
 
 grpc_proto_library(
@@ -76,7 +75,7 @@ proto_library(
 
 py_proto_library(
     name = "empty_py_pb2",
-    srcs = [":empty_proto_descriptor"],
+    deps = [":empty_proto_descriptor"],
 )
 
 py_grpc_library(
@@ -98,7 +97,7 @@ proto_library(
 
 py_proto_library(
     name = "py_messages_proto",
-    srcs = [":messages_proto_descriptor"],
+    deps = [":messages_proto_descriptor"],
 )
 
 py_grpc_library(
@@ -145,7 +144,6 @@ grpc_proto_library(
 grpc_proto_library(
     name = "simple_messages_proto",
     srcs = ["simple_messages.proto"],
-    has_services = False,
 )
 
 grpc_proto_library(
@@ -208,7 +206,7 @@ proto_library(
 
 py_proto_library(
     name = "py_test_proto",
-    srcs = [":test_proto_descriptor"],
+    deps = [":test_proto_descriptor"],
 )
 
 py_grpc_library(

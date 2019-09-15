@@ -28,6 +28,12 @@
  */
 @interface InteropTests : XCTestCase
 /**
+ * The test suite to run, checking if the current XCTestCase instance is the base class.
+ * If so, run no tests (disabled). Otherwise, proceed to normal execution.
+ */
+@property(class, readonly) XCTestSuite *defaultTestSuite;
+
+/**
  * Host to send the RPCs to. The base implementation returns nil, which would make all tests to
  * fail.
  * Override in a subclass to perform these tests against a specific address.
@@ -42,10 +48,18 @@
 - (int32_t)encodingOverhead;
 
 /**
+ * DEPRECATED: \a transportType is a deprecated option. Please use \a transport instead.
+ *
  * The type of transport to be used. The base implementation returns default. Subclasses should
  * override to appropriate settings.
  */
 + (GRPCTransportType)transportType;
+
+/*
+ * The transport to be used. The base implementation returns NULL. Subclasses should override to
+ * appropriate settings.
+ */
++ (GRPCTransportID)transport;
 
 /**
  * The root certificates to be used. The base implementation returns nil. Subclasses should override
@@ -58,10 +72,5 @@
  * to appropriate settings.
  */
 + (NSString *)hostNameOverride;
-
-/**
- * Whether to use Cronet for all the v1 API tests in the test suite.
- */
-+ (BOOL)useCronet;
 
 @end

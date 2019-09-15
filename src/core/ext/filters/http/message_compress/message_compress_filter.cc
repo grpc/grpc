@@ -137,9 +137,8 @@ static grpc_compression_algorithm find_compression_algorithm(
                                               &compression_algorithm));
   // Remove this metadata since it's an internal one (i.e., it won't be
   // transmitted out).
-  grpc_metadata_batch_remove(
-      initial_metadata,
-      initial_metadata->idx.named.grpc_internal_encoding_request);
+  grpc_metadata_batch_remove(initial_metadata,
+                             GRPC_BATCH_GRPC_INTERNAL_ENCODING_REQUEST);
   // Check if that algorithm is enabled. Note that GRPC_COMPRESS_NONE is always
   // enabled.
   // TODO(juanlishen): Maybe use channel default or abort() if the algorithm
@@ -195,19 +194,22 @@ static grpc_error* process_send_initial_metadata(
     error = grpc_metadata_batch_add_tail(
         initial_metadata, &calld->message_compression_algorithm_storage,
         grpc_message_compression_encoding_mdelem(
-            calld->message_compression_algorithm));
+            calld->message_compression_algorithm),
+        GRPC_BATCH_GRPC_ENCODING);
   } else if (stream_compression_algorithm != GRPC_STREAM_COMPRESS_NONE) {
     initialize_state(elem, calld);
     error = grpc_metadata_batch_add_tail(
         initial_metadata, &calld->stream_compression_algorithm_storage,
-        grpc_stream_compression_encoding_mdelem(stream_compression_algorithm));
+        grpc_stream_compression_encoding_mdelem(stream_compression_algorithm),
+        GRPC_BATCH_CONTENT_ENCODING);
   }
   if (error != GRPC_ERROR_NONE) return error;
   // Convey supported compression algorithms.
   error = grpc_metadata_batch_add_tail(
       initial_metadata, &calld->accept_encoding_storage,
       GRPC_MDELEM_ACCEPT_ENCODING_FOR_ALGORITHMS(
-          channeld->enabled_message_compression_algorithms_bitset));
+          channeld->enabled_message_compression_algorithms_bitset),
+      GRPC_BATCH_GRPC_ACCEPT_ENCODING);
   if (error != GRPC_ERROR_NONE) return error;
   // Do not overwrite accept-encoding header if it already presents (e.g., added
   // by some proxy).
@@ -215,7 +217,8 @@ static grpc_error* process_send_initial_metadata(
     error = grpc_metadata_batch_add_tail(
         initial_metadata, &calld->accept_stream_encoding_storage,
         GRPC_MDELEM_ACCEPT_STREAM_ENCODING_FOR_ALGORITHMS(
-            channeld->enabled_stream_compression_algorithms_bitset));
+            channeld->enabled_stream_compression_algorithms_bitset),
+        GRPC_BATCH_ACCEPT_ENCODING);
   }
   return error;
 }
@@ -438,23 +441,23 @@ static void compress_start_transport_stream_op_batch(
 }
 
 /* Constructor for call_data */
-static grpc_error* init_call_elem(grpc_call_element* elem,
-                                  const grpc_call_element_args* args) {
+static grpc_error* compress_init_call_elem(grpc_call_element* elem,
+                                           const grpc_call_element_args* args) {
   new (elem->call_data) call_data(elem, *args);
   return GRPC_ERROR_NONE;
 }
 
 /* Destructor for call_data */
-static void destroy_call_elem(grpc_call_element* elem,
-                              const grpc_call_final_info* final_info,
-                              grpc_closure* ignored) {
+static void compress_destroy_call_elem(grpc_call_element* elem,
+                                       const grpc_call_final_info* final_info,
+                                       grpc_closure* ignored) {
   call_data* calld = static_cast<call_data*>(elem->call_data);
   calld->~call_data();
 }
 
 /* Constructor for channel_data */
-static grpc_error* init_channel_elem(grpc_channel_element* elem,
-                                     grpc_channel_element_args* args) {
+static grpc_error* compress_init_channel_elem(grpc_channel_element* elem,
+                                              grpc_channel_element_args* args) {
   channel_data* channeld = static_cast<channel_data*>(elem->channel_data);
   // Get the enabled and the default algorithms from channel args.
   channeld->enabled_compression_algorithms_bitset =
@@ -484,17 +487,17 @@ static grpc_error* init_channel_elem(grpc_channel_element* elem,
 }
 
 /* Destructor for channel data */
-static void destroy_channel_elem(grpc_channel_element* elem) {}
+static void compress_destroy_channel_elem(grpc_channel_element* elem) {}
 
 const grpc_channel_filter grpc_message_compress_filter = {
     compress_start_transport_stream_op_batch,
     grpc_channel_next_op,
     sizeof(call_data),
-    init_call_elem,
+    compress_init_call_elem,
     grpc_call_stack_ignore_set_pollset_or_pollset_set,
-    destroy_call_elem,
+    compress_destroy_call_elem,
     sizeof(channel_data),
-    init_channel_elem,
-    destroy_channel_elem,
+    compress_init_channel_elem,
+    compress_destroy_channel_elem,
     grpc_channel_next_get_info,
     "message_compress"};

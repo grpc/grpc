@@ -48,7 +48,7 @@ struct channel_data {
   grpc_mdelem default_authority_mdelem;
 };
 
-void authority_start_transport_stream_op_batch(
+void client_authority_start_transport_stream_op_batch(
     grpc_call_element* elem, grpc_transport_stream_op_batch* batch) {
   channel_data* chand = static_cast<channel_data*>(elem->channel_data);
   call_data* calld = static_cast<call_data*>(elem->call_data);
@@ -60,7 +60,7 @@ void authority_start_transport_stream_op_batch(
       initial_metadata->idx.named.authority == nullptr) {
     grpc_error* error = grpc_metadata_batch_add_head(
         initial_metadata, &calld->authority_storage,
-        GRPC_MDELEM_REF(chand->default_authority_mdelem));
+        GRPC_MDELEM_REF(chand->default_authority_mdelem), GRPC_BATCH_AUTHORITY);
     if (error != GRPC_ERROR_NONE) {
       grpc_transport_stream_op_batch_finish_with_failure(batch, error,
                                                          calld->call_combiner);
@@ -72,21 +72,21 @@ void authority_start_transport_stream_op_batch(
 }
 
 /* Constructor for call_data */
-grpc_error* init_call_elem(grpc_call_element* elem,
-                           const grpc_call_element_args* args) {
+grpc_error* client_authority_init_call_elem(
+    grpc_call_element* elem, const grpc_call_element_args* args) {
   call_data* calld = static_cast<call_data*>(elem->call_data);
   calld->call_combiner = args->call_combiner;
   return GRPC_ERROR_NONE;
 }
 
 /* Destructor for call_data */
-void destroy_call_elem(grpc_call_element* elem,
-                       const grpc_call_final_info* final_info,
-                       grpc_closure* ignored) {}
+void client_authority_destroy_call_elem(grpc_call_element* elem,
+                                        const grpc_call_final_info* final_info,
+                                        grpc_closure* ignored) {}
 
 /* Constructor for channel_data */
-grpc_error* init_channel_elem(grpc_channel_element* elem,
-                              grpc_channel_element_args* args) {
+grpc_error* client_authority_init_channel_elem(
+    grpc_channel_element* elem, grpc_channel_element_args* args) {
   channel_data* chand = static_cast<channel_data*>(elem->channel_data);
   const grpc_arg* default_authority_arg =
       grpc_channel_args_find(args->channel_args, GRPC_ARG_DEFAULT_AUTHORITY);
@@ -110,7 +110,7 @@ grpc_error* init_channel_elem(grpc_channel_element* elem,
 }
 
 /* Destructor for channel data */
-void destroy_channel_elem(grpc_channel_element* elem) {
+void client_authority_destroy_channel_elem(grpc_channel_element* elem) {
   channel_data* chand = static_cast<channel_data*>(elem->channel_data);
   grpc_slice_unref_internal(chand->default_authority);
   GRPC_MDELEM_UNREF(chand->default_authority_mdelem);
@@ -118,15 +118,15 @@ void destroy_channel_elem(grpc_channel_element* elem) {
 }  // namespace
 
 const grpc_channel_filter grpc_client_authority_filter = {
-    authority_start_transport_stream_op_batch,
+    client_authority_start_transport_stream_op_batch,
     grpc_channel_next_op,
     sizeof(call_data),
-    init_call_elem,
+    client_authority_init_call_elem,
     grpc_call_stack_ignore_set_pollset_or_pollset_set,
-    destroy_call_elem,
+    client_authority_destroy_call_elem,
     sizeof(channel_data),
-    init_channel_elem,
-    destroy_channel_elem,
+    client_authority_init_channel_elem,
+    client_authority_destroy_channel_elem,
     grpc_channel_next_get_info,
     "authority"};
 

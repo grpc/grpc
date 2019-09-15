@@ -13,8 +13,8 @@
  <date>2018-01-19</date>
  <time>16:06:07</time>
  <version>
-  <release>1.24.0dev</release>
-  <api>1.24.0dev</api>
+  <release>1.25.0dev</release>
+  <api>1.25.0dev</api>
  </version>
  <stability>
   <release>beta</release>
@@ -245,6 +245,7 @@
     <file baseinstalldir="/" name="src/core/lib/security/security_connector/security_connector.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/security/security_connector/ssl/ssl_security_connector.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/security/security_connector/ssl_utils.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/security/security_connector/ssl_utils_config.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/security/security_connector/tls/spiffe_security_connector.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/security/transport/auth_filters.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/security/transport/secure_endpoint.h" role="src" />
@@ -287,6 +288,7 @@
     <file baseinstalldir="/" name="src/core/tsi/transport_security_interface.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/client/authority.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/client/chttp2_connector.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/filters/client_channel/backend_metric.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/backup_poller.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/client_channel.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/client_channel_channelz.h" role="src" />
@@ -316,6 +318,19 @@
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/subchannel_pool_interface.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/deadline/deadline_filter.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upb-generated/src/proto/grpc/health/v1/health.upb.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upb-generated/udpa/data/orca/v1/orca_load_report.upb.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upb-generated/gogoproto/gogo.upb.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upb-generated/validate/validate.upb.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upb-generated/google/api/annotations.upb.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upb-generated/google/api/http.upb.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upb-generated/google/protobuf/any.upb.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upb-generated/google/protobuf/descriptor.upb.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upb-generated/google/protobuf/duration.upb.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upb-generated/google/protobuf/empty.upb.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upb-generated/google/protobuf/struct.upb.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upb-generated/google/protobuf/timestamp.upb.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upb-generated/google/protobuf/wrappers.upb.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upb-generated/google/rpc/status.upb.h" role="src" />
     <file baseinstalldir="/" name="src/core/tsi/fake_transport_security.h" role="src" />
     <file baseinstalldir="/" name="src/core/tsi/local_transport_security.h" role="src" />
     <file baseinstalldir="/" name="src/core/tsi/ssl/session_cache/ssl_session.h" role="src" />
@@ -475,16 +490,6 @@
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_client_stats.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/lb_policy/grpclb/load_balancer_api.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upb-generated/src/proto/grpc/lb/v1/load_balancer.upb.h" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/upb-generated/google/api/annotations.upb.h" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/upb-generated/google/api/http.upb.h" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/upb-generated/google/protobuf/any.upb.h" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/upb-generated/google/protobuf/descriptor.upb.h" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/upb-generated/google/protobuf/duration.upb.h" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/upb-generated/google/protobuf/empty.upb.h" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/upb-generated/google/protobuf/struct.upb.h" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/upb-generated/google/protobuf/timestamp.upb.h" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/upb-generated/google/protobuf/wrappers.upb.h" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/upb-generated/google/rpc/status.upb.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/resolver/fake/fake_resolver.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/lb_policy/xds/xds_channel.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/lb_policy/xds/xds_client_stats.h" role="src" />
@@ -492,6 +497,7 @@
     <file baseinstalldir="/" name="src/core/ext/upb-generated/envoy/api/v2/auth/cert.upb.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upb-generated/envoy/api/v2/cds.upb.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upb-generated/envoy/api/v2/cluster/circuit_breaker.upb.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upb-generated/envoy/api/v2/cluster/filter.upb.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upb-generated/envoy/api/v2/cluster/outlier_detection.upb.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upb-generated/envoy/api/v2/discovery.upb.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upb-generated/envoy/api/v2/eds.upb.h" role="src" />
@@ -504,11 +510,10 @@
     <file baseinstalldir="/" name="src/core/ext/upb-generated/envoy/api/v2/core/config_source.upb.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upb-generated/envoy/api/v2/core/grpc_service.upb.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upb-generated/envoy/api/v2/core/health_check.upb.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upb-generated/envoy/api/v2/core/http_uri.upb.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upb-generated/envoy/api/v2/core/protocol.upb.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upb-generated/envoy/type/percent.upb.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upb-generated/envoy/type/range.upb.h" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/upb-generated/gogoproto/gogo.upb.h" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/upb-generated/validate/validate.upb.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/lb_policy/subchannel_list.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper.h" role="src" />
@@ -733,6 +738,7 @@
     <file baseinstalldir="/" name="src/core/lib/security/security_connector/security_connector.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/security/security_connector/ssl/ssl_security_connector.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/security/security_connector/ssl_utils.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/security/security_connector/ssl_utils_config.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/security/security_connector/tls/spiffe_security_connector.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/security/transport/client_auth_filter.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/security/transport/secure_endpoint.cc" role="src" />
@@ -782,6 +788,7 @@
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/client/insecure/channel_create_posix.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/client/authority.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/client/chttp2_connector.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/filters/client_channel/backend_metric.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/backup_poller.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/channel_connectivity.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/client_channel.cc" role="src" />
@@ -810,6 +817,19 @@
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/subchannel_pool_interface.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/deadline/deadline_filter.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upb-generated/src/proto/grpc/health/v1/health.upb.c" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upb-generated/udpa/data/orca/v1/orca_load_report.upb.c" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upb-generated/gogoproto/gogo.upb.c" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upb-generated/validate/validate.upb.c" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upb-generated/google/api/annotations.upb.c" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upb-generated/google/api/http.upb.c" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upb-generated/google/protobuf/any.upb.c" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upb-generated/google/protobuf/descriptor.upb.c" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upb-generated/google/protobuf/duration.upb.c" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upb-generated/google/protobuf/empty.upb.c" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upb-generated/google/protobuf/struct.upb.c" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upb-generated/google/protobuf/timestamp.upb.c" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upb-generated/google/protobuf/wrappers.upb.c" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upb-generated/google/rpc/status.upb.c" role="src" />
     <file baseinstalldir="/" name="src/core/tsi/fake_transport_security.cc" role="src" />
     <file baseinstalldir="/" name="src/core/tsi/local_transport_security.cc" role="src" />
     <file baseinstalldir="/" name="src/core/tsi/ssl/session_cache/ssl_session_boringssl.cc" role="src" />
@@ -829,16 +849,6 @@
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_client_stats.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/lb_policy/grpclb/load_balancer_api.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upb-generated/src/proto/grpc/lb/v1/load_balancer.upb.c" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/upb-generated/google/api/annotations.upb.c" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/upb-generated/google/api/http.upb.c" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/upb-generated/google/protobuf/any.upb.c" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/upb-generated/google/protobuf/descriptor.upb.c" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/upb-generated/google/protobuf/duration.upb.c" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/upb-generated/google/protobuf/empty.upb.c" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/upb-generated/google/protobuf/struct.upb.c" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/upb-generated/google/protobuf/timestamp.upb.c" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/upb-generated/google/protobuf/wrappers.upb.c" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/upb-generated/google/rpc/status.upb.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/resolver/fake/fake_resolver.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/lb_policy/xds/xds.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/lb_policy/xds/xds_channel_secure.cc" role="src" />
@@ -847,6 +857,7 @@
     <file baseinstalldir="/" name="src/core/ext/upb-generated/envoy/api/v2/auth/cert.upb.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upb-generated/envoy/api/v2/cds.upb.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upb-generated/envoy/api/v2/cluster/circuit_breaker.upb.c" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upb-generated/envoy/api/v2/cluster/filter.upb.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upb-generated/envoy/api/v2/cluster/outlier_detection.upb.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upb-generated/envoy/api/v2/discovery.upb.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upb-generated/envoy/api/v2/eds.upb.c" role="src" />
@@ -859,11 +870,10 @@
     <file baseinstalldir="/" name="src/core/ext/upb-generated/envoy/api/v2/core/config_source.upb.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upb-generated/envoy/api/v2/core/grpc_service.upb.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upb-generated/envoy/api/v2/core/health_check.upb.c" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/upb-generated/envoy/api/v2/core/http_uri.upb.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upb-generated/envoy/api/v2/core/protocol.upb.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upb-generated/envoy/type/percent.upb.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upb-generated/envoy/type/range.upb.c" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/upb-generated/gogoproto/gogo.upb.c" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/upb-generated/validate/validate.upb.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/lb_policy/pick_first/pick_first.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/lb_policy/round_robin/round_robin.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/resolver/dns/c_ares/dns_resolver_ares.cc" role="src" />
@@ -879,6 +889,7 @@
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/resolver/dns/dns_resolver_selection.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/resolver/dns/native/dns_resolver.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/resolver/sockaddr/sockaddr_resolver.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/filters/client_channel/resolver/xds/xds_resolver.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/census/grpc_context.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_idle/client_idle_filter.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/max_age/max_age_filter.cc" role="src" />

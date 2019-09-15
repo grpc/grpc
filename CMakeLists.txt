@@ -24,7 +24,7 @@
 cmake_minimum_required(VERSION 3.5.1)
 
 set(PACKAGE_NAME      "grpc")
-set(PACKAGE_VERSION   "1.24.0-dev")
+set(PACKAGE_VERSION   "1.25.0-dev")
 set(PACKAGE_STRING    "${PACKAGE_NAME} ${PACKAGE_VERSION}")
 set(PACKAGE_TARNAME   "${PACKAGE_NAME}-${PACKAGE_VERSION}")
 set(PACKAGE_BUGREPORT "https://github.com/grpc/grpc/issues/")
@@ -96,8 +96,6 @@ endif()
 
 set(CMAKE_POSITION_INDEPENDENT_CODE TRUE)
 
-add_definitions(-DPB_FIELD_32BIT)
-
 if (MSVC)
   include(cmake/msvc_static_runtime.cmake)
   add_definitions(-D_WIN32_WINNT=0x600 -D_SCL_SECURE_NO_WARNINGS -D_CRT_SECURE_NO_WARNINGS -D_WINSOCK_DEPRECATED_NO_WARNINGS)
@@ -127,11 +125,6 @@ if(gRPC_BACKWARDS_COMPATIBILITY_MODE)
 endif()
 
 if (_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_IOS)
-  # C core has C++ source code, but should not depend on libstc++ (for better portability).
-  # We need to use a few tricks to convince cmake to do that.
-  # https://stackoverflow.com/questions/15058403/how-to-stop-cmake-from-linking-against-libstdc
-  set(CMAKE_CXX_IMPLICIT_LINK_LIBRARIES "")
-  # Exceptions and RTTI must be off to avoid dependency on libstdc++
   set(_gRPC_CORE_NOSTDCXX_FLAGS -fno-exceptions -fno-rtti)
 else()
   set(_gRPC_CORE_NOSTDCXX_FLAGS "")
@@ -141,7 +134,6 @@ include(cmake/address_sorting.cmake)
 include(cmake/benchmark.cmake)
 include(cmake/cares.cmake)
 include(cmake/gflags.cmake)
-include(cmake/nanopb.cmake)
 include(cmake/protobuf.cmake)
 include(cmake/ssl.cmake)
 include(cmake/upb.cmake)
@@ -238,13 +230,13 @@ add_custom_target(tools_c
   grpc_create_jwt
   grpc_print_google_default_creds_token
   grpc_verify_jwt
-  gen_hpack_tables
-  gen_legal_metadata_characters
-  gen_percent_encoding_tables
 )
 
 add_custom_target(tools_cxx
   DEPENDS
+  gen_hpack_tables
+  gen_legal_metadata_characters
+  gen_percent_encoding_tables
 )
 
 add_custom_target(tools
@@ -731,6 +723,7 @@ add_dependencies(buildtests_cxx thread_stress_test)
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 add_dependencies(buildtests_cxx time_change_test)
 endif()
+add_dependencies(buildtests_cxx timer_test)
 add_dependencies(buildtests_cxx transport_pid_controller_test)
 add_dependencies(buildtests_cxx transport_security_common_api_test)
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
@@ -792,7 +785,6 @@ target_include_directories(address_sorting
   PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
   PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
   PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
   PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
   PRIVATE ${_gRPC_UPB_GENERATED_DIR}
@@ -800,12 +792,6 @@ target_include_directories(address_sorting
   PRIVATE ${_gRPC_UPB_INCLUDE_DIR}
   PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
 )
-  # avoid dependency on libstdc++
-  if (_gRPC_CORE_NOSTDCXX_FLAGS)
-    set_target_properties(address_sorting PROPERTIES LINKER_LANGUAGE C)
-    # only use the flags for C++ source files
-    target_compile_options(address_sorting PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
-  endif()
 target_link_libraries(address_sorting
   ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
@@ -847,7 +833,6 @@ target_include_directories(alts_test_util
   PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
   PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
   PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
   PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
   PRIVATE ${_gRPC_UPB_GENERATED_DIR}
@@ -855,12 +840,6 @@ target_include_directories(alts_test_util
   PRIVATE ${_gRPC_UPB_INCLUDE_DIR}
   PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
 )
-  # avoid dependency on libstdc++
-  if (_gRPC_CORE_NOSTDCXX_FLAGS)
-    set_target_properties(alts_test_util PROPERTIES LINKER_LANGUAGE C)
-    # only use the flags for C++ source files
-    target_compile_options(alts_test_util PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
-  endif()
 target_link_libraries(alts_test_util
   ${_gRPC_SSL_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
@@ -932,7 +911,6 @@ target_include_directories(gpr
   PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
   PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
   PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
   PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
   PRIVATE ${_gRPC_UPB_GENERATED_DIR}
@@ -940,12 +918,6 @@ target_include_directories(gpr
   PRIVATE ${_gRPC_UPB_INCLUDE_DIR}
   PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
 )
-  # avoid dependency on libstdc++
-  if (_gRPC_CORE_NOSTDCXX_FLAGS)
-    set_target_properties(gpr PROPERTIES LINKER_LANGUAGE C)
-    # only use the flags for C++ source files
-    target_compile_options(gpr PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
-  endif()
 target_link_libraries(gpr
   ${_gRPC_ALLTARGETS_LIBRARIES}
 )
@@ -1222,6 +1194,7 @@ add_library(grpc
   src/core/lib/security/security_connector/security_connector.cc
   src/core/lib/security/security_connector/ssl/ssl_security_connector.cc
   src/core/lib/security/security_connector/ssl_utils.cc
+  src/core/lib/security/security_connector/ssl_utils_config.cc
   src/core/lib/security/security_connector/tls/spiffe_security_connector.cc
   src/core/lib/security/transport/client_auth_filter.cc
   src/core/lib/security/transport/secure_endpoint.cc
@@ -1271,6 +1244,7 @@ add_library(grpc
   src/core/ext/transport/chttp2/client/insecure/channel_create_posix.cc
   src/core/ext/transport/chttp2/client/authority.cc
   src/core/ext/transport/chttp2/client/chttp2_connector.cc
+  src/core/ext/filters/client_channel/backend_metric.cc
   src/core/ext/filters/client_channel/backup_poller.cc
   src/core/ext/filters/client_channel/channel_connectivity.cc
   src/core/ext/filters/client_channel/client_channel.cc
@@ -1299,6 +1273,19 @@ add_library(grpc
   src/core/ext/filters/client_channel/subchannel_pool_interface.cc
   src/core/ext/filters/deadline/deadline_filter.cc
   src/core/ext/upb-generated/src/proto/grpc/health/v1/health.upb.c
+  src/core/ext/upb-generated/udpa/data/orca/v1/orca_load_report.upb.c
+  src/core/ext/upb-generated/gogoproto/gogo.upb.c
+  src/core/ext/upb-generated/validate/validate.upb.c
+  src/core/ext/upb-generated/google/api/annotations.upb.c
+  src/core/ext/upb-generated/google/api/http.upb.c
+  src/core/ext/upb-generated/google/protobuf/any.upb.c
+  src/core/ext/upb-generated/google/protobuf/descriptor.upb.c
+  src/core/ext/upb-generated/google/protobuf/duration.upb.c
+  src/core/ext/upb-generated/google/protobuf/empty.upb.c
+  src/core/ext/upb-generated/google/protobuf/struct.upb.c
+  src/core/ext/upb-generated/google/protobuf/timestamp.upb.c
+  src/core/ext/upb-generated/google/protobuf/wrappers.upb.c
+  src/core/ext/upb-generated/google/rpc/status.upb.c
   src/core/tsi/fake_transport_security.cc
   src/core/tsi/local_transport_security.cc
   src/core/tsi/ssl/session_cache/ssl_session_boringssl.cc
@@ -1318,16 +1305,6 @@ add_library(grpc
   src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_client_stats.cc
   src/core/ext/filters/client_channel/lb_policy/grpclb/load_balancer_api.cc
   src/core/ext/upb-generated/src/proto/grpc/lb/v1/load_balancer.upb.c
-  src/core/ext/upb-generated/google/api/annotations.upb.c
-  src/core/ext/upb-generated/google/api/http.upb.c
-  src/core/ext/upb-generated/google/protobuf/any.upb.c
-  src/core/ext/upb-generated/google/protobuf/descriptor.upb.c
-  src/core/ext/upb-generated/google/protobuf/duration.upb.c
-  src/core/ext/upb-generated/google/protobuf/empty.upb.c
-  src/core/ext/upb-generated/google/protobuf/struct.upb.c
-  src/core/ext/upb-generated/google/protobuf/timestamp.upb.c
-  src/core/ext/upb-generated/google/protobuf/wrappers.upb.c
-  src/core/ext/upb-generated/google/rpc/status.upb.c
   src/core/ext/filters/client_channel/resolver/fake/fake_resolver.cc
   src/core/ext/filters/client_channel/lb_policy/xds/xds.cc
   src/core/ext/filters/client_channel/lb_policy/xds/xds_channel_secure.cc
@@ -1336,6 +1313,7 @@ add_library(grpc
   src/core/ext/upb-generated/envoy/api/v2/auth/cert.upb.c
   src/core/ext/upb-generated/envoy/api/v2/cds.upb.c
   src/core/ext/upb-generated/envoy/api/v2/cluster/circuit_breaker.upb.c
+  src/core/ext/upb-generated/envoy/api/v2/cluster/filter.upb.c
   src/core/ext/upb-generated/envoy/api/v2/cluster/outlier_detection.upb.c
   src/core/ext/upb-generated/envoy/api/v2/discovery.upb.c
   src/core/ext/upb-generated/envoy/api/v2/eds.upb.c
@@ -1348,11 +1326,10 @@ add_library(grpc
   src/core/ext/upb-generated/envoy/api/v2/core/config_source.upb.c
   src/core/ext/upb-generated/envoy/api/v2/core/grpc_service.upb.c
   src/core/ext/upb-generated/envoy/api/v2/core/health_check.upb.c
+  src/core/ext/upb-generated/envoy/api/v2/core/http_uri.upb.c
   src/core/ext/upb-generated/envoy/api/v2/core/protocol.upb.c
   src/core/ext/upb-generated/envoy/type/percent.upb.c
   src/core/ext/upb-generated/envoy/type/range.upb.c
-  src/core/ext/upb-generated/gogoproto/gogo.upb.c
-  src/core/ext/upb-generated/validate/validate.upb.c
   src/core/ext/filters/client_channel/lb_policy/pick_first/pick_first.cc
   src/core/ext/filters/client_channel/lb_policy/round_robin/round_robin.cc
   src/core/ext/filters/client_channel/resolver/dns/c_ares/dns_resolver_ares.cc
@@ -1368,6 +1345,7 @@ add_library(grpc
   src/core/ext/filters/client_channel/resolver/dns/dns_resolver_selection.cc
   src/core/ext/filters/client_channel/resolver/dns/native/dns_resolver.cc
   src/core/ext/filters/client_channel/resolver/sockaddr/sockaddr_resolver.cc
+  src/core/ext/filters/client_channel/resolver/xds/xds_resolver.cc
   src/core/ext/filters/census/grpc_context.cc
   src/core/ext/filters/client_idle/client_idle_filter.cc
   src/core/ext/filters/max_age/max_age_filter.cc
@@ -1397,7 +1375,6 @@ target_include_directories(grpc
   PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
   PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
   PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
   PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
   PRIVATE ${_gRPC_UPB_GENERATED_DIR}
@@ -1405,12 +1382,6 @@ target_include_directories(grpc
   PRIVATE ${_gRPC_UPB_INCLUDE_DIR}
   PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
 )
-  # avoid dependency on libstdc++
-  if (_gRPC_CORE_NOSTDCXX_FLAGS)
-    set_target_properties(grpc PROPERTIES LINKER_LANGUAGE C)
-    # only use the flags for C++ source files
-    target_compile_options(grpc PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
-  endif()
 target_link_libraries(grpc
   ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_SSL_LIBRARIES}
@@ -1672,6 +1643,7 @@ add_library(grpc_cronet
   src/core/ext/filters/http/http_filters_plugin.cc
   src/core/ext/filters/http/message_compress/message_compress_filter.cc
   src/core/ext/filters/http/server/http_server_filter.cc
+  src/core/ext/filters/client_channel/backend_metric.cc
   src/core/ext/filters/client_channel/backup_poller.cc
   src/core/ext/filters/client_channel/channel_connectivity.cc
   src/core/ext/filters/client_channel/client_channel.cc
@@ -1706,6 +1678,19 @@ add_library(grpc_cronet
   third_party/upb/upb/port.c
   third_party/upb/upb/table.c
   third_party/upb/upb/upb.c
+  src/core/ext/upb-generated/udpa/data/orca/v1/orca_load_report.upb.c
+  src/core/ext/upb-generated/gogoproto/gogo.upb.c
+  src/core/ext/upb-generated/validate/validate.upb.c
+  src/core/ext/upb-generated/google/api/annotations.upb.c
+  src/core/ext/upb-generated/google/api/http.upb.c
+  src/core/ext/upb-generated/google/protobuf/any.upb.c
+  src/core/ext/upb-generated/google/protobuf/descriptor.upb.c
+  src/core/ext/upb-generated/google/protobuf/duration.upb.c
+  src/core/ext/upb-generated/google/protobuf/empty.upb.c
+  src/core/ext/upb-generated/google/protobuf/struct.upb.c
+  src/core/ext/upb-generated/google/protobuf/timestamp.upb.c
+  src/core/ext/upb-generated/google/protobuf/wrappers.upb.c
+  src/core/ext/upb-generated/google/rpc/status.upb.c
   src/core/lib/http/httpcli_security_connector.cc
   src/core/lib/security/context/security_context.cc
   src/core/lib/security/credentials/alts/alts_credentials.cc
@@ -1733,6 +1718,7 @@ add_library(grpc_cronet
   src/core/lib/security/security_connector/security_connector.cc
   src/core/lib/security/security_connector/ssl/ssl_security_connector.cc
   src/core/lib/security/security_connector/ssl_utils.cc
+  src/core/lib/security/security_connector/ssl_utils_config.cc
   src/core/lib/security/security_connector/tls/spiffe_security_connector.cc
   src/core/lib/security/transport/client_auth_filter.cc
   src/core/lib/security/transport/secure_endpoint.cc
@@ -1804,7 +1790,6 @@ target_include_directories(grpc_cronet
   PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
   PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
   PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
   PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
   PRIVATE ${_gRPC_UPB_GENERATED_DIR}
@@ -1812,12 +1797,6 @@ target_include_directories(grpc_cronet
   PRIVATE ${_gRPC_UPB_INCLUDE_DIR}
   PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
 )
-  # avoid dependency on libstdc++
-  if (_gRPC_CORE_NOSTDCXX_FLAGS)
-    set_target_properties(grpc_cronet PROPERTIES LINKER_LANGUAGE C)
-    # only use the flags for C++ source files
-    target_compile_options(grpc_cronet PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
-  endif()
 target_link_libraries(grpc_cronet
   ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_SSL_LIBRARIES}
@@ -2065,6 +2044,7 @@ add_library(grpc_test_util
   src/core/lib/transport/transport_op_string.cc
   src/core/lib/uri/uri_parser.cc
   src/core/lib/debug/trace.cc
+  src/core/ext/filters/client_channel/backend_metric.cc
   src/core/ext/filters/client_channel/backup_poller.cc
   src/core/ext/filters/client_channel/channel_connectivity.cc
   src/core/ext/filters/client_channel/client_channel.cc
@@ -2099,6 +2079,19 @@ add_library(grpc_test_util
   third_party/upb/upb/port.c
   third_party/upb/upb/table.c
   third_party/upb/upb/upb.c
+  src/core/ext/upb-generated/udpa/data/orca/v1/orca_load_report.upb.c
+  src/core/ext/upb-generated/gogoproto/gogo.upb.c
+  src/core/ext/upb-generated/validate/validate.upb.c
+  src/core/ext/upb-generated/google/api/annotations.upb.c
+  src/core/ext/upb-generated/google/api/http.upb.c
+  src/core/ext/upb-generated/google/protobuf/any.upb.c
+  src/core/ext/upb-generated/google/protobuf/descriptor.upb.c
+  src/core/ext/upb-generated/google/protobuf/duration.upb.c
+  src/core/ext/upb-generated/google/protobuf/empty.upb.c
+  src/core/ext/upb-generated/google/protobuf/struct.upb.c
+  src/core/ext/upb-generated/google/protobuf/timestamp.upb.c
+  src/core/ext/upb-generated/google/protobuf/wrappers.upb.c
+  src/core/ext/upb-generated/google/rpc/status.upb.c
   src/core/ext/transport/chttp2/transport/bin_decoder.cc
   src/core/ext/transport/chttp2/transport/bin_encoder.cc
   src/core/ext/transport/chttp2/transport/chttp2_plugin.cc
@@ -2148,7 +2141,6 @@ target_include_directories(grpc_test_util
   PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
   PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
   PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
   PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
   PRIVATE ${_gRPC_UPB_GENERATED_DIR}
@@ -2156,12 +2148,6 @@ target_include_directories(grpc_test_util
   PRIVATE ${_gRPC_UPB_INCLUDE_DIR}
   PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
 )
-  # avoid dependency on libstdc++
-  if (_gRPC_CORE_NOSTDCXX_FLAGS)
-    set_target_properties(grpc_test_util PROPERTIES LINKER_LANGUAGE C)
-    # only use the flags for C++ source files
-    target_compile_options(grpc_test_util PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
-  endif()
 target_link_libraries(grpc_test_util
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gpr
@@ -2406,6 +2392,7 @@ add_library(grpc_test_util_unsecure
   src/core/lib/transport/transport_op_string.cc
   src/core/lib/uri/uri_parser.cc
   src/core/lib/debug/trace.cc
+  src/core/ext/filters/client_channel/backend_metric.cc
   src/core/ext/filters/client_channel/backup_poller.cc
   src/core/ext/filters/client_channel/channel_connectivity.cc
   src/core/ext/filters/client_channel/client_channel.cc
@@ -2440,6 +2427,19 @@ add_library(grpc_test_util_unsecure
   third_party/upb/upb/port.c
   third_party/upb/upb/table.c
   third_party/upb/upb/upb.c
+  src/core/ext/upb-generated/udpa/data/orca/v1/orca_load_report.upb.c
+  src/core/ext/upb-generated/gogoproto/gogo.upb.c
+  src/core/ext/upb-generated/validate/validate.upb.c
+  src/core/ext/upb-generated/google/api/annotations.upb.c
+  src/core/ext/upb-generated/google/api/http.upb.c
+  src/core/ext/upb-generated/google/protobuf/any.upb.c
+  src/core/ext/upb-generated/google/protobuf/descriptor.upb.c
+  src/core/ext/upb-generated/google/protobuf/duration.upb.c
+  src/core/ext/upb-generated/google/protobuf/empty.upb.c
+  src/core/ext/upb-generated/google/protobuf/struct.upb.c
+  src/core/ext/upb-generated/google/protobuf/timestamp.upb.c
+  src/core/ext/upb-generated/google/protobuf/wrappers.upb.c
+  src/core/ext/upb-generated/google/rpc/status.upb.c
   src/core/ext/transport/chttp2/transport/bin_decoder.cc
   src/core/ext/transport/chttp2/transport/bin_encoder.cc
   src/core/ext/transport/chttp2/transport/chttp2_plugin.cc
@@ -2489,7 +2489,6 @@ target_include_directories(grpc_test_util_unsecure
   PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
   PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
   PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
   PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
   PRIVATE ${_gRPC_UPB_GENERATED_DIR}
@@ -2497,12 +2496,6 @@ target_include_directories(grpc_test_util_unsecure
   PRIVATE ${_gRPC_UPB_INCLUDE_DIR}
   PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
 )
-  # avoid dependency on libstdc++
-  if (_gRPC_CORE_NOSTDCXX_FLAGS)
-    set_target_properties(grpc_test_util_unsecure PROPERTIES LINKER_LANGUAGE C)
-    # only use the flags for C++ source files
-    target_compile_options(grpc_test_util_unsecure PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
-  endif()
 target_link_libraries(grpc_test_util_unsecure
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gpr
@@ -2758,6 +2751,7 @@ add_library(grpc_unsecure
   src/core/ext/transport/chttp2/client/insecure/channel_create_posix.cc
   src/core/ext/transport/chttp2/client/authority.cc
   src/core/ext/transport/chttp2/client/chttp2_connector.cc
+  src/core/ext/filters/client_channel/backend_metric.cc
   src/core/ext/filters/client_channel/backup_poller.cc
   src/core/ext/filters/client_channel/channel_connectivity.cc
   src/core/ext/filters/client_channel/client_channel.cc
@@ -2792,6 +2786,19 @@ add_library(grpc_unsecure
   third_party/upb/upb/port.c
   third_party/upb/upb/table.c
   third_party/upb/upb/upb.c
+  src/core/ext/upb-generated/udpa/data/orca/v1/orca_load_report.upb.c
+  src/core/ext/upb-generated/gogoproto/gogo.upb.c
+  src/core/ext/upb-generated/validate/validate.upb.c
+  src/core/ext/upb-generated/google/api/annotations.upb.c
+  src/core/ext/upb-generated/google/api/http.upb.c
+  src/core/ext/upb-generated/google/protobuf/any.upb.c
+  src/core/ext/upb-generated/google/protobuf/descriptor.upb.c
+  src/core/ext/upb-generated/google/protobuf/duration.upb.c
+  src/core/ext/upb-generated/google/protobuf/empty.upb.c
+  src/core/ext/upb-generated/google/protobuf/struct.upb.c
+  src/core/ext/upb-generated/google/protobuf/timestamp.upb.c
+  src/core/ext/upb-generated/google/protobuf/wrappers.upb.c
+  src/core/ext/upb-generated/google/rpc/status.upb.c
   src/core/ext/transport/inproc/inproc_plugin.cc
   src/core/ext/transport/inproc/inproc_transport.cc
   src/core/ext/filters/client_channel/resolver/dns/c_ares/dns_resolver_ares.cc
@@ -2808,22 +2815,13 @@ add_library(grpc_unsecure
   src/core/ext/filters/client_channel/resolver/dns/native/dns_resolver.cc
   src/core/ext/filters/client_channel/resolver/sockaddr/sockaddr_resolver.cc
   src/core/ext/filters/client_channel/resolver/fake/fake_resolver.cc
+  src/core/ext/filters/client_channel/resolver/xds/xds_resolver.cc
   src/core/ext/filters/client_channel/lb_policy/grpclb/client_load_reporting_filter.cc
   src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb.cc
   src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_channel.cc
   src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_client_stats.cc
   src/core/ext/filters/client_channel/lb_policy/grpclb/load_balancer_api.cc
   src/core/ext/upb-generated/src/proto/grpc/lb/v1/load_balancer.upb.c
-  src/core/ext/upb-generated/google/api/annotations.upb.c
-  src/core/ext/upb-generated/google/api/http.upb.c
-  src/core/ext/upb-generated/google/protobuf/any.upb.c
-  src/core/ext/upb-generated/google/protobuf/descriptor.upb.c
-  src/core/ext/upb-generated/google/protobuf/duration.upb.c
-  src/core/ext/upb-generated/google/protobuf/empty.upb.c
-  src/core/ext/upb-generated/google/protobuf/struct.upb.c
-  src/core/ext/upb-generated/google/protobuf/timestamp.upb.c
-  src/core/ext/upb-generated/google/protobuf/wrappers.upb.c
-  src/core/ext/upb-generated/google/rpc/status.upb.c
   src/core/ext/filters/client_channel/lb_policy/xds/xds.cc
   src/core/ext/filters/client_channel/lb_policy/xds/xds_channel.cc
   src/core/ext/filters/client_channel/lb_policy/xds/xds_client_stats.cc
@@ -2831,6 +2829,7 @@ add_library(grpc_unsecure
   src/core/ext/upb-generated/envoy/api/v2/auth/cert.upb.c
   src/core/ext/upb-generated/envoy/api/v2/cds.upb.c
   src/core/ext/upb-generated/envoy/api/v2/cluster/circuit_breaker.upb.c
+  src/core/ext/upb-generated/envoy/api/v2/cluster/filter.upb.c
   src/core/ext/upb-generated/envoy/api/v2/cluster/outlier_detection.upb.c
   src/core/ext/upb-generated/envoy/api/v2/discovery.upb.c
   src/core/ext/upb-generated/envoy/api/v2/eds.upb.c
@@ -2843,11 +2842,10 @@ add_library(grpc_unsecure
   src/core/ext/upb-generated/envoy/api/v2/core/config_source.upb.c
   src/core/ext/upb-generated/envoy/api/v2/core/grpc_service.upb.c
   src/core/ext/upb-generated/envoy/api/v2/core/health_check.upb.c
+  src/core/ext/upb-generated/envoy/api/v2/core/http_uri.upb.c
   src/core/ext/upb-generated/envoy/api/v2/core/protocol.upb.c
   src/core/ext/upb-generated/envoy/type/percent.upb.c
   src/core/ext/upb-generated/envoy/type/range.upb.c
-  src/core/ext/upb-generated/gogoproto/gogo.upb.c
-  src/core/ext/upb-generated/validate/validate.upb.c
   src/core/ext/filters/client_channel/lb_policy/pick_first/pick_first.cc
   src/core/ext/filters/client_channel/lb_policy/round_robin/round_robin.cc
   src/core/ext/filters/census/grpc_context.cc
@@ -2879,7 +2877,6 @@ target_include_directories(grpc_unsecure
   PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
   PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
   PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
   PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
   PRIVATE ${_gRPC_UPB_GENERATED_DIR}
@@ -2887,12 +2884,6 @@ target_include_directories(grpc_unsecure
   PRIVATE ${_gRPC_UPB_INCLUDE_DIR}
   PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
 )
-  # avoid dependency on libstdc++
-  if (_gRPC_CORE_NOSTDCXX_FLAGS)
-    set_target_properties(grpc_unsecure PROPERTIES LINKER_LANGUAGE C)
-    # only use the flags for C++ source files
-    target_compile_options(grpc_unsecure PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
-  endif()
 target_link_libraries(grpc_unsecure
   ${_gRPC_BASELIB_LIBRARIES}
   ${_gRPC_ZLIB_LIBRARIES}
@@ -2983,7 +2974,6 @@ target_include_directories(reconnect_server
   PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
   PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
   PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
   PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
   PRIVATE ${_gRPC_UPB_GENERATED_DIR}
@@ -2991,12 +2981,6 @@ target_include_directories(reconnect_server
   PRIVATE ${_gRPC_UPB_INCLUDE_DIR}
   PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
 )
-  # avoid dependency on libstdc++
-  if (_gRPC_CORE_NOSTDCXX_FLAGS)
-    set_target_properties(reconnect_server PROPERTIES LINKER_LANGUAGE C)
-    # only use the flags for C++ source files
-    target_compile_options(reconnect_server PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
-  endif()
 target_link_libraries(reconnect_server
   ${_gRPC_ALLTARGETS_LIBRARIES}
   test_tcp_server
@@ -3032,7 +3016,6 @@ target_include_directories(test_tcp_server
   PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
   PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
   PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
   PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
   PRIVATE ${_gRPC_UPB_GENERATED_DIR}
@@ -3040,12 +3023,6 @@ target_include_directories(test_tcp_server
   PRIVATE ${_gRPC_UPB_INCLUDE_DIR}
   PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
 )
-  # avoid dependency on libstdc++
-  if (_gRPC_CORE_NOSTDCXX_FLAGS)
-    set_target_properties(test_tcp_server PROPERTIES LINKER_LANGUAGE C)
-    # only use the flags for C++ source files
-    target_compile_options(test_tcp_server PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
-  endif()
 target_link_libraries(test_tcp_server
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
@@ -3089,7 +3066,6 @@ target_include_directories(bm_callback_test_service_impl
   PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
   PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
   PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
   PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
   PRIVATE ${_gRPC_UPB_GENERATED_DIR}
@@ -3144,7 +3120,6 @@ target_include_directories(dns_test_util
   PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
   PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
   PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
   PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
   PRIVATE ${_gRPC_UPB_GENERATED_DIR}
@@ -3239,7 +3214,6 @@ target_include_directories(grpc++
   PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
   PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
   PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
   PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
   PRIVATE ${_gRPC_UPB_GENERATED_DIR}
@@ -3491,6 +3465,7 @@ foreach(_hdr
   include/grpcpp/impl/codegen/interceptor_common.h
   include/grpcpp/impl/codegen/message_allocator.h
   include/grpcpp/impl/codegen/metadata_map.h
+  include/grpcpp/impl/codegen/method_handler.h
   include/grpcpp/impl/codegen/method_handler_impl.h
   include/grpcpp/impl/codegen/rpc_method.h
   include/grpcpp/impl/codegen/rpc_service_method.h
@@ -3568,7 +3543,6 @@ target_include_directories(grpc++_core_stats
   PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
   PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
   PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
   PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
   PRIVATE ${_gRPC_UPB_GENERATED_DIR}
@@ -3623,7 +3597,6 @@ target_include_directories(grpc++_error_details
   PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
   PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
   PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
   PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
   PRIVATE ${_gRPC_UPB_GENERATED_DIR}
@@ -3696,7 +3669,6 @@ target_include_directories(grpc++_proto_reflection_desc_db
   PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
   PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
   PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
   PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
   PRIVATE ${_gRPC_UPB_GENERATED_DIR}
@@ -3763,7 +3735,6 @@ target_include_directories(grpc++_reflection
   PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
   PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
   PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
   PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
   PRIVATE ${_gRPC_UPB_GENERATED_DIR}
@@ -3828,7 +3799,6 @@ target_include_directories(grpc++_test_config
   PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
   PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
   PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
   PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
   PRIVATE ${_gRPC_UPB_GENERATED_DIR}
@@ -3926,7 +3896,6 @@ target_include_directories(grpc++_test_util
   PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
   PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
   PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
   PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
   PRIVATE ${_gRPC_UPB_GENERATED_DIR}
@@ -4010,6 +3979,7 @@ foreach(_hdr
   include/grpcpp/impl/codegen/interceptor_common.h
   include/grpcpp/impl/codegen/message_allocator.h
   include/grpcpp/impl/codegen/metadata_map.h
+  include/grpcpp/impl/codegen/method_handler.h
   include/grpcpp/impl/codegen/method_handler_impl.h
   include/grpcpp/impl/codegen/rpc_method.h
   include/grpcpp/impl/codegen/rpc_service_method.h
@@ -4136,7 +4106,6 @@ target_include_directories(grpc++_test_util_unsecure
   PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
   PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
   PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
   PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
   PRIVATE ${_gRPC_UPB_GENERATED_DIR}
@@ -4220,6 +4189,7 @@ foreach(_hdr
   include/grpcpp/impl/codegen/interceptor_common.h
   include/grpcpp/impl/codegen/message_allocator.h
   include/grpcpp/impl/codegen/metadata_map.h
+  include/grpcpp/impl/codegen/method_handler.h
   include/grpcpp/impl/codegen/method_handler_impl.h
   include/grpcpp/impl/codegen/rpc_method.h
   include/grpcpp/impl/codegen/rpc_service_method.h
@@ -4348,7 +4318,6 @@ target_include_directories(grpc++_unsecure
   PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
   PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
   PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
   PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
   PRIVATE ${_gRPC_UPB_GENERATED_DIR}
@@ -4599,6 +4568,7 @@ foreach(_hdr
   include/grpcpp/impl/codegen/interceptor_common.h
   include/grpcpp/impl/codegen/message_allocator.h
   include/grpcpp/impl/codegen/metadata_map.h
+  include/grpcpp/impl/codegen/method_handler.h
   include/grpcpp/impl/codegen/method_handler_impl.h
   include/grpcpp/impl/codegen/rpc_method.h
   include/grpcpp/impl/codegen/rpc_service_method.h
@@ -4662,7 +4632,6 @@ target_include_directories(grpc_benchmark
   PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
   PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
   PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
   PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
   PRIVATE ${_gRPC_UPB_GENERATED_DIR}
@@ -4724,7 +4693,6 @@ target_include_directories(grpc_cli_libs
   PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
   PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
   PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
   PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
   PRIVATE ${_gRPC_UPB_GENERATED_DIR}
@@ -4789,7 +4757,6 @@ target_include_directories(grpc_plugin_support
   PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
   PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
   PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
   PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
   PRIVATE ${_gRPC_UPB_GENERATED_DIR}
@@ -4857,7 +4824,6 @@ target_include_directories(grpcpp_channelz
   PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
   PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
   PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
   PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
   PRIVATE ${_gRPC_UPB_GENERATED_DIR}
@@ -4943,7 +4909,6 @@ target_include_directories(http2_client_main
   PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
   PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
   PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
   PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
   PRIVATE ${_gRPC_UPB_GENERATED_DIR}
@@ -5003,7 +4968,6 @@ target_include_directories(interop_client_helper
   PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
   PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
   PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
   PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
   PRIVATE ${_gRPC_UPB_GENERATED_DIR}
@@ -5078,7 +5042,6 @@ target_include_directories(interop_client_main
   PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
   PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
   PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
   PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
   PRIVATE ${_gRPC_UPB_GENERATED_DIR}
@@ -5132,7 +5095,6 @@ target_include_directories(interop_server_helper
   PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
   PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
   PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
   PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
   PRIVATE ${_gRPC_UPB_GENERATED_DIR}
@@ -5205,7 +5167,6 @@ target_include_directories(interop_server_lib
   PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
   PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
   PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
   PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
   PRIVATE ${_gRPC_UPB_GENERATED_DIR}
@@ -5259,7 +5220,6 @@ target_include_directories(interop_server_main
   PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
   PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
   PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
   PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
   PRIVATE ${_gRPC_UPB_GENERATED_DIR}
@@ -5368,7 +5328,6 @@ target_include_directories(qps
   PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
   PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
   PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
   PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
   PRIVATE ${_gRPC_UPB_GENERATED_DIR}
@@ -5420,7 +5379,6 @@ target_include_directories(grpc_csharp_ext
   PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
   PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
   PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
   PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
   PRIVATE ${_gRPC_UPB_GENERATED_DIR}
@@ -5428,12 +5386,6 @@ target_include_directories(grpc_csharp_ext
   PRIVATE ${_gRPC_UPB_INCLUDE_DIR}
   PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
 )
-  # avoid dependency on libstdc++
-  if (_gRPC_CORE_NOSTDCXX_FLAGS)
-    set_target_properties(grpc_csharp_ext PROPERTIES LINKER_LANGUAGE C)
-    # only use the flags for C++ source files
-    target_compile_options(grpc_csharp_ext PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
-  endif()
 target_link_libraries(grpc_csharp_ext
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc
@@ -5476,7 +5428,6 @@ target_include_directories(bad_client_test
   PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
   PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
   PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
   PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
   PRIVATE ${_gRPC_UPB_GENERATED_DIR}
@@ -5525,7 +5476,6 @@ target_include_directories(bad_ssl_test_server
   PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
   PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
   PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
   PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
   PRIVATE ${_gRPC_UPB_GENERATED_DIR}
@@ -5533,12 +5483,6 @@ target_include_directories(bad_ssl_test_server
   PRIVATE ${_gRPC_UPB_INCLUDE_DIR}
   PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
 )
-  # avoid dependency on libstdc++
-  if (_gRPC_CORE_NOSTDCXX_FLAGS)
-    set_target_properties(bad_ssl_test_server PROPERTIES LINKER_LANGUAGE C)
-    # only use the flags for C++ source files
-    target_compile_options(bad_ssl_test_server PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
-  endif()
 target_link_libraries(bad_ssl_test_server
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
@@ -5652,7 +5596,6 @@ target_include_directories(end2end_tests
   PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
   PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
   PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
   PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
   PRIVATE ${_gRPC_UPB_GENERATED_DIR}
@@ -5660,12 +5603,6 @@ target_include_directories(end2end_tests
   PRIVATE ${_gRPC_UPB_INCLUDE_DIR}
   PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
 )
-  # avoid dependency on libstdc++
-  if (_gRPC_CORE_NOSTDCXX_FLAGS)
-    set_target_properties(end2end_tests PROPERTIES LINKER_LANGUAGE C)
-    # only use the flags for C++ source files
-    target_compile_options(end2end_tests PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
-  endif()
 target_link_libraries(end2end_tests
   ${_gRPC_SSL_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
@@ -5779,7 +5716,6 @@ target_include_directories(end2end_nosec_tests
   PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
   PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
   PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
   PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
   PRIVATE ${_gRPC_UPB_GENERATED_DIR}
@@ -5787,12 +5723,6 @@ target_include_directories(end2end_nosec_tests
   PRIVATE ${_gRPC_UPB_INCLUDE_DIR}
   PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
 )
-  # avoid dependency on libstdc++
-  if (_gRPC_CORE_NOSTDCXX_FLAGS)
-    set_target_properties(end2end_nosec_tests PROPERTIES LINKER_LANGUAGE C)
-    # only use the flags for C++ source files
-    target_compile_options(end2end_nosec_tests PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
-  endif()
 target_link_libraries(end2end_nosec_tests
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util_unsecure
@@ -5817,7 +5747,6 @@ target_include_directories(algorithm_test
   PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
   PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
   PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
   PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
   PRIVATE ${_gRPC_UPB_GENERATED_DIR}
@@ -5833,11 +5762,6 @@ target_link_libraries(algorithm_test
   gpr
 )
 
-  # avoid dependency on libstdc++
-  if (_gRPC_CORE_NOSTDCXX_FLAGS)
-    set_target_properties(algorithm_test PROPERTIES LINKER_LANGUAGE C)
-    target_compile_options(algorithm_test PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
-  endif()
 
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
@@ -5854,7 +5778,6 @@ target_include_directories(alloc_test
   PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
   PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
   PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
   PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
   PRIVATE ${_gRPC_UPB_GENERATED_DIR}
@@ -5870,11 +5793,6 @@ target_link_libraries(alloc_test
   grpc_unsecure
 )
 
-  # avoid dependency on libstdc++
-  if (_gRPC_CORE_NOSTDCXX_FLAGS)
-    set_target_properties(alloc_test PROPERTIES LINKER_LANGUAGE C)
-    target_compile_options(alloc_test PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
-  endif()
 
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
@@ -5891,7 +5809,6 @@ target_include_directories(alpn_test
   PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
   PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
   PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
   PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
   PRIVATE ${_gRPC_UPB_GENERATED_DIR}
@@ -5907,11 +5824,6 @@ target_link_libraries(alpn_test
   gpr
 )
 
-  # avoid dependency on libstdc++
-  if (_gRPC_CORE_NOSTDCXX_FLAGS)
-    set_target_properties(alpn_test PROPERTIES LINKER_LANGUAGE C)
-    target_compile_options(alpn_test PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
-  endif()
 
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
@@ -5928,7 +5840,6 @@ target_include_directories(arena_test
   PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
   PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
   PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
   PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
   PRIVATE ${_gRPC_UPB_GENERATED_DIR}
@@ -5944,11 +5855,6 @@ target_link_libraries(arena_test
   grpc_unsecure
 )
 
-  # avoid dependency on libstdc++
-  if (_gRPC_CORE_NOSTDCXX_FLAGS)
-    set_target_properties(arena_test PROPERTIES LINKER_LANGUAGE C)
-    target_compile_options(arena_test PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
-  endif()
 
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
@@ -5965,7 +5871,6 @@ target_include_directories(avl_test
   PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
   PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
   PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
   PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
   PRIVATE ${_gRPC_UPB_GENERATED_DIR}
@@ -5981,11 +5886,6 @@ target_link_libraries(avl_test
   grpc
 )
 
-  # avoid dependency on libstdc++
-  if (_gRPC_CORE_NOSTDCXX_FLAGS)
-    set_target_properties(avl_test PROPERTIES LINKER_LANGUAGE C)
-    target_compile_options(avl_test PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
-  endif()
 
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
@@ -6002,7 +5902,6 @@ target_include_directories(bad_server_response_test
   PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
   PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
   PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
   PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
   PRIVATE ${_gRPC_UPB_GENERATED_DIR}
@@ -6019,11 +5918,6 @@ target_link_libraries(bad_server_response_test
   gpr
 )
 
-  # avoid dependency on libstdc++
-  if (_gRPC_CORE_NOSTDCXX_FLAGS)
-    set_target_properties(bad_server_response_test PROPERTIES LINKER_LANGUAGE C)
-    target_compile_options(bad_server_response_test PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
-  endif()
 
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
@@ -6040,7 +5934,6 @@ target_include_directories(bin_decoder_test
   PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
   PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
   PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
   PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
   PRIVATE ${_gRPC_UPB_GENERATED_DIR}
@@ -6055,11 +5948,6 @@ target_link_libraries(bin_decoder_test
   grpc
 )
 
-  # avoid dependency on libstdc++
-  if (_gRPC_CORE_NOSTDCXX_FLAGS)
-    set_target_properties(bin_decoder_test PROPERTIES LINKER_LANGUAGE C)
-    target_compile_options(bin_decoder_test PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
-  endif()
 
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
@@ -6076,7 +5964,6 @@ target_include_directories(bin_encoder_test
   PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
   PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
   PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
   PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
   PRIVATE ${_gRPC_UPB_GENERATED_DIR}
@@ -6091,11 +5978,6 @@ target_link_libraries(bin_encoder_test
   grpc
 )
 
-  # avoid dependency on libstdc++
-  if (_gRPC_CORE_NOSTDCXX_FLAGS)
-    set_target_properties(bin_encoder_test PROPERTIES LINKER_LANGUAGE C)
-    target_compile_options(bin_encoder_test PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
-  endif()
 
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
@@ -6113,7 +5995,6 @@ target_include_directories(buffer_list_test
   PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
   PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
   PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
   PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
   PRIVATE ${_gRPC_UPB_GENERATED_DIR}
@@ -6129,11 +6010,6 @@ target_link_libraries(buffer_list_test
   gpr
 )
 
-  # avoid dependency on libstdc++
-  if (_gRPC_CORE_NOSTDCXX_FLAGS)
-    set_target_properties(buffer_list_test PROPERTIES LINKER_LANGUAGE C)
-    target_compile_options(buffer_list_test PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
-  endif()
 
 endif()
 endif (gRPC_BUILD_TESTS)
@@ -6151,7 +6027,6 @@ target_include_directories(channel_create_test
   PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
   PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
   PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
   PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
   PRIVATE ${_gRPC_UPB_GENERATED_DIR}
@@ -6167,11 +6042,6 @@ target_link_libraries(channel_create_test
   gpr
 )
 
-  # avoid dependency on libstdc++
-  if (_gRPC_CORE_NOSTDCXX_FLAGS)
-    set_target_properties(channel_create_test PROPERTIES LINKER_LANGUAGE C)
-    target_compile_options(channel_create_test PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
-  endif()
 
 endif (gRPC_BUILD_TESTS)
 
@@ -6187,7 +6057,6 @@ target_include_directories(check_epollexclusive
   PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
   PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
   PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
   PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
   PRIVATE ${_gRPC_UPB_GENERATED_DIR}
@@ -6202,11 +6071,6 @@ target_link_libraries(check_epollexclusive
   gpr
 )
 
-  # avoid dependency on libstdc++
-  if (_gRPC_CORE_NOSTDCXX_FLAGS)
-    set_target_properties(check_epollexclusive PROPERTIES LINKER_LANGUAGE C)
-    target_compile_options(check_epollexclusive PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
-  endif()
 
 if (gRPC_BUILD_TESTS)
 
@@ -6222,7 +6086,6 @@ target_include_directories(chttp2_hpack_encoder_test
   PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
   PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
   PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
   PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
   PRIVATE ${_gRPC_UPB_GENERATED_DIR}
@@ -6238,11 +6101,6 @@ target_link_libraries(chttp2_hpack_encoder_test
   gpr
 )
 
-  # avoid dependency on libstdc++
-  if (_gRPC_CORE_NOSTDCXX_FLAGS)
-    set_target_properties(chttp2_hpack_encoder_test PROPERTIES LINKER_LANGUAGE C)
-    target_compile_options(chttp2_hpack_encoder_test PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
-  endif()
 
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
@@ -6259,7 +6117,6 @@ target_include_directories(chttp2_stream_map_test
   PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
   PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
   PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
   PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
   PRIVATE ${_gRPC_UPB_GENERATED_DIR}
@@ -6275,11 +6132,6 @@ target_link_libraries(chttp2_stream_map_test
   gpr
 )
 
-  # avoid dependency on libstdc++
-  if (_gRPC_CORE_NOSTDCXX_FLAGS)
-    set_target_properties(chttp2_stream_map_test PROPERTIES LINKER_LANGUAGE C)
-    target_compile_options(chttp2_stream_map_test PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
-  endif()
 
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
@@ -6296,7 +6148,6 @@ target_include_directories(chttp2_varint_test
   PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
   PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
   PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
   PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
   PRIVATE ${_gRPC_UPB_GENERATED_DIR}
@@ -6312,11 +6163,6 @@ target_link_libraries(chttp2_varint_test
   gpr
 )
 
-  # avoid dependency on libstdc++
-  if (_gRPC_CORE_NOSTDCXX_FLAGS)
-    set_target_properties(chttp2_varint_test PROPERTIES LINKER_LANGUAGE C)
-    target_compile_options(chttp2_varint_test PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
-  endif()
 
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
@@ -6334,7 +6180,6 @@ target_include_directories(close_fd_test
   PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
   PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
   PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
   PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
   PRIVATE ${_gRPC_UPB_GENERATED_DIR}
@@ -6350,11 +6195,6 @@ target_link_libraries(close_fd_test
   gpr
 )
 
-  # avoid dependency on libstdc++
-  if (_gRPC_CORE_NOSTDCXX_FLAGS)
-    set_target_properties(close_fd_test PROPERTIES LINKER_LANGUAGE C)
-    target_compile_options(close_fd_test PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
-  endif()
 
 endif()
 endif (gRPC_BUILD_TESTS)
@@ -6372,7 +6212,6 @@ target_include_directories(cmdline_test
   PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
   PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
   PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
   PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
   PRIVATE ${_gRPC_UPB_GENERATED_DIR}
@@ -6388,11 +6227,6 @@ target_link_libraries(cmdline_test
   grpc
 )
 
-  # avoid dependency on libstdc++
-  if (_gRPC_CORE_NOSTDCXX_FLAGS)
-    set_target_properties(cmdline_test PROPERTIES LINKER_LANGUAGE C)
-    target_compile_options(cmdline_test PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
-  endif()
 
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
@@ -6409,7 +6243,6 @@ target_include_directories(combiner_test
   PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
   PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
   PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
   PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
   PRIVATE ${_gRPC_UPB_GENERATED_DIR}
@@ -6425,11 +6258,6 @@ target_link_libraries(combiner_test
   gpr
 )
 
-  # avoid dependency on libstdc++
-  if (_gRPC_CORE_NOSTDCXX_FLAGS)
-    set_target_properties(combiner_test PROPERTIES LINKER_LANGUAGE C)
-    target_compile_options(combiner_test PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
-  endif()
 
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
@@ -6446,7 +6274,6 @@ target_include_directories(compression_test
   PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
   PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
   PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
   PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
   PRIVATE ${_gRPC_UPB_GENERATED_DIR}
@@ -6462,11 +6289,6 @@ target_link_libraries(compression_test
   gpr
 )
 
-  # avoid dependency on libstdc++
-  if (_gRPC_CORE_NOSTDCXX_FLAGS)
-    set_target_properties(compression_test PROPERTIES LINKER_LANGUAGE C)
-    target_compile_options(compression_test PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
-  endif()
 
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
@@ -6483,7 +6305,6 @@ target_include_directories(concurrent_connectivity_test
   PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
   PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
   PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
   PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
   PRIVATE ${_gRPC_UPB_GENERATED_DIR}
@@ -6499,11 +6320,6 @@ target_link_libraries(concurrent_connectivity_test
   gpr
 )
 
-  # avoid dependency on libstdc++
-  if (_gRPC_CORE_NOSTDCXX_FLAGS)
-    set_target_properties(concurrent_connectivity_test PROPERTIES LINKER_LANGUAGE C)
-    target_compile_options(concurrent_connectivity_test PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
-  endif()
 
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
@@ -6520,7 +6336,6 @@ target_include_directories(connection_refused_test
   PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
   PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
   PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
   PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
   PRIVATE ${_gRPC_UPB_GENERATED_DIR}
@@ -6536,11 +6351,6 @@ target_link_libraries(connection_refused_test
   gpr
 )
 
-  # avoid dependency on libstdc++
-  if (_gRPC_CORE_NOSTDCXX_FLAGS)
-    set_target_properties(connection_refused_test PROPERTIES LINKER_LANGUAGE C)
-    target_compile_options(connection_refused_test PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
-  endif()
 
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
@@ -6557,7 +6367,6 @@ target_include_directories(dns_resolver_connectivity_test
   PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
   PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
   PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
   PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
   PRIVATE ${_gRPC_UPB_GENERATED_DIR}
@@ -6573,11 +6382,6 @@ target_link_libraries(dns_resolver_connectivity_test
   gpr
 )
 
-  # avoid dependency on libstdc++
-  if (_gRPC_CORE_NOSTDCXX_FLAGS)
-    set_target_properties(dns_resolver_connectivity_test PROPERTIES LINKER_LANGUAGE C)
-    target_compile_options(dns_resolver_connectivity_test PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
-  endif()
 
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
@@ -6594,7 +6398,6 @@ target_include_directories(dns_resolver_cooldown_using_ares_resolver_test
   PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
   PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
   PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
   PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
   PRIVATE ${_gRPC_UPB_GENERATED_DIR}
@@ -6610,11 +6413,6 @@ target_link_libraries(dns_resolver_cooldown_using_ares_resolver_test
   gpr
 )
 
-  # avoid dependency on libstdc++
-  if (_gRPC_CORE_NOSTDCXX_FLAGS)
-    set_target_properties(dns_resolver_cooldown_using_ares_resolver_test PROPERTIES LINKER_LANGUAGE C)
-    target_compile_options(dns_resolver_cooldown_using_ares_resolver_test PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
-  endif()
 
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
@@ -6631,7 +6429,6 @@ target_include_directories(dns_resolver_cooldown_using_native_resolver_test
   PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
   PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
   PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
   PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
   PRIVATE ${_gRPC_UPB_GENERATED_DIR}
@@ -6647,11 +6444,6 @@ target_link_libraries(dns_resolver_cooldown_using_native_resolver_test
   gpr
 )
 
-  # avoid dependency on libstdc++
-  if (_gRPC_CORE_NOSTDCXX_FLAGS)
-    set_target_properties(dns_resolver_cooldown_using_native_resolver_test PROPERTIES LINKER_LANGUAGE C)
-    target_compile_options(dns_resolver_cooldown_using_native_resolver_test PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
-  endif()
 
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
@@ -6668,7 +6460,6 @@ target_include_directories(dns_resolver_test
   PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
   PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
   PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
   PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
   PRIVATE ${_gRPC_UPB_GENERATED_DIR}
@@ -6684,11 +6475,6 @@ target_link_libraries(dns_resolver_test
   gpr
 )
 
-  # avoid dependency on libstdc++
-  if (_gRPC_CORE_NOSTDCXX_FLAGS)
-    set_target_properties(dns_resolver_test PROPERTIES LINKER_LANGUAGE C)
-    target_compile_options(dns_resolver_test PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
-  endif()
 
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
@@ -6706,7 +6492,6 @@ target_include_directories(dualstack_socket_test
   PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
   PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
   PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
   PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
   PRIVATE ${_gRPC_UPB_GENERATED_DIR}
@@ -6722,11 +6507,6 @@ target_link_libraries(dualstack_socket_test
   gpr
 )
 
-  # avoid dependency on libstdc++
-  if (_gRPC_CORE_NOSTDCXX_FLAGS)
-    set_target_properties(dualstack_socket_test PROPERTIES LINKER_LANGUAGE C)
-    target_compile_options(dualstack_socket_test PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
-  endif()
 
 endif()
 endif (gRPC_BUILD_TESTS)
@@ -6744,7 +6524,6 @@ target_include_directories(endpoint_pair_test
   PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
   PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
   PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
   PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
   PRIVATE ${_gRPC_UPB_GENERATED_DIR}
@@ -6760,11 +6539,6 @@ target_link_libraries(endpoint_pair_test
   gpr
 )
 
-  # avoid dependency on libstdc++
-  if (_gRPC_CORE_NOSTDCXX_FLAGS)
-    set_target_properties(endpoint_pair_test PROPERTIES LINKER_LANGUAGE C)
-    target_compile_options(endpoint_pair_test PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
-  endif()
 
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
@@ -6781,7 +6555,6 @@ target_include_directories(error_test
   PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
   PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
   PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
   PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
   PRIVATE ${_gRPC_UPB_GENERATED_DIR}
@@ -6797,11 +6570,6 @@ target_link_libraries(error_test
   gpr
 )
 
-  # avoid dependency on libstdc++
-  if (_gRPC_CORE_NOSTDCXX_FLAGS)
-    set_target_properties(error_test PROPERTIES LINKER_LANGUAGE C)
-    target_compile_options(error_test PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
-  endif()
 
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
@@ -6819,7 +6587,6 @@ target_include_directories(ev_epollex_linux_test
   PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
   PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
   PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
   PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
   PRIVATE ${_gRPC_UPB_GENERATED_DIR}
@@ -6835,11 +6602,6 @@ target_link_libraries(ev_epollex_linux_test
   gpr
 )
 
-  # avoid dependency on libstdc++
-  if (_gRPC_CORE_NOSTDCXX_FLAGS)
-    set_target_properties(ev_epollex_linux_test PROPERTIES LINKER_LANGUAGE C)
-    target_compile_options(ev_epollex_linux_test PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
-  endif()
 
 endif()
 endif (gRPC_BUILD_TESTS)
@@ -6857,7 +6619,6 @@ target_include_directories(fake_resolver_test
   PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
   PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
   PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
   PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
   PRIVATE ${_gRPC_UPB_GENERATED_DIR}
@@ -6873,11 +6634,6 @@ target_link_libraries(fake_resolver_test
   gpr
 )
 
-  # avoid dependency on libstdc++
-  if (_gRPC_CORE_NOSTDCXX_FLAGS)
-    set_target_properties(fake_resolver_test PROPERTIES LINKER_LANGUAGE C)
-    target_compile_options(fake_resolver_test PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
-  endif()
 
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
@@ -6896,7 +6652,6 @@ target_include_directories(fake_transport_security_test
   PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
   PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
   PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
   PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
   PRIVATE ${_gRPC_UPB_GENERATED_DIR}
@@ -6912,11 +6667,6 @@ target_link_libraries(fake_transport_security_test
   grpc
 )
 
-  # avoid dependency on libstdc++
-  if (_gRPC_CORE_NOSTDCXX_FLAGS)
-    set_target_properties(fake_transport_security_test PROPERTIES LINKER_LANGUAGE C)
-    target_compile_options(fake_transport_security_test PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
-  endif()
 
 endif()
 endif (gRPC_BUILD_TESTS)
@@ -6935,7 +6685,6 @@ target_include_directories(fd_conservation_posix_test
   PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
   PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
   PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
   PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
   PRIVATE ${_gRPC_UPB_GENERATED_DIR}
@@ -6951,11 +6700,6 @@ target_link_libraries(fd_conservation_posix_test
   gpr
 )
 
-  # avoid dependency on libstdc++
-  if (_gRPC_CORE_NOSTDCXX_FLAGS)
-    set_target_properties(fd_conservation_posix_test PROPERTIES LINKER_LANGUAGE C)
-    target_compile_options(fd_conservation_posix_test PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
-  endif()
 
 endif()
 endif (gRPC_BUILD_TESTS)
@@ -6974,7 +6718,6 @@ target_include_directories(fd_posix_test
   PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
   PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
   PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
   PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
   PRIVATE ${_gRPC_UPB_GENERATED_DIR}
@@ -6990,11 +6733,6 @@ target_link_libraries(fd_posix_test
   gpr
 )
 
-  # avoid dependency on libstdc++
-  if (_gRPC_CORE_NOSTDCXX_FLAGS)
-    set_target_properties(fd_posix_test PROPERTIES LINKER_LANGUAGE C)
-    target_compile_options(fd_posix_test PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
-  endif()
 
 endif()
 endif (gRPC_BUILD_TESTS)
@@ -7012,7 +6750,6 @@ target_include_directories(fling_client
   PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
   PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
   PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
   PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
   PRIVATE ${_gRPC_UPB_GENERATED_DIR}
@@ -7028,11 +6765,6 @@ target_link_libraries(fling_client
   gpr
 )
 
-  # avoid dependency on libstdc++
-  if (_gRPC_CORE_NOSTDCXX_FLAGS)
-    set_target_properties(fling_client PROPERTIES LINKER_LANGUAGE C)
-    target_compile_options(fling_client PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
-  endif()
 
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
@@ -7049,7 +6781,6 @@ target_include_directories(fling_server
   PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
   PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
   PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
   PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
   PRIVATE ${_gRPC_UPB_GENERATED_DIR}
@@ -7065,11 +6796,6 @@ target_link_libraries(fling_server
   gpr
 )
 
-  # avoid dependency on libstdc++
-  if (_gRPC_CORE_NOSTDCXX_FLAGS)
-    set_target_properties(fling_server PROPERTIES LINKER_LANGUAGE C)
-    target_compile_options(fling_server PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
-  endif()
 
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
@@ -7087,7 +6813,6 @@ target_include_directories(fling_stream_test
   PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
   PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
   PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
   PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
   PRIVATE ${_gRPC_UPB_GENERATED_DIR}
@@ -7103,11 +6828,6 @@ target_link_libraries(fling_stream_test
   gpr
 )
 
-  # avoid dependency on libstdc++
-  if (_gRPC_CORE_NOSTDCXX_FLAGS)
-    set_target_properties(fling_stream_test PROPERTIES LINKER_LANGUAGE C)
-    target_compile_options(fling_stream_test PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
-  endif()
 
 endif()
 endif (gRPC_BUILD_TESTS)
@@ -7126,7 +6846,6 @@ target_include_directories(fling_test
   PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
   PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
   PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
   PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
   PRIVATE ${_gRPC_UPB_GENERATED_DIR}
@@ -7142,11 +6861,6 @@ target_link_libraries(fling_test
   gpr
 )
 
-  # avoid dependency on libstdc++
-  if (_gRPC_CORE_NOSTDCXX_FLAGS)
-    set_target_properties(fling_test PROPERTIES LINKER_LANGUAGE C)
-    target_compile_options(fling_test PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
-  endif()
 
 endif()
 endif (gRPC_BUILD_TESTS)
@@ -7165,7 +6879,6 @@ target_include_directories(fork_test
   PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
   PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
   PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
   PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
   PRIVATE ${_gRPC_UPB_GENERATED_DIR}
@@ -7181,11 +6894,6 @@ target_link_libraries(fork_test
   grpc_unsecure
 )
 
-  # avoid dependency on libstdc++
-  if (_gRPC_CORE_NOSTDCXX_FLAGS)
-    set_target_properties(fork_test PROPERTIES LINKER_LANGUAGE C)
-    target_compile_options(fork_test PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
-  endif()
 
 endif()
 endif (gRPC_BUILD_TESTS)
@@ -7204,7 +6912,6 @@ target_include_directories(goaway_server_test
   PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
   PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
   PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
   PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
   PRIVATE ${_gRPC_UPB_GENERATED_DIR}
@@ -7220,11 +6927,6 @@ target_link_libraries(goaway_server_test
   gpr
 )
 
-  # avoid dependency on libstdc++
-  if (_gRPC_CORE_NOSTDCXX_FLAGS)
-    set_target_properties(goaway_server_test PROPERTIES LINKER_LANGUAGE C)
-    target_compile_options(goaway_server_test PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
-  endif()
 
 endif()
 endif (gRPC_BUILD_TESTS)
@@ -7242,7 +6944,6 @@ target_include_directories(gpr_cpu_test
   PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
   PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
   PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
   PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
   PRIVATE ${_gRPC_UPB_GENERATED_DIR}
@@ -7258,11 +6959,6 @@ target_link_libraries(gpr_cpu_test
   grpc_unsecure
 )
 
-  # avoid dependency on libstdc++
-  if (_gRPC_CORE_NOSTDCXX_FLAGS)
-    set_target_properties(gpr_cpu_test PROPERTIES LINKER_LANGUAGE C)
-    target_compile_options(gpr_cpu_test PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
-  endif()
 
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
@@ -7279,7 +6975,6 @@ target_include_directories(gpr_env_test
   PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
   PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
   PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
   PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
   PRIVATE ${_gRPC_UPB_GENERATED_DIR}
@@ -7295,11 +6990,6 @@ target_link_libraries(gpr_env_test
   grpc_unsecure
 )
 
-  # avoid dependency on libstdc++
-  if (_gRPC_CORE_NOSTDCXX_FLAGS)
-    set_target_properties(gpr_env_test PROPERTIES LINKER_LANGUAGE C)
-    target_compile_options(gpr_env_test PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
-  endif()
 
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
@@ -7316,7 +7006,6 @@ target_include_directories(gpr_host_port_test
   PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
   PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
   PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
   PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
   PRIVATE ${_gRPC_UPB_GENERATED_DIR}
@@ -7332,11 +7021,6 @@ target_link_libraries(gpr_host_port_test
   grpc_unsecure
 )
 
-  # avoid dependency on libstdc++
-  if (_gRPC_CORE_NOSTDCXX_FLAGS)
-    set_target_properties(gpr_host_port_test PROPERTIES LINKER_LANGUAGE C)
-    target_compile_options(gpr_host_port_test PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
-  endif()
 
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
@@ -7353,7 +7037,6 @@ target_include_directories(gpr_log_test
   PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
   PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
   PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
   PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
   PRIVATE ${_gRPC_UPB_GENERATED_DIR}
@@ -7369,11 +7052,6 @@ target_link_libraries(gpr_log_test
   grpc_unsecure
 )
 
-  # avoid dependency on libstdc++
-  if (_gRPC_CORE_NOSTDCXX_FLAGS)
-    set_target_properties(gpr_log_test PROPERTIES LINKER_LANGUAGE C)
-    target_compile_options(gpr_log_test PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
-  endif()
 
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
@@ -7390,7 +7068,6 @@ target_include_directories(gpr_manual_constructor_test
   PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
   PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
   PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
   PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
   PRIVATE ${_gRPC_UPB_GENERATED_DIR}
@@ -7406,11 +7083,6 @@ target_link_libraries(gpr_manual_constructor_test
   grpc_unsecure
 )
 
-  # avoid dependency on libstdc++
-  if (_gRPC_CORE_NOSTDCXX_FLAGS)
-    set_target_properties(gpr_manual_constructor_test PROPERTIES LINKER_LANGUAGE C)
-    target_compile_options(gpr_manual_constructor_test PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
-  endif()
 
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
@@ -7427,7 +7099,6 @@ target_include_directories(gpr_mpscq_test
   PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
   PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
   PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
   PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
   PRIVATE ${_gRPC_UPB_GENERATED_DIR}
@@ -7443,11 +7114,6 @@ target_link_libraries(gpr_mpscq_test
   grpc_unsecure
 )
 
-  # avoid dependency on libstdc++
-  if (_gRPC_CORE_NOSTDCXX_FLAGS)
-    set_target_properties(gpr_mpscq_test PROPERTIES LINKER_LANGUAGE C)
-    target_compile_options(gpr_mpscq_test PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
-  endif()
 
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
@@ -7464,7 +7130,6 @@ target_include_directories(gpr_spinlock_test
   PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
   PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
   PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
   PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
   PRIVATE ${_gRPC_UPB_GENERATED_DIR}
@@ -7480,11 +7145,6 @@ target_link_libraries(gpr_spinlock_test
   grpc_unsecure
 )
 
-  # avoid dependency on libstdc++
-  if (_gRPC_CORE_NOSTDCXX_FLAGS)
-    set_target_properties(gpr_spinlock_test PROPERTIES LINKER_LANGUAGE C)
-    target_compile_options(gpr_spinlock_test PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
-  endif()
 
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
@@ -7501,7 +7161,6 @@ target_include_directories(gpr_string_test
   PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
   PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
   PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
   PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
   PRIVATE ${_gRPC_UPB_GENERATED_DIR}
@@ -7517,11 +7176,6 @@ target_link_libraries(gpr_string_test
   grpc_unsecure
 )
 
-  # avoid dependency on libstdc++
-  if (_gRPC_CORE_NOSTDCXX_FLAGS)
-    set_target_properties(gpr_string_test PROPERTIES LINKER_LANGUAGE C)
-    target_compile_options(gpr_string_test PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
-  endif()
 
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
@@ -7538,7 +7192,6 @@ target_include_directories(gpr_sync_test
   PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
   PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
   PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
   PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
   PRIVATE ${_gRPC_UPB_GENERATED_DIR}
@@ -7554,11 +7207,6 @@ target_link_libraries(gpr_sync_test
   grpc_unsecure
 )
 
-  # avoid dependency on libstdc++
-  if (_gRPC_CORE_NOSTDCXX_FLAGS)
-    set_target_properties(gpr_sync_test PROPERTIES LINKER_LANGUAGE C)
-    target_compile_options(gpr_sync_test PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
-  endif()
 
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
@@ -7575,7 +7223,6 @@ target_include_directories(gpr_thd_test
   PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
   PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
   PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
   PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
   PRIVATE ${_gRPC_UPB_GENERATED_DIR}
@@ -7591,11 +7238,6 @@ target_link_libraries(gpr_thd_test
   grpc_unsecure
 )
 
-  # avoid dependency on libstdc++
-  if (_gRPC_CORE_NOSTDCXX_FLAGS)
-    set_target_properties(gpr_thd_test PROPERTIES LINKER_LANGUAGE C)
-    target_compile_options(gpr_thd_test PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
-  endif()
 
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
@@ -7612,7 +7254,6 @@ target_include_directories(gpr_time_test
   PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
   PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
   PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
   PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
   PRIVATE ${_gRPC_UPB_GENERATED_DIR}
@@ -7628,11 +7269,6 @@ target_link_libraries(gpr_time_test
   grpc_unsecure
 )
 
-  # avoid dependency on libstdc++
-  if (_gRPC_CORE_NOSTDCXX_FLAGS)
-    set_target_properties(gpr_time_test PROPERTIES LINKER_LANGUAGE C)
-    target_compile_options(gpr_time_test PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
-  endif()
 
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
@@ -7649,7 +7285,6 @@ target_include_directories(gpr_tls_test
   PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
   PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
   PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
   PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
   PRIVATE ${_gRPC_UPB_GENERATED_DIR}
@@ -7665,11 +7300,6 @@ target_link_libraries(gpr_tls_test
   grpc_unsecure
 )
 
-  # avoid dependency on libstdc++
-  if (_gRPC_CORE_NOSTDCXX_FLAGS)
-    set_target_properties(gpr_tls_test PROPERTIES LINKER_LANGUAGE C)
-    target_compile_options(gpr_tls_test PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
-  endif()
 
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
@@ -7686,7 +7316,6 @@ target_include_directories(gpr_useful_test
   PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
   PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
   PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
   PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
   PRIVATE ${_gRPC_UPB_GENERATED_DIR}
@@ -7702,11 +7331,6 @@ target_link_libraries(gpr_useful_test
   grpc_unsecure
 )
 
-  # avoid dependency on libstdc++
-  if (_gRPC_CORE_NOSTDCXX_FLAGS)
-    set_target_properties(gpr_useful_test PROPERTIES LINKER_LANGUAGE C)
-    target_compile_options(gpr_useful_test PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
-  endif()
 
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
@@ -7723,7 +7347,6 @@ target_include_directories(grpc_auth_context_test
   PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
   PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
   PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
   PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
   PRIVATE ${_gRPC_UPB_GENERATED_DIR}
@@ -7739,11 +7362,6 @@ target_link_libraries(grpc_auth_context_test
   gpr
 )
 
-  # avoid dependency on libstdc++
-  if (_gRPC_CORE_NOSTDCXX_FLAGS)
-    set_target_properties(grpc_auth_context_test PROPERTIES LINKER_LANGUAGE C)
-    target_compile_options(grpc_auth_context_test PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
-  endif()
 
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
@@ -7760,7 +7378,6 @@ target_include_directories(grpc_b64_test
   PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
   PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
   PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
   PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
   PRIVATE ${_gRPC_UPB_GENERATED_DIR}
@@ -7776,11 +7393,6 @@ target_link_libraries(grpc_b64_test
   gpr
 )
 
-  # avoid dependency on libstdc++
-  if (_gRPC_CORE_NOSTDCXX_FLAGS)
-    set_target_properties(grpc_b64_test PROPERTIES LINKER_LANGUAGE C)
-    target_compile_options(grpc_b64_test PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
-  endif()
 
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
@@ -7797,7 +7409,6 @@ target_include_directories(grpc_byte_buffer_reader_test
   PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
   PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
   PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
   PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
   PRIVATE ${_gRPC_UPB_GENERATED_DIR}
@@ -7813,11 +7424,6 @@ target_link_libraries(grpc_byte_buffer_reader_test
   gpr
 )
 
-  # avoid dependency on libstdc++
-  if (_gRPC_CORE_NOSTDCXX_FLAGS)
-    set_target_properties(grpc_byte_buffer_reader_test PROPERTIES LINKER_LANGUAGE C)
-    target_compile_options(grpc_byte_buffer_reader_test PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
-  endif()
 
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
@@ -7834,7 +7440,6 @@ target_include_directories(grpc_channel_args_test
   PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
   PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
   PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
   PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
   PRIVATE ${_gRPC_UPB_GENERATED_DIR}
@@ -7850,11 +7455,6 @@ target_link_libraries(grpc_channel_args_test
   gpr
 )
 
-  # avoid dependency on libstdc++
-  if (_gRPC_CORE_NOSTDCXX_FLAGS)
-    set_target_properties(grpc_channel_args_test PROPERTIES LINKER_LANGUAGE C)
-    target_compile_options(grpc_channel_args_test PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
-  endif()
 
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
@@ -7871,7 +7471,6 @@ target_include_directories(grpc_channel_stack_builder_test
   PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
   PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
   PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
   PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
   PRIVATE ${_gRPC_UPB_GENERATED_DIR}
@@ -7887,11 +7486,6 @@ target_link_libraries(grpc_channel_stack_builder_test
   gpr
 )
 
-  # avoid dependency on libstdc++
-  if (_gRPC_CORE_NOSTDCXX_FLAGS)
-    set_target_properties(grpc_channel_stack_builder_test PROPERTIES LINKER_LANGUAGE C)
-    target_compile_options(grpc_channel_stack_builder_test PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
-  endif()
 
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
@@ -7908,7 +7502,6 @@ target_include_directories(grpc_channel_stack_test
   PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
   PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
   PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
   PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
   PRIVATE ${_gRPC_UPB_GENERATED_DIR}
@@ -7924,11 +7517,6 @@ target_link_libraries(grpc_channel_stack_test
   gpr
 )
 
-  # avoid dependency on libstdc++
-  if (_gRPC_CORE_NOSTDCXX_FLAGS)
-    set_target_properties(grpc_channel_stack_test PROPERTIES LINKER_LANGUAGE C)
-    target_compile_options(grpc_channel_stack_test PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
-  endif()
 
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
@@ -7945,7 +7533,6 @@ target_include_directories(grpc_completion_queue_test
   PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
   PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
   PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
   PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
   PRIVATE ${_gRPC_UPB_GENERATED_DIR}
@@ -7961,11 +7548,6 @@ target_link_libraries(grpc_completion_queue_test
   gpr
 )
 
-  # avoid dependency on libstdc++
-  if (_gRPC_CORE_NOSTDCXX_FLAGS)
-    set_target_properties(grpc_completion_queue_test PROPERTIES LINKER_LANGUAGE C)
-    target_compile_options(grpc_completion_queue_test PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
-  endif()
 
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
@@ -7982,7 +7564,6 @@ target_include_directories(grpc_completion_queue_threading_test
   PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
   PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
   PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
   PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
   PRIVATE ${_gRPC_UPB_GENERATED_DIR}
@@ -7998,11 +7579,6 @@ target_link_libraries(grpc_completion_queue_threading_test
   gpr
 )
 
-  # avoid dependency on libstdc++
-  if (_gRPC_CORE_NOSTDCXX_FLAGS)
-    set_target_properties(grpc_completion_queue_threading_test PROPERTIES LINKER_LANGUAGE C)
-    target_compile_options(grpc_completion_queue_threading_test PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
-  endif()
 
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
@@ -8019,7 +7595,6 @@ target_include_directories(grpc_control_plane_credentials_test
   PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
   PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
   PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
   PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
   PRIVATE ${_gRPC_UPB_GENERATED_DIR}
@@ -8035,11 +7610,6 @@ target_link_libraries(grpc_control_plane_credentials_test
   gpr
 )
 
-  # avoid dependency on libstdc++
-  if (_gRPC_CORE_NOSTDCXX_FLAGS)
-    set_target_properties(grpc_control_plane_credentials_test PROPERTIES LINKER_LANGUAGE C)
-    target_compile_options(grpc_control_plane_credentials_test PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
-  endif()
 
 endif (gRPC_BUILD_TESTS)
 
@@ -8056,7 +7626,6 @@ target_include_directories(grpc_create_jwt
   PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
   PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
   PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
   PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
   PRIVATE ${_gRPC_UPB_GENERATED_DIR}
@@ -8072,11 +7641,6 @@ target_link_libraries(grpc_create_jwt
   gpr
 )
 
-  # avoid dependency on libstdc++
-  if (_gRPC_CORE_NOSTDCXX_FLAGS)
-    set_target_properties(grpc_create_jwt PROPERTIES LINKER_LANGUAGE C)
-    target_compile_options(grpc_create_jwt PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
-  endif()
 
 if (gRPC_BUILD_TESTS)
 
@@ -8092,7 +7656,6 @@ target_include_directories(grpc_credentials_test
   PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
   PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
   PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
   PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
   PRIVATE ${_gRPC_UPB_GENERATED_DIR}
@@ -8108,11 +7671,6 @@ target_link_libraries(grpc_credentials_test
   gpr
 )
 
-  # avoid dependency on libstdc++
-  if (_gRPC_CORE_NOSTDCXX_FLAGS)
-    set_target_properties(grpc_credentials_test PROPERTIES LINKER_LANGUAGE C)
-    target_compile_options(grpc_credentials_test PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
-  endif()
 
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
@@ -8129,7 +7687,6 @@ target_include_directories(grpc_ipv6_loopback_available_test
   PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
   PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
   PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
   PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
   PRIVATE ${_gRPC_UPB_GENERATED_DIR}
@@ -8145,11 +7702,6 @@ target_link_libraries(grpc_ipv6_loopback_available_test
   gpr
 )
 
-  # avoid dependency on libstdc++
-  if (_gRPC_CORE_NOSTDCXX_FLAGS)
-    set_target_properties(grpc_ipv6_loopback_available_test PROPERTIES LINKER_LANGUAGE C)
-    target_compile_options(grpc_ipv6_loopback_available_test PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
-  endif()
 
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
@@ -8167,7 +7719,6 @@ target_include_directories(grpc_json_token_test
   PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
   PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
   PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
   PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
   PRIVATE ${_gRPC_UPB_GENERATED_DIR}
@@ -8183,11 +7734,6 @@ target_link_libraries(grpc_json_token_test
   gpr
 )
 
-  # avoid dependency on libstdc++
-  if (_gRPC_CORE_NOSTDCXX_FLAGS)
-    set_target_properties(grpc_json_token_test PROPERTIES LINKER_LANGUAGE C)
-    target_compile_options(grpc_json_token_test PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
-  endif()
 
 endif()
 endif (gRPC_BUILD_TESTS)
@@ -8205,7 +7751,6 @@ target_include_directories(grpc_jwt_verifier_test
   PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
   PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
   PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
   PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
   PRIVATE ${_gRPC_UPB_GENERATED_DIR}
@@ -8221,11 +7766,6 @@ target_link_libraries(grpc_jwt_verifier_test
   gpr
 )
 
-  # avoid dependency on libstdc++
-  if (_gRPC_CORE_NOSTDCXX_FLAGS)
-    set_target_properties(grpc_jwt_verifier_test PROPERTIES LINKER_LANGUAGE C)
-    target_compile_options(grpc_jwt_verifier_test PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
-  endif()
 
 endif (gRPC_BUILD_TESTS)
 
@@ -8242,7 +7782,6 @@ target_include_directories(grpc_print_google_default_creds_token
   PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
   PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
   PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
   PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
   PRIVATE ${_gRPC_UPB_GENERATED_DIR}
@@ -8257,11 +7796,6 @@ target_link_libraries(grpc_print_google_default_creds_token
   gpr
 )
 
-  # avoid dependency on libstdc++
-  if (_gRPC_CORE_NOSTDCXX_FLAGS)
-    set_target_properties(grpc_print_google_default_creds_token PROPERTIES LINKER_LANGUAGE C)
-    target_compile_options(grpc_print_google_default_creds_token PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
-  endif()
 
 if (gRPC_BUILD_TESTS)
 
@@ -8277,7 +7811,6 @@ target_include_directories(grpc_security_connector_test
   PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
   PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
   PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
   PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
   PRIVATE ${_gRPC_UPB_GENERATED_DIR}
@@ -8293,11 +7826,6 @@ target_link_libraries(grpc_security_connector_test
   gpr
 )
 
-  # avoid dependency on libstdc++
-  if (_gRPC_CORE_NOSTDCXX_FLAGS)
-    set_target_properties(grpc_security_connector_test PROPERTIES LINKER_LANGUAGE C)
-    target_compile_options(grpc_security_connector_test PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
-  endif()
 
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
@@ -8314,7 +7842,6 @@ target_include_directories(grpc_ssl_credentials_test
   PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
   PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
   PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
   PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
   PRIVATE ${_gRPC_UPB_GENERATED_DIR}
@@ -8330,11 +7857,6 @@ target_link_libraries(grpc_ssl_credentials_test
   gpr
 )
 
-  # avoid dependency on libstdc++
-  if (_gRPC_CORE_NOSTDCXX_FLAGS)
-    set_target_properties(grpc_ssl_credentials_test PROPERTIES LINKER_LANGUAGE C)
-    target_compile_options(grpc_ssl_credentials_test PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
-  endif()
 
 endif (gRPC_BUILD_TESTS)
 
@@ -8351,7 +7873,6 @@ target_include_directories(grpc_verify_jwt
   PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
   PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
   PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
   PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
   PRIVATE ${_gRPC_UPB_GENERATED_DIR}
@@ -8366,11 +7887,6 @@ target_link_libraries(grpc_verify_jwt
   gpr
 )
 
-  # avoid dependency on libstdc++
-  if (_gRPC_CORE_NOSTDCXX_FLAGS)
-    set_target_properties(grpc_verify_jwt PROPERTIES LINKER_LANGUAGE C)
-    target_compile_options(grpc_verify_jwt PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
-  endif()
 
 if (gRPC_BUILD_TESTS)
 if(_gRPC_PLATFORM_LINUX)
@@ -8387,7 +7903,6 @@ target_include_directories(handshake_client_ssl
   PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
   PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
   PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
   PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
   PRIVATE ${_gRPC_UPB_GENERATED_DIR}
@@ -8404,11 +7919,6 @@ target_link_libraries(handshake_client_ssl
   gpr
 )
 
-  # avoid dependency on libstdc++
-  if (_gRPC_CORE_NOSTDCXX_FLAGS)
-    set_target_properties(handshake_client_ssl PROPERTIES LINKER_LANGUAGE C)
-    target_compile_options(handshake_client_ssl PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
-  endif()
 
 endif()
 endif (gRPC_BUILD_TESTS)
@@ -8428,7 +7938,6 @@ target_include_directories(handshake_server_ssl
   PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
   PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
   PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
   PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
   PRIVATE ${_gRPC_UPB_GENERATED_DIR}
@@ -8445,11 +7954,6 @@ target_link_libraries(handshake_server_ssl
   gpr
 )
 
-  # avoid dependency on libstdc++
-  if (_gRPC_CORE_NOSTDCXX_FLAGS)
-    set_target_properties(handshake_server_ssl PROPERTIES LINKER_LANGUAGE C)
-    target_compile_options(handshake_server_ssl PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
-  endif()
 
 endif()
 endif (gRPC_BUILD_TESTS)
@@ -8469,7 +7973,6 @@ target_include_directories(handshake_server_with_readahead_handshaker
   PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
   PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
   PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
   PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
   PRIVATE ${_gRPC_UPB_GENERATED_DIR}
@@ -8486,11 +7989,6 @@ target_link_libraries(handshake_server_with_readahead_handshaker
   gpr
 )
 
-  # avoid dependency on libstdc++
-  if (_gRPC_CORE_NOSTDCXX_FLAGS)
-    set_target_properties(handshake_server_with_readahead_handshaker PROPERTIES LINKER_LANGUAGE C)
-    target_compile_options(handshake_server_with_readahead_handshaker PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
-  endif()
 
 endif()
 endif (gRPC_BUILD_TESTS)
@@ -8509,7 +8007,6 @@ target_include_directories(handshake_verify_peer_options
   PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
   PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
   PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
   PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
   PRIVATE ${_gRPC_UPB_GENERATED_DIR}
@@ -8526,11 +8023,6 @@ target_link_libraries(handshake_verify_peer_options
   gpr
 )
 
-  # avoid dependency on libstdc++
-  if (_gRPC_CORE_NOSTDCXX_FLAGS)
-    set_target_properties(handshake_verify_peer_options PROPERTIES LINKER_LANGUAGE C)
-    target_compile_options(handshake_verify_peer_options PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
-  endif()
 
 endif()
 endif (gRPC_BUILD_TESTS)
@@ -8548,7 +8040,6 @@ target_include_directories(histogram_test
   PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
   PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
   PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
   PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
   PRIVATE ${_gRPC_UPB_GENERATED_DIR}
@@ -8563,11 +8054,6 @@ target_link_libraries(histogram_test
   gpr
 )
 
-  # avoid dependency on libstdc++
-  if (_gRPC_CORE_NOSTDCXX_FLAGS)
-    set_target_properties(histogram_test PROPERTIES LINKER_LANGUAGE C)
-    target_compile_options(histogram_test PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
-  endif()
 
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
@@ -8584,7 +8070,6 @@ target_include_directories(hpack_parser_test
   PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
   PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
   PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
   PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
   PRIVATE ${_gRPC_UPB_GENERATED_DIR}
@@ -8600,11 +8085,6 @@ target_link_libraries(hpack_parser_test
   gpr
 )
 
-  # avoid dependency on libstdc++
-  if (_gRPC_CORE_NOSTDCXX_FLAGS)
-    set_target_properties(hpack_parser_test PROPERTIES LINKER_LANGUAGE C)
-    target_compile_options(hpack_parser_test PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
-  endif()
 
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
@@ -8621,7 +8101,6 @@ target_include_directories(hpack_table_test
   PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
   PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
   PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
   PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
   PRIVATE ${_gRPC_UPB_GENERATED_DIR}
@@ -8637,11 +8116,6 @@ target_link_libraries(hpack_table_test
   gpr
 )
 
-  # avoid dependency on libstdc++
-  if (_gRPC_CORE_NOSTDCXX_FLAGS)
-    set_target_properties(hpack_table_test PROPERTIES LINKER_LANGUAGE C)
-    target_compile_options(hpack_table_test PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
-  endif()
 
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
@@ -8658,7 +8132,6 @@ target_include_directories(http_parser_test
   PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
   PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
   PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
   PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
   PRIVATE ${_gRPC_UPB_GENERATED_DIR}
@@ -8674,11 +8147,6 @@ target_link_libraries(http_parser_test
   gpr
 )
 
-  # avoid dependency on libstdc++
-  if (_gRPC_CORE_NOSTDCXX_FLAGS)
-    set_target_properties(http_parser_test PROPERTIES LINKER_LANGUAGE C)
-    target_compile_options(http_parser_test PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
-  endif()
 
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
@@ -8695,7 +8163,6 @@ target_include_directories(httpcli_format_request_test
   PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
   PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
   PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
   PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
   PRIVATE ${_gRPC_UPB_GENERATED_DIR}
@@ -8711,11 +8178,6 @@ target_link_libraries(httpcli_format_request_test
   gpr
 )
 
-  # avoid dependency on libstdc++
-  if (_gRPC_CORE_NOSTDCXX_FLAGS)
-    set_target_properties(httpcli_format_request_test PROPERTIES LINKER_LANGUAGE C)
-    target_compile_options(httpcli_format_request_test PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
-  endif()
 
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
@@ -8733,7 +8195,6 @@ target_include_directories(httpcli_test
   PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
   PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
   PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
   PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
   PRIVATE ${_gRPC_UPB_GENERATED_DIR}
@@ -8749,11 +8210,6 @@ target_link_libraries(httpcli_test
   gpr
 )
 
-  # avoid dependency on libstdc++
-  if (_gRPC_CORE_NOSTDCXX_FLAGS)
-    set_target_properties(httpcli_test PROPERTIES LINKER_LANGUAGE C)
-    target_compile_options(httpcli_test PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
-  endif()
 
 endif()
 endif (gRPC_BUILD_TESTS)
@@ -8772,7 +8228,6 @@ target_include_directories(httpscli_test
   PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
   PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
   PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
   PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
   PRIVATE ${_gRPC_UPB_GENERATED_DIR}
@@ -8788,11 +8243,6 @@ target_link_libraries(httpscli_test
   gpr
 )
 
-  # avoid dependency on libstdc++
-  if (_gRPC_CORE_NOSTDCXX_FLAGS)
-    set_target_properties(httpscli_test PROPERTIES LINKER_LANGUAGE C)
-    target_compile_options(httpscli_test PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
-  endif()
 
 endif()
 endif (gRPC_BUILD_TESTS)
@@ -8810,7 +8260,6 @@ target_include_directories(init_test
   PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
   PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
   PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
   PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
   PRIVATE ${_gRPC_UPB_GENERATED_DIR}
@@ -8826,11 +8275,6 @@ target_link_libraries(init_test
   gpr
 )
 
-  # avoid dependency on libstdc++
-  if (_gRPC_CORE_NOSTDCXX_FLAGS)
-    set_target_properties(init_test PROPERTIES LINKER_LANGUAGE C)
-    target_compile_options(init_test PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
-  endif()
 
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
@@ -8847,7 +8291,6 @@ target_include_directories(inproc_callback_test
   PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
   PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
   PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
   PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
   PRIVATE ${_gRPC_UPB_GENERATED_DIR}
@@ -8863,11 +8306,6 @@ target_link_libraries(inproc_callback_test
   gpr
 )
 
-  # avoid dependency on libstdc++
-  if (_gRPC_CORE_NOSTDCXX_FLAGS)
-    set_target_properties(inproc_callback_test PROPERTIES LINKER_LANGUAGE C)
-    target_compile_options(inproc_callback_test PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
-  endif()
 
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
@@ -8884,7 +8322,6 @@ target_include_directories(invalid_call_argument_test
   PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
   PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
   PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
   PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
   PRIVATE ${_gRPC_UPB_GENERATED_DIR}
@@ -8900,11 +8337,6 @@ target_link_libraries(invalid_call_argument_test
   gpr
 )
 
-  # avoid dependency on libstdc++
-  if (_gRPC_CORE_NOSTDCXX_FLAGS)
-    set_target_properties(invalid_call_argument_test PROPERTIES LINKER_LANGUAGE C)
-    target_compile_options(invalid_call_argument_test PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
-  endif()
 
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
@@ -8921,7 +8353,6 @@ target_include_directories(json_rewrite
   PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
   PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
   PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
   PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
   PRIVATE ${_gRPC_UPB_GENERATED_DIR}
@@ -8937,11 +8368,6 @@ target_link_libraries(json_rewrite
   gpr
 )
 
-  # avoid dependency on libstdc++
-  if (_gRPC_CORE_NOSTDCXX_FLAGS)
-    set_target_properties(json_rewrite PROPERTIES LINKER_LANGUAGE C)
-    target_compile_options(json_rewrite PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
-  endif()
 
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
@@ -8958,7 +8384,6 @@ target_include_directories(json_rewrite_test
   PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
   PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
   PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
   PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
   PRIVATE ${_gRPC_UPB_GENERATED_DIR}
@@ -8974,11 +8399,6 @@ target_link_libraries(json_rewrite_test
   gpr
 )
 
-  # avoid dependency on libstdc++
-  if (_gRPC_CORE_NOSTDCXX_FLAGS)
-    set_target_properties(json_rewrite_test PROPERTIES LINKER_LANGUAGE C)
-    target_compile_options(json_rewrite_test PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
-  endif()
 
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
@@ -8995,7 +8415,6 @@ target_include_directories(json_stream_error_test
   PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
   PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
   PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
   PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
   PRIVATE ${_gRPC_UPB_GENERATED_DIR}
@@ -9011,11 +8430,6 @@ target_link_libraries(json_stream_error_test
   gpr
 )
 
-  # avoid dependency on libstdc++
-  if (_gRPC_CORE_NOSTDCXX_FLAGS)
-    set_target_properties(json_stream_error_test PROPERTIES LINKER_LANGUAGE C)
-    target_compile_options(json_stream_error_test PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
-  endif()
 
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
@@ -9032,7 +8446,6 @@ target_include_directories(json_test
   PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
   PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
   PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
   PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
   PRIVATE ${_gRPC_UPB_GENERATED_DIR}
@@ -9048,11 +8461,6 @@ target_link_libraries(json_test
   gpr
 )
 
-  # avoid dependency on libstdc++
-  if (_gRPC_CORE_NOSTDCXX_FLAGS)
-    set_target_properties(json_test PROPERTIES LINKER_LANGUAGE C)
-    target_compile_options(json_test PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
-  endif()
 
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
@@ -9069,7 +8477,6 @@ target_include_directories(lame_client_test
   PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
   PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
   PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
   PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
   PRIVATE ${_gRPC_UPB_GENERATED_DIR}
@@ -9085,11 +8492,6 @@ target_link_libraries(lame_client_test
   gpr
 )
 
-  # avoid dependency on libstdc++
-  if (_gRPC_CORE_NOSTDCXX_FLAGS)
-    set_target_properties(lame_client_test PROPERTIES LINKER_LANGUAGE C)
-    target_compile_options(lame_client_test PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
-  endif()
 
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
@@ -9106,7 +8508,6 @@ target_include_directories(load_file_test
   PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
   PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
   PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
   PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
   PRIVATE ${_gRPC_UPB_GENERATED_DIR}
@@ -9122,11 +8523,6 @@ target_link_libraries(load_file_test
   gpr
 )
 
-  # avoid dependency on libstdc++
-  if (_gRPC_CORE_NOSTDCXX_FLAGS)
-    set_target_properties(load_file_test PROPERTIES LINKER_LANGUAGE C)
-    target_compile_options(load_file_test PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
-  endif()
 
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
@@ -9143,7 +8539,6 @@ target_include_directories(memory_usage_client
   PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
   PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
   PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
   PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
   PRIVATE ${_gRPC_UPB_GENERATED_DIR}
@@ -9159,11 +8554,6 @@ target_link_libraries(memory_usage_client
   gpr
 )
 
-  # avoid dependency on libstdc++
-  if (_gRPC_CORE_NOSTDCXX_FLAGS)
-    set_target_properties(memory_usage_client PROPERTIES LINKER_LANGUAGE C)
-    target_compile_options(memory_usage_client PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
-  endif()
 
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
@@ -9180,7 +8570,6 @@ target_include_directories(memory_usage_server
   PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
   PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
   PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
   PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
   PRIVATE ${_gRPC_UPB_GENERATED_DIR}
@@ -9196,11 +8585,6 @@ target_link_libraries(memory_usage_server
   gpr
 )
 
-  # avoid dependency on libstdc++
-  if (_gRPC_CORE_NOSTDCXX_FLAGS)
-    set_target_properties(memory_usage_server PROPERTIES LINKER_LANGUAGE C)
-    target_compile_options(memory_usage_server PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
-  endif()
 
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
@@ -9218,7 +8602,6 @@ target_include_directories(memory_usage_test
   PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
   PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
   PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
   PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
   PRIVATE ${_gRPC_UPB_GENERATED_DIR}
@@ -9234,11 +8617,6 @@ target_link_libraries(memory_usage_test
   gpr
 )
 
-  # avoid dependency on libstdc++
-  if (_gRPC_CORE_NOSTDCXX_FLAGS)
-    set_target_properties(memory_usage_test PROPERTIES LINKER_LANGUAGE C)
-    target_compile_options(memory_usage_test PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
-  endif()
 
 endif()
 endif (gRPC_BUILD_TESTS)
@@ -9256,7 +8634,6 @@ target_include_directories(message_compress_test
   PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
   PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
   PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
   PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
   PRIVATE ${_gRPC_UPB_GENERATED_DIR}
@@ -9272,11 +8649,6 @@ target_link_libraries(message_compress_test
   gpr
 )
 
-  # avoid dependency on libstdc++
-  if (_gRPC_CORE_NOSTDCXX_FLAGS)
-    set_target_properties(message_compress_test PROPERTIES LINKER_LANGUAGE C)
-    target_compile_options(message_compress_test PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
-  endif()
 
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
@@ -9293,7 +8665,6 @@ target_include_directories(minimal_stack_is_minimal_test
   PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
   PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
   PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
   PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
   PRIVATE ${_gRPC_UPB_GENERATED_DIR}
@@ -9309,11 +8680,6 @@ target_link_libraries(minimal_stack_is_minimal_test
   gpr
 )
 
-  # avoid dependency on libstdc++
-  if (_gRPC_CORE_NOSTDCXX_FLAGS)
-    set_target_properties(minimal_stack_is_minimal_test PROPERTIES LINKER_LANGUAGE C)
-    target_compile_options(minimal_stack_is_minimal_test PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
-  endif()
 
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
@@ -9330,7 +8696,6 @@ target_include_directories(mpmcqueue_test
   PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
   PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
   PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
   PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
   PRIVATE ${_gRPC_UPB_GENERATED_DIR}
@@ -9346,11 +8711,6 @@ target_link_libraries(mpmcqueue_test
   gpr
 )
 
-  # avoid dependency on libstdc++
-  if (_gRPC_CORE_NOSTDCXX_FLAGS)
-    set_target_properties(mpmcqueue_test PROPERTIES LINKER_LANGUAGE C)
-    target_compile_options(mpmcqueue_test PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
-  endif()
 
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
@@ -9367,7 +8727,6 @@ target_include_directories(multiple_server_queues_test
   PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
   PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
   PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
   PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
   PRIVATE ${_gRPC_UPB_GENERATED_DIR}
@@ -9383,11 +8742,6 @@ target_link_libraries(multiple_server_queues_test
   gpr
 )
 
-  # avoid dependency on libstdc++
-  if (_gRPC_CORE_NOSTDCXX_FLAGS)
-    set_target_properties(multiple_server_queues_test PROPERTIES LINKER_LANGUAGE C)
-    target_compile_options(multiple_server_queues_test PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
-  endif()
 
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
@@ -9404,7 +8758,6 @@ target_include_directories(murmur_hash_test
   PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
   PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
   PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
   PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
   PRIVATE ${_gRPC_UPB_GENERATED_DIR}
@@ -9420,11 +8773,6 @@ target_link_libraries(murmur_hash_test
   grpc_unsecure
 )
 
-  # avoid dependency on libstdc++
-  if (_gRPC_CORE_NOSTDCXX_FLAGS)
-    set_target_properties(murmur_hash_test PROPERTIES LINKER_LANGUAGE C)
-    target_compile_options(murmur_hash_test PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
-  endif()
 
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
@@ -9441,7 +8789,6 @@ target_include_directories(no_server_test
   PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
   PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
   PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
   PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
   PRIVATE ${_gRPC_UPB_GENERATED_DIR}
@@ -9457,11 +8804,6 @@ target_link_libraries(no_server_test
   gpr
 )
 
-  # avoid dependency on libstdc++
-  if (_gRPC_CORE_NOSTDCXX_FLAGS)
-    set_target_properties(no_server_test PROPERTIES LINKER_LANGUAGE C)
-    target_compile_options(no_server_test PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
-  endif()
 
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
@@ -9478,7 +8820,6 @@ target_include_directories(num_external_connectivity_watchers_test
   PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
   PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
   PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
   PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
   PRIVATE ${_gRPC_UPB_GENERATED_DIR}
@@ -9494,11 +8835,6 @@ target_link_libraries(num_external_connectivity_watchers_test
   gpr
 )
 
-  # avoid dependency on libstdc++
-  if (_gRPC_CORE_NOSTDCXX_FLAGS)
-    set_target_properties(num_external_connectivity_watchers_test PROPERTIES LINKER_LANGUAGE C)
-    target_compile_options(num_external_connectivity_watchers_test PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
-  endif()
 
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
@@ -9515,7 +8851,6 @@ target_include_directories(parse_address_test
   PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
   PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
   PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
   PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
   PRIVATE ${_gRPC_UPB_GENERATED_DIR}
@@ -9531,11 +8866,6 @@ target_link_libraries(parse_address_test
   gpr
 )
 
-  # avoid dependency on libstdc++
-  if (_gRPC_CORE_NOSTDCXX_FLAGS)
-    set_target_properties(parse_address_test PROPERTIES LINKER_LANGUAGE C)
-    target_compile_options(parse_address_test PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
-  endif()
 
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
@@ -9553,7 +8883,6 @@ target_include_directories(parse_address_with_named_scope_id_test
   PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
   PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
   PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
   PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
   PRIVATE ${_gRPC_UPB_GENERATED_DIR}
@@ -9569,11 +8898,6 @@ target_link_libraries(parse_address_with_named_scope_id_test
   gpr
 )
 
-  # avoid dependency on libstdc++
-  if (_gRPC_CORE_NOSTDCXX_FLAGS)
-    set_target_properties(parse_address_with_named_scope_id_test PROPERTIES LINKER_LANGUAGE C)
-    target_compile_options(parse_address_with_named_scope_id_test PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
-  endif()
 
 endif()
 endif (gRPC_BUILD_TESTS)
@@ -9591,7 +8915,6 @@ target_include_directories(percent_encoding_test
   PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
   PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
   PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
   PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
   PRIVATE ${_gRPC_UPB_GENERATED_DIR}
@@ -9607,11 +8930,6 @@ target_link_libraries(percent_encoding_test
   gpr
 )
 
-  # avoid dependency on libstdc++
-  if (_gRPC_CORE_NOSTDCXX_FLAGS)
-    set_target_properties(percent_encoding_test PROPERTIES LINKER_LANGUAGE C)
-    target_compile_options(percent_encoding_test PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
-  endif()
 
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
@@ -9629,7 +8947,6 @@ target_include_directories(resolve_address_using_ares_resolver_posix_test
   PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
   PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
   PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
   PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
   PRIVATE ${_gRPC_UPB_GENERATED_DIR}
@@ -9645,11 +8962,6 @@ target_link_libraries(resolve_address_using_ares_resolver_posix_test
   gpr
 )
 
-  # avoid dependency on libstdc++
-  if (_gRPC_CORE_NOSTDCXX_FLAGS)
-    set_target_properties(resolve_address_using_ares_resolver_posix_test PROPERTIES LINKER_LANGUAGE C)
-    target_compile_options(resolve_address_using_ares_resolver_posix_test PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
-  endif()
 
 endif()
 endif (gRPC_BUILD_TESTS)
@@ -9667,7 +8979,6 @@ target_include_directories(resolve_address_using_ares_resolver_test
   PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
   PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
   PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
   PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
   PRIVATE ${_gRPC_UPB_GENERATED_DIR}
@@ -9683,11 +8994,6 @@ target_link_libraries(resolve_address_using_ares_resolver_test
   gpr
 )
 
-  # avoid dependency on libstdc++
-  if (_gRPC_CORE_NOSTDCXX_FLAGS)
-    set_target_properties(resolve_address_using_ares_resolver_test PROPERTIES LINKER_LANGUAGE C)
-    target_compile_options(resolve_address_using_ares_resolver_test PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
-  endif()
 
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
@@ -9705,7 +9011,6 @@ target_include_directories(resolve_address_using_native_resolver_posix_test
   PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
   PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
   PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
   PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
   PRIVATE ${_gRPC_UPB_GENERATED_DIR}
@@ -9721,11 +9026,6 @@ target_link_libraries(resolve_address_using_native_resolver_posix_test
   gpr
 )
 
-  # avoid dependency on libstdc++
-  if (_gRPC_CORE_NOSTDCXX_FLAGS)
-    set_target_properties(resolve_address_using_native_resolver_posix_test PROPERTIES LINKER_LANGUAGE C)
-    target_compile_options(resolve_address_using_native_resolver_posix_test PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
-  endif()
 
 endif()
 endif (gRPC_BUILD_TESTS)
@@ -9743,7 +9043,6 @@ target_include_directories(resolve_address_using_native_resolver_test
   PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
   PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
   PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
   PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
   PRIVATE ${_gRPC_UPB_GENERATED_DIR}
@@ -9759,11 +9058,6 @@ target_link_libraries(resolve_address_using_native_resolver_test
   gpr
 )
 
-  # avoid dependency on libstdc++
-  if (_gRPC_CORE_NOSTDCXX_FLAGS)
-    set_target_properties(resolve_address_using_native_resolver_test PROPERTIES LINKER_LANGUAGE C)
-    target_compile_options(resolve_address_using_native_resolver_test PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
-  endif()
 
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
@@ -9780,7 +9074,6 @@ target_include_directories(resource_quota_test
   PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
   PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
   PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
   PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
   PRIVATE ${_gRPC_UPB_GENERATED_DIR}
@@ -9796,11 +9089,6 @@ target_link_libraries(resource_quota_test
   gpr
 )
 
-  # avoid dependency on libstdc++
-  if (_gRPC_CORE_NOSTDCXX_FLAGS)
-    set_target_properties(resource_quota_test PROPERTIES LINKER_LANGUAGE C)
-    target_compile_options(resource_quota_test PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
-  endif()
 
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
@@ -9817,7 +9105,6 @@ target_include_directories(secure_channel_create_test
   PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
   PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
   PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
   PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
   PRIVATE ${_gRPC_UPB_GENERATED_DIR}
@@ -9833,11 +9120,6 @@ target_link_libraries(secure_channel_create_test
   gpr
 )
 
-  # avoid dependency on libstdc++
-  if (_gRPC_CORE_NOSTDCXX_FLAGS)
-    set_target_properties(secure_channel_create_test PROPERTIES LINKER_LANGUAGE C)
-    target_compile_options(secure_channel_create_test PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
-  endif()
 
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
@@ -9854,7 +9136,6 @@ target_include_directories(secure_endpoint_test
   PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
   PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
   PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
   PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
   PRIVATE ${_gRPC_UPB_GENERATED_DIR}
@@ -9870,11 +9151,6 @@ target_link_libraries(secure_endpoint_test
   gpr
 )
 
-  # avoid dependency on libstdc++
-  if (_gRPC_CORE_NOSTDCXX_FLAGS)
-    set_target_properties(secure_endpoint_test PROPERTIES LINKER_LANGUAGE C)
-    target_compile_options(secure_endpoint_test PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
-  endif()
 
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
@@ -9891,7 +9167,6 @@ target_include_directories(sequential_connectivity_test
   PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
   PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
   PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
   PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
   PRIVATE ${_gRPC_UPB_GENERATED_DIR}
@@ -9907,11 +9182,6 @@ target_link_libraries(sequential_connectivity_test
   gpr
 )
 
-  # avoid dependency on libstdc++
-  if (_gRPC_CORE_NOSTDCXX_FLAGS)
-    set_target_properties(sequential_connectivity_test PROPERTIES LINKER_LANGUAGE C)
-    target_compile_options(sequential_connectivity_test PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
-  endif()
 
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
@@ -9928,7 +9198,6 @@ target_include_directories(server_chttp2_test
   PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
   PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
   PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
   PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
   PRIVATE ${_gRPC_UPB_GENERATED_DIR}
@@ -9944,11 +9213,6 @@ target_link_libraries(server_chttp2_test
   gpr
 )
 
-  # avoid dependency on libstdc++
-  if (_gRPC_CORE_NOSTDCXX_FLAGS)
-    set_target_properties(server_chttp2_test PROPERTIES LINKER_LANGUAGE C)
-    target_compile_options(server_chttp2_test PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
-  endif()
 
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
@@ -9965,7 +9229,6 @@ target_include_directories(server_test
   PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
   PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
   PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
   PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
   PRIVATE ${_gRPC_UPB_GENERATED_DIR}
@@ -9981,11 +9244,6 @@ target_link_libraries(server_test
   gpr
 )
 
-  # avoid dependency on libstdc++
-  if (_gRPC_CORE_NOSTDCXX_FLAGS)
-    set_target_properties(server_test PROPERTIES LINKER_LANGUAGE C)
-    target_compile_options(server_test PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
-  endif()
 
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
@@ -10002,7 +9260,6 @@ target_include_directories(slice_buffer_test
   PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
   PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
   PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
   PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
   PRIVATE ${_gRPC_UPB_GENERATED_DIR}
@@ -10018,11 +9275,6 @@ target_link_libraries(slice_buffer_test
   gpr
 )
 
-  # avoid dependency on libstdc++
-  if (_gRPC_CORE_NOSTDCXX_FLAGS)
-    set_target_properties(slice_buffer_test PROPERTIES LINKER_LANGUAGE C)
-    target_compile_options(slice_buffer_test PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
-  endif()
 
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
@@ -10039,7 +9291,6 @@ target_include_directories(slice_string_helpers_test
   PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
   PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
   PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
   PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
   PRIVATE ${_gRPC_UPB_GENERATED_DIR}
@@ -10055,11 +9306,6 @@ target_link_libraries(slice_string_helpers_test
   gpr
 )
 
-  # avoid dependency on libstdc++
-  if (_gRPC_CORE_NOSTDCXX_FLAGS)
-    set_target_properties(slice_string_helpers_test PROPERTIES LINKER_LANGUAGE C)
-    target_compile_options(slice_string_helpers_test PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
-  endif()
 
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
@@ -10076,7 +9322,6 @@ target_include_directories(slice_test
   PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
   PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
   PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
   PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
   PRIVATE ${_gRPC_UPB_GENERATED_DIR}
@@ -10092,11 +9337,6 @@ target_link_libraries(slice_test
   gpr
 )
 
-  # avoid dependency on libstdc++
-  if (_gRPC_CORE_NOSTDCXX_FLAGS)
-    set_target_properties(slice_test PROPERTIES LINKER_LANGUAGE C)
-    target_compile_options(slice_test PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
-  endif()
 
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
@@ -10113,7 +9353,6 @@ target_include_directories(sockaddr_resolver_test
   PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
   PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
   PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
   PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
   PRIVATE ${_gRPC_UPB_GENERATED_DIR}
@@ -10129,11 +9368,6 @@ target_link_libraries(sockaddr_resolver_test
   gpr
 )
 
-  # avoid dependency on libstdc++
-  if (_gRPC_CORE_NOSTDCXX_FLAGS)
-    set_target_properties(sockaddr_resolver_test PROPERTIES LINKER_LANGUAGE C)
-    target_compile_options(sockaddr_resolver_test PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
-  endif()
 
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
@@ -10150,7 +9384,6 @@ target_include_directories(sockaddr_utils_test
   PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
   PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
   PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
   PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
   PRIVATE ${_gRPC_UPB_GENERATED_DIR}
@@ -10166,11 +9399,6 @@ target_link_libraries(sockaddr_utils_test
   gpr
 )
 
-  # avoid dependency on libstdc++
-  if (_gRPC_CORE_NOSTDCXX_FLAGS)
-    set_target_properties(sockaddr_utils_test PROPERTIES LINKER_LANGUAGE C)
-    target_compile_options(sockaddr_utils_test PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
-  endif()
 
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
@@ -10188,7 +9416,6 @@ target_include_directories(socket_utils_test
   PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
   PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
   PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
   PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
   PRIVATE ${_gRPC_UPB_GENERATED_DIR}
@@ -10204,11 +9431,6 @@ target_link_libraries(socket_utils_test
   gpr
 )
 
-  # avoid dependency on libstdc++
-  if (_gRPC_CORE_NOSTDCXX_FLAGS)
-    set_target_properties(socket_utils_test PROPERTIES LINKER_LANGUAGE C)
-    target_compile_options(socket_utils_test PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
-  endif()
 
 endif()
 endif (gRPC_BUILD_TESTS)
@@ -10228,7 +9450,6 @@ target_include_directories(ssl_transport_security_test
   PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
   PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
   PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
   PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
   PRIVATE ${_gRPC_UPB_GENERATED_DIR}
@@ -10244,11 +9465,6 @@ target_link_libraries(ssl_transport_security_test
   grpc
 )
 
-  # avoid dependency on libstdc++
-  if (_gRPC_CORE_NOSTDCXX_FLAGS)
-    set_target_properties(ssl_transport_security_test PROPERTIES LINKER_LANGUAGE C)
-    target_compile_options(ssl_transport_security_test PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
-  endif()
 
 endif()
 endif (gRPC_BUILD_TESTS)
@@ -10266,7 +9482,6 @@ target_include_directories(status_conversion_test
   PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
   PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
   PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
   PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
   PRIVATE ${_gRPC_UPB_GENERATED_DIR}
@@ -10282,11 +9497,6 @@ target_link_libraries(status_conversion_test
   gpr
 )
 
-  # avoid dependency on libstdc++
-  if (_gRPC_CORE_NOSTDCXX_FLAGS)
-    set_target_properties(status_conversion_test PROPERTIES LINKER_LANGUAGE C)
-    target_compile_options(status_conversion_test PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
-  endif()
 
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
@@ -10303,7 +9513,6 @@ target_include_directories(stream_compression_test
   PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
   PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
   PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
   PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
   PRIVATE ${_gRPC_UPB_GENERATED_DIR}
@@ -10319,11 +9528,6 @@ target_link_libraries(stream_compression_test
   gpr
 )
 
-  # avoid dependency on libstdc++
-  if (_gRPC_CORE_NOSTDCXX_FLAGS)
-    set_target_properties(stream_compression_test PROPERTIES LINKER_LANGUAGE C)
-    target_compile_options(stream_compression_test PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
-  endif()
 
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
@@ -10340,7 +9544,6 @@ target_include_directories(stream_owned_slice_test
   PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
   PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
   PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
   PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
   PRIVATE ${_gRPC_UPB_GENERATED_DIR}
@@ -10356,11 +9559,6 @@ target_link_libraries(stream_owned_slice_test
   gpr
 )
 
-  # avoid dependency on libstdc++
-  if (_gRPC_CORE_NOSTDCXX_FLAGS)
-    set_target_properties(stream_owned_slice_test PROPERTIES LINKER_LANGUAGE C)
-    target_compile_options(stream_owned_slice_test PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
-  endif()
 
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
@@ -10378,7 +9576,6 @@ target_include_directories(tcp_client_posix_test
   PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
   PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
   PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
   PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
   PRIVATE ${_gRPC_UPB_GENERATED_DIR}
@@ -10394,11 +9591,6 @@ target_link_libraries(tcp_client_posix_test
   gpr
 )
 
-  # avoid dependency on libstdc++
-  if (_gRPC_CORE_NOSTDCXX_FLAGS)
-    set_target_properties(tcp_client_posix_test PROPERTIES LINKER_LANGUAGE C)
-    target_compile_options(tcp_client_posix_test PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
-  endif()
 
 endif()
 endif (gRPC_BUILD_TESTS)
@@ -10416,7 +9608,6 @@ target_include_directories(tcp_client_uv_test
   PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
   PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
   PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
   PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
   PRIVATE ${_gRPC_UPB_GENERATED_DIR}
@@ -10432,11 +9623,6 @@ target_link_libraries(tcp_client_uv_test
   gpr
 )
 
-  # avoid dependency on libstdc++
-  if (_gRPC_CORE_NOSTDCXX_FLAGS)
-    set_target_properties(tcp_client_uv_test PROPERTIES LINKER_LANGUAGE C)
-    target_compile_options(tcp_client_uv_test PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
-  endif()
 
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
@@ -10454,7 +9640,6 @@ target_include_directories(tcp_posix_test
   PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
   PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
   PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
   PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
   PRIVATE ${_gRPC_UPB_GENERATED_DIR}
@@ -10470,11 +9655,6 @@ target_link_libraries(tcp_posix_test
   gpr
 )
 
-  # avoid dependency on libstdc++
-  if (_gRPC_CORE_NOSTDCXX_FLAGS)
-    set_target_properties(tcp_posix_test PROPERTIES LINKER_LANGUAGE C)
-    target_compile_options(tcp_posix_test PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
-  endif()
 
 endif()
 endif (gRPC_BUILD_TESTS)
@@ -10493,7 +9673,6 @@ target_include_directories(tcp_server_posix_test
   PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
   PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
   PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
   PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
   PRIVATE ${_gRPC_UPB_GENERATED_DIR}
@@ -10509,11 +9688,6 @@ target_link_libraries(tcp_server_posix_test
   gpr
 )
 
-  # avoid dependency on libstdc++
-  if (_gRPC_CORE_NOSTDCXX_FLAGS)
-    set_target_properties(tcp_server_posix_test PROPERTIES LINKER_LANGUAGE C)
-    target_compile_options(tcp_server_posix_test PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
-  endif()
 
 endif()
 endif (gRPC_BUILD_TESTS)
@@ -10531,7 +9705,6 @@ target_include_directories(tcp_server_uv_test
   PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
   PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
   PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
   PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
   PRIVATE ${_gRPC_UPB_GENERATED_DIR}
@@ -10547,11 +9720,6 @@ target_link_libraries(tcp_server_uv_test
   gpr
 )
 
-  # avoid dependency on libstdc++
-  if (_gRPC_CORE_NOSTDCXX_FLAGS)
-    set_target_properties(tcp_server_uv_test PROPERTIES LINKER_LANGUAGE C)
-    target_compile_options(tcp_server_uv_test PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
-  endif()
 
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
@@ -10568,7 +9736,6 @@ target_include_directories(threadpool_test
   PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
   PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
   PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
   PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
   PRIVATE ${_gRPC_UPB_GENERATED_DIR}
@@ -10584,11 +9751,6 @@ target_link_libraries(threadpool_test
   gpr
 )
 
-  # avoid dependency on libstdc++
-  if (_gRPC_CORE_NOSTDCXX_FLAGS)
-    set_target_properties(threadpool_test PROPERTIES LINKER_LANGUAGE C)
-    target_compile_options(threadpool_test PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
-  endif()
 
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
@@ -10605,7 +9767,6 @@ target_include_directories(time_averaged_stats_test
   PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
   PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
   PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
   PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
   PRIVATE ${_gRPC_UPB_GENERATED_DIR}
@@ -10621,11 +9782,6 @@ target_link_libraries(time_averaged_stats_test
   gpr
 )
 
-  # avoid dependency on libstdc++
-  if (_gRPC_CORE_NOSTDCXX_FLAGS)
-    set_target_properties(time_averaged_stats_test PROPERTIES LINKER_LANGUAGE C)
-    target_compile_options(time_averaged_stats_test PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
-  endif()
 
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
@@ -10642,7 +9798,6 @@ target_include_directories(timeout_encoding_test
   PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
   PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
   PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
   PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
   PRIVATE ${_gRPC_UPB_GENERATED_DIR}
@@ -10658,11 +9813,6 @@ target_link_libraries(timeout_encoding_test
   gpr
 )
 
-  # avoid dependency on libstdc++
-  if (_gRPC_CORE_NOSTDCXX_FLAGS)
-    set_target_properties(timeout_encoding_test PROPERTIES LINKER_LANGUAGE C)
-    target_compile_options(timeout_encoding_test PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
-  endif()
 
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
@@ -10679,7 +9829,6 @@ target_include_directories(timer_heap_test
   PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
   PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
   PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
   PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
   PRIVATE ${_gRPC_UPB_GENERATED_DIR}
@@ -10695,11 +9844,6 @@ target_link_libraries(timer_heap_test
   gpr
 )
 
-  # avoid dependency on libstdc++
-  if (_gRPC_CORE_NOSTDCXX_FLAGS)
-    set_target_properties(timer_heap_test PROPERTIES LINKER_LANGUAGE C)
-    target_compile_options(timer_heap_test PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
-  endif()
 
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
@@ -10716,7 +9860,6 @@ target_include_directories(timer_list_test
   PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
   PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
   PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
   PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
   PRIVATE ${_gRPC_UPB_GENERATED_DIR}
@@ -10732,11 +9875,6 @@ target_link_libraries(timer_list_test
   gpr
 )
 
-  # avoid dependency on libstdc++
-  if (_gRPC_CORE_NOSTDCXX_FLAGS)
-    set_target_properties(timer_list_test PROPERTIES LINKER_LANGUAGE C)
-    target_compile_options(timer_list_test PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
-  endif()
 
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
@@ -10753,7 +9891,6 @@ target_include_directories(transport_connectivity_state_test
   PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
   PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
   PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
   PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
   PRIVATE ${_gRPC_UPB_GENERATED_DIR}
@@ -10769,11 +9906,6 @@ target_link_libraries(transport_connectivity_state_test
   gpr
 )
 
-  # avoid dependency on libstdc++
-  if (_gRPC_CORE_NOSTDCXX_FLAGS)
-    set_target_properties(transport_connectivity_state_test PROPERTIES LINKER_LANGUAGE C)
-    target_compile_options(transport_connectivity_state_test PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
-  endif()
 
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
@@ -10790,7 +9922,6 @@ target_include_directories(transport_metadata_test
   PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
   PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
   PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
   PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
   PRIVATE ${_gRPC_UPB_GENERATED_DIR}
@@ -10806,11 +9937,6 @@ target_link_libraries(transport_metadata_test
   gpr
 )
 
-  # avoid dependency on libstdc++
-  if (_gRPC_CORE_NOSTDCXX_FLAGS)
-    set_target_properties(transport_metadata_test PROPERTIES LINKER_LANGUAGE C)
-    target_compile_options(transport_metadata_test PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
-  endif()
 
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
@@ -10828,7 +9954,6 @@ target_include_directories(transport_security_test
   PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
   PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
   PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
   PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
   PRIVATE ${_gRPC_UPB_GENERATED_DIR}
@@ -10844,11 +9969,6 @@ target_link_libraries(transport_security_test
   gpr
 )
 
-  # avoid dependency on libstdc++
-  if (_gRPC_CORE_NOSTDCXX_FLAGS)
-    set_target_properties(transport_security_test PROPERTIES LINKER_LANGUAGE C)
-    target_compile_options(transport_security_test PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
-  endif()
 
 endif()
 endif (gRPC_BUILD_TESTS)
@@ -10867,7 +9987,6 @@ target_include_directories(udp_server_test
   PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
   PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
   PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
   PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
   PRIVATE ${_gRPC_UPB_GENERATED_DIR}
@@ -10883,11 +10002,6 @@ target_link_libraries(udp_server_test
   gpr
 )
 
-  # avoid dependency on libstdc++
-  if (_gRPC_CORE_NOSTDCXX_FLAGS)
-    set_target_properties(udp_server_test PROPERTIES LINKER_LANGUAGE C)
-    target_compile_options(udp_server_test PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
-  endif()
 
 endif()
 endif (gRPC_BUILD_TESTS)
@@ -10905,7 +10019,6 @@ target_include_directories(uri_parser_test
   PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
   PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
   PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
   PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
   PRIVATE ${_gRPC_UPB_GENERATED_DIR}
@@ -10921,11 +10034,6 @@ target_link_libraries(uri_parser_test
   gpr
 )
 
-  # avoid dependency on libstdc++
-  if (_gRPC_CORE_NOSTDCXX_FLAGS)
-    set_target_properties(uri_parser_test PROPERTIES LINKER_LANGUAGE C)
-    target_compile_options(uri_parser_test PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
-  endif()
 
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
@@ -10944,7 +10052,6 @@ target_include_directories(alarm_test
   PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
   PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
   PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
   PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
   PRIVATE ${_gRPC_UPB_GENERATED_DIR}
@@ -10987,7 +10094,6 @@ target_include_directories(alts_counter_test
   PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
   PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
   PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
   PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
   PRIVATE ${_gRPC_UPB_GENERATED_DIR}
@@ -11028,7 +10134,6 @@ target_include_directories(alts_crypt_test
   PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
   PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
   PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
   PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
   PRIVATE ${_gRPC_UPB_GENERATED_DIR}
@@ -11070,7 +10175,6 @@ target_include_directories(alts_crypter_test
   PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
   PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
   PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
   PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
   PRIVATE ${_gRPC_UPB_GENERATED_DIR}
@@ -11111,7 +10215,6 @@ target_include_directories(alts_frame_handler_test
   PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
   PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
   PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
   PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
   PRIVATE ${_gRPC_UPB_GENERATED_DIR}
@@ -11153,7 +10256,6 @@ target_include_directories(alts_frame_protector_test
   PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
   PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
   PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
   PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
   PRIVATE ${_gRPC_UPB_GENERATED_DIR}
@@ -11194,7 +10296,6 @@ target_include_directories(alts_grpc_record_protocol_test
   PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
   PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
   PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
   PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
   PRIVATE ${_gRPC_UPB_GENERATED_DIR}
@@ -11235,7 +10336,6 @@ target_include_directories(alts_handshaker_client_test
   PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
   PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
   PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
   PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
   PRIVATE ${_gRPC_UPB_GENERATED_DIR}
@@ -11276,7 +10376,6 @@ target_include_directories(alts_iovec_record_protocol_test
   PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
   PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
   PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
   PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
   PRIVATE ${_gRPC_UPB_GENERATED_DIR}
@@ -11317,7 +10416,6 @@ target_include_directories(alts_security_connector_test
   PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
   PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
   PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
   PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
   PRIVATE ${_gRPC_UPB_GENERATED_DIR}
@@ -11357,7 +10455,6 @@ target_include_directories(alts_tsi_handshaker_test
   PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
   PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
   PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
   PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
   PRIVATE ${_gRPC_UPB_GENERATED_DIR}
@@ -11398,7 +10495,6 @@ target_include_directories(alts_tsi_utils_test
   PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
   PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
   PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
   PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
   PRIVATE ${_gRPC_UPB_GENERATED_DIR}
@@ -11439,7 +10535,6 @@ target_include_directories(alts_zero_copy_grpc_protector_test
   PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
   PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
   PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
   PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
   PRIVATE ${_gRPC_UPB_GENERATED_DIR}
@@ -11480,7 +10575,6 @@ target_include_directories(async_end2end_test
   PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
   PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
   PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
   PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
   PRIVATE ${_gRPC_UPB_GENERATED_DIR}
@@ -11523,7 +10617,6 @@ target_include_directories(auth_property_iterator_test
   PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
   PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
   PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
   PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
   PRIVATE ${_gRPC_UPB_GENERATED_DIR}
@@ -11566,7 +10659,6 @@ target_include_directories(backoff_test
   PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
   PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
   PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
   PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
   PRIVATE ${_gRPC_UPB_GENERATED_DIR}
@@ -11607,7 +10699,6 @@ target_include_directories(bdp_estimator_test
   PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
   PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
   PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
   PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
   PRIVATE ${_gRPC_UPB_GENERATED_DIR}
@@ -11651,7 +10742,6 @@ target_include_directories(bm_alarm
   PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
   PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
   PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
   PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
   PRIVATE ${_gRPC_UPB_GENERATED_DIR}
@@ -11699,7 +10789,6 @@ target_include_directories(bm_arena
   PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
   PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
   PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
   PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
   PRIVATE ${_gRPC_UPB_GENERATED_DIR}
@@ -11747,7 +10836,6 @@ target_include_directories(bm_byte_buffer
   PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
   PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
   PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
   PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
   PRIVATE ${_gRPC_UPB_GENERATED_DIR}
@@ -11795,7 +10883,6 @@ target_include_directories(bm_call_create
   PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
   PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
   PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
   PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
   PRIVATE ${_gRPC_UPB_GENERATED_DIR}
@@ -11843,7 +10930,6 @@ target_include_directories(bm_callback_streaming_ping_pong
   PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
   PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
   PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
   PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
   PRIVATE ${_gRPC_UPB_GENERATED_DIR}
@@ -11892,7 +10978,6 @@ target_include_directories(bm_callback_unary_ping_pong
   PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
   PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
   PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
   PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
   PRIVATE ${_gRPC_UPB_GENERATED_DIR}
@@ -11941,7 +11026,6 @@ target_include_directories(bm_channel
   PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
   PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
   PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
   PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
   PRIVATE ${_gRPC_UPB_GENERATED_DIR}
@@ -11989,7 +11073,6 @@ target_include_directories(bm_chttp2_hpack
   PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
   PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
   PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
   PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
   PRIVATE ${_gRPC_UPB_GENERATED_DIR}
@@ -12037,7 +11120,6 @@ target_include_directories(bm_chttp2_transport
   PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
   PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
   PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
   PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
   PRIVATE ${_gRPC_UPB_GENERATED_DIR}
@@ -12085,7 +11167,6 @@ target_include_directories(bm_closure
   PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
   PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
   PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
   PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
   PRIVATE ${_gRPC_UPB_GENERATED_DIR}
@@ -12133,7 +11214,6 @@ target_include_directories(bm_cq
   PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
   PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
   PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
   PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
   PRIVATE ${_gRPC_UPB_GENERATED_DIR}
@@ -12181,7 +11261,6 @@ target_include_directories(bm_cq_multiple_threads
   PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
   PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
   PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
   PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
   PRIVATE ${_gRPC_UPB_GENERATED_DIR}
@@ -12229,7 +11308,6 @@ target_include_directories(bm_error
   PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
   PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
   PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
   PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
   PRIVATE ${_gRPC_UPB_GENERATED_DIR}
@@ -12277,7 +11355,6 @@ target_include_directories(bm_fullstack_streaming_ping_pong
   PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
   PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
   PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
   PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
   PRIVATE ${_gRPC_UPB_GENERATED_DIR}
@@ -12325,7 +11402,6 @@ target_include_directories(bm_fullstack_streaming_pump
   PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
   PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
   PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
   PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
   PRIVATE ${_gRPC_UPB_GENERATED_DIR}
@@ -12373,7 +11449,6 @@ target_include_directories(bm_fullstack_trickle
   PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
   PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
   PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
   PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
   PRIVATE ${_gRPC_UPB_GENERATED_DIR}
@@ -12421,7 +11496,6 @@ target_include_directories(bm_fullstack_unary_ping_pong
   PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
   PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
   PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
   PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
   PRIVATE ${_gRPC_UPB_GENERATED_DIR}
@@ -12469,7 +11543,6 @@ target_include_directories(bm_metadata
   PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
   PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
   PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
   PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
   PRIVATE ${_gRPC_UPB_GENERATED_DIR}
@@ -12517,7 +11590,6 @@ target_include_directories(bm_pollset
   PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
   PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
   PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
   PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
   PRIVATE ${_gRPC_UPB_GENERATED_DIR}
@@ -12565,7 +11637,6 @@ target_include_directories(bm_threadpool
   PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
   PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
   PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
   PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
   PRIVATE ${_gRPC_UPB_GENERATED_DIR}
@@ -12613,7 +11684,6 @@ target_include_directories(bm_timer
   PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
   PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
   PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
   PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
   PRIVATE ${_gRPC_UPB_GENERATED_DIR}
@@ -12660,7 +11730,6 @@ target_include_directories(byte_stream_test
   PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
   PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
   PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
   PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
   PRIVATE ${_gRPC_UPB_GENERATED_DIR}
@@ -12701,7 +11770,6 @@ target_include_directories(channel_arguments_test
   PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
   PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
   PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
   PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
   PRIVATE ${_gRPC_UPB_GENERATED_DIR}
@@ -12742,7 +11810,6 @@ target_include_directories(channel_filter_test
   PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
   PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
   PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
   PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
   PRIVATE ${_gRPC_UPB_GENERATED_DIR}
@@ -12790,7 +11857,6 @@ target_include_directories(channel_trace_test
   PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
   PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
   PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
   PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
   PRIVATE ${_gRPC_UPB_GENERATED_DIR}
@@ -12833,7 +11899,6 @@ target_include_directories(channelz_registry_test
   PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
   PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
   PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
   PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
   PRIVATE ${_gRPC_UPB_GENERATED_DIR}
@@ -12883,7 +11948,6 @@ target_include_directories(channelz_service_test
   PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
   PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
   PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
   PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
   PRIVATE ${_gRPC_UPB_GENERATED_DIR}
@@ -12934,7 +11998,6 @@ target_include_directories(channelz_test
   PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
   PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
   PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
   PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
   PRIVATE ${_gRPC_UPB_GENERATED_DIR}
@@ -12977,7 +12040,6 @@ target_include_directories(check_gcp_environment_linux_test
   PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
   PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
   PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
   PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
   PRIVATE ${_gRPC_UPB_GENERATED_DIR}
@@ -13017,7 +12079,6 @@ target_include_directories(check_gcp_environment_windows_test
   PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
   PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
   PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
   PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
   PRIVATE ${_gRPC_UPB_GENERATED_DIR}
@@ -13057,7 +12118,6 @@ target_include_directories(chttp2_settings_timeout_test
   PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
   PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
   PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
   PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
   PRIVATE ${_gRPC_UPB_GENERATED_DIR}
@@ -13098,7 +12158,6 @@ target_include_directories(cli_call_test
   PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
   PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
   PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
   PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
   PRIVATE ${_gRPC_UPB_GENERATED_DIR}
@@ -13143,7 +12202,6 @@ target_include_directories(client_callback_end2end_test
   PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
   PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
   PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
   PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
   PRIVATE ${_gRPC_UPB_GENERATED_DIR}
@@ -13193,7 +12251,6 @@ target_include_directories(client_channel_stress_test
   PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
   PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
   PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
   PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
   PRIVATE ${_gRPC_UPB_GENERATED_DIR}
@@ -13237,7 +12294,6 @@ target_include_directories(client_crash_test
   PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
   PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
   PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
   PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
   PRIVATE ${_gRPC_UPB_GENERATED_DIR}
@@ -13281,7 +12337,6 @@ target_include_directories(client_crash_test_server
   PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
   PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
   PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
   PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
   PRIVATE ${_gRPC_UPB_GENERATED_DIR}
@@ -13326,7 +12381,6 @@ target_include_directories(client_interceptors_end2end_test
   PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
   PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
   PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
   PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
   PRIVATE ${_gRPC_UPB_GENERATED_DIR}
@@ -13356,11 +12410,18 @@ endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
 add_executable(client_lb_end2end_test
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/lb/v2/orca_load_report_for_test.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/lb/v2/orca_load_report_for_test.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/lb/v2/orca_load_report_for_test.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/lb/v2/orca_load_report_for_test.grpc.pb.h
   test/cpp/end2end/client_lb_end2end_test.cc
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
 
+protobuf_generate_grpc_cpp(
+  src/proto/grpc/lb/v2/orca_load_report_for_test.proto
+)
 
 target_include_directories(client_lb_end2end_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
@@ -13369,7 +12430,6 @@ target_include_directories(client_lb_end2end_test
   PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
   PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
   PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
   PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
   PRIVATE ${_gRPC_UPB_GENERATED_DIR}
@@ -13461,7 +12521,6 @@ target_include_directories(codegen_test_full
   PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
   PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
   PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
   PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
   PRIVATE ${_gRPC_UPB_GENERATED_DIR}
@@ -13553,7 +12612,6 @@ target_include_directories(codegen_test_minimal
   PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
   PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
   PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
   PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
   PRIVATE ${_gRPC_UPB_GENERATED_DIR}
@@ -13594,7 +12652,6 @@ target_include_directories(context_list_test
   PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
   PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
   PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
   PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
   PRIVATE ${_gRPC_UPB_GENERATED_DIR}
@@ -13635,7 +12692,6 @@ target_include_directories(credentials_test
   PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
   PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
   PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
   PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
   PRIVATE ${_gRPC_UPB_GENERATED_DIR}
@@ -13676,7 +12732,6 @@ target_include_directories(cxx_byte_buffer_test
   PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
   PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
   PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
   PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
   PRIVATE ${_gRPC_UPB_GENERATED_DIR}
@@ -13718,7 +12773,6 @@ target_include_directories(cxx_slice_test
   PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
   PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
   PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
   PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
   PRIVATE ${_gRPC_UPB_GENERATED_DIR}
@@ -13760,7 +12814,6 @@ target_include_directories(cxx_string_ref_test
   PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
   PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
   PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
   PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
   PRIVATE ${_gRPC_UPB_GENERATED_DIR}
@@ -13800,7 +12853,6 @@ target_include_directories(cxx_time_test
   PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
   PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
   PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
   PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
   PRIVATE ${_gRPC_UPB_GENERATED_DIR}
@@ -13842,7 +12894,6 @@ target_include_directories(delegating_channel_test
   PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
   PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
   PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
   PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
   PRIVATE ${_gRPC_UPB_GENERATED_DIR}
@@ -13886,7 +12937,6 @@ target_include_directories(end2end_test
   PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
   PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
   PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
   PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
   PRIVATE ${_gRPC_UPB_GENERATED_DIR}
@@ -13936,7 +12986,6 @@ target_include_directories(error_details_test
   PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
   PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
   PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
   PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
   PRIVATE ${_gRPC_UPB_GENERATED_DIR}
@@ -13976,7 +13025,6 @@ target_include_directories(exception_test
   PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
   PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
   PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
   PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
   PRIVATE ${_gRPC_UPB_GENERATED_DIR}
@@ -14019,7 +13067,6 @@ target_include_directories(filter_end2end_test
   PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
   PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
   PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
   PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
   PRIVATE ${_gRPC_UPB_GENERATED_DIR}
@@ -14046,6 +13093,92 @@ target_link_libraries(filter_end2end_test
 
 
 endif (gRPC_BUILD_TESTS)
+
+add_executable(gen_hpack_tables
+  tools/codegen/core/gen_hpack_tables.cc
+)
+
+
+target_include_directories(gen_hpack_tables
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
+  PRIVATE ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
+  PRIVATE ${_gRPC_UPB_GENERATED_DIR}
+  PRIVATE ${_gRPC_UPB_GRPC_GENERATED_DIR}
+  PRIVATE ${_gRPC_UPB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_PROTO_GENS_DIR}
+)
+
+target_link_libraries(gen_hpack_tables
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  gpr
+  grpc
+)
+
+
+
+add_executable(gen_legal_metadata_characters
+  tools/codegen/core/gen_legal_metadata_characters.cc
+)
+
+
+target_include_directories(gen_legal_metadata_characters
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
+  PRIVATE ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
+  PRIVATE ${_gRPC_UPB_GENERATED_DIR}
+  PRIVATE ${_gRPC_UPB_GRPC_GENERATED_DIR}
+  PRIVATE ${_gRPC_UPB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_PROTO_GENS_DIR}
+)
+
+target_link_libraries(gen_legal_metadata_characters
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+)
+
+
+
+add_executable(gen_percent_encoding_tables
+  tools/codegen/core/gen_percent_encoding_tables.cc
+)
+
+
+target_include_directories(gen_percent_encoding_tables
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
+  PRIVATE ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
+  PRIVATE ${_gRPC_UPB_GENERATED_DIR}
+  PRIVATE ${_gRPC_UPB_GRPC_GENERATED_DIR}
+  PRIVATE ${_gRPC_UPB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_PROTO_GENS_DIR}
+)
+
+target_link_libraries(gen_percent_encoding_tables
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+)
+
+
 if (gRPC_BUILD_TESTS)
 
 add_executable(generic_end2end_test
@@ -14062,7 +13195,6 @@ target_include_directories(generic_end2end_test
   PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
   PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
   PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
   PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
   PRIVATE ${_gRPC_UPB_GENERATED_DIR}
@@ -14105,7 +13237,6 @@ target_include_directories(global_config_env_test
   PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
   PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
   PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
   PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
   PRIVATE ${_gRPC_UPB_GENERATED_DIR}
@@ -14145,7 +13276,6 @@ target_include_directories(global_config_test
   PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
   PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
   PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
   PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
   PRIVATE ${_gRPC_UPB_GENERATED_DIR}
@@ -14192,7 +13322,6 @@ target_include_directories(golden_file_test
   PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
   PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
   PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
   PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
   PRIVATE ${_gRPC_UPB_GENERATED_DIR}
@@ -14234,7 +13363,6 @@ target_include_directories(grpc_alts_credentials_options_test
   PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
   PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
   PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
   PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
   PRIVATE ${_gRPC_UPB_GENERATED_DIR}
@@ -14274,7 +13402,6 @@ target_include_directories(grpc_cli
   PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
   PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
   PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
   PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
   PRIVATE ${_gRPC_UPB_GENERATED_DIR}
@@ -14318,7 +13445,6 @@ target_include_directories(grpc_core_map_test
   PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
   PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
   PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
   PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
   PRIVATE ${_gRPC_UPB_GENERATED_DIR}
@@ -14358,7 +13484,6 @@ target_include_directories(grpc_cpp_plugin
   PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
   PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
   PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
   PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
   PRIVATE ${_gRPC_UPB_GENERATED_DIR}
@@ -14400,7 +13525,6 @@ target_include_directories(grpc_csharp_plugin
   PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
   PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
   PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
   PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
   PRIVATE ${_gRPC_UPB_GENERATED_DIR}
@@ -14444,7 +13568,6 @@ target_include_directories(grpc_fetch_oauth2
   PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
   PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
   PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
   PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
   PRIVATE ${_gRPC_UPB_GENERATED_DIR}
@@ -14486,7 +13609,6 @@ target_include_directories(grpc_linux_system_roots_test
   PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
   PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
   PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
   PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
   PRIVATE ${_gRPC_UPB_GENERATED_DIR}
@@ -14525,7 +13647,6 @@ target_include_directories(grpc_node_plugin
   PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
   PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
   PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
   PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
   PRIVATE ${_gRPC_UPB_GENERATED_DIR}
@@ -14567,7 +13688,6 @@ target_include_directories(grpc_objective_c_plugin
   PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
   PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
   PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
   PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
   PRIVATE ${_gRPC_UPB_GENERATED_DIR}
@@ -14609,7 +13729,6 @@ target_include_directories(grpc_php_plugin
   PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
   PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
   PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
   PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
   PRIVATE ${_gRPC_UPB_GENERATED_DIR}
@@ -14651,7 +13770,6 @@ target_include_directories(grpc_python_plugin
   PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
   PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
   PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
   PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
   PRIVATE ${_gRPC_UPB_GENERATED_DIR}
@@ -14693,7 +13811,6 @@ target_include_directories(grpc_ruby_plugin
   PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
   PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
   PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
   PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
   PRIVATE ${_gRPC_UPB_GENERATED_DIR}
@@ -14737,7 +13854,6 @@ target_include_directories(grpc_spiffe_security_connector_test
   PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
   PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
   PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
   PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
   PRIVATE ${_gRPC_UPB_GENERATED_DIR}
@@ -14794,7 +13910,6 @@ target_include_directories(grpc_tool_test
   PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
   PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
   PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
   PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
   PRIVATE ${_gRPC_UPB_GENERATED_DIR}
@@ -14847,7 +13962,6 @@ target_include_directories(grpclb_api_test
   PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
   PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
   PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
   PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
   PRIVATE ${_gRPC_UPB_GENERATED_DIR}
@@ -14896,7 +14010,6 @@ target_include_directories(grpclb_end2end_test
   PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
   PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
   PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
   PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
   PRIVATE ${_gRPC_UPB_GENERATED_DIR}
@@ -14961,7 +14074,6 @@ target_include_directories(grpclb_fallback_test
   PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
   PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
   PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
   PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
   PRIVATE ${_gRPC_UPB_GENERATED_DIR}
@@ -15006,7 +14118,6 @@ target_include_directories(h2_ssl_cert_test
   PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
   PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
   PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
   PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
   PRIVATE ${_gRPC_UPB_GENERATED_DIR}
@@ -15048,7 +14159,6 @@ target_include_directories(h2_ssl_session_reuse_test
   PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
   PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
   PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
   PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
   PRIVATE ${_gRPC_UPB_GENERATED_DIR}
@@ -15090,7 +14200,6 @@ target_include_directories(health_service_end2end_test
   PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
   PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
   PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
   PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
   PRIVATE ${_gRPC_UPB_GENERATED_DIR}
@@ -15133,7 +14242,6 @@ target_include_directories(http2_client
   PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
   PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
   PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
   PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
   PRIVATE ${_gRPC_UPB_GENERATED_DIR}
@@ -15178,7 +14286,6 @@ target_include_directories(hybrid_end2end_test
   PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
   PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
   PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
   PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
   PRIVATE ${_gRPC_UPB_GENERATED_DIR}
@@ -15221,7 +14328,6 @@ target_include_directories(inlined_vector_test
   PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
   PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
   PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
   PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
   PRIVATE ${_gRPC_UPB_GENERATED_DIR}
@@ -15264,7 +14370,6 @@ target_include_directories(inproc_sync_unary_ping_pong_test
   PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
   PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
   PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
   PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
   PRIVATE ${_gRPC_UPB_GENERATED_DIR}
@@ -15311,7 +14416,6 @@ target_include_directories(interop_client
   PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
   PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
   PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
   PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
   PRIVATE ${_gRPC_UPB_GENERATED_DIR}
@@ -15358,7 +14462,6 @@ target_include_directories(interop_server
   PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
   PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
   PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
   PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
   PRIVATE ${_gRPC_UPB_GENERATED_DIR}
@@ -15407,7 +14510,6 @@ target_include_directories(interop_test
   PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
   PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
   PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
   PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
   PRIVATE ${_gRPC_UPB_GENERATED_DIR}
@@ -15451,7 +14553,6 @@ target_include_directories(json_run_localhost
   PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
   PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
   PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
   PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
   PRIVATE ${_gRPC_UPB_GENERATED_DIR}
@@ -15496,7 +14597,6 @@ target_include_directories(memory_test
   PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
   PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
   PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
   PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
   PRIVATE ${_gRPC_UPB_GENERATED_DIR}
@@ -15538,7 +14638,6 @@ target_include_directories(message_allocator_end2end_test
   PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
   PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
   PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
   PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
   PRIVATE ${_gRPC_UPB_GENERATED_DIR}
@@ -15588,7 +14687,6 @@ target_include_directories(metrics_client
   PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
   PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
   PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
   PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
   PRIVATE ${_gRPC_UPB_GENERATED_DIR}
@@ -15630,7 +14728,6 @@ target_include_directories(mock_test
   PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
   PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
   PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
   PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
   PRIVATE ${_gRPC_UPB_GENERATED_DIR}
@@ -15673,7 +14770,6 @@ target_include_directories(nonblocking_test
   PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
   PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
   PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
   PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
   PRIVATE ${_gRPC_UPB_GENERATED_DIR}
@@ -15716,7 +14812,6 @@ target_include_directories(noop-benchmark
   PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
   PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
   PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
   PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
   PRIVATE ${_gRPC_UPB_GENERATED_DIR}
@@ -15755,7 +14850,6 @@ target_include_directories(optional_test
   PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
   PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
   PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
   PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
   PRIVATE ${_gRPC_UPB_GENERATED_DIR}
@@ -15797,7 +14891,6 @@ target_include_directories(orphanable_test
   PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
   PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
   PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
   PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
   PRIVATE ${_gRPC_UPB_GENERATED_DIR}
@@ -15839,7 +14932,6 @@ target_include_directories(port_sharing_end2end_test
   PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
   PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
   PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
   PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
   PRIVATE ${_gRPC_UPB_GENERATED_DIR}
@@ -15883,7 +14975,6 @@ target_include_directories(proto_server_reflection_test
   PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
   PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
   PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
   PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
   PRIVATE ${_gRPC_UPB_GENERATED_DIR}
@@ -15928,7 +15019,6 @@ target_include_directories(proto_utils_test
   PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
   PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
   PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
   PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
   PRIVATE ${_gRPC_UPB_GENERATED_DIR}
@@ -15969,7 +15059,6 @@ target_include_directories(qps_interarrival_test
   PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
   PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
   PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
   PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
   PRIVATE ${_gRPC_UPB_GENERATED_DIR}
@@ -16015,7 +15104,6 @@ target_include_directories(qps_json_driver
   PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
   PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
   PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
   PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
   PRIVATE ${_gRPC_UPB_GENERATED_DIR}
@@ -16062,7 +15150,6 @@ target_include_directories(qps_openloop_test
   PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
   PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
   PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
   PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
   PRIVATE ${_gRPC_UPB_GENERATED_DIR}
@@ -16109,7 +15196,6 @@ target_include_directories(qps_worker
   PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
   PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
   PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
   PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
   PRIVATE ${_gRPC_UPB_GENERATED_DIR}
@@ -16155,7 +15241,6 @@ target_include_directories(raw_end2end_test
   PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
   PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
   PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
   PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
   PRIVATE ${_gRPC_UPB_GENERATED_DIR}
@@ -16219,7 +15304,6 @@ target_include_directories(reconnect_interop_client
   PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
   PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
   PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
   PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
   PRIVATE ${_gRPC_UPB_GENERATED_DIR}
@@ -16284,7 +15368,6 @@ target_include_directories(reconnect_interop_server
   PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
   PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
   PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
   PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
   PRIVATE ${_gRPC_UPB_GENERATED_DIR}
@@ -16330,7 +15413,6 @@ target_include_directories(ref_counted_ptr_test
   PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
   PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
   PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
   PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
   PRIVATE ${_gRPC_UPB_GENERATED_DIR}
@@ -16372,7 +15454,6 @@ target_include_directories(ref_counted_test
   PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
   PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
   PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
   PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
   PRIVATE ${_gRPC_UPB_GENERATED_DIR}
@@ -16414,7 +15495,6 @@ target_include_directories(retry_throttle_test
   PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
   PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
   PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
   PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
   PRIVATE ${_gRPC_UPB_GENERATED_DIR}
@@ -16455,7 +15535,6 @@ target_include_directories(secure_auth_context_test
   PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
   PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
   PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
   PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
   PRIVATE ${_gRPC_UPB_GENERATED_DIR}
@@ -16499,7 +15578,6 @@ target_include_directories(secure_sync_unary_ping_pong_test
   PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
   PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
   PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
   PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
   PRIVATE ${_gRPC_UPB_GENERATED_DIR}
@@ -16546,7 +15624,6 @@ target_include_directories(server_builder_plugin_test
   PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
   PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
   PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
   PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
   PRIVATE ${_gRPC_UPB_GENERATED_DIR}
@@ -16603,7 +15680,6 @@ target_include_directories(server_builder_test
   PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
   PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
   PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
   PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
   PRIVATE ${_gRPC_UPB_GENERATED_DIR}
@@ -16661,7 +15737,6 @@ target_include_directories(server_builder_with_socket_mutator_test
   PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
   PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
   PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
   PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
   PRIVATE ${_gRPC_UPB_GENERATED_DIR}
@@ -16705,7 +15780,6 @@ target_include_directories(server_context_test_spouse_test
   PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
   PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
   PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
   PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
   PRIVATE ${_gRPC_UPB_GENERATED_DIR}
@@ -16748,7 +15822,6 @@ target_include_directories(server_crash_test
   PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
   PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
   PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
   PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
   PRIVATE ${_gRPC_UPB_GENERATED_DIR}
@@ -16792,7 +15865,6 @@ target_include_directories(server_crash_test_client
   PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
   PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
   PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
   PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
   PRIVATE ${_gRPC_UPB_GENERATED_DIR}
@@ -16836,7 +15908,6 @@ target_include_directories(server_early_return_test
   PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
   PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
   PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
   PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
   PRIVATE ${_gRPC_UPB_GENERATED_DIR}
@@ -16880,7 +15951,6 @@ target_include_directories(server_interceptors_end2end_test
   PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
   PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
   PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
   PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
   PRIVATE ${_gRPC_UPB_GENERATED_DIR}
@@ -16937,7 +16007,6 @@ target_include_directories(server_request_call_test
   PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
   PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
   PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
   PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
   PRIVATE ${_gRPC_UPB_GENERATED_DIR}
@@ -16980,7 +16049,6 @@ target_include_directories(service_config_end2end_test
   PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
   PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
   PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
   PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
   PRIVATE ${_gRPC_UPB_GENERATED_DIR}
@@ -17023,7 +16091,6 @@ target_include_directories(service_config_test
   PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
   PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
   PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
   PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
   PRIVATE ${_gRPC_UPB_GENERATED_DIR}
@@ -17065,7 +16132,6 @@ target_include_directories(shutdown_test
   PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
   PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
   PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
   PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
   PRIVATE ${_gRPC_UPB_GENERATED_DIR}
@@ -17108,7 +16174,6 @@ target_include_directories(slice_hash_table_test
   PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
   PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
   PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
   PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
   PRIVATE ${_gRPC_UPB_GENERATED_DIR}
@@ -17149,7 +16214,6 @@ target_include_directories(slice_weak_hash_table_test
   PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
   PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
   PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
   PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
   PRIVATE ${_gRPC_UPB_GENERATED_DIR}
@@ -17190,7 +16254,6 @@ target_include_directories(stats_test
   PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
   PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
   PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
   PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
   PRIVATE ${_gRPC_UPB_GENERATED_DIR}
@@ -17232,7 +16295,6 @@ target_include_directories(status_metadata_test
   PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
   PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
   PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
   PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
   PRIVATE ${_gRPC_UPB_GENERATED_DIR}
@@ -17271,7 +16333,6 @@ target_include_directories(status_util_test
   PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
   PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
   PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
   PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
   PRIVATE ${_gRPC_UPB_GENERATED_DIR}
@@ -17311,7 +16372,6 @@ target_include_directories(streaming_throughput_test
   PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
   PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
   PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
   PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
   PRIVATE ${_gRPC_UPB_GENERATED_DIR}
@@ -17386,7 +16446,6 @@ target_include_directories(stress_test
   PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
   PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
   PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
   PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
   PRIVATE ${_gRPC_UPB_GENERATED_DIR}
@@ -17430,7 +16489,6 @@ target_include_directories(string_view_test
   PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
   PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
   PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
   PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
   PRIVATE ${_gRPC_UPB_GENERATED_DIR}
@@ -17472,7 +16530,6 @@ target_include_directories(thread_manager_test
   PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
   PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
   PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
   PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
   PRIVATE ${_gRPC_UPB_GENERATED_DIR}
@@ -17514,7 +16571,6 @@ target_include_directories(thread_stress_test
   PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
   PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
   PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
   PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
   PRIVATE ${_gRPC_UPB_GENERATED_DIR}
@@ -17558,7 +16614,6 @@ target_include_directories(time_change_test
   PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
   PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
   PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
   PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
   PRIVATE ${_gRPC_UPB_GENERATED_DIR}
@@ -17588,6 +16643,47 @@ endif()
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
+add_executable(timer_test
+  test/cpp/common/timer_test.cc
+  third_party/googletest/googletest/src/gtest-all.cc
+  third_party/googletest/googlemock/src/gmock-all.cc
+)
+
+
+target_include_directories(timer_test
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
+  PRIVATE ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
+  PRIVATE ${_gRPC_UPB_GENERATED_DIR}
+  PRIVATE ${_gRPC_UPB_GRPC_GENERATED_DIR}
+  PRIVATE ${_gRPC_UPB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
+  PRIVATE third_party/googletest/googletest/include
+  PRIVATE third_party/googletest/googletest
+  PRIVATE third_party/googletest/googlemock/include
+  PRIVATE third_party/googletest/googlemock
+  PRIVATE ${_gRPC_PROTO_GENS_DIR}
+)
+
+target_link_libraries(timer_test
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  grpc_test_util
+  grpc++
+  grpc
+  gpr
+  ${_gRPC_GFLAGS_LIBRARIES}
+)
+
+
+endif (gRPC_BUILD_TESTS)
+if (gRPC_BUILD_TESTS)
+
 add_executable(transport_pid_controller_test
   test/core/transport/pid_controller_test.cc
   third_party/googletest/googletest/src/gtest-all.cc
@@ -17602,7 +16698,6 @@ target_include_directories(transport_pid_controller_test
   PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
   PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
   PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
   PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
   PRIVATE ${_gRPC_UPB_GENERATED_DIR}
@@ -17645,7 +16740,6 @@ target_include_directories(transport_security_common_api_test
   PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
   PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
   PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
   PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
   PRIVATE ${_gRPC_UPB_GENERATED_DIR}
@@ -17687,7 +16781,6 @@ target_include_directories(writes_per_rpc_test
   PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
   PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
   PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
   PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
   PRIVATE ${_gRPC_UPB_GENERATED_DIR}
@@ -17745,7 +16838,6 @@ target_include_directories(xds_end2end_test
   PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
   PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
   PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
   PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
   PRIVATE ${_gRPC_UPB_GENERATED_DIR}
@@ -17786,7 +16878,6 @@ target_include_directories(public_headers_must_be_c89
   PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
   PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
   PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
   PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
   PRIVATE ${_gRPC_UPB_GENERATED_DIR}
@@ -17803,89 +16894,6 @@ target_link_libraries(public_headers_must_be_c89
 
 
 endif (gRPC_BUILD_TESTS)
-
-add_executable(gen_hpack_tables
-  tools/codegen/core/gen_hpack_tables.cc
-)
-
-
-target_include_directories(gen_hpack_tables
-  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
-  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
-  PRIVATE ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
-  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
-  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
-  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
-  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
-  PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${_gRPC_UPB_GENERATED_DIR}
-  PRIVATE ${_gRPC_UPB_GRPC_GENERATED_DIR}
-  PRIVATE ${_gRPC_UPB_INCLUDE_DIR}
-  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
-)
-
-target_link_libraries(gen_hpack_tables
-  ${_gRPC_ALLTARGETS_LIBRARIES}
-  gpr
-  grpc
-)
-
-
-
-add_executable(gen_legal_metadata_characters
-  tools/codegen/core/gen_legal_metadata_characters.cc
-)
-
-
-target_include_directories(gen_legal_metadata_characters
-  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
-  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
-  PRIVATE ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
-  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
-  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
-  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
-  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
-  PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${_gRPC_UPB_GENERATED_DIR}
-  PRIVATE ${_gRPC_UPB_GRPC_GENERATED_DIR}
-  PRIVATE ${_gRPC_UPB_INCLUDE_DIR}
-  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
-)
-
-target_link_libraries(gen_legal_metadata_characters
-  ${_gRPC_ALLTARGETS_LIBRARIES}
-)
-
-
-
-add_executable(gen_percent_encoding_tables
-  tools/codegen/core/gen_percent_encoding_tables.cc
-)
-
-
-target_include_directories(gen_percent_encoding_tables
-  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
-  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
-  PRIVATE ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
-  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
-  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
-  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
-  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
-  PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${_gRPC_UPB_GENERATED_DIR}
-  PRIVATE ${_gRPC_UPB_GRPC_GENERATED_DIR}
-  PRIVATE ${_gRPC_UPB_INCLUDE_DIR}
-  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
-)
-
-target_link_libraries(gen_percent_encoding_tables
-  ${_gRPC_ALLTARGETS_LIBRARIES}
-)
-
-
 if (gRPC_BUILD_TESTS)
 
 add_executable(bad_streaming_id_bad_client_test
@@ -17902,7 +16910,6 @@ target_include_directories(bad_streaming_id_bad_client_test
   PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
   PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
   PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
   PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
   PRIVATE ${_gRPC_UPB_GENERATED_DIR}
@@ -17917,7 +16924,6 @@ target_include_directories(bad_streaming_id_bad_client_test
 )
 
 target_link_libraries(bad_streaming_id_bad_client_test
-  ${_gRPC_SSL_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   bad_client_test
@@ -17945,7 +16951,6 @@ target_include_directories(badreq_bad_client_test
   PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
   PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
   PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
   PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
   PRIVATE ${_gRPC_UPB_GENERATED_DIR}
@@ -17960,7 +16965,6 @@ target_include_directories(badreq_bad_client_test
 )
 
 target_link_libraries(badreq_bad_client_test
-  ${_gRPC_SSL_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   bad_client_test
@@ -17988,7 +16992,6 @@ target_include_directories(connection_prefix_bad_client_test
   PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
   PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
   PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
   PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
   PRIVATE ${_gRPC_UPB_GENERATED_DIR}
@@ -18003,7 +17006,6 @@ target_include_directories(connection_prefix_bad_client_test
 )
 
 target_link_libraries(connection_prefix_bad_client_test
-  ${_gRPC_SSL_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   bad_client_test
@@ -18031,7 +17033,6 @@ target_include_directories(duplicate_header_bad_client_test
   PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
   PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
   PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
   PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
   PRIVATE ${_gRPC_UPB_GENERATED_DIR}
@@ -18046,7 +17047,6 @@ target_include_directories(duplicate_header_bad_client_test
 )
 
 target_link_libraries(duplicate_header_bad_client_test
-  ${_gRPC_SSL_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   bad_client_test
@@ -18074,7 +17074,6 @@ target_include_directories(head_of_line_blocking_bad_client_test
   PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
   PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
   PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
   PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
   PRIVATE ${_gRPC_UPB_GENERATED_DIR}
@@ -18089,7 +17088,6 @@ target_include_directories(head_of_line_blocking_bad_client_test
 )
 
 target_link_libraries(head_of_line_blocking_bad_client_test
-  ${_gRPC_SSL_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   bad_client_test
@@ -18117,7 +17115,6 @@ target_include_directories(headers_bad_client_test
   PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
   PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
   PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
   PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
   PRIVATE ${_gRPC_UPB_GENERATED_DIR}
@@ -18132,7 +17129,6 @@ target_include_directories(headers_bad_client_test
 )
 
 target_link_libraries(headers_bad_client_test
-  ${_gRPC_SSL_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   bad_client_test
@@ -18160,7 +17156,6 @@ target_include_directories(initial_settings_frame_bad_client_test
   PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
   PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
   PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
   PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
   PRIVATE ${_gRPC_UPB_GENERATED_DIR}
@@ -18175,7 +17170,6 @@ target_include_directories(initial_settings_frame_bad_client_test
 )
 
 target_link_libraries(initial_settings_frame_bad_client_test
-  ${_gRPC_SSL_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   bad_client_test
@@ -18203,7 +17197,6 @@ target_include_directories(large_metadata_bad_client_test
   PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
   PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
   PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
   PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
   PRIVATE ${_gRPC_UPB_GENERATED_DIR}
@@ -18218,7 +17211,6 @@ target_include_directories(large_metadata_bad_client_test
 )
 
 target_link_libraries(large_metadata_bad_client_test
-  ${_gRPC_SSL_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   bad_client_test
@@ -18246,7 +17238,6 @@ target_include_directories(out_of_bounds_bad_client_test
   PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
   PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
   PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
   PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
   PRIVATE ${_gRPC_UPB_GENERATED_DIR}
@@ -18261,7 +17252,6 @@ target_include_directories(out_of_bounds_bad_client_test
 )
 
 target_link_libraries(out_of_bounds_bad_client_test
-  ${_gRPC_SSL_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   bad_client_test
@@ -18289,7 +17279,6 @@ target_include_directories(server_registered_method_bad_client_test
   PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
   PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
   PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
   PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
   PRIVATE ${_gRPC_UPB_GENERATED_DIR}
@@ -18304,7 +17293,6 @@ target_include_directories(server_registered_method_bad_client_test
 )
 
 target_link_libraries(server_registered_method_bad_client_test
-  ${_gRPC_SSL_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   bad_client_test
@@ -18332,7 +17320,6 @@ target_include_directories(simple_request_bad_client_test
   PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
   PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
   PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
   PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
   PRIVATE ${_gRPC_UPB_GENERATED_DIR}
@@ -18347,7 +17334,6 @@ target_include_directories(simple_request_bad_client_test
 )
 
 target_link_libraries(simple_request_bad_client_test
-  ${_gRPC_SSL_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   bad_client_test
@@ -18375,7 +17361,6 @@ target_include_directories(unknown_frame_bad_client_test
   PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
   PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
   PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
   PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
   PRIVATE ${_gRPC_UPB_GENERATED_DIR}
@@ -18390,7 +17375,6 @@ target_include_directories(unknown_frame_bad_client_test
 )
 
 target_link_libraries(unknown_frame_bad_client_test
-  ${_gRPC_SSL_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   bad_client_test
@@ -18418,7 +17402,6 @@ target_include_directories(window_overflow_bad_client_test
   PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
   PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
   PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
   PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
   PRIVATE ${_gRPC_UPB_GENERATED_DIR}
@@ -18433,7 +17416,6 @@ target_include_directories(window_overflow_bad_client_test
 )
 
 target_link_libraries(window_overflow_bad_client_test
-  ${_gRPC_SSL_LIBRARIES}
   ${_gRPC_PROTOBUF_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   bad_client_test
@@ -18460,7 +17442,6 @@ target_include_directories(bad_ssl_cert_server
   PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
   PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
   PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
   PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
   PRIVATE ${_gRPC_UPB_GENERATED_DIR}
@@ -18477,11 +17458,6 @@ target_link_libraries(bad_ssl_cert_server
   gpr
 )
 
-  # avoid dependency on libstdc++
-  if (_gRPC_CORE_NOSTDCXX_FLAGS)
-    set_target_properties(bad_ssl_cert_server PROPERTIES LINKER_LANGUAGE C)
-    target_compile_options(bad_ssl_cert_server PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
-  endif()
 
 endif()
 endif (gRPC_BUILD_TESTS)
@@ -18500,7 +17476,6 @@ target_include_directories(bad_ssl_cert_test
   PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
   PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
   PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
   PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
   PRIVATE ${_gRPC_UPB_GENERATED_DIR}
@@ -18516,11 +17491,6 @@ target_link_libraries(bad_ssl_cert_test
   gpr
 )
 
-  # avoid dependency on libstdc++
-  if (_gRPC_CORE_NOSTDCXX_FLAGS)
-    set_target_properties(bad_ssl_cert_test PROPERTIES LINKER_LANGUAGE C)
-    target_compile_options(bad_ssl_cert_test PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
-  endif()
 
 endif()
 endif (gRPC_BUILD_TESTS)
@@ -18538,7 +17508,6 @@ target_include_directories(h2_census_test
   PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
   PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
   PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
   PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
   PRIVATE ${_gRPC_UPB_GENERATED_DIR}
@@ -18555,11 +17524,6 @@ target_link_libraries(h2_census_test
   gpr
 )
 
-  # avoid dependency on libstdc++
-  if (_gRPC_CORE_NOSTDCXX_FLAGS)
-    set_target_properties(h2_census_test PROPERTIES LINKER_LANGUAGE C)
-    target_compile_options(h2_census_test PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
-  endif()
 
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
@@ -18576,7 +17540,6 @@ target_include_directories(h2_compress_test
   PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
   PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
   PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
   PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
   PRIVATE ${_gRPC_UPB_GENERATED_DIR}
@@ -18593,11 +17556,6 @@ target_link_libraries(h2_compress_test
   gpr
 )
 
-  # avoid dependency on libstdc++
-  if (_gRPC_CORE_NOSTDCXX_FLAGS)
-    set_target_properties(h2_compress_test PROPERTIES LINKER_LANGUAGE C)
-    target_compile_options(h2_compress_test PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
-  endif()
 
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
@@ -18614,7 +17572,6 @@ target_include_directories(h2_fakesec_test
   PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
   PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
   PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
   PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
   PRIVATE ${_gRPC_UPB_GENERATED_DIR}
@@ -18631,11 +17588,6 @@ target_link_libraries(h2_fakesec_test
   gpr
 )
 
-  # avoid dependency on libstdc++
-  if (_gRPC_CORE_NOSTDCXX_FLAGS)
-    set_target_properties(h2_fakesec_test PROPERTIES LINKER_LANGUAGE C)
-    target_compile_options(h2_fakesec_test PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
-  endif()
 
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
@@ -18653,7 +17605,6 @@ target_include_directories(h2_fd_test
   PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
   PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
   PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
   PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
   PRIVATE ${_gRPC_UPB_GENERATED_DIR}
@@ -18670,11 +17621,6 @@ target_link_libraries(h2_fd_test
   gpr
 )
 
-  # avoid dependency on libstdc++
-  if (_gRPC_CORE_NOSTDCXX_FLAGS)
-    set_target_properties(h2_fd_test PROPERTIES LINKER_LANGUAGE C)
-    target_compile_options(h2_fd_test PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
-  endif()
 
 endif()
 endif (gRPC_BUILD_TESTS)
@@ -18692,7 +17638,6 @@ target_include_directories(h2_full_test
   PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
   PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
   PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
   PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
   PRIVATE ${_gRPC_UPB_GENERATED_DIR}
@@ -18709,11 +17654,6 @@ target_link_libraries(h2_full_test
   gpr
 )
 
-  # avoid dependency on libstdc++
-  if (_gRPC_CORE_NOSTDCXX_FLAGS)
-    set_target_properties(h2_full_test PROPERTIES LINKER_LANGUAGE C)
-    target_compile_options(h2_full_test PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
-  endif()
 
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
@@ -18731,7 +17671,6 @@ target_include_directories(h2_full+pipe_test
   PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
   PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
   PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
   PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
   PRIVATE ${_gRPC_UPB_GENERATED_DIR}
@@ -18748,11 +17687,6 @@ target_link_libraries(h2_full+pipe_test
   gpr
 )
 
-  # avoid dependency on libstdc++
-  if (_gRPC_CORE_NOSTDCXX_FLAGS)
-    set_target_properties(h2_full+pipe_test PROPERTIES LINKER_LANGUAGE C)
-    target_compile_options(h2_full+pipe_test PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
-  endif()
 
 endif()
 endif (gRPC_BUILD_TESTS)
@@ -18770,7 +17704,6 @@ target_include_directories(h2_full+trace_test
   PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
   PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
   PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
   PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
   PRIVATE ${_gRPC_UPB_GENERATED_DIR}
@@ -18787,11 +17720,6 @@ target_link_libraries(h2_full+trace_test
   gpr
 )
 
-  # avoid dependency on libstdc++
-  if (_gRPC_CORE_NOSTDCXX_FLAGS)
-    set_target_properties(h2_full+trace_test PROPERTIES LINKER_LANGUAGE C)
-    target_compile_options(h2_full+trace_test PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
-  endif()
 
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
@@ -18808,7 +17736,6 @@ target_include_directories(h2_full+workarounds_test
   PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
   PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
   PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
   PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
   PRIVATE ${_gRPC_UPB_GENERATED_DIR}
@@ -18825,11 +17752,6 @@ target_link_libraries(h2_full+workarounds_test
   gpr
 )
 
-  # avoid dependency on libstdc++
-  if (_gRPC_CORE_NOSTDCXX_FLAGS)
-    set_target_properties(h2_full+workarounds_test PROPERTIES LINKER_LANGUAGE C)
-    target_compile_options(h2_full+workarounds_test PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
-  endif()
 
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
@@ -18846,7 +17768,6 @@ target_include_directories(h2_http_proxy_test
   PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
   PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
   PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
   PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
   PRIVATE ${_gRPC_UPB_GENERATED_DIR}
@@ -18863,11 +17784,6 @@ target_link_libraries(h2_http_proxy_test
   gpr
 )
 
-  # avoid dependency on libstdc++
-  if (_gRPC_CORE_NOSTDCXX_FLAGS)
-    set_target_properties(h2_http_proxy_test PROPERTIES LINKER_LANGUAGE C)
-    target_compile_options(h2_http_proxy_test PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
-  endif()
 
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
@@ -18885,7 +17801,6 @@ target_include_directories(h2_local_ipv4_test
   PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
   PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
   PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
   PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
   PRIVATE ${_gRPC_UPB_GENERATED_DIR}
@@ -18902,11 +17817,6 @@ target_link_libraries(h2_local_ipv4_test
   gpr
 )
 
-  # avoid dependency on libstdc++
-  if (_gRPC_CORE_NOSTDCXX_FLAGS)
-    set_target_properties(h2_local_ipv4_test PROPERTIES LINKER_LANGUAGE C)
-    target_compile_options(h2_local_ipv4_test PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
-  endif()
 
 endif()
 endif (gRPC_BUILD_TESTS)
@@ -18925,7 +17835,6 @@ target_include_directories(h2_local_ipv6_test
   PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
   PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
   PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
   PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
   PRIVATE ${_gRPC_UPB_GENERATED_DIR}
@@ -18942,11 +17851,6 @@ target_link_libraries(h2_local_ipv6_test
   gpr
 )
 
-  # avoid dependency on libstdc++
-  if (_gRPC_CORE_NOSTDCXX_FLAGS)
-    set_target_properties(h2_local_ipv6_test PROPERTIES LINKER_LANGUAGE C)
-    target_compile_options(h2_local_ipv6_test PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
-  endif()
 
 endif()
 endif (gRPC_BUILD_TESTS)
@@ -18965,7 +17869,6 @@ target_include_directories(h2_local_uds_test
   PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
   PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
   PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
   PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
   PRIVATE ${_gRPC_UPB_GENERATED_DIR}
@@ -18982,11 +17885,6 @@ target_link_libraries(h2_local_uds_test
   gpr
 )
 
-  # avoid dependency on libstdc++
-  if (_gRPC_CORE_NOSTDCXX_FLAGS)
-    set_target_properties(h2_local_uds_test PROPERTIES LINKER_LANGUAGE C)
-    target_compile_options(h2_local_uds_test PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
-  endif()
 
 endif()
 endif (gRPC_BUILD_TESTS)
@@ -19004,7 +17902,6 @@ target_include_directories(h2_oauth2_test
   PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
   PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
   PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
   PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
   PRIVATE ${_gRPC_UPB_GENERATED_DIR}
@@ -19021,11 +17918,6 @@ target_link_libraries(h2_oauth2_test
   gpr
 )
 
-  # avoid dependency on libstdc++
-  if (_gRPC_CORE_NOSTDCXX_FLAGS)
-    set_target_properties(h2_oauth2_test PROPERTIES LINKER_LANGUAGE C)
-    target_compile_options(h2_oauth2_test PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
-  endif()
 
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
@@ -19042,7 +17934,6 @@ target_include_directories(h2_proxy_test
   PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
   PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
   PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
   PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
   PRIVATE ${_gRPC_UPB_GENERATED_DIR}
@@ -19059,11 +17950,6 @@ target_link_libraries(h2_proxy_test
   gpr
 )
 
-  # avoid dependency on libstdc++
-  if (_gRPC_CORE_NOSTDCXX_FLAGS)
-    set_target_properties(h2_proxy_test PROPERTIES LINKER_LANGUAGE C)
-    target_compile_options(h2_proxy_test PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
-  endif()
 
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
@@ -19080,7 +17966,6 @@ target_include_directories(h2_sockpair_test
   PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
   PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
   PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
   PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
   PRIVATE ${_gRPC_UPB_GENERATED_DIR}
@@ -19097,11 +17982,6 @@ target_link_libraries(h2_sockpair_test
   gpr
 )
 
-  # avoid dependency on libstdc++
-  if (_gRPC_CORE_NOSTDCXX_FLAGS)
-    set_target_properties(h2_sockpair_test PROPERTIES LINKER_LANGUAGE C)
-    target_compile_options(h2_sockpair_test PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
-  endif()
 
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
@@ -19118,7 +17998,6 @@ target_include_directories(h2_sockpair+trace_test
   PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
   PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
   PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
   PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
   PRIVATE ${_gRPC_UPB_GENERATED_DIR}
@@ -19135,11 +18014,6 @@ target_link_libraries(h2_sockpair+trace_test
   gpr
 )
 
-  # avoid dependency on libstdc++
-  if (_gRPC_CORE_NOSTDCXX_FLAGS)
-    set_target_properties(h2_sockpair+trace_test PROPERTIES LINKER_LANGUAGE C)
-    target_compile_options(h2_sockpair+trace_test PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
-  endif()
 
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
@@ -19156,7 +18030,6 @@ target_include_directories(h2_sockpair_1byte_test
   PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
   PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
   PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
   PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
   PRIVATE ${_gRPC_UPB_GENERATED_DIR}
@@ -19173,11 +18046,6 @@ target_link_libraries(h2_sockpair_1byte_test
   gpr
 )
 
-  # avoid dependency on libstdc++
-  if (_gRPC_CORE_NOSTDCXX_FLAGS)
-    set_target_properties(h2_sockpair_1byte_test PROPERTIES LINKER_LANGUAGE C)
-    target_compile_options(h2_sockpair_1byte_test PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
-  endif()
 
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
@@ -19194,7 +18062,6 @@ target_include_directories(h2_spiffe_test
   PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
   PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
   PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
   PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
   PRIVATE ${_gRPC_UPB_GENERATED_DIR}
@@ -19211,11 +18078,6 @@ target_link_libraries(h2_spiffe_test
   gpr
 )
 
-  # avoid dependency on libstdc++
-  if (_gRPC_CORE_NOSTDCXX_FLAGS)
-    set_target_properties(h2_spiffe_test PROPERTIES LINKER_LANGUAGE C)
-    target_compile_options(h2_spiffe_test PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
-  endif()
 
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
@@ -19232,7 +18094,6 @@ target_include_directories(h2_ssl_test
   PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
   PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
   PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
   PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
   PRIVATE ${_gRPC_UPB_GENERATED_DIR}
@@ -19249,11 +18110,6 @@ target_link_libraries(h2_ssl_test
   gpr
 )
 
-  # avoid dependency on libstdc++
-  if (_gRPC_CORE_NOSTDCXX_FLAGS)
-    set_target_properties(h2_ssl_test PROPERTIES LINKER_LANGUAGE C)
-    target_compile_options(h2_ssl_test PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
-  endif()
 
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
@@ -19270,7 +18126,6 @@ target_include_directories(h2_ssl_cred_reload_test
   PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
   PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
   PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
   PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
   PRIVATE ${_gRPC_UPB_GENERATED_DIR}
@@ -19287,11 +18142,6 @@ target_link_libraries(h2_ssl_cred_reload_test
   gpr
 )
 
-  # avoid dependency on libstdc++
-  if (_gRPC_CORE_NOSTDCXX_FLAGS)
-    set_target_properties(h2_ssl_cred_reload_test PROPERTIES LINKER_LANGUAGE C)
-    target_compile_options(h2_ssl_cred_reload_test PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
-  endif()
 
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
@@ -19308,7 +18158,6 @@ target_include_directories(h2_ssl_proxy_test
   PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
   PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
   PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
   PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
   PRIVATE ${_gRPC_UPB_GENERATED_DIR}
@@ -19325,11 +18174,6 @@ target_link_libraries(h2_ssl_proxy_test
   gpr
 )
 
-  # avoid dependency on libstdc++
-  if (_gRPC_CORE_NOSTDCXX_FLAGS)
-    set_target_properties(h2_ssl_proxy_test PROPERTIES LINKER_LANGUAGE C)
-    target_compile_options(h2_ssl_proxy_test PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
-  endif()
 
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
@@ -19347,7 +18191,6 @@ target_include_directories(h2_uds_test
   PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
   PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
   PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
   PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
   PRIVATE ${_gRPC_UPB_GENERATED_DIR}
@@ -19364,11 +18207,6 @@ target_link_libraries(h2_uds_test
   gpr
 )
 
-  # avoid dependency on libstdc++
-  if (_gRPC_CORE_NOSTDCXX_FLAGS)
-    set_target_properties(h2_uds_test PROPERTIES LINKER_LANGUAGE C)
-    target_compile_options(h2_uds_test PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
-  endif()
 
 endif()
 endif (gRPC_BUILD_TESTS)
@@ -19386,7 +18224,6 @@ target_include_directories(inproc_test
   PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
   PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
   PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
   PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
   PRIVATE ${_gRPC_UPB_GENERATED_DIR}
@@ -19403,11 +18240,6 @@ target_link_libraries(inproc_test
   gpr
 )
 
-  # avoid dependency on libstdc++
-  if (_gRPC_CORE_NOSTDCXX_FLAGS)
-    set_target_properties(inproc_test PROPERTIES LINKER_LANGUAGE C)
-    target_compile_options(inproc_test PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
-  endif()
 
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
@@ -19424,7 +18256,6 @@ target_include_directories(h2_census_nosec_test
   PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
   PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
   PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
   PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
   PRIVATE ${_gRPC_UPB_GENERATED_DIR}
@@ -19441,11 +18272,6 @@ target_link_libraries(h2_census_nosec_test
   gpr
 )
 
-  # avoid dependency on libstdc++
-  if (_gRPC_CORE_NOSTDCXX_FLAGS)
-    set_target_properties(h2_census_nosec_test PROPERTIES LINKER_LANGUAGE C)
-    target_compile_options(h2_census_nosec_test PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
-  endif()
 
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
@@ -19462,7 +18288,6 @@ target_include_directories(h2_compress_nosec_test
   PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
   PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
   PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
   PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
   PRIVATE ${_gRPC_UPB_GENERATED_DIR}
@@ -19479,11 +18304,6 @@ target_link_libraries(h2_compress_nosec_test
   gpr
 )
 
-  # avoid dependency on libstdc++
-  if (_gRPC_CORE_NOSTDCXX_FLAGS)
-    set_target_properties(h2_compress_nosec_test PROPERTIES LINKER_LANGUAGE C)
-    target_compile_options(h2_compress_nosec_test PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
-  endif()
 
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
@@ -19501,7 +18321,6 @@ target_include_directories(h2_fd_nosec_test
   PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
   PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
   PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
   PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
   PRIVATE ${_gRPC_UPB_GENERATED_DIR}
@@ -19518,11 +18337,6 @@ target_link_libraries(h2_fd_nosec_test
   gpr
 )
 
-  # avoid dependency on libstdc++
-  if (_gRPC_CORE_NOSTDCXX_FLAGS)
-    set_target_properties(h2_fd_nosec_test PROPERTIES LINKER_LANGUAGE C)
-    target_compile_options(h2_fd_nosec_test PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
-  endif()
 
 endif()
 endif (gRPC_BUILD_TESTS)
@@ -19540,7 +18354,6 @@ target_include_directories(h2_full_nosec_test
   PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
   PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
   PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
   PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
   PRIVATE ${_gRPC_UPB_GENERATED_DIR}
@@ -19557,11 +18370,6 @@ target_link_libraries(h2_full_nosec_test
   gpr
 )
 
-  # avoid dependency on libstdc++
-  if (_gRPC_CORE_NOSTDCXX_FLAGS)
-    set_target_properties(h2_full_nosec_test PROPERTIES LINKER_LANGUAGE C)
-    target_compile_options(h2_full_nosec_test PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
-  endif()
 
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
@@ -19579,7 +18387,6 @@ target_include_directories(h2_full+pipe_nosec_test
   PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
   PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
   PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
   PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
   PRIVATE ${_gRPC_UPB_GENERATED_DIR}
@@ -19596,11 +18403,6 @@ target_link_libraries(h2_full+pipe_nosec_test
   gpr
 )
 
-  # avoid dependency on libstdc++
-  if (_gRPC_CORE_NOSTDCXX_FLAGS)
-    set_target_properties(h2_full+pipe_nosec_test PROPERTIES LINKER_LANGUAGE C)
-    target_compile_options(h2_full+pipe_nosec_test PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
-  endif()
 
 endif()
 endif (gRPC_BUILD_TESTS)
@@ -19618,7 +18420,6 @@ target_include_directories(h2_full+trace_nosec_test
   PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
   PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
   PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
   PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
   PRIVATE ${_gRPC_UPB_GENERATED_DIR}
@@ -19635,11 +18436,6 @@ target_link_libraries(h2_full+trace_nosec_test
   gpr
 )
 
-  # avoid dependency on libstdc++
-  if (_gRPC_CORE_NOSTDCXX_FLAGS)
-    set_target_properties(h2_full+trace_nosec_test PROPERTIES LINKER_LANGUAGE C)
-    target_compile_options(h2_full+trace_nosec_test PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
-  endif()
 
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
@@ -19656,7 +18452,6 @@ target_include_directories(h2_full+workarounds_nosec_test
   PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
   PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
   PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
   PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
   PRIVATE ${_gRPC_UPB_GENERATED_DIR}
@@ -19673,11 +18468,6 @@ target_link_libraries(h2_full+workarounds_nosec_test
   gpr
 )
 
-  # avoid dependency on libstdc++
-  if (_gRPC_CORE_NOSTDCXX_FLAGS)
-    set_target_properties(h2_full+workarounds_nosec_test PROPERTIES LINKER_LANGUAGE C)
-    target_compile_options(h2_full+workarounds_nosec_test PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
-  endif()
 
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
@@ -19694,7 +18484,6 @@ target_include_directories(h2_http_proxy_nosec_test
   PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
   PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
   PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
   PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
   PRIVATE ${_gRPC_UPB_GENERATED_DIR}
@@ -19711,11 +18500,6 @@ target_link_libraries(h2_http_proxy_nosec_test
   gpr
 )
 
-  # avoid dependency on libstdc++
-  if (_gRPC_CORE_NOSTDCXX_FLAGS)
-    set_target_properties(h2_http_proxy_nosec_test PROPERTIES LINKER_LANGUAGE C)
-    target_compile_options(h2_http_proxy_nosec_test PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
-  endif()
 
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
@@ -19732,7 +18516,6 @@ target_include_directories(h2_proxy_nosec_test
   PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
   PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
   PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
   PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
   PRIVATE ${_gRPC_UPB_GENERATED_DIR}
@@ -19749,11 +18532,6 @@ target_link_libraries(h2_proxy_nosec_test
   gpr
 )
 
-  # avoid dependency on libstdc++
-  if (_gRPC_CORE_NOSTDCXX_FLAGS)
-    set_target_properties(h2_proxy_nosec_test PROPERTIES LINKER_LANGUAGE C)
-    target_compile_options(h2_proxy_nosec_test PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
-  endif()
 
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
@@ -19770,7 +18548,6 @@ target_include_directories(h2_sockpair_nosec_test
   PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
   PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
   PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
   PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
   PRIVATE ${_gRPC_UPB_GENERATED_DIR}
@@ -19787,11 +18564,6 @@ target_link_libraries(h2_sockpair_nosec_test
   gpr
 )
 
-  # avoid dependency on libstdc++
-  if (_gRPC_CORE_NOSTDCXX_FLAGS)
-    set_target_properties(h2_sockpair_nosec_test PROPERTIES LINKER_LANGUAGE C)
-    target_compile_options(h2_sockpair_nosec_test PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
-  endif()
 
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
@@ -19808,7 +18580,6 @@ target_include_directories(h2_sockpair+trace_nosec_test
   PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
   PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
   PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
   PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
   PRIVATE ${_gRPC_UPB_GENERATED_DIR}
@@ -19825,11 +18596,6 @@ target_link_libraries(h2_sockpair+trace_nosec_test
   gpr
 )
 
-  # avoid dependency on libstdc++
-  if (_gRPC_CORE_NOSTDCXX_FLAGS)
-    set_target_properties(h2_sockpair+trace_nosec_test PROPERTIES LINKER_LANGUAGE C)
-    target_compile_options(h2_sockpair+trace_nosec_test PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
-  endif()
 
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
@@ -19846,7 +18612,6 @@ target_include_directories(h2_sockpair_1byte_nosec_test
   PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
   PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
   PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
   PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
   PRIVATE ${_gRPC_UPB_GENERATED_DIR}
@@ -19863,11 +18628,6 @@ target_link_libraries(h2_sockpair_1byte_nosec_test
   gpr
 )
 
-  # avoid dependency on libstdc++
-  if (_gRPC_CORE_NOSTDCXX_FLAGS)
-    set_target_properties(h2_sockpair_1byte_nosec_test PROPERTIES LINKER_LANGUAGE C)
-    target_compile_options(h2_sockpair_1byte_nosec_test PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
-  endif()
 
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
@@ -19885,7 +18645,6 @@ target_include_directories(h2_uds_nosec_test
   PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
   PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
   PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
   PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
   PRIVATE ${_gRPC_UPB_GENERATED_DIR}
@@ -19902,11 +18661,6 @@ target_link_libraries(h2_uds_nosec_test
   gpr
 )
 
-  # avoid dependency on libstdc++
-  if (_gRPC_CORE_NOSTDCXX_FLAGS)
-    set_target_properties(h2_uds_nosec_test PROPERTIES LINKER_LANGUAGE C)
-    target_compile_options(h2_uds_nosec_test PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
-  endif()
 
 endif()
 endif (gRPC_BUILD_TESTS)
@@ -19926,7 +18680,6 @@ target_include_directories(resolver_component_test_unsecure
   PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
   PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
   PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
   PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
   PRIVATE ${_gRPC_UPB_GENERATED_DIR}
@@ -19971,7 +18724,6 @@ target_include_directories(resolver_component_test
   PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
   PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
   PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
   PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
   PRIVATE ${_gRPC_UPB_GENERATED_DIR}
@@ -20017,7 +18769,6 @@ target_include_directories(resolver_component_tests_runner_invoker_unsecure
   PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
   PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
   PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
   PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
   PRIVATE ${_gRPC_UPB_GENERATED_DIR}
@@ -20063,7 +18814,6 @@ target_include_directories(resolver_component_tests_runner_invoker
   PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
   PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
   PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
   PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
   PRIVATE ${_gRPC_UPB_GENERATED_DIR}
@@ -20108,7 +18858,6 @@ target_include_directories(address_sorting_test_unsecure
   PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
   PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
   PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
   PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
   PRIVATE ${_gRPC_UPB_GENERATED_DIR}
@@ -20152,7 +18901,6 @@ target_include_directories(address_sorting_test
   PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
   PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
   PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
   PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
   PRIVATE ${_gRPC_UPB_GENERATED_DIR}
@@ -20196,7 +18944,6 @@ target_include_directories(cancel_ares_query_test
   PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
   PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
   PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
   PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
   PRIVATE ${_gRPC_UPB_GENERATED_DIR}
@@ -20240,7 +18987,6 @@ target_include_directories(alts_credentials_fuzzer_one_entry
   PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
   PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
   PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
   PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
   PRIVATE ${_gRPC_UPB_GENERATED_DIR}
@@ -20256,11 +19002,6 @@ target_link_libraries(alts_credentials_fuzzer_one_entry
   gpr
 )
 
-  # avoid dependency on libstdc++
-  if (_gRPC_CORE_NOSTDCXX_FLAGS)
-    set_target_properties(alts_credentials_fuzzer_one_entry PROPERTIES LINKER_LANGUAGE C)
-    target_compile_options(alts_credentials_fuzzer_one_entry PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
-  endif()
 
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
@@ -20278,7 +19019,6 @@ target_include_directories(api_fuzzer_one_entry
   PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
   PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
   PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
   PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
   PRIVATE ${_gRPC_UPB_GENERATED_DIR}
@@ -20294,11 +19034,6 @@ target_link_libraries(api_fuzzer_one_entry
   gpr
 )
 
-  # avoid dependency on libstdc++
-  if (_gRPC_CORE_NOSTDCXX_FLAGS)
-    set_target_properties(api_fuzzer_one_entry PROPERTIES LINKER_LANGUAGE C)
-    target_compile_options(api_fuzzer_one_entry PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
-  endif()
 
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
@@ -20316,7 +19051,6 @@ target_include_directories(client_fuzzer_one_entry
   PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
   PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
   PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
   PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
   PRIVATE ${_gRPC_UPB_GENERATED_DIR}
@@ -20332,11 +19066,6 @@ target_link_libraries(client_fuzzer_one_entry
   gpr
 )
 
-  # avoid dependency on libstdc++
-  if (_gRPC_CORE_NOSTDCXX_FLAGS)
-    set_target_properties(client_fuzzer_one_entry PROPERTIES LINKER_LANGUAGE C)
-    target_compile_options(client_fuzzer_one_entry PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
-  endif()
 
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
@@ -20354,7 +19083,6 @@ target_include_directories(hpack_parser_fuzzer_test_one_entry
   PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
   PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
   PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
   PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
   PRIVATE ${_gRPC_UPB_GENERATED_DIR}
@@ -20370,11 +19098,6 @@ target_link_libraries(hpack_parser_fuzzer_test_one_entry
   gpr
 )
 
-  # avoid dependency on libstdc++
-  if (_gRPC_CORE_NOSTDCXX_FLAGS)
-    set_target_properties(hpack_parser_fuzzer_test_one_entry PROPERTIES LINKER_LANGUAGE C)
-    target_compile_options(hpack_parser_fuzzer_test_one_entry PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
-  endif()
 
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
@@ -20392,7 +19115,6 @@ target_include_directories(http_request_fuzzer_test_one_entry
   PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
   PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
   PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
   PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
   PRIVATE ${_gRPC_UPB_GENERATED_DIR}
@@ -20408,11 +19130,6 @@ target_link_libraries(http_request_fuzzer_test_one_entry
   gpr
 )
 
-  # avoid dependency on libstdc++
-  if (_gRPC_CORE_NOSTDCXX_FLAGS)
-    set_target_properties(http_request_fuzzer_test_one_entry PROPERTIES LINKER_LANGUAGE C)
-    target_compile_options(http_request_fuzzer_test_one_entry PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
-  endif()
 
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
@@ -20430,7 +19147,6 @@ target_include_directories(http_response_fuzzer_test_one_entry
   PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
   PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
   PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
   PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
   PRIVATE ${_gRPC_UPB_GENERATED_DIR}
@@ -20446,11 +19162,6 @@ target_link_libraries(http_response_fuzzer_test_one_entry
   gpr
 )
 
-  # avoid dependency on libstdc++
-  if (_gRPC_CORE_NOSTDCXX_FLAGS)
-    set_target_properties(http_response_fuzzer_test_one_entry PROPERTIES LINKER_LANGUAGE C)
-    target_compile_options(http_response_fuzzer_test_one_entry PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
-  endif()
 
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
@@ -20468,7 +19179,6 @@ target_include_directories(json_fuzzer_test_one_entry
   PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
   PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
   PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
   PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
   PRIVATE ${_gRPC_UPB_GENERATED_DIR}
@@ -20484,11 +19194,6 @@ target_link_libraries(json_fuzzer_test_one_entry
   gpr
 )
 
-  # avoid dependency on libstdc++
-  if (_gRPC_CORE_NOSTDCXX_FLAGS)
-    set_target_properties(json_fuzzer_test_one_entry PROPERTIES LINKER_LANGUAGE C)
-    target_compile_options(json_fuzzer_test_one_entry PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
-  endif()
 
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
@@ -20506,7 +19211,6 @@ target_include_directories(nanopb_fuzzer_response_test_one_entry
   PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
   PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
   PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
   PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
   PRIVATE ${_gRPC_UPB_GENERATED_DIR}
@@ -20522,11 +19226,6 @@ target_link_libraries(nanopb_fuzzer_response_test_one_entry
   gpr
 )
 
-  # avoid dependency on libstdc++
-  if (_gRPC_CORE_NOSTDCXX_FLAGS)
-    set_target_properties(nanopb_fuzzer_response_test_one_entry PROPERTIES LINKER_LANGUAGE C)
-    target_compile_options(nanopb_fuzzer_response_test_one_entry PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
-  endif()
 
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
@@ -20544,7 +19243,6 @@ target_include_directories(nanopb_fuzzer_serverlist_test_one_entry
   PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
   PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
   PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
   PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
   PRIVATE ${_gRPC_UPB_GENERATED_DIR}
@@ -20560,11 +19258,6 @@ target_link_libraries(nanopb_fuzzer_serverlist_test_one_entry
   gpr
 )
 
-  # avoid dependency on libstdc++
-  if (_gRPC_CORE_NOSTDCXX_FLAGS)
-    set_target_properties(nanopb_fuzzer_serverlist_test_one_entry PROPERTIES LINKER_LANGUAGE C)
-    target_compile_options(nanopb_fuzzer_serverlist_test_one_entry PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
-  endif()
 
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
@@ -20582,7 +19275,6 @@ target_include_directories(percent_decode_fuzzer_one_entry
   PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
   PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
   PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
   PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
   PRIVATE ${_gRPC_UPB_GENERATED_DIR}
@@ -20598,11 +19290,6 @@ target_link_libraries(percent_decode_fuzzer_one_entry
   gpr
 )
 
-  # avoid dependency on libstdc++
-  if (_gRPC_CORE_NOSTDCXX_FLAGS)
-    set_target_properties(percent_decode_fuzzer_one_entry PROPERTIES LINKER_LANGUAGE C)
-    target_compile_options(percent_decode_fuzzer_one_entry PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
-  endif()
 
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
@@ -20620,7 +19307,6 @@ target_include_directories(percent_encode_fuzzer_one_entry
   PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
   PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
   PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
   PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
   PRIVATE ${_gRPC_UPB_GENERATED_DIR}
@@ -20636,11 +19322,6 @@ target_link_libraries(percent_encode_fuzzer_one_entry
   gpr
 )
 
-  # avoid dependency on libstdc++
-  if (_gRPC_CORE_NOSTDCXX_FLAGS)
-    set_target_properties(percent_encode_fuzzer_one_entry PROPERTIES LINKER_LANGUAGE C)
-    target_compile_options(percent_encode_fuzzer_one_entry PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
-  endif()
 
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
@@ -20658,7 +19339,6 @@ target_include_directories(server_fuzzer_one_entry
   PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
   PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
   PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
   PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
   PRIVATE ${_gRPC_UPB_GENERATED_DIR}
@@ -20674,11 +19354,6 @@ target_link_libraries(server_fuzzer_one_entry
   gpr
 )
 
-  # avoid dependency on libstdc++
-  if (_gRPC_CORE_NOSTDCXX_FLAGS)
-    set_target_properties(server_fuzzer_one_entry PROPERTIES LINKER_LANGUAGE C)
-    target_compile_options(server_fuzzer_one_entry PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
-  endif()
 
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
@@ -20696,7 +19371,6 @@ target_include_directories(ssl_server_fuzzer_one_entry
   PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
   PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
   PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
   PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
   PRIVATE ${_gRPC_UPB_GENERATED_DIR}
@@ -20712,11 +19386,6 @@ target_link_libraries(ssl_server_fuzzer_one_entry
   gpr
 )
 
-  # avoid dependency on libstdc++
-  if (_gRPC_CORE_NOSTDCXX_FLAGS)
-    set_target_properties(ssl_server_fuzzer_one_entry PROPERTIES LINKER_LANGUAGE C)
-    target_compile_options(ssl_server_fuzzer_one_entry PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
-  endif()
 
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
@@ -20734,7 +19403,6 @@ target_include_directories(uri_fuzzer_test_one_entry
   PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
   PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
   PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_NANOPB_INCLUDE_DIR}
   PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
   PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
   PRIVATE ${_gRPC_UPB_GENERATED_DIR}
@@ -20750,11 +19418,6 @@ target_link_libraries(uri_fuzzer_test_one_entry
   gpr
 )
 
-  # avoid dependency on libstdc++
-  if (_gRPC_CORE_NOSTDCXX_FLAGS)
-    set_target_properties(uri_fuzzer_test_one_entry PROPERTIES LINKER_LANGUAGE C)
-    target_compile_options(uri_fuzzer_test_one_entry PRIVATE $<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}>)
-  endif()
 
 endif (gRPC_BUILD_TESTS)
 

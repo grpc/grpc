@@ -110,11 +110,17 @@ struct grpc_channel_credentials
   create_security_connector(
       grpc_core::RefCountedPtr<grpc_call_credentials> call_creds,
       const char* target, const grpc_channel_args* args,
-      grpc_channel_args** new_args) {
+      grpc_channel_args** new_args)
+#if GRPC_USE_CPP_STD_LIB
+      = 0;
+#else
+  {
     // Tell clang-tidy that call_creds cannot be passed as const-ref.
     call_creds.reset();
-    GRPC_ABSTRACT;
+    gpr_log(GPR_ERROR, "Function marked GRPC_ABSTRACT was not implemented");
+    GPR_ASSERT(false);
   }
+#endif
 
   // Creates a version of the channel credentials without any attached call
   // credentials. This can be used in order to open a channel to a non-trusted

@@ -22,7 +22,7 @@
 
 Pod::Spec.new do |s|
   s.name     = 'gRPC-Core'
-  version = '1.24.0-dev'
+  version = '1.25.0-dev'
   s.version  = version
   s.summary  = 'Core cross-platform gRPC library, written in C'
   s.homepage = 'https://grpc.io'
@@ -91,12 +91,12 @@ Pod::Spec.new do |s|
     # build.
     'USE_HEADERMAP' => 'NO',
     'ALWAYS_SEARCH_USER_PATHS' => 'NO',
-    'GCC_PREPROCESSOR_DEFINITIONS' => '"$(inherited)" "COCOAPODS=1" "PB_NO_PACKED_STRUCTS=1"',
+    'GCC_PREPROCESSOR_DEFINITIONS' => '"$(inherited)" "COCOAPODS=1"',
     'CLANG_WARN_STRICT_PROTOTYPES' => 'NO',
   }
 
   s.default_subspecs = 'Interface', 'Implementation'
-  s.compiler_flags = '-DGRPC_ARES=0', '-DPB_FIELD_32BIT'
+  s.compiler_flags = '-DGRPC_ARES=0'
   s.libraries = 'c++'
 
   # Like many other C libraries, gRPC-Core has its public headers under `include/<libname>/` and its
@@ -185,7 +185,6 @@ Pod::Spec.new do |s|
     ss.libraries = 'z'
     ss.dependency "#{s.name}/Interface", version
     ss.dependency 'BoringSSL-GRPC', '0.0.3'
-    ss.dependency 'nanopb', '~> 0.3'
     ss.compiler_flags = '-DGRPC_SHADOW_BORINGSSL_SYMBOLS'
 
     # To save you from scrolling, this is the last part of the podspec.
@@ -311,6 +310,7 @@ Pod::Spec.new do |s|
                       'src/core/lib/security/security_connector/security_connector.h',
                       'src/core/lib/security/security_connector/ssl/ssl_security_connector.h',
                       'src/core/lib/security/security_connector/ssl_utils.h',
+                      'src/core/lib/security/security_connector/ssl_utils_config.h',
                       'src/core/lib/security/security_connector/tls/spiffe_security_connector.h',
                       'src/core/lib/security/transport/auth_filters.h',
                       'src/core/lib/security/transport/secure_endpoint.h',
@@ -353,6 +353,7 @@ Pod::Spec.new do |s|
                       'src/core/tsi/transport_security_interface.h',
                       'src/core/ext/transport/chttp2/client/authority.h',
                       'src/core/ext/transport/chttp2/client/chttp2_connector.h',
+                      'src/core/ext/filters/client_channel/backend_metric.h',
                       'src/core/ext/filters/client_channel/backup_poller.h',
                       'src/core/ext/filters/client_channel/client_channel.h',
                       'src/core/ext/filters/client_channel/client_channel_channelz.h',
@@ -382,6 +383,19 @@ Pod::Spec.new do |s|
                       'src/core/ext/filters/client_channel/subchannel_pool_interface.h',
                       'src/core/ext/filters/deadline/deadline_filter.h',
                       'src/core/ext/upb-generated/src/proto/grpc/health/v1/health.upb.h',
+                      'src/core/ext/upb-generated/udpa/data/orca/v1/orca_load_report.upb.h',
+                      'src/core/ext/upb-generated/gogoproto/gogo.upb.h',
+                      'src/core/ext/upb-generated/validate/validate.upb.h',
+                      'src/core/ext/upb-generated/google/api/annotations.upb.h',
+                      'src/core/ext/upb-generated/google/api/http.upb.h',
+                      'src/core/ext/upb-generated/google/protobuf/any.upb.h',
+                      'src/core/ext/upb-generated/google/protobuf/descriptor.upb.h',
+                      'src/core/ext/upb-generated/google/protobuf/duration.upb.h',
+                      'src/core/ext/upb-generated/google/protobuf/empty.upb.h',
+                      'src/core/ext/upb-generated/google/protobuf/struct.upb.h',
+                      'src/core/ext/upb-generated/google/protobuf/timestamp.upb.h',
+                      'src/core/ext/upb-generated/google/protobuf/wrappers.upb.h',
+                      'src/core/ext/upb-generated/google/rpc/status.upb.h',
                       'src/core/tsi/fake_transport_security.h',
                       'src/core/tsi/local_transport_security.h',
                       'src/core/tsi/ssl/session_cache/ssl_session.h',
@@ -541,16 +555,6 @@ Pod::Spec.new do |s|
                       'src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_client_stats.h',
                       'src/core/ext/filters/client_channel/lb_policy/grpclb/load_balancer_api.h',
                       'src/core/ext/upb-generated/src/proto/grpc/lb/v1/load_balancer.upb.h',
-                      'src/core/ext/upb-generated/google/api/annotations.upb.h',
-                      'src/core/ext/upb-generated/google/api/http.upb.h',
-                      'src/core/ext/upb-generated/google/protobuf/any.upb.h',
-                      'src/core/ext/upb-generated/google/protobuf/descriptor.upb.h',
-                      'src/core/ext/upb-generated/google/protobuf/duration.upb.h',
-                      'src/core/ext/upb-generated/google/protobuf/empty.upb.h',
-                      'src/core/ext/upb-generated/google/protobuf/struct.upb.h',
-                      'src/core/ext/upb-generated/google/protobuf/timestamp.upb.h',
-                      'src/core/ext/upb-generated/google/protobuf/wrappers.upb.h',
-                      'src/core/ext/upb-generated/google/rpc/status.upb.h',
                       'src/core/ext/filters/client_channel/resolver/fake/fake_resolver.h',
                       'src/core/ext/filters/client_channel/lb_policy/xds/xds_channel.h',
                       'src/core/ext/filters/client_channel/lb_policy/xds/xds_client_stats.h',
@@ -558,6 +562,7 @@ Pod::Spec.new do |s|
                       'src/core/ext/upb-generated/envoy/api/v2/auth/cert.upb.h',
                       'src/core/ext/upb-generated/envoy/api/v2/cds.upb.h',
                       'src/core/ext/upb-generated/envoy/api/v2/cluster/circuit_breaker.upb.h',
+                      'src/core/ext/upb-generated/envoy/api/v2/cluster/filter.upb.h',
                       'src/core/ext/upb-generated/envoy/api/v2/cluster/outlier_detection.upb.h',
                       'src/core/ext/upb-generated/envoy/api/v2/discovery.upb.h',
                       'src/core/ext/upb-generated/envoy/api/v2/eds.upb.h',
@@ -570,11 +575,10 @@ Pod::Spec.new do |s|
                       'src/core/ext/upb-generated/envoy/api/v2/core/config_source.upb.h',
                       'src/core/ext/upb-generated/envoy/api/v2/core/grpc_service.upb.h',
                       'src/core/ext/upb-generated/envoy/api/v2/core/health_check.upb.h',
+                      'src/core/ext/upb-generated/envoy/api/v2/core/http_uri.upb.h',
                       'src/core/ext/upb-generated/envoy/api/v2/core/protocol.upb.h',
                       'src/core/ext/upb-generated/envoy/type/percent.upb.h',
                       'src/core/ext/upb-generated/envoy/type/range.upb.h',
-                      'src/core/ext/upb-generated/gogoproto/gogo.upb.h',
-                      'src/core/ext/upb-generated/validate/validate.upb.h',
                       'src/core/ext/filters/client_channel/lb_policy/subchannel_list.h',
                       'src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver.h',
                       'src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper.h',
@@ -799,6 +803,7 @@ Pod::Spec.new do |s|
                       'src/core/lib/security/security_connector/security_connector.cc',
                       'src/core/lib/security/security_connector/ssl/ssl_security_connector.cc',
                       'src/core/lib/security/security_connector/ssl_utils.cc',
+                      'src/core/lib/security/security_connector/ssl_utils_config.cc',
                       'src/core/lib/security/security_connector/tls/spiffe_security_connector.cc',
                       'src/core/lib/security/transport/client_auth_filter.cc',
                       'src/core/lib/security/transport/secure_endpoint.cc',
@@ -848,6 +853,7 @@ Pod::Spec.new do |s|
                       'src/core/ext/transport/chttp2/client/insecure/channel_create_posix.cc',
                       'src/core/ext/transport/chttp2/client/authority.cc',
                       'src/core/ext/transport/chttp2/client/chttp2_connector.cc',
+                      'src/core/ext/filters/client_channel/backend_metric.cc',
                       'src/core/ext/filters/client_channel/backup_poller.cc',
                       'src/core/ext/filters/client_channel/channel_connectivity.cc',
                       'src/core/ext/filters/client_channel/client_channel.cc',
@@ -876,6 +882,19 @@ Pod::Spec.new do |s|
                       'src/core/ext/filters/client_channel/subchannel_pool_interface.cc',
                       'src/core/ext/filters/deadline/deadline_filter.cc',
                       'src/core/ext/upb-generated/src/proto/grpc/health/v1/health.upb.c',
+                      'src/core/ext/upb-generated/udpa/data/orca/v1/orca_load_report.upb.c',
+                      'src/core/ext/upb-generated/gogoproto/gogo.upb.c',
+                      'src/core/ext/upb-generated/validate/validate.upb.c',
+                      'src/core/ext/upb-generated/google/api/annotations.upb.c',
+                      'src/core/ext/upb-generated/google/api/http.upb.c',
+                      'src/core/ext/upb-generated/google/protobuf/any.upb.c',
+                      'src/core/ext/upb-generated/google/protobuf/descriptor.upb.c',
+                      'src/core/ext/upb-generated/google/protobuf/duration.upb.c',
+                      'src/core/ext/upb-generated/google/protobuf/empty.upb.c',
+                      'src/core/ext/upb-generated/google/protobuf/struct.upb.c',
+                      'src/core/ext/upb-generated/google/protobuf/timestamp.upb.c',
+                      'src/core/ext/upb-generated/google/protobuf/wrappers.upb.c',
+                      'src/core/ext/upb-generated/google/rpc/status.upb.c',
                       'src/core/tsi/fake_transport_security.cc',
                       'src/core/tsi/local_transport_security.cc',
                       'src/core/tsi/ssl/session_cache/ssl_session_boringssl.cc',
@@ -895,16 +914,6 @@ Pod::Spec.new do |s|
                       'src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_client_stats.cc',
                       'src/core/ext/filters/client_channel/lb_policy/grpclb/load_balancer_api.cc',
                       'src/core/ext/upb-generated/src/proto/grpc/lb/v1/load_balancer.upb.c',
-                      'src/core/ext/upb-generated/google/api/annotations.upb.c',
-                      'src/core/ext/upb-generated/google/api/http.upb.c',
-                      'src/core/ext/upb-generated/google/protobuf/any.upb.c',
-                      'src/core/ext/upb-generated/google/protobuf/descriptor.upb.c',
-                      'src/core/ext/upb-generated/google/protobuf/duration.upb.c',
-                      'src/core/ext/upb-generated/google/protobuf/empty.upb.c',
-                      'src/core/ext/upb-generated/google/protobuf/struct.upb.c',
-                      'src/core/ext/upb-generated/google/protobuf/timestamp.upb.c',
-                      'src/core/ext/upb-generated/google/protobuf/wrappers.upb.c',
-                      'src/core/ext/upb-generated/google/rpc/status.upb.c',
                       'src/core/ext/filters/client_channel/resolver/fake/fake_resolver.cc',
                       'src/core/ext/filters/client_channel/lb_policy/xds/xds.cc',
                       'src/core/ext/filters/client_channel/lb_policy/xds/xds_channel_secure.cc',
@@ -913,6 +922,7 @@ Pod::Spec.new do |s|
                       'src/core/ext/upb-generated/envoy/api/v2/auth/cert.upb.c',
                       'src/core/ext/upb-generated/envoy/api/v2/cds.upb.c',
                       'src/core/ext/upb-generated/envoy/api/v2/cluster/circuit_breaker.upb.c',
+                      'src/core/ext/upb-generated/envoy/api/v2/cluster/filter.upb.c',
                       'src/core/ext/upb-generated/envoy/api/v2/cluster/outlier_detection.upb.c',
                       'src/core/ext/upb-generated/envoy/api/v2/discovery.upb.c',
                       'src/core/ext/upb-generated/envoy/api/v2/eds.upb.c',
@@ -925,11 +935,10 @@ Pod::Spec.new do |s|
                       'src/core/ext/upb-generated/envoy/api/v2/core/config_source.upb.c',
                       'src/core/ext/upb-generated/envoy/api/v2/core/grpc_service.upb.c',
                       'src/core/ext/upb-generated/envoy/api/v2/core/health_check.upb.c',
+                      'src/core/ext/upb-generated/envoy/api/v2/core/http_uri.upb.c',
                       'src/core/ext/upb-generated/envoy/api/v2/core/protocol.upb.c',
                       'src/core/ext/upb-generated/envoy/type/percent.upb.c',
                       'src/core/ext/upb-generated/envoy/type/range.upb.c',
-                      'src/core/ext/upb-generated/gogoproto/gogo.upb.c',
-                      'src/core/ext/upb-generated/validate/validate.upb.c',
                       'src/core/ext/filters/client_channel/lb_policy/pick_first/pick_first.cc',
                       'src/core/ext/filters/client_channel/lb_policy/round_robin/round_robin.cc',
                       'src/core/ext/filters/client_channel/resolver/dns/c_ares/dns_resolver_ares.cc',
@@ -945,6 +954,7 @@ Pod::Spec.new do |s|
                       'src/core/ext/filters/client_channel/resolver/dns/dns_resolver_selection.cc',
                       'src/core/ext/filters/client_channel/resolver/dns/native/dns_resolver.cc',
                       'src/core/ext/filters/client_channel/resolver/sockaddr/sockaddr_resolver.cc',
+                      'src/core/ext/filters/client_channel/resolver/xds/xds_resolver.cc',
                       'src/core/ext/filters/census/grpc_context.cc',
                       'src/core/ext/filters/client_idle/client_idle_filter.cc',
                       'src/core/ext/filters/max_age/max_age_filter.cc',
@@ -1036,6 +1046,7 @@ Pod::Spec.new do |s|
                               'src/core/lib/security/security_connector/security_connector.h',
                               'src/core/lib/security/security_connector/ssl/ssl_security_connector.h',
                               'src/core/lib/security/security_connector/ssl_utils.h',
+                              'src/core/lib/security/security_connector/ssl_utils_config.h',
                               'src/core/lib/security/security_connector/tls/spiffe_security_connector.h',
                               'src/core/lib/security/transport/auth_filters.h',
                               'src/core/lib/security/transport/secure_endpoint.h',
@@ -1078,6 +1089,7 @@ Pod::Spec.new do |s|
                               'src/core/tsi/transport_security_interface.h',
                               'src/core/ext/transport/chttp2/client/authority.h',
                               'src/core/ext/transport/chttp2/client/chttp2_connector.h',
+                              'src/core/ext/filters/client_channel/backend_metric.h',
                               'src/core/ext/filters/client_channel/backup_poller.h',
                               'src/core/ext/filters/client_channel/client_channel.h',
                               'src/core/ext/filters/client_channel/client_channel_channelz.h',
@@ -1107,6 +1119,19 @@ Pod::Spec.new do |s|
                               'src/core/ext/filters/client_channel/subchannel_pool_interface.h',
                               'src/core/ext/filters/deadline/deadline_filter.h',
                               'src/core/ext/upb-generated/src/proto/grpc/health/v1/health.upb.h',
+                              'src/core/ext/upb-generated/udpa/data/orca/v1/orca_load_report.upb.h',
+                              'src/core/ext/upb-generated/gogoproto/gogo.upb.h',
+                              'src/core/ext/upb-generated/validate/validate.upb.h',
+                              'src/core/ext/upb-generated/google/api/annotations.upb.h',
+                              'src/core/ext/upb-generated/google/api/http.upb.h',
+                              'src/core/ext/upb-generated/google/protobuf/any.upb.h',
+                              'src/core/ext/upb-generated/google/protobuf/descriptor.upb.h',
+                              'src/core/ext/upb-generated/google/protobuf/duration.upb.h',
+                              'src/core/ext/upb-generated/google/protobuf/empty.upb.h',
+                              'src/core/ext/upb-generated/google/protobuf/struct.upb.h',
+                              'src/core/ext/upb-generated/google/protobuf/timestamp.upb.h',
+                              'src/core/ext/upb-generated/google/protobuf/wrappers.upb.h',
+                              'src/core/ext/upb-generated/google/rpc/status.upb.h',
                               'src/core/tsi/fake_transport_security.h',
                               'src/core/tsi/local_transport_security.h',
                               'src/core/tsi/ssl/session_cache/ssl_session.h',
@@ -1266,16 +1291,6 @@ Pod::Spec.new do |s|
                               'src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_client_stats.h',
                               'src/core/ext/filters/client_channel/lb_policy/grpclb/load_balancer_api.h',
                               'src/core/ext/upb-generated/src/proto/grpc/lb/v1/load_balancer.upb.h',
-                              'src/core/ext/upb-generated/google/api/annotations.upb.h',
-                              'src/core/ext/upb-generated/google/api/http.upb.h',
-                              'src/core/ext/upb-generated/google/protobuf/any.upb.h',
-                              'src/core/ext/upb-generated/google/protobuf/descriptor.upb.h',
-                              'src/core/ext/upb-generated/google/protobuf/duration.upb.h',
-                              'src/core/ext/upb-generated/google/protobuf/empty.upb.h',
-                              'src/core/ext/upb-generated/google/protobuf/struct.upb.h',
-                              'src/core/ext/upb-generated/google/protobuf/timestamp.upb.h',
-                              'src/core/ext/upb-generated/google/protobuf/wrappers.upb.h',
-                              'src/core/ext/upb-generated/google/rpc/status.upb.h',
                               'src/core/ext/filters/client_channel/resolver/fake/fake_resolver.h',
                               'src/core/ext/filters/client_channel/lb_policy/xds/xds_channel.h',
                               'src/core/ext/filters/client_channel/lb_policy/xds/xds_client_stats.h',
@@ -1283,6 +1298,7 @@ Pod::Spec.new do |s|
                               'src/core/ext/upb-generated/envoy/api/v2/auth/cert.upb.h',
                               'src/core/ext/upb-generated/envoy/api/v2/cds.upb.h',
                               'src/core/ext/upb-generated/envoy/api/v2/cluster/circuit_breaker.upb.h',
+                              'src/core/ext/upb-generated/envoy/api/v2/cluster/filter.upb.h',
                               'src/core/ext/upb-generated/envoy/api/v2/cluster/outlier_detection.upb.h',
                               'src/core/ext/upb-generated/envoy/api/v2/discovery.upb.h',
                               'src/core/ext/upb-generated/envoy/api/v2/eds.upb.h',
@@ -1295,11 +1311,10 @@ Pod::Spec.new do |s|
                               'src/core/ext/upb-generated/envoy/api/v2/core/config_source.upb.h',
                               'src/core/ext/upb-generated/envoy/api/v2/core/grpc_service.upb.h',
                               'src/core/ext/upb-generated/envoy/api/v2/core/health_check.upb.h',
+                              'src/core/ext/upb-generated/envoy/api/v2/core/http_uri.upb.h',
                               'src/core/ext/upb-generated/envoy/api/v2/core/protocol.upb.h',
                               'src/core/ext/upb-generated/envoy/type/percent.upb.h',
                               'src/core/ext/upb-generated/envoy/type/range.upb.h',
-                              'src/core/ext/upb-generated/gogoproto/gogo.upb.h',
-                              'src/core/ext/upb-generated/validate/validate.upb.h',
                               'src/core/ext/filters/client_channel/lb_policy/subchannel_list.h',
                               'src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_ev_driver.h',
                               'src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper.h',
@@ -1479,7 +1494,6 @@ Pod::Spec.new do |s|
 
   # TODO (mxyan): Instead of this hack, add include path "third_party" to C core's include path?
   s.prepare_command = <<-END_OF_COMMAND
-    sed -E -i '' 's;#include "(pb(_.*)?\\.h)";#if COCOAPODS==1\\\n  #include <nanopb/\\1>\\\n#else\\\n  #include "\\1"\\\n#endif;g' $(find src/core -type f -print | xargs grep -H -c '#include <nanopb/' | grep 0$ | cut -d':' -f1)
     sed -E -i '' 's;#include <openssl/(.*)>;#if COCOAPODS==1\\\n  #include <openssl_grpc/\\1>\\\n#else\\\n  #include <openssl/\\1>\\\n#endif;g' $(find src/core -type f \\( -path '*.h' -or -path '*.cc' \\) -print | xargs grep -H -c '#include <openssl_grpc/' | grep 0$ | cut -d':' -f1)
     find src/core/ third_party/upb/ -type f \\( -name '*.h' -or -name '*.c' -or -name '*.cc' \\) -print0 | xargs -0 -L1 sed -E -i'.grpc_back' 's;#include "upb/(.*)";#if COCOAPODS==1\\\n  #include  "third_party/upb/upb/\\1"\\\n#else\\\n  #include  "upb/\\1"\\\n#endif;g'
     find src/core/ third_party/upb/ -type f -name '*.grpc_back' -print0 | xargs -0 rm

@@ -145,8 +145,6 @@
   ## Some libraries are shared even with BUILD_SHARED_LIBRARIES=OFF
   set(CMAKE_POSITION_INDEPENDENT_CODE TRUE)
   
-  add_definitions(-DPB_FIELD_32BIT)
-
   if (MSVC)
     include(cmake/msvc_static_runtime.cmake)
     add_definitions(-D_WIN32_WINNT=0x600 -D_SCL_SECURE_NO_WARNINGS -D_CRT_SECURE_NO_WARNINGS -D_WINSOCK_DEPRECATED_NO_WARNINGS)
@@ -176,11 +174,6 @@
   endif()
 
   if (_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_IOS)
-    # C core has C++ source code, but should not depend on libstc++ (for better portability).
-    # We need to use a few tricks to convince cmake to do that.
-    # https://stackoverflow.com/questions/15058403/how-to-stop-cmake-from-linking-against-libstdc
-    set(CMAKE_CXX_IMPLICIT_LINK_LIBRARIES "")
-    # Exceptions and RTTI must be off to avoid dependency on libstdc++
     set(_gRPC_CORE_NOSTDCXX_FLAGS -fno-exceptions -fno-rtti)
   else()
     set(_gRPC_CORE_NOSTDCXX_FLAGS "")
@@ -190,7 +183,6 @@
   include(cmake/benchmark.cmake)
   include(cmake/cares.cmake)
   include(cmake/gflags.cmake)
-  include(cmake/nanopb.cmake)
   include(cmake/protobuf.cmake)
   include(cmake/ssl.cmake)
   include(cmake/upb.cmake)
@@ -431,7 +423,6 @@
     PRIVATE <%text>${_gRPC_BENCHMARK_INCLUDE_DIR}</%text>
     PRIVATE <%text>${_gRPC_CARES_INCLUDE_DIR}</%text>
     PRIVATE <%text>${_gRPC_GFLAGS_INCLUDE_DIR}</%text>
-    PRIVATE <%text>${_gRPC_NANOPB_INCLUDE_DIR}</%text>
     PRIVATE <%text>${_gRPC_PROTOBUF_INCLUDE_DIR}</%text>
     PRIVATE <%text>${_gRPC_SSL_INCLUDE_DIR}</%text>
     PRIVATE <%text>${_gRPC_UPB_GENERATED_DIR}</%text>
@@ -448,14 +439,6 @@
     PRIVATE <%text>${_gRPC_PROTO_GENS_DIR}</%text>
   % endif
   )
-  % if lib.language in ['c', 'csharp']:
-    # avoid dependency on libstdc++
-    if (_gRPC_CORE_NOSTDCXX_FLAGS)
-      set_target_properties(${lib.name} PROPERTIES LINKER_LANGUAGE C)
-      # only use the flags for C++ source files
-      target_compile_options(${lib.name} PRIVATE <%text>$<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}></%text>)
-    endif()
-  % endif
   % if len(get_deps(lib)) > 0:
   target_link_libraries(${lib.name}
   % for dep in get_deps(lib):
@@ -530,7 +513,6 @@
     PRIVATE <%text>${_gRPC_BENCHMARK_INCLUDE_DIR}</%text>
     PRIVATE <%text>${_gRPC_CARES_INCLUDE_DIR}</%text>
     PRIVATE <%text>${_gRPC_GFLAGS_INCLUDE_DIR}</%text>
-    PRIVATE <%text>${_gRPC_NANOPB_INCLUDE_DIR}</%text>
     PRIVATE <%text>${_gRPC_PROTOBUF_INCLUDE_DIR}</%text>
     PRIVATE <%text>${_gRPC_SSL_INCLUDE_DIR}</%text>
     PRIVATE <%text>${_gRPC_UPB_GENERATED_DIR}</%text>
@@ -555,13 +537,6 @@
   % endfor
   )
 
-  % if tgt.language in ['c', 'csharp']:
-    # avoid dependency on libstdc++
-    if (_gRPC_CORE_NOSTDCXX_FLAGS)
-      set_target_properties(${tgt.name} PROPERTIES LINKER_LANGUAGE C)
-      target_compile_options(${tgt.name} PRIVATE <%text>$<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}></%text>)
-    endif()
-  % endif
   % endif
   </%def>
 

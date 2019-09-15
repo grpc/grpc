@@ -107,6 +107,35 @@ class TestLite(setuptools.Command):
         self.distribution.fetch_build_eggs(self.distribution.tests_require)
 
 
+class TestAio(setuptools.Command):
+    """Command to run aio tests without fetching or building anything."""
+
+    description = 'run aio tests without fetching or building anything.'
+    user_options = []
+
+    def initialize_options(self):
+        pass
+
+    def finalize_options(self):
+        pass
+
+    def run(self):
+        self._add_eggs_to_path()
+
+        import tests
+        loader = tests.Loader()
+        loader.loadTestsFromNames(['tests_aio'])
+        runner = tests.Runner()
+        result = runner.run(loader.suite)
+        if not result.wasSuccessful():
+            sys.exit('Test failure')
+
+    def _add_eggs_to_path(self):
+        """Fetch install and test requirements"""
+        self.distribution.fetch_build_eggs(self.distribution.install_requires)
+        self.distribution.fetch_build_eggs(self.distribution.tests_require)
+
+
 class TestGevent(setuptools.Command):
     """Command to run tests w/gevent."""
 
@@ -154,7 +183,9 @@ class TestGevent(setuptools.Command):
         'channelz._channelz_servicer_test.ChannelzServicerTest.test_many_subchannels_and_sockets',
         'channelz._channelz_servicer_test.ChannelzServicerTest.test_streaming_rpc',
         # TODO(https://github.com/grpc/grpc/issues/15411) enable this test
-        'unit._cython._channel_test.ChannelTest.test_negative_deadline_connectivity'
+        'unit._cython._channel_test.ChannelTest.test_negative_deadline_connectivity',
+        # TODO(https://github.com/grpc/grpc/issues/15411) enable this test
+        'unit._local_credentials_test.LocalCredentialsTest',
     )
     BANNED_WINDOWS_TESTS = (
         # TODO(https://github.com/grpc/grpc/pull/15411) enable this test

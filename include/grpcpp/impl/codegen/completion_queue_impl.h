@@ -60,6 +60,17 @@ class ServerWriter;
 namespace internal {
 template <class W, class R>
 class ServerReaderWriterBody;
+
+template <class ServiceType, class RequestType, class ResponseType>
+class RpcMethodHandler;
+template <class ServiceType, class RequestType, class ResponseType>
+class ClientStreamingHandler;
+template <class ServiceType, class RequestType, class ResponseType>
+class ServerStreamingHandler;
+template <class Streamer, bool WriteNeeded>
+class TemplatedBidiStreamingHandler;
+template <::grpc::StatusCode code>
+class ErrorMethodHandler;
 }  // namespace internal
 }  // namespace grpc_impl
 namespace grpc {
@@ -70,18 +81,6 @@ class ServerInterface;
 namespace internal {
 class CompletionQueueTag;
 class RpcMethod;
-template <class ServiceType, class RequestType, class ResponseType>
-class RpcMethodHandler;
-template <class ServiceType, class RequestType, class ResponseType>
-class ClientStreamingHandler;
-template <class ServiceType, class RequestType, class ResponseType>
-class ServerStreamingHandler;
-template <class ServiceType, class RequestType, class ResponseType>
-class BidiStreamingHandler;
-template <class Streamer, bool WriteNeeded>
-class TemplatedBidiStreamingHandler;
-template <StatusCode code>
-class ErrorMethodHandler;
 template <class InputMessage, class OutputMessage>
 class BlockingUnaryCallImpl;
 template <class Op1, class Op2, class Op3, class Op4, class Op5, class Op6>
@@ -266,15 +265,15 @@ class CompletionQueue : private ::grpc::GrpcLibraryCodegen {
   template <class W, class R>
   friend class ::grpc_impl::internal::ServerReaderWriterBody;
   template <class ServiceType, class RequestType, class ResponseType>
-  friend class ::grpc::internal::RpcMethodHandler;
+  friend class ::grpc_impl::internal::RpcMethodHandler;
   template <class ServiceType, class RequestType, class ResponseType>
-  friend class ::grpc::internal::ClientStreamingHandler;
+  friend class ::grpc_impl::internal::ClientStreamingHandler;
   template <class ServiceType, class RequestType, class ResponseType>
-  friend class ::grpc::internal::ServerStreamingHandler;
+  friend class ::grpc_impl::internal::ServerStreamingHandler;
   template <class Streamer, bool WriteNeeded>
-  friend class ::grpc::internal::TemplatedBidiStreamingHandler;
+  friend class ::grpc_impl::internal::TemplatedBidiStreamingHandler;
   template <::grpc::StatusCode code>
-  friend class ::grpc::internal::ErrorMethodHandler;
+  friend class ::grpc_impl::internal::ErrorMethodHandler;
   friend class ::grpc_impl::Server;
   friend class ::grpc_impl::ServerContext;
   friend class ::grpc::ServerInterface;

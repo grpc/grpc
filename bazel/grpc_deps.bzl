@@ -9,11 +9,6 @@ def grpc_deps():
     """Loads dependencies need to compile and test the grpc library."""
 
     native.bind(
-        name = "nanopb",
-        actual = "@com_github_nanopb_nanopb//:nanopb",
-    )
-
-    native.bind(
         name = "upb_lib",
         actual = "@upb//:upb",
     )
@@ -67,7 +62,7 @@ def grpc_deps():
         name = "gtest",
         actual = "@com_github_google_googletest//:gtest",
     )
-
+    
     native.bind(
         name = "benchmark",
         actual = "@com_github_google_benchmark//:benchmark",
@@ -129,21 +124,20 @@ def grpc_deps():
             url = "https://github.com/google/protobuf/archive/09745575a923640154bcf307fba8aedff47f240a.tar.gz",
         )
 
-    if "com_github_nanopb_nanopb" not in native.existing_rules():
-        http_archive(
-            name = "com_github_nanopb_nanopb",
-            build_file = "@com_github_grpc_grpc//third_party:nanopb.BUILD",
-            sha256 = "8bbbb1e78d4ddb0a1919276924ab10d11b631df48b657d960e0c795a25515735",
-            strip_prefix = "nanopb-f8ac463766281625ad710900479130c7fcb4d63b",
-            url = "https://github.com/nanopb/nanopb/archive/f8ac463766281625ad710900479130c7fcb4d63b.tar.gz",
-        )
-
     if "com_github_google_googletest" not in native.existing_rules():
         http_archive(
             name = "com_github_google_googletest",
-            sha256 = "d0d447b4feeedca837a0d46a289d4223089b32ac2f84545fa4982755cc8919be",
-            strip_prefix = "googletest-2fe3bd994b3189899d93f1d5a881e725e046fdc2",
-            url = "https://github.com/google/googletest/archive/2fe3bd994b3189899d93f1d5a881e725e046fdc2.tar.gz",
+            sha256 = "443d383db648ebb8e391382c0ab63263b7091d03197f304390baac10f178a468",
+            strip_prefix = "googletest-c9ccac7cb7345901884aabf5d1a786cfa6e2f397",
+            url = "https://github.com/google/googletest/archive/c9ccac7cb7345901884aabf5d1a786cfa6e2f397.tar.gz", # 2019-08-19
+        )
+
+    if "rules_cc" not in native.existing_rules():
+        http_archive(
+            name = "rules_cc",
+            sha256 = "35f2fb4ea0b3e61ad64a369de284e4fbbdcdba71836a5555abb5e194cf119509",
+            strip_prefix = "rules_cc-624b5d59dfb45672d4239422fa1e3de1822ee110",
+            url = "https://github.com/bazelbuild/rules_cc/archive/624b5d59dfb45672d4239422fa1e3de1822ee110.tar.gz", #2019-08-15
         )
 
     if "com_github_gflags_gflags" not in native.existing_rules():
@@ -157,9 +151,9 @@ def grpc_deps():
     if "com_github_google_benchmark" not in native.existing_rules():
         http_archive(
             name = "com_github_google_benchmark",
-            sha256 = "c7682e9007ddfd94072647abab3e89ffd9084089460ae47d67060974467b58bf",
-            strip_prefix = "benchmark-e776aa0275e293707b6a0901e0e8d8a8a3679508",
-            url = "https://github.com/google/benchmark/archive/e776aa0275e293707b6a0901e0e8d8a8a3679508.tar.gz",
+            sha256 = "f68aec93154d010324c05bcd8c5cc53468b87af88d87acb5ddcfaa1bba044837",
+            strip_prefix = "benchmark-090faecb454fbd6e6e17a75ef8146acb037118d4",
+            url = "https://github.com/google/benchmark/archive/090faecb454fbd6e6e17a75ef8146acb037118d4.tar.gz",
         )
 
     if "com_github_cares_cares" not in native.existing_rules():
@@ -182,20 +176,19 @@ def grpc_deps():
     if "bazel_toolchains" not in native.existing_rules():
         http_archive(
             name = "bazel_toolchains",
-            sha256 = "d968b414b32aa99c86977e1171645d31da2b52ac88060de3ac1e49932d5dcbf1",
-            strip_prefix = "bazel-toolchains-4bd5df80d77aa7f4fb943dfdfad5c9056a62fb47",
+            sha256 = "872955b658113924eb1a3594b04d43238da47f4f90c17b76e8785709490dc041",
+            strip_prefix = "bazel-toolchains-1083686fde6032378d52b4c98044922cebde364e",
             urls = [
-                "https://mirror.bazel.build/github.com/bazelbuild/bazel-toolchains/archive/4bd5df80d77aa7f4fb943dfdfad5c9056a62fb47.tar.gz",
-                "https://github.com/bazelbuild/bazel-toolchains/archive/4bd5df80d77aa7f4fb943dfdfad5c9056a62fb47.tar.gz",
+                "https://mirror.bazel.build/github.com/bazelbuild/bazel-toolchains/archive/1083686fde6032378d52b4c98044922cebde364e.tar.gz",
+                "https://github.com/bazelbuild/bazel-toolchains/archive/1083686fde6032378d52b4c98044922cebde364e.tar.gz",
             ],
         )
 
     if "bazel_skylib" not in native.existing_rules():
-        http_archive(
+        git_repository(
             name = "bazel_skylib",
-            sha256 = "ba5d15ca230efca96320085d8e4d58da826d1f81b444ef8afccd8b23e0799b52",
-            strip_prefix = "bazel-skylib-f83cb8dd6f5658bc574ccd873e25197055265d1c",
-            url = "https://github.com/bazelbuild/bazel-skylib/archive/f83cb8dd6f5658bc574ccd873e25197055265d1c.tar.gz",
+            remote = "https://github.com/bazelbuild/bazel-skylib",
+            tag = "0.9.0",
         )
 
     if "io_opencensus_cpp" not in native.existing_rules():
@@ -208,9 +201,9 @@ def grpc_deps():
     if "upb" not in native.existing_rules():
         http_archive(
             name = "upb",
-            sha256 = "95150db57b51b65f3422c38953956e0f786945d842d76f8ab685fbcd93ab5caa",
-            strip_prefix = "upb-931bbecbd3230ae7f22efa5d203639facc47f719",
-            url = "https://github.com/protocolbuffers/upb/archive/931bbecbd3230ae7f22efa5d203639facc47f719.tar.gz",
+            sha256 = "61d0417abd60e65ed589c9deee7c124fe76a4106831f6ad39464e1525cef1454",
+            strip_prefix = "upb-9effcbcb27f0a665f9f345030188c0b291e32482",
+            url = "https://github.com/protocolbuffers/upb/archive/9effcbcb27f0a665f9f345030188c0b291e32482.tar.gz",
         )
     if "envoy_api" not in native.existing_rules():
         http_archive(
@@ -228,10 +221,11 @@ def grpc_deps():
         )
 
     if "build_bazel_rules_apple" not in native.existing_rules():
-        git_repository(
+        http_archive(
             name = "build_bazel_rules_apple",
-            remote = "https://github.com/bazelbuild/rules_apple.git",
-            tag = "0.17.2",
+            url = "https://github.com/bazelbuild/rules_apple/archive/b869b0d3868d78a1d4ffd866ccb304fb68aa12c3.tar.gz",
+            strip_prefix = "rules_apple-b869b0d3868d78a1d4ffd866ccb304fb68aa12c3",
+            sha256 = "bdc8e66e70b8a75da23b79f1f8c6207356df07d041d96d2189add7ee0780cf4e",
         )
 
     grpc_python_deps()

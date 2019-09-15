@@ -56,6 +56,7 @@ CONFIG = [
     '3',
     '4',
     '',
+    'x-endpoint-load-metrics-bin',
     # channel arg keys
     'grpc.wait_for_ready',
     'grpc.timeout',
@@ -177,6 +178,7 @@ METADATA_BATCH_CALLOUTS = [
     'host',
     'grpc-previous-rpc-attempts',
     'grpc-retry-pushback-ms',
+    'x-endpoint-load-metrics-bin',
 ]
 
 COMPRESSION_ALGORITHMS = [
@@ -393,10 +395,22 @@ for i, elem in enumerate(all_strs):
     str_ofs += len(elem)
 
 
+def slice_def_for_ctx(i):
+    return (
+        'grpc_core::StaticMetadataSlice(&refcounts[%d].base, %d, g_bytes+%d)'
+    ) % (i, len(all_strs[i]), id2strofs[i])
+
+
 def slice_def(i):
     return (
-        'grpc_core::StaticMetadataSlice(&grpc_static_metadata_refcounts[%d].base, %d, g_bytes+%d)'
+        'grpc_core::StaticMetadataSlice(&grpc_static_metadata_refcounts()[%d].base, %d, g_bytes+%d)'
     ) % (i, len(all_strs[i]), id2strofs[i])
+
+
+def str_idx(s):
+    for i, s2 in enumerate(all_strs):
+        if s == s2:
+            return i
 
 
 # validate configuration
@@ -408,36 +422,139 @@ static_slice_dest_assert = (
     '"grpc_core::StaticMetadataSlice must be trivially destructible.");')
 print >> H, static_slice_dest_assert
 print >> H, '#define GRPC_STATIC_MDSTR_COUNT %d' % len(all_strs)
-print >> H, ('extern const grpc_core::StaticMetadataSlice '
-             'grpc_static_slice_table[GRPC_STATIC_MDSTR_COUNT];')
+print >> H, '''
+void grpc_init_static_metadata_ctx(void);
+void grpc_destroy_static_metadata_ctx(void);
+namespace grpc_core {
+#ifndef NDEBUG
+constexpr uint64_t kGrpcStaticMetadataInitCanary = 0xCAFEF00DC0FFEE11L;
+uint64_t StaticMetadataInitCanary();
+#endif
+extern const StaticMetadataSlice* g_static_metadata_slice_table;
+}
+inline const grpc_core::StaticMetadataSlice* grpc_static_slice_table() {
+  GPR_DEBUG_ASSERT(grpc_core::StaticMetadataInitCanary()
+    == grpc_core::kGrpcStaticMetadataInitCanary);
+  GPR_DEBUG_ASSERT(grpc_core::g_static_metadata_slice_table != nullptr);
+  return grpc_core::g_static_metadata_slice_table;
+}
+'''
 for i, elem in enumerate(all_strs):
     print >> H, '/* "%s" */' % elem
-    print >> H, '#define %s (grpc_static_slice_table[%d])' % (
+    print >> H, '#define %s (grpc_static_slice_table()[%d])' % (
         mangle(elem).upper(), i)
 print >> H
-print >> C, 'static uint8_t g_bytes[] = {%s};' % (','.join(
+print >> C, 'static constexpr uint8_t g_bytes[] = {%s};' % (','.join(
     '%d' % ord(c) for c in ''.join(all_strs)))
 print >> C
-print >> H, ('namespace grpc_core { struct StaticSliceRefcount; }')
-print >> H, ('extern grpc_core::StaticSliceRefcount '
-             'grpc_static_metadata_refcounts[GRPC_STATIC_MDSTR_COUNT];')
+print >> H, '''
+namespace grpc_core {
+struct StaticSliceRefcount;
+extern StaticSliceRefcount* g_static_metadata_slice_refcounts;
+}
+inline grpc_core::StaticSliceRefcount* grpc_static_metadata_refcounts() {
+  GPR_DEBUG_ASSERT(grpc_core::StaticMetadataInitCanary()
+    == grpc_core::kGrpcStaticMetadataInitCanary);
+  GPR_DEBUG_ASSERT(grpc_core::g_static_metadata_slice_refcounts != nullptr);
+  return grpc_core::g_static_metadata_slice_refcounts;
+}
+'''
 print >> C, 'grpc_slice_refcount grpc_core::StaticSliceRefcount::kStaticSubRefcount;'
-print >> C, ('grpc_core::StaticSliceRefcount '
-             'grpc_static_metadata_refcounts[GRPC_STATIC_MDSTR_COUNT] = {')
+print >> C, '''
+namespace grpc_core {
+struct StaticMetadataCtx {
+#ifndef NDEBUG
+  const uint64_t init_canary = kGrpcStaticMetadataInitCanary;
+#endif
+  StaticSliceRefcount
+    refcounts[GRPC_STATIC_MDSTR_COUNT] = {
+'''
 for i, elem in enumerate(all_strs):
-    print >> C, '  grpc_core::StaticSliceRefcount(%d), ' % i
-print >> C, '};'
+    print >> C, '  StaticSliceRefcount(%d), ' % i
+print >> C, '};'  # static slice refcounts
+print >> C
+print >> C, '''
+  const StaticMetadataSlice
+    slices[GRPC_STATIC_MDSTR_COUNT] = {
+'''
+for i, elem in enumerate(all_strs):
+    print >> C, slice_def_for_ctx(i) + ','
+print >> C, '};'  # static slices
+print >> C, 'StaticMetadata static_mdelem_table[GRPC_STATIC_MDELEM_COUNT] = {'
+for idx, (a, b) in enumerate(all_elems):
+    print >> C, 'StaticMetadata(%s,%s, %d),' % (slice_def_for_ctx(str_idx(a)),
+                                                slice_def_for_ctx(str_idx(b)),
+                                                idx)
+print >> C, '};'  # static_mdelem_table
+print >> C, ('''
+/* Warning: the core static metadata currently operates under the soft constraint
+that the first GRPC_CHTTP2_LAST_STATIC_ENTRY (61) entries must contain
+metadata specified by the http2 hpack standard. The CHTTP2 transport reads the
+core metadata with this assumption in mind. If the order of the core static
+metadata is to be changed, then the CHTTP2 transport must be changed as well to
+stop relying on the core metadata. */
+''')
+print >> C, ('grpc_mdelem '
+             'static_mdelem_manifested[GRPC_STATIC_MDELEM_COUNT] = {')
+print >> C, '// clang-format off'
+static_mds = []
+for i, elem in enumerate(all_elems):
+    md_name = mangle(elem).upper()
+    md_human_readable = '"%s": "%s"' % elem
+    md_spec = '    /* %s: \n     %s */\n' % (md_name, md_human_readable)
+    md_spec += '    GRPC_MAKE_MDELEM(\n'
+    md_spec += (('        &static_mdelem_table[%d].data(),\n' % i) +
+                '        GRPC_MDELEM_STORAGE_STATIC)')
+    static_mds.append(md_spec)
+print >> C, ',\n'.join(static_mds)
+print >> C, '// clang-format on'
+print >> C, ('};')  # static_mdelem_manifested
+print >> C, '};'  # struct StaticMetadataCtx
+print >> C, '}'  # namespace grpc_core
+print >> C, '''
+namespace grpc_core {
+static StaticMetadataCtx* g_static_metadata_slice_ctx = nullptr;
+const StaticMetadataSlice* g_static_metadata_slice_table = nullptr;
+StaticSliceRefcount* g_static_metadata_slice_refcounts = nullptr;
+StaticMetadata* g_static_mdelem_table = nullptr;
+grpc_mdelem* g_static_mdelem_manifested = nullptr;
+#ifndef NDEBUG
+uint64_t StaticMetadataInitCanary() {
+  return g_static_metadata_slice_ctx->init_canary;
+}
+#endif
+}
+
+void grpc_init_static_metadata_ctx(void) {
+  grpc_core::g_static_metadata_slice_ctx
+    = grpc_core::New<grpc_core::StaticMetadataCtx>();
+  grpc_core::g_static_metadata_slice_table
+    = grpc_core::g_static_metadata_slice_ctx->slices;
+  grpc_core::g_static_metadata_slice_refcounts
+    = grpc_core::g_static_metadata_slice_ctx->refcounts;
+  grpc_core::g_static_mdelem_table
+    = grpc_core::g_static_metadata_slice_ctx->static_mdelem_table;
+  grpc_core::g_static_mdelem_manifested =
+      grpc_core::g_static_metadata_slice_ctx->static_mdelem_manifested;
+}
+
+void grpc_destroy_static_metadata_ctx(void) {
+  grpc_core::Delete<grpc_core::StaticMetadataCtx>(
+    grpc_core::g_static_metadata_slice_ctx);
+  grpc_core::g_static_metadata_slice_ctx = nullptr;
+  grpc_core::g_static_metadata_slice_table = nullptr;
+  grpc_core::g_static_metadata_slice_refcounts = nullptr;
+  grpc_core::g_static_mdelem_table = nullptr;
+  grpc_core::g_static_mdelem_manifested = nullptr;
+}
+
+'''
+
 print >> C
 print >> H, '#define GRPC_IS_STATIC_METADATA_STRING(slice) \\'
 print >> H, ('  ((slice).refcount != NULL && (slice).refcount->GetType() == '
              'grpc_slice_refcount::Type::STATIC)')
 print >> H
-print >> C, (
-    'const grpc_core::StaticMetadataSlice grpc_static_slice_table[GRPC_STATIC_MDSTR_COUNT]'
-    ' = {')
-for i, elem in enumerate(all_strs):
-    print >> C, slice_def(i) + ','
-print >> C, '};'
 print >> C
 print >> H, '#define GRPC_STATIC_METADATA_INDEX(static_slice) \\'
 print >> H, '(reinterpret_cast<grpc_core::StaticSliceRefcount*>((static_slice).refcount)->index)'
@@ -451,41 +568,32 @@ for i, elem in enumerate(all_elems):
                                  [len(elem[1])] + [ord(c) for c in elem[1]]))
 
 print >> H, '#define GRPC_STATIC_MDELEM_COUNT %d' % len(all_elems)
-print >> H, ('extern grpc_core::StaticMetadata '
-             'grpc_static_mdelem_table[GRPC_STATIC_MDELEM_COUNT];')
+print >> H, '''
+namespace grpc_core {
+extern StaticMetadata* g_static_mdelem_table;
+extern grpc_mdelem* g_static_mdelem_manifested;
+}
+inline grpc_core::StaticMetadata* grpc_static_mdelem_table() {
+  GPR_DEBUG_ASSERT(grpc_core::StaticMetadataInitCanary()
+    == grpc_core::kGrpcStaticMetadataInitCanary);
+  GPR_DEBUG_ASSERT(grpc_core::g_static_mdelem_table != nullptr);
+  return grpc_core::g_static_mdelem_table;
+}
+inline grpc_mdelem* grpc_static_mdelem_manifested() {
+  GPR_DEBUG_ASSERT(grpc_core::StaticMetadataInitCanary()
+    == grpc_core::kGrpcStaticMetadataInitCanary);
+  GPR_DEBUG_ASSERT(grpc_core::g_static_mdelem_manifested != nullptr);
+  return grpc_core::g_static_mdelem_manifested;
+}
+'''
 print >> H, ('extern uintptr_t '
              'grpc_static_mdelem_user_data[GRPC_STATIC_MDELEM_COUNT];')
-print >> H, ('extern grpc_mdelem '
-             'grpc_static_mdelem_manifested[GRPC_STATIC_MDELEM_COUNT];')
-print >> C, ('''
-/* Warning: the core static metadata currently operates under the soft constraint
-that the first GRPC_CHTTP2_LAST_STATIC_ENTRY (61) entries must contain
-metadata specified by the http2 hpack standard. The CHTTP2 transport reads the
-core metadata with this assumption in mind. If the order of the core static
-metadata is to be changed, then the CHTTP2 transport must be changed as well to
-stop relying on the core metadata. */
-''')
-print >> C, ('grpc_mdelem '
-             'grpc_static_mdelem_manifested[GRPC_STATIC_MDELEM_COUNT] = {')
-print >> C, '// clang-format off'
-static_mds = []
-for i, elem in enumerate(all_elems):
-    md_name = mangle(elem).upper()
-    md_human_readable = '"%s": "%s"' % elem
-    md_spec = '    /* %s: \n     %s */\n' % (md_name, md_human_readable)
-    md_spec += '    GRPC_MAKE_MDELEM(\n'
-    md_spec += (('        &grpc_static_mdelem_table[%d].data(),\n' % i) +
-                '        GRPC_MDELEM_STORAGE_STATIC)')
-    static_mds.append(md_spec)
-print >> C, ',\n'.join(static_mds)
-print >> C, '// clang-format on'
-print >> C, ('};')
 
 for i, elem in enumerate(all_elems):
     md_name = mangle(elem).upper()
     print >> H, '/* "%s": "%s" */' % elem
-    print >> H, ('#define %s (grpc_static_mdelem_manifested[%d])' % (md_name,
-                                                                     i))
+    print >> H, ('#define %s (grpc_static_mdelem_manifested()[%d])' % (md_name,
+                                                                       i))
 print >> H
 
 print >> C, ('uintptr_t grpc_static_mdelem_user_data[GRPC_STATIC_MDELEM_COUNT] '
@@ -494,12 +602,6 @@ print >> C, '  %s' % ','.join(
     '%d' % static_userdata.get(elem, 0) for elem in all_elems)
 print >> C, '};'
 print >> C
-
-
-def str_idx(s):
-    for i, s2 in enumerate(all_strs):
-        if s == s2:
-            return i
 
 
 def md_idx(m):
@@ -525,7 +627,6 @@ def perfect_hash(keys, name):
         return x + p.r[y]
 
     return {
-        'PHASHRANGE': p.t - 1 + max(p.r),
         'PHASHNKEYS': len(p.slots),
         'pyfunc': f,
         'code': """
@@ -557,7 +658,7 @@ elem_keys = [
 elem_hash = perfect_hash(elem_keys, 'elems')
 print >> C, elem_hash['code']
 
-keys = [0] * int(elem_hash['PHASHRANGE'])
+keys = [0] * int(elem_hash['PHASHNKEYS'])
 idxs = [255] * int(elem_hash['PHASHNKEYS'])
 for i, k in enumerate(elem_keys):
     h = elem_hash['pyfunc'](k)
@@ -575,15 +676,9 @@ print >> C, 'grpc_mdelem grpc_static_mdelem_for_static_strings(intptr_t a, intpt
 print >> C, '  if (a == -1 || b == -1) return GRPC_MDNULL;'
 print >> C, '  uint32_t k = static_cast<uint32_t>(a * %d + b);' % len(all_strs)
 print >> C, '  uint32_t h = elems_phash(k);'
-print >> C, '  return h < GPR_ARRAY_SIZE(elem_keys) && elem_keys[h] == k && elem_idxs[h] != 255 ? GRPC_MAKE_MDELEM(&grpc_static_mdelem_table[elem_idxs[h]].data(), GRPC_MDELEM_STORAGE_STATIC) : GRPC_MDNULL;'
+print >> C, '  return h < GPR_ARRAY_SIZE(elem_keys) && elem_keys[h] == k && elem_idxs[h] != 255 ? GRPC_MAKE_MDELEM(&grpc_static_mdelem_table()[elem_idxs[h]].data(), GRPC_MDELEM_STORAGE_STATIC) : GRPC_MDNULL;'
 print >> C, '}'
 print >> C
-
-print >> C, 'grpc_core::StaticMetadata grpc_static_mdelem_table[GRPC_STATIC_MDELEM_COUNT] = {'
-for idx, (a, b) in enumerate(all_elems):
-    print >> C, 'grpc_core::StaticMetadata(%s,%s, %d),' % (
-        slice_def(str_idx(a)), slice_def(str_idx(b)), idx)
-print >> C, '};'
 
 print >> H, 'typedef enum {'
 for elem in METADATA_BATCH_CALLOUTS:
@@ -629,7 +724,7 @@ print >> C, '0,%s' % ','.join('%d' % md_idx(elem) for elem in compression_elems)
 print >> C, '};'
 print >> C
 
-print >> H, '#define GRPC_MDELEM_ACCEPT_ENCODING_FOR_ALGORITHMS(algs) (GRPC_MAKE_MDELEM(&grpc_static_mdelem_table[grpc_static_accept_encoding_metadata[(algs)]].data(), GRPC_MDELEM_STORAGE_STATIC))'
+print >> H, '#define GRPC_MDELEM_ACCEPT_ENCODING_FOR_ALGORITHMS(algs) (GRPC_MAKE_MDELEM(&grpc_static_mdelem_table()[grpc_static_accept_encoding_metadata[(algs)]].data(), GRPC_MDELEM_STORAGE_STATIC))'
 print >> H
 
 print >> H, 'extern const uint8_t grpc_static_accept_stream_encoding_metadata[%d];' % (
@@ -640,7 +735,7 @@ print >> C, '0,%s' % ','.join(
     '%d' % md_idx(elem) for elem in stream_compression_elems)
 print >> C, '};'
 
-print >> H, '#define GRPC_MDELEM_ACCEPT_STREAM_ENCODING_FOR_ALGORITHMS(algs) (GRPC_MAKE_MDELEM(&grpc_static_mdelem_table[grpc_static_accept_stream_encoding_metadata[(algs)]].data(), GRPC_MDELEM_STORAGE_STATIC))'
+print >> H, '#define GRPC_MDELEM_ACCEPT_STREAM_ENCODING_FOR_ALGORITHMS(algs) (GRPC_MAKE_MDELEM(&grpc_static_mdelem_table()[grpc_static_accept_stream_encoding_metadata[(algs)]].data(), GRPC_MDELEM_STORAGE_STATIC))'
 
 print >> H, '#endif /* GRPC_CORE_LIB_TRANSPORT_STATIC_METADATA_H */'
 

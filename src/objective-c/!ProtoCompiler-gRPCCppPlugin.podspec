@@ -42,7 +42,7 @@ Pod::Spec.new do |s|
   # exclamation mark ensures that other "regular" pods will be able to find it as it'll be installed
   # before them.
   s.name     = '!ProtoCompiler-gRPCCppPlugin'
-  v = '1.24.0-dev'
+  v = '1.25.0-dev'
   s.version  = v
   s.summary  = 'The gRPC ProtoC plugin generates C++ files from .proto services.'
   s.description = <<-DESC
@@ -94,6 +94,7 @@ Pod::Spec.new do |s|
   }
 
   repo_root = '../..'
+  bazel = "#{repo_root}/tools/bazel"
   plugin = 'grpc_cpp_plugin'
 
   s.preserve_paths = plugin
@@ -111,15 +112,6 @@ Pod::Spec.new do |s|
   # present in this pod's directory. We use that knowledge to check for the existence of the file
   # and, if absent, compile the plugin from the local sources.
   s.prepare_command = <<-CMD
-    if [ ! -f #{plugin} ]; then
-      cd #{repo_root}
-      # This will build the plugin and put it in #{repo_root}/bins/opt.
-      #
-      # TODO(jcanizales): I reckon make will try to use locally-installed libprotoc (headers and
-      # library binary) if found, which _we do not want_. Find a way for this to always use the
-      # sources in the repo.
-      make #{plugin}
-      cd -
-    fi
+    #{bazel} build //src/compiler:grpc_cpp_plugin
   CMD
 end

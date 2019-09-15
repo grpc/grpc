@@ -392,7 +392,7 @@ static grpc_error* tcp_server_add_port(grpc_tcp_server* s,
   socket->endpoint = nullptr;
   socket->listener = nullptr;
   socket->connector = nullptr;
-  grpc_custom_socket_vtable->init(socket, family);
+  error = grpc_custom_socket_vtable->init(socket, family);
 
   if (error == GRPC_ERROR_NONE) {
     error = add_socket_to_server(s, socket, addr, port_index, &sp);

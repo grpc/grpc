@@ -875,6 +875,8 @@ src/core/README.md \
 src/core/ext/README.md \
 src/core/ext/filters/census/grpc_context.cc \
 src/core/ext/filters/client_channel/README.md \
+src/core/ext/filters/client_channel/backend_metric.cc \
+src/core/ext/filters/client_channel/backend_metric.h \
 src/core/ext/filters/client_channel/backup_poller.cc \
 src/core/ext/filters/client_channel/backup_poller.h \
 src/core/ext/filters/client_channel/channel_connectivity.cc \
@@ -952,6 +954,7 @@ src/core/ext/filters/client_channel/resolver/fake/fake_resolver.cc \
 src/core/ext/filters/client_channel/resolver/fake/fake_resolver.h \
 src/core/ext/filters/client_channel/resolver/sockaddr/README.md \
 src/core/ext/filters/client_channel/resolver/sockaddr/sockaddr_resolver.cc \
+src/core/ext/filters/client_channel/resolver/xds/xds_resolver.cc \
 src/core/ext/filters/client_channel/resolver_factory.h \
 src/core/ext/filters/client_channel/resolver_registry.cc \
 src/core/ext/filters/client_channel/resolver_registry.h \
@@ -1064,6 +1067,8 @@ src/core/ext/upb-generated/envoy/api/v2/cds.upb.c \
 src/core/ext/upb-generated/envoy/api/v2/cds.upb.h \
 src/core/ext/upb-generated/envoy/api/v2/cluster/circuit_breaker.upb.c \
 src/core/ext/upb-generated/envoy/api/v2/cluster/circuit_breaker.upb.h \
+src/core/ext/upb-generated/envoy/api/v2/cluster/filter.upb.c \
+src/core/ext/upb-generated/envoy/api/v2/cluster/filter.upb.h \
 src/core/ext/upb-generated/envoy/api/v2/cluster/outlier_detection.upb.c \
 src/core/ext/upb-generated/envoy/api/v2/cluster/outlier_detection.upb.h \
 src/core/ext/upb-generated/envoy/api/v2/core/address.upb.c \
@@ -1076,6 +1081,8 @@ src/core/ext/upb-generated/envoy/api/v2/core/grpc_service.upb.c \
 src/core/ext/upb-generated/envoy/api/v2/core/grpc_service.upb.h \
 src/core/ext/upb-generated/envoy/api/v2/core/health_check.upb.c \
 src/core/ext/upb-generated/envoy/api/v2/core/health_check.upb.h \
+src/core/ext/upb-generated/envoy/api/v2/core/http_uri.upb.c \
+src/core/ext/upb-generated/envoy/api/v2/core/http_uri.upb.h \
 src/core/ext/upb-generated/envoy/api/v2/core/protocol.upb.c \
 src/core/ext/upb-generated/envoy/api/v2/core/protocol.upb.h \
 src/core/ext/upb-generated/envoy/api/v2/discovery.upb.c \
@@ -1126,6 +1133,8 @@ src/core/ext/upb-generated/src/proto/grpc/health/v1/health.upb.c \
 src/core/ext/upb-generated/src/proto/grpc/health/v1/health.upb.h \
 src/core/ext/upb-generated/src/proto/grpc/lb/v1/load_balancer.upb.c \
 src/core/ext/upb-generated/src/proto/grpc/lb/v1/load_balancer.upb.h \
+src/core/ext/upb-generated/udpa/data/orca/v1/orca_load_report.upb.c \
+src/core/ext/upb-generated/udpa/data/orca/v1/orca_load_report.upb.h \
 src/core/ext/upb-generated/validate/validate.upb.c \
 src/core/ext/upb-generated/validate/validate.upb.h \
 src/core/lib/README.md \
@@ -1493,6 +1502,8 @@ src/core/lib/security/security_connector/ssl/ssl_security_connector.cc \
 src/core/lib/security/security_connector/ssl/ssl_security_connector.h \
 src/core/lib/security/security_connector/ssl_utils.cc \
 src/core/lib/security/security_connector/ssl_utils.h \
+src/core/lib/security/security_connector/ssl_utils_config.cc \
+src/core/lib/security/security_connector/ssl_utils_config.h \
 src/core/lib/security/security_connector/tls/spiffe_security_connector.cc \
 src/core/lib/security/security_connector/tls/spiffe_security_connector.h \
 src/core/lib/security/transport/auth_filters.h \

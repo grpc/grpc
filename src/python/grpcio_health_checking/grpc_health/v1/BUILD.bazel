@@ -3,13 +3,14 @@ package(default_visibility = ["//visibility:public"])
 
 py_proto_library(
     name = "health_py_pb2",
-    srcs = ["//src/proto/grpc/health/v1:health_proto_descriptor",],
+    deps = ["//src/proto/grpc/health/v1:health_proto_descriptor",],
 )
 
 py_grpc_library(
     name = "health_py_pb2_grpc",
     srcs = ["//src/proto/grpc/health/v1:health_proto_descriptor",],
     deps = [":health_py_pb2"],
+    strip_prefixes = ["src.python.grpcio_health_checking."],
 )
 
 py_library(

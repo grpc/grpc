@@ -67,10 +67,6 @@
     excl_files += grpcpp_proto_files(filegroups)
     out = [file for file in out if file not in excl_files]
 
-    # Since some C++ source files directly included private headers in C core, we include all the
-    # C core headers in C++ Implementation subspec as well.
-    out += [file for file in grpc_private_headers(libs) if not file.startswith("third_party/nanopb/")]
-
     out = filter_grpcpp(out)
     return out
 
@@ -80,10 +76,6 @@
     # We exclude proto related files in this particular podspec so that we can provide a protobuf-independent lib
     excl_files = grpcpp_proto_files(filegroups)
     out = [file for file in out if file not in excl_files]
-
-    # Since some C++ source files directly included private headers in C core, we intentionally
-    # keep the C core headers in \a out. But we should exclude nanopb headers.
-    out = [file for file in out if not file.startswith("third_party/nanopb/")]
 
     out = filter_grpcpp(out)
     return out
@@ -178,7 +170,7 @@
     s.pod_target_xcconfig = {
       'HEADER_SEARCH_PATHS' => '"$(inherited)" "$(PODS_TARGET_SRCROOT)/include"',
       'USER_HEADER_SEARCH_PATHS' => '"$(PODS_TARGET_SRCROOT)"',
-      'GCC_PREPROCESSOR_DEFINITIONS' => '"$(inherited)" "COCOAPODS=1" "PB_NO_PACKED_STRUCTS=1"',
+      'GCC_PREPROCESSOR_DEFINITIONS' => '"$(inherited)" "COCOAPODS=1"',
       'CLANG_WARN_STRICT_PROTOTYPES' => 'NO',
       'CLANG_WARN_DOCUMENTATION_COMMENTS' => 'NO',
 
@@ -208,7 +200,6 @@
       ss.header_mappings_dir = '.'
       ss.dependency "#{s.name}/Interface", version
       ss.dependency 'gRPC-Core', grpc_version
-      ss.dependency 'nanopb', '~> 0.3'
 
       ss.source_files = ${ruby_multiline_list(grpcpp_private_files(libs, filegroups), 22)}
 
@@ -223,10 +214,6 @@
     end
 
     s.prepare_command = <<-END_OF_COMMAND
-      find src/cpp/ -type f ! -path '*.grpc_back' -print0 | xargs -0 -L1 sed -E -i'.grpc_back' 's;#include "(pb(_.*)?\\.h)";#include <nanopb/\\1>;g'
-      find src/cpp/ -type f -path '*.grpc_back' -print0 | xargs -0 rm
-      find src/core/ -type f ! -path '*.grpc_back' -print0 | xargs -0 -L1 sed -E -i'.grpc_back' 's;#include "(pb(_.*)?\\.h)";#include <nanopb/\\1>;g'
-      find src/core/ -type f -path '*.grpc_back' -print0 | xargs -0 rm
       find src/core/ third_party/upb/ -type f \\( -name '*.h' -or -name '*.c' -or -name '*.cc' \\) -print0 | xargs -0 -L1 sed -E -i'.grpc_back' 's;#include "upb/(.*)";#if COCOAPODS==1\\\n  #include  "third_party/upb/upb/\\1"\\\n#else\\\n  #include  "upb/\\1"\\\n#endif;g'
       find src/core/ third_party/upb/ -type f -name '*.grpc_back' -print0 | xargs -0 rm
       find src/core/ src/cpp/ -type f \\( -name '*.h' -or -name '*.c' -or -name '*.cc' \\) -print0 | xargs -0 -L1 sed -E -i'.grpc_back' 's;#include "(.*).upb.h";#if COCOAPODS==1\\\n  #include  "src/core/ext/upb-generated/\\1.upb.h"\\\n#else\\\n  #include  "\\1.upb.h"\\\n#endif;g'
