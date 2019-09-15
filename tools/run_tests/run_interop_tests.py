@@ -211,7 +211,7 @@ class AspNetCoreLanguage:
             _SKIP_COMPUTE_ENGINE_CHANNEL_CREDS
 
     def unimplemented_test_cases_server(self):
-        return _SKIP_SERVER_COMPRESSION
+        return []
 
     def __str__(self):
         return 'aspnetcore'

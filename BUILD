@@ -31,6 +31,7 @@ load(
     "grpc_cc_library",
     "grpc_generate_one_off_targets",
     "grpc_upb_proto_library",
+    "python_config_settings",
 )
 
 config_setting(
@@ -64,11 +65,6 @@ config_setting(
 )
 
 config_setting(
-    name = "python3",
-    values = {"python_path": "python3"},
-)
-
-config_setting(
     name = "mac_x86_64",
     values = {"cpu": "darwin"},
 )
@@ -78,12 +74,14 @@ config_setting(
     values = {"define": "GRPC_USE_CPP_STD_LIB=1"},
 )
 
+python_config_settings()
+
 # This should be updated along with build.yaml
-g_stands_for = "ganges"
+g_stands_for = "game"
 
 core_version = "7.0.0"
 
-version = "1.24.0-dev"
+version = "1.25.0-dev"
 
 GPR_PUBLIC_HDRS = [
     "include/grpc/support/alloc.h",
@@ -285,6 +283,7 @@ GRPCXX_PUBLIC_HDRS = [
     "include/grpcpp/support/config.h",
     "include/grpcpp/support/interceptor.h",
     "include/grpcpp/support/message_allocator.h",
+    "include/grpcpp/support/method_handler.h",
     "include/grpcpp/support/proto_buffer_reader.h",
     "include/grpcpp/support/proto_buffer_writer.h",
     "include/grpcpp/support/server_callback.h",
@@ -1582,6 +1581,7 @@ grpc_cc_library(
         "src/core/lib/security/security_connector/security_connector.cc",
         "src/core/lib/security/security_connector/ssl/ssl_security_connector.cc",
         "src/core/lib/security/security_connector/ssl_utils.cc",
+        "src/core/lib/security/security_connector/ssl_utils_config.cc",
         "src/core/lib/security/security_connector/tls/spiffe_security_connector.cc",
         "src/core/lib/security/transport/client_auth_filter.cc",
         "src/core/lib/security/transport/secure_endpoint.cc",
@@ -1619,6 +1619,7 @@ grpc_cc_library(
         "src/core/lib/security/security_connector/security_connector.h",
         "src/core/lib/security/security_connector/ssl/ssl_security_connector.h",
         "src/core/lib/security/security_connector/ssl_utils.h",
+        "src/core/lib/security/security_connector/ssl_utils_config.h",
         "src/core/lib/security/security_connector/tls/spiffe_security_connector.h",
         "src/core/lib/security/transport/auth_filters.h",
         "src/core/lib/security/transport/secure_endpoint.h",
@@ -2039,6 +2040,7 @@ grpc_cc_library(
         "include/grpcpp/impl/codegen/interceptor_common.h",
         "include/grpcpp/impl/codegen/message_allocator.h",
         "include/grpcpp/impl/codegen/metadata_map.h",
+        "include/grpcpp/impl/codegen/method_handler.h",
         "include/grpcpp/impl/codegen/method_handler_impl.h",
         "include/grpcpp/impl/codegen/rpc_method.h",
         "include/grpcpp/impl/codegen/rpc_service_method.h",

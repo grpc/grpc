@@ -52,7 +52,7 @@ RUN pip install futures==2.2.0 enum34==1.0.4 protobuf==3.5.2.post1 six==1.10.0 t
 # Bazel installation
 
 # Must be in sync with tools/bazel
-ENV BAZEL_VERSION 0.26.0
+ENV BAZEL_VERSION 0.28.1
 
 # The correct bazel version is already preinstalled, no need to use //tools/bazel wrapper.
 ENV DISABLE_BAZEL_WRAPPER 1

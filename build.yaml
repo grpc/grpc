@@ -14,8 +14,8 @@ settings:
   '#10': See the expand_version.py for all the quirks here
   core_version: 8.0.0
   csharp_major_version: 2
-  g_stands_for: ganges
-  version: 1.24.0-dev
+  g_stands_for: game
+  version: 1.25.0-dev
 filegroups:
 - name: alts_tsi
   headers:
@@ -389,6 +389,7 @@ filegroups:
   - include/grpcpp/impl/codegen/interceptor_common.h
   - include/grpcpp/impl/codegen/message_allocator.h
   - include/grpcpp/impl/codegen/metadata_map.h
+  - include/grpcpp/impl/codegen/method_handler.h
   - include/grpcpp/impl/codegen/method_handler_impl.h
   - include/grpcpp/impl/codegen/rpc_method.h
   - include/grpcpp/impl/codegen/rpc_service_method.h
@@ -1274,6 +1275,7 @@ filegroups:
   - src/core/lib/security/security_connector/security_connector.h
   - src/core/lib/security/security_connector/ssl/ssl_security_connector.h
   - src/core/lib/security/security_connector/ssl_utils.h
+  - src/core/lib/security/security_connector/ssl_utils_config.h
   - src/core/lib/security/security_connector/tls/spiffe_security_connector.h
   - src/core/lib/security/transport/auth_filters.h
   - src/core/lib/security/transport/secure_endpoint.h
@@ -1309,6 +1311,7 @@ filegroups:
   - src/core/lib/security/security_connector/security_connector.cc
   - src/core/lib/security/security_connector/ssl/ssl_security_connector.cc
   - src/core/lib/security/security_connector/ssl_utils.cc
+  - src/core/lib/security/security_connector/ssl_utils_config.cc
   - src/core/lib/security/security_connector/tls/spiffe_security_connector.cc
   - src/core/lib/security/transport/client_auth_filter.cc
   - src/core/lib/security/transport/secure_endpoint.cc
@@ -6083,7 +6086,7 @@ configs:
       -Wno-unused-command-line-argument -DGPR_NO_DIRECT_SYSCALLS
     CXX: clang++
     LD: clang++
-    LDFLAGS: -fsanitize=address
+    LDFLAGS: fsanitize=address
     LDXX: clang++
     compile_the_world: true
     test_environ:
@@ -6137,13 +6140,14 @@ configs:
     valgrind: --tool=memcheck --leak-check=full
   msan:
     CC: clang
-    CPPFLAGS: -O0 -fsanitize-coverage=edge,trace-pc-guard -fsanitize=memory -fsanitize-memory-track-origins
-      -fsanitize-memory-use-after-dtor -fno-omit-frame-pointer -DGTEST_HAS_TR1_TUPLE=0
-      -DGTEST_USE_OWN_TR1_TUPLE=1 -Wno-unused-command-line-argument -fPIE -pie -DGPR_NO_DIRECT_SYSCALLS
+    CPPFLAGS: -O0 -stdlib=libc++ -fsanitize-coverage=edge,trace-pc-guard -fsanitize=memory
+      -fsanitize-memory-track-origins -fsanitize-memory-use-after-dtor -fno-omit-frame-pointer
+      -DGTEST_HAS_TR1_TUPLE=0 -DGTEST_USE_OWN_TR1_TUPLE=1 -Wno-unused-command-line-argument
+      -fPIE -pie -DGPR_NO_DIRECT_SYSCALLS
     CXX: clang++
     DEFINES: NDEBUG
     LD: clang++
-    LDFLAGS: -fsanitize=memory -DGTEST_HAS_TR1_TUPLE=0 -DGTEST_USE_OWN_TR1_TUPLE=1
+    LDFLAGS: -stdlib=libc++ -fsanitize=memory -DGTEST_HAS_TR1_TUPLE=0 -DGTEST_USE_OWN_TR1_TUPLE=1
       -fPIE -pie $(if $(JENKINS_BUILD),-Wl$(comma)-Ttext-segment=0x7e0000000000,)
     LDXX: clang++
     compile_the_world: true
@@ -6177,20 +6181,19 @@ configs:
       TSAN_OPTIONS: suppressions=test/core/util/tsan_suppressions.txt:halt_on_error=1:second_deadlock_stack=1
   ubsan:
     CC: clang
-    CPPFLAGS: -O0 -fsanitize-coverage=edge,trace-pc-guard -fsanitize=undefined -fno-omit-frame-pointer
-      -Wno-unused-command-line-argument -Wvarargs
+    CPPFLAGS: -O0 -stdlib=libc++ -fsanitize-coverage=edge,trace-pc-guard -fsanitize=undefined
+      -fno-omit-frame-pointer -Wno-unused-command-line-argument -Wvarargs
     CXX: clang++
     DEFINES: NDEBUG GRPC_UBSAN
     LD: clang++
-    LDFLAGS: -fsanitize=undefined,unsigned-integer-overflow
+    LDFLAGS: -stdlib=libc++ -fsanitize=undefined,unsigned-integer-overflow
     LDXX: clang++
     compile_the_world: true
     test_environ:
       UBSAN_OPTIONS: halt_on_error=1:print_stacktrace=1:suppressions=test/core/util/ubsan_suppressions.txt
 defaults:
   ares:
-    CFLAGS: -Wno-sign-conversion $(if $(subst Darwin,,$(SYSTEM)),,-Wno-shorten-64-to-32)
-      $(if $(subst MINGW32,,$(SYSTEM)),-Wno-invalid-source-encoding,)
+    CFLAGS: -g
     CPPFLAGS: -Ithird_party/cares -Ithird_party/cares/cares -fvisibility=hidden -D_GNU_SOURCE
       $(if $(subst Darwin,,$(SYSTEM)),,-Ithird_party/cares/config_darwin) $(if $(subst
       FreeBSD,,$(SYSTEM)),,-Ithird_party/cares/config_freebsd) $(if $(subst Linux,,$(SYSTEM)),,-Ithird_party/cares/config_linux)
@@ -6199,9 +6202,7 @@ defaults:
   benchmark:
     CPPFLAGS: -Ithird_party/benchmark/include -DHAVE_POSIX_REGEX
   boringssl:
-    CFLAGS: -Wno-sign-conversion -Wno-conversion -Wno-unused-value -Wno-unknown-pragmas
-      -Wno-implicit-function-declaration -Wno-unused-variable -Wno-sign-compare -Wno-implicit-fallthrough
-      $(NO_W_EXTRA_SEMI)
+    CFLAGS: -g
     CPPFLAGS: -Ithird_party/boringssl/include -fvisibility=hidden -DOPENSSL_NO_ASM
       -D_GNU_SOURCE -DWIN32_LEAN_AND_MEAN -D_HAS_EXCEPTIONS=0 -DNOMINMAX
     CXXFLAGS: -fno-rtti -fno-exceptions
@@ -6211,16 +6212,12 @@ defaults:
       $(W_NO_MAYBE_UNINITIALIZED) -fvisibility=hidden
     CXXFLAGS: $(W_NO_CXX14_COMPAT)
   global:
+    CFLAGS: -g
     COREFLAGS: -fno-rtti -fno-exceptions
-    CPPFLAGS: -g -Wall -Wextra -Werror $(W_NO_UNKNOWN_WARNING_OPTION) -Wno-long-long
-      -Wno-unused-parameter -Wno-deprecated-declarations -Wno-sign-conversion -Wno-shadow
-      -Wno-conversion -Wno-implicit-fallthrough -Wno-sign-compare -Wno-missing-field-initializers
-      -Wno-maybe-uninitialized -DOSATOMIC_USE_INLINED=1 -Ithird_party/upb -Isrc/core/ext/upb-generated
-    CXXFLAGS: -Wnon-virtual-dtor
+    CPPFLAGS: -g -Wall -Wextra -DOSATOMIC_USE_INLINED=1 -Ithird_party/upb -Isrc/core/ext/upb-generated
     LDFLAGS: -g
   zlib:
-    CFLAGS: -Wno-sign-conversion -Wno-conversion -Wno-unused-value -Wno-implicit-function-declaration
-      -Wno-implicit-fallthrough $(W_NO_SHIFT_NEGATIVE_VALUE) -fvisibility=hidden
+    CFLAGS: -fvisibility=hidden
 openssl_fallback:
   base_uri: https://openssl.org/source/old/1.0.2/
   extraction_dir: openssl-1.0.2f

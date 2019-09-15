@@ -34,7 +34,6 @@
 
 #include "src/core/ext/filters/client_channel/backup_poller.h"
 #include "src/core/lib/gpr/tls.h"
-#include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/iomgr/port.h"
 #include "src/proto/grpc/health/v1/health.grpc.pb.h"
 #include "src/proto/grpc/testing/duplicate/echo_duplicate.grpc.pb.h"
@@ -59,18 +58,6 @@ namespace grpc {
 namespace testing {
 
 namespace {
-
-const size_t MAX_TEST_MESSAGE_SIZE =
-#if defined(GPR_APPLE)
-    // The test will time out with macos build.
-    GRPC_DEFAULT_MAX_RECV_MESSAGE_LENGTH;
-#else
-    // Don't test extreme size under tsan or msan, because it uses too much
-    // memory.
-    grpc_test_built_under_tsan_or_msan()
-        ? GRPC_DEFAULT_MAX_RECV_MESSAGE_LENGTH
-        : GPR_MAX(100 * 1024 * 1024, GRPC_DEFAULT_MAX_RECV_MESSAGE_LENGTH);
-#endif
 
 void* tag(int i) { return (void*)static_cast<intptr_t>(i); }
 int detag(void* p) { return static_cast<int>(reinterpret_cast<intptr_t>(p)); }
@@ -231,17 +218,6 @@ class ServerBuilderSyncPluginDisabler : public ::grpc::ServerBuilderOption {
   }
 };
 
-class ServerBuilderMaxRecvMessageSizeOption
-    : public ::grpc::ServerBuilderOption {
- public:
-  void UpdateArguments(ChannelArguments* arg) override {
-    arg->SetInt(GRPC_ARG_MAX_RECEIVE_MESSAGE_LENGTH, -1);
-  }
-
-  void UpdatePlugins(
-      std::vector<std::unique_ptr<ServerBuilderPlugin>>* plugins) override {}
-};
-
 class TestScenario {
  public:
   TestScenario(bool inproc_stub, const grpc::string& creds_type, bool hcs,
@@ -314,9 +290,6 @@ class AsyncEnd2endTest : public ::testing::TestWithParam<TestScenario> {
     std::unique_ptr<ServerBuilderOption> sync_plugin_disabler(
         new ServerBuilderSyncPluginDisabler());
     builder.SetOption(move(sync_plugin_disabler));
-    std::unique_ptr<ServerBuilderOption> max_recv_option(
-        new ServerBuilderMaxRecvMessageSizeOption());
-    builder.SetOption(move(max_recv_option));
     server_ = builder.BuildAndStart();
   }
 
@@ -324,7 +297,6 @@ class AsyncEnd2endTest : public ::testing::TestWithParam<TestScenario> {
     ChannelArguments args;
     auto channel_creds = GetCredentialsProvider()->GetChannelCredentials(
         GetParam().credentials_type, &args);
-    args.SetInt(GRPC_ARG_MAX_RECEIVE_MESSAGE_LENGTH, -1);
     std::shared_ptr<Channel> channel =
         !(GetParam().inproc) ? ::grpc::CreateCustomChannel(
                                    server_address_.str(), channel_creds, args)
@@ -1850,7 +1822,7 @@ TEST_P(AsyncEnd2endServerTryCancelTest, ServerBidiStreamingTryCancelAfter) {
 }
 
 std::vector<TestScenario> CreateTestScenarios(bool test_secure,
-                                              bool test_big_message) {
+                                              bool test_message_size_limit) {
   std::vector<TestScenario> scenarios;
   std::vector<grpc::string> credentials_types;
   std::vector<grpc::string> messages;
@@ -1872,8 +1844,9 @@ std::vector<TestScenario> CreateTestScenarios(bool test_secure,
   GPR_ASSERT(!credentials_types.empty());
 
   messages.push_back("Hello");
-  if (test_big_message) {
-    for (size_t k = 1; k < MAX_TEST_MESSAGE_SIZE / 1024; k *= 32) {
+  if (test_message_size_limit) {
+    for (size_t k = 1; k < GRPC_DEFAULT_MAX_RECV_MESSAGE_LENGTH / 1024;
+         k *= 32) {
       grpc::string big_msg;
       for (size_t i = 0; i < k * 1024; ++i) {
         char c = 'a' + (i % 26);
@@ -1881,7 +1854,8 @@ std::vector<TestScenario> CreateTestScenarios(bool test_secure,
       }
       messages.push_back(big_msg);
     }
-    messages.push_back(grpc::string(MAX_TEST_MESSAGE_SIZE - 10, 'a'));
+    messages.push_back(
+        grpc::string(GRPC_DEFAULT_MAX_RECV_MESSAGE_LENGTH - 10, 'a'));
   }
 
   // TODO (sreek) Renable tests with health check service after the issue
