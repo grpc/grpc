@@ -202,6 +202,7 @@ class ChannelData {
 
     ChannelData* chand_;
     grpc_polling_entity pollent_;
+    grpc_connectivity_state initial_state_;
     grpc_connectivity_state* state_;
     grpc_closure* on_complete_;
     grpc_closure* watcher_timer_init_;
@@ -1120,6 +1121,7 @@ ChannelData::ExternalConnectivityWatcher::ExternalConnectivityWatcher(
     grpc_closure* watcher_timer_init)
     : chand_(chand),
       pollent_(pollent),
+      initial_state_(*state),
       state_(state),
       on_complete_(on_complete),
       watcher_timer_init_(watcher_timer_init) {
@@ -1188,7 +1190,8 @@ void ChannelData::ExternalConnectivityWatcher::AddWatcherLocked(
   GRPC_CLOSURE_RUN(self->watcher_timer_init_, GRPC_ERROR_NONE);
   // Add new watcher.
   self->chand_->state_tracker_.AddWatcher(
-      *self->state_, OrphanablePtr<ConnectivityStateWatcherInterface>(self));
+      self->initial_state_,
+      OrphanablePtr<ConnectivityStateWatcherInterface>(self));
 }
 
 //
