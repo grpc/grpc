@@ -163,6 +163,7 @@ grpc_cc_test(
         ":interarrival",
         "//test/cpp/util:test_config",
     ],
+    uses_polling = False,
 )
 
 grpc_cc_test(
