@@ -277,8 +277,8 @@ class RefcountedMdBase {
   /* must be byte compatible with grpc_mdelem_data */
   grpc_slice key_;
   grpc_slice value_;
-  grpc_core::Atomic<intptr_t> refcnt_;
   uint32_t hash_ = 0;
+  grpc_core::Atomic<intptr_t> refcnt_;
 };
 
 class InternedMetadata : public RefcountedMdBase {
