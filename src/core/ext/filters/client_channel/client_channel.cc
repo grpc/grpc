@@ -206,7 +206,8 @@ class ChannelData {
     grpc_connectivity_state* state_;
     grpc_closure* on_complete_;
     grpc_closure* watcher_timer_init_;
-    grpc_closure my_closure_;
+    grpc_closure add_closure_;
+    grpc_closure remove_closure_;
     Atomic<bool> done_{false};
   };
 
@@ -1129,7 +1130,7 @@ ChannelData::ExternalConnectivityWatcher::ExternalConnectivityWatcher(
                                          chand_->interested_parties_);
   GRPC_CHANNEL_STACK_REF(chand_->owning_stack_, "ExternalConnectivityWatcher");
   GRPC_CLOSURE_SCHED(
-      GRPC_CLOSURE_INIT(&my_closure_, AddWatcherLocked, this,
+      GRPC_CLOSURE_INIT(&add_closure_, AddWatcherLocked, this,
                         grpc_combiner_scheduler(chand_->combiner_)),
       GRPC_ERROR_NONE);
 }
@@ -1155,7 +1156,7 @@ void ChannelData::ExternalConnectivityWatcher::Notify(
   chand_->RemoveExternalConnectivityWatcher(on_complete_, /*cancel=*/false);
   // Hop back into the combiner to clean up.
   GRPC_CLOSURE_SCHED(
-      GRPC_CLOSURE_INIT(&my_closure_, RemoveWatcherLocked, this,
+      GRPC_CLOSURE_INIT(&remove_closure_, RemoveWatcherLocked, this,
                         grpc_combiner_scheduler(chand_->combiner_)),
       GRPC_ERROR_NONE);
 }
@@ -1169,7 +1170,7 @@ void ChannelData::ExternalConnectivityWatcher::Cancel() {
   GRPC_CLOSURE_SCHED(on_complete_, GRPC_ERROR_CANCELLED);
   // Hop back into the combiner to clean up.
   GRPC_CLOSURE_SCHED(
-      GRPC_CLOSURE_INIT(&my_closure_, RemoveWatcherLocked, this,
+      GRPC_CLOSURE_INIT(&remove_closure_, RemoveWatcherLocked, this,
                         grpc_combiner_scheduler(chand_->combiner_)),
       GRPC_ERROR_NONE);
 }
