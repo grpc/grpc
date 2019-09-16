@@ -151,6 +151,9 @@ void ConnectivityStateTracker::SetState(grpc_connectivity_state state,
     }
     p.second->Notify(state);
   }
+  // If the new state is SHUTDOWN, orphan all of the watchers.  This
+  // avoids the need for the callers to explicitly cancel them.
+  if (state == GRPC_CHANNEL_SHUTDOWN) watchers_.clear();
 }
 
 grpc_connectivity_state ConnectivityStateTracker::state() const {
