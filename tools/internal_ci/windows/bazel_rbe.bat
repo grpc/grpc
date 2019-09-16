@@ -14,7 +14,8 @@
 
 @rem TODO(jtattermusch): make this generate less output
 @rem TODO(jtattermusch): use tools/bazel script to keep the versions in sync
-choco install bazel -y --version 0.29.1 --limit-output
+@rem TODO(jtattermusch): https://github.com/bazelbuild/bazel/issues/9369 prevents upgrade to 0.29.1
+choco install bazel -y --version 0.29.0 --limit-output
 
 cd github/grpc
 set PATH=C:\tools\msys64\usr\bin;C:\Python27;%PATH%
