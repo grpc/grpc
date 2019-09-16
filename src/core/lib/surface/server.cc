@@ -1131,7 +1131,25 @@ class ConnectivityWatcher
 
  private:
   void OnConnectivityStateChange(grpc_connectivity_state new_state) override {
+    // Don't do anything until we are being shut down.
     if (new_state != GRPC_CHANNEL_SHUTDOWN) return;
+    // Cancel watch.
+    // TODO(roth): We are showing a slightly inconsistent view to the
+    // filter stack here, because we start the watch directly against
+    // the transport (see grpc_server_setup_transport()), meaning that it
+    // is not seen by the filters, whereas here we cancel the watch
+    // through the entire filter stack.  This doesn't seem to hurt
+    // anything in practice but could be a problem in the future.  If
+    // so, we will need to either change grpc_server_setup_transport()
+    // to start the watch via the full filter stack or else stash a
+    // pointer to the transport somewhere so that we can cancel the
+    // watch directly against the transport.
+    grpc_transport_op* op = grpc_make_transport_op(nullptr);
+    op->stop_connectivity_watch = this;
+    grpc_channel_element* elem = grpc_channel_stack_element(
+        grpc_channel_get_channel_stack(chand_->channel), 0);
+    elem->filter->start_transport_op(elem, op);
+    // Shut down channel.
     grpc_server* server = chand_->server;
     gpr_mu_lock(&server->mu_global);
     destroy_channel(chand_);
@@ -1237,6 +1255,8 @@ void grpc_server_setup_transport(
   op->set_accept_stream = true;
   op->set_accept_stream_fn = accept_stream;
   op->set_accept_stream_user_data = chand;
+  // TODO(roth): See TODO in ConnectivityWatcher above about starting
+  // and cancelling this connectivity watch in inconsistent ways.
   op->start_connectivity_watch.reset(
       grpc_core::New<ConnectivityWatcher>(chand));
   if (gpr_atm_acq_load(&s->shutdown_flag) != 0) {
