@@ -78,6 +78,10 @@ void TlsCredentialReloadArg::set_error_details(
 }
 
 void TlsCredentialReloadArg::OnCredentialReloadDoneCallback() {
+  if (c_arg_->cb == nullptr) {
+    gpr_log(GPR_ERROR, "credential reload arg callback API is nullptr");
+    return;
+  }
   c_arg_->cb(c_arg_);
 }
 
@@ -92,13 +96,17 @@ TlsCredentialReloadConfig::TlsCredentialReloadConfig(
       cancel_(cancel),
       destruct_(destruct) {
   c_config_ = grpc_tls_credential_reload_config_create(
-      config_user_data_, &TlsCredentialReloadConfigCSchedule,
-      &TlsCredentialReloadConfigCCancel, destruct_);
+      config_user_data_,
+      schedule != nullptr ? &TlsCredentialReloadConfigCSchedule : nullptr,
+      cancel != nullptr ? &TlsCredentialReloadConfigCCancel : nullptr,
+      destruct_);
   c_config_->set_context(static_cast<void*>(this));
 }
 
 TlsCredentialReloadConfig::~TlsCredentialReloadConfig() {
-  ::grpc_core::Delete(c_config_);
+  if (destruct_ != nullptr) {
+    destruct_(config_user_data_);
+  }
 }
 
 /** gRPC TLS server authorization check arg API implementation **/
@@ -157,6 +165,10 @@ void TlsServerAuthorizationCheckArg::set_error_details(
 }
 
 void TlsServerAuthorizationCheckArg::OnServerAuthorizationCheckDoneCallback() {
+  if (c_arg_->cb == nullptr) {
+    gpr_log(GPR_ERROR, "server authorizaton check arg callback API is nullptr");
+    return;
+  }
   c_arg_->cb(c_arg_);
 }
 
@@ -172,13 +184,18 @@ TlsServerAuthorizationCheckConfig::TlsServerAuthorizationCheckConfig(
       cancel_(cancel),
       destruct_(destruct) {
   c_config_ = grpc_tls_server_authorization_check_config_create(
-      config_user_data_, &TlsServerAuthorizationCheckConfigCSchedule,
-      &TlsServerAuthorizationCheckConfigCCancel, destruct_);
+      config_user_data_,
+      schedule != nullptr ? &TlsServerAuthorizationCheckConfigCSchedule
+                          : nullptr,
+      cancel != nullptr ? &TlsServerAuthorizationCheckConfigCCancel : nullptr,
+      destruct_);
   c_config_->set_context(static_cast<void*>(this));
 }
 
 TlsServerAuthorizationCheckConfig::~TlsServerAuthorizationCheckConfig() {
-  ::grpc_core::Delete(c_config_);
+  if (destruct_ != nullptr) {
+    destruct_(config_user_data_);
+  }
 }
 
 /** gRPC TLS credential options API implementation **/
@@ -199,14 +216,20 @@ TlsCredentialsOptions::TlsCredentialsOptions(
   grpc_tls_credentials_options_set_key_materials_config(
       c_credentials_options_,
       ConvertToCKeyMaterialsConfig(key_materials_config_));
-  grpc_tls_credentials_options_set_credential_reload_config(
-      c_credentials_options_, credential_reload_config_->c_config());
-  grpc_tls_credentials_options_set_server_authorization_check_config(
-      c_credentials_options_, server_authorization_check_config_->c_config());
+  if (credential_reload_config_ != nullptr) {
+    grpc_tls_credentials_options_set_credential_reload_config(
+        c_credentials_options_, credential_reload_config_->c_config());
+  }
+  if (server_authorization_check_config_ != nullptr) {
+    grpc_tls_credentials_options_set_server_authorization_check_config(
+        c_credentials_options_, server_authorization_check_config_->c_config());
+  }
 }
 
 TlsCredentialsOptions::~TlsCredentialsOptions() {
-  gpr_free(c_credentials_options_);
+  if (c_credentials_options_ != nullptr) {
+    gpr_free(c_credentials_options_);
+  }
 }
 
 }  // namespace experimental

@@ -29,6 +29,9 @@ namespace experimental {
  * Similarly, the user must free the underlying pointer to c_pem_root_certs. **/
 grpc_tls_key_materials_config* ConvertToCKeyMaterialsConfig(
     const std::shared_ptr<TlsKeyMaterialsConfig>& config) {
+  if (config == nullptr) {
+    return nullptr;
+  }
   grpc_tls_key_materials_config* c_config =
       grpc_tls_key_materials_config_create();
   ::grpc_core::InlinedVector<::grpc_core::PemKeyCertPair, 1>
@@ -57,6 +60,9 @@ grpc_tls_key_materials_config* ConvertToCKeyMaterialsConfig(
  * allocates memory for the Cpp config. **/
 std::shared_ptr<TlsKeyMaterialsConfig> ConvertToCppKeyMaterialsConfig(
     const grpc_tls_key_materials_config* config) {
+  if (config == nullptr) {
+    return nullptr;
+  }
   std::shared_ptr<TlsKeyMaterialsConfig> cpp_config(
       new TlsKeyMaterialsConfig());
   std::vector<TlsKeyMaterialsConfig::PemKeyCertPair> cpp_pem_key_cert_pair_list;
@@ -79,6 +85,11 @@ std::shared_ptr<TlsKeyMaterialsConfig> ConvertToCppKeyMaterialsConfig(
  * reload schedule/cancel API. **/
 int TlsCredentialReloadConfigCSchedule(void* config_user_data,
                                        grpc_tls_credential_reload_arg* arg) {
+  if (arg == nullptr || arg->config == nullptr ||
+      arg->config->context() == nullptr) {
+    gpr_log(GPR_ERROR, "credential reload arg was not properly initialized");
+    return 1;
+  }
   TlsCredentialReloadConfig* cpp_config =
       static_cast<TlsCredentialReloadConfig*>(arg->config->context());
   TlsCredentialReloadArg cpp_arg(arg);
@@ -87,6 +98,11 @@ int TlsCredentialReloadConfigCSchedule(void* config_user_data,
 
 void TlsCredentialReloadConfigCCancel(void* config_user_data,
                                       grpc_tls_credential_reload_arg* arg) {
+  if (arg == nullptr || arg->config == nullptr ||
+      arg->config->context() == nullptr) {
+    gpr_log(GPR_ERROR, "credential reload arg was not properly initialized");
+    return;
+  }
   TlsCredentialReloadConfig* cpp_config =
       static_cast<TlsCredentialReloadConfig*>(arg->config->context());
   TlsCredentialReloadArg cpp_arg(arg);
@@ -98,6 +114,12 @@ void TlsCredentialReloadConfigCCancel(void* config_user_data,
  * of a C++ server authorization check schedule/cancel API. **/
 int TlsServerAuthorizationCheckConfigCSchedule(
     void* config_user_data, grpc_tls_server_authorization_check_arg* arg) {
+  if (arg == nullptr || arg->config == nullptr ||
+      arg->config->context() == nullptr) {
+    gpr_log(GPR_ERROR,
+            "server authorization check arg was not properly initialized");
+    return 1;
+  }
   TlsServerAuthorizationCheckConfig* cpp_config =
       static_cast<TlsServerAuthorizationCheckConfig*>(arg->config->context());
   TlsServerAuthorizationCheckArg cpp_arg(arg);
@@ -106,6 +128,12 @@ int TlsServerAuthorizationCheckConfigCSchedule(
 
 void TlsServerAuthorizationCheckConfigCCancel(
     void* config_user_data, grpc_tls_server_authorization_check_arg* arg) {
+  if (arg == nullptr || arg->config == nullptr ||
+      arg->config->context() == nullptr) {
+    gpr_log(GPR_ERROR,
+            "server authorization check arg was not properly initialized");
+    return;
+  }
   TlsServerAuthorizationCheckConfig* cpp_config =
       static_cast<TlsServerAuthorizationCheckConfig*>(arg->config->context());
   TlsServerAuthorizationCheckArg cpp_arg(arg);

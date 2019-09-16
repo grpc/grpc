@@ -69,12 +69,22 @@ struct grpc_tls_credential_reload_config
   void set_context(void* context) { context_ = context; }
 
   int Schedule(grpc_tls_credential_reload_arg* arg) const {
+    if (schedule_ == nullptr) {
+      gpr_log(GPR_ERROR, "schedule API is nullptr");
+      return 1;
+    }
+    if (arg != nullptr && context_ != nullptr) {
+      arg->config = const_cast<grpc_tls_credential_reload_config*>(this);
+    }
     return schedule_(config_user_data_, arg);
   }
   void Cancel(grpc_tls_credential_reload_arg* arg) const {
     if (cancel_ == nullptr) {
       gpr_log(GPR_ERROR, "cancel API is nullptr.");
       return;
+    }
+    if (arg != nullptr && context_ != nullptr) {
+      arg->config = const_cast<grpc_tls_credential_reload_config*>(this);
     }
     cancel_(config_user_data_, arg);
   }
@@ -125,12 +135,24 @@ struct grpc_tls_server_authorization_check_config
   void set_context(void* context) { context_ = context; }
 
   int Schedule(grpc_tls_server_authorization_check_arg* arg) const {
+    if (schedule_ == nullptr) {
+      gpr_log(GPR_ERROR, "schedule API is nullptr");
+      return 1;
+    }
+    if (arg != nullptr && context_ != nullptr) {
+      arg->config =
+          const_cast<grpc_tls_server_authorization_check_config*>(this);
+    }
     return schedule_(config_user_data_, arg);
   }
   void Cancel(grpc_tls_server_authorization_check_arg* arg) const {
     if (cancel_ == nullptr) {
       gpr_log(GPR_ERROR, "cancel API is nullptr.");
       return;
+    }
+    if (arg != nullptr && context_ != nullptr) {
+      arg->config =
+          const_cast<grpc_tls_server_authorization_check_config*>(this);
     }
     cancel_(config_user_data_, arg);
   }

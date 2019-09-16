@@ -53,6 +53,7 @@ static int tls_credential_reload_sync(void* config_user_data,
                                                         "cert_chain3"};
   std::shared_ptr<TlsKeyMaterialsConfig> key_materials_config =
       arg->key_materials_config();
+  GPR_ASSERT(key_materials_config != nullptr);
   std::vector<TlsKeyMaterialsConfig::PemKeyCertPair> pair_list =
       key_materials_config->pem_key_cert_pair_list();
   pair_list.push_back(pair3);
@@ -378,6 +379,7 @@ TEST_F(CredentialsTest, TlsCredentialReloadConfigSchedule) {
   gpr_free(const_cast<char*>(error_details_before_schedule));
   ::grpc_core::Delete(key_materials_config_before_schedule);
   ::grpc_core::Delete(c_arg.key_materials_config);
+  ::grpc_core::Delete(config.c_config());
 }
 
 TEST_F(CredentialsTest, TlsCredentialReloadConfigCppToC) {
@@ -434,6 +436,7 @@ TEST_F(CredentialsTest, TlsCredentialReloadConfigCppToC) {
   // Cleanup.
   ::grpc_core::Delete(key_materials_config_after_schedule);
   gpr_free(const_cast<char*>(c_arg.error_details));
+  ::grpc_core::Delete(config.c_config());
 }
 
 typedef class ::grpc_impl::experimental::TlsServerAuthorizationCheckArg
@@ -505,6 +508,7 @@ TEST_F(CredentialsTest, TlsServerAuthorizationCheckConfigSchedule) {
   gpr_free(const_cast<char*>(c_arg.target_name));
   gpr_free(const_cast<char*>(c_arg.peer_cert));
   gpr_free(const_cast<char*>(c_arg.error_details));
+  ::grpc_core::Delete(config.c_config());
 }
 
 TEST_F(CredentialsTest, TlsServerAuthorizationCheckConfigCppToC) {
@@ -543,6 +547,7 @@ TEST_F(CredentialsTest, TlsServerAuthorizationCheckConfigCppToC) {
   gpr_free(const_cast<char*>(target_name_after_schedule));
   gpr_free(const_cast<char*>(peer_cert_after_schedule));
   gpr_free(const_cast<char*>(error_details_after_schedule));
+  ::grpc_core::Delete(config.c_config());
 }
 
 typedef class ::grpc_impl::experimental::TlsCredentialsOptions
@@ -574,7 +579,6 @@ TEST_F(CredentialsTest, TlsCredentialsOptionsCppToC) {
   grpc_tls_credential_reload_config* c_credential_reload_config =
       c_options->credential_reload_config();
   grpc_tls_credential_reload_arg c_credential_reload_arg;
-  c_credential_reload_arg.config = c_credential_reload_config;
   c_credential_reload_arg.cb_user_data = nullptr;
   c_credential_reload_arg.key_materials_config =
       c_options->key_materials_config();
@@ -585,7 +589,6 @@ TEST_F(CredentialsTest, TlsCredentialsOptionsCppToC) {
       c_server_authorization_check_config =
           c_options->server_authorization_check_config();
   grpc_tls_server_authorization_check_arg c_server_authorization_check_arg;
-  c_server_authorization_check_arg.config = c_server_authorization_check_config;
   c_server_authorization_check_arg.cb = tls_server_authorization_check_callback;
   c_server_authorization_check_arg.cb_user_data = nullptr;
   c_server_authorization_check_arg.success = 0;
@@ -593,7 +596,6 @@ TEST_F(CredentialsTest, TlsCredentialsOptionsCppToC) {
   c_server_authorization_check_arg.peer_cert = "peer_cert";
   c_server_authorization_check_arg.status = GRPC_STATUS_UNAUTHENTICATED;
   c_server_authorization_check_arg.error_details = "error_details";
-
   EXPECT_STREQ(c_key_materials_config->pem_root_certs(), "pem_root_certs");
   EXPECT_EQ(
       static_cast<int>(c_key_materials_config->pem_key_cert_pair_list().size()),
@@ -604,6 +606,7 @@ TEST_F(CredentialsTest, TlsCredentialsOptionsCppToC) {
   EXPECT_STREQ(c_key_materials_config->pem_key_cert_pair_list()[0].cert_chain(),
                "cert_chain");
 
+  GPR_ASSERT(c_credential_reload_config != nullptr);
   int c_credential_reload_schedule_output =
       c_credential_reload_config->Schedule(&c_credential_reload_arg);
   EXPECT_EQ(c_credential_reload_schedule_output, 0);
@@ -644,6 +647,8 @@ TEST_F(CredentialsTest, TlsCredentialsOptionsCppToC) {
   gpr_free(const_cast<char*>(c_server_authorization_check_arg.target_name));
   gpr_free(const_cast<char*>(c_server_authorization_check_arg.peer_cert));
   gpr_free(const_cast<char*>(c_server_authorization_check_arg.error_details));
+  ::grpc_core::Delete(c_credential_reload_config);
+  ::grpc_core::Delete(c_server_authorization_check_config);
 }
 
 }  // namespace testing
