@@ -197,6 +197,18 @@ namespace Grpc.Core
         [Obsolete("Use MaxReceiveMessageLength instead.")]
         public const string MaxMessageLength = MaxReceiveMessageLength;
 
+        /// <summary>Maximum time that a channel may exist in milliseconds.
+        /// <see cref="int.MaxValue"/> means unlimited.</summary>
+        public const string MaxConnectionAgeMs = "grpc.max_connection_age_ms";
+
+        /// <summary>Grace period after the channel reaches its max age in milliseconds.
+        /// <see cref="int.MaxValue"/> means unlimited.</summary>
+        public const string MaxConnectionAgeGraceMs = "grpc.max_connection_age_grace_ms";
+
+        /// <summary>Maximum time that a channel may have no outstanding rpcs, after which the server
+        /// will close the connection. <see cref="int.MaxValue"/> means unlimited.</summary>
+        public const string MaxConnectionIdleMs = "grpc.max_connection_idle_ms";
+
         /// <summary>Initial sequence number for http2 transports</summary>
         public const string Http2InitialSequenceNumber = "grpc.http2.initial_sequence_number";
 
