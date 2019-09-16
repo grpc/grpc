@@ -32,7 +32,7 @@ bazel --bazelrc=tools/remote_build/manual.bazelrc test --config=asan //test/...
 Run on Windows MSVC:
 ```
 # RBE manual run only for c-core (must be run on a Windows host machine)
-bazel --bazelrc=tools/remote_build/windows.bazelrc build :all [--google_credentials=(path to service account credentials)]
+bazel --bazelrc=tools/remote_build/windows.bazelrc build :all
 ```
 
 Available command line options can be found in

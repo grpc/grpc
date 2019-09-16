@@ -3,6 +3,8 @@ startup --host_jvm_args=-Dbazel.DigestFunction=SHA256
 build --remote_cache=grpcs://remotebuildexecution.googleapis.com
 build --remote_executor=grpcs://remotebuildexecution.googleapis.com
 
+build --auth_enabled=true
+
 build --host_crosstool_top=//third_party/toolchains/bazel_0.26.0_rbe_windows:toolchain
 build --crosstool_top=//third_party/toolchains/bazel_0.26.0_rbe_windows:toolchain
 build --extra_toolchains=//third_party/toolchains/bazel_0.26.0_rbe_windows:cc-toolchain-x64_windows
