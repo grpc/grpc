@@ -10,6 +10,8 @@ pyx_library(
         "_cygrpc/_hooks.pyx.pxi",
         "_cygrpc/aio/call.pxd.pxi",
         "_cygrpc/aio/call.pyx.pxi",
+        "_cygrpc/aio/rpc_error.pxd.pxi",
+        "_cygrpc/aio/rpc_error.pyx.pxi",
         "_cygrpc/aio/callbackcontext.pxd.pxi",
         "_cygrpc/aio/channel.pxd.pxi",
         "_cygrpc/aio/channel.pyx.pxi",
