@@ -117,8 +117,13 @@ namespace {
 grpc_json* ParseLoadBalancingConfigHelper(const grpc_json* lb_config_array,
                                           grpc_error** error) {
   GPR_DEBUG_ASSERT(error != nullptr && *error == GRPC_ERROR_NONE);
+  if (lb_config_array == nullptr) {
+    *error =
+        GRPC_ERROR_CREATE_FROM_STATIC_STRING("LB config JSON tree is null");
+    return nullptr;
+  }
   char* error_msg;
-  if (lb_config_array == nullptr || lb_config_array->type != GRPC_JSON_ARRAY) {
+  if (lb_config_array->type != GRPC_JSON_ARRAY) {
     gpr_asprintf(&error_msg, "field:%s error:type should be array",
                  lb_config_array->key);
     *error = GRPC_ERROR_CREATE_FROM_COPIED_STRING(error_msg);

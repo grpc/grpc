@@ -72,11 +72,16 @@ class CallbackUnaryCallImpl {
         grpc::internal::CallOpClientSendClose,
         grpc::internal::CallOpClientRecvStatus>;
 
-    auto* ops = new (::grpc::g_core_codegen_interface->grpc_call_arena_alloc(
-        call.call(), sizeof(FullCallOpSet))) FullCallOpSet;
-
-    auto* tag = new (::grpc::g_core_codegen_interface->grpc_call_arena_alloc(
-        call.call(), sizeof(grpc::internal::CallbackWithStatusTag)))
+    struct OpSetAndTag {
+      FullCallOpSet opset;
+      grpc::internal::CallbackWithStatusTag tag;
+    };
+    const size_t alloc_sz = sizeof(OpSetAndTag);
+    auto* const alloced = static_cast<OpSetAndTag*>(
+        ::grpc::g_core_codegen_interface->grpc_call_arena_alloc(call.call(),
+                                                                alloc_sz));
+    auto* ops = new (&alloced->opset) FullCallOpSet;
+    auto* tag = new (&alloced->tag)
         grpc::internal::CallbackWithStatusTag(call.call(), on_completion, ops);
 
     // TODO(vjpai): Unify code with sync API as much as possible
@@ -272,7 +277,7 @@ class ClientBidiReactor {
   /// have completed and provides the RPC status outcome.
   ///
   /// \param[in] s The status outcome of this RPC
-  virtual void OnDone(const ::grpc::Status& s) {}
+  virtual void OnDone(const ::grpc::Status& /*s*/) {}
 
   /// Notifies the application that a read of initial metadata from the
   /// server is done. If the application chooses not to implement this method,
@@ -281,19 +286,19 @@ class ClientBidiReactor {
   ///
   /// \param[in] ok Was the initial metadata read successfully? If false, no
   ///               further read-side operation will succeed.
-  virtual void OnReadInitialMetadataDone(bool ok) {}
+  virtual void OnReadInitialMetadataDone(bool /*ok*/) {}
 
   /// Notifies the application that a StartRead operation completed.
   ///
   /// \param[in] ok Was it successful? If false, no further read-side operation
   ///               will succeed.
-  virtual void OnReadDone(bool ok) {}
+  virtual void OnReadDone(bool /*ok*/) {}
 
   /// Notifies the application that a StartWrite operation completed.
   ///
   /// \param[in] ok Was it successful? If false, no further write-side operation
   ///               will succeed.
-  virtual void OnWriteDone(bool ok) {}
+  virtual void OnWriteDone(bool /*ok*/) {}
 
   /// Notifies the application that a StartWritesDone operation completed. Note
   /// that this is only used on explicit StartWritesDone operations and not for
@@ -301,7 +306,7 @@ class ClientBidiReactor {
   ///
   /// \param[in] ok Was it successful? If false, the application will later see
   ///               the failure reflected as a bad status in OnDone.
-  virtual void OnWritesDoneDone(bool ok) {}
+  virtual void OnWritesDoneDone(bool /*ok*/) {}
 
  private:
   friend class ClientCallbackReaderWriter<Request, Response>;
@@ -325,9 +330,9 @@ class ClientReadReactor {
   void AddMultipleHolds(int holds) { reader_->AddHold(holds); }
   void RemoveHold() { reader_->RemoveHold(); }
 
-  virtual void OnDone(const ::grpc::Status& s) {}
-  virtual void OnReadInitialMetadataDone(bool ok) {}
-  virtual void OnReadDone(bool ok) {}
+  virtual void OnDone(const ::grpc::Status& /*s*/) {}
+  virtual void OnReadInitialMetadataDone(bool /*ok*/) {}
+  virtual void OnReadDone(bool /*ok*/) {}
 
  private:
   friend class ClientCallbackReader<Response>;
@@ -358,10 +363,10 @@ class ClientWriteReactor {
   void AddMultipleHolds(int holds) { writer_->AddHold(holds); }
   void RemoveHold() { writer_->RemoveHold(); }
 
-  virtual void OnDone(const ::grpc::Status& s) {}
-  virtual void OnReadInitialMetadataDone(bool ok) {}
-  virtual void OnWriteDone(bool ok) {}
-  virtual void OnWritesDoneDone(bool ok) {}
+  virtual void OnDone(const ::grpc::Status& /*s*/) {}
+  virtual void OnReadInitialMetadataDone(bool /*ok*/) {}
+  virtual void OnWriteDone(bool /*ok*/) {}
+  virtual void OnWritesDoneDone(bool /*ok*/) {}
 
  private:
   friend class ClientCallbackWriter<Request>;
@@ -385,8 +390,8 @@ class ClientUnaryReactor {
   virtual ~ClientUnaryReactor() {}
 
   void StartCall() { call_->StartCall(); }
-  virtual void OnDone(const ::grpc::Status& s) {}
-  virtual void OnReadInitialMetadataDone(bool ok) {}
+  virtual void OnDone(const ::grpc::Status& /*s*/) {}
+  virtual void OnReadInitialMetadataDone(bool /*ok*/) {}
 
  private:
   friend class ClientCallbackUnary;
@@ -416,7 +421,7 @@ class ClientCallbackReaderWriterImpl
     : public experimental::ClientCallbackReaderWriter<Request, Response> {
  public:
   // always allocated against a call arena, no memory free required
-  static void operator delete(void* ptr, std::size_t size) {
+  static void operator delete(void* /*ptr*/, std::size_t size) {
     assert(size == sizeof(ClientCallbackReaderWriterImpl));
   }
 
@@ -490,7 +495,7 @@ class ClientCallbackReaderWriterImpl
       call_.PerformOps(&writes_done_ops_);
     }
 
-    finish_tag_.Set(call_.call(), [this](bool ok) { MaybeFinish(); },
+    finish_tag_.Set(call_.call(), [this](bool /*ok*/) { MaybeFinish(); },
                     &finish_ops_);
     finish_ops_.ClientRecvStatus(context_, &finish_status_);
     finish_ops_.set_core_cq_tag(&finish_tag_);
@@ -628,7 +633,7 @@ class ClientCallbackReaderImpl
     : public experimental::ClientCallbackReader<Response> {
  public:
   // always allocated against a call arena, no memory free required
-  static void operator delete(void* ptr, std::size_t size) {
+  static void operator delete(void* /*ptr*/, std::size_t size) {
     assert(size == sizeof(ClientCallbackReaderImpl));
   }
 
@@ -682,7 +687,7 @@ class ClientCallbackReaderImpl
       call_.PerformOps(&read_ops_);
     }
 
-    finish_tag_.Set(call_.call(), [this](bool ok) { MaybeFinish(); },
+    finish_tag_.Set(call_.call(), [this](bool /*ok*/) { MaybeFinish(); },
                     &finish_ops_);
     finish_ops_.ClientRecvStatus(context_, &finish_status_);
     finish_ops_.set_core_cq_tag(&finish_tag_);
@@ -768,7 +773,7 @@ class ClientCallbackWriterImpl
     : public experimental::ClientCallbackWriter<Request> {
  public:
   // always allocated against a call arena, no memory free required
-  static void operator delete(void* ptr, std::size_t size) {
+  static void operator delete(void* /*ptr*/, std::size_t size) {
     assert(size == sizeof(ClientCallbackWriterImpl));
   }
 
@@ -830,7 +835,7 @@ class ClientCallbackWriterImpl
       call_.PerformOps(&writes_done_ops_);
     }
 
-    finish_tag_.Set(call_.call(), [this](bool ok) { MaybeFinish(); },
+    finish_tag_.Set(call_.call(), [this](bool /*ok*/) { MaybeFinish(); },
                     &finish_ops_);
     finish_ops_.ClientRecvStatus(context_, &finish_status_);
     finish_ops_.set_core_cq_tag(&finish_tag_);
@@ -956,7 +961,7 @@ class ClientCallbackWriterFactory {
 class ClientCallbackUnaryImpl final : public experimental::ClientCallbackUnary {
  public:
   // always allocated against a call arena, no memory free required
-  static void operator delete(void* ptr, std::size_t size) {
+  static void operator delete(void* /*ptr*/, std::size_t size) {
     assert(size == sizeof(ClientCallbackUnaryImpl));
   }
 
@@ -985,7 +990,7 @@ class ClientCallbackUnaryImpl final : public experimental::ClientCallbackUnary {
     start_ops_.set_core_cq_tag(&start_tag_);
     call_.PerformOps(&start_ops_);
 
-    finish_tag_.Set(call_.call(), [this](bool ok) { MaybeFinish(); },
+    finish_tag_.Set(call_.call(), [this](bool /*ok*/) { MaybeFinish(); },
                     &finish_ops_);
     finish_ops_.ClientRecvStatus(context_, &finish_status_);
     finish_ops_.set_core_cq_tag(&finish_tag_);

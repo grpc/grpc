@@ -26,6 +26,7 @@
 #include "src/core/ext/filters/client_channel/subchannel_pool_interface.h"
 #include "src/core/lib/backoff/backoff.h"
 #include "src/core/lib/channel/channel_stack.h"
+#include "src/core/lib/gpr/time_precise.h"
 #include "src/core/lib/gprpp/arena.h"
 #include "src/core/lib/gprpp/map.h"
 #include "src/core/lib/gprpp/ref_counted.h"
@@ -104,7 +105,7 @@ class SubchannelCall {
     RefCountedPtr<ConnectedSubchannel> connected_subchannel;
     grpc_polling_entity* pollent;
     grpc_slice path;
-    gpr_timespec start_time;
+    gpr_cycle_counter start_time;
     grpc_millis deadline;
     Arena* arena;
     grpc_call_context_element* context;

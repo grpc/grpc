@@ -24,7 +24,6 @@
 #
 
 load("//bazel:cc_grpc_library.bzl", "cc_grpc_library")
-load("@build_bazel_rules_apple//apple:resources.bzl", "apple_resource_bundle")
 load("@upb//bazel:upb_proto_library.bzl", "upb_proto_library")
 load("@build_bazel_rules_apple//apple:ios.bzl", "ios_unit_test")
 
@@ -239,19 +238,13 @@ def grpc_cc_binary(name, srcs = [], deps = [], external_deps = [], args = [], da
     )
 
 def grpc_generate_one_off_targets():
-    apple_resource_bundle(
-        # The choice of name is signicant here, since it determines the bundle name.
-        name = "gRPCCertificates",
-        resources = ["etc/roots.pem"],
-    )
-
     # In open-source, grpc_objc* libraries depend directly on //:grpc
     native.alias(
         name = "grpc_objc",
         actual = "//:grpc",
     )
 
-def grpc_objc_use_cronet_config():
+def grpc_generate_objc_one_off_targets():
     pass
 
 def grpc_sh_test(name, srcs, args = [], data = []):
@@ -269,13 +262,22 @@ def grpc_sh_binary(name, srcs, data = []):
         data = data,
     )
 
-def grpc_py_binary(name, srcs, data = [], deps = [], external_deps = [], testonly = False):
+def grpc_py_binary(name,
+                   srcs,
+                   data = [],
+                   deps = [],
+                   external_deps = [],
+                   testonly = False,
+                   python_version = "PY2",
+                   **kwargs):
     native.py_binary(
         name = name,
         srcs = srcs,
         testonly = testonly,
         data = data,
         deps = deps + _get_external_deps(external_deps),
+        python_version = python_version,
+        **kwargs
     )
 
 def grpc_package(name, visibility = "private", features = []):
@@ -296,7 +298,7 @@ def grpc_package(name, visibility = "private", features = []):
 
 def grpc_objc_library(
         name,
-        srcs,
+        srcs = [],
         hdrs = [],
         textual_hdrs = [],
         data = [],
@@ -332,4 +334,11 @@ def grpc_objc_library(
     
 def grpc_upb_proto_library(name, deps):
     upb_proto_library(name = name, deps = deps)
+
+
+def python_config_settings():
+    native.config_setting(
+        name = "python3",
+        flag_values = {"@bazel_tools//tools/python:python_version": "PY3"},
+    )
 
