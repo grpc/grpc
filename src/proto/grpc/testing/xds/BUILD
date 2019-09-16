@@ -17,7 +17,7 @@ licenses(["notice"])  # Apache v2
 load("//bazel:grpc_build_system.bzl", "grpc_package", "grpc_proto_library")
 
 grpc_package(
-    name = "lb",
+    name = "xds",
     visibility = "public",
 )
 
