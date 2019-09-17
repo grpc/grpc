@@ -110,6 +110,8 @@ class PythonArtifact:
         self.arch = arch
         self.labels = ['artifact', 'python', platform, arch, py_version]
         self.py_version = py_version
+        if 'manylinux' in platform:
+            self.labels.append('linux')
 
     def pre_build_jobspecs(self):
         return []
