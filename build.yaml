@@ -217,7 +217,6 @@ filegroups:
   - src/core/lib/gpr/log_linux.cc
   - src/core/lib/gpr/log_posix.cc
   - src/core/lib/gpr/log_windows.cc
-  - src/core/lib/gpr/mpscq.cc
   - src/core/lib/gpr/murmur_hash.cc
   - src/core/lib/gpr/string.cc
   - src/core/lib/gpr/string_posix.cc
@@ -239,6 +238,7 @@ filegroups:
   - src/core/lib/gprpp/fork.cc
   - src/core/lib/gprpp/global_config_env.cc
   - src/core/lib/gprpp/host_port.cc
+  - src/core/lib/gprpp/mpscq.cc
   - src/core/lib/gprpp/thd_posix.cc
   - src/core/lib/gprpp/thd_windows.cc
   - src/core/lib/profiling/basic_timers.cc
@@ -268,7 +268,6 @@ filegroups:
   - src/core/lib/gpr/alloc.h
   - src/core/lib/gpr/arena.h
   - src/core/lib/gpr/env.h
-  - src/core/lib/gpr/mpscq.h
   - src/core/lib/gpr/murmur_hash.h
   - src/core/lib/gpr/spinlock.h
   - src/core/lib/gpr/string.h
@@ -292,6 +291,7 @@ filegroups:
   - src/core/lib/gprpp/manual_constructor.h
   - src/core/lib/gprpp/map.h
   - src/core/lib/gprpp/memory.h
+  - src/core/lib/gprpp/mpscq.h
   - src/core/lib/gprpp/pair.h
   - src/core/lib/gprpp/sync.h
   - src/core/lib/gprpp/thd.h
@@ -2741,17 +2741,6 @@ targets:
   - grpc_test_util_unsecure
   - grpc_unsecure
   uses_polling: false
-- name: gpr_mpscq_test
-  cpu_cost: 30
-  build: test
-  language: c
-  src:
-  - test/core/gpr/mpscq_test.cc
-  deps:
-  - gpr
-  - grpc_test_util_unsecure
-  - grpc_unsecure
-  uses_polling: false
 - name: gpr_spinlock_test
   cpu_cost: 3
   build: test
@@ -5003,6 +4992,17 @@ targets:
   - gpr
   args:
   - --generated_file_path=gens/src/proto/grpc/testing/
+  uses_polling: false
+- name: gprpp_mpscq_test
+  cpu_cost: 30
+  build: test
+  language: c++
+  src:
+  - test/core/gprpp/mpscq_test.cc
+  deps:
+  - gpr
+  - grpc_test_util_unsecure
+  - grpc_unsecure
   uses_polling: false
 - name: grpc_alts_credentials_options_test
   build: test
