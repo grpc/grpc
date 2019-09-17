@@ -730,6 +730,9 @@ int main(int argc, char** argv) {
     g_fake_non_responsive_dns_server_port = grpc_pick_unused_port_or_die();
     grpc::testing::FakeNonResponsiveDNSServer fake_non_responsive_dns_server(
         g_fake_non_responsive_dns_server_port);
+    if (FLAGS_inject_broken_nameserver_list == "True") {
+      grpc_ares_test_only_inject_config = InjectBrokenNameServerList;
+    }
     result = RUN_ALL_TESTS();
   }
   grpc_shutdown();
