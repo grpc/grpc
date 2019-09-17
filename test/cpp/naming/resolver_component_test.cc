@@ -585,7 +585,6 @@ void RunResolvesRelevantRecordsTest(
           "resolver_component_test: --inject_broken_nameserver_list: %s",
           FLAGS_inject_broken_nameserver_list.c_str());
   if (FLAGS_inject_broken_nameserver_list == "True") {
-    grpc_ares_test_only_inject_config = InjectBrokenNameServerList;
     GPR_ASSERT(gpr_asprintf(&whole_uri, "dns:///%s", target_name));
   } else if (FLAGS_inject_broken_nameserver_list == "False") {
     gpr_log(GPR_INFO, "Specifying authority in uris to: %s",
