@@ -905,25 +905,25 @@ static void channel_connectivity_changed(void* cd, grpc_error* error) {
   }
 }
 
-static grpc_error* init_call_elem(grpc_call_element* elem,
-                                  const grpc_call_element_args* args) {
+static grpc_error* server_init_call_elem(grpc_call_element* elem,
+                                         const grpc_call_element_args* args) {
   channel_data* chand = static_cast<channel_data*>(elem->channel_data);
   server_ref(chand->server);
   new (elem->call_data) call_data(elem, *args);
   return GRPC_ERROR_NONE;
 }
 
-static void destroy_call_elem(grpc_call_element* elem,
-                              const grpc_call_final_info* final_info,
-                              grpc_closure* ignored) {
+static void server_destroy_call_elem(grpc_call_element* elem,
+                                     const grpc_call_final_info* final_info,
+                                     grpc_closure* ignored) {
   call_data* calld = static_cast<call_data*>(elem->call_data);
   calld->~call_data();
   channel_data* chand = static_cast<channel_data*>(elem->channel_data);
   server_unref(chand->server);
 }
 
-static grpc_error* init_channel_elem(grpc_channel_element* elem,
-                                     grpc_channel_element_args* args) {
+static grpc_error* server_init_channel_elem(grpc_channel_element* elem,
+                                            grpc_channel_element_args* args) {
   channel_data* chand = static_cast<channel_data*>(elem->channel_data);
   GPR_ASSERT(args->is_first);
   GPR_ASSERT(!args->is_last);
@@ -938,7 +938,7 @@ static grpc_error* init_channel_elem(grpc_channel_element* elem,
   return GRPC_ERROR_NONE;
 }
 
-static void destroy_channel_elem(grpc_channel_element* elem) {
+static void server_destroy_channel_elem(grpc_channel_element* elem) {
   size_t i;
   channel_data* chand = static_cast<channel_data*>(elem->channel_data);
   if (chand->registered_methods) {
@@ -970,12 +970,12 @@ const grpc_channel_filter grpc_server_top_filter = {
     server_start_transport_stream_op_batch,
     grpc_channel_next_op,
     sizeof(call_data),
-    init_call_elem,
+    server_init_call_elem,
     grpc_call_stack_ignore_set_pollset_or_pollset_set,
-    destroy_call_elem,
+    server_destroy_call_elem,
     sizeof(channel_data),
-    init_channel_elem,
-    destroy_channel_elem,
+    server_init_channel_elem,
+    server_destroy_channel_elem,
     grpc_channel_next_get_info,
     "server",
 };
