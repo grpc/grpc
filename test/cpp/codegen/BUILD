@@ -71,7 +71,6 @@ grpc_cc_binary(
         "//test/core/util:grpc_test_util",
         "//test/cpp/util:test_config",
     ],
-    uses_polling = False,
 )
 
 genrule(
