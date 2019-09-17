@@ -816,6 +816,9 @@ class SockToPolledFdMap {
     SockToPolledFdMap* map = static_cast<SockToPolledFdMap*>(user_data);
     GrpcPolledFdWindows* polled_fd = map->LookupPolledFd(s);
     map->RemoveEntry(s);
+    // This trace log should crash in C# DNS resolution w/tracing test.
+    GRPC_CARES_TRACE_LOG("CloseSocket called for socket: %s",
+                         polled_fd->GetName());
     // If a gRPC polled fd has not made it in to the driver's list yet, then
     // the driver has not and will never see this socket.
     if (!polled_fd->gotten_into_driver_list()) {
