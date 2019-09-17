@@ -176,7 +176,7 @@ class ChannelData {
 
   int NumExternalConnectivityWatchers() const {
     MutexLock lock(&external_watchers_mu_);
-    return external_watchers_.size();
+    return static_cast<int>(external_watchers_.size());
   }
 
  private:
