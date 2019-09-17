@@ -1111,11 +1111,16 @@ def build_interop_image_jobspec(language, tag=None):
     if language.safename == 'php' and os.path.exists(host_file):
         env['BUILD_INTEROP_DOCKER_EXTRA_ARGS'] = \
           '-v %s:/root/.composer/auth.json:ro' % host_file
+    shortname = 'build_docker_%s' % (language)
+    # the log file name needs to match the generated report file name
+    # to be displayed correctly by sponge/resultstore UI.
+    logfilename = _DOCKER_BUILD_XML_REPORT.replace('sponge_log.xml', '%s/sponge_log.log' % shortname)
     build_job = jobset.JobSpec(
         cmdline=['tools/run_tests/dockerize/build_interop_image.sh'],
         environ=env,
-        shortname='build_docker_%s' % (language),
-        timeout_seconds=30 * 60)
+        shortname=shortname,
+        timeout_seconds=30 * 60,
+        logfilename=logfilename)
     build_job.tag = tag
     return build_job
 
