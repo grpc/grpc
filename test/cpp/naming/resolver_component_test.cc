@@ -584,12 +584,7 @@ void RunResolvesRelevantRecordsTest(
   gpr_log(GPR_DEBUG,
           "resolver_component_test: --inject_broken_nameserver_list: %s",
           FLAGS_inject_broken_nameserver_list.c_str());
-  grpc_core::UniquePtr<grpc::testing::FakeNonResponsiveDNSServer>
-      fake_non_responsive_dns_server;
   if (FLAGS_inject_broken_nameserver_list == "True") {
-    fake_non_responsive_dns_server.reset(
-        grpc_core::New<grpc::testing::FakeNonResponsiveDNSServer>(
-            g_fake_non_responsive_dns_server_port));
     grpc_ares_test_only_inject_config = InjectBrokenNameServerList;
     GPR_ASSERT(gpr_asprintf(&whole_uri, "dns:///%s", target_name));
   } else if (FLAGS_inject_broken_nameserver_list == "False") {
@@ -730,8 +725,12 @@ int main(int argc, char** argv) {
     gpr_log(GPR_ERROR, "Missing target_name param.");
     abort();
   }
-  g_fake_non_responsive_dns_server_port = grpc_pick_unused_port_or_die();
-  auto result = RUN_ALL_TESTS();
+  auto result = 0;
+  {
+    g_fake_non_responsive_dns_server_port = grpc_pick_unused_port_or_die();
+    grpc::testing::FakeNonResponsiveDNSServer fake_non_responsive_dns_server(g_fake_non_responsive_dns_server_port);
+    result = RUN_ALL_TESTS();
+  }
   grpc_shutdown();
   return result;
 }
