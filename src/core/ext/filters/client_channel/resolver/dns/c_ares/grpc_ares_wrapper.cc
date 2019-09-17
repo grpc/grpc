@@ -643,7 +643,8 @@ void grpc_dns_lookup_ares_continue_after_check_localhost_and_ip_literals_locked(
   return;
 
 error_cleanup:
-  GRPC_CLOSURE_SCHED(r->on_done, error);
+  r->error = error;
+  grpc_ares_complete_request_locked(r);
 }
 
 static bool inner_resolve_as_ip_literal_locked(

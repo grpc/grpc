@@ -133,7 +133,7 @@ static grpc_ares_request* my_dns_lookup_ares_locked(
   return nullptr;
 }
 
-static void my_cancel_ares_request_locked(grpc_ares_request* request) {
+static void my_ares_request_destroy_locked(grpc_ares_request* request) {
   if (request != nullptr) {
     iomgr_ares_request_destroy_locked(request);
   }
@@ -161,6 +161,7 @@ int main(int argc, char** argv) {
   iomgr_cancel_ares_request_locked = grpc_cancel_ares_request_locked;
   iomgr_ares_request_destroy_locked = grpc_ares_request_destroy_locked;
   grpc_dns_lookup_ares_locked = my_dns_lookup_ares_locked;
+  grpc_ares_request_destroy_locked = my_ares_request_destroy_locked;
   grpc_cancel_ares_request_locked = my_cancel_ares_request_locked;
 
   int was_cancelled1;
