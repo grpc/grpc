@@ -814,6 +814,9 @@ class SockToPolledFdMap {
     SockToPolledFdMap* map = static_cast<SockToPolledFdMap*>(user_data);
     GrpcPolledFdWindows* polled_fd = map->LookupPolledFd(s);
     map->RemoveEntry(s);
+    // See https://github.com/grpc/grpc/pull/20284, this trace log is
+    // intentionally placed to attempt to trigger a crash in case of a
+    // use after free on polled_fd.
     GRPC_CARES_TRACE_LOG("CloseSocket called for socket: %s",
                          polled_fd->GetName());
     // If a gRPC polled fd has not made it in to the driver's list yet, then
