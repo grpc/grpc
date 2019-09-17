@@ -94,7 +94,7 @@ struct grpc_tls_credential_reload_config
    * grpc_tls_credential_reload_config. It is necessary to implement the C
    * schedule and cancel functions, given the schedule or cancel function in a
    * wrapped language. **/
-  void* context_;
+  void* context_ = nullptr;
   /** config-specific, read-only user data that works for all channels created
      with a credential using the config. */
   void* config_user_data_;
@@ -162,7 +162,7 @@ struct grpc_tls_server_authorization_check_config
    * grpc_tls_server_authorization_check_config. It is necessary to implement
    * the C schedule and cancel functions, given the schedule or cancel function
    * in a wrapped language. **/
-  void* context_;
+  void* context_ = nullptr;
   /** config-specific, read-only user data that works for all channels created
      with a Credential using the config. */
   void* config_user_data_;
