@@ -12,8 +12,9 @@ gRPC C++ - Building from source
 If you plan to build from source and run tests, install the following as well:
 ```sh
  $ [sudo] apt-get install libgflags-dev libgtest-dev
- $ [sudo] apt-get install clang libc++-dev
+ $ [sudo] apt-get install clang-5.0 libc++-dev
 ```
+Lastly, see the Protoc section below if you do not yet have the protoc compiler installed.
 
 ## MacOS
 
@@ -46,6 +47,7 @@ installed by `brew` is being used:
 ```sh
  $ LIBTOOL=glibtool LIBTOOLIZE=glibtoolize make
 ```
+Lastly, see the Protoc section below if you do not yet have the protoc compiler.
 
 ## Windows
 
@@ -111,6 +113,12 @@ for guidance on how to add gRPC as a dependency to a C++ application (there are 
 From the grpc repository root
 ```sh
  $ make
+```
+NOTE: if you get an error on linux such as 'aclocal-1.15: command not found', which can happen if you ran 'make' before installing the pre-reqs, try the following:
+```sh
+$ git clean -f -d -x && git submodule foreach --recursive git clean -f -d -x
+$ [sudo] apt-get install build-essential autoconf libtool pkg-config
+$ make
 ```
 
 ## bazel

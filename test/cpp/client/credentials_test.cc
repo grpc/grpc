@@ -119,7 +119,7 @@ TEST_F(CredentialsTest, StsCredentialsOptionsJson) {
   I'm not a valid JSON.
   )";
   EXPECT_EQ(
-      grpc::INVALID_ARGUMENT,
+      grpc::StatusCode::INVALID_ARGUMENT,
       grpc::experimental::StsCredentialsOptionsFromJson(invalid_json, &options)
           .error_code());
 
@@ -130,7 +130,7 @@ TEST_F(CredentialsTest, StsCredentialsOptionsJson) {
   })";
   auto status = grpc::experimental::StsCredentialsOptionsFromJson(
       invalid_json_missing_subject_token_type, &options);
-  EXPECT_EQ(grpc::INVALID_ARGUMENT, status.error_code());
+  EXPECT_EQ(grpc::StatusCode::INVALID_ARGUMENT, status.error_code());
   EXPECT_THAT(status.error_message(),
               ::testing::HasSubstr("subject_token_type"));
 
@@ -141,7 +141,7 @@ TEST_F(CredentialsTest, StsCredentialsOptionsJson) {
   })";
   status = grpc::experimental::StsCredentialsOptionsFromJson(
       invalid_json_missing_subject_token_path, &options);
-  EXPECT_EQ(grpc::INVALID_ARGUMENT, status.error_code());
+  EXPECT_EQ(grpc::StatusCode::INVALID_ARGUMENT, status.error_code());
   EXPECT_THAT(status.error_message(),
               ::testing::HasSubstr("subject_token_path"));
 
@@ -152,7 +152,7 @@ TEST_F(CredentialsTest, StsCredentialsOptionsJson) {
   })";
   status = grpc::experimental::StsCredentialsOptionsFromJson(
       invalid_json_missing_token_exchange_uri, &options);
-  EXPECT_EQ(grpc::INVALID_ARGUMENT, status.error_code());
+  EXPECT_EQ(grpc::StatusCode::INVALID_ARGUMENT, status.error_code());
   EXPECT_THAT(status.error_message(),
               ::testing::HasSubstr("token_exchange_service_uri"));
 }
@@ -162,7 +162,7 @@ TEST_F(CredentialsTest, StsCredentialsOptionsFromEnv) {
   gpr_unsetenv("STS_CREDENTIALS");
   grpc::experimental::StsCredentialsOptions options;
   auto status = grpc::experimental::StsCredentialsOptionsFromEnv(&options);
-  EXPECT_EQ(grpc::NOT_FOUND, status.error_code());
+  EXPECT_EQ(grpc::StatusCode::NOT_FOUND, status.error_code());
 
   // Set env and check for success.
   const char valid_json[] = R"(

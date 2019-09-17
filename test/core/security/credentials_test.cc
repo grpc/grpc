@@ -149,7 +149,7 @@ static char* test_json_key_str(void) {
 
 static grpc_httpcli_response http_response(int status, const char* body) {
   grpc_httpcli_response response;
-  memset(&response, 0, sizeof(grpc_httpcli_response));
+  response = {};
   response.status = status;
   response.body = gpr_strdup(const_cast<char*>(body));
   response.body_length = strlen(body);
@@ -161,7 +161,7 @@ static grpc_httpcli_response http_response(int status, const char* body) {
 static void test_empty_md_array(void) {
   grpc_core::ExecCtx exec_ctx;
   grpc_credentials_mdelem_array md_array;
-  memset(&md_array, 0, sizeof(md_array));
+  md_array = {};
   GPR_ASSERT(md_array.md == nullptr);
   GPR_ASSERT(md_array.size == 0);
   grpc_credentials_mdelem_array_destroy(&md_array);
@@ -170,7 +170,7 @@ static void test_empty_md_array(void) {
 static void test_add_to_empty_md_array(void) {
   grpc_core::ExecCtx exec_ctx;
   grpc_credentials_mdelem_array md_array;
-  memset(&md_array, 0, sizeof(md_array));
+  md_array = {};
   const char* key = "hello";
   const char* value = "there blah blah blah blah blah blah blah";
   grpc_mdelem md = grpc_mdelem_from_slices(
@@ -185,7 +185,7 @@ static void test_add_to_empty_md_array(void) {
 static void test_add_abunch_to_md_array(void) {
   grpc_core::ExecCtx exec_ctx;
   grpc_credentials_mdelem_array md_array;
-  memset(&md_array, 0, sizeof(md_array));
+  md_array = {};
   const char* key = "hello";
   const char* value = "there blah blah blah blah blah blah blah";
   grpc_mdelem md = grpc_mdelem_from_slices(

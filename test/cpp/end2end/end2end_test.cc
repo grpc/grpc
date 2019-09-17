@@ -16,9 +16,6 @@
  *
  */
 
-#include <mutex>
-#include <thread>
-
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
@@ -35,7 +32,11 @@
 #include <grpcpp/server_builder.h>
 #include <grpcpp/server_context.h>
 
+#include <mutex>
+#include <thread>
+
 #include "src/core/ext/filters/client_channel/backup_poller.h"
+#include "src/core/lib/gpr/env.h"
 #include "src/core/lib/iomgr/iomgr.h"
 #include "src/core/lib/security/credentials/credentials.h"
 #include "src/proto/grpc/testing/duplicate/echo_duplicate.grpc.pb.h"
@@ -254,6 +255,8 @@ void TestScenario::Log() const {
 
 class End2endTest : public ::testing::TestWithParam<TestScenario> {
  protected:
+  static void SetUpTestCase() { grpc_init(); }
+  static void TearDownTestCase() { grpc_shutdown(); }
   End2endTest()
       : is_server_started_(false),
         kMaxMessageSize_(8192),
@@ -338,7 +341,10 @@ class End2endTest : public ::testing::TestWithParam<TestScenario> {
         kMaxMessageSize_);  // For testing max message size.
   }
 
-  void ResetChannel() {
+  void ResetChannel(
+      std::vector<
+          std::unique_ptr<experimental::ClientInterceptorFactoryInterface>>
+          interceptor_creators = {}) {
     if (!is_server_started_) {
       StartServer(std::shared_ptr<AuthMetadataProcessor>());
     }
@@ -358,20 +364,26 @@ class End2endTest : public ::testing::TestWithParam<TestScenario> {
       } else {
         channel_ = CreateCustomChannelWithInterceptors(
             server_address_.str(), channel_creds, args,
-            CreateDummyClientInterceptors());
+            interceptor_creators.empty() ? CreateDummyClientInterceptors()
+                                         : std::move(interceptor_creators));
       }
     } else {
       if (!GetParam().use_interceptors) {
         channel_ = server_->InProcessChannel(args);
       } else {
         channel_ = server_->experimental().InProcessChannelWithInterceptors(
-            args, CreateDummyClientInterceptors());
+            args, interceptor_creators.empty()
+                      ? CreateDummyClientInterceptors()
+                      : std::move(interceptor_creators));
       }
     }
   }
 
-  void ResetStub() {
-    ResetChannel();
+  void ResetStub(
+      std::vector<
+          std::unique_ptr<experimental::ClientInterceptorFactoryInterface>>
+          interceptor_creators = {}) {
+    ResetChannel(std::move(interceptor_creators));
     if (GetParam().use_proxy) {
       proxy_service_.reset(new Proxy(channel_));
       int port = grpc_pick_unused_port_or_die();
@@ -1802,6 +1814,90 @@ TEST_P(SecureEnd2endTest, SetPerCallCredentials) {
                                "fake_selector"));
 }
 
+class CredentialsInterceptor : public experimental::Interceptor {
+ public:
+  CredentialsInterceptor(experimental::ClientRpcInfo* info) : info_(info) {}
+
+  void Intercept(experimental::InterceptorBatchMethods* methods) {
+    if (methods->QueryInterceptionHookPoint(
+            experimental::InterceptionHookPoints::PRE_SEND_INITIAL_METADATA)) {
+      std::shared_ptr<CallCredentials> creds =
+          GoogleIAMCredentials("fake_token", "fake_selector");
+      info_->client_context()->set_credentials(creds);
+    }
+    methods->Proceed();
+  }
+
+ private:
+  experimental::ClientRpcInfo* info_ = nullptr;
+};
+
+class CredentialsInterceptorFactory
+    : public experimental::ClientInterceptorFactoryInterface {
+  CredentialsInterceptor* CreateClientInterceptor(
+      experimental::ClientRpcInfo* info) {
+    return new CredentialsInterceptor(info);
+  }
+};
+
+TEST_P(SecureEnd2endTest, CallCredentialsInterception) {
+  MAYBE_SKIP_TEST;
+  if (!GetParam().use_interceptors) {
+    return;
+  }
+  std::vector<std::unique_ptr<experimental::ClientInterceptorFactoryInterface>>
+      interceptor_creators;
+  interceptor_creators.push_back(std::unique_ptr<CredentialsInterceptorFactory>(
+      new CredentialsInterceptorFactory()));
+  ResetStub(std::move(interceptor_creators));
+  EchoRequest request;
+  EchoResponse response;
+  ClientContext context;
+
+  request.set_message("Hello");
+  request.mutable_param()->set_echo_metadata(true);
+
+  Status s = stub_->Echo(&context, request, &response);
+  EXPECT_EQ(request.message(), response.message());
+  EXPECT_TRUE(s.ok());
+  EXPECT_TRUE(MetadataContains(context.GetServerTrailingMetadata(),
+                               GRPC_IAM_AUTHORIZATION_TOKEN_METADATA_KEY,
+                               "fake_token"));
+  EXPECT_TRUE(MetadataContains(context.GetServerTrailingMetadata(),
+                               GRPC_IAM_AUTHORITY_SELECTOR_METADATA_KEY,
+                               "fake_selector"));
+}
+
+TEST_P(SecureEnd2endTest, CallCredentialsInterceptionWithSetCredentials) {
+  MAYBE_SKIP_TEST;
+  if (!GetParam().use_interceptors) {
+    return;
+  }
+  std::vector<std::unique_ptr<experimental::ClientInterceptorFactoryInterface>>
+      interceptor_creators;
+  interceptor_creators.push_back(std::unique_ptr<CredentialsInterceptorFactory>(
+      new CredentialsInterceptorFactory()));
+  ResetStub(std::move(interceptor_creators));
+  EchoRequest request;
+  EchoResponse response;
+  ClientContext context;
+  std::shared_ptr<CallCredentials> creds1 =
+      GoogleIAMCredentials("wrong_token", "wrong_selector");
+  context.set_credentials(creds1);
+  request.set_message("Hello");
+  request.mutable_param()->set_echo_metadata(true);
+
+  Status s = stub_->Echo(&context, request, &response);
+  EXPECT_EQ(request.message(), response.message());
+  EXPECT_TRUE(s.ok());
+  EXPECT_TRUE(MetadataContains(context.GetServerTrailingMetadata(),
+                               GRPC_IAM_AUTHORIZATION_TOKEN_METADATA_KEY,
+                               "fake_token"));
+  EXPECT_TRUE(MetadataContains(context.GetServerTrailingMetadata(),
+                               GRPC_IAM_AUTHORITY_SELECTOR_METADATA_KEY,
+                               "fake_selector"));
+}
+
 TEST_P(SecureEnd2endTest, OverridePerCallCredentials) {
   MAYBE_SKIP_TEST;
   ResetStub();
@@ -2106,6 +2202,13 @@ std::vector<TestScenario> CreateTestScenarios(bool use_proxy,
                                               bool test_callback_server) {
   std::vector<TestScenario> scenarios;
   std::vector<grpc::string> credentials_types;
+
+  GPR_GLOBAL_CONFIG_SET(grpc_client_channel_backup_poll_interval_ms, 200);
+#if TARGET_OS_IPHONE
+  // Workaround Apple CFStream bug
+  gpr_setenv("grpc_cfstream", "0");
+#endif
+
   if (test_secure) {
     credentials_types =
         GetCredentialsProvider()->GetSecureCredentialsTypeList();
@@ -2173,12 +2276,8 @@ INSTANTIATE_TEST_CASE_P(
 }  // namespace grpc
 
 int main(int argc, char** argv) {
-  GPR_GLOBAL_CONFIG_SET(grpc_client_channel_backup_poll_interval_ms, 200);
   grpc::testing::TestEnvironment env(argc, argv);
-  // The grpc_init is to cover the MAYBE_SKIP_TEST.
-  grpc_init();
   ::testing::InitGoogleTest(&argc, argv);
   int ret = RUN_ALL_TESTS();
-  grpc_shutdown();
   return ret;
 }

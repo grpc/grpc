@@ -24,6 +24,7 @@
 #include <grpc/grpc.h>
 
 #include "src/core/lib/channel/channel_trace.h"
+#include "src/core/lib/gpr/time_precise.h"
 #include "src/core/lib/gprpp/inlined_vector.h"
 #include "src/core/lib/gprpp/manual_constructor.h"
 #include "src/core/lib/gprpp/map.h"
@@ -58,13 +59,8 @@ namespace channelz {
 grpc_arg MakeParentUuidArg(intptr_t parent_uuid);
 intptr_t GetParentUuidFromArgs(const grpc_channel_args& args);
 
-// TODO(ncteisen), this only contains the uuids of the children for now,
-// since that is all that is strictly needed. In a future enhancement we will
-// add human readable names as in the channelz.proto
-typedef InlinedVector<intptr_t, 10> ChildRefsList;
-
 class SocketNode;
-typedef InlinedVector<SocketNode*, 10> ChildSocketsList;
+class ListenSocketNode;
 
 namespace testing {
 class CallCountingHelperPeer;
@@ -85,7 +81,10 @@ class BaseNode : public RefCounted<BaseNode> {
     kSocket,
   };
 
-  explicit BaseNode(EntityType type);
+ protected:
+  BaseNode(EntityType type, UniquePtr<char> name);
+
+ public:
   virtual ~BaseNode();
 
   // All children must implement this function.
@@ -97,12 +96,14 @@ class BaseNode : public RefCounted<BaseNode> {
 
   EntityType type() const { return type_; }
   intptr_t uuid() const { return uuid_; }
+  const char* name() const { return name_.get(); }
 
  private:
   // to allow the ChannelzRegistry to set uuid_ under its lock.
   friend class ChannelzRegistry;
   const EntityType type_;
   intptr_t uuid_;
+  UniquePtr<char> name_;
 };
 
 // This class is a helper class for channelz entities that deal with Channels,
@@ -114,7 +115,6 @@ class BaseNode : public RefCounted<BaseNode> {
 class CallCountingHelper {
  public:
   CallCountingHelper();
-  ~CallCountingHelper();
 
   void RecordCallStarted();
   void RecordCallFailed();
@@ -127,24 +127,38 @@ class CallCountingHelper {
   // testing peer friend.
   friend class testing::CallCountingHelperPeer;
 
+  // TODO(soheil): add a proper PerCPU helper and use it here.
   struct AtomicCounterData {
-    gpr_atm calls_started = 0;
-    gpr_atm calls_succeeded = 0;
-    gpr_atm calls_failed = 0;
-    gpr_atm last_call_started_millis = 0;
-  };
+    // Define the ctors so that we can use this structure in InlinedVector.
+    AtomicCounterData() = default;
+    AtomicCounterData(const AtomicCounterData& that)
+        : calls_started(that.calls_started.Load(MemoryOrder::RELAXED)),
+          calls_succeeded(that.calls_succeeded.Load(MemoryOrder::RELAXED)),
+          calls_failed(that.calls_failed.Load(MemoryOrder::RELAXED)),
+          last_call_started_cycle(
+              that.last_call_started_cycle.Load(MemoryOrder::RELAXED)) {}
+
+    Atomic<intptr_t> calls_started{0};
+    Atomic<intptr_t> calls_succeeded{0};
+    Atomic<intptr_t> calls_failed{0};
+    Atomic<gpr_cycle_counter> last_call_started_cycle{0};
+    // Make sure the size is exactly one cache line.
+    uint8_t padding[GPR_CACHELINE_SIZE - 3 * sizeof(Atomic<intptr_t>) -
+                    sizeof(Atomic<gpr_cycle_counter>)];
+  } GPR_ALIGN_STRUCT(GPR_CACHELINE_SIZE);
 
   struct CounterData {
     intptr_t calls_started = 0;
     intptr_t calls_succeeded = 0;
     intptr_t calls_failed = 0;
-    intptr_t last_call_started_millis = 0;
+    gpr_cycle_counter last_call_started_cycle = 0;
   };
 
   // collects the sharded data into one CounterData struct.
   void CollectData(CounterData* out);
 
-  AtomicCounterData* per_cpu_counter_data_storage_ = nullptr;
+  // Really zero-sized, but 0-sized arrays are illegal on MSVC.
+  InlinedVector<AtomicCounterData, 1> per_cpu_counter_data_storage_;
   size_t num_cores_ = 0;
 };
 
@@ -153,6 +167,10 @@ class ChannelNode : public BaseNode {
  public:
   ChannelNode(UniquePtr<char> target, size_t channel_tracer_max_nodes,
               intptr_t parent_uuid);
+
+  // Returns the string description of the given connectivity state.
+  static const char* GetChannelConnectivityStateChangeString(
+      grpc_connectivity_state state);
 
   intptr_t parent_uuid() const { return parent_uuid_; }
 
@@ -174,9 +192,13 @@ class ChannelNode : public BaseNode {
 
   void SetConnectivityState(grpc_connectivity_state state);
 
+  // TODO(roth): take in a RefCountedPtr to the child channel so we can retrieve
+  // the human-readable name.
   void AddChildChannel(intptr_t child_uuid);
   void RemoveChildChannel(intptr_t child_uuid);
 
+  // TODO(roth): take in a RefCountedPtr to the child subchannel so we can
+  // retrieve the human-readable name.
   void AddChildSubchannel(intptr_t child_uuid);
   void RemoveChildSubchannel(intptr_t child_uuid);
 
@@ -207,12 +229,20 @@ class ChannelNode : public BaseNode {
 class ServerNode : public BaseNode {
  public:
   ServerNode(grpc_server* server, size_t channel_tracer_max_nodes);
+
   ~ServerNode() override;
 
   grpc_json* RenderJson() override;
 
-  char* RenderServerSockets(intptr_t start_socket_id,
-                            intptr_t pagination_limit);
+  char* RenderServerSockets(intptr_t start_socket_id, intptr_t max_results);
+
+  void AddChildSocket(RefCountedPtr<SocketNode> node);
+
+  void RemoveChildSocket(intptr_t child_uuid);
+
+  void AddChildListenSocket(RefCountedPtr<ListenSocketNode> node);
+
+  void RemoveChildListenSocket(intptr_t child_uuid);
 
   // proxy methods to composed classes.
   void AddTraceEvent(ChannelTrace::Severity severity, const grpc_slice& data) {
@@ -229,15 +259,18 @@ class ServerNode : public BaseNode {
   void RecordCallSucceeded() { call_counter_.RecordCallSucceeded(); }
 
  private:
-  grpc_server* server_;
   CallCountingHelper call_counter_;
   ChannelTrace trace_;
+  Mutex child_mu_;  // Guards child maps below.
+  Map<intptr_t, RefCountedPtr<SocketNode>> child_sockets_;
+  Map<intptr_t, RefCountedPtr<ListenSocketNode>> child_listen_sockets_;
 };
 
 // Handles channelz bookkeeping for sockets
 class SocketNode : public BaseNode {
  public:
-  SocketNode(UniquePtr<char> local, UniquePtr<char> remote);
+  SocketNode(UniquePtr<char> local, UniquePtr<char> remote,
+             UniquePtr<char> name);
   ~SocketNode() override {}
 
   grpc_json* RenderJson() override;
@@ -265,10 +298,10 @@ class SocketNode : public BaseNode {
   gpr_atm messages_sent_ = 0;
   gpr_atm messages_received_ = 0;
   gpr_atm keepalives_sent_ = 0;
-  gpr_atm last_local_stream_created_millis_ = 0;
-  gpr_atm last_remote_stream_created_millis_ = 0;
-  gpr_atm last_message_sent_millis_ = 0;
-  gpr_atm last_message_received_millis_ = 0;
+  gpr_atm last_local_stream_created_cycle_ = 0;
+  gpr_atm last_remote_stream_created_cycle_ = 0;
+  gpr_atm last_message_sent_cycle_ = 0;
+  gpr_atm last_message_received_cycle_ = 0;
   UniquePtr<char> local_;
   UniquePtr<char> remote_;
 };
@@ -276,8 +309,7 @@ class SocketNode : public BaseNode {
 // Handles channelz bookkeeping for listen sockets
 class ListenSocketNode : public BaseNode {
  public:
-  // ListenSocketNode takes ownership of host.
-  explicit ListenSocketNode(UniquePtr<char> local_addr);
+  ListenSocketNode(UniquePtr<char> local_addr, UniquePtr<char> name);
   ~ListenSocketNode() override {}
 
   grpc_json* RenderJson() override;

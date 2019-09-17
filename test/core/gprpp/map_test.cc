@@ -29,6 +29,13 @@
 
 namespace grpc_core {
 namespace testing {
+
+#if GRPC_USE_CPP_STD_LIB
+
+TEST(MapTest, Nop) {}
+
+#else
+
 class Payload {
  public:
   Payload() : data_(-1) {}
@@ -436,6 +443,66 @@ TEST_F(MapTest, LowerBound) {
   it = test_map.lower_bound(9);
   EXPECT_EQ(it, test_map.end());
 }
+
+// Test move ctor
+TEST_F(MapTest, MoveCtor) {
+  Map<const char*, Payload, StringLess> test_map;
+  for (int i = 0; i < 5; i++) {
+    test_map.emplace(kKeys[i], Payload(i));
+  }
+  Map<const char*, Payload, StringLess> test_map2 = std::move(test_map);
+  for (int i = 0; i < 5; i++) {
+    EXPECT_EQ(test_map.end(), test_map.find(kKeys[i]));
+    EXPECT_EQ(i, test_map2.find(kKeys[i])->second.data());
+  }
+}
+
+// Test move assignment
+TEST_F(MapTest, MoveAssignment) {
+  Map<const char*, Payload, StringLess> test_map;
+  for (int i = 0; i < 5; i++) {
+    test_map.emplace(kKeys[i], Payload(i));
+  }
+  Map<const char*, Payload, StringLess> test_map2;
+  test_map2.emplace("xxx", Payload(123));
+  test_map2 = std::move(test_map);
+  for (int i = 0; i < 5; i++) {
+    EXPECT_EQ(test_map.end(), test_map.find(kKeys[i]));
+    EXPECT_EQ(i, test_map2.find(kKeys[i])->second.data());
+  }
+  EXPECT_EQ(test_map2.end(), test_map2.find("xxx"));
+}
+
+// Test copy ctor
+TEST_F(MapTest, CopyCtor) {
+  Map<const char*, Payload, StringLess> test_map;
+  for (int i = 0; i < 5; i++) {
+    test_map.emplace(kKeys[i], Payload(i));
+  }
+  Map<const char*, Payload, StringLess> test_map2 = test_map;
+  for (int i = 0; i < 5; i++) {
+    EXPECT_EQ(i, test_map.find(kKeys[i])->second.data());
+    EXPECT_EQ(i, test_map2.find(kKeys[i])->second.data());
+  }
+}
+
+// Test copy assignment
+TEST_F(MapTest, CopyAssignment) {
+  Map<const char*, Payload, StringLess> test_map;
+  for (int i = 0; i < 5; i++) {
+    test_map.emplace(kKeys[i], Payload(i));
+  }
+  Map<const char*, Payload, StringLess> test_map2;
+  test_map2.emplace("xxx", Payload(123));
+  test_map2 = test_map;
+  for (int i = 0; i < 5; i++) {
+    EXPECT_EQ(i, test_map.find(kKeys[i])->second.data());
+    EXPECT_EQ(i, test_map2.find(kKeys[i])->second.data());
+  }
+  EXPECT_EQ(test_map2.end(), test_map2.find("xxx"));
+}
+
+#endif
 
 }  // namespace testing
 }  // namespace grpc_core

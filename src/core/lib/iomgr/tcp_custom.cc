@@ -145,6 +145,7 @@ static void call_read_cb(custom_tcp_endpoint* tcp, grpc_error* error) {
 
 static void custom_read_callback(grpc_custom_socket* socket, size_t nread,
                                  grpc_error* error) {
+  grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
   grpc_core::ExecCtx exec_ctx;
   grpc_slice_buffer garbage;
   custom_tcp_endpoint* tcp = (custom_tcp_endpoint*)socket->endpoint;
@@ -207,6 +208,7 @@ static void endpoint_read(grpc_endpoint* ep, grpc_slice_buffer* read_slices,
 
 static void custom_write_callback(grpc_custom_socket* socket,
                                   grpc_error* error) {
+  grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
   grpc_core::ExecCtx exec_ctx;
   custom_tcp_endpoint* tcp = (custom_tcp_endpoint*)socket->endpoint;
   grpc_closure* cb = tcp->write_cb;
@@ -301,6 +303,7 @@ static void custom_close_callback(grpc_custom_socket* socket) {
     grpc_custom_socket_vtable->destroy(socket);
     gpr_free(socket);
   } else if (socket->endpoint) {
+    grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
     grpc_core::ExecCtx exec_ctx;
     custom_tcp_endpoint* tcp = (custom_tcp_endpoint*)socket->endpoint;
     TCP_UNREF(tcp, "destroy");
@@ -343,6 +346,7 @@ grpc_endpoint* custom_tcp_endpoint_create(grpc_custom_socket* socket,
                                           char* peer_string) {
   custom_tcp_endpoint* tcp =
       (custom_tcp_endpoint*)gpr_malloc(sizeof(custom_tcp_endpoint));
+  grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
   grpc_core::ExecCtx exec_ctx;
 
   if (GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace)) {

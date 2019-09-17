@@ -71,7 +71,7 @@ static void destroy_after_shutdown(void* pollset, grpc_error* error) {
 char* grpc_test_fetch_oauth2_token_with_credentials(
     grpc_call_credentials* creds) {
   oauth2_request request;
-  memset(&request, 0, sizeof(request));
+  request = {};
   grpc_core::ExecCtx exec_ctx;
   grpc_closure destroy_after_shutdown_closure;
   grpc_auth_metadata_context null_ctx = {"", "", nullptr, nullptr};

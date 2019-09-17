@@ -39,6 +39,7 @@
 #include "src/core/ext/filters/client_channel/resolver/fake/fake_resolver.h"
 #include "src/core/ext/filters/client_channel/server_address.h"
 #include "src/core/ext/filters/client_channel/service_config.h"
+#include "src/core/lib/gpr/env.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/iomgr/sockaddr.h"
 #include "src/core/lib/security/credentials/fake/fake_credentials.h"
@@ -378,6 +379,10 @@ class GrpclbEnd2endTest : public ::testing::Test {
     // Make the backup poller poll very frequently in order to pick up
     // updates from all the subchannels's FDs.
     GPR_GLOBAL_CONFIG_SET(grpc_client_channel_backup_poll_interval_ms, 1);
+#if TARGET_OS_IPHONE
+    // Workaround Apple CFStream bug
+    gpr_setenv("grpc_cfstream", "0");
+#endif
     grpc_init();
   }
 
@@ -1618,6 +1623,8 @@ TEST_F(UpdatesTest, ReresolveDeadBackend) {
   addresses.emplace_back(AddressData{balancers_[0]->port_, true, ""});
   addresses.emplace_back(AddressData{backends_[0]->port_, false, ""});
   SetNextResolution(addresses);
+  // Ask channel to connect to trigger resolver creation.
+  channel_->GetState(true);
   // The re-resolution result will contain the addresses of the same balancer
   // and a new fallback backend.
   addresses.clear();
@@ -1669,6 +1676,8 @@ class UpdatesWithClientLoadReportingTest : public GrpclbEnd2endTest {
 };
 
 TEST_F(UpdatesWithClientLoadReportingTest, ReresolveDeadBalancer) {
+  // Ask channel to connect to trigger resolver creation.
+  channel_->GetState(true);
   std::vector<AddressData> addresses;
   addresses.emplace_back(AddressData{balancers_[0]->port_, true, ""});
   SetNextResolution(addresses);

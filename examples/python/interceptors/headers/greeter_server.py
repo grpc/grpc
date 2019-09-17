@@ -14,7 +14,6 @@
 """The Python implementation of the GRPC helloworld.Greeter server."""
 
 from concurrent import futures
-import time
 import logging
 
 import grpc
@@ -22,8 +21,6 @@ import grpc
 import helloworld_pb2
 import helloworld_pb2_grpc
 from request_header_validator_interceptor import RequestHeaderValidatorInterceptor
-
-_ONE_DAY_IN_SECONDS = 60 * 60 * 24
 
 
 class Greeter(helloworld_pb2_grpc.GreeterServicer):
@@ -42,11 +39,7 @@ def serve():
     helloworld_pb2_grpc.add_GreeterServicer_to_server(Greeter(), server)
     server.add_insecure_port('[::]:50051')
     server.start()
-    try:
-        while True:
-            time.sleep(_ONE_DAY_IN_SECONDS)
-    except KeyboardInterrupt:
-        server.stop(0)
+    server.wait_for_termination()
 
 
 if __name__ == '__main__':

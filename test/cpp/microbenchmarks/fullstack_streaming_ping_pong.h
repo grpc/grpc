@@ -65,7 +65,7 @@ static void BM_StreamingPingPong(benchmark::State& state) {
     std::unique_ptr<EchoTestService::Stub> stub(
         EchoTestService::NewStub(fixture->channel()));
 
-    while (state.KeepRunning()) {
+    for (auto _ : state) {
       ServerContext svr_ctx;
       ServerContextMutator svr_ctx_mut(&svr_ctx);
       ServerAsyncReaderWriter<EchoResponse, EchoRequest> response_rw(&svr_ctx);
@@ -180,7 +180,7 @@ static void BM_StreamingPingPongMsgs(benchmark::State& state) {
       need_tags &= ~(1 << i);
     }
 
-    while (state.KeepRunning()) {
+    for (auto _ : state) {
       GPR_TIMER_SCOPE("BenchmarkCycle", 0);
       request_rw->Write(send_request, tag(0));   // Start client send
       response_rw.Read(&recv_request, tag(1));   // Start server recv
@@ -262,7 +262,7 @@ static void BM_StreamingPingPongWithCoalescingApi(benchmark::State& state) {
     std::unique_ptr<EchoTestService::Stub> stub(
         EchoTestService::NewStub(fixture->channel()));
 
-    while (state.KeepRunning()) {
+    for (auto _ : state) {
       ServerContext svr_ctx;
       ServerContextMutator svr_ctx_mut(&svr_ctx);
       ServerAsyncReaderWriter<EchoResponse, EchoRequest> response_rw(&svr_ctx);

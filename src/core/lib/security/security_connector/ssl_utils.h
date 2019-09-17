@@ -31,12 +31,10 @@
 #include "src/core/lib/gprpp/string_view.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/security/security_connector/security_connector.h"
+#include "src/core/lib/security/security_connector/ssl_utils_config.h"
 #include "src/core/tsi/ssl_transport_security.h"
 #include "src/core/tsi/transport_security.h"
 #include "src/core/tsi/transport_security_interface.h"
-
-GPR_GLOBAL_CONFIG_DECLARE_STRING(grpc_default_ssl_roots_file_path);
-GPR_GLOBAL_CONFIG_DECLARE_BOOL(grpc_not_use_system_ssl_roots);
 
 /* --- Util --- */
 
@@ -149,9 +147,15 @@ class PemKeyCertPair {
     return *this;
   }
 
-  // Not copyable.
-  PemKeyCertPair(const PemKeyCertPair&) = delete;
-  PemKeyCertPair& operator=(const PemKeyCertPair&) = delete;
+  // Copyable.
+  PemKeyCertPair(const PemKeyCertPair& other)
+      : private_key_(gpr_strdup(other.private_key())),
+        cert_chain_(gpr_strdup(other.cert_chain())) {}
+  PemKeyCertPair& operator=(const PemKeyCertPair& other) {
+    private_key_ = grpc_core::UniquePtr<char>(gpr_strdup(other.private_key()));
+    cert_chain_ = grpc_core::UniquePtr<char>(gpr_strdup(other.cert_chain()));
+    return *this;
+  }
 
   char* private_key() const { return private_key_.get(); }
   char* cert_chain() const { return cert_chain_.get(); }

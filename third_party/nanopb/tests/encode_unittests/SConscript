@@ -1,5 +1,0 @@
-# Build and run the stand-alone unit tests for the nanopb encoder part.
-
-Import('env')
-p = env.Program(["encode_unittests.c", "$COMMON/unittestproto.pb.c"])
-env.RunTest(p)

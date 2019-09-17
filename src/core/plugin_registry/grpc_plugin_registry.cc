@@ -46,6 +46,10 @@ void grpc_resolver_dns_native_init(void);
 void grpc_resolver_dns_native_shutdown(void);
 void grpc_resolver_sockaddr_init(void);
 void grpc_resolver_sockaddr_shutdown(void);
+void grpc_resolver_xds_init(void);
+void grpc_resolver_xds_shutdown(void);
+void grpc_client_idle_filter_init(void);
+void grpc_client_idle_filter_shutdown(void);
 void grpc_max_age_filter_init(void);
 void grpc_max_age_filter_shutdown(void);
 void grpc_message_size_filter_init(void);
@@ -82,6 +86,10 @@ void grpc_register_built_in_plugins(void) {
                        grpc_resolver_dns_native_shutdown);
   grpc_register_plugin(grpc_resolver_sockaddr_init,
                        grpc_resolver_sockaddr_shutdown);
+  grpc_register_plugin(grpc_resolver_xds_init,
+                       grpc_resolver_xds_shutdown);
+  grpc_register_plugin(grpc_client_idle_filter_init,
+                       grpc_client_idle_filter_shutdown);
   grpc_register_plugin(grpc_max_age_filter_init,
                        grpc_max_age_filter_shutdown);
   grpc_register_plugin(grpc_message_size_filter_init,

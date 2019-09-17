@@ -265,8 +265,8 @@ static void test_static_slice_interning(void) {
 
   for (size_t i = 0; i < GRPC_STATIC_MDSTR_COUNT; i++) {
     GPR_ASSERT(grpc_slice_is_equivalent(
-        grpc_static_slice_table[i],
-        grpc_slice_intern(grpc_static_slice_table[i])));
+        grpc_static_slice_table()[i],
+        grpc_slice_intern(grpc_static_slice_table()[i])));
   }
 }
 
@@ -276,9 +276,9 @@ static void test_static_slice_copy_interning(void) {
   grpc_init();
 
   for (size_t i = 0; i < GRPC_STATIC_MDSTR_COUNT; i++) {
-    grpc_slice copy = grpc_slice_dup(grpc_static_slice_table[i]);
-    GPR_ASSERT(grpc_static_slice_table[i].refcount != copy.refcount);
-    GPR_ASSERT(grpc_static_slice_table[i].refcount ==
+    grpc_slice copy = grpc_slice_dup(grpc_static_slice_table()[i]);
+    GPR_ASSERT(grpc_static_slice_table()[i].refcount != copy.refcount);
+    GPR_ASSERT(grpc_static_slice_table()[i].refcount ==
                grpc_slice_intern(copy).refcount);
     grpc_slice_unref(copy);
   }

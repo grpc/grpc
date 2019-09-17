@@ -192,6 +192,9 @@ class Future(six.with_metaclass(abc.ABCMeta)):
         If the computation has already completed, the callback will be called
         immediately.
 
+        Exceptions raised in the callback will be logged at ERROR level, but
+        will not terminate any threads of execution.
+
         Args:
           fn: A callable taking this Future object as its single parameter.
         """
@@ -339,8 +342,7 @@ class RpcContext(six.with_metaclass(abc.ABCMeta)):
           callback: A no-parameter callable to be called on RPC termination.
 
         Returns:
-          bool:
-            True if the callback was added and will be called later; False if
+          True if the callback was added and will be called later; False if
             the callback was not added and will not be called (because the RPC
             already terminated or some other reason).
         """
@@ -1285,6 +1287,7 @@ class RpcMethodHandler(six.with_metaclass(abc.ABCMeta)):
 
 class HandlerCallDetails(six.with_metaclass(abc.ABCMeta)):
     """Describes an RPC that has just arrived for service.
+
     Attributes:
       method: The method name of the RPC.
       invocation_metadata: The :term:`metadata` sent by the client.
@@ -1381,12 +1384,10 @@ class Server(six.with_metaclass(abc.ABCMeta)):
         This method may only be called before starting the server.
 
         Args:
-          address: The address for which to open a port.
-          if the port is 0, or not specified in the address, then gRPC runtime
-          will choose a port.
+          address: The address for which to open a port. If the port is 0,
+            or not specified in the address, then gRPC runtime will choose a port.
 
         Returns:
-          integer:
           An integer port on which server will accept RPC requests.
         """
         raise NotImplementedError()
@@ -1404,7 +1405,6 @@ class Server(six.with_metaclass(abc.ABCMeta)):
           server_credentials: A ServerCredentials object.
 
         Returns:
-          integer:
           An integer port on which server will accept RPC requests.
         """
         raise NotImplementedError()
@@ -1444,6 +1444,29 @@ class Server(six.with_metaclass(abc.ABCMeta)):
           A threading.Event that will be set when this Server has completely
           stopped, i.e. when running RPCs either complete or are aborted and
           all handlers have terminated.
+        """
+        raise NotImplementedError()
+
+    def wait_for_termination(self, timeout=None):
+        """Block current thread until the server stops.
+
+        This is an EXPERIMENTAL API.
+
+        The wait will not consume computational resources during blocking, and
+        it will block until one of the two following conditions are met:
+
+        1) The server is stopped or terminated;
+        2) A timeout occurs if timeout is not `None`.
+
+        The timeout argument works in the same way as `threading.Event.wait()`.
+        https://docs.python.org/3/library/threading.html#threading.Event.wait
+
+        Args:
+          timeout: A floating point number specifying a timeout for the
+            operation in seconds.
+
+        Returns:
+          A bool indicates if the operation times out.
         """
         raise NotImplementedError()
 
@@ -1724,6 +1747,64 @@ def dynamic_ssl_server_credentials(initial_certificate_configuration,
             certificate_configuration_fetcher, require_client_authentication))
 
 
+@enum.unique
+class LocalConnectionType(enum.Enum):
+    """Types of local connection for local credential creation.
+
+    Attributes:
+      UDS: Unix domain socket connections
+      LOCAL_TCP: Local TCP connections.
+    """
+    UDS = _cygrpc.LocalConnectionType.uds
+    LOCAL_TCP = _cygrpc.LocalConnectionType.local_tcp
+
+
+def local_channel_credentials(local_connect_type=LocalConnectionType.LOCAL_TCP):
+    """Creates a local ChannelCredentials used for local connections.
+
+    This is an EXPERIMENTAL API.
+
+    Local credentials are used by local TCP endpoints (e.g. localhost:10000)
+    also UDS connections. It allows them to create secure channel, hence
+    transmitting call credentials become possible.
+
+    It is useful for 1) eliminating insecure_channel usage; 2) enable unit
+    testing for call credentials without setting up secrets.
+
+    Args:
+      local_connect_type: Local connection type (either
+        grpc.LocalConnectionType.UDS or grpc.LocalConnectionType.LOCAL_TCP)
+
+    Returns:
+      A ChannelCredentials for use with a local Channel
+    """
+    return ChannelCredentials(
+        _cygrpc.channel_credentials_local(local_connect_type.value))
+
+
+def local_server_credentials(local_connect_type=LocalConnectionType.LOCAL_TCP):
+    """Creates a local ServerCredentials used for local connections.
+
+    This is an EXPERIMENTAL API.
+
+    Local credentials are used by local TCP endpoints (e.g. localhost:10000)
+    also UDS connections. It allows them to create secure channel, hence
+    transmitting call credentials become possible.
+
+    It is useful for 1) eliminating insecure_channel usage; 2) enable unit
+    testing for call credentials without setting up secrets.
+
+    Args:
+      local_connect_type: Local connection type (either
+        grpc.LocalConnectionType.UDS or grpc.LocalConnectionType.LOCAL_TCP)
+
+    Returns:
+      A ServerCredentials for use with a local Server
+    """
+    return ServerCredentials(
+        _cygrpc.server_credentials_local(local_connect_type.value))
+
+
 def channel_ready_future(channel):
     """Creates a Future that tracks when a Channel is ready.
 
@@ -1856,10 +1937,16 @@ def _create_servicer_context(rpc_event, state, request_deserializer):
     context._finalize_state()  # pylint: disable=protected-access
 
 
+@enum.unique
 class Compression(enum.IntEnum):
     """Indicates the compression method to be used for an RPC.
 
        This enumeration is part of an EXPERIMENTAL API.
+
+       Attributes:
+        NoCompression: Do not use compression algorithm.
+        Deflate: Use "Deflate" compression algorithm.
+        Gzip: Use "Gzip" compression algorithm.
     """
     NoCompression = _compression.NoCompression
     Deflate = _compression.Deflate
@@ -1887,6 +1974,7 @@ __all__ = (
     'ClientCallDetails',
     'ServerCertificateConfiguration',
     'ServerCredentials',
+    'LocalConnectionType',
     'UnaryUnaryMultiCallable',
     'UnaryStreamMultiCallable',
     'StreamUnaryMultiCallable',
@@ -1913,6 +2001,8 @@ __all__ = (
     'access_token_call_credentials',
     'composite_call_credentials',
     'composite_channel_credentials',
+    'local_channel_credentials',
+    'local_server_credentials',
     'ssl_server_credentials',
     'ssl_server_certificate_configuration',
     'dynamic_ssl_server_credentials',

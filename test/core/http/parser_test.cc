@@ -101,7 +101,7 @@ static void test_succeeds(grpc_slice_split_mode split_mode,
   grpc_slice* slices;
   va_list args;
   grpc_http_response response;
-  memset(&response, 0, sizeof(response));
+  response = {};
 
   grpc_split_slices(split_mode, &input_slice, 1, &slices, &num_slices);
   grpc_slice_unref(input_slice);
@@ -155,7 +155,7 @@ static void test_fails(grpc_slice_split_mode split_mode,
   grpc_slice* slices;
   grpc_error* error = GRPC_ERROR_NONE;
   grpc_http_response response;
-  memset(&response, 0, sizeof(response));
+  response = {};
 
   grpc_split_slices(split_mode, &input_slice, 1, &slices, &num_slices);
   grpc_slice_unref(input_slice);

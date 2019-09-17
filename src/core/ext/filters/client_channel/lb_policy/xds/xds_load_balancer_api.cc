@@ -18,294 +18,438 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "pb_decode.h"
-#include "pb_encode.h"
-#include "src/core/ext/filters/client_channel/lb_policy/xds/xds_load_balancer_api.h"
+#include <algorithm>
 
+#include <grpc/impl/codegen/log.h>
 #include <grpc/support/alloc.h>
+#include <grpc/support/string_util.h>
 
-/* invoked once for every Server in ServerList */
-static bool count_serverlist(pb_istream_t* stream, const pb_field_t* field,
-                             void** arg) {
-  xds_grpclb_serverlist* sl = static_cast<xds_grpclb_serverlist*>(*arg);
-  xds_grpclb_server server;
-  if (GPR_UNLIKELY(!pb_decode(stream, grpc_lb_v1_Server_fields, &server))) {
-    gpr_log(GPR_ERROR, "nanopb error: %s", PB_GET_ERROR(stream));
-    return false;
-  }
-  ++sl->num_servers;
-  return true;
-}
+#include "src/core/ext/filters/client_channel/lb_policy/xds/xds_load_balancer_api.h"
+#include "src/core/lib/iomgr/error.h"
+#include "src/core/lib/iomgr/sockaddr_utils.h"
 
-typedef struct decode_serverlist_arg {
-  /* The decoding callback is invoked once per server in serverlist. Remember
-   * which index of the serverlist are we currently decoding */
-  size_t decoding_idx;
-  /* The decoded serverlist */
-  xds_grpclb_serverlist* serverlist;
-} decode_serverlist_arg;
+#include "envoy/api/v2/core/address.upb.h"
+#include "envoy/api/v2/core/base.upb.h"
+#include "envoy/api/v2/discovery.upb.h"
+#include "envoy/api/v2/eds.upb.h"
+#include "envoy/api/v2/endpoint/endpoint.upb.h"
+#include "envoy/api/v2/endpoint/load_report.upb.h"
+#include "envoy/service/load_stats/v2/lrs.upb.h"
+#include "envoy/type/percent.upb.h"
+#include "google/protobuf/any.upb.h"
+#include "google/protobuf/duration.upb.h"
+#include "google/protobuf/struct.upb.h"
+#include "google/protobuf/timestamp.upb.h"
+#include "google/protobuf/wrappers.upb.h"
+#include "upb/upb.h"
 
-/* invoked once for every Server in ServerList */
-static bool decode_serverlist(pb_istream_t* stream, const pb_field_t* field,
-                              void** arg) {
-  decode_serverlist_arg* dec_arg = static_cast<decode_serverlist_arg*>(*arg);
-  GPR_ASSERT(dec_arg->serverlist->num_servers >= dec_arg->decoding_idx);
-  xds_grpclb_server* server =
-      static_cast<xds_grpclb_server*>(gpr_zalloc(sizeof(xds_grpclb_server)));
-  if (GPR_UNLIKELY(!pb_decode(stream, grpc_lb_v1_Server_fields, server))) {
-    gpr_free(server);
-    gpr_log(GPR_ERROR, "nanopb error: %s", PB_GET_ERROR(stream));
-    return false;
-  }
-  dec_arg->serverlist->servers[dec_arg->decoding_idx++] = server;
-  return true;
-}
+namespace grpc_core {
 
-xds_grpclb_request* xds_grpclb_request_create(const char* lb_service_name) {
-  xds_grpclb_request* req =
-      static_cast<xds_grpclb_request*>(gpr_malloc(sizeof(xds_grpclb_request)));
-  req->has_client_stats = false;
-  req->has_initial_request = true;
-  req->initial_request.has_name = true;
-  // GCC warns (-Wstringop-truncation) because the destination
-  // buffer size is identical to max-size, leading to a potential
-  // char[] with no null terminator.  nanopb can handle it fine,
-  // and parantheses around strncpy silence that compiler warning.
-  (strncpy(req->initial_request.name, lb_service_name,
-           XDS_SERVICE_NAME_MAX_LENGTH));
-  return req;
-}
+namespace {
 
-static void populate_timestamp(gpr_timespec timestamp,
-                               xds_grpclb_timestamp* timestamp_pb) {
-  timestamp_pb->has_seconds = true;
-  timestamp_pb->seconds = timestamp.tv_sec;
-  timestamp_pb->has_nanos = true;
-  timestamp_pb->nanos = timestamp.tv_nsec;
-}
+constexpr char kEdsTypeUrl[] =
+    "type.googleapis.com/envoy.api.v2.ClusterLoadAssignment";
+constexpr char kEndpointRequired[] = "endpointRequired";
 
-static bool encode_string(pb_ostream_t* stream, const pb_field_t* field,
-                          void* const* arg) {
-  char* str = static_cast<char*>(*arg);
-  if (!pb_encode_tag_for_field(stream, field)) return false;
-  return pb_encode_string(stream, reinterpret_cast<uint8_t*>(str), strlen(str));
-}
+}  // namespace
 
-static bool encode_drops(pb_ostream_t* stream, const pb_field_t* field,
-                         void* const* arg) {
-  grpc_core::XdsLbClientStats::DroppedCallCounts* drop_entries =
-      static_cast<grpc_core::XdsLbClientStats::DroppedCallCounts*>(*arg);
-  if (drop_entries == nullptr) return true;
-  for (size_t i = 0; i < drop_entries->size(); ++i) {
-    if (!pb_encode_tag_for_field(stream, field)) return false;
-    grpc_lb_v1_ClientStatsPerToken drop_message;
-    drop_message.load_balance_token.funcs.encode = encode_string;
-    drop_message.load_balance_token.arg = (*drop_entries)[i].token.get();
-    drop_message.has_num_calls = true;
-    drop_message.num_calls = (*drop_entries)[i].count;
-    if (!pb_encode_submessage(stream, grpc_lb_v1_ClientStatsPerToken_fields,
-                              &drop_message)) {
-      return false;
+bool XdsDropConfig::ShouldDrop(const UniquePtr<char>** category_name) const {
+  for (size_t i = 0; i < drop_category_list_.size(); ++i) {
+    const auto& drop_category = drop_category_list_[i];
+    // Generate a random number in [0, 1000000).
+    const int random = rand() % 1000000;
+    if (random < drop_category.parts_per_million) {
+      *category_name = &drop_category.name;
+      return true;
     }
   }
-  return true;
+  return false;
 }
 
-xds_grpclb_request* xds_grpclb_load_report_request_create_locked(
-    grpc_core::XdsLbClientStats* client_stats) {
-  xds_grpclb_request* req =
-      static_cast<xds_grpclb_request*>(gpr_zalloc(sizeof(xds_grpclb_request)));
-  req->has_client_stats = true;
-  req->client_stats.has_timestamp = true;
-  populate_timestamp(gpr_now(GPR_CLOCK_REALTIME), &req->client_stats.timestamp);
-  req->client_stats.has_num_calls_started = true;
-  req->client_stats.has_num_calls_finished = true;
-  req->client_stats.has_num_calls_finished_with_client_failed_to_send = true;
-  req->client_stats.has_num_calls_finished_with_client_failed_to_send = true;
-  req->client_stats.has_num_calls_finished_known_received = true;
-  req->client_stats.calls_finished_with_drop.funcs.encode = encode_drops;
-  grpc_core::UniquePtr<grpc_core::XdsLbClientStats::DroppedCallCounts>
-      drop_counts;
-  client_stats->GetLocked(
-      &req->client_stats.num_calls_started,
-      &req->client_stats.num_calls_finished,
-      &req->client_stats.num_calls_finished_with_client_failed_to_send,
-      &req->client_stats.num_calls_finished_known_received, &drop_counts);
-  // Will be deleted in xds_grpclb_request_destroy().
-  req->client_stats.calls_finished_with_drop.arg = drop_counts.release();
-  return req;
+grpc_slice XdsEdsRequestCreateAndEncode(const char* service_name) {
+  upb::Arena arena;
+  // Create a request.
+  envoy_api_v2_DiscoveryRequest* request =
+      envoy_api_v2_DiscoveryRequest_new(arena.ptr());
+  envoy_api_v2_core_Node* node =
+      envoy_api_v2_DiscoveryRequest_mutable_node(request, arena.ptr());
+  google_protobuf_Struct* metadata =
+      envoy_api_v2_core_Node_mutable_metadata(node, arena.ptr());
+  google_protobuf_Struct_FieldsEntry* field =
+      google_protobuf_Struct_add_fields(metadata, arena.ptr());
+  google_protobuf_Struct_FieldsEntry_set_key(
+      field, upb_strview_makez(kEndpointRequired));
+  google_protobuf_Value* value =
+      google_protobuf_Struct_FieldsEntry_mutable_value(field, arena.ptr());
+  google_protobuf_Value_set_bool_value(value, true);
+  envoy_api_v2_DiscoveryRequest_add_resource_names(
+      request, upb_strview_makez(service_name), arena.ptr());
+  envoy_api_v2_DiscoveryRequest_set_type_url(request,
+                                             upb_strview_makez(kEdsTypeUrl));
+  // Encode the request.
+  size_t output_length;
+  char* output = envoy_api_v2_DiscoveryRequest_serialize(request, arena.ptr(),
+                                                         &output_length);
+  return grpc_slice_from_copied_buffer(output, output_length);
 }
 
-grpc_slice xds_grpclb_request_encode(const xds_grpclb_request* request) {
-  size_t encoded_length;
-  pb_ostream_t sizestream;
-  pb_ostream_t outputstream;
-  grpc_slice slice;
-  memset(&sizestream, 0, sizeof(pb_ostream_t));
-  pb_encode(&sizestream, grpc_lb_v1_LoadBalanceRequest_fields, request);
-  encoded_length = sizestream.bytes_written;
+namespace {
 
-  slice = GRPC_SLICE_MALLOC(encoded_length);
-  outputstream =
-      pb_ostream_from_buffer(GRPC_SLICE_START_PTR(slice), encoded_length);
-  GPR_ASSERT(pb_encode(&outputstream, grpc_lb_v1_LoadBalanceRequest_fields,
-                       request) != 0);
-  return slice;
-}
-
-void xds_grpclb_request_destroy(xds_grpclb_request* request) {
-  if (request->has_client_stats) {
-    grpc_core::XdsLbClientStats::DroppedCallCounts* drop_entries =
-        static_cast<grpc_core::XdsLbClientStats::DroppedCallCounts*>(
-            request->client_stats.calls_finished_with_drop.arg);
-    grpc_core::Delete(drop_entries);
+grpc_error* ServerAddressParseAndAppend(
+    const envoy_api_v2_endpoint_LbEndpoint* lb_endpoint,
+    ServerAddressList* list) {
+  // Find the ip:port.
+  const envoy_api_v2_endpoint_Endpoint* endpoint =
+      envoy_api_v2_endpoint_LbEndpoint_endpoint(lb_endpoint);
+  const envoy_api_v2_core_Address* address =
+      envoy_api_v2_endpoint_Endpoint_address(endpoint);
+  const envoy_api_v2_core_SocketAddress* socket_address =
+      envoy_api_v2_core_Address_socket_address(address);
+  upb_strview address_strview =
+      envoy_api_v2_core_SocketAddress_address(socket_address);
+  uint32_t port = envoy_api_v2_core_SocketAddress_port_value(socket_address);
+  if (GPR_UNLIKELY(port >> 16) != 0) {
+    return GRPC_ERROR_CREATE_FROM_STATIC_STRING("Invalid port.");
   }
-  gpr_free(request);
+  // Populate grpc_resolved_address.
+  grpc_resolved_address addr;
+  char* address_str = static_cast<char*>(gpr_malloc(address_strview.size + 1));
+  memcpy(address_str, address_strview.data, address_strview.size);
+  address_str[address_strview.size] = '\0';
+  grpc_string_to_sockaddr(&addr, address_str, port);
+  gpr_free(address_str);
+  // Append the address to the list.
+  list->emplace_back(addr, nullptr);
+  return GRPC_ERROR_NONE;
 }
 
-typedef grpc_lb_v1_LoadBalanceResponse xds_grpclb_response;
-xds_grpclb_initial_response* xds_grpclb_initial_response_parse(
-    const grpc_slice& encoded_xds_grpclb_response) {
-  pb_istream_t stream = pb_istream_from_buffer(
-      const_cast<uint8_t*>(GRPC_SLICE_START_PTR(encoded_xds_grpclb_response)),
-      GRPC_SLICE_LENGTH(encoded_xds_grpclb_response));
-  xds_grpclb_response res;
-  memset(&res, 0, sizeof(xds_grpclb_response));
-  if (GPR_UNLIKELY(
-          !pb_decode(&stream, grpc_lb_v1_LoadBalanceResponse_fields, &res))) {
-    gpr_log(GPR_ERROR, "nanopb error: %s", PB_GET_ERROR(&stream));
-    return nullptr;
-  }
+namespace {
 
-  if (!res.has_initial_response) return nullptr;
-
-  xds_grpclb_initial_response* initial_res =
-      static_cast<xds_grpclb_initial_response*>(
-          gpr_malloc(sizeof(xds_grpclb_initial_response)));
-  memcpy(initial_res, &res.initial_response,
-         sizeof(xds_grpclb_initial_response));
-
-  return initial_res;
+UniquePtr<char> StringCopy(const upb_strview& strview) {
+  char* str = static_cast<char*>(gpr_malloc(strview.size + 1));
+  memcpy(str, strview.data, strview.size);
+  str[strview.size] = '\0';
+  return UniquePtr<char>(str);
 }
 
-xds_grpclb_serverlist* xds_grpclb_response_parse_serverlist(
-    const grpc_slice& encoded_xds_grpclb_response) {
-  pb_istream_t stream = pb_istream_from_buffer(
-      const_cast<uint8_t*>(GRPC_SLICE_START_PTR(encoded_xds_grpclb_response)),
-      GRPC_SLICE_LENGTH(encoded_xds_grpclb_response));
-  pb_istream_t stream_at_start = stream;
-  xds_grpclb_serverlist* sl = static_cast<xds_grpclb_serverlist*>(
-      gpr_zalloc(sizeof(xds_grpclb_serverlist)));
-  xds_grpclb_response res;
-  memset(&res, 0, sizeof(xds_grpclb_response));
-  // First pass: count number of servers.
-  res.server_list.servers.funcs.decode = count_serverlist;
-  res.server_list.servers.arg = sl;
-  bool status = pb_decode(&stream, grpc_lb_v1_LoadBalanceResponse_fields, &res);
-  if (GPR_UNLIKELY(!status)) {
-    gpr_free(sl);
-    gpr_log(GPR_ERROR, "nanopb error: %s", PB_GET_ERROR(&stream));
-    return nullptr;
+}  // namespace
+
+grpc_error* LocalityParse(
+    const envoy_api_v2_endpoint_LocalityLbEndpoints* locality_lb_endpoints,
+    XdsLocalityInfo* locality_info) {
+  // Parse LB weight.
+  const google_protobuf_UInt32Value* lb_weight =
+      envoy_api_v2_endpoint_LocalityLbEndpoints_load_balancing_weight(
+          locality_lb_endpoints);
+  // If LB weight is not specified, it means this locality is assigned no load.
+  // TODO(juanlishen): When we support CDS to configure the inter-locality
+  // policy, we should change the LB weight handling.
+  locality_info->lb_weight =
+      lb_weight != nullptr ? google_protobuf_UInt32Value_value(lb_weight) : 0;
+  if (locality_info->lb_weight == 0) return GRPC_ERROR_NONE;
+  // Parse locality name.
+  const envoy_api_v2_core_Locality* locality =
+      envoy_api_v2_endpoint_LocalityLbEndpoints_locality(locality_lb_endpoints);
+  locality_info->locality_name = MakeRefCounted<XdsLocalityName>(
+      StringCopy(envoy_api_v2_core_Locality_region(locality)),
+      StringCopy(envoy_api_v2_core_Locality_zone(locality)),
+      StringCopy(envoy_api_v2_core_Locality_sub_zone(locality)));
+  // Parse the addresses.
+  size_t size;
+  const envoy_api_v2_endpoint_LbEndpoint* const* lb_endpoints =
+      envoy_api_v2_endpoint_LocalityLbEndpoints_lb_endpoints(
+          locality_lb_endpoints, &size);
+  for (size_t i = 0; i < size; ++i) {
+    grpc_error* error = ServerAddressParseAndAppend(lb_endpoints[i],
+                                                    &locality_info->serverlist);
+    if (error != GRPC_ERROR_NONE) return error;
   }
-  // Second pass: populate servers.
-  if (sl->num_servers > 0) {
-    sl->servers = static_cast<xds_grpclb_server**>(
-        gpr_zalloc(sizeof(xds_grpclb_server*) * sl->num_servers));
-    decode_serverlist_arg decode_arg;
-    memset(&decode_arg, 0, sizeof(decode_arg));
-    decode_arg.serverlist = sl;
-    res.server_list.servers.funcs.decode = decode_serverlist;
-    res.server_list.servers.arg = &decode_arg;
-    status = pb_decode(&stream_at_start, grpc_lb_v1_LoadBalanceResponse_fields,
-                       &res);
-    if (GPR_UNLIKELY(!status)) {
-      xds_grpclb_destroy_serverlist(sl);
-      gpr_log(GPR_ERROR, "nanopb error: %s", PB_GET_ERROR(&stream));
-      return nullptr;
+  // Parse the priority.
+  locality_info->priority =
+      envoy_api_v2_endpoint_LocalityLbEndpoints_priority(locality_lb_endpoints);
+  return GRPC_ERROR_NONE;
+}
+
+grpc_error* DropParseAndAppend(
+    const envoy_api_v2_ClusterLoadAssignment_Policy_DropOverload* drop_overload,
+    XdsDropConfig* drop_config, bool* drop_all) {
+  // Get the category.
+  upb_strview category =
+      envoy_api_v2_ClusterLoadAssignment_Policy_DropOverload_category(
+          drop_overload);
+  if (category.size == 0) {
+    return GRPC_ERROR_CREATE_FROM_STATIC_STRING("Empty drop category name");
+  }
+  // Get the drop rate (per million).
+  const envoy_type_FractionalPercent* drop_percentage =
+      envoy_api_v2_ClusterLoadAssignment_Policy_DropOverload_drop_percentage(
+          drop_overload);
+  uint32_t numerator = envoy_type_FractionalPercent_numerator(drop_percentage);
+  const auto denominator =
+      static_cast<envoy_type_FractionalPercent_DenominatorType>(
+          envoy_type_FractionalPercent_denominator(drop_percentage));
+  // Normalize to million.
+  switch (denominator) {
+    case envoy_type_FractionalPercent_HUNDRED:
+      numerator *= 10000;
+      break;
+    case envoy_type_FractionalPercent_TEN_THOUSAND:
+      numerator *= 100;
+      break;
+    case envoy_type_FractionalPercent_MILLION:
+      break;
+    default:
+      return GRPC_ERROR_CREATE_FROM_STATIC_STRING("Unknown denominator type");
+  }
+  // Cap numerator to 1000000.
+  numerator = GPR_MIN(numerator, 1000000);
+  if (numerator == 1000000) *drop_all = true;
+  drop_config->AddCategory(StringCopy(category), numerator);
+  return GRPC_ERROR_NONE;
+}
+
+}  // namespace
+
+grpc_error* XdsEdsResponseDecodeAndParse(const grpc_slice& encoded_response,
+                                         XdsUpdate* update) {
+  upb::Arena arena;
+  // Decode the response.
+  const envoy_api_v2_DiscoveryResponse* response =
+      envoy_api_v2_DiscoveryResponse_parse(
+          reinterpret_cast<const char*>(GRPC_SLICE_START_PTR(encoded_response)),
+          GRPC_SLICE_LENGTH(encoded_response), arena.ptr());
+  // Parse the response.
+  if (response == nullptr) {
+    return GRPC_ERROR_CREATE_FROM_STATIC_STRING("No response found.");
+  }
+  // Check the type_url of the response.
+  upb_strview type_url = envoy_api_v2_DiscoveryResponse_type_url(response);
+  upb_strview expected_type_url = upb_strview_makez(kEdsTypeUrl);
+  if (!upb_strview_eql(type_url, expected_type_url)) {
+    return GRPC_ERROR_CREATE_FROM_STATIC_STRING("Resource is not EDS.");
+  }
+  // Get the resources from the response.
+  size_t size;
+  const google_protobuf_Any* const* resources =
+      envoy_api_v2_DiscoveryResponse_resources(response, &size);
+  if (size < 1) {
+    return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+        "EDS response contains 0 resource.");
+  }
+  // Check the type_url of the resource.
+  type_url = google_protobuf_Any_type_url(resources[0]);
+  if (!upb_strview_eql(type_url, expected_type_url)) {
+    return GRPC_ERROR_CREATE_FROM_STATIC_STRING("Resource is not EDS.");
+  }
+  // Get the cluster_load_assignment.
+  upb_strview encoded_cluster_load_assignment =
+      google_protobuf_Any_value(resources[0]);
+  envoy_api_v2_ClusterLoadAssignment* cluster_load_assignment =
+      envoy_api_v2_ClusterLoadAssignment_parse(
+          encoded_cluster_load_assignment.data,
+          encoded_cluster_load_assignment.size, arena.ptr());
+  // Get the endpoints.
+  const envoy_api_v2_endpoint_LocalityLbEndpoints* const* endpoints =
+      envoy_api_v2_ClusterLoadAssignment_endpoints(cluster_load_assignment,
+                                                   &size);
+  for (size_t i = 0; i < size; ++i) {
+    XdsLocalityInfo locality_info;
+    grpc_error* error = LocalityParse(endpoints[i], &locality_info);
+    if (error != GRPC_ERROR_NONE) return error;
+    // Filter out locality with weight 0.
+    if (locality_info.lb_weight == 0) continue;
+    update->locality_list.push_back(std::move(locality_info));
+  }
+  // The locality list is sorted here into deterministic order so that it's
+  // easier to check if two locality lists contain the same set of localities.
+  std::sort(update->locality_list.data(),
+            update->locality_list.data() + update->locality_list.size(),
+            XdsLocalityInfo::Less());
+  // Get the drop config.
+  update->drop_config = MakeRefCounted<XdsDropConfig>();
+  const envoy_api_v2_ClusterLoadAssignment_Policy* policy =
+      envoy_api_v2_ClusterLoadAssignment_policy(cluster_load_assignment);
+  if (policy != nullptr) {
+    const envoy_api_v2_ClusterLoadAssignment_Policy_DropOverload* const*
+        drop_overload =
+            envoy_api_v2_ClusterLoadAssignment_Policy_drop_overloads(policy,
+                                                                     &size);
+    for (size_t i = 0; i < size; ++i) {
+      grpc_error* error = DropParseAndAppend(
+          drop_overload[i], update->drop_config.get(), &update->drop_all);
+      if (error != GRPC_ERROR_NONE) return error;
     }
   }
-  return sl;
+  return GRPC_ERROR_NONE;
 }
 
-void xds_grpclb_destroy_serverlist(xds_grpclb_serverlist* serverlist) {
-  if (serverlist == nullptr) {
-    return;
-  }
-  for (size_t i = 0; i < serverlist->num_servers; i++) {
-    gpr_free(serverlist->servers[i]);
-  }
-  gpr_free(serverlist->servers);
-  gpr_free(serverlist);
+namespace {
+
+grpc_slice LrsRequestEncode(
+    const envoy_service_load_stats_v2_LoadStatsRequest* request,
+    upb_arena* arena) {
+  size_t output_length;
+  char* output = envoy_service_load_stats_v2_LoadStatsRequest_serialize(
+      request, arena, &output_length);
+  return grpc_slice_from_copied_buffer(output, output_length);
 }
 
-xds_grpclb_serverlist* xds_grpclb_serverlist_copy(
-    const xds_grpclb_serverlist* sl) {
-  xds_grpclb_serverlist* copy = static_cast<xds_grpclb_serverlist*>(
-      gpr_zalloc(sizeof(xds_grpclb_serverlist)));
-  copy->num_servers = sl->num_servers;
-  copy->servers = static_cast<xds_grpclb_server**>(
-      gpr_malloc(sizeof(xds_grpclb_server*) * sl->num_servers));
-  for (size_t i = 0; i < sl->num_servers; i++) {
-    copy->servers[i] =
-        static_cast<xds_grpclb_server*>(gpr_malloc(sizeof(xds_grpclb_server)));
-    memcpy(copy->servers[i], sl->servers[i], sizeof(xds_grpclb_server));
-  }
-  return copy;
+}  // namespace
+
+grpc_slice XdsLrsRequestCreateAndEncode(const char* server_name) {
+  upb::Arena arena;
+  // Create a request.
+  envoy_service_load_stats_v2_LoadStatsRequest* request =
+      envoy_service_load_stats_v2_LoadStatsRequest_new(arena.ptr());
+  // Add cluster stats. There is only one because we only use one server name in
+  // one channel.
+  envoy_api_v2_endpoint_ClusterStats* cluster_stats =
+      envoy_service_load_stats_v2_LoadStatsRequest_add_cluster_stats(
+          request, arena.ptr());
+  // Set the cluster name.
+  envoy_api_v2_endpoint_ClusterStats_set_cluster_name(
+      cluster_stats, upb_strview_makez(server_name));
+  return LrsRequestEncode(request, arena.ptr());
 }
 
-bool xds_grpclb_serverlist_equals(const xds_grpclb_serverlist* lhs,
-                                  const xds_grpclb_serverlist* rhs) {
-  if (lhs == nullptr || rhs == nullptr) {
-    return false;
+namespace {
+
+void LocalityStatsPopulate(envoy_api_v2_endpoint_UpstreamLocalityStats* output,
+#if GRPC_USE_CPP_STD_LIB
+                           // TODO(veblush): Clean up this
+                           // This is to address the difference between
+                           // std::map and Map. #else block will be gone
+                           // once using stdlib is enabled by default.
+                           Pair<const RefCountedPtr<XdsLocalityName>,
+#else
+                           Pair<RefCountedPtr<XdsLocalityName>,
+#endif
+                                XdsClientStats::LocalityStats::Snapshot>& input,
+                           upb_arena* arena) {
+  // Set sub_zone.
+  envoy_api_v2_core_Locality* locality =
+      envoy_api_v2_endpoint_UpstreamLocalityStats_mutable_locality(output,
+                                                                   arena);
+  envoy_api_v2_core_Locality_set_sub_zone(
+      locality, upb_strview_makez(input.first->sub_zone()));
+  // Set total counts.
+  XdsClientStats::LocalityStats::Snapshot& snapshot = input.second;
+  envoy_api_v2_endpoint_UpstreamLocalityStats_set_total_successful_requests(
+      output, snapshot.total_successful_requests);
+  envoy_api_v2_endpoint_UpstreamLocalityStats_set_total_requests_in_progress(
+      output, snapshot.total_requests_in_progress);
+  envoy_api_v2_endpoint_UpstreamLocalityStats_set_total_error_requests(
+      output, snapshot.total_error_requests);
+  envoy_api_v2_endpoint_UpstreamLocalityStats_set_total_issued_requests(
+      output, snapshot.total_issued_requests);
+  // Add load metric stats.
+  for (auto& p : snapshot.load_metric_stats) {
+    const char* metric_name = p.first.get();
+    const XdsClientStats::LocalityStats::LoadMetric::Snapshot& metric_value =
+        p.second;
+    envoy_api_v2_endpoint_EndpointLoadMetricStats* load_metric =
+        envoy_api_v2_endpoint_UpstreamLocalityStats_add_load_metric_stats(
+            output, arena);
+    envoy_api_v2_endpoint_EndpointLoadMetricStats_set_metric_name(
+        load_metric, upb_strview_makez(metric_name));
+    envoy_api_v2_endpoint_EndpointLoadMetricStats_set_num_requests_finished_with_metric(
+        load_metric, metric_value.num_requests_finished_with_metric);
+    envoy_api_v2_endpoint_EndpointLoadMetricStats_set_total_metric_value(
+        load_metric, metric_value.total_metric_value);
   }
-  if (lhs->num_servers != rhs->num_servers) {
-    return false;
-  }
-  for (size_t i = 0; i < lhs->num_servers; i++) {
-    if (!xds_grpclb_server_equals(lhs->servers[i], rhs->servers[i])) {
-      return false;
-    }
-  }
-  return true;
 }
 
-bool xds_grpclb_server_equals(const xds_grpclb_server* lhs,
-                              const xds_grpclb_server* rhs) {
-  return memcmp(lhs, rhs, sizeof(xds_grpclb_server)) == 0;
-}
+}  // namespace
 
-int xds_grpclb_duration_compare(const xds_grpclb_duration* lhs,
-                                const xds_grpclb_duration* rhs) {
-  GPR_ASSERT(lhs && rhs);
-  if (lhs->has_seconds && rhs->has_seconds) {
-    if (lhs->seconds < rhs->seconds) return -1;
-    if (lhs->seconds > rhs->seconds) return 1;
-  } else if (lhs->has_seconds) {
-    return 1;
-  } else if (rhs->has_seconds) {
-    return -1;
+grpc_slice XdsLrsRequestCreateAndEncode(const char* server_name,
+                                        XdsClientStats* client_stats) {
+  upb::Arena arena;
+  XdsClientStats::Snapshot snapshot = client_stats->GetSnapshotAndReset();
+  // Prune unused locality stats.
+  client_stats->PruneLocalityStats();
+  // When all the counts are zero, return empty slice.
+  if (snapshot.IsAllZero()) return grpc_empty_slice();
+  // Create a request.
+  envoy_service_load_stats_v2_LoadStatsRequest* request =
+      envoy_service_load_stats_v2_LoadStatsRequest_new(arena.ptr());
+  // Add cluster stats. There is only one because we only use one server name in
+  // one channel.
+  envoy_api_v2_endpoint_ClusterStats* cluster_stats =
+      envoy_service_load_stats_v2_LoadStatsRequest_add_cluster_stats(
+          request, arena.ptr());
+  // Set the cluster name.
+  envoy_api_v2_endpoint_ClusterStats_set_cluster_name(
+      cluster_stats, upb_strview_makez(server_name));
+  // Add locality stats.
+  for (auto& p : snapshot.upstream_locality_stats) {
+    envoy_api_v2_endpoint_UpstreamLocalityStats* locality_stats =
+        envoy_api_v2_endpoint_ClusterStats_add_upstream_locality_stats(
+            cluster_stats, arena.ptr());
+    LocalityStatsPopulate(locality_stats, p, arena.ptr());
   }
-
-  GPR_ASSERT(lhs->seconds == rhs->seconds);
-  if (lhs->has_nanos && rhs->has_nanos) {
-    if (lhs->nanos < rhs->nanos) return -1;
-    if (lhs->nanos > rhs->nanos) return 1;
-  } else if (lhs->has_nanos) {
-    return 1;
-  } else if (rhs->has_nanos) {
-    return -1;
+  // Add dropped requests.
+  for (auto& p : snapshot.dropped_requests) {
+    const char* category = p.first.get();
+    const uint64_t count = p.second;
+    envoy_api_v2_endpoint_ClusterStats_DroppedRequests* dropped_requests =
+        envoy_api_v2_endpoint_ClusterStats_add_dropped_requests(cluster_stats,
+                                                                arena.ptr());
+    envoy_api_v2_endpoint_ClusterStats_DroppedRequests_set_category(
+        dropped_requests, upb_strview_makez(category));
+    envoy_api_v2_endpoint_ClusterStats_DroppedRequests_set_dropped_count(
+        dropped_requests, count);
   }
-
-  return 0;
+  // Set total dropped requests.
+  envoy_api_v2_endpoint_ClusterStats_set_total_dropped_requests(
+      cluster_stats, snapshot.total_dropped_requests);
+  // Set real load report interval.
+  gpr_timespec timespec =
+      grpc_millis_to_timespec(snapshot.load_report_interval, GPR_TIMESPAN);
+  google_protobuf_Duration* load_report_interval =
+      envoy_api_v2_endpoint_ClusterStats_mutable_load_report_interval(
+          cluster_stats, arena.ptr());
+  google_protobuf_Duration_set_seconds(load_report_interval, timespec.tv_sec);
+  google_protobuf_Duration_set_nanos(load_report_interval, timespec.tv_nsec);
+  return LrsRequestEncode(request, arena.ptr());
 }
 
-grpc_millis xds_grpclb_duration_to_millis(xds_grpclb_duration* duration_pb) {
-  return static_cast<grpc_millis>(
-      (duration_pb->has_seconds ? duration_pb->seconds : 0) * GPR_MS_PER_SEC +
-      (duration_pb->has_nanos ? duration_pb->nanos : 0) / GPR_NS_PER_MS);
+grpc_error* XdsLrsResponseDecodeAndParse(const grpc_slice& encoded_response,
+                                         grpc_millis* load_reporting_interval,
+                                         const char* expected_server_name) {
+  upb::Arena arena;
+  // Decode the response.
+  const envoy_service_load_stats_v2_LoadStatsResponse* decoded_response =
+      envoy_service_load_stats_v2_LoadStatsResponse_parse(
+          reinterpret_cast<const char*>(GRPC_SLICE_START_PTR(encoded_response)),
+          GRPC_SLICE_LENGTH(encoded_response), arena.ptr());
+  // Parse the response.
+  if (decoded_response == nullptr) {
+    return GRPC_ERROR_CREATE_FROM_STATIC_STRING("No response found.");
+  }
+  // Check the cluster size in the response.
+  size_t size;
+  const upb_strview* clusters =
+      envoy_service_load_stats_v2_LoadStatsResponse_clusters(decoded_response,
+                                                             &size);
+  if (size != 1) {
+    return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+        "The number of clusters (server names) is not 1.");
+  }
+  // Check the cluster name in the response
+  if (strncmp(expected_server_name, clusters[0].data, clusters[0].size) != 0) {
+    return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+        "Unexpected cluster (server name).");
+  }
+  // Get the load report interval.
+  const google_protobuf_Duration* load_reporting_interval_duration =
+      envoy_service_load_stats_v2_LoadStatsResponse_load_reporting_interval(
+          decoded_response);
+  gpr_timespec timespec{
+      google_protobuf_Duration_seconds(load_reporting_interval_duration),
+      google_protobuf_Duration_nanos(load_reporting_interval_duration),
+      GPR_TIMESPAN};
+  *load_reporting_interval = gpr_time_to_millis(timespec);
+  return GRPC_ERROR_NONE;
 }
 
-void xds_grpclb_initial_response_destroy(
-    xds_grpclb_initial_response* response) {
-  gpr_free(response);
-}
+}  // namespace grpc_core

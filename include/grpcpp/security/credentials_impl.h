@@ -95,10 +95,10 @@ class ChannelCredentials : private grpc::GrpcLibraryCodegen {
   // This function should have been a pure virtual function, but it is
   // implemented as a virtual function so that it does not break API.
   virtual std::shared_ptr<Channel> CreateChannelWithInterceptors(
-      const grpc::string& target, const ChannelArguments& args,
+      const grpc::string& /*target*/, const ChannelArguments& /*args*/,
       std::vector<std::unique_ptr<
           grpc::experimental::ClientInterceptorFactoryInterface>>
-          interceptor_creators) {
+      /*interceptor_creators*/) {
     return nullptr;
   }
 };
@@ -227,9 +227,6 @@ std::shared_ptr<CallCredentials> CompositeCallCredentials(
 
 /// Credentials for an unencrypted, unauthenticated channel
 std::shared_ptr<ChannelCredentials> InsecureChannelCredentials();
-
-/// Credentials for a channel using Cronet.
-std::shared_ptr<ChannelCredentials> CronetChannelCredentials(void* engine);
 
 /// User defined metadata credentials.
 class MetadataCredentialsPlugin {

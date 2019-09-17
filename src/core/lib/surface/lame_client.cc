@@ -61,10 +61,10 @@ static void fill_metadata(grpc_call_element* elem, grpc_metadata_batch* mdb) {
   char tmp[GPR_LTOA_MIN_BUFSIZE];
   gpr_ltoa(chand->error_code, tmp);
   calld->status.md = grpc_mdelem_from_slices(
-      GRPC_MDSTR_GRPC_STATUS, grpc_slice_from_copied_string(tmp));
+      GRPC_MDSTR_GRPC_STATUS, grpc_core::UnmanagedMemorySlice(tmp));
   calld->details.md = grpc_mdelem_from_slices(
       GRPC_MDSTR_GRPC_MESSAGE,
-      grpc_slice_from_copied_string(chand->error_message));
+      grpc_core::UnmanagedMemorySlice(chand->error_message));
   calld->status.prev = calld->details.next = nullptr;
   calld->status.next = &calld->details;
   calld->details.prev = &calld->status;
@@ -115,27 +115,27 @@ static void lame_start_transport_op(grpc_channel_element* elem,
   }
 }
 
-static grpc_error* init_call_elem(grpc_call_element* elem,
-                                  const grpc_call_element_args* args) {
+static grpc_error* lame_init_call_elem(grpc_call_element* elem,
+                                       const grpc_call_element_args* args) {
   CallData* calld = static_cast<CallData*>(elem->call_data);
   calld->call_combiner = args->call_combiner;
   return GRPC_ERROR_NONE;
 }
 
-static void destroy_call_elem(grpc_call_element* elem,
-                              const grpc_call_final_info* final_info,
-                              grpc_closure* then_schedule_closure) {
+static void lame_destroy_call_elem(grpc_call_element* elem,
+                                   const grpc_call_final_info* final_info,
+                                   grpc_closure* then_schedule_closure) {
   GRPC_CLOSURE_SCHED(then_schedule_closure, GRPC_ERROR_NONE);
 }
 
-static grpc_error* init_channel_elem(grpc_channel_element* elem,
-                                     grpc_channel_element_args* args) {
+static grpc_error* lame_init_channel_elem(grpc_channel_element* elem,
+                                          grpc_channel_element_args* args) {
   GPR_ASSERT(args->is_first);
   GPR_ASSERT(args->is_last);
   return GRPC_ERROR_NONE;
 }
 
-static void destroy_channel_elem(grpc_channel_element* elem) {}
+static void lame_destroy_channel_elem(grpc_channel_element* elem) {}
 
 }  // namespace
 
@@ -145,12 +145,12 @@ const grpc_channel_filter grpc_lame_filter = {
     grpc_core::lame_start_transport_stream_op_batch,
     grpc_core::lame_start_transport_op,
     sizeof(grpc_core::CallData),
-    grpc_core::init_call_elem,
+    grpc_core::lame_init_call_elem,
     grpc_call_stack_ignore_set_pollset_or_pollset_set,
-    grpc_core::destroy_call_elem,
+    grpc_core::lame_destroy_call_elem,
     sizeof(grpc_core::ChannelData),
-    grpc_core::init_channel_elem,
-    grpc_core::destroy_channel_elem,
+    grpc_core::lame_init_channel_elem,
+    grpc_core::lame_destroy_channel_elem,
     grpc_core::lame_get_channel_info,
     "lame-client",
 };

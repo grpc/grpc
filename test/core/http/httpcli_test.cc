@@ -77,7 +77,7 @@ static void test_get(int port) {
   req.handshaker = &grpc_httpcli_plaintext;
 
   grpc_http_response response;
-  memset(&response, 0, sizeof(response));
+  response = {};
   grpc_resource_quota* resource_quota = grpc_resource_quota_create("test_get");
   grpc_httpcli_get(
       &g_context, &g_pops, resource_quota, &req, n_seconds_time(15),
@@ -116,7 +116,7 @@ static void test_post(int port) {
   req.handshaker = &grpc_httpcli_plaintext;
 
   grpc_http_response response;
-  memset(&response, 0, sizeof(response));
+  response = {};
   grpc_resource_quota* resource_quota = grpc_resource_quota_create("test_post");
   grpc_httpcli_post(
       &g_context, &g_pops, resource_quota, &req, "hello", 5, n_seconds_time(15),

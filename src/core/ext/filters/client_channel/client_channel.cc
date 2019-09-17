@@ -31,6 +31,7 @@
 #include <grpc/support/string_util.h>
 #include <grpc/support/sync.h>
 
+#include "src/core/ext/filters/client_channel/backend_metric.h"
 #include "src/core/ext/filters/client_channel/backup_poller.h"
 #include "src/core/ext/filters/client_channel/global_subchannel_pool.h"
 #include "src/core/ext/filters/client_channel/http_connect_handshaker.h"
@@ -129,7 +130,7 @@ class ChannelData {
     return disconnect_error_.Load(MemoryOrder::ACQUIRE);
   }
 
-  grpc_combiner* data_plane_combiner() const { return data_plane_combiner_; }
+  Mutex* data_plane_mu() const { return &data_plane_mu_; }
 
   LoadBalancingPolicy::SubchannelPicker* picker() const {
     return picker_.get();
@@ -147,6 +148,9 @@ class ChannelData {
     return service_config_;
   }
 
+  RefCountedPtr<ConnectedSubchannel> GetConnectedSubchannelInDataPlane(
+      SubchannelInterface* subchannel) const;
+
   grpc_connectivity_state CheckConnectivityState(bool try_to_connect);
   void AddExternalConnectivityWatcher(grpc_polling_entity pollent,
                                       grpc_connectivity_state* state,
@@ -161,9 +165,7 @@ class ChannelData {
   }
 
  private:
-  class ConnectivityStateAndPickerSetter;
-  class ServiceConfigSetter;
-  class GrpcSubchannel;
+  class SubchannelWrapper;
   class ClientChannelControlHelper;
 
   class ExternalConnectivityWatcher {
@@ -210,6 +212,18 @@ class ChannelData {
   ChannelData(grpc_channel_element_args* args, grpc_error** error);
   ~ChannelData();
 
+  void UpdateStateAndPickerLocked(
+      grpc_connectivity_state state, const char* reason,
+      UniquePtr<LoadBalancingPolicy::SubchannelPicker> picker);
+
+  void UpdateServiceConfigLocked(
+      RefCountedPtr<ServerRetryThrottleData> retry_throttle_data,
+      RefCountedPtr<ServiceConfig> service_config);
+
+  void CreateResolvingLoadBalancingPolicyLocked();
+
+  void DestroyResolvingLoadBalancingPolicyLocked();
+
   static bool ProcessResolverResultLocked(
       void* arg, const Resolver::Result& result, const char** lb_policy_name,
       RefCountedPtr<LoadBalancingPolicy::Config>* lb_policy_config,
@@ -235,14 +249,16 @@ class ChannelData {
   const size_t per_rpc_retry_buffer_size_;
   grpc_channel_stack* owning_stack_;
   ClientChannelFactory* client_channel_factory_;
-  UniquePtr<char> server_name_;
+  const grpc_channel_args* channel_args_;
   RefCountedPtr<ServiceConfig> default_service_config_;
+  UniquePtr<char> server_name_;
+  UniquePtr<char> target_uri_;
   channelz::ChannelNode* channelz_node_;
 
   //
-  // Fields used in the data plane.  Guarded by data_plane_combiner.
+  // Fields used in the data plane.  Guarded by data_plane_mu.
   //
-  grpc_combiner* data_plane_combiner_;
+  mutable Mutex data_plane_mu_;
   UniquePtr<LoadBalancingPolicy::SubchannelPicker> picker_;
   QueuedPick* queued_picks_ = nullptr;  // Linked list of queued picks.
   // Data from service config.
@@ -262,10 +278,23 @@ class ChannelData {
   UniquePtr<char> health_check_service_name_;
   RefCountedPtr<ServiceConfig> saved_service_config_;
   bool received_first_resolver_result_ = false;
+  // The number of SubchannelWrapper instances referencing a given Subchannel.
   Map<Subchannel*, int> subchannel_refcount_map_;
+  // The set of SubchannelWrappers that currently exist.
+  // No need to hold a ref, since the map is updated in the control-plane
+  // combiner when the SubchannelWrappers are created and destroyed.
+  // TODO(roth): We really want to use a set here, not a map.  Since we don't
+  // currently have a set implementation, we use a map and ignore the value.
+  Map<SubchannelWrapper*, bool> subchannel_wrappers_;
+  // Pending ConnectedSubchannel updates for each SubchannelWrapper.
+  // Updates are queued here in the control plane combiner and then applied
+  // in the data plane mutex when the picker is updated.
+  Map<RefCountedPtr<SubchannelWrapper>, RefCountedPtr<ConnectedSubchannel>,
+      RefCountedPtrLess<SubchannelWrapper>>
+      pending_subchannel_updates_;
 
   //
-  // Fields accessed from both data plane and control plane combiners.
+  // Fields accessed from both data plane mutex and control plane combiner.
   //
   Atomic<grpc_error*> disconnect_error_;
 
@@ -299,16 +328,86 @@ class CallData {
   void MaybeApplyServiceConfigToCallLocked(grpc_call_element* elem);
 
   // Invoked by channel for queued picks when the picker is updated.
-  static void StartPickLocked(void* arg, grpc_error* error);
+  static void PickSubchannel(void* arg, grpc_error* error);
+
+  // Helper function for performing a pick while holding the data plane
+  // mutex.  Returns true if the pick is complete, in which case the caller
+  // must invoke PickDone() or AsyncPickDone() with the returned error.
+  bool PickSubchannelLocked(grpc_call_element* elem, grpc_error** error);
+
+  // Schedules a callback to process the completed pick.  The callback
+  // will not run until after this method returns.
+  void AsyncPickDone(grpc_call_element* elem, grpc_error* error);
 
  private:
   class QueuedPickCanceller;
+
+  class Metadata : public LoadBalancingPolicy::MetadataInterface {
+   public:
+    Metadata(CallData* calld, grpc_metadata_batch* batch)
+        : calld_(calld), batch_(batch) {}
+
+    void Add(StringView key, StringView value) override {
+      grpc_linked_mdelem* linked_mdelem = static_cast<grpc_linked_mdelem*>(
+          calld_->arena_->Alloc(sizeof(grpc_linked_mdelem)));
+      linked_mdelem->md = grpc_mdelem_from_slices(
+          grpc_core::ExternallyManagedSlice(key.data(), key.size()),
+          grpc_core::ExternallyManagedSlice(value.data(), value.size()));
+      GPR_ASSERT(grpc_metadata_batch_link_tail(batch_, linked_mdelem) ==
+                 GRPC_ERROR_NONE);
+    }
+
+    Iterator Begin() const override {
+      static_assert(sizeof(grpc_linked_mdelem*) <= sizeof(Iterator),
+                    "iterator size too large");
+      return reinterpret_cast<Iterator>(batch_->list.head);
+    }
+    bool IsEnd(Iterator it) const override {
+      return reinterpret_cast<grpc_linked_mdelem*>(it) == nullptr;
+    }
+    void Next(Iterator* it) const override {
+      *it = reinterpret_cast<Iterator>(
+          reinterpret_cast<grpc_linked_mdelem*>(*it)->next);
+    }
+    StringView Key(Iterator it) const override {
+      return StringView(
+          GRPC_MDKEY(reinterpret_cast<grpc_linked_mdelem*>(it)->md));
+    }
+    StringView Value(Iterator it) const override {
+      return StringView(
+          GRPC_MDVALUE(reinterpret_cast<grpc_linked_mdelem*>(it)->md));
+    }
+
+    void Erase(Iterator* it) override {
+      grpc_linked_mdelem* linked_mdelem =
+          reinterpret_cast<grpc_linked_mdelem*>(*it);
+      *it = reinterpret_cast<Iterator>(linked_mdelem->next);
+      grpc_metadata_batch_remove(batch_, linked_mdelem);
+    }
+
+   private:
+    CallData* calld_;
+    grpc_metadata_batch* batch_;
+  };
 
   class LbCallState : public LoadBalancingPolicy::CallState {
    public:
     explicit LbCallState(CallData* calld) : calld_(calld) {}
 
     void* Alloc(size_t size) override { return calld_->arena_->Alloc(size); }
+
+    const LoadBalancingPolicy::BackendMetricData* GetBackendMetricData()
+        override {
+      if (calld_->backend_metric_data_ == nullptr) {
+        grpc_linked_mdelem* md = calld_->recv_trailing_metadata_->idx.named
+                                     .x_endpoint_load_metrics_bin;
+        if (md != nullptr) {
+          calld_->backend_metric_data_ =
+              ParseBackendMetricData(GRPC_MDVALUE(md->md), calld_->arena_);
+        }
+      }
+      return calld_->backend_metric_data_;
+    }
 
    private:
     CallData* calld_;
@@ -621,7 +720,7 @@ class CallData {
   grpc_deadline_state deadline_state_;
 
   grpc_slice path_;  // Request path.
-  gpr_timespec call_start_time_;
+  gpr_cycle_counter call_start_time_;
   grpc_millis deadline_;
   Arena* arena_;
   grpc_call_stack* owning_call_;
@@ -642,9 +741,11 @@ class CallData {
   bool service_config_applied_ = false;
   QueuedPickCanceller* pick_canceller_ = nullptr;
   LbCallState lb_call_state_;
+  const LoadBalancingPolicy::BackendMetricData* backend_metric_data_ = nullptr;
   RefCountedPtr<ConnectedSubchannel> connected_subchannel_;
   void (*lb_recv_trailing_metadata_ready_)(
-      void* user_data, grpc_metadata_batch* recv_trailing_metadata,
+      void* user_data, grpc_error* error,
+      LoadBalancingPolicy::MetadataInterface* recv_trailing_metadata,
       LoadBalancingPolicy::CallState* call_state) = nullptr;
   void* lb_recv_trailing_metadata_ready_user_data_ = nullptr;
   grpc_closure pick_closure_;
@@ -707,127 +808,301 @@ class CallData {
 };
 
 //
-// ChannelData::ConnectivityStateAndPickerSetter
+// ChannelData::SubchannelWrapper
 //
 
-// A fire-and-forget class that sets the channel's connectivity state
-// and then hops into the data plane combiner to update the picker.
-// Must be instantiated while holding the control plane combiner.
-// Deletes itself when done.
-class ChannelData::ConnectivityStateAndPickerSetter {
+// This class is a wrapper for Subchannel that hides details of the
+// channel's implementation (such as the health check service name and
+// connected subchannel) from the LB policy API.
+//
+// Note that no synchronization is needed here, because even if the
+// underlying subchannel is shared between channels, this wrapper will only
+// be used within one channel, so it will always be synchronized by the
+// control plane combiner.
+class ChannelData::SubchannelWrapper : public SubchannelInterface {
  public:
-  ConnectivityStateAndPickerSetter(
-      ChannelData* chand, grpc_connectivity_state state, const char* reason,
-      UniquePtr<LoadBalancingPolicy::SubchannelPicker> picker)
-      : chand_(chand), picker_(std::move(picker)) {
-    // Update connectivity state here, while holding control plane combiner.
-    grpc_connectivity_state_set(&chand->state_tracker_, state, reason);
-    if (chand->channelz_node_ != nullptr) {
-      chand->channelz_node_->SetConnectivityState(state);
-      chand->channelz_node_->AddTraceEvent(
-          channelz::ChannelTrace::Severity::Info,
-          grpc_slice_from_static_string(
-              GetChannelConnectivityStateChangeString(state)));
+  SubchannelWrapper(ChannelData* chand, Subchannel* subchannel,
+                    UniquePtr<char> health_check_service_name)
+      : SubchannelInterface(&grpc_client_channel_routing_trace),
+        chand_(chand),
+        subchannel_(subchannel),
+        health_check_service_name_(std::move(health_check_service_name)) {
+    if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_routing_trace)) {
+      gpr_log(GPR_INFO,
+              "chand=%p: creating subchannel wrapper %p for subchannel %p",
+              chand, this, subchannel_);
     }
-    // Bounce into the data plane combiner to reset the picker.
-    GRPC_CHANNEL_STACK_REF(chand->owning_stack_,
-                           "ConnectivityStateAndPickerSetter");
-    GRPC_CLOSURE_INIT(&closure_, SetPicker, this,
-                      grpc_combiner_scheduler(chand->data_plane_combiner_));
-    GRPC_CLOSURE_SCHED(&closure_, GRPC_ERROR_NONE);
+    GRPC_CHANNEL_STACK_REF(chand_->owning_stack_, "SubchannelWrapper");
+    auto* subchannel_node = subchannel_->channelz_node();
+    if (subchannel_node != nullptr) {
+      auto it = chand_->subchannel_refcount_map_.find(subchannel_);
+      if (it == chand_->subchannel_refcount_map_.end()) {
+        chand_->channelz_node_->AddChildSubchannel(subchannel_node->uuid());
+        it = chand_->subchannel_refcount_map_.emplace(subchannel_, 0).first;
+      }
+      ++it->second;
+    }
+    chand_->subchannel_wrappers_[this] = true;
+  }
+
+  ~SubchannelWrapper() {
+    if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_routing_trace)) {
+      gpr_log(GPR_INFO,
+              "chand=%p: destroying subchannel wrapper %p for subchannel %p",
+              chand_, this, subchannel_);
+    }
+    chand_->subchannel_wrappers_.erase(this);
+    auto* subchannel_node = subchannel_->channelz_node();
+    if (subchannel_node != nullptr) {
+      auto it = chand_->subchannel_refcount_map_.find(subchannel_);
+      GPR_ASSERT(it != chand_->subchannel_refcount_map_.end());
+      --it->second;
+      if (it->second == 0) {
+        chand_->channelz_node_->RemoveChildSubchannel(subchannel_node->uuid());
+        chand_->subchannel_refcount_map_.erase(it);
+      }
+    }
+    GRPC_SUBCHANNEL_UNREF(subchannel_, "unref from LB");
+    GRPC_CHANNEL_STACK_UNREF(chand_->owning_stack_, "SubchannelWrapper");
+  }
+
+  grpc_connectivity_state CheckConnectivityState() override {
+    RefCountedPtr<ConnectedSubchannel> connected_subchannel;
+    grpc_connectivity_state connectivity_state =
+        subchannel_->CheckConnectivityState(health_check_service_name_.get(),
+                                            &connected_subchannel);
+    MaybeUpdateConnectedSubchannel(std::move(connected_subchannel));
+    return connectivity_state;
+  }
+
+  void WatchConnectivityState(
+      grpc_connectivity_state initial_state,
+      UniquePtr<ConnectivityStateWatcherInterface> watcher) override {
+    auto& watcher_wrapper = watcher_map_[watcher.get()];
+    GPR_ASSERT(watcher_wrapper == nullptr);
+    watcher_wrapper = New<WatcherWrapper>(std::move(watcher),
+                                          Ref(DEBUG_LOCATION, "WatcherWrapper"),
+                                          initial_state);
+    subchannel_->WatchConnectivityState(
+        initial_state,
+        UniquePtr<char>(gpr_strdup(health_check_service_name_.get())),
+        OrphanablePtr<Subchannel::ConnectivityStateWatcherInterface>(
+            watcher_wrapper));
+  }
+
+  void CancelConnectivityStateWatch(
+      ConnectivityStateWatcherInterface* watcher) override {
+    auto it = watcher_map_.find(watcher);
+    GPR_ASSERT(it != watcher_map_.end());
+    subchannel_->CancelConnectivityStateWatch(health_check_service_name_.get(),
+                                              it->second);
+    watcher_map_.erase(it);
+  }
+
+  void AttemptToConnect() override { subchannel_->AttemptToConnect(); }
+
+  void ResetBackoff() override { subchannel_->ResetBackoff(); }
+
+  const grpc_channel_args* channel_args() override {
+    return subchannel_->channel_args();
+  }
+
+  void UpdateHealthCheckServiceName(UniquePtr<char> health_check_service_name) {
+    if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_routing_trace)) {
+      gpr_log(GPR_INFO,
+              "chand=%p: subchannel wrapper %p: updating health check service "
+              "name from \"%s\" to \"%s\"",
+              chand_, this, health_check_service_name_.get(),
+              health_check_service_name.get());
+    }
+    for (auto& p : watcher_map_) {
+      WatcherWrapper*& watcher_wrapper = p.second;
+      // Cancel the current watcher and create a new one using the new
+      // health check service name.
+      // TODO(roth): If there is not already an existing health watch
+      // call for the new name, then the watcher will initially report
+      // state CONNECTING.  If the LB policy is currently reporting
+      // state READY, this may cause it to switch to CONNECTING before
+      // switching back to READY.  This could cause a small delay for
+      // RPCs being started on the channel.  If/when this becomes a
+      // problem, we may be able to handle it by waiting for the new
+      // watcher to report READY before we use it to replace the old one.
+      WatcherWrapper* replacement = watcher_wrapper->MakeReplacement();
+      subchannel_->CancelConnectivityStateWatch(
+          health_check_service_name_.get(), watcher_wrapper);
+      watcher_wrapper = replacement;
+      subchannel_->WatchConnectivityState(
+          replacement->last_seen_state(),
+          UniquePtr<char>(gpr_strdup(health_check_service_name.get())),
+          OrphanablePtr<Subchannel::ConnectivityStateWatcherInterface>(
+              replacement));
+    }
+    // Save the new health check service name.
+    health_check_service_name_ = std::move(health_check_service_name);
+  }
+
+  // Caller must be holding the control-plane combiner.
+  ConnectedSubchannel* connected_subchannel() const {
+    return connected_subchannel_.get();
+  }
+
+  // Caller must be holding the data-plane mutex.
+  ConnectedSubchannel* connected_subchannel_in_data_plane() const {
+    return connected_subchannel_in_data_plane_.get();
+  }
+  void set_connected_subchannel_in_data_plane(
+      RefCountedPtr<ConnectedSubchannel> connected_subchannel) {
+    connected_subchannel_in_data_plane_ = std::move(connected_subchannel);
   }
 
  private:
-  static const char* GetChannelConnectivityStateChangeString(
-      grpc_connectivity_state state) {
-    switch (state) {
-      case GRPC_CHANNEL_IDLE:
-        return "Channel state change to IDLE";
-      case GRPC_CHANNEL_CONNECTING:
-        return "Channel state change to CONNECTING";
-      case GRPC_CHANNEL_READY:
-        return "Channel state change to READY";
-      case GRPC_CHANNEL_TRANSIENT_FAILURE:
-        return "Channel state change to TRANSIENT_FAILURE";
-      case GRPC_CHANNEL_SHUTDOWN:
-        return "Channel state change to SHUTDOWN";
-    }
-    GPR_UNREACHABLE_CODE(return "UNKNOWN");
-  }
+  // Subchannel and SubchannelInterface have different interfaces for
+  // their respective ConnectivityStateWatcherInterface classes.
+  // The one in Subchannel updates the ConnectedSubchannel along with
+  // the state, whereas the one in SubchannelInterface does not expose
+  // the ConnectedSubchannel.
+  //
+  // This wrapper provides a bridge between the two.  It implements
+  // Subchannel::ConnectivityStateWatcherInterface and wraps
+  // the instance of SubchannelInterface::ConnectivityStateWatcherInterface
+  // that was passed in by the LB policy.  We pass an instance of this
+  // class to the underlying Subchannel, and when we get updates from
+  // the subchannel, we pass those on to the wrapped watcher to return
+  // the update to the LB policy.  This allows us to set the connected
+  // subchannel before passing the result back to the LB policy.
+  class WatcherWrapper : public Subchannel::ConnectivityStateWatcherInterface {
+   public:
+    WatcherWrapper(
+        UniquePtr<SubchannelInterface::ConnectivityStateWatcherInterface>
+            watcher,
+        RefCountedPtr<SubchannelWrapper> parent,
+        grpc_connectivity_state initial_state)
+        : watcher_(std::move(watcher)),
+          parent_(std::move(parent)),
+          last_seen_state_(initial_state) {}
 
-  static void SetPicker(void* arg, grpc_error* ignored) {
-    auto* self = static_cast<ConnectivityStateAndPickerSetter*>(arg);
-    // Update picker.
-    self->chand_->picker_ = std::move(self->picker_);
-    // Re-process queued picks.
-    for (QueuedPick* pick = self->chand_->queued_picks_; pick != nullptr;
-         pick = pick->next) {
-      CallData::StartPickLocked(pick->elem, GRPC_ERROR_NONE);
+    ~WatcherWrapper() { parent_.reset(DEBUG_LOCATION, "WatcherWrapper"); }
+
+    void Orphan() override { Unref(); }
+
+    void OnConnectivityStateChange(
+        grpc_connectivity_state new_state,
+        RefCountedPtr<ConnectedSubchannel> connected_subchannel) override {
+      if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_routing_trace)) {
+        gpr_log(GPR_INFO,
+                "chand=%p: connectivity change for subchannel wrapper %p "
+                "subchannel %p (connected_subchannel=%p state=%s); "
+                "hopping into combiner",
+                parent_->chand_, parent_.get(), parent_->subchannel_,
+                connected_subchannel.get(),
+                grpc_connectivity_state_name(new_state));
+      }
+      // Will delete itself.
+      New<Updater>(Ref(), new_state, std::move(connected_subchannel));
     }
-    // Clean up.
-    GRPC_CHANNEL_STACK_UNREF(self->chand_->owning_stack_,
-                             "ConnectivityStateAndPickerSetter");
-    Delete(self);
+
+    grpc_pollset_set* interested_parties() override {
+      SubchannelInterface::ConnectivityStateWatcherInterface* watcher =
+          watcher_.get();
+      if (watcher_ == nullptr) watcher = replacement_->watcher_.get();
+      return watcher->interested_parties();
+    }
+
+    WatcherWrapper* MakeReplacement() {
+      auto* replacement =
+          New<WatcherWrapper>(std::move(watcher_), parent_, last_seen_state_);
+      replacement_ = replacement;
+      return replacement;
+    }
+
+    grpc_connectivity_state last_seen_state() const { return last_seen_state_; }
+
+   private:
+    class Updater {
+     public:
+      Updater(RefCountedPtr<WatcherWrapper> parent,
+              grpc_connectivity_state new_state,
+              RefCountedPtr<ConnectedSubchannel> connected_subchannel)
+          : parent_(std::move(parent)),
+            state_(new_state),
+            connected_subchannel_(std::move(connected_subchannel)) {
+        GRPC_CLOSURE_INIT(
+            &closure_, ApplyUpdateInControlPlaneCombiner, this,
+            grpc_combiner_scheduler(parent_->parent_->chand_->combiner_));
+        GRPC_CLOSURE_SCHED(&closure_, GRPC_ERROR_NONE);
+      }
+
+     private:
+      static void ApplyUpdateInControlPlaneCombiner(void* arg,
+                                                    grpc_error* error) {
+        Updater* self = static_cast<Updater*>(arg);
+        if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_routing_trace)) {
+          gpr_log(GPR_INFO,
+                  "chand=%p: processing connectivity change in combiner "
+                  "for subchannel wrapper %p subchannel %p "
+                  "(connected_subchannel=%p state=%s): watcher=%p",
+                  self->parent_->parent_->chand_, self->parent_->parent_.get(),
+                  self->parent_->parent_->subchannel_,
+                  self->connected_subchannel_.get(),
+                  grpc_connectivity_state_name(self->state_),
+                  self->parent_->watcher_.get());
+        }
+        // Ignore update if the parent WatcherWrapper has been replaced
+        // since this callback was scheduled.
+        if (self->parent_->watcher_ == nullptr) return;
+        self->parent_->last_seen_state_ = self->state_;
+        self->parent_->parent_->MaybeUpdateConnectedSubchannel(
+            std::move(self->connected_subchannel_));
+        self->parent_->watcher_->OnConnectivityStateChange(self->state_);
+        Delete(self);
+      }
+
+      RefCountedPtr<WatcherWrapper> parent_;
+      grpc_connectivity_state state_;
+      RefCountedPtr<ConnectedSubchannel> connected_subchannel_;
+      grpc_closure closure_;
+    };
+
+    UniquePtr<SubchannelInterface::ConnectivityStateWatcherInterface> watcher_;
+    RefCountedPtr<SubchannelWrapper> parent_;
+    grpc_connectivity_state last_seen_state_;
+    WatcherWrapper* replacement_ = nullptr;
+  };
+
+  void MaybeUpdateConnectedSubchannel(
+      RefCountedPtr<ConnectedSubchannel> connected_subchannel) {
+    // Update the connected subchannel only if the channel is not shutting
+    // down.  This is because once the channel is shutting down, we
+    // ignore picker updates from the LB policy, which means that
+    // UpdateStateAndPickerLocked() will never process the entries
+    // in chand_->pending_subchannel_updates_.  So we don't want to add
+    // entries there that will never be processed, since that would
+    // leave dangling refs to the channel and prevent its destruction.
+    grpc_error* disconnect_error = chand_->disconnect_error();
+    if (disconnect_error != GRPC_ERROR_NONE) return;
+    // Not shutting down, so do the update.
+    if (connected_subchannel_ != connected_subchannel) {
+      connected_subchannel_ = std::move(connected_subchannel);
+      // Record the new connected subchannel so that it can be updated
+      // in the data plane mutex the next time the picker is updated.
+      chand_->pending_subchannel_updates_[Ref(
+          DEBUG_LOCATION, "ConnectedSubchannelUpdate")] = connected_subchannel_;
+    }
   }
 
   ChannelData* chand_;
-  UniquePtr<LoadBalancingPolicy::SubchannelPicker> picker_;
-  grpc_closure closure_;
-};
-
-//
-// ChannelData::ServiceConfigSetter
-//
-
-// A fire-and-forget class that sets the channel's service config data
-// in the data plane combiner.  Deletes itself when done.
-class ChannelData::ServiceConfigSetter {
- public:
-  ServiceConfigSetter(
-      ChannelData* chand,
-      Optional<internal::ClientChannelGlobalParsedConfig::RetryThrottling>
-          retry_throttle_data,
-      RefCountedPtr<ServiceConfig> service_config)
-      : chand_(chand),
-        retry_throttle_data_(retry_throttle_data),
-        service_config_(std::move(service_config)) {
-    GRPC_CHANNEL_STACK_REF(chand->owning_stack_, "ServiceConfigSetter");
-    GRPC_CLOSURE_INIT(&closure_, SetServiceConfigData, this,
-                      grpc_combiner_scheduler(chand->data_plane_combiner_));
-    GRPC_CLOSURE_SCHED(&closure_, GRPC_ERROR_NONE);
-  }
-
- private:
-  static void SetServiceConfigData(void* arg, grpc_error* ignored) {
-    ServiceConfigSetter* self = static_cast<ServiceConfigSetter*>(arg);
-    ChannelData* chand = self->chand_;
-    // Update channel state.
-    chand->received_service_config_data_ = true;
-    if (self->retry_throttle_data_.has_value()) {
-      chand->retry_throttle_data_ =
-          internal::ServerRetryThrottleMap::GetDataForServer(
-              chand->server_name_.get(),
-              self->retry_throttle_data_.value().max_milli_tokens,
-              self->retry_throttle_data_.value().milli_token_ratio);
-    }
-    chand->service_config_ = std::move(self->service_config_);
-    // Apply service config to queued picks.
-    for (QueuedPick* pick = chand->queued_picks_; pick != nullptr;
-         pick = pick->next) {
-      CallData* calld = static_cast<CallData*>(pick->elem->call_data);
-      calld->MaybeApplyServiceConfigToCallLocked(pick->elem);
-    }
-    // Clean up.
-    GRPC_CHANNEL_STACK_UNREF(self->chand_->owning_stack_,
-                             "ServiceConfigSetter");
-    Delete(self);
-  }
-
-  ChannelData* chand_;
-  Optional<internal::ClientChannelGlobalParsedConfig::RetryThrottling>
-      retry_throttle_data_;
-  RefCountedPtr<ServiceConfig> service_config_;
-  grpc_closure closure_;
+  Subchannel* subchannel_;
+  UniquePtr<char> health_check_service_name_;
+  // Maps from the address of the watcher passed to us by the LB policy
+  // to the address of the WrapperWatcher that we passed to the underlying
+  // subchannel.  This is needed so that when the LB policy calls
+  // CancelConnectivityStateWatch() with its watcher, we know the
+  // corresponding WrapperWatcher to cancel on the underlying subchannel.
+  Map<ConnectivityStateWatcherInterface*, WatcherWrapper*> watcher_map_;
+  // To be accessed only in the control plane combiner.
+  RefCountedPtr<ConnectedSubchannel> connected_subchannel_;
+  // To be accessed only in the data plane mutex.
+  RefCountedPtr<ConnectedSubchannel> connected_subchannel_in_data_plane_;
 };
 
 //
@@ -947,89 +1222,6 @@ void ChannelData::ExternalConnectivityWatcher::WatchConnectivityStateLocked(
 }
 
 //
-// ChannelData::GrpcSubchannel
-//
-
-// This class is a wrapper for Subchannel that hides details of the
-// channel's implementation (such as the health check service name) from
-// the LB policy API.
-//
-// Note that no synchronization is needed here, because even if the
-// underlying subchannel is shared between channels, this wrapper will only
-// be used within one channel, so it will always be synchronized by the
-// control plane combiner.
-class ChannelData::GrpcSubchannel : public SubchannelInterface {
- public:
-  GrpcSubchannel(ChannelData* chand, Subchannel* subchannel,
-                 UniquePtr<char> health_check_service_name)
-      : chand_(chand),
-        subchannel_(subchannel),
-        health_check_service_name_(std::move(health_check_service_name)) {
-    GRPC_CHANNEL_STACK_REF(chand_->owning_stack_, "GrpcSubchannel");
-    auto* subchannel_node = subchannel_->channelz_node();
-    if (subchannel_node != nullptr) {
-      intptr_t subchannel_uuid = subchannel_node->uuid();
-      auto it = chand_->subchannel_refcount_map_.find(subchannel_);
-      if (it == chand_->subchannel_refcount_map_.end()) {
-        chand_->channelz_node_->AddChildSubchannel(subchannel_uuid);
-        it = chand_->subchannel_refcount_map_.emplace(subchannel_, 0).first;
-      }
-      ++it->second;
-    }
-  }
-
-  ~GrpcSubchannel() {
-    auto* subchannel_node = subchannel_->channelz_node();
-    if (subchannel_node != nullptr) {
-      intptr_t subchannel_uuid = subchannel_node->uuid();
-      auto it = chand_->subchannel_refcount_map_.find(subchannel_);
-      GPR_ASSERT(it != chand_->subchannel_refcount_map_.end());
-      --it->second;
-      if (it->second == 0) {
-        chand_->channelz_node_->RemoveChildSubchannel(subchannel_uuid);
-        chand_->subchannel_refcount_map_.erase(it);
-      }
-    }
-    GRPC_SUBCHANNEL_UNREF(subchannel_, "unref from LB");
-    GRPC_CHANNEL_STACK_UNREF(chand_->owning_stack_, "GrpcSubchannel");
-  }
-
-  grpc_connectivity_state CheckConnectivityState(
-      RefCountedPtr<ConnectedSubchannelInterface>* connected_subchannel)
-      override {
-    RefCountedPtr<ConnectedSubchannel> tmp;
-    auto retval = subchannel_->CheckConnectivityState(
-        health_check_service_name_.get(), &tmp);
-    *connected_subchannel = std::move(tmp);
-    return retval;
-  }
-
-  void WatchConnectivityState(
-      grpc_connectivity_state initial_state,
-      UniquePtr<ConnectivityStateWatcher> watcher) override {
-    subchannel_->WatchConnectivityState(
-        initial_state,
-        UniquePtr<char>(gpr_strdup(health_check_service_name_.get())),
-        std::move(watcher));
-  }
-
-  void CancelConnectivityStateWatch(
-      ConnectivityStateWatcher* watcher) override {
-    subchannel_->CancelConnectivityStateWatch(health_check_service_name_.get(),
-                                              watcher);
-  }
-
-  void AttemptToConnect() override { subchannel_->AttemptToConnect(); }
-
-  void ResetBackoff() override { subchannel_->ResetBackoff(); }
-
- private:
-  ChannelData* chand_;
-  Subchannel* subchannel_;
-  UniquePtr<char> health_check_service_name_;
-};
-
-//
 // ChannelData::ClientChannelControlHelper
 //
 
@@ -1066,20 +1258,14 @@ class ChannelData::ClientChannelControlHelper
         chand_->client_channel_factory_->CreateSubchannel(new_args);
     grpc_channel_args_destroy(new_args);
     if (subchannel == nullptr) return nullptr;
-    return MakeRefCounted<GrpcSubchannel>(chand_, subchannel,
-                                          std::move(health_check_service_name));
-  }
-
-  grpc_channel* CreateChannel(const char* target,
-                              const grpc_channel_args& args) override {
-    return chand_->client_channel_factory_->CreateChannel(target, &args);
+    return MakeRefCounted<SubchannelWrapper>(
+        chand_, subchannel, std::move(health_check_service_name));
   }
 
   void UpdateState(
       grpc_connectivity_state state,
       UniquePtr<LoadBalancingPolicy::SubchannelPicker> picker) override {
-    grpc_error* disconnect_error =
-        chand_->disconnect_error_.Load(MemoryOrder::ACQUIRE);
+    grpc_error* disconnect_error = chand_->disconnect_error();
     if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_routing_trace)) {
       const char* extra = disconnect_error == GRPC_ERROR_NONE
                               ? ""
@@ -1089,20 +1275,18 @@ class ChannelData::ClientChannelControlHelper
     }
     // Do update only if not shutting down.
     if (disconnect_error == GRPC_ERROR_NONE) {
-      // Will delete itself.
-      New<ConnectivityStateAndPickerSetter>(chand_, state, "helper",
-                                            std::move(picker));
+      chand_->UpdateStateAndPickerLocked(state, "helper", std::move(picker));
     }
   }
 
   // No-op -- we should never get this from ResolvingLoadBalancingPolicy.
   void RequestReresolution() override {}
 
-  void AddTraceEvent(TraceSeverity severity, const char* message) override {
+  void AddTraceEvent(TraceSeverity severity, StringView message) override {
     if (chand_->channelz_node_ != nullptr) {
       chand_->channelz_node_->AddTraceEvent(
           ConvertSeverityEnum(severity),
-          grpc_slice_from_copied_string(message));
+          grpc_slice_from_copied_buffer(message.data(), message.size()));
     }
   }
 
@@ -1175,7 +1359,6 @@ ChannelData::ChannelData(grpc_channel_element_args* args, grpc_error** error)
       client_channel_factory_(
           ClientChannelFactory::GetFromChannelArgs(args->channel_args)),
       channelz_node_(GetChannelzNode(args->channel_args)),
-      data_plane_combiner_(grpc_combiner_create()),
       combiner_(grpc_combiner_create()),
       interested_parties_(grpc_pollset_set_create()),
       subchannel_pool_(GetSubchannelPool(args->channel_args)),
@@ -1226,59 +1409,156 @@ ChannelData::ChannelData(grpc_channel_element_args* args, grpc_error** error)
   grpc_channel_args* new_args = nullptr;
   grpc_proxy_mappers_map_name(server_uri, args->channel_args, &proxy_name,
                               &new_args);
-  UniquePtr<char> target_uri(proxy_name != nullptr ? proxy_name
-                                                   : gpr_strdup(server_uri));
-  // Instantiate resolving LB policy.
-  LoadBalancingPolicy::Args lb_args;
-  lb_args.combiner = combiner_;
-  lb_args.channel_control_helper =
-      UniquePtr<LoadBalancingPolicy::ChannelControlHelper>(
-          New<ClientChannelControlHelper>(this));
-  lb_args.args = new_args != nullptr ? new_args : args->channel_args;
-  resolving_lb_policy_.reset(New<ResolvingLoadBalancingPolicy>(
-      std::move(lb_args), &grpc_client_channel_routing_trace,
-      std::move(target_uri), ProcessResolverResultLocked, this, error));
-  grpc_channel_args_destroy(new_args);
-  if (*error != GRPC_ERROR_NONE) {
-    // Orphan the resolving LB policy and flush the exec_ctx to ensure
-    // that it finishes shutting down.  This ensures that if we are
-    // failing, we destroy the ClientChannelControlHelper (and thus
-    // unref the channel stack) before we return.
-    // TODO(roth): This is not a complete solution, because it only
-    // catches the case where channel stack initialization fails in this
-    // particular filter.  If there is a failure in a different filter, we
-    // will leave a dangling ref here, which can cause a crash.  Fortunately,
-    // in practice, there are no other filters that can cause failures in
-    // channel stack initialization, so this works for now.
-    resolving_lb_policy_.reset();
-    ExecCtx::Get()->Flush();
-  } else {
-    grpc_pollset_set_add_pollset_set(resolving_lb_policy_->interested_parties(),
-                                     interested_parties_);
-    if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_routing_trace)) {
-      gpr_log(GPR_INFO, "chand=%p: created resolving_lb_policy=%p", this,
-              resolving_lb_policy_.get());
-    }
+  target_uri_.reset(proxy_name != nullptr ? proxy_name
+                                          : gpr_strdup(server_uri));
+  channel_args_ = new_args != nullptr
+                      ? new_args
+                      : grpc_channel_args_copy(args->channel_args);
+  if (!ResolverRegistry::IsValidTarget(target_uri_.get())) {
+    *error =
+        GRPC_ERROR_CREATE_FROM_STATIC_STRING("the target uri is not valid.");
+    return;
   }
+  *error = GRPC_ERROR_NONE;
 }
 
 ChannelData::~ChannelData() {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_routing_trace)) {
     gpr_log(GPR_INFO, "chand=%p: destroying channel", this);
   }
+  DestroyResolvingLoadBalancingPolicyLocked();
+  grpc_channel_args_destroy(channel_args_);
+  // Stop backup polling.
+  grpc_client_channel_stop_backup_polling(interested_parties_);
+  grpc_pollset_set_destroy(interested_parties_);
+  GRPC_COMBINER_UNREF(combiner_, "client_channel");
+  GRPC_ERROR_UNREF(disconnect_error_.Load(MemoryOrder::RELAXED));
+  grpc_connectivity_state_destroy(&state_tracker_);
+  gpr_mu_destroy(&info_mu_);
+}
+
+void ChannelData::UpdateStateAndPickerLocked(
+    grpc_connectivity_state state, const char* reason,
+    UniquePtr<LoadBalancingPolicy::SubchannelPicker> picker) {
+  // Clean the control plane when entering IDLE.
+  if (picker_ == nullptr) {
+    health_check_service_name_.reset();
+    saved_service_config_.reset();
+    received_first_resolver_result_ = false;
+  }
+  // Update connectivity state.
+  grpc_connectivity_state_set(&state_tracker_, state, reason);
+  if (channelz_node_ != nullptr) {
+    channelz_node_->SetConnectivityState(state);
+    channelz_node_->AddTraceEvent(
+        channelz::ChannelTrace::Severity::Info,
+        grpc_slice_from_static_string(
+            channelz::ChannelNode::GetChannelConnectivityStateChangeString(
+                state)));
+  }
+  // Grab data plane lock to do subchannel updates and update the picker.
+  //
+  // Note that we want to minimize the work done while holding the data
+  // plane lock, to keep the critical section small.  So, for all of the
+  // objects that we might wind up unreffing here, we actually hold onto
+  // the refs until after we release the lock, and then unref them at
+  // that point.  This includes the following:
+  // - refs to subchannel wrappers in the keys of pending_subchannel_updates_
+  // - ref stored in retry_throttle_data_
+  // - ref stored in service_config_
+  // - ownership of the existing picker in picker_
+  RefCountedPtr<ServerRetryThrottleData> retry_throttle_data_to_unref;
+  RefCountedPtr<ServiceConfig> service_config_to_unref;
+  {
+    MutexLock lock(&data_plane_mu_);
+    // Handle subchannel updates.
+    for (auto& p : pending_subchannel_updates_) {
+      if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_routing_trace)) {
+        gpr_log(GPR_INFO,
+                "chand=%p: updating subchannel wrapper %p data plane "
+                "connected_subchannel to %p",
+                this, p.first.get(), p.second.get());
+      }
+      // Note: We do not remove the entry from pending_subchannel_updates_
+      // here, since this would unref the subchannel wrapper; instead,
+      // we wait until we've released the lock to clear the map.
+      p.first->set_connected_subchannel_in_data_plane(std::move(p.second));
+    }
+    // Swap out the picker.
+    // Note: Original value will be destroyed after the lock is released.
+    picker_.swap(picker);
+    // Clean the data plane if the updated picker is nullptr.
+    if (picker_ == nullptr) {
+      received_service_config_data_ = false;
+      // Note: We save the objects to unref until after the lock is released.
+      retry_throttle_data_to_unref = std::move(retry_throttle_data_);
+      service_config_to_unref = std::move(service_config_);
+    }
+    // Re-process queued picks.
+    for (QueuedPick* pick = queued_picks_; pick != nullptr; pick = pick->next) {
+      grpc_call_element* elem = pick->elem;
+      CallData* calld = static_cast<CallData*>(elem->call_data);
+      grpc_error* error = GRPC_ERROR_NONE;
+      if (calld->PickSubchannelLocked(elem, &error)) {
+        calld->AsyncPickDone(elem, error);
+      }
+    }
+  }
+  // Clear the pending update map after releasing the lock, to keep the
+  // critical section small.
+  pending_subchannel_updates_.clear();
+}
+
+void ChannelData::UpdateServiceConfigLocked(
+    RefCountedPtr<ServerRetryThrottleData> retry_throttle_data,
+    RefCountedPtr<ServiceConfig> service_config) {
+  // Grab data plane lock to update service config.
+  //
+  // We defer unreffing the old values (and deallocating memory) until
+  // after releasing the lock to keep the critical section small.
+  {
+    MutexLock lock(&data_plane_mu_);
+    // Update service config.
+    received_service_config_data_ = true;
+    // Old values will be unreffed after lock is released.
+    retry_throttle_data_.swap(retry_throttle_data);
+    service_config_.swap(service_config);
+    // Apply service config to queued picks.
+    for (QueuedPick* pick = queued_picks_; pick != nullptr; pick = pick->next) {
+      CallData* calld = static_cast<CallData*>(pick->elem->call_data);
+      calld->MaybeApplyServiceConfigToCallLocked(pick->elem);
+    }
+  }
+  // Old values will be unreffed after lock is released when they go out
+  // of scope.
+}
+
+void ChannelData::CreateResolvingLoadBalancingPolicyLocked() {
+  // Instantiate resolving LB policy.
+  LoadBalancingPolicy::Args lb_args;
+  lb_args.combiner = combiner_;
+  lb_args.channel_control_helper =
+      UniquePtr<LoadBalancingPolicy::ChannelControlHelper>(
+          New<ClientChannelControlHelper>(this));
+  lb_args.args = channel_args_;
+  UniquePtr<char> target_uri(gpr_strdup(target_uri_.get()));
+  resolving_lb_policy_.reset(New<ResolvingLoadBalancingPolicy>(
+      std::move(lb_args), &grpc_client_channel_routing_trace,
+      std::move(target_uri), ProcessResolverResultLocked, this));
+  grpc_pollset_set_add_pollset_set(resolving_lb_policy_->interested_parties(),
+                                   interested_parties_);
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_routing_trace)) {
+    gpr_log(GPR_INFO, "chand=%p: created resolving_lb_policy=%p", this,
+            resolving_lb_policy_.get());
+  }
+}
+
+void ChannelData::DestroyResolvingLoadBalancingPolicyLocked() {
   if (resolving_lb_policy_ != nullptr) {
     grpc_pollset_set_del_pollset_set(resolving_lb_policy_->interested_parties(),
                                      interested_parties_);
     resolving_lb_policy_.reset();
   }
-  // Stop backup polling.
-  grpc_client_channel_stop_backup_polling(interested_parties_);
-  grpc_pollset_set_destroy(interested_parties_);
-  GRPC_COMBINER_UNREF(data_plane_combiner_, "client_channel");
-  GRPC_COMBINER_UNREF(combiner_, "client_channel");
-  GRPC_ERROR_UNREF(disconnect_error_.Load(MemoryOrder::RELAXED));
-  grpc_connectivity_state_destroy(&state_tracker_);
-  gpr_mu_destroy(&info_mu_);
 }
 
 void ChannelData::ProcessLbPolicy(
@@ -1411,6 +1691,11 @@ bool ChannelData::ProcessResolverResultLocked(
     } else {
       chand->health_check_service_name_.reset();
     }
+    // Update health check service name used by existing subchannel wrappers.
+    for (const auto& p : chand->subchannel_wrappers_) {
+      p.first->UpdateHealthCheckServiceName(
+          UniquePtr<char>(gpr_strdup(chand->health_check_service_name_.get())));
+    }
     // Save service config.
     chand->saved_service_config_ = std::move(service_config);
   }
@@ -1419,15 +1704,20 @@ bool ChannelData::ProcessResolverResultLocked(
   // if we feel it is unnecessary.
   if (service_config_changed || !chand->received_first_resolver_result_) {
     chand->received_first_resolver_result_ = true;
-    Optional<internal::ClientChannelGlobalParsedConfig::RetryThrottling>
-        retry_throttle_data;
+    RefCountedPtr<ServerRetryThrottleData> retry_throttle_data;
     if (parsed_service_config != nullptr) {
-      retry_throttle_data = parsed_service_config->retry_throttling();
+      Optional<internal::ClientChannelGlobalParsedConfig::RetryThrottling>
+          retry_throttle_config = parsed_service_config->retry_throttling();
+      if (retry_throttle_config.has_value()) {
+        retry_throttle_data =
+            internal::ServerRetryThrottleMap::GetDataForServer(
+                chand->server_name_.get(),
+                retry_throttle_config.value().max_milli_tokens,
+                retry_throttle_config.value().milli_token_ratio);
+      }
     }
-    // Create service config setter to update channel state in the data
-    // plane combiner.  Destroys itself when done.
-    New<ServiceConfigSetter>(chand, retry_throttle_data,
-                             chand->saved_service_config_);
+    chand->UpdateServiceConfigLocked(std::move(retry_throttle_data),
+                                     chand->saved_service_config_);
   }
   UniquePtr<char> processed_lb_policy_name;
   chand->ProcessLbPolicy(result, parsed_service_config,
@@ -1451,9 +1741,13 @@ grpc_error* ChannelData::DoPingLocked(grpc_transport_op* op) {
   }
   LoadBalancingPolicy::PickResult result =
       picker_->Pick(LoadBalancingPolicy::PickArgs());
-  if (result.connected_subchannel != nullptr) {
-    ConnectedSubchannel* connected_subchannel =
-        static_cast<ConnectedSubchannel*>(result.connected_subchannel.get());
+  ConnectedSubchannel* connected_subchannel = nullptr;
+  if (result.subchannel != nullptr) {
+    SubchannelWrapper* subchannel =
+        static_cast<SubchannelWrapper*>(result.subchannel.get());
+    connected_subchannel = subchannel->connected_subchannel();
+  }
+  if (connected_subchannel != nullptr) {
     connected_subchannel->Ping(op->send_ping.on_initiate, op->send_ping.on_ack);
   } else {
     if (result.error == GRPC_ERROR_NONE) {
@@ -1494,22 +1788,35 @@ void ChannelData::StartTransportOpLocked(void* arg, grpc_error* ignored) {
       chand->resolving_lb_policy_->ResetBackoffLocked();
     }
   }
-  // Disconnect.
+  // Disconnect or enter IDLE.
   if (op->disconnect_with_error != GRPC_ERROR_NONE) {
-    grpc_error* error = GRPC_ERROR_NONE;
-    GPR_ASSERT(chand->disconnect_error_.CompareExchangeStrong(
-        &error, op->disconnect_with_error, MemoryOrder::ACQ_REL,
-        MemoryOrder::ACQUIRE));
-    grpc_pollset_set_del_pollset_set(
-        chand->resolving_lb_policy_->interested_parties(),
-        chand->interested_parties_);
-    chand->resolving_lb_policy_.reset();
-    // Will delete itself.
-    New<ConnectivityStateAndPickerSetter>(
-        chand, GRPC_CHANNEL_SHUTDOWN, "shutdown from API",
-        UniquePtr<LoadBalancingPolicy::SubchannelPicker>(
-            New<LoadBalancingPolicy::TransientFailurePicker>(
-                GRPC_ERROR_REF(op->disconnect_with_error))));
+    if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_call_trace)) {
+      gpr_log(GPR_INFO, "chand=%p: disconnect_with_error: %s", chand,
+              grpc_error_string(op->disconnect_with_error));
+    }
+    chand->DestroyResolvingLoadBalancingPolicyLocked();
+    intptr_t value;
+    if (grpc_error_get_int(op->disconnect_with_error,
+                           GRPC_ERROR_INT_CHANNEL_CONNECTIVITY_STATE, &value) &&
+        static_cast<grpc_connectivity_state>(value) == GRPC_CHANNEL_IDLE) {
+      if (chand->disconnect_error() == GRPC_ERROR_NONE) {
+        // Enter IDLE state.
+        chand->UpdateStateAndPickerLocked(GRPC_CHANNEL_IDLE,
+                                          "channel entering IDLE", nullptr);
+      }
+      GRPC_ERROR_UNREF(op->disconnect_with_error);
+    } else {
+      // Disconnect.
+      GPR_ASSERT(chand->disconnect_error_.Load(MemoryOrder::RELAXED) ==
+                 GRPC_ERROR_NONE);
+      chand->disconnect_error_.Store(op->disconnect_with_error,
+                                     MemoryOrder::RELEASE);
+      chand->UpdateStateAndPickerLocked(
+          GRPC_CHANNEL_SHUTDOWN, "shutdown from API",
+          UniquePtr<LoadBalancingPolicy::SubchannelPicker>(
+              New<LoadBalancingPolicy::TransientFailurePicker>(
+                  GRPC_ERROR_REF(op->disconnect_with_error))));
+    }
   }
   GRPC_CHANNEL_STACK_UNREF(chand->owning_stack_, "start_transport_op");
   GRPC_CLOSURE_SCHED(op->on_consumed, GRPC_ERROR_NONE);
@@ -1570,10 +1877,23 @@ void ChannelData::RemoveQueuedPick(QueuedPick* to_remove,
   }
 }
 
+RefCountedPtr<ConnectedSubchannel>
+ChannelData::GetConnectedSubchannelInDataPlane(
+    SubchannelInterface* subchannel) const {
+  SubchannelWrapper* subchannel_wrapper =
+      static_cast<SubchannelWrapper*>(subchannel);
+  ConnectedSubchannel* connected_subchannel =
+      subchannel_wrapper->connected_subchannel_in_data_plane();
+  if (connected_subchannel == nullptr) return nullptr;
+  return connected_subchannel->Ref();
+}
+
 void ChannelData::TryToConnectLocked(void* arg, grpc_error* error_ignored) {
   auto* chand = static_cast<ChannelData*>(arg);
   if (chand->resolving_lb_policy_ != nullptr) {
     chand->resolving_lb_policy_->ExitIdleLocked();
+  } else {
+    chand->CreateResolvingLoadBalancingPolicyLocked();
   }
   GRPC_CHANNEL_STACK_UNREF(chand->owning_stack_, "TryToConnect");
 }
@@ -1653,6 +1973,10 @@ CallData::CallData(grpc_call_element* elem, const ChannelData& chand,
 CallData::~CallData() {
   grpc_slice_unref_internal(path_);
   GRPC_ERROR_UNREF(cancel_error_);
+  if (backend_metric_data_ != nullptr) {
+    backend_metric_data_
+        ->LoadBalancingPolicy::BackendMetricData::~BackendMetricData();
+  }
   // Make sure there are no remaining pending batches.
   for (size_t i = 0; i < GPR_ARRAY_SIZE(pending_batches_); ++i) {
     GPR_ASSERT(pending_batches_[i].batch == nullptr);
@@ -1731,8 +2055,8 @@ void CallData::StartTransportStreamOpBatch(
   // Add the batch to the pending list.
   calld->PendingBatchesAdd(elem, batch);
   // Check if we've already gotten a subchannel call.
-  // Note that once we have completed the pick, we do not need to enter
-  // the channel combiner, which is more efficient (especially for
+  // Note that once we have picked a subchannel, we do not need to acquire
+  // the channel's data plane mutex, which is more efficient (especially for
   // streaming calls).
   if (calld->subchannel_call_ != nullptr) {
     if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_call_trace)) {
@@ -1744,18 +2068,15 @@ void CallData::StartTransportStreamOpBatch(
     return;
   }
   // We do not yet have a subchannel call.
-  // For batches containing a send_initial_metadata op, enter the channel
-  // combiner to start a pick.
+  // For batches containing a send_initial_metadata op, acquire the
+  // channel's data plane mutex to pick a subchannel.
   if (GPR_LIKELY(batch->send_initial_metadata)) {
     if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_call_trace)) {
-      gpr_log(GPR_INFO, "chand=%p calld=%p: entering client_channel combiner",
+      gpr_log(GPR_INFO,
+              "chand=%p calld=%p: grabbing data plane mutex to perform pick",
               chand, calld);
     }
-    GRPC_CLOSURE_SCHED(
-        GRPC_CLOSURE_INIT(
-            &batch->handler_private.closure, StartPickLocked, elem,
-            grpc_combiner_scheduler(chand->data_plane_combiner())),
-        GRPC_ERROR_NONE);
+    PickSubchannel(elem, GRPC_ERROR_NONE);
   } else {
     // For all other batches, release the call combiner.
     if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_call_trace)) {
@@ -1879,9 +2200,10 @@ void CallData::RecvTrailingMetadataReadyForLoadBalancingPolicy(
     void* arg, grpc_error* error) {
   CallData* calld = static_cast<CallData*>(arg);
   // Invoke callback to LB policy.
+  Metadata trailing_metadata(calld, calld->recv_trailing_metadata_);
   calld->lb_recv_trailing_metadata_ready_(
-      calld->lb_recv_trailing_metadata_ready_user_data_,
-      calld->recv_trailing_metadata_, &calld->lb_call_state_);
+      calld->lb_recv_trailing_metadata_ready_user_data_, error,
+      &trailing_metadata, &calld->lb_call_state_);
   // Chain to original callback.
   GRPC_CLOSURE_RUN(calld->original_recv_trailing_metadata_ready_,
                    GRPC_ERROR_REF(error));
@@ -2157,9 +2479,8 @@ void CallData::DoRetry(grpc_call_element* elem,
   GPR_ASSERT(method_params_ != nullptr);
   const auto* retry_policy = method_params_->retry_policy();
   GPR_ASSERT(retry_policy != nullptr);
-  // Reset subchannel call and connected subchannel.
+  // Reset subchannel call.
   subchannel_call_.reset();
-  connected_subchannel_.reset();
   // Compute backoff delay.
   grpc_millis next_attempt_time;
   if (server_pushback_ms >= 0) {
@@ -2183,8 +2504,8 @@ void CallData::DoRetry(grpc_call_element* elem,
             this, next_attempt_time - ExecCtx::Get()->Now());
   }
   // Schedule retry after computed delay.
-  GRPC_CLOSURE_INIT(&pick_closure_, StartPickLocked, elem,
-                    grpc_combiner_scheduler(chand->data_plane_combiner()));
+  GRPC_CLOSURE_INIT(&pick_closure_, PickSubchannel, elem,
+                    grpc_schedule_on_exec_ctx);
   grpc_timer_init(&retry_timer_, next_attempt_time, &pick_closure_);
   // Update bookkeeping.
   if (retry_state != nullptr) retry_state->retry_dispatched = true;
@@ -2889,8 +3210,8 @@ void CallData::AddRetriableSendInitialMetadataOp(
     SubchannelCallRetryState* retry_state,
     SubchannelCallBatchData* batch_data) {
   // Maps the number of retries to the corresponding metadata value slice.
-  static const grpc_slice* retry_count_strings[] = {
-      &GRPC_MDSTR_1, &GRPC_MDSTR_2, &GRPC_MDSTR_3, &GRPC_MDSTR_4};
+  const grpc_slice* retry_count_strings[] = {&GRPC_MDSTR_1, &GRPC_MDSTR_2,
+                                             &GRPC_MDSTR_3, &GRPC_MDSTR_4};
   // We need to make a copy of the metadata batch for each attempt, since
   // the filters in the subchannel stack may modify this batch, and we don't
   // want those modifications to be passed forward to subsequent attempts.
@@ -2907,8 +3228,7 @@ void CallData::AddRetriableSendInitialMetadataOp(
   if (GPR_UNLIKELY(retry_state->send_initial_metadata.idx.named
                        .grpc_previous_rpc_attempts != nullptr)) {
     grpc_metadata_batch_remove(&retry_state->send_initial_metadata,
-                               retry_state->send_initial_metadata.idx.named
-                                   .grpc_previous_rpc_attempts);
+                               GRPC_BATCH_GRPC_PREVIOUS_RPC_ATTEMPTS);
   }
   if (GPR_UNLIKELY(num_attempts_completed_ > 0)) {
     grpc_mdelem retry_md = grpc_mdelem_create(
@@ -2918,7 +3238,7 @@ void CallData::AddRetriableSendInitialMetadataOp(
         &retry_state->send_initial_metadata,
         &retry_state
              ->send_initial_metadata_storage[send_initial_metadata_.list.count],
-        retry_md);
+        retry_md, GRPC_BATCH_GRPC_PREVIOUS_RPC_ATTEMPTS);
     if (GPR_UNLIKELY(error != GRPC_ERROR_NONE)) {
       gpr_log(GPR_ERROR, "error adding retry metadata: %s",
               grpc_error_string(error));
@@ -3277,13 +3597,14 @@ void CallData::CreateSubchannelCall(grpc_call_element* elem) {
   ChannelData* chand = static_cast<ChannelData*>(elem->channel_data);
   const size_t parent_data_size =
       enable_retries_ ? sizeof(SubchannelCallRetryState) : 0;
-  const ConnectedSubchannel::CallArgs call_args = {
-      pollent_, path_, call_start_time_, deadline_, arena_,
+  SubchannelCall::Args call_args = {
+      std::move(connected_subchannel_), pollent_, path_, call_start_time_,
+      deadline_, arena_,
       // TODO(roth): When we implement hedging support, we will probably
       // need to use a separate call context for each subchannel call.
       call_context_, call_combiner_, parent_data_size};
   grpc_error* error = GRPC_ERROR_NONE;
-  subchannel_call_ = connected_subchannel_->CreateCall(call_args, &error);
+  subchannel_call_ = SubchannelCall::Create(std::move(call_args), &error);
   if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_routing_trace)) {
     gpr_log(GPR_INFO, "chand=%p calld=%p: create subchannel_call=%p: error=%s",
             chand, this, subchannel_call_.get(), grpc_error_string(error));
@@ -3297,6 +3618,11 @@ void CallData::CreateSubchannelCall(grpc_call_element* elem) {
     }
     PendingBatchesResume(elem);
   }
+}
+
+void CallData::AsyncPickDone(grpc_call_element* elem, grpc_error* error) {
+  GRPC_CLOSURE_INIT(&pick_closure_, PickDone, elem, grpc_schedule_on_exec_ctx);
+  GRPC_CLOSURE_SCHED(&pick_closure_, error);
 }
 
 void CallData::PickDone(void* arg, grpc_error* error) {
@@ -3321,10 +3647,9 @@ class CallData::QueuedPickCanceller {
  public:
   explicit QueuedPickCanceller(grpc_call_element* elem) : elem_(elem) {
     auto* calld = static_cast<CallData*>(elem->call_data);
-    auto* chand = static_cast<ChannelData*>(elem->channel_data);
     GRPC_CALL_STACK_REF(calld->owning_call_, "QueuedPickCanceller");
     GRPC_CLOSURE_INIT(&closure_, &CancelLocked, this,
-                      grpc_combiner_scheduler(chand->data_plane_combiner()));
+                      grpc_schedule_on_exec_ctx);
     calld->call_combiner_->SetNotifyOnCancel(&closure_);
   }
 
@@ -3333,6 +3658,7 @@ class CallData::QueuedPickCanceller {
     auto* self = static_cast<QueuedPickCanceller*>(arg);
     auto* chand = static_cast<ChannelData*>(self->elem_->channel_data);
     auto* calld = static_cast<CallData*>(self->elem_->call_data);
+    MutexLock lock(chand->data_plane_mu());
     if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_routing_trace)) {
       gpr_log(GPR_INFO,
               "chand=%p calld=%p: cancelling queued pick: "
@@ -3404,7 +3730,7 @@ void CallData::ApplyServiceConfigToCallLocked(grpc_call_element* elem) {
     // from the client API, reset the deadline timer.
     if (chand->deadline_checking_enabled() && method_params_->timeout() != 0) {
       const grpc_millis per_method_deadline =
-          grpc_timespec_to_millis_round_up(call_start_time_) +
+          grpc_cycle_counter_to_millis_round_up(call_start_time_) +
           method_params_->timeout();
       if (per_method_deadline < deadline_) {
         deadline_ = per_method_deadline;
@@ -3451,20 +3777,44 @@ const char* PickResultTypeName(
       return "COMPLETE";
     case LoadBalancingPolicy::PickResult::PICK_QUEUE:
       return "QUEUE";
-    case LoadBalancingPolicy::PickResult::PICK_TRANSIENT_FAILURE:
-      return "TRANSIENT_FAILURE";
+    case LoadBalancingPolicy::PickResult::PICK_FAILED:
+      return "FAILED";
   }
   GPR_UNREACHABLE_CODE(return "UNKNOWN");
 }
 
-void CallData::StartPickLocked(void* arg, grpc_error* error) {
+void CallData::PickSubchannel(void* arg, grpc_error* error) {
   grpc_call_element* elem = static_cast<grpc_call_element*>(arg);
   CallData* calld = static_cast<CallData*>(elem->call_data);
   ChannelData* chand = static_cast<ChannelData*>(elem->channel_data);
-  GPR_ASSERT(calld->connected_subchannel_ == nullptr);
-  GPR_ASSERT(calld->subchannel_call_ == nullptr);
+  bool pick_complete;
+  {
+    MutexLock lock(chand->data_plane_mu());
+    pick_complete = calld->PickSubchannelLocked(elem, &error);
+  }
+  if (pick_complete) {
+    PickDone(elem, error);
+    GRPC_ERROR_UNREF(error);
+  }
+}
+
+bool CallData::PickSubchannelLocked(grpc_call_element* elem,
+                                    grpc_error** error) {
+  ChannelData* chand = static_cast<ChannelData*>(elem->channel_data);
+  GPR_ASSERT(connected_subchannel_ == nullptr);
+  GPR_ASSERT(subchannel_call_ == nullptr);
+  // The picker being null means that the channel is currently in IDLE state.
+  // The incoming call will make the channel exit IDLE.
+  if (chand->picker() == nullptr) {
+    // Bounce into the control plane combiner to exit IDLE.
+    chand->CheckConnectivityState(/*try_to_connect=*/true);
+    // Queue the pick, so that it will be attempted once the channel
+    // becomes connected.
+    AddCallToQueuedPicksLocked(elem);
+    return false;
+  }
   // Apply service config to call if needed.
-  calld->MaybeApplyServiceConfigToCallLocked(elem);
+  MaybeApplyServiceConfigToCallLocked(elem);
   // If this is a retry, use the send_initial_metadata payload that
   // we've cached; otherwise, use the pending batch.  The
   // send_initial_metadata batch will be the first pending batch in the
@@ -3476,41 +3826,38 @@ void CallData::StartPickLocked(void* arg, grpc_error* error) {
   // subchannel's copy of the metadata batch (which is copied for each
   // attempt) to the LB policy instead the one from the parent channel.
   LoadBalancingPolicy::PickArgs pick_args;
-  pick_args.call_state = &calld->lb_call_state_;
-  pick_args.initial_metadata =
-      calld->seen_send_initial_metadata_
-          ? &calld->send_initial_metadata_
-          : calld->pending_batches_[0]
-                .batch->payload->send_initial_metadata.send_initial_metadata;
+  pick_args.call_state = &lb_call_state_;
+  Metadata initial_metadata(
+      this,
+      seen_send_initial_metadata_
+          ? &send_initial_metadata_
+          : pending_batches_[0]
+                .batch->payload->send_initial_metadata.send_initial_metadata);
+  pick_args.initial_metadata = &initial_metadata;
   // Grab initial metadata flags so that we can check later if the call has
   // wait_for_ready enabled.
   const uint32_t send_initial_metadata_flags =
-      calld->seen_send_initial_metadata_
-          ? calld->send_initial_metadata_flags_
-          : calld->pending_batches_[0]
-                .batch->payload->send_initial_metadata
-                .send_initial_metadata_flags;
-  // When done, we schedule this closure to leave the data plane combiner.
-  GRPC_CLOSURE_INIT(&calld->pick_closure_, PickDone, elem,
-                    grpc_schedule_on_exec_ctx);
+      seen_send_initial_metadata_ ? send_initial_metadata_flags_
+                                  : pending_batches_[0]
+                                        .batch->payload->send_initial_metadata
+                                        .send_initial_metadata_flags;
   // Attempt pick.
   auto result = chand->picker()->Pick(pick_args);
   if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_routing_trace)) {
     gpr_log(GPR_INFO,
-            "chand=%p calld=%p: LB pick returned %s (connected_subchannel=%p, "
-            "error=%s)",
-            chand, calld, PickResultTypeName(result.type),
-            result.connected_subchannel.get(), grpc_error_string(result.error));
+            "chand=%p calld=%p: LB pick returned %s (subchannel=%p, error=%s)",
+            chand, this, PickResultTypeName(result.type),
+            result.subchannel.get(), grpc_error_string(result.error));
   }
   switch (result.type) {
-    case LoadBalancingPolicy::PickResult::PICK_TRANSIENT_FAILURE: {
+    case LoadBalancingPolicy::PickResult::PICK_FAILED: {
       // If we're shutting down, fail all RPCs.
       grpc_error* disconnect_error = chand->disconnect_error();
       if (disconnect_error != GRPC_ERROR_NONE) {
         GRPC_ERROR_UNREF(result.error);
-        GRPC_CLOSURE_SCHED(&calld->pick_closure_,
-                           GRPC_ERROR_REF(disconnect_error));
-        break;
+        if (pick_queued_) RemoveCallFromQueuedPicksLocked(elem);
+        *error = GRPC_ERROR_REF(disconnect_error);
+        return true;
       }
       // If wait_for_ready is false, then the error indicates the RPC
       // attempt's final status.
@@ -3518,19 +3865,20 @@ void CallData::StartPickLocked(void* arg, grpc_error* error) {
            GRPC_INITIAL_METADATA_WAIT_FOR_READY) == 0) {
         // Retry if appropriate; otherwise, fail.
         grpc_status_code status = GRPC_STATUS_OK;
-        grpc_error_get_status(result.error, calld->deadline_, &status, nullptr,
+        grpc_error_get_status(result.error, deadline_, &status, nullptr,
                               nullptr, nullptr);
-        if (!calld->enable_retries_ ||
-            !calld->MaybeRetry(elem, nullptr /* batch_data */, status,
-                               nullptr /* server_pushback_md */)) {
+        const bool retried = enable_retries_ &&
+                             MaybeRetry(elem, nullptr /* batch_data */, status,
+                                        nullptr /* server_pushback_md */);
+        if (!retried) {
           grpc_error* new_error =
               GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
                   "Failed to pick subchannel", &result.error, 1);
           GRPC_ERROR_UNREF(result.error);
-          GRPC_CLOSURE_SCHED(&calld->pick_closure_, new_error);
+          *error = new_error;
         }
-        if (calld->pick_queued_) calld->RemoveCallFromQueuedPicksLocked(elem);
-        break;
+        if (pick_queued_) RemoveCallFromQueuedPicksLocked(elem);
+        return !retried;
       }
       // If wait_for_ready is true, then queue to retry when we get a new
       // picker.
@@ -3538,21 +3886,26 @@ void CallData::StartPickLocked(void* arg, grpc_error* error) {
     }
     // Fallthrough
     case LoadBalancingPolicy::PickResult::PICK_QUEUE:
-      if (!calld->pick_queued_) calld->AddCallToQueuedPicksLocked(elem);
-      break;
+      if (!pick_queued_) AddCallToQueuedPicksLocked(elem);
+      return false;
     default:  // PICK_COMPLETE
+      if (pick_queued_) RemoveCallFromQueuedPicksLocked(elem);
       // Handle drops.
-      if (GPR_UNLIKELY(result.connected_subchannel == nullptr)) {
+      if (GPR_UNLIKELY(result.subchannel == nullptr)) {
         result.error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
             "Call dropped by load balancing policy");
+      } else {
+        // Grab a ref to the connected subchannel while we're still
+        // holding the data plane mutex.
+        connected_subchannel_ =
+            chand->GetConnectedSubchannelInDataPlane(result.subchannel.get());
+        GPR_ASSERT(connected_subchannel_ != nullptr);
       }
-      calld->connected_subchannel_ = std::move(result.connected_subchannel);
-      calld->lb_recv_trailing_metadata_ready_ =
-          result.recv_trailing_metadata_ready;
-      calld->lb_recv_trailing_metadata_ready_user_data_ =
+      lb_recv_trailing_metadata_ready_ = result.recv_trailing_metadata_ready;
+      lb_recv_trailing_metadata_ready_user_data_ =
           result.recv_trailing_metadata_ready_user_data;
-      GRPC_CLOSURE_SCHED(&calld->pick_closure_, result.error);
-      if (calld->pick_queued_) calld->RemoveCallFromQueuedPicksLocked(elem);
+      *error = result.error;
+      return true;
   }
 }
 

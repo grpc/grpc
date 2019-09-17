@@ -89,7 +89,7 @@ struct grpc_tcp {
   bool is_first_read;
   double target_length;
   double bytes_read_this_round;
-  gpr_refcount refcount;
+  grpc_core::RefCount refcount;
   gpr_atm shutdown_count;
 
   int min_read_chunk_size;
@@ -359,41 +359,29 @@ static void tcp_free(grpc_tcp* tcp) {
 }
 
 #ifndef NDEBUG
-#define TCP_UNREF(tcp, reason) tcp_unref((tcp), (reason), __FILE__, __LINE__)
-#define TCP_REF(tcp, reason) tcp_ref((tcp), (reason), __FILE__, __LINE__)
-static void tcp_unref(grpc_tcp* tcp, const char* reason, const char* file,
-                      int line) {
-  if (GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace)) {
-    gpr_atm val = gpr_atm_no_barrier_load(&tcp->refcount.count);
-    gpr_log(file, line, GPR_LOG_SEVERITY_DEBUG,
-            "TCP unref %p : %s %" PRIdPTR " -> %" PRIdPTR, tcp, reason, val,
-            val - 1);
-  }
-  if (gpr_unref(&tcp->refcount)) {
+#define TCP_UNREF(tcp, reason) tcp_unref((tcp), (reason), DEBUG_LOCATION)
+#define TCP_REF(tcp, reason) tcp_ref((tcp), (reason), DEBUG_LOCATION)
+static void tcp_unref(grpc_tcp* tcp, const char* reason,
+                      const grpc_core::DebugLocation& debug_location) {
+  if (GPR_UNLIKELY(tcp->refcount.Unref(debug_location, reason))) {
     tcp_free(tcp);
   }
 }
 
-static void tcp_ref(grpc_tcp* tcp, const char* reason, const char* file,
-                    int line) {
-  if (GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace)) {
-    gpr_atm val = gpr_atm_no_barrier_load(&tcp->refcount.count);
-    gpr_log(file, line, GPR_LOG_SEVERITY_DEBUG,
-            "TCP   ref %p : %s %" PRIdPTR " -> %" PRIdPTR, tcp, reason, val,
-            val + 1);
-  }
-  gpr_ref(&tcp->refcount);
+static void tcp_ref(grpc_tcp* tcp, const char* reason,
+                    const grpc_core::DebugLocation& debug_location) {
+  tcp->refcount.Ref(debug_location, reason);
 }
 #else
 #define TCP_UNREF(tcp, reason) tcp_unref((tcp))
 #define TCP_REF(tcp, reason) tcp_ref((tcp))
 static void tcp_unref(grpc_tcp* tcp) {
-  if (gpr_unref(&tcp->refcount)) {
+  if (GPR_UNLIKELY(tcp->refcount.Unref())) {
     tcp_free(tcp);
   }
 }
 
-static void tcp_ref(grpc_tcp* tcp) { gpr_ref(&tcp->refcount); }
+static void tcp_ref(grpc_tcp* tcp) { tcp->refcount.Ref(); }
 #endif
 
 static void tcp_destroy(grpc_endpoint* ep) {
@@ -1032,7 +1020,7 @@ static void tcp_handle_write(void* arg /* grpc_tcp */, grpc_error* error) {
   if (error != GRPC_ERROR_NONE) {
     cb = tcp->write_cb;
     tcp->write_cb = nullptr;
-    cb->cb(cb->cb_arg, error);
+    GRPC_CLOSURE_SCHED(cb, GRPC_ERROR_REF(error));
     TCP_UNREF(tcp, "write");
     return;
   }
@@ -1042,6 +1030,8 @@ static void tcp_handle_write(void* arg /* grpc_tcp */, grpc_error* error) {
       gpr_log(GPR_INFO, "write: delayed");
     }
     notify_on_write(tcp);
+    // tcp_flush does not populate error if it has returned false.
+    GPR_DEBUG_ASSERT(error == GRPC_ERROR_NONE);
   } else {
     cb = tcp->write_cb;
     tcp->write_cb = nullptr;
@@ -1049,6 +1039,7 @@ static void tcp_handle_write(void* arg /* grpc_tcp */, grpc_error* error) {
       const char* str = grpc_error_string(error);
       gpr_log(GPR_INFO, "write: %s", str);
     }
+    // No need to take a ref on error since tcp_flush provides a ref.
     GRPC_CLOSURE_SCHED(cb, error);
     TCP_UNREF(tcp, "write");
   }
@@ -1230,7 +1221,7 @@ grpc_endpoint* grpc_tcp_create(grpc_fd* em_fd,
   tcp->ts_capable = true;
   tcp->outgoing_buffer_arg = nullptr;
   /* paired with unref in grpc_tcp_destroy */
-  gpr_ref_init(&tcp->refcount, 1);
+  new (&tcp->refcount) grpc_core::RefCount(1, &grpc_tcp_trace);
   gpr_atm_no_barrier_store(&tcp->shutdown_count, 0);
   tcp->em_fd = em_fd;
   grpc_slice_buffer_init(&tcp->last_read_buffer);

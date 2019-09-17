@@ -47,10 +47,12 @@ static char* get_http_proxy_server(char** user_cred) {
   char* proxy_name = nullptr;
   char** authority_strs = nullptr;
   size_t authority_nstrs;
-  /* Prefer using 'https_proxy'. Fallback on 'http_proxy' if it is not set. The
+  /* Prefer using 'grpc_proxy'. Fallback on 'http_proxy' if it is not set.
+   * Also prefer using 'https_proxy' with fallback on 'http_proxy'. The
    * fallback behavior can be removed if there's a demand for it.
    */
-  char* uri_str = gpr_getenv("https_proxy");
+  char* uri_str = gpr_getenv("grpc_proxy");
+  if (uri_str == nullptr) uri_str = gpr_getenv("https_proxy");
   if (uri_str == nullptr) uri_str = gpr_getenv("http_proxy");
   if (uri_str == nullptr) return nullptr;
   grpc_uri* uri = grpc_uri_parse(uri_str, false /* suppress_errors */);
@@ -122,7 +124,9 @@ static bool proxy_mapper_map_name(grpc_proxy_mapper* mapper,
             server_uri);
     goto no_use_proxy;
   }
-  no_proxy_str = gpr_getenv("no_proxy");
+  /* Prefer using 'no_grpc_proxy'. Fallback on 'no_proxy' if it is not set. */
+  no_proxy_str = gpr_getenv("no_grpc_proxy");
+  if (no_proxy_str == nullptr) no_proxy_str = gpr_getenv("no_proxy");
   if (no_proxy_str != nullptr) {
     static const char* NO_PROXY_SEPARATOR = ",";
     bool use_proxy = true;

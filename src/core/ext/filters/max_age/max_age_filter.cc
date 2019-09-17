@@ -47,7 +47,7 @@
 
 namespace {
 struct channel_data {
-  /* We take a reference to the channel stack for the timer callback */
+  /* The channel stack to which we take refs for pending callbacks. */
   grpc_channel_stack* channel_stack;
   /* Guards access to max_age_timer, max_age_timer_pending, max_age_grace_timer
      and max_age_grace_timer_pending */
@@ -122,8 +122,8 @@ struct channel_data {
 
      MAX_IDLE_STATE_SEEN_ENTER_IDLE: The state after the timer is set and the at
      least one call has arrived after the timer is set, BUT the channel
-     currently has 1 or 1+ active calls. If the timer is fired in this state, we
-     will reschudle it.
+     currently has 0 active calls. If the timer is fired in this state, we will
+     reschudle it.
 
      max_idle_timer will not be cancelled (unless the channel is shutting down).
      If the timer callback is called when the max_idle_timer is valid (i.e.
@@ -395,24 +395,24 @@ add_random_max_connection_age_jitter_and_convert_to_grpc_millis(int value) {
 }
 
 /* Constructor for call_data. */
-static grpc_error* init_call_elem(grpc_call_element* elem,
-                                  const grpc_call_element_args* args) {
+static grpc_error* max_age_init_call_elem(grpc_call_element* elem,
+                                          const grpc_call_element_args* args) {
   channel_data* chand = static_cast<channel_data*>(elem->channel_data);
   increase_call_count(chand);
   return GRPC_ERROR_NONE;
 }
 
 /* Destructor for call_data. */
-static void destroy_call_elem(grpc_call_element* elem,
-                              const grpc_call_final_info* final_info,
-                              grpc_closure* ignored) {
+static void max_age_destroy_call_elem(grpc_call_element* elem,
+                                      const grpc_call_final_info* final_info,
+                                      grpc_closure* ignored) {
   channel_data* chand = static_cast<channel_data*>(elem->channel_data);
   decrease_call_count(chand);
 }
 
 /* Constructor for channel_data. */
-static grpc_error* init_channel_elem(grpc_channel_element* elem,
-                                     grpc_channel_element_args* args) {
+static grpc_error* max_age_init_channel_elem(grpc_channel_element* elem,
+                                             grpc_channel_element_args* args) {
   channel_data* chand = static_cast<channel_data*>(elem->channel_data);
   gpr_mu_init(&chand->max_age_timer_mu);
   chand->max_age_timer_pending = false;
@@ -499,7 +499,7 @@ static grpc_error* init_channel_elem(grpc_channel_element* elem,
 }
 
 /* Destructor for channel_data. */
-static void destroy_channel_elem(grpc_channel_element* elem) {
+static void max_age_destroy_channel_elem(grpc_channel_element* elem) {
   channel_data* chand = static_cast<channel_data*>(elem->channel_data);
   gpr_mu_destroy(&chand->max_age_timer_mu);
 }
@@ -508,12 +508,12 @@ const grpc_channel_filter grpc_max_age_filter = {
     grpc_call_next_op,
     grpc_channel_next_op,
     0, /* sizeof_call_data */
-    init_call_elem,
+    max_age_init_call_elem,
     grpc_call_stack_ignore_set_pollset_or_pollset_set,
-    destroy_call_elem,
+    max_age_destroy_call_elem,
     sizeof(channel_data),
-    init_channel_elem,
-    destroy_channel_elem,
+    max_age_init_channel_elem,
+    max_age_destroy_channel_elem,
     grpc_channel_next_get_info,
     "max_age"};
 
