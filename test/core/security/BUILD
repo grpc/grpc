@@ -177,7 +177,6 @@ grpc_cc_binary(
         "//:grpc",
         "//test/core/util:grpc_test_util",
     ],
-    uses_polling = False,
 )
 
 grpc_cc_binary(
@@ -202,7 +201,6 @@ grpc_cc_binary(
         "//:grpc",
         "//test/core/util:grpc_test_util",
     ],
-    uses_polling = False,
 )
 
 grpc_cc_test(
