@@ -85,7 +85,7 @@ _SKIP_DATA_FRAME_PADDING = ['data_frame_padding']
 
 # report suffix "sponge_log.xml" is important for reports to get picked up by internal CI
 _DOCKER_BUILD_XML_REPORT = 'interop_docker_build/sponge_log.xml'
-_TESTS_XML_REPORT = 'interop_test/sponge_log.xml'
+_TESTS_XML_REPORT = 'run_interop_tests/sponge_log.xml'
 
 
 class CXXLanguage:
@@ -1382,7 +1382,8 @@ if args.use_docker:
             build_jobs, newline_on_success=True, maxjobs=args.jobs)
 
         report_utils.render_junit_xml_report(build_resultset,
-                                             _DOCKER_BUILD_XML_REPORT)
+                                             _DOCKER_BUILD_XML_REPORT,
+                                             multi_target=True)
 
         if num_failures == 0:
             jobset.message(
