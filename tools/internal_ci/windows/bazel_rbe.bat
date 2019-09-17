@@ -24,7 +24,7 @@ powershell -Command "[guid]::NewGuid().ToString()" >%KOKORO_ARTIFACTS_DIR%/bazel
 set /p BAZEL_INVOCATION_ID=<%KOKORO_ARTIFACTS_DIR%/bazel_invocation_ids
 
 @rem TODO(jtattermusch): windows RBE should be able to use the same credentials as Linux RBE.
-bazel --bazelrc=tools/remote_build/windows.bazelrc test --invocation_id="%BAZEL_INVOCATION_ID%" --workspace_status_command=tools/remote_build/workspace_status_kokoro.sh --google_credentials=%KOKORO_GFILE_DIR%/rbe-windows-credentials.json //test/core/gpr:log_test
+bazel --bazelrc=tools/remote_build/windows.bazelrc test --invocation_id="%BAZEL_INVOCATION_ID%" --workspace_status_command=tools/remote_build/workspace_status_kokoro.sh --google_credentials=%KOKORO_GFILE_DIR%/rbe-windows-credentials.json //test/core/...
 set BAZEL_EXITCODE=%errorlevel%
 
 @rem TODO(jtattermusch): upload results to bigquery
