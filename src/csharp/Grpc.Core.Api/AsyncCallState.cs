@@ -1,6 +1,6 @@
 #region Copyright notice and license
 
-// Copyright 2015 gRPC authors.
+// Copyright 2019 The gRPC Authors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -26,7 +26,7 @@ namespace Grpc.Core
     /// Provides an abstraction over the callback providers
     /// used by AsyncUnaryCall, AsyncDuplexStreamingCall, etc
     /// </summary>
-    internal /* readonly */ struct AsyncCallState // can be made readonly in C# 7.2
+    internal readonly struct AsyncCallState
     {
         readonly object responseHeadersAsync; // Task<Metadata> or Func<object, Task<Metadata>>
         readonly object getStatusFunc; // Func<Status> or Func<object, Status>
