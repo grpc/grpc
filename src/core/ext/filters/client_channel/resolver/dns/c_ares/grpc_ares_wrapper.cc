@@ -217,6 +217,9 @@ bool push_pending_request(grpc_ares_request* r) {
       r->next = pending_requests->second;
     }
     (*g_pending_requests)[r->key] = r;
+    GRPC_CARES_TRACE_LOG(
+        "request:%p push_pending_request already_exists:%d r->next:%p", r,
+        already_exists, r->next);
     return already_exists;
   }
 }
@@ -261,6 +264,9 @@ void pop_pending_requests(const GrpcAresPendingRequestKey& key,
     args->service_config_json = gpr_strdup(service_config_json);
     args->r = cur_request;
     GRPC_ERROR_REF(error);
+    GRPC_CARES_TRACE_LOG(
+        "cur_request:%p pop_pending_requests cur_request->next:%p", cur_request,
+        cur_request->next);
     GRPC_CLOSURE_SCHED(
         GRPC_CLOSURE_CREATE(complete_request_locked, args,
                             grpc_combiner_scheduler(cur_request->combiner)),
