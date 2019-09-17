@@ -67,6 +67,9 @@ extern grpc_ares_request* (*grpc_dns_lookup_ares_locked)(
     bool check_grpclb, char** service_config_json, int query_timeout_ms,
     grpc_combiner* combiner);
 
+/* Releases a grpc ares request */
+extern void (*grpc_ares_request_destroy_locked)(grpc_ares_request* r);
+
 /* Cancel the pending grpc_ares_request \a request */
 extern void (*grpc_cancel_ares_request_locked)(grpc_ares_request* request);
 

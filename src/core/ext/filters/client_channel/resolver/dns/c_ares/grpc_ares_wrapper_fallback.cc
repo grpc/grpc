@@ -42,6 +42,11 @@ grpc_ares_request* (*grpc_dns_lookup_ares_locked)(
     bool check_grpclb, char** service_config_json, int query_timeout_ms,
     grpc_combiner* combiner) = grpc_dns_lookup_ares_locked_impl;
 
+static void grpc_ares_request_destroy_locked_impl(grpc_ares_request* r) {}
+
+void (*grpc_ares_request_destroy_locked)(grpc_ares_request* r) =
+    grpc_ares_request_destroy_locked_impl;
+
 static void grpc_cancel_ares_request_locked_impl(grpc_ares_request* r) {}
 
 void (*grpc_cancel_ares_request_locked)(grpc_ares_request* r) =

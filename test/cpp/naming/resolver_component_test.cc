@@ -26,7 +26,6 @@
 #include <grpc/support/sync.h>
 #include <grpc/support/time.h>
 
-#include <pthread.h>
 #include <string.h>
 
 #include <errno.h>
@@ -588,7 +587,6 @@ void RunResolvesRelevantRecordsTest(
   grpc_core::UniquePtr<grpc::testing::FakeNonResponsiveDNSServer>
       fake_non_responsive_dns_server;
   if (FLAGS_inject_broken_nameserver_list == "True") {
-    g_fake_non_responsive_dns_server_port = grpc_pick_unused_port_or_die();
     fake_non_responsive_dns_server.reset(
         grpc_core::New<grpc::testing::FakeNonResponsiveDNSServer>(
             g_fake_non_responsive_dns_server_port));
@@ -732,6 +730,7 @@ int main(int argc, char** argv) {
     gpr_log(GPR_ERROR, "Missing target_name param.");
     abort();
   }
+  g_fake_non_responsive_dns_server_port = grpc_pick_unused_port_or_die();
   auto result = RUN_ALL_TESTS();
   grpc_shutdown();
   return result;

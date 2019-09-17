@@ -394,6 +394,7 @@ void TestCancelDuringActiveQuery(
       "dns://[::1]:%d/dont-care-since-wont-be-resolved.test.com:1234",
       fake_dns_port));
   std::vector<std::thread> thds;
+  thds.reserve(num_thds);
   for (int i = 0; i < num_thds; i++) {
     thds.push_back(
         std::thread(PerformFailingRPC, client_target, query_timeout_setting));

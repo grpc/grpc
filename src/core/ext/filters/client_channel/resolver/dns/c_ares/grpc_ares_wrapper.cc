@@ -154,27 +154,31 @@ class GrpcAresPendingRequestKey {
 }  // namespace
 
 struct grpc_ares_request {
+  grpc_ares_request(const GrpcAresPendingRequestKey& key) : key(key) {
+    memset(&dns_server_addr, 0, sizeof(dns_server_addr));
+  }
+
   /** indicates the DNS server to use, if specified */
   struct ares_addr_port_node dns_server_addr;
   /** following members are set in grpc_resolve_address_ares_impl */
   /** closure to call when the request completes */
-  grpc_closure* on_done;
+  grpc_closure* on_done = nullptr;
   /** the pointer to receive the resolved addresses */
-  grpc_core::UniquePtr<grpc_core::ServerAddressList>* addresses_out;
+  grpc_core::UniquePtr<grpc_core::ServerAddressList>* addresses_out = nullptr;
   /** the pointer to receive the service config in JSON */
-  char** service_config_json_out;
+  char** service_config_json_out = nullptr;
   /** the evernt driver used by this request */
-  grpc_ares_ev_driver* ev_driver;
+  grpc_ares_ev_driver* ev_driver = nullptr;
   /** number of ongoing queries */
-  size_t pending_queries;
+  size_t pending_queries = 0;
   /** the errors explaining query failures, appended to in query callbacks */
-  grpc_error* error;
+  grpc_error* error = GRPC_ERROR_NONE;
   /** key used for comparison of this resolution request and others */
   GrpcAresPendingRequestKey key;
   /** synchronizes this resolution */
-  grpc_combiner* combiner;
+  grpc_combiner* combiner = nullptr;
   /** used in a global list of pending duplicate requests */
-  grpc_ares_request* next;
+  grpc_ares_request* next = nullptr;
 };
 
 typedef struct grpc_ares_hostbyname_request {
@@ -218,14 +222,15 @@ bool push_pending_request(grpc_ares_request* r) {
 }
 
 /** A unique result for a lookup. This takes owneship over all fields. */
-struct complete_request_args {
+struct complete_request_locked_args {
   grpc_core::UniquePtr<ServerAddressList> address_list;
   char* service_config_json;
   grpc_ares_request* r;
 };
 
 void complete_request_locked(void* arg, grpc_error* error) {
-  complete_request_args* result = static_cast<complete_request_args*>(arg);
+  complete_request_locked_args* result =
+      static_cast<complete_request_locked_args*>(arg);
   if (result->r->service_config_json_out != nullptr) {
     *result->r->service_config_json_out = result->service_config_json;
   } else {
@@ -233,6 +238,7 @@ void complete_request_locked(void* arg, grpc_error* error) {
   }
   *result->r->addresses_out = std::move(result->address_list);
   GRPC_COMBINER_UNREF(result->r->combiner, "complete request locked");
+  GRPC_ERROR_REF(error);
   GRPC_CLOSURE_SCHED(result->r->on_done, error);
   grpc_core::Delete(result);
 }
@@ -246,13 +252,15 @@ void pop_pending_requests(const GrpcAresPendingRequestKey& key,
   // There's at least one pending request in the list (the one invoking this).
   GPR_ASSERT(cur_request != nullptr);
   while (cur_request != nullptr) {
-    complete_request_args* args = grpc_core::New<complete_request_args>();
+    complete_request_locked_args* args =
+        grpc_core::New<complete_request_locked_args>();
     if (address_list != nullptr) {
       args->address_list = grpc_core::UniquePtr<ServerAddressList>(
           grpc_core::New<ServerAddressList>(*address_list));
     }
     args->service_config_json = gpr_strdup(service_config_json);
     args->r = cur_request;
+    GRPC_ERROR_REF(error);
     GRPC_CLOSURE_SCHED(
         GRPC_CLOSURE_CREATE(complete_request_locked, args,
                             grpc_combiner_scheduler(cur_request->combiner)),
@@ -332,10 +340,10 @@ void grpc_ares_complete_request_locked(grpc_ares_request* r) {
   pop_pending_requests(r->key, addresses, service_config_json, r->error);
   // All pending request with keys equal to r->key (including this request)
   // will now fill in their output pointers under their own combiners.
+  GRPC_ERROR_UNREF(r->error);
   r->addresses_out->reset();
-  gpr_free(service_config_json);
   if (r->service_config_json_out != nullptr) {
-    *r->service_config_json_out = nullptr;
+    gpr_free(*r->service_config_json_out);
   }
 }
 
@@ -779,8 +787,10 @@ static grpc_ares_request* grpc_dns_lookup_ares_locked_impl(
     grpc_core::UniquePtr<grpc_core::ServerAddressList>* addrs,
     bool check_grpclb, char** service_config_json, int query_timeout_ms,
     grpc_combiner* combiner) {
-  grpc_ares_request* r =
-      static_cast<grpc_ares_request*>(gpr_zalloc(sizeof(grpc_ares_request)));
+  auto pending_request_key = GrpcAresPendingRequestKey(
+      dns_server, name, default_port, query_timeout_ms, check_grpclb,
+      service_config_json != nullptr ? true : false /* check service config */);
+  grpc_ares_request* r = grpc_core::New<grpc_ares_request>(pending_request_key);
   r->ev_driver = nullptr;
   r->on_done = on_done;
   r->addresses_out = addrs;
@@ -795,9 +805,6 @@ static grpc_ares_request* grpc_dns_lookup_ares_locked_impl(
       "query_timeout_ms=%d",
       r, dns_server, name, default_port, check_grpclb, service_config_json,
       query_timeout_ms);
-  r->key = GrpcAresPendingRequestKey(
-      dns_server, name, default_port, query_timeout_ms, check_grpclb,
-      service_config_json != nullptr ? true : false /* check service config */);
   if (push_pending_request(r)) {
     // A resolution request with the same key is already pending. Wait until
     // that one finishes and then complete this one with a copy of the results.
@@ -834,6 +841,13 @@ grpc_ares_request* (*grpc_dns_lookup_ares_locked)(
     grpc_core::UniquePtr<grpc_core::ServerAddressList>* addrs,
     bool check_grpclb, char** service_config_json, int query_timeout_ms,
     grpc_combiner* combiner) = grpc_dns_lookup_ares_locked_impl;
+
+static void grpc_ares_request_destroy_locked_impl(grpc_ares_request* r) {
+  grpc_core::Delete(r);
+}
+
+void (*grpc_ares_request_destroy_locked)(grpc_ares_request* r) =
+    grpc_ares_request_destroy_locked_impl;
 
 static void grpc_cancel_ares_request_locked_impl(grpc_ares_request* r) {
   GPR_ASSERT(r != nullptr);
@@ -897,7 +911,7 @@ typedef struct grpc_resolve_address_ares_request {
 static void on_dns_lookup_done_locked(void* arg, grpc_error* error) {
   grpc_resolve_address_ares_request* r =
       static_cast<grpc_resolve_address_ares_request*>(arg);
-  gpr_free(r->ares_request);
+  grpc_ares_request_destroy_locked(r->ares_request);
   grpc_resolved_addresses** resolved_addresses = r->addrs_out;
   if (r->addresses == nullptr || r->addresses->empty()) {
     *resolved_addresses = nullptr;

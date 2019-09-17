@@ -85,6 +85,10 @@ static grpc_ares_request* my_dns_lookup_ares_locked(
   return nullptr;
 }
 
+static void my_ares_request_destroy_locked(grpc_ares_request* request) {
+  GPR_ASSERT(request == nullptr);
+}
+
 static void my_cancel_ares_request_locked(grpc_ares_request* request) {
   GPR_ASSERT(request == nullptr);
 }
@@ -163,6 +167,7 @@ int main(int argc, char** argv) {
   g_combiner = grpc_combiner_create();
   grpc_set_resolver_impl(&test_resolver);
   grpc_dns_lookup_ares_locked = my_dns_lookup_ares_locked;
+  grpc_ares_request_desroy_locked = my_ares_request_destroy_locked;
   grpc_cancel_ares_request_locked = my_cancel_ares_request_locked;
 
   {
