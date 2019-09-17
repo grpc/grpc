@@ -486,6 +486,7 @@ grpc_cc_test(
 
 grpc_cc_test(
     name = "xds_end2end_test",
+    timeout = "long",
     srcs = ["xds_end2end_test.cc"],
     external_deps = [
         "gtest",
