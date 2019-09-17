@@ -1643,7 +1643,7 @@ try:
     write_cmdlog_maybe(server_manual_cmd_log, 'interop_server_cmds.sh')
     write_cmdlog_maybe(client_manual_cmd_log, 'interop_client_cmds.sh')
 
-    report_utils.render_junit_xml_report(resultset, _TESTS_XML_REPORT)
+    report_utils.render_junit_xml_report(resultset, _TESTS_XML_REPORT, multi_target=True)
 
     for name, job in resultset.items():
         if "http2" in name:
