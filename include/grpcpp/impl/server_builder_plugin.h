@@ -21,11 +21,11 @@
 
 #include <memory>
 
+#include <grpcpp/support/channel_arguments.h>
 #include <grpcpp/support/config.h>
 
 namespace grpc_impl {
 
-class ChannelArguments;
 class ServerBuilder;
 class ServerInitializer;
 }  // namespace grpc_impl
@@ -42,7 +42,7 @@ class ServerBuilderPlugin {
   /// UpdateServerBuilder will be called at an early stage in
   /// ServerBuilder::BuildAndStart(), right after the ServerBuilderOptions have
   /// done their updates.
-  virtual void UpdateServerBuilder(grpc_impl::ServerBuilder* builder) {}
+  virtual void UpdateServerBuilder(grpc_impl::ServerBuilder* /*builder*/) {}
 
   /// InitServer will be called in ServerBuilder::BuildAndStart(), after the
   /// Server instance is created.
@@ -57,7 +57,7 @@ class ServerBuilderPlugin {
 
   /// UpdateChannelArguments will be called in ServerBuilder::BuildAndStart(),
   /// before the Server instance is created.
-  virtual void UpdateChannelArguments(grpc_impl::ChannelArguments* args) {}
+  virtual void UpdateChannelArguments(ChannelArguments* /*args*/) {}
 
   virtual bool has_sync_methods() const { return false; }
   virtual bool has_async_methods() const { return false; }

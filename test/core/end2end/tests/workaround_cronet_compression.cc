@@ -136,9 +136,9 @@ static void request_with_payload_template(
   grpc_slice response_payload_slice =
       grpc_slice_from_copied_string(response_str);
 
-  client_args = grpc_channel_args_set_compression_algorithm(
+  client_args = grpc_channel_args_set_channel_default_compression_algorithm(
       nullptr, default_client_channel_compression_algorithm);
-  server_args = grpc_channel_args_set_compression_algorithm(
+  server_args = grpc_channel_args_set_channel_default_compression_algorithm(
       nullptr, default_server_channel_compression_algorithm);
 
   if (user_agent_override) {

@@ -115,23 +115,25 @@ namespace Grpc.Core.Internal
         /// </summary>
         protected Task SendMessageInternalAsync(TWrite msg, WriteFlags writeFlags)
         {
-            byte[] payload = UnsafeSerialize(msg);
-
-            lock (myLock)
+            using (var serializationScope = DefaultSerializationContext.GetInitializedThreadLocalScope())
             {
-                GrpcPreconditions.CheckState(started);
-                var earlyResult = CheckSendAllowedOrEarlyResult();
-                if (earlyResult != null)
+                var payload = UnsafeSerialize(msg, serializationScope.Context);
+                lock (myLock)
                 {
-                    return earlyResult;
+                    GrpcPreconditions.CheckState(started);
+                    var earlyResult = CheckSendAllowedOrEarlyResult();
+                    if (earlyResult != null)
+                    {
+                        return earlyResult;
+                    }
+
+                    call.StartSendMessage(SendCompletionCallback, payload, writeFlags, !initialMetadataSent);
+
+                    initialMetadataSent = true;
+                    streamingWritesCounter++;
+                    streamingWriteTcs = new TaskCompletionSource<object>();
+                    return streamingWriteTcs.Task;
                 }
-
-                call.StartSendMessage(SendCompletionCallback, payload, writeFlags, !initialMetadataSent);
-
-                initialMetadataSent = true;
-                streamingWritesCounter++;
-                streamingWriteTcs = new TaskCompletionSource<object>();
-                return streamingWriteTcs.Task;
             }
         }
 
@@ -213,19 +215,11 @@ namespace Grpc.Core.Internal
         /// </summary>
         protected abstract Task CheckSendAllowedOrEarlyResult();
 
-        protected byte[] UnsafeSerialize(TWrite msg)
+        // runs the serializer, propagating any exceptions being thrown without modifying them
+        protected SliceBufferSafeHandle UnsafeSerialize(TWrite msg, DefaultSerializationContext context)
         {
-            DefaultSerializationContext context = null;
-            try
-            {
-                context = DefaultSerializationContext.GetInitializedThreadLocal();
-                serializer(msg, context);
-                return context.GetPayload();
-            }
-            finally
-            {
-                context?.Reset();
-            }
+            serializer(msg, context);
+            return context.GetPayload();
         }
 
         protected Exception TryDeserialize(IBufferReader reader, out TRead msg)
@@ -394,5 +388,13 @@ namespace Grpc.Core.Internal
         {
             HandleReadFinished(success, receivedMessageReader);
         }
+
+        internal CancellationTokenRegistration RegisterCancellationCallbackForToken(CancellationToken cancellationToken)
+        {
+            if (cancellationToken.CanBeCanceled) return cancellationToken.Register(CancelCallFromToken, this);
+            return default(CancellationTokenRegistration);
+        }
+
+        private static readonly Action<object> CancelCallFromToken = state => ((AsyncCallBase<TWrite, TRead>)state).Cancel();
     }
 }

@@ -24,7 +24,18 @@
 #include <grpc/slice.h>
 #include "src/core/lib/iomgr/error.h"
 
-grpc_error* grpc_validate_header_key_is_legal(grpc_slice slice);
-grpc_error* grpc_validate_header_nonbin_value_is_legal(grpc_slice slice);
+grpc_error* grpc_validate_header_key_is_legal(const grpc_slice& slice);
+grpc_error* grpc_validate_header_nonbin_value_is_legal(const grpc_slice& slice);
+
+int grpc_is_binary_header_internal(const grpc_slice& slice);
+inline int grpc_key_is_binary_header(const uint8_t* buf, size_t length) {
+  if (length < 5) return 0;
+  return 0 == memcmp(buf + length - 4, "-bin", 4);
+}
+inline int grpc_is_refcounted_slice_binary_header(const grpc_slice& slice) {
+  GPR_DEBUG_ASSERT(slice.refcount != nullptr);
+  return grpc_key_is_binary_header(slice.data.refcounted.bytes,
+                                   slice.data.refcounted.length);
+}
 
 #endif /* GRPC_CORE_LIB_SURFACE_VALIDATE_METADATA_H */

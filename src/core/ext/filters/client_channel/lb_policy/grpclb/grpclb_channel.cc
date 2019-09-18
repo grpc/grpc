@@ -18,9 +18,20 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <grpc/grpc.h>
+
 #include "src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_channel.h"
 
-grpc_channel_args* grpc_lb_policy_grpclb_modify_lb_channel_args(
-    const grpc_core::ServerAddressList& addresses, grpc_channel_args* args) {
+namespace grpc_core {
+
+grpc_channel_args* ModifyGrpclbBalancerChannelArgs(
+    const ServerAddressList& addresses, grpc_channel_args* args) {
   return args;
 }
+
+grpc_channel* CreateGrpclbBalancerChannel(const char* target_uri,
+                                          const grpc_channel_args& args) {
+  return grpc_insecure_channel_create(target_uri, &args, nullptr);
+}
+
+}  // namespace grpc_core

@@ -108,8 +108,8 @@ namespace Grpc.Core.Tests
             var deadline = DateTime.UtcNow.AddDays(7);
             helper.UnaryHandler = new UnaryServerMethod<string, string>((request, context) =>
             {
-                Assert.IsTrue(context.Deadline < deadline.AddMinutes(1));
-                Assert.IsTrue(context.Deadline > deadline.AddMinutes(-1));
+                Assert.IsTrue(context.Deadline < deadline.AddHours(1));
+                Assert.IsTrue(context.Deadline > deadline.AddHours(-1));
                 return Task.FromResult("PASS");
             });
 

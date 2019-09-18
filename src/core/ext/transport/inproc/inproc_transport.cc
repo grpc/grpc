@@ -1203,7 +1203,7 @@ void inproc_transports_create(grpc_transport** server_transport,
  */
 void grpc_inproc_transport_init(void) {
   grpc_core::ExecCtx exec_ctx;
-  g_empty_slice = grpc_slice_from_static_buffer(nullptr, 0);
+  g_empty_slice = grpc_core::ExternallyManagedSlice();
 
   grpc_slice key_tmp = grpc_slice_from_static_string(":path");
   g_fake_path_key = grpc_slice_intern(key_tmp);

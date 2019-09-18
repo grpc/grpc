@@ -21,9 +21,13 @@ C++ compatible with
 
 ## Constraints
 
-- No use of standard library
+- No use of standard library if it requires link-time dependency
   - Standard library makes wrapping difficult/impossible and also reduces platform portability
   - This takes precedence over using C++ style guide
+- Limited use of standard library if it does not require link-time dependency
+ - We can use things from `std::` as long as they are header-only implementations.
+ - Since the standard library API does not specify whether any given part of the API is implemented header-only, the only way to know is to try using something and see if our tests fail.
+ - Since there is no guarantee that some header-only implementation in the standard library will remain header-only in the future, we should define our own API in lib/gprpp that is an alias for the thing we want to use in `std::` and use the gprpp API in core. That way, if we later need to stop using the thing from `std::`, we can replace the alias with our own implementation.
 - But lambdas are ok
 - As are third-party libraries that meet our build requirements (such as many parts of abseil)
 - There will be some C++ features that don't work

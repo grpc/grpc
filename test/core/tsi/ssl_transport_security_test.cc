@@ -790,6 +790,41 @@ void ssl_tsi_test_duplicate_root_certificates() {
   gpr_free(dup_root_cert);
 }
 
+void ssl_tsi_test_extract_x509_subject_names() {
+  char* cert = load_file(SSL_TSI_TEST_CREDENTIALS_DIR, "multi-domain.pem");
+  tsi_peer peer;
+  GPR_ASSERT(tsi_ssl_extract_x509_subject_names_from_pem_cert(cert, &peer) ==
+             TSI_OK);
+  // One for common name, one for certificate, and six for SAN fields.
+  size_t expected_property_count = 8;
+  GPR_ASSERT(peer.property_count == expected_property_count);
+  // Check common name
+  const char* expected_cn = "xpigors";
+  const tsi_peer_property* property = tsi_peer_get_property_by_name(
+      &peer, TSI_X509_SUBJECT_COMMON_NAME_PEER_PROPERTY);
+  GPR_ASSERT(property != nullptr);
+  GPR_ASSERT(
+      memcmp(property->value.data, expected_cn, property->value.length) == 0);
+  // Check certificate data
+  property = tsi_peer_get_property_by_name(&peer, TSI_X509_PEM_CERT_PROPERTY);
+  GPR_ASSERT(property != nullptr);
+  GPR_ASSERT(memcmp(property->value.data, cert, property->value.length) == 0);
+  // Check DNS
+  GPR_ASSERT(check_subject_alt_name(&peer, "foo.test.domain.com") == 1);
+  GPR_ASSERT(check_subject_alt_name(&peer, "bar.test.domain.com") == 1);
+  // Check URI
+  GPR_ASSERT(
+      check_subject_alt_name(&peer, "https://foo.test.domain.com/test") == 1);
+  GPR_ASSERT(
+      check_subject_alt_name(&peer, "https://bar.test.domain.com/test") == 1);
+  // Check email address
+  GPR_ASSERT(check_subject_alt_name(&peer, "foo@test.domain.com") == 1);
+  GPR_ASSERT(check_subject_alt_name(&peer, "bar@test.domain.com") == 1);
+  // Free memory
+  gpr_free(cert);
+  tsi_peer_destruct(&peer);
+}
+
 int main(int argc, char** argv) {
   grpc::testing::TestEnvironment env(argc, argv);
   grpc_init();
@@ -815,6 +850,7 @@ int main(int argc, char** argv) {
   ssl_tsi_test_do_round_trip_odd_buffer_size();
   ssl_tsi_test_handshaker_factory_internals();
   ssl_tsi_test_duplicate_root_certificates();
+  ssl_tsi_test_extract_x509_subject_names();
   grpc_shutdown();
   return 0;
 }

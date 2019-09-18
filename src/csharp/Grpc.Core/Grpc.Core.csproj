@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
   <Import Project="Common.csproj.include" />
 
@@ -23,9 +23,8 @@
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
 
-  <PropertyGroup Condition=" '$(TargetFramework)' == 'netstandard2.0' ">
+  <PropertyGroup>
     <LangVersion>7.2</LangVersion>
-    <DefineConstants>$(DefineConstants);GRPC_CSHARP_SUPPORT_SYSTEM_MEMORY</DefineConstants>
   </PropertyGroup>
 
   <ItemGroup>
@@ -99,7 +98,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="System.Interactive.Async" Version="3.2.0" />
+    <PackageReference Include="System.Memory" Version="4.5.3" />
   </ItemGroup>
 
   <ItemGroup Condition=" '$(TargetFramework)' == 'net45' ">

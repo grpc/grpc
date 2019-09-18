@@ -28,7 +28,31 @@ grpc_cc_test(
         "//:grpc++_unsecure",
         "//test/core/util:grpc_test_util_unsecure",
     ],
-    tags = ["no_windows"],
+)
+
+grpc_cc_test(
+    name = "timer_test",
+    srcs = ["timer_test.cc"],
+    external_deps = [
+        "gtest",
+    ],
+    deps = [
+        "//:grpc++",
+        "//test/core/util:grpc_test_util",
+    ],
+)
+
+grpc_cc_test(
+    name = "time_jump_test",
+    srcs = ["time_jump_test.cc"],
+    external_deps = [
+        "gtest",
+    ],
+    tags = ["manual"],
+    deps = [
+        "//:grpc++",
+        "//test/core/util:grpc_test_util",
+    ],
 )
 
 grpc_cc_test(

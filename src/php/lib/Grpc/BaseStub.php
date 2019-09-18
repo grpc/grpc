@@ -199,6 +199,13 @@ class BaseStub
      */
     private function _get_jwt_aud_uri($method)
     {
+        // TODO(jtattermusch): This is not the correct implementation
+        // of extracting JWT "aud" claim. We should rely on
+        // grpc_metadata_credentials_plugin which
+        // also provides the correct value of "aud" claim
+        // in the grpc_auth_metadata_context.service_url field.
+        // Trying to do the construction of "aud" field ourselves
+        // is bad.
         $last_slash_idx = strrpos($method, '/');
         if ($last_slash_idx === false) {
             throw new \InvalidArgumentException(
@@ -211,6 +218,12 @@ class BaseStub
             $hostname = $this->hostname_override;
         } else {
             $hostname = $this->hostname;
+        }
+
+        // Remove the port if it is 443
+        // See https://github.com/grpc/grpc/blob/07c9f7a36b2a0d34fcffebc85649cf3b8c339b5d/src/core/lib/security/transport/client_auth_filter.cc#L205
+        if ((strlen($hostname) > 4) && (substr($hostname, -4) === ":443")) {
+            $hostname = substr($hostname, 0, -4);
         }
 
         return 'https://'.$hostname.$service_name;
@@ -228,10 +241,10 @@ class BaseStub
     {
         $metadata_copy = [];
         foreach ($metadata as $key => $value) {
-            if (!preg_match('/^[A-Za-z\d_-]+$/', $key)) {
+            if (!preg_match('/^[.A-Za-z\d_-]+$/', $key)) {
                 throw new \InvalidArgumentException(
                     'Metadata keys must be nonempty strings containing only '.
-                    'alphanumeric characters, hyphens and underscores'
+                    'alphanumeric characters, hyphens, underscores and dots'
                 );
             }
             $metadata_copy[strtolower($key)] = $value;

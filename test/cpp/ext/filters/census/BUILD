@@ -26,7 +26,6 @@ grpc_cc_test(
     ],
     external_deps = [
         "gtest",
-        "gmock",
         "opencensus-stats-test",
     ],
     language = "C++",

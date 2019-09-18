@@ -28,6 +28,7 @@
 #include <grpc/support/log.h>
 
 #include "src/core/lib/debug/stats.h"
+#include "src/core/lib/gprpp/mpscq.h"
 #include "src/core/lib/iomgr/executor.h"
 #include "src/core/lib/iomgr/iomgr.h"
 #include "src/core/lib/profiling/timers.h"
@@ -45,10 +46,10 @@ grpc_core::DebugOnlyTraceFlag grpc_combiner_trace(false, "combiner");
 #define STATE_ELEM_COUNT_LOW_BIT 2
 
 struct grpc_combiner {
-  grpc_combiner* next_combiner_on_this_exec_ctx;
+  grpc_combiner* next_combiner_on_this_exec_ctx = nullptr;
   grpc_closure_scheduler scheduler;
   grpc_closure_scheduler finally_scheduler;
-  gpr_mpscq queue;
+  grpc_core::MultiProducerSingleConsumerQueue queue;
   // either:
   // a pointer to the initiating exec ctx if that is the only exec_ctx that has
   // ever queued to this combiner, or NULL. If this is non-null, it's not
@@ -58,7 +59,7 @@ struct grpc_combiner {
   // lower bit - zero if orphaned (STATE_UNORPHANED)
   // other bits - number of items queued on the lock (STATE_ELEM_COUNT_LOW_BIT)
   gpr_atm state;
-  bool time_to_execute_final_list;
+  bool time_to_execute_final_list = false;
   grpc_closure_list final_list;
   grpc_closure offload;
   gpr_refcount refs;
@@ -76,12 +77,11 @@ static const grpc_closure_scheduler_vtable finally_scheduler = {
 static void offload(void* arg, grpc_error* error);
 
 grpc_combiner* grpc_combiner_create(void) {
-  grpc_combiner* lock = static_cast<grpc_combiner*>(gpr_zalloc(sizeof(*lock)));
+  grpc_combiner* lock = grpc_core::New<grpc_combiner>();
   gpr_ref_init(&lock->refs, 1);
   lock->scheduler.vtable = &scheduler;
   lock->finally_scheduler.vtable = &finally_scheduler;
   gpr_atm_no_barrier_store(&lock->state, STATE_UNORPHANED);
-  gpr_mpscq_init(&lock->queue);
   grpc_closure_list_init(&lock->final_list);
   GRPC_CLOSURE_INIT(
       &lock->offload, offload, lock,
@@ -93,8 +93,7 @@ grpc_combiner* grpc_combiner_create(void) {
 static void really_destroy(grpc_combiner* lock) {
   GRPC_COMBINER_TRACE(gpr_log(GPR_INFO, "C:%p really_destroy", lock));
   GPR_ASSERT(gpr_atm_no_barrier_load(&lock->state) == 0);
-  gpr_mpscq_destroy(&lock->queue);
-  gpr_free(lock);
+  grpc_core::Delete(lock);
 }
 
 static void start_destroy(grpc_combiner* lock) {
@@ -185,7 +184,7 @@ static void combiner_exec(grpc_closure* cl, grpc_error* error) {
   GPR_ASSERT(last & STATE_UNORPHANED);  // ensure lock has not been destroyed
   assert(cl->cb);
   cl->error_data.error = error;
-  gpr_mpscq_push(&lock->queue, &cl->next_data.atm_next);
+  lock->queue.Push(cl->next_data.mpscq_node.get());
 }
 
 static void move_next() {
@@ -233,11 +232,11 @@ bool grpc_combiner_continue_exec_ctx() {
   // offload only if all the following conditions are true:
   // 1. the combiner is contended and has more than one closure to execute
   // 2. the current execution context needs to finish as soon as possible
-  // 3. the DEFAULT executor is threaded
-  // 4. the current thread is not a worker for any background poller
+  // 3. the current thread is not a worker for any background poller
+  // 4. the DEFAULT executor is threaded
   if (contended && grpc_core::ExecCtx::Get()->IsReadyToFinish() &&
-      grpc_core::Executor::IsThreadedDefault() &&
-      !grpc_iomgr_is_any_background_poller_thread()) {
+      !grpc_iomgr_is_any_background_poller_thread() &&
+      grpc_core::Executor::IsThreadedDefault()) {
     GPR_TIMER_MARK("offload_from_finished_exec_ctx", 0);
     // this execution context wants to move on: schedule remaining work to be
     // picked up on the executor
@@ -249,7 +248,7 @@ bool grpc_combiner_continue_exec_ctx() {
       // peek to see if something new has shown up, and execute that with
       // priority
       (gpr_atm_acq_load(&lock->state) >> 1) > 1) {
-    gpr_mpscq_node* n = gpr_mpscq_pop(&lock->queue);
+    grpc_core::MultiProducerSingleConsumerQueue::Node* n = lock->queue.Pop();
     GRPC_COMBINER_TRACE(
         gpr_log(GPR_INFO, "C:%p maybe_finish_one n=%p", lock, n));
     if (n == nullptr) {

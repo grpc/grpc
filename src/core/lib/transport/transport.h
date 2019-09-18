@@ -80,11 +80,13 @@ inline void grpc_stream_ref(grpc_stream_refcount* refcount,
     gpr_log(GPR_DEBUG, "%s %p:%p REF %s", refcount->object_type, refcount,
             refcount->destroy.cb_arg, reason);
   }
+  refcount->refs.RefNonZero(DEBUG_LOCATION, reason);
+}
 #else
 inline void grpc_stream_ref(grpc_stream_refcount* refcount) {
-#endif
   refcount->refs.RefNonZero();
 }
+#endif
 
 void grpc_stream_destroy(grpc_stream_refcount* refcount);
 
@@ -95,13 +97,17 @@ inline void grpc_stream_unref(grpc_stream_refcount* refcount,
     gpr_log(GPR_DEBUG, "%s %p:%p UNREF %s", refcount->object_type, refcount,
             refcount->destroy.cb_arg, reason);
   }
+  if (GPR_UNLIKELY(refcount->refs.Unref(DEBUG_LOCATION, reason))) {
+    grpc_stream_destroy(refcount);
+  }
+}
 #else
 inline void grpc_stream_unref(grpc_stream_refcount* refcount) {
-#endif
   if (GPR_UNLIKELY(refcount->refs.Unref())) {
     grpc_stream_destroy(refcount);
   }
 }
+#endif
 
 /* Wrap a buffer that is owned by some stream object into a slice that shares
    the same refcount */
@@ -239,6 +245,18 @@ struct grpc_transport_stream_op_batch_payload {
     // The batch's on_complete will not be called until after the byte
     // stream is orphaned.
     grpc_core::OrphanablePtr<grpc_core::ByteStream> send_message;
+    // Set by the transport if the stream has been closed for writes. If this
+    // is set and send message op is present, we set the operation to be a
+    // failure without sending a cancel OP down the stack. This is so that the
+    // status of the call does not get overwritten by the Cancel OP, which would
+    // be especially problematic if we had received a valid status from the
+    // server.
+    // For send_initial_metadata, it is fine for the status to be overwritten
+    // because at that point, the client will not have received a status.
+    // For send_trailing_metadata, we might overwrite the status if we have
+    // non-zero metadata to send. This is fine because the API does not allow
+    // the client to send trailing metadata.
+    bool stream_write_closed = false;
   } send_message;
 
   struct {

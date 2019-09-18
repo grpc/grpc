@@ -20,7 +20,7 @@
 
 #include <grpc/support/string_util.h>
 
-#include "src/core/lib/gpr/host_port.h"
+#include "src/core/lib/gprpp/host_port.h"
 #include "test/core/end2end/end2end_tests.h"
 #include "test/core/end2end/fixtures/local_util.h"
 #include "test/core/util/port.h"
@@ -31,7 +31,7 @@ static grpc_end2end_test_fixture chttp2_create_fixture_fullstack_ipv6(
   grpc_end2end_test_fixture f =
       grpc_end2end_local_chttp2_create_fixture_fullstack();
   int port = grpc_pick_unused_port_or_die();
-  gpr_join_host_port(
+  grpc_core::JoinHostPort(
       &static_cast<grpc_end2end_local_fullstack_fixture_data*>(f.fixture_data)
            ->localaddr,
       "[::1]", port);

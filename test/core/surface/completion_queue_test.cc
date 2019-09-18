@@ -23,6 +23,7 @@
 #include <grpc/support/time.h>
 #include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/gprpp/memory.h"
+#include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/iomgr/iomgr.h"
 #include "test/core/util/test_config.h"
 
@@ -359,12 +360,19 @@ static void test_pluck_after_shutdown(void) {
 
 static void test_callback(void) {
   grpc_completion_queue* cc;
-  void* tags[128];
+  static void* tags[128];
   grpc_cq_completion completions[GPR_ARRAY_SIZE(tags)];
   grpc_cq_polling_type polling_types[] = {
       GRPC_CQ_DEFAULT_POLLING, GRPC_CQ_NON_LISTENING, GRPC_CQ_NON_POLLING};
   grpc_completion_queue_attributes attr;
   unsigned i;
+  static gpr_mu mu, shutdown_mu;
+  static gpr_cv cv, shutdown_cv;
+  static int cb_counter;
+  gpr_mu_init(&mu);
+  gpr_mu_init(&shutdown_mu);
+  gpr_cv_init(&cv);
+  gpr_cv_init(&shutdown_cv);
 
   LOG_TEST("test_callback");
 
@@ -376,7 +384,11 @@ static void test_callback(void) {
     }
     ~ShutdownCallback() {}
     static void Run(grpc_experimental_completion_queue_functor* cb, int ok) {
+      gpr_mu_lock(&shutdown_mu);
       *static_cast<ShutdownCallback*>(cb)->done_ = static_cast<bool>(ok);
+      // Signal when the shutdown callback is completed.
+      gpr_cv_signal(&shutdown_cv);
+      gpr_mu_unlock(&shutdown_mu);
     }
 
    private:
@@ -391,9 +403,9 @@ static void test_callback(void) {
   for (size_t pidx = 0; pidx < GPR_ARRAY_SIZE(polling_types); pidx++) {
     int sumtags = 0;
     int counter = 0;
+    cb_counter = 0;
     {
       // reset exec_ctx types
-      grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
       grpc_core::ExecCtx exec_ctx;
       attr.cq_polling_type = polling_types[pidx];
       cc = grpc_completion_queue_create(
@@ -409,7 +421,13 @@ static void test_callback(void) {
                         int ok) {
           GPR_ASSERT(static_cast<bool>(ok));
           auto* callback = static_cast<TagCallback*>(cb);
+          gpr_mu_lock(&mu);
+          cb_counter++;
           *callback->counter_ += callback->tag_;
+          if (cb_counter == GPR_ARRAY_SIZE(tags)) {
+            gpr_cv_signal(&cv);
+          }
+          gpr_mu_unlock(&mu);
           grpc_core::Delete(callback);
         };
 
@@ -429,12 +447,34 @@ static void test_callback(void) {
                        nullptr, &completions[i]);
       }
 
+      gpr_mu_lock(&mu);
+      while (cb_counter != GPR_ARRAY_SIZE(tags)) {
+        // Wait for all the callbacks to complete.
+        gpr_cv_wait(&cv, &mu, gpr_inf_future(GPR_CLOCK_REALTIME));
+      }
+      gpr_mu_unlock(&mu);
+
       shutdown_and_destroy(cc);
+
+      gpr_mu_lock(&shutdown_mu);
+      while (!got_shutdown) {
+        // Wait for the shutdown callback to complete.
+        gpr_cv_wait(&shutdown_cv, &shutdown_mu,
+                    gpr_inf_future(GPR_CLOCK_REALTIME));
+      }
+      gpr_mu_unlock(&shutdown_mu);
     }
+
+    // Run the assertions to check if the test ran successfully.
     GPR_ASSERT(sumtags == counter);
     GPR_ASSERT(got_shutdown);
     got_shutdown = false;
   }
+
+  gpr_cv_destroy(&cv);
+  gpr_cv_destroy(&shutdown_cv);
+  gpr_mu_destroy(&mu);
+  gpr_mu_destroy(&shutdown_mu);
 }
 
 struct thread_state {

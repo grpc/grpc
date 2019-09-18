@@ -35,9 +35,7 @@ egg_info.manifest_maker.template = 'PYTHON-MANIFEST.in'
 PY3 = sys.version_info.major == 3
 PYTHON_STEM = os.path.join('src', 'python', 'grpcio')
 CORE_INCLUDE = ('include', '.',)
-SSL_INCLUDE = (os.path.join('third_party', 'boringssl', 'include'),)
-ZLIB_INCLUDE = (os.path.join('third_party', 'zlib'),)
-NANOPB_INCLUDE = (os.path.join('third_party', 'nanopb'),)
+ADDRESS_SORTING_INCLUDE = (os.path.join('third_party', 'address_sorting', 'include'),)
 CARES_INCLUDE = (
     os.path.join('third_party', 'cares'),
     os.path.join('third_party', 'cares', 'cares'),)
@@ -49,7 +47,10 @@ if 'linux' in sys.platform:
   CARES_INCLUDE += (os.path.join('third_party', 'cares', 'config_linux'),)
 if 'openbsd' in sys.platform:
   CARES_INCLUDE += (os.path.join('third_party', 'cares', 'config_openbsd'),)
-ADDRESS_SORTING_INCLUDE = (os.path.join('third_party', 'address_sorting', 'include'),)
+SSL_INCLUDE = (os.path.join('third_party', 'boringssl', 'include'),)
+UPB_INCLUDE = (os.path.join('third_party', 'upb'),)
+UPB_GRPC_GENERATED_INCLUDE = (os.path.join('src', 'core', 'ext', 'upb-generated'),)
+ZLIB_INCLUDE = (os.path.join('third_party', 'zlib'),)
 README = os.path.join(PYTHON_STEM, 'README.rst')
 
 # Ensure we're in the proper directory whether or not we're being used by pip.
@@ -160,7 +161,6 @@ if EXTRA_ENV_COMPILE_ARGS is None:
     EXTRA_ENV_COMPILE_ARGS += ' -std=gnu99 -fvisibility=hidden -fno-wrapv -fno-exceptions'
   elif "darwin" in sys.platform:
     EXTRA_ENV_COMPILE_ARGS += ' -stdlib=libc++ -fvisibility=hidden -fno-wrapv -fno-exceptions'
-EXTRA_ENV_COMPILE_ARGS += ' -DPB_FIELD_32BIT'
 
 if EXTRA_ENV_LINK_ARGS is None:
   EXTRA_ENV_LINK_ARGS = ''
@@ -203,8 +203,14 @@ if BUILD_WITH_SYSTEM_CARES:
   CARES_INCLUDE = (os.path.join('/usr', 'include'),)
 
 EXTENSION_INCLUDE_DIRECTORIES = (
-    (PYTHON_STEM,) + CORE_INCLUDE + SSL_INCLUDE + ZLIB_INCLUDE +
-    NANOPB_INCLUDE + CARES_INCLUDE + ADDRESS_SORTING_INCLUDE)
+    (PYTHON_STEM,) +
+    CORE_INCLUDE +
+    ADDRESS_SORTING_INCLUDE +
+    CARES_INCLUDE +
+    SSL_INCLUDE +
+    UPB_INCLUDE +
+    UPB_GRPC_GENERATED_INCLUDE +
+    ZLIB_INCLUDE)
 
 EXTENSION_LIBRARIES = ()
 if "linux" in sys.platform:
@@ -259,6 +265,7 @@ if 'darwin' in sys.platform and PY3:
         r'macosx-10.7-\1',
         util.get_platform())
 
+
 def cython_extensions_and_necessity():
   cython_module_files = [os.path.join(PYTHON_STEM,
                                name.replace('.', '/') + '.pyx')
@@ -289,6 +296,8 @@ def cython_extensions_and_necessity():
   need_cython = BUILD_WITH_CYTHON
   if not BUILD_WITH_CYTHON:
     need_cython = need_cython or not commands.check_and_update_cythonization(extensions)
+  # TODO: the strategy for conditional compiling and exposing the aio Cython
+  # dependencies will be revisited by https://github.com/grpc/grpc/issues/19728
   return commands.try_cythonize(extensions, linetracing=ENABLE_CYTHON_TRACING, mandatory=BUILD_WITH_CYTHON), need_cython
 
 CYTHON_EXTENSION_MODULES, need_cython = cython_extensions_and_necessity()

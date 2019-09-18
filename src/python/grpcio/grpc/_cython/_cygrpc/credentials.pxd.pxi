@@ -26,9 +26,9 @@ cdef int _get_metadata(
     grpc_credentials_plugin_metadata_cb cb, void *user_data,
     grpc_metadata creds_md[GRPC_METADATA_CREDENTIALS_PLUGIN_SYNC_MAX],
     size_t *num_creds_md, grpc_status_code *status,
-    const char **error_details) with gil
+    const char **error_details) except * with gil
 
-cdef void _destroy(void *state) with gil
+cdef void _destroy(void *state) except * with gil
 
 
 cdef class MetadataPluginCallCredentials(CallCredentials):
@@ -97,3 +97,8 @@ cdef class ServerCredentials:
   cdef object cert_config_fetcher
   # whether C-core has asked for the initial_cert_config
   cdef bint initial_cert_config_fetched
+
+
+cdef class LocalChannelCredentials(ChannelCredentials):
+
+  cdef grpc_local_connect_type _local_connect_type

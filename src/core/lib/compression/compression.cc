@@ -59,12 +59,11 @@ int grpc_compression_algorithm_parse(grpc_slice name,
   } else {
     return 0;
   }
-  return 0;
 }
 
 int grpc_compression_algorithm_name(grpc_compression_algorithm algorithm,
                                     const char** name) {
-  GRPC_API_TRACE("grpc_compression_algorithm_parse(algorithm=%d, name=%p)", 2,
+  GRPC_API_TRACE("grpc_compression_algorithm_name(algorithm=%d, name=%p)", 2,
                  ((int)algorithm, name));
   switch (algorithm) {
     case GRPC_COMPRESS_NONE:
@@ -128,7 +127,8 @@ void grpc_compression_options_disable_algorithm(
 int grpc_compression_options_is_algorithm_enabled(
     const grpc_compression_options* opts,
     grpc_compression_algorithm algorithm) {
-  return GPR_BITGET(opts->enabled_algorithms_bitset, algorithm);
+  return grpc_compression_options_is_algorithm_enabled_internal(opts,
+                                                                algorithm);
 }
 
 grpc_slice grpc_compression_algorithm_slice(

@@ -24,4 +24,4 @@ cd $(dirname $0)/../../..
 source tools/internal_ci/helper_scripts/prepare_build_macos_rc
 
 tools/profiling/ios_bin/binary_size.py \
-  -d origin/$ghprbTargetBranch
+  -d "origin/$KOKORO_GITHUB_PULL_REQUEST_TARGET_BRANCH"

@@ -32,13 +32,12 @@
 #include "src/core/ext/filters/client_channel/http_connect_handshaker.h"
 #include "src/core/ext/filters/client_channel/lb_policy_registry.h"
 #include "src/core/ext/filters/client_channel/resolver/dns/c_ares/grpc_ares_wrapper.h"
+#include "src/core/ext/filters/client_channel/resolver/dns/dns_resolver_selection.h"
 #include "src/core/ext/filters/client_channel/resolver_registry.h"
 #include "src/core/ext/filters/client_channel/server_address.h"
 #include "src/core/ext/filters/client_channel/service_config.h"
 #include "src/core/lib/backoff/backoff.h"
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/gpr/env.h"
-#include "src/core/lib/gpr/host_port.h"
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gprpp/manual_constructor.h"
 #include "src/core/lib/iomgr/combiner.h"
@@ -145,7 +144,7 @@ AresDnsResolver::AresDnsResolver(ResolverArgs args)
   arg = grpc_channel_args_find(channel_args_,
                                GRPC_ARG_DNS_MIN_TIME_BETWEEN_RESOLUTIONS_MS);
   min_time_between_resolutions_ =
-      grpc_channel_arg_get_integer(arg, {1000, 0, INT_MAX});
+      grpc_channel_arg_get_integer(arg, {1000 * 30, 0, INT_MAX});
   // Enable SRV queries option
   arg = grpc_channel_args_find(channel_args_, GRPC_ARG_DNS_ENABLE_SRV_QUERIES);
   enable_srv_queries_ = grpc_channel_arg_get_bool(arg, false);
@@ -401,7 +400,8 @@ void AresDnsResolver::MaybeStartResolvingLocked() {
       // new closure API is done, find a way to track this ref with the timer
       // callback as part of the type system.
       Ref(DEBUG_LOCATION, "next_resolution_timer_cooldown").release();
-      grpc_timer_init(&next_resolution_timer_, ms_until_next_resolution,
+      grpc_timer_init(&next_resolution_timer_,
+                      ExecCtx::Get()->Now() + ms_until_next_resolution,
                       &on_next_resolution_);
       return;
     }
@@ -433,6 +433,8 @@ void AresDnsResolver::StartResolvingLocked() {
 
 class AresDnsResolverFactory : public ResolverFactory {
  public:
+  bool IsValidUri(const grpc_uri* uri) const override { return true; }
+
   OrphanablePtr<Resolver> CreateResolver(ResolverArgs args) const override {
     return OrphanablePtr<Resolver>(New<AresDnsResolver>(std::move(args)));
   }
@@ -473,9 +475,13 @@ static bool should_use_ares(const char* resolver_env) {
 }
 #endif /* GRPC_UV */
 
+static bool g_use_ares_dns_resolver;
+
 void grpc_resolver_dns_ares_init() {
-  char* resolver_env = gpr_getenv("GRPC_DNS_RESOLVER");
-  if (should_use_ares(resolver_env)) {
+  grpc_core::UniquePtr<char> resolver =
+      GPR_GLOBAL_CONFIG_GET(grpc_dns_resolver);
+  if (should_use_ares(resolver.get())) {
+    g_use_ares_dns_resolver = true;
     gpr_log(GPR_DEBUG, "Using ares dns resolver");
     address_sorting_init();
     grpc_error* error = grpc_ares_init();
@@ -490,17 +496,16 @@ void grpc_resolver_dns_ares_init() {
     grpc_core::ResolverRegistry::Builder::RegisterResolverFactory(
         grpc_core::UniquePtr<grpc_core::ResolverFactory>(
             grpc_core::New<grpc_core::AresDnsResolverFactory>()));
+  } else {
+    g_use_ares_dns_resolver = false;
   }
-  gpr_free(resolver_env);
 }
 
 void grpc_resolver_dns_ares_shutdown() {
-  char* resolver_env = gpr_getenv("GRPC_DNS_RESOLVER");
-  if (should_use_ares(resolver_env)) {
+  if (g_use_ares_dns_resolver) {
     address_sorting_shutdown();
     grpc_ares_cleanup();
   }
-  gpr_free(resolver_env);
 }
 
 #else /* GRPC_ARES == 1 */

@@ -39,7 +39,7 @@
 
 Pod::Spec.new do |s|
   s.name     = 'BoringSSL-GRPC'
-  version = '0.0.3'
+  version = '0.0.4'
   s.version  = version
   s.summary  = 'BoringSSL is a fork of OpenSSL that is designed to meet Google\'s needs.'
   # Adapted from the homepage:
@@ -82,6 +82,7 @@ Pod::Spec.new do |s|
   s.ios.deployment_target = '7.0'
   s.osx.deployment_target = '10.7'
   s.tvos.deployment_target = '10.0'
+  s.watchos.deployment_target = '4.0'
 
   name = 'openssl_grpc'
 

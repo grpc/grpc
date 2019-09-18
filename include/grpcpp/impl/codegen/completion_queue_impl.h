@@ -46,9 +46,7 @@ namespace grpc_impl {
 class Channel;
 class Server;
 class ServerBuilder;
-}  // namespace grpc_impl
-namespace grpc {
-
+class ServerContext;
 template <class R>
 class ClientReader;
 template <class W>
@@ -62,28 +60,27 @@ class ServerWriter;
 namespace internal {
 template <class W, class R>
 class ServerReaderWriterBody;
-}  // namespace internal
 
-class ChannelInterface;
-class ClientContext;
-class ServerContext;
-class ServerInterface;
-
-namespace internal {
-class CompletionQueueTag;
-class RpcMethod;
 template <class ServiceType, class RequestType, class ResponseType>
 class RpcMethodHandler;
 template <class ServiceType, class RequestType, class ResponseType>
 class ClientStreamingHandler;
 template <class ServiceType, class RequestType, class ResponseType>
 class ServerStreamingHandler;
-template <class ServiceType, class RequestType, class ResponseType>
-class BidiStreamingHandler;
 template <class Streamer, bool WriteNeeded>
 class TemplatedBidiStreamingHandler;
-template <StatusCode code>
+template <::grpc::StatusCode code>
 class ErrorMethodHandler;
+}  // namespace internal
+}  // namespace grpc_impl
+namespace grpc {
+
+class ChannelInterface;
+class ServerInterface;
+
+namespace internal {
+class CompletionQueueTag;
+class RpcMethod;
 template <class InputMessage, class OutputMessage>
 class BlockingUnaryCallImpl;
 template <class Op1, class Op2, class Op3, class Op4, class Op5, class Op6>
@@ -186,8 +183,8 @@ class CompletionQueue : private ::grpc::GrpcLibraryCodegen {
   /// within the \a deadline).  A \a tag points to an arbitrary location usually
   /// employed to uniquely identify an event.
   ///
-  /// \param tag [out] Upon sucess, updated to point to the event's tag.
-  /// \param ok [out] Upon sucess, true if a successful event, false otherwise
+  /// \param tag [out] Upon success, updated to point to the event's tag.
+  /// \param ok [out] Upon success, true if a successful event, false otherwise
   ///        See documentation for CompletionQueue::Next for explanation of ok
   /// \param deadline [in] How long to block in wait for an event.
   ///
@@ -206,8 +203,8 @@ class CompletionQueue : private ::grpc::GrpcLibraryCodegen {
   /// employed to uniquely identify an event.
   ///
   /// \param f [in] Function to execute before calling AsyncNext on this queue.
-  /// \param tag [out] Upon sucess, updated to point to the event's tag.
-  /// \param ok [out] Upon sucess, true if read a regular event, false
+  /// \param tag [out] Upon success, updated to point to the event's tag.
+  /// \param ok [out] Upon success, true if read a regular event, false
   /// otherwise.
   /// \param deadline [in] How long to block in wait for an event.
   ///
@@ -256,29 +253,29 @@ class CompletionQueue : private ::grpc::GrpcLibraryCodegen {
   // Friend synchronous wrappers so that they can access Pluck(), which is
   // a semi-private API geared towards the synchronous implementation.
   template <class R>
-  friend class ::grpc::ClientReader;
+  friend class ::grpc_impl::ClientReader;
   template <class W>
-  friend class ::grpc::ClientWriter;
+  friend class ::grpc_impl::ClientWriter;
   template <class W, class R>
-  friend class ::grpc::ClientReaderWriter;
+  friend class ::grpc_impl::ClientReaderWriter;
   template <class R>
-  friend class ::grpc::ServerReader;
+  friend class ::grpc_impl::ServerReader;
   template <class W>
-  friend class ::grpc::ServerWriter;
+  friend class ::grpc_impl::ServerWriter;
   template <class W, class R>
-  friend class ::grpc::internal::ServerReaderWriterBody;
+  friend class ::grpc_impl::internal::ServerReaderWriterBody;
   template <class ServiceType, class RequestType, class ResponseType>
-  friend class ::grpc::internal::RpcMethodHandler;
+  friend class ::grpc_impl::internal::RpcMethodHandler;
   template <class ServiceType, class RequestType, class ResponseType>
-  friend class ::grpc::internal::ClientStreamingHandler;
+  friend class ::grpc_impl::internal::ClientStreamingHandler;
   template <class ServiceType, class RequestType, class ResponseType>
-  friend class ::grpc::internal::ServerStreamingHandler;
+  friend class ::grpc_impl::internal::ServerStreamingHandler;
   template <class Streamer, bool WriteNeeded>
-  friend class ::grpc::internal::TemplatedBidiStreamingHandler;
+  friend class ::grpc_impl::internal::TemplatedBidiStreamingHandler;
   template <::grpc::StatusCode code>
-  friend class ::grpc::internal::ErrorMethodHandler;
+  friend class ::grpc_impl::internal::ErrorMethodHandler;
   friend class ::grpc_impl::Server;
-  friend class ::grpc::ServerContext;
+  friend class ::grpc_impl::ServerContext;
   friend class ::grpc::ServerInterface;
   template <class InputMessage, class OutputMessage>
   friend class ::grpc::internal::BlockingUnaryCallImpl;

@@ -36,10 +36,6 @@ class ClientChannelFactory {
   virtual Subchannel* CreateSubchannel(const grpc_channel_args* args)
       GRPC_ABSTRACT;
 
-  // Creates a channel for the specified target with the specified args.
-  virtual grpc_channel* CreateChannel(
-      const char* target, const grpc_channel_args* args) GRPC_ABSTRACT;
-
   // Returns a channel arg containing the specified factory.
   static grpc_arg CreateChannelArg(ClientChannelFactory* factory);
 

@@ -42,8 +42,7 @@
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/surface/completion_queue.h"
 
-void grpc::experimental::ChannelResetConnectionBackoff(
-    ::grpc::Channel* channel) {
+void ::grpc::experimental::ChannelResetConnectionBackoff(Channel* channel) {
   grpc_impl::experimental::ChannelResetConnectionBackoff(channel);
 }
 
@@ -145,7 +144,7 @@ void ChannelResetConnectionBackoff(Channel* channel) {
 
   // ClientRpcInfo should be set before call because set_call also checks
   // whether the call has been cancelled, and if the call was cancelled, we
-  // should notify the interceptors too/
+  // should notify the interceptors too.
   auto* info =
       context->set_client_rpc_info(method.name(), method.method_type(), this,
                                    interceptor_creators_, interceptor_pos);
@@ -156,7 +155,7 @@ void ChannelResetConnectionBackoff(Channel* channel) {
 
 ::grpc::internal::Call Channel::CreateCall(
     const ::grpc::internal::RpcMethod& method, ::grpc::ClientContext* context,
-    ::grpc::CompletionQueue* cq) {
+    CompletionQueue* cq) {
   return CreateCallInternal(method, context, cq, 0);
 }
 

@@ -13,11 +13,13 @@
 # limitations under the License.
 """Tests of grpc_health.v1.health."""
 
+import logging
 import threading
 import time
 import unittest
 
 import grpc
+
 from grpc_health.v1 import health
 from grpc_health.v1 import health_pb2
 from grpc_health.v1 import health_pb2_grpc
@@ -276,4 +278,5 @@ class HealthServicerBackwardsCompatibleWatchTest(BaseWatchTests.WatchTests):
 
 
 if __name__ == '__main__':
+    logging.basicConfig()
     unittest.main(verbosity=2)

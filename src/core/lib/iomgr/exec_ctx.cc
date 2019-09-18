@@ -52,16 +52,9 @@ static void exec_ctx_sched(grpc_closure* closure, grpc_error* error) {
 }
 
 static gpr_timespec g_start_time;
+static gpr_cycle_counter g_start_cycle;
 
-// For debug of the timer manager crash only.
-// TODO (mxyan): remove after bug is fixed.
-#ifdef GRPC_DEBUG_TIMER_MANAGER
-extern int64_t g_start_time_sec;
-extern int64_t g_start_time_nsec;
-#endif  // GRPC_DEBUG_TIMER_MANAGER
-
-static grpc_millis timespec_to_millis_round_down(gpr_timespec ts) {
-  ts = gpr_time_sub(ts, g_start_time);
+static grpc_millis timespan_to_millis_round_down(gpr_timespec ts) {
   double x = GPR_MS_PER_SEC * static_cast<double>(ts.tv_sec) +
              static_cast<double>(ts.tv_nsec) / GPR_NS_PER_MS;
   if (x < 0) return 0;
@@ -69,8 +62,11 @@ static grpc_millis timespec_to_millis_round_down(gpr_timespec ts) {
   return static_cast<grpc_millis>(x);
 }
 
-static grpc_millis timespec_to_millis_round_up(gpr_timespec ts) {
-  ts = gpr_time_sub(ts, g_start_time);
+static grpc_millis timespec_to_millis_round_down(gpr_timespec ts) {
+  return timespan_to_millis_round_down(gpr_time_sub(ts, g_start_time));
+}
+
+static grpc_millis timespan_to_millis_round_up(gpr_timespec ts) {
   double x = GPR_MS_PER_SEC * static_cast<double>(ts.tv_sec) +
              static_cast<double>(ts.tv_nsec) / GPR_NS_PER_MS +
              static_cast<double>(GPR_NS_PER_SEC - 1) /
@@ -78,6 +74,10 @@ static grpc_millis timespec_to_millis_round_up(gpr_timespec ts) {
   if (x < 0) return 0;
   if (x > GRPC_MILLIS_INF_FUTURE) return GRPC_MILLIS_INF_FUTURE;
   return static_cast<grpc_millis>(x);
+}
+
+static grpc_millis timespec_to_millis_round_up(gpr_timespec ts) {
+  return timespan_to_millis_round_up(gpr_time_sub(ts, g_start_time));
 }
 
 gpr_timespec grpc_millis_to_timespec(grpc_millis millis,
@@ -108,6 +108,16 @@ grpc_millis grpc_timespec_to_millis_round_up(gpr_timespec ts) {
       gpr_convert_clock_type(ts, g_start_time.clock_type));
 }
 
+grpc_millis grpc_cycle_counter_to_millis_round_down(gpr_cycle_counter cycles) {
+  return timespan_to_millis_round_down(
+      gpr_cycle_counter_sub(cycles, g_start_cycle));
+}
+
+grpc_millis grpc_cycle_counter_to_millis_round_up(gpr_cycle_counter cycles) {
+  return timespan_to_millis_round_up(
+      gpr_cycle_counter_sub(cycles, g_start_cycle));
+}
+
 static const grpc_closure_scheduler_vtable exec_ctx_scheduler_vtable = {
     exec_ctx_run, exec_ctx_sched, "exec_ctx"};
 static grpc_closure_scheduler exec_ctx_scheduler = {&exec_ctx_scheduler_vtable};
@@ -124,13 +134,13 @@ void ExecCtx::TestOnlyGlobalInit(gpr_timespec new_val) {
 }
 
 void ExecCtx::GlobalInit(void) {
+  // gpr_now(GPR_CLOCK_MONOTONIC) incurs a syscall. We don't actually know the
+  // exact cycle the time was captured, so we use the average of cycles before
+  // and after the syscall as the starting cycle.
+  const gpr_cycle_counter cycle_before = gpr_get_cycle_counter();
   g_start_time = gpr_now(GPR_CLOCK_MONOTONIC);
-  // For debug of the timer manager crash only.
-  // TODO (mxyan): remove after bug is fixed.
-#ifdef GRPC_DEBUG_TIMER_MANAGER
-  g_start_time_sec = g_start_time.tv_sec;
-  g_start_time_nsec = g_start_time.tv_nsec;
-#endif
+  const gpr_cycle_counter cycle_after = gpr_get_cycle_counter();
+  g_start_cycle = (cycle_before + cycle_after) / 2;
   gpr_tls_init(&exec_ctx_);
 }
 

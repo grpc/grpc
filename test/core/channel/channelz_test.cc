@@ -51,7 +51,8 @@ class CallCountingHelperPeer {
   grpc_millis last_call_started_millis() const {
     CallCountingHelper::CounterData data;
     node_->CollectData(&data);
-    return (grpc_millis)gpr_atm_no_barrier_load(&data.last_call_started_millis);
+    gpr_timespec ts = gpr_cycle_counter_to_time(data.last_call_started_cycle);
+    return grpc_timespec_to_millis_round_up(ts);
   }
 
  private:
@@ -486,8 +487,7 @@ TEST_F(ChannelzRegistryBasedTest, InternalChannelTest) {
   (void)channels;  // suppress unused variable error
   // create an internal channel
   grpc_arg client_a[2];
-  client_a[0] = grpc_channel_arg_integer_create(
-      const_cast<char*>(GRPC_ARG_CHANNELZ_CHANNEL_IS_INTERNAL_CHANNEL), true);
+  client_a[0] = grpc_core::channelz::MakeParentUuidArg(1);
   client_a[1] = grpc_channel_arg_integer_create(
       const_cast<char*>(GRPC_ARG_ENABLE_CHANNELZ), true);
   grpc_channel_args client_args = {GPR_ARRAY_SIZE(client_a), client_a};

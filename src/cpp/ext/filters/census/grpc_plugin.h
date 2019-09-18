@@ -24,15 +24,19 @@
 #include "absl/strings/string_view.h"
 #include "include/grpcpp/opencensus.h"
 #include "opencensus/stats/stats.h"
+#include "opencensus/tags/tag_key.h"
+
+namespace grpc_impl {
+class ServerContext;
+}
 
 namespace grpc {
-class ServerContext;
 
 // The tag keys set when recording RPC stats.
-::opencensus::stats::TagKey ClientMethodTagKey();
-::opencensus::stats::TagKey ClientStatusTagKey();
-::opencensus::stats::TagKey ServerMethodTagKey();
-::opencensus::stats::TagKey ServerStatusTagKey();
+::opencensus::tags::TagKey ClientMethodTagKey();
+::opencensus::tags::TagKey ClientStatusTagKey();
+::opencensus::tags::TagKey ServerMethodTagKey();
+::opencensus::tags::TagKey ServerStatusTagKey();
 
 // Names of measures used by the plugin--users can create views on these
 // measures but should not record data for them.

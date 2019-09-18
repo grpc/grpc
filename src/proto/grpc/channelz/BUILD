@@ -28,6 +28,12 @@ grpc_proto_library(
 proto_library(
     name = "channelz_proto_descriptors",
     srcs = ["channelz.proto"],
+    deps = [
+        "@com_google_protobuf//:any_proto",
+        "@com_google_protobuf//:duration_proto",
+        "@com_google_protobuf//:timestamp_proto",
+        "@com_google_protobuf//:wrappers_proto",
+    ],
 )
 
 filegroup(

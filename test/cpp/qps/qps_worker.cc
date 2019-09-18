@@ -34,7 +34,7 @@
 #include <grpcpp/server.h>
 #include <grpcpp/server_builder.h>
 
-#include "src/core/lib/gpr/host_port.h"
+#include "src/core/lib/gprpp/host_port.h"
 #include "src/proto/grpc/testing/worker_service.grpc.pb.h"
 #include "test/core/util/grpc_profiler.h"
 #include "test/core/util/histogram.h"
@@ -279,12 +279,11 @@ QpsWorker::QpsWorker(int driver_port, int server_port,
 
   std::unique_ptr<ServerBuilder> builder = CreateQpsServerBuilder();
   if (driver_port >= 0) {
-    char* server_address = nullptr;
-    gpr_join_host_port(&server_address, "::", driver_port);
+    grpc_core::UniquePtr<char> server_address;
+    grpc_core::JoinHostPort(&server_address, "::", driver_port);
     builder->AddListeningPort(
-        server_address,
+        server_address.get(),
         GetCredentialsProvider()->GetServerCredentials(credential_type));
-    gpr_free(server_address);
   }
   builder->RegisterService(impl_.get());
 

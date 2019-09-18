@@ -2,7 +2,18 @@
 gRPC C#
 =======
 
-A C# implementation of gRPC.
+A C# implementation of gRPC based on the native gRPC Core library.
+
+There are currently two official implementations of gRPC for C#
+
+- The original gRPC C# implementation based on the native gRPC Core library (the source code lives in this directory)
+- The new "gRPC for .NET" implementation written in pure C# and based on the newly released .NET Core 3 (source code available at https://github.com/grpc/grpc-dotnet)
+
+The implementations are meant to coexist side-by-side and each has its own advantages in terms of available features, integrations, supported platforms, maturity level and performance.
+They share the same API for invoking and handling RPCs, thus limiting the lock-in and enabling users to choose the implementation that satisfies their needs the best
+(and perhaps adjust their choice over time without needing to do too much refactoring).
+
+The following documentation is for the original gRPC C# implementation only (the `Grpc.Core` nuget package).
 
 SUPPORTED PLATFORMS
 ------------------
@@ -17,20 +28,20 @@ PREREQUISITES
 When using gRPC C# under .NET Core you only need to [install .NET Core](https://www.microsoft.com/net/core).
 
 In addition to that, you can also use gRPC C# with these runtimes / IDEs
-- Windows: .NET Framework 4.5+, Visual Studio 2013, 2015, 2017, Visual Studio Code
-- Linux: Mono 4+, Visual Studio Code, MonoDevelop 5.9+ 
-- Mac OS X: Mono 4+, Visual Studio Code, Xamarin Studio 5.9+
+- Windows: .NET Framework 4.5+, Visual Studio 2013 or newer, Visual Studio Code
+- Linux: Mono 4+, Visual Studio Code
+- Mac OS X: Mono 4+, Visual Studio Code, Visual Studio for Mac
 
 HOW TO USE
 --------------
 
 **Windows, Linux, Mac OS X**
 
-- Open Visual Studio / MonoDevelop / Xamarin Studio and start a new project/solution (alternatively, you can create a new project from command line with `dotnet` SDK)
+- Open Visual Studio and start a new project/solution (alternatively, you can create a new project from command line with `dotnet` SDK)
 
 - Add the [Grpc](https://www.nuget.org/packages/Grpc/) NuGet package as a dependency (Project options -> Manage NuGet Packages). 
 
-- To be able to generate code from Protocol Buffer (`.proto`) file definitions, add the [Grpc.Tools](https://www.nuget.org/packages/Grpc.Tools/) NuGet package that contains Protocol Buffers compiler (_protoc_) and the gRPC _protoc_ plugin.
+- To be able to generate code from Protocol Buffer (`.proto`) file definitions, add the [Grpc.Tools](https://www.nuget.org/packages/Grpc.Tools/) NuGet package which provides [code generation integrated into your build](BUILD-INTEGRATION.md).
 
 **Xamarin.Android and Xamarin.iOS (Experimental only)**
 

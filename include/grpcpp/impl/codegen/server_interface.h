@@ -25,21 +25,21 @@
 #include <grpcpp/impl/codegen/call_hook.h>
 #include <grpcpp/impl/codegen/completion_queue_tag.h>
 #include <grpcpp/impl/codegen/core_codegen_interface.h>
+#include <grpcpp/impl/codegen/interceptor_common.h>
 #include <grpcpp/impl/codegen/rpc_service_method.h>
-#include <grpcpp/impl/codegen/server_context.h>
+#include <grpcpp/impl/codegen/server_context_impl.h>
 
 namespace grpc_impl {
 
+class Channel;
 class CompletionQueue;
 class ServerCompletionQueue;
-class Channel;
 class ServerCredentials;
 }  // namespace grpc_impl
 namespace grpc {
 
 class AsyncGenericService;
 class GenericServerContext;
-class ServerContext;
 class Service;
 
 extern CoreCodegenInterface* g_core_codegen_interface;
@@ -53,6 +53,7 @@ class ServerAsyncStreamingInterface;
 
 namespace experimental {
 class CallbackGenericService;
+class ServerInterceptorFactoryInterface;
 }  // namespace experimental
 
 class ServerInterface : public internal::CallHook {
@@ -131,7 +132,7 @@ class ServerInterface : public internal::CallHook {
     virtual ~experimental_registration_interface() {}
     /// May not be abstract since this is a post-1.0 API addition
     virtual void RegisterCallbackGenericService(
-        experimental::CallbackGenericService* service) {}
+        experimental::CallbackGenericService* /*service*/) {}
   };
 
   /// NOTE: The function experimental_registration() is not stable public API.
@@ -176,7 +177,8 @@ class ServerInterface : public internal::CallHook {
 
   class BaseAsyncRequest : public internal::CompletionQueueTag {
    public:
-    BaseAsyncRequest(ServerInterface* server, ServerContext* context,
+    BaseAsyncRequest(ServerInterface* server,
+                     ::grpc_impl::ServerContext* context,
                      internal::ServerAsyncStreamingInterface* stream,
                      ::grpc_impl::CompletionQueue* call_cq,
                      ::grpc_impl::ServerCompletionQueue* notification_cq,
@@ -190,7 +192,7 @@ class ServerInterface : public internal::CallHook {
 
    protected:
     ServerInterface* const server_;
-    ServerContext* const context_;
+    ::grpc_impl::ServerContext* const context_;
     internal::ServerAsyncStreamingInterface* const stream_;
     ::grpc_impl::CompletionQueue* const call_cq_;
     ::grpc_impl::ServerCompletionQueue* const notification_cq_;
@@ -205,7 +207,8 @@ class ServerInterface : public internal::CallHook {
   /// RegisteredAsyncRequest is not part of the C++ API
   class RegisteredAsyncRequest : public BaseAsyncRequest {
    public:
-    RegisteredAsyncRequest(ServerInterface* server, ServerContext* context,
+    RegisteredAsyncRequest(ServerInterface* server,
+                           ::grpc_impl::ServerContext* context,
                            internal::ServerAsyncStreamingInterface* stream,
                            ::grpc_impl::CompletionQueue* call_cq,
                            ::grpc_impl::ServerCompletionQueue* notification_cq,
@@ -234,7 +237,8 @@ class ServerInterface : public internal::CallHook {
   class NoPayloadAsyncRequest final : public RegisteredAsyncRequest {
    public:
     NoPayloadAsyncRequest(internal::RpcServiceMethod* registered_method,
-                          ServerInterface* server, ServerContext* context,
+                          ServerInterface* server,
+                          ::grpc_impl::ServerContext* context,
                           internal::ServerAsyncStreamingInterface* stream,
                           ::grpc_impl::CompletionQueue* call_cq,
                           ::grpc_impl::ServerCompletionQueue* notification_cq,
@@ -252,7 +256,8 @@ class ServerInterface : public internal::CallHook {
   class PayloadAsyncRequest final : public RegisteredAsyncRequest {
    public:
     PayloadAsyncRequest(internal::RpcServiceMethod* registered_method,
-                        ServerInterface* server, ServerContext* context,
+                        ServerInterface* server,
+                        ::grpc_impl::ServerContext* context,
                         internal::ServerAsyncStreamingInterface* stream,
                         ::grpc_impl::CompletionQueue* call_cq,
                         ::grpc_impl::ServerCompletionQueue* notification_cq,
@@ -309,7 +314,7 @@ class ServerInterface : public internal::CallHook {
    private:
     internal::RpcServiceMethod* const registered_method_;
     ServerInterface* const server_;
-    ServerContext* const context_;
+    ::grpc_impl::ServerContext* const context_;
     internal::ServerAsyncStreamingInterface* const stream_;
     ::grpc_impl::CompletionQueue* const call_cq_;
 
@@ -335,7 +340,7 @@ class ServerInterface : public internal::CallHook {
 
   template <class Message>
   void RequestAsyncCall(internal::RpcServiceMethod* method,
-                        ServerContext* context,
+                        ::grpc_impl::ServerContext* context,
                         internal::ServerAsyncStreamingInterface* stream,
                         ::grpc_impl::CompletionQueue* call_cq,
                         ::grpc_impl::ServerCompletionQueue* notification_cq,
@@ -346,7 +351,7 @@ class ServerInterface : public internal::CallHook {
   }
 
   void RequestAsyncCall(internal::RpcServiceMethod* method,
-                        ServerContext* context,
+                        ::grpc_impl::ServerContext* context,
                         internal::ServerAsyncStreamingInterface* stream,
                         ::grpc_impl::CompletionQueue* call_cq,
                         ::grpc_impl::ServerCompletionQueue* notification_cq,

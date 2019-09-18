@@ -1,0 +1,65 @@
+# Copyright 2019 The gRPC Authors
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+load("@grpc_python_dependencies//:requirements.bzl", "requirement")
+
+py_binary(
+    name = "debug_server",
+    testonly = 1,
+    srcs = ["debug_server.py"],
+    deps = [
+        "//src/python/grpcio/grpc:grpcio",
+        "//src/python/grpcio_channelz/grpc_channelz/v1:grpc_channelz",
+        "//examples:helloworld_py_pb2",
+        "//examples:helloworld_py_pb2_grpc",
+    ],
+)
+
+py_binary(
+    name = "send_message",
+    testonly = 1,
+    srcs = ["send_message.py"],
+    deps = [
+        "//src/python/grpcio/grpc:grpcio",
+        "//examples:helloworld_py_pb2",
+        "//examples:helloworld_py_pb2_grpc",
+    ],
+    python_version = "PY3",
+)
+
+py_binary(
+    name = "get_stats",
+    testonly = 1,
+    srcs = ["get_stats.py"],
+    deps = [
+        "//src/python/grpcio/grpc:grpcio",
+        "//src/python/grpcio_channelz/grpc_channelz/v1:grpc_channelz",
+    ],
+    python_version = "PY3",
+)
+
+py_test(
+    name = "_debug_example_test",
+    srcs = ["test/_debug_example_test.py"],
+    deps = [
+        "//src/python/grpcio/grpc:grpcio",
+        "//src/python/grpcio_channelz/grpc_channelz/v1:grpc_channelz",
+        "//examples:helloworld_py_pb2",
+        "//examples:helloworld_py_pb2_grpc",
+        ":debug_server",
+        ":send_message",
+        ":get_stats",
+    ],
+    python_version = "PY3",
+)
