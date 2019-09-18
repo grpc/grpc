@@ -5,7 +5,6 @@ load(
     "get_include_protoc_args",
     "get_plugin_args",
     "get_proto_root",
-    "proto_path_to_generated_filename",
     "protos_from_context",
     "includes_from_deps",
     "get_proto_arguments",
