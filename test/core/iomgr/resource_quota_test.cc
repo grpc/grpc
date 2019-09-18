@@ -119,7 +119,7 @@ static void test_instant_alloc_then_free(void) {
   grpc_resource_user* usr = grpc_resource_user_create(q, "usr");
   {
     grpc_core::ExecCtx exec_ctx;
-    grpc_resource_user_alloc(usr, 1024, nullptr);
+    GPR_ASSERT(!grpc_resource_user_alloc(usr, 1024, nullptr));
   }
   {
     grpc_core::ExecCtx exec_ctx;
@@ -137,7 +137,7 @@ static void test_instant_alloc_free_pair(void) {
   grpc_resource_user* usr = grpc_resource_user_create(q, "usr");
   {
     grpc_core::ExecCtx exec_ctx;
-    grpc_resource_user_alloc(usr, 1024, nullptr);
+    GPR_ASSERT(!grpc_resource_user_alloc(usr, 1024, nullptr));
     grpc_resource_user_free(usr, 1024);
   }
   grpc_resource_quota_unref(q);
@@ -154,12 +154,18 @@ static void test_simple_async_alloc(void) {
     gpr_event ev;
     gpr_event_init(&ev);
     grpc_core::ExecCtx exec_ctx;
-    grpc_resource_user_alloc(usr, 1024, set_event(&ev));
+    GPR_ASSERT(!grpc_resource_user_alloc(usr, 1024, set_event(&ev)));
     grpc_core::ExecCtx::Get()->Flush();
     GPR_ASSERT(gpr_event_wait(&ev, grpc_timeout_seconds_to_deadline(5)) !=
                nullptr);
   }
   {
+    grpc_core::ExecCtx exec_ctx;
+    grpc_resource_user_free(usr, 1024);
+  }
+  {
+    // Now the allocation should be inline.
+    GPR_ASSERT(grpc_resource_user_alloc(usr, 1024, nullptr));
     grpc_core::ExecCtx exec_ctx;
     grpc_resource_user_free(usr, 1024);
   }
@@ -177,7 +183,7 @@ static void test_async_alloc_blocked_by_size(void) {
   gpr_event_init(&ev);
   {
     grpc_core::ExecCtx exec_ctx;
-    grpc_resource_user_alloc(usr, 1024, set_event(&ev));
+    GPR_ASSERT(!grpc_resource_user_alloc(usr, 1024, set_event(&ev)));
     grpc_core::ExecCtx::Get()->Flush();
     GPR_ASSERT(gpr_event_wait(
                    &ev, grpc_timeout_milliseconds_to_deadline(100)) == nullptr);
@@ -185,7 +191,6 @@ static void test_async_alloc_blocked_by_size(void) {
   grpc_resource_quota_resize(q, 1024);
   GPR_ASSERT(gpr_event_wait(&ev, grpc_timeout_seconds_to_deadline(5)) !=
              nullptr);
-  ;
   {
     grpc_core::ExecCtx exec_ctx;
     grpc_resource_user_free(usr, 1024);
@@ -204,11 +209,10 @@ static void test_scavenge(void) {
     gpr_event ev;
     gpr_event_init(&ev);
     grpc_core::ExecCtx exec_ctx;
-    grpc_resource_user_alloc(usr1, 1024, set_event(&ev));
+    GPR_ASSERT(!grpc_resource_user_alloc(usr1, 1024, set_event(&ev)));
     grpc_core::ExecCtx::Get()->Flush();
     GPR_ASSERT(gpr_event_wait(&ev, grpc_timeout_seconds_to_deadline(5)) !=
                nullptr);
-    ;
   }
   {
     grpc_core::ExecCtx exec_ctx;
@@ -218,11 +222,10 @@ static void test_scavenge(void) {
     gpr_event ev;
     gpr_event_init(&ev);
     grpc_core::ExecCtx exec_ctx;
-    grpc_resource_user_alloc(usr2, 1024, set_event(&ev));
+    GPR_ASSERT(!grpc_resource_user_alloc(usr2, 1024, set_event(&ev)));
     grpc_core::ExecCtx::Get()->Flush();
     GPR_ASSERT(gpr_event_wait(&ev, grpc_timeout_seconds_to_deadline(5)) !=
                nullptr);
-    ;
   }
   {
     grpc_core::ExecCtx exec_ctx;
@@ -243,16 +246,15 @@ static void test_scavenge_blocked(void) {
   {
     gpr_event_init(&ev);
     grpc_core::ExecCtx exec_ctx;
-    grpc_resource_user_alloc(usr1, 1024, set_event(&ev));
+    GPR_ASSERT(!grpc_resource_user_alloc(usr1, 1024, set_event(&ev)));
     grpc_core::ExecCtx::Get()->Flush();
     GPR_ASSERT(gpr_event_wait(&ev, grpc_timeout_seconds_to_deadline(5)) !=
                nullptr);
-    ;
   }
   {
     gpr_event_init(&ev);
     grpc_core::ExecCtx exec_ctx;
-    grpc_resource_user_alloc(usr2, 1024, set_event(&ev));
+    GPR_ASSERT(!grpc_resource_user_alloc(usr2, 1024, set_event(&ev)));
     grpc_core::ExecCtx::Get()->Flush();
     GPR_ASSERT(gpr_event_wait(
                    &ev, grpc_timeout_milliseconds_to_deadline(100)) == nullptr);
@@ -263,7 +265,6 @@ static void test_scavenge_blocked(void) {
     grpc_core::ExecCtx::Get()->Flush();
     GPR_ASSERT(gpr_event_wait(&ev, grpc_timeout_seconds_to_deadline(5)) !=
                nullptr);
-    ;
   }
   {
     grpc_core::ExecCtx exec_ctx;
@@ -284,11 +285,10 @@ static void test_blocked_until_scheduled_reclaim(void) {
     gpr_event ev;
     gpr_event_init(&ev);
     grpc_core::ExecCtx exec_ctx;
-    grpc_resource_user_alloc(usr, 1024, set_event(&ev));
+    GPR_ASSERT(!grpc_resource_user_alloc(usr, 1024, set_event(&ev)));
     grpc_core::ExecCtx::Get()->Flush();
     GPR_ASSERT(gpr_event_wait(&ev, grpc_timeout_seconds_to_deadline(5)) !=
                nullptr);
-    ;
   }
   gpr_event reclaim_done;
   gpr_event_init(&reclaim_done);
@@ -301,7 +301,7 @@ static void test_blocked_until_scheduled_reclaim(void) {
     gpr_event ev;
     gpr_event_init(&ev);
     grpc_core::ExecCtx exec_ctx;
-    grpc_resource_user_alloc(usr, 1024, set_event(&ev));
+    GPR_ASSERT(!grpc_resource_user_alloc(usr, 1024, set_event(&ev)));
     grpc_core::ExecCtx::Get()->Flush();
     GPR_ASSERT(gpr_event_wait(&reclaim_done,
                               grpc_timeout_seconds_to_deadline(5)) != nullptr);
@@ -328,7 +328,7 @@ static void test_blocked_until_scheduled_reclaim_and_scavenge(void) {
     gpr_event ev;
     gpr_event_init(&ev);
     grpc_core::ExecCtx exec_ctx;
-    grpc_resource_user_alloc(usr1, 1024, set_event(&ev));
+    GPR_ASSERT(!grpc_resource_user_alloc(usr1, 1024, set_event(&ev)));
     grpc_core::ExecCtx::Get()->Flush();
     GPR_ASSERT(gpr_event_wait(&ev, grpc_timeout_seconds_to_deadline(5)) !=
                nullptr);
@@ -345,7 +345,7 @@ static void test_blocked_until_scheduled_reclaim_and_scavenge(void) {
     gpr_event ev;
     gpr_event_init(&ev);
     grpc_core::ExecCtx exec_ctx;
-    grpc_resource_user_alloc(usr2, 1024, set_event(&ev));
+    GPR_ASSERT(!grpc_resource_user_alloc(usr2, 1024, set_event(&ev)));
     grpc_core::ExecCtx::Get()->Flush();
     GPR_ASSERT(gpr_event_wait(&reclaim_done,
                               grpc_timeout_seconds_to_deadline(5)) != nullptr);
@@ -372,7 +372,7 @@ static void test_blocked_until_scheduled_destructive_reclaim(void) {
     gpr_event ev;
     gpr_event_init(&ev);
     grpc_core::ExecCtx exec_ctx;
-    grpc_resource_user_alloc(usr, 1024, set_event(&ev));
+    GPR_ASSERT(!grpc_resource_user_alloc(usr, 1024, set_event(&ev)));
     grpc_core::ExecCtx::Get()->Flush();
     GPR_ASSERT(gpr_event_wait(&ev, grpc_timeout_seconds_to_deadline(5)) !=
                nullptr);
@@ -389,7 +389,7 @@ static void test_blocked_until_scheduled_destructive_reclaim(void) {
     gpr_event ev;
     gpr_event_init(&ev);
     grpc_core::ExecCtx exec_ctx;
-    grpc_resource_user_alloc(usr, 1024, set_event(&ev));
+    GPR_ASSERT(!grpc_resource_user_alloc(usr, 1024, set_event(&ev)));
     grpc_core::ExecCtx::Get()->Flush();
     GPR_ASSERT(gpr_event_wait(&reclaim_done,
                               grpc_timeout_seconds_to_deadline(5)) != nullptr);
@@ -451,7 +451,7 @@ static void test_benign_reclaim_is_preferred(void) {
     gpr_event ev;
     gpr_event_init(&ev);
     grpc_core::ExecCtx exec_ctx;
-    grpc_resource_user_alloc(usr, 1024, set_event(&ev));
+    GPR_ASSERT(!grpc_resource_user_alloc(usr, 1024, set_event(&ev)));
     grpc_core::ExecCtx::Get()->Flush();
     GPR_ASSERT(gpr_event_wait(&ev, grpc_timeout_seconds_to_deadline(5)) !=
                nullptr);
@@ -475,7 +475,7 @@ static void test_benign_reclaim_is_preferred(void) {
     gpr_event ev;
     gpr_event_init(&ev);
     grpc_core::ExecCtx exec_ctx;
-    grpc_resource_user_alloc(usr, 1024, set_event(&ev));
+    GPR_ASSERT(!grpc_resource_user_alloc(usr, 1024, set_event(&ev)));
     grpc_core::ExecCtx::Get()->Flush();
     GPR_ASSERT(gpr_event_wait(&benign_done,
                               grpc_timeout_seconds_to_deadline(5)) != nullptr);
@@ -511,7 +511,7 @@ static void test_multiple_reclaims_can_be_triggered(void) {
     gpr_event ev;
     gpr_event_init(&ev);
     grpc_core::ExecCtx exec_ctx;
-    grpc_resource_user_alloc(usr, 1024, set_event(&ev));
+    GPR_ASSERT(!grpc_resource_user_alloc(usr, 1024, set_event(&ev)));
     grpc_core::ExecCtx::Get()->Flush();
     GPR_ASSERT(gpr_event_wait(&ev, grpc_timeout_seconds_to_deadline(5)) !=
                nullptr);
@@ -535,7 +535,7 @@ static void test_multiple_reclaims_can_be_triggered(void) {
     gpr_event ev;
     gpr_event_init(&ev);
     grpc_core::ExecCtx exec_ctx;
-    grpc_resource_user_alloc(usr, 1024, set_event(&ev));
+    GPR_ASSERT(!grpc_resource_user_alloc(usr, 1024, set_event(&ev)));
     grpc_core::ExecCtx::Get()->Flush();
     GPR_ASSERT(gpr_event_wait(&benign_done,
                               grpc_timeout_seconds_to_deadline(5)) != nullptr);
@@ -566,7 +566,7 @@ static void test_resource_user_stays_allocated_until_memory_released(void) {
   grpc_resource_user* usr = grpc_resource_user_create(q, "usr");
   {
     grpc_core::ExecCtx exec_ctx;
-    grpc_resource_user_alloc(usr, 1024, nullptr);
+    GPR_ASSERT(!grpc_resource_user_alloc(usr, 1024, nullptr));
   }
   {
     grpc_core::ExecCtx exec_ctx;
@@ -607,7 +607,7 @@ test_resource_user_stays_allocated_and_reclaimers_unrun_until_memory_released(
       gpr_event allocated;
       gpr_event_init(&allocated);
       grpc_core::ExecCtx exec_ctx;
-      grpc_resource_user_alloc(usr, 1024, set_event(&allocated));
+      GPR_ASSERT(!grpc_resource_user_alloc(usr, 1024, set_event(&allocated)));
       grpc_core::ExecCtx::Get()->Flush();
       GPR_ASSERT(gpr_event_wait(&allocated, grpc_timeout_seconds_to_deadline(
                                                 5)) != nullptr);
@@ -645,7 +645,7 @@ static void test_reclaimers_can_be_posted_repeatedly(void) {
     gpr_event allocated;
     gpr_event_init(&allocated);
     grpc_core::ExecCtx exec_ctx;
-    grpc_resource_user_alloc(usr, 1024, set_event(&allocated));
+    GPR_ASSERT(!grpc_resource_user_alloc(usr, 1024, set_event(&allocated)));
     grpc_core::ExecCtx::Get()->Flush();
     GPR_ASSERT(gpr_event_wait(&allocated,
                               grpc_timeout_seconds_to_deadline(5)) != nullptr);
@@ -666,7 +666,7 @@ static void test_reclaimers_can_be_posted_repeatedly(void) {
       gpr_event allocated;
       gpr_event_init(&allocated);
       grpc_core::ExecCtx exec_ctx;
-      grpc_resource_user_alloc(usr, 1024, set_event(&allocated));
+      GPR_ASSERT(!grpc_resource_user_alloc(usr, 1024, set_event(&allocated)));
       grpc_core::ExecCtx::Get()->Flush();
       GPR_ASSERT(gpr_event_wait(&allocated, grpc_timeout_seconds_to_deadline(
                                                 5)) != nullptr);
@@ -701,7 +701,7 @@ static void test_one_slice(void) {
   {
     const int start_allocs = num_allocs;
     grpc_core::ExecCtx exec_ctx;
-    grpc_resource_user_alloc_slices(&alloc, 1024, 1, &buffer);
+    GPR_ASSERT(!grpc_resource_user_alloc_slices(&alloc, 1024, 1, &buffer));
     grpc_core::ExecCtx::Get()->Flush();
     assert_counter_becomes(&num_allocs, start_allocs + 1);
   }
@@ -733,7 +733,7 @@ static void test_one_slice_deleted_late(void) {
   {
     const int start_allocs = num_allocs;
     grpc_core::ExecCtx exec_ctx;
-    grpc_resource_user_alloc_slices(&alloc, 1024, 1, &buffer);
+    GPR_ASSERT(!grpc_resource_user_alloc_slices(&alloc, 1024, 1, &buffer));
     grpc_core::ExecCtx::Get()->Flush();
     assert_counter_becomes(&num_allocs, start_allocs + 1);
   }
@@ -775,7 +775,7 @@ static void test_negative_rq_free_pool(void) {
   {
     const int start_allocs = num_allocs;
     grpc_core::ExecCtx exec_ctx;
-    grpc_resource_user_alloc_slices(&alloc, 1024, 1, &buffer);
+    GPR_ASSERT(!grpc_resource_user_alloc_slices(&alloc, 1024, 1, &buffer));
     grpc_core::ExecCtx::Get()->Flush();
     assert_counter_becomes(&num_allocs, start_allocs + 1);
   }

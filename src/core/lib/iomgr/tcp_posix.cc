@@ -571,7 +571,7 @@ static void tcp_read_allocation_done(void* tcpp, grpc_error* error) {
     gpr_log(GPR_INFO, "TCP:%p read_allocation_done: %s", tcp,
             grpc_error_string(error));
   }
-  if (error != GRPC_ERROR_NONE) {
+  if (GPR_UNLIKELY(error != GRPC_ERROR_NONE)) {
     grpc_slice_buffer_reset_and_unref_internal(tcp->incoming_buffer);
     grpc_slice_buffer_reset_and_unref_internal(&tcp->last_read_buffer);
     call_read_cb(tcp, GRPC_ERROR_REF(error));
@@ -589,14 +589,17 @@ static void tcp_continue_read(grpc_tcp* tcp) {
     if (GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace)) {
       gpr_log(GPR_INFO, "TCP:%p alloc_slices", tcp);
     }
-    grpc_resource_user_alloc_slices(&tcp->slice_allocator, target_read_size, 1,
-                                    tcp->incoming_buffer);
-  } else {
-    if (GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace)) {
-      gpr_log(GPR_INFO, "TCP:%p do_read", tcp);
+    if (GPR_UNLIKELY(!grpc_resource_user_alloc_slices(&tcp->slice_allocator,
+                                                      target_read_size, 1,
+                                                      tcp->incoming_buffer))) {
+      // Wait for allocation.
+      return;
     }
-    tcp_do_read(tcp);
   }
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace)) {
+    gpr_log(GPR_INFO, "TCP:%p do_read", tcp);
+  }
+  tcp_do_read(tcp);
 }
 
 static void tcp_handle_read(void* arg /* grpc_tcp */, grpc_error* error) {
@@ -605,7 +608,7 @@ static void tcp_handle_read(void* arg /* grpc_tcp */, grpc_error* error) {
     gpr_log(GPR_INFO, "TCP:%p got_read: %s", tcp, grpc_error_string(error));
   }
 
-  if (error != GRPC_ERROR_NONE) {
+  if (GPR_UNLIKELY(error != GRPC_ERROR_NONE)) {
     grpc_slice_buffer_reset_and_unref_internal(tcp->incoming_buffer);
     grpc_slice_buffer_reset_and_unref_internal(&tcp->last_read_buffer);
     call_read_cb(tcp, GRPC_ERROR_REF(error));
