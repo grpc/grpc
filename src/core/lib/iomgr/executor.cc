@@ -264,6 +264,8 @@ void Executor::ThreadMain(void* arg) {
     grpc_core::ExecCtx::Get()->InvalidateNow();
     subtract_depth = RunClosures(ts->name, closures);
   }
+  // Clear the thread local after use.
+  gpr_tls_set(&g_this_thread_state, reinterpret_cast<intptr_t>(nullptr));
 }
 
 void Executor::Enqueue(grpc_closure* closure, grpc_error* error,
