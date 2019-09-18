@@ -591,7 +591,7 @@ class XdsLb : public LoadBalancingPolicy {
 
     explicit PriorityList(XdsLb* xds_policy) : xds_policy_(xds_policy) {}
 
-    void UpdateLocked(bool force_update_all_priorities = false);
+    void UpdateLocked();
     void ResetBackoffLocked();
     void ShutdownLocked();
     void UpdateXdsPickerLocked();
@@ -645,8 +645,6 @@ class XdsLb : public LoadBalancingPolicy {
     return pending_lb_chand_ != nullptr ? pending_lb_chand_.get()
                                         : lb_chand_.get();
   }
-
-  void StorePriorityListUpdate(XdsPriorityListUpdate new_update);
 
   // Methods for dealing with fallback state.
   void MaybeCancelFallbackAtStartupChecks();
@@ -706,8 +704,6 @@ class XdsLb : public LoadBalancingPolicy {
   PriorityList priority_list_;
   // The update for priority_list_.
   XdsPriorityListUpdate priority_list_update_;
-  // Bitmask to track if the update for each priority has been applied.
-  InlinedVector<bool, 2> priority_list_update_applied_bitmask_;
 
   // The config for dropping calls.
   RefCountedPtr<XdsDropConfig> drop_config_;
@@ -1304,8 +1300,8 @@ void XdsLb::LbChannelState::EdsCallState::OnResponseReceivedLocked(
       return;
     }
     // Update the priority list.
-    xdslb_policy->StorePriorityListUpdate(
-        std::move(update.priority_list_update));
+    xdslb_policy->priority_list_update_ =
+        std::move(update.priority_list_update);
     xdslb_policy->priority_list_.UpdateLocked();
   }();
   grpc_slice_unref_internal(response_slice);
@@ -1936,7 +1932,7 @@ void XdsLb::UpdateLocked(UpdateArgs args) {
     return;
   }
   ProcessAddressesAndChannelArgsLocked(std::move(args.addresses), *args.args);
-  priority_list_.UpdateLocked(/*force_update_all_priorities=*/true);
+  priority_list_.UpdateLocked();
   // Update the existing fallback policy. The fallback policy config and/or the
   // fallback addresses may be new.
   if (fallback_policy_ != nullptr) UpdateFallbackPolicyLocked();
@@ -1953,19 +1949,6 @@ void XdsLb::UpdateLocked(UpdateArgs args) {
     // the fallback timeout has not elapsed.
     lb_chand_->StartConnectivityWatchLocked();
   }
-}
-
-void XdsLb::StorePriorityListUpdate(XdsPriorityListUpdate new_update) {
-  InlinedVector<bool, 2> new_bitmask;
-  for (size_t i = 0; i < new_update.size(); ++i) {
-    const bool applied = priority_list_update_.Contains(i) &&
-                         priority_list_update_.Find(i)->localities ==
-                             new_update.Find(i)->localities &&
-                         priority_list_update_applied_bitmask_[i];
-    new_bitmask.emplace_back(applied);
-  }
-  priority_list_update_applied_bitmask_ = std::move(new_bitmask);
-  priority_list_update_ = std::move(new_update);
 }
 
 //
@@ -2147,10 +2130,8 @@ void XdsLb::MaybeExitFallbackMode() {
 // XdsLb::PriorityList
 //
 
-void XdsLb::PriorityList::UpdateLocked(bool force_update_all_priorities) {
+void XdsLb::PriorityList::UpdateLocked() {
   const auto& priority_list_update = xds_policy_->priority_list_update_;
-  const auto& applied_bitmask =
-      xds_policy_->priority_list_update_applied_bitmask_;
   // Remove from the priority list the priorities that are not in the update.
   DeactivatePrioritiesLowerThan(priority_list_update.LowestPriority());
   // Update all the existing priorities; maybe create one more.
@@ -2169,18 +2150,10 @@ void XdsLb::PriorityList::UpdateLocked(bool force_update_all_priorities) {
     }
     const auto* locality_list = priority_list_update.Find(priority);
     LocalityMap* locality_map = priorities_[priority].get();
-    // Propagate the locality list if it contains new update.
-    if (force_update_all_priorities || !applied_bitmask[priority]) {
-      // Note that in some rare cases (e.g., the currently used locality map
-      // reports TRANSIENT_FAILURE synchronously after update due to subchannel
-      // sharing), the following invocation may result in creating new locality
-      // maps. For example, last update only contains P0, and P0 is READY. The
-      // new update contains P0, P1. Updating P0 makes P0 fail immediately, so
-      // P1 is created using the latest update. In such cases, the update will
-      // not be applied again on next iteration because the bitmask is already
-      // set when creating the new locality map.
-      locality_map->UpdateLocked(*locality_list);
-    }
+    // Propagate the locality list.
+    // TODO(juanlishen): Find a clean way to skip duplicate update for a
+    // priority.
+    locality_map->UpdateLocked(*locality_list);
   }
 }
 
@@ -2304,8 +2277,6 @@ XdsLb::PriorityList::LocalityMap::LocalityMap(RefCountedPtr<XdsLb> xds_policy,
 void XdsLb::PriorityList::LocalityMap::UpdateLocked(
     const XdsPriorityListUpdate::LocalityList& locality_list) {
   if (xds_policy_->shutting_down_) return;
-  if (xds_policy_->priority_list_update_applied_bitmask_[priority_]) return;
-  xds_policy_->priority_list_update_applied_bitmask_[priority_] = true;
   if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_xds_trace)) {
     gpr_log(GPR_INFO, "[xdslb %p] Start Updating priority %" PRIu32,
             xds_policy(), priority_);
