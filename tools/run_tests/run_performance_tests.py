@@ -707,7 +707,7 @@ def main():
             '%s/index.html' % args.flame_graph_reports, profile_output_files)
 
     report_utils.render_junit_xml_report(
-        merged_resultset, args.xml_report, suite_name='benchmarks')
+        merged_resultset, args.xml_report, suite_name='benchmarks', multi_target=True)
 
     if total_scenario_failures > 0 or qps_workers_killed > 0:
         print('%s scenarios failed and %s qps worker jobs killed' %
