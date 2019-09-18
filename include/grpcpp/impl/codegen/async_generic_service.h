@@ -19,27 +19,29 @@
 #ifndef GRPCPP_IMPL_CODEGEN_ASYNC_GENERIC_SERVICE_H
 #define GRPCPP_IMPL_CODEGEN_ASYNC_GENERIC_SERVICE_H
 
-#include <grpcpp/impl/codegen/async_stream.h>
+#include <grpcpp/impl/codegen/async_stream_impl.h>
 #include <grpcpp/impl/codegen/byte_buffer.h>
-#include <grpcpp/impl/codegen/server_callback.h>
+#include <grpcpp/impl/codegen/server_callback_impl.h>
 
 struct grpc_server;
 
 namespace grpc {
 
-typedef ServerAsyncReaderWriter<ByteBuffer, ByteBuffer>
+typedef ::grpc_impl::ServerAsyncReaderWriter<ByteBuffer, ByteBuffer>
     GenericServerAsyncReaderWriter;
-typedef ServerAsyncResponseWriter<ByteBuffer> GenericServerAsyncResponseWriter;
-typedef ServerAsyncReader<ByteBuffer, ByteBuffer> GenericServerAsyncReader;
-typedef ServerAsyncWriter<ByteBuffer> GenericServerAsyncWriter;
+typedef ::grpc_impl::ServerAsyncResponseWriter<ByteBuffer>
+    GenericServerAsyncResponseWriter;
+typedef ::grpc_impl::ServerAsyncReader<ByteBuffer, ByteBuffer>
+    GenericServerAsyncReader;
+typedef ::grpc_impl::ServerAsyncWriter<ByteBuffer> GenericServerAsyncWriter;
 
-class GenericServerContext final : public ServerContext {
+class GenericServerContext final : public ::grpc_impl::ServerContext {
  public:
   const grpc::string& method() const { return method_; }
   const grpc::string& host() const { return host_; }
 
  private:
-  friend class Server;
+  friend class grpc_impl::Server;
   friend class ServerInterface;
 
   void Clear() {
@@ -75,12 +77,13 @@ class AsyncGenericService final {
 
   void RequestCall(GenericServerContext* ctx,
                    GenericServerAsyncReaderWriter* reader_writer,
-                   CompletionQueue* call_cq,
-                   ServerCompletionQueue* notification_cq, void* tag);
+                   ::grpc_impl::CompletionQueue* call_cq,
+                   ::grpc_impl::ServerCompletionQueue* notification_cq,
+                   void* tag);
 
  private:
-  friend class Server;
-  Server* server_;
+  friend class grpc_impl::Server;
+  grpc_impl::Server* server_;
 };
 
 namespace experimental {
@@ -91,15 +94,16 @@ namespace experimental {
 /// GenericServerContext rather than a ServerContext. All other reaction and
 /// operation initiation APIs are the same as ServerBidiReactor.
 class ServerGenericBidiReactor
-    : public ServerBidiReactor<ByteBuffer, ByteBuffer> {
+    : public ::grpc_impl::experimental::ServerBidiReactor<ByteBuffer,
+                                                          ByteBuffer> {
  public:
   /// Similar to ServerBidiReactor::OnStarted except for argument type.
   ///
   /// \param[in] context The context object associated with this RPC.
-  virtual void OnStarted(GenericServerContext* context) {}
+  virtual void OnStarted(GenericServerContext* /*context*/) {}
 
  private:
-  void OnStarted(ServerContext* ctx) final {
+  void OnStarted(::grpc_impl::ServerContext* ctx) final {
     OnStarted(static_cast<GenericServerContext*>(ctx));
   }
 };
@@ -135,14 +139,16 @@ class CallbackGenericService {
   }
 
  private:
-  friend class ::grpc::Server;
+  friend class ::grpc_impl::Server;
 
-  internal::CallbackBidiHandler<ByteBuffer, ByteBuffer>* Handler() {
-    return new internal::CallbackBidiHandler<ByteBuffer, ByteBuffer>(
+  ::grpc_impl::internal::CallbackBidiHandler<ByteBuffer, ByteBuffer>*
+  Handler() {
+    return new ::grpc_impl::internal::CallbackBidiHandler<ByteBuffer,
+                                                          ByteBuffer>(
         [this] { return CreateReactor(); });
   }
 
-  Server* server_{nullptr};
+  grpc_impl::Server* server_{nullptr};
 };
 }  // namespace experimental
 }  // namespace grpc

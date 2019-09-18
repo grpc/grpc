@@ -39,11 +39,26 @@ namespace Grpc.Core
         /// Also, allocating a new buffer each time can put excessive pressure on GC, especially if
         /// the payload is more than 86700 bytes large (which means the newly allocated buffer will be placed in LOH,
         /// and LOH object can only be garbage collected via a full ("stop the world") GC run).
-        /// NOTE: Deserializers are expected not to call this method more than once per received message
+        /// NOTE: Deserializers are expected not to call this method (or other payload accessor methods) more than once per received message
         /// (as there is no practical reason for doing so) and <c>DeserializationContext</c> implementations are free to assume so.
         /// </summary>
         /// <returns>byte array containing the entire payload.</returns>
         public virtual byte[] PayloadAsNewBuffer()
+        {
+            throw new NotImplementedException();
+        }
+
+        /// <summary>
+        /// Gets the entire payload as a ReadOnlySequence.
+        /// The ReadOnlySequence is only valid for the duration of the deserializer routine and the caller must not access it after the deserializer returns.
+        /// Using the read only sequence is the most efficient way to access the message payload. Where possible it allows directly
+        /// accessing the received payload without needing to perform any buffer copying or buffer allocations.
+        /// NOTE: When using this method, it is recommended to use C# 7.2 compiler to make it more useful (using Span type directly from your code requires C# 7.2)."
+        /// NOTE: Deserializers are expected not to call this method (or other payload accessor methods) more than once per received message
+        /// (as there is no practical reason for doing so) and <c>DeserializationContext</c> implementations are free to assume so.
+        /// </summary>
+        /// <returns>read only sequence containing the entire payload.</returns>
+        public virtual System.Buffers.ReadOnlySequence<byte> PayloadAsReadOnlySequence()
         {
             throw new NotImplementedException();
         }

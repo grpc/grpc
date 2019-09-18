@@ -29,6 +29,7 @@
 #include <grpcpp/server_context.h>
 
 #include <grpcpp/ext/channelz_service_plugin.h>
+#include "src/core/lib/gpr/env.h"
 #include "src/proto/grpc/channelz/channelz.grpc.pb.h"
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
 #include "test/core/util/port.h"
@@ -104,7 +105,12 @@ class Proxy : public ::grpc::testing::EchoTestService::Service {
 class ChannelzServerTest : public ::testing::Test {
  public:
   ChannelzServerTest() {}
-
+  static void SetUpTestCase() {
+#if TARGET_OS_IPHONE
+    // Workaround Apple CFStream bug
+    gpr_setenv("grpc_cfstream", "0");
+#endif
+  }
   void SetUp() override {
     // ensure channel server is brought up on all severs we build.
     ::grpc::channelz::experimental::InitChannelzService();
@@ -163,13 +169,12 @@ class ChannelzServerTest : public ::testing::Test {
   }
 
   std::unique_ptr<grpc::testing::EchoTestService::Stub> NewEchoStub() {
-    static int salt = 0;
     string target = "dns:localhost:" + to_string(proxy_port_);
     ChannelArguments args;
     // disable channelz. We only want to focus on proxy to backend outbound.
     args.SetInt(GRPC_ARG_ENABLE_CHANNELZ, 0);
     // This ensures that gRPC will not do connection sharing.
-    args.SetInt("salt", salt++);
+    args.SetInt(GRPC_ARG_USE_LOCAL_SUBCHANNEL_POOL, true);
     std::shared_ptr<Channel> channel =
         ::grpc::CreateCustomChannel(target, InsecureChannelCredentials(), args);
     return grpc::testing::EchoTestService::NewStub(channel);
@@ -572,6 +577,8 @@ TEST_F(ChannelzServerTest, ManySubchannelsAndSockets) {
         get_subchannel_resp.subchannel().socket_ref(0).socket_id());
     s = channelz_stub_->GetSocket(&get_socket_ctx, get_socket_req,
                                   &get_socket_resp);
+    EXPECT_TRUE(
+        get_subchannel_resp.subchannel().socket_ref(0).name().find("http"));
     EXPECT_TRUE(s.ok()) << s.error_message();
     // calls started == streams started AND stream succeeded. Since none of
     // these RPCs were canceled, all of the streams will succeeded even though
@@ -627,6 +634,8 @@ TEST_F(ChannelzServerTest, StreamingRPC) {
   ClientContext get_socket_context;
   get_socket_request.set_socket_id(
       get_subchannel_response.subchannel().socket_ref(0).socket_id());
+  EXPECT_TRUE(
+      get_subchannel_response.subchannel().socket_ref(0).name().find("http"));
   s = channelz_stub_->GetSocket(&get_socket_context, get_socket_request,
                                 &get_socket_response);
   EXPECT_TRUE(s.ok()) << "s.error_message() = " << s.error_message();
@@ -660,6 +669,7 @@ TEST_F(ChannelzServerTest, GetServerSocketsTest) {
                                        &get_server_sockets_response);
   EXPECT_TRUE(s.ok()) << "s.error_message() = " << s.error_message();
   EXPECT_EQ(get_server_sockets_response.socket_ref_size(), 1);
+  EXPECT_TRUE(get_server_sockets_response.socket_ref(0).name().find("http"));
 }
 
 TEST_F(ChannelzServerTest, GetServerSocketsPaginationTest) {
@@ -739,6 +749,8 @@ TEST_F(ChannelzServerTest, GetServerListenSocketsTest) {
   GetSocketResponse get_socket_response;
   get_socket_request.set_socket_id(
       get_server_response.server(0).listen_socket(0).socket_id());
+  EXPECT_TRUE(
+      get_server_response.server(0).listen_socket(0).name().find("http"));
   ClientContext get_socket_context;
   s = channelz_stub_->GetSocket(&get_socket_context, get_socket_request,
                                 &get_socket_response);

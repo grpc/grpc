@@ -49,7 +49,7 @@ struct grpc_error {
   uint8_t strs[GRPC_ERROR_STR_MAX];
   uint8_t times[GRPC_ERROR_TIME_MAX];
   // The child errors are stored in the arena, but are effectively a linked list
-  // structure, since they are contained withing grpc_linked_error objects.
+  // structure, since they are contained within grpc_linked_error objects.
   uint8_t first_err;
   uint8_t last_err;
   // The arena is dynamically reallocated with a grow factor of 1.5.

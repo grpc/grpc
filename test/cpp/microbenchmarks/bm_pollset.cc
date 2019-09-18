@@ -40,8 +40,6 @@
 #include <unistd.h>
 #endif
 
-auto& force_library_initialization = Library::get();
-
 static void shutdown_ps(void* ps, grpc_error* error) {
   grpc_pollset_destroy(static_cast<grpc_pollset*>(ps));
 }
@@ -55,7 +53,7 @@ static void BM_CreateDestroyPollset(benchmark::State& state) {
   grpc_closure shutdown_ps_closure;
   GRPC_CLOSURE_INIT(&shutdown_ps_closure, shutdown_ps, ps,
                     grpc_schedule_on_exec_ctx);
-  while (state.KeepRunning()) {
+  for (auto _ : state) {
     memset(ps, 0, ps_sz);
     grpc_pollset_init(ps, &mu);
     gpr_mu_lock(mu);
@@ -86,7 +84,7 @@ static void BM_PollEmptyPollset_SpeedOfLight(benchmark::State& state) {
     ev.events = EPOLLIN;
     epoll_ctl(epfd, EPOLL_CTL_ADD, fds.back(), &ev);
   }
-  while (state.KeepRunning()) {
+  for (auto _ : state) {
     epoll_wait(epfd, ev, nev, 0);
   }
   for (auto fd : fds) {
@@ -117,7 +115,7 @@ static void BM_PollEmptyPollset(benchmark::State& state) {
   grpc_pollset_init(ps, &mu);
   grpc_core::ExecCtx exec_ctx;
   gpr_mu_lock(mu);
-  while (state.KeepRunning()) {
+  for (auto _ : state) {
     GRPC_ERROR_UNREF(grpc_pollset_work(ps, nullptr, 0));
   }
   grpc_closure shutdown_ps_closure;
@@ -142,7 +140,7 @@ static void BM_PollAddFd(benchmark::State& state) {
   GPR_ASSERT(
       GRPC_LOG_IF_ERROR("wakeup_fd_init", grpc_wakeup_fd_init(&wakeup_fd)));
   grpc_fd* fd = grpc_fd_create(wakeup_fd.read_fd, "xxx", false);
-  while (state.KeepRunning()) {
+  for (auto _ : state) {
     grpc_pollset_add_fd(ps, fd);
     grpc_core::ExecCtx::Get()->Flush();
   }
@@ -190,7 +188,7 @@ static void BM_SingleThreadPollOneFd_SpeedOfLight(benchmark::State& state) {
   int fd = eventfd(0, EFD_NONBLOCK);
   ev[0].events = EPOLLIN;
   epoll_ctl(epfd, EPOLL_CTL_ADD, fd, &ev[0]);
-  while (state.KeepRunning()) {
+  for (auto _ : state) {
     int err;
     do {
       err = eventfd_write(fd, 1);
@@ -264,6 +262,7 @@ void RunTheBenchmarksNamespaced() { RunSpecifiedBenchmarks(); }
 }  // namespace benchmark
 
 int main(int argc, char** argv) {
+  LibraryInitializer libInit;
   ::benchmark::Initialize(&argc, argv);
   ::grpc::testing::InitTest(&argc, &argv, false);
   benchmark::RunTheBenchmarksNamespaced();

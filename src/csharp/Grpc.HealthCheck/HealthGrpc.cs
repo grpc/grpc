@@ -102,7 +102,7 @@ namespace Grpc.Health.V1 {
     {
       /// <summary>Creates a new client for Health</summary>
       /// <param name="channel">The channel to use to make remote calls.</param>
-      public HealthClient(grpc::Channel channel) : base(channel)
+      public HealthClient(grpc::ChannelBase channel) : base(channel)
       {
       }
       /// <summary>Creates a new client for Health that uses a custom <c>CallInvoker</c>.</summary>

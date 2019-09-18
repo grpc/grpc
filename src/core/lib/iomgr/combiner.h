@@ -25,13 +25,12 @@
 
 #include <grpc/support/atm.h>
 #include "src/core/lib/debug/trace.h"
-#include "src/core/lib/gpr/mpscq.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 
 // Provides serialized access to some resource.
 // Each action queued on a combiner is executed serially in a borrowed thread.
 // The actual thread executing actions may change over time (but there will only
-// every be one at a time).
+// ever be one at a time).
 
 // Initialize the lock, with an optional workqueue to shift load to when
 // necessary

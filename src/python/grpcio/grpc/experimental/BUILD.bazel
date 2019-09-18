@@ -1,10 +1,21 @@
-load("@grpc_python_dependencies//:requirements.bzl", "requirement")
 package(default_visibility = ["//visibility:public"])
+
+py_library(
+    name = "aio",
+    srcs = [
+        "aio/__init__.py",
+        "aio/_channel.py",
+    ],
+    deps = [
+        "//src/python/grpcio/grpc/_cython:cygrpc",
+    ],
+)
 
 py_library(
     name = "experimental",
     srcs = ["__init__.py",],
     deps = [
+        ":aio",
         ":gevent",
         ":session_cache",
     ],

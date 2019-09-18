@@ -21,6 +21,7 @@
 
 #include <grpc/support/port_platform.h>
 
+#include "src/core/lib/gprpp/string_view.h"
 #include "src/core/tsi/transport_security_interface.h"
 
 /* Value for the TSI_CERTIFICATE_TYPE_PEER_PROPERTY property for X509 certs. */
@@ -306,7 +307,7 @@ void tsi_ssl_server_handshaker_factory_unref(
    - handle mixed case.
    - handle %encoded chars.
    - handle public suffix wildchar more strictly (e.g. *.co.uk) */
-int tsi_ssl_peer_matches_name(const tsi_peer* peer, const char* name);
+int tsi_ssl_peer_matches_name(const tsi_peer* peer, grpc_core::StringView name);
 
 /* --- Testing support. ---
 
@@ -330,5 +331,9 @@ typedef struct {
 const tsi_ssl_handshaker_factory_vtable* tsi_ssl_handshaker_factory_swap_vtable(
     tsi_ssl_handshaker_factory* factory,
     tsi_ssl_handshaker_factory_vtable* new_vtable);
+
+/* Exposed for testing only. */
+tsi_result tsi_ssl_extract_x509_subject_names_from_pem_cert(
+    const char* pem_cert, tsi_peer* peer);
 
 #endif /* GRPC_CORE_TSI_SSL_TRANSPORT_SECURITY_H */

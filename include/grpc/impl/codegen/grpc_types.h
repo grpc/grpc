@@ -157,8 +157,9 @@ typedef struct {
 /** Maximum message length that the channel can send. Int valued, bytes.
     -1 means unlimited. */
 #define GRPC_ARG_MAX_SEND_MESSAGE_LENGTH "grpc.max_send_message_length"
-/** Maximum time that a channel may have no outstanding rpcs. Int valued,
-    milliseconds. INT_MAX means unlimited. */
+/** Maximum time that a channel may have no outstanding rpcs, after which the
+ * server will close the connection. Int valued, milliseconds. INT_MAX means
+ * unlimited. */
 #define GRPC_ARG_MAX_CONNECTION_IDLE_MS "grpc.max_connection_idle_ms"
 /** Maximum time that a channel may exist. Int valued, milliseconds.
  * INT_MAX means unlimited. */
@@ -166,6 +167,10 @@ typedef struct {
 /** Grace period after the channel reaches its max age. Int valued,
    milliseconds. INT_MAX means unlimited. */
 #define GRPC_ARG_MAX_CONNECTION_AGE_GRACE_MS "grpc.max_connection_age_grace_ms"
+/** Timeout after the last RPC finishes on the client channel at which the
+ * channel goes back into IDLE state. Int valued, milliseconds. INT_MAX means
+ * unlimited. The default value is 30 minutes and the min value is 1 second. */
+#define GRPC_ARG_CLIENT_IDLE_TIMEOUT_MS "grpc.client_idle_timeout_ms"
 /** Enable/disable support for per-message compression. Defaults to 1, unless
     GRPC_ARG_MINIMAL_STACK is enabled, in which case it defaults to 0. */
 #define GRPC_ARG_ENABLE_PER_MESSAGE_COMPRESSION "grpc.per_message_compression"
@@ -262,6 +267,14 @@ typedef struct {
     grpc_ssl_session_cache*). (use grpc_ssl_session_cache_arg_vtable() to fetch
     an appropriate pointer arg vtable) */
 #define GRPC_SSL_SESSION_CACHE_ARG "grpc.ssl_session_cache"
+/** If non-zero, it will determine the maximum frame size used by TSI's frame
+ *  protector.
+ *
+ *  NOTE: Be aware that using a large "max_frame_size" is memory inefficient
+ *        for non-zerocopy protectors. Also, increasing this value above 1MiB
+ *        can break old binaries that don't support larger than 1MiB frame
+ *        size. */
+#define GRPC_ARG_TSI_MAX_FRAME_SIZE "grpc.tsi.max_frame_size"
 /** Maximum metadata size, in bytes. Note this limit applies to the max sum of
     all metadata key-value entries in a batch of headers. */
 #define GRPC_ARG_MAX_METADATA_SIZE "grpc.max_metadata_size"
@@ -321,6 +334,11 @@ typedef struct {
    balancer before using fallback backend addresses from the resolver.
    If 0, enter fallback mode immediately. Default value is 10000. */
 #define GRPC_ARG_XDS_FALLBACK_TIMEOUT_MS "grpc.xds_fallback_timeout_ms"
+/* Time in milliseconds to wait before a locality is deleted after it's removed
+   from the received EDS update. If 0, delete the locality immediately. Default
+   value is 15 minutes. */
+#define GRPC_ARG_LOCALITY_RETENTION_INTERVAL_MS \
+  "grpc.xds_locality_retention_interval_ms"
 /** If non-zero, grpc server's cronet compression workaround will be enabled */
 #define GRPC_ARG_WORKAROUND_CRONET_COMPRESSION \
   "grpc.workaround.cronet_compression"
@@ -359,10 +377,12 @@ typedef struct {
  * load balancing policy. Note that this only works with the "ares"
  * DNS resolver, and isn't supported by the "native" DNS resolver. */
 #define GRPC_ARG_DNS_ENABLE_SRV_QUERIES "grpc.dns_enable_srv_queries"
-/** If set, determines the number of milliseconds that the c-ares based
- * DNS resolver will wait on queries before cancelling them. The default value
- * is 10000. Setting this to "0" will disable c-ares query timeouts
- * entirely. */
+/** If set, determines an upper bound on the number of milliseconds that the
+ * c-ares based DNS resolver will wait on queries before cancelling them.
+ * The default value is 120,000. Setting this to "0" will disable the
+ * overall timeout entirely. Note that this doesn't include internal c-ares
+ * timeouts/backoff/retry logic, and so the actual DNS resolution may time out
+ * sooner than the value specified here. */
 #define GRPC_ARG_DNS_ARES_QUERY_TIMEOUT_MS "grpc.dns_ares_query_timeout"
 /** If set, uses a local subchannel pool within the channel. Otherwise, uses the
  * global subchannel pool. */

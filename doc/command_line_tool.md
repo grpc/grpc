@@ -70,6 +70,8 @@ guides for
 , [C++](https://github.com/grpc/grpc/blob/master/doc/server_reflection_tutorial.md)
 and [Go](https://github.com/grpc/grpc-go/blob/master/Documentation/server-reflection-tutorial.md)
 
+Local proto files can be used as an alternative. See instructions [below](#Call-a-remote-method).
+
 ## Usage
 
 ### List services
@@ -184,6 +186,10 @@ We can send RPCs to a server and get responses using `grpc_cli call` command.
 
     If the proto file is not under the current directory, you can use
     `--proto_path` to specify a new search root.
+
+    Note that the tool will always attempt to use the reflection service first,
+    falling back to local proto files if the service is not found. Use
+    `--noremotedb` to avoid attempting to use the reflection service.
 
 -   Send non-proto rpc
 

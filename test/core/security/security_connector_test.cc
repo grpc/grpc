@@ -24,7 +24,6 @@
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
 
-#include "src/core/lib/gpr/env.h"
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gpr/tmpfile.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
@@ -394,7 +393,7 @@ static void test_default_ssl_roots(void) {
 
   /* First let's get the root through the override: set the env to an invalid
      value. */
-  gpr_setenv(GRPC_DEFAULT_SSL_ROOTS_FILE_PATH_ENV_VAR, "");
+  GPR_GLOBAL_CONFIG_SET(grpc_default_ssl_roots_file_path, "");
   grpc_set_ssl_roots_override_callback(override_roots_success);
   grpc_slice roots =
       grpc_core::TestDefaultSslRootStore::ComputePemRootCertsForTesting();
@@ -405,7 +404,8 @@ static void test_default_ssl_roots(void) {
 
   /* Now let's set the env var: We should get the contents pointed value
      instead. */
-  gpr_setenv(GRPC_DEFAULT_SSL_ROOTS_FILE_PATH_ENV_VAR, roots_env_var_file_path);
+  GPR_GLOBAL_CONFIG_SET(grpc_default_ssl_roots_file_path,
+                        roots_env_var_file_path);
   roots = grpc_core::TestDefaultSslRootStore::ComputePemRootCertsForTesting();
   roots_contents = grpc_slice_to_c_string(roots);
   grpc_slice_unref(roots);
@@ -414,7 +414,7 @@ static void test_default_ssl_roots(void) {
 
   /* Now reset the env var. We should fall back to the value overridden using
      the api. */
-  gpr_setenv(GRPC_DEFAULT_SSL_ROOTS_FILE_PATH_ENV_VAR, "");
+  GPR_GLOBAL_CONFIG_SET(grpc_default_ssl_roots_file_path, "");
   roots = grpc_core::TestDefaultSslRootStore::ComputePemRootCertsForTesting();
   roots_contents = grpc_slice_to_c_string(roots);
   grpc_slice_unref(roots);
@@ -423,7 +423,7 @@ static void test_default_ssl_roots(void) {
 
   /* Now setup a permanent failure for the overridden roots and we should get
      an empty slice. */
-  gpr_setenv("GRPC_NOT_USE_SYSTEM_SSL_ROOTS", "true");
+  GPR_GLOBAL_CONFIG_SET(grpc_not_use_system_ssl_roots, true);
   grpc_set_ssl_roots_override_callback(override_roots_permanent_failure);
   roots = grpc_core::TestDefaultSslRootStore::ComputePemRootCertsForTesting();
   GPR_ASSERT(GRPC_SLICE_IS_EMPTY(roots));

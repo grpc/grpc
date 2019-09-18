@@ -26,16 +26,18 @@
 #include "src/core/lib/iomgr/polling_entity.h"
 #include "src/core/lib/iomgr/resolve_address.h"
 
-#define GRPC_DNS_ARES_DEFAULT_QUERY_TIMEOUT_MS 10000
+#define GRPC_DNS_ARES_DEFAULT_QUERY_TIMEOUT_MS 120000
 
 extern grpc_core::TraceFlag grpc_trace_cares_address_sorting;
 
 extern grpc_core::TraceFlag grpc_trace_cares_resolver;
 
-#define GRPC_CARES_TRACE_LOG(format, ...)                         \
-  if (grpc_trace_cares_resolver.enabled()) {                      \
-    gpr_log(GPR_DEBUG, "(c-ares resolver) " format, __VA_ARGS__); \
-  }
+#define GRPC_CARES_TRACE_LOG(format, ...)                           \
+  do {                                                              \
+    if (GRPC_TRACE_FLAG_ENABLED(grpc_trace_cares_resolver)) {       \
+      gpr_log(GPR_DEBUG, "(c-ares resolver) " format, __VA_ARGS__); \
+    }                                                               \
+  } while (0)
 
 typedef struct grpc_ares_request grpc_ares_request;
 
@@ -84,14 +86,6 @@ void grpc_ares_complete_request_locked(grpc_ares_request* request);
 /* Indicates whether or not AAAA queries should be attempted. */
 /* E.g., return false if ipv6 is known to not be available. */
 bool grpc_ares_query_ipv6();
-
-/* Maybe (depending on the current platform) checks if "name" matches
- * "localhost" and if so fills in addrs with the correct sockaddr structures.
- * Returns a bool indicating whether or not such an action was performed.
- * See https://github.com/grpc/grpc/issues/15158. */
-bool grpc_ares_maybe_resolve_localhost_manually_locked(
-    const char* name, const char* default_port,
-    grpc_core::UniquePtr<grpc_core::ServerAddressList>* addrs);
 
 /* Sorts destinations in lb_addrs according to RFC 6724. */
 void grpc_cares_wrapper_address_sorting_sort(

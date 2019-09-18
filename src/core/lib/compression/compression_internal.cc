@@ -26,6 +26,7 @@
 #include "src/core/lib/compression/algorithm_metadata.h"
 #include "src/core/lib/compression/compression_internal.h"
 #include "src/core/lib/gpr/useful.h"
+#include "src/core/lib/slice/slice_utils.h"
 #include "src/core/lib/surface/api_trace.h"
 #include "src/core/lib/transport/static_metadata.h"
 
@@ -33,18 +34,21 @@
 
 grpc_message_compression_algorithm
 grpc_message_compression_algorithm_from_slice(const grpc_slice& str) {
-  if (grpc_slice_eq(str, GRPC_MDSTR_IDENTITY))
+  if (grpc_slice_eq_static_interned(str, GRPC_MDSTR_IDENTITY))
     return GRPC_MESSAGE_COMPRESS_NONE;
-  if (grpc_slice_eq(str, GRPC_MDSTR_DEFLATE))
+  if (grpc_slice_eq_static_interned(str, GRPC_MDSTR_DEFLATE))
     return GRPC_MESSAGE_COMPRESS_DEFLATE;
-  if (grpc_slice_eq(str, GRPC_MDSTR_GZIP)) return GRPC_MESSAGE_COMPRESS_GZIP;
+  if (grpc_slice_eq_static_interned(str, GRPC_MDSTR_GZIP))
+    return GRPC_MESSAGE_COMPRESS_GZIP;
   return GRPC_MESSAGE_COMPRESS_ALGORITHMS_COUNT;
 }
 
 grpc_stream_compression_algorithm grpc_stream_compression_algorithm_from_slice(
     const grpc_slice& str) {
-  if (grpc_slice_eq(str, GRPC_MDSTR_IDENTITY)) return GRPC_STREAM_COMPRESS_NONE;
-  if (grpc_slice_eq(str, GRPC_MDSTR_GZIP)) return GRPC_STREAM_COMPRESS_GZIP;
+  if (grpc_slice_eq_static_interned(str, GRPC_MDSTR_IDENTITY))
+    return GRPC_STREAM_COMPRESS_NONE;
+  if (grpc_slice_eq_static_interned(str, GRPC_MDSTR_GZIP))
+    return GRPC_STREAM_COMPRESS_GZIP;
   return GRPC_STREAM_COMPRESS_ALGORITHMS_COUNT;
 }
 
@@ -167,7 +171,7 @@ int grpc_compression_algorithm_from_message_stream_compression_algorithm(
 int grpc_message_compression_algorithm_name(
     grpc_message_compression_algorithm algorithm, const char** name) {
   GRPC_API_TRACE(
-      "grpc_message_compression_algorithm_parse(algorithm=%d, name=%p)", 2,
+      "grpc_message_compression_algorithm_name(algorithm=%d, name=%p)", 2,
       ((int)algorithm, name));
   switch (algorithm) {
     case GRPC_MESSAGE_COMPRESS_NONE:
@@ -244,13 +248,13 @@ grpc_message_compression_algorithm grpc_message_compression_algorithm_for_level(
 
 int grpc_message_compression_algorithm_parse(
     grpc_slice value, grpc_message_compression_algorithm* algorithm) {
-  if (grpc_slice_eq(value, GRPC_MDSTR_IDENTITY)) {
+  if (grpc_slice_eq_static_interned(value, GRPC_MDSTR_IDENTITY)) {
     *algorithm = GRPC_MESSAGE_COMPRESS_NONE;
     return 1;
-  } else if (grpc_slice_eq(value, GRPC_MDSTR_DEFLATE)) {
+  } else if (grpc_slice_eq_static_interned(value, GRPC_MDSTR_DEFLATE)) {
     *algorithm = GRPC_MESSAGE_COMPRESS_DEFLATE;
     return 1;
-  } else if (grpc_slice_eq(value, GRPC_MDSTR_GZIP)) {
+  } else if (grpc_slice_eq_static_interned(value, GRPC_MDSTR_GZIP)) {
     *algorithm = GRPC_MESSAGE_COMPRESS_GZIP;
     return 1;
   } else {
@@ -263,10 +267,10 @@ int grpc_message_compression_algorithm_parse(
 
 int grpc_stream_compression_algorithm_parse(
     grpc_slice value, grpc_stream_compression_algorithm* algorithm) {
-  if (grpc_slice_eq(value, GRPC_MDSTR_IDENTITY)) {
+  if (grpc_slice_eq_static_interned(value, GRPC_MDSTR_IDENTITY)) {
     *algorithm = GRPC_STREAM_COMPRESS_NONE;
     return 1;
-  } else if (grpc_slice_eq(value, GRPC_MDSTR_GZIP)) {
+  } else if (grpc_slice_eq_static_interned(value, GRPC_MDSTR_GZIP)) {
     *algorithm = GRPC_STREAM_COMPRESS_GZIP;
     return 1;
   } else {

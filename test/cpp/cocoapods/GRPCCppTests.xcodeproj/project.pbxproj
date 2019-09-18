@@ -435,7 +435,6 @@
 					"\"${PODS_ROOT}/Headers/Public/BoringSSL\"",
 					"\"${PODS_ROOT}/Headers/Public/gRPC-C++\"",
 					"\"${PODS_ROOT}/Headers/Public/gRPC-Core\"",
-					"\"${PODS_ROOT}/Headers/Public/nanopb\"",
 				);
 				INFOPLIST_FILE = test/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks @loader_path/Frameworks";
@@ -457,7 +456,6 @@
 					"\"${PODS_ROOT}/Headers/Public/BoringSSL\"",
 					"\"${PODS_ROOT}/Headers/Public/gRPC-C++\"",
 					"\"${PODS_ROOT}/Headers/Public/gRPC-Core\"",
-					"\"${PODS_ROOT}/Headers/Public/nanopb\"",
 				);
 				INFOPLIST_FILE = test/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks @loader_path/Frameworks";

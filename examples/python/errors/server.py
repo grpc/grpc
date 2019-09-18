@@ -14,7 +14,6 @@
 """This example sends out rich error status from server-side."""
 
 from concurrent import futures
-import time
 import logging
 import threading
 
@@ -24,10 +23,8 @@ from grpc_status import rpc_status
 from google.protobuf import any_pb2
 from google.rpc import code_pb2, status_pb2, error_details_pb2
 
-from examples.protos import helloworld_pb2
-from examples.protos import helloworld_pb2_grpc
-
-_ONE_DAY_IN_SECONDS = 60 * 60 * 24
+from examples import helloworld_pb2
+from examples import helloworld_pb2_grpc
 
 
 def create_greet_limit_exceed_error_status(name):
@@ -73,11 +70,7 @@ def create_server(server_address):
 
 def serve(server):
     server.start()
-    try:
-        while True:
-            time.sleep(_ONE_DAY_IN_SECONDS)
-    except KeyboardInterrupt:
-        server.stop(None)
+    server.wait_for_termination()
 
 
 def main():

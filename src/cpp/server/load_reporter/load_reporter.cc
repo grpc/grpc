@@ -29,6 +29,7 @@
 #include "src/cpp/server/load_reporter/load_reporter.h"
 
 #include "opencensus/stats/internal/set_aggregation_window.h"
+#include "opencensus/tags/tag_key.h"
 
 namespace grpc {
 namespace load_reporter {
@@ -38,12 +39,12 @@ CpuStatsProvider::CpuStatsSample CpuStatsProviderDefaultImpl::GetCpuStats() {
 }
 
 CensusViewProvider::CensusViewProvider()
-    : tag_key_token_(::opencensus::stats::TagKey::Register(kTagKeyToken)),
-      tag_key_host_(::opencensus::stats::TagKey::Register(kTagKeyHost)),
-      tag_key_user_id_(::opencensus::stats::TagKey::Register(kTagKeyUserId)),
-      tag_key_status_(::opencensus::stats::TagKey::Register(kTagKeyStatus)),
+    : tag_key_token_(::opencensus::tags::TagKey::Register(kTagKeyToken)),
+      tag_key_host_(::opencensus::tags::TagKey::Register(kTagKeyHost)),
+      tag_key_user_id_(::opencensus::tags::TagKey::Register(kTagKeyUserId)),
+      tag_key_status_(::opencensus::tags::TagKey::Register(kTagKeyStatus)),
       tag_key_metric_name_(
-          ::opencensus::stats::TagKey::Register(kTagKeyMetricName)) {
+          ::opencensus::tags::TagKey::Register(kTagKeyMetricName)) {
   // One view related to starting a call.
   auto vd_start_count =
       ::opencensus::stats::ViewDescriptor()

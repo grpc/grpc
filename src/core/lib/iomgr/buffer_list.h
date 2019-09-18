@@ -133,7 +133,7 @@ class TracedBuffer {
                        grpc_error* shutdown_err);
 
  private:
-  GPRC_ALLOW_CLASS_TO_USE_NON_PUBLIC_NEW
+  GRPC_ALLOW_CLASS_TO_USE_NON_PUBLIC_NEW
 
   TracedBuffer(uint32_t seq_no, void* arg)
       : seq_no_(seq_no), arg_(arg), next_(nullptr) {}

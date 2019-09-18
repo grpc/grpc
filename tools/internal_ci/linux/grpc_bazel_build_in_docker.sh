@@ -24,5 +24,5 @@ git clone /var/local/jenkins/grpc /var/local/git/grpc
 && git submodule update --init --reference /var/local/jenkins/grpc/${name} \
 ${name}')
 cd /var/local/git/grpc
-#TODO(yfen): add back examples/... to build targets once python rules issues are resolved
-bazel build --spawn_strategy=standalone --genrule_strategy=standalone :all test/...
+bazel build --spawn_strategy=standalone --genrule_strategy=standalone :all test/... examples/...
+bazel build --spawn_strategy=standalone --genrule_strategy=standalone --define=GRPC_USE_CPP_STD_LIB=1 :grpc

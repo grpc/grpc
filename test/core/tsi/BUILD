@@ -74,6 +74,8 @@ grpc_cc_test(
         "//src/core/tsi/test_creds:server0.pem",
         "//src/core/tsi/test_creds:server1.key",
         "//src/core/tsi/test_creds:server1.pem",
+        "//src/core/tsi/test_creds:multi-domain.key",
+        "//src/core/tsi/test_creds:multi-domain.pem",
     ],
     language = "C++",
     deps = [

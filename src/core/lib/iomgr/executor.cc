@@ -36,15 +36,19 @@
 
 #define MAX_DEPTH 2
 
-#define EXECUTOR_TRACE(format, ...)                     \
-  if (executor_trace.enabled()) {                       \
-    gpr_log(GPR_INFO, "EXECUTOR " format, __VA_ARGS__); \
-  }
+#define EXECUTOR_TRACE(format, ...)                       \
+  do {                                                    \
+    if (GRPC_TRACE_FLAG_ENABLED(executor_trace)) {        \
+      gpr_log(GPR_INFO, "EXECUTOR " format, __VA_ARGS__); \
+    }                                                     \
+  } while (0)
 
-#define EXECUTOR_TRACE0(str)            \
-  if (executor_trace.enabled()) {       \
-    gpr_log(GPR_INFO, "EXECUTOR " str); \
-  }
+#define EXECUTOR_TRACE0(str)                       \
+  do {                                             \
+    if (GRPC_TRACE_FLAG_ENABLED(executor_trace)) { \
+      gpr_log(GPR_INFO, "EXECUTOR " str);          \
+    }                                              \
+  } while (0)
 
 namespace grpc_core {
 namespace {
@@ -116,7 +120,10 @@ size_t Executor::RunClosures(const char* executor_name,
   // thread itself, but this is the point where we could start seeing
   // application-level callbacks. No need to create a new ExecCtx, though,
   // since there already is one and it is flushed (but not destructed) in this
-  // function itself.
+  // function itself. The ApplicationCallbackExecCtx will have its callbacks
+  // invoked on its destruction, which will be after completing any closures in
+  // the executor's closure list (which were explicitly scheduled onto the
+  // executor).
   grpc_core::ApplicationCallbackExecCtx callback_exec_ctx(
       GRPC_APP_CALLBACK_EXEC_CTX_FLAG_IS_INTERNAL_THREAD);
 

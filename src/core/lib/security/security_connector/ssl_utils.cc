@@ -27,13 +27,13 @@
 
 #include "src/core/ext/transport/chttp2/alpn/alpn.h"
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/gpr/env.h"
-#include "src/core/lib/gpr/host_port.h"
 #include "src/core/lib/gpr/string.h"
+#include "src/core/lib/gprpp/host_port.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/iomgr/load_file.h"
 #include "src/core/lib/security/context/security_context.h"
 #include "src/core/lib/security/security_connector/load_system_roots.h"
+#include "src/core/lib/security/security_connector/ssl_utils_config.h"
 #include "src/core/tsi/ssl_transport_security.h"
 
 /* -- Constants. -- */
@@ -43,12 +43,6 @@ static const char* installed_roots_path = "/usr/share/grpc/roots.pem";
 #else
 static const char* installed_roots_path =
     INSTALL_PREFIX "/share/grpc/roots.pem";
-#endif
-
-/** Environment variable used as a flag to enable/disable loading system root
-    certificates from the OS trust store. */
-#ifndef GRPC_NOT_USE_SYSTEM_SSL_ROOTS_ENV_VAR
-#define GRPC_NOT_USE_SYSTEM_SSL_ROOTS_ENV_VAR "GRPC_NOT_USE_SYSTEM_SSL_ROOTS"
 #endif
 
 #ifndef TSI_OPENSSL_ALPN_SUPPORT
@@ -65,20 +59,22 @@ void grpc_set_ssl_roots_override_callback(grpc_ssl_roots_override_callback cb) {
 
 /* -- Cipher suites. -- */
 
-/* Defines the cipher suites that we accept by default. All these cipher suites
-   are compliant with HTTP2. */
-#define GRPC_SSL_CIPHER_SUITES     \
-  "ECDHE-ECDSA-AES128-GCM-SHA256:" \
-  "ECDHE-ECDSA-AES256-GCM-SHA384:" \
-  "ECDHE-RSA-AES128-GCM-SHA256:"   \
-  "ECDHE-RSA-AES256-GCM-SHA384"
-
 static gpr_once cipher_suites_once = GPR_ONCE_INIT;
 static const char* cipher_suites = nullptr;
 
+// All cipher suites for default are compliant with HTTP2.
+GPR_GLOBAL_CONFIG_DEFINE_STRING(
+    grpc_ssl_cipher_suites,
+    "ECDHE-ECDSA-AES128-GCM-SHA256:"
+    "ECDHE-ECDSA-AES256-GCM-SHA384:"
+    "ECDHE-RSA-AES128-GCM-SHA256:"
+    "ECDHE-RSA-AES256-GCM-SHA384",
+    "A colon separated list of cipher suites to use with OpenSSL")
+
 static void init_cipher_suites(void) {
-  char* overridden = gpr_getenv("GRPC_SSL_CIPHER_SUITES");
-  cipher_suites = overridden != nullptr ? overridden : GRPC_SSL_CIPHER_SUITES;
+  grpc_core::UniquePtr<char> value =
+      GPR_GLOBAL_CONFIG_GET(grpc_ssl_cipher_suites);
+  cipher_suites = value.release();
 }
 
 /* --- Util --- */
@@ -129,12 +125,13 @@ grpc_error* grpc_ssl_check_alpn(const tsi_peer* peer) {
   return GRPC_ERROR_NONE;
 }
 
-grpc_error* grpc_ssl_check_peer_name(const char* peer_name,
+grpc_error* grpc_ssl_check_peer_name(grpc_core::StringView peer_name,
                                      const tsi_peer* peer) {
   /* Check the peer name if specified. */
-  if (peer_name != nullptr && !grpc_ssl_host_matches_name(peer, peer_name)) {
+  if (!peer_name.empty() && !grpc_ssl_host_matches_name(peer, peer_name)) {
     char* msg;
-    gpr_asprintf(&msg, "Peer name %s is not in peer certificate", peer_name);
+    gpr_asprintf(&msg, "Peer name %s is not in peer certificate",
+                 peer_name.data());
     grpc_error* error = GRPC_ERROR_CREATE_FROM_COPIED_STRING(msg);
     gpr_free(msg);
     return error;
@@ -142,15 +139,16 @@ grpc_error* grpc_ssl_check_peer_name(const char* peer_name,
   return GRPC_ERROR_NONE;
 }
 
-bool grpc_ssl_check_call_host(const char* host, const char* target_name,
-                              const char* overridden_target_name,
+bool grpc_ssl_check_call_host(grpc_core::StringView host,
+                              grpc_core::StringView target_name,
+                              grpc_core::StringView overridden_target_name,
                               grpc_auth_context* auth_context,
                               grpc_closure* on_call_host_checked,
                               grpc_error** error) {
   grpc_security_status status = GRPC_SECURITY_ERROR;
   tsi_peer peer = grpc_shallow_peer_from_ssl_auth_context(auth_context);
   if (grpc_ssl_host_matches_name(&peer, host)) status = GRPC_SECURITY_OK;
-  if (overridden_target_name != nullptr && strcmp(host, target_name) == 0) {
+  if (!overridden_target_name.empty() && host == target_name) {
     status = GRPC_SECURITY_OK;
   }
   if (status != GRPC_SECURITY_OK) {
@@ -172,35 +170,28 @@ const char** grpc_fill_alpn_protocol_strings(size_t* num_alpn_protocols) {
   return alpn_protocol_strings;
 }
 
-int grpc_ssl_host_matches_name(const tsi_peer* peer, const char* peer_name) {
-  char* allocated_name = nullptr;
-  int r;
-
-  char* ignored_port;
-  gpr_split_host_port(peer_name, &allocated_name, &ignored_port);
-  gpr_free(ignored_port);
-  peer_name = allocated_name;
-  if (!peer_name) return 0;
+int grpc_ssl_host_matches_name(const tsi_peer* peer,
+                               grpc_core::StringView peer_name) {
+  grpc_core::StringView allocated_name;
+  grpc_core::StringView ignored_port;
+  grpc_core::SplitHostPort(peer_name, &allocated_name, &ignored_port);
+  if (allocated_name.empty()) return 0;
 
   // IPv6 zone-id should not be included in comparisons.
-  char* const zone_id = strchr(allocated_name, '%');
-  if (zone_id != nullptr) *zone_id = '\0';
-
-  r = tsi_ssl_peer_matches_name(peer, peer_name);
-  gpr_free(allocated_name);
-  return r;
+  const size_t zone_id = allocated_name.find('%');
+  if (zone_id != grpc_core::StringView::npos) {
+    allocated_name.remove_suffix(allocated_name.size() - zone_id);
+  }
+  return tsi_ssl_peer_matches_name(peer, allocated_name);
 }
 
-bool grpc_ssl_cmp_target_name(const char* target_name,
-                              const char* other_target_name,
-                              const char* overridden_target_name,
-                              const char* other_overridden_target_name) {
-  int c = strcmp(target_name, other_target_name);
+int grpc_ssl_cmp_target_name(
+    grpc_core::StringView target_name, grpc_core::StringView other_target_name,
+    grpc_core::StringView overridden_target_name,
+    grpc_core::StringView other_overridden_target_name) {
+  int c = target_name.cmp(other_target_name);
   if (c != 0) return c;
-  return (overridden_target_name == nullptr ||
-          other_overridden_target_name == nullptr)
-             ? GPR_ICMP(overridden_target_name, other_overridden_target_name)
-             : strcmp(overridden_target_name, other_overridden_target_name);
+  return overridden_target_name.cmp(other_overridden_target_name);
 }
 
 grpc_core::RefCountedPtr<grpc_auth_context> grpc_ssl_peer_to_auth_context(
@@ -428,17 +419,14 @@ const char* DefaultSslRootStore::GetPemRootCerts() {
 
 grpc_slice DefaultSslRootStore::ComputePemRootCerts() {
   grpc_slice result = grpc_empty_slice();
-  char* not_use_system_roots_env_value =
-      gpr_getenv(GRPC_NOT_USE_SYSTEM_SSL_ROOTS_ENV_VAR);
-  const bool not_use_system_roots = gpr_is_true(not_use_system_roots_env_value);
-  gpr_free(not_use_system_roots_env_value);
-  // First try to load the roots from the environment.
-  char* default_root_certs_path =
-      gpr_getenv(GRPC_DEFAULT_SSL_ROOTS_FILE_PATH_ENV_VAR);
-  if (default_root_certs_path != nullptr) {
-    GRPC_LOG_IF_ERROR("load_file",
-                      grpc_load_file(default_root_certs_path, 1, &result));
-    gpr_free(default_root_certs_path);
+  const bool not_use_system_roots =
+      GPR_GLOBAL_CONFIG_GET(grpc_not_use_system_ssl_roots);
+  // First try to load the roots from the configuration.
+  UniquePtr<char> default_root_certs_path =
+      GPR_GLOBAL_CONFIG_GET(grpc_default_ssl_roots_file_path);
+  if (strlen(default_root_certs_path.get()) > 0) {
+    GRPC_LOG_IF_ERROR(
+        "load_file", grpc_load_file(default_root_certs_path.get(), 1, &result));
   }
   // Try overridden roots if needed.
   grpc_ssl_roots_override_result ovrd_res = GRPC_SSL_ROOTS_OVERRIDE_FAIL;

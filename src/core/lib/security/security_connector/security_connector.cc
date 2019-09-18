@@ -28,9 +28,8 @@
 #include "src/core/ext/transport/chttp2/alpn/alpn.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/handshaker.h"
-#include "src/core/lib/gpr/env.h"
-#include "src/core/lib/gpr/host_port.h"
 #include "src/core/lib/gpr/string.h"
+#include "src/core/lib/gprpp/host_port.h"
 #include "src/core/lib/iomgr/load_file.h"
 #include "src/core/lib/security/context/security_context.h"
 #include "src/core/lib/security/credentials/credentials.h"
@@ -54,6 +53,7 @@ grpc_channel_security_connector::grpc_channel_security_connector(
     : grpc_security_connector(url_scheme),
       channel_creds_(std::move(channel_creds)),
       request_metadata_creds_(std::move(request_metadata_creds)) {}
+
 grpc_channel_security_connector::~grpc_channel_security_connector() {}
 
 int grpc_security_connector_cmp(const grpc_security_connector* sc,

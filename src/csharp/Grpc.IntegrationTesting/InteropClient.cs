@@ -185,6 +185,9 @@ namespace Grpc.IntegrationTesting
                 case "unimplemented_service":
                     RunUnimplementedService(new UnimplementedService.UnimplementedServiceClient(channel));
                     break;
+                case "special_status_message":
+                    await RunSpecialStatusMessageAsync(client);
+                    break;
                 case "unimplemented_method":
                     RunUnimplementedMethod(client);
                     break;
@@ -473,8 +476,7 @@ namespace Grpc.IntegrationTesting
                 }
                 catch (RpcException ex)
                 {
-                    // We can't guarantee the status code always DeadlineExceeded. See issue #2685.
-                    Assert.Contains(ex.Status.StatusCode, new[] { StatusCode.DeadlineExceeded, StatusCode.Internal });
+                    Assert.AreEqual(StatusCode.DeadlineExceeded, ex.Status.StatusCode);
                 }
             }
             Console.WriteLine("Passed!");
@@ -562,6 +564,33 @@ namespace Grpc.IntegrationTesting
                     Assert.AreEqual(StatusCode.Unknown, e.Status.StatusCode);
                     Assert.AreEqual(echoStatus.Message, e.Status.Detail);
                 }
+            }
+
+            Console.WriteLine("Passed!");
+        }
+
+        private static async Task RunSpecialStatusMessageAsync(TestService.TestServiceClient client)
+        {
+            Console.WriteLine("running special_status_message");
+
+            var echoStatus = new EchoStatus
+            {
+                Code = 2,
+                Message = "\t\ntest with whitespace\r\nand Unicode BMP ☺ and non-BMP 😈\t\n"
+            };
+
+            try
+            {
+                await client.UnaryCallAsync(new SimpleRequest
+                {
+                    ResponseStatus = echoStatus
+                });
+                Assert.Fail();
+            }
+            catch (RpcException e)
+            {
+                Assert.AreEqual(StatusCode.Unknown, e.Status.StatusCode);
+                Assert.AreEqual(echoStatus.Message, e.Status.Detail);
             }
 
             Console.WriteLine("Passed!");

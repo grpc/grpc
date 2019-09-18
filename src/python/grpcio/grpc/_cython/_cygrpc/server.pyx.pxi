@@ -31,8 +31,7 @@ cdef class Server:
     self.is_shutting_down = False
     self.is_shutdown = False
     self.c_server = NULL
-    self._vtable = _VTable()
-    cdef _ChannelArgs channel_args = _ChannelArgs(arguments, self._vtable)
+    cdef _ChannelArgs channel_args = _ChannelArgs(arguments)
     self.c_server = grpc_server_create(channel_args.c_args(), NULL)
     self.references.append(arguments)
 
@@ -43,7 +42,7 @@ cdef class Server:
       raise ValueError("server must be started and not shutting down")
     if server_queue not in self.registered_completion_queues:
       raise ValueError("server_queue must be a registered completion queue")
-    cdef _RequestCallTag request_call_tag = _RequestCallTag(tag, self._vtable)
+    cdef _RequestCallTag request_call_tag = _RequestCallTag(tag)
     request_call_tag.prepare()
     cpython.Py_INCREF(request_call_tag)
     return grpc_server_request_call(

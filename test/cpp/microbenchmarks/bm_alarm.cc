@@ -30,8 +30,6 @@
 namespace grpc {
 namespace testing {
 
-auto& force_library_initialization = Library::get();
-
 static void BM_Alarm_Tag_Immediate(benchmark::State& state) {
   TrackCounters track_counters;
   CompletionQueue cq;
@@ -39,7 +37,7 @@ static void BM_Alarm_Tag_Immediate(benchmark::State& state) {
   void* output_tag;
   bool ok;
   auto deadline = grpc_timeout_seconds_to_deadline(0);
-  while (state.KeepRunning()) {
+  for (auto _ : state) {
     alarm.Set(&cq, deadline, nullptr);
     cq.Next(&output_tag, &ok);
   }
@@ -57,6 +55,7 @@ void RunTheBenchmarksNamespaced() { RunSpecifiedBenchmarks(); }
 }  // namespace benchmark
 
 int main(int argc, char** argv) {
+  LibraryInitializer libInit;
   ::benchmark::Initialize(&argc, argv);
   ::grpc::testing::InitTest(&argc, &argv, false);
   benchmark::RunTheBenchmarksNamespaced();

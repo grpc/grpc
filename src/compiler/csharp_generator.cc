@@ -428,8 +428,8 @@ void GenerateClientStub(Printer* out, const ServiceDescriptor* service) {
       "/// <param name=\"channel\">The channel to use to make remote "
       "calls.</param>\n",
       "servicename", GetServiceClassName(service));
-  out->Print("public $name$(grpc::Channel channel) : base(channel)\n", "name",
-             GetClientClassName(service));
+  out->Print("public $name$(grpc::ChannelBase channel) : base(channel)\n",
+             "name", GetClientClassName(service));
   out->Print("{\n");
   out->Print("}\n");
   out->Print(

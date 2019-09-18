@@ -139,7 +139,7 @@ grpc_error* grpc_chttp2_goaway_parser_parse(void* parser,
       p->state = GRPC_CHTTP2_GOAWAY_DEBUG;
       if (is_last) {
         grpc_chttp2_add_incoming_goaway(
-            t, p->error_code,
+            t, p->error_code, p->last_stream_id,
             grpc_slice_new(p->debug_data, p->debug_length, gpr_free));
         p->debug_data = nullptr;
       }

@@ -22,7 +22,9 @@
 #include <grpc/support/port_platform.h>
 
 #include <grpc/grpc.h>
+#include <grpc/impl/codegen/grpc_types.h>
 
+#include "src/core/lib/gprpp/abstract.h"
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/endpoint.h"
 #include "src/core/lib/iomgr/resolve_address.h"
@@ -37,6 +39,10 @@ typedef struct grpc_tcp_server_acceptor {
   /* Indices that may be passed to grpc_tcp_server_port_fd(). */
   unsigned port_index;
   unsigned fd_index;
+  /* Data when the connection is passed to tcp_server from external. */
+  bool external_connection;
+  int listener_fd;
+  grpc_byte_buffer* pending_data;
 } grpc_tcp_server_acceptor;
 
 /* Called for newly connected TCP connections.
@@ -44,6 +50,18 @@ typedef struct grpc_tcp_server_acceptor {
 typedef void (*grpc_tcp_server_cb)(void* arg, grpc_endpoint* ep,
                                    grpc_pollset* accepting_pollset,
                                    grpc_tcp_server_acceptor* acceptor);
+namespace grpc_core {
+// An interface for a handler to take a externally connected fd as a internal
+// connection.
+class TcpServerFdHandler {
+ public:
+  virtual ~TcpServerFdHandler() = default;
+  virtual void Handle(int listener_fd, int fd,
+                      grpc_byte_buffer* pending_read) GRPC_ABSTRACT;
+
+  GRPC_ABSTRACT_BASE_CLASS;
+};
+}  // namespace grpc_core
 
 typedef struct grpc_tcp_server_vtable {
   grpc_error* (*create)(grpc_closure* shutdown_complete,
@@ -54,6 +72,7 @@ typedef struct grpc_tcp_server_vtable {
                 void* cb_arg);
   grpc_error* (*add_port)(grpc_tcp_server* s, const grpc_resolved_address* addr,
                           int* out_port);
+  grpc_core::TcpServerFdHandler* (*create_fd_handler)(grpc_tcp_server* s);
   unsigned (*port_fd_count)(grpc_tcp_server* s, unsigned port_index);
   int (*port_fd)(grpc_tcp_server* s, unsigned port_index, unsigned fd_index);
   grpc_tcp_server* (*ref)(grpc_tcp_server* s);
@@ -87,6 +106,11 @@ void grpc_tcp_server_start(grpc_tcp_server* server, grpc_pollset** pollsets,
 grpc_error* grpc_tcp_server_add_port(grpc_tcp_server* s,
                                      const grpc_resolved_address* addr,
                                      int* out_port);
+
+/* Create and return a TcpServerFdHandler so that it can be used by upper layer
+   to hand over an externally connected fd to the grpc server. */
+grpc_core::TcpServerFdHandler* grpc_tcp_server_create_fd_handler(
+    grpc_tcp_server* s);
 
 /* Number of fds at the given port_index, or 0 if port_index is out of
    bounds. */

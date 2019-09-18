@@ -25,8 +25,8 @@
 
 #include <grpc/support/atm.h>
 
-#include "src/core/lib/gpr/mpscq.h"
 #include "src/core/lib/gprpp/inlined_vector.h"
+#include "src/core/lib/gprpp/mpscq.h"
 #include "src/core/lib/gprpp/ref_counted.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/iomgr/closure.h"
@@ -43,7 +43,7 @@
 
 namespace grpc_core {
 
-extern TraceFlag grpc_call_combiner_trace;
+extern DebugOnlyTraceFlag grpc_call_combiner_trace;
 
 class CallCombiner {
  public:
@@ -108,7 +108,7 @@ class CallCombiner {
 #endif
 
   gpr_atm size_ = 0;  // size_t, num closures in queue or currently executing
-  gpr_mpscq queue_;
+  MultiProducerSingleConsumerQueue queue_;
   // Either 0 (if not cancelled and no cancellation closure set),
   // a grpc_closure* (if the lowest bit is 0),
   // or a grpc_error* (if the lowest bit is 1).
@@ -169,7 +169,7 @@ class CallCombinerClosureList {
       GRPC_CALL_COMBINER_START(call_combiner, closure.closure, closure.error,
                                closure.reason);
     }
-    if (grpc_call_combiner_trace.enabled()) {
+    if (GRPC_TRACE_FLAG_ENABLED(grpc_call_combiner_trace)) {
       gpr_log(GPR_INFO,
               "CallCombinerClosureList executing closure while already "
               "holding call_combiner %p: closure=%p error=%s reason=%s",

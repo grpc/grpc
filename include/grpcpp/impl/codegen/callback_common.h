@@ -69,7 +69,7 @@ class CallbackWithStatusTag
     : public grpc_experimental_completion_queue_functor {
  public:
   // always allocated against a call arena, no memory free required
-  static void operator delete(void* ptr, std::size_t size) {
+  static void operator delete(void* /*ptr*/, std::size_t size) {
     assert(size == sizeof(CallbackWithStatusTag));
   }
 
@@ -133,7 +133,7 @@ class CallbackWithSuccessTag
     : public grpc_experimental_completion_queue_functor {
  public:
   // always allocated against a call arena, no memory free required
-  static void operator delete(void* ptr, std::size_t size) {
+  static void operator delete(void* /*ptr*/, std::size_t size) {
     assert(size == sizeof(CallbackWithSuccessTag));
   }
 
@@ -201,9 +201,11 @@ class CallbackWithSuccessTag
     void* ignored = ops_;
     // Allow a "false" return value from FinalizeResult to silence the
     // callback, just as it silences a CQ tag in the async cases
+#ifndef NDEBUG
     auto* ops = ops_;
+#endif
     bool do_callback = ops_->FinalizeResult(&ignored, &ok);
-    GPR_CODEGEN_ASSERT(ignored == ops);
+    GPR_CODEGEN_DEBUG_ASSERT(ignored == ops);
 
     if (do_callback) {
       CatchingCallback(func_, ok);

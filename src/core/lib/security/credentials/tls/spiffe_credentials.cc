@@ -84,7 +84,7 @@ SpiffeCredentials::create_security_connector(
           static_cast<tsi_ssl_session_cache*>(arg->value.pointer.p);
     }
   }
-  grpc_core::RefCountedPtr<grpc_channel_security_connector> sc =
+  grpc_core::RefCountedPtr<grpc_channel_security_connector> sc = grpc_core::
       SpiffeChannelSecurityConnector::CreateSpiffeChannelSecurityConnector(
           this->Ref(), std::move(call_creds), target_name,
           overridden_target_name, ssl_session_cache);
@@ -106,8 +106,8 @@ SpiffeServerCredentials::~SpiffeServerCredentials() {}
 
 grpc_core::RefCountedPtr<grpc_server_security_connector>
 SpiffeServerCredentials::create_security_connector() {
-  return SpiffeServerSecurityConnector::CreateSpiffeServerSecurityConnector(
-      this->Ref());
+  return grpc_core::SpiffeServerSecurityConnector::
+      CreateSpiffeServerSecurityConnector(this->Ref());
 }
 
 grpc_channel_credentials* grpc_tls_spiffe_credentials_create(

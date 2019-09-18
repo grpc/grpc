@@ -26,7 +26,9 @@
 
 #include <utility>
 
+#include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gpr/useful.h"
+#include "src/cpp/server/external_connection_acceptor_impl.h"
 #include "src/cpp/server/thread_pool_interface.h"
 
 namespace grpc_impl {
@@ -67,14 +69,14 @@ ServerBuilder::~ServerBuilder() {
   }
 }
 
-std::unique_ptr<grpc::ServerCompletionQueue> ServerBuilder::AddCompletionQueue(
+std::unique_ptr<ServerCompletionQueue> ServerBuilder::AddCompletionQueue(
     bool is_frequently_polled) {
-  grpc::ServerCompletionQueue* cq = new grpc::ServerCompletionQueue(
+  ServerCompletionQueue* cq = new ServerCompletionQueue(
       GRPC_CQ_NEXT,
       is_frequently_polled ? GRPC_CQ_DEFAULT_POLLING : GRPC_CQ_NON_LISTENING,
       nullptr);
   cqs_.push_back(cq);
-  return std::unique_ptr<grpc::ServerCompletionQueue>(cq);
+  return std::unique_ptr<ServerCompletionQueue>(cq);
 }
 
 ServerBuilder& ServerBuilder::RegisterService(grpc::Service* service) {
@@ -112,6 +114,19 @@ ServerBuilder& ServerBuilder::experimental_type::RegisterCallbackGenericService(
     builder_->callback_generic_service_ = service;
   }
   return *builder_;
+}
+
+std::unique_ptr<grpc::experimental::ExternalConnectionAcceptor>
+ServerBuilder::experimental_type::AddExternalConnectionAcceptor(
+    experimental_type::ExternalConnectionType type,
+    std::shared_ptr<ServerCredentials> creds) {
+  grpc::string name_prefix("external:");
+  char count_str[GPR_LTOA_MIN_BUFSIZE];
+  gpr_ltoa(static_cast<long>(builder_->acceptors_.size()), count_str);
+  builder_->acceptors_.emplace_back(
+      std::make_shared<grpc::internal::ExternalConnectionAcceptorImpl>(
+          name_prefix.append(count_str), type, creds));
+  return builder_->acceptors_.back()->GetAcceptor();
 }
 
 ServerBuilder& ServerBuilder::SetOption(
@@ -251,10 +266,9 @@ std::unique_ptr<grpc::Server> ServerBuilder::BuildAndStart() {
   // This is different from the completion queues added to the server via
   // ServerBuilder's AddCompletionQueue() method (those completion queues
   // are in 'cqs_' member variable of ServerBuilder object)
-  std::shared_ptr<std::vector<std::unique_ptr<grpc::ServerCompletionQueue>>>
-      sync_server_cqs(
-          std::make_shared<
-              std::vector<std::unique_ptr<grpc::ServerCompletionQueue>>>());
+  std::shared_ptr<std::vector<std::unique_ptr<ServerCompletionQueue>>>
+      sync_server_cqs(std::make_shared<
+                      std::vector<std::unique_ptr<ServerCompletionQueue>>>());
 
   bool has_frequently_polled_cqs = false;
   for (auto it = cqs_.begin(); it != cqs_.end(); ++it) {
@@ -283,7 +297,7 @@ std::unique_ptr<grpc::Server> ServerBuilder::BuildAndStart() {
     // Create completion queues to listen to incoming rpc requests
     for (int i = 0; i < sync_server_settings_.num_cqs; i++) {
       sync_server_cqs->emplace_back(
-          new grpc::ServerCompletionQueue(GRPC_CQ_NEXT, polling_type, nullptr));
+          new ServerCompletionQueue(GRPC_CQ_NEXT, polling_type, nullptr));
     }
   }
 
@@ -307,8 +321,8 @@ std::unique_ptr<grpc::Server> ServerBuilder::BuildAndStart() {
   std::unique_ptr<grpc::Server> server(new grpc::Server(
       max_receive_message_size_, &args, sync_server_cqs,
       sync_server_settings_.min_pollers, sync_server_settings_.max_pollers,
-      sync_server_settings_.cq_timeout_msec, resource_quota_,
-      std::move(interceptor_creators_)));
+      sync_server_settings_.cq_timeout_msec, std::move(acceptors_),
+      resource_quota_, std::move(interceptor_creators_)));
 
   grpc_impl::ServerInitializer* initializer = server->initializer();
 

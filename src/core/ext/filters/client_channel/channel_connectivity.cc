@@ -111,6 +111,12 @@ static void finished_completion(void* pw, grpc_cq_completion* ignored) {
 
 static void partly_done(state_watcher* w, bool due_to_completion,
                         grpc_error* error) {
+  bool end_op = false;
+  void* end_op_tag = nullptr;
+  grpc_error* end_op_error = nullptr;
+  grpc_completion_queue* end_op_cq = nullptr;
+  grpc_cq_completion* end_op_completion_storage = nullptr;
+
   if (due_to_completion) {
     grpc_timer_cancel(&w->alarm);
   } else {
@@ -125,7 +131,7 @@ static void partly_done(state_watcher* w, bool due_to_completion,
   gpr_mu_lock(&w->mu);
 
   if (due_to_completion) {
-    if (grpc_trace_operation_failures.enabled()) {
+    if (GRPC_TRACE_FLAG_ENABLED(grpc_trace_operation_failures)) {
       GRPC_LOG_IF_ERROR("watch_completion_error", GRPC_ERROR_REF(error));
     }
     GRPC_ERROR_UNREF(error);
@@ -152,14 +158,22 @@ static void partly_done(state_watcher* w, bool due_to_completion,
         w->error = error;
       }
       w->phase = CALLING_BACK_AND_FINISHED;
-      grpc_cq_end_op(w->cq, w->tag, w->error, finished_completion, w,
-                     &w->completion_storage);
+      end_op = true;
+      end_op_cq = w->cq;
+      end_op_tag = w->tag;
+      end_op_error = w->error;
+      end_op_completion_storage = &w->completion_storage;
       break;
     case CALLING_BACK_AND_FINISHED:
       GPR_UNREACHABLE_CODE(return );
       break;
   }
   gpr_mu_unlock(&w->mu);
+
+  if (end_op) {
+    grpc_cq_end_op(end_op_cq, end_op_tag, end_op_error, finished_completion, w,
+                   end_op_completion_storage);
+  }
 
   GRPC_ERROR_UNREF(error);
 }

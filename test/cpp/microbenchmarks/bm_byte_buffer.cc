@@ -30,7 +30,6 @@ namespace grpc {
 namespace testing {
 
 static void BM_ByteBuffer_Copy(benchmark::State& state) {
-  Library::get();
   int num_slices = state.range(0);
   size_t slice_size = state.range(1);
   std::vector<grpc::Slice> slices;
@@ -41,14 +40,13 @@ static void BM_ByteBuffer_Copy(benchmark::State& state) {
     slices.emplace_back(buf.get(), slice_size);
   }
   grpc::ByteBuffer bb(slices.data(), num_slices);
-  while (state.KeepRunning()) {
+  for (auto _ : state) {
     grpc::ByteBuffer cc(bb);
   }
 }
 BENCHMARK(BM_ByteBuffer_Copy)->Ranges({{1, 64}, {1, 1024 * 1024}});
 
 static void BM_ByteBufferReader_Next(benchmark::State& state) {
-  Library::get();
   const int num_slices = state.range(0);
   constexpr size_t kSliceSize = 16;
   std::vector<grpc_slice> slices;
@@ -62,7 +60,7 @@ static void BM_ByteBufferReader_Next(benchmark::State& state) {
   grpc_byte_buffer_reader reader;
   GPR_ASSERT(
       g_core_codegen_interface->grpc_byte_buffer_reader_init(&reader, bb));
-  while (state.KeepRunning()) {
+  for (auto _ : state) {
     grpc_slice* slice;
     if (GPR_UNLIKELY(!g_core_codegen_interface->grpc_byte_buffer_reader_peek(
             &reader, &slice))) {
@@ -82,7 +80,6 @@ static void BM_ByteBufferReader_Next(benchmark::State& state) {
 BENCHMARK(BM_ByteBufferReader_Next)->Ranges({{64 * 1024, 1024 * 1024}});
 
 static void BM_ByteBufferReader_Peek(benchmark::State& state) {
-  Library::get();
   const int num_slices = state.range(0);
   constexpr size_t kSliceSize = 16;
   std::vector<grpc_slice> slices;
@@ -96,7 +93,7 @@ static void BM_ByteBufferReader_Peek(benchmark::State& state) {
   grpc_byte_buffer_reader reader;
   GPR_ASSERT(
       g_core_codegen_interface->grpc_byte_buffer_reader_init(&reader, bb));
-  while (state.KeepRunning()) {
+  for (auto _ : state) {
     grpc_slice* slice;
     if (GPR_UNLIKELY(!g_core_codegen_interface->grpc_byte_buffer_reader_peek(
             &reader, &slice))) {
@@ -125,6 +122,7 @@ void RunTheBenchmarksNamespaced() { RunSpecifiedBenchmarks(); }
 }  // namespace benchmark
 
 int main(int argc, char** argv) {
+  LibraryInitializer libInit;
   ::benchmark::Initialize(&argc, argv);
   ::grpc::testing::InitTest(&argc, &argv, false);
   benchmark::RunTheBenchmarksNamespaced();

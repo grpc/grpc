@@ -25,11 +25,20 @@
 #include <grpc/support/log.h>
 
 #include "src/core/lib/gpr/string.h"
+#include "src/core/lib/gprpp/memory.h"
 #include "src/core/lib/slice/slice_internal.h"
 
-char* grpc_dump_slice(grpc_slice s, uint32_t flags) {
+char* grpc_dump_slice(const grpc_slice& s, uint32_t flags) {
   return gpr_dump(reinterpret_cast<const char*> GRPC_SLICE_START_PTR(s),
                   GRPC_SLICE_LENGTH(s), flags);
+}
+
+grpc_slice grpc_dump_slice_to_slice(const grpc_slice& s, uint32_t flags) {
+  size_t len;
+  grpc_core::UniquePtr<char> ptr(
+      gpr_dump_return_len(reinterpret_cast<const char*> GRPC_SLICE_START_PTR(s),
+                          GRPC_SLICE_LENGTH(s), flags, &len));
+  return grpc_slice_from_moved_buffer(std::move(ptr), len);
 }
 
 /** Finds the initial (\a begin) and final (\a end) offsets of the next

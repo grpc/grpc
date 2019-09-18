@@ -46,7 +46,7 @@ void grpcsharp_batch_context_recv_message_length() {
   fprintf(stderr, "Should never reach here");
   abort();
 }
-void grpcsharp_batch_context_recv_message_to_buffer() {
+void grpcsharp_batch_context_recv_message_next_slice_peek() {
   fprintf(stderr, "Should never reach here");
   abort();
 }
@@ -374,6 +374,30 @@ void grpcsharp_auth_context_release() {
   fprintf(stderr, "Should never reach here");
   abort();
 }
+void grpcsharp_slice_buffer_create() {
+  fprintf(stderr, "Should never reach here");
+  abort();
+}
+void grpcsharp_slice_buffer_adjust_tail_space() {
+  fprintf(stderr, "Should never reach here");
+  abort();
+}
+void grpcsharp_slice_buffer_slice_count() {
+  fprintf(stderr, "Should never reach here");
+  abort();
+}
+void grpcsharp_slice_buffer_slice_peek() {
+  fprintf(stderr, "Should never reach here");
+  abort();
+}
+void grpcsharp_slice_buffer_reset_and_unref() {
+  fprintf(stderr, "Should never reach here");
+  abort();
+}
+void grpcsharp_slice_buffer_destroy() {
+  fprintf(stderr, "Should never reach here");
+  abort();
+}
 void gprsharp_now() {
   fprintf(stderr, "Should never reach here");
   abort();
@@ -403,6 +427,10 @@ void grpcsharp_test_nop() {
   abort();
 }
 void grpcsharp_test_override_method() {
+  fprintf(stderr, "Should never reach here");
+  abort();
+}
+void grpcsharp_test_call_start_unary_echo() {
   fprintf(stderr, "Should never reach here");
   abort();
 }

@@ -26,7 +26,7 @@
 /* Env utility functions */
 
 /* Gets the environment variable value with the specified name.
-   Returns a newly allocated string. It is the responsability of the caller to
+   Returns a newly allocated string. It is the responsibility of the caller to
    gpr_free the return value if not NULL (which means that the environment
    variable exists). */
 char* gpr_getenv(const char* name);
@@ -34,10 +34,7 @@ char* gpr_getenv(const char* name);
 /* Sets the environment with the specified name to the specified value. */
 void gpr_setenv(const char* name, const char* value);
 
-/* This is a version of gpr_getenv that does not produce any output if it has to
-   use an insecure version of the function. It is ONLY to be used to solve the
-   problem in which we need to check an env variable to configure the verbosity
-   level of logging. So DO NOT USE THIS. */
-const char* gpr_getenv_silent(const char* name, char** dst);
+/* Deletes the variable name from the environment. */
+void gpr_unsetenv(const char* name);
 
 #endif /* GRPC_CORE_LIB_GPR_ENV_H */

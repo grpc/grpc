@@ -23,8 +23,6 @@
 #include "test/cpp/microbenchmarks/helpers.h"
 #include "test/cpp/util/test_config.h"
 
-auto& force_library_initialization = Library::get();
-
 class ChannelDestroyerFixture {
  public:
   ChannelDestroyerFixture() {}
@@ -64,7 +62,7 @@ static void BM_InsecureChannelCreateDestroy(benchmark::State& state) {
   for (int i = 0; i < state.range(0); i++) {
     initial_channels[i].Init();
   }
-  while (state.KeepRunning()) {
+  for (auto _ : state) {
     Fixture channel;
     channel.Init();
   }
@@ -83,6 +81,7 @@ void RunTheBenchmarksNamespaced() { RunSpecifiedBenchmarks(); }
 }  // namespace benchmark
 
 int main(int argc, char** argv) {
+  LibraryInitializer libInit;
   ::benchmark::Initialize(&argc, argv);
   ::grpc::testing::InitTest(&argc, &argv, false);
   benchmark::RunTheBenchmarksNamespaced();

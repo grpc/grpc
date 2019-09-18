@@ -22,7 +22,7 @@
 #include <grpc/support/log.h>
 
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/gpr/host_port.h"
+#include "src/core/lib/gprpp/host_port.h"
 #include "src/core/lib/gprpp/thd.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 #include "test/core/end2end/data/ssl_test_data.h"
@@ -56,11 +56,11 @@ static void run_test(const test_fixture* fixture) {
 
   grpc_init();
 
-  char* addr;
-  gpr_join_host_port(&addr, "localhost", grpc_pick_unused_port_or_die());
+  grpc_core::UniquePtr<char> addr;
+  grpc_core::JoinHostPort(&addr, "localhost", grpc_pick_unused_port_or_die());
 
   grpc_server* server = grpc_server_create(nullptr, nullptr);
-  fixture->add_server_port(server, addr);
+  fixture->add_server_port(server, addr.get());
   grpc_completion_queue* server_cq =
       grpc_completion_queue_create_for_next(nullptr);
   grpc_server_register_completion_queue(server, server_cq, nullptr);
@@ -73,7 +73,7 @@ static void run_test(const test_fixture* fixture) {
   grpc_completion_queue* cq = grpc_completion_queue_create_for_next(nullptr);
   grpc_channel* channels[NUM_CONNECTIONS];
   for (size_t i = 0; i < NUM_CONNECTIONS; i++) {
-    channels[i] = fixture->create_channel(addr);
+    channels[i] = fixture->create_channel(addr.get());
 
     gpr_timespec connect_deadline = grpc_timeout_seconds_to_deadline(30);
     grpc_connectivity_state state;
@@ -116,7 +116,6 @@ static void run_test(const test_fixture* fixture) {
   grpc_completion_queue_destroy(cq);
 
   grpc_shutdown();
-  gpr_free(addr);
 }
 
 static void insecure_test_add_port(grpc_server* server, const char* addr) {

@@ -30,7 +30,9 @@
 #include "src/core/lib/gpr/string.h"
 
 /* Calls gpr_dump on a slice. */
-char* grpc_dump_slice(grpc_slice slice, uint32_t flags);
+char* grpc_dump_slice(const grpc_slice& slice, uint32_t flags);
+/* Calls gpr_dump on a slice and returns the result as a slice. */
+grpc_slice grpc_dump_slice_to_slice(const grpc_slice& slice, uint32_t flags);
 
 /** Split \a str by the separator \a sep. Results are stored in \a dst, which
  * should be a properly initialized instance. */

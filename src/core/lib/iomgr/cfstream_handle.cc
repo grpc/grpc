@@ -18,12 +18,14 @@
 
 #include <grpc/support/port_platform.h>
 
+#include "src/core/lib/gprpp/memory.h"
 #include "src/core/lib/iomgr/port.h"
 
 #ifdef GRPC_CFSTREAM
 #import <CoreFoundation/CoreFoundation.h>
 #import "src/core/lib/iomgr/cfstream_handle.h"
 
+#include <grpc/grpc.h>
 #include <grpc/support/atm.h>
 #include <grpc/support/sync.h>
 
@@ -33,6 +35,10 @@
 #include "src/core/lib/iomgr/exec_ctx.h"
 
 extern grpc_core::TraceFlag grpc_tcp_trace;
+
+GrpcLibraryInitHolder::GrpcLibraryInitHolder() { grpc_init(); }
+
+GrpcLibraryInitHolder::~GrpcLibraryInitHolder() { grpc_shutdown(); }
 
 void* CFStreamHandle::Retain(void* info) {
   CFStreamHandle* handle = static_cast<CFStreamHandle*>(info);
@@ -47,7 +53,7 @@ void CFStreamHandle::Release(void* info) {
 
 CFStreamHandle* CFStreamHandle::CreateStreamHandle(
     CFReadStreamRef read_stream, CFWriteStreamRef write_stream) {
-  return new CFStreamHandle(read_stream, write_stream);
+  return grpc_core::New<CFStreamHandle>(read_stream, write_stream);
 }
 
 void CFStreamHandle::ReadCallback(CFReadStreamRef stream,
@@ -183,12 +189,12 @@ void CFStreamHandle::Ref(const char* file, int line, const char* reason) {
 void CFStreamHandle::Unref(const char* file, int line, const char* reason) {
   if (grpc_tcp_trace.enabled()) {
     gpr_atm val = gpr_atm_no_barrier_load(&refcount_.count);
-    gpr_log(GPR_ERROR,
+    gpr_log(GPR_DEBUG,
             "CFStream Handle unref %p : %s %" PRIdPTR " -> %" PRIdPTR, this,
             reason, val, val - 1);
   }
   if (gpr_unref(&refcount_)) {
-    delete this;
+    grpc_core::Delete<CFStreamHandle>(this);
   }
 }
 

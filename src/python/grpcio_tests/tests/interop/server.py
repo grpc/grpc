@@ -16,16 +16,14 @@
 import argparse
 from concurrent import futures
 import logging
-import time
 
 import grpc
 from src.proto.grpc.testing import test_pb2_grpc
 
-from tests.interop import methods
+from tests.interop import service
 from tests.interop import resources
 from tests.unit import test_common
 
-_ONE_DAY_IN_SECONDS = 60 * 60 * 24
 logging.basicConfig()
 _LOGGER = logging.getLogger(__name__)
 
@@ -42,7 +40,7 @@ def serve():
     args = parser.parse_args()
 
     server = test_common.test_server()
-    test_pb2_grpc.add_TestServiceServicer_to_server(methods.TestService(),
+    test_pb2_grpc.add_TestServiceServicer_to_server(service.TestService(),
                                                     server)
     if args.use_tls:
         private_key = resources.private_key()
@@ -55,13 +53,8 @@ def serve():
 
     server.start()
     _LOGGER.info('Server serving.')
-    try:
-        while True:
-            time.sleep(_ONE_DAY_IN_SECONDS)
-    except BaseException as e:
-        _LOGGER.info('Caught exception "%s"; stopping server...', e)
-        server.stop(None)
-        _LOGGER.info('Server stopped; exiting.')
+    server.wait_for_termination()
+    _LOGGER.info('Server stopped; exiting.')
 
 
 if __name__ == '__main__':

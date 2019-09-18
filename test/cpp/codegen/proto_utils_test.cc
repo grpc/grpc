@@ -49,7 +49,18 @@ class GrpcByteBufferPeer {
   ByteBuffer* bb_;
 };
 
-class ProtoUtilsTest : public ::testing::Test {};
+class ProtoUtilsTest : public ::testing::Test {
+ protected:
+  static void SetUpTestCase() {
+    // Ensure the ProtoBufferWriter internals are initialized.
+    grpc::internal::GrpcLibraryInitializer init;
+    init.summon();
+    grpc::GrpcLibraryCodegen lib;
+    grpc_init();
+  }
+
+  static void TearDownTestCase() { grpc_shutdown(); }
+};
 
 // Regression test for a memory corruption bug where a series of
 // ProtoBufferWriter Next()/Backup() invocations could result in a dangling
@@ -136,36 +147,46 @@ void BufferWriterTest(int block_size, int total_size, int backup_size) {
   grpc_byte_buffer_reader_destroy(&reader);
 }
 
-TEST(WriterTest, TinyBlockTinyBackup) {
+class WriterTest : public ::testing::Test {
+ protected:
+  static void SetUpTestCase() {
+    grpc::internal::GrpcLibraryInitializer init;
+    init.summon();
+    grpc::GrpcLibraryCodegen lib;
+    // Ensure the ProtoBufferWriter internals are initialized.
+    grpc_init();
+  }
+
+  static void TearDownTestCase() { grpc_shutdown(); }
+};
+
+TEST_F(WriterTest, TinyBlockTinyBackup) {
   for (int i = 2; i < static_cast<int> GRPC_SLICE_INLINED_SIZE; i++) {
     BufferWriterTest(i, 256, 1);
   }
 }
 
-TEST(WriterTest, SmallBlockTinyBackup) { BufferWriterTest(64, 256, 1); }
+TEST_F(WriterTest, SmallBlockTinyBackup) { BufferWriterTest(64, 256, 1); }
 
-TEST(WriterTest, SmallBlockNoBackup) { BufferWriterTest(64, 256, 0); }
+TEST_F(WriterTest, SmallBlockNoBackup) { BufferWriterTest(64, 256, 0); }
 
-TEST(WriterTest, SmallBlockFullBackup) { BufferWriterTest(64, 256, 64); }
+TEST_F(WriterTest, SmallBlockFullBackup) { BufferWriterTest(64, 256, 64); }
 
-TEST(WriterTest, LargeBlockTinyBackup) { BufferWriterTest(4096, 8192, 1); }
+TEST_F(WriterTest, LargeBlockTinyBackup) { BufferWriterTest(4096, 8192, 1); }
 
-TEST(WriterTest, LargeBlockNoBackup) { BufferWriterTest(4096, 8192, 0); }
+TEST_F(WriterTest, LargeBlockNoBackup) { BufferWriterTest(4096, 8192, 0); }
 
-TEST(WriterTest, LargeBlockFullBackup) { BufferWriterTest(4096, 8192, 4096); }
+TEST_F(WriterTest, LargeBlockFullBackup) { BufferWriterTest(4096, 8192, 4096); }
 
-TEST(WriterTest, LargeBlockLargeBackup) { BufferWriterTest(4096, 8192, 4095); }
+TEST_F(WriterTest, LargeBlockLargeBackup) {
+  BufferWriterTest(4096, 8192, 4095);
+}
 
 }  // namespace
 }  // namespace internal
 }  // namespace grpc
 
 int main(int argc, char** argv) {
-  // Ensure the ProtoBufferWriter internals are initialized.
-  grpc::internal::GrpcLibraryInitializer init;
-  init.summon();
-  grpc::GrpcLibraryCodegen lib;
-
   ::testing::InitGoogleTest(&argc, argv);
   return RUN_ALL_TESTS();
 }

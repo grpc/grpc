@@ -89,7 +89,7 @@ struct grpc_tcp {
   bool is_first_read;
   double target_length;
   double bytes_read_this_round;
-  gpr_refcount refcount;
+  grpc_core::RefCount refcount;
   gpr_atm shutdown_count;
 
   int min_read_chunk_size;
@@ -163,7 +163,7 @@ static void tcp_drop_uncovered_then_handle_write(void* arg /* grpc_tcp */,
 
 static void done_poller(void* bp, grpc_error* error_ignored) {
   backup_poller* p = static_cast<backup_poller*>(bp);
-  if (grpc_tcp_trace.enabled()) {
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace)) {
     gpr_log(GPR_INFO, "BACKUP_POLLER:%p destroy", p);
   }
   grpc_pollset_destroy(BACKUP_POLLER_POLLSET(p));
@@ -172,7 +172,7 @@ static void done_poller(void* bp, grpc_error* error_ignored) {
 
 static void run_poller(void* bp, grpc_error* error_ignored) {
   backup_poller* p = static_cast<backup_poller*>(bp);
-  if (grpc_tcp_trace.enabled()) {
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace)) {
     gpr_log(GPR_INFO, "BACKUP_POLLER:%p run", p);
   }
   gpr_mu_lock(p->pollset_mu);
@@ -188,18 +188,18 @@ static void run_poller(void* bp, grpc_error* error_ignored) {
       gpr_atm_full_cas(&g_uncovered_notifications_pending, 1, 0)) {
     gpr_mu_lock(p->pollset_mu);
     bool cas_ok = gpr_atm_full_cas(&g_backup_poller, (gpr_atm)p, 0);
-    if (grpc_tcp_trace.enabled()) {
+    if (GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace)) {
       gpr_log(GPR_INFO, "BACKUP_POLLER:%p done cas_ok=%d", p, cas_ok);
     }
     gpr_mu_unlock(p->pollset_mu);
-    if (grpc_tcp_trace.enabled()) {
+    if (GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace)) {
       gpr_log(GPR_INFO, "BACKUP_POLLER:%p shutdown", p);
     }
     grpc_pollset_shutdown(BACKUP_POLLER_POLLSET(p),
                           GRPC_CLOSURE_INIT(&p->run_poller, done_poller, p,
                                             grpc_schedule_on_exec_ctx));
   } else {
-    if (grpc_tcp_trace.enabled()) {
+    if (GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace)) {
       gpr_log(GPR_INFO, "BACKUP_POLLER:%p reschedule", p);
     }
     GRPC_CLOSURE_SCHED(&p->run_poller, GRPC_ERROR_NONE);
@@ -210,7 +210,7 @@ static void drop_uncovered(grpc_tcp* tcp) {
   backup_poller* p = (backup_poller*)gpr_atm_acq_load(&g_backup_poller);
   gpr_atm old_count =
       gpr_atm_full_fetch_add(&g_uncovered_notifications_pending, -1);
-  if (grpc_tcp_trace.enabled()) {
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace)) {
     gpr_log(GPR_INFO, "BACKUP_POLLER:%p uncover cnt %d->%d", p,
             static_cast<int>(old_count), static_cast<int>(old_count) - 1);
   }
@@ -228,7 +228,7 @@ static void cover_self(grpc_tcp* tcp) {
   backup_poller* p;
   gpr_atm old_count =
       gpr_atm_no_barrier_fetch_add(&g_uncovered_notifications_pending, 2);
-  if (grpc_tcp_trace.enabled()) {
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace)) {
     gpr_log(GPR_INFO, "BACKUP_POLLER: cover cnt %d->%d",
             static_cast<int>(old_count), 2 + static_cast<int>(old_count));
   }
@@ -236,7 +236,7 @@ static void cover_self(grpc_tcp* tcp) {
     GRPC_STATS_INC_TCP_BACKUP_POLLERS_CREATED();
     p = static_cast<backup_poller*>(
         gpr_zalloc(sizeof(*p) + grpc_pollset_size()));
-    if (grpc_tcp_trace.enabled()) {
+    if (GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace)) {
       gpr_log(GPR_INFO, "BACKUP_POLLER:%p create", p);
     }
     grpc_pollset_init(BACKUP_POLLER_POLLSET(p), &p->pollset_mu);
@@ -251,7 +251,7 @@ static void cover_self(grpc_tcp* tcp) {
       // spin waiting for backup poller
     }
   }
-  if (grpc_tcp_trace.enabled()) {
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace)) {
     gpr_log(GPR_INFO, "BACKUP_POLLER:%p add %p", p, tcp);
   }
   grpc_pollset_add_fd(BACKUP_POLLER_POLLSET(p), tcp->em_fd);
@@ -261,32 +261,24 @@ static void cover_self(grpc_tcp* tcp) {
 }
 
 static void notify_on_read(grpc_tcp* tcp) {
-  if (grpc_tcp_trace.enabled()) {
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace)) {
     gpr_log(GPR_INFO, "TCP:%p notify_on_read", tcp);
   }
   grpc_fd_notify_on_read(tcp->em_fd, &tcp->read_done_closure);
 }
 
 static void notify_on_write(grpc_tcp* tcp) {
-  if (grpc_tcp_trace.enabled()) {
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace)) {
     gpr_log(GPR_INFO, "TCP:%p notify_on_write", tcp);
   }
-  if (grpc_event_engine_run_in_background()) {
-    // If there is a polling engine always running in the background, there is
-    // no need to run the backup poller.
-    GRPC_CLOSURE_INIT(&tcp->write_done_closure, tcp_handle_write, tcp,
-                      grpc_schedule_on_exec_ctx);
-  } else {
+  if (!grpc_event_engine_run_in_background()) {
     cover_self(tcp);
-    GRPC_CLOSURE_INIT(&tcp->write_done_closure,
-                      tcp_drop_uncovered_then_handle_write, tcp,
-                      grpc_schedule_on_exec_ctx);
   }
   grpc_fd_notify_on_write(tcp->em_fd, &tcp->write_done_closure);
 }
 
 static void tcp_drop_uncovered_then_handle_write(void* arg, grpc_error* error) {
-  if (grpc_tcp_trace.enabled()) {
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace)) {
     gpr_log(GPR_INFO, "TCP:%p got_write: %s", arg, grpc_error_string(error));
   }
   drop_uncovered(static_cast<grpc_tcp*>(arg));
@@ -367,41 +359,29 @@ static void tcp_free(grpc_tcp* tcp) {
 }
 
 #ifndef NDEBUG
-#define TCP_UNREF(tcp, reason) tcp_unref((tcp), (reason), __FILE__, __LINE__)
-#define TCP_REF(tcp, reason) tcp_ref((tcp), (reason), __FILE__, __LINE__)
-static void tcp_unref(grpc_tcp* tcp, const char* reason, const char* file,
-                      int line) {
-  if (grpc_tcp_trace.enabled()) {
-    gpr_atm val = gpr_atm_no_barrier_load(&tcp->refcount.count);
-    gpr_log(file, line, GPR_LOG_SEVERITY_DEBUG,
-            "TCP unref %p : %s %" PRIdPTR " -> %" PRIdPTR, tcp, reason, val,
-            val - 1);
-  }
-  if (gpr_unref(&tcp->refcount)) {
+#define TCP_UNREF(tcp, reason) tcp_unref((tcp), (reason), DEBUG_LOCATION)
+#define TCP_REF(tcp, reason) tcp_ref((tcp), (reason), DEBUG_LOCATION)
+static void tcp_unref(grpc_tcp* tcp, const char* reason,
+                      const grpc_core::DebugLocation& debug_location) {
+  if (GPR_UNLIKELY(tcp->refcount.Unref(debug_location, reason))) {
     tcp_free(tcp);
   }
 }
 
-static void tcp_ref(grpc_tcp* tcp, const char* reason, const char* file,
-                    int line) {
-  if (grpc_tcp_trace.enabled()) {
-    gpr_atm val = gpr_atm_no_barrier_load(&tcp->refcount.count);
-    gpr_log(file, line, GPR_LOG_SEVERITY_DEBUG,
-            "TCP   ref %p : %s %" PRIdPTR " -> %" PRIdPTR, tcp, reason, val,
-            val + 1);
-  }
-  gpr_ref(&tcp->refcount);
+static void tcp_ref(grpc_tcp* tcp, const char* reason,
+                    const grpc_core::DebugLocation& debug_location) {
+  tcp->refcount.Ref(debug_location, reason);
 }
 #else
 #define TCP_UNREF(tcp, reason) tcp_unref((tcp))
 #define TCP_REF(tcp, reason) tcp_ref((tcp))
 static void tcp_unref(grpc_tcp* tcp) {
-  if (gpr_unref(&tcp->refcount)) {
+  if (GPR_UNLIKELY(tcp->refcount.Unref())) {
     tcp_free(tcp);
   }
 }
 
-static void tcp_ref(grpc_tcp* tcp) { gpr_ref(&tcp->refcount); }
+static void tcp_ref(grpc_tcp* tcp) { tcp->refcount.Ref(); }
 #endif
 
 static void tcp_destroy(grpc_endpoint* ep) {
@@ -417,7 +397,7 @@ static void tcp_destroy(grpc_endpoint* ep) {
 static void call_read_cb(grpc_tcp* tcp, grpc_error* error) {
   grpc_closure* cb = tcp->read_cb;
 
-  if (grpc_tcp_trace.enabled()) {
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace)) {
     gpr_log(GPR_INFO, "TCP:%p call_cb %p %p:%p", tcp, cb, cb->cb, cb->cb_arg);
     size_t i;
     const char* str = grpc_error_string(error);
@@ -443,12 +423,17 @@ static void tcp_do_read(grpc_tcp* tcp) {
   GPR_TIMER_SCOPE("tcp_do_read", 0);
   struct msghdr msg;
   struct iovec iov[MAX_READ_IOVEC];
-  char cmsgbuf[24 /*CMSG_SPACE(sizeof(int))*/];
   ssize_t read_bytes;
   size_t total_read_bytes = 0;
-
   size_t iov_len =
       std::min<size_t>(MAX_READ_IOVEC, tcp->incoming_buffer->count);
+#ifdef GRPC_LINUX_ERRQUEUE
+  constexpr size_t cmsg_alloc_space =
+      CMSG_SPACE(sizeof(grpc_core::scm_timestamping)) + CMSG_SPACE(sizeof(int));
+#else
+  constexpr size_t cmsg_alloc_space = 24 /* CMSG_SPACE(sizeof(int)) */;
+#endif /* GRPC_LINUX_ERRQUEUE */
+  char cmsgbuf[cmsg_alloc_space];
   for (size_t i = 0; i < iov_len; i++) {
     iov[i].iov_base = GRPC_SLICE_START_PTR(tcp->incoming_buffer->slices[i]);
     iov[i].iov_len = GRPC_SLICE_LENGTH(tcp->incoming_buffer->slices[i]);
@@ -532,6 +517,7 @@ static void tcp_do_read(grpc_tcp* tcp) {
         if (cmsg->cmsg_level == SOL_TCP && cmsg->cmsg_type == TCP_CM_INQ &&
             cmsg->cmsg_len == CMSG_LEN(sizeof(int))) {
           tcp->inq = *reinterpret_cast<int*>(CMSG_DATA(cmsg));
+          break;
         }
       }
     }
@@ -581,7 +567,7 @@ static void tcp_do_read(grpc_tcp* tcp) {
 
 static void tcp_read_allocation_done(void* tcpp, grpc_error* error) {
   grpc_tcp* tcp = static_cast<grpc_tcp*>(tcpp);
-  if (grpc_tcp_trace.enabled()) {
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace)) {
     gpr_log(GPR_INFO, "TCP:%p read_allocation_done: %s", tcp,
             grpc_error_string(error));
   }
@@ -600,13 +586,13 @@ static void tcp_continue_read(grpc_tcp* tcp) {
   /* Wait for allocation only when there is no buffer left. */
   if (tcp->incoming_buffer->length == 0 &&
       tcp->incoming_buffer->count < MAX_READ_IOVEC) {
-    if (grpc_tcp_trace.enabled()) {
+    if (GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace)) {
       gpr_log(GPR_INFO, "TCP:%p alloc_slices", tcp);
     }
     grpc_resource_user_alloc_slices(&tcp->slice_allocator, target_read_size, 1,
                                     tcp->incoming_buffer);
   } else {
-    if (grpc_tcp_trace.enabled()) {
+    if (GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace)) {
       gpr_log(GPR_INFO, "TCP:%p do_read", tcp);
     }
     tcp_do_read(tcp);
@@ -615,7 +601,7 @@ static void tcp_continue_read(grpc_tcp* tcp) {
 
 static void tcp_handle_read(void* arg /* grpc_tcp */, grpc_error* error) {
   grpc_tcp* tcp = static_cast<grpc_tcp*>(arg);
-  if (grpc_tcp_trace.enabled()) {
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace)) {
     gpr_log(GPR_INFO, "TCP:%p got_read: %s", tcp, grpc_error_string(error));
   }
 
@@ -693,8 +679,7 @@ static bool tcp_write_with_timestamps(grpc_tcp* tcp, struct msghdr* msg,
     uint32_t opt = grpc_core::kTimestampingSocketOptions;
     if (setsockopt(tcp->fd, SOL_SOCKET, SO_TIMESTAMPING,
                    static_cast<void*>(&opt), sizeof(opt)) != 0) {
-      grpc_slice_buffer_reset_and_unref_internal(tcp->outgoing_buffer);
-      if (grpc_tcp_trace.enabled()) {
+      if (GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace)) {
         gpr_log(GPR_ERROR, "Failed to set timestamping options on the socket.");
       }
       return false;
@@ -743,7 +728,7 @@ struct cmsghdr* process_timestamp(grpc_tcp* tcp, msghdr* msg,
   auto next_cmsg = CMSG_NXTHDR(msg, cmsg);
   cmsghdr* opt_stats = nullptr;
   if (next_cmsg == nullptr) {
-    if (grpc_tcp_trace.enabled()) {
+    if (GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace)) {
       gpr_log(GPR_ERROR, "Received timestamp without extended error");
     }
     return cmsg;
@@ -755,7 +740,7 @@ struct cmsghdr* process_timestamp(grpc_tcp* tcp, msghdr* msg,
     opt_stats = next_cmsg;
     next_cmsg = CMSG_NXTHDR(msg, opt_stats);
     if (next_cmsg == nullptr) {
-      if (grpc_tcp_trace.enabled()) {
+      if (GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace)) {
         gpr_log(GPR_ERROR, "Received timestamp without extended error");
       }
       return opt_stats;
@@ -765,7 +750,7 @@ struct cmsghdr* process_timestamp(grpc_tcp* tcp, msghdr* msg,
   if (!(next_cmsg->cmsg_level == SOL_IP || next_cmsg->cmsg_level == SOL_IPV6) ||
       !(next_cmsg->cmsg_type == IP_RECVERR ||
         next_cmsg->cmsg_type == IPV6_RECVERR)) {
-    if (grpc_tcp_trace.enabled()) {
+    if (GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace)) {
       gpr_log(GPR_ERROR, "Unexpected control message");
     }
     return cmsg;
@@ -847,7 +832,7 @@ static void process_errors(grpc_tcp* tcp) {
           cmsg->cmsg_type != SCM_TIMESTAMPING) {
         /* Got a control message that is not a timestamp. Don't know how to
          * handle this. */
-        if (grpc_tcp_trace.enabled()) {
+        if (GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace)) {
           gpr_log(GPR_INFO,
                   "unknown control message cmsg_level:%d cmsg_type:%d",
                   cmsg->cmsg_level, cmsg->cmsg_type);
@@ -865,7 +850,7 @@ static void process_errors(grpc_tcp* tcp) {
 
 static void tcp_handle_error(void* arg /* grpc_tcp */, grpc_error* error) {
   grpc_tcp* tcp = static_cast<grpc_tcp*>(arg);
-  if (grpc_tcp_trace.enabled()) {
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace)) {
     gpr_log(GPR_INFO, "TCP:%p got_error: %s", tcp, grpc_error_string(error));
   }
 
@@ -884,8 +869,6 @@ static void tcp_handle_error(void* arg /* grpc_tcp */, grpc_error* error) {
    * ready. */
   grpc_fd_set_readable(tcp->em_fd);
   grpc_fd_set_writable(tcp->em_fd);
-  GRPC_CLOSURE_INIT(&tcp->error_closure, tcp_handle_error, tcp,
-                    grpc_schedule_on_exec_ctx);
   grpc_fd_notify_on_error(tcp->em_fd, &tcp->error_closure);
 }
 
@@ -990,8 +973,7 @@ static bool tcp_flush(grpc_tcp* tcp, grpc_error** error) {
         // unref all and forget about all slices that have been written to this
         // point
         for (size_t idx = 0; idx < unwind_slice_idx; ++idx) {
-          grpc_slice_unref_internal(
-              grpc_slice_buffer_take_first(tcp->outgoing_buffer));
+          grpc_slice_buffer_remove_first(tcp->outgoing_buffer);
         }
         return false;
       } else if (errno == EPIPE) {
@@ -1038,23 +1020,26 @@ static void tcp_handle_write(void* arg /* grpc_tcp */, grpc_error* error) {
   if (error != GRPC_ERROR_NONE) {
     cb = tcp->write_cb;
     tcp->write_cb = nullptr;
-    cb->cb(cb->cb_arg, error);
+    GRPC_CLOSURE_SCHED(cb, GRPC_ERROR_REF(error));
     TCP_UNREF(tcp, "write");
     return;
   }
 
   if (!tcp_flush(tcp, &error)) {
-    if (grpc_tcp_trace.enabled()) {
+    if (GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace)) {
       gpr_log(GPR_INFO, "write: delayed");
     }
     notify_on_write(tcp);
+    // tcp_flush does not populate error if it has returned false.
+    GPR_DEBUG_ASSERT(error == GRPC_ERROR_NONE);
   } else {
     cb = tcp->write_cb;
     tcp->write_cb = nullptr;
-    if (grpc_tcp_trace.enabled()) {
+    if (GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace)) {
       const char* str = grpc_error_string(error);
       gpr_log(GPR_INFO, "write: %s", str);
     }
+    // No need to take a ref on error since tcp_flush provides a ref.
     GRPC_CLOSURE_SCHED(cb, error);
     TCP_UNREF(tcp, "write");
   }
@@ -1066,7 +1051,7 @@ static void tcp_write(grpc_endpoint* ep, grpc_slice_buffer* buf,
   grpc_tcp* tcp = reinterpret_cast<grpc_tcp*>(ep);
   grpc_error* error = GRPC_ERROR_NONE;
 
-  if (grpc_tcp_trace.enabled()) {
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace)) {
     size_t i;
 
     for (i = 0; i < buf->count; i++) {
@@ -1101,12 +1086,12 @@ static void tcp_write(grpc_endpoint* ep, grpc_slice_buffer* buf,
   if (!tcp_flush(tcp, &error)) {
     TCP_REF(tcp, "write");
     tcp->write_cb = cb;
-    if (grpc_tcp_trace.enabled()) {
+    if (GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace)) {
       gpr_log(GPR_INFO, "write: delayed");
     }
     notify_on_write(tcp);
   } else {
-    if (grpc_tcp_trace.enabled()) {
+    if (GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace)) {
       const char* str = grpc_error_string(error);
       gpr_log(GPR_INFO, "write: %s", str);
     }
@@ -1236,7 +1221,7 @@ grpc_endpoint* grpc_tcp_create(grpc_fd* em_fd,
   tcp->ts_capable = true;
   tcp->outgoing_buffer_arg = nullptr;
   /* paired with unref in grpc_tcp_destroy */
-  gpr_ref_init(&tcp->refcount, 1);
+  new (&tcp->refcount) grpc_core::RefCount(1, &grpc_tcp_trace);
   gpr_atm_no_barrier_store(&tcp->shutdown_count, 0);
   tcp->em_fd = em_fd;
   grpc_slice_buffer_init(&tcp->last_read_buffer);
@@ -1248,6 +1233,16 @@ grpc_endpoint* grpc_tcp_create(grpc_fd* em_fd,
   tcp->tb_head = nullptr;
   GRPC_CLOSURE_INIT(&tcp->read_done_closure, tcp_handle_read, tcp,
                     grpc_schedule_on_exec_ctx);
+  if (grpc_event_engine_run_in_background()) {
+    // If there is a polling engine always running in the background, there is
+    // no need to run the backup poller.
+    GRPC_CLOSURE_INIT(&tcp->write_done_closure, tcp_handle_write, tcp,
+                      grpc_schedule_on_exec_ctx);
+  } else {
+    GRPC_CLOSURE_INIT(&tcp->write_done_closure,
+                      tcp_drop_uncovered_then_handle_write, tcp,
+                      grpc_schedule_on_exec_ctx);
+  }
   /* Always assume there is something on the queue to read. */
   tcp->inq = 1;
 #ifdef GRPC_HAVE_TCP_INQ

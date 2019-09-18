@@ -30,7 +30,6 @@
 #include "src/core/ext/transport/chttp2/transport/incoming_metadata.h"
 #include "src/core/ext/transport/cronet/transport/cronet_transport.h"
 #include "src/core/lib/debug/trace.h"
-#include "src/core/lib/gpr/host_port.h"
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gprpp/manual_constructor.h"
 #include "src/core/lib/iomgr/endpoint.h"
@@ -38,9 +37,12 @@
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/slice/slice_string_helpers.h"
 #include "src/core/lib/surface/channel.h"
+#include "src/core/lib/surface/validate_metadata.h"
 #include "src/core/lib/transport/metadata_batch.h"
 #include "src/core/lib/transport/static_metadata.h"
+#include "src/core/lib/transport/timeout_encoding.h"
 #include "src/core/lib/transport/transport_impl.h"
+
 #include "third_party/objective_c/Cronet/bidirectional_stream_c.h"
 
 #define GRPC_HEADER_SIZE_IN_BYTES 5
@@ -419,7 +421,7 @@ static void convert_cronet_array_to_metadata(
     grpc_slice key = grpc_slice_intern(
         grpc_slice_from_static_string(header_array->headers[i].key));
     grpc_slice value;
-    if (grpc_is_binary_header(key)) {
+    if (grpc_is_refcounted_slice_binary_header(key)) {
       value = grpc_slice_from_static_string(header_array->headers[i].value);
       value = grpc_slice_intern(grpc_chttp2_base64_decode_with_length(
           value, grpc_chttp2_base64_infer_length_after_decode(value)));
@@ -717,14 +719,18 @@ static void create_grpc_frame(grpc_slice_buffer* write_slice_buffer,
  Convert metadata in a format that Cronet can consume
 */
 static void convert_metadata_to_cronet_headers(
-    grpc_linked_mdelem* head, const char* host, char** pp_url,
+    grpc_metadata_batch* metadata, const char* host, char** pp_url,
     bidirectional_stream_header** pp_headers, size_t* p_num_headers,
     const char** method) {
-  grpc_linked_mdelem* curr = head;
+  grpc_linked_mdelem* curr = metadata->list.head;
   /* Walk the linked list and get number of header fields */
   size_t num_headers_available = 0;
   while (curr != nullptr) {
     curr = curr->next;
+    num_headers_available++;
+  }
+  grpc_millis deadline = metadata->deadline;
+  if (deadline != GRPC_MILLIS_INF_FUTURE) {
     num_headers_available++;
   }
   /* Allocate enough memory. It is freed in the on_stream_ready callback
@@ -739,29 +745,30 @@ static void convert_metadata_to_cronet_headers(
     are not used for cronet.
     TODO (makdharma): Eliminate need to traverse the LL second time for perf.
    */
-  curr = head;
+  curr = metadata->list.head;
   size_t num_headers = 0;
   while (num_headers < num_headers_available) {
     grpc_mdelem mdelem = curr->md;
     curr = curr->next;
     char* key = grpc_slice_to_c_string(GRPC_MDKEY(mdelem));
     char* value;
-    if (grpc_is_binary_header(GRPC_MDKEY(mdelem))) {
+    if (grpc_is_binary_header_internal(GRPC_MDKEY(mdelem))) {
       grpc_slice wire_value = grpc_chttp2_base64_encode(GRPC_MDVALUE(mdelem));
       value = grpc_slice_to_c_string(wire_value);
       grpc_slice_unref_internal(wire_value);
     } else {
       value = grpc_slice_to_c_string(GRPC_MDVALUE(mdelem));
     }
-    if (grpc_slice_eq(GRPC_MDKEY(mdelem), GRPC_MDSTR_SCHEME) ||
-        grpc_slice_eq(GRPC_MDKEY(mdelem), GRPC_MDSTR_AUTHORITY)) {
+    if (grpc_slice_eq_static_interned(GRPC_MDKEY(mdelem), GRPC_MDSTR_SCHEME) ||
+        grpc_slice_eq_static_interned(GRPC_MDKEY(mdelem),
+                                      GRPC_MDSTR_AUTHORITY)) {
       /* Cronet populates these fields on its own */
       gpr_free(key);
       gpr_free(value);
       continue;
     }
-    if (grpc_slice_eq(GRPC_MDKEY(mdelem), GRPC_MDSTR_METHOD)) {
-      if (grpc_slice_eq(GRPC_MDVALUE(mdelem), GRPC_MDSTR_PUT)) {
+    if (grpc_slice_eq_static_interned(GRPC_MDKEY(mdelem), GRPC_MDSTR_METHOD)) {
+      if (grpc_slice_eq_static_interned(GRPC_MDVALUE(mdelem), GRPC_MDSTR_PUT)) {
         *method = "PUT";
       } else {
         /* POST method in default*/
@@ -771,7 +778,7 @@ static void convert_metadata_to_cronet_headers(
       gpr_free(value);
       continue;
     }
-    if (grpc_slice_eq(GRPC_MDKEY(mdelem), GRPC_MDSTR_PATH)) {
+    if (grpc_slice_eq_static_interned(GRPC_MDKEY(mdelem), GRPC_MDSTR_PATH)) {
       /* Create URL by appending :path value to the hostname */
       gpr_asprintf(pp_url, "https://%s%s", host, value);
       gpr_free(key);
@@ -786,6 +793,18 @@ static void convert_metadata_to_cronet_headers(
       break;
     }
   }
+  if (deadline != GRPC_MILLIS_INF_FUTURE) {
+    char* key = grpc_slice_to_c_string(GRPC_MDSTR_GRPC_TIMEOUT);
+    char* value =
+        static_cast<char*>(gpr_malloc(GRPC_HTTP2_TIMEOUT_ENCODE_MIN_BUFSIZE));
+    grpc_http2_encode_timeout(deadline - grpc_core::ExecCtx::Get()->Now(),
+                              value);
+    headers[num_headers].key = key;
+    headers[num_headers].value = value;
+
+    num_headers++;
+  }
+
   *p_num_headers = num_headers;
 }
 
@@ -803,7 +822,8 @@ static void parse_grpc_header(const uint8_t* data, int* length,
 
 static bool header_has_authority(grpc_linked_mdelem* head) {
   while (head != nullptr) {
-    if (grpc_slice_eq(GRPC_MDKEY(head->md), GRPC_MDSTR_AUTHORITY)) {
+    if (grpc_slice_eq_static_interned(GRPC_MDKEY(head->md),
+                                      GRPC_MDSTR_AUTHORITY)) {
       return true;
     }
     head = head->next;
@@ -1025,10 +1045,10 @@ static enum e_op_result execute_stream_op(struct op_and_state* oas) {
     char* url = nullptr;
     const char* method = "POST";
     s->header_array.headers = nullptr;
-    convert_metadata_to_cronet_headers(stream_op->payload->send_initial_metadata
-                                           .send_initial_metadata->list.head,
-                                       t->host, &url, &s->header_array.headers,
-                                       &s->header_array.count, &method);
+    convert_metadata_to_cronet_headers(
+        stream_op->payload->send_initial_metadata.send_initial_metadata,
+        t->host, &url, &s->header_array.headers, &s->header_array.count,
+        &method);
     s->header_array.capacity = s->header_array.count;
     CRONET_LOG(GPR_DEBUG, "bidirectional_stream_start(%p, %s)", s->cbs, url);
     bidirectional_stream_start(s->cbs, url, 0, method, &s->header_array, false);

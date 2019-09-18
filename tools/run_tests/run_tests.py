@@ -703,6 +703,10 @@ class PythonConfig(
 
 class PythonLanguage(object):
 
+    _DEFAULT_COMMAND = 'test_lite'
+    _TEST_SPECS_FILE = 'src/python/grpcio_tests/tests/tests.json'
+    _TEST_FOLDER = 'test'
+
     def configure(self, config, args):
         self.config = config
         self.args = args
@@ -710,8 +714,7 @@ class PythonLanguage(object):
 
     def test_specs(self):
         # load list of known test suites
-        with open(
-                'src/python/grpcio_tests/tests/tests.json') as tests_json_file:
+        with open(self._TEST_SPECS_FILE) as tests_json_file:
             tests_json = json.load(tests_json_file)
         environment = dict(_FORCE_ENVIRON_FOR_WRAPPERS)
         return [
@@ -721,7 +724,8 @@ class PythonLanguage(object):
                 environ=dict(
                     list(environment.items()) + [(
                         'GRPC_PYTHON_TESTRUNNER_FILTER', str(suite_name))]),
-                shortname='%s.test.%s' % (config.name, suite_name),
+                shortname='%s.%s.%s' % (config.name, self._TEST_FOLDER,
+                                        suite_name),
             ) for suite_name in tests_json for config in self.pythons
         ]
 
@@ -753,7 +757,7 @@ class PythonLanguage(object):
     def _python_manager_name(self):
         """Choose the docker image to use based on python version."""
         if self.args.compiler in [
-                'python2.7', 'python3.5', 'python3.6', 'python3.7'
+                'python2.7', 'python3.5', 'python3.6', 'python3.7', 'python3.8'
         ]:
             return 'stretch_' + self.args.compiler[len('python'):]
         elif self.args.compiler == 'python_alpine':
@@ -761,7 +765,7 @@ class PythonLanguage(object):
         elif self.args.compiler == 'python3.4':
             return 'jessie'
         else:
-            return 'stretch_3.7'
+            return 'stretch_default'
 
     def _get_pythons(self, args):
         """Get python runtimes to test with, based on current platform, architecture, compiler etc."""
@@ -789,7 +793,7 @@ class PythonLanguage(object):
             venv_relative_python = ['bin/python']
             toolchain = ['unix']
 
-        test_command = 'test_lite'
+        test_command = self._DEFAULT_COMMAND
         if args.iomgr_platform == 'gevent':
             test_command = 'test_gevent'
         runner = [
@@ -829,6 +833,12 @@ class PythonLanguage(object):
             minor='7',
             bits=bits,
             config_vars=config_vars)
+        python38_config = _python_config_generator(
+            name='py38',
+            major='3',
+            minor='8',
+            bits=bits,
+            config_vars=config_vars)
         pypy27_config = _pypy_config_generator(
             name='pypy', major='2', config_vars=config_vars)
         pypy32_config = _pypy_config_generator(
@@ -840,6 +850,7 @@ class PythonLanguage(object):
             else:
                 return (
                     python27_config,
+                    python36_config,
                     python37_config,
                 )
         elif args.compiler == 'python2.7':
@@ -852,6 +863,8 @@ class PythonLanguage(object):
             return (python36_config,)
         elif args.compiler == 'python3.7':
             return (python37_config,)
+        elif args.compiler == 'python3.8':
+            return (python38_config,)
         elif args.compiler == 'pypy':
             return (pypy27_config,)
         elif args.compiler == 'pypy3':
@@ -865,12 +878,38 @@ class PythonLanguage(object):
                 python35_config,
                 python36_config,
                 python37_config,
+                # TODO: Add Python 3.8 once it's released.
             )
         else:
             raise Exception('Compiler %s not supported.' % args.compiler)
 
     def __str__(self):
         return 'python'
+
+
+class PythonAioLanguage(PythonLanguage):
+
+    _DEFAULT_COMMAND = 'test_aio'
+    _TEST_SPECS_FILE = 'src/python/grpcio_tests/tests_aio/tests.json'
+    _TEST_FOLDER = 'test_aio'
+
+    def configure(self, config, args):
+        self.config = config
+        self.args = args
+        self.pythons = self._get_pythons(self.args)
+
+    def _get_pythons(self, args):
+        """Get python runtimes to test with, based on current platform, architecture, compiler etc."""
+
+        if args.compiler not in ('python3.6', 'python3.7', 'python3.8'):
+            raise Exception('Compiler %s not supported.' % args.compiler)
+        if args.iomgr_platform not in ('native'):
+            raise Exception(
+                'Iomgr platform %s not supported.' % args.iomgr_platform)
+        return super()._get_pythons(args)
+
+    def __str__(self):
+        return 'python_aio'
 
 
 class RubyLanguage(object):
@@ -1048,69 +1087,147 @@ class ObjCLanguage(object):
         _check_compiler(self.args.compiler, ['default'])
 
     def test_specs(self):
-        return [
+        out = []
+        out.append(
             self.config.job_spec(
-                ['src/objective-c/tests/run_tests.sh'],
-                timeout_seconds=60 * 60,
-                shortname='objc-tests',
-                cpu_cost=1e6,
-                environ=_FORCE_ENVIRON_FOR_WRAPPERS),
-            self.config.job_spec(
-                ['src/objective-c/tests/run_plugin_tests.sh'],
-                timeout_seconds=60 * 60,
-                shortname='objc-plugin-tests',
-                cpu_cost=1e6,
-                environ=_FORCE_ENVIRON_FOR_WRAPPERS),
-            self.config.job_spec(
-                ['src/objective-c/tests/build_one_example.sh'],
+                ['src/objective-c/tests/build_one_example_bazel.sh'],
                 timeout_seconds=10 * 60,
-                shortname='objc-build-example-sample',
+                shortname='ios-buildtest-example-sample',
                 cpu_cost=1e6,
                 environ={
                     'SCHEME': 'Sample',
-                    'EXAMPLE_PATH': 'src/objective-c/examples/Sample'
-                }),
+                    'EXAMPLE_PATH': 'src/objective-c/examples/Sample',
+                    'FRAMEWORKS': 'NO'
+                }))
+        # Currently not supporting compiling as frameworks in Bazel
+        out.append(
             self.config.job_spec(
                 ['src/objective-c/tests/build_one_example.sh'],
-                timeout_seconds=10 * 60,
-                shortname='objc-build-example-sample-frameworks',
+                timeout_seconds=20 * 60,
+                shortname='ios-buildtest-example-sample-frameworks',
                 cpu_cost=1e6,
                 environ={
                     'SCHEME': 'Sample',
                     'EXAMPLE_PATH': 'src/objective-c/examples/Sample',
                     'FRAMEWORKS': 'YES'
-                }),
+                }))
+        out.append(
             self.config.job_spec(
                 ['src/objective-c/tests/build_one_example.sh'],
-                timeout_seconds=10 * 60,
-                shortname='objc-build-example-switftsample',
+                timeout_seconds=20 * 60,
+                shortname='ios-buildtest-example-switftsample',
                 cpu_cost=1e6,
                 environ={
                     'SCHEME': 'SwiftSample',
                     'EXAMPLE_PATH': 'src/objective-c/examples/SwiftSample'
-                }),
+                }))
+        out.append(
             self.config.job_spec(
-                ['test/core/iomgr/ios/CFStreamTests/run_tests.sh'],
-                timeout_seconds=20 * 60,
-                shortname='cfstream-tests',
+                ['src/objective-c/tests/build_one_example_bazel.sh'],
+                timeout_seconds=10 * 60,
+                shortname='ios-buildtest-example-tvOS-sample',
                 cpu_cost=1e6,
-                environ=_FORCE_ENVIRON_FOR_WRAPPERS),
-        ]
+                environ={
+                    'SCHEME': 'tvOS-sample',
+                    'EXAMPLE_PATH': 'src/objective-c/examples/tvOS-sample',
+                    'FRAMEWORKS': 'NO'
+                }))
+        # Disabled due to #20258
+        # TODO (mxyan): Reenable this test when #20258 is resolved.
+        # out.append(
+        #     self.config.job_spec(
+        #         ['src/objective-c/tests/build_one_example_bazel.sh'],
+        #         timeout_seconds=20 * 60,
+        #         shortname='ios-buildtest-example-watchOS-sample',
+        #         cpu_cost=1e6,
+        #         environ={
+        #             'SCHEME': 'watchOS-sample-WatchKit-App',
+        #             'EXAMPLE_PATH': 'src/objective-c/examples/watchOS-sample',
+        #             'FRAMEWORKS': 'NO'
+        #         }))
+        out.append(
+            self.config.job_spec(
+                ['src/objective-c/tests/run_plugin_tests.sh'],
+                timeout_seconds=60 * 60,
+                shortname='ios-test-plugintest',
+                cpu_cost=1e6,
+                environ=_FORCE_ENVIRON_FOR_WRAPPERS))
+        out.append(
+            self.config.job_spec(
+                ['test/core/iomgr/ios/CFStreamTests/build_and_run_tests.sh'],
+                timeout_seconds=20 * 60,
+                shortname='ios-test-cfstream-tests',
+                cpu_cost=1e6,
+                environ=_FORCE_ENVIRON_FOR_WRAPPERS))
+        # TODO: replace with run_one_test_bazel.sh when Bazel-Xcode is stable
+        out.append(
+            self.config.job_spec(
+                ['src/objective-c/tests/run_one_test.sh'],
+                timeout_seconds=60 * 60,
+                shortname='ios-test-unittests',
+                cpu_cost=1e6,
+                environ={
+                    'SCHEME': 'UnitTests'
+                }))
+        out.append(
+            self.config.job_spec(
+                ['src/objective-c/tests/run_one_test.sh'],
+                timeout_seconds=60 * 60,
+                shortname='ios-test-interoptests',
+                cpu_cost=1e6,
+                environ={
+                    'SCHEME': 'InteropTests'
+                }))
+        out.append(
+            self.config.job_spec(
+                ['src/objective-c/tests/run_one_test.sh'],
+                timeout_seconds=60 * 60,
+                shortname='ios-test-cronettests',
+                cpu_cost=1e6,
+                environ={
+                    'SCHEME': 'CronetTests'
+                }))
+        out.append(
+            self.config.job_spec(
+                ['test/cpp/ios/build_and_run_tests.sh'],
+                timeout_seconds=20 * 60,
+                shortname='ios-cpp-test-cronet',
+                cpu_cost=1e6,
+                environ=_FORCE_ENVIRON_FOR_WRAPPERS))
+        out.append(
+            self.config.job_spec(
+                ['src/objective-c/tests/run_one_test.sh'],
+                timeout_seconds=60 * 60,
+                shortname='mac-test-basictests',
+                cpu_cost=1e6,
+                environ={
+                    'SCHEME': 'MacTests',
+                    'PLATFORM': 'macos'
+                }))
+        out.append(
+            self.config.job_spec(
+                ['src/objective-c/tests/run_one_test.sh'],
+                timeout_seconds=30 * 60,
+                shortname='tvos-test-basictests',
+                cpu_cost=1e6,
+                environ={
+                    'SCHEME': 'TvTests',
+                    'PLATFORM': 'tvos'
+                }))
+
+        return sorted(out)
 
     def pre_build_steps(self):
         return []
 
     def make_targets(self):
-        return ['interop_server']
+        return []
 
     def make_options(self):
         return []
 
     def build_steps(self):
-        return [
-            ['src/objective-c/tests/build_tests.sh'],
-            ['test/core/iomgr/ios/CFStreamTests/build_tests.sh'],
-        ]
+        return []
 
     def post_tests_steps(self):
         return []
@@ -1184,6 +1301,7 @@ _LANGUAGES = {
     'php': PhpLanguage(),
     'php7': Php7Language(),
     'python': PythonLanguage(),
+    'python-aio': PythonAioLanguage(),
     'ruby': RubyLanguage(),
     'csharp': CSharpLanguage(),
     'objc': ObjCLanguage(),
@@ -1340,9 +1458,10 @@ argp.add_argument(
     choices=[
         'default', 'gcc4.4', 'gcc4.6', 'gcc4.8', 'gcc4.9', 'gcc5.3', 'gcc7.2',
         'gcc_musl', 'clang3.4', 'clang3.5', 'clang3.6', 'clang3.7', 'clang7.0',
-        'python2.7', 'python3.4', 'python3.5', 'python3.6', 'python3.7', 'pypy',
-        'pypy3', 'python_alpine', 'all_the_cpythons', 'electron1.3',
-        'electron1.6', 'coreclr', 'cmake', 'cmake_vs2015', 'cmake_vs2017'
+        'python2.7', 'python3.4', 'python3.5', 'python3.6', 'python3.7',
+        'python3.8', 'pypy', 'pypy3', 'python_alpine', 'all_the_cpythons',
+        'electron1.3', 'electron1.6', 'coreclr', 'cmake', 'cmake_vs2015',
+        'cmake_vs2017'
     ],
     default='default',
     help=
@@ -1386,6 +1505,13 @@ argp.add_argument(
     default='tests',
     type=str,
     help='Test suite name to use in generated JUnit XML report')
+argp.add_argument(
+    '--report_multi_target',
+    default=False,
+    const=True,
+    action='store_const',
+    help='Generate separate XML report for each test job (Looks better in UIs).'
+)
 argp.add_argument(
     '--quiet_success',
     default=False,
@@ -1794,7 +1920,10 @@ def _build_and_run(check_cancelled,
                                  upload_extra_fields)
         if xml_report and resultset:
             report_utils.render_junit_xml_report(
-                resultset, xml_report, suite_name=args.report_suite_name)
+                resultset,
+                xml_report,
+                suite_name=args.report_suite_name,
+                multi_target=args.report_multi_target)
 
     number_failures, _ = jobset.run(
         post_tests_steps,

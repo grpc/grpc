@@ -61,8 +61,8 @@ class ChannelArguments {
   void SetChannelArgs(grpc_channel_args* channel_args) const;
 
   // gRPC specific channel argument setters
-  /// Set target name override for SSL host name checking. This option is for
-  /// testing only and should never be used in production.
+  /// Set target name override for SSL host name checking. This option should
+  /// be used with caution in production.
   void SetSslTargetNameOverride(const grpc::string& name);
   // TODO(yangg) add flow control options
   /// Set the compression algorithm for the channel.
@@ -132,7 +132,7 @@ class ChannelArguments {
   /// Default pointer argument operations.
   struct PointerVtableMembers {
     static void* Copy(void* in) { return in; }
-    static void Destroy(void* in) {}
+    static void Destroy(void* /*in*/) {}
     static int Compare(void* a, void* b) {
       if (a < b) return -1;
       if (a > b) return 1;

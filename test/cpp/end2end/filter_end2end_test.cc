@@ -121,6 +121,17 @@ class FilterEnd2endTest : public ::testing::Test {
  protected:
   FilterEnd2endTest() : server_host_("localhost") {}
 
+  static void SetUpTestCase() {
+    // Workaround for
+    // https://github.com/google/google-toolbox-for-mac/issues/242
+    static bool setup_done = false;
+    if (!setup_done) {
+      setup_done = true;
+      grpc::RegisterChannelFilter<ChannelDataImpl, CallDataImpl>(
+          "test-filter", GRPC_SERVER_CHANNEL, INT_MAX, nullptr);
+    }
+  }
+
   void SetUp() override {
     int port = grpc_pick_unused_port_or_die();
     server_address_ << server_host_ << ":" << port;
@@ -321,11 +332,6 @@ TEST_F(FilterEnd2endTest, SimpleBidiStreaming) {
   EXPECT_EQ(1, GetConnectionCounterValue());
 }
 
-void RegisterFilter() {
-  grpc::RegisterChannelFilter<ChannelDataImpl, CallDataImpl>(
-      "test-filter", GRPC_SERVER_CHANNEL, INT_MAX, nullptr);
-}
-
 }  // namespace
 }  // namespace testing
 }  // namespace grpc
@@ -333,6 +339,5 @@ void RegisterFilter() {
 int main(int argc, char** argv) {
   grpc::testing::TestEnvironment env(argc, argv);
   ::testing::InitGoogleTest(&argc, argv);
-  grpc::testing::RegisterFilter();
   return RUN_ALL_TESTS();
 }
