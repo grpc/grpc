@@ -69,17 +69,6 @@ grpc_cc_test(
 )
 
 grpc_cc_test(
-    name = "mpscq_test",
-    srcs = ["mpscq_test.cc"],
-    exec_compatible_with = ["//third_party/toolchains/machine_size:large"],
-    language = "C++",
-    deps = [
-        "//:gpr",
-        "//test/core/util:grpc_test_util",
-    ],
-)
-
-grpc_cc_test(
     name = "murmur_hash_test",
     srcs = ["murmur_hash_test.cc"],
     language = "C++",

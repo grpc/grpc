@@ -1038,7 +1038,6 @@ gpr_env_test: $(BINDIR)/$(CONFIG)/gpr_env_test
 gpr_host_port_test: $(BINDIR)/$(CONFIG)/gpr_host_port_test
 gpr_log_test: $(BINDIR)/$(CONFIG)/gpr_log_test
 gpr_manual_constructor_test: $(BINDIR)/$(CONFIG)/gpr_manual_constructor_test
-gpr_mpscq_test: $(BINDIR)/$(CONFIG)/gpr_mpscq_test
 gpr_spinlock_test: $(BINDIR)/$(CONFIG)/gpr_spinlock_test
 gpr_string_test: $(BINDIR)/$(CONFIG)/gpr_string_test
 gpr_sync_test: $(BINDIR)/$(CONFIG)/gpr_sync_test
@@ -1218,6 +1217,7 @@ generic_end2end_test: $(BINDIR)/$(CONFIG)/generic_end2end_test
 global_config_env_test: $(BINDIR)/$(CONFIG)/global_config_env_test
 global_config_test: $(BINDIR)/$(CONFIG)/global_config_test
 golden_file_test: $(BINDIR)/$(CONFIG)/golden_file_test
+gprpp_mpscq_test: $(BINDIR)/$(CONFIG)/gprpp_mpscq_test
 grpc_alts_credentials_options_test: $(BINDIR)/$(CONFIG)/grpc_alts_credentials_options_test
 grpc_cli: $(BINDIR)/$(CONFIG)/grpc_cli
 grpc_core_map_test: $(BINDIR)/$(CONFIG)/grpc_core_map_test
@@ -1478,7 +1478,6 @@ buildtests_c: privatelibs_c \
   $(BINDIR)/$(CONFIG)/gpr_host_port_test \
   $(BINDIR)/$(CONFIG)/gpr_log_test \
   $(BINDIR)/$(CONFIG)/gpr_manual_constructor_test \
-  $(BINDIR)/$(CONFIG)/gpr_mpscq_test \
   $(BINDIR)/$(CONFIG)/gpr_spinlock_test \
   $(BINDIR)/$(CONFIG)/gpr_string_test \
   $(BINDIR)/$(CONFIG)/gpr_sync_test \
@@ -1697,6 +1696,7 @@ buildtests_cxx: privatelibs_cxx \
   $(BINDIR)/$(CONFIG)/global_config_env_test \
   $(BINDIR)/$(CONFIG)/global_config_test \
   $(BINDIR)/$(CONFIG)/golden_file_test \
+  $(BINDIR)/$(CONFIG)/gprpp_mpscq_test \
   $(BINDIR)/$(CONFIG)/grpc_alts_credentials_options_test \
   $(BINDIR)/$(CONFIG)/grpc_cli \
   $(BINDIR)/$(CONFIG)/grpc_core_map_test \
@@ -1867,6 +1867,7 @@ buildtests_cxx: privatelibs_cxx \
   $(BINDIR)/$(CONFIG)/global_config_env_test \
   $(BINDIR)/$(CONFIG)/global_config_test \
   $(BINDIR)/$(CONFIG)/golden_file_test \
+  $(BINDIR)/$(CONFIG)/gprpp_mpscq_test \
   $(BINDIR)/$(CONFIG)/grpc_alts_credentials_options_test \
   $(BINDIR)/$(CONFIG)/grpc_cli \
   $(BINDIR)/$(CONFIG)/grpc_core_map_test \
@@ -2049,8 +2050,6 @@ test_c: buildtests_c
 	$(Q) $(BINDIR)/$(CONFIG)/gpr_log_test || ( echo test gpr_log_test failed ; exit 1 )
 	$(E) "[RUN]     Testing gpr_manual_constructor_test"
 	$(Q) $(BINDIR)/$(CONFIG)/gpr_manual_constructor_test || ( echo test gpr_manual_constructor_test failed ; exit 1 )
-	$(E) "[RUN]     Testing gpr_mpscq_test"
-	$(Q) $(BINDIR)/$(CONFIG)/gpr_mpscq_test || ( echo test gpr_mpscq_test failed ; exit 1 )
 	$(E) "[RUN]     Testing gpr_spinlock_test"
 	$(Q) $(BINDIR)/$(CONFIG)/gpr_spinlock_test || ( echo test gpr_spinlock_test failed ; exit 1 )
 	$(E) "[RUN]     Testing gpr_string_test"
@@ -2375,6 +2374,8 @@ test_cxx: buildtests_cxx
 	$(Q) $(BINDIR)/$(CONFIG)/global_config_test || ( echo test global_config_test failed ; exit 1 )
 	$(E) "[RUN]     Testing golden_file_test"
 	$(Q) $(BINDIR)/$(CONFIG)/golden_file_test || ( echo test golden_file_test failed ; exit 1 )
+	$(E) "[RUN]     Testing gprpp_mpscq_test"
+	$(Q) $(BINDIR)/$(CONFIG)/gprpp_mpscq_test || ( echo test gprpp_mpscq_test failed ; exit 1 )
 	$(E) "[RUN]     Testing grpc_alts_credentials_options_test"
 	$(Q) $(BINDIR)/$(CONFIG)/grpc_alts_credentials_options_test || ( echo test grpc_alts_credentials_options_test failed ; exit 1 )
 	$(E) "[RUN]     Testing grpc_core_map_test"
@@ -3458,7 +3459,6 @@ LIBGPR_SRC = \
     src/core/lib/gpr/log_linux.cc \
     src/core/lib/gpr/log_posix.cc \
     src/core/lib/gpr/log_windows.cc \
-    src/core/lib/gpr/mpscq.cc \
     src/core/lib/gpr/murmur_hash.cc \
     src/core/lib/gpr/string.cc \
     src/core/lib/gpr/string_posix.cc \
@@ -3480,6 +3480,7 @@ LIBGPR_SRC = \
     src/core/lib/gprpp/fork.cc \
     src/core/lib/gprpp/global_config_env.cc \
     src/core/lib/gprpp/host_port.cc \
+    src/core/lib/gprpp/mpscq.cc \
     src/core/lib/gprpp/thd_posix.cc \
     src/core/lib/gprpp/thd_windows.cc \
     src/core/lib/profiling/basic_timers.cc \
@@ -9989,38 +9990,6 @@ deps_gpr_manual_constructor_test: $(GPR_MANUAL_CONSTRUCTOR_TEST_OBJS:.o=.dep)
 ifneq ($(NO_SECURE),true)
 ifneq ($(NO_DEPS),true)
 -include $(GPR_MANUAL_CONSTRUCTOR_TEST_OBJS:.o=.dep)
-endif
-endif
-
-
-GPR_MPSCQ_TEST_SRC = \
-    test/core/gpr/mpscq_test.cc \
-
-GPR_MPSCQ_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(GPR_MPSCQ_TEST_SRC))))
-ifeq ($(NO_SECURE),true)
-
-# You can't build secure targets if you don't have OpenSSL.
-
-$(BINDIR)/$(CONFIG)/gpr_mpscq_test: openssl_dep_error
-
-else
-
-
-
-$(BINDIR)/$(CONFIG)/gpr_mpscq_test: $(GPR_MPSCQ_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a
-	$(E) "[LD]      Linking $@"
-	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LDXX) $(LDFLAGS) $(GPR_MPSCQ_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LDLIBS) $(LDLIBS_SECURE) -o $(BINDIR)/$(CONFIG)/gpr_mpscq_test
-
-endif
-
-$(OBJDIR)/$(CONFIG)/test/core/gpr/mpscq_test.o:  $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a
-
-deps_gpr_mpscq_test: $(GPR_MPSCQ_TEST_OBJS:.o=.dep)
-
-ifneq ($(NO_SECURE),true)
-ifneq ($(NO_DEPS),true)
--include $(GPR_MPSCQ_TEST_OBJS:.o=.dep)
 endif
 endif
 
@@ -16703,6 +16672,49 @@ ifneq ($(NO_DEPS),true)
 endif
 endif
 $(OBJDIR)/$(CONFIG)/test/cpp/codegen/golden_file_test.o: $(GENDIR)/src/proto/grpc/testing/compiler_test.pb.cc $(GENDIR)/src/proto/grpc/testing/compiler_test.grpc.pb.cc
+
+
+GPRPP_MPSCQ_TEST_SRC = \
+    test/core/gprpp/mpscq_test.cc \
+
+GPRPP_MPSCQ_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(GPRPP_MPSCQ_TEST_SRC))))
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL.
+
+$(BINDIR)/$(CONFIG)/gprpp_mpscq_test: openssl_dep_error
+
+else
+
+
+
+
+ifeq ($(NO_PROTOBUF),true)
+
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
+
+$(BINDIR)/$(CONFIG)/gprpp_mpscq_test: protobuf_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/gprpp_mpscq_test: $(PROTOBUF_DEP) $(GPRPP_MPSCQ_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LDXX) $(LDFLAGS) $(GPRPP_MPSCQ_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(LDLIBS_SECURE) $(GTEST_LIB) -o $(BINDIR)/$(CONFIG)/gprpp_mpscq_test
+
+endif
+
+endif
+
+$(OBJDIR)/$(CONFIG)/test/core/gprpp/mpscq_test.o:  $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a
+
+deps_gprpp_mpscq_test: $(GPRPP_MPSCQ_TEST_OBJS:.o=.dep)
+
+ifneq ($(NO_SECURE),true)
+ifneq ($(NO_DEPS),true)
+-include $(GPRPP_MPSCQ_TEST_OBJS:.o=.dep)
+endif
+endif
 
 
 GRPC_ALTS_CREDENTIALS_OPTIONS_TEST_SRC = \

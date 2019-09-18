@@ -964,30 +964,6 @@
       "posix", 
       "windows"
     ], 
-    "cpu_cost": 30, 
-    "exclude_configs": [], 
-    "exclude_iomgrs": [], 
-    "flaky": false, 
-    "gtest": false, 
-    "language": "c", 
-    "name": "gpr_mpscq_test", 
-    "platforms": [
-      "linux", 
-      "mac", 
-      "posix", 
-      "windows"
-    ], 
-    "uses_polling": false
-  }, 
-  {
-    "args": [], 
-    "benchmark": false, 
-    "ci_platforms": [
-      "linux", 
-      "mac", 
-      "posix", 
-      "windows"
-    ], 
     "cpu_cost": 3, 
     "exclude_configs": [], 
     "exclude_iomgrs": [], 
@@ -4707,6 +4683,30 @@
     "gtest": true, 
     "language": "c++", 
     "name": "golden_file_test", 
+    "platforms": [
+      "linux", 
+      "mac", 
+      "posix", 
+      "windows"
+    ], 
+    "uses_polling": false
+  }, 
+  {
+    "args": [], 
+    "benchmark": false, 
+    "ci_platforms": [
+      "linux", 
+      "mac", 
+      "posix", 
+      "windows"
+    ], 
+    "cpu_cost": 30, 
+    "exclude_configs": [], 
+    "exclude_iomgrs": [], 
+    "flaky": false, 
+    "gtest": false, 
+    "language": "c++", 
+    "name": "gprpp_mpscq_test", 
     "platforms": [
       "linux", 
       "mac", 
