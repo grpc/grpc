@@ -149,7 +149,7 @@ class PythonArtifact:
             # defines ourselves.
             # TODO(atash) get better platform-detection support in core so we don't
             # need to do this manually...
-            environ['CFLAGS'] = '-DGPR_MANYLINUX1=1'
+            environ['CFLAGS'] = '-DGPR_MANYLINUX1=1 -msse -msse2'
             environ['GRPC_BUILD_GRPCIO_TOOLS_DEPENDENTS'] = 'TRUE'
             environ['GRPC_BUILD_MANYLINUX_WHEEL'] = 'TRUE'
 
