@@ -2192,8 +2192,10 @@ void XdsLb::PriorityList::CreateLocalityMapLocked(uint32_t priority) {
 }
 
 void XdsLb::PriorityList::FailoverOnConnectionFailureLocked() {
-  // If we're failing over from P0, report TRANSIENT_FAILURE.
-  if (current_priority_ == 0) UpdateXdsPickerLocked();
+  // If we're failing over from the lowest priority, report TRANSIENT_FAILURE.
+  if (current_priority_ == priority_list_update().LowestPriority()) {
+    UpdateXdsPickerLocked();
+  }
   const uint32_t next_priority = current_priority_ + 1;
   current_priority_ = UINT32_MAX;
   CreateLocalityMapLocked(next_priority);
@@ -2421,26 +2423,31 @@ void XdsLb::PriorityList::LocalityMap::OnLocalityStateUpdateLocked() {
     return;
   }
   if (previous_state != GRPC_CHANNEL_READY) {
-    // The currently trying priority.
-    if (connectivity_state_ == GRPC_CHANNEL_TRANSIENT_FAILURE) {
-      // Fail over if it fails to connect.
-      MaybeCancelFailoverTimerLocked();
-      priority_list()->FailoverOnConnectionFailureLocked();
-    } else if (connectivity_state_ == GRPC_CHANNEL_READY) {
-      // Switch to use it if it successfully connects.
-      MaybeCancelFailoverTimerLocked();
-      priority_list()->SwitchToHigherPriorityLocked(priority_);
+    // The current priority was not READY, so it's the priority that is
+    // currently being tried (i.e., waiting for the initial connection result).
+    if (connectivity_state_ != GRPC_CHANNEL_READY) {
+      if (connectivity_state_ == GRPC_CHANNEL_TRANSIENT_FAILURE) {
+        // It fails to connect, so fail over and return.
+        MaybeCancelFailoverTimerLocked();
+        priority_list()->FailoverOnConnectionFailureLocked();
+      }
+      return;
     }
-    return;
+    // It successfully connects, cancel the failover timer and use it when we
+    // update the xds picker.
+    MaybeCancelFailoverTimerLocked();
+  } else {
+    // The current priority was READY, so it's the priority that is currently
+    // used.
+    if (connectivity_state_ != GRPC_CHANNEL_READY) {
+      // Fail over if it's no longer READY.
+      priority_list()->FailoverOnDisconnectionLocked(priority_);
+    }
   }
-  // The currently used priority.
-  if (connectivity_state_ != GRPC_CHANNEL_READY) {
-    // Fail over if it's no longer READY.
-    priority_list()->FailoverOnDisconnectionLocked(priority_);
-  }
-  // The currently used priority may (1) remain the same (but receives picker
-  // update) (2) become a new one after above failover (3) or null if above
-  // failover doesn't yield a READY one. In any case, update the xds picker.
+  // The currently used priority may (1) be upgraded from the currently trying
+  // priority (2) remain the same (but receives picker update) (3) become a new
+  // one after above failover (4) or null if above failover doesn't yield a
+  // READY one. In any case, update the xds picker.
   priority_list()->UpdateXdsPickerLocked();
 }
 
@@ -2504,6 +2511,8 @@ void XdsLb::PriorityList::LocalityMap::OnDelayedRemovalTimerLocked(
       // Resetting the priority is always safe here. However, to avoid deletion
       // race from multiple priorities in case the timer closures are not
       // executed in FIFO, only pop out the null entries from the tail.
+      // TODO(juanlishen): Check the timer implementation to see if this defense
+      // is necessary.
       priority_list->priorities_[self->priority_].reset();
       while (!priority_list->priorities_.empty() &&
              priority_list->priorities_[priority_list->LowestPriority()] ==
