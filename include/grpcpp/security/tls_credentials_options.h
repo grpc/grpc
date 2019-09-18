@@ -27,9 +27,12 @@
 #include <grpcpp/support/config.h>
 
 typedef struct grpc_tls_credential_reload_arg grpc_tls_credential_reload_arg;
-typedef struct grpc_tls_credential_reload_config grpc_tls_credential_reload_config;
-typedef struct grpc_tls_server_authorization_check_arg grpc_tls_server_authorization_check_arg;
-typedef struct grpc_tls_server_authorization_check_config grpc_tls_server_authorization_check_config;
+typedef struct grpc_tls_credential_reload_config
+    grpc_tls_credential_reload_config;
+typedef struct grpc_tls_server_authorization_check_arg
+    grpc_tls_server_authorization_check_arg;
+typedef struct grpc_tls_server_authorization_check_config
+    grpc_tls_server_authorization_check_config;
 typedef struct grpc_tls_credentials_options grpc_tls_credentials_options;
 
 namespace grpc_impl {
@@ -63,7 +66,7 @@ class TlsKeyMaterialsConfig {
   grpc::string pem_root_certs_;
 };
 
-//typedef struct grpc_tls_credential_reload_arg grpc_tls_credential_reload_arg;
+// typedef struct grpc_tls_credential_reload_arg grpc_tls_credential_reload_arg;
 
 /** TLS credential reload arguments, wraps grpc_tls_credential_reload_arg. It is
  * used for experimental purposes for now and it is subject to change.
@@ -109,7 +112,8 @@ class TlsCredentialReloadArg {
   grpc_tls_credential_reload_arg* c_arg_;
 };
 
-//typedef struct grpc_tls_credential_reload_config grpc_tls_credential_reload_config;
+// typedef struct grpc_tls_credential_reload_config
+// grpc_tls_credential_reload_config;
 
 /** TLS credential reloag config, wraps grpc_tls_credential_reload_config. It is
  * used for experimental purposes for now and it is subject to change.
@@ -157,7 +161,8 @@ class TlsCredentialReloadConfig {
   void (*destruct_)(void* config_user_data);
 };
 
-//typedef struct grpc_tls_server_authorization_check_arg grpc_tls_server_authorization_check_arg;
+// typedef struct grpc_tls_server_authorization_check_arg
+// grpc_tls_server_authorization_check_arg;
 
 /** TLS server authorization check arguments, wraps
  *  grpc_tls_server_authorization_check_arg. It is used for experimental
@@ -206,7 +211,8 @@ class TlsServerAuthorizationCheckArg {
   grpc_tls_server_authorization_check_arg* c_arg_;
 };
 
-//typedef struct ::grpc_tls_server_authorization_check_config grpc_tls_server_authorization_check_config;
+// typedef struct ::grpc_tls_server_authorization_check_config
+// grpc_tls_server_authorization_check_config;
 
 /** TLS server authorization check config, wraps
  *  grps_tls_server_authorization_check_config. It is used for experimental
@@ -260,7 +266,7 @@ class TlsServerAuthorizationCheckConfig {
   void (*destruct_)(void* config_user_data);
 };
 
-//typedef struct ::grpc_tls_credentials_options grpc_tls_credentials_options;
+// typedef struct ::grpc_tls_credentials_options grpc_tls_credentials_options;
 
 /** TLS credentials options, wrapper for grpc_tls_credentials_options. It is
  * used for experimental purposes for now and it is subject to change. See the
