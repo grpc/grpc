@@ -263,7 +263,6 @@ GRPCXX_PUBLIC_HDRS = [
     "include/grpcpp/security/credentials_impl.h",
     "include/grpcpp/security/server_credentials.h",
     "include/grpcpp/security/server_credentials_impl.h",
-    "include/grpcpp/security/tls_credentials_options.h",
     "include/grpcpp/server.h",
     "include/grpcpp/server_impl.h",
     "include/grpcpp/server_builder.h",
@@ -299,6 +298,10 @@ GRPCXX_PUBLIC_HDRS = [
     "include/grpcpp/support/sync_stream_impl.h",
     "include/grpcpp/support/time.h",
     "include/grpcpp/support/validate_service_config.h",
+]
+
+GRPCXX_SECURE_PUBLIC_HDRS = [
+    "include/grpcpp/security/tls_credentials_options.h",
 ]
 
 grpc_cc_library(
@@ -373,7 +376,7 @@ grpc_cc_library(
         "src/cpp/server/secure_server_credentials.h",
     ],
     language = "c++",
-    public_hdrs = GRPCXX_PUBLIC_HDRS,
+    public_hdrs = GRPCXX_PUBLIC_HDRS + GRPCXX_SECURE_PUBLIC_HDRS,
     standalone = True,
     deps = [
         "gpr",
