@@ -1971,7 +1971,7 @@ grpc_cc_library(
     srcs = GRPCXX_SRCS,
     hdrs = GRPCXX_HDRS,
     language = "c++",
-    public_hdrs = GRPCXX_PUBLIC_HDRS + GRPC_SECURE_PUBLIC_HDRS,
+    public_hdrs = GRPCXX_PUBLIC_HDRS,
     deps = [
         "grpc++_codegen_base",
         "grpc_health_upb",

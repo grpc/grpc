@@ -4338,7 +4338,6 @@ target_link_libraries(grpc++_unsecure
 )
 
 foreach(_hdr
-  include/grpc/grpc_security.h
   include/grpc++/alarm.h
   include/grpc++/channel.h
   include/grpc++/client_context.h
