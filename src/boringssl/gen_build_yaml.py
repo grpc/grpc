@@ -33,10 +33,7 @@ except ImportError:
   sys.exit()
 
 def map_dir(filename):
-  if filename[0:4] == 'src/':
-    return 'third_party/boringssl/' + filename[4:]
-  else:
-    return 'src/boringssl/' + filename
+  return 'third_party/boringssl/' + filename[4:]
 
 def map_testarg(arg):
   if '/' in arg:
