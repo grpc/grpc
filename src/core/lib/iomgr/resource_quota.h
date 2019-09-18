@@ -169,7 +169,7 @@ void grpc_resource_user_slice_allocator_init(
 /* Allocate \a count slices of length \a length into \a dest. Only one request
    can be outstanding at a time.
    Returns whether the slice was allocated inline in the function. If true,
-   the callback will not be called. */
+   the \a slice_allocator->on_allocated callback will not be called. */
 bool grpc_resource_user_alloc_slices(
     grpc_resource_user_slice_allocator* slice_allocator, size_t length,
     size_t count, grpc_slice_buffer* dest) GRPC_MUST_USE_RESULT;
