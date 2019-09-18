@@ -308,7 +308,6 @@ add_dependencies(buildtests_c gpr_env_test)
 add_dependencies(buildtests_c gpr_host_port_test)
 add_dependencies(buildtests_c gpr_log_test)
 add_dependencies(buildtests_c gpr_manual_constructor_test)
-add_dependencies(buildtests_c gpr_mpscq_test)
 add_dependencies(buildtests_c gpr_spinlock_test)
 add_dependencies(buildtests_c gpr_string_test)
 add_dependencies(buildtests_c gpr_sync_test)
@@ -628,6 +627,7 @@ add_dependencies(buildtests_cxx generic_end2end_test)
 add_dependencies(buildtests_cxx global_config_env_test)
 add_dependencies(buildtests_cxx global_config_test)
 add_dependencies(buildtests_cxx golden_file_test)
+add_dependencies(buildtests_cxx gprpp_mpscq_test)
 add_dependencies(buildtests_cxx grpc_alts_credentials_options_test)
 add_dependencies(buildtests_cxx grpc_cli)
 add_dependencies(buildtests_cxx grpc_core_map_test)
@@ -864,7 +864,6 @@ add_library(gpr
   src/core/lib/gpr/log_linux.cc
   src/core/lib/gpr/log_posix.cc
   src/core/lib/gpr/log_windows.cc
-  src/core/lib/gpr/mpscq.cc
   src/core/lib/gpr/murmur_hash.cc
   src/core/lib/gpr/string.cc
   src/core/lib/gpr/string_posix.cc
@@ -886,6 +885,7 @@ add_library(gpr
   src/core/lib/gprpp/fork.cc
   src/core/lib/gprpp/global_config_env.cc
   src/core/lib/gprpp/host_port.cc
+  src/core/lib/gprpp/mpscq.cc
   src/core/lib/gprpp/thd_posix.cc
   src/core/lib/gprpp/thd_windows.cc
   src/core/lib/profiling/basic_timers.cc
@@ -7081,37 +7081,6 @@ target_include_directories(gpr_manual_constructor_test
 )
 
 target_link_libraries(gpr_manual_constructor_test
-  ${_gRPC_ALLTARGETS_LIBRARIES}
-  gpr
-  grpc_test_util_unsecure
-  grpc_unsecure
-)
-
-
-endif (gRPC_BUILD_TESTS)
-if (gRPC_BUILD_TESTS)
-
-add_executable(gpr_mpscq_test
-  test/core/gpr/mpscq_test.cc
-)
-
-
-target_include_directories(gpr_mpscq_test
-  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
-  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
-  PRIVATE ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
-  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
-  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
-  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
-  PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${_gRPC_UPB_GENERATED_DIR}
-  PRIVATE ${_gRPC_UPB_GRPC_GENERATED_DIR}
-  PRIVATE ${_gRPC_UPB_INCLUDE_DIR}
-  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
-)
-
-target_link_libraries(gpr_mpscq_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gpr
   grpc_test_util_unsecure
@@ -13346,6 +13315,46 @@ target_link_libraries(golden_file_test
   grpc++
   grpc
   gpr
+  ${_gRPC_GFLAGS_LIBRARIES}
+)
+
+
+endif (gRPC_BUILD_TESTS)
+if (gRPC_BUILD_TESTS)
+
+add_executable(gprpp_mpscq_test
+  test/core/gprpp/mpscq_test.cc
+  third_party/googletest/googletest/src/gtest-all.cc
+  third_party/googletest/googlemock/src/gmock-all.cc
+)
+
+
+target_include_directories(gprpp_mpscq_test
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
+  PRIVATE ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
+  PRIVATE ${_gRPC_UPB_GENERATED_DIR}
+  PRIVATE ${_gRPC_UPB_GRPC_GENERATED_DIR}
+  PRIVATE ${_gRPC_UPB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
+  PRIVATE third_party/googletest/googletest/include
+  PRIVATE third_party/googletest/googletest
+  PRIVATE third_party/googletest/googlemock/include
+  PRIVATE third_party/googletest/googlemock
+  PRIVATE ${_gRPC_PROTO_GENS_DIR}
+)
+
+target_link_libraries(gprpp_mpscq_test
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  gpr
+  grpc_test_util_unsecure
+  grpc_unsecure
   ${_gRPC_GFLAGS_LIBRARIES}
 )
 
