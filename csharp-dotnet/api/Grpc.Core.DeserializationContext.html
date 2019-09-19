@@ -1,0 +1,224 @@
+﻿<!DOCTYPE html>
+<!--[if IE]><![endif]-->
+<html>
+  
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+    <title>Class DeserializationContext
+   | gRPC for .NET </title>
+    <meta name="viewport" content="width=device-width">
+    <meta name="title" content="Class DeserializationContext
+   | gRPC for .NET ">
+    <meta name="generator" content="docfx 2.36.0.0">
+    
+    <link rel="shortcut icon" href="../favicon.ico">
+    <link rel="stylesheet" href="../styles/docfx.vendor.css">
+    <link rel="stylesheet" href="../styles/docfx.css">
+    <link rel="stylesheet" href="../styles/main.css">
+    <meta property="docfx:navrel" content="../toc.html">
+    <meta property="docfx:tocrel" content="toc.html">
+    
+    <meta property="docfx:rel" content="../">
+    
+  </head>
+  <body data-spy="scroll" data-target="#affix" data-offset="120">
+    <div id="wrapper">
+      <header>
+        
+        <nav id="autocollapse" class="navbar navbar-inverse ng-scope" role="navigation">
+          <div class="container">
+            <div class="navbar-header">
+              <button type="button" class="navbar-toggle" data-toggle="collapse" data-target="#navbar">
+                <span class="sr-only">Toggle navigation</span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+              </button>
+              
+              <a class="navbar-brand" href="../index.html">
+                <img id="logo" class="svg" src="../logo.svg" alt="">
+              </a>
+            </div>
+            <div class="collapse navbar-collapse" id="navbar">
+              <form class="navbar-form navbar-right" role="search" id="search">
+                <div class="form-group">
+                  <input type="text" class="form-control" id="search-query" placeholder="Search" autocomplete="off">
+                </div>
+              </form>
+            </div>
+          </div>
+        </nav>
+        
+        <div class="subnav navbar navbar-default">
+          <div class="container hide-when-search" id="breadcrumb">
+            <ul class="breadcrumb">
+              <li></li>
+            </ul>
+          </div>
+        </div>
+      </header>
+      <div class="container body-content">
+        
+        <div id="search-results">
+          <div class="search-list"></div>
+          <div class="sr-items">
+            <p><i class="glyphicon glyphicon-refresh index-loading"></i></p>
+          </div>
+          <ul id="pagination"></ul>
+        </div>
+      </div>
+      <div role="main" class="container body-content hide-when-search">
+        
+        <div class="sidenav hide-when-search">
+          <a class="btn toc-toggle collapse" data-toggle="collapse" href="#sidetoggle" aria-expanded="false" aria-controls="sidetoggle">Show / Hide Table of Contents</a>
+          <div class="sidetoggle collapse" id="sidetoggle">
+            <div id="sidetoc"></div>
+          </div>
+        </div>
+        <div class="article row grid-right">
+          <div class="col-md-10">
+            <article class="content wrap" id="_content" data-uid="Grpc.Core.DeserializationContext">
+  
+  
+  <h1 id="Grpc_Core_DeserializationContext" data-uid="Grpc.Core.DeserializationContext" class="text-break">Class DeserializationContext
+  </h1>
+  <div class="markdown level0 summary"><p>Provides access to the payload being deserialized when deserializing messages.</p>
+</div>
+  <div class="markdown level0 conceptual"></div>
+  <div class="inheritance">
+    <h5>Inheritance</h5>
+    <div class="level0"><span class="xref">System.Object</span></div>
+    <div class="level1"><span class="xref">DeserializationContext</span></div>
+  </div>
+  <h6><strong>Namespace</strong>: <a class="xref" href="Grpc.Core.html">Grpc.Core</a></h6>
+  <h6><strong>Assembly</strong>: Grpc.Core.Api.dll</h6>
+  <h5 id="Grpc_Core_DeserializationContext_syntax">Syntax</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public abstract class DeserializationContext : object</code></pre>
+  </div>
+  <h3 id="properties">Properties
+  </h3>
+  <a id="Grpc_Core_DeserializationContext_PayloadLength_" data-uid="Grpc.Core.DeserializationContext.PayloadLength*"></a>
+  <h4 id="Grpc_Core_DeserializationContext_PayloadLength" data-uid="Grpc.Core.DeserializationContext.PayloadLength">PayloadLength</h4>
+  <div class="markdown level1 summary"><p>Get the total length of the payload in bytes.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public abstract int PayloadLength { get; }</code></pre>
+  </div>
+  <h5 class="propertyValue">Property Value</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Int32</span></td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+  <h3 id="methods">Methods
+  </h3>
+  <a id="Grpc_Core_DeserializationContext_PayloadAsNewBuffer_" data-uid="Grpc.Core.DeserializationContext.PayloadAsNewBuffer*"></a>
+  <h4 id="Grpc_Core_DeserializationContext_PayloadAsNewBuffer" data-uid="Grpc.Core.DeserializationContext.PayloadAsNewBuffer">PayloadAsNewBuffer()</h4>
+  <div class="markdown level1 summary"><p>Gets the entire payload as a newly allocated byte array.
+Once the byte array is returned, the byte array becomes owned by the caller and won&apos;t be ever accessed or reused by gRPC again.
+NOTE: Obtaining the buffer as a newly allocated byte array is the simplest way of accessing the payload,
+but it can have important consequences in high-performance scenarios.
+In particular, using this method usually requires copying of the entire buffer one extra time.
+Also, allocating a new buffer each time can put excessive pressure on GC, especially if
+the payload is more than 86700 bytes large (which means the newly allocated buffer will be placed in LOH,
+and LOH object can only be garbage collected via a full (&quot;stop the world&quot;) GC run).
+NOTE: Deserializers are expected not to call this method (or other payload accessor methods) more than once per received message
+(as there is no practical reason for doing so) and <code>DeserializationContext</code> implementations are free to assume so.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public virtual byte[] PayloadAsNewBuffer()</code></pre>
+  </div>
+  <h5 class="returns">Returns</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Byte</span>[]</td>
+        <td><p>byte array containing the entire payload.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+  <a id="Grpc_Core_DeserializationContext_PayloadAsReadOnlySequence_" data-uid="Grpc.Core.DeserializationContext.PayloadAsReadOnlySequence*"></a>
+  <h4 id="Grpc_Core_DeserializationContext_PayloadAsReadOnlySequence" data-uid="Grpc.Core.DeserializationContext.PayloadAsReadOnlySequence">PayloadAsReadOnlySequence()</h4>
+  <div class="markdown level1 summary"><p>Gets the entire payload as a ReadOnlySequence.
+The ReadOnlySequence is only valid for the duration of the deserializer routine and the caller must not access it after the deserializer returns.
+Using the read only sequence is the most efficient way to access the message payload. Where possible it allows directly
+accessing the received payload without needing to perform any buffer copying or buffer allocations.
+NOTE: When using this method, it is recommended to use C# 7.2 compiler to make it more useful (using Span type directly from your code requires C# 7.2).&quot;
+NOTE: Deserializers are expected not to call this method (or other payload accessor methods) more than once per received message
+(as there is no practical reason for doing so) and <code>DeserializationContext</code> implementations are free to assume so.</p>
+</div>
+  <div class="markdown level1 conceptual"></div>
+  <h5 class="decalaration">Declaration</h5>
+  <div class="codewrapper">
+    <pre><code class="lang-csharp hljs">public virtual System.Buffers.ReadOnlySequence&lt;byte&gt; PayloadAsReadOnlySequence()</code></pre>
+  </div>
+  <h5 class="returns">Returns</h5>
+  <table class="table table-bordered table-striped table-condensed">
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><span class="xref">System.Buffers.ReadOnlySequence</span>&lt;<span class="xref">System.Byte</span>&gt;</td>
+        <td><p>read only sequence containing the entire payload.</p>
+</td>
+      </tr>
+    </tbody>
+  </table>
+</article>
+          </div>
+          
+          <div class="hidden-sm col-md-2" role="complementary">
+            <div class="sideaffix">
+              <nav class="bs-docs-sidebar hidden-print hidden-xs hidden-sm affix" id="affix">
+              <!-- <p><a class="back-to-top" href="#top">Back to top</a><p> -->
+              </nav>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <footer>
+        <div class="grad-bottom"></div>
+        <div class="footer">
+          <div class="container">
+            <span class="pull-right">
+              <a href="#top">Back to top</a>
+            </span>
+            
+            <span>Generated by <strong>DocFX</strong></span>
+          </div>
+        </div>
+      </footer>
+    </div>
+    
+    <script type="text/javascript" src="../styles/docfx.vendor.js"></script>
+    <script type="text/javascript" src="../styles/docfx.js"></script>
+    <script type="text/javascript" src="../styles/main.js"></script>
+  </body>
+</html>
