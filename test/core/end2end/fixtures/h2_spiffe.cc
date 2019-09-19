@@ -35,7 +35,7 @@
 #include "src/core/lib/gprpp/thd.h"
 #include "src/core/lib/security/credentials/credentials.h"
 #include "src/core/lib/security/credentials/tls/grpc_tls_credentials_options.h"
-#include "src/core/lib/security/security_connector/ssl_utils.h"
+#include "src/core/lib/security/security_connector/ssl_utils_config.h"
 #include "test/core/end2end/data/ssl_test_data.h"
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
@@ -138,6 +138,10 @@ static int server_authz_check_async(
 // grpc_tls_credentials_options instance.
 static int client_cred_reload_sync(void* config_user_data,
                                    grpc_tls_credential_reload_arg* arg) {
+  if (!arg->key_materials_config->pem_key_cert_pair_list().empty()) {
+    arg->status = GRPC_SSL_CERTIFICATE_CONFIG_RELOAD_UNCHANGED;
+    return 0;
+  }
   grpc_ssl_pem_key_cert_pair** key_cert_pair =
       static_cast<grpc_ssl_pem_key_cert_pair**>(
           gpr_zalloc(sizeof(grpc_ssl_pem_key_cert_pair*)));
@@ -160,6 +164,10 @@ static int client_cred_reload_sync(void* config_user_data,
 // grpc_tls_credentials_options instance.
 static int server_cred_reload_sync(void* config_user_data,
                                    grpc_tls_credential_reload_arg* arg) {
+  if (!arg->key_materials_config->pem_key_cert_pair_list().empty()) {
+    arg->status = GRPC_SSL_CERTIFICATE_CONFIG_RELOAD_UNCHANGED;
+    return 0;
+  }
   grpc_ssl_pem_key_cert_pair** key_cert_pair =
       static_cast<grpc_ssl_pem_key_cert_pair**>(
           gpr_zalloc(sizeof(grpc_ssl_pem_key_cert_pair*)));

@@ -17,6 +17,13 @@ cimport cpython
 
 import os.path
 import sys
+try:
+    import asyncio
+except ImportError:
+    # TODO(https://github.com/grpc/grpc/issues/19728) Improve how Aio Cython is
+    # distributed without breaking none compatible Python versions. For now, if
+    # Asyncio package is not available we just skip it.
+    pass
 
 # TODO(atash): figure out why the coverage tool gets confused about the Cython
 # coverage plugin when the following files don't have a '.pxi' suffix.
@@ -39,12 +46,24 @@ include "_cygrpc/time.pyx.pxi"
 include "_cygrpc/vtable.pyx.pxi"
 include "_cygrpc/_hooks.pyx.pxi"
 
+include "_cygrpc/iomgr.pyx.pxi"
+
 include "_cygrpc/grpc_gevent.pyx.pxi"
 
 IF UNAME_SYSNAME == "Windows":
     include "_cygrpc/fork_windows.pyx.pxi"
 ELSE:
     include "_cygrpc/fork_posix.pyx.pxi"
+
+# Following pxi files are part of the Aio module
+include "_cygrpc/aio/iomgr/iomgr.pyx.pxi"
+include "_cygrpc/aio/iomgr/socket.pyx.pxi"
+include "_cygrpc/aio/iomgr/timer.pyx.pxi"
+include "_cygrpc/aio/iomgr/resolver.pyx.pxi"
+include "_cygrpc/aio/grpc_aio.pyx.pxi"
+include "_cygrpc/aio/call.pyx.pxi"
+include "_cygrpc/aio/channel.pyx.pxi"
+
 
 #
 # initialize gRPC

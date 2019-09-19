@@ -40,7 +40,7 @@ PROJECT_NAME           = "GRPC C++"
 # could be handy for archiving the generated documentation or if some version
 # control system is used.
 
-PROJECT_NUMBER         = 1.23.0-dev
+PROJECT_NUMBER         = 1.25.0-dev
 
 # Using the PROJECT_BRIEF tag one can provide an optional one line description
 # for a project that appears at the top of each page and should give viewer a
@@ -972,12 +972,14 @@ include/grpcpp/impl/codegen/config_protobuf.h \
 include/grpcpp/impl/codegen/core_codegen.h \
 include/grpcpp/impl/codegen/core_codegen_interface.h \
 include/grpcpp/impl/codegen/create_auth_context.h \
+include/grpcpp/impl/codegen/delegating_channel.h \
 include/grpcpp/impl/codegen/grpc_library.h \
 include/grpcpp/impl/codegen/intercepted_channel.h \
 include/grpcpp/impl/codegen/interceptor.h \
 include/grpcpp/impl/codegen/interceptor_common.h \
 include/grpcpp/impl/codegen/message_allocator.h \
 include/grpcpp/impl/codegen/metadata_map.h \
+include/grpcpp/impl/codegen/method_handler.h \
 include/grpcpp/impl/codegen/method_handler_impl.h \
 include/grpcpp/impl/codegen/proto_buffer_reader.h \
 include/grpcpp/impl/codegen/proto_buffer_writer.h \

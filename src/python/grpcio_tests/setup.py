@@ -58,6 +58,7 @@ COMMAND_CLASS = {
     'run_interop': commands.RunInterop,
     'test_lite': commands.TestLite,
     'test_gevent': commands.TestGevent,
+    'test_aio': commands.TestAio,
 }
 
 PACKAGE_DATA = {

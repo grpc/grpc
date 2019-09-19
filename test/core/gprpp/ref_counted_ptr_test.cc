@@ -151,6 +151,20 @@ TEST(RefCountedPtr, EqualityOperators) {
   EXPECT_NE(foo, nullptr);
 }
 
+TEST(RefCountedPtr, Swap) {
+  Foo* foo = New<Foo>();
+  Foo* bar = New<Foo>();
+  RefCountedPtr<Foo> ptr1(foo);
+  RefCountedPtr<Foo> ptr2(bar);
+  ptr1.swap(ptr2);
+  EXPECT_EQ(foo, ptr2.get());
+  EXPECT_EQ(bar, ptr1.get());
+  RefCountedPtr<Foo> ptr3;
+  ptr3.swap(ptr2);
+  EXPECT_EQ(nullptr, ptr2.get());
+  EXPECT_EQ(foo, ptr3.get());
+}
+
 TEST(MakeRefCounted, NoArgs) {
   RefCountedPtr<Foo> foo = MakeRefCounted<Foo>();
   EXPECT_EQ(0, foo->value());

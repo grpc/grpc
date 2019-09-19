@@ -190,8 +190,10 @@ class HijackingInterceptorMakesAnotherCall : public experimental::Interceptor {
                                           EXPECT_EQ(resp_.message(), "Hello");
                                           methods->Hijack();
                                         });
-      // There isn't going to be any other interesting operation in this batch,
-      // so it is fine to return
+      // This is a Unary RPC and we have got nothing interesting to do in the
+      // PRE_SEND_CLOSE interception hook point for this interceptor, so let's
+      // return here. (We do not want to call methods->Proceed(). When the new
+      // RPC returns, we will call methods->Hijack() instead.)
       return;
     }
     if (methods->QueryInterceptionHookPoint(

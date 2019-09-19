@@ -613,7 +613,7 @@ class ServerReader final : public ServerReaderInterface<R> {
   ServerContext* const ctx_;
 
   template <class ServiceType, class RequestType, class ResponseType>
-  friend class ::grpc::internal::ClientStreamingHandler;
+  friend class ::grpc_impl::internal::ClientStreamingHandler;
 
   ServerReader(::grpc::internal::Call* call, ::grpc_impl::ServerContext* ctx)
       : call_(call), ctx_(ctx) {}
@@ -688,7 +688,7 @@ class ServerWriter final : public ServerWriterInterface<W> {
   ::grpc_impl::ServerContext* const ctx_;
 
   template <class ServiceType, class RequestType, class ResponseType>
-  friend class ::grpc::internal::ServerStreamingHandler;
+  friend class ::grpc_impl::internal::ServerStreamingHandler;
 
   ServerWriter(::grpc::internal::Call* call, ::grpc_impl::ServerContext* ctx)
       : call_(call), ctx_(ctx) {}
@@ -800,7 +800,7 @@ class ServerReaderWriter final : public ServerReaderWriterInterface<W, R> {
  private:
   internal::ServerReaderWriterBody<W, R> body_;
 
-  friend class ::grpc::internal::TemplatedBidiStreamingHandler<
+  friend class ::grpc_impl::internal::TemplatedBidiStreamingHandler<
       ServerReaderWriter<W, R>, false>;
   ServerReaderWriter(::grpc::internal::Call* call,
                      ::grpc_impl::ServerContext* ctx)
@@ -870,7 +870,7 @@ class ServerUnaryStreamer final
   bool read_done_;
   bool write_done_;
 
-  friend class ::grpc::internal::TemplatedBidiStreamingHandler<
+  friend class ::grpc_impl::internal::TemplatedBidiStreamingHandler<
       ServerUnaryStreamer<RequestType, ResponseType>, true>;
   ServerUnaryStreamer(::grpc::internal::Call* call,
                       ::grpc_impl::ServerContext* ctx)
@@ -932,7 +932,7 @@ class ServerSplitStreamer final
   internal::ServerReaderWriterBody<ResponseType, RequestType> body_;
   bool read_done_;
 
-  friend class ::grpc::internal::TemplatedBidiStreamingHandler<
+  friend class ::grpc_impl::internal::TemplatedBidiStreamingHandler<
       ServerSplitStreamer<RequestType, ResponseType>, false>;
   ServerSplitStreamer(::grpc::internal::Call* call,
                       ::grpc_impl::ServerContext* ctx)

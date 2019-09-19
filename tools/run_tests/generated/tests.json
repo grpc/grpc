@@ -964,30 +964,6 @@
       "posix", 
       "windows"
     ], 
-    "cpu_cost": 30, 
-    "exclude_configs": [], 
-    "exclude_iomgrs": [], 
-    "flaky": false, 
-    "gtest": false, 
-    "language": "c", 
-    "name": "gpr_mpscq_test", 
-    "platforms": [
-      "linux", 
-      "mac", 
-      "posix", 
-      "windows"
-    ], 
-    "uses_polling": false
-  }, 
-  {
-    "args": [], 
-    "benchmark": false, 
-    "ci_platforms": [
-      "linux", 
-      "mac", 
-      "posix", 
-      "windows"
-    ], 
     "cpu_cost": 3, 
     "exclude_configs": [], 
     "exclude_iomgrs": [], 
@@ -3266,30 +3242,6 @@
     "flaky": false, 
     "gtest": false, 
     "language": "c++", 
-    "name": "alts_handshaker_service_api_test", 
-    "platforms": [
-      "linux", 
-      "mac", 
-      "posix", 
-      "windows"
-    ], 
-    "uses_polling": true
-  }, 
-  {
-    "args": [], 
-    "benchmark": false, 
-    "ci_platforms": [
-      "linux", 
-      "mac", 
-      "posix", 
-      "windows"
-    ], 
-    "cpu_cost": 1.0, 
-    "exclude_configs": [], 
-    "exclude_iomgrs": [], 
-    "flaky": false, 
-    "gtest": false, 
-    "language": "c++", 
     "name": "alts_iovec_record_protocol_test", 
     "platforms": [
       "linux", 
@@ -3941,6 +3893,28 @@
     "flaky": false, 
     "gtest": false, 
     "language": "c++", 
+    "name": "bm_threadpool", 
+    "platforms": [
+      "linux", 
+      "mac", 
+      "posix"
+    ], 
+    "uses_polling": false
+  }, 
+  {
+    "args": [], 
+    "benchmark": true, 
+    "ci_platforms": [
+      "linux", 
+      "mac", 
+      "posix"
+    ], 
+    "cpu_cost": 1.0, 
+    "exclude_configs": [], 
+    "exclude_iomgrs": [], 
+    "flaky": false, 
+    "gtest": false, 
+    "language": "c++", 
     "name": "bm_timer", 
     "platforms": [
       "linux", 
@@ -4532,6 +4506,30 @@
       "posix", 
       "windows"
     ], 
+    "cpu_cost": 1.0, 
+    "exclude_configs": [], 
+    "exclude_iomgrs": [], 
+    "flaky": false, 
+    "gtest": true, 
+    "language": "c++", 
+    "name": "delegating_channel_test", 
+    "platforms": [
+      "linux", 
+      "mac", 
+      "posix", 
+      "windows"
+    ], 
+    "uses_polling": true
+  }, 
+  {
+    "args": [], 
+    "benchmark": false, 
+    "ci_platforms": [
+      "linux", 
+      "mac", 
+      "posix", 
+      "windows"
+    ], 
     "cpu_cost": 0.5, 
     "exclude_configs": [], 
     "exclude_iomgrs": [], 
@@ -4726,6 +4724,30 @@
       "posix", 
       "windows"
     ], 
+    "cpu_cost": 30, 
+    "exclude_configs": [], 
+    "exclude_iomgrs": [], 
+    "flaky": false, 
+    "gtest": false, 
+    "language": "c++", 
+    "name": "gprpp_mpscq_test", 
+    "platforms": [
+      "linux", 
+      "mac", 
+      "posix", 
+      "windows"
+    ], 
+    "uses_polling": false
+  }, 
+  {
+    "args": [], 
+    "benchmark": false, 
+    "ci_platforms": [
+      "linux", 
+      "mac", 
+      "posix", 
+      "windows"
+    ], 
     "cpu_cost": 1.0, 
     "exclude_configs": [], 
     "exclude_iomgrs": [], 
@@ -4804,6 +4826,30 @@
     "flaky": false, 
     "gtest": true, 
     "language": "c++", 
+    "name": "grpc_spiffe_security_connector_test", 
+    "platforms": [
+      "linux", 
+      "mac", 
+      "posix", 
+      "windows"
+    ], 
+    "uses_polling": true
+  }, 
+  {
+    "args": [], 
+    "benchmark": false, 
+    "ci_platforms": [
+      "linux", 
+      "mac", 
+      "posix", 
+      "windows"
+    ], 
+    "cpu_cost": 1.0, 
+    "exclude_configs": [], 
+    "exclude_iomgrs": [], 
+    "flaky": false, 
+    "gtest": true, 
+    "language": "c++", 
     "name": "grpc_tool_test", 
     "platforms": [
       "linux", 
@@ -4858,24 +4904,6 @@
       "mac", 
       "posix", 
       "windows"
-    ], 
-    "uses_polling": true
-  }, 
-  {
-    "args": [], 
-    "benchmark": false, 
-    "ci_platforms": [
-      "linux"
-    ], 
-    "cpu_cost": 1.0, 
-    "exclude_configs": [], 
-    "exclude_iomgrs": [], 
-    "flaky": false, 
-    "gtest": false, 
-    "language": "c++", 
-    "name": "grpclb_fallback_test", 
-    "platforms": [
-      "linux"
     ], 
     "uses_polling": true
   }, 
@@ -5939,6 +5967,30 @@
       "linux", 
       "mac", 
       "posix"
+    ], 
+    "uses_polling": true
+  }, 
+  {
+    "args": [], 
+    "benchmark": false, 
+    "ci_platforms": [
+      "linux", 
+      "mac", 
+      "posix", 
+      "windows"
+    ], 
+    "cpu_cost": 1.0, 
+    "exclude_configs": [], 
+    "exclude_iomgrs": [], 
+    "flaky": false, 
+    "gtest": true, 
+    "language": "c++", 
+    "name": "timer_test", 
+    "platforms": [
+      "linux", 
+      "mac", 
+      "posix", 
+      "windows"
     ], 
     "uses_polling": true
   }, 

@@ -23,14 +23,20 @@
 
 #include <grpc/impl/codegen/grpc_types.h>
 
+namespace grpc_core {
+
 /// Makes any necessary modifications to \a args for use in the xds
 /// balancer channel.
 ///
 /// Takes ownership of \a args.
 ///
 /// Caller takes ownership of the returned args.
-grpc_channel_args* grpc_lb_policy_xds_modify_lb_channel_args(
-    grpc_channel_args* args);
+grpc_channel_args* ModifyXdsBalancerChannelArgs(grpc_channel_args* args);
+
+grpc_channel* CreateXdsBalancerChannel(const char* target_uri,
+                                       const grpc_channel_args& args);
+
+}  // namespace grpc_core
 
 #endif /* GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_LB_POLICY_XDS_XDS_CHANNEL_H \
         */

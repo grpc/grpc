@@ -192,38 +192,49 @@ static const tsi_handshaker_result_vtable result_vtable = {
     handshaker_result_create_frame_protector,
     handshaker_result_get_unused_bytes, handshaker_result_destroy};
 
-tsi_result alts_tsi_handshaker_result_create(grpc_gcp_handshaker_resp* resp,
+tsi_result alts_tsi_handshaker_result_create(grpc_gcp_HandshakerResp* resp,
                                              bool is_client,
                                              tsi_handshaker_result** self) {
   if (self == nullptr || resp == nullptr) {
     gpr_log(GPR_ERROR, "Invalid arguments to create_handshaker_result()");
     return TSI_INVALID_ARGUMENT;
   }
-  grpc_slice* key = static_cast<grpc_slice*>(resp->result.key_data.arg);
-  GPR_ASSERT(key != nullptr);
-  grpc_slice* identity =
-      static_cast<grpc_slice*>(resp->result.peer_identity.service_account.arg);
+  const grpc_gcp_HandshakerResult* hresult =
+      grpc_gcp_HandshakerResp_result(resp);
+  const grpc_gcp_Identity* identity =
+      grpc_gcp_HandshakerResult_peer_identity(hresult);
   if (identity == nullptr) {
+    gpr_log(GPR_ERROR, "Invalid identity");
+    return TSI_FAILED_PRECONDITION;
+  }
+  upb_strview service_account = grpc_gcp_Identity_service_account(identity);
+  if (service_account.size == 0) {
     gpr_log(GPR_ERROR, "Invalid service account");
     return TSI_FAILED_PRECONDITION;
   }
-  if (GRPC_SLICE_LENGTH(*key) < kAltsAes128GcmRekeyKeyLength) {
+  upb_strview key_data = grpc_gcp_HandshakerResult_key_data(hresult);
+  if (key_data.size < kAltsAes128GcmRekeyKeyLength) {
     gpr_log(GPR_ERROR, "Bad key length");
+    return TSI_FAILED_PRECONDITION;
+  }
+  const grpc_gcp_RpcProtocolVersions* peer_rpc_version =
+      grpc_gcp_HandshakerResult_peer_rpc_versions(hresult);
+  if (peer_rpc_version == nullptr) {
+    gpr_log(GPR_ERROR, "Peer does not set RPC protocol versions.");
     return TSI_FAILED_PRECONDITION;
   }
   alts_tsi_handshaker_result* result =
       static_cast<alts_tsi_handshaker_result*>(gpr_zalloc(sizeof(*result)));
   result->key_data =
       static_cast<char*>(gpr_zalloc(kAltsAes128GcmRekeyKeyLength));
-  memcpy(result->key_data, GRPC_SLICE_START_PTR(*key),
-         kAltsAes128GcmRekeyKeyLength);
-  result->peer_identity = grpc_slice_to_c_string(*identity);
-  if (!resp->result.has_peer_rpc_versions) {
-    gpr_log(GPR_ERROR, "Peer does not set RPC protocol versions.");
-    return TSI_FAILED_PRECONDITION;
-  }
-  if (!grpc_gcp_rpc_protocol_versions_encode(&resp->result.peer_rpc_versions,
-                                             &result->rpc_versions)) {
+  memcpy(result->key_data, key_data.data, kAltsAes128GcmRekeyKeyLength);
+  result->peer_identity =
+      static_cast<char*>(gpr_zalloc(service_account.size + 1));
+  memcpy(result->peer_identity, service_account.data, service_account.size);
+  upb::Arena arena;
+  bool serialized = grpc_gcp_rpc_protocol_versions_encode(
+      peer_rpc_version, arena.ptr(), &result->rpc_versions);
+  if (!serialized) {
     gpr_log(GPR_ERROR, "Failed to serialize peer's RPC protocol versions.");
     return TSI_FAILED_PRECONDITION;
   }
@@ -240,7 +251,14 @@ static void on_handshaker_service_resp_recv(void* arg, grpc_error* error) {
     gpr_log(GPR_ERROR, "ALTS handshaker client is nullptr");
     return;
   }
-  alts_handshaker_client_handle_response(client, true);
+  bool success = true;
+  if (error != GRPC_ERROR_NONE) {
+    gpr_log(GPR_ERROR,
+            "ALTS handshaker on_handshaker_service_resp_recv error: %s",
+            grpc_error_string(error));
+    success = false;
+  }
+  alts_handshaker_client_handle_response(client, success);
 }
 
 /* gRPC provided callback used when dedicatd CQ and thread are used.

@@ -349,7 +349,7 @@ class Subchannel::ConnectedSubchannelStateWatcher {
             }
             c->connected_subchannel_.reset();
             if (c->channelz_node() != nullptr) {
-              c->channelz_node()->SetChildSocketUuid(0);
+              c->channelz_node()->SetChildSocket(nullptr);
             }
             c->SetConnectivityStateLocked(GRPC_CHANNEL_TRANSIENT_FAILURE);
             c->backoff_begun_ = false;
@@ -1072,8 +1072,9 @@ bool Subchannel::PublishTransportLocked() {
     GRPC_ERROR_UNREF(error);
     return false;
   }
-  intptr_t socket_uuid = connecting_result_.socket_uuid;
-  memset(&connecting_result_, 0, sizeof(connecting_result_));
+  RefCountedPtr<channelz::SocketNode> socket =
+      std::move(connecting_result_.socket);
+  connecting_result_.reset();
   if (disconnected_) {
     grpc_channel_stack_destroy(stk);
     gpr_free(stk);
@@ -1085,7 +1086,7 @@ bool Subchannel::PublishTransportLocked() {
   gpr_log(GPR_INFO, "New connected subchannel at %p for subchannel %p",
           connected_subchannel_.get(), this);
   if (channelz_node_ != nullptr) {
-    channelz_node_->SetChildSocketUuid(socket_uuid);
+    channelz_node_->SetChildSocket(std::move(socket));
   }
   // Instantiate state watcher.  Will clean itself up.
   New<ConnectedSubchannelStateWatcher>(this);

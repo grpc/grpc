@@ -1,4 +1,3 @@
-load("@grpc_python_dependencies//:requirements.bzl", "requirement")
 package(default_visibility = ["//visibility:public"])
 
 py_library(
@@ -14,7 +13,7 @@ py_library(
     name = "cardinality",
     srcs = ["cardinality.py"],
     deps = select({
-        "//conditions:default": [requirement('enum34'),],
+        "//conditions:default": ["@enum34//:enum34",],
         "//:python3": [],
     }),
 )
@@ -23,7 +22,7 @@ py_library(
     name = "style",
     srcs = ["style.py"],
     deps = select({
-        "//conditions:default": [requirement('enum34'),],
+        "//conditions:default": ["@enum34//:enum34",],
         "//:python3": [],
     }),
 )

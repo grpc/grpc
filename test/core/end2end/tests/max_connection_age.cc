@@ -204,7 +204,7 @@ static void test_max_age_forcibly_close(grpc_end2end_test_config config) {
 
   /* The connection should be closed immediately after the max age grace period,
      the in-progress RPC should fail. */
-  GPR_ASSERT(status == GRPC_STATUS_INTERNAL);
+  GPR_ASSERT(status == GRPC_STATUS_UNAVAILABLE);
   GPR_ASSERT(0 == grpc_slice_str_cmp(call_details.method, "/foo"));
   GPR_ASSERT(was_cancelled == 1);
 

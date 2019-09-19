@@ -407,7 +407,7 @@ int MetadataCredentialsPluginWrapper::GetMetadata(
     *num_creds_md = 0;
     *status = GRPC_STATUS_OK;
     *error_details = nullptr;
-    return true;
+    return 1;
   }
   if (w->plugin_->IsBlocking()) {
     // The internals of context may be destroyed if GetMetadata is cancelled.

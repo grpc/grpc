@@ -23,14 +23,12 @@
 
 #include "src/core/ext/filters/client_channel/health/health_check_client.h"
 
-#include "pb_decode.h"
-#include "pb_encode.h"
-#include "src/core/ext/filters/client_channel/health/health.pb.h"
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/transport/error_utils.h"
 #include "src/core/lib/transport/status_metadata.h"
+#include "src/proto/grpc/health/v1/health.upb.h"
 
 #define HEALTH_CHECK_INITIAL_CONNECT_BACKOFF_SECONDS 1
 #define HEALTH_CHECK_RECONNECT_BACKOFF_MULTIPLIER 1.6
@@ -202,19 +200,16 @@ namespace {
 
 void EncodeRequest(const char* service_name,
                    ManualConstructor<SliceBufferByteStream>* send_message) {
-  grpc_health_v1_HealthCheckRequest request_struct;
-  request_struct.has_service = true;
-  snprintf(request_struct.service, sizeof(request_struct.service), "%s",
-           service_name);
-  pb_ostream_t ostream;
-  memset(&ostream, 0, sizeof(ostream));
-  pb_encode(&ostream, grpc_health_v1_HealthCheckRequest_fields,
-            &request_struct);
-  grpc_slice request_slice = GRPC_SLICE_MALLOC(ostream.bytes_written);
-  ostream = pb_ostream_from_buffer(GRPC_SLICE_START_PTR(request_slice),
-                                   GRPC_SLICE_LENGTH(request_slice));
-  GPR_ASSERT(pb_encode(&ostream, grpc_health_v1_HealthCheckRequest_fields,
-                       &request_struct) != 0);
+  upb::Arena arena;
+  grpc_health_v1_HealthCheckRequest* request_struct =
+      grpc_health_v1_HealthCheckRequest_new(arena.ptr());
+  grpc_health_v1_HealthCheckRequest_set_service(
+      request_struct, upb_strview_makez(service_name));
+  size_t buf_length;
+  char* buf = grpc_health_v1_HealthCheckRequest_serialize(
+      request_struct, arena.ptr(), &buf_length);
+  grpc_slice request_slice = GRPC_SLICE_MALLOC(buf_length);
+  memcpy(GRPC_SLICE_START_PTR(request_slice), buf, buf_length);
   grpc_slice_buffer slice_buffer;
   grpc_slice_buffer_init(&slice_buffer);
   grpc_slice_buffer_add(&slice_buffer, request_slice);
@@ -248,24 +243,19 @@ bool DecodeResponse(grpc_slice_buffer* slice_buffer, grpc_error** error) {
     }
   }
   // Deserialize message.
-  grpc_health_v1_HealthCheckResponse response_struct;
-  pb_istream_t istream =
-      pb_istream_from_buffer(recv_message, slice_buffer->length);
-  if (!pb_decode(&istream, grpc_health_v1_HealthCheckResponse_fields,
-                 &response_struct)) {
+  upb::Arena arena;
+  grpc_health_v1_HealthCheckResponse* response_struct =
+      grpc_health_v1_HealthCheckResponse_parse(
+          reinterpret_cast<char*>(recv_message), slice_buffer->length,
+          arena.ptr());
+  if (response_struct == nullptr) {
     // Can't parse message; assume unhealthy.
     *error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
         "cannot parse health check response");
     return false;
   }
-  if (!response_struct.has_status) {
-    // Field not present; assume unhealthy.
-    *error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-        "status field not present in health check response");
-    return false;
-  }
-  return response_struct.status ==
-         grpc_health_v1_HealthCheckResponse_ServingStatus_SERVING;
+  int32_t status = grpc_health_v1_HealthCheckResponse_status(response_struct);
+  return status == grpc_health_v1_HealthCheckResponse_SERVING;
 }
 
 }  // namespace
@@ -314,8 +304,8 @@ void HealthCheckClient::CallState::StartCall() {
       health_check_client_->connected_subchannel_,
       &pollent_,
       GRPC_MDSTR_SLASH_GRPC_DOT_HEALTH_DOT_V1_DOT_HEALTH_SLASH_WATCH,
-      gpr_now(GPR_CLOCK_MONOTONIC),  // start_time
-      GRPC_MILLIS_INF_FUTURE,        // deadline
+      gpr_get_cycle_counter(),  // start_time
+      GRPC_MILLIS_INF_FUTURE,   // deadline
       arena_,
       context_,
       &call_combiner_,
@@ -356,7 +346,8 @@ void HealthCheckClient::CallState::StartCall() {
       &send_initial_metadata_, &path_metadata_storage_,
       grpc_mdelem_from_slices(
           GRPC_MDSTR_PATH,
-          GRPC_MDSTR_SLASH_GRPC_DOT_HEALTH_DOT_V1_DOT_HEALTH_SLASH_WATCH));
+          GRPC_MDSTR_SLASH_GRPC_DOT_HEALTH_DOT_V1_DOT_HEALTH_SLASH_WATCH),
+      GRPC_BATCH_PATH);
   GPR_ASSERT(error == GRPC_ERROR_NONE);
   payload_.send_initial_metadata.send_initial_metadata =
       &send_initial_metadata_;

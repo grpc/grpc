@@ -53,14 +53,8 @@ static int32_t kRemoteInteropServerOverhead = 12;
   return kRemoteInteropServerOverhead;  // bytes
 }
 
-#ifdef GRPC_COMPILE_WITH_CRONET
-+ (GRPCTransportType)transportType {
-  return GRPCTransportTypeCronet;
-}
-#else
 + (GRPCTransportType)transportType {
   return GRPCTransportTypeChttp2BoringSSL;
 }
-#endif
 
 @end

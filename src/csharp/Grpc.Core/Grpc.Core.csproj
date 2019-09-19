@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
   <Import Project="Common.csproj.include" />
 
@@ -98,7 +98,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="System.Interactive.Async" Version="3.2.0" />
     <PackageReference Include="System.Memory" Version="4.5.3" />
   </ItemGroup>
 

@@ -169,11 +169,7 @@ typedef struct {
 #define GRPC_ARG_MAX_CONNECTION_AGE_GRACE_MS "grpc.max_connection_age_grace_ms"
 /** Timeout after the last RPC finishes on the client channel at which the
  * channel goes back into IDLE state. Int valued, milliseconds. INT_MAX means
- * unlimited. */
-/** TODO(qianchengz): Currently the default value is INT_MAX, which means the
- * client idle filter is disabled by default. After the client idle filter
- * proves no perfomance issue, we will change the default value to a reasonable
- * value. */
+ * unlimited. The default value is 30 minutes and the min value is 1 second. */
 #define GRPC_ARG_CLIENT_IDLE_TIMEOUT_MS "grpc.client_idle_timeout_ms"
 /** Enable/disable support for per-message compression. Defaults to 1, unless
     GRPC_ARG_MINIMAL_STACK is enabled, in which case it defaults to 0. */
@@ -271,6 +267,14 @@ typedef struct {
     grpc_ssl_session_cache*). (use grpc_ssl_session_cache_arg_vtable() to fetch
     an appropriate pointer arg vtable) */
 #define GRPC_SSL_SESSION_CACHE_ARG "grpc.ssl_session_cache"
+/** If non-zero, it will determine the maximum frame size used by TSI's frame
+ *  protector.
+ *
+ *  NOTE: Be aware that using a large "max_frame_size" is memory inefficient
+ *        for non-zerocopy protectors. Also, increasing this value above 1MiB
+ *        can break old binaries that don't support larger than 1MiB frame
+ *        size. */
+#define GRPC_ARG_TSI_MAX_FRAME_SIZE "grpc.tsi.max_frame_size"
 /** Maximum metadata size, in bytes. Note this limit applies to the max sum of
     all metadata key-value entries in a batch of headers. */
 #define GRPC_ARG_MAX_METADATA_SIZE "grpc.max_metadata_size"
@@ -330,6 +334,11 @@ typedef struct {
    balancer before using fallback backend addresses from the resolver.
    If 0, enter fallback mode immediately. Default value is 10000. */
 #define GRPC_ARG_XDS_FALLBACK_TIMEOUT_MS "grpc.xds_fallback_timeout_ms"
+/* Time in milliseconds to wait before a locality is deleted after it's removed
+   from the received EDS update. If 0, delete the locality immediately. Default
+   value is 15 minutes. */
+#define GRPC_ARG_LOCALITY_RETENTION_INTERVAL_MS \
+  "grpc.xds_locality_retention_interval_ms"
 /** If non-zero, grpc server's cronet compression workaround will be enabled */
 #define GRPC_ARG_WORKAROUND_CRONET_COMPRESSION \
   "grpc.workaround.cronet_compression"

@@ -113,23 +113,18 @@ Pod::Spec.new do |s|
   s.ios.deployment_target = '7.0'
   s.osx.deployment_target = '10.9'
   s.tvos.deployment_target = '10.0'
+  s.watchos.deployment_target = '4.0'
 
   # This is only for local development of protoc: If the Podfile brings this pod from a local
   # directory using `:path`, CocoaPods won't download the zip file and so the compiler won't be
   # present in this pod's directory. We use that knowledge to check for the existence of the file
   # and, if absent, build it from the local sources.
   repo_root = '../..'
-  plugin = 'grpc_objective_c_plugin'
+  bazel = "#{repo_root}/tools/bazel"
+  
   s.prepare_command = <<-CMD
     if [ ! -f bin/protoc ]; then
-      cd #{repo_root}
-      # This will build protoc from the Protobuf submodule of gRPC, and put it in
-      # #{repo_root}/bins/opt/protobuf.
-      #
-      # TODO(jcanizales): Make won't build protoc from sources if one's locally installed, which
-      # _we do not want_. Find a way for this to always build from source.
-      make #{plugin}
-      cd -
+      #{bazel} build @com_google_protobuf//:protoc
     else
       mv bin/protoc .
       mv include/google .

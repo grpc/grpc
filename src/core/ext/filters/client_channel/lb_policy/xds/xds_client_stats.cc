@@ -26,60 +26,171 @@
 
 namespace grpc_core {
 
-void XdsLbClientStats::AddCallStarted() {
-  gpr_atm_full_fetch_add(&num_calls_started_, (gpr_atm)1);
-}
-
-void XdsLbClientStats::AddCallFinished(bool finished_with_client_failed_to_send,
-                                       bool finished_known_received) {
-  gpr_atm_full_fetch_add(&num_calls_finished_, (gpr_atm)1);
-  if (finished_with_client_failed_to_send) {
-    gpr_atm_full_fetch_add(&num_calls_finished_with_client_failed_to_send_,
-                           (gpr_atm)1);
-  }
-  if (finished_known_received) {
-    gpr_atm_full_fetch_add(&num_calls_finished_known_received_, (gpr_atm)1);
-  }
-}
-
-void XdsLbClientStats::AddCallDroppedLocked(char* token) {
-  // Increment num_calls_started and num_calls_finished.
-  gpr_atm_full_fetch_add(&num_calls_started_, (gpr_atm)1);
-  gpr_atm_full_fetch_add(&num_calls_finished_, (gpr_atm)1);
-  // Record the drop.
-  if (drop_token_counts_ == nullptr) {
-    drop_token_counts_.reset(New<DroppedCallCounts>());
-  }
-  for (size_t i = 0; i < drop_token_counts_->size(); ++i) {
-    if (strcmp((*drop_token_counts_)[i].token.get(), token) == 0) {
-      ++(*drop_token_counts_)[i].count;
-      return;
-    }
-  }
-  // Not found, so add a new entry.
-  drop_token_counts_->emplace_back(UniquePtr<char>(gpr_strdup(token)), 1);
-}
-
 namespace {
 
-void AtomicGetAndResetCounter(int64_t* value, gpr_atm* counter) {
-  *value = static_cast<int64_t>(gpr_atm_full_xchg(counter, (gpr_atm)0));
+template <typename T>
+T GetAndResetCounter(Atomic<T>* from) {
+  return from->Exchange(0, MemoryOrder::RELAXED);
 }
 
 }  // namespace
 
-void XdsLbClientStats::GetLocked(
-    int64_t* num_calls_started, int64_t* num_calls_finished,
-    int64_t* num_calls_finished_with_client_failed_to_send,
-    int64_t* num_calls_finished_known_received,
-    UniquePtr<DroppedCallCounts>* drop_token_counts) {
-  AtomicGetAndResetCounter(num_calls_started, &num_calls_started_);
-  AtomicGetAndResetCounter(num_calls_finished, &num_calls_finished_);
-  AtomicGetAndResetCounter(num_calls_finished_with_client_failed_to_send,
-                           &num_calls_finished_with_client_failed_to_send_);
-  AtomicGetAndResetCounter(num_calls_finished_known_received,
-                           &num_calls_finished_known_received_);
-  *drop_token_counts = std::move(drop_token_counts_);
+//
+// XdsClientStats::LocalityStats::LoadMetric::Snapshot
+//
+
+bool XdsClientStats::LocalityStats::LoadMetric::Snapshot::IsAllZero() const {
+  return total_metric_value == 0 && num_requests_finished_with_metric == 0;
+}
+
+//
+// XdsClientStats::LocalityStats::LoadMetric
+//
+
+XdsClientStats::LocalityStats::LoadMetric::Snapshot
+XdsClientStats::LocalityStats::LoadMetric::GetSnapshotAndReset() {
+  Snapshot metric = {num_requests_finished_with_metric_, total_metric_value_};
+  num_requests_finished_with_metric_ = 0;
+  total_metric_value_ = 0;
+  return metric;
+}
+
+//
+// XdsClientStats::LocalityStats::Snapshot
+//
+
+bool XdsClientStats::LocalityStats::Snapshot::IsAllZero() {
+  if (total_successful_requests != 0 || total_requests_in_progress != 0 ||
+      total_error_requests != 0 || total_issued_requests != 0) {
+    return false;
+  }
+  for (auto& p : load_metric_stats) {
+    const LoadMetric::Snapshot& metric_value = p.second;
+    if (!metric_value.IsAllZero()) return false;
+  }
+  return true;
+}
+
+//
+// XdsClientStats::LocalityStats
+//
+
+XdsClientStats::LocalityStats::Snapshot
+XdsClientStats::LocalityStats::GetSnapshotAndReset() {
+  Snapshot snapshot = {
+      GetAndResetCounter(&total_successful_requests_),
+      // Don't reset total_requests_in_progress because it's not
+      // related to a single reporting interval.
+      total_requests_in_progress_.Load(MemoryOrder::RELAXED),
+      GetAndResetCounter(&total_error_requests_),
+      GetAndResetCounter(&total_issued_requests_)};
+  {
+    MutexLock lock(&load_metric_stats_mu_);
+    for (auto& p : load_metric_stats_) {
+      const char* metric_name = p.first.get();
+      LoadMetric& metric_value = p.second;
+      snapshot.load_metric_stats.emplace(
+          UniquePtr<char>(gpr_strdup(metric_name)),
+          metric_value.GetSnapshotAndReset());
+    }
+  }
+  return snapshot;
+}
+
+void XdsClientStats::LocalityStats::AddCallStarted() {
+  total_issued_requests_.FetchAdd(1, MemoryOrder::RELAXED);
+  total_requests_in_progress_.FetchAdd(1, MemoryOrder::RELAXED);
+}
+
+void XdsClientStats::LocalityStats::AddCallFinished(bool fail) {
+  Atomic<uint64_t>& to_increment =
+      fail ? total_error_requests_ : total_successful_requests_;
+  to_increment.FetchAdd(1, MemoryOrder::RELAXED);
+  total_requests_in_progress_.FetchAdd(-1, MemoryOrder::ACQ_REL);
+}
+
+//
+// XdsClientStats::Snapshot
+//
+
+bool XdsClientStats::Snapshot::IsAllZero() {
+  for (auto& p : upstream_locality_stats) {
+    if (!p.second.IsAllZero()) return false;
+  }
+  for (auto& p : dropped_requests) {
+    if (p.second != 0) return false;
+  }
+  return total_dropped_requests == 0;
+}
+
+//
+// XdsClientStats
+//
+
+XdsClientStats::Snapshot XdsClientStats::GetSnapshotAndReset() {
+  grpc_millis now = ExecCtx::Get()->Now();
+  // Record total_dropped_requests and reporting interval in the snapshot.
+  Snapshot snapshot;
+  snapshot.total_dropped_requests =
+      GetAndResetCounter(&total_dropped_requests_);
+  snapshot.load_report_interval = now - last_report_time_;
+  // Update last report time.
+  last_report_time_ = now;
+  // Snapshot all the other stats.
+  for (auto& p : upstream_locality_stats_) {
+    snapshot.upstream_locality_stats.emplace(p.first,
+                                             p.second->GetSnapshotAndReset());
+  }
+  {
+    MutexLock lock(&dropped_requests_mu_);
+#if GRPC_USE_CPP_STD_LIB
+    // This is a workaround for the case where some compilers cannot build
+    // move-assignment of map with non-copyable but movable key.
+    // https://stackoverflow.com/questions/36475497
+    std::swap(snapshot.dropped_requests, dropped_requests_);
+    dropped_requests_.clear();
+#else
+    snapshot.dropped_requests = std::move(dropped_requests_);
+#endif
+  }
+  return snapshot;
+}
+
+void XdsClientStats::MaybeInitLastReportTime() {
+  if (last_report_time_ == -1) last_report_time_ = ExecCtx::Get()->Now();
+}
+
+RefCountedPtr<XdsClientStats::LocalityStats> XdsClientStats::FindLocalityStats(
+    const RefCountedPtr<XdsLocalityName>& locality_name) {
+  auto iter = upstream_locality_stats_.find(locality_name);
+  if (iter == upstream_locality_stats_.end()) {
+    iter = upstream_locality_stats_
+               .emplace(locality_name, MakeRefCounted<LocalityStats>())
+               .first;
+  }
+  return iter->second;
+}
+
+void XdsClientStats::PruneLocalityStats() {
+  auto iter = upstream_locality_stats_.begin();
+  while (iter != upstream_locality_stats_.end()) {
+    if (iter->second->IsSafeToDelete()) {
+      iter = upstream_locality_stats_.erase(iter);
+    } else {
+      ++iter;
+    }
+  }
+}
+
+void XdsClientStats::AddCallDropped(const UniquePtr<char>& category) {
+  total_dropped_requests_.FetchAdd(1, MemoryOrder::RELAXED);
+  MutexLock lock(&dropped_requests_mu_);
+  auto iter = dropped_requests_.find(category);
+  if (iter == dropped_requests_.end()) {
+    dropped_requests_.emplace(UniquePtr<char>(gpr_strdup(category.get())), 1);
+  } else {
+    ++iter->second;
+  }
 }
 
 }  // namespace grpc_core

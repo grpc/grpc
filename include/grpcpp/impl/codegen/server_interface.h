@@ -25,6 +25,7 @@
 #include <grpcpp/impl/codegen/call_hook.h>
 #include <grpcpp/impl/codegen/completion_queue_tag.h>
 #include <grpcpp/impl/codegen/core_codegen_interface.h>
+#include <grpcpp/impl/codegen/interceptor_common.h>
 #include <grpcpp/impl/codegen/rpc_service_method.h>
 #include <grpcpp/impl/codegen/server_context_impl.h>
 
@@ -52,6 +53,7 @@ class ServerAsyncStreamingInterface;
 
 namespace experimental {
 class CallbackGenericService;
+class ServerInterceptorFactoryInterface;
 }  // namespace experimental
 
 class ServerInterface : public internal::CallHook {

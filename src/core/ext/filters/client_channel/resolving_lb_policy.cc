@@ -113,13 +113,6 @@ class ResolvingLoadBalancingPolicy::ResolvingControlHelper
     return parent_->channel_control_helper()->CreateSubchannel(args);
   }
 
-  grpc_channel* CreateChannel(const char* target,
-                              const grpc_channel_args& args) override {
-    if (parent_->resolver_ == nullptr) return nullptr;  // Shutting down.
-    if (!CalledByCurrentChild() && !CalledByPendingChild()) return nullptr;
-    return parent_->channel_control_helper()->CreateChannel(target, args);
-  }
-
   void UpdateState(grpc_connectivity_state state,
                    UniquePtr<SubchannelPicker> picker) override {
     if (parent_->resolver_ == nullptr) return;  // Shutting down.
@@ -159,6 +152,8 @@ class ResolvingLoadBalancingPolicy::ResolvingControlHelper
       parent_->resolver_->RequestReresolutionLocked();
     }
   }
+
+  void AddTraceEvent(TraceSeverity severity, StringView message) override {}
 
   void set_child(LoadBalancingPolicy* child) { child_ = child; }
 
@@ -433,7 +428,7 @@ void ResolvingLoadBalancingPolicy::ConcatenateAndAddChannelTraceLocked(
     size_t len = 0;
     UniquePtr<char> message(gpr_strvec_flatten(&v, &len));
     channel_control_helper()->AddTraceEvent(ChannelControlHelper::TRACE_INFO,
-                                            message.get());
+                                            StringView(message.get()));
     gpr_strvec_destroy(&v);
   }
 }

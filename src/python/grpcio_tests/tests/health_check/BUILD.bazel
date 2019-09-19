@@ -1,6 +1,7 @@
 package(default_visibility = ["//visibility:public"])
+load("//bazel:python_rules.bzl", "py2and3_test")
 
-py_test(
+py2and3_test(
     name = "health_servicer_test",
     srcs = ["_health_servicer_test.py"],
     main = "_health_servicer_test.py",

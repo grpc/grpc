@@ -192,6 +192,9 @@ class Future(six.with_metaclass(abc.ABCMeta)):
         If the computation has already completed, the callback will be called
         immediately.
 
+        Exceptions raised in the callback will be logged at ERROR level, but
+        will not terminate any threads of execution.
+
         Args:
           fn: A callable taking this Future object as its single parameter.
         """
@@ -1444,6 +1447,29 @@ class Server(six.with_metaclass(abc.ABCMeta)):
         """
         raise NotImplementedError()
 
+    def wait_for_termination(self, timeout=None):
+        """Block current thread until the server stops.
+
+        This is an EXPERIMENTAL API.
+
+        The wait will not consume computational resources during blocking, and
+        it will block until one of the two following conditions are met:
+
+        1) The server is stopped or terminated;
+        2) A timeout occurs if timeout is not `None`.
+
+        The timeout argument works in the same way as `threading.Event.wait()`.
+        https://docs.python.org/3/library/threading.html#threading.Event.wait
+
+        Args:
+          timeout: A floating point number specifying a timeout for the
+            operation in seconds.
+
+        Returns:
+          A bool indicates if the operation times out.
+        """
+        raise NotImplementedError()
+
 
 #################################  Functions    ################################
 
@@ -1721,6 +1747,64 @@ def dynamic_ssl_server_credentials(initial_certificate_configuration,
             certificate_configuration_fetcher, require_client_authentication))
 
 
+@enum.unique
+class LocalConnectionType(enum.Enum):
+    """Types of local connection for local credential creation.
+
+    Attributes:
+      UDS: Unix domain socket connections
+      LOCAL_TCP: Local TCP connections.
+    """
+    UDS = _cygrpc.LocalConnectionType.uds
+    LOCAL_TCP = _cygrpc.LocalConnectionType.local_tcp
+
+
+def local_channel_credentials(local_connect_type=LocalConnectionType.LOCAL_TCP):
+    """Creates a local ChannelCredentials used for local connections.
+
+    This is an EXPERIMENTAL API.
+
+    Local credentials are used by local TCP endpoints (e.g. localhost:10000)
+    also UDS connections. It allows them to create secure channel, hence
+    transmitting call credentials become possible.
+
+    It is useful for 1) eliminating insecure_channel usage; 2) enable unit
+    testing for call credentials without setting up secrets.
+
+    Args:
+      local_connect_type: Local connection type (either
+        grpc.LocalConnectionType.UDS or grpc.LocalConnectionType.LOCAL_TCP)
+
+    Returns:
+      A ChannelCredentials for use with a local Channel
+    """
+    return ChannelCredentials(
+        _cygrpc.channel_credentials_local(local_connect_type.value))
+
+
+def local_server_credentials(local_connect_type=LocalConnectionType.LOCAL_TCP):
+    """Creates a local ServerCredentials used for local connections.
+
+    This is an EXPERIMENTAL API.
+
+    Local credentials are used by local TCP endpoints (e.g. localhost:10000)
+    also UDS connections. It allows them to create secure channel, hence
+    transmitting call credentials become possible.
+
+    It is useful for 1) eliminating insecure_channel usage; 2) enable unit
+    testing for call credentials without setting up secrets.
+
+    Args:
+      local_connect_type: Local connection type (either
+        grpc.LocalConnectionType.UDS or grpc.LocalConnectionType.LOCAL_TCP)
+
+    Returns:
+      A ServerCredentials for use with a local Server
+    """
+    return ServerCredentials(
+        _cygrpc.server_credentials_local(local_connect_type.value))
+
+
 def channel_ready_future(channel):
     """Creates a Future that tracks when a Channel is ready.
 
@@ -1890,6 +1974,7 @@ __all__ = (
     'ClientCallDetails',
     'ServerCertificateConfiguration',
     'ServerCredentials',
+    'LocalConnectionType',
     'UnaryUnaryMultiCallable',
     'UnaryStreamMultiCallable',
     'StreamUnaryMultiCallable',
@@ -1916,6 +2001,8 @@ __all__ = (
     'access_token_call_credentials',
     'composite_call_credentials',
     'composite_channel_credentials',
+    'local_channel_credentials',
+    'local_server_credentials',
     'ssl_server_credentials',
     'ssl_server_certificate_configuration',
     'dynamic_ssl_server_credentials',

@@ -1,0 +1,5 @@
+[
+  "_sanity._sanity_test.AioSanityTest",
+  "unit.channel_test.TestChannel",
+  "unit.init_test.TestInsecureChannel"
+]

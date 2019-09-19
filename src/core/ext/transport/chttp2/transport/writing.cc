@@ -219,6 +219,7 @@ class WriteContext {
   void FlushQueuedBuffers() {
     /* simple writes are queued to qbuf, and flushed here */
     grpc_slice_buffer_move_into(&t_->qbuf, &t_->outbuf);
+    t_->num_pending_induced_frames = 0;
     GPR_ASSERT(t_->qbuf.count == 0);
   }
 

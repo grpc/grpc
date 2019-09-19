@@ -19,6 +19,14 @@
 #ifndef GRPC_CORE_LIB_GPRPP_ABSTRACT_H
 #define GRPC_CORE_LIB_GPRPP_ABSTRACT_H
 
+#if GRPC_USE_CPP_STD_LIB
+
+#define GRPC_ABSTRACT_BASE_CLASS
+
+#define GRPC_ABSTRACT = 0
+
+#else
+
 // This is needed to support abstract base classes in the c core. Since gRPC
 // doesn't have a c++ runtime, it will hit a linker error on delete unless
 // we define a virtual operator delete. See this blog for more info:
@@ -33,5 +41,7 @@
     gpr_log(GPR_ERROR, "Function marked GRPC_ABSTRACT was not implemented"); \
     GPR_ASSERT(false);                                                       \
   }
+
+#endif  // GRPC_USE_CPP_STD_LIB
 
 #endif /* GRPC_CORE_LIB_GPRPP_ABSTRACT_H */

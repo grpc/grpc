@@ -157,6 +157,29 @@ int grpc_tls_key_materials_config_set_key_materials(
   return 1;
 }
 
+int grpc_tls_key_materials_config_set_version(
+    grpc_tls_key_materials_config* config, int version) {
+  if (config == nullptr) {
+    gpr_log(GPR_ERROR,
+            "Invalid arguments to "
+            "grpc_tls_key_materials_config_set_version()");
+    return 0;
+  }
+  config->set_version(version);
+  return 1;
+}
+
+int grpc_tls_key_materials_config_get_version(
+    grpc_tls_key_materials_config* config) {
+  if (config == nullptr) {
+    gpr_log(GPR_ERROR,
+            "Invalid arguments to "
+            "grpc_tls_key_materials_config_get_version()");
+    return -1;
+  }
+  return config->version();
+}
+
 grpc_tls_credential_reload_config* grpc_tls_credential_reload_config_create(
     const void* config_user_data,
     int (*schedule)(void* config_user_data,
