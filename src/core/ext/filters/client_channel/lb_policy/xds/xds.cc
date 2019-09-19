@@ -2135,29 +2135,26 @@ void XdsLb::MaybeExitFallbackMode() {
 
 void XdsLb::PriorityList::UpdateLocked() {
   const auto& priority_list_update = xds_policy_->priority_list_update_;
-  // Remove from the priority list the priorities that are not in the update.
+  // 1. Remove from the priority list the priorities that are not in the update.
   DeactivatePrioritiesLowerThan(priority_list_update.LowestPriority());
-  // Update all the existing priorities; maybe create one more.
-  for (uint32_t priority = 0; priority < priority_list_update.size();
-       ++priority) {
-    if (!Contains(priority)) {
-      // Only create a new locality map if all the existing ones have failed.
-      if (current_priority() != UINT32_MAX) break;
-      // Create a new locality map. Don't continue to create another
-      // one. Note that in some rare cases (e.g., the locality map reports
-      // TRANSIENT_FAILURE synchronously due to subchannel sharing), the
-      // following invocation may result in multiple locality maps to be
-      // created.
-      CreateLocalityMapLocked(priority);
-      break;
-    }
-    const auto* locality_map_update = priority_list_update.Find(priority);
+  // 2. Update all the existing priorities.
+  for (uint32_t priority = 0; priority < priorities_.size(); ++priority) {
     LocalityMap* locality_map = priorities_[priority].get();
+    const auto* locality_map_update = priority_list_update.Find(priority);
     // Propagate locality_map_update.
     // TODO(juanlishen): Find a clean way to skip duplicate update for a
     // priority.
     locality_map->UpdateLocked(*locality_map_update);
   }
+  // 3. Only create a new locality map if all the existing ones have failed.
+  if (current_priority() != UINT32_MAX) return;
+  const uint32_t new_priority = priorities_.size();
+  if (!priority_list_update.Contains(new_priority)) return;
+  // Create a new locality map. Note that in some rare cases (e.g., the locality
+  // map reports TRANSIENT_FAILURE synchronously due to subchannel sharing), the
+  // following invocation may result in multiple locality maps to be
+  // created.
+  CreateLocalityMapLocked(new_priority);
 }
 
 void XdsLb::PriorityList::ResetBackoffLocked() {
