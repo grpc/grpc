@@ -26,7 +26,7 @@ syntax = "proto3";
 package envoy.service.load_stats.v2;
 
 import "google/protobuf/duration.proto";
-import "src/proto/grpc/lb/v2/eds_for_test.proto";
+import "src/proto/grpc/testing/xds/eds_for_test.proto";
 
 // [#not-implemented-hide:] Not configuration. TBD how to doc proto APIs.
 message EndpointLoadMetricStats {
