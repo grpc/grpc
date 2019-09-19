@@ -31,7 +31,7 @@ namespace grpc_core {
 
 class XdsPriorityListUpdate {
  public:
-  struct LocalityList {
+  struct LocalityMap {
     struct Locality {
       bool operator==(const Locality& other) const {
         return *name == *other.name && serverlist == other.serverlist &&
@@ -51,31 +51,26 @@ class XdsPriorityListUpdate {
       uint32_t priority;
     };
 
-    bool Contains(const XdsLocalityName& name) const {
-      for (size_t i = 0; i < localities.size(); ++i) {
-        if (*localities[i].name == name) return true;
-      }
-      return false;
+    bool Contains(const RefCountedPtr<XdsLocalityName>& name) const {
+      return localities.find(name) != localities.end();
     }
 
     size_t size() const { return localities.size(); }
 
-    InlinedVector<Locality, 1> localities;
+    Map<RefCountedPtr<XdsLocalityName>, Locality, XdsLocalityName::Less>
+        localities;
   };
 
   bool operator==(const XdsPriorityListUpdate& other) const;
 
-  void Add(LocalityList::Locality locality);
+  void Add(LocalityMap::Locality locality);
 
-  // Sorts the locality list for each priority.
-  void Sort();
-
-  const LocalityList* Find(uint32_t priority) const;
+  const LocalityMap* Find(uint32_t priority) const;
 
   bool Contains(uint32_t priority) const {
     return priority < priorities_.size();
   }
-  bool Contains(const XdsLocalityName& name);
+  bool Contains(const RefCountedPtr<XdsLocalityName>& name);
 
   bool empty() const { return priorities_.empty(); }
   size_t size() const { return priorities_.size(); }
@@ -84,7 +79,7 @@ class XdsPriorityListUpdate {
   uint32_t LowestPriority() const { return priorities_.size() - 1; }
 
  private:
-  InlinedVector<LocalityList, 2> priorities_;
+  InlinedVector<LocalityMap, 2> priorities_;
 };
 
 // There are two phases of accessing this class's content:
