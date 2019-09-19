@@ -48,6 +48,9 @@
    add_assoc_bool_ex(val, key, key_len, str);
 #define PHP_GRPC_ADD_LONG_TO_RETVAL(val, key, key_len, str) \
    add_assoc_long_ex(val, key, key_len+1, str);
+#define PHP_GRPC_ZVAL_ARR(z, a) \
+  Z_ARRVAL_P(z) = a; \
+  +  Z_TYPE_P(z) = IS_ARRAY;
 
 #define RETURN_DESTROY_ZVAL(val) \
   RETURN_ZVAL(val, false /* Don't execute copy constructor */, \
@@ -193,6 +196,7 @@ static inline HashTable* php_grpc_zend_new_array(uint nSize) {
    add_assoc_bool_ex(val, key, key_len - 1, str);
 #define PHP_GRPC_ADD_LONG_TO_RETVAL(val, key, key_len, str) \
    add_assoc_long_ex(val, key, key_len, str);
+#define PHP_GRPC_ZVAL_ARR(z, a) ZVAL_ARR(z, a)
 
 #define RETURN_DESTROY_ZVAL(val) \
   RETVAL_ZVAL(val, false /* Don't execute copy constructor */, \
@@ -257,7 +261,16 @@ static inline int php_grpc_zend_hash_find(HashTable *ht, char *key, int len,
   }
 }
 
+#if PHP_MAJOR_VERSION <= 7 && PHP_MINOR_VERSION <= 2
+static inline HashTable* php_grpc_zend_new_array(uint nSize) {
+    HashTable *ht = emalloc(sizeof(HashTable));
+    zend_hash_init(ht, nSize, NULL, ZVAL_PTR_DTOR, 0);
+
+    return ht;
+}
+#else
 #define php_grpc_zend_new_array zend_new_array
+#endif
 
 static inline void php_grpc_zend_hash_copy(HashTable *target, HashTable *source,
                     copy_ctor_func_t pCopyConstructor, void *tmp, uint size) {

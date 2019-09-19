@@ -301,7 +301,7 @@ PHP_METHOD(Channel, __construct) {
   php_grpc_int target_length;
   zval *args_array = NULL;
   grpc_channel_args args;
-  HashTable *array_hash;
+  HashTable *array_hash, *array_hash_passed;
   wrapped_grpc_channel_credentials *creds = NULL;
   php_grpc_zend_resource *rsrc;
   bool force_new = false;
@@ -315,6 +315,7 @@ PHP_METHOD(Channel, __construct) {
                          "Channel expects a string and an array", 1 TSRMLS_CC);
     return;
   }
+  array_hash_passed = Z_ARRVAL_P(args_array);
   array_hash = php_grpc_zend_new_array(zend_hash_num_elements(Z_ARRVAL_P(args_array)));
   php_grpc_zend_hash_copy(array_hash, Z_ARRVAL_P(args_array), (copy_ctor_func_t) zval_add_ref, NULL, sizeof(zval*));
   if (php_grpc_zend_hash_find(array_hash, "credentials", sizeof("credentials"),
@@ -374,9 +375,11 @@ PHP_METHOD(Channel, __construct) {
   // 3. (optional) hash value of the ChannelCredentials object
   php_serialize_data_t var_hash;
   smart_str buf = {0};
+  PHP_GRPC_ZVAL_ARR(args_array, array_hash);
   PHP_VAR_SERIALIZE_INIT(var_hash);
   PHP_GRPC_VAR_SERIALIZE(&buf, args_array, &var_hash);
   PHP_VAR_SERIALIZE_DESTROY(var_hash);
+  PHP_GRPC_ZVAL_ARR(args_array, array_hash_passed);
 
   char sha1str[41];
   generate_sha1_str(sha1str, PHP_GRPC_SERIALIZED_BUF_STR(buf),
