@@ -2373,6 +2373,12 @@ void XdsLb::PriorityList::LocalityMap::DeactivateLocked() {
   MaybeCancelFailoverTimerLocked();
   // Start a timer to delete the locality.
   Ref(DEBUG_LOCATION, "LocalityMap+timer").release();
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_xds_trace)) {
+    gpr_log(GPR_INFO,
+            "[xdslb %p] Will remove priority %" PRIu32 " in %" PRId64 " ms.",
+            xds_policy(), priority_,
+            xds_policy()->locality_retention_interval_ms_);
+  }
   grpc_timer_init(
       &delayed_removal_timer_,
       ExecCtx::Get()->Now() + xds_policy()->locality_retention_interval_ms_,
@@ -2398,6 +2404,10 @@ void XdsLb::PriorityList::LocalityMap::MaybeCancelFailoverTimerLocked() {
 }
 
 void XdsLb::PriorityList::LocalityMap::Orphan() {
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_xds_trace)) {
+    gpr_log(GPR_INFO, "[xdslb %p] Priority %" PRIu32 " orphaned.", xds_policy(),
+            priority_);
+  }
   MaybeCancelFailoverTimerLocked();
   if (delayed_removal_timer_callback_pending_) {
     grpc_timer_cancel(&delayed_removal_timer_);
