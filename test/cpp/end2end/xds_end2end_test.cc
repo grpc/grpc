@@ -51,9 +51,9 @@
 #include "test/core/util/test_config.h"
 #include "test/cpp/end2end/test_service_impl.h"
 
-#include "src/proto/grpc/lb/v2/eds_for_test.grpc.pb.h"
-#include "src/proto/grpc/lb/v2/lrs_for_test.grpc.pb.h"
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
+#include "src/proto/grpc/testing/xds/eds_for_test.grpc.pb.h"
+#include "src/proto/grpc/testing/xds/lrs_for_test.grpc.pb.h"
 
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
