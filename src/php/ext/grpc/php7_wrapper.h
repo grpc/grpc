@@ -50,7 +50,7 @@
    add_assoc_long_ex(val, key, key_len+1, str);
 #define PHP_GRPC_ZVAL_ARR(z, a) \
   Z_ARRVAL_P(z) = a; \
-  +  Z_TYPE_P(z) = IS_ARRAY;
+  Z_TYPE_P(z) = IS_ARRAY;
 
 #define RETURN_DESTROY_ZVAL(val) \
   RETURN_ZVAL(val, false /* Don't execute copy constructor */, \
