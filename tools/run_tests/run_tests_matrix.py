@@ -66,10 +66,8 @@ def _matrix_job_logfilename(shortname_for_multi_target):
     # for the corresponding 'sponge_log.xml' report.
     # the shortname_for_multi_target component must be set to match the sponge_log.xml location
     # because the top-level render_junit_xml_report is called with multi_target=True
-    s = '%s/%s/%s' % (_MATRIX_REPORT_NAME, shortname_for_multi_target,
-                      'sponge_log.log')
-    print(s)
-    return s
+    return '%s/%s/%s' % (_MATRIX_REPORT_NAME, shortname_for_multi_target,
+                         'sponge_log.log')
 
 
 def _docker_jobspec(name,

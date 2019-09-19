@@ -135,7 +135,7 @@ def create_scenario_jobspec(scenario_json,
 
     return jobset.JobSpec(
         cmdline=[cmd],
-        shortname='qps_json_driver.%s' % scenario_json['name'],
+        shortname='%s' % scenario_json['name'],
         timeout_seconds=_SCENARIO_TIMEOUT,
         shell=True,
         verbose_success=True)
@@ -153,7 +153,7 @@ def create_quit_jobspec(workers, remote_host=None):
 
     return jobset.JobSpec(
         cmdline=[cmd],
-        shortname='qps_json_driver.quit',
+        shortname='shutdown_workers',
         timeout_seconds=_QUIT_WORKER_TIMEOUT,
         shell=True,
         verbose_success=True)
@@ -670,6 +670,8 @@ def main():
                     worker.start()
                 jobs = [scenario.jobspec]
                 if scenario.workers:
+                    # TODO(jtattermusch): ideally the "quit" job won't show up
+                    # in the report
                     jobs.append(
                         create_quit_jobspec(
                             scenario.workers,
@@ -707,7 +709,10 @@ def main():
             '%s/index.html' % args.flame_graph_reports, profile_output_files)
 
     report_utils.render_junit_xml_report(
-        merged_resultset, args.xml_report, suite_name='benchmarks')
+        merged_resultset,
+        args.xml_report,
+        suite_name='benchmarks',
+        multi_target=True)
 
     if total_scenario_failures > 0 or qps_workers_killed > 0:
         print('%s scenarios failed and %s qps worker jobs killed' %
