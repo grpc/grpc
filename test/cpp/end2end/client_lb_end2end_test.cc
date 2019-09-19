@@ -399,26 +399,31 @@ class ClientLbEnd2endTest : public ::testing::Test {
     ResetCounters();
   }
 
-  bool WaitForChannelNotReady(Channel* channel, int timeout_seconds = 5) {
+  bool WaitForChannelState(
+      Channel* channel, std::function<bool(grpc_connectivity_state)> predicate,
+      bool try_to_connect = false, int timeout_seconds = 5) {
     const gpr_timespec deadline =
         grpc_timeout_seconds_to_deadline(timeout_seconds);
-    grpc_connectivity_state state;
-    while ((state = channel->GetState(false /* try_to_connect */)) ==
-           GRPC_CHANNEL_READY) {
+    while (true) {
+      grpc_connectivity_state state = channel->GetState(try_to_connect);
+      if (predicate(state)) break;
       if (!channel->WaitForStateChange(state, deadline)) return false;
     }
     return true;
   }
 
+  bool WaitForChannelNotReady(Channel* channel, int timeout_seconds = 5) {
+    auto predicate = [](grpc_connectivity_state state) {
+      return state != GRPC_CHANNEL_READY;
+    };
+    return WaitForChannelState(channel, predicate, false, timeout_seconds);
+  }
+
   bool WaitForChannelReady(Channel* channel, int timeout_seconds = 5) {
-    const gpr_timespec deadline =
-        grpc_timeout_seconds_to_deadline(timeout_seconds);
-    grpc_connectivity_state state;
-    while ((state = channel->GetState(true /* try_to_connect */)) !=
-           GRPC_CHANNEL_READY) {
-      if (!channel->WaitForStateChange(state, deadline)) return false;
-    }
-    return true;
+    auto predicate = [](grpc_connectivity_state state) {
+      return state == GRPC_CHANNEL_READY;
+    };
+    return WaitForChannelState(channel, predicate, true, timeout_seconds);
   }
 
   bool SeenAllServers() {
@@ -1176,7 +1181,6 @@ TEST_F(ClientLbEnd2endTest, RoundRobinUpdateInError) {
   auto channel = BuildChannel("round_robin", response_generator);
   auto stub = BuildStub(channel);
   std::vector<int> ports;
-
   // Start with a single server.
   ports.emplace_back(servers_[0]->port_);
   response_generator.SetNextResolution(ports);
@@ -1187,7 +1191,6 @@ TEST_F(ClientLbEnd2endTest, RoundRobinUpdateInError) {
   EXPECT_EQ(0, servers_[1]->service_.request_count());
   EXPECT_EQ(0, servers_[2]->service_.request_count());
   servers_[0]->service_.ResetCounters();
-
   // Shutdown one of the servers to be sent in the update.
   servers_[1]->Shutdown();
   ports.emplace_back(servers_[1]->port_);
@@ -1195,7 +1198,6 @@ TEST_F(ClientLbEnd2endTest, RoundRobinUpdateInError) {
   response_generator.SetNextResolution(ports);
   WaitForServer(stub, 0, DEBUG_LOCATION);
   WaitForServer(stub, 2, DEBUG_LOCATION);
-
   // Send three RPCs, one per server.
   for (size_t i = 0; i < kNumServers; ++i) SendRpc(stub);
   // The server in shutdown shouldn't receive any.
@@ -1277,6 +1279,63 @@ TEST_F(ClientLbEnd2endTest, RoundRobinReresolve) {
     now = gpr_now(GPR_CLOCK_MONOTONIC);
   }
   ASSERT_GT(gpr_time_cmp(deadline, now), 0);
+}
+
+TEST_F(ClientLbEnd2endTest, RoundRobinTransientFailure) {
+  // Start servers and create channel.  Channel should go to READY state.
+  const int kNumServers = 3;
+  StartServers(kNumServers);
+  auto response_generator = BuildResolverResponseGenerator();
+  auto channel = BuildChannel("round_robin", response_generator);
+  auto stub = BuildStub(channel);
+  response_generator.SetNextResolution(GetServersPorts());
+  EXPECT_TRUE(WaitForChannelReady(channel.get()));
+  // Now kill the servers.  The channel should transition to TRANSIENT_FAILURE.
+  // TODO(roth): This test should ideally check that even when the
+  // subchannels are in state CONNECTING for an extended period of time,
+  // we will still report TRANSIENT_FAILURE.  Unfortunately, we don't
+  // currently have a good way to get a subchannel to report CONNECTING
+  // for a long period of time, since the servers in this test framework
+  // are on the loopback interface, which will immediately return a
+  // "Connection refused" error, so the subchannels will only be in
+  // CONNECTING state very briefly.  When we have time, see if we can
+  // find a way to fix this.
+  for (size_t i = 0; i < servers_.size(); ++i) {
+    servers_[i]->Shutdown();
+  }
+  auto predicate = [](grpc_connectivity_state state) {
+    return state == GRPC_CHANNEL_TRANSIENT_FAILURE;
+  };
+  EXPECT_TRUE(WaitForChannelState(channel.get(), predicate));
+}
+
+TEST_F(ClientLbEnd2endTest, RoundRobinTransientFailureAtStartup) {
+  // Create channel and return servers that don't exist.  Channel should
+  // quickly transition into TRANSIENT_FAILURE.
+  // TODO(roth): This test should ideally check that even when the
+  // subchannels are in state CONNECTING for an extended period of time,
+  // we will still report TRANSIENT_FAILURE.  Unfortunately, we don't
+  // currently have a good way to get a subchannel to report CONNECTING
+  // for a long period of time, since the servers in this test framework
+  // are on the loopback interface, which will immediately return a
+  // "Connection refused" error, so the subchannels will only be in
+  // CONNECTING state very briefly.  When we have time, see if we can
+  // find a way to fix this.
+  auto response_generator = BuildResolverResponseGenerator();
+  auto channel = BuildChannel("round_robin", response_generator);
+  auto stub = BuildStub(channel);
+  response_generator.SetNextResolution({
+      grpc_pick_unused_port_or_die(),
+      grpc_pick_unused_port_or_die(),
+      grpc_pick_unused_port_or_die(),
+  });
+  for (size_t i = 0; i < servers_.size(); ++i) {
+    servers_[i]->Shutdown();
+  }
+  auto predicate = [](grpc_connectivity_state state) {
+    return state == GRPC_CHANNEL_TRANSIENT_FAILURE;
+  };
+  EXPECT_TRUE(WaitForChannelState(channel.get(), predicate, true));
 }
 
 TEST_F(ClientLbEnd2endTest, RoundRobinSingleReconnect) {
