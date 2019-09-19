@@ -67,8 +67,6 @@ class TlsKeyMaterialsConfig {
   grpc::string pem_root_certs_;
 };
 
-// typedef struct grpc_tls_credential_reload_arg grpc_tls_credential_reload_arg;
-
 /** TLS credential reload arguments, wraps grpc_tls_credential_reload_arg. It is
  * used for experimental purposes for now and it is subject to change.
  *
@@ -113,57 +111,41 @@ class TlsCredentialReloadArg {
   grpc_tls_credential_reload_arg* c_arg_;
 };
 
-// typedef struct grpc_tls_credential_reload_config
-// grpc_tls_credential_reload_config;
+/** An interface that the application derives and uses to instantiate a
+ * TlsCredentialReloadConfig instance. All 3 methods must be defined. **/
+struct TlsCredentialReloadInterface {
+  /** An application-provided callback that invokes the credential reload. **/
+  virtual int Schedule(TlsCredentialReloadArg* arg) = 0;
+  /** An application-provided callback that cancels a credential reload request.
+   * **/
+  virtual void Cancel(TlsCredentialReloadArg* arg) = 0;
+  /** An application-provided callback that cleans up any data associated to the
+   * interface or the config. **/
+  virtual void Release() = 0;
+};
 
 /** TLS credential reloag config, wraps grpc_tls_credential_reload_config. It is
- * used for experimental purposes for now and it is subject to change.
- *
- * The config_user_data is read-only user data; schedule is a pointer to an
- * application-provided callback that invokes the credential reload; cancel is a
- * pointer to an application-provided callback that cancels a credential reload
- * request; destruct is a pointer to an application-provided callback that
- * cleans up any data associated to the config. See the description of the
- * grpc_tls_credential_reload_config struct in grpc_security.h. **/
+ * used for experimental purposes for now and it is subject to change. **/
 class TlsCredentialReloadConfig {
  public:
-  TlsCredentialReloadConfig(const void* config_user_data,
-                            int (*schedule)(void* config_user_data,
-                                            TlsCredentialReloadArg* arg),
-                            void (*cancel)(void* config_user_data,
-                                           TlsCredentialReloadArg* arg),
-                            void (*destruct)(void* config_user_data));
+  /** The constructor takes ownership of the interface argument. **/
+  TlsCredentialReloadConfig(
+      std::shared_ptr<TlsCredentialReloadInterface> interface);
   ~TlsCredentialReloadConfig();
 
   int Schedule(TlsCredentialReloadArg* arg) const {
-    if (schedule_ == nullptr) {
-      gpr_log(GPR_ERROR, "schedule API is nullptr");
-      return 1;
-    }
-    return schedule_(config_user_data_, arg);
+    return interface_->Schedule(arg);
   }
 
-  void Cancel(TlsCredentialReloadArg* arg) const {
-    if (cancel_ == nullptr) {
-      gpr_log(GPR_ERROR, "cancel API is nullptr");
-      return;
-    }
-    cancel_(config_user_data_, arg);
-  }
+  void Cancel(TlsCredentialReloadArg* arg) const { interface_->Cancel(arg); }
 
   /** Returns a C struct for the credential reload config. **/
   grpc_tls_credential_reload_config* c_config() const { return c_config_; }
 
  private:
   grpc_tls_credential_reload_config* c_config_;
-  void* config_user_data_;
-  int (*schedule_)(void* config_user_data, TlsCredentialReloadArg* arg);
-  void (*cancel_)(void* config_user_data, TlsCredentialReloadArg* arg);
-  void (*destruct_)(void* config_user_data);
+  std::shared_ptr<TlsCredentialReloadInterface> interface_;
 };
-
-// typedef struct grpc_tls_server_authorization_check_arg
-// grpc_tls_server_authorization_check_arg;
 
 /** TLS server authorization check arguments, wraps
  *  grpc_tls_server_authorization_check_arg. It is used for experimental
@@ -212,46 +194,38 @@ class TlsServerAuthorizationCheckArg {
   grpc_tls_server_authorization_check_arg* c_arg_;
 };
 
-// typedef struct ::grpc_tls_server_authorization_check_config
-// grpc_tls_server_authorization_check_config;
+/** An interface that the application derives and uses to instantiate a
+ * TlsServerAuthorizationCheckConfig instance. All 3 methods must be defined.
+ * **/
+struct TlsServerAuthorizationCheckInterface {
+  /** An application-provided callback that invokes the server authorization
+   * check. **/
+  virtual int Schedule(TlsServerAuthorizationCheckArg* arg) = 0;
+  /** An application-provided callback that cancels a server authorization check
+   * request.
+   * **/
+  virtual void Cancel(TlsServerAuthorizationCheckArg* arg) = 0;
+  /** An application-provided callback that cleans up any data associated to the
+   * interface or the config. **/
+  virtual void Release() = 0;
+};
 
 /** TLS server authorization check config, wraps
  *  grps_tls_server_authorization_check_config. It is used for experimental
- *  purposes for now and it is subject to change.
- *
- *  The config_user_data is read-only user data; schedule is a pointer to an
- *  application-provided callback that invokes the server authorization check;
- *  cancel is a pointer to an application-provided callback that cancels a
- *  server authorization check request; destruct is a pointer to an
- *  application-provided callback that cleans up any data associated to the
- *  config. See the description of the
- *  grpc_tls_server_authorization_check_config struct in grpc_security.h for
- *  more details. **/
+ *  purposes for now and it is subject to change. **/
 class TlsServerAuthorizationCheckConfig {
  public:
+  /** The constructor takess ownership of the interface argument. **/
   TlsServerAuthorizationCheckConfig(
-      const void* config_user_data,
-      int (*schedule)(void* config_user_data,
-                      TlsServerAuthorizationCheckArg* arg),
-      void (*cancel)(void* config_user_data,
-                     TlsServerAuthorizationCheckArg* arg),
-      void (*destruct)(void* config_user_data));
+      std::shared_ptr<TlsServerAuthorizationCheckInterface> interface);
   ~TlsServerAuthorizationCheckConfig();
 
   int Schedule(TlsServerAuthorizationCheckArg* arg) const {
-    if (schedule_ == nullptr) {
-      gpr_log(GPR_ERROR, "schedule API is nullptr");
-      return 1;
-    }
-    return schedule_(config_user_data_, arg);
+    return interface_->Schedule(arg);
   }
 
   void Cancel(TlsServerAuthorizationCheckArg* arg) const {
-    if (cancel_ == nullptr) {
-      gpr_log(GPR_ERROR, "cancel API is nullptr");
-      return;
-    }
-    cancel_(config_user_data_, arg);
+    interface_->Cancel(arg);
   }
 
   /** Creates C struct for the server authorization check config. **/
@@ -261,13 +235,8 @@ class TlsServerAuthorizationCheckConfig {
 
  private:
   grpc_tls_server_authorization_check_config* c_config_;
-  void* config_user_data_;
-  int (*schedule_)(void* config_user_data, TlsServerAuthorizationCheckArg* arg);
-  void (*cancel_)(void* config_user_data, TlsServerAuthorizationCheckArg* arg);
-  void (*destruct_)(void* config_user_data);
+  std::shared_ptr<TlsServerAuthorizationCheckInterface> interface_;
 };
-
-// typedef struct ::grpc_tls_credentials_options grpc_tls_credentials_options;
 
 /** TLS credentials options, wrapper for grpc_tls_credentials_options. It is
  * used for experimental purposes for now and it is subject to change. See the
