@@ -1123,19 +1123,16 @@ void perform_transport_op(grpc_transport* gt, grpc_transport_op* op) {
     GRPC_CLOSURE_SCHED(op->on_consumed, GRPC_ERROR_NONE);
   }
 
-  bool do_close = false;
   if (op->goaway_error != GRPC_ERROR_NONE) {
-    do_close = true;
+    /* Simply ignore goaway_error in inproc */
     GRPC_ERROR_UNREF(op->goaway_error);
   }
-  if (op->disconnect_with_error != GRPC_ERROR_NONE) {
-    do_close = true;
-    GRPC_ERROR_UNREF(op->disconnect_with_error);
-  }
 
-  if (do_close) {
+  if (op->disconnect_with_error != GRPC_ERROR_NONE) {
+    GRPC_ERROR_UNREF(op->disconnect_with_error);
     close_transport_locked(t);
   }
+
   gpr_mu_unlock(&t->mu->mu);
 }
 
