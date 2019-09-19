@@ -36,7 +36,7 @@
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
 #include "test/cpp/util/byte_buffer_proto_helper.h"
-#include "test/cpp/end2end/spiffe_end2end_test/spiffe_test_credentials.h"
+#include "test/cpp/end2end/spiffe/spiffe_test_credentials.h"
 
 #include <gtest/gtest.h>
 
@@ -254,6 +254,7 @@ class SpiffeGenericEnd2endTest : public ::testing::Test {
 };
 
 TEST_F(SpiffeGenericEnd2endTest, SimpleRpc) {
+  GPR_ASSERT(0 == 1);
   ResetStub();
   SendRpc(1);
 }

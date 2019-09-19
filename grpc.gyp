@@ -1668,6 +1668,7 @@
         'src/proto/grpc/testing/echo.proto',
         'src/proto/grpc/testing/duplicate/echo_duplicate.proto',
         'src/proto/grpc/testing/simple_messages.proto',
+        'test/cpp/end2end/spiffe/spiffe_test_credentials.cc',
         'test/cpp/end2end/test_health_check_service_impl.cc',
         'test/cpp/end2end/test_service_impl.cc',
         'test/cpp/util/byte_buffer_proto_helper.cc',

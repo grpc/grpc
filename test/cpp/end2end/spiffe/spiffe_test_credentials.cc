@@ -16,17 +16,15 @@
  *
  */
 
-#include "test/cpp/end2ened/spiffe_end2end_test/spiffe_test_credentials.h"
+#include "test/cpp/end2end/spiffe/spiffe_test_credentials.h"
 #include "test/core/end2end/data/ssl_test_data.h"
 
 namespace grpc{
 namespace testing {
 
-/** An implementation of the schedule field in a
- * TlsCredentialReloadConfig instance, to be used for either the server or
- * client. This has the same functionality as the
- * method client_cred_reload_sync from h2_spiffe.cc. **/
-static int CredentialReloadSync(void* config_user_data, ::grpc_impl::experimental::TlsCredentialReloadArg* arg) {
+class TestTlsCredentialReloadInterface : public ::grpc_impl::experimental::TlsCredentialReloadInterface {
+
+int Schedule(::grpc_impl::experimental::TlsCredentialReloadArg* arg) override {
   GPR_ASSERT(arg != nullptr);
   std::shared_ptr<::grpc_impl::experimental::TlsKeyMaterialsConfig> arg_key_materials_config = arg->key_materials_config();
   GPR_ASSERT(arg_key_materials_config != nullptr);
@@ -45,16 +43,33 @@ static int CredentialReloadSync(void* config_user_data, ::grpc_impl::experimenta
   return 0;
 }
 
-/** An implementation of the schedule field in a
- * TlsServerAuthorizationCheckConfig instance. This has the same functionality
- * as the method server_authz_check_cb from h2_spiffe.cc. **/
-static int ServerAuthorizationCheckSync(void* config_user_data, ::grpc_impl::experimental::TlsServerAuthorizationCheckArg* arg) {
+void Cancel(::grpc_impl::experimental::TlsCredentialReloadArg* arg) override {
+  return;
+}
+
+void Release() override {
+  return;
+}
+};
+
+class TestTlsServerAuthorizationCheckInterface : public ::grpc_impl::experimental::TlsServerAuthorizationCheckInterface {
+
+int Schedule(::grpc_impl::experimental::TlsServerAuthorizationCheckArg* arg) override {
   GPR_ASSERT(arg != nullptr);
   //arg->set_success(1);
   //arg->set_status(GRPC_STATUS_OK);
   //arg->OnServerAuthorizationCheckDoneCallback();
   return 0;
 }
+
+void Cancel(::grpc_impl::experimental::TlsServerAuthorizationCheckArg* arg) override {
+  return;
+}
+
+void Release() override {
+  return;
+}
+};
 
 std::shared_ptr<::grpc_impl::experimental::TlsCredentialsOptions> CreateTestTlsCredentialsOptions(bool is_client) {
   /**
@@ -65,12 +80,12 @@ std::shared_ptr<::grpc_impl::experimental::TlsCredentialsOptions> CreateTestTlsC
   test_key_materials_config->set_key_materials(test_root_cert, pem_key_cert_pair_list);
   **/
 
-  std::shared_ptr<::grpc_impl::experimental::TlsCredentialReloadConfig> test_credential_reload_config(
-      new ::grpc_impl::experimental::TlsCredentialReloadConfig(nullptr, &CredentialReloadSync, nullptr, nullptr));
-  std::shared_ptr<::grpc_impl::experimental::TlsServerAuthorizationCheckConfig> test_server_authorization_check_config(
-      new ::grpc_impl::experimental::TlsServerAuthorizationCheckConfig(nullptr, &ServerAuthorizationCheckSync, nullptr, nullptr));
+  std::shared_ptr<TestTlsCredentialReloadInterface> credential_reload_interface(new TestTlsCredentialReloadInterface());
+  std::shared_ptr<::grpc_impl::experimental::TlsCredentialReloadConfig> test_credential_reload_config(new ::grpc_impl::experimental::TlsCredentialReloadConfig(credential_reload_interface));
+  std::shared_ptr<TestTlsServerAuthorizationCheckInterface> server_authorization_check_interface(new TestTlsServerAuthorizationCheckInterface());
+  std::shared_ptr<::grpc_impl::experimental::TlsServerAuthorizationCheckConfig> test_server_authorization_check_config(new ::grpc_impl::experimental::TlsServerAuthorizationCheckConfig(server_authorization_check_interface));
   std::shared_ptr<::grpc_impl::experimental::TlsCredentialsOptions> options(new ::grpc_impl::experimental::TlsCredentialsOptions(
-      GRPC_SSL_REQUEST_AND_REQUIRE_CLIENT_CERTIFICATE_AND_VERIFY,
+      is_client ? GRPC_SSL_DONT_REQUEST_CLIENT_CERTIFICATE : GRPC_SSL_REQUEST_AND_REQUIRE_CLIENT_CERTIFICATE_AND_VERIFY,
       nullptr,
       test_credential_reload_config,
       is_client ? test_server_authorization_check_config : nullptr));

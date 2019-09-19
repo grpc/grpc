@@ -328,6 +328,34 @@ grpc_cc_test(
     ],
 )
 
+grpc_cc_library(
+    name = "spiffe_test_credentials",
+    srcs = ["spiffe/spiffe_test_credentials.cc"],
+    hdrs = ["spiffe/spiffe_test_credentials.h"],
+    deps = [
+        "//:grpc++",
+    ],
+)
+
+grpc_cc_test(
+    name = "spiffe_test",
+    srcs = ["spiffe_test.cc"],
+    external_deps = [
+        "gtest",
+    ],
+    deps = [
+        "//:gpr",
+        "//:grpc",
+        "//:grpc++",
+        "//src/proto/grpc/testing:echo_messages_proto",
+        "//src/proto/grpc/testing:echo_proto",
+        "//src/proto/grpc/testing/duplicate:echo_duplicate_proto",
+        "//test/core/util:grpc_test_util",
+        "//test/cpp/util:test_util",
+        ":spiffe_test_credentials"
+    ],
+)
+
 grpc_cc_test(
     name = "health_service_end2end_test",
     srcs = ["health_service_end2end_test.cc"],

@@ -31,11 +31,11 @@ namespace testing {
 // the server_authorization_check_config is populated for the client only.
 std::shared_ptr<::grpc_impl::experimental::TlsCredentialsOptions> CreateTestTlsCredentialsOptions(bool is_client);
 
-std::shared<grpc_impl::ChannelCredentials> SpiffeTestChannelCredentials() {
+std::shared_ptr<grpc_impl::ChannelCredentials> SpiffeTestChannelCredentials() {
   return TlsCredentials(*CreateTestTlsCredentialsOptions(true));
 }
 
-std::shared<ServerCredentials> SpiffeTestServerCredentials() {
+std::shared_ptr<ServerCredentials> SpiffeTestServerCredentials() {
   return TlsServerCredentials(*CreateTestTlsCredentialsOptions(false));
 }
 
