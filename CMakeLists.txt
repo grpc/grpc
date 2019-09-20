@@ -111,6 +111,14 @@ endif()
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${_gRPC_C_CXX_FLAGS}")
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${_gRPC_C_CXX_FLAGS}")
 
+if(CMAKE_BUILD_TYPE STREQUAL "RelWithDebInfo")
+  # Windows release builds don't set NDEBUG in NASM flags automatically.
+  # boringssl's cmake already sets this flag for "Release" build,
+  # but gRPC C# artifacts are being built under the RelWithDebInfo configuration
+  # https://github.com/google/boringssl/blob/f7b830d8df9f5578c748aa0283d44c59ea7eeb25/CMakeLists.txt#L64
+  set(CMAKE_ASM_NASM_FLAGS "${CMAKE_ASM_NASM_FLAGS} -DNDEBUG")
+endif()
+
 if (gRPC_USE_PROTO_LITE)
   set(_gRPC_PROTOBUF_LIBRARY_NAME "libprotobuf-lite")
   add_definitions("-DGRPC_USE_PROTO_LITE")
