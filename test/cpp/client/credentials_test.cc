@@ -74,8 +74,6 @@ class TestTlsCredentialReloadInterface : public TlsCredentialReloadInterface {
     arg->set_status(GRPC_SSL_CERTIFICATE_CONFIG_RELOAD_FAIL);
     arg->set_error_details("cancelled");
   }
-
-  void Release() override { return; }
 };
 
 static void tls_server_authorization_check_callback(
@@ -109,8 +107,6 @@ class TestTlsServerAuthorizationCheckInterface
     arg->set_status(GRPC_STATUS_PERMISSION_DENIED);
     arg->set_error_details("cancelled");
   }
-
-  void Release() override { return; }
 };
 
 }  // namespace
@@ -348,9 +344,9 @@ TEST_F(CredentialsTest, TlsCredentialReloadArgCallback) {
 }
 
 TEST_F(CredentialsTest, TlsCredentialReloadConfigSchedule) {
-  std::shared_ptr<TestTlsCredentialReloadInterface> interface(
+  std::unique_ptr<TestTlsCredentialReloadInterface> interface(
       new TestTlsCredentialReloadInterface());
-  TlsCredentialReloadConfig config(interface);
+  TlsCredentialReloadConfig config(std::move(interface));
   grpc_tls_credential_reload_arg c_arg;
   TlsCredentialReloadArg arg(&c_arg);
   arg.set_cb_user_data(static_cast<void*>(nullptr));
@@ -393,9 +389,9 @@ TEST_F(CredentialsTest, TlsCredentialReloadConfigSchedule) {
 }
 
 TEST_F(CredentialsTest, TlsCredentialReloadConfigCppToC) {
-  std::shared_ptr<TestTlsCredentialReloadInterface> interface(
+  std::unique_ptr<TestTlsCredentialReloadInterface> interface(
       new TestTlsCredentialReloadInterface());
-  TlsCredentialReloadConfig config = TlsCredentialReloadConfig(interface);
+  TlsCredentialReloadConfig config(std::move(interface));
   grpc_tls_credential_reload_arg c_arg;
   c_arg.cb_user_data = static_cast<void*>(nullptr);
   grpc_tls_key_materials_config c_key_materials;
@@ -487,10 +483,9 @@ TEST_F(CredentialsTest, TlsServerAuthorizationCheckArgCallback) {
 }
 
 TEST_F(CredentialsTest, TlsServerAuthorizationCheckConfigSchedule) {
-  std::shared_ptr<TestTlsServerAuthorizationCheckInterface> interface(
+  std::unique_ptr<TestTlsServerAuthorizationCheckInterface> interface(
       new TestTlsServerAuthorizationCheckInterface());
-  TlsServerAuthorizationCheckConfig config =
-      TlsServerAuthorizationCheckConfig(interface);
+  TlsServerAuthorizationCheckConfig config(std::move(interface));
   grpc_tls_server_authorization_check_arg c_arg;
   TlsServerAuthorizationCheckArg arg(&c_arg);
   arg.set_cb_user_data(nullptr);
@@ -524,10 +519,9 @@ TEST_F(CredentialsTest, TlsServerAuthorizationCheckConfigSchedule) {
 }
 
 TEST_F(CredentialsTest, TlsServerAuthorizationCheckConfigCppToC) {
-  std::shared_ptr<TestTlsServerAuthorizationCheckInterface> interface(
+  std::unique_ptr<TestTlsServerAuthorizationCheckInterface> interface(
       new TestTlsServerAuthorizationCheckInterface());
-  TlsServerAuthorizationCheckConfig config =
-      TlsServerAuthorizationCheckConfig(interface);
+  TlsServerAuthorizationCheckConfig config(std::move(interface));
   grpc_tls_server_authorization_check_arg c_arg;
   c_arg.cb = tls_server_authorization_check_callback;
   c_arg.cb_user_data = nullptr;
@@ -574,17 +568,17 @@ TEST_F(CredentialsTest, TlsCredentialsOptionsCppToC) {
   std::vector<TlsKeyMaterialsConfig::PemKeyCertPair> pair_list = {pair};
   key_materials_config->set_key_materials("pem_root_certs", pair_list);
 
-  std::shared_ptr<TestTlsCredentialReloadInterface> credential_reload_interface(
+  std::unique_ptr<TestTlsCredentialReloadInterface> credential_reload_interface(
       new TestTlsCredentialReloadInterface());
   std::shared_ptr<TlsCredentialReloadConfig> credential_reload_config(
-      new TlsCredentialReloadConfig(credential_reload_interface));
+      new TlsCredentialReloadConfig(std::move(credential_reload_interface)));
 
-  std::shared_ptr<TestTlsServerAuthorizationCheckInterface>
+  std::unique_ptr<TestTlsServerAuthorizationCheckInterface>
       server_authorization_check_interface(
           new TestTlsServerAuthorizationCheckInterface());
   std::shared_ptr<TlsServerAuthorizationCheckConfig>
       server_authorization_check_config(new TlsServerAuthorizationCheckConfig(
-          server_authorization_check_interface));
+          std::move(server_authorization_check_interface)));
 
   TlsCredentialsOptions options = TlsCredentialsOptions(
       GRPC_SSL_REQUEST_CLIENT_CERTIFICATE_AND_VERIFY, key_materials_config,
@@ -672,17 +666,17 @@ TEST_F(CredentialsTest, TlsCredentialsOptionsCppToC) {
 
 // This test demonstrates how the SPIFFE credentials will be used.
 TEST_F(CredentialsTest, LoadSpiffeChannelCredentials) {
-  std::shared_ptr<TestTlsCredentialReloadInterface> credential_reload_interface(
+  std::unique_ptr<TestTlsCredentialReloadInterface> credential_reload_interface(
       new TestTlsCredentialReloadInterface());
   std::shared_ptr<TlsCredentialReloadConfig> credential_reload_config(
-      new TlsCredentialReloadConfig(credential_reload_interface));
+      new TlsCredentialReloadConfig(std::move(credential_reload_interface)));
 
-  std::shared_ptr<TestTlsServerAuthorizationCheckInterface>
+  std::unique_ptr<TestTlsServerAuthorizationCheckInterface>
       server_authorization_check_interface(
           new TestTlsServerAuthorizationCheckInterface());
   std::shared_ptr<TlsServerAuthorizationCheckConfig>
       server_authorization_check_config(new TlsServerAuthorizationCheckConfig(
-          server_authorization_check_interface));
+          std::move(server_authorization_check_interface)));
 
   TlsCredentialsOptions options = TlsCredentialsOptions(
       GRPC_SSL_REQUEST_CLIENT_CERTIFICATE_AND_VERIFY, nullptr,

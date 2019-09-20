@@ -112,39 +112,44 @@ class TlsCredentialReloadArg {
 };
 
 /** An interface that the application derives and uses to instantiate a
- * TlsCredentialReloadConfig instance. All 3 methods must be defined. **/
+ * TlsCredentialReloadConfig instance. Refer to the definition of the
+ * grpc_tls_credential_reload_config in grpc_tls_credentials_options.h for more
+ * details on the expectations of the member functions of the interface. **/
 struct TlsCredentialReloadInterface {
-  /** An application-provided callback that invokes the credential reload. **/
-  virtual int Schedule(TlsCredentialReloadArg* arg) = 0;
-  /** An application-provided callback that cancels a credential reload request.
-   * **/
-  virtual void Cancel(TlsCredentialReloadArg* arg) = 0;
-  /** An application-provided callback that cleans up any data associated to the
-   * interface or the config. **/
-  virtual void Release() = 0;
+  virtual ~TlsCredentialReloadInterface() = default;
+  /** A callback that invokes the credential reload. **/
+  virtual int Schedule(TlsCredentialReloadArg* arg) { return 1; }
+  /** A callback that cancels a credential reload request. **/
+  virtual void Cancel(TlsCredentialReloadArg* arg) {}
+  /** A callback that cleans up any data associated to the
+   * interface or the config. It will be called when the config is no longer
+   * using the interface. **/
+  virtual void Release() {}
 };
 
 /** TLS credential reloag config, wraps grpc_tls_credential_reload_config. It is
  * used for experimental purposes for now and it is subject to change. **/
 class TlsCredentialReloadConfig {
  public:
-  /** The constructor takes ownership of the interface argument. **/
-  TlsCredentialReloadConfig(
-      std::shared_ptr<TlsCredentialReloadInterface> interface);
+  /** The config takes ownership of the credential reload interface. **/
+  TlsCredentialReloadConfig(std::unique_ptr<TlsCredentialReloadInterface>
+                                credential_reload_interface);
   ~TlsCredentialReloadConfig();
 
   int Schedule(TlsCredentialReloadArg* arg) const {
-    return interface_->Schedule(arg);
+    return credential_reload_interface_->Schedule(arg);
   }
 
-  void Cancel(TlsCredentialReloadArg* arg) const { interface_->Cancel(arg); }
+  void Cancel(TlsCredentialReloadArg* arg) const {
+    credential_reload_interface_->Cancel(arg);
+  }
 
   /** Returns a C struct for the credential reload config. **/
   grpc_tls_credential_reload_config* c_config() const { return c_config_; }
 
  private:
   grpc_tls_credential_reload_config* c_config_;
-  std::shared_ptr<TlsCredentialReloadInterface> interface_;
+  std::unique_ptr<TlsCredentialReloadInterface> credential_reload_interface_;
 };
 
 /** TLS server authorization check arguments, wraps
@@ -195,19 +200,20 @@ class TlsServerAuthorizationCheckArg {
 };
 
 /** An interface that the application derives and uses to instantiate a
- * TlsServerAuthorizationCheckConfig instance. All 3 methods must be defined.
+ * TlsServerAuthorizationCheckConfig instance. Refer to the definition of the
+ * grpc_tls_server_authorization_check_config in grpc_tls_credentials_options.h
+ * for more details on the expectations of the member functions of the
+ * interface.
  * **/
 struct TlsServerAuthorizationCheckInterface {
-  /** An application-provided callback that invokes the server authorization
-   * check. **/
-  virtual int Schedule(TlsServerAuthorizationCheckArg* arg) = 0;
-  /** An application-provided callback that cancels a server authorization check
-   * request.
-   * **/
-  virtual void Cancel(TlsServerAuthorizationCheckArg* arg) = 0;
-  /** An application-provided callback that cleans up any data associated to the
+  virtual ~TlsServerAuthorizationCheckInterface() = default;
+  /** A callback that invokes the server authorization check. **/
+  virtual int Schedule(TlsServerAuthorizationCheckArg* arg) { return 1; }
+  /** A callback that cancels a server authorization check request. **/
+  virtual void Cancel(TlsServerAuthorizationCheckArg* arg){};
+  /** A callback that cleans up any data associated to the
    * interface or the config. **/
-  virtual void Release() = 0;
+  virtual void Release(){};
 };
 
 /** TLS server authorization check config, wraps
@@ -215,17 +221,19 @@ struct TlsServerAuthorizationCheckInterface {
  *  purposes for now and it is subject to change. **/
 class TlsServerAuthorizationCheckConfig {
  public:
-  /** The constructor takess ownership of the interface argument. **/
+  /** The config takes ownership of the server authorization check interface.
+   * **/
   TlsServerAuthorizationCheckConfig(
-      std::shared_ptr<TlsServerAuthorizationCheckInterface> interface);
+      std::unique_ptr<TlsServerAuthorizationCheckInterface>
+          server_authorization_check_interface);
   ~TlsServerAuthorizationCheckConfig();
 
   int Schedule(TlsServerAuthorizationCheckArg* arg) const {
-    return interface_->Schedule(arg);
+    return server_authorization_check_interface_->Schedule(arg);
   }
 
   void Cancel(TlsServerAuthorizationCheckArg* arg) const {
-    interface_->Cancel(arg);
+    server_authorization_check_interface_->Cancel(arg);
   }
 
   /** Creates C struct for the server authorization check config. **/
@@ -235,7 +243,8 @@ class TlsServerAuthorizationCheckConfig {
 
  private:
   grpc_tls_server_authorization_check_config* c_config_;
-  std::shared_ptr<TlsServerAuthorizationCheckInterface> interface_;
+  std::unique_ptr<TlsServerAuthorizationCheckInterface>
+      server_authorization_check_interface_;
 };
 
 /** TLS credentials options, wrapper for grpc_tls_credentials_options. It is
@@ -271,6 +280,10 @@ class TlsCredentialsOptions {
   }
 
  private:
+  /** The cert_request_type_ flag is only relevant when the
+   * TlsCredentialsOptions are used to instantiate server credentials; the flag
+   * goes unused when creating channel credentials, and the user can set it to
+   * GRPC_SSL_DONT_REQUEST_CLIENT_CERTIFICATE. **/
   grpc_ssl_client_certificate_request_type cert_request_type_;
   std::shared_ptr<TlsKeyMaterialsConfig> key_materials_config_;
   std::shared_ptr<TlsCredentialReloadConfig> credential_reload_config_;

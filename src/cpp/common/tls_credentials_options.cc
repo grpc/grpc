@@ -87,8 +87,8 @@ void TlsCredentialReloadArg::OnCredentialReloadDoneCallback() {
 
 /** gRPC TLS credential reload config API implementation **/
 TlsCredentialReloadConfig::TlsCredentialReloadConfig(
-    std::shared_ptr<TlsCredentialReloadInterface> interface)
-    : interface_(std::move(interface)) {
+    std::unique_ptr<TlsCredentialReloadInterface> credential_reload_interface)
+    : credential_reload_interface_(std::move(credential_reload_interface)) {
   c_config_ = grpc_tls_credential_reload_config_create(
       nullptr, &TlsCredentialReloadConfigCSchedule,
       &TlsCredentialReloadConfigCCancel, nullptr);
@@ -96,7 +96,7 @@ TlsCredentialReloadConfig::TlsCredentialReloadConfig(
 }
 
 TlsCredentialReloadConfig::~TlsCredentialReloadConfig() {
-  interface_->Release();
+  credential_reload_interface_->Release();
 }
 
 /** gRPC TLS server authorization check arg API implementation **/
@@ -164,8 +164,10 @@ void TlsServerAuthorizationCheckArg::OnServerAuthorizationCheckDoneCallback() {
 
 /** gRPC TLS server authorization check config API implementation. **/
 TlsServerAuthorizationCheckConfig::TlsServerAuthorizationCheckConfig(
-    std::shared_ptr<TlsServerAuthorizationCheckInterface> interface)
-    : interface_(std::move(interface)) {
+    std::unique_ptr<TlsServerAuthorizationCheckInterface>
+        server_authorization_check_interface)
+    : server_authorization_check_interface_(
+          std::move(server_authorization_check_interface)) {
   c_config_ = grpc_tls_server_authorization_check_config_create(
       nullptr, &TlsServerAuthorizationCheckConfigCSchedule,
       &TlsServerAuthorizationCheckConfigCCancel, nullptr);
@@ -173,7 +175,7 @@ TlsServerAuthorizationCheckConfig::TlsServerAuthorizationCheckConfig(
 }
 
 TlsServerAuthorizationCheckConfig::~TlsServerAuthorizationCheckConfig() {
-  interface_->Release();
+  server_authorization_check_interface_->Release();
 }
 
 /** gRPC TLS credential options API implementation **/
