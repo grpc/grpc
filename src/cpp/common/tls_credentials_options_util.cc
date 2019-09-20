@@ -92,8 +92,8 @@ int TlsCredentialReloadConfigCSchedule(void* config_user_data,
   }
   TlsCredentialReloadConfig* cpp_config =
       static_cast<TlsCredentialReloadConfig*>(arg->config->context());
-  TlsCredentialReloadArg cpp_arg(arg);
-  return cpp_config->Schedule(&cpp_arg);
+  std::unique_ptr<TlsCredentialReloadArg> cpp_arg(new TlsCredentialReloadArg(arg));
+  return cpp_config->Schedule(cpp_arg);
 }
 
 void TlsCredentialReloadConfigCCancel(void* config_user_data,
@@ -105,8 +105,8 @@ void TlsCredentialReloadConfigCCancel(void* config_user_data,
   }
   TlsCredentialReloadConfig* cpp_config =
       static_cast<TlsCredentialReloadConfig*>(arg->config->context());
-  TlsCredentialReloadArg cpp_arg(arg);
-  cpp_config->Cancel(&cpp_arg);
+  std::unique_ptr<TlsCredentialReloadArg> cpp_arg(new TlsCredentialReloadArg(arg));
+  cpp_config->Cancel(cpp_arg);
 }
 
 /** The C schedule and cancel functions for the server authorization check
@@ -122,8 +122,8 @@ int TlsServerAuthorizationCheckConfigCSchedule(
   }
   TlsServerAuthorizationCheckConfig* cpp_config =
       static_cast<TlsServerAuthorizationCheckConfig*>(arg->config->context());
-  TlsServerAuthorizationCheckArg cpp_arg(arg);
-  return cpp_config->Schedule(&cpp_arg);
+  std::unique_ptr<TlsServerAuthorizationCheckArg> cpp_arg(new TlsServerAuthorizationCheckArg(arg));
+  return cpp_config->Schedule(cpp_arg);
 }
 
 void TlsServerAuthorizationCheckConfigCCancel(
@@ -136,8 +136,8 @@ void TlsServerAuthorizationCheckConfigCCancel(
   }
   TlsServerAuthorizationCheckConfig* cpp_config =
       static_cast<TlsServerAuthorizationCheckConfig*>(arg->config->context());
-  TlsServerAuthorizationCheckArg cpp_arg(arg);
-  cpp_config->Cancel(&cpp_arg);
+  std::unique_ptr<TlsServerAuthorizationCheckArg> cpp_arg(new TlsServerAuthorizationCheckArg(arg));
+  cpp_config->Cancel(cpp_arg);
 }
 
 }  // namespace experimental
