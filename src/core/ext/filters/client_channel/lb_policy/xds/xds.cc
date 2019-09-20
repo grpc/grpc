@@ -2284,7 +2284,8 @@ void XdsLb::PriorityList::LocalityMap::UpdateLocked(
     gpr_log(GPR_INFO, "[xdslb %p] Start Updating priority %" PRIu32,
             xds_policy(), priority_);
   }
-  // Maybe reactivate the locality map in case all the active locality maps have failed.
+  // Maybe reactivate the locality map in case all the active locality maps have
+  // failed.
   MaybeReactivateLocked();
   // Remove (later) the localities not in locality_map_update.
   for (auto iter = localities_.begin(); iter != localities_.end();) {
@@ -2456,10 +2457,14 @@ void XdsLb::PriorityList::LocalityMap::OnLocalityStateUpdateLocked() {
       priority_list()->FailoverOnDisconnectionLocked(priority_);
     }
   }
-  // The currently used priority may (1) be upgraded from the currently trying
-  // priority (2) remain the same (but receives picker update) (3) become a new
-  // one after above failover (4) or null if above failover doesn't yield a
-  // READY one. In any case, update the xds picker.
+  // At this point, one of the following things has happened to the currently
+  // used priority.
+  // 1. It was upgraded from the currently trying priority because of successful
+  // connection.
+  // 2. It remained the same (but receives picker update from its localities).
+  // 3. It became a new one due to failover.
+  // 4. It became invalid because failover doesn't yield a READY priority.
+  // In any case, update the xds picker.
   priority_list()->UpdateXdsPickerLocked();
 }
 
