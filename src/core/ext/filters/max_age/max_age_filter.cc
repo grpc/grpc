@@ -29,6 +29,9 @@
 #include "src/core/lib/surface/channel_init.h"
 #include "src/core/lib/transport/http2_errors.h"
 
+/* If these settings change, make sure that we are not sending a GOAWAY for
+ * inproc transport, since a GOAWAY to inproc ends up destroying the transport.
+ */
 #define DEFAULT_MAX_CONNECTION_AGE_MS INT_MAX
 #define DEFAULT_MAX_CONNECTION_AGE_GRACE_MS INT_MAX
 #define DEFAULT_MAX_CONNECTION_IDLE_MS INT_MAX
