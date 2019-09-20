@@ -330,6 +330,19 @@ grpc_error* grpc_set_socket_with_mutator(int fd, grpc_socket_mutator* mutator) {
   return GRPC_ERROR_NONE;
 }
 
+grpc_error* grpc_apply_socket_mutator_in_args(int fd,
+                                              const grpc_channel_args* args) {
+  const grpc_arg* socket_mutator_arg =
+      grpc_channel_args_find(args, GRPC_ARG_SOCKET_MUTATOR);
+  if (socket_mutator_arg == nullptr) {
+    return GRPC_ERROR_NONE;
+  }
+  GPR_DEBUG_ASSERT(socket_mutator_arg->type == GRPC_ARG_POINTER);
+  grpc_socket_mutator* mutator =
+      static_cast<grpc_socket_mutator*>(socket_mutator_arg->value.pointer.p);
+  return grpc_set_socket_with_mutator(fd, mutator);
+}
+
 static gpr_once g_probe_ipv6_once = GPR_ONCE_INIT;
 static int g_ipv6_loopback_available;
 
