@@ -2223,6 +2223,7 @@ void XdsLb::PriorityList::SwitchToHigherPriorityLocked(uint32_t priority) {
 
 void XdsLb::PriorityList::DeactivatePrioritiesLowerThan(uint32_t priority) {
   if (priorities_.empty()) return;
+  // Deactivate the locality maps from the lowest priority.
   for (uint32_t p = LowestPriority(); p > priority; --p) {
     if (xds_policy_->locality_retention_interval_ms_ == 0) {
       priorities_.pop_back();
@@ -2283,8 +2284,7 @@ void XdsLb::PriorityList::LocalityMap::UpdateLocked(
     gpr_log(GPR_INFO, "[xdslb %p] Start Updating priority %" PRIu32,
             xds_policy(), priority_);
   }
-  // Maybe reactivate the locality map in case we don't have READY locality
-  // map.
+  // Maybe reactivate the locality map in case all the active locality maps have failed.
   MaybeReactivateLocked();
   // Remove (later) the localities not in locality_map_update.
   for (auto iter = localities_.begin(); iter != localities_.end();) {
@@ -2433,6 +2433,7 @@ void XdsLb::PriorityList::LocalityMap::OnLocalityStateUpdateLocked() {
     }
     return;
   }
+  // Update is for current priority.
   if (previous_state != GRPC_CHANNEL_READY) {
     // The current priority was not READY, so it's the priority that is
     // currently being tried (i.e., waiting for the initial connection result).
@@ -2519,16 +2520,19 @@ void XdsLb::PriorityList::LocalityMap::OnDelayedRemovalTimerLocked(
     const bool keep = self->priority_list_update().Contains(self->priority_) &&
                       self->priority_ <= priority_list->current_priority();
     if (!keep) {
-      // Resetting the priority is always safe here. However, to avoid deletion
-      // race from multiple priorities in case the timer closures are not
-      // executed in FIFO, only pop out the null entries from the tail.
+      // This check is to make sure we always delete the locality maps from the
+      // lowest priority even if the closures of the back-to-back timers are not
+      // run in FIFO order.
       // TODO(juanlishen): Check the timer implementation to see if this defense
       // is necessary.
-      priority_list->priorities_[self->priority_].reset();
-      while (!priority_list->priorities_.empty() &&
-             priority_list->priorities_[priority_list->LowestPriority()] ==
-                 nullptr) {
+      if (self->priority_ == priority_list->LowestPriority()) {
         priority_list->priorities_.pop_back();
+      } else {
+        gpr_log(GPR_ERROR,
+                "[xdslb %p] Priority %" PRIu32
+                " is not the lowest priority (highest numeric value) but is "
+                "attempted to be deleted.",
+                self->xds_policy(), self->priority_);
       }
     }
   }
