@@ -138,7 +138,7 @@ class ProtoBufferWriter : public ::grpc::protobuf::io::ZeroCopyOutputStream {
   }
 
   /// Returns the total number of bytes written since this object was created.
-  grpc::protobuf::int64 ByteCount() const override { return byte_count_; }
+  int64_t ByteCount() const override { return byte_count_; }
 
   // These protected members are needed to support internal optimizations.
   // they expose internal bits of grpc core that are NOT stable. If you have
