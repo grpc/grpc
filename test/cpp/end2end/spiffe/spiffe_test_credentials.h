@@ -21,7 +21,8 @@
 
 #include <memory>
 
-#include <grpcpp/security/tls_credentials_options.h>
+#include <grpcpp/security/credentials.h>
+#include <grpcpp/security/server_credentials.h>
 
 namespace grpc {
 namespace testing {
@@ -31,6 +32,7 @@ namespace testing {
 // the server_authorization_check_config is populated for the client only.
 std::shared_ptr<::grpc_impl::experimental::TlsCredentialsOptions> CreateTestTlsCredentialsOptions(bool is_client);
 
+namespace spiffe {
 std::shared_ptr<grpc_impl::ChannelCredentials> SpiffeTestChannelCredentials() {
   return TlsCredentials(*CreateTestTlsCredentialsOptions(true));
 }
@@ -38,6 +40,7 @@ std::shared_ptr<grpc_impl::ChannelCredentials> SpiffeTestChannelCredentials() {
 std::shared_ptr<ServerCredentials> SpiffeTestServerCredentials() {
   return TlsServerCredentials(*CreateTestTlsCredentialsOptions(false));
 }
+} // namespace spiffe
 
 } // namespace testing
 } // namespace grpc

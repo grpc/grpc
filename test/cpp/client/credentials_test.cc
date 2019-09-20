@@ -31,6 +31,7 @@
 #include "src/cpp/client/secure_credentials.h"
 #include "src/cpp/common/tls_credentials_options_util.h"
 
+/**
 namespace {
 
 typedef class ::grpc_impl::experimental::TlsKeyMaterialsConfig
@@ -105,6 +106,8 @@ static void tls_server_authorization_check_cancel(
 }
 
 }  // namespace
+
+**/
 
 namespace grpc {
 namespace testing {
@@ -274,6 +277,7 @@ TEST_F(CredentialsTest, StsCredentialsOptionsFromEnv) {
   gpr_unsetenv("STS_CREDENTIALS");
 }
 
+/**
 typedef class ::grpc_impl::experimental::TlsKeyMaterialsConfig
     TlsKeyMaterialsConfig;
 
@@ -650,6 +654,8 @@ TEST_F(CredentialsTest, TlsCredentialsOptionsCppToC) {
   ::grpc_core::Delete(c_credential_reload_config);
   ::grpc_core::Delete(c_server_authorization_check_config);
 }
+
+**/
 
 }  // namespace testing
 }  // namespace grpc

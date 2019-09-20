@@ -69,7 +69,7 @@ class SpiffeGenericEnd2endTest : public ::testing::Test {
     // Setup server
     ServerBuilder builder;
     builder.AddListeningPort(server_address_.str(),
-                             SpiffeTestServerCredentials());
+                             spiffe::SpiffeTestServerCredentials());
     builder.RegisterAsyncGenericService(&generic_service_);
     // Include a second call to RegisterAsyncGenericService to make sure that
     // we get an error in the log, since it is not allowed to have 2 async
@@ -97,7 +97,7 @@ class SpiffeGenericEnd2endTest : public ::testing::Test {
 
   void ResetStub() {
     std::shared_ptr<Channel> channel = grpc::CreateChannel(
-        server_address_.str(), SpiffeTestChannelCredentials());
+        server_address_.str(), spiffe::SpiffeTestChannelCredentials());
     stub_ = grpc::testing::EchoTestService::NewStub(channel);
     generic_stub_.reset(new GenericStub(channel));
   }
