@@ -348,7 +348,8 @@ TEST_F(CredentialsTest, TlsCredentialReloadConfigSchedule) {
       new TestTlsCredentialReload());
   TlsCredentialReloadConfig config(std::move(test_credential_reload));
   grpc_tls_credential_reload_arg c_arg;
-  std::unique_ptr<TlsCredentialReloadArg> arg( new TlsCredentialReloadArg(&c_arg));
+  std::unique_ptr<TlsCredentialReloadArg> arg(
+      new TlsCredentialReloadArg(&c_arg));
   arg->set_cb_user_data(static_cast<void*>(nullptr));
   std::shared_ptr<TlsKeyMaterialsConfig> key_materials_config(
       new TlsKeyMaterialsConfig());
@@ -489,7 +490,8 @@ TEST_F(CredentialsTest, TlsServerAuthorizationCheckConfigSchedule) {
   TlsServerAuthorizationCheckConfig config(
       std::move(test_server_authorization_check));
   grpc_tls_server_authorization_check_arg c_arg;
-  std::unique_ptr<TlsServerAuthorizationCheckArg> arg(new TlsServerAuthorizationCheckArg(&c_arg));
+  std::unique_ptr<TlsServerAuthorizationCheckArg> arg(
+      new TlsServerAuthorizationCheckArg(&c_arg));
   arg->set_cb_user_data(nullptr);
   arg->set_success(0);
   arg->set_target_name("target_name");

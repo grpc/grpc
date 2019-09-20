@@ -208,7 +208,8 @@ class TlsServerAuthorizationCheckArg {
 struct TlsServerAuthorizationCheckInterface {
   virtual ~TlsServerAuthorizationCheckInterface() = default;
   /** A callback that invokes the server authorization check. **/
-  virtual int Schedule(std::unique_ptr<TlsServerAuthorizationCheckArg>& arg) = 0;
+  virtual int Schedule(
+      std::unique_ptr<TlsServerAuthorizationCheckArg>& arg) = 0;
   /** A callback that cancels a server authorization check request. **/
   virtual void Cancel(std::unique_ptr<TlsServerAuthorizationCheckArg>& arg) {}
   /** A callback that cleans up any data associated to the
