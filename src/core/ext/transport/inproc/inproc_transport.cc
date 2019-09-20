@@ -1226,10 +1226,15 @@ grpc_channel* grpc_inproc_channel_create(grpc_server* server,
 
   grpc_core::ExecCtx exec_ctx;
 
-  const grpc_channel_args* server_args = grpc_server_get_channel_args(server);
+  // Remove max_connection_idle and max_connection_age channel arguments since
+  // those do not apply to inproc transports.
+  const char* args_to_remove[] = {GRPC_ARG_MAX_CONNECTION_IDLE_MS,
+                                  GRPC_ARG_MAX_CONNECTION_AGE_MS};
+  const grpc_channel_args* server_args = grpc_channel_args_copy_and_remove(
+      grpc_server_get_channel_args(server), args_to_remove,
+      GPR_ARRAY_SIZE(args_to_remove));
 
   // Add a default authority channel argument for the client
-
   grpc_arg default_authority_arg;
   default_authority_arg.type = GRPC_ARG_STRING;
   default_authority_arg.key = (char*)GRPC_ARG_DEFAULT_AUTHORITY;
@@ -1249,6 +1254,7 @@ grpc_channel* grpc_inproc_channel_create(grpc_server* server,
       "inproc", client_args, GRPC_CLIENT_DIRECT_CHANNEL, client_transport);
 
   // Free up created channel args
+  grpc_channel_args_destroy(server_args);
   grpc_channel_args_destroy(client_args);
 
   // Now finish scheduled operations
