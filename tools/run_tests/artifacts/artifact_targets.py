@@ -153,6 +153,13 @@ class PythonArtifact:
             environ['GRPC_BUILD_GRPCIO_TOOLS_DEPENDENTS'] = 'TRUE'
             environ['GRPC_BUILD_MANYLINUX_WHEEL'] = 'TRUE'
 
+            if self.platform == 'manylinux1':
+                # manylinux1 currently has too old version of gcc
+                # so we need to use this workaround to avoid
+                # the "SSE2 instruction set not enabled" boringssl build error
+                # https://gcc.gnu.org/ml/gcc-patches/2013-04/msg00740.html
+                environ['CFLAGS'] += ' -msse2'
+
             return create_docker_jobspec(
                 self.name,
                 'tools/dockerfile/grpc_artifact_python_%s_%s' % (self.platform,
