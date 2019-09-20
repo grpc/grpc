@@ -1284,6 +1284,7 @@ service_config_test: $(BINDIR)/$(CONFIG)/service_config_test
 shutdown_test: $(BINDIR)/$(CONFIG)/shutdown_test
 slice_hash_table_test: $(BINDIR)/$(CONFIG)/slice_hash_table_test
 slice_weak_hash_table_test: $(BINDIR)/$(CONFIG)/slice_weak_hash_table_test
+spiffe_raw_test: $(BINDIR)/$(CONFIG)/spiffe_raw_test
 spiffe_test: $(BINDIR)/$(CONFIG)/spiffe_test
 stats_test: $(BINDIR)/$(CONFIG)/stats_test
 status_metadata_test: $(BINDIR)/$(CONFIG)/status_metadata_test
@@ -1757,6 +1758,7 @@ buildtests_cxx: privatelibs_cxx \
   $(BINDIR)/$(CONFIG)/shutdown_test \
   $(BINDIR)/$(CONFIG)/slice_hash_table_test \
   $(BINDIR)/$(CONFIG)/slice_weak_hash_table_test \
+  $(BINDIR)/$(CONFIG)/spiffe_raw_test \
   $(BINDIR)/$(CONFIG)/spiffe_test \
   $(BINDIR)/$(CONFIG)/stats_test \
   $(BINDIR)/$(CONFIG)/status_metadata_test \
@@ -1927,6 +1929,7 @@ buildtests_cxx: privatelibs_cxx \
   $(BINDIR)/$(CONFIG)/shutdown_test \
   $(BINDIR)/$(CONFIG)/slice_hash_table_test \
   $(BINDIR)/$(CONFIG)/slice_weak_hash_table_test \
+  $(BINDIR)/$(CONFIG)/spiffe_raw_test \
   $(BINDIR)/$(CONFIG)/spiffe_test \
   $(BINDIR)/$(CONFIG)/stats_test \
   $(BINDIR)/$(CONFIG)/status_metadata_test \
@@ -2465,6 +2468,8 @@ test_cxx: buildtests_cxx
 	$(Q) $(BINDIR)/$(CONFIG)/slice_hash_table_test || ( echo test slice_hash_table_test failed ; exit 1 )
 	$(E) "[RUN]     Testing slice_weak_hash_table_test"
 	$(Q) $(BINDIR)/$(CONFIG)/slice_weak_hash_table_test || ( echo test slice_weak_hash_table_test failed ; exit 1 )
+	$(E) "[RUN]     Testing spiffe_raw_test"
+	$(Q) $(BINDIR)/$(CONFIG)/spiffe_raw_test || ( echo test spiffe_raw_test failed ; exit 1 )
 	$(E) "[RUN]     Testing spiffe_test"
 	$(Q) $(BINDIR)/$(CONFIG)/spiffe_test || ( echo test spiffe_test failed ; exit 1 )
 	$(E) "[RUN]     Testing stats_test"
@@ -19493,6 +19498,49 @@ deps_slice_weak_hash_table_test: $(SLICE_WEAK_HASH_TABLE_TEST_OBJS:.o=.dep)
 ifneq ($(NO_SECURE),true)
 ifneq ($(NO_DEPS),true)
 -include $(SLICE_WEAK_HASH_TABLE_TEST_OBJS:.o=.dep)
+endif
+endif
+
+
+SPIFFE_RAW_TEST_SRC = \
+    test/cpp/end2end/spiffe/spiffe_raw_test.cc \
+
+SPIFFE_RAW_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(SPIFFE_RAW_TEST_SRC))))
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL.
+
+$(BINDIR)/$(CONFIG)/spiffe_raw_test: openssl_dep_error
+
+else
+
+
+
+
+ifeq ($(NO_PROTOBUF),true)
+
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
+
+$(BINDIR)/$(CONFIG)/spiffe_raw_test: protobuf_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/spiffe_raw_test: $(PROTOBUF_DEP) $(SPIFFE_RAW_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LDXX) $(LDFLAGS) $(SPIFFE_RAW_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(LDLIBS_SECURE) $(GTEST_LIB) -o $(BINDIR)/$(CONFIG)/spiffe_raw_test
+
+endif
+
+endif
+
+$(OBJDIR)/$(CONFIG)/test/cpp/end2end/spiffe/spiffe_raw_test.o:  $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a
+
+deps_spiffe_raw_test: $(SPIFFE_RAW_TEST_OBJS:.o=.dep)
+
+ifneq ($(NO_SECURE),true)
+ifneq ($(NO_DEPS),true)
+-include $(SPIFFE_RAW_TEST_OBJS:.o=.dep)
 endif
 endif
 

@@ -5860,6 +5860,18 @@ targets:
   - grpc
   - gpr
   uses_polling: false
+- name: spiffe_raw_test
+  gtest: true
+  build: test
+  language: c++
+  src:
+  - test/cpp/end2end/spiffe/spiffe_raw_test.cc
+  deps:
+  - grpc++_test_util
+  - grpc_test_util
+  - grpc++
+  - grpc
+  - gpr
 - name: spiffe_test
   gtest: true
   build: test

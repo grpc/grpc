@@ -339,7 +339,7 @@ grpc_cc_library(
 
 grpc_cc_test(
     name = "spiffe_test",
-    srcs = ["spiffe_test.cc"],
+    srcs = ["spiffe/spiffe_test.cc"],
     external_deps = [
         "gtest",
     ],
@@ -353,6 +353,26 @@ grpc_cc_test(
         "//test/core/util:grpc_test_util",
         "//test/cpp/util:test_util",
         ":spiffe_test_credentials"
+    ],
+)
+
+grpc_cc_test(
+    name = "spiffe_raw_test",
+    srcs = ["spiffe/spiffe_raw_test.cc"],
+    external_deps = [
+        "gtest",
+    ],
+    deps = [
+        ":test_service_impl",
+        "//:gpr",
+        "//:grpc",
+        "//:grpc++",
+        "//src/proto/grpc/testing:echo_messages_proto",
+        "//src/proto/grpc/testing:echo_proto",
+        "//src/proto/grpc/testing/duplicate:echo_duplicate_proto",
+        "//test/core/util:grpc_test_util",
+        "//test/cpp/util:test_util",
+        ":spiffe_test_credentials",
     ],
 )
 

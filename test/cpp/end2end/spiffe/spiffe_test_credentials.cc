@@ -42,14 +42,6 @@ int Schedule(::grpc_impl::experimental::TlsCredentialReloadArg* arg) override {
   arg->OnCredentialReloadDoneCallback();
   return 0;
 }
-
-void Cancel(::grpc_impl::experimental::TlsCredentialReloadArg* arg) override {
-  return;
-}
-
-void Release() override {
-  return;
-}
 };
 
 class TestTlsServerAuthorizationCheckInterface : public ::grpc_impl::experimental::TlsServerAuthorizationCheckInterface {
@@ -61,35 +53,55 @@ int Schedule(::grpc_impl::experimental::TlsServerAuthorizationCheckArg* arg) ove
   //arg->OnServerAuthorizationCheckDoneCallback();
   return 0;
 }
-
-void Cancel(::grpc_impl::experimental::TlsServerAuthorizationCheckArg* arg) override {
-  return;
-}
-
-void Release() override {
-  return;
-}
 };
 
 std::shared_ptr<::grpc_impl::experimental::TlsCredentialsOptions> CreateTestTlsCredentialsOptions(bool is_client) {
-  /**
+  
   std::shared_ptr<::grpc_impl::experimental::TlsKeyMaterialsConfig> test_key_materials_config(new ::grpc_impl::experimental::TlsKeyMaterialsConfig());
   struct ::grpc_impl::experimental::TlsKeyMaterialsConfig::PemKeyCertPair pem_key_cert_pair = {test_server1_key, test_server1_cert};
   std::vector<::grpc_impl::experimental::TlsKeyMaterialsConfig::PemKeyCertPair> pem_key_cert_pair_list;
   pem_key_cert_pair_list.push_back(pem_key_cert_pair);
   test_key_materials_config->set_key_materials(test_root_cert, pem_key_cert_pair_list);
-  **/
+  std::shared_ptr<::grpc_impl::experimental::TlsCredentialsOptions> options(new ::grpc_impl::experimental::TlsCredentialsOptions(
+      is_client ? GRPC_SSL_DONT_REQUEST_CLIENT_CERTIFICATE : GRPC_SSL_REQUEST_AND_REQUIRE_CLIENT_CERTIFICATE_AND_VERIFY,
+      test_key_materials_config,
+      nullptr,
+      nullptr));
+  return options;
 
-  std::shared_ptr<TestTlsCredentialReloadInterface> credential_reload_interface(new TestTlsCredentialReloadInterface());
-  std::shared_ptr<::grpc_impl::experimental::TlsCredentialReloadConfig> test_credential_reload_config(new ::grpc_impl::experimental::TlsCredentialReloadConfig(credential_reload_interface));
-  std::shared_ptr<TestTlsServerAuthorizationCheckInterface> server_authorization_check_interface(new TestTlsServerAuthorizationCheckInterface());
-  std::shared_ptr<::grpc_impl::experimental::TlsServerAuthorizationCheckConfig> test_server_authorization_check_config(new ::grpc_impl::experimental::TlsServerAuthorizationCheckConfig(server_authorization_check_interface));
+  /**
+  std::unique_ptr<TestTlsCredentialReloadInterface> credential_reload_interface(new TestTlsCredentialReloadInterface());
+  std::shared_ptr<::grpc_impl::experimental::TlsCredentialReloadConfig> test_credential_reload_config(new ::grpc_impl::experimental::TlsCredentialReloadConfig(std::move(credential_reload_interface)));
+  std::unique_ptr<TestTlsServerAuthorizationCheckInterface> server_authorization_check_interface(new TestTlsServerAuthorizationCheckInterface());
+  std::shared_ptr<::grpc_impl::experimental::TlsServerAuthorizationCheckConfig> test_server_authorization_check_config(new ::grpc_impl::experimental::TlsServerAuthorizationCheckConfig(std::move(server_authorization_check_interface)));
   std::shared_ptr<::grpc_impl::experimental::TlsCredentialsOptions> options(new ::grpc_impl::experimental::TlsCredentialsOptions(
       is_client ? GRPC_SSL_DONT_REQUEST_CLIENT_CERTIFICATE : GRPC_SSL_REQUEST_AND_REQUIRE_CLIENT_CERTIFICATE_AND_VERIFY,
       nullptr,
       test_credential_reload_config,
       is_client ? test_server_authorization_check_config : nullptr));
   return options;
+  **/
+}
+
+std::shared_ptr<grpc_impl::ChannelCredentials> SpiffeTestChannelCredentials() {
+  return TlsCredentials(*CreateTestTlsCredentialsOptions(true));
+}
+
+std::shared_ptr<ServerCredentials> SpiffeTestServerCredentials() {
+  return TlsServerCredentials(*CreateTestTlsCredentialsOptions(false));
+}
+
+std::shared_ptr<grpc_impl::ChannelCredentials> SSLTestChannelCredentials() {
+  SslCredentialsOptions ssl_opts = {test_root_cert, "", ""};
+  return grpc::SslCredentials(ssl_opts);
+}
+
+std::shared_ptr<ServerCredentials> SSLTestServerCredentials() {
+  SslServerCredentialsOptions ssl_opts;
+  ssl_opts.pem_root_certs = "";
+  SslServerCredentialsOptions::PemKeyCertPair pkcp = {test_server1_key, test_server1_cert};
+  ssl_opts.pem_key_cert_pairs.push_back(pkcp);
+  return SslServerCredentials(ssl_opts);
 }
 
 } // namespace testing
