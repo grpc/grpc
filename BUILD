@@ -2519,3 +2519,12 @@ filegroup(
     ],
     visibility = ["//visibility:public"],
 )
+
+# Base classes of EventManagerInterface
+
+grpc_cc_library(
+    name = "eventmanager_interface",
+    hdrs = [
+        "src/core/lib/iomgr/poller/eventmanager_interface.h",
+    ],
+)
