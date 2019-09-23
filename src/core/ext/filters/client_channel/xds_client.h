@@ -31,12 +31,15 @@ extern TraceFlag xds_client_trace;
 
 class XdsClient : public RefCounted<XdsClient> {
  public:
+  // Data containing configuration for a cluster.
   struct ClusterData {
   };
 
+  // Data containing locality and endpoint information for a cluster.
   struct EndpointData {
   };
 
+  // Service config watcher interface.  Implemented by callers.
   class ServiceConfigWatcherInterface {
    public:
     virtual ~ServiceConfigWatcherInterface() = default;
@@ -47,6 +50,7 @@ class XdsClient : public RefCounted<XdsClient> {
     GRPC_ABSTRACT_BASE_CLASS
   };
 
+  // Cluster data watcher interface.  Implemented by callers.
   class ClusterWatcherInterface {
    public:
     virtual ~ClusterWatcherInterface() = default;
@@ -56,6 +60,7 @@ class XdsClient : public RefCounted<XdsClient> {
     GRPC_ABSTRACT_BASE_CLASS
   };
 
+  // Endpoint data watcher interface.  Implemented by callers.
   class EndpointWatcherInterface {
    public:
     virtual ~EndpointWatcherInterface() = default;
@@ -68,13 +73,29 @@ class XdsClient : public RefCounted<XdsClient> {
   XdsClient();
   ~XdsClient();
 
+  // Start and cancel service config watch for a server name.
   void WatchServiceConfig(StringView server_name,
                           UniquePtr<ServiceConfigWatcherInterface> watcher);
+  void CancelServiceConfigWatch(ServiceConfigWatcherInterface* watcher);
+
+  // Start and cancel cluster data watch for a cluster.
   void WatchClusterData(StringView cluster,
                         UniquePtr<ClusterWatcherInterface> watcher);
+  void CancelClusterDataWatch(ClusterWatcherInterface* watcher);
+
+  // Start and cancel endpoint data watch for a cluster.
   void WatchEndpointData(StringView cluster,
                          UniquePtr<EndpointWatcherInterface> watcher);
+  void CancelEndpointDataWatch(EndpointWatcherInterface* watcher);
 
+  // Adds and removes client stats for cluster.
+  void AddClientStats(StringView cluster, XdsClientStats* client_stats);
+  void RemoveClientStats(StringView cluster, XdsClientStats* client_stats);
+
+  // Resets connection backoff.
+  void ResetBackoff();
+
+  // Helpers for encoding the XdsClient object in channel args.
   grpc_arg MakeChannelArg() const;
   static RefCountedPtr<XdsClient> GetFromChannelArgs(
       const grpc_channel_args& args);
