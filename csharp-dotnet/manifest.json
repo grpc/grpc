@@ -1,0 +1,1298 @@
+{
+  "homepages": [],
+  "source_base_path": "/work/docfx",
+  "xrefmap": "xrefmap.yml",
+  "files": [
+    {
+      "type": "Resource",
+      "output": {
+        "resource": {
+          "relative_path": "index.json"
+        }
+      },
+      "is_incremental": false
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/api/Grpc.AspNetCore.Server.GrpcMethodMetadata.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Grpc.AspNetCore.Server.GrpcMethodMetadata.html",
+          "hash": "e0I10ugFybrZzGVD/incNw=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/api/Grpc.AspNetCore.Server.GrpcServiceOptions-1.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Grpc.AspNetCore.Server.GrpcServiceOptions-1.html",
+          "hash": "tdq0mhEPtti+Ah0Gptcwfw=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/api/Grpc.AspNetCore.Server.GrpcServiceOptions.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Grpc.AspNetCore.Server.GrpcServiceOptions.html",
+          "hash": "Pk6gOBq4nqrAYYkkNHClEw=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/api/Grpc.AspNetCore.Server.IGrpcServerBuilder.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Grpc.AspNetCore.Server.IGrpcServerBuilder.html",
+          "hash": "mbYEPpxAWA563itS+yF8+w=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/api/Grpc.AspNetCore.Server.IServerCallContextFeature.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Grpc.AspNetCore.Server.IServerCallContextFeature.html",
+          "hash": "n8TYMGw7KcFBnRY5hkjpEQ=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/api/Grpc.AspNetCore.Server.InterceptorCollection.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Grpc.AspNetCore.Server.InterceptorCollection.html",
+          "hash": "wuUxXM8yq/iJtZic/zD7Mg=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/api/Grpc.AspNetCore.Server.InterceptorRegistration.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Grpc.AspNetCore.Server.InterceptorRegistration.html",
+          "hash": "Fo7tNHkMI2xkpiPUZPUn9g=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/api/Grpc.AspNetCore.Server.Model.ClientStreamingServerMethod-3.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Grpc.AspNetCore.Server.Model.ClientStreamingServerMethod-3.html",
+          "hash": "SafacnJhqTe8ZAQxls08Nw=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/api/Grpc.AspNetCore.Server.Model.DuplexStreamingServerMethod-3.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Grpc.AspNetCore.Server.Model.DuplexStreamingServerMethod-3.html",
+          "hash": "ZZ0r/ulxgluDCLb/8qreMw=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/api/Grpc.AspNetCore.Server.Model.IServiceMethodProvider-1.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Grpc.AspNetCore.Server.Model.IServiceMethodProvider-1.html",
+          "hash": "cNGtKpTtIYxz3cQnVdUcDw=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/api/Grpc.AspNetCore.Server.Model.ServerStreamingServerMethod-3.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Grpc.AspNetCore.Server.Model.ServerStreamingServerMethod-3.html",
+          "hash": "P+eZ6r6qe75+7TSWaZtglA=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/api/Grpc.AspNetCore.Server.Model.ServiceMethodProviderContext-1.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Grpc.AspNetCore.Server.Model.ServiceMethodProviderContext-1.html",
+          "hash": "m90N8fbIowjnWyZpbFbi4A=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/api/Grpc.AspNetCore.Server.Model.UnaryServerMethod-3.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Grpc.AspNetCore.Server.Model.UnaryServerMethod-3.html",
+          "hash": "Nn4YOgXGhzyrURwnvHUgZA=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/api/Grpc.AspNetCore.Server.Model.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Grpc.AspNetCore.Server.Model.html",
+          "hash": "cWu4afTinzVRQZgf/5VOMg=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/api/Grpc.AspNetCore.Server.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Grpc.AspNetCore.Server.html",
+          "hash": "ofY6AdM7wDIdmPTFtg7pGg=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/api/Grpc.Core.AsyncAuthInterceptor.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Grpc.Core.AsyncAuthInterceptor.html",
+          "hash": "weBSlQxOUWQt1UTvQaP+gA=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/api/Grpc.Core.AsyncClientStreamingCall-2.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Grpc.Core.AsyncClientStreamingCall-2.html",
+          "hash": "AYJ92wnkf1N6NFTkkx1RDQ=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/api/Grpc.Core.AsyncDuplexStreamingCall-2.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Grpc.Core.AsyncDuplexStreamingCall-2.html",
+          "hash": "Q/svUBFtcwDEn5D7PrWRwQ=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/api/Grpc.Core.AsyncServerStreamingCall-1.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Grpc.Core.AsyncServerStreamingCall-1.html",
+          "hash": "rFinyVMYtPSKg4GlgWlKFQ=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/api/Grpc.Core.AsyncStreamReaderExtensions.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Grpc.Core.AsyncStreamReaderExtensions.html",
+          "hash": "Xdke9/QFqQfQvLfphXa7lQ=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/api/Grpc.Core.AsyncUnaryCall-1.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Grpc.Core.AsyncUnaryCall-1.html",
+          "hash": "qoRU8QueizhAO/aqVo1c6A=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/api/Grpc.Core.AuthContext.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Grpc.Core.AuthContext.html",
+          "hash": "tiO+s/j8HYXZYRACfApxpg=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/api/Grpc.Core.AuthInterceptorContext.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Grpc.Core.AuthInterceptorContext.html",
+          "hash": "Jx2mrb4l6/tjtAIC1aaQbA=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/api/Grpc.Core.AuthProperty.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Grpc.Core.AuthProperty.html",
+          "hash": "35IoXle1ly/svht43sZYcw=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/api/Grpc.Core.BindServiceMethodAttribute.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Grpc.Core.BindServiceMethodAttribute.html",
+          "hash": "pLWlxYQZFtdQ9OxV/5LqIg=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/api/Grpc.Core.CallCredentials.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Grpc.Core.CallCredentials.html",
+          "hash": "xf+YVNKnCOsEwtoiMK44fQ=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/api/Grpc.Core.CallCredentialsConfiguratorBase.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Grpc.Core.CallCredentialsConfiguratorBase.html",
+          "hash": "iVxSxVJk7FRMWH/suk0M4Q=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/api/Grpc.Core.CallInvoker.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Grpc.Core.CallInvoker.html",
+          "hash": "E0nkblSjupLKgXlpQkgk3A=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/api/Grpc.Core.CallOptions.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Grpc.Core.CallOptions.html",
+          "hash": "De1pbsEKnBMGrQXgC8mhJA=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/api/Grpc.Core.ChannelBase.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Grpc.Core.ChannelBase.html",
+          "hash": "xF6C2Pvqgwjbc5tSH/qloA=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/api/Grpc.Core.ChannelCredentials.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Grpc.Core.ChannelCredentials.html",
+          "hash": "noqmoowZZvWQvYp3wTVxdw=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/api/Grpc.Core.ChannelCredentialsConfiguratorBase.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Grpc.Core.ChannelCredentialsConfiguratorBase.html",
+          "hash": "HhxJGabpuoSpp+QhGMJWkA=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/api/Grpc.Core.ClientBase-1.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Grpc.Core.ClientBase-1.html",
+          "hash": "seVTAOvPmbPHIOlaoHG/EQ=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/api/Grpc.Core.ClientBase.ClientBaseConfiguration.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Grpc.Core.ClientBase.ClientBaseConfiguration.html",
+          "hash": "FcKXdN+FqPgF7FMniC9ypw=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/api/Grpc.Core.ClientBase.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Grpc.Core.ClientBase.html",
+          "hash": "ZCR7uODGFNooGwBWU+6kyg=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/api/Grpc.Core.ClientStreamingServerMethod-2.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Grpc.Core.ClientStreamingServerMethod-2.html",
+          "hash": "p0Prj3YcmHfIxTOu5qAatQ=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/api/Grpc.Core.ContextPropagationOptions.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Grpc.Core.ContextPropagationOptions.html",
+          "hash": "oERKaS9tkATK9C9DBaiyVA=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/api/Grpc.Core.ContextPropagationToken.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Grpc.Core.ContextPropagationToken.html",
+          "hash": "9THVxvSES80x+e8OBBj71Q=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/api/Grpc.Core.DeserializationContext.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Grpc.Core.DeserializationContext.html",
+          "hash": "0y0OuACRgqAOVn+NMxu3SA=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/api/Grpc.Core.DuplexStreamingServerMethod-2.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Grpc.Core.DuplexStreamingServerMethod-2.html",
+          "hash": "lnqfyg6Yz281zN0g4nyZFA=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/api/Grpc.Core.IAsyncStreamReader-1.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Grpc.Core.IAsyncStreamReader-1.html",
+          "hash": "ueWHCNrLjOpEateSy2Bhpg=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/api/Grpc.Core.IAsyncStreamWriter-1.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Grpc.Core.IAsyncStreamWriter-1.html",
+          "hash": "XnOyvtYpgxNyj+zQc+tAWQ=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/api/Grpc.Core.IClientStreamWriter-1.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Grpc.Core.IClientStreamWriter-1.html",
+          "hash": "BQoMgKo/5dHjs/jquhpERQ=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/api/Grpc.Core.IMethod.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Grpc.Core.IMethod.html",
+          "hash": "4da4VKgKXiELUc8fN/xPfg=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/api/Grpc.Core.IServerStreamWriter-1.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Grpc.Core.IServerStreamWriter-1.html",
+          "hash": "MAqLu/VsGmKR5CwgeJcX8g=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/api/Grpc.Core.Interceptors.CallInvokerExtensions.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Grpc.Core.Interceptors.CallInvokerExtensions.html",
+          "hash": "oz42kyOQvragD1k9nIAYEg=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/api/Grpc.Core.Interceptors.ChannelExtensions.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Grpc.Core.Interceptors.ChannelExtensions.html",
+          "hash": "614T54MBTDM3L/en91G0CA=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/api/Grpc.Core.Interceptors.ClientInterceptorContext-2.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Grpc.Core.Interceptors.ClientInterceptorContext-2.html",
+          "hash": "iQOAJRELXo7j+07Xrwyq4w=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/api/Grpc.Core.Interceptors.Interceptor.AsyncClientStreamingCallContinuation-2.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Grpc.Core.Interceptors.Interceptor.AsyncClientStreamingCallContinuation-2.html",
+          "hash": "1ZZ77Isyg5v2OvyHGJamYg=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/api/Grpc.Core.Interceptors.Interceptor.AsyncDuplexStreamingCallContinuation-2.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Grpc.Core.Interceptors.Interceptor.AsyncDuplexStreamingCallContinuation-2.html",
+          "hash": "1KXTWKgsTwSHnK0+0sEIFw=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/api/Grpc.Core.Interceptors.Interceptor.AsyncServerStreamingCallContinuation-2.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Grpc.Core.Interceptors.Interceptor.AsyncServerStreamingCallContinuation-2.html",
+          "hash": "vwgCGleZPoDO8zMU+q/fMQ=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/api/Grpc.Core.Interceptors.Interceptor.AsyncUnaryCallContinuation-2.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Grpc.Core.Interceptors.Interceptor.AsyncUnaryCallContinuation-2.html",
+          "hash": "BIF6JogDHT75syKKeOMhnw=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/api/Grpc.Core.Interceptors.Interceptor.BlockingUnaryCallContinuation-2.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Grpc.Core.Interceptors.Interceptor.BlockingUnaryCallContinuation-2.html",
+          "hash": "SDo1Q1iYNiH+zOHwekKKow=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/api/Grpc.Core.Interceptors.Interceptor.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Grpc.Core.Interceptors.Interceptor.html",
+          "hash": "WaJnrOqaQKshvGNtk8GyrA=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/api/Grpc.Core.Interceptors.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Grpc.Core.Interceptors.html",
+          "hash": "hL0+wHUD3B3lnKfP7+meUw=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/api/Grpc.Core.KeyCertificatePair.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Grpc.Core.KeyCertificatePair.html",
+          "hash": "5XqwDQlxu8C7JTsL/fwylg=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/api/Grpc.Core.LiteClientBase.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Grpc.Core.LiteClientBase.html",
+          "hash": "9OfwT0LY6dlttwMM42tzGA=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/api/Grpc.Core.Marshaller-1.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Grpc.Core.Marshaller-1.html",
+          "hash": "JWt1eIqTjJBXn3QpHL+13A=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/api/Grpc.Core.Marshallers.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Grpc.Core.Marshallers.html",
+          "hash": "vS2OJNl5tRWdDpf9T+yk9Q=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/api/Grpc.Core.Metadata.Entry.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Grpc.Core.Metadata.Entry.html",
+          "hash": "U+tGC3BNlJ9Yy6Rwtexs0w=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/api/Grpc.Core.Metadata.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Grpc.Core.Metadata.html",
+          "hash": "TrFxPWy71HL9uBwAQ7wuMg=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/api/Grpc.Core.Method-2.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Grpc.Core.Method-2.html",
+          "hash": "TCTArRzu3KwAmDnhInqPHg=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/api/Grpc.Core.MethodType.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Grpc.Core.MethodType.html",
+          "hash": "Gofr/PqW7rRTGKLLwrKBaw=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/api/Grpc.Core.RpcException.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Grpc.Core.RpcException.html",
+          "hash": "Pz29FC1OvhwqcgdoaPL2mg=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/api/Grpc.Core.SerializationContext.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Grpc.Core.SerializationContext.html",
+          "hash": "tZE8lubYWTYZZvxa6v/b5w=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/api/Grpc.Core.ServerCallContext.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Grpc.Core.ServerCallContext.html",
+          "hash": "Rp+ux6LkUs6Uwjg9bZizZw=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/api/Grpc.Core.ServerCallContextExtensions.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Grpc.Core.ServerCallContextExtensions.html",
+          "hash": "rYvjrxmDIB27weO3OY8NNg=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/api/Grpc.Core.ServerServiceDefinition.Builder.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Grpc.Core.ServerServiceDefinition.Builder.html",
+          "hash": "gjexQUCtcJFfOYJE6cxP/w=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/api/Grpc.Core.ServerServiceDefinition.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Grpc.Core.ServerServiceDefinition.html",
+          "hash": "yuc+PFU/Yi/LyGkOQeQCvw=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/api/Grpc.Core.ServerStreamingServerMethod-2.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Grpc.Core.ServerStreamingServerMethod-2.html",
+          "hash": "yi0AvLRJpqvZhZk5jDjZqQ=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/api/Grpc.Core.ServiceBinderBase.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Grpc.Core.ServiceBinderBase.html",
+          "hash": "+q7YTVdGphq/ozOeuqQ20g=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/api/Grpc.Core.SslCredentials.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Grpc.Core.SslCredentials.html",
+          "hash": "oupOI5h1UbEA2CKaSKFOcw=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/api/Grpc.Core.Status.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Grpc.Core.Status.html",
+          "hash": "zVbmFOyZaEdrWEMFYBNjyg=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/api/Grpc.Core.StatusCode.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Grpc.Core.StatusCode.html",
+          "hash": "fWZZdQiMl8RqLzgI4pZCCA=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/api/Grpc.Core.UnaryServerMethod-2.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Grpc.Core.UnaryServerMethod-2.html",
+          "hash": "z7gV9BVG1+3rrseZnPPnsw=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/api/Grpc.Core.Utils.GrpcPreconditions.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Grpc.Core.Utils.GrpcPreconditions.html",
+          "hash": "hTeK5qOC0g4r5LCnfA7pSw=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/api/Grpc.Core.Utils.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Grpc.Core.Utils.html",
+          "hash": "+EI1VyK1kZKEDZNHg7b6+w=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/api/Grpc.Core.VerifyPeerCallback.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Grpc.Core.VerifyPeerCallback.html",
+          "hash": "d35nj4j0Vo5eXdBu4Qdb3Q=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/api/Grpc.Core.VerifyPeerContext.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Grpc.Core.VerifyPeerContext.html",
+          "hash": "0A17JevX1zIw5bEXskQMvA=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/api/Grpc.Core.VersionInfo.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Grpc.Core.VersionInfo.html",
+          "hash": "LvCHN/CTLNRlQC8jO6mY7g=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/api/Grpc.Core.WriteFlags.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Grpc.Core.WriteFlags.html",
+          "hash": "TBOpdgeusqYEUkwXE1wByg=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/api/Grpc.Core.WriteOptions.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Grpc.Core.WriteOptions.html",
+          "hash": "6h6zgQMCUUi+JLSLSBJiTA=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/api/Grpc.Core.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Grpc.Core.html",
+          "hash": "WTwvGsUG5NqpZIQ4eGJFEQ=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/api/Grpc.Net.Client.GrpcChannel.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Grpc.Net.Client.GrpcChannel.html",
+          "hash": "cHUQ32erA/BBW72aEDjP0Q=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/api/Grpc.Net.Client.GrpcChannelOptions.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Grpc.Net.Client.GrpcChannelOptions.html",
+          "hash": "MGS1E72zrb5GIC8cWAM4bA=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/api/Grpc.Net.Client.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Grpc.Net.Client.html",
+          "hash": "Ogot1xJG6Rd34mvAYyBfSQ=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/api/Grpc.Net.ClientFactory.GrpcClientFactory.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Grpc.Net.ClientFactory.GrpcClientFactory.html",
+          "hash": "lt1ViqbFcv11oCvDSU024Q=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/api/Grpc.Net.ClientFactory.GrpcClientFactoryOptions.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Grpc.Net.ClientFactory.GrpcClientFactoryOptions.html",
+          "hash": "p9u26xeYhCVytcLFKkuJfA=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/api/Grpc.Net.ClientFactory.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Grpc.Net.ClientFactory.html",
+          "hash": "Z0dwFMnxcHOrgnoTMSOBEg=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/api/Grpc.Net.Compression.GzipCompressionProvider.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Grpc.Net.Compression.GzipCompressionProvider.html",
+          "hash": "QuHCxqnBXPI00zyke+CS4w=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/api/Grpc.Net.Compression.ICompressionProvider.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Grpc.Net.Compression.ICompressionProvider.html",
+          "hash": "Fysam+e/5eZlFMy0p6fDRg=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/api/Grpc.Net.Compression.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Grpc.Net.Compression.html",
+          "hash": "IbmpZRDeJJ4rFFXuQ8jAQA=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/api/Microsoft.AspNetCore.Builder.GrpcEndpointRouteBuilderExtensions.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Microsoft.AspNetCore.Builder.GrpcEndpointRouteBuilderExtensions.html",
+          "hash": "zeYFySewjr/mxr9QFx46cQ=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/api/Microsoft.AspNetCore.Builder.GrpcReflectionEndpointRouteBuilderExtensions.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Microsoft.AspNetCore.Builder.GrpcReflectionEndpointRouteBuilderExtensions.html",
+          "hash": "s/EqO26Vcirmpe/q+ZbHgw=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/api/Microsoft.AspNetCore.Builder.GrpcServiceEndpointConventionBuilder.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Microsoft.AspNetCore.Builder.GrpcServiceEndpointConventionBuilder.html",
+          "hash": "TVnjNmuR4HR+z57skLAPwg=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/api/Microsoft.AspNetCore.Builder.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Microsoft.AspNetCore.Builder.html",
+          "hash": "DMYlL0YZNiCYkId3AeGuOw=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/api/Microsoft.Extensions.DependencyInjection.GrpcClientServiceExtensions.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Microsoft.Extensions.DependencyInjection.GrpcClientServiceExtensions.html",
+          "hash": "5tcfsje5DJ20XFG9jcdt/w=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/api/Microsoft.Extensions.DependencyInjection.GrpcHttpClientBuilderExtensions.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Microsoft.Extensions.DependencyInjection.GrpcHttpClientBuilderExtensions.html",
+          "hash": "Y847Orh8XhoHExOgGHM+1w=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/api/Microsoft.Extensions.DependencyInjection.GrpcReflectionServiceExtensions.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Microsoft.Extensions.DependencyInjection.GrpcReflectionServiceExtensions.html",
+          "hash": "qitZfsaIkZQT3RqXJaWGvA=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/api/Microsoft.Extensions.DependencyInjection.GrpcServerHttpClientBuilderExtensions.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Microsoft.Extensions.DependencyInjection.GrpcServerHttpClientBuilderExtensions.html",
+          "hash": "iSKhA4ODQfpmoV6fYNQzVA=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/api/Microsoft.Extensions.DependencyInjection.GrpcServicesExtensions.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Microsoft.Extensions.DependencyInjection.GrpcServicesExtensions.html",
+          "hash": "nd5sFYHsfLkve32XtCoMWg=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "type": "ManagedReference",
+      "source_relative_path": "obj/api/Microsoft.Extensions.DependencyInjection.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/Microsoft.Extensions.DependencyInjection.html",
+          "hash": "ocMj/y7oWzJj9uTaia4TEw=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "type": "Toc",
+      "source_relative_path": "obj/api/toc.yml",
+      "output": {
+        ".html": {
+          "relative_path": "api/toc.html",
+          "hash": "0mHD9TOc+XwU4JS82gquPQ=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    },
+    {
+      "type": "Toc",
+      "source_relative_path": "toc.yml",
+      "output": {
+        ".html": {
+          "relative_path": "toc.html",
+          "hash": "ZGICZRNZVHD/xJBYvIYKyQ=="
+        }
+      },
+      "is_incremental": false,
+      "version": ""
+    }
+  ],
+  "incremental_info": [
+    {
+      "status": {
+        "can_incremental": false,
+        "details": "Cannot build incrementally because last build info is missing.",
+        "incrementalPhase": "build"
+      },
+      "processors": {
+        "TocDocumentProcessor": {
+          "can_incremental": false,
+          "details": "Processor TocDocumentProcessor cannot support incremental build because the processor doesn't implement ISupportIncrementalDocumentProcessor interface.",
+          "incrementalPhase": "build"
+        },
+        "ManagedReferenceDocumentProcessor": {
+          "can_incremental": false,
+          "incrementalPhase": "build"
+        }
+      }
+    },
+    {
+      "status": {
+        "can_incremental": false,
+        "details": "Cannot support incremental post processing, the reason is: should not trace intermediate info.",
+        "incrementalPhase": "postProcessing"
+      },
+      "processors": {}
+    }
+  ],
+  "version_info": {},
+  "groups": [
+    {
+      "xrefmap": "xrefmap.yml"
+    }
+  ]
+}

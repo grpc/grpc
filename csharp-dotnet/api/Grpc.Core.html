@@ -1,0 +1,355 @@
+﻿<!DOCTYPE html>
+<!--[if IE]><![endif]-->
+<html>
+  
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+    <title>Namespace Grpc.Core
+   | gRPC for .NET </title>
+    <meta name="viewport" content="width=device-width">
+    <meta name="title" content="Namespace Grpc.Core
+   | gRPC for .NET ">
+    <meta name="generator" content="docfx 2.36.0.0">
+    
+    <link rel="shortcut icon" href="../favicon.ico">
+    <link rel="stylesheet" href="../styles/docfx.vendor.css">
+    <link rel="stylesheet" href="../styles/docfx.css">
+    <link rel="stylesheet" href="../styles/main.css">
+    <meta property="docfx:navrel" content="../toc.html">
+    <meta property="docfx:tocrel" content="toc.html">
+    
+    <meta property="docfx:rel" content="../">
+    
+  </head>
+  <body data-spy="scroll" data-target="#affix" data-offset="120">
+    <div id="wrapper">
+      <header>
+        
+        <nav id="autocollapse" class="navbar navbar-inverse ng-scope" role="navigation">
+          <div class="container">
+            <div class="navbar-header">
+              <button type="button" class="navbar-toggle" data-toggle="collapse" data-target="#navbar">
+                <span class="sr-only">Toggle navigation</span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+                <span class="icon-bar"></span>
+              </button>
+              
+              <a class="navbar-brand" href="../index.html">
+                <img id="logo" class="svg" src="../logo.svg" alt="">
+              </a>
+            </div>
+            <div class="collapse navbar-collapse" id="navbar">
+              <form class="navbar-form navbar-right" role="search" id="search">
+                <div class="form-group">
+                  <input type="text" class="form-control" id="search-query" placeholder="Search" autocomplete="off">
+                </div>
+              </form>
+            </div>
+          </div>
+        </nav>
+        
+        <div class="subnav navbar navbar-default">
+          <div class="container hide-when-search" id="breadcrumb">
+            <ul class="breadcrumb">
+              <li></li>
+            </ul>
+          </div>
+        </div>
+      </header>
+      <div class="container body-content">
+        
+        <div id="search-results">
+          <div class="search-list"></div>
+          <div class="sr-items">
+            <p><i class="glyphicon glyphicon-refresh index-loading"></i></p>
+          </div>
+          <ul id="pagination"></ul>
+        </div>
+      </div>
+      <div role="main" class="container body-content hide-when-search">
+        
+        <div class="sidenav hide-when-search">
+          <a class="btn toc-toggle collapse" data-toggle="collapse" href="#sidetoggle" aria-expanded="false" aria-controls="sidetoggle">Show / Hide Table of Contents</a>
+          <div class="sidetoggle collapse" id="sidetoggle">
+            <div id="sidetoc"></div>
+          </div>
+        </div>
+        <div class="article row grid-right">
+          <div class="col-md-10">
+            <article class="content wrap" id="_content" data-uid="Grpc.Core">
+  
+  <h1 id="Grpc_Core" data-uid="Grpc.Core" class="text-break">Namespace Grpc.Core
+  </h1>
+  <div class="markdown level0 summary"></div>
+  <div class="markdown level0 conceptual"></div>
+  <div class="markdown level0 remarks"></div>
+    <h3 id="classes">Classes
+  </h3>
+      <h4><a class="xref" href="Grpc.Core.AsyncClientStreamingCall-2.html">AsyncClientStreamingCall&lt;TRequest, TResponse&gt;</a></h4>
+      <section><p>Return type for client streaming calls.</p>
+</section>
+      <h4><a class="xref" href="Grpc.Core.AsyncDuplexStreamingCall-2.html">AsyncDuplexStreamingCall&lt;TRequest, TResponse&gt;</a></h4>
+      <section><p>Return type for bidirectional streaming calls.</p>
+</section>
+      <h4><a class="xref" href="Grpc.Core.AsyncServerStreamingCall-1.html">AsyncServerStreamingCall&lt;TResponse&gt;</a></h4>
+      <section><p>Return type for server streaming calls.</p>
+</section>
+      <h4><a class="xref" href="Grpc.Core.AsyncStreamReaderExtensions.html">AsyncStreamReaderExtensions</a></h4>
+      <section><p>Extension methods for <a class="xref" href="Grpc.Core.IAsyncStreamReader-1.html">IAsyncStreamReader&lt;T&gt;</a>.</p>
+</section>
+      <h4><a class="xref" href="Grpc.Core.AsyncUnaryCall-1.html">AsyncUnaryCall&lt;TResponse&gt;</a></h4>
+      <section><p>Return type for single request - single response call.</p>
+</section>
+      <h4><a class="xref" href="Grpc.Core.AuthContext.html">AuthContext</a></h4>
+      <section><p>Authentication context for a call.
+AuthContext is the only reliable source of truth when it comes to authenticating calls.
+Using any other call/context properties for authentication purposes is wrong and inherently unsafe.
+Note: experimental API that can change or be removed without any prior notice.</p>
+</section>
+      <h4><a class="xref" href="Grpc.Core.AuthInterceptorContext.html">AuthInterceptorContext</a></h4>
+      <section><p>Context for an RPC being intercepted by <a class="xref" href="Grpc.Core.AsyncAuthInterceptor.html">AsyncAuthInterceptor</a>.</p>
+</section>
+      <h4><a class="xref" href="Grpc.Core.AuthProperty.html">AuthProperty</a></h4>
+      <section><p>A property of an <a class="xref" href="Grpc.Core.AuthContext.html">AuthContext</a>.
+Note: experimental API that can change or be removed without any prior notice.</p>
+</section>
+      <h4><a class="xref" href="Grpc.Core.BindServiceMethodAttribute.html">BindServiceMethodAttribute</a></h4>
+      <section><p>Specifies the location of the service bind method for a gRPC service.
+The bind method is typically generated code and is used to register a service&apos;s
+methods with the server on startup.</p>
+<p>The bind method signature takes a <a class="xref" href="Grpc.Core.ServiceBinderBase.html">ServiceBinderBase</a> and an optional
+instance of the service base class, e.g. <code>static void BindService(ServiceBinderBase, GreeterService)</code>.</p>
+</section>
+      <h4><a class="xref" href="Grpc.Core.CallCredentials.html">CallCredentials</a></h4>
+      <section><p>Client-side call credentials. Provide authorization with per-call granularity.</p>
+</section>
+      <h4><a class="xref" href="Grpc.Core.CallCredentialsConfiguratorBase.html">CallCredentialsConfiguratorBase</a></h4>
+      <section><p>Base class for objects that can consume configuration from <code>CallCredentials</code> objects.
+Note: experimental API that can change or be removed without any prior notice.</p>
+</section>
+      <h4><a class="xref" href="Grpc.Core.CallInvoker.html">CallInvoker</a></h4>
+      <section><p>Abstraction of client-side RPC invocation.</p>
+</section>
+      <h4><a class="xref" href="Grpc.Core.ChannelBase.html">ChannelBase</a></h4>
+      <section><p>Base class for gRPC channel. Channels are an abstraction of long-lived connections to remote servers.</p>
+</section>
+      <h4><a class="xref" href="Grpc.Core.ChannelCredentials.html">ChannelCredentials</a></h4>
+      <section><p>Client-side channel credentials. Used for creation of a secure channel.</p>
+</section>
+      <h4><a class="xref" href="Grpc.Core.ChannelCredentialsConfiguratorBase.html">ChannelCredentialsConfiguratorBase</a></h4>
+      <section><p>Base class for objects that can consume configuration from <code>CallCredentials</code> objects.
+Note: experimental API that can change or be removed without any prior notice.</p>
+</section>
+      <h4><a class="xref" href="Grpc.Core.ClientBase.html">ClientBase</a></h4>
+      <section><p>Base class for client-side stubs.</p>
+</section>
+      <h4><a class="xref" href="Grpc.Core.ClientBase.ClientBaseConfiguration.html">ClientBase.ClientBaseConfiguration</a></h4>
+      <section><p>Represents configuration of ClientBase. The class itself is visible to
+subclasses, but contents are marked as internal to make the instances opaque.
+The verbose name of this class was chosen to make name clash in generated code 
+less likely.</p>
+</section>
+      <h4><a class="xref" href="Grpc.Core.ClientBase-1.html">ClientBase&lt;T&gt;</a></h4>
+      <section><p>Generic base class for client-side stubs.</p>
+</section>
+      <h4><a class="xref" href="Grpc.Core.ContextPropagationOptions.html">ContextPropagationOptions</a></h4>
+      <section><p>Options for <a class="xref" href="Grpc.Core.ContextPropagationToken.html">ContextPropagationToken</a>.</p>
+</section>
+      <h4><a class="xref" href="Grpc.Core.ContextPropagationToken.html">ContextPropagationToken</a></h4>
+      <section><p>Token for propagating context of server side handlers to child calls.
+In situations when a backend is making calls to another backend,
+it makes sense to propagate properties like deadline and cancellation 
+token of the server call to the child call.
+Underlying gRPC implementation may provide other &quot;opaque&quot; contexts (like tracing context) that
+are not explicitly accesible via the public C# API, but this token still allows propagating them.</p>
+</section>
+      <h4><a class="xref" href="Grpc.Core.DeserializationContext.html">DeserializationContext</a></h4>
+      <section><p>Provides access to the payload being deserialized when deserializing messages.</p>
+</section>
+      <h4><a class="xref" href="Grpc.Core.KeyCertificatePair.html">KeyCertificatePair</a></h4>
+      <section><p>Key certificate pair (in PEM encoding).</p>
+</section>
+      <h4><a class="xref" href="Grpc.Core.LiteClientBase.html">LiteClientBase</a></h4>
+      <section><p>Base class for lightweight client-side stubs.
+All calls are invoked via a <code>CallInvoker</code>.
+Lite client stubs have no configuration knobs, all configuration
+is provided by decorating the call invoker.
+Note: experimental API that can change or be removed without any prior notice.</p>
+</section>
+      <h4><a class="xref" href="Grpc.Core.Marshaller-1.html">Marshaller&lt;T&gt;</a></h4>
+      <section><p>Encapsulates the logic for serializing and deserializing messages.</p>
+</section>
+      <h4><a class="xref" href="Grpc.Core.Marshallers.html">Marshallers</a></h4>
+      <section><p>Utilities for creating marshallers.</p>
+</section>
+      <h4><a class="xref" href="Grpc.Core.Metadata.html">Metadata</a></h4>
+      <section><p>A collection of metadata entries that can be exchanged during a call.
+gRPC supports these types of metadata:
+<ul><li>Request headersare sent by the client at the beginning of a remote call before any request messages are sent.</li><li>Response headersare sent by the server at the beginning of a remote call handler before any response messages are sent.</li><li>Response trailersare sent by the server at the end of a remote call along with resulting call status.</li></ul></p>
+</section>
+      <h4><a class="xref" href="Grpc.Core.Metadata.Entry.html">Metadata.Entry</a></h4>
+      <section><p>Metadata entry</p>
+</section>
+      <h4><a class="xref" href="Grpc.Core.Method-2.html">Method&lt;TRequest, TResponse&gt;</a></h4>
+      <section><p>A description of a remote method.</p>
+</section>
+      <h4><a class="xref" href="Grpc.Core.RpcException.html">RpcException</a></h4>
+      <section><p>Thrown when remote procedure call fails. Every <code>RpcException</code> is associated with a resulting <a class="xref" href="Grpc.Core.RpcException.html#Grpc_Core_RpcException_Status">Status</a> of the call.</p>
+</section>
+      <h4><a class="xref" href="Grpc.Core.SerializationContext.html">SerializationContext</a></h4>
+      <section><p>Provides storage for payload when serializing a message.</p>
+</section>
+      <h4><a class="xref" href="Grpc.Core.ServerCallContext.html">ServerCallContext</a></h4>
+      <section><p>Context for a server-side call.</p>
+</section>
+      <h4><a class="xref" href="Grpc.Core.ServerCallContextExtensions.html">ServerCallContextExtensions</a></h4>
+      <section><p>Extension methods for ServerCallContext.</p>
+</section>
+      <h4><a class="xref" href="Grpc.Core.ServerServiceDefinition.html">ServerServiceDefinition</a></h4>
+      <section><p>Stores mapping of methods to server call handlers.
+Normally, the <code>ServerServiceDefinition</code> objects will be created by the <code>BindService</code> factory method 
+that is part of the autogenerated code for a protocol buffers service definition.</p>
+</section>
+      <h4><a class="xref" href="Grpc.Core.ServerServiceDefinition.Builder.html">ServerServiceDefinition.Builder</a></h4>
+      <section><p>Builder class for <a class="xref" href="Grpc.Core.ServerServiceDefinition.html">ServerServiceDefinition</a>.</p>
+</section>
+      <h4><a class="xref" href="Grpc.Core.ServiceBinderBase.html">ServiceBinderBase</a></h4>
+      <section><p>Allows binding server-side method implementations in alternative serving stacks.
+Instances of this class are usually populated by the <code>BindService</code> method
+that is part of the autogenerated code for a protocol buffers service definition.</p>
+</section>
+      <h4><a class="xref" href="Grpc.Core.SslCredentials.html">SslCredentials</a></h4>
+      <section><p>Client-side SSL credentials.</p>
+</section>
+      <h4><a class="xref" href="Grpc.Core.VerifyPeerContext.html">VerifyPeerContext</a></h4>
+      <section><p>Verification context for VerifyPeerCallback.
+Note: experimental API that can change or be removed without any prior notice.</p>
+</section>
+      <h4><a class="xref" href="Grpc.Core.VersionInfo.html">VersionInfo</a></h4>
+      <section><p>Provides info about current version of gRPC.
+See <a href="https://codingforsmarties.wordpress.com/2016/01/21/how-to-version-assemblies-destined-for-nuget/">https://codingforsmarties.wordpress.com/2016/01/21/how-to-version-assemblies-destined-for-nuget/</a>
+for rationale about assembly versioning.</p>
+</section>
+      <h4><a class="xref" href="Grpc.Core.WriteOptions.html">WriteOptions</a></h4>
+      <section><p>Options for write operations.</p>
+</section>
+    <h3 id="structs">Structs
+  </h3>
+      <h4><a class="xref" href="Grpc.Core.CallOptions.html">CallOptions</a></h4>
+      <section><p>Options for calls made by client.</p>
+</section>
+      <h4><a class="xref" href="Grpc.Core.Status.html">Status</a></h4>
+      <section><p>Represents RPC result, which consists of <a class="xref" href="Grpc.Core.Status.html#Grpc_Core_Status_StatusCode">StatusCode</a> and an optional detail string.</p>
+</section>
+    <h3 id="interfaces">Interfaces
+  </h3>
+      <h4><a class="xref" href="Grpc.Core.IAsyncStreamReader-1.html">IAsyncStreamReader&lt;T&gt;</a></h4>
+      <section><p>A stream of messages to be read.
+Messages can be awaited <code>await reader.MoveNext()</code>, that returns <code>true</code>
+if there is a message available and <code>false</code> if there are no more messages
+(i.e. the stream has been closed).
+<p>
+On the client side, the last invocation of <code>MoveNext()</code> either returns <code>false</code>
+if the call has finished successfully or throws <code>RpcException</code> if call finished
+with an error. Once the call finishes, subsequent invocations of <code>MoveNext()</code> will
+continue yielding the same result (returning <code>false</code> or throwing an exception).
+</p>
+<p>
+On the server side, <code>MoveNext()</code> does not throw exceptions.
+In case of a failure, the request stream will appear to be finished
+(<code>MoveNext</code> will return <code>false</code>) and the <code>CancellationToken</code>
+associated with the call will be cancelled to signal the failure.
+</p>
+<p>
+<code>MoveNext()</code> operations can be cancelled via a cancellation token. Cancelling
+an individual read operation has the same effect as cancelling the entire call
+(which will also result in the read operation returning prematurely), but the per-read cancellation
+tokens passed to MoveNext() only result in cancelling the call if the read operation haven&apos;t finished
+yet.
+</p></p>
+</section>
+      <h4><a class="xref" href="Grpc.Core.IAsyncStreamWriter-1.html">IAsyncStreamWriter&lt;T&gt;</a></h4>
+      <section><p>A writable stream of messages.</p>
+</section>
+      <h4><a class="xref" href="Grpc.Core.IClientStreamWriter-1.html">IClientStreamWriter&lt;T&gt;</a></h4>
+      <section><p>Client-side writable stream of messages with Close capability.</p>
+</section>
+      <h4><a class="xref" href="Grpc.Core.IMethod.html">IMethod</a></h4>
+      <section><p>A non-generic representation of a remote method.</p>
+</section>
+      <h4><a class="xref" href="Grpc.Core.IServerStreamWriter-1.html">IServerStreamWriter&lt;T&gt;</a></h4>
+      <section><p>A writable stream of messages that is used in server-side handlers.</p>
+</section>
+    <h3 id="enums">Enums
+  </h3>
+      <h4><a class="xref" href="Grpc.Core.MethodType.html">MethodType</a></h4>
+      <section><p>Method types supported by gRPC.</p>
+</section>
+      <h4><a class="xref" href="Grpc.Core.StatusCode.html">StatusCode</a></h4>
+      <section><p>Result of a remote procedure call.
+Based on grpc_status_code from grpc/status.h</p>
+</section>
+      <h4><a class="xref" href="Grpc.Core.WriteFlags.html">WriteFlags</a></h4>
+      <section><p>Flags for write operations.</p>
+</section>
+    <h3 id="delegates">Delegates
+  </h3>
+      <h4><a class="xref" href="Grpc.Core.AsyncAuthInterceptor.html">AsyncAuthInterceptor</a></h4>
+      <section><p>Asynchronous authentication interceptor for <a class="xref" href="Grpc.Core.CallCredentials.html">CallCredentials</a>.</p>
+</section>
+      <h4><a class="xref" href="Grpc.Core.ClientStreamingServerMethod-2.html">ClientStreamingServerMethod&lt;TRequest, TResponse&gt;</a></h4>
+      <section><p>Server-side handler for client streaming call.</p>
+</section>
+      <h4><a class="xref" href="Grpc.Core.DuplexStreamingServerMethod-2.html">DuplexStreamingServerMethod&lt;TRequest, TResponse&gt;</a></h4>
+      <section><p>Server-side handler for bidi streaming call.</p>
+</section>
+      <h4><a class="xref" href="Grpc.Core.ServerStreamingServerMethod-2.html">ServerStreamingServerMethod&lt;TRequest, TResponse&gt;</a></h4>
+      <section><p>Server-side handler for server streaming call.</p>
+</section>
+      <h4><a class="xref" href="Grpc.Core.UnaryServerMethod-2.html">UnaryServerMethod&lt;TRequest, TResponse&gt;</a></h4>
+      <section><p>Server-side handler for unary call.</p>
+</section>
+      <h4><a class="xref" href="Grpc.Core.VerifyPeerCallback.html">VerifyPeerCallback</a></h4>
+      <section><p>Callback invoked with the expected targetHost and the peer&apos;s certificate.
+If false is returned by this callback then it is treated as a
+verification failure and the attempted connection will fail.
+Invocation of the callback is blocking, so any
+implementation should be light-weight.
+Note that the callback can potentially be invoked multiple times,
+concurrently from different threads (e.g. when multiple connections
+are being created for the same credentials).</p>
+</section>
+</article>
+          </div>
+          
+          <div class="hidden-sm col-md-2" role="complementary">
+            <div class="sideaffix">
+              <nav class="bs-docs-sidebar hidden-print hidden-xs hidden-sm affix" id="affix">
+              <!-- <p><a class="back-to-top" href="#top">Back to top</a><p> -->
+              </nav>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <footer>
+        <div class="grad-bottom"></div>
+        <div class="footer">
+          <div class="container">
+            <span class="pull-right">
+              <a href="#top">Back to top</a>
+            </span>
+            
+            <span>Generated by <strong>DocFX</strong></span>
+          </div>
+        </div>
+      </footer>
+    </div>
+    
+    <script type="text/javascript" src="../styles/docfx.vendor.js"></script>
+    <script type="text/javascript" src="../styles/docfx.js"></script>
+    <script type="text/javascript" src="../styles/main.js"></script>
+  </body>
+</html>
