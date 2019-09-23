@@ -20,7 +20,6 @@
 #define GRPC_CORE_LIB_IOMGR_POLLER_EVENTMANAGER_INTERFACE_H_
 
 namespace grpc {
-
 namespace experimental {
 
 class BaseEventManagerInterface {

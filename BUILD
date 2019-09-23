@@ -2523,7 +2523,6 @@ filegroup(
 )
 
 # Base classes of EventManagerInterface
-
 grpc_cc_library(
     name = "eventmanager_interface",
     hdrs = [
