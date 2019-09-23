@@ -81,6 +81,10 @@ build:tsan --extra_execution_platforms=//third_party/toolchains:rbe_ubuntu1604,/
 # undefined behavior sanitizer: most settings are already in %workspace%/.bazelrc
 # we only need a few additional ones that are Foundry specific
 build:ubsan --copt=-gmlt
+# workaround to use libc++ instead of libstdc++ because gcc 4.9 installed in ubuntu16_04_clang
+# has an issue with ubsan. (https://gcc.gnu.org/bugzilla/show_bug.cgi?id=66017)
+build:ubsan --cxxopt=-stdlib=libc++
+build:ubsan --linkopt=-stdlib=libc++
 # TODO(jtattermusch): use more reasonable test timeout
 build:ubsan --test_timeout=3600
 # override the config-agnostic crosstool_top
