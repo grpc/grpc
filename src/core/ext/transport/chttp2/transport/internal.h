@@ -522,7 +522,6 @@ struct grpc_chttp2_stream {
     explicit Reffer(grpc_chttp2_stream* s);
   } reffer;
 
-  grpc_closure destroy_stream;
   grpc_closure* destroy_stream_arg;
 
   grpc_chttp2_stream_link links[STREAM_LIST_COUNT];

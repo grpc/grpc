@@ -747,12 +747,6 @@ static int init_stream(grpc_transport* gt, grpc_stream* gs,
   return 0;
 }
 
-static void destroy_stream_locked(void* sp, grpc_error* error) {
-  GPR_TIMER_SCOPE("destroy_stream", 0);
-  grpc_chttp2_stream* s = static_cast<grpc_chttp2_stream*>(sp);
-  s->~grpc_chttp2_stream();
-}
-
 static void destroy_stream(grpc_transport* gt, grpc_stream* gs,
                            grpc_closure* then_schedule_closure) {
   GPR_TIMER_SCOPE("destroy_stream", 0);
@@ -771,10 +765,7 @@ static void destroy_stream(grpc_transport* gt, grpc_stream* gs,
   }
 
   s->destroy_stream_arg = then_schedule_closure;
-  GRPC_CLOSURE_SCHED(
-      GRPC_CLOSURE_INIT(&s->destroy_stream, destroy_stream_locked, s,
-                        grpc_schedule_on_exec_ctx),
-      GRPC_ERROR_NONE);
+  s->~grpc_chttp2_stream();
 }
 
 grpc_chttp2_stream* grpc_chttp2_parsing_accept_stream(grpc_chttp2_transport* t,
