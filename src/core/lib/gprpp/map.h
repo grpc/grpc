@@ -59,9 +59,6 @@ struct RefCountedPtrLess {
   }
 };
 
-template <class Key, class T, class Compare = std::less<Key>>
-using Map = std::map<Key, T, Compare>;
-
 }  // namespace grpc_core
 
 #endif /* GRPC_CORE_LIB_GPRPP_MAP_H */
