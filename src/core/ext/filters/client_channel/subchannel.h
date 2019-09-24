@@ -192,11 +192,9 @@ class Subchannel {
     virtual void OnConnectivityStateChange(
         grpc_connectivity_state new_state,
         RefCountedPtr<ConnectedSubchannel> connected_subchannel)  // NOLINT
-        GRPC_ABSTRACT;
+        = 0;
 
-    virtual grpc_pollset_set* interested_parties() GRPC_ABSTRACT;
-
-    GRPC_ABSTRACT_BASE_CLASS
+    virtual grpc_pollset_set* interested_parties() = 0;
   };
 
   // The ctor and dtor are not intended to use directly.

@@ -77,12 +77,11 @@ struct HandshakerArgs {
 class Handshaker : public RefCounted<Handshaker> {
  public:
   virtual ~Handshaker() = default;
-  virtual void Shutdown(grpc_error* why) GRPC_ABSTRACT;
+  virtual void Shutdown(grpc_error* why) = 0;
   virtual void DoHandshake(grpc_tcp_server_acceptor* acceptor,
                            grpc_closure* on_handshake_done,
-                           HandshakerArgs* args) GRPC_ABSTRACT;
-  virtual const char* name() const GRPC_ABSTRACT;
-  GRPC_ABSTRACT_BASE_CLASS
+                           HandshakerArgs* args) = 0;
+  virtual const char* name() const = 0;
 };
 
 //
