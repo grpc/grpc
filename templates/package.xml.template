@@ -12,7 +12,7 @@
     <email>grpc-packages@google.com</email>
     <active>yes</active>
    </lead>
-   <date>2018-01-19</date>
+   <date>2019-09-24</date>
    <time>16:06:07</time>
    <version>
     <release>${settings.php_version.php()}</release>
@@ -24,7 +24,7 @@
    </stability>
    <license>Apache 2.0</license>
    <notes>
-  - TBD
+  - gRPC Core ${settings.php_version.php_composer()} update
    </notes>
    <contents>
     <dir baseinstalldir="/" name="/">
