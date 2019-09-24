@@ -24,7 +24,6 @@
 #include <grpc/grpc.h>
 #include <grpc/impl/codegen/grpc_types.h>
 
-#include "src/core/lib/gprpp/abstract.h"
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/endpoint.h"
 #include "src/core/lib/iomgr/resolve_address.h"
@@ -57,9 +56,9 @@ class TcpServerFdHandler {
  public:
   virtual ~TcpServerFdHandler() = default;
   virtual void Handle(int listener_fd, int fd,
-                      grpc_byte_buffer* pending_read) GRPC_ABSTRACT;
+                      grpc_byte_buffer* pending_read) = 0;
 
-  GRPC_ABSTRACT_BASE_CLASS;
+  ;
 };
 }  // namespace grpc_core
 

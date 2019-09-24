@@ -33,7 +33,7 @@ C++ compatible with
 - There will be some C++ features that don't work
   - `new` and `delete`
   - pure virtual functions are not allowed because the message that prints out "Pure Virtual Function called" is part of the standard library
-    - Make a `#define GRPC_ABSTRACT {GPR_ASSERT(false);}` instead of `= 0;`
+    - Make a `#define = 0 {GPR_ASSERT(false);}` instead of `= 0;`
 - The sanity for making sure that we don't depend on libstdc++ is that at least some tests should explicitly not include it
   - Most tests can migrate to use gtest
     - There are tremendous # of code paths that can now be exposed to unit tests because of the use of gtest and C++
