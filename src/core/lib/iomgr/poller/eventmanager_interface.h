@@ -16,8 +16,8 @@
  *
  */
 
-#ifndef GRPC_CORE_LIB_IOMGR_POLLER_EVENTMANAGER_INTERFACE_H_
-#define GRPC_CORE_LIB_IOMGR_POLLER_EVENTMANAGER_INTERFACE_H_
+#ifndef GRPC_CORE_LIB_IOMGR_POLLER_EVENTMANAGER_INTERFACE_H
+#define GRPC_CORE_LIB_IOMGR_POLLER_EVENTMANAGER_INTERFACE_H
 
 namespace grpc {
 namespace experimental {
@@ -32,4 +32,4 @@ class EpollEventManagerInterface : public BaseEventManagerInterface {};
 }  // namespace experimental
 }  // namespace grpc
 
-#endif  // GRPC_CORE_LIB_IOMGR_POLLER_EVENTMANAGER_INTERFACE_H_
+#endif /* GRPC_CORE_LIB_IOMGR_POLLER_EVENTMANAGER_INTERFACE_H */
