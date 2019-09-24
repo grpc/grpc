@@ -257,8 +257,8 @@ TEST_P(ServerBuilderPluginTest, PluginWithServiceTest) {
   EXPECT_TRUE(s.ok());
 }
 
-INSTANTIATE_TEST_CASE_P(ServerBuilderPluginTest, ServerBuilderPluginTest,
-                        ::testing::Values(false, true));
+INSTANTIATE_TEST_SUITE_P(ServerBuilderPluginTest, ServerBuilderPluginTest,
+                         ::testing::Values(false, true));
 
 }  // namespace testing
 }  // namespace grpc
