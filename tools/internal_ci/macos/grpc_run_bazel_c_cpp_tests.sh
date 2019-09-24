@@ -1,3 +1,4 @@
+#!/usr/bin/env bash
 # Copyright 2019 The gRPC Authors
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -12,12 +13,18 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# Config file for the internal CI (in protobuf text format)
+set -ex
 
-# Location of the continuous shell script in repository.
-build_file: "grpc/tools/internal_ci/macos/grpc_run_bazel_isolated_tests.sh"
-env_vars {
-  key: "RUN_TESTS_FLAGS"
-  value: "--config=asan_macos"
-}
+# change to grpc repo root
+cd $(dirname $0)/../../..
+
+./tools/run_tests/start_port_server.py
+
+# run all C/C++ tests
+# TODO(jtattermusch): try using Bazel RBE remote cache
+# TODO(jtattermusch): upload bazel test results to resultstore
+tools/bazel test $RUN_TESTS_FLAGS //test/...
+
+# kill port_server.py to prevent the build from hanging
+ps aux | grep port_server\\.py | awk '{print $2}' | xargs kill -9
 
