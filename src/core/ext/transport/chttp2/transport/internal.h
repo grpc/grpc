@@ -293,7 +293,7 @@ struct grpc_chttp2_transport {
   ~grpc_chttp2_transport();
 
   grpc_transport base; /* must be first */
-  gpr_mu mu;
+  grpc_core::Mutex mu;
   grpc_core::RefCount refs;
   grpc_endpoint* ep;
   char* peer_string;
