@@ -69,11 +69,6 @@ config_setting(
     values = {"cpu": "darwin"},
 )
 
-config_setting(
-    name = "grpc_use_cpp_std_lib",
-    values = {"define": "GRPC_USE_CPP_STD_LIB=1"},
-)
-
 python_config_settings()
 
 # This should be updated along with build.yaml
@@ -514,7 +509,6 @@ grpc_cc_library(
         "src/core/lib/gpr/tls_pthread.h",
         "src/core/lib/gpr/tmpfile.h",
         "src/core/lib/gpr/useful.h",
-        "src/core/lib/gprpp/abstract.h",
         "src/core/lib/gprpp/arena.h",
         "src/core/lib/gprpp/atomic.h",
         "src/core/lib/gprpp/fork.h",

@@ -28,7 +28,6 @@
 #include <memory>
 
 #include "src/core/lib/debug/trace.h"
-#include "src/core/lib/gprpp/abstract.h"
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/memory.h"
 #include "src/core/lib/gprpp/ref_counted.h"
@@ -46,13 +45,11 @@ class Orphanable {
   // Gives up ownership of the object.  The implementation must arrange
   // to eventually destroy the object without further interaction from the
   // caller.
-  virtual void Orphan() GRPC_ABSTRACT;
+  virtual void Orphan() = 0;
 
   // Not copyable or movable.
   Orphanable(const Orphanable&) = delete;
   Orphanable& operator=(const Orphanable&) = delete;
-
-  GRPC_ABSTRACT_BASE_CLASS
 
  protected:
   Orphanable() {}
@@ -80,8 +77,6 @@ class InternallyRefCounted : public Orphanable {
   // Not copyable nor movable.
   InternallyRefCounted(const InternallyRefCounted&) = delete;
   InternallyRefCounted& operator=(const InternallyRefCounted&) = delete;
-
-  GRPC_ABSTRACT_BASE_CLASS
 
  protected:
   GRPC_ALLOW_CLASS_TO_USE_NON_PUBLIC_DELETE
