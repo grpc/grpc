@@ -294,8 +294,8 @@ class Subchannel {
    private:
     // TODO(roth): This could be a set instead of a map if we had a set
     // implementation.
-    Map<ConnectivityStateWatcherInterface*,
-        OrphanablePtr<ConnectivityStateWatcherInterface>>
+    std::map<ConnectivityStateWatcherInterface*,
+             OrphanablePtr<ConnectivityStateWatcherInterface>>
         watchers_;
   };
 
@@ -328,7 +328,7 @@ class Subchannel {
    private:
     class HealthWatcher;
 
-    Map<const char*, OrphanablePtr<HealthWatcher>, StringLess> map_;
+    std::map<const char*, OrphanablePtr<HealthWatcher>, StringLess> map_;
   };
 
   class ConnectedSubchannelStateWatcher;

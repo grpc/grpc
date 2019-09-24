@@ -526,8 +526,8 @@ class XdsLb : public LoadBalancingPolicy {
 
    private:
     XdsLb* xds_policy_;
-    Map<RefCountedPtr<XdsLocalityName>, OrphanablePtr<LocalityEntry>,
-        XdsLocalityName::Less>
+    std::map<RefCountedPtr<XdsLocalityName>, OrphanablePtr<LocalityEntry>,
+             XdsLocalityName::Less>
         map_;
   };
 
