@@ -39,7 +39,6 @@ namespace grpc_core {
 
 // PolymorphicRefCount enforces polymorphic destruction of RefCounted.
 class PolymorphicRefCount {
- public:
  protected:
   GRPC_ALLOW_CLASS_TO_USE_NON_PUBLIC_DELETE
 
@@ -50,7 +49,6 @@ class PolymorphicRefCount {
 // RefCounted. Please refer to grpc_core::RefCounted for more details, and
 // when in doubt use PolymorphicRefCount.
 class NonPolymorphicRefCount {
- public:
  protected:
   GRPC_ALLOW_CLASS_TO_USE_NON_PUBLIC_DELETE
 
