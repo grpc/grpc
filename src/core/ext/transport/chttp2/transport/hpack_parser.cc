@@ -1742,6 +1742,8 @@ grpc_error* grpc_chttp2_header_parser_parse(void* hpack_parser,
              the stream. Wait until the combiner lock is ready to be released
              however -- it might be that we receive a RST_STREAM following this
              and can avoid the extra write */
+          // TODO(yashykt) : When we were using combiners, we were using the
+          // finally version. Maybe do something similar?
           GRPC_CHTTP2_STREAM_REF(s, "final_rst");
           GRPC_CLOSURE_SCHED(GRPC_CLOSURE_CREATE(force_client_rst_stream, s,
                                                  grpc_schedule_on_exec_ctx),

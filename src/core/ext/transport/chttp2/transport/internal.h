@@ -254,7 +254,7 @@ class Chttp2IncomingByteStream : public ByteStream {
 
  private:
   static void NextLocked(void* arg, grpc_error* error_ignored);
-  static void OrphanLocked(void* arg, grpc_error* error_ignored);
+  static void OrphanLocked(void* arg);
 
   void MaybeCreateStreamDecompressionCtx();
 
