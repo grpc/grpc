@@ -23,7 +23,6 @@
 
 #include "src/core/lib/avl/avl.h"
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/gprpp/abstract.h"
 #include "src/core/lib/gprpp/ref_counted.h"
 
 namespace grpc_core {

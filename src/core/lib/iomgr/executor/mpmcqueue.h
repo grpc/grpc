@@ -22,7 +22,6 @@
 #include <grpc/support/port_platform.h>
 
 #include "src/core/lib/debug/stats.h"
-#include "src/core/lib/gprpp/abstract.h"
 #include "src/core/lib/gprpp/atomic.h"
 #include "src/core/lib/gprpp/sync.h"
 

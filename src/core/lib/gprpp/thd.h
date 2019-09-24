@@ -28,7 +28,6 @@
 #include <grpc/support/thd_id.h>
 #include <grpc/support/time.h>
 
-#include "src/core/lib/gprpp/abstract.h"
 #include "src/core/lib/gprpp/memory.h"
 
 namespace grpc_core {

@@ -24,7 +24,6 @@
 #include <grpc/support/string_util.h>
 
 #include "src/core/ext/filters/client_channel/resolver.h"
-#include "src/core/lib/gprpp/abstract.h"
 #include "src/core/lib/gprpp/memory.h"
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/iomgr/pollset_set.h"

@@ -24,7 +24,6 @@
 #include <grpc/grpc.h>
 #include <grpc/impl/codegen/grpc_types.h>
 
-#include "src/core/lib/gprpp/abstract.h"
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/iomgr/endpoint.h"
 #include "src/core/lib/iomgr/resolve_address.h"
