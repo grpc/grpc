@@ -605,7 +605,7 @@ class XdsLb : public LoadBalancingPolicy {
     uint32_t current_priority() const { return current_priority_; }
 
    private:
-    void CreateLocalityMapLocked(uint32_t priority);
+    void MaybeCreateLocalityMapLocked(uint32_t priority);
     void FailoverOnConnectionFailureLocked();
     void FailoverOnDisconnectionLocked(uint32_t failed_priority);
     void SwitchToHigherPriorityLocked(uint32_t priority);
@@ -2152,7 +2152,7 @@ void XdsLb::PriorityList::UpdateLocked() {
     // locality map reports TRANSIENT_FAILURE synchronously due to subchannel
     // sharing), the following invocation may result in multiple locality maps
     // to be created.
-    CreateLocalityMapLocked(new_priority);
+    MaybeCreateLocalityMapLocked(new_priority);
   }
 }
 
@@ -2179,7 +2179,7 @@ void XdsLb::PriorityList::UpdateXdsPickerLocked() {
   priorities_[current_priority_]->UpdateXdsPickerLocked();
 }
 
-void XdsLb::PriorityList::CreateLocalityMapLocked(uint32_t priority) {
+void XdsLb::PriorityList::MaybeCreateLocalityMapLocked(uint32_t priority) {
   // Exhausted priorities in the update.
   if (!priority_list_update().Contains(priority)) return;
   auto new_locality_map = New<LocalityMap>(
@@ -2194,7 +2194,7 @@ void XdsLb::PriorityList::FailoverOnConnectionFailureLocked() {
   if (failed_priority == priority_list_update().LowestPriority()) {
     UpdateXdsPickerLocked();
   }
-  CreateLocalityMapLocked(failed_priority + 1);
+  MaybeCreateLocalityMapLocked(failed_priority + 1);
 }
 
 void XdsLb::PriorityList::FailoverOnDisconnectionLocked(
@@ -2204,7 +2204,7 @@ void XdsLb::PriorityList::FailoverOnDisconnectionLocked(
        next_priority <= priority_list_update().LowestPriority();
        ++next_priority) {
     if (!Contains(next_priority)) {
-      CreateLocalityMapLocked(next_priority);
+      MaybeCreateLocalityMapLocked(next_priority);
       return;
     }
     if (priorities_[next_priority]->MaybeReactivateLocked()) return;
@@ -2411,7 +2411,7 @@ void XdsLb::PriorityList::LocalityMap::Orphan() {
 
 void XdsLb::PriorityList::LocalityMap::OnLocalityStateUpdateLocked() {
   UpdateConnectivityStateLocked();
-  // Ignore priorities not in the update.
+  // Ignore priorities not in priority_list_update.
   if (!priority_list_update().Contains(priority_)) return;
   const uint32_t current_priority = priority_list()->current_priority();
   // Ignore lower-than-current priorities.
@@ -2421,6 +2421,8 @@ void XdsLb::PriorityList::LocalityMap::OnLocalityStateUpdateLocked() {
     xds_policy_->MaybeCancelFallbackAtStartupChecks();
     xds_policy_->MaybeExitFallbackMode();
   }
+  // Update is for a higher-than-current priority. (Special case: update is for
+  // any active priority if there is no current priority.)
   if (priority_ < current_priority) {
     if (connectivity_state_ == GRPC_CHANNEL_READY) {
       MaybeCancelFailoverTimerLocked();
@@ -2436,16 +2438,16 @@ void XdsLb::PriorityList::LocalityMap::OnLocalityStateUpdateLocked() {
     }
     return;
   }
-  // Update is for current priority  that is currently used.
+  // Update is for current priority.
   if (connectivity_state_ != GRPC_CHANNEL_READY) {
     // Fail over if it's no longer READY.
     priority_list()->FailoverOnDisconnectionLocked(priority_);
   }
-  // At this point, one of the following things has happened to the currently
-  // used priority.
-  // 1. It remained the same (but receives picker update from its localities).
-  // 2. It became a new one due to failover.
-  // 3. It became invalid because failover doesn't yield a READY priority.
+  // At this point, one of the following things has happened to the current
+  // priority.
+  // 1. It remained the same (but received picker update from its localities).
+  // 2. It changed to a lower priority due to failover.
+  // 3. It became invalid because failover didn't yield a READY priority.
   // In any case, update the xds picker.
   priority_list()->UpdateXdsPickerLocked();
 }
@@ -2510,6 +2512,8 @@ void XdsLb::PriorityList::LocalityMap::OnDelayedRemovalTimerLocked(
       // This check is to make sure we always delete the locality maps from the
       // lowest priority even if the closures of the back-to-back timers are not
       // run in FIFO order.
+      // TODO(juanlishen): Eliminate unnecessary maintenance overhead for some
+      // deactivated locality maps when out-of-order closures are run.
       // TODO(juanlishen): Check the timer implementation to see if this defense
       // is necessary.
       if (self->priority_ == priority_list->LowestPriority()) {
