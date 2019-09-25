@@ -23,6 +23,7 @@
 
 #include <grpcpp/security/credentials.h>
 #include <grpcpp/security/server_credentials.h>
+#include "test/cpp/util/test_credentials_provider.h"
 
 namespace grpc {
 namespace testing {
@@ -36,9 +37,22 @@ std::shared_ptr<grpc_impl::ChannelCredentials> SpiffeTestChannelCredentials();
 
 std::shared_ptr<ServerCredentials> SpiffeTestServerCredentials();
 
-std::shared_ptr<grpc_impl::ChannelCredentials> SSLTestChannelCredentials();
+std::shared_ptr<ChannelCredentials> SSLTestChannelCredentials();
 
 std::shared_ptr<ServerCredentials> SSLTestServerCredentials();
+
+const char kMySslCredentialsType[] = "my_ssl";
+
+class MySslCredentialTypeProvider : public CredentialTypeProvider {
+ public:
+  std::shared_ptr<ChannelCredentials> GetChannelCredentials(ChannelArguments* args) override {
+    args->SetSslTargetNameOverride("foo.test.google.fr");
+    return SSLTestChannelCredentials();
+  }
+  std::shared_ptr<ServerCredentials> GetServerCredentials() override {
+    return SSLTestServerCredentials();
+  }
+};
 
 } // namespace testing
 } // namespace grpc

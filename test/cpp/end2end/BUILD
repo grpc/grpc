@@ -222,6 +222,7 @@ grpc_cc_library(
         "//src/proto/grpc/testing/duplicate:echo_duplicate_proto",
         "//test/core/util:grpc_test_util",
         "//test/cpp/util:test_util",
+        ":spiffe_test_credentials",
     ],
     alwayslink = 1,
 )
@@ -334,6 +335,7 @@ grpc_cc_library(
     hdrs = ["spiffe/spiffe_test_credentials.h"],
     deps = [
         "//:grpc++",
+        "//test/cpp/util:test_util",
     ],
 )
 

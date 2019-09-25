@@ -92,16 +92,18 @@ std::shared_ptr<ServerCredentials> SpiffeTestServerCredentials() {
 }
 
 std::shared_ptr<grpc_impl::ChannelCredentials> SSLTestChannelCredentials() {
-  SslCredentialsOptions ssl_opts = {test_root_cert, "", ""};
-  return grpc::SslCredentials(ssl_opts);
+  SslCredentialsOptions ssl_opts = {test_root_cert, test_server1_key, test_server1_cert};
+  std::shared_ptr<grpc_impl::ChannelCredentials> creds =  grpc::SslCredentials(ssl_opts);
+  return creds;
 }
 
 std::shared_ptr<ServerCredentials> SSLTestServerCredentials() {
   SslServerCredentialsOptions ssl_opts;
-  ssl_opts.pem_root_certs = "";
+  ssl_opts.pem_root_certs = test_root_cert;
   SslServerCredentialsOptions::PemKeyCertPair pkcp = {test_server1_key, test_server1_cert};
   ssl_opts.pem_key_cert_pairs.push_back(pkcp);
-  return SslServerCredentials(ssl_opts);
+  std::shared_ptr<ServerCredentials> creds = grpc::SslServerCredentials(ssl_opts);
+  return creds;
 }
 
 } // namespace testing
