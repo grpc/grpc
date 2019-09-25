@@ -610,15 +610,6 @@ filegroups:
 - name: grpc++_reflection_proto
   src:
   - src/proto/grpc/reflection/v1alpha/reflection.proto
-- name: grpc++_test
-  public_headers:
-  - include/grpc++/test/mock_stream.h
-  - include/grpc++/test/server_context_test_spouse.h
-  - include/grpcpp/test/mock_stream.h
-  - include/grpcpp/test/server_context_test_spouse.h
-  deps:
-  - grpc++
-  - grpc
 - name: grpc_base
   src:
   - src/core/lib/avl/avl.cc
@@ -1897,6 +1888,17 @@ libs:
   - grpc
   filegroups:
   - grpc++_reflection_proto
+- name: grpc++_test
+  build: all
+  language: c++
+  public_headers:
+  - include/grpc++/test/mock_stream.h
+  - include/grpc++/test/server_context_test_spouse.h
+  - include/grpcpp/test/mock_stream.h
+  - include/grpcpp/test/server_context_test_spouse.h
+  deps:
+  - grpc++
+  - grpc
 - name: grpc++_test_config
   build: private
   language: c++
