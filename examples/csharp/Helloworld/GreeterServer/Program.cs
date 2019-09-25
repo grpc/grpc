@@ -43,7 +43,7 @@ namespace GreeterServer
 
             Console.WriteLine("Greeter server listening on port " + Port);
             Console.WriteLine("Press any key to stop the server...");
-            Console.ReadKey();
+            Console.ReadLine();//ReadKey does not work in C# core 
 
             server.ShutdownAsync().Wait();
         }
