@@ -92,9 +92,10 @@ int TlsCredentialReloadConfigCSchedule(void* config_user_data,
   }
   TlsCredentialReloadConfig* cpp_config =
       static_cast<TlsCredentialReloadConfig*>(arg->config->context());
-  std::unique_ptr<TlsCredentialReloadArg> cpp_arg(
-      new TlsCredentialReloadArg(arg));
-  return cpp_config->Schedule(cpp_arg);
+  TlsCredentialReloadArg* cpp_arg = new TlsCredentialReloadArg(arg);
+  int schedule_result = cpp_config->Schedule(cpp_arg);
+  delete cpp_arg;
+  return schedule_result;
 }
 
 void TlsCredentialReloadConfigCCancel(void* config_user_data,
@@ -104,11 +105,16 @@ void TlsCredentialReloadConfigCCancel(void* config_user_data,
     gpr_log(GPR_ERROR, "credential reload arg was not properly initialized");
     return;
   }
+  if (arg->context == nullptr) {
+    gpr_log(GPR_ERROR, "credential reload arg schedule has already completed");
+    return;
+  }
   TlsCredentialReloadConfig* cpp_config =
       static_cast<TlsCredentialReloadConfig*>(arg->config->context());
-  std::unique_ptr<TlsCredentialReloadArg> cpp_arg(
-      new TlsCredentialReloadArg(arg));
+  TlsCredentialReloadArg* cpp_arg =
+      static_cast<TlsCredentialReloadArg*>(arg->context);
   cpp_config->Cancel(cpp_arg);
+  delete cpp_arg;
 }
 
 /** The C schedule and cancel functions for the server authorization check
@@ -124,9 +130,11 @@ int TlsServerAuthorizationCheckConfigCSchedule(
   }
   TlsServerAuthorizationCheckConfig* cpp_config =
       static_cast<TlsServerAuthorizationCheckConfig*>(arg->config->context());
-  std::unique_ptr<TlsServerAuthorizationCheckArg> cpp_arg(
-      new TlsServerAuthorizationCheckArg(arg));
-  return cpp_config->Schedule(cpp_arg);
+  TlsServerAuthorizationCheckArg* cpp_arg =
+      new TlsServerAuthorizationCheckArg(arg);
+  int schedule_result = cpp_config->Schedule(cpp_arg);
+  delete cpp_arg;
+  return schedule_result;
 }
 
 void TlsServerAuthorizationCheckConfigCCancel(
@@ -137,11 +145,17 @@ void TlsServerAuthorizationCheckConfigCCancel(
             "server authorization check arg was not properly initialized");
     return;
   }
+  if (arg->context == nullptr) {
+    gpr_log(GPR_ERROR,
+            "server authorization check arg schedule has already completed");
+    return;
+  }
   TlsServerAuthorizationCheckConfig* cpp_config =
       static_cast<TlsServerAuthorizationCheckConfig*>(arg->config->context());
-  std::unique_ptr<TlsServerAuthorizationCheckArg> cpp_arg(
-      new TlsServerAuthorizationCheckArg(arg));
+  TlsServerAuthorizationCheckArg* cpp_arg =
+      static_cast<TlsServerAuthorizationCheckArg*>(arg->context);
   cpp_config->Cancel(cpp_arg);
+  delete cpp_arg;
 }
 
 }  // namespace experimental

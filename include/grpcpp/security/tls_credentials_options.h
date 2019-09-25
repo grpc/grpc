@@ -80,7 +80,7 @@ class TlsCredentialReloadArg {
   /** TlsCredentialReloadArg does not take ownership of the C arg that is passed
    * to the constructor. One must remember to free any memory allocated to the C
    * arg after using the setter functions below. **/
-  TlsCredentialReloadArg(grpc_tls_credential_reload_arg* arg) : c_arg_(arg) {}
+  TlsCredentialReloadArg(grpc_tls_credential_reload_arg* arg);
   ~TlsCredentialReloadArg();
 
   /** Getters for member fields. The callback function is not exposed.
@@ -118,13 +118,9 @@ class TlsCredentialReloadArg {
 struct TlsCredentialReloadInterface {
   virtual ~TlsCredentialReloadInterface() = default;
   /** A callback that invokes the credential reload. **/
-  virtual int Schedule(std::unique_ptr<TlsCredentialReloadArg>& arg) = 0;
+  virtual int Schedule(TlsCredentialReloadArg* arg) = 0;
   /** A callback that cancels a credential reload request. **/
-  virtual void Cancel(std::unique_ptr<TlsCredentialReloadArg>& arg) {}
-  /** A callback that cleans up any data associated to the
-   * interface or the config. It will be called when the config is no longer
-   * using the interface. **/
-  virtual void Release() {}
+  virtual void Cancel(TlsCredentialReloadArg* arg) {}
 };
 
 /** TLS credential reloag config, wraps grpc_tls_credential_reload_config. It is
@@ -136,11 +132,11 @@ class TlsCredentialReloadConfig {
                                 credential_reload_interface);
   ~TlsCredentialReloadConfig();
 
-  int Schedule(std::unique_ptr<TlsCredentialReloadArg>& arg) const {
+  int Schedule(TlsCredentialReloadArg* arg) const {
     return credential_reload_interface_->Schedule(arg);
   }
 
-  void Cancel(std::unique_ptr<TlsCredentialReloadArg>& arg) const {
+  void Cancel(TlsCredentialReloadArg* arg) const {
     credential_reload_interface_->Cancel(arg);
   }
 
@@ -166,8 +162,7 @@ class TlsServerAuthorizationCheckArg {
   /** TlsServerAuthorizationCheckArg does not take ownership of the C arg passed
    * to the constructor. One must remember to free any memory allocated to the
    * C arg after using the setter functions below. **/
-  TlsServerAuthorizationCheckArg(grpc_tls_server_authorization_check_arg* arg)
-      : c_arg_(arg) {}
+  TlsServerAuthorizationCheckArg(grpc_tls_server_authorization_check_arg* arg);
   ~TlsServerAuthorizationCheckArg();
 
   /** Getters for member fields. They return the corresponding fields of the
@@ -208,13 +203,9 @@ class TlsServerAuthorizationCheckArg {
 struct TlsServerAuthorizationCheckInterface {
   virtual ~TlsServerAuthorizationCheckInterface() = default;
   /** A callback that invokes the server authorization check. **/
-  virtual int Schedule(
-      std::unique_ptr<TlsServerAuthorizationCheckArg>& arg) = 0;
+  virtual int Schedule(TlsServerAuthorizationCheckArg* arg) = 0;
   /** A callback that cancels a server authorization check request. **/
-  virtual void Cancel(std::unique_ptr<TlsServerAuthorizationCheckArg>& arg) {}
-  /** A callback that cleans up any data associated to the
-   * interface or the config. **/
-  virtual void Release() {}
+  virtual void Cancel(TlsServerAuthorizationCheckArg* arg) {}
 };
 
 /** TLS server authorization check config, wraps
@@ -229,11 +220,11 @@ class TlsServerAuthorizationCheckConfig {
           server_authorization_check_interface);
   ~TlsServerAuthorizationCheckConfig();
 
-  int Schedule(std::unique_ptr<TlsServerAuthorizationCheckArg>& arg) const {
+  int Schedule(TlsServerAuthorizationCheckArg* arg) const {
     return server_authorization_check_interface_->Schedule(arg);
   }
 
-  void Cancel(std::unique_ptr<TlsServerAuthorizationCheckArg>& arg) const {
+  void Cancel(TlsServerAuthorizationCheckArg* arg) const {
     server_authorization_check_interface_->Cancel(arg);
   }
 

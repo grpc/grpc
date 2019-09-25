@@ -33,7 +33,16 @@ void TlsKeyMaterialsConfig::set_key_materials(
 }
 
 /** TLS credential reload arg API implementation **/
-TlsCredentialReloadArg::~TlsCredentialReloadArg() {}
+TlsCredentialReloadArg::TlsCredentialReloadArg(
+    grpc_tls_credential_reload_arg* arg)
+    : c_arg_(arg) {
+  if (c_arg_ != nullptr && c_arg_->context != nullptr) {
+    gpr_log(GPR_ERROR, "c_arg context has already been set");
+  }
+  c_arg_->context = static_cast<void*>(this);
+}
+
+TlsCredentialReloadArg::~TlsCredentialReloadArg() { c_arg_->context = nullptr; }
 
 void* TlsCredentialReloadArg::cb_user_data() const {
   return c_arg_->cb_user_data;
@@ -95,14 +104,21 @@ TlsCredentialReloadConfig::TlsCredentialReloadConfig(
   c_config_->set_context(static_cast<void*>(this));
 }
 
-TlsCredentialReloadConfig::~TlsCredentialReloadConfig() {
-  if (credential_reload_interface_ != nullptr) {
-    credential_reload_interface_->Release();
-  }
-}
+TlsCredentialReloadConfig::~TlsCredentialReloadConfig() {}
 
 /** gRPC TLS server authorization check arg API implementation **/
-TlsServerAuthorizationCheckArg::~TlsServerAuthorizationCheckArg() {}
+TlsServerAuthorizationCheckArg::TlsServerAuthorizationCheckArg(
+    grpc_tls_server_authorization_check_arg* arg)
+    : c_arg_(arg) {
+  if (c_arg_ != nullptr && c_arg_->context != nullptr) {
+    gpr_log(GPR_ERROR, "c_arg context has already been set");
+  }
+  c_arg_->context = static_cast<void*>(this);
+}
+
+TlsServerAuthorizationCheckArg::~TlsServerAuthorizationCheckArg() {
+  c_arg_->context = nullptr;
+}
 
 void* TlsServerAuthorizationCheckArg::cb_user_data() const {
   return c_arg_->cb_user_data;
@@ -176,11 +192,7 @@ TlsServerAuthorizationCheckConfig::TlsServerAuthorizationCheckConfig(
   c_config_->set_context(static_cast<void*>(this));
 }
 
-TlsServerAuthorizationCheckConfig::~TlsServerAuthorizationCheckConfig() {
-  if (server_authorization_check_interface_ != nullptr) {
-    server_authorization_check_interface_->Release();
-  }
-}
+TlsServerAuthorizationCheckConfig::~TlsServerAuthorizationCheckConfig() {}
 
 /** gRPC TLS credential options API implementation **/
 TlsCredentialsOptions::TlsCredentialsOptions(
