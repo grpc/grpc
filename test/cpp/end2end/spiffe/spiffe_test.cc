@@ -66,9 +66,10 @@ class SpiffeGenericEnd2endTest : public ::testing::Test {
     shut_down_ = false;
     int port = grpc_pick_unused_port_or_die();
     server_address_ << server_host_ << ":" << port;
+    port = 5000;
     // Setup server
     ServerBuilder builder;
-    builder.AddListeningPort(server_address_.str(),
+    builder.AddListeningPort("localhost:5000",
                              SSLTestServerCredentials());
     //builder.RegisterAsyncGenericService(&generic_service_);
     // Include a second call to RegisterAsyncGenericService to make sure that
@@ -98,16 +99,31 @@ class SpiffeGenericEnd2endTest : public ::testing::Test {
   void ResetStub() {
     ChannelArguments args;
     args.SetSslTargetNameOverride("foo.test.google.fr");
+    //args.SetUserAgentPrefix("custom_prefix");
+    //args.SetString(GRPC_ARG_SECONDARY_USER_AGENT_STRING, "end2end_test");
     std::shared_ptr<Channel> channel = grpc::CreateCustomChannel(
-        server_address_.str(), SSLTestChannelCredentials(), args);
+        "127.0.0.1:5000", SSLTestChannelCredentials(), args);
     stub_ = grpc::testing::EchoTestService::NewStub(channel);
     generic_stub_.reset(new GenericStub(channel));
   }
 
-  void server_ok(int i) { verify_ok(srv_cq_.get(), i, true); }
-  void client_ok(int i) { verify_ok(&cli_cq_, i, true); }
-  void server_fail(int i) { verify_ok(srv_cq_.get(), i, false); }
-  void client_fail(int i) { verify_ok(&cli_cq_, i, false); }
+  void server_ok(int i) {
+    std::cout << "**************is server_ok?" << std::endl;
+    verify_ok(srv_cq_.get(), i, true);
+    std::cout << "**************server_ok" << std::endl;
+  }
+  void client_ok(int i) {
+    std::cout << "**************client_ok" << std::endl;
+    verify_ok(&cli_cq_, i, true);
+  }
+  void server_fail(int i) {
+    std::cout << "**************server_fail" << std::endl;
+    verify_ok(srv_cq_.get(), i, false);
+  }
+  void client_fail(int i) {
+    std::cout << "**************client_fail" << std::endl;
+    verify_ok(&cli_cq_, i, false);
+  }
 
   void SendRpc(int num_rpcs) {
     SendRpc(num_rpcs, false, gpr_inf_future(GPR_CLOCK_MONOTONIC));
@@ -157,6 +173,7 @@ class SpiffeGenericEnd2endTest : public ::testing::Test {
       generic_service_.RequestCall(&srv_ctx, &stream, srv_cq_.get(),
                                    srv_cq_.get(), tag(4));
 
+      std::cout << "***************standalone verify_ok in SendRpc" << std::endl;
       verify_ok(srv_cq_.get(), 4, true);
       EXPECT_EQ(server_host_, srv_ctx.host().substr(0, server_host_.length()));
       EXPECT_EQ(kMethodName, srv_ctx.method());
