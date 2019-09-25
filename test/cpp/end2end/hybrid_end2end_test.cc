@@ -962,8 +962,8 @@ TEST_F(HybridEnd2endTest, GenericMethodWithoutGenericService) {
   EXPECT_EQ(nullptr, server_.get());
 }
 
-INSTANTIATE_TEST_CASE_P(HybridEnd2endTest, HybridEnd2endTest,
-                        ::testing::Bool());
+INSTANTIATE_TEST_SUITE_P(HybridEnd2endTest, HybridEnd2endTest,
+                         ::testing::Bool());
 
 }  // namespace
 }  // namespace testing
