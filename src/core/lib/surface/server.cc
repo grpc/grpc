@@ -629,7 +629,7 @@ static void start_new_rpc(grpc_call_element* elem) {
     for (i = 0; i <= chand->registered_method_max_probes; i++) {
       rm = &chand->registered_methods[(hash + i) %
                                       chand->registered_method_slots];
-      if (!rm) break;
+      if (rm->server_registered_method == nullptr) break;
       if (!rm->has_host) continue;
       if (!grpc_slice_eq(rm->host, calld->host)) continue;
       if (!grpc_slice_eq(rm->method, calld->path)) continue;
@@ -647,7 +647,7 @@ static void start_new_rpc(grpc_call_element* elem) {
     for (i = 0; i <= chand->registered_method_max_probes; i++) {
       rm = &chand->registered_methods[(hash + i) %
                                       chand->registered_method_slots];
-      if (!rm) break;
+      if (rm->server_registered_method == nullptr) break;
       if (rm->has_host) continue;
       if (!grpc_slice_eq(rm->method, calld->path)) continue;
       if ((rm->flags & GRPC_INITIAL_METADATA_IDEMPOTENT_REQUEST) &&
