@@ -133,6 +133,7 @@ bool grpc_base64_decode_partial(struct grpc_base64_decode_context *ctx) {
       switch (input_tail) {
         case 3:
           ctx->output_cur[1] = COMPOSE_OUTPUT_BYTE_1(ctx->input_cur);
+          __attribute__ ((fallthrough));
         case 2:
           ctx->output_cur[0] = COMPOSE_OUTPUT_BYTE_0(ctx->input_cur);
       }

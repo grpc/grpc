@@ -192,6 +192,7 @@ grpc_json_reader_status grpc_json_reader_run(grpc_json_reader *reader) {
             if (!success) return GRPC_JSON_PARSE_ERROR;
             json_reader_string_clear(reader);
             reader->state = GRPC_JSON_STATE_VALUE_END;
+            __attribute__ ((fallthrough));
           /* The missing break here is intentional. */
 
           case GRPC_JSON_STATE_VALUE_END:

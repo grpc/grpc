@@ -92,7 +92,7 @@ CC_opt = $(DEFAULT_CC)
 CXX_opt = $(DEFAULT_CXX)
 LD_opt = $(DEFAULT_CC)
 LDXX_opt = $(DEFAULT_CXX)
-CPPFLAGS_opt = -O2
+CPPFLAGS_opt = -O2 -Wno-unused -Wno-deprecated-declarations
 DEFINES_opt = NDEBUG
 
 VALID_CONFIG_asan-trace-cmp = 1
