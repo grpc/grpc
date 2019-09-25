@@ -483,6 +483,7 @@ static const tsi_zero_copy_grpc_protector_vtable
         fake_zero_copy_grpc_protector_protect,
         fake_zero_copy_grpc_protector_unprotect,
         fake_zero_copy_grpc_protector_destroy,
+        nullptr /* fake_zero_copy_grpc_protector_max_frame_size */
 };
 
 /* --- tsi_handshaker_result methods implementation. ---*/
