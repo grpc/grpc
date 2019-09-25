@@ -121,7 +121,7 @@ class CSharpDistribTest(object):
                 use_workspace=True)
         elif self.platform == 'windows':
             if self.arch == 'x64':
-                # Use double leading / as the first occurence gets removed by msys bash
+                # Use double leading / as the first occurrence gets removed by msys bash
                 # when invoking the .bat file (side-effect of posix path conversion)
                 environ = {
                     'MSBUILD_EXTRA_ARGS': '//p:Platform=x64',
@@ -255,7 +255,7 @@ class PHPDistribTest(object):
 
 
 class CppDistribTest(object):
-    """Tests Cpp make intall by building examples."""
+    """Tests Cpp make install by building examples."""
 
     def __init__(self, platform, arch, docker_suffix=None, testcase=None):
         if platform == 'linux':
