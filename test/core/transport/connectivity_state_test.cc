@@ -131,7 +131,7 @@ TEST(StateTracker, NotifyShutdownAtDestruction) {
   EXPECT_EQ(state, GRPC_CHANNEL_SHUTDOWN);
 }
 
-TEST(StateTracker, NoNotNotifyShutdownAtDestructionIfAlreadyInShutdown) {
+TEST(StateTracker, DoNotNotifyShutdownAtDestructionIfAlreadyInShutdown) {
   int count = 0;
   grpc_connectivity_state state = GRPC_CHANNEL_SHUTDOWN;
   {

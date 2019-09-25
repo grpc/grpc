@@ -78,7 +78,6 @@ class ConnectedSubchannel : public RefCounted<ConnectedSubchannel> {
   ~ConnectedSubchannel();
 
   void StartWatch(grpc_pollset_set* interested_parties,
-                  grpc_connectivity_state initial_state,
                   OrphanablePtr<ConnectivityStateWatcherInterface> watcher);
 
   void Ping(grpc_closure* on_initiate, grpc_closure* on_ack);

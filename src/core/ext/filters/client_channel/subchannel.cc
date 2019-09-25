@@ -96,11 +96,11 @@ ConnectedSubchannel::~ConnectedSubchannel() {
 }
 
 void ConnectedSubchannel::StartWatch(
-    grpc_pollset_set* interested_parties, grpc_connectivity_state initial_state,
+    grpc_pollset_set* interested_parties,
     OrphanablePtr<ConnectivityStateWatcherInterface> watcher) {
   grpc_transport_op* op = grpc_make_transport_op(nullptr);
   op->start_connectivity_watch = std::move(watcher);
-  op->start_connectivity_watch_state = initial_state;
+  op->start_connectivity_watch_state = GRPC_CHANNEL_READY;
   op->bind_pollset_set = interested_parties;
   grpc_channel_element* elem = grpc_channel_stack_element(channel_stack_, 0);
   elem->filter->start_transport_op(elem, op);
@@ -1071,7 +1071,7 @@ bool Subchannel::PublishTransportLocked() {
   }
   // Start watching connected subchannel.
   connected_subchannel_->StartWatch(
-      pollset_set_, GRPC_CHANNEL_READY,
+      pollset_set_,
       OrphanablePtr<grpc_core::ConnectivityStateWatcherInterface>(
           New<ConnectedSubchannelStateWatcher>(this)));
   // Report initial state.

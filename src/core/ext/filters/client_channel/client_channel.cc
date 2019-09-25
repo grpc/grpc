@@ -183,6 +183,8 @@ class ChannelData {
   class SubchannelWrapper;
   class ClientChannelControlHelper;
 
+  // Represents a pending connectivity callback from an external caller
+  // via grpc_client_channel_watch_connectivity_state().
   class ExternalConnectivityWatcher : public ConnectivityStateWatcherInterface {
    public:
     ExternalConnectivityWatcher(ChannelData* chand, grpc_polling_entity pollent,
@@ -197,8 +199,8 @@ class ChannelData {
     void Cancel();
 
    private:
-    static void RemoveWatcherLocked(void* arg, grpc_error* ignored);
     static void AddWatcherLocked(void* arg, grpc_error* ignored);
+    static void RemoveWatcherLocked(void* arg, grpc_error* ignored);
 
     ChannelData* chand_;
     grpc_polling_entity pollent_;
@@ -1179,13 +1181,6 @@ void ChannelData::ExternalConnectivityWatcher::Cancel() {
       GRPC_ERROR_NONE);
 }
 
-void ChannelData::ExternalConnectivityWatcher::RemoveWatcherLocked(
-    void* arg, grpc_error* ignored) {
-  ExternalConnectivityWatcher* self =
-      static_cast<ExternalConnectivityWatcher*>(arg);
-  self->chand_->state_tracker_.RemoveWatcher(self);
-}
-
 void ChannelData::ExternalConnectivityWatcher::AddWatcherLocked(
     void* arg, grpc_error* ignored) {
   ExternalConnectivityWatcher* self =
@@ -1197,6 +1192,13 @@ void ChannelData::ExternalConnectivityWatcher::AddWatcherLocked(
   self->chand_->state_tracker_.AddWatcher(
       self->initial_state_,
       OrphanablePtr<ConnectivityStateWatcherInterface>(self));
+}
+
+void ChannelData::ExternalConnectivityWatcher::RemoveWatcherLocked(
+    void* arg, grpc_error* ignored) {
+  ExternalConnectivityWatcher* self =
+      static_cast<ExternalConnectivityWatcher*>(arg);
+  self->chand_->state_tracker_.RemoveWatcher(self);
 }
 
 //

@@ -47,7 +47,6 @@ void test_transport_op(grpc_channel* channel) {
   op->start_connectivity_watch =
       grpc_core::OrphanablePtr<grpc_core::ConnectivityStateWatcherInterface>(
           grpc_core::New<Watcher>());
-  op->start_connectivity_watch_state = GRPC_CHANNEL_IDLE;
   grpc_channel_element* elem =
       grpc_channel_stack_element(grpc_channel_get_channel_stack(channel), 0);
   elem->filter->start_transport_op(elem, op);

@@ -69,7 +69,7 @@ class AsyncConnectivityStateWatcherInterface::Notifier {
     Notifier* self = static_cast<Notifier*>(arg);
     if (GRPC_TRACE_FLAG_ENABLED(grpc_connectivity_state_trace)) {
       gpr_log(GPR_INFO, "watcher %p: delivering async notification for %s",
-              self, ConnectivityStateName(self->state_));
+              self->watcher_.get(), ConnectivityStateName(self->state_));
     }
     self->watcher_->OnConnectivityStateChange(self->state_);
     Delete(self);
