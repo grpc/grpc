@@ -77,9 +77,9 @@ class ConnectedSubchannel : public RefCounted<ConnectedSubchannel> {
       RefCountedPtr<channelz::SubchannelNode> channelz_subchannel);
   ~ConnectedSubchannel();
 
-  void NotifyOnStateChange(grpc_pollset_set* interested_parties,
-                           grpc_connectivity_state* state,
-                           grpc_closure* closure);
+  void StartWatch(grpc_pollset_set* interested_parties,
+                  OrphanablePtr<ConnectivityStateWatcherInterface> watcher);
+
   void Ping(grpc_closure* on_initiate, grpc_closure* on_ack);
 
   grpc_channel_stack* channel_stack() const { return channel_stack_; }

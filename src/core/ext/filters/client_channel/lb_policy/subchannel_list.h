@@ -254,8 +254,7 @@ void SubchannelData<SubchannelListType, SubchannelDataType>::Watcher::
             subchannel_list_.get(), subchannel_data_->Index(),
             subchannel_list_->num_subchannels(),
             subchannel_data_->subchannel_.get(),
-            grpc_connectivity_state_name(new_state),
-            subchannel_list_->shutting_down(),
+            ConnectivityStateName(new_state), subchannel_list_->shutting_down(),
             subchannel_data_->pending_watcher_);
   }
   if (!subchannel_list_->shutting_down() &&
@@ -318,8 +317,7 @@ void SubchannelData<SubchannelListType,
             " (subchannel %p): starting watch (from %s)",
             subchannel_list_->tracer()->name(), subchannel_list_->policy(),
             subchannel_list_, Index(), subchannel_list_->num_subchannels(),
-            subchannel_.get(),
-            grpc_connectivity_state_name(connectivity_state_));
+            subchannel_.get(), ConnectivityStateName(connectivity_state_));
   }
   GPR_ASSERT(pending_watcher_ == nullptr);
   pending_watcher_ =

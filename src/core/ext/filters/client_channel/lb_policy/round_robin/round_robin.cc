@@ -372,8 +372,8 @@ void RoundRobin::RoundRobinSubchannelData::UpdateConnectivityStateLocked(
         "(index %" PRIuPTR " of %" PRIuPTR "): prev_state=%s new_state=%s",
         p, subchannel(), subchannel_list(), Index(),
         subchannel_list()->num_subchannels(),
-        grpc_connectivity_state_name(last_connectivity_state_),
-        grpc_connectivity_state_name(connectivity_state));
+        ConnectivityStateName(last_connectivity_state_),
+        ConnectivityStateName(connectivity_state));
   }
   subchannel_list()->UpdateStateCountersLocked(last_connectivity_state_,
                                                connectivity_state);
