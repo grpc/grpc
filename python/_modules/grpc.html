@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-    <title>grpc &#8212; gRPC Python 1.23.0 documentation</title>
+    <title>grpc &#8212; gRPC Python 1.24.0 documentation</title>
     <link rel="stylesheet" href="../_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
     <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
@@ -31,7 +31,7 @@
 
 
 
-<p class="blurb">1.23.0</p>
+<p class="blurb">1.24.0</p>
 
 
 
@@ -281,6 +281,9 @@
 
 <span class="sd">        If the computation has already completed, the callback will be called</span>
 <span class="sd">        immediately.</span>
+
+<span class="sd">        Exceptions raised in the callback will be logged at ERROR level, but</span>
+<span class="sd">        will not terminate any threads of execution.</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">          fn: A callable taking this Future object as its single parameter.</span>
@@ -1532,6 +1535,29 @@
 <span class="sd">          stopped, i.e. when running RPCs either complete or are aborted and</span>
 <span class="sd">          all handlers have terminated.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span></div>
+
+<div class="viewcode-block" id="Server.wait_for_termination"><a class="viewcode-back" href="../grpc.html#grpc.Server.wait_for_termination">[docs]</a>    <span class="k">def</span> <span class="nf">wait_for_termination</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">timeout</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;Block current thread until the server stops.</span>
+
+<span class="sd">        This is an EXPERIMENTAL API.</span>
+
+<span class="sd">        The wait will not consume computational resources during blocking, and</span>
+<span class="sd">        it will block until one of the two following conditions are met:</span>
+
+<span class="sd">        1) The server is stopped or terminated;</span>
+<span class="sd">        2) A timeout occurs if timeout is not `None`.</span>
+
+<span class="sd">        The timeout argument works in the same way as `threading.Event.wait()`.</span>
+<span class="sd">        https://docs.python.org/3/library/threading.html#threading.Event.wait</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">          timeout: A floating point number specifying a timeout for the</span>
+<span class="sd">            operation in seconds.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">          A bool indicates if the operation times out.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span></div></div>
 
 
@@ -1811,6 +1837,64 @@
             <span class="n">certificate_configuration_fetcher</span><span class="p">,</span> <span class="n">require_client_authentication</span><span class="p">))</span></div>
 
 
+<span class="nd">@enum</span><span class="o">.</span><span class="n">unique</span>
+<span class="k">class</span> <span class="nc">LocalConnectionType</span><span class="p">(</span><span class="n">enum</span><span class="o">.</span><span class="n">Enum</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Types of local connection for local credential creation.</span>
+
+<span class="sd">    Attributes:</span>
+<span class="sd">      UDS: Unix domain socket connections</span>
+<span class="sd">      LOCAL_TCP: Local TCP connections.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">UDS</span> <span class="o">=</span> <span class="n">_cygrpc</span><span class="o">.</span><span class="n">LocalConnectionType</span><span class="o">.</span><span class="n">uds</span>
+    <span class="n">LOCAL_TCP</span> <span class="o">=</span> <span class="n">_cygrpc</span><span class="o">.</span><span class="n">LocalConnectionType</span><span class="o">.</span><span class="n">local_tcp</span>
+
+
+<span class="k">def</span> <span class="nf">local_channel_credentials</span><span class="p">(</span><span class="n">local_connect_type</span><span class="o">=</span><span class="n">LocalConnectionType</span><span class="o">.</span><span class="n">LOCAL_TCP</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Creates a local ChannelCredentials used for local connections.</span>
+
+<span class="sd">    This is an EXPERIMENTAL API.</span>
+
+<span class="sd">    Local credentials are used by local TCP endpoints (e.g. localhost:10000)</span>
+<span class="sd">    also UDS connections. It allows them to create secure channel, hence</span>
+<span class="sd">    transmitting call credentials become possible.</span>
+
+<span class="sd">    It is useful for 1) eliminating insecure_channel usage; 2) enable unit</span>
+<span class="sd">    testing for call credentials without setting up secrets.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">      local_connect_type: Local connection type (either</span>
+<span class="sd">        grpc.LocalConnectionType.UDS or grpc.LocalConnectionType.LOCAL_TCP)</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">      A ChannelCredentials for use with a local Channel</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">ChannelCredentials</span><span class="p">(</span>
+        <span class="n">_cygrpc</span><span class="o">.</span><span class="n">channel_credentials_local</span><span class="p">(</span><span class="n">local_connect_type</span><span class="o">.</span><span class="n">value</span><span class="p">))</span>
+
+
+<span class="k">def</span> <span class="nf">local_server_credentials</span><span class="p">(</span><span class="n">local_connect_type</span><span class="o">=</span><span class="n">LocalConnectionType</span><span class="o">.</span><span class="n">LOCAL_TCP</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Creates a local ServerCredentials used for local connections.</span>
+
+<span class="sd">    This is an EXPERIMENTAL API.</span>
+
+<span class="sd">    Local credentials are used by local TCP endpoints (e.g. localhost:10000)</span>
+<span class="sd">    also UDS connections. It allows them to create secure channel, hence</span>
+<span class="sd">    transmitting call credentials become possible.</span>
+
+<span class="sd">    It is useful for 1) eliminating insecure_channel usage; 2) enable unit</span>
+<span class="sd">    testing for call credentials without setting up secrets.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">      local_connect_type: Local connection type (either</span>
+<span class="sd">        grpc.LocalConnectionType.UDS or grpc.LocalConnectionType.LOCAL_TCP)</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">      A ServerCredentials for use with a local Server</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">ServerCredentials</span><span class="p">(</span>
+        <span class="n">_cygrpc</span><span class="o">.</span><span class="n">server_credentials_local</span><span class="p">(</span><span class="n">local_connect_type</span><span class="o">.</span><span class="n">value</span><span class="p">))</span>
+
+
 <div class="viewcode-block" id="channel_ready_future"><a class="viewcode-back" href="../grpc.html#grpc.channel_ready_future">[docs]</a><span class="k">def</span> <span class="nf">channel_ready_future</span><span class="p">(</span><span class="n">channel</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Creates a Future that tracks when a Channel is ready.</span>
 
@@ -1980,6 +2064,7 @@
     <span class="s1">&#39;ClientCallDetails&#39;</span><span class="p">,</span>
     <span class="s1">&#39;ServerCertificateConfiguration&#39;</span><span class="p">,</span>
     <span class="s1">&#39;ServerCredentials&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;LocalConnectionType&#39;</span><span class="p">,</span>
     <span class="s1">&#39;UnaryUnaryMultiCallable&#39;</span><span class="p">,</span>
     <span class="s1">&#39;UnaryStreamMultiCallable&#39;</span><span class="p">,</span>
     <span class="s1">&#39;StreamUnaryMultiCallable&#39;</span><span class="p">,</span>
@@ -2006,6 +2091,8 @@
     <span class="s1">&#39;access_token_call_credentials&#39;</span><span class="p">,</span>
     <span class="s1">&#39;composite_call_credentials&#39;</span><span class="p">,</span>
     <span class="s1">&#39;composite_channel_credentials&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;local_channel_credentials&#39;</span><span class="p">,</span>
+    <span class="s1">&#39;local_server_credentials&#39;</span><span class="p">,</span>
     <span class="s1">&#39;ssl_server_credentials&#39;</span><span class="p">,</span>
     <span class="s1">&#39;ssl_server_certificate_configuration&#39;</span><span class="p">,</span>
     <span class="s1">&#39;dynamic_ssl_server_credentials&#39;</span><span class="p">,</span>

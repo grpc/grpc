@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-    <title>gRPC &#8212; gRPC Python 1.23.0 documentation</title>
+    <title>gRPC &#8212; gRPC Python 1.24.0 documentation</title>
     <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
     <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
@@ -33,7 +33,7 @@
 
 
 
-<p class="blurb">1.23.0</p>
+<p class="blurb">1.24.0</p>
 
 
 
@@ -1023,6 +1023,32 @@ grace value is used).</p>
 <tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">A threading.Event that will be set when this Server has completely
 stopped, i.e. when running RPCs either complete or are aborted and
 all handlers have terminated.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="grpc.Server.wait_for_termination">
+<code class="descname">wait_for_termination</code><span class="sig-paren">(</span><em>timeout=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/grpc.html#Server.wait_for_termination"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#grpc.Server.wait_for_termination" title="Permalink to this definition">¶</a></dt>
+<dd><p>Block current thread until the server stops.</p>
+<p>This is an EXPERIMENTAL API.</p>
+<p>The wait will not consume computational resources during blocking, and
+it will block until one of the two following conditions are met:</p>
+<ol class="arabic simple">
+<li>The server is stopped or terminated;</li>
+<li>A timeout occurs if timeout is not <cite>None</cite>.</li>
+</ol>
+<p>The timeout argument works in the same way as <cite>threading.Event.wait()</cite>.
+<a class="reference external" href="https://docs.python.org/3/library/threading.html#threading.Event.wait">https://docs.python.org/3/library/threading.html#threading.Event.wait</a></p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>timeout</strong> – A floating point number specifying a timeout for the
+operation in seconds.</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">A bool indicates if the operation times out.</td>
 </tr>
 </tbody>
 </table>
@@ -2250,6 +2276,8 @@ of the computation.  Callbacks will be invoked after the future is
 terimated, whether successfully or not.</p>
 <p>If the computation has already completed, the callback will be called
 immediately.</p>
+<p>Exceptions raised in the callback will be logged at ERROR level, but
+will not terminate any threads of execution.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
