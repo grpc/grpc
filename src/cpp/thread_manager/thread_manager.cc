@@ -34,13 +34,26 @@ ThreadManager::WorkerThread::WorkerThread(ThreadManager* thd_mgr)
   thd_ = grpc_core::Thread(
       "grpcpp_sync_server",
       [](void* th) { static_cast<ThreadManager::WorkerThread*>(th)->Run(); },
-      this);
-  thd_.Start();
+      this,
+      &created_
+      );
+  if (!created_) {
+    gpr_log(GPR_ERROR,
+            "Could not create grpc_sync_server worker-thread"
+            );
+  } else {
+    thd_.Start();
+  }
 }
 
 void ThreadManager::WorkerThread::Run() {
   thd_mgr_->MainWorkLoop();
   thd_mgr_->MarkAsCompleted(this);
+}
+
+
+bool ThreadManager::WorkerThread::isCreated() {
+  return created_;
 }
 
 ThreadManager::WorkerThread::~WorkerThread() {
@@ -177,7 +190,12 @@ void ThreadManager::MainWorkLoop() {
             }
             // Drop lock before spawning thread to avoid contention
             lock.Unlock();
-            new WorkerThread(this);
+            WorkerThread* w = new WorkerThread(this);
+            if (!w->isCreated()) {
+              num_pollers_--;
+              num_threads_--;
+              resource_exhausted = true;
+            }
           } else if (num_pollers_ > 0) {
             // There is still at least some thread polling, so we can go on
             // even though we are below the number of pollers that we would
