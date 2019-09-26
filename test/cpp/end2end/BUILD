@@ -165,7 +165,6 @@ grpc_cc_test(
         "//test/core/util:grpc_test_util",
         "//test/cpp/util:test_util",
     ],
-    tags = ["no_test_ios"],
 )
 
 grpc_cc_test(
@@ -224,6 +223,7 @@ grpc_cc_library(
         "//test/core/util:grpc_test_util",
         "//test/cpp/util:test_util",
     ],
+    alwayslink = 1,
 )
 
 grpc_cc_test(
@@ -272,6 +272,7 @@ grpc_cc_test(
         # system uses it to specialize targets
         "//:grpc++",
     ],
+    tags = ["no_test_ios"],
 )
 
 grpc_cc_test(
@@ -433,7 +434,7 @@ grpc_cc_test(
         "//:gpr",
         "//:grpc",
         "//:grpc++",
-        "//src/proto/grpc/lb/v2:orca_load_report_for_test_proto",
+        "//src/proto/grpc/testing/xds:orca_load_report_for_test_proto",
         "//src/proto/grpc/testing:echo_messages_proto",
         "//src/proto/grpc/testing:echo_proto",
         "//src/proto/grpc/testing/duplicate:echo_duplicate_proto",
@@ -441,7 +442,6 @@ grpc_cc_test(
         "//test/core/util:test_lb_policies",
         "//test/cpp/util:test_util",
     ],
-    tags = ["no_test_ios"],
 )
 
 grpc_cc_test(
@@ -482,11 +482,11 @@ grpc_cc_test(
         "//test/core/util:grpc_test_util",
         "//test/cpp/util:test_util",
     ],
-    tags = ["no_test_ios"],
 )
 
 grpc_cc_test(
     name = "xds_end2end_test",
+    timeout = "long",
     srcs = ["xds_end2end_test.cc"],
     external_deps = [
         "gtest",
@@ -497,15 +497,14 @@ grpc_cc_test(
         "//:grpc",
         "//:grpc++",
         "//:grpc_resolver_fake",
-        "//src/proto/grpc/lb/v2:eds_for_test_proto",
-        "//src/proto/grpc/lb/v2:lrs_for_test_proto",
+        "//src/proto/grpc/testing/xds:eds_for_test_proto",
+        "//src/proto/grpc/testing/xds:lrs_for_test_proto",
         "//src/proto/grpc/testing:echo_messages_proto",
         "//src/proto/grpc/testing:echo_proto",
         "//src/proto/grpc/testing/duplicate:echo_duplicate_proto",
         "//test/core/util:grpc_test_util",
         "//test/cpp/util:test_util",
     ],
-    tags = ["no_test_ios"],
 )
 
 grpc_cc_test(
@@ -698,7 +697,6 @@ grpc_cc_test(
         "//test/core/util:grpc_test_util",
         "//test/cpp/util:test_util",
     ],
-    tags = ["no_test_ios"],
 )
 
 grpc_cc_test(
@@ -756,5 +754,4 @@ grpc_cc_test(
         "//test/core/util:grpc_test_util",
         "//test/cpp/util:test_util",
     ],
-    tags = ["no_test_ios"],
 )

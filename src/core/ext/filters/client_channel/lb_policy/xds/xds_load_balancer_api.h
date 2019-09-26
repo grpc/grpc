@@ -132,7 +132,7 @@ struct XdsUpdate {
 };
 
 // Creates an EDS request querying \a service_name.
-grpc_slice XdsEdsRequestCreateAndEncode(const char* service_name);
+grpc_slice XdsEdsRequestCreateAndEncode(const char* server_name);
 
 // Parses the EDS response and returns the args to update locality map. If there
 // is any error, the output update is invalid.

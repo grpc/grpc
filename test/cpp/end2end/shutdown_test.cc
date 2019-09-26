@@ -136,8 +136,8 @@ std::vector<string> GetAllCredentialsTypeList() {
   return credentials_types;
 }
 
-INSTANTIATE_TEST_CASE_P(End2EndShutdown, ShutdownTest,
-                        ::testing::ValuesIn(GetAllCredentialsTypeList()));
+INSTANTIATE_TEST_SUITE_P(End2EndShutdown, ShutdownTest,
+                         ::testing::ValuesIn(GetAllCredentialsTypeList()));
 
 // TODO(ctiller): leaked objects in this test
 TEST_P(ShutdownTest, ShutdownTest) {

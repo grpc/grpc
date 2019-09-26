@@ -75,8 +75,8 @@ class TimeJumpTest : public ::testing::TestWithParam<std::string> {
 std::vector<std::string> CreateTestScenarios() {
   return {"-1M", "+1M", "-1H", "+1H", "-1d", "+1d", "-1y", "+1y"};
 }
-INSTANTIATE_TEST_CASE_P(TimeJump, TimeJumpTest,
-                        ::testing::ValuesIn(CreateTestScenarios()));
+INSTANTIATE_TEST_SUITE_P(TimeJump, TimeJumpTest,
+                         ::testing::ValuesIn(CreateTestScenarios()));
 
 TEST_P(TimeJumpTest, TimerRunning) {
   grpc_core::ExecCtx exec_ctx;
@@ -121,7 +121,7 @@ TEST_P(TimeJumpTest, TimedWait) {
     GPR_ASSERT(1 ==
                gpr_time_similar(gpr_time_sub(after, before),
                                 gpr_time_from_millis(kWaitTimeMs, GPR_TIMESPAN),
-                                gpr_time_from_millis(10, GPR_TIMESPAN)));
+                                gpr_time_from_millis(50, GPR_TIMESPAN)));
 
     thd.join();
   }

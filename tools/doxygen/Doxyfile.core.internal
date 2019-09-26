@@ -1203,8 +1203,6 @@ src/core/lib/gpr/log_android.cc \
 src/core/lib/gpr/log_linux.cc \
 src/core/lib/gpr/log_posix.cc \
 src/core/lib/gpr/log_windows.cc \
-src/core/lib/gpr/mpscq.cc \
-src/core/lib/gpr/mpscq.h \
 src/core/lib/gpr/murmur_hash.cc \
 src/core/lib/gpr/murmur_hash.h \
 src/core/lib/gpr/spinlock.h \
@@ -1252,6 +1250,8 @@ src/core/lib/gprpp/inlined_vector.h \
 src/core/lib/gprpp/manual_constructor.h \
 src/core/lib/gprpp/map.h \
 src/core/lib/gprpp/memory.h \
+src/core/lib/gprpp/mpscq.cc \
+src/core/lib/gprpp/mpscq.h \
 src/core/lib/gprpp/optional.h \
 src/core/lib/gprpp/orphanable.h \
 src/core/lib/gprpp/pair.h \
@@ -1502,6 +1502,8 @@ src/core/lib/security/security_connector/ssl/ssl_security_connector.cc \
 src/core/lib/security/security_connector/ssl/ssl_security_connector.h \
 src/core/lib/security/security_connector/ssl_utils.cc \
 src/core/lib/security/security_connector/ssl_utils.h \
+src/core/lib/security/security_connector/ssl_utils_config.cc \
+src/core/lib/security/security_connector/ssl_utils_config.h \
 src/core/lib/security/security_connector/tls/spiffe_security_connector.cc \
 src/core/lib/security/security_connector/tls/spiffe_security_connector.h \
 src/core/lib/security/transport/auth_filters.h \

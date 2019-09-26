@@ -21,9 +21,6 @@ native.objc_library(
     srcs = [
         "UnitTesting/GTMGoogleTestRunner.mm",
     ],
-    copts = [
-        "-DGTM_USING_XCTEST",
-    ],
     deps = [
         "//external:gtest",
     ],

@@ -14,8 +14,8 @@ settings:
   '#10': See the expand_version.py for all the quirks here
   core_version: 8.0.0
   csharp_major_version: 2
-  g_stands_for: ganges
-  version: 1.24.0-dev
+  g_stands_for: game
+  version: 1.25.0-dev
 filegroups:
 - name: alts_tsi
   headers:
@@ -217,7 +217,6 @@ filegroups:
   - src/core/lib/gpr/log_linux.cc
   - src/core/lib/gpr/log_posix.cc
   - src/core/lib/gpr/log_windows.cc
-  - src/core/lib/gpr/mpscq.cc
   - src/core/lib/gpr/murmur_hash.cc
   - src/core/lib/gpr/string.cc
   - src/core/lib/gpr/string_posix.cc
@@ -239,6 +238,7 @@ filegroups:
   - src/core/lib/gprpp/fork.cc
   - src/core/lib/gprpp/global_config_env.cc
   - src/core/lib/gprpp/host_port.cc
+  - src/core/lib/gprpp/mpscq.cc
   - src/core/lib/gprpp/thd_posix.cc
   - src/core/lib/gprpp/thd_windows.cc
   - src/core/lib/profiling/basic_timers.cc
@@ -268,7 +268,6 @@ filegroups:
   - src/core/lib/gpr/alloc.h
   - src/core/lib/gpr/arena.h
   - src/core/lib/gpr/env.h
-  - src/core/lib/gpr/mpscq.h
   - src/core/lib/gpr/murmur_hash.h
   - src/core/lib/gpr/spinlock.h
   - src/core/lib/gpr/string.h
@@ -292,6 +291,7 @@ filegroups:
   - src/core/lib/gprpp/manual_constructor.h
   - src/core/lib/gprpp/map.h
   - src/core/lib/gprpp/memory.h
+  - src/core/lib/gprpp/mpscq.h
   - src/core/lib/gprpp/pair.h
   - src/core/lib/gprpp/sync.h
   - src/core/lib/gprpp/thd.h
@@ -389,6 +389,7 @@ filegroups:
   - include/grpcpp/impl/codegen/interceptor_common.h
   - include/grpcpp/impl/codegen/message_allocator.h
   - include/grpcpp/impl/codegen/metadata_map.h
+  - include/grpcpp/impl/codegen/method_handler.h
   - include/grpcpp/impl/codegen/method_handler_impl.h
   - include/grpcpp/impl/codegen/rpc_method.h
   - include/grpcpp/impl/codegen/rpc_service_method.h
@@ -1274,6 +1275,7 @@ filegroups:
   - src/core/lib/security/security_connector/security_connector.h
   - src/core/lib/security/security_connector/ssl/ssl_security_connector.h
   - src/core/lib/security/security_connector/ssl_utils.h
+  - src/core/lib/security/security_connector/ssl_utils_config.h
   - src/core/lib/security/security_connector/tls/spiffe_security_connector.h
   - src/core/lib/security/transport/auth_filters.h
   - src/core/lib/security/transport/secure_endpoint.h
@@ -1309,6 +1311,7 @@ filegroups:
   - src/core/lib/security/security_connector/security_connector.cc
   - src/core/lib/security/security_connector/ssl/ssl_security_connector.cc
   - src/core/lib/security/security_connector/ssl_utils.cc
+  - src/core/lib/security/security_connector/ssl_utils_config.cc
   - src/core/lib/security/security_connector/tls/spiffe_security_connector.cc
   - src/core/lib/security/transport/client_auth_filter.cc
   - src/core/lib/security/transport/secure_endpoint.cc
@@ -2738,17 +2741,6 @@ targets:
   - grpc_test_util_unsecure
   - grpc_unsecure
   uses_polling: false
-- name: gpr_mpscq_test
-  cpu_cost: 30
-  build: test
-  language: c
-  src:
-  - test/core/gpr/mpscq_test.cc
-  deps:
-  - gpr
-  - grpc_test_util_unsecure
-  - grpc_unsecure
-  uses_polling: false
 - name: gpr_spinlock_test
   cpu_cost: 3
   build: test
@@ -3855,15 +3847,6 @@ targets:
   exclude_iomgrs:
   - uv
   uses_polling: false
-- name: transport_connectivity_state_test
-  build: test
-  language: c
-  src:
-  - test/core/transport/connectivity_state_test.cc
-  deps:
-  - grpc_test_util
-  - grpc
-  - gpr
 - name: transport_metadata_test
   build: test
   language: c
@@ -4755,7 +4738,7 @@ targets:
   build: test
   language: c++
   src:
-  - src/proto/grpc/lb/v2/orca_load_report_for_test.proto
+  - src/proto/grpc/testing/xds/orca_load_report_for_test.proto
   - test/cpp/end2end/client_lb_end2end_test.cc
   deps:
   - grpc++_test_util
@@ -5000,6 +4983,17 @@ targets:
   - gpr
   args:
   - --generated_file_path=gens/src/proto/grpc/testing/
+  uses_polling: false
+- name: gprpp_mpscq_test
+  cpu_cost: 30
+  build: test
+  language: c++
+  src:
+  - test/core/gprpp/mpscq_test.cc
+  deps:
+  - gpr
+  - grpc_test_util_unsecure
+  - grpc_unsecure
   uses_polling: false
 - name: grpc_alts_credentials_options_test
   build: test
@@ -5986,6 +5980,16 @@ targets:
   - grpc++
   - grpc
   - gpr
+- name: transport_connectivity_state_test
+  gtest: true
+  build: test
+  language: c++
+  src:
+  - test/core/transport/connectivity_state_test.cc
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr
 - name: transport_pid_controller_test
   build: test
   language: c++
@@ -6028,8 +6032,8 @@ targets:
   build: test
   language: c++
   src:
-  - src/proto/grpc/lb/v2/eds_for_test.proto
-  - src/proto/grpc/lb/v2/lrs_for_test.proto
+  - src/proto/grpc/testing/xds/eds_for_test.proto
+  - src/proto/grpc/testing/xds/lrs_for_test.proto
   - test/cpp/end2end/xds_end2end_test.cc
   deps:
   - grpc++_test_util
@@ -6067,11 +6071,11 @@ vspackages:
 configs:
   asan:
     CC: clang
-    CPPFLAGS: -O0 -stdlib=libc++ -fsanitize-coverage=edge,trace-pc-guard -fsanitize=address
-      -fno-omit-frame-pointer -Wno-unused-command-line-argument -DGPR_NO_DIRECT_SYSCALLS
+    CPPFLAGS: -O0 -fsanitize-coverage=edge,trace-pc-guard -fsanitize=address -fno-omit-frame-pointer
+      -Wno-unused-command-line-argument -DGPR_NO_DIRECT_SYSCALLS
     CXX: clang++
     LD: clang++
-    LDFLAGS: -stdlib=libc++ -fsanitize=address
+    LDFLAGS: -fsanitize=address
     LDXX: clang++
     compile_the_world: true
     test_environ:
@@ -6079,23 +6083,23 @@ configs:
       LSAN_OPTIONS: suppressions=test/core/util/lsan_suppressions.txt:report_objects=1
   asan-noleaks:
     CC: clang
-    CPPFLAGS: -O0 -stdlib=libc++ -fsanitize-coverage=edge,trace-pc-guard -fsanitize=address
-      -fno-omit-frame-pointer -Wno-unused-command-line-argument -DGPR_NO_DIRECT_SYSCALLS
+    CPPFLAGS: -O0 -fsanitize-coverage=edge,trace-pc-guard -fsanitize=address -fno-omit-frame-pointer
+      -Wno-unused-command-line-argument -DGPR_NO_DIRECT_SYSCALLS
     CXX: clang++
     LD: clang++
-    LDFLAGS: -stdlib=libc++ -fsanitize=address
+    LDFLAGS: fsanitize=address
     LDXX: clang++
     compile_the_world: true
     test_environ:
       ASAN_OPTIONS: detect_leaks=0:color=always
   asan-trace-cmp:
     CC: clang
-    CPPFLAGS: -O0 -stdlib=libc++ -fsanitize-coverage=edge,trace-pc-guard -fsanitize-coverage=trace-cmp
+    CPPFLAGS: -O0 -fsanitize-coverage=edge,trace-pc-guard -fsanitize-coverage=trace-cmp
       -fsanitize=address -fno-omit-frame-pointer -Wno-unused-command-line-argument
       -DGPR_NO_DIRECT_SYSCALLS
     CXX: clang++
     LD: clang++
-    LDFLAGS: -stdlib=libc++ -fsanitize=address
+    LDFLAGS: -fsanitize=address
     LDXX: clang++
     compile_the_world: true
     test_environ:
@@ -6166,12 +6170,12 @@ configs:
     DEFINES: NDEBUG
   tsan:
     CC: clang
-    CPPFLAGS: -O0 -stdlib=libc++ -fsanitize=thread -fno-omit-frame-pointer -Wno-unused-command-line-argument
+    CPPFLAGS: -O0 -fsanitize=thread -fno-omit-frame-pointer -Wno-unused-command-line-argument
       -DGPR_NO_DIRECT_SYSCALLS
     CXX: clang++
     DEFINES: GRPC_TSAN
     LD: clang++
-    LDFLAGS: -stdlib=libc++ -fsanitize=thread
+    LDFLAGS: -fsanitize=thread
     LDXX: clang++
     compile_the_world: true
     test_environ:
@@ -6190,8 +6194,7 @@ configs:
       UBSAN_OPTIONS: halt_on_error=1:print_stacktrace=1:suppressions=test/core/util/ubsan_suppressions.txt
 defaults:
   ares:
-    CFLAGS: -Wno-sign-conversion $(if $(subst Darwin,,$(SYSTEM)),,-Wno-shorten-64-to-32)
-      $(if $(subst MINGW32,,$(SYSTEM)),-Wno-invalid-source-encoding,)
+    CFLAGS: -g
     CPPFLAGS: -Ithird_party/cares -Ithird_party/cares/cares -fvisibility=hidden -D_GNU_SOURCE
       $(if $(subst Darwin,,$(SYSTEM)),,-Ithird_party/cares/config_darwin) $(if $(subst
       FreeBSD,,$(SYSTEM)),,-Ithird_party/cares/config_freebsd) $(if $(subst Linux,,$(SYSTEM)),,-Ithird_party/cares/config_linux)
@@ -6200,9 +6203,7 @@ defaults:
   benchmark:
     CPPFLAGS: -Ithird_party/benchmark/include -DHAVE_POSIX_REGEX
   boringssl:
-    CFLAGS: -Wno-sign-conversion -Wno-conversion -Wno-unused-value -Wno-unknown-pragmas
-      -Wno-implicit-function-declaration -Wno-unused-variable -Wno-sign-compare -Wno-implicit-fallthrough
-      $(NO_W_EXTRA_SEMI)
+    CFLAGS: -g
     CPPFLAGS: -Ithird_party/boringssl/include -fvisibility=hidden -DOPENSSL_NO_ASM
       -D_GNU_SOURCE -DWIN32_LEAN_AND_MEAN -D_HAS_EXCEPTIONS=0 -DNOMINMAX
     CXXFLAGS: -fno-rtti -fno-exceptions
@@ -6212,16 +6213,12 @@ defaults:
       $(W_NO_MAYBE_UNINITIALIZED) -fvisibility=hidden
     CXXFLAGS: $(W_NO_CXX14_COMPAT)
   global:
+    CFLAGS: -g
     COREFLAGS: -fno-rtti -fno-exceptions
-    CPPFLAGS: -g -Wall -Wextra -Werror $(W_NO_UNKNOWN_WARNING_OPTION) -Wno-long-long
-      -Wno-unused-parameter -Wno-deprecated-declarations -Wno-sign-conversion -Wno-shadow
-      -Wno-conversion -Wno-implicit-fallthrough -Wno-sign-compare -Wno-missing-field-initializers
-      -Wno-maybe-uninitialized -DOSATOMIC_USE_INLINED=1 -Ithird_party/upb -Isrc/core/ext/upb-generated
-    CXXFLAGS: -Wnon-virtual-dtor
+    CPPFLAGS: -g -Wall -Wextra -DOSATOMIC_USE_INLINED=1 -Ithird_party/upb -Isrc/core/ext/upb-generated
     LDFLAGS: -g
   zlib:
-    CFLAGS: -Wno-sign-conversion -Wno-conversion -Wno-unused-value -Wno-implicit-function-declaration
-      -Wno-implicit-fallthrough $(W_NO_SHIFT_NEGATIVE_VALUE) -fvisibility=hidden
+    CFLAGS: -fvisibility=hidden
 openssl_fallback:
   base_uri: https://openssl.org/source/old/1.0.2/
   extraction_dir: openssl-1.0.2f

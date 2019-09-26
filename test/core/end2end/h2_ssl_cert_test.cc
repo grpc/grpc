@@ -29,7 +29,7 @@
 #include "src/core/lib/gpr/tmpfile.h"
 #include "src/core/lib/gprpp/host_port.h"
 #include "src/core/lib/security/credentials/credentials.h"
-#include "src/core/lib/security/security_connector/ssl_utils.h"
+#include "src/core/lib/security/security_connector/ssl_utils_config.h"
 #include "test/core/end2end/cq_verifier.h"
 #include "test/core/end2end/data/ssl_test_data.h"
 #include "test/core/util/port.h"
@@ -346,7 +346,8 @@ TEST_P(H2SslCertTest, SimpleRequestBody) {
   simple_request_body(fixture_, GetParam().result);
 }
 
-INSTANTIATE_TEST_CASE_P(H2SslCert, H2SslCertTest, ::testing::ValuesIn(configs));
+INSTANTIATE_TEST_SUITE_P(H2SslCert, H2SslCertTest,
+                         ::testing::ValuesIn(configs));
 
 }  // namespace testing
 }  // namespace grpc

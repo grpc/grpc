@@ -51,9 +51,9 @@
 #include "test/core/util/test_config.h"
 #include "test/cpp/end2end/test_service_impl.h"
 
-#include "src/proto/grpc/lb/v2/eds_for_test.grpc.pb.h"
-#include "src/proto/grpc/lb/v2/lrs_for_test.grpc.pb.h"
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
+#include "src/proto/grpc/testing/xds/eds_for_test.grpc.pb.h"
+#include "src/proto/grpc/testing/xds/lrs_for_test.grpc.pb.h"
 
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
@@ -523,6 +523,10 @@ class XdsEnd2endTest : public ::testing::Test {
     // Make the backup poller poll very frequently in order to pick up
     // updates from all the subchannels's FDs.
     GPR_GLOBAL_CONFIG_SET(grpc_client_channel_backup_poll_interval_ms, 1);
+#if TARGET_OS_IPHONE
+    // Workaround Apple CFStream bug
+    gpr_setenv("grpc_cfstream", "0");
+#endif
     grpc_init();
   }
 

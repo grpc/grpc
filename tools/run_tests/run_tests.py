@@ -703,6 +703,10 @@ class PythonConfig(
 
 class PythonLanguage(object):
 
+    _DEFAULT_COMMAND = 'test_lite'
+    _TEST_SPECS_FILE = 'src/python/grpcio_tests/tests/tests.json'
+    _TEST_FOLDER = 'test'
+
     def configure(self, config, args):
         self.config = config
         self.args = args
@@ -710,8 +714,7 @@ class PythonLanguage(object):
 
     def test_specs(self):
         # load list of known test suites
-        with open(
-                'src/python/grpcio_tests/tests/tests.json') as tests_json_file:
+        with open(self._TEST_SPECS_FILE) as tests_json_file:
             tests_json = json.load(tests_json_file)
         environment = dict(_FORCE_ENVIRON_FOR_WRAPPERS)
         return [
@@ -721,7 +724,8 @@ class PythonLanguage(object):
                 environ=dict(
                     list(environment.items()) + [(
                         'GRPC_PYTHON_TESTRUNNER_FILTER', str(suite_name))]),
-                shortname='%s.test.%s' % (config.name, suite_name),
+                shortname='%s.%s.%s' % (config.name, self._TEST_FOLDER,
+                                        suite_name),
             ) for suite_name in tests_json for config in self.pythons
         ]
 
@@ -761,7 +765,7 @@ class PythonLanguage(object):
         elif self.args.compiler == 'python3.4':
             return 'jessie'
         else:
-            return 'stretch_3.7'
+            return 'stretch_default'
 
     def _get_pythons(self, args):
         """Get python runtimes to test with, based on current platform, architecture, compiler etc."""
@@ -789,7 +793,7 @@ class PythonLanguage(object):
             venv_relative_python = ['bin/python']
             toolchain = ['unix']
 
-        test_command = 'test_lite'
+        test_command = self._DEFAULT_COMMAND
         if args.iomgr_platform == 'gevent':
             test_command = 'test_gevent'
         runner = [
@@ -846,6 +850,7 @@ class PythonLanguage(object):
             else:
                 return (
                     python27_config,
+                    python36_config,
                     python37_config,
                 )
         elif args.compiler == 'python2.7':
@@ -880,6 +885,31 @@ class PythonLanguage(object):
 
     def __str__(self):
         return 'python'
+
+
+class PythonAioLanguage(PythonLanguage):
+
+    _DEFAULT_COMMAND = 'test_aio'
+    _TEST_SPECS_FILE = 'src/python/grpcio_tests/tests_aio/tests.json'
+    _TEST_FOLDER = 'test_aio'
+
+    def configure(self, config, args):
+        self.config = config
+        self.args = args
+        self.pythons = self._get_pythons(self.args)
+
+    def _get_pythons(self, args):
+        """Get python runtimes to test with, based on current platform, architecture, compiler etc."""
+
+        if args.compiler not in ('python3.6', 'python3.7', 'python3.8'):
+            raise Exception('Compiler %s not supported.' % args.compiler)
+        if args.iomgr_platform not in ('native'):
+            raise Exception(
+                'Iomgr platform %s not supported.' % args.iomgr_platform)
+        return super()._get_pythons(args)
+
+    def __str__(self):
+        return 'python_aio'
 
 
 class RubyLanguage(object):
@@ -1102,17 +1132,19 @@ class ObjCLanguage(object):
                     'EXAMPLE_PATH': 'src/objective-c/examples/tvOS-sample',
                     'FRAMEWORKS': 'NO'
                 }))
-        out.append(
-            self.config.job_spec(
-                ['src/objective-c/tests/build_one_example_bazel.sh'],
-                timeout_seconds=20 * 60,
-                shortname='ios-buildtest-example-watchOS-sample',
-                cpu_cost=1e6,
-                environ={
-                    'SCHEME': 'watchOS-sample-WatchKit-App',
-                    'EXAMPLE_PATH': 'src/objective-c/examples/watchOS-sample',
-                    'FRAMEWORKS': 'NO'
-                }))
+        # Disabled due to #20258
+        # TODO (mxyan): Reenable this test when #20258 is resolved.
+        # out.append(
+        #     self.config.job_spec(
+        #         ['src/objective-c/tests/build_one_example_bazel.sh'],
+        #         timeout_seconds=20 * 60,
+        #         shortname='ios-buildtest-example-watchOS-sample',
+        #         cpu_cost=1e6,
+        #         environ={
+        #             'SCHEME': 'watchOS-sample-WatchKit-App',
+        #             'EXAMPLE_PATH': 'src/objective-c/examples/watchOS-sample',
+        #             'FRAMEWORKS': 'NO'
+        #         }))
         out.append(
             self.config.job_spec(
                 ['src/objective-c/tests/run_plugin_tests.sh'],
@@ -1154,6 +1186,24 @@ class ObjCLanguage(object):
                 cpu_cost=1e6,
                 environ={
                     'SCHEME': 'CronetTests'
+                }))
+        out.append(
+            self.config.job_spec(
+                ['src/objective-c/tests/run_one_test.sh'],
+                timeout_seconds=30 * 60,
+                shortname='ios-perf-test',
+                cpu_cost=1e6,
+                environ={
+                    'SCHEME': 'PerfTests'
+                }))
+        out.append(
+            self.config.job_spec(
+                ['src/objective-c/tests/run_one_test.sh'],
+                timeout_seconds=30 * 60,
+                shortname='ios-perf-test-posix',
+                cpu_cost=1e6,
+                environ={
+                    'SCHEME': 'PerfTestsPosix'
                 }))
         out.append(
             self.config.job_spec(
@@ -1269,6 +1319,7 @@ _LANGUAGES = {
     'php': PhpLanguage(),
     'php7': Php7Language(),
     'python': PythonLanguage(),
+    'python-aio': PythonAioLanguage(),
     'ruby': RubyLanguage(),
     'csharp': CSharpLanguage(),
     'objc': ObjCLanguage(),
@@ -1472,6 +1523,13 @@ argp.add_argument(
     default='tests',
     type=str,
     help='Test suite name to use in generated JUnit XML report')
+argp.add_argument(
+    '--report_multi_target',
+    default=False,
+    const=True,
+    action='store_const',
+    help='Generate separate XML report for each test job (Looks better in UIs).'
+)
 argp.add_argument(
     '--quiet_success',
     default=False,
@@ -1880,7 +1938,10 @@ def _build_and_run(check_cancelled,
                                  upload_extra_fields)
         if xml_report and resultset:
             report_utils.render_junit_xml_report(
-                resultset, xml_report, suite_name=args.report_suite_name)
+                resultset,
+                xml_report,
+                suite_name=args.report_suite_name,
+                multi_target=args.report_multi_target)
 
     number_failures, _ = jobset.run(
         post_tests_steps,

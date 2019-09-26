@@ -10,6 +10,7 @@ py_grpc_library(
     name = "channelz_py_pb2_grpc",
     srcs = ["//src/proto/grpc/channelz:channelz_proto_descriptors"],
     deps = [":channelz_py_pb2"],
+    strip_prefixes = ["src.python.grpcio_channelz."],
 )
 
 py_library(

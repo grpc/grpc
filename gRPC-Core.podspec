@@ -22,7 +22,7 @@
 
 Pod::Spec.new do |s|
   s.name     = 'gRPC-Core'
-  version = '1.24.0-dev'
+  version = '1.25.0-dev'
   s.version  = version
   s.summary  = 'Core cross-platform gRPC library, written in C'
   s.homepage = 'https://grpc.io'
@@ -32,6 +32,7 @@ Pod::Spec.new do |s|
   s.source = {
     :git => 'https://github.com/grpc/grpc.git',
     :tag => "v#{version}",
+    :submodules => true,
   }
 
   # gRPC podspecs depend on fix for https://github.com/CocoaPods/CocoaPods/issues/6024,
@@ -184,14 +185,12 @@ Pod::Spec.new do |s|
     ss.header_mappings_dir = '.'
     ss.libraries = 'z'
     ss.dependency "#{s.name}/Interface", version
-    ss.dependency 'BoringSSL-GRPC', '0.0.3'
+    ss.dependency 'BoringSSL-GRPC', '0.0.4'
     ss.compiler_flags = '-DGRPC_SHADOW_BORINGSSL_SYMBOLS'
 
-    # To save you from scrolling, this is the last part of the podspec.
     ss.source_files = 'src/core/lib/gpr/alloc.h',
                       'src/core/lib/gpr/arena.h',
                       'src/core/lib/gpr/env.h',
-                      'src/core/lib/gpr/mpscq.h',
                       'src/core/lib/gpr/murmur_hash.h',
                       'src/core/lib/gpr/spinlock.h',
                       'src/core/lib/gpr/string.h',
@@ -215,6 +214,7 @@ Pod::Spec.new do |s|
                       'src/core/lib/gprpp/manual_constructor.h',
                       'src/core/lib/gprpp/map.h',
                       'src/core/lib/gprpp/memory.h',
+                      'src/core/lib/gprpp/mpscq.h',
                       'src/core/lib/gprpp/pair.h',
                       'src/core/lib/gprpp/sync.h',
                       'src/core/lib/gprpp/thd.h',
@@ -233,7 +233,6 @@ Pod::Spec.new do |s|
                       'src/core/lib/gpr/log_linux.cc',
                       'src/core/lib/gpr/log_posix.cc',
                       'src/core/lib/gpr/log_windows.cc',
-                      'src/core/lib/gpr/mpscq.cc',
                       'src/core/lib/gpr/murmur_hash.cc',
                       'src/core/lib/gpr/string.cc',
                       'src/core/lib/gpr/string_posix.cc',
@@ -255,6 +254,7 @@ Pod::Spec.new do |s|
                       'src/core/lib/gprpp/fork.cc',
                       'src/core/lib/gprpp/global_config_env.cc',
                       'src/core/lib/gprpp/host_port.cc',
+                      'src/core/lib/gprpp/mpscq.cc',
                       'src/core/lib/gprpp/thd_posix.cc',
                       'src/core/lib/gprpp/thd_windows.cc',
                       'src/core/lib/profiling/basic_timers.cc',
@@ -310,6 +310,7 @@ Pod::Spec.new do |s|
                       'src/core/lib/security/security_connector/security_connector.h',
                       'src/core/lib/security/security_connector/ssl/ssl_security_connector.h',
                       'src/core/lib/security/security_connector/ssl_utils.h',
+                      'src/core/lib/security/security_connector/ssl_utils_config.h',
                       'src/core/lib/security/security_connector/tls/spiffe_security_connector.h',
                       'src/core/lib/security/transport/auth_filters.h',
                       'src/core/lib/security/transport/secure_endpoint.h',
@@ -802,6 +803,7 @@ Pod::Spec.new do |s|
                       'src/core/lib/security/security_connector/security_connector.cc',
                       'src/core/lib/security/security_connector/ssl/ssl_security_connector.cc',
                       'src/core/lib/security/security_connector/ssl_utils.cc',
+                      'src/core/lib/security/security_connector/ssl_utils_config.cc',
                       'src/core/lib/security/security_connector/tls/spiffe_security_connector.cc',
                       'src/core/lib/security/transport/client_auth_filter.cc',
                       'src/core/lib/security/transport/secure_endpoint.cc',
@@ -965,7 +967,6 @@ Pod::Spec.new do |s|
     ss.private_header_files = 'src/core/lib/gpr/alloc.h',
                               'src/core/lib/gpr/arena.h',
                               'src/core/lib/gpr/env.h',
-                              'src/core/lib/gpr/mpscq.h',
                               'src/core/lib/gpr/murmur_hash.h',
                               'src/core/lib/gpr/spinlock.h',
                               'src/core/lib/gpr/string.h',
@@ -989,6 +990,7 @@ Pod::Spec.new do |s|
                               'src/core/lib/gprpp/manual_constructor.h',
                               'src/core/lib/gprpp/map.h',
                               'src/core/lib/gprpp/memory.h',
+                              'src/core/lib/gprpp/mpscq.h',
                               'src/core/lib/gprpp/pair.h',
                               'src/core/lib/gprpp/sync.h',
                               'src/core/lib/gprpp/thd.h',
@@ -1044,6 +1046,7 @@ Pod::Spec.new do |s|
                               'src/core/lib/security/security_connector/security_connector.h',
                               'src/core/lib/security/security_connector/ssl/ssl_security_connector.h',
                               'src/core/lib/security/security_connector/ssl_utils.h',
+                              'src/core/lib/security/security_connector/ssl_utils_config.h',
                               'src/core/lib/security/security_connector/tls/spiffe_security_connector.h',
                               'src/core/lib/security/transport/auth_filters.h',
                               'src/core/lib/security/transport/secure_endpoint.h',

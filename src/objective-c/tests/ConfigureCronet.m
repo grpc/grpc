@@ -16,8 +16,6 @@
  *
  */
 
-#ifdef GRPC_COMPILE_WITH_CRONET
-
 #import "ConfigureCronet.h"
 #import <Cronet/Cronet.h>
 
@@ -35,5 +33,3 @@ void configureCronet(void) {
     [Cronet startNetLogToFile:@"cronet_netlog.json" logBytes:YES];
   });
 }
-
-#endif

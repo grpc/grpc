@@ -138,7 +138,7 @@ SpiffeChannelSecurityConnector::~SpiffeChannelSecurityConnector() {
 }
 
 void SpiffeChannelSecurityConnector::add_handshakers(
-    grpc_pollset_set* interested_parties,
+    const grpc_channel_args* args, grpc_pollset_set* interested_parties,
     grpc_core::HandshakeManager* handshake_mgr) {
   if (RefreshHandshakerFactory() != GRPC_SECURITY_OK) {
     gpr_log(GPR_ERROR, "Handshaker factory refresh failed.");
@@ -157,7 +157,7 @@ void SpiffeChannelSecurityConnector::add_handshakers(
     return;
   }
   // Create handshakers.
-  handshake_mgr->Add(grpc_core::SecurityHandshakerCreate(tsi_hs, this));
+  handshake_mgr->Add(grpc_core::SecurityHandshakerCreate(tsi_hs, this, args));
 }
 
 void SpiffeChannelSecurityConnector::check_peer(
@@ -412,7 +412,7 @@ SpiffeServerSecurityConnector::~SpiffeServerSecurityConnector() {
 }
 
 void SpiffeServerSecurityConnector::add_handshakers(
-    grpc_pollset_set* interested_parties,
+    const grpc_channel_args* args, grpc_pollset_set* interested_parties,
     grpc_core::HandshakeManager* handshake_mgr) {
   /* Refresh handshaker factory if needed. */
   if (RefreshHandshakerFactory() != GRPC_SECURITY_OK) {
@@ -428,7 +428,7 @@ void SpiffeServerSecurityConnector::add_handshakers(
             tsi_result_to_string(result));
     return;
   }
-  handshake_mgr->Add(grpc_core::SecurityHandshakerCreate(tsi_hs, this));
+  handshake_mgr->Add(grpc_core::SecurityHandshakerCreate(tsi_hs, this, args));
 }
 
 void SpiffeServerSecurityConnector::check_peer(
