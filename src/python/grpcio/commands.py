@@ -217,12 +217,16 @@ class BuildExt(build_ext.build_ext):
             """Test if default compiler is okay with specifying c++ version
             when invoked in C mode. GCC is okay with this, while clang is not.
             """
+            cc = self.compiler.compiler[0]
             cc_test = subprocess.Popen(
-                ['cc', '-x', 'c', '-std=c++11', '-'],
+                [cc, '-x', 'c', '-std=c++11', '-'],
                 stdin=subprocess.PIPE,
                 stdout=subprocess.PIPE,
                 stderr=subprocess.PIPE)
             _, cc_err = cc_test.communicate(input=b'int main(){return 0;}')
+            # We don't check .returncode because we're looking for the failure; missing
+            # compiler is also a failure, but hopefully this uses the same one that real
+            # compilations will later use, which will provide a user-visible error.
             return not 'invalid argument' in str(cc_err)
 
         # This special conditioning is here due to difference of compiler
