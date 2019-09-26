@@ -1189,6 +1189,24 @@ class ObjCLanguage(object):
                 }))
         out.append(
             self.config.job_spec(
+                ['src/objective-c/tests/run_one_test.sh'],
+                timeout_seconds=30 * 60,
+                shortname='ios-perf-test',
+                cpu_cost=1e6,
+                environ={
+                    'SCHEME': 'PerfTests'
+                }))
+        out.append(
+            self.config.job_spec(
+                ['src/objective-c/tests/run_one_test.sh'],
+                timeout_seconds=30 * 60,
+                shortname='ios-perf-test-posix',
+                cpu_cost=1e6,
+                environ={
+                    'SCHEME': 'PerfTestsPosix'
+                }))
+        out.append(
+            self.config.job_spec(
                 ['test/cpp/ios/build_and_run_tests.sh'],
                 timeout_seconds=20 * 60,
                 shortname='ios-cpp-test-cronet',

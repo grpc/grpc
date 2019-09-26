@@ -346,7 +346,8 @@ TEST_P(H2SslCertTest, SimpleRequestBody) {
   simple_request_body(fixture_, GetParam().result);
 }
 
-INSTANTIATE_TEST_CASE_P(H2SslCert, H2SslCertTest, ::testing::ValuesIn(configs));
+INSTANTIATE_TEST_SUITE_P(H2SslCert, H2SslCertTest,
+                         ::testing::ValuesIn(configs));
 
 }  // namespace testing
 }  // namespace grpc
