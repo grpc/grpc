@@ -76,7 +76,9 @@ class XdsPriorityListUpdate {
   size_t size() const { return priorities_.size(); }
 
   // Callers should make sure the priority list is non-empty.
-  uint32_t LowestPriority() const { return priorities_.size() - 1; }
+  uint32_t LowestPriority() const {
+    return static_cast<uint32_t>(priorities_.size()) - 1;
+  }
 
  private:
   InlinedVector<LocalityMap, 2> priorities_;

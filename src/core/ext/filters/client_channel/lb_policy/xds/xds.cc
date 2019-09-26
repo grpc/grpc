@@ -613,7 +613,9 @@ class XdsLb : public LoadBalancingPolicy {
     OrphanablePtr<LocalityMap::Locality> ExtractLocalityLocked(
         const RefCountedPtr<XdsLocalityName>& name, uint32_t exclude_priority);
     // Callers should make sure the priority list is non-empty.
-    uint32_t LowestPriority() const { return priorities_.size() - 1; }
+    uint32_t LowestPriority() const {
+      return static_cast<uint32_t>(priorities_.size()) - 1;
+    }
     bool Contains(uint32_t priority) { return priority < priorities_.size(); }
 
     XdsLb* xds_policy_;
@@ -1222,7 +1224,7 @@ void XdsLb::LbChannelState::EdsCallState::OnResponseReceivedLocked(
       for (size_t priority = 0; priority < update.priority_list_update.size();
            ++priority) {
         const auto* locality_map_update =
-            update.priority_list_update.Find(priority);
+            update.priority_list_update.Find(static_cast<uint32_t>(priority));
         gpr_log(GPR_INFO,
                 "[xdslb %p] Priority %" PRIuPTR " contains %" PRIuPTR
                 " localities",
@@ -2147,7 +2149,7 @@ void XdsLb::PriorityList::UpdateLocked() {
   // 3. Only create a new locality map if all the existing ones have failed.
   if (priorities_.empty() ||
       !priorities_[priorities_.size() - 1]->failover_timer_callback_pending()) {
-    const uint32_t new_priority = priorities_.size();
+    const uint32_t new_priority = static_cast<uint32_t>(priorities_.size());
     // Create a new locality map. Note that in some rare cases (e.g., the
     // locality map reports TRANSIENT_FAILURE synchronously due to subchannel
     // sharing), the following invocation may result in multiple locality maps
