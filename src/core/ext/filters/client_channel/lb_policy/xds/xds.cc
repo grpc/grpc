@@ -328,6 +328,7 @@ class XdsLb : public LoadBalancingPolicy {
       grpc_closure on_status_received_;
 
       // Load reporting state.
+      UniquePtr<char> cluster_name_;
       grpc_millis load_reporting_interval_ = 0;
       OrphanablePtr<Reporter> reporter_;
     };
@@ -1314,7 +1315,7 @@ void XdsLb::LbChannelState::LrsCallState::Reporter::OnNextReportTimerLocked(
 void XdsLb::LbChannelState::LrsCallState::Reporter::SendReportLocked() {
   // Create a request that contains the load report.
   grpc_slice request_payload_slice = XdsLrsRequestCreateAndEncode(
-      xdslb_policy()->server_name_, &xdslb_policy()->client_stats_);
+      parent_->cluster_name_.get(), &xdslb_policy()->client_stats_);
   // Skip client load report if the counters were all zero in the last
   // report and they are still zero in this one.
   const bool old_val = last_report_counters_were_zero_;
@@ -1535,10 +1536,10 @@ void XdsLb::LbChannelState::LrsCallState::OnResponseReceivedLocked(
   // This anonymous lambda is a hack to avoid the usage of goto.
   [&]() {
     // Parse the response.
+    UniquePtr<char> new_cluster_name;
     grpc_millis new_load_reporting_interval;
     grpc_error* parse_error = XdsLrsResponseDecodeAndParse(
-        response_slice, &new_load_reporting_interval,
-        xdslb_policy->server_name_);
+        response_slice, &new_cluster_name, &new_load_reporting_interval);
     if (parse_error != GRPC_ERROR_NONE) {
       gpr_log(GPR_ERROR, "[xdslb %p] LRS response parsing failed. error=%s",
               xdslb_policy, grpc_error_string(parse_error));
@@ -1548,9 +1549,10 @@ void XdsLb::LbChannelState::LrsCallState::OnResponseReceivedLocked(
     lrs_calld->seen_response_ = true;
     if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_xds_trace)) {
       gpr_log(GPR_INFO,
-              "[xdslb %p] LRS response received, load_report_interval=%" PRId64
-              "ms",
-              xdslb_policy, new_load_reporting_interval);
+              "[xdslb %p] LRS response received, cluster_name=%s, "
+              "load_report_interval=%" PRId64 "ms",
+              xdslb_policy, new_cluster_name.get(),
+              new_load_reporting_interval);
     }
     if (new_load_reporting_interval <
         GRPC_XDS_MIN_CLIENT_LOAD_REPORTING_INTERVAL_MS) {
@@ -1564,7 +1566,8 @@ void XdsLb::LbChannelState::LrsCallState::OnResponseReceivedLocked(
       }
     }
     // Ignore identical update.
-    if (lrs_calld->load_reporting_interval_ == new_load_reporting_interval) {
+    if (lrs_calld->load_reporting_interval_ == new_load_reporting_interval &&
+        strcmp(lrs_calld->cluster_name_.get(), new_cluster_name.get()) == 0) {
       if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_xds_trace)) {
         gpr_log(GPR_INFO,
                 "[xdslb %p] Incoming LRS response identical to current, "
@@ -1573,9 +1576,10 @@ void XdsLb::LbChannelState::LrsCallState::OnResponseReceivedLocked(
       }
       return;
     }
-    // Stop current load reporting (if any) to adopt the new reporting interval.
+    // Stop current load reporting (if any) to adopt the new config.
     lrs_calld->reporter_.reset();
     // Record the new config.
+    lrs_calld->cluster_name_ = std::move(new_cluster_name);
     lrs_calld->load_reporting_interval_ = new_load_reporting_interval;
     // Try starting sending load report.
     lrs_calld->MaybeStartReportingLocked();
