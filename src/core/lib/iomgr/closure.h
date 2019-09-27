@@ -355,4 +355,43 @@ inline void grpc_closure_list_sched(grpc_closure_list* list) {
   grpc_closure_list_sched(closure_list)
 #endif
 
+#ifndef NDEBUG
+inline void grpc_closure_list_run(const char* file, int line,
+                                  grpc_closure_list* list) {
+#else
+inline void grpc_closure_list_run(grpc_closure_list* list) {
+#endif
+  grpc_closure* c = list->head;
+  while (c != nullptr) {
+    grpc_closure* next = c->next_data.next;
+#ifndef NDEBUG
+    if (c->scheduled) {
+      gpr_log(GPR_ERROR,
+              "Closure already scheduled. (closure: %p, created: [%s:%d], "
+              "previously scheduled at: [%s: %d] run?: %s",
+              c, c->file_created, c->line_created, c->file_initiated,
+              c->line_initiated, c->run ? "true" : "false");
+      abort();
+    }
+    c->scheduled = true;
+    c->file_initiated = file;
+    c->line_initiated = line;
+    c->run = false;
+    GPR_ASSERT(c->cb != nullptr);
+#endif
+    c->scheduler->vtable->run(c, c->error_data.error);
+    c = next;
+  }
+  list->head = list->tail = nullptr;
+}
+
+/** Schedule all closures in a list to be run. Does not need to be run from a
+ * safe point. */
+#ifndef NDEBUG
+#define GRPC_CLOSURE_LIST_RUN(closure_list) \
+  grpc_closure_list_run(__FILE__, __LINE__, closure_list)
+#else
+#define GRPC_CLOSURE_LIST_RUN(closure_list) grpc_closure_list_run(closure_list)
+#endif
+
 #endif /* GRPC_CORE_LIB_IOMGR_CLOSURE_H */
