@@ -125,6 +125,7 @@ grpc_cc_test(
     srcs = ["mpscq_test.cc"],
     exec_compatible_with = ["//third_party/toolchains/machine_size:large"],
     language = "C++",
+    tags = ["no_windows"],  # machine_size:large is not configured for windows RBE
     deps = [
         "//:gpr",
         "//test/core/util:grpc_test_util",
