@@ -182,7 +182,7 @@ def _create_test_jobs(extra_args=[], inner_jobs=_DEFAULT_INNER_JOBS):
     # sanity tests
     test_jobs += _generate_jobs(
         languages=['sanity'],
-        configs=['dbg', 'opt'],
+        configs=['dbg'],
         platforms=['linux'],
         labels=['basictests'],
         extra_args=extra_args + ['--report_multi_target'],

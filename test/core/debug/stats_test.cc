@@ -135,8 +135,8 @@ TEST_P(HistogramTest, IncHistogram) {
   }
 }
 
-INSTANTIATE_TEST_CASE_P(HistogramTestCases, HistogramTest,
-                        ::testing::Range<int>(0, GRPC_STATS_HISTOGRAM_COUNT));
+INSTANTIATE_TEST_SUITE_P(HistogramTestCases, HistogramTest,
+                         ::testing::Range<int>(0, GRPC_STATS_HISTOGRAM_COUNT));
 
 }  // namespace testing
 }  // namespace grpc

@@ -1963,6 +1963,7 @@ grpc_cc_library(
     deps = [
         "grpc",
         "grpc++_codegen_base",
+        "grpc++_codegen_base_src",
         "grpc_health_upb",
     ],
 )
@@ -1975,6 +1976,7 @@ grpc_cc_library(
     public_hdrs = GRPCXX_PUBLIC_HDRS,
     deps = [
         "grpc++_codegen_base",
+        "grpc++_codegen_base_src",
         "grpc_health_upb",
         "grpc_unsecure",
     ],
@@ -2523,4 +2525,12 @@ filegroup(
         "etc/roots.pem",
     ],
     visibility = ["//visibility:public"],
+)
+
+# Base classes of EventManagerInterface
+grpc_cc_library(
+    name = "eventmanager_interface",
+    hdrs = [
+        "src/core/lib/iomgr/poller/eventmanager_interface.h",
+    ],
 )

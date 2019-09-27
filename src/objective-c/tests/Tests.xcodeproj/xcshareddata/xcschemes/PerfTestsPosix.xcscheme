@@ -5,22 +5,6 @@
    <BuildAction
       parallelizeBuildables = "YES"
       buildImplicitDependencies = "YES">
-      <BuildActionEntries>
-         <BuildActionEntry
-            buildForTesting = "YES"
-            buildForRunning = "YES"
-            buildForProfiling = "NO"
-            buildForArchiving = "NO"
-            buildForAnalyzing = "NO">
-            <BuildableReference
-               BuildableIdentifier = "primary"
-               BlueprintIdentifier = "B0F2D0B9232991BA008C2575"
-               BuildableName = "PerfTests.xctest"
-               BlueprintName = "PerfTests"
-               ReferencedContainer = "container:Tests.xcodeproj">
-            </BuildableReference>
-         </BuildActionEntry>
-      </BuildActionEntries>
    </BuildAction>
    <TestAction
       buildConfiguration = "Test"
@@ -45,19 +29,13 @@
                   Identifier = "PerfTestsCFStreamCleartext">
                </Test>
                <Test
-                  Identifier = "PerfTestsCronet/testPingPongRPCWithFlowControl">
+                  Identifier = "PerfTestsCFStreamSSL">
                </Test>
                <Test
-                  Identifier = "PerfTestsCronet/testPingPongRPCWithInterceptor">
-               </Test>
-               <Test
-                  Identifier = "PerfTestsCronet/testPingPongRPCWithV1API">
+                  Identifier = "PerfTestsCronet">
                </Test>
                <Test
                   Identifier = "PerfTestsNoCFStreamCleartext">
-               </Test>
-               <Test
-                  Identifier = "PerfTestsNoCFStreamSSL">
                </Test>
                <Test
                   Identifier = "PerfTestsNoCFStreamSSL/testPingPongRPCWithFlowControl">
@@ -87,15 +65,6 @@
       debugDocumentVersioning = "YES"
       debugServiceExtension = "internal"
       allowLocationSimulation = "YES">
-      <MacroExpansion>
-         <BuildableReference
-            BuildableIdentifier = "primary"
-            BlueprintIdentifier = "B0F2D0B9232991BA008C2575"
-            BuildableName = "PerfTests.xctest"
-            BlueprintName = "PerfTests"
-            ReferencedContainer = "container:Tests.xcodeproj">
-         </BuildableReference>
-      </MacroExpansion>
       <AdditionalOptions>
       </AdditionalOptions>
    </LaunchAction>
@@ -105,15 +74,6 @@
       savedToolIdentifier = ""
       useCustomWorkingDirectory = "NO"
       debugDocumentVersioning = "YES">
-      <MacroExpansion>
-         <BuildableReference
-            BuildableIdentifier = "primary"
-            BlueprintIdentifier = "B0F2D0B9232991BA008C2575"
-            BuildableName = "PerfTests.xctest"
-            BlueprintName = "PerfTests"
-            ReferencedContainer = "container:Tests.xcodeproj">
-         </BuildableReference>
-      </MacroExpansion>
    </ProfileAction>
    <AnalyzeAction
       buildConfiguration = "Debug">

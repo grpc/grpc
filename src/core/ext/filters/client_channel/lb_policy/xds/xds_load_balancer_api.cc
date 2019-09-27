@@ -66,7 +66,7 @@ bool XdsDropConfig::ShouldDrop(const UniquePtr<char>** category_name) const {
   return false;
 }
 
-grpc_slice XdsEdsRequestCreateAndEncode(const char* service_name) {
+grpc_slice XdsEdsRequestCreateAndEncode(const char* server_name) {
   upb::Arena arena;
   // Create a request.
   envoy_api_v2_DiscoveryRequest* request =
@@ -83,7 +83,7 @@ grpc_slice XdsEdsRequestCreateAndEncode(const char* service_name) {
       google_protobuf_Struct_FieldsEntry_mutable_value(field, arena.ptr());
   google_protobuf_Value_set_bool_value(value, true);
   envoy_api_v2_DiscoveryRequest_add_resource_names(
-      request, upb_strview_makez(service_name), arena.ptr());
+      request, upb_strview_makez(server_name), arena.ptr());
   envoy_api_v2_DiscoveryRequest_set_type_url(request,
                                              upb_strview_makez(kEdsTypeUrl));
   // Encode the request.
@@ -414,8 +414,8 @@ grpc_slice XdsLrsRequestCreateAndEncode(const char* server_name,
 }
 
 grpc_error* XdsLrsResponseDecodeAndParse(const grpc_slice& encoded_response,
-                                         grpc_millis* load_reporting_interval,
-                                         const char* expected_server_name) {
+                                         UniquePtr<char>* cluster_name,
+                                         grpc_millis* load_reporting_interval) {
   upb::Arena arena;
   // Decode the response.
   const envoy_service_load_stats_v2_LoadStatsResponse* decoded_response =
@@ -435,11 +435,8 @@ grpc_error* XdsLrsResponseDecodeAndParse(const grpc_slice& encoded_response,
     return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
         "The number of clusters (server names) is not 1.");
   }
-  // Check the cluster name in the response
-  if (strncmp(expected_server_name, clusters[0].data, clusters[0].size) != 0) {
-    return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-        "Unexpected cluster (server name).");
-  }
+  // Get the cluster name for reporting loads.
+  *cluster_name = StringCopy(clusters[0]);
   // Get the load report interval.
   const google_protobuf_Duration* load_reporting_interval_duration =
       envoy_service_load_stats_v2_LoadStatsResponse_load_reporting_interval(

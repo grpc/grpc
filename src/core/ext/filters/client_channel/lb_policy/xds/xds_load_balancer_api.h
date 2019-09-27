@@ -99,7 +99,7 @@ struct XdsUpdate {
 };
 
 // Creates an EDS request querying \a service_name.
-grpc_slice XdsEdsRequestCreateAndEncode(const char* service_name);
+grpc_slice XdsEdsRequestCreateAndEncode(const char* server_name);
 
 // Parses the EDS response and returns the args to update locality map. If there
 // is any error, the output update is invalid.
@@ -114,12 +114,12 @@ grpc_slice XdsLrsRequestCreateAndEncode(const char* server_name);
 grpc_slice XdsLrsRequestCreateAndEncode(const char* server_name,
                                         XdsClientStats* client_stats);
 
-// Parses the LRS response and returns the client-side load reporting interval.
-// If there is any error (e.g., the found server name doesn't match \a
-// expected_server_name), the output config is invalid.
+// Parses the LRS response and returns \a cluster_name and \a
+// load_reporting_interval for client-side load reporting. If there is any
+// error, the output config is invalid.
 grpc_error* XdsLrsResponseDecodeAndParse(const grpc_slice& encoded_response,
-                                         grpc_millis* load_reporting_interval,
-                                         const char* expected_server_name);
+                                         UniquePtr<char>* cluster_name,
+                                         grpc_millis* load_reporting_interval);
 
 }  // namespace grpc_core
 

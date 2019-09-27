@@ -344,8 +344,8 @@ std::vector<TestScenario> CreateTestScenarios() {
   return scenarios;
 }
 
-INSTANTIATE_TEST_CASE_P(FlakyNetworkTest, FlakyNetworkTest,
-                        ::testing::ValuesIn(CreateTestScenarios()));
+INSTANTIATE_TEST_SUITE_P(FlakyNetworkTest, FlakyNetworkTest,
+                         ::testing::ValuesIn(CreateTestScenarios()));
 
 // Network interface connected to server flaps
 TEST_P(FlakyNetworkTest, NetworkTransition) {
