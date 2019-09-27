@@ -57,9 +57,10 @@ void* TlsCredentialReloadArg::cb_user_data() const {
   return c_arg_->cb_user_data;
 }
 
-/** This function creates a new TlsKeyMaterialsConfig instance whose fields are
- * not shared with the corresponding key materials config fields of the
- * TlsCredentialReloadArg instance. **/
+bool TlsCredentialReloadArg::is_pem_key_cert_pair_list_empty() const {
+  return c_arg_->key_materials_config->pem_key_cert_pair_list().empty();
+}
+
 grpc_ssl_certificate_config_reload_status TlsCredentialReloadArg::status()
     const {
   return c_arg_->status;
@@ -94,8 +95,29 @@ void TlsCredentialReloadArg::add_pem_key_cert_pair(
 
 void TlsCredentialReloadArg::set_key_materials_config(
     const std::shared_ptr<TlsKeyMaterialsConfig>& key_materials_config) {
-  c_arg_->key_materials_config =
-      ConvertToCKeyMaterialsConfig(key_materials_config);
+  if (key_materials_config == nullptr) {
+    c_arg_->key_materials_config = nullptr;
+    return;
+  }
+  ::grpc_core::InlinedVector<::grpc_core::PemKeyCertPair, 1>
+      c_pem_key_cert_pair_list;
+  for (auto key_cert_pair = key_materials_config->pem_key_cert_pair_list().begin();
+       key_cert_pair != key_materials_config->pem_key_cert_pair_list().end();
+       key_cert_pair++) {
+    grpc_ssl_pem_key_cert_pair* ssl_pair =
+        (grpc_ssl_pem_key_cert_pair*)gpr_malloc(
+            sizeof(grpc_ssl_pem_key_cert_pair));
+    ssl_pair->private_key = gpr_strdup(key_cert_pair->private_key.c_str());
+    ssl_pair->cert_chain = gpr_strdup(key_cert_pair->cert_chain.c_str());
+    ::grpc_core::PemKeyCertPair c_pem_key_cert_pair =
+        ::grpc_core::PemKeyCertPair(ssl_pair);
+    c_pem_key_cert_pair_list.push_back(::std::move(c_pem_key_cert_pair));
+  }
+  ::grpc_core::UniquePtr<char> c_pem_root_certs(
+      gpr_strdup(key_materials_config->pem_root_certs().c_str()));
+  c_arg_->key_materials_config->set_key_materials(std::move(c_pem_root_certs),
+                              std::move(c_pem_key_cert_pair_list));
+  c_arg_->key_materials_config->set_version(key_materials_config->version());
 }
 
 void TlsCredentialReloadArg::set_status(
