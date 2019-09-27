@@ -56,30 +56,6 @@ grpc_tls_key_materials_config* ConvertToCKeyMaterialsConfig(
   return c_config;
 }
 
-/** Converts the C key materials config to a Cpp key materials config; it
- * allocates memory for the Cpp config. **/
-std::shared_ptr<TlsKeyMaterialsConfig> ConvertToCppKeyMaterialsConfig(
-    const grpc_tls_key_materials_config* config) {
-  if (config == nullptr) {
-    return nullptr;
-  }
-  std::shared_ptr<TlsKeyMaterialsConfig> cpp_config(
-      new TlsKeyMaterialsConfig());
-  std::vector<TlsKeyMaterialsConfig::PemKeyCertPair> cpp_pem_key_cert_pair_list;
-  grpc_tls_key_materials_config::PemKeyCertPairList pem_key_cert_pair_list =
-      config->pem_key_cert_pair_list();
-  for (size_t i = 0; i < pem_key_cert_pair_list.size(); i++) {
-    ::grpc_core::PemKeyCertPair key_cert_pair = pem_key_cert_pair_list[i];
-    TlsKeyMaterialsConfig::PemKeyCertPair p = {key_cert_pair.private_key(),
-                                               key_cert_pair.cert_chain()};
-    cpp_pem_key_cert_pair_list.push_back(::std::move(p));
-  }
-  cpp_config->set_key_materials(std::move(config->pem_root_certs()),
-                                std::move(cpp_pem_key_cert_pair_list));
-  cpp_config->set_version(config->version());
-  return cpp_config;
-}
-
 /** The C schedule and cancel functions for the credential reload config.
  * They populate a C credential reload arg with the result of a C++ credential
  * reload schedule/cancel API. **/

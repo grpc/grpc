@@ -57,6 +57,8 @@ class TlsKeyMaterialsConfig {
 
   /** Setter for key materials that will be called by the user. The setter
    * transfers ownership of the arguments to the config. **/
+  void set_pem_root_certs(grpc::string pem_root_certs);
+  void add_pem_key_cert_pair(PemKeyCertPair pem_key_cert_pair);
   void set_key_materials(grpc::string pem_root_certs,
                          std::vector<PemKeyCertPair> pem_key_cert_pair_list);
   void set_version(int version) { version_ = version; };
@@ -88,7 +90,7 @@ class TlsCredentialReloadArg {
    * of the key materials config, it creates a new instance of the C++ key
    * materials config from the underlying C grpc_tls_key_materials_config. **/
   void* cb_user_data() const;
-  std::shared_ptr<TlsKeyMaterialsConfig> key_materials_config() const;
+  bool is_pem_key_cert_pair_list_empty() const;
   grpc_ssl_certificate_config_reload_status status() const;
   grpc::string error_details() const;
 
@@ -99,6 +101,8 @@ class TlsCredentialReloadArg {
    * setter function.
    * **/
   void set_cb_user_data(void* cb_user_data);
+  void set_pem_root_certs(grpc::string pem_root_certs);
+  void add_pem_key_cert_pair(TlsKeyMaterialsConfig::PemKeyCertPair pem_key_cert_pair);
   void set_key_materials_config(
       const std::shared_ptr<TlsKeyMaterialsConfig>& key_materials_config);
   void set_status(grpc_ssl_certificate_config_reload_status status);
@@ -127,16 +131,23 @@ struct TlsCredentialReloadInterface {
  * used for experimental purposes for now and it is subject to change. **/
 class TlsCredentialReloadConfig {
  public:
-  /** The config takes ownership of the credential reload interface. **/
-  TlsCredentialReloadConfig(std::unique_ptr<TlsCredentialReloadInterface>
+  TlsCredentialReloadConfig(std::shared_ptr<TlsCredentialReloadInterface>
                                 credential_reload_interface);
   ~TlsCredentialReloadConfig();
 
   int Schedule(TlsCredentialReloadArg* arg) const {
+    if (credential_reload_interface_ == nullptr) {
+      gpr_log(GPR_ERROR, "credential reload interface is nullptr");
+      return 1;
+    }
     return credential_reload_interface_->Schedule(arg);
   }
 
   void Cancel(TlsCredentialReloadArg* arg) const {
+    if (credential_reload_interface_ == nullptr) {
+      gpr_log(GPR_ERROR, "credential reload interface is nullptr");
+      return;
+    }
     credential_reload_interface_->Cancel(arg);
   }
 
@@ -145,7 +156,7 @@ class TlsCredentialReloadConfig {
 
  private:
   grpc_tls_credential_reload_config* c_config_;
-  std::unique_ptr<TlsCredentialReloadInterface> credential_reload_interface_;
+  std::shared_ptr<TlsCredentialReloadInterface> credential_reload_interface_;
 };
 
 /** TLS server authorization check arguments, wraps
@@ -213,18 +224,24 @@ struct TlsServerAuthorizationCheckInterface {
  *  purposes for now and it is subject to change. **/
 class TlsServerAuthorizationCheckConfig {
  public:
-  /** The config takes ownership of the server authorization check interface.
-   * **/
   TlsServerAuthorizationCheckConfig(
-      std::unique_ptr<TlsServerAuthorizationCheckInterface>
+      std::shared_ptr<TlsServerAuthorizationCheckInterface>
           server_authorization_check_interface);
   ~TlsServerAuthorizationCheckConfig();
 
   int Schedule(TlsServerAuthorizationCheckArg* arg) const {
+    if (server_authorization_check_interface_ == nullptr) {
+      gpr_log(GPR_ERROR, "server authorization check interface is nullptr");
+      return 1;
+    }
     return server_authorization_check_interface_->Schedule(arg);
   }
 
   void Cancel(TlsServerAuthorizationCheckArg* arg) const {
+    if (server_authorization_check_interface_ == nullptr) {
+      gpr_log(GPR_ERROR, "server authorization check interface is nullptr");
+      return;
+    }
     server_authorization_check_interface_->Cancel(arg);
   }
 
@@ -235,7 +252,7 @@ class TlsServerAuthorizationCheckConfig {
 
  private:
   grpc_tls_server_authorization_check_config* c_config_;
-  std::unique_ptr<TlsServerAuthorizationCheckInterface>
+  std::shared_ptr<TlsServerAuthorizationCheckInterface>
       server_authorization_check_interface_;
 };
 

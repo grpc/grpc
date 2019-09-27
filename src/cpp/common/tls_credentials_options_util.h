@@ -27,12 +27,9 @@
 namespace grpc_impl {
 namespace experimental {
 
-/** The following 2 functions are exposed for testing purposes. **/
+/** The following function is exposed for testing purposes. **/
 grpc_tls_key_materials_config* ConvertToCKeyMaterialsConfig(
     const std::shared_ptr<TlsKeyMaterialsConfig>& config);
-
-std::shared_ptr<TlsKeyMaterialsConfig> ConvertToCppKeyMaterialsConfig(
-    const grpc_tls_key_materials_config* config);
 
 /** The following 4 functions convert the user-provided schedule or cancel
  *  functions into C style schedule or cancel functions. These are internal
