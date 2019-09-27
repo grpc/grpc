@@ -29,7 +29,8 @@ void TlsKeyMaterialsConfig::set_pem_root_certs(grpc::string pem_root_certs) {
   pem_root_certs_ = std::move(pem_root_certs);
 }
 
-void TlsKeyMaterialsConfig::add_pem_key_cert_pair(PemKeyCertPair pem_key_cert_pair) {
+void TlsKeyMaterialsConfig::add_pem_key_cert_pair(
+    PemKeyCertPair pem_key_cert_pair) {
   pem_key_cert_pair_list_.push_back(pem_key_cert_pair);
 }
 
@@ -74,16 +75,20 @@ void TlsCredentialReloadArg::set_cb_user_data(void* cb_user_data) {
 }
 
 void TlsCredentialReloadArg::set_pem_root_certs(grpc::string pem_root_certs) {
-  ::grpc_core::UniquePtr<char> c_pem_root_certs(gpr_strdup(pem_root_certs.c_str()));
+  ::grpc_core::UniquePtr<char> c_pem_root_certs(
+      gpr_strdup(pem_root_certs.c_str()));
   c_arg_->key_materials_config->set_pem_root_certs(std::move(c_pem_root_certs));
 }
 
-void TlsCredentialReloadArg::add_pem_key_cert_pair(TlsKeyMaterialsConfig::PemKeyCertPair pem_key_cert_pair) {
-  grpc_ssl_pem_key_cert_pair* ssl_pair = (grpc_ssl_pem_key_cert_pair*)gpr_malloc(sizeof(grpc_ssl_pem_key_cert_pair));
+void TlsCredentialReloadArg::add_pem_key_cert_pair(
+    TlsKeyMaterialsConfig::PemKeyCertPair pem_key_cert_pair) {
+  grpc_ssl_pem_key_cert_pair* ssl_pair =
+      (grpc_ssl_pem_key_cert_pair*)gpr_malloc(
+          sizeof(grpc_ssl_pem_key_cert_pair));
   ssl_pair->private_key = gpr_strdup(pem_key_cert_pair.private_key.c_str());
   ssl_pair->cert_chain = gpr_strdup(pem_key_cert_pair.cert_chain.c_str());
   ::grpc_core::PemKeyCertPair c_pem_key_cert_pair =
-    ::grpc_core::PemKeyCertPair(ssl_pair);
+      ::grpc_core::PemKeyCertPair(ssl_pair);
   c_arg_->key_materials_config->add_pem_key_cert_pair(c_pem_key_cert_pair);
 }
 
@@ -221,8 +226,7 @@ TlsCredentialsOptions::TlsCredentialsOptions(
     : cert_request_type_(cert_request_type),
       key_materials_config_(key_materials_config),
       credential_reload_config_(credential_reload_config),
-      server_authorization_check_config_(
-          server_authorization_check_config) {
+      server_authorization_check_config_(server_authorization_check_config) {
   c_credentials_options_ = grpc_tls_credentials_options_create();
   grpc_tls_credentials_options_set_cert_request_type(c_credentials_options_,
                                                      cert_request_type_);
