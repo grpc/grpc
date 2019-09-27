@@ -467,6 +467,10 @@ void Executor::ShutdownAll() {
 
 bool Executor::IsThreaded(ExecutorType executor_type) {
   GPR_ASSERT(executor_type < ExecutorType::NUM_EXECUTORS);
+  Executor* executor = executors[static_cast<size_t>(executor_type)];
+  if (executor == nullptr) {
+    return false;
+  }
   return executors[static_cast<size_t>(executor_type)]->IsThreaded();
 }
 
