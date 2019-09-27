@@ -45,7 +45,7 @@ const int kPaginationLimit = 100;
 
 void ChannelzRegistry::Init() { g_channelz_registry = New<ChannelzRegistry>(); }
 
-void ChannelzRegistry::Shutdown() { Delete(g_channelz_registry); }
+void ChannelzRegistry::Shutdown() { Delete(g_channelz_registry); g_channelz_registry = nullptr; }
 
 ChannelzRegistry* ChannelzRegistry::Default() {
   GPR_DEBUG_ASSERT(g_channelz_registry != nullptr);
@@ -59,6 +59,7 @@ void ChannelzRegistry::InternalRegister(BaseNode* node) {
 }
 
 void ChannelzRegistry::InternalUnregister(intptr_t uuid) {
+  if (g_channelz_registry == nullptr) return;
   GPR_ASSERT(uuid >= 1);
   MutexLock lock(&mu_);
   GPR_ASSERT(uuid <= uuid_generator_);
