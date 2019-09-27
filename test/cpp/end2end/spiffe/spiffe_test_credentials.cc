@@ -24,6 +24,7 @@ namespace testing {
 
 class TestTlsCredentialReloadInterface : public ::grpc_impl::experimental::TlsCredentialReloadInterface {
 
+// Sync implementation.
 int Schedule(::grpc_impl::experimental::TlsCredentialReloadArg* arg) override {
   std::cout << "*************entered credential reload test interface schedule" << std::endl;
   //GPR_ASSERT(arg != nullptr);
@@ -54,7 +55,7 @@ int Schedule(::grpc_impl::experimental::TlsCredentialReloadArg* arg) override {
   //std::shared_ptr<::grpc_impl::experimental::TlsKeyMaterialsConfig> config
   arg->set_pem_root_certs(test_root_cert);
   arg->add_pem_key_cert_pair(pem_key_cert_pair);
-  arg->set_status(GRPC_SSL_CERTIFICATE_CONFIG_RELOAD_NEW);
+  //arg->set_status(GRPC_SSL_CERTIFICATE_CONFIG_RELOAD_NEW);
   arg->OnCredentialReloadDoneCallback();
   std::cout << "*****************completing credential reload test interface schedule" << std::endl;
   return 0;
@@ -63,6 +64,7 @@ int Schedule(::grpc_impl::experimental::TlsCredentialReloadArg* arg) override {
 
 class TestTlsServerAuthorizationCheckInterface : public ::grpc_impl::experimental::TlsServerAuthorizationCheckInterface {
 
+// Sync implementation.
 int Schedule(::grpc_impl::experimental::TlsServerAuthorizationCheckArg* arg) override {
   GPR_ASSERT(arg != nullptr);
   std::cout << "*************entered serv authz check test interface schedule" << std::endl; 
