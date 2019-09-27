@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC Core
-   &#160;<span id="projectnumber">7.0.0</span>
+   &#160;<span id="projectnumber">8.0.0</span>
    </div>
   </td>
  </tr>
@@ -638,11 +638,11 @@ $(function() {
 <h3>FullDuplexCall</h3>
 <p>Server implements FullDuplexCall by replying, in order, with one StreamingOutputCallResponse for each ResponseParameters in each StreamingOutputCallRequest. Each StreamingOutputCallResponse should have a payload body of size ResponseParameters.size bytes, as specified by its respective ResponseParameters. After receiving half close and sending all responses, it closes with OK.</p>
 <h3>Echo Status</h3>
-<p>When the client sends a response_status in the request payload, the server closes the stream with the status code and messsage contained within said response_status. The server will not process any further messages on the stream sent by the client. This can be used by clients to verify correct handling of different status codes and associated status messages end-to-end.</p>
+<p>When the client sends a response_status in the request payload, the server closes the stream with the status code and message contained within said response_status. The server will not process any further messages on the stream sent by the client. This can be used by clients to verify correct handling of different status codes and associated status messages end-to-end.</p>
 <h3>Echo Metadata</h3>
 <p>When the client sends metadata with the key <code>"x-grpc-test-echo-initial"</code> with its request, the server sends back exactly this key and the corresponding value back to the client as part of initial metadata. When the client sends metadata with the key <code>"x-grpc-test-echo-trailing-bin"</code> with its request, the server sends back exactly this key and the corresponding value back to the client as trailing metadata.</p>
 <h3>Observe ResponseParameters.interval_us</h3>
-<p>In StreamingOutputCall and FullDuplexCall, server delays sending a StreamingOutputCallResponse by the ResponseParameters's <code>interval_us</code> for that particular response, relative to the last response sent. That is, <code>interval_us</code> acts like a sleep <em>before</em> sending the response and accumulates from one response to the next.</p>
+<p>In StreamingOutputCall and FullDuplexCall, server delays sending a StreamingOutputCallResponse by the ResponseParameters' <code>interval_us</code> for that particular response, relative to the last response sent. That is, <code>interval_us</code> acts like a sleep <em>before</em> sending the response and accumulates from one response to the next.</p>
 <p>Interaction with flow control is unspecified.</p>
 <h3>Echo Auth Information</h3>
 <p>Status: Pending</p>
@@ -656,7 +656,7 @@ $(function() {
 </div></div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Mon Aug 19 2019 12:05:22 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Fri Sep 27 2019 16:29:33 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.13
 </small></address>

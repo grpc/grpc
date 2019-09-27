@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.23.0</span>
+   &#160;<span id="projectnumber">1.24.0</span>
    </div>
   </td>
  </tr>
@@ -101,18 +101,18 @@ Public Member Functions</h2></td></tr>
 <tr class="memitem:a2ff4a902cf501ebe3ebd420003a33467"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc__impl_1_1experimental_1_1_server_bidi_reactor.html#a2ff4a902cf501ebe3ebd420003a33467">Finish</a> (::<a class="el" href="classgrpc_1_1_status.html">grpc::Status</a> s)</td></tr>
 <tr class="memdesc:a2ff4a902cf501ebe3ebd420003a33467"><td class="mdescLeft">&#160;</td><td class="mdescRight">Indicate that the stream is to be finished and the trailing metadata and RPC status are to be sent.  <a href="#a2ff4a902cf501ebe3ebd420003a33467">More...</a><br /></td></tr>
 <tr class="separator:a2ff4a902cf501ebe3ebd420003a33467"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a4934538877083ae0a1b53eda781b39ad"><td class="memItemLeft" align="right" valign="top">virtual void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc__impl_1_1experimental_1_1_server_bidi_reactor.html#a4934538877083ae0a1b53eda781b39ad">OnStarted</a> (::<a class="el" href="classgrpc__impl_1_1_server_context.html">grpc_impl::ServerContext</a> *context)</td></tr>
-<tr class="memdesc:a4934538877083ae0a1b53eda781b39ad"><td class="mdescLeft">&#160;</td><td class="mdescRight">Notify the application that a streaming RPC has started and that it is now ok to call any operation initiation method.  <a href="#a4934538877083ae0a1b53eda781b39ad">More...</a><br /></td></tr>
-<tr class="separator:a4934538877083ae0a1b53eda781b39ad"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:afab2e67c9e24e035404662f712543055"><td class="memItemLeft" align="right" valign="top">virtual void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc__impl_1_1experimental_1_1_server_bidi_reactor.html#afab2e67c9e24e035404662f712543055">OnSendInitialMetadataDone</a> (bool ok)</td></tr>
-<tr class="memdesc:afab2e67c9e24e035404662f712543055"><td class="mdescLeft">&#160;</td><td class="mdescRight">Notifies the application that an explicit StartSendInitialMetadata operation completed.  <a href="#afab2e67c9e24e035404662f712543055">More...</a><br /></td></tr>
-<tr class="separator:afab2e67c9e24e035404662f712543055"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a8ae1c03d368b08fdd3976e28cd4b9a9f"><td class="memItemLeft" align="right" valign="top">virtual void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc__impl_1_1experimental_1_1_server_bidi_reactor.html#a8ae1c03d368b08fdd3976e28cd4b9a9f">OnReadDone</a> (bool ok)</td></tr>
-<tr class="memdesc:a8ae1c03d368b08fdd3976e28cd4b9a9f"><td class="mdescLeft">&#160;</td><td class="mdescRight">Notifies the application that a StartRead operation completed.  <a href="#a8ae1c03d368b08fdd3976e28cd4b9a9f">More...</a><br /></td></tr>
-<tr class="separator:a8ae1c03d368b08fdd3976e28cd4b9a9f"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a30292b2e68b346b3570a1eb45ee19b6d"><td class="memItemLeft" align="right" valign="top">virtual void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc__impl_1_1experimental_1_1_server_bidi_reactor.html#a30292b2e68b346b3570a1eb45ee19b6d">OnWriteDone</a> (bool ok)</td></tr>
-<tr class="memdesc:a30292b2e68b346b3570a1eb45ee19b6d"><td class="mdescLeft">&#160;</td><td class="mdescRight">Notifies the application that a StartWrite (or StartWriteLast) operation completed.  <a href="#a30292b2e68b346b3570a1eb45ee19b6d">More...</a><br /></td></tr>
-<tr class="separator:a30292b2e68b346b3570a1eb45ee19b6d"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:afa3b64af6f2fdb5e6e6fc725f6e6bc66"><td class="memItemLeft" align="right" valign="top">virtual void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc__impl_1_1experimental_1_1_server_bidi_reactor.html#afa3b64af6f2fdb5e6e6fc725f6e6bc66">OnStarted</a> (::<a class="el" href="classgrpc__impl_1_1_server_context.html">grpc_impl::ServerContext</a> *)</td></tr>
+<tr class="memdesc:afa3b64af6f2fdb5e6e6fc725f6e6bc66"><td class="mdescLeft">&#160;</td><td class="mdescRight">Notify the application that a streaming RPC has started and that it is now ok to call any operation initiation method.  <a href="#afa3b64af6f2fdb5e6e6fc725f6e6bc66">More...</a><br /></td></tr>
+<tr class="separator:afa3b64af6f2fdb5e6e6fc725f6e6bc66"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a3ff910fde2d7cadca59f048d2634d002"><td class="memItemLeft" align="right" valign="top">virtual void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc__impl_1_1experimental_1_1_server_bidi_reactor.html#a3ff910fde2d7cadca59f048d2634d002">OnSendInitialMetadataDone</a> (bool)</td></tr>
+<tr class="memdesc:a3ff910fde2d7cadca59f048d2634d002"><td class="mdescLeft">&#160;</td><td class="mdescRight">Notifies the application that an explicit StartSendInitialMetadata operation completed.  <a href="#a3ff910fde2d7cadca59f048d2634d002">More...</a><br /></td></tr>
+<tr class="separator:a3ff910fde2d7cadca59f048d2634d002"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ab89454bee4af228e7a3cacce14b2ffa1"><td class="memItemLeft" align="right" valign="top">virtual void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc__impl_1_1experimental_1_1_server_bidi_reactor.html#ab89454bee4af228e7a3cacce14b2ffa1">OnReadDone</a> (bool)</td></tr>
+<tr class="memdesc:ab89454bee4af228e7a3cacce14b2ffa1"><td class="mdescLeft">&#160;</td><td class="mdescRight">Notifies the application that a StartRead operation completed.  <a href="#ab89454bee4af228e7a3cacce14b2ffa1">More...</a><br /></td></tr>
+<tr class="separator:ab89454bee4af228e7a3cacce14b2ffa1"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a094a8b8a1edf506a9b53a71053dce722"><td class="memItemLeft" align="right" valign="top">virtual void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc__impl_1_1experimental_1_1_server_bidi_reactor.html#a094a8b8a1edf506a9b53a71053dce722">OnWriteDone</a> (bool)</td></tr>
+<tr class="memdesc:a094a8b8a1edf506a9b53a71053dce722"><td class="mdescLeft">&#160;</td><td class="mdescRight">Notifies the application that a StartWrite (or StartWriteLast) operation completed.  <a href="#a094a8b8a1edf506a9b53a71053dce722">More...</a><br /></td></tr>
+<tr class="separator:a094a8b8a1edf506a9b53a71053dce722"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a3cd92331893b7be7b53aca6d97e3e0fe"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc__impl_1_1experimental_1_1_server_bidi_reactor.html#a3cd92331893b7be7b53aca6d97e3e0fe">OnDone</a> () override</td></tr>
 <tr class="memdesc:a3cd92331893b7be7b53aca6d97e3e0fe"><td class="mdescLeft">&#160;</td><td class="mdescRight">Notifies the application that all operations associated with this RPC have completed.  <a href="#a3cd92331893b7be7b53aca6d97e3e0fe">More...</a><br /></td></tr>
 <tr class="separator:a3cd92331893b7be7b53aca6d97e3e0fe"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -265,8 +265,8 @@ template&lt;class Request, class Response&gt; </div>
 
 </div>
 </div>
-<a id="a8ae1c03d368b08fdd3976e28cd4b9a9f"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a8ae1c03d368b08fdd3976e28cd4b9a9f">&#9670;&nbsp;</a></span>OnReadDone()</h2>
+<a id="ab89454bee4af228e7a3cacce14b2ffa1"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ab89454bee4af228e7a3cacce14b2ffa1">&#9670;&nbsp;</a></span>OnReadDone()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -280,7 +280,7 @@ template&lt;class Request, class Response&gt; </div>
           <td class="memname">virtual void <a class="el" href="classgrpc__impl_1_1experimental_1_1_server_bidi_reactor.html">grpc_impl::experimental::ServerBidiReactor</a>&lt; Request, Response &gt;::OnReadDone </td>
           <td>(</td>
           <td class="paramtype">bool&#160;</td>
-          <td class="paramname"><em>ok</em></td><td>)</td>
+          <td class="paramname"></td><td>)</td>
           <td></td>
         </tr>
       </table>
@@ -301,8 +301,8 @@ template&lt;class Request, class Response&gt; </div>
 
 </div>
 </div>
-<a id="afab2e67c9e24e035404662f712543055"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#afab2e67c9e24e035404662f712543055">&#9670;&nbsp;</a></span>OnSendInitialMetadataDone()</h2>
+<a id="a3ff910fde2d7cadca59f048d2634d002"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a3ff910fde2d7cadca59f048d2634d002">&#9670;&nbsp;</a></span>OnSendInitialMetadataDone()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -316,7 +316,7 @@ template&lt;class Request, class Response&gt; </div>
           <td class="memname">virtual void <a class="el" href="classgrpc__impl_1_1experimental_1_1_server_bidi_reactor.html">grpc_impl::experimental::ServerBidiReactor</a>&lt; Request, Response &gt;::OnSendInitialMetadataDone </td>
           <td>(</td>
           <td class="paramtype">bool&#160;</td>
-          <td class="paramname"><em>ok</em></td><td>)</td>
+          <td class="paramname"></td><td>)</td>
           <td></td>
         </tr>
       </table>
@@ -338,8 +338,8 @@ template&lt;class Request, class Response&gt; </div>
 
 </div>
 </div>
-<a id="a4934538877083ae0a1b53eda781b39ad"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a4934538877083ae0a1b53eda781b39ad">&#9670;&nbsp;</a></span>OnStarted()</h2>
+<a id="afa3b64af6f2fdb5e6e6fc725f6e6bc66"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#afa3b64af6f2fdb5e6e6fc725f6e6bc66">&#9670;&nbsp;</a></span>OnStarted()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -353,7 +353,7 @@ template&lt;class Request, class Response&gt; </div>
           <td class="memname">virtual void <a class="el" href="classgrpc__impl_1_1experimental_1_1_server_bidi_reactor.html">grpc_impl::experimental::ServerBidiReactor</a>&lt; Request, Response &gt;::OnStarted </td>
           <td>(</td>
           <td class="paramtype">::<a class="el" href="classgrpc__impl_1_1_server_context.html">grpc_impl::ServerContext</a> *&#160;</td>
-          <td class="paramname"><em>context</em></td><td>)</td>
+          <td class="paramname"></td><td>)</td>
           <td></td>
         </tr>
       </table>
@@ -377,8 +377,8 @@ template&lt;class Request, class Response&gt; </div>
 
 </div>
 </div>
-<a id="a30292b2e68b346b3570a1eb45ee19b6d"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a30292b2e68b346b3570a1eb45ee19b6d">&#9670;&nbsp;</a></span>OnWriteDone()</h2>
+<a id="a094a8b8a1edf506a9b53a71053dce722"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a094a8b8a1edf506a9b53a71053dce722">&#9670;&nbsp;</a></span>OnWriteDone()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -392,7 +392,7 @@ template&lt;class Request, class Response&gt; </div>
           <td class="memname">virtual void <a class="el" href="classgrpc__impl_1_1experimental_1_1_server_bidi_reactor.html">grpc_impl::experimental::ServerBidiReactor</a>&lt; Request, Response &gt;::OnWriteDone </td>
           <td>(</td>
           <td class="paramtype">bool&#160;</td>
-          <td class="paramname"><em>ok</em></td><td>)</td>
+          <td class="paramname"></td><td>)</td>
           <td></td>
         </tr>
       </table>
@@ -695,7 +695,7 @@ template&lt;class Request, class Response&gt; </div>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Mon Aug 19 2019 12:05:23 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Fri Sep 27 2019 16:29:34 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.13
 </small></address>

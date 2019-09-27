@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC Core
-   &#160;<span id="projectnumber">7.0.0</span>
+   &#160;<span id="projectnumber">8.0.0</span>
    </div>
   </td>
  </tr>
@@ -360,6 +360,12 @@ Functions</h2></td></tr>
 <tr class="memitem:ab6371d3ff79d1330eb914bff2122e6f9"><td class="memItemLeft" align="right" valign="top"><a class="el" href="impl_2codegen_2port__platform_8h.html#a2865c3b28ea7db75be4c725adb1edc7d">GRPCAPI</a> int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="grpc__security_8h.html#ab6371d3ff79d1330eb914bff2122e6f9">grpc_tls_key_materials_config_set_key_materials</a> (<a class="el" href="grpc__security_8h.html#a2967916eed7d3f7aa1f8fbf3fc45d9ce">grpc_tls_key_materials_config</a> *config, const char *pem_root_certs, const <a class="el" href="structgrpc__ssl__pem__key__cert__pair.html">grpc_ssl_pem_key_cert_pair</a> **pem_key_cert_pairs, size_t num_key_cert_pairs)</td></tr>
 <tr class="memdesc:ab6371d3ff79d1330eb914bff2122e6f9"><td class="mdescLeft">&#160;</td><td class="mdescRight">Set grpc_tls_key_materials_config instance with provided a TLS certificate.  <a href="#ab6371d3ff79d1330eb914bff2122e6f9">More...</a><br /></td></tr>
 <tr class="separator:ab6371d3ff79d1330eb914bff2122e6f9"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aae75d3aa29f4d31b40474d14601c05d5"><td class="memItemLeft" align="right" valign="top"><a class="el" href="impl_2codegen_2port__platform_8h.html#a2865c3b28ea7db75be4c725adb1edc7d">GRPCAPI</a> int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="grpc__security_8h.html#aae75d3aa29f4d31b40474d14601c05d5">grpc_tls_key_materials_config_set_version</a> (<a class="el" href="grpc__security_8h.html#a2967916eed7d3f7aa1f8fbf3fc45d9ce">grpc_tls_key_materials_config</a> *config, int version)</td></tr>
+<tr class="memdesc:aae75d3aa29f4d31b40474d14601c05d5"><td class="mdescLeft">&#160;</td><td class="mdescRight">Set grpc_tls_key_materials_config instance with a provided version number, which is used to keep track of the version of key materials.  <a href="#aae75d3aa29f4d31b40474d14601c05d5">More...</a><br /></td></tr>
+<tr class="separator:aae75d3aa29f4d31b40474d14601c05d5"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a0396c2be5765f1c33301663ebc9a0a28"><td class="memItemLeft" align="right" valign="top"><a class="el" href="impl_2codegen_2port__platform_8h.html#a2865c3b28ea7db75be4c725adb1edc7d">GRPCAPI</a> int&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="grpc__security_8h.html#a0396c2be5765f1c33301663ebc9a0a28">grpc_tls_key_materials_config_get_version</a> (<a class="el" href="grpc__security_8h.html#a2967916eed7d3f7aa1f8fbf3fc45d9ce">grpc_tls_key_materials_config</a> *config)</td></tr>
+<tr class="memdesc:a0396c2be5765f1c33301663ebc9a0a28"><td class="mdescLeft">&#160;</td><td class="mdescRight">Get the version number of a grpc_tls_key_materials_config instance.  <a href="#a0396c2be5765f1c33301663ebc9a0a28">More...</a><br /></td></tr>
+<tr class="separator:a0396c2be5765f1c33301663ebc9a0a28"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a2337a83a6898dde63d4948e8b12aee69"><td class="memItemLeft" align="right" valign="top"><a class="el" href="impl_2codegen_2port__platform_8h.html#a2865c3b28ea7db75be4c725adb1edc7d">GRPCAPI</a> <a class="el" href="grpc__security_8h.html#aed7d78aacba36dda7c4e95668e1e8f8e">grpc_tls_credential_reload_config</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="grpc__security_8h.html#a2337a83a6898dde63d4948e8b12aee69">grpc_tls_credential_reload_config_create</a> (const void *config_user_data, int(*schedule)(void *config_user_data, <a class="el" href="structgrpc__tls__credential__reload__arg.html">grpc_tls_credential_reload_arg</a> *arg), void(*cancel)(void *config_user_data, <a class="el" href="structgrpc__tls__credential__reload__arg.html">grpc_tls_credential_reload_arg</a> *arg), void(*destruct)(void *config_user_data))</td></tr>
 <tr class="memdesc:a2337a83a6898dde63d4948e8b12aee69"><td class="mdescLeft">&#160;</td><td class="mdescRight">Create a grpc_tls_credential_reload_config instance.  <a href="#a2337a83a6898dde63d4948e8b12aee69">More...</a><br /></td></tr>
 <tr class="separator:a2337a83a6898dde63d4948e8b12aee69"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -2467,6 +2473,27 @@ Functions</h2></td></tr>
 
 </div>
 </div>
+<a id="a0396c2be5765f1c33301663ebc9a0a28"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a0396c2be5765f1c33301663ebc9a0a28">&#9670;&nbsp;</a></span>grpc_tls_key_materials_config_get_version()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="el" href="impl_2codegen_2port__platform_8h.html#a2865c3b28ea7db75be4c725adb1edc7d">GRPCAPI</a> int grpc_tls_key_materials_config_get_version </td>
+          <td>(</td>
+          <td class="paramtype"><a class="el" href="grpc__security_8h.html#a2967916eed7d3f7aa1f8fbf3fc45d9ce">grpc_tls_key_materials_config</a> *&#160;</td>
+          <td class="paramname"><em>config</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Get the version number of a grpc_tls_key_materials_config instance. </p>
+<p>It returns the version number on success and -1 on failure. It is used for experimental purpose for now and subject to change. </p>
+
+</div>
+</div>
 <a id="ab6371d3ff79d1330eb914bff2122e6f9"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#ab6371d3ff79d1330eb914bff2122e6f9">&#9670;&nbsp;</a></span>grpc_tls_key_materials_config_set_key_materials()</h2>
 
@@ -2507,6 +2534,37 @@ Functions</h2></td></tr>
 
 <p>Set grpc_tls_key_materials_config instance with provided a TLS certificate. </p>
 <p>config will take the ownership of pem_root_certs and pem_key_cert_pairs. It's valid for the caller to provide nullptr pem_root_certs, in which case the gRPC-provided root cert will be used. pem_key_cert_pairs should not be NULL. It returns 1 on success and 0 on failure. It is used for experimental purpose for now and subject to change. </p>
+
+</div>
+</div>
+<a id="aae75d3aa29f4d31b40474d14601c05d5"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#aae75d3aa29f4d31b40474d14601c05d5">&#9670;&nbsp;</a></span>grpc_tls_key_materials_config_set_version()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="el" href="impl_2codegen_2port__platform_8h.html#a2865c3b28ea7db75be4c725adb1edc7d">GRPCAPI</a> int grpc_tls_key_materials_config_set_version </td>
+          <td>(</td>
+          <td class="paramtype"><a class="el" href="grpc__security_8h.html#a2967916eed7d3f7aa1f8fbf3fc45d9ce">grpc_tls_key_materials_config</a> *&#160;</td>
+          <td class="paramname"><em>config</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">int&#160;</td>
+          <td class="paramname"><em>version</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Set grpc_tls_key_materials_config instance with a provided version number, which is used to keep track of the version of key materials. </p>
+<p>It returns 1 on success and 0 on failure. It is used for experimental purpose for now and subject to change. </p>
 
 </div>
 </div>
@@ -2613,7 +2671,7 @@ Functions</h2></td></tr>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Mon Aug 19 2019 12:05:22 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Fri Sep 27 2019 16:29:33 for GRPC Core by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.13
 </small></address>

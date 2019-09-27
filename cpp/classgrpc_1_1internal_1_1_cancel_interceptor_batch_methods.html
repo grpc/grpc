@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.23.0</span>
+   &#160;<span id="projectnumber">1.24.0</span>
    </div>
   </td>
  </tr>
@@ -92,18 +92,18 @@ Public Member Functions</h2></td></tr>
 <tr class="memitem:a82b2071f39325cee162a7e98cf384c7f"><td class="memItemLeft" align="right" valign="top">const void *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1internal_1_1_cancel_interceptor_batch_methods.html#a82b2071f39325cee162a7e98cf384c7f">GetSendMessage</a> () override</td></tr>
 <tr class="memdesc:a82b2071f39325cee162a7e98cf384c7f"><td class="mdescLeft">&#160;</td><td class="mdescRight">Returns a non-modifiable pointer to the non-serialized form of the message to be sent.  <a href="#a82b2071f39325cee162a7e98cf384c7f">More...</a><br /></td></tr>
 <tr class="separator:a82b2071f39325cee162a7e98cf384c7f"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ae38346053d5cd82f077af2b286861bc3"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1internal_1_1_cancel_interceptor_batch_methods.html#ae38346053d5cd82f077af2b286861bc3">ModifySendMessage</a> (const void *message) override</td></tr>
-<tr class="memdesc:ae38346053d5cd82f077af2b286861bc3"><td class="mdescLeft">&#160;</td><td class="mdescRight">Overwrites the message to be sent with <em>message</em>.  <a href="#ae38346053d5cd82f077af2b286861bc3">More...</a><br /></td></tr>
-<tr class="separator:ae38346053d5cd82f077af2b286861bc3"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a3cde40872d7f653148cd34c29219b0c5"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1internal_1_1_cancel_interceptor_batch_methods.html#a3cde40872d7f653148cd34c29219b0c5">ModifySendMessage</a> (const void *) override</td></tr>
+<tr class="memdesc:a3cde40872d7f653148cd34c29219b0c5"><td class="mdescLeft">&#160;</td><td class="mdescRight">Overwrites the message to be sent with <em>message</em>.  <a href="#a3cde40872d7f653148cd34c29219b0c5">More...</a><br /></td></tr>
+<tr class="separator:a3cde40872d7f653148cd34c29219b0c5"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:aeb89be1a0a160c39a1e6bf94429d5b10"><td class="memItemLeft" align="right" valign="top">std::multimap&lt; <a class="el" href="namespacegrpc.html#ab04a87625da3bf85cdaf5e7856b00203">grpc::string</a>, <a class="el" href="namespacegrpc.html#ab04a87625da3bf85cdaf5e7856b00203">grpc::string</a> &gt; *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1internal_1_1_cancel_interceptor_batch_methods.html#aeb89be1a0a160c39a1e6bf94429d5b10">GetSendInitialMetadata</a> () override</td></tr>
 <tr class="memdesc:aeb89be1a0a160c39a1e6bf94429d5b10"><td class="mdescLeft">&#160;</td><td class="mdescRight">Returns a modifiable multimap of the initial metadata to be sent.  <a href="#aeb89be1a0a160c39a1e6bf94429d5b10">More...</a><br /></td></tr>
 <tr class="separator:aeb89be1a0a160c39a1e6bf94429d5b10"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a847d3514928d17070c30430fcbf9630c"><td class="memItemLeft" align="right" valign="top"><a class="el" href="classgrpc_1_1_status.html">Status</a>&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1internal_1_1_cancel_interceptor_batch_methods.html#a847d3514928d17070c30430fcbf9630c">GetSendStatus</a> () override</td></tr>
 <tr class="memdesc:a847d3514928d17070c30430fcbf9630c"><td class="mdescLeft">&#160;</td><td class="mdescRight">Returns the status to be sent. Valid for PRE_SEND_STATUS interceptions.  <a href="#a847d3514928d17070c30430fcbf9630c">More...</a><br /></td></tr>
 <tr class="separator:a847d3514928d17070c30430fcbf9630c"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a05b4170713f592382e8008bc0a9c5f06"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1internal_1_1_cancel_interceptor_batch_methods.html#a05b4170713f592382e8008bc0a9c5f06">ModifySendStatus</a> (const <a class="el" href="classgrpc_1_1_status.html">Status</a> &amp;status) override</td></tr>
-<tr class="memdesc:a05b4170713f592382e8008bc0a9c5f06"><td class="mdescLeft">&#160;</td><td class="mdescRight">Overwrites the status with <em>status</em>.  <a href="#a05b4170713f592382e8008bc0a9c5f06">More...</a><br /></td></tr>
-<tr class="separator:a05b4170713f592382e8008bc0a9c5f06"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aebd80df936f4275f01c03945354f11ab"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1internal_1_1_cancel_interceptor_batch_methods.html#aebd80df936f4275f01c03945354f11ab">ModifySendStatus</a> (const <a class="el" href="classgrpc_1_1_status.html">Status</a> &amp;) override</td></tr>
+<tr class="memdesc:aebd80df936f4275f01c03945354f11ab"><td class="mdescLeft">&#160;</td><td class="mdescRight">Overwrites the status with <em>status</em>.  <a href="#aebd80df936f4275f01c03945354f11ab">More...</a><br /></td></tr>
+<tr class="separator:aebd80df936f4275f01c03945354f11ab"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a4d1a0a5461cbc9173cffd81fe0c8b80d"><td class="memItemLeft" align="right" valign="top">std::multimap&lt; <a class="el" href="namespacegrpc.html#ab04a87625da3bf85cdaf5e7856b00203">grpc::string</a>, <a class="el" href="namespacegrpc.html#ab04a87625da3bf85cdaf5e7856b00203">grpc::string</a> &gt; *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1internal_1_1_cancel_interceptor_batch_methods.html#a4d1a0a5461cbc9173cffd81fe0c8b80d">GetSendTrailingMetadata</a> () override</td></tr>
 <tr class="memdesc:a4d1a0a5461cbc9173cffd81fe0c8b80d"><td class="mdescLeft">&#160;</td><td class="mdescRight">Returns a modifiable multimap of the trailing metadata to be sent.  <a href="#a4d1a0a5461cbc9173cffd81fe0c8b80d">More...</a><br /></td></tr>
 <tr class="separator:a4d1a0a5461cbc9173cffd81fe0c8b80d"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -549,8 +549,8 @@ Public Member Functions</h2></td></tr>
 
 </div>
 </div>
-<a id="ae38346053d5cd82f077af2b286861bc3"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#ae38346053d5cd82f077af2b286861bc3">&#9670;&nbsp;</a></span>ModifySendMessage()</h2>
+<a id="a3cde40872d7f653148cd34c29219b0c5"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a3cde40872d7f653148cd34c29219b0c5">&#9670;&nbsp;</a></span>ModifySendMessage()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -580,8 +580,8 @@ Public Member Functions</h2></td></tr>
 
 </div>
 </div>
-<a id="a05b4170713f592382e8008bc0a9c5f06"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a05b4170713f592382e8008bc0a9c5f06">&#9670;&nbsp;</a></span>ModifySendStatus()</h2>
+<a id="aebd80df936f4275f01c03945354f11ab"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#aebd80df936f4275f01c03945354f11ab">&#9670;&nbsp;</a></span>ModifySendStatus()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -677,7 +677,7 @@ Public Member Functions</h2></td></tr>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Mon Aug 19 2019 12:05:23 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Fri Sep 27 2019 16:29:34 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.13
 </small></address>

@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.23.0</span>
+   &#160;<span id="projectnumber">1.24.0</span>
    </div>
   </td>
  </tr>
@@ -79,21 +79,21 @@ $(function() {
 Public Member Functions</h2></td></tr>
 <tr class="memitem:a4b8e77bfae7312ffbcc66c4115e58e8c"><td class="memItemLeft" align="right" valign="top">virtual&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc__impl_1_1_server_1_1_global_callbacks.html#a4b8e77bfae7312ffbcc66c4115e58e8c">~GlobalCallbacks</a> ()</td></tr>
 <tr class="separator:a4b8e77bfae7312ffbcc66c4115e58e8c"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ad2adf058b6ad3ee0a00f5ecfeb04c54a"><td class="memItemLeft" align="right" valign="top">virtual void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc__impl_1_1_server_1_1_global_callbacks.html#ad2adf058b6ad3ee0a00f5ecfeb04c54a">UpdateArguments</a> (<a class="el" href="classgrpc__impl_1_1_channel_arguments.html">ChannelArguments</a> *args)</td></tr>
-<tr class="memdesc:ad2adf058b6ad3ee0a00f5ecfeb04c54a"><td class="mdescLeft">&#160;</td><td class="mdescRight">Called before server is created.  <a href="#ad2adf058b6ad3ee0a00f5ecfeb04c54a">More...</a><br /></td></tr>
-<tr class="separator:ad2adf058b6ad3ee0a00f5ecfeb04c54a"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a170f259cc1e40a593a951c275a3c852a"><td class="memItemLeft" align="right" valign="top">virtual void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc__impl_1_1_server_1_1_global_callbacks.html#a170f259cc1e40a593a951c275a3c852a">UpdateArguments</a> (<a class="el" href="classgrpc__impl_1_1_channel_arguments.html">ChannelArguments</a> *)</td></tr>
+<tr class="memdesc:a170f259cc1e40a593a951c275a3c852a"><td class="mdescLeft">&#160;</td><td class="mdescRight">Called before server is created.  <a href="#a170f259cc1e40a593a951c275a3c852a">More...</a><br /></td></tr>
+<tr class="separator:a170f259cc1e40a593a951c275a3c852a"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a3b8319323879d19bc9a4de5a4a744193"><td class="memItemLeft" align="right" valign="top">virtual void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc__impl_1_1_server_1_1_global_callbacks.html#a3b8319323879d19bc9a4de5a4a744193">PreSynchronousRequest</a> (<a class="el" href="classgrpc__impl_1_1_server_context.html">grpc_impl::ServerContext</a> *context)=0</td></tr>
 <tr class="memdesc:a3b8319323879d19bc9a4de5a4a744193"><td class="mdescLeft">&#160;</td><td class="mdescRight">Called before application callback for each synchronous server request.  <a href="#a3b8319323879d19bc9a4de5a4a744193">More...</a><br /></td></tr>
 <tr class="separator:a3b8319323879d19bc9a4de5a4a744193"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ab881b0088cf1fa639d514d1dc3918334"><td class="memItemLeft" align="right" valign="top">virtual void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc__impl_1_1_server_1_1_global_callbacks.html#ab881b0088cf1fa639d514d1dc3918334">PostSynchronousRequest</a> (<a class="el" href="classgrpc__impl_1_1_server_context.html">grpc_impl::ServerContext</a> *context)=0</td></tr>
 <tr class="memdesc:ab881b0088cf1fa639d514d1dc3918334"><td class="mdescLeft">&#160;</td><td class="mdescRight">Called after application callback for each synchronous server request.  <a href="#ab881b0088cf1fa639d514d1dc3918334">More...</a><br /></td></tr>
 <tr class="separator:ab881b0088cf1fa639d514d1dc3918334"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a683232d2d4b43b8ebb4df02c878f6abe"><td class="memItemLeft" align="right" valign="top">virtual void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc__impl_1_1_server_1_1_global_callbacks.html#a683232d2d4b43b8ebb4df02c878f6abe">PreServerStart</a> (<a class="el" href="classgrpc__impl_1_1_server.html">Server</a> *<a class="el" href="classgrpc__impl_1_1_server.html#aa9689c77feab97a862edac219fc7f562">server</a>)</td></tr>
-<tr class="memdesc:a683232d2d4b43b8ebb4df02c878f6abe"><td class="mdescLeft">&#160;</td><td class="mdescRight">Called before server is started.  <a href="#a683232d2d4b43b8ebb4df02c878f6abe">More...</a><br /></td></tr>
-<tr class="separator:a683232d2d4b43b8ebb4df02c878f6abe"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a528b866dc5354a0fa1c822f7ca3a8826"><td class="memItemLeft" align="right" valign="top">virtual void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc__impl_1_1_server_1_1_global_callbacks.html#a528b866dc5354a0fa1c822f7ca3a8826">AddPort</a> (<a class="el" href="classgrpc__impl_1_1_server.html">Server</a> *<a class="el" href="classgrpc__impl_1_1_server.html#aa9689c77feab97a862edac219fc7f562">server</a>, const <a class="el" href="namespacegrpc.html#ab04a87625da3bf85cdaf5e7856b00203">grpc::string</a> &amp;addr, <a class="el" href="namespacegrpc.html#a22ea4b437affc5587998470b98f946d2">grpc::ServerCredentials</a> *creds, int port)</td></tr>
-<tr class="memdesc:a528b866dc5354a0fa1c822f7ca3a8826"><td class="mdescLeft">&#160;</td><td class="mdescRight">Called after a server port is added.  <a href="#a528b866dc5354a0fa1c822f7ca3a8826">More...</a><br /></td></tr>
-<tr class="separator:a528b866dc5354a0fa1c822f7ca3a8826"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a54763e2c30add4fabb3bc62b18231d0b"><td class="memItemLeft" align="right" valign="top">virtual void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc__impl_1_1_server_1_1_global_callbacks.html#a54763e2c30add4fabb3bc62b18231d0b">PreServerStart</a> (<a class="el" href="classgrpc__impl_1_1_server.html">Server</a> *)</td></tr>
+<tr class="memdesc:a54763e2c30add4fabb3bc62b18231d0b"><td class="mdescLeft">&#160;</td><td class="mdescRight">Called before server is started.  <a href="#a54763e2c30add4fabb3bc62b18231d0b">More...</a><br /></td></tr>
+<tr class="separator:a54763e2c30add4fabb3bc62b18231d0b"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a7ce49b94f54ed68cc48a82093d3ffbbc"><td class="memItemLeft" align="right" valign="top">virtual void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc__impl_1_1_server_1_1_global_callbacks.html#a7ce49b94f54ed68cc48a82093d3ffbbc">AddPort</a> (<a class="el" href="classgrpc__impl_1_1_server.html">Server</a> *, const <a class="el" href="namespacegrpc.html#ab04a87625da3bf85cdaf5e7856b00203">grpc::string</a> &amp;, <a class="el" href="namespacegrpc.html#a22ea4b437affc5587998470b98f946d2">grpc::ServerCredentials</a> *, int)</td></tr>
+<tr class="memdesc:a7ce49b94f54ed68cc48a82093d3ffbbc"><td class="mdescLeft">&#160;</td><td class="mdescRight">Called after a server port is added.  <a href="#a7ce49b94f54ed68cc48a82093d3ffbbc">More...</a><br /></td></tr>
+<tr class="separator:a7ce49b94f54ed68cc48a82093d3ffbbc"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
 <div class="textblock"><p>Global callbacks are a set of hooks that are called when server events occur. </p>
@@ -125,8 +125,8 @@ Public Member Functions</h2></td></tr>
 </div>
 </div>
 <h2 class="groupheader">Member Function Documentation</h2>
-<a id="a528b866dc5354a0fa1c822f7ca3a8826"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a528b866dc5354a0fa1c822f7ca3a8826">&#9670;&nbsp;</a></span>AddPort()</h2>
+<a id="a7ce49b94f54ed68cc48a82093d3ffbbc"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a7ce49b94f54ed68cc48a82093d3ffbbc">&#9670;&nbsp;</a></span>AddPort()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -138,25 +138,25 @@ Public Member Functions</h2></td></tr>
           <td class="memname">virtual void grpc_impl::Server::GlobalCallbacks::AddPort </td>
           <td>(</td>
           <td class="paramtype"><a class="el" href="classgrpc__impl_1_1_server.html">Server</a> *&#160;</td>
-          <td class="paramname"><em>server</em>, </td>
+          <td class="paramname">, </td>
         </tr>
         <tr>
           <td class="paramkey"></td>
           <td></td>
           <td class="paramtype">const <a class="el" href="namespacegrpc.html#ab04a87625da3bf85cdaf5e7856b00203">grpc::string</a> &amp;&#160;</td>
-          <td class="paramname"><em>addr</em>, </td>
+          <td class="paramname">, </td>
         </tr>
         <tr>
           <td class="paramkey"></td>
           <td></td>
           <td class="paramtype"><a class="el" href="namespacegrpc.html#a22ea4b437affc5587998470b98f946d2">grpc::ServerCredentials</a> *&#160;</td>
-          <td class="paramname"><em>creds</em>, </td>
+          <td class="paramname">, </td>
         </tr>
         <tr>
           <td class="paramkey"></td>
           <td></td>
           <td class="paramtype">int&#160;</td>
-          <td class="paramname"><em>port</em>&#160;</td>
+          <td class="paramname">&#160;</td>
         </tr>
         <tr>
           <td></td>
@@ -203,8 +203,8 @@ Public Member Functions</h2></td></tr>
 
 </div>
 </div>
-<a id="a683232d2d4b43b8ebb4df02c878f6abe"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a683232d2d4b43b8ebb4df02c878f6abe">&#9670;&nbsp;</a></span>PreServerStart()</h2>
+<a id="a54763e2c30add4fabb3bc62b18231d0b"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a54763e2c30add4fabb3bc62b18231d0b">&#9670;&nbsp;</a></span>PreServerStart()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -216,7 +216,7 @@ Public Member Functions</h2></td></tr>
           <td class="memname">virtual void grpc_impl::Server::GlobalCallbacks::PreServerStart </td>
           <td>(</td>
           <td class="paramtype"><a class="el" href="classgrpc__impl_1_1_server.html">Server</a> *&#160;</td>
-          <td class="paramname"><em>server</em></td><td>)</td>
+          <td class="paramname"></td><td>)</td>
           <td></td>
         </tr>
       </table>
@@ -259,8 +259,8 @@ Public Member Functions</h2></td></tr>
 
 </div>
 </div>
-<a id="ad2adf058b6ad3ee0a00f5ecfeb04c54a"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#ad2adf058b6ad3ee0a00f5ecfeb04c54a">&#9670;&nbsp;</a></span>UpdateArguments()</h2>
+<a id="a170f259cc1e40a593a951c275a3c852a"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a170f259cc1e40a593a951c275a3c852a">&#9670;&nbsp;</a></span>UpdateArguments()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -272,7 +272,7 @@ Public Member Functions</h2></td></tr>
           <td class="memname">virtual void grpc_impl::Server::GlobalCallbacks::UpdateArguments </td>
           <td>(</td>
           <td class="paramtype"><a class="el" href="classgrpc__impl_1_1_channel_arguments.html">ChannelArguments</a> *&#160;</td>
-          <td class="paramname"><em>args</em></td><td>)</td>
+          <td class="paramname"></td><td>)</td>
           <td></td>
         </tr>
       </table>
@@ -293,7 +293,7 @@ Public Member Functions</h2></td></tr>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Mon Aug 19 2019 12:05:23 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Fri Sep 27 2019 16:29:34 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.13
 </small></address>

@@ -35,6 +35,7 @@ var searchData=
   ['_7ecompletionqueuetag',['~CompletionQueueTag',['../classgrpc_1_1internal_1_1_completion_queue_tag.html#a53fa1b2f86702495363df0b8edef8758',1,'grpc::internal::CompletionQueueTag']]],
   ['_7econdvar',['~CondVar',['../classgrpc_1_1internal_1_1_cond_var.html#a7bce6437bf6391cd0404ae1e380a77e5',1,'grpc::internal::CondVar']]],
   ['_7ecorecodegeninterface',['~CoreCodegenInterface',['../classgrpc_1_1_core_codegen_interface.html#a7ffb9238b8ae58d659db8358bf1449e3',1,'grpc::CoreCodegenInterface']]],
+  ['_7edelegatingchannel',['~DelegatingChannel',['../classgrpc_1_1experimental_1_1_delegating_channel.html#aa47364e7dcc6665c8e9e8cb78352b375',1,'grpc::experimental::DelegatingChannel']]],
   ['_7edeserializefunc',['~DeserializeFunc',['../classgrpc_1_1internal_1_1_deserialize_func.html#a4a4df24fd15ad617aa0ae64884c5c2fe',1,'grpc::internal::DeserializeFunc']]],
   ['_7edeserializefunctype',['~DeserializeFuncType',['../classgrpc_1_1internal_1_1_deserialize_func_type.html#a0f6759e448421cddf22c5676c24fda95',1,'grpc::internal::DeserializeFuncType']]],
   ['_7eexperimental_5fregistration_5finterface',['~experimental_registration_interface',['../classgrpc_1_1_server_interface_1_1experimental__registration__interface.html#a1f81d01eb74f10ac38925ffe9c72de82',1,'grpc::ServerInterface::experimental_registration_interface']]],

@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.23.0</span>
+   &#160;<span id="projectnumber">1.24.0</span>
    </div>
   </td>
  </tr>
@@ -93,14 +93,14 @@ Public Member Functions</h2></td></tr>
 <tr class="separator:a9fd15717cddecb27f09326f287697fa2"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:af656f012c63c7b5e768de48e8bfcd92b"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc__impl_1_1experimental_1_1_server_write_reactor.html#af656f012c63c7b5e768de48e8bfcd92b">Finish</a> (::<a class="el" href="classgrpc_1_1_status.html">grpc::Status</a> s)</td></tr>
 <tr class="separator:af656f012c63c7b5e768de48e8bfcd92b"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a14551b30e602971420a70c5b05af55a8"><td class="memItemLeft" align="right" valign="top">virtual void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc__impl_1_1experimental_1_1_server_write_reactor.html#a14551b30e602971420a70c5b05af55a8">OnStarted</a> (::<a class="el" href="classgrpc__impl_1_1_server_context.html">grpc_impl::ServerContext</a> *context, const Request *req)</td></tr>
-<tr class="memdesc:a14551b30e602971420a70c5b05af55a8"><td class="mdescLeft">&#160;</td><td class="mdescRight">Similar to <a class="el" href="classgrpc__impl_1_1experimental_1_1_server_bidi_reactor.html#a4934538877083ae0a1b53eda781b39ad" title="Notify the application that a streaming RPC has started and that it is now ok to call any operation i...">ServerBidiReactor::OnStarted</a>, except that this also provides the request object sent by the client.  <a href="#a14551b30e602971420a70c5b05af55a8">More...</a><br /></td></tr>
-<tr class="separator:a14551b30e602971420a70c5b05af55a8"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a9e474f4d4a4e225ddc580f6d04abdf80"><td class="memItemLeft" align="right" valign="top">virtual void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc__impl_1_1experimental_1_1_server_write_reactor.html#a9e474f4d4a4e225ddc580f6d04abdf80">OnSendInitialMetadataDone</a> (bool ok)</td></tr>
-<tr class="memdesc:a9e474f4d4a4e225ddc580f6d04abdf80"><td class="mdescLeft">&#160;</td><td class="mdescRight">The following notifications are exactly like <a class="el" href="classgrpc__impl_1_1experimental_1_1_server_bidi_reactor.html" title="ServerBidiReactor is the interface for a bidirectional streaming RPC. ">ServerBidiReactor</a>.  <a href="#a9e474f4d4a4e225ddc580f6d04abdf80">More...</a><br /></td></tr>
-<tr class="separator:a9e474f4d4a4e225ddc580f6d04abdf80"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a835373aaff170631887d7c9a847debdb"><td class="memItemLeft" align="right" valign="top">virtual void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc__impl_1_1experimental_1_1_server_write_reactor.html#a835373aaff170631887d7c9a847debdb">OnWriteDone</a> (bool ok)</td></tr>
-<tr class="separator:a835373aaff170631887d7c9a847debdb"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a59bb1ad87840f6e8215340beb28bd4e0"><td class="memItemLeft" align="right" valign="top">virtual void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc__impl_1_1experimental_1_1_server_write_reactor.html#a59bb1ad87840f6e8215340beb28bd4e0">OnStarted</a> (::<a class="el" href="classgrpc__impl_1_1_server_context.html">grpc_impl::ServerContext</a> *, const Request *)</td></tr>
+<tr class="memdesc:a59bb1ad87840f6e8215340beb28bd4e0"><td class="mdescLeft">&#160;</td><td class="mdescRight">Similar to <a class="el" href="classgrpc__impl_1_1experimental_1_1_server_bidi_reactor.html#afa3b64af6f2fdb5e6e6fc725f6e6bc66" title="Notify the application that a streaming RPC has started and that it is now ok to call any operation i...">ServerBidiReactor::OnStarted</a>, except that this also provides the request object sent by the client.  <a href="#a59bb1ad87840f6e8215340beb28bd4e0">More...</a><br /></td></tr>
+<tr class="separator:a59bb1ad87840f6e8215340beb28bd4e0"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a74639c63cbcda67f956c2042ffb78fb3"><td class="memItemLeft" align="right" valign="top">virtual void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc__impl_1_1experimental_1_1_server_write_reactor.html#a74639c63cbcda67f956c2042ffb78fb3">OnSendInitialMetadataDone</a> (bool)</td></tr>
+<tr class="memdesc:a74639c63cbcda67f956c2042ffb78fb3"><td class="mdescLeft">&#160;</td><td class="mdescRight">The following notifications are exactly like <a class="el" href="classgrpc__impl_1_1experimental_1_1_server_bidi_reactor.html" title="ServerBidiReactor is the interface for a bidirectional streaming RPC. ">ServerBidiReactor</a>.  <a href="#a74639c63cbcda67f956c2042ffb78fb3">More...</a><br /></td></tr>
+<tr class="separator:a74639c63cbcda67f956c2042ffb78fb3"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a1f90e295865bf34feef48139c35b8f05"><td class="memItemLeft" align="right" valign="top">virtual void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc__impl_1_1experimental_1_1_server_write_reactor.html#a1f90e295865bf34feef48139c35b8f05">OnWriteDone</a> (bool)</td></tr>
+<tr class="separator:a1f90e295865bf34feef48139c35b8f05"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a6a3dd9464a186ec4bfe82b38e37c05fd"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc__impl_1_1experimental_1_1_server_write_reactor.html#a6a3dd9464a186ec4bfe82b38e37c05fd">OnDone</a> () override</td></tr>
 <tr class="separator:a6a3dd9464a186ec4bfe82b38e37c05fd"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:adbd8cd34a49c2a4d818c0561188960f2"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc__impl_1_1experimental_1_1_server_write_reactor.html#adbd8cd34a49c2a4d818c0561188960f2">OnCancel</a> () override</td></tr>
@@ -236,8 +236,8 @@ template&lt;class Request, class Response&gt; </div>
 
 </div>
 </div>
-<a id="a9e474f4d4a4e225ddc580f6d04abdf80"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a9e474f4d4a4e225ddc580f6d04abdf80">&#9670;&nbsp;</a></span>OnSendInitialMetadataDone()</h2>
+<a id="a74639c63cbcda67f956c2042ffb78fb3"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a74639c63cbcda67f956c2042ffb78fb3">&#9670;&nbsp;</a></span>OnSendInitialMetadataDone()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -251,7 +251,7 @@ template&lt;class Request, class Response&gt; </div>
           <td class="memname">virtual void <a class="el" href="classgrpc__impl_1_1experimental_1_1_server_write_reactor.html">grpc_impl::experimental::ServerWriteReactor</a>&lt; Request, Response &gt;::OnSendInitialMetadataDone </td>
           <td>(</td>
           <td class="paramtype">bool&#160;</td>
-          <td class="paramname"><em>ok</em></td><td>)</td>
+          <td class="paramname"></td><td>)</td>
           <td></td>
         </tr>
       </table>
@@ -266,8 +266,8 @@ template&lt;class Request, class Response&gt; </div>
 
 </div>
 </div>
-<a id="a14551b30e602971420a70c5b05af55a8"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a14551b30e602971420a70c5b05af55a8">&#9670;&nbsp;</a></span>OnStarted()</h2>
+<a id="a59bb1ad87840f6e8215340beb28bd4e0"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a59bb1ad87840f6e8215340beb28bd4e0">&#9670;&nbsp;</a></span>OnStarted()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -281,13 +281,13 @@ template&lt;class Request, class Response&gt; </div>
           <td class="memname">virtual void <a class="el" href="classgrpc__impl_1_1experimental_1_1_server_write_reactor.html">grpc_impl::experimental::ServerWriteReactor</a>&lt; Request, Response &gt;::OnStarted </td>
           <td>(</td>
           <td class="paramtype">::<a class="el" href="classgrpc__impl_1_1_server_context.html">grpc_impl::ServerContext</a> *&#160;</td>
-          <td class="paramname"><em>context</em>, </td>
+          <td class="paramname">, </td>
         </tr>
         <tr>
           <td class="paramkey"></td>
           <td></td>
           <td class="paramtype">const Request *&#160;</td>
-          <td class="paramname"><em>req</em>&#160;</td>
+          <td class="paramname">&#160;</td>
         </tr>
         <tr>
           <td></td>
@@ -302,7 +302,7 @@ template&lt;class Request, class Response&gt; </div>
 </table>
 </div><div class="memdoc">
 
-<p>Similar to <a class="el" href="classgrpc__impl_1_1experimental_1_1_server_bidi_reactor.html#a4934538877083ae0a1b53eda781b39ad" title="Notify the application that a streaming RPC has started and that it is now ok to call any operation i...">ServerBidiReactor::OnStarted</a>, except that this also provides the request object sent by the client. </p>
+<p>Similar to <a class="el" href="classgrpc__impl_1_1experimental_1_1_server_bidi_reactor.html#afa3b64af6f2fdb5e6e6fc725f6e6bc66" title="Notify the application that a streaming RPC has started and that it is now ok to call any operation i...">ServerBidiReactor::OnStarted</a>, except that this also provides the request object sent by the client. </p>
 <dl class="params"><dt>Parameters</dt><dd>
   <table class="params">
     <tr><td class="paramdir">[in]</td><td class="paramname">context</td><td>The context object now associated with this RPC </td></tr>
@@ -315,8 +315,8 @@ template&lt;class Request, class Response&gt; </div>
 
 </div>
 </div>
-<a id="a835373aaff170631887d7c9a847debdb"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a835373aaff170631887d7c9a847debdb">&#9670;&nbsp;</a></span>OnWriteDone()</h2>
+<a id="a1f90e295865bf34feef48139c35b8f05"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a1f90e295865bf34feef48139c35b8f05">&#9670;&nbsp;</a></span>OnWriteDone()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -330,7 +330,7 @@ template&lt;class Request, class Response&gt; </div>
           <td class="memname">virtual void <a class="el" href="classgrpc__impl_1_1experimental_1_1_server_write_reactor.html">grpc_impl::experimental::ServerWriteReactor</a>&lt; Request, Response &gt;::OnWriteDone </td>
           <td>(</td>
           <td class="paramtype">bool&#160;</td>
-          <td class="paramname"><em>ok</em></td><td>)</td>
+          <td class="paramname"></td><td>)</td>
           <td></td>
         </tr>
       </table>
@@ -551,7 +551,7 @@ template&lt;class Request, class Response&gt; </div>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Mon Aug 19 2019 12:05:23 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Fri Sep 27 2019 16:29:34 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.13
 </small></address>

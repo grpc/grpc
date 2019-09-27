@@ -22,7 +22,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">GRPC C++
-   &#160;<span id="projectnumber">1.23.0</span>
+   &#160;<span id="projectnumber">1.24.0</span>
    </div>
   </td>
  </tr>
@@ -87,8 +87,8 @@ Public Member Functions</h2></td></tr>
 <tr class="separator:a6c9896af1ffd8b22d0bc197fbd946a33"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a61b91173bcf71a512a80947a5413c6c6"><td class="memItemLeft" align="right" valign="top">virtual void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1internal_1_1_method_handler.html#a61b91173bcf71a512a80947a5413c6c6">RunHandler</a> (const <a class="el" href="structgrpc_1_1internal_1_1_method_handler_1_1_handler_parameter.html">HandlerParameter</a> &amp;param)=0</td></tr>
 <tr class="separator:a61b91173bcf71a512a80947a5413c6c6"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a4e470bb630513c1a1b755017fe534fe3"><td class="memItemLeft" align="right" valign="top">virtual void *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1internal_1_1_method_handler.html#a4e470bb630513c1a1b755017fe534fe3">Deserialize</a> (<a class="el" href="grpc__types_8h.html#a122f8f4f0a585396d993d9b55848f222">grpc_call</a> *call, <a class="el" href="structgrpc__byte__buffer.html">grpc_byte_buffer</a> *req, <a class="el" href="classgrpc_1_1_status.html">Status</a> *status, void **handler_data)</td></tr>
-<tr class="separator:a4e470bb630513c1a1b755017fe534fe3"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ab2e06e37ecfe5f4dbdb200f8323995bd"><td class="memItemLeft" align="right" valign="top">virtual void *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="classgrpc_1_1internal_1_1_method_handler.html#ab2e06e37ecfe5f4dbdb200f8323995bd">Deserialize</a> (<a class="el" href="grpc__types_8h.html#a122f8f4f0a585396d993d9b55848f222">grpc_call</a> *, <a class="el" href="structgrpc__byte__buffer.html">grpc_byte_buffer</a> *req, <a class="el" href="classgrpc_1_1_status.html">Status</a> *, void **)</td></tr>
+<tr class="separator:ab2e06e37ecfe5f4dbdb200f8323995bd"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
 <div class="textblock"><p>Base class for running an RPC handler. </p>
@@ -119,8 +119,8 @@ Public Member Functions</h2></td></tr>
 </div>
 </div>
 <h2 class="groupheader">Member Function Documentation</h2>
-<a id="a4e470bb630513c1a1b755017fe534fe3"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#a4e470bb630513c1a1b755017fe534fe3">&#9670;&nbsp;</a></span>Deserialize()</h2>
+<a id="ab2e06e37ecfe5f4dbdb200f8323995bd"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ab2e06e37ecfe5f4dbdb200f8323995bd">&#9670;&nbsp;</a></span>Deserialize()</h2>
 
 <div class="memitem">
 <div class="memproto">
@@ -132,7 +132,7 @@ Public Member Functions</h2></td></tr>
           <td class="memname">virtual void* grpc::internal::MethodHandler::Deserialize </td>
           <td>(</td>
           <td class="paramtype"><a class="el" href="grpc__types_8h.html#a122f8f4f0a585396d993d9b55848f222">grpc_call</a> *&#160;</td>
-          <td class="paramname"><em>call</em>, </td>
+          <td class="paramname">, </td>
         </tr>
         <tr>
           <td class="paramkey"></td>
@@ -144,13 +144,13 @@ Public Member Functions</h2></td></tr>
           <td class="paramkey"></td>
           <td></td>
           <td class="paramtype"><a class="el" href="classgrpc_1_1_status.html">Status</a> *&#160;</td>
-          <td class="paramname"><em>status</em>, </td>
+          <td class="paramname">, </td>
         </tr>
         <tr>
           <td class="paramkey"></td>
           <td></td>
           <td class="paramtype">void **&#160;</td>
-          <td class="paramname"><em>handler_data</em>&#160;</td>
+          <td class="paramname">&#160;</td>
         </tr>
         <tr>
           <td></td>
@@ -165,7 +165,7 @@ Public Member Functions</h2></td></tr>
 </table>
 </div><div class="memdoc">
 
-<p>Reimplemented in <a class="el" href="classgrpc_1_1internal_1_1_error_method_handler.html#aa79003dd7c0dd4af0b05d8c73286b9e5">grpc::internal::ErrorMethodHandler&lt; code &gt;</a>, <a class="el" href="classgrpc_1_1internal_1_1_server_streaming_handler.html#a840441259ff0da603f2b4577d2341aac">grpc::internal::ServerStreamingHandler&lt; ServiceType, RequestType, ResponseType &gt;</a>, and <a class="el" href="classgrpc_1_1internal_1_1_rpc_method_handler.html#ab71b40988dcd67a165200d776735414e">grpc::internal::RpcMethodHandler&lt; ServiceType, RequestType, ResponseType &gt;</a>.</p>
+<p>Reimplemented in <a class="el" href="classgrpc_1_1internal_1_1_error_method_handler.html#a1f660a48fc1e71b55cac34026c1b958e">grpc::internal::ErrorMethodHandler&lt; code &gt;</a>, <a class="el" href="classgrpc_1_1internal_1_1_server_streaming_handler.html#a8d8404240f14c9ed8dfda44c62b66501">grpc::internal::ServerStreamingHandler&lt; ServiceType, RequestType, ResponseType &gt;</a>, and <a class="el" href="classgrpc_1_1internal_1_1_rpc_method_handler.html#a2f56d06838a9e24ef33d84eb7e1bd161">grpc::internal::RpcMethodHandler&lt; ServiceType, RequestType, ResponseType &gt;</a>.</p>
 
 </div>
 </div>
@@ -203,7 +203,7 @@ Public Member Functions</h2></td></tr>
 </div><!-- contents -->
 <!-- start footer part -->
 <hr class="footer"/><address class="footer"><small>
-Generated on Mon Aug 19 2019 12:05:23 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
+Generated on Fri Sep 27 2019 16:29:34 for GRPC C++ by &#160;<a href="http://www.doxygen.org/index.html">
 <img class="footer" src="doxygen.png" alt="doxygen"/>
 </a> 1.8.13
 </small></address>
