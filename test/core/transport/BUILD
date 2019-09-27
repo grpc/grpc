@@ -25,6 +25,7 @@ grpc_cc_test(
         "gtest",
     ],
     language = "C++",
+    tags = ["no_windows"],  # TODO(jtattermusch): investigate the timeout on windows
     deps = [
         "//:gpr",
         "//:grpc",
