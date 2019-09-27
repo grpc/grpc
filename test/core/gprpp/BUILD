@@ -22,6 +22,7 @@ grpc_cc_test(
     name = "fork_test",
     srcs = ["fork_test.cc"],
     language = "C++",
+    tags = ["no_windows"],
     deps = [
         "//:gpr",
         "//test/core/util:grpc_test_util",
