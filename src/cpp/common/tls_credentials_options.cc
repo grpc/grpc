@@ -105,7 +105,7 @@ void TlsCredentialReloadArg::add_pem_key_cert_pair(TlsKeyMaterialsConfig::PemKey
 /** gRPC TLS credential reload config API implementation **/
 TlsCredentialReloadConfig::TlsCredentialReloadConfig(
     std::shared_ptr<TlsCredentialReloadInterface> credential_reload_interface)
-    : credential_reload_interface_(credential_reload_interface) {
+    : credential_reload_interface_(std::move(credential_reload_interface)) {
   c_config_ = grpc_tls_credential_reload_config_create(
       nullptr, &TlsCredentialReloadConfigCSchedule,
       &TlsCredentialReloadConfigCCancel, nullptr);
@@ -186,7 +186,7 @@ TlsServerAuthorizationCheckConfig::TlsServerAuthorizationCheckConfig(
     std::shared_ptr<TlsServerAuthorizationCheckInterface>
         server_authorization_check_interface)
     : server_authorization_check_interface_(
-          server_authorization_check_interface) {
+          std::move(server_authorization_check_interface)) {
   c_config_ = grpc_tls_server_authorization_check_config_create(
       nullptr, &TlsServerAuthorizationCheckConfigCSchedule,
       &TlsServerAuthorizationCheckConfigCCancel, nullptr);
@@ -207,10 +207,10 @@ TlsCredentialsOptions::TlsCredentialsOptions(
     std::shared_ptr<TlsServerAuthorizationCheckConfig>
         server_authorization_check_config)
     : cert_request_type_(cert_request_type),
-      key_materials_config_(key_materials_config),
-      credential_reload_config_(credential_reload_config),
+      key_materials_config_(std::move(key_materials_config)),
+      credential_reload_config_(std::move(credential_reload_config)),
       server_authorization_check_config_(
-          server_authorization_check_config) {
+          std::move(server_authorization_check_config)) {
   c_credentials_options_ = grpc_tls_credentials_options_create();
   grpc_tls_credentials_options_set_cert_request_type(c_credentials_options_,
                                                      cert_request_type_);
