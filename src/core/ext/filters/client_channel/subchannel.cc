@@ -410,8 +410,6 @@ class Subchannel::HealthWatcherMap::HealthWatcher
         state_(subchannel_state == GRPC_CHANNEL_READY ? GRPC_CHANNEL_CONNECTING
                                                       : subchannel_state) {
     GRPC_SUBCHANNEL_WEAK_REF(subchannel_, "health_watcher");
-    GRPC_CLOSURE_INIT(&on_health_changed_, OnHealthChanged, this,
-                      grpc_schedule_on_exec_ctx);
     // If the subchannel is already connected, start health checking.
     if (subchannel_state == GRPC_CHANNEL_READY) StartHealthCheckingLocked();
   }
@@ -473,38 +471,39 @@ class Subchannel::HealthWatcherMap::HealthWatcher
   }
 
  private:
+  class ConnectivityStateWatcher
+      : public grpc_core::AsyncConnectivityStateWatcherInterface {
+   public:
+    explicit ConnectivityStateWatcher(RefCountedPtr<HealthWatcher> parent)
+        : parent_(std::move(parent)) {}
+
+   private:
+    void OnConnectivityStateChange(grpc_connectivity_state new_state) override {
+      Subchannel* c = parent_->subchannel_;
+      MutexLock lock(&c->mu_);
+      if (new_state != GRPC_CHANNEL_SHUTDOWN &&
+          parent_->health_check_client_ != nullptr) {
+        parent_->state_ = new_state;
+        parent_->watcher_list_.NotifyLocked(c, new_state);
+      }
+    }
+
+   private:
+    RefCountedPtr<HealthWatcher> parent_;
+  };
+
   void StartHealthCheckingLocked() {
     GPR_ASSERT(health_check_client_ == nullptr);
     health_check_client_ = MakeOrphanable<HealthCheckClient>(
         health_check_service_name_.get(), subchannel_->connected_subchannel_,
-        subchannel_->pollset_set_, subchannel_->channelz_node_);
-    Ref().release();  // Ref for health callback tracked manually.
-    health_check_client_->NotifyOnHealthChange(&state_, &on_health_changed_);
-  }
-
-  static void OnHealthChanged(void* arg, grpc_error* error) {
-    auto* self = static_cast<HealthWatcher*>(arg);
-    Subchannel* c = self->subchannel_;
-    {
-      MutexLock lock(&c->mu_);
-      if (self->state_ != GRPC_CHANNEL_SHUTDOWN &&
-          self->health_check_client_ != nullptr) {
-        self->watcher_list_.NotifyLocked(c, self->state_);
-        // Renew watch.
-        self->health_check_client_->NotifyOnHealthChange(
-            &self->state_, &self->on_health_changed_);
-        return;  // So we don't unref below.
-      }
-    }
-    // Don't unref until we've released the lock, because this might
-    // cause the subchannel (which contains the lock) to be destroyed.
-    self->Unref();
+        subchannel_->pollset_set_, subchannel_->channelz_node_,
+        UniquePtr<grpc_core::ConnectivityStateWatcherInterface>(
+            New<ConnectivityStateWatcher>(Ref())));
   }
 
   Subchannel* subchannel_;
   UniquePtr<char> health_check_service_name_;
   OrphanablePtr<HealthCheckClient> health_check_client_;
-  grpc_closure on_health_changed_;
   grpc_connectivity_state state_;
   ConnectivityStateWatcherList watcher_list_;
 };
