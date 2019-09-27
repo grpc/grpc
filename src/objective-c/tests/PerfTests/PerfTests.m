@@ -76,11 +76,6 @@ extern const char *kCFStreamVarName;
 
 @end
 
-BOOL isUsingCFStream() {
-  NSString *enabled = @(getenv(kCFStreamVarName));
-  return [enabled isEqualToString:@"1"];
-}
-
 #pragma mark Tests
 
 @implementation PerfTests {
@@ -118,12 +113,6 @@ BOOL isUsingCFStream() {
   return nil;
 }
 
-+ (void)setUp {
-  setenv("GRPC_TRACE", "tcp", 1);
-  setenv("GRPC_VERBOSITY", "DEBUG", 1);
-  NSLog(@"In setUp");
-}
-
 - (void)setUp {
   self.continueAfterFailure = NO;
 
@@ -135,6 +124,10 @@ BOOL isUsingCFStream() {
 #pragma clang diagnostic pop
 
   _service = [[self class] host] ? [RMTTestService serviceWithHost:[[self class] host]] : nil;
+}
+
+- (BOOL)isUsingCFStream {
+  return [NSStringFromClass([self class]) isEqualToString:@"PerfTestsCFStreamSSL"];
 }
 
 - (void)pingPongV2APIWithRequest:(RMTStreamingOutputCallRequest *)request
@@ -265,37 +258,41 @@ BOOL isUsingCFStream() {
   }];
 }
 
-- (void)unaryRPCWithRequest:(RMTSimpleRequest *)request
-                numMessages:(int)numMessages
-                callOptions:(GRPCMutableCallOptions *)options {
-  const int kOutstandingRPCs = 10;
-  NSAssert(numMessages > kOutstandingRPCs, @"Number of RPCs must be > %d", kOutstandingRPCs);
+- (void)unaryRPCsWithServices:(NSArray<RMTTestService *> *)services
+                      request:(RMTSimpleRequest *)request
+              callsPerService:(int)callsPerService
+          maxOutstandingCalls:(int)maxOutstandingCalls
+                  callOptions:(GRPCMutableCallOptions *)options {
   __weak XCTestExpectation *expectation = [self expectationWithDescription:@"unaryRPC"];
 
-  dispatch_semaphore_t sema = dispatch_semaphore_create(kOutstandingRPCs);
+  dispatch_semaphore_t sema = dispatch_semaphore_create(maxOutstandingCalls);
   __block int index = 0;
 
-  for (int i = 0; i < numMessages; ++i) {
-    GRPCUnaryProtoCall *call = [_service
-        unaryCallWithMessage:request
-             responseHandler:[[PerfTestsBlockCallbacks alloc]
-                                 initWithInitialMetadataCallback:nil
-                                                 messageCallback:nil
-                                                   closeCallback:^(NSDictionary *trailingMetadata,
-                                                                   NSError *error) {
-                                                     dispatch_semaphore_signal(sema);
-                                                     @synchronized(self) {
-                                                       ++index;
-                                                       if (index == numMessages) {
-                                                         [expectation fulfill];
+  for (RMTTestService *service in services) {
+    for (int i = 0; i < callsPerService; ++i) {
+      GRPCUnaryProtoCall *call = [service
+          unaryCallWithMessage:request
+               responseHandler:[[PerfTestsBlockCallbacks alloc]
+                                   initWithInitialMetadataCallback:nil
+                                                   messageCallback:nil
+                                                     closeCallback:^(NSDictionary *trailingMetadata,
+                                                                     NSError *error) {
+                                                       dispatch_semaphore_signal(sema);
+                                                       @synchronized(self) {
+                                                         ++index;
+                                                         if (index ==
+                                                             callsPerService * [services count]) {
+                                                           [expectation fulfill];
+                                                         }
                                                        }
-                                                     }
 
-                                                   }]
-                 callOptions:options];
-
-    dispatch_semaphore_wait(sema, DISPATCH_TIME_FOREVER);
-    [call start];
+                                                     }]
+                   callOptions:options];
+      dispatch_time_t timeout =
+          dispatch_time(DISPATCH_TIME_NOW, (int64_t)(TEST_TIMEOUT * NSEC_PER_SEC));
+      dispatch_semaphore_wait(sema, timeout);
+      [call start];
+    }
   }
 
   [self waitForExpectationsWithTimeout:TEST_TIMEOUT handler:nil];
@@ -303,7 +300,7 @@ BOOL isUsingCFStream() {
 
 - (void)testUnaryRPC {
   // Workaround Apple CFStream bug
-  if (isUsingCFStream()) {
+  if ([self isUsingCFStream]) {
     return;
   }
 
@@ -317,10 +314,54 @@ BOOL isUsingCFStream() {
   options.hostNameOverride = [[self class] hostNameOverride];
 
   // warm up
-  [self unaryRPCWithRequest:request numMessages:50 callOptions:options];
+  [self unaryRPCsWithServices:@[ self->_service ]
+                      request:request
+              callsPerService:50
+          maxOutstandingCalls:10
+                  callOptions:options];
 
   [self measureBlock:^{
-    [self unaryRPCWithRequest:request numMessages:50 callOptions:options];
+    [self unaryRPCsWithServices:@[ self->_service ]
+                        request:request
+                callsPerService:50
+            maxOutstandingCalls:10
+                    callOptions:options];
+  }];
+}
+
+- (void)testMultipleChannels {
+  NSString *port = [[[self class] host] componentsSeparatedByString:@":"][1];
+  int kNumAddrs = 10;
+  NSMutableArray<NSString *> *addrs = [NSMutableArray arrayWithCapacity:kNumAddrs];
+  NSMutableArray<RMTTestService *> *services = [NSMutableArray arrayWithCapacity:kNumAddrs];
+  for (int i = 0; i < kNumAddrs; ++i) {
+    addrs[i] = [NSString stringWithFormat:@"127.0.0.%d", (i + 1)];
+    NSString *hostWithPort = [NSString stringWithFormat:@"%@:%@", addrs[i], port];
+    services[i] = [RMTTestService serviceWithHost:hostWithPort];
+  }
+
+  RMTSimpleRequest *request = [RMTSimpleRequest message];
+  request.responseSize = 0;
+  request.payload.body = [NSMutableData dataWithLength:0];
+
+  GRPCMutableCallOptions *options = [[GRPCMutableCallOptions alloc] init];
+  options.transport = [[self class] transport];
+  options.PEMRootCertificates = [[self class] PEMRootCertificates];
+  options.hostNameOverride = [[self class] hostNameOverride];
+
+  // warm up
+  [self unaryRPCsWithServices:services
+                      request:request
+              callsPerService:100
+          maxOutstandingCalls:100
+                  callOptions:options];
+
+  [self measureBlock:^{
+    [self unaryRPCsWithServices:services
+                        request:request
+                callsPerService:100
+            maxOutstandingCalls:100
+                    callOptions:options];
   }];
 }
 

@@ -100,14 +100,16 @@ if (MSVC)
   include(cmake/msvc_static_runtime.cmake)
   add_definitions(-D_WIN32_WINNT=0x600 -D_SCL_SECURE_NO_WARNINGS -D_CRT_SECURE_NO_WARNINGS -D_WINSOCK_DEPRECATED_NO_WARNINGS)
   # needed to compile protobuf
-  add_definitions(/wd4065 /wd4506)
+  set(_gRPC_C_CXX_FLAGS "${_gRPC_C_CXX_FLAGS} /wd4065 /wd4506")
   # TODO(jtattermusch): revisit warnings that were silenced as part of upgrade to protobuf3.6.0
-  add_definitions(/wd4200 /wd4291 /wd4244)
+  set(_gRPC_C_CXX_FLAGS "${_gRPC_C_CXX_FLAGS} /wd4200 /wd4291 /wd4244")
   # TODO(jtattermusch): revisit C4267 occurrences throughout the code
-  add_definitions(/wd4267)
+  set(_gRPC_C_CXX_FLAGS "${_gRPC_C_CXX_FLAGS} /wd4267")
   # TODO(jtattermusch): needed to build boringssl with VS2017, revisit later
-  add_definitions(/wd4987 /wd4774 /wd4819 /wd4996 /wd4619)
+  set(_gRPC_C_CXX_FLAGS "${_gRPC_C_CXX_FLAGS} /wd4987 /wd4774 /wd4819 /wd4996 /wd4619")
 endif()
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${_gRPC_C_CXX_FLAGS}")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${_gRPC_C_CXX_FLAGS}")
 
 if (gRPC_USE_PROTO_LITE)
   set(_gRPC_PROTOBUF_LIBRARY_NAME "libprotobuf-lite")
@@ -425,7 +427,6 @@ add_dependencies(buildtests_c time_averaged_stats_test)
 add_dependencies(buildtests_c timeout_encoding_test)
 add_dependencies(buildtests_c timer_heap_test)
 add_dependencies(buildtests_c timer_list_test)
-add_dependencies(buildtests_c transport_connectivity_state_test)
 add_dependencies(buildtests_c transport_metadata_test)
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 add_dependencies(buildtests_c transport_security_test)
@@ -724,6 +725,7 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 add_dependencies(buildtests_cxx time_change_test)
 endif()
 add_dependencies(buildtests_cxx timer_test)
+add_dependencies(buildtests_cxx transport_connectivity_state_test)
 add_dependencies(buildtests_cxx transport_pid_controller_test)
 add_dependencies(buildtests_cxx transport_security_common_api_test)
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
@@ -9848,37 +9850,6 @@ target_link_libraries(timer_list_test
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
-add_executable(transport_connectivity_state_test
-  test/core/transport/connectivity_state_test.cc
-)
-
-
-target_include_directories(transport_connectivity_state_test
-  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
-  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
-  PRIVATE ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
-  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
-  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
-  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
-  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
-  PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
-  PRIVATE ${_gRPC_UPB_GENERATED_DIR}
-  PRIVATE ${_gRPC_UPB_GRPC_GENERATED_DIR}
-  PRIVATE ${_gRPC_UPB_INCLUDE_DIR}
-  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
-)
-
-target_link_libraries(transport_connectivity_state_test
-  ${_gRPC_ALLTARGETS_LIBRARIES}
-  grpc_test_util
-  grpc
-  gpr
-)
-
-
-endif (gRPC_BUILD_TESTS)
-if (gRPC_BUILD_TESTS)
-
 add_executable(transport_metadata_test
   test/core/transport/metadata_test.cc
 )
@@ -16684,6 +16655,46 @@ target_link_libraries(timer_test
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc_test_util
   grpc++
+  grpc
+  gpr
+  ${_gRPC_GFLAGS_LIBRARIES}
+)
+
+
+endif (gRPC_BUILD_TESTS)
+if (gRPC_BUILD_TESTS)
+
+add_executable(transport_connectivity_state_test
+  test/core/transport/connectivity_state_test.cc
+  third_party/googletest/googletest/src/gtest-all.cc
+  third_party/googletest/googlemock/src/gmock-all.cc
+)
+
+
+target_include_directories(transport_connectivity_state_test
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
+  PRIVATE ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
+  PRIVATE ${_gRPC_UPB_GENERATED_DIR}
+  PRIVATE ${_gRPC_UPB_GRPC_GENERATED_DIR}
+  PRIVATE ${_gRPC_UPB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
+  PRIVATE third_party/googletest/googletest/include
+  PRIVATE third_party/googletest/googletest
+  PRIVATE third_party/googletest/googlemock/include
+  PRIVATE third_party/googletest/googlemock
+  PRIVATE ${_gRPC_PROTO_GENS_DIR}
+)
+
+target_link_libraries(transport_connectivity_state_test
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  grpc_test_util
   grpc
   gpr
   ${_gRPC_GFLAGS_LIBRARIES}

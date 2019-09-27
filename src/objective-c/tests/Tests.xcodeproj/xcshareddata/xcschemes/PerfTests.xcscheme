@@ -41,6 +41,36 @@
                <Test
                   Identifier = "PerfTests">
                </Test>
+               <Test
+                  Identifier = "PerfTestsCFStreamCleartext">
+               </Test>
+               <Test
+                  Identifier = "PerfTestsCronet/testPingPongRPCWithFlowControl">
+               </Test>
+               <Test
+                  Identifier = "PerfTestsCronet/testPingPongRPCWithInterceptor">
+               </Test>
+               <Test
+                  Identifier = "PerfTestsCronet/testPingPongRPCWithV1API">
+               </Test>
+               <Test
+                  Identifier = "PerfTestsNoCFStreamCleartext">
+               </Test>
+               <Test
+                  Identifier = "PerfTestsNoCFStreamSSL">
+               </Test>
+               <Test
+                  Identifier = "PerfTestsNoCFStreamSSL/testPingPongRPCWithFlowControl">
+               </Test>
+               <Test
+                  Identifier = "PerfTestsNoCFStreamSSL/testPingPongRPCWithInterceptor">
+               </Test>
+               <Test
+                  Identifier = "PerfTestsNoCFStreamSSL/testPingPongRPCWithV1API">
+               </Test>
+               <Test
+                  Identifier = "TestBase">
+               </Test>
             </SkippedTests>
          </TestableReference>
       </Testables>
