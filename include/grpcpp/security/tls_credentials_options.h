@@ -58,7 +58,7 @@ class TlsKeyMaterialsConfig {
   /** Setter for key materials that will be called by the user. The setter
    * transfers ownership of the arguments to the config. **/
   void set_pem_root_certs(grpc::string pem_root_certs);
-  void add_pem_key_cert_pair(PemKeyCertPair pem_key_cert_pair);
+  void add_pem_key_cert_pair(const PemKeyCertPair& pem_key_cert_pair);
   void set_key_materials(grpc::string pem_root_certs,
                          std::vector<PemKeyCertPair> pem_key_cert_pair_list);
   void set_version(int version) { version_ = version; };
@@ -101,7 +101,7 @@ class TlsCredentialReloadArg {
    * setter function.
    * **/
   void set_cb_user_data(void* cb_user_data);
-  void set_pem_root_certs(grpc::string pem_root_certs);
+  void set_pem_root_certs(const grpc::string& pem_root_certs);
   void add_pem_key_cert_pair(
       TlsKeyMaterialsConfig::PemKeyCertPair pem_key_cert_pair);
   void set_key_materials_config(
