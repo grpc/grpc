@@ -16,8 +16,8 @@
  *
  */
 
-#ifndef GRPC_CORE_LIB_IOMGR_GEVENT_UTIL_H
-#define GRPC_CORE_LIB_IOMGR_GEVENT_UTIL_H
+#ifndef GRPC_CORE_LIB_IOMGR_PYTHON_UTIL_H
+#define GRPC_CORE_LIB_IOMGR_PYTHON_UTIL_H
 
 #include <grpc/support/port_platform.h>
 
@@ -25,8 +25,8 @@
 #include <grpc/status.h>
 #include "src/core/lib/iomgr/error.h"
 
-// These are only used by the gRPC Python extension for gevent
-// support.  They are easier to define here (rather than in Cython)
+// These are only used by the gRPC Python extensions.
+// They are easier to define here (rather than in Cython)
 // because Cython doesn't handle #defines well.
 
 grpc_error* grpc_socket_error(char* error) {
