@@ -65,13 +65,13 @@ class SpiffeGenericEnd2endTest : public ::testing::Test {
   void SetUp() override {
     shut_down_ = false;
     int port = grpc_pick_unused_port_or_die();
-    server_address_ << server_host_ << ":" << port;
+    //server_address_ << server_host_ << ":" << port;
     port = 5000;
     // Setup server
     ServerBuilder builder;
     builder.AddListeningPort("localhost:5000",
                              SSLTestServerCredentials());
-    //builder.RegisterAsyncGenericService(&generic_service_);
+    builder.RegisterAsyncGenericService(&generic_service_);
     // Include a second call to RegisterAsyncGenericService to make sure that
     // we get an error in the log, since it is not allowed to have 2 async
     // generic services
@@ -102,7 +102,7 @@ class SpiffeGenericEnd2endTest : public ::testing::Test {
     //args.SetUserAgentPrefix("custom_prefix");
     //args.SetString(GRPC_ARG_SECONDARY_USER_AGENT_STRING, "end2end_test");
     std::shared_ptr<Channel> channel = grpc::CreateCustomChannel(
-        "127.0.0.1:5000", SSLTestChannelCredentials(), args);
+        "localhost:5000", SSLTestChannelCredentials(), args);
     stub_ = grpc::testing::EchoTestService::NewStub(channel);
     generic_stub_.reset(new GenericStub(channel));
   }

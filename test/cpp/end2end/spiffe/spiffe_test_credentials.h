@@ -31,7 +31,7 @@ namespace testing {
 // Creates a test instance of TlsCredentialsOptions where the
 // key_materials_config is null, the credential_reload_config is populated, and
 // the server_authorization_check_config is populated for the client only.
-std::shared_ptr<::grpc_impl::experimental::TlsCredentialsOptions> CreateTestTlsCredentialsOptions(bool is_client);
+::grpc_impl::experimental::TlsCredentialsOptions* CreateTestTlsCredentialsOptions(bool is_client);
 
 std::shared_ptr<grpc_impl::ChannelCredentials> SpiffeTestChannelCredentials();
 
@@ -42,6 +42,7 @@ std::shared_ptr<ChannelCredentials> SSLTestChannelCredentials();
 std::shared_ptr<ServerCredentials> SSLTestServerCredentials();
 
 const char kMySslCredentialsType[] = "my_ssl";
+const char kSpiffeCredentialsType[] = "spiffe";
 
 class MySslCredentialTypeProvider : public CredentialTypeProvider {
  public:
@@ -52,6 +53,17 @@ class MySslCredentialTypeProvider : public CredentialTypeProvider {
   std::shared_ptr<ServerCredentials> GetServerCredentials() override {
     return SSLTestServerCredentials();
   }
+};
+
+class SpiffeCredentialTypeProvider : public CredentialTypeProvider {
+  public:
+   std::shared_ptr<ChannelCredentials> GetChannelCredentials(ChannelArguments* args) override {
+     args->SetSslTargetNameOverride("foo.test.google.fr");
+     return SpiffeTestChannelCredentials();
+   }
+   std::shared_ptr<ServerCredentials> GetServerCredentials() override {
+     return SpiffeTestServerCredentials();
+   }
 };
 
 } // namespace testing

@@ -18,6 +18,7 @@
 
 #include "src/cpp/common/tls_credentials_options_util.h"
 #include <grpcpp/security/tls_credentials_options.h>
+#include <iostream>
 
 namespace grpc_impl {
 namespace experimental {
@@ -60,6 +61,7 @@ grpc_tls_key_materials_config* ConvertToCKeyMaterialsConfig(
  * allocates memory for the Cpp config. **/
 std::shared_ptr<TlsKeyMaterialsConfig> ConvertToCppKeyMaterialsConfig(
     const grpc_tls_key_materials_config* config) {
+  std::cout << "Got into ConvertToCppKeyMaterialsConfig" << std::endl;
   if (config == nullptr) {
     return nullptr;
   }
@@ -72,10 +74,14 @@ std::shared_ptr<TlsKeyMaterialsConfig> ConvertToCppKeyMaterialsConfig(
     ::grpc_core::PemKeyCertPair key_cert_pair = pem_key_cert_pair_list[i];
     TlsKeyMaterialsConfig::PemKeyCertPair p = {key_cert_pair.private_key(),
                                                key_cert_pair.cert_chain()};
-    cpp_pem_key_cert_pair_list.push_back(::std::move(p));
+    //TlsKeyMaterialsConfig::PemKeyCertPair* p = (TlsKeyMaterialsConfig::PemKeyCertPair*)gpr_malloc(
+    //    sizeof(TlsKeyMaterialsConfig::PemKeyCertPair));
+    //p->private_key = gpr_strdup(key_cert_pair.private_key());
+    //p->cert_chain = gpr_strdup(key_cert_pair.cert_chain());
+    cpp_pem_key_cert_pair_list.push_back({key_cert_pair.private_key(), key_cert_pair.cert_chain()});
   }
-  cpp_config->set_key_materials(std::move(config->pem_root_certs()),
-                                std::move(cpp_pem_key_cert_pair_list));
+  cpp_config->set_key_materials(config->pem_root_certs(),
+                                cpp_pem_key_cert_pair_list);
   cpp_config->set_version(config->version());
   return cpp_config;
 }
@@ -85,6 +91,7 @@ std::shared_ptr<TlsKeyMaterialsConfig> ConvertToCppKeyMaterialsConfig(
  * reload schedule/cancel API. **/
 int TlsCredentialReloadConfigCSchedule(void* config_user_data,
                                        grpc_tls_credential_reload_arg* arg) {
+  std::cout << "**************entered CredReloadConfig util schedule" << std::endl;
   if (arg == nullptr || arg->config == nullptr ||
       arg->config->context() == nullptr) {
     gpr_log(GPR_ERROR, "credential reload arg was not properly initialized");
@@ -114,6 +121,7 @@ void TlsCredentialReloadConfigCCancel(void* config_user_data,
  * of a C++ server authorization check schedule/cancel API. **/
 int TlsServerAuthorizationCheckConfigCSchedule(
     void* config_user_data, grpc_tls_server_authorization_check_arg* arg) {
+  std::cout << "******************************entered ServAuthzCheckConfig util schedule" << std::endl;
   if (arg == nullptr || arg->config == nullptr ||
       arg->config->context() == nullptr) {
     gpr_log(GPR_ERROR,

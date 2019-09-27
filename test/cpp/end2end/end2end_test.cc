@@ -1722,10 +1722,6 @@ TEST_P(SecureEnd2endTest, SimpleRpcWithHost) {
   MAYBE_SKIP_TEST;
   ResetStub();
 
-  if (GetParam().credentials_type != kMySslCredentialsType) {
-    return;
-  }
-
   EchoRequest request;
   EchoResponse response;
   request.set_message("Hello");
@@ -1756,10 +1752,6 @@ bool MetadataContains(
 
 TEST_P(SecureEnd2endTest, BlockingAuthMetadataPluginAndProcessorSuccess) {
   MAYBE_SKIP_TEST;
-  if (GetParam().credentials_type != kMySslCredentialsType) {
-     return;
-  }
-
   auto* processor = new TestAuthMetadataProcessor(true);
   StartServer(std::shared_ptr<AuthMetadataProcessor>(processor));
   ResetStub();
@@ -1786,10 +1778,6 @@ TEST_P(SecureEnd2endTest, BlockingAuthMetadataPluginAndProcessorSuccess) {
 
 TEST_P(SecureEnd2endTest, BlockingAuthMetadataPluginAndProcessorFailure) {
   MAYBE_SKIP_TEST;
-  if (GetParam().credentials_type != kMySslCredentialsType) {
-    return;
-  }
-
   auto* processor = new TestAuthMetadataProcessor(true);
   StartServer(std::shared_ptr<AuthMetadataProcessor>(processor));
   ResetStub();
@@ -1807,10 +1795,6 @@ TEST_P(SecureEnd2endTest, BlockingAuthMetadataPluginAndProcessorFailure) {
 TEST_P(SecureEnd2endTest, SetPerCallCredentials) {
   MAYBE_SKIP_TEST;
   ResetStub();
-  if (GetParam().credentials_type != kMySslCredentialsType) {
-    return;
-  }
-
   EchoRequest request;
   EchoResponse response;
   ClientContext context;
@@ -1862,10 +1846,6 @@ TEST_P(SecureEnd2endTest, CallCredentialsInterception) {
   if (!GetParam().use_interceptors) {
     return;
   }
-  if (GetParam().credentials_type != kMySslCredentialsType) {
-    return;
-  }
-
   std::vector<std::unique_ptr<experimental::ClientInterceptorFactoryInterface>>
       interceptor_creators;
   interceptor_creators.push_back(std::unique_ptr<CredentialsInterceptorFactory>(
@@ -1894,10 +1874,6 @@ TEST_P(SecureEnd2endTest, CallCredentialsInterceptionWithSetCredentials) {
   if (!GetParam().use_interceptors) {
     return;
   }
-  if (GetParam().credentials_type != kMySslCredentialsType) {
-    return;
-  }
-
   std::vector<std::unique_ptr<experimental::ClientInterceptorFactoryInterface>>
       interceptor_creators;
   interceptor_creators.push_back(std::unique_ptr<CredentialsInterceptorFactory>(
@@ -1926,10 +1902,6 @@ TEST_P(SecureEnd2endTest, CallCredentialsInterceptionWithSetCredentials) {
 TEST_P(SecureEnd2endTest, OverridePerCallCredentials) {
   MAYBE_SKIP_TEST;
   ResetStub();
-  if (GetParam().credentials_type != kMySslCredentialsType) {
-    return;
-  }
-
   EchoRequest request;
   EchoResponse response;
   ClientContext context;
@@ -1962,10 +1934,6 @@ TEST_P(SecureEnd2endTest, OverridePerCallCredentials) {
 TEST_P(SecureEnd2endTest, AuthMetadataPluginKeyFailure) {
   MAYBE_SKIP_TEST;
   ResetStub();
-  if (GetParam().credentials_type != kMySslCredentialsType) {
-    return;
-  }
-
   EchoRequest request;
   EchoResponse response;
   ClientContext context;
@@ -1985,10 +1953,6 @@ TEST_P(SecureEnd2endTest, AuthMetadataPluginKeyFailure) {
 TEST_P(SecureEnd2endTest, AuthMetadataPluginValueFailure) {
   MAYBE_SKIP_TEST;
   ResetStub();
-  if (GetParam().credentials_type != kMySslCredentialsType) {
-    return;
-  }
-
   EchoRequest request;
   EchoResponse response;
   ClientContext context;
@@ -2007,10 +1971,6 @@ TEST_P(SecureEnd2endTest, AuthMetadataPluginValueFailure) {
 TEST_P(SecureEnd2endTest, AuthMetadataPluginWithDeadline) {
   MAYBE_SKIP_TEST;
   ResetStub();
-  if (GetParam().credentials_type != kMySslCredentialsType) {
-    return;
-  }
-
   EchoRequest request;
   request.mutable_param()->set_skip_cancelled_check(true);
   EchoResponse response;
@@ -2035,10 +1995,6 @@ TEST_P(SecureEnd2endTest, AuthMetadataPluginWithDeadline) {
 TEST_P(SecureEnd2endTest, AuthMetadataPluginWithCancel) {
   MAYBE_SKIP_TEST;
   ResetStub();
-  if (GetParam().credentials_type != kMySslCredentialsType) {
-    return;
-  }
-
   EchoRequest request;
   request.mutable_param()->set_skip_cancelled_check(true);
   EchoResponse response;
@@ -2066,10 +2022,6 @@ TEST_P(SecureEnd2endTest, AuthMetadataPluginWithCancel) {
 TEST_P(SecureEnd2endTest, NonBlockingAuthMetadataPluginFailure) {
   MAYBE_SKIP_TEST;
   ResetStub();
-  if (GetParam().credentials_type != kMySslCredentialsType) {
-    return;
-  }
-
   EchoRequest request;
   EchoResponse response;
   ClientContext context;
@@ -2091,10 +2043,6 @@ TEST_P(SecureEnd2endTest, NonBlockingAuthMetadataPluginFailure) {
 
 TEST_P(SecureEnd2endTest, NonBlockingAuthMetadataPluginAndProcessorSuccess) {
   MAYBE_SKIP_TEST;
-  if (GetParam().credentials_type != kMySslCredentialsType) {
-    return;
-  }
-
   auto* processor = new TestAuthMetadataProcessor(false);
   StartServer(std::shared_ptr<AuthMetadataProcessor>(processor));
   ResetStub();
@@ -2121,10 +2069,6 @@ TEST_P(SecureEnd2endTest, NonBlockingAuthMetadataPluginAndProcessorSuccess) {
 
 TEST_P(SecureEnd2endTest, NonBlockingAuthMetadataPluginAndProcessorFailure) {
   MAYBE_SKIP_TEST;
-  if (GetParam().credentials_type != kMySslCredentialsType) {
-    return;
-  }
-
   auto* processor = new TestAuthMetadataProcessor(false);
   StartServer(std::shared_ptr<AuthMetadataProcessor>(processor));
   ResetStub();
@@ -2142,10 +2086,6 @@ TEST_P(SecureEnd2endTest, NonBlockingAuthMetadataPluginAndProcessorFailure) {
 TEST_P(SecureEnd2endTest, BlockingAuthMetadataPluginFailure) {
   MAYBE_SKIP_TEST;
   ResetStub();
-  if (GetParam().credentials_type != kMySslCredentialsType) {
-    return;
-  }
-
   EchoRequest request;
   EchoResponse response;
   ClientContext context;
@@ -2168,10 +2108,6 @@ TEST_P(SecureEnd2endTest, BlockingAuthMetadataPluginFailure) {
 TEST_P(SecureEnd2endTest, CompositeCallCreds) {
   MAYBE_SKIP_TEST;
   ResetStub();
-  if (GetParam().credentials_type != kMySslCredentialsType) {
-    return;
-  }
-
   EchoRequest request;
   EchoResponse response;
   ClientContext context;
@@ -2203,9 +2139,6 @@ TEST_P(SecureEnd2endTest, CompositeCallCreds) {
 TEST_P(SecureEnd2endTest, ClientAuthContext) {
   MAYBE_SKIP_TEST;
   ResetStub();
-  if (GetParam().credentials_type != kMySslCredentialsType) {
-     return;
-  }
   EchoRequest request;
   EchoResponse response;
   request.set_message("Hello");
@@ -2280,7 +2213,7 @@ std::vector<TestScenario> CreateTestScenarios(bool use_proxy,
   if (test_secure) {
     CredentialsProvider* credentials_provider = GetCredentialsProvider();
     credentials_provider->AddSecureType(
-        kMySslCredentialsType, std::unique_ptr<MySslCredentialTypeProvider>(new MySslCredentialTypeProvider));
+        kSpiffeCredentialsType, std::unique_ptr<SpiffeCredentialTypeProvider>(new SpiffeCredentialTypeProvider));
     credentials_types =
         credentials_provider->GetSecureCredentialsTypeList();
   }

@@ -21,7 +21,8 @@
  
 #include <memory>
 #include <vector>
- 
+#include <iostream>
+
 #include <grpc/grpc_security_constants.h>
 #include <grpc/status.h>
 #include <grpc/support/log.h>
@@ -57,6 +58,10 @@ class TlsKeyMaterialsConfig {
  
   /** Setter for key materials that will be called by the user. The setter
    * transfers ownership of the arguments to the config. **/
+  void set_pem_root_certs(grpc::string pem_root_certs) { pem_root_certs_ = pem_root_certs; }
+  void add_pem_key_cert_pair(PemKeyCertPair pem_key_cert_pair) {
+    pem_key_cert_pair_list_.push_back(pem_key_cert_pair);
+  }
   void set_key_materials(grpc::string pem_root_certs,
                          std::vector<PemKeyCertPair> pem_key_cert_pair_list);
   void set_version(int version) { version_ = version; };
@@ -89,6 +94,9 @@ class TlsCredentialReloadArg {
    * materials config from the underlying C grpc_tls_key_materials_config. **/
   void* cb_user_data() const;
   std::shared_ptr<TlsKeyMaterialsConfig> key_materials_config() const;
+  void set_pem_root_certs(grpc::string pem_root_certs);
+  void add_pem_key_cert_pair(TlsKeyMaterialsConfig::PemKeyCertPair pem_key_cert_pair);
+  size_t key_materials_config_pem_key_cert_pair_list_size() const;
   grpc_ssl_certificate_config_reload_status status() const;
   grpc::string error_details() const;
  
@@ -132,11 +140,15 @@ struct TlsCredentialReloadInterface {
 class TlsCredentialReloadConfig {
  public:
   /** The config takes ownership of the credential reload interface. **/
-  TlsCredentialReloadConfig(std::unique_ptr<TlsCredentialReloadInterface>
+  TlsCredentialReloadConfig(std::shared_ptr<TlsCredentialReloadInterface>
                                 credential_reload_interface);
   ~TlsCredentialReloadConfig();
  
   int Schedule(TlsCredentialReloadArg* arg) const {
+    std::cout << "*********************attempting a CredReloadConfig schedule" << std::endl;
+    if (credential_reload_interface_ == nullptr) {
+      std::cout << "****************credential reload interface is nullptr" << std::endl;
+    }
     return credential_reload_interface_->Schedule(arg);
   }
  
@@ -149,7 +161,7 @@ class TlsCredentialReloadConfig {
  
  private:
   grpc_tls_credential_reload_config* c_config_;
-  std::unique_ptr<TlsCredentialReloadInterface> credential_reload_interface_;
+  std::shared_ptr<TlsCredentialReloadInterface> credential_reload_interface_;
 };
  
 /** TLS server authorization check arguments, wraps
@@ -224,11 +236,15 @@ class TlsServerAuthorizationCheckConfig {
   /** The config takes ownership of the server authorization check interface.
    * **/
   TlsServerAuthorizationCheckConfig(
-      std::unique_ptr<TlsServerAuthorizationCheckInterface>
+      std::shared_ptr<TlsServerAuthorizationCheckInterface>
           server_authorization_check_interface);
   ~TlsServerAuthorizationCheckConfig();
  
   int Schedule(TlsServerAuthorizationCheckArg* arg) const {
+    std::cout << "***************************** attempting ServAuthzCheckConfig schedule" << std::endl;
+    if (server_authorization_check_interface_ == nullptr) {
+      std::cout << "***************** server authorization check interface is nullptr" << std::endl;
+    }
     return server_authorization_check_interface_->Schedule(arg);
   }
  
@@ -243,7 +259,7 @@ class TlsServerAuthorizationCheckConfig {
  
  private:
   grpc_tls_server_authorization_check_config* c_config_;
-  std::unique_ptr<TlsServerAuthorizationCheckInterface>
+  std::shared_ptr<TlsServerAuthorizationCheckInterface>
       server_authorization_check_interface_;
 };
  
