@@ -401,7 +401,7 @@ void Subchannel::ConnectivityStateWatcherList::NotifyLocked(
 // State needed for tracking the connectivity state with a particular
 // health check service name.
 class Subchannel::HealthWatcherMap::HealthWatcher
-    : public InternallyRefCounted<HealthWatcher> {
+    : public AsyncConnectivityStateWatcherInterface {
  public:
   HealthWatcher(Subchannel* c, UniquePtr<char> health_check_service_name,
                 grpc_connectivity_state subchannel_state)
@@ -426,7 +426,7 @@ class Subchannel::HealthWatcherMap::HealthWatcher
 
   void AddWatcherLocked(
       grpc_connectivity_state initial_state,
-      OrphanablePtr<ConnectivityStateWatcherInterface> watcher) {
+      OrphanablePtr<Subchannel::ConnectivityStateWatcherInterface> watcher) {
     if (state_ != initial_state) {
       RefCountedPtr<ConnectedSubchannel> connected_subchannel;
       if (state_ == GRPC_CHANNEL_READY) {
@@ -438,7 +438,8 @@ class Subchannel::HealthWatcherMap::HealthWatcher
     watcher_list_.AddWatcherLocked(std::move(watcher));
   }
 
-  void RemoveWatcherLocked(ConnectivityStateWatcherInterface* watcher) {
+  void RemoveWatcherLocked(
+      Subchannel::ConnectivityStateWatcherInterface* watcher) {
     watcher_list_.RemoveWatcherLocked(watcher);
   }
 
@@ -471,34 +472,19 @@ class Subchannel::HealthWatcherMap::HealthWatcher
   }
 
  private:
-  class ConnectivityStateWatcher
-      : public grpc_core::AsyncConnectivityStateWatcherInterface {
-   public:
-    explicit ConnectivityStateWatcher(RefCountedPtr<HealthWatcher> parent)
-        : parent_(std::move(parent)) {}
-
-   private:
-    void OnConnectivityStateChange(grpc_connectivity_state new_state) override {
-      Subchannel* c = parent_->subchannel_;
-      MutexLock lock(&c->mu_);
-      if (new_state != GRPC_CHANNEL_SHUTDOWN &&
-          parent_->health_check_client_ != nullptr) {
-        parent_->state_ = new_state;
-        parent_->watcher_list_.NotifyLocked(c, new_state);
-      }
+  void OnConnectivityStateChange(grpc_connectivity_state new_state) override {
+    MutexLock lock(&subchannel_->mu_);
+    if (new_state != GRPC_CHANNEL_SHUTDOWN && health_check_client_ != nullptr) {
+      state_ = new_state;
+      watcher_list_.NotifyLocked(subchannel_, new_state);
     }
-
-   private:
-    RefCountedPtr<HealthWatcher> parent_;
-  };
+  }
 
   void StartHealthCheckingLocked() {
     GPR_ASSERT(health_check_client_ == nullptr);
     health_check_client_ = MakeOrphanable<HealthCheckClient>(
         health_check_service_name_.get(), subchannel_->connected_subchannel_,
-        subchannel_->pollset_set_, subchannel_->channelz_node_,
-        UniquePtr<grpc_core::ConnectivityStateWatcherInterface>(
-            New<ConnectivityStateWatcher>(Ref())));
+        subchannel_->pollset_set_, subchannel_->channelz_node_, Ref());
   }
 
   Subchannel* subchannel_;

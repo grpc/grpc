@@ -48,7 +48,7 @@ HealthCheckClient::HealthCheckClient(
     RefCountedPtr<ConnectedSubchannel> connected_subchannel,
     grpc_pollset_set* interested_parties,
     RefCountedPtr<channelz::SubchannelNode> channelz_node,
-    UniquePtr<ConnectivityStateWatcherInterface> watcher)
+    RefCountedPtr<ConnectivityStateWatcherInterface> watcher)
     : InternallyRefCounted<HealthCheckClient>(&grpc_health_check_client_trace),
       service_name_(service_name),
       connected_subchannel_(std::move(connected_subchannel)),

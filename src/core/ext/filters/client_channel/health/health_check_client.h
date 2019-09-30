@@ -48,7 +48,7 @@ class HealthCheckClient : public InternallyRefCounted<HealthCheckClient> {
                     RefCountedPtr<ConnectedSubchannel> connected_subchannel,
                     grpc_pollset_set* interested_parties,
                     RefCountedPtr<channelz::SubchannelNode> channelz_node,
-                    UniquePtr<ConnectivityStateWatcherInterface> watcher);
+                    RefCountedPtr<ConnectivityStateWatcherInterface> watcher);
 
   ~HealthCheckClient();
 
@@ -156,7 +156,7 @@ class HealthCheckClient : public InternallyRefCounted<HealthCheckClient> {
   RefCountedPtr<channelz::SubchannelNode> channelz_node_;
 
   Mutex mu_;
-  UniquePtr<ConnectivityStateWatcherInterface> watcher_;
+  RefCountedPtr<ConnectivityStateWatcherInterface> watcher_;
   bool shutting_down_ = false;
 
   // The data associated with the current health check call.  It holds a ref
