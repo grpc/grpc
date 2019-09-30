@@ -122,7 +122,7 @@ grpc_cc_test(
         "//test/core/util:grpc_test_util",
         "//test/cpp/util:test_util",
     ],
-    tags = ["no_test_ios"],
+    tags = ["no_test_ios", "no_windows"],
 )
 
 grpc_cc_binary(
@@ -567,7 +567,7 @@ grpc_cc_test(
         "//test/core/util:grpc_test_util",
         "//test/cpp/util:test_util",
     ],
-    tags = ["no_test_ios"],
+    tags = ["no_test_ios", "no_windows"],
 )
 
 grpc_cc_binary(
