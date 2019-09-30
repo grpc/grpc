@@ -870,7 +870,9 @@ class XdsLb::LbChannelState::StateWatcher
     : public AsyncConnectivityStateWatcherInterface {
  public:
   explicit StateWatcher(RefCountedPtr<LbChannelState> parent)
-      : parent_(std::move(parent)) {}
+      : AsyncConnectivityStateWatcherInterface(
+            grpc_combiner_scheduler(parent->xdslb_policy_->combiner())),
+        parent_(std::move(parent)) {}
 
  private:
   void OnConnectivityStateChange(grpc_connectivity_state new_state) override {
