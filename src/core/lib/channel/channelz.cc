@@ -234,7 +234,8 @@ grpc_json* ChannelNode::RenderJson() {
         static_cast<grpc_connectivity_state>(state_field >> 1);
     json = grpc_json_create_child(nullptr, json, "state", nullptr,
                                   GRPC_JSON_OBJECT, false);
-    grpc_json_create_child(nullptr, json, "state", ConnectivityStateName(state),
+    grpc_json_create_child(nullptr, json, "state",
+                           grpc_connectivity_state_name(state),
                            GRPC_JSON_STRING, false);
     json = data;
   }

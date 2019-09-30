@@ -660,7 +660,7 @@ void GrpcLb::Helper::UpdateState(grpc_connectivity_state state,
       gpr_log(GPR_INFO,
               "[grpclb %p helper %p] pending child policy %p reports state=%s",
               parent_.get(), this, parent_->pending_child_policy_.get(),
-              ConnectivityStateName(state));
+              grpc_connectivity_state_name(state));
     }
     if (state != GRPC_CHANNEL_READY) return;
     grpc_pollset_set_del_pollset_set(
@@ -700,7 +700,8 @@ void GrpcLb::Helper::UpdateState(grpc_connectivity_state state,
     if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_glb_trace)) {
       gpr_log(GPR_INFO,
               "[grpclb %p helper %p] state=%s passing child picker %p as-is",
-              parent_.get(), this, ConnectivityStateName(state), picker.get());
+              parent_.get(), this, grpc_connectivity_state_name(state),
+              picker.get());
     }
     parent_->channel_control_helper()->UpdateState(state, std::move(picker));
     return;
@@ -708,7 +709,8 @@ void GrpcLb::Helper::UpdateState(grpc_connectivity_state state,
   // Cases 2 and 3a: wrap picker from the child in our own picker.
   if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_glb_trace)) {
     gpr_log(GPR_INFO, "[grpclb %p helper %p] state=%s wrapping child picker %p",
-            parent_.get(), this, ConnectivityStateName(state), picker.get());
+            parent_.get(), this, grpc_connectivity_state_name(state),
+            picker.get());
   }
   RefCountedPtr<GrpcLbClientStats> client_stats;
   if (parent_->lb_calld_ != nullptr &&

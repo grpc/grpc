@@ -25,7 +25,6 @@
 
 #include "src/core/lib/channel/context.h"
 #include "src/core/lib/gprpp/arena.h"
-#include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/iomgr/call_combiner.h"
 #include "src/core/lib/iomgr/endpoint.h"
 #include "src/core/lib/iomgr/polling_entity.h"
@@ -33,7 +32,6 @@
 #include "src/core/lib/iomgr/pollset_set.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/transport/byte_stream.h"
-#include "src/core/lib/transport/connectivity_state.h"
 #include "src/core/lib/transport/metadata_batch.h"
 
 /* Minimum and maximum protocol accepted versions. */
@@ -322,11 +320,8 @@ typedef struct grpc_transport_op {
   /** Called when processing of this op is done. */
   grpc_closure* on_consumed = nullptr;
   /** connectivity monitoring - set connectivity_state to NULL to unsubscribe */
-  grpc_core::OrphanablePtr<grpc_core::ConnectivityStateWatcherInterface>
-      start_connectivity_watch;
-  grpc_connectivity_state start_connectivity_watch_state = GRPC_CHANNEL_IDLE;
-  grpc_core::ConnectivityStateWatcherInterface* stop_connectivity_watch =
-      nullptr;
+  grpc_closure* on_connectivity_state_change = nullptr;
+  grpc_connectivity_state* connectivity_state = nullptr;
   /** should the transport be disconnected
    * Error contract: the transport that gets this op must cause
    *                 disconnect_with_error to be unref'ed after processing it */

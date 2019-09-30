@@ -95,14 +95,15 @@ ConnectedSubchannel::~ConnectedSubchannel() {
   GRPC_CHANNEL_STACK_UNREF(channel_stack_, "connected_subchannel_dtor");
 }
 
-void ConnectedSubchannel::StartWatch(
-    grpc_pollset_set* interested_parties,
-    OrphanablePtr<ConnectivityStateWatcherInterface> watcher) {
+void ConnectedSubchannel::NotifyOnStateChange(
+    grpc_pollset_set* interested_parties, grpc_connectivity_state* state,
+    grpc_closure* closure) {
   grpc_transport_op* op = grpc_make_transport_op(nullptr);
-  op->start_connectivity_watch = std::move(watcher);
-  op->start_connectivity_watch_state = GRPC_CHANNEL_READY;
+  grpc_channel_element* elem;
+  op->connectivity_state = state;
+  op->on_connectivity_state_change = closure;
   op->bind_pollset_set = interested_parties;
-  grpc_channel_element* elem = grpc_channel_stack_element(channel_stack_, 0);
+  elem = grpc_channel_stack_element(channel_stack_, 0);
   elem->filter->start_transport_op(elem, op);
 }
 
@@ -309,14 +310,19 @@ void SubchannelCall::IncrementRefCount(const grpc_core::DebugLocation& location,
 // Subchannel::ConnectedSubchannelStateWatcher
 //
 
-class Subchannel::ConnectedSubchannelStateWatcher
-    : public AsyncConnectivityStateWatcherInterface {
+class Subchannel::ConnectedSubchannelStateWatcher {
  public:
   // Must be instantiated while holding c->mu.
   explicit ConnectedSubchannelStateWatcher(Subchannel* c) : subchannel_(c) {
     // Steal subchannel ref for connecting.
     GRPC_SUBCHANNEL_WEAK_REF(subchannel_, "state_watcher");
     GRPC_SUBCHANNEL_WEAK_UNREF(subchannel_, "connecting");
+    // Start watching for connectivity state changes.
+    GRPC_CLOSURE_INIT(&on_connectivity_changed_, OnConnectivityChanged, this,
+                      grpc_schedule_on_exec_ctx);
+    c->connected_subchannel_->NotifyOnStateChange(c->pollset_set_,
+                                                  &pending_connectivity_state_,
+                                                  &on_connectivity_changed_);
   }
 
   ~ConnectedSubchannelStateWatcher() {
@@ -324,41 +330,54 @@ class Subchannel::ConnectedSubchannelStateWatcher
   }
 
  private:
-  void OnConnectivityStateChange(grpc_connectivity_state new_state) override {
-    Subchannel* c = subchannel_;
-    MutexLock lock(&c->mu_);
-    switch (new_state) {
-      case GRPC_CHANNEL_TRANSIENT_FAILURE:
-      case GRPC_CHANNEL_SHUTDOWN: {
-        if (!c->disconnected_ && c->connected_subchannel_ != nullptr) {
-          if (grpc_trace_subchannel.enabled()) {
-            gpr_log(GPR_INFO,
-                    "Connected subchannel %p of subchannel %p has gone into "
-                    "%s. Attempting to reconnect.",
-                    c->connected_subchannel_.get(), c,
-                    ConnectivityStateName(new_state));
+  static void OnConnectivityChanged(void* arg, grpc_error* error) {
+    auto* self = static_cast<ConnectedSubchannelStateWatcher*>(arg);
+    Subchannel* c = self->subchannel_;
+    {
+      MutexLock lock(&c->mu_);
+      switch (self->pending_connectivity_state_) {
+        case GRPC_CHANNEL_TRANSIENT_FAILURE:
+        case GRPC_CHANNEL_SHUTDOWN: {
+          if (!c->disconnected_ && c->connected_subchannel_ != nullptr) {
+            if (grpc_trace_subchannel.enabled()) {
+              gpr_log(GPR_INFO,
+                      "Connected subchannel %p of subchannel %p has gone into "
+                      "%s. Attempting to reconnect.",
+                      c->connected_subchannel_.get(), c,
+                      grpc_connectivity_state_name(
+                          self->pending_connectivity_state_));
+            }
+            c->connected_subchannel_.reset();
+            if (c->channelz_node() != nullptr) {
+              c->channelz_node()->SetChildSocket(nullptr);
+            }
+            c->SetConnectivityStateLocked(GRPC_CHANNEL_TRANSIENT_FAILURE);
+            c->backoff_begun_ = false;
+            c->backoff_.Reset();
           }
-          c->connected_subchannel_.reset();
-          if (c->channelz_node() != nullptr) {
-            c->channelz_node()->SetChildSocket(nullptr);
-          }
-          c->SetConnectivityStateLocked(GRPC_CHANNEL_TRANSIENT_FAILURE);
-          c->backoff_begun_ = false;
-          c->backoff_.Reset();
+          break;
         }
-        break;
-      }
-      default: {
-        // In principle, this should never happen.  We should not get
-        // a callback for READY, because that was the state we started
-        // this watch from.  And a connected subchannel should never go
-        // from READY to CONNECTING or IDLE.
-        c->SetConnectivityStateLocked(new_state);
+        default: {
+          // In principle, this should never happen.  We should not get
+          // a callback for READY, because that was the state we started
+          // this watch from.  And a connected subchannel should never go
+          // from READY to CONNECTING or IDLE.
+          c->SetConnectivityStateLocked(self->pending_connectivity_state_);
+          c->connected_subchannel_->NotifyOnStateChange(
+              nullptr, &self->pending_connectivity_state_,
+              &self->on_connectivity_changed_);
+          return;  // So we don't delete ourself below.
+        }
       }
     }
+    // Don't delete until we've released the lock, because this might
+    // cause the subchannel (which contains the lock) to be destroyed.
+    Delete(self);
   }
 
   Subchannel* subchannel_;
+  grpc_closure on_connectivity_changed_;
+  grpc_connectivity_state pending_connectivity_state_ = GRPC_CHANNEL_READY;
 };
 
 //
@@ -1069,10 +1088,8 @@ bool Subchannel::PublishTransportLocked() {
   if (channelz_node_ != nullptr) {
     channelz_node_->SetChildSocket(std::move(socket));
   }
-  // Start watching connected subchannel.
-  connected_subchannel_->StartWatch(
-      pollset_set_, OrphanablePtr<grpc_core::ConnectivityStateWatcherInterface>(
-                        New<ConnectedSubchannelStateWatcher>(this)));
+  // Instantiate state watcher.  Will clean itself up.
+  New<ConnectedSubchannelStateWatcher>(this);
   // Report initial state.
   SetConnectivityStateLocked(GRPC_CHANNEL_READY);
   return true;
