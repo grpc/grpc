@@ -1249,8 +1249,8 @@ class ChannelData::ExternalWatcherAdder {
 
 class ChannelData::ExternalWatcherRemover {
  public:
-  ExternalWatcherRemover(
-      ChannelData* chand, AsyncConnectivityStateWatcherInterface* watcher)
+  ExternalWatcherRemover(ChannelData* chand,
+                         AsyncConnectivityStateWatcherInterface* watcher)
       : chand_(chand), watcher_(watcher) {
     GRPC_CHANNEL_STACK_REF(chand_->owning_stack_, "ExternalWatcherRemover");
     GRPC_CLOSURE_INIT(&closure_, &ExternalWatcherRemover::RemoveWatcher, this,
