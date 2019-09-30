@@ -57,8 +57,7 @@ const char* ConnectivityStateName(grpc_connectivity_state state) {
 class AsyncConnectivityStateWatcherInterface::Notifier {
  public:
   Notifier(RefCountedPtr<AsyncConnectivityStateWatcherInterface> watcher,
-           grpc_connectivity_state state,
-           grpc_closure_scheduler* scheduler)
+           grpc_connectivity_state state, grpc_closure_scheduler* scheduler)
       : watcher_(std::move(watcher)), state_(state) {
     GRPC_CLOSURE_INIT(&closure_, SendNotification, this, scheduler);
     GRPC_CLOSURE_SCHED(&closure_, GRPC_ERROR_NONE);
