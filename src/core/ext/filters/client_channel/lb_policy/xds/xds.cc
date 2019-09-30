@@ -823,7 +823,7 @@ void XdsLb::FallbackHelper::UpdateState(grpc_connectivity_state state,
           GPR_INFO,
           "[xdslb %p helper %p] pending fallback policy %p reports state=%s",
           parent_.get(), this, parent_->pending_fallback_policy_.get(),
-          grpc_connectivity_state_name(state));
+          ConnectivityStateName(state));
     }
     if (state != GRPC_CHANNEL_READY) return;
     grpc_pollset_set_del_pollset_set(
@@ -2502,7 +2502,7 @@ void XdsLb::PriorityList::LocalityMap::UpdateConnectivityStateLocked() {
     gpr_log(GPR_INFO,
             "[xdslb %p] Priority %" PRIu32 " (%p) connectivity changed to %s",
             xds_policy(), priority_, this,
-            grpc_connectivity_state_name(connectivity_state_));
+            ConnectivityStateName(connectivity_state_));
   }
 }
 
@@ -2834,7 +2834,7 @@ void XdsLb::PriorityList::LocalityMap::Locality::Helper::UpdateState(
               "[xdslb %p helper %p] pending child policy %p reports state=%s",
               locality_->xds_policy(), this,
               locality_->pending_child_policy_.get(),
-              grpc_connectivity_state_name(state));
+              ConnectivityStateName(state));
     }
     if (state != GRPC_CHANNEL_READY) return;
     grpc_pollset_set_del_pollset_set(

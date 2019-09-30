@@ -196,7 +196,6 @@ grpc_chttp2_transport::~grpc_chttp2_transport() {
   GPR_ASSERT(grpc_chttp2_stream_map_size(&stream_map) == 0);
 
   grpc_chttp2_stream_map_destroy(&stream_map);
-  grpc_connectivity_state_destroy(&channel_callback.state_tracker);
 
   cancel_pings(this,
                GRPC_ERROR_CREATE_FROM_STATIC_STRING("Transport destroyed"));
@@ -466,6 +465,8 @@ grpc_chttp2_transport::grpc_chttp2_transport(
       ep(ep),
       peer_string(grpc_endpoint_get_peer(ep)),
       resource_user(resource_user),
+      state_tracker(is_client ? "client_transport" : "server_transport",
+                    GRPC_CHANNEL_READY),
       is_client(is_client),
       next_stream_id(is_client ? 1 : 2),
       deframe_state(is_client ? GRPC_DTS_FH_0 : GRPC_DTS_CLIENT_PREFIX_0) {
@@ -480,9 +481,6 @@ grpc_chttp2_transport::grpc_chttp2_transport(
   grpc_chttp2_stream_map_init(&stream_map, 8);
 
   grpc_slice_buffer_init(&read_buffer);
-  grpc_connectivity_state_init(
-      &channel_callback.state_tracker, GRPC_CHANNEL_READY,
-      is_client ? "client_transport" : "server_transport");
   grpc_slice_buffer_init(&outbuf);
   if (is_client) {
     grpc_slice_buffer_add(&outbuf, grpc_slice_from_copied_string(
@@ -770,7 +768,7 @@ static void destroy_stream(grpc_transport* gt, grpc_stream* gs,
 
 grpc_chttp2_stream* grpc_chttp2_parsing_accept_stream(grpc_chttp2_transport* t,
                                                       uint32_t id) {
-  if (t->channel_callback.accept_stream == nullptr) {
+  if (t->accept_stream_cb == nullptr) {
     return nullptr;
   }
   // Don't accept the stream if memory quota doesn't allow. Note that we should
@@ -788,9 +786,8 @@ grpc_chttp2_stream* grpc_chttp2_parsing_accept_stream(grpc_chttp2_transport* t,
   grpc_chttp2_stream* accepting = nullptr;
   GPR_ASSERT(t->accepting_stream == nullptr);
   t->accepting_stream = &accepting;
-  t->channel_callback.accept_stream(t->channel_callback.accept_stream_user_data,
-                                    &t->base,
-                                    (void*)static_cast<uintptr_t>(id));
+  t->accept_stream_cb(t->accept_stream_cb_user_data, &t->base,
+                      (void*)static_cast<uintptr_t>(id));
   t->accepting_stream = nullptr;
   return accepting;
 }
@@ -1843,9 +1840,8 @@ static void perform_transport_op(grpc_transport* gt, grpc_transport_op* op) {
   }
 
   if (op->set_accept_stream) {
-    t->channel_callback.accept_stream = op->set_accept_stream_fn;
-    t->channel_callback.accept_stream_user_data =
-        op->set_accept_stream_user_data;
+    t->accept_stream_cb = op->set_accept_stream_fn;
+    t->accept_stream_cb_user_data = op->set_accept_stream_user_data;
   }
 
   if (op->bind_pollset) {
@@ -1861,10 +1857,12 @@ static void perform_transport_op(grpc_transport* gt, grpc_transport_op* op) {
     grpc_chttp2_initiate_write(t, GRPC_CHTTP2_INITIATE_WRITE_APPLICATION_PING);
   }
 
-  if (op->on_connectivity_state_change != nullptr) {
-    grpc_connectivity_state_notify_on_state_change(
-        &t->channel_callback.state_tracker, op->connectivity_state,
-        op->on_connectivity_state_change);
+  if (op->start_connectivity_watch != nullptr) {
+    t->state_tracker.AddWatcher(op->start_connectivity_watch_state,
+                                std::move(op->start_connectivity_watch));
+  }
+  if (op->stop_connectivity_watch != nullptr) {
+    t->state_tracker.RemoveWatcher(op->stop_connectivity_watch);
   }
 
   if (op->disconnect_with_error != GRPC_ERROR_NONE) {
@@ -2850,8 +2848,7 @@ static void connectivity_state_set(grpc_chttp2_transport* t,
                                    const char* reason) {
   GRPC_CHTTP2_IF_TRACING(
       gpr_log(GPR_INFO, "transport %p set connectivity_state=%d", t, state));
-  grpc_connectivity_state_set(&t->channel_callback.state_tracker, state,
-                              reason);
+  t->state_tracker.SetState(state, reason);
 }
 
 /*******************************************************************************
