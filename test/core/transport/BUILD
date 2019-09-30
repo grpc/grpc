@@ -51,9 +51,6 @@ grpc_cc_test(
 grpc_cc_test(
     name = "connectivity_state_test",
     srcs = ["connectivity_state_test.cc"],
-    external_deps = [
-        "gtest",
-    ],
     language = "C++",
     deps = [
         "//:gpr",

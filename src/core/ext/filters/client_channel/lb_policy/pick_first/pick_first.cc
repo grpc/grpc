@@ -294,7 +294,7 @@ void PickFirst::PickFirstSubchannelData::ProcessConnectivityChangeLocked(
     if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_pick_first_trace)) {
       gpr_log(GPR_INFO,
               "Pick First %p selected subchannel connectivity changed to %s", p,
-              ConnectivityStateName(connectivity_state));
+              grpc_connectivity_state_name(connectivity_state));
     }
     // If the new state is anything other than READY and there is a
     // pending update, switch to the pending update.

@@ -123,7 +123,8 @@ class ResolvingLoadBalancingPolicy::ResolvingControlHelper
         gpr_log(GPR_INFO,
                 "resolving_lb=%p helper=%p: pending child policy %p reports "
                 "state=%s",
-                parent_.get(), this, child_, ConnectivityStateName(state));
+                parent_.get(), this, child_,
+                grpc_connectivity_state_name(state));
       }
       if (state != GRPC_CHANNEL_READY) return;
       grpc_pollset_set_del_pollset_set(
