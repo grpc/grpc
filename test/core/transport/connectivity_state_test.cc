@@ -113,6 +113,40 @@ TEST(StateTracker, SubscribeThenUnsubscribe) {
   EXPECT_EQ(state, GRPC_CHANNEL_IDLE);
 }
 
+TEST(StateTracker, OrphanUponShutdown) {
+  int count = 0;
+  grpc_connectivity_state state = GRPC_CHANNEL_IDLE;
+  bool destroyed = false;
+  ConnectivityStateTracker tracker("xxx", GRPC_CHANNEL_IDLE);
+  ConnectivityStateWatcherInterface* watcher =
+      New<Watcher>(&count, &state, &destroyed);
+  tracker.AddWatcher(GRPC_CHANNEL_IDLE,
+                     OrphanablePtr<ConnectivityStateWatcherInterface>(watcher));
+  // No initial notification, since we started the watch from the
+  // current state.
+  EXPECT_EQ(count, 0);
+  EXPECT_EQ(state, GRPC_CHANNEL_IDLE);
+  // Set state to SHUTDOWN.
+  tracker.SetState(GRPC_CHANNEL_SHUTDOWN, "shutting down");
+  EXPECT_TRUE(destroyed);
+  EXPECT_EQ(count, 1);
+  EXPECT_EQ(state, GRPC_CHANNEL_SHUTDOWN);
+}
+
+TEST(StateTracker, AddWhenAlreadyShutdown) {
+  int count = 0;
+  grpc_connectivity_state state = GRPC_CHANNEL_IDLE;
+  bool destroyed = false;
+  ConnectivityStateTracker tracker("xxx", GRPC_CHANNEL_SHUTDOWN);
+  ConnectivityStateWatcherInterface* watcher =
+      New<Watcher>(&count, &state, &destroyed);
+  tracker.AddWatcher(GRPC_CHANNEL_IDLE,
+                     OrphanablePtr<ConnectivityStateWatcherInterface>(watcher));
+  EXPECT_TRUE(destroyed);
+  EXPECT_EQ(count, 1);
+  EXPECT_EQ(state, GRPC_CHANNEL_SHUTDOWN);
+}
+
 TEST(StateTracker, NotifyShutdownAtDestruction) {
   int count = 0;
   grpc_connectivity_state state = GRPC_CHANNEL_IDLE;
