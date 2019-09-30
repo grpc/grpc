@@ -45,7 +45,10 @@ const int kPaginationLimit = 100;
 
 void ChannelzRegistry::Init() { g_channelz_registry = New<ChannelzRegistry>(); }
 
-void ChannelzRegistry::Shutdown() { Delete(g_channelz_registry); g_channelz_registry = nullptr; }
+void ChannelzRegistry::Shutdown() {
+  Delete(g_channelz_registry);
+  g_channelz_registry = nullptr;
+}
 
 ChannelzRegistry* ChannelzRegistry::Default() {
   GPR_DEBUG_ASSERT(g_channelz_registry != nullptr);
