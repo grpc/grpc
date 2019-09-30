@@ -28,11 +28,11 @@
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
 #include <grpc/support/time.h>
+#include <cstdint>
 
 #include "src/core/lib/debug/stats.h"
 #include "src/core/lib/gpr/spinlock.h"
 #include "src/core/lib/gpr/string.h"
-#include "src/core/lib/gpr/tls.h"
 #include "src/core/lib/gprpp/atomic.h"
 #include "src/core/lib/iomgr/executor.h"
 #include "src/core/lib/iomgr/pollset.h"
@@ -53,8 +53,8 @@ namespace {
 // with a cq cache will go into that cache, and
 // will only be returned on the thread that initialized the cache.
 // NOTE: Only one event will ever be cached.
-GPR_TLS_DECL(g_cached_event);
-GPR_TLS_DECL(g_cached_cq);
+thread_local grpc_cq_completion* g_cached_event;
+thread_local grpc_completion_queue* g_cached_cq;
 
 typedef struct {
   grpc_pollset_worker** worker;
@@ -423,24 +423,22 @@ grpc_core::TraceFlag grpc_cq_pluck_trace(false, "queue_pluck");
 static void on_pollset_shutdown_done(void* cq, grpc_error* error);
 
 void grpc_cq_global_init() {
-  gpr_tls_init(&g_cached_event);
-  gpr_tls_init(&g_cached_cq);
+  g_cached_event = nullptr;
+  g_cached_cq = nullptr;
 }
 
 void grpc_completion_queue_thread_local_cache_init(grpc_completion_queue* cq) {
-  if ((grpc_completion_queue*)gpr_tls_get(&g_cached_cq) == nullptr) {
-    gpr_tls_set(&g_cached_event, (intptr_t)0);
-    gpr_tls_set(&g_cached_cq, (intptr_t)cq);
+  if (g_cached_cq == nullptr) {
+    g_cached_event = nullptr;
+    g_cached_cq = cq;
   }
 }
 
 int grpc_completion_queue_thread_local_cache_flush(grpc_completion_queue* cq,
                                                    void** tag, int* ok) {
-  grpc_cq_completion* storage =
-      (grpc_cq_completion*)gpr_tls_get(&g_cached_event);
+  grpc_cq_completion* storage = g_cached_event;
   int ret = 0;
-  if (storage != nullptr &&
-      (grpc_completion_queue*)gpr_tls_get(&g_cached_cq) == cq) {
+  if (storage != nullptr && g_cached_cq == cq) {
     *tag = storage->tag;
     grpc_core::ExecCtx exec_ctx;
     *ok = (storage->next & static_cast<uintptr_t>(1)) == 1;
@@ -455,8 +453,8 @@ int grpc_completion_queue_thread_local_cache_flush(grpc_completion_queue* cq,
       GRPC_CQ_INTERNAL_UNREF(cq, "shutting_down");
     }
   }
-  gpr_tls_set(&g_cached_event, (intptr_t)0);
-  gpr_tls_set(&g_cached_cq, (intptr_t)0);
+  g_cached_event = nullptr;
+  g_cached_cq = nullptr;
 
   return ret;
 }
@@ -695,9 +693,8 @@ static void cq_end_op_for_next(
 
   cq_check_tag(cq, tag, true); /* Used in debug builds only */
 
-  if ((grpc_completion_queue*)gpr_tls_get(&g_cached_cq) == cq &&
-      (grpc_cq_completion*)gpr_tls_get(&g_cached_event) == nullptr) {
-    gpr_tls_set(&g_cached_event, (intptr_t)storage);
+  if (g_cached_cq == cq && g_cached_event == nullptr) {
+    g_cached_event = storage;
   } else {
     /* Add the completion to the queue */
     bool is_first = cqd->queue.Push(storage);

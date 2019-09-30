@@ -26,9 +26,9 @@
 #include <grpc/support/cpu.h>
 #include <grpc/support/log.h>
 #include <grpc/support/sync.h>
+#include <cstddef>
 
 #include "src/core/lib/debug/stats.h"
-#include "src/core/lib/gpr/tls.h"
 #include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/gprpp/memory.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
@@ -53,7 +53,7 @@
 namespace grpc_core {
 namespace {
 
-GPR_TLS_DECL(g_this_thread_state);
+thread_local intptr_t g_this_thread_state;
 
 Executor* executors[static_cast<size_t>(ExecutorType::NUM_EXECUTORS)];
 
@@ -164,7 +164,7 @@ void Executor::SetThreading(bool threading) {
 
     GPR_ASSERT(num_threads_ == 0);
     gpr_atm_rel_store(&num_threads_, 1);
-    gpr_tls_init(&g_this_thread_state);
+    g_this_thread_state = 0;
     thd_state_ = static_cast<ThreadState*>(
         gpr_zalloc(sizeof(ThreadState) * max_threads_));
 
@@ -213,7 +213,6 @@ void Executor::SetThreading(bool threading) {
     }
 
     gpr_free(thd_state_);
-    gpr_tls_destroy(&g_this_thread_state);
 
     // grpc_iomgr_shutdown_background_closure() will close all the registered
     // fds in the background poller, and wait for all pending closures to
@@ -231,7 +230,7 @@ void Executor::Shutdown() { SetThreading(false); }
 
 void Executor::ThreadMain(void* arg) {
   ThreadState* ts = static_cast<ThreadState*>(arg);
-  gpr_tls_set(&g_this_thread_state, reinterpret_cast<intptr_t>(ts));
+  g_this_thread_state = reinterpret_cast<intptr_t>(ts);
 
   grpc_core::ExecCtx exec_ctx(GRPC_EXEC_CTX_FLAG_IS_INTERNAL_THREAD);
 
@@ -264,6 +263,7 @@ void Executor::ThreadMain(void* arg) {
     grpc_core::ExecCtx::Get()->InvalidateNow();
     subtract_depth = RunClosures(ts->name, closures);
   }
+  g_this_thread_state = 0;
 }
 
 void Executor::Enqueue(grpc_closure* closure, grpc_error* error,
@@ -298,7 +298,7 @@ void Executor::Enqueue(grpc_closure* closure, grpc_error* error,
       return;
     }
 
-    ThreadState* ts = (ThreadState*)gpr_tls_get(&g_this_thread_state);
+    ThreadState* ts = (ThreadState*)(g_this_thread_state);
     if (ts == nullptr) {
       ts = &thd_state_[GPR_HASH_POINTER(grpc_core::ExecCtx::Get(),
                                         cur_thread_count)];
