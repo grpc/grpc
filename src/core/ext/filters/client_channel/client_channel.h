@@ -46,16 +46,20 @@ grpc_connectivity_state grpc_client_channel_check_connectivity_state(
 int grpc_client_channel_num_external_connectivity_watchers(
     grpc_channel_element* elem);
 
-// TODO(roth): This function is used both when handling external
-// connectivity watchers and for LB policies like grpclb and xds that
-// contain nested channels.  In the latter case, we ideally want
-// something closer to the normal connectivity state tracker API.
-// When we have time, consider refactoring this somehow to allow each
-// use-case to be handled more cleanly.
+// Used when starting a watch from outside of C-core.
 void grpc_client_channel_watch_connectivity_state(
     grpc_channel_element* elem, grpc_polling_entity pollent,
     grpc_connectivity_state* state, grpc_closure* on_complete,
     grpc_closure* watcher_timer_init);
+
+// Used when starting watches from internal code (e.g., xds).
+void grpc_client_channel_start_connectivity_watch(
+    grpc_channel_element* elem, grpc_connectivity_state initial_state,
+    grpc_core::OrphanablePtr<grpc_core::AsyncConnectivityStateWatcherInterface>
+        watcher);
+void grpc_client_channel_stop_connectivity_watch(
+    grpc_channel_element* elem,
+    grpc_core::AsyncConnectivityStateWatcherInterface* watcher);
 
 /* Debug helper: pull the subchannel call from a call stack element */
 grpc_core::RefCountedPtr<grpc_core::SubchannelCall>
