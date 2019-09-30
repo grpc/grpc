@@ -442,6 +442,7 @@ grpc_cc_test(
         "//test/core/util:test_lb_policies",
         "//test/cpp/util:test_util",
     ],
+    tags = ["no_windows"],  # TODO(jtattermusch): fix test on windows
 )
 
 grpc_cc_test(
@@ -482,6 +483,7 @@ grpc_cc_test(
         "//test/core/util:grpc_test_util",
         "//test/cpp/util:test_util",
     ],
+    tags = ["no_windows"],  # TODO(jtattermusch): fix test on windows
 )
 
 grpc_cc_test(
@@ -505,6 +507,7 @@ grpc_cc_test(
         "//test/core/util:grpc_test_util",
         "//test/cpp/util:test_util",
     ],
+    tags = ["no_windows"],  # TODO(jtattermusch): fix test on windows
 )
 
 grpc_cc_test(
@@ -621,7 +624,7 @@ grpc_cc_test(
         "//src/proto/grpc/testing:echo_proto",
         "//test/cpp/util:test_util",
     ],
-    tags = ["no_test_ios"],
+    tags = ["no_test_ios", "no_windows"],
 )
 
 grpc_cc_test(
@@ -687,6 +690,7 @@ grpc_cc_test(
     external_deps = [
         "gtest",
     ],
+    tags = ["no_windows"],  # TODO(jtattermusch): fix test on windows
     deps = [
         "//:gpr",
         "//:grpc",
