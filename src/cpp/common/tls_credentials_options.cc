@@ -19,6 +19,8 @@
 #include <grpcpp/security/tls_credentials_options.h>
 #include "src/core/lib/security/credentials/tls/grpc_tls_credentials_options.h"
 
+#include <grpc/support/alloc.h>
+
 #include "src/cpp/common/tls_credentials_options_util.h"
 
 namespace grpc_impl {

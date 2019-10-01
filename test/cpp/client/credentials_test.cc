@@ -314,12 +314,16 @@ typedef class ::grpc_impl::experimental::TlsCredentialReloadConfig
     TlsCredentialReloadConfig;
 
 TEST_F(CredentialsTest, TlsCredentialReloadArgCallback) {
-  grpc_tls_credential_reload_arg c_arg;
-  c_arg.cb = tls_credential_reload_callback;
-  TlsCredentialReloadArg arg = TlsCredentialReloadArg(&c_arg);
-  arg.set_status(GRPC_SSL_CERTIFICATE_CONFIG_RELOAD_NEW);
-  arg.OnCredentialReloadDoneCallback();
-  EXPECT_EQ(arg.status(), GRPC_SSL_CERTIFICATE_CONFIG_RELOAD_UNCHANGED);
+  grpc_tls_credential_reload_arg* c_arg = new grpc_tls_credential_reload_arg;
+  c_arg->cb = tls_credential_reload_callback;
+  TlsCredentialReloadArg* arg = new TlsCredentialReloadArg(c_arg);
+  arg->set_status(GRPC_SSL_CERTIFICATE_CONFIG_RELOAD_NEW);
+  arg->OnCredentialReloadDoneCallback();
+  EXPECT_EQ(arg->status(), GRPC_SSL_CERTIFICATE_CONFIG_RELOAD_UNCHANGED);
+
+  // Cleanup.
+  delete arg;
+  delete c_arg;
 }
 
 TEST_F(CredentialsTest, TlsCredentialReloadConfigSchedule) {
@@ -427,35 +431,39 @@ typedef class ::grpc_impl::experimental::TlsServerAuthorizationCheckConfig
     TlsServerAuthorizationCheckConfig;
 
 TEST_F(CredentialsTest, TlsServerAuthorizationCheckArgCallback) {
-  grpc_tls_server_authorization_check_arg c_arg;
-  c_arg.cb = tls_server_authorization_check_callback;
-  TlsServerAuthorizationCheckArg arg(&c_arg);
-  arg.set_cb_user_data(nullptr);
-  arg.set_success(0);
-  arg.set_target_name("target_name");
-  arg.set_peer_cert("peer_cert");
-  arg.set_status(GRPC_STATUS_UNAUTHENTICATED);
-  arg.set_error_details("error_details");
-  const char* target_name_before_callback = c_arg.target_name;
-  const char* peer_cert_before_callback = c_arg.peer_cert;
-  const char* error_details_before_callback = c_arg.error_details;
+  grpc_tls_server_authorization_check_arg* c_arg =
+      new grpc_tls_server_authorization_check_arg;
+  c_arg->cb = tls_server_authorization_check_callback;
+  TlsServerAuthorizationCheckArg* arg =
+      new TlsServerAuthorizationCheckArg(c_arg);
+  arg->set_cb_user_data(nullptr);
+  arg->set_success(0);
+  arg->set_target_name("target_name");
+  arg->set_peer_cert("peer_cert");
+  arg->set_status(GRPC_STATUS_UNAUTHENTICATED);
+  arg->set_error_details("error_details");
+  const char* target_name_before_callback = c_arg->target_name;
+  const char* peer_cert_before_callback = c_arg->peer_cert;
+  const char* error_details_before_callback = c_arg->error_details;
 
-  arg.OnServerAuthorizationCheckDoneCallback();
-  EXPECT_STREQ(static_cast<char*>(arg.cb_user_data()), "cb_user_data");
-  gpr_free(arg.cb_user_data());
-  EXPECT_EQ(arg.success(), 1);
-  EXPECT_STREQ(arg.target_name().c_str(), "callback_target_name");
-  EXPECT_STREQ(arg.peer_cert().c_str(), "callback_peer_cert");
-  EXPECT_EQ(arg.status(), GRPC_STATUS_OK);
-  EXPECT_STREQ(arg.error_details().c_str(), "callback_error_details");
+  arg->OnServerAuthorizationCheckDoneCallback();
+  EXPECT_STREQ(static_cast<char*>(arg->cb_user_data()), "cb_user_data");
+  gpr_free(arg->cb_user_data());
+  EXPECT_EQ(arg->success(), 1);
+  EXPECT_STREQ(arg->target_name().c_str(), "callback_target_name");
+  EXPECT_STREQ(arg->peer_cert().c_str(), "callback_peer_cert");
+  EXPECT_EQ(arg->status(), GRPC_STATUS_OK);
+  EXPECT_STREQ(arg->error_details().c_str(), "callback_error_details");
 
   // Cleanup.
   gpr_free(const_cast<char*>(target_name_before_callback));
   gpr_free(const_cast<char*>(peer_cert_before_callback));
   gpr_free(const_cast<char*>(error_details_before_callback));
-  gpr_free(const_cast<char*>(c_arg.target_name));
-  gpr_free(const_cast<char*>(c_arg.peer_cert));
-  gpr_free(const_cast<char*>(c_arg.error_details));
+  gpr_free(const_cast<char*>(c_arg->target_name));
+  gpr_free(const_cast<char*>(c_arg->peer_cert));
+  gpr_free(const_cast<char*>(c_arg->error_details));
+  delete arg;
+  delete c_arg;
 }
 
 TEST_F(CredentialsTest, TlsServerAuthorizationCheckConfigSchedule) {
@@ -652,6 +660,62 @@ TEST_F(CredentialsTest, LoadSpiffeChannelCredentials) {
   std::shared_ptr<grpc_impl::ChannelCredentials> channel_credentials =
       grpc::experimental::TlsCredentials(options);
   GPR_ASSERT(channel_credentials != nullptr);
+}
+
+TEST_F(CredentialsTest, TlsCredentialReloadConfigErrorMessages) {
+  std::shared_ptr<TlsCredentialReloadConfig> config(
+      new TlsCredentialReloadConfig(nullptr));
+  grpc_tls_credential_reload_arg* c_arg = new grpc_tls_credential_reload_arg;
+  TlsCredentialReloadArg* arg = new TlsCredentialReloadArg(c_arg);
+  int schedule_output = config->Schedule(arg);
+
+  EXPECT_EQ(schedule_output, 1);
+  EXPECT_EQ(arg->status(), GRPC_SSL_CERTIFICATE_CONFIG_RELOAD_FAIL);
+  EXPECT_STREQ(arg->error_details().c_str(),
+               "the interface of the credential reload config is nullptr");
+  gpr_free(const_cast<char*>(c_arg->error_details));
+
+  arg->set_status(GRPC_SSL_CERTIFICATE_CONFIG_RELOAD_UNCHANGED);
+  config->Cancel(arg);
+  EXPECT_EQ(arg->status(), GRPC_SSL_CERTIFICATE_CONFIG_RELOAD_FAIL);
+  EXPECT_STREQ(arg->error_details().c_str(),
+               "the interface of the credential reload config is nullptr");
+
+  // Cleanup.
+  gpr_free(const_cast<char*>(c_arg->error_details));
+  delete arg;
+  delete c_arg;
+  gpr_free(config->c_config());
+}
+
+TEST_F(CredentialsTest, TlsServerAuthorizationCheckConfigErrorMessages) {
+  std::shared_ptr<TlsServerAuthorizationCheckConfig> config(
+      new TlsServerAuthorizationCheckConfig(nullptr));
+  grpc_tls_server_authorization_check_arg* c_arg =
+      new grpc_tls_server_authorization_check_arg;
+  TlsServerAuthorizationCheckArg* arg =
+      new TlsServerAuthorizationCheckArg(c_arg);
+  int schedule_output = config->Schedule(arg);
+
+  EXPECT_EQ(schedule_output, 1);
+  EXPECT_EQ(arg->status(), GRPC_STATUS_NOT_FOUND);
+  EXPECT_STREQ(
+      arg->error_details().c_str(),
+      "the interface of the server authorization check config is nullptr");
+  gpr_free(const_cast<char*>(c_arg->error_details));
+
+  arg->set_status(GRPC_STATUS_OK);
+  config->Cancel(arg);
+  EXPECT_EQ(arg->status(), GRPC_STATUS_NOT_FOUND);
+  EXPECT_STREQ(
+      arg->error_details().c_str(),
+      "the interface of the server authorization check config is nullptr");
+
+  // Cleanup.
+  gpr_free(const_cast<char*>(c_arg->error_details));
+  delete arg;
+  delete c_arg;
+  gpr_free(config->c_config());
 }
 
 }  // namespace testing

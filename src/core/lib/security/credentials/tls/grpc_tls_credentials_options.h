@@ -77,9 +77,14 @@ struct grpc_tls_credential_reload_config
   int Schedule(grpc_tls_credential_reload_arg* arg) const {
     if (schedule_ == nullptr) {
       gpr_log(GPR_ERROR, "schedule API is nullptr");
+      if (arg != nullptr) {
+        arg->status = GRPC_SSL_CERTIFICATE_CONFIG_RELOAD_FAIL;
+        arg->error_details =
+            gpr_strdup("schedule API in credential reload config is nullptr");
+      }
       return 1;
     }
-    if (arg != nullptr && context_ != nullptr) {
+    if (arg != nullptr) {
       arg->config = const_cast<grpc_tls_credential_reload_config*>(this);
     }
     return schedule_(config_user_data_, arg);
@@ -87,9 +92,14 @@ struct grpc_tls_credential_reload_config
   void Cancel(grpc_tls_credential_reload_arg* arg) const {
     if (cancel_ == nullptr) {
       gpr_log(GPR_ERROR, "cancel API is nullptr.");
+      if (arg != nullptr) {
+        arg->status = GRPC_SSL_CERTIFICATE_CONFIG_RELOAD_FAIL;
+        arg->error_details =
+            gpr_strdup("cancel API in credential reload config is nullptr");
+      }
       return;
     }
-    if (arg != nullptr && context_ != nullptr) {
+    if (arg != nullptr) {
       arg->config = const_cast<grpc_tls_credential_reload_config*>(this);
     }
     cancel_(config_user_data_, arg);
@@ -143,6 +153,11 @@ struct grpc_tls_server_authorization_check_config
   int Schedule(grpc_tls_server_authorization_check_arg* arg) const {
     if (schedule_ == nullptr) {
       gpr_log(GPR_ERROR, "schedule API is nullptr");
+      if (arg != nullptr) {
+        arg->status = GRPC_STATUS_NOT_FOUND;
+        arg->error_details = gpr_strdup(
+            "schedule API in server authorization check config is nullptr");
+      }
       return 1;
     }
     if (arg != nullptr && context_ != nullptr) {
@@ -154,9 +169,14 @@ struct grpc_tls_server_authorization_check_config
   void Cancel(grpc_tls_server_authorization_check_arg* arg) const {
     if (cancel_ == nullptr) {
       gpr_log(GPR_ERROR, "cancel API is nullptr.");
+      if (arg != nullptr) {
+        arg->status = GRPC_STATUS_NOT_FOUND;
+        arg->error_details = gpr_strdup(
+            "schedule API in server authorization check config is nullptr");
+      }
       return;
     }
-    if (arg != nullptr && context_ != nullptr) {
+    if (arg != nullptr) {
       arg->config =
           const_cast<grpc_tls_server_authorization_check_config*>(this);
     }

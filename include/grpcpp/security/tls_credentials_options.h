@@ -139,6 +139,11 @@ class TlsCredentialReloadConfig {
   int Schedule(TlsCredentialReloadArg* arg) const {
     if (credential_reload_interface_ == nullptr) {
       gpr_log(GPR_ERROR, "credential reload interface is nullptr");
+      if (arg != nullptr) {
+        arg->set_status(GRPC_SSL_CERTIFICATE_CONFIG_RELOAD_FAIL);
+        arg->set_error_details(
+            "the interface of the credential reload config is nullptr");
+      }
       return 1;
     }
     return credential_reload_interface_->Schedule(arg);
@@ -147,6 +152,11 @@ class TlsCredentialReloadConfig {
   void Cancel(TlsCredentialReloadArg* arg) const {
     if (credential_reload_interface_ == nullptr) {
       gpr_log(GPR_ERROR, "credential reload interface is nullptr");
+      if (arg != nullptr) {
+        arg->set_status(GRPC_SSL_CERTIFICATE_CONFIG_RELOAD_FAIL);
+        arg->set_error_details(
+            "the interface of the credential reload config is nullptr");
+      }
       return;
     }
     credential_reload_interface_->Cancel(arg);
@@ -233,6 +243,12 @@ class TlsServerAuthorizationCheckConfig {
   int Schedule(TlsServerAuthorizationCheckArg* arg) const {
     if (server_authorization_check_interface_ == nullptr) {
       gpr_log(GPR_ERROR, "server authorization check interface is nullptr");
+      if (arg != nullptr) {
+        arg->set_status(GRPC_STATUS_NOT_FOUND);
+        arg->set_error_details(
+            "the interface of the server authorization check config is "
+            "nullptr");
+      }
       return 1;
     }
     return server_authorization_check_interface_->Schedule(arg);
@@ -241,12 +257,18 @@ class TlsServerAuthorizationCheckConfig {
   void Cancel(TlsServerAuthorizationCheckArg* arg) const {
     if (server_authorization_check_interface_ == nullptr) {
       gpr_log(GPR_ERROR, "server authorization check interface is nullptr");
+      if (arg != nullptr) {
+        arg->set_status(GRPC_STATUS_NOT_FOUND);
+        arg->set_error_details(
+            "the interface of the server authorization check config is "
+            "nullptr");
+      }
       return;
     }
     server_authorization_check_interface_->Cancel(arg);
   }
 
-  /** Creates C struct for the server authorization check config. **/
+  /** Returns C struct for the server authorization check config. **/
   grpc_tls_server_authorization_check_config* c_config() const {
     return c_config_;
   }
