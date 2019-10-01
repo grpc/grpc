@@ -39,10 +39,11 @@ class FirstServiceServicer(services_pb2_grpc.FirstServiceServicer):
                 try:
                     context.abort(grpc.StatusCode.PERMISSION_DENIED,
                                   "Denying permission to test abort.")
-                except Exception as e:
+                except Exception as e:  # pylint: disable=broad-except
                     self._abort_response = _application_common.ABORT_SUCCESS_RESPONSE
                 else:
                     self._abort_status = _application_common.ABORT_FAILURE_RESPONSE
+            return None  # NOTE: For the linter.
         elif request == _application_common.ABORT_SUCCESS_QUERY:
             with self._abort_lock:
                 return self._abort_response
