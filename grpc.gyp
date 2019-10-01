@@ -1643,16 +1643,6 @@
       ],
     },
     {
-      'target_name': 'grpc++_test',
-      'type': 'static_library',
-      'dependencies': [
-        'grpc++',
-        'grpc',
-      ],
-      'sources': [
-      ],
-    },
-    {
       'target_name': 'grpc++_test_config',
       'type': 'static_library',
       'dependencies': [
