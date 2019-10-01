@@ -1151,11 +1151,11 @@ void ChannelData::ExternalConnectivityWatcher::Notify(
                                    MemoryOrder::RELAXED)) {
     return;  // Already done.
   }
+  // Remove external watcher.
+  chand_->RemoveExternalConnectivityWatcher(on_complete_, /*cancel=*/false);
   // Report new state to the user.
   *state_ = state;
   GRPC_CLOSURE_SCHED(on_complete_, GRPC_ERROR_NONE);
-  // Remove external watcher.
-  chand_->RemoveExternalConnectivityWatcher(on_complete_, /*cancel=*/false);
   // Hop back into the combiner to clean up.
   // Not needed in state SHUTDOWN, because the tracker will
   // automatically remove all watchers in that case.
