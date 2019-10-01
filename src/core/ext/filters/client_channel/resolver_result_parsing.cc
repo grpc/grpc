@@ -53,9 +53,8 @@ size_t ClientChannelServiceConfigParser::ParserIndex() {
 }
 
 void ClientChannelServiceConfigParser::Register() {
-  g_client_channel_service_config_parser_index =
-      ServiceConfig::RegisterParser(UniquePtr<ServiceConfig::Parser>(
-          New<ClientChannelServiceConfigParser>()));
+  g_client_channel_service_config_parser_index = ServiceConfig::RegisterParser(
+      MakeUnique<ClientChannelServiceConfigParser>());
 }
 
 namespace {
@@ -439,10 +438,9 @@ ClientChannelServiceConfigParser::ParseGlobalParams(const grpc_json* json,
   *error = GRPC_ERROR_CREATE_FROM_VECTOR("Client channel global parser",
                                          &error_list);
   if (*error == GRPC_ERROR_NONE) {
-    return UniquePtr<ServiceConfig::ParsedConfig>(
-        New<ClientChannelGlobalParsedConfig>(
-            std::move(parsed_lb_config), std::move(lb_policy_name),
-            retry_throttling, health_check_service_name));
+    return MakeUnique<ClientChannelGlobalParsedConfig>(
+        std::move(parsed_lb_config), std::move(lb_policy_name),
+        retry_throttling, health_check_service_name);
   }
   return nullptr;
 }
@@ -493,9 +491,8 @@ ClientChannelServiceConfigParser::ParsePerMethodParams(const grpc_json* json,
   }
   *error = GRPC_ERROR_CREATE_FROM_VECTOR("Client channel parser", &error_list);
   if (*error == GRPC_ERROR_NONE) {
-    return UniquePtr<ServiceConfig::ParsedConfig>(
-        New<ClientChannelMethodParsedConfig>(timeout, wait_for_ready,
-                                             std::move(retry_policy)));
+    return MakeUnique<ClientChannelMethodParsedConfig>(timeout, wait_for_ready,
+                                                       std::move(retry_policy));
   }
   return nullptr;
 }

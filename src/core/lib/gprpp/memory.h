@@ -33,10 +33,8 @@
 // Should not be used in new code.
 // TODO(juanlishen): Remove this macro, and instead comment that the public dtor
 // should not be used directly.
-#define GRPC_ALLOW_CLASS_TO_USE_NON_PUBLIC_DELETE         \
-  template <typename _Delete_T, bool _Delete_can_be_null> \
-  friend void ::grpc_core::Delete(_Delete_T*);            \
-  template <typename _Delete_T>                           \
+#define GRPC_ALLOW_CLASS_TO_USE_NON_PUBLIC_DELETE \
+  template <typename _Delete_T>                   \
   friend void ::grpc_core::Delete(_Delete_T*);
 
 // Add this to a class that want to use New(), but has a private or
@@ -58,33 +56,28 @@ inline T* New(Args&&... args) {
 }
 
 // Alternative to delete, since we cannot use it (for fear of libstdc++)
-// We cannot add a default value for can_be_null, because they are used as
-// as friend template methods where we cannot define a default value.
-// Instead we simply define two variants, one with and one without the boolean
-// argument.
-template <typename T, bool can_be_null>
+template <typename T>
 inline void Delete(T* p) {
-  GPR_DEBUG_ASSERT(can_be_null || p != nullptr);
-  if (can_be_null && p == nullptr) return;
+  if (p == nullptr) return;
   p->~T();
   gpr_free(p);
 }
-template <typename T>
-inline void Delete(T* p) {
-  Delete<T, /*can_be_null=*/true>(p);
-}
 
-template <typename T>
 class DefaultDelete {
  public:
+  template <typename T>
   void operator()(T* p) {
-    // std::unique_ptr is gauranteed not to call the deleter
-    // if the pointer is nullptr.
-    Delete<T, /*can_be_null=*/false>(p);
+    // Delete() checks whether the value is null, but std::unique_ptr<> is
+    // gauranteed not to call the deleter if the pointer is nullptr
+    // (i.e., it already does this check for us), and we don't want to
+    // do the check twice.  So, instead of calling Delete() here, we
+    // manually call the object's dtor and free it.
+    p->~T();
+    gpr_free(p);
   }
 };
 
-template <typename T, typename Deleter = DefaultDelete<T>>
+template <typename T, typename Deleter = DefaultDelete>
 using UniquePtr = std::unique_ptr<T, Deleter>;
 
 template <typename T, typename... Args>

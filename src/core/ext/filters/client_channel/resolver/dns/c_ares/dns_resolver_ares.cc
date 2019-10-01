@@ -436,7 +436,7 @@ class AresDnsResolverFactory : public ResolverFactory {
   bool IsValidUri(const grpc_uri* uri) const override { return true; }
 
   OrphanablePtr<Resolver> CreateResolver(ResolverArgs args) const override {
-    return OrphanablePtr<Resolver>(New<AresDnsResolver>(std::move(args)));
+    return MakeOrphanable<AresDnsResolver>(std::move(args));
   }
 
   const char* scheme() const override { return "dns"; }
@@ -494,8 +494,7 @@ void grpc_resolver_dns_ares_init() {
     }
     grpc_set_resolver_impl(&ares_resolver);
     grpc_core::ResolverRegistry::Builder::RegisterResolverFactory(
-        grpc_core::UniquePtr<grpc_core::ResolverFactory>(
-            grpc_core::New<grpc_core::AresDnsResolverFactory>()));
+        grpc_core::MakeUnique<grpc_core::AresDnsResolverFactory>());
   } else {
     g_use_ares_dns_resolver = false;
   }

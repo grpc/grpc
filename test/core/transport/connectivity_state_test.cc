@@ -73,8 +73,7 @@ TEST(StateTracker, NotificationUponAddingWatcher) {
   grpc_connectivity_state state = GRPC_CHANNEL_IDLE;
   ConnectivityStateTracker tracker("xxx", GRPC_CHANNEL_CONNECTING);
   tracker.AddWatcher(GRPC_CHANNEL_IDLE,
-                     OrphanablePtr<ConnectivityStateWatcherInterface>(
-                         New<Watcher>(&count, &state)));
+                     MakeOrphanable<Watcher>(&count, &state));
   EXPECT_EQ(count, 1);
   EXPECT_EQ(state, GRPC_CHANNEL_CONNECTING);
 }
@@ -84,8 +83,7 @@ TEST(StateTracker, NotificationUponStateChange) {
   grpc_connectivity_state state = GRPC_CHANNEL_IDLE;
   ConnectivityStateTracker tracker("xxx", GRPC_CHANNEL_IDLE);
   tracker.AddWatcher(GRPC_CHANNEL_IDLE,
-                     OrphanablePtr<ConnectivityStateWatcherInterface>(
-                         New<Watcher>(&count, &state)));
+                     MakeOrphanable<Watcher>(&count, &state));
   EXPECT_EQ(count, 0);
   EXPECT_EQ(state, GRPC_CHANNEL_IDLE);
   tracker.SetState(GRPC_CHANNEL_CONNECTING, "whee");
@@ -153,8 +151,7 @@ TEST(StateTracker, NotifyShutdownAtDestruction) {
   {
     ConnectivityStateTracker tracker("xxx", GRPC_CHANNEL_IDLE);
     tracker.AddWatcher(GRPC_CHANNEL_IDLE,
-                       OrphanablePtr<ConnectivityStateWatcherInterface>(
-                           New<Watcher>(&count, &state)));
+                       MakeOrphanable<Watcher>(&count, &state));
     // No initial notification, since we started the watch from the
     // current state.
     EXPECT_EQ(count, 0);
@@ -171,8 +168,7 @@ TEST(StateTracker, DoNotNotifyShutdownAtDestructionIfAlreadyInShutdown) {
   {
     ConnectivityStateTracker tracker("xxx", GRPC_CHANNEL_SHUTDOWN);
     tracker.AddWatcher(GRPC_CHANNEL_SHUTDOWN,
-                       OrphanablePtr<ConnectivityStateWatcherInterface>(
-                           New<Watcher>(&count, &state)));
+                       MakeOrphanable<Watcher>(&count, &state));
     // No initial notification, since we started the watch from the
     // current state.
     EXPECT_EQ(count, 0);
