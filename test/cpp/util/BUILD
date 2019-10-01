@@ -188,7 +188,8 @@ grpc_cc_test(
         "gtest",
     ],
     tags = ["nomsan",  # death tests seem to be incompatible with msan
-            "no_test_ios"
+            "no_test_ios",
+            "no_windows",
     ],
     deps = [
         ":grpc_cli_libs",

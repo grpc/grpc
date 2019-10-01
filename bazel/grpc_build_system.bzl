@@ -184,17 +184,17 @@ def grpc_cc_test(name, srcs = [], deps = [], external_deps = [], args = [], data
         "exec_compatible_with": exec_compatible_with,
     }
     if uses_polling:
-        # Only run targets with pollers for non-MSVC
-        # TODO(yfen): Enable MSVC for poller-enabled targets without pollers
+        # the vanilla version of the test should run on platforms that only 
+        # support a single poller
         native.cc_test(
             name = name,
             testonly = True,
-            tags = [
-                "manual",
-                "no_windows",
-            ],
+            tags = (tags + [
+                "no_linux",  # linux supports multiple pollers
+            ]),
             **args
         )
+        # on linux we run the same test multiple times, once for each poller
         for poller in POLLERS:
             native.sh_test(
                 name = name + "@poller=" + poller,
@@ -208,10 +208,11 @@ def grpc_cc_test(name, srcs = [], deps = [], external_deps = [], args = [], data
                     poller,
                     "$(location %s)" % name,
                 ] + args["args"],
-                tags = (tags + ["no_windows"]),
+                tags = (tags + ["no_windows", "no_mac"]),
                 exec_compatible_with = exec_compatible_with,
             )
     else:
+        # the test behavior doesn't depend on polling, just generate the test
         native.cc_test(name = name, tags = tags, **args)
     ios_cc_test(
         name = name,

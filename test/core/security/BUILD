@@ -30,6 +30,7 @@ grpc_fuzzer(
         "//:grpc",
         "//test/core/util:grpc_test_util",
     ],
+    tags = ["no_windows"],
 )
 
 grpc_fuzzer(
@@ -43,6 +44,7 @@ grpc_fuzzer(
         "//test/core/end2end:ssl_test_data",
         "//test/core/util:grpc_test_util",
     ],
+    tags = ["no_windows"],
 )
 
 grpc_cc_library(
