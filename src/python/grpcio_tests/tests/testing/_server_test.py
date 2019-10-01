@@ -168,12 +168,12 @@ class FirstServiceServicerTest(unittest.TestCase):
         rpc = self._real_time_server.invoke_unary_unary(
             _application_testing_common.FIRST_SERVICE_UNUN, (),
             _application_common.ABORT_REQUEST, None)
-        response, trailing_metadata, code, details = rpc.termination()
+        _, _, code, _ = rpc.termination()
         self.assertIs(code, grpc.StatusCode.PERMISSION_DENIED)
         rpc = self._real_time_server.invoke_unary_unary(
             _application_testing_common.FIRST_SERVICE_UNUN, (),
             _application_common.ABORT_SUCCESS_QUERY, None)
-        response, trailing_metadata, code, details = rpc.termination()
+        response, _, code, _ = rpc.termination()
         self.assertEqual(_application_common.ABORT_SUCCESS_RESPONSE, response)
         self.assertIs(code, grpc.StatusCode.OK)
 

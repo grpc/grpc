@@ -32,7 +32,7 @@ class FirstServiceServicer(services_pb2_grpc.FirstServiceServicer):
         self._abort_response = _application_common.ABORT_NO_STATUS_RESPONSE
 
     def UnUn(self, request, context):
-        if _application_common.UNARY_UNARY_REQUEST == request:
+        if request == _application_common.UNARY_UNARY_REQUEST:
             return _application_common.UNARY_UNARY_RESPONSE
         elif request == _application_common.ABORT_REQUEST:
             with self._abort_lock:
