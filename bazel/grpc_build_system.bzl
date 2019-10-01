@@ -212,7 +212,7 @@ def grpc_cc_test(name, srcs = [], deps = [], external_deps = [], args = [], data
                 exec_compatible_with = exec_compatible_with,
             )
     else:
-        native.cc_test(tags = tags, **args)
+        native.cc_test(name = name, tags = tags, **args)
     ios_cc_test(
         name = name,
         tags = tags,

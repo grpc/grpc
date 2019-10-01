@@ -120,7 +120,11 @@ void ConnectivityStateTracker::AddWatcher(
     }
     watcher->Notify(current_state);
   }
-  watchers_.insert(MakePair(watcher.get(), std::move(watcher)));
+  // If we're in state SHUTDOWN, don't add the watcher, so that it will
+  // be orphaned immediately.
+  if (current_state != GRPC_CHANNEL_SHUTDOWN) {
+    watchers_.insert(MakePair(watcher.get(), std::move(watcher)));
+  }
 }
 
 void ConnectivityStateTracker::RemoveWatcher(

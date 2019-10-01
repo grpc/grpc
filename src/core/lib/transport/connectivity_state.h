@@ -76,6 +76,10 @@ class AsyncConnectivityStateWatcherInterface
 
 // Tracks connectivity state.  Maintains a list of watchers that are
 // notified whenever the state changes.
+//
+// Note that once the state becomes SHUTDOWN, watchers will be notified
+// and then automatically orphaned (i.e., RemoveWatcher() does not need
+// to be called).
 class ConnectivityStateTracker {
  public:
   ConnectivityStateTracker(const char* name,
