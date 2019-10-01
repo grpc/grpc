@@ -59,13 +59,15 @@ class Orphanable {
   virtual ~Orphanable() {}
 };
 
-template <typename T>
 class OrphanableDelete {
  public:
-  void operator()(T* p) { p->Orphan(); }
+  template <typename T>
+  void operator()(T* p) {
+    p->Orphan();
+  }
 };
 
-template <typename T, typename Deleter = OrphanableDelete<T>>
+template <typename T, typename Deleter = OrphanableDelete>
 using OrphanablePtr = std::unique_ptr<T, Deleter>;
 
 template <typename T, typename... Args>
