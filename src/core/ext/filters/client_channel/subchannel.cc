@@ -1071,8 +1071,7 @@ bool Subchannel::PublishTransportLocked() {
   }
   // Start watching connected subchannel.
   connected_subchannel_->StartWatch(
-      pollset_set_, OrphanablePtr<grpc_core::ConnectivityStateWatcherInterface>(
-                        New<ConnectedSubchannelStateWatcher>(this)));
+      pollset_set_, MakeOrphanable<ConnectedSubchannelStateWatcher>(this));
   // Report initial state.
   SetConnectivityStateLocked(GRPC_CHANNEL_READY);
   return true;

@@ -1151,11 +1151,11 @@ void ChannelData::ExternalConnectivityWatcher::Notify(
                                    MemoryOrder::RELAXED)) {
     return;  // Already done.
   }
+  // Remove external watcher.
+  chand_->RemoveExternalConnectivityWatcher(on_complete_, /*cancel=*/false);
   // Report new state to the user.
   *state_ = state;
   GRPC_CLOSURE_SCHED(on_complete_, GRPC_ERROR_NONE);
-  // Remove external watcher.
-  chand_->RemoveExternalConnectivityWatcher(on_complete_, /*cancel=*/false);
   // Hop back into the combiner to clean up.
   // Not needed in state SHUTDOWN, because the tracker will
   // automatically remove all watchers in that case.
@@ -1515,9 +1515,7 @@ void ChannelData::CreateResolvingLoadBalancingPolicyLocked() {
   // Instantiate resolving LB policy.
   LoadBalancingPolicy::Args lb_args;
   lb_args.combiner = combiner_;
-  lb_args.channel_control_helper =
-      UniquePtr<LoadBalancingPolicy::ChannelControlHelper>(
-          New<ClientChannelControlHelper>(this));
+  lb_args.channel_control_helper = MakeUnique<ClientChannelControlHelper>(this);
   lb_args.args = channel_args_;
   UniquePtr<char> target_uri(gpr_strdup(target_uri_.get()));
   resolving_lb_policy_.reset(New<ResolvingLoadBalancingPolicy>(
@@ -1791,9 +1789,8 @@ void ChannelData::StartTransportOpLocked(void* arg, grpc_error* ignored) {
                                      MemoryOrder::RELEASE);
       chand->UpdateStateAndPickerLocked(
           GRPC_CHANNEL_SHUTDOWN, "shutdown from API",
-          UniquePtr<LoadBalancingPolicy::SubchannelPicker>(
-              New<LoadBalancingPolicy::TransientFailurePicker>(
-                  GRPC_ERROR_REF(op->disconnect_with_error))));
+          MakeUnique<LoadBalancingPolicy::TransientFailurePicker>(
+              GRPC_ERROR_REF(op->disconnect_with_error)));
     }
   }
   GRPC_CHANNEL_STACK_UNREF(chand->owning_stack_, "start_transport_op");

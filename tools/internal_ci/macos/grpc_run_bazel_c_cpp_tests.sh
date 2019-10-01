@@ -1,4 +1,5 @@
-# Copyright 2018 gRPC authors.
+#!/usr/bin/env bash
+# Copyright 2019 The gRPC Authors
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -12,23 +13,18 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-load("//bazel:grpc_build_system.bzl", "grpc_cc_library", "grpc_cc_test", "grpc_cc_binary", "grpc_package")
+set -ex
 
-grpc_package(name = "test/core/debug")
+# change to grpc repo root
+cd $(dirname $0)/../../..
 
-licenses(["notice"])  # Apache v2
+./tools/run_tests/start_port_server.py
 
-grpc_cc_test(
-    name = "stats_test",
-    srcs = ["stats_test.cc"],
-    external_deps = [
-        "gtest",
-    ],
-    language = "C++",
-    deps = [
-        "//:gpr",
-        "//:grpc",
-        "//test/core/util:grpc_test_util",
-    ],
-    uses_polling = False,
-)
+# run all C/C++ tests
+# TODO(jtattermusch): try using Bazel RBE remote cache
+# TODO(jtattermusch): upload bazel test results to resultstore
+tools/bazel test $RUN_TESTS_FLAGS //test/...
+
+# kill port_server.py to prevent the build from hanging
+ps aux | grep port_server\\.py | awk '{print $2}' | xargs kill -9
+

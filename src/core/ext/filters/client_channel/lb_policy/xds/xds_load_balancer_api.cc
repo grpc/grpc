@@ -53,6 +53,42 @@ constexpr char kEndpointRequired[] = "endpointRequired";
 
 }  // namespace
 
+bool XdsPriorityListUpdate::operator==(
+    const XdsPriorityListUpdate& other) const {
+  if (priorities_.size() != other.priorities_.size()) return false;
+  for (size_t i = 0; i < priorities_.size(); ++i) {
+    if (priorities_[i].localities != other.priorities_[i].localities) {
+      return false;
+    }
+  }
+  return true;
+}
+
+void XdsPriorityListUpdate::Add(
+    XdsPriorityListUpdate::LocalityMap::Locality locality) {
+  // Pad the missing priorities in case the localities are not ordered by
+  // priority.
+  // TODO(juanlishen): Implement InlinedVector::resize() and use that instead.
+  while (!Contains(locality.priority)) priorities_.emplace_back();
+  LocalityMap& locality_map = priorities_[locality.priority];
+  locality_map.localities.emplace(locality.name, std::move(locality));
+}
+
+const XdsPriorityListUpdate::LocalityMap* XdsPriorityListUpdate::Find(
+    uint32_t priority) const {
+  if (!Contains(priority)) return nullptr;
+  return &priorities_[priority];
+}
+
+bool XdsPriorityListUpdate::Contains(
+    const RefCountedPtr<XdsLocalityName>& name) {
+  for (size_t i = 0; i < priorities_.size(); ++i) {
+    const LocalityMap& locality_map = priorities_[i];
+    if (locality_map.Contains(name)) return true;
+  }
+  return false;
+}
+
 bool XdsDropConfig::ShouldDrop(const UniquePtr<char>** category_name) const {
   for (size_t i = 0; i < drop_category_list_.size(); ++i) {
     const auto& drop_category = drop_category_list_[i];
@@ -136,7 +172,7 @@ UniquePtr<char> StringCopy(const upb_strview& strview) {
 
 grpc_error* LocalityParse(
     const envoy_api_v2_endpoint_LocalityLbEndpoints* locality_lb_endpoints,
-    XdsLocalityInfo* locality_info) {
+    XdsPriorityListUpdate::LocalityMap::Locality* output_locality) {
   // Parse LB weight.
   const google_protobuf_UInt32Value* lb_weight =
       envoy_api_v2_endpoint_LocalityLbEndpoints_load_balancing_weight(
@@ -144,13 +180,13 @@ grpc_error* LocalityParse(
   // If LB weight is not specified, it means this locality is assigned no load.
   // TODO(juanlishen): When we support CDS to configure the inter-locality
   // policy, we should change the LB weight handling.
-  locality_info->lb_weight =
+  output_locality->lb_weight =
       lb_weight != nullptr ? google_protobuf_UInt32Value_value(lb_weight) : 0;
-  if (locality_info->lb_weight == 0) return GRPC_ERROR_NONE;
+  if (output_locality->lb_weight == 0) return GRPC_ERROR_NONE;
   // Parse locality name.
   const envoy_api_v2_core_Locality* locality =
       envoy_api_v2_endpoint_LocalityLbEndpoints_locality(locality_lb_endpoints);
-  locality_info->locality_name = MakeRefCounted<XdsLocalityName>(
+  output_locality->name = MakeRefCounted<XdsLocalityName>(
       StringCopy(envoy_api_v2_core_Locality_region(locality)),
       StringCopy(envoy_api_v2_core_Locality_zone(locality)),
       StringCopy(envoy_api_v2_core_Locality_sub_zone(locality)));
@@ -160,12 +196,12 @@ grpc_error* LocalityParse(
       envoy_api_v2_endpoint_LocalityLbEndpoints_lb_endpoints(
           locality_lb_endpoints, &size);
   for (size_t i = 0; i < size; ++i) {
-    grpc_error* error = ServerAddressParseAndAppend(lb_endpoints[i],
-                                                    &locality_info->serverlist);
+    grpc_error* error = ServerAddressParseAndAppend(
+        lb_endpoints[i], &output_locality->serverlist);
     if (error != GRPC_ERROR_NONE) return error;
   }
   // Parse the priority.
-  locality_info->priority =
+  output_locality->priority =
       envoy_api_v2_endpoint_LocalityLbEndpoints_priority(locality_lb_endpoints);
   return GRPC_ERROR_NONE;
 }
@@ -253,18 +289,13 @@ grpc_error* XdsEdsResponseDecodeAndParse(const grpc_slice& encoded_response,
       envoy_api_v2_ClusterLoadAssignment_endpoints(cluster_load_assignment,
                                                    &size);
   for (size_t i = 0; i < size; ++i) {
-    XdsLocalityInfo locality_info;
-    grpc_error* error = LocalityParse(endpoints[i], &locality_info);
+    XdsPriorityListUpdate::LocalityMap::Locality locality;
+    grpc_error* error = LocalityParse(endpoints[i], &locality);
     if (error != GRPC_ERROR_NONE) return error;
     // Filter out locality with weight 0.
-    if (locality_info.lb_weight == 0) continue;
-    update->locality_list.push_back(std::move(locality_info));
+    if (locality.lb_weight == 0) continue;
+    update->priority_list_update.Add(locality);
   }
-  // The locality list is sorted here into deterministic order so that it's
-  // easier to check if two locality lists contain the same set of localities.
-  std::sort(update->locality_list.data(),
-            update->locality_list.data() + update->locality_list.size(),
-            XdsLocalityInfo::Less());
   // Get the drop config.
   update->drop_config = MakeRefCounted<XdsDropConfig>();
   const envoy_api_v2_ClusterLoadAssignment_Policy* policy =

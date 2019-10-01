@@ -22,10 +22,12 @@ grpc_cc_test(
     name = "fork_test",
     srcs = ["fork_test.cc"],
     language = "C++",
+    tags = ["no_windows"],
     deps = [
         "//:gpr",
         "//test/core/util:grpc_test_util",
     ],
+    uses_polling = False,
 )
 
 grpc_cc_test(
@@ -39,6 +41,7 @@ grpc_cc_test(
         "//:gpr",
         "//test/core/util:grpc_test_util",
     ],
+    uses_polling = False,
 )
 
 grpc_cc_test(
@@ -48,10 +51,12 @@ grpc_cc_test(
         "gtest",
     ],
     language = "C++",
+    tags = ["no_windows"],  # TODO(jtattermusch): fix the failure on windows
     deps = [
         "//:gpr",
         "//test/core/util:grpc_test_util",
     ],
+    uses_polling = False,
 )
 
 grpc_cc_test(
@@ -62,6 +67,7 @@ grpc_cc_test(
         "//:gpr",
         "//test/core/util:grpc_test_util",
     ],
+    uses_polling = False,
 )
 
 grpc_cc_test(
@@ -72,6 +78,7 @@ grpc_cc_test(
         "//:gpr",
         "//test/core/util:grpc_test_util",
     ],
+    uses_polling = False,
 )
 
 grpc_cc_test(
@@ -85,6 +92,7 @@ grpc_cc_test(
         "//:gpr_base",
         "//test/core/util:grpc_test_util",
     ],
+    uses_polling = False,
 )
 
 grpc_cc_test(
@@ -98,6 +106,7 @@ grpc_cc_test(
         "//:gpr_base",
         "//test/core/util:grpc_test_util",
     ],
+    uses_polling = False,
 )
 
 grpc_cc_test(
@@ -118,10 +127,12 @@ grpc_cc_test(
     srcs = ["mpscq_test.cc"],
     exec_compatible_with = ["//third_party/toolchains/machine_size:large"],
     language = "C++",
+    tags = ["no_windows"],  # machine_size:large is not configured for windows RBE
     deps = [
         "//:gpr",
         "//test/core/util:grpc_test_util",
     ],
+    uses_polling = False,
 )
 
 grpc_cc_test(
@@ -198,4 +209,5 @@ grpc_cc_test(
         "//:gpr",
         "//test/core/util:grpc_test_util",
     ],
+    uses_polling = False,
 )
