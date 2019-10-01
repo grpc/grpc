@@ -1489,8 +1489,11 @@ TEST_F(ClientLbEnd2endTest,
   auto stub = BuildStub(channel);
   response_generator.SetNextResolution(GetServersPorts());
   WaitForServer(stub, 0, DEBUG_LOCATION);
-  // Stop server 0 and send a bunch more RPCs.
+  // Stop server 0 and send a new resolver result to ensure that RR
+  // checks each subchannel's state.
   servers_[0]->Shutdown();
+  response_generator.SetNextResolution(GetServersPorts());
+  // Send a bunch more RPCs.
   for (size_t i = 0; i < 100; i++) {
     SendRpc(stub);
   }
