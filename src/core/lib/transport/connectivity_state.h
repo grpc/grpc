@@ -28,6 +28,7 @@
 #include "src/core/lib/gprpp/map.h"
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/iomgr/closure.h"
+#include "src/core/lib/iomgr/exec_ctx.h"
 
 namespace grpc_core {
 
@@ -69,9 +70,16 @@ class AsyncConnectivityStateWatcherInterface
  protected:
   class Notifier;
 
+  explicit AsyncConnectivityStateWatcherInterface(
+      grpc_closure_scheduler* scheduler = grpc_schedule_on_exec_ctx)
+      : scheduler_(scheduler) {}
+
   // Invoked asynchronously when Notify() is called.
   virtual void OnConnectivityStateChange(grpc_connectivity_state new_state)
       GRPC_ABSTRACT;
+
+ private:
+  grpc_closure_scheduler* scheduler_;
 };
 
 // Tracks connectivity state.  Maintains a list of watchers that are

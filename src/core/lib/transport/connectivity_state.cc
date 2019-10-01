@@ -57,10 +57,9 @@ const char* ConnectivityStateName(grpc_connectivity_state state) {
 class AsyncConnectivityStateWatcherInterface::Notifier {
  public:
   Notifier(RefCountedPtr<AsyncConnectivityStateWatcherInterface> watcher,
-           grpc_connectivity_state state)
+           grpc_connectivity_state state, grpc_closure_scheduler* scheduler)
       : watcher_(std::move(watcher)), state_(state) {
-    GRPC_CLOSURE_INIT(&closure_, SendNotification, this,
-                      grpc_schedule_on_exec_ctx);
+    GRPC_CLOSURE_INIT(&closure_, SendNotification, this, scheduler);
     GRPC_CLOSURE_SCHED(&closure_, GRPC_ERROR_NONE);
   }
 
@@ -82,7 +81,7 @@ class AsyncConnectivityStateWatcherInterface::Notifier {
 
 void AsyncConnectivityStateWatcherInterface::Notify(
     grpc_connectivity_state state) {
-  New<Notifier>(Ref(), state);  // Deletes itself when done.
+  New<Notifier>(Ref(), state, scheduler_);  // Deletes itself when done.
 }
 
 //

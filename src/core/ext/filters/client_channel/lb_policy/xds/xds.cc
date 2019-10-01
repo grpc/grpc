@@ -355,17 +355,17 @@ class XdsLb : public LoadBalancingPolicy {
 
     void StartConnectivityWatchLocked();
     void CancelConnectivityWatchLocked();
-    static void OnConnectivityChangedLocked(void* arg, grpc_error* error);
 
    private:
+    class StateWatcher;
+
     // The owning LB policy.
     RefCountedPtr<XdsLb> xdslb_policy_;
 
     // The channel and its status.
     grpc_channel* channel_;
     bool shutting_down_ = false;
-    grpc_connectivity_state connectivity_ = GRPC_CHANNEL_IDLE;
-    grpc_closure on_connectivity_changed_;
+    StateWatcher* watcher_ = nullptr;
 
     // The retryable XDS calls to the LB server.
     OrphanablePtr<RetryableLbCall<EdsCallState>> eds_calld_;
@@ -863,6 +863,39 @@ void XdsLb::FallbackHelper::AddTraceEvent(TraceSeverity severity,
 }
 
 //
+// XdsLb::LbChannelState::StateWatcher
+//
+
+class XdsLb::LbChannelState::StateWatcher
+    : public AsyncConnectivityStateWatcherInterface {
+ public:
+  explicit StateWatcher(RefCountedPtr<LbChannelState> parent)
+      : AsyncConnectivityStateWatcherInterface(
+            grpc_combiner_scheduler(parent->xdslb_policy_->combiner())),
+        parent_(std::move(parent)) {}
+
+ private:
+  void OnConnectivityStateChange(grpc_connectivity_state new_state) override {
+    if (!parent_->shutting_down_ &&
+        parent_->xdslb_policy_->fallback_at_startup_checks_pending_ &&
+        new_state == GRPC_CHANNEL_TRANSIENT_FAILURE) {
+      // In TRANSIENT_FAILURE.  Cancel the fallback timer and go into
+      // fallback mode immediately.
+      gpr_log(GPR_INFO,
+              "[xdslb %p] Balancer channel in state TRANSIENT_FAILURE; "
+              "entering fallback mode",
+              parent_->xdslb_policy_.get());
+      parent_->xdslb_policy_->fallback_at_startup_checks_pending_ = false;
+      grpc_timer_cancel(&parent_->xdslb_policy_->lb_fallback_timer_);
+      parent_->xdslb_policy_->UpdateFallbackPolicyLocked();
+      parent_->CancelConnectivityWatchLocked();
+    }
+  }
+
+  RefCountedPtr<LbChannelState> parent_;
+};
+
+//
 // XdsLb::LbChannelState
 //
 
@@ -871,8 +904,6 @@ XdsLb::LbChannelState::LbChannelState(RefCountedPtr<XdsLb> xdslb_policy,
                                       const grpc_channel_args& args)
     : InternallyRefCounted<LbChannelState>(&grpc_lb_xds_trace),
       xdslb_policy_(std::move(xdslb_policy)) {
-  GRPC_CLOSURE_INIT(&on_connectivity_changed_, OnConnectivityChangedLocked,
-                    this, grpc_combiner_scheduler(xdslb_policy_->combiner()));
   channel_ = CreateXdsBalancerChannel(balancer_name, args);
   GPR_ASSERT(channel_ != nullptr);
   eds_calld_.reset(New<RetryableLbCall<EdsCallState>>(
@@ -900,56 +931,17 @@ void XdsLb::LbChannelState::StartConnectivityWatchLocked() {
   grpc_channel_element* client_channel_elem =
       grpc_channel_stack_last_element(grpc_channel_get_channel_stack(channel_));
   GPR_ASSERT(client_channel_elem->filter == &grpc_client_channel_filter);
-  // Ref held by callback.
-  Ref(DEBUG_LOCATION, "LbChannelState+start_watch").release();
-  grpc_client_channel_watch_connectivity_state(
-      client_channel_elem,
-      grpc_polling_entity_create_from_pollset_set(
-          xdslb_policy_->interested_parties()),
-      &connectivity_, &on_connectivity_changed_, nullptr);
+  watcher_ = New<StateWatcher>(Ref());
+  grpc_client_channel_start_connectivity_watch(
+      client_channel_elem, GRPC_CHANNEL_IDLE,
+      OrphanablePtr<AsyncConnectivityStateWatcherInterface>(watcher_));
 }
 
 void XdsLb::LbChannelState::CancelConnectivityWatchLocked() {
   grpc_channel_element* client_channel_elem =
       grpc_channel_stack_last_element(grpc_channel_get_channel_stack(channel_));
   GPR_ASSERT(client_channel_elem->filter == &grpc_client_channel_filter);
-  grpc_client_channel_watch_connectivity_state(
-      client_channel_elem,
-      grpc_polling_entity_create_from_pollset_set(
-          xdslb_policy_->interested_parties()),
-      nullptr, &on_connectivity_changed_, nullptr);
-}
-
-void XdsLb::LbChannelState::OnConnectivityChangedLocked(void* arg,
-                                                        grpc_error* error) {
-  LbChannelState* self = static_cast<LbChannelState*>(arg);
-  if (!self->shutting_down_ &&
-      self->xdslb_policy_->fallback_at_startup_checks_pending_) {
-    if (self->connectivity_ != GRPC_CHANNEL_TRANSIENT_FAILURE) {
-      // Not in TRANSIENT_FAILURE.  Renew connectivity watch.
-      grpc_channel_element* client_channel_elem =
-          grpc_channel_stack_last_element(
-              grpc_channel_get_channel_stack(self->channel_));
-      GPR_ASSERT(client_channel_elem->filter == &grpc_client_channel_filter);
-      grpc_client_channel_watch_connectivity_state(
-          client_channel_elem,
-          grpc_polling_entity_create_from_pollset_set(
-              self->xdslb_policy_->interested_parties()),
-          &self->connectivity_, &self->on_connectivity_changed_, nullptr);
-      return;  // Early out so we don't drop the ref below.
-    }
-    // In TRANSIENT_FAILURE.  Cancel the fallback timer and go into
-    // fallback mode immediately.
-    gpr_log(GPR_INFO,
-            "[xdslb %p] Balancer channel in state TRANSIENT_FAILURE; "
-            "entering fallback mode",
-            self);
-    self->xdslb_policy_->fallback_at_startup_checks_pending_ = false;
-    grpc_timer_cancel(&self->xdslb_policy_->lb_fallback_timer_);
-    self->xdslb_policy_->UpdateFallbackPolicyLocked();
-  }
-  // Done watching connectivity state, so drop ref.
-  self->Unref(DEBUG_LOCATION, "LbChannelState+watch_done");
+  grpc_client_channel_stop_connectivity_watch(client_channel_elem, watcher_);
 }
 
 //
@@ -1843,9 +1835,7 @@ void XdsLb::ShutdownLocked() {
     gpr_log(GPR_INFO, "[xdslb %p] shutting down", this);
   }
   shutting_down_ = true;
-  if (fallback_at_startup_checks_pending_) {
-    grpc_timer_cancel(&lb_fallback_timer_);
-  }
+  MaybeCancelFallbackAtStartupChecks();
   priority_list_.ShutdownLocked();
   if (fallback_policy_ != nullptr) {
     grpc_pollset_set_del_pollset_set(fallback_policy_->interested_parties(),
