@@ -872,13 +872,7 @@ class XdsLb::LbChannelState::StateWatcher
   explicit StateWatcher(RefCountedPtr<LbChannelState> parent)
       : AsyncConnectivityStateWatcherInterface(
             grpc_combiner_scheduler(parent->xdslb_policy_->combiner())),
-        parent_(std::move(parent)) {
-gpr_log(GPR_INFO, "CREATE StateWatcher %p", this);
-  }
-
-  ~StateWatcher() {
-gpr_log(GPR_INFO, "DESTROY StateWatcher %p", this);
-  }
+        parent_(std::move(parent)) {}
 
  private:
   void OnConnectivityStateChange(grpc_connectivity_state new_state) override {
