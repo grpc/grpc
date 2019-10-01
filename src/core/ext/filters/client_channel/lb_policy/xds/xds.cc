@@ -1835,9 +1835,7 @@ void XdsLb::ShutdownLocked() {
     gpr_log(GPR_INFO, "[xdslb %p] shutting down", this);
   }
   shutting_down_ = true;
-  if (fallback_at_startup_checks_pending_) {
-    grpc_timer_cancel(&lb_fallback_timer_);
-  }
+  MaybeCancelFallbackAtStartupChecks();
   priority_list_.ShutdownLocked();
   if (fallback_policy_ != nullptr) {
     grpc_pollset_set_del_pollset_set(fallback_policy_->interested_parties(),
