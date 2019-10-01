@@ -7805,12 +7805,15 @@ LIBBORINGSSL_SRC = \
     third_party/boringssl/crypto/evp/p_ed25519_asn1.c \
     third_party/boringssl/crypto/evp/p_rsa.c \
     third_party/boringssl/crypto/evp/p_rsa_asn1.c \
+    third_party/boringssl/crypto/evp/p_x25519.c \
+    third_party/boringssl/crypto/evp/p_x25519_asn1.c \
     third_party/boringssl/crypto/evp/pbkdf.c \
     third_party/boringssl/crypto/evp/print.c \
     third_party/boringssl/crypto/evp/scrypt.c \
     third_party/boringssl/crypto/evp/sign.c \
     third_party/boringssl/crypto/ex_data.c \
     third_party/boringssl/crypto/fipsmodule/bcm.c \
+    third_party/boringssl/crypto/fipsmodule/fips_shared_support.c \
     third_party/boringssl/crypto/fipsmodule/is_fips.c \
     third_party/boringssl/crypto/hkdf/hkdf.c \
     third_party/boringssl/crypto/hrss/hrss.c \
@@ -7845,6 +7848,7 @@ LIBBORINGSSL_SRC = \
     third_party/boringssl/crypto/refcount_lock.c \
     third_party/boringssl/crypto/rsa_extra/rsa_asn1.c \
     third_party/boringssl/crypto/rsa_extra/rsa_print.c \
+    third_party/boringssl/crypto/siphash/siphash.c \
     third_party/boringssl/crypto/stack/stack.c \
     third_party/boringssl/crypto/thread.c \
     third_party/boringssl/crypto/thread_none.c \
@@ -7969,8 +7973,8 @@ LIBBORINGSSL_SRC = \
     third_party/boringssl/ssl/tls_method.cc \
     third_party/boringssl/ssl/tls_record.cc \
     third_party/boringssl/third_party/fiat/curve25519.c \
-    third_party/boringssl/third_party/sike/P503.c \
     third_party/boringssl/third_party/sike/asm/fp_generic.c \
+    third_party/boringssl/third_party/sike/curve_params.c \
     third_party/boringssl/third_party/sike/fpx.c \
     third_party/boringssl/third_party/sike/isogeny.c \
     third_party/boringssl/third_party/sike/sike.c \
@@ -20279,6 +20283,7 @@ BORINGSSL_CRYPTO_TEST_SRC = \
     third_party/boringssl/crypto/refcount_test.cc \
     third_party/boringssl/crypto/rsa_extra/rsa_test.cc \
     third_party/boringssl/crypto/self_test.cc \
+    third_party/boringssl/crypto/siphash/siphash_test.cc \
     third_party/boringssl/crypto/stack/stack_test.cc \
     third_party/boringssl/crypto/test/abi_test.cc \
     third_party/boringssl/crypto/test/file_test_gtest.cc \
@@ -20418,6 +20423,8 @@ $(OBJDIR)/$(CONFIG)/third_party/boringssl/crypto/refcount_test.o:  $(LIBDIR)/$(C
 $(OBJDIR)/$(CONFIG)/third_party/boringssl/crypto/rsa_extra/rsa_test.o:  $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
 
 $(OBJDIR)/$(CONFIG)/third_party/boringssl/crypto/self_test.o:  $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
+
+$(OBJDIR)/$(CONFIG)/third_party/boringssl/crypto/siphash/siphash_test.o:  $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
 
 $(OBJDIR)/$(CONFIG)/third_party/boringssl/crypto/stack/stack_test.o:  $(LIBDIR)/$(CONFIG)/libboringssl_test_util.a $(LIBDIR)/$(CONFIG)/libboringssl.a
 
