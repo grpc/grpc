@@ -883,25 +883,18 @@ gpr_log(GPR_INFO, "DESTROY StateWatcher %p", this);
  private:
   void OnConnectivityStateChange(grpc_connectivity_state new_state) override {
     if (!parent_->shutting_down_ &&
-        parent_->xdslb_policy_->fallback_at_startup_checks_pending_) {
-      if (new_state == GRPC_CHANNEL_READY) {
-        // In READY.  Cancel the connectivity watch.
-        grpc_channel_element* client_channel_elem =
-            grpc_channel_stack_last_element(
-                grpc_channel_get_channel_stack(parent_->channel_));
-        GPR_ASSERT(client_channel_elem->filter == &grpc_client_channel_filter);
-        grpc_client_channel_stop_connectivity_watch(client_channel_elem, this);
-      } else if (new_state == GRPC_CHANNEL_TRANSIENT_FAILURE) {
-        // In TRANSIENT_FAILURE.  Cancel the fallback timer and go into
-        // fallback mode immediately.
-        gpr_log(GPR_INFO,
-                "[xdslb %p] Balancer channel in state TRANSIENT_FAILURE; "
-                "entering fallback mode",
-                parent_->xdslb_policy_.get());
-        parent_->xdslb_policy_->fallback_at_startup_checks_pending_ = false;
-        grpc_timer_cancel(&parent_->xdslb_policy_->lb_fallback_timer_);
-        parent_->xdslb_policy_->UpdateFallbackPolicyLocked();
-      }
+        parent_->xdslb_policy_->fallback_at_startup_checks_pending_ &&
+        new_state == GRPC_CHANNEL_TRANSIENT_FAILURE) {
+      // In TRANSIENT_FAILURE.  Cancel the fallback timer and go into
+      // fallback mode immediately.
+      gpr_log(GPR_INFO,
+              "[xdslb %p] Balancer channel in state TRANSIENT_FAILURE; "
+              "entering fallback mode",
+              parent_->xdslb_policy_.get());
+      parent_->xdslb_policy_->fallback_at_startup_checks_pending_ = false;
+      grpc_timer_cancel(&parent_->xdslb_policy_->lb_fallback_timer_);
+      parent_->xdslb_policy_->UpdateFallbackPolicyLocked();
+      parent_->CancelConnectivityWatchLocked();
     }
   }
 
