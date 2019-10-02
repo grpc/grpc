@@ -67,7 +67,7 @@ describe 'conversion from a status struct to a google protobuf status' do
     expect(rpc_status).to eq(proto)
   end
 
-  it 'can succesfully convert a status struct into a google protobuf status '\
+  it 'can successfully convert a status struct into a google protobuf status '\
     'when there are no rpcstatus details' do
     proto = Google::Rpc::Status.new(code: 1, message: 'matching message')
     encoded_proto = Google::Rpc::Status.encode(proto)
@@ -79,7 +79,7 @@ describe 'conversion from a status struct to a google protobuf status' do
     expect(out.details).to eq([])
   end
 
-  it 'can succesfully convert a status struct into a google protobuf '\
+  it 'can successfully convert a status struct into a google protobuf '\
     'status when there are multiple rpcstatus details' do
     simple_request_any = Google::Protobuf::Any.new
     simple_request = Grpc::Testing::SimpleRequest.new(

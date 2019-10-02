@@ -399,8 +399,8 @@ class GrpcPolledFdWindows {
   ares_ssize_t SendVTCP(WSAErrorContext* wsa_error_ctx, const struct iovec* iov,
                         int iov_count) {
     // The "sendv" handler on TCP sockets buffers up write
-    // requests and returns an artifical WSAEWOULDBLOCK. Writing that buffer out
-    // in the background, and making further send progress in general, will
+    // requests and returns an artificial WSAEWOULDBLOCK. Writing that buffer
+    // out in the background, and making further send progress in general, will
     // happen as long as c-ares continues to show interest in writeability on
     // this fd.
     GRPC_CARES_TRACE_LOG("fd:|%s| SendVTCP called tcp_write_state_:%d",
