@@ -108,7 +108,6 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/lib/gprpp/map.h )
   s.files += %w( src/core/lib/gprpp/memory.h )
   s.files += %w( src/core/lib/gprpp/mpscq.h )
-  s.files += %w( src/core/lib/gprpp/pair.h )
   s.files += %w( src/core/lib/gprpp/sync.h )
   s.files += %w( src/core/lib/gprpp/thd.h )
   s.files += %w( src/core/lib/profiling/timers.h )

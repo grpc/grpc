@@ -407,7 +407,7 @@ class XdsLb : public LoadBalancingPolicy {
     // proportional to the locality's weight. The start of the range is the
     // previous value in the vector and is 0 for the first element.
     using PickerList =
-        InlinedVector<Pair<uint32_t, RefCountedPtr<PickerWrapper>>, 1>;
+        InlinedVector<std::pair<uint32_t, RefCountedPtr<PickerWrapper>>, 1>;
     Picker(RefCountedPtr<XdsLb> xds_policy, PickerList pickers)
         : xds_policy_(std::move(xds_policy)),
           pickers_(std::move(pickers)),
@@ -2343,7 +2343,7 @@ void XdsLb::PriorityList::LocalityMap::UpdateXdsPickerLocked() {
     if (!locality_map_update()->Contains(locality_name)) continue;
     if (locality->connectivity_state() != GRPC_CHANNEL_READY) continue;
     end += locality->weight();
-    picker_list.push_back(MakePair(end, locality->picker_wrapper()));
+    picker_list.push_back(std::make_pair(end, locality->picker_wrapper()));
   }
   xds_policy()->channel_control_helper()->UpdateState(
       GRPC_CHANNEL_READY,
