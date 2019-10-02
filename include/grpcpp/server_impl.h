@@ -377,7 +377,6 @@ class Server : public grpc::ServerInterface, private grpc::GrpcLibraryCodegen {
   // It is protected by mu_
   CompletionQueue* callback_cq_shards_ = nullptr;
   size_t num_cb_cq_shards_ = 0;
-  static constexpr unsigned kDefaultCallbackCqShards = 32;
   void MakeCallbackCQShardsLocked();
 };
 

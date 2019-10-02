@@ -1368,6 +1368,7 @@ grpc::ServerInitializer* Server::initializer() {
   return server_initializer_.get();
 }
 
+static constexpr unsigned kDefaultCallbackCqShards = 32;
 void GPR_ATTRIBUTE_NOINLINE Server::MakeCallbackCQShardsLocked() {
   num_cb_cq_shards_ = std::max(gpr_cpu_num_cores(), kDefaultCallbackCqShards);
   callback_cq_shards_ = static_cast<CompletionQueue*>(
