@@ -48,19 +48,32 @@
 
 namespace grpc_core {
 
-// Alternative to new, since we cannot use it (for fear of libstdc++)
+// Alternative to new, to ensure memory allocation being wrapped to gpr_malloc
 template <typename T, typename... Args>
 inline T* New(Args&&... args) {
   void* p = gpr_malloc(sizeof(T));
   return new (p) T(std::forward<Args>(args)...);
 }
 
-// Alternative to delete, since we cannot use it (for fear of libstdc++)
+// Gets the base pointer of any class, in case of multiple inheritence.
+// Used by Delete and friends.
+template <typename T, bool isPolymorphic>
+struct BasePointerGetter {
+  static void* get(T* p) { return p; }
+};
+
+template <typename T>
+struct BasePointerGetter<T, true> {
+  static void* get(T* p) { return dynamic_cast<void*>(p); }
+};
+
+// Alternative to delete, to ensure memory allocation being wrapped to gpr_free
 template <typename T>
 inline void Delete(T* p) {
   if (p == nullptr) return;
+  void* basePtr = BasePointerGetter<T, std::is_polymorphic<T>::value>::get(p);
   p->~T();
-  gpr_free(p);
+  gpr_free(basePtr);
 }
 
 class DefaultDelete {
@@ -68,12 +81,13 @@ class DefaultDelete {
   template <typename T>
   void operator()(T* p) {
     // Delete() checks whether the value is null, but std::unique_ptr<> is
-    // gauranteed not to call the deleter if the pointer is nullptr
+    // guaranteed not to call the deleter if the pointer is nullptr
     // (i.e., it already does this check for us), and we don't want to
     // do the check twice.  So, instead of calling Delete() here, we
     // manually call the object's dtor and free it.
+    void* basePtr = BasePointerGetter<T, std::is_polymorphic<T>::value>::get(p);
     p->~T();
-    gpr_free(p);
+    gpr_free(basePtr);
   }
 };
 
