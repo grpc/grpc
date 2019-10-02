@@ -79,6 +79,10 @@ Pod::Spec.new do |s|
     :commit => "b29b21a81b32ec273f118f589f46d56ad3332420",
   }
 
+  # gRPC podspecs depend on the fix in https://github.com/CocoaPods/CocoaPods/pull/9019,
+  # which was released in Cocoapods v1.8.0.
+  s.cocoapods_version = '>= 1.8.0'
+
   s.ios.deployment_target = '7.0'
   s.osx.deployment_target = '10.7'
   s.tvos.deployment_target = '10.0'
@@ -86,21 +90,15 @@ Pod::Spec.new do |s|
 
   name = 'openssl_grpc'
 
-  # When creating a dynamic framework, name it openssl.framework instead of BoringSSL.framework.
-  # This lets users write their includes like `#include <openssl/ssl.h>` as opposed to `#include
+  # When creating a dynamic framework, name it openssl_grpc.framework instead of BoringSSL.framework.
+  # This lets users write their includes like `#include <openssl_grpc/ssl.h>` as opposed to `#include
   # <BoringSSL/ssl.h>`.
   s.module_name = name
 
-  # When creating a dynamic framework, copy the headers under `include/openssl/` into the root of
-  # the `Headers/` directory of the framework (i.e., not under `Headers/include/openssl`).
-  #
-  # TODO(jcanizales): Debug why this doesn't work on macOS.
-  s.header_mappings_dir = 'include/openssl'
-
-  # The above has an undesired effect when creating a static library: It forces users to write
-  # includes like `#include <BoringSSL/ssl.h>`. `s.header_dir` adds a path prefix to that, and
-  # because Cocoapods lets omit the pod name when including headers of static libraries, the
-  # following lets users write `#include <openssl/ssl.h>`.
+  # The header_mappings_dir in the Interface subspec has an undesired effect when creating a static
+  # library: It forces users to write includes like `#include <BoringSSL/ssl.h>`. `s.header_dir` adds
+  # a path prefix to that, and because Cocoapods lets omit the pod name when including headers of
+  # static libraries, the following lets users write `#include <openssl_grpc/ssl.h>`.
   s.header_dir = name
 
   # The module map and umbrella header created automatically by Cocoapods don't work for C libraries
@@ -117,10 +115,12 @@ Pod::Spec.new do |s|
   # sources and private headers in other directories outside `include/`. Cocoapods' linter doesn't
   # allow any header to be listed outside the `header_mappings_dir` (even though doing so works in
   # practice). Because we need our `header_mappings_dir` to be `include/openssl/` for the reason
-  # mentioned above, we work around the linter limitation by dividing the pod into two subspecs, one
+  # mentioned below, we work around the linter limitation by dividing the pod into two subspecs, one
   # for public headers and the other for implementation. Each gets its own `header_mappings_dir`,
   # making the linter happy.
   s.subspec 'Interface' do |ss|
+    # When creating a dynamic framework, copy the headers under `include/openssl/` into the root of
+    # the `Headers/` directory of the framework (i.e., not under `Headers/include/openssl`).
     ss.header_mappings_dir = 'include/openssl'
     ss.source_files = 'include/openssl/*.h'
   end
@@ -136,7 +136,8 @@ Pod::Spec.new do |s|
                               'ssl/**/*.h',
                               '*.h',
                               'crypto/*.h',
-                              'crypto/**/*.h'
+                              'crypto/**/*.h',
+                              'third_party/fiat/*.h'
     # bcm.c includes other source files, creating duplicated symbols. Since it is not used, we
     # explicitly exclude it from the pod.
     # TODO (mxyan): Work with BoringSSL team to remove this hack.
@@ -154,10 +155,10 @@ Pod::Spec.new do |s|
       #include "ssl.h"
       #include "crypto.h"
       #include "aes.h"
-      /* The following macros are defined by base.h. The latter is the first file included by the    
-         other headers. */    
-      #if defined(OPENSSL_ARM) || defined(OPENSSL_AARCH64)    
-      #  include "arm_arch.h"   
+      /* The following macros are defined by base.h. The latter is the first file included by the
+         other headers. */
+      #if defined(OPENSSL_ARM) || defined(OPENSSL_AARCH64)
+      #  include "arm_arch.h"
       #endif
       #include "asn1.h"
       #include "asn1_mac.h"
@@ -191,7 +192,7 @@ Pod::Spec.new do |s|
       #include "x509v3.h"
     EOF
     cat > include/openssl/BoringSSL.modulemap <<EOF
-      framework module openssl {
+      framework module #{name} {
         umbrella header "umbrella.h"
         textual header "arm_arch.h"
         export *
@@ -1546,6 +1547,7 @@ Pod::Spec.new do |s|
           "";
     EOF
 
+    sed -i'.back' '/#include <inttypes.h>/d' include/openssl/bn.h
     sed -i'.back' '/^#define \\([A-Za-z0-9_]*\\) \\1/d' include/openssl/ssl.h
     sed -i'.back' 'N;/^#define \\([A-Za-z0-9_]*\\) *\\\\\\n *\\1/d' include/openssl/ssl.h
     sed -i'.back' 's/#ifndef md5_block_data_order/#ifndef GRPC_SHADOW_md5_block_data_order/g' crypto/fipsmodule/md5/md5.c
@@ -1555,7 +1557,7 @@ Pod::Spec.new do |s|
   # Redefine symbols to avoid conflict when the same app also depends on OpenSSL. The list of
   # symbols are src/objective-c/grpc_shadow_boringssl_symbol_list.
   # This is the last part of this file.
-  s.prefix_header_contents = 
+  s.prefix_header_contents =
     '#define a2i_GENERAL_NAME GRPC_SHADOW_a2i_GENERAL_NAME',
     '#define a2i_ipadd GRPC_SHADOW_a2i_ipadd',
     '#define a2i_IPADDRESS GRPC_SHADOW_a2i_IPADDRESS',
