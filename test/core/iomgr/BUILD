@@ -254,7 +254,10 @@ grpc_cc_test(
     name = "tcp_posix_test",
     srcs = ["tcp_posix_test.cc"],
     language = "C++",
-    tags = ["no_windows"],
+    tags = [
+        "no_windows",
+        "no_mac",  # TODO(jtattermusch): Reenable once https://github.com/grpc/grpc/issues/21282 is fixed.
+    ],
     deps = [
         ":endpoint_tests",
         "//:gpr",
