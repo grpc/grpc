@@ -264,6 +264,15 @@ void Executor::ThreadMain(void* arg) {
     grpc_core::ExecCtx::Get()->InvalidateNow();
     subtract_depth = RunClosures(ts->name, closures);
   }
+
+    // We have an issue with Apple platforms where applying gpr_tls_set here
+    // leads to an EAGAIN error while performing a gpr_tls_get, so we are
+    // skipping this cleanup for Apple platforms. See PR #19978
+    // TODO(mhaidry) : Fix this by switching to using thread_local once we have
+    // support for it in Xcode (PR #20413)or whatever else it takes
+#if !defined(__APPLE__)
+  gpr_tls_set(&g_this_thread_state, reinterpret_cast<intptr_t>(nullptr));
+#endif  // !__APPLE__
 }
 
 void Executor::Enqueue(grpc_closure* closure, grpc_error* error,
@@ -465,10 +474,6 @@ void Executor::ShutdownAll() {
 
 bool Executor::IsThreaded(ExecutorType executor_type) {
   GPR_ASSERT(executor_type < ExecutorType::NUM_EXECUTORS);
-  Executor* executor = executors[static_cast<size_t>(executor_type)];
-  if (executor == nullptr) {
-    return false;
-  }
   return executors[static_cast<size_t>(executor_type)]->IsThreaded();
 }
 

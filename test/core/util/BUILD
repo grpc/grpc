@@ -119,6 +119,7 @@ grpc_cc_test(
         ":grpc_test_util",
         "//:gpr",
     ],
+    uses_polling = False,
 )
 
 grpc_cc_library(
@@ -145,6 +146,7 @@ grpc_cc_test(
         ":grpc_test_util",
         "//:gpr",
     ],
+    uses_polling = False,
 )
 
 sh_library(

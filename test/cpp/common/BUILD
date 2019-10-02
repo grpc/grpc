@@ -24,6 +24,7 @@ grpc_cc_test(
     external_deps = [
         "gtest",
     ],
+    tags = ["no_windows"],  # TODO(jtattermusch): fix test on windows RBE
     deps = [
         "//:grpc++_unsecure",
         "//test/core/util:grpc_test_util_unsecure",
@@ -66,6 +67,7 @@ grpc_cc_test(
         "//test/core/util:grpc_test_util",
         "//test/cpp/util:test_util",
     ],
+    uses_polling = False,
 )
 
 grpc_cc_test(
@@ -78,6 +80,7 @@ grpc_cc_test(
         "//:grpc++",
         "//test/core/util:grpc_test_util",
     ],
+    uses_polling = False,
 )
 
 grpc_cc_test(
@@ -90,6 +93,7 @@ grpc_cc_test(
         "//:grpc++",
         "//test/core/util:grpc_test_util",
     ],
+    uses_polling = False,
 )
 
 grpc_cc_test(

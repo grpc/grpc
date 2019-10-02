@@ -904,8 +904,7 @@ class GrpcPolledFdFactoryWindows : public GrpcPolledFdFactory {
 };
 
 UniquePtr<GrpcPolledFdFactory> NewGrpcPolledFdFactory(grpc_combiner* combiner) {
-  return UniquePtr<GrpcPolledFdFactory>(
-      New<GrpcPolledFdFactoryWindows>(combiner));
+  return MakeUnique<GrpcPolledFdFactoryWindows>(combiner);
 }
 
 }  // namespace grpc_core

@@ -279,7 +279,6 @@ filegroups:
   - src/core/lib/gpr/tls_pthread.h
   - src/core/lib/gpr/tmpfile.h
   - src/core/lib/gpr/useful.h
-  - src/core/lib/gprpp/abstract.h
   - src/core/lib/gprpp/arena.h
   - src/core/lib/gprpp/atomic.h
   - src/core/lib/gprpp/fork.h
@@ -292,7 +291,6 @@ filegroups:
   - src/core/lib/gprpp/map.h
   - src/core/lib/gprpp/memory.h
   - src/core/lib/gprpp/mpscq.h
-  - src/core/lib/gprpp/pair.h
   - src/core/lib/gprpp/sync.h
   - src/core/lib/gprpp/thd.h
   - src/core/lib/profiling/timers.h
@@ -1627,32 +1625,6 @@ libs:
   deps:
   - grpc
   secure: true
-- name: cxxabi
-  build: private
-  language: c
-  src:
-  - third_party/libcxxabi/src/abort_message.cpp
-  - third_party/libcxxabi/src/cxa_aux_runtime.cpp
-  - third_party/libcxxabi/src/cxa_default_handlers.cpp
-  - third_party/libcxxabi/src/cxa_demangle.cpp
-  - third_party/libcxxabi/src/cxa_exception_storage.cpp
-  - third_party/libcxxabi/src/cxa_guard.cpp
-  - third_party/libcxxabi/src/cxa_handlers.cpp
-  - third_party/libcxxabi/src/cxa_noexception.cpp
-  - third_party/libcxxabi/src/cxa_thread_atexit.cpp
-  - third_party/libcxxabi/src/cxa_unexpected.cpp
-  - third_party/libcxxabi/src/cxa_vector.cpp
-  - third_party/libcxxabi/src/cxa_virtual.cpp
-  - third_party/libcxxabi/src/fallback_malloc.cpp
-  - third_party/libcxxabi/src/private_typeinfo.cpp
-  - third_party/libcxxabi/src/stdlib_exception.cpp
-  - third_party/libcxxabi/src/stdlib_new_delete.cpp
-  - third_party/libcxxabi/src/stdlib_stdexcept.cpp
-  - third_party/libcxxabi/src/stdlib_typeinfo.cpp
-  build_system:
-  - Makefile
-  defaults: cxxabi
-  secure: false
 - name: gpr
   build: all
   language: c
@@ -5016,20 +4988,6 @@ targets:
   - grpc
   - gpr
   - grpc++_test_config
-- name: grpc_core_map_test
-  gtest: true
-  build: test
-  language: c++
-  headers:
-  - test/core/gprpp/map_tester.h
-  src:
-  - test/core/gprpp/map_test.cc
-  deps:
-  - grpc_test_util
-  - grpc++
-  - grpc
-  - gpr
-  uses_polling: false
 - name: grpc_cpp_plugin
   build: protoc
   language: c++
@@ -6207,11 +6165,6 @@ defaults:
     CPPFLAGS: -Ithird_party/boringssl/include -fvisibility=hidden -DOPENSSL_NO_ASM
       -D_GNU_SOURCE -DWIN32_LEAN_AND_MEAN -D_HAS_EXCEPTIONS=0 -DNOMINMAX
     CXXFLAGS: -fno-rtti -fno-exceptions
-  cxxabi:
-    CPPFLAGS: -D_LIBCPP_DISABLE_EXTERN_TEMPLATE -D_LIBCXXABI_BUILDING_LIBRARY -D_LIBCXXABI_NO_EXCEPTIONS
-      -Ithird_party/libcxxabi/include -nostdinc++ -Ithird_party/libcxx/include $(W_NO_UNUSED_BUT_SET_VARIABLE)
-      $(W_NO_MAYBE_UNINITIALIZED) -fvisibility=hidden
-    CXXFLAGS: $(W_NO_CXX14_COMPAT)
   global:
     CFLAGS: -g
     COREFLAGS: -fno-rtti -fno-exceptions

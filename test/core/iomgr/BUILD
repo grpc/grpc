@@ -41,6 +41,7 @@ grpc_cc_test(
     srcs = ["combiner_test.cc"],
     exec_compatible_with = ["//third_party/toolchains/machine_size:large"],
     language = "C++",
+    tags = ["no_windows"],  # machine_size:large is not configured for windows RBE
     deps = [
         "//:gpr",
         "//:grpc",
@@ -70,6 +71,7 @@ grpc_cc_test(
         "//:grpc",
         "//test/core/util:grpc_test_util",
     ],
+    uses_polling = False,
 )
 
 grpc_cc_test(
@@ -128,6 +130,7 @@ grpc_cc_test(
         "//:grpc",
         "//test/core/util:grpc_test_util",
     ],
+    uses_polling = False,
 )
 
 grpc_cc_test(
@@ -139,6 +142,7 @@ grpc_cc_test(
         "//:grpc",
         "//test/core/util:grpc_test_util",
     ],
+    uses_polling = False,
 )
 
 grpc_cc_test(
@@ -290,6 +294,7 @@ grpc_cc_test(
         "//:grpc",
         "//test/core/util:grpc_test_util",
     ],
+    uses_polling = False,
 )
 
 grpc_cc_test(
@@ -301,6 +306,7 @@ grpc_cc_test(
         "//:grpc",
         "//test/core/util:grpc_test_util",
     ],
+    uses_polling = False,
 )
 
 grpc_cc_test(
@@ -312,6 +318,7 @@ grpc_cc_test(
         "//:grpc",
         "//test/core/util:grpc_test_util",
     ],
+    uses_polling = False,
 )
 
 grpc_cc_test(
@@ -323,6 +330,7 @@ grpc_cc_test(
         "//:grpc",
         "//test/core/util:grpc_test_util",
     ],
+    uses_polling = False,
 )
 
 grpc_cc_test(

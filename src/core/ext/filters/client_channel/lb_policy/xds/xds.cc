@@ -355,17 +355,17 @@ class XdsLb : public LoadBalancingPolicy {
 
     void StartConnectivityWatchLocked();
     void CancelConnectivityWatchLocked();
-    static void OnConnectivityChangedLocked(void* arg, grpc_error* error);
 
    private:
+    class StateWatcher;
+
     // The owning LB policy.
     RefCountedPtr<XdsLb> xdslb_policy_;
 
     // The channel and its status.
     grpc_channel* channel_;
     bool shutting_down_ = false;
-    grpc_connectivity_state connectivity_ = GRPC_CHANNEL_IDLE;
-    grpc_closure on_connectivity_changed_;
+    StateWatcher* watcher_ = nullptr;
 
     // The retryable XDS calls to the LB server.
     OrphanablePtr<RetryableLbCall<EdsCallState>> eds_calld_;
@@ -389,11 +389,6 @@ class XdsLb : public LoadBalancingPolicy {
     PickResult Pick(PickArgs args);
 
    private:
-    static void RecordCallCompletion(
-        void* arg, grpc_error* error,
-        LoadBalancingPolicy::MetadataInterface* recv_trailing_metadata,
-        LoadBalancingPolicy::CallState* call_state);
-
     UniquePtr<SubchannelPicker> picker_;
     RefCountedPtr<XdsClientStats::LocalityStats> locality_stats_;
   };
@@ -407,7 +402,7 @@ class XdsLb : public LoadBalancingPolicy {
     // proportional to the locality's weight. The start of the range is the
     // previous value in the vector and is 0 for the first element.
     using PickerList =
-        InlinedVector<Pair<uint32_t, RefCountedPtr<PickerWrapper>>, 1>;
+        InlinedVector<std::pair<uint32_t, RefCountedPtr<PickerWrapper>>, 1>;
     Picker(RefCountedPtr<XdsLb> xds_policy, PickerList pickers)
         : xds_policy_(std::move(xds_policy)),
           pickers_(std::move(pickers)),
@@ -576,8 +571,8 @@ class XdsLb : public LoadBalancingPolicy {
 
       RefCountedPtr<XdsLb> xds_policy_;
 
-      Map<RefCountedPtr<XdsLocalityName>, OrphanablePtr<Locality>,
-          XdsLocalityName::Less>
+      std::map<RefCountedPtr<XdsLocalityName>, OrphanablePtr<Locality>,
+               XdsLocalityName::Less>
           localities_;
       const uint32_t priority_;
       grpc_connectivity_state connectivity_state_ = GRPC_CHANNEL_IDLE;
@@ -728,23 +723,18 @@ LoadBalancingPolicy::PickResult XdsLb::PickerWrapper::Pick(
   // Record a call started.
   locality_stats_->AddCallStarted();
   // Intercept the recv_trailing_metadata op to record call completion.
-  result.recv_trailing_metadata_ready = RecordCallCompletion;
-  result.recv_trailing_metadata_ready_user_data =
-      locality_stats_->Ref(DEBUG_LOCATION, "LocalityStats+call").release();
-  return result;
-}
-
-// Note that the following callback does not run in either the control plane
-// combiner or the data plane combiner.
-void XdsLb::PickerWrapper::RecordCallCompletion(
-    void* arg, grpc_error* error,
-    LoadBalancingPolicy::MetadataInterface* recv_trailing_metadata,
-    LoadBalancingPolicy::CallState* call_state) {
   XdsClientStats::LocalityStats* locality_stats =
-      static_cast<XdsClientStats::LocalityStats*>(arg);
-  const bool call_failed = error != GRPC_ERROR_NONE;
-  locality_stats->AddCallFinished(call_failed);
-  locality_stats->Unref(DEBUG_LOCATION, "LocalityStats+call");
+      locality_stats_->Ref(DEBUG_LOCATION, "LocalityStats+call").release();
+  result.recv_trailing_metadata_ready =
+      // Note: This callback does not run in either the control plane
+      // combiner or in the data plane mutex.
+      [locality_stats](grpc_error* error, MetadataInterface* metadata,
+                       CallState* call_state) {
+        const bool call_failed = error != GRPC_ERROR_NONE;
+        locality_stats->AddCallFinished(call_failed);
+        locality_stats->Unref(DEBUG_LOCATION, "LocalityStats+call");
+      };
+  return result;
 }
 
 //
@@ -863,6 +853,39 @@ void XdsLb::FallbackHelper::AddTraceEvent(TraceSeverity severity,
 }
 
 //
+// XdsLb::LbChannelState::StateWatcher
+//
+
+class XdsLb::LbChannelState::StateWatcher
+    : public AsyncConnectivityStateWatcherInterface {
+ public:
+  explicit StateWatcher(RefCountedPtr<LbChannelState> parent)
+      : AsyncConnectivityStateWatcherInterface(
+            grpc_combiner_scheduler(parent->xdslb_policy_->combiner())),
+        parent_(std::move(parent)) {}
+
+ private:
+  void OnConnectivityStateChange(grpc_connectivity_state new_state) override {
+    if (!parent_->shutting_down_ &&
+        parent_->xdslb_policy_->fallback_at_startup_checks_pending_ &&
+        new_state == GRPC_CHANNEL_TRANSIENT_FAILURE) {
+      // In TRANSIENT_FAILURE.  Cancel the fallback timer and go into
+      // fallback mode immediately.
+      gpr_log(GPR_INFO,
+              "[xdslb %p] Balancer channel in state TRANSIENT_FAILURE; "
+              "entering fallback mode",
+              parent_->xdslb_policy_.get());
+      parent_->xdslb_policy_->fallback_at_startup_checks_pending_ = false;
+      grpc_timer_cancel(&parent_->xdslb_policy_->lb_fallback_timer_);
+      parent_->xdslb_policy_->UpdateFallbackPolicyLocked();
+      parent_->CancelConnectivityWatchLocked();
+    }
+  }
+
+  RefCountedPtr<LbChannelState> parent_;
+};
+
+//
 // XdsLb::LbChannelState
 //
 
@@ -871,8 +894,6 @@ XdsLb::LbChannelState::LbChannelState(RefCountedPtr<XdsLb> xdslb_policy,
                                       const grpc_channel_args& args)
     : InternallyRefCounted<LbChannelState>(&grpc_lb_xds_trace),
       xdslb_policy_(std::move(xdslb_policy)) {
-  GRPC_CLOSURE_INIT(&on_connectivity_changed_, OnConnectivityChangedLocked,
-                    this, grpc_combiner_scheduler(xdslb_policy_->combiner()));
   channel_ = CreateXdsBalancerChannel(balancer_name, args);
   GPR_ASSERT(channel_ != nullptr);
   eds_calld_.reset(New<RetryableLbCall<EdsCallState>>(
@@ -900,56 +921,17 @@ void XdsLb::LbChannelState::StartConnectivityWatchLocked() {
   grpc_channel_element* client_channel_elem =
       grpc_channel_stack_last_element(grpc_channel_get_channel_stack(channel_));
   GPR_ASSERT(client_channel_elem->filter == &grpc_client_channel_filter);
-  // Ref held by callback.
-  Ref(DEBUG_LOCATION, "LbChannelState+start_watch").release();
-  grpc_client_channel_watch_connectivity_state(
-      client_channel_elem,
-      grpc_polling_entity_create_from_pollset_set(
-          xdslb_policy_->interested_parties()),
-      &connectivity_, &on_connectivity_changed_, nullptr);
+  auto watcher = MakeOrphanable<StateWatcher>(Ref());
+  watcher_ = watcher.get();
+  grpc_client_channel_start_connectivity_watch(
+      client_channel_elem, GRPC_CHANNEL_IDLE, std::move(watcher));
 }
 
 void XdsLb::LbChannelState::CancelConnectivityWatchLocked() {
   grpc_channel_element* client_channel_elem =
       grpc_channel_stack_last_element(grpc_channel_get_channel_stack(channel_));
   GPR_ASSERT(client_channel_elem->filter == &grpc_client_channel_filter);
-  grpc_client_channel_watch_connectivity_state(
-      client_channel_elem,
-      grpc_polling_entity_create_from_pollset_set(
-          xdslb_policy_->interested_parties()),
-      nullptr, &on_connectivity_changed_, nullptr);
-}
-
-void XdsLb::LbChannelState::OnConnectivityChangedLocked(void* arg,
-                                                        grpc_error* error) {
-  LbChannelState* self = static_cast<LbChannelState*>(arg);
-  if (!self->shutting_down_ &&
-      self->xdslb_policy_->fallback_at_startup_checks_pending_) {
-    if (self->connectivity_ != GRPC_CHANNEL_TRANSIENT_FAILURE) {
-      // Not in TRANSIENT_FAILURE.  Renew connectivity watch.
-      grpc_channel_element* client_channel_elem =
-          grpc_channel_stack_last_element(
-              grpc_channel_get_channel_stack(self->channel_));
-      GPR_ASSERT(client_channel_elem->filter == &grpc_client_channel_filter);
-      grpc_client_channel_watch_connectivity_state(
-          client_channel_elem,
-          grpc_polling_entity_create_from_pollset_set(
-              self->xdslb_policy_->interested_parties()),
-          &self->connectivity_, &self->on_connectivity_changed_, nullptr);
-      return;  // Early out so we don't drop the ref below.
-    }
-    // In TRANSIENT_FAILURE.  Cancel the fallback timer and go into
-    // fallback mode immediately.
-    gpr_log(GPR_INFO,
-            "[xdslb %p] Balancer channel in state TRANSIENT_FAILURE; "
-            "entering fallback mode",
-            self);
-    self->xdslb_policy_->fallback_at_startup_checks_pending_ = false;
-    grpc_timer_cancel(&self->xdslb_policy_->lb_fallback_timer_);
-    self->xdslb_policy_->UpdateFallbackPolicyLocked();
-  }
-  // Done watching connectivity state, so drop ref.
-  self->Unref(DEBUG_LOCATION, "LbChannelState+watch_done");
+  grpc_client_channel_stop_connectivity_watch(client_channel_elem, watcher_);
 }
 
 //
@@ -1843,9 +1825,7 @@ void XdsLb::ShutdownLocked() {
     gpr_log(GPR_INFO, "[xdslb %p] shutting down", this);
   }
   shutting_down_ = true;
-  if (fallback_at_startup_checks_pending_) {
-    grpc_timer_cancel(&lb_fallback_timer_);
-  }
+  MaybeCancelFallbackAtStartupChecks();
   priority_list_.ShutdownLocked();
   if (fallback_policy_ != nullptr) {
     grpc_pollset_set_del_pollset_set(fallback_policy_->interested_parties(),
@@ -2179,7 +2159,7 @@ void XdsLb::PriorityList::UpdateXdsPickerLocked() {
         GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_UNAVAILABLE);
     xds_policy_->channel_control_helper()->UpdateState(
         GRPC_CHANNEL_TRANSIENT_FAILURE,
-        UniquePtr<SubchannelPicker>(New<TransientFailurePicker>(error)));
+        MakeUnique<TransientFailurePicker>(error));
     return;
   }
   priorities_[current_priority_]->UpdateXdsPickerLocked();
@@ -2272,9 +2252,8 @@ XdsLb::PriorityList::LocalityMap::LocalityMap(RefCountedPtr<XdsLb> xds_policy,
   // This is the first locality map ever created, report CONNECTING.
   if (priority_ == 0) {
     xds_policy_->channel_control_helper()->UpdateState(
-        GRPC_CHANNEL_CONNECTING,
-        UniquePtr<SubchannelPicker>(
-            New<QueuePicker>(xds_policy_->Ref(DEBUG_LOCATION, "QueuePicker"))));
+        GRPC_CHANNEL_CONNECTING, MakeUnique<QueuePicker>(xds_policy_->Ref(
+                                     DEBUG_LOCATION, "QueuePicker")));
   }
 }
 
@@ -2344,12 +2323,12 @@ void XdsLb::PriorityList::LocalityMap::UpdateXdsPickerLocked() {
     if (!locality_map_update()->Contains(locality_name)) continue;
     if (locality->connectivity_state() != GRPC_CHANNEL_READY) continue;
     end += locality->weight();
-    picker_list.push_back(MakePair(end, locality->picker_wrapper()));
+    picker_list.push_back(std::make_pair(end, locality->picker_wrapper()));
   }
   xds_policy()->channel_control_helper()->UpdateState(
-      GRPC_CHANNEL_READY, UniquePtr<SubchannelPicker>(New<Picker>(
-                              xds_policy_->Ref(DEBUG_LOCATION, "XdsLb+Picker"),
-                              std::move(picker_list))));
+      GRPC_CHANNEL_READY,
+      MakeUnique<Picker>(xds_policy_->Ref(DEBUG_LOCATION, "XdsLb+Picker"),
+                         std::move(picker_list)));
 }
 
 OrphanablePtr<XdsLb::PriorityList::LocalityMap::Locality>
@@ -2898,7 +2877,7 @@ class XdsFactory : public LoadBalancingPolicyFactory {
  public:
   OrphanablePtr<LoadBalancingPolicy> CreateLoadBalancingPolicy(
       LoadBalancingPolicy::Args args) const override {
-    return OrphanablePtr<LoadBalancingPolicy>(New<XdsLb>(std::move(args)));
+    return MakeOrphanable<XdsLb>(std::move(args));
   }
 
   const char* name() const override { return kXds; }
@@ -2982,8 +2961,7 @@ class XdsFactory : public LoadBalancingPolicyFactory {
 void grpc_lb_policy_xds_init() {
   grpc_core::LoadBalancingPolicyRegistry::Builder::
       RegisterLoadBalancingPolicyFactory(
-          grpc_core::UniquePtr<grpc_core::LoadBalancingPolicyFactory>(
-              grpc_core::New<grpc_core::XdsFactory>()));
+          grpc_core::MakeUnique<grpc_core::XdsFactory>());
 }
 
 void grpc_lb_policy_xds_shutdown() {}

@@ -69,11 +69,6 @@ config_setting(
     values = {"cpu": "darwin"},
 )
 
-config_setting(
-    name = "grpc_use_cpp_std_lib",
-    values = {"define": "GRPC_USE_CPP_STD_LIB=1"},
-)
-
 python_config_settings()
 
 # This should be updated along with build.yaml
@@ -514,7 +509,6 @@ grpc_cc_library(
         "src/core/lib/gpr/tls_pthread.h",
         "src/core/lib/gpr/tmpfile.h",
         "src/core/lib/gpr/useful.h",
-        "src/core/lib/gprpp/abstract.h",
         "src/core/lib/gprpp/arena.h",
         "src/core/lib/gprpp/atomic.h",
         "src/core/lib/gprpp/fork.h",
@@ -527,7 +521,6 @@ grpc_cc_library(
         "src/core/lib/gprpp/map.h",
         "src/core/lib/gprpp/memory.h",
         "src/core/lib/gprpp/mpscq.h",
-        "src/core/lib/gprpp/pair.h",
         "src/core/lib/gprpp/string_view.h",
         "src/core/lib/gprpp/sync.h",
         "src/core/lib/gprpp/thd.h",
@@ -855,7 +848,7 @@ grpc_cc_library(
         "src/core/lib/iomgr/executor/mpmcqueue.h",
         "src/core/lib/iomgr/executor/threadpool.h",
         "src/core/lib/iomgr/gethostname.h",
-        "src/core/lib/iomgr/gevent_util.h",
+        "src/core/lib/iomgr/python_util.h",
         "src/core/lib/iomgr/grpc_if_nametoindex.h",
         "src/core/lib/iomgr/internal_errqueue.h",
         "src/core/lib/iomgr/iocp_windows.h",

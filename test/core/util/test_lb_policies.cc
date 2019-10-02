@@ -177,22 +177,23 @@ class InterceptRecvTrailingMetadataLoadBalancingPolicy
                             InterceptRecvTrailingMetadataCallback cb,
                             void* user_data)
         : cb_(cb), user_data_(user_data) {
-      result->recv_trailing_metadata_ready = &RecordRecvTrailingMetadata;
-      result->recv_trailing_metadata_ready_user_data = this;
+      result->recv_trailing_metadata_ready = [this](grpc_error* error,
+                                                    MetadataInterface* metadata,
+                                                    CallState* call_state) {
+        RecordRecvTrailingMetadata(error, metadata, call_state);
+      };
     }
 
    private:
-    static void RecordRecvTrailingMetadata(
-        void* arg, grpc_error* error, MetadataInterface* recv_trailing_metadata,
-        CallState* call_state) {
-      TrailingMetadataHandler* self =
-          static_cast<TrailingMetadataHandler*>(arg);
+    void RecordRecvTrailingMetadata(grpc_error* error,
+                                    MetadataInterface* recv_trailing_metadata,
+                                    CallState* call_state) {
       GPR_ASSERT(recv_trailing_metadata != nullptr);
       gpr_log(GPR_INFO, "trailing metadata:");
       InterceptRecvTrailingMetadataLoadBalancingPolicy::LogMetadata(
           recv_trailing_metadata);
-      self->cb_(self->user_data_, call_state->GetBackendMetricData());
-      self->~TrailingMetadataHandler();
+      cb_(user_data_, call_state->GetBackendMetricData());
+      this->~TrailingMetadataHandler();
     }
 
     InterceptRecvTrailingMetadataCallback cb_;
@@ -219,9 +220,8 @@ class InterceptTrailingFactory : public LoadBalancingPolicyFactory {
 
   OrphanablePtr<LoadBalancingPolicy> CreateLoadBalancingPolicy(
       LoadBalancingPolicy::Args args) const override {
-    return OrphanablePtr<LoadBalancingPolicy>(
-        New<InterceptRecvTrailingMetadataLoadBalancingPolicy>(std::move(args),
-                                                              cb_, user_data_));
+    return MakeOrphanable<InterceptRecvTrailingMetadataLoadBalancingPolicy>(
+        std::move(args), cb_, user_data_);
   }
 
   const char* name() const override {

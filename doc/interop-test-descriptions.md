@@ -1121,7 +1121,7 @@ for the `SimpleRequest.response_type`. If the server does not support the
 Server gets the default SimpleRequest proto as the request. The content of the
 request is ignored. It returns the SimpleResponse proto with the payload set
 to current timestamp.  The timestamp is an integer representing current time
-with nanosecond resolution. This integer is formated as ASCII decimal in the
+with nanosecond resolution. This integer is formatted as ASCII decimal in the
 response. The format is not really important as long as the response payload
 is different for each request. In addition it adds
   1. cache control headers such that the response can be cached by proxies in

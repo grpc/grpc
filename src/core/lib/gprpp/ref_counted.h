@@ -30,7 +30,6 @@
 #include <cinttypes>
 
 #include "src/core/lib/debug/trace.h"
-#include "src/core/lib/gprpp/abstract.h"
 #include "src/core/lib/gprpp/atomic.h"
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/memory.h"
@@ -40,9 +39,6 @@ namespace grpc_core {
 
 // PolymorphicRefCount enforces polymorphic destruction of RefCounted.
 class PolymorphicRefCount {
- public:
-  GRPC_ABSTRACT_BASE_CLASS
-
  protected:
   GRPC_ALLOW_CLASS_TO_USE_NON_PUBLIC_DELETE
 
@@ -53,9 +49,6 @@ class PolymorphicRefCount {
 // RefCounted. Please refer to grpc_core::RefCounted for more details, and
 // when in doubt use PolymorphicRefCount.
 class NonPolymorphicRefCount {
- public:
-  GRPC_ABSTRACT_BASE_CLASS
-
  protected:
   GRPC_ALLOW_CLASS_TO_USE_NON_PUBLIC_DELETE
 
@@ -271,8 +264,6 @@ class RefCounted : public Impl {
   // Not copyable nor movable.
   RefCounted(const RefCounted&) = delete;
   RefCounted& operator=(const RefCounted&) = delete;
-
-  GRPC_ABSTRACT_BASE_CLASS
 
  protected:
   GRPC_ALLOW_CLASS_TO_USE_NON_PUBLIC_DELETE

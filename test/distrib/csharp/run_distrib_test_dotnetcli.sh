@@ -33,11 +33,14 @@ dotnet publish -f net45 DistribTestDotNet.csproj
 
 ls -R bin
 
-# .NET 4.5 target after dotnet build
-mono bin/Debug/net45/publish/DistribTestDotNet.exe
+if [ "${SKIP_MONO_DISTRIBTEST}" != "1" ]
+then
+  # .NET 4.5 target after dotnet build
+  mono bin/Debug/net45/publish/DistribTestDotNet.exe
 
-# .NET 4.5 target after dotnet publish
-mono bin/Debug/net45/publish/DistribTestDotNet.exe
+  # .NET 4.5 target after dotnet publish
+  mono bin/Debug/net45/publish/DistribTestDotNet.exe
+fi
 
 # .NET Core target after dotnet build
 dotnet exec bin/Debug/netcoreapp2.1/DistribTestDotNet.dll

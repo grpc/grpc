@@ -26,6 +26,9 @@
 #include <stdio.h>
 #include <string.h>
 
+#include <map>
+#include <set>
+
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
@@ -179,9 +182,17 @@ class ChannelData {
     return static_cast<int>(external_watchers_.size());
   }
 
+  void AddConnectivityWatcher(
+      grpc_connectivity_state initial_state,
+      OrphanablePtr<AsyncConnectivityStateWatcherInterface> watcher);
+  void RemoveConnectivityWatcher(
+      AsyncConnectivityStateWatcherInterface* watcher);
+
  private:
   class SubchannelWrapper;
   class ClientChannelControlHelper;
+  class ConnectivityWatcherAdder;
+  class ConnectivityWatcherRemover;
 
   // Represents a pending connectivity callback from an external caller
   // via grpc_client_channel_watch_connectivity_state().
@@ -282,18 +293,16 @@ class ChannelData {
   RefCountedPtr<ServiceConfig> saved_service_config_;
   bool received_first_resolver_result_ = false;
   // The number of SubchannelWrapper instances referencing a given Subchannel.
-  Map<Subchannel*, int> subchannel_refcount_map_;
+  std::map<Subchannel*, int> subchannel_refcount_map_;
   // The set of SubchannelWrappers that currently exist.
   // No need to hold a ref, since the map is updated in the control-plane
   // combiner when the SubchannelWrappers are created and destroyed.
-  // TODO(roth): We really want to use a set here, not a map.  Since we don't
-  // currently have a set implementation, we use a map and ignore the value.
-  Map<SubchannelWrapper*, bool> subchannel_wrappers_;
+  std::set<SubchannelWrapper*> subchannel_wrappers_;
   // Pending ConnectedSubchannel updates for each SubchannelWrapper.
   // Updates are queued here in the control plane combiner and then applied
   // in the data plane mutex when the picker is updated.
-  Map<RefCountedPtr<SubchannelWrapper>, RefCountedPtr<ConnectedSubchannel>,
-      RefCountedPtrLess<SubchannelWrapper>>
+  std::map<RefCountedPtr<SubchannelWrapper>, RefCountedPtr<ConnectedSubchannel>,
+           RefCountedPtrLess<SubchannelWrapper>>
       pending_subchannel_updates_;
 
   //
@@ -314,7 +323,7 @@ class ChannelData {
   // synchronously via grpc_channel_num_external_connectivity_watchers().
   //
   mutable Mutex external_watchers_mu_;
-  Map<grpc_closure*, ExternalConnectivityWatcher*> external_watchers_;
+  std::map<grpc_closure*, ExternalConnectivityWatcher*> external_watchers_;
 };
 
 //
@@ -753,11 +762,9 @@ class CallData {
   LbCallState lb_call_state_;
   const LoadBalancingPolicy::BackendMetricData* backend_metric_data_ = nullptr;
   RefCountedPtr<ConnectedSubchannel> connected_subchannel_;
-  void (*lb_recv_trailing_metadata_ready_)(
-      void* user_data, grpc_error* error,
-      LoadBalancingPolicy::MetadataInterface* recv_trailing_metadata,
-      LoadBalancingPolicy::CallState* call_state) = nullptr;
-  void* lb_recv_trailing_metadata_ready_user_data_ = nullptr;
+  std::function<void(grpc_error*, LoadBalancingPolicy::MetadataInterface*,
+                     LoadBalancingPolicy::CallState*)>
+      lb_recv_trailing_metadata_ready_;
   grpc_closure pick_closure_;
 
   // For intercepting recv_trailing_metadata_ready for the LB policy.
@@ -852,7 +859,7 @@ class ChannelData::SubchannelWrapper : public SubchannelInterface {
       }
       ++it->second;
     }
-    chand_->subchannel_wrappers_[this] = true;
+    chand_->subchannel_wrappers_.insert(this);
   }
 
   ~SubchannelWrapper() {
@@ -1107,7 +1114,7 @@ class ChannelData::SubchannelWrapper : public SubchannelInterface {
   // subchannel.  This is needed so that when the LB policy calls
   // CancelConnectivityStateWatch() with its watcher, we know the
   // corresponding WrapperWatcher to cancel on the underlying subchannel.
-  Map<ConnectivityStateWatcherInterface*, WatcherWrapper*> watcher_map_;
+  std::map<ConnectivityStateWatcherInterface*, WatcherWrapper*> watcher_map_;
   // To be accessed only in the control plane combiner.
   RefCountedPtr<ConnectedSubchannel> connected_subchannel_;
   // To be accessed only in the data plane mutex.
@@ -1151,11 +1158,11 @@ void ChannelData::ExternalConnectivityWatcher::Notify(
                                    MemoryOrder::RELAXED)) {
     return;  // Already done.
   }
+  // Remove external watcher.
+  chand_->RemoveExternalConnectivityWatcher(on_complete_, /*cancel=*/false);
   // Report new state to the user.
   *state_ = state;
   GRPC_CLOSURE_SCHED(on_complete_, GRPC_ERROR_NONE);
-  // Remove external watcher.
-  chand_->RemoveExternalConnectivityWatcher(on_complete_, /*cancel=*/false);
   // Hop back into the combiner to clean up.
   // Not needed in state SHUTDOWN, because the tracker will
   // automatically remove all watchers in that case.
@@ -1200,6 +1207,72 @@ void ChannelData::ExternalConnectivityWatcher::RemoveWatcherLocked(
       static_cast<ExternalConnectivityWatcher*>(arg);
   self->chand_->state_tracker_.RemoveWatcher(self);
 }
+
+//
+// ChannelData::ConnectivityWatcherAdder
+//
+
+class ChannelData::ConnectivityWatcherAdder {
+ public:
+  ConnectivityWatcherAdder(
+      ChannelData* chand, grpc_connectivity_state initial_state,
+      OrphanablePtr<AsyncConnectivityStateWatcherInterface> watcher)
+      : chand_(chand),
+        initial_state_(initial_state),
+        watcher_(std::move(watcher)) {
+    GRPC_CHANNEL_STACK_REF(chand_->owning_stack_, "ConnectivityWatcherAdder");
+    GRPC_CLOSURE_INIT(&closure_, &ConnectivityWatcherAdder::AddWatcherLocked,
+                      this, grpc_combiner_scheduler(chand_->combiner_));
+    GRPC_CLOSURE_SCHED(&closure_, GRPC_ERROR_NONE);
+  }
+
+ private:
+  static void AddWatcherLocked(void* arg, grpc_error* error) {
+    ConnectivityWatcherAdder* self =
+        static_cast<ConnectivityWatcherAdder*>(arg);
+    self->chand_->state_tracker_.AddWatcher(self->initial_state_,
+                                            std::move(self->watcher_));
+    GRPC_CHANNEL_STACK_UNREF(self->chand_->owning_stack_,
+                             "ConnectivityWatcherAdder");
+    Delete(self);
+  }
+
+  ChannelData* chand_;
+  grpc_connectivity_state initial_state_;
+  OrphanablePtr<AsyncConnectivityStateWatcherInterface> watcher_;
+  grpc_closure closure_;
+};
+
+//
+// ChannelData::ConnectivityWatcherRemover
+//
+
+class ChannelData::ConnectivityWatcherRemover {
+ public:
+  ConnectivityWatcherRemover(ChannelData* chand,
+                             AsyncConnectivityStateWatcherInterface* watcher)
+      : chand_(chand), watcher_(watcher) {
+    GRPC_CHANNEL_STACK_REF(chand_->owning_stack_, "ConnectivityWatcherRemover");
+    GRPC_CLOSURE_INIT(&closure_,
+                      &ConnectivityWatcherRemover::RemoveWatcherLocked, this,
+                      grpc_combiner_scheduler(chand_->combiner_));
+    GRPC_CLOSURE_SCHED(&closure_, GRPC_ERROR_NONE);
+  }
+
+ private:
+  static void RemoveWatcherLocked(void* arg, grpc_error* error) {
+    ConnectivityWatcherRemover* self =
+        static_cast<ConnectivityWatcherRemover*>(arg);
+    self->chand_->state_tracker_.RemoveWatcher(self->watcher_);
+    GRPC_CHANNEL_STACK_UNREF(self->chand_->owning_stack_,
+                             "ConnectivityWatcherRemover");
+    Delete(self);
+  }
+
+  ChannelData* chand_;
+  AsyncConnectivityStateWatcherInterface* watcher_;
+  grpc_closure closure_;
+};
 
 //
 // ChannelData::ClientChannelControlHelper
@@ -1515,9 +1588,7 @@ void ChannelData::CreateResolvingLoadBalancingPolicyLocked() {
   // Instantiate resolving LB policy.
   LoadBalancingPolicy::Args lb_args;
   lb_args.combiner = combiner_;
-  lb_args.channel_control_helper =
-      UniquePtr<LoadBalancingPolicy::ChannelControlHelper>(
-          New<ClientChannelControlHelper>(this));
+  lb_args.channel_control_helper = MakeUnique<ClientChannelControlHelper>(this);
   lb_args.args = channel_args_;
   UniquePtr<char> target_uri(gpr_strdup(target_uri_.get()));
   resolving_lb_policy_.reset(New<ResolvingLoadBalancingPolicy>(
@@ -1670,8 +1741,8 @@ bool ChannelData::ProcessResolverResultLocked(
       chand->health_check_service_name_.reset();
     }
     // Update health check service name used by existing subchannel wrappers.
-    for (const auto& p : chand->subchannel_wrappers_) {
-      p.first->UpdateHealthCheckServiceName(
+    for (auto* subchannel_wrapper : chand->subchannel_wrappers_) {
+      subchannel_wrapper->UpdateHealthCheckServiceName(
           UniquePtr<char>(gpr_strdup(chand->health_check_service_name_.get())));
     }
     // Save service config.
@@ -1791,9 +1862,8 @@ void ChannelData::StartTransportOpLocked(void* arg, grpc_error* ignored) {
                                      MemoryOrder::RELEASE);
       chand->UpdateStateAndPickerLocked(
           GRPC_CHANNEL_SHUTDOWN, "shutdown from API",
-          UniquePtr<LoadBalancingPolicy::SubchannelPicker>(
-              New<LoadBalancingPolicy::TransientFailurePicker>(
-                  GRPC_ERROR_REF(op->disconnect_with_error))));
+          MakeUnique<LoadBalancingPolicy::TransientFailurePicker>(
+              GRPC_ERROR_REF(op->disconnect_with_error)));
     }
   }
   GRPC_CHANNEL_STACK_UNREF(chand->owning_stack_, "start_transport_op");
@@ -1886,6 +1956,17 @@ grpc_connectivity_state ChannelData::CheckConnectivityState(
                        GRPC_ERROR_NONE);
   }
   return out;
+}
+
+void ChannelData::AddConnectivityWatcher(
+    grpc_connectivity_state initial_state,
+    OrphanablePtr<AsyncConnectivityStateWatcherInterface> watcher) {
+  New<ConnectivityWatcherAdder>(this, initial_state, std::move(watcher));
+}
+
+void ChannelData::RemoveConnectivityWatcher(
+    AsyncConnectivityStateWatcherInterface* watcher) {
+  New<ConnectivityWatcherRemover>(this, watcher);
 }
 
 //
@@ -2179,9 +2260,8 @@ void CallData::RecvTrailingMetadataReadyForLoadBalancingPolicy(
   CallData* calld = static_cast<CallData*>(arg);
   // Invoke callback to LB policy.
   Metadata trailing_metadata(calld, calld->recv_trailing_metadata_);
-  calld->lb_recv_trailing_metadata_ready_(
-      calld->lb_recv_trailing_metadata_ready_user_data_, error,
-      &trailing_metadata, &calld->lb_call_state_);
+  calld->lb_recv_trailing_metadata_ready_(error, &trailing_metadata,
+                                          &calld->lb_call_state_);
   // Chain to original callback.
   GRPC_CLOSURE_RUN(calld->original_recv_trailing_metadata_ready_,
                    GRPC_ERROR_REF(error));
@@ -3880,8 +3960,6 @@ bool CallData::PickSubchannelLocked(grpc_call_element* elem,
         GPR_ASSERT(connected_subchannel_ != nullptr);
       }
       lb_recv_trailing_metadata_ready_ = result.recv_trailing_metadata_ready;
-      lb_recv_trailing_metadata_ready_user_data_ =
-          result.recv_trailing_metadata_ready_user_data;
       *error = result.error;
       return true;
   }
@@ -3937,6 +4015,21 @@ void grpc_client_channel_watch_connectivity_state(
   // Handle addition.
   return chand->AddExternalConnectivityWatcher(pollent, state, closure,
                                                watcher_timer_init);
+}
+
+void grpc_client_channel_start_connectivity_watch(
+    grpc_channel_element* elem, grpc_connectivity_state initial_state,
+    grpc_core::OrphanablePtr<grpc_core::AsyncConnectivityStateWatcherInterface>
+        watcher) {
+  auto* chand = static_cast<ChannelData*>(elem->channel_data);
+  chand->AddConnectivityWatcher(initial_state, std::move(watcher));
+}
+
+void grpc_client_channel_stop_connectivity_watch(
+    grpc_channel_element* elem,
+    grpc_core::AsyncConnectivityStateWatcherInterface* watcher) {
+  auto* chand = static_cast<ChannelData*>(elem->channel_data);
+  chand->RemoveConnectivityWatcher(watcher);
 }
 
 grpc_core::RefCountedPtr<grpc_core::SubchannelCall>

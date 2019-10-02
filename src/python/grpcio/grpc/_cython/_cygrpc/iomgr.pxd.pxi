@@ -23,7 +23,7 @@ cdef extern from "src/core/lib/iomgr/error.h":
 
 # TODO(https://github.com/grpc/grpc/issues/20135) Change the filename
 # for something more meaningful.
-cdef extern from "src/core/lib/iomgr/gevent_util.h":
+cdef extern from "src/core/lib/iomgr/python_util.h":
   grpc_error* grpc_socket_error(char* error) 
   char* grpc_slice_buffer_start(grpc_slice_buffer* buffer, int i)
   int grpc_slice_buffer_length(grpc_slice_buffer* buffer, int i)

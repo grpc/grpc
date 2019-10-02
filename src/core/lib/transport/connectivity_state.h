@@ -28,6 +28,7 @@
 #include "src/core/lib/gprpp/map.h"
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/iomgr/closure.h"
+#include "src/core/lib/iomgr/exec_ctx.h"
 
 namespace grpc_core {
 
@@ -47,11 +48,9 @@ class ConnectivityStateWatcherInterface
   virtual ~ConnectivityStateWatcherInterface() = default;
 
   // Notifies the watcher that the state has changed to new_state.
-  virtual void Notify(grpc_connectivity_state new_state) GRPC_ABSTRACT;
+  virtual void Notify(grpc_connectivity_state new_state) = 0;
 
   void Orphan() override { Unref(); }
-
-  GRPC_ABSTRACT_BASE_CLASS
 };
 
 // An alternative watcher interface that performs notifications via an
@@ -69,13 +68,23 @@ class AsyncConnectivityStateWatcherInterface
  protected:
   class Notifier;
 
+  explicit AsyncConnectivityStateWatcherInterface(
+      grpc_closure_scheduler* scheduler = grpc_schedule_on_exec_ctx)
+      : scheduler_(scheduler) {}
+
   // Invoked asynchronously when Notify() is called.
-  virtual void OnConnectivityStateChange(grpc_connectivity_state new_state)
-      GRPC_ABSTRACT;
+  virtual void OnConnectivityStateChange(grpc_connectivity_state new_state) = 0;
+
+ private:
+  grpc_closure_scheduler* scheduler_;
 };
 
 // Tracks connectivity state.  Maintains a list of watchers that are
 // notified whenever the state changes.
+//
+// Note that once the state becomes SHUTDOWN, watchers will be notified
+// and then automatically orphaned (i.e., RemoveWatcher() does not need
+// to be called).
 class ConnectivityStateTracker {
  public:
   ConnectivityStateTracker(const char* name,
@@ -107,10 +116,10 @@ class ConnectivityStateTracker {
  private:
   const char* name_;
   Atomic<grpc_connectivity_state> state_;
-  // TODO(roth): This could be a set instead of a map if we had a set
-  // implementation.
-  Map<ConnectivityStateWatcherInterface*,
-      OrphanablePtr<ConnectivityStateWatcherInterface>>
+  // TODO(roth): Once we can use C++-14 heterogenous lookups, this can
+  // be a set instead of a map.
+  std::map<ConnectivityStateWatcherInterface*,
+           OrphanablePtr<ConnectivityStateWatcherInterface>>
       watchers_;
 };
 

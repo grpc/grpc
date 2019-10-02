@@ -515,10 +515,10 @@ RefCountedPtr<Handshaker> SecurityHandshakerCreate(
 void SecurityRegisterHandshakerFactories() {
   HandshakerRegistry::RegisterHandshakerFactory(
       false /* at_start */, HANDSHAKER_CLIENT,
-      UniquePtr<HandshakerFactory>(New<ClientSecurityHandshakerFactory>()));
+      MakeUnique<ClientSecurityHandshakerFactory>());
   HandshakerRegistry::RegisterHandshakerFactory(
       false /* at_start */, HANDSHAKER_SERVER,
-      UniquePtr<HandshakerFactory>(New<ServerSecurityHandshakerFactory>()));
+      MakeUnique<ServerSecurityHandshakerFactory>());
 }
 
 }  // namespace grpc_core
