@@ -200,13 +200,10 @@ class InterceptRecvTrailingMetadataLoadBalancingPolicy
   };
 
   static void LogMetadata(MetadataInterface* metadata) {
-    for (MetadataInterface::Iterator it = metadata->Begin();
-         !metadata->IsEnd(it); metadata->Next(&it)) {
+    for (const auto& p : *metadata) {
       gpr_log(GPR_INFO, "  \"%.*s\"=>\"%.*s\"",
-              static_cast<int>(metadata->Key(it).size()),
-              metadata->Key(it).data(),
-              static_cast<int>(metadata->Value(it).size()),
-              metadata->Value(it).data());
+              static_cast<int>(p.first.size()), p.first.data(),
+              static_cast<int>(p.second.size()), p.second.data());
     }
   }
 };

@@ -367,35 +367,39 @@ class CallData {
                  GRPC_ERROR_NONE);
     }
 
-    Iterator Begin() const override {
-      static_assert(sizeof(grpc_linked_mdelem*) <= sizeof(Iterator),
+    iterator begin() const override {
+      static_assert(sizeof(grpc_linked_mdelem*) <= sizeof(intptr_t),
                     "iterator size too large");
-      return reinterpret_cast<Iterator>(batch_->list.head);
+      return iterator(this, reinterpret_cast<intptr_t>(batch_->list.head));
     }
-    bool IsEnd(Iterator it) const override {
-      return reinterpret_cast<grpc_linked_mdelem*>(it) == nullptr;
-    }
-    void Next(Iterator* it) const override {
-      *it = reinterpret_cast<Iterator>(
-          reinterpret_cast<grpc_linked_mdelem*>(*it)->next);
-    }
-    StringView Key(Iterator it) const override {
-      return StringView(
-          GRPC_MDKEY(reinterpret_cast<grpc_linked_mdelem*>(it)->md));
-    }
-    StringView Value(Iterator it) const override {
-      return StringView(
-          GRPC_MDVALUE(reinterpret_cast<grpc_linked_mdelem*>(it)->md));
+    iterator end() const override {
+      static_assert(sizeof(grpc_linked_mdelem*) <= sizeof(intptr_t),
+                    "iterator size too large");
+      return iterator(this, 0);
     }
 
-    void Erase(Iterator* it) override {
+    iterator erase(iterator it) override {
       grpc_linked_mdelem* linked_mdelem =
-          reinterpret_cast<grpc_linked_mdelem*>(*it);
-      *it = reinterpret_cast<Iterator>(linked_mdelem->next);
+          reinterpret_cast<grpc_linked_mdelem*>(GetIteratorHandle(it));
+      intptr_t handle = reinterpret_cast<intptr_t>(linked_mdelem->next);
       grpc_metadata_batch_remove(batch_, linked_mdelem);
+      return iterator(this, handle);
     }
 
    private:
+    intptr_t IteratorNext(intptr_t handle) const override {
+      grpc_linked_mdelem* linked_mdelem =
+          reinterpret_cast<grpc_linked_mdelem*>(handle);
+      return reinterpret_cast<intptr_t>(linked_mdelem->next);
+    }
+    std::pair<StringView, StringView> IteratorGet(
+        intptr_t handle) const override {
+      grpc_linked_mdelem* linked_mdelem =
+          reinterpret_cast<grpc_linked_mdelem*>(handle);
+      return std::make_pair(StringView(GRPC_MDKEY(linked_mdelem->md)),
+                            StringView(GRPC_MDVALUE(linked_mdelem->md)));
+    }
+
     CallData* calld_;
     grpc_metadata_batch* batch_;
   };
