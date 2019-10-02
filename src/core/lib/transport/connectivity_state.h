@@ -108,8 +108,8 @@ class ConnectivityStateTracker {
  private:
   const char* name_;
   Atomic<grpc_connectivity_state> state_;
-  // TODO(roth): This could be a set instead of a map if we had a set
-  // implementation.
+  // TODO(roth): Once we can use C++-14 heterogenous lookups, this can
+  // be a set instead of a map.
   std::map<ConnectivityStateWatcherInterface*,
            OrphanablePtr<ConnectivityStateWatcherInterface>>
       watchers_;
