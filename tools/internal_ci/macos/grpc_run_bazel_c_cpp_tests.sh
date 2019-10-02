@@ -23,7 +23,7 @@ cd $(dirname $0)/../../..
 # run all C/C++ tests
 # TODO(jtattermusch): try using Bazel RBE remote cache
 # TODO(jtattermusch): upload bazel test results to resultstore
-tools/bazel test $RUN_TESTS_FLAGS //test/...
+tools/bazel --bazelrc=tools/remote_build/mac.bazelrc test $RUN_TESTS_FLAGS //test/...
 
 # kill port_server.py to prevent the build from hanging
 ps aux | grep port_server\\.py | awk '{print $2}' | xargs kill -9
