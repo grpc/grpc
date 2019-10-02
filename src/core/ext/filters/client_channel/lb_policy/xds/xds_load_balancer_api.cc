@@ -345,10 +345,11 @@ grpc_slice XdsLrsRequestCreateAndEncode(const char* server_name) {
 
 namespace {
 
-void LocalityStatsPopulate(envoy_api_v2_endpoint_UpstreamLocalityStats* output,
-                           Pair<const RefCountedPtr<XdsLocalityName>,
-                                XdsClientStats::LocalityStats::Snapshot>& input,
-                           upb_arena* arena) {
+void LocalityStatsPopulate(
+    envoy_api_v2_endpoint_UpstreamLocalityStats* output,
+    std::pair<const RefCountedPtr<XdsLocalityName>,
+              XdsClientStats::LocalityStats::Snapshot>& input,
+    upb_arena* arena) {
   // Set sub_zone.
   envoy_api_v2_core_Locality* locality =
       envoy_api_v2_endpoint_UpstreamLocalityStats_mutable_locality(output,

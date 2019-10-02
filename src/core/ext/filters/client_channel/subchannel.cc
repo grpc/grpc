@@ -367,7 +367,7 @@ class Subchannel::ConnectedSubchannelStateWatcher
 
 void Subchannel::ConnectivityStateWatcherList::AddWatcherLocked(
     OrphanablePtr<ConnectivityStateWatcherInterface> watcher) {
-  watchers_.insert(MakePair(watcher.get(), std::move(watcher)));
+  watchers_.insert(std::make_pair(watcher.get(), std::move(watcher)));
 }
 
 void Subchannel::ConnectivityStateWatcherList::RemoveWatcherLocked(

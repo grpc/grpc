@@ -30,7 +30,6 @@
 
 #include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/gprpp/memory.h"
-#include "src/core/lib/gprpp/pair.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/gprpp/string_view.h"
 
