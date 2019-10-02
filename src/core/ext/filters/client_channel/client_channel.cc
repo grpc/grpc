@@ -179,17 +179,17 @@ class ChannelData {
     return static_cast<int>(external_watchers_.size());
   }
 
-  void AddExternalConnectivityWatcher(
+  void AddConnectivityWatcher(
       grpc_connectivity_state initial_state,
       OrphanablePtr<AsyncConnectivityStateWatcherInterface> watcher);
-  void RemoveExternalConnectivityWatcher(
+  void RemoveConnectivityWatcher(
       AsyncConnectivityStateWatcherInterface* watcher);
 
  private:
   class SubchannelWrapper;
   class ClientChannelControlHelper;
-  class ExternalWatcherAdder;
-  class ExternalWatcherRemover;
+  class ConnectivityWatcherAdder;
+  class ConnectivityWatcherRemover;
 
   // Represents a pending connectivity callback from an external caller
   // via grpc_client_channel_watch_connectivity_state().
@@ -1210,30 +1210,31 @@ void ChannelData::ExternalConnectivityWatcher::RemoveWatcherLocked(
 }
 
 //
-// ChannelData::ExternalWatcherAdder
+// ChannelData::ConnectivityWatcherAdder
 //
 
-class ChannelData::ExternalWatcherAdder {
+class ChannelData::ConnectivityWatcherAdder {
  public:
-  ExternalWatcherAdder(
+  ConnectivityWatcherAdder(
       ChannelData* chand, grpc_connectivity_state initial_state,
       OrphanablePtr<AsyncConnectivityStateWatcherInterface> watcher)
       : chand_(chand),
         initial_state_(initial_state),
         watcher_(std::move(watcher)) {
-    GRPC_CHANNEL_STACK_REF(chand_->owning_stack_, "ExternalWatcherAdder");
-    GRPC_CLOSURE_INIT(&closure_, &ExternalWatcherAdder::AddWatcher, this,
-                      grpc_combiner_scheduler(chand_->combiner_));
+    GRPC_CHANNEL_STACK_REF(chand_->owning_stack_, "ConnectivityWatcherAdder");
+    GRPC_CLOSURE_INIT(&closure_, &ConnectivityWatcherAdder::AddWatcherLocked,
+                      this, grpc_combiner_scheduler(chand_->combiner_));
     GRPC_CLOSURE_SCHED(&closure_, GRPC_ERROR_NONE);
   }
 
  private:
-  static void AddWatcher(void* arg, grpc_error* error) {
-    ExternalWatcherAdder* self = static_cast<ExternalWatcherAdder*>(arg);
+  static void AddWatcherLocked(void* arg, grpc_error* error) {
+    ConnectivityWatcherAdder* self =
+        static_cast<ConnectivityWatcherAdder*>(arg);
     self->chand_->state_tracker_.AddWatcher(self->initial_state_,
                                             std::move(self->watcher_));
     GRPC_CHANNEL_STACK_UNREF(self->chand_->owning_stack_,
-                             "ExternalWatcherAdder");
+                             "ConnectivityWatcherAdder");
     Delete(self);
   }
 
@@ -1244,26 +1245,28 @@ class ChannelData::ExternalWatcherAdder {
 };
 
 //
-// ChannelData::ExternalWatcherRemover
+// ChannelData::ConnectivityWatcherRemover
 //
 
-class ChannelData::ExternalWatcherRemover {
+class ChannelData::ConnectivityWatcherRemover {
  public:
-  ExternalWatcherRemover(ChannelData* chand,
-                         AsyncConnectivityStateWatcherInterface* watcher)
+  ConnectivityWatcherRemover(ChannelData* chand,
+                             AsyncConnectivityStateWatcherInterface* watcher)
       : chand_(chand), watcher_(watcher) {
-    GRPC_CHANNEL_STACK_REF(chand_->owning_stack_, "ExternalWatcherRemover");
-    GRPC_CLOSURE_INIT(&closure_, &ExternalWatcherRemover::RemoveWatcher, this,
+    GRPC_CHANNEL_STACK_REF(chand_->owning_stack_, "ConnectivityWatcherRemover");
+    GRPC_CLOSURE_INIT(&closure_,
+                      &ConnectivityWatcherRemover::RemoveWatcherLocked, this,
                       grpc_combiner_scheduler(chand_->combiner_));
     GRPC_CLOSURE_SCHED(&closure_, GRPC_ERROR_NONE);
   }
 
  private:
-  static void RemoveWatcher(void* arg, grpc_error* error) {
-    ExternalWatcherRemover* self = static_cast<ExternalWatcherRemover*>(arg);
+  static void RemoveWatcherLocked(void* arg, grpc_error* error) {
+    ConnectivityWatcherRemover* self =
+        static_cast<ConnectivityWatcherRemover*>(arg);
     self->chand_->state_tracker_.RemoveWatcher(self->watcher_);
     GRPC_CHANNEL_STACK_UNREF(self->chand_->owning_stack_,
-                             "ExternalWatcherRemover");
+                             "ConnectivityWatcherRemover");
     Delete(self);
   }
 
@@ -1956,15 +1959,15 @@ grpc_connectivity_state ChannelData::CheckConnectivityState(
   return out;
 }
 
-void ChannelData::AddExternalConnectivityWatcher(
+void ChannelData::AddConnectivityWatcher(
     grpc_connectivity_state initial_state,
     OrphanablePtr<AsyncConnectivityStateWatcherInterface> watcher) {
-  New<ExternalWatcherAdder>(this, initial_state, std::move(watcher));
+  New<ConnectivityWatcherAdder>(this, initial_state, std::move(watcher));
 }
 
-void ChannelData::RemoveExternalConnectivityWatcher(
+void ChannelData::RemoveConnectivityWatcher(
     AsyncConnectivityStateWatcherInterface* watcher) {
-  New<ExternalWatcherRemover>(this, watcher);
+  New<ConnectivityWatcherRemover>(this, watcher);
 }
 
 //
@@ -4023,14 +4026,14 @@ void grpc_client_channel_start_connectivity_watch(
     grpc_core::OrphanablePtr<grpc_core::AsyncConnectivityStateWatcherInterface>
         watcher) {
   auto* chand = static_cast<ChannelData*>(elem->channel_data);
-  chand->AddExternalConnectivityWatcher(initial_state, std::move(watcher));
+  chand->AddConnectivityWatcher(initial_state, std::move(watcher));
 }
 
 void grpc_client_channel_stop_connectivity_watch(
     grpc_channel_element* elem,
     grpc_core::AsyncConnectivityStateWatcherInterface* watcher) {
   auto* chand = static_cast<ChannelData*>(elem->channel_data);
-  chand->RemoveExternalConnectivityWatcher(watcher);
+  chand->RemoveConnectivityWatcher(watcher);
 }
 
 grpc_core::RefCountedPtr<grpc_core::SubchannelCall>

@@ -931,10 +931,10 @@ void XdsLb::LbChannelState::StartConnectivityWatchLocked() {
   grpc_channel_element* client_channel_elem =
       grpc_channel_stack_last_element(grpc_channel_get_channel_stack(channel_));
   GPR_ASSERT(client_channel_elem->filter == &grpc_client_channel_filter);
-  watcher_ = New<StateWatcher>(Ref());
+  auto watcher = MakeOrphanable<StateWatcher>(Ref());
+  watcher_ = watcher.get();
   grpc_client_channel_start_connectivity_watch(
-      client_channel_elem, GRPC_CHANNEL_IDLE,
-      OrphanablePtr<AsyncConnectivityStateWatcherInterface>(watcher_));
+      client_channel_elem, GRPC_CHANNEL_IDLE, std::move(watcher));
 }
 
 void XdsLb::LbChannelState::CancelConnectivityWatchLocked() {
