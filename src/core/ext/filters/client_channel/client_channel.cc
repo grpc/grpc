@@ -26,6 +26,9 @@
 #include <stdio.h>
 #include <string.h>
 
+#include <map>
+#include <set>
+
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
@@ -286,9 +289,7 @@ class ChannelData {
   // The set of SubchannelWrappers that currently exist.
   // No need to hold a ref, since the map is updated in the control-plane
   // combiner when the SubchannelWrappers are created and destroyed.
-  // TODO(roth): We really want to use a set here, not a map.  Since we don't
-  // currently have a set implementation, we use a map and ignore the value.
-  std::map<SubchannelWrapper*, bool> subchannel_wrappers_;
+  std::set<SubchannelWrapper*> subchannel_wrappers_;
   // Pending ConnectedSubchannel updates for each SubchannelWrapper.
   // Updates are queued here in the control plane combiner and then applied
   // in the data plane mutex when the picker is updated.
@@ -852,7 +853,7 @@ class ChannelData::SubchannelWrapper : public SubchannelInterface {
       }
       ++it->second;
     }
-    chand_->subchannel_wrappers_[this] = true;
+    chand_->subchannel_wrappers_.insert(this);
   }
 
   ~SubchannelWrapper() {
@@ -1668,8 +1669,8 @@ bool ChannelData::ProcessResolverResultLocked(
       chand->health_check_service_name_.reset();
     }
     // Update health check service name used by existing subchannel wrappers.
-    for (const auto& p : chand->subchannel_wrappers_) {
-      p.first->UpdateHealthCheckServiceName(
+    for (auto* subchannel_wrapper : chand->subchannel_wrappers_) {
+      subchannel_wrapper->UpdateHealthCheckServiceName(
           UniquePtr<char>(gpr_strdup(chand->health_check_service_name_.get())));
     }
     // Save service config.
