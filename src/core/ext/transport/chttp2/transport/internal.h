@@ -39,7 +39,6 @@
 #include "src/core/lib/channel/channelz.h"
 #include "src/core/lib/compression/stream_compression.h"
 #include "src/core/lib/gprpp/manual_constructor.h"
-#include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/iomgr/combiner.h"
 #include "src/core/lib/iomgr/endpoint.h"
 #include "src/core/lib/iomgr/timer.h"
@@ -254,6 +253,7 @@ class Chttp2IncomingByteStream : public ByteStream {
 
  private:
   static void NextLocked(void* arg, grpc_error* error_ignored);
+  static void OrphanLocked(void* arg, grpc_error* error_ignored);
 
   void MaybeCreateStreamDecompressionCtx();
 
@@ -275,6 +275,7 @@ class Chttp2IncomingByteStream : public ByteStream {
     size_t max_size_hint;
     grpc_closure* on_complete;
   } next_action_;
+  grpc_closure destroy_action_;
 };
 
 }  // namespace grpc_core
@@ -293,12 +294,13 @@ struct grpc_chttp2_transport {
   ~grpc_chttp2_transport();
 
   grpc_transport base; /* must be first */
-  grpc_core::Mutex mu;
   grpc_core::RefCount refs;
   grpc_endpoint* ep;
   char* peer_string;
 
   grpc_resource_user* resource_user;
+
+  grpc_combiner* combiner;
 
   grpc_closure* notify_on_receive_settings = nullptr;
 
@@ -325,11 +327,11 @@ struct grpc_chttp2_transport {
   /** maps stream id to grpc_chttp2_stream objects */
   grpc_chttp2_stream_map stream_map;
 
-  grpc_closure write_action_begin;
+  grpc_closure write_action_begin_locked;
   grpc_closure write_action;
-  grpc_closure write_action_end;
+  grpc_closure write_action_end_locked;
 
-  grpc_closure read_action;
+  grpc_closure read_action_locked;
 
   /** incoming read bytes */
   grpc_slice_buffer read_buffer;
@@ -390,7 +392,7 @@ struct grpc_chttp2_transport {
   grpc_chttp2_repeated_ping_policy ping_policy;
   grpc_chttp2_repeated_ping_state ping_state;
   uint64_t ping_ctr = 0; /* unique id for pings */
-  grpc_closure retry_initiate_ping;
+  grpc_closure retry_initiate_ping_locked;
 
   /** ping acks */
   size_t ping_ack_count = 0;
@@ -440,9 +442,9 @@ struct grpc_chttp2_transport {
   grpc_chttp2_write_cb* write_cb_pool = nullptr;
 
   /* bdp estimator */
-  grpc_closure next_bdp_ping_timer_expired;
+  grpc_closure next_bdp_ping_timer_expired_locked;
   grpc_closure start_bdp_ping_locked;
-  grpc_closure finish_bdp_ping;
+  grpc_closure finish_bdp_ping_locked;
 
   /* if non-NULL, close the transport with this error when writes are finished
    */
@@ -457,9 +459,9 @@ struct grpc_chttp2_transport {
   /** have we scheduled a destructive cleanup? */
   bool destructive_reclaimer_registered = false;
   /** benign cleanup closure */
-  grpc_closure benign_reclaimer;
+  grpc_closure benign_reclaimer_locked;
   /** destructive cleanup closure */
-  grpc_closure destructive_reclaimer;
+  grpc_closure destructive_reclaimer_locked;
 
   /* next bdp ping timer */
   bool have_next_bdp_ping_timer = false;
@@ -467,13 +469,13 @@ struct grpc_chttp2_transport {
 
   /* keep-alive ping support */
   /** Closure to initialize a keepalive ping */
-  grpc_closure init_keepalive_ping;
+  grpc_closure init_keepalive_ping_locked;
   /** Closure to run when the keepalive ping is sent */
   grpc_closure start_keepalive_ping_locked;
   /** Cousure to run when the keepalive ping ack is received */
-  grpc_closure finish_keepalive_ping;
+  grpc_closure finish_keepalive_ping_locked;
   /** Closrue to run when the keepalive ping timeouts */
-  grpc_closure keepalive_watchdog_fired;
+  grpc_closure keepalive_watchdog_fired_locked;
   /** timer to initiate ping events */
   grpc_timer keepalive_ping_timer;
   /** watchdog to kill the transport when waiting for the keepalive ping */
@@ -520,6 +522,7 @@ struct grpc_chttp2_stream {
     explicit Reffer(grpc_chttp2_stream* s);
   } reffer;
 
+  grpc_closure destroy_stream;
   grpc_closure* destroy_stream_arg;
 
   grpc_chttp2_stream_link links[STREAM_LIST_COUNT];
@@ -540,7 +543,7 @@ struct grpc_chttp2_stream {
   int64_t next_message_end_offset;
   int64_t flow_controlled_bytes_written = 0;
   int64_t flow_controlled_bytes_flowed = 0;
-  grpc_closure complete_fetch;
+  grpc_closure complete_fetch_locked;
   grpc_closure* fetching_send_message_finished = nullptr;
 
   grpc_metadata_batch* recv_initial_metadata;
