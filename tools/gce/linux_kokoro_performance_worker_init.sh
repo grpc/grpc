@@ -92,7 +92,7 @@ sudo pypy get-pip.py
 sudo pypy -m pip install tabulate
 sudo pypy -m pip install google-api-python-client oauth2client
 # TODO(jtattermusch): for some reason, we need psutil installed
-# in pypy for kokoro_log_reader.py (strange, because the comand is
+# in pypy for kokoro_log_reader.py (strange, because the command is
 # "python kokoro_log_reader.py" and pypy is not the system default)
 sudo pypy -m pip install psutil
 

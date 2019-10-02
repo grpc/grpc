@@ -1380,7 +1380,7 @@ def _docker_arch_suffix(arch):
 
 
 def runs_per_test_type(arg_str):
-    """Auxilary function to parse the "runs_per_test" flag.
+    """Auxiliary function to parse the "runs_per_test" flag.
 
        Returns:
            A positive integer or 0, the latter indicating an infinite number of
@@ -1786,7 +1786,7 @@ def _shut_down_legacy_server(legacy_server_port):
 
 
 def _calculate_num_runs_failures(list_of_results):
-    """Caculate number of runs and failures for a particular test.
+    """Calculate number of runs and failures for a particular test.
 
   Args:
     list_of_results: (List) of JobResult object.

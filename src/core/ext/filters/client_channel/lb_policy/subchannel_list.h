@@ -33,7 +33,6 @@
 #include "src/core/ext/filters/client_channel/subchannel_interface.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/debug/trace.h"
-#include "src/core/lib/gprpp/abstract.h"
 #include "src/core/lib/gprpp/inlined_vector.h"
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/gprpp/ref_counted.h"
@@ -117,8 +116,6 @@ class SubchannelData {
   // Cancels any pending connectivity watch and unrefs the subchannel.
   void ShutdownLocked();
 
-  GRPC_ABSTRACT_BASE_CLASS
-
  protected:
   SubchannelData(
       SubchannelList<SubchannelListType, SubchannelDataType>* subchannel_list,
@@ -131,7 +128,7 @@ class SubchannelData {
   // invoked whenever the subchannel's connectivity state changes.
   // To stop watching, use CancelConnectivityWatchLocked().
   virtual void ProcessConnectivityChangeLocked(
-      grpc_connectivity_state connectivity_state) GRPC_ABSTRACT;
+      grpc_connectivity_state connectivity_state) = 0;
 
  private:
   // Watcher for subchannel connectivity state.
@@ -199,8 +196,6 @@ class SubchannelList : public InternallyRefCounted<SubchannelListType> {
     ShutdownLocked();
     InternallyRefCounted<SubchannelListType>::Unref(DEBUG_LOCATION, "shutdown");
   }
-
-  GRPC_ABSTRACT_BASE_CLASS
 
  protected:
   SubchannelList(LoadBalancingPolicy* policy, TraceFlag* tracer,

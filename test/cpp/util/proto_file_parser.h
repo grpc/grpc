@@ -63,7 +63,7 @@ class ProtoFileParser {
   /// \param is_json_format if \c true the \c formatted_proto is treated as a
   ///        json-formatted proto, otherwise it is treated as a text-formatted
   ///        proto
-  /// \return the serialised binary proto represenation of \c formatted_proto
+  /// \return the serialised binary proto representation of \c formatted_proto
   grpc::string GetSerializedProtoFromMethod(const grpc::string& method,
                                             const grpc::string& formatted_proto,
                                             bool is_request,
@@ -72,7 +72,7 @@ class ProtoFileParser {
   /// Converts a text or json string to its proto representation for the given
   /// message type.
   /// \param formatted_proto the text- or json-formatted proto string
-  /// \return the serialised binary proto represenation of \c formatted_proto
+  /// \return the serialised binary proto representation of \c formatted_proto
   grpc::string GetSerializedProtoFromMessageType(
       const grpc::string& message_type_name,
       const grpc::string& formatted_proto, bool is_json_format);

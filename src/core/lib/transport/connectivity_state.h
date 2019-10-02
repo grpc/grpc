@@ -48,11 +48,9 @@ class ConnectivityStateWatcherInterface
   virtual ~ConnectivityStateWatcherInterface() = default;
 
   // Notifies the watcher that the state has changed to new_state.
-  virtual void Notify(grpc_connectivity_state new_state) GRPC_ABSTRACT;
+  virtual void Notify(grpc_connectivity_state new_state) = 0;
 
   void Orphan() override { Unref(); }
-
-  GRPC_ABSTRACT_BASE_CLASS
 };
 
 // An alternative watcher interface that performs notifications via an
@@ -75,8 +73,7 @@ class AsyncConnectivityStateWatcherInterface
       : scheduler_(scheduler) {}
 
   // Invoked asynchronously when Notify() is called.
-  virtual void OnConnectivityStateChange(grpc_connectivity_state new_state)
-      GRPC_ABSTRACT;
+  virtual void OnConnectivityStateChange(grpc_connectivity_state new_state) = 0;
 
  private:
   grpc_closure_scheduler* scheduler_;
@@ -121,8 +118,8 @@ class ConnectivityStateTracker {
   Atomic<grpc_connectivity_state> state_;
   // TODO(roth): This could be a set instead of a map if we had a set
   // implementation.
-  Map<ConnectivityStateWatcherInterface*,
-      OrphanablePtr<ConnectivityStateWatcherInterface>>
+  std::map<ConnectivityStateWatcherInterface*,
+           OrphanablePtr<ConnectivityStateWatcherInterface>>
       watchers_;
 };
 

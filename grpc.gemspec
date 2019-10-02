@@ -96,7 +96,6 @@ Gem::Specification.new do |s|
   s.files += %w( src/core/lib/gpr/tls_pthread.h )
   s.files += %w( src/core/lib/gpr/tmpfile.h )
   s.files += %w( src/core/lib/gpr/useful.h )
-  s.files += %w( src/core/lib/gprpp/abstract.h )
   s.files += %w( src/core/lib/gprpp/arena.h )
   s.files += %w( src/core/lib/gprpp/atomic.h )
   s.files += %w( src/core/lib/gprpp/fork.h )

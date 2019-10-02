@@ -87,7 +87,7 @@ class ChannelzRegistry {
 
   // protects members
   Mutex mu_;
-  Map<intptr_t, BaseNode*> node_map_;
+  std::map<intptr_t, BaseNode*> node_map_;
   intptr_t uuid_generator_ = 0;
 };
 

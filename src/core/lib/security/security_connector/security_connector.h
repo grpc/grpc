@@ -58,14 +58,12 @@ class grpc_security_connector
   virtual void check_peer(
       tsi_peer peer, grpc_endpoint* ep,
       grpc_core::RefCountedPtr<grpc_auth_context>* auth_context,
-      grpc_closure* on_peer_checked) GRPC_ABSTRACT;
+      grpc_closure* on_peer_checked) = 0;
 
   /* Compares two security connectors. */
-  virtual int cmp(const grpc_security_connector* other) const GRPC_ABSTRACT;
+  virtual int cmp(const grpc_security_connector* other) const = 0;
 
   const char* url_scheme() const { return url_scheme_; }
-
-  GRPC_ABSTRACT_BASE_CLASS
 
  private:
   const char* url_scheme_;
@@ -103,16 +101,16 @@ class grpc_channel_security_connector : public grpc_security_connector {
   virtual bool check_call_host(grpc_core::StringView host,
                                grpc_auth_context* auth_context,
                                grpc_closure* on_call_host_checked,
-                               grpc_error** error) GRPC_ABSTRACT;
+                               grpc_error** error) = 0;
   /// Cancels a pending asynchronous call to
   /// grpc_channel_security_connector_check_call_host() with
   /// \a on_call_host_checked as its callback.
   virtual void cancel_check_call_host(grpc_closure* on_call_host_checked,
-                                      grpc_error* error) GRPC_ABSTRACT;
+                                      grpc_error* error) = 0;
   /// Registers handshakers with \a handshake_mgr.
-  virtual void add_handshakers(
-      const grpc_channel_args* args, grpc_pollset_set* interested_parties,
-      grpc_core::HandshakeManager* handshake_mgr) GRPC_ABSTRACT;
+  virtual void add_handshakers(const grpc_channel_args* args,
+                               grpc_pollset_set* interested_parties,
+                               grpc_core::HandshakeManager* handshake_mgr) = 0;
 
   const grpc_channel_credentials* channel_creds() const {
     return channel_creds_.get();
@@ -126,8 +124,6 @@ class grpc_channel_security_connector : public grpc_security_connector {
   grpc_call_credentials* mutable_request_metadata_creds() {
     return request_metadata_creds_.get();
   }
-
-  GRPC_ABSTRACT_BASE_CLASS
 
  protected:
   // Helper methods to be used in subclasses.
@@ -157,9 +153,9 @@ class grpc_server_security_connector : public grpc_security_connector {
       grpc_core::RefCountedPtr<grpc_server_credentials> server_creds);
   ~grpc_server_security_connector() override = default;
 
-  virtual void add_handshakers(
-      const grpc_channel_args* args, grpc_pollset_set* interested_parties,
-      grpc_core::HandshakeManager* handshake_mgr) GRPC_ABSTRACT;
+  virtual void add_handshakers(const grpc_channel_args* args,
+                               grpc_pollset_set* interested_parties,
+                               grpc_core::HandshakeManager* handshake_mgr) = 0;
 
   const grpc_server_credentials* server_creds() const {
     return server_creds_.get();
@@ -167,8 +163,6 @@ class grpc_server_security_connector : public grpc_security_connector {
   grpc_server_credentials* mutable_server_creds() {
     return server_creds_.get();
   }
-
-  GRPC_ABSTRACT_BASE_CLASS
 
  protected:
   // Helper methods to be used in subclasses.
