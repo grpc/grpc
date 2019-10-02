@@ -1186,14 +1186,7 @@ void grpc_server_setup_transport(
     chand->channelz_socket_uuid = 0;
   }
 
-  size_t cq_idx;
-  for (cq_idx = 0; cq_idx < s->cq_count; cq_idx++) {
-    if (grpc_cq_pollset(s->cqs[cq_idx]) == accepting_pollset) break;
-  }
-  if (cq_idx == s->cq_count) {
-    /* completion queue not found: pick a random one to publish new calls to */
-    cq_idx = static_cast<size_t>(rand()) % s->cq_count;
-  }
+  size_t cq_idx = static_cast<size_t>(rand()) % s->cq_count;
   chand->cq_idx = cq_idx;
 
   num_registered_methods = 0;

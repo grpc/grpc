@@ -32,6 +32,7 @@
 #include <grpcpp/health_check_service_interface.h>
 #include <grpcpp/impl/call.h>
 #include <grpcpp/impl/codegen/client_interceptor.h>
+#include <grpcpp/impl/codegen/completion_queue.h>
 #include <grpcpp/impl/codegen/completion_queue_impl.h>
 #include <grpcpp/impl/codegen/grpc_library.h>
 #include <grpcpp/impl/codegen/server_interface.h>
@@ -283,6 +284,7 @@ class Server : public grpc::ServerInterface, private grpc::GrpcLibraryCodegen {
   }
 
   CompletionQueue* CallbackCQ() override;
+  std::pair<grpc::CompletionQueue*, size_t> CallbackCQShards();
 
   grpc_impl::ServerInitializer* initializer();
 
@@ -368,12 +370,15 @@ class Server : public grpc::ServerInterface, private grpc::GrpcLibraryCodegen {
   // Handler for callback generic service, if any
   std::unique_ptr<grpc::internal::MethodHandler> generic_handler_;
 
-  // callback_cq_ references the callbackable completion queue associated
+  // callback_cq_shards_references the callbackable completion queues associated
   // with this server (if any). It is set on the first call to CallbackCQ().
   // It is _not owned_ by the server; ownership belongs with its internal
   // shutdown callback tag (invoked when the CQ is fully shutdown).
   // It is protected by mu_
-  CompletionQueue* callback_cq_ = nullptr;
+  CompletionQueue* callback_cq_shards_ = nullptr;
+  size_t num_cb_cq_shards_ = 0;
+  static constexpr unsigned kDefaultCallbackCqShards = 32;
+  void MakeCallbackCQShardsLocked();
 };
 
 }  // namespace grpc_impl

@@ -24,6 +24,7 @@
 
 #include <grpc/grpc.h>
 #include <grpc/support/alloc.h>
+#include <grpc/support/cpu.h>
 #include <grpc/support/log.h>
 #include <grpcpp/completion_queue.h>
 #include <grpcpp/generic/async_generic_service.h>
@@ -1006,8 +1007,11 @@ Server::Server(
 Server::~Server() {
   {
     grpc::internal::ReleasableMutexLock lock(&mu_);
-    if (callback_cq_ != nullptr) {
-      callback_cq_->Shutdown();
+    if (callback_cq_shards_ != nullptr) {
+      for (auto idx = 0; idx < num_cb_cq_shards_; idx++) {
+        auto* cb_cq = &callback_cq_shards_[idx];
+        cb_cq->Shutdown();
+      }
     }
     if (started_ && !shutdown_) {
       lock.Unlock();
@@ -1364,20 +1368,40 @@ grpc::ServerInitializer* Server::initializer() {
   return server_initializer_.get();
 }
 
-grpc::CompletionQueue* Server::CallbackCQ() {
-  // TODO(vjpai): Consider using a single global CQ for the default CQ
-  // if there is no explicit per-server CQ registered
-  grpc::internal::MutexLock l(&mu_);
-  if (callback_cq_ == nullptr) {
+void GPR_ATTRIBUTE_NOINLINE Server::MakeCallbackCQShardsLocked() {
+  num_cb_cq_shards_ = std::max(gpr_cpu_num_cores(), kDefaultCallbackCqShards);
+  callback_cq_shards_ = static_cast<CompletionQueue*>(
+      gpr_malloc(num_cb_cq_shards_ * sizeof(*callback_cq_shards_)));
+  for (auto idx = 0; idx < num_cb_cq_shards_; idx++) {
     auto* shutdown_callback = new grpc::ShutdownCallback;
-    callback_cq_ = new grpc::CompletionQueue(grpc_completion_queue_attributes{
+    CompletionQueue* cq = &callback_cq_shards_[idx];
+    new (cq) grpc::CompletionQueue(grpc_completion_queue_attributes{
         GRPC_CQ_CURRENT_VERSION, GRPC_CQ_CALLBACK, GRPC_CQ_DEFAULT_POLLING,
         shutdown_callback});
 
     // Transfer ownership of the new cq to its own shutdown callback
-    shutdown_callback->TakeCQ(callback_cq_);
+    shutdown_callback->TakeCQ(cq);
   }
-  return callback_cq_;
+}
+
+grpc::CompletionQueue* Server::CallbackCQ() {
+  // TODO(vjpai): Consider using a single global CQ for the default CQ
+  // if there is no explicit per-server CQ registered
+  grpc::internal::MutexLock l(&mu_);
+  if (GPR_UNLIKELY(callback_cq_shards_ == nullptr)) {
+    MakeCallbackCQShardsLocked();
+  }
+  return &callback_cq_shards_[rand() % num_cb_cq_shards_];
+}
+
+std::pair<grpc::CompletionQueue*, size_t> Server::CallbackCQShards() {
+  grpc::internal::MutexLock l(&mu_);
+  if (GPR_UNLIKELY(callback_cq_shards_ == nullptr)) {
+    MakeCallbackCQShardsLocked();
+  }
+  return std::make_pair<grpc::CompletionQueue*, size_t>(
+      std::forward<grpc::CompletionQueue*>(callback_cq_shards_),
+      std::forward<size_t>(num_cb_cq_shards_));
 }
 
 }  // namespace grpc_impl
