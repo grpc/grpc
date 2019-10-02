@@ -113,6 +113,7 @@
     <file baseinstalldir="/" name="src/core/lib/gprpp/map.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gprpp/memory.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gprpp/mpscq.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/gprpp/set.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gprpp/sync.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gprpp/thd.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/profiling/timers.h" role="src" />
