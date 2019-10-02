@@ -24,7 +24,6 @@
 #include "src/core/ext/filters/client_channel/server_address.h"
 #include "src/core/ext/filters/client_channel/service_config.h"
 #include "src/core/ext/filters/client_channel/subchannel_interface.h"
-#include "src/core/lib/gprpp/abstract.h"
 #include "src/core/lib/gprpp/map.h"
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
@@ -91,11 +90,11 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
     /// Application-specific requests cost metrics.  Metric names are
     /// determined by the application.  Each value is an absolute cost
     /// (e.g. 3487 bytes of storage) associated with the request.
-    Map<StringView, double, StringLess> request_cost;
+    std::map<StringView, double, StringLess> request_cost;
     /// Application-specific resource utilization metrics.  Metric names
     /// are determined by the application.  Each value is expressed as a
     /// fraction of total resources available.
-    Map<StringView, double, StringLess> utilization;
+    std::map<StringView, double, StringLess> utilization;
   };
 
   /// Interface for accessing per-call state.
@@ -109,13 +108,11 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
     /// automatically freed when the call is complete.
     /// It is more efficient to use this than to allocate memory directly
     /// for allocations that need to be made on a per-call basis.
-    virtual void* Alloc(size_t size) GRPC_ABSTRACT;
+    virtual void* Alloc(size_t size) = 0;
 
     /// Returns the backend metric data returned by the server for the call,
     /// or null if no backend metric data was returned.
-    virtual const BackendMetricData* GetBackendMetricData() GRPC_ABSTRACT;
-
-    GRPC_ABSTRACT_BASE_CLASS
+    virtual const BackendMetricData* GetBackendMetricData() = 0;
   };
 
   /// Interface for accessing metadata.
@@ -134,20 +131,18 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
     /// Implementations must ensure that the key and value remain alive
     /// until the call ends.  If desired, they may be allocated via
     /// CallState::Alloc().
-    virtual void Add(StringView key, StringView value) GRPC_ABSTRACT;
+    virtual void Add(StringView key, StringView value) = 0;
 
     /// Iteration interface.
-    virtual Iterator Begin() const GRPC_ABSTRACT;
-    virtual bool IsEnd(Iterator it) const GRPC_ABSTRACT;
-    virtual void Next(Iterator* it) const GRPC_ABSTRACT;
-    virtual StringView Key(Iterator it) const GRPC_ABSTRACT;
-    virtual StringView Value(Iterator it) const GRPC_ABSTRACT;
+    virtual Iterator Begin() const = 0;
+    virtual bool IsEnd(Iterator it) const = 0;
+    virtual void Next(Iterator* it) const = 0;
+    virtual StringView Key(Iterator it) const = 0;
+    virtual StringView Value(Iterator it) const = 0;
 
     /// Removes the element pointed to by \a it, which is modified to
     /// point to the next element.
-    virtual void Erase(Iterator* it) GRPC_ABSTRACT;
-
-    GRPC_ABSTRACT_BASE_CLASS
+    virtual void Erase(Iterator* it) = 0;
   };
 
   /// Arguments used when picking a subchannel for a call.
@@ -229,9 +224,7 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
     SubchannelPicker() = default;
     virtual ~SubchannelPicker() = default;
 
-    virtual PickResult Pick(PickArgs args) GRPC_ABSTRACT;
-
-    GRPC_ABSTRACT_BASE_CLASS
+    virtual PickResult Pick(PickArgs args) = 0;
   };
 
   /// A proxy object implemented by the client channel and used by the
@@ -246,22 +239,19 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
 
     /// Creates a new subchannel with the specified channel args.
     virtual RefCountedPtr<SubchannelInterface> CreateSubchannel(
-        const grpc_channel_args& args) GRPC_ABSTRACT;
+        const grpc_channel_args& args) = 0;
 
     /// Sets the connectivity state and returns a new picker to be used
     /// by the client channel.
     virtual void UpdateState(grpc_connectivity_state state,
-                             UniquePtr<SubchannelPicker>) GRPC_ABSTRACT;
+                             UniquePtr<SubchannelPicker>) = 0;
 
     /// Requests that the resolver re-resolve.
-    virtual void RequestReresolution() GRPC_ABSTRACT;
+    virtual void RequestReresolution() = 0;
 
     /// Adds a trace message associated with the channel.
     enum TraceSeverity { TRACE_INFO, TRACE_WARNING, TRACE_ERROR };
-    virtual void AddTraceEvent(TraceSeverity severity,
-                               StringView message) GRPC_ABSTRACT;
-
-    GRPC_ABSTRACT_BASE_CLASS
+    virtual void AddTraceEvent(TraceSeverity severity, StringView message) = 0;
   };
 
   /// Interface for configuration data used by an LB policy implementation.
@@ -272,9 +262,7 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
     virtual ~Config() = default;
 
     // Returns the load balancing policy name
-    virtual const char* name() const GRPC_ABSTRACT;
-
-    GRPC_ABSTRACT_BASE_CLASS
+    virtual const char* name() const = 0;
   };
 
   /// Data passed to the UpdateLocked() method when new addresses and
@@ -319,12 +307,12 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
   LoadBalancingPolicy& operator=(const LoadBalancingPolicy&) = delete;
 
   /// Returns the name of the LB policy.
-  virtual const char* name() const GRPC_ABSTRACT;
+  virtual const char* name() const = 0;
 
   /// Updates the policy with new data from the resolver.  Will be invoked
   /// immediately after LB policy is constructed, and then again whenever
   /// the resolver returns a new result.
-  virtual void UpdateLocked(UpdateArgs) GRPC_ABSTRACT;  // NOLINT
+  virtual void UpdateLocked(UpdateArgs) = 0;  // NOLINT
 
   /// Tries to enter a READY connectivity state.
   /// This is a no-op by default, since most LB policies never go into
@@ -332,7 +320,7 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
   virtual void ExitIdleLocked() {}
 
   /// Resets connection backoff.
-  virtual void ResetBackoffLocked() GRPC_ABSTRACT;
+  virtual void ResetBackoffLocked() = 0;
 
   grpc_pollset_set* interested_parties() const { return interested_parties_; }
 
@@ -370,8 +358,6 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
     grpc_error* error_;
   };
 
-  GRPC_ABSTRACT_BASE_CLASS
-
  protected:
   grpc_combiner* combiner() const { return combiner_; }
 
@@ -382,7 +368,7 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
   }
 
   /// Shuts down the policy.
-  virtual void ShutdownLocked() GRPC_ABSTRACT;
+  virtual void ShutdownLocked() = 0;
 
  private:
   /// Combiner under which LB policy actions take place.

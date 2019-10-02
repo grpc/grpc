@@ -25,7 +25,6 @@
 
 #include "src/core/ext/filters/client_channel/server_address.h"
 #include "src/core/ext/filters/client_channel/service_config.h"
-#include "src/core/lib/gprpp/abstract.h"
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/iomgr/combiner.h"
@@ -74,17 +73,15 @@ class Resolver : public InternallyRefCounted<Resolver> {
 
     /// Returns a result to the channel.
     /// Takes ownership of \a result.args.
-    virtual void ReturnResult(Result result) GRPC_ABSTRACT;  // NOLINT
+    virtual void ReturnResult(Result result) = 0;  // NOLINT
 
     /// Returns a transient error to the channel.
     /// If the resolver does not set the GRPC_ERROR_INT_GRPC_STATUS
     /// attribute on the error, calls will be failed with status UNKNOWN.
-    virtual void ReturnError(grpc_error* error) GRPC_ABSTRACT;
+    virtual void ReturnError(grpc_error* error) = 0;
 
     // TODO(yashkt): As part of the service config error handling
     // changes, add a method to parse the service config JSON string.
-
-    GRPC_ABSTRACT_BASE_CLASS
   };
 
   // Not copyable nor movable.
@@ -92,7 +89,7 @@ class Resolver : public InternallyRefCounted<Resolver> {
   Resolver& operator=(const Resolver&) = delete;
 
   /// Starts resolving.
-  virtual void StartLocked() GRPC_ABSTRACT;
+  virtual void StartLocked() = 0;
 
   /// Asks the resolver to obtain an updated resolver result, if
   /// applicable.
@@ -123,8 +120,6 @@ class Resolver : public InternallyRefCounted<Resolver> {
     Unref();
   }
 
-  GRPC_ABSTRACT_BASE_CLASS
-
  protected:
   GRPC_ALLOW_CLASS_TO_USE_NON_PUBLIC_DELETE
 
@@ -138,7 +133,7 @@ class Resolver : public InternallyRefCounted<Resolver> {
   virtual ~Resolver();
 
   /// Shuts down the resolver.
-  virtual void ShutdownLocked() GRPC_ABSTRACT;
+  virtual void ShutdownLocked() = 0;
 
   grpc_combiner* combiner() const { return combiner_; }
 
