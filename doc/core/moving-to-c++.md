@@ -33,6 +33,8 @@ C++ compatible with
 - This would limit us not to use modern C++11 standard library such as `filesystem`. 
   You can easily see whether PR is free from this issue by checking the result of
   `Artifact Build Linux` test.
+- `thread_local` is not allowed to use on Apple's products because their old OSes
+  (e.g. ios < 9.0) don't support `thread_local`.
 
 ## Roadmap
 
