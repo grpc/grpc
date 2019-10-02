@@ -1669,15 +1669,11 @@ static const maybe_complete_func_type maybe_complete_funcs[] = {
 static void force_client_rst_stream(void* sp, grpc_error* error) {
   grpc_chttp2_stream* s = static_cast<grpc_chttp2_stream*>(sp);
   grpc_chttp2_transport* t = s->t;
-  {
-    grpc_core::MutexLock lock(&t->mu);
-    if (!s->write_closed) {
-      grpc_chttp2_add_rst_stream_to_next_write(t, s->id, GRPC_HTTP2_NO_ERROR,
-                                               &s->stats.outgoing);
-      grpc_chttp2_initiate_write(t,
-                                 GRPC_CHTTP2_INITIATE_WRITE_FORCE_RST_STREAM);
-      grpc_chttp2_mark_stream_closed(t, s, true, true, GRPC_ERROR_NONE);
-    }
+  if (!s->write_closed) {
+    grpc_chttp2_add_rst_stream_to_next_write(t, s->id, GRPC_HTTP2_NO_ERROR,
+                                             &s->stats.outgoing);
+    grpc_chttp2_initiate_write(t, GRPC_CHTTP2_INITIATE_WRITE_FORCE_RST_STREAM);
+    grpc_chttp2_mark_stream_closed(t, s, true, true, GRPC_ERROR_NONE);
   }
   GRPC_CHTTP2_STREAM_UNREF(s, "final_rst");
 }
@@ -1744,12 +1740,11 @@ grpc_error* grpc_chttp2_header_parser_parse(void* hpack_parser,
              the stream. Wait until the combiner lock is ready to be released
              however -- it might be that we receive a RST_STREAM following this
              and can avoid the extra write */
-          // TODO(yashykt) : When we were using combiners, we were using the
-          // finally version. Maybe do something similar?
           GRPC_CHTTP2_STREAM_REF(s, "final_rst");
-          GRPC_CLOSURE_SCHED(GRPC_CLOSURE_CREATE(force_client_rst_stream, s,
-                                                 grpc_schedule_on_exec_ctx),
-                             GRPC_ERROR_NONE);
+          GRPC_CLOSURE_SCHED(
+              GRPC_CLOSURE_CREATE(force_client_rst_stream, s,
+                                  grpc_combiner_finally_scheduler(t->combiner)),
+              GRPC_ERROR_NONE);
         }
         grpc_chttp2_mark_stream_closed(t, s, true, false, GRPC_ERROR_NONE);
       }
