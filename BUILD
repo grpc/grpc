@@ -81,7 +81,7 @@ g_stands_for = "ganges"
 
 core_version = "7.0.0"
 
-version = "1.24.0"
+version = "1.24.1"
 
 GPR_PUBLIC_HDRS = [
     "include/grpc/support/alloc.h",
