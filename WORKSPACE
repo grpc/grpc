@@ -23,6 +23,10 @@ load("@bazel_toolchains//rules:rbe_repo.bzl", "rbe_autoconfig")
 # Create toolchain configuration for remote execution.
 rbe_autoconfig(
     name = "rbe_default",
+    env = clang_env(),
+    registry = "gcr.io",
+    repository = "cloud-marketplace/google/rbe-ubuntu18-04",
+    digest = "sha256:0191ae7277b35b787851168d1900ec36d0a47744315638aa0a00d078ca1dc63c",
 )
 
 load("@bazel_toolchains//rules:environments.bzl", "clang_env")
@@ -37,6 +41,9 @@ rbe_autoconfig(
             "BAZEL_LINKOPTS": "-lc++:-lc++abi:-lm",
         },
     ),
+    registry = "gcr.io",
+    repository = "cloud-marketplace/google/rbe-ubuntu18-04",
+    digest = "sha256:0191ae7277b35b787851168d1900ec36d0a47744315638aa0a00d078ca1dc63c",
 )
 
 load("@io_bazel_rules_python//python:pip.bzl", "pip_repositories", "pip_import")
