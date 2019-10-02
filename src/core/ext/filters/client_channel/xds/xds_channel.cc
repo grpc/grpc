@@ -20,16 +20,16 @@
 
 #include <grpc/grpc.h>
 
-#include "src/core/ext/filters/client_channel/lb_policy/xds/xds_channel.h"
+#include "src/core/ext/filters/client_channel/xds/xds_channel.h"
 
 namespace grpc_core {
 
-grpc_channel_args* ModifyXdsBalancerChannelArgs(grpc_channel_args* args) {
+grpc_channel_args* ModifyXdsChannelArgs(grpc_channel_args* args) {
   return args;
 }
 
-grpc_channel* CreateXdsBalancerChannel(const char* target_uri,
-                                       const grpc_channel_args& args) {
+grpc_channel* CreateXdsChannel(const char* target_uri,
+                               const grpc_channel_args& args) {
   return grpc_insecure_channel_create(target_uri, &args, nullptr);
 }
 

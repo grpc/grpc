@@ -3836,9 +3836,10 @@ LIBGRPC_SRC = \
     src/core/ext/upb-generated/src/proto/grpc/lb/v1/load_balancer.upb.c \
     src/core/ext/filters/client_channel/resolver/fake/fake_resolver.cc \
     src/core/ext/filters/client_channel/lb_policy/xds/xds.cc \
-    src/core/ext/filters/client_channel/lb_policy/xds/xds_channel_secure.cc \
-    src/core/ext/filters/client_channel/lb_policy/xds/xds_client_stats.cc \
-    src/core/ext/filters/client_channel/lb_policy/xds/xds_load_balancer_api.cc \
+    src/core/ext/filters/client_channel/xds/xds_api.cc \
+    src/core/ext/filters/client_channel/xds/xds_channel_secure.cc \
+    src/core/ext/filters/client_channel/xds/xds_client.cc \
+    src/core/ext/filters/client_channel/xds/xds_client_stats.cc \
     src/core/ext/upb-generated/envoy/api/v2/auth/cert.upb.c \
     src/core/ext/upb-generated/envoy/api/v2/cds.upb.c \
     src/core/ext/upb-generated/envoy/api/v2/cluster/circuit_breaker.upb.c \
@@ -5304,9 +5305,10 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/ext/filters/client_channel/lb_policy/grpclb/load_balancer_api.cc \
     src/core/ext/upb-generated/src/proto/grpc/lb/v1/load_balancer.upb.c \
     src/core/ext/filters/client_channel/lb_policy/xds/xds.cc \
-    src/core/ext/filters/client_channel/lb_policy/xds/xds_channel.cc \
-    src/core/ext/filters/client_channel/lb_policy/xds/xds_client_stats.cc \
-    src/core/ext/filters/client_channel/lb_policy/xds/xds_load_balancer_api.cc \
+    src/core/ext/filters/client_channel/xds/xds_api.cc \
+    src/core/ext/filters/client_channel/xds/xds_channel.cc \
+    src/core/ext/filters/client_channel/xds/xds_client.cc \
+    src/core/ext/filters/client_channel/xds/xds_client_stats.cc \
     src/core/ext/upb-generated/envoy/api/v2/auth/cert.upb.c \
     src/core/ext/upb-generated/envoy/api/v2/cds.upb.c \
     src/core/ext/upb-generated/envoy/api/v2/cluster/circuit_breaker.upb.c \
@@ -22580,7 +22582,7 @@ ifneq ($(OPENSSL_DEP),)
 # installing headers to their final destination on the drive. We need this
 # otherwise parallel compilation will fail if a source is compiled first.
 src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_channel_secure.cc: $(OPENSSL_DEP)
-src/core/ext/filters/client_channel/lb_policy/xds/xds_channel_secure.cc: $(OPENSSL_DEP)
+src/core/ext/filters/client_channel/xds/xds_channel_secure.cc: $(OPENSSL_DEP)
 src/core/ext/transport/chttp2/client/secure/secure_channel_create.cc: $(OPENSSL_DEP)
 src/core/ext/transport/chttp2/server/secure/server_secure_chttp2.cc: $(OPENSSL_DEP)
 src/core/ext/transport/cronet/client/secure/cronet_channel_create.cc: $(OPENSSL_DEP)

@@ -18,7 +18,7 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "src/core/ext/filters/client_channel/lb_policy/xds/xds_channel.h"
+#include "src/core/ext/filters/client_channel/xds/xds_channel.h"
 
 #include <string.h>
 
@@ -37,7 +37,7 @@
 
 namespace grpc_core {
 
-grpc_channel_args* ModifyXdsBalancerChannelArgs(grpc_channel_args* args) {
+grpc_channel_args* ModifyXdsChannelArgs(grpc_channel_args* args) {
   InlinedVector<const char*, 1> args_to_remove;
   InlinedVector<grpc_arg, 2> args_to_add;
   // Substitute the channel credentials with a version without call
@@ -62,12 +62,12 @@ grpc_channel_args* ModifyXdsBalancerChannelArgs(grpc_channel_args* args) {
   return result;
 }
 
-grpc_channel* CreateXdsBalancerChannel(const char* target_uri,
-                                       const grpc_channel_args& args) {
+grpc_channel* CreateXdsChannel(const char* target_uri,
+                               const grpc_channel_args& args) {
   grpc_channel_credentials* creds =
       grpc_channel_credentials_find_in_args(&args);
   if (creds == nullptr) {
-    // Build with security but parent channel is insecure.
+    // Built with security but parent channel is insecure.
     return grpc_insecure_channel_create(target_uri, &args, nullptr);
   }
   const char* arg_to_remove = GRPC_ARG_CHANNEL_CREDENTIALS;
