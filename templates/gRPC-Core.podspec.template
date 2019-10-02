@@ -88,9 +88,9 @@
       :submodules => true,
     }
 
-    # gRPC podspecs depend on fix for https://github.com/CocoaPods/CocoaPods/issues/6024,
-    # which was released in Cocoapods v1.2.0.
-    s.cocoapods_version = '>= 1.2.0'
+    # gRPC podspecs depend on the fix in https://github.com/CocoaPods/CocoaPods/pull/9019,
+    # which was released in Cocoapods v1.8.0.
+    s.cocoapods_version = '>= 1.8.0'
 
     s.ios.deployment_target = '7.0'
     s.osx.deployment_target = '10.9'
@@ -106,16 +106,10 @@
     # <gRPC-Core/grpc.h>`.
     s.module_name = name
 
-    # When creating a dynamic framework, copy the headers under `include/grpc/` into the root of
-    # the `Headers/` directory of the framework (i.e., not under `Headers/include/grpc`).
-    #
-    # TODO(jcanizales): Debug why this doesn't work on macOS.
-    s.header_mappings_dir = 'include/grpc'
-
-    # The above has an undesired effect when creating a static library: It forces users to write
-    # includes like `#include <gRPC-Core/grpc.h>`. `s.header_dir` adds a path prefix to that, and
-    # because Cocoapods lets omit the pod name when including headers of static libraries, the
-    # following lets users write `#include <grpc/grpc.h>`.
+    # The header_mappings_dir in the Interface subspecs have an undesired effect when creating a static
+    # library: It forces users to write includes like `#include <gRPC-Core/grpc.h>`. `s.header_dir` adds
+    # a path prefix to that, and because Cocoapods lets omit the pod name when including headers of static
+    # libraries, the following lets users write `#include <grpc/grpc.h>`.
     s.header_dir = name
 
     # The module map created automatically by Cocoapods doesn't work for C libraries like gRPC-Core.
@@ -124,29 +118,18 @@
     # To compile the library, we need the user headers search path (quoted includes) to point to the
     # root of the repo, and the system headers search path (angled includes) to point to `include/`.
     # Cocoapods effectively clones the repo under `<Podfile dir>/Pods/gRPC-Core/`, and sets a build
-    # variable called `$(PODS_ROOT)` to `<Podfile dir>/Pods/`, so we use that.
+    # variable called `$(PODS_TARGET_SRCROOT)` to that directory, so we use that.
     #
-    # Relying on the file structure under $(PODS_ROOT) isn't officially supported in Cocoapods, as it
-    # is taken as an implementation detail. We've asked for an alternative, and have been told that
-    # what we're doing should keep working: https://github.com/CocoaPods/CocoaPods/issues/4386
-    #
-    # The `src_root` value of `$(PODS_ROOT)/gRPC-Core` assumes Cocoapods is installing this pod from
-    # its remote repo. For local development of this library, enabled by using `:path` in the Podfile,
-    # that assumption is wrong. In such case, the following settings need to be reset with the
-    # appropriate value of `src_root`. This can be accomplished in the `pre_install` hook of the
-    # Podfile; see `src/objective-c/tests/Podfile` for an example.
-    src_root = '$(PODS_ROOT)/gRPC-Core'
+    # If we don't set ALWAYS_SEARCH_USER_PATHS and USE_HEADERMAP, `include/grpc/support/time.h` and
+    # `src/core/lib/gpr/string.h` shadow the system `<time.h>` and `<string.h>`, breaking the
+    # build.
     s.pod_target_xcconfig = {
-      'GRPC_SRC_ROOT' => src_root,
-      'HEADER_SEARCH_PATHS' => '"$(inherited)" "$(GRPC_SRC_ROOT)/include"',
-      'USER_HEADER_SEARCH_PATHS' => '"$(GRPC_SRC_ROOT)"',
-      # If we don't set these two settings, `include/grpc/support/time.h` and
-      # `src/core/lib/gpr/string.h` shadow the system `<time.h>` and `<string.h>`, breaking the
-      # build.
-      'USE_HEADERMAP' => 'NO',
       'ALWAYS_SEARCH_USER_PATHS' => 'NO',
-      'GCC_PREPROCESSOR_DEFINITIONS' => '"$(inherited)" "COCOAPODS=1"',
       'CLANG_WARN_STRICT_PROTOTYPES' => 'NO',
+      'GCC_PREPROCESSOR_DEFINITIONS' => '"$(inherited)" "COCOAPODS=1"',
+      'HEADER_SEARCH_PATHS' => '"$(inherited)" "$(PODS_TARGET_SRCROOT)/include"',
+      'USER_HEADER_SEARCH_PATHS' => '"$(PODS_TARGET_SRCROOT)"',
+      'USE_HEADERMAP' => 'NO',
     }
 
     s.default_subspecs = 'Interface', 'Implementation'
@@ -168,6 +151,7 @@
 
       ss.source_files = ${ruby_multiline_list(grpc_public_headers(libs), 22)}
     end
+
     s.subspec 'Implementation' do |ss|
       ss.header_mappings_dir = '.'
       ss.libraries = 'z'
@@ -191,8 +175,11 @@
     end
 
     s.subspec 'Cronet-Implementation' do |ss|
+      ss.platform = :ios
+
       ss.header_mappings_dir = '.'
 
+      ss.dependency 'CronetFramework', '0.0.4'
       ss.dependency "#{s.name}/Interface", version
       ss.dependency "#{s.name}/Implementation", version
       ss.dependency "#{s.name}/Cronet-Interface", version
@@ -212,6 +199,7 @@
 
     # TODO (mxyan): Instead of this hack, add include path "third_party" to C core's include path?
     s.prepare_command = <<-END_OF_COMMAND
+      sed -E -i '' 's;(#include "third_party/objective_c/Cronet/((.*)\\.h)");#if COCOAPODS==1\\\n  #include <Cronet/\\2>\\\n#else\\\n  \\1\\\n#endif;g' $(find src/core -type f \\( -path '*.h' -or -path '*.cc' \\) -print | xargs grep -H -c '#include <Cronet/' | grep 0$ | cut -d':' -f1)
       sed -E -i '' 's;#include <openssl/(.*)>;#if COCOAPODS==1\\\n  #include <openssl_grpc/\\1>\\\n#else\\\n  #include <openssl/\\1>\\\n#endif;g' $(find src/core -type f \\( -path '*.h' -or -path '*.cc' \\) -print | xargs grep -H -c '#include <openssl_grpc/' | grep 0$ | cut -d':' -f1)
       find src/core/ third_party/upb/ -type f \\( -name '*.h' -or -name '*.c' -or -name '*.cc' \\) -print0 | xargs -0 -L1 sed -E -i'.grpc_back' 's;#include "upb/(.*)";#if COCOAPODS==1\\\n  #include  "third_party/upb/upb/\\1"\\\n#else\\\n  #include  "upb/\\1"\\\n#endif;g'
       find src/core/ third_party/upb/ -type f -name '*.grpc_back' -print0 | xargs -0 rm
