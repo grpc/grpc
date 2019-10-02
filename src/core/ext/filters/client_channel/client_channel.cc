@@ -762,11 +762,9 @@ class CallData {
   LbCallState lb_call_state_;
   const LoadBalancingPolicy::BackendMetricData* backend_metric_data_ = nullptr;
   RefCountedPtr<ConnectedSubchannel> connected_subchannel_;
-  void (*lb_recv_trailing_metadata_ready_)(
-      void* user_data, grpc_error* error,
-      LoadBalancingPolicy::MetadataInterface* recv_trailing_metadata,
-      LoadBalancingPolicy::CallState* call_state) = nullptr;
-  void* lb_recv_trailing_metadata_ready_user_data_ = nullptr;
+  std::function<void(grpc_error*, LoadBalancingPolicy::MetadataInterface*,
+                     LoadBalancingPolicy::CallState*)>
+      lb_recv_trailing_metadata_ready_;
   grpc_closure pick_closure_;
 
   // For intercepting recv_trailing_metadata_ready for the LB policy.
@@ -2262,9 +2260,8 @@ void CallData::RecvTrailingMetadataReadyForLoadBalancingPolicy(
   CallData* calld = static_cast<CallData*>(arg);
   // Invoke callback to LB policy.
   Metadata trailing_metadata(calld, calld->recv_trailing_metadata_);
-  calld->lb_recv_trailing_metadata_ready_(
-      calld->lb_recv_trailing_metadata_ready_user_data_, error,
-      &trailing_metadata, &calld->lb_call_state_);
+  calld->lb_recv_trailing_metadata_ready_(error, &trailing_metadata,
+                                          &calld->lb_call_state_);
   // Chain to original callback.
   GRPC_CLOSURE_RUN(calld->original_recv_trailing_metadata_ready_,
                    GRPC_ERROR_REF(error));
@@ -3963,8 +3960,6 @@ bool CallData::PickSubchannelLocked(grpc_call_element* elem,
         GPR_ASSERT(connected_subchannel_ != nullptr);
       }
       lb_recv_trailing_metadata_ready_ = result.recv_trailing_metadata_ready;
-      lb_recv_trailing_metadata_ready_user_data_ =
-          result.recv_trailing_metadata_ready_user_data;
       *error = result.error;
       return true;
   }

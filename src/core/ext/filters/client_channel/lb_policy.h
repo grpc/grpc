@@ -189,20 +189,14 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
 
     /// Used only if type is PICK_COMPLETE.
     /// Callback set by LB policy to be notified of trailing metadata.
-    /// The user_data argument will be set to the
-    /// recv_trailing_metadata_ready_user_data field.
-    /// recv_trailing_metadata will be set to the metadata, which may be
-    /// modified by the callback.  The callback does not take ownership,
-    /// however, so any data that needs to be used after returning must
-    /// be copied.
-    /// call_state can be used to obtain backend metric data.
-    // TODO(roth): Replace grpc_error with something better before we allow
-    // people outside of gRPC team to use this API.
-    void (*recv_trailing_metadata_ready)(
-        void* user_data, grpc_error* error,
-        MetadataInterface* recv_trailing_metadata,
-        CallState* call_state) = nullptr;
-    void* recv_trailing_metadata_ready_user_data = nullptr;
+    /// If set by LB policy, the client channel will invoke the callback
+    /// when trailing metadata is returned.
+    /// The metadata may be modified by the callback.  However, the callback
+    /// does not take ownership, so any data that needs to be used after
+    /// returning must be copied.
+    /// The call state can be used to obtain backend metric data.
+    std::function<void(grpc_error*, MetadataInterface*, CallState*)>
+        recv_trailing_metadata_ready;
   };
 
   /// A subchannel picker is the object used to pick the subchannel to
