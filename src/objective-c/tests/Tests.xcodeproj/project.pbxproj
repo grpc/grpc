@@ -32,6 +32,7 @@
 		5E7F489022778C95006656AD /* RxLibraryUnitTests.m in Sources */ = {isa = PBXBuildFile; fileRef = 5E7F488A22778B5D006656AD /* RxLibraryUnitTests.m */; };
 		5E9F1C332321AB1700837469 /* TransportRegistryTests.m in Sources */ = {isa = PBXBuildFile; fileRef = 5E9F1C322321AB1700837469 /* TransportRegistryTests.m */; };
 		5E9F1C352321C9B200837469 /* TransportRegistryTests.m in Sources */ = {isa = PBXBuildFile; fileRef = 5E9F1C342321C9B200837469 /* TransportRegistryTests.m */; };
+		5E9F1C59232302E200837469 /* TransportTests.m in Sources */ = {isa = PBXBuildFile; fileRef = 5E9F1C58232302E200837469 /* TransportTests.m */; };
 		5EA4770322736178000F72FC /* InteropTestsLocalSSL.m in Sources */ = {isa = PBXBuildFile; fileRef = 63E240CD1B6C4E2B005F3B0E /* InteropTestsLocalSSL.m */; };
 		5EA477042273617B000F72FC /* InteropTestsLocalCleartext.m in Sources */ = {isa = PBXBuildFile; fileRef = 63715F551B780C020029CB0B /* InteropTestsLocalCleartext.m */; };
 		5EA4770522736AC4000F72FC /* TestCertificates.bundle in Resources */ = {isa = PBXBuildFile; fileRef = 63E240CF1B6C63DC005F3B0E /* TestCertificates.bundle */; };
@@ -49,10 +50,26 @@
 		ABCB3EEA22F23BF500F0FECE /* APIv2Tests.m in Sources */ = {isa = PBXBuildFile; fileRef = 5E7F487F227782C1006656AD /* APIv2Tests.m */; };
 		ABCB3EEB22F23BF500F0FECE /* NSErrorUnitTests.m in Sources */ = {isa = PBXBuildFile; fileRef = 5E0282E8215AA697007AC99D /* NSErrorUnitTests.m */; };
 		B071230B22669EED004B64A1 /* StressTests.m in Sources */ = {isa = PBXBuildFile; fileRef = B071230A22669EED004B64A1 /* StressTests.m */; };
+		B098FC622331B7EA00029C0E /* TestBase.m in Sources */ = {isa = PBXBuildFile; fileRef = B0C461E02331AC5C004E17DA /* TestBase.m */; };
+		B098FC632331B7FA00029C0E /* TestBase.m in Sources */ = {isa = PBXBuildFile; fileRef = B0C461E02331AC5C004E17DA /* TestBase.m */; };
+		B098FC642331B80500029C0E /* TestBase.m in Sources */ = {isa = PBXBuildFile; fileRef = B0C461E02331AC5C004E17DA /* TestBase.m */; };
+		B098FC652331B82000029C0E /* TestBase.m in Sources */ = {isa = PBXBuildFile; fileRef = B0C461E02331AC5C004E17DA /* TestBase.m */; };
+		B098FC662331B83900029C0E /* TestBase.m in Sources */ = {isa = PBXBuildFile; fileRef = B0C461E02331AC5C004E17DA /* TestBase.m */; };
+		B0A420C523299D2200D95F2A /* TestCertificates.bundle in Resources */ = {isa = PBXBuildFile; fileRef = 63E240CF1B6C63DC005F3B0E /* TestCertificates.bundle */; };
+		B0A420C623299D2D00D95F2A /* ConfigureCronet.m in Sources */ = {isa = PBXBuildFile; fileRef = 5E3F1487227918AA007C6D90 /* ConfigureCronet.m */; };
 		B0BB3F08225E7ABA008DA580 /* NSErrorUnitTests.m in Sources */ = {isa = PBXBuildFile; fileRef = 5E0282E8215AA697007AC99D /* NSErrorUnitTests.m */; };
 		B0BB3F0A225EA511008DA580 /* TestCertificates.bundle in Resources */ = {isa = PBXBuildFile; fileRef = 63E240CF1B6C63DC005F3B0E /* TestCertificates.bundle */; };
 		B0D39B9A2266F3CB00A4078D /* StressTestsSSL.m in Sources */ = {isa = PBXBuildFile; fileRef = B0D39B992266F3CB00A4078D /* StressTestsSSL.m */; };
 		B0D39B9C2266FF9800A4078D /* StressTestsCleartext.m in Sources */ = {isa = PBXBuildFile; fileRef = B0D39B9B2266FF9800A4078D /* StressTestsCleartext.m */; };
+		B0F2D0C4232991CC008C2575 /* PerfTestsBlockCallbacks.h in Sources */ = {isa = PBXBuildFile; fileRef = B0F2D08E23297BC6008C2575 /* PerfTestsBlockCallbacks.h */; };
+		B0F2D0C5232991CC008C2575 /* PerfTestsBlockCallbacks.m in Sources */ = {isa = PBXBuildFile; fileRef = B0F2D08F23297BDD008C2575 /* PerfTestsBlockCallbacks.m */; };
+		B0F2D0C6232991CC008C2575 /* PerfTests.m in Sources */ = {isa = PBXBuildFile; fileRef = B0F2D09123297C1A008C2575 /* PerfTests.m */; };
+		B0F2D0C7232991CC008C2575 /* PerfTests.h in Sources */ = {isa = PBXBuildFile; fileRef = B0F2D09323297C28008C2575 /* PerfTests.h */; };
+		B0F2D0C8232991CC008C2575 /* PerfTestsCronet.m in Sources */ = {isa = PBXBuildFile; fileRef = B0F2D09423297C47008C2575 /* PerfTestsCronet.m */; };
+		B0F2D0C9232991CC008C2575 /* PerfTestsCFStreamSSL.m in Sources */ = {isa = PBXBuildFile; fileRef = B0F2D09623297CA6008C2575 /* PerfTestsCFStreamSSL.m */; };
+		B0F2D0CA232991CC008C2575 /* PerfTestsCFStreamCleartext.m in Sources */ = {isa = PBXBuildFile; fileRef = B0F2D09823297CBF008C2575 /* PerfTestsCFStreamCleartext.m */; };
+		B0F2D0CB232991CC008C2575 /* PerfTestsNoCFStreamSSL.m in Sources */ = {isa = PBXBuildFile; fileRef = B0F2D09A23297CF2008C2575 /* PerfTestsNoCFStreamSSL.m */; };
+		B0F2D0CC232991CC008C2575 /* PerfTestsNoCFStreamCleartext.m in Sources */ = {isa = PBXBuildFile; fileRef = B0F2D09C23297D02008C2575 /* PerfTestsNoCFStreamCleartext.m */; };
 		CCF5C0719EF608276AE16374 /* libPods-UnitTests.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 22A3EBB488699C8CEA19707B /* libPods-UnitTests.a */; };
 		F4E21D69D650D61FE8F02696 /* libPods-TvTests.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 2A0A5455106001F60357A4B6 /* libPods-TvTests.a */; };
 /* End PBXBuildFile section */
@@ -125,6 +142,7 @@
 		5E7F488A22778B5D006656AD /* RxLibraryUnitTests.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = RxLibraryUnitTests.m; sourceTree = "<group>"; };
 		5E9F1C322321AB1700837469 /* TransportRegistryTests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = TransportRegistryTests.m; sourceTree = "<group>"; };
 		5E9F1C342321C9B200837469 /* TransportRegistryTests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = TransportRegistryTests.m; sourceTree = "<group>"; };
+		5E9F1C58232302E200837469 /* TransportTests.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = TransportTests.m; sourceTree = "<group>"; };
 		5EA476F42272816A000F72FC /* InteropTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = InteropTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		5EA908CF4CDA4CE218352A06 /* Pods-InteropTestsLocalSSLCFStream.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-InteropTestsLocalSSLCFStream.release.xcconfig"; path = "Pods/Target Support Files/Pods-InteropTestsLocalSSLCFStream/Pods-InteropTestsLocalSSLCFStream.release.xcconfig"; sourceTree = "<group>"; };
 		5EAD6D261E27047400002378 /* CronetUnitTests.mm */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.objcpp; name = CronetUnitTests.mm; path = CronetTests/CronetUnitTests.mm; sourceTree = SOURCE_ROOT; };
@@ -163,9 +181,21 @@
 		B071230A22669EED004B64A1 /* StressTests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = StressTests.m; sourceTree = "<group>"; };
 		B0BB3EF7225E795F008DA580 /* MacTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = MacTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		B0BB3EFB225E795F008DA580 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		B0C461DF2331AC3F004E17DA /* TestBase.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = TestBase.h; sourceTree = "<group>"; };
+		B0C461E02331AC5C004E17DA /* TestBase.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = TestBase.m; sourceTree = "<group>"; };
 		B0C5FC172267C77200F192BE /* StressTests.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = StressTests.h; sourceTree = "<group>"; };
 		B0D39B992266F3CB00A4078D /* StressTestsSSL.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = StressTestsSSL.m; sourceTree = "<group>"; };
 		B0D39B9B2266FF9800A4078D /* StressTestsCleartext.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = StressTestsCleartext.m; sourceTree = "<group>"; };
+		B0F2D08E23297BC6008C2575 /* PerfTestsBlockCallbacks.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = PerfTestsBlockCallbacks.h; sourceTree = "<group>"; };
+		B0F2D08F23297BDD008C2575 /* PerfTestsBlockCallbacks.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = PerfTestsBlockCallbacks.m; sourceTree = "<group>"; };
+		B0F2D09123297C1A008C2575 /* PerfTests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = PerfTests.m; sourceTree = "<group>"; };
+		B0F2D09323297C28008C2575 /* PerfTests.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = PerfTests.h; sourceTree = "<group>"; };
+		B0F2D09423297C47008C2575 /* PerfTestsCronet.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = PerfTestsCronet.m; sourceTree = "<group>"; };
+		B0F2D09623297CA6008C2575 /* PerfTestsCFStreamSSL.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = PerfTestsCFStreamSSL.m; sourceTree = "<group>"; };
+		B0F2D09823297CBF008C2575 /* PerfTestsCFStreamCleartext.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = PerfTestsCFStreamCleartext.m; sourceTree = "<group>"; };
+		B0F2D09A23297CF2008C2575 /* PerfTestsNoCFStreamSSL.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = PerfTestsNoCFStreamSSL.m; sourceTree = "<group>"; };
+		B0F2D09C23297D02008C2575 /* PerfTestsNoCFStreamCleartext.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = PerfTestsNoCFStreamCleartext.m; sourceTree = "<group>"; };
+		B0F2D0BA232991BA008C2575 /* PerfTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = PerfTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		B226619DC4E709E0FFFF94B8 /* Pods-CronetUnitTests.test.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-CronetUnitTests.test.xcconfig"; path = "Pods/Target Support Files/Pods-CronetUnitTests/Pods-CronetUnitTests.test.xcconfig"; sourceTree = "<group>"; };
 		B6AD69CACF67505B0F028E92 /* libPods-APIv2Tests.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = "libPods-APIv2Tests.a"; sourceTree = BUILT_PRODUCTS_DIR; };
 		B94C27C06733CF98CE1B2757 /* Pods-AllTests.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-AllTests.debug.xcconfig"; path = "Pods/Target Support Files/Pods-AllTests/Pods-AllTests.debug.xcconfig"; sourceTree = "<group>"; };
@@ -238,6 +268,13 @@
 			buildActionMask = 2147483647;
 			files = (
 				953CD2942A3A6D6CE695BE87 /* libPods-MacTests.a in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		B0F2D0B7232991BA008C2575 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -366,6 +403,7 @@
 		5E0282E7215AA697007AC99D /* UnitTests */ = {
 			isa = PBXGroup;
 			children = (
+				5E9F1C58232302E200837469 /* TransportTests.m */,
 				5E9F1C322321AB1700837469 /* TransportRegistryTests.m */,
 				5E7F488A22778B5D006656AD /* RxLibraryUnitTests.m */,
 				5E7F488622778AEA006656AD /* GRPCClientTests.m */,
@@ -406,6 +444,7 @@
 		635697BE1B14FC11007A7283 = {
 			isa = PBXGroup;
 			children = (
+				B0F2D08D23297B9E008C2575 /* PerfTests */,
 				5E7F48762277820F006656AD /* InteropTests */,
 				635697C91B14FC11007A7283 /* Tests */,
 				63E240CF1B6C63DC005F3B0E /* TestCertificates.bundle */,
@@ -427,6 +466,7 @@
 				5EA476F42272816A000F72FC /* InteropTests.xctest */,
 				5E7F485922775B15006656AD /* CronetTests.xctest */,
 				ABCB3EDA22F23B9700F0FECE /* TvTests.xctest */,
+				B0F2D0BA232991BA008C2575 /* PerfTests.xctest */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -437,6 +477,8 @@
 				5E3F148A227918C4007C6D90 /* ConfigureCronet.h */,
 				5E3F1487227918AA007C6D90 /* ConfigureCronet.m */,
 				5EAFE8271F8EFB87007F2189 /* version.h */,
+				B0C461E02331AC5C004E17DA /* TestBase.m */,
+				B0C461DF2331AC3F004E17DA /* TestBase.h */,
 				635697D71B14FC11007A7283 /* Supporting Files */,
 			);
 			name = Tests;
@@ -468,6 +510,22 @@
 				B0C5FC172267C77200F192BE /* StressTests.h */,
 			);
 			path = MacTests;
+			sourceTree = "<group>";
+		};
+		B0F2D08D23297B9E008C2575 /* PerfTests */ = {
+			isa = PBXGroup;
+			children = (
+				B0F2D08E23297BC6008C2575 /* PerfTestsBlockCallbacks.h */,
+				B0F2D08F23297BDD008C2575 /* PerfTestsBlockCallbacks.m */,
+				B0F2D09123297C1A008C2575 /* PerfTests.m */,
+				B0F2D09323297C28008C2575 /* PerfTests.h */,
+				B0F2D09423297C47008C2575 /* PerfTestsCronet.m */,
+				B0F2D09623297CA6008C2575 /* PerfTestsCFStreamSSL.m */,
+				B0F2D09823297CBF008C2575 /* PerfTestsCFStreamCleartext.m */,
+				B0F2D09A23297CF2008C2575 /* PerfTestsNoCFStreamSSL.m */,
+				B0F2D09C23297D02008C2575 /* PerfTestsNoCFStreamCleartext.m */,
+			);
+			path = PerfTests;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -569,6 +627,23 @@
 			productReference = B0BB3EF7225E795F008DA580 /* MacTests.xctest */;
 			productType = "com.apple.product-type.bundle.unit-test";
 		};
+		B0F2D0B9232991BA008C2575 /* PerfTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = B0F2D0BF232991BA008C2575 /* Build configuration list for PBXNativeTarget "PerfTests" */;
+			buildPhases = (
+				B0F2D0B6232991BA008C2575 /* Sources */,
+				B0F2D0B7232991BA008C2575 /* Frameworks */,
+				B0F2D0B8232991BA008C2575 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = PerfTests;
+			productName = PerfTests;
+			productReference = B0F2D0BA232991BA008C2575 /* PerfTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
@@ -599,6 +674,10 @@
 						CreatedOnToolsVersion = 10.1;
 						ProvisioningStyle = Automatic;
 					};
+					B0F2D0B9232991BA008C2575 = {
+						CreatedOnToolsVersion = 10.1;
+						ProvisioningStyle = Automatic;
+					};
 				};
 			};
 			buildConfigurationList = 635697C21B14FC11007A7283 /* Build configuration list for PBXProject "Tests" */;
@@ -619,6 +698,7 @@
 				5EA476F32272816A000F72FC /* InteropTests */,
 				5E7F485822775B15006656AD /* CronetTests */,
 				ABCB3ED922F23B9700F0FECE /* TvTests */,
+				B0F2D0B9232991BA008C2575 /* PerfTests */,
 			);
 		};
 /* End PBXProject section */
@@ -660,6 +740,14 @@
 			buildActionMask = 2147483647;
 			files = (
 				B0BB3F0A225EA511008DA580 /* TestCertificates.bundle in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		B0F2D0B8232991BA008C2575 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				B0A420C523299D2200D95F2A /* TestCertificates.bundle in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -874,6 +962,7 @@
 				5E0282E9215AA697007AC99D /* NSErrorUnitTests.m in Sources */,
 				5E7F4880227782C1006656AD /* APIv2Tests.m in Sources */,
 				5E7F487D22778256006656AD /* ChannelPoolTest.m in Sources */,
+				5E9F1C59232302E200837469 /* TransportTests.m in Sources */,
 				5E9F1C332321AB1700837469 /* TransportRegistryTests.m in Sources */,
 				5E7F488722778AEA006656AD /* GRPCClientTests.m in Sources */,
 				5E7F487E22778256006656AD /* ChannelTests.m in Sources */,
@@ -885,6 +974,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				B098FC652331B82000029C0E /* TestBase.m in Sources */,
 				5E3F14852278BF5D007C6D90 /* InteropTestsBlockCallbacks.m in Sources */,
 				5E3F148D22792856007C6D90 /* ConfigureCronet.m in Sources */,
 				5E08D07023021E3B006D76EA /* InteropTestsMultipleChannels.m in Sources */,
@@ -900,6 +990,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				B098FC642331B80500029C0E /* TestBase.m in Sources */,
 				5E3F14842278B461007C6D90 /* InteropTestsBlockCallbacks.m in Sources */,
 				5E7F488922778B04006656AD /* InteropTestsRemote.m in Sources */,
 				5EA477042273617B000F72FC /* InteropTestsLocalCleartext.m in Sources */,
@@ -912,6 +1003,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				B098FC662331B83900029C0E /* TestBase.m in Sources */,
 				ABCB3EEA22F23BF500F0FECE /* APIv2Tests.m in Sources */,
 				ABCB3EE822F23BEF00F0FECE /* InteropTestsBlockCallbacks.m in Sources */,
 				ABCB3EE422F23BEF00F0FECE /* InteropTestsRemote.m in Sources */,
@@ -927,6 +1019,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				B098FC632331B7FA00029C0E /* TestBase.m in Sources */,
 				B0BB3F08225E7ABA008DA580 /* NSErrorUnitTests.m in Sources */,
 				5E7F488D22778C85006656AD /* InteropTestsLocalSSL.m in Sources */,
 				5E7F488E22778C87006656AD /* InteropTestsLocalCleartext.m in Sources */,
@@ -938,6 +1031,24 @@
 				5E7F488C22778C60006656AD /* APIv2Tests.m in Sources */,
 				5E7F488F22778C8C006656AD /* InteropTestsRemote.m in Sources */,
 				B0D39B9C2266FF9800A4078D /* StressTestsCleartext.m in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		B0F2D0B6232991BA008C2575 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				B098FC622331B7EA00029C0E /* TestBase.m in Sources */,
+				B0A420C623299D2D00D95F2A /* ConfigureCronet.m in Sources */,
+				B0F2D0C4232991CC008C2575 /* PerfTestsBlockCallbacks.h in Sources */,
+				B0F2D0C5232991CC008C2575 /* PerfTestsBlockCallbacks.m in Sources */,
+				B0F2D0C6232991CC008C2575 /* PerfTests.m in Sources */,
+				B0F2D0C7232991CC008C2575 /* PerfTests.h in Sources */,
+				B0F2D0C8232991CC008C2575 /* PerfTestsCronet.m in Sources */,
+				B0F2D0C9232991CC008C2575 /* PerfTestsCFStreamSSL.m in Sources */,
+				B0F2D0CA232991CC008C2575 /* PerfTestsCFStreamCleartext.m in Sources */,
+				B0F2D0CB232991CC008C2575 /* PerfTestsNoCFStreamSSL.m in Sources */,
+				B0F2D0CC232991CC008C2575 /* PerfTestsNoCFStreamCleartext.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -1790,6 +1901,133 @@
 			};
 			name = Release;
 		};
+		B0F2D0C0232991BA008C2575 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CODE_SIGN_IDENTITY = "iPhone Developer";
+				CODE_SIGN_STYLE = Automatic;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_TESTABILITY = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				IPHONEOS_DEPLOYMENT_TARGET = 12.1;
+				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks @loader_path/Frameworks";
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				PRODUCT_BUNDLE_IDENTIFIER = org.grpc.PerfTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		B0F2D0C1232991BA008C2575 /* Test */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CODE_SIGN_IDENTITY = "iPhone Developer";
+				CODE_SIGN_STYLE = Automatic;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				IPHONEOS_DEPLOYMENT_TARGET = 12.1;
+				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks @loader_path/Frameworks";
+				MTL_FAST_MATH = YES;
+				PRODUCT_BUNDLE_IDENTIFIER = org.grpc.PerfTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Test;
+		};
+		B0F2D0C2232991BA008C2575 /* Cronet */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CODE_SIGN_IDENTITY = "iPhone Developer";
+				CODE_SIGN_STYLE = Automatic;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				IPHONEOS_DEPLOYMENT_TARGET = 12.1;
+				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks @loader_path/Frameworks";
+				MTL_FAST_MATH = YES;
+				PRODUCT_BUNDLE_IDENTIFIER = org.grpc.PerfTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Cronet;
+		};
+		B0F2D0C3232991BA008C2575 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CODE_SIGN_IDENTITY = "iPhone Developer";
+				CODE_SIGN_STYLE = Automatic;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				IPHONEOS_DEPLOYMENT_TARGET = 12.1;
+				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks @loader_path/Frameworks";
+				MTL_FAST_MATH = YES;
+				PRODUCT_BUNDLE_IDENTIFIER = org.grpc.PerfTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -1855,6 +2093,17 @@
 				B0BB3EFE225E795F008DA580 /* Test */,
 				B0BB3EFF225E795F008DA580 /* Cronet */,
 				B0BB3F00225E795F008DA580 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		B0F2D0BF232991BA008C2575 /* Build configuration list for PBXNativeTarget "PerfTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				B0F2D0C0232991BA008C2575 /* Debug */,
+				B0F2D0C1232991BA008C2575 /* Test */,
+				B0F2D0C2232991BA008C2575 /* Cronet */,
+				B0F2D0C3232991BA008C2575 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;

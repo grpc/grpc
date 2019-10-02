@@ -88,7 +88,7 @@ class WSAErrorContext {
  * from c-ares and are used with the grpc windows poller, and it, e.g.,
  * manufactures virtual socket error codes when it e.g. needs to tell the c-ares
  * library to wait for an async read. */
-class GrpcPolledFdWindows : public GrpcPolledFd {
+class GrpcPolledFdWindows {
  public:
   enum WriteState {
     WRITE_IDLE,
@@ -146,7 +146,7 @@ class GrpcPolledFdWindows : public GrpcPolledFd {
     write_closure_ = nullptr;
   }
 
-  void RegisterForOnReadableLocked(grpc_closure* read_closure) override {
+  void RegisterForOnReadableLocked(grpc_closure* read_closure) {
     GPR_ASSERT(read_closure_ == nullptr);
     read_closure_ = read_closure;
     GPR_ASSERT(GRPC_SLICE_LENGTH(read_buf_) == 0);
@@ -206,7 +206,7 @@ class GrpcPolledFdWindows : public GrpcPolledFd {
     grpc_socket_notify_on_read(winsocket_, &outer_read_closure_);
   }
 
-  void RegisterForOnWriteableLocked(grpc_closure* write_closure) override {
+  void RegisterForOnWriteableLocked(grpc_closure* write_closure) {
     if (socket_type_ == SOCK_DGRAM) {
       GRPC_CARES_TRACE_LOG("fd:|%s| RegisterForOnWriteableLocked called",
                            GetName());
@@ -272,19 +272,17 @@ class GrpcPolledFdWindows : public GrpcPolledFd {
     }
   }
 
-  bool IsFdStillReadableLocked() override {
-    return GRPC_SLICE_LENGTH(read_buf_) > 0;
-  }
+  bool IsFdStillReadableLocked() { return GRPC_SLICE_LENGTH(read_buf_) > 0; }
 
-  void ShutdownLocked(grpc_error* error) override {
+  void ShutdownLocked(grpc_error* error) {
     grpc_winsocket_shutdown(winsocket_);
   }
 
-  ares_socket_t GetWrappedAresSocketLocked() override {
+  ares_socket_t GetWrappedAresSocketLocked() {
     return grpc_winsocket_wrapped_socket(winsocket_);
   }
 
-  const char* GetName() override { return name_; }
+  const char* GetName() { return name_; }
 
   ares_ssize_t RecvFrom(WSAErrorContext* wsa_error_ctx, void* data,
                         ares_socket_t data_len, int flags,
@@ -816,14 +814,19 @@ class SockToPolledFdMap {
     SockToPolledFdMap* map = static_cast<SockToPolledFdMap*>(user_data);
     GrpcPolledFdWindows* polled_fd = map->LookupPolledFd(s);
     map->RemoveEntry(s);
+    // See https://github.com/grpc/grpc/pull/20284, this trace log is
+    // intentionally placed to attempt to trigger a crash in case of a
+    // use after free on polled_fd.
+    GRPC_CARES_TRACE_LOG("CloseSocket called for socket: %s",
+                         polled_fd->GetName());
     // If a gRPC polled fd has not made it in to the driver's list yet, then
     // the driver has not and will never see this socket.
     if (!polled_fd->gotten_into_driver_list()) {
       polled_fd->ShutdownLocked(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
           "Shut down c-ares fd before without it ever having made it into the "
           "driver's list"));
-      return 0;
     }
+    grpc_core::Delete(polled_fd);
     return 0;
   }
 
@@ -840,6 +843,42 @@ const struct ares_socket_functions custom_ares_sock_funcs = {
     &SockToPolledFdMap::SendV /* sendv */,
 };
 
+/* A thin wrapper over a GrpcPolledFdWindows object but with a shorter
+   lifetime. This object releases it's GrpcPolledFdWindows upon destruction,
+   so that c-ares can close it via usual socket teardown. */
+class GrpcPolledFdWindowsWrapper : public GrpcPolledFd {
+ public:
+  GrpcPolledFdWindowsWrapper(GrpcPolledFdWindows* wrapped)
+      : wrapped_(wrapped) {}
+
+  ~GrpcPolledFdWindowsWrapper() {}
+
+  void RegisterForOnReadableLocked(grpc_closure* read_closure) override {
+    wrapped_->RegisterForOnReadableLocked(read_closure);
+  }
+
+  void RegisterForOnWriteableLocked(grpc_closure* write_closure) override {
+    wrapped_->RegisterForOnWriteableLocked(write_closure);
+  }
+
+  bool IsFdStillReadableLocked() override {
+    return wrapped_->IsFdStillReadableLocked();
+  }
+
+  void ShutdownLocked(grpc_error* error) override {
+    wrapped_->ShutdownLocked(error);
+  }
+
+  ares_socket_t GetWrappedAresSocketLocked() override {
+    return wrapped_->GetWrappedAresSocketLocked();
+  }
+
+  const char* GetName() override { return wrapped_->GetName(); }
+
+ private:
+  GrpcPolledFdWindows* wrapped_;
+};
+
 class GrpcPolledFdFactoryWindows : public GrpcPolledFdFactory {
  public:
   GrpcPolledFdFactoryWindows(grpc_combiner* combiner)
@@ -852,7 +891,7 @@ class GrpcPolledFdFactoryWindows : public GrpcPolledFdFactory {
     // Set a flag so that the virtual socket "close" method knows it
     // doesn't need to call ShutdownLocked, since now the driver will.
     polled_fd->set_gotten_into_driver_list();
-    return polled_fd;
+    return grpc_core::New<GrpcPolledFdWindowsWrapper>(polled_fd);
   }
 
   void ConfigureAresChannelLocked(ares_channel channel) override {
@@ -865,8 +904,7 @@ class GrpcPolledFdFactoryWindows : public GrpcPolledFdFactory {
 };
 
 UniquePtr<GrpcPolledFdFactory> NewGrpcPolledFdFactory(grpc_combiner* combiner) {
-  return UniquePtr<GrpcPolledFdFactory>(
-      New<GrpcPolledFdFactoryWindows>(combiner));
+  return MakeUnique<GrpcPolledFdFactoryWindows>(combiner);
 }
 
 }  // namespace grpc_core

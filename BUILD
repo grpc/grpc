@@ -14,7 +14,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-licenses(["notice"])  # Apache v2
+licenses(["notice"])
 
 exports_files(["LICENSE"])
 
@@ -67,11 +67,6 @@ config_setting(
 config_setting(
     name = "mac_x86_64",
     values = {"cpu": "darwin"},
-)
-
-config_setting(
-    name = "grpc_use_cpp_std_lib",
-    values = {"define": "GRPC_USE_CPP_STD_LIB=1"},
 )
 
 python_config_settings()
@@ -472,7 +467,6 @@ grpc_cc_library(
         "src/core/lib/gpr/log_linux.cc",
         "src/core/lib/gpr/log_posix.cc",
         "src/core/lib/gpr/log_windows.cc",
-        "src/core/lib/gpr/mpscq.cc",
         "src/core/lib/gpr/murmur_hash.cc",
         "src/core/lib/gpr/string.cc",
         "src/core/lib/gpr/string_posix.cc",
@@ -494,6 +488,7 @@ grpc_cc_library(
         "src/core/lib/gprpp/fork.cc",
         "src/core/lib/gprpp/global_config_env.cc",
         "src/core/lib/gprpp/host_port.cc",
+        "src/core/lib/gprpp/mpscq.cc",
         "src/core/lib/gprpp/thd_posix.cc",
         "src/core/lib/gprpp/thd_windows.cc",
         "src/core/lib/profiling/basic_timers.cc",
@@ -503,7 +498,6 @@ grpc_cc_library(
         "src/core/lib/gpr/alloc.h",
         "src/core/lib/gpr/arena.h",
         "src/core/lib/gpr/env.h",
-        "src/core/lib/gpr/mpscq.h",
         "src/core/lib/gpr/murmur_hash.h",
         "src/core/lib/gpr/spinlock.h",
         "src/core/lib/gpr/string.h",
@@ -515,7 +509,6 @@ grpc_cc_library(
         "src/core/lib/gpr/tls_pthread.h",
         "src/core/lib/gpr/tmpfile.h",
         "src/core/lib/gpr/useful.h",
-        "src/core/lib/gprpp/abstract.h",
         "src/core/lib/gprpp/arena.h",
         "src/core/lib/gprpp/atomic.h",
         "src/core/lib/gprpp/fork.h",
@@ -527,7 +520,7 @@ grpc_cc_library(
         "src/core/lib/gprpp/manual_constructor.h",
         "src/core/lib/gprpp/map.h",
         "src/core/lib/gprpp/memory.h",
-        "src/core/lib/gprpp/pair.h",
+        "src/core/lib/gprpp/mpscq.h",
         "src/core/lib/gprpp/string_view.h",
         "src/core/lib/gprpp/sync.h",
         "src/core/lib/gprpp/thd.h",
@@ -855,7 +848,7 @@ grpc_cc_library(
         "src/core/lib/iomgr/executor/mpmcqueue.h",
         "src/core/lib/iomgr/executor/threadpool.h",
         "src/core/lib/iomgr/gethostname.h",
-        "src/core/lib/iomgr/gevent_util.h",
+        "src/core/lib/iomgr/python_util.h",
         "src/core/lib/iomgr/grpc_if_nametoindex.h",
         "src/core/lib/iomgr/internal_errqueue.h",
         "src/core/lib/iomgr/iocp_windows.h",
@@ -1958,6 +1951,7 @@ grpc_cc_library(
     deps = [
         "grpc",
         "grpc++_codegen_base",
+        "grpc++_codegen_base_src",
         "grpc_health_upb",
     ],
 )
@@ -1970,6 +1964,7 @@ grpc_cc_library(
     public_hdrs = GRPCXX_PUBLIC_HDRS,
     deps = [
         "grpc++_codegen_base",
+        "grpc++_codegen_base_src",
         "grpc_health_upb",
         "grpc_unsecure",
     ],
@@ -2518,4 +2513,12 @@ filegroup(
         "etc/roots.pem",
     ],
     visibility = ["//visibility:public"],
+)
+
+# Base classes of EventManagerInterface
+grpc_cc_library(
+    name = "eventmanager_interface",
+    hdrs = [
+        "src/core/lib/iomgr/poller/eventmanager_interface.h",
+    ],
 )

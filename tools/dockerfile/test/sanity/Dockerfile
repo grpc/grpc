@@ -63,8 +63,6 @@ RUN echo 'APT::Default-Release "stretch";' | tee -a /etc/apt/apt.conf.d/00local
 
 RUN mkdir /var/local/jenkins
 
-# Define the default command.
-CMD ["bash"]
 
 #=================
 # C++ dependencies
@@ -97,7 +95,7 @@ ENV CLANG_TIDY=clang-tidy
 # Bazel installation
 
 # Must be in sync with tools/bazel
-ENV BAZEL_VERSION 0.28.1
+ENV BAZEL_VERSION 0.29.1
 
 # The correct bazel version is already preinstalled, no need to use //tools/bazel wrapper.
 ENV DISABLE_BAZEL_WRAPPER 1

@@ -266,12 +266,6 @@ class ServerInterface : public internal::CallHook {
               server, context, stream, call_cq, notification_cq, tag,
               registered_method->name(), registered_method->method_type()),
           registered_method_(registered_method),
-          server_(server),
-          context_(context),
-          stream_(stream),
-          call_cq_(call_cq),
-          notification_cq_(notification_cq),
-          tag_(tag),
           request_(request) {
       IssueRequest(registered_method->server_tag(), payload_.bbuf_ptr(),
                    notification_cq);
@@ -313,13 +307,6 @@ class ServerInterface : public internal::CallHook {
 
    private:
     internal::RpcServiceMethod* const registered_method_;
-    ServerInterface* const server_;
-    ::grpc_impl::ServerContext* const context_;
-    internal::ServerAsyncStreamingInterface* const stream_;
-    ::grpc_impl::CompletionQueue* const call_cq_;
-
-    ::grpc_impl::ServerCompletionQueue* const notification_cq_;
-    void* const tag_;
     Message* const request_;
     ByteBuffer payload_;
   };

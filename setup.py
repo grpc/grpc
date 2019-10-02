@@ -147,16 +147,21 @@ EXTRA_ENV_COMPILE_ARGS = os.environ.get('GRPC_PYTHON_CFLAGS', None)
 EXTRA_ENV_LINK_ARGS = os.environ.get('GRPC_PYTHON_LDFLAGS', None)
 if EXTRA_ENV_COMPILE_ARGS is None:
   EXTRA_ENV_COMPILE_ARGS = ' -std=c++11'
-  if 'win32' in sys.platform and sys.version_info < (3, 5):
-    EXTRA_ENV_COMPILE_ARGS += ' -D_hypot=hypot'
-    # We use define flags here and don't directly add to DEFINE_MACROS below to
-    # ensure that the expert user/builder has a way of turning it off (via the
-    # envvars) without adding yet more GRPC-specific envvars.
-    # See https://sourceforge.net/p/mingw-w64/bugs/363/
-    if '32' in platform.architecture()[0]:
-      EXTRA_ENV_COMPILE_ARGS += ' -D_ftime=_ftime32 -D_timeb=__timeb32 -D_ftime_s=_ftime32_s'
+  if 'win32' in sys.platform:
+    if sys.version_info < (3, 5):
+      EXTRA_ENV_COMPILE_ARGS += ' -D_hypot=hypot'
+      # We use define flags here and don't directly add to DEFINE_MACROS below to
+      # ensure that the expert user/builder has a way of turning it off (via the
+      # envvars) without adding yet more GRPC-specific envvars.
+      # See https://sourceforge.net/p/mingw-w64/bugs/363/
+      if '32' in platform.architecture()[0]:
+        EXTRA_ENV_COMPILE_ARGS += ' -D_ftime=_ftime32 -D_timeb=__timeb32 -D_ftime_s=_ftime32_s'
+      else:
+        EXTRA_ENV_COMPILE_ARGS += ' -D_ftime=_ftime64 -D_timeb=__timeb64'
     else:
-      EXTRA_ENV_COMPILE_ARGS += ' -D_ftime=_ftime64 -D_timeb=__timeb64'
+      # We need to statically link the C++ Runtime, only the C runtime is
+      # available dynamically
+      EXTRA_ENV_COMPILE_ARGS += ' /MT'
   elif "linux" in sys.platform:
     EXTRA_ENV_COMPILE_ARGS += ' -std=gnu99 -fvisibility=hidden -fno-wrapv -fno-exceptions'
   elif "darwin" in sys.platform:
@@ -265,6 +270,7 @@ if 'darwin' in sys.platform and PY3:
         r'macosx-10.7-\1',
         util.get_platform())
 
+
 def cython_extensions_and_necessity():
   cython_module_files = [os.path.join(PYTHON_STEM,
                                name.replace('.', '/') + '.pyx')
@@ -295,6 +301,8 @@ def cython_extensions_and_necessity():
   need_cython = BUILD_WITH_CYTHON
   if not BUILD_WITH_CYTHON:
     need_cython = need_cython or not commands.check_and_update_cythonization(extensions)
+  # TODO: the strategy for conditional compiling and exposing the aio Cython
+  # dependencies will be revisited by https://github.com/grpc/grpc/issues/19728
   return commands.try_cythonize(extensions, linetracing=ENABLE_CYTHON_TRACING, mandatory=BUILD_WITH_CYTHON), need_cython
 
 CYTHON_EXTENSION_MODULES, need_cython = cython_extensions_and_necessity()

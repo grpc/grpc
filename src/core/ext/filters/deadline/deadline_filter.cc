@@ -233,14 +233,14 @@ void grpc_deadline_state_client_start_transport_stream_op_batch(
 //
 
 // Constructor for channel_data.  Used for both client and server filters.
-static grpc_error* init_channel_elem(grpc_channel_element* elem,
-                                     grpc_channel_element_args* args) {
+static grpc_error* deadline_init_channel_elem(grpc_channel_element* elem,
+                                              grpc_channel_element_args* args) {
   GPR_ASSERT(!args->is_last);
   return GRPC_ERROR_NONE;
 }
 
 // Destructor for channel_data.  Used for both client and server filters.
-static void destroy_channel_elem(grpc_channel_element* elem) {}
+static void deadline_destroy_channel_elem(grpc_channel_element* elem) {}
 
 // Call data used for both client and server filter.
 typedef struct base_call_data {
@@ -260,24 +260,24 @@ typedef struct server_call_data {
 } server_call_data;
 
 // Constructor for call_data.  Used for both client and server filters.
-static grpc_error* init_call_elem(grpc_call_element* elem,
-                                  const grpc_call_element_args* args) {
+static grpc_error* deadline_init_call_elem(grpc_call_element* elem,
+                                           const grpc_call_element_args* args) {
   new (elem->call_data) grpc_deadline_state(
       elem, args->call_stack, args->call_combiner, args->deadline);
   return GRPC_ERROR_NONE;
 }
 
 // Destructor for call_data.  Used for both client and server filters.
-static void destroy_call_elem(grpc_call_element* elem,
-                              const grpc_call_final_info* final_info,
-                              grpc_closure* ignored) {
+static void deadline_destroy_call_elem(grpc_call_element* elem,
+                                       const grpc_call_final_info* final_info,
+                                       grpc_closure* ignored) {
   grpc_deadline_state* deadline_state =
       static_cast<grpc_deadline_state*>(elem->call_data);
   deadline_state->~grpc_deadline_state();
 }
 
 // Method for starting a call op for client filter.
-static void client_start_transport_stream_op_batch(
+static void deadline_client_start_transport_stream_op_batch(
     grpc_call_element* elem, grpc_transport_stream_op_batch* op) {
   grpc_deadline_state_client_start_transport_stream_op_batch(elem, op);
   // Chain to next filter.
@@ -295,7 +295,7 @@ static void recv_initial_metadata_ready(void* arg, grpc_error* error) {
 }
 
 // Method for starting a call op for server filter.
-static void server_start_transport_stream_op_batch(
+static void deadline_server_start_transport_stream_op_batch(
     grpc_call_element* elem, grpc_transport_stream_op_batch* op) {
   server_call_data* calld = static_cast<server_call_data*>(elem->call_data);
   if (op->cancel_stream) {
@@ -329,29 +329,29 @@ static void server_start_transport_stream_op_batch(
 }
 
 const grpc_channel_filter grpc_client_deadline_filter = {
-    client_start_transport_stream_op_batch,
+    deadline_client_start_transport_stream_op_batch,
     grpc_channel_next_op,
     sizeof(base_call_data),
-    init_call_elem,
+    deadline_init_call_elem,
     grpc_call_stack_ignore_set_pollset_or_pollset_set,
-    destroy_call_elem,
+    deadline_destroy_call_elem,
     0,  // sizeof(channel_data)
-    init_channel_elem,
-    destroy_channel_elem,
+    deadline_init_channel_elem,
+    deadline_destroy_channel_elem,
     grpc_channel_next_get_info,
     "deadline",
 };
 
 const grpc_channel_filter grpc_server_deadline_filter = {
-    server_start_transport_stream_op_batch,
+    deadline_server_start_transport_stream_op_batch,
     grpc_channel_next_op,
     sizeof(server_call_data),
-    init_call_elem,
+    deadline_init_call_elem,
     grpc_call_stack_ignore_set_pollset_or_pollset_set,
-    destroy_call_elem,
+    deadline_destroy_call_elem,
     0,  // sizeof(channel_data)
-    init_channel_elem,
-    destroy_channel_elem,
+    deadline_init_channel_elem,
+    deadline_destroy_channel_elem,
     grpc_channel_next_get_info,
     "deadline",
 };

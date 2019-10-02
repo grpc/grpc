@@ -47,7 +47,8 @@ class SpiffeChannelSecurityConnector final
       const char* target_name, const char* overridden_target_name);
   ~SpiffeChannelSecurityConnector() override;
 
-  void add_handshakers(grpc_pollset_set* interested_parties,
+  void add_handshakers(const grpc_channel_args* args,
+                       grpc_pollset_set* interested_parties,
                        grpc_core::HandshakeManager* handshake_mgr) override;
 
   void check_peer(tsi_peer peer, grpc_endpoint* ep,
@@ -117,7 +118,8 @@ class SpiffeServerSecurityConnector final
       grpc_core::RefCountedPtr<grpc_server_credentials> server_creds);
   ~SpiffeServerSecurityConnector() override;
 
-  void add_handshakers(grpc_pollset_set* interested_parties,
+  void add_handshakers(const grpc_channel_args* args,
+                       grpc_pollset_set* interested_parties,
                        grpc_core::HandshakeManager* handshake_mgr) override;
 
   void check_peer(tsi_peer peer, grpc_endpoint* ep,

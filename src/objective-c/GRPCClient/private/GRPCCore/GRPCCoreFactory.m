@@ -48,6 +48,10 @@ static dispatch_once_t gInitGRPCCoreInsecureFactory;
   return [[GRPCCall2Internal alloc] initWithTransportManager:transportManager];
 }
 
+- (NSArray<id<GRPCInterceptorFactory>> *)transportInterceptorFactories {
+  return nil;
+}
+
 - (id<GRPCChannelFactory>)createCoreChannelFactoryWithCallOptions:(GRPCCallOptions *)callOptions {
   NSError *error;
   id<GRPCChannelFactory> factory =
@@ -81,6 +85,10 @@ static dispatch_once_t gInitGRPCCoreInsecureFactory;
 
 - (GRPCTransport *)createTransportWithManager:(GRPCTransportManager *)transportManager {
   return [[GRPCCall2Internal alloc] initWithTransportManager:transportManager];
+}
+
+- (NSArray<id<GRPCInterceptorFactory>> *)transportInterceptorFactories {
+  return nil;
 }
 
 - (id<GRPCChannelFactory>)createCoreChannelFactoryWithCallOptions:(GRPCCallOptions *)callOptions {

@@ -84,7 +84,8 @@ static const tsi_zero_copy_grpc_protector_vtable
     local_zero_copy_grpc_protector_vtable = {
         local_zero_copy_grpc_protector_protect,
         local_zero_copy_grpc_protector_unprotect,
-        local_zero_copy_grpc_protector_destroy};
+        local_zero_copy_grpc_protector_destroy,
+        nullptr /* local_zero_copy_grpc_protector_max_frame_size */};
 
 tsi_result local_zero_copy_grpc_protector_create(
     tsi_zero_copy_grpc_protector** protector) {

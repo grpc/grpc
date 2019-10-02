@@ -2251,23 +2251,23 @@ std::vector<TestScenario> CreateTestScenarios(bool use_proxy,
   return scenarios;
 }
 
-INSTANTIATE_TEST_CASE_P(
+INSTANTIATE_TEST_SUITE_P(
     End2end, End2endTest,
     ::testing::ValuesIn(CreateTestScenarios(false, true, true, true, true)));
 
-INSTANTIATE_TEST_CASE_P(
+INSTANTIATE_TEST_SUITE_P(
     End2endServerTryCancel, End2endServerTryCancelTest,
     ::testing::ValuesIn(CreateTestScenarios(false, true, true, true, true)));
 
-INSTANTIATE_TEST_CASE_P(
+INSTANTIATE_TEST_SUITE_P(
     ProxyEnd2end, ProxyEnd2endTest,
     ::testing::ValuesIn(CreateTestScenarios(true, true, true, true, true)));
 
-INSTANTIATE_TEST_CASE_P(
+INSTANTIATE_TEST_SUITE_P(
     SecureEnd2end, SecureEnd2endTest,
     ::testing::ValuesIn(CreateTestScenarios(false, false, true, false, true)));
 
-INSTANTIATE_TEST_CASE_P(
+INSTANTIATE_TEST_SUITE_P(
     ResourceQuotaEnd2end, ResourceQuotaEnd2endTest,
     ::testing::ValuesIn(CreateTestScenarios(false, true, true, true, true)));
 

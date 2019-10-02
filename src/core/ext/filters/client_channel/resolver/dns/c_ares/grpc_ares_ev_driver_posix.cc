@@ -98,7 +98,7 @@ class GrpcPolledFdFactoryPosix : public GrpcPolledFdFactory {
 };
 
 UniquePtr<GrpcPolledFdFactory> NewGrpcPolledFdFactory(grpc_combiner* combiner) {
-  return UniquePtr<GrpcPolledFdFactory>(New<GrpcPolledFdFactoryPosix>());
+  return MakeUnique<GrpcPolledFdFactoryPosix>();
 }
 
 }  // namespace grpc_core

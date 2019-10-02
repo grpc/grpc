@@ -341,15 +341,13 @@ struct grpc_chttp2_transport {
       publish the accepted server stream */
   grpc_chttp2_stream** accepting_stream = nullptr;
 
-  struct {
-    /* accept stream callback */
-    void (*accept_stream)(void* user_data, grpc_transport* transport,
-                          const void* server_data);
-    void* accept_stream_user_data;
+  /* accept stream callback */
+  void (*accept_stream_cb)(void* user_data, grpc_transport* transport,
+                           const void* server_data);
+  void* accept_stream_cb_user_data;
 
-    /** connectivity tracking */
-    grpc_connectivity_state_tracker state_tracker;
-  } channel_callback;
+  /** connectivity tracking */
+  grpc_core::ConnectivityStateTracker state_tracker;
 
   /** data to write now */
   grpc_slice_buffer outbuf;

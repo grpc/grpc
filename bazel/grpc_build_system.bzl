@@ -98,9 +98,6 @@ def grpc_cc_library(
                       "//:grpc_allow_exceptions": ["GRPC_ALLOW_EXCEPTIONS=1"],
                       "//:grpc_disallow_exceptions": ["GRPC_ALLOW_EXCEPTIONS=0"],
                       "//conditions:default": [],
-                  }) + select({
-                      "//:grpc_use_cpp_std_lib": ["GRPC_USE_CPP_STD_LIB=1"],
-                      "//conditions:default": [],
                   }),
         hdrs = hdrs + public_hdrs,
         deps = deps + _get_external_deps(external_deps),
@@ -184,17 +181,17 @@ def grpc_cc_test(name, srcs = [], deps = [], external_deps = [], args = [], data
         "exec_compatible_with": exec_compatible_with,
     }
     if uses_polling:
-        # Only run targets with pollers for non-MSVC
-        # TODO(yfen): Enable MSVC for poller-enabled targets without pollers
+        # the vanilla version of the test should run on platforms that only 
+        # support a single poller
         native.cc_test(
             name = name,
             testonly = True,
-            tags = [
-                "manual",
-                "no_windows",
-            ],
+            tags = (tags + [
+                "no_linux",  # linux supports multiple pollers
+            ]),
             **args
         )
+        # on linux we run the same test multiple times, once for each poller
         for poller in POLLERS:
             native.sh_test(
                 name = name + "@poller=" + poller,
@@ -208,11 +205,12 @@ def grpc_cc_test(name, srcs = [], deps = [], external_deps = [], args = [], data
                     poller,
                     "$(location %s)" % name,
                 ] + args["args"],
-                tags = (tags + ["no_windows"]),
+                tags = (tags + ["no_windows", "no_mac"]),
                 exec_compatible_with = exec_compatible_with,
             )
     else:
-        native.cc_test(tags = tags, **args)
+        # the test behavior doesn't depend on polling, just generate the test
+        native.cc_test(name = name, tags = tags, **args)
     ios_cc_test(
         name = name,
         tags = tags,

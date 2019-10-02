@@ -85,7 +85,7 @@ grpc_security_status grpc_ssl_tsi_server_handshaker_factory_init(
 
 /* Exposed for testing only. */
 grpc_core::RefCountedPtr<grpc_auth_context> grpc_ssl_peer_to_auth_context(
-    const tsi_peer* peer);
+    const tsi_peer* peer, const char* transport_security_type);
 tsi_peer grpc_shallow_peer_from_ssl_auth_context(
     const grpc_auth_context* auth_context);
 void grpc_shallow_peer_destruct(tsi_peer* peer);

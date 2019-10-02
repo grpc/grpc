@@ -119,8 +119,8 @@ OrphanablePtr<Resolver> CreateSockaddrResolver(
   ServerAddressList addresses;
   if (!ParseUri(args.uri, parse, &addresses)) return nullptr;
   // Instantiate resolver.
-  return OrphanablePtr<Resolver>(
-      New<SockaddrResolver>(std::move(addresses), std::move(args)));
+  return MakeOrphanable<SockaddrResolver>(std::move(addresses),
+                                          std::move(args));
 }
 
 class IPv4ResolverFactory : public ResolverFactory {
@@ -174,15 +174,12 @@ class UnixResolverFactory : public ResolverFactory {
 
 void grpc_resolver_sockaddr_init() {
   grpc_core::ResolverRegistry::Builder::RegisterResolverFactory(
-      grpc_core::UniquePtr<grpc_core::ResolverFactory>(
-          grpc_core::New<grpc_core::IPv4ResolverFactory>()));
+      grpc_core::MakeUnique<grpc_core::IPv4ResolverFactory>());
   grpc_core::ResolverRegistry::Builder::RegisterResolverFactory(
-      grpc_core::UniquePtr<grpc_core::ResolverFactory>(
-          grpc_core::New<grpc_core::IPv6ResolverFactory>()));
+      grpc_core::MakeUnique<grpc_core::IPv6ResolverFactory>());
 #ifdef GRPC_HAVE_UNIX_SOCKET
   grpc_core::ResolverRegistry::Builder::RegisterResolverFactory(
-      grpc_core::UniquePtr<grpc_core::ResolverFactory>(
-          grpc_core::New<grpc_core::UnixResolverFactory>()));
+      grpc_core::MakeUnique<grpc_core::UnixResolverFactory>());
 #endif
 }
 

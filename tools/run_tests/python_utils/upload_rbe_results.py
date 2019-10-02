@@ -51,7 +51,7 @@ def _get_api_key():
     api_key_directory = os.getenv('KOKORO_GFILE_DIR')
     api_key_file = os.path.join(api_key_directory, 'resultstore_api_key')
     assert os.path.isfile(api_key_file), 'Must add --api_key arg if not on ' \
-     'Kokoro or Kokoro envrionment is not set up properly.'
+     'Kokoro or Kokoro environment is not set up properly.'
     with open(api_key_file, 'r') as f:
         return f.read().replace('\n', '')
 
