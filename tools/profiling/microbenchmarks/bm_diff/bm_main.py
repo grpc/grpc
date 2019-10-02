@@ -109,7 +109,7 @@ def eintr_be_gone(fn):
         while True:
             try:
                 return fn(*args)
-            except IOError, e:
+            except IOError as e:
                 if e.errno != errno.EINTR:
                     raise
 
