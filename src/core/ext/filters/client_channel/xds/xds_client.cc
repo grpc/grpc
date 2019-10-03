@@ -1197,6 +1197,10 @@ XdsClient::XdsClient(grpc_combiner* combiner,
 
 XdsClient::~XdsClient() { GRPC_COMBINER_UNREF(combiner_, "xds_client"); }
 
+const char* XdsClient::GetServerURI() {
+  return grpc_channel_get_target(chand_->channel());
+}
+
 void XdsClient::Orphan() {
   shutting_down_ = true;
   chand_.reset();

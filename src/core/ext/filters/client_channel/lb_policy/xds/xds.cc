@@ -402,8 +402,15 @@ class XdsLb : public LoadBalancingPolicy {
   bool shutting_down_ = false;
 
   // The xds client and endpoint watcher.
-  OrphanablePtr<XdsClient> xds_client_;
-  EndpointWatcher* endpoint_watcher_ = nullptr;
+  struct XdsClientState {
+    OrphanablePtr<XdsClient> xds_client;
+    EndpointWatcher* endpoint_watcher;
+    bool failing = false;
+
+    void Set(XdsLb* parent);
+  };
+  XdsClientState xds_client_;
+  XdsClientState pending_xds_client_;
 
   // Whether the checks for fallback at startup are ALL pending. There are
   // several cases where this can be reset:
@@ -598,10 +605,22 @@ void XdsLb::FallbackHelper::AddTraceEvent(TraceSeverity severity,
 
 class XdsLb::EndpointWatcher : public XdsClient::EndpointWatcherInterface {
  public:
-  explicit EndpointWatcher(RefCountedPtr<XdsLb> xds_policy)
-      : xds_policy_(std::move(xds_policy)) {}
+  EndpointWatcher(RefCountedPtr<XdsLb> xds_policy, XdsClientState* client_state)
+      : xds_policy_(std::move(xds_policy)), client_state_(client_state) {}
 
   void OnEndpointChanged(EdsUpdate update) override {
+    client_state_->failing = false;
+    // If this response is for the pending xds client, promote it.
+    if (client_state_ == &xds_policy_->pending_xds_client_) {
+      if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_xds_trace)) {
+        gpr_log(GPR_INFO,
+                "[xdslb %p] Pending xds client %p receives EDS response; "
+                "promoting it to replace current xds client %p",
+                xds_policy_.get(), client_state_->xds_client.get(),
+                xds_policy_->xds_client_.xds_client.get());
+      }
+      xds_policy_->xds_client_ = std::move(xds_policy_->pending_xds_client_);
+    }
     // If the balancer tells us to drop all the calls, we should exit fallback
     // mode immediately.
     if (update.drop_all) xds_policy_->MaybeExitFallbackMode();
@@ -629,6 +648,7 @@ class XdsLb::EndpointWatcher : public XdsClient::EndpointWatcherInterface {
   }
 
   void OnError(grpc_error* error) override {
+    client_state_->failing = true;
     // If the fallback-at-startup checks are pending, go into fallback mode
     // immediately.  This short-circuits the timeout for the
     // fallback-at-startup case.
@@ -661,6 +681,7 @@ class XdsLb::EndpointWatcher : public XdsClient::EndpointWatcherInterface {
 
  private:
   RefCountedPtr<XdsLb> xds_policy_;
+  XdsClientState* client_state_;
 };
 
 //
@@ -719,7 +740,8 @@ void XdsLb::ShutdownLocked() {
   }
   fallback_policy_.reset();
   pending_fallback_policy_.reset();
-  xds_client_.reset();
+  xds_client_.xds_client.reset();
+  pending_xds_client_.xds_client.reset();
   // TODO(roth): When we instantiate the XdsClient in the resolver
   // instead of here, re-enable the code below.  Right now, we need to NOT
   // cancel the watches, since the watchers are holding refs to this LB
@@ -736,10 +758,17 @@ void XdsLb::ShutdownLocked() {
 #if 0
   // Cancel the endpoint watch here instead of in our dtor, because the
   // watcher holds a ref to us.
-  if (xds_client_ != nullptr) {
-    xds_client_->CancelEndpointDataWatch(StringView(server_name_),
-                                         endpoint_watcher_);
-    xds_client_->RemoveClientStats(StringView(server_name_), &client_stats_);
+  if (xds_client_.xds_client != nullptr) {
+    xds_client_.xds_client->CancelEndpointDataWatch(StringView(server_name_),
+                                                    endpoint_watcher_);
+    xds_client_.xds_client->RemoveClientStats(StringView(server_name_),
+                                              &client_stats_);
+  }
+  if (pending_xds_client_.xds_client != nullptr) {
+    pending_xds_client_.xds_client->CancelEndpointDataWatch(
+        StringView(server_name_), pending_endpoint_watcher_);
+    pending_xds_client_.xds_client->RemoveClientStats(StringView(server_name_),
+                                                      &client_stats_);
   }
 #endif
 }
@@ -752,7 +781,12 @@ void XdsLb::ResetBackoffLocked() {
   // TODO(roth): When we instantiate the XdsClient in the resolver
   // instead of in this LB policy, this should be done in the resolver
   // instead of here.
-  if (xds_client_ != nullptr) xds_client_->ResetBackoff();
+  if (xds_client_.xds_client != nullptr) {
+    xds_client_.xds_client->ResetBackoff();
+  }
+  if (pending_xds_client_.xds_client != nullptr) {
+    pending_xds_client_.xds_client->ResetBackoff();
+  }
   priority_list_.ResetBackoffLocked();
   if (fallback_policy_ != nullptr) {
     fallback_policy_->ResetBackoffLocked();
@@ -771,8 +805,23 @@ void XdsLb::ParseLbConfig(const ParsedXdsConfig* xds_config) {
   fallback_policy_config_ = xds_config->fallback_policy();
 }
 
+void XdsLb::XdsClientState::Set(XdsLb* parent) {
+  xds_client = MakeOrphanable<XdsClient>(
+      parent->combiner(), parent->interested_parties(),
+      parent->balancer_name_.get(),
+      StringView(parent->server_name_),
+      nullptr /* service config watcher */, *parent->args_);
+  auto watcher = MakeUnique<EndpointWatcher>(parent->Ref(), this);
+  endpoint_watcher = watcher.get();
+  xds_client->WatchEndpointData(StringView(parent->server_name_),
+                                std::move(watcher));
+  xds_client->AddClientStats(StringView(parent->server_name_),
+                             &parent->client_stats_);
+  failing = false;
+}
+
 void XdsLb::UpdateLocked(UpdateArgs args) {
-  const bool is_initial_update = xds_client_ == nullptr;
+  const bool is_initial_update = xds_client_.xds_client == nullptr;
   ParseLbConfig(static_cast<const ParsedXdsConfig*>(args.config.get()));
   // TODO(roth): This check should go away once we are getting the xds
   // server from the bootstrap file.
@@ -786,16 +835,22 @@ void XdsLb::UpdateLocked(UpdateArgs args) {
   grpc_channel_args_destroy(args_);
   args_ = args.args;
   args.args = nullptr;
-  // Create an xds client if we don't have one yet.
-  if (xds_client_ == nullptr) {
-    xds_client_ = MakeOrphanable<XdsClient>(
-        combiner(), interested_parties(), balancer_name_.get(),
-        StringView(server_name_), nullptr /* service config watcher */, *args_);
-    endpoint_watcher_ = New<EndpointWatcher>(Ref());
-    xds_client_->WatchEndpointData(
-        StringView(server_name_),
-        UniquePtr<XdsClient::EndpointWatcherInterface>(endpoint_watcher_));
-    xds_client_->AddClientStats(StringView(server_name_), &client_stats_);
+  // Create an XdsClient if we don't yet have one or if the balancer
+  // name changed from the last received one.
+  bool create_xds_client = is_initial_update;
+  if (!is_initial_update) {
+    auto& latest_xds_client = pending_xds_client_.xds_client != nullptr
+                              ? pending_xds_client_.xds_client
+                              : xds_client_.xds_client;
+    create_xds_client =
+        strcmp(balancer_name_.get(), latest_xds_client->GetServerURI()) != 0;
+  }
+  if (create_xds_client) {
+    if (xds_client_.xds_client == nullptr || xds_client_.failing) {
+      xds_client_.Set(this);
+    } else {
+      pending_xds_client_.Set(this);
+    }
   }
   // Update priority list.
   priority_list_.UpdateLocked();
