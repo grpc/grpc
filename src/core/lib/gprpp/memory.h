@@ -103,6 +103,11 @@ class Allocator {
   };
   typedef std::true_type is_always_equal;
 
+  Allocator() = default;
+
+  template <class U>
+  Allocator(const Allocator<U>&) {}
+
   pointer address(reference x) const { return &x; }
   const_pointer address(const_reference x) const { return &x; }
   pointer allocate(std::size_t n,
