@@ -1140,7 +1140,6 @@ filegroups:
   uses:
   - grpc_base
   - grpc_client_channel
-  - grpc_secure
   - grpc_xds_client_secure
 - name: grpc_lb_subchannel_list
   headers:

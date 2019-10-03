@@ -18,9 +18,6 @@
 
 #include <grpc/support/port_platform.h>
 
-#include "src/core/lib/iomgr/sockaddr.h"
-#include "src/core/lib/iomgr/socket_utils.h"
-
 #include <inttypes.h>
 #include <limits.h>
 #include <string.h>
@@ -86,9 +83,9 @@ class XdsClient::ChannelState : public InternallyRefCounted<ChannelState> {
   // An xds call wrapper that can restart a call upon failure. Holds a ref to
   // the xds channel. The template parameter is the kind of wrapped xds call.
   template <typename T>
-  class RetryableLbCall : public InternallyRefCounted<RetryableLbCall<T>> {
+  class RetryableCall : public InternallyRefCounted<RetryableCall<T>> {
    public:
-    explicit RetryableLbCall(RefCountedPtr<ChannelState> chand);
+    explicit RetryableCall(RefCountedPtr<ChannelState> chand);
 
     void Orphan() override;
 
@@ -105,7 +102,7 @@ class XdsClient::ChannelState : public InternallyRefCounted<ChannelState> {
     // The wrapped call that talks to the xds server. It's instantiated
     // every time we start a new call. It's null during call retry backoff.
     OrphanablePtr<T> calld_;
-    // The owing xds channel.
+    // The owning xds channel.
     RefCountedPtr<ChannelState> chand_;
 
     // Retry state.
@@ -121,12 +118,12 @@ class XdsClient::ChannelState : public InternallyRefCounted<ChannelState> {
   class EdsCallState : public InternallyRefCounted<EdsCallState> {
    public:
     // The ctor and dtor should not be used directly.
-    explicit EdsCallState(RefCountedPtr<RetryableLbCall<EdsCallState>> parent);
+    explicit EdsCallState(RefCountedPtr<RetryableCall<EdsCallState>> parent);
     ~EdsCallState() override;
 
     void Orphan() override;
 
-    RetryableLbCall<EdsCallState>* parent() const { return parent_.get(); }
+    RetryableCall<EdsCallState>* parent() const { return parent_.get(); }
     ChannelState* chand() const { return parent_->chand(); }
     XdsClient* xds_client() const { return chand()->xds_client(); }
     bool seen_response() const { return seen_response_; }
@@ -137,8 +134,8 @@ class XdsClient::ChannelState : public InternallyRefCounted<ChannelState> {
 
     bool IsCurrentCallOnChannel() const;
 
-    // The owning RetryableLbCall<>.
-    RefCountedPtr<RetryableLbCall<EdsCallState>> parent_;
+    // The owning RetryableCall<>.
+    RefCountedPtr<RetryableCall<EdsCallState>> parent_;
     bool seen_response_ = false;
 
     // Always non-NULL.
@@ -165,14 +162,14 @@ class XdsClient::ChannelState : public InternallyRefCounted<ChannelState> {
   class LrsCallState : public InternallyRefCounted<LrsCallState> {
    public:
     // The ctor and dtor should not be used directly.
-    explicit LrsCallState(RefCountedPtr<RetryableLbCall<LrsCallState>> parent);
+    explicit LrsCallState(RefCountedPtr<RetryableCall<LrsCallState>> parent);
     ~LrsCallState() override;
 
     void Orphan() override;
 
     void MaybeStartReportingLocked();
 
-    RetryableLbCall<LrsCallState>* parent() { return parent_.get(); }
+    RetryableCall<LrsCallState>* parent() { return parent_.get(); }
     ChannelState* chand() const { return parent_->chand(); }
     XdsClient* xds_client() const { return chand()->xds_client(); }
     bool seen_response() const { return seen_response_; }
@@ -221,8 +218,8 @@ class XdsClient::ChannelState : public InternallyRefCounted<ChannelState> {
 
     bool IsCurrentCallOnChannel() const;
 
-    // The owning RetryableLbCall<>.
-    RefCountedPtr<RetryableLbCall<LrsCallState>> parent_;
+    // The owning RetryableCall<>.
+    RefCountedPtr<RetryableCall<LrsCallState>> parent_;
     bool seen_response_ = false;
 
     // Always non-NULL.
@@ -285,8 +282,8 @@ class XdsClient::ChannelState : public InternallyRefCounted<ChannelState> {
   StateWatcher* watcher_ = nullptr;
 
   // The retryable XDS calls.
-  OrphanablePtr<RetryableLbCall<EdsCallState>> eds_calld_;
-  OrphanablePtr<RetryableLbCall<LrsCallState>> lrs_calld_;
+  OrphanablePtr<RetryableCall<EdsCallState>> eds_calld_;
+  OrphanablePtr<RetryableCall<LrsCallState>> lrs_calld_;
 };
 
 //
@@ -406,7 +403,7 @@ void XdsClient::ChannelState::Orphan() {
 
 void XdsClient::ChannelState::MaybeStartEdsCall() {
   if (eds_calld_ != nullptr) return;
-  eds_calld_.reset(New<RetryableLbCall<EdsCallState>>(
+  eds_calld_.reset(New<RetryableCall<EdsCallState>>(
       Ref(DEBUG_LOCATION, "ChannelState+eds")));
 }
 
@@ -414,7 +411,7 @@ void XdsClient::ChannelState::StopEdsCall() { eds_calld_.reset(); }
 
 void XdsClient::ChannelState::MaybeStartLrsCall() {
   if (lrs_calld_ != nullptr) return;
-  lrs_calld_.reset(New<RetryableLbCall<LrsCallState>>(
+  lrs_calld_.reset(New<RetryableCall<LrsCallState>>(
       Ref(DEBUG_LOCATION, "ChannelState+lrs")));
 }
 
@@ -438,11 +435,11 @@ void XdsClient::ChannelState::CancelConnectivityWatchLocked() {
 }
 
 //
-// XdsClient::ChannelState::RetryableLbCall<>
+// XdsClient::ChannelState::RetryableCall<>
 //
 
 template <typename T>
-XdsClient::ChannelState::RetryableLbCall<T>::RetryableLbCall(
+XdsClient::ChannelState::RetryableCall<T>::RetryableCall(
     RefCountedPtr<ChannelState> chand)
     : chand_(std::move(chand)),
       backoff_(
@@ -458,15 +455,15 @@ XdsClient::ChannelState::RetryableLbCall<T>::RetryableLbCall(
 }
 
 template <typename T>
-void XdsClient::ChannelState::RetryableLbCall<T>::Orphan() {
+void XdsClient::ChannelState::RetryableCall<T>::Orphan() {
   shutting_down_ = true;
   calld_.reset();
   if (retry_timer_callback_pending_) grpc_timer_cancel(&retry_timer_);
-  this->Unref(DEBUG_LOCATION, "RetryableLbCall+orphaned");
+  this->Unref(DEBUG_LOCATION, "RetryableCall+orphaned");
 }
 
 template <typename T>
-void XdsClient::ChannelState::RetryableLbCall<T>::OnCallFinishedLocked() {
+void XdsClient::ChannelState::RetryableCall<T>::OnCallFinishedLocked() {
   const bool seen_response = calld_->seen_response();
   calld_.reset();
   if (seen_response) {
@@ -481,7 +478,7 @@ void XdsClient::ChannelState::RetryableLbCall<T>::OnCallFinishedLocked() {
 }
 
 template <typename T>
-void XdsClient::ChannelState::RetryableLbCall<T>::StartNewCallLocked() {
+void XdsClient::ChannelState::RetryableCall<T>::StartNewCallLocked() {
   if (shutting_down_) return;
   GPR_ASSERT(chand_->channel_ != nullptr);
   GPR_ASSERT(calld_ == nullptr);
@@ -492,11 +489,11 @@ void XdsClient::ChannelState::RetryableLbCall<T>::StartNewCallLocked() {
             chand()->xds_client(), chand(), this);
   }
   calld_ = MakeOrphanable<T>(
-      this->Ref(DEBUG_LOCATION, "RetryableLbCall+start_new_call"));
+      this->Ref(DEBUG_LOCATION, "RetryableCall+start_new_call"));
 }
 
 template <typename T>
-void XdsClient::ChannelState::RetryableLbCall<T>::StartRetryTimerLocked() {
+void XdsClient::ChannelState::RetryableCall<T>::StartRetryTimerLocked() {
   if (shutting_down_) return;
   const grpc_millis next_attempt_time = backoff_.NextAttemptTime();
   if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_client_trace)) {
@@ -506,15 +503,15 @@ void XdsClient::ChannelState::RetryableLbCall<T>::StartRetryTimerLocked() {
             "retry timer will fire in %" PRId64 "ms.",
             chand()->xds_client(), chand(), timeout);
   }
-  this->Ref(DEBUG_LOCATION, "RetryableLbCall+retry_timer_start").release();
+  this->Ref(DEBUG_LOCATION, "RetryableCall+retry_timer_start").release();
   grpc_timer_init(&retry_timer_, next_attempt_time, &on_retry_timer_);
   retry_timer_callback_pending_ = true;
 }
 
 template <typename T>
-void XdsClient::ChannelState::RetryableLbCall<T>::OnRetryTimerLocked(
+void XdsClient::ChannelState::RetryableCall<T>::OnRetryTimerLocked(
     void* arg, grpc_error* error) {
-  RetryableLbCall* calld = static_cast<RetryableLbCall*>(arg);
+  RetryableCall* calld = static_cast<RetryableCall*>(arg);
   calld->retry_timer_callback_pending_ = false;
   if (!calld->shutting_down_ && error == GRPC_ERROR_NONE) {
     if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_client_trace)) {
@@ -525,7 +522,7 @@ void XdsClient::ChannelState::RetryableLbCall<T>::OnRetryTimerLocked(
     }
     calld->StartNewCallLocked();
   }
-  calld->Unref(DEBUG_LOCATION, "RetryableLbCall+retry_timer_done");
+  calld->Unref(DEBUG_LOCATION, "RetryableCall+retry_timer_done");
 }
 
 //
@@ -533,7 +530,7 @@ void XdsClient::ChannelState::RetryableLbCall<T>::OnRetryTimerLocked(
 //
 
 XdsClient::ChannelState::EdsCallState::EdsCallState(
-    RefCountedPtr<RetryableLbCall<EdsCallState>> parent)
+    RefCountedPtr<RetryableCall<EdsCallState>> parent)
     : InternallyRefCounted<EdsCallState>(&grpc_xds_client_trace),
       parent_(std::move(parent)) {
   // Init the EDS call. Note that the call will progress every time there's
@@ -566,7 +563,7 @@ XdsClient::ChannelState::EdsCallState::EdsCallState(
   if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_client_trace)) {
     gpr_log(GPR_INFO,
             "[xds_client %p] Starting EDS call (chand: %p, calld: %p, "
-            "lb_call: %p)",
+            "call: %p)",
             xds_client(), chand(), this, call_);
   }
   // Create the ops.
@@ -751,7 +748,7 @@ void XdsClient::ChannelState::EdsCallState::OnResponseReceivedLocked(
     const bool priority_list_changed =
         prev_update.priority_list_update != update.priority_list_update;
     const bool drop_config_changed =
-        (prev_update.drop_config == nullptr && update.drop_config != nullptr) ||
+        prev_update.drop_config == nullptr ||
         *prev_update.drop_config != *update.drop_config;
     if (!priority_list_changed && !drop_config_changed) {
       if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_client_trace)) {
@@ -798,7 +795,7 @@ void XdsClient::ChannelState::EdsCallState::OnStatusReceivedLocked(
     char* status_details = grpc_slice_to_c_string(eds_calld->status_details_);
     gpr_log(GPR_INFO,
             "[xds_client %p] EDS call status received. Status = %d, details "
-            "= '%s', (chand: %p, eds_calld: %p, lb_call: %p), error '%s'",
+            "= '%s', (chand: %p, eds_calld: %p, call: %p), error '%s'",
             xds_client, eds_calld->status_code_, status_details, chand,
             eds_calld, eds_calld->call_, grpc_error_string(error));
     gpr_free(status_details);
@@ -910,7 +907,7 @@ void XdsClient::ChannelState::LrsCallState::Reporter::OnReportDoneLocked(
 //
 
 XdsClient::ChannelState::LrsCallState::LrsCallState(
-    RefCountedPtr<RetryableLbCall<LrsCallState>> parent)
+    RefCountedPtr<RetryableCall<LrsCallState>> parent)
     : InternallyRefCounted<LrsCallState>(&grpc_xds_client_trace),
       parent_(std::move(parent)) {
   // Init the LRS call. Note that the call will progress every time there's
@@ -944,7 +941,7 @@ XdsClient::ChannelState::LrsCallState::LrsCallState(
   if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_client_trace)) {
     gpr_log(GPR_INFO,
             "[xds_client %p] Starting LRS call (chand: %p, calld: %p, "
-            "lb_call: %p)",
+            "call: %p)",
             xds_client(), chand(), this, call_);
   }
   // Create the ops.
@@ -1155,7 +1152,7 @@ void XdsClient::ChannelState::LrsCallState::OnStatusReceivedLocked(
     char* status_details = grpc_slice_to_c_string(lrs_calld->status_details_);
     gpr_log(GPR_INFO,
             "[xds_client %p] LRS call status received. Status = %d, details "
-            "= '%s', (chand: %p, calld: %p, lb_call: %p), error '%s'",
+            "= '%s', (chand: %p, calld: %p, call: %p), error '%s'",
             xds_client, lrs_calld->status_code_, status_details, chand,
             lrs_calld, lrs_calld->call_, grpc_error_string(error));
     gpr_free(status_details);
