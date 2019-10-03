@@ -53,6 +53,7 @@ class SslSessionLRUCache : public grpc_core::RefCounted<SslSessionLRUCache> {
     return grpc_core::MakeRefCounted<SslSessionLRUCache>(capacity);
   }
 
+  // Use Create function instead of using this directly.
   explicit SslSessionLRUCache(size_t capacity);
   ~SslSessionLRUCache();
 
