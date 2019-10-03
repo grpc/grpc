@@ -87,7 +87,6 @@ class NewSliceRefcount {
   grpc_slice_refcount* base_refcount() { return &base_; }
 
  private:
-
   grpc_slice_refcount base_;
   RefCount refs_;
   void (*user_destroy_)(void*);

@@ -65,6 +65,10 @@ class SliceHashTable : public RefCounted<SliceHashTable<T>> {
                                               Entry* entries,
                                               ValueCmp value_cmp);
 
+  // Use Create function instead of using this directly.
+  SliceHashTable(size_t num_entries, Entry* entries, ValueCmp value_cmp);
+  virtual ~SliceHashTable();
+
   /// Returns the value from the table associated with \a key.
   /// Returns null if \a key is not found.
   const T* Get(const grpc_slice& key) const;
@@ -76,9 +80,6 @@ class SliceHashTable : public RefCounted<SliceHashTable<T>> {
   ///  - else, if strcmp(a_key, b_key) < 1 (resp. > 1),
   ///  - else, if value_cmp(a_value, b_value) < 1 (resp. > 1).
   static int Cmp(const SliceHashTable& a, const SliceHashTable& b);
-
-  SliceHashTable(size_t num_entries, Entry* entries, ValueCmp value_cmp);
-  virtual ~SliceHashTable();
 
  private:
   void Add(const grpc_slice& key, T& value);

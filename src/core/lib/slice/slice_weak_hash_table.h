@@ -39,13 +39,14 @@ namespace grpc_core {
 template <typename T, size_t Size>
 class SliceWeakHashTable : public RefCounted<SliceWeakHashTable<T, Size>> {
  public:
-  SliceWeakHashTable() = default;
-  ~SliceWeakHashTable() = default;
-
   /// Creates a new table of at most \a size entries.
   static RefCountedPtr<SliceWeakHashTable> Create() {
     return MakeRefCounted<SliceWeakHashTable<T, Size>>();
   }
+
+  /// Use Create function instead of using this directly.
+  SliceWeakHashTable() = default;
+  ~SliceWeakHashTable() = default;
 
   /// Add a mapping from \a key to \a value, taking ownership of \a key. This
   /// operation will always succeed. It may discard older entries.
