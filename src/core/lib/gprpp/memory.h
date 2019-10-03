@@ -28,34 +28,16 @@
 #include <memory>
 #include <utility>
 
-// Add this to a class that want to use Delete(), but has a private or
-// protected destructor.
-// Should not be used in new code.
-// TODO(juanlishen): Remove this macro, and instead comment that the public dtor
-// should not be used directly.
-#define GRPC_ALLOW_CLASS_TO_USE_NON_PUBLIC_DELETE \
-  template <typename _Delete_T>                   \
-  friend void ::grpc_core::Delete(_Delete_T*);
-
-// Add this to a class that want to use New(), but has a private or
-// protected constructor.
-// Should not be used in new code.
-// TODO(juanlishen): Remove this macro, and instead comment that the public dtor
-// should not be used directly.
-#define GRPC_ALLOW_CLASS_TO_USE_NON_PUBLIC_NEW      \
-  template <typename _New_T, typename... _New_Args> \
-  friend _New_T* grpc_core::New(_New_Args&&...);
-
 namespace grpc_core {
 
-// Alternative to new, since we cannot use it (for fear of libstdc++)
+// Alternative to new to use gpr_malloc
 template <typename T, typename... Args>
 inline T* New(Args&&... args) {
   void* p = gpr_malloc(sizeof(T));
   return new (p) T(std::forward<Args>(args)...);
 }
 
-// Alternative to delete, since we cannot use it (for fear of libstdc++)
+// Alternative to delete to use gpr_free
 template <typename T>
 inline void Delete(T* p) {
   if (p == nullptr) return;

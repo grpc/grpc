@@ -77,13 +77,10 @@ class SliceHashTable : public RefCounted<SliceHashTable<T>> {
   ///  - else, if value_cmp(a_value, b_value) < 1 (resp. > 1).
   static int Cmp(const SliceHashTable& a, const SliceHashTable& b);
 
- private:
-  GRPC_ALLOW_CLASS_TO_USE_NON_PUBLIC_DELETE
-  GRPC_ALLOW_CLASS_TO_USE_NON_PUBLIC_NEW
-
   SliceHashTable(size_t num_entries, Entry* entries, ValueCmp value_cmp);
   virtual ~SliceHashTable();
 
+ private:
   void Add(const grpc_slice& key, T& value);
 
   // Default value comparison function, if none specified by caller.

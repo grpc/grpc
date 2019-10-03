@@ -72,9 +72,6 @@ class CFStreamHandle : public GrpcLibraryInitHolder {
   dispatch_queue_t dispatch_queue_;
 
   gpr_refcount refcount_;
-
-  GRPC_ALLOW_CLASS_TO_USE_NON_PUBLIC_NEW
-  GRPC_ALLOW_CLASS_TO_USE_NON_PUBLIC_DELETE
 };
 
 #ifdef DEBUG
