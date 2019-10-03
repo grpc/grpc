@@ -151,6 +151,7 @@ class GrpcLb : public LoadBalancingPolicy {
    public:
     explicit BalancerCallState(
         RefCountedPtr<LoadBalancingPolicy> parent_grpclb_policy);
+    ~BalancerCallState();
 
     // It's the caller's responsibility to ensure that Orphan() is called from
     // inside the combiner.
@@ -164,10 +165,6 @@ class GrpcLb : public LoadBalancingPolicy {
     bool seen_serverlist() const { return seen_serverlist_; }
 
    private:
-    GRPC_ALLOW_CLASS_TO_USE_NON_PUBLIC_DELETE
-
-    ~BalancerCallState();
-
     GrpcLb* grpclb_policy() const {
       return static_cast<GrpcLb*>(grpclb_policy_.get());
     }
