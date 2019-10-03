@@ -498,11 +498,11 @@ ifeq ($(HAS_PKG_CONFIG), true)
 CACHE_MK += HAS_PKG_CONFIG = true,
 endif
 
-CORE_PC_TEMPLATE = prefix=$(prefix),exec_prefix=\$${prefix},includedir=\$${prefix}/include,libdir=\$${exec_prefix}/lib,,Name: $(PC_NAME),Description: $(PC_DESCRIPTION),Version: $(CORE_VERSION),Cflags: -I\$${includedir} $(PC_CFLAGS),Requires.private: $(PC_REQUIRES_PRIVATE),Libs: -L\$${libdir} $(PC_LIB),Libs.private: $(PC_LIBS_PRIVATE)
+CORE_PC_TEMPLATE = prefix=$(prefix),exec_prefix=\$${prefix},includedir=\$${prefix}/include,libdir=\$${exec_prefix}/lib,,Name: $(PC_NAME),Description: $(PC_DESCRIPTION),Version: $(CORE_VERSION),Cflags: -I\$${includedir} $(PC_CFLAGS),Requires: $(PC_REQUIRES),Libs: -L\$${libdir} $(PC_LIB),Libs.private: $(PC_LIBS_PRIVATE)
 
-CPP_PC_TEMPLATE = prefix=$(prefix),exec_prefix=\$${prefix},includedir=\$${prefix}/include,libdir=\$${exec_prefix}/lib,,Name: $(PC_NAME),Description: $(PC_DESCRIPTION),Version: $(CPP_VERSION),Cflags: -I\$${includedir} $(PC_CFLAGS),Requires.private: $(PC_REQUIRES_PRIVATE),Libs: -L\$${libdir} $(PC_LIB),Libs.private: $(PC_LIBS_PRIVATE)
+CPP_PC_TEMPLATE = prefix=$(prefix),exec_prefix=\$${prefix},includedir=\$${prefix}/include,libdir=\$${exec_prefix}/lib,,Name: $(PC_NAME),Description: $(PC_DESCRIPTION),Version: $(CPP_VERSION),Cflags: -I\$${includedir} $(PC_CFLAGS),Requires: $(PC_REQUIRES),Libs: -L\$${libdir} $(PC_LIB),Libs.private: $(PC_LIBS_PRIVATE)
 
-CSHARP_PC_TEMPLATE = prefix=$(prefix),exec_prefix=\$${prefix},includedir=\$${prefix}/include,libdir=\$${exec_prefix}/lib,,Name: $(PC_NAME),Description: $(PC_DESCRIPTION),Version: $(CSHARP_VERSION),Cflags: -I\$${includedir} $(PC_CFLAGS),Requires.private: $(PC_REQUIRES_PRIVATE),Libs: -L\$${libdir} $(PC_LIB),Libs.private: $(PC_LIBS_PRIVATE)
+CSHARP_PC_TEMPLATE = prefix=$(prefix),exec_prefix=\$${prefix},includedir=\$${prefix}/include,libdir=\$${exec_prefix}/lib,,Name: $(PC_NAME),Description: $(PC_DESCRIPTION),Version: $(CSHARP_VERSION),Cflags: -I\$${includedir} $(PC_CFLAGS),Requires: $(PC_REQUIRES),Libs: -L\$${libdir} $(PC_LIB),Libs.private: $(PC_LIBS_PRIVATE)
 
 ifeq ($(SYSTEM),MINGW32)
 EXECUTABLE_SUFFIX = .exe
@@ -795,7 +795,7 @@ endif
 PC_NAME = gpr
 PC_DESCRIPTION = gRPC platform support library
 PC_CFLAGS =
-PC_REQUIRES_PRIVATE = $(PC_REQUIRES_GPR)
+PC_REQUIRES = $(PC_REQUIRES_GPR)
 PC_LIBS_PRIVATE = $(PC_LIBS_GPR)
 PC_LIB = -lgpr
 GPR_PC_FILE := $(CORE_PC_TEMPLATE)
@@ -804,7 +804,7 @@ GPR_PC_FILE := $(CORE_PC_TEMPLATE)
 PC_NAME = gRPC
 PC_DESCRIPTION = high performance general RPC framework
 PC_CFLAGS =
-PC_REQUIRES_PRIVATE = gpr $(PC_REQUIRES_GRPC) $(PC_REQUIRES_SECURE)
+PC_REQUIRES = gpr $(PC_REQUIRES_GRPC) $(PC_REQUIRES_SECURE)
 PC_LIBS_PRIVATE = $(PC_LIBS_GRPC) $(PC_LIBS_SECURE)
 PC_LIB = -lgrpc
 GRPC_PC_FILE := $(CORE_PC_TEMPLATE)
@@ -813,7 +813,7 @@ GRPC_PC_FILE := $(CORE_PC_TEMPLATE)
 PC_NAME = gRPC unsecure
 PC_DESCRIPTION = high performance general RPC framework without SSL
 PC_CFLAGS =
-PC_REQUIRES_PRIVATE = gpr $(PC_REQUIRES_GRPC)
+PC_REQUIRES = gpr $(PC_REQUIRES_GRPC)
 PC_LIBS_PRIVATE = $(PC_LIBS_GRPC)
 PC_LIB = -lgrpc_unsecure
 GRPC_UNSECURE_PC_FILE := $(CORE_PC_TEMPLATE)
@@ -875,7 +875,7 @@ endif
 PC_NAME = gRPC++
 PC_DESCRIPTION = C++ wrapper for gRPC
 PC_CFLAGS =
-PC_REQUIRES_PRIVATE = grpc $(PC_REQUIRES_GRPCXX)
+PC_REQUIRES = grpc $(PC_REQUIRES_GRPCXX)
 PC_LIBS_PRIVATE = $(PC_LIBS_GRPCXX)
 PC_LIB = -lgrpc++
 GRPCXX_PC_FILE := $(CPP_PC_TEMPLATE)
@@ -884,7 +884,7 @@ GRPCXX_PC_FILE := $(CPP_PC_TEMPLATE)
 PC_NAME = gRPC++ unsecure
 PC_DESCRIPTION = C++ wrapper for gRPC without SSL
 PC_CFLAGS =
-PC_REQUIRES_PRIVATE = grpc_unsecure $(PC_REQUIRES_GRPCXX)
+PC_REQUIRES = grpc_unsecure $(PC_REQUIRES_GRPCXX)
 PC_LIBS_PRIVATE = $(PC_LIBS_GRPCXX)
 PC_LIB = -lgrpc++_unsecure
 GRPCXX_UNSECURE_PC_FILE := $(CPP_PC_TEMPLATE)
