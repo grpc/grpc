@@ -35,6 +35,9 @@
 
 namespace grpc_core {
 
+template <class Key, class T, class Compare = std::less<Key>>
+using Map = std::map<Key, T, Compare, Allocator<std::pair<const Key, T>>>;
+
 struct StringLess {
   bool operator()(const char* a, const char* b) const {
     return strcmp(a, b) < 0;

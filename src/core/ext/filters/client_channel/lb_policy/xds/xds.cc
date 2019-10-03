@@ -571,8 +571,8 @@ class XdsLb : public LoadBalancingPolicy {
 
       RefCountedPtr<XdsLb> xds_policy_;
 
-      std::map<RefCountedPtr<XdsLocalityName>, OrphanablePtr<Locality>,
-               XdsLocalityName::Less>
+      Map<RefCountedPtr<XdsLocalityName>, OrphanablePtr<Locality>,
+          XdsLocalityName::Less>
           localities_;
       const uint32_t priority_;
       grpc_connectivity_state connectivity_state_ = GRPC_CHANNEL_IDLE;
