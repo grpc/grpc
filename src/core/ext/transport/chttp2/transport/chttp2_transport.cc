@@ -308,21 +308,7 @@ static bool read_channel_args(grpc_chttp2_transport* t,
           grpc_channel_arg_get_integer(&channel_args->args[i], {0, 0, 1}));
     } else if (0 == strcmp(channel_args->args[i].key,
                            GRPC_ARG_OPTIMIZATION_TARGET)) {
-      if (channel_args->args[i].type != GRPC_ARG_STRING) {
-        gpr_log(GPR_ERROR, "%s should be a string",
-                GRPC_ARG_OPTIMIZATION_TARGET);
-      } else if (0 == strcmp(channel_args->args[i].value.string, "blend")) {
-        t->opt_target = GRPC_CHTTP2_OPTIMIZE_FOR_LATENCY;
-      } else if (0 == strcmp(channel_args->args[i].value.string, "latency")) {
-        t->opt_target = GRPC_CHTTP2_OPTIMIZE_FOR_LATENCY;
-      } else if (0 ==
-                 strcmp(channel_args->args[i].value.string, "throughput")) {
-        t->opt_target = GRPC_CHTTP2_OPTIMIZE_FOR_THROUGHPUT;
-      } else {
-        gpr_log(GPR_ERROR, "%s value '%s' unknown, assuming 'blend'",
-                GRPC_ARG_OPTIMIZATION_TARGET,
-                channel_args->args[i].value.string);
-      }
+      gpr_log(GPR_INFO, "GRPC_ARG_OPTIMIZATION_TARGET is deprecated");
     } else if (0 ==
                strcmp(channel_args->args[i].key, GRPC_ARG_ENABLE_CHANNELZ)) {
       channelz_enabled = grpc_channel_arg_get_bool(
@@ -926,7 +912,6 @@ void grpc_chttp2_initiate_write(grpc_chttp2_transport* t,
       inc_initiate_write_reason(reason);
       set_write_state(t, GRPC_CHTTP2_WRITE_STATE_WRITING,
                       grpc_chttp2_initiate_write_reason_string(reason));
-      t->is_first_write_in_batch = true;
       GRPC_CHTTP2_REF_TRANSPORT(t, "writing");
       /* Note that the 'write_action_begin_locked' closure is being scheduled
        * on the 'finally_scheduler' of t->combiner. This means that
@@ -988,9 +973,6 @@ static void write_action_begin_locked(void* gt, grpc_error* error_ignored) {
   if (r.writing) {
     if (r.partial) {
       GRPC_STATS_INC_HTTP2_PARTIAL_WRITES();
-    }
-    if (!t->is_first_write_in_batch) {
-      GRPC_STATS_INC_HTTP2_WRITES_CONTINUED();
     }
     set_write_state(t,
                     r.partial ? GRPC_CHTTP2_WRITE_STATE_WRITING_WITH_MORE
@@ -1060,7 +1042,6 @@ static void write_action_end_locked(void* tp, grpc_error* error) {
     case GRPC_CHTTP2_WRITE_STATE_WRITING_WITH_MORE:
       GPR_TIMER_MARK("state=writing_stale_no_poller", 0);
       set_write_state(t, GRPC_CHTTP2_WRITE_STATE_WRITING, "continue writing");
-      t->is_first_write_in_batch = false;
       GRPC_CHTTP2_REF_TRANSPORT(t, "writing");
       // If the transport is closed, we will retry writing on the endpoint
       // and next write may contain part of the currently serialized frames.
