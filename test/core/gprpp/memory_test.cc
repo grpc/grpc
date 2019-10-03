@@ -29,6 +29,21 @@ struct Foo {
   int b;
 };
 
+struct Base1 {
+  int a;
+  virtual ~Base1() {}
+};
+
+struct Base2 {
+  int b;
+  virtual ~Base2() {}
+};
+
+struct Compound : public Base1, Base2 {
+  int c;
+  virtual ~Compound() {}
+};
+
 TEST(MemoryTest, NewDeleteTest) { Delete(New<int>()); }
 
 TEST(MemoryTest, NewDeleteWithArgTest) {
@@ -62,6 +77,12 @@ TEST(MemoryTest, UniquePtrWithCustomDeleter) {
     EXPECT_EQ(0, n);
   }
   EXPECT_EQ(1, n);
+}
+
+TEST(MemoryTest, MultipleInheritence) {
+  Base2* p = New<Compound>();
+  EXPECT_NE(p, dynamic_cast<void*>(p));
+  Delete(p);
 }
 
 }  // namespace testing
