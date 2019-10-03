@@ -1048,7 +1048,7 @@ XdsLb::LbChannelState::EdsCallState::EdsCallState(
   lb_call_ = grpc_channel_create_pollset_set_call(
       lb_chand()->channel_, nullptr, GRPC_PROPAGATE_DEFAULTS,
       xdslb_policy()->interested_parties(),
-      GRPC_MDSTR_SLASH_ENVOY_DOT_API_DOT_V2_DOT_ENDPOINTDISCOVERYSERVICE_SLASH_STREAMENDPOINTS,
+      GRPC_MDSTR_SLASH_ENVOY_DOT_SERVICE_DOT_DISCOVERY_DOT_V2_DOT_AGGREGATEDDISCOVERYSERVICE_SLASH_STREAMAGGREGATEDRESOURCES,
       nullptr, deadline, nullptr);
   GPR_ASSERT(lb_call_ != nullptr);
   // Init the LB call request payload.
