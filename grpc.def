@@ -217,8 +217,6 @@ EXPORTS
     gpr_realloc
     gpr_malloc_aligned
     gpr_free_aligned
-    gpr_set_allocation_functions
-    gpr_get_allocation_functions
     gpr_cpu_num_cores
     gpr_cpu_current_cpu
     gpr_format_message
