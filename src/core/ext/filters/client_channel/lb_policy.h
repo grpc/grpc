@@ -21,6 +21,8 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <iterator>
+
 #include "src/core/ext/filters/client_channel/server_address.h"
 #include "src/core/ext/filters/client_channel/service_config.h"
 #include "src/core/ext/filters/client_channel/subchannel_interface.h"
@@ -90,11 +92,11 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
     /// Application-specific requests cost metrics.  Metric names are
     /// determined by the application.  Each value is an absolute cost
     /// (e.g. 3487 bytes of storage) associated with the request.
-    std::map<StringView, double, StringLess> request_cost;
+    Map<StringView, double, StringLess> request_cost;
     /// Application-specific resource utilization metrics.  Metric names
     /// are determined by the application.  Each value is expressed as a
     /// fraction of total resources available.
-    std::map<StringView, double, StringLess> utilization;
+    Map<StringView, double, StringLess> utilization;
   };
 
   /// Interface for accessing per-call state.
@@ -119,10 +121,31 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
   /// Implemented by the client channel and used by the SubchannelPicker.
   class MetadataInterface {
    public:
-    // Implementations whose iterators fit in intptr_t may internally
-    // cast this directly to their iterator type.  Otherwise, they may
-    // dynamically allocate their iterators and store the address here.
-    typedef intptr_t Iterator;
+    class iterator
+        : public std::iterator<std::input_iterator_tag,
+                               std::pair<StringView, StringView>,  // value_type
+                               std::ptrdiff_t,  // difference_type
+                               std::pair<StringView, StringView>*,  // pointer
+                               std::pair<StringView, StringView>&   // reference
+                               > {
+     public:
+      iterator(const MetadataInterface* md, intptr_t handle)
+          : md_(md), handle_(handle) {}
+      iterator& operator++() {
+        handle_ = md_->IteratorHandleNext(handle_);
+        return *this;
+      }
+      bool operator==(iterator other) const {
+        return md_ == other.md_ && handle_ == other.handle_;
+      }
+      bool operator!=(iterator other) const { return !(*this == other); }
+      value_type operator*() const { return md_->IteratorHandleGet(handle_); }
+
+     private:
+      friend class MetadataInterface;
+      const MetadataInterface* md_;
+      intptr_t handle_;
+    };
 
     virtual ~MetadataInterface() = default;
 
@@ -134,15 +157,22 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
     virtual void Add(StringView key, StringView value) = 0;
 
     /// Iteration interface.
-    virtual Iterator Begin() const = 0;
-    virtual bool IsEnd(Iterator it) const = 0;
-    virtual void Next(Iterator* it) const = 0;
-    virtual StringView Key(Iterator it) const = 0;
-    virtual StringView Value(Iterator it) const = 0;
+    virtual iterator begin() const = 0;
+    virtual iterator end() const = 0;
 
-    /// Removes the element pointed to by \a it, which is modified to
-    /// point to the next element.
-    virtual void Erase(Iterator* it) = 0;
+    /// Removes the element pointed to by \a it.
+    /// Returns an iterator pointing to the next element.
+    virtual iterator erase(iterator it) = 0;
+
+   protected:
+    intptr_t GetIteratorHandle(const iterator& it) const { return it.handle_; }
+
+   private:
+    friend class iterator;
+
+    virtual intptr_t IteratorHandleNext(intptr_t handle) const = 0;
+    virtual std::pair<StringView /*key*/, StringView /*value */>
+    IteratorHandleGet(intptr_t handle) const = 0;
   };
 
   /// Arguments used when picking a subchannel for a call.
@@ -189,20 +219,14 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
 
     /// Used only if type is PICK_COMPLETE.
     /// Callback set by LB policy to be notified of trailing metadata.
-    /// The user_data argument will be set to the
-    /// recv_trailing_metadata_ready_user_data field.
-    /// recv_trailing_metadata will be set to the metadata, which may be
-    /// modified by the callback.  The callback does not take ownership,
-    /// however, so any data that needs to be used after returning must
-    /// be copied.
-    /// call_state can be used to obtain backend metric data.
-    // TODO(roth): Replace grpc_error with something better before we allow
-    // people outside of gRPC team to use this API.
-    void (*recv_trailing_metadata_ready)(
-        void* user_data, grpc_error* error,
-        MetadataInterface* recv_trailing_metadata,
-        CallState* call_state) = nullptr;
-    void* recv_trailing_metadata_ready_user_data = nullptr;
+    /// If set by LB policy, the client channel will invoke the callback
+    /// when trailing metadata is returned.
+    /// The metadata may be modified by the callback.  However, the callback
+    /// does not take ownership, so any data that needs to be used after
+    /// returning must be copied.
+    /// The call state can be used to obtain backend metric data.
+    std::function<void(grpc_error*, MetadataInterface*, CallState*)>
+        recv_trailing_metadata_ready;
   };
 
   /// A subchannel picker is the object used to pick the subchannel to

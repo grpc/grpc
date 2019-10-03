@@ -130,11 +130,6 @@ class XdsLb : public LoadBalancingPolicy {
     PickResult Pick(PickArgs args);
 
    private:
-    static void RecordCallCompletion(
-        void* arg, grpc_error* error,
-        LoadBalancingPolicy::MetadataInterface* recv_trailing_metadata,
-        LoadBalancingPolicy::CallState* call_state);
-
     UniquePtr<SubchannelPicker> picker_;
     RefCountedPtr<XdsClientStats::LocalityStats> locality_stats_;
   };
@@ -319,8 +314,8 @@ class XdsLb : public LoadBalancingPolicy {
 
       RefCountedPtr<XdsLb> xds_policy_;
 
-      std::map<RefCountedPtr<XdsLocalityName>, OrphanablePtr<Locality>,
-               XdsLocalityName::Less>
+      Map<RefCountedPtr<XdsLocalityName>, OrphanablePtr<Locality>,
+          XdsLocalityName::Less>
           localities_;
       const uint32_t priority_;
       grpc_connectivity_state connectivity_state_ = GRPC_CHANNEL_IDLE;
@@ -459,23 +454,18 @@ LoadBalancingPolicy::PickResult XdsLb::PickerWrapper::Pick(
   // Record a call started.
   locality_stats_->AddCallStarted();
   // Intercept the recv_trailing_metadata op to record call completion.
-  result.recv_trailing_metadata_ready = RecordCallCompletion;
-  result.recv_trailing_metadata_ready_user_data =
-      locality_stats_->Ref(DEBUG_LOCATION, "LocalityStats+call").release();
-  return result;
-}
-
-// Note that the following callback does not run in either the control plane
-// combiner or the data plane combiner.
-void XdsLb::PickerWrapper::RecordCallCompletion(
-    void* arg, grpc_error* error,
-    LoadBalancingPolicy::MetadataInterface* recv_trailing_metadata,
-    LoadBalancingPolicy::CallState* call_state) {
   XdsClientStats::LocalityStats* locality_stats =
-      static_cast<XdsClientStats::LocalityStats*>(arg);
-  const bool call_failed = error != GRPC_ERROR_NONE;
-  locality_stats->AddCallFinished(call_failed);
-  locality_stats->Unref(DEBUG_LOCATION, "LocalityStats+call");
+      locality_stats_->Ref(DEBUG_LOCATION, "LocalityStats+call").release();
+  result.recv_trailing_metadata_ready =
+      // Note: This callback does not run in either the control plane
+      // combiner or in the data plane mutex.
+      [locality_stats](grpc_error* error, MetadataInterface* metadata,
+                       CallState* call_state) {
+        const bool call_failed = error != GRPC_ERROR_NONE;
+        locality_stats->AddCallFinished(call_failed);
+        locality_stats->Unref(DEBUG_LOCATION, "LocalityStats+call");
+      };
+  return result;
 }
 
 //

@@ -98,7 +98,7 @@ def _args():
     args = argp.parse_args()
     assert args.diff_base or args.old, "One of diff_base or old must be set!"
     if args.loops < 3:
-        print "WARNING: This run will likely be noisy. Increase loops."
+        print("WARNING: This run will likely be noisy. Increase loops.")
     return args
 
 
@@ -109,7 +109,7 @@ def eintr_be_gone(fn):
         while True:
             try:
                 return fn(*args)
-            except IOError, e:
+            except IOError as e:
                 if e.errno != errno.EINTR:
                     raise
 

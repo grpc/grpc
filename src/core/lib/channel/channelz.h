@@ -221,8 +221,8 @@ class ChannelNode : public BaseNode {
   // TODO(roth): We don't actually use the values here, only the keys, so
   // these should be sets instead of maps, but we don't currently have a set
   // implementation.  Change this if/when we have one.
-  std::map<intptr_t, bool> child_channels_;
-  std::map<intptr_t, bool> child_subchannels_;
+  Map<intptr_t, bool> child_channels_;
+  Map<intptr_t, bool> child_subchannels_;
 };
 
 // Handles channelz bookkeeping for servers
@@ -262,8 +262,8 @@ class ServerNode : public BaseNode {
   CallCountingHelper call_counter_;
   ChannelTrace trace_;
   Mutex child_mu_;  // Guards child maps below.
-  std::map<intptr_t, RefCountedPtr<SocketNode>> child_sockets_;
-  std::map<intptr_t, RefCountedPtr<ListenSocketNode>> child_listen_sockets_;
+  Map<intptr_t, RefCountedPtr<SocketNode>> child_sockets_;
+  Map<intptr_t, RefCountedPtr<ListenSocketNode>> child_listen_sockets_;
 };
 
 // Handles channelz bookkeeping for sockets

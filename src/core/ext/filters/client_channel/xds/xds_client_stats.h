@@ -111,9 +111,9 @@ class XdsClientStats {
       double total_metric_value_{0};
     };
 
-    using LoadMetricMap = std::map<UniquePtr<char>, LoadMetric, StringLess>;
+    using LoadMetricMap = Map<UniquePtr<char>, LoadMetric, StringLess>;
     using LoadMetricSnapshotMap =
-        std::map<UniquePtr<char>, LoadMetric::Snapshot, StringLess>;
+        Map<UniquePtr<char>, LoadMetric::Snapshot, StringLess>;
 
     struct Snapshot {
       // TODO(juanlishen): Change this to const method when const_iterator is
@@ -180,12 +180,12 @@ class XdsClientStats {
   // UniquePtr<>. We should remove this wrapper if the value type of Map<>
   // doesn't have to be movable.
   using LocalityStatsMap =
-      std::map<RefCountedPtr<XdsLocalityName>, RefCountedPtr<LocalityStats>,
-               XdsLocalityName::Less>;
+      Map<RefCountedPtr<XdsLocalityName>, RefCountedPtr<LocalityStats>,
+          XdsLocalityName::Less>;
   using LocalityStatsSnapshotMap =
-      std::map<RefCountedPtr<XdsLocalityName>, LocalityStats::Snapshot,
-               XdsLocalityName::Less>;
-  using DroppedRequestsMap = std::map<UniquePtr<char>, uint64_t, StringLess>;
+      Map<RefCountedPtr<XdsLocalityName>, LocalityStats::Snapshot,
+          XdsLocalityName::Less>;
+  using DroppedRequestsMap = Map<UniquePtr<char>, uint64_t, StringLess>;
   using DroppedRequestsSnapshotMap = DroppedRequestsMap;
 
   struct Snapshot {

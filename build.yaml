@@ -291,6 +291,7 @@ filegroups:
   - src/core/lib/gprpp/map.h
   - src/core/lib/gprpp/memory.h
   - src/core/lib/gprpp/mpscq.h
+  - src/core/lib/gprpp/set.h
   - src/core/lib/gprpp/sync.h
   - src/core/lib/gprpp/thd.h
   - src/core/lib/profiling/timers.h
@@ -6183,10 +6184,10 @@ defaults:
     CFLAGS: -g
     CPPFLAGS: -Ithird_party/boringssl/include -fvisibility=hidden -DOPENSSL_NO_ASM
       -D_GNU_SOURCE -DWIN32_LEAN_AND_MEAN -D_HAS_EXCEPTIONS=0 -DNOMINMAX
-    CXXFLAGS: -fno-rtti -fno-exceptions
+    CXXFLAGS: -fno-exceptions
   global:
     CFLAGS: -g
-    COREFLAGS: -fno-rtti -fno-exceptions
+    COREFLAGS: -fno-exceptions
     CPPFLAGS: -g -Wall -Wextra -DOSATOMIC_USE_INLINED=1 -Ithird_party/upb -Isrc/core/ext/upb-generated
     LDFLAGS: -g
   zlib:
