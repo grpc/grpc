@@ -132,12 +132,10 @@ class TracedBuffer {
   static void Shutdown(grpc_core::TracedBuffer** head, void* remaining,
                        grpc_error* shutdown_err);
 
- private:
-  GRPC_ALLOW_CLASS_TO_USE_NON_PUBLIC_NEW
-
   TracedBuffer(uint32_t seq_no, void* arg)
       : seq_no_(seq_no), arg_(arg), next_(nullptr) {}
 
+ private:
   uint32_t seq_no_; /* The sequence number for the last byte in the buffer */
   void* arg_;       /* The arg to pass to timestamps_callback */
   grpc_core::Timestamps ts_; /* The timestamps corresponding to this buffer */

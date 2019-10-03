@@ -39,6 +39,9 @@ namespace grpc_core {
 template <typename T, size_t Size>
 class SliceWeakHashTable : public RefCounted<SliceWeakHashTable<T, Size>> {
  public:
+  SliceWeakHashTable() = default;
+  ~SliceWeakHashTable() = default;
+
   /// Creates a new table of at most \a size entries.
   static RefCountedPtr<SliceWeakHashTable> Create() {
     return MakeRefCounted<SliceWeakHashTable<T, Size>>();
@@ -61,12 +64,6 @@ class SliceWeakHashTable : public RefCounted<SliceWeakHashTable<T, Size>> {
   }
 
  private:
-  GRPC_ALLOW_CLASS_TO_USE_NON_PUBLIC_NEW
-  GRPC_ALLOW_CLASS_TO_USE_NON_PUBLIC_DELETE
-
-  SliceWeakHashTable() = default;
-  ~SliceWeakHashTable() = default;
-
   /// The type of the table "rows".
   class Entry {
    public:
