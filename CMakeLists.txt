@@ -16789,6 +16789,10 @@ endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
 add_executable(xds_end2end_test
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/ads_for_test.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/ads_for_test.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/ads_for_test.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/ads_for_test.grpc.pb.h
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/eds_for_test.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/eds_for_test.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/eds_for_test.pb.h
@@ -16802,6 +16806,9 @@ add_executable(xds_end2end_test
   third_party/googletest/googlemock/src/gmock-all.cc
 )
 
+protobuf_generate_grpc_cpp(
+  src/proto/grpc/testing/xds/ads_for_test.proto
+)
 protobuf_generate_grpc_cpp(
   src/proto/grpc/testing/xds/eds_for_test.proto
 )

@@ -34,6 +34,7 @@
 #include "envoy/api/v2/eds.upb.h"
 #include "envoy/api/v2/endpoint/endpoint.upb.h"
 #include "envoy/api/v2/endpoint/load_report.upb.h"
+#include "envoy/service/discovery/v2/ads.upb.h"
 #include "envoy/service/load_stats/v2/lrs.upb.h"
 #include "envoy/type/percent.upb.h"
 #include "google/protobuf/any.upb.h"
