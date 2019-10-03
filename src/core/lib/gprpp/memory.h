@@ -130,6 +130,16 @@ class Allocator {
   }
 };
 
+template <class T, class U>
+bool operator==(Allocator<T> const&, Allocator<U> const&) noexcept {
+  return true;
+}
+
+template <class T, class U>
+bool operator!=(Allocator<T> const& x, Allocator<U> const& y) noexcept {
+  return false;
+}
+
 }  // namespace grpc_core
 
 #endif /* GRPC_CORE_LIB_GPRPP_MEMORY_H */

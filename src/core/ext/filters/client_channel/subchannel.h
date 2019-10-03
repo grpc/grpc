@@ -294,8 +294,8 @@ class Subchannel {
    private:
     // TODO(roth): Once we can use C++-14 heterogenous lookups, this can
     // be a set instead of a map.
-    std::map<ConnectivityStateWatcherInterface*,
-             OrphanablePtr<ConnectivityStateWatcherInterface>>
+    Map<ConnectivityStateWatcherInterface*,
+        OrphanablePtr<ConnectivityStateWatcherInterface>>
         watchers_;
   };
 
@@ -328,7 +328,7 @@ class Subchannel {
    private:
     class HealthWatcher;
 
-    std::map<const char*, OrphanablePtr<HealthWatcher>, StringLess> map_;
+    Map<const char*, OrphanablePtr<HealthWatcher>, StringLess> map_;
   };
 
   class ConnectedSubchannelStateWatcher;

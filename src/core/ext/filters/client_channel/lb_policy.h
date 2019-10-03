@@ -92,11 +92,11 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
     /// Application-specific requests cost metrics.  Metric names are
     /// determined by the application.  Each value is an absolute cost
     /// (e.g. 3487 bytes of storage) associated with the request.
-    std::map<StringView, double, StringLess> request_cost;
+    Map<StringView, double, StringLess> request_cost;
     /// Application-specific resource utilization metrics.  Metric names
     /// are determined by the application.  Each value is expressed as a
     /// fraction of total resources available.
-    std::map<StringView, double, StringLess> utilization;
+    Map<StringView, double, StringLess> utilization;
   };
 
   /// Interface for accessing per-call state.
