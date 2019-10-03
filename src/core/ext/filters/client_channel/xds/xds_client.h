@@ -78,9 +78,6 @@ class XdsClient : public InternallyRefCounted<XdsClient> {
 
   void Orphan() override;
 
-  // Returns the xds server URI.
-  const char* GetServerURI();
-
   // Start and cancel cluster data watch for a cluster.
   void WatchClusterData(StringView cluster,
                         UniquePtr<ClusterWatcherInterface> watcher);
