@@ -1308,9 +1308,10 @@ add_library(grpc
   src/core/ext/upb-generated/src/proto/grpc/lb/v1/load_balancer.upb.c
   src/core/ext/filters/client_channel/resolver/fake/fake_resolver.cc
   src/core/ext/filters/client_channel/lb_policy/xds/xds.cc
-  src/core/ext/filters/client_channel/lb_policy/xds/xds_channel_secure.cc
-  src/core/ext/filters/client_channel/lb_policy/xds/xds_client_stats.cc
-  src/core/ext/filters/client_channel/lb_policy/xds/xds_load_balancer_api.cc
+  src/core/ext/filters/client_channel/xds/xds_api.cc
+  src/core/ext/filters/client_channel/xds/xds_channel_secure.cc
+  src/core/ext/filters/client_channel/xds/xds_client.cc
+  src/core/ext/filters/client_channel/xds/xds_client_stats.cc
   src/core/ext/upb-generated/envoy/api/v2/auth/cert.upb.c
   src/core/ext/upb-generated/envoy/api/v2/cds.upb.c
   src/core/ext/upb-generated/envoy/api/v2/cluster/circuit_breaker.upb.c
@@ -2824,9 +2825,10 @@ add_library(grpc_unsecure
   src/core/ext/filters/client_channel/lb_policy/grpclb/load_balancer_api.cc
   src/core/ext/upb-generated/src/proto/grpc/lb/v1/load_balancer.upb.c
   src/core/ext/filters/client_channel/lb_policy/xds/xds.cc
-  src/core/ext/filters/client_channel/lb_policy/xds/xds_channel.cc
-  src/core/ext/filters/client_channel/lb_policy/xds/xds_client_stats.cc
-  src/core/ext/filters/client_channel/lb_policy/xds/xds_load_balancer_api.cc
+  src/core/ext/filters/client_channel/xds/xds_api.cc
+  src/core/ext/filters/client_channel/xds/xds_channel.cc
+  src/core/ext/filters/client_channel/xds/xds_client.cc
+  src/core/ext/filters/client_channel/xds/xds_client_stats.cc
   src/core/ext/upb-generated/envoy/api/v2/auth/cert.upb.c
   src/core/ext/upb-generated/envoy/api/v2/cds.upb.c
   src/core/ext/upb-generated/envoy/api/v2/cluster/circuit_breaker.upb.c
