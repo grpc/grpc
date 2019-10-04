@@ -50,7 +50,7 @@ class ClientAsyncStreamingInterface {
   /// when the call has been ended.
   /// Should not be used concurrently with other operations.
   ///
-  /// It is appropriate to call this method when both:
+  /// It is appropriate to call this method exactly once when both:
   ///   * the client side has no more message to send
   ///     (this can be declared implicitly by calling this method, or
   ///     explicitly through an earlier call to the <i>WritesDone</i> method

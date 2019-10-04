@@ -38,7 +38,7 @@ class ClientStreamingInterface {
   /// Block waiting until the stream finishes and a final status of the call is
   /// available.
   ///
-  /// It is appropriate to call this method when both:
+  /// It is appropriate to call this method exactly once when both:
   ///   * the calling code (client-side) has no more message to send
   ///     (this can be declared implicitly by calling this method, or
   ///     explicitly through an earlier call to <i>WritesDone</i> method of the
