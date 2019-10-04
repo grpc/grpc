@@ -259,7 +259,7 @@ class ClientStats {
   std::map<grpc::string, uint64_t> dropped_requests_;
 };
 
-// Only the ADS functionality is implemented.
+// Only the EDS functionality is implemented.
 class AdsServiceImpl : public AdsService {
  public:
   struct ResponseArgs {
