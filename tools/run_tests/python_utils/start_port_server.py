@@ -77,7 +77,7 @@ def start_port_server():
                 args,
                 env=env,
                 cwd=tempdir,
-                creationflags=0x00000008,  # detached process
+                creationflags=0x08000000,  # CREATE_NO_WINDOW
                 close_fds=True)
         else:
             port_server = subprocess.Popen(
