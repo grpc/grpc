@@ -77,12 +77,20 @@ class XdsClient : public InternallyRefCounted<XdsClient> {
   void Orphan() override;
 
   // Start and cancel cluster data watch for a cluster.
+  // The XdsClient takes ownership of the watcher, but the caller may
+  // keep a raw pointer to the watcher, which may be used only for
+  // cancellation.  (Because the caller does not own the watcher, the
+  // pointer must not be used for any other purpose.)
   void WatchClusterData(StringView cluster,
                         UniquePtr<ClusterWatcherInterface> watcher);
   void CancelClusterDataWatch(StringView cluster,
                               ClusterWatcherInterface* watcher);
 
   // Start and cancel endpoint data watch for a cluster.
+  // The XdsClient takes ownership of the watcher, but the caller may
+  // keep a raw pointer to the watcher, which may be used only for
+  // cancellation.  (Because the caller does not own the watcher, the
+  // pointer must not be used for any other purpose.)
   void WatchEndpointData(StringView cluster,
                          UniquePtr<EndpointWatcherInterface> watcher);
   void CancelEndpointDataWatch(StringView cluster,

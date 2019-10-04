@@ -396,8 +396,10 @@ class XdsLb : public LoadBalancingPolicy {
   // Internal state.
   bool shutting_down_ = false;
 
-  // The xds client and endpoint watcher.
+  // The xds client.
   OrphanablePtr<XdsClient> xds_client_;
+  // A pointer to the endpoint watcher, to be used when cancelling the watch.
+  // Note that this is not owned, so this pointer must never be derefernced.
   EndpointWatcher* endpoint_watcher_ = nullptr;
 
   // Whether the checks for fallback at startup are ALL pending. There are
