@@ -44,6 +44,7 @@ service AggregatedDiscoveryService {
       returns (stream envoy.api.v2.DiscoveryResponse) {
   }
 
+  // Commented out so that we don't have to copy the request/response protos.
 //  rpc DeltaAggregatedResources(stream api.v2.DeltaDiscoveryRequest)
 //      returns (stream api.v2.DeltaDiscoveryResponse) {
 //  }

@@ -142,8 +142,8 @@ using BackendService = CountedService<TestServiceImpl>;
 using AdsService = CountedService<AggregatedDiscoveryService::Service>;
 using LrsService = CountedService<LoadReportingService::Service>;
 
-const char g_kCallCradsMdKey[] = "Balancer should not ...";
-const char g_kCallCradsMdValue[] = "... receive me";
+const char g_kCallCredsMdKey[] = "Balancer should not ...";
+const char g_kCallCredsMdValue[] = "... receive me";
 
 class BackendServiceImpl : public BackendService {
  public:
@@ -153,10 +153,10 @@ class BackendServiceImpl : public BackendService {
               EchoResponse* response) override {
     // Backend should receive the call credentials metadata.
     auto call_credentials_entry =
-        context->client_metadata().find(g_kCallCradsMdKey);
+        context->client_metadata().find(g_kCallCredsMdKey);
     EXPECT_NE(call_credentials_entry, context->client_metadata().end());
     if (call_credentials_entry != context->client_metadata().end()) {
-      EXPECT_EQ(call_credentials_entry->second, g_kCallCradsMdValue);
+      EXPECT_EQ(call_credentials_entry->second, g_kCallCredsMdValue);
     }
     IncreaseRequestCount();
     const auto status = TestServiceImpl::Echo(context, request, response);
@@ -300,7 +300,7 @@ class AdsServiceImpl : public AdsService {
         if (ads_done_) return;
       }
       // Balancer shouldn't receive the call credentials metadata.
-      EXPECT_EQ(context->client_metadata().find(g_kCallCradsMdKey),
+      EXPECT_EQ(context->client_metadata().find(g_kCallCredsMdKey),
                 context->client_metadata().end());
       // Read request.
       DiscoveryRequest request;
@@ -592,16 +592,16 @@ class XdsEnd2endTest : public ::testing::Test {
     uri << scheme << ":///" << kApplicationTargetName_;
     // TODO(dgq): templatize tests to run everything using both secure and
     // insecure channel credentials.
-    grpc_channel_credentials* channel_crads =
+    grpc_channel_credentials* channel_creds =
         grpc_fake_transport_security_credentials_create();
-    grpc_call_credentials* call_crads = grpc_md_only_test_credentials_create(
-        g_kCallCradsMdKey, g_kCallCradsMdValue, false);
-    std::shared_ptr<ChannelCredentials> crads(
+    grpc_call_credentials* call_creds = grpc_md_only_test_credentials_create(
+        g_kCallCredsMdKey, g_kCallCredsMdValue, false);
+    std::shared_ptr<ChannelCredentials> creds(
         new SecureChannelCredentials(grpc_composite_channel_credentials_create(
-            channel_crads, call_crads, nullptr)));
-    call_crads->Unref();
-    channel_crads->Unref();
-    channel_ = ::grpc::CreateCustomChannel(uri.str(), crads, args);
+            channel_creds, call_creds, nullptr)));
+    call_creds->Unref();
+    channel_creds->Unref();
+    channel_ = ::grpc::CreateCustomChannel(uri.str(), creds, args);
     stub_ = grpc::testing::EchoTestService::NewStub(channel_);
   }
 
@@ -817,9 +817,9 @@ class XdsEnd2endTest : public ::testing::Test {
       std::ostringstream server_address;
       server_address << server_host << ":" << port_;
       ServerBuilder builder;
-      std::shared_ptr<ServerCredentials> crads(new SecureServerCredentials(
+      std::shared_ptr<ServerCredentials> creds(new SecureServerCredentials(
           grpc_fake_transport_security_server_credentials_create()));
-      builder.AddListeningPort(server_address.str(), crads);
+      builder.AddListeningPort(server_address.str(), creds);
       RegisterAllServices(&builder);
       server_ = builder.BuildAndStart();
       cond->Signal();
@@ -1074,7 +1074,7 @@ using SecureNamingTest = BasicTest;
 
 // Tests that secure naming check passes if target name is expected.
 TEST_F(SecureNamingTest, TargetNameIsExpected) {
-  // TODO(juanlishen): Use separate fake crads for the balancer channel.
+  // TODO(juanlishen): Use separate fake creds for the balancer channel.
   ResetStub(0, 0, kApplicationTargetName_ + ";lb");
   SetNextResolution({}, kDefaultServiceConfig_.c_str());
   SetNextResolutionForLbChannel({balancers_[0]->port()});
@@ -1834,7 +1834,7 @@ TEST_F(FallbackTest, FallbackEarlyWhenBalancerChannelFails) {
   SetNextResolution({backends_[0]->port()}, kDefaultServiceConfig_.c_str());
   SetNextResolutionForLbChannel({grpc_pick_unused_port_or_die()});
   // Send RPC with deadline less than the fallback timeout and make sure it
-  // succeads.
+  // succeeds.
   CheckRpcSendOk(/* times */ 1, /* timeout_ms */ 1000,
                  /* wait_for_ready */ false);
 }
@@ -1849,7 +1849,7 @@ TEST_F(FallbackTest, FallbackEarlyWhenBalancerCallFails) {
   // Balancer drops call without sending a serverlist.
   balancers_[0]->ads_service()->NotifyDoneWithAdsCall();
   // Send RPC with deadline less than the fallback timeout and make sure it
-  // succeads.
+  // succeeds.
   CheckRpcSendOk(/* times */ 1, /* timeout_ms */ 1000,
                  /* wait_for_ready */ false);
 }

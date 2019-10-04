@@ -103,7 +103,7 @@ bool XdsDropConfig::ShouldDrop(const UniquePtr<char>** category_name) const {
   return false;
 }
 
-grpc_slice XdsEdsRequestCreateAndEncode(const char* server_name) {
+grpc_slice XdsAdsRequestCreateAndEncode(const char* server_name) {
   upb::Arena arena;
   // Create a request.
   envoy_api_v2_DiscoveryRequest* request =
@@ -247,7 +247,7 @@ grpc_error* DropParseAndAppend(
 
 }  // namespace
 
-grpc_error* XdsEdsResponseDecodeAndParse(const grpc_slice& encoded_response,
+grpc_error* XdsAdsResponseDecodeAndParse(const grpc_slice& encoded_response,
                                          EdsUpdate* update) {
   upb::Arena arena;
   // Decode the response.

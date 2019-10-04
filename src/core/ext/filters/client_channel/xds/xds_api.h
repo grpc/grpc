@@ -138,12 +138,12 @@ struct EdsUpdate {
 // TODO(juanlishen): Add fields as part of implementing CDS support.
 struct CdsUpdate {};
 
-// Creates an EDS request querying \a service_name.
-grpc_slice XdsEdsRequestCreateAndEncode(const char* server_name);
+// Creates an ADS request querying \a service_name.
+grpc_slice XdsAdsRequestCreateAndEncode(const char* server_name);
 
-// Parses the EDS response and returns the args to update locality map. If there
+// Parses the ADS response and returns the args to update locality map. If there
 // is any error, the output update is invalid.
-grpc_error* XdsEdsResponseDecodeAndParse(const grpc_slice& encoded_response,
+grpc_error* XdsAdsResponseDecodeAndParse(const grpc_slice& encoded_response,
                                          EdsUpdate* update);
 
 // Creates an LRS request querying \a server_name.
