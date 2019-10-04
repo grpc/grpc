@@ -1124,38 +1124,23 @@ filegroups:
 - name: grpc_lb_policy_xds
   headers:
   - src/core/ext/filters/client_channel/lb_policy/xds/xds.h
-  - src/core/ext/filters/client_channel/lb_policy/xds/xds_channel.h
-  - src/core/ext/filters/client_channel/lb_policy/xds/xds_client_stats.h
-  - src/core/ext/filters/client_channel/lb_policy/xds/xds_load_balancer_api.h
   src:
   - src/core/ext/filters/client_channel/lb_policy/xds/xds.cc
-  - src/core/ext/filters/client_channel/lb_policy/xds/xds_channel.cc
-  - src/core/ext/filters/client_channel/lb_policy/xds/xds_client_stats.cc
-  - src/core/ext/filters/client_channel/lb_policy/xds/xds_load_balancer_api.cc
   plugin: grpc_lb_policy_xds
   uses:
-  - envoy_ads_upb
   - grpc_base
   - grpc_client_channel
-  - grpc_resolver_fake
+  - grpc_xds_client
 - name: grpc_lb_policy_xds_secure
   headers:
   - src/core/ext/filters/client_channel/lb_policy/xds/xds.h
-  - src/core/ext/filters/client_channel/lb_policy/xds/xds_channel.h
-  - src/core/ext/filters/client_channel/lb_policy/xds/xds_client_stats.h
-  - src/core/ext/filters/client_channel/lb_policy/xds/xds_load_balancer_api.h
   src:
   - src/core/ext/filters/client_channel/lb_policy/xds/xds.cc
-  - src/core/ext/filters/client_channel/lb_policy/xds/xds_channel_secure.cc
-  - src/core/ext/filters/client_channel/lb_policy/xds/xds_client_stats.cc
-  - src/core/ext/filters/client_channel/lb_policy/xds/xds_load_balancer_api.cc
   plugin: grpc_lb_policy_xds
   uses:
-  - envoy_ads_upb
   - grpc_base
   - grpc_client_channel
-  - grpc_resolver_fake
-  - grpc_secure
+  - grpc_xds_client_secure
 - name: grpc_lb_subchannel_list
   headers:
   - src/core/ext/filters/client_channel/lb_policy/subchannel_list.h
@@ -1549,6 +1534,39 @@ filegroups:
   uses:
   - grpc_base
   - grpc_server_backward_compatibility
+- name: grpc_xds_client
+  headers:
+  - src/core/ext/filters/client_channel/xds/xds_api.h
+  - src/core/ext/filters/client_channel/xds/xds_channel.h
+  - src/core/ext/filters/client_channel/xds/xds_channel_args.h
+  - src/core/ext/filters/client_channel/xds/xds_client.h
+  - src/core/ext/filters/client_channel/xds/xds_client_stats.h
+  src:
+  - src/core/ext/filters/client_channel/xds/xds_api.cc
+  - src/core/ext/filters/client_channel/xds/xds_channel.cc
+  - src/core/ext/filters/client_channel/xds/xds_client.cc
+  - src/core/ext/filters/client_channel/xds/xds_client_stats.cc
+  uses:
+  - envoy_ads_upb
+  - grpc_base
+  - grpc_client_channel
+- name: grpc_xds_client_secure
+  headers:
+  - src/core/ext/filters/client_channel/xds/xds_api.h
+  - src/core/ext/filters/client_channel/xds/xds_channel.h
+  - src/core/ext/filters/client_channel/xds/xds_channel_args.h
+  - src/core/ext/filters/client_channel/xds/xds_client.h
+  - src/core/ext/filters/client_channel/xds/xds_client_stats.h
+  src:
+  - src/core/ext/filters/client_channel/xds/xds_api.cc
+  - src/core/ext/filters/client_channel/xds/xds_channel_secure.cc
+  - src/core/ext/filters/client_channel/xds/xds_client.cc
+  - src/core/ext/filters/client_channel/xds/xds_client_stats.cc
+  uses:
+  - envoy_ads_upb
+  - grpc_base
+  - grpc_client_channel
+  - grpc_secure
 - name: grpcpp_channelz_proto
   src:
   - src/proto/grpc/channelz/channelz.proto

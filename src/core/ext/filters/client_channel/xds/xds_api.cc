@@ -24,7 +24,7 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/string_util.h>
 
-#include "src/core/ext/filters/client_channel/lb_policy/xds/xds_load_balancer_api.h"
+#include "src/core/ext/filters/client_channel/xds/xds_api.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/sockaddr_utils.h"
 
@@ -247,7 +247,7 @@ grpc_error* DropParseAndAppend(
 }  // namespace
 
 grpc_error* XdsEdsResponseDecodeAndParse(const grpc_slice& encoded_response,
-                                         XdsUpdate* update) {
+                                         EdsUpdate* update) {
   upb::Arena arena;
   // Decode the response.
   const envoy_api_v2_DiscoveryResponse* response =
