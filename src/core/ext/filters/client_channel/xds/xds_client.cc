@@ -248,7 +248,7 @@ class XdsClient::ChannelState : public InternallyRefCounted<ChannelState> {
     OrphanablePtr<Reporter> reporter_;
   };
 
-  ChannelState(RefCountedPtr<XdsClient> xds_client, const char* balancer_name,
+  ChannelState(RefCountedPtr<XdsClient> xds_client,
                const grpc_channel_args& args);
   ~ChannelState();
 
@@ -374,12 +374,11 @@ grpc_channel_args* BuildXdsChannelArgs(const grpc_channel_args& args) {
 }  // namespace
 
 XdsClient::ChannelState::ChannelState(RefCountedPtr<XdsClient> xds_client,
-                                      const char* balancer_name,
                                       const grpc_channel_args& args)
     : InternallyRefCounted<ChannelState>(&grpc_xds_client_trace),
       xds_client_(std::move(xds_client)) {
   grpc_channel_args* new_args = BuildXdsChannelArgs(args);
-  channel_ = CreateXdsChannel(balancer_name, *new_args);
+  channel_ = CreateXdsChannel(*xds_client_->bootstrap_, *new_args);
   grpc_channel_args_destroy(new_args);
   GPR_ASSERT(channel_ != nullptr);
   StartConnectivityWatchLocked();
@@ -547,8 +546,8 @@ XdsClient::ChannelState::EdsCallState::EdsCallState(
       nullptr, GRPC_MILLIS_INF_FUTURE, nullptr);
   GPR_ASSERT(call_ != nullptr);
   // Init the request payload.
-  grpc_slice request_payload_slice =
-      XdsEdsRequestCreateAndEncode(xds_client()->server_name_.get());
+  grpc_slice request_payload_slice = XdsEdsRequestCreateAndEncode(
+      xds_client()->server_name_.get(), xds_client()->bootstrap_->node());
   send_message_payload_ =
       grpc_raw_byte_buffer_create(&request_payload_slice, 1);
   grpc_slice_unref_internal(request_payload_slice);
@@ -923,8 +922,8 @@ XdsClient::ChannelState::LrsCallState::LrsCallState(
       nullptr, GRPC_MILLIS_INF_FUTURE, nullptr);
   GPR_ASSERT(call_ != nullptr);
   // Init the request payload.
-  grpc_slice request_payload_slice =
-      XdsLrsRequestCreateAndEncode(xds_client()->server_name_.get());
+  grpc_slice request_payload_slice = XdsLrsRequestCreateAndEncode(
+      xds_client()->server_name_.get(), xds_client()->bootstrap_->node());
   send_message_payload_ =
       grpc_raw_byte_buffer_create(&request_payload_slice, 1);
   grpc_slice_unref_internal(request_payload_slice);
@@ -1179,17 +1178,23 @@ bool XdsClient::ChannelState::LrsCallState::IsCurrentCallOnChannel() const {
 
 XdsClient::XdsClient(grpc_combiner* combiner,
                      grpc_pollset_set* interested_parties,
-                     const char* balancer_name, StringView server_name,
+                     StringView server_name,
                      UniquePtr<ServiceConfigWatcherInterface> watcher,
-                     const grpc_channel_args& channel_args)
+                     const grpc_channel_args& channel_args, grpc_error** error)
     : combiner_(GRPC_COMBINER_REF(combiner, "xds_client")),
       interested_parties_(interested_parties),
+      bootstrap_(XdsBootstrap::ReadFromFile(error)),
       server_name_(server_name.dup()),
-      service_config_watcher_(std::move(watcher)),
-      chand_(MakeOrphanable<ChannelState>(
-          Ref(DEBUG_LOCATION, "XdsClient+ChannelState"), balancer_name,
-          channel_args)) {
-  // TODO(roth): Start LDS call.
+      service_config_watcher_(std::move(watcher)) {
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_client_trace)) {
+    gpr_log(GPR_INFO, "[xds_client %p: creating channel to %s", this,
+            bootstrap_->server_uri());
+  }
+  if (bootstrap_ != nullptr) {
+    chand_ = MakeOrphanable<ChannelState>(
+        Ref(DEBUG_LOCATION, "XdsClient+ChannelState"), channel_args);
+    // TODO(roth): Start LDS call.
+  }
 }
 
 XdsClient::~XdsClient() { GRPC_COMBINER_UNREF(combiner_, "xds_client"); }

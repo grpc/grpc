@@ -1251,12 +1251,14 @@ grpc_cc_library(
     name = "grpc_xds_client",
     srcs = [
         "src/core/ext/filters/client_channel/xds/xds_api.cc",
+        "src/core/ext/filters/client_channel/xds/xds_bootstrap.cc",
         "src/core/ext/filters/client_channel/xds/xds_client.cc",
         "src/core/ext/filters/client_channel/xds/xds_channel.cc",
         "src/core/ext/filters/client_channel/xds/xds_client_stats.cc",
     ],
     hdrs = [
         "src/core/ext/filters/client_channel/xds/xds_api.h",
+        "src/core/ext/filters/client_channel/xds/xds_bootstrap.h",
         "src/core/ext/filters/client_channel/xds/xds_client.h",
         "src/core/ext/filters/client_channel/xds/xds_channel.h",
         "src/core/ext/filters/client_channel/xds/xds_channel_args.h",
@@ -1274,12 +1276,14 @@ grpc_cc_library(
     name = "grpc_xds_client_secure",
     srcs = [
         "src/core/ext/filters/client_channel/xds/xds_api.cc",
+        "src/core/ext/filters/client_channel/xds/xds_bootstrap.cc",
         "src/core/ext/filters/client_channel/xds/xds_client.cc",
         "src/core/ext/filters/client_channel/xds/xds_channel_secure.cc",
         "src/core/ext/filters/client_channel/xds/xds_client_stats.cc",
     ],
     hdrs = [
         "src/core/ext/filters/client_channel/xds/xds_api.h",
+        "src/core/ext/filters/client_channel/xds/xds_bootstrap.h",
         "src/core/ext/filters/client_channel/xds/xds_client.h",
         "src/core/ext/filters/client_channel/xds/xds_channel.h",
         "src/core/ext/filters/client_channel/xds/xds_channel_args.h",
