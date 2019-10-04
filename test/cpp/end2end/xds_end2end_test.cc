@@ -293,7 +293,7 @@ class AdsServiceImpl : public AdsService {
 
   Status StreamAggregatedResources(ServerContext* context,
                                    Stream* stream) override {
-    gpr_log(GPR_INFO, "LB[%p]: ADS StreamEndpoints starts", this);
+    gpr_log(GPR_INFO, "LB[%p]: ADS StreamAggregatedResources starts", this);
     [&]() {
       {
         grpc_core::MutexLock lock(&ads_mu_);
@@ -322,7 +322,7 @@ class AdsServiceImpl : public AdsService {
       grpc_core::MutexLock lock(&ads_mu_);
       ads_cond_.WaitUntil(&ads_mu_, [this] { return ads_done_; });
     }();
-    gpr_log(GPR_INFO, "LB[%p]: ADS StreamEndpoints done", this);
+    gpr_log(GPR_INFO, "LB[%p]: ADS StreamAggregatedResources done", this);
     return Status::OK;
   }
 
