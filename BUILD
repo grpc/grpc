@@ -1248,26 +1248,65 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
-    name = "grpc_lb_policy_xds",
+    name = "grpc_xds_client",
     srcs = [
-        "src/core/ext/filters/client_channel/lb_policy/xds/xds.cc",
-        "src/core/ext/filters/client_channel/lb_policy/xds/xds_channel.cc",
-        "src/core/ext/filters/client_channel/lb_policy/xds/xds_client_stats.cc",
-        "src/core/ext/filters/client_channel/lb_policy/xds/xds_load_balancer_api.cc",
+        "src/core/ext/filters/client_channel/xds/xds_api.cc",
+        "src/core/ext/filters/client_channel/xds/xds_client.cc",
+        "src/core/ext/filters/client_channel/xds/xds_channel.cc",
+        "src/core/ext/filters/client_channel/xds/xds_client_stats.cc",
     ],
     hdrs = [
-        "src/core/ext/filters/client_channel/lb_policy/xds/xds.h",
-        "src/core/ext/filters/client_channel/lb_policy/xds/xds_channel.h",
-        "src/core/ext/filters/client_channel/lb_policy/xds/xds_client_stats.h",
-        "src/core/ext/filters/client_channel/lb_policy/xds/xds_load_balancer_api.h",
+        "src/core/ext/filters/client_channel/xds/xds_api.h",
+        "src/core/ext/filters/client_channel/xds/xds_client.h",
+        "src/core/ext/filters/client_channel/xds/xds_channel.h",
+        "src/core/ext/filters/client_channel/xds/xds_channel_args.h",
+        "src/core/ext/filters/client_channel/xds/xds_client_stats.h",
     ],
     language = "c++",
     deps = [
         "envoy_ads_upb",
         "grpc_base",
         "grpc_client_channel",
-        "grpc_resolver_fake",
-        "grpc_transport_chttp2_client_insecure",
+    ],
+)
+
+grpc_cc_library(
+    name = "grpc_xds_client_secure",
+    srcs = [
+        "src/core/ext/filters/client_channel/xds/xds_api.cc",
+        "src/core/ext/filters/client_channel/xds/xds_client.cc",
+        "src/core/ext/filters/client_channel/xds/xds_channel_secure.cc",
+        "src/core/ext/filters/client_channel/xds/xds_client_stats.cc",
+    ],
+    hdrs = [
+        "src/core/ext/filters/client_channel/xds/xds_api.h",
+        "src/core/ext/filters/client_channel/xds/xds_client.h",
+        "src/core/ext/filters/client_channel/xds/xds_channel.h",
+        "src/core/ext/filters/client_channel/xds/xds_channel_args.h",
+        "src/core/ext/filters/client_channel/xds/xds_client_stats.h",
+    ],
+    language = "c++",
+    deps = [
+        "envoy_ads_upb",
+        "grpc_base",
+        "grpc_client_channel",
+        "grpc_secure",
+    ],
+)
+
+grpc_cc_library(
+    name = "grpc_lb_policy_xds",
+    srcs = [
+        "src/core/ext/filters/client_channel/lb_policy/xds/xds.cc",
+    ],
+    hdrs = [
+        "src/core/ext/filters/client_channel/lb_policy/xds/xds.h",
+    ],
+    language = "c++",
+    deps = [
+        "grpc_base",
+        "grpc_client_channel",
+        "grpc_xds_client",
     ],
 )
 
@@ -1275,24 +1314,15 @@ grpc_cc_library(
     name = "grpc_lb_policy_xds_secure",
     srcs = [
         "src/core/ext/filters/client_channel/lb_policy/xds/xds.cc",
-        "src/core/ext/filters/client_channel/lb_policy/xds/xds_channel_secure.cc",
-        "src/core/ext/filters/client_channel/lb_policy/xds/xds_client_stats.cc",
-        "src/core/ext/filters/client_channel/lb_policy/xds/xds_load_balancer_api.cc",
     ],
     hdrs = [
         "src/core/ext/filters/client_channel/lb_policy/xds/xds.h",
-        "src/core/ext/filters/client_channel/lb_policy/xds/xds_channel.h",
-        "src/core/ext/filters/client_channel/lb_policy/xds/xds_client_stats.h",
-        "src/core/ext/filters/client_channel/lb_policy/xds/xds_load_balancer_api.h",
     ],
     language = "c++",
     deps = [
-        "envoy_ads_upb",
         "grpc_base",
         "grpc_client_channel",
-        "grpc_resolver_fake",
-        "grpc_secure",
-        "grpc_transport_chttp2_client_secure",
+        "grpc_xds_client_secure",
     ],
 )
 
@@ -1588,7 +1618,7 @@ grpc_cc_library(
     ],
     hdrs = [
         "src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb.h",
-        "src/core/ext/filters/client_channel/lb_policy/xds/xds.h",
+        "src/core/ext/filters/client_channel/xds/xds_channel_args.h",
         "src/core/lib/security/context/security_context.h",
         "src/core/lib/security/credentials/alts/alts_credentials.h",
         "src/core/lib/security/credentials/composite/composite_credentials.h",

@@ -42,7 +42,7 @@ static int32_t kRemoteInteropServerOverhead = 12;
 @implementation PerfTestsCronet
 
 + (void)setUp {
-  configureCronet();
+  configureCronet(/*enable_netlog=*/false);
   [GRPCCall useCronetWithEngine:[Cronet getGlobalEngine]];
 
   [super setUp];

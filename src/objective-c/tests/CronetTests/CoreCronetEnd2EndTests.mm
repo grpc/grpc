@@ -177,7 +177,7 @@ static char *roots_filename;
 
   grpc_init();
 
-  configureCronet();
+  configureCronet(/*enable_netlog=*/false);
 }
 
 // The tearDown() function is run after all test cases finish running

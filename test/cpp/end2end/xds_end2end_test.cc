@@ -1574,7 +1574,7 @@ TEST_F(DropTest, DropPerTenThousand) {
 TEST_F(DropTest, Update) {
   SetNextResolution({}, kDefaultServiceConfig_.c_str());
   SetNextResolutionForLbChannelAllBalancers();
-  const size_t kNumRpcs = 5000;
+  const size_t kNumRpcs = 1000;
   const uint32_t kDropPerMillionForLb = 100000;
   const uint32_t kDropPerMillionForThrottle = 200000;
   const double kDropRateForLb = kDropPerMillionForLb / 1000000.0;
@@ -1613,7 +1613,7 @@ TEST_F(DropTest, Update) {
   gpr_log(GPR_INFO, "========= DONE WITH FIRST BATCH ==========");
   // The drop rate should be roughly equal to the expectation.
   double seen_drop_rate = static_cast<double>(num_drops) / kNumRpcs;
-  const double kErrorTolerance = 0.2;
+  const double kErrorTolerance = 0.3;
   EXPECT_THAT(
       seen_drop_rate,
       ::testing::AllOf(::testing::Ge(kDropRateForLb * (1 - kErrorTolerance)),
@@ -2050,70 +2050,6 @@ TEST_F(BalancerUpdateTest, Repeated) {
   // xds continued using the original LB call to the first balancer, which
   // doesn't assign the second backend.
   EXPECT_EQ(0U, backends_[1]->backend_service()->request_count());
-}
-
-// Tests that if the balancer name changes, a new LB channel will be created to
-// replace the old one.
-TEST_F(BalancerUpdateTest, UpdateBalancerName) {
-  SetNextResolution({}, kDefaultServiceConfig_.c_str());
-  SetNextResolutionForLbChannelAllBalancers();
-  AdsServiceImpl::ResponseArgs args({
-      {"locality0", {backends_[0]->port()}},
-  });
-  ScheduleResponseForBalancer(0, AdsServiceImpl::BuildResponse(args), 0);
-  args = AdsServiceImpl::ResponseArgs({
-      {"locality0", {backends_[1]->port()}},
-  });
-  ScheduleResponseForBalancer(1, AdsServiceImpl::BuildResponse(args), 0);
-  // Wait until the first backend is ready.
-  WaitForBackend(0);
-  // Send 10 requests.
-  gpr_log(GPR_INFO, "========= BEFORE FIRST BATCH ==========");
-  CheckRpcSendOk(10);
-  gpr_log(GPR_INFO, "========= DONE WITH FIRST BATCH ==========");
-  // All 10 requests should have gone to the first backend.
-  EXPECT_EQ(10U, backends_[0]->backend_service()->request_count());
-  // The ADS service of balancer 0 got a single request, and sent a single
-  // response.
-  EXPECT_EQ(1U, balancers_[0]->ads_service()->request_count());
-  EXPECT_EQ(1U, balancers_[0]->ads_service()->response_count());
-  EXPECT_EQ(0U, balancers_[1]->ads_service()->request_count());
-  EXPECT_EQ(0U, balancers_[1]->ads_service()->response_count());
-  EXPECT_EQ(0U, balancers_[2]->ads_service()->request_count());
-  EXPECT_EQ(0U, balancers_[2]->ads_service()->response_count());
-  std::vector<int> ports;
-  ports.emplace_back(balancers_[1]->port());
-  auto new_lb_channel_response_generator =
-      grpc_core::MakeRefCounted<grpc_core::FakeResolverResponseGenerator>();
-  SetNextResolutionForLbChannel(ports, nullptr,
-                                new_lb_channel_response_generator.get());
-  gpr_log(GPR_INFO, "========= ABOUT TO UPDATE BALANCER NAME ==========");
-  SetNextResolution({},
-                    "{\n"
-                    "  \"loadBalancingConfig\":[\n"
-                    "    { \"does_not_exist\":{} },\n"
-                    "    { \"xds_experimental\":{ \"balancerName\": "
-                    "\"fake:///updated_lb\" } }\n"
-                    "  ]\n"
-                    "}",
-                    new_lb_channel_response_generator.get());
-  gpr_log(GPR_INFO, "========= UPDATED BALANCER NAME ==========");
-  // Wait until update has been processed, as signaled by the second backend
-  // receiving a request.
-  EXPECT_EQ(0U, backends_[1]->backend_service()->request_count());
-  WaitForBackend(1);
-  backends_[1]->backend_service()->ResetCounters();
-  gpr_log(GPR_INFO, "========= BEFORE SECOND BATCH ==========");
-  CheckRpcSendOk(10);
-  gpr_log(GPR_INFO, "========= DONE WITH SECOND BATCH ==========");
-  // All 10 requests should have gone to the second backend.
-  EXPECT_EQ(10U, backends_[1]->backend_service()->request_count());
-  EXPECT_EQ(1U, balancers_[0]->ads_service()->request_count());
-  EXPECT_EQ(1U, balancers_[0]->ads_service()->response_count());
-  EXPECT_EQ(1U, balancers_[1]->ads_service()->request_count());
-  EXPECT_EQ(1U, balancers_[1]->ads_service()->response_count());
-  EXPECT_EQ(0U, balancers_[2]->ads_service()->request_count());
-  EXPECT_EQ(0U, balancers_[2]->ads_service()->response_count());
 }
 
 // Tests that if the balancer is down, the RPCs will still be sent to the

@@ -27,7 +27,7 @@
 #include <grpc/support/string_util.h>
 
 #include "src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb.h"
-#include "src/core/ext/filters/client_channel/lb_policy/xds/xds.h"
+#include "src/core/ext/filters/client_channel/xds/xds_channel_args.h"
 #include "src/core/ext/transport/chttp2/alpn/alpn.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/handshaker.h"
@@ -56,8 +56,8 @@ class grpc_fake_channel_security_connector final
         expected_targets_(
             gpr_strdup(grpc_fake_transport_get_expected_targets(args))),
         is_lb_channel_(
-            grpc_channel_args_find(
-                args, GRPC_ARG_ADDRESS_IS_XDS_LOAD_BALANCER) != nullptr ||
+            grpc_channel_args_find(args, GRPC_ARG_ADDRESS_IS_XDS_SERVER) !=
+                nullptr ||
             grpc_channel_args_find(
                 args, GRPC_ARG_ADDRESS_IS_GRPCLB_LOAD_BALANCER) != nullptr) {
     const grpc_arg* target_name_override_arg =

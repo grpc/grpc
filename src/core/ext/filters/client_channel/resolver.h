@@ -87,6 +87,7 @@ class Resolver : public InternallyRefCounted<Resolver> {
   // Not copyable nor movable.
   Resolver(const Resolver&) = delete;
   Resolver& operator=(const Resolver&) = delete;
+  virtual ~Resolver();
 
   /// Starts resolving.
   virtual void StartLocked() = 0;
@@ -121,16 +122,12 @@ class Resolver : public InternallyRefCounted<Resolver> {
   }
 
  protected:
-  GRPC_ALLOW_CLASS_TO_USE_NON_PUBLIC_DELETE
-
   /// Does NOT take ownership of the reference to \a combiner.
   // TODO(roth): Once we have a C++-like interface for combiners, this
   // API should change to take a RefCountedPtr<>, so that we always take
   // ownership of a new ref.
   explicit Resolver(grpc_combiner* combiner,
                     UniquePtr<ResultHandler> result_handler);
-
-  virtual ~Resolver();
 
   /// Shuts down the resolver.
   virtual void ShutdownLocked() = 0;

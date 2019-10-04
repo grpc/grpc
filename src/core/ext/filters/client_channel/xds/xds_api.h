@@ -16,16 +16,17 @@
  *
  */
 
-#ifndef GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_LB_POLICY_XDS_XDS_LOAD_BALANCER_API_H
-#define GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_LB_POLICY_XDS_XDS_LOAD_BALANCER_API_H
+#ifndef GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_XDS_XDS_API_H
+#define GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_XDS_XDS_API_H
 
 #include <grpc/support/port_platform.h>
 
+#include <stdint.h>
+
 #include <grpc/slice_buffer.h>
 
-#include <stdint.h>
-#include "src/core/ext/filters/client_channel/lb_policy/xds/xds_client_stats.h"
 #include "src/core/ext/filters/client_channel/server_address.h"
+#include "src/core/ext/filters/client_channel/xds/xds_client_stats.h"
 
 namespace grpc_core {
 
@@ -62,6 +63,9 @@ class XdsPriorityListUpdate {
   };
 
   bool operator==(const XdsPriorityListUpdate& other) const;
+  bool operator!=(const XdsPriorityListUpdate& other) const {
+    return !(*this == other);
+  }
 
   void Add(LocalityMap::Locality locality);
 
@@ -125,11 +129,14 @@ class XdsDropConfig : public RefCounted<XdsDropConfig> {
   DropCategoryList drop_category_list_;
 };
 
-struct XdsUpdate {
+struct EdsUpdate {
   XdsPriorityListUpdate priority_list_update;
   RefCountedPtr<XdsDropConfig> drop_config;
   bool drop_all = false;
 };
+
+// TODO(juanlishen): Add fields as part of implementing CDS support.
+struct CdsUpdate {};
 
 // Creates an EDS request querying \a service_name.
 grpc_slice XdsEdsRequestCreateAndEncode(const char* server_name);
@@ -137,7 +144,7 @@ grpc_slice XdsEdsRequestCreateAndEncode(const char* server_name);
 // Parses the EDS response and returns the args to update locality map. If there
 // is any error, the output update is invalid.
 grpc_error* XdsEdsResponseDecodeAndParse(const grpc_slice& encoded_response,
-                                         XdsUpdate* update);
+                                         EdsUpdate* update);
 
 // Creates an LRS request querying \a server_name.
 grpc_slice XdsLrsRequestCreateAndEncode(const char* server_name);
@@ -156,5 +163,4 @@ grpc_error* XdsLrsResponseDecodeAndParse(const grpc_slice& encoded_response,
 
 }  // namespace grpc_core
 
-#endif /* GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_LB_POLICY_XDS_XDS_LOAD_BALANCER_API_H \
-        */
+#endif /* GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_XDS_XDS_API_H */

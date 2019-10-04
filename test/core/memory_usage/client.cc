@@ -49,7 +49,7 @@ typedef struct {
   grpc_metadata_array trailing_metadata_recv;
 } fling_call;
 
-// Statically allocate call data structs. Enough to accomodate 10000 ping-pong
+// Statically allocate call data structs. Enough to accommodate 10000 ping-pong
 // calls and 1 extra for the snapshot calls.
 static fling_call calls[10001];
 

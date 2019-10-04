@@ -100,6 +100,14 @@ bool grpc_channel_arg_get_bool(const grpc_arg* arg, bool default_value);
 bool grpc_channel_args_find_bool(const grpc_channel_args* args,
                                  const char* name, bool default_value);
 
+template <typename T>
+T* grpc_channel_args_find_pointer(const grpc_channel_args* args,
+                                  const char* name) {
+  const grpc_arg* arg = grpc_channel_args_find(args, name);
+  if (arg == nullptr || arg->type != GRPC_ARG_POINTER) return nullptr;
+  return static_cast<T*>(arg->value.pointer.p);
+}
+
 // Helpers for creating channel args.
 grpc_arg grpc_channel_arg_string_create(char* name, char* value);
 grpc_arg grpc_channel_arg_integer_create(char* name, int value);

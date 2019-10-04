@@ -81,8 +81,6 @@ class InternallyRefCounted : public Orphanable {
   InternallyRefCounted& operator=(const InternallyRefCounted&) = delete;
 
  protected:
-  GRPC_ALLOW_CLASS_TO_USE_NON_PUBLIC_DELETE
-
   // Allow RefCountedPtr<> to access Unref() and IncrementRefCount().
   template <typename T>
   friend class RefCountedPtr;
