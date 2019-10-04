@@ -64,7 +64,7 @@ static void drain_cq(grpc_completion_queue *cq) {
   grpc_test_init(1, argv);
 
   grpc_init();
-  configureCronet();
+  configureCronet(/*enable_netlog=*/false);
   init_ssl();
 }
 
