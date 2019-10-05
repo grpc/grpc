@@ -18,7 +18,7 @@ from grpc._cython import cygrpc
 
 
 class UnaryUnaryMultiCallable:
-    """Afford invoking an unary-unary RPC from client-side in an asynchronous way."""
+    """Afford invoking a unary-unary RPC from client-side in an asynchronous way."""
 
     def __init__(self, channel, method, request_serializer,
                  response_deserializer):
