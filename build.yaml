@@ -6009,6 +6009,7 @@ targets:
   build: test
   language: c++
   src:
+  - src/proto/grpc/testing/xds/ads_for_test.proto
   - src/proto/grpc/testing/xds/eds_for_test.proto
   - src/proto/grpc/testing/xds/lrs_for_test.proto
   - test/cpp/end2end/xds_end2end_test.cc
