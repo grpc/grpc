@@ -67,8 +67,7 @@ BUILD_WITH_CYTHON = os.environ.get('GRPC_PYTHON_BUILD_WITH_CYTHON', False)
 
 
 def check_linker_need_libatomic():
-    """Test if linker on system needs libatomic.
-    """
+    """Test if linker on system needs libatomic."""
     code_test = (b'#include <atomic>\n' +
                  b'int main() { return std::atomic<int64_t>{}; }')
     cc_test = subprocess.Popen(
