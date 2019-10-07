@@ -114,16 +114,16 @@ class XdsClient::ChannelState : public InternallyRefCounted<ChannelState> {
     bool shutting_down_ = false;
   };
 
-  // Contains an EDS call to the xds server.
-  class EdsCallState : public InternallyRefCounted<EdsCallState> {
+  // Contains an ADS call to the xds server.
+  class AdsCallState : public InternallyRefCounted<AdsCallState> {
    public:
     // The ctor and dtor should not be used directly.
-    explicit EdsCallState(RefCountedPtr<RetryableCall<EdsCallState>> parent);
-    ~EdsCallState() override;
+    explicit AdsCallState(RefCountedPtr<RetryableCall<AdsCallState>> parent);
+    ~AdsCallState() override;
 
     void Orphan() override;
 
-    RetryableCall<EdsCallState>* parent() const { return parent_.get(); }
+    RetryableCall<AdsCallState>* parent() const { return parent_.get(); }
     ChannelState* chand() const { return parent_->chand(); }
     XdsClient* xds_client() const { return chand()->xds_client(); }
     bool seen_response() const { return seen_response_; }
@@ -135,7 +135,7 @@ class XdsClient::ChannelState : public InternallyRefCounted<ChannelState> {
     bool IsCurrentCallOnChannel() const;
 
     // The owning RetryableCall<>.
-    RefCountedPtr<RetryableCall<EdsCallState>> parent_;
+    RefCountedPtr<RetryableCall<AdsCallState>> parent_;
     bool seen_response_ = false;
 
     // Always non-NULL.
@@ -256,16 +256,16 @@ class XdsClient::ChannelState : public InternallyRefCounted<ChannelState> {
 
   grpc_channel* channel() const { return channel_; }
   XdsClient* xds_client() const { return xds_client_.get(); }
-  EdsCallState* eds_calld() const { return eds_calld_->calld(); }
+  AdsCallState* ads_calld() const { return ads_calld_->calld(); }
   LrsCallState* lrs_calld() const { return lrs_calld_->calld(); }
 
-  void MaybeStartEdsCall();
-  void StopEdsCall();
+  void MaybeStartAdsCall();
+  void StopAdsCall();
 
   void MaybeStartLrsCall();
   void StopLrsCall();
 
-  bool HasActiveEdsCall() const { return eds_calld_->calld() != nullptr; }
+  bool HasActiveAdsCall() const { return ads_calld_->calld() != nullptr; }
 
   void StartConnectivityWatchLocked();
   void CancelConnectivityWatchLocked();
@@ -282,7 +282,7 @@ class XdsClient::ChannelState : public InternallyRefCounted<ChannelState> {
   StateWatcher* watcher_ = nullptr;
 
   // The retryable XDS calls.
-  OrphanablePtr<RetryableCall<EdsCallState>> eds_calld_;
+  OrphanablePtr<RetryableCall<AdsCallState>> ads_calld_;
   OrphanablePtr<RetryableCall<LrsCallState>> lrs_calld_;
 };
 
@@ -396,18 +396,18 @@ XdsClient::ChannelState::~ChannelState() {
 void XdsClient::ChannelState::Orphan() {
   shutting_down_ = true;
   CancelConnectivityWatchLocked();
-  eds_calld_.reset();
+  ads_calld_.reset();
   lrs_calld_.reset();
   Unref(DEBUG_LOCATION, "ChannelState+orphaned");
 }
 
-void XdsClient::ChannelState::MaybeStartEdsCall() {
-  if (eds_calld_ != nullptr) return;
-  eds_calld_.reset(New<RetryableCall<EdsCallState>>(
-      Ref(DEBUG_LOCATION, "ChannelState+eds")));
+void XdsClient::ChannelState::MaybeStartAdsCall() {
+  if (ads_calld_ != nullptr) return;
+  ads_calld_.reset(New<RetryableCall<AdsCallState>>(
+      Ref(DEBUG_LOCATION, "ChannelState+ads")));
 }
 
-void XdsClient::ChannelState::StopEdsCall() { eds_calld_.reset(); }
+void XdsClient::ChannelState::StopAdsCall() { ads_calld_.reset(); }
 
 void XdsClient::ChannelState::MaybeStartLrsCall() {
   if (lrs_calld_ != nullptr) return;
@@ -526,14 +526,14 @@ void XdsClient::ChannelState::RetryableCall<T>::OnRetryTimerLocked(
 }
 
 //
-// XdsClient::ChannelState::EdsCallState
+// XdsClient::ChannelState::AdsCallState
 //
 
-XdsClient::ChannelState::EdsCallState::EdsCallState(
-    RefCountedPtr<RetryableCall<EdsCallState>> parent)
-    : InternallyRefCounted<EdsCallState>(&grpc_xds_client_trace),
+XdsClient::ChannelState::AdsCallState::AdsCallState(
+    RefCountedPtr<RetryableCall<AdsCallState>> parent)
+    : InternallyRefCounted<AdsCallState>(&grpc_xds_client_trace),
       parent_(std::move(parent)) {
-  // Init the EDS call. Note that the call will progress every time there's
+  // Init the ADS call. Note that the call will progress every time there's
   // activity in xds_client()->interested_parties_, which is comprised of
   // the polling entities from client_channel.
   GPR_ASSERT(xds_client() != nullptr);
@@ -543,7 +543,7 @@ XdsClient::ChannelState::EdsCallState::EdsCallState(
   call_ = grpc_channel_create_pollset_set_call(
       chand()->channel_, nullptr, GRPC_PROPAGATE_DEFAULTS,
       xds_client()->interested_parties_,
-      GRPC_MDSTR_SLASH_ENVOY_DOT_API_DOT_V2_DOT_ENDPOINTDISCOVERYSERVICE_SLASH_STREAMENDPOINTS,
+      GRPC_MDSTR_SLASH_ENVOY_DOT_SERVICE_DOT_DISCOVERY_DOT_V2_DOT_AGGREGATEDDISCOVERYSERVICE_SLASH_STREAMAGGREGATEDRESOURCES,
       nullptr, GRPC_MILLIS_INF_FUTURE, nullptr);
   GPR_ASSERT(call_ != nullptr);
   // Init the request payload.
@@ -562,7 +562,7 @@ XdsClient::ChannelState::EdsCallState::EdsCallState(
   // Start the call.
   if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_client_trace)) {
     gpr_log(GPR_INFO,
-            "[xds_client %p] Starting EDS call (chand: %p, calld: %p, "
+            "[xds_client %p] Starting ADS call (chand: %p, calld: %p, "
             "call: %p)",
             xds_client(), chand(), this, call_);
   }
@@ -601,7 +601,7 @@ XdsClient::ChannelState::EdsCallState::EdsCallState(
   op->flags = 0;
   op->reserved = nullptr;
   op++;
-  Ref(DEBUG_LOCATION, "EDS+OnResponseReceivedLocked").release();
+  Ref(DEBUG_LOCATION, "ADS+OnResponseReceivedLocked").release();
   call_error = grpc_call_start_batch_and_execute(call_, ops, (size_t)(op - ops),
                                                  &on_response_received_);
   GPR_ASSERT(GRPC_CALL_OK == call_error);
@@ -622,7 +622,7 @@ XdsClient::ChannelState::EdsCallState::EdsCallState(
   GPR_ASSERT(GRPC_CALL_OK == call_error);
 }
 
-XdsClient::ChannelState::EdsCallState::~EdsCallState() {
+XdsClient::ChannelState::AdsCallState::~AdsCallState() {
   grpc_metadata_array_destroy(&initial_metadata_recv_);
   grpc_metadata_array_destroy(&trailing_metadata_recv_);
   grpc_byte_buffer_destroy(send_message_payload_);
@@ -632,7 +632,7 @@ XdsClient::ChannelState::EdsCallState::~EdsCallState() {
   grpc_call_unref(call_);
 }
 
-void XdsClient::ChannelState::EdsCallState::Orphan() {
+void XdsClient::ChannelState::AdsCallState::Orphan() {
   GPR_ASSERT(call_ != nullptr);
   // If we are here because xds_client wants to cancel the call,
   // on_status_received_ will complete the cancellation and clean up. Otherwise,
@@ -643,23 +643,23 @@ void XdsClient::ChannelState::EdsCallState::Orphan() {
   // corresponding unref happens in on_status_received_ instead of here.
 }
 
-void XdsClient::ChannelState::EdsCallState::OnResponseReceivedLocked(
+void XdsClient::ChannelState::AdsCallState::OnResponseReceivedLocked(
     void* arg, grpc_error* error) {
-  EdsCallState* eds_calld = static_cast<EdsCallState*>(arg);
-  XdsClient* xds_client = eds_calld->xds_client();
+  AdsCallState* ads_calld = static_cast<AdsCallState*>(arg);
+  XdsClient* xds_client = ads_calld->xds_client();
   // Empty payload means the call was cancelled.
-  if (!eds_calld->IsCurrentCallOnChannel() ||
-      eds_calld->recv_message_payload_ == nullptr) {
-    eds_calld->Unref(DEBUG_LOCATION, "EDS+OnResponseReceivedLocked");
+  if (!ads_calld->IsCurrentCallOnChannel() ||
+      ads_calld->recv_message_payload_ == nullptr) {
+    ads_calld->Unref(DEBUG_LOCATION, "ADS+OnResponseReceivedLocked");
     return;
   }
   // Read the response.
   grpc_byte_buffer_reader bbr;
-  grpc_byte_buffer_reader_init(&bbr, eds_calld->recv_message_payload_);
+  grpc_byte_buffer_reader_init(&bbr, ads_calld->recv_message_payload_);
   grpc_slice response_slice = grpc_byte_buffer_reader_readall(&bbr);
   grpc_byte_buffer_reader_destroy(&bbr);
-  grpc_byte_buffer_destroy(eds_calld->recv_message_payload_);
-  eds_calld->recv_message_payload_ = nullptr;
+  grpc_byte_buffer_destroy(ads_calld->recv_message_payload_);
+  ads_calld->recv_message_payload_ = nullptr;
   // TODO(juanlishen): When we convert this to use the xds protocol, the
   // balancer will send us a fallback timeout such that we should go into
   // fallback mode if we have lost contact with the balancer after a certain
@@ -676,7 +676,7 @@ void XdsClient::ChannelState::EdsCallState::OnResponseReceivedLocked(
         XdsEdsResponseDecodeAndParse(response_slice, &update);
     if (parse_error != GRPC_ERROR_NONE) {
       gpr_log(GPR_ERROR,
-              "[xds_client %p] EDS response parsing failed. error=%s",
+              "[xds_client %p] ADS response parsing failed. error=%s",
               xds_client, grpc_error_string(parse_error));
       GRPC_ERROR_UNREF(parse_error);
       return;
@@ -685,16 +685,16 @@ void XdsClient::ChannelState::EdsCallState::OnResponseReceivedLocked(
       char* response_slice_str =
           grpc_dump_slice(response_slice, GPR_DUMP_ASCII | GPR_DUMP_HEX);
       gpr_log(GPR_ERROR,
-              "[xds_client %p] EDS response '%s' doesn't contain any valid "
+              "[xds_client %p] ADS response '%s' doesn't contain any valid "
               "locality but doesn't require to drop all calls. Ignoring.",
               xds_client, response_slice_str);
       gpr_free(response_slice_str);
       return;
     }
-    eds_calld->seen_response_ = true;
+    ads_calld->seen_response_ = true;
     if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_client_trace)) {
       gpr_log(GPR_INFO,
-              "[xds_client %p] EDS response with %" PRIuPTR
+              "[xds_client %p] ADS response with %" PRIuPTR
               " priorities and %" PRIuPTR
               " drop categories received (drop_all=%d)",
               xds_client, update.priority_list_update.size(),
@@ -741,7 +741,7 @@ void XdsClient::ChannelState::EdsCallState::OnResponseReceivedLocked(
       }
     }
     // Start load reporting if needed.
-    LrsCallState* lrs_calld = eds_calld->chand()->lrs_calld_->calld();
+    LrsCallState* lrs_calld = ads_calld->chand()->lrs_calld_->calld();
     if (lrs_calld != nullptr) lrs_calld->MaybeStartReportingLocked();
     // Ignore identical update.
     const EdsUpdate& prev_update = xds_client->cluster_state_.eds_update;
@@ -768,54 +768,54 @@ void XdsClient::ChannelState::EdsCallState::OnResponseReceivedLocked(
   }();
   grpc_slice_unref_internal(response_slice);
   if (xds_client->shutting_down_) {
-    eds_calld->Unref(DEBUG_LOCATION,
-                     "EDS+OnResponseReceivedLocked+xds_shutdown");
+    ads_calld->Unref(DEBUG_LOCATION,
+                     "ADS+OnResponseReceivedLocked+xds_shutdown");
     return;
   }
   // Keep listening for serverlist updates.
   grpc_op op;
   memset(&op, 0, sizeof(op));
   op.op = GRPC_OP_RECV_MESSAGE;
-  op.data.recv_message.recv_message = &eds_calld->recv_message_payload_;
+  op.data.recv_message.recv_message = &ads_calld->recv_message_payload_;
   op.flags = 0;
   op.reserved = nullptr;
-  GPR_ASSERT(eds_calld->call_ != nullptr);
-  // Reuse the "EDS+OnResponseReceivedLocked" ref taken in ctor.
+  GPR_ASSERT(ads_calld->call_ != nullptr);
+  // Reuse the "ADS+OnResponseReceivedLocked" ref taken in ctor.
   const grpc_call_error call_error = grpc_call_start_batch_and_execute(
-      eds_calld->call_, &op, 1, &eds_calld->on_response_received_);
+      ads_calld->call_, &op, 1, &ads_calld->on_response_received_);
   GPR_ASSERT(GRPC_CALL_OK == call_error);
 }
 
-void XdsClient::ChannelState::EdsCallState::OnStatusReceivedLocked(
+void XdsClient::ChannelState::AdsCallState::OnStatusReceivedLocked(
     void* arg, grpc_error* error) {
-  EdsCallState* eds_calld = static_cast<EdsCallState*>(arg);
-  ChannelState* chand = eds_calld->chand();
-  XdsClient* xds_client = eds_calld->xds_client();
+  AdsCallState* ads_calld = static_cast<AdsCallState*>(arg);
+  ChannelState* chand = ads_calld->chand();
+  XdsClient* xds_client = ads_calld->xds_client();
   if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_client_trace)) {
-    char* status_details = grpc_slice_to_c_string(eds_calld->status_details_);
+    char* status_details = grpc_slice_to_c_string(ads_calld->status_details_);
     gpr_log(GPR_INFO,
-            "[xds_client %p] EDS call status received. Status = %d, details "
-            "= '%s', (chand: %p, eds_calld: %p, call: %p), error '%s'",
-            xds_client, eds_calld->status_code_, status_details, chand,
-            eds_calld, eds_calld->call_, grpc_error_string(error));
+            "[xds_client %p] ADS call status received. Status = %d, details "
+            "= '%s', (chand: %p, ads_calld: %p, call: %p), error '%s'",
+            xds_client, ads_calld->status_code_, status_details, chand,
+            ads_calld, ads_calld->call_, grpc_error_string(error));
     gpr_free(status_details);
   }
   // Ignore status from a stale call.
-  if (eds_calld->IsCurrentCallOnChannel()) {
+  if (ads_calld->IsCurrentCallOnChannel()) {
     // Try to restart the call.
-    eds_calld->parent_->OnCallFinishedLocked();
+    ads_calld->parent_->OnCallFinishedLocked();
     // Send error to all watchers.
     xds_client->NotifyOnError(
         GRPC_ERROR_CREATE_FROM_STATIC_STRING("xds call failed"));
   }
-  eds_calld->Unref(DEBUG_LOCATION, "EDS+OnStatusReceivedLocked");
+  ads_calld->Unref(DEBUG_LOCATION, "ADS+OnStatusReceivedLocked");
 }
 
-bool XdsClient::ChannelState::EdsCallState::IsCurrentCallOnChannel() const {
-  // If the retryable EDS call is null (which only happens when the xds channel
-  // is shutting down), all the EDS calls are stale.
-  if (chand()->eds_calld_ == nullptr) return false;
-  return this == chand()->eds_calld_->calld();
+bool XdsClient::ChannelState::AdsCallState::IsCurrentCallOnChannel() const {
+  // If the retryable ADS call is null (which only happens when the xds channel
+  // is shutting down), all the ADS calls are stale.
+  if (chand()->ads_calld_ == nullptr) return false;
+  return this == chand()->ads_calld_->calld();
 }
 
 //
@@ -1031,11 +1031,11 @@ void XdsClient::ChannelState::LrsCallState::MaybeStartReportingLocked() {
   if (send_message_payload_ != nullptr) return;
   // Don't start if no LRS response has arrived.
   if (!seen_response()) return;
-  // Don't start if the EDS call hasn't received any valid response. Note that
+  // Don't start if the ADS call hasn't received any valid response. Note that
   // this must be the first channel because it is the current channel but its
-  // EDS call hasn't seen any response.
-  EdsCallState* eds_calld = chand()->eds_calld_->calld();
-  if (eds_calld == nullptr || !eds_calld->seen_response()) return;
+  // ADS call hasn't seen any response.
+  AdsCallState* ads_calld = chand()->ads_calld_->calld();
+  if (ads_calld == nullptr || !ads_calld->seen_response()) return;
   // Start reporting.
   for (auto* client_stats : chand()->xds_client_->cluster_state_.client_stats) {
     client_stats->MaybeInitLastReportTime();
@@ -1219,7 +1219,7 @@ void XdsClient::WatchEndpointData(StringView cluster,
   if (!cluster_state_.eds_update.priority_list_update.empty()) {
     w->OnEndpointChanged(cluster_state_.eds_update);
   }
-  chand_->MaybeStartEdsCall();
+  chand_->MaybeStartAdsCall();
 }
 
 void XdsClient::CancelEndpointDataWatch(StringView cluster,
@@ -1228,7 +1228,7 @@ void XdsClient::CancelEndpointDataWatch(StringView cluster,
   if (it != cluster_state_.endpoint_watchers.end()) {
     cluster_state_.endpoint_watchers.erase(it);
   }
-  if (cluster_state_.endpoint_watchers.empty()) chand_->StopEdsCall();
+  if (cluster_state_.endpoint_watchers.empty()) chand_->StopAdsCall();
 }
 
 void XdsClient::AddClientStats(StringView cluster,

@@ -499,6 +499,7 @@ grpc_cc_test(
         "//:grpc",
         "//:grpc++",
         "//:grpc_resolver_fake",
+        "//src/proto/grpc/testing/xds:ads_for_test_proto",
         "//src/proto/grpc/testing/xds:eds_for_test_proto",
         "//src/proto/grpc/testing/xds:lrs_for_test_proto",
         "//src/proto/grpc/testing:echo_messages_proto",
