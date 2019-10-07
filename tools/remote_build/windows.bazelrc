@@ -1,5 +1,9 @@
 startup --host_jvm_args=-Dbazel.DigestFunction=SHA256
 
+# TODO(jtattermusch): Currently building with --compilation_mode=dbg is broken on Windows RBE
+# so we need to explicitly override it to use fastbuild.
+build:windows_dbg --compilation_mode=fastbuild
+
 build --remote_cache=grpcs://remotebuildexecution.googleapis.com
 build --remote_executor=grpcs://remotebuildexecution.googleapis.com
 
