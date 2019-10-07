@@ -28,6 +28,25 @@ server = new Server()
 };
 server.Start();
 ```
+### Server Reflection in C# in .NET Core 3.0 sevices
+Since now a days in .NET Core 3.0, sevices are registered in startup.cs and build in program.cs , below is the way one can implement Server Reflection
+
+```csharp
+//Create a class named ReflectionImplementation which inherits ReflectionServiceImpl (using nuget Grpc.Reflection)
+ public class ReflectionImplementation: ReflectionServiceImpl
+{
+    public ReflectionImplementation():base(Calculator.Descriptor, Greeter.Descriptor, ServerReflection.Descriptor)
+    {
+    }
+
+}
+```
+
+```csharp
+// add below line startup.cs
+endpoints.MapGrpcService<ReflectionImplementation>();
+```
+
 
 After starting the server, you can verify that the server reflection
 is working properly by using the [`grpc_cli` command line
