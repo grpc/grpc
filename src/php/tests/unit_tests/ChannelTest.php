@@ -17,13 +17,13 @@
  *
  */
 
-class ChannelTest extends PHPUnit_Framework_TestCase
+class ChannelTest extends PHPUnit\Framework\TestCase
 {
-    public function setUp()
+    public function setUp(): void
     {
     }
 
-    public function tearDown()
+    public function tearDown(): void
     {
         if (!empty($this->channel)) {
             $this->channel->close();
@@ -39,8 +39,9 @@ class ChannelTest extends PHPUnit_Framework_TestCase
 
     public function testConstructorCreateSsl()
     {
-        new Grpc\Channel('localhost:50033', 
+        $this->channel = new Grpc\Channel('localhost:50033', 
             ['credentials' => \Grpc\ChannelCredentials::createSsl()]);
+        $this->assertSame('Grpc\Channel', get_class($this->channel));
     }
 
     public function testGetConnectivityState()
@@ -106,66 +107,76 @@ class ChannelTest extends PHPUnit_Framework_TestCase
     }
 
     /**
-     * @expectedException InvalidArgumentException
+     * expectedException InvalidArgumentException
      */
     public function testInvalidConstructorWithNull()
-    {
+    {   $this->expectException(InvalidArgumentException::class);
+
         $this->channel = new Grpc\Channel();
         $this->assertNull($this->channel);
     }
 
     /**
-     * @expectedException InvalidArgumentException
+     * expectedException InvalidArgumentException
      */
     public function testInvalidConstructorWith()
-    {
+    {   $this->expectException(InvalidArgumentException::class);
+
         $this->channel = new Grpc\Channel('localhost:50008', 'invalid');
         $this->assertNull($this->channel);
     }
 
     /**
-     * @expectedException InvalidArgumentException
+     * expectedException InvalidArgumentException
      */
     public function testInvalidCredentials()
-    {
+    {   $this->expectException(InvalidArgumentException::class);
+
         $this->channel = new Grpc\Channel('localhost:50009',
             ['credentials' => new Grpc\Timeval(100)]);
     }
 
     /**
-     * @expectedException InvalidArgumentException
+     * expectedException InvalidArgumentException
      */
     public function testInvalidOptionsArray()
-    {
+    {   $this->expectException(InvalidArgumentException::class);
+
         $this->channel = new Grpc\Channel('localhost:50010',
             ['abc' => []]);
     }
 
     /**
-     * @expectedException InvalidArgumentException
+     * expectedException InvalidArgumentException
      */
     public function testInvalidGetConnectivityStateWithArray()
     {
+        $this->expectException(InvalidArgumentException::class);
+
         $this->channel = new Grpc\Channel('localhost:50011',
             ['credentials' => Grpc\ChannelCredentials::createInsecure()]);
         $this->channel->getConnectivityState([]);
     }
 
     /**
-     * @expectedException InvalidArgumentException
+     * expectedException InvalidArgumentException
      */
     public function testInvalidWatchConnectivityState()
     {
+        $this->expectException(InvalidArgumentException::class);
+
         $this->channel = new Grpc\Channel('localhost:50012',
             ['credentials' => Grpc\ChannelCredentials::createInsecure()]);
         $this->channel->watchConnectivityState([]);
     }
 
     /**
-     * @expectedException InvalidArgumentException
+     * expectedException InvalidArgumentException
      */
     public function testInvalidWatchConnectivityState2()
     {
+        $this->expectException(InvalidArgumentException::class);
+
         $this->channel = new Grpc\Channel('localhost:50013',
             ['credentials' => Grpc\ChannelCredentials::createInsecure()]);
         $this->channel->watchConnectivityState(1, 'hi');
@@ -410,10 +421,12 @@ class ChannelTest extends PHPUnit_Framework_TestCase
     }
 
     /**
-     * @expectedException RuntimeException
+     * expectedException RuntimeException
      */
     public function testPersistentChannelSharedChannelClose2()
     {
+        $this->expectException(RuntimeException::class);
+
         // same underlying channel
         $this->channel1 = new Grpc\Channel('localhost:50223', [
             "grpc_target_persist_bound" => 3,
@@ -646,10 +659,11 @@ class ChannelTest extends PHPUnit_Framework_TestCase
     }
 
     /**
-     * @expectedException RuntimeException
+     * expectedException RuntimeException
      */
     public function testPersistentChannelForceNewOldChannelClose2()
     {
+        $this->expectException(RuntimeException::class);
 
         $this->channel1 = new Grpc\Channel('localhost:50230', [
             "grpc_target_persist_bound" => 2,

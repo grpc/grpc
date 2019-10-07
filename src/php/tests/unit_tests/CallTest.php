@@ -16,18 +16,18 @@
  * limitations under the License.
  *
  */
-class CallTest extends PHPUnit_Framework_TestCase
+class CallTest extends PHPUnit\Framework\TestCase
 {
     public static $server;
     public static $port;
 
-    public static function setUpBeforeClass()
+    public static function setUpBeforeClass(): void
     {
         self::$server = new Grpc\Server([]);
         self::$port = self::$server->addHttp2Port('0.0.0.0:53000');
     }
 
-    public function setUp()
+    public function setUp(): void
     {
         $this->channel = new Grpc\Channel('localhost:'.self::$port, [
             'force_new' => true,
@@ -37,7 +37,7 @@ class CallTest extends PHPUnit_Framework_TestCase
                                     Grpc\Timeval::infFuture());
     }
 
-    public function tearDown()
+    public function tearDown(): void
     {
         $this->channel->close();
     }
@@ -107,10 +107,12 @@ class CallTest extends PHPUnit_Framework_TestCase
     }
 
     /**
-     * @expectedException InvalidArgumentException
+     * expectedException InvalidArgumentException
      */
     public function testInvalidStartBatchKey()
-    {
+    {   
+        $this->expectException(InvalidArgumentException::class);
+
         $batch = [
             'invalid' => ['key1' => 'value1'],
         ];
@@ -118,10 +120,12 @@ class CallTest extends PHPUnit_Framework_TestCase
     }
 
     /**
-     * @expectedException InvalidArgumentException
+     * expectedException InvalidArgumentException
      */
     public function testInvalidMetadataStrKey()
-    {
+    {   
+        $this->expectException(InvalidArgumentException::class);
+
         $batch = [
             Grpc\OP_SEND_INITIAL_METADATA => ['Key' => ['value1', 'value2']],
         ];
@@ -129,10 +133,12 @@ class CallTest extends PHPUnit_Framework_TestCase
     }
 
     /**
-     * @expectedException InvalidArgumentException
+     * expectedException InvalidArgumentException
      */
     public function testInvalidMetadataIntKey()
-    {
+    {   
+        $this->expectException(InvalidArgumentException::class);
+
         $batch = [
             Grpc\OP_SEND_INITIAL_METADATA => [1 => ['value1', 'value2']],
         ];
@@ -140,10 +146,12 @@ class CallTest extends PHPUnit_Framework_TestCase
     }
 
     /**
-     * @expectedException InvalidArgumentException
+     * expectedException InvalidArgumentException
      */
     public function testInvalidMetadataInnerValue()
-    {
+    {   
+        $this->expectException(InvalidArgumentException::class);
+
         $batch = [
             Grpc\OP_SEND_INITIAL_METADATA => ['key1' => 'value1'],
         ];
@@ -151,36 +159,44 @@ class CallTest extends PHPUnit_Framework_TestCase
     }
 
     /**
-     * @expectedException InvalidArgumentException
+     * expectedException InvalidArgumentException
      */
     public function testInvalidConstuctor()
-    {
+    {   
+        $this->expectException(InvalidArgumentException::class);
+
         $this->call = new Grpc\Call();
         $this->assertNull($this->call);
     }
 
     /**
-     * @expectedException InvalidArgumentException
+     * expectedException InvalidArgumentException
      */
     public function testInvalidConstuctor2()
-    {
+    {   
+        $this->expectException(InvalidArgumentException::class);
+
         $this->call = new Grpc\Call('hi', 'hi', 'hi');
         $this->assertNull($this->call);
     }
 
     /**
-     * @expectedException InvalidArgumentException
+     * expectedException InvalidArgumentException
      */
     public function testInvalidSetCredentials()
-    {
+    {   
+        $this->expectException(InvalidArgumentException::class);
+
         $this->call->setCredentials('hi');
     }
 
     /**
-     * @expectedException InvalidArgumentException
+     * expectedException InvalidArgumentException
      */
     public function testInvalidSetCredentials2()
-    {
+    {   
+        $this->expectException(InvalidArgumentException::class);
+
         $this->call->setCredentials([]);
     }
 }

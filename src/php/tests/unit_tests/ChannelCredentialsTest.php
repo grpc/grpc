@@ -17,13 +17,13 @@
  *
  */
 
-class ChanellCredentialsTest extends PHPUnit_Framework_TestCase
+class ChanellCredentialsTest extends PHPUnit\Framework\TestCase
 {
-    public function setUp()
+    public function setUp(): void
     {
     }
 
-    public function tearDown()
+    public function tearDown(): void
     {
     }
 
@@ -47,18 +47,22 @@ class ChanellCredentialsTest extends PHPUnit_Framework_TestCase
     }
 
     /**
-     * @expectedException InvalidArgumentException
+     * expectedException InvalidArgumentException
      */
     public function testInvalidCreateSsl()
     {
+        $this->expectException(InvalidArgumentException::class);
+
         $channel_credentials = Grpc\ChannelCredentials::createSsl([]);
     }
 
     /**
-     * @expectedException InvalidArgumentException
+     * expectedException InvalidArgumentException
      */
     public function testInvalidCreateComposite()
-    {
+    {   
+        $this->expectException(InvalidArgumentException::class);
+
         $channel_credentials = Grpc\ChannelCredentials::createComposite(
             'something', 'something');
     }
