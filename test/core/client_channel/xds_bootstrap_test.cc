@@ -51,6 +51,12 @@ TEST(XdsBootstrapTest, Basic) {
       "  \"node\": {"
       "    \"id\": \"foo\","
       "    \"cluster\": \"bar\","
+      "    \"locality\": {"
+      "      \"region\": \"milky_way\","
+      "      \"zone\": \"sol_system\","
+      "      \"subzone\": \"earth\","
+      "      \"ignore\": {}"
+      "    },"
       "    \"metadata\": {"
       "      \"null\": null,"
       "      \"string\": \"quux\","
@@ -60,12 +66,6 @@ TEST(XdsBootstrapTest, Basic) {
       "        \"whee\": 0"
       "      },"
       "      \"list\": [1, 2, 3]"
-      "    },"
-      "    \"locality\": {"
-      "      \"region\": \"milky_way\","
-      "      \"zone\": \"sol_system\","
-      "      \"subzone\": \"earth\","
-      "      \"ignore\": {}"
       "    },"
       "    \"ignore\": \"whee\""
       "  },"
@@ -82,6 +82,9 @@ TEST(XdsBootstrapTest, Basic) {
   ASSERT_NE(bootstrap.node(), nullptr);
   EXPECT_STREQ(bootstrap.node()->id, "foo");
   EXPECT_STREQ(bootstrap.node()->cluster, "bar");
+  EXPECT_STREQ(bootstrap.node()->locality_region, "milky_way");
+  EXPECT_STREQ(bootstrap.node()->locality_zone, "sol_system");
+  EXPECT_STREQ(bootstrap.node()->locality_subzone, "earth");
   EXPECT_THAT(
       bootstrap.node()->metadata,
       ::testing::ElementsAre(
@@ -144,9 +147,6 @@ TEST(XdsBootstrapTest, Basic) {
   EXPECT_EQ(it->second.list_value[2].type,
             XdsBootstrap::MetadataValue::Type::DOUBLE);
   EXPECT_EQ(it->second.list_value[2].double_value, 3);
-  EXPECT_STREQ(bootstrap.node()->locality_region, "milky_way");
-  EXPECT_STREQ(bootstrap.node()->locality_zone, "sol_system");
-  EXPECT_STREQ(bootstrap.node()->locality_subzone, "earth");
 }
 
 TEST(XdsBootstrapTest, ValidWithoutChannelCredsAndNode) {
@@ -275,12 +275,6 @@ TEST(XdsBootstrapTest, BadNode) {
       "    \"id\":\"foo\","
       "    \"cluster\":0,"
       "    \"cluster\":\"foo\","
-      "    \"metadata\":0,"
-      "    \"metadata\":{"
-      "      \"foo\":0,"
-      "      \"foo\":\"whee\","
-      "      \"foo\":\"whee2\""
-      "    },"
       "    \"locality\":0,"
       "    \"locality\":{"
       "      \"region\":0,"
@@ -289,6 +283,12 @@ TEST(XdsBootstrapTest, BadNode) {
       "      \"zone\":\"foo\","
       "      \"subzone\":0,"
       "      \"subzone\":\"foo\""
+      "    },"
+      "    \"metadata\":0,"
+      "    \"metadata\":{"
+      "      \"foo\":0,"
+      "      \"foo\":\"whee\","
+      "      \"foo\":\"whee2\""
       "    }"
       "  }"
       "}");
@@ -304,10 +304,6 @@ TEST(XdsBootstrapTest, BadNode) {
                   "duplicate \"id\" field(.*)"
                   "\"cluster\" field is not a string(.*)"
                   "duplicate \"cluster\" field(.*)"
-                  "\"metadata\" field is not an object(.*)"
-                  "duplicate \"metadata\" field(.*)"
-                  "errors parsing \"metadata\" object(.*)"
-                  "duplicate metadata key \"foo\"(.*)"
                   "\"locality\" field is not an object(.*)"
                   "duplicate \"locality\" field(.*)"
                   "errors parsing \"locality\" object(.*)"
@@ -316,7 +312,11 @@ TEST(XdsBootstrapTest, BadNode) {
                   "\"zone\" field is not a string(.*)"
                   "duplicate \"zone\" field(.*)"
                   "\"subzone\" field is not a string(.*)"
-                  "duplicate \"subzone\" field"));
+                  "duplicate \"subzone\" field(.*)"
+                  "\"metadata\" field is not an object(.*)"
+                  "duplicate \"metadata\" field(.*)"
+                  "errors parsing \"metadata\" object(.*)"
+                  "duplicate metadata key \"foo\""));
   VerifyRegexMatch(error, e);
 }
 

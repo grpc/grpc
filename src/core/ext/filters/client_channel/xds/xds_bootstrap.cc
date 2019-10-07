@@ -239,18 +239,6 @@ grpc_error* XdsBootstrap::ParseNode(grpc_json* json) {
             "duplicate \"cluster\" field"));
       }
       node_->cluster = child->value;
-    } else if (strcmp(child->key, "metadata") == 0) {
-      if (child->type != GRPC_JSON_OBJECT) {
-        error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-            "\"metadata\" field is not an object"));
-      }
-      if (seen_metadata) {
-        error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-            "duplicate \"metadata\" field"));
-      }
-      seen_metadata = true;
-      grpc_error* parse_error = ParseMetadata(child);
-      if (parse_error != GRPC_ERROR_NONE) error_list.push_back(parse_error);
     } else if (strcmp(child->key, "locality") == 0) {
       if (child->type != GRPC_JSON_OBJECT) {
         error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
@@ -263,139 +251,27 @@ grpc_error* XdsBootstrap::ParseNode(grpc_json* json) {
       seen_locality = true;
       grpc_error* parse_error = ParseLocality(child);
       if (parse_error != GRPC_ERROR_NONE) error_list.push_back(parse_error);
+    } else if (strcmp(child->key, "metadata") == 0) {
+      if (child->type != GRPC_JSON_OBJECT) {
+        error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+            "\"metadata\" field is not an object"));
+      }
+      if (seen_metadata) {
+        error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+            "duplicate \"metadata\" field"));
+      }
+      seen_metadata = true;
+      InlinedVector<grpc_error*, 1> parse_errors =
+          ParseMetadataStruct(child, &node_->metadata);
+      if (!parse_errors.empty()) {
+        grpc_error* parse_error = GRPC_ERROR_CREATE_FROM_VECTOR(
+            "errors parsing \"metadata\" object", &parse_errors);
+        error_list.push_back(parse_error);
+      }
     }
   }
   return GRPC_ERROR_CREATE_FROM_VECTOR("errors parsing \"node\" object",
                                        &error_list);
-}
-
-grpc_error* XdsBootstrap::ParseMetadata(grpc_json* json) {
-  InlinedVector<grpc_error*, 1> error_list;
-  node_->metadata.clear();
-  for (grpc_json* child = json->child; child != nullptr; child = child->next) {
-    if (child->key == nullptr) {
-      error_list.push_back(
-          GRPC_ERROR_CREATE_FROM_STATIC_STRING("JSON key is null"));
-    } else {
-      if (node_->metadata.find(child->key) != node_->metadata.end()) {
-        char* msg;
-        gpr_asprintf(&msg, "duplicate metadata key \"%s\"", child->key);
-        error_list.push_back(GRPC_ERROR_CREATE_FROM_COPIED_STRING(msg));
-        gpr_free(msg);
-      }
-      grpc_error* parse_error = GRPC_ERROR_NONE;
-      node_->metadata[child->key] = ParseMetadataValue(child, &parse_error);
-      if (parse_error != GRPC_ERROR_NONE) error_list.push_back(parse_error);
-    }
-  }
-  return GRPC_ERROR_CREATE_FROM_VECTOR("errors parsing \"metadata\" object",
-                                       &error_list);
-}
-
-XdsBootstrap::MetadataValue XdsBootstrap::ParseMetadataValue(
-    grpc_json* json, grpc_error** error) {
-  MetadataValue value;
-  switch (json->type) {
-    case GRPC_JSON_STRING:
-      value.type = MetadataValue::Type::STRING;
-      value.string_value = json->value;
-      break;
-    case GRPC_JSON_NUMBER:
-      value.type = MetadataValue::Type::DOUBLE;
-      errno = 0;  // To distinguish error.
-      value.double_value = strtod(json->value, nullptr);
-      if (errno != 0) {
-        char* msg;
-        gpr_asprintf(
-            &msg, "error parsing numeric value for metadata key \"%s\": \"%s\"",
-            json->key, json->value);
-        *error = GRPC_ERROR_CREATE_FROM_COPIED_STRING(msg);
-        gpr_free(msg);
-      }
-      break;
-    case GRPC_JSON_TRUE:
-      value.type = MetadataValue::Type::BOOL;
-      value.bool_value = true;
-      break;
-    case GRPC_JSON_FALSE:
-      value.type = MetadataValue::Type::BOOL;
-      value.bool_value = false;
-      break;
-    case GRPC_JSON_NULL:
-      value.type = MetadataValue::Type::MD_NULL;
-      break;
-    case GRPC_JSON_ARRAY:
-      value.type = MetadataValue::Type::LIST;
-      value.list_value = ParseMetadataList(json, error);
-      break;
-    case GRPC_JSON_OBJECT:
-      value.type = MetadataValue::Type::STRUCT;
-      value.struct_value = ParseMetadataStruct(json, error);
-      break;
-    default:
-      break;
-  }
-  return value;
-}
-
-std::vector<XdsBootstrap::MetadataValue> XdsBootstrap::ParseMetadataList(
-    grpc_json* json, grpc_error** error) {
-  std::vector<MetadataValue> result;
-  InlinedVector<grpc_error*, 1> error_list;
-  size_t idx = 0;
-  for (grpc_json *child = json->child; child != nullptr;
-       child = child->next, ++idx) {
-    if (child->key != nullptr) {
-      error_list.push_back(
-          GRPC_ERROR_CREATE_FROM_STATIC_STRING("JSON key is non-null"));
-    }
-    grpc_error* parse_error = GRPC_ERROR_NONE;
-    result.emplace_back(ParseMetadataValue(child, &parse_error));
-    // FIXME: add idx to error message
-    if (parse_error != GRPC_ERROR_NONE) error_list.push_back(parse_error);
-  }
-  // Can't use GRPC_ERROR_CREATE_FROM_VECTOR() here, because the error
-  // string is not static in this case.
-  if (!error_list.empty()) {
-    char* msg;
-    gpr_asprintf(&msg, "errors parsing array for key \"%s\"", json->key);
-    *error = GRPC_ERROR_CREATE_FROM_COPIED_STRING(msg);
-    gpr_free(msg);
-    for (size_t i = 0; i < error_list.size(); ++i) {
-      *error = grpc_error_add_child(*error, error_list[i]);
-      GRPC_ERROR_UNREF(error_list[i]);
-    }
-  }
-  return result;
-}
-
-Map<const char*, XdsBootstrap::MetadataValue, StringLess>
-XdsBootstrap::ParseMetadataStruct(grpc_json* json, grpc_error** error) {
-  Map<const char*, MetadataValue, StringLess> result;
-  InlinedVector<grpc_error*, 1> error_list;
-  for (grpc_json* child = json->child; child != nullptr; child = child->next) {
-    if (child->key == nullptr) {
-      error_list.push_back(
-          GRPC_ERROR_CREATE_FROM_STATIC_STRING("JSON key is null"));
-      continue;
-    }
-    grpc_error* parse_error = GRPC_ERROR_NONE;
-    result[child->key] = ParseMetadataValue(child, &parse_error);
-    if (parse_error != GRPC_ERROR_NONE) error_list.push_back(parse_error);
-  }
-  // Can't use GRPC_ERROR_CREATE_FROM_VECTOR() here, because the error
-  // string is not static in this case.
-  if (!error_list.empty()) {
-    char* msg;
-    gpr_asprintf(&msg, "errors parsing struct for key \"%s\"", json->key);
-    *error = GRPC_ERROR_CREATE_FROM_COPIED_STRING(msg);
-    gpr_free(msg);
-    for (size_t i = 0; i < error_list.size(); ++i) {
-      *error = grpc_error_add_child(*error, error_list[i]);
-      GRPC_ERROR_UNREF(error_list[i]);
-    }
-  }
-  return result;
 }
 
 grpc_error* XdsBootstrap::ParseLocality(grpc_json* json) {
@@ -441,6 +317,136 @@ grpc_error* XdsBootstrap::ParseLocality(grpc_json* json) {
   }
   return GRPC_ERROR_CREATE_FROM_VECTOR("errors parsing \"locality\" object",
                                        &error_list);
+}
+
+InlinedVector<grpc_error*, 1> XdsBootstrap::ParseMetadataStruct(
+    grpc_json* json,
+    Map<const char*, XdsBootstrap::MetadataValue, StringLess>* result) {
+  InlinedVector<grpc_error*, 1> error_list;
+  for (grpc_json* child = json->child; child != nullptr; child = child->next) {
+    if (child->key == nullptr) {
+      error_list.push_back(
+          GRPC_ERROR_CREATE_FROM_STATIC_STRING("JSON key is null"));
+      continue;
+    }
+    if (result->find(child->key) != result->end()) {
+      char* msg;
+      gpr_asprintf(&msg, "duplicate metadata key \"%s\"", child->key);
+      error_list.push_back(GRPC_ERROR_CREATE_FROM_COPIED_STRING(msg));
+      gpr_free(msg);
+    }
+    MetadataValue& value = (*result)[child->key];
+    grpc_error* parse_error = ParseMetadataValue(child, 0, &value);
+    if (parse_error != GRPC_ERROR_NONE) error_list.push_back(parse_error);
+  }
+  return error_list;
+}
+
+InlinedVector<grpc_error*, 1> XdsBootstrap::ParseMetadataList(
+    grpc_json* json, std::vector<MetadataValue>* result) {
+  InlinedVector<grpc_error*, 1> error_list;
+  size_t idx = 0;
+  for (grpc_json *child = json->child; child != nullptr;
+       child = child->next, ++idx) {
+    if (child->key != nullptr) {
+      char* msg;
+      gpr_asprintf(&msg, "JSON key is non-null for index %" PRIuPTR, idx);
+      error_list.push_back(GRPC_ERROR_CREATE_FROM_COPIED_STRING(msg));
+      gpr_free(msg);
+    }
+    result->emplace_back();
+    grpc_error* parse_error = ParseMetadataValue(child, idx, &result->back());
+    if (parse_error != GRPC_ERROR_NONE) error_list.push_back(parse_error);
+  }
+  return error_list;
+}
+
+grpc_error* XdsBootstrap::ParseMetadataValue(grpc_json* json, size_t idx,
+                                             MetadataValue* result) {
+  grpc_error* error = GRPC_ERROR_NONE;
+  auto context_func = [json, idx]() {
+    char* context;
+    if (json->key != nullptr) {
+      gpr_asprintf(&context, "key \"%s\"", json->key);
+    } else {
+      gpr_asprintf(&context, "index %" PRIuPTR, idx);
+    }
+    return context;
+  };
+  switch (json->type) {
+    case GRPC_JSON_STRING:
+      result->type = MetadataValue::Type::STRING;
+      result->string_value = json->value;
+      break;
+    case GRPC_JSON_NUMBER:
+      result->type = MetadataValue::Type::DOUBLE;
+      errno = 0;  // To distinguish error.
+      result->double_value = strtod(json->value, nullptr);
+      if (errno != 0) {
+        char* context = context_func();
+        char* msg;
+        gpr_asprintf(&msg, "error parsing numeric value for %s: \"%s\"",
+                     context, json->value);
+        error = GRPC_ERROR_CREATE_FROM_COPIED_STRING(msg);
+        gpr_free(context);
+        gpr_free(msg);
+      }
+      break;
+    case GRPC_JSON_TRUE:
+      result->type = MetadataValue::Type::BOOL;
+      result->bool_value = true;
+      break;
+    case GRPC_JSON_FALSE:
+      result->type = MetadataValue::Type::BOOL;
+      result->bool_value = false;
+      break;
+    case GRPC_JSON_NULL:
+      result->type = MetadataValue::Type::MD_NULL;
+      break;
+    case GRPC_JSON_ARRAY: {
+      result->type = MetadataValue::Type::LIST;
+      InlinedVector<grpc_error*, 1> error_list =
+          ParseMetadataList(json, &result->list_value);
+      if (!error_list.empty()) {
+        // Can't use GRPC_ERROR_CREATE_FROM_VECTOR() here, because the error
+        // string is not static in this case.
+        char* context = context_func();
+        char* msg;
+        gpr_asprintf(&msg, "errors parsing struct for %s", context);
+        error = GRPC_ERROR_CREATE_FROM_COPIED_STRING(msg);
+        gpr_free(context);
+        gpr_free(msg);
+        for (size_t i = 0; i < error_list.size(); ++i) {
+          error = grpc_error_add_child(error, error_list[i]);
+          GRPC_ERROR_UNREF(error_list[i]);
+        }
+      }
+      break;
+    }
+    case GRPC_JSON_OBJECT: {
+      result->type = MetadataValue::Type::STRUCT;
+      InlinedVector<grpc_error*, 1> error_list =
+          ParseMetadataStruct(json, &result->struct_value);
+      if (!error_list.empty()) {
+        // Can't use GRPC_ERROR_CREATE_FROM_VECTOR() here, because the error
+        // string is not static in this case.
+        char* context = context_func();
+        char* msg;
+        gpr_asprintf(&msg, "errors parsing struct for %s", context);
+        error = GRPC_ERROR_CREATE_FROM_COPIED_STRING(msg);
+        gpr_free(context);
+        gpr_free(msg);
+        for (size_t i = 0; i < error_list.size(); ++i) {
+          error = grpc_error_add_child(error, error_list[i]);
+          GRPC_ERROR_UNREF(error_list[i]);
+        }
+      }
+      break;
+    }
+    default:
+      break;
+  }
+  return error;
 }
 
 }  // namespace grpc_core

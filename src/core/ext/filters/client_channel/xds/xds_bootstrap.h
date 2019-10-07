@@ -47,10 +47,10 @@ class XdsBootstrap {
   struct Node {
     const char* id = nullptr;
     const char* cluster = nullptr;
-    Map<const char*, MetadataValue, StringLess> metadata;
     const char* locality_region = nullptr;
     const char* locality_zone = nullptr;
     const char* locality_subzone = nullptr;
+    Map<const char*, MetadataValue, StringLess> metadata;
   };
 
   struct ChannelCreds {
@@ -77,13 +77,14 @@ class XdsBootstrap {
   grpc_error* ParseChannelCredsArray(grpc_json* json);
   grpc_error* ParseChannelCreds(grpc_json* json, size_t idx);
   grpc_error* ParseNode(grpc_json* json);
-  grpc_error* ParseMetadata(grpc_json* json);
-  MetadataValue ParseMetadataValue(grpc_json* json, grpc_error** error);
-  std::vector<MetadataValue> ParseMetadataList(grpc_json* json,
-                                               grpc_error** error);
-  Map<const char*, MetadataValue, StringLess> ParseMetadataStruct(
-      grpc_json* json, grpc_error** error);
   grpc_error* ParseLocality(grpc_json* json);
+
+  InlinedVector<grpc_error*, 1> ParseMetadataStruct(
+      grpc_json* json, Map<const char*, MetadataValue, StringLess>* result);
+  InlinedVector<grpc_error*, 1> ParseMetadataList(
+      grpc_json* json, std::vector<MetadataValue>* result);
+  grpc_error* ParseMetadataValue(grpc_json* json, size_t idx,
+                                 MetadataValue* result);
 
   grpc_slice contents_;
   grpc_json* tree_ = nullptr;
