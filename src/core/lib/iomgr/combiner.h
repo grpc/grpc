@@ -62,8 +62,8 @@ extern grpc_core::DebugOnlyTraceFlag grpc_combiner_trace;
 namespace grpc_core {
 class Combiner {
  public:
-  static void Exec(grpc_closure* closure, grpc_error* error);
-  static void FinallyExec(grpc_closure* closure, grpc_error* error);
+  static void Run(grpc_closure* closure, grpc_error* error);
+  static void FinallyRun(grpc_closure* closure, grpc_error* error);
   Combiner* next_combiner_on_this_exec_ctx = nullptr;
   grpc_closure_scheduler scheduler;
   grpc_closure_scheduler finally_scheduler;

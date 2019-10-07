@@ -341,11 +341,11 @@ static void enqueue_finally(void* closure, grpc_error* error) {
                         GRPC_ERROR_REF(error));
 }
 
-static void Combiner::Exec(grpc_closure* closure, grpc_error* error) {
+static void Combiner::Run(grpc_closure* closure, grpc_error* error) {
   combiner_exec(combiner, closure, error);
 }
 
-static void Combiner::FinallyExec(grpc_closure* closure, grpc_error* error) {
+static void Combiner::FinallyRun(grpc_closure* closure, grpc_error* error) {
   combiner_finally_exec(combiner, closure, exec);
 }
 }  // namespace grpc_core
