@@ -338,10 +338,10 @@ std::unique_ptr<grpc::Server> ServerBuilder::BuildAndStart() {
   }
 
   if (has_callback_methods || callback_generic_service_ != nullptr) {
-    std::pair<grpc::CompletionQueue*, size_t> cb_cq_shards =
+    std::pair<grpc::CompletionQueue**, size_t> cb_cq_shards =
         server->CallbackCQShards();
     for (auto idx = 0; idx < cb_cq_shards.second; idx++) {
-      grpc::CompletionQueue* cq = &cb_cq_shards.first[idx];
+      grpc::CompletionQueue* cq = cb_cq_shards.first[idx];
       grpc_server_register_completion_queue(server->server_, cq->cq(), nullptr);
     }
   }

@@ -284,7 +284,7 @@ class Server : public grpc::ServerInterface, private grpc::GrpcLibraryCodegen {
   }
 
   CompletionQueue* CallbackCQ() override;
-  std::pair<grpc::CompletionQueue*, size_t> CallbackCQShards();
+  std::pair<grpc::CompletionQueue**, size_t> CallbackCQShards();
 
   grpc_impl::ServerInitializer* initializer();
 
@@ -375,7 +375,7 @@ class Server : public grpc::ServerInterface, private grpc::GrpcLibraryCodegen {
   // It is _not owned_ by the server; ownership belongs with its internal
   // shutdown callback tag (invoked when the CQ is fully shutdown).
   // It is protected by mu_
-  CompletionQueue* callback_cq_shards_ = nullptr;
+  CompletionQueue** callback_cq_shards_ = nullptr;
   size_t num_cb_cq_shards_ = 0;
   void MakeCallbackCQShardsLocked();
 };
