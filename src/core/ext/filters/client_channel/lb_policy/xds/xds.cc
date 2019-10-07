@@ -1707,13 +1707,11 @@ class XdsFactory : public LoadBalancingPolicyFactory {
       // xds was mentioned as a policy in the deprecated loadBalancingPolicy
       // field or in the client API.
       *error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-          "field:loadBalancingPolicy error:Xds Parser has required field - "
-          "balancerName. Please use loadBalancingConfig field of service "
-          "config instead.");
+          "field:loadBalancingPolicy error:xds policy requires configuration. "
+          "Please use loadBalancingConfig field of service config instead.");
       return nullptr;
     }
     GPR_DEBUG_ASSERT(strcmp(json->key, name()) == 0);
-
     InlinedVector<grpc_error*, 3> error_list;
     RefCountedPtr<LoadBalancingPolicy::Config> child_policy;
     RefCountedPtr<LoadBalancingPolicy::Config> fallback_policy;
