@@ -22,8 +22,7 @@ var services = require('./helloworld_grpc_pb');
 var grpc = require('grpc');
 
 function main() {
-  var client = new services.GreeterClient('localhost:50051',
-                                          grpc.credentials.createInsecure());
+  var client = new services.GreeterClient('localhost:50051', grpc.credentials.createInsecure());
   var request = new messages.HelloRequest();
   var user;
   if (process.argv.length >= 3) {
