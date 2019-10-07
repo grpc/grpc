@@ -452,10 +452,15 @@ static void add_key(grpc_chttp2_hpack_compressor* c, grpc_mdelem elem,
   }
 }
 
+template <bool static_entry>
 static void emit_indexed(grpc_chttp2_hpack_compressor* c, uint32_t elem_index,
                          framer_state* st) {
   GRPC_STATS_INC_HPACK_SEND_INDEXED();
-  uint32_t len = GRPC_CHTTP2_VARINT_LENGTH(elem_index, 1);
+  const uint32_t len =
+      static_entry ? 1 : GRPC_CHTTP2_VARINT_LENGTH(elem_index, 1);
+  if (static_entry) {
+    GPR_DEBUG_ASSERT(len == GRPC_CHTTP2_VARINT_LENGTH(elem_index, 1));
+  }
   GRPC_CHTTP2_WRITE_VARINT(elem_index, 1, 0x80, add_tiny_header_data(st, len),
                            len);
 }
@@ -548,7 +553,7 @@ static void emit_lithdr(grpc_chttp2_hpack_compressor* c, uint32_t key_index,
   add_header_data(st, value.data);
 }
 
-template <EmitLitHdrVType type>
+template <EmitLitHdrVType type, bool key_definitely_refcounted>
 static void emit_lithdr_v(grpc_chttp2_hpack_compressor* c, grpc_mdelem elem,
                           framer_state* st) {
   switch (type) {
@@ -560,8 +565,11 @@ static void emit_lithdr_v(grpc_chttp2_hpack_compressor* c, grpc_mdelem elem,
       break;
   }
   GRPC_STATS_INC_HPACK_SEND_UNCOMPRESSED();
+  const grpc_slice& elem_key = GRPC_MDKEY(elem);
   const uint32_t len_key =
-      static_cast<uint32_t>(GRPC_SLICE_LENGTH(GRPC_MDKEY(elem)));
+      key_definitely_refcounted
+          ? static_cast<uint32_t>(elem_key.data.refcounted.length)
+          : static_cast<uint32_t>(GRPC_SLICE_LENGTH(GRPC_MDKEY(elem)));
   const wire_value value =
       type == EmitLitHdrVType::INC_IDX_V
           ? get_wire_value<true>(elem, st->use_true_binary_metadata)
@@ -574,7 +582,13 @@ static void emit_lithdr_v(grpc_chttp2_hpack_compressor* c, grpc_mdelem elem,
   uint8_t* key_buf = add_tiny_header_data(st, 1 + len_key_len);
   key_buf[0] = type == EmitLitHdrVType::INC_IDX_V ? 0x40 : 0x00;
   GRPC_CHTTP2_WRITE_VARINT(len_key, 1, 0x00, &key_buf[1], len_key_len);
-  add_header_data(st, grpc_slice_ref_internal(GRPC_MDKEY(elem)));
+  if (key_definitely_refcounted) {
+    GPR_DEBUG_ASSERT(elem_key.refcount != nullptr);
+    elem_key.refcount->Ref();
+  } else {
+    grpc_slice_ref_internal(elem_key);
+  }
+  add_header_data(st, elem_key);
   uint8_t* value_buf = add_tiny_header_data(
       st, len_val_len + (value.insert_null_before_wire_value ? 1 : 0));
   GRPC_CHTTP2_WRITE_VARINT(len_val, 1, value.huffman_prefix, value_buf,
@@ -642,7 +656,7 @@ static EmitIndexedStatus maybe_emit_indexed(grpc_chttp2_hpack_compressor* c,
   if (GetMatchingIndex<MetadataComparator>(c->elem_table.entries, elem,
                                            elem_hash, &indices_key) &&
       indices_key > c->tail_remote_index) {
-    emit_indexed(c, dynidx(c, indices_key), st);
+    emit_indexed<false>(c, dynidx(c, indices_key), st);
     return EmitIndexedStatus(elem_hash, true, false);
   }
   /* Didn't hit either cuckoo index, so no emit. */
@@ -688,7 +702,7 @@ static void hpack_enc(grpc_chttp2_hpack_compressor* c, grpc_mdelem elem,
   const bool key_interned = elem_interned || grpc_slice_is_interned(elem_key);
   /* Key is not interned, emit literals. */
   if (!key_interned) {
-    emit_lithdr_v<EmitLitHdrVType::NO_IDX_V>(c, elem, st);
+    emit_lithdr_v<EmitLitHdrVType::NO_IDX_V, false>(c, elem, st);
     return;
   }
   /* Interned metadata => maybe already indexed. */
@@ -718,9 +732,9 @@ static void hpack_enc(grpc_chttp2_hpack_compressor* c, grpc_mdelem elem,
   /* no elem, key in the table... fall back to literal emission */
   const bool should_add_key = !elem_interned && decoder_space_available;
   if (should_add_elem || should_add_key) {
-    emit_lithdr_v<EmitLitHdrVType::INC_IDX_V>(c, elem, st);
+    emit_lithdr_v<EmitLitHdrVType::INC_IDX_V, true>(c, elem, st);
   } else {
-    emit_lithdr_v<EmitLitHdrVType::NO_IDX_V>(c, elem, st);
+    emit_lithdr_v<EmitLitHdrVType::NO_IDX_V, true>(c, elem, st);
   }
   if (should_add_elem) {
     add_elem(c, elem, decoder_space_usage, elem_hash, key_hash);
@@ -859,7 +873,7 @@ void grpc_chttp2_encode_header(grpc_chttp2_hpack_compressor* c,
         (static_index =
              reinterpret_cast<grpc_core::StaticMetadata*>(GRPC_MDELEM_DATA(md))
                  ->StaticIndex()) < GRPC_CHTTP2_LAST_STATIC_ENTRY) {
-      emit_indexed(c, static_cast<uint32_t>(static_index + 1), &st);
+      emit_indexed<true>(c, static_cast<uint32_t>(static_index + 1), &st);
     } else {
       hpack_enc(c, md, &st);
     }
@@ -873,7 +887,7 @@ void grpc_chttp2_encode_header(grpc_chttp2_hpack_compressor* c,
         (static_index = reinterpret_cast<grpc_core::StaticMetadata*>(
                             GRPC_MDELEM_DATA(l->md))
                             ->StaticIndex()) < GRPC_CHTTP2_LAST_STATIC_ENTRY) {
-      emit_indexed(c, static_cast<uint32_t>(static_index + 1), &st);
+      emit_indexed<true>(c, static_cast<uint32_t>(static_index + 1), &st);
     } else {
       hpack_enc(c, l->md, &st);
     }

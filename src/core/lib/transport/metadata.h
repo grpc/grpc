@@ -235,7 +235,7 @@ class RefcountedMdBase {
       : key_(key), value_(value), refcnt_(1) {}
   RefcountedMdBase(const grpc_slice& key, const grpc_slice& value,
                    uint32_t hash)
-      : key_(key), value_(value), refcnt_(1), hash_(hash) {}
+      : key_(key), value_(value), hash_(hash), refcnt_(1) {}
 
   const grpc_slice& key() const { return key_; }
   const grpc_slice& value() const { return value_; }
@@ -277,8 +277,8 @@ class RefcountedMdBase {
   /* must be byte compatible with grpc_mdelem_data */
   grpc_slice key_;
   grpc_slice value_;
-  grpc_core::Atomic<intptr_t> refcnt_;
   uint32_t hash_ = 0;
+  grpc_core::Atomic<intptr_t> refcnt_;
 };
 
 class InternedMetadata : public RefcountedMdBase {
