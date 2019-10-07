@@ -1186,7 +1186,9 @@ void grpc_server_setup_transport(
     chand->channelz_socket_uuid = 0;
   }
 
-  size_t cq_idx = static_cast<size_t>(rand()) % s->cq_count;
+  const size_t cq_idx = gpr_murmur_hash3(&transport, sizeof(grpc_transport*),
+                                         grpc_core::g_hash_seed) &
+                        (s->cq_count - 1);
   chand->cq_idx = cq_idx;
 
   num_registered_methods = 0;

@@ -17,6 +17,7 @@
 
 #include <grpcpp/server.h>
 
+#include <cmath>
 #include <cstdlib>
 #include <sstream>
 #include <type_traits>
@@ -1002,17 +1003,14 @@ Server::Server(
   }
 
   server_ = grpc_server_create(&channel_args, nullptr);
+  MakeCallbackCQShardsLocked();
 }
 
 Server::~Server() {
   {
     grpc::internal::ReleasableMutexLock lock(&mu_);
-    if (callback_cq_shards_ != nullptr) {
-      for (auto idx = 0; idx < num_cb_cq_shards_; idx++) {
-        callback_cq_shards_[idx]->Shutdown();
-      }
-      gpr_free(callback_cq_shards_);
-      callback_cq_shards_ = nullptr;
+    for (auto* cq : callback_cq_shards_) {
+      cq->Shutdown();
     }
     if (started_ && !shutdown_) {
       lock.Unlock();
@@ -1371,16 +1369,19 @@ grpc::ServerInitializer* Server::initializer() {
 
 static constexpr unsigned kDefaultCallbackCqShards = 32;
 void GPR_ATTRIBUTE_NOINLINE Server::MakeCallbackCQShardsLocked() {
-  num_cb_cq_shards_ = std::max(gpr_cpu_num_cores(), kDefaultCallbackCqShards);
-  callback_cq_shards_ = static_cast<CompletionQueue**>(
-      gpr_malloc(num_cb_cq_shards_ * sizeof(*callback_cq_shards_)));
-  for (auto idx = 0; idx < num_cb_cq_shards_; idx++) {
+  const unsigned num_cores = gpr_cpu_num_cores();
+  const size_t num_cb_cq_shards =
+      num_cores == 0 ? kDefaultCallbackCqShards
+                     : static_cast<size_t>(pow(
+                           2, static_cast<int>(ceil(log(num_cores) / log(2)))));
+  callback_cq_shards_.reserve(num_cb_cq_shards);
+  for (auto idx = 0; idx < num_cb_cq_shards; idx++) {
     auto* shutdown_callback = new grpc::ShutdownCallback;
     CompletionQueue* cq =
         new grpc::CompletionQueue(grpc_completion_queue_attributes{
             GRPC_CQ_CURRENT_VERSION, GRPC_CQ_CALLBACK, GRPC_CQ_DEFAULT_POLLING,
             shutdown_callback});
-    callback_cq_shards_[idx] = cq;
+    callback_cq_shards_.push_back(cq);
 
     // Transfer ownership of the new cq to its own shutdown callback
     shutdown_callback->TakeCQ(cq);
@@ -1390,21 +1391,15 @@ void GPR_ATTRIBUTE_NOINLINE Server::MakeCallbackCQShardsLocked() {
 grpc::CompletionQueue* Server::CallbackCQ() {
   // TODO(vjpai): Consider using a single global CQ for the default CQ
   // if there is no explicit per-server CQ registered
-  grpc::internal::MutexLock l(&mu_);
-  if (GPR_UNLIKELY(callback_cq_shards_ == nullptr)) {
-    MakeCallbackCQShardsLocked();
-  }
-  return callback_cq_shards_[rand() % num_cb_cq_shards_];
+  GPR_DEBUG_ASSERT(!callback_cq_shards_.empty());
+  return callback_cq_shards_[rand() % callback_cq_shards_.size()];
 }
 
 std::pair<grpc::CompletionQueue**, size_t> Server::CallbackCQShards() {
-  grpc::internal::MutexLock l(&mu_);
-  if (GPR_UNLIKELY(callback_cq_shards_ == nullptr)) {
-    MakeCallbackCQShardsLocked();
-  }
+  GPR_DEBUG_ASSERT(!callback_cq_shards_.empty());
   return std::make_pair<grpc::CompletionQueue**, size_t>(
-      std::forward<grpc::CompletionQueue**>(callback_cq_shards_),
-      std::forward<size_t>(num_cb_cq_shards_));
+      std::forward<grpc::CompletionQueue**>(&callback_cq_shards_[0]),
+      std::forward<size_t>(callback_cq_shards_.size()));
 }
 
 }  // namespace grpc_impl

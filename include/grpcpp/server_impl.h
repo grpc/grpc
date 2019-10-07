@@ -372,11 +372,11 @@ class Server : public grpc::ServerInterface, private grpc::GrpcLibraryCodegen {
 
   // callback_cq_shards_references the callbackable completion queues associated
   // with this server (if any). It is set on the first call to CallbackCQ().
-  // It is _not owned_ by the server; ownership belongs with its internal
-  // shutdown callback tag (invoked when the CQ is fully shutdown).
-  // It is protected by mu_
-  CompletionQueue** callback_cq_shards_ = nullptr;
-  size_t num_cb_cq_shards_ = 0;
+  // The CQs themselves are _not owned_ by the server; ownership belongs with
+  // the internal shutdown callback tag (invoked when the CQ is fully shutdown).
+  // It is protected by mu_. This is why callback_cq_shards_ is a vector of
+  // pointers, and not a vector of completion queues.
+  std::vector<CompletionQueue*> callback_cq_shards_;
   void MakeCallbackCQShardsLocked();
 };
 
