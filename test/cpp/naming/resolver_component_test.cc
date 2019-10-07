@@ -192,7 +192,7 @@ struct ArgsStruct {
   gpr_mu* mu;
   grpc_pollset* pollset;
   grpc_pollset_set* pollset_set;
-  grpc_combiner* lock;
+  grpc_core::Combiner* lock;
   grpc_channel_args* channel_args;
   vector<GrpcLBAddress> expected_addrs;
   std::string expected_service_config_string;
@@ -616,9 +616,9 @@ void RunResolvesRelevantRecordsTest(
                                                   CreateResultHandler(&args));
   grpc_channel_args_destroy(resolver_args);
   gpr_free(whole_uri);
-  GRPC_CLOSURE_SCHED(GRPC_CLOSURE_CREATE(StartResolvingLocked, resolver.get(),
-                                         grpc_combiner_scheduler(args.lock)),
-                     GRPC_ERROR_NONE);
+  args.lock->Run(
+      GRPC_CLOSURE_CREATE(StartResolvingLocked, resolver.get(), nullptr),
+      GRPC_ERROR_NONE);
   grpc_core::ExecCtx::Get()->Flush();
   PollPollsetUntilRequestDone(&args);
   ArgsFinish(&args);

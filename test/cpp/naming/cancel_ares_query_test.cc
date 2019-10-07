@@ -81,7 +81,7 @@ struct ArgsStruct {
   gpr_mu* mu;
   grpc_pollset* pollset;
   grpc_pollset_set* pollset_set;
-  grpc_combiner* lock;
+  grpc_core::Combiner* lock;
   grpc_channel_args* channel_args;
 };
 

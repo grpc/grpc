@@ -71,7 +71,7 @@ class XdsClient : public InternallyRefCounted<XdsClient> {
 
   // If *error is not GRPC_ERROR_NONE after construction, then there was
   // an error initializing the client.
-  XdsClient(grpc_combiner* combiner, grpc_pollset_set* interested_parties,
+  XdsClient(Combiner* combiner, grpc_pollset_set* interested_parties,
             StringView server_name,
             UniquePtr<ServiceConfigWatcherInterface> watcher,
             const grpc_channel_args& channel_args, grpc_error** error);
@@ -194,7 +194,7 @@ class XdsClient : public InternallyRefCounted<XdsClient> {
 
   UniquePtr<char> build_version_;
 
-  grpc_combiner* combiner_;
+  Combiner* combiner_;
   grpc_pollset_set* interested_parties_;
 
   UniquePtr<XdsBootstrap> bootstrap_;

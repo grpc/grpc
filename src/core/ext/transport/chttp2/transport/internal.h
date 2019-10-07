@@ -300,7 +300,7 @@ struct grpc_chttp2_transport {
 
   grpc_resource_user* resource_user;
 
-  grpc_combiner* combiner;
+  grpc_core::Combiner* combiner;
 
   grpc_closure* notify_on_receive_settings = nullptr;
 
@@ -459,6 +459,8 @@ struct grpc_chttp2_transport {
 
   /* next bdp ping timer */
   bool have_next_bdp_ping_timer = false;
+  /** If start_bdp_ping_locked has been called */
+  bool bdp_ping_started = false;
   grpc_timer next_bdp_ping_timer;
 
   /* keep-alive ping support */
@@ -480,6 +482,8 @@ struct grpc_chttp2_transport {
   grpc_millis keepalive_timeout;
   /** if keepalive pings are allowed when there's no outstanding streams */
   bool keepalive_permit_without_calls = false;
+  /** If start_keepalive_ping_locked has been called */
+  bool keepalive_ping_started = false;
   /** keep-alive state machine state */
   grpc_chttp2_keepalive_state keepalive_state;
   grpc_core::ContextList* cl = nullptr;
@@ -861,5 +865,7 @@ void grpc_chttp2_fail_pending_writes(grpc_chttp2_transport* t,
     initialization */
 void grpc_chttp2_config_default_keepalive_args(grpc_channel_args* args,
                                                bool is_client);
+
+void grpc_chttp2_retry_initiate_ping(void* tp, grpc_error* error);
 
 #endif /* GRPC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_INTERNAL_H */
