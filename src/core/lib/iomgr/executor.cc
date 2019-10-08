@@ -54,6 +54,7 @@ namespace grpc_core {
 namespace {
 
 GPR_TLS_DECL(g_this_thread_state);
+gpr_atm g_thread_state_cleared;
 
 Executor* executors[static_cast<size_t>(ExecutorType::NUM_EXECUTORS)];
 
@@ -212,6 +213,7 @@ void Executor::SetThreading(bool threading) {
       RunClosures(thd_state_[i].name, thd_state_[i].elems);
     }
 
+    gpr_atm_rel_store(&g_thread_state_cleared, 1);
     gpr_free(thd_state_);
     gpr_tls_destroy(&g_this_thread_state);
 
@@ -232,6 +234,7 @@ void Executor::Shutdown() { SetThreading(false); }
 void Executor::ThreadMain(void* arg) {
   ThreadState* ts = static_cast<ThreadState*>(arg);
   gpr_tls_set(&g_this_thread_state, reinterpret_cast<intptr_t>(ts));
+  gpr_atm_rel_store(&g_thread_state_cleared, 0);
 
   grpc_core::ExecCtx exec_ctx(GRPC_EXEC_CTX_FLAG_IS_INTERNAL_THREAD);
 
@@ -265,14 +268,9 @@ void Executor::ThreadMain(void* arg) {
     subtract_depth = RunClosures(ts->name, closures);
   }
 
-    // We have an issue with Apple platforms where applying gpr_tls_set here
-    // leads to an EAGAIN error while performing a gpr_tls_get, so we are
-    // skipping this cleanup for Apple platforms. See PR #19978
-    // TODO(mhaidry) : Fix this by switching to using thread_local once we have
-    // support for it in Xcode (PR #20413)or whatever else it takes
-#if !defined(__APPLE__)
-  gpr_tls_set(&g_this_thread_state, reinterpret_cast<intptr_t>(nullptr));
-#endif  // !__APPLE__
+  if (gpr_atm_acq_load(&g_thread_state_cleared) == 0) {
+    gpr_tls_set(&g_this_thread_state, reinterpret_cast<intptr_t>(nullptr));
+  }
 }
 
 void Executor::Enqueue(grpc_closure* closure, grpc_error* error,
