@@ -73,6 +73,7 @@ static void do_basic_init(void) {
   g_shutting_down = false;
   grpc_register_built_in_plugins();
   grpc_cq_global_init();
+  grpc_core::grpc_executor_global_init();
   gpr_time_init();
   g_initializations = 0;
 }
