@@ -37,7 +37,7 @@ inline T* New(Args&&... args) {
   return new (p) T(std::forward<Args>(args)...);
 }
 
-// Gets the base pointer of any class, in case of multiple inheritence.
+// Gets the base pointer of any class, in case of multiple inheritance.
 // Used by Delete and friends.
 template <typename T, bool isPolymorphic>
 struct BasePointerGetter {

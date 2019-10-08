@@ -292,7 +292,7 @@ class Subchannel {
     bool empty() const { return watchers_.empty(); }
 
    private:
-    // TODO(roth): Once we can use C++-14 heterogenous lookups, this can
+    // TODO(roth): Once we can use C++-14 heterogeneous lookups, this can
     // be a set instead of a map.
     Map<ConnectivityStateWatcherInterface*,
         OrphanablePtr<ConnectivityStateWatcherInterface>>
