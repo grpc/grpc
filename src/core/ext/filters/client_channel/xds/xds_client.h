@@ -108,6 +108,8 @@ class XdsClient : public InternallyRefCounted<XdsClient> {
   static RefCountedPtr<XdsClient> GetFromChannelArgs(
       const grpc_channel_args& args);
 
+  grpc_combiner* combiner() { return combiner_; }
+
  private:
   class ChannelState;
 
