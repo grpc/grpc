@@ -153,7 +153,7 @@ void NativeDnsResolver::OnNextResolution(void* arg, grpc_error* error) {
       GRPC_CLOSURE_INIT(&r->on_next_resolution_,
                         NativeDnsResolver::OnNextResolutionLocked, this,
                         nullptr),
-      GRPC_ERROR_NONE);
+      GRPC_ERROR_REF(error));
 }
 
 void NativeDnsResolver::OnNextResolutionLocked(void* arg, grpc_error* error) {
@@ -170,7 +170,7 @@ void NativeDnsResolver::OnResolved(void* arg, grpc_error* error) {
   r->combiner()->Run(
       GRPC_CLOSURE_INIT(&on_resolved_, NativeDnsResolver::OnResolvedLocked,
                         this, nullptr),
-      GRPC_ERROR_NONE)
+      GRPC_ERROR_REF(error))
 }
 
 void NativeDnsResolver::OnResolvedLocked(void* arg, grpc_error* error) {

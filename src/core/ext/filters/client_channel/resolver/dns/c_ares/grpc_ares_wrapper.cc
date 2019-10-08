@@ -694,6 +694,14 @@ typedef struct grpc_resolve_address_ares_request {
   grpc_ares_request* ares_request = nullptr;
 } grpc_resolve_address_ares_request;
 
+static void on_dns_lookup_done(void* arg, grpc_error* error) {
+  grpc_resolve_address_ares_request* r =
+      static_cast<grpc_resolve_address_ares_request*>(arg);
+  r->combiner->Run(GRPC_CLOSURE_INIT(&r->on_dns_lookup_done_locked,
+                                     on_dns_lookup_done_locked, r, nullptr),
+                   GRPC_ERROR_REF(error));
+}
+
 static void on_dns_lookup_done_locked(void* arg, grpc_error* error) {
   grpc_resolve_address_ares_request* r =
       static_cast<grpc_resolve_address_ares_request*>(arg);
@@ -723,6 +731,8 @@ static void grpc_resolve_address_invoke_dns_lookup_ares_locked(
     void* arg, grpc_error* unused_error) {
   grpc_resolve_address_ares_request* r =
       static_cast<grpc_resolve_address_ares_request*>(arg);
+  GRPC_CLOSURE_INIT(&r->on_dns_lookup_done_locked, on_dns_lookup_done, r,
+                    grpc_schedule_on_exec_ctx);
   r->ares_request = grpc_dns_lookup_ares_locked(
       nullptr /* dns_server */, r->name, r->default_port, r->interested_parties,
       &r->on_dns_lookup_done_locked, &r->addresses, false /* check_grpclb */,
@@ -740,14 +750,12 @@ static void grpc_resolve_address_ares_impl(const char* name,
   r->combiner = grpc_combiner_create();
   r->addrs_out = addrs;
   r->on_resolve_address_done = on_done;
-  GRPC_CLOSURE_INIT(&r->on_dns_lookup_done_locked, on_dns_lookup_done_locked, r,
-                    grpc_combiner_scheduler(r->combiner));
   r->name = name;
   r->default_port = default_port;
   r->interested_parties = interested_parties;
-  GRPC_CLOSURE_SCHED(
+  r->combiner->Run(
       GRPC_CLOSURE_CREATE(grpc_resolve_address_invoke_dns_lookup_ares_locked, r,
-                          grpc_combiner_scheduler(r->combiner)),
+                          nullptr),
       GRPC_ERROR_NONE);
 }
 
