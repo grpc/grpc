@@ -697,29 +697,14 @@ void XdsLb::ShutdownLocked() {
   }
   fallback_policy_.reset();
   pending_fallback_policy_.reset();
-  xds_client_.reset();
-  // TODO(roth): When we instantiate the XdsClient in the resolver
-  // instead of here, re-enable the code below.  Right now, we need to NOT
-  // cancel the watches, since the watchers are holding refs to this LB
-  // policy, and it causes polling-related crashes when this LB policy's
-  // pollset_set goes away before the one in the XdsClient object.  However,
-  // once the resolver becomes the owner of the XdsClient object, it will be
-  // using the pollset_set of the resolver, and the resolver will be kept
-  // alive until after the XdsClient is destroyed via the ServiceConfigWatcher.
-  // At that point, we will not need to prevent this LB policy from being
-  // destroyed before the XdsClient, but we WILL need to drop these refs so
-  // that the LB policy will be destroyed if the XdsClient object is not being
-  // destroyed at the same time (e.g., if this LB policy is going away
-  // due to an RDS update that changed the clusters we're using).
-#if 0
   // Cancel the endpoint watch here instead of in our dtor, because the
   // watcher holds a ref to us.
   if (xds_client_ != nullptr) {
     xds_client_->CancelEndpointDataWatch(StringView(server_name_),
                                          endpoint_watcher_);
     xds_client_->RemoveClientStats(StringView(server_name_), &client_stats_);
+    xds_client_.reset();
   }
-#endif
 }
 
 //
