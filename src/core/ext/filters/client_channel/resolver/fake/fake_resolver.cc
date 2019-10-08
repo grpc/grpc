@@ -128,7 +128,7 @@ void FakeResolver::RequestReresolutionLocked() {
       reresolution_closure_pending_ = true;
       Ref().release();  // ref held by closure
       GRPC_CLOSURE_INIT(&reresolution_closure_, ReturnReresolutionResult, this,
-                        grpc_combiner_scheduler(combiner()));
+                        nullptr);
       combiner()->Run(&reresolution_closure_, GRPC_ERROR_NONE);
     }
   }
