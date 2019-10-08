@@ -12,6 +12,9 @@ build:opt --copt=-Wframe-larger-than=16384
 
 build:dbg --compilation_mode=dbg
 
+build:windows_opt --compilation_mode=opt
+build:windows_dbg --compilation_mode=dbg
+
 build:asan --strip=never
 build:asan --copt=-fsanitize=address
 build:asan --copt=-O0
