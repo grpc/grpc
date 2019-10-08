@@ -298,12 +298,12 @@ class XdsClient::ChannelState::StateWatcher
     : public AsyncConnectivityStateWatcherInterface {
  public:
   explicit StateWatcher(RefCountedPtr<ChannelState> parent)
-      : AsyncConnectivityStateWatcherInterface(
-            grpc_combiner_scheduler(parent->xds_client()->combiner_)),
+      : AsyncConnectivityStateWatcherInterface(parent->xds_client()->combiner_),
         parent_(std::move(parent)) {}
 
  private:
-  void OnConnectivityStateChange(grpc_connectivity_state new_state) override {
+  void OnConnectivityStateChange(
+      grpc_connectivity_state new_state) override {
     if (!parent_->shutting_down_ &&
         new_state == GRPC_CHANNEL_TRANSIENT_FAILURE) {
       // In TRANSIENT_FAILURE.  Notify all watchers of error.

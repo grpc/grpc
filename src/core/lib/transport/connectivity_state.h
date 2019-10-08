@@ -69,8 +69,8 @@ class AsyncConnectivityStateWatcherInterface
   class Notifier;
 
   explicit AsyncConnectivityStateWatcherInterface(
-      grpc_closure_scheduler* scheduler = grpc_schedule_on_exec_ctx)
-      : scheduler_(scheduler) {}
+      grpc_core::Combiner* combiner = nullptr)
+      : combiner_(combiner) {}
 
   // Invoked asynchronously when Notify() is called.
   virtual void OnConnectivityStateChange(grpc_connectivity_state new_state) = 0;
