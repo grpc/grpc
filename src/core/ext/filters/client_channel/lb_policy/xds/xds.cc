@@ -746,6 +746,10 @@ void XdsLb::UpdateLocked(UpdateArgs args) {
     // TODO(roth): When we move instantiation of the XdsClient into the
     // xds resolver, add proper error handling there.
     GPR_ASSERT(error == GRPC_ERROR_NONE);
+    if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_xds_trace)) {
+      gpr_log(GPR_INFO, "[xdslb %p] Created xds client %p", this,
+              xds_client_.get());
+    }
     endpoint_watcher_ = New<EndpointWatcher>(Ref());
     xds_client_->WatchEndpointData(
         StringView(server_name_),
@@ -774,10 +778,9 @@ void XdsLb::UpdateLocked(UpdateArgs args) {
 
 void XdsLb::MaybeCancelFallbackAtStartupChecks() {
   if (!fallback_at_startup_checks_pending_) return;
-  gpr_log(GPR_INFO,
-          "[xdslb %p] Cancelling fallback timer and LB channel connectivity "
-          "watch",
-          this);
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_xds_trace)) {
+    gpr_log(GPR_INFO, "[xdslb %p] Cancelling fallback timer", this);
+  }
   grpc_timer_cancel(&lb_fallback_timer_);
   fallback_at_startup_checks_pending_ = false;
 }
@@ -788,12 +791,10 @@ void XdsLb::OnFallbackTimerLocked(void* arg, grpc_error* error) {
   // this callback actually runs, don't fall back.
   if (xdslb_policy->fallback_at_startup_checks_pending_ &&
       !xdslb_policy->shutting_down_ && error == GRPC_ERROR_NONE) {
-    if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_xds_trace)) {
-      gpr_log(GPR_INFO,
-              "[xdslb %p] Child policy not ready after fallback timeout; "
-              "entering fallback mode",
-              xdslb_policy);
-    }
+    gpr_log(GPR_INFO,
+            "[xdslb %p] Child policy not ready after fallback timeout; "
+            "entering fallback mode",
+            xdslb_policy);
     xdslb_policy->fallback_at_startup_checks_pending_ = false;
     xdslb_policy->UpdateFallbackPolicyLocked();
   }
@@ -1410,14 +1411,14 @@ XdsLb::PriorityList::LocalityMap::Locality::CreateChildPolicyLocked(
   if (GPR_UNLIKELY(lb_policy == nullptr)) {
     gpr_log(GPR_ERROR,
             "[xdslb %p] Locality %p %s: failure creating child policy %s",
-            locality_map_.get(), this, name_->AsHumanReadableString(), name);
+            xds_policy(), this, name_->AsHumanReadableString(), name);
     return nullptr;
   }
   helper->set_child(lb_policy.get());
   if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_xds_trace)) {
     gpr_log(GPR_INFO,
             "[xdslb %p] Locality %p %s: Created new child policy %s (%p)",
-            locality_map_.get(), this, name_->AsHumanReadableString(), name,
+            xds_policy(), this, name_->AsHumanReadableString(), name,
             lb_policy.get());
   }
   // Add the xDS's interested_parties pollset_set to that of the newly created
@@ -1515,7 +1516,7 @@ void XdsLb::PriorityList::LocalityMap::Locality::UpdateLocked(
     if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_xds_trace)) {
       gpr_log(GPR_INFO,
               "[xdslb %p] Locality %p %s: Creating new %schild policy %s",
-              locality_map_.get(), this, name_->AsHumanReadableString(),
+              xds_policy(), this, name_->AsHumanReadableString(),
               child_policy_ == nullptr ? "" : "pending ", child_policy_name);
     }
     auto& lb_policy =
@@ -1534,7 +1535,7 @@ void XdsLb::PriorityList::LocalityMap::Locality::UpdateLocked(
   // Update the policy.
   if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_xds_trace)) {
     gpr_log(GPR_INFO, "[xdslb %p] Locality %p %s: Updating %schild policy %p",
-            locality_map_.get(), this, name_->AsHumanReadableString(),
+            xds_policy(), this, name_->AsHumanReadableString(),
             policy_to_update == pending_child_policy_.get() ? "pending " : "",
             policy_to_update);
   }
@@ -1544,7 +1545,7 @@ void XdsLb::PriorityList::LocalityMap::Locality::UpdateLocked(
 void XdsLb::PriorityList::LocalityMap::Locality::ShutdownLocked() {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_xds_trace)) {
     gpr_log(GPR_INFO, "[xdslb %p] Locality %p %s: shutting down locality",
-            locality_map_.get(), this, name_->AsHumanReadableString());
+            xds_policy(), this, name_->AsHumanReadableString());
   }
   // Remove the child policy's interested_parties pollset_set from the
   // xDS policy.
