@@ -302,8 +302,7 @@ class XdsClient::ChannelState::StateWatcher
         parent_(std::move(parent)) {}
 
  private:
-  void OnConnectivityStateChange(
-      grpc_connectivity_state new_state) override {
+  void OnConnectivityStateChange(grpc_connectivity_state new_state) override {
     if (!parent_->shutting_down_ &&
         new_state == GRPC_CHANNEL_TRANSIENT_FAILURE) {
       // In TRANSIENT_FAILURE.  Notify all watchers of error.
