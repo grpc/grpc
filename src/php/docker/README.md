@@ -11,7 +11,7 @@ different PHP environments.
 To build all docker images:
 
 ```sh
-# cd grpc
+$ cd grpc
 $ ./src/php/bin/build_all_docker_images.sh
 
 # or to only build some selected images
@@ -35,15 +35,24 @@ $ ./src/php/bin/run_all_docker_images.sh grpc-ext php-src
 $ ./src/php/bin/run_all_docker_images.sh --cmds
 ```
 
-
-## `grpc-ext`
-
+## Build and Run Specified Image
+### `grpc-ext`
 This image builds the full `grpc` PECL extension (effectively the current
 release candidate), installs it against the current PHP version, and runs the
 unit tests.
 
+Build `grpc-ext` docker image:
+```sh
+$ cd grpc
+$ docker build -t grpc-php/grpc-ext -f ./src/php/docker/grpc-ext/Dockerfile .
+```
 
-## `grpc-src`
+ Run image:
+```sh
+$ docker run -it --rm grpc-php/grpc-ext
+```
+
+### `grpc-src`
 
 This image builds the `grpc` PECL extension in a 'thin' way, only containing
 the gRPC extension source files. The gRPC C Core library is expected to be
@@ -54,14 +63,34 @@ This also allows us to compile our `grpc` extension with some additional
 configure options, like `--enable-tests`, which allows some additional unit
 tests to be run.
 
+Build `grpc-src` docker image:
+```sh
+$ cd grpc
+$ docker build -t grpc-php/grpc-src -f ./src/php/docker/grpc-src/Dockerfile .
+```
 
-## `alpine`
+ Run image:
+```sh
+$ docker run -it --rm grpc-php/grpc-src
+```
+
+### `alpine`
 
 This image builds the `grpc` extension against the current PHP version in an
 Alpine-Linux base image.
 
+Build `alpine` docker image:
+```sh
+$ cd grpc
+$ docker build -t grpc-php/alpine -f ./src/php/docker/alpine/Dockerfile .
+```
 
-## `php-src`
+ Run image:
+```sh
+$ docker run -it --rm grpc-php/alpine
+```
+
+### `php-src`
 
 Instead of using a general purpose base docker image provided by PHP, here we
 compile PHP itself from
@@ -69,28 +98,79 @@ compile PHP itself from
 `configure` options, like `--enable-debug`. Then we proceed to build the full
 `grpc` PECL extension and run the unit tests.
 
+Build `php-src` docker image:
+```sh
+$ cd grpc
+$ docker build -t grpc-php/php-src -f ./src/php/docker/php-src/Dockerfile .
+```
 
-## `php-zts`
+ Run image:
+```sh
+$ docker run -it --rm grpc-php/php-src
+```
+
+### `php-zts`
 
 This image builds the `grpc` extension against the current PHP version with ZTS
 enabled.
 
+Build `php-zts` docker image:
+```sh
+$ cd grpc
+$ docker build -t grpc-php/php-zts -f ./src/php/docker/php-zts/Dockerfile .
+```
 
-## `php-future`
+ Run image:
+```sh
+$ docker run -it --rm grpc-php/php-zts
+```
+
+### `php-future`
 
 This image builds the `grpc` extension against the next future PHP version
 currently in alpha, beta or release candidate stage.
 
+Build `php-future` docker image:
+```sh
+$ cd grpc
+$ docker build -t grpc-php/php-future -f ./src/php/docker/php-future/Dockerfile .
+```
 
-## `php5`
+ Run image:
+```sh
+$ docker run -it --rm grpc-php/php-future
+```
+
+### `php5`
 
 This image builds the `grpc` extension against a PHP 5 base image with ZTS
 enabled.
 
 NOTE: PHP 5.x has reached the end-of-life state and is no longer supported.
 
+Build `php5` docker image:
+```sh
+$ cd grpc
+$ docker build -t grpc-php/php5 -f ./src/php/docker/php5/Dockerfile .
+```
+
+ Run image:
+```sh
+$ docker run -it --rm grpc-php/php5
+```
 
 ## `fork-support`
 
 This image tests `pcntl_fork()` support and makes sure scripts using
 `pcntl_fork()` don't hang or crash.
+
+Build `grpc-ext` docker image:
+```sh
+$ cd grpc
+$ docker build -t grpc-php/fork-support -f ./src/php/docker/fork-support/Dockerfile .
+```
+
+ Run image:
+```sh
+$ docker run -it --rm grpc-php/fork-support
+```
