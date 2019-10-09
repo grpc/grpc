@@ -134,6 +134,8 @@ class XdsClient : public InternallyRefCounted<XdsClient> {
 
   static const grpc_arg_pointer_vtable kXdsClientVtable;
 
+  UniquePtr<char> build_version_;
+
   grpc_combiner* combiner_;
   grpc_pollset_set* interested_parties_;
 

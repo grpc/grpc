@@ -547,7 +547,8 @@ XdsClient::ChannelState::AdsCallState::AdsCallState(
   GPR_ASSERT(call_ != nullptr);
   // Init the request payload.
   grpc_slice request_payload_slice = XdsEdsRequestCreateAndEncode(
-      xds_client()->server_name_.get(), xds_client()->bootstrap_->node());
+      xds_client()->server_name_.get(), xds_client()->bootstrap_->node(),
+      xds_client()->build_version_.get());
   send_message_payload_ =
       grpc_raw_byte_buffer_create(&request_payload_slice, 1);
   grpc_slice_unref_internal(request_payload_slice);
@@ -923,7 +924,8 @@ XdsClient::ChannelState::LrsCallState::LrsCallState(
   GPR_ASSERT(call_ != nullptr);
   // Init the request payload.
   grpc_slice request_payload_slice = XdsLrsRequestCreateAndEncode(
-      xds_client()->server_name_.get(), xds_client()->bootstrap_->node());
+      xds_client()->server_name_.get(), xds_client()->bootstrap_->node(),
+      xds_client()->build_version_.get());
   send_message_payload_ =
       grpc_raw_byte_buffer_create(&request_payload_slice, 1);
   grpc_slice_unref_internal(request_payload_slice);
@@ -1176,12 +1178,24 @@ bool XdsClient::ChannelState::LrsCallState::IsCurrentCallOnChannel() const {
 // XdsClient
 //
 
+namespace {
+
+UniquePtr<char> GenerateBuildVersionString() {
+  char* build_version_str;
+  gpr_asprintf(&build_version_str, "gRPC C-core %s %s", grpc_version_string(),
+               GPR_PLATFORM_STRING);
+  return UniquePtr<char>(build_version_str);
+}
+
+}  // namespace
+
 XdsClient::XdsClient(grpc_combiner* combiner,
                      grpc_pollset_set* interested_parties,
                      StringView server_name,
                      UniquePtr<ServiceConfigWatcherInterface> watcher,
                      const grpc_channel_args& channel_args, grpc_error** error)
-    : combiner_(GRPC_COMBINER_REF(combiner, "xds_client")),
+    : build_version_(GenerateBuildVersionString()),
+      combiner_(GRPC_COMBINER_REF(combiner, "xds_client")),
       interested_parties_(interested_parties),
       bootstrap_(XdsBootstrap::ReadFromFile(error)),
       server_name_(server_name.dup()),

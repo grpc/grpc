@@ -159,11 +159,8 @@ void PopulateMetadataValue(upb_arena* arena, google_protobuf_Value* value_pb,
   }
 }
 
-// *build_version will be set to the string containing the build version,
-// since we need to avoid freeing that string until after the
-// constructed protobuf is serialized.
 void PopulateNode(upb_arena* arena, const XdsBootstrap::Node* node,
-                  UniquePtr<char>* build_version,
+                  const char* build_version,
                   envoy_api_v2_core_Node* node_msg) {
   if (node != nullptr) {
     if (node->id != nullptr) {
@@ -196,26 +193,22 @@ void PopulateNode(upb_arena* arena, const XdsBootstrap::Node* node,
       }
     }
   }
-  char* build_version_str;
-  gpr_asprintf(&build_version_str, "gRPC C-core %s %s", grpc_version_string(),
-               GPR_PLATFORM_STRING);
   envoy_api_v2_core_Node_set_build_version(
-      node_msg, upb_strview_makez(build_version_str));
-  build_version->reset(build_version_str);
+      node_msg, upb_strview_makez(build_version));
 }
 
 }  // namespace
 
 grpc_slice XdsEdsRequestCreateAndEncode(const char* server_name,
-                                        const XdsBootstrap::Node* node) {
+                                        const XdsBootstrap::Node* node,
+                                        const char* build_version) {
   upb::Arena arena;
   // Create a request.
   envoy_api_v2_DiscoveryRequest* request =
       envoy_api_v2_DiscoveryRequest_new(arena.ptr());
   envoy_api_v2_core_Node* node_msg =
       envoy_api_v2_DiscoveryRequest_mutable_node(request, arena.ptr());
-  UniquePtr<char> build_version;
-  PopulateNode(arena.ptr(), node, &build_version, node_msg);
+  PopulateNode(arena.ptr(), node, build_version, node_msg);
   envoy_api_v2_DiscoveryRequest_add_resource_names(
       request, upb_strview_makez(server_name), arena.ptr());
   envoy_api_v2_DiscoveryRequest_set_type_url(request,
@@ -426,7 +419,8 @@ grpc_slice LrsRequestEncode(
 }  // namespace
 
 grpc_slice XdsLrsRequestCreateAndEncode(const char* server_name,
-                                        const XdsBootstrap::Node* node) {
+                                        const XdsBootstrap::Node* node,
+                                        const char* build_version) {
   upb::Arena arena;
   // Create a request.
   envoy_service_load_stats_v2_LoadStatsRequest* request =
@@ -435,8 +429,7 @@ grpc_slice XdsLrsRequestCreateAndEncode(const char* server_name,
   envoy_api_v2_core_Node* node_msg =
       envoy_service_load_stats_v2_LoadStatsRequest_mutable_node(request,
                                                                 arena.ptr());
-  UniquePtr<char> build_version;
-  PopulateNode(arena.ptr(), node, &build_version, node_msg);
+  PopulateNode(arena.ptr(), node, build_version, node_msg);
   // Add cluster stats. There is only one because we only use one server name in
   // one channel.
   envoy_api_v2_endpoint_ClusterStats* cluster_stats =
