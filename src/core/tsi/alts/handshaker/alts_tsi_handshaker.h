@@ -62,6 +62,8 @@ tsi_result alts_tsi_handshaker_create(
     const char* handshaker_service_url, bool is_client,
     grpc_pollset_set* interested_parties, tsi_handshaker** self);
 
+grpc_channel* alts_tsi_handshaker_get_channel(alts_tsi_handshaker* handshaker);
+
 /**
  * This method creates an ALTS TSI handshaker result instance.
  *

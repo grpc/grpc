@@ -65,6 +65,10 @@ typedef struct alts_tsi_handshaker_result {
   bool is_client;
 } alts_tsi_handshaker_result;
 
+grpc_channel* alts_tsi_handshaker_get_channel(alts_tsi_handshaker* handshaker) {
+  return handshaker->channel;
+}
+
 static tsi_result handshaker_result_extract_peer(
     const tsi_handshaker_result* self, tsi_peer* peer) {
   if (self == nullptr || peer == nullptr) {
@@ -372,7 +376,7 @@ static void handshaker_destroy(tsi_handshaker* self) {
   }
   alts_tsi_handshaker* handshaker =
       reinterpret_cast<alts_tsi_handshaker*>(self);
-  alts_handshaker_client_destroy(handshaker->client);
+  alts_handshaker_client_unref(handshaker->client);
   grpc_slice_unref_internal(handshaker->target_name);
   grpc_alts_credentials_options_destroy(handshaker->options);
   if (handshaker->channel != nullptr) {

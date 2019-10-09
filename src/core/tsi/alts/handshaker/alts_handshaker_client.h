@@ -111,7 +111,7 @@ void alts_handshaker_client_shutdown(alts_handshaker_client* client);
  *
  * - client: an ALTS handshaker client instance.
  */
-void alts_handshaker_client_destroy(alts_handshaker_client* client);
+void alts_handshaker_client_unref(alts_handshaker_client* client);
 
 /**
  * This method creates an ALTS handshaker client.
