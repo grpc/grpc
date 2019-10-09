@@ -334,7 +334,7 @@ TEST_F(CredentialsTest, TlsCredentialReloadConfigSchedule) {
       new TlsCredentialReloadConfig(test_credential_reload));
   grpc_tls_credential_reload_arg* c_arg =
       grpc_core::New<grpc_tls_credential_reload_arg>();
-  c_arg.context = nullptr;
+  c_arg->context = nullptr;
   TlsCredentialReloadArg* arg = new TlsCredentialReloadArg(c_arg);
   std::shared_ptr<TlsKeyMaterialsConfig> key_materials_config(
       new TlsKeyMaterialsConfig());
@@ -423,8 +423,6 @@ TEST_F(CredentialsTest, TlsCredentialReloadConfigCppToC) {
   EXPECT_STREQ(pair_list[1].cert_chain(), "cert_chain3");
   EXPECT_EQ(c_arg.status, GRPC_SSL_CERTIFICATE_CONFIG_RELOAD_NEW);
   EXPECT_STREQ(c_arg.error_details, test_error_details.c_str());
-  grpc_tls_key_materials_config* key_materials_config_after_schedule =
-      c_arg.key_materials_config;
 
   // Cleanup.
   c_arg.destroy_context(c_arg.context);
@@ -479,7 +477,7 @@ TEST_F(CredentialsTest, TlsServerAuthorizationCheckConfigSchedule) {
   TlsServerAuthorizationCheckConfig config(test_server_authorization_check);
   grpc_tls_server_authorization_check_arg* c_arg =
       grpc_core::New<grpc_tls_server_authorization_check_arg>();
-  c_arg.context = nullptr;
+  c_arg->context = nullptr;
   TlsServerAuthorizationCheckArg* arg =
       new TlsServerAuthorizationCheckArg(c_arg);
   arg->set_cb_user_data(nullptr);
@@ -683,7 +681,7 @@ TEST_F(CredentialsTest, TlsCredentialReloadConfigErrorMessages) {
   std::shared_ptr<TlsCredentialReloadConfig> config(
       new TlsCredentialReloadConfig(nullptr));
   grpc_tls_credential_reload_arg* c_arg = new grpc_tls_credential_reload_arg;
-  c_arg.context = nullptr;
+  c_arg->context = nullptr;
   TlsCredentialReloadArg* arg = new TlsCredentialReloadArg(c_arg);
   int schedule_output = config->Schedule(arg);
 
@@ -713,7 +711,7 @@ TEST_F(CredentialsTest, TlsServerAuthorizationCheckConfigErrorMessages) {
       new TlsServerAuthorizationCheckConfig(nullptr));
   grpc_tls_server_authorization_check_arg* c_arg =
       new grpc_tls_server_authorization_check_arg;
-  c_arg.context = nullptr;
+  c_arg->context = nullptr;
   TlsServerAuthorizationCheckArg* arg =
       new TlsServerAuthorizationCheckArg(c_arg);
   int schedule_output = config->Schedule(arg);
