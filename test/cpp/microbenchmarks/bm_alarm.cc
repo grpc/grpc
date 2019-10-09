@@ -37,7 +37,7 @@ static void BM_Alarm_Tag_Immediate(benchmark::State& state) {
   void* output_tag;
   bool ok;
   auto deadline = grpc_timeout_seconds_to_deadline(0);
-  while (state.KeepRunning()) {
+  for (auto _ : state) {
     alarm.Set(&cq, deadline, nullptr);
     cq.Next(&output_tag, &ok);
   }

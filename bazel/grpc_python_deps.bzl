@@ -47,6 +47,15 @@ def grpc_python_deps():
             remote = "https://github.com/bazelbuild/rules_python.git",
         )
 
+
+    if "rules_python" not in native.existing_rules():
+        http_archive(
+            name = "rules_python",
+            url = "https://github.com/bazelbuild/rules_python/archive/9d68f24659e8ce8b736590ba1e4418af06ec2552.zip",
+            sha256 = "f7402f11691d657161f871e11968a984e5b48b023321935f5a55d7e56cf4758a",
+            strip_prefix = "rules_python-9d68f24659e8ce8b736590ba1e4418af06ec2552",
+        )
+
     python_configure(name = "local_config_python")
 
     native.bind(

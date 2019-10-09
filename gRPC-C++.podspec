@@ -23,7 +23,7 @@
 Pod::Spec.new do |s|
   s.name     = 'gRPC-C++'
   # TODO (mxyan): use version that match gRPC version when pod is stabilized
-  # version = '1.24.0-dev'
+  # version = '1.25.0-dev'
   version = '0.0.9-dev'
   s.version  = version
   s.summary  = 'gRPC C++ library'
@@ -31,7 +31,7 @@ Pod::Spec.new do |s|
   s.license  = 'Apache License, Version 2.0'
   s.authors  = { 'The gRPC contributors' => 'grpc-packages@google.com' }
 
-  grpc_version = '1.24.0-dev'
+  grpc_version = '1.25.0-dev'
 
   s.source = {
     :git => 'https://github.com/grpc/grpc.git',
@@ -186,6 +186,7 @@ Pod::Spec.new do |s|
                       'include/grpcpp/impl/codegen/interceptor_common.h',
                       'include/grpcpp/impl/codegen/message_allocator.h',
                       'include/grpcpp/impl/codegen/metadata_map.h',
+                      'include/grpcpp/impl/codegen/method_handler.h',
                       'include/grpcpp/impl/codegen/method_handler_impl.h',
                       'include/grpcpp/impl/codegen/rpc_method.h',
                       'include/grpcpp/impl/codegen/rpc_service_method.h',
@@ -287,7 +288,6 @@ Pod::Spec.new do |s|
                               'src/core/lib/gpr/alloc.h',
                               'src/core/lib/gpr/arena.h',
                               'src/core/lib/gpr/env.h',
-                              'src/core/lib/gpr/mpscq.h',
                               'src/core/lib/gpr/murmur_hash.h',
                               'src/core/lib/gpr/spinlock.h',
                               'src/core/lib/gpr/string.h',
@@ -299,7 +299,6 @@ Pod::Spec.new do |s|
                               'src/core/lib/gpr/tls_pthread.h',
                               'src/core/lib/gpr/tmpfile.h',
                               'src/core/lib/gpr/useful.h',
-                              'src/core/lib/gprpp/abstract.h',
                               'src/core/lib/gprpp/arena.h',
                               'src/core/lib/gprpp/atomic.h',
                               'src/core/lib/gprpp/fork.h',
@@ -311,7 +310,8 @@ Pod::Spec.new do |s|
                               'src/core/lib/gprpp/manual_constructor.h',
                               'src/core/lib/gprpp/map.h',
                               'src/core/lib/gprpp/memory.h',
-                              'src/core/lib/gprpp/pair.h',
+                              'src/core/lib/gprpp/mpscq.h',
+                              'src/core/lib/gprpp/set.h',
                               'src/core/lib/gprpp/sync.h',
                               'src/core/lib/gprpp/thd.h',
                               'src/core/lib/profiling/timers.h',

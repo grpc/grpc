@@ -72,11 +72,16 @@ class CallbackUnaryCallImpl {
         grpc::internal::CallOpClientSendClose,
         grpc::internal::CallOpClientRecvStatus>;
 
-    auto* ops = new (::grpc::g_core_codegen_interface->grpc_call_arena_alloc(
-        call.call(), sizeof(FullCallOpSet))) FullCallOpSet;
-
-    auto* tag = new (::grpc::g_core_codegen_interface->grpc_call_arena_alloc(
-        call.call(), sizeof(grpc::internal::CallbackWithStatusTag)))
+    struct OpSetAndTag {
+      FullCallOpSet opset;
+      grpc::internal::CallbackWithStatusTag tag;
+    };
+    const size_t alloc_sz = sizeof(OpSetAndTag);
+    auto* const alloced = static_cast<OpSetAndTag*>(
+        ::grpc::g_core_codegen_interface->grpc_call_arena_alloc(call.call(),
+                                                                alloc_sz));
+    auto* ops = new (&alloced->opset) FullCallOpSet;
+    auto* tag = new (&alloced->tag)
         grpc::internal::CallbackWithStatusTag(call.call(), on_completion, ops);
 
     // TODO(vjpai): Unify code with sync API as much as possible

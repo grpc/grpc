@@ -60,8 +60,7 @@ class TestParser1 : public ServiceConfig::Parser {
               GRPC_ERROR_CREATE_FROM_STATIC_STRING(InvalidValueErrorMessage());
           return nullptr;
         }
-        return UniquePtr<ServiceConfig::ParsedConfig>(
-            New<TestParsedConfig1>(value));
+        return MakeUnique<TestParsedConfig1>(value);
       }
     }
     return nullptr;
@@ -98,8 +97,7 @@ class TestParser2 : public ServiceConfig::Parser {
               GRPC_ERROR_CREATE_FROM_STATIC_STRING(InvalidValueErrorMessage());
           return nullptr;
         }
-        return UniquePtr<ServiceConfig::ParsedConfig>(
-            New<TestParsedConfig1>(value));
+        return MakeUnique<TestParsedConfig1>(value);
       }
     }
     return nullptr;
@@ -148,10 +146,8 @@ class ServiceConfigTest : public ::testing::Test {
   void SetUp() override {
     ServiceConfig::Shutdown();
     ServiceConfig::Init();
-    EXPECT_TRUE(ServiceConfig::RegisterParser(
-                    UniquePtr<ServiceConfig::Parser>(New<TestParser1>())) == 0);
-    EXPECT_TRUE(ServiceConfig::RegisterParser(
-                    UniquePtr<ServiceConfig::Parser>(New<TestParser2>())) == 1);
+    EXPECT_TRUE(ServiceConfig::RegisterParser(MakeUnique<TestParser1>()) == 0);
+    EXPECT_TRUE(ServiceConfig::RegisterParser(MakeUnique<TestParser2>()) == 1);
   }
 };
 
@@ -312,10 +308,8 @@ class ErroredParsersScopingTest : public ::testing::Test {
   void SetUp() override {
     ServiceConfig::Shutdown();
     ServiceConfig::Init();
-    EXPECT_TRUE(ServiceConfig::RegisterParser(
-                    UniquePtr<ServiceConfig::Parser>(New<ErrorParser>())) == 0);
-    EXPECT_TRUE(ServiceConfig::RegisterParser(
-                    UniquePtr<ServiceConfig::Parser>(New<ErrorParser>())) == 1);
+    EXPECT_TRUE(ServiceConfig::RegisterParser(MakeUnique<ErrorParser>()) == 0);
+    EXPECT_TRUE(ServiceConfig::RegisterParser(MakeUnique<ErrorParser>()) == 1);
   }
 };
 
@@ -359,10 +353,9 @@ class ClientChannelParserTest : public ::testing::Test {
   void SetUp() override {
     ServiceConfig::Shutdown();
     ServiceConfig::Init();
-    EXPECT_TRUE(
-        ServiceConfig::RegisterParser(UniquePtr<ServiceConfig::Parser>(
-            New<grpc_core::internal::ClientChannelServiceConfigParser>())) ==
-        0);
+    EXPECT_TRUE(ServiceConfig::RegisterParser(
+                    MakeUnique<internal::ClientChannelServiceConfigParser>()) ==
+                0);
   }
 };
 
@@ -921,10 +914,7 @@ TEST_F(ClientChannelParserTest, InvalidHealthCheckMultipleEntries) {
                   "error)(.*)(referenced_errors)(.*)(Global "
                   "Params)(.*)(referenced_errors)(.*)(field:healthCheckConfig "
                   "error:Duplicate entry)"));
-  std::smatch match;
-  std::string s(grpc_error_string(error));
-  EXPECT_TRUE(std::regex_search(s, match, e));
-  GRPC_ERROR_UNREF(error);
+  VerifyRegexMatch(error, e);
 }
 
 class MessageSizeParserTest : public ::testing::Test {
@@ -932,8 +922,8 @@ class MessageSizeParserTest : public ::testing::Test {
   void SetUp() override {
     ServiceConfig::Shutdown();
     ServiceConfig::Init();
-    EXPECT_TRUE(ServiceConfig::RegisterParser(UniquePtr<ServiceConfig::Parser>(
-                    New<MessageSizeParser>())) == 0);
+    EXPECT_TRUE(
+        ServiceConfig::RegisterParser(MakeUnique<MessageSizeParser>()) == 0);
   }
 };
 
@@ -1014,6 +1004,11 @@ TEST_F(MessageSizeParserTest, InvalidMaxResponseMessageBytes) {
 }  // namespace grpc_core
 
 int main(int argc, char** argv) {
+// Regexes don't work in gcc4.8 and below, so just skip testing in those cases
+#if defined(__GNUC__) && \
+    ((__GNUC__ < 4) || ((__GNUC__ == 4) && (__GNUC_MINOR__) <= 8))
+  return 0;
+#endif
   grpc::testing::TestEnvironment env(argc, argv);
   grpc_init();
   ::testing::InitGoogleTest(&argc, argv);

@@ -164,7 +164,6 @@ void Executor::SetThreading(bool threading) {
 
     GPR_ASSERT(num_threads_ == 0);
     gpr_atm_rel_store(&num_threads_, 1);
-    gpr_tls_init(&g_this_thread_state);
     thd_state_ = static_cast<ThreadState*>(
         gpr_zalloc(sizeof(ThreadState) * max_threads_));
 
@@ -213,7 +212,6 @@ void Executor::SetThreading(bool threading) {
     }
 
     gpr_free(thd_state_);
-    gpr_tls_destroy(&g_this_thread_state);
 
     // grpc_iomgr_shutdown_background_closure() will close all the registered
     // fds in the background poller, and wait for all pending closures to
@@ -264,6 +262,8 @@ void Executor::ThreadMain(void* arg) {
     grpc_core::ExecCtx::Get()->InvalidateNow();
     subtract_depth = RunClosures(ts->name, closures);
   }
+
+  gpr_tls_set(&g_this_thread_state, reinterpret_cast<intptr_t>(nullptr));
 }
 
 void Executor::Enqueue(grpc_closure* closure, grpc_error* error,
@@ -484,5 +484,7 @@ void Executor::SetThreadingDefault(bool enable) {
   EXECUTOR_TRACE("Executor::SetThreadingDefault(%d) called", enable);
   executors[static_cast<size_t>(ExecutorType::DEFAULT)]->SetThreading(enable);
 }
+
+void grpc_executor_global_init() { gpr_tls_init(&g_this_thread_state); }
 
 }  // namespace grpc_core

@@ -32,7 +32,7 @@
 
 static void BM_NoOpExecCtx(benchmark::State& state) {
   TrackCounters track_counters;
-  while (state.KeepRunning()) {
+  for (auto _ : state) {
     grpc_core::ExecCtx exec_ctx;
   }
   track_counters.Finish(state);
@@ -42,7 +42,7 @@ BENCHMARK(BM_NoOpExecCtx);
 static void BM_WellFlushed(benchmark::State& state) {
   TrackCounters track_counters;
   grpc_core::ExecCtx exec_ctx;
-  while (state.KeepRunning()) {
+  for (auto _ : state) {
     grpc_core::ExecCtx::Get()->Flush();
   }
 
@@ -55,7 +55,7 @@ static void DoNothing(void* arg, grpc_error* error) {}
 static void BM_ClosureInitAgainstExecCtx(benchmark::State& state) {
   TrackCounters track_counters;
   grpc_closure c;
-  while (state.KeepRunning()) {
+  for (auto _ : state) {
     benchmark::DoNotOptimize(
         GRPC_CLOSURE_INIT(&c, DoNothing, nullptr, grpc_schedule_on_exec_ctx));
   }
@@ -68,7 +68,7 @@ static void BM_ClosureInitAgainstCombiner(benchmark::State& state) {
   grpc_combiner* combiner = grpc_combiner_create();
   grpc_closure c;
   grpc_core::ExecCtx exec_ctx;
-  while (state.KeepRunning()) {
+  for (auto _ : state) {
     benchmark::DoNotOptimize(GRPC_CLOSURE_INIT(
         &c, DoNothing, nullptr, grpc_combiner_scheduler(combiner)));
   }
@@ -83,7 +83,7 @@ static void BM_ClosureRunOnExecCtx(benchmark::State& state) {
   grpc_closure c;
   GRPC_CLOSURE_INIT(&c, DoNothing, nullptr, grpc_schedule_on_exec_ctx);
   grpc_core::ExecCtx exec_ctx;
-  while (state.KeepRunning()) {
+  for (auto _ : state) {
     GRPC_CLOSURE_RUN(&c, GRPC_ERROR_NONE);
     grpc_core::ExecCtx::Get()->Flush();
   }
@@ -95,7 +95,7 @@ BENCHMARK(BM_ClosureRunOnExecCtx);
 static void BM_ClosureCreateAndRun(benchmark::State& state) {
   TrackCounters track_counters;
   grpc_core::ExecCtx exec_ctx;
-  while (state.KeepRunning()) {
+  for (auto _ : state) {
     GRPC_CLOSURE_RUN(
         GRPC_CLOSURE_CREATE(DoNothing, nullptr, grpc_schedule_on_exec_ctx),
         GRPC_ERROR_NONE);
@@ -109,7 +109,7 @@ static void BM_ClosureInitAndRun(benchmark::State& state) {
   TrackCounters track_counters;
   grpc_core::ExecCtx exec_ctx;
   grpc_closure c;
-  while (state.KeepRunning()) {
+  for (auto _ : state) {
     GRPC_CLOSURE_RUN(
         GRPC_CLOSURE_INIT(&c, DoNothing, nullptr, grpc_schedule_on_exec_ctx),
         GRPC_ERROR_NONE);
@@ -124,7 +124,7 @@ static void BM_ClosureSchedOnExecCtx(benchmark::State& state) {
   grpc_closure c;
   GRPC_CLOSURE_INIT(&c, DoNothing, nullptr, grpc_schedule_on_exec_ctx);
   grpc_core::ExecCtx exec_ctx;
-  while (state.KeepRunning()) {
+  for (auto _ : state) {
     GRPC_CLOSURE_SCHED(&c, GRPC_ERROR_NONE);
     grpc_core::ExecCtx::Get()->Flush();
   }
@@ -140,7 +140,7 @@ static void BM_ClosureSched2OnExecCtx(benchmark::State& state) {
   GRPC_CLOSURE_INIT(&c1, DoNothing, nullptr, grpc_schedule_on_exec_ctx);
   GRPC_CLOSURE_INIT(&c2, DoNothing, nullptr, grpc_schedule_on_exec_ctx);
   grpc_core::ExecCtx exec_ctx;
-  while (state.KeepRunning()) {
+  for (auto _ : state) {
     GRPC_CLOSURE_SCHED(&c1, GRPC_ERROR_NONE);
     GRPC_CLOSURE_SCHED(&c2, GRPC_ERROR_NONE);
     grpc_core::ExecCtx::Get()->Flush();
@@ -159,7 +159,7 @@ static void BM_ClosureSched3OnExecCtx(benchmark::State& state) {
   GRPC_CLOSURE_INIT(&c2, DoNothing, nullptr, grpc_schedule_on_exec_ctx);
   GRPC_CLOSURE_INIT(&c3, DoNothing, nullptr, grpc_schedule_on_exec_ctx);
   grpc_core::ExecCtx exec_ctx;
-  while (state.KeepRunning()) {
+  for (auto _ : state) {
     GRPC_CLOSURE_SCHED(&c1, GRPC_ERROR_NONE);
     GRPC_CLOSURE_SCHED(&c2, GRPC_ERROR_NONE);
     GRPC_CLOSURE_SCHED(&c3, GRPC_ERROR_NONE);
@@ -176,7 +176,7 @@ static void BM_AcquireMutex(benchmark::State& state) {
   gpr_mu mu;
   gpr_mu_init(&mu);
   grpc_core::ExecCtx exec_ctx;
-  while (state.KeepRunning()) {
+  for (auto _ : state) {
     gpr_mu_lock(&mu);
     DoNothing(nullptr, GRPC_ERROR_NONE);
     gpr_mu_unlock(&mu);
@@ -193,7 +193,7 @@ static void BM_TryAcquireMutex(benchmark::State& state) {
   gpr_mu mu;
   gpr_mu_init(&mu);
   grpc_core::ExecCtx exec_ctx;
-  while (state.KeepRunning()) {
+  for (auto _ : state) {
     if (gpr_mu_trylock(&mu)) {
       DoNothing(nullptr, GRPC_ERROR_NONE);
       gpr_mu_unlock(&mu);
@@ -212,7 +212,7 @@ static void BM_AcquireSpinlock(benchmark::State& state) {
   // for comparison with the combiner stuff below
   gpr_spinlock mu = GPR_SPINLOCK_INITIALIZER;
   grpc_core::ExecCtx exec_ctx;
-  while (state.KeepRunning()) {
+  for (auto _ : state) {
     gpr_spinlock_lock(&mu);
     DoNothing(nullptr, GRPC_ERROR_NONE);
     gpr_spinlock_unlock(&mu);
@@ -227,7 +227,7 @@ static void BM_TryAcquireSpinlock(benchmark::State& state) {
   // for comparison with the combiner stuff below
   gpr_spinlock mu = GPR_SPINLOCK_INITIALIZER;
   grpc_core::ExecCtx exec_ctx;
-  while (state.KeepRunning()) {
+  for (auto _ : state) {
     if (gpr_spinlock_trylock(&mu)) {
       DoNothing(nullptr, GRPC_ERROR_NONE);
       gpr_spinlock_unlock(&mu);
@@ -246,7 +246,7 @@ static void BM_ClosureSchedOnCombiner(benchmark::State& state) {
   grpc_closure c;
   GRPC_CLOSURE_INIT(&c, DoNothing, nullptr, grpc_combiner_scheduler(combiner));
   grpc_core::ExecCtx exec_ctx;
-  while (state.KeepRunning()) {
+  for (auto _ : state) {
     GRPC_CLOSURE_SCHED(&c, GRPC_ERROR_NONE);
     grpc_core::ExecCtx::Get()->Flush();
   }
@@ -264,7 +264,7 @@ static void BM_ClosureSched2OnCombiner(benchmark::State& state) {
   GRPC_CLOSURE_INIT(&c1, DoNothing, nullptr, grpc_combiner_scheduler(combiner));
   GRPC_CLOSURE_INIT(&c2, DoNothing, nullptr, grpc_combiner_scheduler(combiner));
   grpc_core::ExecCtx exec_ctx;
-  while (state.KeepRunning()) {
+  for (auto _ : state) {
     GRPC_CLOSURE_SCHED(&c1, GRPC_ERROR_NONE);
     GRPC_CLOSURE_SCHED(&c2, GRPC_ERROR_NONE);
     grpc_core::ExecCtx::Get()->Flush();
@@ -285,7 +285,7 @@ static void BM_ClosureSched3OnCombiner(benchmark::State& state) {
   GRPC_CLOSURE_INIT(&c2, DoNothing, nullptr, grpc_combiner_scheduler(combiner));
   GRPC_CLOSURE_INIT(&c3, DoNothing, nullptr, grpc_combiner_scheduler(combiner));
   grpc_core::ExecCtx exec_ctx;
-  while (state.KeepRunning()) {
+  for (auto _ : state) {
     GRPC_CLOSURE_SCHED(&c1, GRPC_ERROR_NONE);
     GRPC_CLOSURE_SCHED(&c2, GRPC_ERROR_NONE);
     GRPC_CLOSURE_SCHED(&c3, GRPC_ERROR_NONE);
@@ -308,7 +308,7 @@ static void BM_ClosureSched2OnTwoCombiners(benchmark::State& state) {
   GRPC_CLOSURE_INIT(&c2, DoNothing, nullptr,
                     grpc_combiner_scheduler(combiner2));
   grpc_core::ExecCtx exec_ctx;
-  while (state.KeepRunning()) {
+  for (auto _ : state) {
     GRPC_CLOSURE_SCHED(&c1, GRPC_ERROR_NONE);
     GRPC_CLOSURE_SCHED(&c2, GRPC_ERROR_NONE);
     grpc_core::ExecCtx::Get()->Flush();
@@ -337,7 +337,7 @@ static void BM_ClosureSched4OnTwoCombiners(benchmark::State& state) {
   GRPC_CLOSURE_INIT(&c4, DoNothing, nullptr,
                     grpc_combiner_scheduler(combiner2));
   grpc_core::ExecCtx exec_ctx;
-  while (state.KeepRunning()) {
+  for (auto _ : state) {
     GRPC_CLOSURE_SCHED(&c1, GRPC_ERROR_NONE);
     GRPC_CLOSURE_SCHED(&c2, GRPC_ERROR_NONE);
     GRPC_CLOSURE_SCHED(&c3, GRPC_ERROR_NONE);

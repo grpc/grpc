@@ -170,7 +170,7 @@ static VALUE grpc_rb_call_cancel(VALUE self) {
 /* TODO: expose this as part of the surface API if needed.
  * This is meant for internal usage by the "write thread" of grpc-ruby
  * client-side bidi calls. It provides a way for the background write-thread
- * to propogate failures to the main read-thread and give the user an error
+ * to propagate failures to the main read-thread and give the user an error
  * message. */
 static VALUE grpc_rb_call_cancel_with_status(VALUE self, VALUE status_code,
                                              VALUE details) {

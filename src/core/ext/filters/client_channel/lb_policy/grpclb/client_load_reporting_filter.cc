@@ -30,12 +30,12 @@
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/profiling/timers.h"
 
-static grpc_error* init_channel_elem(grpc_channel_element* elem,
-                                     grpc_channel_element_args* args) {
+static grpc_error* clr_init_channel_elem(grpc_channel_element* elem,
+                                         grpc_channel_element_args* args) {
   return GRPC_ERROR_NONE;
 }
 
-static void destroy_channel_elem(grpc_channel_element* elem) {}
+static void clr_destroy_channel_elem(grpc_channel_element* elem) {}
 
 namespace {
 
@@ -71,16 +71,16 @@ static void recv_initial_metadata_ready(void* arg, grpc_error* error) {
                    GRPC_ERROR_REF(error));
 }
 
-static grpc_error* init_call_elem(grpc_call_element* elem,
-                                  const grpc_call_element_args* args) {
+static grpc_error* clr_init_call_elem(grpc_call_element* elem,
+                                      const grpc_call_element_args* args) {
   GPR_ASSERT(args->context != nullptr);
   new (elem->call_data) call_data();
   return GRPC_ERROR_NONE;
 }
 
-static void destroy_call_elem(grpc_call_element* elem,
-                              const grpc_call_final_info* final_info,
-                              grpc_closure* ignored) {
+static void clr_destroy_call_elem(grpc_call_element* elem,
+                                  const grpc_call_final_info* final_info,
+                                  grpc_closure* ignored) {
   call_data* calld = static_cast<call_data*>(elem->call_data);
   if (calld->client_stats != nullptr) {
     // Record call finished, optionally setting client_failed_to_send and
@@ -92,7 +92,7 @@ static void destroy_call_elem(grpc_call_element* elem,
   calld->~call_data();
 }
 
-static void start_transport_stream_op_batch(
+static void clr_start_transport_stream_op_batch(
     grpc_call_element* elem, grpc_transport_stream_op_batch* batch) {
   call_data* calld = static_cast<call_data*>(elem->call_data);
   GPR_TIMER_SCOPE("clr_start_transport_stream_op_batch", 0);
@@ -142,14 +142,14 @@ static void start_transport_stream_op_batch(
 }
 
 const grpc_channel_filter grpc_client_load_reporting_filter = {
-    start_transport_stream_op_batch,
+    clr_start_transport_stream_op_batch,
     grpc_channel_next_op,
     sizeof(call_data),
-    init_call_elem,
+    clr_init_call_elem,
     grpc_call_stack_ignore_set_pollset_or_pollset_set,
-    destroy_call_elem,
+    clr_destroy_call_elem,
     0,  // sizeof(channel_data)
-    init_channel_elem,
-    destroy_channel_elem,
+    clr_init_channel_elem,
+    clr_destroy_channel_elem,
     grpc_channel_next_get_info,
     "client_load_reporting"};

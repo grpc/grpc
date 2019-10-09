@@ -24,7 +24,6 @@
 #include <grpc/impl/codegen/grpc_types.h>
 
 #include "src/core/ext/filters/client_channel/subchannel.h"
-#include "src/core/lib/gprpp/abstract.h"
 
 namespace grpc_core {
 
@@ -33,8 +32,7 @@ class ClientChannelFactory {
   virtual ~ClientChannelFactory() = default;
 
   // Creates a subchannel with the specified args.
-  virtual Subchannel* CreateSubchannel(const grpc_channel_args* args)
-      GRPC_ABSTRACT;
+  virtual Subchannel* CreateSubchannel(const grpc_channel_args* args) = 0;
 
   // Returns a channel arg containing the specified factory.
   static grpc_arg CreateChannelArg(ClientChannelFactory* factory);
@@ -42,8 +40,6 @@ class ClientChannelFactory {
   // Returns the factory from args, or null if not found.
   static ClientChannelFactory* GetFromChannelArgs(
       const grpc_channel_args* args);
-
-  GRPC_ABSTRACT_BASE_CLASS
 };
 
 }  // namespace grpc_core

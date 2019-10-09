@@ -28,6 +28,7 @@
 #include <grpcpp/server_builder.h>
 #include <grpcpp/server_context.h>
 
+#include "src/core/lib/gpr/env.h"
 #include "src/core/lib/iomgr/iomgr.h"
 #include "src/proto/grpc/testing/duplicate/echo_duplicate.grpc.pb.h"
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
@@ -228,6 +229,13 @@ class TestServiceImplDupPkg
 class HybridEnd2endTest : public ::testing::TestWithParam<bool> {
  protected:
   HybridEnd2endTest() {}
+
+  static void SetUpTestCase() {
+#if TARGET_OS_IPHONE
+    // Workaround Apple CFStream bug
+    gpr_setenv("grpc_cfstream", "0");
+#endif
+  }
 
   void SetUp() override {
     inproc_ = (::testing::UnitTest::GetInstance()
@@ -954,8 +962,8 @@ TEST_F(HybridEnd2endTest, GenericMethodWithoutGenericService) {
   EXPECT_EQ(nullptr, server_.get());
 }
 
-INSTANTIATE_TEST_CASE_P(HybridEnd2endTest, HybridEnd2endTest,
-                        ::testing::Bool());
+INSTANTIATE_TEST_SUITE_P(HybridEnd2endTest, HybridEnd2endTest,
+                         ::testing::Bool());
 
 }  // namespace
 }  // namespace testing

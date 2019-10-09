@@ -188,7 +188,8 @@ grpc_cc_test(
         "gtest",
     ],
     tags = ["nomsan",  # death tests seem to be incompatible with msan
-            "no_test_ios"
+            "no_test_ios",
+            "no_windows",
     ],
     deps = [
         ":grpc_cli_libs",
@@ -213,6 +214,7 @@ grpc_cc_test(
     deps = [
         ":test_util",
     ],
+    uses_polling = False,
 )
 
 grpc_cc_test(
@@ -226,6 +228,7 @@ grpc_cc_test(
     deps = [
         ":test_util",
     ],
+    uses_polling = False,
 )
 
 grpc_cc_test(
@@ -240,6 +243,7 @@ grpc_cc_test(
         "//:grpc++",
         "//test/core/util:grpc_test_util",
     ],
+    uses_polling = False,
 )
 
 grpc_cc_test(
@@ -253,6 +257,7 @@ grpc_cc_test(
     deps = [
         ":test_util",
     ],
+    uses_polling = False,
 )
 
 grpc_cc_test(

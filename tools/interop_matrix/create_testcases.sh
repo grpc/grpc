@@ -19,7 +19,7 @@
 # Params:
 #   LANG - The language.
 #   SKIP_TEST - If set, skip running the test cases for sanity.
-#   RELEASE - Create testcase for specific release, defautl to 'master'.
+#   RELEASE - Create testcase for specific release, default to 'master'.
 #   KEEP_IMAGE - Do not clean local docker image created for the test cases.
 
 set -e

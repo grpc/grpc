@@ -25,16 +25,34 @@ ssl_lib='../../third_party/boringssl/build/ssl/libssl.a'
 crypto_lib='../../third_party/boringssl/build/crypto/libcrypto.a'
 
 # Generate boringssl archives
-( cd ../../third_party/boringssl ; mkdir -p build ; cd build ; cmake .. ; make )
+( cd ../../third_party/boringssl ; mkdir -p build ; cd build ; cmake .. ; make -j ssl crypto )
 
 # Generate shadow_boringssl.h
-outputs="$(nm -C $ssl_lib)"$'\n'"$(nm -C $crypto_lib)"
-symbols=$(echo "$outputs" | 
-          grep '^[0-9a-f]* [A-Z] ' |               # Only public symbols
-          grep -v ' bssl::' |                      # Filter BoringSSL symbols since they are already namespaced
-          sed 's/(.*//g' |                         # Remove parenthesis from C++ symbols
-          grep '^[0-9a-f]* [A-Z] _' |              # Filter symbols that is not prefixed with '_'
-          sed 's/[0-9a-f]* [A-Z] _\(.*\)/\1/g')    # Extract the symbol names
+unameOut="$(uname -s)"
+case "${unameOut}" in
+  Linux*)
+    outputs="$(nm $ssl_lib)"$'\n'"$(nm $crypto_lib)"
+    symbols=$(echo "$outputs" | 
+              grep '^[0-9a-f]* [A-Z] ' |               # Only public symbols
+              grep -v '^[0-9a-f]* [A-Z] _' |           # Remove all symbols which look like for C++
+              sed 's/[0-9a-f]* [A-Z] \(.*\)/\1/g' |    # Extract the symbol names
+              sort)                                    # Sort symbol names
+    ;;
+  Darwin*)
+    outputs="$(nm -C $ssl_lib)"$'\n'"$(nm -C $crypto_lib)"
+    symbols=$(echo "$outputs" | 
+              grep '^[0-9a-f]* [A-Z] ' |               # Only public symbols
+              grep -v ' bssl::' |                      # Filter BoringSSL symbols since they are already namespaced
+              sed 's/(.*//g' |                         # Remove parenthesis from C++ symbols
+              grep '^[0-9a-f]* [A-Z] _' |              # Filter symbols that is not prefixed with '_'
+              sed 's/[0-9a-f]* [A-Z] _\(.*\)/\1/g' |   # Extract the symbol names
+              sort)                                    # Sort symbol names
+    ;;
+  *)
+    echo "Supports only Linux and Darwin but this system is $unameOut"
+    exit 1
+    ;;
+esac
 
 commit=$(git submodule | grep "boringssl " | awk '{print $1}' | head -n 1)
 

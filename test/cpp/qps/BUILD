@@ -163,12 +163,14 @@ grpc_cc_test(
         ":interarrival",
         "//test/cpp/util:test_config",
     ],
+    uses_polling = False,
 )
 
 grpc_cc_test(
     name = "qps_openloop_test",
     srcs = ["qps_openloop_test.cc"],
     exec_compatible_with = ["//third_party/toolchains/machine_size:large"],
+    tags = ["no_windows"],  # machine_size:large is not configured for windows RBE
     deps = [
         ":benchmark_config",
         ":driver_impl",
