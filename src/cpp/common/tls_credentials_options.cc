@@ -51,6 +51,7 @@ TlsCredentialReloadArg::TlsCredentialReloadArg(
     gpr_log(GPR_ERROR, "c_arg context has already been set");
   }
   c_arg_->context = static_cast<void*>(this);
+  c_arg_->destroy_context = &TlsCredentialReloadArgDestroyContext;
 }
 
 TlsCredentialReloadArg::~TlsCredentialReloadArg() {}
@@ -166,6 +167,7 @@ TlsServerAuthorizationCheckArg::TlsServerAuthorizationCheckArg(
     gpr_log(GPR_ERROR, "c_arg context has already been set");
   }
   c_arg_->context = static_cast<void*>(this);
+  c_arg_->destroy_context = &TlsServerAuthorizationCheckArgDestroyContext;
 }
 
 TlsServerAuthorizationCheckArg::~TlsServerAuthorizationCheckArg() {}

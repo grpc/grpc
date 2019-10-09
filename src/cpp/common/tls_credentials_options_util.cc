@@ -70,7 +70,6 @@ int TlsCredentialReloadConfigCSchedule(void* config_user_data,
       static_cast<TlsCredentialReloadConfig*>(arg->config->context());
   TlsCredentialReloadArg* cpp_arg = new TlsCredentialReloadArg(arg);
   int schedule_result = cpp_config->Schedule(cpp_arg);
-  delete cpp_arg;
   return schedule_result;
 }
 
@@ -90,7 +89,14 @@ void TlsCredentialReloadConfigCCancel(void* config_user_data,
   TlsCredentialReloadArg* cpp_arg =
       static_cast<TlsCredentialReloadArg*>(arg->context);
   cpp_config->Cancel(cpp_arg);
-  delete cpp_arg;
+}
+
+void TlsCredentialReloadArgDestroyContext(void* context) {
+  if (context != nullptr) {
+    TlsCredentialReloadArg* cpp_arg =
+        static_cast<TlsCredentialReloadArg*>(context);
+    delete cpp_arg;
+  }
 }
 
 /** The C schedule and cancel functions for the server authorization check
@@ -109,7 +115,6 @@ int TlsServerAuthorizationCheckConfigCSchedule(
   TlsServerAuthorizationCheckArg* cpp_arg =
       new TlsServerAuthorizationCheckArg(arg);
   int schedule_result = cpp_config->Schedule(cpp_arg);
-  delete cpp_arg;
   return schedule_result;
 }
 
@@ -131,7 +136,14 @@ void TlsServerAuthorizationCheckConfigCCancel(
   TlsServerAuthorizationCheckArg* cpp_arg =
       static_cast<TlsServerAuthorizationCheckArg*>(arg->context);
   cpp_config->Cancel(cpp_arg);
-  delete cpp_arg;
+}
+
+void TlsServerAuthorizationCheckArgDestroyContext(void* context) {
+  if (context != nullptr) {
+    TlsServerAuthorizationCheckArg* cpp_arg =
+        static_cast<TlsServerAuthorizationCheckArg*>(context);
+    delete cpp_arg;
+  }
 }
 
 }  // namespace experimental
