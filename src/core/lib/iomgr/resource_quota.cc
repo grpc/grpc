@@ -132,7 +132,7 @@ struct grpc_resource_quota {
 
   /* Master combiner lock: all activity on a quota executes under this combiner
    * (so no mutex is needed for this data structure) */
-  grpc_combiner* combiner;
+  grpc_core::Combiner* combiner;
   /* Size of the resource quota */
   int64_t size;
   /* Amount of free memory in the resource quota */

@@ -309,8 +309,10 @@ static void combiner_finally_exec(Combiner* lock, grpc_closure* closure,
       grpc_core::ExecCtx::Get()->combiner_data()->active_combiner));
   if (grpc_core::ExecCtx::Get()->combiner_data()->active_combiner != lock) {
     GPR_TIMER_MARK("slowpath", 0);
-    grpc_core::Combiner::Exec(
-        lock, GRPC_CLOSURE_CREATE(enqueue_finally, closure, nullptr), error);
+    lock->Run(
+        GRPC_CLOSURE_CREATE(enqueue_finally, closure,
+                            reinterpret_cast<grpc_closure_scheduler*>(lock)),
+        error);
     return;
   }
 
@@ -337,15 +339,26 @@ static void combiner_run(Combiner* lock, grpc_closure* closure,
 }
 
 static void enqueue_finally(void* closure, grpc_error* error) {
-  combiner_finally_exec(static_cast<grpc_closure*>(closure),
+  grpc_closure* cl = static_cast<grpc_closure*>(cl);
+  combiner_finally_exec(reinterpret_cast<Combiner*>(cl->scheduler), cl,
                         GRPC_ERROR_REF(error));
 }
 
-static void Combiner::Run(grpc_closure* closure, grpc_error* error) {
-  combiner_exec(combiner, closure, error);
+void Combiner::Run(grpc_closure* closure, grpc_error* error) {
+  combiner_exec(this, closure, error);
 }
 
-static void Combiner::FinallyRun(grpc_closure* closure, grpc_error* error) {
-  combiner_finally_exec(combiner, closure, exec);
+void Combiner::Run(grpc_closure_list* list) {
+  grpc_closure* c = list->head;
+  while (c != nullptr) {
+    grpc_closure* next = c->next_data.next;
+    Run(c, c->error_data.error);
+    c = next;
+  }
+  list->head = list->tail = nullptr;
+}
+
+void Combiner::FinallyRun(grpc_closure* closure, grpc_error* error) {
+  combiner_finally_exec(this, closure, error);
 }
 }  // namespace grpc_core

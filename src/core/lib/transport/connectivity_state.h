@@ -68,15 +68,14 @@ class AsyncConnectivityStateWatcherInterface
  protected:
   class Notifier;
 
-  explicit AsyncConnectivityStateWatcherInterface(
-      grpc_core::Combiner* combiner = nullptr)
+  explicit AsyncConnectivityStateWatcherInterface(Combiner* combiner = nullptr)
       : combiner_(combiner) {}
 
   // Invoked asynchronously when Notify() is called.
   virtual void OnConnectivityStateChange(grpc_connectivity_state new_state) = 0;
 
  private:
-  grpc_closure_scheduler* scheduler_;
+  Combiner* combiner_;
 };
 
 // Tracks connectivity state.  Maintains a list of watchers that are

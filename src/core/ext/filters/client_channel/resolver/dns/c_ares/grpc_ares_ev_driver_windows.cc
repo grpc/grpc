@@ -97,8 +97,8 @@ class GrpcPolledFdWindows {
     WRITE_WAITING_FOR_VERIFICATION_UPON_RETRY,
   };
 
-  GrpcPolledFdWindows(ares_socket_t as, grpc_combiner* combiner,
-                      int address_family, int socket_type)
+  GrpcPolledFdWindows(ares_socket_t as, Combiner* combiner, int address_family,
+                      int socket_type)
       : read_buf_(grpc_empty_slice()),
         write_buf_(grpc_empty_slice()),
         tcp_write_state_(WRITE_IDLE),
@@ -698,7 +698,7 @@ class GrpcPolledFdWindows {
   bool gotten_into_driver_list() const { return gotten_into_driver_list_; }
   void set_gotten_into_driver_list() { gotten_into_driver_list_ = true; }
 
-  grpc_combiner* combiner_;
+  Combiner* combiner_;
   char recv_from_source_addr_[200];
   ares_socklen_t recv_from_source_addr_len_;
   grpc_slice read_buf_;
@@ -742,7 +742,7 @@ struct SockToPolledFdEntry {
  * with a GrpcPolledFdWindows factory and event driver */
 class SockToPolledFdMap {
  public:
-  SockToPolledFdMap(grpc_combiner* combiner) {
+  SockToPolledFdMap(Combiner* combiner) {
     combiner_ = GRPC_COMBINER_REF(combiner, "sock to polled fd map");
   }
 
@@ -861,7 +861,7 @@ class SockToPolledFdMap {
 
  private:
   SockToPolledFdEntry* head_ = nullptr;
-  grpc_combiner* combiner_;
+  Combiner* combiner_;
 };
 
 const struct ares_socket_functions custom_ares_sock_funcs = {
@@ -910,12 +910,12 @@ class GrpcPolledFdWindowsWrapper : public GrpcPolledFd {
 
 class GrpcPolledFdFactoryWindows : public GrpcPolledFdFactory {
  public:
-  GrpcPolledFdFactoryWindows(grpc_combiner* combiner)
+  GrpcPolledFdFactoryWindows(Combiner* combiner)
       : sock_to_polled_fd_map_(combiner) {}
 
   GrpcPolledFd* NewGrpcPolledFdLocked(ares_socket_t as,
                                       grpc_pollset_set* driver_pollset_set,
-                                      grpc_combiner* combiner) override {
+                                      Combiner* combiner) override {
     GrpcPolledFdWindows* polled_fd = sock_to_polled_fd_map_.LookupPolledFd(as);
     // Set a flag so that the virtual socket "close" method knows it
     // doesn't need to call ShutdownLocked, since now the driver will.
@@ -932,7 +932,7 @@ class GrpcPolledFdFactoryWindows : public GrpcPolledFdFactory {
   SockToPolledFdMap sock_to_polled_fd_map_;
 };
 
-UniquePtr<GrpcPolledFdFactory> NewGrpcPolledFdFactory(grpc_combiner* combiner) {
+UniquePtr<GrpcPolledFdFactory> NewGrpcPolledFdFactory(Combiner* combiner) {
   return MakeUnique<GrpcPolledFdFactoryWindows>(combiner);
 }
 

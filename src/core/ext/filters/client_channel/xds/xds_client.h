@@ -68,7 +68,7 @@ class XdsClient : public InternallyRefCounted<XdsClient> {
     virtual void OnError(grpc_error* error) = 0;
   };
 
-  XdsClient(grpc_combiner* combiner, grpc_pollset_set* interested_parties,
+  XdsClient(Combiner* combiner, grpc_pollset_set* interested_parties,
             const char* balancer_name, StringView server_name,
             UniquePtr<ServiceConfigWatcherInterface> watcher,
             const grpc_channel_args& channel_args);
@@ -108,7 +108,7 @@ class XdsClient : public InternallyRefCounted<XdsClient> {
   static RefCountedPtr<XdsClient> GetFromChannelArgs(
       const grpc_channel_args& args);
 
-  grpc_combiner* combiner() { return combiner_; }
+  Combiner* combiner() { return combiner_; }
 
  private:
   class ChannelState;
@@ -133,7 +133,7 @@ class XdsClient : public InternallyRefCounted<XdsClient> {
 
   static const grpc_arg_pointer_vtable kXdsClientVtable;
 
-  grpc_combiner* combiner_;
+  Combiner* combiner_;
   grpc_pollset_set* interested_parties_;
 
   UniquePtr<char> server_name_;

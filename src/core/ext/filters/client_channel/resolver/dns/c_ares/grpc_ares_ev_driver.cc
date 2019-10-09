@@ -67,7 +67,7 @@ struct grpc_ares_ev_driver {
   gpr_refcount refs;
 
   /** combiner to synchronize c-ares and I/O callbacks on */
-  grpc_combiner* combiner;
+  Combiner* combiner;
   /** a list of grpc_fd that this event driver is currently using. */
   fd_node* fds;
   /** is this event driver currently working? */
@@ -146,7 +146,7 @@ void (*grpc_ares_test_only_inject_config)(ares_channel channel) =
 grpc_error* grpc_ares_ev_driver_create_locked(grpc_ares_ev_driver** ev_driver,
                                               grpc_pollset_set* pollset_set,
                                               int query_timeout_ms,
-                                              grpc_combiner* combiner,
+                                              Combiner* combiner,
                                               grpc_ares_request* request) {
   *ev_driver = grpc_core::New<grpc_ares_ev_driver>();
   ares_options opts;

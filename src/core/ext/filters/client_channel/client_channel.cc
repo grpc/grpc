@@ -282,7 +282,7 @@ class ChannelData {
   //
   // Fields used in the control plane.  Guarded by combiner.
   //
-  grpc_combiner* combiner_;
+  Combiner* combiner_;
   grpc_pollset_set* interested_parties_;
   RefCountedPtr<SubchannelPoolInterface> subchannel_pool_;
   OrphanablePtr<ResolvingLoadBalancingPolicy> resolving_lb_policy_;

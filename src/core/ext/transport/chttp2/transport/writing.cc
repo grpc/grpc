@@ -96,6 +96,9 @@ static void maybe_initiate_ping(grpc_chttp2_transport* t) {
     if (!t->ping_state.is_delayed_ping_timer_set) {
       t->ping_state.is_delayed_ping_timer_set = true;
       GRPC_CHTTP2_REF_TRANSPORT(t, "retry_initiate_ping_locked");
+      GRPC_CLOSURE_INIT(&t->retry_initiate_ping_locked,
+                        grpc_chttp2_retry_initiate_ping, t,
+                        grpc_schedule_on_exec_ctx);
       grpc_timer_init(&t->ping_state.delayed_ping_timer, next_allowed_ping,
                       &t->retry_initiate_ping_locked);
     }
@@ -104,7 +107,7 @@ static void maybe_initiate_ping(grpc_chttp2_transport* t) {
 
   pq->inflight_id = t->ping_ctr;
   t->ping_ctr++;
-  GRPC_CLOSURE_LIST_SCHED(&pq->lists[GRPC_CHTTP2_PCL_INITIATE]);
+  t->combiner->Run(&pq->lists[GRPC_CHTTP2_PCL_INITIATE]);
   grpc_closure_list_move(&pq->lists[GRPC_CHTTP2_PCL_NEXT],
                          &pq->lists[GRPC_CHTTP2_PCL_INFLIGHT]);
   grpc_slice_buffer_add(&t->outbuf,

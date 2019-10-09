@@ -300,7 +300,7 @@ struct grpc_chttp2_transport {
 
   grpc_resource_user* resource_user;
 
-  grpc_combiner* combiner;
+  grpc_core::Combiner* combiner;
 
   grpc_closure* notify_on_receive_settings = nullptr;
 
@@ -861,5 +861,7 @@ void grpc_chttp2_fail_pending_writes(grpc_chttp2_transport* t,
     initialization */
 void grpc_chttp2_config_default_keepalive_args(grpc_channel_args* args,
                                                bool is_client);
+
+void grpc_chttp2_retry_initiate_ping(void* tp, grpc_error* error);
 
 #endif /* GRPC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_INTERNAL_H */

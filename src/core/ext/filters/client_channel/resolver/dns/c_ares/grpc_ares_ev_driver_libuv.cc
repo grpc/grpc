@@ -41,7 +41,7 @@ void ares_uv_poll_close_cb(uv_handle_t* handle) { Delete(handle); }
 
 class GrpcPolledFdLibuv : public GrpcPolledFd {
  public:
-  GrpcPolledFdLibuv(ares_socket_t as, grpc_combiner* combiner)
+  GrpcPolledFdLibuv(ares_socket_t as, Combiner* combiner)
       : as_(as), combiner_(combiner) {
     gpr_asprintf(&name_, "c-ares socket: %" PRIdPTR, (intptr_t)as);
     handle_ = New<uv_poll_t>();
@@ -107,7 +107,7 @@ class GrpcPolledFdLibuv : public GrpcPolledFd {
   grpc_closure* read_closure_ = nullptr;
   grpc_closure* write_closure_ = nullptr;
   int poll_events_ = 0;
-  grpc_combiner* combiner_;
+  Combiner* combiner_;
 };
 
 struct AresUvPollCbArg {
@@ -162,14 +162,14 @@ class GrpcPolledFdFactoryLibuv : public GrpcPolledFdFactory {
  public:
   GrpcPolledFd* NewGrpcPolledFdLocked(ares_socket_t as,
                                       grpc_pollset_set* driver_pollset_set,
-                                      grpc_combiner* combiner) override {
+                                      Combiner* combiner) override {
     return New<GrpcPolledFdLibuv>(as, combiner);
   }
 
   void ConfigureAresChannelLocked(ares_channel channel) override {}
 };
 
-UniquePtr<GrpcPolledFdFactory> NewGrpcPolledFdFactory(grpc_combiner* combiner) {
+UniquePtr<GrpcPolledFdFactory> NewGrpcPolledFdFactory(Combiner* combiner) {
   return MakeUnique<GrpcPolledFdFactoryLibuv>();
 }
 

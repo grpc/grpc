@@ -1260,8 +1260,7 @@ bool XdsClient::ChannelState::LrsCallState::IsCurrentCallOnChannel() const {
 // XdsClient
 //
 
-XdsClient::XdsClient(grpc_combiner* combiner,
-                     grpc_pollset_set* interested_parties,
+XdsClient::XdsClient(Combiner* combiner, grpc_pollset_set* interested_parties,
                      const char* balancer_name, StringView server_name,
                      UniquePtr<ServiceConfigWatcherInterface> watcher,
                      const grpc_channel_args& channel_args)

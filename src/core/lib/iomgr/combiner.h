@@ -27,6 +27,32 @@
 #include "src/core/lib/debug/trace.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 
+namespace grpc_core {
+class Combiner {
+ public:
+  void Run(grpc_closure* closure, grpc_error* error);
+  void Run(grpc_closure_list* list);
+  void FinallyRun(grpc_closure* closure, grpc_error* error);
+  Combiner* next_combiner_on_this_exec_ctx = nullptr;
+  grpc_closure_scheduler scheduler;
+  grpc_closure_scheduler finally_scheduler;
+  grpc_core::MultiProducerSingleConsumerQueue queue;
+  // either:
+  // a pointer to the initiating exec ctx if that is the only exec_ctx that has
+  // ever queued to this combiner, or NULL. If this is non-null, it's not
+  // dereferencable (since the initiating exec_ctx may have gone out of scope)
+  gpr_atm initiating_exec_ctx_or_null;
+  // state is:
+  // lower bit - zero if orphaned (STATE_UNORPHANED)
+  // other bits - number of items queued on the lock (STATE_ELEM_COUNT_LOW_BIT)
+  gpr_atm state;
+  bool time_to_execute_final_list = false;
+  grpc_closure_list final_list;
+  grpc_closure offload;
+  gpr_refcount refs;
+};
+}  // namespace grpc_core
+
 // Provides serialized access to some resource.
 // Each action queued on a combiner is executed serially in a borrowed thread.
 // The actual thread executing actions may change over time (but there will only
@@ -58,31 +84,5 @@ void grpc_combiner_unref(grpc_core::Combiner* lock GRPC_COMBINER_DEBUG_ARGS);
 bool grpc_combiner_continue_exec_ctx();
 
 extern grpc_core::DebugOnlyTraceFlag grpc_combiner_trace;
-
-namespace grpc_core {
-class Combiner {
- public:
-  static void Run(grpc_closure* closure, grpc_error* error);
-  static void FinallyRun(grpc_closure* closure, grpc_error* error);
-  Combiner* next_combiner_on_this_exec_ctx = nullptr;
-  grpc_closure_scheduler scheduler;
-  grpc_closure_scheduler finally_scheduler;
-  grpc_core::MultiProducerSingleConsumerQueue queue;
-  // either:
-  // a pointer to the initiating exec ctx if that is the only exec_ctx that has
-  // ever queued to this combiner, or NULL. If this is non-null, it's not
-  // dereferencable (since the initiating exec_ctx may have gone out of scope)
-  gpr_atm initiating_exec_ctx_or_null;
-  // state is:
-  // lower bit - zero if orphaned (STATE_UNORPHANED)
-  // other bits - number of items queued on the lock (STATE_ELEM_COUNT_LOW_BIT)
-  gpr_atm state;
-  bool time_to_execute_final_list = false;
-  grpc_closure_list final_list;
-  grpc_closure offload;
-  gpr_refcount refs;
-};
-
-}  // namespace grpc_core
 
 #endif /* GRPC_CORE_LIB_IOMGR_COMBINER_H */
