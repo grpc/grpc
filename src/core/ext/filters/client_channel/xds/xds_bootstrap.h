@@ -67,7 +67,7 @@ class XdsBootstrap {
   ~XdsBootstrap();
 
   const char* server_uri() const { return server_uri_; }
-  const InlinedVector<ChannelCreds, 1> channel_creds() const {
+  const InlinedVector<ChannelCreds, 1>& channel_creds() const {
     return channel_creds_;
   }
   const Node* node() const { return node_.get(); }

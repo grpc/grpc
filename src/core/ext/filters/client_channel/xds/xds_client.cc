@@ -1186,15 +1186,20 @@ XdsClient::XdsClient(grpc_combiner* combiner,
       bootstrap_(XdsBootstrap::ReadFromFile(error)),
       server_name_(server_name.dup()),
       service_config_watcher_(std::move(watcher)) {
+  if (*error != GRPC_ERROR_NONE) {
+    if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_client_trace)) {
+      gpr_log(GPR_INFO, "[xds_client %p: failed to read bootstrap file: %s",
+              this, grpc_error_string(*error));
+    }
+    return;
+  }
   if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_client_trace)) {
     gpr_log(GPR_INFO, "[xds_client %p: creating channel to %s", this,
             bootstrap_->server_uri());
   }
-  if (bootstrap_ != nullptr) {
-    chand_ = MakeOrphanable<ChannelState>(
-        Ref(DEBUG_LOCATION, "XdsClient+ChannelState"), channel_args);
-    // TODO(roth): Start LDS call.
-  }
+  chand_ = MakeOrphanable<ChannelState>(
+      Ref(DEBUG_LOCATION, "XdsClient+ChannelState"), channel_args);
+  // TODO(roth): Start LDS call.
 }
 
 XdsClient::~XdsClient() { GRPC_COMBINER_UNREF(combiner_, "xds_client"); }

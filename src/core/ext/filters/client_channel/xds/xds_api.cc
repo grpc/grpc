@@ -159,6 +159,9 @@ void PopulateMetadataValue(upb_arena* arena, google_protobuf_Value* value_pb,
   }
 }
 
+// *build_version will be set to the string containing the build version,
+// since we need to avoid freeing that string until after the
+// constructed protobuf is serialized.
 void PopulateNode(upb_arena* arena, const XdsBootstrap::Node* node,
                   UniquePtr<char>* build_version,
                   envoy_api_v2_core_Node* node_msg) {
