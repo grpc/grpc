@@ -14,7 +14,7 @@
 
 
 cdef class CallbackFailureHandler:
-    
+
     def __cinit__(self,
                   str core_function_name,
                   object error_details,
@@ -78,7 +78,7 @@ cdef class CallbackCompletionQueue:
 
     cdef grpc_completion_queue* c_ptr(self):
         return self._cq
-    
+
     async def shutdown(self):
         grpc_completion_queue_shutdown(self._cq)
         await self._shutdown_completed

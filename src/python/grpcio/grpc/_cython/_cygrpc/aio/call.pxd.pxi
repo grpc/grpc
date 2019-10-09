@@ -28,4 +28,4 @@ cdef class _AioCall(GrpcCallWrapper):
         # because Core is holding a pointer for the callback handler.
         bint _is_locally_cancelled
 
-    cdef grpc_call* _create_grpc_call(self, object timeout, bytes method) except *
+    cdef void _create_grpc_call(self, object timeout, bytes method, CallCredentials credentials) except *

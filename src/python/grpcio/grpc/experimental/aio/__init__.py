@@ -52,10 +52,33 @@ def insecure_channel(
     Returns:
       A Channel.
     """
+    return Channel(target, () if options is None else options, None,
+                   compression, interceptors)
+
+
+def secure_channel(
+        target: Text,
+        credentials: grpc.ChannelCredentials,
+        options: Optional[list] = None,
+        compression: Optional[grpc.Compression] = None,
+        interceptors: Optional[Sequence[UnaryUnaryClientInterceptor]] = None):
+    """Creates a secure asynchronous Channel to a server.
+
+    Args:
+      target: The server address.
+      credentials: A ChannelCredentials instance.
+      options: An optional list of key-value pairs (channel args
+        in gRPC Core runtime) to configure the channel.
+      compression: An optional value indicating the compression method to be
+        used over the lifetime of the channel. This is an EXPERIMENTAL option.
+      interceptors: An optional sequence of interceptors that will be executed for
+        any call executed with this channel.
+
+    Returns:
+      An aio.Channel.
+    """
     return Channel(target, () if options is None else options,
-                   None,
-                   compression,
-                   interceptors=interceptors)
+                   credentials._credentials, compression, interceptors)
 
 
 ###################################  __all__  #################################
@@ -64,4 +87,4 @@ __all__ = ('AioRpcError', 'RpcContext', 'Call', 'UnaryUnaryCall',
            'UnaryStreamCall', 'init_grpc_aio', 'Channel',
            'UnaryUnaryMultiCallable', 'ClientCallDetails',
            'UnaryUnaryClientInterceptor', 'InterceptedUnaryUnaryCall',
-           'insecure_channel', 'server', 'Server')
+           'insecure_channel', 'secure_channel', 'server')

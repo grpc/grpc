@@ -28,12 +28,13 @@ cdef class _AioCall:
     def __cinit__(self,
                   AioChannel channel,
                   object deadline,
-                  bytes method):
+                  bytes method,
+                  CallCredentials credentials):
         self.call = NULL
         self._channel = channel
         self._references = []
         self._loop = asyncio.get_event_loop()
-        self._create_grpc_call(deadline, method)
+        self._create_grpc_call(deadline, method, credentials)
         self._is_locally_cancelled = False
 
     def __dealloc__(self):
@@ -45,12 +46,13 @@ cdef class _AioCall:
         id_ = id(self)
         return f"<{class_name} {id_}>"
 
-    cdef grpc_call* _create_grpc_call(self,
-                                      object deadline,
-                                      bytes method) except *:
+    cdef void _create_grpc_call(self,
+                                object deadline,
+                                bytes method,
+                                CallCredentials credentials) except *:
         """Creates the corresponding Core object for this RPC.
 
-        For unary calls, the grpc_call lives shortly and can be destroied after
+        For unary calls, the grpc_call lives shortly and can be destroyed after
         invoke start_batch. However, if either side is streaming, the grpc_call
         life span will be longer than one function. So, it would better save it
         as an instance variable than a stack variable, which reflects its
@@ -58,6 +60,7 @@ cdef class _AioCall:
         """
         cdef grpc_slice method_slice
         cdef gpr_timespec c_deadline = _timespec_from_time(deadline)
+        cdef grpc_call_error set_credentials_error
 
         method_slice = grpc_slice_from_copied_buffer(
             <const char *> method,
@@ -73,6 +76,12 @@ cdef class _AioCall:
             c_deadline,
             NULL
         )
+
+        if credentials is not None:
+            set_credentials_error = grpc_call_set_credentials(self.call, credentials.c())
+            if set_credentials_error != GRPC_CALL_OK:
+                raise Exception("Credentials couldn't have been set")
+
         grpc_slice_unref(method_slice)
 
     def cancel(self, AioRpcStatus status):
