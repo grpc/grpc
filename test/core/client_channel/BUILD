@@ -109,4 +109,7 @@ grpc_cc_test(
         "//:grpc",
         "//test/core/util:grpc_test_util",
     ],
+    # TODO(nnoble): Remove this once https://github.com/grpc/grpc/issues/20541
+    # is resolved.
+    tags = ["no_windows"],
 )
