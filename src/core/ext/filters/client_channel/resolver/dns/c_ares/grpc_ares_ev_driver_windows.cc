@@ -110,11 +110,11 @@ class GrpcPolledFdWindows {
     combiner_ = GRPC_COMBINER_REF(combiner, name_);
     GRPC_CLOSURE_INIT(&continue_register_for_on_readable_locked_,
                       &GrpcPolledFdWindows::ContinueRegisterForOnReadableLocked,
-                      this, grpc_combiner_scheduler(combiner_));
+                      this, nullptr);
     GRPC_CLOSURE_INIT(
         &continue_register_for_on_writeable_locked_,
         &GrpcPolledFdWindows::ContinueRegisterForOnWriteableLocked, this,
-        grpc_combiner_scheduler(combiner_));
+        nullptr);
   }
 
   ~GrpcPolledFdWindows() {

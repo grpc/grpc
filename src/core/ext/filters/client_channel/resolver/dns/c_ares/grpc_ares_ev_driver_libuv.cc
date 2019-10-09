@@ -153,9 +153,8 @@ void ares_uv_poll_cb(uv_poll_t* handle, int status, int events) {
   GrpcPolledFdLibuv* polled_fd =
       reinterpret_cast<GrpcPolledFdLibuv*>(handle->data);
   AresUvPollCbArg* arg = New<AresUvPollCbArg>(handle, status, events);
-  GRPC_CLOSURE_SCHED(
-      GRPC_CLOSURE_CREATE(ares_uv_poll_cb_locked, arg,
-                          grpc_combiner_scheduler(polled_fd->combiner_)),
+  polled_fd->combiner_->Run(
+      GRPC_CLOSURE_CREATE(ares_uv_poll_cb_locked, arg, nullptr),
       GRPC_ERROR_NONE);
 }
 
