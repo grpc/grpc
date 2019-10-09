@@ -201,8 +201,8 @@ void AresDnsResolver::ShutdownLocked() {
 
 void AresDnsResolver::OnNextResolution(void* arg, grpc_error* error) {
   AresDnsResolver* r = static_cast<AresDnsResolver*>(arg);
-  r->combiner()->Run(GRPC_CLOSURE_INIT(&on_next_resolution_,
-                                       OnNextResolutionLocked, this, nullptr),
+  r->combiner()->Run(GRPC_CLOSURE_INIT(&r->on_next_resolution_,
+                                       OnNextResolutionLocked, r, nullptr),
                      GRPC_ERROR_REF(error));
 }
 
@@ -326,7 +326,7 @@ char* ChooseServiceConfig(char* service_config_choice_json,
 void AresDnsResolver::OnResolved(void* arg, grpc_error* error) {
   AresDnsResolver* r = static_cast<AresDnsResolver*>(arg);
   r->combiner()->Run(
-      GRPC_CLOSURE_INIT(&on_resolved_, OnResolvedLocked, this, nullptr),
+      GRPC_CLOSURE_INIT(&r->on_resolved_, OnResolvedLocked, r, nullptr),
       GRPC_ERROR_REF(error));
 }
 
@@ -386,7 +386,7 @@ void AresDnsResolver::OnResolvedLocked(void* arg, grpc_error* error) {
     } else {
       GRPC_CARES_TRACE_LOG("resolver:%p retrying immediately", r);
     }
-    GRPC_CLOSURE_INIT(&r->on_next_resolution_, OnNextResolution, this,
+    GRPC_CLOSURE_INIT(&r->on_next_resolution_, OnNextResolution, r,
                       grpc_schedule_on_exec_ctx);
     grpc_timer_init(&r->next_resolution_timer_, next_try,
                     &r->on_next_resolution_);
@@ -415,7 +415,7 @@ void AresDnsResolver::MaybeStartResolvingLocked() {
       // new closure API is done, find a way to track this ref with the timer
       // callback as part of the type system.
       Ref(DEBUG_LOCATION, "next_resolution_timer_cooldown").release();
-      GRPC_CLOSURE_INIT(&r->on_next_resolution_, OnNextResolution, this,
+      GRPC_CLOSURE_INIT(&on_next_resolution_, OnNextResolution, this,
                         grpc_schedule_on_exec_ctx);
       grpc_timer_init(&next_resolution_timer_,
                       ExecCtx::Get()->Now() + ms_until_next_resolution,

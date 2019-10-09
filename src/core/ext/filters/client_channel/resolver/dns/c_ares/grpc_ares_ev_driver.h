@@ -43,7 +43,7 @@ ares_channel* grpc_ares_ev_driver_get_channel_locked(
 grpc_error* grpc_ares_ev_driver_create_locked(grpc_ares_ev_driver** ev_driver,
                                               grpc_pollset_set* pollset_set,
                                               int query_timeout_ms,
-                                              Combiner* combiner,
+                                              grpc_core::Combiner* combiner,
                                               grpc_ares_request* request);
 
 /* Called back when all DNS lookups have completed. */

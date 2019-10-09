@@ -151,8 +151,7 @@ void NativeDnsResolver::OnNextResolution(void* arg, grpc_error* error) {
   NativeDnsResolver* r = static_cast<NativeDnsResolver*>(arg);
   r->combiner()->Run(
       GRPC_CLOSURE_INIT(&r->on_next_resolution_,
-                        NativeDnsResolver::OnNextResolutionLocked, this,
-                        nullptr),
+                        NativeDnsResolver::OnNextResolutionLocked, r, nullptr),
       GRPC_ERROR_REF(error));
 }
 
@@ -168,9 +167,9 @@ void NativeDnsResolver::OnNextResolutionLocked(void* arg, grpc_error* error) {
 void NativeDnsResolver::OnResolved(void* arg, grpc_error* error) {
   NativeDnsResolver* r = static_cast<NativeDnsResolver*>(arg);
   r->combiner()->Run(
-      GRPC_CLOSURE_INIT(&on_resolved_, NativeDnsResolver::OnResolvedLocked,
-                        this, nullptr),
-      GRPC_ERROR_REF(error))
+      GRPC_CLOSURE_INIT(&r->on_resolved_, NativeDnsResolver::OnResolvedLocked,
+                        r, nullptr),
+      GRPC_ERROR_REF(error));
 }
 
 void NativeDnsResolver::OnResolvedLocked(void* arg, grpc_error* error) {
@@ -217,7 +216,7 @@ void NativeDnsResolver::OnResolvedLocked(void* arg, grpc_error* error) {
       gpr_log(GPR_DEBUG, "retrying immediately");
     }
     GRPC_CLOSURE_INIT(&r->on_next_resolution_,
-                      NativeDnsResolver::OnNextResolution, this,
+                      NativeDnsResolver::OnNextResolution, r,
                       grpc_schedule_on_exec_ctx);
     grpc_timer_init(&r->next_resolution_timer_, next_try,
                     &r->on_next_resolution_);

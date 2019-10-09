@@ -913,7 +913,7 @@ void GrpcLb::BalancerCallState::MaybeSendClientLoadReport(void* arg,
                                                           grpc_error* error) {
   BalancerCallState* lb_calld = static_cast<BalancerCallState*>(arg);
   lb_calld->grpclb_policy()->combiner()->Run(
-      GRPC_CLOSURE_INIT(&client_load_report_closure_,
+      GRPC_CLOSURE_INIT(&lb_calld->client_load_report_closure_,
                         MaybeSendClientLoadReportLocked, lb_calld, nullptr),
       GRPC_ERROR_REF(error));
 }
@@ -998,8 +998,8 @@ void GrpcLb::BalancerCallState::ClientLoadReportDone(void* arg,
                                                      grpc_error* error) {
   BalancerCallState* lb_calld = static_cast<BalancerCallState*>(arg);
   lb_calld->grpclb_policy()->combiner()->Run(
-      GRPC_CLOSURE_INIT(&client_load_report_closure_, ClientLoadReportDone,
-                        this, nullptr),
+      GRPC_CLOSURE_INIT(&lb_calld->client_load_report_closure_,
+                        ClientLoadReportDone, lb_calld, nullptr),
       GRPC_ERROR_REF(error));
 }
 
@@ -1020,8 +1020,8 @@ void GrpcLb::BalancerCallState::OnInitialRequestSent(void* arg,
                                                      grpc_error* error) {
   BalancerCallState* lb_calld = static_cast<BalancerCallState*>(arg);
   lb_calld->grpclb_policy()->combiner()->Run(
-      GRPC_CLOSURE_INIT(&lb_on_initial_request_sent_,
-                        OnInitialRequestSentLocked, this, nullptr),
+      GRPC_CLOSURE_INIT(&lb_calld->lb_on_initial_request_sent_,
+                        OnInitialRequestSentLocked, lb_calld, nullptr),
       GRPC_ERROR_REF(error));
 }
 
@@ -1044,8 +1044,8 @@ void GrpcLb::BalancerCallState::OnBalancerMessageReceived(void* arg,
                                                           grpc_error* error) {
   BalancerCallState* lb_calld = static_cast<BalancerCallState*>(arg);
   lb_calld->grpclb_policy()->combiner()->Run(
-      GRPC_CLOSURE_INIT(&lb_on_balancer_message_received_,
-                        OnBalancerMessageReceivedLocked, this, nullptr),
+      GRPC_CLOSURE_INIT(&lb_calld->lb_on_balancer_message_received_,
+                        OnBalancerMessageReceivedLocked, lb_calld, nullptr),
       GRPC_ERROR_REF(error));
 }
 
@@ -1184,9 +1184,9 @@ void GrpcLb::BalancerCallState::OnBalancerMessageReceivedLocked(
     op.flags = 0;
     op.reserved = nullptr;
     // Reuse the "OnBalancerMessageReceivedLocked" ref taken in StartQuery().
-    GRPC_CLOSURE_INIT(&lb_on_balancer_message_received_,
+    GRPC_CLOSURE_INIT(&lb_calld->lb_on_balancer_message_received_,
                       GrpcLb::BalancerCallState::OnBalancerMessageReceived,
-                      this, grpc_schedule_on_exec_ctx);
+                      lb_calld, grpc_schedule_on_exec_ctx);
     const grpc_call_error call_error = grpc_call_start_batch_and_execute(
         lb_calld->lb_call_, &op, 1,
         &lb_calld->lb_on_balancer_message_received_);
@@ -1196,12 +1196,13 @@ void GrpcLb::BalancerCallState::OnBalancerMessageReceivedLocked(
   }
 }
 
-void GrpcLb::BalancerCallState::OnBalancerStatusReceivedLocked(
-    void* arg, grpc_error* error) {
+void GrpcLb::BalancerCallState::OnBalancerStatusReceived(void* arg,
+                                                         grpc_error* error) {
   BalancerCallState* lb_calld = static_cast<BalancerCallState*>(arg);
   lb_calld->grpclb_policy()->combiner()->Run(
-      GRPC_CLOSURE_INIT(&lb_on_balancer_status_received_,
-                        OnBalancerStatusReceivedLocked, this, nullptr));
+      GRPC_CLOSURE_INIT(&lb_calld->lb_on_balancer_status_received_,
+                        OnBalancerStatusReceivedLocked, lb_calld, nullptr),
+      GRPC_ERROR_REF(error));
 }
 
 void GrpcLb::BalancerCallState::OnBalancerStatusReceivedLocked(
@@ -1539,14 +1540,15 @@ void GrpcLb::OnBalancerChannelConnectivityChanged(void* arg,
                                                   grpc_error* error) {
   GrpcLb* self = static_cast<GrpcLb*>(arg);
   self->combiner()->Run(
-      GRPC_CLOSURE_INIT(&lb_channel_on_connectivity_changed_,
+      GRPC_CLOSURE_INIT(&self->lb_channel_on_connectivity_changed_,
                         &GrpcLb::OnBalancerChannelConnectivityChangedLocked,
-                        this, nullptr),
+                        self, nullptr),
       GRPC_ERROR_REF(error));
 }
 
 void GrpcLb::OnBalancerChannelConnectivityChangedLocked(void* arg,
                                                         grpc_error* error) {
+  GrpcLb* self = static_cast<GrpcLb*>(arg);
   if (!self->shutting_down_ && self->fallback_at_startup_checks_pending_) {
     if (self->lb_channel_connectivity_ != GRPC_CHANNEL_TRANSIENT_FAILURE) {
       // Not in TRANSIENT_FAILURE.  Renew connectivity watch.
@@ -1555,7 +1557,7 @@ void GrpcLb::OnBalancerChannelConnectivityChangedLocked(void* arg,
               grpc_channel_get_channel_stack(self->lb_channel_));
       GPR_ASSERT(client_channel_elem->filter == &grpc_client_channel_filter);
       GRPC_CLOSURE_INIT(&self->lb_channel_on_connectivity_changed_,
-                        &GrpcLb::OnBalancerChannelConnectivityChanged, this,
+                        &GrpcLb::OnBalancerChannelConnectivityChanged, self,
                         grpc_schedule_on_exec_ctx);
       grpc_client_channel_watch_connectivity_state(
           client_channel_elem,
@@ -1635,8 +1637,9 @@ void GrpcLb::StartBalancerCallRetryTimerLocked() {
 void GrpcLb::OnBalancerCallRetryTimer(void* arg, grpc_error* error) {
   GrpcLb* grpclb_policy = static_cast<GrpcLb*>(arg);
   grpclb_policy->combiner()->Run(
-      GRPC_CLOSURE_INIT(&lb_on_call_retry_,
-                        &GrpcLb::OnBalancerCallRetryTimerLocked, this, nullptr),
+      GRPC_CLOSURE_INIT(&grpclb_policy->lb_on_call_retry_,
+                        &GrpcLb::OnBalancerCallRetryTimerLocked, grpclb_policy,
+                        nullptr),
       GRPC_ERROR_REF(error));
 }
 
@@ -1676,11 +1679,11 @@ void GrpcLb::MaybeEnterFallbackModeAfterStartup() {
   }
 }
 
-void GrpcLb::OnFallbackTimerLocked(void* arg, grpc_error* error) {
+void GrpcLb::OnFallbackTimer(void* arg, grpc_error* error) {
   GrpcLb* grpclb_policy = static_cast<GrpcLb*>(arg);
   grpclb_policy->combiner()->Run(
-      GRPC_CLOSURE_INIT(&lb_on_fallback_, &GrpcLb::OnFallbackTimerLocked, this,
-                        nullptr),
+      GRPC_CLOSURE_INIT(&grpclb_policy->lb_on_fallback_,
+                        &GrpcLb::OnFallbackTimerLocked, grpclb_policy, nullptr),
       GRPC_ERROR_REF(error));
 }
 

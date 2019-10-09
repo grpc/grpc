@@ -516,7 +516,8 @@ void XdsClient::ChannelState::RetryableCall<T>::OnRetryTimer(
     void* arg, grpc_error* error) {
   RetryableCall* calld = static_cast<RetryableCall*>(arg);
   calld->chand_->xds_client()->combiner()->Run(
-      GRPC_CLOSURE_INIT(&on_retry_timer_, OnRetryTimerLocked, this, nullptr),
+      GRPC_CLOSURE_INIT(&calld->on_retry_timer_, OnRetryTimerLocked, calld,
+                        nullptr),
       GRPC_ERROR_REF(error));
 }
 
@@ -660,8 +661,8 @@ void XdsClient::ChannelState::AdsCallState::OnResponseReceived(
     void* arg, grpc_error* error) {
   AdsCallState* ads_calld = static_cast<AdsCallState*>(arg);
   ads_calld->xds_client()->combiner_->Run(
-      GRPC_CLOSURE_INIT(&on_response_received_, OnResponseReceivedLocked, this,
-                        nullptr),
+      GRPC_CLOSURE_INIT(&ads_calld->on_response_received_,
+                        OnResponseReceivedLocked, ads_calld, nullptr),
       GRPC_ERROR_REF(error));
   ;
 }
@@ -813,8 +814,8 @@ void XdsClient::ChannelState::AdsCallState::OnStatusReceived(
     void* arg, grpc_error* error) {
   AdsCallState* ads_calld = static_cast<AdsCallState*>(arg);
   ads_calld->xds_client()->combiner_->Run(
-      GRPC_CLOSURE_INIT(&on_status_received_, OnStatusReceivedLocked, this,
-                        nullptr),
+      GRPC_CLOSURE_INIT(&ads_calld->on_status_received_, OnStatusReceivedLocked,
+                        ads_calld, nullptr),
       GRPC_ERROR_REF(error));
 }
 
@@ -874,8 +875,8 @@ void XdsClient::ChannelState::LrsCallState::Reporter::OnNextReportTimer(
     void* arg, grpc_error* error) {
   Reporter* self = static_cast<Reporter*>(arg);
   self->xds_client()->combiner()->Run(
-      GRPC_CLOSURE_INIT(&on_next_report_timer_, OnNextReportTimerLocked, this,
-                        nullptr),
+      GRPC_CLOSURE_INIT(&self->on_next_report_timer_, OnNextReportTimerLocked,
+                        self, nullptr),
       GRPC_ERROR_REF(error));
 }
 
@@ -934,7 +935,8 @@ void XdsClient::ChannelState::LrsCallState::Reporter::OnReportDone(
     void* arg, grpc_error* error) {
   Reporter* self = static_cast<Reporter*>(arg);
   self->xds_client()->combiner_->Run(
-      GRPC_CLOSURE_INIT(&on_report_done_, OnReportDoneLocked, this, nullptr),
+      GRPC_CLOSURE_INIT(&self->on_report_done_, OnReportDoneLocked, self,
+                        nullptr),
       GRPC_ERROR_REF(error));
 }
 
@@ -1102,8 +1104,8 @@ void XdsClient::ChannelState::LrsCallState::OnInitialRequestSent(
     void* arg, grpc_error* error) {
   LrsCallState* lrs_calld = static_cast<LrsCallState*>(arg);
   lrs_calld->xds_client()->combiner_->Run(
-      GRPC_CLOSURE_INIT(&on_initial_request_sent_, OnInitialRequestSentLocked,
-                        this, nullptr),
+      GRPC_CLOSURE_INIT(&lrs_calld->on_initial_request_sent_,
+                        OnInitialRequestSentLocked, lrs_calld, nullptr),
       GRPC_ERROR_REF(error));
 }
 
@@ -1121,8 +1123,8 @@ void XdsClient::ChannelState::LrsCallState::OnResponseReceived(
     void* arg, grpc_error* error) {
   LrsCallState* lrs_calld = static_cast<LrsCallState*>(arg);
   lrs_calld->xds_client()->combiner_->Run(
-      GRPC_CLOSURE_INIT(&on_response_received_, OnResponseReceivedLocked, this,
-                        nullptr),
+      GRPC_CLOSURE_INIT(&lrs_calld->on_response_received_,
+                        OnResponseReceivedLocked, lrs_calld, nullptr),
       GRPC_ERROR_REF(error));
 }
 
@@ -1209,8 +1211,8 @@ void XdsClient::ChannelState::LrsCallState::OnResponseReceivedLocked(
   op.reserved = nullptr;
   GPR_ASSERT(lrs_calld->call_ != nullptr);
   // Reuse the "OnResponseReceivedLocked" ref taken in ctor.
-  GRPC_CLOSURE_INIT(&on_response_received_, OnResponseReceived, this,
-                    grpc_schedule_on_exec_ctx);
+  GRPC_CLOSURE_INIT(&lrs_calld->on_response_received_, OnResponseReceived,
+                    lrs_calld, grpc_schedule_on_exec_ctx);
   const grpc_call_error call_error = grpc_call_start_batch_and_execute(
       lrs_calld->call_, &op, 1, &lrs_calld->on_response_received_);
   GPR_ASSERT(GRPC_CALL_OK == call_error);
@@ -1220,8 +1222,8 @@ void XdsClient::ChannelState::LrsCallState::OnStatusReceived(
     void* arg, grpc_error* error) {
   LrsCallState* lrs_calld = static_cast<LrsCallState*>(arg);
   lrs_calld->xds_client()->combiner_->Run(
-      GRPC_CLOSURE_INIT(&on_status_received_, OnStatusReceivedLocked, this,
-                        nullptr),
+      GRPC_CLOSURE_INIT(&lrs_calld->on_status_received_, OnStatusReceivedLocked,
+                        lrs_calld, nullptr),
       GRPC_ERROR_REF(error));
 }
 
