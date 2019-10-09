@@ -818,6 +818,8 @@ typedef void (*grpc_tls_on_credential_reload_done_cb)(
       instance that this argument corresponds to.
     - context is a pointer to a wrapped language implementation of this
       grpc_tls_credential_reload_arg instance.
+    - destroy_context is a pointer to a caller-provided method that cleans
+      up any data associated with the context pointer.
     It is used for experimental purposes for now and subject to change.
 */
 struct grpc_tls_credential_reload_arg {
@@ -828,6 +830,7 @@ struct grpc_tls_credential_reload_arg {
   const char* error_details;
   grpc_tls_credential_reload_config* config;
   void* context;
+  void (*destroy_context)(void* ctx);
 };
 
 /** Create a grpc_tls_credential_reload_config instance.
@@ -889,6 +892,8 @@ typedef void (*grpc_tls_on_server_authorization_check_done_cb)(
      corresponds to.
    - context is a pointer to a wrapped language implementation of this
      grpc_tls_server_authorization_check_arg instance.
+   - destroy_context is a pointer to a caller-provided method that cleans
+      up any data associated with the context pointer.
    It is used for experimental purpose for now and subject to change.
 */
 struct grpc_tls_server_authorization_check_arg {
@@ -901,6 +906,7 @@ struct grpc_tls_server_authorization_check_arg {
   const char* error_details;
   grpc_tls_server_authorization_check_config* config;
   void* context;
+  void (*destroy_context)(void* ctx);
 };
 
 /** Create a grpc_tls_server_authorization_check_config instance.

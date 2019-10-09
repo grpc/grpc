@@ -369,7 +369,10 @@ TEST_F(CredentialsTest, TlsCredentialReloadConfigSchedule) {
   // Cleanup.
   gpr_free(const_cast<char*>(error_details_before_schedule));
   grpc_core::Delete(c_arg->key_materials_config);
-  delete arg;
+  // delete arg;
+  if (c_arg->destroy_context != nullptr) {
+    c_arg->destroy_context(c_arg->context);
+  }
   gpr_free(c_arg);
   gpr_free(config->c_config());
 }
@@ -422,6 +425,7 @@ TEST_F(CredentialsTest, TlsCredentialReloadConfigCppToC) {
       c_arg.key_materials_config;
 
   // Cleanup.
+  c_arg.destroy_context(c_arg.context);
   ::grpc_core::Delete(config.c_config());
 }
 
@@ -501,7 +505,10 @@ TEST_F(CredentialsTest, TlsServerAuthorizationCheckConfigSchedule) {
   gpr_free(const_cast<char*>(c_arg->target_name));
   gpr_free(const_cast<char*>(c_arg->peer_cert));
   gpr_free(const_cast<char*>(c_arg->error_details));
-  delete arg;
+  // delete arg;
+  if (c_arg->destroy_context != nullptr) {
+    c_arg->destroy_context(c_arg->context);
+  }
   gpr_free(c_arg);
   gpr_free(config.c_config());
 }
@@ -530,6 +537,7 @@ TEST_F(CredentialsTest, TlsServerAuthorizationCheckConfigCppToC) {
 
   // Cleanup.
   gpr_free(c_arg.cb_user_data);
+  c_arg.destroy_context(c_arg.context);
   gpr_free(const_cast<char*>(c_arg.error_details));
   gpr_free(const_cast<char*>(c_arg.target_name));
   gpr_free(const_cast<char*>(c_arg.peer_cert));
@@ -632,6 +640,9 @@ TEST_F(CredentialsTest, TlsCredentialsOptionsCppToC) {
 
   // Cleanup.
   ::grpc_core::Delete(c_credential_reload_arg.key_materials_config);
+  c_credential_reload_arg.destroy_context(c_credential_reload_arg.context);
+  c_server_authorization_check_arg.destroy_context(
+      c_server_authorization_check_arg.context);
   gpr_free(c_server_authorization_check_arg.cb_user_data);
   gpr_free(const_cast<char*>(c_server_authorization_check_arg.target_name));
   gpr_free(const_cast<char*>(c_server_authorization_check_arg.peer_cert));
@@ -683,7 +694,10 @@ TEST_F(CredentialsTest, TlsCredentialReloadConfigErrorMessages) {
 
   // Cleanup.
   gpr_free(const_cast<char*>(c_arg->error_details));
-  delete arg;
+  // delete arg;
+  if (c_arg->destroy_context != nullptr) {
+    c_arg->destroy_context(c_arg->context);
+  }
   delete c_arg;
   gpr_free(config->c_config());
 }
@@ -713,7 +727,10 @@ TEST_F(CredentialsTest, TlsServerAuthorizationCheckConfigErrorMessages) {
 
   // Cleanup.
   gpr_free(const_cast<char*>(c_arg->error_details));
-  delete arg;
+  // delete arg;
+  if (c_arg->destroy_context != nullptr) {
+    c_arg->destroy_context(c_arg->context);
+  }
   delete c_arg;
   gpr_free(config->c_config());
 }
