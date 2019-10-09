@@ -525,33 +525,40 @@ static void on_accept(void* arg, grpc_endpoint* endpoint,
   grpc_pollset_set_add_pollset(conn->pollset_set, proxy->pollset);
   grpc_endpoint_add_to_pollset_set(endpoint, conn->pollset_set);
   GRPC_CLOSURE_INIT(&conn->on_read_request_done, on_read_request_done, conn,
-                    grpc_schedule_on_exec_ctx);
+                    nullptr);
   GRPC_CLOSURE_INIT(&conn->on_server_connect_done, on_server_connect_done, conn,
-                    grpc_schedule_on_exec_ctx);
+                    nullptr);
   GRPC_CLOSURE_INIT(&conn->on_write_response_done, on_write_response_done, conn,
-                    grpc_schedule_on_exec_ctx);
+                    nullptr);
   GRPC_CLOSURE_INIT(&conn->on_client_read_done, on_client_read_done, conn,
-                    grpc_schedule_on_exec_ctx);
+                    nullptr);
   GRPC_CLOSURE_INIT(&conn->on_client_write_done, on_client_write_done, conn,
-                    grpc_schedule_on_exec_ctx);
+                    nullptr);
   GRPC_CLOSURE_INIT(&conn->on_server_read_done, on_server_read_done, conn,
-                    grpc_schedule_on_exec_ctx);
+                    nullptr);
   GRPC_CLOSURE_INIT(&conn->on_server_write_done, on_server_write_done, conn,
-                    grpc_schedule_on_exec_ctx);
+                    nullptr);
   GRPC_CLOSURE_INIT(&conn->on_read_request_done_hopper,
-                    on_read_request_done_hopper, conn, nullptr);
+                    on_read_request_done_hopper, conn,
+                    grpc_schedule_on_exec_ctx);
   GRPC_CLOSURE_INIT(&conn->on_server_connect_done_hopper,
-                    on_server_connect_done_hopper, conn, nullptr);
+                    on_server_connect_done_hopper, conn,
+                    grpc_schedule_on_exec_ctx);
   GRPC_CLOSURE_INIT(&conn->on_write_response_done_hopper,
-                    on_write_response_done_hopper, conn, nullptr);
+                    on_write_response_done_hopper, conn,
+                    grpc_schedule_on_exec_ctx);
   GRPC_CLOSURE_INIT(&conn->on_client_read_done_hopper,
-                    on_client_read_done_hopper, conn, nullptr);
+                    on_client_read_done_hopper, conn,
+                    grpc_schedule_on_exec_ctx);
   GRPC_CLOSURE_INIT(&conn->on_client_write_done_hopper,
-                    on_client_write_done_hopper, conn, nullptr);
+                    on_client_write_done_hopper, conn,
+                    grpc_schedule_on_exec_ctx);
   GRPC_CLOSURE_INIT(&conn->on_server_read_done_hopper,
-                    on_server_read_done_hopper, conn, nullptr);
+                    on_server_read_done_hopper, conn,
+                    grpc_schedule_on_exec_ctx);
   GRPC_CLOSURE_INIT(&conn->on_server_write_done_hopper,
-                    on_server_write_done_hopper, conn, nullptr);
+                    on_server_write_done_hopper, conn,
+                    grpc_schedule_on_exec_ctx);
   grpc_slice_buffer_init(&conn->client_read_buffer);
   grpc_slice_buffer_init(&conn->client_deferred_write_buffer);
   conn->client_is_writing = false;

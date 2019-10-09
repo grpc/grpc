@@ -302,6 +302,7 @@ static void enqueue_finally(void* closure, grpc_error* error);
 
 static void combiner_finally_exec(grpc_core::Combiner* lock,
                                   grpc_closure* closure, grpc_error* error) {
+  GPR_ASSERT(lock != nullptr);
   GPR_TIMER_SCOPE("combiner.execute_finally", 0);
   GRPC_STATS_INC_COMBINER_LOCKS_SCHEDULED_FINAL_ITEMS();
   GRPC_COMBINER_TRACE(gpr_log(
@@ -309,10 +310,10 @@ static void combiner_finally_exec(grpc_core::Combiner* lock,
       grpc_core::ExecCtx::Get()->combiner_data()->active_combiner));
   if (grpc_core::ExecCtx::Get()->combiner_data()->active_combiner != lock) {
     GPR_TIMER_MARK("slowpath", 0);
-    lock->Run(
-        GRPC_CLOSURE_CREATE(enqueue_finally, closure,
-                            reinterpret_cast<grpc_closure_scheduler*>(lock)),
-        error);
+    // Reusing scheduler to store the combiner so that it can be accessed in
+    // enqueue_finally
+    closure->scheduler = reinterpret_cast<grpc_closure_scheduler*>(lock);
+    lock->Run(GRPC_CLOSURE_CREATE(enqueue_finally, closure, nullptr), error);
     return;
   }
 
