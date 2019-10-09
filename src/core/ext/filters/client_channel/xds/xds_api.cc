@@ -160,8 +160,7 @@ void PopulateMetadataValue(upb_arena* arena, google_protobuf_Value* value_pb,
 }
 
 void PopulateNode(upb_arena* arena, const XdsBootstrap::Node* node,
-                  const char* build_version,
-                  envoy_api_v2_core_Node* node_msg) {
+                  const char* build_version, envoy_api_v2_core_Node* node_msg) {
   if (node != nullptr) {
     if (node->id != nullptr) {
       envoy_api_v2_core_Node_set_id(node_msg, upb_strview_makez(node->id));
@@ -193,8 +192,8 @@ void PopulateNode(upb_arena* arena, const XdsBootstrap::Node* node,
       }
     }
   }
-  envoy_api_v2_core_Node_set_build_version(
-      node_msg, upb_strview_makez(build_version));
+  envoy_api_v2_core_Node_set_build_version(node_msg,
+                                           upb_strview_makez(build_version));
 }
 
 }  // namespace
