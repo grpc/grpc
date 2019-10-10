@@ -250,56 +250,8 @@ static void test_slice_interning(void) {
   grpc_slice src1 = grpc_slice_from_copied_string("hello123456789123456789");
   grpc_slice src2 = grpc_slice_from_copied_string("hello123456789123456789");
   
-  void *ptr1 = GRPC_SLICE_START_PTR(src1);
-  void *ptr2 = GRPC_SLICE_START_PTR(src2);
-  
-  // ptr1 and ptr2 are actually not equal, but the following assert still fails
-  // under some circumstances
-
-  // 1. if assert is used, the test fails
-  //GPR_ASSERT(ptr1 != ptr2);
-  
-  // 2. after manually expanding the GPR_ASSERT macro, the test still fails
-  //do {
-  //  if (GPR_UNLIKELY(!(ptr1 != ptr2))) {
-  //    gpr_log(GPR_ERROR, "assertion failed");
-  //    abort();
-  //  }
-  //}
-  //while (0);
-
-  // 3. a simplified version of the GPR_ASSERT macro expansion to eliminate possible culprits
-  // test still fails
-  // do {
-  //   if (ptr1 == ptr2) {
-  //     gpr_log(GPR_ERROR, "assertion failed");
-  //     abort();
-  //   }
-  // }
-  // while (0);
-
-  // 4. just use an if without the enclosing while loop: test still fails
-  //if (ptr1 == ptr2) {
-  //  gpr_log(GPR_ERROR, "assertion failed");
-  //  abort();
-  //}
-
-  // still fails
-  //if (ptr1 == ptr2) {
-  //  gpr_log(GPR_ERROR, "assertion failed");
-  //  GPR_ASSERT(0);
-  //}
-
-  // if (GRPC_SLICE_START_PTR(src1) == GRPC_SLICE_START_PTR(src2)) {
-  //   gpr_log(GPR_ERROR, "assertion would have failed");
-  //   gpr_log(GPR_ERROR, "we just evaluated the start ptrs as being equal, but it's actually not true");
-  //   print_slice(src1);  // call into another function
-  //   print_slice(src2);
-  //   abort();
-  // }
-
-   // the original assert checks that newly allocated slices point to different data
-   // GPR_ASSERT(GRPC_SLICE_START_PTR(src1) != GRPC_SLICE_START_PTR(src2));
+  // the original assert checks that newly allocated slices point to different data
+  // GPR_ASSERT(GRPC_SLICE_START_PTR(src1) != GRPC_SLICE_START_PTR(src2));
 
   if (GRPC_SLICE_START_PTR(src1) == GRPC_SLICE_START_PTR(src2)) {
     gpr_log(GPR_ERROR, "assertion would have failed");
@@ -310,9 +262,9 @@ static void test_slice_interning(void) {
     print_slice(src1);
     print_slice(src2);
 
-    // If you uncomment this line, compiler will see that we're using the src1 value and
+    // If you uncomment the next line, compiler will see that we're using the src1 value and
     // the enclosing if statement will be evaluated correctly (pointers will be seen as not equal) 
-    // gpr_log(GPR_ERROR, "src1 start ptr:" + GRPC_SLICE_START_PTR(src1));
+    // gpr_log(GPR_ERROR, "src1 start ptr:", GRPC_SLICE_START_PTR(src1));
     abort();
   }
 
@@ -328,8 +280,6 @@ static void test_slice_interning(void) {
   grpc_slice_unref(interned2);
   grpc_shutdown();
 }
-
-
 
 static void test_static_slice_interning(void) {
   LOG_TEST_NAME("test_static_slice_interning");
