@@ -1590,7 +1590,7 @@ try:
             # HTTP_SERVER_TEST_CASES, in which clients use their gRPC interop clients rather
             # than specialized http2 clients, reusing existing test implementations.
             # For example, in the "data_frame_padding" test, use language's gRPC
-            # interop clients and make them think that theyre running "large_unary"
+            # interop clients and make them think that they're running "large_unary"
             # test case. This avoids implementing a new test case in each language.
             for test_case in _HTTP2_SERVER_TEST_CASES_THAT_USE_GRPC_CLIENTS:
                 if test_case not in language.unimplemented_test_cases():

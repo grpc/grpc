@@ -23,6 +23,8 @@
 
 #include <grpc/grpc.h>
 
+#include "src/core/lib/surface/channel_stack_type.h"
+
 // Channel args are intentionally immutable, to avoid the need for locking.
 
 /** Copy the arguments in \a src into a new instance */
@@ -98,6 +100,14 @@ bool grpc_channel_arg_get_bool(const grpc_arg* arg, bool default_value);
 bool grpc_channel_args_find_bool(const grpc_channel_args* args,
                                  const char* name, bool default_value);
 
+template <typename T>
+T* grpc_channel_args_find_pointer(const grpc_channel_args* args,
+                                  const char* name) {
+  const grpc_arg* arg = grpc_channel_args_find(args, name);
+  if (arg == nullptr || arg->type != GRPC_ARG_POINTER) return nullptr;
+  return static_cast<T*>(arg->value.pointer.p);
+}
+
 // Helpers for creating channel args.
 grpc_arg grpc_channel_arg_string_create(char* name, char* value);
 grpc_arg grpc_channel_arg_integer_create(char* name, int value);
@@ -107,5 +117,17 @@ grpc_arg grpc_channel_arg_pointer_create(char* name, void* value,
 // Returns a string representing channel args in human-readable form.
 // Callers takes ownership of result.
 char* grpc_channel_args_string(const grpc_channel_args* args);
+
+// Takes ownership of the old_args
+typedef grpc_channel_args* (*grpc_channel_args_client_channel_creation_mutator)(
+    const char* target, grpc_channel_args* old_args,
+    grpc_channel_stack_type type);
+
+// Should be called only once globaly before grpc is init'ed.
+void grpc_channel_args_set_client_channel_creation_mutator(
+    grpc_channel_args_client_channel_creation_mutator cb);
+// This will be called at the creation of each channel.
+grpc_channel_args_client_channel_creation_mutator
+grpc_channel_args_get_client_channel_creation_mutator();
 
 #endif /* GRPC_CORE_LIB_CHANNEL_CHANNEL_ARGS_H */

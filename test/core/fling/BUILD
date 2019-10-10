@@ -59,6 +59,7 @@ grpc_cc_test(
         "//test/core/end2end:ssl_test_data",
         "//test/core/util:grpc_test_util",
     ],
+    tags = ["no_windows"],
 )
 
 grpc_cc_test(
@@ -74,4 +75,5 @@ grpc_cc_test(
         "//test/core/end2end:ssl_test_data",
         "//test/core/util:grpc_test_util",
     ],
+    tags = ["no_windows"],
 )

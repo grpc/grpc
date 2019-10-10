@@ -1132,17 +1132,19 @@ class ObjCLanguage(object):
                     'EXAMPLE_PATH': 'src/objective-c/examples/tvOS-sample',
                     'FRAMEWORKS': 'NO'
                 }))
-        out.append(
-            self.config.job_spec(
-                ['src/objective-c/tests/build_one_example_bazel.sh'],
-                timeout_seconds=20 * 60,
-                shortname='ios-buildtest-example-watchOS-sample',
-                cpu_cost=1e6,
-                environ={
-                    'SCHEME': 'watchOS-sample-WatchKit-App',
-                    'EXAMPLE_PATH': 'src/objective-c/examples/watchOS-sample',
-                    'FRAMEWORKS': 'NO'
-                }))
+        # Disabled due to #20258
+        # TODO (mxyan): Reenable this test when #20258 is resolved.
+        # out.append(
+        #     self.config.job_spec(
+        #         ['src/objective-c/tests/build_one_example_bazel.sh'],
+        #         timeout_seconds=20 * 60,
+        #         shortname='ios-buildtest-example-watchOS-sample',
+        #         cpu_cost=1e6,
+        #         environ={
+        #             'SCHEME': 'watchOS-sample-WatchKit-App',
+        #             'EXAMPLE_PATH': 'src/objective-c/examples/watchOS-sample',
+        #             'FRAMEWORKS': 'NO'
+        #         }))
         out.append(
             self.config.job_spec(
                 ['src/objective-c/tests/run_plugin_tests.sh'],
@@ -1184,6 +1186,24 @@ class ObjCLanguage(object):
                 cpu_cost=1e6,
                 environ={
                     'SCHEME': 'CronetTests'
+                }))
+        out.append(
+            self.config.job_spec(
+                ['src/objective-c/tests/run_one_test.sh'],
+                timeout_seconds=30 * 60,
+                shortname='ios-perf-test',
+                cpu_cost=1e6,
+                environ={
+                    'SCHEME': 'PerfTests'
+                }))
+        out.append(
+            self.config.job_spec(
+                ['src/objective-c/tests/run_one_test.sh'],
+                timeout_seconds=30 * 60,
+                shortname='ios-perf-test-posix',
+                cpu_cost=1e6,
+                environ={
+                    'SCHEME': 'PerfTestsPosix'
                 }))
         out.append(
             self.config.job_spec(
@@ -1360,7 +1380,7 @@ def _docker_arch_suffix(arch):
 
 
 def runs_per_test_type(arg_str):
-    """Auxilary function to parse the "runs_per_test" flag.
+    """Auxiliary function to parse the "runs_per_test" flag.
 
        Returns:
            A positive integer or 0, the latter indicating an infinite number of
@@ -1766,7 +1786,7 @@ def _shut_down_legacy_server(legacy_server_port):
 
 
 def _calculate_num_runs_failures(list_of_results):
-    """Caculate number of runs and failures for a particular test.
+    """Calculate number of runs and failures for a particular test.
 
   Args:
     list_of_results: (List) of JobResult object.

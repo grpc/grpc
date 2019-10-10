@@ -359,8 +359,8 @@ TEST_P(PortSharingEnd2endTest, TwoHandoffPorts) {
   }
 }
 
-INSTANTIATE_TEST_CASE_P(PortSharingEnd2end, PortSharingEnd2endTest,
-                        ::testing::ValuesIn(CreateTestScenarios()));
+INSTANTIATE_TEST_SUITE_P(PortSharingEnd2end, PortSharingEnd2endTest,
+                         ::testing::ValuesIn(CreateTestScenarios()));
 
 }  // namespace
 }  // namespace testing

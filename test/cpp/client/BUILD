@@ -48,4 +48,7 @@ grpc_cc_test(
         "//test/cpp/end2end:test_service_impl",
         "//test/cpp/util:test_util",
     ],
+    # TODO(jtattermusch): test fails frequently on Win RBE, but passes locally
+    # reenable the tests once it works reliably on Win RBE.
+    tags = ["no_windows"],
 )

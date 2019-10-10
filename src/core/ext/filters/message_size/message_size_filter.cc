@@ -88,13 +88,13 @@ UniquePtr<ServiceConfig::ParsedConfig> MessageSizeParser::ParsePerMethodParams(
     *error = GRPC_ERROR_CREATE_FROM_VECTOR("Message size parser", &error_list);
     return nullptr;
   }
-  return UniquePtr<ServiceConfig::ParsedConfig>(New<MessageSizeParsedConfig>(
-      max_request_message_bytes, max_response_message_bytes));
+  return MakeUnique<MessageSizeParsedConfig>(max_request_message_bytes,
+                                             max_response_message_bytes);
 }
 
 void MessageSizeParser::Register() {
-  g_message_size_parser_index = ServiceConfig::RegisterParser(
-      UniquePtr<ServiceConfig::Parser>(New<MessageSizeParser>()));
+  g_message_size_parser_index =
+      ServiceConfig::RegisterParser(MakeUnique<MessageSizeParser>());
 }
 
 size_t MessageSizeParser::ParserIndex() { return g_message_size_parser_index; }

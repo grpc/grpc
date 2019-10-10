@@ -53,9 +53,8 @@ void SubchannelNode::PopulateConnectivityState(grpc_json* json) {
       connectivity_state_.Load(MemoryOrder::RELAXED);
   json = grpc_json_create_child(nullptr, json, "state", nullptr,
                                 GRPC_JSON_OBJECT, false);
-  grpc_json_create_child(nullptr, json, "state",
-                         grpc_connectivity_state_name(state), GRPC_JSON_STRING,
-                         false);
+  grpc_json_create_child(nullptr, json, "state", ConnectivityStateName(state),
+                         GRPC_JSON_STRING, false);
 }
 
 grpc_json* SubchannelNode::RenderJson() {

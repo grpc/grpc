@@ -195,7 +195,7 @@ int grpc_ssl_cmp_target_name(
 }
 
 grpc_core::RefCountedPtr<grpc_auth_context> grpc_ssl_peer_to_auth_context(
-    const tsi_peer* peer) {
+    const tsi_peer* peer, const char* transport_security_type) {
   size_t i;
   const char* peer_identity_property_name = nullptr;
 
@@ -205,7 +205,7 @@ grpc_core::RefCountedPtr<grpc_auth_context> grpc_ssl_peer_to_auth_context(
       grpc_core::MakeRefCounted<grpc_auth_context>(nullptr);
   grpc_auth_context_add_cstring_property(
       ctx.get(), GRPC_TRANSPORT_SECURITY_TYPE_PROPERTY_NAME,
-      GRPC_SSL_TRANSPORT_SECURITY_TYPE);
+      transport_security_type);
   for (i = 0; i < peer->property_count; i++) {
     const tsi_peer_property* prop = &peer->properties[i];
     if (prop->name == nullptr) continue;

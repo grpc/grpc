@@ -33,7 +33,6 @@ if (PHP_GRPC != "no") {
     "src\\core\\lib\\gpr\\log_linux.cc " +
     "src\\core\\lib\\gpr\\log_posix.cc " +
     "src\\core\\lib\\gpr\\log_windows.cc " +
-    "src\\core\\lib\\gpr\\mpscq.cc " +
     "src\\core\\lib\\gpr\\murmur_hash.cc " +
     "src\\core\\lib\\gpr\\string.cc " +
     "src\\core\\lib\\gpr\\string_posix.cc " +
@@ -55,6 +54,7 @@ if (PHP_GRPC != "no") {
     "src\\core\\lib\\gprpp\\fork.cc " +
     "src\\core\\lib\\gprpp\\global_config_env.cc " +
     "src\\core\\lib\\gprpp\\host_port.cc " +
+    "src\\core\\lib\\gprpp\\mpscq.cc " +
     "src\\core\\lib\\gprpp\\thd_posix.cc " +
     "src\\core\\lib\\gprpp\\thd_windows.cc " +
     "src\\core\\lib\\profiling\\basic_timers.cc " +
@@ -387,9 +387,10 @@ if (PHP_GRPC != "no") {
     "src\\core\\ext\\upb-generated\\src\\proto\\grpc\\lb\\v1\\load_balancer.upb.c " +
     "src\\core\\ext\\filters\\client_channel\\resolver\\fake\\fake_resolver.cc " +
     "src\\core\\ext\\filters\\client_channel\\lb_policy\\xds\\xds.cc " +
-    "src\\core\\ext\\filters\\client_channel\\lb_policy\\xds\\xds_channel_secure.cc " +
-    "src\\core\\ext\\filters\\client_channel\\lb_policy\\xds\\xds_client_stats.cc " +
-    "src\\core\\ext\\filters\\client_channel\\lb_policy\\xds\\xds_load_balancer_api.cc " +
+    "src\\core\\ext\\filters\\client_channel\\xds\\xds_api.cc " +
+    "src\\core\\ext\\filters\\client_channel\\xds\\xds_channel_secure.cc " +
+    "src\\core\\ext\\filters\\client_channel\\xds\\xds_client.cc " +
+    "src\\core\\ext\\filters\\client_channel\\xds\\xds_client_stats.cc " +
     "src\\core\\ext\\upb-generated\\envoy\\api\\v2\\auth\\cert.upb.c " +
     "src\\core\\ext\\upb-generated\\envoy\\api\\v2\\cds.upb.c " +
     "src\\core\\ext\\upb-generated\\envoy\\api\\v2\\cluster\\circuit_breaker.upb.c " +
@@ -743,6 +744,7 @@ if (PHP_GRPC != "no") {
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\filters\\client_channel\\resolver\\fake");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\filters\\client_channel\\resolver\\sockaddr");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\filters\\client_channel\\resolver\\xds");
+  FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\filters\\client_channel\\xds");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\filters\\client_idle");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\filters\\deadline");
   FSO.CreateFolder(base_dir+"\\ext\\grpc\\src\\core\\ext\\filters\\http");

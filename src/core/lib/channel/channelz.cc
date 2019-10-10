@@ -234,8 +234,7 @@ grpc_json* ChannelNode::RenderJson() {
         static_cast<grpc_connectivity_state>(state_field >> 1);
     json = grpc_json_create_child(nullptr, json, "state", nullptr,
                                   GRPC_JSON_OBJECT, false);
-    grpc_json_create_child(nullptr, json, "state",
-                           grpc_connectivity_state_name(state),
+    grpc_json_create_child(nullptr, json, "state", ConnectivityStateName(state),
                            GRPC_JSON_STRING, false);
     json = data;
   }
@@ -294,7 +293,7 @@ void ChannelNode::SetConnectivityState(grpc_connectivity_state state) {
 
 void ChannelNode::AddChildChannel(intptr_t child_uuid) {
   MutexLock lock(&child_mu_);
-  child_channels_.insert(MakePair(child_uuid, true));
+  child_channels_.insert(std::make_pair(child_uuid, true));
 }
 
 void ChannelNode::RemoveChildChannel(intptr_t child_uuid) {
@@ -304,7 +303,7 @@ void ChannelNode::RemoveChildChannel(intptr_t child_uuid) {
 
 void ChannelNode::AddChildSubchannel(intptr_t child_uuid) {
   MutexLock lock(&child_mu_);
-  child_subchannels_.insert(MakePair(child_uuid, true));
+  child_subchannels_.insert(std::make_pair(child_uuid, true));
 }
 
 void ChannelNode::RemoveChildSubchannel(intptr_t child_uuid) {
@@ -324,7 +323,7 @@ ServerNode::~ServerNode() {}
 
 void ServerNode::AddChildSocket(RefCountedPtr<SocketNode> node) {
   MutexLock lock(&child_mu_);
-  child_sockets_.insert(MakePair(node->uuid(), std::move(node)));
+  child_sockets_.insert(std::make_pair(node->uuid(), std::move(node)));
 }
 
 void ServerNode::RemoveChildSocket(intptr_t child_uuid) {
@@ -334,7 +333,7 @@ void ServerNode::RemoveChildSocket(intptr_t child_uuid) {
 
 void ServerNode::AddChildListenSocket(RefCountedPtr<ListenSocketNode> node) {
   MutexLock lock(&child_mu_);
-  child_listen_sockets_.insert(MakePair(node->uuid(), std::move(node)));
+  child_listen_sockets_.insert(std::make_pair(node->uuid(), std::move(node)));
 }
 
 void ServerNode::RemoveChildListenSocket(intptr_t child_uuid) {

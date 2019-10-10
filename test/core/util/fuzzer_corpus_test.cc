@@ -140,7 +140,7 @@ ExampleGenerator::End() const {
   return new ExampleIterator(*this, examples_.end());
 }
 
-INSTANTIATE_TEST_CASE_P(
+INSTANTIATE_TEST_SUITE_P(
     CorpusExamples, FuzzerCorpusTest,
     ::testing::internal::ParamGenerator<std::string>(new ExampleGenerator));
 

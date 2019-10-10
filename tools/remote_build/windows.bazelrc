@@ -1,7 +1,13 @@
 startup --host_jvm_args=-Dbazel.DigestFunction=SHA256
 
+# TODO(jtattermusch): Currently building with --compilation_mode=dbg is broken on Windows RBE
+# so we need to explicitly override it to use fastbuild.
+build:windows_dbg --compilation_mode=fastbuild
+
 build --remote_cache=grpcs://remotebuildexecution.googleapis.com
 build --remote_executor=grpcs://remotebuildexecution.googleapis.com
+
+build --auth_enabled=true
 
 build --host_crosstool_top=//third_party/toolchains/bazel_0.26.0_rbe_windows:toolchain
 build --crosstool_top=//third_party/toolchains/bazel_0.26.0_rbe_windows:toolchain
@@ -32,6 +38,9 @@ build --define GRPC_PORT_ISOLATED_RUNTIME=1
 build --test_tag_filters=-no_windows
 build --build_tag_filters=-no_windows
 
+# required for the tests to pass on Windows RBE
+build --incompatible_windows_native_test_wrapper
+
 # without verbose gRPC logs the test outputs are not very useful
 test --test_env=GRPC_VERBOSITY=debug
 
@@ -42,7 +51,7 @@ build --bes_timeout=60s
 build --bes_results_url="https://source.cloud.google.com/results/invocations/"
 build --project_id=grpc-testing
 
-build --jobs=30
+build --jobs=100
 
 # print output for tests that fail (default is "summary")
 build --test_output=errors

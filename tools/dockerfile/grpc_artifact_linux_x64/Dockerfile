@@ -84,7 +84,7 @@ RUN apt-get update && apt-get install -t jessie-backports -y cmake && apt-get cl
 # Python AuditWheel dependencies (needed to check manylinux1 compatibility)
 
 RUN apt-get install -y python3 python3-pip
-RUN pip3 install auditwheel==1.10.0
+RUN pip3 install auditwheel==2.1.1
 
 
 RUN mkdir /var/local/jenkins

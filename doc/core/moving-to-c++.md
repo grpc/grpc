@@ -1,8 +1,8 @@
 # Moving gRPC core to C++
 
-October 2017
+Originally written by ctiller, markdroth, and vjpai in October 2017
 
-ctiller, markdroth, vjpai
+Revised by veblush in October 2019
 
 ## Background and Goal
 
@@ -10,10 +10,14 @@ gRPC core was originally written in C89 for several reasons
 (possibility of kernel integration, ease of wrapping, compiler
 support, etc). Over time, this was changed to C99 as all relevant
 compilers in active use came to support C99 effectively.
-[Now, gRPC core is C++](https://github.com/grpc/proposal/blob/master/L6-allow-c%2B%2B-in-grpc-core.md)
-(although the code is still idiomatically C code) with C linkage for
-public functions. Throughout all of these transitions, the public
-header files are committed to remain in C89.
+
+gRPC started allowing to use C++ with a couple of exceptions not to 
+have C++ library linked such as `libstdc++.so`.
+(For more detail, see the [proposal](https://github.com/grpc/proposal/blob/master/L6-core-allow-cpp.md))
+
+Finally gRPC became ready to use full C++11 with the standard library by the [proposal](https://github.com[/grpc/proposal/blob/master/L59-core-allow-cppstdlib.md).
+
+Throughout all of these transitions, the public header files are committed to remain in C89.
 
 The goal now is to make the gRPC core implementation true idiomatic
 C++ compatible with
@@ -21,24 +25,16 @@ C++ compatible with
 
 ## Constraints
 
-- No use of standard library if it requires link-time dependency
-  - Standard library makes wrapping difficult/impossible and also reduces platform portability
-  - This takes precedence over using C++ style guide
-- Limited use of standard library if it does not require link-time dependency
- - We can use things from `std::` as long as they are header-only implementations.
- - Since the standard library API does not specify whether any given part of the API is implemented header-only, the only way to know is to try using something and see if our tests fail.
- - Since there is no guarantee that some header-only implementation in the standard library will remain header-only in the future, we should define our own API in lib/gprpp that is an alias for the thing we want to use in `std::` and use the gprpp API in core. That way, if we later need to stop using the thing from `std::`, we can replace the alias with our own implementation.
-- But lambdas are ok
-- As are third-party libraries that meet our build requirements (such as many parts of abseil)
-- There will be some C++ features that don't work
-  - `new` and `delete`
-  - pure virtual functions are not allowed because the message that prints out "Pure Virtual Function called" is part of the standard library
-    - Make a `#define GRPC_ABSTRACT {GPR_ASSERT(false);}` instead of `= 0;`
-- The sanity for making sure that we don't depend on libstdc++ is that at least some tests should explicitly not include it
-  - Most tests can migrate to use gtest
-    - There are tremendous # of code paths that can now be exposed to unit tests because of the use of gtest and C++
-  - But at least some tests should not use gtest
-
+- Most of features available in C++11 are allowed to use but there are some exceptions 
+  because gRPC should support old systems.
+  - Should be built with gcc 4.8, clang 3.3, and Visual C++ 2015.
+  - Should be run on Linux system with libstdc++ 6.0.9 to support
+    [manylinux1](https://www.python.org/dev/peps/pep-0513).
+- This would limit us not to use modern C++11 standard library such as `filesystem`. 
+  You can easily see whether PR is free from this issue by checking the result of
+  `Artifact Build Linux` test.
+- `thread_local` is not allowed to use on Apple's products because their old OSes
+  (e.g. ios < 9.0) don't support `thread_local`.
 
 ## Roadmap
 
@@ -59,6 +55,3 @@ C++ compatible with
 ByteBuffer, ...)
 - The C++ API implementation might directly start using
 `grpc_transport_stream_op_batch` rather than the core surface `grpc_op`.
-- Can we get wrapped languages to a point where we can statically link C++? This will take a year in probability but that would allow the use of `std::`
-  - Are there other environments that don't support std library, like maybe Android NDK?
-    - Probably, that might push things out to 18 months

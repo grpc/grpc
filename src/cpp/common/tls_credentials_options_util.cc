@@ -18,7 +18,6 @@
 
 #include "src/cpp/common/tls_credentials_options_util.h"
 #include <grpcpp/security/tls_credentials_options.h>
-#include <iostream>
 
 namespace grpc_impl {
 namespace experimental {
@@ -57,41 +56,11 @@ grpc_tls_key_materials_config* ConvertToCKeyMaterialsConfig(
   return c_config;
 }
 
-/** Converts the C key materials config to a Cpp key materials config; it
- * allocates memory for the Cpp config. **/
-std::shared_ptr<TlsKeyMaterialsConfig> ConvertToCppKeyMaterialsConfig(
-    const grpc_tls_key_materials_config* config) {
-  std::cout << "Got into ConvertToCppKeyMaterialsConfig" << std::endl;
-  if (config == nullptr) {
-    return nullptr;
-  }
-  std::shared_ptr<TlsKeyMaterialsConfig> cpp_config(
-      new TlsKeyMaterialsConfig());
-  std::vector<TlsKeyMaterialsConfig::PemKeyCertPair> cpp_pem_key_cert_pair_list;
-  grpc_tls_key_materials_config::PemKeyCertPairList pem_key_cert_pair_list =
-      config->pem_key_cert_pair_list();
-  for (size_t i = 0; i < pem_key_cert_pair_list.size(); i++) {
-    ::grpc_core::PemKeyCertPair key_cert_pair = pem_key_cert_pair_list[i];
-    TlsKeyMaterialsConfig::PemKeyCertPair p = {key_cert_pair.private_key(),
-                                               key_cert_pair.cert_chain()};
-    //TlsKeyMaterialsConfig::PemKeyCertPair* p = (TlsKeyMaterialsConfig::PemKeyCertPair*)gpr_malloc(
-    //    sizeof(TlsKeyMaterialsConfig::PemKeyCertPair));
-    //p->private_key = gpr_strdup(key_cert_pair.private_key());
-    //p->cert_chain = gpr_strdup(key_cert_pair.cert_chain());
-    cpp_pem_key_cert_pair_list.push_back({key_cert_pair.private_key(), key_cert_pair.cert_chain()});
-  }
-  cpp_config->set_key_materials(config->pem_root_certs(),
-                                cpp_pem_key_cert_pair_list);
-  cpp_config->set_version(config->version());
-  return cpp_config;
-}
-
 /** The C schedule and cancel functions for the credential reload config.
  * They populate a C credential reload arg with the result of a C++ credential
  * reload schedule/cancel API. **/
 int TlsCredentialReloadConfigCSchedule(void* config_user_data,
                                        grpc_tls_credential_reload_arg* arg) {
-  std::cout << "**************entered CredReloadConfig util schedule" << std::endl;
   if (arg == nullptr || arg->config == nullptr ||
       arg->config->context() == nullptr) {
     gpr_log(GPR_ERROR, "credential reload arg was not properly initialized");
@@ -99,8 +68,9 @@ int TlsCredentialReloadConfigCSchedule(void* config_user_data,
   }
   TlsCredentialReloadConfig* cpp_config =
       static_cast<TlsCredentialReloadConfig*>(arg->config->context());
-  TlsCredentialReloadArg cpp_arg(arg);
-  return cpp_config->Schedule(&cpp_arg);
+  TlsCredentialReloadArg* cpp_arg = new TlsCredentialReloadArg(arg);
+  int schedule_result = cpp_config->Schedule(cpp_arg);
+  return schedule_result;
 }
 
 void TlsCredentialReloadConfigCCancel(void* config_user_data,
@@ -110,10 +80,23 @@ void TlsCredentialReloadConfigCCancel(void* config_user_data,
     gpr_log(GPR_ERROR, "credential reload arg was not properly initialized");
     return;
   }
+  if (arg->context == nullptr) {
+    gpr_log(GPR_ERROR, "credential reload arg schedule has already completed");
+    return;
+  }
   TlsCredentialReloadConfig* cpp_config =
       static_cast<TlsCredentialReloadConfig*>(arg->config->context());
-  TlsCredentialReloadArg cpp_arg(arg);
-  cpp_config->Cancel(&cpp_arg);
+  TlsCredentialReloadArg* cpp_arg =
+      static_cast<TlsCredentialReloadArg*>(arg->context);
+  cpp_config->Cancel(cpp_arg);
+}
+
+void TlsCredentialReloadArgDestroyContext(void* context) {
+  if (context != nullptr) {
+    TlsCredentialReloadArg* cpp_arg =
+        static_cast<TlsCredentialReloadArg*>(context);
+    delete cpp_arg;
+  }
 }
 
 /** The C schedule and cancel functions for the server authorization check
@@ -121,7 +104,6 @@ void TlsCredentialReloadConfigCCancel(void* config_user_data,
  * of a C++ server authorization check schedule/cancel API. **/
 int TlsServerAuthorizationCheckConfigCSchedule(
     void* config_user_data, grpc_tls_server_authorization_check_arg* arg) {
-  std::cout << "******************************entered ServAuthzCheckConfig util schedule" << std::endl;
   if (arg == nullptr || arg->config == nullptr ||
       arg->config->context() == nullptr) {
     gpr_log(GPR_ERROR,
@@ -130,8 +112,10 @@ int TlsServerAuthorizationCheckConfigCSchedule(
   }
   TlsServerAuthorizationCheckConfig* cpp_config =
       static_cast<TlsServerAuthorizationCheckConfig*>(arg->config->context());
-  TlsServerAuthorizationCheckArg cpp_arg(arg);
-  return cpp_config->Schedule(&cpp_arg);
+  TlsServerAuthorizationCheckArg* cpp_arg =
+      new TlsServerAuthorizationCheckArg(arg);
+  int schedule_result = cpp_config->Schedule(cpp_arg);
+  return schedule_result;
 }
 
 void TlsServerAuthorizationCheckConfigCCancel(
@@ -142,10 +126,24 @@ void TlsServerAuthorizationCheckConfigCCancel(
             "server authorization check arg was not properly initialized");
     return;
   }
+  if (arg->context == nullptr) {
+    gpr_log(GPR_ERROR,
+            "server authorization check arg schedule has already completed");
+    return;
+  }
   TlsServerAuthorizationCheckConfig* cpp_config =
       static_cast<TlsServerAuthorizationCheckConfig*>(arg->config->context());
-  TlsServerAuthorizationCheckArg cpp_arg(arg);
-  cpp_config->Cancel(&cpp_arg);
+  TlsServerAuthorizationCheckArg* cpp_arg =
+      static_cast<TlsServerAuthorizationCheckArg*>(arg->context);
+  cpp_config->Cancel(cpp_arg);
+}
+
+void TlsServerAuthorizationCheckArgDestroyContext(void* context) {
+  if (context != nullptr) {
+    TlsServerAuthorizationCheckArg* cpp_arg =
+        static_cast<TlsServerAuthorizationCheckArg*>(context);
+    delete cpp_arg;
+  }
 }
 
 }  // namespace experimental

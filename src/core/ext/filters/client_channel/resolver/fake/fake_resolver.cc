@@ -382,7 +382,7 @@ class FakeResolverFactory : public ResolverFactory {
   bool IsValidUri(const grpc_uri* uri) const override { return true; }
 
   OrphanablePtr<Resolver> CreateResolver(ResolverArgs args) const override {
-    return OrphanablePtr<Resolver>(New<FakeResolver>(std::move(args)));
+    return MakeOrphanable<FakeResolver>(std::move(args));
   }
 
   const char* scheme() const override { return "fake"; }
@@ -394,8 +394,7 @@ class FakeResolverFactory : public ResolverFactory {
 
 void grpc_resolver_fake_init() {
   grpc_core::ResolverRegistry::Builder::RegisterResolverFactory(
-      grpc_core::UniquePtr<grpc_core::ResolverFactory>(
-          grpc_core::New<grpc_core::FakeResolverFactory>()));
+      grpc_core::MakeUnique<grpc_core::FakeResolverFactory>());
 }
 
 void grpc_resolver_fake_shutdown() {}

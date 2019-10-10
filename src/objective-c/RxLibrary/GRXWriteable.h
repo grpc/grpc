@@ -28,7 +28,7 @@
 - (void)writeValue:(id)value;
 
 /**
- * Signal that the sequence is completed, or that an error ocurred. After this
+ * Signal that the sequence is completed, or that an error occurred. After this
  * message is sent to the instance, neither it nor writeValue: may be
  * called again.
  */

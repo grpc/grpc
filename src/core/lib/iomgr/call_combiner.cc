@@ -48,7 +48,6 @@ gpr_atm EncodeCancelStateError(grpc_error* error) {
 CallCombiner::CallCombiner() {
   gpr_atm_no_barrier_store(&cancel_state_, 0);
   gpr_atm_no_barrier_store(&size_, 0);
-  gpr_mpscq_init(&queue_);
 #ifdef GRPC_TSAN_ENABLED
   GRPC_CLOSURE_INIT(&tsan_closure_, TsanClosure, this,
                     grpc_schedule_on_exec_ctx);
@@ -56,7 +55,6 @@ CallCombiner::CallCombiner() {
 }
 
 CallCombiner::~CallCombiner() {
-  gpr_mpscq_destroy(&queue_);
   GRPC_ERROR_UNREF(DecodeCancelStateError(cancel_state_));
 }
 
@@ -140,7 +138,8 @@ void CallCombiner::Start(grpc_closure* closure, grpc_error* error,
     }
     // Queue was not empty, so add closure to queue.
     closure->error_data.error = error;
-    gpr_mpscq_push(&queue_, reinterpret_cast<gpr_mpscq_node*>(closure));
+    queue_.Push(
+        reinterpret_cast<MultiProducerSingleConsumerQueue::Node*>(closure));
   }
 }
 
@@ -163,8 +162,8 @@ void CallCombiner::Stop(DEBUG_ARGS const char* reason) {
         gpr_log(GPR_INFO, "  checking queue");
       }
       bool empty;
-      grpc_closure* closure = reinterpret_cast<grpc_closure*>(
-          gpr_mpscq_pop_and_check_end(&queue_, &empty));
+      grpc_closure* closure =
+          reinterpret_cast<grpc_closure*>(queue_.PopAndCheckEnd(&empty));
       if (closure == nullptr) {
         // This can happen either due to a race condition within the mpscq
         // code or because of a race with Start().

@@ -107,6 +107,10 @@ class InlinedVector {
     return true;
   }
 
+  bool operator!=(const InlinedVector& other) const {
+    return !(*this == other);
+  }
+
   void reserve(size_t capacity) {
     if (capacity > capacity_) {
       T* new_dynamic =

@@ -55,7 +55,7 @@ cdef class _AioCall:
         assert call._waiter_call
 
         if succeed == 0:
-            call._waiter_call.set_exception(Exception("Some error ocurred"))
+            call._waiter_call.set_exception(Exception("Some error occurred"))
         else:
             call._waiter_call.set_result(None)
 

@@ -88,7 +88,7 @@ class BaseNode : public RefCounted<BaseNode> {
   virtual ~BaseNode();
 
   // All children must implement this function.
-  virtual grpc_json* RenderJson() GRPC_ABSTRACT;
+  virtual grpc_json* RenderJson() = 0;
 
   // Renders the json and returns allocated string that must be freed by the
   // caller.

@@ -217,7 +217,6 @@ filegroups:
   - src/core/lib/gpr/log_linux.cc
   - src/core/lib/gpr/log_posix.cc
   - src/core/lib/gpr/log_windows.cc
-  - src/core/lib/gpr/mpscq.cc
   - src/core/lib/gpr/murmur_hash.cc
   - src/core/lib/gpr/string.cc
   - src/core/lib/gpr/string_posix.cc
@@ -239,6 +238,7 @@ filegroups:
   - src/core/lib/gprpp/fork.cc
   - src/core/lib/gprpp/global_config_env.cc
   - src/core/lib/gprpp/host_port.cc
+  - src/core/lib/gprpp/mpscq.cc
   - src/core/lib/gprpp/thd_posix.cc
   - src/core/lib/gprpp/thd_windows.cc
   - src/core/lib/profiling/basic_timers.cc
@@ -268,7 +268,6 @@ filegroups:
   - src/core/lib/gpr/alloc.h
   - src/core/lib/gpr/arena.h
   - src/core/lib/gpr/env.h
-  - src/core/lib/gpr/mpscq.h
   - src/core/lib/gpr/murmur_hash.h
   - src/core/lib/gpr/spinlock.h
   - src/core/lib/gpr/string.h
@@ -280,7 +279,6 @@ filegroups:
   - src/core/lib/gpr/tls_pthread.h
   - src/core/lib/gpr/tmpfile.h
   - src/core/lib/gpr/useful.h
-  - src/core/lib/gprpp/abstract.h
   - src/core/lib/gprpp/arena.h
   - src/core/lib/gprpp/atomic.h
   - src/core/lib/gprpp/fork.h
@@ -292,7 +290,8 @@ filegroups:
   - src/core/lib/gprpp/manual_constructor.h
   - src/core/lib/gprpp/map.h
   - src/core/lib/gprpp/memory.h
-  - src/core/lib/gprpp/pair.h
+  - src/core/lib/gprpp/mpscq.h
+  - src/core/lib/gprpp/set.h
   - src/core/lib/gprpp/sync.h
   - src/core/lib/gprpp/thd.h
   - src/core/lib/profiling/timers.h
@@ -321,8 +320,6 @@ filegroups:
   - grpc++_common
   - grpc++_codegen_base
 - name: grpc++_base_unsecure
-  public_headers:
-  - include/grpc/grpc_security.h
   deps:
   - grpc_unsecure
   uses:
@@ -1128,38 +1125,23 @@ filegroups:
 - name: grpc_lb_policy_xds
   headers:
   - src/core/ext/filters/client_channel/lb_policy/xds/xds.h
-  - src/core/ext/filters/client_channel/lb_policy/xds/xds_channel.h
-  - src/core/ext/filters/client_channel/lb_policy/xds/xds_client_stats.h
-  - src/core/ext/filters/client_channel/lb_policy/xds/xds_load_balancer_api.h
   src:
   - src/core/ext/filters/client_channel/lb_policy/xds/xds.cc
-  - src/core/ext/filters/client_channel/lb_policy/xds/xds_channel.cc
-  - src/core/ext/filters/client_channel/lb_policy/xds/xds_client_stats.cc
-  - src/core/ext/filters/client_channel/lb_policy/xds/xds_load_balancer_api.cc
   plugin: grpc_lb_policy_xds
   uses:
-  - envoy_ads_upb
   - grpc_base
   - grpc_client_channel
-  - grpc_resolver_fake
+  - grpc_xds_client
 - name: grpc_lb_policy_xds_secure
   headers:
   - src/core/ext/filters/client_channel/lb_policy/xds/xds.h
-  - src/core/ext/filters/client_channel/lb_policy/xds/xds_channel.h
-  - src/core/ext/filters/client_channel/lb_policy/xds/xds_client_stats.h
-  - src/core/ext/filters/client_channel/lb_policy/xds/xds_load_balancer_api.h
   src:
   - src/core/ext/filters/client_channel/lb_policy/xds/xds.cc
-  - src/core/ext/filters/client_channel/lb_policy/xds/xds_channel_secure.cc
-  - src/core/ext/filters/client_channel/lb_policy/xds/xds_client_stats.cc
-  - src/core/ext/filters/client_channel/lb_policy/xds/xds_load_balancer_api.cc
   plugin: grpc_lb_policy_xds
   uses:
-  - envoy_ads_upb
   - grpc_base
   - grpc_client_channel
-  - grpc_resolver_fake
-  - grpc_secure
+  - grpc_xds_client_secure
 - name: grpc_lb_subchannel_list
   headers:
   - src/core/ext/filters/client_channel/lb_policy/subchannel_list.h
@@ -1553,6 +1535,39 @@ filegroups:
   uses:
   - grpc_base
   - grpc_server_backward_compatibility
+- name: grpc_xds_client
+  headers:
+  - src/core/ext/filters/client_channel/xds/xds_api.h
+  - src/core/ext/filters/client_channel/xds/xds_channel.h
+  - src/core/ext/filters/client_channel/xds/xds_channel_args.h
+  - src/core/ext/filters/client_channel/xds/xds_client.h
+  - src/core/ext/filters/client_channel/xds/xds_client_stats.h
+  src:
+  - src/core/ext/filters/client_channel/xds/xds_api.cc
+  - src/core/ext/filters/client_channel/xds/xds_channel.cc
+  - src/core/ext/filters/client_channel/xds/xds_client.cc
+  - src/core/ext/filters/client_channel/xds/xds_client_stats.cc
+  uses:
+  - envoy_ads_upb
+  - grpc_base
+  - grpc_client_channel
+- name: grpc_xds_client_secure
+  headers:
+  - src/core/ext/filters/client_channel/xds/xds_api.h
+  - src/core/ext/filters/client_channel/xds/xds_channel.h
+  - src/core/ext/filters/client_channel/xds/xds_channel_args.h
+  - src/core/ext/filters/client_channel/xds/xds_client.h
+  - src/core/ext/filters/client_channel/xds/xds_client_stats.h
+  src:
+  - src/core/ext/filters/client_channel/xds/xds_api.cc
+  - src/core/ext/filters/client_channel/xds/xds_channel_secure.cc
+  - src/core/ext/filters/client_channel/xds/xds_client.cc
+  - src/core/ext/filters/client_channel/xds/xds_client_stats.cc
+  uses:
+  - envoy_ads_upb
+  - grpc_base
+  - grpc_client_channel
+  - grpc_secure
 - name: grpcpp_channelz_proto
   src:
   - src/proto/grpc/channelz/channelz.proto
@@ -1630,32 +1645,6 @@ libs:
   deps:
   - grpc
   secure: true
-- name: cxxabi
-  build: private
-  language: c
-  src:
-  - third_party/libcxxabi/src/abort_message.cpp
-  - third_party/libcxxabi/src/cxa_aux_runtime.cpp
-  - third_party/libcxxabi/src/cxa_default_handlers.cpp
-  - third_party/libcxxabi/src/cxa_demangle.cpp
-  - third_party/libcxxabi/src/cxa_exception_storage.cpp
-  - third_party/libcxxabi/src/cxa_guard.cpp
-  - third_party/libcxxabi/src/cxa_handlers.cpp
-  - third_party/libcxxabi/src/cxa_noexception.cpp
-  - third_party/libcxxabi/src/cxa_thread_atexit.cpp
-  - third_party/libcxxabi/src/cxa_unexpected.cpp
-  - third_party/libcxxabi/src/cxa_vector.cpp
-  - third_party/libcxxabi/src/cxa_virtual.cpp
-  - third_party/libcxxabi/src/fallback_malloc.cpp
-  - third_party/libcxxabi/src/private_typeinfo.cpp
-  - third_party/libcxxabi/src/stdlib_exception.cpp
-  - third_party/libcxxabi/src/stdlib_new_delete.cpp
-  - third_party/libcxxabi/src/stdlib_stdexcept.cpp
-  - third_party/libcxxabi/src/stdlib_typeinfo.cpp
-  build_system:
-  - Makefile
-  defaults: cxxabi
-  secure: false
 - name: gpr
   build: all
   language: c
@@ -2744,17 +2733,6 @@ targets:
   language: c
   src:
   - test/core/gprpp/manual_constructor_test.cc
-  deps:
-  - gpr
-  - grpc_test_util_unsecure
-  - grpc_unsecure
-  uses_polling: false
-- name: gpr_mpscq_test
-  cpu_cost: 30
-  build: test
-  language: c
-  src:
-  - test/core/gpr/mpscq_test.cc
   deps:
   - gpr
   - grpc_test_util_unsecure
@@ -3866,15 +3844,6 @@ targets:
   exclude_iomgrs:
   - uv
   uses_polling: false
-- name: transport_connectivity_state_test
-  build: test
-  language: c
-  src:
-  - test/core/transport/connectivity_state_test.cc
-  deps:
-  - grpc_test_util
-  - grpc
-  - gpr
 - name: transport_metadata_test
   build: test
   language: c
@@ -4766,7 +4735,7 @@ targets:
   build: test
   language: c++
   src:
-  - src/proto/grpc/lb/v2/orca_load_report_for_test.proto
+  - src/proto/grpc/testing/xds/orca_load_report_for_test.proto
   - test/cpp/end2end/client_lb_end2end_test.cc
   deps:
   - grpc++_test_util
@@ -5012,6 +4981,17 @@ targets:
   args:
   - --generated_file_path=gens/src/proto/grpc/testing/
   uses_polling: false
+- name: gprpp_mpscq_test
+  cpu_cost: 30
+  build: test
+  language: c++
+  src:
+  - test/core/gprpp/mpscq_test.cc
+  deps:
+  - gpr
+  - grpc_test_util_unsecure
+  - grpc_unsecure
+  uses_polling: false
 - name: grpc_alts_credentials_options_test
   build: test
   language: c++
@@ -5033,20 +5013,6 @@ targets:
   - grpc
   - gpr
   - grpc++_test_config
-- name: grpc_core_map_test
-  gtest: true
-  build: test
-  language: c++
-  headers:
-  - test/core/gprpp/map_tester.h
-  src:
-  - test/core/gprpp/map_test.cc
-  deps:
-  - grpc_test_util
-  - grpc++
-  - grpc
-  - gpr
-  uses_polling: false
 - name: grpc_cpp_plugin
   build: protoc
   language: c++
@@ -6021,6 +5987,16 @@ targets:
   - grpc++
   - grpc
   - gpr
+- name: transport_connectivity_state_test
+  gtest: true
+  build: test
+  language: c++
+  src:
+  - test/core/transport/connectivity_state_test.cc
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr
 - name: transport_pid_controller_test
   build: test
   language: c++
@@ -6063,8 +6039,9 @@ targets:
   build: test
   language: c++
   src:
-  - src/proto/grpc/lb/v2/eds_for_test.proto
-  - src/proto/grpc/lb/v2/lrs_for_test.proto
+  - src/proto/grpc/testing/xds/ads_for_test.proto
+  - src/proto/grpc/testing/xds/eds_for_test.proto
+  - src/proto/grpc/testing/xds/lrs_for_test.proto
   - test/cpp/end2end/xds_end2end_test.cc
   deps:
   - grpc++_test_util
@@ -6237,15 +6214,10 @@ defaults:
     CFLAGS: -g
     CPPFLAGS: -Ithird_party/boringssl/include -fvisibility=hidden -DOPENSSL_NO_ASM
       -D_GNU_SOURCE -DWIN32_LEAN_AND_MEAN -D_HAS_EXCEPTIONS=0 -DNOMINMAX
-    CXXFLAGS: -fno-rtti -fno-exceptions
-  cxxabi:
-    CPPFLAGS: -D_LIBCPP_DISABLE_EXTERN_TEMPLATE -D_LIBCXXABI_BUILDING_LIBRARY -D_LIBCXXABI_NO_EXCEPTIONS
-      -Ithird_party/libcxxabi/include -nostdinc++ -Ithird_party/libcxx/include $(W_NO_UNUSED_BUT_SET_VARIABLE)
-      $(W_NO_MAYBE_UNINITIALIZED) -fvisibility=hidden
-    CXXFLAGS: $(W_NO_CXX14_COMPAT)
+    CXXFLAGS: -fno-exceptions
   global:
     CFLAGS: -g
-    COREFLAGS: -fno-rtti -fno-exceptions
+    COREFLAGS: -fno-exceptions
     CPPFLAGS: -g -Wall -Wextra -DOSATOMIC_USE_INLINED=1 -Ithird_party/upb -Isrc/core/ext/upb-generated
     LDFLAGS: -g
   zlib:

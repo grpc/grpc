@@ -10,7 +10,7 @@
   <email>grpc-packages@google.com</email>
   <active>yes</active>
  </lead>
- <date>2018-01-19</date>
+ <date>2019-09-24</date>
  <time>16:06:07</time>
  <version>
   <release>1.25.0dev</release>
@@ -22,7 +22,7 @@
  </stability>
  <license>Apache 2.0</license>
  <notes>
-- TBD
+- gRPC Core 1.25.0 update
  </notes>
  <contents>
   <dir baseinstalldir="/" name="/">
@@ -90,7 +90,6 @@
     <file baseinstalldir="/" name="src/core/lib/gpr/alloc.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gpr/arena.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gpr/env.h" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/gpr/mpscq.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gpr/murmur_hash.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gpr/spinlock.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gpr/string.h" role="src" />
@@ -102,7 +101,6 @@
     <file baseinstalldir="/" name="src/core/lib/gpr/tls_pthread.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gpr/tmpfile.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gpr/useful.h" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/gprpp/abstract.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gprpp/arena.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gprpp/atomic.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gprpp/fork.h" role="src" />
@@ -114,7 +112,8 @@
     <file baseinstalldir="/" name="src/core/lib/gprpp/manual_constructor.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gprpp/map.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gprpp/memory.h" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/gprpp/pair.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/gprpp/mpscq.h" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/gprpp/set.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gprpp/sync.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gprpp/thd.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/profiling/timers.h" role="src" />
@@ -132,7 +131,6 @@
     <file baseinstalldir="/" name="src/core/lib/gpr/log_linux.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gpr/log_posix.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gpr/log_windows.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/gpr/mpscq.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gpr/murmur_hash.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gpr/string.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gpr/string_posix.cc" role="src" />
@@ -154,6 +152,7 @@
     <file baseinstalldir="/" name="src/core/lib/gprpp/fork.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gprpp/global_config_env.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gprpp/host_port.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/gprpp/mpscq.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gprpp/thd_posix.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gprpp/thd_windows.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/profiling/basic_timers.cc" role="src" />
@@ -491,9 +490,11 @@
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/lb_policy/grpclb/load_balancer_api.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upb-generated/src/proto/grpc/lb/v1/load_balancer.upb.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/resolver/fake/fake_resolver.h" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/filters/client_channel/lb_policy/xds/xds_channel.h" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/filters/client_channel/lb_policy/xds/xds_client_stats.h" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/filters/client_channel/lb_policy/xds/xds_load_balancer_api.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/filters/client_channel/xds/xds_api.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/filters/client_channel/xds/xds_channel.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/filters/client_channel/xds/xds_channel_args.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/filters/client_channel/xds/xds_client.h" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/filters/client_channel/xds/xds_client_stats.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upb-generated/envoy/api/v2/auth/cert.upb.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upb-generated/envoy/api/v2/cds.upb.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upb-generated/envoy/api/v2/cluster/circuit_breaker.upb.h" role="src" />
@@ -851,9 +852,10 @@
     <file baseinstalldir="/" name="src/core/ext/upb-generated/src/proto/grpc/lb/v1/load_balancer.upb.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/resolver/fake/fake_resolver.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/filters/client_channel/lb_policy/xds/xds.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/filters/client_channel/lb_policy/xds/xds_channel_secure.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/filters/client_channel/lb_policy/xds/xds_client_stats.cc" role="src" />
-    <file baseinstalldir="/" name="src/core/ext/filters/client_channel/lb_policy/xds/xds_load_balancer_api.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/filters/client_channel/xds/xds_api.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/filters/client_channel/xds/xds_channel_secure.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/filters/client_channel/xds/xds_client.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/ext/filters/client_channel/xds/xds_client_stats.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upb-generated/envoy/api/v2/auth/cert.upb.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upb-generated/envoy/api/v2/cds.upb.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upb-generated/envoy/api/v2/cluster/circuit_breaker.upb.c" role="src" />

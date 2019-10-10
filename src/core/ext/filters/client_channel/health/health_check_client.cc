@@ -47,12 +47,14 @@ HealthCheckClient::HealthCheckClient(
     const char* service_name,
     RefCountedPtr<ConnectedSubchannel> connected_subchannel,
     grpc_pollset_set* interested_parties,
-    RefCountedPtr<channelz::SubchannelNode> channelz_node)
+    RefCountedPtr<channelz::SubchannelNode> channelz_node,
+    RefCountedPtr<ConnectivityStateWatcherInterface> watcher)
     : InternallyRefCounted<HealthCheckClient>(&grpc_health_check_client_trace),
       service_name_(service_name),
       connected_subchannel_(std::move(connected_subchannel)),
       interested_parties_(interested_parties),
       channelz_node_(std::move(channelz_node)),
+      watcher_(std::move(watcher)),
       retry_backoff_(
           BackOff::Options()
               .set_initial_backoff(
@@ -73,43 +75,21 @@ HealthCheckClient::~HealthCheckClient() {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_health_check_client_trace)) {
     gpr_log(GPR_INFO, "destroying HealthCheckClient %p", this);
   }
-  GRPC_ERROR_UNREF(error_);
-}
-
-void HealthCheckClient::NotifyOnHealthChange(grpc_connectivity_state* state,
-                                             grpc_closure* closure) {
-  MutexLock lock(&mu_);
-  GPR_ASSERT(notify_state_ == nullptr);
-  if (*state != state_) {
-    *state = state_;
-    GRPC_CLOSURE_SCHED(closure, GRPC_ERROR_REF(error_));
-    return;
-  }
-  notify_state_ = state;
-  on_health_changed_ = closure;
 }
 
 void HealthCheckClient::SetHealthStatus(grpc_connectivity_state state,
-                                        grpc_error* error) {
+                                        const char* reason) {
   MutexLock lock(&mu_);
-  SetHealthStatusLocked(state, error);
+  SetHealthStatusLocked(state, reason);
 }
 
 void HealthCheckClient::SetHealthStatusLocked(grpc_connectivity_state state,
-                                              grpc_error* error) {
+                                              const char* reason) {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_health_check_client_trace)) {
-    gpr_log(GPR_INFO, "HealthCheckClient %p: setting state=%d error=%s", this,
-            state, grpc_error_string(error));
+    gpr_log(GPR_INFO, "HealthCheckClient %p: setting state=%s reason=%s", this,
+            ConnectivityStateName(state), reason);
   }
-  if (notify_state_ != nullptr && *notify_state_ != state) {
-    *notify_state_ = state;
-    notify_state_ = nullptr;
-    GRPC_CLOSURE_SCHED(on_health_changed_, GRPC_ERROR_REF(error));
-    on_health_changed_ = nullptr;
-  }
-  state_ = state;
-  GRPC_ERROR_UNREF(error_);
-  error_ = error;
+  if (watcher_ != nullptr) watcher_->Notify(state);
 }
 
 void HealthCheckClient::Orphan() {
@@ -118,13 +98,8 @@ void HealthCheckClient::Orphan() {
   }
   {
     MutexLock lock(&mu_);
-    if (on_health_changed_ != nullptr) {
-      *notify_state_ = GRPC_CHANNEL_SHUTDOWN;
-      notify_state_ = nullptr;
-      GRPC_CLOSURE_SCHED(on_health_changed_, GRPC_ERROR_NONE);
-      on_health_changed_ = nullptr;
-    }
     shutting_down_ = true;
+    watcher_.reset();
     call_state_.reset();
     if (retry_timer_callback_pending_) {
       grpc_timer_cancel(&retry_timer_);
@@ -141,7 +116,7 @@ void HealthCheckClient::StartCall() {
 void HealthCheckClient::StartCallLocked() {
   if (shutting_down_) return;
   GPR_ASSERT(call_state_ == nullptr);
-  SetHealthStatusLocked(GRPC_CHANNEL_CONNECTING, GRPC_ERROR_NONE);
+  SetHealthStatusLocked(GRPC_CHANNEL_CONNECTING, "starting health watch");
   call_state_ = MakeOrphanable<CallState>(Ref(), interested_parties_);
   if (GRPC_TRACE_FLAG_ENABLED(grpc_health_check_client_trace)) {
     gpr_log(GPR_INFO, "HealthCheckClient %p: created CallState %p", this,
@@ -152,10 +127,8 @@ void HealthCheckClient::StartCallLocked() {
 
 void HealthCheckClient::StartRetryTimer() {
   MutexLock lock(&mu_);
-  SetHealthStatusLocked(
-      GRPC_CHANNEL_TRANSIENT_FAILURE,
-      GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-          "health check call failed; will retry after backoff"));
+  SetHealthStatusLocked(GRPC_CHANNEL_TRANSIENT_FAILURE,
+                        "health check call failed; will retry after backoff");
   grpc_millis next_try = retry_backoff_.NextAttemptTime();
   if (GRPC_TRACE_FLAG_ENABLED(grpc_health_check_client_trace)) {
     gpr_log(GPR_INFO, "HealthCheckClient %p: health check call lost...", this);
@@ -489,10 +462,10 @@ void HealthCheckClient::CallState::DoneReadingRecvMessage(grpc_error* error) {
   const bool healthy = DecodeResponse(&recv_message_buffer_, &error);
   const grpc_connectivity_state state =
       healthy ? GRPC_CHANNEL_READY : GRPC_CHANNEL_TRANSIENT_FAILURE;
-  if (error == GRPC_ERROR_NONE && !healthy) {
-    error = GRPC_ERROR_CREATE_FROM_STATIC_STRING("backend unhealthy");
-  }
-  health_check_client_->SetHealthStatus(state, error);
+  const char* reason = error == GRPC_ERROR_NONE && !healthy
+                           ? "backend unhealthy"
+                           : grpc_error_string(error);
+  health_check_client_->SetHealthStatus(state, reason);
   seen_response_.Store(true, MemoryOrder::RELEASE);
   grpc_slice_buffer_destroy_internal(&recv_message_buffer_);
   // Start another recv_message batch.
@@ -603,7 +576,7 @@ void HealthCheckClient::CallState::RecvTrailingMetadataReady(
           grpc_slice_from_static_string(kErrorMessage));
     }
     self->health_check_client_->SetHealthStatus(GRPC_CHANNEL_READY,
-                                                GRPC_ERROR_NONE);
+                                                kErrorMessage);
     retry = false;
   }
   self->CallEnded(retry);

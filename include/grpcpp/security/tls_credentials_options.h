@@ -19,10 +19,10 @@
 #ifndef GRPCPP_SECURITY_TLS_CREDENTIALS_OPTIONS_H
 #define GRPCPP_SECURITY_TLS_CREDENTIALS_OPTIONS_H
  
+#include <iostream>
 #include <memory>
 #include <vector>
-#include <iostream>
-
+ 
 #include <grpc/grpc_security_constants.h>
 #include <grpc/status.h>
 #include <grpc/support/log.h>
@@ -57,11 +57,9 @@ class TlsKeyMaterialsConfig {
   int version() const { return version_; }
  
   /** Setter for key materials that will be called by the user. The setter
-   * transfers ownership of the arguments to the config. **/
-  void set_pem_root_certs(grpc::string pem_root_certs) { pem_root_certs_ = pem_root_certs; }
-  void add_pem_key_cert_pair(PemKeyCertPair pem_key_cert_pair) {
-    pem_key_cert_pair_list_.push_back(pem_key_cert_pair);
-  }
+   *  transfers ownership of the arguments to the config. **/
+  void set_pem_root_certs(grpc::string pem_root_certs);
+  void add_pem_key_cert_pair(const PemKeyCertPair& pem_key_cert_pair);
   void set_key_materials(grpc::string pem_root_certs,
                          std::vector<PemKeyCertPair> pem_key_cert_pair_list);
   void set_version(int version) { version_ = version; };
@@ -85,7 +83,7 @@ class TlsCredentialReloadArg {
   /** TlsCredentialReloadArg does not take ownership of the C arg that is passed
    * to the constructor. One must remember to free any memory allocated to the C
    * arg after using the setter functions below. **/
-  TlsCredentialReloadArg(grpc_tls_credential_reload_arg* arg) : c_arg_(arg) {}
+  TlsCredentialReloadArg(grpc_tls_credential_reload_arg* arg);
   ~TlsCredentialReloadArg();
  
   /** Getters for member fields. The callback function is not exposed.
@@ -93,10 +91,7 @@ class TlsCredentialReloadArg {
    * of the key materials config, it creates a new instance of the C++ key
    * materials config from the underlying C grpc_tls_key_materials_config. **/
   void* cb_user_data() const;
-  std::shared_ptr<TlsKeyMaterialsConfig> key_materials_config() const;
-  void set_pem_root_certs(grpc::string pem_root_certs);
-  void add_pem_key_cert_pair(TlsKeyMaterialsConfig::PemKeyCertPair pem_key_cert_pair);
-  size_t key_materials_config_pem_key_cert_pair_list_size() const;
+  bool is_pem_key_cert_pair_list_empty() const;
   grpc_ssl_certificate_config_reload_status status() const;
   grpc::string error_details() const;
  
@@ -107,6 +102,9 @@ class TlsCredentialReloadArg {
    * setter function.
    * **/
   void set_cb_user_data(void* cb_user_data);
+  void set_pem_root_certs(const grpc::string& pem_root_certs);
+  void add_pem_key_cert_pair(
+      TlsKeyMaterialsConfig::PemKeyCertPair pem_key_cert_pair);
   void set_key_materials_config(
       const std::shared_ptr<TlsKeyMaterialsConfig>& key_materials_config);
   void set_status(grpc_ssl_certificate_config_reload_status status);
@@ -126,33 +124,42 @@ class TlsCredentialReloadArg {
 struct TlsCredentialReloadInterface {
   virtual ~TlsCredentialReloadInterface() = default;
   /** A callback that invokes the credential reload. **/
-  virtual int Schedule(TlsCredentialReloadArg* arg) { return 1; }
+  virtual int Schedule(TlsCredentialReloadArg* arg) = 0;
   /** A callback that cancels a credential reload request. **/
   virtual void Cancel(TlsCredentialReloadArg* arg) {}
-  /** A callback that cleans up any data associated to the
-   * interface or the config. It will be called when the config is no longer
-   * using the interface. **/
-  virtual void Release() {}
 };
  
 /** TLS credential reloag config, wraps grpc_tls_credential_reload_config. It is
  * used for experimental purposes for now and it is subject to change. **/
 class TlsCredentialReloadConfig {
  public:
-  /** The config takes ownership of the credential reload interface. **/
   TlsCredentialReloadConfig(std::shared_ptr<TlsCredentialReloadInterface>
                                 credential_reload_interface);
   ~TlsCredentialReloadConfig();
  
   int Schedule(TlsCredentialReloadArg* arg) const {
-    std::cout << "*********************attempting a CredReloadConfig schedule" << std::endl;
     if (credential_reload_interface_ == nullptr) {
-      std::cout << "****************credential reload interface is nullptr" << std::endl;
+      gpr_log(GPR_ERROR, "credential reload interface is nullptr");
+      if (arg != nullptr) {
+        arg->set_status(GRPC_SSL_CERTIFICATE_CONFIG_RELOAD_FAIL);
+        arg->set_error_details(
+            "the interface of the credential reload config is nullptr");
+      }
+      return 1;
     }
     return credential_reload_interface_->Schedule(arg);
   }
  
   void Cancel(TlsCredentialReloadArg* arg) const {
+    if (credential_reload_interface_ == nullptr) {
+      gpr_log(GPR_ERROR, "credential reload interface is nullptr");
+      if (arg != nullptr) {
+        arg->set_status(GRPC_SSL_CERTIFICATE_CONFIG_RELOAD_FAIL);
+        arg->set_error_details(
+            "the interface of the credential reload config is nullptr");
+      }
+      return;
+    }
     credential_reload_interface_->Cancel(arg);
   }
  
@@ -178,8 +185,7 @@ class TlsServerAuthorizationCheckArg {
   /** TlsServerAuthorizationCheckArg does not take ownership of the C arg passed
    * to the constructor. One must remember to free any memory allocated to the
    * C arg after using the setter functions below. **/
-  TlsServerAuthorizationCheckArg(grpc_tls_server_authorization_check_arg* arg)
-      : c_arg_(arg) {}
+  TlsServerAuthorizationCheckArg(grpc_tls_server_authorization_check_arg* arg);
   ~TlsServerAuthorizationCheckArg();
  
   /** Getters for member fields. They return the corresponding fields of the
@@ -220,12 +226,9 @@ class TlsServerAuthorizationCheckArg {
 struct TlsServerAuthorizationCheckInterface {
   virtual ~TlsServerAuthorizationCheckInterface() = default;
   /** A callback that invokes the server authorization check. **/
-  virtual int Schedule(TlsServerAuthorizationCheckArg* arg) { return 1; }
+  virtual int Schedule(TlsServerAuthorizationCheckArg* arg) = 0;
   /** A callback that cancels a server authorization check request. **/
-  virtual void Cancel(TlsServerAuthorizationCheckArg* arg){};
-  /** A callback that cleans up any data associated to the
-   * interface or the config. **/
-  virtual void Release(){};
+  virtual void Cancel(TlsServerAuthorizationCheckArg* arg) {}
 };
  
 /** TLS server authorization check config, wraps
@@ -241,18 +244,34 @@ class TlsServerAuthorizationCheckConfig {
   ~TlsServerAuthorizationCheckConfig();
  
   int Schedule(TlsServerAuthorizationCheckArg* arg) const {
-    std::cout << "***************************** attempting ServAuthzCheckConfig schedule" << std::endl;
     if (server_authorization_check_interface_ == nullptr) {
-      std::cout << "***************** server authorization check interface is nullptr" << std::endl;
+      gpr_log(GPR_ERROR, "server authorization check interface is nullptr");
+      if (arg != nullptr) {
+        arg->set_status(GRPC_STATUS_NOT_FOUND);
+        arg->set_error_details(
+            "the interface of the server authorization check config is "
+            "nullptr");
+      }
+      return 1;
     }
     return server_authorization_check_interface_->Schedule(arg);
   }
  
   void Cancel(TlsServerAuthorizationCheckArg* arg) const {
+    if (server_authorization_check_interface_ == nullptr) {
+      gpr_log(GPR_ERROR, "server authorization check interface is nullptr");
+      if (arg != nullptr) {
+        arg->set_status(GRPC_STATUS_NOT_FOUND);
+        arg->set_error_details(
+            "the interface of the server authorization check config is "
+            "nullptr");
+      }
+      return;
+    }
     server_authorization_check_interface_->Cancel(arg);
   }
  
-  /** Creates C struct for the server authorization check config. **/
+  /** Returns C struct for the server authorization check config. **/
   grpc_tls_server_authorization_check_config* c_config() const {
     return c_config_;
   }
