@@ -347,8 +347,6 @@ TEST_F(CredentialsTest, TlsCredentialReloadConfigSchedule) {
   arg->set_key_materials_config(key_materials_config);
   arg->set_status(GRPC_SSL_CERTIFICATE_CONFIG_RELOAD_NEW);
   arg->set_error_details("error_details");
-  grpc_tls_key_materials_config* key_materials_config_before_schedule =
-      c_arg->key_materials_config;
   const char* error_details_before_schedule = c_arg->error_details;
 
   int schedule_output = config->Schedule(arg);
