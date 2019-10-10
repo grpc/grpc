@@ -81,10 +81,10 @@ NS_ASSUME_NONNULL_BEGIN
  *
  * responseHandler: The unary handler to be called when the call is completed.
  * responseDispatchQueue: the dispatch queue on which the response handler
- * should be issued.
+ * should be issued. If it's nil, the handler will use the main queue.
  */
 - (nullable instancetype)initWithResponseHandler:(void (^)(GPBMessage *, NSError *))handler
-                           responseDispatchQueue:(nullable dispatch_queue_t)responseDispatchQueue;
+                           responseDispatchQueue:(nullable dispatch_queue_t)dispatchQueue;
 
 /** Response headers received during the call. */
 @property(readonly, nullable) NSDictionary *responseHeaders;
