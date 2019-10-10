@@ -68,9 +68,19 @@ template <class RequestType, class ResponseType>
 class CallbackServerStreamingHandler;
 template <class RequestType, class ResponseType>
 class CallbackBidiHandler;
+template <class ServiceType, class RequestType, class ResponseType>
+class ClientStreamingHandler;
+template <class ServiceType, class RequestType, class ResponseType>
+class RpcMethodHandler;
 template <class W, class R>
 class ServerReaderWriterBody;
+template <class ServiceType, class RequestType, class ResponseType>
+class ServerStreamingHandler;
 class ServerReactor;
+template <class Streamer, bool WriteNeeded>
+class TemplatedBidiStreamingHandler;
+template <::grpc::StatusCode code>
+class ErrorMethodHandler;
 }  // namespace internal
 
 }  // namespace grpc_impl
@@ -79,20 +89,9 @@ class GenericServerContext;
 class ServerInterface;
 
 namespace internal {
-template <class ServiceType, class RequestType, class ResponseType>
-class ClientStreamingHandler;
-template <class ServiceType, class RequestType, class ResponseType>
-class ServerStreamingHandler;
-template <class ServiceType, class RequestType, class ResponseType>
-class RpcMethodHandler;
-template <class Streamer, bool WriteNeeded>
-class TemplatedBidiStreamingHandler;
-template <StatusCode code>
-class ErrorMethodHandler;
 class Call;
 }  // namespace internal
 
-class ServerInterface;
 namespace testing {
 class InteropServerContextInspector;
 class ServerContextTestSpouse;
@@ -293,13 +292,13 @@ class ServerContext {
   template <class W, class R>
   friend class ::grpc_impl::internal::ServerReaderWriterBody;
   template <class ServiceType, class RequestType, class ResponseType>
-  friend class ::grpc::internal::RpcMethodHandler;
+  friend class ::grpc_impl::internal::RpcMethodHandler;
   template <class ServiceType, class RequestType, class ResponseType>
-  friend class ::grpc::internal::ClientStreamingHandler;
+  friend class ::grpc_impl::internal::ClientStreamingHandler;
   template <class ServiceType, class RequestType, class ResponseType>
-  friend class ::grpc::internal::ServerStreamingHandler;
+  friend class ::grpc_impl::internal::ServerStreamingHandler;
   template <class Streamer, bool WriteNeeded>
-  friend class ::grpc::internal::TemplatedBidiStreamingHandler;
+  friend class ::grpc_impl::internal::TemplatedBidiStreamingHandler;
   template <class RequestType, class ResponseType>
   friend class ::grpc_impl::internal::CallbackUnaryHandler;
   template <class RequestType, class ResponseType>
@@ -309,7 +308,7 @@ class ServerContext {
   template <class RequestType, class ResponseType>
   friend class ::grpc_impl::internal::CallbackBidiHandler;
   template <::grpc::StatusCode code>
-  friend class ::grpc::internal::ErrorMethodHandler;
+  friend class ::grpc_impl::internal::ErrorMethodHandler;
   friend class ::grpc_impl::ClientContext;
   friend class ::grpc::GenericServerContext;
 

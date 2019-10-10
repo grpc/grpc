@@ -44,6 +44,11 @@ build --define GRPC_PORT_ISOLATED_RUNTIME=1
 # without verbose gRPC logs the test outputs are not very useful
 test --test_env=GRPC_VERBOSITY=debug
 
+# we assume the default bazel RBE build is on linux,
+# so filter out stuff that should not be built or run there.
+build --test_tag_filters=-no_linux
+build --build_tag_filters=-no_linux
+
 # Default test timeouts for all RBE tests (sanitizers override these values)
 # TODO(jtattermusch): revisit the non-standard test timeout values
 build --test_timeout=300,450,1200,3600
@@ -53,7 +58,7 @@ build --test_timeout=300,450,1200,3600
 build:asan --copt=-gmlt
 # TODO(jtattermusch): use more reasonable test timeout
 build:asan --test_timeout=3600
-build:asan --test_tag_filters=-qps_json_driver
+build:asan --test_tag_filters=-no_linux,-qps_json_driver
 
 # memory sanitizer: most settings are already in %workspace%/.bazelrc
 # we only need a few additional ones that are Foundry specific
@@ -61,7 +66,7 @@ build:msan --copt=-gmlt
 # TODO(jtattermusch): use more reasonable test timeout
 build:msan --test_timeout=3600
 # TODO(jtattermusch): revisit the disabled tests
-build:msan --test_tag_filters=-nomsan,-json_run_localhost
+build:msan --test_tag_filters=-no_linux,-nomsan,-json_run_localhost
 build:msan --cxxopt=--stdlib=libc++
 # setting LD_LIBRARY_PATH is necessary
 # to avoid "libc++.so.1: cannot open shared object file"
@@ -75,7 +80,7 @@ build:msan --crosstool_top=@rbe_msan//cc:toolchain
 build:tsan --copt=-gmlt
 # TODO(jtattermusch): use more reasonable test timeout
 build:tsan --test_timeout=3600
-build:tsan --test_tag_filters=-qps_json_driver
+build:tsan --test_tag_filters=-no_linux,-qps_json_driver
 build:tsan --extra_execution_platforms=//third_party/toolchains:rbe_ubuntu1604,//third_party/toolchains:rbe_ubuntu1604_large
 
 # undefined behavior sanitizer: most settings are already in %workspace%/.bazelrc
@@ -87,4 +92,4 @@ build:ubsan --test_timeout=3600
 # how to update the bazel toolchain for ubsan:
 # - check for the latest released version in https://github.com/bazelbuild/bazel-toolchains/tree/master/configs/experimental/ubuntu16_04_clang
 # - you might need to update the bazel_toolchains dependency in grpc_deps.bzl
-build:ubsan --crosstool_top=@bazel_toolchains//configs/experimental/ubuntu16_04_clang/1.2/bazel_0.23.0/ubsan:toolchain
+build:ubsan --crosstool_top=@bazel_toolchains//configs/experimental/ubuntu16_04_clang/1.2/bazel_0.28.0/ubsan:toolchain

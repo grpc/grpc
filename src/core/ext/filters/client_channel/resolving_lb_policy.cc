@@ -123,8 +123,7 @@ class ResolvingLoadBalancingPolicy::ResolvingControlHelper
         gpr_log(GPR_INFO,
                 "resolving_lb=%p helper=%p: pending child policy %p reports "
                 "state=%s",
-                parent_.get(), this, child_,
-                grpc_connectivity_state_name(state));
+                parent_.get(), this, child_, ConnectivityStateName(state));
       }
       if (state != GRPC_CHANNEL_READY) return;
       grpc_pollset_set_del_pollset_set(
@@ -188,16 +187,15 @@ ResolvingLoadBalancingPolicy::ResolvingLoadBalancingPolicy(
   GPR_ASSERT(process_resolver_result != nullptr);
   resolver_ = ResolverRegistry::CreateResolver(
       target_uri_.get(), args.args, interested_parties(), combiner(),
-      UniquePtr<Resolver::ResultHandler>(New<ResolverResultHandler>(Ref())));
+      MakeUnique<ResolverResultHandler>(Ref()));
   // Since the validity of args has been checked when create the channel,
   // CreateResolver() must return a non-null result.
   GPR_ASSERT(resolver_ != nullptr);
   if (GRPC_TRACE_FLAG_ENABLED(*tracer_)) {
     gpr_log(GPR_INFO, "resolving_lb=%p: starting name resolution", this);
   }
-  channel_control_helper()->UpdateState(
-      GRPC_CHANNEL_CONNECTING,
-      UniquePtr<SubchannelPicker>(New<QueuePicker>(Ref())));
+  channel_control_helper()->UpdateState(GRPC_CHANNEL_CONNECTING,
+                                        MakeUnique<QueuePicker>(Ref()));
   resolver_->StartLocked();
 }
 
@@ -263,7 +261,7 @@ void ResolvingLoadBalancingPolicy::OnResolverError(grpc_error* error) {
         "Resolver transient failure", &error, 1);
     channel_control_helper()->UpdateState(
         GRPC_CHANNEL_TRANSIENT_FAILURE,
-        UniquePtr<SubchannelPicker>(New<TransientFailurePicker>(state_error)));
+        MakeUnique<TransientFailurePicker>(state_error));
   }
   GRPC_ERROR_UNREF(error);
 }

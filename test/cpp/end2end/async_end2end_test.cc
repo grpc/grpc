@@ -1875,11 +1875,12 @@ std::vector<TestScenario> CreateTestScenarios(bool test_secure,
   return scenarios;
 }
 
-INSTANTIATE_TEST_CASE_P(AsyncEnd2end, AsyncEnd2endTest,
-                        ::testing::ValuesIn(CreateTestScenarios(true, true)));
-INSTANTIATE_TEST_CASE_P(AsyncEnd2endServerTryCancel,
-                        AsyncEnd2endServerTryCancelTest,
-                        ::testing::ValuesIn(CreateTestScenarios(false, false)));
+INSTANTIATE_TEST_SUITE_P(AsyncEnd2end, AsyncEnd2endTest,
+                         ::testing::ValuesIn(CreateTestScenarios(true, true)));
+INSTANTIATE_TEST_SUITE_P(AsyncEnd2endServerTryCancel,
+                         AsyncEnd2endServerTryCancelTest,
+                         ::testing::ValuesIn(CreateTestScenarios(false,
+                                                                 false)));
 
 }  // namespace
 }  // namespace testing

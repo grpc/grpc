@@ -28,12 +28,12 @@
 #include "src/core/ext/transport/chttp2/alpn/alpn.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gpr/string.h"
-#include "src/core/lib/gprpp/global_config.h"
 #include "src/core/lib/gprpp/host_port.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/iomgr/load_file.h"
 #include "src/core/lib/security/context/security_context.h"
 #include "src/core/lib/security/security_connector/load_system_roots.h"
+#include "src/core/lib/security/security_connector/ssl_utils_config.h"
 #include "src/core/tsi/ssl_transport_security.h"
 
 /* -- Constants. -- */
@@ -44,17 +44,6 @@ static const char* installed_roots_path = "/usr/share/grpc/roots.pem";
 static const char* installed_roots_path =
     INSTALL_PREFIX "/share/grpc/roots.pem";
 #endif
-
-/** Config variable that points to the default SSL roots file. This file
-   must be a PEM encoded file with all the roots such as the one that can be
-   downloaded from https://pki.google.com/roots.pem.  */
-GPR_GLOBAL_CONFIG_DEFINE_STRING(grpc_default_ssl_roots_file_path, "",
-                                "Path to the default SSL roots file.");
-
-/** Config variable used as a flag to enable/disable loading system root
-    certificates from the OS trust store. */
-GPR_GLOBAL_CONFIG_DEFINE_BOOL(grpc_not_use_system_ssl_roots, false,
-                              "Disable loading system root certificates.");
 
 #ifndef TSI_OPENSSL_ALPN_SUPPORT
 #define TSI_OPENSSL_ALPN_SUPPORT 1
@@ -206,7 +195,7 @@ int grpc_ssl_cmp_target_name(
 }
 
 grpc_core::RefCountedPtr<grpc_auth_context> grpc_ssl_peer_to_auth_context(
-    const tsi_peer* peer) {
+    const tsi_peer* peer, const char* transport_security_type) {
   size_t i;
   const char* peer_identity_property_name = nullptr;
 
@@ -216,7 +205,7 @@ grpc_core::RefCountedPtr<grpc_auth_context> grpc_ssl_peer_to_auth_context(
       grpc_core::MakeRefCounted<grpc_auth_context>(nullptr);
   grpc_auth_context_add_cstring_property(
       ctx.get(), GRPC_TRANSPORT_SECURITY_TYPE_PROPERTY_NAME,
-      GRPC_SSL_TRANSPORT_SECURITY_TYPE);
+      transport_security_type);
   for (i = 0; i < peer->property_count; i++) {
     const tsi_peer_property* prop = &peer->properties[i];
     if (prop->name == nullptr) continue;

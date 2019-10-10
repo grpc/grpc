@@ -62,8 +62,6 @@ class ServiceConfig : public RefCounted<ServiceConfig> {
   class ParsedConfig {
    public:
     virtual ~ParsedConfig() = default;
-
-    GRPC_ABSTRACT_BASE_CLASS;
   };
 
   /// This is the base class that all service config parsers should derive from.
@@ -82,8 +80,6 @@ class ServiceConfig : public RefCounted<ServiceConfig> {
       GPR_DEBUG_ASSERT(error != nullptr);
       return nullptr;
     }
-
-    GRPC_ABSTRACT_BASE_CLASS;
   };
 
   static constexpr int kNumPreallocatedParsers = 4;

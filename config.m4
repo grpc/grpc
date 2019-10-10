@@ -24,12 +24,16 @@ if test "$PHP_GRPC" != "no"; then
 
   case $host in
     *darwin*)
+      PHP_ADD_LIBRARY(c++,1,GRPC_SHARED_LIBADD)
       ;;
     *)
+      PHP_ADD_LIBRARY(stdc++,1,GRPC_SHARED_LIBADD)
       PHP_ADD_LIBRARY(rt,,GRPC_SHARED_LIBADD)
       PHP_ADD_LIBRARY(rt)
       ;;
   esac
+
+  PHP_SUBST(GRPC_SHARED_LIBADD)
 
   PHP_NEW_EXTENSION(grpc,
     src/php/ext/grpc/byte_buffer.c \
@@ -59,7 +63,6 @@ if test "$PHP_GRPC" != "no"; then
     src/core/lib/gpr/log_linux.cc \
     src/core/lib/gpr/log_posix.cc \
     src/core/lib/gpr/log_windows.cc \
-    src/core/lib/gpr/mpscq.cc \
     src/core/lib/gpr/murmur_hash.cc \
     src/core/lib/gpr/string.cc \
     src/core/lib/gpr/string_posix.cc \
@@ -81,6 +84,7 @@ if test "$PHP_GRPC" != "no"; then
     src/core/lib/gprpp/fork.cc \
     src/core/lib/gprpp/global_config_env.cc \
     src/core/lib/gprpp/host_port.cc \
+    src/core/lib/gprpp/mpscq.cc \
     src/core/lib/gprpp/thd_posix.cc \
     src/core/lib/gprpp/thd_windows.cc \
     src/core/lib/profiling/basic_timers.cc \
@@ -300,6 +304,7 @@ if test "$PHP_GRPC" != "no"; then
     src/core/lib/security/security_connector/security_connector.cc \
     src/core/lib/security/security_connector/ssl/ssl_security_connector.cc \
     src/core/lib/security/security_connector/ssl_utils.cc \
+    src/core/lib/security/security_connector/ssl_utils_config.cc \
     src/core/lib/security/security_connector/tls/spiffe_security_connector.cc \
     src/core/lib/security/transport/client_auth_filter.cc \
     src/core/lib/security/transport/secure_endpoint.cc \
@@ -412,9 +417,10 @@ if test "$PHP_GRPC" != "no"; then
     src/core/ext/upb-generated/src/proto/grpc/lb/v1/load_balancer.upb.c \
     src/core/ext/filters/client_channel/resolver/fake/fake_resolver.cc \
     src/core/ext/filters/client_channel/lb_policy/xds/xds.cc \
-    src/core/ext/filters/client_channel/lb_policy/xds/xds_channel_secure.cc \
-    src/core/ext/filters/client_channel/lb_policy/xds/xds_client_stats.cc \
-    src/core/ext/filters/client_channel/lb_policy/xds/xds_load_balancer_api.cc \
+    src/core/ext/filters/client_channel/xds/xds_api.cc \
+    src/core/ext/filters/client_channel/xds/xds_channel_secure.cc \
+    src/core/ext/filters/client_channel/xds/xds_client.cc \
+    src/core/ext/filters/client_channel/xds/xds_client_stats.cc \
     src/core/ext/upb-generated/envoy/api/v2/auth/cert.upb.c \
     src/core/ext/upb-generated/envoy/api/v2/cds.upb.c \
     src/core/ext/upb-generated/envoy/api/v2/cluster/circuit_breaker.upb.c \
@@ -737,6 +743,7 @@ if test "$PHP_GRPC" != "no"; then
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/filters/client_channel/resolver/fake)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/filters/client_channel/resolver/sockaddr)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/filters/client_channel/resolver/xds)
+  PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/filters/client_channel/xds)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/filters/client_idle)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/filters/deadline)
   PHP_ADD_BUILD_DIR($ext_builddir/src/core/ext/filters/http)

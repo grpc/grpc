@@ -51,6 +51,9 @@ load("@grpc_python_dependencies//:requirements.bzl", "pip_install")
 pip_repositories()
 pip_install()
 
+load("@com_google_protobuf//:protobuf_deps.bzl", "protobuf_deps")
+protobuf_deps()
+
 load("@upb//bazel:workspace_deps.bzl", "upb_deps")
 upb_deps()
 

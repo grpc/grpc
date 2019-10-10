@@ -43,7 +43,6 @@ $ sudo yum install php56w php56w-devel php-pear phpunit gcc zlib-devel
 
 **Install PHP and PECL on Mac:**
 ```sh
-$ brew install homebrew/php/php56-grpc
 $ curl -O http://pear.php.net/go-pear.phar
 $ sudo php -d detect_unicode=0 go-pear.phar
 ```
@@ -56,9 +55,9 @@ $ sudo mv composer.phar /usr/local/bin/composer
 
 **Install PHPUnit (Linux or Mac):**
 ```sh
-$ wget https://phar.phpunit.de/phpunit-old.phar
-$ chmod +x phpunit-old.phar
-$ sudo mv phpunit-old.phar /usr/bin/phpunit
+$ wget -O phpunit https://phar.phpunit.de/phpunit-5.phar
+$ chmod +x phpunit
+$ sudo mv phpunit /usr/bin/phpunit
 ```
 
 ## Install the gRPC PHP extension

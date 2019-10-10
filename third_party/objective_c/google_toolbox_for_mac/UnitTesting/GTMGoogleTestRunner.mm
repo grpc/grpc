@@ -20,14 +20,14 @@
 #error "This file requires ARC support."
 #endif
 
-// This is a SenTest/XCTest based unit test that will run all of the GoogleTest
+// This is a XCTest based unit test that will run all of the GoogleTest
 // https://code.google.com/p/googletest/
-// based tests in the project, and will report results correctly via SenTest so
+// based tests in the project, and will report results correctly via XCTest so
 // that Xcode can pick them up in it's UI.
 
-// SenTest dynamically creates one SenTest per GoogleTest.
+// XCTest dynamically creates one XCTest per GoogleTest.
 // GoogleTest is set up using a custom event listener (GoogleTestPrinter)
-// which knows how to log GoogleTest test results in a manner that SenTest (and
+// which knows how to log GoogleTest test results in a manner that XCTest (and
 // the Xcode IDE) understand.
 
 // Note that this does not able you to control individual tests from the Xcode
@@ -39,33 +39,30 @@
 // project because of it's dependency on https://code.google.com/p/googletest/
 
 // To use this:
-// - If you are using XCTest (vs SenTest) make sure to define GTM_USING_XCTEST
-//   in the settings for your testing bundle.
 // - Add GTMGoogleTestRunner to your test bundle sources.
 // - Add gtest-all.cc from gtest to your test bundle sources.
 // - Write some C++ tests and add them to your test bundle sources.
 // - Build and run tests. Your C++ tests should just execute.
 
-// If you are using this with XCTest (as opposed to SenTestingKit)
-// make sure to define GTM_USING_XCTEST.
-#ifndef GTM_USING_XCTEST
-#define GTM_USING_XCTEST 0
-#endif
+// NOTE:
+// A key difference between how GTMGoogleTestRunner runs tests versus how a
+// "standard" unit test package runs tests is that SetUpTestSuite/SetupTestCase
+// and TeardownTestSuite/TeardownTestCase are going to be called before/after
+// *every* individual test. Unfortunately this is due to restrictions in the
+// design of GoogleTest in that the only way to run individual tests is to
+// use a filter to focus on a specific test, and then "run" all the tests
+// multiple times.
+// If you have state that you need maintained across tests (not normally a
+// great idea anyhow), using SetUp*, Teardown* is not going to work for you.
 
-#if GTM_USING_XCTEST
 #import <XCTest/XCTest.h>
-#define SenTestCase XCTestCase
-#define SenTestSuite XCTestSuite
-#else  // GTM_USING_XCTEST
-#import <SenTestingKit/SenTestingKit.h>
-#endif  // GTM_USING_XCTEST
-
 #import <objc/runtime.h>
 
 #include <gtest/gtest.h>
 
 using ::testing::EmptyTestEventListener;
 using ::testing::TestCase;
+using ::testing::TestEventListener;
 using ::testing::TestEventListeners;
 using ::testing::TestInfo;
 using ::testing::TestPartResult;
@@ -75,18 +72,19 @@ using ::testing::UnitTest;
 namespace {
 
 // A gtest printer that takes care of reporting gtest results via the
-// SenTest interface. Note that a test suite in SenTest == a test case in gtest
-// and a test case in SenTest == a test in gtest.
+// XCTest interface. Note that a test suite in XCTest == a test case in gtest
+// and a test case in XCTest == a test in gtest.
 // This will handle fatal and non-fatal gtests properly.
 class GoogleTestPrinter : public EmptyTestEventListener {
  public:
-  GoogleTestPrinter(SenTestCase *test_case) : test_case_(test_case) {}
+  GoogleTestPrinter(XCTestCase *test_case) : test_case_(test_case) {}
 
   virtual ~GoogleTestPrinter() {}
 
   virtual void OnTestPartResult(const TestPartResult &test_part_result) {
     if (!test_part_result.passed()) {
-      NSString *file = @(test_part_result.file_name());
+      const char *file_name = test_part_result.file_name();
+      NSString *file = @(file_name ? file_name : "<file name unavailable>");
       int line = test_part_result.line_number();
       NSString *summary = @(test_part_result.summary());
 
@@ -94,26 +92,16 @@ class GoogleTestPrinter : public EmptyTestEventListener {
       // the Xcode UI, so we clean them up.
       NSString *oneLineSummary =
           [summary stringByReplacingOccurrencesOfString:@"\n" withString:@" "];
-#if GTM_USING_XCTEST
       BOOL expected = test_part_result.nonfatally_failed();
       [test_case_ recordFailureWithDescription:oneLineSummary
                                         inFile:file
                                         atLine:line
                                       expected:expected];
-#else  // GTM_USING_XCTEST
-      NSException *exception =
-          [NSException failureInFile:file
-                              atLine:line
-                     withDescription:@"%@", oneLineSummary];
-
-      // failWithException: will log appropriately.
-      [test_case_ failWithException:exception];
-#endif  // GTM_USING_XCTEST
     }
   }
 
  private:
-  SenTestCase *test_case_;
+  XCTestCase *test_case_;
 };
 
 NSString *SelectorNameFromGTestName(NSString *testName) {
@@ -127,7 +115,7 @@ NSString *SelectorNameFromGTestName(NSString *testName) {
 
 // GTMGoogleTestRunner is a GTMTestCase that makes a sub test suite populated
 // with all of the GoogleTest unit tests.
-@interface GTMGoogleTestRunner : SenTestCase {
+@interface GTMGoogleTestRunner : XCTestCase {
   NSString *testName_;
 }
 
@@ -154,8 +142,7 @@ NSString *SelectorNameFromGTestName(NSString *testName) {
 
 + (id)defaultTestSuite {
   [GTMGoogleTestRunner initGoogleTest];
-  SenTestSuite *result =
-      [[SenTestSuite alloc] initWithName:NSStringFromClass(self)];
+  XCTestSuite *result = [[XCTestSuite alloc] initWithName:NSStringFromClass(self)];
   UnitTest *test = UnitTest::GetInstance();
 
   // Walk the GoogleTest tests, adding sub tests and sub suites as appropriate.
@@ -163,15 +150,14 @@ NSString *SelectorNameFromGTestName(NSString *testName) {
   for (int i = 0; i < total_test_case_count; ++i) {
     const TestCase *test_case = test->GetTestCase(i);
     int total_test_count = test_case->total_test_count();
-    SenTestSuite *subSuite =
-        [[SenTestSuite alloc] initWithName:@(test_case->name())];
+    XCTestSuite *subSuite = [[XCTestSuite alloc] initWithName:@(test_case->name())];
     [result addTest:subSuite];
     for (int j = 0; j < total_test_count; ++j) {
       const TestInfo *test_info = test_case->GetTestInfo(j);
       NSString *testName = [NSString stringWithFormat:@"%s.%s",
                             test_case->name(), test_info->name()];
-      SenTestCase *senTest = [[self alloc] initWithName:testName];
-      [subSuite addTest:senTest];
+      XCTestCase *xcTest = [[self alloc] initWithName:testName];
+      [subSuite addTest:xcTest];
     }
   }
   return result;
@@ -201,7 +187,7 @@ NSString *SelectorNameFromGTestName(NSString *testName) {
 }
 
 - (NSString *)name {
-  // A SenTest name must be "-[foo bar]" or it won't be parsed properly.
+  // An XCTest name must be "-[foo bar]" or it won't be parsed properly.
   NSRange dot = [testName_ rangeOfString:@"."];
   return [NSString stringWithFormat:@"-[%@ %@]",
           [testName_ substringToIndex:dot.location],
@@ -214,11 +200,15 @@ NSString *SelectorNameFromGTestName(NSString *testName) {
   // Gets hold of the event listener list.
   TestEventListeners& listeners = UnitTest::GetInstance()->listeners();
 
-  // Adds a listener to the end. Google Test takes the ownership.
-  listeners.Append(new GoogleTestPrinter(self));
+  // Adds a listener to the end.
+  GoogleTestPrinter printer = GoogleTestPrinter(self);
+  listeners.Append(&printer);
 
-  // Remove the default printer.
-  delete listeners.Release(listeners.default_result_printer());
+  // Remove the default printer if it exists.
+  TestEventListener *defaultListener = listeners.default_result_printer();
+  if (defaultListener) {
+    delete listeners.Release(defaultListener);
+  }
 
   // Since there is no way of running a single GoogleTest directly, we use the
   // filter mechanism in GoogleTest to simulate it for us.
@@ -228,6 +218,9 @@ NSString *SelectorNameFromGTestName(NSString *testName) {
   // the output appropriately, and there is no reason to mark this test as
   // "failed" if RUN_ALL_TESTS returns non-zero.
   (void)RUN_ALL_TESTS();
+
+  // Remove the listener that we added.
+  listeners.Release(&printer);
 }
 
 @end

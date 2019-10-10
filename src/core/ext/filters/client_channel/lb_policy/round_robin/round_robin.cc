@@ -88,14 +88,21 @@ class RoundRobin : public LoadBalancingPolicy {
       return last_connectivity_state_;
     }
 
+    bool seen_failure_since_ready() const { return seen_failure_since_ready_; }
+
+    // Performs connectivity state updates that need to be done both when we
+    // first start watching and when a watcher notification is received.
     void UpdateConnectivityStateLocked(
         grpc_connectivity_state connectivity_state);
 
    private:
+    // Performs connectivity state updates that need to be done only
+    // after we have started watching.
     void ProcessConnectivityChangeLocked(
         grpc_connectivity_state connectivity_state) override;
 
     grpc_connectivity_state last_connectivity_state_ = GRPC_CHANNEL_IDLE;
+    bool seen_failure_since_ready_ = false;
   };
 
   // A list of subchannels.
@@ -314,13 +321,13 @@ void RoundRobin::RoundRobinSubchannelList::
    */
   if (num_ready_ > 0) {
     /* 1) READY */
-    p->channel_control_helper()->UpdateState(
-        GRPC_CHANNEL_READY, UniquePtr<SubchannelPicker>(New<Picker>(p, this)));
+    p->channel_control_helper()->UpdateState(GRPC_CHANNEL_READY,
+                                             MakeUnique<Picker>(p, this));
   } else if (num_connecting_ > 0) {
     /* 2) CONNECTING */
     p->channel_control_helper()->UpdateState(
-        GRPC_CHANNEL_CONNECTING, UniquePtr<SubchannelPicker>(New<QueuePicker>(
-                                     p->Ref(DEBUG_LOCATION, "QueuePicker"))));
+        GRPC_CHANNEL_CONNECTING,
+        MakeUnique<QueuePicker>(p->Ref(DEBUG_LOCATION, "QueuePicker")));
   } else if (num_transient_failure_ == num_subchannels()) {
     /* 3) TRANSIENT_FAILURE */
     grpc_error* error =
@@ -329,7 +336,7 @@ void RoundRobin::RoundRobinSubchannelList::
                            GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_UNAVAILABLE);
     p->channel_control_helper()->UpdateState(
         GRPC_CHANNEL_TRANSIENT_FAILURE,
-        UniquePtr<SubchannelPicker>(New<TransientFailurePicker>(error)));
+        MakeUnique<TransientFailurePicker>(error));
   }
 }
 
@@ -372,11 +379,28 @@ void RoundRobin::RoundRobinSubchannelData::UpdateConnectivityStateLocked(
         "(index %" PRIuPTR " of %" PRIuPTR "): prev_state=%s new_state=%s",
         p, subchannel(), subchannel_list(), Index(),
         subchannel_list()->num_subchannels(),
-        grpc_connectivity_state_name(last_connectivity_state_),
-        grpc_connectivity_state_name(connectivity_state));
+        ConnectivityStateName(last_connectivity_state_),
+        ConnectivityStateName(connectivity_state));
   }
-  subchannel_list()->UpdateStateCountersLocked(last_connectivity_state_,
-                                               connectivity_state);
+  // Decide what state to report for aggregation purposes.
+  // If we haven't seen a failure since the last time we were in state
+  // READY, then we report the state change as-is.  However, once we do see
+  // a failure, we report TRANSIENT_FAILURE and do not report any subsequent
+  // state changes until we go back into state READY.
+  if (!seen_failure_since_ready_) {
+    if (connectivity_state == GRPC_CHANNEL_TRANSIENT_FAILURE) {
+      seen_failure_since_ready_ = true;
+    }
+    subchannel_list()->UpdateStateCountersLocked(last_connectivity_state_,
+                                                 connectivity_state);
+  } else {
+    if (connectivity_state == GRPC_CHANNEL_READY) {
+      seen_failure_since_ready_ = false;
+      subchannel_list()->UpdateStateCountersLocked(
+          GRPC_CHANNEL_TRANSIENT_FAILURE, connectivity_state);
+    }
+  }
+  // Record last seen connectivity state.
   last_connectivity_state_ = connectivity_state;
 }
 
@@ -429,7 +453,7 @@ void RoundRobin::UpdateLocked(UpdateArgs args) {
                            GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_UNAVAILABLE);
     channel_control_helper()->UpdateState(
         GRPC_CHANNEL_TRANSIENT_FAILURE,
-        UniquePtr<SubchannelPicker>(New<TransientFailurePicker>(error)));
+        MakeUnique<TransientFailurePicker>(error));
     subchannel_list_ = std::move(latest_pending_subchannel_list_);
   } else if (subchannel_list_ == nullptr) {
     // If there is no current list, immediately promote the new list to
@@ -456,7 +480,7 @@ class RoundRobinFactory : public LoadBalancingPolicyFactory {
  public:
   OrphanablePtr<LoadBalancingPolicy> CreateLoadBalancingPolicy(
       LoadBalancingPolicy::Args args) const override {
-    return OrphanablePtr<LoadBalancingPolicy>(New<RoundRobin>(std::move(args)));
+    return MakeOrphanable<RoundRobin>(std::move(args));
   }
 
   const char* name() const override { return kRoundRobin; }
@@ -478,8 +502,7 @@ class RoundRobinFactory : public LoadBalancingPolicyFactory {
 void grpc_lb_policy_round_robin_init() {
   grpc_core::LoadBalancingPolicyRegistry::Builder::
       RegisterLoadBalancingPolicyFactory(
-          grpc_core::UniquePtr<grpc_core::LoadBalancingPolicyFactory>(
-              grpc_core::New<grpc_core::RoundRobinFactory>()));
+          grpc_core::MakeUnique<grpc_core::RoundRobinFactory>());
 }
 
 void grpc_lb_policy_round_robin_shutdown() {}

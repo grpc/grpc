@@ -21,11 +21,6 @@
 
 #define GRPC_OPEN_SOURCE_PROTO
 
-#ifndef GRPC_CUSTOM_PROTOBUF_INT64
-#include <google/protobuf/stubs/common.h>
-#define GRPC_CUSTOM_PROTOBUF_INT64 ::google::protobuf::int64
-#endif
-
 #ifndef GRPC_CUSTOM_MESSAGE
 #ifdef GRPC_USE_PROTO_LITE
 #include <google/protobuf/message_lite.h>
@@ -79,7 +74,6 @@ namespace protobuf {
 
 typedef GRPC_CUSTOM_MESSAGE Message;
 typedef GRPC_CUSTOM_MESSAGELITE MessageLite;
-typedef GRPC_CUSTOM_PROTOBUF_INT64 int64;
 
 typedef GRPC_CUSTOM_DESCRIPTOR Descriptor;
 typedef GRPC_CUSTOM_DESCRIPTORPOOL DescriptorPool;

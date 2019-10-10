@@ -25,7 +25,6 @@
 
 #include <grpc/support/atm.h>
 #include "src/core/lib/debug/trace.h"
-#include "src/core/lib/gpr/mpscq.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 
 // Provides serialized access to some resource.

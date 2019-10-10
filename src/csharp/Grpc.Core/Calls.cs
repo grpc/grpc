@@ -33,7 +33,7 @@ namespace Grpc.Core
         /// Invokes a simple remote call in a blocking fashion.
         /// </summary>
         /// <returns>The response.</returns>
-        /// <param name="call">The call defintion.</param>
+        /// <param name="call">The call definition.</param>
         /// <param name="req">Request message.</param>
         /// <typeparam name="TRequest">Type of request message.</typeparam>
         /// <typeparam name="TResponse">The of response message.</typeparam>
@@ -49,7 +49,7 @@ namespace Grpc.Core
         /// Invokes a simple remote call asynchronously.
         /// </summary>
         /// <returns>An awaitable call object providing access to the response.</returns>
-        /// <param name="call">The call defintion.</param>
+        /// <param name="call">The call definition.</param>
         /// <param name="req">Request message.</param>
         /// <typeparam name="TRequest">Type of request message.</typeparam>
         /// <typeparam name="TResponse">The of response message.</typeparam>
@@ -67,7 +67,7 @@ namespace Grpc.Core
         /// In server streaming scenario, client sends on request and server responds with a stream of responses.
         /// </summary>
         /// <returns>A call object providing access to the asynchronous response stream.</returns>
-        /// <param name="call">The call defintion.</param>
+        /// <param name="call">The call definition.</param>
         /// <param name="req">Request message.</param>
         /// <typeparam name="TRequest">Type of request message.</typeparam>
         /// <typeparam name="TResponse">The of response messages.</typeparam>
@@ -85,7 +85,7 @@ namespace Grpc.Core
         /// Invokes a client streaming call asynchronously.
         /// In client streaming scenario, client sends a stream of requests and server responds with a single response.
         /// </summary>
-        /// <param name="call">The call defintion.</param>
+        /// <param name="call">The call definition.</param>
         /// <returns>An awaitable call object providing access to the response.</returns>
         /// <typeparam name="TRequest">Type of request messages.</typeparam>
         /// <typeparam name="TResponse">The of response message.</typeparam>
@@ -107,7 +107,7 @@ namespace Grpc.Core
         /// <returns>A call object providing access to the asynchronous request and response streams.</returns>
         /// <param name="call">The call definition.</param>
         /// <typeparam name="TRequest">Type of request messages.</typeparam>
-        /// <typeparam name="TResponse">Type of reponse messages.</typeparam>
+        /// <typeparam name="TResponse">Type of responsemessages.</typeparam>
         public static AsyncDuplexStreamingCall<TRequest, TResponse> AsyncDuplexStreamingCall<TRequest, TResponse>(CallInvocationDetails<TRequest, TResponse> call)
             where TRequest : class
             where TResponse : class

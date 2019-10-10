@@ -37,4 +37,5 @@ grpc_cc_test(
         "//test/cpp/util:test_config",
         "//test/cpp/util:test_util",
     ],
+    tags = ["no_windows"],  # TODO(jtattermusch): fix test on windows
 )
