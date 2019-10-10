@@ -117,11 +117,9 @@ Pod::Spec.new do |s|
                              'src/objective-c/GRPCClient/GRPCCall+Cronet.h',
                              'src/objective-c/GRPCClient/GRPCCall+OAuth2.h',
                              'src/objective-c/GRPCClient/GRPCCall+Tests.h',
-                             'src/objective-c/GRPCClient/GRPCCall+ChannelArg.h',
-                             'src/objective-c/GRPCClient/internal_testing/*.h'
+                             'src/objective-c/GRPCClient/GRPCCall+ChannelArg.h'
     ss.private_header_files = 'src/objective-c/GRPCClient/private/GRPCCore/*.h'
-    ss.source_files = 'src/objective-c/GRPCClient/internal_testing/*.{h,m}',
-                      'src/objective-c/GRPCClient/private/GRPCCore/*.{h,m}',
+    ss.source_files = 'src/objective-c/GRPCClient/private/GRPCCore/*.{h,m}',
                       'src/objective-c/GRPCClient/GRPCCall+ChannelArg.h',
                       'src/objective-c/GRPCClient/GRPCCall+ChannelArg.m',
                       'src/objective-c/GRPCClient/GRPCCall+ChannelCredentials.h',
@@ -164,6 +162,18 @@ Pod::Spec.new do |s|
   # CFStream is now default. Leaving this subspec only for compatibility purpose.
   s.subspec 'CFStream' do |ss|
     ss.dependency "#{s.name}/GRPCCore", version
+
+    ss.ios.deployment_target = '7.0'
+    ss.osx.deployment_target = '10.9'
+    ss.tvos.deployment_target = '10.0'
+    ss.watchos.deployment_target = '4.0'
+  end
+
+  s.subspec 'InternalTesting' do |ss|
+    ss.dependency "#{s.name}/GRPCCore", version
+    ss.public_header_files = 'src/objective-c/GRPCClient/internal_testing/*.h'
+    ss.source_files = 'src/objective-c/GRPCClient/internal_testing/*.{h,m}'
+    ss.header_mappings_dir = 'src/objective-c/GRPCClient'
 
     ss.ios.deployment_target = '7.0'
     ss.osx.deployment_target = '10.9'
