@@ -243,7 +243,13 @@ static void test_slice_interning(void) {
   grpc_init();
   grpc_slice src1 = grpc_slice_from_copied_string("hello123456789123456789");
   grpc_slice src2 = grpc_slice_from_copied_string("hello123456789123456789");
-  GPR_ASSERT(GRPC_SLICE_START_PTR(src1) != GRPC_SLICE_START_PTR(src2));
+  // this is scary! if the commented-out assert is used instead of the following
+  // if statement, test will fail consistently on windows bazel opt build.
+  // GPR_ASSERT(GRPC_SLICE_START_PTR(src1) != GRPC_SLICE_START_PTR(src2));
+  if (GRPC_SLICE_START_PTR(src1) == GRPC_SLICE_START_PTR(src2)) {
+    gpr_log(GPR_ERROR, "slice start pointers must not be the same src1:%p, src2:%p", GRPC_SLICE_START_PTR(src1), GRPC_SLICE_START_PTR(src2));
+    GPR_ASSERT(0);
+  }
   grpc_slice interned1 = grpc_slice_intern(src1);
   grpc_slice interned2 = grpc_slice_intern(src2);
   GPR_ASSERT(GRPC_SLICE_START_PTR(interned1) ==
