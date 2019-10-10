@@ -5616,6 +5616,8 @@ LIBGRPC++_SRC = \
     src/cpp/common/secure_auth_context.cc \
     src/cpp/common/secure_channel_arguments.cc \
     src/cpp/common/secure_create_auth_context.cc \
+    src/cpp/common/tls_credentials_options.cc \
+    src/cpp/common/tls_credentials_options_util.cc \
     src/cpp/server/insecure_server_credentials.cc \
     src/cpp/server/secure_server_credentials.cc \
     src/cpp/client/channel_cc.cc \
@@ -5750,6 +5752,7 @@ PUBLIC_HEADERS_CXX += \
     include/grpcpp/security/credentials_impl.h \
     include/grpcpp/security/server_credentials.h \
     include/grpcpp/security/server_credentials_impl.h \
+    include/grpcpp/security/tls_credentials_options.h \
     include/grpcpp/server.h \
     include/grpcpp/server_builder.h \
     include/grpcpp/server_builder_impl.h \
@@ -6784,6 +6787,7 @@ PUBLIC_HEADERS_CXX += \
     include/grpcpp/security/credentials_impl.h \
     include/grpcpp/security/server_credentials.h \
     include/grpcpp/security/server_credentials_impl.h \
+    include/grpcpp/security/tls_credentials_options.h \
     include/grpcpp/server.h \
     include/grpcpp/server_builder.h \
     include/grpcpp/server_builder_impl.h \
@@ -22688,6 +22692,8 @@ src/cpp/common/auth_property_iterator.cc: $(OPENSSL_DEP)
 src/cpp/common/secure_auth_context.cc: $(OPENSSL_DEP)
 src/cpp/common/secure_channel_arguments.cc: $(OPENSSL_DEP)
 src/cpp/common/secure_create_auth_context.cc: $(OPENSSL_DEP)
+src/cpp/common/tls_credentials_options.cc: $(OPENSSL_DEP)
+src/cpp/common/tls_credentials_options_util.cc: $(OPENSSL_DEP)
 src/cpp/ext/proto_server_reflection.cc: $(OPENSSL_DEP)
 src/cpp/ext/proto_server_reflection_plugin.cc: $(OPENSSL_DEP)
 src/cpp/server/channelz/channelz_service.cc: $(OPENSSL_DEP)

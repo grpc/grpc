@@ -3151,6 +3151,8 @@ add_library(grpc++
   src/cpp/common/secure_auth_context.cc
   src/cpp/common/secure_channel_arguments.cc
   src/cpp/common/secure_create_auth_context.cc
+  src/cpp/common/tls_credentials_options.cc
+  src/cpp/common/tls_credentials_options_util.cc
   src/cpp/server/insecure_server_credentials.cc
   src/cpp/server/secure_server_credentials.cc
   src/cpp/client/channel_cc.cc
@@ -3322,6 +3324,7 @@ foreach(_hdr
   include/grpcpp/security/credentials_impl.h
   include/grpcpp/security/server_credentials.h
   include/grpcpp/security/server_credentials_impl.h
+  include/grpcpp/security/tls_credentials_options.h
   include/grpcpp/server.h
   include/grpcpp/server_builder.h
   include/grpcpp/server_builder_impl.h
@@ -4425,6 +4428,7 @@ foreach(_hdr
   include/grpcpp/security/credentials_impl.h
   include/grpcpp/security/server_credentials.h
   include/grpcpp/security/server_credentials_impl.h
+  include/grpcpp/security/tls_credentials_options.h
   include/grpcpp/server.h
   include/grpcpp/server_builder.h
   include/grpcpp/server_builder_impl.h
