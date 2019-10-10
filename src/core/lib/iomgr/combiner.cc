@@ -337,16 +337,6 @@ void Combiner::Run(grpc_closure* closure, grpc_error* error) {
   combiner_exec(this, closure, error);
 }
 
-void Combiner::Run(grpc_closure_list* list) {
-  grpc_closure* c = list->head;
-  while (c != nullptr) {
-    grpc_closure* next = c->next_data.next;
-    Run(c, c->error_data.error);
-    c = next;
-  }
-  list->head = list->tail = nullptr;
-}
-
 void Combiner::FinallyRun(grpc_closure* closure, grpc_error* error) {
   GPR_ASSERT(closure->scheduler == nullptr ||
              closure->scheduler ==

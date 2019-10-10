@@ -31,7 +31,6 @@ namespace grpc_core {
 class Combiner {
  public:
   void Run(grpc_closure* closure, grpc_error* error);
-  void Run(grpc_closure_list* list);
   void FinallyRun(grpc_closure* closure, grpc_error* error);
   Combiner* next_combiner_on_this_exec_ctx = nullptr;
   grpc_closure_scheduler scheduler;
