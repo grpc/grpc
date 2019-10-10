@@ -70,6 +70,30 @@ NS_ASSUME_NONNULL_BEGIN
 
 @end
 
+/**
+ * A convenience class of objects that act as response handlers of calls. Issues
+ * response to a single handler when the response is completed.
+ */
+@interface GRPCUnaryResponseHandler : NSObject<GRPCProtoResponseHandler>
+
+/**
+ * Creates a responsehandler object with a unary call handler.
+ *
+ * responseHandler: The unary handler to be called when the call is completed.
+ * responseDispatchQueue: the dispatch queue on which the response handler
+ * should be issued.
+ */
+- (nullable instancetype)initWithResponseHandler:(void (^)(GPBMessage *, NSError *))handler
+                           responseDispatchQueue:(dispatch_queue_t)responseDispatchQueue;
+
+/** Response headers received during the call. */
+@property(readonly, nullable) NSDictionary *responseHeaders;
+
+/** Response trailers received during the call. */
+@property(readonly, nullable) NSDictionary *responseTrailers;
+
+@end
+
 /** A unary-request RPC call with Protobuf. */
 @interface GRPCUnaryProtoCall : NSObject
 
