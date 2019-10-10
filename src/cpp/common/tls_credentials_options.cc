@@ -143,10 +143,6 @@ void TlsCredentialReloadArg::OnCredentialReloadDoneCallback() {
   }
   c_arg_->cb(c_arg_);
 }
-  ::grpc_core::UniquePtr<char>
-c_pem_root_certs(gpr_strdup(pem_root_certs.c_str()));
-  c_arg_->key_materials_config->set_pem_root_certs(std::move(c_pem_root_certs));
-}
 
 /** gRPC TLS credential reload config API implementation **/
 TlsCredentialReloadConfig::TlsCredentialReloadConfig(
