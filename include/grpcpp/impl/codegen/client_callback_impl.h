@@ -285,18 +285,18 @@ class ClientBidiReactor {
   /// call of OnReadDone or OnDone.
   ///
   /// \param[in] ok Was the initial metadata read successfully? If false, no
-  ///               further read-side operation will succeed.
+  ///               new read/write operation will succeed.
   virtual void OnReadInitialMetadataDone(bool /*ok*/) {}
 
   /// Notifies the application that a StartRead operation completed.
   ///
-  /// \param[in] ok Was it successful? If false, no further read-side operation
+  /// \param[in] ok Was it successful? If false, no new read/write operation
   ///               will succeed.
   virtual void OnReadDone(bool /*ok*/) {}
 
   /// Notifies the application that a StartWrite operation completed.
   ///
-  /// \param[in] ok Was it successful? If false, no further write-side operation
+  /// \param[in] ok Was it successful? If false, no new read/write operation
   ///               will succeed.
   virtual void OnWriteDone(bool /*ok*/) {}
 
