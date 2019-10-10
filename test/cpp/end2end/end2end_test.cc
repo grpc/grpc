@@ -44,10 +44,10 @@
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
 #include "test/cpp/end2end/interceptors_util.h"
+#include "test/cpp/util/spiffe_test_credentials.h"
 #include "test/cpp/end2end/test_service_impl.h"
 #include "test/cpp/util/string_ref_helper.h"
 #include "test/cpp/util/test_credentials_provider.h"
-#include "test/cpp/end2end/spiffe/spiffe_test_credentials.h"
 
 #ifdef GRPC_POSIX_SOCKET
 #include "src/core/lib/iomgr/ev_posix.h"
@@ -2213,9 +2213,9 @@ std::vector<TestScenario> CreateTestScenarios(bool use_proxy,
   if (test_secure) {
     CredentialsProvider* credentials_provider = GetCredentialsProvider();
     credentials_provider->AddSecureType(
-        kSpiffeCredentialsType, std::unique_ptr<SpiffeCredentialTypeProvider>(new SpiffeCredentialTypeProvider));
-    credentials_types =
-        credentials_provider->GetSecureCredentialsTypeList();
+        kSpiffeCredentialsType, std::unique_ptr<SpiffeCredentialTypeProvider>(
+                                    new SpiffeCredentialTypeProvider));
+    credentials_types = credentials_provider->GetSecureCredentialsTypeList();
   }
   auto insec_ok = [] {
     // Only allow insecure credentials type when it is registered with the

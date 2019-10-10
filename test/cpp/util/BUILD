@@ -38,6 +38,16 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
+    name = "spiffe_test_credentials",
+    srcs = ["spiffe_test_credentials.cc"],
+    hdrs = ["spiffe_test_credentials.h"],
+    deps = [
+        "//:grpc++",
+        ":test_util",
+    ],
+)
+
+grpc_cc_library(
     name = "grpc++_proto_reflection_desc_db",
     srcs = [
         "proto_reflection_descriptor_database.cc",

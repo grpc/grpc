@@ -1904,12 +1904,12 @@ libs:
   build: private
   language: c++
   headers:
-  - test/cpp/end2end/spiffe/spiffe_test_credentials.h
   - test/cpp/end2end/test_health_check_service_impl.h
   - test/cpp/end2end/test_service_impl.h
   - test/cpp/util/byte_buffer_proto_helper.h
   - test/cpp/util/channel_trace_proto_helper.h
   - test/cpp/util/create_test_channel.h
+  - test/cpp/util/spiffe_test_credentials.h
   - test/cpp/util/string_ref_helper.h
   - test/cpp/util/subprocess.h
   - test/cpp/util/test_credentials_provider.h
@@ -1920,12 +1920,12 @@ libs:
   - src/proto/grpc/testing/echo.proto
   - src/proto/grpc/testing/duplicate/echo_duplicate.proto
   - src/proto/grpc/testing/simple_messages.proto
-  - test/cpp/end2end/spiffe/spiffe_test_credentials.cc
   - test/cpp/end2end/test_health_check_service_impl.cc
   - test/cpp/end2end/test_service_impl.cc
   - test/cpp/util/byte_buffer_proto_helper.cc
   - test/cpp/util/channel_trace_proto_helper.cc
   - test/cpp/util/create_test_channel.cc
+  - test/cpp/util/spiffe_test_credentials.cc
   - test/cpp/util/string_ref_helper.cc
   - test/cpp/util/subprocess.cc
   - test/cpp/util/test_credentials_provider.cc
@@ -5826,30 +5826,6 @@ targets:
   - grpc
   - gpr
   uses_polling: false
-- name: spiffe_raw_test
-  gtest: true
-  build: test
-  language: c++
-  src:
-  - test/cpp/end2end/spiffe/spiffe_raw_test.cc
-  deps:
-  - grpc++_test_util
-  - grpc_test_util
-  - grpc++
-  - grpc
-  - gpr
-- name: spiffe_test
-  gtest: true
-  build: test
-  language: c++
-  src:
-  - test/cpp/end2end/spiffe/spiffe_test.cc
-  deps:
-  - grpc++_test_util
-  - grpc_test_util
-  - grpc++
-  - grpc
-  - gpr
 - name: stats_test
   gtest: true
   build: test
