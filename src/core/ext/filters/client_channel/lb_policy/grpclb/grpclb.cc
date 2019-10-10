@@ -999,7 +999,7 @@ void GrpcLb::BalancerCallState::ClientLoadReportDone(void* arg,
   BalancerCallState* lb_calld = static_cast<BalancerCallState*>(arg);
   lb_calld->grpclb_policy()->combiner()->Run(
       GRPC_CLOSURE_INIT(&lb_calld->client_load_report_closure_,
-                        ClientLoadReportDone, lb_calld, nullptr),
+                        ClientLoadReportDoneLocked, lb_calld, nullptr),
       GRPC_ERROR_REF(error));
 }
 

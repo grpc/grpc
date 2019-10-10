@@ -304,13 +304,6 @@ static void on_ares_backup_poll_alarm_locked(void* arg, grpc_error* error) {
   grpc_ares_ev_driver_unref(driver);
 }
 
-static void on_readable(void* arg, grpc_error* error) {
-  fd_node* fdn = static_cast<fd_node*>(arg);
-  fdn->ev_driver->combiner->Run(
-      GRPC_CLOSURE_INIT(&fdn->read_closure, on_readable, fdn, nullptr),
-      GRPC_ERROR_REF(error));
-}
-
 static void on_readable_locked(void* arg, grpc_error* error) {
   fd_node* fdn = static_cast<fd_node*>(arg);
   GPR_ASSERT(fdn->readable_registered);
@@ -336,10 +329,10 @@ static void on_readable_locked(void* arg, grpc_error* error) {
   grpc_ares_ev_driver_unref(ev_driver);
 }
 
-static void on_writable(void* arg, grpc_error* error) {
+static void on_readable(void* arg, grpc_error* error) {
   fd_node* fdn = static_cast<fd_node*>(arg);
   fdn->ev_driver->combiner->Run(
-      GRPC_CLOSURE_INIT(&fdn->write_closure, on_writable, fdn, nullptr),
+      GRPC_CLOSURE_INIT(&fdn->read_closure, on_readable_locked, fdn, nullptr),
       GRPC_ERROR_REF(error));
 }
 
@@ -364,6 +357,13 @@ static void on_writable_locked(void* arg, grpc_error* error) {
   }
   grpc_ares_notify_on_event_locked(ev_driver);
   grpc_ares_ev_driver_unref(ev_driver);
+}
+
+static void on_writable(void* arg, grpc_error* error) {
+  fd_node* fdn = static_cast<fd_node*>(arg);
+  fdn->ev_driver->combiner->Run(
+      GRPC_CLOSURE_INIT(&fdn->write_closure, on_writable_locked, fdn, nullptr),
+      GRPC_ERROR_REF(error));
 }
 
 ares_channel* grpc_ares_ev_driver_get_channel_locked(

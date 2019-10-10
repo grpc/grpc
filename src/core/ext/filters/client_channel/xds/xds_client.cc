@@ -805,6 +805,8 @@ void XdsClient::ChannelState::AdsCallState::OnResponseReceivedLocked(
   op.reserved = nullptr;
   GPR_ASSERT(ads_calld->call_ != nullptr);
   // Reuse the "ADS+OnResponseReceivedLocked" ref taken in ctor.
+  GRPC_CLOSURE_INIT(&ads_calld->on_response_received_, OnResponseReceived,
+                    ads_calld, grpc_schedule_on_exec_ctx);
   const grpc_call_error call_error = grpc_call_start_batch_and_execute(
       ads_calld->call_, &op, 1, &ads_calld->on_response_received_);
   GPR_ASSERT(GRPC_CALL_OK == call_error);

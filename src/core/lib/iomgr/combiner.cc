@@ -331,6 +331,9 @@ static void enqueue_finally(void* closure, grpc_error* error) {
 
 namespace grpc_core {
 void Combiner::Run(grpc_closure* closure, grpc_error* error) {
+  GPR_ASSERT(closure->scheduler == nullptr ||
+             closure->scheduler ==
+                 reinterpret_cast<grpc_closure_scheduler*>(this));
   combiner_exec(this, closure, error);
 }
 
@@ -345,6 +348,9 @@ void Combiner::Run(grpc_closure_list* list) {
 }
 
 void Combiner::FinallyRun(grpc_closure* closure, grpc_error* error) {
+  GPR_ASSERT(closure->scheduler == nullptr ||
+             closure->scheduler ==
+                 reinterpret_cast<grpc_closure_scheduler*>(this));
   combiner_finally_exec(this, closure, error);
 }
 }  // namespace grpc_core

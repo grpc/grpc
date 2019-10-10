@@ -1652,8 +1652,8 @@ void XdsLb::PriorityList::LocalityMap::Locality::DeactivateLocked() {
   weight_ = 0;
   // Start a timer to delete the locality.
   Ref(DEBUG_LOCATION, "Locality+timer").release();
-  GRPC_CLOSURE_INIT(&on_delayed_removal_timer_, OnDelayedRemovalTimerLocked,
-                    this, grpc_schedule_on_exec_ctx);
+  GRPC_CLOSURE_INIT(&on_delayed_removal_timer_, OnDelayedRemovalTimer, this,
+                    grpc_schedule_on_exec_ctx);
   grpc_timer_init(
       &delayed_removal_timer_,
       ExecCtx::Get()->Now() + xds_policy()->locality_retention_interval_ms_,
