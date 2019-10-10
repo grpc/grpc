@@ -1,4 +1,4 @@
-# Copyright 2016 gRPC authors.
+# Copyright 2019 The gRPC Authors
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -14,7 +14,7 @@
 
 # Docker file for building gRPC manylinux Python artifacts.
 
-FROM quay.io/pypa/manylinux1_i686
+FROM quay.io/pypa/manylinux2010_i686
 
 # Update the package manager
 RUN yum update -y
