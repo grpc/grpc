@@ -664,7 +664,6 @@ void XdsClient::ChannelState::AdsCallState::OnResponseReceived(
       GRPC_CLOSURE_INIT(&ads_calld->on_response_received_,
                         OnResponseReceivedLocked, ads_calld, nullptr),
       GRPC_ERROR_REF(error));
-  ;
 }
 
 void XdsClient::ChannelState::AdsCallState::OnResponseReceivedLocked(
@@ -988,7 +987,6 @@ XdsClient::ChannelState::LrsCallState::LrsCallState(
   // Init other data associated with the LRS call.
   grpc_metadata_array_init(&initial_metadata_recv_);
   grpc_metadata_array_init(&trailing_metadata_recv_);
-
   // Start the call.
   if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_client_trace)) {
     gpr_log(GPR_INFO,

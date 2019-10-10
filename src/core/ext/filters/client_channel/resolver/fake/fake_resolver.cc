@@ -212,7 +212,6 @@ void FakeResolverResponseGenerator::SetResponse(Resolver::Result result) {
       GRPC_CLOSURE_INIT(&closure_arg->set_response_closure, SetResponseLocked,
                         closure_arg, nullptr),
       GRPC_ERROR_NONE);
-  ;
 }
 
 void FakeResolverResponseGenerator::SetReresolutionResponseLocked(
