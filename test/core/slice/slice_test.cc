@@ -237,19 +237,85 @@ static void test_slice_from_copied_string_works(void) {
   grpc_slice_unref(slice);
 }
 
+// optimizer doesn't see inside this function
+void print_slice(grpc_slice slice)
+{
+  gpr_log(GPR_ERROR, "slice start ptr: %p", GRPC_SLICE_START_PTR(slice));
+}
+
 static void test_slice_interning(void) {
   LOG_TEST_NAME("test_slice_interning");
 
   grpc_init();
   grpc_slice src1 = grpc_slice_from_copied_string("hello123456789123456789");
   grpc_slice src2 = grpc_slice_from_copied_string("hello123456789123456789");
-  // this is scary! if the commented-out assert is used instead of the following
-  // if statement, test will fail consistently on windows bazel opt build.
-  // GPR_ASSERT(GRPC_SLICE_START_PTR(src1) != GRPC_SLICE_START_PTR(src2));
+  
+  void *ptr1 = GRPC_SLICE_START_PTR(src1);
+  void *ptr2 = GRPC_SLICE_START_PTR(src2);
+  
+  // ptr1 and ptr2 are actually not equal, but the following assert still fails
+  // under some circumstances
+
+  // 1. if assert is used, the test fails
+  //GPR_ASSERT(ptr1 != ptr2);
+  
+  // 2. after manually expanding the GPR_ASSERT macro, the test still fails
+  //do {
+  //  if (GPR_UNLIKELY(!(ptr1 != ptr2))) {
+  //    gpr_log(GPR_ERROR, "assertion failed");
+  //    abort();
+  //  }
+  //}
+  //while (0);
+
+  // 3. a simplified version of the GPR_ASSERT macro expansion to eliminate possible culprits
+  // test still fails
+  // do {
+  //   if (ptr1 == ptr2) {
+  //     gpr_log(GPR_ERROR, "assertion failed");
+  //     abort();
+  //   }
+  // }
+  // while (0);
+
+  // 4. just use an if without the enclosing while loop: test still fails
+  //if (ptr1 == ptr2) {
+  //  gpr_log(GPR_ERROR, "assertion failed");
+  //  abort();
+  //}
+
+  // still fails
+  //if (ptr1 == ptr2) {
+  //  gpr_log(GPR_ERROR, "assertion failed");
+  //  GPR_ASSERT(0);
+  //}
+
+  // if (GRPC_SLICE_START_PTR(src1) == GRPC_SLICE_START_PTR(src2)) {
+  //   gpr_log(GPR_ERROR, "assertion would have failed");
+  //   gpr_log(GPR_ERROR, "we just evaluated the start ptrs as being equal, but it's actually not true");
+  //   print_slice(src1);  // call into another function
+  //   print_slice(src2);
+  //   abort();
+  // }
+
+   // the original assert checks that newly allocated slices point to different data
+   // GPR_ASSERT(GRPC_SLICE_START_PTR(src1) != GRPC_SLICE_START_PTR(src2));
+
   if (GRPC_SLICE_START_PTR(src1) == GRPC_SLICE_START_PTR(src2)) {
-    gpr_log(GPR_ERROR, "slice start pointers must not be the same src1:%p, src2:%p", GRPC_SLICE_START_PTR(src1), GRPC_SLICE_START_PTR(src2));
-    GPR_ASSERT(0);
+    gpr_log(GPR_ERROR, "assertion would have failed");
+    gpr_log(GPR_ERROR, "we just evaluated the start ptrs as being equal, but it's actually not true");
+    // we want to print the actual values of slice_start_ptr to catch the compiler red-handed
+    // but we need to be sneaky and look at the values from a different function (outside of the optimizer's sight),
+    // otherwise the internal state in the compiler changes and we won't trigger the suspected compiler bug.
+    print_slice(src1);
+    print_slice(src2);
+
+    // If you uncomment this line, compiler will see that we're using the src1 value and
+    // the enclosing if statement will be evaluated correctly (pointers will be seen as not equal) 
+    // gpr_log(GPR_ERROR, "src1 start ptr:" + GRPC_SLICE_START_PTR(src1));
+    abort();
   }
+
   grpc_slice interned1 = grpc_slice_intern(src1);
   grpc_slice interned2 = grpc_slice_intern(src2);
   GPR_ASSERT(GRPC_SLICE_START_PTR(interned1) ==
@@ -262,6 +328,8 @@ static void test_slice_interning(void) {
   grpc_slice_unref(interned2);
   grpc_shutdown();
 }
+
+
 
 static void test_static_slice_interning(void) {
   LOG_TEST_NAME("test_static_slice_interning");
