@@ -243,7 +243,13 @@ static void test_slice_interning(void) {
   grpc_init();
   grpc_slice src1 = grpc_slice_from_copied_string("hello123456789123456789");
   grpc_slice src2 = grpc_slice_from_copied_string("hello123456789123456789");
+
+  // Do not remove the log line. It actually supresses a compiler bug in windows
+  // bazel opt build. See https://github.com/grpc/grpc/issues/20519
+  gpr_log(GPR_DEBUG, "src1 start ptr: %p, src2 start ptr: %p",
+          GRPC_SLICE_START_PTR(src1), GRPC_SLICE_START_PTR(src2));
   GPR_ASSERT(GRPC_SLICE_START_PTR(src1) != GRPC_SLICE_START_PTR(src2));
+
   grpc_slice interned1 = grpc_slice_intern(src1);
   grpc_slice interned2 = grpc_slice_intern(src2);
   GPR_ASSERT(GRPC_SLICE_START_PTR(interned1) ==
