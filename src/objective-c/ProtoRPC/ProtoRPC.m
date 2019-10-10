@@ -38,7 +38,11 @@
                            responseDispatchQueue:(dispatch_queue_t)dispatchQueue {
   if ((self = [super init])) {
     _responseHandler = handler;
-    _responseDispatchQueue = dispatchQueue;
+    if (dispatchQueue == nil) {
+      _responseDispatchQueue = dispatchQueue;
+    } else {
+      _responseDispatchQueue = dispatch_get_main_queue();
+    }
   }
   return self;
 }

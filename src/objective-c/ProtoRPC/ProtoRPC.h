@@ -84,7 +84,7 @@ NS_ASSUME_NONNULL_BEGIN
  * should be issued.
  */
 - (nullable instancetype)initWithResponseHandler:(void (^)(GPBMessage *, NSError *))handler
-                           responseDispatchQueue:(dispatch_queue_t)responseDispatchQueue;
+                           responseDispatchQueue:(nullable dispatch_queue_t)responseDispatchQueue;
 
 /** Response headers received during the call. */
 @property(readonly, nullable) NSDictionary *responseHeaders;
