@@ -79,12 +79,12 @@ ${SETARCH_CMD} "${PYTHON}" tools/distrib/python/grpcio_tools/setup.py bdist_whee
 if [ "$GRPC_BUILD_MANYLINUX_WHEEL" != "" ]
 then
   for wheel in dist/*.whl; do
-    "${AUDITWHEEL}" show "$wheel" | tee /dev/stderr | grep \"manylinux1
+    "${AUDITWHEEL}" show "$wheel" | tee /dev/stderr |  grep -E -w "$AUDITWHEEL_PLAT"
     "${AUDITWHEEL}" repair "$wheel" -w "$ARTIFACT_DIR"
     rm "$wheel"
   done
   for wheel in tools/distrib/python/grpcio_tools/dist/*.whl; do
-    "${AUDITWHEEL}" show "$wheel" | tee /dev/stderr | grep \"manylinux1
+    "${AUDITWHEEL}" show "$wheel" | tee /dev/stderr |  grep -E -w "$AUDITWHEEL_PLAT"
     "${AUDITWHEEL}" repair "$wheel" -w "$ARTIFACT_DIR"
     rm "$wheel"
   done
