@@ -2631,6 +2631,7 @@ static void start_bdp_ping_locked(void* tp, grpc_error* error) {
     grpc_timer_cancel(&t->keepalive_ping_timer);
   }
   t->flow_control->bdp_estimator()->StartPing();
+  t->bdp_ping_started = true;
 }
 
 static void finish_bdp_ping(void* tp, grpc_error* error) {
@@ -2650,6 +2651,15 @@ static void finish_bdp_ping_locked(void* tp, grpc_error* error) {
     GRPC_CHTTP2_UNREF_TRANSPORT(t, "bdp_ping");
     return;
   }
+  if (!t->bdp_ping_started) {
+    /* start_bdp_ping_locked has not been run yet. Schedule
+     * finish_bdp_ping_locked to be run later. */
+    t->combiner->Run(GRPC_CLOSURE_INIT(&t->finish_bdp_ping_locked,
+                                       finish_bdp_ping_locked, t, nullptr),
+                     GRPC_ERROR_REF(error));
+    return;
+  }
+  t->bdp_ping_started = false;
   grpc_millis next_ping = t->flow_control->bdp_estimator()->CompletePing();
   grpc_chttp2_act_on_flowctl_action(t->flow_control->PeriodicUpdate(), t,
                                     nullptr);
@@ -2811,6 +2821,7 @@ static void start_keepalive_ping_locked(void* arg, grpc_error* error) {
   grpc_timer_init(&t->keepalive_watchdog_timer,
                   grpc_core::ExecCtx::Get()->Now() + t->keepalive_timeout,
                   &t->keepalive_watchdog_fired_locked);
+  t->keepalive_ping_started = true;
 }
 
 static void finish_keepalive_ping(void* arg, grpc_error* error) {
@@ -2827,6 +2838,16 @@ static void finish_keepalive_ping_locked(void* arg, grpc_error* error) {
       if (GRPC_TRACE_FLAG_ENABLED(grpc_http_trace)) {
         gpr_log(GPR_INFO, "%s: Finish keepalive ping", t->peer_string);
       }
+      if (!t->keepalive_ping_started) {
+        /* start_keepalive_ping_locked has not run yet. Reschedule
+         * finish_keepalive_ping_locked for it to be run later. */
+        t->combiner->Run(
+            GRPC_CLOSURE_INIT(&t->finish_keepalive_ping_locked,
+                              finish_keepalive_ping_locked, t, nullptr),
+            GRPC_ERROR_REF(error));
+        return;
+      }
+      t->keepalive_ping_started = false;
       t->keepalive_state = GRPC_CHTTP2_KEEPALIVE_STATE_WAITING;
       grpc_timer_cancel(&t->keepalive_watchdog_timer);
       GRPC_CHTTP2_REF_TRANSPORT(t, "init keepalive ping");
