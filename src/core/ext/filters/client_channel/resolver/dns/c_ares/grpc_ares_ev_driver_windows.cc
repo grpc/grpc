@@ -441,9 +441,9 @@ class GrpcPolledFdWindows {
     GrpcPolledFdWindows* grpc_polled_fd =
         static_cast<GrpcPolledFdWindows*>(arg);
     grpc_polled_fd->combiner_->Run(
-        GRPC_CLOSURE_INIT(&on_tcp_connect_locked_,
-                          &GrpcPolledFdWindows::OnTcpConnectLocked, this,
-                          nullptr),
+        GRPC_CLOSURE_INIT(&grpc_polled_fd->on_tcp_connect_locked_,
+                          &GrpcPolledFdWindows::OnTcpConnectLocked,
+                          grpc_polled_fd, nullptr),
         GRPC_ERROR_REF(error));
   }
 
@@ -603,8 +603,8 @@ class GrpcPolledFdWindows {
   static void OnIocpReadable(void* arg, grpc_error* error) {
     GrpcPolledFdWindows* polled_fd = static_cast<GrpcPolledFdWindows*>(arg);
     polled_fd->combiner_->Run(
-        GRPC_CLOSURE_INIT(&outer_read_closure_,
-                          &GrpcPolledFdWindows::OnIocpReadableLocked, this,
+        GRPC_CLOSURE_INIT(&polled_fd->outer_read_closure_,
+                          &GrpcPolledFdWindows::OnIocpReadableLocked, polled_fd,
                           nullptr),
         GRPC_ERROR_REF(error));
   }
@@ -655,9 +655,9 @@ class GrpcPolledFdWindows {
   static void OnIocpWriteable(void* arg, grpc_error* error) {
     GrpcPolledFdWindows* polled_fd = static_cast<GrpcPolledFdWindows*>(arg);
     polled_fd->combiner_->Run(
-        GRPC_CLOSURE_INIT(&outer_write_closure_,
-                          &GrpcPolledFdWindows::OnIocpWriteableLocked, this,
-                          nullptr),
+        GRPC_CLOSURE_INIT(&polled_fd->outer_write_closure_,
+                          &GrpcPolledFdWindows::OnIocpWriteableLocked,
+                          polled_fd, nullptr),
         GRPC_ERROR_REF(error));
   }
 
