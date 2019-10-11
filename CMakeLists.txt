@@ -524,6 +524,9 @@ add_dependencies(buildtests_cxx alts_iovec_record_protocol_test)
 add_dependencies(buildtests_cxx alts_security_connector_test)
 add_dependencies(buildtests_cxx alts_tsi_handshaker_test)
 add_dependencies(buildtests_cxx alts_tsi_utils_test)
+if(_gRPC_PLATFORM_LINUX)
+add_dependencies(buildtests_cxx alts_with_fake_handshake_server_test)
+endif()
 add_dependencies(buildtests_cxx alts_zero_copy_grpc_protector_test)
 add_dependencies(buildtests_cxx async_end2end_test)
 add_dependencies(buildtests_cxx auth_property_iterator_test)
@@ -10459,6 +10462,66 @@ target_link_libraries(alts_tsi_utils_test
 )
 
 
+endif (gRPC_BUILD_TESTS)
+if (gRPC_BUILD_TESTS)
+if(_gRPC_PLATFORM_LINUX)
+
+add_executable(alts_with_fake_handshake_server_test
+  ${_gRPC_PROTO_GENS_DIR}/test/core/tsi/alts/fake_handshaker/handshaker.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/tsi/alts/fake_handshaker/handshaker.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/tsi/alts/fake_handshaker/handshaker.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/tsi/alts/fake_handshaker/handshaker.grpc.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/tsi/alts/fake_handshaker/transport_security_common.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/tsi/alts/fake_handshaker/transport_security_common.grpc.pb.cc
+  ${_gRPC_PROTO_GENS_DIR}/test/core/tsi/alts/fake_handshaker/transport_security_common.pb.h
+  ${_gRPC_PROTO_GENS_DIR}/test/core/tsi/alts/fake_handshaker/transport_security_common.grpc.pb.h
+  test/core/tsi/alts/fake_handshaker/fake_handshaker_server.cc
+  test/core/tsi/alts/handshaker/alts_with_fake_handshaker_test.cc
+  third_party/googletest/googletest/src/gtest-all.cc
+  third_party/googletest/googlemock/src/gmock-all.cc
+)
+
+protobuf_generate_grpc_cpp(
+  test/core/tsi/alts/fake_handshaker/handshaker.proto
+)
+protobuf_generate_grpc_cpp(
+  test/core/tsi/alts/fake_handshaker/transport_security_common.proto
+)
+
+target_include_directories(alts_with_fake_handshake_server_test
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
+  PRIVATE ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
+  PRIVATE ${_gRPC_UPB_GENERATED_DIR}
+  PRIVATE ${_gRPC_UPB_GRPC_GENERATED_DIR}
+  PRIVATE ${_gRPC_UPB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
+  PRIVATE third_party/googletest/googletest/include
+  PRIVATE third_party/googletest/googletest
+  PRIVATE third_party/googletest/googlemock/include
+  PRIVATE third_party/googletest/googlemock
+  PRIVATE ${_gRPC_PROTO_GENS_DIR}
+)
+
+target_link_libraries(alts_with_fake_handshake_server_test
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  grpc++_test_util
+  grpc_test_util
+  grpc++
+  grpc
+  gpr
+  grpc++_test_config
+  ${_gRPC_GFLAGS_LIBRARIES}
+)
+
+
+endif()
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 

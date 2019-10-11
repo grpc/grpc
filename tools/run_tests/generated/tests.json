@@ -3303,6 +3303,24 @@
     "args": [], 
     "benchmark": false, 
     "ci_platforms": [
+      "linux"
+    ], 
+    "cpu_cost": 1.0, 
+    "exclude_configs": [], 
+    "exclude_iomgrs": [], 
+    "flaky": false, 
+    "gtest": false, 
+    "language": "c++", 
+    "name": "alts_with_fake_handshake_server_test", 
+    "platforms": [
+      "linux"
+    ], 
+    "uses_polling": true
+  }, 
+  {
+    "args": [], 
+    "benchmark": false, 
+    "ci_platforms": [
       "linux", 
       "mac", 
       "posix", 

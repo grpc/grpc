@@ -4009,6 +4009,25 @@ targets:
   - alts_test_util
   - gpr
   - grpc
+- name: alts_with_fake_handshake_server_test
+  build: test
+  language: c++
+  headers:
+  - test/core/tsi/alts/fake_handshaker/fake_handshaker_server.h
+  src:
+  - test/core/tsi/alts/fake_handshaker/handshaker.proto
+  - test/core/tsi/alts/fake_handshaker/transport_security_common.proto
+  - test/core/tsi/alts/fake_handshaker/fake_handshaker_server.cc
+  - test/core/tsi/alts/handshaker/alts_with_fake_handshaker_test.cc
+  deps:
+  - grpc++_test_util
+  - grpc_test_util
+  - grpc++
+  - grpc
+  - gpr
+  - grpc++_test_config
+  platforms:
+  - linux
 - name: alts_zero_copy_grpc_protector_test
   build: test
   language: c++
