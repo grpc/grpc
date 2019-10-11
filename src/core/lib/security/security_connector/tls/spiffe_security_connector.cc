@@ -104,6 +104,9 @@ grpc_status_code TlsFetchKeyMaterials(
       }
     }
     gpr_free((void*)arg->error_details);
+    if (arg->destroy_context != nullptr) {
+      arg->destroy_context(arg->context);
+    }
     grpc_core::Delete(arg);
   }
   return status;
@@ -393,6 +396,9 @@ void SpiffeChannelSecurityConnector::ServerAuthorizationCheckArgDestroy(
   gpr_free((void*)arg->target_name);
   gpr_free((void*)arg->peer_cert);
   gpr_free((void*)arg->error_details);
+  if (arg->destroy_context != nullptr) {
+    arg->destroy_context(arg->context);
+  }
   grpc_core::Delete(arg);
 }
 

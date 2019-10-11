@@ -25,10 +25,11 @@ cmake_minimum_required(VERSION 3.5.1)
 
 set(PACKAGE_NAME      "grpc")
 set(PACKAGE_VERSION   "1.25.0-dev")
+set(gRPC_CORE_VERSION "8.0.0")
 set(PACKAGE_STRING    "${PACKAGE_NAME} ${PACKAGE_VERSION}")
 set(PACKAGE_TARNAME   "${PACKAGE_NAME}-${PACKAGE_VERSION}")
 set(PACKAGE_BUGREPORT "https://github.com/grpc/grpc/issues/")
-project(${PACKAGE_NAME} C CXX)
+project(${PACKAGE_NAME} LANGUAGES C CXX)
 
 set(gRPC_INSTALL_BINDIR "bin" CACHE STRING "Installation directory for executables")
 set(gRPC_INSTALL_LIBDIR "lib" CACHE STRING "Installation directory for libraries")
@@ -3154,6 +3155,8 @@ add_library(grpc++
   src/cpp/common/secure_auth_context.cc
   src/cpp/common/secure_channel_arguments.cc
   src/cpp/common/secure_create_auth_context.cc
+  src/cpp/common/tls_credentials_options.cc
+  src/cpp/common/tls_credentials_options_util.cc
   src/cpp/server/insecure_server_credentials.cc
   src/cpp/server/secure_server_credentials.cc
   src/cpp/client/channel_cc.cc
@@ -3325,6 +3328,7 @@ foreach(_hdr
   include/grpcpp/security/credentials_impl.h
   include/grpcpp/security/server_credentials.h
   include/grpcpp/security/server_credentials_impl.h
+  include/grpcpp/security/tls_credentials_options.h
   include/grpcpp/server.h
   include/grpcpp/server_builder.h
   include/grpcpp/server_builder_impl.h
@@ -4428,6 +4432,7 @@ foreach(_hdr
   include/grpcpp/security/credentials_impl.h
   include/grpcpp/security/server_credentials.h
   include/grpcpp/security/server_credentials_impl.h
+  include/grpcpp/security/tls_credentials_options.h
   include/grpcpp/server.h
   include/grpcpp/server_builder.h
   include/grpcpp/server_builder_impl.h
@@ -19475,3 +19480,71 @@ endforeach()
 
 install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/etc/roots.pem
   DESTINATION ${gRPC_INSTALL_SHAREDIR})
+
+# Function to generate pkg-config files.
+function(generate_pkgconfig name description version requires
+                            libs libs_private output_filename)
+  set(PC_NAME "${name}")
+  set(PC_DESCRIPTION "${description}")
+  set(PC_VERSION "${version}")
+  set(PC_REQUIRES "${requires}")
+  set(PC_LIB "${libs}")
+  set(PC_LIBS_PRIVATE "${libs_private}")
+  set(output_filepath "${grpc_BINARY_DIR}/libs/opt/pkgconfig/${output_filename}")
+  configure_file(
+    "${grpc_SOURCE_DIR}/cmake/pkg-config-template.pc.in"
+    "${output_filepath}"
+    @ONLY)
+  install(FILES "${output_filepath}"
+    DESTINATION "lib/pkgconfig/")
+endfunction()
+
+# gpr .pc file
+generate_pkgconfig(
+  "gpr"
+  "gRPC platform support library"
+  "${gRPC_CORE_VERSION}"
+  ""
+  "-lgpr"
+  ""
+  "gpr.pc")
+
+# grpc .pc file
+generate_pkgconfig(
+  "gRPC"
+  "high performance general RPC framework"
+  "${gRPC_CORE_VERSION}"
+  "gpr"
+  "-lgrpc -laddress_sorting -lcares -lz"
+  ""
+  "grpc.pc")
+
+# grpc_unsecure .pc file
+generate_pkgconfig(
+  "gRPC unsecure"
+  "high performance general RPC framework without SSL"
+  "${gRPC_CORE_VERSION}"
+  "gpr"
+  "-lgrpc_unsecure"
+  ""
+  "grpc_unsecure.pc")
+
+# grpc++ .pc file
+generate_pkgconfig(
+  "gRPC++"
+  "C++ wrapper for gRPC"
+  "${PACKAGE_VERSION}"
+  "grpc"
+  "-lgrpc++"
+  ""
+  "grpc++.pc")
+
+# grpc++_unsecure .pc file
+generate_pkgconfig(
+  "gRPC++ unsecure"
+  "C++ wrapper for gRPC without SSL"
+  "${PACKAGE_VERSION}"
+  "grpc_unsecure"
+  "-lgrpc++_unsecure"
+  ""
+  "grpc++_unsecure.pc")
