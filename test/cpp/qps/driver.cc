@@ -118,6 +118,20 @@ static double ServerIdleCpuTime(const ServerStats& s) {
 }
 static int Cores(int n) { return n; }
 
+static bool IsSuccess(Status s) {
+  if (s.ok()) return true;
+  // Since we shutdown servers and clients at the same time, they both can
+  // observe cancellation.  Thus, we consider CANCELLED as good status.
+  if (static_cast<StatusCode>(s.error_code()) == StatusCode::CANCELLED) {
+    return true;
+  }
+  // Since we shutdown servers and clients at the same time, server can close
+  // the socket before the client attempts to do that, and vice versa.  Thus
+  // receiving a "Socket closed" error is fine.
+  if (s.error_message() == "Socket closed") return true;
+  return false;
+}
+
 // Postprocess ScenarioResult and populate result summary.
 static void postprocess_scenario_result(ScenarioResult* result) {
   Histogram histogram;
@@ -498,8 +512,7 @@ std::unique_ptr<ScenarioResult> RunScenario(
     // Since we shutdown servers and clients at the same time, clients can
     // observe cancellation.  Thus, we consider both OK and CANCELLED as good
     // status.
-    const bool success = s.ok() || static_cast<StatusCode>(s.error_code()) ==
-                                       StatusCode::CANCELLED;
+    const bool success = IsSuccess(s);
     result->add_client_success(success);
     if (!success) {
       gpr_log(GPR_ERROR, "Client %zu had an error %s", i,
@@ -534,8 +547,7 @@ std::unique_ptr<ScenarioResult> RunScenario(
     // Since we shutdown servers and clients at the same time, servers can
     // observe cancellation.  Thus, we consider both OK and CANCELLED as good
     // status.
-    const bool success = s.ok() || static_cast<StatusCode>(s.error_code()) ==
-                                       StatusCode::CANCELLED;
+    const bool success = IsSuccess(s);
     result->add_server_success(success);
     if (!success) {
       gpr_log(GPR_ERROR, "Server %zu had an error %s", i,
