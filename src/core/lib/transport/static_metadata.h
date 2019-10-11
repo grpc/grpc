@@ -102,36 +102,35 @@ inline const grpc_core::StaticMetadataSlice* grpc_static_slice_table() {
 #define GRPC_MDSTR_GRPC_PREVIOUS_RPC_ATTEMPTS (grpc_static_slice_table()[21])
 /* "grpc-retry-pushback-ms" */
 #define GRPC_MDSTR_GRPC_RETRY_PUSHBACK_MS (grpc_static_slice_table()[22])
+/* "x-endpoint-load-metrics-bin" */
+#define GRPC_MDSTR_X_ENDPOINT_LOAD_METRICS_BIN (grpc_static_slice_table()[23])
 /* "grpc-timeout" */
-#define GRPC_MDSTR_GRPC_TIMEOUT (grpc_static_slice_table()[23])
+#define GRPC_MDSTR_GRPC_TIMEOUT (grpc_static_slice_table()[24])
 /* "1" */
-#define GRPC_MDSTR_1 (grpc_static_slice_table()[24])
+#define GRPC_MDSTR_1 (grpc_static_slice_table()[25])
 /* "2" */
-#define GRPC_MDSTR_2 (grpc_static_slice_table()[25])
+#define GRPC_MDSTR_2 (grpc_static_slice_table()[26])
 /* "3" */
-#define GRPC_MDSTR_3 (grpc_static_slice_table()[26])
+#define GRPC_MDSTR_3 (grpc_static_slice_table()[27])
 /* "4" */
-#define GRPC_MDSTR_4 (grpc_static_slice_table()[27])
+#define GRPC_MDSTR_4 (grpc_static_slice_table()[28])
 /* "" */
-#define GRPC_MDSTR_EMPTY (grpc_static_slice_table()[28])
+#define GRPC_MDSTR_EMPTY (grpc_static_slice_table()[29])
 /* "grpc.wait_for_ready" */
-#define GRPC_MDSTR_GRPC_DOT_WAIT_FOR_READY (grpc_static_slice_table()[29])
+#define GRPC_MDSTR_GRPC_DOT_WAIT_FOR_READY (grpc_static_slice_table()[30])
 /* "grpc.timeout" */
-#define GRPC_MDSTR_GRPC_DOT_TIMEOUT (grpc_static_slice_table()[30])
+#define GRPC_MDSTR_GRPC_DOT_TIMEOUT (grpc_static_slice_table()[31])
 /* "grpc.max_request_message_bytes" */
 #define GRPC_MDSTR_GRPC_DOT_MAX_REQUEST_MESSAGE_BYTES \
-  (grpc_static_slice_table()[31])
+  (grpc_static_slice_table()[32])
 /* "grpc.max_response_message_bytes" */
 #define GRPC_MDSTR_GRPC_DOT_MAX_RESPONSE_MESSAGE_BYTES \
-  (grpc_static_slice_table()[32])
+  (grpc_static_slice_table()[33])
 /* "/grpc.lb.v1.LoadBalancer/BalanceLoad" */
 #define GRPC_MDSTR_SLASH_GRPC_DOT_LB_DOT_V1_DOT_LOADBALANCER_SLASH_BALANCELOAD \
-  (grpc_static_slice_table()[33])
+  (grpc_static_slice_table()[34])
 /* "/envoy.service.load_stats.v2.LoadReportingService/StreamLoadStats" */
 #define GRPC_MDSTR_SLASH_ENVOY_DOT_SERVICE_DOT_LOAD_STATS_DOT_V2_DOT_LOADREPORTINGSERVICE_SLASH_STREAMLOADSTATS \
-  (grpc_static_slice_table()[34])
-/* "/envoy.api.v2.EndpointDiscoveryService/StreamEndpoints" */
-#define GRPC_MDSTR_SLASH_ENVOY_DOT_API_DOT_V2_DOT_ENDPOINTDISCOVERYSERVICE_SLASH_STREAMENDPOINTS \
   (grpc_static_slice_table()[35])
 /* "/grpc.health.v1.Health/Watch" */
 #define GRPC_MDSTR_SLASH_GRPC_DOT_HEALTH_DOT_V1_DOT_HEALTH_SLASH_WATCH \
@@ -538,6 +537,7 @@ typedef enum {
   GRPC_BATCH_HOST,
   GRPC_BATCH_GRPC_PREVIOUS_RPC_ATTEMPTS,
   GRPC_BATCH_GRPC_RETRY_PUSHBACK_MS,
+  GRPC_BATCH_X_ENDPOINT_LOAD_METRICS_BIN,
   GRPC_BATCH_CALLOUTS_COUNT
 } grpc_metadata_batch_callouts_index;
 
@@ -567,6 +567,7 @@ typedef union {
     struct grpc_linked_mdelem* host;
     struct grpc_linked_mdelem* grpc_previous_rpc_attempts;
     struct grpc_linked_mdelem* grpc_retry_pushback_ms;
+    struct grpc_linked_mdelem* x_endpoint_load_metrics_bin;
   } named;
 } grpc_metadata_batch_callouts;
 

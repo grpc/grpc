@@ -56,6 +56,7 @@ CONFIG = [
     '3',
     '4',
     '',
+    'x-endpoint-load-metrics-bin',
     # channel arg keys
     'grpc.wait_for_ready',
     'grpc.timeout',
@@ -64,7 +65,6 @@ CONFIG = [
     # well known method names
     '/grpc.lb.v1.LoadBalancer/BalanceLoad',
     '/envoy.service.load_stats.v2.LoadReportingService/StreamLoadStats',
-    '/envoy.api.v2.EndpointDiscoveryService/StreamEndpoints',
     '/grpc.health.v1.Health/Watch',
     '/envoy.service.discovery.v2.AggregatedDiscoveryService/StreamAggregatedResources',
     # compression algorithm names
@@ -177,6 +177,7 @@ METADATA_BATCH_CALLOUTS = [
     'host',
     'grpc-previous-rpc-attempts',
     'grpc-retry-pushback-ms',
+    'x-endpoint-load-metrics-bin',
 ]
 
 COMPRESSION_ALGORITHMS = [
@@ -625,7 +626,6 @@ def perfect_hash(keys, name):
         return x + p.r[y]
 
     return {
-        'PHASHRANGE': p.t - 1 + max(p.r),
         'PHASHNKEYS': len(p.slots),
         'pyfunc': f,
         'code': """
@@ -657,7 +657,7 @@ elem_keys = [
 elem_hash = perfect_hash(elem_keys, 'elems')
 print >> C, elem_hash['code']
 
-keys = [0] * int(elem_hash['PHASHRANGE'])
+keys = [0] * int(elem_hash['PHASHNKEYS'])
 idxs = [255] * int(elem_hash['PHASHNKEYS'])
 for i, k in enumerate(elem_keys):
     h = elem_hash['pyfunc'](k)

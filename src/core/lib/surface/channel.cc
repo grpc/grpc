@@ -257,6 +257,13 @@ grpc_channel* grpc_channel_create(const char* target,
       get_default_authority(input_args);
   grpc_channel_args* args =
       build_channel_args(input_args, default_authority.get());
+  if (grpc_channel_stack_type_is_client(channel_stack_type)) {
+    auto channel_args_mutator =
+        grpc_channel_args_get_client_channel_creation_mutator();
+    if (channel_args_mutator != nullptr) {
+      args = channel_args_mutator(target, args, channel_stack_type);
+    }
+  }
   grpc_channel_stack_builder_set_channel_arguments(builder, args);
   grpc_channel_args_destroy(args);
   grpc_channel_stack_builder_set_target(builder, target);

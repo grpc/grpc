@@ -43,7 +43,7 @@ static void BM_InitCancelTimer(benchmark::State& state) {
   grpc_core::ExecCtx exec_ctx;
   std::vector<TimerClosure> timer_closures(kTimerCount);
   int i = 0;
-  while (state.KeepRunning()) {
+  for (auto _ : state) {
     TimerClosure* timer_closure = &timer_closures[i++ % kTimerCount];
     GRPC_CLOSURE_INIT(&timer_closure->closure,
                       [](void* /*args*/, grpc_error* /*err*/) {}, nullptr,
@@ -71,7 +71,7 @@ static void BM_TimerBatch(benchmark::State& state) {
   TrackCounters track_counters;
   grpc_core::ExecCtx exec_ctx;
   std::vector<TimerClosure> timer_closures(kTimerCount);
-  while (state.KeepRunning()) {
+  for (auto _ : state) {
     for (grpc_millis deadline = start; deadline != end; deadline += increment) {
       TimerClosure* timer_closure = &timer_closures[deadline % kTimerCount];
       GRPC_CLOSURE_INIT(&timer_closure->closure,

@@ -88,6 +88,9 @@ class WriteOptions {
   WriteOptions(const WriteOptions& other)
       : flags_(other.flags_), last_message_(other.last_message_) {}
 
+  /// Default assignment operator
+  WriteOptions& operator=(const WriteOptions& other) = default;
+
   /// Clear all flags.
   inline void Clear() { flags_ = 0; }
 
@@ -206,13 +209,14 @@ namespace internal {
 template <int I>
 class CallNoOp {
  protected:
-  void AddOp(grpc_op* ops, size_t* nops) {}
-  void FinishOp(bool* status) {}
+  void AddOp(grpc_op* /*ops*/, size_t* /*nops*/) {}
+  void FinishOp(bool* /*status*/) {}
   void SetInterceptionHookPoint(
-      InterceptorBatchMethodsImpl* interceptor_methods) {}
+      InterceptorBatchMethodsImpl* /*interceptor_methods*/) {}
   void SetFinishInterceptionHookPoint(
-      InterceptorBatchMethodsImpl* interceptor_methods) {}
-  void SetHijackingState(InterceptorBatchMethodsImpl* interceptor_methods) {}
+      InterceptorBatchMethodsImpl* /*interceptor_methods*/) {}
+  void SetHijackingState(InterceptorBatchMethodsImpl* /*interceptor_methods*/) {
+  }
 };
 
 class CallOpSendInitialMetadata {
@@ -252,7 +256,7 @@ class CallOpSendInitialMetadata {
           maybe_compression_level_.level;
     }
   }
-  void FinishOp(bool* status) {
+  void FinishOp(bool* /*status*/) {
     if (!send_ || hijacked_) return;
     g_core_codegen_interface->gpr_free(initial_metadata_);
     send_ = false;
@@ -267,9 +271,9 @@ class CallOpSendInitialMetadata {
   }
 
   void SetFinishInterceptionHookPoint(
-      InterceptorBatchMethodsImpl* interceptor_methods) {}
+      InterceptorBatchMethodsImpl* /*interceptor_methods*/) {}
 
-  void SetHijackingState(InterceptorBatchMethodsImpl* interceptor_methods) {
+  void SetHijackingState(InterceptorBatchMethodsImpl* /*interceptor_methods*/) {
     hijacked_ = true;
   }
 
@@ -363,7 +367,7 @@ class CallOpSendMessage {
                                         nullptr);
   }
 
-  void SetHijackingState(InterceptorBatchMethodsImpl* interceptor_methods) {
+  void SetHijackingState(InterceptorBatchMethodsImpl* /*interceptor_methods*/) {
     hijacked_ = true;
   }
 
@@ -605,7 +609,7 @@ class CallOpClientSendClose {
     op->flags = 0;
     op->reserved = NULL;
   }
-  void FinishOp(bool* status) { send_ = false; }
+  void FinishOp(bool* /*status*/) { send_ = false; }
 
   void SetInterceptionHookPoint(
       InterceptorBatchMethodsImpl* interceptor_methods) {
@@ -615,9 +619,9 @@ class CallOpClientSendClose {
   }
 
   void SetFinishInterceptionHookPoint(
-      InterceptorBatchMethodsImpl* interceptor_methods) {}
+      InterceptorBatchMethodsImpl* /*interceptor_methods*/) {}
 
-  void SetHijackingState(InterceptorBatchMethodsImpl* interceptor_methods) {
+  void SetHijackingState(InterceptorBatchMethodsImpl* /*interceptor_methods*/) {
     hijacked_ = true;
   }
 
@@ -658,7 +662,7 @@ class CallOpServerSendStatus {
     op->reserved = NULL;
   }
 
-  void FinishOp(bool* status) {
+  void FinishOp(bool* /*status*/) {
     if (!send_status_available_ || hijacked_) return;
     g_core_codegen_interface->gpr_free(trailing_metadata_);
     send_status_available_ = false;
@@ -675,9 +679,9 @@ class CallOpServerSendStatus {
   }
 
   void SetFinishInterceptionHookPoint(
-      InterceptorBatchMethodsImpl* interceptor_methods) {}
+      InterceptorBatchMethodsImpl* /*interceptor_methods*/) {}
 
-  void SetHijackingState(InterceptorBatchMethodsImpl* interceptor_methods) {
+  void SetHijackingState(InterceptorBatchMethodsImpl* /*interceptor_methods*/) {
     hijacked_ = true;
   }
 
@@ -712,7 +716,7 @@ class CallOpRecvInitialMetadata {
     op->reserved = NULL;
   }
 
-  void FinishOp(bool* status) {
+  void FinishOp(bool* /*status*/) {
     if (metadata_map_ == nullptr || hijacked_) return;
   }
 
@@ -766,22 +770,27 @@ class CallOpClientRecvStatus {
     op->reserved = NULL;
   }
 
-  void FinishOp(bool* status) {
+  void FinishOp(bool* /*status*/) {
     if (recv_status_ == nullptr || hijacked_) return;
-    grpc::string binary_error_details = metadata_map_->GetBinaryErrorDetails();
-    *recv_status_ =
-        Status(static_cast<StatusCode>(status_code_),
-               GRPC_SLICE_IS_EMPTY(error_message_)
-                   ? grpc::string()
-                   : grpc::string(GRPC_SLICE_START_PTR(error_message_),
-                                  GRPC_SLICE_END_PTR(error_message_)),
-               binary_error_details);
-    client_context_->set_debug_error_string(
-        debug_error_string_ != nullptr ? debug_error_string_ : "");
-    g_core_codegen_interface->grpc_slice_unref(error_message_);
-    if (debug_error_string_ != nullptr) {
-      g_core_codegen_interface->gpr_free((void*)debug_error_string_);
+    if (static_cast<StatusCode>(status_code_) == StatusCode::OK) {
+      *recv_status_ = Status();
+      GPR_CODEGEN_DEBUG_ASSERT(debug_error_string_ == nullptr);
+    } else {
+      *recv_status_ =
+          Status(static_cast<StatusCode>(status_code_),
+                 GRPC_SLICE_IS_EMPTY(error_message_)
+                     ? grpc::string()
+                     : grpc::string(GRPC_SLICE_START_PTR(error_message_),
+                                    GRPC_SLICE_END_PTR(error_message_)),
+                 metadata_map_->GetBinaryErrorDetails());
+      if (debug_error_string_ != nullptr) {
+        client_context_->set_debug_error_string(debug_error_string_);
+        g_core_codegen_interface->gpr_free((void*)debug_error_string_);
+      }
     }
+    // TODO(soheil): Find callers that set debug string even for status OK,
+    //               and fix them.
+    g_core_codegen_interface->grpc_slice_unref(error_message_);
   }
 
   void SetInterceptionHookPoint(

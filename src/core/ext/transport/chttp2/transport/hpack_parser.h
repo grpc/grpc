@@ -46,7 +46,7 @@ typedef struct {
 
 struct grpc_chttp2_hpack_parser {
   /* user specified callback for each header output */
-  void (*on_header)(void* user_data, grpc_mdelem md);
+  grpc_error* (*on_header)(void* user_data, grpc_mdelem md);
   void* on_header_user_data;
 
   grpc_error* last_error;

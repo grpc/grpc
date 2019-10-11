@@ -70,7 +70,7 @@ class XdsResolverFactory : public ResolverFactory {
 
   OrphanablePtr<Resolver> CreateResolver(ResolverArgs args) const override {
     if (!IsValidUri(args.uri)) return nullptr;
-    return OrphanablePtr<Resolver>(New<XdsResolver>(std::move(args)));
+    return MakeOrphanable<XdsResolver>(std::move(args));
   }
 
   const char* scheme() const override { return "xds-experimental"; }
@@ -82,8 +82,7 @@ class XdsResolverFactory : public ResolverFactory {
 
 void grpc_resolver_xds_init() {
   grpc_core::ResolverRegistry::Builder::RegisterResolverFactory(
-      grpc_core::UniquePtr<grpc_core::ResolverFactory>(
-          grpc_core::New<grpc_core::XdsResolverFactory>()));
+      grpc_core::MakeUnique<grpc_core::XdsResolverFactory>());
 }
 
 void grpc_resolver_xds_shutdown() {}

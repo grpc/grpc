@@ -46,10 +46,34 @@ grpc_connectivity_state grpc_client_channel_check_connectivity_state(
 int grpc_client_channel_num_external_connectivity_watchers(
     grpc_channel_element* elem);
 
+// Starts a one-time connectivity state watch.  When the channel's state
+// becomes different from *state, sets *state to the new state and
+// schedules on_complete.  The watcher_timer_init callback is invoked as
+// soon as the watch is actually started (i.e., after hopping into the
+// client channel combiner).  I/O will be serviced via pollent.
+//
+// This is intended to be used when starting a watch from outside of C-core
+// via grpc_channel_watch_connectivity_state().  It should not be used
+// by other callers.
 void grpc_client_channel_watch_connectivity_state(
     grpc_channel_element* elem, grpc_polling_entity pollent,
     grpc_connectivity_state* state, grpc_closure* on_complete,
     grpc_closure* watcher_timer_init);
+
+// Starts and stops a connectivity watch.  The watcher will be initially
+// notified as soon as the state changes from initial_state and then on
+// every subsequent state change until either the watch is stopped or
+// it is notified that the state has changed to SHUTDOWN.
+//
+// This is intended to be used when starting watches from code inside of
+// C-core (e.g., for a nested control plane channel for things like xds).
+void grpc_client_channel_start_connectivity_watch(
+    grpc_channel_element* elem, grpc_connectivity_state initial_state,
+    grpc_core::OrphanablePtr<grpc_core::AsyncConnectivityStateWatcherInterface>
+        watcher);
+void grpc_client_channel_stop_connectivity_watch(
+    grpc_channel_element* elem,
+    grpc_core::AsyncConnectivityStateWatcherInterface* watcher);
 
 /* Debug helper: pull the subchannel call from a call stack element */
 grpc_core::RefCountedPtr<grpc_core::SubchannelCall>

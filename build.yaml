@@ -14,8 +14,8 @@ settings:
   '#10': See the expand_version.py for all the quirks here
   core_version: 8.0.0
   csharp_major_version: 2
-  g_stands_for: ganges
-  version: 1.24.0-dev
+  g_stands_for: game
+  version: 1.25.0-dev
 filegroups:
 - name: alts_tsi
   headers:
@@ -113,6 +113,7 @@ filegroups:
   - src/core/ext/upb-generated/envoy/api/v2/auth/cert.upb.h
   - src/core/ext/upb-generated/envoy/api/v2/cds.upb.h
   - src/core/ext/upb-generated/envoy/api/v2/cluster/circuit_breaker.upb.h
+  - src/core/ext/upb-generated/envoy/api/v2/cluster/filter.upb.h
   - src/core/ext/upb-generated/envoy/api/v2/cluster/outlier_detection.upb.h
   - src/core/ext/upb-generated/envoy/api/v2/discovery.upb.h
   - src/core/ext/upb-generated/envoy/api/v2/eds.upb.h
@@ -124,6 +125,7 @@ filegroups:
   - src/core/ext/upb-generated/envoy/api/v2/auth/cert.upb.c
   - src/core/ext/upb-generated/envoy/api/v2/cds.upb.c
   - src/core/ext/upb-generated/envoy/api/v2/cluster/circuit_breaker.upb.c
+  - src/core/ext/upb-generated/envoy/api/v2/cluster/filter.upb.c
   - src/core/ext/upb-generated/envoy/api/v2/cluster/outlier_detection.upb.c
   - src/core/ext/upb-generated/envoy/api/v2/discovery.upb.c
   - src/core/ext/upb-generated/envoy/api/v2/eds.upb.c
@@ -143,6 +145,7 @@ filegroups:
   - src/core/ext/upb-generated/envoy/api/v2/core/config_source.upb.h
   - src/core/ext/upb-generated/envoy/api/v2/core/grpc_service.upb.h
   - src/core/ext/upb-generated/envoy/api/v2/core/health_check.upb.h
+  - src/core/ext/upb-generated/envoy/api/v2/core/http_uri.upb.h
   - src/core/ext/upb-generated/envoy/api/v2/core/protocol.upb.h
   src:
   - src/core/ext/upb-generated/envoy/api/v2/core/address.upb.c
@@ -150,10 +153,18 @@ filegroups:
   - src/core/ext/upb-generated/envoy/api/v2/core/config_source.upb.c
   - src/core/ext/upb-generated/envoy/api/v2/core/grpc_service.upb.c
   - src/core/ext/upb-generated/envoy/api/v2/core/health_check.upb.c
+  - src/core/ext/upb-generated/envoy/api/v2/core/http_uri.upb.c
   - src/core/ext/upb-generated/envoy/api/v2/core/protocol.upb.c
   uses:
   - envoy_type_upb
   - google_api_upb
+  - proto_gen_validate_upb
+- name: envoy_orca_upb
+  headers:
+  - src/core/ext/upb-generated/udpa/data/orca/v1/orca_load_report.upb.h
+  src:
+  - src/core/ext/upb-generated/udpa/data/orca/v1/orca_load_report.upb.c
+  uses:
   - proto_gen_validate_upb
 - name: envoy_type_upb
   headers:
@@ -206,7 +217,6 @@ filegroups:
   - src/core/lib/gpr/log_linux.cc
   - src/core/lib/gpr/log_posix.cc
   - src/core/lib/gpr/log_windows.cc
-  - src/core/lib/gpr/mpscq.cc
   - src/core/lib/gpr/murmur_hash.cc
   - src/core/lib/gpr/string.cc
   - src/core/lib/gpr/string_posix.cc
@@ -228,6 +238,7 @@ filegroups:
   - src/core/lib/gprpp/fork.cc
   - src/core/lib/gprpp/global_config_env.cc
   - src/core/lib/gprpp/host_port.cc
+  - src/core/lib/gprpp/mpscq.cc
   - src/core/lib/gprpp/thd_posix.cc
   - src/core/lib/gprpp/thd_windows.cc
   - src/core/lib/profiling/basic_timers.cc
@@ -257,7 +268,6 @@ filegroups:
   - src/core/lib/gpr/alloc.h
   - src/core/lib/gpr/arena.h
   - src/core/lib/gpr/env.h
-  - src/core/lib/gpr/mpscq.h
   - src/core/lib/gpr/murmur_hash.h
   - src/core/lib/gpr/spinlock.h
   - src/core/lib/gpr/string.h
@@ -269,7 +279,6 @@ filegroups:
   - src/core/lib/gpr/tls_pthread.h
   - src/core/lib/gpr/tmpfile.h
   - src/core/lib/gpr/useful.h
-  - src/core/lib/gprpp/abstract.h
   - src/core/lib/gprpp/arena.h
   - src/core/lib/gprpp/atomic.h
   - src/core/lib/gprpp/fork.h
@@ -281,7 +290,8 @@ filegroups:
   - src/core/lib/gprpp/manual_constructor.h
   - src/core/lib/gprpp/map.h
   - src/core/lib/gprpp/memory.h
-  - src/core/lib/gprpp/pair.h
+  - src/core/lib/gprpp/mpscq.h
+  - src/core/lib/gprpp/set.h
   - src/core/lib/gprpp/sync.h
   - src/core/lib/gprpp/thd.h
   - src/core/lib/profiling/timers.h
@@ -378,6 +388,7 @@ filegroups:
   - include/grpcpp/impl/codegen/interceptor_common.h
   - include/grpcpp/impl/codegen/message_allocator.h
   - include/grpcpp/impl/codegen/metadata_map.h
+  - include/grpcpp/impl/codegen/method_handler.h
   - include/grpcpp/impl/codegen/method_handler_impl.h
   - include/grpcpp/impl/codegen/rpc_method.h
   - include/grpcpp/impl/codegen/rpc_service_method.h
@@ -504,6 +515,7 @@ filegroups:
   - include/grpcpp/security/credentials_impl.h
   - include/grpcpp/security/server_credentials.h
   - include/grpcpp/security/server_credentials_impl.h
+  - include/grpcpp/security/tls_credentials_options.h
   - include/grpcpp/server.h
   - include/grpcpp/server_builder.h
   - include/grpcpp/server_builder_impl.h
@@ -945,6 +957,7 @@ filegroups:
   - grpc_base
 - name: grpc_client_channel
   headers:
+  - src/core/ext/filters/client_channel/backend_metric.h
   - src/core/ext/filters/client_channel/backup_poller.h
   - src/core/ext/filters/client_channel/client_channel.h
   - src/core/ext/filters/client_channel/client_channel_channelz.h
@@ -973,6 +986,7 @@ filegroups:
   - src/core/ext/filters/client_channel/subchannel_interface.h
   - src/core/ext/filters/client_channel/subchannel_pool_interface.h
   src:
+  - src/core/ext/filters/client_channel/backend_metric.cc
   - src/core/ext/filters/client_channel/backup_poller.cc
   - src/core/ext/filters/client_channel/channel_connectivity.cc
   - src/core/ext/filters/client_channel/client_channel.cc
@@ -1004,6 +1018,7 @@ filegroups:
   - grpc_base
   - grpc_deadline_filter
   - grpc_health_upb
+  - envoy_orca_upb
 - name: grpc_client_idle_filter
   src:
   - src/core/ext/filters/client_idle/client_idle_filter.cc
@@ -1110,38 +1125,23 @@ filegroups:
 - name: grpc_lb_policy_xds
   headers:
   - src/core/ext/filters/client_channel/lb_policy/xds/xds.h
-  - src/core/ext/filters/client_channel/lb_policy/xds/xds_channel.h
-  - src/core/ext/filters/client_channel/lb_policy/xds/xds_client_stats.h
-  - src/core/ext/filters/client_channel/lb_policy/xds/xds_load_balancer_api.h
   src:
   - src/core/ext/filters/client_channel/lb_policy/xds/xds.cc
-  - src/core/ext/filters/client_channel/lb_policy/xds/xds_channel.cc
-  - src/core/ext/filters/client_channel/lb_policy/xds/xds_client_stats.cc
-  - src/core/ext/filters/client_channel/lb_policy/xds/xds_load_balancer_api.cc
   plugin: grpc_lb_policy_xds
   uses:
-  - envoy_ads_upb
   - grpc_base
   - grpc_client_channel
-  - grpc_resolver_fake
+  - grpc_xds_client
 - name: grpc_lb_policy_xds_secure
   headers:
   - src/core/ext/filters/client_channel/lb_policy/xds/xds.h
-  - src/core/ext/filters/client_channel/lb_policy/xds/xds_channel.h
-  - src/core/ext/filters/client_channel/lb_policy/xds/xds_client_stats.h
-  - src/core/ext/filters/client_channel/lb_policy/xds/xds_load_balancer_api.h
   src:
   - src/core/ext/filters/client_channel/lb_policy/xds/xds.cc
-  - src/core/ext/filters/client_channel/lb_policy/xds/xds_channel_secure.cc
-  - src/core/ext/filters/client_channel/lb_policy/xds/xds_client_stats.cc
-  - src/core/ext/filters/client_channel/lb_policy/xds/xds_load_balancer_api.cc
   plugin: grpc_lb_policy_xds
   uses:
-  - envoy_ads_upb
   - grpc_base
   - grpc_client_channel
-  - grpc_resolver_fake
-  - grpc_secure
+  - grpc_xds_client_secure
 - name: grpc_lb_subchannel_list
   headers:
   - src/core/ext/filters/client_channel/lb_policy/subchannel_list.h
@@ -1260,6 +1260,7 @@ filegroups:
   - src/core/lib/security/security_connector/security_connector.h
   - src/core/lib/security/security_connector/ssl/ssl_security_connector.h
   - src/core/lib/security/security_connector/ssl_utils.h
+  - src/core/lib/security/security_connector/ssl_utils_config.h
   - src/core/lib/security/security_connector/tls/spiffe_security_connector.h
   - src/core/lib/security/transport/auth_filters.h
   - src/core/lib/security/transport/secure_endpoint.h
@@ -1295,6 +1296,7 @@ filegroups:
   - src/core/lib/security/security_connector/security_connector.cc
   - src/core/lib/security/security_connector/ssl/ssl_security_connector.cc
   - src/core/lib/security/security_connector/ssl_utils.cc
+  - src/core/lib/security/security_connector/ssl_utils_config.cc
   - src/core/lib/security/security_connector/tls/spiffe_security_connector.cc
   - src/core/lib/security/transport/client_auth_filter.cc
   - src/core/lib/security/transport/secure_endpoint.cc
@@ -1533,6 +1535,39 @@ filegroups:
   uses:
   - grpc_base
   - grpc_server_backward_compatibility
+- name: grpc_xds_client
+  headers:
+  - src/core/ext/filters/client_channel/xds/xds_api.h
+  - src/core/ext/filters/client_channel/xds/xds_channel.h
+  - src/core/ext/filters/client_channel/xds/xds_channel_args.h
+  - src/core/ext/filters/client_channel/xds/xds_client.h
+  - src/core/ext/filters/client_channel/xds/xds_client_stats.h
+  src:
+  - src/core/ext/filters/client_channel/xds/xds_api.cc
+  - src/core/ext/filters/client_channel/xds/xds_channel.cc
+  - src/core/ext/filters/client_channel/xds/xds_client.cc
+  - src/core/ext/filters/client_channel/xds/xds_client_stats.cc
+  uses:
+  - envoy_ads_upb
+  - grpc_base
+  - grpc_client_channel
+- name: grpc_xds_client_secure
+  headers:
+  - src/core/ext/filters/client_channel/xds/xds_api.h
+  - src/core/ext/filters/client_channel/xds/xds_channel.h
+  - src/core/ext/filters/client_channel/xds/xds_channel_args.h
+  - src/core/ext/filters/client_channel/xds/xds_client.h
+  - src/core/ext/filters/client_channel/xds/xds_client_stats.h
+  src:
+  - src/core/ext/filters/client_channel/xds/xds_api.cc
+  - src/core/ext/filters/client_channel/xds/xds_channel_secure.cc
+  - src/core/ext/filters/client_channel/xds/xds_client.cc
+  - src/core/ext/filters/client_channel/xds/xds_client_stats.cc
+  uses:
+  - envoy_ads_upb
+  - grpc_base
+  - grpc_client_channel
+  - grpc_secure
 - name: grpcpp_channelz_proto
   src:
   - src/proto/grpc/channelz/channelz.proto
@@ -1610,32 +1645,6 @@ libs:
   deps:
   - grpc
   secure: true
-- name: cxxabi
-  build: private
-  language: c
-  src:
-  - third_party/libcxxabi/src/abort_message.cpp
-  - third_party/libcxxabi/src/cxa_aux_runtime.cpp
-  - third_party/libcxxabi/src/cxa_default_handlers.cpp
-  - third_party/libcxxabi/src/cxa_demangle.cpp
-  - third_party/libcxxabi/src/cxa_exception_storage.cpp
-  - third_party/libcxxabi/src/cxa_guard.cpp
-  - third_party/libcxxabi/src/cxa_handlers.cpp
-  - third_party/libcxxabi/src/cxa_noexception.cpp
-  - third_party/libcxxabi/src/cxa_thread_atexit.cpp
-  - third_party/libcxxabi/src/cxa_unexpected.cpp
-  - third_party/libcxxabi/src/cxa_vector.cpp
-  - third_party/libcxxabi/src/cxa_virtual.cpp
-  - third_party/libcxxabi/src/fallback_malloc.cpp
-  - third_party/libcxxabi/src/private_typeinfo.cpp
-  - third_party/libcxxabi/src/stdlib_exception.cpp
-  - third_party/libcxxabi/src/stdlib_new_delete.cpp
-  - third_party/libcxxabi/src/stdlib_stdexcept.cpp
-  - third_party/libcxxabi/src/stdlib_typeinfo.cpp
-  build_system:
-  - Makefile
-  defaults: cxxabi
-  secure: false
 - name: gpr
   build: all
   language: c
@@ -1808,6 +1817,7 @@ libs:
   - include/grpcpp/impl/codegen/core_codegen.h
   - src/cpp/client/secure_credentials.h
   - src/cpp/common/secure_auth_context.h
+  - src/cpp/common/tls_credentials_options_util.h
   - src/cpp/server/secure_server_credentials.h
   src:
   - src/cpp/client/insecure_credentials.cc
@@ -1816,6 +1826,8 @@ libs:
   - src/cpp/common/secure_auth_context.cc
   - src/cpp/common/secure_channel_arguments.cc
   - src/cpp/common/secure_create_auth_context.cc
+  - src/cpp/common/tls_credentials_options.cc
+  - src/cpp/common/tls_credentials_options_util.cc
   - src/cpp/server/insecure_server_credentials.cc
   - src/cpp/server/secure_server_credentials.cc
   deps:
@@ -2719,17 +2731,6 @@ targets:
   language: c
   src:
   - test/core/gprpp/manual_constructor_test.cc
-  deps:
-  - gpr
-  - grpc_test_util_unsecure
-  - grpc_unsecure
-  uses_polling: false
-- name: gpr_mpscq_test
-  cpu_cost: 30
-  build: test
-  language: c
-  src:
-  - test/core/gpr/mpscq_test.cc
   deps:
   - gpr
   - grpc_test_util_unsecure
@@ -3841,15 +3842,6 @@ targets:
   exclude_iomgrs:
   - uv
   uses_polling: false
-- name: transport_connectivity_state_test
-  build: test
-  language: c
-  src:
-  - test/core/transport/connectivity_state_test.cc
-  deps:
-  - grpc_test_util
-  - grpc
-  - gpr
 - name: transport_metadata_test
   build: test
   language: c
@@ -4741,6 +4733,7 @@ targets:
   build: test
   language: c++
   src:
+  - src/proto/grpc/testing/xds/orca_load_report_for_test.proto
   - test/cpp/end2end/client_lb_end2end_test.cc
   deps:
   - grpc++_test_util
@@ -4986,6 +4979,17 @@ targets:
   args:
   - --generated_file_path=gens/src/proto/grpc/testing/
   uses_polling: false
+- name: gprpp_mpscq_test
+  cpu_cost: 30
+  build: test
+  language: c++
+  src:
+  - test/core/gprpp/mpscq_test.cc
+  deps:
+  - gpr
+  - grpc_test_util_unsecure
+  - grpc_unsecure
+  uses_polling: false
 - name: grpc_alts_credentials_options_test
   build: test
   language: c++
@@ -5007,20 +5011,6 @@ targets:
   - grpc
   - gpr
   - grpc++_test_config
-- name: grpc_core_map_test
-  gtest: true
-  build: test
-  language: c++
-  headers:
-  - test/core/gprpp/map_tester.h
-  src:
-  - test/core/gprpp/map_test.cc
-  deps:
-  - grpc_test_util
-  - grpc++
-  - grpc
-  - gpr
-  uses_polling: false
 - name: grpc_cpp_plugin
   build: protoc
   language: c++
@@ -5971,6 +5961,16 @@ targets:
   - grpc++
   - grpc
   - gpr
+- name: transport_connectivity_state_test
+  gtest: true
+  build: test
+  language: c++
+  src:
+  - test/core/transport/connectivity_state_test.cc
+  deps:
+  - grpc_test_util
+  - grpc
+  - gpr
 - name: transport_pid_controller_test
   build: test
   language: c++
@@ -6013,8 +6013,9 @@ targets:
   build: test
   language: c++
   src:
-  - src/proto/grpc/lb/v2/eds_for_test.proto
-  - src/proto/grpc/lb/v2/lrs_for_test.proto
+  - src/proto/grpc/testing/xds/ads_for_test.proto
+  - src/proto/grpc/testing/xds/eds_for_test.proto
+  - src/proto/grpc/testing/xds/lrs_for_test.proto
   - test/cpp/end2end/xds_end2end_test.cc
   deps:
   - grpc++_test_util
@@ -6068,7 +6069,7 @@ configs:
       -Wno-unused-command-line-argument -DGPR_NO_DIRECT_SYSCALLS
     CXX: clang++
     LD: clang++
-    LDFLAGS: -fsanitize=address
+    LDFLAGS: fsanitize=address
     LDXX: clang++
     compile_the_world: true
     test_environ:
@@ -6122,13 +6123,14 @@ configs:
     valgrind: --tool=memcheck --leak-check=full
   msan:
     CC: clang
-    CPPFLAGS: -O0 -fsanitize-coverage=edge,trace-pc-guard -fsanitize=memory -fsanitize-memory-track-origins
-      -fsanitize-memory-use-after-dtor -fno-omit-frame-pointer -DGTEST_HAS_TR1_TUPLE=0
-      -DGTEST_USE_OWN_TR1_TUPLE=1 -Wno-unused-command-line-argument -fPIE -pie -DGPR_NO_DIRECT_SYSCALLS
+    CPPFLAGS: -O0 -stdlib=libc++ -fsanitize-coverage=edge,trace-pc-guard -fsanitize=memory
+      -fsanitize-memory-track-origins -fsanitize-memory-use-after-dtor -fno-omit-frame-pointer
+      -DGTEST_HAS_TR1_TUPLE=0 -DGTEST_USE_OWN_TR1_TUPLE=1 -Wno-unused-command-line-argument
+      -fPIE -pie -DGPR_NO_DIRECT_SYSCALLS
     CXX: clang++
     DEFINES: NDEBUG
     LD: clang++
-    LDFLAGS: -fsanitize=memory -DGTEST_HAS_TR1_TUPLE=0 -DGTEST_USE_OWN_TR1_TUPLE=1
+    LDFLAGS: -stdlib=libc++ -fsanitize=memory -DGTEST_HAS_TR1_TUPLE=0 -DGTEST_USE_OWN_TR1_TUPLE=1
       -fPIE -pie $(if $(JENKINS_BUILD),-Wl$(comma)-Ttext-segment=0x7e0000000000,)
     LDXX: clang++
     compile_the_world: true
@@ -6162,20 +6164,19 @@ configs:
       TSAN_OPTIONS: suppressions=test/core/util/tsan_suppressions.txt:halt_on_error=1:second_deadlock_stack=1
   ubsan:
     CC: clang
-    CPPFLAGS: -O0 -fsanitize-coverage=edge,trace-pc-guard -fsanitize=undefined -fno-omit-frame-pointer
-      -Wno-unused-command-line-argument -Wvarargs
+    CPPFLAGS: -O0 -stdlib=libc++ -fsanitize-coverage=edge,trace-pc-guard -fsanitize=undefined
+      -fno-omit-frame-pointer -Wno-unused-command-line-argument -Wvarargs
     CXX: clang++
     DEFINES: NDEBUG GRPC_UBSAN
     LD: clang++
-    LDFLAGS: -fsanitize=undefined,unsigned-integer-overflow
+    LDFLAGS: -stdlib=libc++ -fsanitize=undefined,unsigned-integer-overflow
     LDXX: clang++
     compile_the_world: true
     test_environ:
       UBSAN_OPTIONS: halt_on_error=1:print_stacktrace=1:suppressions=test/core/util/ubsan_suppressions.txt
 defaults:
   ares:
-    CFLAGS: -Wno-sign-conversion $(if $(subst Darwin,,$(SYSTEM)),,-Wno-shorten-64-to-32)
-      $(if $(subst MINGW32,,$(SYSTEM)),-Wno-invalid-source-encoding,)
+    CFLAGS: -g
     CPPFLAGS: -Ithird_party/cares -Ithird_party/cares/cares -fvisibility=hidden -D_GNU_SOURCE
       $(if $(subst Darwin,,$(SYSTEM)),,-Ithird_party/cares/config_darwin) $(if $(subst
       FreeBSD,,$(SYSTEM)),,-Ithird_party/cares/config_freebsd) $(if $(subst Linux,,$(SYSTEM)),,-Ithird_party/cares/config_linux)
@@ -6184,28 +6185,17 @@ defaults:
   benchmark:
     CPPFLAGS: -Ithird_party/benchmark/include -DHAVE_POSIX_REGEX
   boringssl:
-    CFLAGS: -Wno-sign-conversion -Wno-conversion -Wno-unused-value -Wno-unknown-pragmas
-      -Wno-implicit-function-declaration -Wno-unused-variable -Wno-sign-compare -Wno-implicit-fallthrough
-      $(NO_W_EXTRA_SEMI)
+    CFLAGS: -g
     CPPFLAGS: -Ithird_party/boringssl/include -fvisibility=hidden -DOPENSSL_NO_ASM
       -D_GNU_SOURCE -DWIN32_LEAN_AND_MEAN -D_HAS_EXCEPTIONS=0 -DNOMINMAX
-    CXXFLAGS: -fno-rtti -fno-exceptions
-  cxxabi:
-    CPPFLAGS: -D_LIBCPP_DISABLE_EXTERN_TEMPLATE -D_LIBCXXABI_BUILDING_LIBRARY -D_LIBCXXABI_NO_EXCEPTIONS
-      -Ithird_party/libcxxabi/include -nostdinc++ -Ithird_party/libcxx/include $(W_NO_UNUSED_BUT_SET_VARIABLE)
-      $(W_NO_MAYBE_UNINITIALIZED) -fvisibility=hidden
-    CXXFLAGS: $(W_NO_CXX14_COMPAT)
+    CXXFLAGS: -fno-exceptions
   global:
-    COREFLAGS: -fno-rtti -fno-exceptions
-    CPPFLAGS: -g -Wall -Wextra -Werror $(W_NO_UNKNOWN_WARNING_OPTION) -Wno-long-long
-      -Wno-unused-parameter -Wno-deprecated-declarations -Wno-sign-conversion -Wno-shadow
-      -Wno-conversion -Wno-implicit-fallthrough -Wno-sign-compare -Wno-missing-field-initializers
-      -Wno-maybe-uninitialized -DOSATOMIC_USE_INLINED=1 -Ithird_party/upb -Isrc/core/ext/upb-generated
-    CXXFLAGS: -Wnon-virtual-dtor
+    CFLAGS: -g
+    COREFLAGS: -fno-exceptions
+    CPPFLAGS: -g -Wall -Wextra -DOSATOMIC_USE_INLINED=1 -Ithird_party/upb -Isrc/core/ext/upb-generated
     LDFLAGS: -g
   zlib:
-    CFLAGS: -Wno-sign-conversion -Wno-conversion -Wno-unused-value -Wno-implicit-function-declaration
-      -Wno-implicit-fallthrough $(W_NO_SHIFT_NEGATIVE_VALUE) -fvisibility=hidden
+    CFLAGS: -fvisibility=hidden
 openssl_fallback:
   base_uri: https://openssl.org/source/old/1.0.2/
   extraction_dir: openssl-1.0.2f

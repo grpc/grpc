@@ -17,6 +17,7 @@
 #endregion
 
 using System;
+using System.Buffers;
 
 namespace Grpc.Core
 {
@@ -27,13 +28,31 @@ namespace Grpc.Core
     {
         /// <summary>
         /// Use the byte array as serialized form of current message and mark serialization process as complete.
-        /// Complete() can only be called once. By calling this method the caller gives up the ownership of the
+        /// <c>Complete(byte[])</c> can only be called once. By calling this method the caller gives up the ownership of the
         /// payload which must not be accessed afterwards.
         /// </summary>
         /// <param name="payload">the serialized form of current message</param>
         public virtual void Complete(byte[] payload)
         {
             throw new NotImplementedException();
+        }
+
+        /// <summary>
+        /// Gets buffer writer that can be used to write the serialized data. Once serialization is finished,
+        /// <c>Complete()</c> needs to be called.
+        /// </summary>
+        public virtual IBufferWriter<byte> GetBufferWriter()
+        {
+            throw new NotImplementedException();
+        }
+
+        /// <summary>
+        /// Complete the payload written to the buffer writer. <c>Complete()</c> can only be called once.
+        /// </summary>
+        public virtual void Complete()
+        {
+            throw new NotImplementedException();
+
         }
     }
 }

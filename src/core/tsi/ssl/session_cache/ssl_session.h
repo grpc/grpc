@@ -62,9 +62,7 @@ class SslCachedSession {
   virtual ~SslCachedSession() = default;
 
   /// Returns a copy of previously cached session.
-  virtual SslSessionPtr CopySession() const GRPC_ABSTRACT;
-
-  GRPC_ABSTRACT_BASE_CLASS
+  virtual SslSessionPtr CopySession() const = 0;
 
  protected:
   SslCachedSession() = default;

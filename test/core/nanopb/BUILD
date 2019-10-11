@@ -30,6 +30,7 @@ grpc_fuzzer(
         "//:grpc",
         "//test/core/util:grpc_test_util",
     ],
+    tags = ["no_windows"],
 )
 
 grpc_fuzzer(
@@ -42,4 +43,5 @@ grpc_fuzzer(
         "//:grpc",
         "//test/core/util:grpc_test_util",
     ],
+    tags = ["no_windows"],
 )

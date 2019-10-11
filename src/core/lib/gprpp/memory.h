@@ -28,63 +28,52 @@
 #include <memory>
 #include <utility>
 
-// Add this to a class that want to use Delete(), but has a private or
-// protected destructor.
-// Should not be used in new code.
-// TODO(juanlishen): Remove this macro, and instead comment that the public dtor
-// should not be used directly.
-#define GRPC_ALLOW_CLASS_TO_USE_NON_PUBLIC_DELETE         \
-  template <typename _Delete_T, bool _Delete_can_be_null> \
-  friend void ::grpc_core::Delete(_Delete_T*);            \
-  template <typename _Delete_T>                           \
-  friend void ::grpc_core::Delete(_Delete_T*);
-
-// Add this to a class that want to use New(), but has a private or
-// protected constructor.
-// Should not be used in new code.
-// TODO(juanlishen): Remove this macro, and instead comment that the public dtor
-// should not be used directly.
-#define GRPC_ALLOW_CLASS_TO_USE_NON_PUBLIC_NEW      \
-  template <typename _New_T, typename... _New_Args> \
-  friend _New_T* grpc_core::New(_New_Args&&...);
-
 namespace grpc_core {
 
-// Alternative to new, since we cannot use it (for fear of libstdc++)
+// Alternative to new, to ensure memory allocation being wrapped to gpr_malloc
 template <typename T, typename... Args>
 inline T* New(Args&&... args) {
   void* p = gpr_malloc(sizeof(T));
   return new (p) T(std::forward<Args>(args)...);
 }
 
-// Alternative to delete, since we cannot use it (for fear of libstdc++)
-// We cannot add a default value for can_be_null, because they are used as
-// as friend template methods where we cannot define a default value.
-// Instead we simply define two variants, one with and one without the boolean
-// argument.
-template <typename T, bool can_be_null>
-inline void Delete(T* p) {
-  GPR_DEBUG_ASSERT(can_be_null || p != nullptr);
-  if (can_be_null && p == nullptr) return;
-  p->~T();
-  gpr_free(p);
-}
-template <typename T>
-inline void Delete(T* p) {
-  Delete<T, /*can_be_null=*/true>(p);
-}
+// Gets the base pointer of any class, in case of multiple inheritance.
+// Used by Delete and friends.
+template <typename T, bool isPolymorphic>
+struct BasePointerGetter {
+  static void* get(T* p) { return p; }
+};
 
 template <typename T>
+struct BasePointerGetter<T, true> {
+  static void* get(T* p) { return dynamic_cast<void*>(p); }
+};
+
+// Alternative to delete, to ensure memory allocation being wrapped to gpr_free
+template <typename T>
+inline void Delete(T* p) {
+  if (p == nullptr) return;
+  void* basePtr = BasePointerGetter<T, std::is_polymorphic<T>::value>::get(p);
+  p->~T();
+  gpr_free(basePtr);
+}
+
 class DefaultDelete {
  public:
+  template <typename T>
   void operator()(T* p) {
-    // std::unique_ptr is gauranteed not to call the deleter
-    // if the pointer is nullptr.
-    Delete<T, /*can_be_null=*/false>(p);
+    // Delete() checks whether the value is null, but std::unique_ptr<> is
+    // guaranteed not to call the deleter if the pointer is nullptr
+    // (i.e., it already does this check for us), and we don't want to
+    // do the check twice.  So, instead of calling Delete() here, we
+    // manually call the object's dtor and free it.
+    void* basePtr = BasePointerGetter<T, std::is_polymorphic<T>::value>::get(p);
+    p->~T();
+    gpr_free(basePtr);
   }
 };
 
-template <typename T, typename Deleter = DefaultDelete<T>>
+template <typename T, typename Deleter = DefaultDelete>
 using UniquePtr = std::unique_ptr<T, Deleter>;
 
 template <typename T, typename... Args>
@@ -110,6 +99,11 @@ class Allocator {
   };
   typedef std::true_type is_always_equal;
 
+  Allocator() = default;
+
+  template <class U>
+  Allocator(const Allocator<U>&) {}
+
   pointer address(reference x) const { return &x; }
   const_pointer address(const_reference x) const { return &x; }
   pointer allocate(std::size_t n,
@@ -131,6 +125,16 @@ class Allocator {
     p->~U();
   }
 };
+
+template <class T, class U>
+bool operator==(Allocator<T> const&, Allocator<U> const&) noexcept {
+  return true;
+}
+
+template <class T, class U>
+bool operator!=(Allocator<T> const& x, Allocator<U> const& y) noexcept {
+  return false;
+}
 
 }  // namespace grpc_core
 

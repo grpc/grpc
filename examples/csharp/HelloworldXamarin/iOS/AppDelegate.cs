@@ -58,7 +58,7 @@ namespace HelloworldXamarin.iOS
 
         public override void WillEnterForeground(UIApplication application)
         {
-            // Called as part of the transiton from background to active state.
+            // Called as part of the transition from background to active state.
             // Here you can undo many of the changes made on entering the background.
         }
 

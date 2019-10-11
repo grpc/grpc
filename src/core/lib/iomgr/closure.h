@@ -22,10 +22,13 @@
 #include <grpc/support/port_platform.h>
 
 #include <assert.h>
+#include <stdbool.h>
+
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
-#include <stdbool.h>
-#include "src/core/lib/gpr/mpscq.h"
+
+#include "src/core/lib/gprpp/manual_constructor.h"
+#include "src/core/lib/gprpp/mpscq.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/profiling/timers.h"
 
@@ -69,7 +72,9 @@ struct grpc_closure {
    *  space */
   union {
     grpc_closure* next;
-    gpr_mpscq_node atm_next;
+    grpc_core::ManualConstructor<
+        grpc_core::MultiProducerSingleConsumerQueue::Node>
+        mpscq_node;
     uintptr_t scratch;
   } next_data;
 

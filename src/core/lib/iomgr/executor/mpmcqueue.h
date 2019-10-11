@@ -22,7 +22,6 @@
 #include <grpc/support/port_platform.h>
 
 #include "src/core/lib/debug/stats.h"
-#include "src/core/lib/gprpp/abstract.h"
 #include "src/core/lib/gprpp/atomic.h"
 #include "src/core/lib/gprpp/sync.h"
 
@@ -38,17 +37,15 @@ class MPMCQueueInterface {
 
   // Puts elem into queue immediately at the end of queue.
   // This might cause to block on full queue depending on implementation.
-  virtual void Put(void* elem) GRPC_ABSTRACT;
+  virtual void Put(void* elem) = 0;
 
   // Removes the oldest element from the queue and return it.
   // This might cause to block on empty queue depending on implementation.
   // Optional argument for collecting stats purpose.
-  virtual void* Get(gpr_timespec* wait_time = nullptr) GRPC_ABSTRACT;
+  virtual void* Get(gpr_timespec* wait_time = nullptr) = 0;
 
   // Returns number of elements in the queue currently
-  virtual int count() const GRPC_ABSTRACT;
-
-  GRPC_ABSTRACT_BASE_CLASS
+  virtual int count() const = 0;
 };
 
 class InfLenFIFOQueue : public MPMCQueueInterface {

@@ -174,7 +174,7 @@ static void BM_Cq_Throughput(benchmark::State& state) {
   // (optionally including low-level counters) before and after the test
   TrackCounters track_counters;
 
-  while (state.KeepRunning()) {
+  for (auto _ : state) {
     GPR_ASSERT(grpc_completion_queue_next(g_cq, deadline, nullptr).type ==
                GRPC_OP_COMPLETE);
   }

@@ -24,7 +24,6 @@
 #
 
 load("//bazel:cc_grpc_library.bzl", "cc_grpc_library")
-load("@build_bazel_rules_apple//apple:resources.bzl", "apple_resource_bundle")
 load("@upb//bazel:upb_proto_library.bzl", "upb_proto_library")
 load("@build_bazel_rules_apple//apple:ios.bzl", "ios_unit_test")
 
@@ -98,9 +97,6 @@ def grpc_cc_library(
                   select({
                       "//:grpc_allow_exceptions": ["GRPC_ALLOW_EXCEPTIONS=1"],
                       "//:grpc_disallow_exceptions": ["GRPC_ALLOW_EXCEPTIONS=0"],
-                      "//conditions:default": [],
-                  }) + select({
-                      "//:grpc_use_cpp_std_lib": ["GRPC_USE_CPP_STD_LIB=1"],
                       "//conditions:default": [],
                   }),
         hdrs = hdrs + public_hdrs,
@@ -185,17 +181,17 @@ def grpc_cc_test(name, srcs = [], deps = [], external_deps = [], args = [], data
         "exec_compatible_with": exec_compatible_with,
     }
     if uses_polling:
-        # Only run targets with pollers for non-MSVC
-        # TODO(yfen): Enable MSVC for poller-enabled targets without pollers
+        # the vanilla version of the test should run on platforms that only 
+        # support a single poller
         native.cc_test(
             name = name,
             testonly = True,
-            tags = [
-                "manual",
-                "no_windows",
-            ],
+            tags = (tags + [
+                "no_linux",  # linux supports multiple pollers
+            ]),
             **args
         )
+        # on linux we run the same test multiple times, once for each poller
         for poller in POLLERS:
             native.sh_test(
                 name = name + "@poller=" + poller,
@@ -209,11 +205,12 @@ def grpc_cc_test(name, srcs = [], deps = [], external_deps = [], args = [], data
                     poller,
                     "$(location %s)" % name,
                 ] + args["args"],
-                tags = (tags + ["no_windows"]),
+                tags = (tags + ["no_windows", "no_mac"]),
                 exec_compatible_with = exec_compatible_with,
             )
     else:
-        native.cc_test(tags = tags, **args)
+        # the test behavior doesn't depend on polling, just generate the test
+        native.cc_test(name = name, tags = tags, **args)
     ios_cc_test(
         name = name,
         tags = tags,
@@ -239,19 +236,13 @@ def grpc_cc_binary(name, srcs = [], deps = [], external_deps = [], args = [], da
     )
 
 def grpc_generate_one_off_targets():
-    apple_resource_bundle(
-        # The choice of name is signicant here, since it determines the bundle name.
-        name = "gRPCCertificates",
-        resources = ["etc/roots.pem"],
-    )
-
     # In open-source, grpc_objc* libraries depend directly on //:grpc
     native.alias(
         name = "grpc_objc",
         actual = "//:grpc",
     )
 
-def grpc_objc_use_cronet_config():
+def grpc_generate_objc_one_off_targets():
     pass
 
 def grpc_sh_test(name, srcs, args = [], data = []):
@@ -305,7 +296,7 @@ def grpc_package(name, visibility = "private", features = []):
 
 def grpc_objc_library(
         name,
-        srcs,
+        srcs = [],
         hdrs = [],
         textual_hdrs = [],
         data = [],
@@ -341,4 +332,11 @@ def grpc_objc_library(
     
 def grpc_upb_proto_library(name, deps):
     upb_proto_library(name = name, deps = deps)
+
+
+def python_config_settings():
+    native.config_setting(
+        name = "python3",
+        flag_values = {"@bazel_tools//tools/python:python_version": "PY3"},
+    )
 

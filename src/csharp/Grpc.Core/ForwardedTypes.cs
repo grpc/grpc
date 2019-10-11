@@ -38,6 +38,7 @@ using Grpc.Core.Utils;
 [assembly:TypeForwardedToAttribute(typeof(CallInvoker))]
 [assembly:TypeForwardedToAttribute(typeof(CallInvokerExtensions))]
 [assembly:TypeForwardedToAttribute(typeof(CallOptions))]
+[assembly:TypeForwardedToAttribute(typeof(ChannelExtensions))]
 [assembly:TypeForwardedToAttribute(typeof(ClientBase))]
 [assembly:TypeForwardedToAttribute(typeof(ClientBase<>))]
 [assembly:TypeForwardedToAttribute(typeof(ChannelCredentials))]

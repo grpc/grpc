@@ -49,9 +49,11 @@ grpc_cc_test(
         ":memory_usage_server",
     ],
     language = "C++",
+    tags = ["no_windows"],  # TODO(jtattermusch): breaks windows RBE build if enabled
     deps = [
         "//:gpr",
         "//:grpc",
         "//test/core/util:grpc_test_util",
     ],
+    uses_polling = False,
 )

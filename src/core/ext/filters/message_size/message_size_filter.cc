@@ -88,13 +88,13 @@ UniquePtr<ServiceConfig::ParsedConfig> MessageSizeParser::ParsePerMethodParams(
     *error = GRPC_ERROR_CREATE_FROM_VECTOR("Message size parser", &error_list);
     return nullptr;
   }
-  return UniquePtr<ServiceConfig::ParsedConfig>(New<MessageSizeParsedConfig>(
-      max_request_message_bytes, max_response_message_bytes));
+  return MakeUnique<MessageSizeParsedConfig>(max_request_message_bytes,
+                                             max_response_message_bytes);
 }
 
 void MessageSizeParser::Register() {
-  g_message_size_parser_index = ServiceConfig::RegisterParser(
-      UniquePtr<ServiceConfig::Parser>(New<MessageSizeParser>()));
+  g_message_size_parser_index =
+      ServiceConfig::RegisterParser(MakeUnique<MessageSizeParser>());
 }
 
 size_t MessageSizeParser::ParserIndex() { return g_message_size_parser_index; }
@@ -238,7 +238,7 @@ static void recv_trailing_metadata_ready(void* user_data, grpc_error* error) {
 }
 
 // Start transport stream op.
-static void start_transport_stream_op_batch(
+static void message_size_start_transport_stream_op_batch(
     grpc_call_element* elem, grpc_transport_stream_op_batch* op) {
   call_data* calld = static_cast<call_data*>(elem->call_data);
   // Check max send message size.
@@ -277,17 +277,17 @@ static void start_transport_stream_op_batch(
 }
 
 // Constructor for call_data.
-static grpc_error* init_call_elem(grpc_call_element* elem,
-                                  const grpc_call_element_args* args) {
+static grpc_error* message_size_init_call_elem(
+    grpc_call_element* elem, const grpc_call_element_args* args) {
   channel_data* chand = static_cast<channel_data*>(elem->channel_data);
   new (elem->call_data) call_data(elem, *chand, *args);
   return GRPC_ERROR_NONE;
 }
 
 // Destructor for call_data.
-static void destroy_call_elem(grpc_call_element* elem,
-                              const grpc_call_final_info* final_info,
-                              grpc_closure* ignored) {
+static void message_size_destroy_call_elem(
+    grpc_call_element* elem, const grpc_call_final_info* final_info,
+    grpc_closure* ignored) {
   call_data* calld = (call_data*)elem->call_data;
   calld->~call_data();
 }
@@ -325,8 +325,8 @@ grpc_core::MessageSizeParsedConfig::message_size_limits get_message_size_limits(
 }
 
 // Constructor for channel_data.
-static grpc_error* init_channel_elem(grpc_channel_element* elem,
-                                     grpc_channel_element_args* args) {
+static grpc_error* message_size_init_channel_elem(
+    grpc_channel_element* elem, grpc_channel_element_args* args) {
   GPR_ASSERT(!args->is_last);
   channel_data* chand = static_cast<channel_data*>(elem->channel_data);
   new (chand) channel_data();
@@ -355,21 +355,21 @@ static grpc_error* init_channel_elem(grpc_channel_element* elem,
 }
 
 // Destructor for channel_data.
-static void destroy_channel_elem(grpc_channel_element* elem) {
+static void message_size_destroy_channel_elem(grpc_channel_element* elem) {
   channel_data* chand = static_cast<channel_data*>(elem->channel_data);
   chand->~channel_data();
 }
 
 const grpc_channel_filter grpc_message_size_filter = {
-    start_transport_stream_op_batch,
+    message_size_start_transport_stream_op_batch,
     grpc_channel_next_op,
     sizeof(call_data),
-    init_call_elem,
+    message_size_init_call_elem,
     grpc_call_stack_ignore_set_pollset_or_pollset_set,
-    destroy_call_elem,
+    message_size_destroy_call_elem,
     sizeof(channel_data),
-    init_channel_elem,
-    destroy_channel_elem,
+    message_size_init_channel_elem,
+    message_size_destroy_channel_elem,
     grpc_channel_next_get_info,
     "message_size"};
 

@@ -463,6 +463,17 @@ std::unique_ptr<ScenarioResult> RunScenario(
       gpr_log(GPR_ERROR, "Failed WritesDone for client %zu", i);
     }
   }
+  gpr_log(GPR_INFO, "Finishing servers");
+  for (size_t i = 0; i < num_servers; i++) {
+    auto server = &servers[i];
+    if (!server->stream->Write(server_mark)) {
+      gpr_log(GPR_ERROR, "Couldn't write mark to server %zu", i);
+    }
+    if (!server->stream->WritesDone()) {
+      gpr_log(GPR_ERROR, "Failed WritesDone for server %zu", i);
+    }
+  }
+
   for (size_t i = 0; i < num_clients; i++) {
     auto client = &clients[i];
     // Read the client final status
@@ -484,8 +495,13 @@ std::unique_ptr<ScenarioResult> RunScenario(
   for (size_t i = 0; i < num_clients; i++) {
     auto client = &clients[i];
     Status s = client->stream->Finish();
-    result->add_client_success(s.ok());
-    if (!s.ok()) {
+    // Since we shutdown servers and clients at the same time, clients can
+    // observe cancellation.  Thus, we consider both OK and CANCELLED as good
+    // status.
+    const bool success = s.ok() || static_cast<StatusCode>(s.error_code()) ==
+                                       StatusCode::CANCELLED;
+    result->add_client_success(success);
+    if (!success) {
       gpr_log(GPR_ERROR, "Client %zu had an error %s", i,
               s.error_message().c_str());
     }
@@ -499,16 +515,6 @@ std::unique_ptr<ScenarioResult> RunScenario(
     rrc->set_count(it->second);
   }
 
-  gpr_log(GPR_INFO, "Finishing servers");
-  for (size_t i = 0; i < num_servers; i++) {
-    auto server = &servers[i];
-    if (!server->stream->Write(server_mark)) {
-      gpr_log(GPR_ERROR, "Couldn't write mark to server %zu", i);
-    }
-    if (!server->stream->WritesDone()) {
-      gpr_log(GPR_ERROR, "Failed WritesDone for server %zu", i);
-    }
-  }
   for (size_t i = 0; i < num_servers; i++) {
     auto server = &servers[i];
     // Read the server final status
@@ -525,8 +531,13 @@ std::unique_ptr<ScenarioResult> RunScenario(
   for (size_t i = 0; i < num_servers; i++) {
     auto server = &servers[i];
     Status s = server->stream->Finish();
-    result->add_server_success(s.ok());
-    if (!s.ok()) {
+    // Since we shutdown servers and clients at the same time, servers can
+    // observe cancellation.  Thus, we consider both OK and CANCELLED as good
+    // status.
+    const bool success = s.ok() || static_cast<StatusCode>(s.error_code()) ==
+                                       StatusCode::CANCELLED;
+    result->add_server_success(success);
+    if (!success) {
       gpr_log(GPR_ERROR, "Server %zu had an error %s", i,
               s.error_message().c_str());
     }

@@ -107,6 +107,35 @@ class TestLite(setuptools.Command):
         self.distribution.fetch_build_eggs(self.distribution.tests_require)
 
 
+class TestAio(setuptools.Command):
+    """Command to run aio tests without fetching or building anything."""
+
+    description = 'run aio tests without fetching or building anything.'
+    user_options = []
+
+    def initialize_options(self):
+        pass
+
+    def finalize_options(self):
+        pass
+
+    def run(self):
+        self._add_eggs_to_path()
+
+        import tests
+        loader = tests.Loader()
+        loader.loadTestsFromNames(['tests_aio'])
+        runner = tests.Runner()
+        result = runner.run(loader.suite)
+        if not result.wasSuccessful():
+            sys.exit('Test failure')
+
+    def _add_eggs_to_path(self):
+        """Fetch install and test requirements"""
+        self.distribution.fetch_build_eggs(self.distribution.install_requires)
+        self.distribution.fetch_build_eggs(self.distribution.tests_require)
+
+
 class TestGevent(setuptools.Command):
     """Command to run tests w/gevent."""
 
