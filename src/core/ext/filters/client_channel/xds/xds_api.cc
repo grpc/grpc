@@ -67,8 +67,7 @@ void XdsPriorityListUpdate::Add(
     XdsPriorityListUpdate::LocalityMap::Locality locality) {
   // Pad the missing priorities in case the localities are not ordered by
   // priority.
-  // TODO(juanlishen): Implement InlinedVector::resize() and use that instead.
-  while (!Contains(locality.priority)) priorities_.emplace_back();
+  if (!Contains(locality.priority)) priorities_.resize(locality.priority + 1);
   LocalityMap& locality_map = priorities_[locality.priority];
   locality_map.localities.emplace(locality.name, std::move(locality));
 }
