@@ -40,7 +40,9 @@ grpc_alts_credentials::grpc_alts_credentials(
       options_(grpc_alts_credentials_options_copy(options)),
       handshaker_service_url_(handshaker_service_url == nullptr
                                   ? gpr_strdup(GRPC_ALTS_HANDSHAKER_SERVICE_URL)
-                                  : gpr_strdup(handshaker_service_url)) {}
+                                  : gpr_strdup(handshaker_service_url)) {
+  grpc_alts_set_rpc_protocol_versions(&options_->rpc_versions);
+}
 
 grpc_alts_credentials::~grpc_alts_credentials() {
   grpc_alts_credentials_options_destroy(options_);
@@ -63,7 +65,9 @@ grpc_alts_server_credentials::grpc_alts_server_credentials(
       options_(grpc_alts_credentials_options_copy(options)),
       handshaker_service_url_(handshaker_service_url == nullptr
                                   ? gpr_strdup(GRPC_ALTS_HANDSHAKER_SERVICE_URL)
-                                  : gpr_strdup(handshaker_service_url)) {}
+                                  : gpr_strdup(handshaker_service_url)) {
+  grpc_alts_set_rpc_protocol_versions(&options_->rpc_versions);
+}
 
 grpc_core::RefCountedPtr<grpc_server_security_connector>
 grpc_alts_server_credentials::create_security_connector() {
