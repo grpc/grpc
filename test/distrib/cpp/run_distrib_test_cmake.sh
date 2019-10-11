@@ -52,10 +52,23 @@ make -j4 install
 cd ../../../..
 rm -rf third_party/protobuf  # wipe out to prevent influencing the grpc build
 
+# Install upb
+cd third_party/upb
+mkdir -p cmake/build
+cd cmake/build
+cmake -DCMAKE_BUILD_TYPE=Release ../..
+make -j4 install
+cd ../../../..
+rm -rf third_party/ubp  # wipe out to prevent influencing the grpc build
+
+# Just before installing gRPC, wipe out contents of all the submodules to simulate
+# a standalone build from an archive
+git submodule foreach 'cd $toplevel; rm -rf $name'
+
 # Install gRPC
 mkdir -p cmake/build
 cd cmake/build
-cmake -DgRPC_INSTALL=ON -DgRPC_BUILD_TESTS=OFF -DgRPC_PROTOBUF_PROVIDER=package -DgRPC_ZLIB_PROVIDER=package -DgRPC_CARES_PROVIDER=package -DgRPC_SSL_PROVIDER=package -DCMAKE_BUILD_TYPE=Release ../..
+cmake -DgRPC_INSTALL=ON -DgRPC_BUILD_TESTS=OFF -DgRPC_PROTOBUF_PROVIDER=package -DgRPC_ZLIB_PROVIDER=package -DgRPC_CARES_PROVIDER=package -DgRPC_SSL_PROVIDER=package -DgRPC_UPB_PROVIDER=package -DCMAKE_BUILD_TYPE=Release ../..
 make -j4 install
 cd ../..
 
