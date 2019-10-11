@@ -32,6 +32,9 @@ namespace internal {
 alts_handshaker_client* alts_tsi_handshaker_get_client_for_testing(
     alts_tsi_handshaker* handshaker);
 
+void alts_tsi_handshaker_set_client_for_testing(alts_tsi_handshaker* handshaker,
+                                                alts_handshaker_client* client);
+
 bool alts_tsi_handshaker_get_has_sent_start_message_for_testing(
     alts_tsi_handshaker* handshaker);
 

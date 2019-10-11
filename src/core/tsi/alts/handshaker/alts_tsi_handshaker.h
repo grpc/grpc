@@ -89,6 +89,27 @@ void alts_tsi_handshaker_result_set_unused_bytes(tsi_handshaker_result* result,
  * This method returns a boolean value indicating if an ALTS TSI handshaker
  * has been shutdown or not.
  */
-bool alts_tsi_handshaker_has_shutdown(alts_tsi_handshaker* handshaker);
+bool alts_tsi_handshaker_has_shutdown_locked(alts_tsi_handshaker* handshaker);
+
+/* Invoked by the dedicated handshaker completion-queue-polling thread
+ * to handle a response.
+ *
+ * - client: an ALTS handshaker client instance.
+ * - is_ok: a boolean value indicating if the handshaker response is ok to read.
+ */
+void alts_tsi_handshaker_handle_response_dedicated(
+    alts_tsi_handshaker* handshaker, bool success);
+
+struct alts_tsi_handshaker_re_enter_lock_then_continue_make_grpc_call_args {
+  alts_tsi_handshaker* handshaker;
+  bool is_start;
+};
+
+/* This is used by alts_handshaker_client objects to create a channel without
+ * holding any locks (in order to avoid potential cycles with g_init_mu), and
+ * then get back into the lock of the alts_tsi_handshaker to continue perfoming
+ * a call. */
+void alts_tsi_handshaker_re_enter_lock_then_continue_make_grpc_call(
+    void* arg, grpc_error* unused_error);
 
 #endif /* GRPC_CORE_TSI_ALTS_HANDSHAKER_ALTS_TSI_HANDSHAKER_H */
