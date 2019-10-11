@@ -1296,6 +1296,7 @@ transport_connectivity_state_test: $(BINDIR)/$(CONFIG)/transport_connectivity_st
 transport_pid_controller_test: $(BINDIR)/$(CONFIG)/transport_pid_controller_test
 transport_security_common_api_test: $(BINDIR)/$(CONFIG)/transport_security_common_api_test
 writes_per_rpc_test: $(BINDIR)/$(CONFIG)/writes_per_rpc_test
+xds_bootstrap_test: $(BINDIR)/$(CONFIG)/xds_bootstrap_test
 xds_end2end_test: $(BINDIR)/$(CONFIG)/xds_end2end_test
 public_headers_must_be_c89: $(BINDIR)/$(CONFIG)/public_headers_must_be_c89
 boringssl_ssl_test: $(BINDIR)/$(CONFIG)/boringssl_ssl_test
@@ -1767,6 +1768,7 @@ buildtests_cxx: privatelibs_cxx \
   $(BINDIR)/$(CONFIG)/transport_pid_controller_test \
   $(BINDIR)/$(CONFIG)/transport_security_common_api_test \
   $(BINDIR)/$(CONFIG)/writes_per_rpc_test \
+  $(BINDIR)/$(CONFIG)/xds_bootstrap_test \
   $(BINDIR)/$(CONFIG)/xds_end2end_test \
   $(BINDIR)/$(CONFIG)/boringssl_ssl_test \
   $(BINDIR)/$(CONFIG)/boringssl_crypto_test \
@@ -1937,6 +1939,7 @@ buildtests_cxx: privatelibs_cxx \
   $(BINDIR)/$(CONFIG)/transport_pid_controller_test \
   $(BINDIR)/$(CONFIG)/transport_security_common_api_test \
   $(BINDIR)/$(CONFIG)/writes_per_rpc_test \
+  $(BINDIR)/$(CONFIG)/xds_bootstrap_test \
   $(BINDIR)/$(CONFIG)/xds_end2end_test \
   $(BINDIR)/$(CONFIG)/bad_streaming_id_bad_client_test \
   $(BINDIR)/$(CONFIG)/badreq_bad_client_test \
@@ -2483,6 +2486,8 @@ test_cxx: buildtests_cxx
 	$(Q) $(BINDIR)/$(CONFIG)/transport_security_common_api_test || ( echo test transport_security_common_api_test failed ; exit 1 )
 	$(E) "[RUN]     Testing writes_per_rpc_test"
 	$(Q) $(BINDIR)/$(CONFIG)/writes_per_rpc_test || ( echo test writes_per_rpc_test failed ; exit 1 )
+	$(E) "[RUN]     Testing xds_bootstrap_test"
+	$(Q) $(BINDIR)/$(CONFIG)/xds_bootstrap_test || ( echo test xds_bootstrap_test failed ; exit 1 )
 	$(E) "[RUN]     Testing xds_end2end_test"
 	$(Q) $(BINDIR)/$(CONFIG)/xds_end2end_test || ( echo test xds_end2end_test failed ; exit 1 )
 	$(E) "[RUN]     Testing bad_streaming_id_bad_client_test"
@@ -3853,6 +3858,7 @@ LIBGRPC_SRC = \
     src/core/ext/filters/client_channel/resolver/fake/fake_resolver.cc \
     src/core/ext/filters/client_channel/lb_policy/xds/xds.cc \
     src/core/ext/filters/client_channel/xds/xds_api.cc \
+    src/core/ext/filters/client_channel/xds/xds_bootstrap.cc \
     src/core/ext/filters/client_channel/xds/xds_channel_secure.cc \
     src/core/ext/filters/client_channel/xds/xds_client.cc \
     src/core/ext/filters/client_channel/xds/xds_client_stats.cc \
@@ -5322,6 +5328,7 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/ext/upb-generated/src/proto/grpc/lb/v1/load_balancer.upb.c \
     src/core/ext/filters/client_channel/lb_policy/xds/xds.cc \
     src/core/ext/filters/client_channel/xds/xds_api.cc \
+    src/core/ext/filters/client_channel/xds/xds_bootstrap.cc \
     src/core/ext/filters/client_channel/xds/xds_channel.cc \
     src/core/ext/filters/client_channel/xds/xds_client.cc \
     src/core/ext/filters/client_channel/xds/xds_client_stats.cc \
@@ -20019,6 +20026,49 @@ deps_writes_per_rpc_test: $(WRITES_PER_RPC_TEST_OBJS:.o=.dep)
 ifneq ($(NO_SECURE),true)
 ifneq ($(NO_DEPS),true)
 -include $(WRITES_PER_RPC_TEST_OBJS:.o=.dep)
+endif
+endif
+
+
+XDS_BOOTSTRAP_TEST_SRC = \
+    test/core/client_channel/xds_bootstrap_test.cc \
+
+XDS_BOOTSTRAP_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(XDS_BOOTSTRAP_TEST_SRC))))
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL.
+
+$(BINDIR)/$(CONFIG)/xds_bootstrap_test: openssl_dep_error
+
+else
+
+
+
+
+ifeq ($(NO_PROTOBUF),true)
+
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
+
+$(BINDIR)/$(CONFIG)/xds_bootstrap_test: protobuf_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/xds_bootstrap_test: $(PROTOBUF_DEP) $(XDS_BOOTSTRAP_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LDXX) $(LDFLAGS) $(XDS_BOOTSTRAP_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(LDLIBS_SECURE) $(GTEST_LIB) -o $(BINDIR)/$(CONFIG)/xds_bootstrap_test
+
+endif
+
+endif
+
+$(OBJDIR)/$(CONFIG)/test/core/client_channel/xds_bootstrap_test.o:  $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a
+
+deps_xds_bootstrap_test: $(XDS_BOOTSTRAP_TEST_OBJS:.o=.dep)
+
+ifneq ($(NO_SECURE),true)
+ifneq ($(NO_DEPS),true)
+-include $(XDS_BOOTSTRAP_TEST_OBJS:.o=.dep)
 endif
 endif
 
