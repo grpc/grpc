@@ -26,6 +26,9 @@
 #include "src/core/lib/channel/channelz.h"
 #include "src/core/lib/surface/channel_stack_type.h"
 
+#define GRPC_ARG_CHANNEL_SKIP_INIT_AND_SHUTDOWN \
+  "grpc.channel_skip_init_and_shutdown"
+
 grpc_channel* grpc_channel_create(const char* target,
                                   const grpc_channel_args* args,
                                   grpc_channel_stack_type channel_stack_type,
@@ -138,5 +141,10 @@ inline void grpc_channel_internal_unref(grpc_channel* channel) {
 /** Return the channel's compression options. */
 grpc_compression_options grpc_channel_compression_options(
     const grpc_channel* channel);
+
+/* Utility meant to be used for creating insecure channels from
+ * within C-core.*/
+grpc_channel* grpc_insecure_channel_create_internal(
+    const char* target, const grpc_channel_args* args);
 
 #endif /* GRPC_CORE_LIB_SURFACE_CHANNEL_H */

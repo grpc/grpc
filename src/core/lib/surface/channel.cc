@@ -62,6 +62,8 @@ typedef struct registered_call {
 
 static void destroy_channel(void* arg, grpc_error* error);
 
+static void destroy_channel_and_do_shutdown(void* arg, grpc_error* error);
+
 grpc_channel* grpc_channel_create_with_builder(
     grpc_channel_stack_builder* builder,
     grpc_channel_stack_type channel_stack_type) {
@@ -76,8 +78,14 @@ grpc_channel* grpc_channel_create_with_builder(
   } else {
     GRPC_STATS_INC_CLIENT_CHANNELS_CREATED();
   }
+  void (*destroy_channel_func)(void* arg, grpc_error*) =
+      destroy_channel_and_do_shutdown;
+  if (grpc_channel_args_find_bool(args, GRPC_ARG_CHANNEL_SKIP_INIT_AND_SHUTDOWN,
+                                  false)) {
+    destroy_channel_func = destroy_channel;
+  }
   grpc_error* error = grpc_channel_stack_builder_finish(
-      builder, sizeof(grpc_channel), 1, destroy_channel, nullptr,
+      builder, sizeof(grpc_channel), 1, destroy_channel_func, nullptr,
       reinterpret_cast<void**>(&channel));
   if (error != GRPC_ERROR_NONE) {
     gpr_log(GPR_ERROR, "channel stack builder failed: %s",
@@ -251,7 +259,10 @@ grpc_channel* grpc_channel_create(const char* target,
   // accommodate that, we call grpc_init() here and then call
   // grpc_shutdown() when the channel is actually destroyed, thus
   // ensuring that shutdown is deferred until that point.
-  grpc_init();
+  if (!grpc_channel_args_find_bool(
+          input_args, GRPC_ARG_CHANNEL_SKIP_INIT_AND_SHUTDOWN, false)) {
+    grpc_init();
+  }
   grpc_channel_stack_builder* builder = grpc_channel_stack_builder_create();
   const grpc_core::UniquePtr<char> default_authority =
       get_default_authority(input_args);
@@ -274,7 +285,10 @@ grpc_channel* grpc_channel_create(const char* target,
     if (resource_user != nullptr) {
       grpc_resource_user_free(resource_user, GRPC_RESOURCE_QUOTA_CHANNEL_SIZE);
     }
-    grpc_shutdown();  // Since we won't call destroy_channel().
+    if (!grpc_channel_args_find_bool(
+            input_args, GRPC_ARG_CHANNEL_SKIP_INIT_AND_SHUTDOWN, false)) {
+      grpc_shutdown();  // Since we won't call destroy_channel().
+    }
     return nullptr;
   }
   // We only need to do this for clients here. For servers, this will be
@@ -284,7 +298,9 @@ grpc_channel* grpc_channel_create(const char* target,
   }
   grpc_channel* channel =
       grpc_channel_create_with_builder(builder, channel_stack_type);
-  if (channel == nullptr) {
+  if (channel == nullptr &&
+      !grpc_channel_args_find_bool(
+          input_args, GRPC_ARG_CHANNEL_SKIP_INIT_AND_SHUTDOWN, false)) {
     grpc_shutdown();  // Since we won't call destroy_channel().
   }
   return channel;
@@ -496,6 +512,10 @@ static void destroy_channel(void* arg, grpc_error* error) {
   gpr_mu_destroy(&channel->registered_call_mu);
   gpr_free(channel->target);
   gpr_free(channel);
+}
+
+static void destroy_channel_and_do_shutdown(void* arg, grpc_error* error) {
+  destroy_channel(arg, error);
   // See comment in grpc_channel_create() for why we do this.
   grpc_shutdown();
 }

@@ -109,3 +109,27 @@ grpc_channel* grpc_insecure_channel_create(const char* target,
                                   target, GRPC_STATUS_INTERNAL,
                                   "Failed to create client channel");
 }
+
+/* The same as grpc_insecure_channel_create expect for:
+ *   - doesn't create a new ExecCtx
+ *   - doesn't call grpc_init or grpc_shutdown internally */
+grpc_channel* grpc_insecure_channel_create_internal(
+    const char* target, const grpc_channel_args* args) {
+  // Add channel arg containing the client channel factory.
+  gpr_once_init(&g_factory_once, FactoryInit);
+  const grpc_arg args_to_add[] = {
+      grpc_core::ClientChannelFactory::CreateChannelArg(g_factory),
+      grpc_channel_arg_integer_create(
+          const_cast<char*>(GRPC_ARG_CHANNEL_SKIP_INIT_AND_SHUTDOWN), 1),
+  };
+  grpc_channel_args* new_args = grpc_channel_args_copy_and_add(
+      args, args_to_add, GPR_ARRAY_SIZE(args_to_add));
+  // Create channel.
+  grpc_channel* channel = grpc_core::CreateChannel(target, new_args);
+  // Clean up.
+  grpc_channel_args_destroy(new_args);
+  return channel != nullptr ? channel
+                            : grpc_lame_client_channel_create(
+                                  target, GRPC_STATUS_INTERNAL,
+                                  "Failed to create client channel");
+}
