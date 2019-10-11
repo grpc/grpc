@@ -118,7 +118,7 @@ static double ServerIdleCpuTime(const ServerStats& s) {
 }
 static int Cores(int n) { return n; }
 
-static bool IsSuccess(Status s) {
+static bool IsSuccess(const Status& s) {
   if (s.ok()) return true;
   // Since we shutdown servers and clients at the same time, they both can
   // observe cancellation.  Thus, we consider CANCELLED as good status.
