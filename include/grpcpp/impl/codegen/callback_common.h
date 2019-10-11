@@ -85,6 +85,7 @@ class CallbackWithStatusTag
       : call_(call), func_(std::move(f)), ops_(ops) {
     g_core_codegen_interface->grpc_call_ref(call);
     functor_run = &CallbackWithStatusTag::StaticRun;
+    inlineable = false;
   }
   ~CallbackWithStatusTag() {}
   Status* status_ptr() { return &status_; }
@@ -147,8 +148,8 @@ class CallbackWithSuccessTag
   CallbackWithSuccessTag() : call_(nullptr) {}
 
   CallbackWithSuccessTag(grpc_call* call, std::function<void(bool)> f,
-                         CompletionQueueTag* ops) {
-    Set(call, f, ops);
+                         CompletionQueueTag* ops, bool can_inline) {
+    Set(call, f, ops, can_inline);
   }
 
   CallbackWithSuccessTag(const CallbackWithSuccessTag&) = delete;
@@ -160,13 +161,14 @@ class CallbackWithSuccessTag
   // It should never be called on a tag that was constructed with arguments
   // or on a tag that has been Set before unless the tag has been cleared.
   void Set(grpc_call* call, std::function<void(bool)> f,
-           CompletionQueueTag* ops) {
+           CompletionQueueTag* ops, bool can_inline) {
     GPR_CODEGEN_ASSERT(call_ == nullptr);
     g_core_codegen_interface->grpc_call_ref(call);
     call_ = call;
     func_ = std::move(f);
     ops_ = ops;
     functor_run = &CallbackWithSuccessTag::StaticRun;
+    inlineable = can_inline;
   }
 
   void Clear() {

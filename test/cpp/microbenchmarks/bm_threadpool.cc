@@ -67,6 +67,7 @@ class AddAnotherFunctor : public grpc_experimental_completion_queue_functor {
                     int num_add)
       : pool_(pool), counter_(counter), num_add_(num_add) {
     functor_run = &AddAnotherFunctor::Run;
+    inlineable = false;
     internal_next = this;
     internal_success = 0;
   }
@@ -130,6 +131,7 @@ class SuicideFunctorForAdd : public grpc_experimental_completion_queue_functor {
  public:
   SuicideFunctorForAdd(BlockingCounter* counter) : counter_(counter) {
     functor_run = &SuicideFunctorForAdd::Run;
+    inlineable = false;
     internal_next = this;
     internal_success = 0;
   }
@@ -182,6 +184,7 @@ class AddSelfFunctor : public grpc_experimental_completion_queue_functor {
                  int num_add)
       : pool_(pool), counter_(counter), num_add_(num_add) {
     functor_run = &AddSelfFunctor::Run;
+    inlineable = false;
     internal_next = this;
     internal_success = 0;
   }
@@ -261,6 +264,7 @@ class ShortWorkFunctorForAdd
 
   ShortWorkFunctorForAdd() {
     functor_run = &ShortWorkFunctorForAdd::Run;
+    inlineable = false;
     internal_next = this;
     internal_success = 0;
     val_ = 0;

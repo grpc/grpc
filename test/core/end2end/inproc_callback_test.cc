@@ -41,6 +41,7 @@ class CQDeletingCallback : public grpc_experimental_completion_queue_functor {
  public:
   explicit CQDeletingCallback(F f) : func_(f) {
     functor_run = &CQDeletingCallback::Run;
+    inlineable = false;
   }
   ~CQDeletingCallback() {}
   static void Run(grpc_experimental_completion_queue_functor* cb, int ok) {
@@ -62,6 +63,7 @@ class ShutdownCallback : public grpc_experimental_completion_queue_functor {
  public:
   ShutdownCallback() : done_(false) {
     functor_run = &ShutdownCallback::StaticRun;
+    inlineable = false;
     gpr_mu_init(&mu_);
     gpr_cv_init(&cv_);
   }

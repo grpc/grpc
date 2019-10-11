@@ -56,6 +56,8 @@ void CallbackStreamingTestService::Echo(
   } else {
     response->set_message("");
   }
+  *reactor = context->DefaultReactor();
+  (*reactor)->Finish(::grpc::Status::OK);
 }
 
 void CallbackStreamingTestService::BidiStream(

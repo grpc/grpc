@@ -254,7 +254,10 @@ bool ServerInterface::GenericAsyncRequest::FinalizeResult(void** tag,
 namespace {
 class ShutdownCallback : public grpc_experimental_completion_queue_functor {
  public:
-  ShutdownCallback() { functor_run = &ShutdownCallback::Run; }
+  ShutdownCallback() {
+    functor_run = &ShutdownCallback::Run;
+    inlineable = true;
+  }
   // TakeCQ takes ownership of the cq into the shutdown callback
   // so that the shutdown callback will be responsible for destroying it
   void TakeCQ(CompletionQueue* cq) { cq_ = cq; }
@@ -606,6 +609,9 @@ class Server::CallbackRequest final : public Server::CallbackRequestBase {
     CallbackCallTag(Server::CallbackRequest<ServerContextType>* req)
         : req_(req) {
       functor_run = &CallbackCallTag::StaticRun;
+      inlineable = true;
+      // the work here is actually non-trivial, but there is no chance of having
+      // user locks conflict with each other so it's ok to run inlined
     }
 
     // force_run can not be performed on a tag if operations using this tag

@@ -18,6 +18,8 @@
 
 #ifndef GRPCPP_IMPL_CODEGEN_SERVER_CONTEXT_IMPL_H
 #define GRPCPP_IMPL_CODEGEN_SERVER_CONTEXT_IMPL_H
+
+#include <atomic>
 #include <map>
 #include <memory>
 #include <vector>
@@ -33,6 +35,7 @@
 #include <grpcpp/impl/codegen/message_allocator.h>
 #include <grpcpp/impl/codegen/metadata_map.h>
 #include <grpcpp/impl/codegen/security/auth_context.h>
+#include <grpcpp/impl/codegen/server_callback.h>
 #include <grpcpp/impl/codegen/server_interceptor.h>
 #include <grpcpp/impl/codegen/status.h>
 #include <grpcpp/impl/codegen/string_ref.h>
@@ -284,16 +287,12 @@ class ServerContext {
     return message_allocator_state_;
   }
 
-  /// Set the status for callback RPCs that are finished in the method handler
-  /// itself. It should only be called from the method handler (for method
-  /// handlers that don't require additional delaying work), and the method
-  /// handler should return immediately thereafter without filling in a reactor
-  /// value. Defaults to OK if the method handler returns without filling a
-  /// reactor value and never called this function.
+  /// Get the default unary reactor for use in minimal reaction cases.
   /// WARNING: This is experimental API and could be changed or removed.
-  void ReactWithStatus(::grpc::Status status) {
-    fast_status_set_ = true;
-    fast_status_ = std::move(status);
+  experimental::ServerUnaryReactor* DefaultReactor() {
+    auto reactor = &default_reactor_;
+    default_reactor_used_.store(true, std::memory_order_relaxed);
+    return reactor;
   }
 
  private:
@@ -362,9 +361,6 @@ class ServerContext {
 
   uint32_t initial_metadata_flags() const { return 0; }
 
-  void SetCancelCallback(std::function<void()> callback);
-  void ClearCancelCallback();
-
   ::grpc::experimental::ServerRpcInfo* set_server_rpc_info(
       const char* method, ::grpc::internal::RpcMethod::RpcType type,
       const std::vector<std::unique_ptr<
@@ -381,18 +377,10 @@ class ServerContext {
     message_allocator_state_ = allocator_state;
   }
 
-  template <class Reactor>
-  void FinishWithFastStatus(Reactor* reactor) {
-    reactor->Finish(fast_status_set_ ? std::move(fast_status_)
-                                     : ::grpc::Status::OK);
-  }
-
   CompletionOp* completion_op_;
   bool has_notify_when_done_tag_;
   void* async_notify_when_done_tag_;
   ::grpc::internal::CallbackWithSuccessTag completion_tag_;
-  bool fast_status_set_ = false;
-  ::grpc::Status fast_status_;
 
   gpr_timespec deadline_;
   grpc_call* call_;
@@ -414,6 +402,15 @@ class ServerContext {
 
   ::grpc::experimental::ServerRpcInfo* rpc_info_;
   ::grpc::experimental::RpcAllocatorState* message_allocator_state_ = nullptr;
+
+  class Reactor : public experimental::ServerUnaryReactor {
+   public:
+    void OnDone() override {}
+    bool InternalInlineable() override { return true; }
+  };
+
+  Reactor default_reactor_;
+  std::atomic_bool default_reactor_used_{false};
 };
 }  // namespace grpc_impl
 #endif  // GRPCPP_IMPL_CODEGEN_SERVER_CONTEXT_IMPL_H

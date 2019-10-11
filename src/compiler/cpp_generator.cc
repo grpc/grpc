@@ -148,6 +148,7 @@ grpc::string GetHeaderIncludes(grpc_generator::File* file,
         "grpcpp/impl/codegen/proto_utils.h",
         "grpcpp/impl/codegen/rpc_method.h",
         "grpcpp/impl/codegen/server_callback.h",
+        "grpcpp/impl/codegen/server_callback_handlers.h",
         "grpcpp/impl/codegen/server_context.h",
         "grpcpp/impl/codegen/service_type.h",
         "grpcpp/impl/codegen/status.h",
@@ -932,11 +933,10 @@ void PrintHeaderServerCallbackMethodsHelper(
     printer->Print(
         *vars,
         "virtual void "
-        "$Method$(::grpc::ServerContext* context, const $RealRequest$* "
+        "$Method$(::grpc::ServerContext* /*context*/, const $RealRequest$* "
         "/*request*/, $RealResponse$* /*response*/, "
-        "::grpc::experimental::ServerUnaryReactor** /*reactor*/) { "
-        "context->ReactWithStatus(::grpc::Status(::grpc::StatusCode::"
-        "UNIMPLEMENTED, \"\")); }\n");
+        "::grpc::experimental::ServerUnaryReactor** reactor) { "
+        "*reactor = nullptr; }\n");
   } else if (ClientOnlyStreaming(method)) {
     printer->Print(
         *vars,
@@ -948,14 +948,13 @@ void PrintHeaderServerCallbackMethodsHelper(
         "  abort();\n"
         "  return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, \"\");\n"
         "}\n");
-    printer->Print(
-        *vars,
-        "virtual void "
-        "$Method$(::grpc::ServerContext* context, "
-        "$RealResponse$* response, ::grpc::experimental::ServerReadReactor< "
-        "$RealRequest$>** reactor) { "
-        "context->ReactWithStatus(::grpc::Status(::grpc::StatusCode::"
-        "UNIMPLEMENTED, \"\")); }\n");
+    printer->Print(*vars,
+                   "virtual void "
+                   "$Method$(::grpc::ServerContext* /*context*/, "
+                   "$RealResponse$* /*response*/, "
+                   "::grpc::experimental::ServerReadReactor< "
+                   "$RealRequest$>** reactor) { "
+                   "*reactor = nullptr; }\n");
   } else if (ServerOnlyStreaming(method)) {
     printer->Print(
         *vars,
@@ -969,12 +968,11 @@ void PrintHeaderServerCallbackMethodsHelper(
         "}\n");
     printer->Print(*vars,
                    "virtual void "
-                   "$Method$(::grpc::ServerContext* context, "
-                   "const $RealRequest$* request, "
+                   "$Method$(::grpc::ServerContext* /*context*/, "
+                   "const $RealRequest$* /*request*/, "
                    "::grpc::experimental::ServerWriteReactor< "
                    "$RealResponse$>** reactor) { "
-                   "context->ReactWithStatus(::grpc::Status(::grpc::StatusCode:"
-                   ":UNIMPLEMENTED, \"\")); }\n");
+                   "*reactor = nullptr; }\n");
   } else if (method->BidiStreaming()) {
     printer->Print(
         *vars,
@@ -988,11 +986,10 @@ void PrintHeaderServerCallbackMethodsHelper(
         "}\n");
     printer->Print(*vars,
                    "virtual void "
-                   "$Method$(::grpc::ServerContext* context, "
+                   "$Method$(::grpc::ServerContext* /*context*/, "
                    "::grpc::experimental::ServerBidiReactor< "
                    "$RealRequest$, $RealResponse$>** reactor) { "
-                   "context->ReactWithStatus(::grpc::Status(::grpc::StatusCode:"
-                   ":UNIMPLEMENTED, \"\")); }\n");
+                   "*reactor = nullptr; }\n");
   }
 }
 
@@ -1682,6 +1679,8 @@ grpc::string GetSourceIncludes(grpc_generator::File* file,
         "grpcpp/impl/codegen/method_handler.h",
         "grpcpp/impl/codegen/rpc_service_method.h",
         "grpcpp/impl/codegen/server_callback.h",
+        "grpcpp/impl/codegen/server_callback_handlers.h",
+        "grpcpp/impl/codegen/server_context.h",
         "grpcpp/impl/codegen/service_type.h",
         "grpcpp/impl/codegen/sync_stream.h"};
     std::vector<grpc::string> headers(headers_strs, array_end(headers_strs));

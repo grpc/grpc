@@ -36,7 +36,8 @@ class BenchmarkCallbackServiceImpl final
   void UnaryCall(ServerContext* context, const SimpleRequest* request,
                  SimpleResponse* response,
                  ::grpc::experimental::ServerUnaryReactor** reactor) override {
-    context->ReactWithStatus(SetResponse(request, response));
+    *reactor = context->DefaultReactor();
+    (*reactor)->Finish(SetResponse(request, response));
   }
 
   void StreamingCall(

@@ -214,7 +214,10 @@ bool Channel::WaitForStateChangeImpl(grpc_connectivity_state last_observed,
 namespace {
 class ShutdownCallback : public grpc_experimental_completion_queue_functor {
  public:
-  ShutdownCallback() { functor_run = &ShutdownCallback::Run; }
+  ShutdownCallback() {
+    functor_run = &ShutdownCallback::Run;
+    inlineable = true;
+  }
   // TakeCQ takes ownership of the cq into the shutdown callback
   // so that the shutdown callback will be responsible for destroying it
   void TakeCQ(::grpc::CompletionQueue* cq) { cq_ = cq; }

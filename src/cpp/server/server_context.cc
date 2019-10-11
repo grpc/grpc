@@ -265,6 +265,11 @@ void ServerContext::Clear() {
     call_ = nullptr;
     grpc_call_unref(call);
   }
+  if (default_reactor_used_.load(std::memory_order_relaxed)) {
+    default_reactor_.~Reactor();
+    new (&default_reactor_) Reactor;
+    default_reactor_used_.store(false, std::memory_order_relaxed);
+  }
 }
 
 void ServerContext::BeginCompletionOp(::grpc::internal::Call* call,
@@ -279,7 +284,8 @@ void ServerContext::BeginCompletionOp(::grpc::internal::Call* call,
       new (grpc_call_arena_alloc(call->call(), sizeof(CompletionOp)))
           CompletionOp(call, reactor);
   if (callback != nullptr) {
-    completion_tag_.Set(call->call(), std::move(callback), completion_op_);
+    completion_tag_.Set(call->call(), std::move(callback), completion_op_,
+                        reactor->InternalInlineable());
     completion_op_->set_core_cq_tag(&completion_tag_);
     completion_op_->set_tag(completion_op_);
   } else if (has_notify_when_done_tag_) {

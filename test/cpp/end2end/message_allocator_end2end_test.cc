@@ -77,7 +77,8 @@ class CallbackTestServiceImpl
     if (allocator_mutator_) {
       allocator_mutator_(context->GetRpcAllocatorState(), request, response);
     }
-    context->ReactWithStatus(Status::OK);
+    *reactor = context->DefaultReactor();
+    (*reactor)->Finish(Status::OK);
   }
 
  private:

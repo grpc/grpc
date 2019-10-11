@@ -22,6 +22,7 @@
 #include <grpcpp/impl/codegen/async_stream_impl.h>
 #include <grpcpp/impl/codegen/byte_buffer.h>
 #include <grpcpp/impl/codegen/server_callback.h>
+#include <grpcpp/impl/codegen/server_callback_handlers.h>
 
 struct grpc_server;
 
@@ -104,9 +105,14 @@ class CallbackGenericService {
   /// The "method handler" for the generic API. This function should be
   /// overridden to provide a ServerGenericBidiReactor that implements the
   /// application-level interface for this RPC. Unimplemented by default.
-  virtual void CreateReactor(GenericServerContext* ctx,
-                             ServerGenericBidiReactor** /*reactor*/) {
-    ctx->ReactWithStatus(Status(StatusCode::UNIMPLEMENTED, ""));
+  virtual void CreateReactor(GenericServerContext* /* ctx */,
+                             ServerGenericBidiReactor** reactor) {
+    class Reactor : public ServerGenericBidiReactor {
+     public:
+      Reactor() { this->Finish(Status(StatusCode::UNIMPLEMENTED, "")); }
+      void OnDone() override { delete this; }
+    };
+    *reactor = new Reactor;
   }
 
  private:
