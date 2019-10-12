@@ -533,8 +533,8 @@ TEST_F(ChannelzRegistryBasedTest, ManyServersTest) {
   ValidateGetServers(10);
 }
 
-INSTANTIATE_TEST_CASE_P(ChannelzChannelTestSweep, ChannelzChannelTest,
-                        ::testing::Values(0, 8, 64, 1024, 1024 * 1024));
+INSTANTIATE_TEST_SUITE_P(ChannelzChannelTestSweep, ChannelzChannelTest,
+                         ::testing::Values(0, 8, 64, 1024, 1024 * 1024));
 
 }  // namespace testing
 }  // namespace channelz

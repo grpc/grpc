@@ -34,7 +34,7 @@
 
 constexpr size_t kMinFrameLength = 1024;
 constexpr size_t kDefaultFrameLength = 16 * 1024;
-constexpr size_t kMaxFrameLength = 16 * 1024 * 1024;
+constexpr size_t kMaxFrameLength = 1024 * 1024;
 
 // Limit k on number of frames such that at most 2^(8 * k) frames can be sent.
 constexpr size_t kAltsRecordProtocolRekeyFrameLimit = 8;

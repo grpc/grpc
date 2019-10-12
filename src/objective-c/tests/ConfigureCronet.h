@@ -15,6 +15,7 @@
  * limitations under the License.
  *
  */
+#include <stdbool.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -23,7 +24,7 @@ extern "C" {
 /**
  * Enable Cronet for once.
  */
-void configureCronet(void);
+void configureCronet(bool enable_netlog);
 
 #ifdef __cplusplus
 }

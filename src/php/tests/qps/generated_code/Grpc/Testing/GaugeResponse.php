@@ -9,7 +9,7 @@ use Google\Protobuf\Internal\RepeatedField;
 use Google\Protobuf\Internal\GPBUtil;
 
 /**
- * Reponse message containing the gauge name and value
+ * Response message containing the gauge name and value
  *
  * Generated from protobuf message <code>grpc.testing.GaugeResponse</code>
  */

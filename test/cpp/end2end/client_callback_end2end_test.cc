@@ -1375,8 +1375,8 @@ std::vector<TestScenario> CreateTestScenarios(bool test_insecure) {
   return scenarios;
 }
 
-INSTANTIATE_TEST_CASE_P(ClientCallbackEnd2endTest, ClientCallbackEnd2endTest,
-                        ::testing::ValuesIn(CreateTestScenarios(true)));
+INSTANTIATE_TEST_SUITE_P(ClientCallbackEnd2endTest, ClientCallbackEnd2endTest,
+                         ::testing::ValuesIn(CreateTestScenarios(true)));
 
 }  // namespace
 }  // namespace testing

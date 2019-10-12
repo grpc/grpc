@@ -107,6 +107,10 @@ class InlinedVector {
     return true;
   }
 
+  bool operator!=(const InlinedVector& other) const {
+    return !(*this == other);
+  }
+
   void reserve(size_t capacity) {
     if (capacity > capacity_) {
       T* new_dynamic =
@@ -119,6 +123,11 @@ class InlinedVector {
       dynamic_ = new_dynamic;
       capacity_ = capacity;
     }
+  }
+
+  void resize(size_t new_size) {
+    while (new_size > size_) emplace_back();
+    while (new_size < size_) pop_back();
   }
 
   template <typename... Args>

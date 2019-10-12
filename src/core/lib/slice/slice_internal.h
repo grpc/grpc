@@ -36,7 +36,6 @@
 // Interned slices have specific fast-path operations for hashing. To inline
 // these operations, we need to forward declare them here.
 extern uint32_t grpc_static_metadata_hash_values[GRPC_STATIC_MDSTR_COUNT];
-extern uint32_t g_hash_seed;
 
 // grpc_slice_refcount : A reference count for grpc_slice.
 //
@@ -259,7 +258,8 @@ inline uint32_t grpc_slice_refcount::Hash(const grpc_slice& slice) {
       break;
   }
   return gpr_murmur_hash3(grpc_refcounted_slice_data(slice),
-                          grpc_refcounted_slice_length(slice), g_hash_seed);
+                          grpc_refcounted_slice_length(slice),
+                          grpc_core::g_hash_seed);
 }
 
 inline const grpc_slice& grpc_slice_ref_internal(const grpc_slice& slice) {
@@ -327,7 +327,7 @@ inline uint32_t grpc_slice_hash_refcounted(const grpc_slice& s) {
 
 inline uint32_t grpc_slice_default_hash_internal(const grpc_slice& s) {
   return gpr_murmur_hash3(GRPC_SLICE_START_PTR(s), GRPC_SLICE_LENGTH(s),
-                          g_hash_seed);
+                          grpc_core::g_hash_seed);
 }
 
 inline uint32_t grpc_slice_hash_internal(const grpc_slice& s) {

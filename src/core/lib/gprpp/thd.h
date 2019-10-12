@@ -28,7 +28,6 @@
 #include <grpc/support/thd_id.h>
 #include <grpc/support/time.h>
 
-#include "src/core/lib/gprpp/abstract.h"
 #include "src/core/lib/gprpp/memory.h"
 
 namespace grpc_core {
@@ -38,9 +37,8 @@ namespace internal {
 class ThreadInternalsInterface {
  public:
   virtual ~ThreadInternalsInterface() {}
-  virtual void Start() GRPC_ABSTRACT;
-  virtual void Join() GRPC_ABSTRACT;
-  GRPC_ABSTRACT_BASE_CLASS
+  virtual void Start() = 0;
+  virtual void Join() = 0;
 };
 
 }  // namespace internal

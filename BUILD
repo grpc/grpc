@@ -14,7 +14,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-licenses(["notice"])  # Apache v2
+licenses(["notice"])
 
 exports_files(["LICENSE"])
 
@@ -67,11 +67,6 @@ config_setting(
 config_setting(
     name = "mac_x86_64",
     values = {"cpu": "darwin"},
-)
-
-config_setting(
-    name = "grpc_use_cpp_std_lib",
-    values = {"define": "GRPC_USE_CPP_STD_LIB=1"},
 )
 
 python_config_settings()
@@ -263,6 +258,7 @@ GRPCXX_PUBLIC_HDRS = [
     "include/grpcpp/security/credentials_impl.h",
     "include/grpcpp/security/server_credentials.h",
     "include/grpcpp/security/server_credentials_impl.h",
+    "include/grpcpp/security/tls_credentials_options.h",
     "include/grpcpp/server.h",
     "include/grpcpp/server_impl.h",
     "include/grpcpp/server_builder.h",
@@ -360,12 +356,15 @@ grpc_cc_library(
         "src/cpp/common/secure_auth_context.cc",
         "src/cpp/common/secure_channel_arguments.cc",
         "src/cpp/common/secure_create_auth_context.cc",
+        "src/cpp/common/tls_credentials_options.cc",
+        "src/cpp/common/tls_credentials_options_util.cc",
         "src/cpp/server/insecure_server_credentials.cc",
         "src/cpp/server/secure_server_credentials.cc",
     ],
     hdrs = [
         "src/cpp/client/secure_credentials.h",
         "src/cpp/common/secure_auth_context.h",
+        "src/cpp/common/tls_credentials_options_util.h",
         "src/cpp/server/secure_server_credentials.h",
     ],
     language = "c++",
@@ -374,6 +373,7 @@ grpc_cc_library(
     deps = [
         "gpr",
         "grpc",
+        "grpc_secure",
         "grpc++_base",
         "grpc++_codegen_base",
         "grpc++_codegen_base_src",
@@ -514,7 +514,6 @@ grpc_cc_library(
         "src/core/lib/gpr/tls_pthread.h",
         "src/core/lib/gpr/tmpfile.h",
         "src/core/lib/gpr/useful.h",
-        "src/core/lib/gprpp/abstract.h",
         "src/core/lib/gprpp/arena.h",
         "src/core/lib/gprpp/atomic.h",
         "src/core/lib/gprpp/fork.h",
@@ -527,7 +526,7 @@ grpc_cc_library(
         "src/core/lib/gprpp/map.h",
         "src/core/lib/gprpp/memory.h",
         "src/core/lib/gprpp/mpscq.h",
-        "src/core/lib/gprpp/pair.h",
+        "src/core/lib/gprpp/set.h",
         "src/core/lib/gprpp/string_view.h",
         "src/core/lib/gprpp/sync.h",
         "src/core/lib/gprpp/thd.h",
@@ -855,7 +854,7 @@ grpc_cc_library(
         "src/core/lib/iomgr/executor/mpmcqueue.h",
         "src/core/lib/iomgr/executor/threadpool.h",
         "src/core/lib/iomgr/gethostname.h",
-        "src/core/lib/iomgr/gevent_util.h",
+        "src/core/lib/iomgr/python_util.h",
         "src/core/lib/iomgr/grpc_if_nametoindex.h",
         "src/core/lib/iomgr/internal_errqueue.h",
         "src/core/lib/iomgr/iocp_windows.h",
@@ -1254,26 +1253,69 @@ grpc_cc_library(
 )
 
 grpc_cc_library(
-    name = "grpc_lb_policy_xds",
+    name = "grpc_xds_client",
     srcs = [
-        "src/core/ext/filters/client_channel/lb_policy/xds/xds.cc",
-        "src/core/ext/filters/client_channel/lb_policy/xds/xds_channel.cc",
-        "src/core/ext/filters/client_channel/lb_policy/xds/xds_client_stats.cc",
-        "src/core/ext/filters/client_channel/lb_policy/xds/xds_load_balancer_api.cc",
+        "src/core/ext/filters/client_channel/xds/xds_api.cc",
+        "src/core/ext/filters/client_channel/xds/xds_bootstrap.cc",
+        "src/core/ext/filters/client_channel/xds/xds_client.cc",
+        "src/core/ext/filters/client_channel/xds/xds_channel.cc",
+        "src/core/ext/filters/client_channel/xds/xds_client_stats.cc",
     ],
     hdrs = [
-        "src/core/ext/filters/client_channel/lb_policy/xds/xds.h",
-        "src/core/ext/filters/client_channel/lb_policy/xds/xds_channel.h",
-        "src/core/ext/filters/client_channel/lb_policy/xds/xds_client_stats.h",
-        "src/core/ext/filters/client_channel/lb_policy/xds/xds_load_balancer_api.h",
+        "src/core/ext/filters/client_channel/xds/xds_api.h",
+        "src/core/ext/filters/client_channel/xds/xds_bootstrap.h",
+        "src/core/ext/filters/client_channel/xds/xds_client.h",
+        "src/core/ext/filters/client_channel/xds/xds_channel.h",
+        "src/core/ext/filters/client_channel/xds/xds_channel_args.h",
+        "src/core/ext/filters/client_channel/xds/xds_client_stats.h",
     ],
     language = "c++",
     deps = [
         "envoy_ads_upb",
         "grpc_base",
         "grpc_client_channel",
-        "grpc_resolver_fake",
-        "grpc_transport_chttp2_client_insecure",
+    ],
+)
+
+grpc_cc_library(
+    name = "grpc_xds_client_secure",
+    srcs = [
+        "src/core/ext/filters/client_channel/xds/xds_api.cc",
+        "src/core/ext/filters/client_channel/xds/xds_bootstrap.cc",
+        "src/core/ext/filters/client_channel/xds/xds_client.cc",
+        "src/core/ext/filters/client_channel/xds/xds_channel_secure.cc",
+        "src/core/ext/filters/client_channel/xds/xds_client_stats.cc",
+    ],
+    hdrs = [
+        "src/core/ext/filters/client_channel/xds/xds_api.h",
+        "src/core/ext/filters/client_channel/xds/xds_bootstrap.h",
+        "src/core/ext/filters/client_channel/xds/xds_client.h",
+        "src/core/ext/filters/client_channel/xds/xds_channel.h",
+        "src/core/ext/filters/client_channel/xds/xds_channel_args.h",
+        "src/core/ext/filters/client_channel/xds/xds_client_stats.h",
+    ],
+    language = "c++",
+    deps = [
+        "envoy_ads_upb",
+        "grpc_base",
+        "grpc_client_channel",
+        "grpc_secure",
+    ],
+)
+
+grpc_cc_library(
+    name = "grpc_lb_policy_xds",
+    srcs = [
+        "src/core/ext/filters/client_channel/lb_policy/xds/xds.cc",
+    ],
+    hdrs = [
+        "src/core/ext/filters/client_channel/lb_policy/xds/xds.h",
+    ],
+    language = "c++",
+    deps = [
+        "grpc_base",
+        "grpc_client_channel",
+        "grpc_xds_client",
     ],
 )
 
@@ -1281,24 +1323,15 @@ grpc_cc_library(
     name = "grpc_lb_policy_xds_secure",
     srcs = [
         "src/core/ext/filters/client_channel/lb_policy/xds/xds.cc",
-        "src/core/ext/filters/client_channel/lb_policy/xds/xds_channel_secure.cc",
-        "src/core/ext/filters/client_channel/lb_policy/xds/xds_client_stats.cc",
-        "src/core/ext/filters/client_channel/lb_policy/xds/xds_load_balancer_api.cc",
     ],
     hdrs = [
         "src/core/ext/filters/client_channel/lb_policy/xds/xds.h",
-        "src/core/ext/filters/client_channel/lb_policy/xds/xds_channel.h",
-        "src/core/ext/filters/client_channel/lb_policy/xds/xds_client_stats.h",
-        "src/core/ext/filters/client_channel/lb_policy/xds/xds_load_balancer_api.h",
     ],
     language = "c++",
     deps = [
-        "envoy_ads_upb",
         "grpc_base",
         "grpc_client_channel",
-        "grpc_resolver_fake",
-        "grpc_secure",
-        "grpc_transport_chttp2_client_secure",
+        "grpc_xds_client_secure",
     ],
 )
 
@@ -1594,7 +1627,7 @@ grpc_cc_library(
     ],
     hdrs = [
         "src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb.h",
-        "src/core/ext/filters/client_channel/lb_policy/xds/xds.h",
+        "src/core/ext/filters/client_channel/xds/xds_channel_args.h",
         "src/core/lib/security/context/security_context.h",
         "src/core/lib/security/credentials/alts/alts_credentials.h",
         "src/core/lib/security/credentials/composite/composite_credentials.h",
@@ -2520,4 +2553,12 @@ filegroup(
         "etc/roots.pem",
     ],
     visibility = ["//visibility:public"],
+)
+
+# Base classes of EventManagerInterface
+grpc_cc_library(
+    name = "eventmanager_interface",
+    hdrs = [
+        "src/core/lib/iomgr/poller/eventmanager_interface.h",
+    ],
 )

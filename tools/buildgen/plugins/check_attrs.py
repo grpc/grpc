@@ -112,7 +112,7 @@ def mako_plugin(dictionary):
 
   This validates that filegroups, libs, and target can have only valid
   attributes. This is mainly for preventing build.yaml from having
-  unnecessary and misleading attributes accidently.
+  unnecessary and misleading attributes accidentally.
   """
 
     errors = []

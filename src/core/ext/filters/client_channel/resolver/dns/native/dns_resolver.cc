@@ -268,7 +268,7 @@ class NativeDnsResolverFactory : public ResolverFactory {
 
   OrphanablePtr<Resolver> CreateResolver(ResolverArgs args) const override {
     if (!IsValidUri(args.uri)) return nullptr;
-    return OrphanablePtr<Resolver>(New<NativeDnsResolver>(std::move(args)));
+    return MakeOrphanable<NativeDnsResolver>(std::move(args));
   }
 
   const char* scheme() const override { return "dns"; }
@@ -284,8 +284,7 @@ void grpc_resolver_dns_native_init() {
   if (gpr_stricmp(resolver.get(), "native") == 0) {
     gpr_log(GPR_DEBUG, "Using native dns resolver");
     grpc_core::ResolverRegistry::Builder::RegisterResolverFactory(
-        grpc_core::UniquePtr<grpc_core::ResolverFactory>(
-            grpc_core::New<grpc_core::NativeDnsResolverFactory>()));
+        grpc_core::MakeUnique<grpc_core::NativeDnsResolverFactory>());
   } else {
     grpc_core::ResolverRegistry::Builder::InitRegistry();
     grpc_core::ResolverFactory* existing_factory =
@@ -293,8 +292,7 @@ void grpc_resolver_dns_native_init() {
     if (existing_factory == nullptr) {
       gpr_log(GPR_DEBUG, "Using native dns resolver");
       grpc_core::ResolverRegistry::Builder::RegisterResolverFactory(
-          grpc_core::UniquePtr<grpc_core::ResolverFactory>(
-              grpc_core::New<grpc_core::NativeDnsResolverFactory>()));
+          grpc_core::MakeUnique<grpc_core::NativeDnsResolverFactory>());
     }
   }
 }

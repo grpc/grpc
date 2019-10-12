@@ -25,11 +25,13 @@ grpc_cc_test(
         "gtest",
     ],
     language = "C++",
+    tags = ["no_windows"],  # TODO(jtattermusch): investigate the timeout on windows
     deps = [
         "//:gpr",
         "//:grpc",
         "//test/core/util:grpc_test_util",
     ],
+    uses_polling = False,
 )
 
 grpc_cc_test(
@@ -44,11 +46,15 @@ grpc_cc_test(
         "//:grpc",
         "//test/core/util:grpc_test_util",
     ],
+    uses_polling = False,
 )
 
 grpc_cc_test(
     name = "connectivity_state_test",
     srcs = ["connectivity_state_test.cc"],
+    external_deps = [
+        "gtest",
+    ],
     language = "C++",
     deps = [
         "//:gpr",
@@ -105,6 +111,7 @@ grpc_cc_test(
         "//:grpc",
         "//test/core/util:grpc_test_util",
     ],
+    uses_polling = False,
 )
 
 grpc_cc_test(
@@ -116,6 +123,7 @@ grpc_cc_test(
         "//:grpc",
         "//test/core/util:grpc_test_util",
     ],
+    uses_polling = False,
 )
 
 grpc_cc_test(
@@ -127,6 +135,7 @@ grpc_cc_test(
         "//:grpc",
         "//test/core/util:grpc_test_util",
     ],
+    uses_polling = False,
 )
 
 grpc_cc_test(
@@ -140,4 +149,5 @@ grpc_cc_test(
         "//:grpc",
         "//test/core/util:grpc_test_util",
     ],
+    uses_polling = False,
 )

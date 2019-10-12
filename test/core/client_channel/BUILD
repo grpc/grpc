@@ -30,6 +30,7 @@ grpc_fuzzer(
         "//:grpc",
         "//test/core/util:grpc_test_util",
     ],
+    tags = ["no_windows"],
 )
 
 grpc_cc_test(
@@ -53,6 +54,7 @@ grpc_cc_test(
         "//test/core/util:grpc_test_util",
     ],
     tags = ["no_windows"],
+    uses_polling = False,
 )
 
 grpc_cc_test(
@@ -78,6 +80,7 @@ grpc_cc_test(
         "//:grpc",
         "//test/core/util:grpc_test_util",
     ],
+    uses_polling = False,
 )
 
 grpc_cc_test(
@@ -92,4 +95,21 @@ grpc_cc_test(
         "//:grpc",
         "//test/core/util:grpc_test_util",
     ],
+)
+
+grpc_cc_test(
+    name = "xds_bootstrap_test",
+    srcs = ["xds_bootstrap_test.cc"],
+    external_deps = [
+        "gtest",
+    ],
+    language = "C++",
+    deps = [
+        "//:gpr",
+        "//:grpc",
+        "//test/core/util:grpc_test_util",
+    ],
+    # TODO(nnoble): Remove this once https://github.com/grpc/grpc/issues/20541
+    # is resolved.
+    tags = ["no_windows"],
 )

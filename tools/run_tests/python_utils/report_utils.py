@@ -30,7 +30,7 @@ def _filter_msg(msg, output_format):
     """Filters out nonprintable and illegal characters from the message."""
     if output_format in ['XML', 'HTML']:
         # keep whitespaces but remove formfeed and vertical tab characters
-        # that make XML report unparseable.
+        # that make XML report unparsable.
         filtered_msg = filter(
             lambda x: x in string.printable and x != '\f' and x != '\v',
             msg.decode('UTF-8', 'ignore'))

@@ -24,7 +24,6 @@
 #include <grpc/support/string_util.h>
 
 #include "src/core/ext/filters/client_channel/resolver.h"
-#include "src/core/lib/gprpp/abstract.h"
 #include "src/core/lib/gprpp/memory.h"
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/iomgr/pollset_set.h"
@@ -49,11 +48,10 @@ class ResolverFactory {
  public:
   /// Returns a bool indicating whether the input uri is valid to create a
   /// resolver.
-  virtual bool IsValidUri(const grpc_uri* uri) const GRPC_ABSTRACT;
+  virtual bool IsValidUri(const grpc_uri* uri) const = 0;
 
   /// Returns a new resolver instance.
-  virtual OrphanablePtr<Resolver> CreateResolver(ResolverArgs args) const
-      GRPC_ABSTRACT;
+  virtual OrphanablePtr<Resolver> CreateResolver(ResolverArgs args) const = 0;
 
   /// Returns a string representing the default authority to use for this
   /// scheme.
@@ -65,11 +63,9 @@ class ResolverFactory {
 
   /// Returns the URI scheme that this factory implements.
   /// Caller does NOT take ownership of result.
-  virtual const char* scheme() const GRPC_ABSTRACT;
+  virtual const char* scheme() const = 0;
 
   virtual ~ResolverFactory() {}
-
-  GRPC_ABSTRACT_BASE_CLASS
 };
 
 }  // namespace grpc_core
