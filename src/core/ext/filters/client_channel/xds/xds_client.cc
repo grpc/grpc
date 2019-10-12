@@ -515,7 +515,7 @@ template <typename T>
 void XdsClient::ChannelState::RetryableCall<T>::OnRetryTimer(
     void* arg, grpc_error* error) {
   RetryableCall* calld = static_cast<RetryableCall*>(arg);
-  calld->chand_->xds_client()->combiner()->Run(
+  calld->chand_->xds_client()->combiner_->Run(
       GRPC_CLOSURE_INIT(&calld->on_retry_timer_, OnRetryTimerLocked, calld,
                         nullptr),
       GRPC_ERROR_REF(error));
@@ -628,7 +628,6 @@ XdsClient::ChannelState::AdsCallState::AdsCallState(
   // This callback signals the end of the call, so it relies on the initial
   // ref instead of a new ref. When it's invoked, it's the initial ref that is
   // unreffed.
-
   GRPC_CLOSURE_INIT(&on_status_received_, OnStatusReceived, this,
                     grpc_schedule_on_exec_ctx);
   call_error = grpc_call_start_batch_and_execute(call_, ops, (size_t)(op - ops),
@@ -875,7 +874,7 @@ void XdsClient::ChannelState::LrsCallState::Reporter::
 void XdsClient::ChannelState::LrsCallState::Reporter::OnNextReportTimer(
     void* arg, grpc_error* error) {
   Reporter* self = static_cast<Reporter*>(arg);
-  self->xds_client()->combiner()->Run(
+  self->xds_client()->combiner_->Run(
       GRPC_CLOSURE_INIT(&self->on_next_report_timer_, OnNextReportTimerLocked,
                         self, nullptr),
       GRPC_ERROR_REF(error));

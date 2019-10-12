@@ -28,14 +28,17 @@
 #include "src/core/lib/iomgr/exec_ctx.h"
 
 namespace grpc_core {
+// TODO(yashkt) : Remove this class and replace it with a class that does not
+// use ExecCtx
 class Combiner {
  public:
   void Run(grpc_closure* closure, grpc_error* error);
+  // TODO(yashkt) : Remove this method
   void FinallyRun(grpc_closure* closure, grpc_error* error);
   Combiner* next_combiner_on_this_exec_ctx = nullptr;
   grpc_closure_scheduler scheduler;
   grpc_closure_scheduler finally_scheduler;
-  grpc_core::MultiProducerSingleConsumerQueue queue;
+  MultiProducerSingleConsumerQueue queue;
   // either:
   // a pointer to the initiating exec ctx if that is the only exec_ctx that has
   // ever queued to this combiner, or NULL. If this is non-null, it's not

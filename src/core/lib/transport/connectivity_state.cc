@@ -58,7 +58,7 @@ const char* ConnectivityStateName(grpc_connectivity_state state) {
 class AsyncConnectivityStateWatcherInterface::Notifier {
  public:
   Notifier(RefCountedPtr<AsyncConnectivityStateWatcherInterface> watcher,
-           grpc_connectivity_state state, grpc_core::Combiner* combiner)
+           grpc_connectivity_state state, Combiner* combiner)
       : watcher_(std::move(watcher)), state_(state) {
     if (combiner != nullptr) {
       combiner->Run(

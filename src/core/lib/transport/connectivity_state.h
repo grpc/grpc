@@ -68,6 +68,8 @@ class AsyncConnectivityStateWatcherInterface
  protected:
   class Notifier;
 
+  // If \a combiner is nullptr, then the notification will be scheduled on the
+  // ExecCtx.
   explicit AsyncConnectivityStateWatcherInterface(Combiner* combiner = nullptr)
       : combiner_(combiner) {}
 
