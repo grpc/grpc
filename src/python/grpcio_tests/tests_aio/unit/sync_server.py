@@ -20,6 +20,7 @@ from time import sleep
 import grpc
 from src.proto.grpc.testing import messages_pb2
 from src.proto.grpc.testing import test_pb2_grpc
+from tests.unit.framework.common import test_constants
 
 
 # TODO (https://github.com/grpc/grpc/issues/19762)
@@ -28,6 +29,10 @@ class TestServiceServicer(test_pb2_grpc.TestServiceServicer):
 
     def UnaryCall(self, request, context):
         return messages_pb2.SimpleResponse()
+
+    def EmptyCall(self, request, context):
+        while True:
+            sleep(test_constants.LONG_TIMEOUT)
 
 
 if __name__ == "__main__":

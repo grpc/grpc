@@ -515,6 +515,7 @@ filegroups:
   - include/grpcpp/security/credentials_impl.h
   - include/grpcpp/security/server_credentials.h
   - include/grpcpp/security/server_credentials_impl.h
+  - include/grpcpp/security/tls_credentials_options.h
   - include/grpcpp/server.h
   - include/grpcpp/server_builder.h
   - include/grpcpp/server_builder_impl.h
@@ -1537,12 +1538,14 @@ filegroups:
 - name: grpc_xds_client
   headers:
   - src/core/ext/filters/client_channel/xds/xds_api.h
+  - src/core/ext/filters/client_channel/xds/xds_bootstrap.h
   - src/core/ext/filters/client_channel/xds/xds_channel.h
   - src/core/ext/filters/client_channel/xds/xds_channel_args.h
   - src/core/ext/filters/client_channel/xds/xds_client.h
   - src/core/ext/filters/client_channel/xds/xds_client_stats.h
   src:
   - src/core/ext/filters/client_channel/xds/xds_api.cc
+  - src/core/ext/filters/client_channel/xds/xds_bootstrap.cc
   - src/core/ext/filters/client_channel/xds/xds_channel.cc
   - src/core/ext/filters/client_channel/xds/xds_client.cc
   - src/core/ext/filters/client_channel/xds/xds_client_stats.cc
@@ -1553,12 +1556,14 @@ filegroups:
 - name: grpc_xds_client_secure
   headers:
   - src/core/ext/filters/client_channel/xds/xds_api.h
+  - src/core/ext/filters/client_channel/xds/xds_bootstrap.h
   - src/core/ext/filters/client_channel/xds/xds_channel.h
   - src/core/ext/filters/client_channel/xds/xds_channel_args.h
   - src/core/ext/filters/client_channel/xds/xds_client.h
   - src/core/ext/filters/client_channel/xds/xds_client_stats.h
   src:
   - src/core/ext/filters/client_channel/xds/xds_api.cc
+  - src/core/ext/filters/client_channel/xds/xds_bootstrap.cc
   - src/core/ext/filters/client_channel/xds/xds_channel_secure.cc
   - src/core/ext/filters/client_channel/xds/xds_client.cc
   - src/core/ext/filters/client_channel/xds/xds_client_stats.cc
@@ -1816,6 +1821,7 @@ libs:
   - include/grpcpp/impl/codegen/core_codegen.h
   - src/cpp/client/secure_credentials.h
   - src/cpp/common/secure_auth_context.h
+  - src/cpp/common/tls_credentials_options_util.h
   - src/cpp/server/secure_server_credentials.h
   src:
   - src/cpp/client/insecure_credentials.cc
@@ -1824,6 +1830,8 @@ libs:
   - src/cpp/common/secure_auth_context.cc
   - src/cpp/common/secure_channel_arguments.cc
   - src/cpp/common/secure_create_auth_context.cc
+  - src/cpp/common/tls_credentials_options.cc
+  - src/cpp/common/tls_credentials_options_util.cc
   - src/cpp/server/insecure_server_credentials.cc
   - src/cpp/server/secure_server_credentials.cc
   deps:
@@ -6004,6 +6012,17 @@ targets:
   - mac
   - linux
   - posix
+- name: xds_bootstrap_test
+  gtest: true
+  build: test
+  language: c++
+  src:
+  - test/core/client_channel/xds_bootstrap_test.cc
+  deps:
+  - grpc_test_util
+  - grpc++
+  - grpc
+  - gpr
 - name: xds_end2end_test
   gtest: true
   build: test

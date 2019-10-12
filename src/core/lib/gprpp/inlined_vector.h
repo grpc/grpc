@@ -125,6 +125,11 @@ class InlinedVector {
     }
   }
 
+  void resize(size_t new_size) {
+    while (new_size > size_) emplace_back();
+    while (new_size < size_) pop_back();
+  }
+
   template <typename... Args>
   void emplace_back(Args&&... args) {
     if (size_ == capacity_) {

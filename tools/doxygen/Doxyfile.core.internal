@@ -969,6 +969,8 @@ src/core/ext/filters/client_channel/subchannel_pool_interface.cc \
 src/core/ext/filters/client_channel/subchannel_pool_interface.h \
 src/core/ext/filters/client_channel/xds/xds_api.cc \
 src/core/ext/filters/client_channel/xds/xds_api.h \
+src/core/ext/filters/client_channel/xds/xds_bootstrap.cc \
+src/core/ext/filters/client_channel/xds/xds_bootstrap.h \
 src/core/ext/filters/client_channel/xds/xds_channel.h \
 src/core/ext/filters/client_channel/xds/xds_channel_args.h \
 src/core/ext/filters/client_channel/xds/xds_channel_secure.cc \
