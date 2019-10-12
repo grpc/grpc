@@ -35,22 +35,36 @@ grpc_json* grpc_json_create(grpc_json_type type) {
 }
 
 void grpc_json_destroy(grpc_json* json) {
+  grpc_json* root = json;
   if (json == nullptr) return;
-  while (json->child) {
-    grpc_json_destroy(json->child);
+
+  while (1) {
+    while (json->child) {
+      json = json->child;
+    }
+
+    grpc_json tmp_copy = *json;
+    if (json->prev) {
+      json->prev->next = json->next;
+    }
+    if (json->next) {
+      json->next->prev = json->prev;
+    }
+    if (json->parent) {
+      json->parent->child = json->next;
+    }
+    if (json->owns_value) {
+      gpr_free((void*)json->value);
+    }
+    gpr_free(json);
+    if (json == root)
+      return;
+    if (tmp_copy.next) {
+      json = tmp_copy.next;
+    } else {
+      json = tmp_copy.parent;
+    }
   }
-  if (json->next) {
-    json->next->prev = json->prev;
-  }
-  if (json->prev) {
-    json->prev->next = json->next;
-  } else if (json->parent) {
-    json->parent->child = json->next;
-  }
-  if (json->owns_value) {
-    gpr_free((void*)json->value);
-  }
-  gpr_free(json);
 }
 
 grpc_json* grpc_json_link_child(grpc_json* parent, grpc_json* child,
