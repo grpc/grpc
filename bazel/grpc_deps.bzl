@@ -229,8 +229,16 @@ def grpc_deps():
             sha256 = "bdc8e66e70b8a75da23b79f1f8c6207356df07d041d96d2189add7ee0780cf4e",
         )
 
-    grpc_python_deps()
+    if "build_bazel_apple_support" not in native.existing_rules():
+        http_archive(
+            name = "build_bazel_apple_support",
+            urls = [
+                "https://github.com/bazelbuild/apple_support/releases/download/0.7.1/apple_support.0.7.1.tar.gz",
+            ],
+            sha256 = "122ebf7fe7d1c8e938af6aeaee0efe788a3a2449ece5a8d6a428cb18d6f88033",
+        )
 
+    grpc_python_deps()
 
 # TODO: move some dependencies from "grpc_deps" here?
 def grpc_test_only_deps():
