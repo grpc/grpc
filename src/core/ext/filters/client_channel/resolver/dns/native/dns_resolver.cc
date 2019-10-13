@@ -164,6 +164,7 @@ void NativeDnsResolver::OnResolvedLocked(void* arg, grpc_error* error) {
   GPR_ASSERT(r->resolving_);
   r->resolving_ = false;
   if (r->shutdown_) {
+    grpc_resolved_addresses_destroy(r->addresses_);
     r->Unref(DEBUG_LOCATION, "dns-resolving");
     return;
   }
