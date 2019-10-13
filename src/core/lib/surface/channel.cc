@@ -122,11 +122,15 @@ grpc_channel* grpc_channel_create_with_builder(
           static_cast<uint32_t>(args->args[i].value.integer) |
           0x1; /* always support no compression */
     } else if (0 == strcmp(args->args[i].key, GRPC_ARG_CHANNELZ_CHANNEL_NODE)) {
-      GPR_ASSERT(args->args[i].type == GRPC_ARG_POINTER);
-      GPR_ASSERT(args->args[i].value.pointer.p != nullptr);
-      channel->channelz_node = static_cast<grpc_core::channelz::ChannelNode*>(
-                                   args->args[i].value.pointer.p)
-                                   ->Ref();
+      if (args->args[i].type == GRPC_ARG_POINTER) {
+        GPR_ASSERT(args->args[i].value.pointer.p != nullptr);
+        channel->channelz_node = static_cast<grpc_core::channelz::ChannelNode*>(
+                                     args->args[i].value.pointer.p)
+                                     ->Ref();
+      } else {
+        gpr_log(GPR_DEBUG,
+                GRPC_ARG_CHANNELZ_CHANNEL_NODE " should be a pointer");
+      }
     }
   }
 
