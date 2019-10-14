@@ -1,0 +1,24 @@
+#include<iostream>
+using namespace std;
+int main()
+{
+    int n,i,o,k;
+    cin>>n;
+    for(i=1;i<=n;i++)
+    {
+        cout<<"*";
+    }
+    cout<<endl;
+    for(k=(n-2);k>0;k--)
+    {
+       for(i=1;i<=k;i++)
+       {
+        cout<<" " ;  
+       } 
+       cout<<"*"<<endl;
+    }
+    for(o=1;o<=n;o++)
+    {
+        cout<<"*";
+    }
+}
