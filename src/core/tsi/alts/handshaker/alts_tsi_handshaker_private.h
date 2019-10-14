@@ -65,6 +65,9 @@ void alts_handshaker_client_set_fields_for_testing(
     tsi_handshaker_on_next_done_cb cb, void* user_data,
     grpc_byte_buffer* recv_buffer, grpc_status_code status);
 
+void alts_tsi_handshaker_set_client_for_testing(alts_tsi_handshaker* handshaker,
+                                                alts_handshaker_client* client);
+
 void alts_handshaker_client_set_vtable_for_testing(
     alts_handshaker_client* client, alts_handshaker_client_vtable* vtable);
 

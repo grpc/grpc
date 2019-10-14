@@ -267,6 +267,12 @@ void alts_handshaker_client_continue_make_grpc_call_locked(
   op++;
   GPR_ASSERT(op - ops <= kHandshakerClientOpNum);
   GPR_ASSERT(client->grpc_caller != nullptr);
+  gpr_log(GPR_ERROR,
+          "todo remove this, invoking grpc_caller with closure addr:%p",
+          &client->on_handshaker_service_resp_recv);
+  gpr_log(GPR_DEBUG,
+          "todo remove this, invoking grpc caller:%p with closure:%p",
+          client->grpc_caller, &client->on_handshaker_service_resp_recv);
   grpc_call_error call_error =
       client->grpc_caller(client->call, ops, static_cast<size_t>(op - ops),
                           &client->on_handshaker_service_resp_recv);
