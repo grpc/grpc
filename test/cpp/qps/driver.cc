@@ -151,7 +151,7 @@ static void postprocess_scenario_result(ScenarioResult* result) {
   double server_system_cpu_load = 0, server_user_cpu_load = 0;
   for (size_t i = 0; i < result->client_stats_size(); i++) {
     auto client_stat = result->client_stats(i);
-    qps += client_stat.latencies().count() / client_stat.time_system();
+    qps += client_stat.latencies().count() / client_stat.time_elapse();
     client_system_cpu_load +=
         client_stat.time_system() / client_stat.time_elapsed();
     client_user_cpu_load +=
