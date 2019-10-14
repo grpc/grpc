@@ -39,9 +39,9 @@
   if ((self = [super init])) {
     _responseHandler = handler;
     if (dispatchQueue == nil) {
-      _responseDispatchQueue = dispatchQueue;
-    } else {
       _responseDispatchQueue = dispatch_get_main_queue();
+    } else {
+      _responseDispatchQueue = dispatchQueue;
     }
   }
   return self;
