@@ -23,8 +23,6 @@
 
 #include <grpc/impl/codegen/grpc_types.h>
 
-#include "src/core/ext/filters/client_channel/xds/xds_bootstrap.h"
-
 namespace grpc_core {
 
 /// Makes any necessary modifications to \a args for use in the xds
@@ -35,7 +33,7 @@ namespace grpc_core {
 /// Caller takes ownership of the returned args.
 grpc_channel_args* ModifyXdsChannelArgs(grpc_channel_args* args);
 
-grpc_channel* CreateXdsChannel(const XdsBootstrap& bootstrap,
+grpc_channel* CreateXdsChannel(const char* target_uri,
                                const grpc_channel_args& args);
 
 }  // namespace grpc_core

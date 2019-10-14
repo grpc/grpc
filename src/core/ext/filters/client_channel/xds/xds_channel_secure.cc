@@ -32,7 +32,6 @@
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/iomgr/sockaddr_utils.h"
 #include "src/core/lib/security/credentials/credentials.h"
-#include "src/core/lib/security/credentials/fake/fake_credentials.h"
 #include "src/core/lib/security/transport/target_authority_table.h"
 #include "src/core/lib/slice/slice_internal.h"
 
@@ -63,35 +62,19 @@ grpc_channel_args* ModifyXdsChannelArgs(grpc_channel_args* args) {
   return result;
 }
 
-grpc_channel* CreateXdsChannel(const XdsBootstrap& bootstrap,
+grpc_channel* CreateXdsChannel(const char* target_uri,
                                const grpc_channel_args& args) {
-  grpc_channel_credentials* creds = nullptr;
-  RefCountedPtr<grpc_channel_credentials> creds_to_unref;
-  if (!bootstrap.channel_creds().empty()) {
-    for (size_t i = 0; i < bootstrap.channel_creds().size(); ++i) {
-      if (strcmp(bootstrap.channel_creds()[i].type, "google_default") == 0) {
-        creds = grpc_google_default_credentials_create();
-        break;
-      } else if (strcmp(bootstrap.channel_creds()[i].type, "fake") == 0) {
-        creds = grpc_fake_transport_security_credentials_create();
-        break;
-      }
-    }
-    if (creds == nullptr) return nullptr;
-    creds_to_unref.reset(creds);
-  } else {
-    creds = grpc_channel_credentials_find_in_args(&args);
-    if (creds == nullptr) {
-      // Built with security but parent channel is insecure.
-      return grpc_insecure_channel_create(bootstrap.server_uri(), &args,
-                                          nullptr);
-    }
+  grpc_channel_credentials* creds =
+      grpc_channel_credentials_find_in_args(&args);
+  if (creds == nullptr) {
+    // Built with security but parent channel is insecure.
+    return grpc_insecure_channel_create(target_uri, &args, nullptr);
   }
   const char* arg_to_remove = GRPC_ARG_CHANNEL_CREDENTIALS;
   grpc_channel_args* new_args =
       grpc_channel_args_copy_and_remove(&args, &arg_to_remove, 1);
-  grpc_channel* channel = grpc_secure_channel_create(
-      creds, bootstrap.server_uri(), new_args, nullptr);
+  grpc_channel* channel =
+      grpc_secure_channel_create(creds, target_uri, new_args, nullptr);
   grpc_channel_args_destroy(new_args);
   return channel;
 }
