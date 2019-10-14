@@ -43,9 +43,7 @@ platform(
     constraint_values = [
         "//third_party/toolchains/machine_size:standard",
     ],
-    # TODO: what about {PARENT_REMOTE_EXECUTION_PROPERTIES}?
     exec_properties = {
-        "container-image" : "docker://gcr.io/grpc-testing/rbe_windows_toolchain@sha256:75728e7d6d804090f71095e5fec627b18cfa1f47adc52096c209f2a687e06b2e",
         "gceMachineType" : "n1-highmem-2",  # Small machines for majority of tests
         "dockerSiblingContainers" : "false",
         "dockerNetwork" : "off",
@@ -60,7 +58,6 @@ platform(
     constraint_values = [
         "//third_party/toolchains/machine_size:large",
     ],
-    # TODO: what about {PARENT_REMOTE_EXECUTION_PROPERTIES}?
     exec_properties = {
         "gceMachineType" : "n1-standard-8",  # Large machines for some resource demanding tests (TSAN).
         "dockerSiblingContainers" : "false",
