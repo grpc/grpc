@@ -568,7 +568,8 @@ static dispatch_once_t initGlobalInterceptorFactory;
   // The test does not work on a remote server since it does not echo a trailer
   if ([[self class] isRemoteTest]) return;
   XCTestExpectation *expectComplete = [self expectationWithDescription:@"call complete"];
-  XCTestExpectation *expectCompleteMainQueue = [self expectationWithDescription:@"main queue call complete"];
+  XCTestExpectation *expectCompleteMainQueue =
+      [self expectationWithDescription:@"main queue call complete"];
 
   RMTSimpleRequest *request = [RMTSimpleRequest message];
   request.responseType = RMTPayloadType_Compressable;
@@ -608,7 +609,8 @@ static dispatch_once_t initGlobalInterceptorFactory;
         expectedResponse.payload.type = RMTPayloadType_Compressable;
         expectedResponse.payload.body = [NSMutableData dataWithLength:314159];
         XCTAssertEqualObjects(response, expectedResponse);
-        XCTAssertEqualObjects(handlerMainQueue.responseHeaders[@"x-grpc-test-echo-initial"], @"test-header");
+        XCTAssertEqualObjects(handlerMainQueue.responseHeaders[@"x-grpc-test-echo-initial"],
+                              @"test-header");
         XCTAssertEqualObjects(handlerMainQueue.responseTrailers[@"x-grpc-test-echo-trailing-bin"],
                               trailer_data);
         [expectCompleteMainQueue fulfill];
@@ -616,7 +618,8 @@ static dispatch_once_t initGlobalInterceptorFactory;
         responseDispatchQueue:nil];
 
   [[_service unaryCallWithMessage:request responseHandler:handler callOptions:options] start];
-  [[_service unaryCallWithMessage:request responseHandler:handlerMainQueue callOptions:options] start];
+  [[_service unaryCallWithMessage:request responseHandler:handlerMainQueue callOptions:options]
+      start];
   [self waitForExpectationsWithTimeout:TEST_TIMEOUT handler:nil];
 }
 
