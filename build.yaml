@@ -101,13 +101,6 @@ filegroups:
   - src/core/ext/filters/census/grpc_context.cc
   uses:
   - grpc_base
-- name: cmdline
-  headers:
-  - test/core/util/cmdline.h
-  src:
-  - test/core/util/cmdline.cc
-  uses:
-  - gpr_base_headers
 - name: envoy_ads_upb
   headers:
   - src/core/ext/upb-generated/envoy/api/v2/auth/cert.upb.h
@@ -1330,6 +1323,7 @@ filegroups:
   - test/core/end2end/fixtures/local_util.h
   - test/core/end2end/fixtures/proxy.h
   - test/core/iomgr/endpoint_tests.h
+  - test/core/util/cmdline.h
   - test/core/util/debugger_macros.h
   - test/core/util/fuzzer_util.h
   - test/core/util/grpc_profiler.h
@@ -1353,6 +1347,7 @@ filegroups:
   - test/core/end2end/fixtures/local_util.cc
   - test/core/end2end/fixtures/proxy.cc
   - test/core/iomgr/endpoint_tests.cc
+  - test/core/util/cmdline.cc
   - test/core/util/debugger_macros.cc
   - test/core/util/fuzzer_util.cc
   - test/core/util/grpc_profiler.cc
@@ -1374,7 +1369,6 @@ filegroups:
   deps:
   - gpr
   uses:
-  - cmdline
   - grpc_base
   - grpc_client_channel
   - grpc_transport_chttp2
@@ -2905,8 +2899,7 @@ targets:
   deps:
   - grpc
   - gpr
-  filegroups:
-  - cmdline
+  - grpc_test_util
   secure: true
   uses_polling: false
 - name: grpc_credentials_test
@@ -2961,8 +2954,7 @@ targets:
   deps:
   - grpc
   - gpr
-  filegroups:
-  - cmdline
+  - grpc_test_util
   uses_polling: false
 - name: grpc_security_connector_test
   build: test
@@ -2990,8 +2982,7 @@ targets:
   deps:
   - grpc
   - gpr
-  filegroups:
-  - cmdline
+  - grpc_test_util
   uses_polling: false
 - name: handshake_client_ssl
   build: test
