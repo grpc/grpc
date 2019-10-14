@@ -21,7 +21,6 @@
 
 #include "src/core/ext/filters/client_channel/service_config.h"
 #include "src/core/ext/filters/client_channel/xds/xds_api.h"
-#include "src/core/ext/filters/client_channel/xds/xds_bootstrap.h"
 #include "src/core/ext/filters/client_channel/xds/xds_client_stats.h"
 #include "src/core/lib/gprpp/map.h"
 #include "src/core/lib/gprpp/memory.h"
@@ -69,12 +68,10 @@ class XdsClient : public InternallyRefCounted<XdsClient> {
     virtual void OnError(grpc_error* error) = 0;
   };
 
-  // If *error is not GRPC_ERROR_NONE after construction, then there was
-  // an error initializing the client.
   XdsClient(grpc_combiner* combiner, grpc_pollset_set* interested_parties,
-            StringView server_name,
+            const char* balancer_name, StringView server_name,
             UniquePtr<ServiceConfigWatcherInterface> watcher,
-            const grpc_channel_args& channel_args, grpc_error** error);
+            const grpc_channel_args& channel_args);
   ~XdsClient();
 
   void Orphan() override;
@@ -134,12 +131,8 @@ class XdsClient : public InternallyRefCounted<XdsClient> {
 
   static const grpc_arg_pointer_vtable kXdsClientVtable;
 
-  UniquePtr<char> build_version_;
-
   grpc_combiner* combiner_;
   grpc_pollset_set* interested_parties_;
-
-  UniquePtr<XdsBootstrap> bootstrap_;
 
   UniquePtr<char> server_name_;
   UniquePtr<ServiceConfigWatcherInterface> service_config_watcher_;

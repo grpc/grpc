@@ -28,10 +28,9 @@ grpc_channel_args* ModifyXdsChannelArgs(grpc_channel_args* args) {
   return args;
 }
 
-grpc_channel* CreateXdsChannel(const XdsBootstrap& bootstrap,
+grpc_channel* CreateXdsChannel(const char* target_uri,
                                const grpc_channel_args& args) {
-  if (!bootstrap.channel_creds().empty()) return nullptr;
-  return grpc_insecure_channel_create(bootstrap.server_uri(), &args, nullptr);
+  return grpc_insecure_channel_create(target_uri, &args, nullptr);
 }
 
 }  // namespace grpc_core

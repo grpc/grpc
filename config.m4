@@ -418,7 +418,6 @@ if test "$PHP_GRPC" != "no"; then
     src/core/ext/filters/client_channel/resolver/fake/fake_resolver.cc \
     src/core/ext/filters/client_channel/lb_policy/xds/xds.cc \
     src/core/ext/filters/client_channel/xds/xds_api.cc \
-    src/core/ext/filters/client_channel/xds/xds_bootstrap.cc \
     src/core/ext/filters/client_channel/xds/xds_channel_secure.cc \
     src/core/ext/filters/client_channel/xds/xds_client.cc \
     src/core/ext/filters/client_channel/xds/xds_client_stats.cc \

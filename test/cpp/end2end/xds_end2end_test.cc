@@ -536,7 +536,6 @@ class XdsEnd2endTest : public ::testing::Test {
   static void TearDownTestCase() { grpc_shutdown(); }
 
   void SetUp() override {
-    gpr_setenv("GRPC_XDS_BOOTSTRAP", "test/cpp/end2end/xds_bootstrap.json");
     response_generator_ =
         grpc_core::MakeRefCounted<grpc_core::FakeResolverResponseGenerator>();
     lb_channel_response_generator_ =
@@ -665,7 +664,7 @@ class XdsEnd2endTest : public ::testing::Test {
     gpr_log(GPR_INFO, "========= BACKEND %lu READY ==========", backend_idx);
   }
 
-  grpc_core::ServerAddressList CreateAddressListFromPortList(
+  grpc_core::ServerAddressList CreateLbAddressesFromPortList(
       const std::vector<int>& ports) {
     grpc_core::ServerAddressList addresses;
     for (int port : ports) {
@@ -675,7 +674,10 @@ class XdsEnd2endTest : public ::testing::Test {
       GPR_ASSERT(lb_uri != nullptr);
       grpc_resolved_address address;
       GPR_ASSERT(grpc_parse_uri(lb_uri, &address));
-      addresses.emplace_back(address.addr, address.len, nullptr);
+      std::vector<grpc_arg> args_to_add;
+      grpc_channel_args* args = grpc_channel_args_copy_and_add(
+          nullptr, args_to_add.data(), args_to_add.size());
+      addresses.emplace_back(address.addr, address.len, args);
       grpc_uri_destroy(lb_uri);
       gpr_free(lb_uri_str);
     }
@@ -688,7 +690,7 @@ class XdsEnd2endTest : public ::testing::Test {
                              lb_channel_response_generator = nullptr) {
     grpc_core::ExecCtx exec_ctx;
     grpc_core::Resolver::Result result;
-    result.addresses = CreateAddressListFromPortList(ports);
+    result.addresses = CreateLbAddressesFromPortList(ports);
     if (service_config_json != nullptr) {
       grpc_error* error = GRPC_ERROR_NONE;
       result.service_config =
@@ -721,7 +723,7 @@ class XdsEnd2endTest : public ::testing::Test {
           nullptr) {
     grpc_core::ExecCtx exec_ctx;
     grpc_core::Resolver::Result result;
-    result.addresses = CreateAddressListFromPortList(ports);
+    result.addresses = CreateLbAddressesFromPortList(ports);
     if (service_config_json != nullptr) {
       grpc_error* error = GRPC_ERROR_NONE;
       result.service_config =
@@ -737,7 +739,7 @@ class XdsEnd2endTest : public ::testing::Test {
   void SetNextReresolutionResponse(const std::vector<int>& ports) {
     grpc_core::ExecCtx exec_ctx;
     grpc_core::Resolver::Result result;
-    result.addresses = CreateAddressListFromPortList(ports);
+    result.addresses = CreateLbAddressesFromPortList(ports);
     response_generator_->SetReresolutionResponse(std::move(result));
   }
 
@@ -914,7 +916,7 @@ class XdsEnd2endTest : public ::testing::Test {
       "{\n"
       "  \"loadBalancingConfig\":[\n"
       "    { \"does_not_exist\":{} },\n"
-      "    { \"xds_experimental\":{} }\n"
+      "    { \"xds_experimental\":{ \"balancerName\": \"fake:///lb\" } }\n"
       "  ]\n"
       "}";
 };
@@ -1099,14 +1101,20 @@ TEST_F(SecureNamingTest, TargetNameIsExpected) {
 
 // Tests that secure naming check fails if target name is unexpected.
 TEST_F(SecureNamingTest, TargetNameIsUnexpected) {
-  gpr_setenv("GRPC_XDS_BOOTSTRAP", "test/cpp/end2end/xds_bootstrap_bad.json");
   ::testing::FLAGS_gtest_death_test_style = "threadsafe";
   // Make sure that we blow up (via abort() from the security connector) when
   // the name from the balancer doesn't match expectations.
   ASSERT_DEATH_IF_SUPPORTED(
       {
         ResetStub(0, 0, kApplicationTargetName_ + ";lb");
-        SetNextResolution({}, kDefaultServiceConfig_.c_str());
+        SetNextResolution({},
+                          "{\n"
+                          "  \"loadBalancingConfig\":[\n"
+                          "    { \"does_not_exist\":{} },\n"
+                          "    { \"xds_experimental\":{ \"balancerName\": "
+                          "\"fake:///wrong_lb\" } }\n"
+                          "  ]\n"
+                          "}");
         SetNextResolutionForLbChannel({balancers_[0]->port()});
         channel_->WaitForConnected(grpc_timeout_seconds_to_deadline(1));
       },
