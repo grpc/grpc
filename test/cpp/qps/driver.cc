@@ -144,27 +144,35 @@ static void postprocess_scenario_result(ScenarioResult* result) {
   result->mutable_summary()->set_latency_99(histogram.Percentile(99));
   result->mutable_summary()->set_latency_999(histogram.Percentile(99.9));
 
-  // Calculate qps and cpu load for each client and then aggregate results for all clients 
+  // Calculate qps and cpu load for each client and then aggregate results for
+  // all clients
   double qps = 0;
   double client_system_cpu_load = 0, client_user_cpu_load = 0;
   double server_system_cpu_load = 0, server_user_cpu_load = 0;
-  for (size_t i = 0; i < result->client_stats_size(); i++){
+  for (size_t i = 0; i < result->client_stats_size(); i++) {
     auto client_stat = result->client_stats(i);
     qps += client_stat.latencies().count() / client_stat.time_system();
-    client_system_cpu_load += client_stat.time_system() / client_stat.time_elapsed();
-    client_user_cpu_load += client_stat.time_user() / client_stat.time_elapsed();
+    client_system_cpu_load +=
+        client_stat.time_system() / client_stat.time_elapsed();
+    client_user_cpu_load +=
+        client_stat.time_user() / client_stat.time_elapsed();
   }
-  // Calculate cpu load for each server and then aggregate results for all servers
-  for (size_t i = 0; i < result->server_stats_size(); i++){
+  // Calculate cpu load for each server and then aggregate results for all
+  // servers
+  for (size_t i = 0; i < result->server_stats_size(); i++) {
     auto server_stat = result->server_stats(i);
-    server_system_cpu_load += server_stat.time_system() / server_stat.time_elapsed();
-    server_user_cpu_load += server_stat.time_user() / server_stat.time_elapsed();
+    server_system_cpu_load +=
+        server_stat.time_system() / server_stat.time_elapsed();
+    server_user_cpu_load +=
+        server_stat.time_user() / server_stat.time_elapsed();
   }
   result->mutable_summary()->set_qps(qps);
   // Populate the percentage of cpu load to result summary.
-  result->mutable_summary()->set_server_system_time(100 * server_system_cpu_load);
+  result->mutable_summary()->set_server_system_time(100 *
+                                                    server_system_cpu_load);
   result->mutable_summary()->set_server_user_time(100 * server_user_cpu_load);
-  result->mutable_summary()->set_client_system_time(100* client_system_cpu_load);
+  result->mutable_summary()->set_client_system_time(100 *
+                                                    client_system_cpu_load);
   result->mutable_summary()->set_client_user_time(100 * client_user_cpu_load);
 
   // For Non-linux platform, get_cpu_usage() is not implemented. Thus,
