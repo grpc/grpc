@@ -7,31 +7,37 @@ different PHP environments.
 
 
 ## Build and Run Tests
+```sh
+$ cd grpc
+```
 
 To build all docker images:
-
 ```sh
-# cd grpc
 $ ./src/php/bin/build_all_docker_images.sh
+```
 
-# or to only build some selected images
+Or to only build some selected images
+```sh
 $ ./src/php/bin/build_all_docker_images.sh grpc-ext php-src
+```
 
-# or to only print out individual `docker build` commands
+Or to only print out individual `docker build` commands
+```sh
 $ ./src/php/bin/build_all_docker_images.sh --cmds
 ```
 
-
 To run all tests:
-
 ```sh
-$ cd grpc
 $ ./src/php/bin/run_all_docker_images.sh
+```
 
-# or to only run some selected images
+Or to only run some selected images
+```sh
 $ ./src/php/bin/run_all_docker_images.sh grpc-ext php-src
+```
 
-# or to only print out individual `docker run` commands
+Or to only print out individual `docker run` commands
+```sh
 $ ./src/php/bin/run_all_docker_images.sh --cmds
 ```
 
