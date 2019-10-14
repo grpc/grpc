@@ -20,6 +20,7 @@ import six
 import grpc
 from grpc._cython import cygrpc
 from grpc._cython.cygrpc import init_grpc_aio
+from ._server import server
 
 
 class Channel(six.with_metaclass(abc.ABCMeta)):
