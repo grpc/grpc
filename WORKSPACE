@@ -25,6 +25,12 @@ rbe_autoconfig(
     name = "rbe_default",
 )
 
+# Same as @rbe_default except that the platform uses exec_properties instead of remote_execution_properties.
+rbe_autoconfig(
+    name = "rbe_default_exec_properties",
+    use_legacy_platform_definition = False,
+)
+
 load("@bazel_toolchains//rules:environments.bzl", "clang_env")
 load("@bazel_skylib//lib:dicts.bzl", "dicts")
 
