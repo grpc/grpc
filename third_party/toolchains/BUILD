@@ -16,6 +16,8 @@ licenses(["notice"])  # Apache v2
 
 package(default_visibility = ["//visibility:public"])
 
+load("//third_party/toolchains/machine_size:machine_size_defs.bzl", "LARGE_MACHINE")
+
 alias(
     name = "rbe_windows",
     actual = ":rbe_windows_1803",
@@ -31,7 +33,7 @@ platform(
     ],
     exec_properties = {
         "container-image" : "docker://gcr.io/grpc-testing/rbe_windows_toolchain@sha256:75728e7d6d804090f71095e5fec627b18cfa1f47adc52096c209f2a687e06b2e",
-        "gceMachineType" : "n1-highmem-2",
+        "gceMachineType" : "n1-highmem-2",  # Small machines for majority of tests
         "OSFamily" : "Windows",
     },
 )
