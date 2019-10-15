@@ -241,13 +241,13 @@ static void test_slice_interning(void) {
   LOG_TEST_NAME("test_slice_interning");
 
   grpc_init();
-  grpc_slice src1 = grpc_slice_from_copied_string("hello1234567891234567891");
-  grpc_slice src2 = grpc_slice_from_copied_string("hello1234567891234567891");
+  grpc_slice src1 = grpc_slice_from_copied_string("hello123456789123456789");
+  grpc_slice src2 = grpc_slice_from_copied_string("hello123456789123456789");
 
-  // make sure slices are refcounted to guarantee slices' start ptrs are
-  // distinct (even on windows opt 64bit build).
+  // Explicitly checking that the slices are at different addresses prevents
+  // failure with windows opt 64bit build.
   // See https://github.com/grpc/grpc/issues/20519
-  GPR_ASSERT(src1.refcount);
+  GPR_ASSERT(&src1 != &src2);
   GPR_ASSERT(GRPC_SLICE_START_PTR(src1) != GRPC_SLICE_START_PTR(src2));
 
   grpc_slice interned1 = grpc_slice_intern(src1);
