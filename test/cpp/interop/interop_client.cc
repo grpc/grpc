@@ -1088,10 +1088,12 @@ bool InteropClient::DoChannelSoakTest(int32_t soak_iterations) {
   SimpleResponse response;
   for (int i = 0; i < soak_iterations; ++i) {
     serviceStub_.ResetChannel();
+    gpr_log(GPR_DEBUG, "Starting channel_soak iteration %d...", i);
     if (!PerformLargeUnary(&request, &response)) {
       gpr_log(GPR_ERROR, "channel_soak test failed on iteration %d", i);
       return false;
     }
+    gpr_log(GPR_DEBUG, "channel_soak iteration %d finished", i);
   }
   gpr_log(GPR_DEBUG, "channel_soak test done.");
   return true;
