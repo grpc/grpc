@@ -23,6 +23,8 @@ load("@bazel_toolchains//rules:rbe_repo.bzl", "rbe_autoconfig")
 # Create toolchain configuration for remote execution.
 rbe_autoconfig(
     name = "rbe_default",
+    # use exec_properties instead of deprecated remote_execution_properties
+    use_legacy_platform_definition = False,
 )
 
 load("@bazel_toolchains//rules:environments.bzl", "clang_env")
