@@ -91,4 +91,5 @@ grpc_cc_test(
         "//test/core/tsi/alts/fake_handshaker:fake_handshaker_lib",
         "//test/core/end2end:cq_verifier",
     ],
+    tags = ["no_windows"], # this test involves a fake TCP server that isn't portable to Windows
 )
