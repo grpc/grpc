@@ -626,6 +626,8 @@
     <file baseinstalldir="/" name="src/core/lib/iomgr/unix_sockets_posix.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/unix_sockets_posix.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/unix_sockets_posix_noop.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/iomgr/vsock_sockets_posix.cc" role="src" />
+    <file baseinstalldir="/" name="src/core/lib/iomgr/vsock_sockets_posix.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/wakeup_fd_eventfd.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/wakeup_fd_nospecial.cc" role="src" />
     <file baseinstalldir="/" name="src/core/lib/iomgr/wakeup_fd_pipe.cc" role="src" />
@@ -970,6 +972,7 @@
     <file baseinstalldir="/" name="third_party/boringssl/crypto/engine/engine.c" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl/crypto/err/err.c" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl/crypto/err/internal.h" role="src" />
+    <file baseinstalldir="/" name="third_party/boringssl/crypto/err_data.c" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl/crypto/evp/digestsign.c" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl/crypto/evp/evp.c" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl/crypto/evp/evp_asn1.c" role="src" />

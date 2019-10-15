@@ -33,6 +33,7 @@
 #include "src/core/lib/iomgr/sockaddr.h"
 #include "src/core/lib/iomgr/socket_utils.h"
 #include "src/core/lib/iomgr/unix_sockets_posix.h"
+#include "src/core/lib/iomgr/vsock_sockets_posix.h"
 
 static const uint8_t kV4MappedPrefix[] = {0, 0, 0, 0, 0,    0,
                                           0, 0, 0, 0, 0xff, 0xff};
@@ -225,6 +226,8 @@ char* grpc_sockaddr_to_uri(const grpc_resolved_address* resolved_addr) {
   const char* scheme = grpc_sockaddr_get_uri_scheme(resolved_addr);
   if (scheme == nullptr || strcmp("unix", scheme) == 0) {
     return grpc_sockaddr_to_uri_unix_if_possible(resolved_addr);
+  } else if (strcmp("vsock", scheme) == 0) {
+    return grpc_sockaddr_to_uri_vsock_if_possible(resolved_addr);
   }
   char* path = nullptr;
   char* uri_str = nullptr;
@@ -248,6 +251,8 @@ const char* grpc_sockaddr_get_uri_scheme(
       return "ipv6";
     case GRPC_AF_UNIX:
       return "unix";
+    case GRPC_AF_VSOCK:
+      return "vsock";
   }
   return nullptr;
 }
@@ -266,6 +271,8 @@ int grpc_sockaddr_get_port(const grpc_resolved_address* resolved_addr) {
       return grpc_ntohs(((grpc_sockaddr_in*)addr)->sin_port);
     case GRPC_AF_INET6:
       return grpc_ntohs(((grpc_sockaddr_in6*)addr)->sin6_port);
+    case GRPC_AF_VSOCK:
+      return ((struct sockaddr_vm *)addr)->svm_port;
     default:
       if (grpc_is_unix_socket(resolved_addr)) {
         return 1;
