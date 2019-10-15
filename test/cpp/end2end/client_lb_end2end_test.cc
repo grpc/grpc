@@ -1471,6 +1471,34 @@ TEST_F(ClientLbEnd2endTest, RoundRobinWithHealthChecking) {
   EnableDefaultHealthCheckService(false);
 }
 
+TEST_F(ClientLbEnd2endTest,
+       RoundRobinWithHealthCheckingHandlesSubchannelFailure) {
+  EnableDefaultHealthCheckService(true);
+  // Start servers.
+  const int kNumServers = 3;
+  StartServers(kNumServers);
+  servers_[0]->SetServingStatus("health_check_service_name", true);
+  servers_[1]->SetServingStatus("health_check_service_name", true);
+  servers_[2]->SetServingStatus("health_check_service_name", true);
+  ChannelArguments args;
+  args.SetServiceConfigJSON(
+      "{\"healthCheckConfig\": "
+      "{\"serviceName\": \"health_check_service_name\"}}");
+  auto response_generator = BuildResolverResponseGenerator();
+  auto channel = BuildChannel("round_robin", response_generator, args);
+  auto stub = BuildStub(channel);
+  response_generator.SetNextResolution(GetServersPorts());
+  WaitForServer(stub, 0, DEBUG_LOCATION);
+  // Stop server 0 and send a new resolver result to ensure that RR
+  // checks each subchannel's state.
+  servers_[0]->Shutdown();
+  response_generator.SetNextResolution(GetServersPorts());
+  // Send a bunch more RPCs.
+  for (size_t i = 0; i < 100; i++) {
+    SendRpc(stub);
+  }
+}
+
 TEST_F(ClientLbEnd2endTest, RoundRobinWithHealthCheckingInhibitPerChannel) {
   EnableDefaultHealthCheckService(true);
   // Start server.

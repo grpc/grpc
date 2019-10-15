@@ -223,7 +223,7 @@ EOF
 
 # Upload the current build artifacts
 gsutil -m cp -r "$LOCAL_STAGING_TEMPDIR/${BUILD_RELPATH%%/*}" "$GCS_ARCHIVE_ROOT"
-# Upload directory indicies for subdirectories
+# Upload directory indices for subdirectories
 (
   cd "$LOCAL_BUILD_ROOT"
   find * -type d | while read -r directory

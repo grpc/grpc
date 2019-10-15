@@ -143,8 +143,8 @@ extern const char *kCFStreamVarName;
                                             messageCallback:^(id message) {
                                               int indexCopy;
                                               @synchronized(self) {
-                                                index += 1;
                                                 indexCopy = index;
+                                                index += 1;
                                               }
                                               if (indexCopy < numMessages) {
                                                 [call writeMessage:request];
@@ -181,7 +181,7 @@ extern const char *kCFStreamVarName;
   [self pingPongV2APIWithRequest:request numMessages:1000 options:options];
 
   [self measureBlock:^{
-    [self pingPongV2APIWithRequest:request numMessages:10000 options:options];
+    [self pingPongV2APIWithRequest:request numMessages:1000 options:options];
   }];
 }
 
@@ -198,7 +198,7 @@ extern const char *kCFStreamVarName;
   [self pingPongV2APIWithRequest:request numMessages:1000 options:options];
 
   [self measureBlock:^{
-    [self pingPongV2APIWithRequest:request numMessages:10000 options:options];
+    [self pingPongV2APIWithRequest:request numMessages:1000 options:options];
   }];
 }
 
@@ -215,7 +215,7 @@ extern const char *kCFStreamVarName;
   [self pingPongV2APIWithRequest:request numMessages:1000 options:options];
 
   [self measureBlock:^{
-    [self pingPongV2APIWithRequest:request numMessages:10000 options:options];
+    [self pingPongV2APIWithRequest:request numMessages:1000 options:options];
   }];
 }
 
@@ -254,7 +254,7 @@ extern const char *kCFStreamVarName;
   id request = [RMTStreamingOutputCallRequest messageWithPayloadSize:@1 requestedResponseSize:@1];
   [self pingPongV1APIWithRequest:request numMessages:1000];
   [self measureBlock:^{
-    [self pingPongV1APIWithRequest:request numMessages:10000];
+    [self pingPongV1APIWithRequest:request numMessages:1000];
   }];
 }
 
@@ -298,7 +298,7 @@ extern const char *kCFStreamVarName;
   [self waitForExpectationsWithTimeout:TEST_TIMEOUT handler:nil];
 }
 
-- (void)testUnaryRPC {
+- (void)test1MBUnaryRPC {
   // Workaround Apple CFStream bug
   if ([self isUsingCFStream]) {
     return;
@@ -325,6 +325,32 @@ extern const char *kCFStreamVarName;
                         request:request
                 callsPerService:50
             maxOutstandingCalls:10
+                    callOptions:options];
+  }];
+}
+
+- (void)test1KBUnaryRPC {
+  RMTSimpleRequest *request = [RMTSimpleRequest message];
+  request.responseSize = 1024;
+  request.payload.body = [NSMutableData dataWithLength:1024];
+
+  GRPCMutableCallOptions *options = [[GRPCMutableCallOptions alloc] init];
+  options.transport = [[self class] transport];
+  options.PEMRootCertificates = [[self class] PEMRootCertificates];
+  options.hostNameOverride = [[self class] hostNameOverride];
+
+  // warm up
+  [self unaryRPCsWithServices:@[ self->_service ]
+                      request:request
+              callsPerService:1000
+          maxOutstandingCalls:100
+                  callOptions:options];
+
+  [self measureBlock:^{
+    [self unaryRPCsWithServices:@[ self->_service ]
+                        request:request
+                callsPerService:1000
+            maxOutstandingCalls:100
                     callOptions:options];
   }];
 }

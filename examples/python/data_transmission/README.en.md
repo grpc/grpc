@@ -1,6 +1,6 @@
 ##  Data transmission demo for using gRPC in Python
 
-Four ways of data transmission when gRPC is used in Python.  [Offical Guide](<https://grpc.io/docs/guides/concepts/#unary-rpc>)
+Four ways of data transmission when gRPC is used in Python.  [Official Guide](<https://grpc.io/docs/guides/concepts/#unary-rpc>)
 
 - #### unary-unary
 

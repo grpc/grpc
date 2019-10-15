@@ -150,7 +150,7 @@ class ThreadManager {
   //
   // Note: The user of this ThreadManager object must create grpc_resource_quota
   // object (that contains the actual max thread quota) and a grpc_resource_user
-  // object through which quota is requested whenver new threads need to be
+  // object through which quota is requested whenever new threads need to be
   // created
   grpc_resource_user* resource_user_;
 

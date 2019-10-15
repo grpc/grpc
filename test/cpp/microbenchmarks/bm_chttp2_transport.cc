@@ -331,9 +331,12 @@ static void BM_StreamCreateSendInitialMetadataDestroy(benchmark::State& state) {
   }
 
   f.FlushExecCtx();
+  gpr_event bm_done;
+  gpr_event_init(&bm_done);
   start = MakeClosure([&, s](grpc_error* error) {
     if (!state.KeepRunning()) {
       delete s;
+      gpr_event_set(&bm_done, (void*)1);
       return;
     }
     s->Init(state);
@@ -352,6 +355,7 @@ static void BM_StreamCreateSendInitialMetadataDestroy(benchmark::State& state) {
   });
   GRPC_CLOSURE_SCHED(start.get(), GRPC_ERROR_NONE);
   f.FlushExecCtx();
+  gpr_event_wait(&bm_done, gpr_inf_future(GPR_CLOCK_REALTIME));
   grpc_metadata_batch_destroy(&b);
   track_counters.Finish(state);
 }

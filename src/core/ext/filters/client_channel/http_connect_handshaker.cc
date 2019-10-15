@@ -356,5 +356,5 @@ void grpc_http_connect_register_handshaker_factory() {
   using namespace grpc_core;
   HandshakerRegistry::RegisterHandshakerFactory(
       true /* at_start */, HANDSHAKER_CLIENT,
-      UniquePtr<HandshakerFactory>(New<HttpConnectHandshakerFactory>()));
+      MakeUnique<HttpConnectHandshakerFactory>());
 }

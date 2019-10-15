@@ -42,7 +42,7 @@ static int32_t kRemoteInteropServerOverhead = 12;
 @implementation InteropTestsRemoteWithCronet
 
 + (void)setUp {
-  configureCronet();
+  configureCronet(/*enable_netlog=*/false);
   [GRPCCall useCronetWithEngine:[Cronet getGlobalEngine]];
 
   [super setUp];
@@ -58,6 +58,10 @@ static int32_t kRemoteInteropServerOverhead = 12;
 
 - (int32_t)encodingOverhead {
   return kRemoteInteropServerOverhead;  // bytes
+}
+
++ (BOOL)isRemoteTest {
+  return YES;
 }
 
 @end

@@ -174,13 +174,14 @@ def grpc_deps():
         )
 
     if "bazel_toolchains" not in native.existing_rules():
+        # list of releases is at https://releases.bazel.build/bazel-toolchains.html
         http_archive(
             name = "bazel_toolchains",
-            sha256 = "872955b658113924eb1a3594b04d43238da47f4f90c17b76e8785709490dc041",
-            strip_prefix = "bazel-toolchains-1083686fde6032378d52b4c98044922cebde364e",
+            sha256 = "22ca5b8115c8673ecb627a02b606529e813961e447933863fccdf325cc5f999f",
+            strip_prefix = "bazel-toolchains-0.29.5",
             urls = [
-                "https://mirror.bazel.build/github.com/bazelbuild/bazel-toolchains/archive/1083686fde6032378d52b4c98044922cebde364e.tar.gz",
-                "https://github.com/bazelbuild/bazel-toolchains/archive/1083686fde6032378d52b4c98044922cebde364e.tar.gz",
+                "https://github.com/bazelbuild/bazel-toolchains/releases/download/0.29.5/bazel-toolchains-0.29.5.tar.gz",
+                "https://mirror.bazel.build/github.com/bazelbuild/bazel-toolchains/archive/0.29.5.tar.gz",
             ],
         )
 

@@ -25,7 +25,6 @@
 
 #include "src/core/ext/transport/chttp2/transport/http2_settings.h"
 #include "src/core/lib/gpr/useful.h"
-#include "src/core/lib/gprpp/abstract.h"
 #include "src/core/lib/gprpp/manual_constructor.h"
 #include "src/core/lib/transport/bdp_estimator.h"
 #include "src/core/lib/transport/pid_controller.h"
@@ -188,8 +187,6 @@ class TransportFlowControlBase {
   // Used in certain benchmarks in which we don't want FlowControl to be a
   // factor
   virtual void TestOnlyForceHugeWindow() {}
-
-  GRPC_ABSTRACT_BASE_CLASS
 
  protected:
   friend class ::grpc::testing::TrickledCHTTP2;
@@ -384,8 +381,6 @@ class StreamFlowControlBase {
   int64_t remote_window_delta() { return remote_window_delta_; }
   int64_t local_window_delta() { return local_window_delta_; }
   int64_t announced_window_delta() { return announced_window_delta_; }
-
-  GRPC_ABSTRACT_BASE_CLASS
 
  protected:
   friend class ::grpc::testing::TrickledCHTTP2;

@@ -57,4 +57,8 @@ static int32_t kRemoteInteropServerOverhead = 12;
   return GRPCTransportTypeChttp2BoringSSL;
 }
 
++ (BOOL)isRemoteTest {
+  return YES;
+}
+
 @end

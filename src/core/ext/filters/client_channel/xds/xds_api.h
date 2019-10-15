@@ -16,40 +16,77 @@
  *
  */
 
-#ifndef GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_LB_POLICY_XDS_XDS_LOAD_BALANCER_API_H
-#define GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_LB_POLICY_XDS_XDS_LOAD_BALANCER_API_H
+#ifndef GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_XDS_XDS_API_H
+#define GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_XDS_XDS_API_H
 
 #include <grpc/support/port_platform.h>
 
+#include <stdint.h>
+
 #include <grpc/slice_buffer.h>
 
-#include "src/core/ext/filters/client_channel/lb_policy/xds/xds_client_stats.h"
 #include "src/core/ext/filters/client_channel/server_address.h"
+#include "src/core/ext/filters/client_channel/xds/xds_client_stats.h"
 
 namespace grpc_core {
 
-struct XdsLocalityInfo {
-  bool operator==(const XdsLocalityInfo& other) const {
-    return *locality_name == *other.locality_name &&
-           serverlist == other.serverlist && lb_weight == other.lb_weight &&
-           priority == other.priority;
-  }
+class XdsPriorityListUpdate {
+ public:
+  struct LocalityMap {
+    struct Locality {
+      bool operator==(const Locality& other) const {
+        return *name == *other.name && serverlist == other.serverlist &&
+               lb_weight == other.lb_weight && priority == other.priority;
+      }
 
-  // This comparator only compares the locality names.
-  struct Less {
-    bool operator()(const XdsLocalityInfo& lhs,
-                    const XdsLocalityInfo& rhs) const {
-      return XdsLocalityName::Less()(lhs.locality_name, rhs.locality_name);
+      // This comparator only compares the locality names.
+      struct Less {
+        bool operator()(const Locality& lhs, const Locality& rhs) const {
+          return XdsLocalityName::Less()(lhs.name, rhs.name);
+        }
+      };
+
+      RefCountedPtr<XdsLocalityName> name;
+      ServerAddressList serverlist;
+      uint32_t lb_weight;
+      uint32_t priority;
+    };
+
+    bool Contains(const RefCountedPtr<XdsLocalityName>& name) const {
+      return localities.find(name) != localities.end();
     }
+
+    size_t size() const { return localities.size(); }
+
+    Map<RefCountedPtr<XdsLocalityName>, Locality, XdsLocalityName::Less>
+        localities;
   };
 
-  RefCountedPtr<XdsLocalityName> locality_name;
-  ServerAddressList serverlist;
-  uint32_t lb_weight;
-  uint32_t priority;
-};
+  bool operator==(const XdsPriorityListUpdate& other) const;
+  bool operator!=(const XdsPriorityListUpdate& other) const {
+    return !(*this == other);
+  }
 
-using XdsLocalityList = InlinedVector<XdsLocalityInfo, 1>;
+  void Add(LocalityMap::Locality locality);
+
+  const LocalityMap* Find(uint32_t priority) const;
+
+  bool Contains(uint32_t priority) const {
+    return priority < priorities_.size();
+  }
+  bool Contains(const RefCountedPtr<XdsLocalityName>& name);
+
+  bool empty() const { return priorities_.empty(); }
+  size_t size() const { return priorities_.size(); }
+
+  // Callers should make sure the priority list is non-empty.
+  uint32_t LowestPriority() const {
+    return static_cast<uint32_t>(priorities_.size()) - 1;
+  }
+
+ private:
+  InlinedVector<LocalityMap, 2> priorities_;
+};
 
 // There are two phases of accessing this class's content:
 // 1. to initialize in the control plane combiner;
@@ -92,11 +129,14 @@ class XdsDropConfig : public RefCounted<XdsDropConfig> {
   DropCategoryList drop_category_list_;
 };
 
-struct XdsUpdate {
-  XdsLocalityList locality_list;
+struct EdsUpdate {
+  XdsPriorityListUpdate priority_list_update;
   RefCountedPtr<XdsDropConfig> drop_config;
   bool drop_all = false;
 };
+
+// TODO(juanlishen): Add fields as part of implementing CDS support.
+struct CdsUpdate {};
 
 // Creates an EDS request querying \a service_name.
 grpc_slice XdsEdsRequestCreateAndEncode(const char* server_name);
@@ -104,7 +144,7 @@ grpc_slice XdsEdsRequestCreateAndEncode(const char* server_name);
 // Parses the EDS response and returns the args to update locality map. If there
 // is any error, the output update is invalid.
 grpc_error* XdsEdsResponseDecodeAndParse(const grpc_slice& encoded_response,
-                                         XdsUpdate* update);
+                                         EdsUpdate* update);
 
 // Creates an LRS request querying \a server_name.
 grpc_slice XdsLrsRequestCreateAndEncode(const char* server_name);
@@ -114,14 +154,13 @@ grpc_slice XdsLrsRequestCreateAndEncode(const char* server_name);
 grpc_slice XdsLrsRequestCreateAndEncode(const char* server_name,
                                         XdsClientStats* client_stats);
 
-// Parses the LRS response and returns the client-side load reporting interval.
-// If there is any error (e.g., the found server name doesn't match \a
-// expected_server_name), the output config is invalid.
+// Parses the LRS response and returns \a cluster_name and \a
+// load_reporting_interval for client-side load reporting. If there is any
+// error, the output config is invalid.
 grpc_error* XdsLrsResponseDecodeAndParse(const grpc_slice& encoded_response,
-                                         grpc_millis* load_reporting_interval,
-                                         const char* expected_server_name);
+                                         UniquePtr<char>* cluster_name,
+                                         grpc_millis* load_reporting_interval);
 
 }  // namespace grpc_core
 
-#endif /* GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_LB_POLICY_XDS_XDS_LOAD_BALANCER_API_H \
-        */
+#endif /* GRPC_CORE_EXT_FILTERS_CLIENT_CHANNEL_XDS_XDS_API_H */

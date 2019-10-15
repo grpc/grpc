@@ -104,6 +104,9 @@ grpc_status_code TlsFetchKeyMaterials(
       }
     }
     gpr_free((void*)arg->error_details);
+    if (arg->destroy_context != nullptr) {
+      arg->destroy_context(arg->context);
+    }
     grpc_core::Delete(arg);
   }
   return status;
@@ -173,7 +176,8 @@ void SpiffeChannelSecurityConnector::check_peer(
     tsi_peer_destruct(&peer);
     return;
   }
-  *auth_context = grpc_ssl_peer_to_auth_context(&peer);
+  *auth_context = grpc_ssl_peer_to_auth_context(
+      &peer, GRPC_TLS_SPIFFE_TRANSPORT_SECURITY_TYPE);
   const SpiffeCredentials* creds =
       static_cast<const SpiffeCredentials*>(channel_creds());
   const grpc_tls_server_authorization_check_config* config =
@@ -392,6 +396,9 @@ void SpiffeChannelSecurityConnector::ServerAuthorizationCheckArgDestroy(
   gpr_free((void*)arg->target_name);
   gpr_free((void*)arg->peer_cert);
   gpr_free((void*)arg->error_details);
+  if (arg->destroy_context != nullptr) {
+    arg->destroy_context(arg->context);
+  }
   grpc_core::Delete(arg);
 }
 
@@ -436,7 +443,8 @@ void SpiffeServerSecurityConnector::check_peer(
     grpc_core::RefCountedPtr<grpc_auth_context>* auth_context,
     grpc_closure* on_peer_checked) {
   grpc_error* error = grpc_ssl_check_alpn(&peer);
-  *auth_context = grpc_ssl_peer_to_auth_context(&peer);
+  *auth_context = grpc_ssl_peer_to_auth_context(
+      &peer, GRPC_TLS_SPIFFE_TRANSPORT_SECURITY_TYPE);
   tsi_peer_destruct(&peer);
   GRPC_CLOSURE_SCHED(on_peer_checked, error);
 }

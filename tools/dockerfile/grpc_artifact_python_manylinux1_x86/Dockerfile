@@ -28,12 +28,5 @@ RUN /opt/python/cp34-cp34m/bin/pip install cython
 RUN /opt/python/cp35-cp35m/bin/pip install cython
 RUN /opt/python/cp36-cp36m/bin/pip install cython
 RUN /opt/python/cp37-cp37m/bin/pip install cython
-
-####################################################
-# Install auditwheel with fix for namespace packages
-RUN git clone https://github.com/pypa/auditwheel /usr/local/src/auditwheel
-RUN cd /usr/local/src/auditwheel && git checkout 2.1
-RUN /opt/python/cp36-cp36m/bin/pip install /usr/local/src/auditwheel
-RUN rm /usr/local/bin/auditwheel
-RUN cd /usr/local/bin && ln -s /opt/python/cp36-cp36m/bin/auditwheel
-
+RUN /opt/python/cp37-cp37m/bin/pip install cython
+RUN /opt/python/cp38-cp38/bin/pip install cython

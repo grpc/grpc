@@ -38,7 +38,7 @@
 + (NSString *)host;
 
 /**
- * Bytes of overhead of test proto responses due to encoding. This is used to excercise the behavior
+ * Bytes of overhead of test proto responses due to encoding. This is used to exercise the behavior
  * when responses are just above or below the max response size. For some reason, the local and
  * remote servers enconde responses with different overhead (?), so this is defined per-subclass.
  */
@@ -57,9 +57,13 @@
 + (NSString *)PEMRootCertificates;
 
 /**
- * The root certificates to be used. The base implementation returns nil. Subclasses should override
- * to appropriate settings.
+ * The host name to be used for TLS verification in the tests.
  */
 + (NSString *)hostNameOverride;
+
+/**
+ * Indication of whether the test is connecting to a remote server.
+ */
++ (BOOL)isRemoteTest;
 
 @end

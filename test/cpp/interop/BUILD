@@ -44,6 +44,7 @@ grpc_cc_binary(
         "grpclb_fallback_test.cc",
     ],
     language = "C++",
+    tags = ["no_windows"],
     deps = [
         "//src/proto/grpc/testing:empty_proto",
         "//src/proto/grpc/testing:messages_proto",

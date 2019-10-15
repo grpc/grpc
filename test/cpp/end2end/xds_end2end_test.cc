@@ -52,6 +52,7 @@
 #include "test/cpp/end2end/test_service_impl.h"
 
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
+#include "src/proto/grpc/testing/xds/ads_for_test.grpc.pb.h"
 #include "src/proto/grpc/testing/xds/eds_for_test.grpc.pb.h"
 #include "src/proto/grpc/testing/xds/lrs_for_test.grpc.pb.h"
 
@@ -84,8 +85,8 @@ using std::chrono::system_clock;
 using ::envoy::api::v2::ClusterLoadAssignment;
 using ::envoy::api::v2::DiscoveryRequest;
 using ::envoy::api::v2::DiscoveryResponse;
-using ::envoy::api::v2::EndpointDiscoveryService;
 using ::envoy::api::v2::FractionalPercent;
+using ::envoy::service::discovery::v2::AggregatedDiscoveryService;
 using ::envoy::service::load_stats::v2::ClusterStats;
 using ::envoy::service::load_stats::v2::LoadReportingService;
 using ::envoy::service::load_stats::v2::LoadStatsRequest;
@@ -99,6 +100,7 @@ constexpr char kDefaultLocalityZone[] = "xds_default_locality_zone";
 constexpr char kLbDropType[] = "lb";
 constexpr char kThrottleDropType[] = "throttle";
 constexpr int kDefaultLocalityWeight = 3;
+constexpr int kDefaultLocalityPriority = 0;
 
 template <typename ServiceType>
 class CountedService : public ServiceType {
@@ -137,7 +139,7 @@ class CountedService : public ServiceType {
 };
 
 using BackendService = CountedService<TestServiceImpl>;
-using EdsService = CountedService<EndpointDiscoveryService::Service>;
+using AdsService = CountedService<AggregatedDiscoveryService::Service>;
 using LrsService = CountedService<LoadReportingService::Service>;
 
 const char g_kCallCredsMdKey[] = "Balancer should not ...";
@@ -257,12 +259,14 @@ class ClientStats {
   std::map<grpc::string, uint64_t> dropped_requests_;
 };
 
-class EdsServiceImpl : public EdsService {
+// Only the EDS functionality is implemented.
+class AdsServiceImpl : public AdsService {
  public:
   struct ResponseArgs {
     struct Locality {
       Locality(const grpc::string& sub_zone, std::vector<int> ports,
-               int lb_weight = kDefaultLocalityWeight, int priority = 0)
+               int lb_weight = kDefaultLocalityWeight,
+               int priority = kDefaultLocalityPriority)
           : sub_zone(std::move(sub_zone)),
             ports(std::move(ports)),
             lb_weight(lb_weight),
@@ -287,12 +291,13 @@ class EdsServiceImpl : public EdsService {
   using Stream = ServerReaderWriter<DiscoveryResponse, DiscoveryRequest>;
   using ResponseDelayPair = std::pair<DiscoveryResponse, int>;
 
-  Status StreamEndpoints(ServerContext* context, Stream* stream) override {
-    gpr_log(GPR_INFO, "LB[%p]: EDS StreamEndpoints starts", this);
+  Status StreamAggregatedResources(ServerContext* context,
+                                   Stream* stream) override {
+    gpr_log(GPR_INFO, "LB[%p]: ADS StreamAggregatedResources starts", this);
     [&]() {
       {
-        grpc_core::MutexLock lock(&eds_mu_);
-        if (eds_done_) return;
+        grpc_core::MutexLock lock(&ads_mu_);
+        if (ads_done_) return;
       }
       // Balancer shouldn't receive the call credentials metadata.
       EXPECT_EQ(context->client_metadata().find(g_kCallCredsMdKey),
@@ -306,7 +311,7 @@ class EdsServiceImpl : public EdsService {
       // Send response.
       std::vector<ResponseDelayPair> responses_and_delays;
       {
-        grpc_core::MutexLock lock(&eds_mu_);
+        grpc_core::MutexLock lock(&ads_mu_);
         responses_and_delays = responses_and_delays_;
       }
       for (const auto& response_and_delay : responses_and_delays) {
@@ -314,28 +319,28 @@ class EdsServiceImpl : public EdsService {
                      response_and_delay.second);
       }
       // Wait until notified done.
-      grpc_core::MutexLock lock(&eds_mu_);
-      eds_cond_.WaitUntil(&eds_mu_, [this] { return eds_done_; });
+      grpc_core::MutexLock lock(&ads_mu_);
+      ads_cond_.WaitUntil(&ads_mu_, [this] { return ads_done_; });
     }();
-    gpr_log(GPR_INFO, "LB[%p]: EDS StreamEndpoints done", this);
+    gpr_log(GPR_INFO, "LB[%p]: ADS StreamAggregatedResources done", this);
     return Status::OK;
   }
 
   void add_response(const DiscoveryResponse& response, int send_after_ms) {
-    grpc_core::MutexLock lock(&eds_mu_);
+    grpc_core::MutexLock lock(&ads_mu_);
     responses_and_delays_.push_back(std::make_pair(response, send_after_ms));
   }
 
   void Start() {
-    grpc_core::MutexLock lock(&eds_mu_);
-    eds_done_ = false;
+    grpc_core::MutexLock lock(&ads_mu_);
+    ads_done_ = false;
     responses_and_delays_.clear();
   }
 
   void Shutdown() {
     {
-      grpc_core::MutexLock lock(&eds_mu_);
-      NotifyDoneWithEdsCallLocked();
+      grpc_core::MutexLock lock(&ads_mu_);
+      NotifyDoneWithAdsCallLocked();
       responses_and_delays_.clear();
     }
     gpr_log(GPR_INFO, "LB[%p]: shut down", this);
@@ -378,15 +383,15 @@ class EdsServiceImpl : public EdsService {
     return response;
   }
 
-  void NotifyDoneWithEdsCall() {
-    grpc_core::MutexLock lock(&eds_mu_);
-    NotifyDoneWithEdsCallLocked();
+  void NotifyDoneWithAdsCall() {
+    grpc_core::MutexLock lock(&ads_mu_);
+    NotifyDoneWithAdsCallLocked();
   }
 
-  void NotifyDoneWithEdsCallLocked() {
-    if (!eds_done_) {
-      eds_done_ = true;
-      eds_cond_.Broadcast();
+  void NotifyDoneWithAdsCallLocked() {
+    if (!ads_done_) {
+      ads_done_ = true;
+      ads_cond_.Broadcast();
     }
   }
 
@@ -403,10 +408,10 @@ class EdsServiceImpl : public EdsService {
     stream->Write(response);
   }
 
-  grpc_core::CondVar eds_cond_;
+  grpc_core::CondVar ads_cond_;
   // Protect the members below.
-  grpc_core::Mutex eds_mu_;
-  bool eds_done_ = false;
+  grpc_core::Mutex ads_mu_;
+  bool ads_done_ = false;
   std::vector<ResponseDelayPair> responses_and_delays_;
 };
 
@@ -566,13 +571,16 @@ class XdsEnd2endTest : public ::testing::Test {
 
   void ShutdownBackend(size_t index) { backends_[index]->Shutdown(); }
 
-  void ResetStub(int fallback_timeout = 0,
+  void ResetStub(int fallback_timeout = 0, int failover_timeout = 0,
                  const grpc::string& expected_targets = "",
                  grpc::string scheme = "") {
     ChannelArguments args;
     // TODO(juanlishen): Add setter to ChannelArguments.
     if (fallback_timeout > 0) {
       args.SetInt(GRPC_ARG_XDS_FALLBACK_TIMEOUT_MS, fallback_timeout);
+    }
+    if (failover_timeout > 0) {
+      args.SetInt(GRPC_ARG_XDS_FAILOVER_TIMEOUT_MS, failover_timeout);
     }
     args.SetPointer(GRPC_ARG_FAKE_RESOLVER_RESPONSE_GENERATOR,
                     response_generator_.get());
@@ -747,7 +755,7 @@ class XdsEnd2endTest : public ::testing::Test {
 
   void ScheduleResponseForBalancer(size_t i, const DiscoveryResponse& response,
                                    int delay_ms) {
-    balancers_[i]->eds_service()->add_response(response, delay_ms);
+    balancers_[i]->ads_service()->add_response(response, delay_ms);
   }
 
   Status SendRpc(EchoResponse* response = nullptr, int timeout_ms = 1000,
@@ -865,28 +873,28 @@ class XdsEnd2endTest : public ::testing::Test {
     explicit BalancerServerThread(int client_load_reporting_interval = 0)
         : lrs_service_(client_load_reporting_interval) {}
 
-    EdsServiceImpl* eds_service() { return &eds_service_; }
+    AdsServiceImpl* ads_service() { return &ads_service_; }
     LrsServiceImpl* lrs_service() { return &lrs_service_; }
 
    private:
     void RegisterAllServices(ServerBuilder* builder) override {
-      builder->RegisterService(&eds_service_);
+      builder->RegisterService(&ads_service_);
       builder->RegisterService(&lrs_service_);
     }
 
     void StartAllServices() override {
-      eds_service_.Start();
+      ads_service_.Start();
       lrs_service_.Start();
     }
 
     void ShutdownAllServices() override {
-      eds_service_.Shutdown();
+      ads_service_.Shutdown();
       lrs_service_.Shutdown();
     }
 
     const char* Type() override { return "Balancer"; }
 
-    EdsServiceImpl eds_service_;
+    AdsServiceImpl ads_service_;
     LrsServiceImpl lrs_service_;
   };
 
@@ -922,7 +930,7 @@ class XdsResolverTest : public XdsEnd2endTest {
 // used.
 TEST_F(XdsResolverTest, XdsResolverIsUsed) {
   // Use xds-experimental scheme in URI.
-  ResetStub(0, "", "xds-experimental");
+  ResetStub(0, 0, "", "xds-experimental");
   // Send an RPC to trigger resolution.
   auto unused_result = SendRpc();
   // Xds resolver returns xds_experimental as the LB policy.
@@ -940,10 +948,10 @@ TEST_F(BasicTest, Vanilla) {
   SetNextResolution({}, kDefaultServiceConfig_.c_str());
   SetNextResolutionForLbChannelAllBalancers();
   const size_t kNumRpcsPerAddress = 100;
-  EdsServiceImpl::ResponseArgs args({
+  AdsServiceImpl::ResponseArgs args({
       {"locality0", GetBackendPorts()},
   });
-  ScheduleResponseForBalancer(0, EdsServiceImpl::BuildResponse(args), 0);
+  ScheduleResponseForBalancer(0, AdsServiceImpl::BuildResponse(args), 0);
   // Make sure that trying to connect works without a call.
   channel_->GetState(true /* try_to_connect */);
   // We need to wait for all backends to come online.
@@ -955,9 +963,9 @@ TEST_F(BasicTest, Vanilla) {
     EXPECT_EQ(kNumRpcsPerAddress,
               backends_[i]->backend_service()->request_count());
   }
-  // The EDS service got a single request, and sent a single response.
-  EXPECT_EQ(1U, balancers_[0]->eds_service()->request_count());
-  EXPECT_EQ(1U, balancers_[0]->eds_service()->response_count());
+  // The ADS service got a single request, and sent a single response.
+  EXPECT_EQ(1U, balancers_[0]->ads_service()->request_count());
+  EXPECT_EQ(1U, balancers_[0]->ads_service()->response_count());
   // Check LB policy name for the channel.
   EXPECT_EQ("xds_experimental", channel_->GetLoadBalancingPolicyName());
 }
@@ -969,11 +977,11 @@ TEST_F(BasicTest, SameBackendListedMultipleTimes) {
   SetNextResolutionForLbChannelAllBalancers();
   // Same backend listed twice.
   std::vector<int> ports(2, backends_[0]->port());
-  EdsServiceImpl::ResponseArgs args({
+  AdsServiceImpl::ResponseArgs args({
       {"locality0", ports},
   });
   const size_t kNumRpcsPerAddress = 10;
-  ScheduleResponseForBalancer(0, EdsServiceImpl::BuildResponse(args), 0);
+  ScheduleResponseForBalancer(0, AdsServiceImpl::BuildResponse(args), 0);
   // We need to wait for the backend to come online.
   WaitForBackend(0);
   // Send kNumRpcsPerAddress RPCs per server.
@@ -993,16 +1001,16 @@ TEST_F(BasicTest, InitiallyEmptyServerlist) {
   const int kServerlistDelayMs = 500 * grpc_test_slowdown_factor();
   const int kCallDeadlineMs = kServerlistDelayMs * 2;
   // First response is an empty serverlist, sent right away.
-  EdsServiceImpl::ResponseArgs::Locality empty_locality("locality0", {});
-  EdsServiceImpl::ResponseArgs args({
+  AdsServiceImpl::ResponseArgs::Locality empty_locality("locality0", {});
+  AdsServiceImpl::ResponseArgs args({
       empty_locality,
   });
-  ScheduleResponseForBalancer(0, EdsServiceImpl::BuildResponse(args), 0);
+  ScheduleResponseForBalancer(0, AdsServiceImpl::BuildResponse(args), 0);
   // Send non-empty serverlist only after kServerlistDelayMs.
-  args = EdsServiceImpl::ResponseArgs({
+  args = AdsServiceImpl::ResponseArgs({
       {"locality0", GetBackendPorts()},
   });
-  ScheduleResponseForBalancer(0, EdsServiceImpl::BuildResponse(args),
+  ScheduleResponseForBalancer(0, AdsServiceImpl::BuildResponse(args),
                               kServerlistDelayMs);
   const auto t0 = system_clock::now();
   // Client will block: LB will initially send empty serverlist.
@@ -1015,10 +1023,10 @@ TEST_F(BasicTest, InitiallyEmptyServerlist) {
   // populated serverlist but under the call's deadline (which is enforced by
   // the call's deadline).
   EXPECT_GT(ellapsed_ms.count(), kServerlistDelayMs);
-  // The EDS service got a single request.
-  EXPECT_EQ(1U, balancers_[0]->eds_service()->request_count());
+  // The ADS service got a single request.
+  EXPECT_EQ(1U, balancers_[0]->ads_service()->request_count());
   // and sent two responses.
-  EXPECT_EQ(2U, balancers_[0]->eds_service()->response_count());
+  EXPECT_EQ(2U, balancers_[0]->ads_service()->response_count());
 }
 
 // Tests that RPCs will fail with UNAVAILABLE instead of DEADLINE_EXCEEDED if
@@ -1031,16 +1039,16 @@ TEST_F(BasicTest, AllServersUnreachableFailFast) {
   for (size_t i = 0; i < kNumUnreachableServers; ++i) {
     ports.push_back(grpc_pick_unused_port_or_die());
   }
-  EdsServiceImpl::ResponseArgs args({
+  AdsServiceImpl::ResponseArgs args({
       {"locality0", ports},
   });
-  ScheduleResponseForBalancer(0, EdsServiceImpl::BuildResponse(args), 0);
+  ScheduleResponseForBalancer(0, AdsServiceImpl::BuildResponse(args), 0);
   const Status status = SendRpc();
   // The error shouldn't be DEADLINE_EXCEEDED.
   EXPECT_EQ(StatusCode::UNAVAILABLE, status.error_code());
-  // The EDS service got a single request, and sent a single response.
-  EXPECT_EQ(1U, balancers_[0]->eds_service()->request_count());
-  EXPECT_EQ(1U, balancers_[0]->eds_service()->response_count());
+  // The ADS service got a single request, and sent a single response.
+  EXPECT_EQ(1U, balancers_[0]->ads_service()->request_count());
+  EXPECT_EQ(1U, balancers_[0]->ads_service()->response_count());
 }
 
 // Tests that RPCs fail when the backends are down, and will succeed again after
@@ -1048,10 +1056,10 @@ TEST_F(BasicTest, AllServersUnreachableFailFast) {
 TEST_F(BasicTest, BackendsRestart) {
   SetNextResolution({}, kDefaultServiceConfig_.c_str());
   SetNextResolutionForLbChannelAllBalancers();
-  EdsServiceImpl::ResponseArgs args({
+  AdsServiceImpl::ResponseArgs args({
       {"locality0", GetBackendPorts()},
   });
-  ScheduleResponseForBalancer(0, EdsServiceImpl::BuildResponse(args), 0);
+  ScheduleResponseForBalancer(0, AdsServiceImpl::BuildResponse(args), 0);
   WaitForAllBackends();
   // Stop backends.  RPCs should fail.
   ShutdownAllBackends();
@@ -1067,14 +1075,14 @@ using SecureNamingTest = BasicTest;
 // Tests that secure naming check passes if target name is expected.
 TEST_F(SecureNamingTest, TargetNameIsExpected) {
   // TODO(juanlishen): Use separate fake creds for the balancer channel.
-  ResetStub(0, kApplicationTargetName_ + ";lb");
+  ResetStub(0, 0, kApplicationTargetName_ + ";lb");
   SetNextResolution({}, kDefaultServiceConfig_.c_str());
   SetNextResolutionForLbChannel({balancers_[0]->port()});
   const size_t kNumRpcsPerAddress = 100;
-  EdsServiceImpl::ResponseArgs args({
+  AdsServiceImpl::ResponseArgs args({
       {"locality0", GetBackendPorts()},
   });
-  ScheduleResponseForBalancer(0, EdsServiceImpl::BuildResponse(args), 0);
+  ScheduleResponseForBalancer(0, AdsServiceImpl::BuildResponse(args), 0);
   // Make sure that trying to connect works without a call.
   channel_->GetState(true /* try_to_connect */);
   // We need to wait for all backends to come online.
@@ -1086,9 +1094,9 @@ TEST_F(SecureNamingTest, TargetNameIsExpected) {
     EXPECT_EQ(kNumRpcsPerAddress,
               backends_[i]->backend_service()->request_count());
   }
-  // The EDS service got a single request, and sent a single response.
-  EXPECT_EQ(1U, balancers_[0]->eds_service()->request_count());
-  EXPECT_EQ(1U, balancers_[0]->eds_service()->response_count());
+  // The ADS service got a single request, and sent a single response.
+  EXPECT_EQ(1U, balancers_[0]->ads_service()->request_count());
+  EXPECT_EQ(1U, balancers_[0]->ads_service()->response_count());
 }
 
 // Tests that secure naming check fails if target name is unexpected.
@@ -1098,7 +1106,7 @@ TEST_F(SecureNamingTest, TargetNameIsUnexpected) {
   // the name from the balancer doesn't match expectations.
   ASSERT_DEATH_IF_SUPPORTED(
       {
-        ResetStub(0, kApplicationTargetName_ + ";lb");
+        ResetStub(0, 0, kApplicationTargetName_ + ";lb");
         SetNextResolution({},
                           "{\n"
                           "  \"loadBalancingConfig\":[\n"
@@ -1128,12 +1136,12 @@ TEST_F(LocalityMapTest, WeightedRoundRobin) {
       static_cast<double>(kLocalityWeight0) / kTotalLocalityWeight;
   const double kLocalityWeightRate1 =
       static_cast<double>(kLocalityWeight1) / kTotalLocalityWeight;
-  // EDS response contains 2 localities, each of which contains 1 backend.
-  EdsServiceImpl::ResponseArgs args({
+  // ADS response contains 2 localities, each of which contains 1 backend.
+  AdsServiceImpl::ResponseArgs args({
       {"locality0", GetBackendPorts(0, 1), kLocalityWeight0},
       {"locality1", GetBackendPorts(1, 2), kLocalityWeight1},
   });
-  ScheduleResponseForBalancer(0, EdsServiceImpl::BuildResponse(args), 0);
+  ScheduleResponseForBalancer(0, AdsServiceImpl::BuildResponse(args), 0);
   // Wait for both backends to be ready.
   WaitForAllBackends(1, 0, 2);
   // Send kNumRpcs RPCs.
@@ -1154,9 +1162,9 @@ TEST_F(LocalityMapTest, WeightedRoundRobin) {
               ::testing::AllOf(
                   ::testing::Ge(kLocalityWeightRate1 * (1 - kErrorTolerance)),
                   ::testing::Le(kLocalityWeightRate1 * (1 + kErrorTolerance))));
-  // The EDS service got a single request, and sent a single response.
-  EXPECT_EQ(1U, balancers_[0]->eds_service()->request_count());
-  EXPECT_EQ(1U, balancers_[0]->eds_service()->response_count());
+  // The ADS service got a single request, and sent a single response.
+  EXPECT_EQ(1U, balancers_[0]->ads_service()->request_count());
+  EXPECT_EQ(1U, balancers_[0]->ads_service()->response_count());
 }
 
 // Tests that the locality map can work properly even when it contains a large
@@ -1165,21 +1173,21 @@ TEST_F(LocalityMapTest, StressTest) {
   SetNextResolution({}, kDefaultServiceConfig_.c_str());
   SetNextResolutionForLbChannelAllBalancers();
   const size_t kNumLocalities = 100;
-  // The first EDS response contains kNumLocalities localities, each of which
+  // The first ADS response contains kNumLocalities localities, each of which
   // contains backend 0.
-  EdsServiceImpl::ResponseArgs args;
+  AdsServiceImpl::ResponseArgs args;
   for (size_t i = 0; i < kNumLocalities; ++i) {
     grpc::string name = "locality" + std::to_string(i);
-    EdsServiceImpl::ResponseArgs::Locality locality(name,
+    AdsServiceImpl::ResponseArgs::Locality locality(name,
                                                     {backends_[0]->port()});
     args.locality_list.emplace_back(std::move(locality));
   }
-  ScheduleResponseForBalancer(0, EdsServiceImpl::BuildResponse(args), 0);
-  // The second EDS response contains 1 locality, which contains backend 1.
-  args = EdsServiceImpl::ResponseArgs({
+  ScheduleResponseForBalancer(0, AdsServiceImpl::BuildResponse(args), 0);
+  // The second ADS response contains 1 locality, which contains backend 1.
+  args = AdsServiceImpl::ResponseArgs({
       {"locality0", GetBackendPorts(1, 2)},
   });
-  ScheduleResponseForBalancer(0, EdsServiceImpl::BuildResponse(args),
+  ScheduleResponseForBalancer(0, AdsServiceImpl::BuildResponse(args),
                               60 * 1000);
   // Wait until backend 0 is ready, before which kNumLocalities localities are
   // received and handled by the xds policy.
@@ -1188,10 +1196,10 @@ TEST_F(LocalityMapTest, StressTest) {
   // Wait until backend 1 is ready, before which kNumLocalities localities are
   // removed by the xds policy.
   WaitForBackend(1);
-  // The EDS service got a single request.
-  EXPECT_EQ(1U, balancers_[0]->eds_service()->request_count());
+  // The ADS service got a single request.
+  EXPECT_EQ(1U, balancers_[0]->ads_service()->request_count());
   // and sent two responses.
-  EXPECT_EQ(2U, balancers_[0]->eds_service()->response_count());
+  EXPECT_EQ(2U, balancers_[0]->ads_service()->response_count());
 }
 
 // Tests that the localities in a locality map are picked correctly after update
@@ -1218,18 +1226,18 @@ TEST_F(LocalityMapTest, UpdateMap) {
   for (int weight : kLocalityWeights1) {
     locality_weight_rate_1.push_back(weight / kTotalLocalityWeight1);
   }
-  EdsServiceImpl::ResponseArgs args({
+  AdsServiceImpl::ResponseArgs args({
       {"locality0", GetBackendPorts(0, 1), 2},
       {"locality1", GetBackendPorts(1, 2), 3},
       {"locality2", GetBackendPorts(2, 3), 4},
   });
-  ScheduleResponseForBalancer(0, EdsServiceImpl::BuildResponse(args), 0);
-  args = EdsServiceImpl::ResponseArgs({
+  ScheduleResponseForBalancer(0, AdsServiceImpl::BuildResponse(args), 0);
+  args = AdsServiceImpl::ResponseArgs({
       {"locality1", GetBackendPorts(1, 2), 3},
       {"locality2", GetBackendPorts(2, 3), 2},
       {"locality3", GetBackendPorts(3, 4), 6},
   });
-  ScheduleResponseForBalancer(0, EdsServiceImpl::BuildResponse(args), 5000);
+  ScheduleResponseForBalancer(0, AdsServiceImpl::BuildResponse(args), 5000);
   // Wait for the first 3 backends to be ready.
   WaitForAllBackends(1, 0, 3);
   gpr_log(GPR_INFO, "========= BEFORE FIRST BATCH ==========");
@@ -1254,9 +1262,9 @@ TEST_F(LocalityMapTest, UpdateMap) {
   }
   // Backend 3 hasn't received any request.
   EXPECT_EQ(0U, backends_[3]->backend_service()->request_count());
-  // The EDS service got a single request, and sent a single response.
-  EXPECT_EQ(1U, balancers_[0]->eds_service()->request_count());
-  EXPECT_EQ(1U, balancers_[0]->eds_service()->response_count());
+  // The ADS service got a single request, and sent a single response.
+  EXPECT_EQ(1U, balancers_[0]->ads_service()->request_count());
+  EXPECT_EQ(1U, balancers_[0]->ads_service()->response_count());
   // Wait until the locality update has been processed, as signaled by backend 3
   // receiving a request.
   WaitForBackend(3);
@@ -1281,10 +1289,155 @@ TEST_F(LocalityMapTest, UpdateMap) {
             ::testing::Ge(locality_weight_rate_1[i] * (1 - kErrorTolerance)),
             ::testing::Le(locality_weight_rate_1[i] * (1 + kErrorTolerance))));
   }
-  // The EDS service got a single request.
-  EXPECT_EQ(1U, balancers_[0]->eds_service()->request_count());
+  // The ADS service got a single request.
+  EXPECT_EQ(1U, balancers_[0]->ads_service()->request_count());
   // and sent two responses.
-  EXPECT_EQ(2U, balancers_[0]->eds_service()->response_count());
+  EXPECT_EQ(2U, balancers_[0]->ads_service()->response_count());
+}
+
+class FailoverTest : public BasicTest {
+ public:
+  FailoverTest() { ResetStub(0, 100, "", ""); }
+};
+
+// Localities with the highest priority are used when multiple priority exist.
+TEST_F(FailoverTest, ChooseHighestPriority) {
+  SetNextResolution({}, kDefaultServiceConfig_.c_str());
+  SetNextResolutionForLbChannelAllBalancers();
+  AdsServiceImpl::ResponseArgs args({
+      {"locality0", GetBackendPorts(0, 1), kDefaultLocalityWeight, 1},
+      {"locality1", GetBackendPorts(1, 2), kDefaultLocalityWeight, 2},
+      {"locality2", GetBackendPorts(2, 3), kDefaultLocalityWeight, 3},
+      {"locality3", GetBackendPorts(3, 4), kDefaultLocalityWeight, 0},
+  });
+  ScheduleResponseForBalancer(0, AdsServiceImpl::BuildResponse(args), 0);
+  WaitForBackend(3, false);
+  for (size_t i = 0; i < 3; ++i) {
+    EXPECT_EQ(0, backends_[i]->backend_service()->request_count());
+  }
+  // The ADS service got a single request, and sent a single response.
+  EXPECT_EQ(1U, balancers_[0]->ads_service()->request_count());
+  EXPECT_EQ(1U, balancers_[0]->ads_service()->response_count());
+}
+
+// If the higher priority localities are not reachable, failover to the highest
+// priority among the rest.
+TEST_F(FailoverTest, Failover) {
+  SetNextResolution({}, kDefaultServiceConfig_.c_str());
+  SetNextResolutionForLbChannelAllBalancers();
+  AdsServiceImpl::ResponseArgs args({
+      {"locality0", GetBackendPorts(0, 1), kDefaultLocalityWeight, 1},
+      {"locality1", GetBackendPorts(1, 2), kDefaultLocalityWeight, 2},
+      {"locality2", GetBackendPorts(2, 3), kDefaultLocalityWeight, 3},
+      {"locality3", GetBackendPorts(3, 4), kDefaultLocalityWeight, 0},
+  });
+  ShutdownBackend(3);
+  ShutdownBackend(0);
+  ScheduleResponseForBalancer(0, AdsServiceImpl::BuildResponse(args), 0);
+  WaitForBackend(1, false);
+  for (size_t i = 0; i < 4; ++i) {
+    if (i == 1) continue;
+    EXPECT_EQ(0, backends_[i]->backend_service()->request_count());
+  }
+  // The ADS service got a single request, and sent a single response.
+  EXPECT_EQ(1U, balancers_[0]->ads_service()->request_count());
+  EXPECT_EQ(1U, balancers_[0]->ads_service()->response_count());
+}
+
+// If a locality with higher priority than the current one becomes ready,
+// switch to it.
+TEST_F(FailoverTest, SwitchBackToHigherPriority) {
+  SetNextResolution({}, kDefaultServiceConfig_.c_str());
+  SetNextResolutionForLbChannelAllBalancers();
+  const size_t kNumRpcs = 100;
+  AdsServiceImpl::ResponseArgs args({
+      {"locality0", GetBackendPorts(0, 1), kDefaultLocalityWeight, 1},
+      {"locality1", GetBackendPorts(1, 2), kDefaultLocalityWeight, 2},
+      {"locality2", GetBackendPorts(2, 3), kDefaultLocalityWeight, 3},
+      {"locality3", GetBackendPorts(3, 4), kDefaultLocalityWeight, 0},
+  });
+  ShutdownBackend(3);
+  ShutdownBackend(0);
+  ScheduleResponseForBalancer(0, AdsServiceImpl::BuildResponse(args), 0);
+  WaitForBackend(1, false);
+  for (size_t i = 0; i < 4; ++i) {
+    if (i == 1) continue;
+    EXPECT_EQ(0, backends_[i]->backend_service()->request_count());
+  }
+  StartBackend(0);
+  WaitForBackend(0);
+  CheckRpcSendOk(kNumRpcs);
+  EXPECT_EQ(kNumRpcs, backends_[0]->backend_service()->request_count());
+  // The ADS service got a single request, and sent a single response.
+  EXPECT_EQ(1U, balancers_[0]->ads_service()->request_count());
+  EXPECT_EQ(1U, balancers_[0]->ads_service()->response_count());
+}
+
+// The first update only contains unavailable priorities. The second update
+// contains available priorities.
+TEST_F(FailoverTest, UpdateInitialUnavailable) {
+  SetNextResolution({}, kDefaultServiceConfig_.c_str());
+  SetNextResolutionForLbChannelAllBalancers();
+  AdsServiceImpl::ResponseArgs args({
+      {"locality0", GetBackendPorts(0, 1), kDefaultLocalityWeight, 0},
+      {"locality1", GetBackendPorts(1, 2), kDefaultLocalityWeight, 1},
+  });
+  ScheduleResponseForBalancer(0, AdsServiceImpl::BuildResponse(args), 0);
+  args = AdsServiceImpl::ResponseArgs({
+      {"locality0", GetBackendPorts(0, 1), kDefaultLocalityWeight, 0},
+      {"locality1", GetBackendPorts(1, 2), kDefaultLocalityWeight, 1},
+      {"locality2", GetBackendPorts(2, 3), kDefaultLocalityWeight, 2},
+      {"locality3", GetBackendPorts(3, 4), kDefaultLocalityWeight, 3},
+  });
+  ShutdownBackend(0);
+  ShutdownBackend(1);
+  ScheduleResponseForBalancer(0, AdsServiceImpl::BuildResponse(args), 1000);
+  gpr_timespec deadline = gpr_time_add(gpr_now(GPR_CLOCK_REALTIME),
+                                       gpr_time_from_millis(500, GPR_TIMESPAN));
+  // Send 0.5 second worth of RPCs.
+  do {
+    CheckRpcSendFailure();
+  } while (gpr_time_cmp(gpr_now(GPR_CLOCK_REALTIME), deadline) < 0);
+  WaitForBackend(2, false);
+  for (size_t i = 0; i < 4; ++i) {
+    if (i == 2) continue;
+    EXPECT_EQ(0, backends_[i]->backend_service()->request_count());
+  }
+  // The ADS service got a single request, and sent a single response.
+  EXPECT_EQ(1U, balancers_[0]->ads_service()->request_count());
+  EXPECT_EQ(2U, balancers_[0]->ads_service()->response_count());
+}
+
+// Tests that after the localities' priorities are updated, we still choose the
+// highest READY priority with the updated localities.
+TEST_F(FailoverTest, UpdatePriority) {
+  SetNextResolution({}, kDefaultServiceConfig_.c_str());
+  SetNextResolutionForLbChannelAllBalancers();
+  const size_t kNumRpcs = 100;
+  AdsServiceImpl::ResponseArgs args({
+      {"locality0", GetBackendPorts(0, 1), kDefaultLocalityWeight, 1},
+      {"locality1", GetBackendPorts(1, 2), kDefaultLocalityWeight, 2},
+      {"locality2", GetBackendPorts(2, 3), kDefaultLocalityWeight, 3},
+      {"locality3", GetBackendPorts(3, 4), kDefaultLocalityWeight, 0},
+  });
+  ScheduleResponseForBalancer(0, AdsServiceImpl::BuildResponse(args), 0);
+  args = AdsServiceImpl::ResponseArgs({
+      {"locality0", GetBackendPorts(0, 1), kDefaultLocalityWeight, 2},
+      {"locality1", GetBackendPorts(1, 2), kDefaultLocalityWeight, 0},
+      {"locality2", GetBackendPorts(2, 3), kDefaultLocalityWeight, 1},
+      {"locality3", GetBackendPorts(3, 4), kDefaultLocalityWeight, 3},
+  });
+  ScheduleResponseForBalancer(0, AdsServiceImpl::BuildResponse(args), 1000);
+  WaitForBackend(3, false);
+  for (size_t i = 0; i < 3; ++i) {
+    EXPECT_EQ(0, backends_[i]->backend_service()->request_count());
+  }
+  WaitForBackend(1);
+  CheckRpcSendOk(kNumRpcs);
+  EXPECT_EQ(kNumRpcs, backends_[1]->backend_service()->request_count());
+  // The ADS service got a single request, and sent a single response.
+  EXPECT_EQ(1U, balancers_[0]->ads_service()->request_count());
+  EXPECT_EQ(2U, balancers_[0]->ads_service()->response_count());
 }
 
 using DropTest = BasicTest;
@@ -1300,13 +1453,13 @@ TEST_F(DropTest, Vanilla) {
   const double kDropRateForThrottle = kDropPerMillionForThrottle / 1000000.0;
   const double KDropRateForLbAndThrottle =
       kDropRateForLb + (1 - kDropRateForLb) * kDropRateForThrottle;
-  // The EDS response contains two drop categories.
-  EdsServiceImpl::ResponseArgs args({
+  // The ADS response contains two drop categories.
+  AdsServiceImpl::ResponseArgs args({
       {"locality0", GetBackendPorts()},
   });
   args.drop_categories = {{kLbDropType, kDropPerMillionForLb},
                           {kThrottleDropType, kDropPerMillionForThrottle}};
-  ScheduleResponseForBalancer(0, EdsServiceImpl::BuildResponse(args), 0);
+  ScheduleResponseForBalancer(0, AdsServiceImpl::BuildResponse(args), 0);
   WaitForAllBackends();
   // Send kNumRpcs RPCs and count the drops.
   size_t num_drops = 0;
@@ -1330,9 +1483,9 @@ TEST_F(DropTest, Vanilla) {
       ::testing::AllOf(
           ::testing::Ge(KDropRateForLbAndThrottle * (1 - kErrorTolerance)),
           ::testing::Le(KDropRateForLbAndThrottle * (1 + kErrorTolerance))));
-  // The EDS service got a single request, and sent a single response.
-  EXPECT_EQ(1U, balancers_[0]->eds_service()->request_count());
-  EXPECT_EQ(1U, balancers_[0]->eds_service()->response_count());
+  // The ADS service got a single request, and sent a single response.
+  EXPECT_EQ(1U, balancers_[0]->ads_service()->request_count());
+  EXPECT_EQ(1U, balancers_[0]->ads_service()->response_count());
 }
 
 // Tests that drop config is converted correctly from per hundred.
@@ -1342,13 +1495,13 @@ TEST_F(DropTest, DropPerHundred) {
   const size_t kNumRpcs = 5000;
   const uint32_t kDropPerHundredForLb = 10;
   const double kDropRateForLb = kDropPerHundredForLb / 100.0;
-  // The EDS response contains one drop category.
-  EdsServiceImpl::ResponseArgs args({
+  // The ADS response contains one drop category.
+  AdsServiceImpl::ResponseArgs args({
       {"locality0", GetBackendPorts()},
   });
   args.drop_categories = {{kLbDropType, kDropPerHundredForLb}};
   args.drop_denominator = FractionalPercent::HUNDRED;
-  ScheduleResponseForBalancer(0, EdsServiceImpl::BuildResponse(args), 0);
+  ScheduleResponseForBalancer(0, AdsServiceImpl::BuildResponse(args), 0);
   WaitForAllBackends();
   // Send kNumRpcs RPCs and count the drops.
   size_t num_drops = 0;
@@ -1371,9 +1524,9 @@ TEST_F(DropTest, DropPerHundred) {
       seen_drop_rate,
       ::testing::AllOf(::testing::Ge(kDropRateForLb * (1 - kErrorTolerance)),
                        ::testing::Le(kDropRateForLb * (1 + kErrorTolerance))));
-  // The EDS service got a single request, and sent a single response.
-  EXPECT_EQ(1U, balancers_[0]->eds_service()->request_count());
-  EXPECT_EQ(1U, balancers_[0]->eds_service()->response_count());
+  // The ADS service got a single request, and sent a single response.
+  EXPECT_EQ(1U, balancers_[0]->ads_service()->request_count());
+  EXPECT_EQ(1U, balancers_[0]->ads_service()->response_count());
 }
 
 // Tests that drop config is converted correctly from per ten thousand.
@@ -1383,13 +1536,13 @@ TEST_F(DropTest, DropPerTenThousand) {
   const size_t kNumRpcs = 5000;
   const uint32_t kDropPerTenThousandForLb = 1000;
   const double kDropRateForLb = kDropPerTenThousandForLb / 10000.0;
-  // The EDS response contains one drop category.
-  EdsServiceImpl::ResponseArgs args({
+  // The ADS response contains one drop category.
+  AdsServiceImpl::ResponseArgs args({
       {"locality0", GetBackendPorts()},
   });
   args.drop_categories = {{kLbDropType, kDropPerTenThousandForLb}};
   args.drop_denominator = FractionalPercent::TEN_THOUSAND;
-  ScheduleResponseForBalancer(0, EdsServiceImpl::BuildResponse(args), 0);
+  ScheduleResponseForBalancer(0, AdsServiceImpl::BuildResponse(args), 0);
   WaitForAllBackends();
   // Send kNumRpcs RPCs and count the drops.
   size_t num_drops = 0;
@@ -1412,35 +1565,35 @@ TEST_F(DropTest, DropPerTenThousand) {
       seen_drop_rate,
       ::testing::AllOf(::testing::Ge(kDropRateForLb * (1 - kErrorTolerance)),
                        ::testing::Le(kDropRateForLb * (1 + kErrorTolerance))));
-  // The EDS service got a single request, and sent a single response.
-  EXPECT_EQ(1U, balancers_[0]->eds_service()->request_count());
-  EXPECT_EQ(1U, balancers_[0]->eds_service()->response_count());
+  // The ADS service got a single request, and sent a single response.
+  EXPECT_EQ(1U, balancers_[0]->ads_service()->request_count());
+  EXPECT_EQ(1U, balancers_[0]->ads_service()->response_count());
 }
 
 // Tests that drop is working correctly after update.
 TEST_F(DropTest, Update) {
   SetNextResolution({}, kDefaultServiceConfig_.c_str());
   SetNextResolutionForLbChannelAllBalancers();
-  const size_t kNumRpcs = 5000;
+  const size_t kNumRpcs = 1000;
   const uint32_t kDropPerMillionForLb = 100000;
   const uint32_t kDropPerMillionForThrottle = 200000;
   const double kDropRateForLb = kDropPerMillionForLb / 1000000.0;
   const double kDropRateForThrottle = kDropPerMillionForThrottle / 1000000.0;
   const double KDropRateForLbAndThrottle =
       kDropRateForLb + (1 - kDropRateForLb) * kDropRateForThrottle;
-  // The first EDS response contains one drop category.
-  EdsServiceImpl::ResponseArgs args({
+  // The first ADS response contains one drop category.
+  AdsServiceImpl::ResponseArgs args({
       {"locality0", GetBackendPorts()},
   });
   args.drop_categories = {{kLbDropType, kDropPerMillionForLb}};
-  ScheduleResponseForBalancer(0, EdsServiceImpl::BuildResponse(args), 0);
-  // The second EDS response contains two drop categories.
-  // TODO(juanlishen): Change the EDS response sending to deterministic style
+  ScheduleResponseForBalancer(0, AdsServiceImpl::BuildResponse(args), 0);
+  // The second ADS response contains two drop categories.
+  // TODO(juanlishen): Change the ADS response sending to deterministic style
   // (e.g., by using condition variable) so that we can shorten the test
   // duration.
   args.drop_categories = {{kLbDropType, kDropPerMillionForLb},
                           {kThrottleDropType, kDropPerMillionForThrottle}};
-  ScheduleResponseForBalancer(0, EdsServiceImpl::BuildResponse(args), 10000);
+  ScheduleResponseForBalancer(0, AdsServiceImpl::BuildResponse(args), 10000);
   WaitForAllBackends();
   // Send kNumRpcs RPCs and count the drops.
   size_t num_drops = 0;
@@ -1460,7 +1613,7 @@ TEST_F(DropTest, Update) {
   gpr_log(GPR_INFO, "========= DONE WITH FIRST BATCH ==========");
   // The drop rate should be roughly equal to the expectation.
   double seen_drop_rate = static_cast<double>(num_drops) / kNumRpcs;
-  const double kErrorTolerance = 0.2;
+  const double kErrorTolerance = 0.3;
   EXPECT_THAT(
       seen_drop_rate,
       ::testing::AllOf(::testing::Ge(kDropRateForLb * (1 - kErrorTolerance)),
@@ -1507,10 +1660,10 @@ TEST_F(DropTest, Update) {
       ::testing::AllOf(
           ::testing::Ge(KDropRateForLbAndThrottle * (1 - kErrorTolerance)),
           ::testing::Le(KDropRateForLbAndThrottle * (1 + kErrorTolerance))));
-  // The EDS service got a single request,
-  EXPECT_EQ(1U, balancers_[0]->eds_service()->request_count());
+  // The ADS service got a single request,
+  EXPECT_EQ(1U, balancers_[0]->ads_service()->request_count());
   // and sent two responses
-  EXPECT_EQ(2U, balancers_[0]->eds_service()->response_count());
+  EXPECT_EQ(2U, balancers_[0]->ads_service()->response_count());
 }
 
 // Tests that all the RPCs are dropped if any drop category drops 100%.
@@ -1520,13 +1673,13 @@ TEST_F(DropTest, DropAll) {
   const size_t kNumRpcs = 1000;
   const uint32_t kDropPerMillionForLb = 100000;
   const uint32_t kDropPerMillionForThrottle = 1000000;
-  // The EDS response contains two drop categories.
-  EdsServiceImpl::ResponseArgs args({
+  // The ADS response contains two drop categories.
+  AdsServiceImpl::ResponseArgs args({
       {"locality0", GetBackendPorts()},
   });
   args.drop_categories = {{kLbDropType, kDropPerMillionForLb},
                           {kThrottleDropType, kDropPerMillionForThrottle}};
-  ScheduleResponseForBalancer(0, EdsServiceImpl::BuildResponse(args), 0);
+  ScheduleResponseForBalancer(0, AdsServiceImpl::BuildResponse(args), 0);
   // Send kNumRpcs RPCs and all of them are dropped.
   for (size_t i = 0; i < kNumRpcs; ++i) {
     EchoResponse response;
@@ -1534,9 +1687,9 @@ TEST_F(DropTest, DropAll) {
     EXPECT_TRUE(!status.ok() && status.error_message() ==
                                     "Call dropped by load balancing policy");
   }
-  // The EDS service got a single request, and sent a single response.
-  EXPECT_EQ(1U, balancers_[0]->eds_service()->request_count());
-  EXPECT_EQ(1U, balancers_[0]->eds_service()->response_count());
+  // The ADS service got a single request, and sent a single response.
+  EXPECT_EQ(1U, balancers_[0]->ads_service()->request_count());
+  EXPECT_EQ(1U, balancers_[0]->ads_service()->response_count());
 }
 
 using FallbackTest = BasicTest;
@@ -1552,10 +1705,10 @@ TEST_F(FallbackTest, Vanilla) {
                     kDefaultServiceConfig_.c_str());
   SetNextResolutionForLbChannelAllBalancers();
   // Send non-empty serverlist only after kServerlistDelayMs.
-  EdsServiceImpl::ResponseArgs args({
+  AdsServiceImpl::ResponseArgs args({
       {"locality0", GetBackendPorts(kNumBackendsInResolution)},
   });
-  ScheduleResponseForBalancer(0, EdsServiceImpl::BuildResponse(args),
+  ScheduleResponseForBalancer(0, AdsServiceImpl::BuildResponse(args),
                               kServerlistDelayMs);
   // Wait until all the fallback backends are reachable.
   WaitForAllBackends(1 /* num_requests_multiple_of */, 0 /* start_index */,
@@ -1586,9 +1739,9 @@ TEST_F(FallbackTest, Vanilla) {
   for (size_t i = kNumBackendsInResolution; i < backends_.size(); ++i) {
     EXPECT_EQ(1U, backends_[i]->backend_service()->request_count());
   }
-  // The EDS service got a single request, and sent a single response.
-  EXPECT_EQ(1U, balancers_[0]->eds_service()->request_count());
-  EXPECT_EQ(1U, balancers_[0]->eds_service()->response_count());
+  // The ADS service got a single request, and sent a single response.
+  EXPECT_EQ(1U, balancers_[0]->ads_service()->request_count());
+  EXPECT_EQ(1U, balancers_[0]->ads_service()->response_count());
 }
 
 // Tests that RPCs are handled by the updated fallback backends before
@@ -1603,11 +1756,11 @@ TEST_F(FallbackTest, Update) {
                     kDefaultServiceConfig_.c_str());
   SetNextResolutionForLbChannelAllBalancers();
   // Send non-empty serverlist only after kServerlistDelayMs.
-  EdsServiceImpl::ResponseArgs args({
+  AdsServiceImpl::ResponseArgs args({
       {"locality0", GetBackendPorts(kNumBackendsInResolution +
                                     kNumBackendsInResolutionUpdate)},
   });
-  ScheduleResponseForBalancer(0, EdsServiceImpl::BuildResponse(args),
+  ScheduleResponseForBalancer(0, AdsServiceImpl::BuildResponse(args),
                               kServerlistDelayMs);
   // Wait until all the fallback backends are reachable.
   WaitForAllBackends(1 /* num_requests_multiple_of */, 0 /* start_index */,
@@ -1668,9 +1821,9 @@ TEST_F(FallbackTest, Update) {
        i < backends_.size(); ++i) {
     EXPECT_EQ(1U, backends_[i]->backend_service()->request_count());
   }
-  // The EDS service got a single request, and sent a single response.
-  EXPECT_EQ(1U, balancers_[0]->eds_service()->request_count());
-  EXPECT_EQ(1U, balancers_[0]->eds_service()->response_count());
+  // The ADS service got a single request, and sent a single response.
+  EXPECT_EQ(1U, balancers_[0]->ads_service()->request_count());
+  EXPECT_EQ(1U, balancers_[0]->ads_service()->response_count());
 }
 
 // Tests that fallback will kick in immediately if the balancer channel fails.
@@ -1694,7 +1847,7 @@ TEST_F(FallbackTest, FallbackEarlyWhenBalancerCallFails) {
   SetNextResolution({backends_[0]->port()}, kDefaultServiceConfig_.c_str());
   SetNextResolutionForLbChannelAllBalancers();
   // Balancer drops call without sending a serverlist.
-  balancers_[0]->eds_service()->NotifyDoneWithEdsCall();
+  balancers_[0]->ads_service()->NotifyDoneWithAdsCall();
   // Send RPC with deadline less than the fallback timeout and make sure it
   // succeeds.
   CheckRpcSendOk(/* times */ 1, /* timeout_ms */ 1000,
@@ -1710,10 +1863,10 @@ TEST_F(FallbackTest, FallbackIfResponseReceivedButChildNotReady) {
   SetNextResolutionForLbChannelAllBalancers();
   // Send a serverlist that only contains an unreachable backend before fallback
   // timeout.
-  EdsServiceImpl::ResponseArgs args({
+  AdsServiceImpl::ResponseArgs args({
       {"locality0", {grpc_pick_unused_port_or_die()}},
   });
-  ScheduleResponseForBalancer(0, EdsServiceImpl::BuildResponse(args), 0);
+  ScheduleResponseForBalancer(0, AdsServiceImpl::BuildResponse(args), 0);
   // Because no child policy is ready before fallback timeout, we enter fallback
   // mode.
   WaitForBackend(0);
@@ -1728,11 +1881,11 @@ TEST_F(FallbackTest, FallbackModeIsExitedWhenBalancerSaysToDropAllCalls) {
   // Enter fallback mode because the LB channel fails to connect.
   WaitForBackend(0);
   // Return a new balancer that sends a response to drop all calls.
-  EdsServiceImpl::ResponseArgs args({
+  AdsServiceImpl::ResponseArgs args({
       {"locality0", GetBackendPorts()},
   });
   args.drop_categories = {{kLbDropType, 1000000}};
-  ScheduleResponseForBalancer(0, EdsServiceImpl::BuildResponse(args), 0);
+  ScheduleResponseForBalancer(0, AdsServiceImpl::BuildResponse(args), 0);
   SetNextResolutionForLbChannelAllBalancers();
   // Send RPCs until failure.
   gpr_timespec deadline = gpr_time_add(
@@ -1753,16 +1906,16 @@ TEST_F(FallbackTest, FallbackModeIsExitedAfterChildRready) {
   WaitForBackend(0);
   // Return a new balancer that sends a dead backend.
   ShutdownBackend(1);
-  EdsServiceImpl::ResponseArgs args({
+  AdsServiceImpl::ResponseArgs args({
       {"locality0", {backends_[1]->port()}},
   });
-  ScheduleResponseForBalancer(0, EdsServiceImpl::BuildResponse(args), 0);
+  ScheduleResponseForBalancer(0, AdsServiceImpl::BuildResponse(args), 0);
   SetNextResolutionForLbChannelAllBalancers();
   // The state (TRANSIENT_FAILURE) update from the child policy will be ignored
   // because we are still in fallback mode.
-  gpr_timespec deadline = gpr_time_add(
-      gpr_now(GPR_CLOCK_REALTIME), gpr_time_from_millis(5000, GPR_TIMESPAN));
-  // Send 5 seconds worth of RPCs.
+  gpr_timespec deadline = gpr_time_add(gpr_now(GPR_CLOCK_REALTIME),
+                                       gpr_time_from_millis(500, GPR_TIMESPAN));
+  // Send 0.5 second worth of RPCs.
   do {
     CheckRpcSendOk();
   } while (gpr_time_cmp(gpr_now(GPR_CLOCK_REALTIME), deadline) < 0);
@@ -1787,14 +1940,14 @@ class BalancerUpdateTest : public XdsEnd2endTest {
 TEST_F(BalancerUpdateTest, UpdateBalancersButKeepUsingOriginalBalancer) {
   SetNextResolution({}, kDefaultServiceConfig_.c_str());
   SetNextResolutionForLbChannelAllBalancers();
-  EdsServiceImpl::ResponseArgs args({
+  AdsServiceImpl::ResponseArgs args({
       {"locality0", {backends_[0]->port()}},
   });
-  ScheduleResponseForBalancer(0, EdsServiceImpl::BuildResponse(args), 0);
-  args = EdsServiceImpl::ResponseArgs({
+  ScheduleResponseForBalancer(0, AdsServiceImpl::BuildResponse(args), 0);
+  args = AdsServiceImpl::ResponseArgs({
       {"locality0", {backends_[1]->port()}},
   });
-  ScheduleResponseForBalancer(1, EdsServiceImpl::BuildResponse(args), 0);
+  ScheduleResponseForBalancer(1, AdsServiceImpl::BuildResponse(args), 0);
   // Wait until the first backend is ready.
   WaitForBackend(0);
   // Send 10 requests.
@@ -1803,14 +1956,14 @@ TEST_F(BalancerUpdateTest, UpdateBalancersButKeepUsingOriginalBalancer) {
   gpr_log(GPR_INFO, "========= DONE WITH FIRST BATCH ==========");
   // All 10 requests should have gone to the first backend.
   EXPECT_EQ(10U, backends_[0]->backend_service()->request_count());
-  // The EDS service of balancer 0 got a single request, and sent a single
+  // The ADS service of balancer 0 got a single request, and sent a single
   // response.
-  EXPECT_EQ(1U, balancers_[0]->eds_service()->request_count());
-  EXPECT_EQ(1U, balancers_[0]->eds_service()->response_count());
-  EXPECT_EQ(0U, balancers_[1]->eds_service()->request_count());
-  EXPECT_EQ(0U, balancers_[1]->eds_service()->response_count());
-  EXPECT_EQ(0U, balancers_[2]->eds_service()->request_count());
-  EXPECT_EQ(0U, balancers_[2]->eds_service()->response_count());
+  EXPECT_EQ(1U, balancers_[0]->ads_service()->request_count());
+  EXPECT_EQ(1U, balancers_[0]->ads_service()->response_count());
+  EXPECT_EQ(0U, balancers_[1]->ads_service()->request_count());
+  EXPECT_EQ(0U, balancers_[1]->ads_service()->response_count());
+  EXPECT_EQ(0U, balancers_[2]->ads_service()->request_count());
+  EXPECT_EQ(0U, balancers_[2]->ads_service()->response_count());
   gpr_log(GPR_INFO, "========= ABOUT TO UPDATE 1 ==========");
   SetNextResolutionForLbChannel({balancers_[1]->port()});
   gpr_log(GPR_INFO, "========= UPDATE 1 DONE ==========");
@@ -1824,12 +1977,12 @@ TEST_F(BalancerUpdateTest, UpdateBalancersButKeepUsingOriginalBalancer) {
   // The current LB call is still working, so xds continued using it to the
   // first balancer, which doesn't assign the second backend.
   EXPECT_EQ(0U, backends_[1]->backend_service()->request_count());
-  EXPECT_EQ(1U, balancers_[0]->eds_service()->request_count());
-  EXPECT_EQ(1U, balancers_[0]->eds_service()->response_count());
-  EXPECT_EQ(0U, balancers_[1]->eds_service()->request_count());
-  EXPECT_EQ(0U, balancers_[1]->eds_service()->response_count());
-  EXPECT_EQ(0U, balancers_[2]->eds_service()->request_count());
-  EXPECT_EQ(0U, balancers_[2]->eds_service()->response_count());
+  EXPECT_EQ(1U, balancers_[0]->ads_service()->request_count());
+  EXPECT_EQ(1U, balancers_[0]->ads_service()->response_count());
+  EXPECT_EQ(0U, balancers_[1]->ads_service()->request_count());
+  EXPECT_EQ(0U, balancers_[1]->ads_service()->response_count());
+  EXPECT_EQ(0U, balancers_[2]->ads_service()->request_count());
+  EXPECT_EQ(0U, balancers_[2]->ads_service()->response_count());
 }
 
 // Tests that the old LB call is still used after multiple balancer address
@@ -1840,14 +1993,14 @@ TEST_F(BalancerUpdateTest, UpdateBalancersButKeepUsingOriginalBalancer) {
 TEST_F(BalancerUpdateTest, Repeated) {
   SetNextResolution({}, kDefaultServiceConfig_.c_str());
   SetNextResolutionForLbChannelAllBalancers();
-  EdsServiceImpl::ResponseArgs args({
+  AdsServiceImpl::ResponseArgs args({
       {"locality0", {backends_[0]->port()}},
   });
-  ScheduleResponseForBalancer(0, EdsServiceImpl::BuildResponse(args), 0);
-  args = EdsServiceImpl::ResponseArgs({
+  ScheduleResponseForBalancer(0, AdsServiceImpl::BuildResponse(args), 0);
+  args = AdsServiceImpl::ResponseArgs({
       {"locality0", {backends_[1]->port()}},
   });
-  ScheduleResponseForBalancer(1, EdsServiceImpl::BuildResponse(args), 0);
+  ScheduleResponseForBalancer(1, AdsServiceImpl::BuildResponse(args), 0);
   // Wait until the first backend is ready.
   WaitForBackend(0);
   // Send 10 requests.
@@ -1856,14 +2009,14 @@ TEST_F(BalancerUpdateTest, Repeated) {
   gpr_log(GPR_INFO, "========= DONE WITH FIRST BATCH ==========");
   // All 10 requests should have gone to the first backend.
   EXPECT_EQ(10U, backends_[0]->backend_service()->request_count());
-  // The EDS service of balancer 0 got a single request, and sent a single
+  // The ADS service of balancer 0 got a single request, and sent a single
   // response.
-  EXPECT_EQ(1U, balancers_[0]->eds_service()->request_count());
-  EXPECT_EQ(1U, balancers_[0]->eds_service()->response_count());
-  EXPECT_EQ(0U, balancers_[1]->eds_service()->request_count());
-  EXPECT_EQ(0U, balancers_[1]->eds_service()->response_count());
-  EXPECT_EQ(0U, balancers_[2]->eds_service()->request_count());
-  EXPECT_EQ(0U, balancers_[2]->eds_service()->response_count());
+  EXPECT_EQ(1U, balancers_[0]->ads_service()->request_count());
+  EXPECT_EQ(1U, balancers_[0]->ads_service()->response_count());
+  EXPECT_EQ(0U, balancers_[1]->ads_service()->request_count());
+  EXPECT_EQ(0U, balancers_[1]->ads_service()->response_count());
+  EXPECT_EQ(0U, balancers_[2]->ads_service()->request_count());
+  EXPECT_EQ(0U, balancers_[2]->ads_service()->response_count());
   std::vector<int> ports;
   ports.emplace_back(balancers_[0]->port());
   ports.emplace_back(balancers_[1]->port());
@@ -1899,84 +2052,20 @@ TEST_F(BalancerUpdateTest, Repeated) {
   EXPECT_EQ(0U, backends_[1]->backend_service()->request_count());
 }
 
-// Tests that if the balancer name changes, a new LB channel will be created to
-// replace the old one.
-TEST_F(BalancerUpdateTest, UpdateBalancerName) {
-  SetNextResolution({}, kDefaultServiceConfig_.c_str());
-  SetNextResolutionForLbChannelAllBalancers();
-  EdsServiceImpl::ResponseArgs args({
-      {"locality0", {backends_[0]->port()}},
-  });
-  ScheduleResponseForBalancer(0, EdsServiceImpl::BuildResponse(args), 0);
-  args = EdsServiceImpl::ResponseArgs({
-      {"locality0", {backends_[1]->port()}},
-  });
-  ScheduleResponseForBalancer(1, EdsServiceImpl::BuildResponse(args), 0);
-  // Wait until the first backend is ready.
-  WaitForBackend(0);
-  // Send 10 requests.
-  gpr_log(GPR_INFO, "========= BEFORE FIRST BATCH ==========");
-  CheckRpcSendOk(10);
-  gpr_log(GPR_INFO, "========= DONE WITH FIRST BATCH ==========");
-  // All 10 requests should have gone to the first backend.
-  EXPECT_EQ(10U, backends_[0]->backend_service()->request_count());
-  // The EDS service of balancer 0 got a single request, and sent a single
-  // response.
-  EXPECT_EQ(1U, balancers_[0]->eds_service()->request_count());
-  EXPECT_EQ(1U, balancers_[0]->eds_service()->response_count());
-  EXPECT_EQ(0U, balancers_[1]->eds_service()->request_count());
-  EXPECT_EQ(0U, balancers_[1]->eds_service()->response_count());
-  EXPECT_EQ(0U, balancers_[2]->eds_service()->request_count());
-  EXPECT_EQ(0U, balancers_[2]->eds_service()->response_count());
-  std::vector<int> ports;
-  ports.emplace_back(balancers_[1]->port());
-  auto new_lb_channel_response_generator =
-      grpc_core::MakeRefCounted<grpc_core::FakeResolverResponseGenerator>();
-  SetNextResolutionForLbChannel(ports, nullptr,
-                                new_lb_channel_response_generator.get());
-  gpr_log(GPR_INFO, "========= ABOUT TO UPDATE BALANCER NAME ==========");
-  SetNextResolution({},
-                    "{\n"
-                    "  \"loadBalancingConfig\":[\n"
-                    "    { \"does_not_exist\":{} },\n"
-                    "    { \"xds_experimental\":{ \"balancerName\": "
-                    "\"fake:///updated_lb\" } }\n"
-                    "  ]\n"
-                    "}",
-                    new_lb_channel_response_generator.get());
-  gpr_log(GPR_INFO, "========= UPDATED BALANCER NAME ==========");
-  // Wait until update has been processed, as signaled by the second backend
-  // receiving a request.
-  EXPECT_EQ(0U, backends_[1]->backend_service()->request_count());
-  WaitForBackend(1);
-  backends_[1]->backend_service()->ResetCounters();
-  gpr_log(GPR_INFO, "========= BEFORE SECOND BATCH ==========");
-  CheckRpcSendOk(10);
-  gpr_log(GPR_INFO, "========= DONE WITH SECOND BATCH ==========");
-  // All 10 requests should have gone to the second backend.
-  EXPECT_EQ(10U, backends_[1]->backend_service()->request_count());
-  EXPECT_EQ(1U, balancers_[0]->eds_service()->request_count());
-  EXPECT_EQ(1U, balancers_[0]->eds_service()->response_count());
-  EXPECT_EQ(1U, balancers_[1]->eds_service()->request_count());
-  EXPECT_EQ(1U, balancers_[1]->eds_service()->response_count());
-  EXPECT_EQ(0U, balancers_[2]->eds_service()->request_count());
-  EXPECT_EQ(0U, balancers_[2]->eds_service()->response_count());
-}
-
 // Tests that if the balancer is down, the RPCs will still be sent to the
 // backends according to the last balancer response, until a new balancer is
 // reachable.
 TEST_F(BalancerUpdateTest, DeadUpdate) {
   SetNextResolution({}, kDefaultServiceConfig_.c_str());
   SetNextResolutionForLbChannel({balancers_[0]->port()});
-  EdsServiceImpl::ResponseArgs args({
+  AdsServiceImpl::ResponseArgs args({
       {"locality0", {backends_[0]->port()}},
   });
-  ScheduleResponseForBalancer(0, EdsServiceImpl::BuildResponse(args), 0);
-  args = EdsServiceImpl::ResponseArgs({
+  ScheduleResponseForBalancer(0, AdsServiceImpl::BuildResponse(args), 0);
+  args = AdsServiceImpl::ResponseArgs({
       {"locality0", {backends_[1]->port()}},
   });
-  ScheduleResponseForBalancer(1, EdsServiceImpl::BuildResponse(args), 0);
+  ScheduleResponseForBalancer(1, AdsServiceImpl::BuildResponse(args), 0);
   // Start servers and send 10 RPCs per server.
   gpr_log(GPR_INFO, "========= BEFORE FIRST BATCH ==========");
   CheckRpcSendOk(10);
@@ -1994,14 +2083,14 @@ TEST_F(BalancerUpdateTest, DeadUpdate) {
   // All 10 requests should again have gone to the first backend.
   EXPECT_EQ(20U, backends_[0]->backend_service()->request_count());
   EXPECT_EQ(0U, backends_[1]->backend_service()->request_count());
-  // The EDS service of balancer 0 got a single request, and sent a single
+  // The ADS service of balancer 0 got a single request, and sent a single
   // response.
-  EXPECT_EQ(1U, balancers_[0]->eds_service()->request_count());
-  EXPECT_EQ(1U, balancers_[0]->eds_service()->response_count());
-  EXPECT_EQ(0U, balancers_[1]->eds_service()->request_count());
-  EXPECT_EQ(0U, balancers_[1]->eds_service()->response_count());
-  EXPECT_EQ(0U, balancers_[2]->eds_service()->request_count());
-  EXPECT_EQ(0U, balancers_[2]->eds_service()->response_count());
+  EXPECT_EQ(1U, balancers_[0]->ads_service()->request_count());
+  EXPECT_EQ(1U, balancers_[0]->ads_service()->response_count());
+  EXPECT_EQ(0U, balancers_[1]->ads_service()->request_count());
+  EXPECT_EQ(0U, balancers_[1]->ads_service()->response_count());
+  EXPECT_EQ(0U, balancers_[2]->ads_service()->request_count());
+  EXPECT_EQ(0U, balancers_[2]->ads_service()->response_count());
   gpr_log(GPR_INFO, "========= ABOUT TO UPDATE 1 ==========");
   SetNextResolutionForLbChannel({balancers_[1]->port()});
   gpr_log(GPR_INFO, "========= UPDATE 1 DONE ==========");
@@ -2017,18 +2106,18 @@ TEST_F(BalancerUpdateTest, DeadUpdate) {
   gpr_log(GPR_INFO, "========= DONE WITH THIRD BATCH ==========");
   // All 10 requests should have gone to the second backend.
   EXPECT_EQ(10U, backends_[1]->backend_service()->request_count());
-  EXPECT_EQ(1U, balancers_[0]->eds_service()->request_count());
-  EXPECT_EQ(1U, balancers_[0]->eds_service()->response_count());
+  EXPECT_EQ(1U, balancers_[0]->ads_service()->request_count());
+  EXPECT_EQ(1U, balancers_[0]->ads_service()->response_count());
   // The second balancer, published as part of the first update, may end up
   // getting two requests (that is, 1 <= #req <= 2) if the LB call retry timer
   // firing races with the arrival of the update containing the second
   // balancer.
-  EXPECT_GE(balancers_[1]->eds_service()->request_count(), 1U);
-  EXPECT_GE(balancers_[1]->eds_service()->response_count(), 1U);
-  EXPECT_LE(balancers_[1]->eds_service()->request_count(), 2U);
-  EXPECT_LE(balancers_[1]->eds_service()->response_count(), 2U);
-  EXPECT_EQ(0U, balancers_[2]->eds_service()->request_count());
-  EXPECT_EQ(0U, balancers_[2]->eds_service()->response_count());
+  EXPECT_GE(balancers_[1]->ads_service()->request_count(), 1U);
+  EXPECT_GE(balancers_[1]->ads_service()->response_count(), 1U);
+  EXPECT_LE(balancers_[1]->ads_service()->request_count(), 2U);
+  EXPECT_LE(balancers_[1]->ads_service()->response_count(), 2U);
+  EXPECT_EQ(0U, balancers_[2]->ads_service()->request_count());
+  EXPECT_EQ(0U, balancers_[2]->ads_service()->response_count());
 }
 
 // The re-resolution tests are deferred because they rely on the fallback mode,
@@ -2051,10 +2140,10 @@ TEST_F(ClientLoadReportingTest, Vanilla) {
   const size_t kNumRpcsPerAddress = 100;
   // TODO(juanlishen): Partition the backends after multiple localities is
   // tested.
-  EdsServiceImpl::ResponseArgs args({
+  AdsServiceImpl::ResponseArgs args({
       {"locality0", GetBackendPorts()},
   });
-  ScheduleResponseForBalancer(0, EdsServiceImpl::BuildResponse(args), 0);
+  ScheduleResponseForBalancer(0, AdsServiceImpl::BuildResponse(args), 0);
   // Wait until all backends are ready.
   int num_ok = 0;
   int num_failure = 0;
@@ -2067,9 +2156,9 @@ TEST_F(ClientLoadReportingTest, Vanilla) {
     EXPECT_EQ(kNumRpcsPerAddress,
               backends_[i]->backend_service()->request_count());
   }
-  // The EDS service got a single request, and sent a single response.
-  EXPECT_EQ(1U, balancers_[0]->eds_service()->request_count());
-  EXPECT_EQ(1U, balancers_[0]->eds_service()->response_count());
+  // The ADS service got a single request, and sent a single response.
+  EXPECT_EQ(1U, balancers_[0]->ads_service()->request_count());
+  EXPECT_EQ(1U, balancers_[0]->ads_service()->response_count());
   // The LRS service got a single request, and sent a single response.
   EXPECT_EQ(1U, balancers_[0]->lrs_service()->request_count());
   EXPECT_EQ(1U, balancers_[0]->lrs_service()->response_count());
@@ -2092,10 +2181,10 @@ TEST_F(ClientLoadReportingTest, BalancerRestart) {
   const size_t kNumBackendsFirstPass = backends_.size() / 2;
   const size_t kNumBackendsSecondPass =
       backends_.size() - kNumBackendsFirstPass;
-  EdsServiceImpl::ResponseArgs args({
+  AdsServiceImpl::ResponseArgs args({
       {"locality0", GetBackendPorts(0, kNumBackendsFirstPass)},
   });
-  ScheduleResponseForBalancer(0, EdsServiceImpl::BuildResponse(args), 0);
+  ScheduleResponseForBalancer(0, AdsServiceImpl::BuildResponse(args), 0);
   // Wait until all backends returned by the balancer are ready.
   int num_ok = 0;
   int num_failure = 0;
@@ -2122,10 +2211,10 @@ TEST_F(ClientLoadReportingTest, BalancerRestart) {
   }
   // Now restart the balancer, this time pointing to the new backends.
   balancers_[0]->Start(server_host_);
-  args = EdsServiceImpl::ResponseArgs({
+  args = AdsServiceImpl::ResponseArgs({
       {"locality0", GetBackendPorts(kNumBackendsFirstPass)},
   });
-  ScheduleResponseForBalancer(0, EdsServiceImpl::BuildResponse(args), 0);
+  ScheduleResponseForBalancer(0, AdsServiceImpl::BuildResponse(args), 0);
   // Wait for queries to start going to one of the new backends.
   // This tells us that we're now using the new serverlist.
   std::tie(num_ok, num_failure, num_drops) =
@@ -2159,13 +2248,13 @@ TEST_F(ClientLoadReportingWithDropTest, Vanilla) {
   const double kDropRateForThrottle = kDropPerMillionForThrottle / 1000000.0;
   const double KDropRateForLbAndThrottle =
       kDropRateForLb + (1 - kDropRateForLb) * kDropRateForThrottle;
-  // The EDS response contains two drop categories.
-  EdsServiceImpl::ResponseArgs args({
+  // The ADS response contains two drop categories.
+  AdsServiceImpl::ResponseArgs args({
       {"locality0", GetBackendPorts()},
   });
   args.drop_categories = {{kLbDropType, kDropPerMillionForLb},
                           {kThrottleDropType, kDropPerMillionForThrottle}};
-  ScheduleResponseForBalancer(0, EdsServiceImpl::BuildResponse(args), 0);
+  ScheduleResponseForBalancer(0, AdsServiceImpl::BuildResponse(args), 0);
   int num_ok = 0;
   int num_failure = 0;
   int num_drops = 0;
@@ -2207,9 +2296,9 @@ TEST_F(ClientLoadReportingWithDropTest, Vanilla) {
                                 kDropRateForThrottle * (1 - kErrorTolerance)),
                   ::testing::Le(total_rpc * (1 - kDropRateForLb) *
                                 kDropRateForThrottle * (1 + kErrorTolerance))));
-  // The EDS service got a single request, and sent a single response.
-  EXPECT_EQ(1U, balancers_[0]->eds_service()->request_count());
-  EXPECT_EQ(1U, balancers_[0]->eds_service()->response_count());
+  // The ADS service got a single request, and sent a single response.
+  EXPECT_EQ(1U, balancers_[0]->ads_service()->request_count());
+  EXPECT_EQ(1U, balancers_[0]->ads_service()->response_count());
 }
 
 }  // namespace

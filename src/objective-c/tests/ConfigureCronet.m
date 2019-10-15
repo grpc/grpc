@@ -19,7 +19,7 @@
 #import "ConfigureCronet.h"
 #import <Cronet/Cronet.h>
 
-void configureCronet(void) {
+void configureCronet(bool enable_netlog) {
   static dispatch_once_t configureCronet;
   dispatch_once(&configureCronet, ^{
     NSLog(@"configureCronet()");
@@ -29,7 +29,9 @@ void configureCronet(void) {
     NSURL *url = [[[NSFileManager defaultManager] URLsForDirectory:NSDocumentDirectory
                                                          inDomains:NSUserDomainMask] lastObject];
     NSLog(@"Documents directory: %@", url);
+    if (enable_netlog) {
+      [Cronet startNetLogToFile:@"cronet_netlog.json" logBytes:YES];
+    }
     [Cronet start];
-    [Cronet startNetLogToFile:@"cronet_netlog.json" logBytes:YES];
   });
 }
