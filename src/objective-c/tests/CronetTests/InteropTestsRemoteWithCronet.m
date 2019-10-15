@@ -60,4 +60,8 @@ static int32_t kRemoteInteropServerOverhead = 12;
   return kRemoteInteropServerOverhead;  // bytes
 }
 
++ (BOOL)isRemoteTest {
+  return YES;
+}
+
 @end

@@ -88,6 +88,24 @@ TEST(XdsBootstrapTest, Basic) {
   EXPECT_THAT(
       bootstrap.node()->metadata,
       ::testing::ElementsAre(
+          ::testing::Pair(
+              ::testing::StrEq("bool"),
+              ::testing::AllOf(
+                  ::testing::Field(&XdsBootstrap::MetadataValue::type,
+                                   XdsBootstrap::MetadataValue::Type::BOOL),
+                  ::testing::Field(&XdsBootstrap::MetadataValue::bool_value,
+                                   true))),
+          ::testing::Pair(
+              ::testing::StrEq("double"),
+              ::testing::AllOf(
+                  ::testing::Field(&XdsBootstrap::MetadataValue::type,
+                                   XdsBootstrap::MetadataValue::Type::DOUBLE),
+                  ::testing::Field(&XdsBootstrap::MetadataValue::double_value,
+                                   123.4))),
+          ::testing::Pair(
+              ::testing::StrEq("list"),
+              ::testing::Field(&XdsBootstrap::MetadataValue::type,
+                               XdsBootstrap::MetadataValue::Type::LIST)),
           ::testing::Pair(::testing::StrEq("null"),
                           ::testing::AllOf(::testing::Field(
                               &XdsBootstrap::MetadataValue::type,
@@ -99,20 +117,6 @@ TEST(XdsBootstrapTest, Basic) {
                                    XdsBootstrap::MetadataValue::Type::STRING),
                   ::testing::Field(&XdsBootstrap::MetadataValue::string_value,
                                    ::testing::StrEq("quux")))),
-          ::testing::Pair(
-              ::testing::StrEq("double"),
-              ::testing::AllOf(
-                  ::testing::Field(&XdsBootstrap::MetadataValue::type,
-                                   XdsBootstrap::MetadataValue::Type::DOUBLE),
-                  ::testing::Field(&XdsBootstrap::MetadataValue::double_value,
-                                   123.4))),
-          ::testing::Pair(
-              ::testing::StrEq("bool"),
-              ::testing::AllOf(
-                  ::testing::Field(&XdsBootstrap::MetadataValue::type,
-                                   XdsBootstrap::MetadataValue::Type::BOOL),
-                  ::testing::Field(&XdsBootstrap::MetadataValue::bool_value,
-                                   true))),
           ::testing::Pair(
               ::testing::StrEq("struct"),
               ::testing::AllOf(
@@ -128,11 +132,7 @@ TEST(XdsBootstrapTest, Basic) {
                                   XdsBootstrap::MetadataValue::Type::DOUBLE),
                               ::testing::Field(
                                   &XdsBootstrap::MetadataValue::double_value,
-                                  0))))))),
-          ::testing::Pair(
-              ::testing::StrEq("list"),
-              ::testing::Field(&XdsBootstrap::MetadataValue::type,
-                               XdsBootstrap::MetadataValue::Type::LIST))));
+                                  0)))))))));
   // TODO(roth): Once our InlinedVector<> implementation supports
   // iteration, replace this by using ElementsAre() in the statement above.
   auto it = bootstrap.node()->metadata.find("list");
@@ -232,8 +232,8 @@ TEST(XdsBootstrapTest, BadXdsServerContents) {
                   "\"server_uri\" field is not a string(.*)"
                   "duplicate \"server_uri\" field(.*)"
                   "\"channel_creds\" field is not an array(.*)"
-                  "duplicate \"channel_creds\" field(.*)"
-                  "\"channel_creds\" field is not an array"));
+                  "\"channel_creds\" field is not an array(.*)"
+                  "duplicate \"channel_creds\" field(.*)"));
   VerifyRegexMatch(error, e);
 }
 
@@ -258,7 +258,8 @@ TEST(XdsBootstrapTest, BadChannelCredsContents) {
   ASSERT_TRUE(error != GRPC_ERROR_NONE);
   std::regex e(
       std::string("errors parsing \"xds_server\" object(.*)"
-                  "errors parsing \"channel_creds\" object(.*)"
+                  "errors parsing \"channel_creds\" array(.*)"
+                  "errors parsing index 0(.*)"
                   "\"type\" field is not a string(.*)"
                   "duplicate \"type\" field(.*)"
                   "\"config\" field is not an object(.*)"
@@ -324,9 +325,12 @@ TEST(XdsBootstrapTest, BadNode) {
 }  // namespace grpc_core
 
 int main(int argc, char** argv) {
-// Regexes don't work in gcc4.8 and below, so just skip testing in those cases
-#if defined(__GNUC__) && \
-    ((__GNUC__ < 4) || ((__GNUC__ == 4) && (__GNUC_MINOR__) <= 8))
+// Regexes don't work in old libstdc++ versions, so just skip testing in those
+// cases
+#if defined(__GLIBCXX__) && (__GLIBCXX__ <= 20150623)
+  gpr_log(GPR_ERROR,
+          "Skipping xds_bootstrap_test since std::regex is not supported on "
+          "this system.");
   return 0;
 #endif
   grpc::testing::TestEnvironment env(argc, argv);

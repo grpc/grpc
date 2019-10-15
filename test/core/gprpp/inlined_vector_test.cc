@@ -486,6 +486,19 @@ TEST(InlinedVectorTest, PopBackAllocated) {
   EXPECT_EQ(sz - 1, v.size());
 }
 
+TEST(InlinedVectorTest, Resize) {
+  const int kInlinedSize = 2;
+  InlinedVector<UniquePtr<int>, kInlinedSize> v;
+  // Size up.
+  v.resize(5);
+  EXPECT_EQ(5UL, v.size());
+  EXPECT_EQ(nullptr, v[4]);
+  // Size down.
+  v[4] = MakeUnique<int>(5);
+  v.resize(1);
+  EXPECT_EQ(1UL, v.size());
+}
+
 }  // namespace testing
 }  // namespace grpc_core
 

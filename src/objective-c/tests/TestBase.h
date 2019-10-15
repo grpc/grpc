@@ -57,9 +57,13 @@
 + (NSString *)PEMRootCertificates;
 
 /**
- * The root certificates to be used. The base implementation returns nil. Subclasses should override
- * to appropriate settings.
+ * The host name to be used for TLS verification in the tests.
  */
 + (NSString *)hostNameOverride;
+
+/**
+ * Indication of whether the test is connecting to a remote server.
+ */
++ (BOOL)isRemoteTest;
 
 @end

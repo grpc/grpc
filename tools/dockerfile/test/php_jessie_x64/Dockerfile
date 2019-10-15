@@ -75,7 +75,11 @@ RUN pip install futures==2.2.0 enum34==1.0.4 protobuf==3.5.2.post1 six==1.10.0 t
 # Install dependencies
 
 RUN apt-get update && apt-get install -y \
-    git php5 php5-dev phpunit unzip
+    git php5 php5-dev unzip
+
+RUN wget https://phar.phpunit.de/phpunit-5.7.27.phar && \
+  mv phpunit-5.7.27.phar /usr/local/bin/phpunit && \
+  chmod +x /usr/local/bin/phpunit
 
 
 RUN mkdir /var/local/jenkins

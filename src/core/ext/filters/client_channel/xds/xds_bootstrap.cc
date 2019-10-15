@@ -124,7 +124,7 @@ grpc_error* XdsBootstrap::ParseXdsServer(grpc_json* json) {
     } else if (strcmp(child->key, "channel_creds") == 0) {
       if (child->type != GRPC_JSON_ARRAY) {
         error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-            "\"channel_creds\" field is not a array"));
+            "\"channel_creds\" field is not an array"));
       }
       if (seen_channel_creds) {
         error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
@@ -205,7 +205,6 @@ grpc_error* XdsBootstrap::ParseChannelCreds(grpc_json* json, size_t idx) {
   gpr_free(msg);
   for (size_t i = 0; i < error_list.size(); ++i) {
     error = grpc_error_add_child(error, error_list[i]);
-    GRPC_ERROR_UNREF(error_list[i]);
   }
   return error;
 }
@@ -418,7 +417,6 @@ grpc_error* XdsBootstrap::ParseMetadataValue(grpc_json* json, size_t idx,
         gpr_free(msg);
         for (size_t i = 0; i < error_list.size(); ++i) {
           error = grpc_error_add_child(error, error_list[i]);
-          GRPC_ERROR_UNREF(error_list[i]);
         }
       }
       break;

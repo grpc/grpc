@@ -21,17 +21,17 @@ gRPC PHP installation instructions for Google Cloud Platform is in
 For PHP5:
 
 ```sh
-$ sudo apt-get install php5 php5-dev php-pear phpunit
+$ sudo apt-get install php5 php5-dev php-pear
 ```
 
 For PHP7:
 
 ```sh
-$ sudo apt-get install php7.0 php7.0-dev php-pear phpunit
+$ sudo apt-get install php7.0 php7.0-dev php-pear
 ```
 or
 ```sh
-$ sudo apt-get install php php-dev php-pear phpunit
+$ sudo apt-get install php php-dev php-pear
 ```
 
 **Install PHP and PECL on CentOS/RHEL 7:**
@@ -54,10 +54,13 @@ $ sudo mv composer.phar /usr/local/bin/composer
 ```
 
 **Install PHPUnit (Linux or Mac):**
+
+PHP tests currently require using an older version of PHPUnit
+
 ```sh
-$ wget https://phar.phpunit.de/phpunit-old.phar
-$ chmod +x phpunit-old.phar
-$ sudo mv phpunit-old.phar /usr/bin/phpunit
+$ wget https://phar.phpunit.de/phpunit-5.7.27.phar
+$ chmod +x phpunit-5.7.27.phar
+$ sudo mv phpunit-5.7.27.phar /usr/local/bin/phpunit
 ```
 
 ## Install the gRPC PHP extension
