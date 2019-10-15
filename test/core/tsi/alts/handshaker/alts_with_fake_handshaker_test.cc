@@ -222,9 +222,9 @@ void test_concurrent_client_server_handshakes() {
   // Test
   {
     TestServer test_server(fake_handshake_server.Address());
-    // Expect to be fast enough to do roughly just over 50 handshakes per
-    // second (in opt).
-    gpr_timespec test_deadline = grpc_timeout_seconds_to_deadline(10);
+    // Expect to be fast enough to do at least 25 handshakes per
+    // second (subject to sanitizer scaling).
+    gpr_timespec test_deadline = grpc_timeout_seconds_to_deadline(20);
     int num_concurrent_connects = 100;
     std::vector<grpc_core::UniquePtr<grpc_core::Thread>> thds;
     thds.reserve(num_concurrent_connects);
@@ -439,9 +439,9 @@ void test_handshake_fails_fast_when_peer_endpoint_closes_connection_after_accept
   {
     FakeTcpServerThatClosesConnectionsUponReceivingBytes fake_tcp_server;
     {
-      gpr_timespec test_deadline = grpc_timeout_seconds_to_deadline(10);
-      // Expect to be fast enough to do roughly just over 50 failed
-      // handshakes per second (in opt).
+      gpr_timespec test_deadline = grpc_timeout_seconds_to_deadline(20);
+      // Expect to be fast enough to do at least 25 handshakes per
+      // second (subject to sanitizer scaling).
       std::vector<grpc_core::UniquePtr<grpc_core::Thread>> connect_thds;
       int num_concurrent_connects = 100;
       connect_thds.reserve(num_concurrent_connects);
