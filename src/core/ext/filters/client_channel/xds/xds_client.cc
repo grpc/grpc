@@ -97,7 +97,7 @@ class XdsClient::ChannelState::RetryableCall
   // The wrapped xds call that talks to the xds server. It's instantiated
   // every time we start a new call. It's null during call retry backoff.
   OrphanablePtr<T> calld_;
-  // The owing xds channel.
+  // The owning xds channel.
   RefCountedPtr<ChannelState> chand_;
 
   // Retry state.
@@ -109,7 +109,7 @@ class XdsClient::ChannelState::RetryableCall
   bool shutting_down_ = false;
 };
 
-// Contains an EDS call to the xds server.
+// Contains an ADS call to the xds server.
 class XdsClient::ChannelState::AdsCallState
     : public InternallyRefCounted<AdsCallState> {
  public:

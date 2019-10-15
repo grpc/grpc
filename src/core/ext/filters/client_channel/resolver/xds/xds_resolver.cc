@@ -50,14 +50,14 @@ class XdsResolver : public Resolver {
  private:
   class ServiceConfigWatcher : public XdsClient::ServiceConfigWatcherInterface {
    public:
-    explicit ServiceConfigWatcher(RefCountedPtr<XdsResolver> parent)
-        : parent_(std::move(parent)) {}
+    explicit ServiceConfigWatcher(RefCountedPtr<XdsResolver> resolver)
+        : resolver_(std::move(resolver)) {}
     void OnServiceConfigChanged(
         RefCountedPtr<ServiceConfig> service_config) override;
     void OnError(grpc_error* error) override;
 
    private:
-    RefCountedPtr<XdsResolver> parent_;
+    RefCountedPtr<XdsResolver> resolver_;
   };
 
   UniquePtr<char> server_name_;
@@ -68,21 +68,21 @@ class XdsResolver : public Resolver {
 
 void XdsResolver::ServiceConfigWatcher::OnServiceConfigChanged(
     RefCountedPtr<ServiceConfig> service_config) {
-  grpc_arg xds_client_arg = parent_->xds_client_->MakeChannelArg();
+  grpc_arg xds_client_arg = resolver_->xds_client_->MakeChannelArg();
   Result result;
   result.args =
-      grpc_channel_args_copy_and_add(parent_->args_, &xds_client_arg, 1);
+      grpc_channel_args_copy_and_add(resolver_->args_, &xds_client_arg, 1);
   result.service_config = std::move(service_config);
-  parent_->result_handler()->ReturnResult(std::move(result));
+  resolver_->result_handler()->ReturnResult(std::move(result));
 }
 
 void XdsResolver::ServiceConfigWatcher::OnError(grpc_error* error) {
-  grpc_arg xds_client_arg = parent_->xds_client_->MakeChannelArg();
+  grpc_arg xds_client_arg = resolver_->xds_client_->MakeChannelArg();
   Result result;
   result.args =
-      grpc_channel_args_copy_and_add(parent_->args_, &xds_client_arg, 1);
+      grpc_channel_args_copy_and_add(resolver_->args_, &xds_client_arg, 1);
   result.service_config_error = error;
-  parent_->result_handler()->ReturnResult(std::move(result));
+  resolver_->result_handler()->ReturnResult(std::move(result));
 }
 
 void XdsResolver::StartLocked() {
@@ -96,7 +96,6 @@ void XdsResolver::StartLocked() {
             "TRANSIENT_FAILURE: %s",
             grpc_error_string(error));
     result_handler()->ReturnError(error);
-    return;
   }
 }
 
