@@ -40,6 +40,7 @@
 #define GRPC_HAVE_IP_PKTINFO 1
 #define GRPC_HAVE_MSG_NOSIGNAL 1
 #define GRPC_HAVE_UNIX_SOCKET 1
+#define GRPC_HAVE_VSOCK_SOCKET 1
 #define GRPC_POSIX_FORK 1
 #define GRPC_POSIX_NO_SPECIAL_WAKEUP_FD 1
 #define GRPC_POSIX_SOCKET 1
@@ -66,6 +67,7 @@
 #define GRPC_HAVE_IP_PKTINFO 1
 #define GRPC_HAVE_MSG_NOSIGNAL 1
 #define GRPC_HAVE_UNIX_SOCKET 1
+#define GRPC_HAVE_VSOCK_SOCKET 1
 /* Linux has TCP_INQ support since 4.18, but it is safe to set
    the socket option on older kernels. */
 #define GRPC_HAVE_TCP_INQ 1

@@ -413,6 +413,7 @@ Pod::Spec.new do |s|
                               'src/core/lib/iomgr/timer_manager.h',
                               'src/core/lib/iomgr/udp_server.h',
                               'src/core/lib/iomgr/unix_sockets_posix.h',
+                              'src/core/lib/iomgr/vsock_sockets_posix.h',
                               'src/core/lib/iomgr/wakeup_fd_pipe.h',
                               'src/core/lib/iomgr/wakeup_fd_posix.h',
                               'src/core/lib/json/json.h',
