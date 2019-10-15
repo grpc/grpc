@@ -84,7 +84,9 @@ class FakeHandshakeServer {
     server_->Shutdown(grpc_timeout_milliseconds_to_deadline(0));
   }
 
-  const char* Address() { return address_.get(); }
+  grpc_core::UniquePtr<char> Address() {
+    return grpc_core::UniquePtr<char>(gpr_strdup(address_.get()));
+  }
 
  private:
   grpc_core::UniquePtr<char> address_;
@@ -94,12 +96,12 @@ class FakeHandshakeServer {
 
 class TestServer {
  public:
-  TestServer(const char* fake_handshake_server_address) {
+  TestServer(grpc_core::UniquePtr<char> fake_handshake_server_address) {
     grpc_alts_credentials_options* alts_options =
         grpc_alts_credentials_server_options_create();
     grpc_server_credentials* server_creds =
         grpc_alts_server_credentials_create_customized(
-            alts_options, fake_handshake_server_address,
+            alts_options, fake_handshake_server_address.get(),
             true /* enable_untrusted_alts */);
     grpc_alts_credentials_options_destroy(alts_options);
     server_ = grpc_server_create(nullptr, nullptr);
@@ -128,7 +130,9 @@ class TestServer {
     grpc_completion_queue_destroy(server_cq_);
   }
 
-  const char* Address() { return server_addr_.get(); }
+  grpc_core::UniquePtr<char> Address() {
+    return grpc_core::UniquePtr<char>(gpr_strdup(server_addr_.get()));
+  }
 
   static void PollUntilShutdown(void* arg) {
     TestServer* self = static_cast<TestServer*>(arg);
@@ -148,8 +152,8 @@ class TestServer {
 };
 
 struct connect_args {
-  const char* server_address;
-  const char* fake_handshaker_server_addr;
+  grpc_core::UniquePtr<char> server_address;
+  grpc_core::UniquePtr<char> fake_handshaker_server_addr;
   const void* debug_id;
   int per_connect_deadline_seconds;
   int loops;
@@ -164,12 +168,12 @@ void connect_loop(void* arg) {
         grpc_alts_credentials_client_options_create();
     grpc_channel_credentials* channel_creds =
         grpc_alts_credentials_create_customized(
-            alts_options, args->fake_handshaker_server_addr,
+            alts_options, args->fake_handshaker_server_addr.get(),
             true /* enable_untrusted_alts */);
     grpc_alts_credentials_options_destroy(alts_options);
     grpc_completion_queue* cq = grpc_completion_queue_create_for_next(nullptr);
     grpc_channel* channel = grpc_secure_channel_create(
-        channel_creds, args->server_address, nullptr, nullptr);
+        channel_creds, args->server_address.get(), nullptr, nullptr);
     grpc_channel_credentials_release(channel_creds);
     // Connect, forcing an ALTS handshake
     gpr_timespec connect_deadline =
@@ -248,92 +252,125 @@ void test_concurrent_client_server_handshakes() {
   }
 }
 
-struct fake_tcp_server_args {
-  int port;
-  gpr_event stop_ev;
-};
-
-void run_fake_tcp_server_that_closes_connections_upon_receiving_bytes(
-    void* arg) {
-  fake_tcp_server_args* args = static_cast<fake_tcp_server_args*>(arg);
-  int s = socket(AF_INET6, SOCK_STREAM, 0);
-  GPR_ASSERT(s != -1);
-  if (s == -1) {
-    gpr_log(GPR_ERROR, "Failed to create socket: %d", errno);
-    abort();
-  }
-  int val = 1;
-  if (setsockopt(s, SOL_SOCKET, SO_REUSEADDR, &val, sizeof(val)) != 0) {
-    gpr_log(GPR_ERROR,
-            "Failed to set SO_REUSEADDR on socket bound to [::1]:%d : %d",
-            args->port, errno);
-    abort();
-  }
-  if (fcntl(s, F_SETFL, O_NONBLOCK) != 0) {
-    gpr_log(GPR_ERROR, "Failed to set O_NONBLOCK on socket: %d", errno);
-    abort();
-  }
-  sockaddr_in6 addr;
-  memset(&addr, 0, sizeof(addr));
-  addr.sin6_family = AF_INET6;
-  addr.sin6_port = htons(args->port);
-  ((char*)&addr.sin6_addr)[15] = 1;
-  if (bind(s, (const sockaddr*)&addr, sizeof(addr)) != 0) {
-    gpr_log(GPR_ERROR, "Failed to bind socket to [::1]:%d : %d", args->port,
-            errno);
-    abort();
-  }
-  if (listen(s, 100)) {
-    gpr_log(GPR_ERROR, "Failed to listen on socket bound to [::1]:%d : %d",
-            args->port, errno);
-    abort();
-  }
-  std::set<int> peers;
-  while (!gpr_event_get(&args->stop_ev)) {
-    int p = accept(s, nullptr, nullptr);
-    if (p == -1 && errno != EAGAIN && errno != EWOULDBLOCK) {
-      gpr_log(GPR_ERROR, "Failed to accept connection: %d", errno);
+class FakeTcpServerThatClosesConnectionsUponReceivingBytes {
+ public:
+  FakeTcpServerThatClosesConnectionsUponReceivingBytes() {
+    port_ = grpc_pick_unused_port_or_die();
+    accept_socket_ = socket(AF_INET6, SOCK_STREAM, 0);
+    GPR_ASSERT(accept_socket_ != -1);
+    if (accept_socket_ == -1) {
+      gpr_log(GPR_ERROR, "Failed to create socket: %d", errno);
       abort();
     }
-    if (p != -1) {
-      gpr_log(GPR_DEBUG, "accepted peer socket: %d", p);
-      if (fcntl(p, F_SETFL, O_NONBLOCK) != 0) {
-        gpr_log(GPR_ERROR, "Failed to set O_NONBLOCK on peer socket: %d", p,
-                errno);
+    int val = 1;
+    if (setsockopt(accept_socket_, SOL_SOCKET, SO_REUSEADDR, &val,
+                   sizeof(val)) != 0) {
+      gpr_log(GPR_ERROR,
+              "Failed to set SO_REUSEADDR on socket bound to [::1]:%d : %d",
+              port_, errno);
+      abort();
+    }
+    if (fcntl(accept_socket_, F_SETFL, O_NONBLOCK) != 0) {
+      gpr_log(GPR_ERROR, "Failed to set O_NONBLOCK on socket: %d", errno);
+      abort();
+    }
+    sockaddr_in6 addr;
+    memset(&addr, 0, sizeof(addr));
+    addr.sin6_family = AF_INET6;
+    addr.sin6_port = htons(port_);
+    ((char*)&addr.sin6_addr)[15] = 1;
+    if (bind(accept_socket_, (const sockaddr*)&addr, sizeof(addr)) != 0) {
+      gpr_log(GPR_ERROR, "Failed to bind socket to [::1]:%d : %d", port_,
+              errno);
+      abort();
+    }
+    if (listen(accept_socket_, 100)) {
+      gpr_log(GPR_ERROR, "Failed to listen on socket bound to [::1]:%d : %d",
+              port_, errno);
+      abort();
+    }
+    gpr_event_init(&stop_ev_);
+    run_server_loop_thd_ = grpc_core::MakeUnique<grpc_core::Thread>(
+        "fake tcp server that closes connections upon receiving bytes",
+        RunServerLoop, this);
+    run_server_loop_thd_->Start();
+  }
+
+  ~FakeTcpServerThatClosesConnectionsUponReceivingBytes() {
+    gpr_log(GPR_DEBUG,
+            "FakeTcpServerThatClosesConnectionsUponReceivingBytes stop and "
+            "join server thread");
+    gpr_event_set(&stop_ev_, (void*)1);
+    run_server_loop_thd_->Join();
+    gpr_log(GPR_DEBUG,
+            "FakeTcpServerThatClosesConnectionsUponReceivingBytes join server "
+            "thread complete");
+  }
+
+  grpc_core::UniquePtr<char> Address() {
+    char* addr;
+    GPR_ASSERT(gpr_asprintf(&addr, "[::]:%d", port_));
+    return grpc_core::UniquePtr<char>(addr);
+  }
+
+  static void RunServerLoop(void* arg) {
+    FakeTcpServerThatClosesConnectionsUponReceivingBytes* self =
+        static_cast<FakeTcpServerThatClosesConnectionsUponReceivingBytes*>(arg);
+    std::set<int> peers;
+    while (!gpr_event_get(&self->stop_ev_)) {
+      int p = accept(self->accept_socket_, nullptr, nullptr);
+      if (p == -1 && errno != EAGAIN && errno != EWOULDBLOCK) {
+        gpr_log(GPR_ERROR, "Failed to accept connection: %d", errno);
         abort();
       }
-      peers.insert(p);
-    }
-    auto it = peers.begin();
-    while (it != peers.end()) {
-      int p = *it;
-      char buf[100];
-      int bytes_received_size = recv(p, buf, 100, 0);
-      if (bytes_received_size < 0 && errno != EAGAIN && errno != EWOULDBLOCK) {
-        gpr_log(GPR_ERROR, "Failed to receive from peer socket: %d. errno: %d",
-                p, errno);
-        abort();
+      if (p != -1) {
+        gpr_log(GPR_DEBUG, "accepted peer socket: %d", p);
+        if (fcntl(p, F_SETFL, O_NONBLOCK) != 0) {
+          gpr_log(GPR_ERROR, "Failed to set O_NONBLOCK on peer socket: %d", p,
+                  errno);
+          abort();
+        }
+        peers.insert(p);
       }
-      if (bytes_received_size >= 0) {
-        gpr_log(GPR_DEBUG,
-                "Fake TCP server received %d bytes from peer socket: %d. Now "
-                "close the "
-                "connection.",
-                bytes_received_size, p);
-        close(p);
-        it = peers.erase(it);
-      } else {
-        it++;
+      auto it = peers.begin();
+      while (it != peers.end()) {
+        int p = *it;
+        char buf[100];
+        int bytes_received_size = recv(p, buf, 100, 0);
+        if (bytes_received_size < 0 && errno != EAGAIN &&
+            errno != EWOULDBLOCK) {
+          gpr_log(GPR_ERROR,
+                  "Failed to receive from peer socket: %d. errno: %d", p,
+                  errno);
+          abort();
+        }
+        if (bytes_received_size >= 0) {
+          gpr_log(GPR_DEBUG,
+                  "Fake TCP server received %d bytes from peer socket: %d. Now "
+                  "close the "
+                  "connection.",
+                  bytes_received_size, p);
+          close(p);
+          it = peers.erase(it);
+        } else {
+          it++;
+        }
       }
+      gpr_sleep_until(gpr_time_add(gpr_now(GPR_CLOCK_MONOTONIC),
+                                   gpr_time_from_millis(10, GPR_TIMESPAN)));
     }
-    gpr_sleep_until(gpr_time_add(gpr_now(GPR_CLOCK_MONOTONIC),
-                                 gpr_time_from_millis(10, GPR_TIMESPAN)));
+    for (auto it = peers.begin(); it != peers.end(); it++) {
+      close(*it);
+    }
+    close(self->accept_socket_);
   }
-  for (auto it = peers.begin(); it != peers.end(); it++) {
-    close(*it);
-  }
-  close(s);
-}
+
+ private:
+  int accept_socket_;
+  int port_;
+  gpr_event stop_ev_;
+  grpc_core::UniquePtr<grpc_core::Thread> run_server_loop_thd_;
+};
 
 void expect_connect_fails_loop(void* arg) {
   connect_args* args = static_cast<connect_args*>(arg);
@@ -345,12 +382,12 @@ void expect_connect_fails_loop(void* arg) {
         grpc_alts_credentials_client_options_create();
     grpc_channel_credentials* channel_creds =
         grpc_alts_credentials_create_customized(
-            alts_options, args->fake_handshaker_server_addr,
+            alts_options, args->fake_handshaker_server_addr.get(),
             true /* enable_untrusted_alts */);
     grpc_alts_credentials_options_destroy(alts_options);
     grpc_completion_queue* cq = grpc_completion_queue_create_for_next(nullptr);
     grpc_channel* channel = grpc_secure_channel_create(
-        channel_creds, args->server_address, nullptr, nullptr);
+        channel_creds, args->server_address.get(), nullptr, nullptr);
     grpc_channel_credentials_release(channel_creds);
     // Connect, forcing an ALTS handshake attempt
     gpr_timespec connect_failure_deadline =
@@ -394,25 +431,14 @@ void test_handshake_fails_fast_when_peer_endpoint_closes_connection_after_accept
           "after_accepting");
   FakeHandshakeServer fake_handshake_server;
   {
-    fake_tcp_server_args args;
-    memset(&args, 0, sizeof(args));
-    args.port = grpc_pick_unused_port_or_die();
-    gpr_event_init(&args.stop_ev);
-    grpc_core::UniquePtr<grpc_core::Thread> fake_tcp_server_thd =
-        grpc_core::MakeUnique<grpc_core::Thread>(
-            "fake tcp server that closes connections upon receiving bytes",
-            run_fake_tcp_server_that_closes_connections_upon_receiving_bytes,
-            &args);
-    fake_tcp_server_thd->Start();
-    grpc_core::UniquePtr<char> fake_tcp_server_addr;
-    grpc_core::JoinHostPort(&fake_tcp_server_addr, "[::1]", args.port);
+    FakeTcpServerThatClosesConnectionsUponReceivingBytes fake_tcp_server;
     {
       gpr_timespec test_deadline = grpc_timeout_seconds_to_deadline(10);
       std::vector<grpc_core::UniquePtr<grpc_core::Thread>> connect_thds;
       int num_concurrent_connects = 100;
       connect_thds.reserve(num_concurrent_connects);
       connect_args c_args;
-      c_args.server_address = fake_tcp_server_addr.get();
+      c_args.server_address = fake_tcp_server.Address();
       c_args.fake_handshaker_server_addr = fake_handshake_server.Address();
       c_args.loops = 5;
       c_args.per_connect_deadline_seconds = 10;
@@ -426,7 +452,6 @@ void test_handshake_fails_fast_when_peer_endpoint_closes_connection_after_accept
       for (size_t i = 0; i < num_concurrent_connects; i++) {
         connect_thds[i]->Join();
       }
-      gpr_event_set(&args.stop_ev, (void*)1);
       gpr_log(GPR_DEBUG, "done performing concurrent connect expect failures");
       if (gpr_time_cmp(gpr_now(GPR_CLOCK_MONOTONIC), test_deadline) > 0) {
         gpr_log(GPR_ERROR,
@@ -435,7 +460,6 @@ void test_handshake_fails_fast_when_peer_endpoint_closes_connection_after_accept
         abort();
       }
     }
-    fake_tcp_server_thd->Join();
   }
 }
 
