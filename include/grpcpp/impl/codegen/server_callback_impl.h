@@ -27,6 +27,7 @@
 #include <grpcpp/impl/codegen/callback_common.h>
 #include <grpcpp/impl/codegen/config.h>
 #include <grpcpp/impl/codegen/core_codegen_interface.h>
+#include <grpcpp/impl/codegen/message_allocator.h>
 #include <grpcpp/impl/codegen/status.h>
 
 namespace grpc_impl {
