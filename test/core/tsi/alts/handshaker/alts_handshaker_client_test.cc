@@ -157,8 +157,6 @@ static grpc_call_error check_client_start_success(grpc_call* call,
   upb::Arena arena;
   alts_handshaker_client* client = alts_tsi_handshaker_get_client_for_testing(
       static_cast<alts_tsi_handshaker*>(closure->cb_arg));
-  gpr_log(GPR_ERROR, "expected %p; got %p", closure,
-          alts_handshaker_client_get_closure_for_testing(client));
   GPR_ASSERT(alts_handshaker_client_get_closure_for_testing(client) == closure);
   grpc_gcp_HandshakerReq* req = deserialize_handshaker_req(
       alts_handshaker_client_get_send_buffer_for_testing(client), arena.ptr());
@@ -312,10 +310,6 @@ static alts_handshaker_client_test_config* create_config() {
       config->client_tsi_handshaker, config->client);
   grpc_core::internal::alts_tsi_handshaker_set_client_for_testing(
       config->server_tsi_handshaker, config->server);
-  gpr_log(GPR_ERROR, "client closure get for testing: %p",
-          alts_handshaker_client_get_closure_for_testing(config->client));
-  gpr_log(GPR_ERROR, "server closure get for testing: %p",
-          alts_handshaker_client_get_closure_for_testing(config->server));
   GPR_ASSERT(config->client != nullptr);
   GPR_ASSERT(config->server != nullptr);
   grpc_alts_credentials_options_destroy(client_options);
@@ -368,8 +362,6 @@ static void schedule_request_success_test() {
   {
     grpc_core::ExecCtx exec_ctx;
     /* Check client_start success. */
-    gpr_log(GPR_DEBUG, "set grpc caller for testing to %p",
-            check_client_start_success);
     alts_handshaker_client_set_grpc_caller_for_testing(
         config->client, check_client_start_success);
     alts_handshaker_client_start_client_locked(config->client);

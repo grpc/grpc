@@ -304,7 +304,8 @@ void run_fake_tcp_server_that_closes_connections_upon_receiving_bytes(
       }
       peers.insert(p);
     }
-    for (auto it = peers.begin(); it != peers.end(); it++) {
+    auto it = peers.begin();
+    while (it != peers.end()) {
       int p = *it;
       char buf[100];
       int bytes_received_size = recv(p, buf, 100, 0);
@@ -320,7 +321,9 @@ void run_fake_tcp_server_that_closes_connections_upon_receiving_bytes(
                 "connection.",
                 bytes_received_size, p);
         close(p);
-        peers.erase(p);
+        it = peers.erase(it);
+      } else {
+        it++;
       }
     }
     gpr_sleep_until(gpr_time_add(gpr_now(GPR_CLOCK_MONOTONIC),
