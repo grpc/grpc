@@ -58,7 +58,7 @@ struct alts_tsi_handshaker {
   alts_handshaker_client_vtable* client_vtable_for_testing;
   bool use_dedicated_cq;
   grpc_channel* channel;
-  // shutdown effectively tracks base.handshake_shutdown,
+  // shutdown effectively follows base.handshake_shutdown,
   // but is synchronized by the mutex of this object.
   bool shutdown;
 };
@@ -521,18 +521,6 @@ bool alts_tsi_handshaker_get_has_sent_start_message_for_testing(
   return handshaker->has_sent_start_message;
 }
 
-alts_handshaker_client* alts_tsi_handshaker_get_client_for_testing(
-    alts_tsi_handshaker* handshaker) {
-  GPR_ASSERT(handshaker != nullptr);
-  return handshaker->client;
-}
-
-void alts_tsi_handshaker_set_client_for_testing(
-    alts_tsi_handshaker* handshaker, alts_handshaker_client* client) {
-  GPR_ASSERT(handshaker != nullptr);
-  handshaker->client = client;
-}
-
 void alts_tsi_handshaker_set_client_vtable_for_testing(
     alts_tsi_handshaker* handshaker, alts_handshaker_client_vtable* vtable) {
   GPR_ASSERT(handshaker != nullptr);
@@ -543,6 +531,16 @@ bool alts_tsi_handshaker_get_is_client_for_testing(
     alts_tsi_handshaker* handshaker) {
   GPR_ASSERT(handshaker != nullptr);
   return handshaker->is_client;
+}
+
+alts_handshaker_client* alts_tsi_handshaker_get_client_for_testing(
+    alts_tsi_handshaker* handshaker) {
+  return handshaker->client;
+}
+
+void alts_tsi_handshaker_set_client_for_testing(
+    alts_tsi_handshaker* handshaker, alts_handshaker_client* client) {
+  handshaker->client = client;
 }
 
 }  // namespace internal

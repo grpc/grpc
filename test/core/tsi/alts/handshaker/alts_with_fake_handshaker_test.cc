@@ -55,8 +55,6 @@
 
 namespace {
 
-void* tag(int i) { return (void*)static_cast<intptr_t>(i); }
-
 void drain_cq(grpc_completion_queue* cq) {
   grpc_event ev;
   do {
@@ -72,8 +70,6 @@ class FakeHandshakeServer {
     grpc_core::JoinHostPort(&address_, "localhost", port);
     service_ = grpc::gcp::CreateFakeHandshakerService();
     grpc::ServerBuilder builder;
-    // builder.SetResourceQuota(grpc::ResourceQuota("FakeHandshakerService").Resize(2
-    // * 1024 * 1024 * 1024/* 2 MB */));
     builder.AddListeningPort(address_.get(), grpc::InsecureServerCredentials());
     builder.RegisterService(service_.get());
     server_ = builder.BuildAndStart();
@@ -137,7 +133,7 @@ class TestServer {
   static void PollUntilShutdown(void* arg) {
     TestServer* self = static_cast<TestServer*>(arg);
     grpc_event ev;
-    // Expect to shut down within 30 seconds
+    // The test is expected to be over in 30 seconds
     gpr_timespec deadline = grpc_timeout_seconds_to_deadline(30);
     ev = grpc_completion_queue_next(self->server_cq_, deadline, nullptr);
     GPR_ASSERT(ev.type == GRPC_OP_COMPLETE);
@@ -202,10 +198,11 @@ void connect_loop(void* arg) {
   }
 }
 
+// Perform a few ALTS handshakes sequentially (using the fake, in-process ALTS
+// handshake server).
 void test_basic_client_server_handshake() {
   gpr_log(GPR_DEBUG, "Running test: test_basic_client_server_handshake");
   FakeHandshakeServer fake_handshake_server;
-  // Test
   {
     TestServer test_server(fake_handshake_server.Address());
     connect_args args;
@@ -217,15 +214,16 @@ void test_basic_client_server_handshake() {
   }
 }
 
-/* This test is interesting largely because of the fake handshake server's
- * low resource quota. We make sure that all handshakes succeed, without
- * overloading the fake handshake server. */
+/* Run a bunch of concurrent ALTS handshakes on concurrent channels
+ * (using the fake, in-process handshake server). */
 void test_concurrent_client_server_handshakes() {
   gpr_log(GPR_DEBUG, "Running test: test_concurrent_client_server_handshakes");
   FakeHandshakeServer fake_handshake_server;
   // Test
   {
     TestServer test_server(fake_handshake_server.Address());
+    // Expect to be fast enough to do roughly just over 50 handshakes per
+    // second (in opt).
     gpr_timespec test_deadline = grpc_timeout_seconds_to_deadline(10);
     int num_concurrent_connects = 100;
     std::vector<grpc_core::UniquePtr<grpc_core::Thread>> thds;
@@ -234,7 +232,9 @@ void test_concurrent_client_server_handshakes() {
     c_args.fake_handshaker_server_addr = fake_handshake_server.Address();
     c_args.server_address = test_server.Address();
     c_args.per_connect_deadline_seconds = 10;
-    c_args.loops = 1;
+    c_args.loops = 5;
+    gpr_log(GPR_DEBUG,
+            "start performing concurrent expected-to-succeed connects");
     for (size_t i = 0; i < num_concurrent_connects; i++) {
       auto new_thd = grpc_core::MakeUnique<grpc_core::Thread>(
           "test_concurrent_client_server_handshakes thd", connect_loop,
@@ -245,6 +245,8 @@ void test_concurrent_client_server_handshakes() {
     for (size_t i = 0; i < num_concurrent_connects; i++) {
       thds[i]->Join();
     }
+    gpr_log(GPR_DEBUG,
+            "done performing concurrent expected-to-succeed connects");
     if (gpr_time_cmp(gpr_now(GPR_CLOCK_MONOTONIC), test_deadline) > 0) {
       gpr_log(GPR_DEBUG, "Test took longer than expected.");
       abort();
@@ -313,6 +315,10 @@ class FakeTcpServerThatClosesConnectionsUponReceivingBytes {
     return grpc_core::UniquePtr<char>(addr);
   }
 
+  // Run a loop that periodically, every 10 ms:
+  //   1) Checks if there are any new TCP connections to accept.
+  //   2) Checks if any data has arrived yet on established connections,
+  //      and closes them if so.
   static void RunServerLoop(void* arg) {
     FakeTcpServerThatClosesConnectionsUponReceivingBytes* self =
         static_cast<FakeTcpServerThatClosesConnectionsUponReceivingBytes*>(arg);
@@ -419,11 +425,11 @@ void expect_connect_fails_loop(void* arg) {
   }
 }
 
-/* This test is intended to make sure that we quickly cancel ALTS RPC's
- * when the security handshaker gets a read endpoint from the remote peer. The
- * goal is that RPC's will sharply slow down due to exceeding the number
- * of handshakes that can be outstanding at once, forcing new handshakes to be
- * queued up for longer than they should be if that isn't done. */
+/* This test is intended to make sure that ALTS handshakes we correctly
+ * fail fast when the security handshaker gets an error while reading
+ * from the remote peer, after having earlier sent the first bytes of the
+ * ALTS handshake to the peer, i.e. after getting into the middle of a
+ * handshake. */
 void test_handshake_fails_fast_when_peer_endpoint_closes_connection_after_accepting() {
   gpr_log(GPR_DEBUG,
           "Running test: "
@@ -434,15 +440,18 @@ void test_handshake_fails_fast_when_peer_endpoint_closes_connection_after_accept
     FakeTcpServerThatClosesConnectionsUponReceivingBytes fake_tcp_server;
     {
       gpr_timespec test_deadline = grpc_timeout_seconds_to_deadline(10);
+      // Expect to be fast enough to do roughly just over 50 failed
+      // handshakes per second (in opt).
       std::vector<grpc_core::UniquePtr<grpc_core::Thread>> connect_thds;
       int num_concurrent_connects = 100;
       connect_thds.reserve(num_concurrent_connects);
       connect_args c_args;
       c_args.server_address = fake_tcp_server.Address();
       c_args.fake_handshaker_server_addr = fake_handshake_server.Address();
-      c_args.loops = 5;
       c_args.per_connect_deadline_seconds = 10;
-      gpr_log(GPR_DEBUG, "start performing concurrent connect expect failures");
+      c_args.loops = 5;
+      gpr_log(GPR_DEBUG,
+              "start performing concurrent expected-to-fail connects");
       for (size_t i = 0; i < num_concurrent_connects; i++) {
         auto new_thd = grpc_core::MakeUnique<grpc_core::Thread>(
             "connect fails fast", expect_connect_fails_loop, &c_args);
@@ -452,7 +461,8 @@ void test_handshake_fails_fast_when_peer_endpoint_closes_connection_after_accept
       for (size_t i = 0; i < num_concurrent_connects; i++) {
         connect_thds[i]->Join();
       }
-      gpr_log(GPR_DEBUG, "done performing concurrent connect expect failures");
+      gpr_log(GPR_DEBUG,
+              "done performing concurrent expected-to-fail connects");
       if (gpr_time_cmp(gpr_now(GPR_CLOCK_MONOTONIC), test_deadline) > 0) {
         gpr_log(GPR_ERROR,
                 "Exceeded test deadline. ALTS handshakes might not be failing "

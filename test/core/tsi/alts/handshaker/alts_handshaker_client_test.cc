@@ -52,6 +52,7 @@ typedef struct alts_handshaker_client_test_config {
   alts_handshaker_client* client;
   alts_handshaker_client* server;
   grpc_slice out_frame;
+  // dummy_pss is a placeholder but isn't actually used in these tests.
   grpc_pollset_set* dummy_pss;
   alts_tsi_handshaker* client_tsi_handshaker;
   alts_tsi_handshaker* server_tsi_handshaker;
@@ -364,29 +365,32 @@ static void schedule_request_success_test() {
     /* Check client_start success. */
     alts_handshaker_client_set_grpc_caller_for_testing(
         config->client, check_client_start_success);
-    alts_handshaker_client_start_client_locked(config->client);
+    GPR_ASSERT(alts_handshaker_client_start_client_locked(config->client) ==
+               TSI_OK);
   }
   {
     grpc_core::ExecCtx exec_ctx;
     /* Check server_start success. */
     alts_handshaker_client_set_grpc_caller_for_testing(
         config->server, check_server_start_success);
-    alts_handshaker_client_start_server_locked(config->server,
-                                               &config->out_frame);
+    GPR_ASSERT(alts_handshaker_client_start_server_locked(
+                   config->server, &config->out_frame) == TSI_OK);
   }
   {
     grpc_core::ExecCtx exec_ctx;
     /* Check client next success. */
     alts_handshaker_client_set_grpc_caller_for_testing(config->client,
                                                        check_next_success);
-    alts_handshaker_client_next_locked(config->client, &config->out_frame);
+    GPR_ASSERT(alts_handshaker_client_next_locked(
+                   config->client, &config->out_frame) == TSI_OK);
   }
   {
     grpc_core::ExecCtx exec_ctx;
     /* Check server next success. */
     alts_handshaker_client_set_grpc_caller_for_testing(config->server,
                                                        check_next_success);
-    alts_handshaker_client_next_locked(config->server, &config->out_frame);
+    GPR_ASSERT(alts_handshaker_client_next_locked(
+                   config->server, &config->out_frame) == TSI_OK);
   }
   /* Cleanup. */
   destroy_config(config);

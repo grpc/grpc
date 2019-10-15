@@ -108,7 +108,7 @@ struct invoke_tsi_next_cb_args {
   tsi_handshaker_result* result;
 };
 
-// Invoke the TSI API callback without holding the TSI object's lock
+// Invoke the TSI API callback without holding the alts_tsi_handshaker's lock
 void invoke_tsi_next_cb(void* arg, grpc_error* error_unused) {
   invoke_tsi_next_cb_args* t = static_cast<invoke_tsi_next_cb_args*>(arg);
   t->cb(t->status, t->user_data, t->bytes_to_send, t->bytes_to_send_size,
@@ -275,7 +275,8 @@ void alts_handshaker_client_continue_make_grpc_call_locked(
 
 /**
  * Populate grpc operation data with the fields of ALTS handshaker client and
- * make a grpc call.
+ * make a grpc call. First bounce into the alts_tsi_handshaker in order to
+ * safely create channnel, if needed.
  */
 static tsi_result make_grpc_call_locked(alts_handshaker_client* c,
                                         bool is_start) {

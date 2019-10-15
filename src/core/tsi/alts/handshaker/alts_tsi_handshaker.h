@@ -106,10 +106,9 @@ struct alts_tsi_handshaker_re_enter_lock_then_continue_make_grpc_call_args {
 };
 
 /* This is used by alts_handshaker_client objects to create a channel without
- * holding any locks, and then jump back into the lock
- * of their owning alts_tsi_handshaker. When making a gRPC call, we need
- * to first create a channel; alts channel creation is done without holding any
- * locks in order to avoid any potential cycles with g_init_mu. */
+ * holding any locks (in order to avoid potential cycles with g_init_mu), and
+ * then get back into the lock of the alts_tsi_handshaker to continue perfoming
+ * a call. */
 void alts_tsi_handshaker_re_enter_lock_then_continue_make_grpc_call(
     void* arg, grpc_error* unused_error);
 
