@@ -19702,16 +19702,16 @@ $(BINDIR)/$(CONFIG)/thread_manager_test: protobuf_dep_error
 
 else
 
-$(BINDIR)/$(CONFIG)/thread_manager_test: $(PROTOBUF_DEP) $(THREAD_MANAGER_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc++_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_config.a
+$(BINDIR)/$(CONFIG)/thread_manager_test: $(PROTOBUF_DEP) $(THREAD_MANAGER_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc++_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_config.a
 	$(E) "[LD]      Linking $@"
 	$(Q) mkdir -p `dirname $@`
-	$(Q) $(LDXX) $(LDFLAGS) $(THREAD_MANAGER_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc++_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_config.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(LDLIBS_SECURE) $(GTEST_LIB) -o $(BINDIR)/$(CONFIG)/thread_manager_test
+	$(Q) $(LDXX) $(LDFLAGS) $(THREAD_MANAGER_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc++_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_config.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(LDLIBS_SECURE) $(GTEST_LIB) -o $(BINDIR)/$(CONFIG)/thread_manager_test
 
 endif
 
 endif
 
-$(OBJDIR)/$(CONFIG)/test/cpp/thread_manager/thread_manager_test.o:  $(LIBDIR)/$(CONFIG)/libgrpc++_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_config.a
+$(OBJDIR)/$(CONFIG)/test/cpp/thread_manager/thread_manager_test.o:  $(LIBDIR)/$(CONFIG)/libgrpc++_unsecure.a $(LIBDIR)/$(CONFIG)/libgrpc_unsecure.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++_test_config.a
 
 deps_thread_manager_test: $(THREAD_MANAGER_TEST_OBJS:.o=.dep)
 

@@ -5912,6 +5912,8 @@ targets:
   - grpc
   - gpr
 - name: thread_manager_test
+  gtest: true
+  cpu_cost: 20
   build: test
   language: c++
   src:
@@ -5920,6 +5922,8 @@ targets:
   - grpc++_unsecure
   - grpc_unsecure
   - gpr
+  - grpc++_test_util
+  - grpc_test_util
   - grpc++_test_config
 - name: thread_stress_test
   gtest: true
