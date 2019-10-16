@@ -1004,9 +1004,12 @@ TEST_F(MessageSizeParserTest, InvalidMaxResponseMessageBytes) {
 }  // namespace grpc_core
 
 int main(int argc, char** argv) {
-// Regexes don't work in gcc4.8 and below, so just skip testing in those cases
-#if defined(__GNUC__) && \
-    ((__GNUC__ < 4) || ((__GNUC__ == 4) && (__GNUC_MINOR__) <= 8))
+// Regexes don't work in old libstdc++ versions, so just skip testing in those
+// cases
+#if defined(__GLIBCXX__) && (__GLIBCXX__ <= 20150623)
+  gpr_log(GPR_ERROR,
+          "Skipping service_config_test since std::regex is not supported on "
+          "this system.");
   return 0;
 #endif
   grpc::testing::TestEnvironment env(argc, argv);
