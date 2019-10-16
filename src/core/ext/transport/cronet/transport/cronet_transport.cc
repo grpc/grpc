@@ -1348,21 +1348,26 @@ static enum e_op_result execute_stream_op(struct op_and_state* oas) {
       stream_state->cancel_error =
           GRPC_ERROR_REF(stream_op->payload->cancel_stream.cancel_error);
     }
-  } else if (stream_op->on_complete &&
-             op_can_be_run(stream_op, s, &oas->state, OP_ON_COMPLETE)) {
+  } else if (op_can_be_run(stream_op, s, &oas->state, OP_ON_COMPLETE)) {
     CRONET_LOG(GPR_DEBUG, "running: %p  OP_ON_COMPLETE", oas);
     if (stream_state->state_op_done[OP_CANCEL_ERROR]) {
-      GRPC_CLOSURE_SCHED(stream_op->on_complete,
-                         GRPC_ERROR_REF(stream_state->cancel_error));
+      if (stream_op->on_complete) {
+        GRPC_CLOSURE_SCHED(stream_op->on_complete,
+                           GRPC_ERROR_REF(stream_state->cancel_error));
+      }
     } else if (stream_state->state_callback_received[OP_FAILED]) {
-      GRPC_CLOSURE_SCHED(
-          stream_op->on_complete,
-          make_error_with_desc(GRPC_STATUS_UNAVAILABLE, "Unavailable."));
+      if (stream_op->on_complete) {
+        GRPC_CLOSURE_SCHED(
+            stream_op->on_complete,
+            make_error_with_desc(GRPC_STATUS_UNAVAILABLE, "Unavailable."));
+      }
     } else {
       /* All actions in this stream_op are complete. Call the on_complete
        * callback
        */
-      GRPC_CLOSURE_SCHED(stream_op->on_complete, GRPC_ERROR_NONE);
+      if (stream_op->on_complete) {
+        GRPC_CLOSURE_SCHED(stream_op->on_complete, GRPC_ERROR_NONE);
+      }
     }
     oas->state.state_op_done[OP_ON_COMPLETE] = true;
     oas->done = true;

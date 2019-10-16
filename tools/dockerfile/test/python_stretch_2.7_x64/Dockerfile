@@ -63,6 +63,4 @@ RUN echo 'APT::Default-Release "stretch";' | tee -a /etc/apt/apt.conf.d/00local
 
 RUN mkdir /var/local/jenkins
 
-# Define the default command.
-CMD ["bash"]
 

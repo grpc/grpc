@@ -17,12 +17,16 @@
  */
 
 #import <Foundation/Foundation.h>
-#import <GRPCClient/GRPCCall.h>
+
+// import legacy header for compatibility with users using the ProtoRPC interface
+#import "ProtoRPCLegacy.h"
 
 #import "ProtoMethod.h"
 
 NS_ASSUME_NONNULL_BEGIN
 
+@class GRPCRequestOptions;
+@class GRPCCallOptions;
 @class GPBMessage;
 
 /** An object can implement this protocol to receive responses from server from a call. */
@@ -63,6 +67,30 @@ NS_ASSUME_NONNULL_BEGIN
  * SEND_MESSAGE operation.
  */
 - (void)didWriteMessage;
+
+@end
+
+/**
+ * A convenience class of objects that act as response handlers of calls. Issues
+ * response to a single handler when the response is completed.
+ */
+@interface GRPCUnaryResponseHandler : NSObject<GRPCProtoResponseHandler>
+
+/**
+ * Creates a responsehandler object with a unary call handler.
+ *
+ * responseHandler: The unary handler to be called when the call is completed.
+ * responseDispatchQueue: the dispatch queue on which the response handler
+ * should be issued. If it's nil, the handler will use the main queue.
+ */
+- (nullable instancetype)initWithResponseHandler:(void (^)(GPBMessage *, NSError *))handler
+                           responseDispatchQueue:(nullable dispatch_queue_t)dispatchQueue;
+
+/** Response headers received during the call. */
+@property(readonly, nullable) NSDictionary *responseHeaders;
+
+/** Response trailers received during the call. */
+@property(readonly, nullable) NSDictionary *responseTrailers;
 
 @end
 
@@ -160,35 +188,3 @@ NS_ASSUME_NONNULL_BEGIN
 @end
 
 NS_ASSUME_NONNULL_END
-
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wnullability-completeness"
-
-__attribute__((deprecated("Please use GRPCProtoCall."))) @interface ProtoRPC
-    : GRPCCall
-
-      /**
-       * host parameter should not contain the scheme (http:// or https://), only the name or IP
-       * addr and the port number, for example @"localhost:5050".
-       */
-      -
-      (instancetype)initWithHost : (NSString *)host method
-    : (GRPCProtoMethod *)method requestsWriter : (GRXWriter *)requestsWriter responseClass
-    : (Class)responseClass responsesWriteable
-    : (id<GRXWriteable>)responsesWriteable NS_DESIGNATED_INITIALIZER;
-
-- (void)start;
-@end
-
-/**
- * This subclass is empty now. Eventually we'll remove ProtoRPC class
- * to avoid potential naming conflict
- */
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wdeprecated-declarations"
-    @interface GRPCProtoCall : ProtoRPC
-#pragma clang diagnostic pop
-
-                               @end
-
-#pragma clang diagnostic pop

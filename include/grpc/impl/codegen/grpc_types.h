@@ -267,6 +267,14 @@ typedef struct {
     grpc_ssl_session_cache*). (use grpc_ssl_session_cache_arg_vtable() to fetch
     an appropriate pointer arg vtable) */
 #define GRPC_SSL_SESSION_CACHE_ARG "grpc.ssl_session_cache"
+/** If non-zero, it will determine the maximum frame size used by TSI's frame
+ *  protector.
+ *
+ *  NOTE: Be aware that using a large "max_frame_size" is memory inefficient
+ *        for non-zerocopy protectors. Also, increasing this value above 1MiB
+ *        can break old binaries that don't support larger than 1MiB frame
+ *        size. */
+#define GRPC_ARG_TSI_MAX_FRAME_SIZE "grpc.tsi.max_frame_size"
 /** Maximum metadata size, in bytes. Note this limit applies to the max sum of
     all metadata key-value entries in a batch of headers. */
 #define GRPC_ARG_MAX_METADATA_SIZE "grpc.max_metadata_size"
@@ -331,6 +339,13 @@ typedef struct {
    value is 15 minutes. */
 #define GRPC_ARG_LOCALITY_RETENTION_INTERVAL_MS \
   "grpc.xds_locality_retention_interval_ms"
+/* Timeout in milliseconds to wait for the localities of a specific priority to
+   complete their initial connection attempt before xDS fails over to the next
+   priority. Specifically, the connection attempt of a priority is considered
+   completed when any locality of that priority is ready or all the localities
+   of that priority fail to connect. If 0, failover happens immediately. Default
+   value is 10 seconds. */
+#define GRPC_ARG_XDS_FAILOVER_TIMEOUT_MS "grpc.xds_failover_timeout_ms"
 /** If non-zero, grpc server's cronet compression workaround will be enabled */
 #define GRPC_ARG_WORKAROUND_CRONET_COMPRESSION \
   "grpc.workaround.cronet_compression"

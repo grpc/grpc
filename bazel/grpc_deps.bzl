@@ -1,6 +1,5 @@
 """Load dependencies needed to compile and test the grpc library as a 3rd-party consumer."""
 
-load("@bazel_tools//tools/build_defs/repo:git.bzl", "git_repository")
 load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 load("@com_github_grpc_grpc//bazel:grpc_python_deps.bzl", "grpc_python_deps")
 
@@ -151,9 +150,9 @@ def grpc_deps():
     if "com_github_google_benchmark" not in native.existing_rules():
         http_archive(
             name = "com_github_google_benchmark",
-            sha256 = "c7682e9007ddfd94072647abab3e89ffd9084089460ae47d67060974467b58bf",
-            strip_prefix = "benchmark-e776aa0275e293707b6a0901e0e8d8a8a3679508",
-            url = "https://github.com/google/benchmark/archive/e776aa0275e293707b6a0901e0e8d8a8a3679508.tar.gz",
+            sha256 = "f68aec93154d010324c05bcd8c5cc53468b87af88d87acb5ddcfaa1bba044837",
+            strip_prefix = "benchmark-090faecb454fbd6e6e17a75ef8146acb037118d4",
+            url = "https://github.com/google/benchmark/archive/090faecb454fbd6e6e17a75ef8146acb037118d4.tar.gz",
         )
 
     if "com_github_cares_cares" not in native.existing_rules():
@@ -174,21 +173,25 @@ def grpc_deps():
         )
 
     if "bazel_toolchains" not in native.existing_rules():
+        # list of releases is at https://releases.bazel.build/bazel-toolchains.html
         http_archive(
             name = "bazel_toolchains",
-            sha256 = "d968b414b32aa99c86977e1171645d31da2b52ac88060de3ac1e49932d5dcbf1",
-            strip_prefix = "bazel-toolchains-4bd5df80d77aa7f4fb943dfdfad5c9056a62fb47",
+            sha256 = "22ca5b8115c8673ecb627a02b606529e813961e447933863fccdf325cc5f999f",
+            strip_prefix = "bazel-toolchains-0.29.5",
             urls = [
-                "https://mirror.bazel.build/github.com/bazelbuild/bazel-toolchains/archive/4bd5df80d77aa7f4fb943dfdfad5c9056a62fb47.tar.gz",
-                "https://github.com/bazelbuild/bazel-toolchains/archive/4bd5df80d77aa7f4fb943dfdfad5c9056a62fb47.tar.gz",
+                "https://github.com/bazelbuild/bazel-toolchains/releases/download/0.29.5/bazel-toolchains-0.29.5.tar.gz",
+                "https://mirror.bazel.build/github.com/bazelbuild/bazel-toolchains/archive/0.29.5.tar.gz",
             ],
         )
 
     if "bazel_skylib" not in native.existing_rules():
-        git_repository(
+        http_archive(
             name = "bazel_skylib",
-            remote = "https://github.com/bazelbuild/bazel-skylib",
-            tag = "0.9.0",
+            urls = [
+                "https://mirror.bazel.build/github.com/bazelbuild/bazel-skylib/releases/download/1.0.2/bazel-skylib-1.0.2.tar.gz",
+                "https://github.com/bazelbuild/bazel-skylib/releases/download/1.0.2/bazel-skylib-1.0.2.tar.gz",
+            ],
+            sha256 = "97e70364e9249702246c0e9444bccdc4b847bed1eb03c5a3ece4f83dfe6abc44",
         )
 
     if "io_opencensus_cpp" not in native.existing_rules():
@@ -201,9 +204,9 @@ def grpc_deps():
     if "upb" not in native.existing_rules():
         http_archive(
             name = "upb",
-            sha256 = "95150db57b51b65f3422c38953956e0f786945d842d76f8ab685fbcd93ab5caa",
-            strip_prefix = "upb-931bbecbd3230ae7f22efa5d203639facc47f719",
-            url = "https://github.com/protocolbuffers/upb/archive/931bbecbd3230ae7f22efa5d203639facc47f719.tar.gz",
+            sha256 = "61d0417abd60e65ed589c9deee7c124fe76a4106831f6ad39464e1525cef1454",
+            strip_prefix = "upb-9effcbcb27f0a665f9f345030188c0b291e32482",
+            url = "https://github.com/protocolbuffers/upb/archive/9effcbcb27f0a665f9f345030188c0b291e32482.tar.gz",
         )
     if "envoy_api" not in native.existing_rules():
         http_archive(
@@ -221,10 +224,11 @@ def grpc_deps():
         )
 
     if "build_bazel_rules_apple" not in native.existing_rules():
-        git_repository(
+        http_archive(
             name = "build_bazel_rules_apple",
-            remote = "https://github.com/bazelbuild/rules_apple.git",
-            tag = "0.17.2",
+            url = "https://github.com/bazelbuild/rules_apple/archive/b869b0d3868d78a1d4ffd866ccb304fb68aa12c3.tar.gz",
+            strip_prefix = "rules_apple-b869b0d3868d78a1d4ffd866ccb304fb68aa12c3",
+            sha256 = "bdc8e66e70b8a75da23b79f1f8c6207356df07d041d96d2189add7ee0780cf4e",
         )
 
     grpc_python_deps()

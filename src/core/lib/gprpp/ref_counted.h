@@ -30,7 +30,6 @@
 #include <cinttypes>
 
 #include "src/core/lib/debug/trace.h"
-#include "src/core/lib/gprpp/abstract.h"
 #include "src/core/lib/gprpp/atomic.h"
 #include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/memory.h"
@@ -41,11 +40,6 @@ namespace grpc_core {
 // PolymorphicRefCount enforces polymorphic destruction of RefCounted.
 class PolymorphicRefCount {
  public:
-  GRPC_ABSTRACT_BASE_CLASS
-
- protected:
-  GRPC_ALLOW_CLASS_TO_USE_NON_PUBLIC_DELETE
-
   virtual ~PolymorphicRefCount() = default;
 };
 
@@ -54,11 +48,6 @@ class PolymorphicRefCount {
 // when in doubt use PolymorphicRefCount.
 class NonPolymorphicRefCount {
  public:
-  GRPC_ABSTRACT_BASE_CLASS
-
- protected:
-  GRPC_ALLOW_CLASS_TO_USE_NON_PUBLIC_DELETE
-
   ~NonPolymorphicRefCount() = default;
 };
 
@@ -237,6 +226,9 @@ class RefCount {
 template <typename Child, typename Impl = PolymorphicRefCount>
 class RefCounted : public Impl {
  public:
+  // Note: Depending on the Impl used, this dtor can be implicitly virtual.
+  ~RefCounted() = default;
+
   RefCountedPtr<Child> Ref() GRPC_MUST_USE_RESULT {
     IncrementRefCount();
     return RefCountedPtr<Child>(static_cast<Child*>(this));
@@ -272,11 +264,7 @@ class RefCounted : public Impl {
   RefCounted(const RefCounted&) = delete;
   RefCounted& operator=(const RefCounted&) = delete;
 
-  GRPC_ABSTRACT_BASE_CLASS
-
  protected:
-  GRPC_ALLOW_CLASS_TO_USE_NON_PUBLIC_DELETE
-
   // TraceFlagT is defined to accept both DebugOnlyTraceFlag and TraceFlag.
   // Note: RefCount tracing is only enabled on debug builds, even when a
   //       TraceFlag is used.
@@ -284,9 +272,6 @@ class RefCounted : public Impl {
   explicit RefCounted(TraceFlagT* trace_flag = nullptr,
                       intptr_t initial_refcount = 1)
       : refs_(initial_refcount, trace_flag) {}
-
-  // Note: Depending on the Impl used, this dtor can be implicitly virtual.
-  ~RefCounted() = default;
 
  private:
   // Allow RefCountedPtr<> to access IncrementRefCount().

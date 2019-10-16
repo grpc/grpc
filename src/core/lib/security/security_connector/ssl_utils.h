@@ -31,12 +31,10 @@
 #include "src/core/lib/gprpp/string_view.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/security/security_connector/security_connector.h"
+#include "src/core/lib/security/security_connector/ssl_utils_config.h"
 #include "src/core/tsi/ssl_transport_security.h"
 #include "src/core/tsi/transport_security.h"
 #include "src/core/tsi/transport_security_interface.h"
-
-GPR_GLOBAL_CONFIG_DECLARE_STRING(grpc_default_ssl_roots_file_path);
-GPR_GLOBAL_CONFIG_DECLARE_BOOL(grpc_not_use_system_ssl_roots);
 
 /* --- Util --- */
 
@@ -87,7 +85,7 @@ grpc_security_status grpc_ssl_tsi_server_handshaker_factory_init(
 
 /* Exposed for testing only. */
 grpc_core::RefCountedPtr<grpc_auth_context> grpc_ssl_peer_to_auth_context(
-    const tsi_peer* peer);
+    const tsi_peer* peer, const char* transport_security_type);
 tsi_peer grpc_shallow_peer_from_ssl_auth_context(
     const grpc_auth_context* auth_context);
 void grpc_shallow_peer_destruct(tsi_peer* peer);

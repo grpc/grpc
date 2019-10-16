@@ -73,10 +73,11 @@
 
   set(PACKAGE_NAME      "grpc")
   set(PACKAGE_VERSION   "${settings.cpp_version}")
+  set(gRPC_CORE_VERSION "${settings.core_version}")
   set(PACKAGE_STRING    "<%text>${PACKAGE_NAME} ${PACKAGE_VERSION}</%text>")
   set(PACKAGE_TARNAME   "<%text>${PACKAGE_NAME}-${PACKAGE_VERSION}</%text>")
   set(PACKAGE_BUGREPORT "https://github.com/grpc/grpc/issues/")
-  project(<%text>${PACKAGE_NAME}</%text> C CXX)
+  project(<%text>${PACKAGE_NAME}</%text> LANGUAGES C CXX)
 
   set(gRPC_INSTALL_BINDIR "bin" CACHE STRING "Installation directory for executables")
   set(gRPC_INSTALL_LIBDIR "lib" CACHE STRING "Installation directory for libraries")
@@ -149,14 +150,16 @@
     include(cmake/msvc_static_runtime.cmake)
     add_definitions(-D_WIN32_WINNT=0x600 -D_SCL_SECURE_NO_WARNINGS -D_CRT_SECURE_NO_WARNINGS -D_WINSOCK_DEPRECATED_NO_WARNINGS)
     # needed to compile protobuf
-    add_definitions(/wd4065 /wd4506)
+    set(_gRPC_C_CXX_FLAGS "<%text>${_gRPC_C_CXX_FLAGS}</%text> /wd4065 /wd4506")
     # TODO(jtattermusch): revisit warnings that were silenced as part of upgrade to protobuf3.6.0
-    add_definitions(/wd4200 /wd4291 /wd4244)
+    set(_gRPC_C_CXX_FLAGS "<%text>${_gRPC_C_CXX_FLAGS}</%text> /wd4200 /wd4291 /wd4244")
     # TODO(jtattermusch): revisit C4267 occurrences throughout the code
-    add_definitions(/wd4267)
+    set(_gRPC_C_CXX_FLAGS "<%text>${_gRPC_C_CXX_FLAGS}</%text> /wd4267")
     # TODO(jtattermusch): needed to build boringssl with VS2017, revisit later
-    add_definitions(/wd4987 /wd4774 /wd4819 /wd4996 /wd4619)
+    set(_gRPC_C_CXX_FLAGS "<%text>${_gRPC_C_CXX_FLAGS}</%text> /wd4987 /wd4774 /wd4819 /wd4996 /wd4619")
   endif()
+  set(CMAKE_C_FLAGS "<%text>${CMAKE_C_FLAGS} ${_gRPC_C_CXX_FLAGS}</%text>")
+  set(CMAKE_CXX_FLAGS "<%text>${CMAKE_CXX_FLAGS} ${_gRPC_C_CXX_FLAGS}</%text>")
 
   if (gRPC_USE_PROTO_LITE)
     set(_gRPC_PROTOBUF_LIBRARY_NAME "libprotobuf-lite")
@@ -174,11 +177,6 @@
   endif()
 
   if (_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_IOS)
-    # C core has C++ source code, but should not depend on libstc++ (for better portability).
-    # We need to use a few tricks to convince cmake to do that.
-    # https://stackoverflow.com/questions/15058403/how-to-stop-cmake-from-linking-against-libstdc
-    set(CMAKE_CXX_IMPLICIT_LINK_LIBRARIES "")
-    # Exceptions and RTTI must be off to avoid dependency on libstdc++
     set(_gRPC_CORE_NOSTDCXX_FLAGS -fno-exceptions -fno-rtti)
   else()
     set(_gRPC_CORE_NOSTDCXX_FLAGS "")
@@ -444,14 +442,6 @@
     PRIVATE <%text>${_gRPC_PROTO_GENS_DIR}</%text>
   % endif
   )
-  % if lib.language in ['c', 'csharp']:
-    # avoid dependency on libstdc++
-    if (_gRPC_CORE_NOSTDCXX_FLAGS)
-      set_target_properties(${lib.name} PROPERTIES LINKER_LANGUAGE C)
-      # only use the flags for C++ source files
-      target_compile_options(${lib.name} PRIVATE <%text>$<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}></%text>)
-    endif()
-  % endif
   % if len(get_deps(lib)) > 0:
   target_link_libraries(${lib.name}
   % for dep in get_deps(lib):
@@ -550,13 +540,6 @@
   % endfor
   )
 
-  % if tgt.language in ['c', 'csharp']:
-    # avoid dependency on libstdc++
-    if (_gRPC_CORE_NOSTDCXX_FLAGS)
-      set_target_properties(${tgt.name} PROPERTIES LINKER_LANGUAGE C)
-      target_compile_options(${tgt.name} PRIVATE <%text>$<$<COMPILE_LANGUAGE:CXX>:${_gRPC_CORE_NOSTDCXX_FLAGS}></%text>)
-    endif()
-  % endif
   % endif
   </%def>
 
@@ -587,3 +570,71 @@
   
   install(FILES <%text>${CMAKE_CURRENT_SOURCE_DIR}/etc/roots.pem</%text>
     DESTINATION <%text>${gRPC_INSTALL_SHAREDIR}</%text>)
+
+  # Function to generate pkg-config files.
+  function(generate_pkgconfig name description version requires
+                              libs libs_private output_filename)
+    set(PC_NAME "<%text>${name}</%text>")
+    set(PC_DESCRIPTION "<%text>${description}</%text>")
+    set(PC_VERSION "<%text>${version}</%text>")
+    set(PC_REQUIRES "<%text>${requires}</%text>")
+    set(PC_LIB "<%text>${libs}</%text>")
+    set(PC_LIBS_PRIVATE "<%text>${libs_private}</%text>")
+    set(output_filepath "<%text>${grpc_BINARY_DIR}/libs/opt/pkgconfig/${output_filename}</%text>")
+    configure_file(
+      "<%text>${grpc_SOURCE_DIR}/cmake/pkg-config-template.pc.in</%text>"
+      "<%text>${output_filepath}</%text>"
+      @ONLY)
+    install(FILES "<%text>${output_filepath}</%text>"
+      DESTINATION "lib/pkgconfig/")
+  endfunction()
+
+  # gpr .pc file
+  generate_pkgconfig(
+    "gpr"
+    "gRPC platform support library"
+    "<%text>${gRPC_CORE_VERSION}</%text>"
+    ""
+    "-lgpr"
+    ""
+    "gpr.pc")
+
+  # grpc .pc file
+  generate_pkgconfig(
+    "gRPC"
+    "high performance general RPC framework"
+    "<%text>${gRPC_CORE_VERSION}</%text>"
+    "gpr"
+    "-lgrpc -laddress_sorting -lcares -lz"
+    ""
+    "grpc.pc")
+
+  # grpc_unsecure .pc file
+  generate_pkgconfig(
+    "gRPC unsecure"
+    "high performance general RPC framework without SSL"
+    "<%text>${gRPC_CORE_VERSION}</%text>"
+    "gpr"
+    "-lgrpc_unsecure"
+    ""
+    "grpc_unsecure.pc")
+
+  # grpc++ .pc file
+  generate_pkgconfig(
+    "gRPC++"
+    "C++ wrapper for gRPC"
+    "<%text>${PACKAGE_VERSION}</%text>"
+    "grpc"
+    "-lgrpc++"
+    ""
+    "grpc++.pc")
+
+  # grpc++_unsecure .pc file
+  generate_pkgconfig(
+    "gRPC++ unsecure"
+    "C++ wrapper for gRPC without SSL"
+    "<%text>${PACKAGE_VERSION}</%text>"
+    "grpc_unsecure"
+    "-lgrpc++_unsecure"
+    ""
+    "grpc++_unsecure.pc")

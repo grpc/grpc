@@ -75,17 +75,17 @@ struct shared_mu {
 struct inproc_transport {
   inproc_transport(const grpc_transport_vtable* vtable, shared_mu* mu,
                    bool is_client)
-      : mu(mu), is_client(is_client) {
+      : mu(mu),
+        is_client(is_client),
+        state_tracker(is_client ? "inproc_client" : "inproc_server",
+                      GRPC_CHANNEL_READY) {
     base.vtable = vtable;
     // Start each side of transport with 2 refs since they each have a ref
     // to the other
     gpr_ref_init(&refs, 2);
-    grpc_connectivity_state_init(&connectivity, GRPC_CHANNEL_READY,
-                                 is_client ? "inproc_client" : "inproc_server");
   }
 
   ~inproc_transport() {
-    grpc_connectivity_state_destroy(&connectivity);
     if (gpr_unref(&mu->refs)) {
       mu->~shared_mu();
       gpr_free(mu);
@@ -111,7 +111,7 @@ struct inproc_transport {
   shared_mu* mu;
   gpr_refcount refs;
   bool is_client;
-  grpc_connectivity_state_tracker connectivity;
+  grpc_core::ConnectivityStateTracker state_tracker;
   void (*accept_stream_cb)(void* user_data, grpc_transport* transport,
                            const void* server_data);
   void* accept_stream_data;
@@ -1090,8 +1090,7 @@ void perform_stream_op(grpc_transport* gt, grpc_stream* gs,
 
 void close_transport_locked(inproc_transport* t) {
   INPROC_LOG(GPR_INFO, "close_transport %p %d", t, t->is_closed);
-  grpc_connectivity_state_set(&t->connectivity, GRPC_CHANNEL_SHUTDOWN,
-                              "close transport");
+  t->state_tracker.SetState(GRPC_CHANNEL_SHUTDOWN, "close transport");
   if (!t->is_closed) {
     t->is_closed = true;
     /* Also end all streams on this transport */
@@ -1110,10 +1109,12 @@ void perform_transport_op(grpc_transport* gt, grpc_transport_op* op) {
   inproc_transport* t = reinterpret_cast<inproc_transport*>(gt);
   INPROC_LOG(GPR_INFO, "perform_transport_op %p %p", t, op);
   gpr_mu_lock(&t->mu->mu);
-  if (op->on_connectivity_state_change) {
-    grpc_connectivity_state_notify_on_state_change(
-        &t->connectivity, op->connectivity_state,
-        op->on_connectivity_state_change);
+  if (op->start_connectivity_watch != nullptr) {
+    t->state_tracker.AddWatcher(op->start_connectivity_watch_state,
+                                std::move(op->start_connectivity_watch));
+  }
+  if (op->stop_connectivity_watch != nullptr) {
+    t->state_tracker.RemoveWatcher(op->stop_connectivity_watch);
   }
   if (op->set_accept_stream) {
     t->accept_stream_cb = op->set_accept_stream_fn;
@@ -1226,10 +1227,15 @@ grpc_channel* grpc_inproc_channel_create(grpc_server* server,
 
   grpc_core::ExecCtx exec_ctx;
 
-  const grpc_channel_args* server_args = grpc_server_get_channel_args(server);
+  // Remove max_connection_idle and max_connection_age channel arguments since
+  // those do not apply to inproc transports.
+  const char* args_to_remove[] = {GRPC_ARG_MAX_CONNECTION_IDLE_MS,
+                                  GRPC_ARG_MAX_CONNECTION_AGE_MS};
+  const grpc_channel_args* server_args = grpc_channel_args_copy_and_remove(
+      grpc_server_get_channel_args(server), args_to_remove,
+      GPR_ARRAY_SIZE(args_to_remove));
 
   // Add a default authority channel argument for the client
-
   grpc_arg default_authority_arg;
   default_authority_arg.type = GRPC_ARG_STRING;
   default_authority_arg.key = (char*)GRPC_ARG_DEFAULT_AUTHORITY;
@@ -1249,6 +1255,7 @@ grpc_channel* grpc_inproc_channel_create(grpc_server* server,
       "inproc", client_args, GRPC_CLIENT_DIRECT_CHANNEL, client_transport);
 
   // Free up created channel args
+  grpc_channel_args_destroy(server_args);
   grpc_channel_args_destroy(client_args);
 
   // Now finish scheduled operations

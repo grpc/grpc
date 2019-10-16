@@ -41,11 +41,11 @@ DEFINE_string(
     "validation.");
 DEFINE_string(
     ssl_client_cert, "",
-    "If not empty, load this PEM formated client certificate file. Requires "
+    "If not empty, load this PEM formatted client certificate file. Requires "
     "use of --ssl_client_key.");
 DEFINE_string(
     ssl_client_key, "",
-    "If not empty, load this PEM formated private key. Requires use of "
+    "If not empty, load this PEM formatted private key. Requires use of "
     "--ssl_client_cert");
 DEFINE_string(
     channel_creds_type, "",

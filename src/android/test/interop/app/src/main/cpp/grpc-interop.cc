@@ -19,7 +19,7 @@
 #include <grpcpp/grpcpp.h>
 #include <jni.h>
 
-#include "src/core/lib/security/security_connector/ssl_utils.h"
+#include "src/core/lib/security/security_connector/ssl_utils_config.h"
 #include "test/cpp/interop/interop_client.h"
 
 extern "C" JNIEXPORT void JNICALL

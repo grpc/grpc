@@ -25,6 +25,12 @@
 
 #include <grpc/slice.h>
 
+#include "src/core/lib/gpr/murmur_hash.h"
+
+namespace grpc_core {
+extern uint32_t g_hash_seed;
+}  // namespace grpc_core
+
 // When we compare two slices, and we know the latter is not inlined, we can
 // short circuit our comparison operator. We specifically use differs()
 // semantics instead of equals() semantics due to more favourable code
@@ -101,15 +107,16 @@ struct ManagedMemorySlice : public grpc_slice {
   explicit ManagedMemorySlice(const char* string);
   ManagedMemorySlice(const char* buf, size_t len);
   explicit ManagedMemorySlice(const grpc_slice* slice);
-  bool Equals(const grpc_slice& other) const {
+  bool operator==(const grpc_slice& other) const {
     if (refcount == other.refcount) {
       return true;
     }
     return !grpc_slice_differs_refcounted(other, *this);
   }
-  bool Equals(const char* buf, const size_t len) const {
-    return data.refcounted.length == len && buf != nullptr &&
-           memcmp(buf, data.refcounted.bytes, len) == 0;
+  bool operator!=(const grpc_slice& other) const { return !(*this == other); }
+  bool operator==(std::pair<const char*, size_t> buflen) const {
+    return data.refcounted.length == buflen.second && buflen.first != nullptr &&
+           memcmp(buflen.first, data.refcounted.bytes, buflen.second) == 0;
   }
 };
 struct UnmanagedMemorySlice : public grpc_slice {
@@ -149,6 +156,16 @@ struct ExternallyManagedSlice : public UnmanagedMemorySlice {
     refcount = ref;
     data.refcounted.length = length;
     data.refcounted.bytes = bytes;
+  }
+  bool operator==(const grpc_slice& other) const {
+    return data.refcounted.length == GRPC_SLICE_LENGTH(other) &&
+           memcmp(data.refcounted.bytes, GRPC_SLICE_START_PTR(other),
+                  data.refcounted.length) == 0;
+  }
+  bool operator!=(const grpc_slice& other) const { return !(*this == other); }
+  uint32_t Hash() {
+    return gpr_murmur_hash3(data.refcounted.bytes, data.refcounted.length,
+                            g_hash_seed);
   }
 };
 

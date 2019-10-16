@@ -67,8 +67,11 @@ RUN /bin/bash -l -c "gem install bundler -v 1.17.3 --no-document"
 # PHP dependencies
 
 RUN apt-get update && apt-get install -y \
-    php5 php5-dev php-pear phpunit && apt-get clean
+    php5 php5-dev php-pear && apt-get clean
 
+RUN wget https://phar.phpunit.de/phpunit-5.7.27.phar && \
+  mv phpunit-5.7.27.phar /usr/local/bin/phpunit && \
+  chmod +x /usr/local/bin/phpunit
 
 ##################
 # C# dependencies (needed to build grpc_csharp_ext)
@@ -84,7 +87,7 @@ RUN apt-get update && apt-get install -t jessie-backports -y cmake && apt-get cl
 # Python AuditWheel dependencies (needed to check manylinux1 compatibility)
 
 RUN apt-get install -y python3 python3-pip
-RUN pip3 install auditwheel==1.10.0
+RUN pip3 install auditwheel==2.1.1
 
 
 RUN mkdir /var/local/jenkins

@@ -15,7 +15,7 @@
 # limitations under the License.
 
 # make sure that the client doesn't hang when channel is closed
-# explictly while it's used
+# explicitly while it's used
 
 require_relative './end2end_common'
 

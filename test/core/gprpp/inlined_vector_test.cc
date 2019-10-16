@@ -127,6 +127,24 @@ TEST(InlinedVectorTest, EqualOperator) {
   EXPECT_FALSE(v1 == v2);
 }
 
+TEST(InlinedVectorTest, NotEqualOperator) {
+  constexpr int kNumElements = 10;
+  // Both v1 and v2 are empty.
+  InlinedVector<int, 5> v1;
+  InlinedVector<int, 5> v2;
+  EXPECT_FALSE(v1 != v2);
+  // Both v1 and v2 contains the same data.
+  FillVector(&v1, kNumElements);
+  FillVector(&v2, kNumElements);
+  EXPECT_FALSE(v1 != v2);
+  // The sizes of v1 and v2 are different.
+  v1.push_back(0);
+  EXPECT_TRUE(v1 != v2);
+  // The contents of v1 and v2 are different although their sizes are the same.
+  v2.push_back(1);
+  EXPECT_TRUE(v1 != v2);
+}
+
 // the following constants and typedefs are used for copy/move
 // construction/assignment
 const size_t kInlinedLength = 8;
@@ -466,6 +484,19 @@ TEST(InlinedVectorTest, PopBackAllocated) {
   size_t sz = v.size();
   v.pop_back();
   EXPECT_EQ(sz - 1, v.size());
+}
+
+TEST(InlinedVectorTest, Resize) {
+  const int kInlinedSize = 2;
+  InlinedVector<UniquePtr<int>, kInlinedSize> v;
+  // Size up.
+  v.resize(5);
+  EXPECT_EQ(5UL, v.size());
+  EXPECT_EQ(nullptr, v[4]);
+  // Size down.
+  v[4] = MakeUnique<int>(5);
+  v.resize(1);
+  EXPECT_EQ(1UL, v.size());
 }
 
 }  // namespace testing

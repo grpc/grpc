@@ -121,7 +121,7 @@ class CSharpDistribTest(object):
                 use_workspace=True)
         elif self.platform == 'windows':
             if self.arch == 'x64':
-                # Use double leading / as the first occurence gets removed by msys bash
+                # Use double leading / as the first occurrence gets removed by msys bash
                 # when invoking the .bat file (side-effect of posix path conversion)
                 environ = {
                     'MSBUILD_EXTRA_ARGS': '//p:Platform=x64',
@@ -255,7 +255,7 @@ class PHPDistribTest(object):
 
 
 class CppDistribTest(object):
-    """Tests Cpp make intall by building examples."""
+    """Tests Cpp make install by building examples."""
 
     def __init__(self, platform, arch, docker_suffix=None, testcase=None):
         if platform == 'linux':
@@ -301,14 +301,17 @@ def targets():
         CppDistribTest('linux', 'x64', 'jessie', 'cmake'),
         CppDistribTest('linux', 'x64', 'jessie', 'cmake_as_externalproject'),
         CppDistribTest('linux', 'x64', 'jessie', 'cmake_as_submodule'),
+        CppDistribTest('linux', 'x64', 'jessie', 'cmake_pkgconfig'),
         CppDistribTest('windows', 'x86', testcase='cmake'),
         CppDistribTest('windows', 'x86', testcase='cmake_as_externalproject'),
         CSharpDistribTest('linux', 'x64', 'jessie'),
         CSharpDistribTest('linux', 'x86', 'jessie'),
+        CSharpDistribTest('linux', 'x64', 'stretch'),
+        CSharpDistribTest('linux', 'x64', 'stretch', use_dotnet_cli=True),
         CSharpDistribTest('linux', 'x64', 'centos7'),
-        CSharpDistribTest('linux', 'x64', 'ubuntu1404'),
         CSharpDistribTest('linux', 'x64', 'ubuntu1604'),
-        CSharpDistribTest('linux', 'x64', 'ubuntu1404', use_dotnet_cli=True),
+        CSharpDistribTest('linux', 'x64', 'ubuntu1604', use_dotnet_cli=True),
+        CSharpDistribTest('linux', 'x64', 'alpine', use_dotnet_cli=True),
         CSharpDistribTest('macos', 'x86'),
         CSharpDistribTest('windows', 'x86'),
         CSharpDistribTest('windows', 'x64'),

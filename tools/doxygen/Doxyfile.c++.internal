@@ -40,7 +40,7 @@ PROJECT_NAME           = "GRPC C++"
 # could be handy for archiving the generated documentation or if some version
 # control system is used.
 
-PROJECT_NUMBER         = 1.24.0-dev
+PROJECT_NUMBER         = 1.25.0-dev
 
 # Using the PROJECT_BRIEF tag one can provide an optional one line description
 # for a project that appears at the top of each page and should give viewer a
@@ -981,6 +981,7 @@ include/grpcpp/impl/codegen/interceptor.h \
 include/grpcpp/impl/codegen/interceptor_common.h \
 include/grpcpp/impl/codegen/message_allocator.h \
 include/grpcpp/impl/codegen/metadata_map.h \
+include/grpcpp/impl/codegen/method_handler.h \
 include/grpcpp/impl/codegen/method_handler_impl.h \
 include/grpcpp/impl/codegen/proto_buffer_reader.h \
 include/grpcpp/impl/codegen/proto_buffer_writer.h \
@@ -1025,6 +1026,7 @@ include/grpcpp/security/credentials.h \
 include/grpcpp/security/credentials_impl.h \
 include/grpcpp/security/server_credentials.h \
 include/grpcpp/security/server_credentials_impl.h \
+include/grpcpp/security/tls_credentials_options.h \
 include/grpcpp/server.h \
 include/grpcpp/server_builder.h \
 include/grpcpp/server_builder_impl.h \
@@ -1089,7 +1091,6 @@ src/core/lib/debug/trace.h \
 src/core/lib/gpr/alloc.h \
 src/core/lib/gpr/arena.h \
 src/core/lib/gpr/env.h \
-src/core/lib/gpr/mpscq.h \
 src/core/lib/gpr/murmur_hash.h \
 src/core/lib/gpr/spinlock.h \
 src/core/lib/gpr/string.h \
@@ -1101,7 +1102,6 @@ src/core/lib/gpr/tls_msvc.h \
 src/core/lib/gpr/tls_pthread.h \
 src/core/lib/gpr/tmpfile.h \
 src/core/lib/gpr/useful.h \
-src/core/lib/gprpp/abstract.h \
 src/core/lib/gprpp/arena.h \
 src/core/lib/gprpp/atomic.h \
 src/core/lib/gprpp/debug_location.h \
@@ -1115,11 +1115,12 @@ src/core/lib/gprpp/inlined_vector.h \
 src/core/lib/gprpp/manual_constructor.h \
 src/core/lib/gprpp/map.h \
 src/core/lib/gprpp/memory.h \
+src/core/lib/gprpp/mpscq.h \
 src/core/lib/gprpp/optional.h \
 src/core/lib/gprpp/orphanable.h \
-src/core/lib/gprpp/pair.h \
 src/core/lib/gprpp/ref_counted.h \
 src/core/lib/gprpp/ref_counted_ptr.h \
+src/core/lib/gprpp/set.h \
 src/core/lib/gprpp/string_view.h \
 src/core/lib/gprpp/sync.h \
 src/core/lib/gprpp/thd.h \
@@ -1264,6 +1265,9 @@ src/cpp/common/secure_auth_context.cc \
 src/cpp/common/secure_auth_context.h \
 src/cpp/common/secure_channel_arguments.cc \
 src/cpp/common/secure_create_auth_context.cc \
+src/cpp/common/tls_credentials_options.cc \
+src/cpp/common/tls_credentials_options_util.cc \
+src/cpp/common/tls_credentials_options_util.h \
 src/cpp/common/validate_service_config.cc \
 src/cpp/common/version_cc.cc \
 src/cpp/server/async_generic_service.cc \

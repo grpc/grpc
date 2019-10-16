@@ -85,13 +85,11 @@ class grpc_oauth2_token_fetcher_credentials : public grpc_call_credentials {
   void on_http_response(grpc_credentials_metadata_request* r,
                         grpc_error* error);
 
-  GRPC_ABSTRACT_BASE_CLASS
-
  protected:
   virtual void fetch_oauth2(grpc_credentials_metadata_request* req,
                             grpc_httpcli_context* httpcli_context,
                             grpc_polling_entity* pollent, grpc_iomgr_cb_func cb,
-                            grpc_millis deadline) GRPC_ABSTRACT;
+                            grpc_millis deadline) = 0;
 
  private:
   gpr_mu mu_;

@@ -42,6 +42,12 @@ struct grpc_tls_key_materials_config
   int version() const { return version_; }
 
   /** Setters for member fields. **/
+  void set_pem_root_certs(grpc_core::UniquePtr<char> pem_root_certs) {
+    pem_root_certs_ = std::move(pem_root_certs);
+  }
+  void add_pem_key_cert_pair(grpc_core::PemKeyCertPair pem_key_cert_pair) {
+    pem_key_cert_pair_list_.push_back(pem_key_cert_pair);
+  }
   void set_key_materials(grpc_core::UniquePtr<char> pem_root_certs,
                          PemKeyCertPairList pem_key_cert_pair_list);
   void set_version(int version) { version_ = version; }
@@ -65,18 +71,46 @@ struct grpc_tls_credential_reload_config
       void (*destruct)(void* config_user_data));
   ~grpc_tls_credential_reload_config();
 
+  void* context() const { return context_; }
+  void set_context(void* context) { context_ = context; }
+
   int Schedule(grpc_tls_credential_reload_arg* arg) const {
+    if (schedule_ == nullptr) {
+      gpr_log(GPR_ERROR, "schedule API is nullptr");
+      if (arg != nullptr) {
+        arg->status = GRPC_SSL_CERTIFICATE_CONFIG_RELOAD_FAIL;
+        arg->error_details =
+            gpr_strdup("schedule API in credential reload config is nullptr");
+      }
+      return 1;
+    }
+    if (arg != nullptr) {
+      arg->config = const_cast<grpc_tls_credential_reload_config*>(this);
+    }
     return schedule_(config_user_data_, arg);
   }
   void Cancel(grpc_tls_credential_reload_arg* arg) const {
     if (cancel_ == nullptr) {
       gpr_log(GPR_ERROR, "cancel API is nullptr.");
+      if (arg != nullptr) {
+        arg->status = GRPC_SSL_CERTIFICATE_CONFIG_RELOAD_FAIL;
+        arg->error_details =
+            gpr_strdup("cancel API in credential reload config is nullptr");
+      }
       return;
+    }
+    if (arg != nullptr) {
+      arg->config = const_cast<grpc_tls_credential_reload_config*>(this);
     }
     cancel_(config_user_data_, arg);
   }
 
  private:
+  /** This is a pointer to the wrapped language implementation of
+   * grpc_tls_credential_reload_config. It is necessary to implement the C
+   * schedule and cancel functions, given the schedule or cancel function in a
+   * wrapped language. **/
+  void* context_ = nullptr;
   /** config-specific, read-only user data that works for all channels created
      with a credential using the config. */
   void* config_user_data_;
@@ -113,18 +147,48 @@ struct grpc_tls_server_authorization_check_config
       void (*destruct)(void* config_user_data));
   ~grpc_tls_server_authorization_check_config();
 
+  void* context() const { return context_; }
+  void set_context(void* context) { context_ = context; }
+
   int Schedule(grpc_tls_server_authorization_check_arg* arg) const {
+    if (schedule_ == nullptr) {
+      gpr_log(GPR_ERROR, "schedule API is nullptr");
+      if (arg != nullptr) {
+        arg->status = GRPC_STATUS_NOT_FOUND;
+        arg->error_details = gpr_strdup(
+            "schedule API in server authorization check config is nullptr");
+      }
+      return 1;
+    }
+    if (arg != nullptr && context_ != nullptr) {
+      arg->config =
+          const_cast<grpc_tls_server_authorization_check_config*>(this);
+    }
     return schedule_(config_user_data_, arg);
   }
   void Cancel(grpc_tls_server_authorization_check_arg* arg) const {
     if (cancel_ == nullptr) {
       gpr_log(GPR_ERROR, "cancel API is nullptr.");
+      if (arg != nullptr) {
+        arg->status = GRPC_STATUS_NOT_FOUND;
+        arg->error_details = gpr_strdup(
+            "schedule API in server authorization check config is nullptr");
+      }
       return;
+    }
+    if (arg != nullptr) {
+      arg->config =
+          const_cast<grpc_tls_server_authorization_check_config*>(this);
     }
     cancel_(config_user_data_, arg);
   }
 
  private:
+  /** This is a pointer to the wrapped language implementation of
+   * grpc_tls_server_authorization_check_config. It is necessary to implement
+   * the C schedule and cancel functions, given the schedule or cancel function
+   * in a wrapped language. **/
+  void* context_ = nullptr;
   /** config-specific, read-only user data that works for all channels created
      with a Credential using the config. */
   void* config_user_data_;

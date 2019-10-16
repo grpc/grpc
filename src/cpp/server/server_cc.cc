@@ -31,9 +31,9 @@
 #include <grpcpp/impl/codegen/byte_buffer.h>
 #include <grpcpp/impl/codegen/call.h>
 #include <grpcpp/impl/codegen/completion_queue_tag.h>
+#include <grpcpp/impl/codegen/method_handler.h>
 #include <grpcpp/impl/codegen/server_interceptor.h>
 #include <grpcpp/impl/grpc_library.h>
-#include <grpcpp/impl/method_handler_impl.h>
 #include <grpcpp/impl/rpc_service_method.h>
 #include <grpcpp/impl/server_initializer.h>
 #include <grpcpp/impl/service_type.h>
@@ -914,9 +914,9 @@ class Server::SyncRequestThreadManager : public grpc::ThreadManager {
 
   void Start() {
     if (!sync_requests_.empty()) {
-      for (auto m = sync_requests_.begin(); m != sync_requests_.end(); m++) {
-        (*m)->SetupRequest();
-        (*m)->Request(server_->c_server(), server_cq_->cq());
+      for (const auto& value : sync_requests_) {
+        value->SetupRequest();
+        value->Request(server_->c_server(), server_cq_->cq());
       }
 
       Initialize();  // ThreadManager's Initialize()
@@ -1014,8 +1014,8 @@ Server::~Server() {
       Shutdown();
     } else if (!started_) {
       // Shutdown the completion queues
-      for (auto it = sync_req_mgrs_.begin(); it != sync_req_mgrs_.end(); it++) {
-        (*it)->Shutdown();
+      for (const auto& value : sync_req_mgrs_) {
+        value->Shutdown();
       }
     }
   }
@@ -1103,8 +1103,8 @@ bool Server::RegisterService(const grpc::string* host, grpc::Service* service) {
       method->set_server_tag(method_registration_tag);
     } else if (method->api_type() ==
                grpc::internal::RpcServiceMethod::ApiType::SYNC) {
-      for (auto it = sync_req_mgrs_.begin(); it != sync_req_mgrs_.end(); it++) {
-        (*it)->AddSyncMethod(method, method_registration_tag);
+      for (const auto& value : sync_req_mgrs_) {
+        value->AddSyncMethod(method, method_registration_tag);
       }
     } else {
       // a callback method. Register at least some callback requests
@@ -1213,8 +1213,8 @@ void Server::Start(grpc::ServerCompletionQueue** cqs, size_t num_cqs) {
   grpc_server_start(server_);
 
   if (!has_async_generic_service_ && !has_callback_generic_service_) {
-    for (auto it = sync_req_mgrs_.begin(); it != sync_req_mgrs_.end(); it++) {
-      (*it)->AddUnknownSyncMethod();
+    for (const auto& value : sync_req_mgrs_) {
+      value->AddUnknownSyncMethod();
     }
 
     for (size_t i = 0; i < num_cqs; i++) {
@@ -1235,8 +1235,8 @@ void Server::Start(grpc::ServerCompletionQueue** cqs, size_t num_cqs) {
         new grpc::internal::ResourceExhaustedHandler);
   }
 
-  for (auto it = sync_req_mgrs_.begin(); it != sync_req_mgrs_.end(); it++) {
-    (*it)->Start();
+  for (const auto& value : sync_req_mgrs_) {
+    value->Start();
   }
 
   for (auto* cbreq : callback_reqs_to_start_) {
@@ -1287,13 +1287,13 @@ void Server::ShutdownInternal(gpr_timespec deadline) {
 
   // Shutdown all ThreadManagers. This will try to gracefully stop all the
   // threads in the ThreadManagers (once they process any inflight requests)
-  for (auto it = sync_req_mgrs_.begin(); it != sync_req_mgrs_.end(); it++) {
-    (*it)->Shutdown();  // ThreadManager's Shutdown()
+  for (const auto& value : sync_req_mgrs_) {
+    value->Shutdown();  // ThreadManager's Shutdown()
   }
 
   // Wait for threads in all ThreadManagers to terminate
-  for (auto it = sync_req_mgrs_.begin(); it != sync_req_mgrs_.end(); it++) {
-    (*it)->Wait();
+  for (const auto& value : sync_req_mgrs_) {
+    value->Wait();
   }
 
   // Wait for all outstanding callback requests to complete

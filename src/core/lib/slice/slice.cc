@@ -82,14 +82,11 @@ class NewSliceRefcount {
               &base_),
         user_destroy_(destroy),
         user_data_(user_data) {}
-
-  GRPC_ALLOW_CLASS_TO_USE_NON_PUBLIC_DELETE
+  ~NewSliceRefcount() { user_destroy_(user_data_); }
 
   grpc_slice_refcount* base_refcount() { return &base_; }
 
  private:
-  ~NewSliceRefcount() { user_destroy_(user_data_); }
-
   grpc_slice_refcount base_;
   RefCount refs_;
   void (*user_destroy_)(void*);
@@ -147,14 +144,11 @@ class NewWithLenSliceRefcount {
         user_data_(user_data),
         user_length_(user_length),
         user_destroy_(destroy) {}
-
-  GRPC_ALLOW_CLASS_TO_USE_NON_PUBLIC_DELETE
+  ~NewWithLenSliceRefcount() { user_destroy_(user_data_, user_length_); }
 
   grpc_slice_refcount* base_refcount() { return &base_; }
 
  private:
-  ~NewWithLenSliceRefcount() { user_destroy_(user_data_, user_length_); }
-
   grpc_slice_refcount base_;
   RefCount refs_;
   void* user_data_;
@@ -169,8 +163,6 @@ class MovedStringSliceRefCount {
       : base_(grpc_slice_refcount::Type::REGULAR, &refs_, Destroy, this,
               &base_),
         str_(std::move(str)) {}
-
-  GRPC_ALLOW_CLASS_TO_USE_NON_PUBLIC_DELETE
 
   grpc_slice_refcount* base_refcount() { return &base_; }
 

@@ -92,7 +92,7 @@ sudo pypy get-pip.py
 sudo pypy -m pip install tabulate
 sudo pypy -m pip install google-api-python-client oauth2client
 # TODO(jtattermusch): for some reason, we need psutil installed
-# in pypy for kokoro_log_reader.py (strange, because the comand is
+# in pypy for kokoro_log_reader.py (strange, because the command is
 # "python kokoro_log_reader.py" and pypy is not the system default)
 sudo pypy -m pip install psutil
 
@@ -161,7 +161,10 @@ ruby -v
 gem install bundler
 
 # PHP dependencies
-sudo apt-get install -y php php-dev phpunit php-pear unzip zlib1g-dev
+sudo apt-get install -y php php-dev php-pear unzip zlib1g-dev
+sudo wget https://phar.phpunit.de/phpunit-5.7.27.phar && \
+    sudo mv phpunit-5.7.27.phar /usr/local/bin/phpunit && \
+    sudo chmod +x /usr/local/bin/phpunit
 curl -sS https://getcomposer.org/installer | php
 sudo mv composer.phar /usr/local/bin/composer
 

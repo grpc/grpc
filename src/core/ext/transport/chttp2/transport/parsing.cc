@@ -318,7 +318,10 @@ static grpc_error* skip_parser(void* parser, grpc_chttp2_transport* t,
   return GRPC_ERROR_NONE;
 }
 
-static void skip_header(void* tp, grpc_mdelem md) { GRPC_MDELEM_UNREF(md); }
+static grpc_error* skip_header(void* tp, grpc_mdelem md) {
+  GRPC_MDELEM_UNREF(md);
+  return GRPC_ERROR_NONE;
+}
 
 static grpc_error* init_skip_frame_parser(grpc_chttp2_transport* t,
                                           int is_header) {
@@ -419,7 +422,77 @@ static bool is_nonzero_status(grpc_mdelem md) {
          !md_cmp(md, GRPC_MDELEM_GRPC_STATUS_0, GRPC_MDSTR_GRPC_STATUS);
 }
 
-static void on_initial_header(void* tp, grpc_mdelem md) {
+static void GPR_ATTRIBUTE_NOINLINE on_initial_header_log(
+    grpc_chttp2_transport* t, grpc_chttp2_stream* s, grpc_mdelem md) {
+  char* key = grpc_slice_to_c_string(GRPC_MDKEY(md));
+  char* value =
+      grpc_dump_slice(GRPC_MDVALUE(md), GPR_DUMP_HEX | GPR_DUMP_ASCII);
+  gpr_log(GPR_INFO, "HTTP:%d:HDR:%s: %s: %s", s->id,
+          t->is_client ? "CLI" : "SVR", key, value);
+  gpr_free(key);
+  gpr_free(value);
+}
+
+static grpc_error* GPR_ATTRIBUTE_NOINLINE handle_timeout(grpc_chttp2_stream* s,
+                                                         grpc_mdelem md) {
+  grpc_millis* cached_timeout =
+      static_cast<grpc_millis*>(grpc_mdelem_get_user_data(md, free_timeout));
+  grpc_millis timeout;
+  if (cached_timeout != nullptr) {
+    timeout = *cached_timeout;
+  } else {
+    if (GPR_UNLIKELY(!grpc_http2_decode_timeout(GRPC_MDVALUE(md), &timeout))) {
+      char* val = grpc_slice_to_c_string(GRPC_MDVALUE(md));
+      gpr_log(GPR_ERROR, "Ignoring bad timeout value '%s'", val);
+      gpr_free(val);
+      timeout = GRPC_MILLIS_INF_FUTURE;
+    }
+    if (GRPC_MDELEM_IS_INTERNED(md)) {
+      /* store the result */
+      cached_timeout =
+          static_cast<grpc_millis*>(gpr_malloc(sizeof(grpc_millis)));
+      *cached_timeout = timeout;
+      grpc_mdelem_set_user_data(md, free_timeout, cached_timeout);
+    }
+  }
+  if (timeout != GRPC_MILLIS_INF_FUTURE) {
+    grpc_chttp2_incoming_metadata_buffer_set_deadline(
+        &s->metadata_buffer[0], grpc_core::ExecCtx::Get()->Now() + timeout);
+  }
+  GRPC_MDELEM_UNREF(md);
+  return GRPC_ERROR_NONE;
+}
+
+static grpc_error* GPR_ATTRIBUTE_NOINLINE handle_metadata_size_limit_exceeded(
+    grpc_chttp2_transport* t, grpc_chttp2_stream* s, grpc_mdelem md,
+    size_t new_size, size_t metadata_size_limit) {
+  gpr_log(GPR_DEBUG,
+          "received initial metadata size exceeds limit (%" PRIuPTR
+          " vs. %" PRIuPTR ")",
+          new_size, metadata_size_limit);
+  grpc_chttp2_cancel_stream(
+      t, s,
+      grpc_error_set_int(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+                             "received initial metadata size exceeds limit"),
+                         GRPC_ERROR_INT_GRPC_STATUS,
+                         GRPC_STATUS_RESOURCE_EXHAUSTED));
+  grpc_chttp2_parsing_become_skip_parser(t);
+  s->seen_error = true;
+  GRPC_MDELEM_UNREF(md);
+  return GRPC_ERROR_NONE;
+}
+
+static grpc_error* GPR_ATTRIBUTE_NOINLINE
+handle_metadata_add_failure(grpc_chttp2_transport* t, grpc_chttp2_stream* s,
+                            grpc_mdelem md, grpc_error* error) {
+  grpc_chttp2_cancel_stream(t, s, error);
+  grpc_chttp2_parsing_become_skip_parser(t);
+  s->seen_error = true;
+  GRPC_MDELEM_UNREF(md);
+  return GRPC_ERROR_NONE;
+}
+
+static grpc_error* on_initial_header(void* tp, grpc_mdelem md) {
   GPR_TIMER_SCOPE("on_initial_header", 0);
 
   grpc_chttp2_transport* t = static_cast<grpc_chttp2_transport*>(tp);
@@ -427,45 +500,13 @@ static void on_initial_header(void* tp, grpc_mdelem md) {
   GPR_DEBUG_ASSERT(s != nullptr);
 
   if (GRPC_TRACE_FLAG_ENABLED(grpc_http_trace)) {
-    char* key = grpc_slice_to_c_string(GRPC_MDKEY(md));
-    char* value =
-        grpc_dump_slice(GRPC_MDVALUE(md), GPR_DUMP_HEX | GPR_DUMP_ASCII);
-    gpr_log(GPR_INFO, "HTTP:%d:HDR:%s: %s: %s", s->id,
-            t->is_client ? "CLI" : "SVR", key, value);
-    gpr_free(key);
-    gpr_free(value);
+    on_initial_header_log(t, s, md);
   }
 
   if (is_nonzero_status(md)) {  // not GRPC_MDELEM_GRPC_STATUS_0?
     s->seen_error = true;
   } else if (md_key_cmp(md, GRPC_MDSTR_GRPC_TIMEOUT)) {
-    grpc_millis* cached_timeout =
-        static_cast<grpc_millis*>(grpc_mdelem_get_user_data(md, free_timeout));
-    grpc_millis timeout;
-    if (cached_timeout != nullptr) {
-      timeout = *cached_timeout;
-    } else {
-      if (GPR_UNLIKELY(
-              !grpc_http2_decode_timeout(GRPC_MDVALUE(md), &timeout))) {
-        char* val = grpc_slice_to_c_string(GRPC_MDVALUE(md));
-        gpr_log(GPR_ERROR, "Ignoring bad timeout value '%s'", val);
-        gpr_free(val);
-        timeout = GRPC_MILLIS_INF_FUTURE;
-      }
-      if (GRPC_MDELEM_IS_INTERNED(md)) {
-        /* store the result */
-        cached_timeout =
-            static_cast<grpc_millis*>(gpr_malloc(sizeof(grpc_millis)));
-        *cached_timeout = timeout;
-        grpc_mdelem_set_user_data(md, free_timeout, cached_timeout);
-      }
-    }
-    if (timeout != GRPC_MILLIS_INF_FUTURE) {
-      grpc_chttp2_incoming_metadata_buffer_set_deadline(
-          &s->metadata_buffer[0], grpc_core::ExecCtx::Get()->Now() + timeout);
-    }
-    GRPC_MDELEM_UNREF(md);
-    return;
+    return handle_timeout(s, md);
   }
 
   const size_t new_size = s->metadata_buffer[0].size + GRPC_MDELEM_LENGTH(md);
@@ -473,32 +514,20 @@ static void on_initial_header(void* tp, grpc_mdelem md) {
       t->settings[GRPC_ACKED_SETTINGS]
                  [GRPC_CHTTP2_SETTINGS_MAX_HEADER_LIST_SIZE];
   if (GPR_UNLIKELY(new_size > metadata_size_limit)) {
-    gpr_log(GPR_DEBUG,
-            "received initial metadata size exceeds limit (%" PRIuPTR
-            " vs. %" PRIuPTR ")",
-            new_size, metadata_size_limit);
-    grpc_chttp2_cancel_stream(
-        t, s,
-        grpc_error_set_int(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-                               "received initial metadata size exceeds limit"),
-                           GRPC_ERROR_INT_GRPC_STATUS,
-                           GRPC_STATUS_RESOURCE_EXHAUSTED));
-    grpc_chttp2_parsing_become_skip_parser(t);
-    s->seen_error = true;
-    GRPC_MDELEM_UNREF(md);
+    return handle_metadata_size_limit_exceeded(t, s, md, new_size,
+                                               metadata_size_limit);
   } else {
     grpc_error* error =
         grpc_chttp2_incoming_metadata_buffer_add(&s->metadata_buffer[0], md);
-    if (error != GRPC_ERROR_NONE) {
-      grpc_chttp2_cancel_stream(t, s, error);
-      grpc_chttp2_parsing_become_skip_parser(t);
-      s->seen_error = true;
-      GRPC_MDELEM_UNREF(md);
+    if (GPR_UNLIKELY(error != GRPC_ERROR_NONE)) {
+      return handle_metadata_add_failure(t, s, md, error);
     }
   }
+  // Not timeout-related metadata, and no error occurred.
+  return GRPC_ERROR_NONE;
 }
 
-static void on_trailing_header(void* tp, grpc_mdelem md) {
+static grpc_error* on_trailing_header(void* tp, grpc_mdelem md) {
   GPR_TIMER_SCOPE("on_trailing_header", 0);
 
   grpc_chttp2_transport* t = static_cast<grpc_chttp2_transport*>(tp);
@@ -547,6 +576,7 @@ static void on_trailing_header(void* tp, grpc_mdelem md) {
       GRPC_MDELEM_UNREF(md);
     }
   }
+  return GRPC_ERROR_NONE;
 }
 
 static grpc_error* init_header_frame_parser(grpc_chttp2_transport* t,

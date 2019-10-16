@@ -29,6 +29,7 @@
 #include <grpcpp/server_context.h>
 
 #include <grpcpp/ext/channelz_service_plugin.h>
+#include "src/core/lib/gpr/env.h"
 #include "src/proto/grpc/channelz/channelz.grpc.pb.h"
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
 #include "test/core/util/port.h"
@@ -104,7 +105,12 @@ class Proxy : public ::grpc::testing::EchoTestService::Service {
 class ChannelzServerTest : public ::testing::Test {
  public:
   ChannelzServerTest() {}
-
+  static void SetUpTestCase() {
+#if TARGET_OS_IPHONE
+    // Workaround Apple CFStream bug
+    gpr_setenv("grpc_cfstream", "0");
+#endif
+  }
   void SetUp() override {
     // ensure channel server is brought up on all severs we build.
     ::grpc::channelz::experimental::InitChannelzService();

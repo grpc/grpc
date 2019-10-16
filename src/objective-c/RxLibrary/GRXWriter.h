@@ -44,7 +44,7 @@ typedef NS_ENUM(NSInteger, GRXWriterState) {
   /**
    * The writer has released its writeable and won't interact with it anymore.
    *
-   * One seldomly wants to set a writer's state to this value, as its writeable isn't notified with
+   * One seldom wants to set a writer's state to this value, as its writeable isn't notified with
    * a writesFinishedWithError: message. Instead, sending finishWithError: to the writer will make
    * it notify the writeable and then transition to this state.
    */
