@@ -134,7 +134,7 @@ std::shared_ptr<ServerCredentials> SslServerCredentials(
 namespace experimental {
 
 std::shared_ptr<ServerCredentials> AltsServerCredentials(
-    const AltsServerCredentialsOptions& options) {
+    const AltsServerCredentialsOptions& /* options */) {
   grpc_alts_credentials_options* c_options =
       grpc_alts_credentials_server_options_create();
   grpc_server_credentials* c_creds =
