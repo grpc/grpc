@@ -27,6 +27,7 @@ GRPC_ASYNC_TESTS = [
         size="small",
         srcs=[test_file_name],
         main=test_file_name,
+        python_version="PY3",
         deps=[
             "//src/python/grpcio/grpc:grpcio",
             "//src/proto/grpc/testing:py_messages_proto",
