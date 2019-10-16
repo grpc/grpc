@@ -204,11 +204,13 @@ ServerInterface::RegisteredAsyncRequest::RegisteredAsyncRequest(
 void ServerInterface::RegisteredAsyncRequest::IssueRequest(
     void* registered_method, grpc_byte_buffer** payload,
     ServerCompletionQueue* notification_cq) {
-  GPR_ASSERT(GRPC_CALL_OK == grpc_server_request_registered_call(
-                                 server_->server(), registered_method, &call_,
-                                 &context_->deadline_,
-                                 context_->client_metadata_.arr(), payload,
-                                 call_cq_->cq(), notification_cq->cq(), this));
+  // The following call_start_batch is internally-generated so no need for an
+  // explanatory log on failure.
+  GPR_ASSERT(grpc_server_request_registered_call(
+                 server_->server(), registered_method, &call_,
+                 &context_->deadline_, context_->client_metadata_.arr(),
+                 payload, call_cq_->cq(), notification_cq->cq(),
+                 this) == GRPC_CALL_OK);
 }
 
 ServerInterface::GenericAsyncRequest::GenericAsyncRequest(
@@ -220,10 +222,12 @@ ServerInterface::GenericAsyncRequest::GenericAsyncRequest(
   grpc_call_details_init(&call_details_);
   GPR_ASSERT(notification_cq);
   GPR_ASSERT(call_cq);
-  GPR_ASSERT(GRPC_CALL_OK == grpc_server_request_call(
-                                 server->server(), &call_, &call_details_,
-                                 context->client_metadata_.arr(), call_cq->cq(),
-                                 notification_cq->cq(), this));
+  // The following call_start_batch is internally-generated so no need for an
+  // explanatory log on failure.
+  GPR_ASSERT(grpc_server_request_call(server->server(), &call_, &call_details_,
+                                      context->client_metadata_.arr(),
+                                      call_cq->cq(), notification_cq->cq(),
+                                      this) == GRPC_CALL_OK);
 }
 
 bool ServerInterface::GenericAsyncRequest::FinalizeResult(void** tag,
@@ -571,12 +575,11 @@ class Server::CallbackRequest final : public Server::CallbackRequestBase {
 
   bool Request() override {
     if (method_tag_) {
-      if (GRPC_CALL_OK !=
-          grpc_server_request_registered_call(
+      if (grpc_server_request_registered_call(
               server_->c_server(), method_tag_, &call_, &deadline_,
               &request_metadata_,
               has_request_payload_ ? &request_payload_ : nullptr, cq_->cq(),
-              cq_->cq(), static_cast<void*>(&tag_))) {
+              cq_->cq(), static_cast<void*>(&tag_)) != GRPC_CALL_OK) {
         return false;
       }
     } else {
