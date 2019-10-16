@@ -52,10 +52,6 @@ void ThreadManager::WorkerThread::Run() {
 }
 
 
-inline bool ThreadManager::WorkerThread::created() const {
-  return created_;
-}
-
 ThreadManager::WorkerThread::~WorkerThread() {
   // Don't join until the thread is fully constructed.
   thd_.Join();
