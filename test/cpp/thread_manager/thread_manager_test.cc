@@ -69,7 +69,7 @@ class TestThreadManager final : public grpc::ThreadManager {
         num_work_found_(0) {}
 
   grpc::ThreadManager::WorkStatus PollForWork(void** tag, bool* ok) override;
-  void DoWork(void* tag, bool ok, bool resources) override {
+  void DoWork(void* /* tag */, bool /*ok*/, bool /*resources*/) override {
     num_do_work_.fetch_add(1, std::memory_order_relaxed);
 
     // Simulate work by sleeping
@@ -143,18 +143,16 @@ class ThreadManagerTest
   std::vector<std::unique_ptr<TestThreadManager>> thread_manager_;
 };
 
-INSTANTIATE_TEST_SUITE_P(
-    ThreadManagerTest, ThreadManagerTest,
-    ::testing::ValuesIn(
-        {TestThreadManagerSettings{
-             2 /* min_pollers */, 10 /* max_pollers */,
-             10 /* poll_duration_ms */, 1 /* work_duration_ms */,
-             50 /* max_poll_calls */, INT_MAX /* thread_limit */,
-             1 /* thread_manager_count */},
-         TestThreadManagerSettings{
-             1 /* min_pollers */, 1 /* max_pollers */, 1 /* poll_duration_ms */,
-             10 /* work_duration_ms */, 50 /* max_poll_calls */,
-             3 /* thread_limit */, 2 /* thread_manager_count */}}));
+TestThreadManagerSettings scenarios[] = {
+    {2 /* min_pollers */, 10 /* max_pollers */, 10 /* poll_duration_ms */,
+     1 /* work_duration_ms */, 50 /* max_poll_calls */,
+     INT_MAX /* thread_limit */, 1 /* thread_manager_count */},
+    {1 /* min_pollers */, 1 /* max_pollers */, 1 /* poll_duration_ms */,
+     10 /* work_duration_ms */, 50 /* max_poll_calls */, 3 /* thread_limit */,
+     2 /* thread_manager_count */}};
+
+INSTANTIATE_TEST_SUITE_P(ThreadManagerTest, ThreadManagerTest,
+                         ::testing::ValuesIn(scenarios));
 
 TEST_P(ThreadManagerTest, TestPollAndWork) {
   for (auto& tm : thread_manager_) {
