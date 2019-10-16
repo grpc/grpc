@@ -635,7 +635,6 @@ class _UnaryUnaryMultiCallable(grpc.UnaryUnaryMultiCallable):
             return _Rendezvous(state, call, self._response_deserializer,
                                deadline)
 
-
 class _UnaryStreamMultiCallable(grpc.UnaryStreamMultiCallable):
 
     # pylint: disable=too-many-arguments

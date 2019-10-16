@@ -1,0 +1,9 @@
+py_binary(
+    name = "unary_stream_benchmark",
+    srcs_version = "PY3",
+    python_version = "PY3",
+    srcs = ["unary_stream_benchmark.py"],
+    deps = [
+        "//src/python/grpcio/grpc:grpcio",
+    ]
+)
