@@ -34,13 +34,9 @@ ThreadManager::WorkerThread::WorkerThread(ThreadManager* thd_mgr)
   thd_ = grpc_core::Thread(
       "grpcpp_sync_server",
       [](void* th) { static_cast<ThreadManager::WorkerThread*>(th)->Run(); },
-      this,
-      &created_
-      );
+      this, &created_);
   if (!created_) {
-    gpr_log(GPR_ERROR,
-            "Could not create grpc_sync_server worker-thread"
-            );
+    gpr_log(GPR_ERROR, "Could not create grpc_sync_server worker-thread");
   } else {
     thd_.Start();
   }
@@ -50,7 +46,6 @@ void ThreadManager::WorkerThread::Run() {
   thd_mgr_->MainWorkLoop();
   thd_mgr_->MarkAsCompleted(this);
 }
-
 
 ThreadManager::WorkerThread::~WorkerThread() {
   // Don't join until the thread is fully constructed.
