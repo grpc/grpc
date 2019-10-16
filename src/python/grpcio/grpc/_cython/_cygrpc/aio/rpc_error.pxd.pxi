@@ -11,20 +11,17 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+"""Exceptions for the aio version of the RPC calls."""
 
-cdef class AioChannel:
-    def __cinit__(self, bytes target):
-        self.channel = grpc_insecure_channel_create(<char *>target, NULL, NULL)
-        self._target = target
 
-    def __repr__(self):
-        class_name = self.__class__.__name__
-        id_ = id(self)
-        return f"<{class_name} {id_}>"
+cdef class _AioRpcError(Exception):
+    cdef readonly:
+        tuple _initial_metadata
+        int _code
+        str _details
+        tuple _trailing_metadata
 
-    def close(self):
-        grpc_channel_destroy(self.channel)
-
-    async def unary_unary(self, method, request, timeout):
-        call = _AioCall(self)
-        return await call.unary_unary(method, request, timeout)
+    cpdef tuple initial_metadata(self)
+    cpdef int code(self)
+    cpdef str details(self)
+    cpdef tuple trailing_metadata(self)
