@@ -18,6 +18,7 @@ import asyncio
 import grpc
 from grpc._cython import cygrpc
 
+
 class Server:
     """Serves RPCs."""
 
