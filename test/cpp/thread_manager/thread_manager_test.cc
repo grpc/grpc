@@ -77,6 +77,10 @@ class TestThreadManager final : public grpc::ThreadManager {
         std::chrono::milliseconds(settings_.work_duration_ms));
   }
 
+  // Get number of times PollForWork() was called
+  int num_poll_for_work() const {
+    return num_poll_for_work_.load(std::memory_order_relaxed);
+  }
   // Get number of times PollForWork() returned WORK_FOUND
   int num_work_found() const {
     return num_work_found_.load(std::memory_order_relaxed);
@@ -159,6 +163,7 @@ TEST_P(ThreadManagerTest, TestPollAndWork) {
     // Verify that The number of times DoWork() was called is equal to the
     // number of times WORK_FOUND was returned
     gpr_log(GPR_DEBUG, "DoWork() called %d times", tm->num_do_work());
+    EXPECT_GE(tm->num_poll_for_work(), GetParam().max_poll_calls);
     EXPECT_EQ(tm->num_do_work(), tm->num_work_found());
   }
 }
@@ -166,6 +171,7 @@ TEST_P(ThreadManagerTest, TestPollAndWork) {
 TEST_P(ThreadManagerTest, TestThreadQuota) {
   if (GetParam().thread_limit > 0) {
     for (auto& tm : thread_manager_) {
+      EXPECT_GE(tm->num_poll_for_work(), GetParam().max_poll_calls);
       EXPECT_LE(tm->GetMaxActiveThreadsSoFar(), GetParam().thread_limit);
     }
   }
