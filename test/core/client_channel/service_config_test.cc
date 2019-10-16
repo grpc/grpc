@@ -116,14 +116,14 @@ class TestParser2 : public ServiceConfig::Parser {
 class ErrorParser : public ServiceConfig::Parser {
  public:
   UniquePtr<ServiceConfig::ParsedConfig> ParsePerMethodParams(
-      const grpc_json* json, grpc_error** error) override {
+      const grpc_json* /* json */, grpc_error** error) override {
     GPR_DEBUG_ASSERT(error != nullptr);
     *error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(MethodError());
     return nullptr;
   }
 
   UniquePtr<ServiceConfig::ParsedConfig> ParseGlobalParams(
-      const grpc_json* json, grpc_error** error) override {
+      const grpc_json* /* json */, grpc_error** error) override {
     GPR_DEBUG_ASSERT(error != nullptr);
     *error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(GlobalError());
     return nullptr;

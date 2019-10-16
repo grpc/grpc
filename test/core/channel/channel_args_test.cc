@@ -100,7 +100,7 @@ static void test_channel_create_with_args(void) {
 
 grpc_channel_args* mutate_channel_args(const char* target,
                                        grpc_channel_args* old_args,
-                                       grpc_channel_stack_type type) {
+                                       grpc_channel_stack_type /* type */) {
   GPR_ASSERT(old_args != nullptr);
   GPR_ASSERT(grpc_channel_args_find(old_args, "arg_int")->value.integer == 0);
   GPR_ASSERT(strcmp(grpc_channel_args_find(old_args, "arg_str")->value.string,

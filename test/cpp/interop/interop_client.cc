@@ -50,12 +50,13 @@ const int kReceiveDelayMilliSeconds = 20;
 const int kLargeRequestSize = 271828;
 const int kLargeResponseSize = 314159;
 
-void NoopChecks(const InteropClientContextInspector& inspector,
-                const SimpleRequest* request, const SimpleResponse* response) {}
+void NoopChecks(const InteropClientContextInspector& /* inspector */,
+                const SimpleRequest* /* request */,
+                const SimpleResponse* /* response */) {}
 
 void UnaryCompressionChecks(const InteropClientContextInspector& inspector,
                             const SimpleRequest* request,
-                            const SimpleResponse* response) {
+                            const SimpleResponse* /* response */) {
   const grpc_compression_algorithm received_compression =
       inspector.GetCallCompressionAlgorithm();
   if (request->response_compressed().value()) {

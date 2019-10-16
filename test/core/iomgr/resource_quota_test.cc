@@ -28,7 +28,7 @@
 gpr_mu g_mu;
 gpr_cv g_cv;
 
-static void inc_int_cb(void* a, grpc_error* error) {
+static void inc_int_cb(void* a, grpc_error* /* error */) {
   gpr_mu_lock(&g_mu);
   ++*static_cast<int*>(a);
   gpr_cv_signal(&g_cv);
@@ -44,7 +44,7 @@ static void assert_counter_becomes(int* ctr, int value) {
   gpr_mu_unlock(&g_mu);
 }
 
-static void set_event_cb(void* a, grpc_error* error) {
+static void set_event_cb(void* a, grpc_error* /* error */) {
   gpr_event_set(static_cast<gpr_event*>(a), (void*)1);
 }
 grpc_closure* set_event(gpr_event* ev) {

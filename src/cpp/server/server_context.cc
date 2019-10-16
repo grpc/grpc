@@ -73,7 +73,7 @@ class ServerContext::CompletionOp final
   // This should always be arena allocated in the call, so override delete.
   // But this class is not trivially destructible, so must actually call delete
   // before allowing the arena to be freed
-  static void operator delete(void* ptr, std::size_t size) {
+  static void operator delete(void* /* ptr */, std::size_t size) {
     assert(size == sizeof(CompletionOp));
   }
 

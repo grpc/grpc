@@ -31,8 +31,8 @@
 static grpc_combiner* g_combiner;
 
 class TestResultHandler : public grpc_core::Resolver::ResultHandler {
-  void ReturnResult(grpc_core::Resolver::Result result) override {}
-  void ReturnError(grpc_error* error) override {}
+  void ReturnResult(grpc_core::Resolver::Result /* result */) override {}
+  void ReturnError(grpc_error* /* error */) override {}
 };
 
 static void test_succeeds(grpc_core::ResolverFactory* factory,

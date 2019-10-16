@@ -57,7 +57,7 @@ class TestServiceImpl : public ::grpc::testing::EchoTestService::Service {
  public:
   TestServiceImpl() {}
 
-  Status Echo(ServerContext* context, const EchoRequest* request,
+  Status Echo(ServerContext* /* context */, const EchoRequest* request,
               EchoResponse* response) override {
     response->set_message(request->message());
     return Status::OK;

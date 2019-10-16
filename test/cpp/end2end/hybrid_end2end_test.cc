@@ -80,7 +80,7 @@ void HandleEcho(Service* service, ServerCompletionQueue* cq, bool dup_service) {
 // that the req/resp are ByteBuffers
 template <class Service>
 void HandleRawEcho(Service* service, ServerCompletionQueue* cq,
-                   bool dup_service) {
+                   bool /* dup_service */) {
   ServerContext srv_ctx;
   GenericServerAsyncResponseWriter response_writer(&srv_ctx);
   ByteBuffer recv_buffer;
@@ -219,7 +219,7 @@ void HandleGenericCall(AsyncGenericService* service,
 class TestServiceImplDupPkg
     : public ::grpc::testing::duplicate::EchoTestService::Service {
  public:
-  Status Echo(ServerContext* context, const EchoRequest* request,
+  Status Echo(ServerContext* /* context */, const EchoRequest* request,
               EchoResponse* response) override {
     response->set_message(request->message() + "_dup");
     return Status::OK;
@@ -566,7 +566,7 @@ class StreamedUnaryDupPkg
           TestServiceImplDupPkg> {
  public:
   Status StreamedEcho(
-      ServerContext* context,
+      ServerContext* /* context */,
       ServerUnaryStreamer<EchoRequest, EchoResponse>* stream) override {
     EchoRequest req;
     EchoResponse resp;
@@ -604,7 +604,7 @@ class FullyStreamedUnaryDupPkg
     : public duplicate::EchoTestService::StreamedUnaryService {
  public:
   Status StreamedEcho(
-      ServerContext* context,
+      ServerContext* /* context */,
       ServerUnaryStreamer<EchoRequest, EchoResponse>* stream) override {
     EchoRequest req;
     EchoResponse resp;
@@ -643,7 +643,7 @@ class SplitResponseStreamDupPkg
           WithSplitStreamingMethod_ResponseStream<TestServiceImplDupPkg> {
  public:
   Status StreamedResponseStream(
-      ServerContext* context,
+      ServerContext* /* context */,
       ServerSplitStreamer<EchoRequest, EchoResponse>* stream) override {
     EchoRequest req;
     EchoResponse resp;
@@ -683,7 +683,7 @@ class FullySplitStreamedDupPkg
     : public duplicate::EchoTestService::SplitStreamedService {
  public:
   Status StreamedResponseStream(
-      ServerContext* context,
+      ServerContext* /* context */,
       ServerSplitStreamer<EchoRequest, EchoResponse>* stream) override {
     EchoRequest req;
     EchoResponse resp;
@@ -722,7 +722,7 @@ TEST_F(HybridEnd2endTest,
 class FullyStreamedDupPkg : public duplicate::EchoTestService::StreamedService {
  public:
   Status StreamedEcho(
-      ServerContext* context,
+      ServerContext* /* context */,
       ServerUnaryStreamer<EchoRequest, EchoResponse>* stream) override {
     EchoRequest req;
     EchoResponse resp;
@@ -735,7 +735,7 @@ class FullyStreamedDupPkg : public duplicate::EchoTestService::StreamedService {
     return Status::OK;
   }
   Status StreamedResponseStream(
-      ServerContext* context,
+      ServerContext* /* context */,
       ServerSplitStreamer<EchoRequest, EchoResponse>* stream) override {
     EchoRequest req;
     EchoResponse resp;

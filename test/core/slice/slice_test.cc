@@ -61,7 +61,7 @@ static void test_slice_malloc_returns_something_sensible(void) {
   }
 }
 
-static void do_nothing(void* ignored) {}
+static void do_nothing(void* /* ignored */) {}
 
 static void test_slice_new_returns_something_sensible(void) {
   uint8_t x;
@@ -96,7 +96,7 @@ static void test_slice_new_with_user_data(void) {
 
 static int do_nothing_with_len_1_calls = 0;
 
-static void do_nothing_with_len_1(void* ignored, size_t len) {
+static void do_nothing_with_len_1(void* /* ignored */, size_t len) {
   GPR_ASSERT(len == 1);
   do_nothing_with_len_1_calls++;
 }

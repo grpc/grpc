@@ -343,7 +343,7 @@ static grpc_ssl_roots_override_result override_roots_success(
 }
 
 static grpc_ssl_roots_override_result override_roots_permanent_failure(
-    char** pem_root_certs) {
+    char** /* pem_root_certs */) {
   return GRPC_SSL_ROOTS_OVERRIDE_FAIL_PERMANENTLY;
 }
 

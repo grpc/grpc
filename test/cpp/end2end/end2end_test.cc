@@ -212,7 +212,7 @@ class Proxy : public ::grpc::testing::EchoTestService::Service {
 class TestServiceImplDupPkg
     : public ::grpc::testing::duplicate::EchoTestService::Service {
  public:
-  Status Echo(ServerContext* context, const EchoRequest* request,
+  Status Echo(ServerContext* /* context */, const EchoRequest* /* request */,
               EchoResponse* response) override {
     response->set_message("no package");
     return Status::OK;
