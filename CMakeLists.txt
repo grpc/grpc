@@ -220,15 +220,41 @@ function(protobuf_generate_grpc_cpp)
   endforeach()
 endfunction()
 
+# These options allow users to enable or disable the building of the various
+# protoc plugins. For example, running CMake with
+# -DgRPC_BUILD_GRPC_CSHARP_PLUGIN=OFF will disable building the C# plugin.
+set(_gRPC_PLUGIN_LIST)
+option(gRPC_BUILD_GRPC_CPP_PLUGIN "Build grpc_cpp_plugin" ON)
+if (gRPC_BUILD_GRPC_CPP_PLUGIN)
+  list(APPEND _gRPC_PLUGIN_LIST grpc_cpp_plugin)
+endif ()
+option(gRPC_BUILD_GRPC_CSHARP_PLUGIN "Build grpc_csharp_plugin" ON)
+if (gRPC_BUILD_GRPC_CSHARP_PLUGIN)
+  list(APPEND _gRPC_PLUGIN_LIST grpc_csharp_plugin)
+endif ()
+option(gRPC_BUILD_GRPC_NODE_PLUGIN "Build grpc_node_plugin" ON)
+if (gRPC_BUILD_GRPC_NODE_PLUGIN)
+  list(APPEND _gRPC_PLUGIN_LIST grpc_node_plugin)
+endif ()
+option(gRPC_BUILD_GRPC_OBJECTIVE_C_PLUGIN "Build grpc_objective_c_plugin" ON)
+if (gRPC_BUILD_GRPC_OBJECTIVE_C_PLUGIN)
+  list(APPEND _gRPC_PLUGIN_LIST grpc_objective_c_plugin)
+endif ()
+option(gRPC_BUILD_GRPC_PHP_PLUGIN "Build grpc_php_plugin" ON)
+if (gRPC_BUILD_GRPC_PHP_PLUGIN)
+  list(APPEND _gRPC_PLUGIN_LIST grpc_php_plugin)
+endif ()
+option(gRPC_BUILD_GRPC_PYTHON_PLUGIN "Build grpc_python_plugin" ON)
+if (gRPC_BUILD_GRPC_PYTHON_PLUGIN)
+  list(APPEND _gRPC_PLUGIN_LIST grpc_python_plugin)
+endif ()
+option(gRPC_BUILD_GRPC_RUBY_PLUGIN "Build grpc_ruby_plugin" ON)
+if (gRPC_BUILD_GRPC_RUBY_PLUGIN)
+  list(APPEND _gRPC_PLUGIN_LIST grpc_ruby_plugin)
+endif ()
+
 add_custom_target(plugins
-  DEPENDS
-  grpc_cpp_plugin
-  grpc_csharp_plugin
-  grpc_node_plugin
-  grpc_objective_c_plugin
-  grpc_php_plugin
-  grpc_python_plugin
-  grpc_ruby_plugin
+  DEPENDS ${_gRPC_PLUGIN_LIST}
 )
 
 add_custom_target(tools_c
@@ -12509,7 +12535,7 @@ target_link_libraries(grpc_cli
 
 
 endif()
-if(gRPC_BUILD_CODEGEN)
+if(gRPC_BUILD_CODEGEN AND gRPC_BUILD_GRPC_CPP_PLUGIN)
 
 add_executable(grpc_cpp_plugin
   src/compiler/cpp_plugin.cc
@@ -12546,7 +12572,7 @@ if(gRPC_INSTALL)
 endif()
 
 endif()
-if(gRPC_BUILD_CODEGEN)
+if(gRPC_BUILD_CODEGEN AND gRPC_BUILD_GRPC_CSHARP_PLUGIN)
 
 add_executable(grpc_csharp_plugin
   src/compiler/csharp_plugin.cc
@@ -12656,7 +12682,7 @@ target_link_libraries(grpc_linux_system_roots_test
 
 
 endif()
-if(gRPC_BUILD_CODEGEN)
+if(gRPC_BUILD_CODEGEN AND gRPC_BUILD_GRPC_NODE_PLUGIN)
 
 add_executable(grpc_node_plugin
   src/compiler/node_plugin.cc
@@ -12693,7 +12719,7 @@ if(gRPC_INSTALL)
 endif()
 
 endif()
-if(gRPC_BUILD_CODEGEN)
+if(gRPC_BUILD_CODEGEN AND gRPC_BUILD_GRPC_OBJECTIVE_C_PLUGIN)
 
 add_executable(grpc_objective_c_plugin
   src/compiler/objective_c_plugin.cc
@@ -12730,7 +12756,7 @@ if(gRPC_INSTALL)
 endif()
 
 endif()
-if(gRPC_BUILD_CODEGEN)
+if(gRPC_BUILD_CODEGEN AND gRPC_BUILD_GRPC_PHP_PLUGIN)
 
 add_executable(grpc_php_plugin
   src/compiler/php_plugin.cc
@@ -12767,7 +12793,7 @@ if(gRPC_INSTALL)
 endif()
 
 endif()
-if(gRPC_BUILD_CODEGEN)
+if(gRPC_BUILD_CODEGEN AND gRPC_BUILD_GRPC_PYTHON_PLUGIN)
 
 add_executable(grpc_python_plugin
   src/compiler/python_plugin.cc
@@ -12804,7 +12830,7 @@ if(gRPC_INSTALL)
 endif()
 
 endif()
-if(gRPC_BUILD_CODEGEN)
+if(gRPC_BUILD_CODEGEN AND gRPC_BUILD_GRPC_RUBY_PLUGIN)
 
 add_executable(grpc_ruby_plugin
   src/compiler/ruby_plugin.cc
