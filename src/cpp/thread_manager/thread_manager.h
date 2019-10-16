@@ -124,7 +124,7 @@ class ThreadManager {
     WorkerThread(ThreadManager* thd_mgr);
     ~WorkerThread();
 
-    bool isCreated();
+    bool created() const;
    private:
     // Calls thd_mgr_->MainWorkLoop() and once that completes, calls
     // thd_mgr_>MarkAsCompleted(this) to mark the thread as completed

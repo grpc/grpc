@@ -52,7 +52,7 @@ void ThreadManager::WorkerThread::Run() {
 }
 
 
-bool ThreadManager::WorkerThread::isCreated() {
+inline bool ThreadManager::WorkerThread::created() const {
   return created_;
 }
 
@@ -191,7 +191,7 @@ void ThreadManager::MainWorkLoop() {
             // Drop lock before spawning thread to avoid contention
             lock.Unlock();
             WorkerThread* w = new WorkerThread(this);
-            if (!w->isCreated()) {
+            if (!w->created()) {
               num_pollers_--;
               num_threads_--;
               resource_exhausted = true;
