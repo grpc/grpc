@@ -19,6 +19,7 @@
 #include <grpc/grpc.h>
 
 #include "src/core/lib/iomgr/pollset_set.h"
+#include "src/core/lib/security/security_connector/alts/alts_security_connector.h"
 #include "src/core/tsi/alts/handshaker/alts_handshaker_client.h"
 #include "src/core/tsi/alts/handshaker/alts_shared_resource.h"
 #include "src/core/tsi/alts/handshaker/alts_tsi_handshaker.h"
@@ -47,6 +48,8 @@ using grpc_core::internal::alts_handshaker_client_get_send_buffer_for_testing;
 using grpc_core::internal::alts_handshaker_client_set_grpc_caller_for_testing;
 using grpc_core::internal::alts_tsi_handshaker_get_client_for_testing;
 using grpc_core::internal::alts_tsi_handshaker_set_client_for_testing;
+using grpc_core::internal::
+    alts_tsi_handshaker_set_receive_status_pending_for_testing;
 
 typedef struct alts_handshaker_client_test_config {
   alts_handshaker_client* client;
@@ -291,13 +294,13 @@ static alts_handshaker_client_test_config* create_config() {
   alts_tsi_handshaker_create(
       client_options, ALTS_HANDSHAKER_SERVICE_URL_FOR_TESTING,
       ALTS_HANDSHAKER_CLIENT_TEST_TARGET_NAME, true /* is client */,
-      config->dummy_pss,
+      config->dummy_pss, GRPC_ALTS_DEFAULT_HANDSHAKE_RPC_DEADLINE_MS,
       reinterpret_cast<tsi_handshaker**>(&config->client_tsi_handshaker));
   GPR_ASSERT(config->server_tsi_handshaker == nullptr);
   alts_tsi_handshaker_create(
       server_options, ALTS_HANDSHAKER_SERVICE_URL_FOR_TESTING,
       ALTS_HANDSHAKER_CLIENT_TEST_TARGET_NAME, false /* is client */,
-      config->dummy_pss,
+      config->dummy_pss, GRPC_ALTS_DEFAULT_HANDSHAKE_RPC_DEADLINE_MS,
       reinterpret_cast<tsi_handshaker**>(&config->server_tsi_handshaker));
   // Create "handshaker client" objects
   config->client = alts_grpc_handshaker_client_create_locked(
@@ -370,6 +373,10 @@ static void schedule_request_success_test() {
         config->client, check_client_start_success);
     GPR_ASSERT(alts_handshaker_client_start_client_locked(config->client) ==
                TSI_OK);
+    // Duplicate necessary logic that the client_tsi_hanshaker would
+    // normally do here.
+    alts_tsi_handshaker_set_receive_status_pending_for_testing(
+        config->client_tsi_handshaker, true);
   }
   {
     grpc_core::ExecCtx exec_ctx;
@@ -378,6 +385,10 @@ static void schedule_request_success_test() {
         config->server, check_server_start_success);
     GPR_ASSERT(alts_handshaker_client_start_server_locked(
                    config->server, &config->out_frame) == TSI_OK);
+    // Duplicate necessary logic that the server_tsi_hanshaker would
+    // normally do here.
+    alts_tsi_handshaker_set_receive_status_pending_for_testing(
+        config->server_tsi_handshaker, true);
   }
   {
     grpc_core::ExecCtx exec_ctx;

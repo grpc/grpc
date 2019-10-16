@@ -61,6 +61,9 @@ struct alts_tsi_handshaker {
   // shutdown effectively follows base.handshake_shutdown,
   // but is synchronized by the mutex of this object.
   bool shutdown;
+  bool receive_status_pending;
+  bool tsi_destroy_called;
+  grpc_millis handshake_rpc_deadline_ms;
 };
 
 /* Main struct for ALTS TSI handshaker result. */
@@ -342,11 +345,13 @@ static tsi_result handshaker_next(
              : alts_handshaker_client_start_server_locked(handshaker->client,
                                                           &slice);
     handshaker->has_sent_start_message = true;
+    handshaker->receive_status_pending = true;
   } else {
     ok = alts_handshaker_client_next_locked(handshaker->client, &slice);
   }
   grpc_slice_unref_internal(slice);
   if (ok != TSI_OK) {
+    handshaker->receive_status_pending = false;
     gpr_log(GPR_ERROR, "Failed to schedule ALTS handshaker requests");
     return ok;
   }
@@ -386,37 +391,56 @@ static void handshaker_channel_destroy(void* arg, grpc_error* /* error */) {
   grpc_channel_destroy(c);
 }
 
-static void handshaker_destroy(tsi_handshaker* self) {
-  if (self == nullptr) {
-    return;
-  }
-  alts_tsi_handshaker* handshaker =
-      reinterpret_cast<alts_tsi_handshaker*>(self);
-  gpr_mu_lock(&handshaker->mu);
-  if (handshaker->client != nullptr) {
-    // this is defensive in order to avoid leaving a stray/unpolled call
-    alts_handshaker_client_cancel_call_locked(handshaker->client);
-  }
-  alts_handshaker_client_destroy_locked(handshaker->client);
-  grpc_slice_unref_internal(handshaker->target_name);
-  grpc_alts_credentials_options_destroy(handshaker->options);
+static void alts_tsi_handshaker_destroy_locked(alts_tsi_handshaker* self) {
   if (handshaker->channel != nullptr) {
     GRPC_CLOSURE_SCHED(
         GRPC_CLOSURE_CREATE(handshaker_channel_destroy, handshaker->channel,
                             grpc_schedule_on_exec_ctx),
         GRPC_ERROR_NONE);
   }
-  gpr_free(handshaker->handshaker_service_url);
-  gpr_mu_unlock(&handshaker->mu);
-  gpr_mu_destroy(&handshaker->mu);
-  gpr_free(handshaker);
+  alts_handshaker_client_destroy_locked(self->client);
+  grpc_slice_unref_internal(self->target_name);
+  grpc_alts_credentials_options_destroy(self->options);
+  gpr_free(self->handshaker_service_url);
+  gpr_mu_unlock(&self->mu);
+  gpr_mu_destroy(&self->mu);
+  gpr_free(self);
+}
+
+void alts_tsi_handshaker_on_status_received(void* arg, grpc_error* error) {
+  alts_tsi_handshaker* handshaker = static_cast<alts_tsi_handshaker*>(arg);
+  gpr_mu_lock(&handshaker->mu);
+  alts_handshaker_client_on_status_received_locked(handshaker->client, error);
+  GPR_ASSERT(handshaker->receive_status_pending);
+  handshaker->receive_status_pending = false;
+  if (handshaker->tsi_destroy_called) {
+    alts_tsi_handshaker_destroy_locked(handshaker);
+  } else {
+    gpr_mu_unlock(&handshaker->mu);
+  }
+}
+
+static void handshaker_orphan(tsi_handshaker* self) {
+  if (self == nullptr) {
+    return;
+  }
+  alts_tsi_handshaker* handshaker =
+      reinterpret_cast<alts_tsi_handshaker*>(self);
+  gpr_mu_lock(&handshaker->mu);
+  GPR_ASSERT(!handshaker->tsi_destroy_called);
+  handshaker->tsi_destroy_called = true;
+  if (!handshaker->receive_status_pending) {
+    alts_tsi_handshaker_destroy_locked(handshaker);
+  } else {
+    // this is defensive in order to avoid leaving a stray/unpolled call
+    alts_handshaker_client_cancel_call_locked(handshaker->client);
+    gpr_mu_unlock(&handshaker->mu);
+  }
 }
 
 static const tsi_handshaker_vtable handshaker_vtable = {
-    nullptr,         nullptr,
-    nullptr,         nullptr,
-    nullptr,         handshaker_destroy,
-    handshaker_next, handshaker_shutdown};
+    nullptr, nullptr,           nullptr,         nullptr,
+    nullptr, handshaker_orphan, handshaker_next, handshaker_shutdown};
 
 static const tsi_handshaker_vtable handshaker_vtable_dedicated = {
     nullptr,
@@ -424,7 +448,7 @@ static const tsi_handshaker_vtable handshaker_vtable_dedicated = {
     nullptr,
     nullptr,
     nullptr,
-    handshaker_destroy,
+    handshaker_orphan,
     handshaker_next_dedicated,
     handshaker_shutdown};
 
@@ -436,7 +460,8 @@ bool alts_tsi_handshaker_has_shutdown_locked(alts_tsi_handshaker* handshaker) {
 tsi_result alts_tsi_handshaker_create(
     const grpc_alts_credentials_options* options, const char* target_name,
     const char* handshaker_service_url, bool is_client,
-    grpc_pollset_set* interested_parties, tsi_handshaker** self) {
+    grpc_pollset_set* interested_parties, grpc_millis handshake_rpc_deadline_ms,
+    tsi_handshaker** self) {
   if (handshaker_service_url == nullptr || self == nullptr ||
       options == nullptr || (is_client && target_name == nullptr)) {
     gpr_log(GPR_ERROR, "Invalid arguments to alts_tsi_handshaker_create()");
@@ -459,6 +484,8 @@ tsi_result alts_tsi_handshaker_create(
   handshaker->base.vtable =
       use_dedicated_cq ? &handshaker_vtable_dedicated : &handshaker_vtable;
   handshaker->use_dedicated_cq = use_dedicated_cq;
+  handshaker->handshake_rpc_deadline_ms = handshake_rpc_deadline_ms;
+  handshaker->receive_status_pending = false;
   *self = &handshaker->base;
   return TSI_OK;
 }
@@ -512,11 +539,14 @@ void alts_tsi_handshaker_re_enter_lock_then_continue_make_grpc_call(
     handshaker->channel = channel;
     grpc_slice slice =
         grpc_slice_from_copied_string(handshaker_service_url.get());
+    grpc_core::ExecCtx::Get()->InvalidateNow();
+    grpc_millis deadline = grpc_core::ExecCtx::Get()->Now() +
+                           handshaker->handshake_rpc_deadline_ms;
     grpc_call* call = grpc_channel_create_pollset_set_call(
         handshaker->channel, nullptr, GRPC_PROPAGATE_DEFAULTS,
         handshaker->interested_parties,
-        grpc_slice_from_static_string(ALTS_SERVICE_METHOD), &slice,
-        GRPC_MILLIS_INF_FUTURE, nullptr);
+        grpc_slice_from_static_string(ALTS_SERVICE_METHOD), &slice, deadline,
+        nullptr);
     grpc_slice_unref_internal(slice);
     alts_handshaker_client_continue_make_grpc_call_locked(handshaker->client,
                                                           call);
@@ -549,6 +579,12 @@ bool alts_tsi_handshaker_get_is_client_for_testing(
     alts_tsi_handshaker* handshaker) {
   GPR_ASSERT(handshaker != nullptr);
   return handshaker->is_client;
+}
+
+bool alts_tsi_handshaker_set_receive_status_pending_for_testing(
+    alts_tsi_handshaker* handshaker, bool receive_status_pending) {
+  GPR_ASSERT(handshaker != nullptr);
+  return handshaker->receive_status_pending = receive_status_pending;
 }
 
 alts_handshaker_client* alts_tsi_handshaker_get_client_for_testing(

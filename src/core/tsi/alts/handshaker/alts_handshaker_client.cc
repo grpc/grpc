@@ -82,6 +82,12 @@ typedef struct alts_grpc_handshaker_client {
   /* a buffer containing data to be sent to the grpc client or server's peer. */
   unsigned char* buffer;
   size_t buffer_size;
+  /** callback for receiving handshake call status */
+  grpc_closure on_status_received;
+  /** gRPC status code of handshake call */
+  grpc_status_code handshake_status_code;
+  /** gRPC status details of handshake call */
+  grpc_slice handshake_status_details;
 } alts_grpc_handshaker_client;
 
 static void handshaker_client_send_buffer_destroy_locked(
@@ -116,7 +122,7 @@ void invoke_tsi_next_cb(void* arg, grpc_error* error_unused) {
   gpr_free(t);
 }
 
-static void handle_response_done_locked(alts_grpc_handshaker_client* c,
+static void handle_response_done_locked(alts_grpc_handshaker_client* client,
                                         tsi_result status,
                                         const unsigned char* bytes_to_send,
                                         size_t bytes_to_send_size,
@@ -124,12 +130,12 @@ static void handle_response_done_locked(alts_grpc_handshaker_client* c,
   gpr_log(GPR_DEBUG,
           "handle_response_done_locked client:%p status:%d user_data:%p "
           "bytes_to_send_size:%ld result:%p",
-          c, status, c->user_data, bytes_to_send_size, result);
+          client, status, client->user_data, bytes_to_send_size, result);
   invoke_tsi_next_cb_args* t = static_cast<invoke_tsi_next_cb_args*>(
       gpr_zalloc(sizeof(invoke_tsi_next_cb_args)));
-  t->cb = c->cb;
+  t->cb = client->cb;
   t->status = status;
-  t->user_data = c->user_data;
+  t->user_data = client->user_data;
   t->bytes_to_send = bytes_to_send;
   t->bytes_to_send_size = bytes_to_send_size;
   t->result = result;
@@ -245,6 +251,22 @@ void alts_handshaker_client_handle_response_locked(alts_handshaker_client* c,
                               bytes_to_send, bytes_to_send_size, result);
 }
 
+void alts_handshaker_client_on_status_received_locked(alts_handshaker_client* c,
+                                                      grpc_error* error) {
+  alts_grpc_handshaker_client* client =
+      reinterpret_cast<alts_grpc_handshaker_client*>(c);
+  if (client->handshake_status_code != GRPC_STATUS_OK) {
+    char* status_details =
+        grpc_slice_to_c_string(client->handshake_status_details);
+    gpr_log(GPR_ERROR,
+            "alts_grpc_handshaker_client:%p user_data:%p Handshake failed "
+            "status: %d. details: %s. error: %s",
+            client, client->user_data, client->handshake_status_code,
+            status_details, grpc_error_string(error));
+    gpr_free(status_details);
+  }
+}
+
 void alts_handshaker_client_continue_make_grpc_call_locked(
     alts_handshaker_client* c, grpc_call* call) {
   alts_grpc_handshaker_client* client =
@@ -256,6 +278,20 @@ void alts_handshaker_client_continue_make_grpc_call_locked(
   if (is_start) {
     GPR_ASSERT(client->call == nullptr);
     client->call = call;
+    op->op = GRPC_OP_RECV_STATUS_ON_CLIENT;
+    op->data.recv_status_on_client.trailing_metadata = nullptr;
+    op->data.recv_status_on_client.status = &client->handshake_status_code;
+    op->data.recv_status_on_client.status_details =
+        &client->handshake_status_details;
+    op->flags = 0;
+    op->reserved = nullptr;
+    op++;
+    GPR_ASSERT(op - ops <= kHandshakerClientOpNum);
+    grpc_call_error call_error = grpc_call_start_batch_and_execute(
+        client->call, ops, (size_t)(op - ops), &client->on_status_received);
+    GPR_ASSERT(call_error == GRPC_CALL_OK);
+    memset(ops, 0, sizeof(ops));
+    op = ops;
     op->op = GRPC_OP_SEND_INITIAL_METADATA;
     op->data.send_initial_metadata.count = 0;
     op++;
@@ -531,6 +567,9 @@ alts_handshaker_client* alts_grpc_handshaker_client_create_locked(
       vtable_for_testing == nullptr ? &vtable : vtable_for_testing;
   GRPC_CLOSURE_INIT(&client->on_handshaker_service_resp_recv, client->grpc_cb,
                     client->handshaker, grpc_schedule_on_exec_ctx);
+  GRPC_CLOSURE_INIT(&client->on_status_received,
+                    alts_tsi_handshaker_on_status_received, client->handshaker,
+                    grpc_schedule_on_exec_ctx);
   return &client->base;
 }
 
@@ -697,6 +736,7 @@ void alts_handshaker_client_destroy_locked(alts_handshaker_client* c) {
     grpc_slice_unref_internal(client->recv_bytes);
     grpc_slice_unref_internal(client->target_name);
     grpc_alts_credentials_options_destroy(client->options);
+    grpc_slice_unref_internal(client->handshake_status_details);
     gpr_free(client->buffer);
     gpr_free(client);
   }

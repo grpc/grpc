@@ -20,6 +20,7 @@
 
 #include "src/core/lib/security/security_connector/alts/alts_security_connector.h"
 
+#include <limits.h>
 #include <stdbool.h>
 #include <string.h>
 
@@ -86,10 +87,13 @@ class grpc_alts_channel_security_connector final
     tsi_handshaker* handshaker = nullptr;
     const grpc_alts_credentials* creds =
         static_cast<const grpc_alts_credentials*>(channel_creds());
-    GPR_ASSERT(alts_tsi_handshaker_create(creds->options(), target_name_,
-                                          creds->handshaker_service_url(), true,
-                                          interested_parties,
-                                          &handshaker) == TSI_OK);
+    grpc_millis handshake_rpc_deadline_ms = grpc_channel_args_find_integer(
+        args, GRPC_ARG_ALTS_HANDSHAKE_RPC_DEADLINE_MS,
+        {GRPC_ALTS_DEFAULT_HANDSHAKE_RPC_DEADLINE_MS, 0, INT_MAX});
+    GPR_ASSERT(alts_tsi_handshaker_create(
+                   creds->options(), target_name_,
+                   creds->handshaker_service_url(), true, interested_parties,
+                   handshake_rpc_deadline_ms, &handshaker) == TSI_OK);
     handshake_manager->Add(
         grpc_core::SecurityHandshakerCreate(handshaker, this, args));
   }
@@ -147,9 +151,13 @@ class grpc_alts_server_security_connector final
     tsi_handshaker* handshaker = nullptr;
     const grpc_alts_server_credentials* creds =
         static_cast<const grpc_alts_server_credentials*>(server_creds());
+    grpc_millis handshake_rpc_deadline_ms = grpc_channel_args_find_integer(
+        args, GRPC_ARG_ALTS_HANDSHAKE_RPC_DEADLINE_MS,
+        {GRPC_ALTS_DEFAULT_HANDSHAKE_RPC_DEADLINE_MS, 0, INT_MAX});
     GPR_ASSERT(alts_tsi_handshaker_create(
                    creds->options(), nullptr, creds->handshaker_service_url(),
-                   false, interested_parties, &handshaker) == TSI_OK);
+                   false, interested_parties, handshake_rpc_deadline_ms,
+                   &handshaker) == TSI_OK);
     handshake_manager->Add(
         grpc_core::SecurityHandshakerCreate(handshaker, this, args));
   }

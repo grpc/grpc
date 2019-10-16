@@ -23,6 +23,7 @@
 #include <grpc/support/sync.h>
 
 #include "src/core/lib/gprpp/thd.h"
+#include "src/core/lib/security/security_connector/alts/alts_security_connector.h"
 #include "src/core/tsi/alts/handshaker/alts_handshaker_client.h"
 #include "src/core/tsi/alts/handshaker/alts_shared_resource.h"
 #include "src/core/tsi/alts/handshaker/alts_tsi_handshaker.h"
@@ -54,6 +55,9 @@ using grpc_core::internal::alts_handshaker_client_set_vtable_for_testing;
 using grpc_core::internal::alts_tsi_handshaker_get_client_for_testing;
 using grpc_core::internal::alts_tsi_handshaker_get_is_client_for_testing;
 using grpc_core::internal::alts_tsi_handshaker_set_client_vtable_for_testing;
+using grpc_core::internal::
+    alts_tsi_handshaker_set_receive_status_pending_for_testing;
+
 static bool should_handshaker_client_api_succeed = true;
 
 /* ALTS mock notification. */
@@ -394,9 +398,10 @@ static tsi_handshaker* create_test_handshaker(bool is_client) {
   tsi_handshaker* handshaker = nullptr;
   grpc_alts_credentials_options* options =
       grpc_alts_credentials_client_options_create();
-  alts_tsi_handshaker_create(options, "target_name",
-                             ALTS_HANDSHAKER_SERVICE_URL_FOR_TESTING, is_client,
-                             nullptr, &handshaker);
+  alts_tsi_handshaker_create(
+      options, "target_name", ALTS_HANDSHAKER_SERVICE_URL_FOR_TESTING,
+      is_client, nullptr, GRPC_ALTS_DEFAULT_HANDSHAKE_RPC_DEADLINE_MS,
+      &handshaker);
   alts_tsi_handshaker* alts_handshaker =
       reinterpret_cast<alts_tsi_handshaker*>(handshaker);
   alts_tsi_handshaker_set_client_vtable_for_testing(alts_handshaker, &vtable);
@@ -461,6 +466,11 @@ static void check_handshaker_next_success() {
                  strlen(ALTS_TSI_HANDSHAKER_TEST_RECV_BYTES), nullptr, nullptr,
                  nullptr, on_server_next_success_cb, nullptr) == TSI_ASYNC);
   wait(&tsi_to_caller_notification);
+  /* Spoof receive-status completions. */
+  alts_tsi_handshaker_set_receive_status_pending_for_testing(
+      reinterpret_cast<alts_tsi_handshaker*>(client_handshaker), false);
+  alts_tsi_handshaker_set_receive_status_pending_for_testing(
+      reinterpret_cast<alts_tsi_handshaker*>(server_handshaker), false);
   /* Cleanup. */
   tsi_handshaker_destroy(server_handshaker);
   tsi_handshaker_destroy(client_handshaker);
@@ -480,6 +490,9 @@ static void check_handshaker_next_with_shutdown() {
                  strlen(ALTS_TSI_HANDSHAKER_TEST_RECV_BYTES), nullptr, nullptr,
                  nullptr, on_client_next_success_cb,
                  nullptr) == TSI_HANDSHAKE_SHUTDOWN);
+  /* Spoof a receive-status completion. */
+  alts_tsi_handshaker_set_receive_status_pending_for_testing(
+      reinterpret_cast<alts_tsi_handshaker*>(handshaker), false);
   /* Cleanup. */
   tsi_handshaker_destroy(handshaker);
 }

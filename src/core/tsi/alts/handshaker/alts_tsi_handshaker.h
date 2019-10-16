@@ -60,7 +60,8 @@ typedef struct alts_tsi_handshaker alts_tsi_handshaker;
 tsi_result alts_tsi_handshaker_create(
     const grpc_alts_credentials_options* options, const char* target_name,
     const char* handshaker_service_url, bool is_client,
-    grpc_pollset_set* interested_parties, tsi_handshaker** self);
+    grpc_pollset_set* interested_parties, grpc_millis handshake_rpc_deadline_ms,
+    tsi_handshaker** self);
 
 /**
  * This method creates an ALTS TSI handshaker result instance.
@@ -111,5 +112,8 @@ struct alts_tsi_handshaker_re_enter_lock_then_continue_make_grpc_call_args {
  * a call. */
 void alts_tsi_handshaker_re_enter_lock_then_continue_make_grpc_call(
     void* arg, grpc_error* unused_error);
+
+/* gRPC status received callback for handshake RPCs. */
+void alts_tsi_handshaker_on_status_received(void* arg, grpc_error* error);
 
 #endif /* GRPC_CORE_TSI_ALTS_HANDSHAKER_ALTS_TSI_HANDSHAKER_H */

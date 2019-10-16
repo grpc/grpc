@@ -398,6 +398,8 @@ typedef struct {
 #define GRPC_ARG_CHANNEL_POOL_DOMAIN "grpc.channel_pooling_domain"
 /** gRPC Objective-C channel pooling id. */
 #define GRPC_ARG_CHANNEL_ID "grpc.channel_id"
+#define GRPC_ARG_ALTS_HANDSHAKE_RPC_DEADLINE_MS \
+  "grpc.alts_handshake_rpc_deadline_ms"
 /** \} */
 
 /** Result of a grpc call. If the caller satisfies the prerequisites of a

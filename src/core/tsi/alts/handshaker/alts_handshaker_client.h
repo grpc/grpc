@@ -159,4 +159,9 @@ void alts_handshaker_client_continue_make_grpc_call_locked(
 /** Cancels any active handshake call. */
 void alts_handshaker_client_cancel_call_locked(alts_handshaker_client* client);
 
+/** Invoked under the alts_tsi_handshaker's lock when the handshake gRPC status
+ * has been received. */
+void alts_handshaker_client_on_status_received_locked(
+    alts_handshaker_client* client, grpc_error* error);
+
 #endif /* GRPC_CORE_TSI_ALTS_HANDSHAKER_ALTS_HANDSHAKER_CLIENT_H */

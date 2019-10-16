@@ -80,6 +80,9 @@ void alts_handshaker_client_set_cb_for_testing(
 grpc_closure* alts_handshaker_client_get_closure_for_testing(
     alts_handshaker_client* client);
 
+void alts_tsi_handshaker_set_receive_status_pending_for_testing(
+    alts_tsi_handshaker* handshaker, bool receive_status_pending);
+
 }  // namespace internal
 }  // namespace grpc_core
 
