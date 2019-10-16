@@ -1,6 +1,5 @@
 """Load dependencies needed to compile and test the grpc python library as a 3rd-party consumer."""
 
-load("@bazel_tools//tools/build_defs/repo:git.bzl", "git_repository")
 load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 load("@com_github_grpc_grpc//third_party/py:python_configure.bzl", "python_configure")
 
@@ -41,12 +40,11 @@ def grpc_python_deps():
         )
 
     if "io_bazel_rules_python" not in native.existing_rules():
-        git_repository(
+        http_archive(
             name = "io_bazel_rules_python",
-            commit = "fdbb17a4118a1728d19e638a5291b4c4266ea5b8",
-            remote = "https://github.com/bazelbuild/rules_python.git",
+            url = "https://github.com/bazelbuild/rules_python/releases/download/0.0.1/rules_python-0.0.1.tar.gz",
+            sha256 = "aa96a691d3a8177f3215b14b0edc9641787abaaa30363a080165d06ab65e1161",
         )
-
 
     if "rules_python" not in native.existing_rules():
         http_archive(
