@@ -98,22 +98,14 @@ loop):
     batch_operation_tag.event(c_event)
 
 
-async def _handle_rpc(_AioServerState server_state, RPCState rpc_state, object loop):
-    # Finds the method handler (application logic)
-    cdef object method_handler = _find_method_handler(
-        rpc_state,
-        server_state.generic_handlers
-    )
-    if method_handler.request_streaming or method_handler.response_streaming:
-        raise NotImplementedError()
-
+async def _handle_unary_unary_rpc(object method_handler, RPCState rpc_state, object loop):
     # Receives request message
     cdef tuple receive_ops = (
         ReceiveMessageOperation(_EMPTY_FLAGS),
     )
     await callback_start_batch(rpc_state, receive_ops, loop)
 
-    # Parses the request
+    # Deserializes the request message
     cdef bytes request_raw = receive_ops[0].message()
     cdef object request_message
     if method_handler.request_deserializer:
@@ -121,8 +113,10 @@ async def _handle_rpc(_AioServerState server_state, RPCState rpc_state, object l
     else:
         request_message = request_raw
 
-    # Executes application logic & encodes response message
+    # Executes application logic
     cdef object response_message = await method_handler.unary_unary(request_message, _ServicerContextPlaceHolder())
+
+    # Serializes the response message
     cdef bytes response_raw
     if method_handler.response_serializer:
         response_raw = method_handler.response_serializer(response_message)
@@ -137,6 +131,26 @@ async def _handle_rpc(_AioServerState server_state, RPCState rpc_state, object l
         SendMessageOperation(response_raw, _EMPTY_FLAGS),
     )
     await callback_start_batch(rpc_state, send_ops, loop)
+
+
+async def _handle_rpc(_AioServerState server_state, RPCState rpc_state, object loop):
+    # Finds the method handler (application logic)
+    cdef object method_handler = _find_method_handler(
+        rpc_state,
+        server_state.generic_handlers
+    )
+    if method_handler is None:
+        # TODO(lidiz) return unimplemented error to client side
+        raise NotImplementedError()
+    # TODO(lidiz) extend to all 4 types of RPC
+    if method_handler.request_streaming or method_handler.response_streaming:
+        raise NotImplementedError()
+    else:
+        await _handle_unary_unary_rpc(
+            method_handler,
+            rpc_state,
+            loop
+        )
 
 
 async def _server_call_request_call(_AioServerState server_state, object loop):
