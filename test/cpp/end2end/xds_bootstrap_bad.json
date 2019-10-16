@@ -1,0 +1,12 @@
+{
+  "xds_server": {
+    "server_uri": "fake:///wrong_lb",
+    "channel_creds": [
+      {
+        "type": "fake"
+      }
+    ]
+  },
+  "node": {
+  }
+}
