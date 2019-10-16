@@ -145,9 +145,8 @@ class ClientRpcInfo {
       // No interceptors to register
       return;
     }
-    for (auto it = creators.begin() + interceptor_pos; it != creators.end();
-         ++it) {
-      auto* interceptor = (*it)->CreateClientInterceptor(this);
+    for (const auto& creator : creators) {
+      auto* interceptor = creator->CreateClientInterceptor(this);
       if (interceptor != nullptr) {
         interceptors_.push_back(
             std::unique_ptr<experimental::Interceptor>(interceptor));
