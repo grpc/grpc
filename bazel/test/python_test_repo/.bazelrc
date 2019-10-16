@@ -1,3 +1,0 @@
-build:python3 --python_path=python3
-build:python3 --python_version=PY3
-build:python3 --action_env=PYTHON_BIN_PATH=python3

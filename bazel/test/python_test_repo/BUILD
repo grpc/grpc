@@ -14,7 +14,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-load("@com_github_grpc_grpc//bazel:python_rules.bzl", "py_proto_library", "py_grpc_library")
+load(
+    "@com_github_grpc_grpc//bazel:python_rules.bzl",
+    "py_proto_library",
+    "py_grpc_library",
+    "py2and3_test",
+)
 
 package(default_testonly = 1)
 
@@ -48,7 +53,7 @@ py_proto_library(
     deps = ["@com_google_protobuf//:timestamp_proto"],
 )
 
-py_test(
+py2and3_test(
     name = "import_test",
     main = "helloworld.py",
     srcs = ["helloworld.py"],
@@ -58,7 +63,6 @@ py_test(
         ":duration_py_pb2",
         ":timestamp_py_pb2",
     ],
-    python_version = "PY3",
 )
 
 # Test compatibility of py_proto_library and py_grpc_library rules with
@@ -86,7 +90,7 @@ py_grpc_library(
     deps = [":helloworld_moved_py_pb2"],
 )
 
-py_test(
+py2and3_test(
     name = "import_moved_test",
     main = "helloworld_moved.py",
     srcs = ["helloworld_moved.py"],
@@ -96,5 +100,4 @@ py_test(
         ":duration_py_pb2",
         ":timestamp_py_pb2",
     ],
-    python_version = "PY3",
 )
