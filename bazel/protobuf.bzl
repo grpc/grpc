@@ -3,7 +3,6 @@
 _PROTO_EXTENSION = ".proto"
 _VIRTUAL_IMPORTS = "/_virtual_imports/"
 
-
 def well_known_proto_libs():
     return [
         "@com_google_protobuf//:any_proto",
@@ -111,8 +110,8 @@ def get_plugin_args(plugin, flags, dir_out, generate_mocks):
     ]
 
 def _get_staged_proto_file(context, source_file):
-    if source_file.dirname == context.label.package \
-        or is_in_virtual_imports(source_file):
+    if source_file.dirname == context.label.package or \
+       is_in_virtual_imports(source_file):
         # Current target and source_file are in same package
         return source_file
     else:
@@ -175,11 +174,7 @@ def declare_out_files(protos, context, generated_file_format):
             out_file_paths.append(proto.basename)
         else:
             path = proto.path[proto.path.index(_VIRTUAL_IMPORTS) + 1:]
-            # TODO: uncomment if '.' path is chosen over
-            #       `_virtual_imports/proto_library_target_name` as the output
-            # path = proto.path.split(_VIRTUAL_IMPORTS)[1].split("/", 1)[1]
             out_file_paths.append(path)
-
 
     return [
         context.actions.declare_file(
@@ -208,11 +203,15 @@ def get_out_dir(protos, context):
         elif at_least_one_virtual:
             fail("Proto sources must be either all virtual imports or all real")
     if at_least_one_virtual:
-        return get_include_directory(protos[0])
-        # TODO: uncomment if '.' path is chosen over
-        #       `_virtual_imports/proto_library_target_name` as the output path
-        # return "{}/{}".format(context.genfiles_dir.path, context.label.package)
-    return context.genfiles_dir.path
+        out_dir = get_include_directory(protos[0])
+        ws_root = protos[0].owner.workspace_root
+        if ws_root and out_dir.find(ws_root) >= 0:
+            out_dir = "".join(out_dir.rsplit(ws_root, 1))
+        return struct(
+            path = out_dir,
+            import_path = out_dir[out_dir.find(_VIRTUAL_IMPORTS) + 1:],
+        )
+    return struct(path = context.genfiles_dir.path, import_path = None)
 
 def is_in_virtual_imports(source_file, virtual_folder = _VIRTUAL_IMPORTS):
     """Determines if source_file is virtual (is placed in _virtual_imports

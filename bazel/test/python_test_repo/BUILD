@@ -88,26 +88,13 @@ py_grpc_library(
 
 py_test(
     name = "import_moved_test",
-    main = "helloworld.py",
-    srcs = ["helloworld.py"],
+    main = "helloworld_moved.py",
+    srcs = ["helloworld_moved.py"],
     deps = [
         ":helloworld_moved_py_pb2",
         ":helloworld_moved_py_pb2_grpc",
         ":duration_py_pb2",
         ":timestamp_py_pb2",
-    ],
-    imports = [
-        "_virtual_imports/helloworld_moved_proto",
-        # The following line allows us to keep helloworld.py file same for both
-        # test cases ("import_test" and "import_moved_test") and reduce the code
-        # duplication.
-        #
-        # Without this line, the actual imports in hellowold.py should look
-        # like the following:
-        #     import google.cloud.helloworld_pb2 as helloworld_pb2
-        # instead of:
-        #     import helloworld_pb2
-        "_virtual_imports/helloworld_moved_proto/google/cloud"
     ],
     python_version = "PY3",
 )
