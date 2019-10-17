@@ -100,8 +100,8 @@ class DummyEndpoint : public grpc_endpoint {
     GRPC_CLOSURE_SCHED(cb, GRPC_ERROR_NONE);
   }
 
-  static void add_to_pollset(grpc_endpoint* /*ep*/,
-                             grpc_pollset* /*pollset*/) {}
+  static void add_to_pollset(grpc_endpoint* /*ep*/, grpc_pollset* /*pollset*/) {
+  }
 
   static void add_to_pollset_set(grpc_endpoint* /*ep*/,
                                  grpc_pollset_set* /*pollset*/) {}
