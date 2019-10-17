@@ -5320,13 +5320,6 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/ext/filters/client_channel/resolver/sockaddr/sockaddr_resolver.cc \
     src/core/ext/filters/client_channel/resolver/fake/fake_resolver.cc \
     src/core/ext/filters/client_channel/resolver/xds/xds_resolver.cc \
-    src/core/ext/filters/client_channel/lb_policy/grpclb/client_load_reporting_filter.cc \
-    src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb.cc \
-    src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_channel.cc \
-    src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_client_stats.cc \
-    src/core/ext/filters/client_channel/lb_policy/grpclb/load_balancer_api.cc \
-    src/core/ext/upb-generated/src/proto/grpc/lb/v1/load_balancer.upb.c \
-    src/core/ext/filters/client_channel/lb_policy/xds/xds.cc \
     src/core/ext/filters/client_channel/xds/xds_api.cc \
     src/core/ext/filters/client_channel/xds/xds_bootstrap.cc \
     src/core/ext/filters/client_channel/xds/xds_channel.cc \
@@ -5352,6 +5345,13 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/ext/upb-generated/envoy/api/v2/core/protocol.upb.c \
     src/core/ext/upb-generated/envoy/type/percent.upb.c \
     src/core/ext/upb-generated/envoy/type/range.upb.c \
+    src/core/ext/filters/client_channel/lb_policy/grpclb/client_load_reporting_filter.cc \
+    src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb.cc \
+    src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_channel.cc \
+    src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_client_stats.cc \
+    src/core/ext/filters/client_channel/lb_policy/grpclb/load_balancer_api.cc \
+    src/core/ext/upb-generated/src/proto/grpc/lb/v1/load_balancer.upb.c \
+    src/core/ext/filters/client_channel/lb_policy/xds/xds.cc \
     src/core/ext/filters/client_channel/lb_policy/pick_first/pick_first.cc \
     src/core/ext/filters/client_channel/lb_policy/round_robin/round_robin.cc \
     src/core/ext/filters/census/grpc_context.cc \
