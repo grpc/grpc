@@ -130,6 +130,28 @@ From the grpc repository root
 $ bazel build :all
 ```
 
+## cmake: Linux, Using Make
+Run from grpc directory after cloning the repo with --recursive or updating submodules.
+```
+$ mkdir build
+$ cd build
+$ cmake ..
+$ make
+```
+
+If you want to build shared libraries (`.so` files), run `cmake` with `-DBUILD_SHARED_LIBS=ON`.
+
+## cmake: Linux, Using Ninja (faster build)
+Run from grpc directory after cloning the repo with --recursive or updating submodules.
+```
+$ mkdir build
+$ cd build
+$ cmake .. -GNinja
+$ ninja
+```
+
+If you want to build shared libraries (`.so` files), run `cmake` with `-DBUILD_SHARED_LIBS=ON`.
+
 ## cmake: Windows, Using Visual Studio 2015 or 2017 (can only build with OPENSSL_NO_ASM).
 When using the "Visual Studio" generator,
 cmake will generate a solution (`grpc.sln`) that contains a VS project for 
@@ -144,6 +166,8 @@ you will be able to browse and build the code.
 > cmake --build . --config Release
 ```
 
+If you want to build DLLs, run `cmake` with `-DBUILD_SHARED_LIBS=ON`.
+
 ## cmake: Windows, Using Ninja (faster build, supports boringssl's assembly optimizations).
 Please note that when using Ninja, you will still need Visual C++ (part of Visual Studio)
 installed to be able to compile the C/C++ sources.
@@ -154,4 +178,17 @@ installed to be able to compile the C/C++ sources.
 > call "%VS140COMNTOOLS%..\..\VC\vcvarsall.bat" x64
 > cmake .. -GNinja -DCMAKE_BUILD_TYPE=Release
 > cmake --build .
+```
+
+If you want to build DLLs, run `cmake` with `-DBUILD_SHARED_LIBS=ON`.
+
+## cmake: Install After Build
+gRPC includes copies of the libraries that it uses. However, if you build with CMake and then
+want to use `make install` or `ninja install`, you need to select "package" mode (rather than
+"module" mode) for these libraries. This means you will need to have external copies of the
+libraries available on your system.
+```
+$ cmake .. -DgRPC_CARES_PROVIDER=package -DgRPC_PROTOBUF_PROVIDER=package -DgRPC_SSL_PROVIDER=package -DgRPC_ZLIB_PROVIDER=package
+$ make
+$ make install
 ```
