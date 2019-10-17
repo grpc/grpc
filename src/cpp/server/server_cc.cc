@@ -1086,16 +1086,14 @@ bool Server::RegisterService(const grpc::string* host, grpc::Service* service) {
 
   const char* method_name = nullptr;
 
-  for (auto it = service->methods_.begin(); it != service->methods_.end();
-       ++it) {
-    if (it->get() == nullptr) {  // Handled by generic service if any.
+  for (const auto& method : service->methods_) {
+    if (method.get() == nullptr) {  // Handled by generic service if any.
       continue;
     }
 
-    grpc::internal::RpcServiceMethod* method = it->get();
     void* method_registration_tag = grpc_server_register_method(
         server_, method->name(), host ? host->c_str() : nullptr,
-        PayloadHandlingForMethod(method), 0);
+        PayloadHandlingForMethod(method.get()), 0);
     if (method_registration_tag == nullptr) {
       gpr_log(GPR_DEBUG, "Attempt to register %s multiple times",
               method->name());
@@ -1107,7 +1105,7 @@ bool Server::RegisterService(const grpc::string* host, grpc::Service* service) {
     } else if (method->api_type() ==
                grpc::internal::RpcServiceMethod::ApiType::SYNC) {
       for (const auto& value : sync_req_mgrs_) {
-        value->AddSyncMethod(method, method_registration_tag);
+        value->AddSyncMethod(method.get(), method_registration_tag);
       }
     } else {
       // a callback method. Register at least some callback requests
@@ -1116,8 +1114,8 @@ bool Server::RegisterService(const grpc::string* host, grpc::Service* service) {
       // TODO(vjpai): Register these dynamically based on need
       for (int i = 0; i < DEFAULT_CALLBACK_REQS_PER_METHOD; i++) {
         callback_reqs_to_start_.push_back(
-            new CallbackRequest<grpc::ServerContext>(this, method_index, method,
-                                                     method_registration_tag));
+            new CallbackRequest<grpc::ServerContext>(
+                this, method_index, method.get(), method_registration_tag));
       }
       // Enqueue it so that it will be Request'ed later after all request
       // matchers are created at core server startup

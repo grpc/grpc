@@ -269,8 +269,8 @@ std::unique_ptr<grpc::Server> ServerBuilder::BuildAndStart() {
                       std::vector<std::unique_ptr<ServerCompletionQueue>>>());
 
   bool has_frequently_polled_cqs = false;
-  for (auto it = cqs_.begin(); it != cqs_.end(); ++it) {
-    if ((*it)->IsFrequentlyPolled()) {
+  for (const auto& cq : cqs_) {
+    if (cq->IsFrequentlyPolled()) {
       has_frequently_polled_cqs = true;
       break;
     }
@@ -278,8 +278,8 @@ std::unique_ptr<grpc::Server> ServerBuilder::BuildAndStart() {
 
   // == Determine if the server has any callback methods ==
   bool has_callback_methods = false;
-  for (auto it = services_.begin(); it != services_.end(); ++it) {
-    if ((*it)->service->has_callback_methods()) {
+  for (const auto& service : services_) {
+    if (service->service->has_callback_methods()) {
       has_callback_methods = true;
       has_frequently_polled_cqs = true;
       break;
@@ -382,15 +382,15 @@ std::unique_ptr<grpc::Server> ServerBuilder::BuildAndStart() {
   }
 
   bool added_port = false;
-  for (auto port = ports_.begin(); port != ports_.end(); port++) {
-    int r = server->AddListeningPort(port->addr, port->creds.get());
+  for (auto& port : ports_) {
+    int r = server->AddListeningPort(port.addr, port.creds.get());
     if (!r) {
       if (added_port) server->Shutdown();
       return nullptr;
     }
     added_port = true;
-    if (port->selected_port != nullptr) {
-      *port->selected_port = r;
+    if (port.selected_port != nullptr) {
+      *port.selected_port = r;
     }
   }
 
