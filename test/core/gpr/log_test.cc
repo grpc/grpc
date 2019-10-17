@@ -37,11 +37,13 @@ static void test_callback(gpr_log_func_args* args) {
   GPR_ASSERT(0 == strcmp(args->message, "hello 1 2 3"));
 }
 
-static void test_should_log(gpr_log_func_args* args) {
+static void test_should_log(gpr_log_func_args* /*args*/) {
   log_func_reached = true;
 }
 
-static void test_should_not_log(gpr_log_func_args* args) { GPR_ASSERT(false); }
+static void test_should_not_log(gpr_log_func_args* /*args*/) {
+  GPR_ASSERT(false);
+}
 
 #define test_log_function_reached(SEVERITY)     \
   gpr_set_log_function(test_should_log);        \

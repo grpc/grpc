@@ -75,8 +75,8 @@ namespace {
 class DefaultGlobalCallbacks final : public Server::GlobalCallbacks {
  public:
   ~DefaultGlobalCallbacks() override {}
-  void PreSynchronousRequest(ServerContext* context) override {}
-  void PostSynchronousRequest(ServerContext* context) override {}
+  void PreSynchronousRequest(ServerContext* /*context*/) override {}
+  void PostSynchronousRequest(ServerContext* /*context*/) override {}
 };
 
 std::shared_ptr<Server::GlobalCallbacks> g_callbacks = nullptr;
@@ -90,12 +90,12 @@ void InitGlobalCallbacks() {
 
 class ShutdownTag : public internal::CompletionQueueTag {
  public:
-  bool FinalizeResult(void** tag, bool* status) { return false; }
+  bool FinalizeResult(void** /*tag*/, bool* /*status*/) { return false; }
 };
 
 class DummyTag : public internal::CompletionQueueTag {
  public:
-  bool FinalizeResult(void** tag, bool* status) { return true; }
+  bool FinalizeResult(void** /*tag*/, bool* /*status*/) { return true; }
 };
 
 class UnimplementedAsyncRequestContext {
@@ -187,7 +187,7 @@ void ServerInterface::BaseAsyncRequest::
   grpc_cq_begin_op(notification_cq_->cq(), this);
   grpc_cq_end_op(
       notification_cq_->cq(), this, GRPC_ERROR_NONE,
-      [](void* arg, grpc_cq_completion* completion) { delete completion; },
+      [](void* /*arg*/, grpc_cq_completion* completion) { delete completion; },
       nullptr, new grpc_cq_completion());
 }
 
@@ -398,7 +398,7 @@ class Server::SyncRequest final : public grpc::internal::CompletionQueueTag {
     }
   }
 
-  bool FinalizeResult(void** tag, bool* status) override {
+  bool FinalizeResult(void** /*tag*/, bool* status) override {
     if (!*status) {
       grpc_completion_queue_destroy(cq_);
       cq_ = nullptr;
@@ -791,13 +791,13 @@ class Server::CallbackRequest final : public Server::CallbackRequestBase {
 
 template <>
 bool Server::CallbackRequest<grpc::ServerContext>::FinalizeResult(
-    void** tag, bool* status) {
+    void** /*tag*/, bool* /*status*/) {
   return false;
 }
 
 template <>
 bool Server::CallbackRequest<grpc::GenericServerContext>::FinalizeResult(
-    void** tag, bool* status) {
+    void** /*tag*/, bool* status) {
   if (*status) {
     // TODO(yangg) remove the copy here
     ctx_.method_ = grpc::StringFromCopiedSlice(call_details_->method);

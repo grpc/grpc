@@ -167,7 +167,7 @@ static void start_send_status(void) {
 
 /* We have some sort of deadlock, so let's not exit gracefully for now.
    When that is resolved, please remove the #include <unistd.h> above. */
-static void sigint_handler(int x) { _exit(0); }
+static void sigint_handler(int /*x*/) { _exit(0); }
 
 int main(int argc, char** argv) {
   grpc_event ev;

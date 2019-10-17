@@ -41,8 +41,8 @@ void ProtoServerReflectionPlugin::Finish(grpc::ServerInitializer* si) {
   reflection_service_->SetServiceList(si->GetServiceList());
 }
 
-void ProtoServerReflectionPlugin::ChangeArguments(const grpc::string& name,
-                                                  void* value) {}
+void ProtoServerReflectionPlugin::ChangeArguments(const grpc::string& /*name*/,
+                                                  void* /*value*/) {}
 
 bool ProtoServerReflectionPlugin::has_sync_methods() const {
   if (reflection_service_) {

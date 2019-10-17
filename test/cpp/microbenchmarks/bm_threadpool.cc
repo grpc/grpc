@@ -73,7 +73,7 @@ class AddAnotherFunctor : public grpc_experimental_completion_queue_functor {
   }
   // When the functor gets to run in thread pool, it will take itself as first
   // argument and internal_success as second one.
-  static void Run(grpc_experimental_completion_queue_functor* cb, int ok) {
+  static void Run(grpc_experimental_completion_queue_functor* cb, int /*ok*/) {
     auto* callback = static_cast<AddAnotherFunctor*>(cb);
     if (--callback->num_add_ > 0) {
       callback->pool_->Add(new AddAnotherFunctor(
@@ -136,7 +136,7 @@ class SuicideFunctorForAdd : public grpc_experimental_completion_queue_functor {
     internal_success = 0;
   }
 
-  static void Run(grpc_experimental_completion_queue_functor* cb, int ok) {
+  static void Run(grpc_experimental_completion_queue_functor* cb, int /*ok*/) {
     // On running, the first argument would be itself.
     auto* callback = static_cast<SuicideFunctorForAdd*>(cb);
     callback->counter_->DecrementCount();
@@ -190,7 +190,7 @@ class AddSelfFunctor : public grpc_experimental_completion_queue_functor {
   }
   // When the functor gets to run in thread pool, it will take itself as first
   // argument and internal_success as second one.
-  static void Run(grpc_experimental_completion_queue_functor* cb, int ok) {
+  static void Run(grpc_experimental_completion_queue_functor* cb, int /*ok*/) {
     auto* callback = static_cast<AddSelfFunctor*>(cb);
     if (--callback->num_add_ > 0) {
       callback->pool_->Add(cb);
@@ -269,7 +269,7 @@ class ShortWorkFunctorForAdd
     internal_success = 0;
     val_ = 0;
   }
-  static void Run(grpc_experimental_completion_queue_functor* cb, int ok) {
+  static void Run(grpc_experimental_completion_queue_functor* cb, int /*ok*/) {
     auto* callback = static_cast<ShortWorkFunctorForAdd*>(cb);
     // Uses pad to avoid compiler complaining unused variable error.
     callback->pad[0] = 0;
