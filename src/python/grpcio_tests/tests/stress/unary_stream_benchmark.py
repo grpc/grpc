@@ -9,7 +9,7 @@ import datetime
 import sys
 
 _PORT = 5741
-_MESSAGE_SIZE = 1
+_MESSAGE_SIZE = 4
 _RESPONSE_COUNT = 32 * 1024
 
 
@@ -55,7 +55,7 @@ def profile(message_size, response_count):
     call = channel.unary_stream('foo')
     start = datetime.datetime.now()
     request = '{},{}'.format(message_size, response_count).encode('ascii')
-    for _ in call(request, wait_for_ready=True):
+    for message in call(request, wait_for_ready=True):
       pass
     end = datetime.datetime.now()
   return end - start

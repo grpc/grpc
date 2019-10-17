@@ -92,6 +92,7 @@ cdef tuple _operate(grpc_call *c_call, object operations, object user_tag):
   cdef _BatchOperationTag tag = _BatchOperationTag(user_tag, operations, None)
   tag.prepare()
   cpython.Py_INCREF(tag)
+  # print("****************** Starting batch with operations {}".format(operations))
   with nogil:
     c_call_error = grpc_call_start_batch(
         c_call, tag.c_ops, tag.c_nops, <cpython.PyObject *>tag, NULL)
@@ -352,6 +353,10 @@ cdef SegregatedCall _segregated_call(
   def on_success(started_tags):
     state.segregated_call_states.add(call_state)
 
+  # TODO: It doesn't seem necessary to acquire this lock. We're holding the GIL
+  # and we're only doing a read. In fact, there appears to be a race right now
+  # because we don't act on the read until later in the function when we're not
+  # holding the lock.
   with state.condition:
     if state.open:
       c_completion_queue = (grpc_completion_queue_create_for_next(NULL))
@@ -420,8 +425,12 @@ cdef _close(Channel channel, grpc_status_code code, object details,
       else:
         while state.integrated_call_states:
           state.condition.wait()
-        while state.segregated_call_states:
-          state.condition.wait()
+		# This is not valid when we're truly single-threaded because there's no
+		# thread left to dequeue them.
+		# Why is unary-unary not currently running into this problem?
+		# TODO: Figure this out.
+        # while state.segregated_call_states:
+        #   state.condition.wait()
         while state.connectivity_due:
           state.condition.wait()
 
