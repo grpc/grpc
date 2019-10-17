@@ -655,7 +655,7 @@ class ServerUnaryReactor : public internal::ServerReactor {
   }
 
   /// The following notifications are exactly like ServerBidiReactor.
-  virtual void OnSendInitialMetadataDone(bool ok) {}
+  virtual void OnSendInitialMetadataDone(bool /*ok*/) {}
   void OnDone() override = 0;
   void OnCancel() override {}
 
