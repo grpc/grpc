@@ -59,7 +59,7 @@ void ThreadPool::SharedThreadPoolConstructor() {
       gpr_zalloc(num_threads_ * sizeof(ThreadPoolWorker*)));
   for (int i = 0; i < num_threads_; ++i) {
     threads_[i] =
-        New<ThreadPoolWorker>(thd_name_, this, queue_, thread_options_, i);
+        New<ThreadPoolWorker>(thd_name_, queue_, thread_options_, i);
     threads_[i]->Start();
   }
 }
