@@ -181,8 +181,7 @@ static grpc_byte_buffer* generate_handshaker_response(
   return buffer;
 }
 
-static void check_must_not_be_called(tsi_result /*status*/,
-                                     void* /*user_data*/,
+static void check_must_not_be_called(tsi_result /*status*/, void* /*user_data*/,
                                      const unsigned char* /*bytes_to_send*/,
                                      size_t /*bytes_to_send_size*/,
                                      tsi_handshaker_result* /*result*/) {
