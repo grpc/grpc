@@ -80,8 +80,7 @@ TEST_F(SliceTest, SliceNew) {
 }
 
 TEST_F(SliceTest, SliceNewDoNothing) {
-  Slice spp(const_cast<char*>(kContent), strlen(kContent),
-            [](void* /*p*/) {});
+  Slice spp(const_cast<char*>(kContent), strlen(kContent), [](void* /*p*/) {});
   CheckSlice(spp, kContent);
 }
 
