@@ -73,7 +73,7 @@ class BalancerServiceImpl : public LoadBalancer::Service {
   explicit BalancerServiceImpl(const std::vector<int>& all_backend_ports)
       : all_backend_ports_(all_backend_ports) {}
 
-  Status BalanceLoad(ServerContext* context, Stream* stream) override {
+  Status BalanceLoad(ServerContext* /*context*/, Stream* stream) override {
     gpr_log(GPR_INFO, "LB[%p]: Start BalanceLoad.", this);
     LoadBalanceRequest request;
     stream->Read(&request);

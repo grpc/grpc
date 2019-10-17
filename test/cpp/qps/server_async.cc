@@ -365,7 +365,7 @@ class AsyncQpsServerTest final : public grpc::testing::Server {
       }
       return true;
     }
-    bool finish_done(bool ok) { return false; /* reset the context */ }
+    bool finish_done(bool /*ok*/) { return false; /*reset the context*/ }
 
     std::unique_ptr<ServerContextType> srv_ctx_;
     RequestType req_;
@@ -434,7 +434,7 @@ class AsyncQpsServerTest final : public grpc::testing::Server {
       }
       return true;
     }
-    bool finish_done(bool ok) { return false; /* reset the context */ }
+    bool finish_done(bool /*ok*/) { return false; /*reset the context*/ }
 
     std::unique_ptr<ServerContextType> srv_ctx_;
     RequestType req_;
@@ -502,7 +502,7 @@ class AsyncQpsServerTest final : public grpc::testing::Server {
       }
       return true;
     }
-    bool finish_done(bool ok) { return false; /* reset the context */ }
+    bool finish_done(bool /*ok*/) { return false; /*reset the context*/ }
 
     std::unique_ptr<ServerContextType> srv_ctx_;
     RequestType req_;

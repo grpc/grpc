@@ -55,7 +55,7 @@ class MockSocketMutator : public grpc_socket_mutator {
   int mutate_fd_call_count_;
 };
 
-bool mock_socket_mutator_mutate_fd(int fd, grpc_socket_mutator* m) {
+bool mock_socket_mutator_mutate_fd(int /*fd*/, grpc_socket_mutator* m) {
   MockSocketMutator* s = reinterpret_cast<MockSocketMutator*>(m);
   s->mutate_fd_call_count_++;
   return true;

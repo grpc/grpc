@@ -110,7 +110,7 @@ static void on_connect_result_set(on_connect_result* result,
       result->server, acceptor->port_index, acceptor->fd_index);
 }
 
-static void server_weak_ref_shutdown(void* arg, grpc_error* error) {
+static void server_weak_ref_shutdown(void* arg, grpc_error* /*error*/) {
   server_weak_ref* weak_ref = static_cast<server_weak_ref*>(arg);
   weak_ref->server = nullptr;
 }
@@ -144,7 +144,8 @@ static void test_addr_init_str(test_addr* addr) {
   }
 }
 
-static void on_connect(void* arg, grpc_endpoint* tcp, grpc_pollset* pollset,
+static void on_connect(void* /*arg*/, grpc_endpoint* tcp,
+                       grpc_pollset* /*pollset*/,
                        grpc_tcp_server_acceptor* acceptor) {
   grpc_endpoint_shutdown(tcp,
                          GRPC_ERROR_CREATE_FROM_STATIC_STRING("Connected"));
@@ -421,7 +422,7 @@ static void test_connect(size_t num_connects,
   GPR_ASSERT(weak_ref.server == nullptr);
 }
 
-static void destroy_pollset(void* p, grpc_error* error) {
+static void destroy_pollset(void* p, grpc_error* /*error*/) {
   grpc_pollset_destroy(static_cast<grpc_pollset*>(p));
 }
 

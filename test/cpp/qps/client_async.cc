@@ -86,7 +86,7 @@ class ClientRpcContextUnaryImpl : public ClientRpcContext {
     GPR_ASSERT(!config.use_coalesce_api());  // not supported.
     StartInternal(cq);
   }
-  bool RunNextState(bool ok, HistogramEntry* entry) override {
+  bool RunNextState(bool /*ok*/, HistogramEntry* entry) override {
     switch (next_state_) {
       case State::READY:
         start_ = UsageTimer::Now();
@@ -314,7 +314,7 @@ class AsyncUnaryClient final
   ~AsyncUnaryClient() override {}
 
  private:
-  static void CheckDone(const grpc::Status& s, SimpleResponse* response,
+  static void CheckDone(const grpc::Status& s, SimpleResponse* /*response*/,
                         HistogramEntry* entry) {
     entry->set_status(s.error_code());
   }
@@ -498,7 +498,8 @@ class AsyncStreamingPingPongClient final
   ~AsyncStreamingPingPongClient() override {}
 
  private:
-  static void CheckDone(const grpc::Status& s, SimpleResponse* response) {}
+  static void CheckDone(const grpc::Status& /*s*/,
+                        SimpleResponse* /*response*/) {}
   static std::unique_ptr<
       grpc::ClientAsyncReaderWriter<SimpleRequest, SimpleResponse>>
   PrepareReq(BenchmarkService::Stub* stub, grpc::ClientContext* ctx,
@@ -630,7 +631,8 @@ class AsyncStreamingFromClientClient final
   ~AsyncStreamingFromClientClient() override {}
 
  private:
-  static void CheckDone(const grpc::Status& s, SimpleResponse* response) {}
+  static void CheckDone(const grpc::Status& /*s*/,
+                        SimpleResponse* /*response*/) {}
   static std::unique_ptr<grpc::ClientAsyncWriter<SimpleRequest>> PrepareReq(
       BenchmarkService::Stub* stub, grpc::ClientContext* ctx,
       SimpleResponse* resp, CompletionQueue* cq) {
@@ -745,7 +747,8 @@ class AsyncStreamingFromServerClient final
   ~AsyncStreamingFromServerClient() override {}
 
  private:
-  static void CheckDone(const grpc::Status& s, SimpleResponse* response) {}
+  static void CheckDone(const grpc::Status& /*s*/,
+                        SimpleResponse* /*response*/) {}
   static std::unique_ptr<grpc::ClientAsyncReader<SimpleResponse>> PrepareReq(
       BenchmarkService::Stub* stub, grpc::ClientContext* ctx,
       const SimpleRequest& req, CompletionQueue* cq) {
@@ -911,7 +914,7 @@ class GenericAsyncStreamingClient final
   ~GenericAsyncStreamingClient() override {}
 
  private:
-  static void CheckDone(const grpc::Status& s, ByteBuffer* response) {}
+  static void CheckDone(const grpc::Status& /*s*/, ByteBuffer* /*response*/) {}
   static std::unique_ptr<grpc::GenericClientAsyncReaderWriter> PrepareReq(
       grpc::GenericStub* stub, grpc::ClientContext* ctx,
       const grpc::string& method_name, CompletionQueue* cq) {
