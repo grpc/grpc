@@ -61,12 +61,9 @@ class TestServerBuilderPlugin : public ServerBuilderPlugin {
     }
   }
 
-  void Finish(ServerInitializer* /*si*/) override {
-    finish_is_called_ = true;
-  }
+  void Finish(ServerInitializer* /*si*/) override { finish_is_called_ = true; }
 
-  void ChangeArguments(const grpc::string& /*name*/,
-                       void* /*value*/) override {
+  void ChangeArguments(const grpc::string& /*name*/, void* /*value*/) override {
     change_arguments_is_called_ = true;
   }
 

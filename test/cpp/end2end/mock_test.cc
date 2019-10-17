@@ -182,8 +182,7 @@ class TestServiceImpl : public EchoTestService::Service {
     return Status::OK;
   }
 
-  Status ResponseStream(ServerContext* /*context*/,
-                        const EchoRequest* request,
+  Status ResponseStream(ServerContext* /*context*/, const EchoRequest* request,
                         ServerWriter<EchoResponse>* writer) override {
     EchoResponse response;
     vector<grpc::string> tokens = split(request->message());
