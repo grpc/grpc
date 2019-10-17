@@ -105,7 +105,7 @@ class CallbackGenericService {
   /// The "method handler" for the generic API. This function should be
   /// overridden to provide a ServerGenericBidiReactor that implements the
   /// application-level interface for this RPC. Unimplemented by default.
-  virtual void CreateReactor(GenericServerContext* /* ctx */,
+  virtual void CreateReactor(GenericServerContext* /*ctx*/,
                              ServerGenericBidiReactor** reactor) {
     class Reactor : public ServerGenericBidiReactor {
      public:
