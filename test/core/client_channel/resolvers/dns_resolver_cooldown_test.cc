@@ -60,10 +60,11 @@ static struct iomgr_args {
 
 // Wrapper around default resolve_address in order to count the number of
 // times we incur in a system-level name resolution.
-static void test_resolve_address_impl(
-    const char* name, const char* default_port,
-    grpc_pollset_set* /*interested_parties*/, grpc_closure* on_done,
-    grpc_resolved_addresses** addrs) {
+static void test_resolve_address_impl(const char* name,
+                                      const char* default_port,
+                                      grpc_pollset_set* /*interested_parties*/,
+                                      grpc_closure* on_done,
+                                      grpc_resolved_addresses** addrs) {
   default_resolve_address->resolve_address(
       name, default_port, g_iomgr_args.pollset_set, on_done, addrs);
   ++g_resolution_count;
