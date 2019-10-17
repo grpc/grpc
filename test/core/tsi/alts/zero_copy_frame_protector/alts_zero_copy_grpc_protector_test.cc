@@ -295,7 +295,7 @@ static void alts_zero_copy_protector_seal_unseal_large_buffer_tests(
   alts_zero_copy_grpc_protector_test_fixture_destroy(fixture);
 }
 
-int main(int argc, char** argv) {
+int main(int /*argc*/, char** /*argv*/) {
   alts_zero_copy_protector_seal_unseal_small_buffer_tests(
       /*enable_extra_copy=*/false);
   alts_zero_copy_protector_seal_unseal_small_buffer_tests(

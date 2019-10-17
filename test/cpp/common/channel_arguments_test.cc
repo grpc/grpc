@@ -36,7 +36,7 @@ class TestSocketMutator : public grpc_socket_mutator {
  public:
   TestSocketMutator();
 
-  bool MutateFd(int fd) {
+  bool MutateFd(int /*fd*/) {
     // Do nothing on the fd
     return true;
   }
