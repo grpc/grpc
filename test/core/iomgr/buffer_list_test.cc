@@ -27,7 +27,7 @@
 #ifdef GRPC_LINUX_ERRQUEUE
 
 static void TestShutdownFlushesListVerifier(void* arg,
-                                            grpc_core::Timestamps* ts,
+                                            grpc_core::Timestamps* /*ts*/,
                                             grpc_error* error) {
   GPR_ASSERT(error == GRPC_ERROR_NONE);
   GPR_ASSERT(arg != nullptr);
