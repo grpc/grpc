@@ -69,14 +69,14 @@ class ServiceConfig : public RefCounted<ServiceConfig> {
    public:
     virtual ~Parser() = default;
 
-    virtual UniquePtr<ParsedConfig> ParseGlobalParams(const grpc_json* json,
-                                                      grpc_error** error) {
+    virtual UniquePtr<ParsedConfig> ParseGlobalParams(
+        const grpc_json* /* json */, grpc_error** error) {
       GPR_DEBUG_ASSERT(error != nullptr);
       return nullptr;
     }
 
-    virtual UniquePtr<ParsedConfig> ParsePerMethodParams(const grpc_json* json,
-                                                         grpc_error** error) {
+    virtual UniquePtr<ParsedConfig> ParsePerMethodParams(
+        const grpc_json* /* json */, grpc_error** error) {
       GPR_DEBUG_ASSERT(error != nullptr);
       return nullptr;
     }
