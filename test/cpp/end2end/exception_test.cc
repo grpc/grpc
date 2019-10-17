@@ -39,8 +39,7 @@ const char* kErrorMessage = "This service caused an exception";
 #if GRPC_ALLOW_EXCEPTIONS
 class ExceptingServiceImpl : public ::grpc::testing::EchoTestService::Service {
  public:
-  Status Echo(ServerContext* /*server_context*/,
-              const EchoRequest* /*request*/,
+  Status Echo(ServerContext* /*server_context*/, const EchoRequest* /*request*/,
               EchoResponse* /*response*/) override {
     throw - 1;
   }
