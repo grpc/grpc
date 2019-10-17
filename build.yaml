@@ -1230,6 +1230,16 @@ filegroups:
   uses:
   - grpc_base
   - grpc_client_channel
+  - grpc_xds_client
+- name: grpc_resolver_xds_secure
+  src:
+  - src/core/ext/filters/client_channel/resolver/xds/xds_resolver.cc
+  plugin: grpc_resolver_xds
+  uses:
+  - grpc_base
+  - grpc_client_channel
+  - grpc_secure
+  - grpc_xds_client_secure
 - name: grpc_secure
   public_headers:
   - include/grpc/grpc_security.h
@@ -1678,7 +1688,7 @@ libs:
   - grpc_resolver_dns_native
   - grpc_resolver_sockaddr
   - grpc_resolver_fake
-  - grpc_resolver_xds
+  - grpc_resolver_xds_secure
   - grpc_secure
   - census
   - grpc_client_idle_filter
