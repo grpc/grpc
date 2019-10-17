@@ -70,7 +70,7 @@ class CallbackWithStatusTag
  public:
   // always allocated against a call arena, no memory free required
   static void operator delete(void* /*ptr*/, std::size_t size) {
-    assert(size == sizeof(CallbackWithStatusTag));
+    GPR_CODEGEN_ASSERT(size == sizeof(CallbackWithStatusTag));
   }
 
   // This operator should never be called as the memory should be freed as part
@@ -78,7 +78,7 @@ class CallbackWithStatusTag
   // delete to the operator new so that some compilers will not complain (see
   // https://github.com/grpc/grpc/issues/11301) Note at the time of adding this
   // there are no tests catching the compiler warning.
-  static void operator delete(void*, void*) { assert(0); }
+  static void operator delete(void*, void*) { GPR_CODEGEN_ASSERT(false); }
 
   CallbackWithStatusTag(grpc_call* call, std::function<void(Status)> f,
                         CompletionQueueTag* ops)
@@ -134,7 +134,7 @@ class CallbackWithSuccessTag
  public:
   // always allocated against a call arena, no memory free required
   static void operator delete(void* /*ptr*/, std::size_t size) {
-    assert(size == sizeof(CallbackWithSuccessTag));
+    GPR_CODEGEN_ASSERT(size == sizeof(CallbackWithSuccessTag));
   }
 
   // This operator should never be called as the memory should be freed as part
@@ -142,7 +142,7 @@ class CallbackWithSuccessTag
   // delete to the operator new so that some compilers will not complain (see
   // https://github.com/grpc/grpc/issues/11301) Note at the time of adding this
   // there are no tests catching the compiler warning.
-  static void operator delete(void*, void*) { assert(0); }
+  static void operator delete(void*, void*) { GPR_CODEGEN_ASSERT(false); }
 
   CallbackWithSuccessTag() : call_(nullptr) {}
 
