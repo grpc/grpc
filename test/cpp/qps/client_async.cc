@@ -914,8 +914,7 @@ class GenericAsyncStreamingClient final
   ~GenericAsyncStreamingClient() override {}
 
  private:
-  static void CheckDone(const grpc::Status& /*s*/,
-                        ByteBuffer* /*response*/) {}
+  static void CheckDone(const grpc::Status& /*s*/, ByteBuffer* /*response*/) {}
   static std::unique_ptr<grpc::GenericClientAsyncReaderWriter> PrepareReq(
       grpc::GenericStub* stub, grpc::ClientContext* ctx,
       const grpc::string& method_name, CompletionQueue* cq) {

@@ -320,8 +320,8 @@ class CallbackStreamingPingPongReactor final
       if (ctx_->alarm_ == nullptr) {
         ctx_->alarm_.reset(new Alarm);
       }
-      ctx_->alarm_->experimental().Set(
-          next_issue_time, [this](bool /*ok*/) { StartNewRpc(); });
+      ctx_->alarm_->experimental().Set(next_issue_time,
+                                       [this](bool /*ok*/) { StartNewRpc(); });
     } else {
       StartNewRpc();
     }
