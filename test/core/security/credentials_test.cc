@@ -579,8 +579,8 @@ static int compute_engine_httpcli_get_failure_override(
 
 static int httpcli_post_should_not_be_called(
     const grpc_httpcli_request* /*request*/, const char* /*body_bytes*/,
-    size_t /*body_size*/, grpc_millis /*deadline*/,
-    grpc_closure* /*on_done*/, grpc_httpcli_response* /*response*/) {
+    size_t /*body_size*/, grpc_millis /*deadline*/, grpc_closure* /*on_done*/,
+    grpc_httpcli_response* /*response*/) {
   GPR_ASSERT("HTTP POST should not be called" == nullptr);
   return 1;
 }

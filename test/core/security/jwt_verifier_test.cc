@@ -319,8 +319,8 @@ static grpc_httpcli_response http_response(int status, char* body) {
 
 static int httpcli_post_should_not_be_called(
     const grpc_httpcli_request* /*request*/, const char* /*body_bytes*/,
-    size_t /*body_size*/, grpc_millis /*deadline*/,
-    grpc_closure* /*on_done*/, grpc_httpcli_response* /*response*/) {
+    size_t /*body_size*/, grpc_millis /*deadline*/, grpc_closure* /*on_done*/,
+    grpc_httpcli_response* /*response*/) {
   GPR_ASSERT("HTTP POST should not be called" == nullptr);
   return 1;
 }
@@ -405,8 +405,7 @@ static void test_jwt_verifier_custom_email_issuer_success(void) {
 }
 
 static int httpcli_get_jwk_set(const grpc_httpcli_request* request,
-                               grpc_millis /*deadline*/,
-                               grpc_closure* on_done,
+                               grpc_millis /*deadline*/, grpc_closure* on_done,
                                grpc_httpcli_response* response) {
   *response = http_response(200, gpr_strdup(good_jwk_set));
   GPR_ASSERT(request->handshaker == &grpc_httpcli_ssl);
@@ -461,8 +460,7 @@ static void on_verification_key_retrieval_error(void* user_data,
 }
 
 static int httpcli_get_bad_json(const grpc_httpcli_request* request,
-                                grpc_millis /*deadline*/,
-                                grpc_closure* on_done,
+                                grpc_millis /*deadline*/, grpc_closure* on_done,
                                 grpc_httpcli_response* response) {
   *response = http_response(200, gpr_strdup("{\"bad\": \"stuff\"}"));
   GPR_ASSERT(request->handshaker == &grpc_httpcli_ssl);
