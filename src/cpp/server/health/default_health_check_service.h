@@ -120,8 +120,8 @@ class DefaultHealthCheckService final : public HealthCheckServiceInterface {
                        HealthCheckServiceImpl* service);
 
       // Not used for Check.
-      void SendHealth(std::shared_ptr<CallHandler> self,
-                      ServingStatus status) override {}
+      void SendHealth(std::shared_ptr<CallHandler> /*self*/,
+                      ServingStatus /*status*/) override {}
 
      private:
       // Called when we receive a call.

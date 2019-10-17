@@ -57,7 +57,7 @@ grpc_tls_key_materials_config* ConvertToCKeyMaterialsConfig(
 /** The C schedule and cancel functions for the credential reload config.
  * They populate a C credential reload arg with the result of a C++ credential
  * reload schedule/cancel API. **/
-int TlsCredentialReloadConfigCSchedule(void* config_user_data,
+int TlsCredentialReloadConfigCSchedule(void* /*config_user_data*/,
                                        grpc_tls_credential_reload_arg* arg) {
   if (arg == nullptr || arg->config == nullptr ||
       arg->config->context() == nullptr) {
@@ -71,7 +71,7 @@ int TlsCredentialReloadConfigCSchedule(void* config_user_data,
   return schedule_result;
 }
 
-void TlsCredentialReloadConfigCCancel(void* config_user_data,
+void TlsCredentialReloadConfigCCancel(void* /*config_user_data*/,
                                       grpc_tls_credential_reload_arg* arg) {
   if (arg == nullptr || arg->config == nullptr ||
       arg->config->context() == nullptr) {
@@ -101,7 +101,7 @@ void TlsCredentialReloadArgDestroyContext(void* context) {
  * config. They populate a C server authorization check arg with the result
  * of a C++ server authorization check schedule/cancel API. **/
 int TlsServerAuthorizationCheckConfigCSchedule(
-    void* config_user_data, grpc_tls_server_authorization_check_arg* arg) {
+    void* /*config_user_data*/, grpc_tls_server_authorization_check_arg* arg) {
   if (arg == nullptr || arg->config == nullptr ||
       arg->config->context() == nullptr) {
     gpr_log(GPR_ERROR,
@@ -117,7 +117,7 @@ int TlsServerAuthorizationCheckConfigCSchedule(
 }
 
 void TlsServerAuthorizationCheckConfigCCancel(
-    void* config_user_data, grpc_tls_server_authorization_check_arg* arg) {
+    void* /*config_user_data*/, grpc_tls_server_authorization_check_arg* arg) {
   if (arg == nullptr || arg->config == nullptr ||
       arg->config->context() == nullptr) {
     gpr_log(GPR_ERROR,
