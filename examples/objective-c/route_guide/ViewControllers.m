@@ -23,6 +23,8 @@
 #import "examples/protos/RouteGuide.pbrpc.h"
 #endif
 
+#import <GRPCClient/GRPCTransport.h>
+
 static NSString * const kHostAddress = @"localhost:50051";
 
 /** Category to override RTGPoint's description. */
@@ -123,7 +125,7 @@ static NSString * const kHostAddress = @"localhost:50051";
   [super viewDidLoad];
 
   GRPCMutableCallOptions *options = [[GRPCMutableCallOptions alloc] init];
-  options.transportType = GRPCTransportTypeInsecure;
+  options.transport = GRPCDefaultTransportImplList.core_insecure;
 
   _service = [[RTGRouteGuide alloc] initWithHost:kHostAddress callOptions:options];
 }
@@ -193,7 +195,7 @@ static NSString * const kHostAddress = @"localhost:50051";
   [super viewDidLoad];
 
   GRPCMutableCallOptions *options = [[GRPCMutableCallOptions alloc] init];
-  options.transportType = GRPCTransportTypeInsecure;
+  options.transport = GRPCDefaultTransportImplList.core_insecure;
 
   _service = [[RTGRouteGuide alloc] initWithHost:kHostAddress callOptions:options];
 }
@@ -286,7 +288,7 @@ static NSString * const kHostAddress = @"localhost:50051";
   [super viewDidLoad];
 
   GRPCMutableCallOptions *options = [[GRPCMutableCallOptions alloc] init];
-  options.transportType = GRPCTransportTypeInsecure;
+  options.transport = GRPCDefaultTransportImplList.core_insecure;
 
   _service = [[RTGRouteGuide alloc] initWithHost:kHostAddress callOptions:options];
 }
@@ -360,7 +362,7 @@ static NSString * const kHostAddress = @"localhost:50051";
   [super viewDidLoad];
 
   GRPCMutableCallOptions *options = [[GRPCMutableCallOptions alloc] init];
-  options.transportType = GRPCTransportTypeInsecure;
+  options.transport = GRPCDefaultTransportImplList.core_insecure;
 
   _service = [[RTGRouteGuide alloc] initWithHost:kHostAddress callOptions:options];
 }
