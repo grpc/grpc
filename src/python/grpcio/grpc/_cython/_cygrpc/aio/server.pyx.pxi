@@ -21,21 +21,26 @@ cdef class _HandlerCallDetails:
 class _ServicerContextPlaceHolder(object): pass
 
 
+# TODO(https://github.com/grpc/grpc/issues/20669)
+# Apply this to the client-side
 cdef class CallbackWrapper:
     cdef CallbackContext context
-    cdef object future
+    cdef object _keep_reference
 
     def __cinit__(self, object future):
         self.context.functor.functor_run = self.functor_run
         self.context.waiter = <cpython.PyObject*>(future)
-        self.future = future
+        self._keep_reference = future
 
     @staticmethod
     cdef void functor_run(
             grpc_experimental_completion_queue_functor* functor,
             int succeed):
         cdef CallbackContext *context = <CallbackContext *>functor
-        (<object>context.waiter).set_result(None)
+        if succeed == 0:
+            (<object>context.waiter).set_exception(RuntimeError())
+        else:
+            (<object>context.waiter).set_result(None)
 
     cdef grpc_experimental_completion_queue_functor *c_functor(self):
         return &self.context.functor
@@ -178,13 +183,11 @@ async def _server_call_request_call(_AioServerState server_state, object loop):
 async def _server_main_loop(_AioServerState server_state):
     cdef object loop = asyncio.get_event_loop()
     cdef RPCState rpc_state
-    cdef object waiter
 
     while True:
         rpc_state = await _server_call_request_call(
             server_state,
             loop)
-        # await waiter
 
         loop.create_task(_handle_rpc(server_state, rpc_state, loop))
         await asyncio.sleep(0)
@@ -212,6 +215,7 @@ cdef class AioServer:
             NULL,
             NULL
         )
+        self._state.status = AIO_SERVER_STATUS_READY
         grpc_server_register_completion_queue(
             self._state.server.c_server,
             self._state.cq,
@@ -240,9 +244,17 @@ cdef class AioServer:
                                           server_credentials._credentials)
 
     async def start(self):
+        if self._state.status == AIO_SERVER_STATUS_RUNNING:
+            return
+        elif self._state.status != AIO_SERVER_STATUS_READY:
+            raise RuntimeError('Server not in ready state')
+
+        self._state.status = AIO_SERVER_STATUS_RUNNING
         loop = asyncio.get_event_loop()
         loop.create_task(_server_start(self._state))
         await asyncio.sleep(0)
 
+    # TODO(https://github.com/grpc/grpc/issues/20668)
+    # Implement Destruction Methods for AsyncIO Server
     def stop(self, unused_grace):
         pass

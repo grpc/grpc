@@ -35,7 +35,10 @@ cdef class _AsyncioSocket:
         object _peername
 
     @staticmethod
-    cdef _AsyncioSocket create(grpc_custom_socket * grpc_socket)
+    cdef _AsyncioSocket create(
+            grpc_custom_socket * grpc_socket,
+            object reader,
+            object writer)
     @staticmethod
     cdef _AsyncioSocket create_with_py_socket(grpc_custom_socket * grpc_socket, object py_socket)
 

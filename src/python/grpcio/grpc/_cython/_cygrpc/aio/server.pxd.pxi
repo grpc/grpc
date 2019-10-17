@@ -25,10 +25,18 @@ cdef class RPCState:
     cdef bytes method(self)
 
 
+cdef enum AioServerStatus:
+    AIO_SERVER_STATUS_UNKNOWN
+    AIO_SERVER_STATUS_READY
+    AIO_SERVER_STATUS_RUNNING
+    AIO_SERVER_STATUS_STOPPED
+
+
 cdef class _AioServerState:
     cdef Server server
     cdef grpc_completion_queue *cq
     cdef list generic_handlers
+    cdef AioServerStatus status
 
 
 cdef class AioServer:

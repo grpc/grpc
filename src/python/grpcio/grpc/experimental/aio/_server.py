@@ -112,7 +112,7 @@ class Server:
 
     async def wait_for_termination(self,
                                    timeout: Optional[float] = None) -> bool:
-        """Block current thread until the server stops.
+        """Block current coroutine until the server stops.
 
         This is an EXPERIMENTAL API.
 

@@ -16,16 +16,25 @@ import asyncio
 import logging
 import unittest
 
+import grpc
 from grpc.experimental import aio
 from src.proto.grpc.testing import messages_pb2
 from src.proto.grpc.testing import benchmark_service_pb2_grpc
 
+_TEST_METHOD_PATH = ''
 
-class BenchmarkServer(benchmark_service_pb2_grpc.BenchmarkServiceServicer):
+_REQUEST = b'\x00\x00\x00'
+_RESPONSE = b'\x01\x01\x01'
 
-    async def UnaryCall(self, request, context):
-        payload = messages_pb2.Payload(body=b'\0' * request.response_size)
-        return messages_pb2.SimpleResponse(payload=payload)
+
+async def unary_unary(unused_request, unused_context):
+    return _RESPONSE
+
+
+class GenericHandler(grpc.GenericRpcHandler):
+
+    def service(self, unused_handler_details):
+        return grpc.unary_unary_rpc_method_handler(unary_unary)
 
 
 class TestServer(unittest.TestCase):
@@ -36,21 +45,13 @@ class TestServer(unittest.TestCase):
         async def test_unary_unary_body():
             server = aio.server()
             port = server.add_insecure_port(('[::]:0').encode('ASCII'))
-            benchmark_service_pb2_grpc.add_BenchmarkServiceServicer_to_server(
-                BenchmarkServer(), server)
+            server.add_generic_rpc_handlers((GenericHandler(),))
             await server.start()
 
             async with aio.insecure_channel(f'localhost:{port}') as channel:
-                unary_call = channel.unary_unary(
-                    '/grpc.testing.BenchmarkService/UnaryCall',
-                    request_serializer=messages_pb2.SimpleRequest.
-                    SerializeToString,
-                    response_deserializer=messages_pb2.SimpleResponse.FromString
-                )
-                response = await unary_call(
-                    messages_pb2.SimpleRequest(response_size=1))
-                self.assertIsInstance(response, messages_pb2.SimpleResponse)
-                self.assertEqual(1, len(response.payload.body))
+                unary_call = channel.unary_unary(_TEST_METHOD_PATH)
+                response = await unary_call(_REQUEST)
+                self.assertEqual(response, _RESPONSE)
 
         loop.run_until_complete(test_unary_unary_body())
 

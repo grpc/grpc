@@ -28,11 +28,18 @@ cdef class _AsyncioSocket:
         self._read_buffer = NULL
         self._server = None
         self._py_socket = None
+        self._peername = None
 
     @staticmethod
-    cdef _AsyncioSocket create(grpc_custom_socket * grpc_socket):
+    cdef _AsyncioSocket create(grpc_custom_socket * grpc_socket,
+                               object reader,
+                               object writer):
         socket = _AsyncioSocket()
         socket._grpc_socket = grpc_socket
+        socket._reader = reader
+        socket._writer = writer
+        if writer is not None:
+            socket._peername = writer.get_extra_info('peername')
         return socket
 
     @staticmethod
@@ -101,7 +108,13 @@ cdef class _AsyncioSocket:
                 grpc_socket_error("read {}".format(error_msg).encode())
             )
 
-    cdef void connect(self, object host, object port, grpc_custom_connect_callback grpc_connect_cb):
+    cdef void connect(self,
+                      object host,
+                      object port,
+                      grpc_custom_connect_callback grpc_connect_cb):
+        if self._reader:
+            return
+
         assert not self._task_connect
 
         self._task_connect = asyncio.ensure_future(
@@ -143,10 +156,11 @@ cdef class _AsyncioSocket:
             self._writer.close()
 
     def _new_connection_callback(self, object reader, object writer):
-        client_socket = _AsyncioSocket.create(self._grpc_client_socket)
-        client_socket._reader = reader
-        client_socket._writer = writer
-        client_socket._peername = addr = writer.get_extra_info('peername')
+        client_socket = _AsyncioSocket.create(
+            self._grpc_client_socket,
+            reader,
+            writer,
+        )
 
         self._grpc_client_socket.impl = <void*>client_socket
         cpython.Py_INCREF(client_socket)

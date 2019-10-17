@@ -27,7 +27,7 @@ cdef grpc_custom_poller_vtable asyncio_pollset_vtable
 cdef grpc_error* asyncio_socket_init(
         grpc_custom_socket* grpc_socket,
         int domain) with gil:
-    socket = _AsyncioSocket.create(grpc_socket)
+    socket = _AsyncioSocket.create(grpc_socket, None, None)
     Py_INCREF(socket)
     grpc_socket.impl = <void*>socket
     return <grpc_error*>0
@@ -115,12 +115,11 @@ cdef grpc_error* asyncio_socket_listen(grpc_custom_socket* grpc_socket) with gil
     return grpc_error_none()
 
 
-# TODO(lidiz) connects the so_reuse_port option to channel arguments
 def _asyncio_apply_socket_options(object s, so_reuse_port=False):
-  s.setsockopt(native_socket.SOL_SOCKET, native_socket.SO_REUSEADDR, 1)
-  if so_reuse_port:
-    s.setsockopt(native_socket.SOL_SOCKET, native_socket.SO_REUSEPORT, 1)
-  s.setsockopt(native_socket.IPPROTO_TCP, native_socket.TCP_NODELAY, True)
+    # TODO(https://github.com/grpc/grpc/issues/20667)
+    # Connects the so_reuse_port option to channel arguments
+    s.setsockopt(native_socket.SOL_SOCKET, native_socket.SO_REUSEADDR, 1)
+    s.setsockopt(native_socket.IPPROTO_TCP, native_socket.TCP_NODELAY, True)
 
 
 cdef grpc_error* asyncio_socket_bind(
