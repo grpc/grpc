@@ -375,9 +375,8 @@ static grpc_address_resolver_vtable fuzzer_resolver = {my_resolve_address,
                                                        nullptr};
 
 grpc_ares_request* my_dns_lookup_ares_locked(
-    const char* /*dns_server*/, const char* addr,
-    const char* /*default_port*/, grpc_pollset_set* /*interested_parties*/,
-    grpc_closure* on_done,
+    const char* /*dns_server*/, const char* addr, const char* /*default_port*/,
+    grpc_pollset_set* /*interested_parties*/, grpc_closure* on_done,
     grpc_core::UniquePtr<grpc_core::ServerAddressList>* addresses,
     bool /*check_grpclb*/, char** /*service_config_json*/,
     int /*query_timeout*/, grpc_combiner* /*combiner*/) {
