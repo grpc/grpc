@@ -46,8 +46,8 @@ class TestServiceImpl : public ::grpc::testing::EchoTestService::Service {
  public:
   explicit TestServiceImpl(gpr_event* ev) : ev_(ev) {}
 
-  Status Echo(ServerContext* context, const EchoRequest* request,
-              EchoResponse* response) override {
+  Status Echo(ServerContext* context, const EchoRequest* /*request*/,
+              EchoResponse* /*response*/) override {
     gpr_event_set(ev_, (void*)1);
     while (!context->IsCancelled()) {
     }

@@ -423,7 +423,7 @@ class LrsServiceImpl : public LrsService {
       : client_load_reporting_interval_seconds_(
             client_load_reporting_interval_seconds) {}
 
-  Status StreamLoadStats(ServerContext* context, Stream* stream) override {
+  Status StreamLoadStats(ServerContext* /*context*/, Stream* stream) override {
     gpr_log(GPR_INFO, "LRS[%p]: StreamLoadStats starts", this);
     // Read request.
     LoadStatsRequest request;

@@ -70,7 +70,7 @@ class CallbackTestServiceImpl
     allocator_mutator_ = mutator;
   }
 
-  void Echo(ServerContext* context, const EchoRequest* request,
+  void Echo(ServerContext* /*context*/, const EchoRequest* request,
             EchoResponse* response,
             experimental::ServerUnaryReactor** reactor) override {
     response->set_message(request->message());
