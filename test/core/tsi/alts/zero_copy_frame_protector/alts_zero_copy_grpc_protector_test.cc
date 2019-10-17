@@ -296,6 +296,7 @@ static void alts_zero_copy_protector_seal_unseal_large_buffer_tests(
 }
 
 int main(int /*argc*/, char** /*argv*/) {
+  grpc_init();
   alts_zero_copy_protector_seal_unseal_small_buffer_tests(
       /*enable_extra_copy=*/false);
   alts_zero_copy_protector_seal_unseal_small_buffer_tests(
@@ -304,5 +305,6 @@ int main(int /*argc*/, char** /*argv*/) {
       /*enable_extra_copy=*/false);
   alts_zero_copy_protector_seal_unseal_large_buffer_tests(
       /*enable_extra_copy=*/true);
+  grpc_shutdown();
   return 0;
 }
