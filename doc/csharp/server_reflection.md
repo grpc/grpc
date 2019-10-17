@@ -29,8 +29,7 @@ server = new Server()
 server.Start();
 ```
 ### Server Reflection in C# in .NET Core 3.0 sevices
-Since now a days in .NET Core 3.0, sevices are registered in startup.cs and build in program.cs , below is the way one can implement Server Reflection
-
+Since now a days in .NET Core 3.0, sevices are registered in startup.cs and build in program.cs, below is the way one can implement Server Reflection
 ```csharp
 //Create a class named ReflectionImplementation which inherits ReflectionServiceImpl (using nuget Grpc.Reflection)
  public class ReflectionImplementation: ReflectionServiceImpl
