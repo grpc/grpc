@@ -287,8 +287,7 @@ static void client_init(client* cl) {
 }
 
 /* Called when a client upload session is ready to shutdown. */
-static void client_session_shutdown_cb(void* arg /*client*/,
-                                       int /*success*/) {
+static void client_session_shutdown_cb(void* arg /*client*/, int /*success*/) {
   client* cl = static_cast<client*>(arg);
   grpc_fd_orphan(cl->em_fd, nullptr, nullptr, "c");
   cl->done = 1;
