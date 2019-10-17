@@ -422,7 +422,7 @@ class ClientCallbackReaderWriterImpl
  public:
   // always allocated against a call arena, no memory free required
   static void operator delete(void* /*ptr*/, std::size_t size) {
-    assert(size == sizeof(ClientCallbackReaderWriterImpl));
+    GPR_CODEGEN_ASSERT(size == sizeof(ClientCallbackReaderWriterImpl));
   }
 
   // This operator should never be called as the memory should be freed as part
@@ -430,7 +430,7 @@ class ClientCallbackReaderWriterImpl
   // delete to the operator new so that some compilers will not complain (see
   // https://github.com/grpc/grpc/issues/11301) Note at the time of adding this
   // there are no tests catching the compiler warning.
-  static void operator delete(void*, void*) { assert(0); }
+  static void operator delete(void*, void*) { GPR_CODEGEN_ASSERT(false); }
 
   void MaybeFinish() {
     if (GPR_UNLIKELY(callbacks_outstanding_.fetch_sub(
@@ -634,7 +634,7 @@ class ClientCallbackReaderImpl
  public:
   // always allocated against a call arena, no memory free required
   static void operator delete(void* /*ptr*/, std::size_t size) {
-    assert(size == sizeof(ClientCallbackReaderImpl));
+    GPR_CODEGEN_ASSERT(size == sizeof(ClientCallbackReaderImpl));
   }
 
   // This operator should never be called as the memory should be freed as part
@@ -642,7 +642,7 @@ class ClientCallbackReaderImpl
   // delete to the operator new so that some compilers will not complain (see
   // https://github.com/grpc/grpc/issues/11301) Note at the time of adding this
   // there are no tests catching the compiler warning.
-  static void operator delete(void*, void*) { assert(0); }
+  static void operator delete(void*, void*) { GPR_CODEGEN_ASSERT(false); }
 
   void MaybeFinish() {
     if (GPR_UNLIKELY(callbacks_outstanding_.fetch_sub(
@@ -774,7 +774,7 @@ class ClientCallbackWriterImpl
  public:
   // always allocated against a call arena, no memory free required
   static void operator delete(void* /*ptr*/, std::size_t size) {
-    assert(size == sizeof(ClientCallbackWriterImpl));
+    GPR_CODEGEN_ASSERT(size == sizeof(ClientCallbackWriterImpl));
   }
 
   // This operator should never be called as the memory should be freed as part
@@ -782,7 +782,7 @@ class ClientCallbackWriterImpl
   // delete to the operator new so that some compilers will not complain (see
   // https://github.com/grpc/grpc/issues/11301) Note at the time of adding this
   // there are no tests catching the compiler warning.
-  static void operator delete(void*, void*) { assert(0); }
+  static void operator delete(void*, void*) { GPR_CODEGEN_ASSERT(false); }
 
   void MaybeFinish() {
     if (GPR_UNLIKELY(callbacks_outstanding_.fetch_sub(
@@ -962,7 +962,7 @@ class ClientCallbackUnaryImpl final : public experimental::ClientCallbackUnary {
  public:
   // always allocated against a call arena, no memory free required
   static void operator delete(void* /*ptr*/, std::size_t size) {
-    assert(size == sizeof(ClientCallbackUnaryImpl));
+    GPR_CODEGEN_ASSERT(size == sizeof(ClientCallbackUnaryImpl));
   }
 
   // This operator should never be called as the memory should be freed as part
@@ -970,7 +970,7 @@ class ClientCallbackUnaryImpl final : public experimental::ClientCallbackUnary {
   // delete to the operator new so that some compilers will not complain (see
   // https://github.com/grpc/grpc/issues/11301) Note at the time of adding this
   // there are no tests catching the compiler warning.
-  static void operator delete(void*, void*) { assert(0); }
+  static void operator delete(void*, void*) { GPR_CODEGEN_ASSERT(false); }
 
   void StartCall() override {
     // This call initiates two batches, each with a callback

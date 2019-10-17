@@ -19,14 +19,12 @@
 #ifndef GRPCPP_IMPL_CODEGEN_CALL_OP_SET_H
 #define GRPCPP_IMPL_CODEGEN_CALL_OP_SET_H
 
-#include <assert.h>
-#include <array>
 #include <cstring>
-#include <functional>
 #include <map>
 #include <memory>
-#include <vector>
 
+#include <grpc/impl/codegen/compression_types.h>
+#include <grpc/impl/codegen/grpc_types.h>
 #include <grpcpp/impl/codegen/byte_buffer.h>
 #include <grpcpp/impl/codegen/call.h>
 #include <grpcpp/impl/codegen/call_hook.h>
@@ -41,10 +39,6 @@
 #include <grpcpp/impl/codegen/serialization_traits.h>
 #include <grpcpp/impl/codegen/slice.h>
 #include <grpcpp/impl/codegen/string_ref.h>
-
-#include <grpc/impl/codegen/atm.h>
-#include <grpc/impl/codegen/compression_types.h>
-#include <grpc/impl/codegen/grpc_types.h>
 
 namespace grpc {
 
@@ -940,18 +934,29 @@ class CallOpSet : public CallOpSetInterface,
     this->Op4::AddOp(ops, &nops);
     this->Op5::AddOp(ops, &nops);
     this->Op6::AddOp(ops, &nops);
-    GPR_CODEGEN_ASSERT(GRPC_CALL_OK ==
-                       g_core_codegen_interface->grpc_call_start_batch(
-                           call_.call(), ops, nops, core_cq_tag(), nullptr));
+
+    grpc_call_error err = g_core_codegen_interface->grpc_call_start_batch(
+        call_.call(), ops, nops, core_cq_tag(), nullptr);
+
+    if (err != GRPC_CALL_OK) {
+      // A failure here indicates an API misuse; for example, doing a Write
+      // while another Write is already pending on the same RPC or invoking
+      // WritesDone multiple times
+      gpr_log(GPR_ERROR, "API misuse of type %s observed",
+              g_core_codegen_interface->grpc_call_error_to_string(err));
+      GPR_CODEGEN_ASSERT(false);
+    }
   }
 
   // Should be called after interceptors are done running on the finalize result
   // path
   void ContinueFinalizeResultAfterInterception() override {
     done_intercepting_ = true;
-    GPR_CODEGEN_ASSERT(GRPC_CALL_OK ==
-                       g_core_codegen_interface->grpc_call_start_batch(
-                           call_.call(), nullptr, 0, core_cq_tag(), nullptr));
+    // The following call_start_batch is internally-generated so no need for an
+    // explanatory log on failure.
+    GPR_CODEGEN_ASSERT(g_core_codegen_interface->grpc_call_start_batch(
+                           call_.call(), nullptr, 0, core_cq_tag(), nullptr) ==
+                       GRPC_CALL_OK);
   }
 
  private:

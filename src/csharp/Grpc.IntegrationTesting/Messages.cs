@@ -97,7 +97,7 @@ namespace Grpc.Testing {
   /// the server via the "gRPCLB fallback" path, and "backend" if it detects
   /// that the RPC reached the server via "gRPCLB backend" path (i.e. if it got
   /// the address of this server from the gRPCLB server BalanceLoad RPC). Exactly
-  /// how this detection is done is context and server dependant.
+  /// how this detection is done is context and server dependent.
   /// </summary>
   public enum GrpclbRouteType {
     /// <summary>

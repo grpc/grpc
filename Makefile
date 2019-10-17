@@ -498,11 +498,11 @@ ifeq ($(HAS_PKG_CONFIG), true)
 CACHE_MK += HAS_PKG_CONFIG = true,
 endif
 
-CORE_PC_TEMPLATE = prefix=$(prefix),exec_prefix=\$${prefix},includedir=\$${prefix}/include,libdir=\$${exec_prefix}/lib,,Name: $(PC_NAME),Description: $(PC_DESCRIPTION),Version: $(CORE_VERSION),Cflags: -I\$${includedir} $(PC_CFLAGS),Requires.private: $(PC_REQUIRES_PRIVATE),Libs: -L\$${libdir} $(PC_LIB),Libs.private: $(PC_LIBS_PRIVATE)
+CORE_PC_TEMPLATE = prefix=$(prefix),exec_prefix=\$${prefix},includedir=\$${prefix}/include,libdir=\$${exec_prefix}/lib,,Name: $(PC_NAME),Description: $(PC_DESCRIPTION),Version: $(CORE_VERSION),Cflags: -I\$${includedir} $(PC_CFLAGS),Requires: $(PC_REQUIRES),Libs: -L\$${libdir} $(PC_LIB),Libs.private: $(PC_LIBS_PRIVATE)
 
-CPP_PC_TEMPLATE = prefix=$(prefix),exec_prefix=\$${prefix},includedir=\$${prefix}/include,libdir=\$${exec_prefix}/lib,,Name: $(PC_NAME),Description: $(PC_DESCRIPTION),Version: $(CPP_VERSION),Cflags: -I\$${includedir} $(PC_CFLAGS),Requires.private: $(PC_REQUIRES_PRIVATE),Libs: -L\$${libdir} $(PC_LIB),Libs.private: $(PC_LIBS_PRIVATE)
+CPP_PC_TEMPLATE = prefix=$(prefix),exec_prefix=\$${prefix},includedir=\$${prefix}/include,libdir=\$${exec_prefix}/lib,,Name: $(PC_NAME),Description: $(PC_DESCRIPTION),Version: $(CPP_VERSION),Cflags: -I\$${includedir} $(PC_CFLAGS),Requires: $(PC_REQUIRES),Libs: -L\$${libdir} $(PC_LIB),Libs.private: $(PC_LIBS_PRIVATE)
 
-CSHARP_PC_TEMPLATE = prefix=$(prefix),exec_prefix=\$${prefix},includedir=\$${prefix}/include,libdir=\$${exec_prefix}/lib,,Name: $(PC_NAME),Description: $(PC_DESCRIPTION),Version: $(CSHARP_VERSION),Cflags: -I\$${includedir} $(PC_CFLAGS),Requires.private: $(PC_REQUIRES_PRIVATE),Libs: -L\$${libdir} $(PC_LIB),Libs.private: $(PC_LIBS_PRIVATE)
+CSHARP_PC_TEMPLATE = prefix=$(prefix),exec_prefix=\$${prefix},includedir=\$${prefix}/include,libdir=\$${exec_prefix}/lib,,Name: $(PC_NAME),Description: $(PC_DESCRIPTION),Version: $(CSHARP_VERSION),Cflags: -I\$${includedir} $(PC_CFLAGS),Requires: $(PC_REQUIRES),Libs: -L\$${libdir} $(PC_LIB),Libs.private: $(PC_LIBS_PRIVATE)
 
 ifeq ($(SYSTEM),MINGW32)
 EXECUTABLE_SUFFIX = .exe
@@ -795,7 +795,7 @@ endif
 PC_NAME = gpr
 PC_DESCRIPTION = gRPC platform support library
 PC_CFLAGS =
-PC_REQUIRES_PRIVATE = $(PC_REQUIRES_GPR)
+PC_REQUIRES = $(PC_REQUIRES_GPR)
 PC_LIBS_PRIVATE = $(PC_LIBS_GPR)
 PC_LIB = -lgpr
 GPR_PC_FILE := $(CORE_PC_TEMPLATE)
@@ -804,7 +804,7 @@ GPR_PC_FILE := $(CORE_PC_TEMPLATE)
 PC_NAME = gRPC
 PC_DESCRIPTION = high performance general RPC framework
 PC_CFLAGS =
-PC_REQUIRES_PRIVATE = gpr $(PC_REQUIRES_GRPC) $(PC_REQUIRES_SECURE)
+PC_REQUIRES = gpr $(PC_REQUIRES_GRPC) $(PC_REQUIRES_SECURE)
 PC_LIBS_PRIVATE = $(PC_LIBS_GRPC) $(PC_LIBS_SECURE)
 PC_LIB = -lgrpc
 GRPC_PC_FILE := $(CORE_PC_TEMPLATE)
@@ -813,7 +813,7 @@ GRPC_PC_FILE := $(CORE_PC_TEMPLATE)
 PC_NAME = gRPC unsecure
 PC_DESCRIPTION = high performance general RPC framework without SSL
 PC_CFLAGS =
-PC_REQUIRES_PRIVATE = gpr $(PC_REQUIRES_GRPC)
+PC_REQUIRES = gpr $(PC_REQUIRES_GRPC)
 PC_LIBS_PRIVATE = $(PC_LIBS_GRPC)
 PC_LIB = -lgrpc_unsecure
 GRPC_UNSECURE_PC_FILE := $(CORE_PC_TEMPLATE)
@@ -875,7 +875,7 @@ endif
 PC_NAME = gRPC++
 PC_DESCRIPTION = C++ wrapper for gRPC
 PC_CFLAGS =
-PC_REQUIRES_PRIVATE = grpc $(PC_REQUIRES_GRPCXX)
+PC_REQUIRES = grpc $(PC_REQUIRES_GRPCXX)
 PC_LIBS_PRIVATE = $(PC_LIBS_GRPCXX)
 PC_LIB = -lgrpc++
 GRPCXX_PC_FILE := $(CPP_PC_TEMPLATE)
@@ -884,7 +884,7 @@ GRPCXX_PC_FILE := $(CPP_PC_TEMPLATE)
 PC_NAME = gRPC++ unsecure
 PC_DESCRIPTION = C++ wrapper for gRPC without SSL
 PC_CFLAGS =
-PC_REQUIRES_PRIVATE = grpc_unsecure $(PC_REQUIRES_GRPCXX)
+PC_REQUIRES = grpc_unsecure $(PC_REQUIRES_GRPCXX)
 PC_LIBS_PRIVATE = $(PC_LIBS_GRPCXX)
 PC_LIB = -lgrpc++_unsecure
 GRPCXX_UNSECURE_PC_FILE := $(CPP_PC_TEMPLATE)
@@ -1296,6 +1296,7 @@ transport_connectivity_state_test: $(BINDIR)/$(CONFIG)/transport_connectivity_st
 transport_pid_controller_test: $(BINDIR)/$(CONFIG)/transport_pid_controller_test
 transport_security_common_api_test: $(BINDIR)/$(CONFIG)/transport_security_common_api_test
 writes_per_rpc_test: $(BINDIR)/$(CONFIG)/writes_per_rpc_test
+xds_bootstrap_test: $(BINDIR)/$(CONFIG)/xds_bootstrap_test
 xds_end2end_test: $(BINDIR)/$(CONFIG)/xds_end2end_test
 public_headers_must_be_c89: $(BINDIR)/$(CONFIG)/public_headers_must_be_c89
 boringssl_ssl_test: $(BINDIR)/$(CONFIG)/boringssl_ssl_test
@@ -1767,6 +1768,7 @@ buildtests_cxx: privatelibs_cxx \
   $(BINDIR)/$(CONFIG)/transport_pid_controller_test \
   $(BINDIR)/$(CONFIG)/transport_security_common_api_test \
   $(BINDIR)/$(CONFIG)/writes_per_rpc_test \
+  $(BINDIR)/$(CONFIG)/xds_bootstrap_test \
   $(BINDIR)/$(CONFIG)/xds_end2end_test \
   $(BINDIR)/$(CONFIG)/boringssl_ssl_test \
   $(BINDIR)/$(CONFIG)/boringssl_crypto_test \
@@ -1937,6 +1939,7 @@ buildtests_cxx: privatelibs_cxx \
   $(BINDIR)/$(CONFIG)/transport_pid_controller_test \
   $(BINDIR)/$(CONFIG)/transport_security_common_api_test \
   $(BINDIR)/$(CONFIG)/writes_per_rpc_test \
+  $(BINDIR)/$(CONFIG)/xds_bootstrap_test \
   $(BINDIR)/$(CONFIG)/xds_end2end_test \
   $(BINDIR)/$(CONFIG)/bad_streaming_id_bad_client_test \
   $(BINDIR)/$(CONFIG)/badreq_bad_client_test \
@@ -2483,6 +2486,8 @@ test_cxx: buildtests_cxx
 	$(Q) $(BINDIR)/$(CONFIG)/transport_security_common_api_test || ( echo test transport_security_common_api_test failed ; exit 1 )
 	$(E) "[RUN]     Testing writes_per_rpc_test"
 	$(Q) $(BINDIR)/$(CONFIG)/writes_per_rpc_test || ( echo test writes_per_rpc_test failed ; exit 1 )
+	$(E) "[RUN]     Testing xds_bootstrap_test"
+	$(Q) $(BINDIR)/$(CONFIG)/xds_bootstrap_test || ( echo test xds_bootstrap_test failed ; exit 1 )
 	$(E) "[RUN]     Testing xds_end2end_test"
 	$(Q) $(BINDIR)/$(CONFIG)/xds_end2end_test || ( echo test xds_end2end_test failed ; exit 1 )
 	$(E) "[RUN]     Testing bad_streaming_id_bad_client_test"
@@ -3853,6 +3858,7 @@ LIBGRPC_SRC = \
     src/core/ext/filters/client_channel/resolver/fake/fake_resolver.cc \
     src/core/ext/filters/client_channel/lb_policy/xds/xds.cc \
     src/core/ext/filters/client_channel/xds/xds_api.cc \
+    src/core/ext/filters/client_channel/xds/xds_bootstrap.cc \
     src/core/ext/filters/client_channel/xds/xds_channel_secure.cc \
     src/core/ext/filters/client_channel/xds/xds_client.cc \
     src/core/ext/filters/client_channel/xds/xds_client_stats.cc \
@@ -5322,6 +5328,7 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/ext/upb-generated/src/proto/grpc/lb/v1/load_balancer.upb.c \
     src/core/ext/filters/client_channel/lb_policy/xds/xds.cc \
     src/core/ext/filters/client_channel/xds/xds_api.cc \
+    src/core/ext/filters/client_channel/xds/xds_bootstrap.cc \
     src/core/ext/filters/client_channel/xds/xds_channel.cc \
     src/core/ext/filters/client_channel/xds/xds_client.cc \
     src/core/ext/filters/client_channel/xds/xds_client_stats.cc \
@@ -5616,6 +5623,8 @@ LIBGRPC++_SRC = \
     src/cpp/common/secure_auth_context.cc \
     src/cpp/common/secure_channel_arguments.cc \
     src/cpp/common/secure_create_auth_context.cc \
+    src/cpp/common/tls_credentials_options.cc \
+    src/cpp/common/tls_credentials_options_util.cc \
     src/cpp/server/insecure_server_credentials.cc \
     src/cpp/server/secure_server_credentials.cc \
     src/cpp/client/channel_cc.cc \
@@ -5750,6 +5759,7 @@ PUBLIC_HEADERS_CXX += \
     include/grpcpp/security/credentials_impl.h \
     include/grpcpp/security/server_credentials.h \
     include/grpcpp/security/server_credentials_impl.h \
+    include/grpcpp/security/tls_credentials_options.h \
     include/grpcpp/server.h \
     include/grpcpp/server_builder.h \
     include/grpcpp/server_builder_impl.h \
@@ -6787,6 +6797,7 @@ PUBLIC_HEADERS_CXX += \
     include/grpcpp/security/credentials_impl.h \
     include/grpcpp/security/server_credentials.h \
     include/grpcpp/security/server_credentials_impl.h \
+    include/grpcpp/security/tls_credentials_options.h \
     include/grpcpp/server.h \
     include/grpcpp/server_builder.h \
     include/grpcpp/server_builder_impl.h \
@@ -20023,6 +20034,49 @@ endif
 endif
 
 
+XDS_BOOTSTRAP_TEST_SRC = \
+    test/core/client_channel/xds_bootstrap_test.cc \
+
+XDS_BOOTSTRAP_TEST_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(XDS_BOOTSTRAP_TEST_SRC))))
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL.
+
+$(BINDIR)/$(CONFIG)/xds_bootstrap_test: openssl_dep_error
+
+else
+
+
+
+
+ifeq ($(NO_PROTOBUF),true)
+
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
+
+$(BINDIR)/$(CONFIG)/xds_bootstrap_test: protobuf_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/xds_bootstrap_test: $(PROTOBUF_DEP) $(XDS_BOOTSTRAP_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LDXX) $(LDFLAGS) $(XDS_BOOTSTRAP_TEST_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(LDLIBS_SECURE) $(GTEST_LIB) -o $(BINDIR)/$(CONFIG)/xds_bootstrap_test
+
+endif
+
+endif
+
+$(OBJDIR)/$(CONFIG)/test/core/client_channel/xds_bootstrap_test.o:  $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc++.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a
+
+deps_xds_bootstrap_test: $(XDS_BOOTSTRAP_TEST_OBJS:.o=.dep)
+
+ifneq ($(NO_SECURE),true)
+ifneq ($(NO_DEPS),true)
+-include $(XDS_BOOTSTRAP_TEST_OBJS:.o=.dep)
+endif
+endif
+
+
 XDS_END2END_TEST_SRC = \
     $(GENDIR)/src/proto/grpc/testing/xds/ads_for_test.pb.cc $(GENDIR)/src/proto/grpc/testing/xds/ads_for_test.grpc.pb.cc \
     $(GENDIR)/src/proto/grpc/testing/xds/eds_for_test.pb.cc $(GENDIR)/src/proto/grpc/testing/xds/eds_for_test.grpc.pb.cc \
@@ -22692,6 +22746,8 @@ src/cpp/common/auth_property_iterator.cc: $(OPENSSL_DEP)
 src/cpp/common/secure_auth_context.cc: $(OPENSSL_DEP)
 src/cpp/common/secure_channel_arguments.cc: $(OPENSSL_DEP)
 src/cpp/common/secure_create_auth_context.cc: $(OPENSSL_DEP)
+src/cpp/common/tls_credentials_options.cc: $(OPENSSL_DEP)
+src/cpp/common/tls_credentials_options_util.cc: $(OPENSSL_DEP)
 src/cpp/ext/proto_server_reflection.cc: $(OPENSSL_DEP)
 src/cpp/ext/proto_server_reflection_plugin.cc: $(OPENSSL_DEP)
 src/cpp/server/channelz/channelz_service.cc: $(OPENSSL_DEP)

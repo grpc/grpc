@@ -563,6 +563,66 @@ static dispatch_once_t initGlobalInterceptorFactory;
   [self waitForExpectationsWithTimeout:TEST_TIMEOUT handler:nil];
 }
 
+- (void)testUnaryResponseHandler {
+  XCTAssertNotNil([[self class] host]);
+  // The test does not work on a remote server since it does not echo a trailer
+  if ([[self class] isRemoteTest]) return;
+  XCTestExpectation *expectComplete = [self expectationWithDescription:@"call complete"];
+  XCTestExpectation *expectCompleteMainQueue =
+      [self expectationWithDescription:@"main queue call complete"];
+
+  RMTSimpleRequest *request = [RMTSimpleRequest message];
+  request.responseType = RMTPayloadType_Compressable;
+  request.responseSize = 314159;
+  request.payload.body = [NSMutableData dataWithLength:271828];
+
+  GRPCMutableCallOptions *options = [[GRPCMutableCallOptions alloc] init];
+  // For backwards compatibility
+  options.transportType = [[self class] transportType];
+  options.transport = [[self class] transport];
+  options.PEMRootCertificates = [[self class] PEMRootCertificates];
+  options.hostNameOverride = [[self class] hostNameOverride];
+  const unsigned char raw_bytes[] = {1, 2, 3, 4};
+  NSData *trailer_data = [NSData dataWithBytes:raw_bytes length:sizeof(raw_bytes)];
+  options.initialMetadata = @{
+    @"x-grpc-test-echo-trailing-bin" : trailer_data,
+    @"x-grpc-test-echo-initial" : @"test-header"
+  };
+
+  __block GRPCUnaryResponseHandler *handler = [[GRPCUnaryResponseHandler alloc]
+      initWithResponseHandler:^(GPBMessage *response, NSError *error) {
+        XCTAssertNil(error, @"Unexpected error: %@", error);
+        RMTSimpleResponse *expectedResponse = [RMTSimpleResponse message];
+        expectedResponse.payload.type = RMTPayloadType_Compressable;
+        expectedResponse.payload.body = [NSMutableData dataWithLength:314159];
+        XCTAssertEqualObjects(response, expectedResponse);
+        XCTAssertEqualObjects(handler.responseHeaders[@"x-grpc-test-echo-initial"], @"test-header");
+        XCTAssertEqualObjects(handler.responseTrailers[@"x-grpc-test-echo-trailing-bin"],
+                              trailer_data);
+        [expectComplete fulfill];
+      }
+        responseDispatchQueue:dispatch_queue_create(NULL, DISPATCH_QUEUE_SERIAL)];
+  __block GRPCUnaryResponseHandler *handlerMainQueue = [[GRPCUnaryResponseHandler alloc]
+      initWithResponseHandler:^(GPBMessage *response, NSError *error) {
+        XCTAssertNil(error, @"Unexpected error: %@", error);
+        RMTSimpleResponse *expectedResponse = [RMTSimpleResponse message];
+        expectedResponse.payload.type = RMTPayloadType_Compressable;
+        expectedResponse.payload.body = [NSMutableData dataWithLength:314159];
+        XCTAssertEqualObjects(response, expectedResponse);
+        XCTAssertEqualObjects(handlerMainQueue.responseHeaders[@"x-grpc-test-echo-initial"],
+                              @"test-header");
+        XCTAssertEqualObjects(handlerMainQueue.responseTrailers[@"x-grpc-test-echo-trailing-bin"],
+                              trailer_data);
+        [expectCompleteMainQueue fulfill];
+      }
+        responseDispatchQueue:nil];
+
+  [[_service unaryCallWithMessage:request responseHandler:handler callOptions:options] start];
+  [[_service unaryCallWithMessage:request responseHandler:handlerMainQueue callOptions:options]
+      start];
+  [self waitForExpectationsWithTimeout:TEST_TIMEOUT handler:nil];
+}
+
 - (void)testLargeUnaryRPCWithV2API {
   XCTAssertNotNil([[self class] host]);
   __weak XCTestExpectation *expectReceive =

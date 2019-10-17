@@ -73,10 +73,11 @@
 
   set(PACKAGE_NAME      "grpc")
   set(PACKAGE_VERSION   "${settings.cpp_version}")
+  set(gRPC_CORE_VERSION "${settings.core_version}")
   set(PACKAGE_STRING    "<%text>${PACKAGE_NAME} ${PACKAGE_VERSION}</%text>")
   set(PACKAGE_TARNAME   "<%text>${PACKAGE_NAME}-${PACKAGE_VERSION}</%text>")
   set(PACKAGE_BUGREPORT "https://github.com/grpc/grpc/issues/")
-  project(<%text>${PACKAGE_NAME}</%text> C CXX)
+  project(<%text>${PACKAGE_NAME}</%text> LANGUAGES C CXX)
 
   set(gRPC_INSTALL_BINDIR "bin" CACHE STRING "Installation directory for executables")
   set(gRPC_INSTALL_LIBDIR "lib" CACHE STRING "Installation directory for libraries")
@@ -569,3 +570,71 @@
   
   install(FILES <%text>${CMAKE_CURRENT_SOURCE_DIR}/etc/roots.pem</%text>
     DESTINATION <%text>${gRPC_INSTALL_SHAREDIR}</%text>)
+
+  # Function to generate pkg-config files.
+  function(generate_pkgconfig name description version requires
+                              libs libs_private output_filename)
+    set(PC_NAME "<%text>${name}</%text>")
+    set(PC_DESCRIPTION "<%text>${description}</%text>")
+    set(PC_VERSION "<%text>${version}</%text>")
+    set(PC_REQUIRES "<%text>${requires}</%text>")
+    set(PC_LIB "<%text>${libs}</%text>")
+    set(PC_LIBS_PRIVATE "<%text>${libs_private}</%text>")
+    set(output_filepath "<%text>${grpc_BINARY_DIR}/libs/opt/pkgconfig/${output_filename}</%text>")
+    configure_file(
+      "<%text>${grpc_SOURCE_DIR}/cmake/pkg-config-template.pc.in</%text>"
+      "<%text>${output_filepath}</%text>"
+      @ONLY)
+    install(FILES "<%text>${output_filepath}</%text>"
+      DESTINATION "lib/pkgconfig/")
+  endfunction()
+
+  # gpr .pc file
+  generate_pkgconfig(
+    "gpr"
+    "gRPC platform support library"
+    "<%text>${gRPC_CORE_VERSION}</%text>"
+    ""
+    "-lgpr"
+    ""
+    "gpr.pc")
+
+  # grpc .pc file
+  generate_pkgconfig(
+    "gRPC"
+    "high performance general RPC framework"
+    "<%text>${gRPC_CORE_VERSION}</%text>"
+    "gpr openssl"
+    "-lgrpc -laddress_sorting -lcares -lz"
+    ""
+    "grpc.pc")
+
+  # grpc_unsecure .pc file
+  generate_pkgconfig(
+    "gRPC unsecure"
+    "high performance general RPC framework without SSL"
+    "<%text>${gRPC_CORE_VERSION}</%text>"
+    "gpr"
+    "-lgrpc_unsecure"
+    ""
+    "grpc_unsecure.pc")
+
+  # grpc++ .pc file
+  generate_pkgconfig(
+    "gRPC++"
+    "C++ wrapper for gRPC"
+    "<%text>${PACKAGE_VERSION}</%text>"
+    "grpc"
+    "-lgrpc++"
+    ""
+    "grpc++.pc")
+
+  # grpc++_unsecure .pc file
+  generate_pkgconfig(
+    "gRPC++ unsecure"
+    "C++ wrapper for gRPC without SSL"
+    "<%text>${PACKAGE_VERSION}</%text>"
+    "grpc_unsecure"
+    "-lgrpc++_unsecure"
+    ""
+    "grpc++_unsecure.pc")

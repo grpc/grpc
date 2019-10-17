@@ -37,7 +37,7 @@ inline T* New(Args&&... args) {
   return new (p) T(std::forward<Args>(args)...);
 }
 
-// Gets the base pointer of any class, in case of multiple inheritence.
+// Gets the base pointer of any class, in case of multiple inheritance.
 // Used by Delete and friends.
 template <typename T, bool isPolymorphic>
 struct BasePointerGetter {
@@ -110,7 +110,7 @@ class Allocator {
                    std::allocator<void>::const_pointer hint = nullptr) {
     return static_cast<pointer>(gpr_malloc(n * sizeof(T)));
   }
-  void deallocate(T* p, std::size_t n) { gpr_free(p); }
+  void deallocate(T* p, std::size_t /* n */) { gpr_free(p); }
   size_t max_size() const {
     return std::numeric_limits<size_type>::max() / sizeof(value_type);
   }

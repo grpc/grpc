@@ -173,7 +173,7 @@ void prefork() {
 void postfork_child() {
   TSRMLS_FETCH();
 
-  // loop through persistant list and destroy all underlying grpc_channel objs
+  // loop through persistent list and destroy all underlying grpc_channel objs
   destroy_grpc_channels();
 
   // clear completion queue

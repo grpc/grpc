@@ -1,6 +1,5 @@
 """Load dependencies needed to compile and test the grpc library as a 3rd-party consumer."""
 
-load("@bazel_tools//tools/build_defs/repo:git.bzl", "git_repository")
 load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 load("@com_github_grpc_grpc//bazel:grpc_python_deps.bzl", "grpc_python_deps")
 
@@ -186,10 +185,13 @@ def grpc_deps():
         )
 
     if "bazel_skylib" not in native.existing_rules():
-        git_repository(
+        http_archive(
             name = "bazel_skylib",
-            remote = "https://github.com/bazelbuild/bazel-skylib",
-            tag = "0.9.0",
+            urls = [
+                "https://mirror.bazel.build/github.com/bazelbuild/bazel-skylib/releases/download/1.0.2/bazel-skylib-1.0.2.tar.gz",
+                "https://github.com/bazelbuild/bazel-skylib/releases/download/1.0.2/bazel-skylib-1.0.2.tar.gz",
+            ],
+            sha256 = "97e70364e9249702246c0e9444bccdc4b847bed1eb03c5a3ece4f83dfe6abc44",
         )
 
     if "io_opencensus_cpp" not in native.existing_rules():
