@@ -186,7 +186,7 @@ static void cb_watch_connectivity(
 }
 
 static void cb_shutdown(grpc_experimental_completion_queue_functor* functor,
-                        int success) {
+                        int /*success*/) {
   CallbackContext* cb_ctx = (CallbackContext*)functor;
 
   gpr_log(GPR_DEBUG, "cb_shutdown called, nothing to do");
