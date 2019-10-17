@@ -145,8 +145,11 @@ class ClientRpcInfo {
       // No interceptors to register
       return;
     }
-    for (const auto& creator : creators) {
-      auto* interceptor = creator->CreateClientInterceptor(this);
+    // NOTE: The following is not a range-based for loop because it will only
+    //       iterate over a portion of the creators vector.
+    for (auto it = creators.begin() + interceptor_pos; it != creators.end();
+         ++it) {
+      auto* interceptor = (*it)->CreateClientInterceptor(this);
       if (interceptor != nullptr) {
         interceptors_.push_back(
             std::unique_ptr<experimental::Interceptor>(interceptor));
