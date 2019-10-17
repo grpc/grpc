@@ -23,11 +23,13 @@
 #include <grpc/impl/codegen/log.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/string_util.h>
+#include <src/core/ext/upb-generated/envoy/api/v2/core/config_source.upb.h>
 
 #include "src/core/ext/filters/client_channel/xds/xds_api.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/sockaddr_utils.h"
 
+#include "envoy/api/v2/cds.upb.h"
 #include "envoy/api/v2/core/address.upb.h"
 #include "envoy/api/v2/core/base.upb.h"
 #include "envoy/api/v2/discovery.upb.h"
@@ -47,6 +49,7 @@ namespace grpc_core {
 
 namespace {
 
+constexpr char kCdsTypeUrl[] = "type.googleapis.com/envoy.api.v2.Cluster";
 constexpr char kEdsTypeUrl[] =
     "type.googleapis.com/envoy.api.v2.ClusterLoadAssignment";
 constexpr char kEndpointRequired[] = "endpointRequired";
@@ -101,6 +104,22 @@ bool XdsDropConfig::ShouldDrop(const UniquePtr<char>** category_name) const {
   return false;
 }
 
+grpc_slice XdsCdsRequestCreateAndEncode(const char* cluster_name) {
+  upb::Arena arena;
+  // Create a request.
+  envoy_api_v2_DiscoveryRequest* request =
+      envoy_api_v2_DiscoveryRequest_new(arena.ptr());
+  envoy_api_v2_DiscoveryRequest_add_resource_names(
+      request, upb_strview_makez(cluster_name), arena.ptr());
+  envoy_api_v2_DiscoveryRequest_set_type_url(request,
+                                             upb_strview_makez(kCdsTypeUrl));
+  // Encode the request.
+  size_t output_length;
+  char* output = envoy_api_v2_DiscoveryRequest_serialize(request, arena.ptr(),
+                                                         &output_length);
+  return grpc_slice_from_copied_buffer(output, output_length);
+}
+
 grpc_slice XdsEdsRequestCreateAndEncode(const char* server_name) {
   upb::Arena arena;
   // Create a request.
@@ -126,6 +145,81 @@ grpc_slice XdsEdsRequestCreateAndEncode(const char* server_name) {
   char* output = envoy_api_v2_DiscoveryRequest_serialize(request, arena.ptr(),
                                                          &output_length);
   return grpc_slice_from_copied_buffer(output, output_length);
+}
+
+namespace {
+
+UniquePtr<char> StringCopy(const upb_strview& strview) {
+  char* str = static_cast<char*>(gpr_malloc(strview.size + 1));
+  memcpy(str, strview.data, strview.size);
+  str[strview.size] = '\0';
+  return UniquePtr<char>(str);
+}
+
+}  // namespace
+
+grpc_error* CdsResponsedParse(const envoy_api_v2_DiscoveryResponse* response,
+                              const char* expected_cluster_name,
+                              CdsUpdate* cds_update, upb_arena* arena) {
+  // Get the resources from the response.
+  size_t size;
+  const google_protobuf_Any* const* resources =
+      envoy_api_v2_DiscoveryResponse_resources(response, &size);
+  if (size < 1) {
+    return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+        "CDS response contains 0 resource.");
+  }
+  // Find the expected cluster.
+  const envoy_api_v2_Cluster* cluster = nullptr;
+  for (size_t i = 0; i < size; ++i) {
+    // Check the type_url of the resource.
+    const upb_strview type_url = google_protobuf_Any_type_url(resources[i]);
+    if (!upb_strview_eql(type_url, upb_strview_makez(kCdsTypeUrl))) {
+      return GRPC_ERROR_CREATE_FROM_STATIC_STRING("Resource is not CDS.");
+    }
+    // Decode the cluster.
+    const upb_strview encoded_cluster = google_protobuf_Any_value(resources[i]);
+    const envoy_api_v2_Cluster* candidate_cluster = envoy_api_v2_Cluster_parse(
+        encoded_cluster.data, encoded_cluster.size, arena);
+    // Check the cluster name.
+    upb_strview cluster_name = envoy_api_v2_Cluster_name(candidate_cluster);
+    if (upb_strview_eql(cluster_name,
+                        upb_strview_makez(expected_cluster_name))) {
+      cluster = candidate_cluster;
+      break;
+    }
+  }
+  if (cluster == nullptr) {
+    return GRPC_ERROR_CREATE_FROM_STATIC_STRING("Expected cluster not found.");
+  }
+  // Check the cluster_discovery_type.
+  if (!envoy_api_v2_Cluster_has_type(cluster)) {
+    return GRPC_ERROR_CREATE_FROM_STATIC_STRING("DiscoveryType not found.");
+  }
+  if (envoy_api_v2_Cluster_type(cluster) != envoy_api_v2_Cluster_EDS) {
+    return GRPC_ERROR_CREATE_FROM_STATIC_STRING("DiscoveryType is not EDS.");
+  }
+  // Check the config source.
+  const envoy_api_v2_Cluster_EdsClusterConfig* eds_cluster_config =
+      envoy_api_v2_Cluster_eds_cluster_config(cluster);
+  const envoy_api_v2_core_ConfigSource* eds_config =
+      envoy_api_v2_Cluster_EdsClusterConfig_eds_config(eds_cluster_config);
+  if (!envoy_api_v2_core_ConfigSource_has_ads(eds_config)) {
+    return GRPC_ERROR_CREATE_FROM_STATIC_STRING("ConfigSource is not ADS.");
+  }
+  // Record service_name (if any).
+  upb_strview service_name =
+      envoy_api_v2_Cluster_EdsClusterConfig_service_name(eds_cluster_config);
+  if (service_name.size != 0) {
+    cds_update->service_name = StringCopy(service_name);
+  }
+  // Check the LB policy.
+  if (envoy_api_v2_Cluster_lb_policy(cluster) !=
+      envoy_api_v2_Cluster_ROUND_ROBIN) {
+    return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+        "LB policy is not ROUND_ROBIN.");
+  }
+  return GRPC_ERROR_NONE;
 }
 
 namespace {
@@ -157,17 +251,6 @@ grpc_error* ServerAddressParseAndAppend(
   list->emplace_back(addr, nullptr);
   return GRPC_ERROR_NONE;
 }
-
-namespace {
-
-UniquePtr<char> StringCopy(const upb_strview& strview) {
-  char* str = static_cast<char*>(gpr_malloc(strview.size + 1));
-  memcpy(str, strview.data, strview.size);
-  str[strview.size] = '\0';
-  return UniquePtr<char>(str);
-}
-
-}  // namespace
 
 grpc_error* LocalityParse(
     const envoy_api_v2_endpoint_LocalityLbEndpoints* locality_lb_endpoints,
@@ -243,26 +326,8 @@ grpc_error* DropParseAndAppend(
   return GRPC_ERROR_NONE;
 }
 
-}  // namespace
-
-grpc_error* XdsEdsResponseDecodeAndParse(const grpc_slice& encoded_response,
-                                         EdsUpdate* update) {
-  upb::Arena arena;
-  // Decode the response.
-  const envoy_api_v2_DiscoveryResponse* response =
-      envoy_api_v2_DiscoveryResponse_parse(
-          reinterpret_cast<const char*>(GRPC_SLICE_START_PTR(encoded_response)),
-          GRPC_SLICE_LENGTH(encoded_response), arena.ptr());
-  // Parse the response.
-  if (response == nullptr) {
-    return GRPC_ERROR_CREATE_FROM_STATIC_STRING("No response found.");
-  }
-  // Check the type_url of the response.
-  upb_strview type_url = envoy_api_v2_DiscoveryResponse_type_url(response);
-  upb_strview expected_type_url = upb_strview_makez(kEdsTypeUrl);
-  if (!upb_strview_eql(type_url, expected_type_url)) {
-    return GRPC_ERROR_CREATE_FROM_STATIC_STRING("Resource is not EDS.");
-  }
+grpc_error* EdsResponsedParse(const envoy_api_v2_DiscoveryResponse* response,
+                              EdsUpdate* eds_update, upb_arena* arena) {
   // Get the resources from the response.
   size_t size;
   const google_protobuf_Any* const* resources =
@@ -272,8 +337,8 @@ grpc_error* XdsEdsResponseDecodeAndParse(const grpc_slice& encoded_response,
         "EDS response contains 0 resource.");
   }
   // Check the type_url of the resource.
-  type_url = google_protobuf_Any_type_url(resources[0]);
-  if (!upb_strview_eql(type_url, expected_type_url)) {
+  upb_strview type_url = google_protobuf_Any_type_url(resources[0]);
+  if (!upb_strview_eql(type_url, upb_strview_makez(kEdsTypeUrl))) {
     return GRPC_ERROR_CREATE_FROM_STATIC_STRING("Resource is not EDS.");
   }
   // Get the cluster_load_assignment.
@@ -282,7 +347,7 @@ grpc_error* XdsEdsResponseDecodeAndParse(const grpc_slice& encoded_response,
   envoy_api_v2_ClusterLoadAssignment* cluster_load_assignment =
       envoy_api_v2_ClusterLoadAssignment_parse(
           encoded_cluster_load_assignment.data,
-          encoded_cluster_load_assignment.size, arena.ptr());
+          encoded_cluster_load_assignment.size, arena);
   // Get the endpoints.
   const envoy_api_v2_endpoint_LocalityLbEndpoints* const* endpoints =
       envoy_api_v2_ClusterLoadAssignment_endpoints(cluster_load_assignment,
@@ -293,10 +358,10 @@ grpc_error* XdsEdsResponseDecodeAndParse(const grpc_slice& encoded_response,
     if (error != GRPC_ERROR_NONE) return error;
     // Filter out locality with weight 0.
     if (locality.lb_weight == 0) continue;
-    update->priority_list_update.Add(locality);
+    eds_update->priority_list_update.Add(locality);
   }
   // Get the drop config.
-  update->drop_config = MakeRefCounted<XdsDropConfig>();
+  eds_update->drop_config = MakeRefCounted<XdsDropConfig>();
   const envoy_api_v2_ClusterLoadAssignment_Policy* policy =
       envoy_api_v2_ClusterLoadAssignment_policy(cluster_load_assignment);
   if (policy != nullptr) {
@@ -305,12 +370,40 @@ grpc_error* XdsEdsResponseDecodeAndParse(const grpc_slice& encoded_response,
             envoy_api_v2_ClusterLoadAssignment_Policy_drop_overloads(policy,
                                                                      &size);
     for (size_t i = 0; i < size; ++i) {
-      grpc_error* error = DropParseAndAppend(
-          drop_overload[i], update->drop_config.get(), &update->drop_all);
+      grpc_error* error =
+          DropParseAndAppend(drop_overload[i], eds_update->drop_config.get(),
+                             &eds_update->drop_all);
       if (error != GRPC_ERROR_NONE) return error;
     }
   }
   return GRPC_ERROR_NONE;
+}
+
+}  // namespace
+
+grpc_error* XdsAdsResponseDecodeAndParse(const grpc_slice& encoded_response,
+                                         const char* expected_cluster_name,
+                                         CdsUpdate* cds_update,
+                                         EdsUpdate* eds_update) {
+  upb::Arena arena;
+  // Decode the response.
+  const envoy_api_v2_DiscoveryResponse* response =
+      envoy_api_v2_DiscoveryResponse_parse(
+          reinterpret_cast<const char*>(GRPC_SLICE_START_PTR(encoded_response)),
+          GRPC_SLICE_LENGTH(encoded_response), arena.ptr());
+  if (response == nullptr) {
+    return GRPC_ERROR_CREATE_FROM_STATIC_STRING("Can't decode response.");
+  }
+  // Check the type_url of the response.
+  upb_strview type_url = envoy_api_v2_DiscoveryResponse_type_url(response);
+  if (upb_strview_eql(type_url, upb_strview_makez(kCdsTypeUrl))) {
+    return CdsResponsedParse(response, expected_cluster_name, cds_update,
+                             arena.ptr());
+  } else if (upb_strview_eql(type_url, upb_strview_makez(kEdsTypeUrl))) {
+    return EdsResponsedParse(response, eds_update, arena.ptr());
+  } else {
+    return GRPC_ERROR_CREATE_FROM_STATIC_STRING("Unsupported response type.");
+  }
 }
 
 namespace {

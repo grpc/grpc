@@ -117,7 +117,8 @@ class XdsClient : public InternallyRefCounted<XdsClient> {
     Map<EndpointWatcherInterface*, UniquePtr<EndpointWatcherInterface>>
         endpoint_watchers;
     Set<XdsClientStats*> client_stats;
-    // The latest data seen from EDS.
+    // The latest data seen from CDS and EDS.
+    CdsUpdate cds_update;
     EdsUpdate eds_update;
   };
 

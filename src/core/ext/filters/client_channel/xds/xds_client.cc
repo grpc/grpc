@@ -673,7 +673,7 @@ void XdsClient::ChannelState::AdsCallState::OnResponseReceivedLocked(
     // Parse the response.
     EdsUpdate update;
     grpc_error* parse_error =
-        XdsEdsResponseDecodeAndParse(response_slice, &update);
+        XdsAdsResponseDecodeAndParse(response_slice, CdsUpdate(), &update);
     if (parse_error != GRPC_ERROR_NONE) {
       gpr_log(GPR_ERROR,
               "[xds_client %p] ADS response parsing failed. error=%s",
@@ -1202,12 +1202,26 @@ void XdsClient::Orphan() {
 
 void XdsClient::WatchClusterData(StringView cluster,
                                  UniquePtr<ClusterWatcherInterface> watcher) {
-  // TODO(roth): Implement.
+  ClusterWatcherInterface* w = watcher.get();
+  cluster_state_.cluster_watchers[w] = std::move(watcher);
+  // If we've already received an CDS update, notify the new watcher
+  // immediately.
+  if (cluster_state_.cds_update.service_name != nullptr) {
+    w->OnClusterChanged(cluster_state_.cds_update);
+  }
+  chand_->MaybeStartAdsCall();
 }
 
 void XdsClient::CancelClusterDataWatch(StringView cluster,
                                        ClusterWatcherInterface* watcher) {
-  // TODO(roth): Implement.
+  auto it = cluster_state_.cluster_watchers.find(watcher);
+  if (it != cluster_state_.cluster_watchers.end()) {
+    cluster_state_.cluster_watchers.erase(it);
+  }
+  if (cluster_state_.cluster_watchers.empty() &&
+      cluster_state_.endpoint_watchers.empty()) {
+    chand_->StopAdsCall();
+  }
 }
 
 void XdsClient::WatchEndpointData(StringView cluster,
@@ -1228,7 +1242,10 @@ void XdsClient::CancelEndpointDataWatch(StringView cluster,
   if (it != cluster_state_.endpoint_watchers.end()) {
     cluster_state_.endpoint_watchers.erase(it);
   }
-  if (cluster_state_.endpoint_watchers.empty()) chand_->StopAdsCall();
+  if (cluster_state_.cluster_watchers.empty() &&
+      cluster_state_.endpoint_watchers.empty()) {
+    chand_->StopAdsCall();
+  }
 }
 
 void XdsClient::AddClientStats(StringView cluster,

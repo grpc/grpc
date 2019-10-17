@@ -135,16 +135,24 @@ struct EdsUpdate {
   bool drop_all = false;
 };
 
-// TODO(juanlishen): Add fields as part of implementing CDS support.
-struct CdsUpdate {};
+struct CdsUpdate {
+  UniquePtr<char> service_name;
+
+  CdsUpdate(const CdsUpdate& other)
+      : service_name(UniquePtr<char>(gpr_strdup(other.service_name.get()))) {}
+};
+
+// Creates a CDS request querying \a sever_name.
+grpc_slice XdsCdsRequestCreateAndEncode(const char* cluster_name);
 
 // Creates an EDS request querying \a service_name.
 grpc_slice XdsEdsRequestCreateAndEncode(const char* server_name);
 
 // Parses the EDS response and returns the args to update locality map. If there
 // is any error, the output update is invalid.
-grpc_error* XdsEdsResponseDecodeAndParse(const grpc_slice& encoded_response,
-                                         EdsUpdate* update);
+grpc_error* XdsAdsResponseDecodeAndParse(const grpc_slice& encoded_response,
+                                         CdsUpdate cds_update,
+                                         EdsUpdate* eds_update);
 
 // Creates an LRS request querying \a server_name.
 grpc_slice XdsLrsRequestCreateAndEncode(const char* server_name);
