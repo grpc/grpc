@@ -92,9 +92,9 @@
 
 static void* tag(intptr_t t) { return (void*)t; }
 
-static void server_verifier_sends_too_much_metadata(grpc_server* server,
-                                                    grpc_completion_queue* cq,
-                                                    void* registered_method) {
+static void server_verifier_sends_too_much_metadata(
+    grpc_server* server, grpc_completion_queue* cq,
+    void* /*registered_method*/) {
   grpc_call_error error;
   grpc_call* s;
   grpc_call_details call_details;
