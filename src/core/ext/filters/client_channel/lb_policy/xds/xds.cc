@@ -931,9 +931,9 @@ void XdsLb::UpdateFallbackPolicyLocked() {
   //       that was there before, which will be immediately shut down)
   //       and will later be swapped into child_policy_ by the helper
   //       when the new child transitions into state READY.
-  const char* fallback_policy_name = config_->fallback_policy() == nullptr
+  const char* fallback_policy_name = update_args.config == nullptr
                                          ? "round_robin"
-                                         : config_->fallback_policy()->name();
+                                         : update_args.config->name();
   const bool create_policy =
       // case 1
       fallback_policy_ == nullptr ||
@@ -1565,10 +1565,9 @@ void XdsLb::PriorityList::LocalityMap::Locality::UpdateLocked(
   //       when the new child transitions into state READY.
   // TODO(juanlishen): If the child policy is not configured via service config,
   // use whatever algorithm is specified by the balancer.
-  const char* child_policy_name =
-      xds_policy()->config_->child_policy() == nullptr
-          ? "round_robin"
-          : xds_policy()->config_->child_policy()->name();
+  const char* child_policy_name = update_args.config == nullptr
+                                      ? "round_robin"
+                                      : update_args.config->name();
   const bool create_policy =
       // case 1
       child_policy_ == nullptr ||
