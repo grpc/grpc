@@ -507,7 +507,7 @@ class BidiStreamingRpcHijackingInterceptorFactory
 // single RPC should be made on the channel before calling the Verify methods.
 class LoggingInterceptor : public experimental::Interceptor {
  public:
-  LoggingInterceptor(experimental::ClientRpcInfo* info) {
+  LoggingInterceptor(experimental::ClientRpcInfo* /*info*/) {
     pre_send_initial_metadata_ = false;
     pre_send_message_count_ = 0;
     pre_send_close_ = false;

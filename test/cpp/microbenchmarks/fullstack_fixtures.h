@@ -68,7 +68,7 @@ class BaseFixture : public TrackCounters {};
 // code easier.
 class ShutdownTag : public internal::CompletionQueueTag {
  public:
-  bool FinalizeResult(void** tag, bool* status) { return false; }
+  bool FinalizeResult(void** /*tag*/, bool* /*status*/) { return false; }
 };
 
 class FullstackFixture : public BaseFixture {

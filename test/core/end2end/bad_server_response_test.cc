@@ -92,7 +92,7 @@ static grpc_closure on_write;
 
 static void* tag(intptr_t t) { return (void*)t; }
 
-static void done_write(void* arg, grpc_error* error) {
+static void done_write(void* /*arg*/, grpc_error* error) {
   GPR_ASSERT(error == GRPC_ERROR_NONE);
 
   gpr_atm_rel_store(&state.done_atm, 1);
@@ -107,7 +107,7 @@ static void handle_write() {
   grpc_endpoint_write(state.tcp, &state.outgoing_buffer, &on_write, nullptr);
 }
 
-static void handle_read(void* arg, grpc_error* error) {
+static void handle_read(void* /*arg*/, grpc_error* error) {
   GPR_ASSERT(error == GRPC_ERROR_NONE);
   state.incoming_data_length += state.temp_incoming_buffer.length;
 
@@ -132,7 +132,7 @@ static void handle_read(void* arg, grpc_error* error) {
 }
 
 static void on_connect(void* arg, grpc_endpoint* tcp,
-                       grpc_pollset* accepting_pollset,
+                       grpc_pollset* /*accepting_pollset*/,
                        grpc_tcp_server_acceptor* acceptor) {
   gpr_free(acceptor);
   test_tcp_server* server = static_cast<test_tcp_server*>(arg);

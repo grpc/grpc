@@ -382,7 +382,7 @@ std::shared_ptr<CallCredentials> MetadataCredentialsFromPlugin(
 
 namespace grpc {
 namespace {
-void DeleteWrapper(void* wrapper, grpc_error* ignored) {
+void DeleteWrapper(void* wrapper, grpc_error* /*ignored*/) {
   MetadataCredentialsPluginWrapper* w =
       static_cast<MetadataCredentialsPluginWrapper*>(wrapper);
   delete w;

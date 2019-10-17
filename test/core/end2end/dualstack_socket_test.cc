@@ -51,7 +51,7 @@ static void drain_cq(grpc_completion_queue* cq) {
   } while (ev.type != GRPC_QUEUE_SHUTDOWN);
 }
 
-static void do_nothing(void* ignored) {}
+static void do_nothing(void* /*ignored*/) {}
 
 static void log_resolved_addrs(const char* label, const char* hostname) {
   grpc_resolved_addresses* res = nullptr;
