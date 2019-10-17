@@ -226,7 +226,7 @@ class ExecCtx {
   virtual bool CheckReadyToFinish() { return false; }
 
   /** Disallow delete on ExecCtx. */
-  static void operator delete(void* p) { abort(); }
+  static void operator delete(void* /* p */) { abort(); }
 
  private:
   /** Set exec_ctx_ to exec_ctx. */

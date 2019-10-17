@@ -377,6 +377,11 @@ class XdsLb : public LoadBalancingPolicy {
       const char* name, const grpc_channel_args* args);
   void MaybeExitFallbackMode();
 
+  XdsClient* xds_client() const {
+    return xds_client_from_channel_ != nullptr ? xds_client_from_channel_.get()
+                                               : xds_client_.get();
+  }
+
   // Name of the backend server to connect to.
   const char* server_name_ = nullptr;
 
@@ -386,7 +391,11 @@ class XdsLb : public LoadBalancingPolicy {
   // Internal state.
   bool shutting_down_ = false;
 
-  // The xds client.
+  // The xds client and endpoint watcher.
+  // If we get the XdsClient from the channel, we store it in
+  // xds_client_from_channel_; if we create it ourselves, we store it in
+  // xds_client_.
+  RefCountedPtr<XdsClient> xds_client_from_channel_;
   OrphanablePtr<XdsClient> xds_client_;
   // A pointer to the endpoint watcher, to be used when cancelling the watch.
   // Note that this is not owned, so this pointer must never be derefernced.
@@ -584,6 +593,10 @@ class XdsLb::EndpointWatcher : public XdsClient::EndpointWatcherInterface {
       : xds_policy_(std::move(xds_policy)) {}
 
   void OnEndpointChanged(EdsUpdate update) override {
+    if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_xds_trace)) {
+      gpr_log(GPR_INFO, "[xdslb %p] Received EDS update from xds client",
+              xds_policy_.get());
+    }
     // If the balancer tells us to drop all the calls, we should exit fallback
     // mode immediately.
     if (update.drop_all) xds_policy_->MaybeExitFallbackMode();
@@ -651,6 +664,7 @@ class XdsLb::EndpointWatcher : public XdsClient::EndpointWatcherInterface {
 
 XdsLb::XdsLb(Args args)
     : LoadBalancingPolicy(std::move(args)),
+      xds_client_from_channel_(XdsClient::GetFromChannelArgs(*args.args)),
       lb_fallback_timeout_ms_(grpc_channel_args_find_integer(
           args.args, GRPC_ARG_XDS_FALLBACK_TIMEOUT_MS,
           {GRPC_XDS_DEFAULT_FALLBACK_TIMEOUT_MS, 0, INT_MAX})),
@@ -661,6 +675,11 @@ XdsLb::XdsLb(Args args)
           args.args, GRPC_ARG_XDS_FAILOVER_TIMEOUT_MS,
           {GRPC_XDS_DEFAULT_FAILOVER_TIMEOUT_MS, 0, INT_MAX})),
       priority_list_(this) {
+  if (xds_client_from_channel_ != nullptr &&
+      GRPC_TRACE_FLAG_ENABLED(grpc_lb_xds_trace)) {
+    gpr_log(GPR_INFO, "[xdslb %p] Using xds client %p from channel", this,
+            xds_client_from_channel_.get());
+  }
   // Record server name.
   const grpc_arg* arg = grpc_channel_args_find(args.args, GRPC_ARG_SERVER_URI);
   const char* server_uri = grpc_channel_arg_get_string(arg);
@@ -703,12 +722,11 @@ void XdsLb::ShutdownLocked() {
   pending_fallback_policy_.reset();
   // Cancel the endpoint watch here instead of in our dtor, because the
   // watcher holds a ref to us.
-  if (xds_client_ != nullptr) {
-    xds_client_->CancelEndpointDataWatch(StringView(server_name_),
-                                         endpoint_watcher_);
-    xds_client_->RemoveClientStats(StringView(server_name_), &client_stats_);
-    xds_client_.reset();
-  }
+  xds_client()->CancelEndpointDataWatch(StringView(server_name_),
+                                        endpoint_watcher_);
+  xds_client()->RemoveClientStats(StringView(server_name_), &client_stats_);
+  xds_client_from_channel_.reset();
+  xds_client_.reset();
 }
 
 //
@@ -716,9 +734,9 @@ void XdsLb::ShutdownLocked() {
 //
 
 void XdsLb::ResetBackoffLocked() {
-  // TODO(roth): When we instantiate the XdsClient in the resolver
-  // instead of in this LB policy, this should be done in the resolver
-  // instead of here.
+  // When the XdsClient is instantiated in the resolver instead of in this
+  // LB policy, this is done via the resolver, so we don't need to do it
+  // for xds_client_from_channel_ here.
   if (xds_client_ != nullptr) xds_client_->ResetBackoff();
   priority_list_.ResetBackoffLocked();
   if (fallback_policy_ != nullptr) {
@@ -730,7 +748,10 @@ void XdsLb::ResetBackoffLocked() {
 }
 
 void XdsLb::UpdateLocked(UpdateArgs args) {
-  const bool is_initial_update = xds_client_ == nullptr;
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_xds_trace)) {
+    gpr_log(GPR_INFO, "[xdslb %p] Received update", this);
+  }
+  const bool is_initial_update = args_ == nullptr;
   // Update config.
   auto* xds_config = static_cast<const ParsedXdsConfig*>(args.config.get());
   child_policy_config_ = xds_config->child_policy();
@@ -741,32 +762,32 @@ void XdsLb::UpdateLocked(UpdateArgs args) {
   grpc_channel_args_destroy(args_);
   args_ = args.args;
   args.args = nullptr;
-  // Create an xds client if we don't have one yet.
-  if (xds_client_ == nullptr) {
-    grpc_error* error = GRPC_ERROR_NONE;
-    xds_client_ = MakeOrphanable<XdsClient>(
-        combiner(), interested_parties(), StringView(server_name_),
-        nullptr /* service config watcher */, *args_, &error);
-    // TODO(roth): When we move instantiation of the XdsClient into the
-    // xds resolver, add proper error handling there.
-    GPR_ASSERT(error == GRPC_ERROR_NONE);
-    if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_xds_trace)) {
-      gpr_log(GPR_INFO, "[xdslb %p] Created xds client %p", this,
-              xds_client_.get());
-    }
-    endpoint_watcher_ = New<EndpointWatcher>(Ref());
-    xds_client_->WatchEndpointData(
-        StringView(server_name_),
-        UniquePtr<XdsClient::EndpointWatcherInterface>(endpoint_watcher_));
-    xds_client_->AddClientStats(StringView(server_name_), &client_stats_);
-  }
   // Update priority list.
   priority_list_.UpdateLocked();
   // Update the existing fallback policy. The fallback policy config and/or the
   // fallback addresses may be new.
   if (fallback_policy_ != nullptr) UpdateFallbackPolicyLocked();
-  // If this is the initial update, start the fallback-at-startup checks.
   if (is_initial_update) {
+    // Initialize XdsClient.
+    if (xds_client_from_channel_ == nullptr) {
+      grpc_error* error = GRPC_ERROR_NONE;
+      xds_client_ = MakeOrphanable<XdsClient>(
+          combiner(), interested_parties(), StringView(server_name_),
+          nullptr /* service config watcher */, *args_, &error);
+      // TODO(roth): If we decide that we care about fallback mode, add
+      // proper error handling here.
+      GPR_ASSERT(error == GRPC_ERROR_NONE);
+      if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_xds_trace)) {
+        gpr_log(GPR_INFO, "[xdslb %p] Created xds client %p", this,
+                xds_client_.get());
+      }
+    }
+    auto watcher = MakeUnique<EndpointWatcher>(Ref());
+    endpoint_watcher_ = watcher.get();
+    xds_client()->WatchEndpointData(StringView(server_name_),
+                                    std::move(watcher));
+    xds_client()->AddClientStats(StringView(server_name_), &client_stats_);
+    // Start fallback-at-startup checks.
     grpc_millis deadline = ExecCtx::Get()->Now() + lb_fallback_timeout_ms_;
     Ref(DEBUG_LOCATION, "on_fallback_timer").release();  // Held by closure
     GRPC_CLOSURE_INIT(&lb_on_fallback_, &XdsLb::OnFallbackTimer, this,

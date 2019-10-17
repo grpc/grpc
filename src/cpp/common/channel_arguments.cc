@@ -39,26 +39,26 @@ ChannelArguments::ChannelArguments(const ChannelArguments& other)
   args_.reserve(other.args_.size());
   auto list_it_dst = strings_.begin();
   auto list_it_src = other.strings_.begin();
-  for (auto a = other.args_.begin(); a != other.args_.end(); ++a) {
+  for (const auto& a : other.args_) {
     grpc_arg ap;
-    ap.type = a->type;
-    GPR_ASSERT(list_it_src->c_str() == a->key);
+    ap.type = a.type;
+    GPR_ASSERT(list_it_src->c_str() == a.key);
     ap.key = const_cast<char*>(list_it_dst->c_str());
     ++list_it_src;
     ++list_it_dst;
-    switch (a->type) {
+    switch (a.type) {
       case GRPC_ARG_INTEGER:
-        ap.value.integer = a->value.integer;
+        ap.value.integer = a.value.integer;
         break;
       case GRPC_ARG_STRING:
-        GPR_ASSERT(list_it_src->c_str() == a->value.string);
+        GPR_ASSERT(list_it_src->c_str() == a.value.string);
         ap.value.string = const_cast<char*>(list_it_dst->c_str());
         ++list_it_src;
         ++list_it_dst;
         break;
       case GRPC_ARG_POINTER:
-        ap.value.pointer = a->value.pointer;
-        ap.value.pointer.p = a->value.pointer.vtable->copy(ap.value.pointer.p);
+        ap.value.pointer = a.value.pointer;
+        ap.value.pointer.p = a.value.pointer.vtable->copy(ap.value.pointer.p);
         break;
     }
     args_.push_back(ap);
@@ -67,9 +67,9 @@ ChannelArguments::ChannelArguments(const ChannelArguments& other)
 
 ChannelArguments::~ChannelArguments() {
   grpc_core::ExecCtx exec_ctx;
-  for (auto it = args_.begin(); it != args_.end(); ++it) {
-    if (it->type == GRPC_ARG_POINTER) {
-      it->value.pointer.vtable->destroy(it->value.pointer.p);
+  for (auto& arg : args_) {
+    if (arg.type == GRPC_ARG_POINTER) {
+      arg.value.pointer.vtable->destroy(arg.value.pointer.p);
     }
   }
 }
@@ -95,12 +95,12 @@ void ChannelArguments::SetSocketMutator(grpc_socket_mutator* mutator) {
   grpc_arg mutator_arg = grpc_socket_mutator_to_arg(mutator);
   bool replaced = false;
   grpc_core::ExecCtx exec_ctx;
-  for (auto it = args_.begin(); it != args_.end(); ++it) {
-    if (it->type == mutator_arg.type &&
-        grpc::string(it->key) == grpc::string(mutator_arg.key)) {
+  for (auto& arg : args_) {
+    if (arg.type == mutator_arg.type &&
+        grpc::string(arg.key) == grpc::string(mutator_arg.key)) {
       GPR_ASSERT(!replaced);
-      it->value.pointer.vtable->destroy(it->value.pointer.p);
-      it->value.pointer = mutator_arg.value.pointer;
+      arg.value.pointer.vtable->destroy(arg.value.pointer.p);
+      arg.value.pointer = mutator_arg.value.pointer;
       replaced = true;
     }
   }
@@ -123,14 +123,13 @@ void ChannelArguments::SetUserAgentPrefix(
   }
   bool replaced = false;
   auto strings_it = strings_.begin();
-  for (auto it = args_.begin(); it != args_.end(); ++it) {
-    const grpc_arg& arg = *it;
+  for (auto& arg : args_) {
     ++strings_it;
     if (arg.type == GRPC_ARG_STRING) {
       if (grpc::string(arg.key) == GRPC_ARG_PRIMARY_USER_AGENT_STRING) {
         GPR_ASSERT(arg.value.string == strings_it->c_str());
         *(strings_it) = user_agent_prefix + " " + arg.value.string;
-        it->value.string = const_cast<char*>(strings_it->c_str());
+        arg.value.string = const_cast<char*>(strings_it->c_str());
         replaced = true;
         break;
       }

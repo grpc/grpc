@@ -110,7 +110,7 @@ class Allocator {
                    std::allocator<void>::const_pointer hint = nullptr) {
     return static_cast<pointer>(gpr_malloc(n * sizeof(T)));
   }
-  void deallocate(T* p, std::size_t n) { gpr_free(p); }
+  void deallocate(T* p, std::size_t /* n */) { gpr_free(p); }
   size_t max_size() const {
     return std::numeric_limits<size_type>::max() / sizeof(value_type);
   }

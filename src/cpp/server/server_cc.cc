@@ -204,11 +204,13 @@ ServerInterface::RegisteredAsyncRequest::RegisteredAsyncRequest(
 void ServerInterface::RegisteredAsyncRequest::IssueRequest(
     void* registered_method, grpc_byte_buffer** payload,
     ServerCompletionQueue* notification_cq) {
-  GPR_ASSERT(GRPC_CALL_OK == grpc_server_request_registered_call(
-                                 server_->server(), registered_method, &call_,
-                                 &context_->deadline_,
-                                 context_->client_metadata_.arr(), payload,
-                                 call_cq_->cq(), notification_cq->cq(), this));
+  // The following call_start_batch is internally-generated so no need for an
+  // explanatory log on failure.
+  GPR_ASSERT(grpc_server_request_registered_call(
+                 server_->server(), registered_method, &call_,
+                 &context_->deadline_, context_->client_metadata_.arr(),
+                 payload, call_cq_->cq(), notification_cq->cq(),
+                 this) == GRPC_CALL_OK);
 }
 
 ServerInterface::GenericAsyncRequest::GenericAsyncRequest(
@@ -220,10 +222,12 @@ ServerInterface::GenericAsyncRequest::GenericAsyncRequest(
   grpc_call_details_init(&call_details_);
   GPR_ASSERT(notification_cq);
   GPR_ASSERT(call_cq);
-  GPR_ASSERT(GRPC_CALL_OK == grpc_server_request_call(
-                                 server->server(), &call_, &call_details_,
-                                 context->client_metadata_.arr(), call_cq->cq(),
-                                 notification_cq->cq(), this));
+  // The following call_start_batch is internally-generated so no need for an
+  // explanatory log on failure.
+  GPR_ASSERT(grpc_server_request_call(server->server(), &call_, &call_details_,
+                                      context->client_metadata_.arr(),
+                                      call_cq->cq(), notification_cq->cq(),
+                                      this) == GRPC_CALL_OK);
 }
 
 bool ServerInterface::GenericAsyncRequest::FinalizeResult(void** tag,
@@ -571,12 +575,11 @@ class Server::CallbackRequest final : public Server::CallbackRequestBase {
 
   bool Request() override {
     if (method_tag_) {
-      if (GRPC_CALL_OK !=
-          grpc_server_request_registered_call(
+      if (grpc_server_request_registered_call(
               server_->c_server(), method_tag_, &call_, &deadline_,
               &request_metadata_,
               has_request_payload_ ? &request_payload_ : nullptr, cq_->cq(),
-              cq_->cq(), static_cast<void*>(&tag_))) {
+              cq_->cq(), static_cast<void*>(&tag_)) != GRPC_CALL_OK) {
         return false;
       }
     } else {
@@ -914,9 +917,9 @@ class Server::SyncRequestThreadManager : public grpc::ThreadManager {
 
   void Start() {
     if (!sync_requests_.empty()) {
-      for (auto m = sync_requests_.begin(); m != sync_requests_.end(); m++) {
-        (*m)->SetupRequest();
-        (*m)->Request(server_->c_server(), server_cq_->cq());
+      for (const auto& value : sync_requests_) {
+        value->SetupRequest();
+        value->Request(server_->c_server(), server_cq_->cq());
       }
 
       Initialize();  // ThreadManager's Initialize()
@@ -1014,8 +1017,8 @@ Server::~Server() {
       Shutdown();
     } else if (!started_) {
       // Shutdown the completion queues
-      for (auto it = sync_req_mgrs_.begin(); it != sync_req_mgrs_.end(); it++) {
-        (*it)->Shutdown();
+      for (const auto& value : sync_req_mgrs_) {
+        value->Shutdown();
       }
     }
   }
@@ -1083,16 +1086,14 @@ bool Server::RegisterService(const grpc::string* host, grpc::Service* service) {
 
   const char* method_name = nullptr;
 
-  for (auto it = service->methods_.begin(); it != service->methods_.end();
-       ++it) {
-    if (it->get() == nullptr) {  // Handled by generic service if any.
+  for (const auto& method : service->methods_) {
+    if (method.get() == nullptr) {  // Handled by generic service if any.
       continue;
     }
 
-    grpc::internal::RpcServiceMethod* method = it->get();
     void* method_registration_tag = grpc_server_register_method(
         server_, method->name(), host ? host->c_str() : nullptr,
-        PayloadHandlingForMethod(method), 0);
+        PayloadHandlingForMethod(method.get()), 0);
     if (method_registration_tag == nullptr) {
       gpr_log(GPR_DEBUG, "Attempt to register %s multiple times",
               method->name());
@@ -1103,8 +1104,8 @@ bool Server::RegisterService(const grpc::string* host, grpc::Service* service) {
       method->set_server_tag(method_registration_tag);
     } else if (method->api_type() ==
                grpc::internal::RpcServiceMethod::ApiType::SYNC) {
-      for (auto it = sync_req_mgrs_.begin(); it != sync_req_mgrs_.end(); it++) {
-        (*it)->AddSyncMethod(method, method_registration_tag);
+      for (const auto& value : sync_req_mgrs_) {
+        value->AddSyncMethod(method.get(), method_registration_tag);
       }
     } else {
       // a callback method. Register at least some callback requests
@@ -1113,8 +1114,8 @@ bool Server::RegisterService(const grpc::string* host, grpc::Service* service) {
       // TODO(vjpai): Register these dynamically based on need
       for (int i = 0; i < DEFAULT_CALLBACK_REQS_PER_METHOD; i++) {
         callback_reqs_to_start_.push_back(
-            new CallbackRequest<grpc::ServerContext>(this, method_index, method,
-                                                     method_registration_tag));
+            new CallbackRequest<grpc::ServerContext>(
+                this, method_index, method.get(), method_registration_tag));
       }
       // Enqueue it so that it will be Request'ed later after all request
       // matchers are created at core server startup
@@ -1213,8 +1214,8 @@ void Server::Start(grpc::ServerCompletionQueue** cqs, size_t num_cqs) {
   grpc_server_start(server_);
 
   if (!has_async_generic_service_ && !has_callback_generic_service_) {
-    for (auto it = sync_req_mgrs_.begin(); it != sync_req_mgrs_.end(); it++) {
-      (*it)->AddUnknownSyncMethod();
+    for (const auto& value : sync_req_mgrs_) {
+      value->AddUnknownSyncMethod();
     }
 
     for (size_t i = 0; i < num_cqs; i++) {
@@ -1235,8 +1236,8 @@ void Server::Start(grpc::ServerCompletionQueue** cqs, size_t num_cqs) {
         new grpc::internal::ResourceExhaustedHandler);
   }
 
-  for (auto it = sync_req_mgrs_.begin(); it != sync_req_mgrs_.end(); it++) {
-    (*it)->Start();
+  for (const auto& value : sync_req_mgrs_) {
+    value->Start();
   }
 
   for (auto* cbreq : callback_reqs_to_start_) {
@@ -1287,13 +1288,13 @@ void Server::ShutdownInternal(gpr_timespec deadline) {
 
   // Shutdown all ThreadManagers. This will try to gracefully stop all the
   // threads in the ThreadManagers (once they process any inflight requests)
-  for (auto it = sync_req_mgrs_.begin(); it != sync_req_mgrs_.end(); it++) {
-    (*it)->Shutdown();  // ThreadManager's Shutdown()
+  for (const auto& value : sync_req_mgrs_) {
+    value->Shutdown();  // ThreadManager's Shutdown()
   }
 
   // Wait for threads in all ThreadManagers to terminate
-  for (auto it = sync_req_mgrs_.begin(); it != sync_req_mgrs_.end(); it++) {
-    (*it)->Wait();
+  for (const auto& value : sync_req_mgrs_) {
+    value->Wait();
   }
 
   // Wait for all outstanding callback requests to complete

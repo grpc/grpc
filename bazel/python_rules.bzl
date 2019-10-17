@@ -2,13 +2,13 @@
 
 load(
     "//bazel:protobuf.bzl",
-    "get_include_protoc_args",
+    "get_include_directory",
     "get_plugin_args",
-    "get_proto_root",
     "protos_from_context",
     "includes_from_deps",
     "get_proto_arguments",
     "declare_out_files",
+    "get_out_dir",
 )
 
 _GENERATED_PROTO_FORMAT = "{}_pb2.py"
@@ -17,17 +17,17 @@ _GENERATED_GRPC_PROTO_FORMAT = "{}_pb2_grpc.py"
 def _generate_py_impl(context):
     protos = protos_from_context(context)
     includes = includes_from_deps(context.attr.deps)
-    proto_root = get_proto_root(context.label.workspace_root)
     out_files = declare_out_files(protos, context, _GENERATED_PROTO_FORMAT)
-
     tools = [context.executable._protoc]
+
+    out_dir = get_out_dir(protos, context)
     arguments = ([
-        "--python_out={}".format(
-            context.genfiles_dir.path,
-        ),
-    ] + get_include_protoc_args(includes) + [
-        "--proto_path={}".format(context.genfiles_dir.path)
-        for proto in protos
+        "--python_out={}".format(out_dir.path),
+    ] + [
+        "--proto_path={}".format(get_include_directory(i))
+        for i in includes
+    ] + [
+        "--proto_path={}".format(context.genfiles_dir.path),
     ])
     arguments += get_proto_arguments(protos, context.genfiles_dir.path)
 
@@ -39,7 +39,18 @@ def _generate_py_impl(context):
         arguments = arguments,
         mnemonic = "ProtocInvocation",
     )
-    return struct(files = depset(out_files))
+
+    imports = []
+    if out_dir.import_path:
+        imports.append("__main__/%s" % out_dir.import_path)
+
+    return [
+        DefaultInfo(files = depset(direct = out_files)),
+        PyInfo(
+            transitive_sources = depset(),
+            imports = depset(direct = imports),
+        ),
+    ]
 
 _generate_pb2_src = rule(
     attrs = {
@@ -82,32 +93,35 @@ def py_proto_library(
     native.py_library(
         name = name,
         srcs = [":{}".format(codegen_target)],
-        deps = ["@com_google_protobuf//:protobuf_python"],
+        deps = [
+            "@com_google_protobuf//:protobuf_python",
+            ":{}".format(codegen_target),
+        ],
         **kwargs
     )
 
 def _generate_pb2_grpc_src_impl(context):
     protos = protos_from_context(context)
     includes = includes_from_deps(context.attr.deps)
-    proto_root = get_proto_root(context.label.workspace_root)
     out_files = declare_out_files(protos, context, _GENERATED_GRPC_PROTO_FORMAT)
 
     plugin_flags = ["grpc_2_0"] + context.attr.strip_prefixes
 
     arguments = []
     tools = [context.executable._protoc, context.executable._plugin]
+    out_dir = get_out_dir(protos, context)
     arguments += get_plugin_args(
         context.executable._plugin,
         plugin_flags,
-        context.genfiles_dir.path,
+        out_dir.path,
         False,
     )
 
-    arguments += get_include_protoc_args(includes)
     arguments += [
-        "--proto_path={}".format(context.genfiles_dir.path)
-        for proto in protos
+        "--proto_path={}".format(get_include_directory(i))
+        for i in includes
     ]
+    arguments += ["--proto_path={}".format(context.genfiles_dir.path)]
     arguments += get_proto_arguments(protos, context.genfiles_dir.path)
 
     context.actions.run(
@@ -118,8 +132,18 @@ def _generate_pb2_grpc_src_impl(context):
         arguments = arguments,
         mnemonic = "ProtocInvocation",
     )
-    return struct(files = depset(out_files))
 
+    imports = []
+    if out_dir.import_path:
+        imports.append("__main__/%s" % out_dir.import_path)
+
+    return [
+        DefaultInfo(files = depset(direct = out_files)),
+        PyInfo(
+            transitive_sources = depset(),
+            imports = depset(direct = imports),
+        ),
+    ]
 
 _generate_pb2_grpc_src = rule(
     attrs = {
@@ -185,7 +209,11 @@ def py_grpc_library(
         srcs = [
             ":{}".format(codegen_grpc_target),
         ],
-        deps = [Label("//src/python/grpcio/grpc:grpcio")] + deps,
+        deps = [
+            Label("//src/python/grpcio/grpc:grpcio"),
+        ] + deps + [
+            ":{}".format(codegen_grpc_target)
+        ],
         **kwargs
     )
 
