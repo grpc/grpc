@@ -154,7 +154,7 @@ class TestTcpServer {
   }
 
  private:
-  void OnConnect(grpc_endpoint* tcp, grpc_pollset* accepting_pollset,
+  void OnConnect(grpc_endpoint* tcp, grpc_pollset* /*accepting_pollset*/,
                  grpc_tcp_server_acceptor* acceptor) {
     char* peer = grpc_endpoint_get_peer(tcp);
     gpr_log(GPR_INFO, "Got incoming connection! from %s", peer);
