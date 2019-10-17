@@ -97,7 +97,7 @@ void ProtoServerReflection::FillErrorResponse(const Status& status,
   error_response->set_error_message(status.error_message());
 }
 
-Status ProtoServerReflection::ListService(ServerContext* context,
+Status ProtoServerReflection::ListService(ServerContext* /*context*/,
                                           ListServiceResponse* response) {
   if (services_ == nullptr) {
     return Status(StatusCode::NOT_FOUND, "Services not found.");
@@ -110,7 +110,7 @@ Status ProtoServerReflection::ListService(ServerContext* context,
 }
 
 Status ProtoServerReflection::GetFileByName(
-    ServerContext* context, const grpc::string& filename,
+    ServerContext* /*context*/, const grpc::string& filename,
     ServerReflectionResponse* response) {
   if (descriptor_pool_ == nullptr) {
     return Status::CANCELLED;
@@ -127,7 +127,7 @@ Status ProtoServerReflection::GetFileByName(
 }
 
 Status ProtoServerReflection::GetFileContainingSymbol(
-    ServerContext* context, const grpc::string& symbol,
+    ServerContext* /*context*/, const grpc::string& symbol,
     ServerReflectionResponse* response) {
   if (descriptor_pool_ == nullptr) {
     return Status::CANCELLED;
@@ -144,7 +144,7 @@ Status ProtoServerReflection::GetFileContainingSymbol(
 }
 
 Status ProtoServerReflection::GetFileContainingExtension(
-    ServerContext* context, const ExtensionRequest* request,
+    ServerContext* /*context*/, const ExtensionRequest* request,
     ServerReflectionResponse* response) {
   if (descriptor_pool_ == nullptr) {
     return Status::CANCELLED;
@@ -168,7 +168,7 @@ Status ProtoServerReflection::GetFileContainingExtension(
 }
 
 Status ProtoServerReflection::GetAllExtensionNumbers(
-    ServerContext* context, const grpc::string& type,
+    ServerContext* /*context*/, const grpc::string& type,
     ExtensionNumberResponse* response) {
   if (descriptor_pool_ == nullptr) {
     return Status::CANCELLED;
