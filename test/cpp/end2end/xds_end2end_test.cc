@@ -986,7 +986,9 @@ TEST_P(BasicTest, Vanilla) {
   EXPECT_EQ(1U, balancers_[0]->ads_service()->request_count());
   EXPECT_EQ(1U, balancers_[0]->ads_service()->response_count());
   // Check LB policy name for the channel.
-  EXPECT_EQ("xds_experimental", channel_->GetLoadBalancingPolicyName());
+  EXPECT_EQ(
+      (GetParam().use_xds_resolver() ? "cds_experimental" : "xds_experimental"),
+      channel_->GetLoadBalancingPolicyName());
 }
 
 // Tests that subchannel sharing works when the same backend is listed multiple
