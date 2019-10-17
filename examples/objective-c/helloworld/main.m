@@ -59,11 +59,9 @@ int main(int argc, char * argv[]) {
     options.transport = GRPCDefaultTransportImplList.core_insecure;
     options.userAgentPrefix = @"HelloWorld/1.0";
 
-    GRPCUnaryProtoCall *call = [client sayHelloWithMessage:request
-                                           responseHandler:[[HLWResponseHandler alloc] init]
-                                               callOptions:options];
-
-    [call start];
+    [[client sayHelloWithMessage:request
+                 responseHandler:[[HLWResponseHandler alloc] init]
+                     callOptions:options] start];
 
     return UIApplicationMain(argc, argv, nil, NSStringFromClass([AppDelegate class]));
   }
