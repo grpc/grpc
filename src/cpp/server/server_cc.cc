@@ -185,11 +185,10 @@ void ServerInterface::BaseAsyncRequest::
   // Queue a tag which will be returned immediately
   grpc_core::ExecCtx exec_ctx;
   grpc_cq_begin_op(notification_cq_->cq(), this);
-  grpc_cq_end_op(notification_cq_->cq(), this, GRPC_ERROR_NONE,
-                 [](void* /*arg*/, grpc_cq_completion* completion) {
-                   delete completion;
-                 },
-                 nullptr, new grpc_cq_completion());
+  grpc_cq_end_op(
+      notification_cq_->cq(), this, GRPC_ERROR_NONE,
+      [](void* /*arg*/, grpc_cq_completion* completion) { delete completion; },
+      nullptr, new grpc_cq_completion());
 }
 
 ServerInterface::RegisteredAsyncRequest::RegisteredAsyncRequest(
