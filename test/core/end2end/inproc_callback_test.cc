@@ -205,8 +205,7 @@ static grpc_experimental_completion_queue_functor* tag(intptr_t t) {
 }
 
 static grpc_end2end_test_fixture inproc_create_fixture(
-    grpc_channel_args* /*client_args*/,
-    grpc_channel_args* /*server_args*/) {
+    grpc_channel_args* /*client_args*/, grpc_channel_args* /*server_args*/) {
   grpc_end2end_test_fixture f;
   inproc_fixture_data* ffd = static_cast<inproc_fixture_data*>(
       gpr_malloc(sizeof(inproc_fixture_data)));
