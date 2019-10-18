@@ -544,6 +544,7 @@ if test "$PHP_GRPC" != "no"; then
     third_party/boringssl/crypto/dsa/dsa.c \
     third_party/boringssl/crypto/dsa/dsa_asn1.c \
     third_party/boringssl/crypto/ec_extra/ec_asn1.c \
+    third_party/boringssl/crypto/ec_extra/ec_derive.c \
     third_party/boringssl/crypto/ecdh_extra/ecdh_extra.c \
     third_party/boringssl/crypto/ecdsa_extra/ecdsa_asn1.c \
     third_party/boringssl/crypto/engine/engine.c \
@@ -727,11 +728,6 @@ if test "$PHP_GRPC" != "no"; then
     third_party/boringssl/ssl/tls_method.cc \
     third_party/boringssl/ssl/tls_record.cc \
     third_party/boringssl/third_party/fiat/curve25519.c \
-    third_party/boringssl/third_party/sike/asm/fp_generic.c \
-    third_party/boringssl/third_party/sike/curve_params.c \
-    third_party/boringssl/third_party/sike/fpx.c \
-    third_party/boringssl/third_party/sike/isogeny.c \
-    third_party/boringssl/third_party/sike/sike.c \
     , $ext_shared, , -fvisibility=hidden \
     -DOPENSSL_NO_ASM -D_GNU_SOURCE -DWIN32_LEAN_AND_MEAN \
     -D_HAS_EXCEPTIONS=0 -DNOMINMAX -DGRPC_ARES=0 \
@@ -873,7 +869,5 @@ if test "$PHP_GRPC" != "no"; then
   PHP_ADD_BUILD_DIR($ext_builddir/third_party/boringssl/crypto/x509v3)
   PHP_ADD_BUILD_DIR($ext_builddir/third_party/boringssl/ssl)
   PHP_ADD_BUILD_DIR($ext_builddir/third_party/boringssl/third_party/fiat)
-  PHP_ADD_BUILD_DIR($ext_builddir/third_party/boringssl/third_party/sike)
-  PHP_ADD_BUILD_DIR($ext_builddir/third_party/boringssl/third_party/sike/asm)
   PHP_ADD_BUILD_DIR($ext_builddir/third_party/upb/upb)
 fi

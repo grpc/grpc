@@ -1088,10 +1088,6 @@
     <file baseinstalldir="/" name="third_party/boringssl/third_party/fiat/p256.c" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl/third_party/fiat/p256_32.h" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl/third_party/fiat/p256_64.h" role="src" />
-    <file baseinstalldir="/" name="third_party/boringssl/third_party/sike/fpx.h" role="src" />
-    <file baseinstalldir="/" name="third_party/boringssl/third_party/sike/isogeny.h" role="src" />
-    <file baseinstalldir="/" name="third_party/boringssl/third_party/sike/sike.h" role="src" />
-    <file baseinstalldir="/" name="third_party/boringssl/third_party/sike/utils.h" role="src" />
     <file baseinstalldir="/" name="src/boringssl/err_data.c" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl/crypto/asn1/a_bitstr.c" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl/crypto/asn1/a_bool.c" role="src" />
@@ -1172,6 +1168,7 @@
     <file baseinstalldir="/" name="third_party/boringssl/crypto/dsa/dsa.c" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl/crypto/dsa/dsa_asn1.c" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl/crypto/ec_extra/ec_asn1.c" role="src" />
+    <file baseinstalldir="/" name="third_party/boringssl/crypto/ec_extra/ec_derive.c" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl/crypto/ecdh_extra/ecdh_extra.c" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl/crypto/ecdsa_extra/ecdsa_asn1.c" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl/crypto/engine/engine.c" role="src" />
@@ -1355,11 +1352,6 @@
     <file baseinstalldir="/" name="third_party/boringssl/ssl/tls_method.cc" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl/ssl/tls_record.cc" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl/third_party/fiat/curve25519.c" role="src" />
-    <file baseinstalldir="/" name="third_party/boringssl/third_party/sike/asm/fp_generic.c" role="src" />
-    <file baseinstalldir="/" name="third_party/boringssl/third_party/sike/curve_params.c" role="src" />
-    <file baseinstalldir="/" name="third_party/boringssl/third_party/sike/fpx.c" role="src" />
-    <file baseinstalldir="/" name="third_party/boringssl/third_party/sike/isogeny.c" role="src" />
-    <file baseinstalldir="/" name="third_party/boringssl/third_party/sike/sike.c" role="src" />
     <file baseinstalldir="/" name="third_party/zlib/crc32.h" role="src" />
     <file baseinstalldir="/" name="third_party/zlib/deflate.h" role="src" />
     <file baseinstalldir="/" name="third_party/zlib/gzguts.h" role="src" />

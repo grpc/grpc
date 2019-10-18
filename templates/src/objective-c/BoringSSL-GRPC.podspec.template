@@ -81,7 +81,7 @@
 
     s.source = {
       :git => 'https://github.com/google/boringssl.git',
-      :commit => "1458b49a9e53b0db0ad63e8ef3156214f1473d87",
+      :commit => "7f02881e96e51f1873afcf384d02f782b48967ca",
     }
 
     s.ios.deployment_target = '7.0'
@@ -141,8 +141,7 @@
                                 'ssl/**/*.h',
                                 '*.h',
                                 'crypto/*.h',
-                                'crypto/**/*.h',
-                                'third_party/sike/*.h'
+                                'crypto/**/*.h'
       # bcm.c includes other source files, creating duplicated symbols. Since it is not used, we
       # explicitly exclude it from the pod.
       # TODO (mxyan): Work with BoringSSL team to remove this hack.
