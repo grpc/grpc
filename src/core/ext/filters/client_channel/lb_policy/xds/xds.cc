@@ -260,6 +260,7 @@ class XdsLb : public LoadBalancingPolicy {
         grpc_channel_args* CreateChildPolicyArgsLocked(
             const grpc_channel_args* args);
 
+        static void OnDelayedRemovalTimer(void* arg, grpc_error* error);
         static void OnDelayedRemovalTimerLocked(void* arg, grpc_error* error);
 
         XdsLb* xds_policy() const { return locality_map_->xds_policy(); }
@@ -309,6 +310,8 @@ class XdsLb : public LoadBalancingPolicy {
      private:
       void OnLocalityStateUpdateLocked();
       void UpdateConnectivityStateLocked();
+      static void OnDelayedRemovalTimer(void* arg, grpc_error* error);
+      static void OnFailoverTimer(void* arg, grpc_error* error);
       static void OnDelayedRemovalTimerLocked(void* arg, grpc_error* error);
       static void OnFailoverTimerLocked(void* arg, grpc_error* error);
 
@@ -382,6 +385,7 @@ class XdsLb : public LoadBalancingPolicy {
 
   // Methods for dealing with fallback state.
   void MaybeCancelFallbackAtStartupChecks();
+  static void OnFallbackTimer(void* arg, grpc_error* error);
   static void OnFallbackTimerLocked(void* arg, grpc_error* error);
   void UpdateFallbackPolicyLocked();
   OrphanablePtr<LoadBalancingPolicy> CreateFallbackPolicyLocked(
@@ -803,8 +807,8 @@ void XdsLb::UpdateLocked(UpdateArgs args) {
     // Start fallback-at-startup checks.
     grpc_millis deadline = ExecCtx::Get()->Now() + lb_fallback_timeout_ms_;
     Ref(DEBUG_LOCATION, "on_fallback_timer").release();  // Held by closure
-    GRPC_CLOSURE_INIT(&lb_on_fallback_, &XdsLb::OnFallbackTimerLocked, this,
-                      grpc_combiner_scheduler(combiner()));
+    GRPC_CLOSURE_INIT(&lb_on_fallback_, &XdsLb::OnFallbackTimer, this,
+                      grpc_schedule_on_exec_ctx);
     fallback_at_startup_checks_pending_ = true;
     grpc_timer_init(&lb_fallback_timer_, deadline, &lb_on_fallback_);
   }
@@ -857,6 +861,14 @@ void XdsLb::MaybeCancelFallbackAtStartupChecks() {
   }
   grpc_timer_cancel(&lb_fallback_timer_);
   fallback_at_startup_checks_pending_ = false;
+}
+
+void XdsLb::OnFallbackTimer(void* arg, grpc_error* error) {
+  XdsLb* xdslb_policy = static_cast<XdsLb*>(arg);
+  xdslb_policy->combiner()->Run(
+      GRPC_CLOSURE_INIT(&xdslb_policy->lb_on_fallback_,
+                        &XdsLb::OnFallbackTimerLocked, xdslb_policy, nullptr),
+      GRPC_ERROR_REF(error));
 }
 
 void XdsLb::OnFallbackTimerLocked(void* arg, grpc_error* error) {
@@ -1139,10 +1151,9 @@ XdsLb::PriorityList::LocalityMap::LocalityMap(RefCountedPtr<XdsLb> xds_policy,
     gpr_log(GPR_INFO, "[xdslb %p] Creating priority %" PRIu32,
             xds_policy_.get(), priority_);
   }
-  GRPC_CLOSURE_INIT(&on_delayed_removal_timer_, OnDelayedRemovalTimerLocked,
-                    this, grpc_combiner_scheduler(xds_policy_->combiner()));
-  GRPC_CLOSURE_INIT(&on_failover_timer_, OnFailoverTimerLocked, this,
-                    grpc_combiner_scheduler(xds_policy_->combiner()));
+
+  GRPC_CLOSURE_INIT(&on_failover_timer_, OnFailoverTimer, this,
+                    grpc_schedule_on_exec_ctx);
   // Start the failover timer.
   Ref(DEBUG_LOCATION, "LocalityMap+OnFailoverTimerLocked").release();
   grpc_timer_init(
@@ -1258,6 +1269,8 @@ void XdsLb::PriorityList::LocalityMap::DeactivateLocked() {
             xds_policy(), priority_,
             xds_policy()->locality_retention_interval_ms_);
   }
+  GRPC_CLOSURE_INIT(&on_delayed_removal_timer_, OnDelayedRemovalTimer, this,
+                    grpc_schedule_on_exec_ctx);
   grpc_timer_init(
       &delayed_removal_timer_,
       ExecCtx::Get()->Now() + xds_policy()->locality_retention_interval_ms_,
@@ -1386,6 +1399,15 @@ void XdsLb::PriorityList::LocalityMap::UpdateConnectivityStateLocked() {
   }
 }
 
+void XdsLb::PriorityList::LocalityMap::OnDelayedRemovalTimer(
+    void* arg, grpc_error* error) {
+  LocalityMap* self = static_cast<LocalityMap*>(arg);
+  self->xds_policy_->combiner()->Run(
+      GRPC_CLOSURE_INIT(&self->on_delayed_removal_timer_,
+                        OnDelayedRemovalTimerLocked, self, nullptr),
+      GRPC_ERROR_REF(error));
+}
+
 void XdsLb::PriorityList::LocalityMap::OnDelayedRemovalTimerLocked(
     void* arg, grpc_error* error) {
   LocalityMap* self = static_cast<LocalityMap*>(arg);
@@ -1395,13 +1417,13 @@ void XdsLb::PriorityList::LocalityMap::OnDelayedRemovalTimerLocked(
     const bool keep = self->priority_list_update().Contains(self->priority_) &&
                       self->priority_ <= priority_list->current_priority();
     if (!keep) {
-      // This check is to make sure we always delete the locality maps from the
-      // lowest priority even if the closures of the back-to-back timers are not
-      // run in FIFO order.
+      // This check is to make sure we always delete the locality maps from
+      // the lowest priority even if the closures of the back-to-back timers
+      // are not run in FIFO order.
       // TODO(juanlishen): Eliminate unnecessary maintenance overhead for some
       // deactivated locality maps when out-of-order closures are run.
-      // TODO(juanlishen): Check the timer implementation to see if this defense
-      // is necessary.
+      // TODO(juanlishen): Check the timer implementation to see if this
+      // defense is necessary.
       if (self->priority_ == priority_list->LowestPriority()) {
         priority_list->priorities_.pop_back();
       } else {
@@ -1414,6 +1436,15 @@ void XdsLb::PriorityList::LocalityMap::OnDelayedRemovalTimerLocked(
     }
   }
   self->Unref(DEBUG_LOCATION, "LocalityMap+timer");
+}
+
+void XdsLb::PriorityList::LocalityMap::OnFailoverTimer(void* arg,
+                                                       grpc_error* error) {
+  LocalityMap* self = static_cast<LocalityMap*>(arg);
+  self->xds_policy_->combiner()->Run(
+      GRPC_CLOSURE_INIT(&self->on_failover_timer_, OnFailoverTimerLocked, self,
+                        nullptr),
+      GRPC_ERROR_REF(error));
 }
 
 void XdsLb::PriorityList::LocalityMap::OnFailoverTimerLocked(
@@ -1438,8 +1469,6 @@ XdsLb::PriorityList::LocalityMap::Locality::Locality(
     gpr_log(GPR_INFO, "[xdslb %p] created Locality %p for %s", xds_policy(),
             this, name_->AsHumanReadableString());
   }
-  GRPC_CLOSURE_INIT(&on_delayed_removal_timer_, OnDelayedRemovalTimerLocked,
-                    this, grpc_combiner_scheduler(xds_policy()->combiner()));
 }
 
 XdsLb::PriorityList::LocalityMap::Locality::~Locality() {
@@ -1494,8 +1523,8 @@ XdsLb::PriorityList::LocalityMap::Locality::CreateChildPolicyLocked(
             lb_policy.get());
   }
   // Add the xDS's interested_parties pollset_set to that of the newly created
-  // child policy. This will make the child policy progress upon activity on xDS
-  // LB, which in turn is tied to the application's call.
+  // child policy. This will make the child policy progress upon activity on
+  // xDS LB, which in turn is tied to the application's call.
   grpc_pollset_set_add_pollset_set(lb_policy->interested_parties(),
                                    xds_policy()->interested_parties());
   return lb_policy;
@@ -1656,11 +1685,22 @@ void XdsLb::PriorityList::LocalityMap::Locality::DeactivateLocked() {
   weight_ = 0;
   // Start a timer to delete the locality.
   Ref(DEBUG_LOCATION, "Locality+timer").release();
+  GRPC_CLOSURE_INIT(&on_delayed_removal_timer_, OnDelayedRemovalTimer, this,
+                    grpc_schedule_on_exec_ctx);
   grpc_timer_init(
       &delayed_removal_timer_,
       ExecCtx::Get()->Now() + xds_policy()->locality_retention_interval_ms_,
       &on_delayed_removal_timer_);
   delayed_removal_timer_callback_pending_ = true;
+}
+
+void XdsLb::PriorityList::LocalityMap::Locality::OnDelayedRemovalTimer(
+    void* arg, grpc_error* error) {
+  Locality* self = static_cast<Locality*>(arg);
+  self->xds_policy()->combiner()->Run(
+      GRPC_CLOSURE_INIT(&self->on_delayed_removal_timer_,
+                        OnDelayedRemovalTimerLocked, self, nullptr),
+      GRPC_ERROR_REF(error));
 }
 
 void XdsLb::PriorityList::LocalityMap::Locality::OnDelayedRemovalTimerLocked(
