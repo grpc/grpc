@@ -120,7 +120,7 @@ GrpclbRouteType DoWaitForReadyRPCAndGetPath(TestService::Stub* stub,
   return DoRPCAndGetPath(stub, deadline_seconds, WaitForReady);
 }
 
-bool TcpUserTimeoutMutateFd(int fd, grpc_socket_mutator* mutator) {
+bool TcpUserTimeoutMutateFd(int fd, grpc_socket_mutator* /*mutator*/) {
   int timeout = 20000;  // 20 seconds
   gpr_log(GPR_INFO, "Setting socket option TCP_USER_TIMEOUT on fd: %d", fd);
   if (0 != setsockopt(fd, IPPROTO_TCP, TCP_USER_TIMEOUT, &timeout,
@@ -138,7 +138,8 @@ bool TcpUserTimeoutMutateFd(int fd, grpc_socket_mutator* mutator) {
   return true;
 }
 
-int TcpUserTimeoutCompare(grpc_socket_mutator* a, grpc_socket_mutator* b) {
+int TcpUserTimeoutCompare(grpc_socket_mutator* /*a*/,
+                          grpc_socket_mutator* /*b*/) {
   return 0;
 }
 
