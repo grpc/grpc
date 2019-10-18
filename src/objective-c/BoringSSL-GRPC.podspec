@@ -136,7 +136,8 @@ Pod::Spec.new do |s|
                               'ssl/**/*.h',
                               '*.h',
                               'crypto/*.h',
-                              'crypto/**/*.h'
+                              'crypto/**/*.h',
+                              'third_party/sike/*.h'
     # bcm.c includes other source files, creating duplicated symbols. Since it is not used, we
     # explicitly exclude it from the pod.
     # TODO (mxyan): Work with BoringSSL team to remove this hack.
