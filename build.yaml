@@ -1065,6 +1065,22 @@ filegroups:
   plugin: grpc_http_filters
   uses:
   - grpc_base
+- name: grpc_lb_policy_cds
+  src:
+  - src/core/ext/filters/client_channel/lb_policy/xds/cds.cc
+  plugin: grpc_lb_policy_cds
+  uses:
+  - grpc_base
+  - grpc_client_channel
+  - grpc_xds_client
+- name: grpc_lb_policy_cds_secure
+  src:
+  - src/core/ext/filters/client_channel/lb_policy/xds/cds.cc
+  plugin: grpc_lb_policy_cds
+  uses:
+  - grpc_base
+  - grpc_client_channel
+  - grpc_xds_client_secure
 - name: grpc_lb_policy_grpclb
   headers:
   - src/core/ext/filters/client_channel/lb_policy/grpclb/client_load_reporting_filter.h
@@ -1681,6 +1697,7 @@ libs:
   - grpc_transport_chttp2_client_insecure
   - grpc_transport_inproc
   - grpc_lb_policy_grpclb_secure
+  - grpc_lb_policy_cds_secure
   - grpc_lb_policy_xds_secure
   - grpc_lb_policy_pick_first
   - grpc_lb_policy_round_robin
@@ -1762,6 +1779,7 @@ libs:
   - grpc_resolver_fake
   - grpc_resolver_xds
   - grpc_lb_policy_grpclb
+  - grpc_lb_policy_cds
   - grpc_lb_policy_xds
   - grpc_lb_policy_pick_first
   - grpc_lb_policy_round_robin
