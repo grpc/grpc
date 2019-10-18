@@ -887,12 +887,13 @@ class RPCTest(unittest.TestCase):
     def _cancelled_unary_request_stream_response(self, multi_callable):
         request = b'\x07\x19'
 
+        response_iterator = None
         with self._control.pause():
             response_iterator = multi_callable(
                 request,
                 metadata=(('test', 'CancelledUnaryRequestStreamResponse'),))
             self._control.block_until_paused()
-            response_iterator.cancel()
+            self.assertTrue(response_iterator.cancel())
 
         with self.assertRaises(grpc.RpcError) as exception_context:
             next(response_iterator)
@@ -902,6 +903,7 @@ class RPCTest(unittest.TestCase):
         self.assertIs(grpc.StatusCode.CANCELLED, response_iterator.code())
         self.assertIsNotNone(response_iterator.details())
         self.assertIsNotNone(response_iterator.trailing_metadata())
+        self.assertFalse(response_iterator.cancel())
 
     def _cancelled_stream_request_stream_response(self, multi_callable):
         requests = tuple(

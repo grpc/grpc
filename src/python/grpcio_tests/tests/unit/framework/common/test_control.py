@@ -73,10 +73,12 @@ class PauseFailControl(Control):
         """Pauses code under control while controlling code is in context."""
         with self._condition:
             self._pause = True
-        yield
-        with self._condition:
-            self._pause = False
-            self._condition.notify_all()
+        try:
+            yield
+        finally:
+            with self._condition:
+                self._pause = False
+                self._condition.notify_all()
 
     def block_until_paused(self):
         """Blocks controlling code until code under control is paused.
