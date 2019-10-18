@@ -267,7 +267,9 @@ class _Rendezvous(grpc.RpcError, grpc.Future, grpc.Call):  # pylint: disable=too
                 self._state.cancelled = True
                 _abort(self._state, code, details)
                 self._state.condition.notify_all()
-            return False
+                return True
+            else:
+                return False
 
     def cancelled(self):
         with self._state.condition:
