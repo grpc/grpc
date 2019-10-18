@@ -2315,58 +2315,59 @@ grpc::string TestTypeName(const ::testing::TestParamInfo<TestType>& info) {
   return info.param.AsString();
 }
 
-INSTANTIATE_TEST_SUITE_P(UsesXdsResolver, BasicTest,
+// TODO(juanlishen): Load reporting disabled is currently tested only with DNS
+// resolver.  Once we implement CDS, test it via the xds resolver too.
+
+INSTANTIATE_TEST_SUITE_P(XdsTest, BasicTest,
                          ::testing::Values(TestType(false, true),
                                            TestType(false, false),
                                            TestType(true, true)),
                          &TestTypeName);
 
-INSTANTIATE_TEST_SUITE_P(UsesXdsResolver, SecureNamingTest,
+INSTANTIATE_TEST_SUITE_P(XdsTest, SecureNamingTest,
                          ::testing::Values(TestType(false, true),
                                            TestType(false, false),
                                            TestType(true, true)),
                          &TestTypeName);
 
-INSTANTIATE_TEST_SUITE_P(UsesXdsResolver, LocalityMapTest,
+INSTANTIATE_TEST_SUITE_P(XdsTest, LocalityMapTest,
                          ::testing::Values(TestType(false, true),
                                            TestType(false, false),
                                            TestType(true, true)),
                          &TestTypeName);
 
-INSTANTIATE_TEST_SUITE_P(UsesXdsResolver, FailoverTest,
+INSTANTIATE_TEST_SUITE_P(XdsTest, FailoverTest,
                          ::testing::Values(TestType(false, true),
                                            TestType(false, false),
                                            TestType(true, true)),
                          &TestTypeName);
 
-INSTANTIATE_TEST_SUITE_P(UsesXdsResolver, DropTest,
+INSTANTIATE_TEST_SUITE_P(XdsTest, DropTest,
                          ::testing::Values(TestType(false, true),
                                            TestType(false, false),
                                            TestType(true, true)),
                          &TestTypeName);
 
 // Fallback does not work with xds resolver.
-INSTANTIATE_TEST_SUITE_P(UsesXdsResolver, FallbackTest,
+INSTANTIATE_TEST_SUITE_P(XdsTest, FallbackTest,
                          ::testing::Values(TestType(false, true),
                                            TestType(false, false)),
                          &TestTypeName);
 
-INSTANTIATE_TEST_SUITE_P(UsesXdsResolver, BalancerUpdateTest,
+INSTANTIATE_TEST_SUITE_P(XdsTest, BalancerUpdateTest,
                          ::testing::Values(TestType(false, true),
                                            TestType(false, false),
                                            TestType(true, true)),
                          &TestTypeName);
 
-// TODO(juanlishen): Load reporting disabled is currently tested only with DNS
-// resolver.  Once we implement CDS, test it via the xds resolver too.
-INSTANTIATE_TEST_SUITE_P(UsesXdsResolver, ClientLoadReportingTest,
+// Load reporting tests are not run with load reporting disabled.
+INSTANTIATE_TEST_SUITE_P(XdsTest, ClientLoadReportingTest,
                          ::testing::Values(TestType(false, true),
                                            TestType(true, true)),
                          &TestTypeName);
 
-// TODO(juanlishen): Load reporting disabled is currently tested only with DNS
-// resolver.  Once we implement CDS, test it via the xds resolver too.
-INSTANTIATE_TEST_SUITE_P(UsesXdsResolver, ClientLoadReportingWithDropTest,
+// Load reporting tests are not run with load reporting disabled.
+INSTANTIATE_TEST_SUITE_P(XdsTest, ClientLoadReportingWithDropTest,
                          ::testing::Values(TestType(false, true),
                                            TestType(true, true)),
                          &TestTypeName);
