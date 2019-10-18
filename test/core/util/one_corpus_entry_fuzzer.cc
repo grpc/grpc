@@ -29,13 +29,14 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size);
 extern bool squelch;
 extern bool leak_check;
 
-int main(int /*argc*/, char** argv) {
+int main(int argc, char** argv) {
   grpc_slice buffer;
   squelch = false;
   leak_check = false;
   /* TODO(yashkt) Calling grpc_init breaks tests. Fix the tests and replace
    * grpc_core::ExecCtx::GlobalInit with grpc_init and GlobalShutdown with
    * grpc_shutdown */
+  GPR_ASSERT(argc > 1); /* Make sure that we have a filename argument */
   GPR_ASSERT(
       GRPC_LOG_IF_ERROR("load_file", grpc_load_file(argv[1], 0, &buffer)));
   LLVMFuzzerTestOneInput(GRPC_SLICE_START_PTR(buffer),
