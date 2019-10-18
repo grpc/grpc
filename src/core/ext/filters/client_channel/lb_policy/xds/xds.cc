@@ -106,7 +106,6 @@ class XdsLb : public LoadBalancingPolicy {
   void ResetBackoffLocked() override;
 
  private:
-  class ClusterWatcher;
   class EndpointWatcher;
 
   // We need this wrapper for the following reasons:
@@ -579,77 +578,6 @@ void XdsLb::FallbackHelper::AddTraceEvent(TraceSeverity severity,
   }
   parent_->channel_control_helper()->AddTraceEvent(severity, message);
 }
-
-//
-// XdsLb::ClusterWatcher
-//
-
-class XdsLb::ClusterWatcher : public XdsClient::ClusterWatcherInterface {
- public:
-  explicit ClusterWatcher(RefCountedPtr<XdsLb> xds_policy)
-      : xds_policy_(std::move(xds_policy)) {}
-
-  void OnClusterChanged(CdsUpdate update) override {
-    // If the balancer tells us to drop all the calls, we should exit fallback
-    // mode immediately.
-    if (update.drop_all) xds_policy_->MaybeExitFallbackMode();
-    // Update the drop config.
-    const bool drop_config_changed =
-        xds_policy_->drop_config_ == nullptr ||
-        *xds_policy_->drop_config_ != *update.drop_config;
-    xds_policy_->drop_config_ = std::move(update.drop_config);
-    // Ignore identical locality update.
-    if (xds_policy_->priority_list_update_ == update.priority_list_update) {
-      if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_xds_trace)) {
-        gpr_log(GPR_INFO,
-                "[xdslb %p] Incoming locality update identical to current, "
-                "ignoring. (drop_config_changed=%d)",
-                xds_policy_.get(), drop_config_changed);
-      }
-      if (drop_config_changed) {
-        xds_policy_->priority_list_.UpdateXdsPickerLocked();
-      }
-      return;
-    }
-    // Update the priority list.
-    xds_policy_->priority_list_update_ = std::move(update.priority_list_update);
-    xds_policy_->priority_list_.UpdateLocked();
-  }
-
-  void OnError(grpc_error* error) override {
-    // If the fallback-at-startup checks are pending, go into fallback mode
-    // immediately.  This short-circuits the timeout for the
-    // fallback-at-startup case.
-    if (xds_policy_->fallback_at_startup_checks_pending_) {
-      gpr_log(GPR_INFO,
-              "[xdslb %p] xds watcher reported error; entering fallback "
-              "mode: %s",
-              xds_policy_.get(), grpc_error_string(error));
-      xds_policy_->fallback_at_startup_checks_pending_ = false;
-      grpc_timer_cancel(&xds_policy_->lb_fallback_timer_);
-      xds_policy_->UpdateFallbackPolicyLocked();
-      // If the xds call failed, request re-resolution.
-      // TODO(roth): We check the error string contents here to
-      // differentiate between the xds call failing and the xds channel
-      // going into TRANSIENT_FAILURE.  This is a pretty ugly hack,
-      // but it's okay for now, since we're not yet sure whether we will
-      // continue to support the current fallback functionality.  If we
-      // decide to keep the fallback approach, then we should either
-      // find a cleaner way to expose the difference between these two
-      // cases or decide that we're okay re-resolving in both cases.
-      // Note that even if we do keep the current fallback functionality,
-      // this re-resolution will only be necessary if we are going to be
-      // using this LB policy with resolvers other than the xds resolver.
-      if (strstr(grpc_error_string(error), "xds call failed")) {
-        xds_policy_->channel_control_helper()->RequestReresolution();
-      }
-    }
-    GRPC_ERROR_UNREF(error);
-  }
-
- private:
-  RefCountedPtr<XdsLb> xds_policy_;
-};
 
 //
 // XdsLb::EndpointWatcher

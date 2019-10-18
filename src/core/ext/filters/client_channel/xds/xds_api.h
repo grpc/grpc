@@ -137,24 +137,34 @@ struct EdsUpdate {
 };
 
 struct CdsUpdate {
-  UniquePtr<char> service_name;
+  // The name to use in the EDS request.
+  // If null, the cluster name will be used.
+  UniquePtr<char> eds_service_name;
+  // The LRS server to use for load reporting.
+  // If null, load reporting will be disabled.
+  // If set to the empty string, will use the same server we obtained
+  // the CDS data from.
+  UniquePtr<char> lrs_load_reporting_server_name;
 
+  CdsUpdate() {}
   CdsUpdate(const CdsUpdate& other)
-      : service_name(UniquePtr<char>(gpr_strdup(other.service_name.get()))) {}
+      : eds_service_name(
+            UniquePtr<char>(gpr_strdup(other.eds_service_name.get()))) {}
 };
 
-// Creates a CDS request querying \a sever_name.
-grpc_slice XdsCdsRequestCreateAndEncode(const char* cluster_name);
-
-// Creates an EDS request querying \a service_name.
-grpc_slice XdsEdsRequestCreateAndEncode(const char* server_name,
+// Creates a CDS request querying \a cluster_name.
+grpc_slice XdsCdsRequestCreateAndEncode(const char* cluster_name,
                                         const XdsBootstrap::Node* node,
                                         const char* build_version);
 
-// Parses the EDS response and returns the args to update locality map. If there
+// Creates an EDS request querying \a service_name.
+grpc_slice XdsEdsRequestCreateAndEncode(const char* server_name);
+
+// Parses the ADS response and outputs update for either CDS or EDS. If there
 // is any error, the output update is invalid.
 grpc_error* XdsAdsResponseDecodeAndParse(const grpc_slice& encoded_response,
-                                         CdsUpdate cds_update,
+                                         const char* expected_cluster_name,
+                                         CdsUpdate* cds_update,
                                          EdsUpdate* eds_update);
 
 // Creates an LRS request querying \a server_name.

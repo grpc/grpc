@@ -23,7 +23,6 @@
 #include <grpc/impl/codegen/log.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/string_util.h>
-#include <src/core/ext/upb-generated/envoy/api/v2/core/config_source.upb.h>
 
 #include "src/core/ext/filters/client_channel/xds/xds_api.h"
 #include "src/core/lib/iomgr/error.h"
@@ -32,6 +31,7 @@
 #include "envoy/api/v2/cds.upb.h"
 #include "envoy/api/v2/core/address.upb.h"
 #include "envoy/api/v2/core/base.upb.h"
+#include "envoy/api/v2/core/config_source.upb.h"
 #include "envoy/api/v2/discovery.upb.h"
 #include "envoy/api/v2/eds.upb.h"
 #include "envoy/api/v2/endpoint/endpoint.upb.h"
@@ -200,11 +200,16 @@ void PopulateNode(upb_arena* arena, const XdsBootstrap::Node* node,
 
 }  // namespace
 
-grpc_slice XdsCdsRequestCreateAndEncode(const char* cluster_name) {
+grpc_slice XdsCdsRequestCreateAndEncode(const char* cluster_name,
+                                        const XdsBootstrap::Node* node,
+                                        const char* build_version) {
   upb::Arena arena;
   // Create a request.
   envoy_api_v2_DiscoveryRequest* request =
       envoy_api_v2_DiscoveryRequest_new(arena.ptr());
+  envoy_api_v2_core_Node* node_msg =
+      envoy_api_v2_DiscoveryRequest_mutable_node(request, arena.ptr());
+  PopulateNode(arena.ptr(), node, build_version, node_msg);
   envoy_api_v2_DiscoveryRequest_add_resource_names(
       request, upb_strview_makez(cluster_name), arena.ptr());
   envoy_api_v2_DiscoveryRequest_set_type_url(request,
@@ -216,16 +221,11 @@ grpc_slice XdsCdsRequestCreateAndEncode(const char* cluster_name) {
   return grpc_slice_from_copied_buffer(output, output_length);
 }
 
-grpc_slice XdsEdsRequestCreateAndEncode(const char* server_name,
-                                        const XdsBootstrap::Node* node,
-                                        const char* build_version) {
+grpc_slice XdsEdsRequestCreateAndEncode(const char* server_name) {
   upb::Arena arena;
   // Create a request.
   envoy_api_v2_DiscoveryRequest* request =
       envoy_api_v2_DiscoveryRequest_new(arena.ptr());
-  envoy_api_v2_core_Node* node_msg =
-      envoy_api_v2_DiscoveryRequest_mutable_node(request, arena.ptr());
-  PopulateNode(arena.ptr(), node, build_version, node_msg);
   envoy_api_v2_DiscoveryRequest_add_resource_names(
       request, upb_strview_makez(server_name), arena.ptr());
   envoy_api_v2_DiscoveryRequest_set_type_url(request,
@@ -271,6 +271,9 @@ grpc_error* CdsResponsedParse(const envoy_api_v2_DiscoveryResponse* response,
     const upb_strview encoded_cluster = google_protobuf_Any_value(resources[i]);
     const envoy_api_v2_Cluster* candidate_cluster = envoy_api_v2_Cluster_parse(
         encoded_cluster.data, encoded_cluster.size, arena);
+    if (candidate_cluster == nullptr) {
+      return GRPC_ERROR_CREATE_FROM_STATIC_STRING("Can't decode cluster.");
+    }
     // Check the cluster name.
     upb_strview cluster_name = envoy_api_v2_Cluster_name(candidate_cluster);
     if (upb_strview_eql(cluster_name,
@@ -297,11 +300,11 @@ grpc_error* CdsResponsedParse(const envoy_api_v2_DiscoveryResponse* response,
   if (!envoy_api_v2_core_ConfigSource_has_ads(eds_config)) {
     return GRPC_ERROR_CREATE_FROM_STATIC_STRING("ConfigSource is not ADS.");
   }
-  // Record service_name (if any).
+  // Record EDS service_name (if any).
   upb_strview service_name =
       envoy_api_v2_Cluster_EdsClusterConfig_service_name(eds_cluster_config);
   if (service_name.size != 0) {
-    cds_update->service_name = StringCopy(service_name);
+    cds_update->eds_service_name = StringCopy(service_name);
   }
   // Check the LB policy.
   if (envoy_api_v2_Cluster_lb_policy(cluster) !=
@@ -309,6 +312,14 @@ grpc_error* CdsResponsedParse(const envoy_api_v2_DiscoveryResponse* response,
     return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
         "LB policy is not ROUND_ROBIN.");
   }
+  // Record LRS server (if any).
+  // FIXME: update upb files.
+  const envoy_api_v2_core_ConfigSource* lrs_server =
+      envoy_api_v2_Cluster_lrs_server(cluster);
+  if (!envoy_api_v2_core_ConfigSource_has_self(lrs_server)) {
+    return GRPC_ERROR_CREATE_FROM_STATIC_STRING("ConfigSource is not self.");
+  }
+  cds_update->lrs_load_reporting_server_name.reset(gpr_strdup(""));
   return GRPC_ERROR_NONE;
 }
 
@@ -438,6 +449,10 @@ grpc_error* EdsResponsedParse(const envoy_api_v2_DiscoveryResponse* response,
       envoy_api_v2_ClusterLoadAssignment_parse(
           encoded_cluster_load_assignment.data,
           encoded_cluster_load_assignment.size, arena);
+  if (cluster_load_assignment == nullptr) {
+    return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+        "Can't cluster_load_assignment.");
+  }
   // Get the endpoints.
   const envoy_api_v2_endpoint_LocalityLbEndpoints* const* endpoints =
       envoy_api_v2_ClusterLoadAssignment_endpoints(cluster_load_assignment,
@@ -637,7 +652,7 @@ grpc_error* XdsLrsResponseDecodeAndParse(const grpc_slice& encoded_response,
           GRPC_SLICE_LENGTH(encoded_response), arena.ptr());
   // Parse the response.
   if (decoded_response == nullptr) {
-    return GRPC_ERROR_CREATE_FROM_STATIC_STRING("No response found.");
+    return GRPC_ERROR_CREATE_FROM_STATIC_STRING("Can't decode response.");
   }
   // Check the cluster size in the response.
   size_t size;

@@ -169,6 +169,7 @@ class XdsClient : public InternallyRefCounted<XdsClient> {
   };
 
   struct ClusterState {
+    const char* cluster_name;
     Map<ClusterWatcherInterface*, UniquePtr<ClusterWatcherInterface>>
         cluster_watchers;
     Map<EndpointWatcherInterface*, UniquePtr<EndpointWatcherInterface>>
