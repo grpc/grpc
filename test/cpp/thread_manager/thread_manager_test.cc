@@ -102,7 +102,7 @@ grpc::ThreadManager::WorkStatus ThreadManagerTest::PollForWork(void** tag,
   return WORK_FOUND;
 }
 
-void ThreadManagerTest::DoWork(void* tag, bool ok, bool resources) {
+void ThreadManagerTest::DoWork(void* /*tag*/, bool /*ok*/, bool /*resources*/) {
   gpr_atm_no_barrier_fetch_add(&num_do_work_, 1);
   SleepForMs(settings_.work_duration_ms);  // Simulate work by sleeping
 }

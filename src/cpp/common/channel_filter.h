@@ -236,13 +236,13 @@ class ChannelData {
   // TODO(roth): Come up with a more C++-like API for the channel element.
 
   /// Initializes the channel data.
-  virtual grpc_error* Init(grpc_channel_element* elem,
-                           grpc_channel_element_args* args) {
+  virtual grpc_error* Init(grpc_channel_element* /*elem*/,
+                           grpc_channel_element_args* /*args*/) {
     return GRPC_ERROR_NONE;
   }
 
   // Called before destruction.
-  virtual void Destroy(grpc_channel_element* elem) {}
+  virtual void Destroy(grpc_channel_element* /*elem*/) {}
 
   virtual void StartTransportOp(grpc_channel_element* elem, TransportOp* op);
 
@@ -259,15 +259,15 @@ class CallData {
   // TODO(roth): Come up with a more C++-like API for the call element.
 
   /// Initializes the call data.
-  virtual grpc_error* Init(grpc_call_element* elem,
-                           const grpc_call_element_args* args) {
+  virtual grpc_error* Init(grpc_call_element* /*elem*/,
+                           const grpc_call_element_args* /*args*/) {
     return GRPC_ERROR_NONE;
   }
 
   // Called before destruction.
-  virtual void Destroy(grpc_call_element* elem,
-                       const grpc_call_final_info* final_info,
-                       grpc_closure* then_call_closure) {}
+  virtual void Destroy(grpc_call_element* /*elem*/,
+                       const grpc_call_final_info* /*final_info*/,
+                       grpc_closure* /*then_call_closure*/) {}
 
   /// Starts a new stream operation.
   virtual void StartTransportStreamOpBatch(grpc_call_element* elem,

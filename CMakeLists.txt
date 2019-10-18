@@ -731,6 +731,7 @@ add_dependencies(buildtests_cxx transport_security_common_api_test)
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 add_dependencies(buildtests_cxx writes_per_rpc_test)
 endif()
+add_dependencies(buildtests_cxx xds_bootstrap_test)
 add_dependencies(buildtests_cxx xds_end2end_test)
 add_dependencies(buildtests_cxx bad_streaming_id_bad_client_test)
 add_dependencies(buildtests_cxx badreq_bad_client_test)
@@ -1310,6 +1311,7 @@ add_library(grpc
   src/core/ext/filters/client_channel/resolver/fake/fake_resolver.cc
   src/core/ext/filters/client_channel/lb_policy/xds/xds.cc
   src/core/ext/filters/client_channel/xds/xds_api.cc
+  src/core/ext/filters/client_channel/xds/xds_bootstrap.cc
   src/core/ext/filters/client_channel/xds/xds_channel_secure.cc
   src/core/ext/filters/client_channel/xds/xds_client.cc
   src/core/ext/filters/client_channel/xds/xds_client_stats.cc
@@ -2819,14 +2821,8 @@ add_library(grpc_unsecure
   src/core/ext/filters/client_channel/resolver/sockaddr/sockaddr_resolver.cc
   src/core/ext/filters/client_channel/resolver/fake/fake_resolver.cc
   src/core/ext/filters/client_channel/resolver/xds/xds_resolver.cc
-  src/core/ext/filters/client_channel/lb_policy/grpclb/client_load_reporting_filter.cc
-  src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb.cc
-  src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_channel.cc
-  src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_client_stats.cc
-  src/core/ext/filters/client_channel/lb_policy/grpclb/load_balancer_api.cc
-  src/core/ext/upb-generated/src/proto/grpc/lb/v1/load_balancer.upb.c
-  src/core/ext/filters/client_channel/lb_policy/xds/xds.cc
   src/core/ext/filters/client_channel/xds/xds_api.cc
+  src/core/ext/filters/client_channel/xds/xds_bootstrap.cc
   src/core/ext/filters/client_channel/xds/xds_channel.cc
   src/core/ext/filters/client_channel/xds/xds_client.cc
   src/core/ext/filters/client_channel/xds/xds_client_stats.cc
@@ -2850,6 +2846,13 @@ add_library(grpc_unsecure
   src/core/ext/upb-generated/envoy/api/v2/core/protocol.upb.c
   src/core/ext/upb-generated/envoy/type/percent.upb.c
   src/core/ext/upb-generated/envoy/type/range.upb.c
+  src/core/ext/filters/client_channel/lb_policy/grpclb/client_load_reporting_filter.cc
+  src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb.cc
+  src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_channel.cc
+  src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_client_stats.cc
+  src/core/ext/filters/client_channel/lb_policy/grpclb/load_balancer_api.cc
+  src/core/ext/upb-generated/src/proto/grpc/lb/v1/load_balancer.upb.c
+  src/core/ext/filters/client_channel/lb_policy/xds/xds.cc
   src/core/ext/filters/client_channel/lb_policy/pick_first/pick_first.cc
   src/core/ext/filters/client_channel/lb_policy/round_robin/round_robin.cc
   src/core/ext/filters/census/grpc_context.cc
@@ -16795,6 +16798,47 @@ endif()
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
+add_executable(xds_bootstrap_test
+  test/core/client_channel/xds_bootstrap_test.cc
+  third_party/googletest/googletest/src/gtest-all.cc
+  third_party/googletest/googlemock/src/gmock-all.cc
+)
+
+
+target_include_directories(xds_bootstrap_test
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
+  PRIVATE ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
+  PRIVATE ${_gRPC_UPB_GENERATED_DIR}
+  PRIVATE ${_gRPC_UPB_GRPC_GENERATED_DIR}
+  PRIVATE ${_gRPC_UPB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
+  PRIVATE third_party/googletest/googletest/include
+  PRIVATE third_party/googletest/googletest
+  PRIVATE third_party/googletest/googlemock/include
+  PRIVATE third_party/googletest/googlemock
+  PRIVATE ${_gRPC_PROTO_GENS_DIR}
+)
+
+target_link_libraries(xds_bootstrap_test
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  grpc_test_util
+  grpc++
+  grpc
+  gpr
+  ${_gRPC_GFLAGS_LIBRARIES}
+)
+
+
+endif (gRPC_BUILD_TESTS)
+if (gRPC_BUILD_TESTS)
+
 add_executable(xds_end2end_test
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/ads_for_test.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/ads_for_test.grpc.pb.cc
@@ -19470,7 +19514,7 @@ generate_pkgconfig(
   "gRPC"
   "high performance general RPC framework"
   "${gRPC_CORE_VERSION}"
-  "gpr"
+  "gpr openssl"
   "-lgrpc -laddress_sorting -lcares -lz"
   ""
   "grpc.pc")

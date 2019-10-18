@@ -1267,6 +1267,7 @@ static void continue_receiving_slices(batch_control* bctl) {
         *call->receiving_buffer = nullptr;
         call->receiving_message = 0;
         finish_batch_step(bctl);
+        GRPC_ERROR_UNREF(error);
         return;
       }
     } else {

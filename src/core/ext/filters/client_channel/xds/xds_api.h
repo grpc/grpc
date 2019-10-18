@@ -26,6 +26,7 @@
 #include <grpc/slice_buffer.h>
 
 #include "src/core/ext/filters/client_channel/server_address.h"
+#include "src/core/ext/filters/client_channel/xds/xds_bootstrap.h"
 #include "src/core/ext/filters/client_channel/xds/xds_client_stats.h"
 
 namespace grpc_core {
@@ -146,7 +147,9 @@ struct CdsUpdate {
 grpc_slice XdsCdsRequestCreateAndEncode(const char* cluster_name);
 
 // Creates an EDS request querying \a service_name.
-grpc_slice XdsEdsRequestCreateAndEncode(const char* server_name);
+grpc_slice XdsEdsRequestCreateAndEncode(const char* server_name,
+                                        const XdsBootstrap::Node* node,
+                                        const char* build_version);
 
 // Parses the EDS response and returns the args to update locality map. If there
 // is any error, the output update is invalid.
@@ -155,7 +158,9 @@ grpc_error* XdsAdsResponseDecodeAndParse(const grpc_slice& encoded_response,
                                          EdsUpdate* eds_update);
 
 // Creates an LRS request querying \a server_name.
-grpc_slice XdsLrsRequestCreateAndEncode(const char* server_name);
+grpc_slice XdsLrsRequestCreateAndEncode(const char* server_name,
+                                        const XdsBootstrap::Node* node,
+                                        const char* build_version);
 
 // Creates an LRS request sending client-side load reports. If all the counters
 // in \a client_stats are zero, returns empty slice.

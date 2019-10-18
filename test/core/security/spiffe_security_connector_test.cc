@@ -46,27 +46,27 @@ void SetKeyMaterials(grpc_tls_key_materials_config* config) {
       (const grpc_ssl_pem_key_cert_pair**)key_cert_pair, 1);
 }
 
-int CredReloadSuccess(void* config_user_data,
+int CredReloadSuccess(void* /*config_user_data*/,
                       grpc_tls_credential_reload_arg* arg) {
   SetKeyMaterials(arg->key_materials_config);
   arg->status = GRPC_SSL_CERTIFICATE_CONFIG_RELOAD_NEW;
   return 0;
 }
 
-int CredReloadFail(void* config_user_data,
+int CredReloadFail(void* /*config_user_data*/,
                    grpc_tls_credential_reload_arg* arg) {
   arg->status = GRPC_SSL_CERTIFICATE_CONFIG_RELOAD_FAIL;
   return 0;
 }
 
-int CredReloadUnchanged(void* config_user_data,
+int CredReloadUnchanged(void* /*config_user_data*/,
                         grpc_tls_credential_reload_arg* arg) {
   arg->status = GRPC_SSL_CERTIFICATE_CONFIG_RELOAD_UNCHANGED;
   return 0;
 }
 
-int CredReloadAsync(void* config_user_data,
-                    grpc_tls_credential_reload_arg* arg) {
+int CredReloadAsync(void* /*config_user_data*/,
+                    grpc_tls_credential_reload_arg* /*arg*/) {
   return 1;
 }
 

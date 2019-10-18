@@ -61,7 +61,7 @@ static void test_slice_malloc_returns_something_sensible(void) {
   }
 }
 
-static void do_nothing(void* ignored) {}
+static void do_nothing(void* /*ignored*/) {}
 
 static void test_slice_new_returns_something_sensible(void) {
   uint8_t x;
@@ -96,7 +96,7 @@ static void test_slice_new_with_user_data(void) {
 
 static int do_nothing_with_len_1_calls = 0;
 
-static void do_nothing_with_len_1(void* ignored, size_t len) {
+static void do_nothing_with_len_1(void* /*ignored*/, size_t len) {
   GPR_ASSERT(len == 1);
   do_nothing_with_len_1_calls++;
 }
@@ -243,7 +243,13 @@ static void test_slice_interning(void) {
   grpc_init();
   grpc_slice src1 = grpc_slice_from_copied_string("hello123456789123456789");
   grpc_slice src2 = grpc_slice_from_copied_string("hello123456789123456789");
+
+  // Explicitly checking that the slices are at different addresses prevents
+  // failure with windows opt 64bit build.
+  // See https://github.com/grpc/grpc/issues/20519
+  GPR_ASSERT(&src1 != &src2);
   GPR_ASSERT(GRPC_SLICE_START_PTR(src1) != GRPC_SLICE_START_PTR(src2));
+
   grpc_slice interned1 = grpc_slice_intern(src1);
   grpc_slice interned2 = grpc_slice_intern(src2);
   GPR_ASSERT(GRPC_SLICE_START_PTR(interned1) ==
