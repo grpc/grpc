@@ -91,8 +91,9 @@ static grpc_end2end_test_fixture chttp2_create_fixture_secure_fullstack(
   return f;
 }
 
-static void process_auth_failure(void* state, grpc_auth_context* ctx,
-                                 const grpc_metadata* md, size_t md_count,
+static void process_auth_failure(void* state, grpc_auth_context* /*ctx*/,
+                                 const grpc_metadata* /*md*/,
+                                 size_t /*md_count*/,
                                  grpc_process_auth_metadata_done_cb cb,
                                  void* user_data) {
   GPR_ASSERT(state == nullptr);
