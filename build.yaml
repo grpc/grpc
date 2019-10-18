@@ -1230,6 +1230,16 @@ filegroups:
   uses:
   - grpc_base
   - grpc_client_channel
+  - grpc_xds_client
+- name: grpc_resolver_xds_secure
+  src:
+  - src/core/ext/filters/client_channel/resolver/xds/xds_resolver.cc
+  plugin: grpc_resolver_xds
+  uses:
+  - grpc_base
+  - grpc_client_channel
+  - grpc_secure
+  - grpc_xds_client_secure
 - name: grpc_secure
   public_headers:
   - include/grpc/grpc_security.h
@@ -1538,12 +1548,14 @@ filegroups:
 - name: grpc_xds_client
   headers:
   - src/core/ext/filters/client_channel/xds/xds_api.h
+  - src/core/ext/filters/client_channel/xds/xds_bootstrap.h
   - src/core/ext/filters/client_channel/xds/xds_channel.h
   - src/core/ext/filters/client_channel/xds/xds_channel_args.h
   - src/core/ext/filters/client_channel/xds/xds_client.h
   - src/core/ext/filters/client_channel/xds/xds_client_stats.h
   src:
   - src/core/ext/filters/client_channel/xds/xds_api.cc
+  - src/core/ext/filters/client_channel/xds/xds_bootstrap.cc
   - src/core/ext/filters/client_channel/xds/xds_channel.cc
   - src/core/ext/filters/client_channel/xds/xds_client.cc
   - src/core/ext/filters/client_channel/xds/xds_client_stats.cc
@@ -1554,12 +1566,14 @@ filegroups:
 - name: grpc_xds_client_secure
   headers:
   - src/core/ext/filters/client_channel/xds/xds_api.h
+  - src/core/ext/filters/client_channel/xds/xds_bootstrap.h
   - src/core/ext/filters/client_channel/xds/xds_channel.h
   - src/core/ext/filters/client_channel/xds/xds_channel_args.h
   - src/core/ext/filters/client_channel/xds/xds_client.h
   - src/core/ext/filters/client_channel/xds/xds_client_stats.h
   src:
   - src/core/ext/filters/client_channel/xds/xds_api.cc
+  - src/core/ext/filters/client_channel/xds/xds_bootstrap.cc
   - src/core/ext/filters/client_channel/xds/xds_channel_secure.cc
   - src/core/ext/filters/client_channel/xds/xds_client.cc
   - src/core/ext/filters/client_channel/xds/xds_client_stats.cc
@@ -1674,7 +1688,7 @@ libs:
   - grpc_resolver_dns_native
   - grpc_resolver_sockaddr
   - grpc_resolver_fake
-  - grpc_resolver_xds
+  - grpc_resolver_xds_secure
   - grpc_secure
   - census
   - grpc_client_idle_filter
@@ -6012,6 +6026,17 @@ targets:
   - mac
   - linux
   - posix
+- name: xds_bootstrap_test
+  gtest: true
+  build: test
+  language: c++
+  src:
+  - test/core/client_channel/xds_bootstrap_test.cc
+  deps:
+  - grpc_test_util
+  - grpc++
+  - grpc
+  - gpr
 - name: xds_end2end_test
   gtest: true
   build: test

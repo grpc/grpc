@@ -38,7 +38,7 @@ typedef struct grpc_udp_server grpc_udp_server;
  * Its implementation should do the real IO work, e.g. read packet and write. */
 class GrpcUdpHandler {
  public:
-  GrpcUdpHandler(grpc_fd* emfd, void* user_data) {}
+  GrpcUdpHandler(grpc_fd* /* emfd */, void* /* user_data */) {}
   virtual ~GrpcUdpHandler() {}
 
   // Interfaces to be implemented by subclasses to do the actual setup/tear down

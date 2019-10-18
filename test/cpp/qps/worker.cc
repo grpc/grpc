@@ -37,7 +37,7 @@ DEFINE_string(credential_type, grpc::testing::kInsecureCredentialsType,
 
 static bool got_sigint = false;
 
-static void sigint_handler(int x) { got_sigint = true; }
+static void sigint_handler(int /*x*/) { got_sigint = true; }
 
 namespace grpc {
 namespace testing {

@@ -63,7 +63,6 @@ include "_cygrpc/aio/iomgr/resolver.pyx.pxi"
 include "_cygrpc/aio/grpc_aio.pyx.pxi"
 include "_cygrpc/aio/call.pyx.pxi"
 include "_cygrpc/aio/channel.pyx.pxi"
-include "_cygrpc/aio/rpc_error.pyx.pxi"
 
 
 #

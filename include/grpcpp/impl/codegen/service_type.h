@@ -63,8 +63,8 @@ class Service {
   virtual ~Service() {}
 
   bool has_async_methods() const {
-    for (auto it = methods_.begin(); it != methods_.end(); ++it) {
-      if (*it && (*it)->handler() == nullptr) {
+    for (const auto& method : methods_) {
+      if (method && method->handler() == nullptr) {
         return true;
       }
     }
@@ -72,9 +72,9 @@ class Service {
   }
 
   bool has_synchronous_methods() const {
-    for (auto it = methods_.begin(); it != methods_.end(); ++it) {
-      if (*it &&
-          (*it)->api_type() == internal::RpcServiceMethod::ApiType::SYNC) {
+    for (const auto& method : methods_) {
+      if (method &&
+          method->api_type() == internal::RpcServiceMethod::ApiType::SYNC) {
         return true;
       }
     }
@@ -82,11 +82,11 @@ class Service {
   }
 
   bool has_callback_methods() const {
-    for (auto it = methods_.begin(); it != methods_.end(); ++it) {
-      if (*it && ((*it)->api_type() ==
-                      internal::RpcServiceMethod::ApiType::CALL_BACK ||
-                  (*it)->api_type() ==
-                      internal::RpcServiceMethod::ApiType::RAW_CALL_BACK)) {
+    for (const auto& method : methods_) {
+      if (method && (method->api_type() ==
+                         internal::RpcServiceMethod::ApiType::CALL_BACK ||
+                     method->api_type() ==
+                         internal::RpcServiceMethod::ApiType::RAW_CALL_BACK)) {
         return true;
       }
     }
@@ -94,8 +94,8 @@ class Service {
   }
 
   bool has_generic_methods() const {
-    for (auto it = methods_.begin(); it != methods_.end(); ++it) {
-      if (it->get() == nullptr) {
+    for (const auto& method : methods_) {
+      if (method.get() == nullptr) {
         return true;
       }
     }

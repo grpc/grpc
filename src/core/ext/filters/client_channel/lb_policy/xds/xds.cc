@@ -76,16 +76,12 @@ constexpr char kXds[] = "xds_experimental";
 
 class ParsedXdsConfig : public LoadBalancingPolicy::Config {
  public:
-  ParsedXdsConfig(const char* balancer_name,
-                  RefCountedPtr<LoadBalancingPolicy::Config> child_policy,
+  ParsedXdsConfig(RefCountedPtr<LoadBalancingPolicy::Config> child_policy,
                   RefCountedPtr<LoadBalancingPolicy::Config> fallback_policy)
-      : balancer_name_(balancer_name),
-        child_policy_(std::move(child_policy)),
+      : child_policy_(std::move(child_policy)),
         fallback_policy_(std::move(fallback_policy)) {}
 
   const char* name() const override { return kXds; }
-
-  const char* balancer_name() const { return balancer_name_; };
 
   RefCountedPtr<LoadBalancingPolicy::Config> child_policy() const {
     return child_policy_;
@@ -96,7 +92,6 @@ class ParsedXdsConfig : public LoadBalancingPolicy::Config {
   }
 
  private:
-  const char* balancer_name_ = nullptr;
   RefCountedPtr<LoadBalancingPolicy::Config> child_policy_;
   RefCountedPtr<LoadBalancingPolicy::Config> fallback_policy_;
 };
@@ -370,12 +365,6 @@ class XdsLb : public LoadBalancingPolicy {
 
   void ShutdownLocked() override;
 
-  // Parses the xds config given the JSON node of the first child of XdsConfig.
-  // If parsing succeeds, updates \a balancer_name, and updates \a
-  // child_policy_config_ and \a fallback_policy_config_ if they are also
-  // found. Does nothing upon failure.
-  void ParseLbConfig(const ParsedXdsConfig* xds_config);
-
   // Methods for dealing with fallback state.
   void MaybeCancelFallbackAtStartupChecks();
   static void OnFallbackTimerLocked(void* arg, grpc_error* error);
@@ -384,11 +373,13 @@ class XdsLb : public LoadBalancingPolicy {
       const char* name, const grpc_channel_args* args);
   void MaybeExitFallbackMode();
 
+  XdsClient* xds_client() const {
+    return xds_client_from_channel_ != nullptr ? xds_client_from_channel_.get()
+                                               : xds_client_.get();
+  }
+
   // Name of the backend server to connect to.
   const char* server_name_ = nullptr;
-
-  // Name of the balancer to connect to.
-  UniquePtr<char> balancer_name_;
 
   // Current channel args from the resolver.
   const grpc_channel_args* args_ = nullptr;
@@ -396,7 +387,11 @@ class XdsLb : public LoadBalancingPolicy {
   // Internal state.
   bool shutting_down_ = false;
 
-  // The xds client.
+  // The xds client and endpoint watcher.
+  // If we get the XdsClient from the channel, we store it in
+  // xds_client_from_channel_; if we create it ourselves, we store it in
+  // xds_client_.
+  RefCountedPtr<XdsClient> xds_client_from_channel_;
   OrphanablePtr<XdsClient> xds_client_;
   // A pointer to the endpoint watcher, to be used when cancelling the watch.
   // Note that this is not owned, so this pointer must never be derefernced.
@@ -594,6 +589,10 @@ class XdsLb::EndpointWatcher : public XdsClient::EndpointWatcherInterface {
       : xds_policy_(std::move(xds_policy)) {}
 
   void OnEndpointChanged(EdsUpdate update) override {
+    if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_xds_trace)) {
+      gpr_log(GPR_INFO, "[xdslb %p] Received EDS update from xds client",
+              xds_policy_.get());
+    }
     // If the balancer tells us to drop all the calls, we should exit fallback
     // mode immediately.
     if (update.drop_all) xds_policy_->MaybeExitFallbackMode();
@@ -661,6 +660,7 @@ class XdsLb::EndpointWatcher : public XdsClient::EndpointWatcherInterface {
 
 XdsLb::XdsLb(Args args)
     : LoadBalancingPolicy(std::move(args)),
+      xds_client_from_channel_(XdsClient::GetFromChannelArgs(*args.args)),
       lb_fallback_timeout_ms_(grpc_channel_args_find_integer(
           args.args, GRPC_ARG_XDS_FALLBACK_TIMEOUT_MS,
           {GRPC_XDS_DEFAULT_FALLBACK_TIMEOUT_MS, 0, INT_MAX})),
@@ -671,6 +671,11 @@ XdsLb::XdsLb(Args args)
           args.args, GRPC_ARG_XDS_FAILOVER_TIMEOUT_MS,
           {GRPC_XDS_DEFAULT_FAILOVER_TIMEOUT_MS, 0, INT_MAX})),
       priority_list_(this) {
+  if (xds_client_from_channel_ != nullptr &&
+      GRPC_TRACE_FLAG_ENABLED(grpc_lb_xds_trace)) {
+    gpr_log(GPR_INFO, "[xdslb %p] Using xds client %p from channel", this,
+            xds_client_from_channel_.get());
+  }
   // Record server name.
   const grpc_arg* arg = grpc_channel_args_find(args.args, GRPC_ARG_SERVER_URI);
   const char* server_uri = grpc_channel_arg_get_string(arg);
@@ -713,12 +718,11 @@ void XdsLb::ShutdownLocked() {
   pending_fallback_policy_.reset();
   // Cancel the endpoint watch here instead of in our dtor, because the
   // watcher holds a ref to us.
-  if (xds_client_ != nullptr) {
-    xds_client_->CancelEndpointDataWatch(StringView(server_name_),
-                                         endpoint_watcher_);
-    xds_client_->RemoveClientStats(StringView(server_name_), &client_stats_);
-    xds_client_.reset();
-  }
+  xds_client()->CancelEndpointDataWatch(StringView(server_name_),
+                                        endpoint_watcher_);
+  xds_client()->RemoveClientStats(StringView(server_name_), &client_stats_);
+  xds_client_from_channel_.reset();
+  xds_client_.reset();
 }
 
 //
@@ -726,9 +730,9 @@ void XdsLb::ShutdownLocked() {
 //
 
 void XdsLb::ResetBackoffLocked() {
-  // TODO(roth): When we instantiate the XdsClient in the resolver
-  // instead of in this LB policy, this should be done in the resolver
-  // instead of here.
+  // When the XdsClient is instantiated in the resolver instead of in this
+  // LB policy, this is done via the resolver, so we don't need to do it
+  // for xds_client_from_channel_ here.
   if (xds_client_ != nullptr) xds_client_->ResetBackoff();
   priority_list_.ResetBackoffLocked();
   if (fallback_policy_ != nullptr) {
@@ -739,52 +743,47 @@ void XdsLb::ResetBackoffLocked() {
   }
 }
 
-void XdsLb::ParseLbConfig(const ParsedXdsConfig* xds_config) {
-  if (xds_config == nullptr || xds_config->balancer_name() == nullptr) return;
-  // TODO(yashykt) : does this need to be a gpr_strdup
-  // TODO(juanlishen): Read balancer name from bootstrap file.
-  balancer_name_ = UniquePtr<char>(gpr_strdup(xds_config->balancer_name()));
+void XdsLb::UpdateLocked(UpdateArgs args) {
+  if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_xds_trace)) {
+    gpr_log(GPR_INFO, "[xdslb %p] Received update", this);
+  }
+  const bool is_initial_update = args_ == nullptr;
+  // Update config.
+  auto* xds_config = static_cast<const ParsedXdsConfig*>(args.config.get());
   child_policy_config_ = xds_config->child_policy();
   fallback_policy_config_ = xds_config->fallback_policy();
-}
-
-void XdsLb::UpdateLocked(UpdateArgs args) {
-  const bool is_initial_update = xds_client_ == nullptr;
-  ParseLbConfig(static_cast<const ParsedXdsConfig*>(args.config.get()));
-  // TODO(roth): This check should go away once we are getting the xds
-  // server from the bootstrap file.
-  if (balancer_name_ == nullptr) {
-    gpr_log(GPR_ERROR, "[xdslb %p] LB config parsing fails.", this);
-    return;
-  }
   // Update fallback address list.
   fallback_backend_addresses_ = std::move(args.addresses);
   // Update args.
   grpc_channel_args_destroy(args_);
   args_ = args.args;
   args.args = nullptr;
-  // Create an xds client if we don't have one yet.
-  if (xds_client_ == nullptr) {
-    xds_client_ = MakeOrphanable<XdsClient>(
-        combiner(), interested_parties(), balancer_name_.get(),
-        StringView(server_name_), nullptr /* service config watcher */, *args_);
-    if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_xds_trace)) {
-      gpr_log(GPR_INFO, "[xdslb %p] Created xds client %p", this,
-              xds_client_.get());
-    }
-    endpoint_watcher_ = New<EndpointWatcher>(Ref());
-    xds_client_->WatchEndpointData(
-        StringView(server_name_),
-        UniquePtr<XdsClient::EndpointWatcherInterface>(endpoint_watcher_));
-    xds_client_->AddClientStats(StringView(server_name_), &client_stats_);
-  }
   // Update priority list.
   priority_list_.UpdateLocked();
   // Update the existing fallback policy. The fallback policy config and/or the
   // fallback addresses may be new.
   if (fallback_policy_ != nullptr) UpdateFallbackPolicyLocked();
-  // If this is the initial update, start the fallback-at-startup checks.
   if (is_initial_update) {
+    // Initialize XdsClient.
+    if (xds_client_from_channel_ == nullptr) {
+      grpc_error* error = GRPC_ERROR_NONE;
+      xds_client_ = MakeOrphanable<XdsClient>(
+          combiner(), interested_parties(), StringView(server_name_),
+          nullptr /* service config watcher */, *args_, &error);
+      // TODO(roth): If we decide that we care about fallback mode, add
+      // proper error handling here.
+      GPR_ASSERT(error == GRPC_ERROR_NONE);
+      if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_xds_trace)) {
+        gpr_log(GPR_INFO, "[xdslb %p] Created xds client %p", this,
+                xds_client_.get());
+      }
+    }
+    auto watcher = MakeUnique<EndpointWatcher>(Ref());
+    endpoint_watcher_ = watcher.get();
+    xds_client()->WatchEndpointData(StringView(server_name_),
+                                    std::move(watcher));
+    xds_client()->AddClientStats(StringView(server_name_), &client_stats_);
+    // Start fallback-at-startup checks.
     grpc_millis deadline = ExecCtx::Get()->Now() + lb_fallback_timeout_ms_;
     Ref(DEBUG_LOCATION, "on_fallback_timer").release();  // Held by closure
     GRPC_CLOSURE_INIT(&lb_on_fallback_, &XdsLb::OnFallbackTimerLocked, this,
@@ -1715,32 +1714,18 @@ class XdsFactory : public LoadBalancingPolicyFactory {
       // xds was mentioned as a policy in the deprecated loadBalancingPolicy
       // field or in the client API.
       *error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-          "field:loadBalancingPolicy error:Xds Parser has required field - "
-          "balancerName. Please use loadBalancingConfig field of service "
-          "config instead.");
+          "field:loadBalancingPolicy error:xds policy requires configuration. "
+          "Please use loadBalancingConfig field of service config instead.");
       return nullptr;
     }
     GPR_DEBUG_ASSERT(strcmp(json->key, name()) == 0);
-
     InlinedVector<grpc_error*, 3> error_list;
-    const char* balancer_name = nullptr;
     RefCountedPtr<LoadBalancingPolicy::Config> child_policy;
     RefCountedPtr<LoadBalancingPolicy::Config> fallback_policy;
     for (const grpc_json* field = json->child; field != nullptr;
          field = field->next) {
       if (field->key == nullptr) continue;
-      if (strcmp(field->key, "balancerName") == 0) {
-        if (balancer_name != nullptr) {
-          error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-              "field:balancerName error:Duplicate entry"));
-        }
-        if (field->type != GRPC_JSON_STRING) {
-          error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-              "field:balancerName error:type should be string"));
-          continue;
-        }
-        balancer_name = field->value;
-      } else if (strcmp(field->key, "childPolicy") == 0) {
+      if (strcmp(field->key, "childPolicy") == 0) {
         if (child_policy != nullptr) {
           error_list.push_back(GRPC_ERROR_CREATE_FROM_STATIC_STRING(
               "field:childPolicy error:Duplicate entry"));
@@ -1768,7 +1753,7 @@ class XdsFactory : public LoadBalancingPolicyFactory {
     }
     if (error_list.empty()) {
       return RefCountedPtr<LoadBalancingPolicy::Config>(New<ParsedXdsConfig>(
-          balancer_name, std::move(child_policy), std::move(fallback_policy)));
+          std::move(child_policy), std::move(fallback_policy)));
     } else {
       *error = GRPC_ERROR_CREATE_FROM_VECTOR("Xds Parser", &error_list);
       return nullptr;

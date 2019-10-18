@@ -129,7 +129,8 @@ static void test_wait_empty(void) {
   }
 }
 
-static void do_nothing_end_completion(void* arg, grpc_cq_completion* c) {}
+static void do_nothing_end_completion(void* /*arg*/,
+                                      grpc_cq_completion* /*c*/) {}
 
 static void test_cq_end_op(void) {
   grpc_event ev;
