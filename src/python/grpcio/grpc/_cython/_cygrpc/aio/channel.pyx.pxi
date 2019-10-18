@@ -18,13 +18,13 @@ cdef class AioChannel:
         self._target = target
 
     def __repr__(self):
-        class_name = self.__class__.__name__
+        class_name = self.__class__.__name__ 
         id_ = id(self)
         return f"<{class_name} {id_}>"
 
     def close(self):
         grpc_channel_destroy(self.channel)
 
-    async def unary_unary(self, method, request, timeout):
+    async def unary_unary(self, method, request):
         call = _AioCall(self)
-        return await call.unary_unary(method, request, timeout)
+        return await call.unary_unary(method, request)

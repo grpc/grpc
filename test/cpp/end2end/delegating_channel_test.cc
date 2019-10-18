@@ -48,7 +48,7 @@ class TestChannel : public experimental::DelegatingChannel {
   TestChannel(const std::shared_ptr<ChannelInterface>& delegate_channel)
       : experimental::DelegatingChannel(delegate_channel) {}
   // Always returns GRPC_CHANNEL_READY
-  grpc_connectivity_state GetState(bool try_to_connect) override {
+  grpc_connectivity_state GetState(bool /*try_to_connect*/) override {
     return GRPC_CHANNEL_READY;
   }
 };

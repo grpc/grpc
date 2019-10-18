@@ -74,7 +74,7 @@ class ShutdownCallback : public grpc_experimental_completion_queue_functor {
     auto* callback = static_cast<ShutdownCallback*>(cb);
     callback->Run(static_cast<bool>(ok));
   }
-  void Run(bool ok) {
+  void Run(bool /*ok*/) {
     gpr_log(GPR_DEBUG, "CQ shutdown notification invoked");
     gpr_mu_lock(&mu_);
     done_ = true;
@@ -205,7 +205,7 @@ static grpc_experimental_completion_queue_functor* tag(intptr_t t) {
 }
 
 static grpc_end2end_test_fixture inproc_create_fixture(
-    grpc_channel_args* client_args, grpc_channel_args* server_args) {
+    grpc_channel_args* /*client_args*/, grpc_channel_args* /*server_args*/) {
   grpc_end2end_test_fixture f;
   inproc_fixture_data* ffd = static_cast<inproc_fixture_data*>(
       gpr_malloc(sizeof(inproc_fixture_data)));
@@ -259,7 +259,7 @@ static gpr_timespec n_seconds_from_now(int n) {
 
 static gpr_timespec five_seconds_from_now() { return n_seconds_from_now(5); }
 
-static void drain_cq(grpc_completion_queue* cq) {
+static void drain_cq(grpc_completion_queue* /*cq*/) {
   // Wait for the shutdown callback to arrive, or fail the test
   GPR_ASSERT(g_shutdown_callback->Wait(five_seconds_from_now()));
   gpr_log(GPR_DEBUG, "CQ shutdown wait complete");

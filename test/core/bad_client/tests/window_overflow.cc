@@ -43,7 +43,7 @@
   "\x10\x0auser-agent\"bad-client grpc-c/0.12.0.0 (linux)"
 
 static void verifier(grpc_server* server, grpc_completion_queue* cq,
-                     void* registered_method) {
+                     void* /*registered_method*/) {
   while (grpc_server_has_open_connections(server)) {
     GPR_ASSERT(grpc_completion_queue_next(
                    cq, grpc_timeout_milliseconds_to_deadline(20), nullptr)

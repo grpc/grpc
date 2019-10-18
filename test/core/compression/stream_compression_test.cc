@@ -287,7 +287,7 @@ static void test_stream_compression_sync_flush() {
   grpc_slice_buffer_destroy(&sink);
 }
 
-int main(int argc, char** argv) {
+int main(int /*argc*/, char** /*argv*/) {
   grpc_init();
   test_stream_compression_simple_compress_decompress();
   test_stream_compression_simple_compress_decompress_with_output_size_constraint();

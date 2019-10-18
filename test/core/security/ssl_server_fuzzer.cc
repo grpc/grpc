@@ -32,9 +32,9 @@ bool squelch = true;
 // Turning this on will fail the leak check.
 bool leak_check = false;
 
-static void discard_write(grpc_slice slice) {}
+static void discard_write(grpc_slice /*slice*/) {}
 
-static void dont_log(gpr_log_func_args* args) {}
+static void dont_log(gpr_log_func_args* /*args*/) {}
 
 struct handshake_state {
   bool done_callback_called;

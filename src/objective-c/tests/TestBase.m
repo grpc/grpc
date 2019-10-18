@@ -47,4 +47,8 @@
   return nil;
 }
 
++ (BOOL)isRemoteTest {
+  return NO;
+}
+
 @end

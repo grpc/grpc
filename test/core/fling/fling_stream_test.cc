@@ -27,7 +27,7 @@
 #include "test/core/util/port.h"
 #include "test/core/util/subprocess.h"
 
-int main(int argc, char** argv) {
+int main(int /*argc*/, char** argv) {
   char* me = argv[0];
   char* lslash = strrchr(me, '/');
   char root[1024];

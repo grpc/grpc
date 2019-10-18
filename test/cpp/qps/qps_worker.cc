@@ -133,13 +133,13 @@ class WorkerServiceImpl final : public WorkerService::Service {
     return ret;
   }
 
-  Status CoreCount(ServerContext* ctx, const CoreRequest*,
+  Status CoreCount(ServerContext* /*ctx*/, const CoreRequest*,
                    CoreResponse* resp) override {
     resp->set_cores(gpr_cpu_num_cores());
     return Status::OK;
   }
 
-  Status QuitWorker(ServerContext* ctx, const Void*, Void*) override {
+  Status QuitWorker(ServerContext* /*ctx*/, const Void*, Void*) override {
     InstanceGuard g(this);
     if (!g.Acquired()) {
       return Status(StatusCode::RESOURCE_EXHAUSTED, "Quitting worker busy");
@@ -181,7 +181,7 @@ class WorkerServiceImpl final : public WorkerService::Service {
     acquired_ = false;
   }
 
-  Status RunClientBody(ServerContext* ctx,
+  Status RunClientBody(ServerContext* /*ctx*/,
                        ServerReaderWriter<ClientStatus, ClientArgs>* stream) {
     ClientArgs args;
     if (!stream->Read(&args)) {
@@ -221,7 +221,7 @@ class WorkerServiceImpl final : public WorkerService::Service {
     return Status::OK;
   }
 
-  Status RunServerBody(ServerContext* ctx,
+  Status RunServerBody(ServerContext* /*ctx*/,
                        ServerReaderWriter<ServerStatus, ServerArgs>* stream) {
     ServerArgs args;
     if (!stream->Read(&args)) {

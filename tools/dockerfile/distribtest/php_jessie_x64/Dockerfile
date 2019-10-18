@@ -14,4 +14,8 @@
 
 FROM debian:jessie
 
-RUN apt-get update && apt-get install -y php5 php5-dev php-pear phpunit
+RUN apt-get update && apt-get install -y php5 php5-dev php-pear wget
+
+RUN wget https://phar.phpunit.de/phpunit-5.7.27.phar && \
+  mv phpunit-5.7.27.phar /usr/local/bin/phpunit && \
+  chmod +x /usr/local/bin/phpunit
