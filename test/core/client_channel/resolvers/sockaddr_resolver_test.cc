@@ -32,7 +32,7 @@ static grpc_core::Combiner* g_combiner;
 
 class ResultHandler : public grpc_core::Resolver::ResultHandler {
  public:
-  void ReturnResult(grpc_core::Resolver::Result result) override {}
+  void ReturnResult(grpc_core::Resolver::Result /*result*/) override {}
 
   void ReturnError(grpc_error* error) override { GRPC_ERROR_UNREF(error); }
 };

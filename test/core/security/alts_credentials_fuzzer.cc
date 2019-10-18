@@ -40,7 +40,7 @@ using grpc_core::testing::input_stream;
 bool squelch = true;
 bool leak_check = true;
 
-static void dont_log(gpr_log_func_args* args) {}
+static void dont_log(gpr_log_func_args* /*args*/) {}
 
 // Add a random number of target service accounts to client options.
 static void read_target_service_accounts(

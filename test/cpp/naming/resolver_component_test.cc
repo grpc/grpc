@@ -211,7 +211,7 @@ void ArgsInit(ArgsStruct* args) {
   args->channel_args = nullptr;
 }
 
-void DoNothing(void* arg, grpc_error* error) {}
+void DoNothing(void* /*arg*/, grpc_error* /*error*/) {}
 
 void ArgsFinish(ArgsStruct* args) {
   GPR_ASSERT(gpr_event_wait(&args->ev, TestDeadline()));
@@ -442,7 +442,7 @@ class ResultHandler : public grpc_core::Resolver::ResultHandler {
     GPR_ASSERT(false);
   }
 
-  virtual void CheckResult(const grpc_core::Resolver::Result& result) {}
+  virtual void CheckResult(const grpc_core::Resolver::Result& /*result*/) {}
 
  protected:
   ArgsStruct* args_struct() const { return args_; }
@@ -534,7 +534,7 @@ void InjectBrokenNameServerList(ares_channel channel) {
   GPR_ASSERT(ares_set_servers_ports(channel, dns_server_addrs) == ARES_SUCCESS);
 }
 
-void StartResolvingLocked(void* arg, grpc_error* unused) {
+void StartResolvingLocked(void* arg, grpc_error* /*unused*/) {
   grpc_core::Resolver* r = static_cast<grpc_core::Resolver*>(arg);
   r->StartLocked();
 }
