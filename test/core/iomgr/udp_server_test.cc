@@ -85,8 +85,8 @@ class TestGrpcUdpHandler : public GrpcUdpHandler {
     return false;
   }
 
-  void OnCanWrite(void* user_data,
-                  grpc_closure* notify_on_write_closure) override {
+  void OnCanWrite(void* /*user_data*/,
+                  grpc_closure* /*notify_on_write_closure*/) override {
     gpr_mu_lock(g_mu);
     g_number_of_writes++;
 
@@ -96,7 +96,7 @@ class TestGrpcUdpHandler : public GrpcUdpHandler {
   }
 
   void OnFdAboutToOrphan(grpc_closure* orphan_fd_closure,
-                         void* user_data) override {
+                         void* /*user_data*/) override {
     gpr_log(GPR_INFO, "gRPC FD about to be orphaned: %d",
             grpc_fd_wrapped_fd(emfd()));
     GRPC_CLOSURE_SCHED(orphan_fd_closure, GRPC_ERROR_NONE);
@@ -170,7 +170,7 @@ static test_socket_factory* test_socket_factory_create(void) {
   return factory;
 }
 
-static void destroy_pollset(void* p, grpc_error* error) {
+static void destroy_pollset(void* p, grpc_error* /*error*/) {
   grpc_pollset_destroy(static_cast<grpc_pollset*>(p));
 }
 
