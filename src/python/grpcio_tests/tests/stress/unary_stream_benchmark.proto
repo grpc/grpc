@@ -1,0 +1,14 @@
+syntax = "proto3";
+
+message BenchmarkRequest {
+  int32 message_size = 1;
+  int32 response_count = 2;
+}
+
+message BenchmarkResponse {
+  bytes response = 1;
+}
+
+service UnaryStreamBenchmarkService {
+  rpc Benchmark(BenchmarkRequest) returns (stream BenchmarkResponse);
+}
