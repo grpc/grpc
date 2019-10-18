@@ -99,7 +99,7 @@ struct channel_data {
 };
 }  // namespace
 
-static grpc_error* client_filter_incoming_metadata(grpc_call_element* elem,
+static grpc_error* client_filter_incoming_metadata(grpc_call_element* /*elem*/,
                                                    grpc_metadata_batch* b) {
   if (b->idx.named.status != nullptr) {
     /* If both gRPC status and HTTP status are provided in the response, we
@@ -473,8 +473,8 @@ static grpc_error* http_client_init_call_elem(
 
 /* Destructor for call_data */
 static void http_client_destroy_call_elem(
-    grpc_call_element* elem, const grpc_call_final_info* final_info,
-    grpc_closure* ignored) {
+    grpc_call_element* elem, const grpc_call_final_info* /*final_info*/,
+    grpc_closure* /*ignored*/) {
   call_data* calld = static_cast<call_data*>(elem->call_data);
   calld->~call_data();
 }

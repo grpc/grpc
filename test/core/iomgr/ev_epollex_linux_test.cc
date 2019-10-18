@@ -111,5 +111,5 @@ int main(int argc, char** argv) {
   return 0;
 }
 #else /* defined(GRPC_LINUX_EPOLL_CREATE1) && defined(GRPC_LINUX_EVENTFD) */
-int main(int argc, char** argv) { return 0; }
+int main(int /*argc*/, char** /*argv*/) { return 0; }
 #endif

@@ -54,7 +54,7 @@ namespace testing {
 template <class RequestType>
 class ClientRequestCreator {
  public:
-  ClientRequestCreator(RequestType* req, const PayloadConfig&) {
+  ClientRequestCreator(RequestType* /*req*/, const PayloadConfig&) {
     // this template must be specialized
     // fail with an assertion rather than a compile-time
     // check since these only happen at the beginning anyway

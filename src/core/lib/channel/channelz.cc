@@ -54,7 +54,7 @@ namespace channelz {
 namespace {
 
 void* parent_uuid_copy(void* p) { return p; }
-void parent_uuid_destroy(void* p) {}
+void parent_uuid_destroy(void* /*p*/) {}
 int parent_uuid_cmp(void* p1, void* p2) { return GPR_ICMP(p1, p2); }
 const grpc_arg_pointer_vtable parent_uuid_vtable = {
     parent_uuid_copy, parent_uuid_destroy, parent_uuid_cmp};
@@ -315,7 +315,7 @@ void ChannelNode::RemoveChildSubchannel(intptr_t child_uuid) {
 // ServerNode
 //
 
-ServerNode::ServerNode(grpc_server* server, size_t channel_tracer_max_nodes)
+ServerNode::ServerNode(grpc_server* /*server*/, size_t channel_tracer_max_nodes)
     : BaseNode(EntityType::kServer, /* name */ nullptr),
       trace_(channel_tracer_max_nodes) {}
 

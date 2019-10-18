@@ -584,7 +584,7 @@ void PrintHeaderClientMethod(grpc_generator::Printer* printer,
 
 void PrintHeaderClientMethodCallbackInterfacesStart(
     grpc_generator::Printer* printer,
-    std::map<grpc::string, grpc::string>* vars) {
+    std::map<grpc::string, grpc::string>* /*vars*/) {
   // This declares the interface for the callback-based API. The components
   // are pure; even though this is new (post-1.0) API, it can be pure because
   // it is an entirely new interface that happens to be scoped within
@@ -599,10 +599,7 @@ void PrintHeaderClientMethodCallbackInterfacesStart(
 
 void PrintHeaderClientMethodCallbackInterfaces(
     grpc_generator::Printer* printer, const grpc_generator::Method* method,
-    std::map<grpc::string, grpc::string>* vars, bool is_public) {
-  // Reserve is_public for future expansion
-  assert(is_public);
-
+    std::map<grpc::string, grpc::string>* vars) {
   (*vars)["Method"] = method->name();
   (*vars)["Request"] = method->input_type_name();
   (*vars)["Response"] = method->output_type_name();
@@ -646,7 +643,7 @@ void PrintHeaderClientMethodCallbackInterfaces(
 
 void PrintHeaderClientMethodCallbackInterfacesEnd(
     grpc_generator::Printer* printer,
-    std::map<grpc::string, grpc::string>* vars) {
+    std::map<grpc::string, grpc::string>* /*vars*/) {
   printer->Outdent();
   printer->Print("};\n");
 
@@ -662,7 +659,7 @@ void PrintHeaderClientMethodCallbackInterfacesEnd(
 
 void PrintHeaderClientMethodCallbackStart(
     grpc_generator::Printer* printer,
-    std::map<grpc::string, grpc::string>* vars) {
+    std::map<grpc::string, grpc::string>* /*vars*/) {
   // This declares the stub entry for the callback-based API.
   printer->Print("class experimental_async final :\n");
   printer->Print("  public StubInterface::experimental_async_interface {\n");
@@ -670,13 +667,9 @@ void PrintHeaderClientMethodCallbackStart(
   printer->Indent();
 }
 
-void PrintHeaderClientMethodCallback(grpc_generator::Printer* printer,
-                                     const grpc_generator::Method* method,
-                                     std::map<grpc::string, grpc::string>* vars,
-                                     bool is_public) {
-  // Reserve is_public for future expansion
-  assert(is_public);
-
+void PrintHeaderClientMethodCallback(
+    grpc_generator::Printer* printer, const grpc_generator::Method* method,
+    std::map<grpc::string, grpc::string>* vars) {
   (*vars)["Method"] = method->name();
   (*vars)["Request"] = method->input_type_name();
   (*vars)["Response"] = method->output_type_name();
@@ -723,7 +716,7 @@ void PrintHeaderClientMethodCallback(grpc_generator::Printer* printer,
 
 void PrintHeaderClientMethodCallbackEnd(
     grpc_generator::Printer* printer,
-    std::map<grpc::string, grpc::string>* vars) {
+    std::map<grpc::string, grpc::string>* /*vars*/) {
   printer->Outdent();
   printer->Print(" private:\n");
   printer->Indent();
@@ -1372,7 +1365,7 @@ void PrintHeaderService(grpc_generator::Printer* printer,
   for (int i = 0; i < service->method_count(); ++i) {
     printer->Print(service->method(i)->GetLeadingComments("//").c_str());
     PrintHeaderClientMethodCallbackInterfaces(printer, service->method(i).get(),
-                                              vars, true);
+                                              vars);
     printer->Print(service->method(i)->GetTrailingComments("//").c_str());
   }
   PrintHeaderClientMethodCallbackInterfacesEnd(printer, vars);
@@ -1397,8 +1390,7 @@ void PrintHeaderService(grpc_generator::Printer* printer,
   }
   PrintHeaderClientMethodCallbackStart(printer, vars);
   for (int i = 0; i < service->method_count(); ++i) {
-    PrintHeaderClientMethodCallback(printer, service->method(i).get(), vars,
-                                    true);
+    PrintHeaderClientMethodCallback(printer, service->method(i).get(), vars);
   }
   PrintHeaderClientMethodCallbackEnd(printer, vars);
   printer->Outdent();

@@ -377,8 +377,8 @@ void HealthCheckClient::CallState::StartCall() {
   StartBatch(&recv_trailing_metadata_batch_);
 }
 
-void HealthCheckClient::CallState::StartBatchInCallCombiner(void* arg,
-                                                            grpc_error* error) {
+void HealthCheckClient::CallState::StartBatchInCallCombiner(
+    void* arg, grpc_error* /*error*/) {
   grpc_transport_stream_op_batch* batch =
       static_cast<grpc_transport_stream_op_batch*>(arg);
   SubchannelCall* call =
@@ -396,21 +396,22 @@ void HealthCheckClient::CallState::StartBatch(
 }
 
 void HealthCheckClient::CallState::AfterCallStackDestruction(
-    void* arg, grpc_error* error) {
+    void* arg, grpc_error* /*error*/) {
   HealthCheckClient::CallState* self =
       static_cast<HealthCheckClient::CallState*>(arg);
   Delete(self);
 }
 
 void HealthCheckClient::CallState::OnCancelComplete(void* arg,
-                                                    grpc_error* error) {
+                                                    grpc_error* /*error*/) {
   HealthCheckClient::CallState* self =
       static_cast<HealthCheckClient::CallState*>(arg);
   GRPC_CALL_COMBINER_STOP(&self->call_combiner_, "health_cancel");
   self->call_->Unref(DEBUG_LOCATION, "cancel");
 }
 
-void HealthCheckClient::CallState::StartCancel(void* arg, grpc_error* error) {
+void HealthCheckClient::CallState::StartCancel(void* arg,
+                                               grpc_error* /*error*/) {
   HealthCheckClient::CallState* self =
       static_cast<HealthCheckClient::CallState*>(arg);
   auto* batch = grpc_make_transport_stream_op(
@@ -432,7 +433,8 @@ void HealthCheckClient::CallState::Cancel() {
   }
 }
 
-void HealthCheckClient::CallState::OnComplete(void* arg, grpc_error* error) {
+void HealthCheckClient::CallState::OnComplete(void* arg,
+                                              grpc_error* /*error*/) {
   HealthCheckClient::CallState* self =
       static_cast<HealthCheckClient::CallState*>(arg);
   GRPC_CALL_COMBINER_STOP(&self->call_combiner_, "on_complete");
@@ -441,8 +443,8 @@ void HealthCheckClient::CallState::OnComplete(void* arg, grpc_error* error) {
   self->call_->Unref(DEBUG_LOCATION, "on_complete");
 }
 
-void HealthCheckClient::CallState::RecvInitialMetadataReady(void* arg,
-                                                            grpc_error* error) {
+void HealthCheckClient::CallState::RecvInitialMetadataReady(
+    void* arg, grpc_error* /*error*/) {
   HealthCheckClient::CallState* self =
       static_cast<HealthCheckClient::CallState*>(arg);
   GRPC_CALL_COMBINER_STOP(&self->call_combiner_, "recv_initial_metadata_ready");
@@ -524,7 +526,7 @@ void HealthCheckClient::CallState::OnByteStreamNext(void* arg,
 }
 
 void HealthCheckClient::CallState::RecvMessageReady(void* arg,
-                                                    grpc_error* error) {
+                                                    grpc_error* /*error*/) {
   HealthCheckClient::CallState* self =
       static_cast<HealthCheckClient::CallState*>(arg);
   GRPC_CALL_COMBINER_STOP(&self->call_combiner_, "recv_message_ready");
@@ -583,7 +585,7 @@ void HealthCheckClient::CallState::RecvTrailingMetadataReady(
 }
 
 void HealthCheckClient::CallState::CallEndedRetry(void* arg,
-                                                  grpc_error* error) {
+                                                  grpc_error* /*error*/) {
   HealthCheckClient::CallState* self =
       static_cast<HealthCheckClient::CallState*>(arg);
   self->CallEnded(true /* retry */);

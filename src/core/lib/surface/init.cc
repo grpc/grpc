@@ -197,7 +197,7 @@ void grpc_shutdown_internal_locked(void) {
   grpc_destroy_static_metadata_ctx();
 }
 
-void grpc_shutdown_internal(void* ignored) {
+void grpc_shutdown_internal(void* /*ignored*/) {
   GRPC_API_TRACE("grpc_shutdown_internal", 0, ());
   grpc_core::MutexLock lock(&g_init_mu);
   // We have released lock from the shutdown thread and it is possible that

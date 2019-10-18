@@ -65,7 +65,7 @@ char* grpc_base64_encode(const void* vdata, size_t data_size, int url_safe,
   return result;
 }
 
-size_t grpc_base64_estimate_encoded_size(size_t data_size, int url_safe,
+size_t grpc_base64_estimate_encoded_size(size_t data_size, int /*url_safe*/,
                                          int multiline) {
   size_t result_projected_size =
       4 * ((data_size + 3) / 3) +

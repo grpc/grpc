@@ -150,7 +150,7 @@ typedef struct {
 
 /* Callback to be passed to grpc Executor to asynch-ify
  * grpc_blocking_resolve_address */
-static void do_request_thread(void* rp, grpc_error* error) {
+static void do_request_thread(void* rp, grpc_error* /*error*/) {
   request* r = static_cast<request*>(rp);
   GRPC_CLOSURE_SCHED(r->on_done, grpc_blocking_resolve_address(
                                      r->name, r->default_port, r->addrs_out));
@@ -160,7 +160,7 @@ static void do_request_thread(void* rp, grpc_error* error) {
 }
 
 static void posix_resolve_address(const char* name, const char* default_port,
-                                  grpc_pollset_set* interested_parties,
+                                  grpc_pollset_set* /*interested_parties*/,
                                   grpc_closure* on_done,
                                   grpc_resolved_addresses** addrs) {
   request* r = static_cast<request*>(gpr_malloc(sizeof(request)));

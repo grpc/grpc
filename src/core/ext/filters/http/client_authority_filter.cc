@@ -80,9 +80,9 @@ grpc_error* client_authority_init_call_elem(
 }
 
 /* Destructor for call_data */
-void client_authority_destroy_call_elem(grpc_call_element* elem,
-                                        const grpc_call_final_info* final_info,
-                                        grpc_closure* ignored) {}
+void client_authority_destroy_call_elem(
+    grpc_call_element* /*elem*/, const grpc_call_final_info* /*final_info*/,
+    grpc_closure* /*ignored*/) {}
 
 /* Constructor for channel_data */
 grpc_error* client_authority_init_channel_elem(

@@ -28,7 +28,7 @@
    */
 #define STATUS_OFFSET 1
 
-static void destroy_status(void* ignored) {}
+static void destroy_status(void* /*ignored*/) {}
 
 grpc_status_code grpc_get_status_code_from_metadata(grpc_mdelem md) {
   if (grpc_mdelem_static_value_eq(md, GRPC_MDELEM_GRPC_STATUS_0)) {

@@ -213,11 +213,12 @@ void SubchannelCall::Unref() {
   GRPC_CALL_STACK_UNREF(SUBCHANNEL_CALL_TO_CALL_STACK(this), "");
 }
 
-void SubchannelCall::Unref(const DebugLocation& location, const char* reason) {
+void SubchannelCall::Unref(const DebugLocation& /*location*/,
+                           const char* reason) {
   GRPC_CALL_STACK_UNREF(SUBCHANNEL_CALL_TO_CALL_STACK(this), reason);
 }
 
-void SubchannelCall::Destroy(void* arg, grpc_error* error) {
+void SubchannelCall::Destroy(void* arg, grpc_error* /*error*/) {
   GPR_TIMER_SCOPE("subchannel_call_destroy", 0);
   SubchannelCall* self = static_cast<SubchannelCall*>(arg);
   // Keep some members before destroying the subchannel call.
@@ -300,8 +301,8 @@ void SubchannelCall::IncrementRefCount() {
   GRPC_CALL_STACK_REF(SUBCHANNEL_CALL_TO_CALL_STACK(this), "");
 }
 
-void SubchannelCall::IncrementRefCount(const grpc_core::DebugLocation& location,
-                                       const char* reason) {
+void SubchannelCall::IncrementRefCount(
+    const grpc_core::DebugLocation& /*location*/, const char* reason) {
   GRPC_CALL_STACK_REF(SUBCHANNEL_CALL_TO_CALL_STACK(this), reason);
 }
 
@@ -721,7 +722,7 @@ Subchannel* Subchannel::WeakRef(GRPC_SUBCHANNEL_REF_EXTRA_ARGS) {
 
 namespace {
 
-void subchannel_destroy(void* arg, grpc_error* error) {
+void subchannel_destroy(void* arg, grpc_error* /*error*/) {
   Subchannel* self = static_cast<Subchannel*>(arg);
   Delete(self);
 }
@@ -739,7 +740,7 @@ void Subchannel::WeakUnref(GRPC_SUBCHANNEL_REF_EXTRA_ARGS) {
   }
 }
 
-Subchannel* Subchannel::RefFromWeakRef(GRPC_SUBCHANNEL_REF_EXTRA_ARGS) {
+Subchannel* Subchannel::RefFromWeakRef() {
   for (;;) {
     gpr_atm old_refs = gpr_atm_acq_load(&ref_pair_);
     if (old_refs >= (1 << INTERNAL_REF_BITS)) {
@@ -1008,7 +1009,7 @@ void Subchannel::OnConnectingFinished(void* arg, grpc_error* error) {
 
 namespace {
 
-void ConnectionDestroy(void* arg, grpc_error* error) {
+void ConnectionDestroy(void* arg, grpc_error* /*error*/) {
   grpc_channel_stack* stk = static_cast<grpc_channel_stack*>(arg);
   grpc_channel_stack_destroy(stk);
   gpr_free(stk);

@@ -495,7 +495,7 @@ typedef struct {
 } fake_handshaker_result;
 
 static tsi_result fake_handshaker_result_extract_peer(
-    const tsi_handshaker_result* self, tsi_peer* peer) {
+    const tsi_handshaker_result* /*self*/, tsi_peer* peer) {
   /* Construct a tsi_peer with 1 property: certificate type. */
   tsi_result result = tsi_construct_peer(1, peer);
   if (result != TSI_OK) return result;
@@ -507,7 +507,8 @@ static tsi_result fake_handshaker_result_extract_peer(
 }
 
 static tsi_result fake_handshaker_result_create_zero_copy_grpc_protector(
-    const tsi_handshaker_result* self, size_t* max_output_protected_frame_size,
+    const tsi_handshaker_result* /*self*/,
+    size_t* max_output_protected_frame_size,
     tsi_zero_copy_grpc_protector** protector) {
   *protector =
       tsi_create_fake_zero_copy_grpc_protector(max_output_protected_frame_size);
@@ -515,8 +516,8 @@ static tsi_result fake_handshaker_result_create_zero_copy_grpc_protector(
 }
 
 static tsi_result fake_handshaker_result_create_frame_protector(
-    const tsi_handshaker_result* self, size_t* max_output_protected_frame_size,
-    tsi_frame_protector** protector) {
+    const tsi_handshaker_result* /*self*/,
+    size_t* max_output_protected_frame_size, tsi_frame_protector** protector) {
   *protector = tsi_create_fake_frame_protector(max_output_protected_frame_size);
   return TSI_OK;
 }
@@ -670,7 +671,7 @@ static tsi_result fake_handshaker_next(
     tsi_handshaker* self, const unsigned char* received_bytes,
     size_t received_bytes_size, const unsigned char** bytes_to_send,
     size_t* bytes_to_send_size, tsi_handshaker_result** handshaker_result,
-    tsi_handshaker_on_next_done_cb cb, void* user_data) {
+    tsi_handshaker_on_next_done_cb /*cb*/, void* /*user_data*/) {
   /* Sanity check the arguments. */
   if ((received_bytes_size > 0 && received_bytes == nullptr) ||
       bytes_to_send == nullptr || bytes_to_send_size == nullptr ||

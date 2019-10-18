@@ -61,6 +61,11 @@
 #include <stdio.h>
 
 int main(int argc, char **argv) {
+  /* Use the parameters to avoid unused-parameter warning.
+     (C89 parameters must be named.) */
+  (void)argc;
+  (void)argv;
+
   printf("%lx", (unsigned long) grpc_compression_algorithm_is_message);
   printf("%lx", (unsigned long) grpc_compression_algorithm_is_stream);
   printf("%lx", (unsigned long) grpc_compression_algorithm_parse);

@@ -141,7 +141,7 @@ SpiffeChannelSecurityConnector::~SpiffeChannelSecurityConnector() {
 }
 
 void SpiffeChannelSecurityConnector::add_handshakers(
-    const grpc_channel_args* args, grpc_pollset_set* interested_parties,
+    const grpc_channel_args* args, grpc_pollset_set* /*interested_parties*/,
     grpc_core::HandshakeManager* handshake_mgr) {
   if (RefreshHandshakerFactory() != GRPC_SECURITY_OK) {
     gpr_log(GPR_ERROR, "Handshaker factory refresh failed.");
@@ -164,7 +164,7 @@ void SpiffeChannelSecurityConnector::add_handshakers(
 }
 
 void SpiffeChannelSecurityConnector::check_peer(
-    tsi_peer peer, grpc_endpoint* ep,
+    tsi_peer peer, grpc_endpoint* /*ep*/,
     grpc_core::RefCountedPtr<grpc_auth_context>* auth_context,
     grpc_closure* on_peer_checked) {
   const char* target_name = overridden_target_name_ != nullptr
@@ -239,7 +239,7 @@ bool SpiffeChannelSecurityConnector::check_call_host(
 }
 
 void SpiffeChannelSecurityConnector::cancel_check_call_host(
-    grpc_closure* on_call_host_checked, grpc_error* error) {
+    grpc_closure* /*on_call_host_checked*/, grpc_error* error) {
   GRPC_ERROR_UNREF(error);
 }
 
@@ -419,7 +419,7 @@ SpiffeServerSecurityConnector::~SpiffeServerSecurityConnector() {
 }
 
 void SpiffeServerSecurityConnector::add_handshakers(
-    const grpc_channel_args* args, grpc_pollset_set* interested_parties,
+    const grpc_channel_args* args, grpc_pollset_set* /*interested_parties*/,
     grpc_core::HandshakeManager* handshake_mgr) {
   /* Refresh handshaker factory if needed. */
   if (RefreshHandshakerFactory() != GRPC_SECURITY_OK) {
@@ -439,7 +439,7 @@ void SpiffeServerSecurityConnector::add_handshakers(
 }
 
 void SpiffeServerSecurityConnector::check_peer(
-    tsi_peer peer, grpc_endpoint* ep,
+    tsi_peer peer, grpc_endpoint* /*ep*/,
     grpc_core::RefCountedPtr<grpc_auth_context>* auth_context,
     grpc_closure* on_peer_checked) {
   grpc_error* error = grpc_ssl_check_alpn(&peer);

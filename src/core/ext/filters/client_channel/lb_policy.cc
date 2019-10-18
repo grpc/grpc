@@ -90,7 +90,7 @@ LoadBalancingPolicy::UpdateArgs& LoadBalancingPolicy::UpdateArgs::operator=(
 //
 
 LoadBalancingPolicy::PickResult LoadBalancingPolicy::QueuePicker::Pick(
-    PickArgs args) {
+    PickArgs /*args*/) {
   // We invoke the parent's ExitIdleLocked() via a closure instead
   // of doing it directly here, for two reasons:
   // 1. ExitIdleLocked() may cause the policy's state to change and
@@ -115,7 +115,7 @@ LoadBalancingPolicy::PickResult LoadBalancingPolicy::QueuePicker::Pick(
 }
 
 void LoadBalancingPolicy::QueuePicker::CallExitIdle(void* arg,
-                                                    grpc_error* error) {
+                                                    grpc_error* /*error*/) {
   LoadBalancingPolicy* parent = static_cast<LoadBalancingPolicy*>(arg);
   parent->ExitIdleLocked();
   parent->Unref();
@@ -126,7 +126,7 @@ void LoadBalancingPolicy::QueuePicker::CallExitIdle(void* arg,
 //
 
 LoadBalancingPolicy::PickResult
-LoadBalancingPolicy::TransientFailurePicker::Pick(PickArgs args) {
+LoadBalancingPolicy::TransientFailurePicker::Pick(PickArgs /*args*/) {
   PickResult result;
   result.type = PickResult::PICK_FAILED;
   result.error = GRPC_ERROR_REF(error_);

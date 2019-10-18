@@ -99,7 +99,7 @@ struct channel_data {
 
 }  // namespace
 
-static grpc_error* hs_filter_outgoing_metadata(grpc_call_element* elem,
+static grpc_error* hs_filter_outgoing_metadata(grpc_call_element* /*elem*/,
                                                grpc_metadata_batch* b) {
   if (b->idx.named.grpc_message != nullptr) {
     grpc_slice pct_encoded_msg = grpc_percent_encode_slice(
@@ -492,8 +492,8 @@ static grpc_error* hs_init_call_elem(grpc_call_element* elem,
 
 /* Destructor for call_data */
 static void hs_destroy_call_elem(grpc_call_element* elem,
-                                 const grpc_call_final_info* final_info,
-                                 grpc_closure* ignored) {
+                                 const grpc_call_final_info* /*final_info*/,
+                                 grpc_closure* /*ignored*/) {
   call_data* calld = static_cast<call_data*>(elem->call_data);
   calld->~call_data();
 }
@@ -511,7 +511,7 @@ static grpc_error* hs_init_channel_elem(grpc_channel_element* elem,
 }
 
 /* Destructor for channel data */
-static void hs_destroy_channel_elem(grpc_channel_element* elem) {}
+static void hs_destroy_channel_elem(grpc_channel_element* /*elem*/) {}
 
 const grpc_channel_filter grpc_http_server_filter = {
     hs_start_transport_stream_op_batch,

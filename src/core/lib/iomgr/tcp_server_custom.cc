@@ -439,13 +439,13 @@ static void tcp_server_start(grpc_tcp_server* server, grpc_pollset** pollsets,
   }
 }
 
-static unsigned tcp_server_port_fd_count(grpc_tcp_server* s,
-                                         unsigned port_index) {
+static unsigned tcp_server_port_fd_count(grpc_tcp_server* /*s*/,
+                                         unsigned /*port_index*/) {
   return 0;
 }
 
-static int tcp_server_port_fd(grpc_tcp_server* s, unsigned port_index,
-                              unsigned fd_index) {
+static int tcp_server_port_fd(grpc_tcp_server* /*s*/, unsigned /*port_index*/,
+                              unsigned /*fd_index*/) {
   return -1;
 }
 
@@ -459,7 +459,7 @@ static void tcp_server_shutdown_listeners(grpc_tcp_server* s) {
 }
 
 static grpc_core::TcpServerFdHandler* tcp_server_create_fd_handler(
-    grpc_tcp_server* s) {
+    grpc_tcp_server* /*s*/) {
   return nullptr;
 }
 

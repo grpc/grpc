@@ -112,7 +112,7 @@ class PickFirst : public LoadBalancingPolicy {
     explicit Picker(RefCountedPtr<SubchannelInterface> subchannel)
         : subchannel_(std::move(subchannel)) {}
 
-    PickResult Pick(PickArgs args) override {
+    PickResult Pick(PickArgs /*args*/) override {
       PickResult result;
       result.type = PickResult::PICK_COMPLETE;
       result.subchannel = subchannel_;
@@ -490,7 +490,7 @@ class PickFirstFactory : public LoadBalancingPolicyFactory {
   const char* name() const override { return kPickFirst; }
 
   RefCountedPtr<LoadBalancingPolicy::Config> ParseLoadBalancingConfig(
-      const grpc_json* json, grpc_error** error) const override {
+      const grpc_json* json, grpc_error** /*error*/) const override {
     if (json != nullptr) {
       GPR_DEBUG_ASSERT(strcmp(json->key, name()) == 0);
     }

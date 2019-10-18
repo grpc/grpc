@@ -138,7 +138,7 @@ static void on_timeout_locked(void* arg, grpc_error* error);
 static void on_ares_backup_poll_alarm(void* arg, grpc_error* error);
 static void on_ares_backup_poll_alarm_locked(void* arg, grpc_error* error);
 
-static void noop_inject_channel_config(ares_channel channel) {}
+static void noop_inject_channel_config(ares_channel /*channel*/) {}
 
 void (*grpc_ares_test_only_inject_config)(ares_channel channel) =
     noop_inject_channel_config;
