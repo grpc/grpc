@@ -25,12 +25,12 @@ class _ServicerContextPlaceHolder(object): pass
 # Apply this to the client-side
 cdef class CallbackWrapper:
     cdef CallbackContext context
-    cdef object _keep_reference
+    cdef object _reference
 
     def __cinit__(self, object future):
         self.context.functor.functor_run = self.functor_run
         self.context.waiter = <cpython.PyObject*>(future)
-        self._keep_reference = future
+        self._reference = future
 
     @staticmethod
     cdef void functor_run(
@@ -63,10 +63,10 @@ cdef class RPCState:
             grpc_call_unref(self.call)
 
 
-cdef _find_method_handler(RPCState rpc_state, list generic_handlers):
+cdef _find_method_handler(str method, list generic_handlers):
     # TODO(lidiz) connects Metadata to call details
     cdef _HandlerCallDetails handler_call_details = _HandlerCallDetails(
-        rpc_state.method().decode(),
+        method,
         tuple()
     )
 
@@ -77,8 +77,9 @@ cdef _find_method_handler(RPCState rpc_state, list generic_handlers):
     return None
 
 
-async def callback_start_batch(RPCState rpc_state, tuple operations, object
-loop):
+async def callback_start_batch(RPCState rpc_state,
+                               tuple operations,
+                               object loop):
     """The callback version of start batch operations."""
     cdef _BatchOperationTag batch_operation_tag = _BatchOperationTag(None, operations, None)
     batch_operation_tag.prepare()
@@ -100,10 +101,13 @@ loop):
     await future
     cpython.Py_DECREF(wrapper)
     cdef grpc_event c_event
+    # Tag.event must be called, otherwise messages won't be parsed from C
     batch_operation_tag.event(c_event)
 
 
-async def _handle_unary_unary_rpc(object method_handler, RPCState rpc_state, object loop):
+async def _handle_unary_unary_rpc(object method_handler,
+                                  RPCState rpc_state,
+                                  object loop):
     # Receives request message
     cdef tuple receive_ops = (
         ReceiveMessageOperation(_EMPTY_FLAGS),
@@ -138,11 +142,11 @@ async def _handle_unary_unary_rpc(object method_handler, RPCState rpc_state, obj
     await callback_start_batch(rpc_state, send_ops, loop)
 
 
-async def _handle_rpc(_AioServerState server_state, RPCState rpc_state, object loop):
+async def _handle_rpc(list generic_handlers, RPCState rpc_state, object loop):
     # Finds the method handler (application logic)
     cdef object method_handler = _find_method_handler(
-        rpc_state,
-        server_state.generic_handlers
+        rpc_state.method().decode(),
+        generic_handlers
     )
     if method_handler is None:
         # TODO(lidiz) return unimplemented error to client side
@@ -158,7 +162,9 @@ async def _handle_rpc(_AioServerState server_state, RPCState rpc_state, object l
         )
 
 
-async def _server_call_request_call(_AioServerState server_state, object loop):
+async def _server_call_request_call(Server server,
+                                    _CallbackCompletionQueue cq,
+                                    object loop):
     cdef grpc_call_error error
     cdef RPCState rpc_state = RPCState()
     cdef object future = loop.create_future()
@@ -167,9 +173,9 @@ async def _server_call_request_call(_AioServerState server_state, object loop):
     # when calling "await". This is an over-optimization by Cython.
     cpython.Py_INCREF(wrapper)
     error = grpc_server_request_call(
-        server_state.server.c_server, &rpc_state.call, &rpc_state.details,
+        server.c_server, &rpc_state.call, &rpc_state.details,
         &rpc_state.request_metadata,
-        server_state.cq, server_state.cq,
+        cq.c_ptr(), cq.c_ptr(),
         wrapper.c_functor()
     )
     if error != GRPC_CALL_OK:
@@ -180,45 +186,52 @@ async def _server_call_request_call(_AioServerState server_state, object loop):
     return rpc_state
 
 
-async def _server_main_loop(_AioServerState server_state):
+async def _server_main_loop(Server server,
+                            _CallbackCompletionQueue cq,
+                            list generic_handlers):
     cdef object loop = asyncio.get_event_loop()
     cdef RPCState rpc_state
 
     while True:
         rpc_state = await _server_call_request_call(
-            server_state,
+            server,
+            cq,
             loop)
 
-        loop.create_task(_handle_rpc(server_state, rpc_state, loop))
+        loop.create_task(_handle_rpc(generic_handlers, rpc_state, loop))
         await asyncio.sleep(0)
 
 
-async def _server_start(_AioServerState server_state):
-    server_state.server.start()
-    await _server_main_loop(server_state)
+async def _server_start(Server server,
+                        _CallbackCompletionQueue cq,
+                        list generic_handlers):
+    server.start()
+    await _server_main_loop(server, cq, generic_handlers)
 
 
-cdef class _AioServerState:
+cdef class _CallbackCompletionQueue:
+
     def __cinit__(self):
-        self.server = None
-        self.cq = NULL
-        self.generic_handlers = []
+        self._cq = grpc_completion_queue_create_for_callback(
+            NULL,
+            NULL
+        )
+
+    cdef grpc_completion_queue* c_ptr(self):
+        return self._cq
 
 
 cdef class AioServer:
 
     def __init__(self, thread_pool, generic_handlers, interceptors, options,
                  maximum_concurrent_rpcs, compression):
-        self._state = _AioServerState()
-        self._state.server = Server(options)
-        self._state.cq = grpc_completion_queue_create_for_callback(
-            NULL,
-            NULL
-        )
-        self._state.status = AIO_SERVER_STATUS_READY
+        self._server = Server(options)
+        self._cq = _CallbackCompletionQueue()
+        self._status = AIO_SERVER_STATUS_READY
+        self._generic_handlers = []
         grpc_server_register_completion_queue(
-            self._state.server.c_server,
-            self._state.cq,
+            self._server.c_server,
+            self._cq.c_ptr(),
             NULL
         )
         self.add_generic_rpc_handlers(generic_handlers)
@@ -234,24 +247,28 @@ cdef class AioServer:
 
     def add_generic_rpc_handlers(self, generic_rpc_handlers):
         for h in generic_rpc_handlers:
-            self._state.generic_handlers.append(h)
+            self._generic_handlers.append(h)
 
     def add_insecure_port(self, address):
-        return self._state.server.add_http2_port(address)
+        return self._server.add_http2_port(address)
 
     def add_secure_port(self, address, server_credentials):
-        return self._state.server.add_http2_port(address,
+        return self._server.add_http2_port(address,
                                           server_credentials._credentials)
 
     async def start(self):
-        if self._state.status == AIO_SERVER_STATUS_RUNNING:
+        if self._status == AIO_SERVER_STATUS_RUNNING:
             return
-        elif self._state.status != AIO_SERVER_STATUS_READY:
+        elif self._status != AIO_SERVER_STATUS_READY:
             raise RuntimeError('Server not in ready state')
 
-        self._state.status = AIO_SERVER_STATUS_RUNNING
+        self._status = AIO_SERVER_STATUS_RUNNING
         loop = asyncio.get_event_loop()
-        loop.create_task(_server_start(self._state))
+        loop.create_task(_server_start(
+            self._server,
+            self._cq,
+            self._generic_handlers,
+        ))
         await asyncio.sleep(0)
 
     # TODO(https://github.com/grpc/grpc/issues/20668)

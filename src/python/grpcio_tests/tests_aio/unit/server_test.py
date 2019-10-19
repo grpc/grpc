@@ -44,7 +44,7 @@ class TestServer(unittest.TestCase):
 
         async def test_unary_unary_body():
             server = aio.server()
-            port = server.add_insecure_port(('[::]:0').encode('ASCII'))
+            port = server.add_insecure_port('[::]:0')
             server.add_generic_rpc_handlers((GenericHandler(),))
             await server.start()
 

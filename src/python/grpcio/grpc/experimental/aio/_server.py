@@ -16,6 +16,7 @@
 from typing import Text, Optional
 import asyncio
 import grpc
+from grpc import _common
 from grpc._cython import cygrpc
 
 
@@ -50,12 +51,12 @@ class Server:
 
         Args:
           address: The address for which to open a port. If the port is 0,
-            or not specified in the address, then gRPC runtime will choose a port.
+            or not specified in the address, then the gRPC runtime will choose a port.
 
         Returns:
-          An integer port on which server will accept RPC requests.
+          An integer port on which the server will accept RPC requests.
         """
-        return self._server.add_insecure_port(address)
+        return self._server.add_insecure_port(_common.encode(address))
 
     def add_secure_port(self, address: Text,
                         server_credentials: grpc.ServerCredentials) -> int:
@@ -65,14 +66,15 @@ class Server:
 
         Args:
           address: The address for which to open a port.
-            if the port is 0, or not specified in the address, then gRPC
+            if the port is 0, or not specified in the address, then the gRPC
             runtime will choose a port.
           server_credentials: A ServerCredentials object.
 
         Returns:
-          An integer port on which server will accept RPC requests.
+          An integer port on which the server will accept RPC requests.
         """
-        return self._server.add_secure_port(address, server_credentials)
+        return self._server.add_secure_port(
+            _common.encode(address), server_credentials)
 
     async def start(self) -> None:
         """Starts this Server.
@@ -84,7 +86,8 @@ class Server:
     def stop(self, grace: Optional[float]) -> asyncio.Event:
         """Stops this Server.
 
-        This method immediately stop service of new RPCs in all cases.
+        "This method immediately stops the server from servicing new RPCs in
+        all cases.
 
         If a grace period is specified, this method returns immediately
         and all RPCs active at the end of the grace period are aborted.
@@ -139,7 +142,7 @@ class Server:
         await future
 
 
-def server(thread_pool=None,
+def server(migration_thread_pool=None,
            handlers=None,
            interceptors=None,
            options=None,
@@ -148,8 +151,8 @@ def server(thread_pool=None,
     """Creates a Server with which RPCs can be serviced.
 
     Args:
-      thread_pool: A futures.ThreadPoolExecutor to be used by the Server
-        to execute RPC handlers.
+      migration_thread_pool: A futures.ThreadPoolExecutor to be used by the
+        Server to execute non-AsyncIO RPC handlers for migration purpose.
       handlers: An optional list of GenericRpcHandlers used for executing RPCs.
         More handlers may be added by calling add_generic_rpc_handlers any time
         before the server is started.
@@ -169,7 +172,8 @@ def server(thread_pool=None,
     Returns:
       A Server object.
     """
-    return Server(thread_pool, () if handlers is None else handlers, ()
+    return Server(migration_thread_pool, ()
+                  if handlers is None else handlers, ()
                   if interceptors is None else interceptors, ()
                   if options is None else options, maximum_concurrent_rpcs,
                   compression)

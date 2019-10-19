@@ -112,9 +112,7 @@ cdef class _AsyncioSocket:
                       object host,
                       object port,
                       grpc_custom_connect_callback grpc_connect_cb):
-        if self._reader:
-            return
-
+        assert not self._reader
         assert not self._task_connect
 
         self._task_connect = asyncio.ensure_future(
@@ -163,11 +161,11 @@ cdef class _AsyncioSocket:
         )
 
         self._grpc_client_socket.impl = <void*>client_socket
-        cpython.Py_INCREF(client_socket)
+        cpython.Py_INCREF(client_socket)  # Py_DECREF in asyncio_socket_destroy
         # Accept callback expects to be called with:
-        # * An grpc custom socket for server
-        # * An grpc custom socket for client (with new Socket instance)
-        # * An error object
+        #   grpc_custom_socket: A grpc custom socket for server
+        #   grpc_custom_socket: A grpc custom socket for client (with new Socket instance)
+        #   grpc_error: An error object
         self._grpc_accept_cb(self._grpc_socket, self._grpc_client_socket, grpc_error_none())
 
     cdef listen(self):

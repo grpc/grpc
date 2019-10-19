@@ -32,12 +32,13 @@ cdef enum AioServerStatus:
     AIO_SERVER_STATUS_STOPPED
 
 
-cdef class _AioServerState:
-    cdef Server server
-    cdef grpc_completion_queue *cq
-    cdef list generic_handlers
-    cdef AioServerStatus status
+cdef class _CallbackCompletionQueue:
+    cdef grpc_completion_queue *_cq
+    cdef grpc_completion_queue* c_ptr(self)
 
 
 cdef class AioServer:
-    cdef _AioServerState _state
+    cdef Server _server
+    cdef _CallbackCompletionQueue _cq
+    cdef list _generic_handlers
+    cdef AioServerStatus _status

@@ -17,6 +17,7 @@ from cpython cimport Py_INCREF, Py_DECREF
 from libc cimport string
 
 import socket as native_socket
+import ipaddress  # CPython 3.3 and above
 
 cdef grpc_socket_vtable asyncio_socket_vtable
 cdef grpc_custom_resolver_vtable asyncio_resolver_vtable
@@ -87,6 +88,7 @@ cdef grpc_error* asyncio_socket_getpeername(
     cdef grpc_resolved_address c_addr
     hostname = str_to_bytes(peer[0])
     grpc_string_to_sockaddr(&c_addr, hostname, peer[1])
+    # TODO(https://github.com/grpc/grpc/issues/20684) Remove the memcpy
     string.memcpy(<void*>addr, <void*>c_addr.addr, c_addr.len)
     length[0] = c_addr.len
     return grpc_error_none()
@@ -105,6 +107,7 @@ cdef grpc_error* asyncio_socket_getsockname(
         peer = socket.sockname()
     hostname = str_to_bytes(peer[0])
     grpc_string_to_sockaddr(&c_addr, hostname, peer[1])
+    # TODO(https://github.com/grpc/grpc/issues/20684) Remove the memcpy
     string.memcpy(<void*>addr, <void*>c_addr.addr, c_addr.len)
     length[0] = c_addr.len
     return grpc_error_none()
@@ -128,19 +131,20 @@ cdef grpc_error* asyncio_socket_bind(
         size_t len, int flags) with gil:
     host, port = sockaddr_to_tuple(addr, len)
     try:
-        try:
-            socket = native_socket.socket(family=native_socket.AF_INET6)
-            _asyncio_apply_socket_options(socket)
-            socket.bind((host, port))
-        except native_socket.gaierror:
-            socket = native_socket.socket(family=native_socket.AF_INET)
-            _asyncio_apply_socket_options(socket)
-            socket.bind((host, port))
+        ip = ipaddress.ip_address(host)
+        if isinstance(ip, ipaddress.IPv6Address):
+            family = native_socket.AF_INET6
+        else:
+            family = native_socket.AF_INET
+
+        socket = native_socket.socket(family=family)
+        _asyncio_apply_socket_options(socket)
+        socket.bind((host, port))
     except IOError as io_error:
         return socket_error("bind", str(io_error))
     else:
         aio_socket = _AsyncioSocket.create_with_py_socket(grpc_socket, socket)
-        cpython.Py_INCREF(aio_socket)
+        cpython.Py_INCREF(aio_socket)  # Py_DECREF in asyncio_socket_destroy
         grpc_socket.impl = <void*>aio_socket
         return grpc_error_none()
 
