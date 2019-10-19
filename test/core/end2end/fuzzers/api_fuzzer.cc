@@ -379,7 +379,7 @@ grpc_ares_request* my_dns_lookup_ares_locked(
     grpc_pollset_set* /*interested_parties*/, grpc_closure* on_done,
     grpc_core::UniquePtr<grpc_core::ServerAddressList>* addresses,
     bool /*check_grpclb*/, char** /*service_config_json*/,
-    int /*query_timeout*/, grpc_combiner* /*combiner*/) {
+    int /*query_timeout*/, grpc_core::Combiner* /*combiner*/) {
   addr_req* r = static_cast<addr_req*>(gpr_malloc(sizeof(*r)));
   r->addr = gpr_strdup(addr);
   r->on_done = on_done;

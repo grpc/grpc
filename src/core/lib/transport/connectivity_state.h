@@ -68,15 +68,16 @@ class AsyncConnectivityStateWatcherInterface
  protected:
   class Notifier;
 
-  explicit AsyncConnectivityStateWatcherInterface(
-      grpc_closure_scheduler* scheduler = grpc_schedule_on_exec_ctx)
-      : scheduler_(scheduler) {}
+  // If \a combiner is nullptr, then the notification will be scheduled on the
+  // ExecCtx.
+  explicit AsyncConnectivityStateWatcherInterface(Combiner* combiner = nullptr)
+      : combiner_(combiner) {}
 
   // Invoked asynchronously when Notify() is called.
   virtual void OnConnectivityStateChange(grpc_connectivity_state new_state) = 0;
 
  private:
-  grpc_closure_scheduler* scheduler_;
+  Combiner* combiner_;
 };
 
 // Tracks connectivity state.  Maintains a list of watchers that are

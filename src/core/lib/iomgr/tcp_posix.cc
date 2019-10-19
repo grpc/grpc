@@ -1043,7 +1043,7 @@ static void tcp_handle_write(void* arg /* grpc_tcp */, grpc_error* error) {
       gpr_log(GPR_INFO, "write: %s", str);
     }
     // No need to take a ref on error since tcp_flush provides a ref.
-    GRPC_CLOSURE_SCHED(cb, error);
+    GRPC_CLOSURE_RUN(cb, error);
     TCP_UNREF(tcp, "write");
   }
 }
