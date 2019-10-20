@@ -41,7 +41,8 @@ namespace Grpc.Core
         /// Gets buffer writer that can be used to write the serialized data. Once serialization is finished,
         /// <c>Complete()</c> needs to be called.
         /// </summary>
-        public virtual IBufferWriter<byte> GetBufferWriter()
+        /// <param name="payloadLength">The total length of the payload in bytes.</param>
+        public virtual IBufferWriter<byte> GetBufferWriter(int payloadLength)
         {
             throw new NotImplementedException();
         }
@@ -52,7 +53,6 @@ namespace Grpc.Core
         public virtual void Complete()
         {
             throw new NotImplementedException();
-
         }
     }
 }

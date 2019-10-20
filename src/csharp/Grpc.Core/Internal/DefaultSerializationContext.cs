@@ -50,7 +50,7 @@ namespace Grpc.Core.Internal
         /// <summary>
         /// Expose serializer as buffer writer
         /// </summary>
-        public override IBufferWriter<byte> GetBufferWriter()
+        public override IBufferWriter<byte> GetBufferWriter(int payloadLength)
         {
             GrpcPreconditions.CheckState(!isComplete);
             return sliceBuffer;
