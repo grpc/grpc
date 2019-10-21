@@ -282,7 +282,7 @@ class ChannelData {
   //
   // Fields used in the control plane.  Guarded by combiner.
   //
-  grpc_combiner* combiner_;
+  Combiner* combiner_;
   grpc_pollset_set* interested_parties_;
   RefCountedPtr<SubchannelPoolInterface> subchannel_pool_;
   OrphanablePtr<ResolvingLoadBalancingPolicy> resolving_lb_policy_;
@@ -1044,10 +1044,10 @@ class ChannelData::SubchannelWrapper : public SubchannelInterface {
           : parent_(std::move(parent)),
             state_(new_state),
             connected_subchannel_(std::move(connected_subchannel)) {
-        GRPC_CLOSURE_INIT(
-            &closure_, ApplyUpdateInControlPlaneCombiner, this,
-            grpc_combiner_scheduler(parent_->parent_->chand_->combiner_));
-        GRPC_CLOSURE_SCHED(&closure_, GRPC_ERROR_NONE);
+        parent_->parent_->chand_->combiner_->Run(
+            GRPC_CLOSURE_INIT(&closure_, ApplyUpdateInControlPlaneCombiner,
+                              this, nullptr),
+            GRPC_ERROR_NONE);
       }
 
      private:
@@ -1140,9 +1140,8 @@ ChannelData::ExternalConnectivityWatcher::ExternalConnectivityWatcher(
   grpc_polling_entity_add_to_pollset_set(&pollent_,
                                          chand_->interested_parties_);
   GRPC_CHANNEL_STACK_REF(chand_->owning_stack_, "ExternalConnectivityWatcher");
-  GRPC_CLOSURE_SCHED(
-      GRPC_CLOSURE_INIT(&add_closure_, AddWatcherLocked, this,
-                        grpc_combiner_scheduler(chand_->combiner_)),
+  chand_->combiner_->Run(
+      GRPC_CLOSURE_INIT(&add_closure_, AddWatcherLocked, this, nullptr),
       GRPC_ERROR_NONE);
 }
 
@@ -1169,9 +1168,8 @@ void ChannelData::ExternalConnectivityWatcher::Notify(
   // Not needed in state SHUTDOWN, because the tracker will
   // automatically remove all watchers in that case.
   if (state != GRPC_CHANNEL_SHUTDOWN) {
-    GRPC_CLOSURE_SCHED(
-        GRPC_CLOSURE_INIT(&remove_closure_, RemoveWatcherLocked, this,
-                          grpc_combiner_scheduler(chand_->combiner_)),
+    chand_->combiner_->Run(
+        GRPC_CLOSURE_INIT(&remove_closure_, RemoveWatcherLocked, this, nullptr),
         GRPC_ERROR_NONE);
   }
 }
@@ -1184,9 +1182,8 @@ void ChannelData::ExternalConnectivityWatcher::Cancel() {
   }
   GRPC_CLOSURE_SCHED(on_complete_, GRPC_ERROR_CANCELLED);
   // Hop back into the combiner to clean up.
-  GRPC_CLOSURE_SCHED(
-      GRPC_CLOSURE_INIT(&remove_closure_, RemoveWatcherLocked, this,
-                        grpc_combiner_scheduler(chand_->combiner_)),
+  chand_->combiner_->Run(
+      GRPC_CLOSURE_INIT(&remove_closure_, RemoveWatcherLocked, this, nullptr),
       GRPC_ERROR_NONE);
 }
 
@@ -1223,9 +1220,11 @@ class ChannelData::ConnectivityWatcherAdder {
         initial_state_(initial_state),
         watcher_(std::move(watcher)) {
     GRPC_CHANNEL_STACK_REF(chand_->owning_stack_, "ConnectivityWatcherAdder");
-    GRPC_CLOSURE_INIT(&closure_, &ConnectivityWatcherAdder::AddWatcherLocked,
-                      this, grpc_combiner_scheduler(chand_->combiner_));
-    GRPC_CLOSURE_SCHED(&closure_, GRPC_ERROR_NONE);
+    chand_->combiner_->Run(
+        GRPC_CLOSURE_INIT(&closure_,
+                          &ConnectivityWatcherAdder::AddWatcherLocked, this,
+                          nullptr),
+        GRPC_ERROR_NONE);
   }
 
  private:
@@ -1255,10 +1254,11 @@ class ChannelData::ConnectivityWatcherRemover {
                              AsyncConnectivityStateWatcherInterface* watcher)
       : chand_(chand), watcher_(watcher) {
     GRPC_CHANNEL_STACK_REF(chand_->owning_stack_, "ConnectivityWatcherRemover");
-    GRPC_CLOSURE_INIT(&closure_,
-                      &ConnectivityWatcherRemover::RemoveWatcherLocked, this,
-                      grpc_combiner_scheduler(chand_->combiner_));
-    GRPC_CLOSURE_SCHED(&closure_, GRPC_ERROR_NONE);
+    chand_->combiner_->Run(
+        GRPC_CLOSURE_INIT(&closure_,
+                          &ConnectivityWatcherRemover::RemoveWatcherLocked,
+                          this, nullptr),
+        GRPC_ERROR_NONE);
   }
 
  private:
@@ -1883,10 +1883,9 @@ void ChannelData::StartTransportOp(grpc_channel_element* elem,
   // Pop into control plane combiner for remaining ops.
   op->handler_private.extra_arg = elem;
   GRPC_CHANNEL_STACK_REF(chand->owning_stack_, "start_transport_op");
-  GRPC_CLOSURE_SCHED(
+  chand->combiner_->Run(
       GRPC_CLOSURE_INIT(&op->handler_private.closure,
-                        ChannelData::StartTransportOpLocked, op,
-                        grpc_combiner_scheduler(chand->combiner_)),
+                        ChannelData::StartTransportOpLocked, op, nullptr),
       GRPC_ERROR_NONE);
 }
 
@@ -1953,9 +1952,8 @@ grpc_connectivity_state ChannelData::CheckConnectivityState(
   grpc_connectivity_state out = state_tracker_.state();
   if (out == GRPC_CHANNEL_IDLE && try_to_connect) {
     GRPC_CHANNEL_STACK_REF(owning_stack_, "TryToConnect");
-    GRPC_CLOSURE_SCHED(GRPC_CLOSURE_CREATE(TryToConnectLocked, this,
-                                           grpc_combiner_scheduler(combiner_)),
-                       GRPC_ERROR_NONE);
+    combiner_->Run(GRPC_CLOSURE_CREATE(TryToConnectLocked, this, nullptr),
+                   GRPC_ERROR_NONE);
   }
   return out;
 }

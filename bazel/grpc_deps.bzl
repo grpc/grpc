@@ -100,10 +100,9 @@ def grpc_deps():
     if "boringssl" not in native.existing_rules():
         http_archive(
             name = "boringssl",
-            # on the chromium-stable-with-bazel branch
             # NOTE: This URL generates a tarball containing dynamic date
             # information, so the sha256 is not consistent.
-            url = "https://boringssl.googlesource.com/boringssl/+archive/afc30d43eef92979b05776ec0963c9cede5fb80f.tar.gz",
+            url = "https://boringssl.googlesource.com/boringssl/+archive/83da28a68f32023fd3b95a8ae94991a07b1f6c62.tar.gz",
         )
 
     if "zlib" not in native.existing_rules():

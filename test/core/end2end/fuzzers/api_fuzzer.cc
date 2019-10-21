@@ -52,7 +52,7 @@ using grpc_core::testing::input_stream;
 bool squelch = true;
 bool leak_check = true;
 
-static void dont_log(gpr_log_func_args* args) {}
+static void dont_log(gpr_log_func_args* /*args*/) {}
 
 ////////////////////////////////////////////////////////////////////////////////
 // global state
@@ -358,8 +358,8 @@ static void finish_resolve(void* arg, grpc_error* error) {
   grpc_core::Delete(r);
 }
 
-void my_resolve_address(const char* addr, const char* default_port,
-                        grpc_pollset_set* interested_parties,
+void my_resolve_address(const char* addr, const char* /*default_port*/,
+                        grpc_pollset_set* /*interested_parties*/,
                         grpc_closure* on_done,
                         grpc_resolved_addresses** addrs) {
   addr_req* r = grpc_core::New<addr_req>();
@@ -375,11 +375,11 @@ static grpc_address_resolver_vtable fuzzer_resolver = {my_resolve_address,
                                                        nullptr};
 
 grpc_ares_request* my_dns_lookup_ares_locked(
-    const char* dns_server, const char* addr, const char* default_port,
-    grpc_pollset_set* interested_parties, grpc_closure* on_done,
+    const char* /*dns_server*/, const char* addr, const char* /*default_port*/,
+    grpc_pollset_set* /*interested_parties*/, grpc_closure* on_done,
     grpc_core::UniquePtr<grpc_core::ServerAddressList>* addresses,
-    bool check_grpclb, char** service_config_json, int query_timeout,
-    grpc_combiner* combiner) {
+    bool /*check_grpclb*/, char** /*service_config_json*/,
+    int /*query_timeout*/, grpc_core::Combiner* /*combiner*/) {
   addr_req* r = static_cast<addr_req*>(gpr_malloc(sizeof(*r)));
   r->addr = gpr_strdup(addr);
   r->on_done = on_done;
@@ -450,9 +450,9 @@ static void sched_connect(grpc_closure* closure, grpc_endpoint** ep,
 }
 
 static void my_tcp_client_connect(grpc_closure* closure, grpc_endpoint** ep,
-                                  grpc_pollset_set* interested_parties,
-                                  const grpc_channel_args* channel_args,
-                                  const grpc_resolved_address* addr,
+                                  grpc_pollset_set* /*interested_parties*/,
+                                  const grpc_channel_args* /*channel_args*/,
+                                  const grpc_resolved_address* /*addr*/,
                                   grpc_millis deadline) {
   sched_connect(closure, ep,
                 grpc_millis_to_timespec(deadline, GPR_CLOCK_MONOTONIC));
@@ -481,7 +481,7 @@ static void assert_success_and_decrement(void* counter, bool success) {
   --*static_cast<int*>(counter);
 }
 
-static void decrement(void* counter, bool success) {
+static void decrement(void* counter, bool /*success*/) {
   --*static_cast<int*>(counter);
 }
 
@@ -662,7 +662,7 @@ typedef struct {
   uint8_t has_ops;
 } batch_info;
 
-static void finished_batch(void* p, bool success) {
+static void finished_batch(void* p, bool /*success*/) {
   batch_info* bi = static_cast<batch_info*>(p);
   --bi->cs->pending_ops;
   if ((bi->has_ops & (1u << GRPC_OP_RECV_MESSAGE)) &&

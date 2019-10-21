@@ -28,7 +28,7 @@
 
 #include "test/core/util/test_config.h"
 
-static grpc_combiner* g_combiner;
+static grpc_core::Combiner* g_combiner;
 
 class ResultHandler : public grpc_core::Resolver::ResultHandler {
  public:
