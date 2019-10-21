@@ -180,7 +180,7 @@ class TagSaver final : public ::grpc::internal::CompletionQueueTag {
  public:
   explicit TagSaver(void* tag) : tag_(tag) {}
   ~TagSaver() override {}
-  bool FinalizeResult(void** tag, bool* status) override {
+  bool FinalizeResult(void** tag, bool* /*status*/) override {
     *tag = tag_;
     delete this;
     return true;
