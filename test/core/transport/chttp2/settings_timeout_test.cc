@@ -205,7 +205,7 @@ class Client {
     }
   }
 
-  static void PollsetDestroy(void* arg, grpc_error* error) {
+  static void PollsetDestroy(void* arg, grpc_error* /*error*/) {
     grpc_pollset* pollset = static_cast<grpc_pollset*>(arg);
     grpc_pollset_destroy(pollset);
     gpr_free(pollset);

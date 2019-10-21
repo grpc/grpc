@@ -141,7 +141,7 @@ bool Http2Client::DoPing() {
 }
 
 void Http2Client::MaxStreamsWorker(
-    const std::shared_ptr<grpc::Channel>& channel) {
+    const std::shared_ptr<grpc::Channel>& /*channel*/) {
   SimpleResponse response;
   AssertStatusCode(SendUnaryCall(&response), grpc::StatusCode::OK);
   GPR_ASSERT(response.payload().body() ==

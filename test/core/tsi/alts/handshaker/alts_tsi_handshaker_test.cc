@@ -181,10 +181,10 @@ static grpc_byte_buffer* generate_handshaker_response(
   return buffer;
 }
 
-static void check_must_not_be_called(tsi_result status, void* user_data,
-                                     const unsigned char* bytes_to_send,
-                                     size_t bytes_to_send_size,
-                                     tsi_handshaker_result* result) {
+static void check_must_not_be_called(tsi_result /*status*/, void* /*user_data*/,
+                                     const unsigned char* /*bytes_to_send*/,
+                                     size_t /*bytes_to_send_size*/,
+                                     tsi_handshaker_result* /*result*/) {
   GPR_ASSERT(0);
 }
 
@@ -331,7 +331,7 @@ static tsi_result mock_client_start(alts_handshaker_client* client) {
   return TSI_OK;
 }
 
-static void mock_shutdown(alts_handshaker_client* self) {}
+static void mock_shutdown(alts_handshaker_client* /*self*/) {}
 
 static tsi_result mock_server_start(alts_handshaker_client* client,
                                     grpc_slice* bytes_received) {
@@ -384,7 +384,7 @@ static tsi_result mock_next(alts_handshaker_client* client,
   return TSI_OK;
 }
 
-static void mock_destruct(alts_handshaker_client* client) {}
+static void mock_destruct(alts_handshaker_client* /*client*/) {}
 
 static alts_handshaker_client_vtable vtable = {mock_client_start,
                                                mock_server_start, mock_next,
@@ -484,7 +484,7 @@ static void check_handshaker_next_with_shutdown() {
   tsi_handshaker_destroy(handshaker);
 }
 
-static void check_handle_response_with_shutdown(void* unused) {
+static void check_handle_response_with_shutdown(void* /*unused*/) {
   wait(&caller_to_tsi_notification);
   alts_handshaker_client_handle_response(cb_event, true /* is_ok */);
 }
@@ -627,7 +627,7 @@ static void check_handle_response_invalid_resp() {
   notification_destroy(&tsi_to_caller_notification);
 }
 
-static void check_handle_response_success(void* unused) {
+static void check_handle_response_success(void* /*unused*/) {
   /* Client start. */
   wait(&caller_to_tsi_notification);
   alts_handshaker_client_handle_response(cb_event, true /* is_ok */);
@@ -750,7 +750,7 @@ void check_handshaker_success() {
   notification_destroy(&tsi_to_caller_notification);
 }
 
-int main(int argc, char** argv) {
+int main(int /*argc*/, char** /*argv*/) {
   /* Initialization. */
   grpc_init();
   grpc_alts_shared_resource_dedicated_init();

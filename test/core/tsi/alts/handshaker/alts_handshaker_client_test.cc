@@ -134,9 +134,10 @@ static grpc_gcp_HandshakerReq* deserialize_handshaker_req(
  * A mock grpc_caller used to check if client_start, server_start, and next
  * operations correctly handle invalid arguments. It should not be called.
  */
-static grpc_call_error check_must_not_be_called(grpc_call* call,
-                                                const grpc_op* ops, size_t nops,
-                                                grpc_closure* tag) {
+static grpc_call_error check_must_not_be_called(grpc_call* /*call*/,
+                                                const grpc_op* /*ops*/,
+                                                size_t /*nops*/,
+                                                grpc_closure* /*tag*/) {
   GPR_ASSERT(0);
 }
 
@@ -146,7 +147,7 @@ static grpc_call_error check_must_not_be_called(grpc_call* call,
  * handshake_security_protocol, application_protocol, and record_protocol, and
  * op is correctly populated.
  */
-static grpc_call_error check_client_start_success(grpc_call* call,
+static grpc_call_error check_client_start_success(grpc_call* /*call*/,
                                                   const grpc_op* op,
                                                   size_t nops,
                                                   grpc_closure* closure) {
@@ -191,7 +192,7 @@ static grpc_call_error check_client_start_success(grpc_call* call,
  * handshake_security_protocol, application_protocol, and record_protocol, and
  * op is correctly populated.
  */
-static grpc_call_error check_server_start_success(grpc_call* call,
+static grpc_call_error check_server_start_success(grpc_call* /*call*/,
                                                   const grpc_op* op,
                                                   size_t nops,
                                                   grpc_closure* closure) {
@@ -234,8 +235,9 @@ static grpc_call_error check_server_start_success(grpc_call* call,
  * checks if the next handshaker request is populated with correct information,
  * and op is correctly populated.
  */
-static grpc_call_error check_next_success(grpc_call* call, const grpc_op* op,
-                                          size_t nops, grpc_closure* closure) {
+static grpc_call_error check_next_success(grpc_call* /*call*/,
+                                          const grpc_op* op, size_t nops,
+                                          grpc_closure* closure) {
   upb::Arena arena;
   alts_handshaker_client* client =
       static_cast<alts_handshaker_client*>(closure->cb_arg);
@@ -256,9 +258,10 @@ static grpc_call_error check_next_success(grpc_call* call, const grpc_op* op,
  * operations correctly handle the situation when the grpc call made to the
  * handshaker service fails.
  */
-static grpc_call_error check_grpc_call_failure(grpc_call* call,
-                                               const grpc_op* op, size_t nops,
-                                               grpc_closure* tag) {
+static grpc_call_error check_grpc_call_failure(grpc_call* /*call*/,
+                                               const grpc_op* /*op*/,
+                                               size_t /*nops*/,
+                                               grpc_closure* /*tag*/) {
   return GRPC_CALL_ERROR;
 }
 
@@ -397,7 +400,7 @@ static void schedule_request_grpc_call_failure_test() {
   destroy_config(config);
 }
 
-int main(int argc, char** argv) {
+int main(int /*argc*/, char** /*argv*/) {
   /* Initialization. */
   grpc_init();
   grpc_alts_shared_resource_dedicated_init();

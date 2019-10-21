@@ -451,7 +451,7 @@ static void BM_HpackParserInitDestroy(benchmark::State& state) {
 }
 BENCHMARK(BM_HpackParserInitDestroy);
 
-static grpc_error* UnrefHeader(void* user_data, grpc_mdelem md) {
+static grpc_error* UnrefHeader(void* /*user_data*/, grpc_mdelem md) {
   GRPC_MDELEM_UNREF(md);
   return GRPC_ERROR_NONE;
 }
@@ -833,7 +833,7 @@ static grpc_error* OnInitialHeader(void* user_data, grpc_mdelem md) {
 }
 
 // Benchmark timeout handling
-static grpc_error* OnHeaderTimeout(void* user_data, grpc_mdelem md) {
+static grpc_error* OnHeaderTimeout(void* /*user_data*/, grpc_mdelem md) {
   if (grpc_slice_eq(GRPC_MDKEY(md), GRPC_MDSTR_GRPC_TIMEOUT)) {
     grpc_millis* cached_timeout =
         static_cast<grpc_millis*>(grpc_mdelem_get_user_data(md, free_timeout));
