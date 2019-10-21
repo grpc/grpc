@@ -473,6 +473,11 @@ static void handshaker_client_shutdown_locked(alts_handshaker_client* c) {
   }
 }
 
+static void handshaker_call_unref(void* arg, grpc_error* /*error*/) {
+  grpc_call* call = static_cast<grpc_call*>(arg);
+  grpc_call_unref(call);
+}
+
 static void handshaker_client_destruct_locked(alts_handshaker_client* c) {
   if (c == nullptr) {
     return;
@@ -480,7 +485,10 @@ static void handshaker_client_destruct_locked(alts_handshaker_client* c) {
   alts_grpc_handshaker_client* client =
       reinterpret_cast<alts_grpc_handshaker_client*>(c);
   if (client->call != nullptr) {
-    grpc_call_unref(client->call);
+    // do this at the bottom of the callstack to avoid lock recursion
+    GRPC_CLOSURE_SCHED(GRPC_CLOSURE_CREATE(handshaker_call_unref, client->call,
+                                           grpc_schedule_on_exec_ctx),
+                       GRPC_ERROR_NONE);
   }
 }
 
