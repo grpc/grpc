@@ -407,10 +407,10 @@ static void alts_tsi_handshaker_destroy_locked(alts_tsi_handshaker* self) {
   gpr_free(self);
 }
 
-void alts_tsi_handshaker_on_status_received(void* arg, grpc_error* error) {
-  alts_tsi_handshaker* handshaker = static_cast<alts_tsi_handshaker*>(arg);
-  gpr_mu_lock(&handshaker->mu);
-  alts_handshaker_client_on_status_received_locked(handshaker->client, error);
+// To be called when we've received a status for a call and processed
+// it, or if we're done with a handshake before starting a call.
+// Note that this unlocks handshaker->mu before returning.
+static void on_call_finished_locked(alts_tsi_handshaker* handshaker) {
   GPR_ASSERT(handshaker->receive_status_pending);
   handshaker->receive_status_pending = false;
   if (handshaker->tsi_destroy_called) {
@@ -418,6 +418,13 @@ void alts_tsi_handshaker_on_status_received(void* arg, grpc_error* error) {
   } else {
     gpr_mu_unlock(&handshaker->mu);
   }
+}
+
+void alts_tsi_handshaker_on_status_received(void* arg, grpc_error* error) {
+  alts_tsi_handshaker* handshaker = static_cast<alts_tsi_handshaker*>(arg);
+  gpr_mu_lock(&handshaker->mu);
+  alts_handshaker_client_on_status_received_locked(handshaker->client, error);
+  on_call_finished_locked(handshaker);
 }
 
 static void handshaker_orphan(tsi_handshaker* self) {
