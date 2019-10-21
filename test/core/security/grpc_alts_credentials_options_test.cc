@@ -87,7 +87,7 @@ static void test_client_options_api_success() {
   grpc_alts_credentials_options_destroy(new_options);
 }
 
-int main(int argc, char** argv) {
+int main(int /*argc*/, char** /*argv*/) {
   /* Test. */
   test_copy_client_options_failure();
   test_client_options_api_success();
