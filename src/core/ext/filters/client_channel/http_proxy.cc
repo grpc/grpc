@@ -99,7 +99,7 @@ bool http_proxy_enabled(const grpc_channel_args* args) {
   return grpc_channel_arg_get_bool(arg, true);
 }
 
-static bool proxy_mapper_map_name(grpc_proxy_mapper* mapper,
+static bool proxy_mapper_map_name(grpc_proxy_mapper* /*mapper*/,
                                   const char* server_uri,
                                   const grpc_channel_args* args,
                                   char** name_to_resolve,
@@ -195,15 +195,15 @@ no_use_proxy:
   return false;
 }
 
-static bool proxy_mapper_map_address(grpc_proxy_mapper* mapper,
-                                     const grpc_resolved_address* address,
-                                     const grpc_channel_args* args,
-                                     grpc_resolved_address** new_address,
-                                     grpc_channel_args** new_args) {
+static bool proxy_mapper_map_address(grpc_proxy_mapper* /*mapper*/,
+                                     const grpc_resolved_address* /*address*/,
+                                     const grpc_channel_args* /*args*/,
+                                     grpc_resolved_address** /*new_address*/,
+                                     grpc_channel_args** /*new_args*/) {
   return false;
 }
 
-static void proxy_mapper_destroy(grpc_proxy_mapper* mapper) {}
+static void proxy_mapper_destroy(grpc_proxy_mapper* /*mapper*/) {}
 
 static const grpc_proxy_mapper_vtable proxy_mapper_vtable = {
     proxy_mapper_map_name, proxy_mapper_map_address, proxy_mapper_destroy};
