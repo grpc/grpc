@@ -302,7 +302,7 @@ static grpc_error* update_path_for_get(grpc_call_element* elem,
   size_t estimated_len = GRPC_SLICE_LENGTH(path_slice);
   estimated_len++; /* for the '?' */
   estimated_len += grpc_base64_estimate_encoded_size(
-      batch->payload->send_message.send_message->length(), true /* url_safe */,
+      batch->payload->send_message.send_message->length(),
       false /* multi_line */);
   grpc_core::UnmanagedMemorySlice path_with_query_slice(estimated_len);
   /* memcopy individual pieces into this slice */
