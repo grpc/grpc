@@ -75,7 +75,7 @@ static void simple_delayed_request_body(grpc_end2end_test_config config,
                                         grpc_end2end_test_fixture* f,
                                         grpc_channel_args* client_args,
                                         grpc_channel_args* server_args,
-                                        long delay_us) {
+                                        long /*delay_us*/) {
   grpc_call* c;
   grpc_call* s;
   cq_verifier* cqv = cq_verifier_create(f->cq);
