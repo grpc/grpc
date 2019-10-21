@@ -17,7 +17,10 @@ from cpython cimport Py_INCREF, Py_DECREF
 from libc cimport string
 
 import socket as native_socket
-import ipaddress  # CPython 3.3 and above
+try:
+    import ipaddress  # CPython 3.3 and above
+except ImportError:
+    pass
 
 cdef grpc_socket_vtable asyncio_socket_vtable
 cdef grpc_custom_resolver_vtable asyncio_resolver_vtable
