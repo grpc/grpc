@@ -119,12 +119,14 @@ typedef struct proxy_connection {
   grpc_http_request http_request;
 } proxy_connection;
 
-static void proxy_connection_ref(proxy_connection* conn, const char* reason) {
+static void proxy_connection_ref(proxy_connection* conn,
+                                 const char* /*reason*/) {
   gpr_ref(&conn->refcount);
 }
 
 // Helper function to destroy the proxy connection.
-static void proxy_connection_unref(proxy_connection* conn, const char* reason) {
+static void proxy_connection_unref(proxy_connection* conn,
+                                   const char* /*reason*/) {
   if (gpr_unref(&conn->refcount)) {
     gpr_log(GPR_DEBUG, "endpoints: %p %p", conn->client_endpoint,
             conn->server_endpoint);
@@ -554,7 +556,7 @@ static void on_read_request_done(void* arg, grpc_error* error) {
 }
 
 static void on_accept(void* arg, grpc_endpoint* endpoint,
-                      grpc_pollset* accepting_pollset,
+                      grpc_pollset* /*accepting_pollset*/,
                       grpc_tcp_server_acceptor* acceptor) {
   gpr_free(acceptor);
   grpc_end2end_http_proxy* proxy = static_cast<grpc_end2end_http_proxy*>(arg);
@@ -639,7 +641,7 @@ grpc_end2end_http_proxy* grpc_end2end_http_proxy_create(
   return proxy;
 }
 
-static void destroy_pollset(void* arg, grpc_error* error) {
+static void destroy_pollset(void* arg, grpc_error* /*error*/) {
   grpc_pollset* pollset = static_cast<grpc_pollset*>(arg);
   grpc_pollset_destroy(pollset);
   gpr_free(pollset);
