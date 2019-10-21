@@ -39,6 +39,7 @@
 #include "src/core/ext/filters/client_channel/resolver/fake/fake_resolver.h"
 #include "src/core/ext/filters/client_channel/server_address.h"
 #include "src/core/lib/gpr/env.h"
+#include "src/core/lib/gpr/tmpfile.h"
 #include "src/core/lib/gprpp/map.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/gprpp/sync.h"
@@ -101,6 +102,59 @@ constexpr char kLbDropType[] = "lb";
 constexpr char kThrottleDropType[] = "throttle";
 constexpr int kDefaultLocalityWeight = 3;
 constexpr int kDefaultLocalityPriority = 0;
+
+constexpr char kBootstrapFile[] =
+    "{\n"
+    "  \"xds_server\": {\n"
+    "    \"server_uri\": \"fake:///lb\",\n"
+    "    \"channel_creds\": [\n"
+    "      {\n"
+    "        \"type\": \"fake\"\n"
+    "      }\n"
+    "    ]\n"
+    "  },\n"
+    "  \"node\": {\n"
+    "    \"id\": \"xds_end2end_test\",\n"
+    "    \"cluster\": \"test\",\n"
+    "    \"metadata\": {\n"
+    "      \"foo\": \"bar\"\n"
+    "    },\n"
+    "    \"locality\": {\n"
+    "      \"region\": \"corp\",\n"
+    "      \"zone\": \"svl\",\n"
+    "      \"subzone\": \"mp3\"\n"
+    "    }\n"
+    "  }\n"
+    "}\n";
+
+constexpr char kBootstrapFileBad[] =
+    "{\n"
+    "  \"xds_server\": {\n"
+    "    \"server_uri\": \"fake:///wrong_lb\",\n"
+    "    \"channel_creds\": [\n"
+    "      {\n"
+    "        \"type\": \"fake\"\n"
+    "      }\n"
+    "    ]\n"
+    "  },\n"
+    "  \"node\": {\n"
+    "  }\n"
+    "}\n";
+
+char* g_bootstrap_file;
+char* g_bootstrap_file_bad;
+
+void WriteBootstrapFiles() {
+  char* bootstrap_file;
+  FILE* out = gpr_tmpfile("xds_bootstrap", &bootstrap_file);
+  fputs(kBootstrapFile, out);
+  fclose(out);
+  g_bootstrap_file = bootstrap_file;
+  out = gpr_tmpfile("xds_bootstrap_bad", &bootstrap_file);
+  fputs(kBootstrapFileBad, out);
+  fclose(out);
+  g_bootstrap_file_bad = bootstrap_file;
+}
 
 template <typename ServiceType>
 class CountedService : public ServiceType {
@@ -565,7 +619,7 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
   static void TearDownTestCase() { grpc_shutdown(); }
 
   void SetUp() override {
-    gpr_setenv("GRPC_XDS_BOOTSTRAP", "test/cpp/end2end/xds_bootstrap.json");
+    gpr_setenv("GRPC_XDS_BOOTSTRAP", g_bootstrap_file);
     response_generator_ =
         grpc_core::MakeRefCounted<grpc_core::FakeResolverResponseGenerator>();
     lb_channel_response_generator_ =
@@ -1159,7 +1213,7 @@ TEST_P(SecureNamingTest, TargetNameIsExpected) {
 
 // Tests that secure naming check fails if target name is unexpected.
 TEST_P(SecureNamingTest, TargetNameIsUnexpected) {
-  gpr_setenv("GRPC_XDS_BOOTSTRAP", "test/cpp/end2end/xds_bootstrap_bad.json");
+  gpr_setenv("GRPC_XDS_BOOTSTRAP", g_bootstrap_file_bad);
   ::testing::FLAGS_gtest_death_test_style = "threadsafe";
   // Make sure that we blow up (via abort() from the security connector) when
   // the name from the balancer doesn't match expectations.
@@ -2418,6 +2472,7 @@ INSTANTIATE_TEST_SUITE_P(XdsTest, ClientLoadReportingWithDropTest,
 int main(int argc, char** argv) {
   grpc::testing::TestEnvironment env(argc, argv);
   ::testing::InitGoogleTest(&argc, argv);
+  grpc::testing::WriteBootstrapFiles();
   const auto result = RUN_ALL_TESTS();
   return result;
 }
