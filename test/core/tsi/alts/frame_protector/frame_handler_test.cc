@@ -228,7 +228,7 @@ static void frame_handler_test_null_reader_bytes() {
   destroy_frame_handler(handler);
 }
 
-int main(int argc, char** argv) {
+int main(int /*argc*/, char** /*argv*/) {
   frame_handler_test_frame_deframe();
   frame_handler_test_small_buffer();
   frame_handler_test_null_input_stream();
