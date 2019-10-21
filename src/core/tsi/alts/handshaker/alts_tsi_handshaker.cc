@@ -474,6 +474,12 @@ void alts_tsi_handshaker_re_enter_lock_then_continue_make_grpc_call(
   alts_tsi_handshaker* handshaker = args->handshaker;
   bool is_start = args->is_start;
   gpr_free(args);
+  {
+    grpc_core::MutexLock(&handshaker->mu);
+    if (handshaker->shutdown) {
+      return;
+    }
+  }
   if (is_start) {
     grpc_core::UniquePtr<char> handshaker_service_url;
     bool use_dedicated_cq;
