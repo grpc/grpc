@@ -199,7 +199,6 @@ async def _server_main_loop(Server server,
             loop)
 
         loop.create_task(_handle_rpc(generic_handlers, rpc_state, loop))
-        await asyncio.sleep(0)
 
 
 async def _server_start(Server server,
@@ -269,7 +268,6 @@ cdef class AioServer:
             self._cq,
             self._generic_handlers,
         ))
-        await asyncio.sleep(0)
 
     # TODO(https://github.com/grpc/grpc/issues/20668)
     # Implement Destruction Methods for AsyncIO Server
