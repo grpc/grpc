@@ -204,19 +204,16 @@ class ServerBidiReactor : public internal::ServerReactor {
   /// any initial metadata will be passed along with the first Write or the
   /// Finish (if there are no writes).
   void StartSendInitialMetadata() {
-    bool ready = true;
     auto* stream = stream_.load(std::memory_order_acquire);
     if (stream == nullptr) {
       grpc::internal::MutexLock l(&stream_mu_);
       stream = stream_.load(std::memory_order_acquire);
       if (stream == nullptr) {
-        ready = false;
         send_initial_metadata_wanted_ = true;
+        return;
       }
     }
-    if (ready) {
-      stream->SendInitialMetadata();
-    }
+    stream->SendInitialMetadata();
   }
 
   /// Initiate a read operation.
@@ -224,19 +221,16 @@ class ServerBidiReactor : public internal::ServerReactor {
   /// \param[out] req Where to eventually store the read message. Valid when
   ///                 the library calls OnReadDone
   void StartRead(Request* req) {
-    bool ready = true;
     auto* stream = stream_.load(std::memory_order_acquire);
     if (stream == nullptr) {
       grpc::internal::MutexLock l(&stream_mu_);
       stream = stream_.load(std::memory_order_acquire);
       if (stream == nullptr) {
-        ready = false;
         read_wanted_ = req;
+        return;
       }
     }
-    if (ready) {
-      stream->Read(req);
-    }
+    stream->Read(req);
   }
 
   /// Initiate a write operation.
@@ -255,20 +249,17 @@ class ServerBidiReactor : public internal::ServerReactor {
   ///                 application regains ownership of resp.
   /// \param[in] options The WriteOptions to use for writing this message
   void StartWrite(const Response* resp, ::grpc::WriteOptions options) {
-    bool ready = true;
     auto* stream = stream_.load(std::memory_order_acquire);
     if (stream == nullptr) {
       grpc::internal::MutexLock l(&stream_mu_);
       stream = stream_.load(std::memory_order_acquire);
       if (stream == nullptr) {
-        ready = false;
         write_wanted_ = resp;
         write_options_wanted_ = std::move(options);
+        return;
       }
     }
-    if (ready) {
-      stream->Write(resp, std::move(options));
-    }
+    stream->Write(resp, std::move(options));
   }
 
   /// Initiate a write operation with specified options and final RPC Status,
@@ -286,22 +277,19 @@ class ServerBidiReactor : public internal::ServerReactor {
   /// \param[in] s The status outcome of this RPC
   void StartWriteAndFinish(const Response* resp, ::grpc::WriteOptions options,
                            ::grpc::Status s) {
-    bool ready = true;
     auto* stream = stream_.load(std::memory_order_acquire);
     if (stream == nullptr) {
       grpc::internal::MutexLock l(&stream_mu_);
       stream = stream_.load(std::memory_order_acquire);
       if (stream == nullptr) {
-        ready = false;
         write_and_finish_wanted_ = true;
         write_wanted_ = resp;
         write_options_wanted_ = std::move(options);
         status_wanted_ = std::move(s);
+        return;
       }
     }
-    if (ready) {
-      stream->WriteAndFinish(resp, std::move(options), std::move(s));
-    }
+    stream->WriteAndFinish(resp, std::move(options), std::move(s));
   }
 
   /// Inform system of a planned write operation with specified options, but
@@ -323,20 +311,17 @@ class ServerBidiReactor : public internal::ServerReactor {
   ///
   /// \param[in] s The status outcome of this RPC
   void Finish(::grpc::Status s) {
-    bool ready = true;
     auto* stream = stream_.load(std::memory_order_acquire);
     if (stream == nullptr) {
       grpc::internal::MutexLock l(&stream_mu_);
       stream = stream_.load(std::memory_order_acquire);
       if (stream == nullptr) {
-        ready = false;
         finish_wanted_ = true;
         status_wanted_ = std::move(s);
+        return;
       }
     }
-    if (ready) {
-      stream->Finish(std::move(s));
-    }
+    stream->Finish(std::move(s));
   }
 
   /// Notifies the application that an explicit StartSendInitialMetadata
@@ -417,50 +402,41 @@ class ServerReadReactor : public internal::ServerReactor {
 
   /// The following operation initiations are exactly like ServerBidiReactor.
   void StartSendInitialMetadata() {
-    bool ready = true;
     auto* reader = reader_.load(std::memory_order_acquire);
     if (reader == nullptr) {
       grpc::internal::MutexLock l(&reader_mu_);
       reader = reader_.load(std::memory_order_acquire);
       if (reader == nullptr) {
-        ready = false;
         send_initial_metadata_wanted_ = true;
+        return;
       }
     }
-    if (ready) {
-      reader->SendInitialMetadata();
-    }
+    reader->SendInitialMetadata();
   }
   void StartRead(Request* req) {
-    bool ready = true;
     auto* reader = reader_.load(std::memory_order_acquire);
     if (reader == nullptr) {
       grpc::internal::MutexLock l(&reader_mu_);
       reader = reader_.load(std::memory_order_acquire);
       if (reader == nullptr) {
-        ready = false;
         read_wanted_ = req;
+        return;
       }
     }
-    if (ready) {
-      reader->Read(req);
-    }
+    reader->Read(req);
   }
   void Finish(::grpc::Status s) {
-    bool ready = true;
     auto* reader = reader_.load(std::memory_order_acquire);
     if (reader == nullptr) {
       grpc::internal::MutexLock l(&reader_mu_);
       reader = reader_.load(std::memory_order_acquire);
       if (reader == nullptr) {
-        ready = false;
         finish_wanted_ = true;
         status_wanted_ = std::move(s);
+        return;
       }
     }
-    if (ready) {
-      reader->Finish(std::move(s));
-    }
+    reader->Finish(std::move(s));
   }
 
   /// The following notifications are exactly like ServerBidiReactor.
@@ -505,76 +481,64 @@ class ServerWriteReactor : public internal::ServerReactor {
 
   /// The following operation initiations are exactly like ServerBidiReactor.
   void StartSendInitialMetadata() {
-    bool ready = true;
     auto* writer = writer_.load(std::memory_order_acquire);
     if (writer == nullptr) {
       grpc::internal::MutexLock l(&writer_mu_);
       writer = writer_.load(std::memory_order_acquire);
       if (writer == nullptr) {
-        ready = false;
         send_initial_metadata_wanted_ = true;
+        return;
       }
     }
-    if (ready) {
-      writer->SendInitialMetadata();
-    }
+    writer->SendInitialMetadata();
   }
   void StartWrite(const Response* resp) {
     StartWrite(resp, ::grpc::WriteOptions());
   }
   void StartWrite(const Response* resp, ::grpc::WriteOptions options) {
-    bool ready = true;
     auto* writer = writer_.load(std::memory_order_acquire);
     if (writer == nullptr) {
       grpc::internal::MutexLock l(&writer_mu_);
       writer = writer_.load(std::memory_order_acquire);
       if (writer == nullptr) {
-        ready = false;
         write_wanted_ = resp;
         write_options_wanted_ = std::move(options);
+        return;
       }
     }
-    if (ready) {
-      writer->Write(resp, std::move(options));
-    }
+    writer->Write(resp, std::move(options));
   }
   void StartWriteAndFinish(const Response* resp, ::grpc::WriteOptions options,
                            ::grpc::Status s) {
-    bool ready = true;
     auto* writer = writer_.load(std::memory_order_acquire);
     if (writer == nullptr) {
       grpc::internal::MutexLock l(&writer_mu_);
       writer = writer_.load(std::memory_order_acquire);
       if (writer == nullptr) {
-        ready = false;
         write_and_finish_wanted_ = true;
         write_wanted_ = resp;
         write_options_wanted_ = std::move(options);
         status_wanted_ = std::move(s);
+        return;
       }
     }
-    if (ready) {
-      writer->WriteAndFinish(resp, std::move(options), std::move(s));
-    }
+    writer->WriteAndFinish(resp, std::move(options), std::move(s));
   }
   void StartWriteLast(const Response* resp, ::grpc::WriteOptions options) {
     StartWrite(resp, std::move(options.set_last_message()));
   }
   void Finish(::grpc::Status s) {
-    bool ready = true;
     auto* writer = writer_.load(std::memory_order_acquire);
     if (writer == nullptr) {
       grpc::internal::MutexLock l(&writer_mu_);
       writer = writer_.load(std::memory_order_acquire);
       if (writer == nullptr) {
-        ready = false;
         finish_wanted_ = true;
         status_wanted_ = std::move(s);
+        return;
       }
     }
-    if (ready) {
-      writer->Finish(std::move(s));
-    }
+    writer->Finish(std::move(s));
   }
 
   /// The following notifications are exactly like ServerBidiReactor.
@@ -623,35 +587,29 @@ class ServerUnaryReactor : public internal::ServerReactor {
 
   /// The following operation initiations are exactly like ServerBidiReactor.
   void StartSendInitialMetadata() {
-    bool ready = true;
     auto* call = call_.load(std::memory_order_acquire);
     if (call == nullptr) {
       grpc::internal::MutexLock l(&call_mu_);
       call = call_.load(std::memory_order_acquire);
       if (call == nullptr) {
-        ready = false;
         send_initial_metadata_wanted_ = true;
+        return;
       }
     }
-    if (ready) {
-      call->SendInitialMetadata();
-    }
+    call->SendInitialMetadata();
   }
   void Finish(::grpc::Status s) {
-    bool ready = true;
     auto* call = call_.load(std::memory_order_acquire);
     if (call == nullptr) {
       grpc::internal::MutexLock l(&call_mu_);
       call = call_.load(std::memory_order_acquire);
       if (call == nullptr) {
-        ready = false;
         finish_wanted_ = true;
         status_wanted_ = std::move(s);
+        return;
       }
     }
-    if (ready) {
-      call->Finish(std::move(s));
-    }
+    call->Finish(std::move(s));
   }
 
   /// The following notifications are exactly like ServerBidiReactor.
