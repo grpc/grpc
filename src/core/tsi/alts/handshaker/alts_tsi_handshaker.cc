@@ -581,7 +581,7 @@ bool alts_tsi_handshaker_get_is_client_for_testing(
   return handshaker->is_client;
 }
 
-bool alts_tsi_handshaker_set_receive_status_pending_for_testing(
+void alts_tsi_handshaker_set_receive_status_pending_for_testing(
     alts_tsi_handshaker* handshaker, bool receive_status_pending) {
   GPR_ASSERT(handshaker != nullptr);
   return handshaker->receive_status_pending = receive_status_pending;
