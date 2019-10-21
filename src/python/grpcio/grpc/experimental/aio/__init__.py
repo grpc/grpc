@@ -64,6 +64,7 @@ class AioRpcError:
 
         return cls._class_built(*args, **kwargs)
 
+
 ###################################  __all__  #################################
 
 __all__ = (
