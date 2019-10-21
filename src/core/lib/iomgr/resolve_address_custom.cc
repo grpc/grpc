@@ -151,7 +151,7 @@ static grpc_error* blocking_resolve_address_impl(
 }
 
 static void resolve_address_impl(const char* name, const char* default_port,
-                                 grpc_pollset_set* interested_parties,
+                                 grpc_pollset_set* /*interested_parties*/,
                                  grpc_closure* on_done,
                                  grpc_resolved_addresses** addrs) {
   grpc_custom_resolver* r = nullptr;
