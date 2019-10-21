@@ -35,14 +35,12 @@ grpc_json* grpc_json_create(grpc_json_type type) {
 }
 
 void grpc_json_destroy(grpc_json* json) {
-  grpc_json* root = json;
   if (json == nullptr) return;
-
+  grpc_json* root = json;
   while (1) {
     while (json->child) {
       json = json->child;
     }
-
     grpc_json tmp_copy = *json;
     if (json->prev) {
       json->prev->next = json->next;
