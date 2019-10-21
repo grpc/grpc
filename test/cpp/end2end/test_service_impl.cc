@@ -76,10 +76,9 @@ int MetadataMatchCount(
     const std::multimap<grpc::string_ref, grpc::string_ref>& metadata,
     const grpc::string& key, const grpc::string& value) {
   int count = 0;
-  for (std::multimap<grpc::string_ref, grpc::string_ref>::const_iterator iter =
-           metadata.begin();
-       iter != metadata.end(); ++iter) {
-    if (ToString(iter->first) == key && ToString(iter->second) == value) {
+  for (const auto& metadatum : metadata) {
+    if (ToString(metadatum.first) == key &&
+        ToString(metadatum.second) == value) {
       count++;
     }
   }
@@ -189,22 +188,18 @@ Status TestServiceImpl::Echo(ServerContext* context, const EchoRequest* request,
   if (request->has_param() && request->param().echo_metadata_initially()) {
     const std::multimap<grpc::string_ref, grpc::string_ref>& client_metadata =
         context->client_metadata();
-    for (std::multimap<grpc::string_ref, grpc::string_ref>::const_iterator
-             iter = client_metadata.begin();
-         iter != client_metadata.end(); ++iter) {
-      context->AddInitialMetadata(ToString(iter->first),
-                                  ToString(iter->second));
+    for (const auto& metadatum : client_metadata) {
+      context->AddInitialMetadata(ToString(metadatum.first),
+                                  ToString(metadatum.second));
     }
   }
 
   if (request->has_param() && request->param().echo_metadata()) {
     const std::multimap<grpc::string_ref, grpc::string_ref>& client_metadata =
         context->client_metadata();
-    for (std::multimap<grpc::string_ref, grpc::string_ref>::const_iterator
-             iter = client_metadata.begin();
-         iter != client_metadata.end(); ++iter) {
-      context->AddTrailingMetadata(ToString(iter->first),
-                                   ToString(iter->second));
+    for (const auto& metadatum : client_metadata) {
+      context->AddTrailingMetadata(ToString(metadatum.first),
+                                   ToString(metadatum.second));
     }
     // Terminate rpc with error and debug info in trailer.
     if (request->param().debug_info().stack_entries_size() ||
@@ -471,7 +466,7 @@ void CallbackTestServiceImpl::Echo(ServerContext* context,
       }
       int server_try_cancel = GetIntValueFromMetadata(
           kServerTryCancelRequest, ctx_->client_metadata(), DO_NOT_CANCEL);
-      if (server_try_cancel > DO_NOT_CANCEL) {
+      if (server_try_cancel != DO_NOT_CANCEL) {
         // Since this is a unary RPC, by the time this server handler is called,
         // the 'request' message is already read from the client. So the
         // scenarios in server_try_cancel don't make much sense. Just cancel the
@@ -510,11 +505,9 @@ void CallbackTestServiceImpl::Echo(ServerContext* context,
       if (req_->has_param() && req_->param().echo_metadata_initially()) {
         const std::multimap<grpc::string_ref, grpc::string_ref>&
             client_metadata = ctx_->client_metadata();
-        for (std::multimap<grpc::string_ref, grpc::string_ref>::const_iterator
-                 iter = client_metadata.begin();
-             iter != client_metadata.end(); ++iter) {
-          ctx_->AddInitialMetadata(ToString(iter->first),
-                                   ToString(iter->second));
+        for (const auto& metadatum : client_metadata) {
+          ctx_->AddInitialMetadata(ToString(metadatum.first),
+                                   ToString(metadatum.second));
         }
         StartSendInitialMetadata();
       }
@@ -522,11 +515,9 @@ void CallbackTestServiceImpl::Echo(ServerContext* context,
       if (req_->has_param() && req_->param().echo_metadata()) {
         const std::multimap<grpc::string_ref, grpc::string_ref>&
             client_metadata = ctx_->client_metadata();
-        for (std::multimap<grpc::string_ref, grpc::string_ref>::const_iterator
-                 iter = client_metadata.begin();
-             iter != client_metadata.end(); ++iter) {
-          ctx_->AddTrailingMetadata(ToString(iter->first),
-                                    ToString(iter->second));
+        for (const auto& metadatum : client_metadata) {
+          ctx_->AddTrailingMetadata(ToString(metadatum.first),
+                                    ToString(metadatum.second));
         }
         // Terminate rpc with error and debug info in trailer.
         if (req_->param().debug_info().stack_entries_size() ||
