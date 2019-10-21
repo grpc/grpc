@@ -81,7 +81,7 @@
 
     s.source = {
       :git => 'https://github.com/google/boringssl.git',
-      :commit => "b29b21a81b32ec273f118f589f46d56ad3332420",
+      :commit => "7f02881e96e51f1873afcf384d02f782b48967ca",
     }
 
     s.ios.deployment_target = '7.0'
@@ -229,208 +229,213 @@
         #include <openssl/type_check.h>
 
 
-        OPENSSL_COMPILE_ASSERT(ERR_LIB_NONE == 1, library_values_changed_1);
-        OPENSSL_COMPILE_ASSERT(ERR_LIB_SYS == 2, library_values_changed_2);
-        OPENSSL_COMPILE_ASSERT(ERR_LIB_BN == 3, library_values_changed_3);
-        OPENSSL_COMPILE_ASSERT(ERR_LIB_RSA == 4, library_values_changed_4);
-        OPENSSL_COMPILE_ASSERT(ERR_LIB_DH == 5, library_values_changed_5);
-        OPENSSL_COMPILE_ASSERT(ERR_LIB_EVP == 6, library_values_changed_6);
-        OPENSSL_COMPILE_ASSERT(ERR_LIB_BUF == 7, library_values_changed_7);
-        OPENSSL_COMPILE_ASSERT(ERR_LIB_OBJ == 8, library_values_changed_8);
-        OPENSSL_COMPILE_ASSERT(ERR_LIB_PEM == 9, library_values_changed_9);
-        OPENSSL_COMPILE_ASSERT(ERR_LIB_DSA == 10, library_values_changed_10);
-        OPENSSL_COMPILE_ASSERT(ERR_LIB_X509 == 11, library_values_changed_11);
-        OPENSSL_COMPILE_ASSERT(ERR_LIB_ASN1 == 12, library_values_changed_12);
-        OPENSSL_COMPILE_ASSERT(ERR_LIB_CONF == 13, library_values_changed_13);
-        OPENSSL_COMPILE_ASSERT(ERR_LIB_CRYPTO == 14, library_values_changed_14);
-        OPENSSL_COMPILE_ASSERT(ERR_LIB_EC == 15, library_values_changed_15);
-        OPENSSL_COMPILE_ASSERT(ERR_LIB_SSL == 16, library_values_changed_16);
-        OPENSSL_COMPILE_ASSERT(ERR_LIB_BIO == 17, library_values_changed_17);
-        OPENSSL_COMPILE_ASSERT(ERR_LIB_PKCS7 == 18, library_values_changed_18);
-        OPENSSL_COMPILE_ASSERT(ERR_LIB_PKCS8 == 19, library_values_changed_19);
-        OPENSSL_COMPILE_ASSERT(ERR_LIB_X509V3 == 20, library_values_changed_20);
-        OPENSSL_COMPILE_ASSERT(ERR_LIB_RAND == 21, library_values_changed_21);
-        OPENSSL_COMPILE_ASSERT(ERR_LIB_ENGINE == 22, library_values_changed_22);
-        OPENSSL_COMPILE_ASSERT(ERR_LIB_OCSP == 23, library_values_changed_23);
-        OPENSSL_COMPILE_ASSERT(ERR_LIB_UI == 24, library_values_changed_24);
-        OPENSSL_COMPILE_ASSERT(ERR_LIB_COMP == 25, library_values_changed_25);
-        OPENSSL_COMPILE_ASSERT(ERR_LIB_ECDSA == 26, library_values_changed_26);
-        OPENSSL_COMPILE_ASSERT(ERR_LIB_ECDH == 27, library_values_changed_27);
-        OPENSSL_COMPILE_ASSERT(ERR_LIB_HMAC == 28, library_values_changed_28);
-        OPENSSL_COMPILE_ASSERT(ERR_LIB_DIGEST == 29, library_values_changed_29);
-        OPENSSL_COMPILE_ASSERT(ERR_LIB_CIPHER == 30, library_values_changed_30);
-        OPENSSL_COMPILE_ASSERT(ERR_LIB_HKDF == 31, library_values_changed_31);
-        OPENSSL_COMPILE_ASSERT(ERR_LIB_USER == 32, library_values_changed_32);
-        OPENSSL_COMPILE_ASSERT(ERR_NUM_LIBS == 33, library_values_changed_num);
+        OPENSSL_STATIC_ASSERT(ERR_LIB_NONE == 1, "library value changed");
+        OPENSSL_STATIC_ASSERT(ERR_LIB_SYS == 2, "library value changed");
+        OPENSSL_STATIC_ASSERT(ERR_LIB_BN == 3, "library value changed");
+        OPENSSL_STATIC_ASSERT(ERR_LIB_RSA == 4, "library value changed");
+        OPENSSL_STATIC_ASSERT(ERR_LIB_DH == 5, "library value changed");
+        OPENSSL_STATIC_ASSERT(ERR_LIB_EVP == 6, "library value changed");
+        OPENSSL_STATIC_ASSERT(ERR_LIB_BUF == 7, "library value changed");
+        OPENSSL_STATIC_ASSERT(ERR_LIB_OBJ == 8, "library value changed");
+        OPENSSL_STATIC_ASSERT(ERR_LIB_PEM == 9, "library value changed");
+        OPENSSL_STATIC_ASSERT(ERR_LIB_DSA == 10, "library value changed");
+        OPENSSL_STATIC_ASSERT(ERR_LIB_X509 == 11, "library value changed");
+        OPENSSL_STATIC_ASSERT(ERR_LIB_ASN1 == 12, "library value changed");
+        OPENSSL_STATIC_ASSERT(ERR_LIB_CONF == 13, "library value changed");
+        OPENSSL_STATIC_ASSERT(ERR_LIB_CRYPTO == 14, "library value changed");
+        OPENSSL_STATIC_ASSERT(ERR_LIB_EC == 15, "library value changed");
+        OPENSSL_STATIC_ASSERT(ERR_LIB_SSL == 16, "library value changed");
+        OPENSSL_STATIC_ASSERT(ERR_LIB_BIO == 17, "library value changed");
+        OPENSSL_STATIC_ASSERT(ERR_LIB_PKCS7 == 18, "library value changed");
+        OPENSSL_STATIC_ASSERT(ERR_LIB_PKCS8 == 19, "library value changed");
+        OPENSSL_STATIC_ASSERT(ERR_LIB_X509V3 == 20, "library value changed");
+        OPENSSL_STATIC_ASSERT(ERR_LIB_RAND == 21, "library value changed");
+        OPENSSL_STATIC_ASSERT(ERR_LIB_ENGINE == 22, "library value changed");
+        OPENSSL_STATIC_ASSERT(ERR_LIB_OCSP == 23, "library value changed");
+        OPENSSL_STATIC_ASSERT(ERR_LIB_UI == 24, "library value changed");
+        OPENSSL_STATIC_ASSERT(ERR_LIB_COMP == 25, "library value changed");
+        OPENSSL_STATIC_ASSERT(ERR_LIB_ECDSA == 26, "library value changed");
+        OPENSSL_STATIC_ASSERT(ERR_LIB_ECDH == 27, "library value changed");
+        OPENSSL_STATIC_ASSERT(ERR_LIB_HMAC == 28, "library value changed");
+        OPENSSL_STATIC_ASSERT(ERR_LIB_DIGEST == 29, "library value changed");
+        OPENSSL_STATIC_ASSERT(ERR_LIB_CIPHER == 30, "library value changed");
+        OPENSSL_STATIC_ASSERT(ERR_LIB_HKDF == 31, "library value changed");
+        OPENSSL_STATIC_ASSERT(ERR_LIB_USER == 32, "library value changed");
+        OPENSSL_STATIC_ASSERT(ERR_NUM_LIBS == 33, "number of libraries changed");
 
         const uint32_t kOpenSSLReasonValues[] = {
-            0xc320838,
-            0xc328852,
-            0xc330861,
-            0xc338871,
-            0xc340880,
-            0xc348899,
-            0xc3508a5,
-            0xc3588c2,
-            0xc3608e2,
-            0xc3688f0,
-            0xc370900,
-            0xc37890d,
-            0xc38091d,
-            0xc388928,
-            0xc39093e,
-            0xc39894d,
-            0xc3a0961,
-            0xc3a8845,
+            0xc32083a,
+            0xc328854,
+            0xc330863,
+            0xc338873,
+            0xc340882,
+            0xc34889b,
+            0xc3508a7,
+            0xc3588c4,
+            0xc3608e4,
+            0xc3688f2,
+            0xc370902,
+            0xc37890f,
+            0xc38091f,
+            0xc38892a,
+            0xc390940,
+            0xc39894f,
+            0xc3a0963,
+            0xc3a8847,
             0xc3b00ea,
-            0xc3b88d4,
-            0x10320845,
-            0x10329513,
-            0x1033151f,
-            0x10339538,
-            0x1034154b,
-            0x10348eed,
-            0x10350c5e,
-            0x1035955e,
-            0x10361573,
-            0x10369586,
-            0x103715a5,
-            0x103795be,
-            0x103815d3,
-            0x103895f1,
-            0x10391600,
-            0x1039961c,
-            0x103a1637,
-            0x103a9646,
-            0x103b1662,
-            0x103b967d,
-            0x103c1694,
+            0xc3b88d6,
+            0x10320847,
+            0x10329574,
+            0x10331580,
+            0x10339599,
+            0x103415ac,
+            0x10348f27,
+            0x10350c60,
+            0x103595bf,
+            0x103615e9,
+            0x103695fc,
+            0x1037161b,
+            0x10379634,
+            0x10381649,
+            0x10389667,
+            0x10391676,
+            0x10399692,
+            0x103a16ad,
+            0x103a96bc,
+            0x103b16d8,
+            0x103b96f3,
+            0x103c1719,
             0x103c80ea,
-            0x103d16a5,
-            0x103d96b9,
-            0x103e16d8,
-            0x103e96e7,
-            0x103f16fe,
-            0x103f9711,
-            0x10400c22,
-            0x10409724,
-            0x10411742,
-            0x10419755,
-            0x1042176f,
-            0x1042977f,
-            0x10431793,
-            0x104397a9,
-            0x104417c1,
-            0x104497d6,
-            0x104517ea,
-            0x104597fc,
-            0x104605fb,
-            0x1046894d,
-            0x10471811,
-            0x10479828,
-            0x1048183d,
-            0x1048984b,
-            0x10490e4f,
-            0x14320c05,
-            0x14328c13,
-            0x14330c22,
-            0x14338c34,
+            0x103d172a,
+            0x103d973e,
+            0x103e175d,
+            0x103e976c,
+            0x103f1783,
+            0x103f9796,
+            0x10400c24,
+            0x104097a9,
+            0x104117c7,
+            0x104197da,
+            0x104217f4,
+            0x10429804,
+            0x10431818,
+            0x1043982e,
+            0x10441846,
+            0x1044985b,
+            0x1045186f,
+            0x10459881,
+            0x104605fd,
+            0x1046894f,
+            0x10471896,
+            0x104798ad,
+            0x104818c2,
+            0x104898d0,
+            0x10490e73,
+            0x1049970a,
+            0x104a15d4,
+            0x14320c07,
+            0x14328c15,
+            0x14330c24,
+            0x14338c36,
             0x143400ac,
             0x143480ea,
             0x18320083,
-            0x18328f43,
+            0x18328f7d,
             0x183300ac,
-            0x18338f59,
-            0x18340f6d,
+            0x18338f93,
+            0x18340fa7,
             0x183480ea,
-            0x18350f82,
-            0x18358f9a,
-            0x18360faf,
-            0x18368fc3,
-            0x18370fe7,
-            0x18378ffd,
-            0x18381011,
-            0x18389021,
-            0x18390a73,
-            0x18399031,
-            0x183a1059,
-            0x183a907f,
-            0x183b0c6a,
-            0x183b90b4,
-            0x183c10c6,
-            0x183c90d1,
-            0x183d10e1,
-            0x183d90f2,
-            0x183e1103,
-            0x183e9115,
-            0x183f113e,
-            0x183f9157,
-            0x1840116f,
-            0x184086d3,
-            0x184110a2,
-            0x1841906d,
-            0x1842108c,
-            0x18429046,
-            0x20321196,
-            0x243211a2,
-            0x24328993,
-            0x243311b4,
-            0x243391c1,
-            0x243411ce,
-            0x243491e0,
-            0x243511ef,
-            0x2435920c,
-            0x24361219,
-            0x24369227,
-            0x24371235,
-            0x24379243,
-            0x2438124c,
-            0x24389259,
-            0x2439126c,
-            0x28320c52,
-            0x28328c6a,
-            0x28330c22,
-            0x28338c7d,
-            0x28340c5e,
+            0x18350fbc,
+            0x18358fd4,
+            0x18360fe9,
+            0x18368ffd,
+            0x18371021,
+            0x18379037,
+            0x1838104b,
+            0x1838905b,
+            0x18390a75,
+            0x1839906b,
+            0x183a1080,
+            0x183a90a6,
+            0x183b0c7f,
+            0x183b90db,
+            0x183c10ed,
+            0x183c90f8,
+            0x183d1108,
+            0x183d9119,
+            0x183e112a,
+            0x183e913c,
+            0x183f1165,
+            0x183f917e,
+            0x18401196,
+            0x184086d5,
+            0x184110c9,
+            0x18419094,
+            0x184210b3,
+            0x18428c6c,
+            0x203211d0,
+            0x203291bd,
+            0x243211dc,
+            0x24328995,
+            0x243311ee,
+            0x243391fb,
+            0x24341208,
+            0x2434921a,
+            0x24351229,
+            0x24359246,
+            0x24361253,
+            0x24369261,
+            0x2437126f,
+            0x2437927d,
+            0x24381286,
+            0x24389293,
+            0x243912a6,
+            0x28320c54,
+            0x28328c7f,
+            0x28330c24,
+            0x28338c92,
+            0x28340c60,
             0x283480ac,
             0x283500ea,
-            0x2c322c30,
-            0x2c329283,
-            0x2c332c3e,
-            0x2c33ac50,
-            0x2c342c64,
-            0x2c34ac76,
-            0x2c352c91,
-            0x2c35aca3,
-            0x2c362cb6,
+            0x28358c6c,
+            0x2c322ec7,
+            0x2c3292bd,
+            0x2c332ed5,
+            0x2c33aee7,
+            0x2c342efb,
+            0x2c34af0d,
+            0x2c352f28,
+            0x2c35af3a,
+            0x2c362f4d,
             0x2c36832d,
-            0x2c372cc3,
-            0x2c37acd5,
-            0x2c382cfa,
-            0x2c38ad11,
-            0x2c392d1f,
-            0x2c39ad2f,
-            0x2c3a2d41,
-            0x2c3aad55,
-            0x2c3b2d66,
-            0x2c3bad85,
-            0x2c3c1295,
-            0x2c3c92ab,
-            0x2c3d2d99,
-            0x2c3d92c4,
-            0x2c3e2db6,
-            0x2c3eadc4,
-            0x2c3f2ddc,
-            0x2c3fadf4,
-            0x2c402e01,
-            0x2c409196,
-            0x2c412e12,
-            0x2c41ae25,
-            0x2c42116f,
-            0x2c42ae36,
-            0x2c430720,
-            0x2c43ad77,
-            0x2c442ce8,
+            0x2c372f5a,
+            0x2c37af6c,
+            0x2c382f91,
+            0x2c38afa8,
+            0x2c392fb6,
+            0x2c39afc6,
+            0x2c3a2fd8,
+            0x2c3aafec,
+            0x2c3b2ffd,
+            0x2c3bb01c,
+            0x2c3c12cf,
+            0x2c3c92e5,
+            0x2c3d3030,
+            0x2c3d92fe,
+            0x2c3e304d,
+            0x2c3eb05b,
+            0x2c3f3073,
+            0x2c3fb08b,
+            0x2c4030b5,
+            0x2c4091d0,
+            0x2c4130c6,
+            0x2c41b0d9,
+            0x2c421196,
+            0x2c42b0ea,
+            0x2c430722,
+            0x2c43b00e,
+            0x2c442f7f,
+            0x2c44b098,
             0x30320000,
             0x30328015,
             0x3033001f,
@@ -474,464 +479,489 @@
             0x30460312,
             0x3046832d,
             0x3047034a,
-            0x30478363,
-            0x30480371,
-            0x30488382,
-            0x30490391,
-            0x304983a9,
-            0x304a03bb,
-            0x304a83cf,
-            0x304b03ee,
-            0x304b8401,
-            0x304c040c,
-            0x304c841d,
-            0x304d0429,
-            0x304d843f,
-            0x304e044d,
-            0x304e8463,
-            0x304f0475,
-            0x304f8487,
-            0x3050049a,
-            0x305084ad,
-            0x305104be,
-            0x305184ce,
-            0x305204e6,
-            0x305284fb,
-            0x30530513,
-            0x30538527,
-            0x3054053f,
-            0x30548558,
-            0x30550571,
-            0x3055858e,
-            0x30560599,
-            0x305685b1,
-            0x305705c1,
-            0x305785d2,
-            0x305805e5,
-            0x305885fb,
-            0x30590604,
-            0x30598619,
-            0x305a062c,
-            0x305a863b,
-            0x305b065b,
-            0x305b866a,
-            0x305c068b,
-            0x305c86a7,
-            0x305d06b3,
-            0x305d86d3,
-            0x305e06ef,
-            0x305e8700,
-            0x305f0716,
-            0x305f8720,
-            0x34320b63,
-            0x34328b77,
-            0x34330b94,
-            0x34338ba7,
-            0x34340bb6,
-            0x34348bef,
-            0x34350bd3,
+            0x3047835c,
+            0x3048036a,
+            0x3048837b,
+            0x3049038a,
+            0x304983a2,
+            0x304a03b4,
+            0x304a83c8,
+            0x304b03e0,
+            0x304b83f3,
+            0x304c03fe,
+            0x304c840f,
+            0x304d041b,
+            0x304d8431,
+            0x304e043f,
+            0x304e8455,
+            0x304f0467,
+            0x304f8479,
+            0x3050049c,
+            0x305084af,
+            0x305104c0,
+            0x305184d0,
+            0x305204e8,
+            0x305284fd,
+            0x30530515,
+            0x30538529,
+            0x30540541,
+            0x3054855a,
+            0x30550573,
+            0x30558590,
+            0x3056059b,
+            0x305685b3,
+            0x305705c3,
+            0x305785d4,
+            0x305805e7,
+            0x305885fd,
+            0x30590606,
+            0x3059861b,
+            0x305a062e,
+            0x305a863d,
+            0x305b065d,
+            0x305b866c,
+            0x305c068d,
+            0x305c86a9,
+            0x305d06b5,
+            0x305d86d5,
+            0x305e06f1,
+            0x305e8702,
+            0x305f0718,
+            0x305f8722,
+            0x3060048c,
+            0x34320b65,
+            0x34328b79,
+            0x34330b96,
+            0x34338ba9,
+            0x34340bb8,
+            0x34348bf1,
+            0x34350bd5,
             0x3c320083,
-            0x3c328ca7,
-            0x3c330cc0,
-            0x3c338cdb,
-            0x3c340cf8,
-            0x3c348d22,
-            0x3c350d3d,
-            0x3c358d63,
-            0x3c360d7c,
-            0x3c368d94,
-            0x3c370da5,
-            0x3c378db3,
-            0x3c380dc0,
-            0x3c388dd4,
-            0x3c390c6a,
-            0x3c398de8,
-            0x3c3a0dfc,
-            0x3c3a890d,
-            0x3c3b0e0c,
-            0x3c3b8e27,
-            0x3c3c0e39,
-            0x3c3c8e6c,
-            0x3c3d0e76,
-            0x3c3d8e8a,
-            0x3c3e0e98,
-            0x3c3e8ebd,
-            0x3c3f0c93,
-            0x3c3f8ea6,
+            0x3c328cbc,
+            0x3c330cd5,
+            0x3c338cf0,
+            0x3c340d0d,
+            0x3c348d37,
+            0x3c350d52,
+            0x3c358d78,
+            0x3c360d91,
+            0x3c368da9,
+            0x3c370dba,
+            0x3c378dc8,
+            0x3c380dd5,
+            0x3c388de9,
+            0x3c390c7f,
+            0x3c398e0c,
+            0x3c3a0e20,
+            0x3c3a890f,
+            0x3c3b0e30,
+            0x3c3b8e4b,
+            0x3c3c0e5d,
+            0x3c3c8e90,
+            0x3c3d0e9a,
+            0x3c3d8eae,
+            0x3c3e0ebc,
+            0x3c3e8ee1,
+            0x3c3f0ca8,
+            0x3c3f8eca,
             0x3c4000ac,
             0x3c4080ea,
-            0x3c410d13,
-            0x3c418d52,
-            0x3c420e4f,
-            0x403218a4,
-            0x403298ba,
-            0x403318e8,
-            0x403398f2,
-            0x40341909,
-            0x40349927,
-            0x40351937,
-            0x40359949,
-            0x40361956,
-            0x40369962,
-            0x40371977,
-            0x40379989,
-            0x40381994,
-            0x403899a6,
-            0x40390eed,
-            0x403999b6,
-            0x403a19c9,
-            0x403a99ea,
-            0x403b19fb,
-            0x403b9a0b,
+            0x3c410d28,
+            0x3c418d67,
+            0x3c420e73,
+            0x3c428dfd,
+            0x40321946,
+            0x4032995c,
+            0x4033198a,
+            0x40339994,
+            0x403419ab,
+            0x403499c9,
+            0x403519d9,
+            0x403599eb,
+            0x403619f8,
+            0x40369a04,
+            0x40371a19,
+            0x40379a2b,
+            0x40381a36,
+            0x40389a48,
+            0x40390f27,
+            0x40399a58,
+            0x403a1a6b,
+            0x403a9a8c,
+            0x403b1a9d,
+            0x403b9aad,
             0x403c0064,
             0x403c8083,
-            0x403d1a8f,
-            0x403d9aa5,
-            0x403e1ab4,
-            0x403e9aec,
-            0x403f1b06,
-            0x403f9b14,
-            0x40401b29,
-            0x40409b3d,
-            0x40411b5a,
-            0x40419b75,
-            0x40421b8e,
-            0x40429ba1,
-            0x40431bb5,
-            0x40439bcd,
-            0x40441be4,
+            0x403d1b31,
+            0x403d9b47,
+            0x403e1b56,
+            0x403e9b8e,
+            0x403f1ba8,
+            0x403f9bd0,
+            0x40401be5,
+            0x40409bf9,
+            0x40411c16,
+            0x40419c31,
+            0x40421c4a,
+            0x40429c5d,
+            0x40431c71,
+            0x40439c89,
+            0x40441ca0,
             0x404480ac,
-            0x40451bf9,
-            0x40459c0b,
-            0x40461c2f,
-            0x40469c4f,
-            0x40471c5d,
-            0x40479c84,
-            0x40481cc1,
-            0x40489cda,
-            0x40491cf1,
-            0x40499d0b,
-            0x404a1d22,
-            0x404a9d40,
-            0x404b1d58,
-            0x404b9d6f,
-            0x404c1d85,
-            0x404c9d97,
-            0x404d1db8,
-            0x404d9dda,
-            0x404e1dee,
-            0x404e9dfb,
-            0x404f1e28,
-            0x404f9e51,
-            0x40501e8c,
-            0x40509ea0,
-            0x40511ebb,
-            0x40521ecb,
-            0x40529eef,
-            0x40531f07,
-            0x40539f1a,
-            0x40541f2f,
-            0x40549f52,
-            0x40551f60,
-            0x40559f7d,
-            0x40561f8a,
-            0x40569fa3,
-            0x40571fbb,
-            0x40579fce,
-            0x40581fe3,
-            0x4058a00a,
-            0x40592039,
-            0x4059a066,
-            0x405a207a,
-            0x405aa08a,
-            0x405b20a2,
-            0x405ba0b3,
-            0x405c20c6,
-            0x405ca105,
-            0x405d2112,
-            0x405da129,
-            0x405e2167,
-            0x405e8ab1,
-            0x405f2188,
-            0x405fa195,
-            0x406021a3,
-            0x4060a1c5,
-            0x40612209,
-            0x4061a241,
-            0x40622258,
-            0x4062a269,
-            0x4063227a,
-            0x4063a28f,
-            0x406422a6,
-            0x4064a2d2,
-            0x406522ed,
-            0x4065a304,
-            0x4066231c,
-            0x4066a346,
-            0x40672371,
-            0x4067a392,
-            0x406823b9,
-            0x4068a3da,
-            0x4069240c,
-            0x4069a43a,
-            0x406a245b,
-            0x406aa47b,
-            0x406b2603,
-            0x406ba626,
-            0x406c263c,
-            0x406ca8b7,
-            0x406d28e6,
-            0x406da90e,
-            0x406e293c,
-            0x406ea989,
-            0x406f29a8,
-            0x406fa9e0,
-            0x407029f3,
-            0x4070aa10,
-            0x40710800,
-            0x4071aa22,
-            0x40722a35,
-            0x4072aa4e,
-            0x40732a66,
-            0x40739482,
-            0x40742a7a,
-            0x4074aa94,
-            0x40752aa5,
-            0x4075aab9,
-            0x40762ac7,
-            0x40769259,
-            0x40772aec,
-            0x4077ab0e,
-            0x40782b29,
-            0x4078ab62,
-            0x40792b79,
-            0x4079ab8f,
-            0x407a2b9b,
-            0x407aabae,
-            0x407b2bc3,
-            0x407babd5,
-            0x407c2c06,
-            0x407cac0f,
-            0x407d23f5,
-            0x407d9e61,
-            0x407e2b3e,
-            0x407ea01a,
-            0x407f1c71,
-            0x407f9a31,
-            0x40801e38,
-            0x40809c99,
-            0x40811edd,
-            0x40819e12,
-            0x40822927,
-            0x40829a17,
-            0x40831ff5,
-            0x4083a2b7,
-            0x40841cad,
-            0x4084a052,
-            0x408520d7,
-            0x4085a1ed,
-            0x40862149,
-            0x40869e7b,
-            0x4087296d,
-            0x4087a21e,
-            0x40881a78,
-            0x4088a3a5,
-            0x40891ac7,
-            0x40899a54,
-            0x408a265c,
-            0x408a9862,
-            0x408b2bea,
-            0x408ba9bd,
-            0x408c20e7,
-            0x408c987e,
-            0x41f4252e,
-            0x41f925c0,
-            0x41fe24b3,
-            0x41fea6a8,
-            0x41ff2799,
-            0x42032547,
-            0x42082569,
-            0x4208a5a5,
-            0x42092497,
-            0x4209a5df,
-            0x420a24ee,
-            0x420aa4ce,
-            0x420b250e,
-            0x420ba587,
-            0x420c27b5,
-            0x420ca675,
-            0x420d268f,
-            0x420da6c6,
-            0x421226e0,
-            0x4217277c,
-            0x4217a722,
-            0x421c2744,
-            0x421f26ff,
-            0x422127cc,
-            0x4226275f,
-            0x422b289b,
-            0x422ba849,
-            0x422c2883,
-            0x422ca808,
-            0x422d27e7,
-            0x422da868,
-            0x422e282e,
-            0x422ea954,
-            0x4432072b,
-            0x4432873a,
-            0x44330746,
-            0x44338754,
-            0x44340767,
-            0x44348778,
-            0x4435077f,
-            0x44358789,
-            0x4436079c,
-            0x443687b2,
-            0x443707c4,
-            0x443787d1,
-            0x443807e0,
-            0x443887e8,
-            0x44390800,
-            0x4439880e,
-            0x443a0821,
-            0x48321283,
-            0x48329295,
-            0x483312ab,
-            0x483392c4,
-            0x4c3212e9,
-            0x4c3292f9,
-            0x4c33130c,
-            0x4c33932c,
+            0x40451cb5,
+            0x40459cc7,
+            0x40461ceb,
+            0x40469d0b,
+            0x40471d19,
+            0x40479d40,
+            0x40481db1,
+            0x40489de4,
+            0x40491dfb,
+            0x40499e15,
+            0x404a1e2c,
+            0x404a9e4a,
+            0x404b1e62,
+            0x404b9e79,
+            0x404c1e8f,
+            0x404c9ea1,
+            0x404d1ec2,
+            0x404d9efb,
+            0x404e1f0f,
+            0x404e9f1c,
+            0x404f1f49,
+            0x404f9f8f,
+            0x40501fe6,
+            0x40509ffa,
+            0x4051202d,
+            0x4052203d,
+            0x4052a061,
+            0x40532079,
+            0x4053a08c,
+            0x405420a1,
+            0x4054a0c4,
+            0x405520d2,
+            0x4055a10f,
+            0x4056211c,
+            0x4056a135,
+            0x4057214d,
+            0x4057a160,
+            0x40582175,
+            0x4058a19c,
+            0x405921cb,
+            0x4059a1f8,
+            0x405a220c,
+            0x405aa21c,
+            0x405b2234,
+            0x405ba245,
+            0x405c2258,
+            0x405ca297,
+            0x405d22a4,
+            0x405da2c9,
+            0x405e2307,
+            0x405e8ab3,
+            0x405f2328,
+            0x405fa335,
+            0x40602343,
+            0x4060a365,
+            0x406123c6,
+            0x4061a3fe,
+            0x40622415,
+            0x4062a426,
+            0x4063244b,
+            0x4063a460,
+            0x40642477,
+            0x4064a4a3,
+            0x406524be,
+            0x4065a4d5,
+            0x406624ed,
+            0x4066a517,
+            0x40672542,
+            0x4067a587,
+            0x406825cf,
+            0x4068a5f0,
+            0x40692622,
+            0x4069a650,
+            0x406a2671,
+            0x406aa691,
+            0x406b2819,
+            0x406ba83c,
+            0x406c2852,
+            0x406caaf5,
+            0x406d2b24,
+            0x406dab4c,
+            0x406e2b7a,
+            0x406eabc7,
+            0x406f2c02,
+            0x406fac3a,
+            0x40702c4d,
+            0x4070ac6a,
+            0x40710802,
+            0x4071ac7c,
+            0x40722c8f,
+            0x4072acc5,
+            0x40732cdd,
+            0x407394cf,
+            0x40742cf1,
+            0x4074ad0b,
+            0x40752d1c,
+            0x4075ad30,
+            0x40762d3e,
+            0x40769293,
+            0x40772d63,
+            0x4077ad85,
+            0x40782da0,
+            0x4078add9,
+            0x40792df0,
+            0x4079ae06,
+            0x407a2e32,
+            0x407aae45,
+            0x407b2e5a,
+            0x407bae6c,
+            0x407c2e9d,
+            0x407caea6,
+            0x407d260b,
+            0x407d9f9f,
+            0x407e2db5,
+            0x407ea1ac,
+            0x407f1d2d,
+            0x407f9ad3,
+            0x40801f59,
+            0x40809d55,
+            0x4081204f,
+            0x40819f33,
+            0x40822b65,
+            0x40829ab9,
+            0x40832187,
+            0x4083a488,
+            0x40841d69,
+            0x4084a1e4,
+            0x40852269,
+            0x4085a38d,
+            0x408622e9,
+            0x40869fb9,
+            0x40872bab,
+            0x4087a3db,
+            0x40881b1a,
+            0x4088a59a,
+            0x40891b69,
+            0x40899af6,
+            0x408a288a,
+            0x408a98e7,
+            0x408b2e81,
+            0x408bac17,
+            0x408c2279,
+            0x408c9903,
+            0x408d1dca,
+            0x408d9d9b,
+            0x408e1ee4,
+            0x408ea0ef,
+            0x408f25ae,
+            0x408fa3a9,
+            0x40902563,
+            0x4090a2bb,
+            0x40912872,
+            0x40919929,
+            0x40921bb6,
+            0x4092abe6,
+            0x40932ca8,
+            0x40939fca,
+            0x40941d7d,
+            0x4094a8a3,
+            0x40952437,
+            0x4095ae12,
+            0x40962b92,
+            0x40969f72,
+            0x40972015,
+            0x41f42744,
+            0x41f927d6,
+            0x41fe26c9,
+            0x41fea8e6,
+            0x41ff29d7,
+            0x4203275d,
+            0x4208277f,
+            0x4208a7bb,
+            0x420926ad,
+            0x4209a7f5,
+            0x420a2704,
+            0x420aa6e4,
+            0x420b2724,
+            0x420ba79d,
+            0x420c29f3,
+            0x420ca8b3,
+            0x420d28cd,
+            0x420da904,
+            0x4212291e,
+            0x421729ba,
+            0x4217a960,
+            0x421c2982,
+            0x421f293d,
+            0x42212a0a,
+            0x4226299d,
+            0x422b2ad9,
+            0x422baa87,
+            0x422c2ac1,
+            0x422caa46,
+            0x422d2a25,
+            0x422daaa6,
+            0x422e2a6c,
+            0x4432072d,
+            0x4432873c,
+            0x44330748,
+            0x44338756,
+            0x44340769,
+            0x4434877a,
+            0x44350781,
+            0x4435878b,
+            0x4436079e,
+            0x443687b4,
+            0x443707c6,
+            0x443787d3,
+            0x443807e2,
+            0x443887ea,
+            0x44390802,
+            0x44398810,
+            0x443a0823,
+            0x483212bd,
+            0x483292cf,
+            0x483312e5,
+            0x483392fe,
+            0x4c321323,
+            0x4c329333,
+            0x4c331346,
+            0x4c339366,
             0x4c3400ac,
             0x4c3480ea,
-            0x4c351338,
-            0x4c359346,
-            0x4c361362,
-            0x4c369375,
-            0x4c371384,
-            0x4c379392,
-            0x4c3813a7,
-            0x4c3893b3,
-            0x4c3913d3,
-            0x4c3993fd,
-            0x4c3a1416,
-            0x4c3a942f,
-            0x4c3b05fb,
-            0x4c3b9448,
-            0x4c3c145a,
-            0x4c3c9469,
-            0x4c3d1482,
-            0x4c3d8c45,
-            0x4c3e14db,
-            0x4c3e9491,
-            0x4c3f14fd,
-            0x4c3f9259,
-            0x4c4014a7,
-            0x4c4092d5,
-            0x4c4114cb,
-            0x50322e48,
-            0x5032ae57,
-            0x50332e62,
-            0x5033ae72,
-            0x50342e8b,
-            0x5034aea5,
-            0x50352eb3,
-            0x5035aec9,
-            0x50362edb,
-            0x5036aef1,
-            0x50372f0a,
-            0x5037af1d,
-            0x50382f35,
-            0x5038af46,
-            0x50392f5b,
-            0x5039af6f,
-            0x503a2f8f,
-            0x503aafa5,
-            0x503b2fbd,
-            0x503bafcf,
-            0x503c2feb,
-            0x503cb002,
-            0x503d301b,
-            0x503db031,
-            0x503e303e,
-            0x503eb054,
-            0x503f3066,
-            0x503f8382,
-            0x50403079,
-            0x5040b089,
-            0x504130a3,
-            0x5041b0b2,
-            0x504230cc,
-            0x5042b0e9,
-            0x504330f9,
-            0x5043b109,
-            0x50443118,
-            0x5044843f,
-            0x5045312c,
-            0x5045b14a,
-            0x5046315d,
-            0x5046b173,
-            0x50473185,
-            0x5047b19a,
-            0x504831c0,
-            0x5048b1ce,
-            0x504931e1,
-            0x5049b1f6,
-            0x504a320c,
-            0x504ab21c,
-            0x504b323c,
-            0x504bb24f,
-            0x504c3272,
-            0x504cb2a0,
-            0x504d32b2,
-            0x504db2cf,
-            0x504e32ea,
-            0x504eb306,
-            0x504f3318,
-            0x504fb32f,
-            0x5050333e,
-            0x505086ef,
-            0x50513351,
-            0x58320f2b,
-            0x68320eed,
-            0x68328c6a,
-            0x68330c7d,
-            0x68338efb,
-            0x68340f0b,
+            0x4c351372,
+            0x4c359380,
+            0x4c36139c,
+            0x4c3693c2,
+            0x4c3713d1,
+            0x4c3793df,
+            0x4c3813f4,
+            0x4c389400,
+            0x4c391420,
+            0x4c39944a,
+            0x4c3a1463,
+            0x4c3a947c,
+            0x4c3b05fd,
+            0x4c3b9495,
+            0x4c3c14a7,
+            0x4c3c94b6,
+            0x4c3d14cf,
+            0x4c3d8c47,
+            0x4c3e153c,
+            0x4c3e94de,
+            0x4c3f155e,
+            0x4c3f9293,
+            0x4c4014f4,
+            0x4c40930f,
+            0x4c41152c,
+            0x4c4193af,
+            0x4c421518,
+            0x503230fc,
+            0x5032b10b,
+            0x50333116,
+            0x5033b126,
+            0x5034313f,
+            0x5034b159,
+            0x50353167,
+            0x5035b17d,
+            0x5036318f,
+            0x5036b1a5,
+            0x503731be,
+            0x5037b1d1,
+            0x503831e9,
+            0x5038b1fa,
+            0x5039320f,
+            0x5039b223,
+            0x503a3243,
+            0x503ab259,
+            0x503b3271,
+            0x503bb283,
+            0x503c329f,
+            0x503cb2b6,
+            0x503d32cf,
+            0x503db2e5,
+            0x503e32f2,
+            0x503eb308,
+            0x503f331a,
+            0x503f837b,
+            0x5040332d,
+            0x5040b33d,
+            0x50413357,
+            0x5041b366,
+            0x50423380,
+            0x5042b39d,
+            0x504333ad,
+            0x5043b3bd,
+            0x504433cc,
+            0x50448431,
+            0x504533e0,
+            0x5045b3fe,
+            0x50463411,
+            0x5046b427,
+            0x50473439,
+            0x5047b44e,
+            0x50483474,
+            0x5048b482,
+            0x50493495,
+            0x5049b4aa,
+            0x504a34c0,
+            0x504ab4d0,
+            0x504b34f0,
+            0x504bb503,
+            0x504c3526,
+            0x504cb554,
+            0x504d3566,
+            0x504db583,
+            0x504e359e,
+            0x504eb5ba,
+            0x504f35cc,
+            0x504fb5e3,
+            0x505035f2,
+            0x505086f1,
+            0x50513605,
+            0x58320f65,
+            0x68320f27,
+            0x68328c7f,
+            0x68330c92,
+            0x68338f35,
+            0x68340f45,
             0x683480ea,
-            0x6c320ec9,
-            0x6c328c34,
-            0x6c330ed4,
-            0x74320a19,
+            0x6c320eed,
+            0x6c328c36,
+            0x6c330ef8,
+            0x6c338f11,
+            0x74320a1b,
             0x743280ac,
-            0x74330c45,
-            0x7832097e,
-            0x78328993,
-            0x7833099f,
+            0x74330c47,
+            0x78320980,
+            0x78328995,
+            0x783309a1,
             0x78338083,
-            0x783409ae,
-            0x783489c3,
-            0x783509e2,
-            0x78358a04,
-            0x78360a19,
-            0x78368a2f,
-            0x78370a3f,
-            0x78378a60,
-            0x78380a73,
-            0x78388a85,
-            0x78390a92,
-            0x78398ab1,
-            0x783a0ac6,
-            0x783a8ad4,
-            0x783b0ade,
-            0x783b8af2,
-            0x783c0b09,
-            0x783c8b1e,
-            0x783d0b35,
-            0x783d8b4a,
-            0x783e0aa0,
-            0x783e8a52,
-            0x7c321185,
+            0x783409b0,
+            0x783489c5,
+            0x783509e4,
+            0x78358a06,
+            0x78360a1b,
+            0x78368a31,
+            0x78370a41,
+            0x78378a62,
+            0x78380a75,
+            0x78388a87,
+            0x78390a94,
+            0x78398ab3,
+            0x783a0ac8,
+            0x783a8ad6,
+            0x783b0ae0,
+            0x783b8af4,
+            0x783c0b0b,
+            0x783c8b20,
+            0x783d0b37,
+            0x783d8b4c,
+            0x783e0aa2,
+            0x783e8a54,
+            0x7c3211ac,
         };
 
         const size_t kOpenSSLReasonValuesLen = sizeof(kOpenSSLReasonValues) / sizeof(kOpenSSLReasonValues[0]);
@@ -979,14 +1009,14 @@
             "INTEGER_NOT_ASCII_FORMAT\\0"
             "INTEGER_TOO_LARGE_FOR_LONG\\0"
             "INVALID_BIT_STRING_BITS_LEFT\\0"
-            "INVALID_BMPSTRING_LENGTH\\0"
+            "INVALID_BMPSTRING\\0"
             "INVALID_DIGIT\\0"
             "INVALID_MODIFIER\\0"
             "INVALID_NUMBER\\0"
             "INVALID_OBJECT_ENCODING\\0"
             "INVALID_SEPARATOR\\0"
             "INVALID_TIME_FORMAT\\0"
-            "INVALID_UNIVERSALSTRING_LENGTH\\0"
+            "INVALID_UNIVERSALSTRING\\0"
             "INVALID_UTF8STRING\\0"
             "LIST_ERROR\\0"
             "MISSING_ASN1_EOS\\0"
@@ -997,6 +1027,7 @@
             "MSTRING_WRONG_TAG\\0"
             "NESTED_ASN1_ERROR\\0"
             "NESTED_ASN1_STRING\\0"
+            "NESTED_TOO_DEEP\\0"
             "NON_HEX_CHARACTERS\\0"
             "NOT_ASCII_FORMAT\\0"
             "NOT_ENOUGH_DATA\\0"
@@ -1104,6 +1135,7 @@
             "UNKNOWN_HASH\\0"
             "BAD_Q_VALUE\\0"
             "BAD_VERSION\\0"
+            "INVALID_PARAMETERS\\0"
             "MISSING_PARAMETERS\\0"
             "NEED_NEW_SETUP_VALUES\\0"
             "BIGNUM_OUT_OF_RANGE\\0"
@@ -1122,6 +1154,7 @@
             "INVALID_FORM\\0"
             "INVALID_GROUP_ORDER\\0"
             "INVALID_PRIVATE_KEY\\0"
+            "INVALID_SCALAR\\0"
             "MISSING_PRIVATE_KEY\\0"
             "NON_NAMED_CURVE\\0"
             "PKPARAMETERS2GROUP_FAILURE\\0"
@@ -1136,6 +1169,7 @@
             "WRONG_ORDER\\0"
             "KDF_FAILED\\0"
             "POINT_ARITHMETIC_FAILURE\\0"
+            "UNKNOWN_DIGEST_LENGTH\\0"
             "BAD_SIGNATURE\\0"
             "NOT_IMPLEMENTED\\0"
             "RANDOM_NUMBER_GENERATION_FAILED\\0"
@@ -1152,7 +1186,6 @@
             "INVALID_KEYBITS\\0"
             "INVALID_MGF1_MD\\0"
             "INVALID_PADDING_MODE\\0"
-            "INVALID_PARAMETERS\\0"
             "INVALID_PSS_SALTLEN\\0"
             "INVALID_SIGNATURE\\0"
             "KEYS_NOT_SET\\0"
@@ -1169,6 +1202,7 @@
             "UNKNOWN_PUBLIC_KEY_TYPE\\0"
             "UNSUPPORTED_ALGORITHM\\0"
             "OUTPUT_TOO_LARGE\\0"
+            "INVALID_OID_STRING\\0"
             "UNKNOWN_NID\\0"
             "BAD_BASE64_DECODE\\0"
             "BAD_END_LINE\\0"
@@ -1196,6 +1230,7 @@
             "ENCRYPT_ERROR\\0"
             "ERROR_SETTING_CIPHER_PARAMS\\0"
             "INCORRECT_PASSWORD\\0"
+            "INVALID_CHARACTERS\\0"
             "KEYGEN_FAILURE\\0"
             "KEY_GEN_ERROR\\0"
             "METHOD_NOT_SUPPORTED\\0"
@@ -1211,6 +1246,7 @@
             "UNKNOWN_DIGEST\\0"
             "UNSUPPORTED_KEYLENGTH\\0"
             "UNSUPPORTED_KEY_DERIVATION_FUNCTION\\0"
+            "UNSUPPORTED_OPTIONS\\0"
             "UNSUPPORTED_PRF\\0"
             "UNSUPPORTED_PRIVATE_KEY_ALGORITHM\\0"
             "UNSUPPORTED_SALT_TYPE\\0"
@@ -1219,6 +1255,7 @@
             "BAD_PAD_BYTE_COUNT\\0"
             "BAD_RSA_PARAMETERS\\0"
             "BLOCK_TYPE_IS_NOT_01\\0"
+            "BLOCK_TYPE_IS_NOT_02\\0"
             "BN_NOT_INITIALIZED\\0"
             "CANNOT_RECOVER_MULTI_PRIME_KEY\\0"
             "CRT_PARAMS_ALREADY_GIVEN\\0"
@@ -1231,6 +1268,7 @@
             "DATA_TOO_SMALL_FOR_KEY_SIZE\\0"
             "DIGEST_TOO_BIG_FOR_RSA_KEY\\0"
             "D_E_NOT_CONGRUENT_TO_1\\0"
+            "D_OUT_OF_RANGE\\0"
             "EMPTY_PUBLIC_KEY\\0"
             "FIRST_OCTET_INVALID\\0"
             "INCONSISTENT_SET_OF_CRT_VALUES\\0"
@@ -1255,6 +1293,7 @@
             "WRONG_SIGNATURE_LENGTH\\0"
             "ALPN_MISMATCH_ON_EARLY_DATA\\0"
             "APPLICATION_DATA_INSTEAD_OF_HANDSHAKE\\0"
+            "APPLICATION_DATA_ON_SHUTDOWN\\0"
             "APP_DATA_IN_HANDSHAKE\\0"
             "ATTEMPT_TO_REUSE_SESSION_IN_DIFFERENT_CONTEXT\\0"
             "BAD_ALERT\\0"
@@ -1284,6 +1323,7 @@
             "CERTIFICATE_AND_PRIVATE_KEY_MISMATCH\\0"
             "CERTIFICATE_VERIFY_FAILED\\0"
             "CERT_CB_ERROR\\0"
+            "CERT_DECOMPRESSION_FAILED\\0"
             "CERT_LENGTH_MISMATCH\\0"
             "CHANNEL_ID_NOT_P256\\0"
             "CHANNEL_ID_SIGNATURE_INVALID\\0"
@@ -1303,7 +1343,10 @@
             "DTLS_MESSAGE_TOO_BIG\\0"
             "DUPLICATE_EXTENSION\\0"
             "DUPLICATE_KEY_SHARE\\0"
+            "DUPLICATE_SIGNATURE_ALGORITHM\\0"
+            "EARLY_DATA_NOT_IN_USE\\0"
             "ECC_CERT_NOT_FOR_SIGNING\\0"
+            "EMPTY_HELLO_RETRY_REQUEST\\0"
             "EMS_STATE_INCONSISTENT\\0"
             "ENCRYPTED_LENGTH_TOO_LONG\\0"
             "ERROR_ADDING_EXTENSION\\0"
@@ -1314,17 +1357,21 @@
             "FRAGMENT_MISMATCH\\0"
             "GOT_NEXT_PROTO_WITHOUT_EXTENSION\\0"
             "HANDSHAKE_FAILURE_ON_CLIENT_HELLO\\0"
+            "HANDSHAKE_NOT_COMPLETE\\0"
             "HTTPS_PROXY_REQUEST\\0"
             "HTTP_REQUEST\\0"
             "INAPPROPRIATE_FALLBACK\\0"
             "INVALID_ALPN_PROTOCOL\\0"
             "INVALID_COMMAND\\0"
             "INVALID_COMPRESSION_LIST\\0"
+            "INVALID_DELEGATED_CREDENTIAL\\0"
             "INVALID_MESSAGE\\0"
             "INVALID_OUTER_RECORD_TYPE\\0"
             "INVALID_SCT_LIST\\0"
+            "INVALID_SIGNATURE_ALGORITHM\\0"
             "INVALID_SSL_SESSION\\0"
             "INVALID_TICKET_KEYS_LENGTH\\0"
+            "KEY_USAGE_BIT_INCORRECT\\0"
             "LENGTH_MISMATCH\\0"
             "MISSING_EXTENSION\\0"
             "MISSING_KEY_SHARE\\0"
@@ -1334,6 +1381,7 @@
             "MIXED_SPECIAL_OPERATOR_WITH_GROUPS\\0"
             "MTU_TOO_SMALL\\0"
             "NEGOTIATED_BOTH_NPN_AND_ALPN\\0"
+            "NEGOTIATED_TB_WITHOUT_EMS_OR_RI\\0"
             "NESTED_GROUP\\0"
             "NO_CERTIFICATES_RETURNED\\0"
             "NO_CERTIFICATE_ASSIGNED\\0"
@@ -1355,6 +1403,7 @@
             "NO_SUPPORTED_VERSIONS_ENABLED\\0"
             "NULL_SSL_CTX\\0"
             "NULL_SSL_METHOD_PASSED\\0"
+            "OCSP_CB_ERROR\\0"
             "OLD_SESSION_CIPHER_NOT_RETURNED\\0"
             "OLD_SESSION_PRF_HASH_MISMATCH\\0"
             "OLD_SESSION_VERSION_NOT_RETURNED\\0"
@@ -1363,11 +1412,13 @@
             "PEER_DID_NOT_RETURN_A_CERTIFICATE\\0"
             "PEER_ERROR_UNSUPPORTED_CERTIFICATE_TYPE\\0"
             "PRE_SHARED_KEY_MUST_BE_LAST\\0"
+            "PRIVATE_KEY_OPERATION_FAILED\\0"
             "PROTOCOL_IS_SHUTDOWN\\0"
             "PSK_IDENTITY_BINDER_COUNT_MISMATCH\\0"
             "PSK_IDENTITY_NOT_FOUND\\0"
             "PSK_NO_CLIENT_CB\\0"
             "PSK_NO_SERVER_CB\\0"
+            "QUIC_INTERNAL_ERROR\\0"
             "READ_TIMEOUT_EXPIRED\\0"
             "RECORD_LENGTH_MISMATCH\\0"
             "RECORD_TOO_LARGE\\0"
@@ -1378,8 +1429,10 @@
             "RESUMED_EMS_SESSION_WITHOUT_EMS_EXTENSION\\0"
             "RESUMED_NON_EMS_SESSION_WITH_EMS_EXTENSION\\0"
             "SCSV_RECEIVED_WHEN_RENEGOTIATING\\0"
+            "SECOND_SERVERHELLO_VERSION_MISMATCH\\0"
             "SERVERHELLO_TLSEXT\\0"
             "SERVER_CERT_CHANGED\\0"
+            "SERVER_ECHOED_INVALID_SESSION_ID\\0"
             "SESSION_ID_CONTEXT_UNINITIALIZED\\0"
             "SESSION_MAY_NOT_BE_CREATED\\0"
             "SHUTDOWN_WHILE_IN_INIT\\0"
@@ -1402,7 +1455,9 @@
             "SSL_CTX_HAS_NO_DEFAULT_SSL_VERSION\\0"
             "SSL_HANDSHAKE_FAILURE\\0"
             "SSL_SESSION_ID_CONTEXT_TOO_LONG\\0"
+            "SSL_SESSION_ID_TOO_LONG\\0"
             "TICKET_ENCRYPTION_FAILED\\0"
+            "TLS13_DOWNGRADE\\0"
             "TLSV1_ALERT_ACCESS_DENIED\\0"
             "TLSV1_ALERT_DECODE_ERROR\\0"
             "TLSV1_ALERT_DECRYPTION_FAILED\\0"
@@ -1431,6 +1486,7 @@
             "TOO_MUCH_READ_EARLY_DATA\\0"
             "TOO_MUCH_SKIPPED_EARLY_DATA\\0"
             "UNABLE_TO_FIND_ECDH_PARAMETERS\\0"
+            "UNCOMPRESSED_CERT_TOO_LARGE\\0"
             "UNEXPECTED_EXTENSION\\0"
             "UNEXPECTED_EXTENSION_ON_EARLY_DATA\\0"
             "UNEXPECTED_MESSAGE\\0"
@@ -1438,6 +1494,7 @@
             "UNEXPECTED_RECORD\\0"
             "UNKNOWN_ALERT_TYPE\\0"
             "UNKNOWN_CERTIFICATE_TYPE\\0"
+            "UNKNOWN_CERT_COMPRESSION_ALG\\0"
             "UNKNOWN_CIPHER_RETURNED\\0"
             "UNKNOWN_CIPHER_TYPE\\0"
             "UNKNOWN_KEY_EXCHANGE_TYPE\\0"
@@ -1452,6 +1509,7 @@
             "WRONG_CERTIFICATE_TYPE\\0"
             "WRONG_CIPHER_RETURNED\\0"
             "WRONG_CURVE\\0"
+            "WRONG_ENCRYPTION_LEVEL_RECEIVED\\0"
             "WRONG_MESSAGE_TYPE\\0"
             "WRONG_SIGNATURE_TYPE\\0"
             "WRONG_SSL_VERSION\\0"
@@ -1484,6 +1542,7 @@
             "PUBLIC_KEY_DECODE_ERROR\\0"
             "PUBLIC_KEY_ENCODE_ERROR\\0"
             "SHOULD_RETRY\\0"
+            "SIGNATURE_ALGORITHM_MISMATCH\\0"
             "UNKNOWN_KEY_TYPE\\0"
             "UNKNOWN_PURPOSE_ID\\0"
             "UNKNOWN_TRUST_ID\\0"
@@ -1551,8 +1610,12 @@
             "";
       EOF
 
-      sed -i'.back' '/^#define \\([A-Za-z0-9_]*\\) \\1/d' include/openssl/ssl.h
-      sed -i'.back' 'N;/^#define \\([A-Za-z0-9_]*\\) *\\\\\\n *\\1/d' include/openssl/ssl.h
+      # Remove lines of the format "#define SOME_MACRO SOME_MACRO" because they mess up the symbol prefix
+      sed -i'.back' '/^#define \\([A-Za-z0-9_]*\\) \\1/d' include/openssl/*.h
+      # Remove lines of the format below because they mess up the symbol prefix
+      #     #define SOME_MACRO ${"\\"}
+      #         SOME_MACRO
+      sed -i'.back' '/^#define.*\\\\$/{N;/^#define \\([A-Za-z0-9_]*\\) *\\\\\\n *\\1/d;}' include/openssl/*.h
       sed -i'.back' 's/#ifndef md5_block_data_order/#ifndef GRPC_SHADOW_md5_block_data_order/g' crypto/fipsmodule/md5/md5.c
       find . -type f \\( -path '*.h' -or -path '*.cc' -or -path '*.c' \\) -print0 | xargs -0 -L1 sed -E -i'.grpc_back' 's;#include <openssl/;#include <openssl_grpc/;g'
     END_OF_COMMAND
