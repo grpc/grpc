@@ -84,7 +84,7 @@ namespace Grpc.Core.Internal.Tests
                 var context = scope.Context;
                 var origPayload = GetTestBuffer(payloadSize);
 
-                var bufferWriter = context.GetBufferWriter(payloadSize);
+                var bufferWriter = context.GetBufferWriter();
                 origPayload.AsSpan().CopyTo(bufferWriter.GetSpan(payloadSize));
                 bufferWriter.Advance(payloadSize);
                 context.Complete();
@@ -106,7 +106,7 @@ namespace Grpc.Core.Internal.Tests
                 var context = scope.Context;
                 var origPayload = GetTestBuffer(payloadSize);
 
-                var bufferWriter = context.GetBufferWriter(payloadSize);
+                var bufferWriter = context.GetBufferWriter();
                 origPayload.AsSpan().CopyTo(bufferWriter.GetMemory(payloadSize).Span);
                 bufferWriter.Advance(payloadSize);
                 context.Complete();
@@ -131,7 +131,7 @@ namespace Grpc.Core.Internal.Tests
                 var context = scope.Context;
                 var origPayload = GetTestBuffer(payloadSize);
 
-                var bufferWriter = context.GetBufferWriter(payloadSize);
+                var bufferWriter = context.GetBufferWriter();
                 for (int offset = 0; offset < payloadSize; offset += maxSliceSize)
                 {
                     var sliceSize = Math.Min(maxSliceSize, payloadSize - offset);
@@ -165,7 +165,7 @@ namespace Grpc.Core.Internal.Tests
 
                 var origPayload2 = GetTestBuffer(20);
     
-                var bufferWriter = context.GetBufferWriter(20);
+                var bufferWriter = context.GetBufferWriter();
                 origPayload2.AsSpan().CopyTo(bufferWriter.GetMemory(origPayload2.Length).Span);
                 bufferWriter.Advance(origPayload2.Length);
                 context.Complete();
@@ -185,7 +185,7 @@ namespace Grpc.Core.Internal.Tests
                 var context = scope.Context;
                 context.Complete(GetTestBuffer(10));
 
-                Assert.Throws(typeof(InvalidOperationException), () => context.GetBufferWriter(10));
+                Assert.Throws(typeof(InvalidOperationException), () => context.GetBufferWriter());
             }
         }
 
