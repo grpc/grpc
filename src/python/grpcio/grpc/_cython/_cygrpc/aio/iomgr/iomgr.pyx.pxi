@@ -14,8 +14,13 @@
 
 
 from cpython cimport Py_INCREF, Py_DECREF
-
 from libc cimport string
+
+import socket as native_socket
+try:
+    import ipaddress  # CPython 3.3 and above
+except ImportError:
+    pass
 
 cdef grpc_socket_vtable asyncio_socket_vtable
 cdef grpc_custom_resolver_vtable asyncio_resolver_vtable
@@ -26,7 +31,7 @@ cdef grpc_custom_poller_vtable asyncio_pollset_vtable
 cdef grpc_error* asyncio_socket_init(
         grpc_custom_socket* grpc_socket,
         int domain) with gil:
-    socket = _AsyncioSocket.create(grpc_socket)
+    socket = _AsyncioSocket.create(grpc_socket, None, None)
     Py_INCREF(socket)
     grpc_socket.impl = <void*>socket
     return <grpc_error*>0
@@ -81,39 +86,85 @@ cdef grpc_error* asyncio_socket_getpeername(
         grpc_custom_socket* grpc_socket,
         const grpc_sockaddr* addr,
         int* length) with gil:
-    raise NotImplemented()
+    peer = (<_AsyncioSocket>grpc_socket.impl).peername()
+
+    cdef grpc_resolved_address c_addr
+    hostname = str_to_bytes(peer[0])
+    grpc_string_to_sockaddr(&c_addr, hostname, peer[1])
+    # TODO(https://github.com/grpc/grpc/issues/20684) Remove the memcpy
+    string.memcpy(<void*>addr, <void*>c_addr.addr, c_addr.len)
+    length[0] = c_addr.len
+    return grpc_error_none()
 
 
 cdef grpc_error* asyncio_socket_getsockname(
         grpc_custom_socket* grpc_socket,
         const grpc_sockaddr* addr,
         int* length) with gil:
-    raise NotImplemented()
+    """Supplies sock_addr in add_socket_to_server."""
+    cdef grpc_resolved_address c_addr
+    socket = (<_AsyncioSocket>grpc_socket.impl)
+    if socket is None:
+        peer = ('0.0.0.0', 0)
+    else:
+        peer = socket.sockname()
+    hostname = str_to_bytes(peer[0])
+    grpc_string_to_sockaddr(&c_addr, hostname, peer[1])
+    # TODO(https://github.com/grpc/grpc/issues/20684) Remove the memcpy
+    string.memcpy(<void*>addr, <void*>c_addr.addr, c_addr.len)
+    length[0] = c_addr.len
+    return grpc_error_none()
 
 
 cdef grpc_error* asyncio_socket_listen(grpc_custom_socket* grpc_socket) with gil:
-    raise NotImplemented()
+    (<_AsyncioSocket>grpc_socket.impl).listen()
+    return grpc_error_none()
+
+
+def _asyncio_apply_socket_options(object s, so_reuse_port=False):
+    # TODO(https://github.com/grpc/grpc/issues/20667)
+    # Connects the so_reuse_port option to channel arguments
+    s.setsockopt(native_socket.SOL_SOCKET, native_socket.SO_REUSEADDR, 1)
+    s.setsockopt(native_socket.IPPROTO_TCP, native_socket.TCP_NODELAY, True)
 
 
 cdef grpc_error* asyncio_socket_bind(
         grpc_custom_socket* grpc_socket,
         const grpc_sockaddr* addr,
         size_t len, int flags) with gil:
-    raise NotImplemented()
+    host, port = sockaddr_to_tuple(addr, len)
+    try:
+        ip = ipaddress.ip_address(host)
+        if isinstance(ip, ipaddress.IPv6Address):
+            family = native_socket.AF_INET6
+        else:
+            family = native_socket.AF_INET
+
+        socket = native_socket.socket(family=family)
+        _asyncio_apply_socket_options(socket)
+        socket.bind((host, port))
+    except IOError as io_error:
+        return socket_error("bind", str(io_error))
+    else:
+        aio_socket = _AsyncioSocket.create_with_py_socket(grpc_socket, socket)
+        cpython.Py_INCREF(aio_socket)  # Py_DECREF in asyncio_socket_destroy
+        grpc_socket.impl = <void*>aio_socket
+        return grpc_error_none()
 
 
 cdef void asyncio_socket_accept(
         grpc_custom_socket* grpc_socket,
         grpc_custom_socket* grpc_socket_client,
         grpc_custom_accept_callback accept_cb) with gil:
-    raise NotImplemented()
+    (<_AsyncioSocket>grpc_socket.impl).accept(grpc_socket_client, accept_cb)
 
 
 cdef grpc_error* asyncio_resolve(
         char* host,
         char* port,
         grpc_resolved_addresses** res) with gil:
-    raise NotImplemented()
+    result = native_socket.getaddrinfo(host, port)
+    res[0] = tuples_to_resolvaddr(result)
 
 
 cdef void asyncio_resolve_async(

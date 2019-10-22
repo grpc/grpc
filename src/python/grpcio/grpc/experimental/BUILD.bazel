@@ -5,6 +5,7 @@ py_library(
     srcs = [
         "aio/__init__.py",
         "aio/_channel.py",
+        "aio/_server.py",
     ],
     deps = [
         "//src/python/grpcio/grpc/_cython:cygrpc",

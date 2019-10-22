@@ -22,6 +22,8 @@ pyx_library(
         "_cygrpc/aio/iomgr/socket.pyx.pxi",
         "_cygrpc/aio/iomgr/timer.pxd.pxi",
         "_cygrpc/aio/iomgr/timer.pyx.pxi",
+        "_cygrpc/aio/server.pxd.pxi",
+        "_cygrpc/aio/server.pyx.pxi",
         "_cygrpc/arguments.pxd.pxi",
         "_cygrpc/arguments.pyx.pxi",
         "_cygrpc/call.pxd.pxi",

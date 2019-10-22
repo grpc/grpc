@@ -17,6 +17,7 @@ import abc
 import six
 
 from grpc._cython.cygrpc import init_grpc_aio
+from ._server import server
 
 from ._channel import Channel
 from ._channel import UnaryUnaryMultiCallable
