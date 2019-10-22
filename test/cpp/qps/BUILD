@@ -16,6 +16,7 @@ licenses(["notice"])  # Apache v2
 
 load("//bazel:grpc_build_system.bzl", "grpc_cc_test", "grpc_cc_library", "grpc_cc_binary", "grpc_package")
 load("//test/cpp/qps:qps_benchmark_script.bzl", "qps_json_driver_batch", "json_run_localhost_batch")
+load("@grpc_custom_exec_properties//:constants.bzl", "LARGE_MACHINE")
 
 grpc_package(name = "test/cpp/qps")
 
@@ -169,8 +170,8 @@ grpc_cc_test(
 grpc_cc_test(
     name = "qps_openloop_test",
     srcs = ["qps_openloop_test.cc"],
-    exec_compatible_with = ["//third_party/toolchains/machine_size:large"],
-    tags = ["no_windows"],  # machine_size:large is not configured for windows RBE
+    exec_properties = LARGE_MACHINE,
+    tags = ["no_windows"],  # LARGE_MACHINE is not configured for windows RBE
     deps = [
         ":benchmark_config",
         ":driver_impl",

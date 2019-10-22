@@ -9,8 +9,6 @@ grpc_deps()
 grpc_test_only_deps()
 
 register_execution_platforms(
-    "//third_party/toolchains:local",
-    "//third_party/toolchains:local_large",
     "//third_party/toolchains:rbe_windows",
 )
 
@@ -18,11 +16,31 @@ register_toolchains(
     "//third_party/toolchains/bazel_0.26.0_rbe_windows:cc-toolchain-x64_windows",
 )
 
+load("@bazel_toolchains//rules/exec_properties:exec_properties.bzl", "create_exec_properties_dict", "custom_exec_properties", "rbe_exec_properties")
+
+# A standard RBE execution property set repo rule.
+rbe_exec_properties(
+    name = "exec_properties",
+)
+
+custom_exec_properties(
+    name = "grpc_custom_exec_properties",
+    constants = {
+        "LARGE_MACHINE": create_exec_properties_dict(gce_machine_type = "n1-standard-8"),
+    },
+)
+
 load("@bazel_toolchains//rules:rbe_repo.bzl", "rbe_autoconfig")
 
 # Create toolchain configuration for remote execution.
 rbe_autoconfig(
     name = "rbe_default",
+    # use exec_properties instead of deprecated remote_execution_properties
+    use_legacy_platform_definition = False,
+    exec_properties = create_exec_properties_dict(
+        docker_add_capabilities = "SYS_PTRACE",
+        docker_privileged = True,
+    ),
 )
 
 load("@bazel_toolchains//rules:environments.bzl", "clang_env")
