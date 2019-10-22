@@ -16,12 +16,7 @@ register_toolchains(
     "//third_party/toolchains/bazel_0.26.0_rbe_windows:cc-toolchain-x64_windows",
 )
 
-load("@bazel_toolchains//rules/exec_properties:exec_properties.bzl", "create_exec_properties_dict", "custom_exec_properties", "rbe_exec_properties")
-
-# A standard RBE execution property set repo rule.
-rbe_exec_properties(
-    name = "exec_properties",
-)
+load("@bazel_toolchains//rules/exec_properties:exec_properties.bzl", "create_exec_properties_dict", "custom_exec_properties")
 
 custom_exec_properties(
     name = "grpc_custom_exec_properties",
