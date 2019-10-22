@@ -13,6 +13,8 @@ In order to protect both you and ourselves, you will need to sign the
 [Contributor License
 Agreement](https://identity.linuxfoundation.org/projects/cncf).
 
+## Find open issues that wants help
+
 ## Cloning the repository
 
 Before starting any development work you will need a local copy of the gRPC repository.
