@@ -48,7 +48,7 @@ class TestServer(unittest.TestCase):
             server.add_generic_rpc_handlers((GenericHandler(),))
             await server.start()
 
-            async with aio.insecure_channel(f'localhost:{port}') as channel:
+            async with aio.insecure_channel('localhost:%d' % port) as channel:
                 unary_call = channel.unary_unary(_TEST_METHOD_PATH)
                 response = await unary_call(_REQUEST)
                 self.assertEqual(response, _RESPONSE)
