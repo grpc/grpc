@@ -38,6 +38,10 @@ rbe_autoconfig(
     # use exec_properties instead of deprecated remote_execution_properties
     use_legacy_platform_definition = False,
     exec_properties = create_exec_properties_dict(
+        # n1-highmem-2 is the default (small machine) machine type. Targets
+        # that want to use other machines (such as LARGE_MACHINE) will override
+        # this value.
+        gce_machine_type = "n1-highmem-2",
         docker_add_capabilities = "SYS_PTRACE",
         docker_privileged = True,
     ),
