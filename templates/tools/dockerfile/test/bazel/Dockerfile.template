@@ -36,6 +36,8 @@
   
   <%include file="../../python_deps.include"/>
 
+  <%include file="../../compile_python_36.include"/>
+
   <%include file="../../bazel.include"/>
   
   RUN mkdir -p /var/local/jenkins
