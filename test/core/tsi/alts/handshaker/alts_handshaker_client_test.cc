@@ -323,6 +323,7 @@ static alts_handshaker_client_test_config* create_config() {
 }
 
 static void destroy_config(alts_handshaker_client_test_config* config) {
+  grpc_core::ExecCtx exec_ctx;
   if (config == nullptr) {
     return;
   }
