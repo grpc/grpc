@@ -13,7 +13,7 @@
 @rem limitations under the License.
 
 @rem Current package versions
-set VERSION=2.24.2
+set VERSION=2.24.3
 
 @rem Adjust the location of nuget.exe
 set NUGET=C:\nuget\nuget.exe
