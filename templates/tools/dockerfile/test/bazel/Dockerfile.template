@@ -29,6 +29,7 @@
     autoconf ${'\\'}
     build-essential ${'\\'}
     curl ${'\\'}
+    wget ${'\\'}
     libtool ${'\\'}
     make ${'\\'}
     openjdk-8-jdk ${'\\'}
