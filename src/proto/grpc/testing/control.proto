@@ -226,13 +226,15 @@ message ScenarioResultSummary
   double qps = 1;
   // QPS per server core.
   double qps_per_server_core = 2;
-  // The percentage of server cpu load based on system time used by the server process (85 => 85%)
+  // The overall percentage of server cpu load based on system time across all the server processes.
+  // For example, 85 implies 85% of a cpu core, 125 implies 125% of a cpu core. Since we are accumulating the cpu load across all the server 
+  // processes, the value could > 100 when there are multiple servers. 
   double server_system_time = 3;
-  // The percentage of server cpu load based on user time used by the server process (85 => 85%)
+  // The overall percentage of server cpu load based on user time across all the server processes (85 => 85%, 125 => 125%)
   double server_user_time = 4;
-  // The percentage of client cpu load based on system time used by the client process (85 => 85%)
+  // The overall percentage of client cpu load based on system time across all the client processes (85 => 85%, 125 => 125%)
   double client_system_time = 5;
-  // The percentage of client cpu load based on user time used by the client process (85 => 85%)
+  // The overall percentage of client cpu load based on user time across all the client processes (85 => 85%, 125 => 125%)
   double client_user_time = 6;
 
   // X% latency percentiles (in nanoseconds)
