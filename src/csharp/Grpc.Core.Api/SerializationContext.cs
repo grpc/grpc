@@ -47,12 +47,23 @@ namespace Grpc.Core
         }
 
         /// <summary>
+        /// Sets the payload length when writing serialized data into a buffer writer. If the serializer knows the full payload
+        /// length in advance, providing that information before obtaining the buffer writer using <c>GetBufferWriter()</c> can improve
+        /// serialization efficiency by avoiding copies. The provided payload length must be the same as the data written to the writer.
+        /// Calling this method is optional. If the payload length is not set then the length is calculated using the data written to
+        /// the buffer writer when <c>Complete()</c> is called.
+        /// </summary>
+        /// <param name="payloadLength">The total length of the payload in bytes.</param>
+        public virtual void SetPayloadLength(int payloadLength)
+        {
+        }
+
+        /// <summary>
         /// Complete the payload written to the buffer writer. <c>Complete()</c> can only be called once.
         /// </summary>
         public virtual void Complete()
         {
             throw new NotImplementedException();
-
         }
     }
 }
