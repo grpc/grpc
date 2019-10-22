@@ -381,6 +381,11 @@ static void handshaker_shutdown(tsi_handshaker* self) {
   handshaker->shutdown = true;
 }
 
+static void handshaker_channel_destroy(void* arg, grpc_error* /* error */) {
+  grpc_channel* c = static_cast<grpc_channel*>(arg);
+  grpc_channel_destroy(c);
+}
+
 static void handshaker_destroy(tsi_handshaker* self) {
   if (self == nullptr) {
     return;
@@ -388,9 +393,19 @@ static void handshaker_destroy(tsi_handshaker* self) {
   alts_tsi_handshaker* handshaker =
       reinterpret_cast<alts_tsi_handshaker*>(self);
   gpr_mu_lock(&handshaker->mu);
+  if (handshaker->client != nullptr) {
+    // this is defensive in order to avoid leaving a stray/unpolled call
+    alts_handshaker_client_cancel_call_locked(handshaker->client);
+  }
   alts_handshaker_client_destroy_locked(handshaker->client);
   grpc_slice_unref_internal(handshaker->target_name);
   grpc_alts_credentials_options_destroy(handshaker->options);
+  if (handshaker->channel != nullptr) {
+    GRPC_CLOSURE_SCHED(
+        GRPC_CLOSURE_CREATE(handshaker_channel_destroy, handshaker->channel,
+                            grpc_schedule_on_exec_ctx),
+        GRPC_ERROR_NONE);
+  }
   gpr_free(handshaker->handshaker_service_url);
   gpr_mu_unlock(&handshaker->mu);
   gpr_mu_destroy(&handshaker->mu);
@@ -474,12 +489,6 @@ void alts_tsi_handshaker_re_enter_lock_then_continue_make_grpc_call(
   alts_tsi_handshaker* handshaker = args->handshaker;
   bool is_start = args->is_start;
   gpr_free(args);
-  {
-    grpc_core::MutexLock(&handshaker->mu);
-    if (handshaker->shutdown) {
-      return;
-    }
-  }
   if (is_start) {
     grpc_core::UniquePtr<char> handshaker_service_url;
     bool use_dedicated_cq;
@@ -502,7 +511,7 @@ void alts_tsi_handshaker_re_enter_lock_then_continue_make_grpc_call(
     GPR_ASSERT(handshaker->channel == nullptr);
     handshaker->channel = channel;
     grpc_slice slice =
-        grpc_slice_from_copied_string(handshaker->handshaker_service_url);
+        grpc_slice_from_copied_string(handshaker_service_url.get());
     grpc_call* call = grpc_channel_create_pollset_set_call(
         handshaker->channel, nullptr, GRPC_PROPAGATE_DEFAULTS,
         handshaker->interested_parties,
@@ -511,6 +520,9 @@ void alts_tsi_handshaker_re_enter_lock_then_continue_make_grpc_call(
     grpc_slice_unref_internal(slice);
     alts_handshaker_client_continue_make_grpc_call_locked(handshaker->client,
                                                           call);
+    if (handshaker->shutdown) {
+      grpc_call_cancel_internal(call);
+    }
   } else {
     grpc_core::MutexLock lock(&handshaker->mu);
     alts_handshaker_client_continue_make_grpc_call_locked(handshaker->client,
