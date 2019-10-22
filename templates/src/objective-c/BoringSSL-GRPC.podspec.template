@@ -9,7 +9,9 @@
   # Please make modifications to
   # `templates/src/objective-c/BoringSSL-GRPC.podspec.template` instead. This
   # file can be regenerated from the template by running
-  # `tools/buildgen/generate_projects.sh`.
+  # `tools/buildgen/generate_projects.sh`. Because of some limitations of this
+  # template, you might actually need to run the same script twice in a row.
+  # (see err_data.c section)
 
   # BoringSSL CocoaPods podspec
 
@@ -214,7 +216,7 @@
       # investigate if we could use it.
       cat > err_data.c <<EOF
       % for err_data in open("src/boringssl/err_data.c", "r").readlines():
-        ${err_data}\
+        ${err_data.replace('\\0', '\\\\0')}\
       % endfor
       EOF
 
