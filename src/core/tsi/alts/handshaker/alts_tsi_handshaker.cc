@@ -392,9 +392,9 @@ static void handshaker_channel_destroy(void* arg, grpc_error* /* error */) {
 }
 
 static void alts_tsi_handshaker_destroy_locked(alts_tsi_handshaker* self) {
-  if (handshaker->channel != nullptr) {
+  if (self->channel != nullptr) {
     GRPC_CLOSURE_SCHED(
-        GRPC_CLOSURE_CREATE(handshaker_channel_destroy, handshaker->channel,
+        GRPC_CLOSURE_CREATE(handshaker_channel_destroy, self->channel,
                             grpc_schedule_on_exec_ctx),
         GRPC_ERROR_NONE);
   }
