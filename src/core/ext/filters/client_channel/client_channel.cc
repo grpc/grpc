@@ -633,8 +633,8 @@ class CallData {
 
   // Sets *status and *server_pushback_md based on md_batch and error.
   // Only sets *server_pushback_md if server_pushback_md != nullptr.
-  void GetCallStatus(grpc_call_element* elem, grpc_metadata_batch* md_batch,
-                     grpc_error* error, grpc_status_code* status,
+  void GetCallStatus(grpc_metadata_batch* md_batch, grpc_error* error,
+                     grpc_status_code* status,
                      grpc_mdelem** server_pushback_md);
   // Adds recv_trailing_metadata_ready closure to closures.
   void AddClosureForRecvTrailingMetadataReady(
@@ -663,10 +663,10 @@ class CallData {
 
   // Adds the on_complete closure for the pending batch completed in
   // batch_data to closures.
-  void AddClosuresForCompletedPendingBatch(
-      grpc_call_element* elem, SubchannelCallBatchData* batch_data,
-      SubchannelCallRetryState* retry_state, grpc_error* error,
-      CallCombinerClosureList* closures);
+  void AddClosuresForCompletedPendingBatch(grpc_call_element* elem,
+                                           SubchannelCallBatchData* batch_data,
+                                           grpc_error* error,
+                                           CallCombinerClosureList* closures);
 
   // If there are any cached ops to replay or pending ops to start on the
   // subchannel call, adds a closure to closures to invoke
@@ -2908,8 +2908,7 @@ void CallData::RecvMessageReady(void* arg, grpc_error* error) {
 // recv_trailing_metadata handling
 //
 
-void CallData::GetCallStatus(grpc_call_element* /*elem*/,
-                             grpc_metadata_batch* md_batch, grpc_error* error,
+void CallData::GetCallStatus(grpc_metadata_batch* md_batch, grpc_error* error,
                              grpc_status_code* status,
                              grpc_mdelem** server_pushback_md) {
   if (error != GRPC_ERROR_NONE) {
@@ -3078,7 +3077,7 @@ void CallData::RecvTrailingMetadataReady(void* arg, grpc_error* error) {
   grpc_mdelem* server_pushback_md = nullptr;
   grpc_metadata_batch* md_batch =
       batch_data->batch.payload->recv_trailing_metadata.recv_trailing_metadata;
-  calld->GetCallStatus(elem, md_batch, GRPC_ERROR_REF(error), &status,
+  calld->GetCallStatus(md_batch, GRPC_ERROR_REF(error), &status,
                        &server_pushback_md);
   if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_call_trace)) {
     gpr_log(GPR_INFO, "chand=%p calld=%p: call finished, status=%s", chand,
@@ -3111,8 +3110,7 @@ void CallData::RecvTrailingMetadataReady(void* arg, grpc_error* error) {
 
 void CallData::AddClosuresForCompletedPendingBatch(
     grpc_call_element* elem, SubchannelCallBatchData* batch_data,
-    SubchannelCallRetryState* /*retry_state*/, grpc_error* error,
-    CallCombinerClosureList* closures) {
+    grpc_error* error, CallCombinerClosureList* closures) {
   PendingBatch* pending = PendingBatchFind(
       elem, "completed", [batch_data](grpc_transport_stream_op_batch* batch) {
         // Match the pending batch with the same set of send ops as the
@@ -3210,7 +3208,7 @@ void CallData::OnComplete(void* arg, grpc_error* error) {
   if (!retry_state->retry_dispatched) {
     // Add closure for the completed pending batch, if any.
     calld->AddClosuresForCompletedPendingBatch(
-        elem, batch_data, retry_state, GRPC_ERROR_REF(error), &closures);
+        elem, batch_data, GRPC_ERROR_REF(error), &closures);
     // If needed, add a callback to start any replay or pending send ops on
     // the subchannel call.
     if (!retry_state->completed_recv_trailing_metadata) {
