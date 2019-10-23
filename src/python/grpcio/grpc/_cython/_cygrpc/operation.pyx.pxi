@@ -172,7 +172,6 @@ cdef class ReceiveMessageOperation(Operation):
         grpc_byte_buffer_reader_destroy(&message_reader)
         self._message = bytes(message)
       else:
-        message = bytearray()
         self._message = None
       grpc_byte_buffer_destroy(self._c_message_byte_buffer)
     else:

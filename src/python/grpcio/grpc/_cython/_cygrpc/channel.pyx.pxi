@@ -92,7 +92,6 @@ cdef tuple _operate(grpc_call *c_call, object operations, object user_tag):
   cdef _BatchOperationTag tag = _BatchOperationTag(user_tag, operations, None)
   tag.prepare()
   cpython.Py_INCREF(tag)
-  # print("****************** Starting batch with operations {}".format(operations))
   with nogil:
     c_call_error = grpc_call_start_batch(
         c_call, tag.c_ops, tag.c_nops, <cpython.PyObject *>tag, NULL)
