@@ -811,11 +811,11 @@ static grpc_error* parse_indexed_field_x(grpc_chttp2_hpack_parser* p,
    cached metadata corresponds with the index we are examining. */
 static grpc_mdelem get_precomputed_md_for_idx(grpc_chttp2_hpack_parser* p) {
   GPR_DEBUG_ASSERT(p->md_for_index.payload != 0);
+  GPR_DEBUG_ASSERT(static_cast<int64_t>(p->index) == p->precomputed_md_index);
   grpc_mdelem md = p->md_for_index;
   GPR_DEBUG_ASSERT(!GRPC_MDISNULL(md)); /* handled in string parsing */
   p->md_for_index.payload = 0; /* Invalidate cached md when index changes. */
 #ifndef NDEBUG
-  GPR_DEBUG_ASSERT(static_cast<int64_t>(p->index) == p->precomputed_md_index);
   p->precomputed_md_index = -1;
 #endif
   return md;
@@ -1543,9 +1543,9 @@ static bool is_binary_literal_header(grpc_chttp2_hpack_parser* p) {
 static void set_precomputed_md_idx(grpc_chttp2_hpack_parser* p,
                                    grpc_mdelem md) {
   GPR_DEBUG_ASSERT(p->md_for_index.payload == 0);
+  GPR_DEBUG_ASSERT(p->precomputed_md_index == -1);
   p->md_for_index = md;
 #ifndef NDEBUG
-  GPR_DEBUG_ASSERT(p->precomputed_md_index == -1);
   p->precomputed_md_index = p->index;
 #endif
 }
