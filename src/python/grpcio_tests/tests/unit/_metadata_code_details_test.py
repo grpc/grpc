@@ -347,7 +347,6 @@ class MetadataCodeDetailsTest(unittest.TestCase):
             self._servicer.set_details(_DETAILS)
             self._servicer.set_abort_call()
 
-
             response_iterator_call = self._unary_stream(
                 _SERIALIZED_REQUEST, metadata=_CLIENT_METADATA)
             # NOTE: In the single-threaded case, we cannot grab the initial_metadata

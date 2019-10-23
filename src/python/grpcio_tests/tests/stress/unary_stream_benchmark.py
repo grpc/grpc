@@ -15,7 +15,6 @@ _PORT = 5741
 _MESSAGE_SIZE = 4
 _RESPONSE_COUNT = 32 * 1024
 
-
 _SERVER_CODE = """
 import datetime
 import threading
@@ -48,33 +47,43 @@ _GRPC_CHANNEL_OPTIONS = [
 
 @contextlib.contextmanager
 def _running_server():
-  server_process = subprocess.Popen([sys.executable, '-c', _SERVER_CODE], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-  try:
-    yield
-  finally:
-    server_process.terminate()
-    server_process.wait()
-    sys.stdout.write("stdout: {}".format(server_process.stdout.read())); sys.stdout.flush()
-    sys.stdout.write("stderr: {}".format(server_process.stderr.read())); sys.stdout.flush()
+    server_process = subprocess.Popen(
+        [sys.executable, '-c', _SERVER_CODE],
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE)
+    try:
+        yield
+    finally:
+        server_process.terminate()
+        server_process.wait()
+        sys.stdout.write("stdout: {}".format(server_process.stdout.read()))
+        sys.stdout.flush()
+        sys.stdout.write("stderr: {}".format(server_process.stderr.read()))
+        sys.stdout.flush()
+
 
 def profile(message_size, response_count):
-  request = unary_stream_benchmark_pb2.BenchmarkRequest(message_size=message_size, response_count=response_count)
-  with grpc.insecure_channel('[::]:{}'.format(_PORT), options=_GRPC_CHANNEL_OPTIONS) as channel:
-    stub = unary_stream_benchmark_pb2_grpc.UnaryStreamBenchmarkServiceStub(channel)
-    start = datetime.datetime.now()
-    call = stub.Benchmark(request, wait_for_ready=True)
-    for message in call:
-      pass
-    end = datetime.datetime.now()
-  return end - start
+    request = unary_stream_benchmark_pb2.BenchmarkRequest(
+        message_size=message_size, response_count=response_count)
+    with grpc.insecure_channel(
+            '[::]:{}'.format(_PORT), options=_GRPC_CHANNEL_OPTIONS) as channel:
+        stub = unary_stream_benchmark_pb2_grpc.UnaryStreamBenchmarkServiceStub(
+            channel)
+        start = datetime.datetime.now()
+        call = stub.Benchmark(request, wait_for_ready=True)
+        for message in call:
+            pass
+        end = datetime.datetime.now()
+    return end - start
+
 
 def main():
-  with _running_server():
-    for i in range(1000):
-      latency = profile(_MESSAGE_SIZE, 1024)
-      sys.stdout.write("{}\n".format(latency.total_seconds()))
-      sys.stdout.flush()
+    with _running_server():
+        for i in range(1000):
+            latency = profile(_MESSAGE_SIZE, 1024)
+            sys.stdout.write("{}\n".format(latency.total_seconds()))
+            sys.stdout.flush()
 
 
 if __name__ == '__main__':
-  main()
+    main()

@@ -1954,14 +1954,14 @@ class Compression(enum.IntEnum):
 
 
 class ChannelOptions(object):
-  """Indicates a channel option unique to gRPC Python.
+    """Indicates a channel option unique to gRPC Python.
 
      This enumeration is part of an EXPERIMENTAL API.
 
      Attributes:
        SingleThreadedUnaryStream: Perform unary-stream RPCs on a single thread.
   """
-  SingleThreadedUnaryStream = "SingleThreadedUnaryStream"
+    SingleThreadedUnaryStream = "SingleThreadedUnaryStream"
 
 
 ###################################  __all__  #################################
