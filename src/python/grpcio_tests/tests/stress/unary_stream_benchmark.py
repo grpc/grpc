@@ -6,8 +6,12 @@ import sys
 import time
 import contextlib
 
-from src.python.grpcio_tests.tests.stress import unary_stream_benchmark_pb2
-from src.python.grpcio_tests.tests.stress import unary_stream_benchmark_pb2_grpc
+try:
+    from src.python.grpcio_tests.tests.stress import unary_stream_benchmark_pb2
+    from src.python.grpcio_tests.tests.stress import unary_stream_benchmark_pb2_grpc
+except ImportError:
+    sys.stderr.write("This test must be run from Bazel.\n")
+    sys.exit(1)
 
 _PORT = 5741
 _MESSAGE_SIZE = 4
