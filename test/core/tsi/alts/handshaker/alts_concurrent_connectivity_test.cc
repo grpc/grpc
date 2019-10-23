@@ -499,7 +499,7 @@ void test_handshake_fails_fast_when_peer_endpoint_closes_connection_after_accept
     c_args.server_address = fake_tcp_server.Address();
     c_args.fake_handshaker_server_addr = fake_handshake_server.Address();
     c_args.per_connect_deadline_seconds = 10;
-    c_args.loops = 5;
+    c_args.loops = 2;
     gpr_log(GPR_DEBUG, "start performing concurrent expected-to-fail connects");
     for (size_t i = 0; i < num_concurrent_connects; i++) {
       auto new_thd = grpc_core::MakeUnique<grpc_core::Thread>(
