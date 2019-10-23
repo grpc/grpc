@@ -94,10 +94,10 @@ class _GenericHandler(grpc.GenericRpcHandler):
 
 
 def get_free_loopback_tcp_port():
-    tcp = socket.socket(socket.AF_INET6)
+    tcp = socket.socket(socket.AF_INET)
     tcp.bind(('', 0))
     address_tuple = tcp.getsockname()
-    return tcp, "[::1]:%s" % (address_tuple[1])
+    return tcp, "localhost:%s" % (address_tuple[1])
 
 
 def create_dummy_channel():
@@ -183,7 +183,7 @@ class MetadataFlagsTest(unittest.TestCase):
             fn(channel, wait_for_ready)
             self.fail("The Call should fail")
         except BaseException as e:  # pylint: disable=broad-except
-            self.assertIn('StatusCode.UNAVAILABLE', str(e))
+            self.assertIs(grpc.StatusCode.UNAVAILABLE, e.code())
 
     def test_call_wait_for_ready_default(self):
         for perform_call in _ALL_CALL_CASES:
