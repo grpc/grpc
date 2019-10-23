@@ -71,12 +71,17 @@
 
   cmake_minimum_required(VERSION 3.5.1)
 
-  set(PACKAGE_NAME      "grpc")
-  set(PACKAGE_VERSION   "${settings.cpp_version}")
-  set(gRPC_CORE_VERSION "${settings.core_version}")
-  set(PACKAGE_STRING    "<%text>${PACKAGE_NAME} ${PACKAGE_VERSION}</%text>")
-  set(PACKAGE_TARNAME   "<%text>${PACKAGE_NAME}-${PACKAGE_VERSION}</%text>")
-  set(PACKAGE_BUGREPORT "https://github.com/grpc/grpc/issues/")
+  set(PACKAGE_NAME          "grpc")
+  set(PACKAGE_VERSION       "${settings.cpp_version}")
+  set(gRPC_CORE_VERSION     "${settings.core_version}")
+  set(gRPC_CORE_SOVERSION   "${settings.core_version.major}")
+  set(gRPC_CPP_VERSION      "${settings.cpp_version}")
+  set(gRPC_CPP_SOVERSION    "${settings.cpp_version.major}")
+  set(gRPC_CSHARP_VERSION   "${settings.csharp_version}")
+  set(gRPC_CSHARP_SOVERSION "${settings.csharp_version.major}")
+  set(PACKAGE_STRING        "<%text>${PACKAGE_NAME} ${PACKAGE_VERSION}</%text>")
+  set(PACKAGE_TARNAME       "<%text>${PACKAGE_NAME}-${PACKAGE_VERSION}</%text>")
+  set(PACKAGE_BUGREPORT     "https://github.com/grpc/grpc/issues/")
   project(<%text>${PACKAGE_NAME}</%text> LANGUAGES C CXX)
 
   set(gRPC_INSTALL_BINDIR "bin" CACHE STRING "Installation directory for executables")
@@ -398,6 +403,19 @@
     % endif
   % endif
   % endfor
+  )
+
+  set_target_properties(${lib.name} PROPERTIES
+  % if lib.language == 'c++':
+    VERSION <%text>${gRPC_CPP_VERSION}</%text>
+    SOVERSION <%text>${gRPC_CPP_SOVERSION}</%text>
+  % elif lib.language == 'csharp':
+    VERSION <%text>${gRPC_CSHARP_VERSION}</%text>
+    SOVERSION <%text>${gRPC_CSHARP_SOVERSION}</%text>
+  % else:
+    VERSION <%text>${gRPC_CORE_VERSION}</%text>
+    SOVERSION <%text>${gRPC_CORE_SOVERSION}</%text>
+  % endif
   )
 
   if(WIN32 AND MSVC)
