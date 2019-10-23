@@ -182,9 +182,9 @@ def get_c_tests(travis, test_lang):
     with open('tools/run_tests/generated/tests.json') as f:
         js = json.load(f)
         return [
-            tgt for tgt in js
-            if tgt['language'] == test_lang and platform_string() in
-            tgt[platforms_str] and not (travis and tgt['flaky'])
+            tgt for tgt in js if tgt['language'] == test_lang and
+            platform_string() in tgt[platforms_str] and
+            not (travis and tgt['flaky'])
         ]
 
 
@@ -721,7 +721,8 @@ class PythonLanguage(object):
 
     def test_specs(self):
         # load list of known test suites
-        with open(self._TEST_SPECS_FILE[self.args.iomgr_platform]) as tests_json_file:
+        with open(self._TEST_SPECS_FILE[
+                self.args.iomgr_platform]) as tests_json_file:
             tests_json = json.load(tests_json_file)
         environment = dict(_FORCE_ENVIRON_FOR_WRAPPERS)
         return [
@@ -731,8 +732,9 @@ class PythonLanguage(object):
                 environ=dict(
                     list(environment.items()) + [(
                         'GRPC_PYTHON_TESTRUNNER_FILTER', str(suite_name))]),
-                    shortname='%s.%s.%s' % (config.name, self._TEST_FOLDER[self.args.iomgr_platform],
-                                        suite_name),
+                shortname='%s.%s.%s' %
+                (config.name, self._TEST_FOLDER[self.args.iomgr_platform],
+                 suite_name),
             ) for suite_name in tests_json for config in self.pythons
         ]
 
@@ -818,9 +820,8 @@ class PythonLanguage(object):
         if args.iomgr_platform == 'asyncio':
             if args.compiler not in ('python3.6', 'python3.7', 'python3.8'):
                 raise Exception(
-                    'Compiler %s not supported with IO Manager platform:' % (
-                        args.compiler,
-                        args.iomgr_platform))
+                    'Compiler %s not supported with IO Manager platform:' %
+                    (args.compiler, args.iomgr_platform))
 
         config_vars = _PythonConfigVars(
             shell, builder, builder_prefix_arguments, venv_relative_python,
@@ -1636,8 +1637,7 @@ if any(language.make_options() for language in languages):
         # together, and is only used under gcov. All other configs should build languages individually.
         language_make_options = list(
             set([
-                make_option
-                for lang in languages
+                make_option for lang in languages
                 for make_option in lang.make_options()
             ]))
 
