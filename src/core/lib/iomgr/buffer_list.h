@@ -146,7 +146,7 @@ class TracedBuffer {
 class TracedBuffer {
  public:
   /* Dummy shutdown function */
-  static void Shutdown(grpc_core::TracedBuffer** head, void* remaining,
+  static void Shutdown(grpc_core::TracedBuffer** /*head*/, void* /*remaining*/,
                        grpc_error* shutdown_err) {
     GRPC_ERROR_UNREF(shutdown_err);
   }
