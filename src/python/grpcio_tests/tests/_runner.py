@@ -215,7 +215,7 @@ class Runner(object):
                         # re-raise the exception after forcing the with-block to end
                         raise
                     result.set_output(augmented_case.case, stdout_pipe.output(),
-                                    stderr_pipe.output())
+                                      stderr_pipe.output())
                     sys.stdout.write(result_out.getvalue())
                     sys.stdout.flush()
                     result_out.truncate(0)
@@ -233,4 +233,3 @@ class Runner(object):
         with open('report.xml', 'wb') as report_xml_file:
             _result.jenkins_junit_xml(result).write(report_xml_file)
         return result
-

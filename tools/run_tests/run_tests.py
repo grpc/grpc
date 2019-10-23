@@ -703,9 +703,16 @@ class PythonConfig(
 
 class PythonLanguage(object):
 
-    _DEFAULT_COMMAND = 'test_lite'
-    _TEST_SPECS_FILE = 'src/python/grpcio_tests/tests/tests.json'
-    _TEST_FOLDER = 'test'
+    _TEST_SPECS_FILE = {
+        'native': 'src/python/grpcio_tests/tests/tests.json',
+        'gevent': 'src/python/grpcio_tests/tests/tests.json',
+        'asyncio': 'src/python/grpcio_tests/tests_aio/tests.json',
+    }
+    _TEST_FOLDER = {
+        'native': 'test',
+        'gevent': 'test',
+        'asyncio': 'test_aio',
+    }
 
     def configure(self, config, args):
         self.config = config
@@ -793,9 +800,17 @@ class PythonLanguage(object):
             venv_relative_python = ['bin/python']
             toolchain = ['unix']
 
-        test_command = self._DEFAULT_COMMAND
-        if args.iomgr_platform == 'gevent':
+        # Selects the corresponding testing mode.
+        # See src/python/grpcio_tests/commands.py for implementation details.
+        if args.iomgr_platform == 'native':
+            test_command = 'test_lite'
+        elif args.iomgr_platform == 'gevent':
             test_command = 'test_gevent'
+        elif args.iomgr_platform == 'asyncio':
+            test_command = 'test_aio'
+        else:
+            raise ValueError(
+                'Unsupported IO Manager platform: %s' % args.iomgr_platform)
         runner = [
             os.path.abspath('tools/run_tests/helper_scripts/run_python.sh')
         ]
