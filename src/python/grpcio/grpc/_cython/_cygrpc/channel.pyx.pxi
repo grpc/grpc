@@ -260,7 +260,6 @@ cdef void _call(
         on_success(started_tags)
     else:
       raise ValueError('Cannot invoke RPC: %s' % channel_state.closed_reason)
-
 cdef void _process_integrated_call_tag(
     _ChannelState state, _BatchOperationTag tag) except *:
   cdef _CallState call_state = state.integrated_call_states.pop(tag)
@@ -353,10 +352,6 @@ cdef SegregatedCall _segregated_call(
   def on_success(started_tags):
     state.segregated_call_states.add(call_state)
 
-  # TODO: It doesn't seem necessary to acquire this lock. We're holding the GIL
-  # and we're only doing a read. In fact, there appears to be a race right now
-  # because we don't act on the read until later in the function when we're not
-  # holding the lock.
   with state.condition:
     if state.open:
       c_completion_queue = (grpc_completion_queue_create_for_next(NULL))
@@ -425,12 +420,6 @@ cdef _close(Channel channel, grpc_status_code code, object details,
       else:
         while state.integrated_call_states:
           state.condition.wait()
-		# This is not valid when we're truly single-threaded because there's no
-		# thread left to dequeue them.
-		# Why is unary-unary not currently running into this problem?
-		# TODO: Figure this out.
-        # while state.segregated_call_states:
-        #   state.condition.wait()
         while state.connectivity_due:
           state.condition.wait()
 
