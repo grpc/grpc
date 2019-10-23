@@ -564,8 +564,6 @@ class _Rendezvous(_SingleThreadedRendezvous, grpc.Future):  # pylint: disable=to
                 return True
 
 
-# TODO: Audit usages of this. The logic is weird. Why not just raise the
-# exception right here?
 def _start_unary_request(request, timeout, request_serializer):
     deadline = _deadline(timeout)
     serialized_request = _common.serialize(request, request_serializer)
@@ -725,8 +723,6 @@ class _SingleThreadedUnaryStreamMultiCallable(grpc.UnaryStreamMultiCallable):
     def __init__(self, channel, managed_call, method, request_serializer,
                  response_deserializer):
         self._channel = channel
-        # TODO: What is managed_call? Does it fit here?
-        self._managed_call = managed_call
         self._method = method
         self._request_serializer = request_serializer
         self._response_deserializer = response_deserializer
@@ -740,17 +736,13 @@ class _SingleThreadedUnaryStreamMultiCallable(grpc.UnaryStreamMultiCallable):
             credentials=None,
             wait_for_ready=None,
             compression=None):
-        # TODO: Dedupe between here and _start_unary_request
         deadline = _deadline(timeout)
         serialized_request = _common.serialize(request, self._request_serializer)
         if serialized_request is None:
             raise  _RPCState((), (), (), grpc.StatusCode.INTERNAL,
                               'Exception serializing request!')
 
-        # TODO: Is the initial_due data still used here?
         state = _RPCState(_UNARY_STREAM_INITIAL_DUE, None, None, None, None)
-        # TODO: Factor this call_credentials logic out somewhere else. This is
-        # duplicated in UnaryUnaryMultiCallable._blocking.
         call_credentials = None if credentials is None else credentials._credentials
         initial_metadata_flags = _InitialMetadataFlags().with_wait_for_ready(
             wait_for_ready)
