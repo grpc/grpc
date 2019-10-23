@@ -94,10 +94,10 @@ class _GenericHandler(grpc.GenericRpcHandler):
 
 
 def get_free_loopback_tcp_port():
-    tcp = socket.socket(socket.AF_INET6)
+    tcp = socket.socket(socket.AF_INET)
     tcp.bind(('', 0))
     address_tuple = tcp.getsockname()
-    return tcp, "[::1]:%s" % (address_tuple[1])
+    return tcp, "localhost:%s" % (address_tuple[1])
 
 
 def create_dummy_channel():
