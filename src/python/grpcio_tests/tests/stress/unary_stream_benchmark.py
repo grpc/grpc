@@ -5,8 +5,6 @@ import subprocess
 import sys
 import time
 import contextlib
-import datetime
-import sys
 
 from src.python.grpcio_tests.tests.stress import unary_stream_benchmark_pb2
 from src.python.grpcio_tests.tests.stress import unary_stream_benchmark_pb2_grpc

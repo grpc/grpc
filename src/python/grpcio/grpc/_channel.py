@@ -445,10 +445,6 @@ class _Rendezvous(_SingleThreadedRendezvous, grpc.Future):  # pylint: disable=to
     and to mediate a bidirection streaming RPC.
     """
 
-    def __init__(self, state, call, response_deserializer, deadline):
-        super(_Rendezvous, self).__init__(state, call, response_deserializer,
-                                          deadline)
-
     def cancelled(self):
         with self._state.condition:
             return self._state.cancelled
@@ -726,7 +722,7 @@ class _UnaryUnaryMultiCallable(grpc.UnaryUnaryMultiCallable):
 class _SingleThreadedUnaryStreamMultiCallable(grpc.UnaryStreamMultiCallable):
 
     # pylint: disable=too-many-arguments
-    def __init__(self, channel, managed_call, method, request_serializer,
+    def __init__(self, channel, method, request_serializer,
                  response_deserializer):
         self._channel = channel
         self._method = method
@@ -746,8 +742,9 @@ class _SingleThreadedUnaryStreamMultiCallable(grpc.UnaryStreamMultiCallable):
         serialized_request = _common.serialize(request,
                                                self._request_serializer)
         if serialized_request is None:
-            raise _RPCState((), (), (), grpc.StatusCode.INTERNAL,
-                            'Exception serializing request!')
+            state = _RPCState((), (), (), grpc.StatusCode.INTERNAL,
+                              'Exception serializing request!')
+            raise _Rendezvous(state, None, None, deadline)
 
         state = _RPCState(_UNARY_STREAM_INITIAL_DUE, None, None, None, None)
         call_credentials = None if credentials is None else credentials._credentials
@@ -1242,9 +1239,8 @@ class Channel(grpc.Channel):
         # remains the default.
         if self._single_threaded_unary_stream:
             return _SingleThreadedUnaryStreamMultiCallable(
-                self._channel, _channel_managed_call_management(
-                    self._call_state), _common.encode(method),
-                request_serializer, response_deserializer)
+                self._channel, _common.encode(method), request_serializer,
+                response_deserializer)
         else:
             return _UnaryStreamMultiCallable(self._channel,
                                              _channel_managed_call_management(
