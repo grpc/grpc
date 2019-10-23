@@ -52,7 +52,6 @@ try:
     from src.python.grpcio_tests.tests.stress import unary_stream_benchmark_pb2
     from src.python.grpcio_tests.tests.stress import unary_stream_benchmark_pb2_grpc
 
-
     _GRPC_CHANNEL_OPTIONS = [
         ('grpc.max_metadata_size', 16 * 1024 * 1024),
         ('grpc.max_receive_message_length', 64 * 1024 * 1024),
