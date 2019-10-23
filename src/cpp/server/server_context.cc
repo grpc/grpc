@@ -74,6 +74,9 @@ class ServerContext::CompletionOp final
   // But this class is not trivially destructible, so must actually call delete
   // before allowing the arena to be freed
   static void operator delete(void* /*ptr*/, std::size_t size) {
+    // Use size to avoid unused-parameter warning since assert seems to be
+    // compiled out and treated as unused in some gcc optimized versions.
+    (void)size;
     assert(size == sizeof(CompletionOp));
   }
 

@@ -35,7 +35,7 @@
                 "include/grpcpp/security/cronet_credentials_impl.h"]
       if "src" in groups:
         out += ["src/cpp/client/cronet_credentials.cc"]
-    return out
+    return sorted(out)
 
   def filter_grpcpp(files):
     return [file for file in files if not file.startswith("include/grpc++")]
