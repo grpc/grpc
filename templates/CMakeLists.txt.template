@@ -614,13 +614,18 @@
     )
   endif()
 
-  foreach(_config gRPCConfig gRPCConfigVersion)
-    configure_file(cmake/<%text>${_config}</%text>.cmake.in
-      <%text>${_config}</%text>.cmake @ONLY)
-    install(FILES <%text>${CMAKE_CURRENT_BINARY_DIR}/${_config}</%text>.cmake
-      DESTINATION <%text>${gRPC_INSTALL_CMAKEDIR}</%text>
-    )
-  endforeach()
+  include(CMakePackageConfigHelpers)
+
+  configure_file(cmake/gRPCConfig.cmake.in
+    gRPCConfig.cmake @ONLY)
+  write_basic_package_version_file(<%text>${CMAKE_CURRENT_BINARY_DIR}/</%text>gRPCConfigVersion.cmake
+    VERSION <%text>${PACKAGE_VERSION}</%text>
+    COMPATIBILITY AnyNewerVersion)
+  install(FILES
+      <%text>${CMAKE_CURRENT_BINARY_DIR}/</%text>gRPCConfig.cmake
+      <%text>${CMAKE_CURRENT_BINARY_DIR}/</%text>gRPCConfigVersion.cmake
+    DESTINATION <%text>${gRPC_INSTALL_CMAKEDIR}</%text>
+  )
 
   install(FILES <%text>${CMAKE_CURRENT_SOURCE_DIR}/etc/roots.pem</%text>
     DESTINATION <%text>${gRPC_INSTALL_SHAREDIR}</%text>)
