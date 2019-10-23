@@ -1953,17 +1953,6 @@ class Compression(enum.IntEnum):
     Gzip = _compression.Gzip
 
 
-class ChannelOptions(object):
-    """Indicates a channel option unique to gRPC Python.
-
-     This enumeration is part of an EXPERIMENTAL API.
-
-     Attributes:
-       SingleThreadedUnaryStream: Perform unary-stream RPCs on a single thread.
-    """
-    SingleThreadedUnaryStream = "SingleThreadedUnaryStream"
-
-
 ###################################  __all__  #################################
 
 __all__ = (
