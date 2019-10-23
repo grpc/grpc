@@ -20,6 +20,7 @@ import threading
 import time
 
 import grpc
+import grpc.experimental
 from grpc import _compression
 from grpc import _common
 from grpc import _grpcio_metadata
@@ -1180,7 +1181,7 @@ def _separate_channel_options(options):
     core_options = []
     python_options = []
     for pair in options:
-        if pair[0] == grpc.ChannelOptions.SingleThreadedUnaryStream:
+        if pair[0] == grpc.experimental.ChannelOptions.SingleThreadedUnaryStream:
             python_options.append(pair)
         else:
             core_options.append(pair)
@@ -1213,7 +1214,7 @@ class Channel(grpc.Channel):
     def _process_python_options(self, python_options):
         """Sets channel attributes according to python-only channel options."""
         for pair in python_options:
-            if pair[0] == grpc.ChannelOptions.SingleThreadedUnaryStream:
+            if pair[0] == grpc.experimental.ChannelOptions.SingleThreadedUnaryStream:
                 self._single_threaded_unary_stream = True
 
     def subscribe(self, callback, try_to_connect=None):

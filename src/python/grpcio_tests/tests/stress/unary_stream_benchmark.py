@@ -15,6 +15,7 @@
 import datetime
 import threading
 import grpc
+import grpc.experimental
 import subprocess
 import sys
 import time
@@ -54,7 +55,7 @@ try:
     _GRPC_CHANNEL_OPTIONS = [
         ('grpc.max_metadata_size', 16 * 1024 * 1024),
         ('grpc.max_receive_message_length', 64 * 1024 * 1024),
-        (grpc.ChannelOptions.SingleThreadedUnaryStream, 1),
+        (grpc.experimental.ChannelOptions.SingleThreadedUnaryStream, 1),
     ]
 
     @contextlib.contextmanager
