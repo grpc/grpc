@@ -12,12 +12,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import asyncio
 import logging
 import unittest
 
 import grpc
 from grpc.experimental import aio
-from tests_aio.unit import test_base
+from tests_aio.unit._test_server import start_test_server
 
 
 class TestAioRpcError(unittest.TestCase):
@@ -59,17 +60,20 @@ class TestAioRpcError(unittest.TestCase):
                       second_aio_rpc_error.__class__)
 
 
-class TestInsecureChannel(test_base.AioTestBase):
+class TestInsecureChannel(unittest.TestCase):
 
     def test_insecure_channel(self):
 
         async def coro():
-            channel = aio.insecure_channel(self.server_target)
+            server_target, unused_server = await start_test_server()
+
+            channel = aio.insecure_channel(server_target)
             self.assertIsInstance(channel, aio.Channel)
 
-        self.loop.run_until_complete(coro())
+        asyncio.get_event_loop().run_until_complete(coro())
 
 
 if __name__ == '__main__':
+    aio.init_grpc_aio()
     logging.basicConfig()
     unittest.main(verbosity=2)
