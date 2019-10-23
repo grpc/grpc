@@ -182,9 +182,9 @@ def get_c_tests(travis, test_lang):
     with open('tools/run_tests/generated/tests.json') as f:
         js = json.load(f)
         return [
-            tgt for tgt in js if tgt['language'] == test_lang and
-            platform_string() in tgt[platforms_str] and
-            not (travis and tgt['flaky'])
+            tgt for tgt in js
+            if tgt['language'] == test_lang and platform_string() in
+            tgt[platforms_str] and not (travis and tgt['flaky'])
         ]
 
 
@@ -1637,7 +1637,8 @@ if any(language.make_options() for language in languages):
         # together, and is only used under gcov. All other configs should build languages individually.
         language_make_options = list(
             set([
-                make_option for lang in languages
+                make_option
+                for lang in languages
                 for make_option in lang.make_options()
             ]))
 
