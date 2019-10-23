@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-if("${gRPC_PROTOBUF_PROVIDER}" STREQUAL "module")
+if(gRPC_PROTOBUF_PROVIDER STREQUAL "module")
   # Building the protobuf tests require gmock what is not part of a standard protobuf checkout.
   # Disable them unless they are explicitly requested from the cmake command line (when we assume
   # gmock is downloaded to the right location inside protobuf).
@@ -45,13 +45,13 @@ if("${gRPC_PROTOBUF_PROVIDER}" STREQUAL "module")
     # For well-known .proto files distributed with protobuf
     set(_gRPC_PROTOBUF_WELLKNOWN_INCLUDE_DIR "${PROTOBUF_ROOT_DIR}/src")
   else()
-      message(WARNING "gRPC_PROTOBUF_PROVIDER is \"module\" but PROTOBUF_ROOT_DIR is wrong")
+    message(WARNING "gRPC_PROTOBUF_PROVIDER is \"module\" but PROTOBUF_ROOT_DIR is wrong")
   endif()
   if(gRPC_INSTALL)
     message(WARNING "gRPC_INSTALL will be forced to FALSE because gRPC_PROTOBUF_PROVIDER is \"module\"")
     set(gRPC_INSTALL FALSE)
   endif()
-elseif("${gRPC_PROTOBUF_PROVIDER}" STREQUAL "package")
+elseif(gRPC_PROTOBUF_PROVIDER STREQUAL "package")
   find_package(Protobuf REQUIRED ${gRPC_PROTOBUF_PACKAGE_TYPE})
 
   # {Protobuf,PROTOBUF}_FOUND is defined based on find_package type ("MODULE" vs "CONFIG").
