@@ -318,7 +318,7 @@ class _SingleThreadedRendezvous(grpc.RpcError, grpc.Call):  # pylint: disable=to
     def code(self):
         """See grpc.Call.code"""
         with self._state.condition:
-            
+
             def _done():
                 return self._state.code is not None
 
@@ -335,41 +335,39 @@ class _SingleThreadedRendezvous(grpc.RpcError, grpc.Call):  # pylint: disable=to
             _common.wait(self._state.condition.wait, _done)
             return _common.decode(self._state.details)
 
-    # TODO: How does this work when the server sends back zero messages?
     def _next(self):
-        # TODO(rbellevi): Take lock.
         # TODO(rbellevi): This conditional block is very similar to the one
         # below. Dedupe.
-        if self._state.code is None:
-            operating = self._call.operate((cygrpc.ReceiveMessageOperation(_EMPTY_FLAGS),), None)
-            if operating:
-                # TODO: Justify this step. Is anyone actually using it?
-                self._state.due.add(cygrpc.OperationType.receive_message)
-        elif self._state.code is grpc.StatusCode.OK:
-            raise StopIteration()
-        else:
-            raise self
+        with self._state.condition:
+            if self._state.code is None:
+                operating = self._call.operate((cygrpc.ReceiveMessageOperation(_EMPTY_FLAGS),), None)
+                if operating:
+                    self._state.due.add(cygrpc.OperationType.receive_message)
+            elif self._state.code is grpc.StatusCode.OK:
+                raise StopIteration()
+            else:
+                raise self
         while True:
-            # TODO: Consider how this interacts with fork support.
             event = self._call.next_event()
-            callbacks = _handle_event(event, self._state, self._response_deserializer)
-            for callback in callbacks:
-                try:
-                    callback()
-                except Exception as e:  # pylint: disable=broad-except
-                    # NOTE(rbellevi): We suppress but log errors here so as not to
-                    # kill the channel spin thread.
-                    logging.error('Exception in callback %s: %s', repr(
-                        callback.func), repr(e))
-            if self._state.response is not None:
-                response = self._state.response
-                self._state.response = None
-                return response
-            elif cygrpc.OperationType.receive_message not in self._state.due:
-                if self._state.code is grpc.StatusCode.OK:
-                    raise StopIteration()
-                elif self._state.code is not None:
-                    raise self
+            with self._state.condition:
+                callbacks = _handle_event(event, self._state, self._response_deserializer)
+                for callback in callbacks:
+                    try:
+                        callback()
+                    except Exception as e:  # pylint: disable=broad-except
+                        # NOTE(rbellevi): We suppress but log errors here so as not to
+                        # kill the channel spin thread.
+                        logging.error('Exception in callback %s: %s', repr(
+                            callback.func), repr(e))
+                if self._state.response is not None:
+                    response = self._state.response
+                    self._state.response = None
+                    return response
+                elif cygrpc.OperationType.receive_message not in self._state.due:
+                    if self._state.code is grpc.StatusCode.OK:
+                        raise StopIteration()
+                    elif self._state.code is not None:
+                        raise self
 
     def __next__(self):
         return self._next()
