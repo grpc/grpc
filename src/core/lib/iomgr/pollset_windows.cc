@@ -224,9 +224,8 @@ static grpc_error* pollset_kick(grpc_pollset* p,
     }
   }
   if (should_kick_global && g_active_poller == NULL) {
-    grpc_pollset_worker* next_global_worker =
-        pop_front_worker(&g_global_root_worker,
-                         GRPC_POLLSET_WORKER_LINK_GLOBAL);
+    grpc_pollset_worker* next_global_worker = pop_front_worker(
+        &g_global_root_worker, GRPC_POLLSET_WORKER_LINK_GLOBAL);
     if (next_global_worker != NULL) {
       next_global_worker->kicked = 1;
       gpr_cv_signal(&next_global_worker->cv);
