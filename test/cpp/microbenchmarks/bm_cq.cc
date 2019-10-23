@@ -65,12 +65,14 @@ static void BM_CreateDestroyCore(benchmark::State& state) {
 }
 BENCHMARK(BM_CreateDestroyCore);
 
-static void DoneWithCompletionOnStack(void* arg,
-                                      grpc_cq_completion* completion) {}
+static void DoneWithCompletionOnStack(void* /*arg*/,
+                                      grpc_cq_completion* /*completion*/) {}
 
 class DummyTag final : public internal::CompletionQueueTag {
  public:
-  bool FinalizeResult(void** tag, bool* status) override { return true; }
+  bool FinalizeResult(void** /*tag*/, bool* /*status*/) override {
+    return true;
+  }
 };
 
 static void BM_Pass1Cpp(benchmark::State& state) {

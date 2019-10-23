@@ -316,6 +316,13 @@ class ClientContext {
   void set_credentials(
       const std::shared_ptr<grpc_impl::CallCredentials>& creds);
 
+  /// EXPERIMENTAL debugging API
+  ///
+  /// Returns the credentials for the client call. This should be used only in
+  /// tests and for diagnostic purposes, and should not be used by application
+  /// logic.
+  std::shared_ptr<grpc_impl::CallCredentials> credentials() { return creds_; }
+
   /// Return the compression algorithm the client call will request be used.
   /// Note that the gRPC runtime may decide to ignore this request, for example,
   /// due to resource constraints.

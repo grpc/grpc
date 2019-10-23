@@ -23,7 +23,7 @@
 
 gpr_atm grpc::testing::interop::g_got_sigint;
 
-static void sigint_handler(int x) {
+static void sigint_handler(int /*x*/) {
   gpr_atm_no_barrier_store(&grpc::testing::interop::g_got_sigint, true);
 }
 

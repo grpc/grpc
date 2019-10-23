@@ -27,9 +27,10 @@
 bool squelch = true;
 bool leak_check = true;
 
-static void dont_log(gpr_log_func_args* args) {}
+static void dont_log(gpr_log_func_args* /*args*/) {}
 
-extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
+extern "C" int LLVMFuzzerTestOneInput(const uint8_t* /*data*/,
+                                      size_t /*size*/) {
   grpc_init();
   if (squelch) gpr_set_log_function(dont_log);
   // TODO(veblush): Convert this to upb.

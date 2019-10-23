@@ -126,19 +126,19 @@ class Resolver : public InternallyRefCounted<Resolver> {
   // TODO(roth): Once we have a C++-like interface for combiners, this
   // API should change to take a RefCountedPtr<>, so that we always take
   // ownership of a new ref.
-  explicit Resolver(grpc_combiner* combiner,
+  explicit Resolver(Combiner* combiner,
                     UniquePtr<ResultHandler> result_handler);
 
   /// Shuts down the resolver.
   virtual void ShutdownLocked() = 0;
 
-  grpc_combiner* combiner() const { return combiner_; }
+  Combiner* combiner() const { return combiner_; }
 
   ResultHandler* result_handler() const { return result_handler_.get(); }
 
  private:
   UniquePtr<ResultHandler> result_handler_;
-  grpc_combiner* combiner_;
+  Combiner* combiner_;
 };
 
 }  // namespace grpc_core

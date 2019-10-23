@@ -50,12 +50,13 @@ const int kReceiveDelayMilliSeconds = 20;
 const int kLargeRequestSize = 271828;
 const int kLargeResponseSize = 314159;
 
-void NoopChecks(const InteropClientContextInspector& inspector,
-                const SimpleRequest* request, const SimpleResponse* response) {}
+void NoopChecks(const InteropClientContextInspector& /*inspector*/,
+                const SimpleRequest* /*request*/,
+                const SimpleResponse* /*response*/) {}
 
 void UnaryCompressionChecks(const InteropClientContextInspector& inspector,
                             const SimpleRequest* request,
-                            const SimpleResponse* response) {
+                            const SimpleResponse* /*response*/) {
   const grpc_compression_algorithm received_compression =
       inspector.GetCallCompressionAlgorithm();
   if (request->response_compressed().value()) {
@@ -1088,10 +1089,12 @@ bool InteropClient::DoChannelSoakTest(int32_t soak_iterations) {
   SimpleResponse response;
   for (int i = 0; i < soak_iterations; ++i) {
     serviceStub_.ResetChannel();
+    gpr_log(GPR_DEBUG, "Starting channel_soak iteration %d...", i);
     if (!PerformLargeUnary(&request, &response)) {
       gpr_log(GPR_ERROR, "channel_soak test failed on iteration %d", i);
       return false;
     }
+    gpr_log(GPR_DEBUG, "channel_soak iteration %d finished", i);
   }
   gpr_log(GPR_DEBUG, "channel_soak test done.");
   return true;

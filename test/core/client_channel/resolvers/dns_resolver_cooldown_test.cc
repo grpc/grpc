@@ -37,14 +37,14 @@ constexpr int kMinResolutionPeriodForCheckMs = 900;
 extern grpc_address_resolver_vtable* grpc_resolve_address_impl;
 static grpc_address_resolver_vtable* default_resolve_address;
 
-static grpc_combiner* g_combiner;
+static grpc_core::Combiner* g_combiner;
 
 static grpc_ares_request* (*g_default_dns_lookup_ares_locked)(
     const char* dns_server, const char* name, const char* default_port,
     grpc_pollset_set* interested_parties, grpc_closure* on_done,
     grpc_core::UniquePtr<grpc_core::ServerAddressList>* addresses,
     bool check_grpclb, char** service_config_json, int query_timeout_ms,
-    grpc_combiner* combiner);
+    grpc_core::Combiner* combiner);
 
 // Counter incremented by test_resolve_address_impl indicating the number of
 // times a system-level resolution has happened.
@@ -62,7 +62,7 @@ static struct iomgr_args {
 // times we incur in a system-level name resolution.
 static void test_resolve_address_impl(const char* name,
                                       const char* default_port,
-                                      grpc_pollset_set* interested_parties,
+                                      grpc_pollset_set* /*interested_parties*/,
                                       grpc_closure* on_done,
                                       grpc_resolved_addresses** addrs) {
   default_resolve_address->resolve_address(
@@ -92,10 +92,10 @@ static grpc_address_resolver_vtable test_resolver = {
 
 static grpc_ares_request* test_dns_lookup_ares_locked(
     const char* dns_server, const char* name, const char* default_port,
-    grpc_pollset_set* interested_parties, grpc_closure* on_done,
+    grpc_pollset_set* /*interested_parties*/, grpc_closure* on_done,
     grpc_core::UniquePtr<grpc_core::ServerAddressList>* addresses,
     bool check_grpclb, char** service_config_json, int query_timeout_ms,
-    grpc_combiner* combiner) {
+    grpc_core::Combiner* combiner) {
   grpc_ares_request* result = g_default_dns_lookup_ares_locked(
       dns_server, name, default_port, g_iomgr_args.pollset_set, on_done,
       addresses, check_grpclb, service_config_json, query_timeout_ms, combiner);
@@ -121,7 +121,7 @@ static gpr_timespec test_deadline(void) {
   return grpc_timeout_seconds_to_deadline(100);
 }
 
-static void do_nothing(void* arg, grpc_error* error) {}
+static void do_nothing(void* /*arg*/, grpc_error* /*error*/) {}
 
 static void iomgr_args_init(iomgr_args* args) {
   gpr_event_init(&args->ev);
@@ -187,7 +187,7 @@ class ResultHandler : public grpc_core::Resolver::ResultHandler {
     state_ = state;
   }
 
-  void ReturnResult(grpc_core::Resolver::Result result) override {
+  void ReturnResult(grpc_core::Resolver::Result /*result*/) override {
     GPR_ASSERT(result_cb_ != nullptr);
     GPR_ASSERT(state_ != nullptr);
     ResultCallback cb = result_cb_;
@@ -271,7 +271,7 @@ static void on_first_resolution(OnResolutionCallbackArg* cb_arg) {
   gpr_mu_unlock(g_iomgr_args.mu);
 }
 
-static void start_test_under_combiner(void* arg, grpc_error* error) {
+static void start_test_under_combiner(void* arg, grpc_error* /*error*/) {
   OnResolutionCallbackArg* res_cb_arg =
       static_cast<OnResolutionCallbackArg*>(arg);
   res_cb_arg->result_handler = grpc_core::New<ResultHandler>();
@@ -309,9 +309,9 @@ static void test_cooldown() {
       grpc_core::New<OnResolutionCallbackArg>();
   res_cb_arg->uri_str = "dns:127.0.0.1";
 
-  GRPC_CLOSURE_SCHED(GRPC_CLOSURE_CREATE(start_test_under_combiner, res_cb_arg,
-                                         grpc_combiner_scheduler(g_combiner)),
-                     GRPC_ERROR_NONE);
+  g_combiner->Run(
+      GRPC_CLOSURE_CREATE(start_test_under_combiner, res_cb_arg, nullptr),
+      GRPC_ERROR_NONE);
   grpc_core::ExecCtx::Get()->Flush();
   poll_pollset_until_request_done(&g_iomgr_args);
   iomgr_args_finish(&g_iomgr_args);

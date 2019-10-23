@@ -146,7 +146,7 @@ cdef class _AioCall:
             grpc_call_unref(call)
             gpr_free(ops)
 
-        if receive_status_on_client_operation.code() == grpc._cygrpc.StatusCode.ok:
+        if receive_status_on_client_operation.code() == StatusCode.ok:
             return receive_message_operation.message()
 
         raise grpc.experimental.aio.AioRpcError(

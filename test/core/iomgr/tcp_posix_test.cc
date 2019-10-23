@@ -472,7 +472,7 @@ static void write_test(size_t num_bytes, size_t slice_size,
   gpr_free(slices);
 }
 
-void on_fd_released(void* arg, grpc_error* errors) {
+void on_fd_released(void* arg, grpc_error* /*errors*/) {
   int* done = static_cast<int*>(arg);
   *done = 1;
   GPR_ASSERT(
@@ -618,7 +618,7 @@ static grpc_endpoint_test_config configs[] = {
     {"tcp/tcp_socketpair", create_fixture_tcp_socketpair, clean_up},
 };
 
-static void destroy_pollset(void* p, grpc_error* error) {
+static void destroy_pollset(void* p, grpc_error* /*error*/) {
   grpc_pollset_destroy(static_cast<grpc_pollset*>(p));
 }
 

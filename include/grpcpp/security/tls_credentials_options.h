@@ -125,7 +125,7 @@ struct TlsCredentialReloadInterface {
   /** A callback that invokes the credential reload. **/
   virtual int Schedule(TlsCredentialReloadArg* arg) = 0;
   /** A callback that cancels a credential reload request. **/
-  virtual void Cancel(TlsCredentialReloadArg* arg) {}
+  virtual void Cancel(TlsCredentialReloadArg* /* arg */) {}
 };
 
 /** TLS credential reloag config, wraps grpc_tls_credential_reload_config. It is
@@ -227,7 +227,7 @@ struct TlsServerAuthorizationCheckInterface {
   /** A callback that invokes the server authorization check. **/
   virtual int Schedule(TlsServerAuthorizationCheckArg* arg) = 0;
   /** A callback that cancels a server authorization check request. **/
-  virtual void Cancel(TlsServerAuthorizationCheckArg* arg) {}
+  virtual void Cancel(TlsServerAuthorizationCheckArg* /* arg */) {}
 };
 
 /** TLS server authorization check config, wraps

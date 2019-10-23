@@ -4,7 +4,7 @@ gRPC in 3 minutes (PHP)
 PREREQUISITES
 -------------
 
-This requires `php` >=5.5, `phpize`, `pecl`, `phpunit`
+This requires `php` >=5.5, `phpize`, `pecl`
 
 INSTALL
 -------

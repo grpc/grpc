@@ -508,10 +508,6 @@ grpc_cc_test(
         "//test/core/util:grpc_test_util",
         "//test/cpp/util:test_util",
     ],
-    data = [
-        "xds_bootstrap.json",
-        "xds_bootstrap_bad.json",
-    ],
     tags = ["no_windows"],  # TODO(jtattermusch): fix test on windows
 )
 

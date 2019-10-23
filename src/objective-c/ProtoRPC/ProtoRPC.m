@@ -27,6 +27,52 @@
 #import <RxLibrary/GRXWriteable.h>
 #import <RxLibrary/GRXWriter+Transformations.h>
 
+@implementation GRPCUnaryResponseHandler {
+  void (^_responseHandler)(GPBMessage *, NSError *);
+  dispatch_queue_t _responseDispatchQueue;
+
+  GPBMessage *_message;
+}
+
+- (nullable instancetype)initWithResponseHandler:(void (^)(GPBMessage *, NSError *))handler
+                           responseDispatchQueue:(dispatch_queue_t)dispatchQueue {
+  if ((self = [super init])) {
+    _responseHandler = handler;
+    if (dispatchQueue == nil) {
+      _responseDispatchQueue = dispatch_get_main_queue();
+    } else {
+      _responseDispatchQueue = dispatchQueue;
+    }
+  }
+  return self;
+}
+
+// Implements GRPCProtoResponseHandler
+- (dispatch_queue_t)dispatchQueue {
+  return _responseDispatchQueue;
+}
+
+- (void)didReceiveInitialMetadata:(NSDictionary *)initialMetadata {
+  _responseHeaders = [initialMetadata copy];
+}
+
+- (void)didReceiveProtoMessage:(GPBMessage *)message {
+  _message = message;
+}
+
+- (void)didCloseWithTrailingMetadata:(NSDictionary *)trailingMetadata error:(NSError *)error {
+  _responseTrailers = [trailingMetadata copy];
+  GPBMessage *message = _message;
+  _message = nil;
+  _responseHandler(message, error);
+}
+
+// Intentional no-op since flow control is N/A in a unary call
+- (void)didWriteMessage {
+}
+
+@end
+
 @implementation GRPCUnaryProtoCall {
   GRPCStreamingProtoCall *_call;
   GPBMessage *_message;

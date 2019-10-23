@@ -55,7 +55,7 @@ class ResultHandler : public grpc_core::Resolver::ResultHandler {
     ev_ = nullptr;
   }
 
-  void ReturnError(grpc_error* error) override {}
+  void ReturnError(grpc_error* /*error*/) override {}
 
  private:
   grpc_core::Resolver::Result expected_;
@@ -63,7 +63,7 @@ class ResultHandler : public grpc_core::Resolver::ResultHandler {
 };
 
 static grpc_core::OrphanablePtr<grpc_core::Resolver> build_fake_resolver(
-    grpc_combiner* combiner,
+    grpc_core::Combiner* combiner,
     grpc_core::FakeResolverResponseGenerator* response_generator,
     grpc_core::UniquePtr<grpc_core::Resolver::ResultHandler> result_handler) {
   grpc_core::ResolverFactory* factory =
@@ -118,7 +118,7 @@ static grpc_core::Resolver::Result create_new_resolver_result() {
 
 static void test_fake_resolver() {
   grpc_core::ExecCtx exec_ctx;
-  grpc_combiner* combiner = grpc_combiner_create();
+  grpc_core::Combiner* combiner = grpc_combiner_create();
   // Create resolver.
   ResultHandler* result_handler = grpc_core::New<ResultHandler>();
   grpc_core::RefCountedPtr<grpc_core::FakeResolverResponseGenerator>

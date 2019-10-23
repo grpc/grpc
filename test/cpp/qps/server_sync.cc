@@ -36,7 +36,7 @@ namespace testing {
 
 class BenchmarkServiceImpl final : public BenchmarkService::Service {
  public:
-  Status UnaryCall(ServerContext* context, const SimpleRequest* request,
+  Status UnaryCall(ServerContext* /*context*/, const SimpleRequest* request,
                    SimpleResponse* response) override {
     auto s = SetResponse(request, response);
     if (!s.ok()) {
@@ -45,7 +45,7 @@ class BenchmarkServiceImpl final : public BenchmarkService::Service {
     return Status::OK;
   }
   Status StreamingCall(
-      ServerContext* context,
+      ServerContext* /*context*/,
       ServerReaderWriter<SimpleResponse, SimpleRequest>* stream) override {
     SimpleRequest request;
     while (stream->Read(&request)) {
@@ -114,7 +114,7 @@ class BenchmarkServiceImpl final : public BenchmarkService::Service {
 
  private:
   template <class R>
-  static Status ClientPull(ServerContext* context, R* stream,
+  static Status ClientPull(ServerContext* /*context*/, R* stream,
                            SimpleResponse* response) {
     SimpleRequest request;
     while (stream->Read(&request)) {
@@ -128,7 +128,7 @@ class BenchmarkServiceImpl final : public BenchmarkService::Service {
     return Status::OK;
   }
   template <class W>
-  static Status ServerPush(ServerContext* context, W* stream,
+  static Status ServerPush(ServerContext* /*context*/, W* stream,
                            const SimpleResponse& response,
                            const std::function<bool()>& done) {
     while ((done == nullptr) || !done()) {
