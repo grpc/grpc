@@ -331,6 +331,8 @@ class _SingleThreadedRendezvous(grpc.RpcError, grpc.Call):  # pylint: disable=to
             _common.wait(self._state.condition.wait, _done)
             return self._state.trailing_metadata
 
+    # TODO(https://github.com/grpc/grpc/issues/20763): Drive RPC progress using
+    # the calling thread.
     def code(self):
         """See grpc.Call.code"""
         with self._state.condition:
