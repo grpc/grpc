@@ -155,8 +155,7 @@ static void windows_resolve_address(const char* name, const char* default_port,
   r->on_done = on_done;
   r->addresses = addresses;
   grpc_core::Executor::Run(&r->request_closure, GRPC_ERROR_NONE,
-                           grpc_core::ExecutorType::RESOLVER,
-                           grpc_core::ExecutorJobType::SHORT);
+                           grpc_core::ExecutorType::RESOLVER);
 }
 
 grpc_address_resolver_vtable grpc_windows_resolver_vtable = {
