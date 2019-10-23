@@ -815,6 +815,13 @@ class PythonLanguage(object):
             os.path.abspath('tools/run_tests/helper_scripts/run_python.sh')
         ]
 
+        if args.iomgr_platform == 'asyncio':
+            if args.compiler not in ('python3.6', 'python3.7', 'python3.8'):
+                raise Exception(
+                    'Compiler %s not supported with IO Manager platform:' % (
+                        args.compiler,
+                        args.iomgr_platform))
+
         config_vars = _PythonConfigVars(
             shell, builder, builder_prefix_arguments, venv_relative_python,
             toolchain, runner, test_command, args.iomgr_platform)
@@ -900,31 +907,6 @@ class PythonLanguage(object):
 
     def __str__(self):
         return 'python'
-
-
-class PythonAioLanguage(PythonLanguage):
-
-    _DEFAULT_COMMAND = 'test_aio'
-    _TEST_SPECS_FILE = 'src/python/grpcio_tests/tests_aio/tests.json'
-    _TEST_FOLDER = 'test_aio'
-
-    def configure(self, config, args):
-        self.config = config
-        self.args = args
-        self.pythons = self._get_pythons(self.args)
-
-    def _get_pythons(self, args):
-        """Get python runtimes to test with, based on current platform, architecture, compiler etc."""
-
-        if args.compiler not in ('python3.6', 'python3.7', 'python3.8'):
-            raise Exception('Compiler %s not supported.' % args.compiler)
-        if args.iomgr_platform not in ('native'):
-            raise Exception(
-                'Iomgr platform %s not supported.' % args.iomgr_platform)
-        return super()._get_pythons(args)
-
-    def __str__(self):
-        return 'python_aio'
 
 
 class RubyLanguage(object):
@@ -1334,7 +1316,6 @@ _LANGUAGES = {
     'php': PhpLanguage(),
     'php7': Php7Language(),
     'python': PythonLanguage(),
-    'python-aio': PythonAioLanguage(),
     'ruby': RubyLanguage(),
     'csharp': CSharpLanguage(),
     'objc': ObjCLanguage(),
