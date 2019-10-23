@@ -21,36 +21,37 @@ import sys
 import time
 import contextlib
 
+_PORT = 5741
+_MESSAGE_SIZE = 4
+_RESPONSE_COUNT = 32 * 1024
+
+_SERVER_CODE = """
+import datetime
+import threading
+import grpc
+from concurrent import futures
+from src.python.grpcio_tests.tests.stress import unary_stream_benchmark_pb2
+from src.python.grpcio_tests.tests.stress import unary_stream_benchmark_pb2_grpc
+
+class Handler(unary_stream_benchmark_pb2_grpc.UnaryStreamBenchmarkServiceServicer):
+
+  def Benchmark(self, request, context):
+    payload = b'\\x00\\x01' * int(request.message_size / 2)
+    for _ in range(request.response_count):
+      yield unary_stream_benchmark_pb2.BenchmarkResponse(response=payload)
+
+
+server = grpc.server(futures.ThreadPoolExecutor(max_workers=1))
+server.add_insecure_port('[::]:%d')
+unary_stream_benchmark_pb2_grpc.add_UnaryStreamBenchmarkServiceServicer_to_server(Handler(), server)
+server.start()
+server.wait_for_termination()
+""" % _PORT
+
 try:
     from src.python.grpcio_tests.tests.stress import unary_stream_benchmark_pb2
     from src.python.grpcio_tests.tests.stress import unary_stream_benchmark_pb2_grpc
 
-    _PORT = 5741
-    _MESSAGE_SIZE = 4
-    _RESPONSE_COUNT = 32 * 1024
-
-    _SERVER_CODE = """
-    import datetime
-    import threading
-    import grpc
-    from concurrent import futures
-    from src.python.grpcio_tests.tests.stress import unary_stream_benchmark_pb2
-    from src.python.grpcio_tests.tests.stress import unary_stream_benchmark_pb2_grpc
-
-    class Handler(unary_stream_benchmark_pb2_grpc.UnaryStreamBenchmarkServiceServicer):
-
-      def Benchmark(self, request, context):
-        payload = b'\\x00\\x01' * int(request.message_size / 2)
-        for _ in range(request.response_count):
-          yield unary_stream_benchmark_pb2.BenchmarkResponse(response=payload)
-
-
-    server = grpc.server(futures.ThreadPoolExecutor(max_workers=1))
-    server.add_insecure_port('[::]:%d')
-    unary_stream_benchmark_pb2_grpc.add_UnaryStreamBenchmarkServiceServicer_to_server(Handler(), server)
-    server.start()
-    server.wait_for_termination()
-    """ % _PORT
 
     _GRPC_CHANNEL_OPTIONS = [
         ('grpc.max_metadata_size', 16 * 1024 * 1024),
