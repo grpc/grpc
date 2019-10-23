@@ -175,7 +175,7 @@ static void destroy_hostbyname_request_locked(
   gpr_free(hr);
 }
 
-static void on_hostbyname_done_locked(void* arg, int status, int timeouts,
+static void on_hostbyname_done_locked(void* arg, int status, int /*timeouts*/,
                                       struct hostent* hostent) {
   grpc_ares_hostbyname_request* hr =
       static_cast<grpc_ares_hostbyname_request*>(arg);
@@ -248,7 +248,7 @@ static void on_hostbyname_done_locked(void* arg, int status, int timeouts,
   destroy_hostbyname_request_locked(hr);
 }
 
-static void on_srv_query_done_locked(void* arg, int status, int timeouts,
+static void on_srv_query_done_locked(void* arg, int status, int /*timeouts*/,
                                      unsigned char* abuf, int alen) {
   grpc_ares_request* r = static_cast<grpc_ares_request*>(arg);
   if (status == ARES_SUCCESS) {
@@ -293,7 +293,7 @@ static void on_srv_query_done_locked(void* arg, int status, int timeouts,
 
 static const char g_service_config_attribute_prefix[] = "grpc_config=";
 
-static void on_txt_done_locked(void* arg, int status, int timeouts,
+static void on_txt_done_locked(void* arg, int status, int /*timeouts*/,
                                unsigned char* buf, int len) {
   char* error_msg;
   grpc_ares_request* r = static_cast<grpc_ares_request*>(arg);
@@ -579,8 +579,8 @@ static bool grpc_ares_maybe_resolve_localhost_manually_locked(
 }
 #else  /* GRPC_ARES_RESOLVE_LOCALHOST_MANUALLY */
 static bool grpc_ares_maybe_resolve_localhost_manually_locked(
-    const char* name, const char* default_port,
-    grpc_core::UniquePtr<grpc_core::ServerAddressList>* addrs) {
+    const char* /*name*/, const char* /*default_port*/,
+    grpc_core::UniquePtr<grpc_core::ServerAddressList>* /*addrs*/) {
   return false;
 }
 #endif /* GRPC_ARES_RESOLVE_LOCALHOST_MANUALLY */
@@ -728,7 +728,7 @@ static void on_dns_lookup_done(void* arg, grpc_error* error) {
 }
 
 static void grpc_resolve_address_invoke_dns_lookup_ares_locked(
-    void* arg, grpc_error* unused_error) {
+    void* arg, grpc_error* /*unused_error*/) {
   grpc_resolve_address_ares_request* r =
       static_cast<grpc_resolve_address_ares_request*>(arg);
   GRPC_CLOSURE_INIT(&r->on_dns_lookup_done_locked, on_dns_lookup_done, r,
