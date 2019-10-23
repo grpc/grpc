@@ -249,7 +249,23 @@ def _consume_request_iterator(request_iterator, state, call, request_serializer,
 
 
 class _SingleThreadedRendezvous(grpc.RpcError, grpc.Call):  # pylint: disable=too-many-ancestors
-    # TODO: Docstring.
+    """An RPC iterator operating entirely on a single thread.
+
+    The __next__ method of _SingleThreadedRendezvous does not depend on the
+    existence of any other thread, including the "channel spin thread".
+    However, this means that its interface is entirely synchronous. So this
+    class cannot fulfill the grpc.Future interface.
+
+    Attributes:
+      _state: An instance of _RPCState.
+      _call: An instance of SegregatedCall or (for subclasses) IntegratedCall.
+        In either case, the _call object is expected to have operate, cancel,
+        and next_event methods.
+      _response_deserializer: A callable taking bytes and return a Python
+        object.
+      _deadline: A float representing the deadline of the RPC in seconds. Or
+        possibly None, to represent an RPC with no deadline at all.
+    """
     def __init__(self, state, call, response_deserializer, deadline):
         super(_SingleThreadedRendezvous, self).__init__()
         self._state = state
@@ -414,6 +430,15 @@ class _SingleThreadedRendezvous(grpc.RpcError, grpc.Call):  # pylint: disable=to
 
 
 class _Rendezvous(_SingleThreadedRendezvous, grpc.Future):  # pylint: disable=too-many-ancestors
+    """An RPC iterator that depends on a channel spin thread.
+
+    This iterator relies upon a per-channel thread running in the background,
+    dequeueing events from the completion queue, and notifying threads waiting
+    on the threading.Condition object in the _RPCState object.
+
+    This extra thread allows _Rendezvous to fulfill the grpc.Future interface
+    and to mediate a bidirection streaming RPC.
+    """
 
     def __init__(self, state, call, response_deserializer, deadline):
         super(_Rendezvous, self).__init__(state, call, response_deserializer, deadline)
