@@ -18,17 +18,16 @@
 
 #include "test/cpp/end2end/test_service_impl.h"
 
-#include <string>
-#include <thread>
-
 #include <grpc/support/log.h>
 #include <grpcpp/security/credentials.h>
 #include <grpcpp/server_context.h>
+#include <gtest/gtest.h>
+
+#include <string>
+#include <thread>
 
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
 #include "test/cpp/util/string_ref_helper.h"
-
-#include <gtest/gtest.h>
 
 using std::chrono::system_clock;
 
@@ -562,10 +561,10 @@ void CallbackTestServiceImpl::Echo(ServerContext* context,
       }
     }
 
-    CallbackTestServiceImpl* service_;
-    ServerContext* ctx_;
-    const EchoRequest* req_;
-    EchoResponse* resp_;
+    CallbackTestServiceImpl* const service_;
+    ServerContext* const ctx_;
+    const EchoRequest* const req_;
+    EchoResponse* const resp_;
     Alarm alarm_;
     bool initial_metadata_sent_{false};
     bool started_{false};
@@ -616,20 +615,17 @@ void CallbackTestServiceImpl::RequestStream(
   class Reactor : public ::grpc::experimental::ServerReadReactor<EchoRequest> {
    public:
     Reactor(ServerContext* ctx, EchoResponse* response, int server_try_cancel)
-        : ctx_(ctx), server_try_cancel_(server_try_cancel) {
+        : ctx_(ctx),
+          response_(response),
+          server_try_cancel_(server_try_cancel) {
       EXPECT_NE(server_try_cancel, CANCEL_BEFORE_PROCESSING);
-
-      // Assign response_ as late as possible to increase likelihood of catching
-      // any races
       response->set_message("");
 
       if (server_try_cancel_ == CANCEL_DURING_PROCESSING) {
         ctx->TryCancel();
         // Don't wait for it here
       }
-      response_ = response;
       StartRead(&request_);
-
       setup_done_ = true;
     }
     void OnDone() override { delete this; }
@@ -667,8 +663,8 @@ void CallbackTestServiceImpl::RequestStream(
       }
     }
 
-    ServerContext* ctx_;
-    EchoResponse* response_;
+    ServerContext* const ctx_;
+    EchoResponse* const response_;
     EchoRequest request_;
     int num_msgs_read_{0};
     int server_try_cancel_;
@@ -704,10 +700,7 @@ void CallbackTestServiceImpl::ResponseStream(
    public:
     Reactor(ServerContext* ctx, const EchoRequest* request,
             int server_try_cancel)
-        : ctx_(ctx), server_try_cancel_(server_try_cancel) {
-      // Assign request_ as late as possible to increase likelihood of
-      // catching any races
-
+        : ctx_(ctx), request_(request), server_try_cancel_(server_try_cancel) {
       server_coalescing_api_ = GetIntValueFromMetadata(
           kServerUseCoalescingApi, ctx->client_metadata(), 0);
       server_responses_to_send_ = GetIntValueFromMetadata(
@@ -717,7 +710,6 @@ void CallbackTestServiceImpl::ResponseStream(
         ctx->TryCancel();
       }
       if (server_try_cancel_ != CANCEL_BEFORE_PROCESSING) {
-        request_ = request;
         if (num_msgs_sent_ < server_responses_to_send_) {
           NextWrite();
         }
@@ -767,8 +759,8 @@ void CallbackTestServiceImpl::ResponseStream(
         StartWrite(&response_);
       }
     }
-    ServerContext* ctx_;
-    const EchoRequest* request_;
+    ServerContext* const ctx_;
+    const EchoRequest* const request_;
     EchoResponse response_;
     int num_msgs_sent_{0};
     int server_try_cancel_;
@@ -854,7 +846,7 @@ void CallbackTestServiceImpl::BidiStream(
       }
     }
 
-    ServerContext* ctx_;
+    ServerContext* const ctx_;
     EchoRequest request_;
     EchoResponse response_;
     int num_msgs_read_{0};
