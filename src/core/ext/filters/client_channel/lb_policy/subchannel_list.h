@@ -282,15 +282,15 @@ SubchannelData<SubchannelListType, SubchannelDataType>::~SubchannelData() {
 
 template <typename SubchannelListType, typename SubchannelDataType>
 void SubchannelData<SubchannelListType, SubchannelDataType>::
-    UnrefSubchannelLocked(const char* /*reason*/) {
+    UnrefSubchannelLocked(const char* reason) {
   if (subchannel_ != nullptr) {
     if (GRPC_TRACE_FLAG_ENABLED(*subchannel_list_->tracer())) {
       gpr_log(GPR_INFO,
               "[%s %p] subchannel list %p index %" PRIuPTR " of %" PRIuPTR
-              " (subchannel %p): unreffing subchannel",
+              " (subchannel %p): unreffing subchannel (%s)",
               subchannel_list_->tracer()->name(), subchannel_list_->policy(),
               subchannel_list_, Index(), subchannel_list_->num_subchannels(),
-              subchannel_.get());
+              subchannel_.get(), reason);
     }
     subchannel_.reset();
   }
