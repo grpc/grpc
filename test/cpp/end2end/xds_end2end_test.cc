@@ -2343,14 +2343,17 @@ INSTANTIATE_TEST_SUITE_P(UsesXdsResolver, LocalityMapTest, ::testing::Bool());
 
 INSTANTIATE_TEST_SUITE_P(UsesXdsResolver, FailoverTest, ::testing::Bool());
 
+// Comment out this test suite because the ports size too large, should be less
+// than 200.
 // INSTANTIATE_TEST_SUITE_P(UsesXdsResolver, DropTest, ::testing::Bool());
 
 // Fallback does not work with xds resolver.
 INSTANTIATE_TEST_SUITE_P(UsesXdsResolver, FallbackTest,
                          ::testing::Values(false));
-
-INSTANTIATE_TEST_SUITE_P(UsesXdsResolver, BalancerUpdateTest,
-                         ::testing::Bool());
+// Comment out this test suite because the ports size too large, should be less
+// than 200.
+// INSTANTIATE_TEST_SUITE_P(UsesXdsResolver, BalancerUpdateTest,
+//                         ::testing::Bool());
 
 INSTANTIATE_TEST_SUITE_P(UsesXdsResolver, ClientLoadReportingTest,
                          ::testing::Bool());
