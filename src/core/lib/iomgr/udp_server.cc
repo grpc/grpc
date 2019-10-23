@@ -260,7 +260,7 @@ static void finish_shutdown(grpc_udp_server* s) {
   grpc_core::Delete(s);
 }
 
-static void destroyed_port(void* server, grpc_error* error) {
+static void destroyed_port(void* server, grpc_error* /*error*/) {
   grpc_udp_server* s = static_cast<grpc_udp_server*>(server);
   gpr_mu_lock(&s->mu);
   s->destroyed_ports++;
@@ -495,7 +495,8 @@ void GrpcUdpListener::OnRead(grpc_error* error, void* do_read_arg) {
 
 // static
 // Wrapper of grpc_fd_notify_on_write() with a grpc_closure callback interface.
-void GrpcUdpListener::fd_notify_on_write_wrapper(void* arg, grpc_error* error) {
+void GrpcUdpListener::fd_notify_on_write_wrapper(void* arg,
+                                                 grpc_error* /*error*/) {
   GrpcUdpListener* sp = static_cast<GrpcUdpListener*>(arg);
   gpr_mu_lock(sp->mutex());
   if (!sp->notify_on_write_armed_) {
