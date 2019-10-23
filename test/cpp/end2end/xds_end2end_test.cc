@@ -2355,11 +2355,15 @@ INSTANTIATE_TEST_SUITE_P(UsesXdsResolver, FallbackTest,
 // INSTANTIATE_TEST_SUITE_P(UsesXdsResolver, BalancerUpdateTest,
 //                         ::testing::Bool());
 
-INSTANTIATE_TEST_SUITE_P(UsesXdsResolver, ClientLoadReportingTest,
-                         ::testing::Bool());
+// Comment out this test suite because the ports size too large, should be less
+// than 200.
+// INSTANTIATE_TEST_SUITE_P(UsesXdsResolver, ClientLoadReportingTest,
+//                         ::testing::Bool());
 
-INSTANTIATE_TEST_SUITE_P(UsesXdsResolver, ClientLoadReportingWithDropTest,
-                         ::testing::Bool());
+// Comment out this test suite because the ports size too large, should be less
+// than 200.
+//INSTANTIATE_TEST_SUITE_P(UsesXdsResolver, ClientLoadReportingWithDropTest,
+//                         ::testing::Bool());
 
 }  // namespace
 }  // namespace testing
