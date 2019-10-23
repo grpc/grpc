@@ -1960,7 +1960,7 @@ class ChannelOptions(object):
 
      Attributes:
        SingleThreadedUnaryStream: Perform unary-stream RPCs on a single thread.
-  """
+    """
     SingleThreadedUnaryStream = "SingleThreadedUnaryStream"
 
 
