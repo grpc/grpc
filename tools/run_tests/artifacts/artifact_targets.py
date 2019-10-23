@@ -153,6 +153,13 @@ class PythonArtifact:
             environ['GRPC_BUILD_GRPCIO_TOOLS_DEPENDENTS'] = 'TRUE'
             environ['GRPC_BUILD_MANYLINUX_WHEEL'] = 'TRUE'
 
+            if self.platform == 'manylinux1':
+                # manylinux1 currently has too old version of gcc
+                # so we need to use this workaround to avoid
+                # the "SSE2 instruction set not enabled" boringssl build error
+                # https://gcc.gnu.org/ml/gcc-patches/2013-04/msg00740.html
+                environ['CFLAGS'] += ' -msse2'
+
             return create_docker_jobspec(
                 self.name,
                 'tools/dockerfile/grpc_artifact_python_%s_%s' % (self.platform,
@@ -372,18 +379,21 @@ def targets():
         PythonArtifact('manylinux1', 'x86', 'cp36-cp36m'),
         PythonArtifact('manylinux1', 'x86', 'cp37-cp37m'),
         PythonArtifact('manylinux1', 'x86', 'cp38-cp38'),
+        PythonArtifact('manylinux2010', 'x86', 'cp27-cp27m'),
+        PythonArtifact('manylinux2010', 'x86', 'cp27-cp27mu'),
+        PythonArtifact('manylinux2010', 'x86', 'cp34-cp34m'),
+        PythonArtifact('manylinux2010', 'x86', 'cp35-cp35m'),
+        PythonArtifact('manylinux2010', 'x86', 'cp36-cp36m'),
+        PythonArtifact('manylinux2010', 'x86', 'cp37-cp37m'),
+        PythonArtifact('manylinux2010', 'x86', 'cp38-cp38'),
         PythonArtifact('linux_extra', 'armv7', '2.7'),
         PythonArtifact('linux_extra', 'armv7', '3.4'),
         PythonArtifact('linux_extra', 'armv7', '3.5'),
         PythonArtifact('linux_extra', 'armv7', '3.6'),
-        PythonArtifact('linux_extra', 'armv7', '3.7'),
-        PythonArtifact('linux_extra', 'armv7', '3.8'),
         PythonArtifact('linux_extra', 'armv6', '2.7'),
         PythonArtifact('linux_extra', 'armv6', '3.4'),
         PythonArtifact('linux_extra', 'armv6', '3.5'),
         PythonArtifact('linux_extra', 'armv6', '3.6'),
-        PythonArtifact('linux_extra', 'armv6', '3.7'),
-        PythonArtifact('linux_extra', 'armv6', '3.8'),
         PythonArtifact('manylinux1', 'x64', 'cp27-cp27m'),
         PythonArtifact('manylinux1', 'x64', 'cp27-cp27mu'),
         PythonArtifact('manylinux1', 'x64', 'cp34-cp34m'),

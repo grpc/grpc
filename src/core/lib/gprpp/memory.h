@@ -107,7 +107,7 @@ class Allocator {
   pointer address(reference x) const { return &x; }
   const_pointer address(const_reference x) const { return &x; }
   pointer allocate(std::size_t n,
-                   std::allocator<void>::const_pointer hint = nullptr) {
+                   std::allocator<void>::const_pointer /*hint*/ = nullptr) {
     return static_cast<pointer>(gpr_malloc(n * sizeof(T)));
   }
   void deallocate(T* p, std::size_t /* n */) { gpr_free(p); }
@@ -132,7 +132,7 @@ bool operator==(Allocator<T> const&, Allocator<U> const&) noexcept {
 }
 
 template <class T, class U>
-bool operator!=(Allocator<T> const& x, Allocator<U> const& y) noexcept {
+bool operator!=(Allocator<T> const& /*x*/, Allocator<U> const& /*y*/) noexcept {
   return false;
 }
 

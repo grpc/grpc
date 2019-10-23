@@ -313,7 +313,7 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
     // TODO(roth): Once we have a C++-like interface for combiners, this
     // API should change to take a smart pointer that does pass ownership
     // of a reference.
-    grpc_combiner* combiner = nullptr;
+    Combiner* combiner = nullptr;
     /// Channel control helper.
     /// Note: LB policies MUST NOT call any method on the helper from
     /// their constructor.
@@ -383,7 +383,7 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
   };
 
  protected:
-  grpc_combiner* combiner() const { return combiner_; }
+  Combiner* combiner() const { return combiner_; }
 
   // Note: LB policies MUST NOT call any method on the helper from their
   // constructor.
@@ -396,7 +396,7 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
 
  private:
   /// Combiner under which LB policy actions take place.
-  grpc_combiner* combiner_;
+  Combiner* combiner_;
   /// Owned pointer to interested parties in load balancing decisions.
   grpc_pollset_set* interested_parties_;
   /// Channel control helper.

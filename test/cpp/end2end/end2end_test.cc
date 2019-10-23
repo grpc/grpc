@@ -1884,6 +1884,7 @@ TEST_P(SecureEnd2endTest, CallCredentialsInterceptionWithSetCredentials) {
   std::shared_ptr<CallCredentials> creds1 =
       GoogleIAMCredentials("wrong_token", "wrong_selector");
   context.set_credentials(creds1);
+  EXPECT_EQ(context.credentials(), creds1);
   request.set_message("Hello");
   request.mutable_param()->set_echo_metadata(true);
 
@@ -1907,9 +1908,11 @@ TEST_P(SecureEnd2endTest, OverridePerCallCredentials) {
   std::shared_ptr<CallCredentials> creds1 =
       GoogleIAMCredentials("fake_token1", "fake_selector1");
   context.set_credentials(creds1);
+  EXPECT_EQ(context.credentials(), creds1);
   std::shared_ptr<CallCredentials> creds2 =
       GoogleIAMCredentials("fake_token2", "fake_selector2");
   context.set_credentials(creds2);
+  EXPECT_EQ(context.credentials(), creds2);
   request.set_message("Hello");
   request.mutable_param()->set_echo_metadata(true);
 

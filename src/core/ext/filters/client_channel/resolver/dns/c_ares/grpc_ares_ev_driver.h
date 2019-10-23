@@ -43,7 +43,7 @@ ares_channel* grpc_ares_ev_driver_get_channel_locked(
 grpc_error* grpc_ares_ev_driver_create_locked(grpc_ares_ev_driver** ev_driver,
                                               grpc_pollset_set* pollset_set,
                                               int query_timeout_ms,
-                                              grpc_combiner* combiner,
+                                              grpc_core::Combiner* combiner,
                                               grpc_ares_request* request);
 
 /* Called back when all DNS lookups have completed. */
@@ -90,12 +90,12 @@ class GrpcPolledFdFactory {
   /* Creates a new wrapped fd for the current platform */
   virtual GrpcPolledFd* NewGrpcPolledFdLocked(
       ares_socket_t as, grpc_pollset_set* driver_pollset_set,
-      grpc_combiner* combiner) = 0;
+      Combiner* combiner) = 0;
   /* Optionally configures the ares channel after creation */
   virtual void ConfigureAresChannelLocked(ares_channel channel) = 0;
 };
 
-UniquePtr<GrpcPolledFdFactory> NewGrpcPolledFdFactory(grpc_combiner* combiner);
+UniquePtr<GrpcPolledFdFactory> NewGrpcPolledFdFactory(Combiner* combiner);
 
 }  // namespace grpc_core
 

@@ -28,7 +28,7 @@
       if lib.name in expect_libs:
         for group in groups:
           out += lib.get(group, [])
-    return out
+    return sorted(out)
 
   def grpc_private_files(libs):
     out = grpc_lib_files(libs, ("grpc", "gpr"), ("headers", "src"))

@@ -78,7 +78,7 @@ void SockaddrResolver::StartLocked() {
 // Factory
 //
 
-void DoNothing(void* ignored) {}
+void DoNothing(void* /*ignored*/) {}
 
 bool ParseUri(const grpc_uri* uri,
               bool parse(const grpc_uri* uri, grpc_resolved_address* dst),
@@ -160,7 +160,7 @@ class UnixResolverFactory : public ResolverFactory {
     return CreateSockaddrResolver(std::move(args), grpc_parse_unix);
   }
 
-  UniquePtr<char> GetDefaultAuthority(grpc_uri* uri) const override {
+  UniquePtr<char> GetDefaultAuthority(grpc_uri* /*uri*/) const override {
     return UniquePtr<char>(gpr_strdup("localhost"));
   }
 

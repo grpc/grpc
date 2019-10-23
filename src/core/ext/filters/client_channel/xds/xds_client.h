@@ -71,7 +71,7 @@ class XdsClient : public InternallyRefCounted<XdsClient> {
 
   // If *error is not GRPC_ERROR_NONE after construction, then there was
   // an error initializing the client.
-  XdsClient(grpc_combiner* combiner, grpc_pollset_set* interested_parties,
+  XdsClient(Combiner* combiner, grpc_pollset_set* interested_parties,
             StringView server_name,
             UniquePtr<ServiceConfigWatcherInterface> watcher,
             const grpc_channel_args& channel_args, grpc_error** error);
@@ -100,8 +100,10 @@ class XdsClient : public InternallyRefCounted<XdsClient> {
                                EndpointWatcherInterface* watcher);
 
   // Adds and removes client stats for cluster.
-  void AddClientStats(StringView cluster, XdsClientStats* client_stats);
-  void RemoveClientStats(StringView cluster, XdsClientStats* client_stats);
+  void AddClientStats(StringView lrs_server, StringView cluster,
+                      XdsClientStats* client_stats);
+  void RemoveClientStats(StringView lrs_server, StringView cluster,
+                         XdsClientStats* client_stats);
 
   // Resets connection backoff state.
   void ResetBackoff();
@@ -194,7 +196,7 @@ class XdsClient : public InternallyRefCounted<XdsClient> {
 
   UniquePtr<char> build_version_;
 
-  grpc_combiner* combiner_;
+  Combiner* combiner_;
   grpc_pollset_set* interested_parties_;
 
   UniquePtr<XdsBootstrap> bootstrap_;
@@ -208,8 +210,9 @@ class XdsClient : public InternallyRefCounted<XdsClient> {
   // The channel for communicating with the xds server.
   OrphanablePtr<ChannelState> chand_;
 
-  // TODO(roth): When we need support for multiple clusters, replace
-  // cluster_state_ with a map keyed by cluster name.
+  // TODO(juanlishen): As part of adding CDS support, replace
+  // cluster_state_ with a map keyed by cluster name, so that we can
+  // support multiple clusters for both CDS and EDS.
   ClusterState cluster_state_;
   // Map<StringView /*cluster*/, ClusterState, StringLess> clusters_;
 

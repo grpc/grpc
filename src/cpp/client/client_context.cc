@@ -39,8 +39,8 @@ class DefaultGlobalClientCallbacks final
     : public ClientContext::GlobalCallbacks {
  public:
   ~DefaultGlobalClientCallbacks() override {}
-  void DefaultConstructor(ClientContext* context) override {}
-  void Destructor(ClientContext* context) override {}
+  void DefaultConstructor(ClientContext* /*context*/) override {}
+  void Destructor(ClientContext* /*context*/) override {}
 };
 
 static grpc::internal::GrpcLibraryInitializer g_gli_initializer;

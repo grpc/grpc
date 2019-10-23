@@ -1741,9 +1741,8 @@ grpc_error* grpc_chttp2_header_parser_parse(void* hpack_parser,
              however -- it might be that we receive a RST_STREAM following this
              and can avoid the extra write */
           GRPC_CHTTP2_STREAM_REF(s, "final_rst");
-          GRPC_CLOSURE_SCHED(
-              GRPC_CLOSURE_CREATE(force_client_rst_stream, s,
-                                  grpc_combiner_finally_scheduler(t->combiner)),
+          t->combiner->FinallyRun(
+              GRPC_CLOSURE_CREATE(force_client_rst_stream, s, nullptr),
               GRPC_ERROR_NONE);
         }
         grpc_chttp2_mark_stream_closed(t, s, true, false, GRPC_ERROR_NONE);
