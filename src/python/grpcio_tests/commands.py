@@ -127,7 +127,7 @@ class TestAio(setuptools.Command):
         import tests
         loader = tests.Loader()
         loader.loadTestsFromNames(['tests_aio'])
-        runner = tests.Runner()
+        runner = tests.Runner(dedicated_threads=False)
         result = runner.run(loader.suite)
         if not result.wasSuccessful():
             sys.exit('Test failure')
