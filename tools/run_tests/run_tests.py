@@ -721,7 +721,7 @@ class PythonLanguage(object):
 
     def test_specs(self):
         # load list of known test suites
-        with open(self._TEST_SPECS_FILE) as tests_json_file:
+        with open(self._TEST_SPECS_FILE[self.args.iomgr_platform]) as tests_json_file:
             tests_json = json.load(tests_json_file)
         environment = dict(_FORCE_ENVIRON_FOR_WRAPPERS)
         return [
@@ -731,7 +731,7 @@ class PythonLanguage(object):
                 environ=dict(
                     list(environment.items()) + [(
                         'GRPC_PYTHON_TESTRUNNER_FILTER', str(suite_name))]),
-                shortname='%s.%s.%s' % (config.name, self._TEST_FOLDER,
+                    shortname='%s.%s.%s' % (config.name, self._TEST_FOLDER[self.args.iomgr_platform],
                                         suite_name),
             ) for suite_name in tests_json for config in self.pythons
         ]
@@ -1502,7 +1502,7 @@ argp.add_argument(
 )
 argp.add_argument(
     '--iomgr_platform',
-    choices=['native', 'uv', 'gevent'],
+    choices=['native', 'uv', 'gevent', 'asyncio'],
     default='native',
     help='Selects iomgr platform to build on')
 argp.add_argument(
