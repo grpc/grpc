@@ -1176,6 +1176,18 @@ def _augment_options(base_options, compression):
     ),)
 
 
+def _separate_channel_options(options):
+    """Separates core channel options from Python channel options."""
+    core_options = []
+    python_options = []
+    for pair in options:
+        if pair[0] == grpc.ChannelOptions.SingleThreadedUnaryStream:
+            python_options.append(pair)
+        else:
+            core_options.append(pair)
+    return python_options, core_options
+
+
 class Channel(grpc.Channel):
     """A cygrpc.Channel-backed implementation of grpc.Channel."""
 
@@ -1189,12 +1201,21 @@ class Channel(grpc.Channel):
           compression: An optional value indicating the compression method to be
             used over the lifetime of the channel.
         """
+        python_options, core_options = _separate_channel_options(options)
+        self._single_threaded_unary_stream = False
+        self._process_python_options(python_options)
         self._channel = cygrpc.Channel(
-            _common.encode(target), _augment_options(options, compression),
+            _common.encode(target), _augment_options(core_options, compression),
             credentials)
         self._call_state = _ChannelCallState(self._channel)
         self._connectivity_state = _ChannelConnectivityState(self._channel)
         cygrpc.fork_register_channel(self)
+
+    def _process_python_options(self, python_options):
+        """Sets channel attributes according to python-only channel options."""
+        for pair in python_options:
+            if pair[0] == grpc.ChannelOptions.SingleThreadedUnaryStream:
+                self._single_threaded_unary_stream = True
 
     def subscribe(self, callback, try_to_connect=None):
         _subscribe(self._connectivity_state, callback, try_to_connect)
@@ -1214,12 +1235,18 @@ class Channel(grpc.Channel):
                      method,
                      request_serializer=None,
                      response_deserializer=None):
-        # return _UnaryStreamMultiCallable(
-        #     self._channel, _channel_managed_call_management(self._call_state),
-        #     _common.encode(method), request_serializer, response_deserializer)
-        return _SingleThreadedUnaryStreamMultiCallable(
-            self._channel, _channel_managed_call_management(self._call_state),
-            _common.encode(method), request_serializer, response_deserializer)
+        # NOTE(rbellevi): Benchmarks have shown that running a unary-stream RPC
+        # on a single Python thread results in an appreciable speed-up. However,
+        # due to slight differences in capability, the multi-threaded variant'
+        # remains the default.
+        if self._single_threaded_unary_stream:
+            return _SingleThreadedUnaryStreamMultiCallable(
+                self._channel, _channel_managed_call_management(self._call_state),
+                _common.encode(method), request_serializer, response_deserializer)
+        else:
+            return _UnaryStreamMultiCallable(
+                self._channel, _channel_managed_call_management(self._call_state),
+                _common.encode(method), request_serializer, response_deserializer)
 
     def stream_unary(self,
                      method,
