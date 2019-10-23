@@ -66,6 +66,8 @@ grpc_slice GetSystemRootCerts() {
         grpc_load_file(kLinuxCertFiles[i], 1, &valid_bundle_slice);
     if (error == GRPC_ERROR_NONE) {
       return valid_bundle_slice;
+    } else {
+      GRPC_ERROR_UNREF(error);
     }
   }
   return grpc_empty_slice();
