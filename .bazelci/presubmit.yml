@@ -1,7 +1,7 @@
 # Configuration file for Bazel CI [1].
 #
 # Also testing on Bazel CI in addition of our normal CI workflow
-# ensures that gRPC is tested agains Bazel@HEAD and stays compatible
+# ensures that gRPC is tested against Bazel@HEAD and stays compatible
 # with the latest release.
 #
 # See [2,3] in case you have questions.
