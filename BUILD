@@ -76,7 +76,7 @@ g_stands_for = "game"
 
 core_version = "7.0.0"
 
-version = "1.25.0-dev"
+version = "1.25.0-pre1"
 
 GPR_PUBLIC_HDRS = [
     "include/grpc/support/alloc.h",
