@@ -817,12 +817,6 @@ class PythonLanguage(object):
             os.path.abspath('tools/run_tests/helper_scripts/run_python.sh')
         ]
 
-        if args.iomgr_platform == 'asyncio':
-            if args.compiler not in ('python3.6', 'python3.7', 'python3.8'):
-                raise Exception(
-                    'Compiler %s not supported with IO Manager platform:' %
-                    (args.compiler, args.iomgr_platform))
-
         config_vars = _PythonConfigVars(
             shell, builder, builder_prefix_arguments, venv_relative_python,
             toolchain, runner, test_command, args.iomgr_platform)
@@ -867,15 +861,25 @@ class PythonLanguage(object):
         pypy32_config = _pypy_config_generator(
             name='pypy3', major='3', config_vars=config_vars)
 
+        if args.iomgr_platform == 'asyncio':
+            if args.compiler not in ('python3.6', 'python3.7', 'python3.8'):
+                raise Exception(
+                    'Compiler %s not supported with IO Manager platform: %s' %
+                    (args.compiler, args.iomgr_platform))
+
+
         if args.compiler == 'default':
             if os.name == 'nt':
                 return (python35_config,)
             else:
-                return (
-                    python27_config,
-                    python36_config,
-                    python37_config,
-                )
+                if args.iomgr_platform == 'asyncio':
+                    return (python36_config,)
+                else:
+                    return (
+                        python27_config,
+                        python36_config,
+                        python37_config,
+                    )
         elif args.compiler == 'python2.7':
             return (python27_config,)
         elif args.compiler == 'python3.4':
