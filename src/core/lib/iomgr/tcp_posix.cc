@@ -202,7 +202,9 @@ static void run_poller(void* bp, grpc_error* /*error_ignored*/) {
     if (GRPC_TRACE_FLAG_ENABLED(grpc_tcp_trace)) {
       gpr_log(GPR_INFO, "BACKUP_POLLER:%p reschedule", p);
     }
-    GRPC_CLOSURE_SCHED(&p->run_poller, GRPC_ERROR_NONE);
+    grpc_core::Executor::Run(&p->run_poller, GRPC_ERROR_NONE,
+                             grpc_core::ExecutorType::DEFAULT,
+                             grpc_core::ExecutorJobType::LONG);
   }
 }
 
@@ -241,10 +243,10 @@ static void cover_self(grpc_tcp* tcp) {
     }
     grpc_pollset_init(BACKUP_POLLER_POLLSET(p), &p->pollset_mu);
     gpr_atm_rel_store(&g_backup_poller, (gpr_atm)p);
-    GRPC_CLOSURE_SCHED(GRPC_CLOSURE_INIT(&p->run_poller, run_poller, p,
-                                         grpc_core::Executor::Scheduler(
-                                             grpc_core::ExecutorJobType::LONG)),
-                       GRPC_ERROR_NONE);
+    grpc_core::Executor::Run(
+        GRPC_CLOSURE_INIT(&p->run_poller, run_poller, p, nullptr),
+        GRPC_ERROR_NONE, grpc_core::ExecutorType::DEFAULT,
+        grpc_core::ExecutorJobType::LONG);
   } else {
     while ((p = (backup_poller*)gpr_atm_acq_load(&g_backup_poller)) ==
            nullptr) {

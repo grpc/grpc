@@ -448,7 +448,9 @@ void GrpcUdpListener::do_read(void* arg, grpc_error* error) {
   if (!sp->already_shutdown_ && sp->udp_handler_->Read()) {
     /* There maybe more packets to read. Schedule read_more_cb_ closure to run
      * after finishing this event loop. */
-    GRPC_CLOSURE_SCHED(&sp->do_read_closure_, GRPC_ERROR_NONE);
+    grpc_core::Executor::Run(&sp->do_read_closure_, GRPC_ERROR_NONE,
+                             grpc_core::ExecutorType::DEFAULT,
+                             grpc_core::ExecutorJobType::LONG);
   } else {
     /* Finish reading all the packets, re-arm the notification event so we can
      * get another chance to read. Or fd already shutdown, re-arm to get a
@@ -481,10 +483,10 @@ void GrpcUdpListener::OnRead(grpc_error* error, void* do_read_arg) {
   if (udp_handler_->Read()) {
     /* There maybe more packets to read. Schedule read_more_cb_ closure to run
      * after finishing this event loop. */
-    GRPC_CLOSURE_INIT(
-        &do_read_closure_, do_read, do_read_arg,
-        grpc_core::Executor::Scheduler(grpc_core::ExecutorJobType::LONG));
-    GRPC_CLOSURE_SCHED(&do_read_closure_, GRPC_ERROR_NONE);
+    GRPC_CLOSURE_INIT(&do_read_closure_, do_read, do_read_arg, nullptr);
+    grpc_core::Executor::Run(&do_read_closure_, GRPC_ERROR_NONE,
+                             grpc_core::ExecutorType::DEFAULT,
+                             grpc_core::ExecutorJobType::LONG);
   } else {
     /* Finish reading all the packets, re-arm the notification event so we can
      * get another chance to read. Or fd already shutdown, re-arm to get a
@@ -544,11 +546,11 @@ void GrpcUdpListener::OnCanWrite(grpc_error* error, void* do_write_arg) {
   }
 
   /* Schedule actual write in another thread. */
-  GRPC_CLOSURE_INIT(
-      &do_write_closure_, do_write, do_write_arg,
-      grpc_core::Executor::Scheduler(grpc_core::ExecutorJobType::LONG));
+  GRPC_CLOSURE_INIT(&do_write_closure_, do_write, do_write_arg, nullptr);
 
-  GRPC_CLOSURE_SCHED(&do_write_closure_, GRPC_ERROR_NONE);
+  grpc_core::Executor::Run(&do_write_closure_, GRPC_ERROR_NONE,
+                           grpc_core::ExecutorType::DEFAULT,
+                           grpc_core::ExecutorJobType::LONG);
 }
 
 static int add_socket_to_server(grpc_udp_server* s, int fd,
