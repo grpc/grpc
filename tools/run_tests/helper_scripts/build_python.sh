@@ -122,7 +122,7 @@ export LANG=en_US.UTF-8
 
 # Allow build_ext to build C/C++ files in parallel
 # by enabling a monkeypatch. It speeds up the build a lot.
-export GRPC_PYTHON_BUILD_EXT_COMPILER_JOBS=4
+export GRPC_PYTHON_BUILD_EXT_COMPILER_JOBS=${GRPC_PYTHON_BUILD_EXT_COMPILER_JOBS:-4}
 
 # If ccache is available on Linux, use it.
 if [ "$(is_linux)" ]; then
