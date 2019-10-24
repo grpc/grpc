@@ -19,6 +19,7 @@ import unittest
 import grpc
 from grpc.experimental import aio
 from tests_aio.unit._test_server import start_test_server
+from tests_aio.unit._test_base import AioTestBase
 
 
 class TestAioRpcError(unittest.TestCase):
@@ -60,7 +61,7 @@ class TestAioRpcError(unittest.TestCase):
                       second_aio_rpc_error.__class__)
 
 
-class TestInsecureChannel(unittest.TestCase):
+class TestInsecureChannel(AioTestBase):
 
     def test_insecure_channel(self):
 
@@ -70,7 +71,7 @@ class TestInsecureChannel(unittest.TestCase):
             channel = aio.insecure_channel(server_target)
             self.assertIsInstance(channel, aio.Channel)
 
-        asyncio.get_event_loop().run_until_complete(coro())
+        self.loop.run_until_complete(coro())
 
 
 if __name__ == '__main__':
