@@ -156,6 +156,25 @@ void WriteBootstrapFiles() {
   g_bootstrap_file_bad = bootstrap_file;
 }
 
+// Helper class to minimize the number of unique ports we use for this test.
+class PortSaver {
+ public:
+  int GetPort() {
+    if (idx_ >= ports_.size()) {
+      ports_.push_back(grpc_pick_unused_port_or_die());
+    }
+    return ports_[idx_++];
+  }
+
+  void Reset() { idx_ = 0; }
+
+ private:
+  std::vector<int> ports_;
+  size_t idx_ = 0;
+};
+
+PortSaver* g_port_saver = nullptr;
+
 template <typename ServiceType>
 class CountedService : public ServiceType {
  public:
@@ -591,6 +610,7 @@ class XdsEnd2endTest : public ::testing::TestWithParam<bool> {
 
   void SetUp() override {
     gpr_setenv("GRPC_XDS_BOOTSTRAP", g_bootstrap_file);
+    g_port_saver->Reset();
     response_generator_ =
         grpc_core::MakeRefCounted<grpc_core::FakeResolverResponseGenerator>();
     lb_channel_response_generator_ =
@@ -846,7 +866,7 @@ class XdsEnd2endTest : public ::testing::TestWithParam<bool> {
 
   class ServerThread {
    public:
-    ServerThread() : port_(grpc_pick_unused_port_or_die()) {}
+    ServerThread() : port_(g_port_saver->GetPort()) {}
     virtual ~ServerThread(){};
 
     void Start(const grpc::string& server_host) {
@@ -1077,7 +1097,7 @@ TEST_P(BasicTest, AllServersUnreachableFailFast) {
   const size_t kNumUnreachableServers = 5;
   std::vector<int> ports;
   for (size_t i = 0; i < kNumUnreachableServers; ++i) {
-    ports.push_back(grpc_pick_unused_port_or_die());
+    ports.push_back(g_port_saver->GetPort());
   }
   AdsServiceImpl::ResponseArgs args({
       {"locality0", ports},
@@ -1863,7 +1883,7 @@ TEST_P(FallbackTest, FallbackEarlyWhenBalancerChannelFails) {
   ResetStub(kFallbackTimeoutMs);
   // Return an unreachable balancer and one fallback backend.
   SetNextResolution({backends_[0]->port()}, kDefaultServiceConfig_.c_str());
-  SetNextResolutionForLbChannel({grpc_pick_unused_port_or_die()});
+  SetNextResolutionForLbChannel({g_port_saver->GetPort()});
   // Send RPC with deadline less than the fallback timeout and make sure it
   // succeeds.
   CheckRpcSendOk(/* times */ 1, /* timeout_ms */ 1000,
@@ -1895,7 +1915,7 @@ TEST_P(FallbackTest, FallbackIfResponseReceivedButChildNotReady) {
   // Send a serverlist that only contains an unreachable backend before fallback
   // timeout.
   AdsServiceImpl::ResponseArgs args({
-      {"locality0", {grpc_pick_unused_port_or_die()}},
+      {"locality0", {g_port_saver->GetPort()}},
   });
   ScheduleResponseForBalancer(0, AdsServiceImpl::BuildResponse(args), 0);
   // Because no child policy is ready before fallback timeout, we enter fallback
@@ -1908,7 +1928,7 @@ TEST_P(FallbackTest, FallbackIfResponseReceivedButChildNotReady) {
 TEST_P(FallbackTest, FallbackModeIsExitedWhenBalancerSaysToDropAllCalls) {
   // Return an unreachable balancer and one fallback backend.
   SetNextResolution({backends_[0]->port()}, kDefaultServiceConfig_.c_str());
-  SetNextResolutionForLbChannel({grpc_pick_unused_port_or_die()});
+  SetNextResolutionForLbChannel({g_port_saver->GetPort()});
   // Enter fallback mode because the LB channel fails to connect.
   WaitForBackend(0);
   // Return a new balancer that sends a response to drop all calls.
@@ -1932,7 +1952,7 @@ TEST_P(FallbackTest, FallbackModeIsExitedWhenBalancerSaysToDropAllCalls) {
 TEST_P(FallbackTest, FallbackModeIsExitedAfterChildRready) {
   // Return an unreachable balancer and one fallback backend.
   SetNextResolution({backends_[0]->port()}, kDefaultServiceConfig_.c_str());
-  SetNextResolutionForLbChannel({grpc_pick_unused_port_or_die()});
+  SetNextResolutionForLbChannel({g_port_saver->GetPort()});
   // Enter fallback mode because the LB channel fails to connect.
   WaitForBackend(0);
   // Return a new balancer that sends a dead backend.
@@ -2343,27 +2363,20 @@ INSTANTIATE_TEST_SUITE_P(UsesXdsResolver, LocalityMapTest, ::testing::Bool());
 
 INSTANTIATE_TEST_SUITE_P(UsesXdsResolver, FailoverTest, ::testing::Bool());
 
-// Comment out this test suite because the ports size too large, should be less
-// than 200.
-// INSTANTIATE_TEST_SUITE_P(UsesXdsResolver, DropTest, ::testing::Bool());
+INSTANTIATE_TEST_SUITE_P(UsesXdsResolver, DropTest, ::testing::Bool());
 
 // Fallback does not work with xds resolver.
 INSTANTIATE_TEST_SUITE_P(UsesXdsResolver, FallbackTest,
                          ::testing::Values(false));
-// Comment out this test suite because the ports size too large, should be less
-// than 200.
-// INSTANTIATE_TEST_SUITE_P(UsesXdsResolver, BalancerUpdateTest,
-//                         ::testing::Bool());
 
-// Comment out this test suite because the ports size too large, should be less
-// than 200.
-// INSTANTIATE_TEST_SUITE_P(UsesXdsResolver, ClientLoadReportingTest,
-//                         ::testing::Bool());
+INSTANTIATE_TEST_SUITE_P(UsesXdsResolver, BalancerUpdateTest,
+                         ::testing::Bool());
 
-// Comment out this test suite because the ports size too large, should be less
-// than 200.
-// INSTANTIATE_TEST_SUITE_P(UsesXdsResolver, ClientLoadReportingWithDropTest,
-//                         ::testing::Bool());
+INSTANTIATE_TEST_SUITE_P(UsesXdsResolver, ClientLoadReportingTest,
+                         ::testing::Bool());
+
+INSTANTIATE_TEST_SUITE_P(UsesXdsResolver, ClientLoadReportingWithDropTest,
+                         ::testing::Bool());
 
 }  // namespace
 }  // namespace testing
@@ -2373,6 +2386,7 @@ int main(int argc, char** argv) {
   grpc::testing::TestEnvironment env(argc, argv);
   ::testing::InitGoogleTest(&argc, argv);
   grpc::testing::WriteBootstrapFiles();
+  grpc::testing::g_port_saver = new grpc::testing::PortSaver();
   const auto result = RUN_ALL_TESTS();
   return result;
 }
