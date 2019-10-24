@@ -421,7 +421,7 @@ void SecurityHandshaker::Shutdown(grpc_error* why) {
   GRPC_ERROR_UNREF(why);
 }
 
-void SecurityHandshaker::DoHandshake(grpc_tcp_server_acceptor* acceptor,
+void SecurityHandshaker::DoHandshake(grpc_tcp_server_acceptor* /*acceptor*/,
                                      grpc_closure* on_handshake_done,
                                      HandshakerArgs* args) {
   auto ref = Ref();
@@ -446,9 +446,9 @@ class FailHandshaker : public Handshaker {
  public:
   const char* name() const override { return "security_fail"; }
   void Shutdown(grpc_error* why) override { GRPC_ERROR_UNREF(why); }
-  void DoHandshake(grpc_tcp_server_acceptor* acceptor,
+  void DoHandshake(grpc_tcp_server_acceptor* /*acceptor*/,
                    grpc_closure* on_handshake_done,
-                   HandshakerArgs* args) override {
+                   HandshakerArgs* /*args*/) override {
     GRPC_CLOSURE_SCHED(on_handshake_done,
                        GRPC_ERROR_CREATE_FROM_STATIC_STRING(
                            "Failed to create security handshaker"));

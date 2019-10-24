@@ -511,7 +511,7 @@ void grpc_call_internal_unref(grpc_call* c REF_ARG) {
   GRPC_CALL_STACK_UNREF(CALL_STACK_FROM_CALL(c), REF_REASON);
 }
 
-static void release_call(void* call, grpc_error* error) {
+static void release_call(void* call, grpc_error* /*error*/) {
   grpc_call* c = static_cast<grpc_call*>(call);
   grpc_channel* channel = c->channel;
   grpc_core::Arena* arena = c->arena;
@@ -520,7 +520,7 @@ static void release_call(void* call, grpc_error* error) {
   GRPC_CHANNEL_INTERNAL_UNREF(channel, "call");
 }
 
-static void destroy_call(void* call, grpc_error* error) {
+static void destroy_call(void* call, grpc_error* /*error*/) {
   GPR_TIMER_SCOPE("destroy_call", 0);
   size_t i;
   int ii;
@@ -617,7 +617,7 @@ grpc_call_error grpc_call_cancel(grpc_call* call, void* reserved) {
 
 // This is called via the call combiner to start sending a batch down
 // the filter stack.
-static void execute_batch_in_call_combiner(void* arg, grpc_error* ignored) {
+static void execute_batch_in_call_combiner(void* arg, grpc_error* /*ignored*/) {
   GPR_TIMER_SCOPE("execute_batch_in_call_combiner", 0);
   grpc_transport_stream_op_batch* batch =
       static_cast<grpc_transport_stream_op_batch*>(arg);
@@ -678,7 +678,7 @@ typedef struct {
 
 // The on_complete callback used when sending a cancel_stream batch down
 // the filter stack.  Yields the call combiner when the batch is done.
-static void done_termination(void* arg, grpc_error* error) {
+static void done_termination(void* arg, grpc_error* /*error*/) {
   cancel_state* state = static_cast<cancel_state*>(arg);
   GRPC_CALL_COMBINER_STOP(&state->call->call_combiner,
                           "on_complete for cancel_stream op");
@@ -805,9 +805,10 @@ uint32_t grpc_call_test_only_get_message_flags(grpc_call* call) {
   return flags;
 }
 
-static void destroy_encodings_accepted_by_peer(void* p) { return; }
+static void destroy_encodings_accepted_by_peer(void* /*p*/) { return; }
 
-static void set_encodings_accepted_by_peer(grpc_call* call, grpc_mdelem mdel,
+static void set_encodings_accepted_by_peer(grpc_call* /*call*/,
+                                           grpc_mdelem mdel,
                                            uint32_t* encodings_accepted_by_peer,
                                            bool stream_encoding) {
   size_t i;
@@ -1152,7 +1153,7 @@ static batch_control* reuse_or_allocate_batch_control(grpc_call* call,
 }
 
 static void finish_batch_completion(void* user_data,
-                                    grpc_cq_completion* storage) {
+                                    grpc_cq_completion* /*storage*/) {
   batch_control* bctl = static_cast<batch_control*>(user_data);
   grpc_call* call = bctl->call;
   bctl->call = nullptr;
@@ -1545,7 +1546,7 @@ static void finish_batch(void* bctlp, grpc_error* error) {
   finish_batch_step(bctl);
 }
 
-static void free_no_op_completion(void* p, grpc_cq_completion* completion) {
+static void free_no_op_completion(void* /*p*/, grpc_cq_completion* completion) {
   gpr_free(completion);
 }
 
@@ -1563,7 +1564,7 @@ static grpc_call_error call_start_batch(grpc_call* call, const grpc_op* ops,
   grpc_transport_stream_op_batch* stream_op;
   grpc_transport_stream_op_batch_payload* stream_op_payload;
 
-  GRPC_CALL_LOG_BATCH(GPR_INFO, call, ops, nops, notify_tag);
+  GRPC_CALL_LOG_BATCH(GPR_INFO, ops, nops);
 
   if (nops == 0) {
     if (!is_notify_tag_closure) {
@@ -1748,8 +1749,8 @@ static grpc_call_error call_start_batch(grpc_call* call, const grpc_op* ops,
         call->sent_final_op = true;
         GPR_ASSERT(call->send_extra_metadata_count == 0);
         call->send_extra_metadata_count = 1;
-        call->send_extra_metadata[0].md = grpc_channel_get_reffed_status_elem(
-            call->channel, op->data.send_status_from_server.status);
+        call->send_extra_metadata[0].md = grpc_get_reffed_status_elem(
+            op->data.send_status_from_server.status);
         grpc_error* status_error =
             op->data.send_status_from_server.status == GRPC_STATUS_OK
                 ? GRPC_ERROR_NONE

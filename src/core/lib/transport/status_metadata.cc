@@ -52,3 +52,10 @@ grpc_status_code grpc_get_status_code_from_metadata(grpc_mdelem md) {
       md, destroy_status, (void*)static_cast<intptr_t>(status + STATUS_OFFSET));
   return static_cast<grpc_status_code>(status);
 }
+
+grpc_mdelem grpc_get_reffed_status_elem_slowpath(int status_code) {
+  char tmp[GPR_LTOA_MIN_BUFSIZE];
+  gpr_ltoa(status_code, tmp);
+  return grpc_mdelem_from_slices(GRPC_MDSTR_GRPC_STATUS,
+                                 grpc_core::UnmanagedMemorySlice(tmp));
+}
