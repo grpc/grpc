@@ -24,7 +24,7 @@ from src.proto.grpc.testing import test_pb2_grpc
 from tests.unit.framework.common import test_constants
 
 
-class TestServiceServicer(test_pb2_grpc.TestServiceServicer):
+class _TestServiceServicer(test_pb2_grpc.TestServiceServicer):
 
     async def UnaryCall(self, request, context):
         return messages_pb2.SimpleResponse()
@@ -36,7 +36,7 @@ class TestServiceServicer(test_pb2_grpc.TestServiceServicer):
 
 async def start_test_server():
     server = aio.server(options=(('grpc.so_reuseport', 0),))
-    test_pb2_grpc.add_TestServiceServicer_to_server(TestServiceServicer(),
+    test_pb2_grpc.add_TestServiceServicer_to_server(_TestServiceServicer(),
                                                     server)
     port = server.add_insecure_port('[::]:0')
     await server.start()
