@@ -24,6 +24,7 @@ build --spawn_strategy=remote
 build --strategy=Javac=remote
 build --strategy=Closure=remote
 build --genrule_strategy=remote
+build --remote_timeout=7200  # very large value to avoid problems like https://github.com/grpc/grpc/issues/20777
 
 build --remote_instance_name=projects/grpc-testing/instances/grpc-windows-rbe-test
 
