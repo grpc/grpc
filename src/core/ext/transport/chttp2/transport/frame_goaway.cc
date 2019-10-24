@@ -37,7 +37,7 @@ void grpc_chttp2_goaway_parser_destroy(grpc_chttp2_goaway_parser* p) {
 
 grpc_error* grpc_chttp2_goaway_parser_begin_frame(grpc_chttp2_goaway_parser* p,
                                                   uint32_t length,
-                                                  uint8_t flags) {
+                                                  uint8_t /*flags*/) {
   if (length < 8) {
     char* msg;
     gpr_asprintf(&msg, "goaway frame too short (%d bytes)", length);
@@ -56,7 +56,7 @@ grpc_error* grpc_chttp2_goaway_parser_begin_frame(grpc_chttp2_goaway_parser* p,
 
 grpc_error* grpc_chttp2_goaway_parser_parse(void* parser,
                                             grpc_chttp2_transport* t,
-                                            grpc_chttp2_stream* s,
+                                            grpc_chttp2_stream* /*s*/,
                                             const grpc_slice& slice,
                                             int is_last) {
   const uint8_t* const beg = GRPC_SLICE_START_PTR(slice);
