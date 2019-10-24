@@ -12,23 +12,36 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """Invocation-side implementation of gRPC Asyncio Python."""
+import asyncio
+from typing import Callable, Optional
 
 from grpc import _common
 from grpc._cython import cygrpc
+
+SerializingFunction = Callable[[str], bytes]
+DeserializingFunction = Callable[[bytes], str]
 
 
 class UnaryUnaryMultiCallable:
     """Afford invoking a unary-unary RPC from client-side in an asynchronous way."""
 
-    def __init__(self, channel, method, request_serializer,
-                 response_deserializer):
+    def __init__(self, channel: cygrpc.AioChannel, method: bytes,
+                 request_serializer: SerializingFunction,
+                 response_deserializer: DeserializingFunction) -> None:
         self._channel = channel
         self._method = method
         self._request_serializer = request_serializer
         self._response_deserializer = response_deserializer
+        self._loop = asyncio.get_event_loop()
+
+    def _timeout_to_deadline(self, timeout: int) -> Optional[int]:
+        if timeout is None:
+            return None
+        return self._loop.time() + timeout
 
     async def __call__(self,
                        request,
+                       *,
                        timeout=None,
                        metadata=None,
                        credentials=None,
@@ -58,9 +71,6 @@ class UnaryUnaryMultiCallable:
             metadata, status code, and details.
         """
 
-        if timeout:
-            raise NotImplementedError("TODO: timeout not implemented yet")
-
         if metadata:
             raise NotImplementedError("TODO: metadata not implemented yet")
 
@@ -74,9 +84,11 @@ class UnaryUnaryMultiCallable:
         if compression:
             raise NotImplementedError("TODO: compression not implemented yet")
 
-        response = await self._channel.unary_unary(
-            self._method, _common.serialize(request, self._request_serializer))
-
+        serialized_request = _common.serialize(request,
+                                               self._request_serializer)
+        timeout = self._timeout_to_deadline(timeout)
+        response = await self._channel.unary_unary(self._method,
+                                                   serialized_request, timeout)
         return _common.deserialize(response, self._response_deserializer)
 
 

@@ -50,6 +50,11 @@
   #include <stdio.h>
 
   int main(int argc, char **argv) {
+    /* Use the parameters to avoid unused-parameter warning.
+       (C89 parameters must be named.) */
+    (void)argc;
+    (void)argv;
+
     % for fn in fns:
     printf("%lx", (unsigned long) ${fn});
     % endfor

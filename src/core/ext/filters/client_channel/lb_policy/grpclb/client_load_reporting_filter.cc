@@ -30,12 +30,12 @@
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/profiling/timers.h"
 
-static grpc_error* clr_init_channel_elem(grpc_channel_element* elem,
-                                         grpc_channel_element_args* args) {
+static grpc_error* clr_init_channel_elem(grpc_channel_element* /*elem*/,
+                                         grpc_channel_element_args* /*args*/) {
   return GRPC_ERROR_NONE;
 }
 
-static void clr_destroy_channel_elem(grpc_channel_element* elem) {}
+static void clr_destroy_channel_elem(grpc_channel_element* /*elem*/) {}
 
 namespace {
 
@@ -79,8 +79,8 @@ static grpc_error* clr_init_call_elem(grpc_call_element* elem,
 }
 
 static void clr_destroy_call_elem(grpc_call_element* elem,
-                                  const grpc_call_final_info* final_info,
-                                  grpc_closure* ignored) {
+                                  const grpc_call_final_info* /*final_info*/,
+                                  grpc_closure* /*ignored*/) {
   call_data* calld = static_cast<call_data*>(elem->call_data);
   if (calld->client_stats != nullptr) {
     // Record call finished, optionally setting client_failed_to_send and

@@ -166,7 +166,7 @@ static void move_next() {
   }
 }
 
-static void offload(void* arg, grpc_error* error) {
+static void offload(void* arg, grpc_error* /*error*/) {
   grpc_core::Combiner* lock = static_cast<grpc_core::Combiner*>(arg);
   push_last_on_exec_ctx(lock);
 }

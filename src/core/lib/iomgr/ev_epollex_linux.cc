@@ -352,15 +352,23 @@ static void ref_by(grpc_fd* fd, int n, const char* reason, const char* file,
             gpr_atm_no_barrier_load(&fd->refst) + n, reason, file, line);
   }
 #else
-#define REF_BY(fd, n, reason) ref_by(fd, n)
-#define UNREF_BY(fd, n, reason) unref_by(fd, n)
+#define REF_BY(fd, n, reason) \
+  do {                        \
+    ref_by(fd, n);            \
+    (void)(reason);           \
+  } while (0)
+#define UNREF_BY(fd, n, reason) \
+  do {                          \
+    unref_by(fd, n);            \
+    (void)(reason);             \
+  } while (0)
 static void ref_by(grpc_fd* fd, int n) {
 #endif
   GPR_ASSERT(gpr_atm_no_barrier_fetch_add(&fd->refst, n) > 0);
 }
 
 /* Uninitialize and add to the freelist */
-static void fd_destroy(void* arg, grpc_error* error) {
+static void fd_destroy(void* arg, grpc_error* /*error*/) {
   grpc_fd* fd = static_cast<grpc_fd*>(arg);
   fd->destroy();
 
@@ -1042,7 +1050,7 @@ static bool begin_worker(grpc_pollset* pollset, grpc_pollset_worker* worker,
 }
 
 static void end_worker(grpc_pollset* pollset, grpc_pollset_worker* worker,
-                       grpc_pollset_worker** worker_hdl) {
+                       grpc_pollset_worker** /*worker_hdl*/) {
   GPR_TIMER_SCOPE("end_worker", 0);
   gpr_mu_lock(&pollset->mu);
   gpr_mu_lock(&worker->pollable_obj->mu);
@@ -1542,8 +1550,8 @@ static void pollset_set_add_pollset_set(grpc_pollset_set* a,
   gpr_mu_unlock(&b->mu);
 }
 
-static void pollset_set_del_pollset_set(grpc_pollset_set* bag,
-                                        grpc_pollset_set* item) {}
+static void pollset_set_del_pollset_set(grpc_pollset_set* /*bag*/,
+                                        grpc_pollset_set* /*item*/) {}
 
 /*******************************************************************************
  * Event engine binding
@@ -1553,8 +1561,8 @@ static bool is_any_background_poller_thread(void) { return false; }
 
 static void shutdown_background_closure(void) {}
 
-static bool add_closure_to_background_poller(grpc_closure* closure,
-                                             grpc_error* error) {
+static bool add_closure_to_background_poller(grpc_closure* /*closure*/,
+                                             grpc_error* /*error*/) {
   return false;
 }
 
@@ -1603,7 +1611,7 @@ static const grpc_event_engine_vtable vtable = {
 };
 
 const grpc_event_engine_vtable* grpc_init_epollex_linux(
-    bool explicitly_requested) {
+    bool /*explicitly_requested*/) {
   if (!grpc_has_wakeup_fd()) {
     gpr_log(GPR_ERROR, "Skipping epollex because of no wakeup fd.");
     return nullptr;
@@ -1631,7 +1639,7 @@ const grpc_event_engine_vtable* grpc_init_epollex_linux(
 /* If GRPC_LINUX_EPOLL_CREATE1 is not defined, it means
    epoll_create1 is not available. Return NULL */
 const grpc_event_engine_vtable* grpc_init_epollex_linux(
-    bool explicitly_requested) {
+    bool /*explicitly_requested*/) {
   return nullptr;
 }
 #endif /* defined(GRPC_POSIX_SOCKET_EV_EPOLLEX) */

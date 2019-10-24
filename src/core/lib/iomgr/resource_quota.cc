@@ -274,7 +274,7 @@ static bool rq_reclaim_from_per_user_free_pool(
     grpc_resource_quota* resource_quota);
 static bool rq_reclaim(grpc_resource_quota* resource_quota, bool destructive);
 
-static void rq_step(void* rq, grpc_error* error) {
+static void rq_step(void* rq, grpc_error* /*error*/) {
   grpc_resource_quota* resource_quota = static_cast<grpc_resource_quota*>(rq);
   resource_quota->step_scheduled = false;
   do {
@@ -479,7 +479,7 @@ static grpc_slice ru_slice_create(grpc_resource_user* resource_user,
  * the combiner
  */
 
-static void ru_allocate(void* ru, grpc_error* error) {
+static void ru_allocate(void* ru, grpc_error* /*error*/) {
   grpc_resource_user* resource_user = static_cast<grpc_resource_user*>(ru);
   if (rulist_empty(resource_user->resource_quota,
                    GRPC_RULIST_AWAITING_ALLOCATION)) {
@@ -488,7 +488,7 @@ static void ru_allocate(void* ru, grpc_error* error) {
   rulist_add_tail(resource_user, GRPC_RULIST_AWAITING_ALLOCATION);
 }
 
-static void ru_add_to_free_pool(void* ru, grpc_error* error) {
+static void ru_add_to_free_pool(void* ru, grpc_error* /*error*/) {
   grpc_resource_user* resource_user = static_cast<grpc_resource_user*>(ru);
   if (!rulist_empty(resource_user->resource_quota,
                     GRPC_RULIST_AWAITING_ALLOCATION) &&
@@ -513,7 +513,7 @@ static bool ru_post_reclaimer(grpc_resource_user* resource_user,
   return true;
 }
 
-static void ru_post_benign_reclaimer(void* ru, grpc_error* error) {
+static void ru_post_benign_reclaimer(void* ru, grpc_error* /*error*/) {
   grpc_resource_user* resource_user = static_cast<grpc_resource_user*>(ru);
   if (!ru_post_reclaimer(resource_user, false)) return;
   if (!rulist_empty(resource_user->resource_quota,
@@ -527,7 +527,7 @@ static void ru_post_benign_reclaimer(void* ru, grpc_error* error) {
   rulist_add_tail(resource_user, GRPC_RULIST_RECLAIMER_BENIGN);
 }
 
-static void ru_post_destructive_reclaimer(void* ru, grpc_error* error) {
+static void ru_post_destructive_reclaimer(void* ru, grpc_error* /*error*/) {
   grpc_resource_user* resource_user = static_cast<grpc_resource_user*>(ru);
   if (!ru_post_reclaimer(resource_user, true)) return;
   if (!rulist_empty(resource_user->resource_quota,
@@ -543,7 +543,7 @@ static void ru_post_destructive_reclaimer(void* ru, grpc_error* error) {
   rulist_add_tail(resource_user, GRPC_RULIST_RECLAIMER_DESTRUCTIVE);
 }
 
-static void ru_shutdown(void* ru, grpc_error* error) {
+static void ru_shutdown(void* ru, grpc_error* /*error*/) {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_resource_quota_trace)) {
     gpr_log(GPR_INFO, "RU shutdown %p", ru);
   }
@@ -561,7 +561,7 @@ static void ru_shutdown(void* ru, grpc_error* error) {
   gpr_mu_unlock(&resource_user->mu);
 }
 
-static void ru_destroy(void* ru, grpc_error* error) {
+static void ru_destroy(void* ru, grpc_error* /*error*/) {
   grpc_resource_user* resource_user = static_cast<grpc_resource_user*>(ru);
   GPR_ASSERT(gpr_atm_no_barrier_load(&resource_user->refs) == 0);
   // Free all the remaining thread quota
@@ -611,7 +611,7 @@ typedef struct {
   grpc_closure closure;
 } rq_resize_args;
 
-static void rq_resize(void* args, grpc_error* error) {
+static void rq_resize(void* args, grpc_error* /*error*/) {
   rq_resize_args* a = static_cast<rq_resize_args*>(args);
   int64_t delta = a->size - a->resource_quota->size;
   a->resource_quota->size += delta;
@@ -622,7 +622,7 @@ static void rq_resize(void* args, grpc_error* error) {
   gpr_free(a);
 }
 
-static void rq_reclamation_done(void* rq, grpc_error* error) {
+static void rq_reclamation_done(void* rq, grpc_error* /*error*/) {
   grpc_resource_quota* resource_quota = static_cast<grpc_resource_quota*>(rq);
   resource_quota->reclaiming = false;
   rq_step_sched(resource_quota);

@@ -264,18 +264,18 @@ static void on_handshaker_service_resp_recv(void* arg, grpc_error* error) {
 /* gRPC provided callback used when dedicatd CQ and thread are used.
  * It serves to safely bring the control back to application. */
 static void on_handshaker_service_resp_recv_dedicated(void* arg,
-                                                      grpc_error* error) {
+                                                      grpc_error* /*error*/) {
   alts_shared_resource_dedicated* resource =
       grpc_alts_get_shared_resource_dedicated();
   grpc_cq_end_op(resource->cq, arg, GRPC_ERROR_NONE,
-                 [](void* done_arg, grpc_cq_completion* storage) {}, nullptr,
-                 &resource->storage);
+                 [](void* /*done_arg*/, grpc_cq_completion* /*storage*/) {},
+                 nullptr, &resource->storage);
 }
 
 static tsi_result handshaker_next(
     tsi_handshaker* self, const unsigned char* received_bytes,
-    size_t received_bytes_size, const unsigned char** bytes_to_send,
-    size_t* bytes_to_send_size, tsi_handshaker_result** result,
+    size_t received_bytes_size, const unsigned char** /*bytes_to_send*/,
+    size_t* /*bytes_to_send_size*/, tsi_handshaker_result** /*result*/,
     tsi_handshaker_on_next_done_cb cb, void* user_data) {
   if (self == nullptr || cb == nullptr) {
     gpr_log(GPR_ERROR, "Invalid arguments to handshaker_next()");

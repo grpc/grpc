@@ -659,7 +659,7 @@ static grpc_error* on_hdr(grpc_chttp2_hpack_parser* p, grpc_mdelem md) {
 }
 
 static grpc_core::UnmanagedMemorySlice take_string_extern(
-    grpc_chttp2_hpack_parser* p, grpc_chttp2_hpack_parser_string* str) {
+    grpc_chttp2_hpack_parser* /*p*/, grpc_chttp2_hpack_parser_string* str) {
   grpc_core::UnmanagedMemorySlice s;
   if (!str->copied) {
     GPR_DEBUG_ASSERT(!grpc_slice_is_interned(str->data.referenced));
@@ -675,7 +675,7 @@ static grpc_core::UnmanagedMemorySlice take_string_extern(
 }
 
 static grpc_core::ManagedMemorySlice take_string_intern(
-    grpc_chttp2_hpack_parser* p, grpc_chttp2_hpack_parser_string* str) {
+    grpc_chttp2_hpack_parser* /*p*/, grpc_chttp2_hpack_parser_string* str) {
   grpc_core::ManagedMemorySlice s;
   if (!str->copied) {
     s = grpc_core::ManagedMemorySlice(&str->data.referenced);
@@ -1067,8 +1067,9 @@ static grpc_error* parse_max_tbl_size_x(grpc_chttp2_hpack_parser* p,
 }
 
 /* a parse error: jam the parse state into parse_error, and return error */
-static grpc_error* parse_error(grpc_chttp2_hpack_parser* p, const uint8_t* cur,
-                               const uint8_t* end, grpc_error* err) {
+static grpc_error* parse_error(grpc_chttp2_hpack_parser* p,
+                               const uint8_t* /*cur*/, const uint8_t* /*end*/,
+                               grpc_error* err) {
   GPR_ASSERT(err != GRPC_ERROR_NONE);
   if (p->last_error == GRPC_ERROR_NONE) {
     p->last_error = GRPC_ERROR_REF(err);
@@ -1078,7 +1079,8 @@ static grpc_error* parse_error(grpc_chttp2_hpack_parser* p, const uint8_t* cur,
 }
 
 static grpc_error* still_parse_error(grpc_chttp2_hpack_parser* p,
-                                     const uint8_t* cur, const uint8_t* end) {
+                                     const uint8_t* /*cur*/,
+                                     const uint8_t* /*end*/) {
   return GRPC_ERROR_REF(p->last_error);
 }
 
@@ -1593,7 +1595,8 @@ static grpc_error* parse_value_string_with_literal_key(
 }
 
 /* "Uninitialized" header parser to save us a branch in on_hdr().  */
-static grpc_error* on_header_uninitialized(void* user_data, grpc_mdelem md) {
+static grpc_error* on_header_uninitialized(void* /*user_data*/,
+                                           grpc_mdelem md) {
   GRPC_MDELEM_UNREF(md);
   return GRPC_ERROR_CREATE_FROM_STATIC_STRING("on_header callback not set");
 }
@@ -1666,7 +1669,7 @@ static const maybe_complete_func_type maybe_complete_funcs[] = {
     grpc_chttp2_maybe_complete_recv_initial_metadata,
     grpc_chttp2_maybe_complete_recv_trailing_metadata};
 
-static void force_client_rst_stream(void* sp, grpc_error* error) {
+static void force_client_rst_stream(void* sp, grpc_error* /*error*/) {
   grpc_chttp2_stream* s = static_cast<grpc_chttp2_stream*>(sp);
   grpc_chttp2_transport* t = s->t;
   if (!s->write_closed) {
@@ -1678,7 +1681,7 @@ static void force_client_rst_stream(void* sp, grpc_error* error) {
   GRPC_CHTTP2_STREAM_UNREF(s, "final_rst");
 }
 
-static void parse_stream_compression_md(grpc_chttp2_transport* t,
+static void parse_stream_compression_md(grpc_chttp2_transport* /*t*/,
                                         grpc_chttp2_stream* s,
                                         grpc_metadata_batch* initial_metadata) {
   if (initial_metadata->idx.named.content_encoding == nullptr ||
