@@ -316,7 +316,7 @@ def _create_portability_test_jobs(extra_args=[],
 
     # portability C and C++ on x64
     for compiler in [
-            'gcc4.8', 'gcc5.3', 'gcc7.2', 'gcc_musl', 'clang3.5', 'clang3.6',
+            'gcc4.8', 'gcc5.3', 'gcc7.4', 'gcc_musl', 'clang3.5', 'clang3.6',
             'clang3.7', 'clang7.0'
     ]:
         test_jobs += _generate_jobs(

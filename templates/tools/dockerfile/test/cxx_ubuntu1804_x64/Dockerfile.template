@@ -14,7 +14,7 @@
   # See the License for the specific language governing permissions and
   # limitations under the License.
   
-  FROM ubuntu:17.10
+  FROM ubuntu:18.04
   
   <%include file="../../apt_get_basic.include"/>
   <%include file="../../gcp_api_libraries.include"/>
