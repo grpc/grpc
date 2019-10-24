@@ -22,9 +22,10 @@ from grpc.experimental import aio
 from src.proto.grpc.testing import messages_pb2
 from tests.unit.framework.common import test_constants
 from tests_aio.unit._test_server import start_test_server
+from tests_aio.unit._test_base import AioTestBase
 
 
-class TestChannel(unittest.TestCase):
+class TestChannel(AioTestBase):
 
     def test_async_context(self):
 
@@ -40,7 +41,7 @@ class TestChannel(unittest.TestCase):
                 )
                 await hi(messages_pb2.SimpleRequest())
 
-        asyncio.get_event_loop().run_until_complete(coro())
+        self._loop.run_until_complete(coro())
 
     def test_unary_unary(self):
 
@@ -58,7 +59,7 @@ class TestChannel(unittest.TestCase):
 
             await channel.close()
 
-        asyncio.get_event_loop().run_until_complete(coro())
+        self._loop.run_until_complete(coro())
 
     def test_unary_call_times_out(self):
 
@@ -90,7 +91,7 @@ class TestChannel(unittest.TestCase):
                 self.assertIsNotNone(
                     exception_context.exception.trailing_metadata())
 
-        asyncio.get_event_loop().run_until_complete(coro())
+        self._loop.run_until_complete(coro())
 
 
 if __name__ == '__main__':

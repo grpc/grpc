@@ -119,8 +119,6 @@ class TestAio(setuptools.Command):
         pass
 
     def run(self):
-        from grpc.experimental import aio
-        aio.init_grpc_aio()
         self._add_eggs_to_path()
 
         import tests

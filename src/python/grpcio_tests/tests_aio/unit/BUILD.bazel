@@ -21,6 +21,12 @@ GRPC_ASYNC_TESTS = glob(["*_test.py"])
 
 
 py_library(
+    name = "_test_base",
+    srcs_version = "PY3",
+    srcs = ["_test_base.py"],
+)
+
+py_library(
     name = "_test_server",
     srcs_version = "PY3",
     srcs = ["_test_server.py"],
@@ -41,6 +47,7 @@ py_library(
         python_version="PY3",
         deps=[
             ":_test_server",
+            ":_test_base",
             "//src/python/grpcio/grpc:grpcio",
             "//src/proto/grpc/testing:py_messages_proto",
             "//src/proto/grpc/testing:benchmark_service_py_pb2_grpc",
