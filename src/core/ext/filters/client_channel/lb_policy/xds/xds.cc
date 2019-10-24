@@ -460,8 +460,8 @@ LoadBalancingPolicy::PickResult XdsLb::PickerWrapper::Pick(
   result.recv_trailing_metadata_ready =
       // Note: This callback does not run in either the control plane
       // combiner or in the data plane mutex.
-      [locality_stats](grpc_error* error, MetadataInterface* metadata,
-                       CallState* call_state) {
+      [locality_stats](grpc_error* error, MetadataInterface* /*metadata*/,
+                       CallState* /*call_state*/) {
         const bool call_failed = error != GRPC_ERROR_NONE;
         locality_stats->AddCallFinished(call_failed);
         locality_stats->Unref(DEBUG_LOCATION, "LocalityStats+call");
