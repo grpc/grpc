@@ -31,80 +31,68 @@
 #include <grpc/support/log.h>
 #include <grpc/support/sync.h>
 
-#define GRPC_ALTS_EXPECT_NAME_GOOGLE "Google"
-#define GRPC_ALTS_WINDOWS_CHECK_COMMAND "powershell.exe"
-#define GRPC_ALTS_WINDOWS_CHECK_COMMAND_ARGS \
-  "(Get-WmiObject -Class Win32_BIOS).Manufacturer"
-#define GRPC_ALTS_WINDOWS_CHECK_BIOS_FILE "windows_bios.data"
+namespace grpc_core {
+namespace internal {
 
-const size_t kBiosDataBufferSize = 256;
+bool check_bios_data(const char*) { return false; }
+
+bool check_windows_registry_product_name(HKEY root_key,
+                                         const char* reg_key_path,
+                                         const char* reg_key_name) {
+  const size_t kProductNameBufferSize = 256;
+  char const expected_substr[] = "Google";
+
+  // Get the size of the string first to allocate our buffer. This includes
+  // enough space for the trailing NUL character that will be included.
+  DWORD buffer_size{};
+  auto rc = ::RegGetValueA(
+      root_key, reg_key_path, reg_key_name, RRF_RT_REG_SZ,
+      nullptr,        // We know the type will be REG_SZ.
+      nullptr,        // We're only fetching the size; no buffer given yet.
+      &buffer_size);  // Fetch the size in bytes of the value, if it exists.
+  if (rc != 0) {
+    return false;
+  }
+
+  if (buffer_size > kProductNameBufferSize) {
+    return false;
+  }
+
+  // Retrieve the product name string.
+  char buffer[kProductNameBufferSize];
+  buffer_size = kProductNameBufferSize;
+  rc = ::RegGetValueA(
+      root_key, reg_key_path, reg_key_name, RRF_RT_REG_SZ,
+      nullptr,                     // We know the type will be REG_SZ.
+      static_cast<void*>(buffer),  // Fetch the string value this time.
+      &buffer_size);  // The string size in bytes, not including trailing NUL.
+  if (rc != 0) {
+    return false;
+  }
+
+  return strstr(buffer, expected_substr) != nullptr;
+}
+
+}  // namespace internal
+}  // namespace grpc_core
 
 static bool g_compute_engine_detection_done = false;
 static bool g_is_on_compute_engine = false;
 static gpr_mu g_mu;
 static gpr_once g_once = GPR_ONCE_INIT;
 
-namespace grpc_core {
-namespace internal {
-
-bool check_bios_data(const char* bios_data_file) {
-  char* bios_data = read_bios_file(bios_data_file);
-  bool result = !strcmp(bios_data, GRPC_ALTS_EXPECT_NAME_GOOGLE);
-  remove(GRPC_ALTS_WINDOWS_CHECK_BIOS_FILE);
-  gpr_free(bios_data);
-  return result;
-}
-
-}  // namespace internal
-}  // namespace grpc_core
-
 static void init_mu(void) { gpr_mu_init(&g_mu); }
 
-static bool run_powershell() {
-  SECURITY_ATTRIBUTES sa;
-  sa.nLength = sizeof(sa);
-  sa.lpSecurityDescriptor = NULL;
-  sa.bInheritHandle = TRUE;
-  HANDLE h = CreateFile(_T(GRPC_ALTS_WINDOWS_CHECK_BIOS_FILE), GENERIC_WRITE,
-                        FILE_SHARE_WRITE | FILE_SHARE_READ, &sa, OPEN_ALWAYS,
-                        FILE_ATTRIBUTE_NORMAL, NULL);
-  if (h == INVALID_HANDLE_VALUE) {
-    gpr_log(GPR_ERROR, "CreateFile failed (%d).", GetLastError());
-    return false;
-  }
-  PROCESS_INFORMATION pi;
-  STARTUPINFO si;
-  DWORD flags = CREATE_NO_WINDOW;
-  ZeroMemory(&pi, sizeof(pi));
-  ZeroMemory(&si, sizeof(si));
-  si.cb = sizeof(si);
-  si.dwFlags |= STARTF_USESTDHANDLES;
-  si.hStdInput = NULL;
-  si.hStdError = h;
-  si.hStdOutput = h;
-  TCHAR cmd[kBiosDataBufferSize];
-  _sntprintf(cmd, kBiosDataBufferSize, _T("%s %s"),
-             _T(GRPC_ALTS_WINDOWS_CHECK_COMMAND),
-             _T(GRPC_ALTS_WINDOWS_CHECK_COMMAND_ARGS));
-  if (!CreateProcess(NULL, cmd, NULL, NULL, TRUE, flags, NULL, NULL, &si,
-                     &pi)) {
-    gpr_log(GPR_ERROR, "CreateProcess failed (%d).\n", GetLastError());
-    return false;
-  }
-  WaitForSingleObject(pi.hProcess, INFINITE);
-  CloseHandle(pi.hProcess);
-  CloseHandle(pi.hThread);
-  CloseHandle(h);
-  return true;
-}
-
 bool grpc_alts_is_running_on_gcp() {
+  char const reg_key_path[] = "SYSTEM\\HardwareConfig\\Current\\";
+  char const reg_key_name[] = "SystemProductName";
+
   gpr_once_init(&g_once, init_mu);
   gpr_mu_lock(&g_mu);
   if (!g_compute_engine_detection_done) {
     g_is_on_compute_engine =
-        run_powershell() &&
-        grpc_core::internal::check_bios_data(GRPC_ALTS_WINDOWS_CHECK_BIOS_FILE);
+        grpc_core::internal::check_windows_registry_product_name(
+            HKEY_LOCAL_MACHINE, reg_key_path, reg_key_name);
     g_compute_engine_detection_done = true;
   }
   gpr_mu_unlock(&g_mu);
