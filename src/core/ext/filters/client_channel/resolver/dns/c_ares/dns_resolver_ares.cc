@@ -97,7 +97,7 @@ class AresDnsResolver : public Resolver {
   /// are we currently resolving?
   bool resolving_ = false;
   /// the pending resolving request
-  grpc_ares_request* pending_request_ = nullptr;
+  GrpcAresResultCallback* pending_request_ = nullptr;
   /// next resolution timer
   bool have_next_resolution_timer_ = false;
   grpc_timer next_resolution_timer_;

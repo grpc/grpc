@@ -44,7 +44,7 @@ grpc_error* grpc_ares_ev_driver_create_locked(grpc_ares_ev_driver** ev_driver,
                                               grpc_pollset_set* pollset_set,
                                               int query_timeout_ms,
                                               grpc_core::Combiner* combiner,
-                                              grpc_ares_request* request);
+                                              GrpcAresResultCallback* request);
 
 /* Called back when all DNS lookups have completed. */
 void grpc_ares_ev_driver_on_queries_complete_locked(

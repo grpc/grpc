@@ -56,136 +56,512 @@ grpc_core::TraceFlag grpc_trace_cares_resolver(false, "cares_resolver");
 
 namespace {
 
-class GrpcAresPendingRequestKey {
+static const char g_service_config_attribute_prefix[] = "grpc_config=";
+
+void grpc_cares_wrapper_address_sorting_sort(ServerAddressList* addresses);
+
+class GrpcAresRequest {
  public:
-  GrpcAresPendingRequestKey(const char* dns_server, const char* name,
-                            const char* default_port, bool query_timeout_ms,
-                            bool check_grpclb, bool check_service_config)
-      : dns_server_(grpc_core::UniquePtr<char>(gpr_strdup(dns_server))),
-        name_(grpc_core::UniquePtr<char>(gpr_strdup(name))),
-        default_port_(grpc_core::UniquePtr<char>(gpr_strdup(default_port))),
-        query_timeout_ms_(query_timeout_ms),
-        check_grpclb_(check_grpclb),
-        check_service_config_(check_grpclb) {}
+  GrpcAresRequest(RequestKey* key,
+      grpc_core::UniquePtr<grpc_core::ServerAddressList>* addresses_out,
+      char** service_config_json_out, grpc_closure* on_done, grpc_pollset_set* interested_party,
+      grpc_combiner* combiner)
+      : key(key), addresses_out(addresses_out),
+        service_config_json_out(service_config_json_out),
+        on_done(on_done), interested_party(interested_party),
+        combiner(combiner)
+         {}
 
-  GrpcAresPendingRequestKey(const GrpcAresPendingRequestKey& other) {
-    dns_server_ =
-        grpc_core::UniquePtr<char>(gpr_strdup(other.dns_server_.get()));
-    name_ = grpc_core::UniquePtr<char>(gpr_strdup(other.name_.get()));
-    default_port_ =
-        grpc_core::UniquePtr<char>(gpr_strdup(other.default_port_.get()));
-    query_timeout_ms_ = other.query_timeout_ms_;
-    check_grpclb_ = other.check_grpclb_;
-    check_service_config_ = other.check_grpclb_;
-  }
 
-  GrpcAresPendingRequestKey& operator=(const GrpcAresPendingRequestKey& other) {
-    dns_server_ =
-        grpc_core::UniquePtr<char>(gpr_strdup(other.dns_server_.get()));
-    name_ = grpc_core::UniquePtr<char>(gpr_strdup(other.name_.get()));
-    default_port_ =
-        grpc_core::UniquePtr<char>(gpr_strdup(other.default_port_.get()));
-    query_timeout_ms_ = other.query_timeout_ms_;
-    check_grpclb_ = other.check_grpclb_;
-    check_service_config_ = other.check_grpclb_;
-    return *this;
-  }
+  RequestKey* key_ = nullptr;
 
-  // Returns true iff a and b are equal, otherwise returns false and
-  // sets result to a valuable suitable for return by the < operator.
-  bool CompareHandleNull(const char* a, const char* b, bool* result) const {
-    if (a == nullptr || b == nullptr) {
-      if (a != b) {
-        *result = a == nullptr ? true : false;
-        return false;
-      }
-      return true;
-    }
-    int res = gpr_stricmp(a, b);
-    if (res == 0) {
-      return true;
-    }
-    *result = res < 0 ? true : false;
-    return false;
-  }
-
-  bool operator<(const GrpcAresPendingRequestKey& other) const {
-    bool res;
-    if (!CompareHandleNull(dns_server_.get(), other.dns_server_.get(), &res)) {
-      return res;
-    }
-    if (!CompareHandleNull(name_.get(), other.name_.get(), &res)) {
-      return res;
-    }
-    if (!CompareHandleNull(default_port_.get(), other.default_port_.get(),
-                           &res)) {
-      return res;
-    }
-    if (query_timeout_ms_ != other.query_timeout_ms_) {
-      return query_timeout_ms_;
-    }
-    if (check_grpclb_ != other.check_grpclb_) {
-      return check_grpclb_;
-    }
-    if (check_service_config_ != other.check_service_config_) {
-      return check_service_config_;
-    }
-    return false;
-  }
-
- private:
-  /** The fields below are all owned by this object.
-   * They are all tracked here only for comparison with other
-   * pending_requests_entry objects. */
-  /** Specific DNS server to query */
-  grpc_core::UniquePtr<char> dns_server_;
-  /** target name to query */
-  grpc_core::UniquePtr<char> name_;
-  /** default port to use */
-  grpc_core::UniquePtr<char> default_port_;
-  /** query timeout */
-  bool query_timeout_ms_;
-  /** whether or not to query SRV records */
-  bool check_grpclb_;
-  /** wether or not to query for service config TXT records */
-  bool check_service_config_;
-};
-
-}  // namespace
-
-struct grpc_ares_request {
-  grpc_ares_request(const GrpcAresPendingRequestKey& key) : key(key) {
-    memset(&dns_server_addr, 0, sizeof(dns_server_addr));
-  }
-
-  /** indicates the DNS server to use, if specified */
-  struct ares_addr_port_node dns_server_addr;
   /** following members are set in grpc_resolve_address_ares_impl */
-  /** closure to call when the request completes */
-  grpc_closure* on_done = nullptr;
   /** the pointer to receive the resolved addresses */
   grpc_core::UniquePtr<grpc_core::ServerAddressList>* addresses_out = nullptr;
   /** the pointer to receive the service config in JSON */
   char** service_config_json_out = nullptr;
-  /** the evernt driver used by this request */
-  grpc_ares_ev_driver* ev_driver = nullptr;
-  /** number of ongoing queries */
-  size_t pending_queries = 0;
-  /** the errors explaining query failures, appended to in query callbacks */
-  grpc_error* error = GRPC_ERROR_NONE;
-  /** key used for comparison of this resolution request and others */
-  GrpcAresPendingRequestKey key;
+  /** closure to call when the request completes */
+  grpc_closure* on_done = nullptr;
+  grpc_pollset_set* interested_party;
   /** synchronizes this resolution */
   grpc_combiner* combiner = nullptr;
-  /** used in a global list of pending duplicate requests */
-  grpc_ares_request* next = nullptr;
+
+ private:
 };
+
+class GrpcAresPendingRequestMap {
+ public:
+  // The key that identifies a unique ares request. Two requests with the same
+  // request key are considered the same and can share the same response.
+  class RequestKey {
+   public:
+    RequestKey(const char* dns_server, const char* name,
+               const char* default_port, bool query_timeout_ms,
+               bool check_grpclb, bool check_service_config)
+        : dns_server_(grpc_core::UniquePtr<char>(gpr_strdup(dns_server))),
+          name_(grpc_core::UniquePtr<char>(gpr_strdup(name))),
+          default_port_(grpc_core::UniquePtr<char>(gpr_strdup(default_port))),
+          query_timeout_ms_(query_timeout_ms),
+          check_grpclb_(check_grpclb),
+          check_service_config_(check_grpclb) {}
+
+    RequestKey(const RequestKey& other) {
+      dns_server_ =
+          grpc_core::UniquePtr<char>(gpr_strdup(other.dns_server_.get()));
+      name_ = grpc_core::UniquePtr<char>(gpr_strdup(other.name_.get()));
+      default_port_ =
+          grpc_core::UniquePtr<char>(gpr_strdup(other.default_port_.get()));
+      query_timeout_ms_ = other.query_timeout_ms_;
+      check_grpclb_ = other.check_grpclb_;
+      check_service_config_ = other.check_grpclb_;
+    }
+
+    RequestKey& operator=(const RequestKey& other) {
+      dns_server_ =
+          grpc_core::UniquePtr<char>(gpr_strdup(other.dns_server_.get()));
+      name_ = grpc_core::UniquePtr<char>(gpr_strdup(other.name_.get()));
+      default_port_ =
+          grpc_core::UniquePtr<char>(gpr_strdup(other.default_port_.get()));
+      query_timeout_ms_ = other.query_timeout_ms_;
+      check_grpclb_ = other.check_grpclb_;
+      check_service_config_ = other.check_grpclb_;
+      return *this;
+    }
+
+    // Returns true iff a and b are equal, otherwise returns false and
+    // sets result to a valuable suitable for return by the < operator.
+    bool CompareHandleNull(const char* a, const char* b, bool* result) const {
+      if (a == nullptr || b == nullptr) {
+        if (a != b) {
+          *result = a == nullptr ? true : false;
+          return false;
+        }
+        return true;
+      }
+      int res = gpr_stricmp(a, b);
+      if (res == 0) {
+        return true;
+      }
+      *result = res < 0 ? true : false;
+      return false;
+    }
+
+    bool operator<(const RequestKey& other) const {
+      bool res;
+      if (!CompareHandleNull(dns_server_.get(), other.dns_server_.get(),
+                             &res)) {
+        return res;
+      }
+      if (!CompareHandleNull(name_.get(), other.name_.get(), &res)) {
+        return res;
+      }
+      if (!CompareHandleNull(default_port_.get(), other.default_port_.get(),
+                             &res)) {
+        return res;
+      }
+      if (query_timeout_ms_ != other.query_timeout_ms_) {
+        return query_timeout_ms_;
+      }
+      if (check_grpclb_ != other.check_grpclb_) {
+        return check_grpclb_;
+      }
+      if (check_service_config_ != other.check_service_config_) {
+        return check_service_config_;
+      }
+      return false;
+    }
+
+   private:
+    /** The fields below are all owned by this object.
+     * They are all tracked here only for comparison with other
+     * pending_requests_entry objects. */
+    /** Specific DNS server to query */
+    grpc_core::UniquePtr<char> dns_server_;
+    /** target name to query */
+    grpc_core::UniquePtr<char> name_;
+    /** default port to use */
+    grpc_core::UniquePtr<char> default_port_;
+    /** query timeout */
+    bool query_timeout_ms_;
+    /** whether or not to query SRV records */
+    bool check_grpclb_;
+    /** wether or not to query for service config TXT records */
+    bool check_service_config_;
+  };
+
+  /** A unique result for a lookup. This takes owneship over all fields. */
+  class ResultUpdater {
+   public:
+    static void UpdateLocked(void* arg, grpc_error* error) {
+      ResultUpdater* self = static_cast<ResultUpdater*>(arg);
+      if (self->request->service_config_json_out != nullptr) {
+        *self->request->service_config_json_out = self->service_config_json;
+      } else {
+        GPR_ASSERT(self->service_config_json == nullptr);
+      }
+      *self->request->addresses_out = std::move(self->address_list);
+      GRPC_COMBINER_UNREF(self->request->combiner, "complete request locked");
+      GRPC_ERROR_REF(error);
+      GRPC_CLOSURE_SCHED(self->request->on_done, error);
+      grpc_core::Delete(self);
+    }
+
+   private:
+    grpc_core::UniquePtr<ServerAddressList> address_list;
+    char* service_config_json;
+
+    GrpcAresRequest* request;
+  };
+
+  class RequestWrapper {
+   public:
+    RequestWrapper() { memset(&dns_server_addr, 0, sizeof(dns_server_addr)); }
+
+    void AddRequest(grpc_core::UniquePtr<GrpcAresRequest> request) {
+      requests_[request.get()] = std::move(request);
+      // FIXME
+      grpc_pollset_set_add_pollset_set(interested_parties_, request->interested_party);
+    }
+
+    bool CancelRequest(GrpcAresRequest* request) {
+      // FIXME: run on_done?
+      requests_.erase(request);
+      // FIXME
+      grpc_pollset_set_del_pollset_set(interested_parties_, request->interested_party);
+      // FIXME: other cleanup if empty
+      return requests_.empty();
+    }
+
+    static void OnTxtQueryDoneLocked(void* arg, int status, int timeouts,
+                                     unsigned char* buf, int len) {
+      char* error_msg;
+      RequestWrapper* self = static_cast<RequestWrapper*>(arg);
+      const size_t prefix_len = sizeof(g_service_config_attribute_prefix) - 1;
+      struct ares_txt_ext* result = nullptr;
+      struct ares_txt_ext* reply = nullptr;
+      grpc_error* error = GRPC_ERROR_NONE;
+      if (status != ARES_SUCCESS) goto fail;
+      GRPC_CARES_TRACE_LOG("request:%p OnTxtQueryDoneLocked ARES_SUCCESS", r);
+      status = ares_parse_txt_reply_ext(buf, len, &reply);
+      if (status != ARES_SUCCESS) goto fail;
+      // Find service config in TXT record.
+      for (result = reply; result != nullptr; result = result->next) {
+        if (result->record_start &&
+            memcmp(result->txt, g_service_config_attribute_prefix,
+                   prefix_len) == 0) {
+          break;
+        }
+      }
+      // Found a service config record.
+      if (result != nullptr) {
+        size_t service_config_len = result->length - prefix_len;
+        *self->service_config_json_out =
+            static_cast<char*>(gpr_malloc(service_config_len + 1));
+        memcpy(*self->service_config_json_out, result->txt + prefix_len,
+               service_config_len);
+        for (result = result->next; result != nullptr && !result->record_start;
+             result = result->next) {
+          *self->service_config_json_out = static_cast<char*>(
+              gpr_realloc(*self->service_config_json_out,
+                          service_config_len + result->length + 1));
+          memcpy(*self->service_config_json_out + service_config_len,
+                 result->txt, result->length);
+          service_config_len += result->length;
+        }
+        (*self->service_config_json_out)[service_config_len] = '\0';
+        GRPC_CARES_TRACE_LOG("request:%p found service config: %s", r,
+                             *self->service_config_json_out);
+      }
+      // Clean up.
+      ares_free_data(reply);
+      goto done;
+    fail:
+      gpr_asprintf(&error_msg,
+                   "C-ares TXT lookup status is not ARES_SUCCESS: %s",
+                   ares_strerror(status));
+      error = GRPC_ERROR_CREATE_FROM_COPIED_STRING(error_msg);
+      GRPC_CARES_TRACE_LOG("request:%p OnTxtQueryDoneLocked %s", r, error_msg);
+      gpr_free(error_msg);
+      self->error = grpc_error_add_child(error, self->error);
+    done:
+      grpc_ares_request_unref_locked(r);
+    }
+
+    static void OnSrvQueryDoneLocked(void* arg, int status, int timeouts,
+                                     unsigned char* abuf, int alen) {
+      GrpcAresPendingRequestMap::RequestWrapper* self =
+          static_cast<RequestWrapper*>(arg);
+      if (status == ARES_SUCCESS) {
+        GRPC_CARES_TRACE_LOG("request:%p OnSrvQueryDoneLocked ARES_SUCCESS", r);
+        struct ares_srv_reply* reply;
+        const int parse_status = ares_parse_srv_reply(abuf, alen, &reply);
+        GRPC_CARES_TRACE_LOG("request:%p ares_parse_srv_reply: %d", r,
+                             parse_status);
+        if (parse_status == ARES_SUCCESS) {
+          ares_channel* channel =
+              grpc_ares_ev_driver_get_channel_locked(self->ev_driver);
+          for (struct ares_srv_reply* srv_it = reply; srv_it != nullptr;
+               srv_it = srv_it->next) {
+            if (grpc_ares_query_ipv6()) {
+              grpc_ares_hostbyname_request* hr =
+                  create_hostbyname_request_locked(r, srv_it->host,
+                                                   htons(srv_it->port),
+                                                   true /* is_balancer */);
+              ares_gethostbyname(*channel, hself->host, AF_INET6,
+                                 on_hostbyname_done_locked, hr);
+            }
+            grpc_ares_hostbyname_request* hr = create_hostbyname_request_locked(
+                r, srv_it->host, htons(srv_it->port), true /* is_balancer */);
+            ares_gethostbyname(*channel, hself->host, AF_INET,
+                               on_hostbyname_done_locked, hr);
+            grpc_ares_ev_driver_start_locked(self->ev_driver);
+          }
+        }
+        if (reply != nullptr) {
+          ares_free_data(reply);
+        }
+      } else {
+        char* error_msg;
+        gpr_asprintf(&error_msg, "C-ares status is not ARES_SUCCESS: %s",
+                     ares_strerror(status));
+        GRPC_CARES_TRACE_LOG("request:%p OnSrvQueryDoneLocked %s", r,
+                             error_msg);
+        grpc_error* error = GRPC_ERROR_CREATE_FROM_COPIED_STRING(error_msg);
+        gpr_free(error_msg);
+        self->error = grpc_error_add_child(error, self->error);
+      }
+      self->Unref()
+    }
+
+    void LookUpWithAresLib() {
+      grpc_error* local_error = GRPC_ERROR_NONE;
+      grpc_ares_hostbyname_request* hr = nullptr;
+      ares_channel* channel = nullptr;
+      /* parse name, splitting it into host and port parts */
+      grpc_core::UniquePtr<char> host;
+      grpc_core::UniquePtr<char> port;
+      grpc_core::SplitHostPort(name, &host, &port);
+      if (host == nullptr) {
+        local_error = grpc_error_set_str(
+            GRPC_ERROR_CREATE_FROM_STATIC_STRING("unparseable host:port"),
+            GRPC_ERROR_STR_TARGET_ADDRESS, grpc_slice_from_copied_string(name));
+        goto error_cleanup;
+      } else if (port == nullptr) {
+        if (default_port == nullptr) {
+          local_error = grpc_error_set_str(
+              GRPC_ERROR_CREATE_FROM_STATIC_STRING("no port in name"),
+              GRPC_ERROR_STR_TARGET_ADDRESS,
+              grpc_slice_from_copied_string(name));
+          goto error_cleanup;
+        }
+        port.reset(gpr_strdup(default_port));
+      }
+      local_error = grpc_ares_ev_driver_create_locked(
+          &ev_driver, interested_parties, query_timeout_ms, combiner, this);
+      if (local_error != GRPC_ERROR_NONE) goto error_cleanup;
+      channel = grpc_ares_ev_driver_get_channel_locked(ev_driver);
+      // If dns_server is specified, use it.
+      if (dns_server != nullptr) {
+        GRPC_CARES_TRACE_LOG("request:%p Using DNS server %s", this,
+                             dns_server);
+        grpc_resolved_address addr;
+        if (grpc_parse_ipv4_hostport(dns_server, &addr,
+                                     false /* log_errors */)) {
+          dns_server_addr.family = AF_INET;
+          struct sockaddr_in* in =
+              reinterpret_cast<struct sockaddr_in*>(addr.addr);
+          memcpy(&dns_server_addr.addr.addr4, &in->sin_addr,
+                 sizeof(struct in_addr));
+          dns_server_addr.tcp_port = grpc_sockaddr_get_port(&addr);
+          dns_server_addr.udp_port = grpc_sockaddr_get_port(&addr);
+        } else if (grpc_parse_ipv6_hostport(dns_server, &addr,
+                                            false /* log_errors */)) {
+          dns_server_addr.family = AF_INET6;
+          struct sockaddr_in6* in6 =
+              reinterpret_cast<struct sockaddr_in6*>(addr.addr);
+          memcpy(&dns_server_addr.addr.addr6, &in6->sin6_addr,
+                 sizeof(struct in6_addr));
+          dns_server_addr.tcp_port = grpc_sockaddr_get_port(&addr);
+          dns_server_addr.udp_port = grpc_sockaddr_get_port(&addr);
+        } else {
+          local_error = grpc_error_set_str(
+              GRPC_ERROR_CREATE_FROM_STATIC_STRING("cannot parse authority"),
+              GRPC_ERROR_STR_TARGET_ADDRESS,
+              grpc_slice_from_copied_string(name));
+          goto error_cleanup;
+        }
+        int status = ares_set_servers_ports(*channel, &dns_server_addr);
+        if (status != ARES_SUCCESS) {
+          char* error_msg;
+          gpr_asprintf(&error_msg, "C-ares status is not ARES_SUCCESS: %s",
+                       ares_strerror(status));
+          local_error = GRPC_ERROR_CREATE_FROM_COPIED_STRING(error_msg);
+          gpr_free(error_msg);
+          goto error_cleanup;
+        }
+      }
+      pending_queries = 1;
+      if (grpc_ares_query_ipv6()) {
+        hr = create_hostbyname_request_locked(r, host.get(),
+                                              grpc_strhtons(port.get()),
+                                              /*is_balancer=*/false);
+        ares_gethostbyname(*channel, hr->host, AF_INET6,
+                           on_hostbyname_done_locked, hr);
+      }
+      hr = create_hostbyname_request_locked(r, host.get(),
+                                            grpc_strhtons(port.get()),
+                                            /*is_balancer=*/false);
+      ares_gethostbyname(*channel, hr->host, AF_INET, on_hostbyname_done_locked,
+                         hr);
+      if (check_grpclb) {
+        /* Query the SRV record */
+        grpc_ares_request_ref_locked(r);
+        char* service_name;
+        gpr_asprintf(&service_name, "_grpclb._tcp.%s", host.get());
+        ares_query(
+            *channel, service_name, ns_c_in, ns_t_srv,
+            GrpcAresPendingRequestMap::RequestWrapper::OnSrvQueryDoneLocked, r);
+        gpr_free(service_name);
+      }
+      if (service_config_json_out != nullptr) {
+        grpc_ares_request_ref_locked(r);
+        char* config_name;
+        gpr_asprintf(&config_name, "_grpc_config.%s", host.get());
+        ares_search(*channel, config_name, ns_c_in, ns_t_txt,
+                    OnTxtQueryDoneLocked, this);
+        gpr_free(config_name);
+      }
+      grpc_ares_ev_driver_start_locked(ev_driver);
+      grpc_ares_request_unref_locked(this);
+      return;
+
+    error_cleanup:
+      error = local_error;
+      RequestDoneLocked(r);
+    }
+
+    void OnResult() {
+      ev_driver = nullptr;
+      ServerAddressList* addresses = addresses_out->get();
+      // Sort the addresses.
+      if (addresses != nullptr) {
+        grpc_cares_wrapper_address_sorting_sort(addresses.get());
+        GRPC_ERROR_UNREF(error);
+        error = GRPC_ERROR_NONE;
+        // TODO(apolcyn): allow c-ares to return a service config
+        // with no addresses along side it
+      }
+      char* service_config_json = service_config_json_out != nullptr
+                                      ? *service_config_json_out
+                                      : nullptr;
+      // Copy and pass result to each request.
+      for (auto& p : requests_) {
+        auto& request = p.second;
+        ResultUpdater* updater = grpc_core::New<ResultUpdater>();
+        if (addresses != nullptr) {
+          updater->address_list =
+              grpc_core::MakeUnique<ServerAddressList>(*addresses);
+        }
+        updater->service_config_json = gpr_strdup(service_config_json);
+        updater->request = request.get();
+        GRPC_ERROR_REF(error);
+        GRPC_CARES_TRACE_LOG("cur_request:%p OnResult", request.get());
+        GRPC_CLOSURE_SCHED(
+            GRPC_CLOSURE_CREATE(ResultUpdater::UpdateLocked, updater,
+                                grpc_combiner_scheduler(request->combiner)),
+            error);
+      }
+      // Clean up.
+      GRPC_ERROR_UNREF(error);
+      addresses_out->reset();
+      if (service_config_json_out != nullptr) {
+        gpr_free(*service_config_json_out);
+      }
+    }
+
+    void Ref() { pending_queries++; }
+
+    void Unref() {
+      ;
+      if (--pending_queries == 0u) {
+        grpc_ares_ev_driver_on_queries_complete_locked(ev_driver);
+      }
+    }
+
+    //   private:
+    /** indicates the DNS server to use, if specified */
+    struct ares_addr_port_node dns_server_addr;
+    /** the evernt driver used by this request */
+    grpc_ares_ev_driver* ev_driver = nullptr;
+    /** number of ongoing queries */
+    size_t pending_queries = 0;
+    /** the errors explaining query failures, appended to in query callbacks */
+    grpc_error* error = GRPC_ERROR_NONE;
+    /** callbacks to invoke upon response */
+    grpc_core::Map<Request*, grpc_core::UniquePtr<Request>> requests_;
+
+    /** the pointer to receive the resolved addresses */
+    grpc_core::UniquePtr<grpc_core::ServerAddressList>* addresses_out = nullptr;
+    /** the pointer to receive the service config in JSON */
+    char** service_config_json_out = nullptr;
+
+    grpc_pollset_set* interested_parties_ = nullptr;
+  };
+
+  GrpcAresPendingRequestMap& instance() {
+    if (instance_ == nullptr) {
+      instance_ = grpc_core::New<GrpcAresPendingRequestMap>();
+    }
+    return *instance_;
+  }
+
+  bool AddRequest(grpc_core::UniquePtr<Request> request) {
+    grpc_core::MutexLock lock(&mu_);
+    auto iter = map_.find(request->key);
+    bool already_exists = iter != map_.end();
+    GRPC_CARES_TRACE_LOG("request:%p already_exists:%d", request.get(),
+                         already_exists);
+    auto wrapper = map_[key];
+    wrapper.AddRequest(std::move(request));
+    return already_exists;
+  }
+
+  void CancelRequest(GrpcAresRequest* request) {
+    auto iter = map_.find(request->key_);
+    auto wrapper = map_[request->key_];
+    if (wrapper.CancelRequest(request)) {
+      map_.erase(iter);
+    }
+  }
+
+  void OnResult(const RequestKey& key) {
+    grpc_core::MutexLock lock(&mu_);
+    auto iter = map_.find(key);
+    iter->second.OnResult();
+    map_.erase(iter);
+  }
+
+  //  void RequestDoneLocked(RequestKey key,
+  //                         grpc_core::UniquePtr<ServerAddressList> addresses,
+  //                         char* service_config_json = nullptr) {
+  //    auto iter = map_.find(key);
+  //    auto& wrapper = iter->second;
+  //  }
+
+ private:
+  static GrpcAresPendingRequestMap* instance_;
+
+  grpc_core::Map<RequestKey, RequestWrapper> map_;
+  grpc_core::Mutex mu_;
+};
+
+}  // namespace
 
 typedef struct grpc_ares_hostbyname_request {
   /** following members are set in create_hostbyname_request_locked
    */
   /** the top-level request instance */
-  grpc_ares_request* parent_request;
+  GrpcAresRequest* parent_request;
   /** host to resolve, parsed from the name to resolve */
   char* host;
   /** port to fill in sockaddr_in, parsed from the name to resolve */
@@ -193,88 +569,6 @@ typedef struct grpc_ares_hostbyname_request {
   /** is it a grpclb address */
   bool is_balancer;
 } grpc_ares_hostbyname_request;
-
-static gpr_once g_pending_requests_init = GPR_ONCE_INIT;
-static gpr_mu g_pending_requests_mu;
-static grpc_core::Map<GrpcAresPendingRequestKey, grpc_ares_request*>*
-    g_pending_requests;
-
-static void do_pending_requests_init() {
-  gpr_mu_init(&g_pending_requests_mu);
-  g_pending_requests = grpc_core::New<
-      grpc_core::Map<GrpcAresPendingRequestKey, grpc_ares_request*>>();
-}
-
-bool push_pending_request(grpc_ares_request* r) {
-  gpr_once_init(&g_pending_requests_init, do_pending_requests_init);
-  {
-    grpc_core::MutexLock lock(&g_pending_requests_mu);
-    bool already_exists = false;
-    GPR_ASSERT(r->next == nullptr);
-    auto pending_requests = g_pending_requests->find(r->key);
-    if (pending_requests != g_pending_requests->end()) {
-      already_exists = true;
-      r->next = pending_requests->second;
-    }
-    (*g_pending_requests)[r->key] = r;
-    GRPC_CARES_TRACE_LOG(
-        "request:%p push_pending_request already_exists:%d r->next:%p", r,
-        already_exists, r->next);
-    return already_exists;
-  }
-}
-
-/** A unique result for a lookup. This takes owneship over all fields. */
-struct complete_request_locked_args {
-  grpc_core::UniquePtr<ServerAddressList> address_list;
-  char* service_config_json;
-  grpc_ares_request* r;
-};
-
-void complete_request_locked(void* arg, grpc_error* error) {
-  complete_request_locked_args* result =
-      static_cast<complete_request_locked_args*>(arg);
-  if (result->r->service_config_json_out != nullptr) {
-    *result->r->service_config_json_out = result->service_config_json;
-  } else {
-    GPR_ASSERT(result->service_config_json == nullptr);
-  }
-  *result->r->addresses_out = std::move(result->address_list);
-  GRPC_COMBINER_UNREF(result->r->combiner, "complete request locked");
-  GRPC_ERROR_REF(error);
-  GRPC_CLOSURE_SCHED(result->r->on_done, error);
-  grpc_core::Delete(result);
-}
-
-void pop_pending_requests(const GrpcAresPendingRequestKey& key,
-                          const ServerAddressList* address_list,
-                          const char* service_config_json, grpc_error* error) {
-  grpc_core::MutexLock lock(&g_pending_requests_mu);
-  auto pending_requests = g_pending_requests->find(key);
-  grpc_ares_request* cur_request = pending_requests->second;
-  // There's at least one pending request in the list (the one invoking this).
-  GPR_ASSERT(cur_request != nullptr);
-  while (cur_request != nullptr) {
-    complete_request_locked_args* args =
-        grpc_core::New<complete_request_locked_args>();
-    if (address_list != nullptr) {
-      args->address_list = grpc_core::UniquePtr<ServerAddressList>(
-          grpc_core::New<ServerAddressList>(*address_list));
-    }
-    args->service_config_json = gpr_strdup(service_config_json);
-    args->r = cur_request;
-    GRPC_ERROR_REF(error);
-    GRPC_CARES_TRACE_LOG(
-        "cur_request:%p pop_pending_requests cur_request->next:%p", cur_request,
-        cur_request->next);
-    GRPC_CLOSURE_SCHED(
-        GRPC_CLOSURE_CREATE(complete_request_locked, args,
-                            grpc_combiner_scheduler(cur_request->combiner)),
-        error);
-    cur_request = cur_request->next;
-  }
-  g_pending_requests->erase(key);
-}
 
 static void log_address_sorting_list(const ServerAddressList& addresses,
                                      const char* input_output_str) {
@@ -317,44 +611,8 @@ void grpc_cares_wrapper_address_sorting_sort(ServerAddressList* addresses) {
   }
 }
 
-static void grpc_ares_request_ref_locked(grpc_ares_request* r) {
-  r->pending_queries++;
-}
-
-static void grpc_ares_request_unref_locked(grpc_ares_request* r) {
-  r->pending_queries--;
-  if (r->pending_queries == 0u) {
-    grpc_ares_ev_driver_on_queries_complete_locked(r->ev_driver);
-  }
-}
-
-void grpc_ares_complete_request_locked(grpc_ares_request* r) {
-  /* Invoke on_done callback and destroy the
-     request */
-  r->ev_driver = nullptr;
-  ServerAddressList* addresses = r->addresses_out->get();
-  if (addresses != nullptr) {
-    grpc_cares_wrapper_address_sorting_sort(addresses);
-    GRPC_ERROR_UNREF(r->error);
-    r->error = GRPC_ERROR_NONE;
-    // TODO(apolcyn): allow c-ares to return a service config
-    // with no addresses along side it
-  }
-  char* service_config_json = r->service_config_json_out != nullptr
-                                  ? *r->service_config_json_out
-                                  : nullptr;
-  pop_pending_requests(r->key, addresses, service_config_json, r->error);
-  // All pending request with keys equal to r->key (including this request)
-  // will now fill in their output pointers under their own combiners.
-  GRPC_ERROR_UNREF(r->error);
-  r->addresses_out->reset();
-  if (r->service_config_json_out != nullptr) {
-    gpr_free(*r->service_config_json_out);
-  }
-}
-
 static grpc_ares_hostbyname_request* create_hostbyname_request_locked(
-    grpc_ares_request* parent_request, char* host, uint16_t port,
+    GrpcAresRequest* parent_request, char* host, uint16_t port,
     bool is_balancer) {
   GRPC_CARES_TRACE_LOG(
       "request:%p create_hostbyname_request_locked host:%s port:%d "
@@ -381,7 +639,7 @@ static void on_hostbyname_done_locked(void* arg, int status, int timeouts,
                                       struct hostent* hostent) {
   grpc_ares_hostbyname_request* hr =
       static_cast<grpc_ares_hostbyname_request*>(arg);
-  grpc_ares_request* r = hr->parent_request;
+  GrpcAresRequest* request = hr->parent_request;
   if (status == ARES_SUCCESS) {
     GRPC_CARES_TRACE_LOG(
         "request:%p on_hostbyname_done_locked host=%s ARES_SUCCESS", r,
@@ -448,209 +706,6 @@ static void on_hostbyname_done_locked(void* arg, int status, int timeouts,
     r->error = grpc_error_add_child(error, r->error);
   }
   destroy_hostbyname_request_locked(hr);
-}
-
-static void on_srv_query_done_locked(void* arg, int status, int timeouts,
-                                     unsigned char* abuf, int alen) {
-  grpc_ares_request* r = static_cast<grpc_ares_request*>(arg);
-  if (status == ARES_SUCCESS) {
-    GRPC_CARES_TRACE_LOG("request:%p on_srv_query_done_locked ARES_SUCCESS", r);
-    struct ares_srv_reply* reply;
-    const int parse_status = ares_parse_srv_reply(abuf, alen, &reply);
-    GRPC_CARES_TRACE_LOG("request:%p ares_parse_srv_reply: %d", r,
-                         parse_status);
-    if (parse_status == ARES_SUCCESS) {
-      ares_channel* channel =
-          grpc_ares_ev_driver_get_channel_locked(r->ev_driver);
-      for (struct ares_srv_reply* srv_it = reply; srv_it != nullptr;
-           srv_it = srv_it->next) {
-        if (grpc_ares_query_ipv6()) {
-          grpc_ares_hostbyname_request* hr = create_hostbyname_request_locked(
-              r, srv_it->host, htons(srv_it->port), true /* is_balancer */);
-          ares_gethostbyname(*channel, hr->host, AF_INET6,
-                             on_hostbyname_done_locked, hr);
-        }
-        grpc_ares_hostbyname_request* hr = create_hostbyname_request_locked(
-            r, srv_it->host, htons(srv_it->port), true /* is_balancer */);
-        ares_gethostbyname(*channel, hr->host, AF_INET,
-                           on_hostbyname_done_locked, hr);
-        grpc_ares_ev_driver_start_locked(r->ev_driver);
-      }
-    }
-    if (reply != nullptr) {
-      ares_free_data(reply);
-    }
-  } else {
-    char* error_msg;
-    gpr_asprintf(&error_msg, "C-ares status is not ARES_SUCCESS: %s",
-                 ares_strerror(status));
-    GRPC_CARES_TRACE_LOG("request:%p on_srv_query_done_locked %s", r,
-                         error_msg);
-    grpc_error* error = GRPC_ERROR_CREATE_FROM_COPIED_STRING(error_msg);
-    gpr_free(error_msg);
-    r->error = grpc_error_add_child(error, r->error);
-  }
-  grpc_ares_request_unref_locked(r);
-}
-
-static const char g_service_config_attribute_prefix[] = "grpc_config=";
-
-static void on_txt_done_locked(void* arg, int status, int timeouts,
-                               unsigned char* buf, int len) {
-  char* error_msg;
-  grpc_ares_request* r = static_cast<grpc_ares_request*>(arg);
-  const size_t prefix_len = sizeof(g_service_config_attribute_prefix) - 1;
-  struct ares_txt_ext* result = nullptr;
-  struct ares_txt_ext* reply = nullptr;
-  grpc_error* error = GRPC_ERROR_NONE;
-  if (status != ARES_SUCCESS) goto fail;
-  GRPC_CARES_TRACE_LOG("request:%p on_txt_done_locked ARES_SUCCESS", r);
-  status = ares_parse_txt_reply_ext(buf, len, &reply);
-  if (status != ARES_SUCCESS) goto fail;
-  // Find service config in TXT record.
-  for (result = reply; result != nullptr; result = result->next) {
-    if (result->record_start &&
-        memcmp(result->txt, g_service_config_attribute_prefix, prefix_len) ==
-            0) {
-      break;
-    }
-  }
-  // Found a service config record.
-  if (result != nullptr) {
-    size_t service_config_len = result->length - prefix_len;
-    *r->service_config_json_out =
-        static_cast<char*>(gpr_malloc(service_config_len + 1));
-    memcpy(*r->service_config_json_out, result->txt + prefix_len,
-           service_config_len);
-    for (result = result->next; result != nullptr && !result->record_start;
-         result = result->next) {
-      *r->service_config_json_out = static_cast<char*>(
-          gpr_realloc(*r->service_config_json_out,
-                      service_config_len + result->length + 1));
-      memcpy(*r->service_config_json_out + service_config_len, result->txt,
-             result->length);
-      service_config_len += result->length;
-    }
-    (*r->service_config_json_out)[service_config_len] = '\0';
-    GRPC_CARES_TRACE_LOG("request:%p found service config: %s", r,
-                         *r->service_config_json_out);
-  }
-  // Clean up.
-  ares_free_data(reply);
-  goto done;
-fail:
-  gpr_asprintf(&error_msg, "C-ares TXT lookup status is not ARES_SUCCESS: %s",
-               ares_strerror(status));
-  error = GRPC_ERROR_CREATE_FROM_COPIED_STRING(error_msg);
-  GRPC_CARES_TRACE_LOG("request:%p on_txt_done_locked %s", r, error_msg);
-  gpr_free(error_msg);
-  r->error = grpc_error_add_child(error, r->error);
-done:
-  grpc_ares_request_unref_locked(r);
-}
-
-void grpc_dns_lookup_ares_continue_after_check_localhost_and_ip_literals_locked(
-    grpc_ares_request* r, const char* dns_server, const char* name,
-    const char* default_port, grpc_pollset_set* interested_parties,
-    bool check_grpclb, int query_timeout_ms, grpc_core::Combiner* combiner) {
-  grpc_error* error = GRPC_ERROR_NONE;
-  grpc_ares_hostbyname_request* hr = nullptr;
-  ares_channel* channel = nullptr;
-  /* parse name, splitting it into host and port parts */
-  grpc_core::UniquePtr<char> host;
-  grpc_core::UniquePtr<char> port;
-  grpc_core::SplitHostPort(name, &host, &port);
-  if (host == nullptr) {
-    error = grpc_error_set_str(
-        GRPC_ERROR_CREATE_FROM_STATIC_STRING("unparseable host:port"),
-        GRPC_ERROR_STR_TARGET_ADDRESS, grpc_slice_from_copied_string(name));
-    goto error_cleanup;
-  } else if (port == nullptr) {
-    if (default_port == nullptr) {
-      error = grpc_error_set_str(
-          GRPC_ERROR_CREATE_FROM_STATIC_STRING("no port in name"),
-          GRPC_ERROR_STR_TARGET_ADDRESS, grpc_slice_from_copied_string(name));
-      goto error_cleanup;
-    }
-    port.reset(gpr_strdup(default_port));
-  }
-  error = grpc_ares_ev_driver_create_locked(&r->ev_driver, interested_parties,
-                                            query_timeout_ms, combiner, r);
-  if (error != GRPC_ERROR_NONE) goto error_cleanup;
-  channel = grpc_ares_ev_driver_get_channel_locked(r->ev_driver);
-  // If dns_server is specified, use it.
-  if (dns_server != nullptr) {
-    GRPC_CARES_TRACE_LOG("request:%p Using DNS server %s", r, dns_server);
-    grpc_resolved_address addr;
-    if (grpc_parse_ipv4_hostport(dns_server, &addr, false /* log_errors */)) {
-      r->dns_server_addr.family = AF_INET;
-      struct sockaddr_in* in = reinterpret_cast<struct sockaddr_in*>(addr.addr);
-      memcpy(&r->dns_server_addr.addr.addr4, &in->sin_addr,
-             sizeof(struct in_addr));
-      r->dns_server_addr.tcp_port = grpc_sockaddr_get_port(&addr);
-      r->dns_server_addr.udp_port = grpc_sockaddr_get_port(&addr);
-    } else if (grpc_parse_ipv6_hostport(dns_server, &addr,
-                                        false /* log_errors */)) {
-      r->dns_server_addr.family = AF_INET6;
-      struct sockaddr_in6* in6 =
-          reinterpret_cast<struct sockaddr_in6*>(addr.addr);
-      memcpy(&r->dns_server_addr.addr.addr6, &in6->sin6_addr,
-             sizeof(struct in6_addr));
-      r->dns_server_addr.tcp_port = grpc_sockaddr_get_port(&addr);
-      r->dns_server_addr.udp_port = grpc_sockaddr_get_port(&addr);
-    } else {
-      error = grpc_error_set_str(
-          GRPC_ERROR_CREATE_FROM_STATIC_STRING("cannot parse authority"),
-          GRPC_ERROR_STR_TARGET_ADDRESS, grpc_slice_from_copied_string(name));
-      goto error_cleanup;
-    }
-    int status = ares_set_servers_ports(*channel, &r->dns_server_addr);
-    if (status != ARES_SUCCESS) {
-      char* error_msg;
-      gpr_asprintf(&error_msg, "C-ares status is not ARES_SUCCESS: %s",
-                   ares_strerror(status));
-      error = GRPC_ERROR_CREATE_FROM_COPIED_STRING(error_msg);
-      gpr_free(error_msg);
-      goto error_cleanup;
-    }
-  }
-  r->pending_queries = 1;
-  if (grpc_ares_query_ipv6()) {
-    hr = create_hostbyname_request_locked(r, host.get(),
-                                          grpc_strhtons(port.get()),
-                                          /*is_balancer=*/false);
-    ares_gethostbyname(*channel, hr->host, AF_INET6, on_hostbyname_done_locked,
-                       hr);
-  }
-  hr =
-      create_hostbyname_request_locked(r, host.get(), grpc_strhtons(port.get()),
-                                       /*is_balancer=*/false);
-  ares_gethostbyname(*channel, hr->host, AF_INET, on_hostbyname_done_locked,
-                     hr);
-  if (check_grpclb) {
-    /* Query the SRV record */
-    grpc_ares_request_ref_locked(r);
-    char* service_name;
-    gpr_asprintf(&service_name, "_grpclb._tcp.%s", host.get());
-    ares_query(*channel, service_name, ns_c_in, ns_t_srv,
-               on_srv_query_done_locked, r);
-    gpr_free(service_name);
-  }
-  if (r->service_config_json_out != nullptr) {
-    grpc_ares_request_ref_locked(r);
-    char* config_name;
-    gpr_asprintf(&config_name, "_grpc_config.%s", host.get());
-    ares_search(*channel, config_name, ns_c_in, ns_t_txt, on_txt_done_locked,
-                r);
-    gpr_free(config_name);
-  }
-  grpc_ares_ev_driver_start_locked(r->ev_driver);
-  grpc_ares_request_unref_locked(r);
-  return;
-
-error_cleanup:
-  r->error = error;
-  grpc_ares_complete_request_locked(r);
 }
 
 static bool inner_resolve_as_ip_literal_locked(
@@ -788,23 +843,19 @@ static bool grpc_ares_maybe_resolve_localhost_manually_locked(
 }
 #endif /* GRPC_ARES_RESOLVE_LOCALHOST_MANUALLY */
 
-static grpc_ares_request* grpc_dns_lookup_ares_locked_impl(
+static GrpcAresRequest* grpc_dns_lookup_ares_locked_impl(
     const char* dns_server, const char* name, const char* default_port,
     grpc_pollset_set* interested_parties, grpc_closure* on_done,
     grpc_core::UniquePtr<grpc_core::ServerAddressList>* addrs,
     bool check_grpclb, char** service_config_json, int query_timeout_ms,
     grpc_core::Combiner* combiner) {
-  auto pending_request_key = GrpcAresPendingRequestKey(
-      dns_server, name, default_port, query_timeout_ms, check_grpclb,
-      service_config_json != nullptr ? true : false /* check service config */);
-  grpc_ares_request* r = grpc_core::New<grpc_ares_request>(pending_request_key);
-  r->ev_driver = nullptr;
-  r->on_done = on_done;
-  r->addresses_out = addrs;
-  r->service_config_json_out = service_config_json;
-  r->error = GRPC_ERROR_NONE;
-  r->pending_queries = 0;
-  r->combiner = GRPC_COMBINER_REF(combiner, "dns lookup ares begin");
+  // Don't query for SRV and TXT records if the target is "localhost", so
+  // as to cut down on lookups over the network, especially in tests:
+  // https://github.com/grpc/proposal/pull/79
+  if (target_matches_localhost(name)) {
+    check_grpclb = false;
+    service_config_json = nullptr;
+  }
   GRPC_CARES_TRACE_LOG(
       "request:%p c-ares grpc_dns_lookup_ares_locked_impl dns_server=%s "
       "name=%s, "
@@ -812,58 +863,55 @@ static grpc_ares_request* grpc_dns_lookup_ares_locked_impl(
       "query_timeout_ms=%d",
       r, dns_server, name, default_port, check_grpclb, service_config_json,
       query_timeout_ms);
-  if (push_pending_request(r)) {
+  auto key = GrpcAresPendingRequestMap::RequestKey(
+      dns_server, name, default_port, query_timeout_ms, check_grpclb,
+      service_config_json != nullptr ? true : false /* check service config */);
+  auto* request = grpc_core::New<GrpcAresRequest>(key,
+      addrs, service_config_json, on_done, interested_parties,
+      GRPC_COMBINER_REF(combiner, "dns lookup ares begin"));
+  auto& map = GrpcAresPendingRequestMap::instance();
+  if (map.AddRequest(request)) {
     // A resolution request with the same key is already pending. Wait until
     // that one finishes and then complete this one with a copy of the results.
-    return r;
+    return request;
   }
   // Early out if the target is an ipv4 or ipv6 literal.
   if (resolve_as_ip_literal_locked(name, default_port, addrs)) {
-    grpc_ares_complete_request_locked(r);
-    return r;
+    map.OnResult(key);
+    return request;
   }
   // Early out if the target is localhost and we're on Windows.
   if (grpc_ares_maybe_resolve_localhost_manually_locked(name, default_port,
                                                         addrs)) {
-    grpc_ares_complete_request_locked(r);
-    return r;
-  }
-  // Don't query for SRV and TXT records if the target is "localhost", so
-  // as to cut down on lookups over the network, especially in tests:
-  // https://github.com/grpc/proposal/pull/79
-  if (target_matches_localhost(name)) {
-    check_grpclb = false;
-    r->service_config_json_out = nullptr;
+    map.OnResult(key);
+    return request;
   }
   // Look up name using c-ares lib.
-  grpc_dns_lookup_ares_continue_after_check_localhost_and_ip_literals_locked(
-      r, dns_server, name, default_port, interested_parties, check_grpclb,
-      query_timeout_ms, combiner);
-  return r;
+  map.LookUpWithAresLib(key);
+  return request;
 }
 
-grpc_ares_request* (*grpc_dns_lookup_ares_locked)(
+GrpcAresRequest* (*grpc_dns_lookup_ares_locked)(
     const char* dns_server, const char* name, const char* default_port,
     grpc_pollset_set* interested_parties, grpc_closure* on_done,
     grpc_core::UniquePtr<grpc_core::ServerAddressList>* addrs,
     bool check_grpclb, char** service_config_json, int query_timeout_ms,
     grpc_core::Combiner* combiner) = grpc_dns_lookup_ares_locked_impl;
 
-static void grpc_ares_request_destroy_locked_impl(grpc_ares_request* r) {
-  grpc_core::Delete(r);
+static void grpc_ares_request_destroy_locked_impl(GrpcAresRequest* request) {
+  grpc_core::Delete(request);
 }
 
-void (*grpc_ares_request_destroy_locked)(grpc_ares_request* r) =
+void (*grpc_ares_request_destroy_locked)(GrpcAresRequest* request) =
     grpc_ares_request_destroy_locked_impl;
 
-static void grpc_cancel_ares_request_locked_impl(grpc_ares_request* r) {
-  GPR_ASSERT(r != nullptr);
-  if (r->ev_driver != nullptr) {
-    grpc_ares_ev_driver_shutdown_locked(r->ev_driver);
-  }
+static void grpc_cancel_ares_request_locked_impl(GrpcAresRequest* request) {
+  GPR_ASSERT(request != nullptr);
+  auto& map = GrpcAresPendingRequestMap::instance();
+  map.CancelRequest(request);
 }
 
-void (*grpc_cancel_ares_request_locked)(grpc_ares_request* r) =
+void (*grpc_cancel_ares_request_locked)(GrpcAresRequest* request) =
     grpc_cancel_ares_request_locked_impl;
 
 // ares_library_init and ares_library_cleanup are currently no-op except under
@@ -912,7 +960,7 @@ typedef struct grpc_resolve_address_ares_request {
   /* pollset_set to be driven by */
   grpc_pollset_set* interested_parties;
   /* underlying ares_request that the query is performed on */
-  grpc_ares_request* ares_request = nullptr;
+  GrpcAresRequest* ares_request = nullptr;
 } grpc_resolve_address_ares_request;
 
 static void on_dns_lookup_done_locked(void* arg, grpc_error* error) {
