@@ -14,4 +14,4 @@
 
 # AUTO-GENERATED FROM `$REPO_ROOT/templates/src/python/grpcio_tests/grpc_version.py.template`!!!
 
-VERSION = '1.25.0.dev0'
+VERSION = '1.26.0.dev0'
