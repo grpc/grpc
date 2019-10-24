@@ -119,7 +119,7 @@ class Runner(object):
 
     def __init__(self, dedicated_threads=True):
         """Constructs the Runner object.
-        
+
         Args:
           dedicated_threads: A bool indicates whether to spawn each unit test
             in separate thread or not.
