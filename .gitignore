@@ -147,3 +147,7 @@ cmake-build-debug/
 
 # Benchmark outputs
 BenchmarkDotNet.Artifacts/
+
+# pyenv config
+.python-version
+
