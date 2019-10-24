@@ -77,9 +77,9 @@ void resolver_enqueue_long(grpc_closure* closure, grpc_error* error) {
       closure, error, false /* is_short */);
 }
 
-using enqueue_func = void (*)(grpc_closure* closure, grpc_error* error);
+using EnqueueFunc = void (*)(grpc_closure* closure, grpc_error* error);
 
-const enqueue_func
+const EnqueueFunc
     executor_enqueue_fns_[static_cast<size_t>(ExecutorType::NUM_EXECUTORS)]
                          [static_cast<size_t>(ExecutorJobType::NUM_JOB_TYPES)] =
                              {{default_enqueue_short, default_enqueue_long},
