@@ -2362,7 +2362,7 @@ INSTANTIATE_TEST_SUITE_P(UsesXdsResolver, FallbackTest,
 
 // Comment out this test suite because the ports size too large, should be less
 // than 200.
-//INSTANTIATE_TEST_SUITE_P(UsesXdsResolver, ClientLoadReportingWithDropTest,
+// INSTANTIATE_TEST_SUITE_P(UsesXdsResolver, ClientLoadReportingWithDropTest,
 //                         ::testing::Bool());
 
 }  // namespace
