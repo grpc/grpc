@@ -16,6 +16,7 @@ import asyncio
 import unittest
 from grpc.experimental import aio
 
+
 class AioTestBase(unittest.TestCase):
 
     def setUp(self):
@@ -26,4 +27,3 @@ class AioTestBase(unittest.TestCase):
     @property
     def loop(self):
         return self._loop
-
