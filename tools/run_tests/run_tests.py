@@ -862,7 +862,7 @@ class PythonLanguage(object):
             name='pypy3', major='3', config_vars=config_vars)
 
         if args.iomgr_platform == 'asyncio':
-            if args.compiler not in ('python3.6', 'python3.7', 'python3.8'):
+            if args.compiler not in ('default', 'python3.6', 'python3.7', 'python3.8'):
                 raise Exception(
                     'Compiler %s not supported with IO Manager platform: %s' %
                     (args.compiler, args.iomgr_platform))
