@@ -249,6 +249,22 @@ def _consume_request_iterator(request_iterator, state, call, request_serializer,
     consumption_thread.start()
 
 
+def _rpc_state_string(class_name, rpc_state):
+    """Calculates error string for RPC."""
+    with rpc_state.condition:
+        if rpc_state.code is None:
+            return '<{} object>'.format(
+                class_name)
+        elif rpc_state.code is grpc.StatusCode.OK:
+            return _OK_RENDEZVOUS_REPR_FORMAT.format(
+                class_name, rpc_state.code, rpc_state.details)
+        else:
+            return _NON_OK_RENDEZVOUS_REPR_FORMAT.format(
+                class_name, rpc_state.code, rpc_state.details,
+                rpc_state.debug_error_string)
+
+
+
 class _RpcError(grpc.RpcError, grpc.Call):
     """An RPC error not tied to the execution of a particular RPC.
 
@@ -278,19 +294,8 @@ class _RpcError(grpc.RpcError, grpc.Call):
         with self._state.condition:
             return _common.decode(self._state.debug_error_string)
 
-    # TODO: Dedupe.
     def _repr(self):
-        with self._state.condition:
-            if self._state.code is None:
-                return '<{} object>'.format(
-                    self.__class__.__name__)
-            elif self._state.code is grpc.StatusCode.OK:
-                return _OK_RENDEZVOUS_REPR_FORMAT.format(
-                    self.__class__.__name__, self._state.code, self._state.details)
-            else:
-                return _NON_OK_RENDEZVOUS_REPR_FORMAT.format(
-                    self.__class__.__name__, self._state.code, self._state.details,
-                    self._state.debug_error_string)
+        return _rpc_state_string(self.__class__.__name__, self._state)
 
     def __repr__(self):
         return self._repr()
@@ -389,17 +394,7 @@ class _Rendezvous(grpc.RpcError, grpc.Call):
         raise NotImplementedError()
 
     def _repr(self):
-        with self._state.condition:
-            if self._state.code is None:
-                return '<{} object of in-flight RPC>'.format(
-                    self.__class__.__name__)
-            elif self._state.code is grpc.StatusCode.OK:
-                return _OK_RENDEZVOUS_REPR_FORMAT.format(
-                    self.__class__.__name__, self._state.code, self._state.details)
-            else:
-                return _NON_OK_RENDEZVOUS_REPR_FORMAT.format(
-                    self.__class__.__name__, self._state.code, self._state.details,
-                    self._state.debug_error_string)
+        return _rpc_state_string(self.__class__.__name__, self._state)
 
     def __repr__(self):
         return self._repr()
