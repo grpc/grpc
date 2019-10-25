@@ -1342,9 +1342,7 @@ class Channel(grpc.Channel):
         # on a single Python thread results in an appreciable speed-up. However,
         # due to slight differences in capability, the multi-threaded variant
         # remains the default.
-        # if self._single_threaded_unary_stream:
-        # TODO: Put this back.
-        if True:
+        if self._single_threaded_unary_stream:
             return _SingleThreadedUnaryStreamMultiCallable(
                 self._channel, _common.encode(method), request_serializer,
                 response_deserializer)
