@@ -51,6 +51,16 @@ class TestServer(AioTestBase):
                 self.assertEqual(response, _RESPONSE)
 
         self.loop.run_until_complete(test_unary_unary_body())
+    
+    def test_shutdown(self):
+
+        async def test_shutdown_body():
+            server = aio.server()
+            port = server.add_insecure_port('[::]:0')
+            server.add_generic_rpc_handlers((GenericHandler(),))
+            await server.start()
+            await server.stop(None)
+        asyncio.get_event_loop().run_until_complete(test_shutdown_body())
 
 
 if __name__ == '__main__':

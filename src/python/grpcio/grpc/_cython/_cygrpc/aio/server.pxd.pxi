@@ -30,6 +30,7 @@ cdef enum AioServerStatus:
     AIO_SERVER_STATUS_READY
     AIO_SERVER_STATUS_RUNNING
     AIO_SERVER_STATUS_STOPPED
+    AIO_SERVER_STATUS_STOPPING
 
 
 cdef class _CallbackCompletionQueue:
@@ -42,3 +43,4 @@ cdef class AioServer:
     cdef _CallbackCompletionQueue _cq
     cdef list _generic_handlers
     cdef AioServerStatus _status
+    cdef object _loop
