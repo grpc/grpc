@@ -412,7 +412,7 @@ class _SingleThreadedRendezvous(_Rendezvous, grpc.Call):  # pylint: disable=too-
             # NOTE(gnossen): Based on our initial call batch, we are guaranteed
             # to receive initial metadata before any messages.
             while self._state.initial_metadata is None:
-                self._get_next_event()
+                self._consume_next_event()
             return self._state.initial_metadata
 
     def trailing_metadata(self):
@@ -427,17 +427,19 @@ class _SingleThreadedRendezvous(_Rendezvous, grpc.Call):  # pylint: disable=too-
         """See grpc.Call.code"""
         with self._state.condition:
             if self._state.code is None:
-                raise grpc.experimental.UsageError("Cannot get code until RPC is completed.")
+                raise grpc.experimental.UsageError(
+                    "Cannot get code until RPC is completed.")
             return self._state.code
 
     def details(self):
         """See grpc.Call.details"""
         with self._state.condition:
             if self._state.details is None:
-                raise grpc.experimental.UsageError("Cannot get details until RPC is completed.")
+                raise grpc.experimental.UsageError(
+                    "Cannot get details until RPC is completed.")
             return _common.decode(self._state.details)
 
-    def _get_next_event(self):
+    def _consume_next_event(self):
         event = self._call.next_event()
         with self._state.condition:
             callbacks = _handle_event(event, self._state,
@@ -450,7 +452,7 @@ class _SingleThreadedRendezvous(_Rendezvous, grpc.Call):  # pylint: disable=too-
 
     def _next_response(self):
         while True:
-            self._get_next_event()
+            self._consume_next_event()
             with self._state.condition:
                 if self._state.response is not None:
                     response = self._state.response
