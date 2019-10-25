@@ -47,7 +47,8 @@ int GetIntValueFromMetadata(
 }  // namespace
 
 void CallbackStreamingTestService::Echo(
-    ServerContext* context, const EchoRequest* request, EchoResponse* response,
+    ServerContext* context, const EchoRequest* /*request*/,
+    EchoResponse* response,
     experimental::ServerCallbackRpcController* controller) {
   int response_msgs_size = GetIntValueFromMetadata(
       kServerMessageSize, context->client_metadata(), 0);

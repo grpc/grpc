@@ -77,28 +77,13 @@ void resolver_enqueue_long(grpc_closure* closure, grpc_error* error) {
       closure, error, false /* is_short */);
 }
 
-const grpc_closure_scheduler_vtable
-    vtables_[static_cast<size_t>(ExecutorType::NUM_EXECUTORS)]
-            [static_cast<size_t>(ExecutorJobType::NUM_JOB_TYPES)] = {
-                {{&default_enqueue_short, &default_enqueue_short,
-                  "def-ex-short"},
-                 {&default_enqueue_long, &default_enqueue_long, "def-ex-long"}},
-                {{&resolver_enqueue_short, &resolver_enqueue_short,
-                  "res-ex-short"},
-                 {&resolver_enqueue_long, &resolver_enqueue_long,
-                  "res-ex-long"}}};
+using EnqueueFunc = void (*)(grpc_closure* closure, grpc_error* error);
 
-grpc_closure_scheduler
-    schedulers_[static_cast<size_t>(ExecutorType::NUM_EXECUTORS)]
-               [static_cast<size_t>(ExecutorJobType::NUM_JOB_TYPES)] = {
-                   {{&vtables_[static_cast<size_t>(ExecutorType::DEFAULT)]
-                              [static_cast<size_t>(ExecutorJobType::SHORT)]},
-                    {&vtables_[static_cast<size_t>(ExecutorType::DEFAULT)]
-                              [static_cast<size_t>(ExecutorJobType::LONG)]}},
-                   {{&vtables_[static_cast<size_t>(ExecutorType::RESOLVER)]
-                              [static_cast<size_t>(ExecutorJobType::SHORT)]},
-                    {&vtables_[static_cast<size_t>(ExecutorType::RESOLVER)]
-                              [static_cast<size_t>(ExecutorJobType::LONG)]}}};
+const EnqueueFunc
+    executor_enqueue_fns_[static_cast<size_t>(ExecutorType::NUM_EXECUTORS)]
+                         [static_cast<size_t>(ExecutorJobType::NUM_JOB_TYPES)] =
+                             {{default_enqueue_short, default_enqueue_long},
+                              {resolver_enqueue_short, resolver_enqueue_long}};
 
 }  // namespace
 
@@ -418,14 +403,10 @@ void Executor::InitAll() {
   EXECUTOR_TRACE0("Executor::InitAll() done");
 }
 
-grpc_closure_scheduler* Executor::Scheduler(ExecutorType executor_type,
-                                            ExecutorJobType job_type) {
-  return &schedulers_[static_cast<size_t>(executor_type)]
-                     [static_cast<size_t>(job_type)];
-}
-
-grpc_closure_scheduler* Executor::Scheduler(ExecutorJobType job_type) {
-  return Executor::Scheduler(ExecutorType::DEFAULT, job_type);
+void Executor::Run(grpc_closure* closure, grpc_error* error,
+                   ExecutorType executor_type, ExecutorJobType job_type) {
+  executor_enqueue_fns_[static_cast<size_t>(executor_type)]
+                       [static_cast<size_t>(job_type)](closure, error);
 }
 
 void Executor::ShutdownAll() {

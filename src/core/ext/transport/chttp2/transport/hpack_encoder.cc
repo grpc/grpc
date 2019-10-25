@@ -224,7 +224,7 @@ static void UpdateAddOrEvict(Hashtable hashtable, const ValueType& value,
 }
 
 /* halve all counts because an element reached max */
-static void HalveFilter(uint8_t idx, uint32_t* sum, uint8_t* elems) {
+static void HalveFilter(uint8_t /*idx*/, uint32_t* sum, uint8_t* elems) {
   *sum = 0;
   for (int i = 0; i < GRPC_CHTTP2_HPACKC_NUM_VALUES; i++) {
     elems[i] /= 2;
@@ -452,8 +452,8 @@ static void add_key(grpc_chttp2_hpack_compressor* c, grpc_mdelem elem,
   }
 }
 
-static void emit_indexed(grpc_chttp2_hpack_compressor* c, uint32_t elem_index,
-                         framer_state* st) {
+static void emit_indexed(grpc_chttp2_hpack_compressor* /*c*/,
+                         uint32_t elem_index, framer_state* st) {
   GRPC_STATS_INC_HPACK_SEND_INDEXED();
   uint32_t len = GRPC_CHTTP2_VARINT_LENGTH(elem_index, 1);
   GRPC_CHTTP2_WRITE_VARINT(elem_index, 1, 0x80, add_tiny_header_data(st, len),
@@ -511,7 +511,7 @@ enum class EmitLitHdrVType { INC_IDX_V, NO_IDX_V };
 }  // namespace
 
 template <EmitLitHdrType type>
-static void emit_lithdr(grpc_chttp2_hpack_compressor* c, uint32_t key_index,
+static void emit_lithdr(grpc_chttp2_hpack_compressor* /*c*/, uint32_t key_index,
                         grpc_mdelem elem, framer_state* st) {
   switch (type) {
     case EmitLitHdrType::INC_IDX:
@@ -549,7 +549,7 @@ static void emit_lithdr(grpc_chttp2_hpack_compressor* c, uint32_t key_index,
 }
 
 template <EmitLitHdrVType type>
-static void emit_lithdr_v(grpc_chttp2_hpack_compressor* c, grpc_mdelem elem,
+static void emit_lithdr_v(grpc_chttp2_hpack_compressor* /*c*/, grpc_mdelem elem,
                           framer_state* st) {
   switch (type) {
     case EmitLitHdrVType::INC_IDX_V:

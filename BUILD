@@ -72,11 +72,11 @@ config_setting(
 python_config_settings()
 
 # This should be updated along with build.yaml
-g_stands_for = "game"
+g_stands_for = "gon"
 
 core_version = "7.0.0"
 
-version = "1.25.0-dev"
+version = "1.26.0-dev"
 
 GPR_PUBLIC_HDRS = [
     "include/grpc/support/alloc.h",
@@ -375,11 +375,11 @@ grpc_cc_library(
     deps = [
         "gpr",
         "grpc",
-        "grpc_secure",
         "grpc++_base",
         "grpc++_codegen_base",
         "grpc++_codegen_base_src",
         "grpc++_codegen_proto",
+        "grpc_secure",
     ],
 )
 
@@ -856,7 +856,6 @@ grpc_cc_library(
         "src/core/lib/iomgr/executor/mpmcqueue.h",
         "src/core/lib/iomgr/executor/threadpool.h",
         "src/core/lib/iomgr/gethostname.h",
-        "src/core/lib/iomgr/python_util.h",
         "src/core/lib/iomgr/grpc_if_nametoindex.h",
         "src/core/lib/iomgr/internal_errqueue.h",
         "src/core/lib/iomgr/iocp_windows.h",
@@ -877,6 +876,7 @@ grpc_cc_library(
         "src/core/lib/iomgr/pollset_uv.h",
         "src/core/lib/iomgr/pollset_windows.h",
         "src/core/lib/iomgr/port.h",
+        "src/core/lib/iomgr/python_util.h",
         "src/core/lib/iomgr/resolve_address.h",
         "src/core/lib/iomgr/resolve_address_custom.h",
         "src/core/lib/iomgr/resource_quota.h",
@@ -1007,8 +1007,8 @@ grpc_cc_library(
 grpc_cc_library(
     name = "grpc_client_channel",
     srcs = [
-        "src/core/ext/filters/client_channel/backup_poller.cc",
         "src/core/ext/filters/client_channel/backend_metric.cc",
+        "src/core/ext/filters/client_channel/backup_poller.cc",
         "src/core/ext/filters/client_channel/channel_connectivity.cc",
         "src/core/ext/filters/client_channel/client_channel.cc",
         "src/core/ext/filters/client_channel/client_channel_channelz.cc",
@@ -1036,8 +1036,8 @@ grpc_cc_library(
         "src/core/ext/filters/client_channel/subchannel_pool_interface.cc",
     ],
     hdrs = [
-        "src/core/ext/filters/client_channel/backup_poller.h",
         "src/core/ext/filters/client_channel/backend_metric.h",
+        "src/core/ext/filters/client_channel/backup_poller.h",
         "src/core/ext/filters/client_channel/client_channel.h",
         "src/core/ext/filters/client_channel/client_channel_channelz.h",
         "src/core/ext/filters/client_channel/client_channel_factory.h",
@@ -1258,16 +1258,16 @@ grpc_cc_library(
     srcs = [
         "src/core/ext/filters/client_channel/xds/xds_api.cc",
         "src/core/ext/filters/client_channel/xds/xds_bootstrap.cc",
-        "src/core/ext/filters/client_channel/xds/xds_client.cc",
         "src/core/ext/filters/client_channel/xds/xds_channel.cc",
+        "src/core/ext/filters/client_channel/xds/xds_client.cc",
         "src/core/ext/filters/client_channel/xds/xds_client_stats.cc",
     ],
     hdrs = [
         "src/core/ext/filters/client_channel/xds/xds_api.h",
         "src/core/ext/filters/client_channel/xds/xds_bootstrap.h",
-        "src/core/ext/filters/client_channel/xds/xds_client.h",
         "src/core/ext/filters/client_channel/xds/xds_channel.h",
         "src/core/ext/filters/client_channel/xds/xds_channel_args.h",
+        "src/core/ext/filters/client_channel/xds/xds_client.h",
         "src/core/ext/filters/client_channel/xds/xds_client_stats.h",
     ],
     language = "c++",
@@ -1283,16 +1283,16 @@ grpc_cc_library(
     srcs = [
         "src/core/ext/filters/client_channel/xds/xds_api.cc",
         "src/core/ext/filters/client_channel/xds/xds_bootstrap.cc",
-        "src/core/ext/filters/client_channel/xds/xds_client.cc",
         "src/core/ext/filters/client_channel/xds/xds_channel_secure.cc",
+        "src/core/ext/filters/client_channel/xds/xds_client.cc",
         "src/core/ext/filters/client_channel/xds/xds_client_stats.cc",
     ],
     hdrs = [
         "src/core/ext/filters/client_channel/xds/xds_api.h",
         "src/core/ext/filters/client_channel/xds/xds_bootstrap.h",
-        "src/core/ext/filters/client_channel/xds/xds_client.h",
         "src/core/ext/filters/client_channel/xds/xds_channel.h",
         "src/core/ext/filters/client_channel/xds/xds_channel_args.h",
+        "src/core/ext/filters/client_channel/xds/xds_client.h",
         "src/core/ext/filters/client_channel/xds/xds_client_stats.h",
     ],
     language = "c++",
@@ -1392,6 +1392,7 @@ grpc_cc_library(
         "grpc++_base",
         "grpc_secure",
     ],
+    alwayslink = 1,
 )
 
 grpc_cc_library(
@@ -1438,7 +1439,6 @@ grpc_cc_library(
         "lb_server_load_reporting_filter",
         "lb_server_load_reporting_service_server_builder_plugin",
     ],
-    alwayslink = 1,
 )
 
 grpc_cc_library(
@@ -2401,10 +2401,12 @@ grpc_cc_library(
 grpc_cc_library(
     name = "envoy_type_upb",
     srcs = [
+        "src/core/ext/upb-generated/envoy/type/http.upb.c",
         "src/core/ext/upb-generated/envoy/type/percent.upb.c",
         "src/core/ext/upb-generated/envoy/type/range.upb.c",
     ],
     hdrs = [
+        "src/core/ext/upb-generated/envoy/type/http.upb.h",
         "src/core/ext/upb-generated/envoy/type/percent.upb.h",
         "src/core/ext/upb-generated/envoy/type/range.upb.h",
     ],

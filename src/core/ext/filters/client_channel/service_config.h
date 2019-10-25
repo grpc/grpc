@@ -71,12 +71,16 @@ class ServiceConfig : public RefCounted<ServiceConfig> {
 
     virtual UniquePtr<ParsedConfig> ParseGlobalParams(
         const grpc_json* /* json */, grpc_error** error) {
+      // Avoid unused parameter warning on debug-only parameter
+      (void)error;
       GPR_DEBUG_ASSERT(error != nullptr);
       return nullptr;
     }
 
     virtual UniquePtr<ParsedConfig> ParsePerMethodParams(
         const grpc_json* /* json */, grpc_error** error) {
+      // Avoid unused parameter warning on debug-only parameter
+      (void)error;
       GPR_DEBUG_ASSERT(error != nullptr);
       return nullptr;
     }

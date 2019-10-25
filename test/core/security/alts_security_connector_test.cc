@@ -146,7 +146,7 @@ static void test_alts_peer_to_auth_context_success() {
   tsi_peer_destruct(&peer);
 }
 
-int main(int argc, char** argv) {
+int main(int /*argc*/, char** /*argv*/) {
   /* Test. */
   test_invalid_input_failure();
   test_empty_certificate_type_failure();

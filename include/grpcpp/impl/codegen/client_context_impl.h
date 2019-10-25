@@ -293,7 +293,8 @@ class ClientContext {
   /// https://tools.ietf.org/html/rfc7540#section-8.1.2.3).
   void set_authority(const grpc::string& authority) { authority_ = authority; }
 
-  /// Return the authentication context for this client call.
+  /// Return the authentication context for the associated client call.
+  /// It is only valid to call this during the lifetime of the client call.
   ///
   /// \see grpc::AuthContext.
   std::shared_ptr<const grpc::AuthContext> auth_context() const {
@@ -315,6 +316,13 @@ class ClientContext {
   /// \see  https://grpc.io/docs/guides/auth.html
   void set_credentials(
       const std::shared_ptr<grpc_impl::CallCredentials>& creds);
+
+  /// EXPERIMENTAL debugging API
+  ///
+  /// Returns the credentials for the client call. This should be used only in
+  /// tests and for diagnostic purposes, and should not be used by application
+  /// logic.
+  std::shared_ptr<grpc_impl::CallCredentials> credentials() { return creds_; }
 
   /// Return the compression algorithm the client call will request be used.
   /// Note that the gRPC runtime may decide to ignore this request, for example,
@@ -343,6 +351,7 @@ class ClientContext {
   }
 
   /// Return the peer uri in a string.
+  /// It is only valid to call this during the lifetime of the client call.
   ///
   /// \warning This value is never authenticated or subject to any security
   /// related code. It must not be used for any authentication related
@@ -351,8 +360,13 @@ class ClientContext {
   /// \return The call's peer URI.
   grpc::string peer() const;
 
-  /// Get and set census context.
+  /// Sets the census context.
+  /// It is only valid to call this before the client call is created. A common
+  /// place of setting census context is from within the DefaultConstructor
+  /// method of GlobalCallbacks.
   void set_census_context(struct census_context* ccp) { census_context_ = ccp; }
+
+  /// Returns the census context that has been set, or nullptr if not set.
   struct census_context* census_context() const {
     return census_context_;
   }

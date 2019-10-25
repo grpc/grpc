@@ -68,15 +68,35 @@
       return ''
     return 'endif()\n'
   %>
+  <%
+  # These files are added to a set so that they are not duplicated if multiple
+  # targets use them. Generating the same file multiple times with
+  # add_custom_command() is not allowed in CMake.
+
+  protobuf_gen_files = set()
+  for tgt in targets:
+    for src in tgt.src:
+      if proto_re.match(src):
+        protobuf_gen_files.add(src)
+  for lib in libs:
+    for src in lib.src:
+      if proto_re.match(src):
+        protobuf_gen_files.add(src)
+  %>
 
   cmake_minimum_required(VERSION 3.5.1)
 
-  set(PACKAGE_NAME      "grpc")
-  set(PACKAGE_VERSION   "${settings.cpp_version}")
-  set(gRPC_CORE_VERSION "${settings.core_version}")
-  set(PACKAGE_STRING    "<%text>${PACKAGE_NAME} ${PACKAGE_VERSION}</%text>")
-  set(PACKAGE_TARNAME   "<%text>${PACKAGE_NAME}-${PACKAGE_VERSION}</%text>")
-  set(PACKAGE_BUGREPORT "https://github.com/grpc/grpc/issues/")
+  set(PACKAGE_NAME          "grpc")
+  set(PACKAGE_VERSION       "${settings.cpp_version}")
+  set(gRPC_CORE_VERSION     "${settings.core_version}")
+  set(gRPC_CORE_SOVERSION   "${settings.core_version.major}")
+  set(gRPC_CPP_VERSION      "${settings.cpp_version}")
+  set(gRPC_CPP_SOVERSION    "${settings.cpp_version.major}")
+  set(gRPC_CSHARP_VERSION   "${settings.csharp_version}")
+  set(gRPC_CSHARP_SOVERSION "${settings.csharp_version.major}")
+  set(PACKAGE_STRING        "<%text>${PACKAGE_NAME} ${PACKAGE_VERSION}</%text>")
+  set(PACKAGE_TARNAME       "<%text>${PACKAGE_NAME}-${PACKAGE_VERSION}</%text>")
+  set(PACKAGE_BUGREPORT     "https://github.com/grpc/grpc/issues/")
   project(<%text>${PACKAGE_NAME}</%text> LANGUAGES C CXX)
 
   set(gRPC_INSTALL_BINDIR "bin" CACHE STRING "Installation directory for executables")
@@ -295,6 +315,12 @@
   add_custom_target(tools
     DEPENDS tools_c tools_cxx)
 
+  % for src in sorted(protobuf_gen_files):
+  protobuf_generate_grpc_cpp(
+    ${src}
+  )
+  % endfor
+
   if (gRPC_BUILD_TESTS)
   add_custom_target(buildtests_c)
   % for tgt in targets:
@@ -400,6 +426,19 @@
   % endfor
   )
 
+  set_target_properties(${lib.name} PROPERTIES
+  % if lib.language == 'c++':
+    VERSION <%text>${gRPC_CPP_VERSION}</%text>
+    SOVERSION <%text>${gRPC_CPP_SOVERSION}</%text>
+  % elif lib.language == 'csharp':
+    VERSION <%text>${gRPC_CSHARP_VERSION}</%text>
+    SOVERSION <%text>${gRPC_CSHARP_SOVERSION}</%text>
+  % else:
+    VERSION <%text>${gRPC_CORE_VERSION}</%text>
+    SOVERSION <%text>${gRPC_CORE_SOVERSION}</%text>
+  % endif
+  )
+
   if(WIN32 AND MSVC)
     set_target_properties(${lib.name} PROPERTIES COMPILE_PDB_NAME "${lib.name}"
       COMPILE_PDB_OUTPUT_DIRECTORY <%text>"${CMAKE_BINARY_DIR}</%text>"
@@ -410,14 +449,6 @@
       )
     endif()
   endif()
-
-  % for src in lib.src:
-  % if proto_re.match(src):
-  protobuf_generate_grpc_cpp(
-    ${src}
-  )
-  % endif
-  % endfor
 
   target_include_directories(${lib.name}
     PUBLIC <%text>$<INSTALL_INTERFACE:${gRPC_INSTALL_INCLUDEDIR}> $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include></%text>
@@ -500,14 +531,6 @@
     third_party/googletest/googlemock/src/gmock-all.cc
   % endif
   )
-
-  % for src in tgt.src:
-  % if proto_re.match(src):
-  protobuf_generate_grpc_cpp(
-    ${src}
-  )
-  % endif
-  % endfor
 
   target_include_directories(${tgt.name}
     PRIVATE <%text>${CMAKE_CURRENT_SOURCE_DIR}</%text>

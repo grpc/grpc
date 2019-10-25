@@ -28,7 +28,7 @@
 #include "src/core/lib/iomgr/combiner.h"
 #include "test/core/util/test_config.h"
 
-static grpc_combiner* g_combiner;
+static grpc_core::Combiner* g_combiner;
 
 class TestResultHandler : public grpc_core::Resolver::ResultHandler {
   void ReturnResult(grpc_core::Resolver::Result /*result*/) override {}

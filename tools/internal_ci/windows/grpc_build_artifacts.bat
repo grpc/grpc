@@ -20,6 +20,10 @@ rename C:\Python35_32bit Python35_32bits
 rename C:\Python36_32bit Python36_32bits
 rename C:\Python37_32bit Python37_32bits
 
+@rem Boringssl build no longer supports yasm
+choco uninstall yasm -y --limit-output
+choco install nasm -y --limit-output
+
 @rem enter repo root
 cd /d %~dp0\..\..\..
 

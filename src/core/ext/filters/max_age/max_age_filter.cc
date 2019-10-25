@@ -206,7 +206,7 @@ static void decrease_call_count(channel_data* chand) {
   }
 }
 
-static void start_max_idle_timer_after_init(void* arg, grpc_error* error) {
+static void start_max_idle_timer_after_init(void* arg, grpc_error* /*error*/) {
   channel_data* chand = static_cast<channel_data*>(arg);
   /* Decrease call_count. If there are no active calls at this time,
      max_idle_timer will start here. If the number of active calls is not 0,
@@ -257,7 +257,7 @@ class ConnectivityWatcher : public AsyncConnectivityStateWatcherInterface {
 
 }  // namespace grpc_core
 
-static void start_max_age_timer_after_init(void* arg, grpc_error* error) {
+static void start_max_age_timer_after_init(void* arg, grpc_error* /*error*/) {
   channel_data* chand = static_cast<channel_data*>(arg);
   gpr_mu_lock(&chand->max_age_timer_mu);
   chand->max_age_timer_pending = true;
@@ -276,7 +276,7 @@ static void start_max_age_timer_after_init(void* arg, grpc_error* error) {
 }
 
 static void start_max_age_grace_timer_after_goaway_op(void* arg,
-                                                      grpc_error* error) {
+                                                      grpc_error* /*error*/) {
   channel_data* chand = static_cast<channel_data*>(arg);
   gpr_mu_lock(&chand->max_age_timer_mu);
   chand->max_age_grace_timer_pending = true;
@@ -407,17 +407,17 @@ add_random_max_connection_age_jitter_and_convert_to_grpc_millis(int value) {
 }
 
 /* Constructor for call_data. */
-static grpc_error* max_age_init_call_elem(grpc_call_element* elem,
-                                          const grpc_call_element_args* args) {
+static grpc_error* max_age_init_call_elem(
+    grpc_call_element* elem, const grpc_call_element_args* /*args*/) {
   channel_data* chand = static_cast<channel_data*>(elem->channel_data);
   increase_call_count(chand);
   return GRPC_ERROR_NONE;
 }
 
 /* Destructor for call_data. */
-static void max_age_destroy_call_elem(grpc_call_element* elem,
-                                      const grpc_call_final_info* final_info,
-                                      grpc_closure* ignored) {
+static void max_age_destroy_call_elem(
+    grpc_call_element* elem, const grpc_call_final_info* /*final_info*/,
+    grpc_closure* /*ignored*/) {
   channel_data* chand = static_cast<channel_data*>(elem->channel_data);
   decrease_call_count(chand);
 }
@@ -527,7 +527,7 @@ const grpc_channel_filter grpc_max_age_filter = {
     "max_age"};
 
 static bool maybe_add_max_age_filter(grpc_channel_stack_builder* builder,
-                                     void* arg) {
+                                     void* /*arg*/) {
   const grpc_channel_args* channel_args =
       grpc_channel_stack_builder_get_channel_arguments(builder);
   bool enable =

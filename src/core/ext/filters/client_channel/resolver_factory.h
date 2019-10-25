@@ -39,7 +39,7 @@ struct ResolverArgs {
   /// Used to drive I/O in the name resolution process.
   grpc_pollset_set* pollset_set = nullptr;
   /// The combiner under which all resolver calls will be run.
-  grpc_combiner* combiner = nullptr;
+  Combiner* combiner = nullptr;
   /// The result handler to be used by the resolver.
   UniquePtr<Resolver::ResultHandler> result_handler;
 };

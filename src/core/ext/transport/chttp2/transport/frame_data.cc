@@ -40,10 +40,9 @@ grpc_chttp2_data_parser::~grpc_chttp2_data_parser() {
   GRPC_ERROR_UNREF(error);
 }
 
-grpc_error* grpc_chttp2_data_parser_begin_frame(grpc_chttp2_data_parser* parser,
-                                                uint8_t flags,
-                                                uint32_t stream_id,
-                                                grpc_chttp2_stream* s) {
+grpc_error* grpc_chttp2_data_parser_begin_frame(
+    grpc_chttp2_data_parser* /*parser*/, uint8_t flags, uint32_t stream_id,
+    grpc_chttp2_stream* s) {
   if (flags & ~GRPC_CHTTP2_DATA_FLAG_END_STREAM) {
     char* msg;
     gpr_asprintf(&msg, "unsupported data flags: 0x%02x", flags);
@@ -279,7 +278,7 @@ grpc_error* grpc_deframe_unprocessed_incoming_frames(
   return GRPC_ERROR_NONE;
 }
 
-grpc_error* grpc_chttp2_data_parser_parse(void* parser,
+grpc_error* grpc_chttp2_data_parser_parse(void* /*parser*/,
                                           grpc_chttp2_transport* t,
                                           grpc_chttp2_stream* s,
                                           const grpc_slice& slice,

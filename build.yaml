@@ -14,8 +14,8 @@ settings:
   '#10': See the expand_version.py for all the quirks here
   core_version: 8.0.0
   csharp_major_version: 2
-  g_stands_for: game
-  version: 1.25.0-dev
+  g_stands_for: gon
+  version: 1.26.0-dev
 filegroups:
 - name: alts_tsi
   headers:
@@ -168,9 +168,11 @@ filegroups:
   - proto_gen_validate_upb
 - name: envoy_type_upb
   headers:
+  - src/core/ext/upb-generated/envoy/type/http.upb.h
   - src/core/ext/upb-generated/envoy/type/percent.upb.h
   - src/core/ext/upb-generated/envoy/type/range.upb.h
   src:
+  - src/core/ext/upb-generated/envoy/type/http.upb.c
   - src/core/ext/upb-generated/envoy/type/percent.upb.c
   - src/core/ext/upb-generated/envoy/type/range.upb.c
   uses:
@@ -5926,6 +5928,8 @@ targets:
   - grpc
   - gpr
 - name: thread_manager_test
+  gtest: true
+  cpu_cost: 20
   build: test
   language: c++
   src:
@@ -5934,6 +5938,8 @@ targets:
   - grpc++_unsecure
   - grpc_unsecure
   - gpr
+  - grpc++_test_util
+  - grpc_test_util
   - grpc++_test_config
 - name: thread_stress_test
   gtest: true
