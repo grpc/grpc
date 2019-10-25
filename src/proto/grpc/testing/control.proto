@@ -220,7 +220,7 @@ message Scenarios {
 // once the scenario has finished.
 message ScenarioResultSummary
 {
-  // Total number of oeprations per second over all clients. What is counted as 1 'operation' depends on the benchmark scenarios:
+  // Total number of operations per second over all clients. What is counted as 1 'operation' depends on the benchmark scenarios:
   // For unary benchmarks, an operation is processing of a single unary RPC. 
   // For streaming benchmarks, an operation is processing of a single ping pong of request and response. 
   double qps = 1;
