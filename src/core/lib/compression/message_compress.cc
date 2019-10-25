@@ -80,11 +80,12 @@ error:
   return 0;
 }
 
-static void* zalloc_gpr(void* opaque, unsigned int items, unsigned int size) {
+static void* zalloc_gpr(void* /*opaque*/, unsigned int items,
+                        unsigned int size) {
   return gpr_malloc(items * size);
 }
 
-static void zfree_gpr(void* opaque, void* address) { gpr_free(address); }
+static void zfree_gpr(void* /*opaque*/, void* address) { gpr_free(address); }
 
 static int zlib_compress(grpc_slice_buffer* input, grpc_slice_buffer* output,
                          int gzip) {
