@@ -658,7 +658,7 @@ static int poll_deadline_to_millis_timeout(grpc_millis millis) {
    NOTE ON SYNCRHONIZATION: Similar to do_epoll_wait(), this function is only
    called by g_active_poller thread. So there is no need for synchronization
    when accessing fields in g_epoll_set */
-static grpc_error* process_epoll_events(grpc_pollset* pollset) {
+static grpc_error* process_epoll_events(grpc_pollset* /*pollset*/) {
   GPR_TIMER_SCOPE("process_epoll_events", 0);
 
   static const char* err_desc = "process_events";
@@ -1219,7 +1219,7 @@ done:
   return ret_err;
 }
 
-static void pollset_add_fd(grpc_pollset* pollset, grpc_fd* fd) {}
+static void pollset_add_fd(grpc_pollset* /*pollset*/, grpc_fd* /*fd*/) {}
 
 /*******************************************************************************
  * Pollset-set Definitions
@@ -1229,21 +1229,23 @@ static grpc_pollset_set* pollset_set_create(void) {
   return (grpc_pollset_set*)(static_cast<intptr_t>(0xdeafbeef));
 }
 
-static void pollset_set_destroy(grpc_pollset_set* pss) {}
+static void pollset_set_destroy(grpc_pollset_set* /*pss*/) {}
 
-static void pollset_set_add_fd(grpc_pollset_set* pss, grpc_fd* fd) {}
+static void pollset_set_add_fd(grpc_pollset_set* /*pss*/, grpc_fd* /*fd*/) {}
 
-static void pollset_set_del_fd(grpc_pollset_set* pss, grpc_fd* fd) {}
+static void pollset_set_del_fd(grpc_pollset_set* /*pss*/, grpc_fd* /*fd*/) {}
 
-static void pollset_set_add_pollset(grpc_pollset_set* pss, grpc_pollset* ps) {}
+static void pollset_set_add_pollset(grpc_pollset_set* /*pss*/,
+                                    grpc_pollset* /*ps*/) {}
 
-static void pollset_set_del_pollset(grpc_pollset_set* pss, grpc_pollset* ps) {}
+static void pollset_set_del_pollset(grpc_pollset_set* /*pss*/,
+                                    grpc_pollset* /*ps*/) {}
 
-static void pollset_set_add_pollset_set(grpc_pollset_set* bag,
-                                        grpc_pollset_set* item) {}
+static void pollset_set_add_pollset_set(grpc_pollset_set* /*bag*/,
+                                        grpc_pollset_set* /*item*/) {}
 
-static void pollset_set_del_pollset_set(grpc_pollset_set* bag,
-                                        grpc_pollset_set* item) {}
+static void pollset_set_del_pollset_set(grpc_pollset_set* /*bag*/,
+                                        grpc_pollset_set* /*item*/) {}
 
 /*******************************************************************************
  * Event engine binding
@@ -1253,8 +1255,8 @@ static bool is_any_background_poller_thread(void) { return false; }
 
 static void shutdown_background_closure(void) {}
 
-static bool add_closure_to_background_poller(grpc_closure* closure,
-                                             grpc_error* error) {
+static bool add_closure_to_background_poller(grpc_closure* /*closure*/,
+                                             grpc_error* /*error*/) {
   return false;
 }
 
@@ -1325,7 +1327,8 @@ static void reset_event_manager_on_fork() {
 /* It is possible that GLIBC has epoll but the underlying kernel doesn't.
  * Create epoll_fd (epoll_set_init() takes care of that) to make sure epoll
  * support is available */
-const grpc_event_engine_vtable* grpc_init_epoll1_linux(bool explicit_request) {
+const grpc_event_engine_vtable* grpc_init_epoll1_linux(
+    bool /*explicit_request*/) {
   if (!grpc_has_wakeup_fd()) {
     gpr_log(GPR_ERROR, "Skipping epoll1 because of no wakeup fd.");
     return nullptr;
@@ -1356,7 +1359,8 @@ const grpc_event_engine_vtable* grpc_init_epoll1_linux(bool explicit_request) {
 #include "src/core/lib/iomgr/ev_epoll1_linux.h"
 /* If GRPC_LINUX_EPOLL is not defined, it means epoll is not available. Return
  * NULL */
-const grpc_event_engine_vtable* grpc_init_epoll1_linux(bool explicit_request) {
+const grpc_event_engine_vtable* grpc_init_epoll1_linux(
+    bool /*explicit_request*/) {
   return nullptr;
 }
 #endif /* defined(GRPC_POSIX_SOCKET_EV_EPOLL1) */

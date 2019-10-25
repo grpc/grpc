@@ -124,8 +124,6 @@ class ThreadManager {
     WorkerThread(ThreadManager* thd_mgr);
     ~WorkerThread();
 
-    bool created() const { return created_; }
-
    private:
     // Calls thd_mgr_->MainWorkLoop() and once that completes, calls
     // thd_mgr_>MarkAsCompleted(this) to mark the thread as completed
@@ -133,7 +131,6 @@ class ThreadManager {
 
     ThreadManager* const thd_mgr_;
     grpc_core::Thread thd_;
-    bool created_;
   };
 
   // The main function in ThreadManager

@@ -30,6 +30,6 @@ void HealthCheckServiceServerBuilderOption::UpdateArguments(
 }
 
 void HealthCheckServiceServerBuilderOption::UpdatePlugins(
-    std::vector<std::unique_ptr<ServerBuilderPlugin>>* plugins) {}
+    std::vector<std::unique_ptr<ServerBuilderPlugin>>* /*plugins*/) {}
 
 }  // namespace grpc

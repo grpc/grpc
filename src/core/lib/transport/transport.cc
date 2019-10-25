@@ -50,10 +50,10 @@ void grpc_stream_destroy(grpc_stream_refcount* refcount) {
        cope with.
        Throw this over to the executor (on a core-owned thread) and process it
        there. */
-    refcount->destroy.scheduler =
-        grpc_core::Executor::Scheduler(grpc_core::ExecutorJobType::SHORT);
+    grpc_core::Executor::Run(&refcount->destroy, GRPC_ERROR_NONE);
+  } else {
+    GRPC_CLOSURE_SCHED(&refcount->destroy, GRPC_ERROR_NONE);
   }
-  GRPC_CLOSURE_SCHED(&refcount->destroy, GRPC_ERROR_NONE);
 }
 
 void slice_stream_destroy(void* arg) {
@@ -80,12 +80,12 @@ grpc_slice grpc_slice_from_stream_owned_buffer(grpc_stream_refcount* refcount,
 }
 
 #ifndef NDEBUG
-void grpc_stream_ref_init(grpc_stream_refcount* refcount, int initial_refs,
+void grpc_stream_ref_init(grpc_stream_refcount* refcount, int /*initial_refs*/,
                           grpc_iomgr_cb_func cb, void* cb_arg,
                           const char* object_type) {
   refcount->object_type = object_type;
 #else
-void grpc_stream_ref_init(grpc_stream_refcount* refcount, int initial_refs,
+void grpc_stream_ref_init(grpc_stream_refcount* refcount, int /*initial_refs*/,
                           grpc_iomgr_cb_func cb, void* cb_arg) {
 #endif
   GRPC_CLOSURE_INIT(&refcount->destroy, cb, cb_arg, grpc_schedule_on_exec_ctx);

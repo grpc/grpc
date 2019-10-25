@@ -1,4 +1,4 @@
-# Copyright 2015 gRPC authors.
+# Copyright 2019 gRPC authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -11,14 +11,17 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+"""Exceptions for the aio version of the RPC calls."""
 
-FROM ubuntu:12.04
 
-RUN apt-get update -y && apt-get install -y curl
+cdef class _AioRpcError(Exception):
+    cdef readonly:
+        tuple _initial_metadata
+        int _code
+        str _details
+        tuple _trailing_metadata
 
-# Install rvm
-RUN gpg --keyserver hkp://keys.gnupg.net --recv-keys 409B6B1796C275462A1703113804BB82D39DC0E3
-RUN \curl -sSL https://get.rvm.io | bash -s stable --ruby
-
-RUN /bin/bash -l -c "echo '. /etc/profile.d/rvm.sh' >> ~/.bashrc"
-RUN /bin/bash -l -c "gem install --update bundler"
+    cpdef tuple initial_metadata(self)
+    cpdef int code(self)
+    cpdef str details(self)
+    cpdef tuple trailing_metadata(self)

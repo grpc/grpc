@@ -13,14 +13,14 @@
 # limitations under the License.
 
 cimport cpython
+import grpc
 
 _EMPTY_FLAGS = 0
-_EMPTY_METADATA = ()
+_EMPTY_METADATA = None
 _OP_ARRAY_LENGTH = 6
 
 
 cdef class _AioCall:
-
 
     def __cinit__(self, AioChannel channel):
         self._channel = channel
@@ -59,7 +59,7 @@ cdef class _AioCall:
         else:
             call._waiter_call.set_result(None)
 
-    async def unary_unary(self, method, request):
+    async def unary_unary(self, method, request, timeout):
         cdef grpc_call * call
         cdef grpc_slice method_slice
         cdef grpc_op * ops
@@ -72,7 +72,7 @@ cdef class _AioCall:
         cdef Operation receive_status_on_client_operation
 
         cdef grpc_call_error call_status
-
+        cdef gpr_timespec deadline = _timespec_from_time(timeout)
 
         method_slice = grpc_slice_from_copied_buffer(
             <const char *> method,
@@ -86,7 +86,7 @@ cdef class _AioCall:
             self._cq,
             method_slice,
             NULL,
-            _timespec_from_time(None),
+            deadline,
             NULL
         )
 
@@ -146,4 +146,12 @@ cdef class _AioCall:
             grpc_call_unref(call)
             gpr_free(ops)
 
-        return receive_message_operation.message()
+        if receive_status_on_client_operation.code() == StatusCode.ok:
+            return receive_message_operation.message()
+
+        raise grpc.experimental.aio.AioRpcError(
+            receive_initial_metadata_operation.initial_metadata(),
+            receive_status_on_client_operation.code(),
+            receive_status_on_client_operation.details(),
+            receive_status_on_client_operation.trailing_metadata(),
+        )

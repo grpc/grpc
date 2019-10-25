@@ -15,8 +15,8 @@
 
 cdef class _AsyncioSocket:
     cdef:
+        # Common attributes
         grpc_custom_socket * _grpc_socket
-        grpc_custom_connect_callback _grpc_connect_cb
         grpc_custom_read_callback _grpc_read_cb
         object _reader
         object _writer
@@ -24,11 +24,31 @@ cdef class _AsyncioSocket:
         object _task_connect
         char * _read_buffer
 
+        # Client-side attributes
+        grpc_custom_connect_callback _grpc_connect_cb
+        
+        # Server-side attributes
+        grpc_custom_accept_callback _grpc_accept_cb
+        grpc_custom_socket * _grpc_client_socket
+        object _server
+        object _py_socket
+        object _peername
+
     @staticmethod
-    cdef _AsyncioSocket create(grpc_custom_socket * grpc_socket)
+    cdef _AsyncioSocket create(
+            grpc_custom_socket * grpc_socket,
+            object reader,
+            object writer)
+    @staticmethod
+    cdef _AsyncioSocket create_with_py_socket(grpc_custom_socket * grpc_socket, object py_socket)
 
     cdef void connect(self, object host, object port, grpc_custom_connect_callback grpc_connect_cb)
     cdef void write(self, grpc_slice_buffer * g_slice_buffer, grpc_custom_write_callback grpc_write_cb)
     cdef void read(self, char * buffer_, size_t length, grpc_custom_read_callback grpc_read_cb)
     cdef bint is_connected(self)
     cdef void close(self)
+
+    cdef accept(self, grpc_custom_socket* grpc_socket_client, grpc_custom_accept_callback grpc_accept_cb)
+    cdef listen(self)
+    cdef tuple peername(self)
+    cdef tuple sockname(self)

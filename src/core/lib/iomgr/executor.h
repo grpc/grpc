@@ -83,6 +83,10 @@ class Executor {
   // Initialize ALL the executors
   static void InitAll();
 
+  static void Run(grpc_closure* closure, grpc_error* error,
+                  ExecutorType executor_type = ExecutorType::DEFAULT,
+                  ExecutorJobType job_type = ExecutorJobType::SHORT);
+
   // Shutdown ALL the executors
   static void ShutdownAll();
 
@@ -91,13 +95,6 @@ class Executor {
 
   // Set the threading mode for ALL the executors
   static void SetThreadingDefault(bool enable);
-
-  // Get the DEFAULT executor scheduler for the given job_type
-  static grpc_closure_scheduler* Scheduler(ExecutorJobType job_type);
-
-  // Get the executor scheduler for a given executor_type and a job_type
-  static grpc_closure_scheduler* Scheduler(ExecutorType executor_type,
-                                           ExecutorJobType job_type);
 
   // Return if a given executor is running in threaded mode (i.e if
   // SetThreading(true) was called previously on that executor)

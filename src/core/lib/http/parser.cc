@@ -327,7 +327,7 @@ void grpc_http_parser_init(grpc_http_parser* parser, grpc_http_type type,
   parser->cur_line_end_length = 2;
 }
 
-void grpc_http_parser_destroy(grpc_http_parser* parser) {}
+void grpc_http_parser_destroy(grpc_http_parser* /*parser*/) {}
 
 void grpc_http_request_destroy(grpc_http_request* request) {
   size_t i;

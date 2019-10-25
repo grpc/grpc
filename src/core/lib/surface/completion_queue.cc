@@ -529,7 +529,8 @@ grpc_completion_queue* grpc_completion_queue_create_internal(
 }
 
 static void cq_init_next(
-    void* data, grpc_experimental_completion_queue_functor* shutdown_callback) {
+    void* data,
+    grpc_experimental_completion_queue_functor* /*shutdown_callback*/) {
   new (data) cq_next_data();
 }
 
@@ -539,7 +540,8 @@ static void cq_destroy_next(void* data) {
 }
 
 static void cq_init_pluck(
-    void* data, grpc_experimental_completion_queue_functor* shutdown_callback) {
+    void* data,
+    grpc_experimental_completion_queue_functor* /*shutdown_callback*/) {
   new (data) cq_pluck_data();
 }
 
@@ -582,7 +584,7 @@ void grpc_cq_internal_ref(grpc_completion_queue* cq) {
   cq->owning_refs.Ref(debug_location, reason);
 }
 
-static void on_pollset_shutdown_done(void* arg, grpc_error* error) {
+static void on_pollset_shutdown_done(void* arg, grpc_error* /*error*/) {
   grpc_completion_queue* cq = static_cast<grpc_completion_queue*>(arg);
   GRPC_CQ_INTERNAL_UNREF(cq, "pollset_destroy");
 }
@@ -630,20 +632,21 @@ static void cq_check_tag(grpc_completion_queue* cq, void* tag, bool lock_cq) {
   GPR_ASSERT(found);
 }
 #else
-static void cq_check_tag(grpc_completion_queue* cq, void* tag, bool lock_cq) {}
+static void cq_check_tag(grpc_completion_queue* /*cq*/, void* /*tag*/,
+                         bool /*lock_cq*/) {}
 #endif
 
-static bool cq_begin_op_for_next(grpc_completion_queue* cq, void* tag) {
+static bool cq_begin_op_for_next(grpc_completion_queue* cq, void* /*tag*/) {
   cq_next_data* cqd = static_cast<cq_next_data*> DATA_FROM_CQ(cq);
   return cqd->pending_events.IncrementIfNonzero();
 }
 
-static bool cq_begin_op_for_pluck(grpc_completion_queue* cq, void* tag) {
+static bool cq_begin_op_for_pluck(grpc_completion_queue* cq, void* /*tag*/) {
   cq_pluck_data* cqd = static_cast<cq_pluck_data*> DATA_FROM_CQ(cq);
   return cqd->pending_events.IncrementIfNonzero();
 }
 
-static bool cq_begin_op_for_callback(grpc_completion_queue* cq, void* tag) {
+static bool cq_begin_op_for_callback(grpc_completion_queue* cq, void* /*tag*/) {
   cq_callback_data* cqd = static_cast<cq_callback_data*> DATA_FROM_CQ(cq);
   return cqd->pending_events.IncrementIfNonzero();
 }
@@ -669,7 +672,7 @@ bool grpc_cq_begin_op(grpc_completion_queue* cq, void* tag) {
 static void cq_end_op_for_next(
     grpc_completion_queue* cq, void* tag, grpc_error* error,
     void (*done)(void* done_arg, grpc_cq_completion* storage), void* done_arg,
-    grpc_cq_completion* storage, bool internal) {
+    grpc_cq_completion* storage, bool /*internal*/) {
   GPR_TIMER_SCOPE("cq_end_op_for_next", 0);
 
   if (GRPC_TRACE_FLAG_ENABLED(grpc_api_trace) ||
@@ -748,7 +751,7 @@ static void cq_end_op_for_next(
 static void cq_end_op_for_pluck(
     grpc_completion_queue* cq, void* tag, grpc_error* error,
     void (*done)(void* done_arg, grpc_cq_completion* storage), void* done_arg,
-    grpc_cq_completion* storage, bool internal) {
+    grpc_cq_completion* storage, bool /*internal*/) {
   GPR_TIMER_SCOPE("cq_end_op_for_pluck", 0);
 
   cq_pluck_data* cqd = static_cast<cq_pluck_data*> DATA_FROM_CQ(cq);
@@ -860,11 +863,8 @@ static void cq_end_op_for_callback(
 
   // Schedule the callback on a closure if not internal or triggered
   // from a background poller thread.
-  GRPC_CLOSURE_SCHED(
-      GRPC_CLOSURE_CREATE(
-          functor_callback, functor,
-          grpc_core::Executor::Scheduler(grpc_core::ExecutorJobType::SHORT)),
-      error);
+  grpc_core::Executor::Run(
+      GRPC_CLOSURE_CREATE(functor_callback, functor, nullptr), error);
 }
 
 void grpc_cq_end_op(grpc_completion_queue* cq, void* tag, grpc_error* error,
@@ -939,7 +939,7 @@ static void dump_pending_tags(grpc_completion_queue* cq) {
   gpr_free(out);
 }
 #else
-static void dump_pending_tags(grpc_completion_queue* cq) {}
+static void dump_pending_tags(grpc_completion_queue* /*cq*/) {}
 #endif
 
 static grpc_event cq_next(grpc_completion_queue* cq, gpr_timespec deadline,
@@ -1357,10 +1357,8 @@ static void cq_finish_shutdown_callback(grpc_completion_queue* cq) {
 
   // Schedule the callback on a closure if not internal or triggered
   // from a background poller thread.
-  GRPC_CLOSURE_SCHED(
-      GRPC_CLOSURE_CREATE(
-          functor_callback, callback,
-          grpc_core::Executor::Scheduler(grpc_core::ExecutorJobType::SHORT)),
+  grpc_core::Executor::Run(
+      GRPC_CLOSURE_CREATE(functor_callback, callback, nullptr),
       GRPC_ERROR_NONE);
 }
 
