@@ -123,6 +123,9 @@ void CoreCodegen::grpc_call_unref(grpc_call* call) { ::grpc_call_unref(call); }
 void* CoreCodegen::grpc_call_arena_alloc(grpc_call* call, size_t length) {
   return ::grpc_call_arena_alloc(call, length);
 }
+const char* CoreCodegen::grpc_call_error_to_string(grpc_call_error error) {
+  return ::grpc_call_error_to_string(error);
+}
 
 int CoreCodegen::grpc_byte_buffer_reader_init(grpc_byte_buffer_reader* reader,
                                               grpc_byte_buffer* buffer) {

@@ -81,7 +81,7 @@ struct ArgsStruct {
   gpr_mu* mu;
   grpc_pollset* pollset;
   grpc_pollset_set* pollset_set;
-  grpc_combiner* lock;
+  grpc_core::Combiner* lock;
   grpc_channel_args* channel_args;
 };
 
@@ -95,7 +95,7 @@ void ArgsInit(ArgsStruct* args) {
   args->channel_args = nullptr;
 }
 
-void DoNothing(void* arg, grpc_error* error) {}
+void DoNothing(void* /*arg*/, grpc_error* /*error*/) {}
 
 void ArgsFinish(ArgsStruct* args) {
   grpc_pollset_set_del_pollset(args->pollset_set, args->pollset);
@@ -142,11 +142,11 @@ class AssertFailureResultHandler : public grpc_core::Resolver::ResultHandler {
     gpr_mu_unlock(args_->mu);
   }
 
-  void ReturnResult(grpc_core::Resolver::Result result) override {
+  void ReturnResult(grpc_core::Resolver::Result /*result*/) override {
     GPR_ASSERT(false);
   }
 
-  void ReturnError(grpc_error* error) override { GPR_ASSERT(false); }
+  void ReturnError(grpc_error* /*error*/) override { GPR_ASSERT(false); }
 
  private:
   ArgsStruct* args_;

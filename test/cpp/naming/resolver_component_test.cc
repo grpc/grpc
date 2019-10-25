@@ -192,7 +192,7 @@ struct ArgsStruct {
   gpr_mu* mu;
   grpc_pollset* pollset;
   grpc_pollset_set* pollset_set;
-  grpc_combiner* lock;
+  grpc_core::Combiner* lock;
   grpc_channel_args* channel_args;
   vector<GrpcLBAddress> expected_addrs;
   std::string expected_service_config_string;
@@ -211,7 +211,7 @@ void ArgsInit(ArgsStruct* args) {
   args->channel_args = nullptr;
 }
 
-void DoNothing(void* arg, grpc_error* error) {}
+void DoNothing(void* /*arg*/, grpc_error* /*error*/) {}
 
 void ArgsFinish(ArgsStruct* args) {
   GPR_ASSERT(gpr_event_wait(&args->ev, TestDeadline()));
@@ -442,7 +442,7 @@ class ResultHandler : public grpc_core::Resolver::ResultHandler {
     GPR_ASSERT(false);
   }
 
-  virtual void CheckResult(const grpc_core::Resolver::Result& result) {}
+  virtual void CheckResult(const grpc_core::Resolver::Result& /*result*/) {}
 
  protected:
   ArgsStruct* args_struct() const { return args_; }
@@ -534,7 +534,7 @@ void InjectBrokenNameServerList(ares_channel channel) {
   GPR_ASSERT(ares_set_servers_ports(channel, dns_server_addrs) == ARES_SUCCESS);
 }
 
-void StartResolvingLocked(void* arg, grpc_error* unused) {
+void StartResolvingLocked(void* arg, grpc_error* /*unused*/) {
   grpc_core::Resolver* r = static_cast<grpc_core::Resolver*>(arg);
   r->StartLocked();
 }
@@ -616,9 +616,9 @@ void RunResolvesRelevantRecordsTest(
                                                   CreateResultHandler(&args));
   grpc_channel_args_destroy(resolver_args);
   gpr_free(whole_uri);
-  GRPC_CLOSURE_SCHED(GRPC_CLOSURE_CREATE(StartResolvingLocked, resolver.get(),
-                                         grpc_combiner_scheduler(args.lock)),
-                     GRPC_ERROR_NONE);
+  args.lock->Run(
+      GRPC_CLOSURE_CREATE(StartResolvingLocked, resolver.get(), nullptr),
+      GRPC_ERROR_NONE);
   grpc_core::ExecCtx::Get()->Flush();
   PollPollsetUntilRequestDone(&args);
   ArgsFinish(&args);

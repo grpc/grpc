@@ -40,7 +40,7 @@
 #include <unistd.h>
 #endif
 
-static void shutdown_ps(void* ps, grpc_error* error) {
+static void shutdown_ps(void* ps, grpc_error* /*error*/) {
   grpc_pollset_destroy(static_cast<grpc_pollset*>(ps));
 }
 
@@ -168,7 +168,7 @@ Closure* MakeClosure(F f, grpc_closure_scheduler* scheduler) {
     C(F f, grpc_closure_scheduler* scheduler) : f_(f) {
       GRPC_CLOSURE_INIT(this, C::cbfn, this, scheduler);
     }
-    static void cbfn(void* arg, grpc_error* error) {
+    static void cbfn(void* arg, grpc_error* /*error*/) {
       C* p = static_cast<C*>(arg);
       p->f_();
     }

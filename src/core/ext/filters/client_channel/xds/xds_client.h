@@ -21,6 +21,7 @@
 
 #include "src/core/ext/filters/client_channel/service_config.h"
 #include "src/core/ext/filters/client_channel/xds/xds_api.h"
+#include "src/core/ext/filters/client_channel/xds/xds_bootstrap.h"
 #include "src/core/ext/filters/client_channel/xds/xds_client_stats.h"
 #include "src/core/lib/gprpp/map.h"
 #include "src/core/lib/gprpp/memory.h"
@@ -68,10 +69,12 @@ class XdsClient : public InternallyRefCounted<XdsClient> {
     virtual void OnError(grpc_error* error) = 0;
   };
 
-  XdsClient(grpc_combiner* combiner, grpc_pollset_set* interested_parties,
-            const char* balancer_name, StringView server_name,
+  // If *error is not GRPC_ERROR_NONE after construction, then there was
+  // an error initializing the client.
+  XdsClient(Combiner* combiner, grpc_pollset_set* interested_parties,
+            StringView server_name,
             UniquePtr<ServiceConfigWatcherInterface> watcher,
-            const grpc_channel_args& channel_args);
+            const grpc_channel_args& channel_args, grpc_error** error);
   ~XdsClient();
 
   void Orphan() override;
@@ -97,8 +100,10 @@ class XdsClient : public InternallyRefCounted<XdsClient> {
                                EndpointWatcherInterface* watcher);
 
   // Adds and removes client stats for cluster.
-  void AddClientStats(StringView cluster, XdsClientStats* client_stats);
-  void RemoveClientStats(StringView cluster, XdsClientStats* client_stats);
+  void AddClientStats(StringView lrs_server, StringView cluster,
+                      XdsClientStats* client_stats);
+  void RemoveClientStats(StringView lrs_server, StringView cluster,
+                         XdsClientStats* client_stats);
 
   // Resets connection backoff state.
   void ResetBackoff();
@@ -109,7 +114,61 @@ class XdsClient : public InternallyRefCounted<XdsClient> {
       const grpc_channel_args& args);
 
  private:
-  class ChannelState;
+  // Contains a channel to the xds server and all the data related to the
+  // channel.  Holds a ref to the xds client object.
+  // TODO(roth): This is separate from the XdsClient object because it was
+  // originally designed to be able to swap itself out in case the
+  // balancer name changed.  Now that the balancer name is going to be
+  // coming from the bootstrap file, we don't really need this level of
+  // indirection unless we decide to support watching the bootstrap file
+  // for changes.  At some point, if we decide that we're never going to
+  // need to do that, then we can eliminate this class and move its
+  // contents directly into the XdsClient class.
+  class ChannelState : public InternallyRefCounted<ChannelState> {
+   public:
+    template <typename T>
+    class RetryableCall;
+
+    class AdsCallState;
+    class LrsCallState;
+
+    ChannelState(RefCountedPtr<XdsClient> xds_client,
+                 const grpc_channel_args& args);
+    ~ChannelState();
+
+    void Orphan() override;
+
+    grpc_channel* channel() const { return channel_; }
+    XdsClient* xds_client() const { return xds_client_.get(); }
+    AdsCallState* ads_calld() const;
+    LrsCallState* lrs_calld() const;
+
+    void MaybeStartAdsCall();
+    void StopAdsCall();
+
+    void MaybeStartLrsCall();
+    void StopLrsCall();
+
+    bool HasActiveAdsCall() const;
+
+    void StartConnectivityWatchLocked();
+    void CancelConnectivityWatchLocked();
+
+   private:
+    class StateWatcher;
+
+    // The owning xds client.
+    RefCountedPtr<XdsClient> xds_client_;
+
+    // The channel and its status.
+    grpc_channel* channel_;
+    bool shutting_down_ = false;
+    StateWatcher* watcher_ = nullptr;
+
+    // The retryable XDS calls.
+    OrphanablePtr<RetryableCall<AdsCallState>> ads_calld_;
+    OrphanablePtr<RetryableCall<LrsCallState>> lrs_calld_;
+  };
 
   struct ClusterState {
     Map<ClusterWatcherInterface*, UniquePtr<ClusterWatcherInterface>>
@@ -124,6 +183,10 @@ class XdsClient : public InternallyRefCounted<XdsClient> {
   // Sends an error notification to all watchers.
   void NotifyOnError(grpc_error* error);
 
+  // TODO(juanlishen): Once we implement LDS support, this can be a
+  // normal method instead of a closure callback.
+  static void NotifyOnServiceConfig(void* arg, grpc_error* error);
+
   // Channel arg vtable functions.
   static void* ChannelArgCopy(void* p);
   static void ChannelArgDestroy(void* p);
@@ -131,17 +194,25 @@ class XdsClient : public InternallyRefCounted<XdsClient> {
 
   static const grpc_arg_pointer_vtable kXdsClientVtable;
 
-  grpc_combiner* combiner_;
+  UniquePtr<char> build_version_;
+
+  Combiner* combiner_;
   grpc_pollset_set* interested_parties_;
+
+  UniquePtr<XdsBootstrap> bootstrap_;
 
   UniquePtr<char> server_name_;
   UniquePtr<ServiceConfigWatcherInterface> service_config_watcher_;
+  // TODO(juanlishen): Once we implement LDS support, this will no
+  // longer be needed.
+  grpc_closure service_config_notify_;
 
   // The channel for communicating with the xds server.
   OrphanablePtr<ChannelState> chand_;
 
-  // TODO(roth): When we need support for multiple clusters, replace
-  // cluster_state_ with a map keyed by cluster name.
+  // TODO(juanlishen): As part of adding CDS support, replace
+  // cluster_state_ with a map keyed by cluster name, so that we can
+  // support multiple clusters for both CDS and EDS.
   ClusterState cluster_state_;
   // Map<StringView /*cluster*/, ClusterState, StringLess> clusters_;
 

@@ -55,7 +55,7 @@ class SimpleFunctorForAdd : public grpc_experimental_completion_queue_functor {
   }
   ~SimpleFunctorForAdd() {}
   static void Run(struct grpc_experimental_completion_queue_functor* cb,
-                  int ok) {
+                  int /*ok*/) {
     auto* callback = static_cast<SimpleFunctorForAdd*>(cb);
     callback->count_.FetchAdd(1, grpc_core::MemoryOrder::RELAXED);
   }
@@ -147,7 +147,7 @@ class SimpleFunctorCheckForAdd
   }
   ~SimpleFunctorCheckForAdd() {}
   static void Run(struct grpc_experimental_completion_queue_functor* cb,
-                  int ok) {
+                  int /*ok*/) {
     auto* callback = static_cast<SimpleFunctorCheckForAdd*>(cb);
     (*callback->count_)++;
     GPR_ASSERT(*callback->count_ == callback->internal_success);

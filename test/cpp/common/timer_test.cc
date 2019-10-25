@@ -176,7 +176,7 @@ TEST_F(TimerTest, DISABLED_CancelRace) {
     grpc_timer* arg = (i != 0) ? &timers[i - 1] : nullptr;
     grpc_timer_init(&timers[i], grpc_core::ExecCtx::Get()->Now() + 100,
                     GRPC_CLOSURE_CREATE(
-                        [](void* arg, grpc_error* error) {
+                        [](void* arg, grpc_error* /*error*/) {
                           grpc_timer* timer = static_cast<grpc_timer*>(arg);
                           if (timer) {
                             grpc_timer_cancel(timer);
@@ -206,7 +206,7 @@ TEST_F(TimerTest, DISABLED_CancelNextTimer) {
     }
     grpc_timer_init(&timers[i], grpc_core::ExecCtx::Get()->Now() + 100,
                     GRPC_CLOSURE_CREATE(
-                        [](void* arg, grpc_error* error) {
+                        [](void* arg, grpc_error* /*error*/) {
                           grpc_timer* timer = static_cast<grpc_timer*>(arg);
                           if (timer) {
                             grpc_timer_cancel(timer);

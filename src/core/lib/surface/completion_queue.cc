@@ -860,11 +860,8 @@ static void cq_end_op_for_callback(
 
   // Schedule the callback on a closure if not internal or triggered
   // from a background poller thread.
-  GRPC_CLOSURE_SCHED(
-      GRPC_CLOSURE_CREATE(
-          functor_callback, functor,
-          grpc_core::Executor::Scheduler(grpc_core::ExecutorJobType::SHORT)),
-      error);
+  grpc_core::Executor::Run(
+      GRPC_CLOSURE_CREATE(functor_callback, functor, nullptr), error);
 }
 
 void grpc_cq_end_op(grpc_completion_queue* cq, void* tag, grpc_error* error,
@@ -1357,10 +1354,8 @@ static void cq_finish_shutdown_callback(grpc_completion_queue* cq) {
 
   // Schedule the callback on a closure if not internal or triggered
   // from a background poller thread.
-  GRPC_CLOSURE_SCHED(
-      GRPC_CLOSURE_CREATE(
-          functor_callback, callback,
-          grpc_core::Executor::Scheduler(grpc_core::ExecutorJobType::SHORT)),
+  grpc_core::Executor::Run(
+      GRPC_CLOSURE_CREATE(functor_callback, callback, nullptr),
       GRPC_ERROR_NONE);
 }
 

@@ -21,14 +21,20 @@
 
 
 
+
 cmake_minimum_required(VERSION 3.5.1)
 
-set(PACKAGE_NAME      "grpc")
-set(PACKAGE_VERSION   "1.25.0-dev")
-set(gRPC_CORE_VERSION "8.0.0")
-set(PACKAGE_STRING    "${PACKAGE_NAME} ${PACKAGE_VERSION}")
-set(PACKAGE_TARNAME   "${PACKAGE_NAME}-${PACKAGE_VERSION}")
-set(PACKAGE_BUGREPORT "https://github.com/grpc/grpc/issues/")
+set(PACKAGE_NAME          "grpc")
+set(PACKAGE_VERSION       "1.26.0-dev")
+set(gRPC_CORE_VERSION     "8.0.0")
+set(gRPC_CORE_SOVERSION   "8")
+set(gRPC_CPP_VERSION      "1.26.0-dev")
+set(gRPC_CPP_SOVERSION    "1")
+set(gRPC_CSHARP_VERSION   "2.26.0-dev")
+set(gRPC_CSHARP_SOVERSION "2")
+set(PACKAGE_STRING        "${PACKAGE_NAME} ${PACKAGE_VERSION}")
+set(PACKAGE_TARNAME       "${PACKAGE_NAME}-${PACKAGE_VERSION}")
+set(PACKAGE_BUGREPORT     "https://github.com/grpc/grpc/issues/")
 project(${PACKAGE_NAME} LANGUAGES C CXX)
 
 set(gRPC_INSTALL_BINDIR "bin" CACHE STRING "Installation directory for executables")
@@ -244,6 +250,82 @@ add_custom_target(tools_cxx
 
 add_custom_target(tools
   DEPENDS tools_c tools_cxx)
+
+protobuf_generate_grpc_cpp(
+  src/proto/grpc/channelz/channelz.proto
+)
+protobuf_generate_grpc_cpp(
+  src/proto/grpc/core/stats.proto
+)
+protobuf_generate_grpc_cpp(
+  src/proto/grpc/health/v1/health.proto
+)
+protobuf_generate_grpc_cpp(
+  src/proto/grpc/lb/v1/load_balancer.proto
+)
+protobuf_generate_grpc_cpp(
+  src/proto/grpc/reflection/v1alpha/reflection.proto
+)
+protobuf_generate_grpc_cpp(
+  src/proto/grpc/status/status.proto
+)
+protobuf_generate_grpc_cpp(
+  src/proto/grpc/testing/benchmark_service.proto
+)
+protobuf_generate_grpc_cpp(
+  src/proto/grpc/testing/compiler_test.proto
+)
+protobuf_generate_grpc_cpp(
+  src/proto/grpc/testing/control.proto
+)
+protobuf_generate_grpc_cpp(
+  src/proto/grpc/testing/duplicate/echo_duplicate.proto
+)
+protobuf_generate_grpc_cpp(
+  src/proto/grpc/testing/echo.proto
+)
+protobuf_generate_grpc_cpp(
+  src/proto/grpc/testing/echo_messages.proto
+)
+protobuf_generate_grpc_cpp(
+  src/proto/grpc/testing/empty.proto
+)
+protobuf_generate_grpc_cpp(
+  src/proto/grpc/testing/messages.proto
+)
+protobuf_generate_grpc_cpp(
+  src/proto/grpc/testing/metrics.proto
+)
+protobuf_generate_grpc_cpp(
+  src/proto/grpc/testing/payloads.proto
+)
+protobuf_generate_grpc_cpp(
+  src/proto/grpc/testing/report_qps_scenario_service.proto
+)
+protobuf_generate_grpc_cpp(
+  src/proto/grpc/testing/simple_messages.proto
+)
+protobuf_generate_grpc_cpp(
+  src/proto/grpc/testing/stats.proto
+)
+protobuf_generate_grpc_cpp(
+  src/proto/grpc/testing/test.proto
+)
+protobuf_generate_grpc_cpp(
+  src/proto/grpc/testing/worker_service.proto
+)
+protobuf_generate_grpc_cpp(
+  src/proto/grpc/testing/xds/ads_for_test.proto
+)
+protobuf_generate_grpc_cpp(
+  src/proto/grpc/testing/xds/eds_for_test.proto
+)
+protobuf_generate_grpc_cpp(
+  src/proto/grpc/testing/xds/lrs_for_test.proto
+)
+protobuf_generate_grpc_cpp(
+  src/proto/grpc/testing/xds/orca_load_report_for_test.proto
+)
 
 if (gRPC_BUILD_TESTS)
 add_custom_target(buildtests_c)
@@ -731,6 +813,7 @@ add_dependencies(buildtests_cxx transport_security_common_api_test)
 if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 add_dependencies(buildtests_cxx writes_per_rpc_test)
 endif()
+add_dependencies(buildtests_cxx xds_bootstrap_test)
 add_dependencies(buildtests_cxx xds_end2end_test)
 add_dependencies(buildtests_cxx bad_streaming_id_bad_client_test)
 add_dependencies(buildtests_cxx badreq_bad_client_test)
@@ -768,6 +851,11 @@ add_library(address_sorting
   third_party/address_sorting/address_sorting_windows.c
 )
 
+set_target_properties(address_sorting PROPERTIES
+  VERSION ${gRPC_CORE_VERSION}
+  SOVERSION ${gRPC_CORE_SOVERSION}
+)
+
 if(WIN32 AND MSVC)
   set_target_properties(address_sorting PROPERTIES COMPILE_PDB_NAME "address_sorting"
     COMPILE_PDB_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}"
@@ -778,7 +866,6 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-
 
 target_include_directories(address_sorting
   PUBLIC $<INSTALL_INTERFACE:${gRPC_INSTALL_INCLUDEDIR}> $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
@@ -816,6 +903,11 @@ add_library(alts_test_util
   test/core/tsi/alts/handshaker/alts_handshaker_service_api_test_lib.cc
 )
 
+set_target_properties(alts_test_util PROPERTIES
+  VERSION ${gRPC_CORE_VERSION}
+  SOVERSION ${gRPC_CORE_SOVERSION}
+)
+
 if(WIN32 AND MSVC)
   set_target_properties(alts_test_util PROPERTIES COMPILE_PDB_NAME "alts_test_util"
     COMPILE_PDB_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}"
@@ -826,7 +918,6 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-
 
 target_include_directories(alts_test_util
   PUBLIC $<INSTALL_INTERFACE:${gRPC_INSTALL_INCLUDEDIR}> $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
@@ -894,6 +985,11 @@ add_library(gpr
   src/core/lib/profiling/stap_timers.cc
 )
 
+set_target_properties(gpr PROPERTIES
+  VERSION ${gRPC_CORE_VERSION}
+  SOVERSION ${gRPC_CORE_SOVERSION}
+)
+
 if(WIN32 AND MSVC)
   set_target_properties(gpr PROPERTIES COMPILE_PDB_NAME "gpr"
     COMPILE_PDB_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}"
@@ -904,7 +1000,6 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-
 
 target_include_directories(gpr
   PUBLIC $<INSTALL_INTERFACE:${gRPC_INSTALL_INCLUDEDIR}> $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
@@ -1310,6 +1405,7 @@ add_library(grpc
   src/core/ext/filters/client_channel/resolver/fake/fake_resolver.cc
   src/core/ext/filters/client_channel/lb_policy/xds/xds.cc
   src/core/ext/filters/client_channel/xds/xds_api.cc
+  src/core/ext/filters/client_channel/xds/xds_bootstrap.cc
   src/core/ext/filters/client_channel/xds/xds_channel_secure.cc
   src/core/ext/filters/client_channel/xds/xds_client.cc
   src/core/ext/filters/client_channel/xds/xds_client_stats.cc
@@ -1331,6 +1427,7 @@ add_library(grpc
   src/core/ext/upb-generated/envoy/api/v2/core/health_check.upb.c
   src/core/ext/upb-generated/envoy/api/v2/core/http_uri.upb.c
   src/core/ext/upb-generated/envoy/api/v2/core/protocol.upb.c
+  src/core/ext/upb-generated/envoy/type/http.upb.c
   src/core/ext/upb-generated/envoy/type/percent.upb.c
   src/core/ext/upb-generated/envoy/type/range.upb.c
   src/core/ext/filters/client_channel/lb_policy/pick_first/pick_first.cc
@@ -1359,6 +1456,11 @@ add_library(grpc
   src/core/plugin_registry/grpc_plugin_registry.cc
 )
 
+set_target_properties(grpc PROPERTIES
+  VERSION ${gRPC_CORE_VERSION}
+  SOVERSION ${gRPC_CORE_SOVERSION}
+)
+
 if(WIN32 AND MSVC)
   set_target_properties(grpc PROPERTIES COMPILE_PDB_NAME "grpc"
     COMPILE_PDB_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}"
@@ -1369,7 +1471,6 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-
 
 target_include_directories(grpc
   PUBLIC $<INSTALL_INTERFACE:${gRPC_INSTALL_INCLUDEDIR}> $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
@@ -1774,6 +1875,11 @@ add_library(grpc_cronet
   src/core/tsi/transport_security_grpc.cc
 )
 
+set_target_properties(grpc_cronet PROPERTIES
+  VERSION ${gRPC_CORE_VERSION}
+  SOVERSION ${gRPC_CORE_SOVERSION}
+)
+
 if(WIN32 AND MSVC)
   set_target_properties(grpc_cronet PROPERTIES COMPILE_PDB_NAME "grpc_cronet"
     COMPILE_PDB_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}"
@@ -1784,7 +1890,6 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-
 
 target_include_directories(grpc_cronet
   PUBLIC $<INSTALL_INTERFACE:${gRPC_INSTALL_INCLUDEDIR}> $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
@@ -2125,6 +2230,11 @@ add_library(grpc_test_util
   src/core/ext/filters/http/server/http_server_filter.cc
 )
 
+set_target_properties(grpc_test_util PROPERTIES
+  VERSION ${gRPC_CORE_VERSION}
+  SOVERSION ${gRPC_CORE_SOVERSION}
+)
+
 if(WIN32 AND MSVC)
   set_target_properties(grpc_test_util PROPERTIES COMPILE_PDB_NAME "grpc_test_util"
     COMPILE_PDB_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}"
@@ -2135,7 +2245,6 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-
 
 target_include_directories(grpc_test_util
   PUBLIC $<INSTALL_INTERFACE:${gRPC_INSTALL_INCLUDEDIR}> $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
@@ -2473,6 +2582,11 @@ add_library(grpc_test_util_unsecure
   src/core/ext/filters/http/server/http_server_filter.cc
 )
 
+set_target_properties(grpc_test_util_unsecure PROPERTIES
+  VERSION ${gRPC_CORE_VERSION}
+  SOVERSION ${gRPC_CORE_SOVERSION}
+)
+
 if(WIN32 AND MSVC)
   set_target_properties(grpc_test_util_unsecure PROPERTIES COMPILE_PDB_NAME "grpc_test_util_unsecure"
     COMPILE_PDB_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}"
@@ -2483,7 +2597,6 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-
 
 target_include_directories(grpc_test_util_unsecure
   PUBLIC $<INSTALL_INTERFACE:${gRPC_INSTALL_INCLUDEDIR}> $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
@@ -2819,14 +2932,8 @@ add_library(grpc_unsecure
   src/core/ext/filters/client_channel/resolver/sockaddr/sockaddr_resolver.cc
   src/core/ext/filters/client_channel/resolver/fake/fake_resolver.cc
   src/core/ext/filters/client_channel/resolver/xds/xds_resolver.cc
-  src/core/ext/filters/client_channel/lb_policy/grpclb/client_load_reporting_filter.cc
-  src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb.cc
-  src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_channel.cc
-  src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_client_stats.cc
-  src/core/ext/filters/client_channel/lb_policy/grpclb/load_balancer_api.cc
-  src/core/ext/upb-generated/src/proto/grpc/lb/v1/load_balancer.upb.c
-  src/core/ext/filters/client_channel/lb_policy/xds/xds.cc
   src/core/ext/filters/client_channel/xds/xds_api.cc
+  src/core/ext/filters/client_channel/xds/xds_bootstrap.cc
   src/core/ext/filters/client_channel/xds/xds_channel.cc
   src/core/ext/filters/client_channel/xds/xds_client.cc
   src/core/ext/filters/client_channel/xds/xds_client_stats.cc
@@ -2848,8 +2955,16 @@ add_library(grpc_unsecure
   src/core/ext/upb-generated/envoy/api/v2/core/health_check.upb.c
   src/core/ext/upb-generated/envoy/api/v2/core/http_uri.upb.c
   src/core/ext/upb-generated/envoy/api/v2/core/protocol.upb.c
+  src/core/ext/upb-generated/envoy/type/http.upb.c
   src/core/ext/upb-generated/envoy/type/percent.upb.c
   src/core/ext/upb-generated/envoy/type/range.upb.c
+  src/core/ext/filters/client_channel/lb_policy/grpclb/client_load_reporting_filter.cc
+  src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb.cc
+  src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_channel.cc
+  src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_client_stats.cc
+  src/core/ext/filters/client_channel/lb_policy/grpclb/load_balancer_api.cc
+  src/core/ext/upb-generated/src/proto/grpc/lb/v1/load_balancer.upb.c
+  src/core/ext/filters/client_channel/lb_policy/xds/xds.cc
   src/core/ext/filters/client_channel/lb_policy/pick_first/pick_first.cc
   src/core/ext/filters/client_channel/lb_policy/round_robin/round_robin.cc
   src/core/ext/filters/census/grpc_context.cc
@@ -2862,6 +2977,11 @@ add_library(grpc_unsecure
   src/core/plugin_registry/grpc_unsecure_plugin_registry.cc
 )
 
+set_target_properties(grpc_unsecure PROPERTIES
+  VERSION ${gRPC_CORE_VERSION}
+  SOVERSION ${gRPC_CORE_SOVERSION}
+)
+
 if(WIN32 AND MSVC)
   set_target_properties(grpc_unsecure PROPERTIES COMPILE_PDB_NAME "grpc_unsecure"
     COMPILE_PDB_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}"
@@ -2872,7 +2992,6 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-
 
 target_include_directories(grpc_unsecure
   PUBLIC $<INSTALL_INTERFACE:${gRPC_INSTALL_INCLUDEDIR}> $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
@@ -2959,6 +3078,11 @@ add_library(reconnect_server
   test/core/util/reconnect_server.cc
 )
 
+set_target_properties(reconnect_server PROPERTIES
+  VERSION ${gRPC_CORE_VERSION}
+  SOVERSION ${gRPC_CORE_SOVERSION}
+)
+
 if(WIN32 AND MSVC)
   set_target_properties(reconnect_server PROPERTIES COMPILE_PDB_NAME "reconnect_server"
     COMPILE_PDB_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}"
@@ -2969,7 +3093,6 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-
 
 target_include_directories(reconnect_server
   PUBLIC $<INSTALL_INTERFACE:${gRPC_INSTALL_INCLUDEDIR}> $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
@@ -3001,6 +3124,11 @@ add_library(test_tcp_server
   test/core/util/test_tcp_server.cc
 )
 
+set_target_properties(test_tcp_server PROPERTIES
+  VERSION ${gRPC_CORE_VERSION}
+  SOVERSION ${gRPC_CORE_SOVERSION}
+)
+
 if(WIN32 AND MSVC)
   set_target_properties(test_tcp_server PROPERTIES COMPILE_PDB_NAME "test_tcp_server"
     COMPILE_PDB_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}"
@@ -3011,7 +3139,6 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-
 
 target_include_directories(test_tcp_server
   PUBLIC $<INSTALL_INTERFACE:${gRPC_INSTALL_INCLUDEDIR}> $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
@@ -3048,6 +3175,11 @@ add_library(bm_callback_test_service_impl
   test/cpp/microbenchmarks/callback_test_service.cc
 )
 
+set_target_properties(bm_callback_test_service_impl PROPERTIES
+  VERSION ${gRPC_CPP_VERSION}
+  SOVERSION ${gRPC_CPP_SOVERSION}
+)
+
 if(WIN32 AND MSVC)
   set_target_properties(bm_callback_test_service_impl PROPERTIES COMPILE_PDB_NAME "bm_callback_test_service_impl"
     COMPILE_PDB_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}"
@@ -3058,10 +3190,6 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-
-protobuf_generate_grpc_cpp(
-  src/proto/grpc/testing/echo.proto
-)
 
 target_include_directories(bm_callback_test_service_impl
   PUBLIC $<INSTALL_INTERFACE:${gRPC_INSTALL_INCLUDEDIR}> $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
@@ -3105,6 +3233,11 @@ add_library(dns_test_util
   test/cpp/naming/dns_test_util.cc
 )
 
+set_target_properties(dns_test_util PROPERTIES
+  VERSION ${gRPC_CPP_VERSION}
+  SOVERSION ${gRPC_CPP_SOVERSION}
+)
+
 if(WIN32 AND MSVC)
   set_target_properties(dns_test_util PROPERTIES COMPILE_PDB_NAME "dns_test_util"
     COMPILE_PDB_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}"
@@ -3115,7 +3248,6 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-
 
 target_include_directories(dns_test_util
   PUBLIC $<INSTALL_INTERFACE:${gRPC_INSTALL_INCLUDEDIR}> $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
@@ -3201,6 +3333,11 @@ add_library(grpc++
   src/cpp/codegen/codegen_init.cc
 )
 
+set_target_properties(grpc++ PROPERTIES
+  VERSION ${gRPC_CPP_VERSION}
+  SOVERSION ${gRPC_CPP_SOVERSION}
+)
+
 if(WIN32 AND MSVC)
   set_target_properties(grpc++ PROPERTIES COMPILE_PDB_NAME "grpc++"
     COMPILE_PDB_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}"
@@ -3211,7 +3348,6 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-
 
 target_include_directories(grpc++
   PUBLIC $<INSTALL_INTERFACE:${gRPC_INSTALL_INCLUDEDIR}> $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
@@ -3528,6 +3664,11 @@ add_library(grpc++_core_stats
   src/cpp/util/core_stats.cc
 )
 
+set_target_properties(grpc++_core_stats PROPERTIES
+  VERSION ${gRPC_CPP_VERSION}
+  SOVERSION ${gRPC_CPP_SOVERSION}
+)
+
 if(WIN32 AND MSVC)
   set_target_properties(grpc++_core_stats PROPERTIES COMPILE_PDB_NAME "grpc++_core_stats"
     COMPILE_PDB_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}"
@@ -3538,10 +3679,6 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-
-protobuf_generate_grpc_cpp(
-  src/proto/grpc/core/stats.proto
-)
 
 target_include_directories(grpc++_core_stats
   PUBLIC $<INSTALL_INTERFACE:${gRPC_INSTALL_INCLUDEDIR}> $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
@@ -3582,6 +3719,11 @@ add_library(grpc++_error_details
   src/cpp/util/error_details.cc
 )
 
+set_target_properties(grpc++_error_details PROPERTIES
+  VERSION ${gRPC_CPP_VERSION}
+  SOVERSION ${gRPC_CPP_SOVERSION}
+)
+
 if(WIN32 AND MSVC)
   set_target_properties(grpc++_error_details PROPERTIES COMPILE_PDB_NAME "grpc++_error_details"
     COMPILE_PDB_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}"
@@ -3592,10 +3734,6 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-
-protobuf_generate_grpc_cpp(
-  src/proto/grpc/status/status.proto
-)
 
 target_include_directories(grpc++_error_details
   PUBLIC $<INSTALL_INTERFACE:${gRPC_INSTALL_INCLUDEDIR}> $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
@@ -3654,6 +3792,11 @@ add_library(grpc++_proto_reflection_desc_db
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/reflection/v1alpha/reflection.grpc.pb.h
 )
 
+set_target_properties(grpc++_proto_reflection_desc_db PROPERTIES
+  VERSION ${gRPC_CPP_VERSION}
+  SOVERSION ${gRPC_CPP_SOVERSION}
+)
+
 if(WIN32 AND MSVC)
   set_target_properties(grpc++_proto_reflection_desc_db PROPERTIES COMPILE_PDB_NAME "grpc++_proto_reflection_desc_db"
     COMPILE_PDB_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}"
@@ -3664,10 +3807,6 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-
-protobuf_generate_grpc_cpp(
-  src/proto/grpc/reflection/v1alpha/reflection.proto
-)
 
 target_include_directories(grpc++_proto_reflection_desc_db
   PUBLIC $<INSTALL_INTERFACE:${gRPC_INSTALL_INCLUDEDIR}> $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
@@ -3720,6 +3859,11 @@ add_library(grpc++_reflection
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/reflection/v1alpha/reflection.grpc.pb.h
 )
 
+set_target_properties(grpc++_reflection PROPERTIES
+  VERSION ${gRPC_CPP_VERSION}
+  SOVERSION ${gRPC_CPP_SOVERSION}
+)
+
 if(WIN32 AND MSVC)
   set_target_properties(grpc++_reflection PROPERTIES COMPILE_PDB_NAME "grpc++_reflection"
     COMPILE_PDB_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}"
@@ -3730,10 +3874,6 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-
-protobuf_generate_grpc_cpp(
-  src/proto/grpc/reflection/v1alpha/reflection.proto
-)
 
 target_include_directories(grpc++_reflection
   PUBLIC $<INSTALL_INTERFACE:${gRPC_INSTALL_INCLUDEDIR}> $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
@@ -3787,6 +3927,11 @@ add_library(grpc++_test_config
   test/cpp/util/test_config_cc.cc
 )
 
+set_target_properties(grpc++_test_config PROPERTIES
+  VERSION ${gRPC_CPP_VERSION}
+  SOVERSION ${gRPC_CPP_SOVERSION}
+)
+
 if(WIN32 AND MSVC)
   set_target_properties(grpc++_test_config PROPERTIES COMPILE_PDB_NAME "grpc++_test_config"
     COMPILE_PDB_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}"
@@ -3797,7 +3942,6 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-
 
 target_include_directories(grpc++_test_config
   PUBLIC $<INSTALL_INTERFACE:${gRPC_INSTALL_INCLUDEDIR}> $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
@@ -3866,6 +4010,11 @@ add_library(grpc++_test_util
   src/cpp/codegen/codegen_init.cc
 )
 
+set_target_properties(grpc++_test_util PROPERTIES
+  VERSION ${gRPC_CPP_VERSION}
+  SOVERSION ${gRPC_CPP_SOVERSION}
+)
+
 if(WIN32 AND MSVC)
   set_target_properties(grpc++_test_util PROPERTIES COMPILE_PDB_NAME "grpc++_test_util"
     COMPILE_PDB_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}"
@@ -3876,25 +4025,6 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-
-protobuf_generate_grpc_cpp(
-  src/proto/grpc/channelz/channelz.proto
-)
-protobuf_generate_grpc_cpp(
-  src/proto/grpc/health/v1/health.proto
-)
-protobuf_generate_grpc_cpp(
-  src/proto/grpc/testing/echo_messages.proto
-)
-protobuf_generate_grpc_cpp(
-  src/proto/grpc/testing/echo.proto
-)
-protobuf_generate_grpc_cpp(
-  src/proto/grpc/testing/duplicate/echo_duplicate.proto
-)
-protobuf_generate_grpc_cpp(
-  src/proto/grpc/testing/simple_messages.proto
-)
 
 target_include_directories(grpc++_test_util
   PUBLIC $<INSTALL_INTERFACE:${gRPC_INSTALL_INCLUDEDIR}> $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
@@ -4079,6 +4209,11 @@ add_library(grpc++_test_util_unsecure
   src/cpp/codegen/codegen_init.cc
 )
 
+set_target_properties(grpc++_test_util_unsecure PROPERTIES
+  VERSION ${gRPC_CPP_VERSION}
+  SOVERSION ${gRPC_CPP_SOVERSION}
+)
+
 if(WIN32 AND MSVC)
   set_target_properties(grpc++_test_util_unsecure PROPERTIES COMPILE_PDB_NAME "grpc++_test_util_unsecure"
     COMPILE_PDB_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}"
@@ -4089,22 +4224,6 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-
-protobuf_generate_grpc_cpp(
-  src/proto/grpc/health/v1/health.proto
-)
-protobuf_generate_grpc_cpp(
-  src/proto/grpc/testing/echo_messages.proto
-)
-protobuf_generate_grpc_cpp(
-  src/proto/grpc/testing/echo.proto
-)
-protobuf_generate_grpc_cpp(
-  src/proto/grpc/testing/duplicate/echo_duplicate.proto
-)
-protobuf_generate_grpc_cpp(
-  src/proto/grpc/testing/simple_messages.proto
-)
 
 target_include_directories(grpc++_test_util_unsecure
   PUBLIC $<INSTALL_INTERFACE:${gRPC_INSTALL_INCLUDEDIR}> $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
@@ -4306,6 +4425,11 @@ add_library(grpc++_unsecure
   src/cpp/codegen/codegen_init.cc
 )
 
+set_target_properties(grpc++_unsecure PROPERTIES
+  VERSION ${gRPC_CPP_VERSION}
+  SOVERSION ${gRPC_CPP_SOVERSION}
+)
+
 if(WIN32 AND MSVC)
   set_target_properties(grpc++_unsecure PROPERTIES COMPILE_PDB_NAME "grpc++_unsecure"
     COMPILE_PDB_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}"
@@ -4316,7 +4440,6 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-
 
 target_include_directories(grpc++_unsecure
   PUBLIC $<INSTALL_INTERFACE:${gRPC_INSTALL_INCLUDEDIR}> $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
@@ -4621,6 +4744,11 @@ add_library(grpc_benchmark
   test/cpp/microbenchmarks/helpers.cc
 )
 
+set_target_properties(grpc_benchmark PROPERTIES
+  VERSION ${gRPC_CPP_VERSION}
+  SOVERSION ${gRPC_CPP_SOVERSION}
+)
+
 if(WIN32 AND MSVC)
   set_target_properties(grpc_benchmark PROPERTIES COMPILE_PDB_NAME "grpc_benchmark"
     COMPILE_PDB_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}"
@@ -4631,7 +4759,6 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-
 
 target_include_directories(grpc_benchmark
   PUBLIC $<INSTALL_INTERFACE:${gRPC_INSTALL_INCLUDEDIR}> $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
@@ -4679,6 +4806,11 @@ add_library(grpc_cli_libs
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/reflection/v1alpha/reflection.grpc.pb.h
 )
 
+set_target_properties(grpc_cli_libs PROPERTIES
+  VERSION ${gRPC_CPP_VERSION}
+  SOVERSION ${gRPC_CPP_SOVERSION}
+)
+
 if(WIN32 AND MSVC)
   set_target_properties(grpc_cli_libs PROPERTIES COMPILE_PDB_NAME "grpc_cli_libs"
     COMPILE_PDB_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}"
@@ -4689,10 +4821,6 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-
-protobuf_generate_grpc_cpp(
-  src/proto/grpc/reflection/v1alpha/reflection.proto
-)
 
 target_include_directories(grpc_cli_libs
   PUBLIC $<INSTALL_INTERFACE:${gRPC_INSTALL_INCLUDEDIR}> $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
@@ -4746,6 +4874,11 @@ add_library(grpc_plugin_support
   src/compiler/ruby_generator.cc
 )
 
+set_target_properties(grpc_plugin_support PROPERTIES
+  VERSION ${gRPC_CPP_VERSION}
+  SOVERSION ${gRPC_CPP_SOVERSION}
+)
+
 if(WIN32 AND MSVC)
   set_target_properties(grpc_plugin_support PROPERTIES COMPILE_PDB_NAME "grpc_plugin_support"
     COMPILE_PDB_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}"
@@ -4756,7 +4889,6 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-
 
 target_include_directories(grpc_plugin_support
   PUBLIC $<INSTALL_INTERFACE:${gRPC_INSTALL_INCLUDEDIR}> $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
@@ -4810,6 +4942,11 @@ add_library(grpcpp_channelz
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/channelz.grpc.pb.h
 )
 
+set_target_properties(grpcpp_channelz PROPERTIES
+  VERSION ${gRPC_CPP_VERSION}
+  SOVERSION ${gRPC_CPP_SOVERSION}
+)
+
 if(WIN32 AND MSVC)
   set_target_properties(grpcpp_channelz PROPERTIES COMPILE_PDB_NAME "grpcpp_channelz"
     COMPILE_PDB_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}"
@@ -4820,10 +4957,6 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-
-protobuf_generate_grpc_cpp(
-  src/proto/grpc/channelz/channelz.proto
-)
 
 target_include_directories(grpcpp_channelz
   PUBLIC $<INSTALL_INTERFACE:${gRPC_INSTALL_INCLUDEDIR}> $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
@@ -4889,6 +5022,11 @@ add_library(http2_client_main
   test/cpp/interop/http2_client.cc
 )
 
+set_target_properties(http2_client_main PROPERTIES
+  VERSION ${gRPC_CPP_VERSION}
+  SOVERSION ${gRPC_CPP_SOVERSION}
+)
+
 if(WIN32 AND MSVC)
   set_target_properties(http2_client_main PROPERTIES COMPILE_PDB_NAME "http2_client_main"
     COMPILE_PDB_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}"
@@ -4899,16 +5037,6 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-
-protobuf_generate_grpc_cpp(
-  src/proto/grpc/testing/empty.proto
-)
-protobuf_generate_grpc_cpp(
-  src/proto/grpc/testing/messages.proto
-)
-protobuf_generate_grpc_cpp(
-  src/proto/grpc/testing/test.proto
-)
 
 target_include_directories(http2_client_main
   PUBLIC $<INSTALL_INTERFACE:${gRPC_INSTALL_INCLUDEDIR}> $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
@@ -4954,6 +5082,11 @@ add_library(interop_client_helper
   test/cpp/interop/client_helper.cc
 )
 
+set_target_properties(interop_client_helper PROPERTIES
+  VERSION ${gRPC_CPP_VERSION}
+  SOVERSION ${gRPC_CPP_SOVERSION}
+)
+
 if(WIN32 AND MSVC)
   set_target_properties(interop_client_helper PROPERTIES COMPILE_PDB_NAME "interop_client_helper"
     COMPILE_PDB_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}"
@@ -4964,10 +5097,6 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-
-protobuf_generate_grpc_cpp(
-  src/proto/grpc/testing/messages.proto
-)
 
 target_include_directories(interop_client_helper
   PUBLIC $<INSTALL_INTERFACE:${gRPC_INSTALL_INCLUDEDIR}> $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
@@ -5022,6 +5151,11 @@ add_library(interop_client_main
   test/cpp/interop/interop_client.cc
 )
 
+set_target_properties(interop_client_main PROPERTIES
+  VERSION ${gRPC_CPP_VERSION}
+  SOVERSION ${gRPC_CPP_SOVERSION}
+)
+
 if(WIN32 AND MSVC)
   set_target_properties(interop_client_main PROPERTIES COMPILE_PDB_NAME "interop_client_main"
     COMPILE_PDB_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}"
@@ -5032,16 +5166,6 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-
-protobuf_generate_grpc_cpp(
-  src/proto/grpc/testing/empty.proto
-)
-protobuf_generate_grpc_cpp(
-  src/proto/grpc/testing/messages.proto
-)
-protobuf_generate_grpc_cpp(
-  src/proto/grpc/testing/test.proto
-)
 
 target_include_directories(interop_client_main
   PUBLIC $<INSTALL_INTERFACE:${gRPC_INSTALL_INCLUDEDIR}> $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
@@ -5084,6 +5208,11 @@ add_library(interop_server_helper
   test/cpp/interop/server_helper.cc
 )
 
+set_target_properties(interop_server_helper PROPERTIES
+  VERSION ${gRPC_CPP_VERSION}
+  SOVERSION ${gRPC_CPP_SOVERSION}
+)
+
 if(WIN32 AND MSVC)
   set_target_properties(interop_server_helper PROPERTIES COMPILE_PDB_NAME "interop_server_helper"
     COMPILE_PDB_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}"
@@ -5094,7 +5223,6 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-
 
 target_include_directories(interop_server_helper
   PUBLIC $<INSTALL_INTERFACE:${gRPC_INSTALL_INCLUDEDIR}> $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
@@ -5147,6 +5275,11 @@ add_library(interop_server_lib
   test/cpp/interop/interop_server.cc
 )
 
+set_target_properties(interop_server_lib PROPERTIES
+  VERSION ${gRPC_CPP_VERSION}
+  SOVERSION ${gRPC_CPP_SOVERSION}
+)
+
 if(WIN32 AND MSVC)
   set_target_properties(interop_server_lib PROPERTIES COMPILE_PDB_NAME "interop_server_lib"
     COMPILE_PDB_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}"
@@ -5157,16 +5290,6 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-
-protobuf_generate_grpc_cpp(
-  src/proto/grpc/testing/empty.proto
-)
-protobuf_generate_grpc_cpp(
-  src/proto/grpc/testing/messages.proto
-)
-protobuf_generate_grpc_cpp(
-  src/proto/grpc/testing/test.proto
-)
 
 target_include_directories(interop_server_lib
   PUBLIC $<INSTALL_INTERFACE:${gRPC_INSTALL_INCLUDEDIR}> $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
@@ -5209,6 +5332,11 @@ add_library(interop_server_main
   test/cpp/interop/interop_server_bootstrap.cc
 )
 
+set_target_properties(interop_server_main PROPERTIES
+  VERSION ${gRPC_CPP_VERSION}
+  SOVERSION ${gRPC_CPP_SOVERSION}
+)
+
 if(WIN32 AND MSVC)
   set_target_properties(interop_server_main PROPERTIES COMPILE_PDB_NAME "interop_server_main"
     COMPILE_PDB_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}"
@@ -5219,7 +5347,6 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-
 
 target_include_directories(interop_server_main
   PUBLIC $<INSTALL_INTERFACE:${gRPC_INSTALL_INCLUDEDIR}> $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
@@ -5296,6 +5423,11 @@ add_library(qps
   test/cpp/qps/usage_timer.cc
 )
 
+set_target_properties(qps PROPERTIES
+  VERSION ${gRPC_CPP_VERSION}
+  SOVERSION ${gRPC_CPP_SOVERSION}
+)
+
 if(WIN32 AND MSVC)
   set_target_properties(qps PROPERTIES COMPILE_PDB_NAME "qps"
     COMPILE_PDB_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}"
@@ -5306,28 +5438,6 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-
-protobuf_generate_grpc_cpp(
-  src/proto/grpc/testing/messages.proto
-)
-protobuf_generate_grpc_cpp(
-  src/proto/grpc/testing/payloads.proto
-)
-protobuf_generate_grpc_cpp(
-  src/proto/grpc/testing/stats.proto
-)
-protobuf_generate_grpc_cpp(
-  src/proto/grpc/testing/control.proto
-)
-protobuf_generate_grpc_cpp(
-  src/proto/grpc/testing/benchmark_service.proto
-)
-protobuf_generate_grpc_cpp(
-  src/proto/grpc/testing/report_qps_scenario_service.proto
-)
-protobuf_generate_grpc_cpp(
-  src/proto/grpc/testing/worker_service.proto
-)
 
 target_include_directories(qps
   PUBLIC $<INSTALL_INTERFACE:${gRPC_INSTALL_INCLUDEDIR}> $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
@@ -5368,6 +5478,11 @@ add_library(grpc_csharp_ext SHARED
   src/csharp/ext/grpc_csharp_ext.c
 )
 
+set_target_properties(grpc_csharp_ext PROPERTIES
+  VERSION ${gRPC_CSHARP_VERSION}
+  SOVERSION ${gRPC_CSHARP_SOVERSION}
+)
+
 if(WIN32 AND MSVC)
   set_target_properties(grpc_csharp_ext PROPERTIES COMPILE_PDB_NAME "grpc_csharp_ext"
     COMPILE_PDB_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}"
@@ -5378,7 +5493,6 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-
 
 target_include_directories(grpc_csharp_ext
   PUBLIC $<INSTALL_INTERFACE:${gRPC_INSTALL_INCLUDEDIR}> $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
@@ -5417,6 +5531,11 @@ add_library(bad_client_test
   test/core/bad_client/bad_client.cc
 )
 
+set_target_properties(bad_client_test PROPERTIES
+  VERSION ${gRPC_CPP_VERSION}
+  SOVERSION ${gRPC_CPP_SOVERSION}
+)
+
 if(WIN32 AND MSVC)
   set_target_properties(bad_client_test PROPERTIES COMPILE_PDB_NAME "bad_client_test"
     COMPILE_PDB_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}"
@@ -5427,7 +5546,6 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-
 
 target_include_directories(bad_client_test
   PUBLIC $<INSTALL_INTERFACE:${gRPC_INSTALL_INCLUDEDIR}> $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
@@ -5465,6 +5583,11 @@ add_library(bad_ssl_test_server
   test/core/bad_ssl/server_common.cc
 )
 
+set_target_properties(bad_ssl_test_server PROPERTIES
+  VERSION ${gRPC_CORE_VERSION}
+  SOVERSION ${gRPC_CORE_SOVERSION}
+)
+
 if(WIN32 AND MSVC)
   set_target_properties(bad_ssl_test_server PROPERTIES COMPILE_PDB_NAME "bad_ssl_test_server"
     COMPILE_PDB_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}"
@@ -5475,7 +5598,6 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-
 
 target_include_directories(bad_ssl_test_server
   PUBLIC $<INSTALL_INTERFACE:${gRPC_INSTALL_INCLUDEDIR}> $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
@@ -5585,6 +5707,11 @@ add_library(end2end_tests
   test/core/end2end/tests/write_buffering_at_end.cc
 )
 
+set_target_properties(end2end_tests PROPERTIES
+  VERSION ${gRPC_CORE_VERSION}
+  SOVERSION ${gRPC_CORE_SOVERSION}
+)
+
 if(WIN32 AND MSVC)
   set_target_properties(end2end_tests PROPERTIES COMPILE_PDB_NAME "end2end_tests"
     COMPILE_PDB_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}"
@@ -5595,7 +5722,6 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-
 
 target_include_directories(end2end_tests
   PUBLIC $<INSTALL_INTERFACE:${gRPC_INSTALL_INCLUDEDIR}> $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
@@ -5705,6 +5831,11 @@ add_library(end2end_nosec_tests
   test/core/end2end/tests/write_buffering_at_end.cc
 )
 
+set_target_properties(end2end_nosec_tests PROPERTIES
+  VERSION ${gRPC_CORE_VERSION}
+  SOVERSION ${gRPC_CORE_SOVERSION}
+)
+
 if(WIN32 AND MSVC)
   set_target_properties(end2end_nosec_tests PROPERTIES COMPILE_PDB_NAME "end2end_nosec_tests"
     COMPILE_PDB_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}"
@@ -5715,7 +5846,6 @@ if(WIN32 AND MSVC)
     )
   endif()
 endif()
-
 
 target_include_directories(end2end_nosec_tests
   PUBLIC $<INSTALL_INTERFACE:${gRPC_INSTALL_INCLUDEDIR}> $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
@@ -5747,7 +5877,6 @@ add_executable(algorithm_test
   test/core/compression/algorithm_test.cc
 )
 
-
 target_include_directories(algorithm_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -5777,7 +5906,6 @@ if (gRPC_BUILD_TESTS)
 add_executable(alloc_test
   test/core/gpr/alloc_test.cc
 )
-
 
 target_include_directories(alloc_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
@@ -5809,7 +5937,6 @@ add_executable(alpn_test
   test/core/transport/chttp2/alpn_test.cc
 )
 
-
 target_include_directories(alpn_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -5839,7 +5966,6 @@ if (gRPC_BUILD_TESTS)
 add_executable(arena_test
   test/core/gpr/arena_test.cc
 )
-
 
 target_include_directories(arena_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
@@ -5871,7 +5997,6 @@ add_executable(avl_test
   test/core/avl/avl_test.cc
 )
 
-
 target_include_directories(avl_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -5901,7 +6026,6 @@ if (gRPC_BUILD_TESTS)
 add_executable(bad_server_response_test
   test/core/end2end/bad_server_response_test.cc
 )
-
 
 target_include_directories(bad_server_response_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
@@ -5934,7 +6058,6 @@ add_executable(bin_decoder_test
   test/core/transport/chttp2/bin_decoder_test.cc
 )
 
-
 target_include_directories(bin_decoder_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -5963,7 +6086,6 @@ if (gRPC_BUILD_TESTS)
 add_executable(bin_encoder_test
   test/core/transport/chttp2/bin_encoder_test.cc
 )
-
 
 target_include_directories(bin_encoder_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
@@ -5994,7 +6116,6 @@ if(_gRPC_PLATFORM_LINUX)
 add_executable(buffer_list_test
   test/core/iomgr/buffer_list_test.cc
 )
-
 
 target_include_directories(buffer_list_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
@@ -6027,7 +6148,6 @@ add_executable(channel_create_test
   test/core/surface/channel_create_test.cc
 )
 
-
 target_include_directories(channel_create_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -6057,7 +6177,6 @@ add_executable(check_epollexclusive
   test/build/check_epollexclusive.c
 )
 
-
 target_include_directories(check_epollexclusive
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -6085,7 +6204,6 @@ if (gRPC_BUILD_TESTS)
 add_executable(chttp2_hpack_encoder_test
   test/core/transport/chttp2/hpack_encoder_test.cc
 )
-
 
 target_include_directories(chttp2_hpack_encoder_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
@@ -6117,7 +6235,6 @@ add_executable(chttp2_stream_map_test
   test/core/transport/chttp2/stream_map_test.cc
 )
 
-
 target_include_directories(chttp2_stream_map_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -6147,7 +6264,6 @@ if (gRPC_BUILD_TESTS)
 add_executable(chttp2_varint_test
   test/core/transport/chttp2/varint_test.cc
 )
-
 
 target_include_directories(chttp2_varint_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
@@ -6180,7 +6296,6 @@ add_executable(close_fd_test
   test/core/bad_connection/close_fd_test.cc
 )
 
-
 target_include_directories(close_fd_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -6212,7 +6327,6 @@ add_executable(cmdline_test
   test/core/util/cmdline_test.cc
 )
 
-
 target_include_directories(cmdline_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -6242,7 +6356,6 @@ if (gRPC_BUILD_TESTS)
 add_executable(combiner_test
   test/core/iomgr/combiner_test.cc
 )
-
 
 target_include_directories(combiner_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
@@ -6274,7 +6387,6 @@ add_executable(compression_test
   test/core/compression/compression_test.cc
 )
 
-
 target_include_directories(compression_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -6304,7 +6416,6 @@ if (gRPC_BUILD_TESTS)
 add_executable(concurrent_connectivity_test
   test/core/surface/concurrent_connectivity_test.cc
 )
-
 
 target_include_directories(concurrent_connectivity_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
@@ -6336,7 +6447,6 @@ add_executable(connection_refused_test
   test/core/end2end/connection_refused_test.cc
 )
 
-
 target_include_directories(connection_refused_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -6366,7 +6476,6 @@ if (gRPC_BUILD_TESTS)
 add_executable(dns_resolver_connectivity_test
   test/core/client_channel/resolvers/dns_resolver_connectivity_test.cc
 )
-
 
 target_include_directories(dns_resolver_connectivity_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
@@ -6398,7 +6507,6 @@ add_executable(dns_resolver_cooldown_using_ares_resolver_test
   test/core/client_channel/resolvers/dns_resolver_cooldown_test.cc
 )
 
-
 target_include_directories(dns_resolver_cooldown_using_ares_resolver_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -6429,7 +6537,6 @@ add_executable(dns_resolver_cooldown_using_native_resolver_test
   test/core/client_channel/resolvers/dns_resolver_cooldown_test.cc
 )
 
-
 target_include_directories(dns_resolver_cooldown_using_native_resolver_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -6459,7 +6566,6 @@ if (gRPC_BUILD_TESTS)
 add_executable(dns_resolver_test
   test/core/client_channel/resolvers/dns_resolver_test.cc
 )
-
 
 target_include_directories(dns_resolver_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
@@ -6492,7 +6598,6 @@ add_executable(dualstack_socket_test
   test/core/end2end/dualstack_socket_test.cc
 )
 
-
 target_include_directories(dualstack_socket_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -6524,7 +6629,6 @@ add_executable(endpoint_pair_test
   test/core/iomgr/endpoint_pair_test.cc
 )
 
-
 target_include_directories(endpoint_pair_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -6554,7 +6658,6 @@ if (gRPC_BUILD_TESTS)
 add_executable(error_test
   test/core/iomgr/error_test.cc
 )
-
 
 target_include_directories(error_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
@@ -6587,7 +6690,6 @@ add_executable(ev_epollex_linux_test
   test/core/iomgr/ev_epollex_linux_test.cc
 )
 
-
 target_include_directories(ev_epollex_linux_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -6618,7 +6720,6 @@ if (gRPC_BUILD_TESTS)
 add_executable(fake_resolver_test
   test/core/client_channel/resolvers/fake_resolver_test.cc
 )
-
 
 target_include_directories(fake_resolver_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
@@ -6652,7 +6753,6 @@ add_executable(fake_transport_security_test
   test/core/tsi/transport_security_test_lib.cc
 )
 
-
 target_include_directories(fake_transport_security_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -6684,7 +6784,6 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 add_executable(fd_conservation_posix_test
   test/core/iomgr/fd_conservation_posix_test.cc
 )
-
 
 target_include_directories(fd_conservation_posix_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
@@ -6718,7 +6817,6 @@ add_executable(fd_posix_test
   test/core/iomgr/fd_posix_test.cc
 )
 
-
 target_include_directories(fd_posix_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -6750,7 +6848,6 @@ add_executable(fling_client
   test/core/fling/client.cc
 )
 
-
 target_include_directories(fling_client
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -6780,7 +6877,6 @@ if (gRPC_BUILD_TESTS)
 add_executable(fling_server
   test/core/fling/server.cc
 )
-
 
 target_include_directories(fling_server
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
@@ -6812,7 +6908,6 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 add_executable(fling_stream_test
   test/core/fling/fling_stream_test.cc
 )
-
 
 target_include_directories(fling_stream_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
@@ -6846,7 +6941,6 @@ add_executable(fling_test
   test/core/fling/fling_test.cc
 )
 
-
 target_include_directories(fling_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -6878,7 +6972,6 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC)
 add_executable(fork_test
   test/core/gprpp/fork_test.cc
 )
-
 
 target_include_directories(fork_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
@@ -6912,7 +7005,6 @@ add_executable(goaway_server_test
   test/core/end2end/goaway_server_test.cc
 )
 
-
 target_include_directories(goaway_server_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -6944,7 +7036,6 @@ add_executable(gpr_cpu_test
   test/core/gpr/cpu_test.cc
 )
 
-
 target_include_directories(gpr_cpu_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -6974,7 +7065,6 @@ if (gRPC_BUILD_TESTS)
 add_executable(gpr_env_test
   test/core/gpr/env_test.cc
 )
-
 
 target_include_directories(gpr_env_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
@@ -7006,7 +7096,6 @@ add_executable(gpr_host_port_test
   test/core/gprpp/host_port_test.cc
 )
 
-
 target_include_directories(gpr_host_port_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -7036,7 +7125,6 @@ if (gRPC_BUILD_TESTS)
 add_executable(gpr_log_test
   test/core/gpr/log_test.cc
 )
-
 
 target_include_directories(gpr_log_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
@@ -7068,7 +7156,6 @@ add_executable(gpr_manual_constructor_test
   test/core/gprpp/manual_constructor_test.cc
 )
 
-
 target_include_directories(gpr_manual_constructor_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -7098,7 +7185,6 @@ if (gRPC_BUILD_TESTS)
 add_executable(gpr_spinlock_test
   test/core/gpr/spinlock_test.cc
 )
-
 
 target_include_directories(gpr_spinlock_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
@@ -7130,7 +7216,6 @@ add_executable(gpr_string_test
   test/core/gpr/string_test.cc
 )
 
-
 target_include_directories(gpr_string_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -7160,7 +7245,6 @@ if (gRPC_BUILD_TESTS)
 add_executable(gpr_sync_test
   test/core/gpr/sync_test.cc
 )
-
 
 target_include_directories(gpr_sync_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
@@ -7192,7 +7276,6 @@ add_executable(gpr_thd_test
   test/core/gprpp/thd_test.cc
 )
 
-
 target_include_directories(gpr_thd_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -7222,7 +7305,6 @@ if (gRPC_BUILD_TESTS)
 add_executable(gpr_time_test
   test/core/gpr/time_test.cc
 )
-
 
 target_include_directories(gpr_time_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
@@ -7254,7 +7336,6 @@ add_executable(gpr_tls_test
   test/core/gpr/tls_test.cc
 )
 
-
 target_include_directories(gpr_tls_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -7284,7 +7365,6 @@ if (gRPC_BUILD_TESTS)
 add_executable(gpr_useful_test
   test/core/gpr/useful_test.cc
 )
-
 
 target_include_directories(gpr_useful_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
@@ -7316,7 +7396,6 @@ add_executable(grpc_auth_context_test
   test/core/security/auth_context_test.cc
 )
 
-
 target_include_directories(grpc_auth_context_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -7346,7 +7425,6 @@ if (gRPC_BUILD_TESTS)
 add_executable(grpc_b64_test
   test/core/slice/b64_test.cc
 )
-
 
 target_include_directories(grpc_b64_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
@@ -7378,7 +7456,6 @@ add_executable(grpc_byte_buffer_reader_test
   test/core/surface/byte_buffer_reader_test.cc
 )
 
-
 target_include_directories(grpc_byte_buffer_reader_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -7408,7 +7485,6 @@ if (gRPC_BUILD_TESTS)
 add_executable(grpc_channel_args_test
   test/core/channel/channel_args_test.cc
 )
-
 
 target_include_directories(grpc_channel_args_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
@@ -7440,7 +7516,6 @@ add_executable(grpc_channel_stack_builder_test
   test/core/channel/channel_stack_builder_test.cc
 )
 
-
 target_include_directories(grpc_channel_stack_builder_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -7470,7 +7545,6 @@ if (gRPC_BUILD_TESTS)
 add_executable(grpc_channel_stack_test
   test/core/channel/channel_stack_test.cc
 )
-
 
 target_include_directories(grpc_channel_stack_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
@@ -7502,7 +7576,6 @@ add_executable(grpc_completion_queue_test
   test/core/surface/completion_queue_test.cc
 )
 
-
 target_include_directories(grpc_completion_queue_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -7532,7 +7605,6 @@ if (gRPC_BUILD_TESTS)
 add_executable(grpc_completion_queue_threading_test
   test/core/surface/completion_queue_threading_test.cc
 )
-
 
 target_include_directories(grpc_completion_queue_threading_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
@@ -7564,7 +7636,6 @@ add_executable(grpc_control_plane_credentials_test
   test/core/security/control_plane_credentials_test.cc
 )
 
-
 target_include_directories(grpc_control_plane_credentials_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -7595,7 +7666,6 @@ add_executable(grpc_create_jwt
   test/core/util/cmdline.cc
 )
 
-
 target_include_directories(grpc_create_jwt
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -7624,7 +7694,6 @@ if (gRPC_BUILD_TESTS)
 add_executable(grpc_credentials_test
   test/core/security/credentials_test.cc
 )
-
 
 target_include_directories(grpc_credentials_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
@@ -7655,7 +7724,6 @@ if (gRPC_BUILD_TESTS)
 add_executable(grpc_ipv6_loopback_available_test
   test/core/iomgr/grpc_ipv6_loopback_available_test.cc
 )
-
 
 target_include_directories(grpc_ipv6_loopback_available_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
@@ -7688,7 +7756,6 @@ add_executable(grpc_json_token_test
   test/core/security/json_token_test.cc
 )
 
-
 target_include_directories(grpc_json_token_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -7720,7 +7787,6 @@ add_executable(grpc_jwt_verifier_test
   test/core/security/jwt_verifier_test.cc
 )
 
-
 target_include_directories(grpc_jwt_verifier_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -7751,7 +7817,6 @@ add_executable(grpc_print_google_default_creds_token
   test/core/util/cmdline.cc
 )
 
-
 target_include_directories(grpc_print_google_default_creds_token
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -7779,7 +7844,6 @@ if (gRPC_BUILD_TESTS)
 add_executable(grpc_security_connector_test
   test/core/security/security_connector_test.cc
 )
-
 
 target_include_directories(grpc_security_connector_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
@@ -7811,7 +7875,6 @@ add_executable(grpc_ssl_credentials_test
   test/core/security/ssl_credentials_test.cc
 )
 
-
 target_include_directories(grpc_ssl_credentials_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -7842,7 +7905,6 @@ add_executable(grpc_verify_jwt
   test/core/util/cmdline.cc
 )
 
-
 target_include_directories(grpc_verify_jwt
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -7871,7 +7933,6 @@ if(_gRPC_PLATFORM_LINUX)
 add_executable(handshake_client_ssl
   test/core/handshake/client_ssl.cc
 )
-
 
 target_include_directories(handshake_client_ssl
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
@@ -7907,7 +7968,6 @@ add_executable(handshake_server_ssl
   test/core/handshake/server_ssl_common.cc
 )
 
-
 target_include_directories(handshake_server_ssl
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -7942,7 +8002,6 @@ add_executable(handshake_server_with_readahead_handshaker
   test/core/handshake/server_ssl_common.cc
 )
 
-
 target_include_directories(handshake_server_with_readahead_handshaker
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -7976,7 +8035,6 @@ add_executable(handshake_verify_peer_options
   test/core/handshake/verify_peer_options.cc
 )
 
-
 target_include_directories(handshake_verify_peer_options
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -8009,7 +8067,6 @@ add_executable(histogram_test
   test/core/util/histogram_test.cc
 )
 
-
 target_include_directories(histogram_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -8038,7 +8095,6 @@ if (gRPC_BUILD_TESTS)
 add_executable(hpack_parser_test
   test/core/transport/chttp2/hpack_parser_test.cc
 )
-
 
 target_include_directories(hpack_parser_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
@@ -8070,7 +8126,6 @@ add_executable(hpack_table_test
   test/core/transport/chttp2/hpack_table_test.cc
 )
 
-
 target_include_directories(hpack_table_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -8100,7 +8155,6 @@ if (gRPC_BUILD_TESTS)
 add_executable(http_parser_test
   test/core/http/parser_test.cc
 )
-
 
 target_include_directories(http_parser_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
@@ -8132,7 +8186,6 @@ add_executable(httpcli_format_request_test
   test/core/http/format_request_test.cc
 )
 
-
 target_include_directories(httpcli_format_request_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -8163,7 +8216,6 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 add_executable(httpcli_test
   test/core/http/httpcli_test.cc
 )
-
 
 target_include_directories(httpcli_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
@@ -8197,7 +8249,6 @@ add_executable(httpscli_test
   test/core/http/httpscli_test.cc
 )
 
-
 target_include_directories(httpscli_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -8229,7 +8280,6 @@ add_executable(init_test
   test/core/surface/init_test.cc
 )
 
-
 target_include_directories(init_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -8259,7 +8309,6 @@ if (gRPC_BUILD_TESTS)
 add_executable(inproc_callback_test
   test/core/end2end/inproc_callback_test.cc
 )
-
 
 target_include_directories(inproc_callback_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
@@ -8291,7 +8340,6 @@ add_executable(invalid_call_argument_test
   test/core/end2end/invalid_call_argument_test.cc
 )
 
-
 target_include_directories(invalid_call_argument_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -8321,7 +8369,6 @@ if (gRPC_BUILD_TESTS)
 add_executable(json_rewrite
   test/core/json/json_rewrite.cc
 )
-
 
 target_include_directories(json_rewrite
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
@@ -8353,7 +8400,6 @@ add_executable(json_rewrite_test
   test/core/json/json_rewrite_test.cc
 )
 
-
 target_include_directories(json_rewrite_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -8383,7 +8429,6 @@ if (gRPC_BUILD_TESTS)
 add_executable(json_stream_error_test
   test/core/json/json_stream_error_test.cc
 )
-
 
 target_include_directories(json_stream_error_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
@@ -8415,7 +8460,6 @@ add_executable(json_test
   test/core/json/json_test.cc
 )
 
-
 target_include_directories(json_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -8445,7 +8489,6 @@ if (gRPC_BUILD_TESTS)
 add_executable(lame_client_test
   test/core/surface/lame_client_test.cc
 )
-
 
 target_include_directories(lame_client_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
@@ -8477,7 +8520,6 @@ add_executable(load_file_test
   test/core/iomgr/load_file_test.cc
 )
 
-
 target_include_directories(load_file_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -8508,7 +8550,6 @@ add_executable(memory_usage_client
   test/core/memory_usage/client.cc
 )
 
-
 target_include_directories(memory_usage_client
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -8538,7 +8579,6 @@ if (gRPC_BUILD_TESTS)
 add_executable(memory_usage_server
   test/core/memory_usage/server.cc
 )
-
 
 target_include_directories(memory_usage_server
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
@@ -8571,7 +8611,6 @@ add_executable(memory_usage_test
   test/core/memory_usage/memory_usage_test.cc
 )
 
-
 target_include_directories(memory_usage_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -8603,7 +8642,6 @@ add_executable(message_compress_test
   test/core/compression/message_compress_test.cc
 )
 
-
 target_include_directories(message_compress_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -8633,7 +8671,6 @@ if (gRPC_BUILD_TESTS)
 add_executable(minimal_stack_is_minimal_test
   test/core/channel/minimal_stack_is_minimal_test.cc
 )
-
 
 target_include_directories(minimal_stack_is_minimal_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
@@ -8665,7 +8702,6 @@ add_executable(mpmcqueue_test
   test/core/iomgr/mpmcqueue_test.cc
 )
 
-
 target_include_directories(mpmcqueue_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -8695,7 +8731,6 @@ if (gRPC_BUILD_TESTS)
 add_executable(multiple_server_queues_test
   test/core/end2end/multiple_server_queues_test.cc
 )
-
 
 target_include_directories(multiple_server_queues_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
@@ -8727,7 +8762,6 @@ add_executable(murmur_hash_test
   test/core/gpr/murmur_hash_test.cc
 )
 
-
 target_include_directories(murmur_hash_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -8757,7 +8791,6 @@ if (gRPC_BUILD_TESTS)
 add_executable(no_server_test
   test/core/end2end/no_server_test.cc
 )
-
 
 target_include_directories(no_server_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
@@ -8789,7 +8822,6 @@ add_executable(num_external_connectivity_watchers_test
   test/core/surface/num_external_connectivity_watchers_test.cc
 )
 
-
 target_include_directories(num_external_connectivity_watchers_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -8819,7 +8851,6 @@ if (gRPC_BUILD_TESTS)
 add_executable(parse_address_test
   test/core/client_channel/parse_address_test.cc
 )
-
 
 target_include_directories(parse_address_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
@@ -8852,7 +8883,6 @@ add_executable(parse_address_with_named_scope_id_test
   test/core/client_channel/parse_address_with_named_scope_id_test.cc
 )
 
-
 target_include_directories(parse_address_with_named_scope_id_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -8883,7 +8913,6 @@ if (gRPC_BUILD_TESTS)
 add_executable(percent_encoding_test
   test/core/slice/percent_encoding_test.cc
 )
-
 
 target_include_directories(percent_encoding_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
@@ -8916,7 +8945,6 @@ add_executable(resolve_address_using_ares_resolver_posix_test
   test/core/iomgr/resolve_address_posix_test.cc
 )
 
-
 target_include_directories(resolve_address_using_ares_resolver_posix_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -8947,7 +8975,6 @@ if (gRPC_BUILD_TESTS)
 add_executable(resolve_address_using_ares_resolver_test
   test/core/iomgr/resolve_address_test.cc
 )
-
 
 target_include_directories(resolve_address_using_ares_resolver_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
@@ -8980,7 +9007,6 @@ add_executable(resolve_address_using_native_resolver_posix_test
   test/core/iomgr/resolve_address_posix_test.cc
 )
 
-
 target_include_directories(resolve_address_using_native_resolver_posix_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -9012,7 +9038,6 @@ add_executable(resolve_address_using_native_resolver_test
   test/core/iomgr/resolve_address_test.cc
 )
 
-
 target_include_directories(resolve_address_using_native_resolver_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -9042,7 +9067,6 @@ if (gRPC_BUILD_TESTS)
 add_executable(resource_quota_test
   test/core/iomgr/resource_quota_test.cc
 )
-
 
 target_include_directories(resource_quota_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
@@ -9074,7 +9098,6 @@ add_executable(secure_channel_create_test
   test/core/surface/secure_channel_create_test.cc
 )
 
-
 target_include_directories(secure_channel_create_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -9104,7 +9127,6 @@ if (gRPC_BUILD_TESTS)
 add_executable(secure_endpoint_test
   test/core/security/secure_endpoint_test.cc
 )
-
 
 target_include_directories(secure_endpoint_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
@@ -9136,7 +9158,6 @@ add_executable(sequential_connectivity_test
   test/core/surface/sequential_connectivity_test.cc
 )
 
-
 target_include_directories(sequential_connectivity_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -9166,7 +9187,6 @@ if (gRPC_BUILD_TESTS)
 add_executable(server_chttp2_test
   test/core/surface/server_chttp2_test.cc
 )
-
 
 target_include_directories(server_chttp2_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
@@ -9198,7 +9218,6 @@ add_executable(server_test
   test/core/surface/server_test.cc
 )
 
-
 target_include_directories(server_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -9228,7 +9247,6 @@ if (gRPC_BUILD_TESTS)
 add_executable(slice_buffer_test
   test/core/slice/slice_buffer_test.cc
 )
-
 
 target_include_directories(slice_buffer_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
@@ -9260,7 +9278,6 @@ add_executable(slice_string_helpers_test
   test/core/slice/slice_string_helpers_test.cc
 )
 
-
 target_include_directories(slice_string_helpers_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -9290,7 +9307,6 @@ if (gRPC_BUILD_TESTS)
 add_executable(slice_test
   test/core/slice/slice_test.cc
 )
-
 
 target_include_directories(slice_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
@@ -9322,7 +9338,6 @@ add_executable(sockaddr_resolver_test
   test/core/client_channel/resolvers/sockaddr_resolver_test.cc
 )
 
-
 target_include_directories(sockaddr_resolver_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -9352,7 +9367,6 @@ if (gRPC_BUILD_TESTS)
 add_executable(sockaddr_utils_test
   test/core/iomgr/sockaddr_utils_test.cc
 )
-
 
 target_include_directories(sockaddr_utils_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
@@ -9384,7 +9398,6 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 add_executable(socket_utils_test
   test/core/iomgr/socket_utils_test.cc
 )
-
 
 target_include_directories(socket_utils_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
@@ -9419,7 +9432,6 @@ add_executable(ssl_transport_security_test
   test/core/tsi/transport_security_test_lib.cc
 )
 
-
 target_include_directories(ssl_transport_security_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -9451,7 +9463,6 @@ add_executable(status_conversion_test
   test/core/transport/status_conversion_test.cc
 )
 
-
 target_include_directories(status_conversion_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -9482,7 +9493,6 @@ add_executable(stream_compression_test
   test/core/compression/stream_compression_test.cc
 )
 
-
 target_include_directories(stream_compression_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -9512,7 +9522,6 @@ if (gRPC_BUILD_TESTS)
 add_executable(stream_owned_slice_test
   test/core/transport/stream_owned_slice_test.cc
 )
-
 
 target_include_directories(stream_owned_slice_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
@@ -9545,7 +9554,6 @@ add_executable(tcp_client_posix_test
   test/core/iomgr/tcp_client_posix_test.cc
 )
 
-
 target_include_directories(tcp_client_posix_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -9577,7 +9585,6 @@ add_executable(tcp_client_uv_test
   test/core/iomgr/tcp_client_uv_test.cc
 )
 
-
 target_include_directories(tcp_client_uv_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -9608,7 +9615,6 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 add_executable(tcp_posix_test
   test/core/iomgr/tcp_posix_test.cc
 )
-
 
 target_include_directories(tcp_posix_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
@@ -9642,7 +9648,6 @@ add_executable(tcp_server_posix_test
   test/core/iomgr/tcp_server_posix_test.cc
 )
 
-
 target_include_directories(tcp_server_posix_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -9674,7 +9679,6 @@ add_executable(tcp_server_uv_test
   test/core/iomgr/tcp_server_uv_test.cc
 )
 
-
 target_include_directories(tcp_server_uv_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -9704,7 +9708,6 @@ if (gRPC_BUILD_TESTS)
 add_executable(threadpool_test
   test/core/iomgr/threadpool_test.cc
 )
-
 
 target_include_directories(threadpool_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
@@ -9736,7 +9739,6 @@ add_executable(time_averaged_stats_test
   test/core/iomgr/time_averaged_stats_test.cc
 )
 
-
 target_include_directories(time_averaged_stats_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -9766,7 +9768,6 @@ if (gRPC_BUILD_TESTS)
 add_executable(timeout_encoding_test
   test/core/transport/timeout_encoding_test.cc
 )
-
 
 target_include_directories(timeout_encoding_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
@@ -9798,7 +9799,6 @@ add_executable(timer_heap_test
   test/core/iomgr/timer_heap_test.cc
 )
 
-
 target_include_directories(timer_heap_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -9828,7 +9828,6 @@ if (gRPC_BUILD_TESTS)
 add_executable(timer_list_test
   test/core/iomgr/timer_list_test.cc
 )
-
 
 target_include_directories(timer_list_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
@@ -9860,7 +9859,6 @@ add_executable(transport_metadata_test
   test/core/transport/metadata_test.cc
 )
 
-
 target_include_directories(transport_metadata_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -9891,7 +9889,6 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 add_executable(transport_security_test
   test/core/tsi/transport_security_test.cc
 )
-
 
 target_include_directories(transport_security_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
@@ -9925,7 +9922,6 @@ add_executable(udp_server_test
   test/core/iomgr/udp_server_test.cc
 )
 
-
 target_include_directories(udp_server_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -9956,7 +9952,6 @@ if (gRPC_BUILD_TESTS)
 add_executable(uri_parser_test
   test/core/client_channel/uri_parser_test.cc
 )
-
 
 target_include_directories(uri_parser_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
@@ -9989,7 +9984,6 @@ add_executable(alarm_test
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
-
 
 target_include_directories(alarm_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
@@ -10032,7 +10026,6 @@ add_executable(alts_counter_test
   third_party/googletest/googlemock/src/gmock-all.cc
 )
 
-
 target_include_directories(alts_counter_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -10071,7 +10064,6 @@ add_executable(alts_crypt_test
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
-
 
 target_include_directories(alts_crypt_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
@@ -10113,7 +10105,6 @@ add_executable(alts_crypter_test
   third_party/googletest/googlemock/src/gmock-all.cc
 )
 
-
 target_include_directories(alts_crypter_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -10152,7 +10143,6 @@ add_executable(alts_frame_handler_test
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
-
 
 target_include_directories(alts_frame_handler_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
@@ -10194,7 +10184,6 @@ add_executable(alts_frame_protector_test
   third_party/googletest/googlemock/src/gmock-all.cc
 )
 
-
 target_include_directories(alts_frame_protector_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -10233,7 +10222,6 @@ add_executable(alts_grpc_record_protocol_test
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
-
 
 target_include_directories(alts_grpc_record_protocol_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
@@ -10274,7 +10262,6 @@ add_executable(alts_handshaker_client_test
   third_party/googletest/googlemock/src/gmock-all.cc
 )
 
-
 target_include_directories(alts_handshaker_client_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -10313,7 +10300,6 @@ add_executable(alts_iovec_record_protocol_test
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
-
 
 target_include_directories(alts_iovec_record_protocol_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
@@ -10354,7 +10340,6 @@ add_executable(alts_security_connector_test
   third_party/googletest/googlemock/src/gmock-all.cc
 )
 
-
 target_include_directories(alts_security_connector_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -10392,7 +10377,6 @@ add_executable(alts_tsi_handshaker_test
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
-
 
 target_include_directories(alts_tsi_handshaker_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
@@ -10433,7 +10417,6 @@ add_executable(alts_tsi_utils_test
   third_party/googletest/googlemock/src/gmock-all.cc
 )
 
-
 target_include_directories(alts_tsi_utils_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -10473,7 +10456,6 @@ add_executable(alts_zero_copy_grpc_protector_test
   third_party/googletest/googlemock/src/gmock-all.cc
 )
 
-
 target_include_directories(alts_zero_copy_grpc_protector_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -10512,7 +10494,6 @@ add_executable(async_end2end_test
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
-
 
 target_include_directories(async_end2end_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
@@ -10555,7 +10536,6 @@ add_executable(auth_property_iterator_test
   third_party/googletest/googlemock/src/gmock-all.cc
 )
 
-
 target_include_directories(auth_property_iterator_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -10597,7 +10577,6 @@ add_executable(backoff_test
   third_party/googletest/googlemock/src/gmock-all.cc
 )
 
-
 target_include_directories(backoff_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -10636,7 +10615,6 @@ add_executable(bdp_estimator_test
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
-
 
 target_include_directories(bdp_estimator_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
@@ -10679,7 +10657,6 @@ add_executable(bm_alarm
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
-
 
 target_include_directories(bm_alarm
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
@@ -10727,7 +10704,6 @@ add_executable(bm_arena
   third_party/googletest/googlemock/src/gmock-all.cc
 )
 
-
 target_include_directories(bm_arena
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -10773,7 +10749,6 @@ add_executable(bm_byte_buffer
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
-
 
 target_include_directories(bm_byte_buffer
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
@@ -10821,7 +10796,6 @@ add_executable(bm_call_create
   third_party/googletest/googlemock/src/gmock-all.cc
 )
 
-
 target_include_directories(bm_call_create
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -10867,7 +10841,6 @@ add_executable(bm_callback_streaming_ping_pong
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
-
 
 target_include_directories(bm_callback_streaming_ping_pong
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
@@ -10916,7 +10889,6 @@ add_executable(bm_callback_unary_ping_pong
   third_party/googletest/googlemock/src/gmock-all.cc
 )
 
-
 target_include_directories(bm_callback_unary_ping_pong
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -10964,7 +10936,6 @@ add_executable(bm_channel
   third_party/googletest/googlemock/src/gmock-all.cc
 )
 
-
 target_include_directories(bm_channel
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -11010,7 +10981,6 @@ add_executable(bm_chttp2_hpack
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
-
 
 target_include_directories(bm_chttp2_hpack
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
@@ -11058,7 +11028,6 @@ add_executable(bm_chttp2_transport
   third_party/googletest/googlemock/src/gmock-all.cc
 )
 
-
 target_include_directories(bm_chttp2_transport
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -11104,7 +11073,6 @@ add_executable(bm_closure
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
-
 
 target_include_directories(bm_closure
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
@@ -11152,7 +11120,6 @@ add_executable(bm_cq
   third_party/googletest/googlemock/src/gmock-all.cc
 )
 
-
 target_include_directories(bm_cq
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -11198,7 +11165,6 @@ add_executable(bm_cq_multiple_threads
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
-
 
 target_include_directories(bm_cq_multiple_threads
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
@@ -11246,7 +11212,6 @@ add_executable(bm_error
   third_party/googletest/googlemock/src/gmock-all.cc
 )
 
-
 target_include_directories(bm_error
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -11292,7 +11257,6 @@ add_executable(bm_fullstack_streaming_ping_pong
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
-
 
 target_include_directories(bm_fullstack_streaming_ping_pong
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
@@ -11340,7 +11304,6 @@ add_executable(bm_fullstack_streaming_pump
   third_party/googletest/googlemock/src/gmock-all.cc
 )
 
-
 target_include_directories(bm_fullstack_streaming_pump
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -11386,7 +11349,6 @@ add_executable(bm_fullstack_trickle
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
-
 
 target_include_directories(bm_fullstack_trickle
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
@@ -11434,7 +11396,6 @@ add_executable(bm_fullstack_unary_ping_pong
   third_party/googletest/googlemock/src/gmock-all.cc
 )
 
-
 target_include_directories(bm_fullstack_unary_ping_pong
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -11480,7 +11441,6 @@ add_executable(bm_metadata
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
-
 
 target_include_directories(bm_metadata
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
@@ -11528,7 +11488,6 @@ add_executable(bm_pollset
   third_party/googletest/googlemock/src/gmock-all.cc
 )
 
-
 target_include_directories(bm_pollset
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -11574,7 +11533,6 @@ add_executable(bm_threadpool
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
-
 
 target_include_directories(bm_threadpool
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
@@ -11622,7 +11580,6 @@ add_executable(bm_timer
   third_party/googletest/googlemock/src/gmock-all.cc
 )
 
-
 target_include_directories(bm_timer
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -11668,7 +11625,6 @@ add_executable(byte_stream_test
   third_party/googletest/googlemock/src/gmock-all.cc
 )
 
-
 target_include_directories(byte_stream_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -11708,7 +11664,6 @@ add_executable(channel_arguments_test
   third_party/googletest/googlemock/src/gmock-all.cc
 )
 
-
 target_include_directories(channel_arguments_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -11747,7 +11702,6 @@ add_executable(channel_filter_test
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
-
 
 target_include_directories(channel_filter_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
@@ -11792,10 +11746,6 @@ add_executable(channel_trace_test
   third_party/googletest/googlemock/src/gmock-all.cc
 )
 
-protobuf_generate_grpc_cpp(
-  src/proto/grpc/channelz/channelz.proto
-)
-
 target_include_directories(channel_trace_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -11836,7 +11786,6 @@ add_executable(channelz_registry_test
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
-
 
 target_include_directories(channelz_registry_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
@@ -11881,10 +11830,6 @@ add_executable(channelz_service_test
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/channelz.grpc.pb.h
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
-)
-
-protobuf_generate_grpc_cpp(
-  src/proto/grpc/channelz/channelz.proto
 )
 
 target_include_directories(channelz_service_test
@@ -11933,10 +11878,6 @@ add_executable(channelz_test
   third_party/googletest/googlemock/src/gmock-all.cc
 )
 
-protobuf_generate_grpc_cpp(
-  src/proto/grpc/channelz/channelz.proto
-)
-
 target_include_directories(channelz_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -11978,7 +11919,6 @@ add_executable(check_gcp_environment_linux_test
   third_party/googletest/googlemock/src/gmock-all.cc
 )
 
-
 target_include_directories(check_gcp_environment_linux_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -12016,7 +11956,6 @@ add_executable(check_gcp_environment_windows_test
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
-
 
 target_include_directories(check_gcp_environment_windows_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
@@ -12056,7 +11995,6 @@ add_executable(chttp2_settings_timeout_test
   third_party/googletest/googlemock/src/gmock-all.cc
 )
 
-
 target_include_directories(chttp2_settings_timeout_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -12095,7 +12033,6 @@ add_executable(cli_call_test
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
-
 
 target_include_directories(cli_call_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
@@ -12139,7 +12076,6 @@ add_executable(client_callback_end2end_test
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
-
 
 target_include_directories(client_callback_end2end_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
@@ -12186,10 +12122,6 @@ add_executable(client_channel_stress_test
   third_party/googletest/googlemock/src/gmock-all.cc
 )
 
-protobuf_generate_grpc_cpp(
-  src/proto/grpc/lb/v1/load_balancer.proto
-)
-
 target_include_directories(client_channel_stress_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -12232,7 +12164,6 @@ add_executable(client_crash_test
   third_party/googletest/googlemock/src/gmock-all.cc
 )
 
-
 target_include_directories(client_crash_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -12274,7 +12205,6 @@ add_executable(client_crash_test_server
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
-
 
 target_include_directories(client_crash_test_server
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
@@ -12319,7 +12249,6 @@ add_executable(client_interceptors_end2end_test
   third_party/googletest/googlemock/src/gmock-all.cc
 )
 
-
 target_include_directories(client_interceptors_end2end_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -12363,10 +12292,6 @@ add_executable(client_lb_end2end_test
   test/cpp/end2end/client_lb_end2end_test.cc
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
-)
-
-protobuf_generate_grpc_cpp(
-  src/proto/grpc/testing/xds/orca_load_report_for_test.proto
 )
 
 target_include_directories(client_lb_end2end_test
@@ -12438,28 +12363,6 @@ add_executable(codegen_test_full
   third_party/googletest/googlemock/src/gmock-all.cc
 )
 
-protobuf_generate_grpc_cpp(
-  src/proto/grpc/testing/control.proto
-)
-protobuf_generate_grpc_cpp(
-  src/proto/grpc/testing/messages.proto
-)
-protobuf_generate_grpc_cpp(
-  src/proto/grpc/testing/payloads.proto
-)
-protobuf_generate_grpc_cpp(
-  src/proto/grpc/testing/benchmark_service.proto
-)
-protobuf_generate_grpc_cpp(
-  src/proto/grpc/testing/report_qps_scenario_service.proto
-)
-protobuf_generate_grpc_cpp(
-  src/proto/grpc/testing/worker_service.proto
-)
-protobuf_generate_grpc_cpp(
-  src/proto/grpc/testing/stats.proto
-)
-
 target_include_directories(codegen_test_full
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -12529,28 +12432,6 @@ add_executable(codegen_test_minimal
   third_party/googletest/googlemock/src/gmock-all.cc
 )
 
-protobuf_generate_grpc_cpp(
-  src/proto/grpc/testing/control.proto
-)
-protobuf_generate_grpc_cpp(
-  src/proto/grpc/testing/messages.proto
-)
-protobuf_generate_grpc_cpp(
-  src/proto/grpc/testing/payloads.proto
-)
-protobuf_generate_grpc_cpp(
-  src/proto/grpc/testing/benchmark_service.proto
-)
-protobuf_generate_grpc_cpp(
-  src/proto/grpc/testing/report_qps_scenario_service.proto
-)
-protobuf_generate_grpc_cpp(
-  src/proto/grpc/testing/worker_service.proto
-)
-protobuf_generate_grpc_cpp(
-  src/proto/grpc/testing/stats.proto
-)
-
 target_include_directories(codegen_test_minimal
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -12589,7 +12470,6 @@ add_executable(context_list_test
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
-
 
 target_include_directories(context_list_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
@@ -12630,7 +12510,6 @@ add_executable(credentials_test
   third_party/googletest/googlemock/src/gmock-all.cc
 )
 
-
 target_include_directories(credentials_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -12669,7 +12548,6 @@ add_executable(cxx_byte_buffer_test
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
-
 
 target_include_directories(cxx_byte_buffer_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
@@ -12711,7 +12589,6 @@ add_executable(cxx_slice_test
   third_party/googletest/googlemock/src/gmock-all.cc
 )
 
-
 target_include_directories(cxx_slice_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -12752,7 +12629,6 @@ add_executable(cxx_string_ref_test
   third_party/googletest/googlemock/src/gmock-all.cc
 )
 
-
 target_include_directories(cxx_string_ref_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -12790,7 +12666,6 @@ add_executable(cxx_time_test
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
-
 
 target_include_directories(cxx_time_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
@@ -12831,7 +12706,6 @@ add_executable(delegating_channel_test
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
-
 
 target_include_directories(delegating_channel_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
@@ -12874,7 +12748,6 @@ add_executable(end2end_test
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
-
 
 target_include_directories(end2end_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
@@ -12921,10 +12794,6 @@ add_executable(error_details_test
   third_party/googletest/googlemock/src/gmock-all.cc
 )
 
-protobuf_generate_grpc_cpp(
-  src/proto/grpc/testing/echo_messages.proto
-)
-
 target_include_directories(error_details_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -12962,7 +12831,6 @@ add_executable(exception_test
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
-
 
 target_include_directories(exception_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
@@ -13005,7 +12873,6 @@ add_executable(filter_end2end_test
   third_party/googletest/googlemock/src/gmock-all.cc
 )
 
-
 target_include_directories(filter_end2end_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -13044,7 +12911,6 @@ add_executable(gen_hpack_tables
   tools/codegen/core/gen_hpack_tables.cc
 )
 
-
 target_include_directories(gen_hpack_tables
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -13074,7 +12940,6 @@ add_executable(gen_legal_metadata_characters
   tools/codegen/core/gen_legal_metadata_characters.cc
 )
 
-
 target_include_directories(gen_legal_metadata_characters
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -13101,7 +12966,6 @@ target_link_libraries(gen_legal_metadata_characters
 add_executable(gen_percent_encoding_tables
   tools/codegen/core/gen_percent_encoding_tables.cc
 )
-
 
 target_include_directories(gen_percent_encoding_tables
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
@@ -13132,7 +12996,6 @@ add_executable(generic_end2end_test
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
-
 
 target_include_directories(generic_end2end_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
@@ -13175,7 +13038,6 @@ add_executable(global_config_env_test
   third_party/googletest/googlemock/src/gmock-all.cc
 )
 
-
 target_include_directories(global_config_env_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -13213,7 +13075,6 @@ add_executable(global_config_test
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
-
 
 target_include_directories(global_config_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
@@ -13257,10 +13118,6 @@ add_executable(golden_file_test
   third_party/googletest/googlemock/src/gmock-all.cc
 )
 
-protobuf_generate_grpc_cpp(
-  src/proto/grpc/testing/compiler_test.proto
-)
-
 target_include_directories(golden_file_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -13301,7 +13158,6 @@ add_executable(gprpp_mpscq_test
   third_party/googletest/googlemock/src/gmock-all.cc
 )
 
-
 target_include_directories(gprpp_mpscq_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -13341,7 +13197,6 @@ add_executable(grpc_alts_credentials_options_test
   third_party/googletest/googlemock/src/gmock-all.cc
 )
 
-
 target_include_directories(grpc_alts_credentials_options_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -13379,7 +13234,6 @@ add_executable(grpc_cli
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
-
 
 target_include_directories(grpc_cli
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
@@ -13421,7 +13275,6 @@ add_executable(grpc_cpp_plugin
   src/compiler/cpp_plugin.cc
 )
 
-
 target_include_directories(grpc_cpp_plugin
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -13461,7 +13314,6 @@ if (gRPC_BUILD_CODEGEN)
 add_executable(grpc_csharp_plugin
   src/compiler/csharp_plugin.cc
 )
-
 
 target_include_directories(grpc_csharp_plugin
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
@@ -13505,7 +13357,6 @@ add_executable(grpc_fetch_oauth2
   third_party/googletest/googlemock/src/gmock-all.cc
 )
 
-
 target_include_directories(grpc_fetch_oauth2
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -13546,7 +13397,6 @@ add_executable(grpc_linux_system_roots_test
   third_party/googletest/googlemock/src/gmock-all.cc
 )
 
-
 target_include_directories(grpc_linux_system_roots_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -13583,7 +13433,6 @@ if (gRPC_BUILD_CODEGEN)
 add_executable(grpc_node_plugin
   src/compiler/node_plugin.cc
 )
-
 
 target_include_directories(grpc_node_plugin
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
@@ -13625,7 +13474,6 @@ add_executable(grpc_objective_c_plugin
   src/compiler/objective_c_plugin.cc
 )
 
-
 target_include_directories(grpc_objective_c_plugin
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -13665,7 +13513,6 @@ if (gRPC_BUILD_CODEGEN)
 add_executable(grpc_php_plugin
   src/compiler/php_plugin.cc
 )
-
 
 target_include_directories(grpc_php_plugin
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
@@ -13707,7 +13554,6 @@ add_executable(grpc_python_plugin
   src/compiler/python_plugin.cc
 )
 
-
 target_include_directories(grpc_python_plugin
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -13747,7 +13593,6 @@ if (gRPC_BUILD_CODEGEN)
 add_executable(grpc_ruby_plugin
   src/compiler/ruby_plugin.cc
 )
-
 
 target_include_directories(grpc_ruby_plugin
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
@@ -13790,7 +13635,6 @@ add_executable(grpc_spiffe_security_connector_test
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
-
 
 target_include_directories(grpc_spiffe_security_connector_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
@@ -13841,13 +13685,6 @@ add_executable(grpc_tool_test
   third_party/googletest/googlemock/src/gmock-all.cc
 )
 
-protobuf_generate_grpc_cpp(
-  src/proto/grpc/testing/echo.proto
-)
-protobuf_generate_grpc_cpp(
-  src/proto/grpc/testing/echo_messages.proto
-)
-
 target_include_directories(grpc_tool_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -13896,10 +13733,6 @@ add_executable(grpclb_api_test
   third_party/googletest/googlemock/src/gmock-all.cc
 )
 
-protobuf_generate_grpc_cpp(
-  src/proto/grpc/lb/v1/load_balancer.proto
-)
-
 target_include_directories(grpclb_api_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -13942,10 +13775,6 @@ add_executable(grpclb_end2end_test
   test/cpp/end2end/grpclb_end2end_test.cc
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
-)
-
-protobuf_generate_grpc_cpp(
-  src/proto/grpc/lb/v1/load_balancer.proto
 )
 
 target_include_directories(grpclb_end2end_test
@@ -14002,16 +13831,6 @@ add_executable(grpclb_fallback_test
   third_party/googletest/googlemock/src/gmock-all.cc
 )
 
-protobuf_generate_grpc_cpp(
-  src/proto/grpc/testing/empty.proto
-)
-protobuf_generate_grpc_cpp(
-  src/proto/grpc/testing/messages.proto
-)
-protobuf_generate_grpc_cpp(
-  src/proto/grpc/testing/test.proto
-)
-
 target_include_directories(grpclb_fallback_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -14055,7 +13874,6 @@ add_executable(h2_ssl_cert_test
   third_party/googletest/googlemock/src/gmock-all.cc
 )
 
-
 target_include_directories(h2_ssl_cert_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -14095,7 +13913,6 @@ add_executable(h2_ssl_session_reuse_test
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
-
 
 target_include_directories(h2_ssl_session_reuse_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
@@ -14137,7 +13954,6 @@ add_executable(health_service_end2end_test
   third_party/googletest/googlemock/src/gmock-all.cc
 )
 
-
 target_include_directories(health_service_end2end_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -14178,7 +13994,6 @@ add_executable(http2_client
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
-
 
 target_include_directories(http2_client
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
@@ -14223,7 +14038,6 @@ add_executable(hybrid_end2end_test
   third_party/googletest/googlemock/src/gmock-all.cc
 )
 
-
 target_include_directories(hybrid_end2end_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -14265,7 +14079,6 @@ add_executable(inlined_vector_test
   third_party/googletest/googlemock/src/gmock-all.cc
 )
 
-
 target_include_directories(inlined_vector_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -14306,7 +14119,6 @@ add_executable(inproc_sync_unary_ping_pong_test
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
-
 
 target_include_directories(inproc_sync_unary_ping_pong_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
@@ -14353,7 +14165,6 @@ add_executable(interop_client
   third_party/googletest/googlemock/src/gmock-all.cc
 )
 
-
 target_include_directories(interop_client
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -14398,7 +14209,6 @@ add_executable(interop_server
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
-
 
 target_include_directories(interop_server
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
@@ -14447,7 +14257,6 @@ add_executable(interop_test
   third_party/googletest/googlemock/src/gmock-all.cc
 )
 
-
 target_include_directories(interop_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -14489,7 +14298,6 @@ add_executable(json_run_localhost
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
-
 
 target_include_directories(json_run_localhost
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
@@ -14534,7 +14342,6 @@ add_executable(memory_test
   third_party/googletest/googlemock/src/gmock-all.cc
 )
 
-
 target_include_directories(memory_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -14574,7 +14381,6 @@ add_executable(message_allocator_end2end_test
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
-
 
 target_include_directories(message_allocator_end2end_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
@@ -14621,10 +14427,6 @@ add_executable(metrics_client
   third_party/googletest/googlemock/src/gmock-all.cc
 )
 
-protobuf_generate_grpc_cpp(
-  src/proto/grpc/testing/metrics.proto
-)
-
 target_include_directories(metrics_client
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -14664,7 +14466,6 @@ add_executable(mock_test
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
-
 
 target_include_directories(mock_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
@@ -14707,7 +14508,6 @@ add_executable(nonblocking_test
   third_party/googletest/googlemock/src/gmock-all.cc
 )
 
-
 target_include_directories(nonblocking_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -14749,7 +14549,6 @@ add_executable(noop-benchmark
   third_party/googletest/googlemock/src/gmock-all.cc
 )
 
-
 target_include_directories(noop-benchmark
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -14786,7 +14585,6 @@ add_executable(optional_test
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
-
 
 target_include_directories(optional_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
@@ -14828,7 +14626,6 @@ add_executable(orphanable_test
   third_party/googletest/googlemock/src/gmock-all.cc
 )
 
-
 target_include_directories(orphanable_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -14868,7 +14665,6 @@ add_executable(port_sharing_end2end_test
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
-
 
 target_include_directories(port_sharing_end2end_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
@@ -14911,7 +14707,6 @@ add_executable(proto_server_reflection_test
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
-
 
 target_include_directories(proto_server_reflection_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
@@ -14956,7 +14751,6 @@ add_executable(proto_utils_test
   third_party/googletest/googlemock/src/gmock-all.cc
 )
 
-
 target_include_directories(proto_utils_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -14995,7 +14789,6 @@ add_executable(qps_interarrival_test
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
-
 
 target_include_directories(qps_interarrival_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
@@ -15040,7 +14833,6 @@ add_executable(qps_json_driver
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
-
 
 target_include_directories(qps_json_driver
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
@@ -15087,7 +14879,6 @@ add_executable(qps_openloop_test
   third_party/googletest/googlemock/src/gmock-all.cc
 )
 
-
 target_include_directories(qps_openloop_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -15133,7 +14924,6 @@ add_executable(qps_worker
   third_party/googletest/googlemock/src/gmock-all.cc
 )
 
-
 target_include_directories(qps_worker
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -15177,7 +14967,6 @@ add_executable(raw_end2end_test
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
-
 
 target_include_directories(raw_end2end_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
@@ -15230,16 +15019,6 @@ add_executable(reconnect_interop_client
   test/cpp/interop/reconnect_interop_client.cc
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
-)
-
-protobuf_generate_grpc_cpp(
-  src/proto/grpc/testing/empty.proto
-)
-protobuf_generate_grpc_cpp(
-  src/proto/grpc/testing/messages.proto
-)
-protobuf_generate_grpc_cpp(
-  src/proto/grpc/testing/test.proto
 )
 
 target_include_directories(reconnect_interop_client
@@ -15296,16 +15075,6 @@ add_executable(reconnect_interop_server
   third_party/googletest/googlemock/src/gmock-all.cc
 )
 
-protobuf_generate_grpc_cpp(
-  src/proto/grpc/testing/empty.proto
-)
-protobuf_generate_grpc_cpp(
-  src/proto/grpc/testing/messages.proto
-)
-protobuf_generate_grpc_cpp(
-  src/proto/grpc/testing/test.proto
-)
-
 target_include_directories(reconnect_interop_server
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -15350,7 +15119,6 @@ add_executable(ref_counted_ptr_test
   third_party/googletest/googlemock/src/gmock-all.cc
 )
 
-
 target_include_directories(ref_counted_ptr_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -15390,7 +15158,6 @@ add_executable(ref_counted_test
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
-
 
 target_include_directories(ref_counted_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
@@ -15432,7 +15199,6 @@ add_executable(retry_throttle_test
   third_party/googletest/googlemock/src/gmock-all.cc
 )
 
-
 target_include_directories(retry_throttle_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -15471,7 +15237,6 @@ add_executable(secure_auth_context_test
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
-
 
 target_include_directories(secure_auth_context_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
@@ -15514,7 +15279,6 @@ add_executable(secure_sync_unary_ping_pong_test
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
-
 
 target_include_directories(secure_sync_unary_ping_pong_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
@@ -15560,7 +15324,6 @@ add_executable(server_builder_plugin_test
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
-
 
 target_include_directories(server_builder_plugin_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
@@ -15609,13 +15372,6 @@ add_executable(server_builder_test
   test/cpp/server/server_builder_test.cc
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
-)
-
-protobuf_generate_grpc_cpp(
-  src/proto/grpc/testing/echo_messages.proto
-)
-protobuf_generate_grpc_cpp(
-  src/proto/grpc/testing/echo.proto
 )
 
 target_include_directories(server_builder_test
@@ -15668,13 +15424,6 @@ add_executable(server_builder_with_socket_mutator_test
   third_party/googletest/googlemock/src/gmock-all.cc
 )
 
-protobuf_generate_grpc_cpp(
-  src/proto/grpc/testing/echo_messages.proto
-)
-protobuf_generate_grpc_cpp(
-  src/proto/grpc/testing/echo.proto
-)
-
 target_include_directories(server_builder_with_socket_mutator_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -15717,7 +15466,6 @@ add_executable(server_context_test_spouse_test
   third_party/googletest/googlemock/src/gmock-all.cc
 )
 
-
 target_include_directories(server_context_test_spouse_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -15758,7 +15506,6 @@ add_executable(server_crash_test
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
-
 
 target_include_directories(server_crash_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
@@ -15802,7 +15549,6 @@ add_executable(server_crash_test_client
   third_party/googletest/googlemock/src/gmock-all.cc
 )
 
-
 target_include_directories(server_crash_test_client
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -15845,7 +15591,6 @@ add_executable(server_early_return_test
   third_party/googletest/googlemock/src/gmock-all.cc
 )
 
-
 target_include_directories(server_early_return_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -15887,7 +15632,6 @@ add_executable(server_interceptors_end2end_test
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
-
 
 target_include_directories(server_interceptors_end2end_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
@@ -15938,13 +15682,6 @@ add_executable(server_request_call_test
   third_party/googletest/googlemock/src/gmock-all.cc
 )
 
-protobuf_generate_grpc_cpp(
-  src/proto/grpc/testing/echo_messages.proto
-)
-protobuf_generate_grpc_cpp(
-  src/proto/grpc/testing/echo.proto
-)
-
 target_include_directories(server_request_call_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -15985,7 +15722,6 @@ add_executable(service_config_end2end_test
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
-
 
 target_include_directories(service_config_end2end_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
@@ -16028,7 +15764,6 @@ add_executable(service_config_test
   third_party/googletest/googlemock/src/gmock-all.cc
 )
 
-
 target_include_directories(service_config_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -16068,7 +15803,6 @@ add_executable(shutdown_test
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
-
 
 target_include_directories(shutdown_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
@@ -16111,7 +15845,6 @@ add_executable(slice_hash_table_test
   third_party/googletest/googlemock/src/gmock-all.cc
 )
 
-
 target_include_directories(slice_hash_table_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -16151,7 +15884,6 @@ add_executable(slice_weak_hash_table_test
   third_party/googletest/googlemock/src/gmock-all.cc
 )
 
-
 target_include_directories(slice_weak_hash_table_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -16190,7 +15922,6 @@ add_executable(stats_test
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
-
 
 target_include_directories(stats_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
@@ -16232,7 +15963,6 @@ add_executable(status_metadata_test
   third_party/googletest/googlemock/src/gmock-all.cc
 )
 
-
 target_include_directories(status_metadata_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -16269,7 +15999,6 @@ add_executable(status_util_test
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
-
 
 target_include_directories(status_util_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
@@ -16308,7 +16037,6 @@ add_executable(streaming_throughput_test
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
-
 
 target_include_directories(streaming_throughput_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
@@ -16371,19 +16099,6 @@ add_executable(stress_test
   third_party/googletest/googlemock/src/gmock-all.cc
 )
 
-protobuf_generate_grpc_cpp(
-  src/proto/grpc/testing/empty.proto
-)
-protobuf_generate_grpc_cpp(
-  src/proto/grpc/testing/messages.proto
-)
-protobuf_generate_grpc_cpp(
-  src/proto/grpc/testing/metrics.proto
-)
-protobuf_generate_grpc_cpp(
-  src/proto/grpc/testing/test.proto
-)
-
 target_include_directories(stress_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -16426,7 +16141,6 @@ add_executable(string_view_test
   third_party/googletest/googlemock/src/gmock-all.cc
 )
 
-
 target_include_directories(string_view_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -16467,7 +16181,6 @@ add_executable(thread_manager_test
   third_party/googletest/googlemock/src/gmock-all.cc
 )
 
-
 target_include_directories(thread_manager_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -16494,6 +16207,8 @@ target_link_libraries(thread_manager_test
   grpc++_unsecure
   grpc_unsecure
   gpr
+  grpc++_test_util
+  grpc_test_util
   grpc++_test_config
   ${_gRPC_GFLAGS_LIBRARIES}
 )
@@ -16507,7 +16222,6 @@ add_executable(thread_stress_test
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
-
 
 target_include_directories(thread_stress_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
@@ -16551,7 +16265,6 @@ add_executable(time_change_test
   third_party/googletest/googlemock/src/gmock-all.cc
 )
 
-
 target_include_directories(time_change_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -16594,7 +16307,6 @@ add_executable(timer_test
   third_party/googletest/googlemock/src/gmock-all.cc
 )
 
-
 target_include_directories(timer_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -16635,7 +16347,6 @@ add_executable(transport_connectivity_state_test
   third_party/googletest/googlemock/src/gmock-all.cc
 )
 
-
 target_include_directories(transport_connectivity_state_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -16674,7 +16385,6 @@ add_executable(transport_pid_controller_test
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
-
 
 target_include_directories(transport_pid_controller_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
@@ -16717,7 +16427,6 @@ add_executable(transport_security_common_api_test
   third_party/googletest/googlemock/src/gmock-all.cc
 )
 
-
 target_include_directories(transport_security_common_api_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -16758,7 +16467,6 @@ add_executable(writes_per_rpc_test
   third_party/googletest/googlemock/src/gmock-all.cc
 )
 
-
 target_include_directories(writes_per_rpc_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -16795,6 +16503,46 @@ endif()
 endif (gRPC_BUILD_TESTS)
 if (gRPC_BUILD_TESTS)
 
+add_executable(xds_bootstrap_test
+  test/core/client_channel/xds_bootstrap_test.cc
+  third_party/googletest/googletest/src/gtest-all.cc
+  third_party/googletest/googlemock/src/gmock-all.cc
+)
+
+target_include_directories(xds_bootstrap_test
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
+  PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
+  PRIVATE ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+  PRIVATE ${_gRPC_BENCHMARK_INCLUDE_DIR}
+  PRIVATE ${_gRPC_CARES_INCLUDE_DIR}
+  PRIVATE ${_gRPC_GFLAGS_INCLUDE_DIR}
+  PRIVATE ${_gRPC_PROTOBUF_INCLUDE_DIR}
+  PRIVATE ${_gRPC_SSL_INCLUDE_DIR}
+  PRIVATE ${_gRPC_UPB_GENERATED_DIR}
+  PRIVATE ${_gRPC_UPB_GRPC_GENERATED_DIR}
+  PRIVATE ${_gRPC_UPB_INCLUDE_DIR}
+  PRIVATE ${_gRPC_ZLIB_INCLUDE_DIR}
+  PRIVATE third_party/googletest/googletest/include
+  PRIVATE third_party/googletest/googletest
+  PRIVATE third_party/googletest/googlemock/include
+  PRIVATE third_party/googletest/googlemock
+  PRIVATE ${_gRPC_PROTO_GENS_DIR}
+)
+
+target_link_libraries(xds_bootstrap_test
+  ${_gRPC_PROTOBUF_LIBRARIES}
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+  grpc_test_util
+  grpc++
+  grpc
+  gpr
+  ${_gRPC_GFLAGS_LIBRARIES}
+)
+
+
+endif (gRPC_BUILD_TESTS)
+if (gRPC_BUILD_TESTS)
+
 add_executable(xds_end2end_test
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/ads_for_test.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/xds/ads_for_test.grpc.pb.cc
@@ -16811,16 +16559,6 @@ add_executable(xds_end2end_test
   test/cpp/end2end/xds_end2end_test.cc
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
-)
-
-protobuf_generate_grpc_cpp(
-  src/proto/grpc/testing/xds/ads_for_test.proto
-)
-protobuf_generate_grpc_cpp(
-  src/proto/grpc/testing/xds/eds_for_test.proto
-)
-protobuf_generate_grpc_cpp(
-  src/proto/grpc/testing/xds/lrs_for_test.proto
 )
 
 target_include_directories(xds_end2end_test
@@ -16862,7 +16600,6 @@ add_executable(public_headers_must_be_c89
   test/core/surface/public_headers_must_be_c89.c
 )
 
-
 target_include_directories(public_headers_must_be_c89
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -16893,7 +16630,6 @@ add_executable(bad_streaming_id_bad_client_test
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
-
 
 target_include_directories(bad_streaming_id_bad_client_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
@@ -16935,7 +16671,6 @@ add_executable(badreq_bad_client_test
   third_party/googletest/googlemock/src/gmock-all.cc
 )
 
-
 target_include_directories(badreq_bad_client_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -16975,7 +16710,6 @@ add_executable(connection_prefix_bad_client_test
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
-
 
 target_include_directories(connection_prefix_bad_client_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
@@ -17017,7 +16751,6 @@ add_executable(duplicate_header_bad_client_test
   third_party/googletest/googlemock/src/gmock-all.cc
 )
 
-
 target_include_directories(duplicate_header_bad_client_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -17057,7 +16790,6 @@ add_executable(head_of_line_blocking_bad_client_test
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
-
 
 target_include_directories(head_of_line_blocking_bad_client_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
@@ -17099,7 +16831,6 @@ add_executable(headers_bad_client_test
   third_party/googletest/googlemock/src/gmock-all.cc
 )
 
-
 target_include_directories(headers_bad_client_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -17139,7 +16870,6 @@ add_executable(initial_settings_frame_bad_client_test
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
-
 
 target_include_directories(initial_settings_frame_bad_client_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
@@ -17181,7 +16911,6 @@ add_executable(large_metadata_bad_client_test
   third_party/googletest/googlemock/src/gmock-all.cc
 )
 
-
 target_include_directories(large_metadata_bad_client_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -17221,7 +16950,6 @@ add_executable(out_of_bounds_bad_client_test
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
-
 
 target_include_directories(out_of_bounds_bad_client_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
@@ -17263,7 +16991,6 @@ add_executable(server_registered_method_bad_client_test
   third_party/googletest/googlemock/src/gmock-all.cc
 )
 
-
 target_include_directories(server_registered_method_bad_client_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -17303,7 +17030,6 @@ add_executable(simple_request_bad_client_test
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
-
 
 target_include_directories(simple_request_bad_client_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
@@ -17345,7 +17071,6 @@ add_executable(unknown_frame_bad_client_test
   third_party/googletest/googlemock/src/gmock-all.cc
 )
 
-
 target_include_directories(unknown_frame_bad_client_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -17386,7 +17111,6 @@ add_executable(window_overflow_bad_client_test
   third_party/googletest/googlemock/src/gmock-all.cc
 )
 
-
 target_include_directories(window_overflow_bad_client_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -17426,7 +17150,6 @@ add_executable(bad_ssl_cert_server
   test/core/bad_ssl/servers/cert.cc
 )
 
-
 target_include_directories(bad_ssl_cert_server
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -17460,7 +17183,6 @@ add_executable(bad_ssl_cert_test
   test/core/bad_ssl/bad_ssl_test.cc
 )
 
-
 target_include_directories(bad_ssl_cert_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -17491,7 +17213,6 @@ if (gRPC_BUILD_TESTS)
 add_executable(h2_census_test
   test/core/end2end/fixtures/h2_census.cc
 )
-
 
 target_include_directories(h2_census_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
@@ -17524,7 +17245,6 @@ add_executable(h2_compress_test
   test/core/end2end/fixtures/h2_compress.cc
 )
 
-
 target_include_directories(h2_compress_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -17555,7 +17275,6 @@ if (gRPC_BUILD_TESTS)
 add_executable(h2_fakesec_test
   test/core/end2end/fixtures/h2_fakesec.cc
 )
-
 
 target_include_directories(h2_fakesec_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
@@ -17589,7 +17308,6 @@ add_executable(h2_fd_test
   test/core/end2end/fixtures/h2_fd.cc
 )
 
-
 target_include_directories(h2_fd_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -17621,7 +17339,6 @@ if (gRPC_BUILD_TESTS)
 add_executable(h2_full_test
   test/core/end2end/fixtures/h2_full.cc
 )
-
 
 target_include_directories(h2_full_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
@@ -17655,7 +17372,6 @@ add_executable(h2_full+pipe_test
   test/core/end2end/fixtures/h2_full+pipe.cc
 )
 
-
 target_include_directories(h2_full+pipe_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -17688,7 +17404,6 @@ add_executable(h2_full+trace_test
   test/core/end2end/fixtures/h2_full+trace.cc
 )
 
-
 target_include_directories(h2_full+trace_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -17719,7 +17434,6 @@ if (gRPC_BUILD_TESTS)
 add_executable(h2_full+workarounds_test
   test/core/end2end/fixtures/h2_full+workarounds.cc
 )
-
 
 target_include_directories(h2_full+workarounds_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
@@ -17752,7 +17466,6 @@ add_executable(h2_http_proxy_test
   test/core/end2end/fixtures/h2_http_proxy.cc
 )
 
-
 target_include_directories(h2_http_proxy_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -17784,7 +17497,6 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 add_executable(h2_local_ipv4_test
   test/core/end2end/fixtures/h2_local_ipv4.cc
 )
-
 
 target_include_directories(h2_local_ipv4_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
@@ -17819,7 +17531,6 @@ add_executable(h2_local_ipv6_test
   test/core/end2end/fixtures/h2_local_ipv6.cc
 )
 
-
 target_include_directories(h2_local_ipv6_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -17853,7 +17564,6 @@ add_executable(h2_local_uds_test
   test/core/end2end/fixtures/h2_local_uds.cc
 )
 
-
 target_include_directories(h2_local_uds_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -17886,7 +17596,6 @@ add_executable(h2_oauth2_test
   test/core/end2end/fixtures/h2_oauth2.cc
 )
 
-
 target_include_directories(h2_oauth2_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -17917,7 +17626,6 @@ if (gRPC_BUILD_TESTS)
 add_executable(h2_proxy_test
   test/core/end2end/fixtures/h2_proxy.cc
 )
-
 
 target_include_directories(h2_proxy_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
@@ -17950,7 +17658,6 @@ add_executable(h2_sockpair_test
   test/core/end2end/fixtures/h2_sockpair.cc
 )
 
-
 target_include_directories(h2_sockpair_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -17981,7 +17688,6 @@ if (gRPC_BUILD_TESTS)
 add_executable(h2_sockpair+trace_test
   test/core/end2end/fixtures/h2_sockpair+trace.cc
 )
-
 
 target_include_directories(h2_sockpair+trace_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
@@ -18014,7 +17720,6 @@ add_executable(h2_sockpair_1byte_test
   test/core/end2end/fixtures/h2_sockpair_1byte.cc
 )
 
-
 target_include_directories(h2_sockpair_1byte_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -18045,7 +17750,6 @@ if (gRPC_BUILD_TESTS)
 add_executable(h2_spiffe_test
   test/core/end2end/fixtures/h2_spiffe.cc
 )
-
 
 target_include_directories(h2_spiffe_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
@@ -18078,7 +17782,6 @@ add_executable(h2_ssl_test
   test/core/end2end/fixtures/h2_ssl.cc
 )
 
-
 target_include_directories(h2_ssl_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -18110,7 +17813,6 @@ add_executable(h2_ssl_cred_reload_test
   test/core/end2end/fixtures/h2_ssl_cred_reload.cc
 )
 
-
 target_include_directories(h2_ssl_cred_reload_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -18141,7 +17843,6 @@ if (gRPC_BUILD_TESTS)
 add_executable(h2_ssl_proxy_test
   test/core/end2end/fixtures/h2_ssl_proxy.cc
 )
-
 
 target_include_directories(h2_ssl_proxy_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
@@ -18175,7 +17876,6 @@ add_executable(h2_uds_test
   test/core/end2end/fixtures/h2_uds.cc
 )
 
-
 target_include_directories(h2_uds_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -18208,7 +17908,6 @@ add_executable(inproc_test
   test/core/end2end/fixtures/inproc.cc
 )
 
-
 target_include_directories(inproc_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -18240,7 +17939,6 @@ add_executable(h2_census_nosec_test
   test/core/end2end/fixtures/h2_census.cc
 )
 
-
 target_include_directories(h2_census_nosec_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -18271,7 +17969,6 @@ if (gRPC_BUILD_TESTS)
 add_executable(h2_compress_nosec_test
   test/core/end2end/fixtures/h2_compress.cc
 )
-
 
 target_include_directories(h2_compress_nosec_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
@@ -18305,7 +18002,6 @@ add_executable(h2_fd_nosec_test
   test/core/end2end/fixtures/h2_fd.cc
 )
 
-
 target_include_directories(h2_fd_nosec_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -18337,7 +18033,6 @@ if (gRPC_BUILD_TESTS)
 add_executable(h2_full_nosec_test
   test/core/end2end/fixtures/h2_full.cc
 )
-
 
 target_include_directories(h2_full_nosec_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
@@ -18371,7 +18066,6 @@ add_executable(h2_full+pipe_nosec_test
   test/core/end2end/fixtures/h2_full+pipe.cc
 )
 
-
 target_include_directories(h2_full+pipe_nosec_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -18404,7 +18098,6 @@ add_executable(h2_full+trace_nosec_test
   test/core/end2end/fixtures/h2_full+trace.cc
 )
 
-
 target_include_directories(h2_full+trace_nosec_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -18435,7 +18128,6 @@ if (gRPC_BUILD_TESTS)
 add_executable(h2_full+workarounds_nosec_test
   test/core/end2end/fixtures/h2_full+workarounds.cc
 )
-
 
 target_include_directories(h2_full+workarounds_nosec_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
@@ -18468,7 +18160,6 @@ add_executable(h2_http_proxy_nosec_test
   test/core/end2end/fixtures/h2_http_proxy.cc
 )
 
-
 target_include_directories(h2_http_proxy_nosec_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -18499,7 +18190,6 @@ if (gRPC_BUILD_TESTS)
 add_executable(h2_proxy_nosec_test
   test/core/end2end/fixtures/h2_proxy.cc
 )
-
 
 target_include_directories(h2_proxy_nosec_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
@@ -18532,7 +18222,6 @@ add_executable(h2_sockpair_nosec_test
   test/core/end2end/fixtures/h2_sockpair.cc
 )
 
-
 target_include_directories(h2_sockpair_nosec_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -18563,7 +18252,6 @@ if (gRPC_BUILD_TESTS)
 add_executable(h2_sockpair+trace_nosec_test
   test/core/end2end/fixtures/h2_sockpair+trace.cc
 )
-
 
 target_include_directories(h2_sockpair+trace_nosec_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
@@ -18596,7 +18284,6 @@ add_executable(h2_sockpair_1byte_nosec_test
   test/core/end2end/fixtures/h2_sockpair_1byte.cc
 )
 
-
 target_include_directories(h2_sockpair_1byte_nosec_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -18628,7 +18315,6 @@ if(_gRPC_PLATFORM_LINUX OR _gRPC_PLATFORM_MAC OR _gRPC_PLATFORM_POSIX)
 add_executable(h2_uds_nosec_test
   test/core/end2end/fixtures/h2_uds.cc
 )
-
 
 target_include_directories(h2_uds_nosec_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
@@ -18663,7 +18349,6 @@ add_executable(resolver_component_test_unsecure
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
-
 
 target_include_directories(resolver_component_test_unsecure
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
@@ -18707,7 +18392,6 @@ add_executable(resolver_component_test
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
-
 
 target_include_directories(resolver_component_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
@@ -18753,7 +18437,6 @@ add_executable(resolver_component_tests_runner_invoker_unsecure
   third_party/googletest/googlemock/src/gmock-all.cc
 )
 
-
 target_include_directories(resolver_component_tests_runner_invoker_unsecure
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -18798,7 +18481,6 @@ add_executable(resolver_component_tests_runner_invoker
   third_party/googletest/googlemock/src/gmock-all.cc
 )
 
-
 target_include_directories(resolver_component_tests_runner_invoker
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -18842,7 +18524,6 @@ add_executable(address_sorting_test_unsecure
   third_party/googletest/googlemock/src/gmock-all.cc
 )
 
-
 target_include_directories(address_sorting_test_unsecure
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -18884,7 +18565,6 @@ add_executable(address_sorting_test
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
 )
-
 
 target_include_directories(address_sorting_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
@@ -18928,7 +18608,6 @@ add_executable(cancel_ares_query_test
   third_party/googletest/googlemock/src/gmock-all.cc
 )
 
-
 target_include_directories(cancel_ares_query_test
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -18971,7 +18650,6 @@ add_executable(alts_credentials_fuzzer_one_entry
   test/core/util/one_corpus_entry_fuzzer.cc
 )
 
-
 target_include_directories(alts_credentials_fuzzer_one_entry
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -19002,7 +18680,6 @@ add_executable(api_fuzzer_one_entry
   test/core/end2end/fuzzers/api_fuzzer.cc
   test/core/util/one_corpus_entry_fuzzer.cc
 )
-
 
 target_include_directories(api_fuzzer_one_entry
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
@@ -19035,7 +18712,6 @@ add_executable(client_fuzzer_one_entry
   test/core/util/one_corpus_entry_fuzzer.cc
 )
 
-
 target_include_directories(client_fuzzer_one_entry
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -19066,7 +18742,6 @@ add_executable(hpack_parser_fuzzer_test_one_entry
   test/core/transport/chttp2/hpack_parser_fuzzer_test.cc
   test/core/util/one_corpus_entry_fuzzer.cc
 )
-
 
 target_include_directories(hpack_parser_fuzzer_test_one_entry
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
@@ -19099,7 +18774,6 @@ add_executable(http_request_fuzzer_test_one_entry
   test/core/util/one_corpus_entry_fuzzer.cc
 )
 
-
 target_include_directories(http_request_fuzzer_test_one_entry
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -19130,7 +18804,6 @@ add_executable(http_response_fuzzer_test_one_entry
   test/core/http/response_fuzzer.cc
   test/core/util/one_corpus_entry_fuzzer.cc
 )
-
 
 target_include_directories(http_response_fuzzer_test_one_entry
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
@@ -19163,7 +18836,6 @@ add_executable(json_fuzzer_test_one_entry
   test/core/util/one_corpus_entry_fuzzer.cc
 )
 
-
 target_include_directories(json_fuzzer_test_one_entry
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -19194,7 +18866,6 @@ add_executable(nanopb_fuzzer_response_test_one_entry
   test/core/nanopb/fuzzer_response.cc
   test/core/util/one_corpus_entry_fuzzer.cc
 )
-
 
 target_include_directories(nanopb_fuzzer_response_test_one_entry
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
@@ -19227,7 +18898,6 @@ add_executable(nanopb_fuzzer_serverlist_test_one_entry
   test/core/util/one_corpus_entry_fuzzer.cc
 )
 
-
 target_include_directories(nanopb_fuzzer_serverlist_test_one_entry
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -19258,7 +18928,6 @@ add_executable(percent_decode_fuzzer_one_entry
   test/core/slice/percent_decode_fuzzer.cc
   test/core/util/one_corpus_entry_fuzzer.cc
 )
-
 
 target_include_directories(percent_decode_fuzzer_one_entry
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
@@ -19291,7 +18960,6 @@ add_executable(percent_encode_fuzzer_one_entry
   test/core/util/one_corpus_entry_fuzzer.cc
 )
 
-
 target_include_directories(percent_encode_fuzzer_one_entry
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -19322,7 +18990,6 @@ add_executable(server_fuzzer_one_entry
   test/core/end2end/fuzzers/server_fuzzer.cc
   test/core/util/one_corpus_entry_fuzzer.cc
 )
-
 
 target_include_directories(server_fuzzer_one_entry
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
@@ -19355,7 +19022,6 @@ add_executable(ssl_server_fuzzer_one_entry
   test/core/util/one_corpus_entry_fuzzer.cc
 )
 
-
 target_include_directories(ssl_server_fuzzer_one_entry
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -19386,7 +19052,6 @@ add_executable(uri_fuzzer_test_one_entry
   test/core/client_channel/uri_fuzzer_test.cc
   test/core/util/one_corpus_entry_fuzzer.cc
 )
-
 
 target_include_directories(uri_fuzzer_test_one_entry
   PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}

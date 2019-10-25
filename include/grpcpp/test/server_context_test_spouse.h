@@ -37,12 +37,11 @@ class ServerContextTestSpouse {
     client_metadata_storage_.insert(
         std::pair<grpc::string, grpc::string>(key, value));
     ctx_->client_metadata_.map()->clear();
-    for (auto iter = client_metadata_storage_.begin();
-         iter != client_metadata_storage_.end(); ++iter) {
+    for (const auto& item : client_metadata_storage_) {
       ctx_->client_metadata_.map()->insert(
           std::pair<grpc::string_ref, grpc::string_ref>(
-              iter->first.c_str(),
-              grpc::string_ref(iter->second.data(), iter->second.size())));
+              item.first.c_str(),
+              grpc::string_ref(item.second.data(), item.second.size())));
     }
   }
 

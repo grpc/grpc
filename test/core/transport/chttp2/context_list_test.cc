@@ -49,7 +49,7 @@ void TestExecuteFlushesListVerifier(void* arg, grpc_core::Timestamps* ts,
   gpr_atm_rel_store(done, static_cast<gpr_atm>(1));
 }
 
-void discard_write(grpc_slice slice) {}
+void discard_write(grpc_slice /*slice*/) {}
 
 class ContextListTest : public ::testing::Test {
  protected:

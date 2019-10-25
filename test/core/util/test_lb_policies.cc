@@ -185,7 +185,7 @@ class InterceptRecvTrailingMetadataLoadBalancingPolicy
     }
 
    private:
-    void RecordRecvTrailingMetadata(grpc_error* error,
+    void RecordRecvTrailingMetadata(grpc_error* /*error*/,
                                     MetadataInterface* recv_trailing_metadata,
                                     CallState* call_state) {
       GPR_ASSERT(recv_trailing_metadata != nullptr);
@@ -226,7 +226,7 @@ class InterceptTrailingFactory : public LoadBalancingPolicyFactory {
   }
 
   RefCountedPtr<LoadBalancingPolicy::Config> ParseLoadBalancingConfig(
-      const grpc_json* json, grpc_error** error) const override {
+      const grpc_json* /*json*/, grpc_error** /*error*/) const override {
     return nullptr;
   }
 

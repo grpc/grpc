@@ -44,7 +44,7 @@ struct fullstack_fixture_data {
 };
 
 static grpc_end2end_test_fixture chttp2_create_fixture_fullstack(
-    grpc_channel_args* client_args, grpc_channel_args* server_args) {
+    grpc_channel_args* client_args, grpc_channel_args* /*server_args*/) {
   grpc_end2end_test_fixture f;
   memset(&f, 0, sizeof(f));
   fullstack_fixture_data* ffd = grpc_core::New<fullstack_fixture_data>();

@@ -125,6 +125,23 @@ grpc_proto_library(
     ],
 )
 
+proto_library(
+    name = "benchmark_service_descriptor",
+    srcs = ["benchmark_service.proto"],
+    deps = [":messages_proto_descriptor"],
+)
+
+py_proto_library(
+    name = "benchmark_service_py_pb2",
+    deps = [":benchmark_service_descriptor"],
+)
+
+py_grpc_library(
+    name = "benchmark_service_py_pb2_grpc",
+    srcs = [":benchmark_service_descriptor"],
+    deps = [":benchmark_service_py_pb2"],
+)
+
 grpc_proto_library(
     name = "report_qps_scenario_service_proto",
     srcs = ["report_qps_scenario_service.proto"],

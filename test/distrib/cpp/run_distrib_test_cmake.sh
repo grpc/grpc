@@ -52,6 +52,11 @@ make -j4 install
 cd ../../../..
 rm -rf third_party/protobuf  # wipe out to prevent influencing the grpc build
 
+# Just before installing gRPC, wipe out contents of all the submodules to simulate
+# a standalone build from an archive
+# shellcheck disable=SC2016
+git submodule foreach 'cd $toplevel; rm -rf $name'
+
 # Install gRPC
 mkdir -p cmake/build
 cd cmake/build

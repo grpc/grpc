@@ -76,7 +76,7 @@ static void process_oauth2_success(void* state, grpc_auth_context* ctx,
   cb(user_data, oauth2, 1, nullptr, 0, GRPC_STATUS_OK, nullptr);
 }
 
-static void process_oauth2_failure(void* state, grpc_auth_context* ctx,
+static void process_oauth2_failure(void* state, grpc_auth_context* /*ctx*/,
                                    const grpc_metadata* md, size_t md_count,
                                    grpc_process_auth_metadata_done_cb cb,
                                    void* user_data) {
@@ -91,7 +91,7 @@ static void process_oauth2_failure(void* state, grpc_auth_context* ctx,
 }
 
 static grpc_end2end_test_fixture chttp2_create_fixture_secure_fullstack(
-    grpc_channel_args* client_args, grpc_channel_args* server_args) {
+    grpc_channel_args* /*client_args*/, grpc_channel_args* /*server_args*/) {
   grpc_end2end_test_fixture f;
   int port = grpc_pick_unused_port_or_die();
   fullstack_secure_fixture_data* ffd =

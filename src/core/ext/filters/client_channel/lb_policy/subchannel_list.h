@@ -267,7 +267,8 @@ void SubchannelData<SubchannelListType, SubchannelDataType>::Watcher::
 template <typename SubchannelListType, typename SubchannelDataType>
 SubchannelData<SubchannelListType, SubchannelDataType>::SubchannelData(
     SubchannelList<SubchannelListType, SubchannelDataType>* subchannel_list,
-    const ServerAddress& address, RefCountedPtr<SubchannelInterface> subchannel)
+    const ServerAddress& /*address*/,
+    RefCountedPtr<SubchannelInterface> subchannel)
     : subchannel_list_(subchannel_list),
       subchannel_(std::move(subchannel)),
       // We assume that the current state is IDLE.  If not, we'll get a
@@ -286,10 +287,10 @@ void SubchannelData<SubchannelListType, SubchannelDataType>::
     if (GRPC_TRACE_FLAG_ENABLED(*subchannel_list_->tracer())) {
       gpr_log(GPR_INFO,
               "[%s %p] subchannel list %p index %" PRIuPTR " of %" PRIuPTR
-              " (subchannel %p): unreffing subchannel",
+              " (subchannel %p): unreffing subchannel (%s)",
               subchannel_list_->tracer()->name(), subchannel_list_->policy(),
               subchannel_list_, Index(), subchannel_list_->num_subchannels(),
-              subchannel_.get());
+              subchannel_.get(), reason);
     }
     subchannel_.reset();
   }

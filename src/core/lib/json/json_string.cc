@@ -311,7 +311,7 @@ grpc_json* grpc_json_parse_string(char* input) {
   return grpc_json_parse_string_with_len(input, UNBOUND_JSON_STRING_LENGTH);
 }
 
-static void json_dump_recursive(grpc_json_writer* writer, grpc_json* json,
+static void json_dump_recursive(grpc_json_writer* writer, const grpc_json* json,
                                 int in_object) {
   while (json) {
     if (in_object) grpc_json_writer_object_key(writer, json->key);
@@ -351,7 +351,7 @@ static grpc_json_writer_vtable writer_vtable = {
     json_writer_output_char, json_writer_output_string,
     json_writer_output_string_with_len};
 
-char* grpc_json_dump_to_string(grpc_json* json, int indent) {
+char* grpc_json_dump_to_string(const grpc_json* json, int indent) {
   grpc_json_writer writer;
   json_writer_userdata state;
 

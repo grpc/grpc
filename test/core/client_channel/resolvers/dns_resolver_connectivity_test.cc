@@ -33,10 +33,10 @@
 
 static gpr_mu g_mu;
 static bool g_fail_resolution = true;
-static grpc_combiner* g_combiner;
+static grpc_core::Combiner* g_combiner;
 
-static void my_resolve_address(const char* addr, const char* default_port,
-                               grpc_pollset_set* interested_parties,
+static void my_resolve_address(const char* addr, const char* /*default_port*/,
+                               grpc_pollset_set* /*interested_parties*/,
                                grpc_closure* on_done,
                                grpc_resolved_addresses** addrs) {
   gpr_mu_lock(&g_mu);
@@ -61,11 +61,11 @@ static grpc_address_resolver_vtable test_resolver = {my_resolve_address,
                                                      nullptr};
 
 static grpc_ares_request* my_dns_lookup_ares_locked(
-    const char* dns_server, const char* addr, const char* default_port,
-    grpc_pollset_set* interested_parties, grpc_closure* on_done,
+    const char* /*dns_server*/, const char* addr, const char* /*default_port*/,
+    grpc_pollset_set* /*interested_parties*/, grpc_closure* on_done,
     grpc_core::UniquePtr<grpc_core::ServerAddressList>* addresses,
-    bool check_grpclb, char** service_config_json, int query_timeout_ms,
-    grpc_combiner* combiner) {
+    bool /*check_grpclb*/, char** /*service_config_json*/,
+    int /*query_timeout_ms*/, grpc_core::Combiner* /*combiner*/) {
   gpr_mu_lock(&g_mu);
   GPR_ASSERT(0 == strcmp("test", addr));
   grpc_error* error = GRPC_ERROR_NONE;
