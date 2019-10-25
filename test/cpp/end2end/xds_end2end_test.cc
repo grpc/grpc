@@ -585,7 +585,27 @@ class LrsServiceImpl : public LrsService {
   bool load_report_ready_ = false;
 };
 
-class XdsEnd2endTest : public ::testing::TestWithParam<bool> {
+class TestType {
+ public:
+  TestType(bool use_xds_resolver, bool enable_load_reporting)
+      : use_xds_resolver_(use_xds_resolver),
+        enable_load_reporting_(enable_load_reporting) {}
+
+  bool use_xds_resolver() const { return use_xds_resolver_; }
+  bool enable_load_reporting() const { return enable_load_reporting_; }
+
+  grpc::string AsString() const {
+    grpc::string retval = (use_xds_resolver_ ? "XdsResolver" : "FakeResolver");
+    if (enable_load_reporting_) retval += "WithLoadReporting";
+    return retval;
+  }
+
+ private:
+  const bool use_xds_resolver_;
+  const bool enable_load_reporting_;
+};
+
+class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
  protected:
   XdsEnd2endTest(size_t num_backends, size_t num_balancers,
                  int client_load_reporting_interval_seconds)
@@ -665,12 +685,14 @@ class XdsEnd2endTest : public ::testing::TestWithParam<bool> {
     // channel never uses a response generator, and we inject the xds
     // channel's response generator here.
     args.SetPointer(GRPC_ARG_FAKE_RESOLVER_RESPONSE_GENERATOR,
-                    GetParam() ? lb_channel_response_generator_.get()
-                               : response_generator_.get());
+                    GetParam().use_xds_resolver()
+                        ? lb_channel_response_generator_.get()
+                        : response_generator_.get());
     if (!expected_targets.empty()) {
       args.SetString(GRPC_ARG_FAKE_SECURITY_EXPECTED_TARGETS, expected_targets);
     }
-    grpc::string scheme = GetParam() ? "xds-experimental" : "fake";
+    grpc::string scheme =
+        GetParam().use_xds_resolver() ? "xds-experimental" : "fake";
     std::ostringstream uri;
     uri << scheme << ":///" << kApplicationTargetName_;
     // TODO(dgq): templatize tests to run everything using both secure and
@@ -760,19 +782,20 @@ class XdsEnd2endTest : public ::testing::TestWithParam<bool> {
   }
 
   void SetNextResolution(const std::vector<int>& ports,
-                         const char* service_config_json = nullptr,
                          grpc_core::FakeResolverResponseGenerator*
                              lb_channel_response_generator = nullptr) {
-    if (GetParam()) return;  // Not used with xds resolver.
+    if (GetParam().use_xds_resolver()) return;  // Not used with xds resolver.
     grpc_core::ExecCtx exec_ctx;
     grpc_core::Resolver::Result result;
     result.addresses = CreateAddressListFromPortList(ports);
-    if (service_config_json != nullptr) {
-      grpc_error* error = GRPC_ERROR_NONE;
-      result.service_config =
-          grpc_core::ServiceConfig::Create(service_config_json, &error);
-      GRPC_ERROR_UNREF(error);
-    }
+    grpc_error* error = GRPC_ERROR_NONE;
+    const char* service_config_json =
+        GetParam().enable_load_reporting()
+            ? kDefaultServiceConfig_
+            : kDefaultServiceConfigWithoutLoadReporting_;
+    result.service_config =
+        grpc_core::ServiceConfig::Create(service_config_json, &error);
+    GRPC_ERROR_UNREF(error);
     grpc_arg arg = grpc_core::FakeResolverResponseGenerator::MakeChannelArg(
         lb_channel_response_generator == nullptr
             ? lb_channel_response_generator_.get()
@@ -988,11 +1011,21 @@ class XdsEnd2endTest : public ::testing::TestWithParam<bool> {
       lb_channel_response_generator_;
   const grpc::string kRequestMessage_ = "Live long and prosper.";
   const grpc::string kApplicationTargetName_ = "application_target_name";
-  const grpc::string kDefaultServiceConfig_ =
+  const char* kDefaultServiceConfig_ =
       "{\n"
       "  \"loadBalancingConfig\":[\n"
       "    { \"does_not_exist\":{} },\n"
-      "    { \"xds_experimental\":{} }\n"
+      "    { \"xds_experimental\":{\n"
+      "      \"lrsLoadReportingServerName\": \"\"\n"
+      "    } }\n"
+      "  ]\n"
+      "}";
+  const char* kDefaultServiceConfigWithoutLoadReporting_ =
+      "{\n"
+      "  \"loadBalancingConfig\":[\n"
+      "    { \"does_not_exist\":{} },\n"
+      "    { \"xds_experimental\":{\n"
+      "    } }\n"
       "  ]\n"
       "}";
 };
@@ -1005,7 +1038,7 @@ class BasicTest : public XdsEnd2endTest {
 // Tests that the balancer sends the correct response to the client, and the
 // client sends RPCs to the backends using the default child policy.
 TEST_P(BasicTest, Vanilla) {
-  SetNextResolution({}, kDefaultServiceConfig_.c_str());
+  SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
   const size_t kNumRpcsPerAddress = 100;
   AdsServiceImpl::ResponseArgs args({
@@ -1033,7 +1066,7 @@ TEST_P(BasicTest, Vanilla) {
 // Tests that subchannel sharing works when the same backend is listed multiple
 // times.
 TEST_P(BasicTest, SameBackendListedMultipleTimes) {
-  SetNextResolution({}, kDefaultServiceConfig_.c_str());
+  SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
   // Same backend listed twice.
   std::vector<int> ports(2, backends_[0]->port());
@@ -1056,7 +1089,7 @@ TEST_P(BasicTest, SameBackendListedMultipleTimes) {
 
 // Tests that RPCs will be blocked until a non-empty serverlist is received.
 TEST_P(BasicTest, InitiallyEmptyServerlist) {
-  SetNextResolution({}, kDefaultServiceConfig_.c_str());
+  SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
   const int kServerlistDelayMs = 500 * grpc_test_slowdown_factor();
   const int kCallDeadlineMs = kServerlistDelayMs * 2;
@@ -1092,7 +1125,7 @@ TEST_P(BasicTest, InitiallyEmptyServerlist) {
 // Tests that RPCs will fail with UNAVAILABLE instead of DEADLINE_EXCEEDED if
 // all the servers are unreachable.
 TEST_P(BasicTest, AllServersUnreachableFailFast) {
-  SetNextResolution({}, kDefaultServiceConfig_.c_str());
+  SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
   const size_t kNumUnreachableServers = 5;
   std::vector<int> ports;
@@ -1114,7 +1147,7 @@ TEST_P(BasicTest, AllServersUnreachableFailFast) {
 // Tests that RPCs fail when the backends are down, and will succeed again after
 // the backends are restarted.
 TEST_P(BasicTest, BackendsRestart) {
-  SetNextResolution({}, kDefaultServiceConfig_.c_str());
+  SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
   AdsServiceImpl::ResponseArgs args({
       {"locality0", GetBackendPorts()},
@@ -1136,7 +1169,7 @@ using SecureNamingTest = BasicTest;
 TEST_P(SecureNamingTest, TargetNameIsExpected) {
   // TODO(juanlishen): Use separate fake creds for the balancer channel.
   ResetStub(0, 0, kApplicationTargetName_ + ";lb");
-  SetNextResolution({}, kDefaultServiceConfig_.c_str());
+  SetNextResolution({});
   SetNextResolutionForLbChannel({balancers_[0]->port()});
   const size_t kNumRpcsPerAddress = 100;
   AdsServiceImpl::ResponseArgs args({
@@ -1168,7 +1201,7 @@ TEST_P(SecureNamingTest, TargetNameIsUnexpected) {
   ASSERT_DEATH_IF_SUPPORTED(
       {
         ResetStub(0, 0, kApplicationTargetName_ + ";lb");
-        SetNextResolution({}, kDefaultServiceConfig_.c_str());
+        SetNextResolution({});
         SetNextResolutionForLbChannel({balancers_[0]->port()});
         channel_->WaitForConnected(grpc_timeout_seconds_to_deadline(1));
       },
@@ -1180,7 +1213,7 @@ using LocalityMapTest = BasicTest;
 // Tests that the localities in a locality map are picked according to their
 // weights.
 TEST_P(LocalityMapTest, WeightedRoundRobin) {
-  SetNextResolution({}, kDefaultServiceConfig_.c_str());
+  SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
   const size_t kNumRpcs = 5000;
   const int kLocalityWeight0 = 2;
@@ -1224,7 +1257,7 @@ TEST_P(LocalityMapTest, WeightedRoundRobin) {
 // Tests that the locality map can work properly even when it contains a large
 // number of localities.
 TEST_P(LocalityMapTest, StressTest) {
-  SetNextResolution({}, kDefaultServiceConfig_.c_str());
+  SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
   const size_t kNumLocalities = 100;
   // The first ADS response contains kNumLocalities localities, each of which
@@ -1259,7 +1292,7 @@ TEST_P(LocalityMapTest, StressTest) {
 // Tests that the localities in a locality map are picked correctly after update
 // (addition, modification, deletion).
 TEST_P(LocalityMapTest, UpdateMap) {
-  SetNextResolution({}, kDefaultServiceConfig_.c_str());
+  SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
   const size_t kNumRpcs = 1000;
   // The locality weight for the first 3 localities.
@@ -1356,7 +1389,7 @@ class FailoverTest : public BasicTest {
 
 // Localities with the highest priority are used when multiple priority exist.
 TEST_P(FailoverTest, ChooseHighestPriority) {
-  SetNextResolution({}, kDefaultServiceConfig_.c_str());
+  SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
   AdsServiceImpl::ResponseArgs args({
       {"locality0", GetBackendPorts(0, 1), kDefaultLocalityWeight, 1},
@@ -1377,7 +1410,7 @@ TEST_P(FailoverTest, ChooseHighestPriority) {
 // If the higher priority localities are not reachable, failover to the highest
 // priority among the rest.
 TEST_P(FailoverTest, Failover) {
-  SetNextResolution({}, kDefaultServiceConfig_.c_str());
+  SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
   AdsServiceImpl::ResponseArgs args({
       {"locality0", GetBackendPorts(0, 1), kDefaultLocalityWeight, 1},
@@ -1401,7 +1434,7 @@ TEST_P(FailoverTest, Failover) {
 // If a locality with higher priority than the current one becomes ready,
 // switch to it.
 TEST_P(FailoverTest, SwitchBackToHigherPriority) {
-  SetNextResolution({}, kDefaultServiceConfig_.c_str());
+  SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
   const size_t kNumRpcs = 100;
   AdsServiceImpl::ResponseArgs args({
@@ -1430,7 +1463,7 @@ TEST_P(FailoverTest, SwitchBackToHigherPriority) {
 // The first update only contains unavailable priorities. The second update
 // contains available priorities.
 TEST_P(FailoverTest, UpdateInitialUnavailable) {
-  SetNextResolution({}, kDefaultServiceConfig_.c_str());
+  SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
   AdsServiceImpl::ResponseArgs args({
       {"locality0", GetBackendPorts(0, 1), kDefaultLocalityWeight, 0},
@@ -1465,7 +1498,7 @@ TEST_P(FailoverTest, UpdateInitialUnavailable) {
 // Tests that after the localities' priorities are updated, we still choose the
 // highest READY priority with the updated localities.
 TEST_P(FailoverTest, UpdatePriority) {
-  SetNextResolution({}, kDefaultServiceConfig_.c_str());
+  SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
   const size_t kNumRpcs = 100;
   AdsServiceImpl::ResponseArgs args({
@@ -1498,7 +1531,7 @@ using DropTest = BasicTest;
 
 // Tests that RPCs are dropped according to the drop config.
 TEST_P(DropTest, Vanilla) {
-  SetNextResolution({}, kDefaultServiceConfig_.c_str());
+  SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
   const size_t kNumRpcs = 5000;
   const uint32_t kDropPerMillionForLb = 100000;
@@ -1544,7 +1577,7 @@ TEST_P(DropTest, Vanilla) {
 
 // Tests that drop config is converted correctly from per hundred.
 TEST_P(DropTest, DropPerHundred) {
-  SetNextResolution({}, kDefaultServiceConfig_.c_str());
+  SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
   const size_t kNumRpcs = 5000;
   const uint32_t kDropPerHundredForLb = 10;
@@ -1585,7 +1618,7 @@ TEST_P(DropTest, DropPerHundred) {
 
 // Tests that drop config is converted correctly from per ten thousand.
 TEST_P(DropTest, DropPerTenThousand) {
-  SetNextResolution({}, kDefaultServiceConfig_.c_str());
+  SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
   const size_t kNumRpcs = 5000;
   const uint32_t kDropPerTenThousandForLb = 1000;
@@ -1626,7 +1659,7 @@ TEST_P(DropTest, DropPerTenThousand) {
 
 // Tests that drop is working correctly after update.
 TEST_P(DropTest, Update) {
-  SetNextResolution({}, kDefaultServiceConfig_.c_str());
+  SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
   const size_t kNumRpcs = 1000;
   const uint32_t kDropPerMillionForLb = 100000;
@@ -1722,7 +1755,7 @@ TEST_P(DropTest, Update) {
 
 // Tests that all the RPCs are dropped if any drop category drops 100%.
 TEST_P(DropTest, DropAll) {
-  SetNextResolution({}, kDefaultServiceConfig_.c_str());
+  SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
   const size_t kNumRpcs = 1000;
   const uint32_t kDropPerMillionForLb = 100000;
@@ -1755,8 +1788,7 @@ TEST_P(FallbackTest, Vanilla) {
   const int kServerlistDelayMs = 500 * grpc_test_slowdown_factor();
   const size_t kNumBackendsInResolution = backends_.size() / 2;
   ResetStub(kFallbackTimeoutMs);
-  SetNextResolution(GetBackendPorts(0, kNumBackendsInResolution),
-                    kDefaultServiceConfig_.c_str());
+  SetNextResolution(GetBackendPorts(0, kNumBackendsInResolution));
   SetNextResolutionForLbChannelAllBalancers();
   // Send non-empty serverlist only after kServerlistDelayMs.
   AdsServiceImpl::ResponseArgs args({
@@ -1805,8 +1837,7 @@ TEST_P(FallbackTest, Update) {
   const size_t kNumBackendsInResolution = backends_.size() / 3;
   const size_t kNumBackendsInResolutionUpdate = backends_.size() / 3;
   ResetStub(kFallbackTimeoutMs);
-  SetNextResolution(GetBackendPorts(0, kNumBackendsInResolution),
-                    kDefaultServiceConfig_.c_str());
+  SetNextResolution(GetBackendPorts(0, kNumBackendsInResolution));
   SetNextResolutionForLbChannelAllBalancers();
   // Send non-empty serverlist only after kServerlistDelayMs.
   AdsServiceImpl::ResponseArgs args({
@@ -1829,10 +1860,9 @@ TEST_P(FallbackTest, Update) {
   for (size_t i = kNumBackendsInResolution; i < backends_.size(); ++i) {
     EXPECT_EQ(0U, backends_[i]->backend_service()->request_count());
   }
-  SetNextResolution(GetBackendPorts(kNumBackendsInResolution,
-                                    kNumBackendsInResolution +
-                                        kNumBackendsInResolutionUpdate),
-                    kDefaultServiceConfig_.c_str());
+  SetNextResolution(GetBackendPorts(
+      kNumBackendsInResolution,
+      kNumBackendsInResolution + kNumBackendsInResolutionUpdate));
   // Wait until the resolution update has been processed and all the new
   // fallback backends are reachable.
   WaitForAllBackends(kNumBackendsInResolution /* start_index */,
@@ -1882,7 +1912,7 @@ TEST_P(FallbackTest, FallbackEarlyWhenBalancerChannelFails) {
   const int kFallbackTimeoutMs = 10000 * grpc_test_slowdown_factor();
   ResetStub(kFallbackTimeoutMs);
   // Return an unreachable balancer and one fallback backend.
-  SetNextResolution({backends_[0]->port()}, kDefaultServiceConfig_.c_str());
+  SetNextResolution({backends_[0]->port()});
   SetNextResolutionForLbChannel({g_port_saver->GetPort()});
   // Send RPC with deadline less than the fallback timeout and make sure it
   // succeeds.
@@ -1895,7 +1925,7 @@ TEST_P(FallbackTest, FallbackEarlyWhenBalancerCallFails) {
   const int kFallbackTimeoutMs = 10000 * grpc_test_slowdown_factor();
   ResetStub(kFallbackTimeoutMs);
   // Return one balancer and one fallback backend.
-  SetNextResolution({backends_[0]->port()}, kDefaultServiceConfig_.c_str());
+  SetNextResolution({backends_[0]->port()});
   SetNextResolutionForLbChannelAllBalancers();
   // Balancer drops call without sending a serverlist.
   balancers_[0]->ads_service()->NotifyDoneWithAdsCall();
@@ -1910,7 +1940,7 @@ TEST_P(FallbackTest, FallbackEarlyWhenBalancerCallFails) {
 TEST_P(FallbackTest, FallbackIfResponseReceivedButChildNotReady) {
   const int kFallbackTimeoutMs = 500 * grpc_test_slowdown_factor();
   ResetStub(kFallbackTimeoutMs);
-  SetNextResolution({backends_[0]->port()}, kDefaultServiceConfig_.c_str());
+  SetNextResolution({backends_[0]->port()});
   SetNextResolutionForLbChannelAllBalancers();
   // Send a serverlist that only contains an unreachable backend before fallback
   // timeout.
@@ -1927,7 +1957,7 @@ TEST_P(FallbackTest, FallbackIfResponseReceivedButChildNotReady) {
 // all the calls.
 TEST_P(FallbackTest, FallbackModeIsExitedWhenBalancerSaysToDropAllCalls) {
   // Return an unreachable balancer and one fallback backend.
-  SetNextResolution({backends_[0]->port()}, kDefaultServiceConfig_.c_str());
+  SetNextResolution({backends_[0]->port()});
   SetNextResolutionForLbChannel({g_port_saver->GetPort()});
   // Enter fallback mode because the LB channel fails to connect.
   WaitForBackend(0);
@@ -1951,7 +1981,7 @@ TEST_P(FallbackTest, FallbackModeIsExitedWhenBalancerSaysToDropAllCalls) {
 // Tests that fallback mode is exited if the child policy becomes ready.
 TEST_P(FallbackTest, FallbackModeIsExitedAfterChildRready) {
   // Return an unreachable balancer and one fallback backend.
-  SetNextResolution({backends_[0]->port()}, kDefaultServiceConfig_.c_str());
+  SetNextResolution({backends_[0]->port()});
   SetNextResolutionForLbChannel({g_port_saver->GetPort()});
   // Enter fallback mode because the LB channel fails to connect.
   WaitForBackend(0);
@@ -1989,7 +2019,7 @@ class BalancerUpdateTest : public XdsEnd2endTest {
 // Tests that the old LB call is still used after the balancer address update as
 // long as that call is still alive.
 TEST_P(BalancerUpdateTest, UpdateBalancersButKeepUsingOriginalBalancer) {
-  SetNextResolution({}, kDefaultServiceConfig_.c_str());
+  SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
   AdsServiceImpl::ResponseArgs args({
       {"locality0", {backends_[0]->port()}},
@@ -2042,7 +2072,7 @@ TEST_P(BalancerUpdateTest, UpdateBalancersButKeepUsingOriginalBalancer) {
 // xds keeps the initial connection (which by definition is also present in the
 // update).
 TEST_P(BalancerUpdateTest, Repeated) {
-  SetNextResolution({}, kDefaultServiceConfig_.c_str());
+  SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
   AdsServiceImpl::ResponseArgs args({
       {"locality0", {backends_[0]->port()}},
@@ -2107,7 +2137,7 @@ TEST_P(BalancerUpdateTest, Repeated) {
 // backends according to the last balancer response, until a new balancer is
 // reachable.
 TEST_P(BalancerUpdateTest, DeadUpdate) {
-  SetNextResolution({}, kDefaultServiceConfig_.c_str());
+  SetNextResolution({});
   SetNextResolutionForLbChannel({balancers_[0]->port()});
   AdsServiceImpl::ResponseArgs args({
       {"locality0", {backends_[0]->port()}},
@@ -2186,7 +2216,7 @@ class ClientLoadReportingTest : public XdsEnd2endTest {
 
 // Tests that the load report received at the balancer is correct.
 TEST_P(ClientLoadReportingTest, Vanilla) {
-  SetNextResolution({}, kDefaultServiceConfig_.c_str());
+  SetNextResolution({});
   SetNextResolutionForLbChannel({balancers_[0]->port()});
   const size_t kNumRpcsPerAddress = 100;
   // TODO(juanlishen): Partition the backends after multiple localities is
@@ -2227,7 +2257,7 @@ TEST_P(ClientLoadReportingTest, Vanilla) {
 // Tests that if the balancer restarts, the client load report contains the
 // stats before and after the restart correctly.
 TEST_P(ClientLoadReportingTest, BalancerRestart) {
-  SetNextResolution({}, kDefaultServiceConfig_.c_str());
+  SetNextResolution({});
   SetNextResolutionForLbChannel({balancers_[0]->port()});
   const size_t kNumBackendsFirstPass = backends_.size() / 2;
   const size_t kNumBackendsSecondPass =
@@ -2293,7 +2323,7 @@ class ClientLoadReportingWithDropTest : public XdsEnd2endTest {
 
 // Tests that the drop stats are correctly reported by client load reporting.
 TEST_P(ClientLoadReportingWithDropTest, Vanilla) {
-  SetNextResolution({}, kDefaultServiceConfig_.c_str());
+  SetNextResolution({});
   SetNextResolutionForLbChannelAllBalancers();
   const size_t kNumRpcs = 3000;
   const uint32_t kDropPerMillionForLb = 100000;
@@ -2355,28 +2385,66 @@ TEST_P(ClientLoadReportingWithDropTest, Vanilla) {
   EXPECT_EQ(1U, balancers_[0]->ads_service()->response_count());
 }
 
-INSTANTIATE_TEST_SUITE_P(UsesXdsResolver, BasicTest, ::testing::Bool());
+grpc::string TestTypeName(const ::testing::TestParamInfo<TestType>& info) {
+  return info.param.AsString();
+}
 
-INSTANTIATE_TEST_SUITE_P(UsesXdsResolver, SecureNamingTest, ::testing::Bool());
+// TODO(juanlishen): Load reporting disabled is currently tested only with DNS
+// resolver.  Once we implement CDS, test it via the xds resolver too.
 
-INSTANTIATE_TEST_SUITE_P(UsesXdsResolver, LocalityMapTest, ::testing::Bool());
+INSTANTIATE_TEST_SUITE_P(XdsTest, BasicTest,
+                         ::testing::Values(TestType(false, true),
+                                           TestType(false, false),
+                                           TestType(true, true)),
+                         &TestTypeName);
 
-INSTANTIATE_TEST_SUITE_P(UsesXdsResolver, FailoverTest, ::testing::Bool());
+INSTANTIATE_TEST_SUITE_P(XdsTest, SecureNamingTest,
+                         ::testing::Values(TestType(false, true),
+                                           TestType(false, false),
+                                           TestType(true, true)),
+                         &TestTypeName);
 
-INSTANTIATE_TEST_SUITE_P(UsesXdsResolver, DropTest, ::testing::Bool());
+INSTANTIATE_TEST_SUITE_P(XdsTest, LocalityMapTest,
+                         ::testing::Values(TestType(false, true),
+                                           TestType(false, false),
+                                           TestType(true, true)),
+                         &TestTypeName);
+
+INSTANTIATE_TEST_SUITE_P(XdsTest, FailoverTest,
+                         ::testing::Values(TestType(false, true),
+                                           TestType(false, false),
+                                           TestType(true, true)),
+                         &TestTypeName);
+
+INSTANTIATE_TEST_SUITE_P(XdsTest, DropTest,
+                         ::testing::Values(TestType(false, true),
+                                           TestType(false, false),
+                                           TestType(true, true)),
+                         &TestTypeName);
 
 // Fallback does not work with xds resolver.
-INSTANTIATE_TEST_SUITE_P(UsesXdsResolver, FallbackTest,
-                         ::testing::Values(false));
+INSTANTIATE_TEST_SUITE_P(XdsTest, FallbackTest,
+                         ::testing::Values(TestType(false, true),
+                                           TestType(false, false)),
+                         &TestTypeName);
 
-INSTANTIATE_TEST_SUITE_P(UsesXdsResolver, BalancerUpdateTest,
-                         ::testing::Bool());
+INSTANTIATE_TEST_SUITE_P(XdsTest, BalancerUpdateTest,
+                         ::testing::Values(TestType(false, true),
+                                           TestType(false, false),
+                                           TestType(true, true)),
+                         &TestTypeName);
 
-INSTANTIATE_TEST_SUITE_P(UsesXdsResolver, ClientLoadReportingTest,
-                         ::testing::Bool());
+// Load reporting tests are not run with load reporting disabled.
+INSTANTIATE_TEST_SUITE_P(XdsTest, ClientLoadReportingTest,
+                         ::testing::Values(TestType(false, true),
+                                           TestType(true, true)),
+                         &TestTypeName);
 
-INSTANTIATE_TEST_SUITE_P(UsesXdsResolver, ClientLoadReportingWithDropTest,
-                         ::testing::Bool());
+// Load reporting tests are not run with load reporting disabled.
+INSTANTIATE_TEST_SUITE_P(XdsTest, ClientLoadReportingWithDropTest,
+                         ::testing::Values(TestType(false, true),
+                                           TestType(true, true)),
+                         &TestTypeName);
 
 }  // namespace
 }  // namespace testing

@@ -13,7 +13,6 @@
 #include "google/protobuf/duration.upb.h"
 #include "google/protobuf/wrappers.upb.h"
 #include "validate/validate.upb.h"
-#include "gogoproto/gogo.upb.h"
 
 #include "upb/port_def.inc"
 
@@ -45,6 +44,12 @@ const upb_msglayout envoy_api_v2_core_AggregatedConfigSource_msginit = {
   UPB_SIZE(0, 0), 0, false,
 };
 
+const upb_msglayout envoy_api_v2_core_SelfConfigSource_msginit = {
+  NULL,
+  NULL,
+  UPB_SIZE(0, 0), 0, false,
+};
+
 static const upb_msglayout *const envoy_api_v2_core_RateLimitSettings_submsgs[2] = {
   &google_protobuf_DoubleValue_msginit,
   &google_protobuf_UInt32Value_msginit,
@@ -61,23 +66,25 @@ const upb_msglayout envoy_api_v2_core_RateLimitSettings_msginit = {
   UPB_SIZE(8, 16), 2, false,
 };
 
-static const upb_msglayout *const envoy_api_v2_core_ConfigSource_submsgs[3] = {
+static const upb_msglayout *const envoy_api_v2_core_ConfigSource_submsgs[4] = {
   &envoy_api_v2_core_AggregatedConfigSource_msginit,
   &envoy_api_v2_core_ApiConfigSource_msginit,
+  &envoy_api_v2_core_SelfConfigSource_msginit,
   &google_protobuf_Duration_msginit,
 };
 
-static const upb_msglayout_field envoy_api_v2_core_ConfigSource__fields[4] = {
+static const upb_msglayout_field envoy_api_v2_core_ConfigSource__fields[5] = {
   {1, UPB_SIZE(4, 8), UPB_SIZE(-13, -25), 0, 9, 1},
   {2, UPB_SIZE(4, 8), UPB_SIZE(-13, -25), 1, 11, 1},
   {3, UPB_SIZE(4, 8), UPB_SIZE(-13, -25), 0, 11, 1},
-  {4, UPB_SIZE(0, 0), 0, 2, 11, 1},
+  {4, UPB_SIZE(0, 0), 0, 3, 11, 1},
+  {5, UPB_SIZE(4, 8), UPB_SIZE(-13, -25), 2, 11, 1},
 };
 
 const upb_msglayout envoy_api_v2_core_ConfigSource_msginit = {
   &envoy_api_v2_core_ConfigSource_submsgs[0],
   &envoy_api_v2_core_ConfigSource__fields[0],
-  UPB_SIZE(16, 32), 4, false,
+  UPB_SIZE(16, 32), 5, false,
 };
 
 #include "upb/port_undef.inc"

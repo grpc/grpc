@@ -424,6 +424,8 @@ config("grpc_config") {
         "src/core/ext/upb-generated/envoy/service/discovery/v2/ads.upb.h",
         "src/core/ext/upb-generated/envoy/service/load_stats/v2/lrs.upb.c",
         "src/core/ext/upb-generated/envoy/service/load_stats/v2/lrs.upb.h",
+        "src/core/ext/upb-generated/envoy/type/http.upb.c",
+        "src/core/ext/upb-generated/envoy/type/http.upb.h",
         "src/core/ext/upb-generated/envoy/type/percent.upb.c",
         "src/core/ext/upb-generated/envoy/type/percent.upb.h",
         "src/core/ext/upb-generated/envoy/type/range.upb.c",
