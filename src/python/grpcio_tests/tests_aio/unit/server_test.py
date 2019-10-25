@@ -19,20 +19,28 @@ import grpc
 from grpc.experimental import aio
 from tests_aio.unit._test_base import AioTestBase
 
-_TEST_METHOD_PATH = ''
+_SIMPLE_UNARY_UNARY = '/test/SimpleUnaryUnary'
+_BLOCK_FOREVER = '/test/BlockForever'
 
 _REQUEST = b'\x00\x00\x00'
 _RESPONSE = b'\x01\x01\x01'
 
 
-async def unary_unary(unused_request, unused_context):
+async def _unary_unary(unused_request, unused_context):
     return _RESPONSE
 
 
-class GenericHandler(grpc.GenericRpcHandler):
+async def _block_forever(unused_request, unused_context):
+    await asyncio.get_event_loop().create_future()
 
-    def service(self, unused_handler_details):
-        return grpc.unary_unary_rpc_method_handler(unary_unary)
+
+class _GenericHandler(grpc.GenericRpcHandler):
+
+    def service(self, handler_details):
+        if handler_details.method == _SIMPLE_UNARY_UNARY:
+            return grpc.unary_unary_rpc_method_handler(_unary_unary)
+        if handler_details.method == _BLOCK_FOREVER:
+            return grpc.unary_unary_rpc_method_handler(_block_forever)
 
 
 class TestServer(AioTestBase):
@@ -42,11 +50,11 @@ class TestServer(AioTestBase):
         async def test_unary_unary_body():
             server = aio.server()
             port = server.add_insecure_port('[::]:0')
-            server.add_generic_rpc_handlers((GenericHandler(),))
+            server.add_generic_rpc_handlers((_GenericHandler(),))
             await server.start()
 
             async with aio.insecure_channel('localhost:%d' % port) as channel:
-                unary_call = channel.unary_unary(_TEST_METHOD_PATH)
+                unary_call = channel.unary_unary(_SIMPLE_UNARY_UNARY)
                 response = await unary_call(_REQUEST)
                 self.assertEqual(response, _RESPONSE)
 
@@ -57,10 +65,52 @@ class TestServer(AioTestBase):
         async def test_shutdown_body():
             server = aio.server()
             port = server.add_insecure_port('[::]:0')
-            server.add_generic_rpc_handlers((GenericHandler(),))
             await server.start()
             await server.stop(None)
-        asyncio.get_event_loop().run_until_complete(test_shutdown_body())
+        self.loop.run_until_complete(test_shutdown_body())
+
+    def test_shutdown_after_call(self):
+
+        async def test_shutdown_body():
+            server = aio.server()
+            port = server.add_insecure_port('[::]:0')
+            server.add_generic_rpc_handlers((_GenericHandler(),))
+            await server.start()
+
+            async with aio.insecure_channel('localhost:%d' % port) as channel:
+                await channel.unary_unary(_SIMPLE_UNARY_UNARY)(_REQUEST)
+
+            await server.stop(None)
+        self.loop.run_until_complete(test_shutdown_body())
+
+    def test_shutdown_during_call(self):
+
+        async def test_shutdown_body():
+            server = aio.server()
+            port = server.add_insecure_port('[::]:0')
+            server.add_generic_rpc_handlers((_GenericHandler(),))
+            await server.start()
+
+            async with aio.insecure_channel('localhost:%d' % port) as channel:
+                self.loop.create_task(channel.unary_unary(_BLOCK_FOREVER)(_REQUEST))
+                await asyncio.sleep(0)
+
+            await server.stop(None)
+        self.loop.run_until_complete(test_shutdown_body())
+
+    def test_shutdown_before_call(self):
+
+        async def test_shutdown_body():
+            server = aio.server()
+            port = server.add_insecure_port('[::]:0')
+            server.add_generic_rpc_handlers((_GenericHandler(),))
+            await server.start()
+            await server.stop(None)
+
+            async with aio.insecure_channel('localhost:%d' % port) as channel:
+                await channel.unary_unary(_SIMPLE_UNARY_UNARY)(_REQUEST)
+
+        self.loop.run_until_complete(test_shutdown_body())
 
 
 if __name__ == '__main__':
