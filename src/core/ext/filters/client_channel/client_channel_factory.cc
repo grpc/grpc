@@ -29,7 +29,7 @@ namespace grpc_core {
 namespace {
 
 void* factory_arg_copy(void* f) { return f; }
-void factory_arg_destroy(void* f) {}
+void factory_arg_destroy(void* /*f*/) {}
 int factory_arg_cmp(void* factory1, void* factory2) {
   return GPR_ICMP(factory1, factory2);
 }
