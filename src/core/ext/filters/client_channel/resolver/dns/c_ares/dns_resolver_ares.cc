@@ -367,6 +367,7 @@ void AresDnsResolver::OnResolvedLocked(void* arg, grpc_error* error) {
     result.args = grpc_channel_args_copy_and_add(
         r->channel_args_, new_args.data(), new_args.size());
     r->result_handler()->ReturnResult(std::move(result));
+    r->addresses_.reset();
     r->balancer_addresses_.reset();
     // Reset backoff state so that we start from the beginning when the
     // next request gets triggered.
