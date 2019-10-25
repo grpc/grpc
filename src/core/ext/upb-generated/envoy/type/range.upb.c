@@ -9,7 +9,6 @@
 #include <stddef.h>
 #include "upb/msg.h"
 #include "envoy/type/range.upb.h"
-#include "gogoproto/gogo.upb.h"
 
 #include "upb/port_def.inc"
 
