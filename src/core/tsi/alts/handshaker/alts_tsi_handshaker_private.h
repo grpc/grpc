@@ -80,6 +80,11 @@ void alts_handshaker_client_set_cb_for_testing(
 grpc_closure* alts_handshaker_client_get_closure_for_testing(
     alts_handshaker_client* client);
 
+/* This allows tests which access internal APIs to do so under the proper lock.
+ */
+gpr_mu* alts_tsi_handshaker_get_lock_for_testing(
+    alts_tsi_handshaker* handshaker);
+
 }  // namespace internal
 }  // namespace grpc_core
 

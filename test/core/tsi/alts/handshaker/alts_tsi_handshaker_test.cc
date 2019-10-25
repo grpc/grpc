@@ -53,6 +53,7 @@ using grpc_core::internal::alts_handshaker_client_set_recv_bytes_for_testing;
 using grpc_core::internal::alts_handshaker_client_set_vtable_for_testing;
 using grpc_core::internal::alts_tsi_handshaker_get_client_for_testing;
 using grpc_core::internal::alts_tsi_handshaker_get_is_client_for_testing;
+using grpc_core::internal::alts_tsi_handshaker_get_lock_for_testing;
 using grpc_core::internal::alts_tsi_handshaker_set_client_vtable_for_testing;
 static bool should_handshaker_client_api_succeed = true;
 
@@ -487,6 +488,8 @@ static void check_handshaker_next_with_shutdown() {
 static void check_handle_response_with_shutdown(void* /*unused*/) {
   grpc_core::ExecCtx exec_ctx;
   wait(&caller_to_tsi_notification);
+  grpc_core::MutexLock lock(alts_tsi_handshaker_get_lock_for_testing(
+      alts_handshaker_client_get_handshaker_for_testing(cb_event)));
   alts_handshaker_client_handle_response_locked(cb_event, true /* is_ok */);
 }
 
@@ -570,6 +573,8 @@ static void check_handle_response_invalid_input() {
                                                 recv_buffer, GRPC_STATUS_OK);
   {
     grpc_core::ExecCtx exec_ctx;
+    grpc_core::MutexLock lock(
+        alts_tsi_handshaker_get_lock_for_testing(alts_handshaker));
     alts_handshaker_client_handle_response_locked(client, true);
   }
   /* Check nullptr recv_bytes. */
@@ -578,6 +583,8 @@ static void check_handle_response_invalid_input() {
                                                 nullptr, GRPC_STATUS_OK);
   {
     grpc_core::ExecCtx exec_ctx;
+    grpc_core::MutexLock lock(
+        alts_tsi_handshaker_get_lock_for_testing(alts_handshaker));
     alts_handshaker_client_handle_response_locked(client, true);
   }
   /* Check failed grpc call made to handshaker service. */
@@ -586,6 +593,8 @@ static void check_handle_response_invalid_input() {
       GRPC_STATUS_UNKNOWN);
   {
     grpc_core::ExecCtx exec_ctx;
+    grpc_core::MutexLock lock(
+        alts_tsi_handshaker_get_lock_for_testing(alts_handshaker));
     alts_handshaker_client_handle_response_locked(client, true);
   }
   alts_handshaker_client_set_fields_for_testing(client, alts_handshaker,
@@ -593,6 +602,8 @@ static void check_handle_response_invalid_input() {
                                                 recv_buffer, GRPC_STATUS_OK);
   {
     grpc_core::ExecCtx exec_ctx;
+    grpc_core::MutexLock lock(
+        alts_tsi_handshaker_get_lock_for_testing(alts_handshaker));
     alts_handshaker_client_handle_response_locked(client, false);
   }
   /* Cleanup. */
@@ -635,6 +646,8 @@ static void check_handle_response_invalid_resp() {
                                                 recv_buffer, GRPC_STATUS_OK);
   {
     grpc_core::ExecCtx exec_ctx;
+    grpc_core::MutexLock lock(alts_tsi_handshaker_get_lock_for_testing(
+        alts_handshaker_client_get_handshaker_for_testing(cb_event)));
     alts_handshaker_client_handle_response_locked(client, true);
   }
   /* Cleanup. */
@@ -648,24 +661,32 @@ static void check_handle_response_success(void* /*unused*/) {
     grpc_core::ExecCtx exec_ctx;
     /* Client start. */
     wait(&caller_to_tsi_notification);
+    grpc_core::MutexLock lock(alts_tsi_handshaker_get_lock_for_testing(
+        alts_handshaker_client_get_handshaker_for_testing(cb_event)));
     alts_handshaker_client_handle_response_locked(cb_event, true /* is_ok */);
   }
   {
     grpc_core::ExecCtx exec_ctx;
     /* Client next. */
     wait(&caller_to_tsi_notification);
+    grpc_core::MutexLock lock(alts_tsi_handshaker_get_lock_for_testing(
+        alts_handshaker_client_get_handshaker_for_testing(cb_event)));
     alts_handshaker_client_handle_response_locked(cb_event, true /* is_ok */);
   }
   {
     grpc_core::ExecCtx exec_ctx;
     /* Server start. */
     wait(&caller_to_tsi_notification);
+    grpc_core::MutexLock lock(alts_tsi_handshaker_get_lock_for_testing(
+        alts_handshaker_client_get_handshaker_for_testing(cb_event)));
     alts_handshaker_client_handle_response_locked(cb_event, true /* is_ok */);
   }
   {
     grpc_core::ExecCtx exec_ctx;
     /* Server next. */
     wait(&caller_to_tsi_notification);
+    grpc_core::MutexLock lock(alts_tsi_handshaker_get_lock_for_testing(
+        alts_handshaker_client_get_handshaker_for_testing(cb_event)));
     alts_handshaker_client_handle_response_locked(cb_event, true /* is_ok */);
   }
 }
@@ -703,6 +724,8 @@ static void check_handle_response_failure() {
                                                 recv_buffer, GRPC_STATUS_OK);
   {
     grpc_core::ExecCtx exec_ctx;
+    grpc_core::MutexLock lock(alts_tsi_handshaker_get_lock_for_testing(
+        alts_handshaker_client_get_handshaker_for_testing(cb_event)));
     alts_handshaker_client_handle_response_locked(client, true /* is_ok*/);
   }
   /* Cleanup. */
@@ -745,6 +768,8 @@ static void check_handle_response_after_shutdown() {
     alts_handshaker_client_set_fields_for_testing(client, alts_handshaker,
                                                   on_shutdown_resp_cb, nullptr,
                                                   recv_buffer, GRPC_STATUS_OK);
+    grpc_core::MutexLock lock(alts_tsi_handshaker_get_lock_for_testing(
+        alts_handshaker_client_get_handshaker_for_testing(cb_event)));
     alts_handshaker_client_handle_response_locked(client, true);
   }
   /* Cleanup. */

@@ -561,5 +561,10 @@ void alts_tsi_handshaker_set_client_for_testing(
   handshaker->client = client;
 }
 
+gpr_mu* alts_tsi_handshaker_get_lock_for_testing(
+    alts_tsi_handshaker* handshaker) {
+  return &handshaker->mu;
+}
+
 }  // namespace internal
 }  // namespace grpc_core
