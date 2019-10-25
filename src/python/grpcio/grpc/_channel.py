@@ -419,7 +419,7 @@ class _SingleThreadedRendezvous(_Rendezvous, grpc.Call):  # pylint: disable=too-
         """See grpc.Call.trailing_metadata"""
         with self._state.condition:
             if self._state.trailing_metadata is None:
-                raise RuntimeError(
+                raise grpc.experimental.UsageError(
                     "Cannot get trailing metadata until RPC is completed.")
             return self._state.trailing_metadata
 
@@ -427,14 +427,14 @@ class _SingleThreadedRendezvous(_Rendezvous, grpc.Call):  # pylint: disable=too-
         """See grpc.Call.code"""
         with self._state.condition:
             if self._state.code is None:
-                raise RuntimeError("Cannot get code until RPC is completed.")
+                raise grpc.experimental.UsageError("Cannot get code until RPC is completed.")
             return self._state.code
 
     def details(self):
         """See grpc.Call.details"""
         with self._state.condition:
             if self._state.details is None:
-                raise RuntimeError("Cannot get details until RPC is completed.")
+                raise grpc.experimental.UsageError("Cannot get details until RPC is completed.")
             return _common.decode(self._state.details)
 
     def _get_next_event(self):
@@ -478,7 +478,7 @@ class _SingleThreadedRendezvous(_Rendezvous, grpc.Call):  # pylint: disable=too-
     def debug_error_string(self):
         with self._state.condition:
             if self._state.debug_error_string is None:
-                raise RuntimeError(
+                raise grpc.experimental.UsageError(
                     "Cannot get debug error string until RPC is completed.")
             return _common.decode(self._state.debug_error_string)
 
