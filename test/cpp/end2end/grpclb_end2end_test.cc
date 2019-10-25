@@ -525,7 +525,7 @@ class GrpclbEnd2endTest : public ::testing::Test {
     grpc::string balancer_name;
   };
 
-  grpc_core::ServerAddressList CreateLbAddressesFromAddressDataList(
+  static grpc_core::ServerAddressList CreateLbAddressesFromAddressDataList(
       const std::vector<AddressData>& address_data) {
     grpc_core::ServerAddressList addresses;
     for (const auto& addr : address_data) {
@@ -546,16 +546,7 @@ class GrpclbEnd2endTest : public ::testing::Test {
     return addresses;
   }
 
-  void SetNextResolutionAllBalancers(
-      const char* service_config_json = kDefaultServiceConfig) {
-    std::vector<AddressData> addresses;
-    for (size_t i = 0; i < balancers_.size(); ++i) {
-      addresses.emplace_back(AddressData{balancers_[i]->port_, ""});
-    }
-    SetNextResolution(addresses, {}, service_config_json);
-  }
-
-  grpc_core::Resolver::Result MakeResolverResult(
+  static grpc_core::Resolver::Result MakeResolverResult(
       const std::vector<AddressData>& balancer_address_data,
       const std::vector<AddressData>& backend_address_data = {},
       const char* service_config_json = kDefaultServiceConfig) {
@@ -571,6 +562,15 @@ class GrpclbEnd2endTest : public ::testing::Test {
     grpc_arg arg = CreateGrpclbBalancerAddressesArg(&balancer_addresses);
     result.args = grpc_channel_args_copy_and_add(nullptr, &arg, 1);
     return result;
+  }
+
+  void SetNextResolutionAllBalancers(
+      const char* service_config_json = kDefaultServiceConfig) {
+    std::vector<AddressData> addresses;
+    for (size_t i = 0; i < balancers_.size(); ++i) {
+      addresses.emplace_back(AddressData{balancers_[i]->port_, ""});
+    }
+    SetNextResolution(addresses, {}, service_config_json);
   }
 
   void SetNextResolution(
