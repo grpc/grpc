@@ -842,13 +842,15 @@ class _SingleThreadedUnaryStreamMultiCallable(grpc.UnaryStreamMultiCallable):
             wait_for_ready)
         augmented_metadata = _compression.augment_metadata(
             metadata, compression)
-        operations_and_tags = (
-            (((cygrpc.SendInitialMetadataOperation(augmented_metadata,
-                                                   initial_metadata_flags),
-               cygrpc.SendMessageOperation(serialized_request, _EMPTY_FLAGS),
-               cygrpc.SendCloseFromClientOperation(_EMPTY_FLAGS)), None),) +
-            (((cygrpc.ReceiveStatusOnClientOperation(_EMPTY_FLAGS),), None),) +
-            (((cygrpc.ReceiveInitialMetadataOperation(_EMPTY_FLAGS),), None),))
+        operations = (
+            (cygrpc.SendInitialMetadataOperation(augmented_metadata,
+                                                 initial_metadata_flags),
+             cygrpc.SendMessageOperation(serialized_request, _EMPTY_FLAGS),
+             cygrpc.SendCloseFromClientOperation(_EMPTY_FLAGS)),
+            (cygrpc.ReceiveStatusOnClientOperation(_EMPTY_FLAGS),),
+            (cygrpc.ReceiveInitialMetadataOperation(_EMPTY_FLAGS),),
+        )
+        operations_and_tags = tuple((ops, None) for ops in operations)
         call = self._channel.segregated_call(
             cygrpc.PropagationConstants.GRPC_PROPAGATE_DEFAULTS, self._method,
             None, _determine_deadline(deadline), metadata, call_credentials,
