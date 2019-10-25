@@ -303,7 +303,7 @@ class _RpcError(grpc.RpcError, grpc.Call):
         return self._repr()
 
 
-class _Rendezvous(grpc.RpcError, grpc.Call):
+class _Rendezvous(grpc.RpcError, grpc.RpcContext):
     """An RPC iterator.
 
     Attributes:
@@ -361,22 +361,6 @@ class _Rendezvous(grpc.RpcError, grpc.Call):
                 self._state.callbacks.append(callback)
                 return True
 
-    def initial_metadata(self):
-        """See grpc.Call.initial_metadata"""
-        raise NotImplementedError()
-
-    def trailing_metadata(self):
-        """See grpc.Call.trailing_metadata"""
-        raise NotImplementedError()
-
-    def code(self):
-        """See grpc.Call.code"""
-        raise NotImplementedError()
-
-    def details(self):
-        """See grpc.Call.details"""
-        raise NotImplementedError()
-
     def __iter__(self):
         return self
 
@@ -413,7 +397,7 @@ class _Rendezvous(grpc.RpcError, grpc.Call):
                 self._state.condition.notify_all()
 
 
-class _SingleThreadedRendezvous(_Rendezvous):  # pylint: disable=too-many-ancestors
+class _SingleThreadedRendezvous(_Rendezvous, grpc.Call):  # pylint: disable=too-many-ancestors
     """An RPC iterator operating entirely on a single thread.
 
     The __next__ method of _SingleThreadedRendezvous does not depend on the
@@ -499,7 +483,7 @@ class _SingleThreadedRendezvous(_Rendezvous):  # pylint: disable=too-many-ancest
             return _common.decode(self._state.debug_error_string)
 
 
-class _MultiThreadedRendezvous(_Rendezvous, grpc.Future):  # pylint: disable=too-many-ancestors
+class _MultiThreadedRendezvous(_Rendezvous, grpc.Call, grpc.Future):  # pylint: disable=too-many-ancestors
     """An RPC iterator that depends on a channel spin thread.
 
     This iterator relies upon a per-channel thread running in the background,
