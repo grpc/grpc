@@ -27,7 +27,8 @@ cdef class RPCState:
 
 cdef class CallbackWrapper:
     cdef CallbackContext context
-    cdef object _reference
+    cdef object _reference_of_future
+    cdef object _reference_of_failure_handler
 
     @staticmethod
     cdef void functor_run(
@@ -48,9 +49,9 @@ cdef enum AioServerStatus:
 cdef class _CallbackCompletionQueue:
     cdef grpc_completion_queue *_cq
     cdef grpc_completion_queue* c_ptr(self)
-    cdef object _shutdown_completed
+    cdef object _shutdown_completed  # asyncio.Future
     cdef CallbackWrapper _wrapper
-    cdef object _loop
+    cdef object _loop  # asyncio.EventLoop
 
 
 cdef class AioServer:
@@ -58,4 +59,5 @@ cdef class AioServer:
     cdef _CallbackCompletionQueue _cq
     cdef list _generic_handlers
     cdef AioServerStatus _status
-    cdef object _loop
+    cdef object _loop  # asyncio.EventLoop
+    cdef object _serving_task  # asyncio.Task

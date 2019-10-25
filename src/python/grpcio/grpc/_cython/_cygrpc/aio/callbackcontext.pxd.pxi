@@ -16,5 +16,5 @@ cimport cpython
 
 cdef struct CallbackContext:
     grpc_experimental_completion_queue_functor functor
-    cpython.PyObject *waiter
-
+    cpython.PyObject *waiter  # asyncio.Future
+    cpython.PyObject *failure_handler  # cygrpc.CallbackFailureHandler
