@@ -20,6 +20,7 @@ import grpc
 from grpc.experimental import aio
 from src.proto.grpc.testing import messages_pb2
 from src.proto.grpc.testing import benchmark_service_pb2_grpc
+from tests_aio.unit._test_base import AioTestBase
 
 _TEST_METHOD_PATH = ''
 
@@ -37,10 +38,9 @@ class GenericHandler(grpc.GenericRpcHandler):
         return grpc.unary_unary_rpc_method_handler(unary_unary)
 
 
-class TestServer(unittest.TestCase):
+class TestServer(AioTestBase):
 
     def test_unary_unary(self):
-        loop = asyncio.get_event_loop()
 
         async def test_unary_unary_body():
             server = aio.server()
@@ -53,10 +53,9 @@ class TestServer(unittest.TestCase):
                 response = await unary_call(_REQUEST)
                 self.assertEqual(response, _RESPONSE)
 
-        loop.run_until_complete(test_unary_unary_body())
+        self.loop.run_until_complete(test_unary_unary_body())
 
 
 if __name__ == '__main__':
-    aio.init_grpc_aio()
     logging.basicConfig()
     unittest.main(verbosity=2)
