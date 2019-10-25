@@ -448,8 +448,6 @@ void CallbackTestServiceImpl::Echo(ServerContext* context,
     void NonDelayed(bool ok) {
       if (!ok) {
         EXPECT_TRUE(ctx_->IsCancelled());
-      }
-      if (ctx_->IsCancelled()) {
         Finish(Status::CANCELLED);
         return;
       }

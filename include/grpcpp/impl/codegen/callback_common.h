@@ -85,6 +85,9 @@ class CallbackWithStatusTag
       : call_(call), func_(std::move(f)), ops_(ops) {
     g_core_codegen_interface->grpc_call_ref(call);
     functor_run = &CallbackWithStatusTag::StaticRun;
+    // A client-side callback should never be run inline since they will always
+    // have work to do from the user application. So, set the parent's
+    // inlineable field to false
     inlineable = false;
   }
   ~CallbackWithStatusTag() {}
@@ -160,6 +163,9 @@ class CallbackWithSuccessTag
   // Set can only be called on a default-constructed or Clear'ed tag.
   // It should never be called on a tag that was constructed with arguments
   // or on a tag that has been Set before unless the tag has been cleared.
+  // can_inline indicates that this particular callback can be executed inline
+  // (without needing a thread hop) and is only used for library-provided server
+  // callbacks.
   void Set(grpc_call* call, std::function<void(bool)> f,
            CompletionQueueTag* ops, bool can_inline) {
     GPR_CODEGEN_ASSERT(call_ == nullptr);

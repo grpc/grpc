@@ -1023,7 +1023,7 @@ void PrintHeaderServerMethodCallback(
         "      [this](::grpc::ServerContext* context, const $RealRequest$* "
         "request, "
         "$RealResponse$* response, ::grpc::experimental::ServerUnaryReactor** "
-        "reactor) { return "
+        "reactor) { "
         "this->$Method$(context, request, response, reactor); }));}\n");
     printer->Print(*vars,
                    "void SetMessageAllocatorFor_$Method$(\n"
@@ -1041,7 +1041,7 @@ void PrintHeaderServerMethodCallback(
         "$RealRequest$, $RealResponse$>(\n"
         "      [this](::grpc::ServerContext* context, $RealResponse$* "
         "response, ::grpc::experimental::ServerReadReactor< "
-        "$RealRequest$>** reactor) { return "
+        "$RealRequest$>** reactor) { "
         "this->$Method$(context, response, reactor); }));\n");
   } else if (ServerOnlyStreaming(method)) {
     printer->Print(
@@ -1051,7 +1051,7 @@ void PrintHeaderServerMethodCallback(
         "$RealRequest$, $RealResponse$>(\n"
         "      [this](::grpc::ServerContext* context, const $RealRequest$* "
         "request, ::grpc::experimental::ServerWriteReactor< "
-        "$RealResponse$>** reactor ) { return "
+        "$RealResponse$>** reactor ) { "
         "this->$Method$(context, request, reactor); }));\n");
   } else if (method->BidiStreaming()) {
     printer->Print(
@@ -1061,7 +1061,7 @@ void PrintHeaderServerMethodCallback(
         "$RealRequest$, $RealResponse$>(\n"
         "      [this](::grpc::ServerContext* context, "
         "::grpc::experimental::ServerBidiReactor< "
-        "$RealRequest$, $RealResponse$>** reactor ) { return "
+        "$RealRequest$, $RealResponse$>** reactor ) { "
         "this->$Method$(context, reactor); }));\n");
   }
   printer->Print(*vars, "}\n");

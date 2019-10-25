@@ -260,6 +260,10 @@ class ShutdownCallback : public grpc_experimental_completion_queue_functor {
  public:
   ShutdownCallback() {
     functor_run = &ShutdownCallback::Run;
+    // Set inlineable to true since this callback is trivial and thus does not
+    // need to be run from the executor (triggering a thread hop). This should
+    // only be used by internal callbacks like this and not by user application
+    // code.
     inlineable = true;
   }
   // TakeCQ takes ownership of the cq into the shutdown callback
@@ -612,9 +616,13 @@ class Server::CallbackRequest final : public Server::CallbackRequestBase {
     CallbackCallTag(Server::CallbackRequest<ServerContextType>* req)
         : req_(req) {
       functor_run = &CallbackCallTag::StaticRun;
+      // Set inlineable to true since this callback is internally-controlled
+      // without taking any locks, and thus does not need to be run from the
+      // executor (which triggers a thread hop). This should only be used by
+      // internal callbacks like this and not by user application code. The work
+      // here is actually non-trivial, but there is no chance of having user
+      // locks conflict with each other so it's ok to run inlined.
       inlineable = true;
-      // the work here is actually non-trivial, but there is no chance of having
-      // user locks conflict with each other so it's ok to run inlined
     }
 
     // force_run can not be performed on a tag if operations using this tag

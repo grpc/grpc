@@ -417,6 +417,7 @@ static void test_callback(void) {
        public:
         TagCallback(int* counter, int tag) : counter_(counter), tag_(tag) {
           functor_run = &TagCallback::Run;
+          // Inlineable should be false since this callback takes locks.
           inlineable = false;
         }
         ~TagCallback() {}

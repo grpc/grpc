@@ -339,7 +339,7 @@ class ServiceA final {
     ExperimentalWithCallbackMethod_MethodA1() {
       ::grpc::Service::experimental().MarkMethodCallback(0,
         new ::grpc_impl::internal::CallbackUnaryHandler< ::grpc::testing::Request, ::grpc::testing::Response>(
-          [this](::grpc::ServerContext* context, const ::grpc::testing::Request* request, ::grpc::testing::Response* response, ::grpc::experimental::ServerUnaryReactor** reactor) { return this->MethodA1(context, request, response, reactor); }));}
+          [this](::grpc::ServerContext* context, const ::grpc::testing::Request* request, ::grpc::testing::Response* response, ::grpc::experimental::ServerUnaryReactor** reactor) { this->MethodA1(context, request, response, reactor); }));}
     void SetMessageAllocatorFor_MethodA1(
         ::grpc::experimental::MessageAllocator< ::grpc::testing::Request, ::grpc::testing::Response>* allocator) {
       static_cast<::grpc_impl::internal::CallbackUnaryHandler< ::grpc::testing::Request, ::grpc::testing::Response>*>(
@@ -364,7 +364,7 @@ class ServiceA final {
     ExperimentalWithCallbackMethod_MethodA2() {
       ::grpc::Service::experimental().MarkMethodCallback(1,
         new ::grpc_impl::internal::CallbackClientStreamingHandler< ::grpc::testing::Request, ::grpc::testing::Response>(
-          [this](::grpc::ServerContext* context, ::grpc::testing::Response* response, ::grpc::experimental::ServerReadReactor< ::grpc::testing::Request>** reactor) { return this->MethodA2(context, response, reactor); }));
+          [this](::grpc::ServerContext* context, ::grpc::testing::Response* response, ::grpc::experimental::ServerReadReactor< ::grpc::testing::Request>** reactor) { this->MethodA2(context, response, reactor); }));
     }
     ~ExperimentalWithCallbackMethod_MethodA2() override {
       BaseClassMustBeDerivedFromService(this);
@@ -384,7 +384,7 @@ class ServiceA final {
     ExperimentalWithCallbackMethod_MethodA3() {
       ::grpc::Service::experimental().MarkMethodCallback(2,
         new ::grpc_impl::internal::CallbackServerStreamingHandler< ::grpc::testing::Request, ::grpc::testing::Response>(
-          [this](::grpc::ServerContext* context, const ::grpc::testing::Request* request, ::grpc::experimental::ServerWriteReactor< ::grpc::testing::Response>** reactor ) { return this->MethodA3(context, request, reactor); }));
+          [this](::grpc::ServerContext* context, const ::grpc::testing::Request* request, ::grpc::experimental::ServerWriteReactor< ::grpc::testing::Response>** reactor ) { this->MethodA3(context, request, reactor); }));
     }
     ~ExperimentalWithCallbackMethod_MethodA3() override {
       BaseClassMustBeDerivedFromService(this);
@@ -404,7 +404,7 @@ class ServiceA final {
     ExperimentalWithCallbackMethod_MethodA4() {
       ::grpc::Service::experimental().MarkMethodCallback(3,
         new ::grpc_impl::internal::CallbackBidiHandler< ::grpc::testing::Request, ::grpc::testing::Response>(
-          [this](::grpc::ServerContext* context, ::grpc::experimental::ServerBidiReactor< ::grpc::testing::Request, ::grpc::testing::Response>** reactor ) { return this->MethodA4(context, reactor); }));
+          [this](::grpc::ServerContext* context, ::grpc::experimental::ServerBidiReactor< ::grpc::testing::Request, ::grpc::testing::Response>** reactor ) { this->MethodA4(context, reactor); }));
     }
     ~ExperimentalWithCallbackMethod_MethodA4() override {
       BaseClassMustBeDerivedFromService(this);
@@ -794,7 +794,7 @@ class ServiceB final {
     ExperimentalWithCallbackMethod_MethodB1() {
       ::grpc::Service::experimental().MarkMethodCallback(0,
         new ::grpc_impl::internal::CallbackUnaryHandler< ::grpc::testing::Request, ::grpc::testing::Response>(
-          [this](::grpc::ServerContext* context, const ::grpc::testing::Request* request, ::grpc::testing::Response* response, ::grpc::experimental::ServerUnaryReactor** reactor) { return this->MethodB1(context, request, response, reactor); }));}
+          [this](::grpc::ServerContext* context, const ::grpc::testing::Request* request, ::grpc::testing::Response* response, ::grpc::experimental::ServerUnaryReactor** reactor) { this->MethodB1(context, request, response, reactor); }));}
     void SetMessageAllocatorFor_MethodB1(
         ::grpc::experimental::MessageAllocator< ::grpc::testing::Request, ::grpc::testing::Response>* allocator) {
       static_cast<::grpc_impl::internal::CallbackUnaryHandler< ::grpc::testing::Request, ::grpc::testing::Response>*>(

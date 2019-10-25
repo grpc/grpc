@@ -216,6 +216,10 @@ class ShutdownCallback : public grpc_experimental_completion_queue_functor {
  public:
   ShutdownCallback() {
     functor_run = &ShutdownCallback::Run;
+    // Set inlineable to true since this callback is trivial and thus does not
+    // need to be run from the executor (triggering a thread hop). This should
+    // only be used by internal callbacks like this and not by user application
+    // code.
     inlineable = true;
   }
   // TakeCQ takes ownership of the cq into the shutdown callback
