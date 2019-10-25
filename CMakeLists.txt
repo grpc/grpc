@@ -16687,6 +16687,8 @@ target_link_libraries(thread_manager_test
   grpc++_unsecure
   grpc_unsecure
   gpr
+  grpc++_test_util
+  grpc_test_util
   grpc++_test_config
   ${_gRPC_GFLAGS_LIBRARIES}
 )
