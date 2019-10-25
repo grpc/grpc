@@ -479,8 +479,7 @@ std::unique_ptr<ScenarioResult> RunScenario(
     }
   }
 
-  // Collect the client final run results before finish server
-  // otherwise, we will include client shutdown process in benchmark results
+  // Collect the client final run results after clients stop sending new rpcs
   for (size_t i = 0; i < num_clients; i++) {
     auto client = &clients[i];
     // Read the client final status
@@ -512,8 +511,7 @@ std::unique_ptr<ScenarioResult> RunScenario(
     }
   }
 
-  // Collect the server final run results before checking client status
-  // otherwise, we will wait for the benchmark 
+  // Collect the server final run results after servers stop receiving rpcs
   for (size_t i = 0; i < num_servers; i++) {
     auto server = &servers[i];
     // Read the server final status
@@ -527,7 +525,7 @@ std::unique_ptr<ScenarioResult> RunScenario(
       gpr_log(GPR_ERROR, "Couldn't get final status from server %zu", i);
     }
   }
-  
+
   // Get final rpc status from clients
   for (size_t i = 0; i < num_clients; i++) {
     auto client = &clients[i];
@@ -542,7 +540,7 @@ std::unique_ptr<ScenarioResult> RunScenario(
               s.error_message().c_str());
     }
   }
-  
+
   // Get final rpc status from servers
   for (size_t i = 0; i < num_servers; i++) {
     auto server = &servers[i];
