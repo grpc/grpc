@@ -25,6 +25,18 @@ cdef class RPCState:
     cdef bytes method(self)
 
 
+cdef class CallbackWrapper:
+    cdef CallbackContext context
+    cdef object _reference
+
+    @staticmethod
+    cdef void functor_run(
+            grpc_experimental_completion_queue_functor* functor,
+            int succeed)
+
+    cdef grpc_experimental_completion_queue_functor *c_functor(self)
+
+
 cdef enum AioServerStatus:
     AIO_SERVER_STATUS_UNKNOWN
     AIO_SERVER_STATUS_READY
@@ -36,6 +48,9 @@ cdef enum AioServerStatus:
 cdef class _CallbackCompletionQueue:
     cdef grpc_completion_queue *_cq
     cdef grpc_completion_queue* c_ptr(self)
+    cdef object _shutdown_completed
+    cdef CallbackWrapper _wrapper
+    cdef object _loop
 
 
 cdef class AioServer:
