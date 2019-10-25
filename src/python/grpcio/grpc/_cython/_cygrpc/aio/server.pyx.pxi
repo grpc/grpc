@@ -203,10 +203,10 @@ async def _handle_rpc(list generic_handlers, RPCState rpc_state, object loop):
         )
 
 
-def _FINISH_FUTURE(future):
-    future.set_result(None)
+class _RequestCallError(Exception): pass
 
-cdef CallbackFailureHandler IGNORE_FAILURE = CallbackFailureHandler(callback=_FINISH_FUTURE)
+cdef CallbackFailureHandler REQUEST_CALL_FAILURE_HANDLER = CallbackFailureHandler(
+    'grpc_server_request_call', 'server shutdown', _RequestCallError)
 
 
 async def _server_call_request_call(Server server,
@@ -217,7 +217,7 @@ async def _server_call_request_call(Server server,
     cdef object future = loop.create_future()
     cdef CallbackWrapper wrapper = CallbackWrapper(
         future,
-        IGNORE_FAILURE)
+        REQUEST_CALL_FAILURE_HANDLER)
     # NOTE(lidiz) Without Py_INCREF, the wrapper object will be destructed
     # when calling "await". This is an over-optimization by Cython.
     cpython.Py_INCREF(wrapper)
@@ -365,8 +365,11 @@ cdef class AioServer:
         self._server.is_shutting_down = True
         self._status = AIO_SERVER_STATUS_STOPPING
 
-        # Ensures the serving task (coroutine) exits normally
-        await self._serving_task
+        # Ensures the serving task (coroutine) exits.
+        try:
+            await self._serving_task
+        except _RequestCallError:
+            pass
 
         if grace is None:
             # Directly cancels all calls
