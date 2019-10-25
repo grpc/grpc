@@ -436,11 +436,13 @@ void CallbackTestServiceImpl::Echo(ServerContext* context,
       // do the actual finish in the main handler only but use this as a chance
       // to cancel any alarms.
       alarm_.Cancel();
+      on_cancel_invoked_ = true;
     }
     void OnDone() override {
       if (req_->has_param() && req_->param().echo_metadata_initially()) {
         EXPECT_TRUE(initial_metadata_sent_);
       }
+      EXPECT_EQ(ctx_->IsCancelled(), on_cancel_invoked_);
       delete this;
     }
 
@@ -566,6 +568,7 @@ void CallbackTestServiceImpl::Echo(ServerContext* context,
     Alarm alarm_;
     bool initial_metadata_sent_{false};
     bool started_{false};
+    bool on_cancel_invoked_{false};
   };
 
   *reactor = new Reactor(this, context, request, response);
