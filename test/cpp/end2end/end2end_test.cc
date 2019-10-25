@@ -1131,6 +1131,30 @@ TEST_P(End2endTest, CancelRpcBeforeStart) {
   }
 }
 
+TEST_P(End2endTest, CancelDelayedRpc) {
+  MAYBE_SKIP_TEST;
+  ResetStub();
+  EchoRequest request;
+  EchoResponse response;
+  ClientContext context;
+  request.set_message("hello");
+  request.mutable_param()->set_server_sleep_us(100 * 1000);
+  request.mutable_param()->set_skip_cancelled_check(true);
+  Status s;
+  std::thread echo_thread([this, &s, &context, &request, &response] {
+    s = stub_->Echo(&context, request, &response);
+    EXPECT_EQ(StatusCode::CANCELLED, s.error_code());
+  });
+  std::this_thread::sleep_for(std::chrono::microseconds(10 * 1000));
+  context.TryCancel();
+  echo_thread.join();
+  EXPECT_EQ("", response.message());
+  EXPECT_EQ(grpc::StatusCode::CANCELLED, s.error_code());
+  if (GetParam().use_interceptors) {
+    EXPECT_EQ(20, DummyInterceptor::GetNumTimesCancel());
+  }
+}
+
 // Client cancels request stream after sending two messages
 TEST_P(End2endTest, ClientCancelsRequestStream) {
   MAYBE_SKIP_TEST;
