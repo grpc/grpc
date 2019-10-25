@@ -107,6 +107,7 @@ if(WIN32)
 endif()
 
 set(CMAKE_POSITION_INDEPENDENT_CODE TRUE)
+set(CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake/modules")
 
 if(MSVC)
   include(cmake/msvc_static_runtime.cmake)
@@ -18268,6 +18269,10 @@ install(FILES
     ${CMAKE_CURRENT_BINARY_DIR}/gRPCConfig.cmake
     ${CMAKE_CURRENT_BINARY_DIR}/gRPCConfigVersion.cmake
   DESTINATION ${gRPC_INSTALL_CMAKEDIR}
+)
+install(FILES
+    ${CMAKE_CURRENT_SOURCE_DIR}/cmake/modules/Findc-ares.cmake
+  DESTINATION ${gRPC_INSTALL_CMAKEDIR}/modules
 )
 
 install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/etc/roots.pem
