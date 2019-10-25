@@ -253,16 +253,14 @@ def _rpc_state_string(class_name, rpc_state):
     """Calculates error string for RPC."""
     with rpc_state.condition:
         if rpc_state.code is None:
-            return '<{} object>'.format(
-                class_name)
+            return '<{} object>'.format(class_name)
         elif rpc_state.code is grpc.StatusCode.OK:
-            return _OK_RENDEZVOUS_REPR_FORMAT.format(
-                class_name, rpc_state.code, rpc_state.details)
+            return _OK_RENDEZVOUS_REPR_FORMAT.format(class_name, rpc_state.code,
+                                                     rpc_state.details)
         else:
             return _NON_OK_RENDEZVOUS_REPR_FORMAT.format(
                 class_name, rpc_state.code, rpc_state.details,
                 rpc_state.debug_error_string)
-
 
 
 class _RpcError(grpc.RpcError, grpc.Call):
@@ -271,6 +269,7 @@ class _RpcError(grpc.RpcError, grpc.Call):
     Attributes:
       _state: An instance of _RPCState.
     """
+
     def __init__(self, state):
         self._state = state
 
@@ -436,7 +435,8 @@ class _SingleThreadedRendezvous(_Rendezvous):  # pylint: disable=too-many-ancest
         """See grpc.Call.trailing_metadata"""
         with self._state.condition:
             if self._state.trailing_metadata is None:
-                raise RuntimeError("Cannot get trailing metadata until RPC is completed.")
+                raise RuntimeError(
+                    "Cannot get trailing metadata until RPC is completed.")
             return self._state.trailing_metadata
 
     def code(self):
@@ -466,7 +466,7 @@ class _SingleThreadedRendezvous(_Rendezvous):  # pylint: disable=too-many-ancest
 
     def _next_response(self):
         while True:
-            event = self._get_next_event()
+            self._get_next_event()
             with self._state.condition:
                 if self._state.response is not None:
                     response = self._state.response
@@ -494,7 +494,8 @@ class _SingleThreadedRendezvous(_Rendezvous):  # pylint: disable=too-many-ancest
     def debug_error_string(self):
         with self._state.condition:
             if self._state.debug_error_string is None:
-                raise RuntimeError("Cannot get debug error string until RPC is completed.")
+                raise RuntimeError(
+                    "Cannot get debug error string until RPC is completed.")
             return _common.decode(self._state.debug_error_string)
 
 
@@ -820,8 +821,8 @@ class _UnaryUnaryMultiCallable(grpc.UnaryUnaryMultiCallable):
                 self._method, None, deadline, metadata, None
                 if credentials is None else credentials._credentials,
                 (operations,), event_handler, self._context)
-            return _MultiThreadedRendezvous(state, call, self._response_deserializer,
-                               deadline)
+            return _MultiThreadedRendezvous(
+                state, call, self._response_deserializer, deadline)
 
 
 class _SingleThreadedUnaryStreamMultiCallable(grpc.UnaryStreamMultiCallable):
@@ -858,13 +859,13 @@ class _SingleThreadedUnaryStreamMultiCallable(grpc.UnaryStreamMultiCallable):
         augmented_metadata = _compression.augment_metadata(
             metadata, compression)
         # TODO: Formatting.
-        operations_and_tags = (((
-            (cygrpc.SendInitialMetadataOperation(augmented_metadata,
-                                                 initial_metadata_flags),
-             cygrpc.SendMessageOperation(serialized_request, _EMPTY_FLAGS),
-             cygrpc.SendCloseFromClientOperation(_EMPTY_FLAGS)), None),) +
-        ((( cygrpc.ReceiveStatusOnClientOperation(_EMPTY_FLAGS),), None),) +
-                               ((( cygrpc.ReceiveInitialMetadataOperation(_EMPTY_FLAGS),), None),))
+        operations_and_tags = (
+            (((cygrpc.SendInitialMetadataOperation(augmented_metadata,
+                                                   initial_metadata_flags),
+               cygrpc.SendMessageOperation(serialized_request, _EMPTY_FLAGS),
+               cygrpc.SendCloseFromClientOperation(_EMPTY_FLAGS)), None),) +
+            (((cygrpc.ReceiveStatusOnClientOperation(_EMPTY_FLAGS),), None),) +
+            (((cygrpc.ReceiveInitialMetadataOperation(_EMPTY_FLAGS),), None),))
         call = self._channel.segregated_call(
             cygrpc.PropagationConstants.GRPC_PROPAGATE_DEFAULTS, self._method,
             None, _determine_deadline(deadline), metadata, call_credentials,
@@ -921,8 +922,8 @@ class _UnaryStreamMultiCallable(grpc.UnaryStreamMultiCallable):
                 credentials._credentials, operationses,
                 _event_handler(state,
                                self._response_deserializer), self._context)
-            return _MultiThreadedRendezvous(state, call, self._response_deserializer,
-                               deadline)
+            return _MultiThreadedRendezvous(
+                state, call, self._response_deserializer, deadline)
 
 
 class _StreamUnaryMultiCallable(grpc.StreamUnaryMultiCallable):
@@ -1006,7 +1007,8 @@ class _StreamUnaryMultiCallable(grpc.StreamUnaryMultiCallable):
                 metadata, initial_metadata_flags), event_handler, self._context)
         _consume_request_iterator(request_iterator, state, call,
                                   self._request_serializer, event_handler)
-        return _MultiThreadedRendezvous(state, call, self._response_deserializer, deadline)
+        return _MultiThreadedRendezvous(state, call,
+                                        self._response_deserializer, deadline)
 
 
 class _StreamStreamMultiCallable(grpc.StreamStreamMultiCallable):
@@ -1050,7 +1052,8 @@ class _StreamStreamMultiCallable(grpc.StreamStreamMultiCallable):
             event_handler, self._context)
         _consume_request_iterator(request_iterator, state, call,
                                   self._request_serializer, event_handler)
-        return _MultiThreadedRendezvous(state, call, self._response_deserializer, deadline)
+        return _MultiThreadedRendezvous(state, call,
+                                        self._response_deserializer, deadline)
 
 
 class _InitialMetadataFlags(int):
