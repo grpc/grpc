@@ -1428,6 +1428,7 @@ add_library(grpc
   src/core/ext/upb-generated/envoy/api/v2/core/health_check.upb.c
   src/core/ext/upb-generated/envoy/api/v2/core/http_uri.upb.c
   src/core/ext/upb-generated/envoy/api/v2/core/protocol.upb.c
+  src/core/ext/upb-generated/envoy/type/http.upb.c
   src/core/ext/upb-generated/envoy/type/percent.upb.c
   src/core/ext/upb-generated/envoy/type/range.upb.c
   src/core/ext/filters/client_channel/lb_policy/pick_first/pick_first.cc
@@ -2956,6 +2957,7 @@ add_library(grpc_unsecure
   src/core/ext/upb-generated/envoy/api/v2/core/health_check.upb.c
   src/core/ext/upb-generated/envoy/api/v2/core/http_uri.upb.c
   src/core/ext/upb-generated/envoy/api/v2/core/protocol.upb.c
+  src/core/ext/upb-generated/envoy/type/http.upb.c
   src/core/ext/upb-generated/envoy/type/percent.upb.c
   src/core/ext/upb-generated/envoy/type/range.upb.c
   src/core/ext/filters/client_channel/lb_policy/grpclb/client_load_reporting_filter.cc
