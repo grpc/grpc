@@ -249,6 +249,56 @@ def _consume_request_iterator(request_iterator, state, call, request_serializer,
     consumption_thread.start()
 
 
+class _RpcError(grpc.RpcError, grpc.Call):
+    """An RPC error not tied to the execution of a particular RPC.
+
+    Attributes:
+      _state: An instance of _RPCState.
+    """
+    def __init__(self, state):
+        self._state = state
+
+    def initial_metadata(self):
+        with self._state.condition:
+            return self._state.initial_metadata
+
+    def trailing_metadata(self):
+        with self._state.condition:
+            return self._state.trailing_metadata
+
+    def code(self):
+        with self._state.condition:
+            return self._state.code
+
+    def details(self):
+        with self._state.condition:
+            return _common.decode(self._state.details)
+
+    def debug_error_string(self):
+        with self._state.condition:
+            return _common.decode(self._state.debug_error_string)
+
+    # TODO: Dedupe.
+    def _repr(self):
+        with self._state.condition:
+            if self._state.code is None:
+                return '<{} object>'.format(
+                    self.__class__.__name__)
+            elif self._state.code is grpc.StatusCode.OK:
+                return _OK_RENDEZVOUS_REPR_FORMAT.format(
+                    self.__class__.__name__, self._state.code, self._state.details)
+            else:
+                return _NON_OK_RENDEZVOUS_REPR_FORMAT.format(
+                    self.__class__.__name__, self._state.code, self._state.details,
+                    self._state.debug_error_string)
+
+    def __repr__(self):
+        return self._repr()
+
+    def __str__(self):
+        return self._repr()
+
+
 class _Rendezvous(grpc.RpcError, grpc.Call):
     """An RPC iterator.
 
@@ -381,12 +431,10 @@ class _SingleThreadedRendezvous(_Rendezvous):  # pylint: disable=too-many-ancest
     def initial_metadata(self):
         """See grpc.Call.initial_metadata"""
         with self._state.condition:
+            # NOTE(gnossen): Based on our initial call batch, we are guaranteed
+            # to receive initial metadata before any messages.
             while self._state.initial_metadata is None:
-                event = self._get_next_event()
-                # TODO: Replace this assert with a test for dropped message.
-                for operation in event.batch_operations:
-                    if operation.type() == cygrpc.OperationType.receive_message:
-                        assert False, "This would drop a message. Don't do this."
+                self._get_next_event()
             return self._state.initial_metadata
 
     def trailing_metadata(self):
@@ -639,8 +687,8 @@ def _start_unary_request(request, timeout, request_serializer):
     if serialized_request is None:
         state = _RPCState((), (), (), grpc.StatusCode.INTERNAL,
                           'Exception serializing request!')
-        rendezvous = _MultiThreadedRendezvous(state, None, None, deadline)
-        return deadline, None, rendezvous
+        error = _RpcError(state)
+        return deadline, None, error
     else:
         return deadline, serialized_request, None
 
@@ -653,7 +701,7 @@ def _end_unary_response_blocking(state, call, with_call, deadline):
         else:
             return state.response
     else:
-        raise _MultiThreadedRendezvous(state, None, None, deadline)
+        raise _RpcError(state)
 
 
 def _stream_unary_invocation_operationses(metadata, initial_metadata_flags):
@@ -811,7 +859,7 @@ class _SingleThreadedUnaryStreamMultiCallable(grpc.UnaryStreamMultiCallable):
         if serialized_request is None:
             state = _RPCState((), (), (), grpc.StatusCode.INTERNAL,
                               'Exception serializing request!')
-            raise _MultiThreadedRendezvous(state, None, None, deadline)
+            raise _RpcError(state)
 
         state = _RPCState(_UNARY_STREAM_INITIAL_DUE, None, None, None, None)
         call_credentials = None if credentials is None else credentials._credentials
