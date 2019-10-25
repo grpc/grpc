@@ -436,7 +436,6 @@ class _SingleThreadedRendezvous(_Rendezvous):  # pylint: disable=too-many-ancest
         """See grpc.Call.trailing_metadata"""
         with self._state.condition:
             if self._state.trailing_metadata is None:
-                # TODO: Replace with better exception type.
                 raise RuntimeError("Cannot get trailing metadata until RPC is completed.")
             return self._state.trailing_metadata
 
@@ -460,13 +459,9 @@ class _SingleThreadedRendezvous(_Rendezvous):  # pylint: disable=too-many-ancest
             callbacks = _handle_event(event, self._state,
                                       self._response_deserializer)
             for callback in callbacks:
-                try:
-                    callback()
-                except Exception as e:  # pylint: disable=broad-except
-                    # NOTE(rbellevi): We suppress but log errors here so as not to
-                    # kill the channel spin thread.
-                    logging.error('Exception in callback %s: %s',
-                                  repr(callback.func), repr(e))
+                # NOTE(gnossen): We intentionally allow exceptions to bubble up
+                # to the user when running on a single thread.
+                callback()
         return event
 
     def _next_response(self):
