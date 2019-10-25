@@ -463,7 +463,6 @@ std::unique_ptr<ScenarioResult> RunScenario(
   gpr_timer_set_enabled(0);
 
   // Finish a run
-  // Finish clients
   std::unique_ptr<ScenarioResult> result(new ScenarioResult);
   Histogram merged_latencies;
   std::unordered_map<int, int64_t> merged_statuses;
@@ -479,7 +478,7 @@ std::unique_ptr<ScenarioResult> RunScenario(
     }
   }
 
-  // Collect the client final run results after clients stop sending new rpcs
+  // Collect the client final run results right after finishing clients
   for (size_t i = 0; i < num_clients; i++) {
     auto client = &clients[i];
     // Read the client final status
@@ -499,7 +498,6 @@ std::unique_ptr<ScenarioResult> RunScenario(
     }
   }
 
-  // Finish servers
   gpr_log(GPR_INFO, "Finishing servers");
   for (size_t i = 0; i < num_servers; i++) {
     auto server = &servers[i];
@@ -511,7 +509,7 @@ std::unique_ptr<ScenarioResult> RunScenario(
     }
   }
 
-  // Collect the server final run results after servers stop receiving rpcs
+  // Collect the server final run results right after finishing server
   for (size_t i = 0; i < num_servers; i++) {
     auto server = &servers[i];
     // Read the server final status
