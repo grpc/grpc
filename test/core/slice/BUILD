@@ -21,6 +21,28 @@ licenses(["notice"])  # Apache v2
 load("//test/core/util:grpc_fuzzer.bzl", "grpc_fuzzer")
 
 grpc_fuzzer(
+    name = "b64_encode_fuzzer",
+    srcs = ["b64_encode_fuzzer.cc"],
+    corpus = "b64_encode_corpus",
+    language = "C++",
+    tags = ["no_windows"],
+    deps = [
+        "//:grpc",
+    ],
+)
+
+grpc_fuzzer(
+    name = "b64_decode_fuzzer",
+    srcs = ["b64_decode_fuzzer.cc"],
+    corpus = "b64_decode_corpus",
+    language = "C++",
+    tags = ["no_windows"],
+    deps = [
+        "//:grpc",
+    ],
+)
+
+grpc_fuzzer(
     name = "percent_encode_fuzzer",
     srcs = ["percent_encode_fuzzer.cc"],
     corpus = "percent_encode_corpus",
