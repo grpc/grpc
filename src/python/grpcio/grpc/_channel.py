@@ -858,7 +858,6 @@ class _SingleThreadedUnaryStreamMultiCallable(grpc.UnaryStreamMultiCallable):
             wait_for_ready)
         augmented_metadata = _compression.augment_metadata(
             metadata, compression)
-        # TODO: Formatting.
         operations_and_tags = (
             (((cygrpc.SendInitialMetadataOperation(augmented_metadata,
                                                    initial_metadata_flags),
