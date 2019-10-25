@@ -204,7 +204,7 @@ RoundRobin::Picker::Picker(RoundRobin* parent,
   }
 }
 
-RoundRobin::PickResult RoundRobin::Picker::Pick(PickArgs args) {
+RoundRobin::PickResult RoundRobin::Picker::Pick(PickArgs /*args*/) {
   last_picked_index_ = (last_picked_index_ + 1) % subchannels_.size();
   if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_round_robin_trace)) {
     gpr_log(GPR_INFO,
@@ -486,7 +486,7 @@ class RoundRobinFactory : public LoadBalancingPolicyFactory {
   const char* name() const override { return kRoundRobin; }
 
   RefCountedPtr<LoadBalancingPolicy::Config> ParseLoadBalancingConfig(
-      const grpc_json* json, grpc_error** error) const override {
+      const grpc_json* json, grpc_error** /*error*/) const override {
     if (json != nullptr) {
       GPR_DEBUG_ASSERT(strcmp(json->key, name()) == 0);
     }

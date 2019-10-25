@@ -152,7 +152,8 @@ class ResolvingLoadBalancingPolicy::ResolvingControlHelper
     }
   }
 
-  void AddTraceEvent(TraceSeverity severity, StringView message) override {}
+  void AddTraceEvent(TraceSeverity /*severity*/,
+                     StringView /*message*/) override {}
 
   void set_child(LoadBalancingPolicy* child) { child_ = child; }
 

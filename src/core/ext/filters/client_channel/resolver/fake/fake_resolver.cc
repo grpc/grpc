@@ -159,7 +159,7 @@ void FakeResolver::MaybeSendResultLocked() {
   }
 }
 
-void FakeResolver::ReturnReresolutionResult(void* arg, grpc_error* error) {
+void FakeResolver::ReturnReresolutionResult(void* arg, grpc_error* /*error*/) {
   FakeResolver* self = static_cast<FakeResolver*>(arg);
   self->reresolution_closure_pending_ = false;
   self->MaybeSendResultLocked();
@@ -183,7 +183,7 @@ struct SetResponseClosureArg {
 };
 
 void FakeResolverResponseGenerator::SetResponseLocked(void* arg,
-                                                      grpc_error* error) {
+                                                      grpc_error* /*error*/) {
   SetResponseClosureArg* closure_arg = static_cast<SetResponseClosureArg*>(arg);
   auto& resolver = closure_arg->resolver;
   if (!resolver->shutdown_) {
@@ -215,7 +215,7 @@ void FakeResolverResponseGenerator::SetResponse(Resolver::Result result) {
 }
 
 void FakeResolverResponseGenerator::SetReresolutionResponseLocked(
-    void* arg, grpc_error* error) {
+    void* arg, grpc_error* /*error*/) {
   SetResponseClosureArg* closure_arg = static_cast<SetResponseClosureArg*>(arg);
   auto& resolver = closure_arg->resolver;
   if (!resolver->shutdown_) {
@@ -259,7 +259,7 @@ void FakeResolverResponseGenerator::UnsetReresolutionResponse() {
 }
 
 void FakeResolverResponseGenerator::SetFailureLocked(void* arg,
-                                                     grpc_error* error) {
+                                                     grpc_error* /*error*/) {
   SetResponseClosureArg* closure_arg = static_cast<SetResponseClosureArg*>(arg);
   auto& resolver = closure_arg->resolver;
   if (!resolver->shutdown_) {
@@ -371,7 +371,7 @@ namespace {
 
 class FakeResolverFactory : public ResolverFactory {
  public:
-  bool IsValidUri(const grpc_uri* uri) const override { return true; }
+  bool IsValidUri(const grpc_uri* /*uri*/) const override { return true; }
 
   OrphanablePtr<Resolver> CreateResolver(ResolverArgs args) const override {
     return MakeOrphanable<FakeResolver>(std::move(args));

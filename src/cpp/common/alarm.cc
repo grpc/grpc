@@ -41,7 +41,7 @@ class AlarmImpl : public ::grpc::internal::CompletionQueueTag {
     grpc_timer_init_unset(&timer_);
   }
   ~AlarmImpl() {}
-  bool FinalizeResult(void** tag, bool* status) override {
+  bool FinalizeResult(void** tag, bool* /*status*/) override {
     *tag = tag_;
     Unref();
     return true;
@@ -53,22 +53,23 @@ class AlarmImpl : public ::grpc::internal::CompletionQueueTag {
     cq_ = cq->cq();
     tag_ = tag;
     GPR_ASSERT(grpc_cq_begin_op(cq_, this));
-    GRPC_CLOSURE_INIT(&on_alarm_,
-                      [](void* arg, grpc_error* error) {
-                        // queue the op on the completion queue
-                        AlarmImpl* alarm = static_cast<AlarmImpl*>(arg);
-                        alarm->Ref();
-                        // Preserve the cq and reset the cq_ so that the alarm
-                        // can be reset when the alarm tag is delivered.
-                        grpc_completion_queue* cq = alarm->cq_;
-                        alarm->cq_ = nullptr;
-                        grpc_cq_end_op(
-                            cq, alarm, error,
-                            [](void* arg, grpc_cq_completion* completion) {},
-                            arg, &alarm->completion_);
-                        GRPC_CQ_INTERNAL_UNREF(cq, "alarm");
-                      },
-                      this, grpc_schedule_on_exec_ctx);
+    GRPC_CLOSURE_INIT(
+        &on_alarm_,
+        [](void* arg, grpc_error* error) {
+          // queue the op on the completion queue
+          AlarmImpl* alarm = static_cast<AlarmImpl*>(arg);
+          alarm->Ref();
+          // Preserve the cq and reset the cq_ so that the alarm
+          // can be reset when the alarm tag is delivered.
+          grpc_completion_queue* cq = alarm->cq_;
+          alarm->cq_ = nullptr;
+          grpc_cq_end_op(
+              cq, alarm, error,
+              [](void* /*arg*/, grpc_cq_completion* /*completion*/) {}, arg,
+              &alarm->completion_);
+          GRPC_CQ_INTERNAL_UNREF(cq, "alarm");
+        },
+        this, grpc_schedule_on_exec_ctx);
     grpc_timer_init(&timer_, grpc_timespec_to_millis_round_up(deadline),
                     &on_alarm_);
   }

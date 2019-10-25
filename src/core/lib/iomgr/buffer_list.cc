@@ -39,8 +39,8 @@ void fill_gpr_from_timestamp(gpr_timespec* gts, const struct timespec* ts) {
   gts->clock_type = GPR_CLOCK_REALTIME;
 }
 
-void default_timestamps_callback(void* arg, grpc_core::Timestamps* ts,
-                                 grpc_error* shudown_err) {
+void default_timestamps_callback(void* /*arg*/, grpc_core::Timestamps* /*ts*/,
+                                 grpc_error* /*shudown_err*/) {
   gpr_log(GPR_DEBUG, "Timestamps callback has not been registered");
 }
 
@@ -293,9 +293,8 @@ void grpc_tcp_set_write_timestamps_callback(void (*fn)(void*,
 #else /* GRPC_LINUX_ERRQUEUE */
 
 namespace grpc_core {
-void grpc_tcp_set_write_timestamps_callback(void (*fn)(void*,
-                                                       grpc_core::Timestamps*,
-                                                       grpc_error* error)) {
+void grpc_tcp_set_write_timestamps_callback(
+    void (*/*fn*/)(void*, grpc_core::Timestamps*, grpc_error* error)) {
   gpr_log(GPR_DEBUG, "Timestamps callback is not enabled for this platform");
 }
 } /* namespace grpc_core */

@@ -72,7 +72,10 @@ void grpc_stream_ref_init(grpc_stream_refcount* refcount, int initial_refs,
 void grpc_stream_ref_init(grpc_stream_refcount* refcount, int initial_refs,
                           grpc_iomgr_cb_func cb, void* cb_arg);
 #define GRPC_STREAM_REF_INIT(rc, ir, cb, cb_arg, objtype) \
-  grpc_stream_ref_init(rc, ir, cb, cb_arg)
+  do {                                                    \
+    grpc_stream_ref_init(rc, ir, cb, cb_arg);             \
+    (void)(objtype);                                      \
+  } while (0)
 #endif
 
 #ifndef NDEBUG

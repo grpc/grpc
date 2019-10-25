@@ -151,5 +151,9 @@ int main(int argc, char** argv) {
   int ret = RUN_ALL_TESTS();
   grpc_shutdown();
   return ret;
+#else
+  // Avoid unused parameter warning for conditional parameters.
+  (void)argc;
+  (void)argv;
 #endif
 }
