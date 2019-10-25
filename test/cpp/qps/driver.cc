@@ -478,7 +478,7 @@ std::unique_ptr<ScenarioResult> RunScenario(
     }
   }
 
-  // Collect the client final run results right after finishing clients
+  // Collect clients' final run results right after finishing clients
   for (size_t i = 0; i < num_clients; i++) {
     auto client = &clients[i];
     // Read the client final status
@@ -509,7 +509,7 @@ std::unique_ptr<ScenarioResult> RunScenario(
     }
   }
 
-  // Collect the server final run results right after finishing server
+  // Collect servers' final run results right after finishing server
   for (size_t i = 0; i < num_servers; i++) {
     auto server = &servers[i];
     // Read the server final status
