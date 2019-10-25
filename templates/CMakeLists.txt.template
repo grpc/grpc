@@ -68,6 +68,21 @@
       return ''
     return 'endif()\n'
   %>
+  <%
+  # These files are added to a set so that they are not duplicated if multiple
+  # targets use them. Generating the same file multiple times with
+  # add_custom_command() is not allowed in CMake.
+
+  protobuf_gen_files = set()
+  for tgt in targets:
+    for src in tgt.src:
+      if proto_re.match(src):
+        protobuf_gen_files.add(src)
+  for lib in libs:
+    for src in lib.src:
+      if proto_re.match(src):
+        protobuf_gen_files.add(src)
+  %>
 
   cmake_minimum_required(VERSION 3.5.1)
 
@@ -300,6 +315,12 @@
   add_custom_target(tools
     DEPENDS tools_c tools_cxx)
 
+  % for src in sorted(protobuf_gen_files):
+  protobuf_generate_grpc_cpp(
+    ${src}
+  )
+  % endfor
+
   if (gRPC_BUILD_TESTS)
   add_custom_target(buildtests_c)
   % for tgt in targets:
@@ -429,14 +450,6 @@
     endif()
   endif()
 
-  % for src in lib.src:
-  % if proto_re.match(src):
-  protobuf_generate_grpc_cpp(
-    ${src}
-  )
-  % endif
-  % endfor
-
   target_include_directories(${lib.name}
     PUBLIC <%text>$<INSTALL_INTERFACE:${gRPC_INSTALL_INCLUDEDIR}> $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include></%text>
     PRIVATE <%text>${CMAKE_CURRENT_SOURCE_DIR}</%text>
@@ -518,14 +531,6 @@
     third_party/googletest/googlemock/src/gmock-all.cc
   % endif
   )
-
-  % for src in tgt.src:
-  % if proto_re.match(src):
-  protobuf_generate_grpc_cpp(
-    ${src}
-  )
-  % endif
-  % endfor
 
   target_include_directories(${tgt.name}
     PRIVATE <%text>${CMAKE_CURRENT_SOURCE_DIR}</%text>
