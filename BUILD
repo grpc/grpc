@@ -72,11 +72,11 @@ config_setting(
 python_config_settings()
 
 # This should be updated along with build.yaml
-g_stands_for = "game"
+g_stands_for = "gon"
 
 core_version = "7.0.0"
 
-version = "1.25.0-dev"
+version = "1.26.0-dev"
 
 GPR_PUBLIC_HDRS = [
     "include/grpc/support/alloc.h",
@@ -1392,6 +1392,7 @@ grpc_cc_library(
         "grpc++_base",
         "grpc_secure",
     ],
+    alwayslink = 1,
 )
 
 grpc_cc_library(
@@ -1438,7 +1439,6 @@ grpc_cc_library(
         "lb_server_load_reporting_filter",
         "lb_server_load_reporting_service_server_builder_plugin",
     ],
-    alwayslink = 1,
 )
 
 grpc_cc_library(

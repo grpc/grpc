@@ -50,10 +50,10 @@ void grpc_stream_destroy(grpc_stream_refcount* refcount) {
        cope with.
        Throw this over to the executor (on a core-owned thread) and process it
        there. */
-    refcount->destroy.scheduler =
-        grpc_core::Executor::Scheduler(grpc_core::ExecutorJobType::SHORT);
+    grpc_core::Executor::Run(&refcount->destroy, GRPC_ERROR_NONE);
+  } else {
+    GRPC_CLOSURE_SCHED(&refcount->destroy, GRPC_ERROR_NONE);
   }
-  GRPC_CLOSURE_SCHED(&refcount->destroy, GRPC_ERROR_NONE);
 }
 
 void slice_stream_destroy(void* arg) {

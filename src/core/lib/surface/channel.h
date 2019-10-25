@@ -55,25 +55,6 @@ grpc_channel_stack* grpc_channel_get_channel_stack(grpc_channel* channel);
 grpc_core::channelz::ChannelNode* grpc_channel_get_channelz_node(
     grpc_channel* channel);
 
-/** Get a grpc_mdelem of grpc-status: X where X is the numeric value of
-    status_code.
-
-    The returned elem is owned by the caller. */
-grpc_mdelem grpc_channel_get_reffed_status_elem_slowpath(grpc_channel* channel,
-                                                         int status_code);
-inline grpc_mdelem grpc_channel_get_reffed_status_elem(grpc_channel* channel,
-                                                       int status_code) {
-  switch (status_code) {
-    case 0:
-      return GRPC_MDELEM_GRPC_STATUS_0;
-    case 1:
-      return GRPC_MDELEM_GRPC_STATUS_1;
-    case 2:
-      return GRPC_MDELEM_GRPC_STATUS_2;
-  }
-  return grpc_channel_get_reffed_status_elem_slowpath(channel, status_code);
-}
-
 size_t grpc_channel_get_call_size_estimate(grpc_channel* channel);
 void grpc_channel_update_call_size_estimate(grpc_channel* channel, size_t size);
 

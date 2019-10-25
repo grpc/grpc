@@ -393,10 +393,8 @@ void MetadataCredentialsPluginWrapper::Destroy(void* wrapper) {
   if (wrapper == nullptr) return;
   grpc_core::ApplicationCallbackExecCtx callback_exec_ctx;
   grpc_core::ExecCtx exec_ctx;
-  GRPC_CLOSURE_RUN(GRPC_CLOSURE_CREATE(DeleteWrapper, wrapper,
-                                       grpc_core::Executor::Scheduler(
-                                           grpc_core::ExecutorJobType::SHORT)),
-                   GRPC_ERROR_NONE);
+  grpc_core::Executor::Run(GRPC_CLOSURE_CREATE(DeleteWrapper, wrapper, nullptr),
+                           GRPC_ERROR_NONE);
 }
 
 int MetadataCredentialsPluginWrapper::GetMetadata(

@@ -43,8 +43,7 @@
 // For debugging refcounting.
 #ifndef NDEBUG
 #define GRPC_SUBCHANNEL_REF(p, r) (p)->Ref(__FILE__, __LINE__, (r))
-#define GRPC_SUBCHANNEL_REF_FROM_WEAK_REF(p, r) \
-  (p)->RefFromWeakRef(__FILE__, __LINE__, (r))
+#define GRPC_SUBCHANNEL_REF_FROM_WEAK_REF(p, r) (p)->RefFromWeakRef()
 #define GRPC_SUBCHANNEL_UNREF(p, r) (p)->Unref(__FILE__, __LINE__, (r))
 #define GRPC_SUBCHANNEL_WEAK_REF(p, r) (p)->WeakRef(__FILE__, __LINE__, (r))
 #define GRPC_SUBCHANNEL_WEAK_UNREF(p, r) (p)->WeakUnref(__FILE__, __LINE__, (r))
@@ -214,7 +213,7 @@ class Subchannel {
   // Attempts to return a strong ref when only the weak refcount is guaranteed
   // non-zero. If the strong refcount is zero, does not alter the refcount and
   // returns null.
-  Subchannel* RefFromWeakRef(GRPC_SUBCHANNEL_REF_EXTRA_ARGS);
+  Subchannel* RefFromWeakRef();
 
   // Gets the string representing the subchannel address.
   // Caller doesn't take ownership.

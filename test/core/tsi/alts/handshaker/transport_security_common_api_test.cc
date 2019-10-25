@@ -155,7 +155,7 @@ static void test_check_failure() {
                  &highest_common_version) == 0);
 }
 
-int main(int argc, char** argv) {
+int main(int /*argc*/, char** /*argv*/) {
   /* Run tests. */
   test_success();
   test_failure();

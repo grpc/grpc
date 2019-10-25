@@ -23,12 +23,17 @@
 
 cmake_minimum_required(VERSION 3.5.1)
 
-set(PACKAGE_NAME      "grpc")
-set(PACKAGE_VERSION   "1.25.0-dev")
-set(gRPC_CORE_VERSION "8.0.0")
-set(PACKAGE_STRING    "${PACKAGE_NAME} ${PACKAGE_VERSION}")
-set(PACKAGE_TARNAME   "${PACKAGE_NAME}-${PACKAGE_VERSION}")
-set(PACKAGE_BUGREPORT "https://github.com/grpc/grpc/issues/")
+set(PACKAGE_NAME          "grpc")
+set(PACKAGE_VERSION       "1.26.0-dev")
+set(gRPC_CORE_VERSION     "8.0.0")
+set(gRPC_CORE_SOVERSION   "8")
+set(gRPC_CPP_VERSION      "1.26.0-dev")
+set(gRPC_CPP_SOVERSION    "1")
+set(gRPC_CSHARP_VERSION   "2.26.0-dev")
+set(gRPC_CSHARP_SOVERSION "2")
+set(PACKAGE_STRING        "${PACKAGE_NAME} ${PACKAGE_VERSION}")
+set(PACKAGE_TARNAME       "${PACKAGE_NAME}-${PACKAGE_VERSION}")
+set(PACKAGE_BUGREPORT     "https://github.com/grpc/grpc/issues/")
 project(${PACKAGE_NAME} LANGUAGES C CXX)
 
 set(gRPC_INSTALL_BINDIR "bin" CACHE STRING "Installation directory for executables")
@@ -769,6 +774,11 @@ add_library(address_sorting
   third_party/address_sorting/address_sorting_windows.c
 )
 
+set_target_properties(address_sorting PROPERTIES
+  VERSION ${gRPC_CORE_VERSION}
+  SOVERSION ${gRPC_CORE_SOVERSION}
+)
+
 if(WIN32 AND MSVC)
   set_target_properties(address_sorting PROPERTIES COMPILE_PDB_NAME "address_sorting"
     COMPILE_PDB_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}"
@@ -815,6 +825,11 @@ if (gRPC_BUILD_TESTS)
 add_library(alts_test_util
   test/core/tsi/alts/crypt/gsec_test_util.cc
   test/core/tsi/alts/handshaker/alts_handshaker_service_api_test_lib.cc
+)
+
+set_target_properties(alts_test_util PROPERTIES
+  VERSION ${gRPC_CORE_VERSION}
+  SOVERSION ${gRPC_CORE_SOVERSION}
 )
 
 if(WIN32 AND MSVC)
@@ -893,6 +908,11 @@ add_library(gpr
   src/core/lib/gprpp/thd_windows.cc
   src/core/lib/profiling/basic_timers.cc
   src/core/lib/profiling/stap_timers.cc
+)
+
+set_target_properties(gpr PROPERTIES
+  VERSION ${gRPC_CORE_VERSION}
+  SOVERSION ${gRPC_CORE_SOVERSION}
 )
 
 if(WIN32 AND MSVC)
@@ -1361,6 +1381,11 @@ add_library(grpc
   src/core/plugin_registry/grpc_plugin_registry.cc
 )
 
+set_target_properties(grpc PROPERTIES
+  VERSION ${gRPC_CORE_VERSION}
+  SOVERSION ${gRPC_CORE_SOVERSION}
+)
+
 if(WIN32 AND MSVC)
   set_target_properties(grpc PROPERTIES COMPILE_PDB_NAME "grpc"
     COMPILE_PDB_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}"
@@ -1776,6 +1801,11 @@ add_library(grpc_cronet
   src/core/tsi/transport_security_grpc.cc
 )
 
+set_target_properties(grpc_cronet PROPERTIES
+  VERSION ${gRPC_CORE_VERSION}
+  SOVERSION ${gRPC_CORE_SOVERSION}
+)
+
 if(WIN32 AND MSVC)
   set_target_properties(grpc_cronet PROPERTIES COMPILE_PDB_NAME "grpc_cronet"
     COMPILE_PDB_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}"
@@ -2127,6 +2157,11 @@ add_library(grpc_test_util
   src/core/ext/filters/http/server/http_server_filter.cc
 )
 
+set_target_properties(grpc_test_util PROPERTIES
+  VERSION ${gRPC_CORE_VERSION}
+  SOVERSION ${gRPC_CORE_SOVERSION}
+)
+
 if(WIN32 AND MSVC)
   set_target_properties(grpc_test_util PROPERTIES COMPILE_PDB_NAME "grpc_test_util"
     COMPILE_PDB_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}"
@@ -2473,6 +2508,11 @@ add_library(grpc_test_util_unsecure
   src/core/ext/filters/http/http_filters_plugin.cc
   src/core/ext/filters/http/message_compress/message_compress_filter.cc
   src/core/ext/filters/http/server/http_server_filter.cc
+)
+
+set_target_properties(grpc_test_util_unsecure PROPERTIES
+  VERSION ${gRPC_CORE_VERSION}
+  SOVERSION ${gRPC_CORE_SOVERSION}
 )
 
 if(WIN32 AND MSVC)
@@ -2865,6 +2905,11 @@ add_library(grpc_unsecure
   src/core/plugin_registry/grpc_unsecure_plugin_registry.cc
 )
 
+set_target_properties(grpc_unsecure PROPERTIES
+  VERSION ${gRPC_CORE_VERSION}
+  SOVERSION ${gRPC_CORE_SOVERSION}
+)
+
 if(WIN32 AND MSVC)
   set_target_properties(grpc_unsecure PROPERTIES COMPILE_PDB_NAME "grpc_unsecure"
     COMPILE_PDB_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}"
@@ -2962,6 +3007,11 @@ add_library(reconnect_server
   test/core/util/reconnect_server.cc
 )
 
+set_target_properties(reconnect_server PROPERTIES
+  VERSION ${gRPC_CORE_VERSION}
+  SOVERSION ${gRPC_CORE_SOVERSION}
+)
+
 if(WIN32 AND MSVC)
   set_target_properties(reconnect_server PROPERTIES COMPILE_PDB_NAME "reconnect_server"
     COMPILE_PDB_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}"
@@ -3002,6 +3052,11 @@ if (gRPC_BUILD_TESTS)
 
 add_library(test_tcp_server
   test/core/util/test_tcp_server.cc
+)
+
+set_target_properties(test_tcp_server PROPERTIES
+  VERSION ${gRPC_CORE_VERSION}
+  SOVERSION ${gRPC_CORE_SOVERSION}
 )
 
 if(WIN32 AND MSVC)
@@ -3049,6 +3104,11 @@ add_library(bm_callback_test_service_impl
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo.grpc.pb.h
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/echo_mock.grpc.pb.h
   test/cpp/microbenchmarks/callback_test_service.cc
+)
+
+set_target_properties(bm_callback_test_service_impl PROPERTIES
+  VERSION ${gRPC_CPP_VERSION}
+  SOVERSION ${gRPC_CPP_SOVERSION}
 )
 
 if(WIN32 AND MSVC)
@@ -3106,6 +3166,11 @@ if (gRPC_BUILD_TESTS)
 
 add_library(dns_test_util
   test/cpp/naming/dns_test_util.cc
+)
+
+set_target_properties(dns_test_util PROPERTIES
+  VERSION ${gRPC_CPP_VERSION}
+  SOVERSION ${gRPC_CPP_SOVERSION}
 )
 
 if(WIN32 AND MSVC)
@@ -3202,6 +3267,11 @@ add_library(grpc++
   third_party/upb/upb/table.c
   third_party/upb/upb/upb.c
   src/cpp/codegen/codegen_init.cc
+)
+
+set_target_properties(grpc++ PROPERTIES
+  VERSION ${gRPC_CPP_VERSION}
+  SOVERSION ${gRPC_CPP_SOVERSION}
 )
 
 if(WIN32 AND MSVC)
@@ -3532,6 +3602,11 @@ add_library(grpc++_core_stats
   src/cpp/util/core_stats.cc
 )
 
+set_target_properties(grpc++_core_stats PROPERTIES
+  VERSION ${gRPC_CPP_VERSION}
+  SOVERSION ${gRPC_CPP_SOVERSION}
+)
+
 if(WIN32 AND MSVC)
   set_target_properties(grpc++_core_stats PROPERTIES COMPILE_PDB_NAME "grpc++_core_stats"
     COMPILE_PDB_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}"
@@ -3584,6 +3659,11 @@ add_library(grpc++_error_details
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/status/status.pb.h
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/status/status.grpc.pb.h
   src/cpp/util/error_details.cc
+)
+
+set_target_properties(grpc++_error_details PROPERTIES
+  VERSION ${gRPC_CPP_VERSION}
+  SOVERSION ${gRPC_CPP_SOVERSION}
 )
 
 if(WIN32 AND MSVC)
@@ -3658,6 +3738,11 @@ add_library(grpc++_proto_reflection_desc_db
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/reflection/v1alpha/reflection.grpc.pb.h
 )
 
+set_target_properties(grpc++_proto_reflection_desc_db PROPERTIES
+  VERSION ${gRPC_CPP_VERSION}
+  SOVERSION ${gRPC_CPP_SOVERSION}
+)
+
 if(WIN32 AND MSVC)
   set_target_properties(grpc++_proto_reflection_desc_db PROPERTIES COMPILE_PDB_NAME "grpc++_proto_reflection_desc_db"
     COMPILE_PDB_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}"
@@ -3722,6 +3807,11 @@ add_library(grpc++_reflection
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/reflection/v1alpha/reflection.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/reflection/v1alpha/reflection.pb.h
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/reflection/v1alpha/reflection.grpc.pb.h
+)
+
+set_target_properties(grpc++_reflection PROPERTIES
+  VERSION ${gRPC_CPP_VERSION}
+  SOVERSION ${gRPC_CPP_SOVERSION}
 )
 
 if(WIN32 AND MSVC)
@@ -3789,6 +3879,11 @@ if (gRPC_BUILD_TESTS)
 
 add_library(grpc++_test_config
   test/cpp/util/test_config_cc.cc
+)
+
+set_target_properties(grpc++_test_config PROPERTIES
+  VERSION ${gRPC_CPP_VERSION}
+  SOVERSION ${gRPC_CPP_SOVERSION}
 )
 
 if(WIN32 AND MSVC)
@@ -3868,6 +3963,11 @@ add_library(grpc++_test_util
   test/cpp/util/subprocess.cc
   test/cpp/util/test_credentials_provider.cc
   src/cpp/codegen/codegen_init.cc
+)
+
+set_target_properties(grpc++_test_util PROPERTIES
+  VERSION ${gRPC_CPP_VERSION}
+  SOVERSION ${gRPC_CPP_SOVERSION}
 )
 
 if(WIN32 AND MSVC)
@@ -4082,6 +4182,11 @@ add_library(grpc++_test_util_unsecure
   test/cpp/util/string_ref_helper.cc
   test/cpp/util/subprocess.cc
   src/cpp/codegen/codegen_init.cc
+)
+
+set_target_properties(grpc++_test_util_unsecure PROPERTIES
+  VERSION ${gRPC_CPP_VERSION}
+  SOVERSION ${gRPC_CPP_SOVERSION}
 )
 
 if(WIN32 AND MSVC)
@@ -4310,6 +4415,11 @@ add_library(grpc++_unsecure
   third_party/upb/upb/table.c
   third_party/upb/upb/upb.c
   src/cpp/codegen/codegen_init.cc
+)
+
+set_target_properties(grpc++_unsecure PROPERTIES
+  VERSION ${gRPC_CPP_VERSION}
+  SOVERSION ${gRPC_CPP_SOVERSION}
 )
 
 if(WIN32 AND MSVC)
@@ -4628,6 +4738,11 @@ add_library(grpc_benchmark
   test/cpp/microbenchmarks/helpers.cc
 )
 
+set_target_properties(grpc_benchmark PROPERTIES
+  VERSION ${gRPC_CPP_VERSION}
+  SOVERSION ${gRPC_CPP_SOVERSION}
+)
+
 if(WIN32 AND MSVC)
   set_target_properties(grpc_benchmark PROPERTIES COMPILE_PDB_NAME "grpc_benchmark"
     COMPILE_PDB_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}"
@@ -4684,6 +4799,11 @@ add_library(grpc_cli_libs
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/reflection/v1alpha/reflection.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/reflection/v1alpha/reflection.pb.h
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/reflection/v1alpha/reflection.grpc.pb.h
+)
+
+set_target_properties(grpc_cli_libs PROPERTIES
+  VERSION ${gRPC_CPP_VERSION}
+  SOVERSION ${gRPC_CPP_SOVERSION}
 )
 
 if(WIN32 AND MSVC)
@@ -4753,6 +4873,11 @@ add_library(grpc_plugin_support
   src/compiler/ruby_generator.cc
 )
 
+set_target_properties(grpc_plugin_support PROPERTIES
+  VERSION ${gRPC_CPP_VERSION}
+  SOVERSION ${gRPC_CPP_SOVERSION}
+)
+
 if(WIN32 AND MSVC)
   set_target_properties(grpc_plugin_support PROPERTIES COMPILE_PDB_NAME "grpc_plugin_support"
     COMPILE_PDB_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}"
@@ -4815,6 +4940,11 @@ add_library(grpcpp_channelz
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/channelz.grpc.pb.cc
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/channelz.pb.h
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/channelz/channelz.grpc.pb.h
+)
+
+set_target_properties(grpcpp_channelz PROPERTIES
+  VERSION ${gRPC_CPP_VERSION}
+  SOVERSION ${gRPC_CPP_SOVERSION}
 )
 
 if(WIN32 AND MSVC)
@@ -4896,6 +5026,11 @@ add_library(http2_client_main
   test/cpp/interop/http2_client.cc
 )
 
+set_target_properties(http2_client_main PROPERTIES
+  VERSION ${gRPC_CPP_VERSION}
+  SOVERSION ${gRPC_CPP_SOVERSION}
+)
+
 if(WIN32 AND MSVC)
   set_target_properties(http2_client_main PROPERTIES COMPILE_PDB_NAME "http2_client_main"
     COMPILE_PDB_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}"
@@ -4959,6 +5094,11 @@ add_library(interop_client_helper
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/messages.pb.h
   ${_gRPC_PROTO_GENS_DIR}/src/proto/grpc/testing/messages.grpc.pb.h
   test/cpp/interop/client_helper.cc
+)
+
+set_target_properties(interop_client_helper PROPERTIES
+  VERSION ${gRPC_CPP_VERSION}
+  SOVERSION ${gRPC_CPP_SOVERSION}
 )
 
 if(WIN32 AND MSVC)
@@ -5029,6 +5169,11 @@ add_library(interop_client_main
   test/cpp/interop/interop_client.cc
 )
 
+set_target_properties(interop_client_main PROPERTIES
+  VERSION ${gRPC_CPP_VERSION}
+  SOVERSION ${gRPC_CPP_SOVERSION}
+)
+
 if(WIN32 AND MSVC)
   set_target_properties(interop_client_main PROPERTIES COMPILE_PDB_NAME "interop_client_main"
     COMPILE_PDB_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}"
@@ -5089,6 +5234,11 @@ if (gRPC_BUILD_TESTS)
 
 add_library(interop_server_helper
   test/cpp/interop/server_helper.cc
+)
+
+set_target_properties(interop_server_helper PROPERTIES
+  VERSION ${gRPC_CPP_VERSION}
+  SOVERSION ${gRPC_CPP_SOVERSION}
 )
 
 if(WIN32 AND MSVC)
@@ -5154,6 +5304,11 @@ add_library(interop_server_lib
   test/cpp/interop/interop_server.cc
 )
 
+set_target_properties(interop_server_lib PROPERTIES
+  VERSION ${gRPC_CPP_VERSION}
+  SOVERSION ${gRPC_CPP_SOVERSION}
+)
+
 if(WIN32 AND MSVC)
   set_target_properties(interop_server_lib PROPERTIES COMPILE_PDB_NAME "interop_server_lib"
     COMPILE_PDB_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}"
@@ -5214,6 +5369,11 @@ if (gRPC_BUILD_TESTS)
 
 add_library(interop_server_main
   test/cpp/interop/interop_server_bootstrap.cc
+)
+
+set_target_properties(interop_server_main PROPERTIES
+  VERSION ${gRPC_CPP_VERSION}
+  SOVERSION ${gRPC_CPP_SOVERSION}
 )
 
 if(WIN32 AND MSVC)
@@ -5303,6 +5463,11 @@ add_library(qps
   test/cpp/qps/usage_timer.cc
 )
 
+set_target_properties(qps PROPERTIES
+  VERSION ${gRPC_CPP_VERSION}
+  SOVERSION ${gRPC_CPP_SOVERSION}
+)
+
 if(WIN32 AND MSVC)
   set_target_properties(qps PROPERTIES COMPILE_PDB_NAME "qps"
     COMPILE_PDB_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}"
@@ -5375,6 +5540,11 @@ add_library(grpc_csharp_ext SHARED
   src/csharp/ext/grpc_csharp_ext.c
 )
 
+set_target_properties(grpc_csharp_ext PROPERTIES
+  VERSION ${gRPC_CSHARP_VERSION}
+  SOVERSION ${gRPC_CSHARP_SOVERSION}
+)
+
 if(WIN32 AND MSVC)
   set_target_properties(grpc_csharp_ext PROPERTIES COMPILE_PDB_NAME "grpc_csharp_ext"
     COMPILE_PDB_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}"
@@ -5424,6 +5594,11 @@ add_library(bad_client_test
   test/core/bad_client/bad_client.cc
 )
 
+set_target_properties(bad_client_test PROPERTIES
+  VERSION ${gRPC_CPP_VERSION}
+  SOVERSION ${gRPC_CPP_SOVERSION}
+)
+
 if(WIN32 AND MSVC)
   set_target_properties(bad_client_test PROPERTIES COMPILE_PDB_NAME "bad_client_test"
     COMPILE_PDB_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}"
@@ -5470,6 +5645,11 @@ if (gRPC_BUILD_TESTS)
 
 add_library(bad_ssl_test_server
   test/core/bad_ssl/server_common.cc
+)
+
+set_target_properties(bad_ssl_test_server PROPERTIES
+  VERSION ${gRPC_CORE_VERSION}
+  SOVERSION ${gRPC_CORE_SOVERSION}
 )
 
 if(WIN32 AND MSVC)
@@ -5592,6 +5772,11 @@ add_library(end2end_tests
   test/core/end2end/tests/write_buffering_at_end.cc
 )
 
+set_target_properties(end2end_tests PROPERTIES
+  VERSION ${gRPC_CORE_VERSION}
+  SOVERSION ${gRPC_CORE_SOVERSION}
+)
+
 if(WIN32 AND MSVC)
   set_target_properties(end2end_tests PROPERTIES COMPILE_PDB_NAME "end2end_tests"
     COMPILE_PDB_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}"
@@ -5710,6 +5895,11 @@ add_library(end2end_nosec_tests
   test/core/end2end/tests/workaround_cronet_compression.cc
   test/core/end2end/tests/write_buffering.cc
   test/core/end2end/tests/write_buffering_at_end.cc
+)
+
+set_target_properties(end2end_nosec_tests PROPERTIES
+  VERSION ${gRPC_CORE_VERSION}
+  SOVERSION ${gRPC_CORE_SOVERSION}
 )
 
 if(WIN32 AND MSVC)
@@ -16501,6 +16691,8 @@ target_link_libraries(thread_manager_test
   grpc++_unsecure
   grpc_unsecure
   gpr
+  grpc++_test_util
+  grpc_test_util
   grpc++_test_config
   ${_gRPC_GFLAGS_LIBRARIES}
 )

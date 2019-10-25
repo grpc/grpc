@@ -62,7 +62,7 @@ static void maybe_call_write_cb_locked(trickle_endpoint* te) {
 }
 
 static void te_write(grpc_endpoint* ep, grpc_slice_buffer* slices,
-                     grpc_closure* cb, void* arg) {
+                     grpc_closure* cb, void* /*arg*/) {
   trickle_endpoint* te = reinterpret_cast<trickle_endpoint*>(ep);
   gpr_mu_lock(&te->mu);
   GPR_ASSERT(te->write_cb == nullptr);
@@ -131,9 +131,9 @@ static int te_get_fd(grpc_endpoint* ep) {
   return grpc_endpoint_get_fd(te->wrapped);
 }
 
-static bool te_can_track_err(grpc_endpoint* ep) { return false; }
+static bool te_can_track_err(grpc_endpoint* /*ep*/) { return false; }
 
-static void te_finish_write(void* arg, grpc_error* error) {
+static void te_finish_write(void* arg, grpc_error* /*error*/) {
   trickle_endpoint* te = static_cast<trickle_endpoint*>(arg);
   gpr_mu_lock(&te->mu);
   te->writing = false;

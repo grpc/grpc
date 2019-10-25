@@ -463,7 +463,7 @@ grpc_call* grpc_channel_create_registered_call(
   return call;
 }
 
-static void destroy_channel(void* arg, grpc_error* error) {
+static void destroy_channel(void* arg, grpc_error* /*error*/) {
   grpc_channel* channel = static_cast<grpc_channel*>(arg);
   if (channel->channelz_node != nullptr) {
     if (channel->channelz_node->parent_uuid() > 0) {
@@ -511,12 +511,4 @@ void grpc_channel_destroy(grpc_channel* channel) {
   elem->filter->start_transport_op(elem, op);
 
   GRPC_CHANNEL_INTERNAL_UNREF(channel, "channel");
-}
-
-grpc_mdelem grpc_channel_get_reffed_status_elem_slowpath(grpc_channel* channel,
-                                                         int i) {
-  char tmp[GPR_LTOA_MIN_BUFSIZE];
-  gpr_ltoa(i, tmp);
-  return grpc_mdelem_from_slices(GRPC_MDSTR_GRPC_STATUS,
-                                 grpc_core::UnmanagedMemorySlice(tmp));
 }

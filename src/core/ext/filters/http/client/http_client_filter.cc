@@ -99,8 +99,7 @@ struct channel_data {
 };
 }  // namespace
 
-static grpc_error* client_filter_incoming_metadata(grpc_call_element* elem,
-                                                   grpc_metadata_batch* b) {
+static grpc_error* client_filter_incoming_metadata(grpc_metadata_batch* b) {
   if (b->idx.named.status != nullptr) {
     /* If both gRPC status and HTTP status are provided in the response, we
      * should prefer the gRPC status code, as mentioned in
@@ -177,7 +176,7 @@ static void recv_initial_metadata_ready(void* user_data, grpc_error* error) {
   grpc_call_element* elem = static_cast<grpc_call_element*>(user_data);
   call_data* calld = static_cast<call_data*>(elem->call_data);
   if (error == GRPC_ERROR_NONE) {
-    error = client_filter_incoming_metadata(elem, calld->recv_initial_metadata);
+    error = client_filter_incoming_metadata(calld->recv_initial_metadata);
     calld->recv_initial_metadata_error = GRPC_ERROR_REF(error);
   } else {
     GRPC_ERROR_REF(error);
@@ -204,8 +203,7 @@ static void recv_trailing_metadata_ready(void* user_data, grpc_error* error) {
     return;
   }
   if (error == GRPC_ERROR_NONE) {
-    error =
-        client_filter_incoming_metadata(elem, calld->recv_trailing_metadata);
+    error = client_filter_incoming_metadata(calld->recv_trailing_metadata);
   } else {
     GRPC_ERROR_REF(error);
   }
@@ -302,7 +300,7 @@ static grpc_error* update_path_for_get(grpc_call_element* elem,
   size_t estimated_len = GRPC_SLICE_LENGTH(path_slice);
   estimated_len++; /* for the '?' */
   estimated_len += grpc_base64_estimate_encoded_size(
-      batch->payload->send_message.send_message->length(), true /* url_safe */,
+      batch->payload->send_message.send_message->length(),
       false /* multi_line */);
   grpc_core::UnmanagedMemorySlice path_with_query_slice(estimated_len);
   /* memcopy individual pieces into this slice */
@@ -473,8 +471,8 @@ static grpc_error* http_client_init_call_elem(
 
 /* Destructor for call_data */
 static void http_client_destroy_call_elem(
-    grpc_call_element* elem, const grpc_call_final_info* final_info,
-    grpc_closure* ignored) {
+    grpc_call_element* elem, const grpc_call_final_info* /*final_info*/,
+    grpc_closure* /*ignored*/) {
   call_data* calld = static_cast<call_data*>(elem->call_data);
   calld->~call_data();
 }
