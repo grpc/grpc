@@ -62,12 +62,12 @@ _STREAM_STREAM_INITIAL_DUE = (
 _CHANNEL_SUBSCRIPTION_CALLBACK_ERROR_LOG_MESSAGE = (
     'Exception calling channel subscription callback!')
 
-_OK_RENDEZVOUS_REPR_FORMAT = ('<_Rendezvous of RPC that terminated with:\n'
+_OK_RENDEZVOUS_REPR_FORMAT = ('<{} of RPC that terminated with:\n'
                               '\tstatus = {}\n'
                               '\tdetails = "{}"\n'
                               '>')
 
-_NON_OK_RENDEZVOUS_REPR_FORMAT = ('<_Rendezvous of RPC that terminated with:\n'
+_NON_OK_RENDEZVOUS_REPR_FORMAT = ('<{} of RPC that terminated with:\n'
                                   '\tstatus = {}\n'
                                   '\tdetails = "{}"\n'
                                   '\tdebug_error_string = "{}"\n'
@@ -249,17 +249,12 @@ def _consume_request_iterator(request_iterator, state, call, request_serializer,
     consumption_thread.start()
 
 
-class _SingleThreadedRendezvous(grpc.RpcError, grpc.Call):  # pylint: disable=too-many-ancestors
-    """An RPC iterator operating entirely on a single thread.
-
-    The __next__ method of _SingleThreadedRendezvous does not depend on the
-    existence of any other thread, including the "channel spin thread".
-    However, this means that its interface is entirely synchronous. So this
-    class cannot fulfill the grpc.Future interface.
+class _Rendezvous(grpc.RpcError, grpc.Call):
+    """An RPC iterator.
 
     Attributes:
       _state: An instance of _RPCState.
-      _call: An instance of SegregatedCall or (for subclasses) IntegratedCall.
+      _call: An instance of SegregatedCall or IntegratedCall.
         In either case, the _call object is expected to have operate, cancel,
         and next_event methods.
       _response_deserializer: A callable taking bytes and return a Python
@@ -269,7 +264,7 @@ class _SingleThreadedRendezvous(grpc.RpcError, grpc.Call):  # pylint: disable=to
     """
 
     def __init__(self, state, call, response_deserializer, deadline):
-        super(_SingleThreadedRendezvous, self).__init__()
+        super(_Rendezvous, self).__init__()
         self._state = state
         self._call = call
         self._response_deserializer = response_deserializer
@@ -314,55 +309,106 @@ class _SingleThreadedRendezvous(grpc.RpcError, grpc.Call):  # pylint: disable=to
 
     def initial_metadata(self):
         """See grpc.Call.initial_metadata"""
-        # TODO: Ahhhhhhh!
-        if self.__class__ is _SingleThreadedRendezvous:
-            with self._state.condition:
-                while self._state.initial_metadata is None:
-                    event = self._get_next_event()
-                    # TODO: Replace this assert with a test for dropped message.
-                    for operation in event.batch_operations:
-                        if operation.type() == cygrpc.OperationType.receive_message:
-                            assert False, "This would drop a message. Don't do this."
-                return self._state.initial_metadata
-        else:
-            with self._state.condition:
+        raise NotImplementedError()
 
-                def _done():
-                    return self._state.initial_metadata is not None
+    def trailing_metadata(self):
+        """See grpc.Call.trailing_metadata"""
+        raise NotImplementedError()
 
-                _common.wait(self._state.condition.wait, _done)
-                return self._state.initial_metadata
+    def code(self):
+        """See grpc.Call.code"""
+        raise NotImplementedError()
+
+    def details(self):
+        """See grpc.Call.details"""
+        raise NotImplementedError()
+
+    def __iter__(self):
+        return self
+
+    def next(self):
+        return self._next()
+
+    def __next__(self):
+        return self._next()
+
+    def _next(self):
+        raise NotImplementedError()
+
+    def debug_error_string(self):
+        raise NotImplementedError()
+
+    def _repr(self):
+        with self._state.condition:
+            if self._state.code is None:
+                return '<{} object of in-flight RPC>'.format(
+                    self.__class__.__name__)
+            elif self._state.code is grpc.StatusCode.OK:
+                return _OK_RENDEZVOUS_REPR_FORMAT.format(
+                    self.__class__.__name__, self._state.code, self._state.details)
+            else:
+                return _NON_OK_RENDEZVOUS_REPR_FORMAT.format(
+                    self.__class__.__name__, self._state.code, self._state.details,
+                    self._state.debug_error_string)
+
+    def __repr__(self):
+        return self._repr()
+
+    def __str__(self):
+        return self._repr()
+
+    def __del__(self):
+        with self._state.condition:
+            if self._state.code is None:
+                self._state.code = grpc.StatusCode.CANCELLED
+                self._state.details = 'Cancelled upon garbage collection!'
+                self._state.cancelled = True
+                self._call.cancel(
+                    _common.STATUS_CODE_TO_CYGRPC_STATUS_CODE[self._state.code],
+                    self._state.details)
+                self._state.condition.notify_all()
+
+
+class _SingleThreadedRendezvous(_Rendezvous):  # pylint: disable=too-many-ancestors
+    """An RPC iterator operating entirely on a single thread.
+
+    The __next__ method of _SingleThreadedRendezvous does not depend on the
+    existence of any other thread, including the "channel spin thread".
+    However, this means that its interface is entirely synchronous. So this
+    class cannot fulfill the grpc.Future interface.
+    """
+
+    def initial_metadata(self):
+        """See grpc.Call.initial_metadata"""
+        with self._state.condition:
+            while self._state.initial_metadata is None:
+                event = self._get_next_event()
+                # TODO: Replace this assert with a test for dropped message.
+                for operation in event.batch_operations:
+                    if operation.type() == cygrpc.OperationType.receive_message:
+                        assert False, "This would drop a message. Don't do this."
+            return self._state.initial_metadata
 
     def trailing_metadata(self):
         """See grpc.Call.trailing_metadata"""
         with self._state.condition:
-
-            def _done():
-                return self._state.trailing_metadata is not None
-
-            _common.wait(self._state.condition.wait, _done)
+            if self._state.trailing_metadata is None:
+                # TODO: Replace with better exception type.
+                raise RuntimeError("Cannot get trailing metadata until RPC is completed.")
             return self._state.trailing_metadata
 
-    # TODO(https://github.com/grpc/grpc/issues/20763): Drive RPC progress using
-    # the calling thread.
     def code(self):
         """See grpc.Call.code"""
         with self._state.condition:
-
-            def _done():
-                return self._state.code is not None
-
-            _common.wait(self._state.condition.wait, _done)
+            if self._state.code is None:
+                raise RuntimeError("Cannot get code until RPC is completed.")
             return self._state.code
 
     def details(self):
         """See grpc.Call.details"""
         with self._state.condition:
-
-            def _done():
-                return self._state.details is not None
-
-            _common.wait(self._state.condition.wait, _done)
+            if self._state.details is None:
+                raise RuntimeError("Cannot get details until RPC is completed.")
             return _common.decode(self._state.details)
 
     def _get_next_event(self):
@@ -407,14 +453,63 @@ class _SingleThreadedRendezvous(grpc.RpcError, grpc.Call):  # pylint: disable=to
                 raise self
         return self._next_response()
 
-    def __next__(self):
-        return self._next()
+    def debug_error_string(self):
+        with self._state.condition:
+            if self._state.debug_error_string is None:
+                raise RuntimeError("Cannot get debug error string until RPC is completed.")
+            return _common.decode(self._state.debug_error_string)
 
-    def next(self):
-        return self._next()
 
-    def __iter__(self):
-        return self
+class _MultiThreadedRendezvous(_Rendezvous, grpc.Future):  # pylint: disable=too-many-ancestors
+    """An RPC iterator that depends on a channel spin thread.
+
+    This iterator relies upon a per-channel thread running in the background,
+    dequeueing events from the completion queue, and notifying threads waiting
+    on the threading.Condition object in the _RPCState object.
+
+    This extra thread allows _MultiThreadedRendezvous to fulfill the grpc.Future interface
+    and to mediate a bidirection streaming RPC.
+    """
+
+    def initial_metadata(self):
+        """See grpc.Call.initial_metadata"""
+        with self._state.condition:
+
+            def _done():
+                return self._state.initial_metadata is not None
+
+            _common.wait(self._state.condition.wait, _done)
+            return self._state.initial_metadata
+
+    def trailing_metadata(self):
+        """See grpc.Call.trailing_metadata"""
+        with self._state.condition:
+
+            def _done():
+                return self._state.trailing_metadata is not None
+
+            _common.wait(self._state.condition.wait, _done)
+            return self._state.trailing_metadata
+
+    def code(self):
+        """See grpc.Call.code"""
+        with self._state.condition:
+
+            def _done():
+                return self._state.code is not None
+
+            _common.wait(self._state.condition.wait, _done)
+            return self._state.code
+
+    def details(self):
+        """See grpc.Call.details"""
+        with self._state.condition:
+
+            def _done():
+                return self._state.details is not None
+
+            _common.wait(self._state.condition.wait, _done)
+            return _common.decode(self._state.details)
 
     def debug_error_string(self):
         with self._state.condition:
@@ -424,48 +519,6 @@ class _SingleThreadedRendezvous(grpc.RpcError, grpc.Call):  # pylint: disable=to
 
             _common.wait(self._state.condition.wait, _done)
             return _common.decode(self._state.debug_error_string)
-
-    def _repr(self):
-        with self._state.condition:
-            if self._state.code is None:
-                return '<{} object of in-flight RPC>'.format(
-                    self.__class__.__name__)
-            elif self._state.code is grpc.StatusCode.OK:
-                return _OK_RENDEZVOUS_REPR_FORMAT.format(
-                    self._state.code, self._state.details)
-            else:
-                return _NON_OK_RENDEZVOUS_REPR_FORMAT.format(
-                    self._state.code, self._state.details,
-                    self._state.debug_error_string)
-
-    def __repr__(self):
-        return self._repr()
-
-    def __str__(self):
-        return self._repr()
-
-    def __del__(self):
-        with self._state.condition:
-            if self._state.code is None:
-                self._state.code = grpc.StatusCode.CANCELLED
-                self._state.details = 'Cancelled upon garbage collection!'
-                self._state.cancelled = True
-                self._call.cancel(
-                    _common.STATUS_CODE_TO_CYGRPC_STATUS_CODE[self._state.code],
-                    self._state.details)
-                self._state.condition.notify_all()
-
-
-class _Rendezvous(_SingleThreadedRendezvous, grpc.Future):  # pylint: disable=too-many-ancestors
-    """An RPC iterator that depends on a channel spin thread.
-
-    This iterator relies upon a per-channel thread running in the background,
-    dequeueing events from the completion queue, and notifying threads waiting
-    on the threading.Condition object in the _RPCState object.
-
-    This extra thread allows _Rendezvous to fulfill the grpc.Future interface
-    and to mediate a bidirection streaming RPC.
-    """
 
     def cancelled(self):
         with self._state.condition:
@@ -579,14 +632,6 @@ class _Rendezvous(_SingleThreadedRendezvous, grpc.Future):  # pylint: disable=to
                 elif self._state.code is not None:
                     raise self
 
-    def add_callback(self, callback):
-        with self._state.condition:
-            if self._state.callbacks is None:
-                return False
-            else:
-                self._state.callbacks.append(callback)
-                return True
-
 
 def _start_unary_request(request, timeout, request_serializer):
     deadline = _deadline(timeout)
@@ -594,7 +639,7 @@ def _start_unary_request(request, timeout, request_serializer):
     if serialized_request is None:
         state = _RPCState((), (), (), grpc.StatusCode.INTERNAL,
                           'Exception serializing request!')
-        rendezvous = _Rendezvous(state, None, None, deadline)
+        rendezvous = _MultiThreadedRendezvous(state, None, None, deadline)
         return deadline, None, rendezvous
     else:
         return deadline, serialized_request, None
@@ -603,12 +648,12 @@ def _start_unary_request(request, timeout, request_serializer):
 def _end_unary_response_blocking(state, call, with_call, deadline):
     if state.code is grpc.StatusCode.OK:
         if with_call:
-            rendezvous = _Rendezvous(state, call, None, deadline)
+            rendezvous = _MultiThreadedRendezvous(state, call, None, deadline)
             return state.response, rendezvous
         else:
             return state.response
     else:
-        raise _Rendezvous(state, None, None, deadline)
+        raise _MultiThreadedRendezvous(state, None, None, deadline)
 
 
 def _stream_unary_invocation_operationses(metadata, initial_metadata_flags):
@@ -737,7 +782,7 @@ class _UnaryUnaryMultiCallable(grpc.UnaryUnaryMultiCallable):
                 self._method, None, deadline, metadata, None
                 if credentials is None else credentials._credentials,
                 (operations,), event_handler, self._context)
-            return _Rendezvous(state, call, self._response_deserializer,
+            return _MultiThreadedRendezvous(state, call, self._response_deserializer,
                                deadline)
 
 
@@ -766,7 +811,7 @@ class _SingleThreadedUnaryStreamMultiCallable(grpc.UnaryStreamMultiCallable):
         if serialized_request is None:
             state = _RPCState((), (), (), grpc.StatusCode.INTERNAL,
                               'Exception serializing request!')
-            raise _Rendezvous(state, None, None, deadline)
+            raise _MultiThreadedRendezvous(state, None, None, deadline)
 
         state = _RPCState(_UNARY_STREAM_INITIAL_DUE, None, None, None, None)
         call_credentials = None if credentials is None else credentials._credentials
@@ -838,7 +883,7 @@ class _UnaryStreamMultiCallable(grpc.UnaryStreamMultiCallable):
                 credentials._credentials, operationses,
                 _event_handler(state,
                                self._response_deserializer), self._context)
-            return _Rendezvous(state, call, self._response_deserializer,
+            return _MultiThreadedRendezvous(state, call, self._response_deserializer,
                                deadline)
 
 
@@ -923,7 +968,7 @@ class _StreamUnaryMultiCallable(grpc.StreamUnaryMultiCallable):
                 metadata, initial_metadata_flags), event_handler, self._context)
         _consume_request_iterator(request_iterator, state, call,
                                   self._request_serializer, event_handler)
-        return _Rendezvous(state, call, self._response_deserializer, deadline)
+        return _MultiThreadedRendezvous(state, call, self._response_deserializer, deadline)
 
 
 class _StreamStreamMultiCallable(grpc.StreamStreamMultiCallable):
@@ -967,7 +1012,7 @@ class _StreamStreamMultiCallable(grpc.StreamStreamMultiCallable):
             event_handler, self._context)
         _consume_request_iterator(request_iterator, state, call,
                                   self._request_serializer, event_handler)
-        return _Rendezvous(state, call, self._response_deserializer, deadline)
+        return _MultiThreadedRendezvous(state, call, self._response_deserializer, deadline)
 
 
 class _InitialMetadataFlags(int):
@@ -1257,7 +1302,7 @@ class Channel(grpc.Channel):
                      response_deserializer=None):
         # NOTE(rbellevi): Benchmarks have shown that running a unary-stream RPC
         # on a single Python thread results in an appreciable speed-up. However,
-        # due to slight differences in capability, the multi-threaded variant'
+        # due to slight differences in capability, the multi-threaded variant
         # remains the default.
         # if self._single_threaded_unary_stream:
         # TODO: Put this back.
