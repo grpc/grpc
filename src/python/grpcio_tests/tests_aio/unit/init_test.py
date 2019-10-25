@@ -75,6 +75,5 @@ class TestInsecureChannel(AioTestBase):
 
 
 if __name__ == '__main__':
-    aio.init_grpc_aio()
     logging.basicConfig()
     unittest.main(verbosity=2)

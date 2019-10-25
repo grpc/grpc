@@ -41,7 +41,7 @@ class TestChannel(AioTestBase):
                 )
                 await hi(messages_pb2.SimpleRequest())
 
-        self._loop.run_until_complete(coro())
+        self.loop.run_until_complete(coro())
 
     def test_unary_unary(self):
 
@@ -59,7 +59,7 @@ class TestChannel(AioTestBase):
 
             await channel.close()
 
-        self._loop.run_until_complete(coro())
+        self.loop.run_until_complete(coro())
 
     def test_unary_call_times_out(self):
 
@@ -91,10 +91,9 @@ class TestChannel(AioTestBase):
                 self.assertIsNotNone(
                     exception_context.exception.trailing_metadata())
 
-        self._loop.run_until_complete(coro())
+        self.loop.run_until_complete(coro())
 
 
 if __name__ == '__main__':
-    aio.init_grpc_aio()
     logging.basicConfig()
     unittest.main(verbosity=2)
