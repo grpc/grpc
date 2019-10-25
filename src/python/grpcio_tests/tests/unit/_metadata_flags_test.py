@@ -201,7 +201,7 @@ class MetadataFlagsTest(unittest.TestCase):
             fn(channel, wait_for_ready)
             self.fail("The Call should fail")
         except BaseException as e:  # pylint: disable=broad-except
-            self.assertIn('StatusCode.UNAVAILABLE', str(e))
+            self.assertIs(grpc.StatusCode.UNAVAILABLE, e.code())
 
     def test_call_wait_for_ready_default(self):
         for perform_call in _ALL_CALL_CASES:
