@@ -314,13 +314,24 @@ class _SingleThreadedRendezvous(grpc.RpcError, grpc.Call):  # pylint: disable=to
 
     def initial_metadata(self):
         """See grpc.Call.initial_metadata"""
-        with self._state.condition:
+        # TODO: Ahhhhhhh!
+        if self.__class__ is _SingleThreadedRendezvous:
+            with self._state.condition:
+                while self._state.initial_metadata is None:
+                    event = self._get_next_event()
+                    # TODO: Replace this assert with a test for dropped message.
+                    for operation in event.batch_operations:
+                        if operation.type() == cygrpc.OperationType.receive_message:
+                            assert False, "This would drop a message. Don't do this."
+                return self._state.initial_metadata
+        else:
+            with self._state.condition:
 
-            def _done():
-                return self._state.initial_metadata is not None
+                def _done():
+                    return self._state.initial_metadata is not None
 
-            _common.wait(self._state.condition.wait, _done)
-            return self._state.initial_metadata
+                _common.wait(self._state.condition.wait, _done)
+                return self._state.initial_metadata
 
     def trailing_metadata(self):
         """See grpc.Call.trailing_metadata"""
@@ -354,6 +365,35 @@ class _SingleThreadedRendezvous(grpc.RpcError, grpc.Call):  # pylint: disable=to
             _common.wait(self._state.condition.wait, _done)
             return _common.decode(self._state.details)
 
+    def _get_next_event(self):
+        event = self._call.next_event()
+        with self._state.condition:
+            callbacks = _handle_event(event, self._state,
+                                      self._response_deserializer)
+            for callback in callbacks:
+                try:
+                    callback()
+                except Exception as e:  # pylint: disable=broad-except
+                    # NOTE(rbellevi): We suppress but log errors here so as not to
+                    # kill the channel spin thread.
+                    logging.error('Exception in callback %s: %s',
+                                  repr(callback.func), repr(e))
+        return event
+
+    def _next_response(self):
+        while True:
+            event = self._get_next_event()
+            with self._state.condition:
+                if self._state.response is not None:
+                    response = self._state.response
+                    self._state.response = None
+                    return response
+                elif cygrpc.OperationType.receive_message not in self._state.due:
+                    if self._state.code is grpc.StatusCode.OK:
+                        raise StopIteration()
+                    elif self._state.code is not None:
+                        raise self
+
     def _next(self):
         with self._state.condition:
             if self._state.code is None:
@@ -365,28 +405,7 @@ class _SingleThreadedRendezvous(grpc.RpcError, grpc.Call):  # pylint: disable=to
                 raise StopIteration()
             else:
                 raise self
-        while True:
-            event = self._call.next_event()
-            with self._state.condition:
-                callbacks = _handle_event(event, self._state,
-                                          self._response_deserializer)
-                for callback in callbacks:
-                    try:
-                        callback()
-                    except Exception as e:  # pylint: disable=broad-except
-                        # NOTE(rbellevi): We suppress but log errors here so as not to
-                        # kill the channel spin thread.
-                        logging.error('Exception in callback %s: %s',
-                                      repr(callback.func), repr(e))
-                if self._state.response is not None:
-                    response = self._state.response
-                    self._state.response = None
-                    return response
-                elif cygrpc.OperationType.receive_message not in self._state.due:
-                    if self._state.code is grpc.StatusCode.OK:
-                        raise StopIteration()
-                    elif self._state.code is not None:
-                        raise self
+        return self._next_response()
 
     def __next__(self):
         return self._next()
@@ -755,13 +774,14 @@ class _SingleThreadedUnaryStreamMultiCallable(grpc.UnaryStreamMultiCallable):
             wait_for_ready)
         augmented_metadata = _compression.augment_metadata(
             metadata, compression)
+        # TODO: Formatting.
         operations_and_tags = ((
             (cygrpc.SendInitialMetadataOperation(augmented_metadata,
                                                  initial_metadata_flags),
              cygrpc.SendMessageOperation(serialized_request, _EMPTY_FLAGS),
-             cygrpc.SendCloseFromClientOperation(_EMPTY_FLAGS),
-             cygrpc.ReceiveStatusOnClientOperation(_EMPTY_FLAGS)), None),) + (((
-                 cygrpc.ReceiveInitialMetadataOperation(_EMPTY_FLAGS),), None),)
+             cygrpc.SendCloseFromClientOperation(_EMPTY_FLAGS)), None),) + \
+        ((( cygrpc.ReceiveStatusOnClientOperation(_EMPTY_FLAGS),), None),) + \
+        ((( cygrpc.ReceiveInitialMetadataOperation(_EMPTY_FLAGS),), None),)
         call = self._channel.segregated_call(
             cygrpc.PropagationConstants.GRPC_PROPAGATE_DEFAULTS, self._method,
             None, _determine_deadline(deadline), metadata, call_credentials,
@@ -1239,7 +1259,9 @@ class Channel(grpc.Channel):
         # on a single Python thread results in an appreciable speed-up. However,
         # due to slight differences in capability, the multi-threaded variant'
         # remains the default.
-        if self._single_threaded_unary_stream:
+        # if self._single_threaded_unary_stream:
+        # TODO: Put this back.
+        if True:
             return _SingleThreadedUnaryStreamMultiCallable(
                 self._channel, _common.encode(method), request_serializer,
                 response_deserializer)
