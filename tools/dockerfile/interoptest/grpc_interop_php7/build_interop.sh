@@ -36,6 +36,12 @@ make -j4 install_c plugins
 # Install protobuf (need access to protoc)
 (cd third_party/protobuf && make -j4 install)
 
-(cd src/php && php -d extension=ext/grpc/modules/grpc.so /usr/local/bin/composer install)
+cd src/php
 
-(cd src/php && ./bin/generate_proto_php.sh)
+set +e
+php -d extension=ext/grpc/modules/grpc.so /usr/local/bin/composer install
+while [ $? -ne 0 ]; do
+  php -d extension=ext/grpc/modules/grpc.so /usr/local/bin/composer install
+done
+
+./bin/generate_proto_php.sh
