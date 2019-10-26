@@ -1,0 +1,18 @@
+#include<bits/stdc++.h>
+using namespace std;
+int main()
+{
+    string s1,s2;
+    int i,k,l,o=0;
+    cin>>s1;
+    i=s1.length();
+     for(k=0;k<i;k++)
+
+        {s2[k]=s1[i-k-1];}
+     for(l=0;l<=k/2;l++){if(s1[l]==s2[l]){o++;}
+
+     }
+     if(o>=k/2){cout<<"YES";}
+     else cout<<"NO";
+        return 0;
+}
