@@ -152,6 +152,8 @@ cdef class _AsyncioSocket:
     cdef void close(self):
         if self.is_connected():
             self._writer.close()
+        if self._server:
+            self._server.close()
 
     def _new_connection_callback(self, object reader, object writer):
         client_socket = _AsyncioSocket.create(

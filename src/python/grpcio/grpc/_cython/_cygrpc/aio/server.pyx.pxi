@@ -305,8 +305,8 @@ cdef class AioServer:
     async def _server_main_loop(self,
                                 object server_started):
         self._server.start(backup_queue=False)
-        server_started.set_result(True)
         cdef RPCState rpc_state
+        server_started.set_result(True)
 
         while True:
             # When shutdown process starts, no more new connections.
@@ -377,7 +377,7 @@ cdef class AioServer:
             await shutdown_completed
         else:
             try:
-                await asyncio.wait_for(shutdown_completed, grace)
+                await asyncio.wait_for(asyncio.shield(shutdown_completed), grace)
             except asyncio.TimeoutError:
                 # Cancels all ongoing calls by the end of grace period.
                 grpc_server_cancel_all_calls(self._server.c_server)
