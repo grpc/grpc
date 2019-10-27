@@ -273,6 +273,7 @@ void ServerContext::Clear() {
     new (&default_reactor_) Reactor;
     default_reactor_used_.store(false, std::memory_order_relaxed);
   }
+  test_unary_.reset();
 }
 
 void ServerContext::BeginCompletionOp(::grpc::internal::Call* call,

@@ -295,6 +295,20 @@ class ServerContext {
     return reactor;
   }
 
+  /// APIs for use only in unit tests of a service. Will prevent RPCs from
+  /// having normal functionality. Will not work for non-callback methods,
+  /// streaming methods, or unary methods that use anything other than the
+  /// default reactor (which can be checked by comparing the pointer result
+  /// from EnableTestDefaultReactor with the reactor result of the RPC method).
+  experimental::ServerUnaryReactor* EnableTestDefaultReactor() {
+    test_unary_.reset(new TestServerCallbackUnary(this));
+    return &default_reactor_;
+  }
+  bool test_status_set() const {
+    return (test_unary_ != nullptr) && test_unary_->status_set();
+  }
+  ::grpc::Status test_status() const { return test_unary_->status(); }
+
  private:
   friend class ::grpc::testing::InteropServerContextInspector;
   friend class ::grpc::testing::ServerContextTestSpouse;
@@ -414,8 +428,30 @@ class ServerContext {
     bool InternalInlineable() override { return true; }
   };
 
+  class TestServerCallbackUnary : public experimental::ServerCallbackUnary {
+   public:
+    explicit TestServerCallbackUnary(ServerContext* ctx) {
+      this->BindReactor(&ctx->default_reactor_);
+    }
+    void Finish(::grpc::Status s) override {
+      status_ = s;
+      status_set_ = true;
+    }
+    void SendInitialMetadata() override {}
+
+    bool status_set() const {
+      return status_set_.load(std::memory_order_acquire);
+    }
+    ::grpc::Status status() const { return status_; }
+
+   private:
+    std::atomic_bool status_set_{false};
+    ::grpc::Status status_;
+  };
+
   Reactor default_reactor_;
   std::atomic_bool default_reactor_used_{false};
+  std::unique_ptr<TestServerCallbackUnary> test_unary_;
 };
 }  // namespace grpc_impl
 #endif  // GRPCPP_IMPL_CODEGEN_SERVER_CONTEXT_IMPL_H

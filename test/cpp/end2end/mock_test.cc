@@ -161,6 +161,59 @@ class FakeClient {
   EchoTestService::StubInterface* stub_;
 };
 
+class CallbackTestServiceImpl
+    : public EchoTestService::ExperimentalCallbackService {
+ public:
+  void Echo(ServerContext* context, const EchoRequest* request,
+            EchoResponse* response,
+            experimental::ServerUnaryReactor** reactor) override {
+    // Make the mock service return a choice of Status even though the
+    // real one doesn't, so that we can test the status options.
+    *reactor = context->DefaultReactor();
+    if (request->message().length() > 0) {
+      response->set_message(request->message());
+      (*reactor)->Finish(Status::OK);
+    } else {
+      (*reactor)->Finish(
+          Status(StatusCode::INVALID_ARGUMENT, "Invalid request"));
+    }
+  }
+};
+
+class MockCallbackTest : public ::testing::Test {
+ protected:
+  CallbackTestServiceImpl service_;
+
+  ServerContext context_;
+};
+
+TEST_F(MockCallbackTest, MockedCallSucceeds) {
+  ServerContext ctx;
+  EchoRequest req;
+  EchoResponse resp;
+  experimental::ServerUnaryReactor* reactor;
+
+  req.set_message("ha ha, consider yourself mocked.");
+  auto* test_reactor = ctx.EnableTestDefaultReactor();
+  service_.Echo(&ctx, &req, &resp, &reactor);
+  EXPECT_EQ(test_reactor, reactor);
+  EXPECT_TRUE(ctx.test_status_set());
+  EXPECT_TRUE(ctx.test_status().ok());
+}
+
+TEST_F(MockCallbackTest, MockedCallFails) {
+  ServerContext ctx;
+  EchoRequest req;
+  EchoResponse resp;
+  experimental::ServerUnaryReactor* reactor;
+
+  auto* test_reactor = ctx.EnableTestDefaultReactor();
+  service_.Echo(&ctx, &req, &resp, &reactor);
+  EXPECT_EQ(test_reactor, reactor);
+  EXPECT_TRUE(ctx.test_status_set());
+  EXPECT_EQ(ctx.test_status().error_code(), StatusCode::INVALID_ARGUMENT);
+}
+
 class TestServiceImpl : public EchoTestService::Service {
  public:
   Status Echo(ServerContext* /*context*/, const EchoRequest* request,
