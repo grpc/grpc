@@ -171,25 +171,23 @@ void prefork() {
 }
 
 void postfork_child() {
-  TSRMLS_FETCH();
-
-  // loop through persistent list and destroy all underlying grpc_channel objs
+  // loop through persistant list and destroy all underlying grpc_channel objs
   destroy_grpc_channels();
 
   // clear completion queue
-  grpc_php_shutdown_completion_queue(TSRMLS_C);
+  grpc_php_shutdown_completion_queue();
 
   // clean-up grpc_core
   grpc_shutdown_blocking();
   if (grpc_is_initialized() > 0) {
     zend_throw_exception(spl_ce_UnexpectedValueException,
                          "Oops, failed to shutdown gRPC Core after fork()",
-                         1 TSRMLS_CC);
+                         1);
   }
 
   // restart grpc_core
   grpc_init();
-  grpc_php_init_completion_queue(TSRMLS_C);
+  grpc_php_init_completion_queue();
 
   // re-create grpc_channel and point wrapped to it
   // unlock wrapped grpc channel mutex
@@ -208,7 +206,7 @@ void register_fork_handlers() {
   }
 }
 
-void apply_ini_settings(TSRMLS_D) {
+void apply_ini_settings() {
   if (GRPC_G(enable_fork_support)) {
     char *enable_str = malloc(sizeof("GRPC_ENABLE_FORK_SUPPORT=1"));
     strcpy(enable_str, "GRPC_ENABLE_FORK_SUPPORT=1");
@@ -350,13 +348,13 @@ PHP_MINIT_FUNCTION(grpc) {
                          GRPC_CHANNEL_SHUTDOWN,
                          CONST_CS | CONST_PERSISTENT);
 
-  grpc_init_call(TSRMLS_C);
+  grpc_init_call();
   GRPC_STARTUP(channel);
-  grpc_init_server(TSRMLS_C);
-  grpc_init_timeval(TSRMLS_C);
-  grpc_init_channel_credentials(TSRMLS_C);
-  grpc_init_call_credentials(TSRMLS_C);
-  grpc_init_server_credentials(TSRMLS_C);
+  grpc_init_server();
+  grpc_init_timeval();
+  grpc_init_channel_credentials();
+  grpc_init_call_credentials();
+  grpc_init_server_credentials();
   return SUCCESS;
 }
 /* }}} */
@@ -372,8 +370,8 @@ PHP_MSHUTDOWN_FUNCTION(grpc) {
     zend_hash_destroy(&grpc_persistent_list);
     zend_hash_clean(&grpc_target_upper_bound_map);
     zend_hash_destroy(&grpc_target_upper_bound_map);
-    grpc_shutdown_timeval(TSRMLS_C);
-    grpc_php_shutdown_completion_queue(TSRMLS_C);
+    grpc_shutdown_timeval();
+    grpc_php_shutdown_completion_queue();
     grpc_shutdown_blocking();
     GRPC_G(initialized) = 0;
   }
@@ -396,10 +394,10 @@ PHP_MINFO_FUNCTION(grpc) {
  */
 PHP_RINIT_FUNCTION(grpc) {
   if (!GRPC_G(initialized)) {
-    apply_ini_settings(TSRMLS_C);
+    apply_ini_settings();
     grpc_init();
     register_fork_handlers();
-    grpc_php_init_completion_queue(TSRMLS_C);
+    grpc_php_init_completion_queue();
     GRPC_G(initialized) = 1;
   }
   return SUCCESS;

@@ -36,12 +36,12 @@ static inline wrapped_grpc_timeval
 }
 
 /* Initialize the Timeval PHP class */
-void grpc_init_timeval(TSRMLS_D);
+void grpc_init_timeval();
 
 /* Shutdown the Timeval PHP class */
-void grpc_shutdown_timeval(TSRMLS_D);
+void grpc_shutdown_timeval();
 
 /* Creates a Timeval object that wraps the given timeval struct */
-zval *grpc_php_wrap_timeval(gpr_timespec wrapped TSRMLS_DC);
+zval *grpc_php_wrap_timeval(gpr_timespec wrapped);
 
 #endif /* NET_GRPC_PHP_GRPC_TIMEVAL_H_ */

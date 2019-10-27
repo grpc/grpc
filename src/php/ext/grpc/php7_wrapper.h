@@ -151,7 +151,7 @@ static inline int php_grpc_zend_hash_find(HashTable *ht, char *key, int len,
 #define PHP_GRPC_DECLARE_OBJECT_HANDLER(handler_name)
 
 #define PHP_GRPC_GET_WRAPPED_OBJECT(class_object, zv) \
-  (class_object *)zend_object_store_get_object(zv TSRMLS_CC)
+  (class_object *)zend_object_store_get_object(zv)
 
 #else
 

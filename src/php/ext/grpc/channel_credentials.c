@@ -57,9 +57,9 @@ PHP_GRPC_FREE_WRAPPED_FUNC_END()
 /* Initializes an instance of wrapped_grpc_channel_credentials to be
  * associated with an object of a class specified by class_type */
 php_grpc_zend_object create_wrapped_grpc_channel_credentials(
-    zend_class_entry *class_type TSRMLS_DC) {
+    zend_class_entry *class_type) {
   PHP_GRPC_ALLOC_CLASS_OBJECT(wrapped_grpc_channel_credentials);
-  zend_object_std_init(&intern->std, class_type TSRMLS_CC);
+  zend_object_std_init(&intern->std, class_type);
   object_properties_init(&intern->std, class_type);
   PHP_GRPC_FREE_CLASS_OBJECT(wrapped_grpc_channel_credentials,
                              channel_credentials_ce_handlers);
@@ -67,7 +67,7 @@ php_grpc_zend_object create_wrapped_grpc_channel_credentials(
 
 zval *grpc_php_wrap_channel_credentials(grpc_channel_credentials *wrapped,
                                         char *hashstr,
-                                        zend_bool has_call_creds TSRMLS_DC) {
+                                        zend_bool has_call_creds) {
   zval *credentials_object;
   PHP_GRPC_MAKE_STD_ZVAL(credentials_object);
   object_init_ex(credentials_object, grpc_ce_channel_credentials);
@@ -90,10 +90,10 @@ PHP_METHOD(ChannelCredentials, setDefaultRootsPem) {
   php_grpc_int pem_roots_length;
 
   /* "s" == 1 string */
-  if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "s", &pem_roots,
+  if (zend_parse_parameters(ZEND_NUM_ARGS(), "s", &pem_roots,
                             &pem_roots_length) == FAILURE) {
     zend_throw_exception(spl_ce_InvalidArgumentException,
-                         "setDefaultRootsPem expects 1 string", 1 TSRMLS_CC);
+                         "setDefaultRootsPem expects 1 string", 1);
     return;
   }
   default_pem_root_certs = gpr_realloc(default_pem_root_certs, (pem_roots_length + 1) * sizeof(char));
@@ -106,8 +106,7 @@ PHP_METHOD(ChannelCredentials, setDefaultRootsPem) {
  */
 PHP_METHOD(ChannelCredentials, createDefault) {
   grpc_channel_credentials *creds = grpc_google_default_credentials_create();
-  zval *creds_object = grpc_php_wrap_channel_credentials(creds, NULL, false
-                                                         TSRMLS_CC);
+  zval *creds_object = grpc_php_wrap_channel_credentials(creds, NULL, false);
   RETURN_DESTROY_ZVAL(creds_object);
 }
 
@@ -133,14 +132,14 @@ PHP_METHOD(ChannelCredentials, createSsl) {
   grpc_set_ssl_roots_override_callback(get_ssl_roots_override);
 
   /* "|s!s!s!" == 3 optional nullable strings */
-  if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "|s!s!s!",
+  if (zend_parse_parameters(ZEND_NUM_ARGS(), "|s!s!s!",
                             &pem_root_certs, &root_certs_length,
                             &pem_key_cert_pair.private_key,
                             &private_key_length,
                             &pem_key_cert_pair.cert_chain,
                             &cert_chain_length) == FAILURE) {
     zend_throw_exception(spl_ce_InvalidArgumentException,
-                         "createSsl expects 3 optional strings", 1 TSRMLS_CC);
+                         "createSsl expects 3 optional strings", 1);
     return;
   }
 
@@ -159,8 +158,7 @@ PHP_METHOD(ChannelCredentials, createSsl) {
   grpc_channel_credentials *creds = grpc_ssl_credentials_create(
       pem_root_certs,
       pem_key_cert_pair.private_key == NULL ? NULL : &pem_key_cert_pair, NULL, NULL);
-  zval *creds_object = grpc_php_wrap_channel_credentials(creds, hashstr, false
-                                                         TSRMLS_CC);
+  zval *creds_object = grpc_php_wrap_channel_credentials(creds, hashstr, false);
   efree(hashkey);
   RETURN_DESTROY_ZVAL(creds_object);
 }
@@ -178,11 +176,11 @@ PHP_METHOD(ChannelCredentials, createComposite) {
   grpc_set_ssl_roots_override_callback(get_ssl_roots_override);
 
   /* "OO" == 2 Objects */
-  if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "OO", &cred1_obj,
+  if (zend_parse_parameters(ZEND_NUM_ARGS(), "OO", &cred1_obj,
                             grpc_ce_channel_credentials, &cred2_obj,
                             grpc_ce_call_credentials) == FAILURE) {
     zend_throw_exception(spl_ce_InvalidArgumentException,
-                         "createComposite expects 2 Credentials", 1 TSRMLS_CC);
+                         "createComposite expects 2 Credentials", 1);
     return;
   }
   wrapped_grpc_channel_credentials *cred1 =
@@ -198,7 +196,7 @@ PHP_METHOD(ChannelCredentials, createComposite) {
   char *cred1_hashstr = malloc(cred1_len+1);
   strcpy(cred1_hashstr, cred1->hashstr);
   zval *creds_object =
-    grpc_php_wrap_channel_credentials(creds, cred1_hashstr, true TSRMLS_CC);
+    grpc_php_wrap_channel_credentials(creds, cred1_hashstr, true);
   RETURN_DESTROY_ZVAL(creds_object);
 }
 
@@ -245,12 +243,12 @@ static zend_function_entry channel_credentials_methods[] = {
   PHP_FE_END
 };
 
-void grpc_init_channel_credentials(TSRMLS_D) {
+void grpc_init_channel_credentials() {
   zend_class_entry ce;
   INIT_CLASS_ENTRY(ce, "Grpc\\ChannelCredentials",
                    channel_credentials_methods);
   ce.create_object = create_wrapped_grpc_channel_credentials;
-  grpc_ce_channel_credentials = zend_register_internal_class(&ce TSRMLS_CC);
+  grpc_ce_channel_credentials = zend_register_internal_class(&ce);
   PHP_GRPC_INIT_HANDLER(wrapped_grpc_channel_credentials,
                         channel_credentials_ce_handlers);
 }

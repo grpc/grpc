@@ -30,15 +30,14 @@ PHP_GRPC_FREE_WRAPPED_FUNC_END()
 
 /* Initializes an instance of wrapped_grpc_timeval to be associated with an
  * object of a class specified by class_type */
-php_grpc_zend_object create_wrapped_grpc_timeval(zend_class_entry *class_type
-                                                 TSRMLS_DC) {
+php_grpc_zend_object create_wrapped_grpc_timeval(zend_class_entry *class_type) {
   PHP_GRPC_ALLOC_CLASS_OBJECT(wrapped_grpc_timeval);
-  zend_object_std_init(&intern->std, class_type TSRMLS_CC);
+  zend_object_std_init(&intern->std, class_type);
   object_properties_init(&intern->std, class_type);
   PHP_GRPC_FREE_CLASS_OBJECT(wrapped_grpc_timeval, timeval_ce_handlers);
 }
 
-zval *grpc_php_wrap_timeval(gpr_timespec wrapped TSRMLS_DC) {
+zval *grpc_php_wrap_timeval(gpr_timespec wrapped) {
   zval *timeval_object;
   PHP_GRPC_MAKE_STD_ZVAL(timeval_object);
   object_init_ex(timeval_object, grpc_ce_timeval);
@@ -58,10 +57,10 @@ PHP_METHOD(Timeval, __construct) {
   php_grpc_long microseconds;
 
   /* "l" == 1 long */
-  if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "l", &microseconds) ==
+  if (zend_parse_parameters(ZEND_NUM_ARGS(), "l", &microseconds) ==
       FAILURE) {
     zend_throw_exception(spl_ce_InvalidArgumentException,
-                         "Timeval expects a long", 1 TSRMLS_CC);
+                         "Timeval expects a long", 1);
     return;
   }
   gpr_timespec time = gpr_time_from_micros(microseconds, GPR_TIMESPAN);
@@ -78,10 +77,10 @@ PHP_METHOD(Timeval, add) {
   zval *other_obj;
 
   /* "O" == 1 Object */
-  if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "O", &other_obj,
+  if (zend_parse_parameters(ZEND_NUM_ARGS(), "O", &other_obj,
                             grpc_ce_timeval) == FAILURE) {
     zend_throw_exception(spl_ce_InvalidArgumentException,
-                         "add expects a Timeval", 1 TSRMLS_CC);
+                         "add expects a Timeval", 1);
     return;
   }
   wrapped_grpc_timeval *self =
@@ -89,8 +88,7 @@ PHP_METHOD(Timeval, add) {
   wrapped_grpc_timeval *other =
     PHP_GRPC_GET_WRAPPED_OBJECT(wrapped_grpc_timeval, other_obj);
   zval *sum =
-    grpc_php_wrap_timeval(gpr_time_add(self->wrapped, other->wrapped)
-                          TSRMLS_CC);
+    grpc_php_wrap_timeval(gpr_time_add(self->wrapped, other->wrapped));
   RETURN_DESTROY_ZVAL(sum);
 }
 
@@ -104,10 +102,10 @@ PHP_METHOD(Timeval, subtract) {
   zval *other_obj;
 
   /* "O" == 1 Object */
-  if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "O", &other_obj,
+  if (zend_parse_parameters(ZEND_NUM_ARGS(), "O", &other_obj,
                             grpc_ce_timeval) == FAILURE) {
     zend_throw_exception(spl_ce_InvalidArgumentException,
-                         "subtract expects a Timeval", 1 TSRMLS_CC);
+                         "subtract expects a Timeval", 1);
     return;
   }
   wrapped_grpc_timeval *self =
@@ -115,8 +113,7 @@ PHP_METHOD(Timeval, subtract) {
   wrapped_grpc_timeval *other =
     PHP_GRPC_GET_WRAPPED_OBJECT(wrapped_grpc_timeval, other_obj);
   zval *diff =
-    grpc_php_wrap_timeval(gpr_time_sub(self->wrapped, other->wrapped)
-                          TSRMLS_CC);
+    grpc_php_wrap_timeval(gpr_time_sub(self->wrapped, other->wrapped));
   RETURN_DESTROY_ZVAL(diff);
 }
 
@@ -132,11 +129,11 @@ PHP_METHOD(Timeval, compare) {
   zval *b_obj;
 
   /* "OO" == 2 Objects */
-  if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "OO", &a_obj,
+  if (zend_parse_parameters(ZEND_NUM_ARGS(), "OO", &a_obj,
                             grpc_ce_timeval, &b_obj,
                             grpc_ce_timeval) == FAILURE) {
     zend_throw_exception(spl_ce_InvalidArgumentException,
-                         "compare expects two Timevals", 1 TSRMLS_CC);
+                         "compare expects two Timevals", 1);
     return;
   }
   wrapped_grpc_timeval *a =
@@ -160,11 +157,11 @@ PHP_METHOD(Timeval, similar) {
   zval *thresh_obj;
 
   /* "OOO" == 3 Objects */
-  if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "OOO", &a_obj,
+  if (zend_parse_parameters(ZEND_NUM_ARGS(), "OOO", &a_obj,
                             grpc_ce_timeval, &b_obj, grpc_ce_timeval,
                             &thresh_obj, grpc_ce_timeval) == FAILURE) {
     zend_throw_exception(spl_ce_InvalidArgumentException,
-                         "compare expects three Timevals", 1 TSRMLS_CC);
+                         "compare expects three Timevals", 1);
     return;
   }
   wrapped_grpc_timeval *a =
@@ -182,7 +179,7 @@ PHP_METHOD(Timeval, similar) {
  * @return Timeval The current time
  */
 PHP_METHOD(Timeval, now) {
-  zval *now = grpc_php_wrap_timeval(gpr_now(GPR_CLOCK_REALTIME) TSRMLS_CC);
+  zval *now = grpc_php_wrap_timeval(gpr_now(GPR_CLOCK_REALTIME));
   RETURN_DESTROY_ZVAL(now);
 }
 
@@ -192,7 +189,7 @@ PHP_METHOD(Timeval, now) {
  */
 PHP_METHOD(Timeval, zero) {
   zval *grpc_php_timeval_zero =
-    grpc_php_wrap_timeval(gpr_time_0(GPR_CLOCK_REALTIME) TSRMLS_CC);
+    grpc_php_wrap_timeval(gpr_time_0(GPR_CLOCK_REALTIME));
   RETURN_DESTROY_ZVAL(grpc_php_timeval_zero);
 }
 
@@ -202,7 +199,7 @@ PHP_METHOD(Timeval, zero) {
  */
 PHP_METHOD(Timeval, infFuture) {
   zval *grpc_php_timeval_inf_future =
-    grpc_php_wrap_timeval(gpr_inf_future(GPR_CLOCK_REALTIME) TSRMLS_CC);
+    grpc_php_wrap_timeval(gpr_inf_future(GPR_CLOCK_REALTIME));
   RETURN_DESTROY_ZVAL(grpc_php_timeval_inf_future);
 }
 
@@ -212,7 +209,7 @@ PHP_METHOD(Timeval, infFuture) {
  */
 PHP_METHOD(Timeval, infPast) {
   zval *grpc_php_timeval_inf_past =
-    grpc_php_wrap_timeval(gpr_inf_past(GPR_CLOCK_REALTIME) TSRMLS_CC);
+    grpc_php_wrap_timeval(gpr_inf_past(GPR_CLOCK_REALTIME));
   RETURN_DESTROY_ZVAL(grpc_php_timeval_inf_past);
 }
 
@@ -288,12 +285,12 @@ static zend_function_entry timeval_methods[] = {
   PHP_FE_END
 };
 
-void grpc_init_timeval(TSRMLS_D) {
+void grpc_init_timeval() {
   zend_class_entry ce;
   INIT_CLASS_ENTRY(ce, "Grpc\\Timeval", timeval_methods);
   ce.create_object = create_wrapped_grpc_timeval;
-  grpc_ce_timeval = zend_register_internal_class(&ce TSRMLS_CC);
+  grpc_ce_timeval = zend_register_internal_class(&ce);
   PHP_GRPC_INIT_HANDLER(wrapped_grpc_timeval, timeval_ce_handlers);
 }
 
-void grpc_shutdown_timeval(TSRMLS_D) {}
+void grpc_shutdown_timeval() {}

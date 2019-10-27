@@ -36,6 +36,6 @@ static inline wrapped_grpc_server
 }
 
 /* Initializes the Server class */
-void grpc_init_server(TSRMLS_D);
+void grpc_init_server();
 
 #endif /* NET_GRPC_PHP_GRPC_SERVER_H_ */

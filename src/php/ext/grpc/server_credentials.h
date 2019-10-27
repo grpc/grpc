@@ -39,6 +39,6 @@ static inline wrapped_grpc_server_credentials
 }
 
 /* Initializes the Server_Credentials PHP class */
-void grpc_init_server_credentials(TSRMLS_D);
+void grpc_init_server_credentials();
 
 #endif /* NET_GRPC_PHP_GRPC_SERVER_CREDENTIALS_H_ */

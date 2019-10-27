@@ -39,16 +39,15 @@ PHP_GRPC_FREE_WRAPPED_FUNC_END()
 /* Initializes an instance of wrapped_grpc_call_credentials to be
  * associated with an object of a class specified by class_type */
 php_grpc_zend_object create_wrapped_grpc_call_credentials(
-    zend_class_entry *class_type TSRMLS_DC) {
+    zend_class_entry *class_type) {
   PHP_GRPC_ALLOC_CLASS_OBJECT(wrapped_grpc_call_credentials);
-  zend_object_std_init(&intern->std, class_type TSRMLS_CC);
+  zend_object_std_init(&intern->std, class_type);
   object_properties_init(&intern->std, class_type);
   PHP_GRPC_FREE_CLASS_OBJECT(wrapped_grpc_call_credentials,
                              call_credentials_ce_handlers);
 }
 
-zval *grpc_php_wrap_call_credentials(grpc_call_credentials
-                                     *wrapped TSRMLS_DC) {
+zval *grpc_php_wrap_call_credentials(grpc_call_credentials *wrapped) {
   zval *credentials_object;
   PHP_GRPC_MAKE_STD_ZVAL(credentials_object);
   object_init_ex(credentials_object, grpc_ce_call_credentials);
@@ -70,12 +69,12 @@ PHP_METHOD(CallCredentials, createComposite) {
   zval *cred2_obj;
 
   /* "OO" == 2 Objects */
-  if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "OO", &cred1_obj,
+  if (zend_parse_parameters(ZEND_NUM_ARGS(), "OO", &cred1_obj,
                             grpc_ce_call_credentials, &cred2_obj,
                             grpc_ce_call_credentials) == FAILURE) {
     zend_throw_exception(spl_ce_InvalidArgumentException,
                          "createComposite expects 2 CallCredentials",
-                         1 TSRMLS_CC);
+                         1);
     return;
   }
   wrapped_grpc_call_credentials *cred1 =
@@ -85,7 +84,7 @@ PHP_METHOD(CallCredentials, createComposite) {
   grpc_call_credentials *creds =
     grpc_composite_call_credentials_create(cred1->wrapped, cred2->wrapped,
                                            NULL);
-  zval *creds_object = grpc_php_wrap_call_credentials(creds TSRMLS_CC);
+  zval *creds_object = grpc_php_wrap_call_credentials(creds);
   RETURN_DESTROY_ZVAL(creds_object);
 }
 
@@ -104,10 +103,10 @@ PHP_METHOD(CallCredentials, createFromPlugin) {
   memset(fci_cache, 0, sizeof(zend_fcall_info_cache));
 
   /* "f" == 1 function */
-  if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "f*", fci, fci_cache,
+  if (zend_parse_parameters(ZEND_NUM_ARGS(), "f*", fci, fci_cache,
                             fci->params, fci->param_count) == FAILURE) {
     zend_throw_exception(spl_ce_InvalidArgumentException,
-                         "createFromPlugin expects 1 callback", 1 TSRMLS_CC);
+                         "createFromPlugin expects 1 callback", 1);
     free(fci);
     free(fci_cache);
     return;
@@ -129,7 +128,7 @@ PHP_METHOD(CallCredentials, createFromPlugin) {
 
   grpc_call_credentials *creds =
     grpc_metadata_credentials_create_from_plugin(plugin, NULL);
-  zval *creds_object = grpc_php_wrap_call_credentials(creds TSRMLS_CC);
+  zval *creds_object = grpc_php_wrap_call_credentials(creds);
   RETURN_DESTROY_ZVAL(creds_object);
 }
 
@@ -140,7 +139,6 @@ int plugin_get_metadata(
     grpc_metadata creds_md[GRPC_METADATA_CREDENTIALS_PLUGIN_SYNC_MAX],
     size_t *num_creds_md, grpc_status_code *status,
     const char **error_details) {
-  TSRMLS_FETCH();
 
   plugin_state *state = (plugin_state *)ptr;
 
@@ -168,7 +166,7 @@ int plugin_get_metadata(
 
   gpr_log(GPR_INFO, "GRPC_PHP: call credentials plugin function - begin");
   /* call the user callback function */
-  zend_call_function(state->fci, state->fci_cache TSRMLS_CC);
+  zend_call_function(state->fci, state->fci_cache);
   gpr_log(GPR_INFO, "GRPC_PHP: call credentials plugin function - end");
 
   *num_creds_md = 0;
@@ -255,7 +253,7 @@ void grpc_init_call_credentials(TSRMLS_D) {
   zend_class_entry ce;
   INIT_CLASS_ENTRY(ce, "Grpc\\CallCredentials", call_credentials_methods);
   ce.create_object = create_wrapped_grpc_call_credentials;
-  grpc_ce_call_credentials = zend_register_internal_class(&ce TSRMLS_CC);
+  grpc_ce_call_credentials = zend_register_internal_class(&ce);
   PHP_GRPC_INIT_HANDLER(wrapped_grpc_call_credentials,
                         call_credentials_ce_handlers);
 }

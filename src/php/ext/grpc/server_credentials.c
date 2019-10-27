@@ -34,16 +34,15 @@ PHP_GRPC_FREE_WRAPPED_FUNC_END()
 /* Initializes an instace of wrapped_grpc_server_credentials to be
  * associated with an object of a class specified by class_type */
 php_grpc_zend_object create_wrapped_grpc_server_credentials(
-    zend_class_entry *class_type TSRMLS_DC) {
+    zend_class_entry *class_type) {
   PHP_GRPC_ALLOC_CLASS_OBJECT(wrapped_grpc_server_credentials);
-  zend_object_std_init(&intern->std, class_type TSRMLS_CC);
+  zend_object_std_init(&intern->std, class_type);
   object_properties_init(&intern->std, class_type);
   PHP_GRPC_FREE_CLASS_OBJECT(wrapped_grpc_server_credentials,
                              server_credentials_ce_handlers);
 }
 
-zval *grpc_php_wrap_server_credentials(grpc_server_credentials
-                                       *wrapped TSRMLS_DC) {
+zval *grpc_php_wrap_server_credentials(grpc_server_credentials *wrapped) {
   zval *server_credentials_object;
   PHP_GRPC_MAKE_STD_ZVAL(server_credentials_object);
   object_init_ex(server_credentials_object, grpc_ce_server_credentials);
@@ -71,12 +70,12 @@ PHP_METHOD(ServerCredentials, createSsl) {
 
   /* "s!ss" == 1 nullable string, 2 strings */
   /* TODO: support multiple key cert pairs. */
-  if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "s!ss", &pem_root_certs,
+  if (zend_parse_parameters(ZEND_NUM_ARGS(), "s!ss", &pem_root_certs,
                             &root_certs_length, &pem_key_cert_pair.private_key,
                             &private_key_length, &pem_key_cert_pair.cert_chain,
                             &cert_chain_length) == FAILURE) {
     zend_throw_exception(spl_ce_InvalidArgumentException,
-                         "createSsl expects 3 strings", 1 TSRMLS_CC);
+                         "createSsl expects 3 strings", 1);
     return;
   }
   /* TODO: add a client_certificate_request field in ServerCredentials and pass
@@ -84,7 +83,7 @@ PHP_METHOD(ServerCredentials, createSsl) {
   grpc_server_credentials *creds = grpc_ssl_server_credentials_create_ex(
       pem_root_certs, &pem_key_cert_pair, 1,
       GRPC_SSL_DONT_REQUEST_CLIENT_CERTIFICATE, NULL);
-  zval *creds_object = grpc_php_wrap_server_credentials(creds TSRMLS_CC);
+  zval *creds_object = grpc_php_wrap_server_credentials(creds);
   RETURN_DESTROY_ZVAL(creds_object);
 }
 
@@ -100,11 +99,11 @@ static zend_function_entry server_credentials_methods[] = {
   PHP_FE_END
  };
 
-void grpc_init_server_credentials(TSRMLS_D) {
+void grpc_init_server_credentials() {
   zend_class_entry ce;
   INIT_CLASS_ENTRY(ce, "Grpc\\ServerCredentials", server_credentials_methods);
   ce.create_object = create_wrapped_grpc_server_credentials;
-  grpc_ce_server_credentials = zend_register_internal_class(&ce TSRMLS_CC);
+  grpc_ce_server_credentials = zend_register_internal_class(&ce);
   PHP_GRPC_INIT_HANDLER(wrapped_grpc_server_credentials,
                         server_credentials_ce_handlers);
 }

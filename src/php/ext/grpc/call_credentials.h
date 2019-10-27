@@ -56,6 +56,6 @@ int plugin_get_metadata(
 void plugin_destroy_state(void *ptr);
 
 /* Initializes the CallCredentials PHP class */
-void grpc_init_call_credentials(TSRMLS_D);
+void grpc_init_call_credentials();
 
 #endif /* NET_GRPC_PHP_GRPC_CALL_CREDENTIALS_H_ */

@@ -47,10 +47,9 @@ PHP_GRPC_FREE_WRAPPED_FUNC_END()
 
 /* Initializes an instance of wrapped_grpc_call to be associated with an
  * object of a class specified by class_type */
-php_grpc_zend_object create_wrapped_grpc_server(zend_class_entry *class_type
-                                                TSRMLS_DC) {
+php_grpc_zend_object create_wrapped_grpc_server(zend_class_entry *class_type) {
   PHP_GRPC_ALLOC_CLASS_OBJECT(wrapped_grpc_server);
-  zend_object_std_init(&intern->std, class_type TSRMLS_CC);
+  zend_object_std_init(&intern->std, class_type);
   object_properties_init(&intern->std, class_type);
   PHP_GRPC_FREE_CLASS_OBJECT(wrapped_grpc_server, server_ce_handlers);
 }
@@ -66,16 +65,16 @@ PHP_METHOD(Server, __construct) {
   grpc_channel_args args;
 
   /* "|a" == 1 optional array */
-  if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "|a", &args_array) ==
+  if (zend_parse_parameters(ZEND_NUM_ARGS(), "|a", &args_array) ==
       FAILURE) {
     zend_throw_exception(spl_ce_InvalidArgumentException,
-                         "Server expects an array", 1 TSRMLS_CC);
+                         "Server expects an array", 1);
     return;
   }
   if (args_array == NULL) {
     server->wrapped = grpc_server_create(NULL, NULL);
   } else {
-    if (php_grpc_read_args_array(args_array, &args TSRMLS_CC) == FAILURE) {
+    if (php_grpc_read_args_array(args_array, &args) == FAILURE) {
       efree(args.args);
       return;
     }
@@ -110,7 +109,7 @@ PHP_METHOD(Server, requestCall) {
                              completion_queue, completion_queue, NULL);
   if (error_code != GRPC_CALL_OK) {
     zend_throw_exception(spl_ce_LogicException, "request_call failed",
-                         (long)error_code TSRMLS_CC);
+                         (long)error_code);
     goto cleanup;
   }
   event = grpc_completion_queue_pluck(completion_queue, NULL,
@@ -119,7 +118,7 @@ PHP_METHOD(Server, requestCall) {
   if (!event.success) {
     zend_throw_exception(spl_ce_LogicException,
                          "Failed to request a call for some reason",
-                         1 TSRMLS_CC);
+                         1);
     goto cleanup;
   }
   char *method_text = grpc_slice_to_c_string(details.method);
@@ -129,11 +128,11 @@ PHP_METHOD(Server, requestCall) {
   gpr_free(method_text);
   gpr_free(host_text);
   php_grpc_add_property_zval(result, "call",
-                             grpc_php_wrap_call(call, true TSRMLS_CC));
+                             grpc_php_wrap_call(call, true));
   php_grpc_add_property_zval(result, "absolute_deadline",
-                             grpc_php_wrap_timeval(details.deadline TSRMLS_CC));
+                             grpc_php_wrap_timeval(details.deadline));
   php_grpc_add_property_zval(result, "metadata",
-                             grpc_parse_metadata_array(&metadata TSRMLS_CC));
+                             grpc_parse_metadata_array(&metadata));
 
  cleanup:
   grpc_call_details_destroy(&details);
@@ -153,10 +152,10 @@ PHP_METHOD(Server, addHttp2Port) {
     PHP_GRPC_GET_WRAPPED_OBJECT(wrapped_grpc_server, getThis());
 
   /* "s" == 1 string */
-  if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "s", &addr, &addr_len)
+  if (zend_parse_parameters(ZEND_NUM_ARGS(), "s", &addr, &addr_len)
       == FAILURE) {
     zend_throw_exception(spl_ce_InvalidArgumentException,
-                         "add_http2_port expects a string", 1 TSRMLS_CC);
+                         "add_http2_port expects a string", 1);
     return;
   }
   RETURN_LONG(grpc_server_add_insecure_http2_port(server->wrapped, addr));
@@ -176,12 +175,12 @@ PHP_METHOD(Server, addSecureHttp2Port) {
     PHP_GRPC_GET_WRAPPED_OBJECT(wrapped_grpc_server, getThis());
 
   /* "sO" == 1 string, 1 object */
-  if (zend_parse_parameters(ZEND_NUM_ARGS() TSRMLS_CC, "sO", &addr, &addr_len,
+  if (zend_parse_parameters(ZEND_NUM_ARGS(), "sO", &addr, &addr_len,
                             &creds_obj, grpc_ce_server_credentials) ==
       FAILURE) {
     zend_throw_exception(spl_ce_InvalidArgumentException,
                          "add_http2_port expects a string and a "
-                         "ServerCredentials", 1 TSRMLS_CC);
+                         "ServerCredentials", 1);
     return;
   }
   wrapped_grpc_server_credentials *creds =
@@ -233,10 +232,10 @@ static zend_function_entry server_methods[] = {
   PHP_FE_END
 };
 
-void grpc_init_server(TSRMLS_D) {
+void grpc_init_server() {
   zend_class_entry ce;
   INIT_CLASS_ENTRY(ce, "Grpc\\Server", server_methods);
   ce.create_object = create_wrapped_grpc_server;
-  grpc_ce_server = zend_register_internal_class(&ce TSRMLS_CC);
+  grpc_ce_server = zend_register_internal_class(&ce);
   PHP_GRPC_INIT_HANDLER(wrapped_grpc_server, server_ce_handlers);
 }
