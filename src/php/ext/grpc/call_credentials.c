@@ -249,7 +249,7 @@ static zend_function_entry call_credentials_methods[] = {
   PHP_FE_END
 };
 
-void grpc_init_call_credentials(TSRMLS_D) {
+void grpc_init_call_credentials() {
   zend_class_entry ce;
   INIT_CLASS_ENTRY(ce, "Grpc\\CallCredentials", call_credentials_methods);
   ce.create_object = create_wrapped_grpc_call_credentials;

@@ -621,7 +621,7 @@ static zend_function_entry call_methods[] = {
   PHP_FE_END
 };
 
-void grpc_init_call(TSRMLS_D) {
+void grpc_init_call() {
   zend_class_entry ce;
   INIT_CLASS_ENTRY(ce, "Grpc\\Call", call_methods);
   ce.create_object = create_wrapped_grpc_call;

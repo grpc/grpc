@@ -60,10 +60,10 @@
   } name;
 
 #define PHP_GRPC_FREE_WRAPPED_FUNC_START(class_object) \
-  void free_##class_object(void *object TSRMLS_DC) { \
+  void free_##class_object(void *object) { \
     class_object *p = (class_object *)object;
 #define PHP_GRPC_FREE_WRAPPED_FUNC_END() \
-    zend_object_std_dtor(&p->std TSRMLS_CC); \
+    zend_object_std_dtor(&p->std); \
     efree(p); \
   }
 
@@ -76,7 +76,7 @@
 #define PHP_GRPC_FREE_CLASS_OBJECT(class_object, handler) \
   retval.handle = zend_objects_store_put( \
     intern, (zend_objects_store_dtor_t)zend_objects_destroy_object, \
-    free_##class_object, NULL TSRMLS_CC); \
+    free_##class_object, NULL); \
   retval.handlers = zend_get_std_object_handlers(); \
   return retval;
 
@@ -131,7 +131,7 @@ static inline int php_grpc_zend_hash_find(HashTable *ht, char *key, int len,
 
 #define PHP_GRPC_BVAL_IS_TRUE(zv) Z_LVAL_P(zv)
 #define PHP_GRPC_VAR_SERIALIZE(buf, zv, hash) \
-  php_var_serialize(buf, &zv, hash TSRMLS_CC)
+  php_var_serialize(buf, &zv, hash)
 #define PHP_GRPC_SERIALIZED_BUF_STR(buf) buf.c
 #define PHP_GRPC_SERIALIZED_BUF_LEN(buf) buf.len
 #define PHP_GRPC_SHA1Update(cxt, str, len)     \
@@ -144,7 +144,7 @@ static inline int php_grpc_zend_hash_find(HashTable *ht, char *key, int len,
 #define PHP_GRPC_PERSISTENT_LIST_SIZE(plist) \
   *plist.nNumOfElements
 
-#define PHP_GRPC_GET_CLASS_ENTRY(object) zend_get_class_entry(object TSRMLS_CC)
+#define PHP_GRPC_GET_CLASS_ENTRY(object) zend_get_class_entry(object)
 
 #define PHP_GRPC_INIT_HANDLER(class_object, handler_name)
 
