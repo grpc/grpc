@@ -95,31 +95,6 @@ class _GenericHandler(grpc.GenericRpcHandler):
             return None
 
 
-# def _create_socket_ipv6(bind_address):
-#     listen_socket = socket.socket(socket.AF_INET6, socket.SOCK_STREAM)
-#     listen_socket.bind((bind_address, 0, 0, 0))
-#     return listen_socket
-# 
-# 
-# def _create_socket_ipv4(bind_address):
-#     listen_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-#     listen_socket.bind((bind_address, 0))
-#     return listen_socket
-# 
-# 
-# def get_free_loopback_tcp_port():
-#     listen_socket = None
-#     if socket.has_ipv6:
-#         try:
-#             listen_socket = _create_socket_ipv6('')
-#         except socket.error:
-#             listen_socket = _create_socket_ipv4('')
-#     else:
-#         listen_socket = _create_socket_ipv4('')
-#     address_tuple = listen_socket.getsockname()
-#     return listen_socket, "localhost:%s" % (address_tuple[1])
-
-
 def create_dummy_channel():
     """Creating dummy channels is a workaround for retries"""
     with bound_socket() as (host, port):
