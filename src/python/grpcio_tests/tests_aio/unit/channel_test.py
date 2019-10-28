@@ -97,7 +97,6 @@ class TestChannel(AioTestBase):
 
         self.loop.run_until_complete(coro())
 
-
     @unittest.skip('https://github.com/grpc/grpc/issues/20818')
     def test_call_to_the_void(self):
 

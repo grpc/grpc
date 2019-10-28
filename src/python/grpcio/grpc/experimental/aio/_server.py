@@ -26,14 +26,9 @@ class Server:
     def __init__(self, thread_pool, generic_handlers, interceptors, options,
                  maximum_concurrent_rpcs, compression):
         self._loop = asyncio.get_event_loop()
-        self._server = cygrpc.AioServer(
-            self._loop,
-            thread_pool,
-            generic_handlers,
-            interceptors,
-            options,
-            maximum_concurrent_rpcs,
-            compression)
+        self._server = cygrpc.AioServer(self._loop, thread_pool,
+                                        generic_handlers, interceptors, options,
+                                        maximum_concurrent_rpcs, compression)
         self._shutdown_started = False
         self._shutdown_future = self._loop.create_future()
 
@@ -99,7 +94,7 @@ class Server:
 
         If a grace period is specified, all RPCs active at the end of the grace
         period are aborted.
-        
+
         If a grace period is not specified (by passing None for `grace`), all
         existing RPCs are aborted immediately and this method blocks until the
         last RPC handler terminates.
@@ -140,7 +135,7 @@ class Server:
         Returns:
           A bool indicates if the operation times out.
         """
-        if timeout == None:
+        if timeout is None:
             await self._shutdown_future
         else:
             try:
