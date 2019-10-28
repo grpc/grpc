@@ -176,7 +176,7 @@ static void report_stall(grpc_chttp2_transport* t, grpc_chttp2_stream* s,
 }
 
 /* How many bytes would we like to put on the wire during a single syscall */
-static uint32_t target_write_size(grpc_chttp2_transport* t) {
+static uint32_t target_write_size(grpc_chttp2_transport* /*t*/) {
   return 1024 * 1024;
 }
 

@@ -302,7 +302,7 @@ struct shutdown_cleanup_args {
   grpc_slice slice;
 };
 
-static void shutdown_cleanup(void* arg, grpc_error* error) {
+static void shutdown_cleanup(void* arg, grpc_error* /*error*/) {
   struct shutdown_cleanup_args* a =
       static_cast<struct shutdown_cleanup_args*>(arg);
   grpc_slice_unref_internal(a->slice);
@@ -367,7 +367,7 @@ static void request_matcher_destroy(request_matcher* rm) {
   gpr_free(rm->requests_per_cq);
 }
 
-static void kill_zombie(void* elem, grpc_error* error) {
+static void kill_zombie(void* elem, grpc_error* /*error*/) {
   grpc_call_unref(
       grpc_call_from_top_element(static_cast<grpc_call_element*>(elem)));
 }
@@ -449,7 +449,7 @@ static void orphan_channel(channel_data* chand) {
   chand->next = chand->prev = chand;
 }
 
-static void finish_destroy_channel(void* cd, grpc_error* error) {
+static void finish_destroy_channel(void* cd, grpc_error* /*error*/) {
   channel_data* chand = static_cast<channel_data*>(cd);
   grpc_server* server = chand->server;
   GRPC_CHANNEL_INTERNAL_UNREF(chand->channel, "server");
@@ -477,7 +477,7 @@ static void destroy_channel(channel_data* chand) {
                        op);
 }
 
-static void done_request_event(void* req, grpc_cq_completion* c) {
+static void done_request_event(void* req, grpc_cq_completion* /*c*/) {
   gpr_free(req);
 }
 
@@ -672,7 +672,8 @@ static int num_listeners(grpc_server* server) {
   return n;
 }
 
-static void done_shutdown_event(void* server, grpc_cq_completion* completion) {
+static void done_shutdown_event(void* server,
+                                grpc_cq_completion* /*completion*/) {
   server_unref(static_cast<grpc_server*>(server));
 }
 
@@ -850,7 +851,7 @@ static void got_initial_metadata(void* ptr, grpc_error* error) {
   }
 }
 
-static void accept_stream(void* cd, grpc_transport* transport,
+static void accept_stream(void* cd, grpc_transport* /*transport*/,
                           const void* transport_server_data) {
   channel_data* chand = static_cast<channel_data*>(cd);
   /* create a call */
@@ -895,8 +896,8 @@ static grpc_error* server_init_call_elem(grpc_call_element* elem,
 }
 
 static void server_destroy_call_elem(grpc_call_element* elem,
-                                     const grpc_call_final_info* final_info,
-                                     grpc_closure* ignored) {
+                                     const grpc_call_final_info* /*final_info*/,
+                                     grpc_closure* /*ignored*/) {
   call_data* calld = static_cast<call_data*>(elem->call_data);
   calld->~call_data();
   channel_data* chand = static_cast<channel_data*>(elem->channel_data);
@@ -1258,7 +1259,7 @@ void done_published_shutdown(void* done_arg, grpc_cq_completion* storage) {
   gpr_free(storage);
 }
 
-static void listener_destroy_done(void* s, grpc_error* error) {
+static void listener_destroy_done(void* s, grpc_error* /*error*/) {
   grpc_server* server = static_cast<grpc_server*>(s);
   gpr_mu_lock(&server->mu_global);
   server->listeners_destroyed++;

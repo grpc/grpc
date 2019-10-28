@@ -117,8 +117,15 @@ class AugmentedCase(collections.namedtuple('AugmentedCase', ['case', 'id'])):
 
 class Runner(object):
 
-    def __init__(self):
+    def __init__(self, dedicated_threads=False):
+        """Constructs the Runner object.
+
+        Args:
+          dedicated_threads: A bool indicates whether to spawn each unit test
+            in separate thread or not.
+        """
         self._skipped_tests = []
+        self._dedicated_threads = dedicated_threads
 
     def skip_tests(self, tests):
         self._skipped_tests = tests
@@ -194,24 +201,31 @@ class Runner(object):
                 sys.stdout.write('Running       {}\n'.format(
                     augmented_case.case.id()))
                 sys.stdout.flush()
-                case_thread = threading.Thread(
-                    target=augmented_case.case.run, args=(result,))
-                try:
-                    with stdout_pipe, stderr_pipe:
-                        case_thread.start()
-                        while case_thread.is_alive():
-                            check_kill_self()
-                            time.sleep(0)
-                        case_thread.join()
-                except:  # pylint: disable=try-except-raise
-                    # re-raise the exception after forcing the with-block to end
-                    raise
-                result.set_output(augmented_case.case, stdout_pipe.output(),
-                                  stderr_pipe.output())
-                sys.stdout.write(result_out.getvalue())
-                sys.stdout.flush()
-                result_out.truncate(0)
-                check_kill_self()
+                if self._dedicated_threads:
+                    # (Deprecated) Spawns dedicated thread for each test case.
+                    case_thread = threading.Thread(
+                        target=augmented_case.case.run, args=(result,))
+                    try:
+                        with stdout_pipe, stderr_pipe:
+                            case_thread.start()
+                            # If the thread is exited unexpected, stop testing.
+                            while case_thread.is_alive():
+                                check_kill_self()
+                                time.sleep(0)
+                            case_thread.join()
+                    except:  # pylint: disable=try-except-raise
+                        # re-raise the exception after forcing the with-block to end
+                        raise
+                    # Records the result of the test case run.
+                    result.set_output(augmented_case.case, stdout_pipe.output(),
+                                      stderr_pipe.output())
+                    sys.stdout.write(result_out.getvalue())
+                    sys.stdout.flush()
+                    result_out.truncate(0)
+                    check_kill_self()
+                else:
+                    # Donates current thread to test case execution.
+                    augmented_case.case.run(result)
         result.stopTestRun()
         stdout_pipe.close()
         stderr_pipe.close()

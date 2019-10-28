@@ -246,7 +246,7 @@ void HttpConnectHandshaker::Shutdown(grpc_error* why) {
   GRPC_ERROR_UNREF(why);
 }
 
-void HttpConnectHandshaker::DoHandshake(grpc_tcp_server_acceptor* acceptor,
+void HttpConnectHandshaker::DoHandshake(grpc_tcp_server_acceptor* /*acceptor*/,
                                         grpc_closure* on_handshake_done,
                                         HandshakerArgs* args) {
   // Check for HTTP CONNECT channel arg.
@@ -340,8 +340,8 @@ HttpConnectHandshaker::HttpConnectHandshaker() {
 
 class HttpConnectHandshakerFactory : public HandshakerFactory {
  public:
-  void AddHandshakers(const grpc_channel_args* args,
-                      grpc_pollset_set* interested_parties,
+  void AddHandshakers(const grpc_channel_args* /*args*/,
+                      grpc_pollset_set* /*interested_parties*/,
                       HandshakeManager* handshake_mgr) override {
     handshake_mgr->Add(MakeRefCounted<HttpConnectHandshaker>());
   }

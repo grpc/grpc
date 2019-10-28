@@ -17,27 +17,25 @@ package(
     default_visibility = ["//visibility:public"],
 )
 
-GRPC_ASYNC_TESTS = [
-    "server_test.py",
-    "init_test.py",
-    "channel_test.py",
-]
+GRPC_ASYNC_TESTS = glob(["*_test.py"])
+
 
 py_library(
-    name = "test_base",
-    srcs = ["test_base.py"],
+    name = "_test_base",
     srcs_version = "PY3",
+    srcs = ["_test_base.py"],
 )
 
 py_library(
-    name = "sync_server",
-    srcs = ["sync_server.py"],
+    name = "_test_server",
+    srcs_version = "PY3",
+    srcs = ["_test_server.py"],
     deps = [
-        "//src/proto/grpc/testing:empty_py_pb2",
+        "//src/python/grpcio/grpc:grpcio",
         "//src/proto/grpc/testing:py_messages_proto",
         "//src/proto/grpc/testing:test_py_pb2_grpc",
-    ],
-    srcs_version = "PY3",
+        "//src/proto/grpc/testing:empty_py_pb2",
+    ]
 )
 
 [
@@ -48,13 +46,13 @@ py_library(
         main=test_file_name,
         python_version="PY3",
         deps=[
+            ":_test_server",
+            ":_test_base",
             "//src/python/grpcio/grpc:grpcio",
             "//src/proto/grpc/testing:py_messages_proto",
             "//src/proto/grpc/testing:benchmark_service_py_pb2_grpc",
             "//src/proto/grpc/testing:benchmark_service_py_pb2",
             "//src/python/grpcio_tests/tests/unit/framework/common",
-            ":test_base",
-            ":sync_server",
             "//external:six"
         ],
         imports=["../../",],
