@@ -16,7 +16,9 @@ import contextlib
 import socket
 
 
-def get_socket(bind_address='localhost', listen=True, sock_options=(socket.SO_REUSEPORT,)):
+def get_socket(bind_address='localhost',
+               listen=True,
+               sock_options=(socket.SO_REUSEPORT,)):
     """Opens a socket bound to an arbitrary port.
 
     Useful for reserving a port for a system-under-test.
@@ -44,11 +46,14 @@ def get_socket(bind_address='localhost', listen=True, sock_options=(socket.SO_RE
             return bind_address, sock.getsockname()[1], sock
         except socket.error:
             continue
-    raise RuntimeError("Failed to find to {} with sock_options {}".format(bind_address, sock_options))
+    raise RuntimeError("Failed to bind to {} with sock_options {}".format(
+        bind_address, sock_options))
 
 
 @contextlib.contextmanager
-def bound_socket(bind_address='localhost', listen=True, sock_options=(socket.SO_REUSEPORT,)):
+def bound_socket(bind_address='localhost',
+                 listen=True,
+                 sock_options=(socket.SO_REUSEPORT,)):
     """Opens a socket bound to an arbitrary port.
 
     Useful for reserving a port for a system-under-test.
@@ -63,7 +68,8 @@ def bound_socket(bind_address='localhost', listen=True, sock_options=(socket.SO_
         - the address to which the socket is bound
         - the port to which the socket is bound
     """
-    host, port, sock = get_socket(bind_address=bind_address, listen=listen, sock_options=sock_options)
+    host, port, sock = get_socket(
+        bind_address=bind_address, listen=listen, sock_options=sock_options)
     try:
         yield host, port
     finally:

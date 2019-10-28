@@ -24,6 +24,7 @@ from grpc.experimental import aio
 from tests_aio.unit import sync_server
 from tests.unit.framework.common import get_socket
 
+
 def _get_free_loopback_tcp_port():
     host, port, sock = get_socket(listen=False)
     return sock, "{}:{}".format(host, port)
