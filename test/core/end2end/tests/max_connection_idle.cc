@@ -42,7 +42,7 @@ static void drain_cq(grpc_completion_queue* cq) {
   } while (ev.type != GRPC_QUEUE_SHUTDOWN);
 }
 
-static void simple_request_body(grpc_end2end_test_config config,
+static void simple_request_body(grpc_end2end_test_config /*config*/,
                                 grpc_end2end_test_fixture* f) {
   grpc_call* c;
   grpc_call* s;

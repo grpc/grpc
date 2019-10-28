@@ -100,7 +100,7 @@ static grpc_slice generate_random_slice() {
   return out;
 }
 
-static void request_response_with_payload(grpc_end2end_test_config config,
+static void request_response_with_payload(grpc_end2end_test_config /*config*/,
                                           grpc_end2end_test_fixture f) {
   /* Create large request and response bodies. These are big enough to require
    * multiple round trips to deliver to the peer, and their exact contents of
