@@ -475,7 +475,8 @@ class CheckingResultHandler : public ResultHandler {
     }
     gpr_log(GPR_INFO,
             "found %" PRIdPTR " backend addresses and %" PRIdPTR
-            " balancer addresses", result.addresses.size(),
+            " balancer addresses",
+            result.addresses.size(),
             balancer_addresses == nullptr ? 0L : balancer_addresses->size());
     if (args->expected_addrs.size() != found_lb_addrs.size()) {
       gpr_log(GPR_DEBUG,
