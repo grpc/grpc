@@ -491,8 +491,6 @@ std::unique_ptr<ScenarioResult> RunScenario(
             stats.request_results(i).count();
       }
       result->add_client_stats()->CopyFrom(stats);
-      // That final status should be the last message on the client stream
-      GPR_ASSERT(!client->stream->Read(&client_status));
     } else {
       gpr_log(GPR_ERROR, "Couldn't get final status from client %zu", i);
     }
