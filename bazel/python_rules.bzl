@@ -29,6 +29,16 @@ def _generate_py_impl(context):
     ] + [
         "--proto_path={}".format(context.genfiles_dir.path),
     ])
+    if context.attr.plugin:
+        arguments += get_plugin_args(
+            context.executable.plugin,
+            [],
+            out_dir.path,
+            False,
+            context.attr.plugin.label.name
+        )
+        tools.append(context.executable.plugin)
+
     arguments += get_proto_arguments(protos, context.genfiles_dir.path)
 
     context.actions.run(
@@ -59,6 +69,11 @@ _generate_pb2_src = rule(
             allow_empty = False,
             providers = [ProtoInfo],
         ),
+        "plugin": attr.label(
+            mandatory = False,
+            executable = True,
+            cfg = "host",
+        ),
         "_protoc": attr.label(
             default = Label("//external:protocol_compiler"),
             providers = ["files_to_run"],
@@ -72,12 +87,17 @@ _generate_pb2_src = rule(
 def py_proto_library(
         name,
         deps,
+        plugin = None,
         **kwargs):
     """Generate python code for a protobuf.
 
     Args:
       name: The name of the target.
       deps: A list of proto_library dependencies. Must contain a single element.
+      plugin: An optional custom protoc plugin to execute together with
+        generating the protobuf code.
+      **kwargs: Additional arguments to be supplied to the invocation of
+        py_library.
     """
     codegen_target = "_{}_codegen".format(name)
     if len(deps) != 1:
@@ -87,6 +107,7 @@ def py_proto_library(
     _generate_pb2_src(
         name = codegen_target,
         deps = deps,
+        plugin = plugin,
         **kwargs
     )
 
@@ -108,14 +129,23 @@ def _generate_pb2_grpc_src_impl(context):
     plugin_flags = ["grpc_2_0"] + context.attr.strip_prefixes
 
     arguments = []
-    tools = [context.executable._protoc, context.executable._plugin]
+    tools = [context.executable._protoc, context.executable._grpc_plugin]
     out_dir = get_out_dir(protos, context)
     arguments += get_plugin_args(
-        context.executable._plugin,
+        context.executable._grpc_plugin,
         plugin_flags,
         out_dir.path,
         False,
     )
+    if context.attr.plugin:
+        arguments += get_plugin_args(
+            context.executable.plugin,
+            [],
+            out_dir.path,
+            False,
+            context.attr.plugin.label.name
+        )
+        tools.append(context.executable.plugin)
 
     arguments += [
         "--proto_path={}".format(get_include_directory(i))
@@ -153,7 +183,12 @@ _generate_pb2_grpc_src = rule(
             providers = [ProtoInfo],
         ),
         "strip_prefixes": attr.string_list(),
-        "_plugin": attr.label(
+        "plugin": attr.label(
+            mandatory = False,
+            executable = True,
+            cfg = "host",
+        ),
+        "_grpc_plugin": attr.label(
             executable = True,
             providers = ["files_to_run"],
             cfg = "host",
@@ -173,6 +208,7 @@ def py_grpc_library(
     name,
     srcs,
     deps,
+    plugin = None,
     strip_prefixes = [],
     **kwargs):
     """Generate python code for gRPC services defined in a protobuf.
@@ -187,6 +223,8 @@ def py_grpc_library(
         stripped from the beginning of foo_pb2 modules imported by the
         generated stubs. This is useful in combination with the `imports`
         attribute of the `py_library` rule.
+      plugin: An optional custom protoc plugin to execute together with
+        generating the gRPC code.
       **kwargs: Additional arguments to be supplied to the invocation of
         py_library.
     """
@@ -201,6 +239,7 @@ def py_grpc_library(
         name = codegen_grpc_target,
         deps = srcs,
         strip_prefixes = strip_prefixes,
+        plugin = plugin,
         **kwargs
     )
 
