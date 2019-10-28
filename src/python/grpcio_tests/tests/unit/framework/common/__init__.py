@@ -16,7 +16,7 @@ import contextlib
 import socket
 
 
-def get_socket(bind_address='localhost', sock_options=(socket.SO_REUSEPORT,)):
+def get_socket(bind_address='localhost', listen=True, sock_options=(socket.SO_REUSEPORT,)):
     """Opens a listening socket on an arbitrary port.
 
     Useful for reserving a port for a system-under-test.
@@ -38,7 +38,8 @@ def get_socket(bind_address='localhost', sock_options=(socket.SO_REUSEPORT,)):
             for sock_option in _sock_options:
                 sock.setsockopt(socket.SOL_SOCKET, sock_option, 1)
             sock.bind((bind_address, 0))
-            sock.listen(1)
+            if listen:
+                sock.listen(1)
             return bind_address, sock.getsockname()[1], sock
         except socket.error:
             continue
@@ -46,9 +47,10 @@ def get_socket(bind_address='localhost', sock_options=(socket.SO_REUSEPORT,)):
 
 
 @contextlib.contextmanager
-def listening_socket(bind_address='localhost', sock_options=(socket.SO_REUSEPORT,)):
+def bound_socket(bind_address='localhost', listen=True, sock_options=(socket.SO_REUSEPORT,)):
     # TODO: Docstring.
-    host, port, sock = get_socket(bind_address=bind_address, sock_options=sock_options)
+    # TODO: Just yield address?
+    host, port, sock = get_socket(bind_address=bind_address, listen=listen, sock_options=sock_options)
     try:
         yield host, port
     finally:

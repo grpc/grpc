@@ -25,7 +25,7 @@ import grpc
 from tests.unit import test_common
 from tests.unit.framework.common import test_constants
 import tests.unit.framework.common
-from tests.unit.framework.common import listening_socket
+from tests.unit.framework.common import bound_socket
 
 _UNARY_UNARY = '/test/UnaryUnary'
 _UNARY_STREAM = '/test/UnaryStream'
@@ -123,7 +123,7 @@ class _GenericHandler(grpc.GenericRpcHandler):
 def create_dummy_channel():
     """Creating dummy channels is a workaround for retries"""
     # _, addr = get_free_loopback_tcp_port()
-    with listening_socket() as host, port:
+    with bound_socket() as (host, port):
         return grpc.insecure_channel('{}:{}'.format(host, port))
 
 
@@ -224,7 +224,7 @@ class MetadataFlagsTest(unittest.TestCase):
         #   main thread. So, it need another method to store the
         #   exceptions and raise them again in main thread.
         unhandled_exceptions = queue.Queue()
-        with listening_socket() as (host, port):
+        with bound_socket(listen=False) as (host, port):
             addr = '{}:{}'.format(host, port)
             wg = test_common.WaitGroup(len(_ALL_CALL_CASES))
 
