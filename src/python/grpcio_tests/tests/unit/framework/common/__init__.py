@@ -35,7 +35,11 @@ def get_socket(bind_address='localhost',
         - the socket object itself
     """
     _sock_options = sock_options if sock_options else []
-    for address_family in (socket.AF_INET, socket.AF_INET6):
+    if socket.has_ipv6:
+        address_families = (socket.AF_INET6, socket.AF_INET)
+    else:
+        address_families =  (socket.AF_INET)
+    for address_family in address_families:
         try:
             sock = socket.socket(address_family, socket.SOCK_STREAM)
             for sock_option in _sock_options:
