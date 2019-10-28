@@ -14,6 +14,7 @@
 
 load("//bazel:grpc_build_system.bzl", "grpc_cc_library", "grpc_cc_test", "grpc_package")
 load("//bazel:cc_grpc_library.bzl", "cc_grpc_library")
+load("//test/core/util:grpc_fuzzer.bzl", "grpc_fuzzer")
 
 licenses(["notice"])  # Apache v2
 
@@ -29,6 +30,7 @@ grpc_cc_test(
         "opencensus-stats-test",
     ],
     language = "C++",
+    tags = ["no_windows"],  # TODO(jtattermusch): fix test on windows
     deps = [
         "//:grpc++",
         "//:grpc_opencensus_plugin",
@@ -37,5 +39,15 @@ grpc_cc_test(
         "//test/cpp/util:test_config",
         "//test/cpp/util:test_util",
     ],
-    tags = ["no_windows"],  # TODO(jtattermusch): fix test on windows
+)
+
+grpc_fuzzer(
+    name = "context_fuzzer",
+    srcs = ["context_fuzzer.cc"],
+    corpus = "context_corpus",
+    language = "C++",
+    deps = [
+        "//:grpc",
+        "//:grpc_opencensus_plugin",
+    ],
 )
