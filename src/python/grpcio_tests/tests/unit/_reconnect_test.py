@@ -42,7 +42,7 @@ class ReconnectTest(unittest.TestCase):
             'UnaryUnary':
             grpc.unary_unary_rpc_method_handler(_handle_unary_unary)
         })
-        options=(('grpc.so_reuseport', 0),)
+        options=(('grpc.so_reuseport', 1),)
         with bound_socket() as (host, port):
             addr = '{}:{}'.format(host, port)
             server = grpc.server(server_pool, (handler,), options=options)

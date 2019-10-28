@@ -15,7 +15,6 @@
 import contextlib
 import socket
 
-
 def get_socket(bind_address='localhost',
                listen=True,
                sock_options=(socket.SO_REUSEPORT,)):
@@ -49,6 +48,7 @@ def get_socket(bind_address='localhost',
                 sock.listen(1)
             return bind_address, sock.getsockname()[1], sock
         except socket.error:
+            sock.close()
             continue
     raise RuntimeError("Failed to bind to {} with sock_options {}".format(
         bind_address, sock_options))
