@@ -122,7 +122,6 @@ class _GenericHandler(grpc.GenericRpcHandler):
 
 def create_dummy_channel():
     """Creating dummy channels is a workaround for retries"""
-    # _, addr = get_free_loopback_tcp_port()
     with bound_socket() as (host, port):
         return grpc.insecure_channel('{}:{}'.format(host, port))
 
