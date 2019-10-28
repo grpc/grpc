@@ -464,9 +464,6 @@ class CheckingResultHandler : public ResultHandler {
 
   void CheckResult(const grpc_core::Resolver::Result& result) override {
     ArgsStruct* args = args_struct();
-    gpr_log(GPR_INFO, "num addrs found: %" PRIdPTR ". expected %" PRIdPTR,
-            result.addresses.size(), args->expected_addrs.size());
-    GPR_ASSERT(result.addresses.size() == args->expected_addrs.size());
     std::vector<GrpcLBAddress> found_lb_addrs;
     AddActualAddresses(result.addresses, /*is_balancer=*/false,
                        &found_lb_addrs);
@@ -476,6 +473,10 @@ class CheckingResultHandler : public ResultHandler {
       AddActualAddresses(*balancer_addresses, /*is_balancer=*/true,
                          &found_lb_addrs);
     }
+    gpr_log(GPR_INFO,
+            "found %" PRIdPTR " backend addresses and %" PRIdPTR
+            " balancer addresses", result.addresses.size(),
+            balancer_addresses == nullptr ? 0L : balancer_addresses->size());
     if (args->expected_addrs.size() != found_lb_addrs.size()) {
       gpr_log(GPR_DEBUG,
               "found lb addrs size is: %" PRIdPTR
