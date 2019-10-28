@@ -1,4 +1,4 @@
-# Copyright 2015 gRPC authors.
+# Copyright 2019 The gRPC authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -17,12 +17,13 @@ import socket
 
 
 def get_socket(bind_address='localhost', listen=True, sock_options=(socket.SO_REUSEPORT,)):
-    """Opens a listening socket on an arbitrary port.
+    """Opens a socket bound to an arbitrary port.
 
     Useful for reserving a port for a system-under-test.
 
     Args:
       bind_address: The host to which to bind.
+      listen: A boolean value indicating whether or not to listen on the socket.
       sock_options: A sequence of socket options to apply to the socket.
 
     Returns:
@@ -48,8 +49,20 @@ def get_socket(bind_address='localhost', listen=True, sock_options=(socket.SO_RE
 
 @contextlib.contextmanager
 def bound_socket(bind_address='localhost', listen=True, sock_options=(socket.SO_REUSEPORT,)):
-    # TODO: Docstring.
-    # TODO: Just yield address?
+    """Opens a socket bound to an arbitrary port.
+
+    Useful for reserving a port for a system-under-test.
+
+    Args:
+      bind_address: The host to which to bind.
+      listen: A boolean value indicating whether or not to listen on the socket.
+      sock_options: A sequence of socket options to apply to the socket.
+
+    Yields:
+      A tuple containing:
+        - the address to which the socket is bound
+        - the port to which the socket is bound
+    """
     host, port, sock = get_socket(bind_address=bind_address, listen=listen, sock_options=sock_options)
     try:
         yield host, port
