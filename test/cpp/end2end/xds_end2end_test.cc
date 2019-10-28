@@ -1100,8 +1100,6 @@ TEST_P(BasicTest, IgnoresUnhealthyEndpoints) {
   // The ADS service got a single request, and sent a single response.
   EXPECT_EQ(1U, balancers_[0]->ads_service()->request_count());
   EXPECT_EQ(1U, balancers_[0]->ads_service()->response_count());
-  // Check LB policy name for the channel.
-  EXPECT_EQ("xds_experimental", channel_->GetLoadBalancingPolicyName());
 }
 
 // Tests that subchannel sharing works when the same backend is listed multiple
