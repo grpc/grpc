@@ -491,6 +491,8 @@ std::unique_ptr<ScenarioResult> RunScenario(
             stats.request_results(i).count();
       }
       result->add_client_stats()->CopyFrom(stats);
+      // That final status should be the last message on the client stream
+      // GPR_ASSERT(!client->stream->Read(&client_status));
     } else {
       gpr_log(GPR_ERROR, "Couldn't get final status from client %zu", i);
     }
@@ -507,21 +509,6 @@ std::unique_ptr<ScenarioResult> RunScenario(
     }
   }
 
-  // Collect servers' final run results right after finishing server
-  for (size_t i = 0; i < num_servers; i++) {
-    auto server = &servers[i];
-    // Read the server final status
-    if (server->stream->Read(&server_status)) {
-      gpr_log(GPR_INFO, "Received final status from server %zu", i);
-      result->add_server_stats()->CopyFrom(server_status.stats());
-      result->add_server_cores(server_status.cores());
-      // That final status should be the last message on the server stream
-      GPR_ASSERT(!server->stream->Read(&server_status));
-    } else {
-      gpr_log(GPR_ERROR, "Couldn't get final status from server %zu", i);
-    }
-  }
-
   // Get final rpc status from clients
   for (size_t i = 0; i < num_clients; i++) {
     auto client = &clients[i];
@@ -534,6 +521,30 @@ std::unique_ptr<ScenarioResult> RunScenario(
     if (!success) {
       gpr_log(GPR_ERROR, "Client %zu had an error %s", i,
               s.error_message().c_str());
+    }
+  }
+
+  // Post-processing the results summary
+  merged_latencies.FillProto(result->mutable_latencies());
+  for (std::unordered_map<int, int64_t>::iterator it = merged_statuses.begin();
+       it != merged_statuses.end(); ++it) {
+    RequestResultCount* rrc = result->add_request_results();
+    rrc->set_status_code(it->first);
+    rrc->set_count(it->second);
+  }
+
+   // Collect servers' final run results right after finishing server
+  for (size_t i = 0; i < num_servers; i++) {
+    auto server = &servers[i];
+    // Read the server final status
+    if (server->stream->Read(&server_status)) {
+      gpr_log(GPR_INFO, "Received final status from server %zu", i);
+      result->add_server_stats()->CopyFrom(server_status.stats());
+      result->add_server_cores(server_status.cores());
+      // That final status should be the last message on the server stream
+      GPR_ASSERT(!server->stream->Read(&server_status));
+    } else {
+      gpr_log(GPR_ERROR, "Couldn't get final status from server %zu", i);
     }
   }
 
@@ -554,15 +565,6 @@ std::unique_ptr<ScenarioResult> RunScenario(
 
   if (g_inproc_servers != nullptr) {
     delete g_inproc_servers;
-  }
-
-  // Post-processing the results summary
-  merged_latencies.FillProto(result->mutable_latencies());
-  for (std::unordered_map<int, int64_t>::iterator it = merged_statuses.begin();
-       it != merged_statuses.end(); ++it) {
-    RequestResultCount* rrc = result->add_request_results();
-    rrc->set_status_code(it->first);
-    rrc->set_count(it->second);
   }
   postprocess_scenario_result(result.get());
   return result;
