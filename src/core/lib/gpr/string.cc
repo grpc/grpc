@@ -290,6 +290,9 @@ char* gpr_strvec_flatten(gpr_strvec* sv, size_t* final_length) {
 }
 
 int gpr_strincmp(const char* a, const char* b, size_t n) {
+  if (a == nullptr && b == nullptr) return 0;
+  if (a == nullptr) return -1;
+  if (b == nullptr) return 1;
   int ca, cb;
   do {
     ca = tolower(*a);

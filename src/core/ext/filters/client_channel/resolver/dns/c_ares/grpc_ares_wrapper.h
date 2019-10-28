@@ -39,7 +39,10 @@ extern grpc_core::TraceFlag grpc_trace_cares_resolver;
     }                                                               \
   } while (0)
 
-typedef struct grpc_ares_request grpc_ares_request;
+namespace grpc_core {
+class AresRequest;
+class AresRequestOnWire;
+}  // namespace grpc_core
 
 /* Asynchronously resolve \a name. Use \a default_port if a port isn't
    designated in \a name, otherwise use the port in \a name. grpc_ares_init()
@@ -60,15 +63,18 @@ extern void (*grpc_resolve_address_ares)(const char* name,
   scheduled with \a exec_ctx, so it must not try to acquire locks that are
   being held by the caller. The returned grpc_ares_request object is owned
   by the caller and it is safe to free after on_done is called back. */
-extern grpc_ares_request* (*grpc_dns_lookup_ares_locked)(
+extern grpc_core::AresRequest* (*grpc_dns_lookup_ares_locked)(
     const char* dns_server, const char* name, const char* default_port,
     grpc_pollset_set* interested_parties, grpc_closure* on_done,
     grpc_core::UniquePtr<grpc_core::ServerAddressList>* addresses,
     bool check_grpclb, char** service_config_json, int query_timeout_ms,
     grpc_core::Combiner* combiner);
 
+/* Releases a grpc ares request */
+extern void (*grpc_ares_request_destroy_locked)(grpc_core::AresRequest* r);
+
 /* Cancel the pending grpc_ares_request \a request */
-extern void (*grpc_cancel_ares_request_locked)(grpc_ares_request* request);
+extern void (*grpc_cancel_ares_request_locked)(grpc_core::AresRequest* request);
 
 /* Initialize gRPC ares wrapper. Must be called at least once before
    grpc_resolve_address_ares(). */
@@ -81,7 +87,7 @@ void grpc_ares_cleanup(void);
 
 /** Schedules the desired callback for request completion
  * and destroys the grpc_ares_request */
-void grpc_ares_complete_request_locked(grpc_ares_request* request);
+void GrpcAresRequestDoneLocked(grpc_core::AresRequestOnWire* r);
 
 /* Indicates whether or not AAAA queries should be attempted. */
 /* E.g., return false if ipv6 is known to not be available. */

@@ -97,7 +97,7 @@ class AresDnsResolver : public Resolver {
   /// are we currently resolving?
   bool resolving_ = false;
   /// the pending resolving request
-  grpc_ares_request* pending_request_ = nullptr;
+  AresRequest* pending_request_ = nullptr;
   /// next resolution timer
   bool have_next_resolution_timer_ = false;
   grpc_timer next_resolution_timer_;
@@ -334,7 +334,7 @@ void AresDnsResolver::OnResolvedLocked(void* arg, grpc_error* error) {
   AresDnsResolver* r = static_cast<AresDnsResolver*>(arg);
   GPR_ASSERT(r->resolving_);
   r->resolving_ = false;
-  gpr_free(r->pending_request_);
+  grpc_ares_request_destroy_locked(r->pending_request_);
   r->pending_request_ = nullptr;
   if (r->shutdown_initiated_) {
     r->Unref(DEBUG_LOCATION, "OnResolvedLocked() shutdown");

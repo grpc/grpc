@@ -75,7 +75,7 @@ struct grpc_ares_ev_driver {
   /** is this event driver being shut down */
   bool shutting_down;
   /** request object that's using this ev driver */
-  grpc_ares_request* request;
+  grpc_core::AresRequestOnWire* request;
   /** Owned by the ev_driver. Creates new GrpcPolledFd's */
   grpc_core::UniquePtr<grpc_core::GrpcPolledFdFactory> polled_fd_factory;
   /** query timeout in milliseconds */
@@ -109,7 +109,7 @@ static void grpc_ares_ev_driver_unref(grpc_ares_ev_driver* ev_driver) {
     GPR_ASSERT(ev_driver->fds == nullptr);
     GRPC_COMBINER_UNREF(ev_driver->combiner, "free ares event driver");
     ares_destroy(ev_driver->channel);
-    grpc_ares_complete_request_locked(ev_driver->request);
+    GrpcAresRequestDoneLocked(ev_driver->request);
     grpc_core::Delete(ev_driver);
   }
 }
@@ -143,18 +143,17 @@ static void noop_inject_channel_config(ares_channel /*channel*/) {}
 void (*grpc_ares_test_only_inject_config)(ares_channel channel) =
     noop_inject_channel_config;
 
-grpc_error* grpc_ares_ev_driver_create_locked(grpc_ares_ev_driver** ev_driver,
-                                              grpc_pollset_set* pollset_set,
-                                              int query_timeout_ms,
-                                              grpc_core::Combiner* combiner,
-                                              grpc_ares_request* request) {
+grpc_error* grpc_ares_ev_driver_create_locked(
+    grpc_ares_ev_driver** ev_driver, grpc_pollset_set* pollset_set,
+    int query_timeout_ms, grpc_core::Combiner* combiner,
+    grpc_core::AresRequestOnWire* wrapper) {
   *ev_driver = grpc_core::New<grpc_ares_ev_driver>();
   ares_options opts;
   memset(&opts, 0, sizeof(opts));
   opts.flags |= ARES_FLAG_STAYOPEN;
   int status = ares_init_options(&(*ev_driver)->channel, &opts, ARES_OPT_FLAGS);
   grpc_ares_test_only_inject_config((*ev_driver)->channel);
-  GRPC_CARES_TRACE_LOG("request:%p grpc_ares_ev_driver_create_locked", request);
+  GRPC_CARES_TRACE_LOG("request:%p grpc_ares_ev_driver_create_locked", wrapper);
   if (status != ARES_SUCCESS) {
     char* err_msg;
     gpr_asprintf(&err_msg, "Failed to init ares channel. C-ares error: %s",
@@ -170,7 +169,7 @@ grpc_error* grpc_ares_ev_driver_create_locked(grpc_ares_ev_driver** ev_driver,
   (*ev_driver)->fds = nullptr;
   (*ev_driver)->working = false;
   (*ev_driver)->shutting_down = false;
-  (*ev_driver)->request = request;
+  (*ev_driver)->request = wrapper;
   (*ev_driver)->polled_fd_factory =
       grpc_core::NewGrpcPolledFdFactory((*ev_driver)->combiner);
   (*ev_driver)
