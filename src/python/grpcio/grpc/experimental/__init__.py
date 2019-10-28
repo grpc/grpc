@@ -26,3 +26,7 @@ class ChannelOptions(object):
        SingleThreadedUnaryStream: Perform unary-stream RPCs on a single thread.
     """
     SingleThreadedUnaryStream = "SingleThreadedUnaryStream"
+
+
+class UsageError(Exception):
+    """Raised by the gRPC library to indicate usage not allowed by the API."""

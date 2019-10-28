@@ -202,9 +202,6 @@ class MetadataTest(unittest.TestCase):
     def testUnaryStream(self):
         multi_callable = self._channel.unary_stream(_UNARY_STREAM)
         call = multi_callable(_REQUEST, metadata=_INVOCATION_METADATA)
-        # TODO(https://github.com/grpc/grpc/issues/20762): Make the call to
-        # `next()` unnecessary.
-        next(call)
         self.assertTrue(
             test_common.metadata_transmitted(_EXPECTED_INITIAL_METADATA,
                                              call.initial_metadata()))
