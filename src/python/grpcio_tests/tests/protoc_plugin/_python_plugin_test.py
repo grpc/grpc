@@ -150,7 +150,8 @@ def _CreateService():
             return servicer_methods.StreamingOutputCall(request, context)
 
         def StreamingInputCall(self, request_iterator, context):
-            return servicer_methods.StreamingInputCall(request_iterator, context)
+            return servicer_methods.StreamingInputCall(request_iterator,
+                                                       context)
 
         def FullDuplexCall(self, request_iterator, context):
             return servicer_methods.FullDuplexCall(request_iterator, context)
