@@ -533,7 +533,7 @@ std::unique_ptr<ScenarioResult> RunScenario(
     rrc->set_count(it->second);
   }
 
-   // Collect servers' final run results right after finishing server
+  // Collect servers' final run results right after finishing server
   for (size_t i = 0; i < num_servers; i++) {
     auto server = &servers[i];
     // Read the server final status
