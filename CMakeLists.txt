@@ -3314,6 +3314,7 @@ add_library(grpc++
   src/cpp/server/health/health_check_service.cc
   src/cpp/server/health/health_check_service_server_builder_option.cc
   src/cpp/server/server_builder.cc
+  src/cpp/server/server_callback.cc
   src/cpp/server/server_cc.cc
   src/cpp/server/server_context.cc
   src/cpp/server/server_credentials.cc
@@ -4409,6 +4410,7 @@ add_library(grpc++_unsecure
   src/cpp/server/health/health_check_service.cc
   src/cpp/server/health/health_check_service_server_builder_option.cc
   src/cpp/server/server_builder.cc
+  src/cpp/server/server_callback.cc
   src/cpp/server/server_cc.cc
   src/cpp/server/server_context.cc
   src/cpp/server/server_credentials.cc

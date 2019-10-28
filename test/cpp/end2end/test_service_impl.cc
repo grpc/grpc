@@ -414,6 +414,10 @@ void CallbackTestServiceImpl::Echo(ServerContext* context,
     Reactor(CallbackTestServiceImpl* service, ServerContext* ctx,
             const EchoRequest* request, EchoResponse* response)
         : service_(service), ctx_(ctx), req_(request), resp_(response) {
+      // It should be safe to call IsCancelled here, even though we don't know
+      // the result. Call it asynchronously to see if we trigger any data races.
+      async_cancel_check_ = std::thread([this] { (void)ctx_->IsCancelled(); });
+
       if (request->has_param() && request->param().server_sleep_us() > 0) {
         // Set an alarm for that much time
         alarm_.experimental().Set(
@@ -443,6 +447,7 @@ void CallbackTestServiceImpl::Echo(ServerContext* context,
         EXPECT_TRUE(initial_metadata_sent_);
       }
       EXPECT_EQ(ctx_->IsCancelled(), on_cancel_invoked_);
+      async_cancel_check_.join();
       delete this;
     }
 
@@ -569,6 +574,7 @@ void CallbackTestServiceImpl::Echo(ServerContext* context,
     bool initial_metadata_sent_{false};
     bool started_{false};
     bool on_cancel_invoked_{false};
+    std::thread async_cancel_check_;
   };
 
   *reactor = new Reactor(this, context, request, response);

@@ -45,9 +45,10 @@ class ServerContext::CompletionOp final
  public:
   // initial refs: one in the server context, one in the cq
   // must ref the call before calling constructor and after deleting this
-  CompletionOp(::grpc::internal::Call* call, internal::ServerReactor* reactor)
+  CompletionOp(::grpc::internal::Call* call,
+               internal::ServerCallbackCall* callback_controller)
       : call_(*call),
-        reactor_(reactor),
+        callback_controller_(callback_controller),
         has_tag_(false),
         tag_(nullptr),
         core_cq_tag_(this),
@@ -137,7 +138,7 @@ class ServerContext::CompletionOp final
   }
 
   ::grpc::internal::Call call_;
-  internal::ServerReactor* const reactor_;
+  internal::ServerCallbackCall* const callback_controller_;
   bool has_tag_;
   void* tag_;
   void* core_cq_tag_;
@@ -200,8 +201,8 @@ bool ServerContext::CompletionOp::FinalizeResult(void** tag, bool* status) {
   // Release the lock since we may call a callback and interceptors now.
   lock.Unlock();
 
-  if (call_cancel && reactor_ != nullptr) {
-    reactor_->MaybeCallOnCancel();
+  if (call_cancel && callback_controller_ != nullptr) {
+    callback_controller_->MaybeCallOnCancel(false);
   }
   /* Add interception point and run through interceptors */
   interceptor_methods_.AddInterceptionHookPoint(
@@ -276,9 +277,9 @@ void ServerContext::Clear() {
   test_unary_.reset();
 }
 
-void ServerContext::BeginCompletionOp(::grpc::internal::Call* call,
-                                      std::function<void(bool)> callback,
-                                      internal::ServerReactor* reactor) {
+void ServerContext::BeginCompletionOp(
+    ::grpc::internal::Call* call, std::function<void(bool)> callback,
+    internal::ServerCallbackCall* callback_controller) {
   GPR_ASSERT(!completion_op_);
   if (rpc_info_) {
     rpc_info_->Ref();
@@ -286,10 +287,10 @@ void ServerContext::BeginCompletionOp(::grpc::internal::Call* call,
   grpc_call_ref(call->call());
   completion_op_ =
       new (grpc_call_arena_alloc(call->call(), sizeof(CompletionOp)))
-          CompletionOp(call, reactor);
-  if (callback != nullptr) {
+          CompletionOp(call, callback_controller);
+  if (callback_controller != nullptr) {
     completion_tag_.Set(call->call(), std::move(callback), completion_op_,
-                        reactor->InternalInlineable());
+                        true);
     completion_op_->set_core_cq_tag(&completion_tag_);
     completion_op_->set_tag(completion_op_);
   } else if (has_notify_when_done_tag_) {

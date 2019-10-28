@@ -58,7 +58,6 @@ class ServerReactor {
   virtual bool InternalInlineable() { return false; }
 
  private:
-  friend class ::grpc_impl::ServerContext;
   template <class Request, class Response>
   friend class CallbackUnaryHandler;
   template <class Request, class Response>
@@ -67,21 +66,58 @@ class ServerReactor {
   friend class CallbackServerStreamingHandler;
   template <class Request, class Response>
   friend class CallbackBidiHandler;
+};
 
-  // The ServerReactor is responsible for tracking when it is safe to call
+/// The base class of ServerCallbackUnary etc.
+class ServerCallbackCall {
+ public:
+  virtual ~ServerCallbackCall() {}
+
+  // This object is responsible for tracking when it is safe to call
   // OnCancel. This function should not be called until after the method handler
   // is done and the RPC has completed with a cancellation. This is tracked by
   // counting how many of these conditions have been met and calling OnCancel
   // when none remain unmet.
 
-  void MaybeCallOnCancel() {
+  // Fast version called with known reactor passed in, used from derived
+  // classes, typically in non-cancel case
+  void MaybeCallOnCancel(ServerReactor* reactor, bool invoke_done) {
     if (GPR_UNLIKELY(on_cancel_conditions_remaining_.fetch_sub(
                          1, std::memory_order_acq_rel) == 1)) {
-      OnCancel();
+      CallOnCancel(reactor, invoke_done);
+    } else if (invoke_done) {
+      MaybeDone();
     }
   }
 
-  std::atomic<intptr_t> on_cancel_conditions_remaining_{2};
+  // Slower version called from object that doesn't know the reactor a priori
+  // (such as the ServerContext CompletionOp which is formed before the
+  // reactor). This is used in cancel cases only, so it's ok to be slower and
+  // invoke a virtual function.
+  void MaybeCallOnCancel(bool invoke_done) {
+    MaybeCallOnCancel(reactor(), invoke_done);
+  }
+
+ protected:
+  /// Increases the reference count
+  void Ref() { callbacks_outstanding_.fetch_add(1, std::memory_order_relaxed); }
+
+  /// Decreases the reference count and returns the previous value
+  int Unref() {
+    return callbacks_outstanding_.fetch_sub(1, std::memory_order_acq_rel);
+  }
+
+ private:
+  virtual ServerReactor* reactor() = 0;
+  virtual void MaybeDone() = 0;
+
+  // If the OnCancel reaction is inlineable, execute it inline. Otherwise send
+  // it to an executor.
+  void CallOnCancel(ServerReactor* reactor, bool invoke_done);
+
+  std::atomic_int on_cancel_conditions_remaining_{2};
+  std::atomic_int callbacks_outstanding_{
+      3};  // reserve for start, Finish, and CompletionOp
 };
 
 template <class Request, class Response>
@@ -118,7 +154,7 @@ class ServerBidiReactor;
 // NOTE: The actual call/stream object classes are provided as API only to
 // support mocking. There are no implementations of these class interfaces in
 // the API.
-class ServerCallbackUnary {
+class ServerCallbackUnary : public internal::ServerCallbackCall {
  public:
   virtual ~ServerCallbackUnary() {}
   virtual void Finish(::grpc::Status s) = 0;
@@ -134,7 +170,7 @@ class ServerCallbackUnary {
 };
 
 template <class Request>
-class ServerCallbackReader {
+class ServerCallbackReader : public internal::ServerCallbackCall {
  public:
   virtual ~ServerCallbackReader() {}
   virtual void Finish(::grpc::Status s) = 0;
@@ -148,7 +184,7 @@ class ServerCallbackReader {
 };
 
 template <class Response>
-class ServerCallbackWriter {
+class ServerCallbackWriter : public internal::ServerCallbackCall {
  public:
   virtual ~ServerCallbackWriter() {}
 
@@ -165,7 +201,7 @@ class ServerCallbackWriter {
 };
 
 template <class Request, class Response>
-class ServerCallbackReaderWriter {
+class ServerCallbackReaderWriter : public internal::ServerCallbackCall {
  public:
   virtual ~ServerCallbackReaderWriter() {}
 

@@ -357,9 +357,9 @@ class ServerContext {
 
   class CompletionOp;
 
-  void BeginCompletionOp(::grpc::internal::Call* call,
-                         std::function<void(bool)> callback,
-                         ::grpc_impl::internal::ServerReactor* reactor);
+  void BeginCompletionOp(
+      ::grpc::internal::Call* call, std::function<void(bool)> callback,
+      ::grpc_impl::internal::ServerCallbackCall* callback_controller);
   /// Return the tag queued by BeginCompletionOp()
   ::grpc::internal::CompletionQueueTag* GetCompletionOpTag();
 
@@ -430,8 +430,9 @@ class ServerContext {
 
   class TestServerCallbackUnary : public experimental::ServerCallbackUnary {
    public:
-    explicit TestServerCallbackUnary(ServerContext* ctx) {
-      this->BindReactor(&ctx->default_reactor_);
+    explicit TestServerCallbackUnary(ServerContext* ctx)
+        : reactor_(&ctx->default_reactor_) {
+      this->BindReactor(reactor_);
     }
     void Finish(::grpc::Status s) override {
       status_ = s;
@@ -445,6 +446,10 @@ class ServerContext {
     ::grpc::Status status() const { return status_; }
 
    private:
+    void MaybeDone() override {}
+    internal::ServerReactor* reactor() override { return reactor_; }
+
+    experimental::ServerUnaryReactor* const reactor_;
     std::atomic_bool status_set_{false};
     ::grpc::Status status_;
   };

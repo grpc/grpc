@@ -267,6 +267,7 @@ Pod::Spec.new do |s|
                       'src/cpp/server/secure_server_credentials.cc',
                       'src/cpp/server/secure_server_credentials.h',
                       'src/cpp/server/server_builder.cc',
+                      'src/cpp/server/server_callback.cc',
                       'src/cpp/server/server_cc.cc',
                       'src/cpp/server/server_context.cc',
                       'src/cpp/server/server_credentials.cc',
