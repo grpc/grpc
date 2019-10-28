@@ -228,7 +228,7 @@ class MetadataFlagsTest(unittest.TestCase):
 
             # Start the server after the connections are waiting
             wg.wait()
-            server = test_common.test_server()
+            server = test_common.test_server(reuse_port=True)
             server.add_generic_rpc_handlers((_GenericHandler(
                 weakref.proxy(self)),))
             server.add_insecure_port(addr)
