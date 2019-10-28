@@ -645,7 +645,7 @@ static void tcp_read(grpc_endpoint* ep, grpc_slice_buffer* incoming_buffer,
      * right thing (i.e calls tcp_do_read() which either reads the available
      * bytes or calls notify_on_read() to be notified when new bytes become
      * available */
-    GRPC_CLOSURE_SCHED(&tcp->read_done_closure, GRPC_ERROR_NONE);
+    tcp_continue_read(tcp);
   }
 }
 
