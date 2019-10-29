@@ -31,6 +31,10 @@ load("@build_bazel_rules_apple//apple:ios.bzl", "ios_unit_test")
 # The set of pollers to test against if a test exercises polling
 POLLERS = ["epollex", "epoll1", "poll"]
 
+# set exec_properties = LARGE_MACHINE, to run the test on a large machine
+# see //third_party/toolchains/machine_size for details
+LARGE_MACHINE = { "gceMachineType" : "n1-standard-8"}
+
 def if_not_windows(a):
     return select({
         "//:windows": [],
@@ -165,7 +169,7 @@ def ios_cc_test(
             deps = ios_test_deps,
         )
 
-def grpc_cc_test(name, srcs = [], deps = [], external_deps = [], args = [], data = [], uses_polling = True, language = "C++", size = "medium", timeout = None, tags = [], exec_compatible_with = []):
+def grpc_cc_test(name, srcs = [], deps = [], external_deps = [], args = [], data = [], uses_polling = True, language = "C++", size = "medium", timeout = None, tags = [], exec_compatible_with = [], exec_properties = {}):
     copts = if_mac(["-DGRPC_CFSTREAM"])
     if language.upper() == "C":
         copts = copts + if_not_windows(["-std=c99"])
@@ -179,6 +183,7 @@ def grpc_cc_test(name, srcs = [], deps = [], external_deps = [], args = [], data
         "size": size,
         "timeout": timeout,
         "exec_compatible_with": exec_compatible_with,
+        "exec_properties": exec_properties,
     }
     if uses_polling:
         # the vanilla version of the test should run on platforms that only 
@@ -207,6 +212,7 @@ def grpc_cc_test(name, srcs = [], deps = [], external_deps = [], args = [], data
                 ] + args["args"],
                 tags = (tags + ["no_windows", "no_mac"]),
                 exec_compatible_with = exec_compatible_with,
+                exec_properties = exec_properties,
             )
     else:
         # the test behavior doesn't depend on polling, just generate the test
