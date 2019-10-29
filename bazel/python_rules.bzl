@@ -72,6 +72,7 @@ _generate_pb2_src = rule(
         "plugin": attr.label(
             mandatory = False,
             executable = True,
+            providers = ["files_to_run"],
             cfg = "host",
         ),
         "_protoc": attr.label(
@@ -186,6 +187,7 @@ _generate_pb2_grpc_src = rule(
         "plugin": attr.label(
             mandatory = False,
             executable = True,
+            providers = ["files_to_run"],
             cfg = "host",
         ),
         "_grpc_plugin": attr.label(
