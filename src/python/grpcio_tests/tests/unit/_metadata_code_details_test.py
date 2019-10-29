@@ -255,8 +255,8 @@ class MetadataCodeDetailsTest(unittest.TestCase):
 
         response_iterator_call = self._unary_stream(
             _SERIALIZED_REQUEST, metadata=_CLIENT_METADATA)
-        list(response_iterator_call)
         received_initial_metadata = response_iterator_call.initial_metadata()
+        list(response_iterator_call)
 
         self.assertTrue(
             test_common.metadata_transmitted(
@@ -349,14 +349,11 @@ class MetadataCodeDetailsTest(unittest.TestCase):
 
             response_iterator_call = self._unary_stream(
                 _SERIALIZED_REQUEST, metadata=_CLIENT_METADATA)
-            # NOTE: In the single-threaded case, we cannot grab the initial_metadata
-            # without running the RPC first (or concurrently, in another
-            # thread).
+            received_initial_metadata = \
+                response_iterator_call.initial_metadata()
             with self.assertRaises(grpc.RpcError):
                 self.assertEqual(len(list(response_iterator_call)), 0)
 
-            received_initial_metadata = \
-                response_iterator_call.initial_metadata()
             self.assertTrue(
                 test_common.metadata_transmitted(
                     _CLIENT_METADATA,
@@ -457,9 +454,9 @@ class MetadataCodeDetailsTest(unittest.TestCase):
 
         response_iterator_call = self._unary_stream(
             _SERIALIZED_REQUEST, metadata=_CLIENT_METADATA)
+        received_initial_metadata = response_iterator_call.initial_metadata()
         with self.assertRaises(grpc.RpcError):
             list(response_iterator_call)
-        received_initial_metadata = response_iterator_call.initial_metadata()
 
         self.assertTrue(
             test_common.metadata_transmitted(
@@ -550,9 +547,9 @@ class MetadataCodeDetailsTest(unittest.TestCase):
 
         response_iterator_call = self._unary_stream(
             _SERIALIZED_REQUEST, metadata=_CLIENT_METADATA)
+        received_initial_metadata = response_iterator_call.initial_metadata()
         with self.assertRaises(grpc.RpcError):
             list(response_iterator_call)
-        received_initial_metadata = response_iterator_call.initial_metadata()
 
         self.assertTrue(
             test_common.metadata_transmitted(

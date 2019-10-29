@@ -312,13 +312,13 @@ static grpc_error* init_frame_parser(grpc_chttp2_transport* t) {
   }
 }
 
-static grpc_error* skip_parser(void* parser, grpc_chttp2_transport* t,
-                               grpc_chttp2_stream* s, const grpc_slice& slice,
-                               int is_last) {
+static grpc_error* skip_parser(void* /*parser*/, grpc_chttp2_transport* /*t*/,
+                               grpc_chttp2_stream* /*s*/,
+                               const grpc_slice& /*slice*/, int /*is_last*/) {
   return GRPC_ERROR_NONE;
 }
 
-static grpc_error* skip_header(void* tp, grpc_mdelem md) {
+static grpc_error* skip_header(void* /*tp*/, grpc_mdelem md) {
   GRPC_MDELEM_UNREF(md);
   return GRPC_ERROR_NONE;
 }

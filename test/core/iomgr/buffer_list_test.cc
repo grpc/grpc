@@ -131,6 +131,6 @@ int main(int argc, char** argv) {
 
 #else /* GRPC_LINUX_ERRQUEUE */
 
-int main(int argc, char** argv) { return 0; }
+int main(int /*argc*/, char** /*argv*/) { return 0; }
 
 #endif /* GRPC_LINUX_ERRQUEUE */

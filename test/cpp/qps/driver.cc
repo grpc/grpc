@@ -477,17 +477,8 @@ std::unique_ptr<ScenarioResult> RunScenario(
       gpr_log(GPR_ERROR, "Failed WritesDone for client %zu", i);
     }
   }
-  gpr_log(GPR_INFO, "Finishing servers");
-  for (size_t i = 0; i < num_servers; i++) {
-    auto server = &servers[i];
-    if (!server->stream->Write(server_mark)) {
-      gpr_log(GPR_ERROR, "Couldn't write mark to server %zu", i);
-    }
-    if (!server->stream->WritesDone()) {
-      gpr_log(GPR_ERROR, "Failed WritesDone for server %zu", i);
-    }
-  }
 
+  // Collect clients' final run results right after finishing clients
   for (size_t i = 0; i < num_clients; i++) {
     auto client = &clients[i];
     // Read the client final status
@@ -501,11 +492,24 @@ std::unique_ptr<ScenarioResult> RunScenario(
       }
       result->add_client_stats()->CopyFrom(stats);
       // That final status should be the last message on the client stream
-      GPR_ASSERT(!client->stream->Read(&client_status));
+      // GPR_ASSERT(!client->stream->Read(&client_status));
     } else {
       gpr_log(GPR_ERROR, "Couldn't get final status from client %zu", i);
     }
   }
+
+  gpr_log(GPR_INFO, "Finishing servers");
+  for (size_t i = 0; i < num_servers; i++) {
+    auto server = &servers[i];
+    if (!server->stream->Write(server_mark)) {
+      gpr_log(GPR_ERROR, "Couldn't write mark to server %zu", i);
+    }
+    if (!server->stream->WritesDone()) {
+      gpr_log(GPR_ERROR, "Failed WritesDone for server %zu", i);
+    }
+  }
+
+  // Get final rpc status from clients
   for (size_t i = 0; i < num_clients; i++) {
     auto client = &clients[i];
     Status s = client->stream->Finish();
@@ -520,6 +524,7 @@ std::unique_ptr<ScenarioResult> RunScenario(
     }
   }
 
+  // Post-processing the results summary
   merged_latencies.FillProto(result->mutable_latencies());
   for (std::unordered_map<int, int64_t>::iterator it = merged_statuses.begin();
        it != merged_statuses.end(); ++it) {
@@ -528,6 +533,7 @@ std::unique_ptr<ScenarioResult> RunScenario(
     rrc->set_count(it->second);
   }
 
+  // Collect servers' final run results right after finishing server
   for (size_t i = 0; i < num_servers; i++) {
     auto server = &servers[i];
     // Read the server final status
@@ -541,6 +547,8 @@ std::unique_ptr<ScenarioResult> RunScenario(
       gpr_log(GPR_ERROR, "Couldn't get final status from server %zu", i);
     }
   }
+
+  // Get final rpc status from servers
   for (size_t i = 0; i < num_servers; i++) {
     auto server = &servers[i];
     Status s = server->stream->Finish();

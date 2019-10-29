@@ -149,14 +149,15 @@ def _CreateService():
         def StreamingOutputCall(self, request, context):
             return servicer_methods.StreamingOutputCall(request, context)
 
-        def StreamingInputCall(self, request_iter, context):
-            return servicer_methods.StreamingInputCall(request_iter, context)
+        def StreamingInputCall(self, request_iterator, context):
+            return servicer_methods.StreamingInputCall(request_iterator,
+                                                       context)
 
-        def FullDuplexCall(self, request_iter, context):
-            return servicer_methods.FullDuplexCall(request_iter, context)
+        def FullDuplexCall(self, request_iterator, context):
+            return servicer_methods.FullDuplexCall(request_iterator, context)
 
-        def HalfDuplexCall(self, request_iter, context):
-            return servicer_methods.HalfDuplexCall(request_iter, context)
+        def HalfDuplexCall(self, request_iterator, context):
+            return servicer_methods.HalfDuplexCall(request_iterator, context)
 
     server = test_common.test_server()
     getattr(service_pb2_grpc, ADD_SERVICER_TO_SERVER_IDENTIFIER)(Servicer(),

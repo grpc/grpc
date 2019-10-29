@@ -154,7 +154,7 @@ static void on_metadata_server_detection_http_response(void* user_data,
   gpr_mu_unlock(g_polling_mu);
 }
 
-static void destroy_pollset(void* p, grpc_error* e) {
+static void destroy_pollset(void* p, grpc_error* /*e*/) {
   grpc_pollset_destroy(static_cast<grpc_pollset*>(p));
 }
 

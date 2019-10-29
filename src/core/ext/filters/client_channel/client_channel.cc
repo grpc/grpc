@@ -584,10 +584,10 @@ class CallData {
   // A predicate type and some useful implementations for PendingBatchesFail().
   typedef bool (*YieldCallCombinerPredicate)(
       const CallCombinerClosureList& closures);
-  static bool YieldCallCombiner(const CallCombinerClosureList& closures) {
+  static bool YieldCallCombiner(const CallCombinerClosureList& /*closures*/) {
     return true;
   }
-  static bool NoYieldCallCombiner(const CallCombinerClosureList& closures) {
+  static bool NoYieldCallCombiner(const CallCombinerClosureList& /*closures*/) {
     return false;
   }
   static bool YieldCallCombinerIfPendingBatchesFound(
@@ -633,8 +633,8 @@ class CallData {
 
   // Sets *status and *server_pushback_md based on md_batch and error.
   // Only sets *server_pushback_md if server_pushback_md != nullptr.
-  void GetCallStatus(grpc_call_element* elem, grpc_metadata_batch* md_batch,
-                     grpc_error* error, grpc_status_code* status,
+  void GetCallStatus(grpc_metadata_batch* md_batch, grpc_error* error,
+                     grpc_status_code* status,
                      grpc_mdelem** server_pushback_md);
   // Adds recv_trailing_metadata_ready closure to closures.
   void AddClosureForRecvTrailingMetadataReady(
@@ -663,10 +663,10 @@ class CallData {
 
   // Adds the on_complete closure for the pending batch completed in
   // batch_data to closures.
-  void AddClosuresForCompletedPendingBatch(
-      grpc_call_element* elem, SubchannelCallBatchData* batch_data,
-      SubchannelCallRetryState* retry_state, grpc_error* error,
-      CallCombinerClosureList* closures);
+  void AddClosuresForCompletedPendingBatch(grpc_call_element* elem,
+                                           SubchannelCallBatchData* batch_data,
+                                           grpc_error* error,
+                                           CallCombinerClosureList* closures);
 
   // If there are any cached ops to replay or pending ops to start on the
   // subchannel call, adds a closure to closures to invoke
@@ -1052,7 +1052,7 @@ class ChannelData::SubchannelWrapper : public SubchannelInterface {
 
      private:
       static void ApplyUpdateInControlPlaneCombiner(void* arg,
-                                                    grpc_error* error) {
+                                                    grpc_error* /*error*/) {
         Updater* self = static_cast<Updater*>(arg);
         if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_routing_trace)) {
           gpr_log(GPR_INFO,
@@ -1188,7 +1188,7 @@ void ChannelData::ExternalConnectivityWatcher::Cancel() {
 }
 
 void ChannelData::ExternalConnectivityWatcher::AddWatcherLocked(
-    void* arg, grpc_error* ignored) {
+    void* arg, grpc_error* /*ignored*/) {
   ExternalConnectivityWatcher* self =
       static_cast<ExternalConnectivityWatcher*>(arg);
   // This assumes that the closure is scheduled on the ExecCtx scheduler
@@ -1201,7 +1201,7 @@ void ChannelData::ExternalConnectivityWatcher::AddWatcherLocked(
 }
 
 void ChannelData::ExternalConnectivityWatcher::RemoveWatcherLocked(
-    void* arg, grpc_error* ignored) {
+    void* arg, grpc_error* /*ignored*/) {
   ExternalConnectivityWatcher* self =
       static_cast<ExternalConnectivityWatcher*>(arg);
   self->chand_->state_tracker_.RemoveWatcher(self);
@@ -1228,7 +1228,7 @@ class ChannelData::ConnectivityWatcherAdder {
   }
 
  private:
-  static void AddWatcherLocked(void* arg, grpc_error* error) {
+  static void AddWatcherLocked(void* arg, grpc_error* /*error*/) {
     ConnectivityWatcherAdder* self =
         static_cast<ConnectivityWatcherAdder*>(arg);
     self->chand_->state_tracker_.AddWatcher(self->initial_state_,
@@ -1262,7 +1262,7 @@ class ChannelData::ConnectivityWatcherRemover {
   }
 
  private:
-  static void RemoveWatcherLocked(void* arg, grpc_error* error) {
+  static void RemoveWatcherLocked(void* arg, grpc_error* /*error*/) {
     ConnectivityWatcherRemover* self =
         static_cast<ConnectivityWatcherRemover*>(arg);
     self->chand_->state_tracker_.RemoveWatcher(self->watcher_);
@@ -1809,7 +1809,7 @@ grpc_error* ChannelData::DoPingLocked(grpc_transport_op* op) {
   return result.error;
 }
 
-void ChannelData::StartTransportOpLocked(void* arg, grpc_error* ignored) {
+void ChannelData::StartTransportOpLocked(void* arg, grpc_error* /*ignored*/) {
   grpc_transport_op* op = static_cast<grpc_transport_op*>(arg);
   grpc_channel_element* elem =
       static_cast<grpc_channel_element*>(op->handler_private.extra_arg);
@@ -1937,7 +1937,7 @@ ChannelData::GetConnectedSubchannelInDataPlane(
   return connected_subchannel->Ref();
 }
 
-void ChannelData::TryToConnectLocked(void* arg, grpc_error* error_ignored) {
+void ChannelData::TryToConnectLocked(void* arg, grpc_error* /*error_ignored*/) {
   auto* chand = static_cast<ChannelData*>(arg);
   if (chand->resolving_lb_policy_ != nullptr) {
     chand->resolving_lb_policy_->ExitIdleLocked();
@@ -2050,7 +2050,7 @@ grpc_error* CallData::Init(grpc_call_element* elem,
 }
 
 void CallData::Destroy(grpc_call_element* elem,
-                       const grpc_call_final_info* final_info,
+                       const grpc_call_final_info* /*final_info*/,
                        grpc_closure* then_schedule_closure) {
   CallData* calld = static_cast<CallData*>(elem->call_data);
   if (GPR_LIKELY(calld->subchannel_call_ != nullptr)) {
@@ -2445,7 +2445,7 @@ void CallData::PendingBatchesFail(
 
 // This is called via the call combiner, so access to calld is synchronized.
 void CallData::ResumePendingBatchInCallCombiner(void* arg,
-                                                grpc_error* ignored) {
+                                                grpc_error* /*ignored*/) {
   grpc_transport_stream_op_batch* batch =
       static_cast<grpc_transport_stream_op_batch*>(arg);
   SubchannelCall* subchannel_call =
@@ -2908,8 +2908,7 @@ void CallData::RecvMessageReady(void* arg, grpc_error* error) {
 // recv_trailing_metadata handling
 //
 
-void CallData::GetCallStatus(grpc_call_element* elem,
-                             grpc_metadata_batch* md_batch, grpc_error* error,
+void CallData::GetCallStatus(grpc_metadata_batch* md_batch, grpc_error* error,
                              grpc_status_code* status,
                              grpc_mdelem** server_pushback_md) {
   if (error != GRPC_ERROR_NONE) {
@@ -3078,7 +3077,7 @@ void CallData::RecvTrailingMetadataReady(void* arg, grpc_error* error) {
   grpc_mdelem* server_pushback_md = nullptr;
   grpc_metadata_batch* md_batch =
       batch_data->batch.payload->recv_trailing_metadata.recv_trailing_metadata;
-  calld->GetCallStatus(elem, md_batch, GRPC_ERROR_REF(error), &status,
+  calld->GetCallStatus(md_batch, GRPC_ERROR_REF(error), &status,
                        &server_pushback_md);
   if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_call_trace)) {
     gpr_log(GPR_INFO, "chand=%p calld=%p: call finished, status=%s", chand,
@@ -3111,8 +3110,7 @@ void CallData::RecvTrailingMetadataReady(void* arg, grpc_error* error) {
 
 void CallData::AddClosuresForCompletedPendingBatch(
     grpc_call_element* elem, SubchannelCallBatchData* batch_data,
-    SubchannelCallRetryState* retry_state, grpc_error* error,
-    CallCombinerClosureList* closures) {
+    grpc_error* error, CallCombinerClosureList* closures) {
   PendingBatch* pending = PendingBatchFind(
       elem, "completed", [batch_data](grpc_transport_stream_op_batch* batch) {
         // Match the pending batch with the same set of send ops as the
@@ -3210,7 +3208,7 @@ void CallData::OnComplete(void* arg, grpc_error* error) {
   if (!retry_state->retry_dispatched) {
     // Add closure for the completed pending batch, if any.
     calld->AddClosuresForCompletedPendingBatch(
-        elem, batch_data, retry_state, GRPC_ERROR_REF(error), &closures);
+        elem, batch_data, GRPC_ERROR_REF(error), &closures);
     // If needed, add a callback to start any replay or pending send ops on
     // the subchannel call.
     if (!retry_state->completed_recv_trailing_metadata) {
@@ -3238,7 +3236,7 @@ void CallData::OnComplete(void* arg, grpc_error* error) {
 // subchannel batch construction
 //
 
-void CallData::StartBatchInCallCombiner(void* arg, grpc_error* ignored) {
+void CallData::StartBatchInCallCombiner(void* arg, grpc_error* /*ignored*/) {
   grpc_transport_stream_op_batch* batch =
       static_cast<grpc_transport_stream_op_batch*>(arg);
   SubchannelCall* subchannel_call =
@@ -3608,7 +3606,8 @@ void CallData::AddSubchannelBatchesForPendingBatches(
   }
 }
 
-void CallData::StartRetriableSubchannelBatches(void* arg, grpc_error* ignored) {
+void CallData::StartRetriableSubchannelBatches(void* arg,
+                                               grpc_error* /*ignored*/) {
   grpc_call_element* elem = static_cast<grpc_call_element*>(arg);
   ChannelData* chand = static_cast<ChannelData*>(elem->channel_data);
   CallData* calld = static_cast<CallData*>(elem->call_data);
