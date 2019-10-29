@@ -66,8 +66,8 @@ cdef class Server:
     
     Args:
       backup_queue: a bool indicates whether to spawn a backup completion
-        queue. In case of no CQ is bound to the server, and the shutdown
-        process of server becomes un-observable.
+        queue. In the case that no CQ is bound to the server, and the shutdown
+        of server becomes un-observable.
     """
     if self.is_started:
       raise ValueError("the server has already started")

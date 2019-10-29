@@ -29,8 +29,6 @@ class Server:
         self._server = cygrpc.AioServer(self._loop, thread_pool,
                                         generic_handlers, interceptors, options,
                                         maximum_concurrent_rpcs, compression)
-        self._shutdown_started = False
-        self._shutdown_future = self._loop.create_future()
 
     def add_generic_rpc_handlers(
             self,
@@ -92,26 +90,23 @@ class Server:
         This method immediately stops the server from servicing new RPCs in
         all cases.
 
-        If a grace period is specified, all RPCs active at the end of the grace
-        period are aborted.
+        If a grace period is specified, this method returns immediately and all
+        RPCs active at the end of the grace period are aborted. If a grace
+        period is not specified (by passing None for grace), all existing RPCs
+        are aborted immediately and this method blocks until the last RPC
+        handler terminates.
 
-        If a grace period is not specified (by passing None for `grace`), all
-        existing RPCs are aborted immediately and this method blocks until the
-        last RPC handler terminates.
-
-        Only the first call to "stop" sets the length of grace period.
-        Additional calls is allowed and will block until the termination of
-        the server.
+        This method is idempotent and may be called at any time. Passing a
+        smaller grace value in a subsequent call will have the effect of
+        stopping the Server sooner (passing None will have the effect of
+        stopping the server immediately). Passing a larger grace value in a
+        subsequent call will not have the effect of stopping the server later
+        (i.e. the most restrictive grace value is used).
 
         Args:
           grace: A duration of time in seconds or None.
         """
-        if self._shutdown_started:
-            await self._shutdown_future
-        else:
-            self._shutdown_started = True
-            await self._server.shutdown(grace)
-            self._shutdown_future.set_result(None)
+        await self._server.shutdown(grace)
 
     async def wait_for_termination(self,
                                    timeout: Optional[float] = None) -> bool:
@@ -135,14 +130,7 @@ class Server:
         Returns:
           A bool indicates if the operation times out.
         """
-        if timeout is None:
-            await self._shutdown_future
-        else:
-            try:
-                await asyncio.wait_for(self._shutdown_future, timeout)
-            except asyncio.TimeoutError:
-                return False
-        return True
+        return await self._server.wait_for_termination(timeout)
 
 
 def server(migration_thread_pool=None,

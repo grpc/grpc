@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+# TODO(https://github.com/grpc/grpc/issues/20850) refactor this.
 _LOGGER = logging.getLogger(__name__)
 
 
@@ -282,6 +283,12 @@ cdef class AioServer:
         self.add_generic_rpc_handlers(generic_handlers)
         self._serving_task = None
 
+        self._shutdown_lock = asyncio.Lock()
+        self._shutdown_completed = self._loop.create_future()
+        self._shutdown_callback_wrapper = CallbackWrapper(
+            self._shutdown_completed,
+            SERVER_SHUTDOWN_FAILURE_HANDLER)
+
         if interceptors:
             raise NotImplementedError()
         if maximum_concurrent_rpcs:
@@ -309,7 +316,7 @@ cdef class AioServer:
         server_started.set_result(True)
 
         while True:
-            # When shutdown process starts, no more new connections.
+            # When shutdown begins, no more new connections.
             if self._status != AIO_SERVER_STATUS_RUNNING:
                 break
 
@@ -336,34 +343,14 @@ cdef class AioServer:
         # Otherwise, the actual start time of the server is un-controllable.
         await server_started
 
-    async def shutdown(self, grace):
-        """Gracefully shutdown the C-Core server.
-
-        Application should only call shutdown once.
-
-        Args:
-          grace: An optional float indicates the length of grace period in
-            seconds.
-        """
-        if self._status != AIO_SERVER_STATUS_RUNNING:
-            # The server either is shutting down, or not started.
-            return
-        cdef object shutdown_completed = self._loop.create_future()
-        cdef CallbackWrapper wrapper = CallbackWrapper(
-            shutdown_completed,
-            SERVER_SHUTDOWN_FAILURE_HANDLER)
-        # NOTE(lidiz) Without Py_INCREF, the wrapper object will be destructed
-        # when calling "await". This is an over-optimization by Cython.
-        cpython.Py_INCREF(wrapper)
-
+    async def _start_shutting_down(self):
+        """Prepares the server to shutting down (NOT coroutine-safe)."""
         # Starts the shutdown process.
-        # The shutdown callback won't be called unless there is no live RPC.
+        # The shutdown callback won't be called until there is no live RPC.
         grpc_server_shutdown_and_notify(
             self._server.c_server,
             self._cq._cq,
-            wrapper.c_functor())
-        self._server.is_shutting_down = True
-        self._status = AIO_SERVER_STATUS_STOPPING
+            self._shutdown_callback_wrapper.c_functor())
 
         # Ensures the serving task (coroutine) exits.
         try:
@@ -371,28 +358,56 @@ cdef class AioServer:
         except _RequestCallError:
             pass
 
+    async def shutdown(self, grace):
+        """Gracefully shutdown the C-Core server.
+
+        Application should only call shutdown once.
+
+        Args:
+          grace: An optional float indicating the length of grace period in
+            seconds.
+        """
+        if self._status == AIO_SERVER_STATUS_READY or self._status == AIO_SERVER_STATUS_STOPPED:
+            return
+
+        async with self._shutdown_lock:
+            if self._status == AIO_SERVER_STATUS_RUNNING:
+                await self._start_shutting_down()
+                self._server.is_shutting_down = True
+                self._status = AIO_SERVER_STATUS_STOPPING
+
         if grace is None:
             # Directly cancels all calls
             grpc_server_cancel_all_calls(self._server.c_server)
-            await shutdown_completed
+            await self._shutdown_completed
         else:
             try:
-                await asyncio.wait_for(asyncio.shield(shutdown_completed), grace)
+                await asyncio.wait_for(asyncio.shield(self._shutdown_completed), grace)
             except asyncio.TimeoutError:
                 # Cancels all ongoing calls by the end of grace period.
                 grpc_server_cancel_all_calls(self._server.c_server)
-                await shutdown_completed
+                await self._shutdown_completed
 
-        # Keeps wrapper object alive until now.
-        cpython.Py_DECREF(wrapper)
-        grpc_server_destroy(self._server.c_server)
-        self._server.c_server = NULL
-        self._server.is_shutdown = True
-        self._status = AIO_SERVER_STATUS_STOPPED
+        async with self._shutdown_lock:
+            if self._status == AIO_SERVER_STATUS_STOPPING:
+                grpc_server_destroy(self._server.c_server)
+                self._server.c_server = NULL
+                self._server.is_shutdown = True
+                self._status = AIO_SERVER_STATUS_STOPPED
 
-        # Shuts down the completion queue
-        await self._cq.shutdown()
+                # Shuts down the completion queue
+                await self._cq.shutdown()
+    
+    async def wait_for_termination(self, float timeout):
+        if timeout is None:
+            await self._shutdown_completed
+        else:
+            try:
+                await asyncio.wait_for(self._shutdown_completed, timeout)
+            except asyncio.TimeoutError:
+                return False
+        return True
 
     def __dealloc__(self):
         if self._status != AIO_SERVER_STATUS_STOPPED:
-            _LOGGER.error('Server is not stopped while deallocation: %d', self._status)
+            _LOGGER.error('__dealloc__ called on running server: %d', self._status)

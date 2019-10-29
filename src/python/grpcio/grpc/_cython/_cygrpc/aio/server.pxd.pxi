@@ -61,3 +61,6 @@ cdef class AioServer:
     cdef AioServerStatus _status
     cdef object _loop  # asyncio.EventLoop
     cdef object _serving_task  # asyncio.Task
+    cdef object _shutdown_lock  # asyncio.Lock
+    cdef object _shutdown_completed  # asyncio.Future
+    cdef CallbackWrapper _shutdown_callback_wrapper

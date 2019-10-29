@@ -15,6 +15,15 @@
 cimport cpython
 
 cdef struct CallbackContext:
+    # C struct to store callback context in the form of pointers.
+    #    
+    #   Attributes:
+    #     functor: A grpc_experimental_completion_queue_functor represents the
+    #       callback function in the only way C-Core understands.
+    #     waiter: An asyncio.Future object that fulfills when the callback is
+    #       invoked by C-Core.
+    #     failure_handler: A CallbackFailureHandler object that called when C-Core
+    #       returns 'success == 0' state.
     grpc_experimental_completion_queue_functor functor
-    cpython.PyObject *waiter  # asyncio.Future
-    cpython.PyObject *failure_handler  # cygrpc.CallbackFailureHandler
+    cpython.PyObject *waiter
+    cpython.PyObject *failure_handler

@@ -108,7 +108,7 @@ class TestChannel(AioTestBase):
                 response_deserializer=messages_pb2.SimpleResponse.FromString)
             response = await hi(messages_pb2.SimpleRequest())
 
-            self.assertEqual(type(response), messages_pb2.SimpleResponse)
+            self.assertIs(type(response), messages_pb2.SimpleResponse)
 
             await channel.close()
 

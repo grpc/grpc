@@ -14,6 +14,7 @@
 
 import logging
 import unittest
+import time
 
 import grpc
 from grpc.experimental import aio
@@ -22,7 +23,7 @@ from tests.unit.framework.common import test_constants
 
 _SIMPLE_UNARY_UNARY = '/test/SimpleUnaryUnary'
 _BLOCK_FOREVER = '/test/BlockForever'
-_BLOCK_SHORTLY = '/test/BlockShortly'
+_BLOCK_BRIEFLY = '/test/BlockBriefly'
 
 _REQUEST = b'\x00\x00\x00'
 _RESPONSE = b'\x01\x01\x01'
@@ -40,7 +41,7 @@ class _GenericHandler(grpc.GenericRpcHandler):
     async def _block_forever(self, unused_request, unused_context):
         await asyncio.get_event_loop().create_future()
 
-    async def _block_shortly(self, unused_request, unused_context):
+    async def _BLOCK_BRIEFLY(self, unused_request, unused_context):
         await asyncio.sleep(test_constants.SHORT_TIMEOUT / 2)
         return _RESPONSE
 
@@ -50,8 +51,8 @@ class _GenericHandler(grpc.GenericRpcHandler):
             return grpc.unary_unary_rpc_method_handler(self._unary_unary)
         if handler_details.method == _BLOCK_FOREVER:
             return grpc.unary_unary_rpc_method_handler(self._block_forever)
-        if handler_details.method == _BLOCK_SHORTLY:
-            return grpc.unary_unary_rpc_method_handler(self._block_shortly)
+        if handler_details.method == _BLOCK_BRIEFLY:
+            return grpc.unary_unary_rpc_method_handler(self._BLOCK_BRIEFLY)
 
     async def wait_for_call(self):
         await self._called
@@ -87,6 +88,7 @@ class TestServer(AioTestBase):
             await server.stop(None)
 
         self.loop.run_until_complete(test_shutdown_body())
+        # Ensures no SIGSEGV triggered, and ends within timeout.
 
     def test_shutdown_after_call(self):
 
@@ -107,12 +109,18 @@ class TestServer(AioTestBase):
 
             channel = aio.insecure_channel(server_target)
             call_task = self.loop.create_task(
-                channel.unary_unary(_BLOCK_SHORTLY)(_REQUEST))
+                channel.unary_unary(_BLOCK_BRIEFLY)(_REQUEST))
             await generic_handler.wait_for_call()
 
+            shutdown_start_time = time.time()
             await server.stop(test_constants.SHORT_TIMEOUT)
+            grace_period_length = time.time() - shutdown_start_time
+            self.assertGreater(grace_period_length,
+                               test_constants.SHORT_TIMEOUT / 3)
+
+            # Validates the states.
             await channel.close()
-            self.assertEqual(await call_task, _RESPONSE)
+            self.assertEqual(_RESPONSE, await call_task)
             self.assertTrue(call_task.done())
 
         self.loop.run_until_complete(test_graceful_shutdown_success_body())
@@ -131,12 +139,67 @@ class TestServer(AioTestBase):
 
             with self.assertRaises(aio.AioRpcError) as exception_context:
                 await call_task
-            self.assertEqual(exception_context.exception.code(),
-                             grpc.StatusCode.UNAVAILABLE)
+            self.assertEqual(grpc.StatusCode.UNAVAILABLE,
+                             exception_context.exception.code())
             self.assertIn('GOAWAY', exception_context.exception.details())
             await channel.close()
 
         self.loop.run_until_complete(test_graceful_shutdown_failed_body())
+
+    def test_concurrent_graceful_shutdown(self):
+
+        async def test_concurrent_graceful_shutdown_body():
+            server_target, server, generic_handler = await _start_test_server()
+
+            channel = aio.insecure_channel(server_target)
+            call_task = self.loop.create_task(
+                channel.unary_unary(_BLOCK_BRIEFLY)(_REQUEST))
+            await generic_handler.wait_for_call()
+
+            # Expects the shortest grace period to be effective.
+            shutdown_start_time = time.time()
+            await asyncio.gather(
+                server.stop(test_constants.LONG_TIMEOUT),
+                server.stop(test_constants.SHORT_TIMEOUT),
+                server.stop(test_constants.LONG_TIMEOUT),
+            )
+            grace_period_length = time.time() - shutdown_start_time
+            self.assertGreater(grace_period_length,
+                               test_constants.SHORT_TIMEOUT / 3)
+
+            await channel.close()
+            self.assertEqual(_RESPONSE, await call_task)
+            self.assertTrue(call_task.done())
+
+        self.loop.run_until_complete(test_concurrent_graceful_shutdown_body())
+
+    def test_concurrent_graceful_shutdown_immediate(self):
+
+        async def test_concurrent_graceful_shutdown_immediate_body():
+            server_target, server, generic_handler = await _start_test_server()
+
+            channel = aio.insecure_channel(server_target)
+            call_task = self.loop.create_task(
+                channel.unary_unary(_BLOCK_FOREVER)(_REQUEST))
+            await generic_handler.wait_for_call()
+
+            # Expects no grace period, due to the "server.stop(None)".
+            await asyncio.gather(
+                server.stop(test_constants.LONG_TIMEOUT),
+                server.stop(None),
+                server.stop(test_constants.SHORT_TIMEOUT),
+                server.stop(test_constants.LONG_TIMEOUT),
+            )
+
+            with self.assertRaises(aio.AioRpcError) as exception_context:
+                await call_task
+            self.assertEqual(grpc.StatusCode.UNAVAILABLE,
+                             exception_context.exception.code())
+            self.assertIn('GOAWAY', exception_context.exception.details())
+            await channel.close()
+
+        self.loop.run_until_complete(
+            test_concurrent_graceful_shutdown_immediate_body())
 
     @unittest.skip('https://github.com/grpc/grpc/issues/20818')
     def test_shutdown_before_call(self):
