@@ -482,7 +482,10 @@ static grpc_resource_user* win_get_resource_user(grpc_endpoint* ep) {
   return tcp->resource_user;
 }
 
-static int win_get_fd(grpc_endpoint* ep) { return -1; }
+static int win_get_fd(grpc_endpoint* ep) {
+  grpc_tcp* tcp = reinterpret_cast<grpc_tcp*>(ep);
+  return tcp->socket->socket;
+}
 
 static bool win_can_track_err(grpc_endpoint* ep) { return false; }
 
