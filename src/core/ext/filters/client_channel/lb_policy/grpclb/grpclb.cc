@@ -1265,11 +1265,10 @@ void GrpcLb::BalancerCallState::OnBalancerStatusReceivedLocked(
 //
 
 ServerAddressList ExtractBalancerAddresses(const grpc_channel_args& args) {
-  ServerAddressList balancer_addresses;
   const ServerAddressList* addresses =
       FindGrpclbBalancerAddressesInChannelArgs(args);
-  if (addresses != nullptr) balancer_addresses = *addresses;
-  return balancer_addresses;
+  if (addresses != nullptr) return *addresses;
+  return ServerAddressList();
 }
 
 /* Returns the channel args for the LB channel, used to create a bidirectional
@@ -1481,13 +1480,13 @@ ServerAddressList AddNullLbTokenToAddresses(
   grpc_arg arg = grpc_channel_arg_pointer_create(
       const_cast<char*>(GRPC_ARG_GRPCLB_ADDRESS_LB_TOKEN),
       const_cast<char*>(lb_token), &lb_token_arg_vtable);
-  ServerAddressList backend_addresses;
+  ServerAddressList addresses_out;
   for (size_t i = 0; i < addresses.size(); ++i) {
-    backend_addresses.emplace_back(
+    addresses_out.emplace_back(
         addresses[i].address(),
         grpc_channel_args_copy_and_add(addresses[i].args(), &arg, 1));
   }
-  return backend_addresses;
+  return addresses_out;
 }
 
 void GrpcLb::ProcessAddressesAndChannelArgsLocked(
