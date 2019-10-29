@@ -59,7 +59,7 @@ typedef struct alts_handshaker_client_vtable {
   tsi_result (*next_locked)(alts_handshaker_client* client,
                             grpc_slice* bytes_received);
   void (*shutdown_locked)(alts_handshaker_client* client);
-  void (*destruct_locked)(alts_handshaker_client* client);
+  void (*destruct)(alts_handshaker_client* client);
 } alts_handshaker_client_vtable;
 
 /**
@@ -112,7 +112,7 @@ void alts_handshaker_client_shutdown_locked(alts_handshaker_client* client);
  *
  * - client: an ALTS handshaker client instance.
  */
-void alts_handshaker_client_destroy_locked(alts_handshaker_client* client);
+void alts_handshaker_client_destroy(alts_handshaker_client* client);
 
 /**
  * This method creates an ALTS handshaker client.
@@ -149,14 +149,6 @@ alts_handshaker_client* alts_grpc_handshaker_client_create_locked(
  * service. */
 void alts_handshaker_client_handle_response_locked(
     alts_handshaker_client* client, bool is_ok);
-
-/* This is used to continue making a gRPC call after the ALTS TSI handshaker
- * first creates a channel and call (if necessary). Note that this is exposed
- * only because some back-and-forth between an alts_handshaker_client object
- * and its owning alts_tsi_handshaker object is currently necessary in order
- * to drop the alts_tsi_handshaker's lock and then grab it again. */
-void alts_handshaker_client_continue_make_grpc_call_locked(
-    alts_handshaker_client* client, grpc_call* call);
 
 /** Cancels any active handshake call. */
 void alts_handshaker_client_cancel_call_locked(alts_handshaker_client* client);

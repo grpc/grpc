@@ -463,7 +463,7 @@ static void handshaker_call_unref(void* arg, grpc_error* /*error*/) {
   grpc_call_unref(call);
 }
 
-static void handshaker_client_destruct_locked(alts_handshaker_client* c) {
+static void handshaker_client_destruct(alts_handshaker_client* c) {
   if (c == nullptr) {
     return;
   }
@@ -480,7 +480,7 @@ static void handshaker_client_destruct_locked(alts_handshaker_client* c) {
 static const alts_handshaker_client_vtable vtable = {
     handshaker_client_start_client_locked,
     handshaker_client_start_server_locked, handshaker_client_next_locked,
-    handshaker_client_shutdown_locked, handshaker_client_destruct_locked};
+    handshaker_client_shutdown_locked, handshaker_client_destruct};
 
 alts_handshaker_client* alts_grpc_handshaker_client_create_locked(
     alts_tsi_handshaker* handshaker, grpc_channel* channel,
@@ -670,10 +670,10 @@ void alts_handshaker_client_shutdown_locked(alts_handshaker_client* client) {
   }
 }
 
-void alts_handshaker_client_destroy_locked(alts_handshaker_client* c) {
+void alts_handshaker_client_destroy(alts_handshaker_client* c) {
   if (c != nullptr) {
-    if (c->vtable != nullptr && c->vtable->destruct_locked != nullptr) {
-      c->vtable->destruct_locked(c);
+    if (c->vtable != nullptr && c->vtable->destruct != nullptr) {
+      c->vtable->destruct(c);
     }
     alts_grpc_handshaker_client* client =
         reinterpret_cast<alts_grpc_handshaker_client*>(c);
