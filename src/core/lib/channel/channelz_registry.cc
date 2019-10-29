@@ -38,16 +38,20 @@ namespace {
 
 // singleton instance of the registry.
 ChannelzRegistry* g_channelz_registry = nullptr;
+bool g_channelz_registry_running = false;
 
 const int kPaginationLimit = 100;
 
 }  // anonymous namespace
 
-void ChannelzRegistry::Init() { g_channelz_registry = New<ChannelzRegistry>(); }
+void ChannelzRegistry::Init() {
+  g_channelz_registry = New<ChannelzRegistry>();
+  g_channelz_registry_running = true;
+}
 
 void ChannelzRegistry::Shutdown() {
   Delete(g_channelz_registry);
-  g_channelz_registry = nullptr;
+  g_channelz_registry_running = false;
 }
 
 ChannelzRegistry* ChannelzRegistry::Default() {
@@ -62,7 +66,7 @@ void ChannelzRegistry::InternalRegister(BaseNode* node) {
 }
 
 void ChannelzRegistry::InternalUnregister(intptr_t uuid) {
-  if (g_channelz_registry == nullptr) return;
+  if (!g_channelz_registry_running) return;
   GPR_ASSERT(uuid >= 1);
   MutexLock lock(&mu_);
   GPR_ASSERT(uuid <= uuid_generator_);
