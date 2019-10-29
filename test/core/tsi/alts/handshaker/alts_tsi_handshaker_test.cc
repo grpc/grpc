@@ -647,7 +647,7 @@ static void check_handle_response_invalid_resp() {
   {
     grpc_core::ExecCtx exec_ctx;
     grpc_core::MutexLock lock(alts_tsi_handshaker_get_lock_for_testing(
-        alts_handshaker_client_get_handshaker_for_testing(cb_event)));
+        alts_handshaker_client_get_handshaker_for_testing(client)));
     alts_handshaker_client_handle_response_locked(client, true);
   }
   /* Cleanup. */
@@ -725,7 +725,7 @@ static void check_handle_response_failure() {
   {
     grpc_core::ExecCtx exec_ctx;
     grpc_core::MutexLock lock(alts_tsi_handshaker_get_lock_for_testing(
-        alts_handshaker_client_get_handshaker_for_testing(cb_event)));
+        alts_handshaker_client_get_handshaker_for_testing(client)));
     alts_handshaker_client_handle_response_locked(client, true /* is_ok*/);
   }
   /* Cleanup. */
