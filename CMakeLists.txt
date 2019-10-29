@@ -326,6 +326,12 @@ protobuf_generate_grpc_cpp(
 protobuf_generate_grpc_cpp(
   src/proto/grpc/testing/xds/orca_load_report_for_test.proto
 )
+protobuf_generate_grpc_cpp(
+  test/core/tsi/alts/fake_handshaker/handshaker.proto
+)
+protobuf_generate_grpc_cpp(
+  test/core/tsi/alts/fake_handshaker/transport_security_common.proto
+)
 
 if (gRPC_BUILD_TESTS)
 add_custom_target(buildtests_c)
@@ -10037,13 +10043,6 @@ add_executable(alts_concurrent_connectivity_test
   test/core/tsi/alts/handshaker/alts_concurrent_connectivity_test.cc
   third_party/googletest/googletest/src/gtest-all.cc
   third_party/googletest/googlemock/src/gmock-all.cc
-)
-
-protobuf_generate_grpc_cpp(
-  test/core/tsi/alts/fake_handshaker/handshaker.proto
-)
-protobuf_generate_grpc_cpp(
-  test/core/tsi/alts/fake_handshaker/transport_security_common.proto
 )
 
 target_include_directories(alts_concurrent_connectivity_test
