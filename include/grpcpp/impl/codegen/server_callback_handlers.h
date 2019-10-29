@@ -114,8 +114,9 @@ class CallbackUnaryHandler : public ::grpc::internal::MethodHandler {
   class ServerCallbackUnaryImpl : public experimental::ServerCallbackUnary {
    public:
     void Finish(::grpc::Status s) override {
-      finish_tag_.Set(call_.call(), [this](bool) { MaybeDone(); }, &finish_ops_,
-                      reactor_->InternalInlineable());
+      finish_tag_.Set(
+          call_.call(), [this](bool) { MaybeDone(); }, &finish_ops_,
+          reactor_.load(std::memory_order_relaxed)->InternalInlineable());
       finish_ops_.set_core_cq_tag(&finish_tag_);
 
       if (!ctx_->sent_initial_metadata_) {
@@ -142,7 +143,8 @@ class CallbackUnaryHandler : public ::grpc::internal::MethodHandler {
       this->Ref();
       meta_tag_.Set(call_.call(),
                     [this](bool ok) {
-                      reactor_->OnSendInitialMetadataDone(ok);
+                      reactor_.load(std::memory_order_relaxed)
+                          ->OnSendInitialMetadataDone(ok);
                       MaybeDone();
                     },
                     &meta_ops_, false);
@@ -176,7 +178,7 @@ class CallbackUnaryHandler : public ::grpc::internal::MethodHandler {
     /// the completion of the RPC. This should be the last component of the
     /// handler.
     void SetupReactor(experimental::ServerUnaryReactor* reactor) {
-      reactor_ = reactor;
+      reactor_.store(reactor, std::memory_order_relaxed);
       this->BindReactor(reactor);
       this->MaybeCallOnCancel(reactor, true);
     }
@@ -186,7 +188,7 @@ class CallbackUnaryHandler : public ::grpc::internal::MethodHandler {
 
     void MaybeDone() override {
       if (GPR_UNLIKELY(this->Unref() == 1)) {
-        reactor_->OnDone();
+        reactor_.load(std::memory_order_relaxed)->OnDone();
         grpc_call* call = call_.call();
         auto call_requester = std::move(call_requester_);
         allocator_state_->Release();
@@ -196,7 +198,9 @@ class CallbackUnaryHandler : public ::grpc::internal::MethodHandler {
       }
     }
 
-    ServerReactor* reactor() override { return reactor_; }
+    ServerReactor* reactor() override {
+      return reactor_.load(std::memory_order_relaxed);
+    }
 
     ::grpc::internal::CallOpSet<::grpc::internal::CallOpSendInitialMetadata>
         meta_ops_;
@@ -212,7 +216,7 @@ class CallbackUnaryHandler : public ::grpc::internal::MethodHandler {
     ::grpc::experimental::MessageHolder<RequestType, ResponseType>* const
         allocator_state_;
     std::function<void()> call_requester_;
-    experimental::ServerUnaryReactor* reactor_;
+    std::atomic<experimental::ServerUnaryReactor*> reactor_;
     std::atomic<intptr_t> callbacks_outstanding_{
         3};  // reserve for start, Finish, and CompletionOp
   };
@@ -289,7 +293,8 @@ class CallbackClientStreamingHandler : public ::grpc::internal::MethodHandler {
       this->Ref();
       meta_tag_.Set(call_.call(),
                     [this](bool ok) {
-                      reactor_->OnSendInitialMetadataDone(ok);
+                      reactor_.load(std::memory_order_relaxed)
+                          ->OnSendInitialMetadataDone(ok);
                       MaybeDone();
                     },
                     &meta_ops_, false);
@@ -318,10 +323,10 @@ class CallbackClientStreamingHandler : public ::grpc::internal::MethodHandler {
         : ctx_(ctx), call_(*call), call_requester_(std::move(call_requester)) {}
 
     void SetupReactor(experimental::ServerReadReactor<RequestType>* reactor) {
-      reactor_ = reactor;
+      reactor_.store(reactor, std::memory_order_relaxed);
       read_tag_.Set(call_.call(),
                     [this](bool ok) {
-                      reactor_->OnReadDone(ok);
+                      reactor_.load(std::memory_order_relaxed)->OnReadDone(ok);
                       MaybeDone();
                     },
                     &read_ops_, false);
@@ -336,7 +341,7 @@ class CallbackClientStreamingHandler : public ::grpc::internal::MethodHandler {
 
     void MaybeDone() override {
       if (GPR_UNLIKELY(this->Unref() == 1)) {
-        reactor_->OnDone();
+        reactor_.load(std::memory_order_relaxed)->OnDone();
         grpc_call* call = call_.call();
         auto call_requester = std::move(call_requester_);
         this->~ServerCallbackReaderImpl();  // explicitly call destructor
@@ -345,7 +350,9 @@ class CallbackClientStreamingHandler : public ::grpc::internal::MethodHandler {
       }
     }
 
-    ServerReactor* reactor() override { return reactor_; }
+    ServerReactor* reactor() override {
+      return reactor_.load(std::memory_order_relaxed);
+    }
 
     ::grpc::internal::CallOpSet<::grpc::internal::CallOpSendInitialMetadata>
         meta_ops_;
@@ -364,7 +371,7 @@ class CallbackClientStreamingHandler : public ::grpc::internal::MethodHandler {
     ::grpc::internal::Call call_;
     ResponseType resp_;
     std::function<void()> call_requester_;
-    experimental::ServerReadReactor<RequestType>* reactor_;
+    std::atomic<experimental::ServerReadReactor<RequestType>*> reactor_;
     std::atomic<intptr_t> callbacks_outstanding_{
         3};  // reserve for OnStarted, Finish, and CompletionOp
   };
@@ -453,7 +460,8 @@ class CallbackServerStreamingHandler : public ::grpc::internal::MethodHandler {
       this->Ref();
       meta_tag_.Set(call_.call(),
                     [this](bool ok) {
-                      reactor_->OnSendInitialMetadataDone(ok);
+                      reactor_.load(std::memory_order_relaxed)
+                          ->OnSendInitialMetadataDone(ok);
                       MaybeDone();
                     },
                     &meta_ops_, false);
@@ -510,13 +518,14 @@ class CallbackServerStreamingHandler : public ::grpc::internal::MethodHandler {
           call_requester_(std::move(call_requester)) {}
 
     void SetupReactor(experimental::ServerWriteReactor<ResponseType>* reactor) {
-      reactor_ = reactor;
-      write_tag_.Set(call_.call(),
-                     [this](bool ok) {
-                       reactor_->OnWriteDone(ok);
-                       MaybeDone();
-                     },
-                     &write_ops_, false);
+      reactor_.store(reactor, std::memory_order_relaxed);
+      write_tag_.Set(
+          call_.call(),
+          [this](bool ok) {
+            reactor_.load(std::memory_order_relaxed)->OnWriteDone(ok);
+            MaybeDone();
+          },
+          &write_ops_, false);
       write_ops_.set_core_cq_tag(&write_tag_);
       this->BindReactor(reactor);
       this->MaybeCallOnCancel(reactor, true);
@@ -527,7 +536,7 @@ class CallbackServerStreamingHandler : public ::grpc::internal::MethodHandler {
 
     void MaybeDone() override {
       if (GPR_UNLIKELY(this->Unref() == 1)) {
-        reactor_->OnDone();
+        reactor_.load(std::memory_order_relaxed)->OnDone();
         grpc_call* call = call_.call();
         auto call_requester = std::move(call_requester_);
         this->~ServerCallbackWriterImpl();  // explicitly call destructor
@@ -536,7 +545,9 @@ class CallbackServerStreamingHandler : public ::grpc::internal::MethodHandler {
       }
     }
 
-    ServerReactor* reactor() override { return reactor_; }
+    ServerReactor* reactor() override {
+      return reactor_.load(std::memory_order_relaxed);
+    }
 
     ::grpc::internal::CallOpSet<::grpc::internal::CallOpSendInitialMetadata>
         meta_ops_;
@@ -555,7 +566,7 @@ class CallbackServerStreamingHandler : public ::grpc::internal::MethodHandler {
     ::grpc::internal::Call call_;
     const RequestType* req_;
     std::function<void()> call_requester_;
-    experimental::ServerWriteReactor<ResponseType>* reactor_;
+    std::atomic<experimental::ServerWriteReactor<ResponseType>*> reactor_;
     std::atomic<intptr_t> callbacks_outstanding_{
         3};  // reserve for OnStarted, Finish, and CompletionOp
   };
@@ -631,7 +642,8 @@ class CallbackBidiHandler : public ::grpc::internal::MethodHandler {
       this->Ref();
       meta_tag_.Set(call_.call(),
                     [this](bool ok) {
-                      reactor_->OnSendInitialMetadataDone(ok);
+                      reactor_.load(std::memory_order_relaxed)
+                          ->OnSendInitialMetadataDone(ok);
                       MaybeDone();
                     },
                     &meta_ops_, false);
@@ -690,17 +702,18 @@ class CallbackBidiHandler : public ::grpc::internal::MethodHandler {
 
     void SetupReactor(
         experimental::ServerBidiReactor<RequestType, ResponseType>* reactor) {
-      reactor_ = reactor;
-      write_tag_.Set(call_.call(),
-                     [this](bool ok) {
-                       reactor_->OnWriteDone(ok);
-                       MaybeDone();
-                     },
-                     &write_ops_, false);
+      reactor_.store(reactor, std::memory_order_relaxed);
+      write_tag_.Set(
+          call_.call(),
+          [this](bool ok) {
+            reactor_.load(std::memory_order_relaxed)->OnWriteDone(ok);
+            MaybeDone();
+          },
+          &write_ops_, false);
       write_ops_.set_core_cq_tag(&write_tag_);
       read_tag_.Set(call_.call(),
                     [this](bool ok) {
-                      reactor_->OnReadDone(ok);
+                      reactor_.load(std::memory_order_relaxed)->OnReadDone(ok);
                       MaybeDone();
                     },
                     &read_ops_, false);
@@ -711,7 +724,7 @@ class CallbackBidiHandler : public ::grpc::internal::MethodHandler {
 
     void MaybeDone() override {
       if (GPR_UNLIKELY(this->Unref() == 1)) {
-        reactor_->OnDone();
+        reactor_.load(std::memory_order_relaxed)->OnDone();
         grpc_call* call = call_.call();
         auto call_requester = std::move(call_requester_);
         this->~ServerCallbackReaderWriterImpl();  // explicitly call destructor
@@ -720,7 +733,9 @@ class CallbackBidiHandler : public ::grpc::internal::MethodHandler {
       }
     }
 
-    ServerReactor* reactor() override { return reactor_; }
+    ServerReactor* reactor() override {
+      return reactor_.load(std::memory_order_relaxed);
+    }
 
     ::grpc::internal::CallOpSet<::grpc::internal::CallOpSendInitialMetadata>
         meta_ops_;
@@ -742,7 +757,8 @@ class CallbackBidiHandler : public ::grpc::internal::MethodHandler {
     ::grpc_impl::ServerContext* ctx_;
     ::grpc::internal::Call call_;
     std::function<void()> call_requester_;
-    experimental::ServerBidiReactor<RequestType, ResponseType>* reactor_;
+    std::atomic<experimental::ServerBidiReactor<RequestType, ResponseType>*>
+        reactor_;
     std::atomic<intptr_t> callbacks_outstanding_{
         3};  // reserve for OnStarted, Finish, and CompletionOp
   };
