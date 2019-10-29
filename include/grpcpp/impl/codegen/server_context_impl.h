@@ -287,7 +287,17 @@ class ServerContext {
     return message_allocator_state_;
   }
 
-  /// Get the default unary reactor for use in minimal reaction cases.
+  /// Get a library-owned default unary reactor for use in minimal reaction
+  /// cases. This supports typical unary RPC usage of providing a response and
+  /// status. It supports immediate Finish (finish from within the method
+  /// handler) or delayed Finish (finish called after the method handler
+  /// invocation). It does not support reacting to cancellation or completion,
+  /// or early sending of initial metadata. Since this is a library-owned
+  /// reactor, it should not be delete'd or freed in any way.
+  ///
+  /// This method should not be called more than once or called after return
+  /// from the method handler.
+  ///
   /// WARNING: This is experimental API and could be changed or removed.
   experimental::ServerUnaryReactor* DefaultReactor() {
     auto reactor = &default_reactor_;
