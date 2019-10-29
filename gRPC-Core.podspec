@@ -226,6 +226,7 @@ Pod::Spec.new do |s|
                       'src/core/ext/filters/client_channel/lb_policy/pick_first/pick_first.cc',
                       'src/core/ext/filters/client_channel/lb_policy/round_robin/round_robin.cc',
                       'src/core/ext/filters/client_channel/lb_policy/subchannel_list.h',
+                      'src/core/ext/filters/client_channel/lb_policy/xds/cds.cc',
                       'src/core/ext/filters/client_channel/lb_policy/xds/xds.cc',
                       'src/core/ext/filters/client_channel/lb_policy/xds/xds.h',
                       'src/core/ext/filters/client_channel/lb_policy_factory.h',
