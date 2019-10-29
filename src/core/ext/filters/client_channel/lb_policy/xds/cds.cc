@@ -117,19 +117,6 @@ void CdsLb::ClusterWatcher::OnClusterChanged(CdsUpdate cluster_data) {
     gpr_log(GPR_INFO, "[cdslb %p] received CDS update from xds client",
             parent_.get());
   }
-  // Create child policy if not already present.
-  if (parent_->child_policy_ == nullptr) {
-    LoadBalancingPolicy::Args args;
-    args.combiner = parent_->combiner();
-    args.args = parent_->args_;
-    args.channel_control_helper = MakeUnique<Helper>(parent_->Ref());
-    parent_->child_policy_ =
-        LoadBalancingPolicyRegistry::CreateLoadBalancingPolicy(
-            "xds_experimental", std::move(args));
-    grpc_pollset_set_add_pollset_set(
-        parent_->child_policy_->interested_parties(),
-        parent_->interested_parties());
-  }
   // Construct config for child policy.
   char* lrs_str = nullptr;
   if (cluster_data.lrs_load_reporting_server_name != nullptr) {
@@ -169,6 +156,19 @@ void CdsLb::ClusterWatcher::OnClusterChanged(CdsUpdate cluster_data) {
   if (error != GRPC_ERROR_NONE) {
     OnError(error);
     return;
+  }
+  // Create child policy if not already present.
+  if (parent_->child_policy_ == nullptr) {
+    LoadBalancingPolicy::Args args;
+    args.combiner = parent_->combiner();
+    args.args = parent_->args_;
+    args.channel_control_helper = MakeUnique<Helper>(parent_->Ref());
+    parent_->child_policy_ =
+        LoadBalancingPolicyRegistry::CreateLoadBalancingPolicy(
+            "xds_experimental", std::move(args));
+    grpc_pollset_set_add_pollset_set(
+        parent_->child_policy_->interested_parties(),
+        parent_->interested_parties());
   }
   // Update child policy.
   UpdateArgs args;

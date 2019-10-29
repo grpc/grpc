@@ -321,7 +321,7 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
     /// Channel args.
     // TODO(roth): Find a better channel args representation for this API.
     // TODO(roth): Clarify ownership semantics here -- currently, this
-    // does not take ownership of args, whuch is the opposite of how we
+    // does not take ownership of args, which is the opposite of how we
     // handle them in UpdateArgs.
     const grpc_channel_args* args = nullptr;
   };
