@@ -94,8 +94,8 @@ static void lame_start_transport_stream_op_batch(
       calld->call_combiner);
 }
 
-static void lame_get_channel_info(grpc_channel_element* elem,
-                                  const grpc_channel_info* channel_info) {}
+static void lame_get_channel_info(grpc_channel_element* /*elem*/,
+                                  const grpc_channel_info* /*channel_info*/) {}
 
 static void lame_start_transport_op(grpc_channel_element* elem,
                                     grpc_transport_op* op) {
@@ -133,8 +133,8 @@ static grpc_error* lame_init_call_elem(grpc_call_element* elem,
   return GRPC_ERROR_NONE;
 }
 
-static void lame_destroy_call_elem(grpc_call_element* elem,
-                                   const grpc_call_final_info* final_info,
+static void lame_destroy_call_elem(grpc_call_element* /*elem*/,
+                                   const grpc_call_final_info* /*final_info*/,
                                    grpc_closure* then_schedule_closure) {
   GRPC_CLOSURE_SCHED(then_schedule_closure, GRPC_ERROR_NONE);
 }

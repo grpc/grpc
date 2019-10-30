@@ -20,7 +20,6 @@ import os.path
 import platform
 import re
 import shutil
-import subprocess
 import sys
 
 import setuptools
@@ -125,7 +124,10 @@ class TestAio(setuptools.Command):
         import tests
         loader = tests.Loader()
         loader.loadTestsFromNames(['tests_aio'])
-        runner = tests.Runner()
+        # Even without dedicated threads, the framework will somehow spawn a
+        # new thread for tests to run upon. New thread doesn't have event loop
+        # attached by default, so initialization is needed.
+        runner = tests.Runner(dedicated_threads=False)
         result = runner.run(loader.suite)
         if not result.wasSuccessful():
             sys.exit('Test failure')

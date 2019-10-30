@@ -178,6 +178,7 @@ class XdsClient : public InternallyRefCounted<XdsClient> {
         endpoint_watchers;
     Set<XdsClientStats*> client_stats;
     // The latest data seen from CDS and EDS.
+    bool seen_cds_update = false;
     CdsUpdate cds_update;
     EdsUpdate eds_update;
   };

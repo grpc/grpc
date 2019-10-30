@@ -90,7 +90,7 @@ static void delete_state_watcher(state_watcher* w) {
   gpr_free(w);
 }
 
-static void finished_completion(void* pw, grpc_cq_completion* ignored) {
+static void finished_completion(void* pw, grpc_cq_completion* /*ignored*/) {
   bool should_delete = false;
   state_watcher* w = static_cast<state_watcher*>(pw);
   gpr_mu_lock(&w->mu);
@@ -198,7 +198,7 @@ typedef struct watcher_timer_init_arg {
   gpr_timespec deadline;
 } watcher_timer_init_arg;
 
-static void watcher_timer_init(void* arg, grpc_error* error_ignored) {
+static void watcher_timer_init(void* arg, grpc_error* /*error_ignored*/) {
   watcher_timer_init_arg* wa = static_cast<watcher_timer_init_arg*>(arg);
 
   grpc_timer_init(&wa->w->alarm, grpc_timespec_to_millis_round_up(wa->deadline),

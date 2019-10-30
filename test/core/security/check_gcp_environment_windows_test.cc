@@ -87,6 +87,6 @@ int main(int argc, char** argv) {
 }
 #else  // GPR_WINDOWS
 
-int main(int argc, char** argv) { return 0; }
+int main(int /*argc*/, char** /*argv*/) { return 0; }
 
 #endif  // GPR_WINDOWS

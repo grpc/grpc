@@ -32,6 +32,7 @@
 #include "envoy/api/v2/core/address.upb.h"
 #include "envoy/api/v2/core/base.upb.h"
 #include "envoy/api/v2/core/config_source.upb.h"
+#include "envoy/api/v2/core/health_check.upb.h"
 #include "envoy/api/v2/discovery.upb.h"
 #include "envoy/api/v2/eds.upb.h"
 #include "envoy/api/v2/endpoint/endpoint.upb.h"
@@ -329,6 +330,13 @@ namespace {
 grpc_error* ServerAddressParseAndAppend(
     const envoy_api_v2_endpoint_LbEndpoint* lb_endpoint,
     ServerAddressList* list) {
+  // If health_status is not HEALTHY or UNKNOWN, skip this endpoint.
+  const int32_t health_status =
+      envoy_api_v2_endpoint_LbEndpoint_health_status(lb_endpoint);
+  if (health_status != envoy_api_v2_core_UNKNOWN &&
+      health_status != envoy_api_v2_core_HEALTHY) {
+    return GRPC_ERROR_NONE;
+  }
   // Find the ip:port.
   const envoy_api_v2_endpoint_Endpoint* endpoint =
       envoy_api_v2_endpoint_LbEndpoint_endpoint(lb_endpoint);

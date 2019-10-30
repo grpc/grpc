@@ -1343,9 +1343,10 @@ void XdsClient::WatchClusterData(StringView cluster,
   cluster_state_.cluster_watchers[w] = std::move(watcher);
   // If we've already received an CDS update, notify the new watcher
   // immediately.
-  if (cluster_state_.cds_update.service_name != nullptr) {
+  if (cluster_state_.seen_cds_update) {
     w->OnClusterChanged(cluster_state_.cds_update);
   }
+  // FIXME: start cds call
   chand_->MaybeStartAdsCall();
 }
 
@@ -1355,9 +1356,8 @@ void XdsClient::CancelClusterDataWatch(StringView cluster,
   if (it != cluster_state_.cluster_watchers.end()) {
     cluster_state_.cluster_watchers.erase(it);
   }
-  if (cluster_state_.cluster_watchers.empty() &&
-      cluster_state_.endpoint_watchers.empty()) {
-    chand_->StopAdsCall();
+  if (chand_ != nullptr && cluster_state_.cluster_watchers.empty()) {
+    // TODO(juanlishen): Stop CDS call.
   }
 }
 
@@ -1434,16 +1434,19 @@ void XdsClient::NotifyOnServiceConfig(void* arg, grpc_error* error) {
   XdsClient* self = static_cast<XdsClient*>(arg);
   // TODO(roth): When we add support for WeightedClusters, select the
   // LB policy based on that functionality.
-  static const char* json =
-      "{\n"
-      "  \"loadBalancingConfig\":[\n"
-      "    { \"xds_experimental\":{\n"
-      "      \"lrsLoadReportingServerName\": \"\"\n"
-      "    } }\n"
-      "  ]\n"
-      "}";
+  char* json;
+  gpr_asprintf(&json,
+               "{\n"
+               "  \"loadBalancingConfig\":[\n"
+               "    { \"cds_experimental\":{\n"
+               "      \"cluster\": \"%s\"\n"
+               "    } }\n"
+               "  ]\n"
+               "}",
+               self->server_name_.get());
   RefCountedPtr<ServiceConfig> service_config =
       ServiceConfig::Create(json, &error);
+  gpr_free(json);
   if (error != GRPC_ERROR_NONE) {
     self->service_config_watcher_->OnError(error);
   } else {

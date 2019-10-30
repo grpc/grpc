@@ -231,7 +231,7 @@ def _create_test_jobs(extra_args=[], inner_jobs=_DEFAULT_INNER_JOBS):
         languages=['python'],
         configs=['opt'],
         platforms=['linux', 'macos', 'windows'],
-        iomgr_platforms=['native', 'gevent'],
+        iomgr_platforms=['native', 'gevent', 'asyncio'],
         labels=['basictests', 'multilang'],
         extra_args=extra_args + ['--report_multi_target'],
         inner_jobs=inner_jobs)

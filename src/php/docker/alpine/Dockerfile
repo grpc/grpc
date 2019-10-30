@@ -16,6 +16,8 @@ FROM php:7.2-alpine3.9
 
 RUN apk add autoconf g++ make zlib-dev git bash wget
 
+ARG MAKEFLAGS=-j8
+
 
 WORKDIR /tmp
 

@@ -339,16 +339,19 @@ class AdsServiceImpl : public AdsService {
     struct Locality {
       Locality(const grpc::string& sub_zone, std::vector<int> ports,
                int lb_weight = kDefaultLocalityWeight,
-               int priority = kDefaultLocalityPriority)
+               int priority = kDefaultLocalityPriority,
+               std::vector<envoy::api::v2::HealthStatus> health_statuses = {})
           : sub_zone(std::move(sub_zone)),
             ports(std::move(ports)),
             lb_weight(lb_weight),
-            priority(priority) {}
+            priority(priority),
+            health_statuses(std::move(health_statuses)) {}
 
       const grpc::string sub_zone;
       std::vector<int> ports;
       int lb_weight;
       int priority;
+      std::vector<envoy::api::v2::HealthStatus> health_statuses;
     };
 
     ResponseArgs() = default;
@@ -429,8 +432,14 @@ class AdsServiceImpl : public AdsService {
       endpoints->mutable_locality()->set_region(kDefaultLocalityRegion);
       endpoints->mutable_locality()->set_zone(kDefaultLocalityZone);
       endpoints->mutable_locality()->set_sub_zone(locality.sub_zone);
-      for (const int& port : locality.ports) {
+      for (size_t i = 0; i < locality.ports.size(); ++i) {
+        const int& port = locality.ports[i];
         auto* lb_endpoints = endpoints->add_lb_endpoints();
+        if (locality.health_statuses.size() > i &&
+            locality.health_statuses[i] !=
+                envoy::api::v2::HealthStatus::UNKNOWN) {
+          lb_endpoints->set_health_status(locality.health_statuses[i]);
+        }
         auto* endpoint = lb_endpoints->mutable_endpoint();
         auto* address = endpoint->mutable_address();
         auto* socket_address = address->mutable_socket_address();
@@ -1060,7 +1069,37 @@ TEST_P(BasicTest, Vanilla) {
   EXPECT_EQ(1U, balancers_[0]->ads_service()->request_count());
   EXPECT_EQ(1U, balancers_[0]->ads_service()->response_count());
   // Check LB policy name for the channel.
-  EXPECT_EQ("xds_experimental", channel_->GetLoadBalancingPolicyName());
+  EXPECT_EQ(
+      (GetParam().use_xds_resolver() ? "cds_experimental" : "xds_experimental"),
+      channel_->GetLoadBalancingPolicyName());
+}
+
+TEST_P(BasicTest, IgnoresUnhealthyEndpoints) {
+  SetNextResolution({});
+  SetNextResolutionForLbChannelAllBalancers();
+  const size_t kNumRpcsPerAddress = 100;
+  AdsServiceImpl::ResponseArgs args({
+      {"locality0",
+       GetBackendPorts(),
+       kDefaultLocalityWeight,
+       kDefaultLocalityPriority,
+       {envoy::api::v2::HealthStatus::DRAINING}},
+  });
+  ScheduleResponseForBalancer(0, AdsServiceImpl::BuildResponse(args), 0);
+  // Make sure that trying to connect works without a call.
+  channel_->GetState(true /* try_to_connect */);
+  // We need to wait for all backends to come online.
+  WaitForAllBackends(/*start_index=*/1);
+  // Send kNumRpcsPerAddress RPCs per server.
+  CheckRpcSendOk(kNumRpcsPerAddress * (num_backends_ - 1));
+  // Each backend should have gotten 100 requests.
+  for (size_t i = 1; i < backends_.size(); ++i) {
+    EXPECT_EQ(kNumRpcsPerAddress,
+              backends_[i]->backend_service()->request_count());
+  }
+  // The ADS service got a single request, and sent a single response.
+  EXPECT_EQ(1U, balancers_[0]->ads_service()->request_count());
+  EXPECT_EQ(1U, balancers_[0]->ads_service()->response_count());
 }
 
 // Tests that subchannel sharing works when the same backend is listed multiple

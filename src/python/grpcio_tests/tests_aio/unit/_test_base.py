@@ -1,4 +1,4 @@
-# Copyright 2018 gRPC authors.
+# Copyright 2019 The gRPC Authors
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -11,22 +11,19 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-"""gRPC's experimental APIs.
 
-These APIs are subject to be removed during any minor version release.
-"""
-
-
-class ChannelOptions(object):
-    """Indicates a channel option unique to gRPC Python.
-
-     This enumeration is part of an EXPERIMENTAL API.
-
-     Attributes:
-       SingleThreadedUnaryStream: Perform unary-stream RPCs on a single thread.
-    """
-    SingleThreadedUnaryStream = "SingleThreadedUnaryStream"
+import asyncio
+import unittest
+from grpc.experimental import aio
 
 
-class UsageError(Exception):
-    """Raised by the gRPC library to indicate usage not allowed by the API."""
+class AioTestBase(unittest.TestCase):
+
+    def setUp(self):
+        self._loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(self._loop)
+        aio.init_grpc_aio()
+
+    @property
+    def loop(self):
+        return self._loop
