@@ -34,8 +34,6 @@
 #include "src/core/lib/gprpp/thd.h"
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/slice/slice_internal.h"
-#include "src/core/lib/surface/call.h"
-#include "src/core/lib/surface/channel.h"
 #include "src/core/tsi/alts/frame_protector/alts_frame_protector.h"
 #include "src/core/tsi/alts/handshaker/alts_handshaker_client.h"
 #include "src/core/tsi/alts/handshaker/alts_shared_resource.h"
@@ -56,7 +54,6 @@ struct alts_tsi_handshaker {
   grpc_pollset_set* interested_parties;
   grpc_alts_credentials_options* options;
   alts_handshaker_client_vtable* client_vtable_for_testing;
-  bool use_dedicated_cq;
   grpc_channel* channel;
   // shutdown effectively follows base.handshake_shutdown,
   // but is synchronized by the mutex of this object.
@@ -292,29 +289,25 @@ static void alts_tsi_handshaker_maybe_create_channel(
     alts_tsi_handshaker* handshaker) {
   bool create_channel = false;
   grpc_core::UniquePtr<char> handshaker_service_url;
-  bool use_dedicated_cq = false;
   {
     grpc_core::MutexLock lock(&handshaker->mu);
-    create_channel = handshaker->channel == nullptr ? true : false;
+    create_channel = false;
+    bool use_dedicated_cq = handshaker->interested_parties == nullptr;
+    if (handshaker->channel == nullptr && !use_dedicated_cq) {
+      create_channel = true;
+    }
     handshaker_service_url = grpc_core::UniquePtr<char>(
         gpr_strdup(handshaker->handshaker_service_url));
-    use_dedicated_cq = handshaker->use_dedicated_cq;
   }
   grpc_channel* channel = nullptr;
   if (create_channel) {
-    if (use_dedicated_cq) {
-      channel = grpc_alts_get_shared_resource_dedicated()->channel;
-    } else {
-      channel = grpc_insecure_channel_create(handshaker_service_url.get(),
-                                             nullptr, nullptr);
-    }
+    channel = grpc_insecure_channel_create(handshaker_service_url.get(),
+                                           nullptr, nullptr);
   }
   grpc_core::MutexLock lock(&handshaker->mu);
   if (channel != nullptr) {
     GPR_ASSERT(handshaker->channel == nullptr);
     handshaker->channel = channel;
-  } else {
-    GPR_ASSERT(handshaker->channel != nullptr);
   }
 }
 
@@ -331,18 +324,23 @@ static void alts_tsi_handshaker_continue_handshaker_next(void* arg,
   struct alts_tsi_handshaker_continue_handshaker_next_args* next_args =
       static_cast<alts_tsi_handshaker_continue_handshaker_next_args*>(arg);
   struct alts_tsi_handshaker* handshaker = next_args->handshaker;
+  grpc_core::UniquePtr<unsigned char> received_bytes =
+      grpc_core::UniquePtr<unsigned char>(next_args->received_bytes);
+  size_t received_bytes_size = next_args->received_bytes_size;
+  tsi_handshaker_on_next_done_cb cb = next_args->cb;
+  void* user_data = next_args->user_data;
+  gpr_free(next_args);
   alts_tsi_handshaker_maybe_create_channel(handshaker);
   // Continue tsi_handshaker_next now that we have a channel
   grpc_core::ReleasableMutexLock lock(&handshaker->mu);
   if (handshaker->shutdown) {
     gpr_log(GPR_ERROR, "TSI handshake shutdown");
     lock.Unlock();
-    next_args->cb(TSI_HANDSHAKE_SHUTDOWN, next_args->user_data, nullptr, 0,
-                  nullptr);
+    cb(TSI_HANDSHAKE_SHUTDOWN, next_args->user_data, nullptr, 0, nullptr);
     return;
   }
   if (!handshaker->has_created_handshaker_client) {
-    if (handshaker->use_dedicated_cq) {
+    if (handshaker->channel == nullptr) {
       grpc_alts_shared_resource_dedicated_start(
           handshaker->handshaker_service_url);
       handshaker->interested_parties =
@@ -352,33 +350,34 @@ static void alts_tsi_handshaker_continue_handshaker_next(void* arg,
     grpc_iomgr_cb_func grpc_cb = handshaker->channel == nullptr
                                      ? on_handshaker_service_resp_recv_dedicated
                                      : on_handshaker_service_resp_recv;
+    grpc_channel* channel =
+        handshaker->channel == nullptr
+            ? grpc_alts_get_shared_resource_dedicated()->channel
+            : handshaker->channel;
     handshaker->client = alts_grpc_handshaker_client_create(
-        handshaker, handshaker->channel, handshaker->handshaker_service_url,
+        handshaker, channel, handshaker->handshaker_service_url,
         handshaker->interested_parties, handshaker->options,
-        handshaker->target_name, grpc_cb, handshaker, next_args->cb,
-        next_args->user_data, handshaker->client_vtable_for_testing,
-        handshaker->is_client);
+        handshaker->target_name, grpc_cb, handshaker, cb, user_data,
+        handshaker->client_vtable_for_testing, handshaker->is_client);
     if (handshaker->client == nullptr) {
       gpr_log(GPR_ERROR, "Failed to create ALTS handshaker client");
       lock.Unlock();
-      next_args->cb(TSI_FAILED_PRECONDITION, next_args->user_data, nullptr, 0,
-                    nullptr);
+      cb(TSI_FAILED_PRECONDITION, user_data, nullptr, 0, nullptr);
       return;
     }
     handshaker->has_created_handshaker_client = true;
   }
-  if (handshaker->use_dedicated_cq &&
+  if (handshaker->channel == nullptr &&
       handshaker->client_vtable_for_testing == nullptr) {
     GPR_ASSERT(grpc_cq_begin_op(grpc_alts_get_shared_resource_dedicated()->cq,
                                 handshaker->client));
   }
   grpc_slice slice =
-      (next_args->received_bytes == nullptr ||
-       next_args->received_bytes_size == 0)
+      (received_bytes.get() == nullptr || received_bytes_size == 0)
           ? grpc_empty_slice()
           : grpc_slice_from_copied_buffer(
-                reinterpret_cast<const char*>(next_args->received_bytes),
-                next_args->received_bytes_size);
+                reinterpret_cast<const char*>(received_bytes.get()),
+                received_bytes_size);
   tsi_result ok = TSI_OK;
   if (!handshaker->has_sent_start_message) {
     ok = handshaker->is_client
@@ -393,11 +392,9 @@ static void alts_tsi_handshaker_continue_handshaker_next(void* arg,
   if (ok != TSI_OK) {
     gpr_log(GPR_ERROR, "Failed to schedule ALTS handshaker requests");
     lock.Unlock();
-    next_args->cb(ok, next_args->user_data, nullptr, 0, nullptr);
+    cb(ok, user_data, nullptr, 0, nullptr);
     return;
   }
-  gpr_free(next_args->received_bytes);
-  gpr_free(next_args);
 }
 
 static tsi_result handshaker_next(
@@ -532,7 +529,6 @@ tsi_result alts_tsi_handshaker_create(
   handshaker->options = grpc_alts_credentials_options_copy(options);
   handshaker->base.vtable =
       use_dedicated_cq ? &handshaker_vtable_dedicated : &handshaker_vtable;
-  handshaker->use_dedicated_cq = use_dedicated_cq;
   *self = &handshaker->base;
   return TSI_OK;
 }
