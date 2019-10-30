@@ -149,7 +149,15 @@ struct CdsUpdate {
   CdsUpdate() {}
   CdsUpdate(const CdsUpdate& other)
       : eds_service_name(
+            UniquePtr<char>(gpr_strdup(other.eds_service_name.get()))),
+        lrs_load_reporting_server_name(
             UniquePtr<char>(gpr_strdup(other.eds_service_name.get()))) {}
+
+  CdsUpdate& operator=(CdsUpdate&& other) {
+    eds_service_name = std::move(other.eds_service_name);
+    lrs_load_reporting_server_name =
+        std::move(other.lrs_load_reporting_server_name);
+  }
 };
 
 // Creates a CDS request querying \a cluster_name.

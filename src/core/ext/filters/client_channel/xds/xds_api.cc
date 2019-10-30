@@ -312,14 +312,15 @@ grpc_error* CdsResponsedParse(const envoy_api_v2_DiscoveryResponse* response,
     return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
         "LB policy is not ROUND_ROBIN.");
   }
-  // Record LRS server (if any).
-  // FIXME: update upb files.
+  // Record LRS server name (if any).
   const envoy_api_v2_core_ConfigSource* lrs_server =
       envoy_api_v2_Cluster_lrs_server(cluster);
-  if (!envoy_api_v2_core_ConfigSource_has_self(lrs_server)) {
-    return GRPC_ERROR_CREATE_FROM_STATIC_STRING("ConfigSource is not self.");
+  if (lrs_server != nullptr) {
+    if (!envoy_api_v2_core_ConfigSource_has_self(lrs_server)) {
+      return GRPC_ERROR_CREATE_FROM_STATIC_STRING("ConfigSource is not self.");
+    }
+    cds_update->lrs_load_reporting_server_name.reset(gpr_strdup(""));
   }
-  cds_update->lrs_load_reporting_server_name.reset(gpr_strdup(""));
   return GRPC_ERROR_NONE;
 }
 
