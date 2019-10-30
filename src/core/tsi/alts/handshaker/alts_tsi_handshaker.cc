@@ -465,10 +465,6 @@ static void handshaker_destroy(tsi_handshaker* self) {
   }
   alts_tsi_handshaker* handshaker =
       reinterpret_cast<alts_tsi_handshaker*>(self);
-  if (handshaker->client != nullptr) {
-    // this is defensive in order to avoid leaving a stray/unpolled call
-    alts_handshaker_client_cancel_call_locked(handshaker->client);
-  }
   alts_handshaker_client_destroy(handshaker->client);
   grpc_slice_unref_internal(handshaker->target_name);
   grpc_alts_credentials_options_destroy(handshaker->options);

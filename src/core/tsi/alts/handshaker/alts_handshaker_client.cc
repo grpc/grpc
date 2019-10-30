@@ -140,14 +140,6 @@ static void handle_response_done_locked(alts_grpc_handshaker_client* c,
       GRPC_ERROR_NONE);
 }
 
-void alts_handshaker_client_cancel_call_locked(alts_handshaker_client* c) {
-  alts_grpc_handshaker_client* client =
-      reinterpret_cast<alts_grpc_handshaker_client*>(c);
-  if (client->call != nullptr) {
-    grpc_call_cancel_internal(client->call);
-  }
-}
-
 void alts_handshaker_client_handle_response_locked(alts_handshaker_client* c,
                                                    bool is_ok) {
   GPR_ASSERT(c != nullptr);

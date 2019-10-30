@@ -151,7 +151,4 @@ alts_handshaker_client* alts_grpc_handshaker_client_create(
 void alts_handshaker_client_handle_response_locked(
     alts_handshaker_client* client, bool is_ok);
 
-/** Cancels any active handshake call. */
-void alts_handshaker_client_cancel_call_locked(alts_handshaker_client* client);
-
 #endif /* GRPC_CORE_TSI_ALTS_HANDSHAKER_ALTS_HANDSHAKER_CLIENT_H */
