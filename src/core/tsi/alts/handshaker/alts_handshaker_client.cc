@@ -491,6 +491,10 @@ alts_handshaker_client* alts_grpc_handshaker_client_create(
     grpc_iomgr_cb_func grpc_cb, void* grpc_cb_arg,
     tsi_handshaker_on_next_done_cb cb, void* user_data,
     alts_handshaker_client_vtable* vtable_for_testing, bool is_client) {
+  if (channel == nullptr || handshaker_service_url == nullptr) {
+    gpr_log(GPR_ERROR, "Invalid arguments to alts_handshaker_client_create()");
+    return nullptr;
+  }
   alts_grpc_handshaker_client* client =
       static_cast<alts_grpc_handshaker_client*>(gpr_zalloc(sizeof(*client)));
   client->grpc_caller = grpc_call_start_batch_and_execute;

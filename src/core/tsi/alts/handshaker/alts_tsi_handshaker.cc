@@ -319,7 +319,7 @@ static void alts_tsi_handshaker_maybe_create_channel(
 }
 
 struct alts_tsi_handshaker_continue_handshaker_next_args {
-  tsi_handshaker* self;
+  alts_tsi_handshaker* handshaker;
   unsigned char* received_bytes;
   size_t received_bytes_size;
   tsi_handshaker_on_next_done_cb cb;
@@ -330,15 +330,16 @@ static void alts_tsi_handshaker_continue_handshaker_next(void* arg,
                                                          grpc_error* error) {
   struct alts_tsi_handshaker_continue_handshaker_next_args* next_args =
       static_cast<alts_tsi_handshaker_continue_handshaker_next_args*>(arg);
-  struct alts_tsi_handshaker* handshaker =
-      reinterpret_cast<alts_tsi_handshaker*>(next_args->self);
+  struct alts_tsi_handshaker* handshaker = next_args->handshaker;
   alts_tsi_handshaker_maybe_create_channel(handshaker);
   // Continue tsi_handshaker_next now that we have a channel
-  grpc_core::MutexLock lock(&handshaker->mu);
+  grpc_core::ReleasableMutexLock lock(&handshaker->mu);
   if (handshaker->shutdown) {
-    gpr_log(GPR_ERROR, "FIXME TSI handshake shutdown");
-    abort();
-    // return TSI_HANDSHAKE_SHUTDOWN;
+    gpr_log(GPR_ERROR, "TSI handshake shutdown");
+    lock.Unlock();
+    next_args->cb(TSI_HANDSHAKE_SHUTDOWN, next_args->user_data, nullptr, 0,
+                  nullptr);
+    return;
   }
   if (!handshaker->has_created_handshaker_client) {
     if (handshaker->use_dedicated_cq) {
@@ -358,9 +359,11 @@ static void alts_tsi_handshaker_continue_handshaker_next(void* arg,
         next_args->user_data, handshaker->client_vtable_for_testing,
         handshaker->is_client);
     if (handshaker->client == nullptr) {
-      gpr_log(GPR_ERROR, "FIXME: Failed to create ALTS handshaker client");
-      abort();
-      // return TSI_FAILED_PRECONDITION;
+      gpr_log(GPR_ERROR, "Failed to create ALTS handshaker client");
+      lock.Unlock();
+      next_args->cb(TSI_FAILED_PRECONDITION, next_args->user_data, nullptr, 0,
+                    nullptr);
+      return;
     }
     handshaker->has_created_handshaker_client = true;
   }
@@ -388,9 +391,10 @@ static void alts_tsi_handshaker_continue_handshaker_next(void* arg,
   }
   grpc_slice_unref_internal(slice);
   if (ok != TSI_OK) {
-    gpr_log(GPR_ERROR, "FIXME Failed to schedule ALTS handshaker requests");
-    abort();
-    // return ok;
+    gpr_log(GPR_ERROR, "Failed to schedule ALTS handshaker requests");
+    lock.Unlock();
+    next_args->cb(ok, next_args->user_data, nullptr, 0, nullptr);
+    return;
   }
   gpr_free(next_args->received_bytes);
   gpr_free(next_args);
@@ -411,7 +415,7 @@ static tsi_result handshaker_next(
   alts_tsi_handshaker_continue_handshaker_next_args* args =
       static_cast<alts_tsi_handshaker_continue_handshaker_next_args*>(
           gpr_zalloc(sizeof(*args)));
-  args->self = self;
+  args->handshaker = handshaker;
   args->received_bytes =
       static_cast<unsigned char*>(gpr_zalloc(received_bytes_size));
   args->received_bytes_size = received_bytes_size;
