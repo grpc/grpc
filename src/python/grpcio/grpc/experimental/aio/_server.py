@@ -134,7 +134,7 @@ class Server:
 
     def __del__(self):
         """Schedules a graceful shutdown in current event loop.
-        
+
         The Cython AioServer doesn't hold a ref-count to this class. It should
         be safe to slightly extend the underlying Cython object's life span.
         """
