@@ -250,6 +250,20 @@ tsi_result alts_tsi_handshaker_result_create(grpc_gcp_HandshakerResp* resp,
   return TSI_OK;
 }
 
+static void run_handle_response_locked_dedicated(alts_tsi_handshaker* handshaker, bool success, void (*handle_response_locked)(alts_handshaker_client* c, bool success)) {
+  // We're running on a dedicated thread without an ExecCtx
+  grpc_core::ExecCtx exec_ctx;
+  {
+    grpc_core::MutexLock lock(&handshaker->mu);
+    handle_response_locked(handshaker->client, success);
+  }
+}
+
+static void run_handle_response_locked(alts_tsi_handshaker* handshaker, bool success, void (*handle_response_locked)(alts_handshaker_client* c, bool success)) {
+  // Nothing to do, we're already holding handshaker->mu.
+  handle_response_locked(handshaker->client, success);
+}
+
 /* gRPC provided callback used when gRPC thread model is applied. */
 static void on_handshaker_service_resp_recv(void* arg, grpc_error* error) {
   alts_tsi_handshaker* handshaker = static_cast<alts_tsi_handshaker*>(arg);
@@ -265,13 +279,7 @@ static void on_handshaker_service_resp_recv(void* arg, grpc_error* error) {
             grpc_error_string(error));
     success = false;
   }
-  alts_handshaker_client_handle_response_locked(handshaker->client, success);
-}
-
-void alts_tsi_handshaker_handle_response_dedicated(
-    alts_tsi_handshaker* handshaker, bool success) {
-  grpc_core::MutexLock lock(&handshaker->mu);
-  alts_handshaker_client_handle_response_locked(handshaker->client, success);
+  alts_handshaker_client_handle_response_ensure_locked(handshaker->client, success);
 }
 
 /* gRPC provided callback used when dedicatd CQ and thread are used.
@@ -317,6 +325,7 @@ struct alts_tsi_handshaker_continue_handshaker_next_args {
   size_t received_bytes_size;
   tsi_handshaker_on_next_done_cb cb;
   void* user_data;
+  grpc_closure closure;
 };
 
 static void alts_tsi_handshaker_continue_handshaker_next(void* arg,
@@ -350,6 +359,7 @@ static void alts_tsi_handshaker_continue_handshaker_next(void* arg,
     grpc_iomgr_cb_func grpc_cb = handshaker->channel == nullptr
                                      ? on_handshaker_service_resp_recv_dedicated
                                      : on_handshaker_service_resp_recv;
+    alts_handshaker_client_safe_handle_response_locked safe_handle_response_locked = handshaker->channel == nullptr ? run_handle_response_locked_dedicated : run_handle_response_locked;
     grpc_channel* channel =
         handshaker->channel == nullptr
             ? grpc_alts_get_shared_resource_dedicated()->channel
@@ -358,6 +368,7 @@ static void alts_tsi_handshaker_continue_handshaker_next(void* arg,
         handshaker, channel, handshaker->handshaker_service_url,
         handshaker->interested_parties, handshaker->options,
         handshaker->target_name, grpc_cb, handshaker, cb, user_data,
+        safe_handle_response_locked,
         handshaker->client_vtable_for_testing, handshaker->is_client);
     if (handshaker->client == nullptr) {
       gpr_log(GPR_ERROR, "Failed to create ALTS handshaker client");
@@ -419,10 +430,8 @@ static tsi_result handshaker_next(
   memcpy(args->received_bytes, received_bytes, args->received_bytes_size);
   args->cb = cb;
   args->user_data = user_data;
-  GRPC_CLOSURE_SCHED(
-      GRPC_CLOSURE_CREATE(alts_tsi_handshaker_continue_handshaker_next, args,
-                          grpc_schedule_on_exec_ctx),
-      GRPC_ERROR_NONE);
+  GRPC_CLOSURE_INIT(&args->closure, alts_tsi_handshaker_continue_handshaker_next, args, grpc_schedule_on_exec_ctx);
+  GRPC_CLOSURE_SCHED(&args->closure, GRPC_ERROR_NONE);
   return TSI_ASYNC;
 }
 

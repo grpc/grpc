@@ -84,6 +84,10 @@ typedef struct alts_grpc_handshaker_client {
   /* a buffer containing data to be sent to the grpc client or server's peer. */
   unsigned char* buffer;
   size_t buffer_size;
+  /* safely invokes
+   * alts_handshaker_client_handle_response_done_locked (which is different for
+   * dedicated-CQ and non-dedicated-CQ handshakes). */
+  alts_handshaker_client_safe_handle_response_locked safe_handle_response_locked;
 } alts_grpc_handshaker_client;
 
 static void handshaker_client_send_buffer_destroy_locked(
@@ -108,6 +112,7 @@ struct invoke_tsi_next_cb_args {
   const unsigned char* bytes_to_send;
   size_t bytes_to_send_size;
   tsi_handshaker_result* result;
+  grpc_closure closure;
 };
 
 // Invoke the TSI API callback without holding the alts_tsi_handshaker's lock
@@ -135,13 +140,11 @@ static void handle_response_done_locked(alts_grpc_handshaker_client* c,
   t->bytes_to_send = bytes_to_send;
   t->bytes_to_send_size = bytes_to_send_size;
   t->result = result;
-  GRPC_CLOSURE_SCHED(
-      GRPC_CLOSURE_CREATE(invoke_tsi_next_cb, t, grpc_schedule_on_exec_ctx),
-      GRPC_ERROR_NONE);
+  GRPC_CLOSURE_INIT(&t->closure, invoke_tsi_next_cb, t, grpc_schedule_on_exec_ctx);
+  GRPC_CLOSURE_SCHED(&t->closure, GRPC_ERROR_NONE);
 }
 
-void alts_handshaker_client_handle_response_locked(alts_handshaker_client* c,
-                                                   bool is_ok) {
+static void handle_response_locked(alts_handshaker_client* c, bool is_ok) {
   GPR_ASSERT(c != nullptr);
   alts_grpc_handshaker_client* client =
       reinterpret_cast<alts_grpc_handshaker_client*>(c);
@@ -239,11 +242,16 @@ void alts_handshaker_client_handle_response_locked(alts_handshaker_client* c,
                               bytes_to_send, bytes_to_send_size, result);
 }
 
+void alts_handshaker_client_handle_response_ensure_locked(alts_handshaker_client* c, bool success) {
+  alts_grpc_handshaker_client* client = reinterpret_cast<alts_grpc_handshaker_client*>(c);
+  client->safe_handle_response_locked(client->handshaker, success, handle_response_locked);
+}
+
 /**
  * Populate grpc operation data with the fields of ALTS handshaker client and
  * make a grpc call.
  */
-static tsi_result make_grpc_call_locked(alts_grpc_handshaker_client* client,
+static void make_grpc_call_locked(alts_grpc_handshaker_client* client,
                                         bool is_start) {
   GPR_ASSERT(client != nullptr);
   grpc_op ops[kHandshakerClientOpNum];
@@ -273,7 +281,7 @@ static tsi_result make_grpc_call_locked(alts_grpc_handshaker_client* client,
       client->grpc_caller(client->call, ops, static_cast<size_t>(op - ops),
                           &client->on_handshaker_service_resp_recv);
   GPR_ASSERT(call_error == GRPC_CALL_OK);
-  return TSI_OK;
+  return;
 }
 
 /* Serializes a grpc_gcp_HandshakerReq message into a buffer and returns newly
@@ -464,7 +472,7 @@ static void handshaker_client_destruct(alts_handshaker_client* c) {
   alts_grpc_handshaker_client* client =
       reinterpret_cast<alts_grpc_handshaker_client*>(c);
   if (client->call != nullptr) {
-    // do this at the bottom of the callstack to avoid lock recursion
+    // do this at the bottom of the callstack to avoid the risks of ExecCtx stacking
     GRPC_CLOSURE_SCHED(GRPC_CLOSURE_CREATE(handshaker_call_unref, client->call,
                                            grpc_schedule_on_exec_ctx),
                        GRPC_ERROR_NONE);
@@ -482,6 +490,7 @@ alts_handshaker_client* alts_grpc_handshaker_client_create(
     grpc_alts_credentials_options* options, const grpc_slice& target_name,
     grpc_iomgr_cb_func grpc_cb, void* grpc_cb_arg,
     tsi_handshaker_on_next_done_cb cb, void* user_data,
+    alts_handshaker_client_safe_handle_response_locked safe_handle_response_locked,
     alts_handshaker_client_vtable* vtable_for_testing, bool is_client) {
   if (channel == nullptr || handshaker_service_url == nullptr) {
     gpr_log(GPR_ERROR, "Invalid arguments to alts_handshaker_client_create()");
@@ -505,6 +514,7 @@ alts_handshaker_client* alts_grpc_handshaker_client_create(
   client->buffer_size = TSI_ALTS_INITIAL_BUFFER_SIZE;
   client->buffer = static_cast<unsigned char*>(gpr_zalloc(client->buffer_size));
   grpc_slice slice = grpc_slice_from_copied_string(handshaker_service_url);
+  client->safe_handle_response_locked = safe_handle_response_locked;
   client->call =
       strcmp(handshaker_service_url, ALTS_HANDSHAKER_SERVICE_URL_FOR_TESTING) ==
               0
