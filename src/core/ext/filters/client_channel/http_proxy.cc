@@ -42,16 +42,19 @@
  * credentials if present in the 'http_proxy' env var, otherwise leaves it
  * unchanged. It is caller's responsibility to gpr_free user_cred.
  */
-static char* get_http_proxy_server(char** user_cred) {
+static char* get_http_proxy_server(const grpc_channel_args* args, char** user_cred) {
   GPR_ASSERT(user_cred != nullptr);
   char* proxy_name = nullptr;
   char** authority_strs = nullptr;
   size_t authority_nstrs;
-  /* Prefer using 'grpc_proxy'. Fallback on 'http_proxy' if it is not set.
+  /* Check channel arguments in case a per channel proxy is set. Otherwise,
+   * prefer using 'grpc_proxy'. Fallback on 'http_proxy' if it is not set.
    * Also prefer using 'https_proxy' with fallback on 'http_proxy'. The
    * fallback behavior can be removed if there's a demand for it.
    */
-  char* uri_str = gpr_getenv("grpc_proxy");
+  const grpc_arg* arg = grpc_channel_args_find(args, GRPC_ARG_HTTP_PROXY);
+  char* uri_str = gpr_strdup(grpc_channel_arg_get_string(arg));
+  if (uri_str == nullptr) uri_str = gpr_getenv("grpc_proxy");
   if (uri_str == nullptr) uri_str = gpr_getenv("https_proxy");
   if (uri_str == nullptr) uri_str = gpr_getenv("http_proxy");
   if (uri_str == nullptr) return nullptr;
@@ -108,7 +111,7 @@ static bool proxy_mapper_map_name(grpc_proxy_mapper* /*mapper*/,
     return false;
   }
   char* user_cred = nullptr;
-  *name_to_resolve = get_http_proxy_server(&user_cred);
+  *name_to_resolve = get_http_proxy_server(args, &user_cred);
   if (*name_to_resolve == nullptr) return false;
   char* no_proxy_str = nullptr;
   grpc_uri* uri = grpc_uri_parse(server_uri, false /* suppress_errors */);
