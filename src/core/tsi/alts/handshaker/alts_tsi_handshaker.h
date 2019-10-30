@@ -28,6 +28,7 @@
 #include "src/core/tsi/alts/handshaker/alts_handshaker_client.h"
 #include "src/core/tsi/transport_security.h"
 #include "src/core/tsi/transport_security_interface.h"
+#include "src/proto/grpc/gcp/altscontext.upb.h"
 #include "src/proto/grpc/gcp/handshaker.upb.h"
 
 #define TSI_ALTS_SERVICE_ACCOUNT_PEER_PROPERTY "service_account"

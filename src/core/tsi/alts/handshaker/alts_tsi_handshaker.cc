@@ -29,7 +29,6 @@
 #include <grpc/support/string_util.h>
 #include <grpc/support/sync.h>
 #include <grpc/support/thd_id.h>
-#include "src/core/ext/upb-generated/src/proto/grpc/gcp/altscontext.upb.h"
 
 #include "src/core/lib/gprpp/thd.h"
 #include "src/core/lib/iomgr/closure.h"
@@ -114,8 +113,9 @@ static tsi_result handshaker_result_extract_peer(
   index++;
   GPR_ASSERT(&peer->properties[index] != nullptr);
   ok = tsi_construct_string_peer_property(
-      TSI_ALTS_CONTEXT, reinterpret_cast<char*>(GRPC_SLICE_START_PTR(result->serialized_context)), GRPC_SLICE_LENGTH(result->serialized_context),
-      &peer->properties[index]);
+      TSI_ALTS_CONTEXT,
+      reinterpret_cast<char*>(GRPC_SLICE_START_PTR(result->serialized_context)),
+      GRPC_SLICE_LENGTH(result->serialized_context), &peer->properties[index]);
   if (ok != TSI_OK) {
     tsi_peer_destruct(peer);
     gpr_log(GPR_ERROR, "Failed to set tsi peer property");
@@ -194,6 +194,7 @@ static void handshaker_result_destroy(tsi_handshaker_result* self) {
   gpr_free(result->key_data);
   gpr_free(result->unused_bytes);
   grpc_slice_unref_internal(result->rpc_versions);
+  grpc_slice_unref_internal(result->serialized_context);
   gpr_free(result);
 }
 
@@ -218,9 +219,10 @@ tsi_result alts_tsi_handshaker_result_create(grpc_gcp_HandshakerResp* resp,
     gpr_log(GPR_ERROR, "Invalid identity");
     return TSI_FAILED_PRECONDITION;
   }
-  upb_strview service_account = grpc_gcp_Identity_service_account(identity);
-  if (service_account.size == 0) {
-    gpr_log(GPR_ERROR, "Invalid service account");
+  upb_strview peer_service_account =
+      grpc_gcp_Identity_service_account(identity);
+  if (peer_service_account.size == 0) {
+    gpr_log(GPR_ERROR, "Invalid peer service account");
     return TSI_FAILED_PRECONDITION;
   }
   upb_strview key_data = grpc_gcp_HandshakerResult_key_data(hresult);
@@ -234,12 +236,14 @@ tsi_result alts_tsi_handshaker_result_create(grpc_gcp_HandshakerResp* resp,
     gpr_log(GPR_ERROR, "Peer does not set RPC protocol versions.");
     return TSI_FAILED_PRECONDITION;
   }
-  upb_strview application_protocol = grpc_gcp_HandshakerResult_application_protocol(hresult);
+  upb_strview application_protocol =
+      grpc_gcp_HandshakerResult_application_protocol(hresult);
   if (application_protocol.size == 0) {
     gpr_log(GPR_ERROR, "Invalid application protocol");
     return TSI_FAILED_PRECONDITION;
   }
-  upb_strview record_protocol = grpc_gcp_HandshakerResult_record_protocol(hresult);
+  upb_strview record_protocol =
+      grpc_gcp_HandshakerResult_record_protocol(hresult);
   if (record_protocol.size == 0) {
     gpr_log(GPR_ERROR, "Invalid record protocol");
     return TSI_FAILED_PRECONDITION;
@@ -250,7 +254,8 @@ tsi_result alts_tsi_handshaker_result_create(grpc_gcp_HandshakerResp* resp,
     gpr_log(GPR_ERROR, "Invalid local identity");
     return TSI_FAILED_PRECONDITION;
   }
-  upb_strview local_service_account = grpc_gcp_Identity_service_account(local_identity);
+  upb_strview local_service_account =
+      grpc_gcp_Identity_service_account(local_identity);
   if (local_service_account.size == 0) {
     gpr_log(GPR_ERROR, "Invalid local service account");
     return TSI_FAILED_PRECONDITION;
@@ -261,11 +266,12 @@ tsi_result alts_tsi_handshaker_result_create(grpc_gcp_HandshakerResp* resp,
       static_cast<char*>(gpr_zalloc(kAltsAes128GcmRekeyKeyLength));
   memcpy(result->key_data, key_data.data, kAltsAes128GcmRekeyKeyLength);
   result->peer_identity =
-      static_cast<char*>(gpr_zalloc(service_account.size + 1));
-  memcpy(result->peer_identity, service_account.data, service_account.size);
-  upb::Arena rpc_protocol_arena;
+      static_cast<char*>(gpr_zalloc(peer_service_account.size + 1));
+  memcpy(result->peer_identity, peer_service_account.data,
+         peer_service_account.size);
+  upb::Arena rpc_versions_arena;
   bool serialized = grpc_gcp_rpc_protocol_versions_encode(
-      peer_rpc_version, rpc_protocol_arena.ptr(), &result->rpc_versions);
+      peer_rpc_version, rpc_versions_arena.ptr(), &result->rpc_versions);
   if (!serialized) {
     gpr_log(GPR_ERROR, "Failed to serialize peer's RPC protocol versions.");
     return TSI_FAILED_PRECONDITION;
@@ -274,18 +280,23 @@ tsi_result alts_tsi_handshaker_result_create(grpc_gcp_HandshakerResp* resp,
   grpc_gcp_AltsContext* context = grpc_gcp_AltsContext_new(context_arena.ptr());
   grpc_gcp_AltsContext_set_application_protocol(context, application_protocol);
   grpc_gcp_AltsContext_set_record_protocol(context, record_protocol);
+  // ALTS currently only supports the security level of 2,
+  // which is "grpc_gcp_INTEGRITY_AND_PRIVACY"
   grpc_gcp_AltsContext_set_security_level(context, 2);
-  grpc_gcp_AltsContext_set_peer_service_account(context, service_account);
-  grpc_gcp_AltsContext_set_local_service_account(context, local_service_account);
-  grpc_gcp_AltsContext_set_peer_rpc_versions(context, const_cast<grpc_gcp_RpcProtocolVersions*>(peer_rpc_version));
+  grpc_gcp_AltsContext_set_peer_service_account(context, peer_service_account);
+  grpc_gcp_AltsContext_set_local_service_account(context,
+                                                 local_service_account);
+  grpc_gcp_AltsContext_set_peer_rpc_versions(
+      context, const_cast<grpc_gcp_RpcProtocolVersions*>(peer_rpc_version));
   size_t serialized_ctx_length;
-  char* serialized_ctx =
-      grpc_gcp_AltsContext_serialize(context, context_arena.ptr(), &serialized_ctx_length);
+  char* serialized_ctx = grpc_gcp_AltsContext_serialize(
+      context, context_arena.ptr(), &serialized_ctx_length);
   if (serialized_ctx == nullptr) {
     gpr_log(GPR_ERROR, "Failed to serialize peer's ALTS context.");
     return TSI_FAILED_PRECONDITION;
   }
-  result->serialized_context = grpc_slice_from_copied_buffer(serialized_ctx, serialized_ctx_length);
+  result->serialized_context =
+      grpc_slice_from_copied_buffer(serialized_ctx, serialized_ctx_length);
   result->is_client = is_client;
   result->base.vtable = &result_vtable;
   *self = &result->base;
@@ -316,8 +327,8 @@ static void on_handshaker_service_resp_recv_dedicated(void* arg,
   alts_shared_resource_dedicated* resource =
       grpc_alts_get_shared_resource_dedicated();
   grpc_cq_end_op(resource->cq, arg, GRPC_ERROR_NONE,
-                 [](void* done_arg, grpc_cq_completion* storage) {}, nullptr,
-                 &resource->storage);
+                 [](void* /*done_arg*/, grpc_cq_completion* /*storage*/) {},
+                 nullptr, &resource->storage);
 }
 
 static tsi_result handshaker_next(
