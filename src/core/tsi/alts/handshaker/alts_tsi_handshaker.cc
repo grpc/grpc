@@ -351,11 +351,12 @@ static void alts_tsi_handshaker_continue_handshaker_next(void* arg,
     grpc_iomgr_cb_func grpc_cb = handshaker->channel == nullptr
                                      ? on_handshaker_service_resp_recv_dedicated
                                      : on_handshaker_service_resp_recv;
-    handshaker->client = alts_grpc_handshaker_client_create_locked(
+    handshaker->client = alts_grpc_handshaker_client_create(
         handshaker, handshaker->channel, handshaker->handshaker_service_url,
         handshaker->interested_parties, handshaker->options,
-        handshaker->target_name, grpc_cb, next_args->cb, next_args->user_data,
-        handshaker->client_vtable_for_testing, handshaker->is_client);
+        handshaker->target_name, grpc_cb, handshaker, next_args->cb,
+        next_args->user_data, handshaker->client_vtable_for_testing,
+        handshaker->is_client);
     if (handshaker->client == nullptr) {
       gpr_log(GPR_ERROR, "FIXME: Failed to create ALTS handshaker client");
       abort();

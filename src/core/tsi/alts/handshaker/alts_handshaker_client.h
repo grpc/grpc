@@ -128,6 +128,7 @@ void alts_handshaker_client_destroy(alts_handshaker_client* client);
  * - target_name: the name of the endpoint that the channel is connecting to,
  *   and will be used for secure naming check
  * - grpc_cb: gRPC provided callbacks passed from TSI handshaker.
+ * - grpc_cb_arg: Argument to pass to grpc_cb when invoked.
  * - cb: callback to be executed when tsi_handshaker_next API compltes.
  * - user_data: argument passed to cb.
  * - vtable_for_testing: ALTS handshaker client vtable instance used for
@@ -136,13 +137,13 @@ void alts_handshaker_client_destroy(alts_handshaker_client* client);
  * used at the client (is_client = true) or server (is_client = false) side. It
  * returns the created ALTS handshaker client on success, and NULL on failure.
  */
-alts_handshaker_client* alts_grpc_handshaker_client_create_locked(
+alts_handshaker_client* alts_grpc_handshaker_client_create(
     alts_tsi_handshaker* handshaker, grpc_channel* channel,
     const char* handshaker_service_url, grpc_pollset_set* interested_parties,
     grpc_alts_credentials_options* options, const grpc_slice& target_name,
-    grpc_iomgr_cb_func grpc_cb, tsi_handshaker_on_next_done_cb cb,
-    void* user_data, alts_handshaker_client_vtable* vtable_for_testing,
-    bool is_client);
+    grpc_iomgr_cb_func grpc_cb, void* grpc_cb_arg,
+    tsi_handshaker_on_next_done_cb cb, void* user_data,
+    alts_handshaker_client_vtable* vtable_for_testing, bool is_client);
 
 /**
  * This method handles handshaker response returned from ALTS handshaker

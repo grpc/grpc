@@ -54,6 +54,8 @@ typedef struct alts_grpc_handshaker_client {
    * handshaker service. It also serves to bring the control safely back to
    * application when dedicated CQ and thread are used. */
   grpc_iomgr_cb_func grpc_cb;
+  /* Argument to pass to grpc_cb when invoked. */
+  void* grpc_cb_arg;
   /* A gRPC closure to be scheduled when the response from handshaker service
    * is received. It will be initialized with grpc_cb. */
   grpc_closure on_handshaker_service_resp_recv;
@@ -482,13 +484,13 @@ static const alts_handshaker_client_vtable vtable = {
     handshaker_client_start_server_locked, handshaker_client_next_locked,
     handshaker_client_shutdown_locked, handshaker_client_destruct};
 
-alts_handshaker_client* alts_grpc_handshaker_client_create_locked(
+alts_handshaker_client* alts_grpc_handshaker_client_create(
     alts_tsi_handshaker* handshaker, grpc_channel* channel,
     const char* handshaker_service_url, grpc_pollset_set* interested_parties,
     grpc_alts_credentials_options* options, const grpc_slice& target_name,
-    grpc_iomgr_cb_func grpc_cb, tsi_handshaker_on_next_done_cb cb,
-    void* user_data, alts_handshaker_client_vtable* vtable_for_testing,
-    bool is_client) {
+    grpc_iomgr_cb_func grpc_cb, void* grpc_cb_arg,
+    tsi_handshaker_on_next_done_cb cb, void* user_data,
+    alts_handshaker_client_vtable* vtable_for_testing, bool is_client) {
   alts_grpc_handshaker_client* client =
       static_cast<alts_grpc_handshaker_client*>(gpr_zalloc(sizeof(*client)));
   client->grpc_caller = grpc_call_start_batch_and_execute;
@@ -502,6 +504,7 @@ alts_handshaker_client* alts_grpc_handshaker_client_create_locked(
   client->recv_bytes = grpc_empty_slice();
   grpc_metadata_array_init(&client->recv_initial_metadata);
   client->grpc_cb = grpc_cb;
+  client->grpc_cb_arg = grpc_cb_arg;
   client->is_client = is_client;
   client->buffer_size = TSI_ALTS_INITIAL_BUFFER_SIZE;
   client->buffer = static_cast<unsigned char*>(gpr_zalloc(client->buffer_size));
@@ -517,7 +520,7 @@ alts_handshaker_client* alts_grpc_handshaker_client_create_locked(
   client->base.vtable =
       vtable_for_testing == nullptr ? &vtable : vtable_for_testing;
   GRPC_CLOSURE_INIT(&client->on_handshaker_service_resp_recv, client->grpc_cb,
-                    client->handshaker, grpc_schedule_on_exec_ctx);
+                    client->grpc_cb_arg, grpc_schedule_on_exec_ctx);
   grpc_slice_unref_internal(slice);
   return &client->base;
 }
