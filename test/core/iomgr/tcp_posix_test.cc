@@ -191,9 +191,9 @@ static void read_cb(void* user_data, grpc_error* error) {
         GRPC_LOG_IF_ERROR("kick", grpc_pollset_kick(g_pollset, nullptr)));
     gpr_mu_unlock(g_mu);
   } else {
+    gpr_mu_unlock(g_mu);
     grpc_endpoint_read(state->ep, &state->incoming, &state->read_cb,
                        /*urgent=*/false);
-    gpr_mu_unlock(g_mu);
   }
 }
 
