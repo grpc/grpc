@@ -24,7 +24,7 @@
 #include "src/core/lib/iomgr/port.h"
 
 // This test won't work except with posix sockets enabled
-#ifdef GRPC_POSIX_SOCKET
+#ifdef GRPC_POSIX_SOCKET_TCP
 
 #include "test/core/util/test_config.h"
 
@@ -751,8 +751,8 @@ int main(int argc, char** argv) {
   return 0;
 }
 
-#else /* GRPC_POSIX_SOCKET */
+#else /* GRPC_POSIX_SOCKET_TCP */
 
 int main(int argc, char** argv) { return 1; }
 
-#endif /* GRPC_POSIX_SOCKET */
+#endif /* GRPC_POSIX_SOCKET_TCP */

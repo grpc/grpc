@@ -27,7 +27,7 @@
 #include "src/core/lib/iomgr/timer_manager.h"
 #include "test/core/util/test_config.h"
 
-#ifdef GRPC_POSIX_SOCKET
+#ifdef GRPC_POSIX_SOCKET_EV
 #include "src/core/lib/iomgr/ev_posix.h"
 #endif
 
@@ -46,7 +46,7 @@ class TimerTest : public ::testing::Test {
     grpc_init();
     // Skip test if slowdown factor > 1, or we are
     // using event manager.
-#ifdef GRPC_POSIX_SOCKET
+#ifdef GRPC_POSIX_SOCKET_EV
     if (grpc_test_slowdown_factor() != 1 ||
         grpc_event_engine_run_in_background()) {
 #else

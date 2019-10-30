@@ -48,9 +48,9 @@
 #include "test/cpp/util/string_ref_helper.h"
 #include "test/cpp/util/test_credentials_provider.h"
 
-#ifdef GRPC_POSIX_SOCKET
+#ifdef GRPC_POSIX_SOCKET_EV
 #include "src/core/lib/iomgr/ev_posix.h"
-#endif  // GRPC_POSIX_SOCKET
+#endif  // GRPC_POSIX_SOCKET_EV
 
 #include <gtest/gtest.h>
 
@@ -833,12 +833,12 @@ TEST_P(End2endTest, ReconnectChannel) {
   int poller_slowdown_factor = 1;
   // It needs 2 pollset_works to reconnect the channel with polling engine
   // "poll"
-#ifdef GRPC_POSIX_SOCKET
+#ifdef GRPC_POSIX_SOCKET_EV
   grpc_core::UniquePtr<char> poller = GPR_GLOBAL_CONFIG_GET(grpc_poll_strategy);
   if (0 == strcmp(poller.get(), "poll")) {
     poller_slowdown_factor = 2;
   }
-#endif  // GRPC_POSIX_SOCKET
+#endif  // GRPC_POSIX_SOCKET_EV
   ResetStub();
   SendRpc(stub_.get(), 1, false);
   RestartServer(std::shared_ptr<AuthMetadataProcessor>());
