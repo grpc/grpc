@@ -47,13 +47,15 @@ static char* get_http_proxy_server(const grpc_channel_args* args, char** user_cr
   char* proxy_name = nullptr;
   char** authority_strs = nullptr;
   size_t authority_nstrs;
-  /* Check channel arguments in case a per channel proxy is set. Otherwise,
-   * prefer using 'grpc_proxy'. Fallback on 'http_proxy' if it is not set.
-   * Also prefer using 'https_proxy' with fallback on 'http_proxy'. The
-   * fallback behavior can be removed if there's a demand for it.
+  /* We check the following places to determine the HTTP proxy to use, stopping
+   * at the first one that is set:
+   * 1. GRPC_ARG_HTTP_PROXY channel arg
+   * 2. grpc_proxy environment variable
+   * 3. https_proxy environment variable
+   * 4. http_proxy environment variable
+   * If none of the above are set, then no HTTP proxy will be used.
    */
-  const grpc_arg* arg = grpc_channel_args_find(args, GRPC_ARG_HTTP_PROXY);
-  char* uri_str = gpr_strdup(grpc_channel_arg_get_string(arg));
+  char* uri_str = gpr_strdup(grpc_channel_args_find_string(args, GRPC_ARG_HTTP_PROXY));
   if (uri_str == nullptr) uri_str = gpr_getenv("grpc_proxy");
   if (uri_str == nullptr) uri_str = gpr_getenv("https_proxy");
   if (uri_str == nullptr) uri_str = gpr_getenv("http_proxy");
