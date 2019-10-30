@@ -91,6 +91,7 @@ grpc_cc_test(
         "//test/core/tsi/alts/fake_handshaker:fake_handshaker_lib",
         "//test/core/end2end:cq_verifier",
     ],
+    external_deps = ["gtest"],
     # TODO(apolcyn): make the fake TCP server used in this
     # test portable to Windows.
     tags = ["no_windows"],
