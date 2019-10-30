@@ -872,7 +872,7 @@ class PythonLanguage(object):
 
         if args.compiler == 'default':
             if os.name == 'nt':
-                return (python35_config,)
+                return (python36_config,)
             else:
                 if args.iomgr_platform == 'asyncio':
                     return (python36_config,)
@@ -907,7 +907,7 @@ class PythonLanguage(object):
                 python35_config,
                 python36_config,
                 python37_config,
-                # TODO: Add Python 3.8 once it's released.
+                python38_config,
             )
         else:
             raise Exception('Compiler %s not supported.' % args.compiler)
