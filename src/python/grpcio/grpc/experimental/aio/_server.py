@@ -132,6 +132,14 @@ class Server:
         """
         return await self._server.wait_for_termination(timeout)
 
+    def __del__(self):
+        """Schedules a graceful shutdown in current event loop.
+        
+        The Cython AioServer doesn't hold a ref-count to this class. It should
+        be safe to slightly extend the underlying Cython object's life span.
+        """
+        self._loop.create_task(self._server.shutdown(None))
+
 
 def server(migration_thread_pool=None,
            handlers=None,

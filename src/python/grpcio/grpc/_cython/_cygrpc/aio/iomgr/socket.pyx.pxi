@@ -154,6 +154,11 @@ cdef class _AsyncioSocket:
             self._writer.close()
         if self._server:
             self._server.close()
+        # NOTE(lidiz) If the asyncio.Server is created from a Python socket,
+        # the server.close() won't release the fd until the close() is called
+        # for the Python socket.
+        if self._py_socket:
+            self._py_socket.close()
 
     def _new_connection_callback(self, object reader, object writer):
         client_socket = _AsyncioSocket.create(

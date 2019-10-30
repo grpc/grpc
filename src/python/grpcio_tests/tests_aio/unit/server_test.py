@@ -15,6 +15,7 @@
 import logging
 import unittest
 import time
+import gc
 
 import grpc
 from grpc.experimental import aio
@@ -72,7 +73,8 @@ class TestServer(AioTestBase):
     def test_unary_unary(self):
 
         async def test_unary_unary_body():
-            server_target, _, _ = await _start_test_server()
+            result = await _start_test_server()
+            server_target = result[0]
 
             async with aio.insecure_channel(server_target) as channel:
                 unary_call = channel.unary_unary(_SIMPLE_UNARY_UNARY)
