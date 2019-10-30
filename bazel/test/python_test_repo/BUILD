@@ -108,7 +108,6 @@ py_binary(
     name = "dummy_plugin",
     srcs = [":dummy_plugin.py"],
     deps = [
-        "@com_github_grpc_grpc//src/python/grpcio/grpc/_cython:cygrpc",
         "@com_google_protobuf//:protobuf_python",
     ],
 )
