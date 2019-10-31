@@ -50,14 +50,8 @@ typedef struct alts_grpc_handshaker_client {
    * that validates the data to be sent to handshaker service in a testing use
    * case. */
   alts_grpc_caller grpc_caller;
-  /* A callback function provided by gRPC to handle the response returned from
-   * handshaker service. It also serves to bring the control safely back to
-   * application when dedicated CQ and thread are used. */
-  grpc_iomgr_cb_func grpc_cb;
-  /* Argument to pass to grpc_cb when invoked. */
-  void* grpc_cb_arg;
   /* A gRPC closure to be scheduled when the response from handshaker service
-   * is received. It will be initialized with grpc_cb. */
+   * is received. It will be initialized with a callback provided on creation. */
   grpc_closure on_handshaker_service_resp_recv;
   /* Buffers containing information to be sent (or received) to (or from) the
    * handshaker service. */
@@ -520,7 +514,6 @@ alts_handshaker_client* alts_grpc_handshaker_client_create(
   client->recv_bytes = grpc_empty_slice();
   grpc_metadata_array_init(&client->recv_initial_metadata);
   client->grpc_cb = grpc_cb;
-  client->grpc_cb_arg = grpc_cb_arg;
   client->is_client = is_client;
   client->buffer_size = TSI_ALTS_INITIAL_BUFFER_SIZE;
   client->buffer = static_cast<unsigned char*>(gpr_zalloc(client->buffer_size));
@@ -537,7 +530,7 @@ alts_handshaker_client* alts_grpc_handshaker_client_create(
   client->base.vtable =
       vtable_for_testing == nullptr ? &vtable : vtable_for_testing;
   GRPC_CLOSURE_INIT(&client->on_handshaker_service_resp_recv, client->grpc_cb,
-                    client->grpc_cb_arg, grpc_schedule_on_exec_ctx);
+                    grpc_cb_arg, grpc_schedule_on_exec_ctx);
   grpc_slice_unref_internal(slice);
   return &client->base;
 }
