@@ -79,9 +79,11 @@ proto_library(
     strip_import_prefix = ""
 )
 
+# Also test the custom plugin execution parameter
 py_proto_library(
     name = "helloworld_moved_py_pb2",
     deps = [":helloworld_moved_proto"],
+    plugin = ":dummy_plugin"
 )
 
 py_grpc_library(
@@ -99,5 +101,13 @@ py2and3_test(
         ":helloworld_moved_py_pb2_grpc",
         ":duration_py_pb2",
         ":timestamp_py_pb2",
+    ],
+)
+
+py_binary(
+    name = "dummy_plugin",
+    srcs = [":dummy_plugin.py"],
+    deps = [
+        "@com_google_protobuf//:protobuf_python",
     ],
 )
