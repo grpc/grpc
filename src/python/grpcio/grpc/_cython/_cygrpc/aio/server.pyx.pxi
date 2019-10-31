@@ -410,7 +410,7 @@ cdef class AioServer:
             await self._shutdown_completed
         else:
             try:
-                await asyncio.wait_for(self._shutdown_completed, timeout)
+                await asyncio.wait_for(asyncio.shield(self._shutdown_completed), timeout)
             except asyncio.TimeoutError:
                 if self._crash_exception is not None:
                     raise self._crash_exception
