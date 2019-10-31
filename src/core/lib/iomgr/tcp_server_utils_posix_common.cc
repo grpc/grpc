@@ -157,6 +157,14 @@ grpc_error* grpc_tcp_server_prepare_socket(grpc_tcp_server* s, int fd,
     if (err != GRPC_ERROR_NONE) goto error;
   }
 
+#ifdef GRPC_LINUX_ERRQUEUE
+  err = grpc_set_socket_zerocopy(fd);
+  if (err != GRPC_ERROR_NONE) {
+    /* it's not fatal, so just log it. */
+    gpr_log(GPR_DEBUG, "Node does not support SO_ZEROCOPY, continuing.");
+    GRPC_ERROR_UNREF(err);
+  }
+#endif
   err = grpc_set_socket_nonblocking(fd, 1);
   if (err != GRPC_ERROR_NONE) goto error;
   err = grpc_set_socket_cloexec(fd, 1);

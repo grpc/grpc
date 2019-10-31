@@ -27,6 +27,7 @@
 #include <functional>
 #include <iterator>
 #include <map>
+#include <unordered_map>
 
 #include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/gprpp/memory.h"
@@ -37,6 +38,11 @@ namespace grpc_core {
 
 template <class Key, class T, class Compare = std::less<Key>>
 using Map = std::map<Key, T, Compare, Allocator<std::pair<const Key, T>>>;
+
+template <class Key, class T, class Hash = std::hash<Key>,
+          class KeyEqual = std::equal_to<Key>>
+using UnorderedMap = std::unordered_map<Key, T, Hash, KeyEqual,
+                                        Allocator<std::pair<const Key, T>>>;
 
 struct StringLess {
   bool operator()(const char* a, const char* b) const {

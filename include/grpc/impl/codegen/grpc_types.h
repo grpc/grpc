@@ -323,6 +323,17 @@ typedef struct {
   "grpc.experimental.tcp_min_read_chunk_size"
 #define GRPC_ARG_TCP_MAX_READ_CHUNK_SIZE \
   "grpc.experimental.tcp_max_read_chunk_size"
+/* TCP TX Zerocopy enable state: zero is disabled, non-zero is enabled. */
+#define GRPC_ARG_TCP_TX_ZEROCOPY_ENABLED "grpc.experimental.tcp_tx_zerocopy_en"
+/* TCP TX Zerocopy send threshold: only zerocopy if >= this many bytes sent. */
+#define GRPC_ARG_TCP_TX_ZEROCOPY_SEND_BYTES_THRESHOLD \
+  "grpc.experimental.tcp_tx_zerocopy_send_bytes_thresh"
+/* TCP TX Zerocopy max simult. sends: limit for maximum number of pending calls
+   to tcp_write() using zerocopy. A tcp_write() is considered pending until the
+   kernel performs the zerocopy-done callback for all sendmsg() calls issued by
+   the tcp_write(). */
+#define GRPC_ARG_TCP_TX_ZEROCOPY_MAX_SIMULT_SENDS \
+  "grpc.experimental.tcp_tx_zerocopy_max_simult_sends"
 /* Timeout in milliseconds to use for calls to the grpclb load balancer.
    If 0 or unset, the balancer calls will have no deadline. */
 #define GRPC_ARG_GRPCLB_CALL_TIMEOUT_MS "grpc.grpclb_call_timeout_ms"
