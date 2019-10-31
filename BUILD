@@ -318,9 +318,9 @@ grpc_cc_library(
     standalone = True,
     deps = [
         "grpc_common",
+        "grpc_lb_policy_cds",
         "grpc_lb_policy_grpclb",
         "grpc_lb_policy_xds",
-        "grpc_lb_policy_cds",
         "grpc_resolver_xds",
     ],
 )
@@ -336,9 +336,9 @@ grpc_cc_library(
     standalone = True,
     deps = [
         "grpc_common",
+        "grpc_lb_policy_cds_secure",
         "grpc_lb_policy_grpclb_secure",
         "grpc_lb_policy_xds_secure",
-        "grpc_lb_policy_cds_secure",
         "grpc_resolver_xds_secure",
         "grpc_secure",
         "grpc_transport_chttp2_client_secure",

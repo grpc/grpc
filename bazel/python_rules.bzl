@@ -2,13 +2,13 @@
 
 load(
     "//bazel:protobuf.bzl",
-    "get_include_directory",
-    "get_plugin_args",
-    "protos_from_context",
-    "includes_from_deps",
-    "get_proto_arguments",
     "declare_out_files",
+    "get_include_directory",
     "get_out_dir",
+    "get_plugin_args",
+    "get_proto_arguments",
+    "includes_from_deps",
+    "protos_from_context",
 )
 
 _GENERATED_PROTO_FORMAT = "{}_pb2.py"
@@ -35,7 +35,7 @@ def _generate_py_impl(context):
             [],
             out_dir.path,
             False,
-            context.attr.plugin.label.name
+            context.attr.plugin.label.name,
         )
         tools.append(context.executable.plugin)
 
@@ -104,7 +104,6 @@ def py_proto_library(
     if len(deps) != 1:
         fail("Can only compile a single proto at a time.")
 
-
     _generate_pb2_src(
         name = codegen_target,
         deps = deps,
@@ -144,7 +143,7 @@ def _generate_pb2_grpc_src_impl(context):
             [],
             out_dir.path,
             False,
-            context.attr.plugin.label.name
+            context.attr.plugin.label.name,
         )
         tools.append(context.executable.plugin)
 
@@ -207,12 +206,12 @@ _generate_pb2_grpc_src = rule(
 )
 
 def py_grpc_library(
-    name,
-    srcs,
-    deps,
-    plugin = None,
-    strip_prefixes = [],
-    **kwargs):
+        name,
+        srcs,
+        deps,
+        plugin = None,
+        strip_prefixes = [],
+        **kwargs):
     """Generate python code for gRPC services defined in a protobuf.
 
     Args:
@@ -253,15 +252,15 @@ def py_grpc_library(
         deps = [
             Label("//src/python/grpcio/grpc:grpcio"),
         ] + deps + [
-            ":{}".format(codegen_grpc_target)
+            ":{}".format(codegen_grpc_target),
         ],
         **kwargs
     )
 
-
-def py2and3_test(name,
-                 py_test = native.py_test,
-                 **kwargs):
+def py2and3_test(
+        name,
+        py_test = native.py_test,
+        **kwargs):
     """Runs a Python test under both Python 2 and Python 3.
 
     Args:

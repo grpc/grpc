@@ -15,7 +15,8 @@
 # limitations under the License.
 
 licenses(["notice"])
-objc_library(
+
+native.objc_library(
     name = "GTM_GoogleTestRunner_GTM_USING_XCTEST",
     testonly = 1,
     srcs = [
@@ -24,5 +25,5 @@ objc_library(
     deps = [
         "//external:gtest",
     ],
-    visibility = ["//visibility:public"]
+    visibility = ["//visibility:public"],
 )

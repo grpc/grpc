@@ -43,7 +43,7 @@ rbe_autoconfig(
     ),
 )
 
-load("@io_bazel_rules_python//python:pip.bzl", "pip_repositories", "pip_import")
+load("@io_bazel_rules_python//python:pip.bzl", "pip_import", "pip_repositories")
 
 pip_import(
     name = "grpc_python_dependencies",
@@ -51,5 +51,7 @@ pip_import(
 )
 
 load("@grpc_python_dependencies//:requirements.bzl", "pip_install")
+
 pip_repositories()
+
 pip_install()

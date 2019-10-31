@@ -27,15 +27,15 @@ load(
     "//bazel:generate_objc.bzl",
     "generate_objc",
     "generate_objc_hdrs",
+    "generate_objc_non_arc_srcs",
     "generate_objc_srcs",
-    "generate_objc_non_arc_srcs"
 )
 
 def proto_library_objc_wrapper(
-    name,
-    srcs,
-    deps = [],
-    use_well_known_protos = False):
+        name,
+        srcs,
+        deps = [],
+        use_well_known_protos = False):
     """proto_library for adding dependencies to google/protobuf protos
     use_well_known_protos - ignored in open source version
     """

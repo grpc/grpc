@@ -46,7 +46,7 @@ def _fixture_options(
         supports_write_buffering = supports_write_buffering,
         client_channel = client_channel,
         supports_msvc = supports_msvc,
-        _platforms=_platforms,
+        _platforms = _platforms,
     )
 
 # maps fixture name to whether it requires the security library
@@ -369,14 +369,14 @@ def _compatible(fopt, topt):
     return True
 
 def _platform_support_tags(fopt):
-     result = []
-     if not "windows" in fopt._platforms:
-         result += ["no_windows"]
-     if not "mac" in fopt._platforms:
-         result += ["no_mac"]
-     if not "linux" in fopt._platforms:
-         result += ["no_linux"]
-     return result
+    result = []
+    if not "windows" in fopt._platforms:
+        result += ["no_windows"]
+    if not "mac" in fopt._platforms:
+        result += ["no_mac"]
+    if not "linux" in fopt._platforms:
+        result += ["no_linux"]
+    return result
 
 def grpc_end2end_tests():
     grpc_cc_library(
@@ -396,7 +396,7 @@ def grpc_end2end_tests():
             ":http_proxy",
             ":proxy",
             ":local_util",
-        ]
+        ],
     )
 
     for f, fopt in END2END_FIXTURES.items():
@@ -424,7 +424,7 @@ def grpc_end2end_tests():
                 srcs = ["end2end_test.sh"],
                 args = [
                     "$(location %s_test)" % f,
-                    t
+                    t,
                 ],
                 tags = ["no_linux"] + _platform_support_tags(fopt),
             )
@@ -461,7 +461,7 @@ def grpc_end2end_nosec_tests():
             ":http_proxy",
             ":proxy",
             ":local_util",
-        ]
+        ],
     )
 
     for f, fopt in END2END_NOSEC_FIXTURES.items():
@@ -492,7 +492,7 @@ def grpc_end2end_nosec_tests():
                 srcs = ["end2end_test.sh"],
                 args = [
                     "$(location %s_nosec_test)" % f,
-                    t
+                    t,
                 ],
                 tags = ["no_linux"] + _platform_support_tags(fopt),
             )

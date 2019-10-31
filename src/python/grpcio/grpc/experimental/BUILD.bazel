@@ -15,7 +15,7 @@ py_library(
 
 py_library(
     name = "experimental",
-    srcs = ["__init__.py",],
+    srcs = ["__init__.py"],
     deps = [
         ":aio",
         ":gevent",

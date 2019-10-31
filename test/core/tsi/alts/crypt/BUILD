@@ -34,10 +34,16 @@ grpc_cc_test(
     ],
 )
 
-grpc_cc_library(
-    name = "alts_crypt_test_util",
-    srcs = ["gsec_test_util.cc"],
-    hdrs = ["gsec_test_util.h"],
+grpc_cc_test(
+    name = "memory_usage_test",
+    srcs = ["memory_usage_test.cc"],
+    data = [
+        ":memory_usage_client",
+        ":memory_usage_server",
+    ],
+    language = "C++",
+    tags = ["no_windows"],  # TODO(jtattermusch): breaks windows RBE build if enabled
+    uses_polling = False,
     deps = [
         "//:gpr",
         "//:grpc",

@@ -30,55 +30,55 @@ platform(
         "@bazel_tools//tools/cpp:msvc",
     ],
     exec_properties = {
-        "container-image" : "docker://gcr.io/grpc-testing/rbe_windows_toolchain@sha256:75728e7d6d804090f71095e5fec627b18cfa1f47adc52096c209f2a687e06b2e",
-        "gceMachineType" : "n1-highmem-2",
-        "OSFamily" : "Windows",
+        "container-image": "docker://gcr.io/grpc-testing/rbe_windows_toolchain@sha256:75728e7d6d804090f71095e5fec627b18cfa1f47adc52096c209f2a687e06b2e",
+        "gceMachineType": "n1-highmem-2",
+        "OSFamily": "Windows",
     },
 )
 
 # RBE Ubuntu16_04 r346485
 platform(
     name = "rbe_ubuntu1604",
-    parents = ["@rbe_default//config:platform"],
     constraint_values = [
         "//third_party/toolchains/machine_size:standard",
     ],
     exec_properties = {
-        "gceMachineType" : "n1-highmem-2",  # Small machines for majority of tests
-        "dockerSiblingContainers" : "false",
-        "dockerNetwork" : "off",
-        "dockerAddCapabilities" : "SYS_PTRACE",
-        "dockerPrivileged" : "true"
+        "gceMachineType": "n1-highmem-2",  # Small machines for majority of tests
+        "dockerSiblingContainers": "false",
+        "dockerNetwork": "off",
+        "dockerAddCapabilities": "SYS_PTRACE",
+        "dockerPrivileged": "true",
     },
+    parents = ["@rbe_default//config:platform"],
 )
 
 platform(
     name = "rbe_ubuntu1604_large",
-    parents = ["@rbe_default//config:platform"],
     constraint_values = [
         "//third_party/toolchains/machine_size:large",
     ],
     exec_properties = {
-        "gceMachineType" : "n1-standard-8",  # Large machines for some resource demanding tests (TSAN).
-        "dockerSiblingContainers" : "false",
-        "dockerNetwork" : "off",
-        "dockerAddCapabilities" : "SYS_PTRACE",
-        "dockerPrivileged" : "true"
+        "gceMachineType": "n1-standard-8",  # Large machines for some resource demanding tests (TSAN).
+        "dockerSiblingContainers": "false",
+        "dockerNetwork": "off",
+        "dockerAddCapabilities": "SYS_PTRACE",
+        "dockerPrivileged": "true",
     },
+    parents = ["@rbe_default//config:platform"],
 )
 
 platform(
     name = "local",
-    parents = ["@bazel_tools//platforms:target_platform"],
     constraint_values = [
         "//third_party/toolchains/machine_size:standard",
     ],
+    parents = ["@bazel_tools//platforms:target_platform"],
 )
 
 platform(
     name = "local_large",
-    parents = ["@bazel_tools//platforms:target_platform"],
     constraint_values = [
         "//third_party/toolchains/machine_size:large",
     ],
+    parents = ["@bazel_tools//platforms:target_platform"],
 )
