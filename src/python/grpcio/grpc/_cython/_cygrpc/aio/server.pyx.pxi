@@ -282,6 +282,7 @@ cdef class AioServer:
         self._shutdown_callback_wrapper = CallbackWrapper(
             self._shutdown_completed,
             SERVER_SHUTDOWN_FAILURE_HANDLER)
+        self._crash_exception = None
 
         if interceptors:
             raise NotImplementedError()
@@ -324,6 +325,15 @@ cdef class AioServer:
                 rpc_state,
                 self._loop))
 
+    def _serving_task_crash_handler(self, object task):
+        """Shutdown the server immediately if unexpectedly exited."""
+        if task.exception() is None:
+            return
+        if self._status != AIO_SERVER_STATUS_STOPPING:
+            self._crash_exception = task.exception()
+            _LOGGER.exception(self._crash_exception)
+            self._loop.create_task(self.shutdown(None))
+
     async def start(self):
         if self._status == AIO_SERVER_STATUS_RUNNING:
             return
@@ -333,6 +343,7 @@ cdef class AioServer:
         self._status = AIO_SERVER_STATUS_RUNNING
         cdef object server_started = self._loop.create_future()
         self._serving_task = self._loop.create_task(self._server_main_loop(server_started))
+        self._serving_task.add_done_callback(self._serving_task_crash_handler)
         # Needs to explicitly wait for the server to start up.
         # Otherwise, the actual start time of the server is un-controllable.
         await server_started
@@ -368,9 +379,9 @@ cdef class AioServer:
 
         async with self._shutdown_lock:
             if self._status == AIO_SERVER_STATUS_RUNNING:
-                await self._start_shutting_down()
                 self._server.is_shutting_down = True
                 self._status = AIO_SERVER_STATUS_STOPPING
+                await self._start_shutting_down()
 
         if grace is None:
             # Directly cancels all calls
@@ -401,7 +412,11 @@ cdef class AioServer:
             try:
                 await asyncio.wait_for(self._shutdown_completed, timeout)
             except asyncio.TimeoutError:
+                if self._crash_exception is not None:
+                    raise self._crash_exception
                 return False
+        if self._crash_exception is not None:
+            raise self._crash_exception
         return True
 
     def __dealloc__(self):

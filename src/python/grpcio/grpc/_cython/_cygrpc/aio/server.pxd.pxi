@@ -64,3 +64,4 @@ cdef class AioServer:
     cdef object _shutdown_lock  # asyncio.Lock
     cdef object _shutdown_completed  # asyncio.Future
     cdef CallbackWrapper _shutdown_callback_wrapper
+    cdef object _crash_exception  # Exception
