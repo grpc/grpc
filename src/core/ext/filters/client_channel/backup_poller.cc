@@ -100,12 +100,13 @@ static void g_poller_unref() {
     g_poller = nullptr;
     gpr_mu_unlock(&g_poller_mu);
     gpr_mu_lock(p->pollset_mu);
+    grpc_timer_cancel(&p->polling_timer);
+    grpc_pollset_work(p->pollset, nullptr, grpc_core::ExecCtx::Get()->Now() + g_poll_interval_ms);
     p->shutting_down = true;
     grpc_pollset_shutdown(
         p->pollset, GRPC_CLOSURE_INIT(&p->shutdown_closure, done_poller, p,
                                       grpc_schedule_on_exec_ctx));
     gpr_mu_unlock(p->pollset_mu);
-    grpc_timer_cancel(&p->polling_timer);
   } else {
     gpr_mu_unlock(&g_poller_mu);
   }
