@@ -298,60 +298,14 @@ static void on_handshaker_service_resp_recv_dedicated(void* arg,
                  nullptr, &resource->storage);
 }
 
-static void alts_tsi_handshaker_maybe_create_channel(
-    alts_tsi_handshaker* handshaker) {
-  bool create_channel = false;
-  grpc_core::UniquePtr<char> handshaker_service_url;
-  {
-    grpc_core::MutexLock lock(&handshaker->mu);
-    create_channel = false;
-    bool use_dedicated_cq = handshaker->interested_parties == nullptr;
-    if (handshaker->channel == nullptr && !use_dedicated_cq) {
-      create_channel = true;
-    }
-    handshaker_service_url = grpc_core::UniquePtr<char>(
-        gpr_strdup(handshaker->handshaker_service_url));
-  }
-  grpc_channel* channel = nullptr;
-  if (create_channel) {
-    channel = grpc_insecure_channel_create(handshaker_service_url.get(),
-                                           nullptr, nullptr);
-  }
-  grpc_core::MutexLock lock(&handshaker->mu);
-  if (channel != nullptr) {
-    GPR_ASSERT(handshaker->channel == nullptr);
-    handshaker->channel = channel;
-  }
-}
-
-struct alts_tsi_handshaker_continue_handshaker_next_args {
-  alts_tsi_handshaker* handshaker;
-  unsigned char* received_bytes;
-  size_t received_bytes_size;
-  tsi_handshaker_on_next_done_cb cb;
-  void* user_data;
-  grpc_closure closure;
-};
-
-static void alts_tsi_handshaker_continue_handshaker_next(void* arg,
-                                                         grpc_error* error) {
-  struct alts_tsi_handshaker_continue_handshaker_next_args* next_args =
-      static_cast<alts_tsi_handshaker_continue_handshaker_next_args*>(arg);
-  struct alts_tsi_handshaker* handshaker = next_args->handshaker;
-  grpc_core::UniquePtr<unsigned char> received_bytes =
-      grpc_core::UniquePtr<unsigned char>(next_args->received_bytes);
-  size_t received_bytes_size = next_args->received_bytes_size;
-  tsi_handshaker_on_next_done_cb cb = next_args->cb;
-  void* user_data = next_args->user_data;
-  gpr_free(next_args);
-  alts_tsi_handshaker_maybe_create_channel(handshaker);
-  // Continue tsi_handshaker_next now that we have a channel
-  grpc_core::ReleasableMutexLock lock(&handshaker->mu);
+/* Returns TSI_OK if and only if no error is encountered. */
+static tsi_result alts_tsi_handshaker_continue_handshaker_next_locked(
+    alts_tsi_handshaker* handshaker, const unsigned char* received_bytes,
+    size_t received_bytes_size, tsi_handshaker_on_next_done_cb cb,
+    void* user_data) {
   if (handshaker->shutdown) {
     gpr_log(GPR_ERROR, "TSI handshake shutdown");
-    lock.Unlock();
-    cb(TSI_HANDSHAKE_SHUTDOWN, next_args->user_data, nullptr, 0, nullptr);
-    return;
+    return TSI_HANDSHAKE_SHUTDOWN;
   }
   if (!handshaker->has_created_handshaker_client) {
     if (handshaker->channel == nullptr) {
@@ -380,9 +334,7 @@ static void alts_tsi_handshaker_continue_handshaker_next(void* arg,
         handshaker->is_client);
     if (handshaker->client == nullptr) {
       gpr_log(GPR_ERROR, "Failed to create ALTS handshaker client");
-      lock.Unlock();
-      cb(TSI_FAILED_PRECONDITION, user_data, nullptr, 0, nullptr);
-      return;
+      return TSI_FAILED_PRECONDITION;
     }
     handshaker->has_created_handshaker_client = true;
   }
@@ -391,12 +343,11 @@ static void alts_tsi_handshaker_continue_handshaker_next(void* arg,
     GPR_ASSERT(grpc_cq_begin_op(grpc_alts_get_shared_resource_dedicated()->cq,
                                 handshaker->client));
   }
-  grpc_slice slice =
-      (received_bytes.get() == nullptr || received_bytes_size == 0)
-          ? grpc_empty_slice()
-          : grpc_slice_from_copied_buffer(
-                reinterpret_cast<const char*>(received_bytes.get()),
-                received_bytes_size);
+  grpc_slice slice = (received_bytes == nullptr || received_bytes_size == 0)
+                         ? grpc_empty_slice()
+                         : grpc_slice_from_copied_buffer(
+                               reinterpret_cast<const char*>(received_bytes),
+                               received_bytes_size);
   tsi_result ok = TSI_OK;
   if (!handshaker->has_sent_start_message) {
     ok = handshaker->is_client
@@ -408,12 +359,46 @@ static void alts_tsi_handshaker_continue_handshaker_next(void* arg,
     ok = alts_handshaker_client_next_locked(handshaker->client, &slice);
   }
   grpc_slice_unref_internal(slice);
-  if (ok != TSI_OK) {
-    gpr_log(GPR_ERROR, "Failed to schedule ALTS handshaker requests");
-    lock.Unlock();
-    cb(ok, user_data, nullptr, 0, nullptr);
-    return;
+  return ok;
+}
+
+struct alts_tsi_handshaker_continue_handshaker_next_args {
+  alts_tsi_handshaker* handshaker;
+  grpc_core::UniquePtr<unsigned char> received_bytes;
+  size_t received_bytes_size;
+  tsi_handshaker_on_next_done_cb cb;
+  void* user_data;
+  grpc_core::UniquePtr<char> handshaker_service_url;
+  bool use_dedicated_cq;
+  grpc_closure closure;
+};
+
+static void alts_tsi_handshaker_maybe_create_channel(void* arg,
+                                                     grpc_error* unused_error) {
+  alts_tsi_handshaker_continue_handshaker_next_args* next_args =
+      static_cast<alts_tsi_handshaker_continue_handshaker_next_args*>(arg);
+  alts_tsi_handshaker* handshaker = next_args->handshaker;
+  grpc_channel* channel = nullptr;
+  if (!next_args->use_dedicated_cq) {
+    channel = grpc_insecure_channel_create(
+        next_args->handshaker_service_url.get(), nullptr, nullptr);
   }
+  tsi_result continue_next_result;
+  {
+    grpc_core::MutexLock lock(&handshaker->mu);
+    if (channel != nullptr) {
+      GPR_ASSERT(handshaker->channel == nullptr);
+      handshaker->channel = channel;
+    }
+    continue_next_result = alts_tsi_handshaker_continue_handshaker_next_locked(
+        handshaker, next_args->received_bytes.get(),
+        next_args->received_bytes_size, next_args->cb, next_args->user_data);
+  }
+  if (continue_next_result != TSI_OK) {
+    next_args->cb(continue_next_result, next_args->user_data, nullptr, 0,
+                  nullptr);
+  }
+  grpc_core::Delete(next_args);
 }
 
 static tsi_result handshaker_next(
@@ -428,20 +413,30 @@ static tsi_result handshaker_next(
   alts_tsi_handshaker* handshaker =
       reinterpret_cast<alts_tsi_handshaker*>(self);
   grpc_core::MutexLock lock(&handshaker->mu);
-  alts_tsi_handshaker_continue_handshaker_next_args* args =
-      static_cast<alts_tsi_handshaker_continue_handshaker_next_args*>(
-          gpr_zalloc(sizeof(*args)));
-  args->handshaker = handshaker;
-  args->received_bytes =
-      static_cast<unsigned char*>(gpr_zalloc(received_bytes_size));
-  args->received_bytes_size = received_bytes_size;
-  memcpy(args->received_bytes, received_bytes, args->received_bytes_size);
-  args->cb = cb;
-  args->user_data = user_data;
-  GRPC_CLOSURE_INIT(&args->closure,
-                    alts_tsi_handshaker_continue_handshaker_next, args,
-                    grpc_schedule_on_exec_ctx);
-  GRPC_CLOSURE_SCHED(&args->closure, GRPC_ERROR_NONE);
+  if (handshaker->channel == nullptr) {
+    alts_tsi_handshaker_continue_handshaker_next_args* args =
+        grpc_core::New<alts_tsi_handshaker_continue_handshaker_next_args>();
+    args->handshaker = handshaker;
+    args->received_bytes = grpc_core::UniquePtr<unsigned char>(
+        static_cast<unsigned char*>(gpr_zalloc(received_bytes_size)));
+    args->received_bytes_size = received_bytes_size;
+    memcpy(args->received_bytes.get(), received_bytes, received_bytes_size);
+    args->cb = cb;
+    args->user_data = user_data;
+    args->handshaker_service_url = grpc_core::UniquePtr<char>(
+        gpr_strdup(handshaker->handshaker_service_url));
+    args->use_dedicated_cq = handshaker->interested_parties == nullptr;
+    GRPC_CLOSURE_INIT(&args->closure, alts_tsi_handshaker_maybe_create_channel,
+                      args, grpc_schedule_on_exec_ctx);
+    GRPC_CLOSURE_SCHED(&args->closure, GRPC_ERROR_NONE);
+  } else {
+    tsi_result ok = alts_tsi_handshaker_continue_handshaker_next_locked(
+        handshaker, received_bytes, received_bytes_size, cb, user_data);
+    if (ok != TSI_OK) {
+      gpr_log(GPR_ERROR, "Failed to schedule ALTS handshaker requests");
+      return ok;
+    }
+  }
   return TSI_ASYNC;
 }
 
