@@ -13,7 +13,7 @@
   srcdoc = []
   for dirpath, dirnames, filenames in os.walk('src/objective-c'):
     for file in filenames:
-      if os.path.splitext(file)[1] == '.md':
+      if os.path.splitext(file)[1] == '.md' and dirpath.find('/Pods/') == -1:
         srcdoc.append(os.path.join(dirpath, file))
 
   def glob_recursive(dir, pattern):
