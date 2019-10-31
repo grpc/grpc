@@ -31,10 +31,6 @@ load("@build_bazel_rules_apple//apple:ios.bzl", "ios_unit_test")
 # The set of pollers to test against if a test exercises polling
 POLLERS = ["epollex", "epoll1", "poll"]
 
-# set exec_properties = LARGE_MACHINE, to run the test on a large machine
-# see //third_party/toolchains/machine_size for details
-LARGE_MACHINE = { "gceMachineType" : "n1-standard-8"}
-
 def if_not_windows(a):
     return select({
         "//:windows": [],
