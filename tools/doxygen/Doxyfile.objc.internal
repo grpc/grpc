@@ -859,15 +859,8 @@ src/objective-c/RxLibrary/README.md \
 src/objective-c/RxLibrary/private/GRXNSBlockEnumerator.h \
 src/objective-c/RxLibrary/private/GRXNSFastEnumerator.h \
 src/objective-c/RxLibrary/private/GRXNSScalarEnumerator.h \
-src/objective-c/examples/Sample/Pods/BoringSSL/README.md \
-src/objective-c/examples/Sample/Pods/nanopb/README.md \
 src/objective-c/examples/Sample/README.md \
-src/objective-c/examples/SwiftSample/Pods/BoringSSL/README.md \
-src/objective-c/examples/SwiftSample/Pods/nanopb/README.md \
-src/objective-c/manual_tests/Pods/BoringSSL-GRPC/README.md \
-src/objective-c/manual_tests/Pods/nanopb/README.md \
-src/objective-c/tests/Connectivity/README.md \
-src/objective-c/tests/Pods/BoringSSL-GRPC/README.md
+src/objective-c/tests/Connectivity/README.md
 
 # This tag can be used to specify the character encoding of the source files
 # that doxygen parses. Internally doxygen uses the UTF-8 encoding. Doxygen uses
