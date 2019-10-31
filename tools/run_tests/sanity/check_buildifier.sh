@@ -1,3 +1,6 @@
 #! /bin/bash -ex
 
-buildifier -r -v "$(dirname "$0")/../../.."
+GIT_ROOT="$(dirname "$0")/../../.."
+TMP_ROOT="/tmp/buildifier_grpc"
+git clone -- "$GIT_ROOT" "$TMP_ROOT"
+buildifier -r -v -mode=diff $TMP_ROOT
