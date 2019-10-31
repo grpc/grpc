@@ -53,8 +53,8 @@ NS_ASSUME_NONNULL_BEGIN
 - (void)didReceiveProtoMessage:(nullable GPBMessage *)message;
 
 /**
- * Issued when a call finished. If the call finished successfully, \a error is nil and \a
- * trainingMetadata consists any trailing metadata received from the server. Otherwise, \a error
+ * Issued when a call finished. If the call finished successfully, \p error is nil and \p
+ * trainingMetadata consists any trailing metadata received from the server. Otherwise, \p error
  * is non-nil and contains the corresponding error information, including gRPC error codes and
  * error descriptions.
  */
