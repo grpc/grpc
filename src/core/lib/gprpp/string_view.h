@@ -126,6 +126,8 @@ class StringView final {
     return 1;
   }
 
+  bool operator<(const StringView& other) const { return cmp(other) < 0; }
+
  private:
   const char* ptr_;
   size_t size_;

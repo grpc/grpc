@@ -24,6 +24,7 @@
 #include <stdint.h>
 
 #include <grpc/slice_buffer.h>
+#include <src/core/lib/gprpp/set.h>
 
 #include "src/core/ext/filters/client_channel/server_address.h"
 #include "src/core/ext/filters/client_channel/xds/xds_bootstrap.h"
@@ -136,6 +137,8 @@ struct EdsUpdate {
   bool drop_all = false;
 };
 
+using EdsUpdateMap = Map<UniquePtr<char> /*cluster*/, EdsUpdate, StringLess>;
+
 struct CdsUpdate {
   // The name to use in the EDS request.
   // If null, the cluster name will be used.
@@ -160,20 +163,33 @@ struct CdsUpdate {
   }
 };
 
+using CdsUpdateMap = Map<UniquePtr<char> /*cluster*/, CdsUpdate, StringLess>;
+
+struct VersionState {
+  UniquePtr<char> version_info;
+  UniquePtr<char> nonce;
+
+  VersionState()
+      : version_info(UniquePtr<char>(gpr_strdup(""))),
+        nonce(UniquePtr<char>(gpr_strdup(""))) {}
+};
+
 // Creates a CDS request querying \a cluster_name.
-grpc_slice XdsCdsRequestCreateAndEncode(const char* cluster_name,
+grpc_slice XdsCdsRequestCreateAndEncode(Set<StringView> cluster_names,
                                         const XdsBootstrap::Node* node,
-                                        const char* build_version);
+                                        const char* build_version,
+                                        const VersionState& cds_version);
 
 // Creates an EDS request querying \a service_name.
-grpc_slice XdsEdsRequestCreateAndEncode(const char* server_name);
+grpc_slice XdsEdsRequestCreateAndEncode(Set<StringView> server_names,
+                                        const VersionState& eds_version);
 
 // Parses the ADS response and outputs update for either CDS or EDS. If there
 // is any error, the output update is invalid.
-grpc_error* XdsAdsResponseDecodeAndParse(const grpc_slice& encoded_response,
-                                         const char* expected_cluster_name,
-                                         CdsUpdate* cds_update,
-                                         EdsUpdate* eds_update);
+grpc_error* XdsAdsResponseDecodeAndParse(
+    const grpc_slice& encoded_response,
+    const Set<StringView>& expected_cluster_names, CdsUpdateMap* cds_update_map,
+    EdsUpdateMap* eds_update_map, VersionState* new_version, bool* is_cds);
 
 // Creates an LRS request querying \a server_name.
 grpc_slice XdsLrsRequestCreateAndEncode(const char* server_name,

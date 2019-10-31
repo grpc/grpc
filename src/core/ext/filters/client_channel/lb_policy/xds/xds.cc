@@ -821,6 +821,8 @@ void XdsLb::UpdateLocked(UpdateArgs args) {
     }
     auto watcher = MakeUnique<EndpointWatcher>(Ref());
     endpoint_watcher_ = watcher.get();
+    // FIMXE: eds_service_name() may be different from the cluster name. Then we
+    // have a new cluster for that eds_service_name()?
     xds_client()->WatchEndpointData(StringView(eds_service_name()),
                                     std::move(watcher));
   }

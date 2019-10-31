@@ -126,8 +126,10 @@ class XdsClient::ChannelState::AdsCallState
   bool seen_response() const { return seen_response_; }
 
  private:
-  void HandleCdsUpdate(CdsUpdate cds_update);
-  void HandleEdsUpdate(EdsUpdate eds_update);
+  void HandleCdsUpdate(CdsUpdateMap cds_update_map, VersionState new_version);
+  void HandleEdsUpdate(EdsUpdateMap eds_update_map, VersionState new_version);
+
+  void SendMessage(bool is_cds);
 
   static void OnResponseReceived(void* arg, grpc_error* error);
   static void OnStatusReceived(void* arg, grpc_error* error);
@@ -535,8 +537,8 @@ XdsClient::ChannelState::AdsCallState::AdsCallState(
       nullptr, GRPC_MILLIS_INF_FUTURE, nullptr);
   GPR_ASSERT(call_ != nullptr);
   // Init the request payload.
-  grpc_slice request_payload_slice =
-      XdsEdsRequestCreateAndEncode(xds_client()->server_name_.get());
+  grpc_slice request_payload_slice = XdsEdsRequestCreateAndEncode(
+      xds_client()->EdsServiceNames(), xds_client()->eds_version_state_);
   send_message_payload_ =
       grpc_raw_byte_buffer_create(&request_payload_slice, 1);
   grpc_slice_unref_internal(request_payload_slice);
@@ -632,130 +634,162 @@ void XdsClient::ChannelState::AdsCallState::Orphan() {
 }
 
 void XdsClient::ChannelState::AdsCallState::HandleCdsUpdate(
-    CdsUpdate cds_update) {
-  ClusterState& cluster_state = xds_client()->cluster_state_;
-  if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_client_trace)) {
-    gpr_log(GPR_INFO,
-            "[xds_client %p] CDS update received: eds_service_name=%s, "
-            "lrs_load_reporting_server_name=%s",
-            xds_client(), cds_update.eds_service_name.get(),
-            cds_update.lrs_load_reporting_server_name.get());
-  }
-  // Start load reporting if needed.
-  LrsCallState* lrs_calld = chand()->lrs_calld_->calld();
-  if (lrs_calld != nullptr) lrs_calld->MaybeStartReportingLocked();
-  // Ignore identical update.
-  const CdsUpdate& prev_update = cluster_state.cds_update;
-  const bool eds_service_name_changed =
-      ((prev_update.eds_service_name == nullptr) !=
-       (cds_update.eds_service_name == nullptr)) ||
-      ((prev_update.eds_service_name != nullptr) &&
-       gpr_stricmp(prev_update.eds_service_name.get(),
-                   cds_update.eds_service_name.get()) != 0);
-  const bool lrs_server_name_changed =
-      ((prev_update.lrs_load_reporting_server_name == nullptr) !=
-       (cds_update.lrs_load_reporting_server_name == nullptr)) ||
-      ((prev_update.lrs_load_reporting_server_name != nullptr) &&
-       gpr_stricmp(prev_update.lrs_load_reporting_server_name.get(),
-                   cds_update.lrs_load_reporting_server_name.get()) != 0);
-  if (!eds_service_name_changed && !lrs_server_name_changed) {
+    CdsUpdateMap cds_update_map, VersionState new_version) {
+  xds_client()->cds_version_state_.nonce = std::move(new_version.nonce);
+  for (auto& p : cds_update_map) {
+    const char* cluster_name = p.first.get();
+    CdsUpdate& cds_update = p.second;
     if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_client_trace)) {
       gpr_log(GPR_INFO,
-              "[xds_client %p] CDS update identical to current, ignoring.",
-              xds_client());
+              "[xds_client %p] CDS update (cluster=%s) received: "
+              "eds_service_name=%s, "
+              "lrs_load_reporting_server_name=%s",
+              xds_client(), cluster_name, cds_update.eds_service_name.get(),
+              cds_update.lrs_load_reporting_server_name.get());
     }
-    return;
+    ClusterState& cluster_state = xds_client()->clusters_[cluster_name];
+    // Ignore identical update.
+    const CdsUpdate& prev_update = cluster_state.cds_update;
+    const bool eds_service_name_changed =
+        ((prev_update.eds_service_name == nullptr) !=
+         (cds_update.eds_service_name == nullptr)) ||
+        ((prev_update.eds_service_name != nullptr) &&
+         gpr_stricmp(prev_update.eds_service_name.get(),
+                     cds_update.eds_service_name.get()) != 0);
+    const bool lrs_server_name_changed =
+        ((prev_update.lrs_load_reporting_server_name == nullptr) !=
+         (cds_update.lrs_load_reporting_server_name == nullptr)) ||
+        ((prev_update.lrs_load_reporting_server_name != nullptr) &&
+         gpr_stricmp(prev_update.lrs_load_reporting_server_name.get(),
+                     cds_update.lrs_load_reporting_server_name.get()) != 0);
+    if (!eds_service_name_changed && !lrs_server_name_changed) {
+      if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_client_trace)) {
+        gpr_log(GPR_INFO,
+                "[xds_client %p] CDS update identical to current, ignoring.",
+                xds_client());
+      }
+      continue;
+    }
+    // Update the cluster state.
+    cluster_state.cds_update = std::move(cds_update);
+    // Notify all watchers.
+    for (const auto& p : cluster_state.cluster_watchers) {
+      p.first->OnClusterChanged(cluster_state.cds_update);
+    }
   }
-  // Update the cluster state.
-  cluster_state.cds_update = std::move(cds_update);
-  // Notify all watchers.
-  for (const auto& p : cluster_state.cluster_watchers) {
-    p.first->OnClusterChanged(cluster_state.cds_update);
-  }
+  xds_client()->cds_version_state_.version_info =
+      std::move(new_version.version_info);
 }
 
 void XdsClient::ChannelState::AdsCallState::HandleEdsUpdate(
-    EdsUpdate eds_update) {
-  ClusterState& cluster_state = xds_client()->cluster_state_;
-  if (eds_update.priority_list_update.empty() && !eds_update.drop_all) {
-    gpr_log(GPR_ERROR,
-            "[xds_client %p] EDS response doesn't contain any valid "
-            "locality but doesn't require to drop all calls. Ignoring.",
-            xds_client());
-    return;
-  }
-  if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_client_trace)) {
-    gpr_log(GPR_INFO,
-            "[xds_client %p] EDS response with %" PRIuPTR
-            " priorities and %" PRIuPTR
-            " drop categories received (drop_all=%d)",
-            xds_client(), eds_update.priority_list_update.size(),
-            eds_update.drop_config->drop_category_list().size(),
-            eds_update.drop_all);
-    for (size_t priority = 0; priority < eds_update.priority_list_update.size();
-         ++priority) {
-      const auto* locality_map_update =
-          eds_update.priority_list_update.Find(static_cast<uint32_t>(priority));
-      gpr_log(GPR_INFO,
-              "[xds_client %p] Priority %" PRIuPTR " contains %" PRIuPTR
-              " localities",
-              xds_client(), priority, locality_map_update->size());
-      size_t locality_count = 0;
-      for (const auto& p : locality_map_update->localities) {
-        const auto& locality = p.second;
-        gpr_log(GPR_INFO,
-                "[xds_client %p] Priority %" PRIuPTR ", locality %" PRIuPTR
-                " %s contains %" PRIuPTR " server addresses",
-                xds_client(), priority, locality_count,
-                locality.name->AsHumanReadableString(),
-                locality.serverlist.size());
-        for (size_t i = 0; i < locality.serverlist.size(); ++i) {
-          char* ipport;
-          grpc_sockaddr_to_string(&ipport, &locality.serverlist[i].address(),
-                                  false);
-          gpr_log(GPR_INFO,
-                  "[xds_client %p] Priority %" PRIuPTR ", locality %" PRIuPTR
-                  " %s, server address %" PRIuPTR ": %s",
-                  xds_client(), priority, locality_count,
-                  locality.name->AsHumanReadableString(), i, ipport);
-          gpr_free(ipport);
-        }
-        ++locality_count;
-      }
-    }
-    for (size_t i = 0; i < eds_update.drop_config->drop_category_list().size();
-         ++i) {
-      const XdsDropConfig::DropCategory& drop_category =
-          eds_update.drop_config->drop_category_list()[i];
-      gpr_log(GPR_INFO,
-              "[xds_client %p] Drop category %s has drop rate %d per million",
-              xds_client(), drop_category.name.get(),
-              drop_category.parts_per_million);
-    }
-  }
-  // Start load reporting if needed.
-  LrsCallState* lrs_calld = chand()->lrs_calld_->calld();
-  if (lrs_calld != nullptr) lrs_calld->MaybeStartReportingLocked();
-  // Ignore identical update.
-  const EdsUpdate& prev_update = cluster_state.eds_update;
-  const bool priority_list_changed =
-      prev_update.priority_list_update != eds_update.priority_list_update;
-  const bool drop_config_changed =
-      prev_update.drop_config == nullptr ||
-      *prev_update.drop_config != *eds_update.drop_config;
-  if (!priority_list_changed && !drop_config_changed) {
+    EdsUpdateMap eds_update_map, VersionState new_version) {
+  xds_client()->eds_version_state_.nonce = std::move(new_version.nonce);
+  for (auto& p : eds_update_map) {
+    const char* cluster_name = p.first.get();
+    EdsUpdate& eds_update = p.second;
     if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_client_trace)) {
       gpr_log(GPR_INFO,
-              "[xds_client %p] EDS update identical to current, ignoring.",
-              xds_client());
+              "[xds_client %p] EDS response with %" PRIuPTR
+              " priorities and %" PRIuPTR
+              " drop categories received (drop_all=%d)",
+              xds_client(), eds_update.priority_list_update.size(),
+              eds_update.drop_config->drop_category_list().size(),
+              eds_update.drop_all);
+      for (size_t priority = 0;
+           priority < eds_update.priority_list_update.size(); ++priority) {
+        const auto* locality_map_update = eds_update.priority_list_update.Find(
+            static_cast<uint32_t>(priority));
+        gpr_log(GPR_INFO,
+                "[xds_client %p] Priority %" PRIuPTR " contains %" PRIuPTR
+                " localities",
+                xds_client(), priority, locality_map_update->size());
+        size_t locality_count = 0;
+        for (const auto& p : locality_map_update->localities) {
+          const auto& locality = p.second;
+          gpr_log(GPR_INFO,
+                  "[xds_client %p] Priority %" PRIuPTR ", locality %" PRIuPTR
+                  " %s contains %" PRIuPTR " server addresses",
+                  xds_client(), priority, locality_count,
+                  locality.name->AsHumanReadableString(),
+                  locality.serverlist.size());
+          for (size_t i = 0; i < locality.serverlist.size(); ++i) {
+            char* ipport;
+            grpc_sockaddr_to_string(&ipport, &locality.serverlist[i].address(),
+                                    false);
+            gpr_log(GPR_INFO,
+                    "[xds_client %p] Priority %" PRIuPTR ", locality %" PRIuPTR
+                    " %s, server address %" PRIuPTR ": %s",
+                    xds_client(), priority, locality_count,
+                    locality.name->AsHumanReadableString(), i, ipport);
+            gpr_free(ipport);
+          }
+          ++locality_count;
+        }
+      }
+      for (size_t i = 0;
+           i < eds_update.drop_config->drop_category_list().size(); ++i) {
+        const XdsDropConfig::DropCategory& drop_category =
+            eds_update.drop_config->drop_category_list()[i];
+        gpr_log(GPR_INFO,
+                "[xds_client %p] Drop category %s has drop rate %d per million",
+                xds_client(), drop_category.name.get(),
+                drop_category.parts_per_million);
+      }
     }
-    return;
+    ClusterState& cluster_state = xds_client()->clusters_[cluster_name];
+    // Ignore identical update.
+    const EdsUpdate& prev_update = cluster_state.eds_update;
+    const bool priority_list_changed =
+        prev_update.priority_list_update != eds_update.priority_list_update;
+    const bool drop_config_changed =
+        prev_update.drop_config == nullptr ||
+        *prev_update.drop_config != *eds_update.drop_config;
+    if (!priority_list_changed && !drop_config_changed) {
+      if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_client_trace)) {
+        gpr_log(GPR_INFO,
+                "[xds_client %p] EDS update identical to current, ignoring.",
+                xds_client());
+      }
+      continue;
+    }
+    // Update the cluster state.
+    cluster_state.eds_update = std::move(eds_update);
+    // Notify all watchers.
+    for (const auto& p : cluster_state.endpoint_watchers) {
+      p.first->OnEndpointChanged(cluster_state.eds_update);
+    }
   }
-  // Update the cluster state.
-  cluster_state.eds_update = std::move(eds_update);
-  // Notify all watchers.
-  for (const auto& p : cluster_state.endpoint_watchers) {
-    p.first->OnEndpointChanged(cluster_state.eds_update);
+  xds_client()->eds_version_state_.version_info =
+      std::move(new_version.version_info);
+}
+
+void XdsClient::ChannelState::AdsCallState::SendMessage(bool is_cds) {
+  grpc_slice request_payload_slice;
+  if (is_cds) {
+    request_payload_slice = XdsCdsRequestCreateAndEncode(
+        xds_client()->ClusterNames(), xds_client()->bootstrap_->node(),
+        xds_client()->build_version_.get(), xds_client()->cds_version_state_);
+  } else {
+    // FIXME: which name to use?
+    request_payload_slice = XdsEdsRequestCreateAndEncode(
+        xds_client()->EdsServiceNames(), xds_client()->eds_version_state_);
+  }
+  // Create message payload.
+  send_message_payload_ =
+      grpc_raw_byte_buffer_create(&request_payload_slice, 1);
+  grpc_slice_unref_internal(request_payload_slice);
+  // Send the message.
+  grpc_op op;
+  memset(&op, 0, sizeof(op));
+  op.op = GRPC_OP_SEND_MESSAGE;
+  op.data.send_message.send_message = send_message_payload_;
+  grpc_call_error call_error =
+      grpc_call_start_batch_and_execute(call_, &op, 1, &on_response_received_);
+  if (GPR_UNLIKELY(call_error != GRPC_CALL_OK)) {
+    gpr_log(GPR_ERROR,
+            "[xds_client %p] calld=%p call_error=%d sending ADS message",
+            xds_client(), this, call_error);
+    GPR_ASSERT(GRPC_CALL_OK == call_error);
   }
 }
 
@@ -772,7 +806,6 @@ void XdsClient::ChannelState::AdsCallState::OnResponseReceivedLocked(
     void* arg, grpc_error* /*error*/) {
   AdsCallState* ads_calld = static_cast<AdsCallState*>(arg);
   XdsClient* xds_client = ads_calld->xds_client();
-  ClusterState& cluster_state = xds_client->cluster_state_;
   // Empty payload means the call was cancelled.
   if (!ads_calld->IsCurrentCallOnChannel() ||
       ads_calld->recv_message_payload_ == nullptr) {
@@ -795,24 +828,40 @@ void XdsClient::ChannelState::AdsCallState::OnResponseReceivedLocked(
   // mode. We will also need to cancel the timer when we receive a serverlist
   // from the balancer.
   // Parse the response.
-  CdsUpdate cds_update;
-  EdsUpdate eds_update;
+  Set<StringView> expected_cluster_names = xds_client->ClusterNames();
+  CdsUpdateMap cds_update_map;
+  EdsUpdateMap eds_update_map;
+  VersionState new_version;
+  // FIXME: If decoding fails, we don't know whether it's CDS or not. Also, we
+  // don't know the nonce to send. The first problem can be solved when separate
+  // streams are used.
+  bool is_cds;
   grpc_error* parse_error = XdsAdsResponseDecodeAndParse(
-      response_slice, cluster_state.cluster_name, &cds_update, &eds_update);
+      response_slice, expected_cluster_names, &cds_update_map, &eds_update_map,
+      &new_version, &is_cds);
+  grpc_slice_unref_internal(response_slice);
   if (parse_error != GRPC_ERROR_NONE) {
     gpr_log(GPR_ERROR, "[xds_client %p] ADS response parsing failed. error=%s",
             xds_client, grpc_error_string(parse_error));
     GRPC_ERROR_UNREF(parse_error);
+    // NACK.
+    ads_calld->SendMessage(is_cds);
     return;
   }
   ads_calld->seen_response_ = true;
   // Handle the (CDS or EDS) response.
-  if (cds_update.eds_service_name != nullptr) {
-    ads_calld->HandleCdsUpdate(std::move(cds_update));
+  if (is_cds) {
+    ads_calld->HandleCdsUpdate(std::move(cds_update_map),
+                               std::move(new_version));
   } else {
-    ads_calld->HandleEdsUpdate(std::move(eds_update));
+    ads_calld->HandleEdsUpdate(std::move(eds_update_map),
+                               std::move(new_version));
   }
-  grpc_slice_unref_internal(response_slice);
+  // ACK.
+  ads_calld->SendMessage(is_cds);
+  // Start load reporting if needed.
+  LrsCallState* lrs_calld = ads_calld->chand()->lrs_calld_->calld();
+  if (lrs_calld != nullptr) lrs_calld->MaybeStartReportingLocked();
   if (xds_client->shutting_down_) {
     ads_calld->Unref(DEBUG_LOCATION,
                      "ADS+OnResponseReceivedLocked+xds_shutdown");
@@ -922,8 +971,10 @@ void XdsClient::ChannelState::LrsCallState::Reporter::SendReportLocked() {
   // run into cases where this happens (e.g., due to graceful LB policy
   // switching).  If/when this becomes a problem, replace this assertion
   // with code to merge data from multiple client stats objects.
-  GPR_ASSERT(xds_client()->cluster_state_.client_stats.size() == 1);
-  auto* client_stats = *xds_client()->cluster_state_.client_stats.begin();
+  // FIXME: multiple clusters
+  GPR_ASSERT(xds_client()->clusters_.size() == 1);
+  GPR_ASSERT(xds_client()->clusters_[0].client_stats.size() == 1);
+  auto* client_stats = *xds_client()->clusters_[0].client_stats.begin();
   grpc_slice request_payload_slice =
       XdsLrsRequestCreateAndEncode(parent_->cluster_name_.get(), client_stats);
   // Skip client load report if the counters were all zero in the last
@@ -1117,7 +1168,7 @@ void XdsClient::ChannelState::LrsCallState::MaybeStartReportingLocked() {
   AdsCallState* ads_calld = chand()->ads_calld_->calld();
   if (ads_calld == nullptr || !ads_calld->seen_response()) return;
   // Start reporting.
-  for (auto* client_stats : chand()->xds_client_->cluster_state_.client_stats) {
+  for (auto* client_stats : chand()->xds_client_->clusters_[0].client_stats) {
     client_stats->MaybeInitLastReportTime();
   }
   reporter_ = MakeOrphanable<Reporter>(
@@ -1339,12 +1390,13 @@ void XdsClient::Orphan() {
 
 void XdsClient::WatchClusterData(StringView cluster,
                                  UniquePtr<ClusterWatcherInterface> watcher) {
+  ClusterState& cluster_state = clusters_[cluster];
   ClusterWatcherInterface* w = watcher.get();
-  cluster_state_.cluster_watchers[w] = std::move(watcher);
+  cluster_state.cluster_watchers[w] = std::move(watcher);
   // If we've already received an CDS update, notify the new watcher
   // immediately.
-  if (cluster_state_.seen_cds_update) {
-    w->OnClusterChanged(cluster_state_.cds_update);
+  if (cluster_state.seen_cds_update) {
+    w->OnClusterChanged(cluster_state.cds_update);
   }
   // FIXME: start cds call
   chand_->MaybeStartAdsCall();
@@ -1352,61 +1404,64 @@ void XdsClient::WatchClusterData(StringView cluster,
 
 void XdsClient::CancelClusterDataWatch(StringView cluster,
                                        ClusterWatcherInterface* watcher) {
-  auto it = cluster_state_.cluster_watchers.find(watcher);
-  if (it != cluster_state_.cluster_watchers.end()) {
-    cluster_state_.cluster_watchers.erase(it);
+  ClusterState& cluster_state = clusters_[cluster];
+  auto it = cluster_state.cluster_watchers.find(watcher);
+  if (it != cluster_state.cluster_watchers.end()) {
+    cluster_state.cluster_watchers.erase(it);
   }
-  if (chand_ != nullptr && cluster_state_.cluster_watchers.empty()) {
+  if (chand_ != nullptr && cluster_state.cluster_watchers.empty()) {
     // TODO(juanlishen): Stop CDS call.
   }
 }
 
-void XdsClient::WatchEndpointData(StringView /*cluster*/,
+void XdsClient::WatchEndpointData(StringView cluster,
                                   UniquePtr<EndpointWatcherInterface> watcher) {
+  ClusterState& cluster_state = clusters_[cluster];
   EndpointWatcherInterface* w = watcher.get();
-  cluster_state_.endpoint_watchers[w] = std::move(watcher);
+  cluster_state.endpoint_watchers[w] = std::move(watcher);
   // If we've already received an EDS update, notify the new watcher
   // immediately.
-  if (!cluster_state_.eds_update.priority_list_update.empty()) {
-    w->OnEndpointChanged(cluster_state_.eds_update);
+  if (!cluster_state.eds_update.priority_list_update.empty()) {
+    w->OnEndpointChanged(cluster_state.eds_update);
   }
   chand_->MaybeStartAdsCall();
 }
 
-void XdsClient::CancelEndpointDataWatch(StringView /*cluster*/,
+void XdsClient::CancelEndpointDataWatch(StringView cluster,
                                         EndpointWatcherInterface* watcher) {
-  auto it = cluster_state_.endpoint_watchers.find(watcher);
-  if (it != cluster_state_.endpoint_watchers.end()) {
-    cluster_state_.endpoint_watchers.erase(it);
+  ClusterState& cluster_state = clusters_[cluster];
+  auto it = cluster_state.endpoint_watchers.find(watcher);
+  if (it != cluster_state.endpoint_watchers.end()) {
+    cluster_state.endpoint_watchers.erase(it);
   }
-  if (cluster_state_.cluster_watchers.empty() &&
-      cluster_state_.endpoint_watchers.empty()) {
+  if (cluster_state.cluster_watchers.empty() &&
+      cluster_state.endpoint_watchers.empty()) {
     chand_->StopAdsCall();
   }
 }
 
-void XdsClient::AddClientStats(StringView /*lrs_server*/,
-                               StringView /*cluster*/,
+void XdsClient::AddClientStats(StringView /*lrs_server*/, StringView cluster,
                                XdsClientStats* client_stats) {
+  ClusterState& cluster_state = clusters_[cluster];
   // TODO(roth): When we add support for direct federation, use the
   // server name specified in lrs_server.
-  cluster_state_.client_stats.insert(client_stats);
+  cluster_state.client_stats.insert(client_stats);
   chand_->MaybeStartLrsCall();
 }
 
-void XdsClient::RemoveClientStats(StringView /*lrs_server*/,
-                                  StringView /*cluster*/,
+void XdsClient::RemoveClientStats(StringView /*lrs_server*/, StringView cluster,
                                   XdsClientStats* client_stats) {
+  ClusterState& cluster_state = clusters_[cluster];
   // TODO(roth): When we add support for direct federation, use the
   // server name specified in lrs_server.
   // TODO(roth): In principle, we should try to send a final load report
   // containing whatever final stats have been accumulated since the
   // last load report.
-  auto it = cluster_state_.client_stats.find(client_stats);
-  if (it != cluster_state_.client_stats.end()) {
-    cluster_state_.client_stats.erase(it);
+  auto it = cluster_state.client_stats.find(client_stats);
+  if (it != cluster_state.client_stats.end()) {
+    cluster_state.client_stats.erase(it);
   }
-  if (chand_ != nullptr && cluster_state_.client_stats.empty()) {
+  if (chand_ != nullptr && cluster_state.client_stats.empty()) {
     chand_->StopLrsCall();
   }
 }
@@ -1421,11 +1476,14 @@ void XdsClient::NotifyOnError(grpc_error* error) {
   if (service_config_watcher_ != nullptr) {
     service_config_watcher_->OnError(GRPC_ERROR_REF(error));
   }
-  for (const auto& p : cluster_state_.cluster_watchers) {
-    p.first->OnError(GRPC_ERROR_REF(error));
-  }
-  for (const auto& p : cluster_state_.endpoint_watchers) {
-    p.first->OnError(GRPC_ERROR_REF(error));
+  for (const auto& p : clusters_) {
+    const ClusterState& cluster_state = p.second;
+    for (const auto& p : cluster_state.cluster_watchers) {
+      p.first->OnError(GRPC_ERROR_REF(error));
+    }
+    for (const auto& p : cluster_state.endpoint_watchers) {
+      p.first->OnError(GRPC_ERROR_REF(error));
+    }
   }
   GRPC_ERROR_UNREF(error);
 }

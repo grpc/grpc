@@ -108,6 +108,27 @@ class XdsClient : public InternallyRefCounted<XdsClient> {
   // Resets connection backoff state.
   void ResetBackoff();
 
+  Set<StringView> ClusterNames() {
+    Set<StringView> cluster_names;
+    for (const auto& p : clusters_) {
+      const StringView& cluster_name = p.first;
+      cluster_names.emplace(cluster_name);
+    }
+    return cluster_names;
+  }
+
+  Set<StringView> EdsServiceNames() {
+    Set<StringView> eds_service_names;
+    for (const auto& p : clusters_) {
+      const StringView& cluster_name = p.first;
+      const CdsUpdate& cds_update = p.second.cds_update;
+      eds_service_names.emplace(cds_update.eds_service_name != nullptr
+                                    ? cds_update.eds_service_name.get()
+                                    : cluster_name);
+    }
+    return eds_service_names;
+  }
+
   // Helpers for encoding the XdsClient object in channel args.
   grpc_arg MakeChannelArg() const;
   static RefCountedPtr<XdsClient> GetFromChannelArgs(
@@ -213,11 +234,10 @@ class XdsClient : public InternallyRefCounted<XdsClient> {
   // The channel for communicating with the xds server.
   OrphanablePtr<ChannelState> chand_;
 
-  // TODO(juanlishen): As part of adding CDS support, replace
-  // cluster_state_ with a map keyed by cluster name, so that we can
-  // support multiple clusters for both CDS and EDS.
-  ClusterState cluster_state_;
-  // Map<StringView /*cluster*/, ClusterState, StringLess> clusters_;
+  // Clusters keyed by cluster name.
+  Map<StringView /*cluster*/, ClusterState, StringLess> clusters_;
+  VersionState cds_version_state_;
+  VersionState eds_version_state_;
 
   bool shutting_down_ = false;
 };
