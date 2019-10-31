@@ -417,10 +417,13 @@ static tsi_result handshaker_next(
     alts_tsi_handshaker_continue_handshaker_next_args* args =
         grpc_core::New<alts_tsi_handshaker_continue_handshaker_next_args>();
     args->handshaker = handshaker;
-    args->received_bytes = grpc_core::UniquePtr<unsigned char>(
-        static_cast<unsigned char*>(gpr_zalloc(received_bytes_size)));
+    args->received_bytes = nullptr;
     args->received_bytes_size = received_bytes_size;
-    memcpy(args->received_bytes.get(), received_bytes, received_bytes_size);
+    if (received_bytes_size > 0) {
+      args->received_bytes = grpc_core::UniquePtr<unsigned char>(
+          static_cast<unsigned char*>(gpr_zalloc(received_bytes_size)));
+      memcpy(args->received_bytes.get(), received_bytes, received_bytes_size);
+    }
     args->cb = cb;
     args->user_data = user_data;
     args->handshaker_service_url = grpc_core::UniquePtr<char>(
