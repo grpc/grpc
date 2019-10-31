@@ -539,8 +539,7 @@ static void check_handshaker_next_with_shutdown() {
 
 static void check_handle_response_with_shutdown(void* /*unused*/) {
   wait(&caller_to_tsi_notification);
-  alts_handshaker_client_handle_response_ensure_locked(cb_event,
-                                                       true /* is_ok */);
+  alts_handshaker_client_handle_response(cb_event, true /* is_ok */);
 }
 
 static void check_handshaker_next_failure() {
@@ -643,21 +642,21 @@ static void check_handle_response_invalid_input() {
                                                 recv_buffer, GRPC_STATUS_OK);
   /* Note that we're acting like an ALTS dedicated-CQ thread, thus we don't
    * acquire the alts_tsi_handshaker lock or create an ExecCtx. */
-  alts_handshaker_client_handle_response_ensure_locked(client, true);
+  alts_handshaker_client_handle_response(client, true);
   /* Check nullptr recv_bytes. */
   alts_handshaker_client_set_fields_for_testing(client, alts_handshaker,
                                                 on_invalid_input_cb, nullptr,
                                                 nullptr, GRPC_STATUS_OK);
-  alts_handshaker_client_handle_response_ensure_locked(client, true);
+  alts_handshaker_client_handle_response(client, true);
   /* Check failed grpc call made to handshaker service. */
   alts_handshaker_client_set_fields_for_testing(
       client, alts_handshaker, on_failed_grpc_call_cb, nullptr, recv_buffer,
       GRPC_STATUS_UNKNOWN);
-  alts_handshaker_client_handle_response_ensure_locked(client, true);
+  alts_handshaker_client_handle_response(client, true);
   alts_handshaker_client_set_fields_for_testing(client, alts_handshaker,
                                                 on_failed_grpc_call_cb, nullptr,
                                                 recv_buffer, GRPC_STATUS_OK);
-  alts_handshaker_client_handle_response_ensure_locked(client, false);
+  alts_handshaker_client_handle_response(client, false);
   /* Cleanup. */
   {
     grpc_core::ExecCtx exec_ctx;
@@ -702,7 +701,7 @@ static void check_handle_response_invalid_resp() {
   alts_handshaker_client_set_fields_for_testing(client, alts_handshaker,
                                                 on_invalid_resp_cb, nullptr,
                                                 recv_buffer, GRPC_STATUS_OK);
-  alts_handshaker_client_handle_response_ensure_locked(client, true);
+  alts_handshaker_client_handle_response(client, true);
   /* Cleanup. */
   {
     grpc_core::ExecCtx exec_ctx;
@@ -715,20 +714,16 @@ static void check_handle_response_invalid_resp() {
 static void check_handle_response_success(void* /*unused*/) {
   /* Client start. */
   wait(&caller_to_tsi_notification);
-  alts_handshaker_client_handle_response_ensure_locked(cb_event,
-                                                       true /* is_ok */);
+  alts_handshaker_client_handle_response(cb_event, true /* is_ok */);
   /* Client next. */
   wait(&caller_to_tsi_notification);
-  alts_handshaker_client_handle_response_ensure_locked(cb_event,
-                                                       true /* is_ok */);
+  alts_handshaker_client_handle_response(cb_event, true /* is_ok */);
   /* Server start. */
   wait(&caller_to_tsi_notification);
-  alts_handshaker_client_handle_response_ensure_locked(cb_event,
-                                                       true /* is_ok */);
+  alts_handshaker_client_handle_response(cb_event, true /* is_ok */);
   /* Server next. */
   wait(&caller_to_tsi_notification);
-  alts_handshaker_client_handle_response_ensure_locked(cb_event,
-                                                       true /* is_ok */);
+  alts_handshaker_client_handle_response(cb_event, true /* is_ok */);
 }
 
 static void on_failed_resp_cb(tsi_result status, void* user_data,
@@ -765,7 +760,7 @@ static void check_handle_response_failure() {
   alts_handshaker_client_set_fields_for_testing(client, alts_handshaker,
                                                 on_failed_resp_cb, nullptr,
                                                 recv_buffer, GRPC_STATUS_OK);
-  alts_handshaker_client_handle_response_ensure_locked(client, true /* is_ok*/);
+  alts_handshaker_client_handle_response(client, true /* is_ok*/);
   /* Cleanup. */
   {
     grpc_core::ExecCtx exec_ctx;
@@ -813,7 +808,7 @@ static void check_handle_response_after_shutdown() {
   alts_handshaker_client_set_fields_for_testing(client, alts_handshaker,
                                                 on_shutdown_resp_cb, nullptr,
                                                 recv_buffer, GRPC_STATUS_OK);
-  alts_handshaker_client_handle_response_ensure_locked(client, true);
+  alts_handshaker_client_handle_response(client, true);
   /* Cleanup. */
   {
     grpc_core::ExecCtx exec_ctx;

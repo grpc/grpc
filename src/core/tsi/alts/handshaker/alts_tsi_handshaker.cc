@@ -283,8 +283,7 @@ static void on_handshaker_service_resp_recv(void* arg, grpc_error* error) {
             grpc_error_string(error));
     success = false;
   }
-  alts_handshaker_client_handle_response_ensure_locked(handshaker->client,
-                                                       success);
+  alts_handshaker_client_handle_response(handshaker->client, success);
 }
 
 /* gRPC provided callback used when dedicatd CQ and thread are used.

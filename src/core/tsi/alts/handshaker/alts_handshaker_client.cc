@@ -244,8 +244,8 @@ static void handle_response_locked(alts_handshaker_client* c, bool is_ok) {
                               bytes_to_send, bytes_to_send_size, result);
 }
 
-void alts_handshaker_client_handle_response_ensure_locked(
-    alts_handshaker_client* c, bool success) {
+void alts_handshaker_client_handle_response(alts_handshaker_client* c,
+                                            bool success) {
   alts_grpc_handshaker_client* client =
       reinterpret_cast<alts_grpc_handshaker_client*>(c);
   if (client->handshaker == nullptr) {

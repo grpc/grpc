@@ -160,7 +160,7 @@ alts_handshaker_client* alts_grpc_handshaker_client_create(
  * - client: an ALTS handshaker client instance.
  * - is_ok: a boolean value indicating if the handshaker response is ok to read.
  */
-void alts_handshaker_client_handle_response_ensure_locked(
-    alts_handshaker_client* client, bool is_ok);
+void alts_handshaker_client_handle_response(alts_handshaker_client* client,
+                                            bool is_ok);
 
 #endif /* GRPC_CORE_TSI_ALTS_HANDSHAKER_ALTS_HANDSHAKER_CLIENT_H */
