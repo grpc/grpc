@@ -299,12 +299,14 @@ static alts_handshaker_client_test_config* create_config() {
       nullptr, config->channel, ALTS_HANDSHAKER_SERVICE_URL_FOR_TESTING,
       nullptr, server_options,
       grpc_slice_from_static_string(ALTS_HANDSHAKER_CLIENT_TEST_TARGET_NAME),
-      nullptr, config->server_grpc_cb_arg, nullptr, nullptr, nullptr, false);
+      nullptr, config->server_grpc_cb_arg, nullptr, nullptr, nullptr, nullptr,
+      false);
   config->client = alts_grpc_handshaker_client_create(
       nullptr, config->channel, ALTS_HANDSHAKER_SERVICE_URL_FOR_TESTING,
       nullptr, client_options,
       grpc_slice_from_static_string(ALTS_HANDSHAKER_CLIENT_TEST_TARGET_NAME),
-      nullptr, config->client_grpc_cb_arg, nullptr, nullptr, nullptr, true);
+      nullptr, config->client_grpc_cb_arg, nullptr, nullptr, nullptr, nullptr,
+      true);
   config->server_grpc_cb_arg->client = config->server;
   config->client_grpc_cb_arg->client = config->client;
   GPR_ASSERT(config->client != nullptr);

@@ -87,7 +87,8 @@ typedef struct alts_grpc_handshaker_client {
   /* safely invokes
    * alts_handshaker_client_handle_response_done_locked (which is different for
    * dedicated-CQ and non-dedicated-CQ handshakes). */
-  alts_handshaker_client_safe_handle_response_locked safe_handle_response_locked;
+  alts_handshaker_client_safe_handle_response_locked
+      safe_handle_response_locked;
 } alts_grpc_handshaker_client;
 
 static void handshaker_client_send_buffer_destroy_locked(
@@ -140,7 +141,8 @@ static void handle_response_done_locked(alts_grpc_handshaker_client* c,
   t->bytes_to_send = bytes_to_send;
   t->bytes_to_send_size = bytes_to_send_size;
   t->result = result;
-  GRPC_CLOSURE_INIT(&t->closure, invoke_tsi_next_cb, t, grpc_schedule_on_exec_ctx);
+  GRPC_CLOSURE_INIT(&t->closure, invoke_tsi_next_cb, t,
+                    grpc_schedule_on_exec_ctx);
   GRPC_CLOSURE_SCHED(&t->closure, GRPC_ERROR_NONE);
 }
 
@@ -242,9 +244,16 @@ static void handle_response_locked(alts_handshaker_client* c, bool is_ok) {
                               bytes_to_send, bytes_to_send_size, result);
 }
 
-void alts_handshaker_client_handle_response_ensure_locked(alts_handshaker_client* c, bool success) {
-  alts_grpc_handshaker_client* client = reinterpret_cast<alts_grpc_handshaker_client*>(c);
-  client->safe_handle_response_locked(client->handshaker, success, handle_response_locked);
+void alts_handshaker_client_handle_response_ensure_locked(
+    alts_handshaker_client* c, bool success) {
+  alts_grpc_handshaker_client* client =
+      reinterpret_cast<alts_grpc_handshaker_client*>(c);
+  if (client->handshaker == nullptr) {
+    gpr_log(GPR_ERROR, "client->handshaker is nullptr");
+    return;
+  }
+  client->safe_handle_response_locked(client->handshaker, success,
+                                      handle_response_locked);
 }
 
 /**
@@ -252,7 +261,7 @@ void alts_handshaker_client_handle_response_ensure_locked(alts_handshaker_client
  * make a grpc call.
  */
 static void make_grpc_call_locked(alts_grpc_handshaker_client* client,
-                                        bool is_start) {
+                                  bool is_start) {
   GPR_ASSERT(client != nullptr);
   grpc_op ops[kHandshakerClientOpNum];
   memset(ops, 0, sizeof(ops));
@@ -472,7 +481,8 @@ static void handshaker_client_destruct(alts_handshaker_client* c) {
   alts_grpc_handshaker_client* client =
       reinterpret_cast<alts_grpc_handshaker_client*>(c);
   if (client->call != nullptr) {
-    // do this at the bottom of the callstack to avoid the risks of ExecCtx stacking
+    // do this at the bottom of the callstack to avoid the risks of ExecCtx
+    // stacking
     GRPC_CLOSURE_SCHED(GRPC_CLOSURE_CREATE(handshaker_call_unref, client->call,
                                            grpc_schedule_on_exec_ctx),
                        GRPC_ERROR_NONE);
@@ -490,7 +500,8 @@ alts_handshaker_client* alts_grpc_handshaker_client_create(
     grpc_alts_credentials_options* options, const grpc_slice& target_name,
     grpc_iomgr_cb_func grpc_cb, void* grpc_cb_arg,
     tsi_handshaker_on_next_done_cb cb, void* user_data,
-    alts_handshaker_client_safe_handle_response_locked safe_handle_response_locked,
+    alts_handshaker_client_safe_handle_response_locked
+        safe_handle_response_locked,
     alts_handshaker_client_vtable* vtable_for_testing, bool is_client) {
   if (channel == nullptr || handshaker_service_url == nullptr) {
     gpr_log(GPR_ERROR, "Invalid arguments to alts_handshaker_client_create()");

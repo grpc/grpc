@@ -53,7 +53,9 @@ typedef grpc_call_error (*alts_grpc_caller)(grpc_call* call, const grpc_op* ops,
 
 /* This is responsible for safely invoking handle_response_locked
  * (which differs for dedicated-CQ and non-dedicated-CQ handshakes). */
-typedef void (*alts_handshaker_client_safe_handle_response_locked)(alts_tsi_handshaker* handshaker, bool success, void (*handle_response_locked)(alts_handshaker_client* c, bool success));
+typedef void (*alts_handshaker_client_safe_handle_response_locked)(
+    alts_tsi_handshaker* handshaker, bool success,
+    void (*handle_response_locked)(alts_handshaker_client* c, bool success));
 
 /* V-table for ALTS handshaker client operations. */
 typedef struct alts_handshaker_client_vtable {
@@ -147,7 +149,8 @@ alts_handshaker_client* alts_grpc_handshaker_client_create(
     grpc_alts_credentials_options* options, const grpc_slice& target_name,
     grpc_iomgr_cb_func grpc_cb, void* grpc_cb_arg,
     tsi_handshaker_on_next_done_cb cb, void* user_data,
-    alts_handshaker_client_safe_handle_response_locked safe_handle_response_locked,
+    alts_handshaker_client_safe_handle_response_locked
+        safe_handle_response_locked,
     alts_handshaker_client_vtable* vtable_for_testing, bool is_client);
 
 /**
