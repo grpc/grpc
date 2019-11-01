@@ -140,18 +140,16 @@ void HttpConnectHandshaker::OnWriteDone(void* arg, grpc_error* error) {
   } else {
     // Otherwise, read the response.
     // The read callback inherits our ref to the handshaker.
-    grpc_endpoint* ep = handshaker->args_->endpoint;
-    grpc_slice_buffer* read_buffer = handshaker->args_->read_buffer;
-    grpc_closure* closure = &handshaker->response_read_closure_;
     lock.Unlock();
-    grpc_endpoint_read(ep, read_buffer, closure, /*urgent=*/true);
+    grpc_endpoint_read(handshaker->args_->endpoint,
+                       handshaker->args_->read_buffer,
+                       &handshaker->response_read_closure_, /*urgent=*/true);
   }
 }
 
 // Callback invoked for reading HTTP CONNECT response.
 void HttpConnectHandshaker::OnReadDone(void* arg, grpc_error* error) {
   auto* handshaker = static_cast<HttpConnectHandshaker*>(arg);
-
   ReleasableMutexLock lock(&handshaker->mu_);
   if (error != GRPC_ERROR_NONE || handshaker->is_shutdown_) {
     // If the read failed or we're shutting down, clean up and invoke the
@@ -204,11 +202,10 @@ void HttpConnectHandshaker::OnReadDone(void* arg, grpc_error* error) {
   // at the Content-Length: header).
   if (handshaker->http_parser_.state != GRPC_HTTP_BODY) {
     grpc_slice_buffer_reset_and_unref_internal(handshaker->args_->read_buffer);
-    grpc_endpoint* ep = handshaker->args_->endpoint;
-    grpc_slice_buffer* read_buffer = handshaker->args_->read_buffer;
-    grpc_closure* closure = &handshaker->response_read_closure_;
     lock.Unlock();
-    grpc_endpoint_read(ep, read_buffer, closure, /*urgent=*/true);
+    grpc_endpoint_read(handshaker->args_->endpoint,
+                       handshaker->args_->read_buffer,
+                       &handshaker->response_read_closure_, /*urgent=*/true);
     return;
   }
   // Make sure we got a 2xx response.
@@ -323,12 +320,9 @@ void HttpConnectHandshaker::DoHandshake(grpc_tcp_server_acceptor* acceptor,
   gpr_free(header_strings);
   // Take a new ref to be held by the write callback.
   Ref().release();
-
-  grpc_endpoint* ep = args->endpoint;
-  grpc_slice_buffer* write_buffer = &write_buffer_;
-  grpc_closure* closure = &request_done_closure_;
   lock.Unlock();
-  grpc_endpoint_write(ep, write_buffer, closure, nullptr);
+  grpc_endpoint_write(args->endpoint, &write_buffer_, &request_done_closure_,
+                      nullptr);
 }
 
 HttpConnectHandshaker::HttpConnectHandshaker() {
