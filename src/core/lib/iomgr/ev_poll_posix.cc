@@ -1391,6 +1391,9 @@ static void reset_event_manager_on_fork() {
     if (fork_fd_list_head->fd != nullptr) {
       if (!fork_fd_list_head->fd->closed) {
         close(fork_fd_list_head->fd->fd);
+        fd->closed = 1;
+        fd->released = 1;
+        fd->shutdown = 1;
       }
       fork_fd_list_head->fd->fd = -1;
     } else {
