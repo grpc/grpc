@@ -330,11 +330,17 @@ static tsi_result alts_tsi_handshaker_continue_handshaker_next(
                                received_bytes_size);
   tsi_result ok = TSI_OK;
   if (!handshaker->has_sent_start_message) {
+    handshaker->has_sent_start_message = true;
     ok = handshaker->is_client
              ? alts_handshaker_client_start_client(handshaker->client)
-             : alts_handshaker_client_start_server(handshaker->client,
-                                                          &slice);
-    handshaker->has_sent_start_message = true;
+             : alts_handshaker_client_start_server(handshaker->client, &slice);
+    // It's unsafe for the current thread to access any state in handshaker
+    // at this point, since alts_handshaker_client_start_client/server
+    // have potentially just started an op batch on the handshake call.
+    // The completion callback of for that batch is unsynchronized and so
+    // can invoke the TSI next API callback from any thread, at which point
+    // there is nothing taking ownership of this handshaker to prevent it
+    // from being destroyed.
   } else {
     ok = alts_handshaker_client_next(handshaker->client, &slice);
   }
@@ -352,16 +358,17 @@ struct alts_tsi_handshaker_continue_handshaker_next_args {
 };
 
 static void alts_tsi_handshaker_create_channel(void* arg,
-                                                     grpc_error* unused_error) {
+                                               grpc_error* unused_error) {
   alts_tsi_handshaker_continue_handshaker_next_args* next_args =
       static_cast<alts_tsi_handshaker_continue_handshaker_next_args*>(arg);
   alts_tsi_handshaker* handshaker = next_args->handshaker;
   GPR_ASSERT(handshaker->channel == nullptr);
   handshaker->channel = grpc_insecure_channel_create(
       next_args->handshaker->handshaker_service_url, nullptr, nullptr);
-  tsi_result continue_next_result = alts_tsi_handshaker_continue_handshaker_next(
-    handshaker, next_args->received_bytes.get(),
-    next_args->received_bytes_size, next_args->cb, next_args->user_data);
+  tsi_result continue_next_result =
+      alts_tsi_handshaker_continue_handshaker_next(
+          handshaker, next_args->received_bytes.get(),
+          next_args->received_bytes_size, next_args->cb, next_args->user_data);
   if (continue_next_result != TSI_OK) {
     next_args->cb(continue_next_result, next_args->user_data, nullptr, 0,
                   nullptr);
@@ -380,9 +387,10 @@ static tsi_result handshaker_next(
   }
   alts_tsi_handshaker* handshaker =
       reinterpret_cast<alts_tsi_handshaker*>(self);
-  if (handshaker->channel == nullptr && handshaker->interested_parties != nullptr) {
-    // We're using the gRPC internal polling framework rather than a dedicated CQ
-    // thread, so first create a new channel.
+  if (handshaker->channel == nullptr &&
+      handshaker->interested_parties != nullptr) {
+    // We're using the gRPC internal polling framework rather than a dedicated
+    // CQ thread, so first create a new channel.
     alts_tsi_handshaker_continue_handshaker_next_args* args =
         grpc_core::New<alts_tsi_handshaker_continue_handshaker_next_args>();
     args->handshaker = handshaker;
@@ -395,8 +403,8 @@ static tsi_result handshaker_next(
     }
     args->cb = cb;
     args->user_data = user_data;
-    GRPC_CLOSURE_INIT(&args->closure, alts_tsi_handshaker_create_channel,
-                      args, grpc_schedule_on_exec_ctx);
+    GRPC_CLOSURE_INIT(&args->closure, alts_tsi_handshaker_create_channel, args,
+                      grpc_schedule_on_exec_ctx);
     GRPC_CLOSURE_SCHED(&args->closure, GRPC_ERROR_NONE);
   } else {
     tsi_result ok = alts_tsi_handshaker_continue_handshaker_next(

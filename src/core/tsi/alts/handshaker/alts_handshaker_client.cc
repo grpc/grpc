@@ -433,7 +433,9 @@ static void handshaker_client_destruct(alts_handshaker_client* c) {
     // This indirection could be removed if we created
     // an internal variant of grpc_call_unref that doesn't need
     // to flush an ExecCtx.
-    GRPC_CLOSURE_SCHED(GRPC_CLOSURE_CREATE(handshaker_call_unref, client->call, grpc_schedule_on_exec_ctx), GRPC_ERROR_NONE);
+    GRPC_CLOSURE_SCHED(GRPC_CLOSURE_CREATE(handshaker_call_unref, client->call,
+                                           grpc_schedule_on_exec_ctx),
+                       GRPC_ERROR_NONE);
   }
 }
 
