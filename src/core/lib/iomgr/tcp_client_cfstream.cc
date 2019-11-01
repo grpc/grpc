@@ -96,7 +96,7 @@ static void OnAlarm(void* arg, grpc_error* error) {
   } else {
     grpc_error* error =
         GRPC_ERROR_CREATE_FROM_STATIC_STRING("connect() timed out");
-    ExecCtx::Run(DEBUG_LOCATION, closure, error);
+    grpc_core::ExecCtx::Run(DEBUG_LOCATION, closure, error);
   }
 }
 
@@ -137,7 +137,7 @@ static void OnOpen(void* arg, grpc_error* error) {
       GRPC_ERROR_REF(error);
     }
     gpr_mu_unlock(&connect->mu);
-    ExecCtx::Run(DEBUG_LOCATION, closure, error);
+    grpc_core::ExecCtx::Run(DEBUG_LOCATION, closure, error);
   }
 }
 
