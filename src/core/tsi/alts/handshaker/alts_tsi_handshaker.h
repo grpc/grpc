@@ -91,13 +91,4 @@ void alts_tsi_handshaker_result_set_unused_bytes(tsi_handshaker_result* result,
  */
 bool alts_tsi_handshaker_has_shutdown(alts_tsi_handshaker* handshaker);
 
-/* Invoked by the dedicated handshaker completion-queue-polling thread
- * to handle a response.
- *
- * - client: an ALTS handshaker client instance.
- * - is_ok: a boolean value indicating if the handshaker response is ok to read.
- */
-void alts_tsi_handshaker_handle_response_dedicated(
-    alts_tsi_handshaker* handshaker, bool success);
-
 #endif /* GRPC_CORE_TSI_ALTS_HANDSHAKER_ALTS_TSI_HANDSHAKER_H */
