@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-if("${gRPC_ZLIB_PROVIDER}" STREQUAL "module")
+if(gRPC_ZLIB_PROVIDER STREQUAL "module")
   if(NOT ZLIB_ROOT_DIR)
     set(ZLIB_ROOT_DIR ${CMAKE_CURRENT_SOURCE_DIR}/third_party/zlib)
   endif()
@@ -26,13 +26,13 @@ if("${gRPC_ZLIB_PROVIDER}" STREQUAL "module")
       set(_gRPC_ZLIB_INCLUDE_DIR "${ZLIB_ROOT_DIR}" "${CMAKE_CURRENT_BINARY_DIR}/third_party/zlib")
     endif()
   else()
-      message(WARNING "gRPC_ZLIB_PROVIDER is \"module\" but ZLIB_ROOT_DIR is wrong")
+    message(WARNING "gRPC_ZLIB_PROVIDER is \"module\" but ZLIB_ROOT_DIR is wrong")
   endif()
   if(gRPC_INSTALL)
     message(WARNING "gRPC_INSTALL will be forced to FALSE because gRPC_ZLIB_PROVIDER is \"module\"")
     set(gRPC_INSTALL FALSE)
   endif()
-elseif("${gRPC_ZLIB_PROVIDER}" STREQUAL "package")
+elseif(gRPC_ZLIB_PROVIDER STREQUAL "package")
   # zlib installation directory can be configured by setting ZLIB_ROOT
   # We allow locating zlib using both "CONFIG" and "MODULE" as the expectation
   # is that many Linux systems will have zlib installed via a distribution

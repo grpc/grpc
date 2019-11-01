@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-if("${gRPC_GFLAGS_PROVIDER}" STREQUAL "module")
+if(gRPC_GFLAGS_PROVIDER STREQUAL "module")
   if(NOT GFLAGS_ROOT_DIR)
     set(GFLAGS_ROOT_DIR ${CMAKE_CURRENT_SOURCE_DIR}/third_party/gflags)
   endif()
@@ -23,7 +23,7 @@ if("${gRPC_GFLAGS_PROVIDER}" STREQUAL "module")
   else()
     message(WARNING "gRPC_GFLAGS_PROVIDER is \"module\" but GFLAGS_ROOT_DIR is wrong")
   endif()
-elseif("${gRPC_GFLAGS_PROVIDER}" STREQUAL "package")
+elseif(gRPC_GFLAGS_PROVIDER STREQUAL "package")
   # Use "CONFIG" as there is no built-in cmake module for gflags.
   find_package(gflags REQUIRED CONFIG)
   if(TARGET gflags::gflags)
