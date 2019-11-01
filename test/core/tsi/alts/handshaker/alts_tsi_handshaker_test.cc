@@ -53,7 +53,6 @@ using grpc_core::internal::alts_handshaker_client_set_recv_bytes_for_testing;
 using grpc_core::internal::alts_handshaker_client_set_vtable_for_testing;
 using grpc_core::internal::alts_tsi_handshaker_get_client_for_testing;
 using grpc_core::internal::alts_tsi_handshaker_get_is_client_for_testing;
-using grpc_core::internal::alts_tsi_handshaker_get_lock_for_testing;
 using grpc_core::internal::alts_tsi_handshaker_set_client_vtable_for_testing;
 static bool should_handshaker_client_api_succeed = true;
 
@@ -189,13 +188,6 @@ static void check_must_not_be_called(tsi_result /*status*/, void* /*user_data*/,
   GPR_ASSERT(0);
 }
 
-static void check_must_be_called_with_internal_error(
-    tsi_result status, void* /*user_data*/,
-    const unsigned char* /*bytes_to_send*/, size_t /*bytes_to_send_size*/,
-    tsi_handshaker_result* /*result*/) {
-  GPR_ASSERT(status == TSI_INTERNAL_ERROR);
-}
-
 static void on_client_start_success_cb(tsi_result status, void* user_data,
                                        const unsigned char* bytes_to_send,
                                        size_t bytes_to_send_size,
@@ -328,8 +320,12 @@ static tsi_result mock_client_start(alts_handshaker_client* client) {
   if (!should_handshaker_client_api_succeed) {
     return TSI_INTERNAL_ERROR;
   }
+  /* Note that the alts_tsi_handshaker needs to set its
+   * has_sent_start_message field field to true
+   * before the call to alts_handshaker_client_start is made because
+   * because it's unsafe to access it afterwards. */
   alts_handshaker_client_check_fields_for_testing(
-      client, on_client_start_success_cb, nullptr, false, nullptr);
+      client, on_client_start_success_cb, nullptr, true, nullptr);
   /* Populate handshaker response for client_start request. */
   grpc_byte_buffer** recv_buffer_ptr =
       alts_handshaker_client_get_recv_buffer_addr_for_testing(client);
@@ -347,7 +343,7 @@ static tsi_result mock_server_start(alts_handshaker_client* client,
     return TSI_INTERNAL_ERROR;
   }
   alts_handshaker_client_check_fields_for_testing(
-      client, on_server_start_success_cb, nullptr, false, nullptr);
+      client, on_server_start_success_cb, nullptr, true, nullptr);
   grpc_slice slice = grpc_empty_slice();
   GPR_ASSERT(grpc_slice_cmp(*bytes_received, slice) == 0);
   /* Populate handshaker response for server_start request. */
@@ -399,7 +395,6 @@ static alts_handshaker_client_vtable vtable = {mock_client_start,
                                                mock_shutdown, mock_destruct};
 
 static tsi_handshaker* create_test_handshaker(bool is_client) {
-  grpc_core::ExecCtx exec_ctx;
   tsi_handshaker* handshaker = nullptr;
   grpc_alts_credentials_options* options =
       grpc_alts_credentials_client_options_create();
@@ -413,43 +408,34 @@ static tsi_handshaker* create_test_handshaker(bool is_client) {
   return handshaker;
 }
 
+static void run_tsi_handshaker_destroy_with_exec_ctx(
+    tsi_handshaker* handshaker) {
+  grpc_core::ExecCtx exec_ctx;
+  tsi_handshaker_destroy(handshaker);
+}
+
 static void check_handshaker_next_invalid_input() {
   /* Initialization. */
   tsi_handshaker* handshaker = create_test_handshaker(true);
-  {
-    /* Check nullptr handshaker. */
-    grpc_core::ExecCtx exec_ctx;
-    GPR_ASSERT(tsi_handshaker_next(nullptr, nullptr, 0, nullptr, nullptr,
-                                   nullptr, check_must_not_be_called,
-                                   nullptr) == TSI_INVALID_ARGUMENT);
-  }
-  {
-    /* Check nullptr callback. */
-    grpc_core::ExecCtx exec_ctx;
-    GPR_ASSERT(tsi_handshaker_next(handshaker, nullptr, 0, nullptr, nullptr,
-                                   nullptr, nullptr,
-                                   nullptr) == TSI_INVALID_ARGUMENT);
-  }
+  /* Check nullptr handshaker. */
+  GPR_ASSERT(tsi_handshaker_next(nullptr, nullptr, 0, nullptr, nullptr, nullptr,
+                                 check_must_not_be_called,
+                                 nullptr) == TSI_INVALID_ARGUMENT);
+  /* Check nullptr callback. */
+  GPR_ASSERT(tsi_handshaker_next(handshaker, nullptr, 0, nullptr, nullptr,
+                                 nullptr, nullptr,
+                                 nullptr) == TSI_INVALID_ARGUMENT);
   /* Cleanup. */
-  {
-    grpc_core::ExecCtx exec_ctx;
-    tsi_handshaker_destroy(handshaker);
-  }
+  run_tsi_handshaker_destroy_with_exec_ctx(handshaker);
 }
 
 static void check_handshaker_shutdown_invalid_input() {
   /* Initialization. */
   tsi_handshaker* handshaker = create_test_handshaker(true /* is_client */);
-  {
-    /* Check nullptr handshaker. */
-    grpc_core::ExecCtx exec_ctx;
-    tsi_handshaker_shutdown(nullptr);
-  }
-  {
-    /* Cleanup. */
-    grpc_core::ExecCtx exec_ctx;
-    tsi_handshaker_destroy(handshaker);
-  }
+  /* Check nullptr handshaker. */
+  tsi_handshaker_shutdown(nullptr);
+  /* Cleanup. */
+  run_tsi_handshaker_destroy_with_exec_ctx(handshaker);
 }
 
 static void check_handshaker_next_success() {
@@ -462,79 +448,50 @@ static void check_handshaker_next_success() {
   tsi_handshaker* server_handshaker =
       create_test_handshaker(false /* is_client */);
   /* Client start. */
-  {
-    grpc_core::ExecCtx exec_ctx;
-    GPR_ASSERT(tsi_handshaker_next(client_handshaker, nullptr, 0, nullptr,
-                                   nullptr, nullptr, on_client_start_success_cb,
-                                   nullptr) == TSI_ASYNC);
-  }
+  GPR_ASSERT(tsi_handshaker_next(client_handshaker, nullptr, 0, nullptr,
+                                 nullptr, nullptr, on_client_start_success_cb,
+                                 nullptr) == TSI_ASYNC);
   wait(&tsi_to_caller_notification);
   /* Client next. */
-  {
-    grpc_core::ExecCtx exec_ctx;
-    GPR_ASSERT(tsi_handshaker_next(
-                   client_handshaker,
-                   (const unsigned char*)ALTS_TSI_HANDSHAKER_TEST_RECV_BYTES,
-                   strlen(ALTS_TSI_HANDSHAKER_TEST_RECV_BYTES), nullptr,
-                   nullptr, nullptr, on_client_next_success_cb,
-                   nullptr) == TSI_ASYNC);
-  }
+  GPR_ASSERT(tsi_handshaker_next(
+                 client_handshaker,
+                 (const unsigned char*)ALTS_TSI_HANDSHAKER_TEST_RECV_BYTES,
+                 strlen(ALTS_TSI_HANDSHAKER_TEST_RECV_BYTES), nullptr, nullptr,
+                 nullptr, on_client_next_success_cb, nullptr) == TSI_ASYNC);
   wait(&tsi_to_caller_notification);
   /* Server start. */
-  {
-    grpc_core::ExecCtx exec_ctx;
-    GPR_ASSERT(tsi_handshaker_next(server_handshaker, nullptr, 0, nullptr,
-                                   nullptr, nullptr, on_server_start_success_cb,
-                                   nullptr) == TSI_ASYNC);
-  }
+  GPR_ASSERT(tsi_handshaker_next(server_handshaker, nullptr, 0, nullptr,
+                                 nullptr, nullptr, on_server_start_success_cb,
+                                 nullptr) == TSI_ASYNC);
   wait(&tsi_to_caller_notification);
   /* Server next. */
-  {
-    grpc_core::ExecCtx exec_ctx;
-    GPR_ASSERT(tsi_handshaker_next(
-                   server_handshaker,
-                   (const unsigned char*)ALTS_TSI_HANDSHAKER_TEST_RECV_BYTES,
-                   strlen(ALTS_TSI_HANDSHAKER_TEST_RECV_BYTES), nullptr,
-                   nullptr, nullptr, on_server_next_success_cb,
-                   nullptr) == TSI_ASYNC);
-  }
+  GPR_ASSERT(tsi_handshaker_next(
+                 server_handshaker,
+                 (const unsigned char*)ALTS_TSI_HANDSHAKER_TEST_RECV_BYTES,
+                 strlen(ALTS_TSI_HANDSHAKER_TEST_RECV_BYTES), nullptr, nullptr,
+                 nullptr, on_server_next_success_cb, nullptr) == TSI_ASYNC);
   wait(&tsi_to_caller_notification);
   /* Cleanup. */
-  {
-    grpc_core::ExecCtx exec_ctx;
-    tsi_handshaker_destroy(server_handshaker);
-    tsi_handshaker_destroy(client_handshaker);
-  }
+  run_tsi_handshaker_destroy_with_exec_ctx(server_handshaker);
+  run_tsi_handshaker_destroy_with_exec_ctx(client_handshaker);
 }
 
 static void check_handshaker_next_with_shutdown() {
   tsi_handshaker* handshaker = create_test_handshaker(true /* is_client*/);
   /* next(success) -- shutdown(success) -- next (fail) */
-  {
-    grpc_core::ExecCtx exec_cx;
-    GPR_ASSERT(tsi_handshaker_next(handshaker, nullptr, 0, nullptr, nullptr,
-                                   nullptr, on_client_start_success_cb,
-                                   nullptr) == TSI_ASYNC);
-  }
+  GPR_ASSERT(tsi_handshaker_next(handshaker, nullptr, 0, nullptr, nullptr,
+                                 nullptr, on_client_start_success_cb,
+                                 nullptr) == TSI_ASYNC);
   wait(&tsi_to_caller_notification);
-  {
-    grpc_core::ExecCtx exec_ctx;
-    tsi_handshaker_shutdown(handshaker);
-  }
-  {
-    grpc_core::ExecCtx exec_ctx;
-    GPR_ASSERT(tsi_handshaker_next(
-                   handshaker,
-                   (const unsigned char*)ALTS_TSI_HANDSHAKER_TEST_RECV_BYTES,
-                   strlen(ALTS_TSI_HANDSHAKER_TEST_RECV_BYTES), nullptr,
-                   nullptr, nullptr, on_client_next_success_cb,
-                   nullptr) == TSI_HANDSHAKE_SHUTDOWN);
-  }
+  tsi_handshaker_shutdown(handshaker);
+  GPR_ASSERT(tsi_handshaker_next(
+                 handshaker,
+                 (const unsigned char*)ALTS_TSI_HANDSHAKER_TEST_RECV_BYTES,
+                 strlen(ALTS_TSI_HANDSHAKER_TEST_RECV_BYTES), nullptr, nullptr,
+                 nullptr, on_client_next_success_cb,
+                 nullptr) == TSI_HANDSHAKE_SHUTDOWN);
   /* Cleanup. */
-  {
-    grpc_core::ExecCtx exec_ctx;
-    tsi_handshaker_destroy(handshaker);
-  }
+  run_tsi_handshaker_destroy_with_exec_ctx(handshaker);
 }
 
 static void check_handle_response_with_shutdown(void* /*unused*/) {
@@ -550,48 +507,31 @@ static void check_handshaker_next_failure() {
       create_test_handshaker(true /* is_client */);
   tsi_handshaker* server_handshaker =
       create_test_handshaker(false /* is_client */);
-  {
-    /* Client start. */
-    grpc_core::ExecCtx exec_ctx;
-    GPR_ASSERT(tsi_handshaker_next(client_handshaker, nullptr, 0, nullptr,
-                                   nullptr, nullptr,
-                                   check_must_be_called_with_internal_error,
-                                   nullptr) == TSI_ASYNC);
-  }
-  {
-    /* Server start. */
-    grpc_core::ExecCtx exec_ctx;
-    GPR_ASSERT(tsi_handshaker_next(server_handshaker, nullptr, 0, nullptr,
-                                   nullptr, nullptr,
-                                   check_must_be_called_with_internal_error,
-                                   nullptr) == TSI_ASYNC);
-  }
-  {
-    /* Server next. */
-    grpc_core::ExecCtx exec_ctx;
-    GPR_ASSERT(tsi_handshaker_next(
-                   server_handshaker,
-                   (const unsigned char*)ALTS_TSI_HANDSHAKER_TEST_RECV_BYTES,
-                   strlen(ALTS_TSI_HANDSHAKER_TEST_RECV_BYTES), nullptr,
-                   nullptr, nullptr, check_must_be_called_with_internal_error,
-                   nullptr) == TSI_ASYNC);
-  }
-  {
-    /* Client next. */
-    grpc_core::ExecCtx exec_ctx;
-    GPR_ASSERT(tsi_handshaker_next(
-                   client_handshaker,
-                   (const unsigned char*)ALTS_TSI_HANDSHAKER_TEST_RECV_BYTES,
-                   strlen(ALTS_TSI_HANDSHAKER_TEST_RECV_BYTES), nullptr,
-                   nullptr, nullptr, check_must_be_called_with_internal_error,
-                   nullptr) == TSI_ASYNC);
-  }
-  {
-    /* Cleanup. */
-    grpc_core::ExecCtx exec_ctx;
-    tsi_handshaker_destroy(server_handshaker);
-    tsi_handshaker_destroy(client_handshaker);
-  }
+  /* Client start. */
+  GPR_ASSERT(tsi_handshaker_next(client_handshaker, nullptr, 0, nullptr,
+                                 nullptr, nullptr, check_must_not_be_called,
+                                 nullptr) == TSI_INTERNAL_ERROR);
+  /* Server start. */
+  GPR_ASSERT(tsi_handshaker_next(server_handshaker, nullptr, 0, nullptr,
+                                 nullptr, nullptr, check_must_not_be_called,
+                                 nullptr) == TSI_INTERNAL_ERROR);
+  /* Server next. */
+  GPR_ASSERT(tsi_handshaker_next(
+                 server_handshaker,
+                 (const unsigned char*)ALTS_TSI_HANDSHAKER_TEST_RECV_BYTES,
+                 strlen(ALTS_TSI_HANDSHAKER_TEST_RECV_BYTES), nullptr, nullptr,
+                 nullptr, check_must_not_be_called,
+                 nullptr) == TSI_INTERNAL_ERROR);
+  /* Client next. */
+  GPR_ASSERT(tsi_handshaker_next(
+                 client_handshaker,
+                 (const unsigned char*)ALTS_TSI_HANDSHAKER_TEST_RECV_BYTES,
+                 strlen(ALTS_TSI_HANDSHAKER_TEST_RECV_BYTES), nullptr, nullptr,
+                 nullptr, check_must_not_be_called,
+                 nullptr) == TSI_INTERNAL_ERROR);
+  /* Cleanup. */
+  run_tsi_handshaker_destroy_with_exec_ctx(server_handshaker);
+  run_tsi_handshaker_destroy_with_exec_ctx(client_handshaker);
 }
 
 static void on_invalid_input_cb(tsi_result status, void* user_data,
@@ -625,11 +565,8 @@ static void check_handle_response_invalid_input() {
    * always going to fail.
    */
   tsi_handshaker* handshaker = create_test_handshaker(true /* is_client */);
-  {
-    grpc_core::ExecCtx exec_ctx;
-    tsi_handshaker_next(handshaker, nullptr, 0, nullptr, nullptr, nullptr,
-                        check_must_be_called_with_internal_error, nullptr);
-  }
+  tsi_handshaker_next(handshaker, nullptr, 0, nullptr, nullptr, nullptr,
+                      on_client_start_success_cb, nullptr);
   alts_tsi_handshaker* alts_handshaker =
       reinterpret_cast<alts_tsi_handshaker*>(handshaker);
   grpc_slice slice = grpc_empty_slice();
@@ -640,8 +577,6 @@ static void check_handle_response_invalid_input() {
   alts_handshaker_client_set_fields_for_testing(client, nullptr,
                                                 on_invalid_input_cb, nullptr,
                                                 recv_buffer, GRPC_STATUS_OK);
-  /* Note that we're acting like an ALTS dedicated-CQ thread, thus we don't
-   * acquire the alts_tsi_handshaker lock or create an ExecCtx. */
   alts_handshaker_client_handle_response(client, true);
   /* Check nullptr recv_bytes. */
   alts_handshaker_client_set_fields_for_testing(client, alts_handshaker,
@@ -658,11 +593,8 @@ static void check_handle_response_invalid_input() {
                                                 recv_buffer, GRPC_STATUS_OK);
   alts_handshaker_client_handle_response(client, false);
   /* Cleanup. */
-  {
-    grpc_core::ExecCtx exec_ctx;
-    grpc_slice_unref(slice);
-    tsi_handshaker_destroy(handshaker);
-  }
+  grpc_slice_unref(slice);
+  run_tsi_handshaker_destroy_with_exec_ctx(handshaker);
   notification_destroy(&caller_to_tsi_notification);
   notification_destroy(&tsi_to_caller_notification);
 }
@@ -687,11 +619,8 @@ static void check_handle_response_invalid_resp() {
    * always going to fail.
    */
   tsi_handshaker* handshaker = create_test_handshaker(true /* is_client */);
-  {
-    grpc_core::ExecCtx exec_ctx;
-    tsi_handshaker_next(handshaker, nullptr, 0, nullptr, nullptr, nullptr,
-                        check_must_be_called_with_internal_error, nullptr);
-  }
+  tsi_handshaker_next(handshaker, nullptr, 0, nullptr, nullptr, nullptr,
+                      on_client_start_success_cb, nullptr);
   alts_tsi_handshaker* alts_handshaker =
       reinterpret_cast<alts_tsi_handshaker*>(handshaker);
   alts_handshaker_client* client =
@@ -703,10 +632,7 @@ static void check_handle_response_invalid_resp() {
                                                 recv_buffer, GRPC_STATUS_OK);
   alts_handshaker_client_handle_response(client, true);
   /* Cleanup. */
-  {
-    grpc_core::ExecCtx exec_ctx;
-    tsi_handshaker_destroy(handshaker);
-  }
+  run_tsi_handshaker_destroy_with_exec_ctx(handshaker);
   notification_destroy(&caller_to_tsi_notification);
   notification_destroy(&tsi_to_caller_notification);
 }
@@ -746,11 +672,8 @@ static void check_handle_response_failure() {
    * always going to fail.
    */
   tsi_handshaker* handshaker = create_test_handshaker(true /* is_client */);
-  {
-    grpc_core::ExecCtx exec_ctx;
-    tsi_handshaker_next(handshaker, nullptr, 0, nullptr, nullptr, nullptr,
-                        check_must_be_called_with_internal_error, nullptr);
-  }
+  tsi_handshaker_next(handshaker, nullptr, 0, nullptr, nullptr, nullptr,
+                      on_client_start_success_cb, nullptr);
   alts_tsi_handshaker* alts_handshaker =
       reinterpret_cast<alts_tsi_handshaker*>(handshaker);
   alts_handshaker_client* client =
@@ -762,10 +685,7 @@ static void check_handle_response_failure() {
                                                 recv_buffer, GRPC_STATUS_OK);
   alts_handshaker_client_handle_response(client, true /* is_ok*/);
   /* Cleanup. */
-  {
-    grpc_core::ExecCtx exec_ctx;
-    tsi_handshaker_destroy(handshaker);
-  }
+  run_tsi_handshaker_destroy_with_exec_ctx(handshaker);
   notification_destroy(&caller_to_tsi_notification);
   notification_destroy(&tsi_to_caller_notification);
 }
@@ -786,11 +706,8 @@ static void check_handle_response_after_shutdown() {
   notification_init(&caller_to_tsi_notification);
   notification_init(&tsi_to_caller_notification);
   tsi_handshaker* handshaker = create_test_handshaker(true /* is_client */);
-  {
-    grpc_core::ExecCtx exec_ctx;
-    tsi_handshaker_next(handshaker, nullptr, 0, nullptr, nullptr, nullptr,
-                        on_client_start_success_cb, nullptr);
-  }
+  tsi_handshaker_next(handshaker, nullptr, 0, nullptr, nullptr, nullptr,
+                      on_client_start_success_cb, nullptr);
   alts_tsi_handshaker* alts_handshaker =
       reinterpret_cast<alts_tsi_handshaker*>(handshaker);
   alts_handshaker_client* client =
@@ -800,20 +717,14 @@ static void check_handle_response_after_shutdown() {
   grpc_byte_buffer_destroy(*recv_buffer_ptr);
 
   /* Tests. */
-  {
-    grpc_core::ExecCtx exec_ctx;
-    tsi_handshaker_shutdown(handshaker);
-  }
+  tsi_handshaker_shutdown(handshaker);
   grpc_byte_buffer* recv_buffer = generate_handshaker_response(CLIENT_START);
   alts_handshaker_client_set_fields_for_testing(client, alts_handshaker,
                                                 on_shutdown_resp_cb, nullptr,
                                                 recv_buffer, GRPC_STATUS_OK);
   alts_handshaker_client_handle_response(client, true);
   /* Cleanup. */
-  {
-    grpc_core::ExecCtx exec_ctx;
-    tsi_handshaker_destroy(handshaker);
-  }
+  run_tsi_handshaker_destroy_with_exec_ctx(handshaker);
   notification_destroy(&caller_to_tsi_notification);
   notification_destroy(&tsi_to_caller_notification);
 }
@@ -855,24 +766,15 @@ int main(int /*argc*/, char** /*argv*/) {
   grpc_alts_shared_resource_dedicated_init();
   /* Tests. */
   should_handshaker_client_api_succeed = true;
-  gpr_log(GPR_DEBUG, "check_handshaker_success");
   check_handshaker_success();
-  gpr_log(GPR_DEBUG, "check_handshaker_next_invalid_input");
   check_handshaker_next_invalid_input();
-  gpr_log(GPR_DEBUG, "check_handshaker_next_fails_after_shutdown");
   check_handshaker_next_fails_after_shutdown();
-  gpr_log(GPR_DEBUG, "check_handshaker_response_after_shutdown");
   check_handle_response_after_shutdown();
   should_handshaker_client_api_succeed = false;
-  gpr_log(GPR_DEBUG, "check_handshaker_shutdown_invalid_input");
   check_handshaker_shutdown_invalid_input();
-  gpr_log(GPR_DEBUG, "check_handshaker_next_failure");
   check_handshaker_next_failure();
-  gpr_log(GPR_DEBUG, "check_handshaker_response_invalid_input");
   check_handle_response_invalid_input();
-  gpr_log(GPR_DEBUG, "check_handshaker_response_invalid_resp");
   check_handle_response_invalid_resp();
-  gpr_log(GPR_DEBUG, "check_handshaker_response_failure");
   check_handle_response_failure();
   /* Cleanup. */
   grpc_alts_shared_resource_dedicated_shutdown();

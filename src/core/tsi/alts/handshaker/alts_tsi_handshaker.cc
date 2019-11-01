@@ -53,6 +53,7 @@ struct alts_tsi_handshaker {
   grpc_alts_credentials_options* options;
   alts_handshaker_client_vtable* client_vtable_for_testing;
   grpc_channel* channel;
+  bool use_dedicated_cq;
   // mu synchronizes all fields below
   gpr_mu mu;
   alts_handshaker_client* client;
@@ -388,10 +389,7 @@ static tsi_result handshaker_next(
   }
   alts_tsi_handshaker* handshaker =
       reinterpret_cast<alts_tsi_handshaker*>(self);
-  if (handshaker->channel == nullptr &&
-      handshaker->interested_parties != nullptr) {
-    // We're using the gRPC internal polling framework rather than a dedicated
-    // CQ thread and channel, so first create a new channel.
+  if (handshaker->channel == nullptr && !handshaker->use_dedicated_cq) {
     alts_tsi_handshaker_continue_handshaker_next_args* args =
         grpc_core::New<alts_tsi_handshaker_continue_handshaker_next_args>();
     args->handshaker = handshaker;
@@ -501,8 +499,8 @@ tsi_result alts_tsi_handshaker_create(
   }
   alts_tsi_handshaker* handshaker =
       static_cast<alts_tsi_handshaker*>(gpr_zalloc(sizeof(*handshaker)));
-  bool use_dedicated_cq = interested_parties == nullptr;
   gpr_mu_init(&handshaker->mu);
+  handshaker->use_dedicated_cq = interested_parties == nullptr;
   handshaker->client = nullptr;
   handshaker->is_client = is_client;
   handshaker->has_sent_start_message = false;
@@ -513,8 +511,9 @@ tsi_result alts_tsi_handshaker_create(
   handshaker->has_created_handshaker_client = false;
   handshaker->handshaker_service_url = gpr_strdup(handshaker_service_url);
   handshaker->options = grpc_alts_credentials_options_copy(options);
-  handshaker->base.vtable =
-      use_dedicated_cq ? &handshaker_vtable_dedicated : &handshaker_vtable;
+  handshaker->base.vtable = handshaker->use_dedicated_cq
+                                ? &handshaker_vtable_dedicated
+                                : &handshaker_vtable;
   *self = &handshaker->base;
   return TSI_OK;
 }
