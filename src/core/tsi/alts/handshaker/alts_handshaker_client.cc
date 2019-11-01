@@ -23,7 +23,6 @@
 #include <grpc/byte_buffer.h>
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
-#include <grpc/support/string_util.h>
 
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/surface/call.h"
@@ -50,8 +49,12 @@ typedef struct alts_grpc_handshaker_client {
    * that validates the data to be sent to handshaker service in a testing use
    * case. */
   alts_grpc_caller grpc_caller;
+  /* A callback function provided by gRPC to handle the response returned from
+   * handshaker service. It also serves to bring the control safely back to
+   * application when dedicated CQ and thread are used. */
+  grpc_iomgr_cb_func grpc_cb;
   /* A gRPC closure to be scheduled when the response from handshaker service
-   * is received. It will be initialized with a callback provided on creation. */
+   * is received. It will be initialized with grpc_cb. */
   grpc_closure on_handshaker_service_resp_recv;
   /* Buffers containing information to be sent (or received) to (or from) the
    * handshaker service. */
@@ -78,14 +81,9 @@ typedef struct alts_grpc_handshaker_client {
   /* a buffer containing data to be sent to the grpc client or server's peer. */
   unsigned char* buffer;
   size_t buffer_size;
-  /* safely invokes
-   * alts_handshaker_client_handle_response_done_locked (which is different for
-   * dedicated-CQ and non-dedicated-CQ handshakes). */
-  alts_handshaker_client_safe_handle_response_locked
-      safe_handle_response_locked;
 } alts_grpc_handshaker_client;
 
-static void handshaker_client_send_buffer_destroy_locked(
+static void handshaker_client_send_buffer_destroy(
     alts_grpc_handshaker_client* client) {
   GPR_ASSERT(client != nullptr);
   grpc_byte_buffer_destroy(client->send_buffer);
@@ -100,86 +98,45 @@ static bool is_handshake_finished_properly(grpc_gcp_HandshakerResp* resp) {
   return false;
 }
 
-struct invoke_tsi_next_cb_args {
-  tsi_handshaker_on_next_done_cb cb;
-  tsi_result status;
-  void* user_data;
-  const unsigned char* bytes_to_send;
-  size_t bytes_to_send_size;
-  tsi_handshaker_result* result;
-  grpc_closure closure;
-};
-
-// Invoke the TSI API callback without holding the alts_tsi_handshaker's lock
-void invoke_tsi_next_cb(void* arg, grpc_error* error_unused) {
-  invoke_tsi_next_cb_args* t = static_cast<invoke_tsi_next_cb_args*>(arg);
-  t->cb(t->status, t->user_data, t->bytes_to_send, t->bytes_to_send_size,
-        t->result);
-  gpr_free(t);
-}
-
-static void handle_response_done_locked(alts_grpc_handshaker_client* c,
-                                        tsi_result status,
-                                        const unsigned char* bytes_to_send,
-                                        size_t bytes_to_send_size,
-                                        tsi_handshaker_result* result) {
-  gpr_log(GPR_DEBUG,
-          "handle_response_done_locked client:%p status:%d user_data:%p "
-          "bytes_to_send_size:%ld result:%p",
-          c, status, c->user_data, bytes_to_send_size, result);
-  invoke_tsi_next_cb_args* t = static_cast<invoke_tsi_next_cb_args*>(
-      gpr_zalloc(sizeof(invoke_tsi_next_cb_args)));
-  t->cb = c->cb;
-  t->status = status;
-  t->user_data = c->user_data;
-  t->bytes_to_send = bytes_to_send;
-  t->bytes_to_send_size = bytes_to_send_size;
-  t->result = result;
-  GRPC_CLOSURE_INIT(&t->closure, invoke_tsi_next_cb, t,
-                    grpc_schedule_on_exec_ctx);
-  GRPC_CLOSURE_SCHED(&t->closure, GRPC_ERROR_NONE);
-}
-
-static void handle_response_locked(alts_handshaker_client* c, bool is_ok) {
+void alts_handshaker_client_handle_response(alts_handshaker_client* c,
+                                            bool is_ok) {
   GPR_ASSERT(c != nullptr);
   alts_grpc_handshaker_client* client =
       reinterpret_cast<alts_grpc_handshaker_client*>(c);
   grpc_byte_buffer* recv_buffer = client->recv_buffer;
   grpc_status_code status = client->status;
+  tsi_handshaker_on_next_done_cb cb = client->cb;
+  void* user_data = client->user_data;
   alts_tsi_handshaker* handshaker = client->handshaker;
 
   /* Invalid input check. */
-  if (client->cb == nullptr) {
+  if (cb == nullptr) {
     gpr_log(GPR_ERROR,
-            "client->cb is nullptr in alts_tsi_handshaker_handle_response()");
+            "cb is nullptr in alts_tsi_handshaker_handle_response()");
     return;
   }
   if (handshaker == nullptr) {
     gpr_log(GPR_ERROR,
             "handshaker is nullptr in alts_tsi_handshaker_handle_response()");
-    handle_response_done_locked(client, TSI_INTERNAL_ERROR, nullptr, 0,
-                                nullptr);
+    cb(TSI_INTERNAL_ERROR, user_data, nullptr, 0, nullptr);
     return;
   }
   /* TSI handshake has been shutdown. */
-  if (alts_tsi_handshaker_has_shutdown_locked(handshaker)) {
+  if (alts_tsi_handshaker_has_shutdown(handshaker)) {
     gpr_log(GPR_ERROR, "TSI handshake shutdown");
-    handle_response_done_locked(client, TSI_HANDSHAKE_SHUTDOWN, nullptr, 0,
-                                nullptr);
+    cb(TSI_HANDSHAKE_SHUTDOWN, user_data, nullptr, 0, nullptr);
     return;
   }
   /* Failed grpc call check. */
   if (!is_ok || status != GRPC_STATUS_OK) {
     gpr_log(GPR_ERROR, "grpc call made to handshaker service failed");
-    handle_response_done_locked(client, TSI_INTERNAL_ERROR, nullptr, 0,
-                                nullptr);
+    cb(TSI_INTERNAL_ERROR, user_data, nullptr, 0, nullptr);
     return;
   }
   if (recv_buffer == nullptr) {
     gpr_log(GPR_ERROR,
             "recv_buffer is nullptr in alts_tsi_handshaker_handle_response()");
-    handle_response_done_locked(client, TSI_INTERNAL_ERROR, nullptr, 0,
-                                nullptr);
+    cb(TSI_INTERNAL_ERROR, user_data, nullptr, 0, nullptr);
     return;
   }
   upb::Arena arena;
@@ -190,16 +147,14 @@ static void handle_response_locked(alts_handshaker_client* c, bool is_ok) {
   /* Invalid handshaker response check. */
   if (resp == nullptr) {
     gpr_log(GPR_ERROR, "alts_tsi_utils_deserialize_response() failed");
-    handle_response_done_locked(client, TSI_DATA_CORRUPTED, nullptr, 0,
-                                nullptr);
+    cb(TSI_DATA_CORRUPTED, user_data, nullptr, 0, nullptr);
     return;
   }
   const grpc_gcp_HandshakerStatus* resp_status =
       grpc_gcp_HandshakerResp_status(resp);
   if (resp_status == nullptr) {
     gpr_log(GPR_ERROR, "No status in HandshakerResp");
-    handle_response_done_locked(client, TSI_DATA_CORRUPTED, nullptr, 0,
-                                nullptr);
+    cb(TSI_DATA_CORRUPTED, user_data, nullptr, 0, nullptr);
     return;
   }
   upb_strview out_frames = grpc_gcp_HandshakerResp_out_frames(resp);
@@ -233,30 +188,18 @@ static void handle_response_locked(alts_handshaker_client* c, bool is_ok) {
       gpr_free(error_details);
     }
   }
-  handle_response_done_locked(client,
-                              alts_tsi_utils_convert_to_tsi_result(code),
-                              bytes_to_send, bytes_to_send_size, result);
-}
-
-void alts_handshaker_client_handle_response(alts_handshaker_client* c,
-                                            bool success) {
-  alts_grpc_handshaker_client* client =
-      reinterpret_cast<alts_grpc_handshaker_client*>(c);
-  if (client->handshaker == nullptr) {
-    gpr_log(GPR_ERROR, "client->handshaker is nullptr");
-    return;
-  }
-  client->safe_handle_response_locked(client->handshaker, success,
-                                      handle_response_locked);
+  cb(alts_tsi_utils_convert_to_tsi_result(code), user_data, bytes_to_send,
+     bytes_to_send_size, result);
 }
 
 /**
  * Populate grpc operation data with the fields of ALTS handshaker client and
  * make a grpc call.
  */
-static void make_grpc_call_locked(alts_grpc_handshaker_client* client,
-                                  bool is_start) {
-  GPR_ASSERT(client != nullptr);
+static tsi_result make_grpc_call(alts_handshaker_client* c, bool is_start) {
+  GPR_ASSERT(c != nullptr);
+  alts_grpc_handshaker_client* client =
+      reinterpret_cast<alts_grpc_handshaker_client*>(c);
   grpc_op ops[kHandshakerClientOpNum];
   memset(ops, 0, sizeof(ops));
   grpc_op* op = ops;
@@ -280,11 +223,13 @@ static void make_grpc_call_locked(alts_grpc_handshaker_client* client,
   op++;
   GPR_ASSERT(op - ops <= kHandshakerClientOpNum);
   GPR_ASSERT(client->grpc_caller != nullptr);
-  grpc_call_error call_error =
-      client->grpc_caller(client->call, ops, static_cast<size_t>(op - ops),
-                          &client->on_handshaker_service_resp_recv);
-  GPR_ASSERT(call_error == GRPC_CALL_OK);
-  return;
+  if (client->grpc_caller(client->call, ops, static_cast<size_t>(op - ops),
+                          &client->on_handshaker_service_resp_recv) !=
+      GRPC_CALL_OK) {
+    gpr_log(GPR_ERROR, "Start batch operation failed");
+    return TSI_INTERNAL_ERROR;
+  }
+  return TSI_OK;
 }
 
 /* Serializes a grpc_gcp_HandshakerReq message into a buffer and returns newly
@@ -303,7 +248,7 @@ static grpc_byte_buffer* get_serialized_handshaker_req(
 }
 
 /* Create and populate a client_start handshaker request, then serialize it. */
-static grpc_byte_buffer* get_serialized_start_client_locked(
+static grpc_byte_buffer* get_serialized_start_client(
     alts_handshaker_client* c) {
   GPR_ASSERT(c != nullptr);
   alts_grpc_handshaker_client* client =
@@ -342,27 +287,29 @@ static grpc_byte_buffer* get_serialized_start_client_locked(
   return get_serialized_handshaker_req(req, arena.ptr());
 }
 
-static tsi_result handshaker_client_start_client_locked(
-    alts_handshaker_client* c) {
+static tsi_result handshaker_client_start_client(alts_handshaker_client* c) {
   if (c == nullptr) {
     gpr_log(GPR_ERROR, "client is nullptr in handshaker_client_start_client()");
     return TSI_INVALID_ARGUMENT;
   }
-  grpc_byte_buffer* buffer = get_serialized_start_client_locked(c);
+  grpc_byte_buffer* buffer = get_serialized_start_client(c);
   alts_grpc_handshaker_client* client =
       reinterpret_cast<alts_grpc_handshaker_client*>(c);
   if (buffer == nullptr) {
     gpr_log(GPR_ERROR, "get_serialized_start_client() failed");
     return TSI_INTERNAL_ERROR;
   }
-  handshaker_client_send_buffer_destroy_locked(client);
+  handshaker_client_send_buffer_destroy(client);
   client->send_buffer = buffer;
-  make_grpc_call_locked(client, true /* is_start */);
-  return TSI_OK;
+  tsi_result result = make_grpc_call(&client->base, true /* is_start */);
+  if (result != TSI_OK) {
+    gpr_log(GPR_ERROR, "make_grpc_call() failed");
+  }
+  return result;
 }
 
 /* Create and populate a start_server handshaker request, then serialize it. */
-static grpc_byte_buffer* get_serialized_start_server_locked(
+static grpc_byte_buffer* get_serialized_start_server(
     alts_handshaker_client* c, grpc_slice* bytes_received) {
   GPR_ASSERT(c != nullptr);
   GPR_ASSERT(bytes_received != nullptr);
@@ -399,24 +346,26 @@ static grpc_byte_buffer* get_serialized_start_server_locked(
   return get_serialized_handshaker_req(req, arena.ptr());
 }
 
-static tsi_result handshaker_client_start_server_locked(
-    alts_handshaker_client* c, grpc_slice* bytes_received) {
+static tsi_result handshaker_client_start_server(alts_handshaker_client* c,
+                                                 grpc_slice* bytes_received) {
   if (c == nullptr || bytes_received == nullptr) {
     gpr_log(GPR_ERROR, "Invalid arguments to handshaker_client_start_server()");
     return TSI_INVALID_ARGUMENT;
   }
   alts_grpc_handshaker_client* client =
       reinterpret_cast<alts_grpc_handshaker_client*>(c);
-  grpc_byte_buffer* buffer =
-      get_serialized_start_server_locked(c, bytes_received);
+  grpc_byte_buffer* buffer = get_serialized_start_server(c, bytes_received);
   if (buffer == nullptr) {
     gpr_log(GPR_ERROR, "get_serialized_start_server() failed");
     return TSI_INTERNAL_ERROR;
   }
-  handshaker_client_send_buffer_destroy_locked(client);
+  handshaker_client_send_buffer_destroy(client);
   client->send_buffer = buffer;
-  make_grpc_call_locked(client, true /* is_start */);
-  return TSI_OK;
+  tsi_result result = make_grpc_call(&client->base, true /* is_start */);
+  if (result != TSI_OK) {
+    gpr_log(GPR_ERROR, "make_grpc_call() failed");
+  }
+  return result;
 }
 
 /* Create and populate a next handshaker request, then serialize it. */
@@ -433,8 +382,8 @@ static grpc_byte_buffer* get_serialized_next(grpc_slice* bytes_received) {
   return get_serialized_handshaker_req(req, arena.ptr());
 }
 
-static tsi_result handshaker_client_next_locked(alts_handshaker_client* c,
-                                                grpc_slice* bytes_received) {
+static tsi_result handshaker_client_next(alts_handshaker_client* c,
+                                         grpc_slice* bytes_received) {
   if (c == nullptr || bytes_received == nullptr) {
     gpr_log(GPR_ERROR, "Invalid arguments to handshaker_client_next()");
     return TSI_INVALID_ARGUMENT;
@@ -448,13 +397,16 @@ static tsi_result handshaker_client_next_locked(alts_handshaker_client* c,
     gpr_log(GPR_ERROR, "get_serialized_next() failed");
     return TSI_INTERNAL_ERROR;
   }
-  handshaker_client_send_buffer_destroy_locked(client);
+  handshaker_client_send_buffer_destroy(client);
   client->send_buffer = buffer;
-  make_grpc_call_locked(client, false /* is_start */);
-  return TSI_OK;
+  tsi_result result = make_grpc_call(&client->base, false /* is_start */);
+  if (result != TSI_OK) {
+    gpr_log(GPR_ERROR, "make_grpc_call() failed");
+  }
+  return result;
 }
 
-static void handshaker_client_shutdown_locked(alts_handshaker_client* c) {
+static void handshaker_client_shutdown(alts_handshaker_client* c) {
   GPR_ASSERT(c != nullptr);
   alts_grpc_handshaker_client* client =
       reinterpret_cast<alts_grpc_handshaker_client*>(c);
@@ -463,7 +415,7 @@ static void handshaker_client_shutdown_locked(alts_handshaker_client* c) {
   }
 }
 
-static void handshaker_call_unref(void* arg, grpc_error* /*error*/) {
+static void handshaker_call_unref(void* arg, grpc_error* error) {
   grpc_call* call = static_cast<grpc_call*>(arg);
   grpc_call_unref(call);
 }
@@ -475,28 +427,28 @@ static void handshaker_client_destruct(alts_handshaker_client* c) {
   alts_grpc_handshaker_client* client =
       reinterpret_cast<alts_grpc_handshaker_client*>(c);
   if (client->call != nullptr) {
-    // do this at the bottom of the callstack to avoid the risks of ExecCtx
-    // stacking
-    GRPC_CLOSURE_SCHED(GRPC_CLOSURE_CREATE(handshaker_call_unref, client->call,
-                                           grpc_schedule_on_exec_ctx),
-                       GRPC_ERROR_NONE);
+    // Throw this grpc_call_unref over to the ExecCtx so that
+    // we invoke it at the bottom of the call stack and
+    // prevent lock inversion problems due to ExecCtx stacking.
+    // This indirection could be removed if we created
+    // an internal variant of grpc_call_unref that doesn't need
+    // to flush an ExecCtx.
+    GRPC_CLOSURE_SCHED(GRPC_CLOSURE_CREATE(handshaker_call_unref, client->call, grpc_schedule_on_exec_ctx), GRPC_ERROR_NONE);
   }
 }
 
 static const alts_handshaker_client_vtable vtable = {
-    handshaker_client_start_client_locked,
-    handshaker_client_start_server_locked, handshaker_client_next_locked,
-    handshaker_client_shutdown_locked, handshaker_client_destruct};
+    handshaker_client_start_client, handshaker_client_start_server,
+    handshaker_client_next, handshaker_client_shutdown,
+    handshaker_client_destruct};
 
 alts_handshaker_client* alts_grpc_handshaker_client_create(
     alts_tsi_handshaker* handshaker, grpc_channel* channel,
     const char* handshaker_service_url, grpc_pollset_set* interested_parties,
     grpc_alts_credentials_options* options, const grpc_slice& target_name,
-    grpc_iomgr_cb_func grpc_cb, void* grpc_cb_arg,
-    tsi_handshaker_on_next_done_cb cb, void* user_data,
-    alts_handshaker_client_safe_handle_response_locked
-        safe_handle_response_locked,
-    alts_handshaker_client_vtable* vtable_for_testing, bool is_client) {
+    grpc_iomgr_cb_func grpc_cb, tsi_handshaker_on_next_done_cb cb,
+    void* user_data, alts_handshaker_client_vtable* vtable_for_testing,
+    bool is_client) {
   if (channel == nullptr || handshaker_service_url == nullptr) {
     gpr_log(GPR_ERROR, "Invalid arguments to alts_handshaker_client_create()");
     return nullptr;
@@ -518,7 +470,6 @@ alts_handshaker_client* alts_grpc_handshaker_client_create(
   client->buffer_size = TSI_ALTS_INITIAL_BUFFER_SIZE;
   client->buffer = static_cast<unsigned char*>(gpr_zalloc(client->buffer_size));
   grpc_slice slice = grpc_slice_from_copied_string(handshaker_service_url);
-  client->safe_handle_response_locked = safe_handle_response_locked;
   client->call =
       strcmp(handshaker_service_url, ALTS_HANDSHAKER_SERVICE_URL_FOR_TESTING) ==
               0
@@ -530,7 +481,7 @@ alts_handshaker_client* alts_grpc_handshaker_client_create(
   client->base.vtable =
       vtable_for_testing == nullptr ? &vtable : vtable_for_testing;
   GRPC_CLOSURE_INIT(&client->on_handshaker_service_resp_recv, client->grpc_cb,
-                    grpc_cb_arg, grpc_schedule_on_exec_ctx);
+                    client, grpc_schedule_on_exec_ctx);
   grpc_slice_unref_internal(slice);
   return &client->base;
 }
@@ -643,43 +594,42 @@ grpc_closure* alts_handshaker_client_get_closure_for_testing(
 }  // namespace internal
 }  // namespace grpc_core
 
-tsi_result alts_handshaker_client_start_client_locked(
-    alts_handshaker_client* client) {
+tsi_result alts_handshaker_client_start_client(alts_handshaker_client* client) {
   if (client != nullptr && client->vtable != nullptr &&
-      client->vtable->client_start_locked != nullptr) {
-    return client->vtable->client_start_locked(client);
+      client->vtable->client_start != nullptr) {
+    return client->vtable->client_start(client);
   }
   gpr_log(GPR_ERROR,
           "client or client->vtable has not been initialized properly");
   return TSI_INVALID_ARGUMENT;
 }
 
-tsi_result alts_handshaker_client_start_server_locked(
-    alts_handshaker_client* client, grpc_slice* bytes_received) {
+tsi_result alts_handshaker_client_start_server(alts_handshaker_client* client,
+                                               grpc_slice* bytes_received) {
   if (client != nullptr && client->vtable != nullptr &&
-      client->vtable->server_start_locked != nullptr) {
-    return client->vtable->server_start_locked(client, bytes_received);
+      client->vtable->server_start != nullptr) {
+    return client->vtable->server_start(client, bytes_received);
   }
   gpr_log(GPR_ERROR,
           "client or client->vtable has not been initialized properly");
   return TSI_INVALID_ARGUMENT;
 }
 
-tsi_result alts_handshaker_client_next_locked(alts_handshaker_client* client,
-                                              grpc_slice* bytes_received) {
+tsi_result alts_handshaker_client_next(alts_handshaker_client* client,
+                                       grpc_slice* bytes_received) {
   if (client != nullptr && client->vtable != nullptr &&
-      client->vtable->next_locked != nullptr) {
-    return client->vtable->next_locked(client, bytes_received);
+      client->vtable->next != nullptr) {
+    return client->vtable->next(client, bytes_received);
   }
   gpr_log(GPR_ERROR,
           "client or client->vtable has not been initialized properly");
   return TSI_INVALID_ARGUMENT;
 }
 
-void alts_handshaker_client_shutdown_locked(alts_handshaker_client* client) {
+void alts_handshaker_client_shutdown(alts_handshaker_client* client) {
   if (client != nullptr && client->vtable != nullptr &&
-      client->vtable->shutdown_locked != nullptr) {
-    client->vtable->shutdown_locked(client);
+      client->vtable->shutdown != nullptr) {
+    client->vtable->shutdown(client);
   }
 }
 

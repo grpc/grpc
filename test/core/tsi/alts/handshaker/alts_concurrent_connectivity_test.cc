@@ -450,7 +450,7 @@ TEST(AltsConcurrentConnectivityTest,
       connect_loop_runners.push_back(std::unique_ptr<
                                      ConnectLoopRunner>(new ConnectLoopRunner(
           fake_tcp_server.address(), fake_handshake_server.address(),
-          10 /* per connect deadline seconds */, 2 /* loops */,
+          10 /* per connect deadline seconds */, 3 /* loops */,
           GRPC_CHANNEL_TRANSIENT_FAILURE /* expected connectivity states */)));
     }
     connect_loop_runners.clear();

@@ -51,20 +51,14 @@ typedef struct alts_handshaker_client alts_handshaker_client;
 typedef grpc_call_error (*alts_grpc_caller)(grpc_call* call, const grpc_op* ops,
                                             size_t nops, grpc_closure* tag);
 
-/* This is responsible for safely invoking handle_response_locked
- * (which differs for dedicated-CQ and non-dedicated-CQ handshakes). */
-typedef void (*alts_handshaker_client_safe_handle_response_locked)(
-    alts_tsi_handshaker* handshaker, bool success,
-    void (*handle_response_locked)(alts_handshaker_client* c, bool success));
-
 /* V-table for ALTS handshaker client operations. */
 typedef struct alts_handshaker_client_vtable {
-  tsi_result (*client_start_locked)(alts_handshaker_client* client);
-  tsi_result (*server_start_locked)(alts_handshaker_client* client,
-                                    grpc_slice* bytes_received);
-  tsi_result (*next_locked)(alts_handshaker_client* client,
-                            grpc_slice* bytes_received);
-  void (*shutdown_locked)(alts_handshaker_client* client);
+  tsi_result (*client_start)(alts_handshaker_client* client);
+  tsi_result (*server_start)(alts_handshaker_client* client,
+                             grpc_slice* bytes_received);
+  tsi_result (*next)(alts_handshaker_client* client,
+                     grpc_slice* bytes_received);
+  void (*shutdown)(alts_handshaker_client* client);
   void (*destruct)(alts_handshaker_client* client);
 } alts_handshaker_client_vtable;
 
@@ -76,8 +70,7 @@ typedef struct alts_handshaker_client_vtable {
  *
  * It returns TSI_OK on success and an error status code on failure.
  */
-tsi_result alts_handshaker_client_start_client_locked(
-    alts_handshaker_client* client);
+tsi_result alts_handshaker_client_start_client(alts_handshaker_client* client);
 
 /**
  * This method schedules a server_start handshaker request to ALTS handshaker
@@ -89,8 +82,8 @@ tsi_result alts_handshaker_client_start_client_locked(
  *
  * It returns TSI_OK on success and an error status code on failure.
  */
-tsi_result alts_handshaker_client_start_server_locked(
-    alts_handshaker_client* client, grpc_slice* bytes_received);
+tsi_result alts_handshaker_client_start_server(alts_handshaker_client* client,
+                                               grpc_slice* bytes_received);
 
 /**
  * This method schedules a next handshaker request to ALTS handshaker service.
@@ -101,8 +94,8 @@ tsi_result alts_handshaker_client_start_server_locked(
  *
  * It returns TSI_OK on success and an error status code on failure.
  */
-tsi_result alts_handshaker_client_next_locked(alts_handshaker_client* client,
-                                              grpc_slice* bytes_received);
+tsi_result alts_handshaker_client_next(alts_handshaker_client* client,
+                                       grpc_slice* bytes_received);
 
 /**
  * This method cancels previously scheduled, but yet executed handshaker
@@ -111,7 +104,7 @@ tsi_result alts_handshaker_client_next_locked(alts_handshaker_client* client,
  *
  * - client: ALTS handshaker client instance.
  */
-void alts_handshaker_client_shutdown_locked(alts_handshaker_client* client);
+void alts_handshaker_client_shutdown(alts_handshaker_client* client);
 
 /**
  * This method destroys an ALTS handshaker client.
@@ -134,7 +127,6 @@ void alts_handshaker_client_destroy(alts_handshaker_client* client);
  * - target_name: the name of the endpoint that the channel is connecting to,
  *   and will be used for secure naming check
  * - grpc_cb: gRPC provided callbacks passed from TSI handshaker.
- * - grpc_cb_arg: Argument to pass to grpc_cb when invoked.
  * - cb: callback to be executed when tsi_handshaker_next API compltes.
  * - user_data: argument passed to cb.
  * - vtable_for_testing: ALTS handshaker client vtable instance used for
@@ -147,15 +139,14 @@ alts_handshaker_client* alts_grpc_handshaker_client_create(
     alts_tsi_handshaker* handshaker, grpc_channel* channel,
     const char* handshaker_service_url, grpc_pollset_set* interested_parties,
     grpc_alts_credentials_options* options, const grpc_slice& target_name,
-    grpc_iomgr_cb_func grpc_cb, void* grpc_cb_arg,
-    tsi_handshaker_on_next_done_cb cb, void* user_data,
-    alts_handshaker_client_safe_handle_response_locked
-        safe_handle_response_locked,
-    alts_handshaker_client_vtable* vtable_for_testing, bool is_client);
+    grpc_iomgr_cb_func grpc_cb, tsi_handshaker_on_next_done_cb cb,
+    void* user_data, alts_handshaker_client_vtable* vtable_for_testing,
+    bool is_client);
 
 /**
  * This method handles handshaker response returned from ALTS handshaker
- * service.
+ * service. Note that the only reason the API is exposed is that it is used in
+ * alts_shared_resources.cc.
  *
  * - client: an ALTS handshaker client instance.
  * - is_ok: a boolean value indicating if the handshaker response is ok to read.
