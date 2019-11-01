@@ -277,11 +277,15 @@ class _RpcError(grpc.RpcError, grpc.Call, grpc.Future):
 
     def __init__(self, state):
         if state.cancelled:
-            raise ValueError("Cannot instantiate an _RpcError for a cancelled RPC.")
+            raise ValueError(
+                "Cannot instantiate an _RpcError for a cancelled RPC.")
         if state.code is grpc.StatusCode.OK:
-            raise ValueError("Cannot instantiate an _RpcError for a successfully completed RPC.")
+            raise ValueError(
+                "Cannot instantiate an _RpcError for a successfully completed RPC."
+            )
         if state.code is None:
-            raise ValueError("Cannot instantiate an _RpcError for an incomplete RPC.")
+            raise ValueError(
+                "Cannot instantiate an _RpcError for an incomplete RPC.")
         self._state = state
 
     def initial_metadata(self):
@@ -324,22 +328,22 @@ class _RpcError(grpc.RpcError, grpc.Call, grpc.Future):
         """See grpc.Future.done."""
         return True
 
-    def result(self, timeout=None):
+    def result(self, timeout=None):  # pylint: disable=unused-argument
         """See grpc.Future.result."""
         raise self
 
-    def exception(self, timeout=None):
+    def exception(self, timeout=None):  # pylint: disable=unused-argument
         """See grpc.Future.exception."""
         return self
 
-    def traceback(self, timeout=None):
+    def traceback(self, timeout=None):  # pylint: disable=unused-argument
         """See grpc.Future.traceback."""
         try:
             raise self
         except grpc.RpcError:
             return sys.exc_info()[2]
 
-    def add_done_callback(self, timeout=None):
+    def add_done_callback(self, fn, timeout=None):  # pylint: disable=unused-argument
         """See grpc.Future.add_done_callback."""
         fn(self)
 

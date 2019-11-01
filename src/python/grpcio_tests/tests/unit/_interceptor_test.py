@@ -243,8 +243,12 @@ class _LoggingInterceptor(
     def intercept_unary_unary(self, continuation, client_call_details, request):
         self.record.append(self.tag + ':intercept_unary_unary')
         result = continuation(client_call_details, request)
-        assert isinstance(result, grpc.Call), '{} is not an instance of grpc.Call'.format(result)
-        assert isinstance(result, grpc.Future), '{} is not an instance of grpc.Future'.format(result)
+        assert isinstance(
+            result,
+            grpc.Call), '{} is not an instance of grpc.Call'.format(result)
+        assert isinstance(
+            result,
+            grpc.Future), '{} is not an instance of grpc.Future'.format(result)
         return result
 
     def intercept_unary_stream(self, continuation, client_call_details,
@@ -256,8 +260,12 @@ class _LoggingInterceptor(
                                request_iterator):
         self.record.append(self.tag + ':intercept_stream_unary')
         result = continuation(client_call_details, request_iterator)
-        assert isinstance(result, grpc.Call), '{} is not an instance of grpc.Call'.format(result)
-        assert isinstance(result, grpc.Future), '{} is not an instance of grpc.Future'.format(result)
+        assert isinstance(
+            result,
+            grpc.Call), '{} is not an instance of grpc.Call'.format(result)
+        assert isinstance(
+            result,
+            grpc.Future), '{} is not an instance of grpc.Future'.format(result)
         return result
 
     def intercept_stream_stream(self, continuation, client_call_details,
