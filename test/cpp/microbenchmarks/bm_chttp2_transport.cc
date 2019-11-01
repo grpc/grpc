@@ -277,7 +277,7 @@ static void BM_StreamCreateDestroy(benchmark::State& state) {
     s->Op(&op);
     s->DestroyThen(next.get());
   });
-  GRPC_CLOSURE_RUN(next.get(), GRPC_ERROR_NONE);
+  grpc_core::Closure::Run(DEBUG_LOCATION, next.get(), GRPC_ERROR_NONE);
   f.FlushExecCtx();
   track_counters.Finish(state);
 }
@@ -606,7 +606,7 @@ static void BM_TransportStreamRecv(benchmark::State& state) {
       GPR_ASSERT(!state.KeepRunning());
       return;
     }
-    GRPC_CLOSURE_RUN(drain.get(), GRPC_ERROR_NONE);
+    grpc_core::Closure::Run(DEBUG_LOCATION, drain.get(), GRPC_ERROR_NONE);
   });
 
   drain = MakeClosure([&](grpc_error* /*error*/) {
@@ -627,7 +627,7 @@ static void BM_TransportStreamRecv(benchmark::State& state) {
     recv_stream->Pull(&recv_slice);
     received += GRPC_SLICE_LENGTH(recv_slice);
     grpc_slice_unref_internal(recv_slice);
-    GRPC_CLOSURE_RUN(drain.get(), GRPC_ERROR_NONE);
+    grpc_core::Closure::Run(DEBUG_LOCATION, drain.get(), GRPC_ERROR_NONE);
   });
 
   reset_op();

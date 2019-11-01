@@ -1191,9 +1191,8 @@ void ChannelData::ExternalConnectivityWatcher::AddWatcherLocked(
     void* arg, grpc_error* /*ignored*/) {
   ExternalConnectivityWatcher* self =
       static_cast<ExternalConnectivityWatcher*>(arg);
-  // This assumes that the closure is scheduled on the ExecCtx scheduler
-  // and that GRPC_CLOSURE_RUN() will run the closure immediately.
-  GRPC_CLOSURE_RUN(self->watcher_timer_init_, GRPC_ERROR_NONE);
+  grpc_core::Closure::Run(DEBUG_LOCATION, self->watcher_timer_init_,
+                          GRPC_ERROR_NONE);
   // Add new watcher.
   self->chand_->state_tracker_.AddWatcher(
       self->initial_state_,
@@ -2263,8 +2262,9 @@ void CallData::RecvTrailingMetadataReadyForLoadBalancingPolicy(
   calld->lb_recv_trailing_metadata_ready_(error, &trailing_metadata,
                                           &calld->lb_call_state_);
   // Chain to original callback.
-  GRPC_CLOSURE_RUN(calld->original_recv_trailing_metadata_ready_,
-                   GRPC_ERROR_REF(error));
+  grpc_core::Closure::Run(DEBUG_LOCATION,
+                          calld->original_recv_trailing_metadata_ready_,
+                          GRPC_ERROR_REF(error));
 }
 
 void CallData::MaybeInjectRecvTrailingMetadataReadyForLoadBalancingPolicy(
@@ -2759,7 +2759,8 @@ void CallData::InvokeRecvInitialMetadataCallback(void* arg, grpc_error* error) {
   calld->MaybeClearPendingBatch(batch_data->elem, pending);
   batch_data->Unref();
   // Invoke callback.
-  GRPC_CLOSURE_RUN(recv_initial_metadata_ready, GRPC_ERROR_REF(error));
+  grpc_core::Closure::Run(DEBUG_LOCATION, recv_initial_metadata_ready,
+                          GRPC_ERROR_REF(error));
 }
 
 void CallData::RecvInitialMetadataReady(void* arg, grpc_error* error) {
@@ -2849,7 +2850,8 @@ void CallData::InvokeRecvMessageCallback(void* arg, grpc_error* error) {
   calld->MaybeClearPendingBatch(batch_data->elem, pending);
   batch_data->Unref();
   // Invoke callback.
-  GRPC_CLOSURE_RUN(recv_message_ready, GRPC_ERROR_REF(error));
+  grpc_core::Closure::Run(DEBUG_LOCATION, recv_message_ready,
+                          GRPC_ERROR_REF(error));
 }
 
 void CallData::RecvMessageReady(void* arg, grpc_error* error) {

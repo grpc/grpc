@@ -58,8 +58,9 @@ void CensusClientCallData::OnDoneRecvTrailingMetadataCb(void* user_data,
     FilterTrailingMetadata(calld->recv_trailing_metadata_,
                            &calld->elapsed_time_);
   }
-  GRPC_CLOSURE_RUN(calld->initial_on_done_recv_trailing_metadata_,
-                   GRPC_ERROR_REF(error));
+  grpc_core::Closure::Run(DEBUG_LOCATION,
+                          calld->initial_on_done_recv_trailing_metadata_,
+                          GRPC_ERROR_REF(error));
 }
 
 void CensusClientCallData::OnDoneRecvMessageCb(void* user_data,
@@ -75,7 +76,8 @@ void CensusClientCallData::OnDoneRecvMessageCb(void* user_data,
   if ((*calld->recv_message_) != nullptr) {
     calld->recv_message_count_++;
   }
-  GRPC_CLOSURE_RUN(calld->initial_on_done_recv_message_, GRPC_ERROR_REF(error));
+  grpc_core::Closure::Run(DEBUG_LOCATION, calld->initial_on_done_recv_message_,
+                          GRPC_ERROR_REF(error));
 }
 
 void CensusClientCallData::StartTransportStreamOpBatch(

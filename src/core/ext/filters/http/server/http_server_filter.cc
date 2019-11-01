@@ -363,7 +363,8 @@ static void hs_recv_initial_metadata_ready(void* user_data, grpc_error* err) {
                              "resuming hs_recv_trailing_metadata_ready from "
                              "hs_recv_initial_metadata_ready");
   }
-  GRPC_CLOSURE_RUN(calld->original_recv_initial_metadata_ready, err);
+  grpc_core::Closure::Run(DEBUG_LOCATION,
+                          calld->original_recv_initial_metadata_ready, err);
 }
 
 static void hs_recv_message_ready(void* user_data, grpc_error* err) {
@@ -378,7 +379,8 @@ static void hs_recv_message_ready(void* user_data, grpc_error* err) {
       calld->recv_message->reset(calld->read_stream.get());
       calld->have_read_stream = false;
     }
-    GRPC_CLOSURE_RUN(calld->original_recv_message_ready, GRPC_ERROR_REF(err));
+    grpc_core::Closure::Run(DEBUG_LOCATION, calld->original_recv_message_ready,
+                            GRPC_ERROR_REF(err));
   } else {
     // We have not yet seen the recv_initial_metadata callback, so we
     // need to wait to see if this is a GET request.
@@ -404,7 +406,8 @@ static void hs_recv_trailing_metadata_ready(void* user_data, grpc_error* err) {
   err = grpc_error_add_child(
       GRPC_ERROR_REF(err),
       GRPC_ERROR_REF(calld->recv_initial_metadata_ready_error));
-  GRPC_CLOSURE_RUN(calld->original_recv_trailing_metadata_ready, err);
+  grpc_core::Closure::Run(DEBUG_LOCATION,
+                          calld->original_recv_trailing_metadata_ready, err);
 }
 
 static grpc_error* hs_mutate_op(grpc_call_element* elem,

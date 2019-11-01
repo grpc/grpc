@@ -74,7 +74,8 @@ void CensusServerCallData::OnDoneRecvMessageCb(void* user_data,
   if ((*calld->recv_message_) != nullptr) {
     ++calld->recv_message_count_;
   }
-  GRPC_CLOSURE_RUN(calld->initial_on_done_recv_message_, GRPC_ERROR_REF(error));
+  grpc_core::Closure::Run(DEBUG_LOCATION, calld->initial_on_done_recv_message_,
+                          GRPC_ERROR_REF(error));
 }
 
 void CensusServerCallData::OnDoneRecvInitialMetadataCb(void* user_data,
@@ -121,8 +122,9 @@ void CensusServerCallData::OnDoneRecvInitialMetadataCb(void* user_data,
     grpc_census_call_set_context(
         calld->gc_, reinterpret_cast<census_context*>(&calld->context_));
   }
-  GRPC_CLOSURE_RUN(calld->initial_on_done_recv_initial_metadata_,
-                   GRPC_ERROR_REF(error));
+  grpc_core::Closure::Run(DEBUG_LOCATION,
+                          calld->initial_on_done_recv_initial_metadata_,
+                          GRPC_ERROR_REF(error));
 }
 
 void CensusServerCallData::StartTransportStreamOpBatch(

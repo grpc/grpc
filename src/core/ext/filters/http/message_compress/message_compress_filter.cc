@@ -227,8 +227,9 @@ static void send_message_on_complete(void* arg, grpc_error* error) {
   grpc_call_element* elem = static_cast<grpc_call_element*>(arg);
   call_data* calld = static_cast<call_data*>(elem->call_data);
   grpc_slice_buffer_reset_and_unref_internal(&calld->slices);
-  GRPC_CLOSURE_RUN(calld->original_send_message_on_complete,
-                   GRPC_ERROR_REF(error));
+  grpc_core::Closure::Run(DEBUG_LOCATION,
+                          calld->original_send_message_on_complete,
+                          GRPC_ERROR_REF(error));
 }
 
 static void send_message_batch_continue(grpc_call_element* elem) {

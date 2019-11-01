@@ -1515,7 +1515,8 @@ static void receiving_initial_metadata_ready(void* bctlp, grpc_error* error) {
     }
   }
   if (saved_rsr_closure != nullptr) {
-    GRPC_CLOSURE_RUN(saved_rsr_closure, GRPC_ERROR_REF(error));
+    grpc_core::Closure::Run(DEBUG_LOCATION, saved_rsr_closure,
+                            GRPC_ERROR_REF(error));
   }
 
   finish_batch_step(bctl);

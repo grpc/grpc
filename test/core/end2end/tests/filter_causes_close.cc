@@ -198,8 +198,8 @@ typedef struct {
 static void recv_im_ready(void* arg, grpc_error* error) {
   grpc_call_element* elem = static_cast<grpc_call_element*>(arg);
   call_data* calld = static_cast<call_data*>(elem->call_data);
-  GRPC_CLOSURE_RUN(
-      calld->recv_im_ready,
+  grpc_core::Closure::Run(
+      DEBUG_LOCATION, calld->recv_im_ready,
       grpc_error_set_int(GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
                              "Failure that's not preventable.", &error, 1),
                          GRPC_ERROR_INT_GRPC_STATUS,
