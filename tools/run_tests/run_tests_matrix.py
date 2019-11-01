@@ -351,7 +351,8 @@ def _create_portability_test_jobs(extra_args=[],
         compiler='default',
         labels=['portability', 'corelang'],
         extra_args=extra_args + ['--build_only'],
-        inner_jobs=inner_jobs)
+        inner_jobs=inner_jobs,
+        timeout_seconds=_CPP_RUNTESTS_TIMEOUT)
 
     # portability C and C++ on Windows using VS2017 (build only)
     # TODO(jtattermusch): some of the tests are failing, so we force --build_only
@@ -363,7 +364,8 @@ def _create_portability_test_jobs(extra_args=[],
         compiler='cmake_vs2017',
         labels=['portability', 'corelang'],
         extra_args=extra_args + ['--build_only'],
-        inner_jobs=inner_jobs)
+        inner_jobs=inner_jobs,
+        timeout_seconds=_CPP_RUNTESTS_TIMEOUT)
 
     # C and C++ with the c-ares DNS resolver on Linux
     test_jobs += _generate_jobs(
