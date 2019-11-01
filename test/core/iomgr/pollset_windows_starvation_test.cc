@@ -41,7 +41,7 @@
 
 #define LOG_TEST(x) gpr_log(GPR_INFO, "%s", #x)
 
-int main(int argc, char **argv) {
+int main(int argc, char** argv) {
   grpc_init();
 
   // Create three threads that all start queueing for work.
@@ -68,7 +68,7 @@ int main(int argc, char **argv) {
     threads.push_back(std::thread([&]() {
       grpc_core::ExecCtx exec_ctx;
 
-      gpr_mu *g_mu;
+      gpr_mu* g_mu;
       grpc_pollset g_pollset = {};
       grpc_pollset_init(&g_pollset, &g_mu);
 
@@ -76,7 +76,7 @@ int main(int argc, char **argv) {
 
       // Queue for work and once we're done, make sure to kick the remaining
       // threads.
-      grpc_error *error;
+      grpc_error* error;
       error = grpc_pollset_work(&g_pollset, NULL, GRPC_MILLIS_INF_FUTURE);
       error = grpc_pollset_kick(&g_pollset, NULL);
 
@@ -102,8 +102,7 @@ int main(int argc, char **argv) {
       return EXIT_FAILURE;
   }
 
-  for (auto &t : threads)
-    t.join();
+  for (auto& t : threads) t.join();
 
   return EXIT_SUCCESS;
 }
