@@ -188,8 +188,8 @@ void ExecCtx::Run(const DebugLocation& location, grpc_closure* closure,
     abort();
   }
   closure->scheduled = true;
-  closure->file_initiated = file;
-  closure->line_initiated = line;
+  closure->file_initiated = location.file();
+  closure->line_initiated = location.line();
   closure->run = false;
   GPR_ASSERT(closure->cb != nullptr);
 #endif
