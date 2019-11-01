@@ -101,6 +101,17 @@ PHP_METHOD(ChannelCredentials, setDefaultRootsPem) {
 }
 
 /**
+ * if default roots pem is set
+ * @return TRUE/FALSE
+ */
+PHP_METHOD(ChannelCredentials, isDefaultRootsPemSet) {
+  if (default_pem_root_certs) {
+    RETURN_TRUE;
+  }
+  RETURN_FALSE;
+}
+
+/**
  * Create a default channel credentials object.
  * @return ChannelCredentials The new default channel credentials object
  */
@@ -214,6 +225,9 @@ ZEND_BEGIN_ARG_INFO_EX(arginfo_setDefaultRootsPem, 0, 0, 1)
   ZEND_ARG_INFO(0, pem_roots)
 ZEND_END_ARG_INFO()
 
+ZEND_BEGIN_ARG_INFO_EX(arginfo_isDefaultRootsPemSet, 0, 0, 0)
+ZEND_END_ARG_INFO()
+
 ZEND_BEGIN_ARG_INFO_EX(arginfo_createDefault, 0, 0, 0)
 ZEND_END_ARG_INFO()
 
@@ -233,6 +247,8 @@ ZEND_END_ARG_INFO()
 
 static zend_function_entry channel_credentials_methods[] = {
   PHP_ME(ChannelCredentials, setDefaultRootsPem, arginfo_setDefaultRootsPem,
+         ZEND_ACC_PUBLIC | ZEND_ACC_STATIC)
+  PHP_ME(ChannelCredentials, isDefaultRootsPemSet, arginfo_isDefaultRootsPemSet,
          ZEND_ACC_PUBLIC | ZEND_ACC_STATIC)
   PHP_ME(ChannelCredentials, createDefault, arginfo_createDefault,
          ZEND_ACC_PUBLIC | ZEND_ACC_STATIC)
