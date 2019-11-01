@@ -339,7 +339,7 @@ static tsi_result alts_tsi_handshaker_continue_handshaker_next(
     // It's unsafe for the current thread to access any state in handshaker
     // at this point, since alts_handshaker_client_start_client/server
     // have potentially just started an op batch on the handshake call.
-    // The completion callback of for that batch is unsynchronized and so
+    // The completion callback for that batch is unsynchronized and so
     // can invoke the TSI next API callback from any thread, at which point
     // there is nothing taking ownership of this handshaker to prevent it
     // from being destroyed.
