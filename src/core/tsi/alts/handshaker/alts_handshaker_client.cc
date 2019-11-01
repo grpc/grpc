@@ -49,12 +49,8 @@ typedef struct alts_grpc_handshaker_client {
    * that validates the data to be sent to handshaker service in a testing use
    * case. */
   alts_grpc_caller grpc_caller;
-  /* A callback function provided by gRPC to handle the response returned from
-   * handshaker service. It also serves to bring the control safely back to
-   * application when dedicated CQ and thread are used. */
-  grpc_iomgr_cb_func grpc_cb;
   /* A gRPC closure to be scheduled when the response from handshaker service
-   * is received. It will be initialized with grpc_cb. */
+   * is received. It will be initialized with the injected grpc RPC callback. */
   grpc_closure on_handshaker_service_resp_recv;
   /* Buffers containing information to be sent (or received) to (or from) the
    * handshaker service. */
@@ -429,7 +425,7 @@ static void handshaker_client_destruct(alts_handshaker_client* c) {
   if (client->call != nullptr) {
     // Throw this grpc_call_unref over to the ExecCtx so that
     // we invoke it at the bottom of the call stack and
-    // prevent lock inversion problems due to ExecCtx stacking.
+    // prevent lock inversion problems due to nested ExecCtx flushing.
     // This indirection could be removed if we created
     // an internal variant of grpc_call_unref that doesn't need
     // to flush an ExecCtx.
@@ -467,7 +463,6 @@ alts_handshaker_client* alts_grpc_handshaker_client_create(
   client->target_name = grpc_slice_copy(target_name);
   client->recv_bytes = grpc_empty_slice();
   grpc_metadata_array_init(&client->recv_initial_metadata);
-  client->grpc_cb = grpc_cb;
   client->is_client = is_client;
   client->buffer_size = TSI_ALTS_INITIAL_BUFFER_SIZE;
   client->buffer = static_cast<unsigned char*>(gpr_zalloc(client->buffer_size));
@@ -482,8 +477,8 @@ alts_handshaker_client* alts_grpc_handshaker_client_create(
                 GRPC_MILLIS_INF_FUTURE, nullptr);
   client->base.vtable =
       vtable_for_testing == nullptr ? &vtable : vtable_for_testing;
-  GRPC_CLOSURE_INIT(&client->on_handshaker_service_resp_recv, client->grpc_cb,
-                    client, grpc_schedule_on_exec_ctx);
+  GRPC_CLOSURE_INIT(&client->on_handshaker_service_resp_recv, grpc_cb, client,
+                    grpc_schedule_on_exec_ctx);
   grpc_slice_unref_internal(slice);
   return &client->base;
 }
