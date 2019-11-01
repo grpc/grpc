@@ -315,7 +315,7 @@ static tsi_result alts_tsi_handshaker_continue_handshaker_next(
       handshaker->client = client;
       if (handshaker->shutdown) {
         gpr_log(GPR_ERROR, "TSI handshake shutdown");
-        alts_handshaker_client_shutdown(handshaker->client);
+        return TSI_HANDSHAKE_SHUTDOWN;
       }
     }
     handshaker->has_created_handshaker_client = true;
@@ -389,6 +389,13 @@ static tsi_result handshaker_next(
   }
   alts_tsi_handshaker* handshaker =
       reinterpret_cast<alts_tsi_handshaker*>(self);
+  {
+    grpc_core::MutexLock lock(&handshaker->mu);
+    if (handshaker->shutdown) {
+      gpr_log(GPR_ERROR, "TSI handshake shutdown");
+      return TSI_HANDSHAKE_SHUTDOWN;
+    }
+  }
   if (handshaker->channel == nullptr && !handshaker->use_dedicated_cq) {
     alts_tsi_handshaker_continue_handshaker_next_args* args =
         grpc_core::New<alts_tsi_handshaker_continue_handshaker_next_args>();
