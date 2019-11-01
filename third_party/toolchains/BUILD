@@ -29,21 +29,11 @@ platform(
         "@bazel_tools//platforms:windows",
         "@bazel_tools//tools/cpp:msvc",
     ],
-    remote_execution_properties = """
-        properties: {
-          name: "container-image"
-          value:"docker://gcr.io/grpc-testing/rbe_windows_toolchain@sha256:75728e7d6d804090f71095e5fec627b18cfa1f47adc52096c209f2a687e06b2e"
-        }
-        properties: {
-          name: "gceMachineType"  # Small machines for majority of tests.
-          value: "n1-highmem-2"
-        }
-        properties:{
-            name: "OSFamily"
-            value: "Windows"
-        }
-
-        """,
+    exec_properties = {
+        "container-image" : "docker://gcr.io/grpc-testing/rbe_windows_toolchain@sha256:75728e7d6d804090f71095e5fec627b18cfa1f47adc52096c209f2a687e06b2e",
+        "gceMachineType" : "n1-highmem-2",
+        "OSFamily" : "Windows",
+    },
 )
 
 # RBE Ubuntu16_04 r346485
@@ -53,29 +43,13 @@ platform(
     constraint_values = [
         "//third_party/toolchains/machine_size:standard",
     ],
-    remote_execution_properties = """
-        {PARENT_REMOTE_EXECUTION_PROPERTIES}
-        properties: {
-          name: "gceMachineType"  # Small machines for majority of tests.
-          value: "n1-highmem-2"
-        }
-        properties: {
-            name: "dockerSiblingContainers"
-            value: "false"
-        }
-        properties: {
-            name: "dockerNetwork"
-            value: "off"
-        }
-        properties: {
-            name: "dockerAddCapabilities"
-            value: "SYS_PTRACE"
-        }
-        properties: {
-            name: "dockerPrivileged"
-            value: "true"
-        }
-        """,
+    exec_properties = {
+        "gceMachineType" : "n1-highmem-2",  # Small machines for majority of tests
+        "dockerSiblingContainers" : "false",
+        "dockerNetwork" : "off",
+        "dockerAddCapabilities" : "SYS_PTRACE",
+        "dockerPrivileged" : "true"
+    },
 )
 
 platform(
@@ -84,29 +58,13 @@ platform(
     constraint_values = [
         "//third_party/toolchains/machine_size:large",
     ],
-    remote_execution_properties = """
-        {PARENT_REMOTE_EXECUTION_PROPERTIES}
-        properties: {
-          name: "gceMachineType"  # Large machines for some resource demanding tests (TSAN).
-          value: "n1-standard-8"
-        }
-        properties: {
-            name: "dockerSiblingContainers"
-            value: "false"
-        }
-        properties: {
-            name: "dockerNetwork"
-            value: "off"
-        }
-        properties: {
-            name: "dockerAddCapabilities"
-            value: "SYS_PTRACE"
-        }
-        properties: {
-            name: "dockerPrivileged"
-            value: "true"
-        }
-    """,
+    exec_properties = {
+        "gceMachineType" : "n1-standard-8",  # Large machines for some resource demanding tests (TSAN).
+        "dockerSiblingContainers" : "false",
+        "dockerNetwork" : "off",
+        "dockerAddCapabilities" : "SYS_PTRACE",
+        "dockerPrivileged" : "true"
+    },
 )
 
 platform(

@@ -18,6 +18,8 @@ RUN apt-get -qq update && apt-get -qq install -y \
   autoconf automake git libtool pkg-config \
   valgrind wget zlib1g-dev
 
+ARG MAKEFLAGS=-j8
+
 
 WORKDIR /tmp
 

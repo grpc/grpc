@@ -639,7 +639,7 @@ void XdsClient::ChannelState::AdsCallState::OnResponseReceived(
 }
 
 void XdsClient::ChannelState::AdsCallState::OnResponseReceivedLocked(
-    void* arg, grpc_error* error) {
+    void* arg, grpc_error* /*error*/) {
   AdsCallState* ads_calld = static_cast<AdsCallState*>(arg);
   XdsClient* xds_client = ads_calld->xds_client();
   // Empty payload means the call was cancelled.
@@ -736,8 +736,11 @@ void XdsClient::ChannelState::AdsCallState::OnResponseReceivedLocked(
       }
     }
     // Start load reporting if needed.
-    LrsCallState* lrs_calld = ads_calld->chand()->lrs_calld_->calld();
-    if (lrs_calld != nullptr) lrs_calld->MaybeStartReportingLocked();
+    auto& lrs_call = ads_calld->chand()->lrs_calld_;
+    if (lrs_call != nullptr) {
+      LrsCallState* lrs_calld = lrs_call->calld();
+      if (lrs_calld != nullptr) lrs_calld->MaybeStartReportingLocked();
+    }
     // Ignore identical update.
     const EdsUpdate& prev_update = xds_client->cluster_state_.eds_update;
     const bool priority_list_changed =
@@ -1083,7 +1086,7 @@ void XdsClient::ChannelState::LrsCallState::OnInitialRequestSent(
 }
 
 void XdsClient::ChannelState::LrsCallState::OnInitialRequestSentLocked(
-    void* arg, grpc_error* error) {
+    void* arg, grpc_error* /*error*/) {
   LrsCallState* lrs_calld = static_cast<LrsCallState*>(arg);
   // Clear the send_message_payload_.
   grpc_byte_buffer_destroy(lrs_calld->send_message_payload_);
@@ -1102,7 +1105,7 @@ void XdsClient::ChannelState::LrsCallState::OnResponseReceived(
 }
 
 void XdsClient::ChannelState::LrsCallState::OnResponseReceivedLocked(
-    void* arg, grpc_error* error) {
+    void* arg, grpc_error* /*error*/) {
   LrsCallState* lrs_calld = static_cast<LrsCallState*>(arg);
   XdsClient* xds_client = lrs_calld->xds_client();
   // Empty payload means the call was cancelled.
@@ -1288,15 +1291,28 @@ void XdsClient::Orphan() {
 
 void XdsClient::WatchClusterData(StringView cluster,
                                  UniquePtr<ClusterWatcherInterface> watcher) {
-  // TODO(juanlishen): Implement.
+  ClusterWatcherInterface* w = watcher.get();
+  cluster_state_.cluster_watchers[w] = std::move(watcher);
+  // TODO(juanlishen): Start CDS call if not already started and return
+  // real data via watcher.
+  CdsUpdate update;
+  update.eds_service_name = cluster.dup();
+  update.lrs_load_reporting_server_name.reset(gpr_strdup(""));
+  w->OnClusterChanged(std::move(update));
 }
 
 void XdsClient::CancelClusterDataWatch(StringView cluster,
                                        ClusterWatcherInterface* watcher) {
-  // TODO(juanlishen): Implement.
+  auto it = cluster_state_.cluster_watchers.find(watcher);
+  if (it != cluster_state_.cluster_watchers.end()) {
+    cluster_state_.cluster_watchers.erase(it);
+  }
+  if (chand_ != nullptr && cluster_state_.cluster_watchers.empty()) {
+    // TODO(juanlishen): Stop CDS call.
+  }
 }
 
-void XdsClient::WatchEndpointData(StringView cluster,
+void XdsClient::WatchEndpointData(StringView /*cluster*/,
                                   UniquePtr<EndpointWatcherInterface> watcher) {
   EndpointWatcherInterface* w = watcher.get();
   cluster_state_.endpoint_watchers[w] = std::move(watcher);
@@ -1308,7 +1324,7 @@ void XdsClient::WatchEndpointData(StringView cluster,
   chand_->MaybeStartAdsCall();
 }
 
-void XdsClient::CancelEndpointDataWatch(StringView cluster,
+void XdsClient::CancelEndpointDataWatch(StringView /*cluster*/,
                                         EndpointWatcherInterface* watcher) {
   auto it = cluster_state_.endpoint_watchers.find(watcher);
   if (it != cluster_state_.endpoint_watchers.end()) {
@@ -1319,14 +1335,20 @@ void XdsClient::CancelEndpointDataWatch(StringView cluster,
   }
 }
 
-void XdsClient::AddClientStats(StringView cluster,
+void XdsClient::AddClientStats(StringView /*lrs_server*/,
+                               StringView /*cluster*/,
                                XdsClientStats* client_stats) {
+  // TODO(roth): When we add support for direct federation, use the
+  // server name specified in lrs_server.
   cluster_state_.client_stats.insert(client_stats);
   chand_->MaybeStartLrsCall();
 }
 
-void XdsClient::RemoveClientStats(StringView cluster,
+void XdsClient::RemoveClientStats(StringView /*lrs_server*/,
+                                  StringView /*cluster*/,
                                   XdsClientStats* client_stats) {
+  // TODO(roth): When we add support for direct federation, use the
+  // server name specified in lrs_server.
   // TODO(roth): In principle, we should try to send a final load report
   // containing whatever final stats have been accumulated since the
   // last load report.
@@ -1362,14 +1384,19 @@ void XdsClient::NotifyOnServiceConfig(void* arg, grpc_error* error) {
   XdsClient* self = static_cast<XdsClient*>(arg);
   // TODO(roth): When we add support for WeightedClusters, select the
   // LB policy based on that functionality.
-  static const char* json =
-      "{\n"
-      "  \"loadBalancingConfig\":[\n"
-      "    { \"xds_experimental\":{} }\n"
-      "  ]\n"
-      "}";
+  char* json;
+  gpr_asprintf(&json,
+               "{\n"
+               "  \"loadBalancingConfig\":[\n"
+               "    { \"cds_experimental\":{\n"
+               "      \"cluster\": \"%s\"\n"
+               "    } }\n"
+               "  ]\n"
+               "}",
+               self->server_name_.get());
   RefCountedPtr<ServiceConfig> service_config =
       ServiceConfig::Create(json, &error);
+  gpr_free(json);
   if (error != GRPC_ERROR_NONE) {
     self->service_config_watcher_->OnError(error);
   } else {

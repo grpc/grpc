@@ -1389,7 +1389,9 @@ static void reset_event_manager_on_fork() {
   gpr_mu_lock(&fork_fd_list_mu);
   while (fork_fd_list_head != nullptr) {
     if (fork_fd_list_head->fd != nullptr) {
-      close(fork_fd_list_head->fd->fd);
+      if (!fork_fd_list_head->fd->closed) {
+        close(fork_fd_list_head->fd->fd);
+      }
       fork_fd_list_head->fd->fd = -1;
     } else {
       close(fork_fd_list_head->cached_wakeup_fd->fd.read_fd);

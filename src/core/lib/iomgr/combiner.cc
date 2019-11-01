@@ -57,9 +57,7 @@ grpc_core::Combiner* grpc_combiner_create(void) {
   gpr_ref_init(&lock->refs, 1);
   gpr_atm_no_barrier_store(&lock->state, STATE_UNORPHANED);
   grpc_closure_list_init(&lock->final_list);
-  GRPC_CLOSURE_INIT(
-      &lock->offload, offload, lock,
-      grpc_core::Executor::Scheduler(grpc_core::ExecutorJobType::SHORT));
+  GRPC_CLOSURE_INIT(&lock->offload, offload, lock, nullptr);
   GRPC_COMBINER_TRACE(gpr_log(GPR_INFO, "C:%p create", lock));
   return lock;
 }
@@ -177,7 +175,7 @@ static void queue_offload(grpc_core::Combiner* lock) {
   GRPC_STATS_INC_COMBINER_LOCKS_OFFLOADED();
   move_next();
   GRPC_COMBINER_TRACE(gpr_log(GPR_INFO, "C:%p queue_offload", lock));
-  GRPC_CLOSURE_SCHED(&lock->offload, GRPC_ERROR_NONE);
+  grpc_core::Executor::Run(&lock->offload, GRPC_ERROR_NONE);
 }
 
 bool grpc_combiner_continue_exec_ctx() {

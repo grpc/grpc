@@ -136,8 +136,16 @@ struct EdsUpdate {
   bool drop_all = false;
 };
 
-// TODO(juanlishen): Add fields as part of implementing CDS support.
-struct CdsUpdate {};
+struct CdsUpdate {
+  // The name to use in the EDS request.
+  // If null, the cluster name will be used.
+  UniquePtr<char> eds_service_name;
+  // The LRS server to use for load reporting.
+  // If null, load reporting will be disabled.
+  // If set to the empty string, will use the same server we obtained
+  // the CDS data from.
+  UniquePtr<char> lrs_load_reporting_server_name;
+};
 
 // Creates an EDS request querying \a service_name.
 grpc_slice XdsEdsRequestCreateAndEncode(const char* server_name,

@@ -118,7 +118,7 @@ class grpc_ssl_channel_security_connector final
   }
 
   void add_handshakers(const grpc_channel_args* args,
-                       grpc_pollset_set* interested_parties,
+                       grpc_pollset_set* /*interested_parties*/,
                        grpc_core::HandshakeManager* handshake_mgr) override {
     // Instantiate TSI handshaker.
     tsi_handshaker* tsi_hs = nullptr;
@@ -136,7 +136,7 @@ class grpc_ssl_channel_security_connector final
     handshake_mgr->Add(grpc_core::SecurityHandshakerCreate(tsi_hs, this, args));
   }
 
-  void check_peer(tsi_peer peer, grpc_endpoint* ep,
+  void check_peer(tsi_peer peer, grpc_endpoint* /*ep*/,
                   grpc_core::RefCountedPtr<grpc_auth_context>* auth_context,
                   grpc_closure* on_peer_checked) override {
     const char* target_name = overridden_target_name_ != nullptr
@@ -188,7 +188,7 @@ class grpc_ssl_channel_security_connector final
 
   bool check_call_host(grpc_core::StringView host,
                        grpc_auth_context* auth_context,
-                       grpc_closure* on_call_host_checked,
+                       grpc_closure* /*on_call_host_checked*/,
                        grpc_error** error) override {
     grpc_security_status status = GRPC_SECURITY_ERROR;
     tsi_peer peer = grpc_shallow_peer_from_ssl_auth_context(auth_context);
@@ -207,7 +207,7 @@ class grpc_ssl_channel_security_connector final
     return true;
   }
 
-  void cancel_check_call_host(grpc_closure* on_call_host_checked,
+  void cancel_check_call_host(grpc_closure* /*on_call_host_checked*/,
                               grpc_error* error) override {
     GRPC_ERROR_UNREF(error);
   }
@@ -281,7 +281,7 @@ class grpc_ssl_server_security_connector
   }
 
   void add_handshakers(const grpc_channel_args* args,
-                       grpc_pollset_set* interested_parties,
+                       grpc_pollset_set* /*interested_parties*/,
                        grpc_core::HandshakeManager* handshake_mgr) override {
     // Instantiate TSI handshaker.
     try_fetch_ssl_server_credentials();
@@ -297,7 +297,7 @@ class grpc_ssl_server_security_connector
     handshake_mgr->Add(grpc_core::SecurityHandshakerCreate(tsi_hs, this, args));
   }
 
-  void check_peer(tsi_peer peer, grpc_endpoint* ep,
+  void check_peer(tsi_peer peer, grpc_endpoint* /*ep*/,
                   grpc_core::RefCountedPtr<grpc_auth_context>* auth_context,
                   grpc_closure* on_peer_checked) override {
     grpc_error* error = ssl_check_peer(nullptr, &peer, auth_context);

@@ -149,15 +149,13 @@ static void windows_resolve_address(const char* name, const char* default_port,
                                     grpc_closure* on_done,
                                     grpc_resolved_addresses** addresses) {
   request* r = (request*)gpr_malloc(sizeof(request));
-  GRPC_CLOSURE_INIT(
-      &r->request_closure, do_request_thread, r,
-      grpc_core::Executor::Scheduler(grpc_core::ExecutorType::RESOLVER,
-                                     grpc_core::ExecutorJobType::SHORT));
+  GRPC_CLOSURE_INIT(&r->request_closure, do_request_thread, r, nullptr);
   r->name = gpr_strdup(name);
   r->default_port = gpr_strdup(default_port);
   r->on_done = on_done;
   r->addresses = addresses;
-  GRPC_CLOSURE_SCHED(&r->request_closure, GRPC_ERROR_NONE);
+  grpc_core::Executor::Run(&r->request_closure, GRPC_ERROR_NONE,
+                           grpc_core::ExecutorType::RESOLVER);
 }
 
 grpc_address_resolver_vtable grpc_windows_resolver_vtable = {

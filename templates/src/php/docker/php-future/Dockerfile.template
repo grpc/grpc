@@ -20,6 +20,8 @@
     autoconf automake git libtool pkg-config ${'\\'}
     wget zlib1g-dev
 
+  ARG MAKEFLAGS=-j8
+
 
   WORKDIR /tmp
 

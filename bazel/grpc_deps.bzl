@@ -3,7 +3,6 @@
 load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 load("@com_github_grpc_grpc//bazel:grpc_python_deps.bzl", "grpc_python_deps")
 
-
 def grpc_deps():
     """Loads dependencies need to compile and test the grpc library."""
 
@@ -61,7 +60,7 @@ def grpc_deps():
         name = "gtest",
         actual = "@com_github_google_googletest//:gtest",
     )
-    
+
     native.bind(
         name = "benchmark",
         actual = "@com_github_google_benchmark//:benchmark",
@@ -127,7 +126,7 @@ def grpc_deps():
             name = "com_github_google_googletest",
             sha256 = "443d383db648ebb8e391382c0ab63263b7091d03197f304390baac10f178a468",
             strip_prefix = "googletest-c9ccac7cb7345901884aabf5d1a786cfa6e2f397",
-            url = "https://github.com/google/googletest/archive/c9ccac7cb7345901884aabf5d1a786cfa6e2f397.tar.gz", # 2019-08-19
+            url = "https://github.com/google/googletest/archive/c9ccac7cb7345901884aabf5d1a786cfa6e2f397.tar.gz",  # 2019-08-19
         )
 
     if "rules_cc" not in native.existing_rules():
@@ -135,7 +134,7 @@ def grpc_deps():
             name = "rules_cc",
             sha256 = "35f2fb4ea0b3e61ad64a369de284e4fbbdcdba71836a5555abb5e194cf119509",
             strip_prefix = "rules_cc-624b5d59dfb45672d4239422fa1e3de1822ee110",
-            url = "https://github.com/bazelbuild/rules_cc/archive/624b5d59dfb45672d4239422fa1e3de1822ee110.tar.gz", #2019-08-15
+            url = "https://github.com/bazelbuild/rules_cc/archive/624b5d59dfb45672d4239422fa1e3de1822ee110.tar.gz",  #2019-08-15
         )
 
     if "com_github_gflags_gflags" not in native.existing_rules():
@@ -175,11 +174,11 @@ def grpc_deps():
         # list of releases is at https://releases.bazel.build/bazel-toolchains.html
         http_archive(
             name = "bazel_toolchains",
-            sha256 = "22ca5b8115c8673ecb627a02b606529e813961e447933863fccdf325cc5f999f",
-            strip_prefix = "bazel-toolchains-0.29.5",
+            sha256 = "e9bab54199722935f239cb1cd56a80be2ac3c3843e1a6d3492e2bc11f9c21daf",
+            strip_prefix = "bazel-toolchains-1.0.0",
             urls = [
-                "https://github.com/bazelbuild/bazel-toolchains/releases/download/0.29.5/bazel-toolchains-0.29.5.tar.gz",
-                "https://mirror.bazel.build/github.com/bazelbuild/bazel-toolchains/archive/0.29.5.tar.gz",
+                "https://github.com/bazelbuild/bazel-toolchains/releases/download/1.0.0/bazel-toolchains-1.0.0.tar.gz",
+                "https://mirror.bazel.build/github.com/bazelbuild/bazel-toolchains/archive/1.0.0.tar.gz",
             ],
         )
 
@@ -210,9 +209,9 @@ def grpc_deps():
     if "envoy_api" not in native.existing_rules():
         http_archive(
             name = "envoy_api",
-            sha256 = "a2c6e854fa9653b0ed6510e31ec7c51eac43d578b54cd75c0bc1898f7515c60d",
-            strip_prefix = "data-plane-api-a83394157ad97f4dadbc8ed81f56ad5b3a72e542",
-            url = "https://github.com/envoyproxy/data-plane-api/archive/a83394157ad97f4dadbc8ed81f56ad5b3a72e542.tar.gz",
+            sha256 = "9e8cf42abce32c9b0e9e271b0cb62803084cbe5e5b49f5d5c2aef0766f9d69ca",
+            strip_prefix = "data-plane-api-c83ed7ea9eb5fb3b93d1ad52b59750f1958b8bde",
+            url = "https://github.com/envoyproxy/data-plane-api/archive/c83ed7ea9eb5fb3b93d1ad52b59750f1958b8bde.tar.gz",
         )
 
     if "io_bazel_rules_go" not in native.existing_rules():
@@ -230,8 +229,16 @@ def grpc_deps():
             sha256 = "bdc8e66e70b8a75da23b79f1f8c6207356df07d041d96d2189add7ee0780cf4e",
         )
 
-    grpc_python_deps()
+    if "build_bazel_apple_support" not in native.existing_rules():
+        http_archive(
+            name = "build_bazel_apple_support",
+            urls = [
+                "https://github.com/bazelbuild/apple_support/releases/download/0.7.1/apple_support.0.7.1.tar.gz",
+            ],
+            sha256 = "122ebf7fe7d1c8e938af6aeaee0efe788a3a2449ece5a8d6a428cb18d6f88033",
+        )
 
+    grpc_python_deps()
 
 # TODO: move some dependencies from "grpc_deps" here?
 def grpc_test_only_deps():
@@ -291,4 +298,3 @@ def grpc_test_only_deps():
             url = "https://github.com/twisted/constantly/archive/15.1.0.zip",
             build_file = "@com_github_grpc_grpc//third_party:constantly.BUILD",
         )
-

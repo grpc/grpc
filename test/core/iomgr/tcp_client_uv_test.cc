@@ -209,6 +209,6 @@ int main(int argc, char** argv) {
 
 #else /* GRPC_UV */
 
-int main(int argc, char** argv) { return 1; }
+int main(int /*argc*/, char** /*argv*/) { return 1; }
 
 #endif /* GRPC_UV */

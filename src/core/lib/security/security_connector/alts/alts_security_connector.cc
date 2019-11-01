@@ -94,7 +94,7 @@ class grpc_alts_channel_security_connector final
         grpc_core::SecurityHandshakerCreate(handshaker, this, args));
   }
 
-  void check_peer(tsi_peer peer, grpc_endpoint* ep,
+  void check_peer(tsi_peer peer, grpc_endpoint* /*ep*/,
                   grpc_core::RefCountedPtr<grpc_auth_context>* auth_context,
                   grpc_closure* on_peer_checked) override {
     alts_check_peer(peer, auth_context, on_peer_checked);
@@ -109,8 +109,8 @@ class grpc_alts_channel_security_connector final
   }
 
   bool check_call_host(grpc_core::StringView host,
-                       grpc_auth_context* auth_context,
-                       grpc_closure* on_call_host_checked,
+                       grpc_auth_context* /*auth_context*/,
+                       grpc_closure* /*on_call_host_checked*/,
                        grpc_error** error) override {
     if (host.empty() || host != target_name_) {
       *error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
@@ -119,7 +119,7 @@ class grpc_alts_channel_security_connector final
     return true;
   }
 
-  void cancel_check_call_host(grpc_closure* on_call_host_checked,
+  void cancel_check_call_host(grpc_closure* /*on_call_host_checked*/,
                               grpc_error* error) override {
     GRPC_ERROR_UNREF(error);
   }
@@ -154,7 +154,7 @@ class grpc_alts_server_security_connector final
         grpc_core::SecurityHandshakerCreate(handshaker, this, args));
   }
 
-  void check_peer(tsi_peer peer, grpc_endpoint* ep,
+  void check_peer(tsi_peer peer, grpc_endpoint* /*ep*/,
                   grpc_core::RefCountedPtr<grpc_auth_context>* auth_context,
                   grpc_closure* on_peer_checked) override {
     alts_check_peer(peer, auth_context, on_peer_checked);
