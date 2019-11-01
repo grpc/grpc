@@ -81,10 +81,12 @@ class GrpcPolledFdLibuv : public GrpcPolledFd {
     uv_poll_stop(handle_);
     uv_close(reinterpret_cast<uv_handle_t*>(handle_), ares_uv_poll_close_cb);
     if (read_closure_ != nullptr) {
-      ExecCtx::Run(DEBUG_LOCATION, read_closure_, GRPC_ERROR_CANCELLED);
+      grpc_core::ExecCtx::Run(DEBUG_LOCATION, read_closure_,
+                              GRPC_ERROR_CANCELLED);
     }
     if (write_closure_ != nullptr) {
-      ExecCtx::Run(DEBUG_LOCATION, write_closure_, GRPC_ERROR_CANCELLED);
+      grpc_core::ExecCtx::Run(DEBUG_LOCATION, write_closure_,
+                              GRPC_ERROR_CANCELLED);
     }
   }
 
@@ -135,13 +137,13 @@ static void ares_uv_poll_cb_locked(void* arg, grpc_error* error) {
   }
   if (events & UV_READABLE) {
     GPR_ASSERT(polled_fd->read_closure_ != nullptr);
-    ExecCtx::Run(DEBUG_LOCATION, polled_fd->read_closure_, error);
+    grpc_core::ExecCtx::Run(DEBUG_LOCATION, polled_fd->read_closure_, error);
     polled_fd->read_closure_ = nullptr;
     polled_fd->poll_events_ &= ~UV_READABLE;
   }
   if (events & UV_WRITABLE) {
     GPR_ASSERT(polled_fd->write_closure_ != nullptr);
-    ExecCtx::Run(DEBUG_LOCATION, polled_fd->write_closure_, error);
+    grpc_core::ExecCtx::Run(DEBUG_LOCATION, polled_fd->write_closure_, error);
     polled_fd->write_closure_ = nullptr;
     polled_fd->poll_events_ &= ~UV_WRITABLE;
   }
