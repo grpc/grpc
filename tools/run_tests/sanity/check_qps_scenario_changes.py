@@ -21,6 +21,7 @@ import subprocess
 os.chdir(os.path.join(os.path.dirname(sys.argv[0]), '../../../test/cpp/qps'))
 subprocess.call(['./json_run_localhost_scenario_gen.py'])
 subprocess.call(['./qps_json_driver_scenario_gen.py'])
+subprocess.call(['buildifier', '-v', '-r', '.'])
 
 output = subprocess.check_output(['git', 'status', '--porcelain'])
 qps_json_driver_bzl = 'test/cpp/qps/qps_json_driver_scenarios.bzl'
