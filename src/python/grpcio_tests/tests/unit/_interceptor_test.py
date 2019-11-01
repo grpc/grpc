@@ -32,6 +32,8 @@ _DESERIALIZE_REQUEST = lambda bytestring: bytestring[len(bytestring) // 2:]
 _SERIALIZE_RESPONSE = lambda bytestring: bytestring * 3
 _DESERIALIZE_RESPONSE = lambda bytestring: bytestring[:len(bytestring) // 3]
 
+_EXCEPTION_REQUEST = b'\x09\x0a'
+
 _UNARY_UNARY = '/test/UnaryUnary'
 _UNARY_STREAM = '/test/UnaryStream'
 _STREAM_UNARY = '/test/StreamUnary'
@@ -70,8 +72,11 @@ class _Handler(object):
                 'testkey',
                 'testvalue',
             ),))
+        if request == _EXCEPTION_REQUEST:
+            raise RuntimeError()
         return request
 
+    # TODO(gnossen): Instrument this for a test of exception handling.
     def handle_unary_stream(self, request, servicer_context):
         for _ in range(test_constants.STREAM_LENGTH):
             self._control.control()
@@ -232,7 +237,10 @@ class _LoggingInterceptor(
 
     def intercept_unary_unary(self, continuation, client_call_details, request):
         self.record.append(self.tag + ':intercept_unary_unary')
-        return continuation(client_call_details, request)
+        result = continuation(client_call_details, request)
+        assert isinstance(result, grpc.Call), '{} is not an instance of grpc.Call'.format(result)
+        assert isinstance(result, grpc.Future), '{} is not an instance of grpc.Future'.format(result)
+        return result
 
     def intercept_unary_stream(self, continuation, client_call_details,
                                request):
@@ -439,6 +447,24 @@ class InterceptorTest(unittest.TestCase):
             'c1:intercept_unary_unary', 'c2:intercept_unary_unary',
             's1:intercept_service', 's2:intercept_service'
         ])
+
+    def testInterceptedUnaryRequestBlockingUnaryResponseWithException(self):
+        request = _EXCEPTION_REQUEST
+
+        self._record[:] = []
+
+        channel = grpc.intercept_channel(self._channel,
+                                         _LoggingInterceptor(
+                                             'c1', self._record),
+                                         _LoggingInterceptor(
+                                             'c2', self._record))
+
+        multi_callable = _unary_unary_multi_callable(channel)
+        with self.assertRaises(grpc.RpcError) as exception_context:
+            multi_callable(
+                request,
+                metadata=(('test',
+                           'InterceptedUnaryRequestBlockingUnaryResponse'),))
 
     def testInterceptedUnaryRequestBlockingUnaryResponseWithCall(self):
         request = b'\x07\x08'

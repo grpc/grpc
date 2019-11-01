@@ -263,35 +263,41 @@ def _rpc_state_string(class_name, rpc_state):
                 rpc_state.debug_error_string)
 
 
-class _RpcError(grpc.RpcError, grpc.Call):
+class _RpcError(grpc.RpcError, grpc.Call, grpc.Future):
     """An RPC error not tied to the execution of a particular RPC.
+
+    The state passed to _RpcError must be guaranteed not to be accessed by any
+    other threads.
+
+    The RPC represented by the state object must not be in-progress.
 
     Attributes:
       _state: An instance of _RPCState.
     """
 
     def __init__(self, state):
+        if state.cancelled:
+            raise ValueError("Cannot instantiate an _RpcError for a cancelled RPC.")
+        if state.code is grpc.StatusCode.OK:
+            raise ValueError("Cannot instantiate an _RpcError for a successfully completed RPC.")
+        if state.code is None:
+            raise ValueError("Cannot instantiate an _RpcError for an incomplete RPC.")
         self._state = state
 
     def initial_metadata(self):
-        with self._state.condition:
-            return self._state.initial_metadata
+        return self._state.initial_metadata
 
     def trailing_metadata(self):
-        with self._state.condition:
-            return self._state.trailing_metadata
+        return self._state.trailing_metadata
 
     def code(self):
-        with self._state.condition:
-            return self._state.code
+        return self._state.code
 
     def details(self):
-        with self._state.condition:
-            return _common.decode(self._state.details)
+        return _common.decode(self._state.details)
 
     def debug_error_string(self):
-        with self._state.condition:
-            return _common.decode(self._state.debug_error_string)
+        return _common.decode(self._state.debug_error_string)
 
     def _repr(self):
         return _rpc_state_string(self.__class__.__name__, self._state)
@@ -301,6 +307,41 @@ class _RpcError(grpc.RpcError, grpc.Call):
 
     def __str__(self):
         return self._repr()
+
+    def cancel(self):
+        """See grpc.Future.cancel."""
+        return False
+
+    def cancelled(self):
+        """See grpc.Future.cancelled."""
+        return False
+
+    def running(self):
+        """See grpc.Future.running."""
+        return False
+
+    def done(self):
+        """See grpc.Future.done."""
+        return True
+
+    def result(self, timeout=None):
+        """See grpc.Future.result."""
+        raise self
+
+    def exception(self, timeout=None):
+        """See grpc.Future.exception."""
+        return self
+
+    def traceback(self, timeout=None):
+        """See grpc.Future.traceback."""
+        try:
+            raise self
+        except grpc.RpcError:
+            return sys.exc_info()[2]
+
+    def add_done_callback(self, timeout=None):
+        """See grpc.Future.add_done_callback."""
+        fn(self)
 
 
 class _Rendezvous(grpc.RpcError, grpc.RpcContext):
