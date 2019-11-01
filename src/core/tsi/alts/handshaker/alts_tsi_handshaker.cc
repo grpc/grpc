@@ -34,6 +34,7 @@
 #include "src/core/lib/gprpp/thd.h"
 #include "src/core/lib/iomgr/closure.h"
 #include "src/core/lib/slice/slice_internal.h"
+#include "src/core/lib/surface/channel.h"
 #include "src/core/tsi/alts/frame_protector/alts_frame_protector.h"
 #include "src/core/tsi/alts/handshaker/alts_handshaker_client.h"
 #include "src/core/tsi/alts/handshaker/alts_shared_resource.h"
@@ -390,7 +391,7 @@ static tsi_result handshaker_next(
   if (handshaker->channel == nullptr &&
       handshaker->interested_parties != nullptr) {
     // We're using the gRPC internal polling framework rather than a dedicated
-    // CQ thread, so first create a new channel.
+    // CQ thread and channel, so first create a new channel.
     alts_tsi_handshaker_continue_handshaker_next_args* args =
         grpc_core::New<alts_tsi_handshaker_continue_handshaker_next_args>();
     args->handshaker = handshaker;
@@ -405,6 +406,11 @@ static tsi_result handshaker_next(
     args->user_data = user_data;
     GRPC_CLOSURE_INIT(&args->closure, alts_tsi_handshaker_create_channel, args,
                       grpc_schedule_on_exec_ctx);
+    // We continue this handshaker_next call at the bottom of the ExecCtx just
+    // so that we can invoke grpc_channel_create at the bottom of the call
+    // stack. Doing so avoids potential lock cycles between g_init_mu and other
+    // mutexes within core that might be held on the current call stack
+    // (note that g_init_mu gets acquired during channel creation).
     GRPC_CLOSURE_SCHED(&args->closure, GRPC_ERROR_NONE);
   } else {
     tsi_result ok = alts_tsi_handshaker_continue_handshaker_next(
@@ -445,11 +451,6 @@ static void handshaker_shutdown(tsi_handshaker* self) {
   handshaker->shutdown = true;
 }
 
-static void handshaker_channel_destroy(void* arg, grpc_error* /* error */) {
-  grpc_channel* c = static_cast<grpc_channel*>(arg);
-  grpc_channel_destroy(c);
-}
-
 static void handshaker_destroy(tsi_handshaker* self) {
   if (self == nullptr) {
     return;
@@ -460,10 +461,7 @@ static void handshaker_destroy(tsi_handshaker* self) {
   grpc_slice_unref_internal(handshaker->target_name);
   grpc_alts_credentials_options_destroy(handshaker->options);
   if (handshaker->channel != nullptr) {
-    GRPC_CLOSURE_SCHED(
-        GRPC_CLOSURE_CREATE(handshaker_channel_destroy, handshaker->channel,
-                            grpc_schedule_on_exec_ctx),
-        GRPC_ERROR_NONE);
+    grpc_channel_destroy_internal(handshaker->channel);
   }
   gpr_free(handshaker->handshaker_service_url);
   gpr_mu_destroy(&handshaker->mu);
