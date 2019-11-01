@@ -492,7 +492,9 @@ static grpc_error* max_age_init_channel_elem(grpc_channel_element* elem,
        initialization is done. */
     GRPC_CHANNEL_STACK_REF(chand->channel_stack,
                            "max_age start_max_age_timer_after_init");
-    GRPC_CLOSURE_SCHED(&chand->start_max_age_timer_after_init, GRPC_ERROR_NONE);
+    grpc_core::ExecCtx::Run(DEBUG_LOCATION,
+                            &chand->start_max_age_timer_after_init,
+                            GRPC_ERROR_NONE);
   }
 
   /* Initialize the number of calls as 1, so that the max_idle_timer will not
@@ -501,8 +503,9 @@ static grpc_error* max_age_init_channel_elem(grpc_channel_element* elem,
   if (chand->max_connection_idle != GRPC_MILLIS_INF_FUTURE) {
     GRPC_CHANNEL_STACK_REF(chand->channel_stack,
                            "max_age start_max_idle_timer_after_init");
-    GRPC_CLOSURE_SCHED(&chand->start_max_idle_timer_after_init,
-                       GRPC_ERROR_NONE);
+    grpc_core::ExecCtx::Run(DEBUG_LOCATION,
+                            &chand->start_max_idle_timer_after_init,
+                            GRPC_ERROR_NONE);
   }
   return GRPC_ERROR_NONE;
 }

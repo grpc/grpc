@@ -148,7 +148,7 @@ void grpc_ares_complete_request_locked(grpc_ares_request* r) {
     // TODO(apolcyn): allow c-ares to return a service config
     // with no addresses along side it
   }
-  GRPC_CLOSURE_SCHED(r->on_done, r->error);
+  grpc_core::ExecCtx::Run(DEBUG_LOCATION, r->on_done, r->error);
 }
 
 static grpc_ares_hostbyname_request* create_hostbyname_request_locked(
@@ -447,7 +447,7 @@ void grpc_dns_lookup_ares_continue_after_check_localhost_and_ip_literals_locked(
   return;
 
 error_cleanup:
-  GRPC_CLOSURE_SCHED(r->on_done, error);
+  grpc_core::ExecCtx::Run(DEBUG_LOCATION, r->on_done, error);
 }
 
 static bool inner_resolve_as_ip_literal_locked(
@@ -714,7 +714,8 @@ static void on_dns_lookup_done_locked(void* arg, grpc_error* error) {
              sizeof(grpc_resolved_address));
     }
   }
-  GRPC_CLOSURE_SCHED(r->on_resolve_address_done, GRPC_ERROR_REF(error));
+  grpc_core::ExecCtx::Run(DEBUG_LOCATION, r->on_resolve_address_done,
+                          GRPC_ERROR_REF(error));
   GRPC_COMBINER_UNREF(r->combiner, "on_dns_lookup_done_cb");
   grpc_core::Delete(r);
 }

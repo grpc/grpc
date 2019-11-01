@@ -199,7 +199,7 @@ void SecurityHandshaker::HandshakeFailedLocked(grpc_error* error) {
     is_shutdown_ = true;
   }
   // Invoke callback.
-  GRPC_CLOSURE_SCHED(on_handshake_done_, error);
+  grpc_core::ExecCtx::Run(DEBUG_LOCATION, on_handshake_done_, error);
 }
 
 void SecurityHandshaker::OnPeerCheckedInner(grpc_error* error) {
@@ -259,7 +259,7 @@ void SecurityHandshaker::OnPeerCheckedInner(grpc_error* error) {
   args_->args = grpc_channel_args_copy_and_add(tmp_args, &auth_context_arg, 1);
   grpc_channel_args_destroy(tmp_args);
   // Invoke callback.
-  GRPC_CLOSURE_SCHED(on_handshake_done_, GRPC_ERROR_NONE);
+  grpc_core::ExecCtx::Run(DEBUG_LOCATION, on_handshake_done_, GRPC_ERROR_NONE);
   // Set shutdown to true so that subsequent calls to
   // security_handshaker_shutdown() do nothing.
   is_shutdown_ = true;
@@ -449,9 +449,9 @@ class FailHandshaker : public Handshaker {
   void DoHandshake(grpc_tcp_server_acceptor* /*acceptor*/,
                    grpc_closure* on_handshake_done,
                    HandshakerArgs* /*args*/) override {
-    GRPC_CLOSURE_SCHED(on_handshake_done,
-                       GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-                           "Failed to create security handshaker"));
+    grpc_core::ExecCtx::Run(DEBUG_LOCATION, on_handshake_done,
+                            GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+                                "Failed to create security handshaker"));
   }
 
  private:

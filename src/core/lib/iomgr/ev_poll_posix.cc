@@ -436,7 +436,7 @@ static void close_fd_locked(grpc_fd* fd) {
   if (!fd->released) {
     close(fd->fd);
   }
-  GRPC_CLOSURE_SCHED(fd->on_done_closure, GRPC_ERROR_NONE);
+  grpc_core::ExecCtx::Run(DEBUG_LOCATION, fd->on_done_closure, GRPC_ERROR_NONE);
 }
 
 static int fd_wrapped_fd(grpc_fd* fd) {
@@ -497,17 +497,18 @@ static grpc_error* fd_shutdown_error(grpc_fd* fd) {
 static void notify_on_locked(grpc_fd* fd, grpc_closure** st,
                              grpc_closure* closure) {
   if (fd->shutdown || gpr_atm_no_barrier_load(&fd->pollhup)) {
-    GRPC_CLOSURE_SCHED(
-        closure, grpc_error_set_int(
-                     GRPC_ERROR_CREATE_FROM_STATIC_STRING("FD shutdown"),
-                     GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_UNAVAILABLE));
+    grpc_core::ExecCtx::Run(
+        DEBUG_LOCATION, closure,
+        grpc_error_set_int(GRPC_ERROR_CREATE_FROM_STATIC_STRING("FD shutdown"),
+                           GRPC_ERROR_INT_GRPC_STATUS,
+                           GRPC_STATUS_UNAVAILABLE));
   } else if (*st == CLOSURE_NOT_READY) {
     /* not ready ==> switch to a waiting state by setting the closure */
     *st = closure;
   } else if (*st == CLOSURE_READY) {
     /* already ready ==> queue the closure to run immediately */
     *st = CLOSURE_NOT_READY;
-    GRPC_CLOSURE_SCHED(closure, fd_shutdown_error(fd));
+    grpc_core::ExecCtx::Run(DEBUG_LOCATION, closure, fd_shutdown_error(fd));
     maybe_wake_one_watcher_locked(fd);
   } else {
     /* upcallptr was set to a different closure.  This is an error! */
@@ -529,7 +530,7 @@ static int set_ready_locked(grpc_fd* fd, grpc_closure** st) {
     return 0;
   } else {
     /* waiting ==> queue closure */
-    GRPC_CLOSURE_SCHED(*st, fd_shutdown_error(fd));
+    grpc_core::ExecCtx::Run(DEBUG_LOCATION, *st, fd_shutdown_error(fd));
     *st = CLOSURE_NOT_READY;
     return 1;
   }
@@ -574,7 +575,7 @@ static void fd_notify_on_error(grpc_fd* /*fd*/, grpc_closure* closure) {
   if (GRPC_TRACE_FLAG_ENABLED(grpc_polling_trace)) {
     gpr_log(GPR_ERROR, "Polling engine does not support tracking errors.");
   }
-  GRPC_CLOSURE_SCHED(closure, GRPC_ERROR_CANCELLED);
+  grpc_core::ExecCtx::Run(DEBUG_LOCATION, closure, GRPC_ERROR_CANCELLED);
 }
 
 static void fd_set_readable(grpc_fd* fd) {
@@ -896,7 +897,8 @@ static void finish_shutdown(grpc_pollset* pollset) {
     GRPC_FD_UNREF(pollset->fds[i], "multipoller");
   }
   pollset->fd_count = 0;
-  GRPC_CLOSURE_SCHED(pollset->shutdown_done, GRPC_ERROR_NONE);
+  grpc_core::ExecCtx::Run(DEBUG_LOCATION, pollset->shutdown_done,
+                          GRPC_ERROR_NONE);
 }
 
 static void work_combine_error(grpc_error** composite, grpc_error* error) {

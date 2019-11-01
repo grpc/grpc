@@ -67,7 +67,7 @@ class AsyncConnectivityStateWatcherInterface::Notifier {
     } else {
       GRPC_CLOSURE_INIT(&closure_, SendNotification, this,
                         grpc_schedule_on_exec_ctx);
-      GRPC_CLOSURE_SCHED(&closure_, GRPC_ERROR_NONE);
+      ExecCtx::Run(DEBUG_LOCATION, &closure_, GRPC_ERROR_NONE);
     }
   }
 

@@ -124,7 +124,8 @@ static void tcp_server_shutdown_starting_add(grpc_tcp_server* s,
 static void finish_shutdown(grpc_tcp_server* s) {
   GPR_ASSERT(s->shutdown);
   if (s->shutdown_complete != nullptr) {
-    GRPC_CLOSURE_SCHED(s->shutdown_complete, GRPC_ERROR_NONE);
+    grpc_core::ExecCtx::Run(DEBUG_LOCATION, s->shutdown_complete,
+                            GRPC_ERROR_NONE);
   }
 
   while (s->head) {

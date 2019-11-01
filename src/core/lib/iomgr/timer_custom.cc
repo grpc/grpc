@@ -37,7 +37,7 @@ void grpc_custom_timer_callback(grpc_custom_timer* t, grpc_error* /*error*/) {
   grpc_timer* timer = t->original;
   GPR_ASSERT(timer->pending);
   timer->pending = 0;
-  GRPC_CLOSURE_SCHED(timer->closure, GRPC_ERROR_NONE);
+  grpc_core::ExecCtx::Run(DEBUG_LOCATION, timer->closure, GRPC_ERROR_NONE);
   custom_timer_impl->stop(t);
   gpr_free(t);
 }
@@ -48,7 +48,7 @@ static void timer_init(grpc_timer* timer, grpc_millis deadline,
   GRPC_CUSTOM_IOMGR_ASSERT_SAME_THREAD();
   grpc_millis now = grpc_core::ExecCtx::Get()->Now();
   if (deadline <= grpc_core::ExecCtx::Get()->Now()) {
-    GRPC_CLOSURE_SCHED(closure, GRPC_ERROR_NONE);
+    grpc_core::ExecCtx::Run(DEBUG_LOCATION, closure, GRPC_ERROR_NONE);
     timer->pending = false;
     return;
   } else {
@@ -69,7 +69,8 @@ static void timer_cancel(grpc_timer* timer) {
   grpc_custom_timer* tw = (grpc_custom_timer*)timer->custom_timer;
   if (timer->pending) {
     timer->pending = 0;
-    GRPC_CLOSURE_SCHED(timer->closure, GRPC_ERROR_CANCELLED);
+    grpc_core::ExecCtx::Run(DEBUG_LOCATION, timer->closure,
+                            GRPC_ERROR_CANCELLED);
     custom_timer_impl->stop(tw);
     gpr_free(tw);
   }

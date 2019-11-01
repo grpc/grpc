@@ -256,7 +256,8 @@ void grpc_oauth2_token_fetcher_credentials::on_http_response(
       new_error = GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
           "Error occurred when fetching oauth2 token.", &error, 1);
     }
-    GRPC_CLOSURE_SCHED(pending_request->on_request_metadata, new_error);
+    grpc_core::ExecCtx::Run(DEBUG_LOCATION,
+                            pending_request->on_request_metadata, new_error);
     grpc_polling_entity_del_from_pollset_set(
         pending_request->pollent, grpc_polling_entity_pollset_set(&pollent_));
     grpc_oauth2_pending_get_request_metadata* prev = pending_request;
@@ -332,8 +333,9 @@ void grpc_oauth2_token_fetcher_credentials::cancel_get_request_metadata(
         pending_requests_ = pending_request->next;
       }
       // Invoke the callback immediately with an error.
-      GRPC_CLOSURE_SCHED(pending_request->on_request_metadata,
-                         GRPC_ERROR_REF(error));
+      grpc_core::ExecCtx::Run(DEBUG_LOCATION,
+                              pending_request->on_request_metadata,
+                              GRPC_ERROR_REF(error));
       gpr_free(pending_request);
       break;
     }

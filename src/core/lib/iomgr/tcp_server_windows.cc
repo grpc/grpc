@@ -135,10 +135,11 @@ static void destroy_server(void* arg, grpc_error* error) {
 
 static void finish_shutdown_locked(grpc_tcp_server* s) {
   if (s->shutdown_complete != NULL) {
-    GRPC_CLOSURE_SCHED(s->shutdown_complete, GRPC_ERROR_NONE);
+    ExecCtx::Run(DEBUG_LOCATION, s->shutdown_complete, GRPC_ERROR_NONE);
   }
 
-  GRPC_CLOSURE_SCHED(
+  ExecCtx::Run(
+      DEBUG_LOCATION,
       GRPC_CLOSURE_CREATE(destroy_server, s, grpc_schedule_on_exec_ctx),
       GRPC_ERROR_NONE);
 }
