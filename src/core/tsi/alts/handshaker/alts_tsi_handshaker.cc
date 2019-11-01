@@ -54,7 +54,10 @@ struct alts_tsi_handshaker {
   alts_handshaker_client_vtable* client_vtable_for_testing;
   grpc_channel* channel;
   bool use_dedicated_cq;
-  // mu synchronizes all fields below
+  // mu synchronizes all fields below. Note these are the
+  // only fields that can be concurrently accessed (due to
+  // potential concurrency of tsi_handshaker_shutdown and
+  // tsi_handshaker_next).
   gpr_mu mu;
   alts_handshaker_client* client;
   // shutdown effectively follows base.handshake_shutdown,
