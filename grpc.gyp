@@ -430,6 +430,15 @@
       ],
     },
     {
+      'target_name': 'engine_passthrough',
+      'type': 'static_library',
+      'dependencies': [
+      ],
+      'sources': [
+        'test/core/end2end/engine_passthrough.cc',
+      ],
+    },
+    {
       'target_name': 'gpr',
       'type': 'static_library',
       'dependencies': [
