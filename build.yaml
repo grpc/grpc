@@ -69,7 +69,7 @@ filegroups:
   - src/core/ext/upb-generated/src/proto/grpc/gcp/altscontext.upb.c
   - src/core/ext/upb-generated/src/proto/grpc/gcp/handshaker.upb.c
   - src/core/ext/upb-generated/src/proto/grpc/gcp/transport_security_common.upb.c
-  uses:
+  deps:
   - upb
 - name: alts_util
   public_headers:
@@ -89,11 +89,12 @@ filegroups:
   - src/core/lib/security/credentials/alts/grpc_alts_credentials_server_options.cc
   - src/core/tsi/alts/handshaker/alts_tsi_utils.cc
   - src/core/tsi/alts/handshaker/transport_security_common_api.cc
+  deps:
+  - upb
   uses:
   - alts_upb
   - grpc_base
   - tsi_interface
-  - upb
 - name: census
   public_headers:
   - include/grpc/census.h
@@ -201,7 +202,7 @@ filegroups:
   - src/core/ext/upb-generated/google/protobuf/timestamp.upb.c
   - src/core/ext/upb-generated/google/protobuf/wrappers.upb.c
   - src/core/ext/upb-generated/google/rpc/status.upb.c
-  uses:
+  deps:
   - upb
 - name: gpr_base
   src:
@@ -1052,7 +1053,7 @@ filegroups:
   - src/core/ext/upb-generated/src/proto/grpc/health/v1/health.upb.h
   src:
   - src/core/ext/upb-generated/src/proto/grpc/health/v1/health.upb.c
-  uses:
+  deps:
   - upb
 - name: grpc_http_filters
   headers:
@@ -1096,13 +1097,14 @@ filegroups:
   - src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_channel.cc
   - src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_client_stats.cc
   - src/core/ext/filters/client_channel/lb_policy/grpclb/load_balancer_api.cc
+  deps:
+  - upb
   plugin: grpc_lb_policy_grpclb
   uses:
   - grpc_base
   - grpc_client_channel
   - grpc_lb_upb
   - grpc_resolver_fake
-  - upb
 - name: grpc_lb_policy_grpclb_secure
   headers:
   - src/core/ext/filters/client_channel/lb_policy/grpclb/client_load_reporting_filter.h
@@ -1116,6 +1118,8 @@ filegroups:
   - src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_channel_secure.cc
   - src/core/ext/filters/client_channel/lb_policy/grpclb/grpclb_client_stats.cc
   - src/core/ext/filters/client_channel/lb_policy/grpclb/load_balancer_api.cc
+  deps:
+  - upb
   plugin: grpc_lb_policy_grpclb
   uses:
   - grpc_base
@@ -1123,7 +1127,6 @@ filegroups:
   - grpc_lb_upb
   - grpc_resolver_fake
   - grpc_secure
-  - upb
 - name: grpc_lb_policy_pick_first
   src:
   - src/core/ext/filters/client_channel/lb_policy/pick_first/pick_first.cc
@@ -1171,9 +1174,10 @@ filegroups:
   - src/core/ext/upb-generated/src/proto/grpc/lb/v1/load_balancer.upb.h
   src:
   - src/core/ext/upb-generated/src/proto/grpc/lb/v1/load_balancer.upb.c
+  deps:
+  - upb
   uses:
   - google_api_upb
-  - upb
 - name: grpc_max_age_filter
   headers:
   - src/core/ext/filters/max_age/max_age_filter.h
@@ -6241,9 +6245,10 @@ php_config_m4:
   deps:
   - grpc
   - gpr
-  - boringssl
-  - z
   - address_sorting
+  - boringssl
+  - upb
+  - z
   headers:
   - src/php/ext/grpc/byte_buffer.h
   - src/php/ext/grpc/call.h
@@ -6272,15 +6277,17 @@ python_dependencies:
   deps:
   - grpc
   - gpr
+  - address_sorting
   - ares
   - boringssl
+  - upb
   - z
-  - address_sorting
 ruby_gem:
   deps:
   - grpc
   - gpr
+  - address_sorting
   - ares
   - boringssl
+  - upb
   - z
-  - address_sorting
