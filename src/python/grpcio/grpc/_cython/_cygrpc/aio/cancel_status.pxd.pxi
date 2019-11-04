@@ -11,20 +11,13 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+"""Desired cancellation status for canceling an ongoing RPC calls."""
 
-cdef class AioChannel:
-    def __cinit__(self, bytes target):
-        self.channel = grpc_insecure_channel_create(<char *>target, NULL, NULL)
-        self._target = target
 
-    def __repr__(self):
-        class_name = self.__class__.__name__
-        id_ = id(self)
-        return f"<{class_name} {id_}>"
+cdef class AioCancelStatus:
+    cdef readonly:
+        object _code
+        str _details
 
-    def close(self):
-        grpc_channel_destroy(self.channel)
-
-    async def unary_unary(self, method, request, timeout, cancel_status):
-        call = _AioCall(self)
-        return await call.unary_unary(method, request, timeout, cancel_status)
+    cpdef object code(self)
+    cpdef str details(self)

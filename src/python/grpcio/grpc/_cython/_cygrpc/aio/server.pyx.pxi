@@ -35,9 +35,9 @@ cdef class CallbackWrapper:
     @staticmethod
     cdef void functor_run(
             grpc_experimental_completion_queue_functor* functor,
-            int succeed):
+            int success):
         cdef CallbackContext *context = <CallbackContext *>functor
-        if succeed == 0:
+        if success == 0:
             (<object>context.waiter).set_exception(RuntimeError())
         else:
             (<object>context.waiter).set_result(None)

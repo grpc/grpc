@@ -18,6 +18,8 @@ from typing import Callable, Optional
 from grpc import _common
 from grpc._cython import cygrpc
 
+from ._call import Call
+
 SerializingFunction = Callable[[str], bytes]
 DeserializingFunction = Callable[[bytes], str]
 
@@ -39,14 +41,14 @@ class UnaryUnaryMultiCallable:
             return None
         return self._loop.time() + timeout
 
-    async def __call__(self,
-                       request,
-                       *,
-                       timeout=None,
-                       metadata=None,
-                       credentials=None,
-                       wait_for_ready=None,
-                       compression=None):
+    def __call__(self,
+                 request,
+                 *,
+                 timeout=None,
+                 metadata=None,
+                 credentials=None,
+                 wait_for_ready=None,
+                 compression=None) -> Call:
         """Asynchronously invokes the underlying RPC.
 
         Args:
@@ -63,7 +65,7 @@ class UnaryUnaryMultiCallable:
             grpc.compression.Gzip. This is an EXPERIMENTAL option.
 
         Returns:
-          The response value for the RPC.
+          A Call object instance which is an awaitable object.
 
         Raises:
           RpcError: Indicating that the RPC terminated with non-OK status. The
@@ -87,9 +89,12 @@ class UnaryUnaryMultiCallable:
         serialized_request = _common.serialize(request,
                                                self._request_serializer)
         timeout = self._timeout_to_deadline(timeout)
-        response = await self._channel.unary_unary(self._method,
-                                                   serialized_request, timeout)
-        return _common.deserialize(response, self._response_deserializer)
+        aio_cancel_status = cygrpc.AioCancelStatus()
+        aio_call = asyncio.ensure_future(
+            self._channel.unary_unary(self._method, serialized_request, timeout,
+                                      aio_cancel_status),
+            loop=self._loop)
+        return Call(aio_call, self._response_deserializer, aio_cancel_status)
 
 
 class Channel:
