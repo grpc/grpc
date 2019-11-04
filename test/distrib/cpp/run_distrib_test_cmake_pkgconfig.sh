@@ -24,19 +24,22 @@ apt-get update
 apt-get install -t jessie-backports -y libssl-dev pkg-config
 
 # Install c-ares
-mkdir -p "third_party/cares/cares/cmake/build" && pushd "$_"
+mkdir -p "third_party/cares/cares/cmake/build"
+pushd "third_party/cares/cares/cmake/build"
 cmake -DCMAKE_BUILD_TYPE=Release ../..
 make -j4 install
 popd
 
 # Install protobuf
-mkdir -p "third_party/protobuf/cmake/build" && pushd "$_"
+mkdir -p "third_party/protobuf/cmake/build"
+pushd "third_party/protobuf/cmake/build"
 cmake -Dprotobuf_BUILD_TESTS=OFF -DCMAKE_BUILD_TYPE=Release ..
 make -j4 install
 popd
 
 # Install zlib
-mkdir -p "third_party/zlib/cmake/build" && pushd "$_"
+mkdir -p "third_party/zlib/cmake/build"
+pushd "third_party/zlib/cmake/build"
 cmake -DCMAKE_BUILD_TYPE=Release ../..
 make -j4 install
 popd
@@ -47,7 +50,8 @@ popd
 git submodule foreach 'cd $toplevel; rm -rf $name'
 
 # Install gRPC
-mkdir -p "cmake/build" && pushd "$_"
+mkdir -p "cmake/build"
+pushd "cmake/build"
 cmake \
   -DCMAKE_BUILD_TYPE=Release \
   -DCMAKE_INSTALL_PREFIX=/usr/local/grpc \
