@@ -748,8 +748,8 @@ static void test_valid_sts_creds_options(void) {
   grpc_core::StringView host;
   grpc_core::StringView port;
   GPR_ASSERT(grpc_core::SplitHostPort(sts_url->authority, &host, &port));
-  GPR_ASSERT(host.cmp("foo.com") == 0);
-  GPR_ASSERT(port.cmp("5555") == 0);
+  GPR_ASSERT(grpc_core::StringViewCmp(host, "foo.com") == 0);
+  GPR_ASSERT(grpc_core::StringViewCmp(port, "5555") == 0);
   grpc_uri_destroy(sts_url);
 }
 

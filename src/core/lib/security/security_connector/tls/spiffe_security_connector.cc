@@ -127,7 +127,7 @@ SpiffeChannelSecurityConnector::SpiffeChannelSecurityConnector(
   grpc_core::StringView host;
   grpc_core::StringView port;
   grpc_core::SplitHostPort(target_name, &host, &port);
-  target_name_ = host.dup();
+  target_name_ = grpc_core::StringViewToCString(host);
 }
 
 SpiffeChannelSecurityConnector::~SpiffeChannelSecurityConnector() {

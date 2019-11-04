@@ -33,7 +33,17 @@
 #include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/gprpp/memory.h"
 
+#if GRPC_USE_ABSL
+#include "absl/strings/string_view.h"
+#endif
+
 namespace grpc_core {
+
+#if GRPC_USE_ABSL
+
+using StringView = absl::string_view;
+
+#else
 
 // Provides a light-weight view over a char array or a slice, similar but not
 // identical to absl::string_view.
@@ -62,10 +72,6 @@ class StringView final {
   constexpr StringView(const char* ptr, size_t size) : ptr_(ptr), size_(size) {}
   constexpr StringView(const char* ptr)
       : StringView(ptr, ptr == nullptr ? 0 : strlen(ptr)) {}
-  // Not part of absl::string_view API.
-  StringView(const grpc_slice& slice)
-      : StringView(reinterpret_cast<const char*>(GRPC_SLICE_START_PTR(slice)),
-                   GRPC_SLICE_LENGTH(slice)) {}
   constexpr StringView() : StringView(nullptr, 0) {}
 
   constexpr const char* data() const { return ptr_; }
@@ -105,27 +111,6 @@ class StringView final {
     size_ = 0;
   }
 
-  // Creates a dup of the string viewed by this class.
-  // Return value is null-terminated and never nullptr.
-  //
-  // Not part of absl::string_view API.
-  grpc_core::UniquePtr<char> dup() const {
-    char* str = static_cast<char*>(gpr_malloc(size_ + 1));
-    if (size_ > 0) memcpy(str, ptr_, size_);
-    str[size_] = '\0';
-    return grpc_core::UniquePtr<char>(str);
-  }
-
-  // Not part of absl::string_view API.
-  int cmp(StringView other) const {
-    const size_t len = GPR_MIN(size(), other.size());
-    const int ret = strncmp(data(), other.data(), len);
-    if (ret != 0) return ret;
-    if (size() == other.size()) return 0;
-    if (size() < other.size()) return -1;
-    return 1;
-  }
-
  private:
   const char* ptr_;
   size_t size_;
@@ -137,6 +122,33 @@ inline bool operator==(StringView lhs, StringView rhs) {
 }
 
 inline bool operator!=(StringView lhs, StringView rhs) { return !(lhs == rhs); }
+
+#endif  // GRPC_USE_ABSL
+
+// Converts grpc_slice to StringView.
+inline StringView StringViewFromSlice(const grpc_slice& slice) {
+  return StringView(reinterpret_cast<const char*>(GRPC_SLICE_START_PTR(slice)),
+                    GRPC_SLICE_LENGTH(slice));
+}
+
+// Creates a dup of the string viewed by this class.
+// Return value is null-terminated and never nullptr.
+inline grpc_core::UniquePtr<char> StringViewToCString(const StringView sv) {
+  char* str = static_cast<char*>(gpr_malloc(sv.size() + 1));
+  if (sv.size() > 0) memcpy(str, sv.data(), sv.size());
+  str[sv.size()] = '\0';
+  return grpc_core::UniquePtr<char>(str);
+}
+
+// Compares lhs and rhs.
+inline int StringViewCmp(const StringView lhs, const StringView rhs) {
+  const size_t len = GPR_MIN(lhs.size(), rhs.size());
+  const int ret = strncmp(lhs.data(), rhs.data(), len);
+  if (ret != 0) return ret;
+  if (lhs.size() == rhs.size()) return 0;
+  if (lhs.size() < rhs.size()) return -1;
+  return 1;
+}
 
 }  // namespace grpc_core
 
