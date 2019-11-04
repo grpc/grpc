@@ -18,22 +18,14 @@ set -ex
 # change to grpc repo root
 cd $(dirname $0)/../../..
 
-# Download bazel
-temp_dir="$(mktemp -d)"
-wget -q https://github.com/bazelbuild/bazel/releases/download/0.26.0/bazel-0.26.0-darwin-x86_64 -O "${temp_dir}/bazel"
-chmod 755 "${temp_dir}/bazel"
-export PATH="${temp_dir}:${PATH}"
-# This should show ${temp_dir}/bazel
-which bazel
-
 ./tools/run_tests/start_port_server.py
 
 dirs=(end2end server client common codegen util grpclb test)
 for dir in ${dirs[*]}; do
   echo $dir
-  out=`bazel query "kind(ios_unit_test, tests(//test/cpp/$dir/...))"`
+  out=`tools/bazel query "kind(ios_unit_test, tests(//test/cpp/$dir/...))" 2>/dev/null | grep '^//'`
   for test in $out; do
     echo "Running: $test"
-    bazel test --test_summary=detailed --test_output=all $test
+    tools/bazel test --test_summary=detailed --test_output=all $test
   done
 done
