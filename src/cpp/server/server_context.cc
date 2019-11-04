@@ -202,7 +202,7 @@ bool ServerContext::CompletionOp::FinalizeResult(void** tag, bool* status) {
   lock.Unlock();
 
   if (call_cancel && callback_controller_ != nullptr) {
-    callback_controller_->MaybeCallOnCancel(false);
+    callback_controller_->MaybeCallOnCancel();
   }
   /* Add interception point and run through interceptors */
   interceptor_methods_.AddInterceptionHookPoint(

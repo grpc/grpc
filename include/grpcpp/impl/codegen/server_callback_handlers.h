@@ -180,7 +180,8 @@ class CallbackUnaryHandler : public ::grpc::internal::MethodHandler {
     void SetupReactor(experimental::ServerUnaryReactor* reactor) {
       reactor_.store(reactor, std::memory_order_relaxed);
       this->BindReactor(reactor);
-      this->MaybeCallOnCancel(reactor, true);
+      this->MaybeCallOnCancel(reactor);
+      this->MaybeDone();
     }
 
     const RequestType* request() { return allocator_state_->request(); }
@@ -332,7 +333,8 @@ class CallbackClientStreamingHandler : public ::grpc::internal::MethodHandler {
                     &read_ops_, false);
       read_ops_.set_core_cq_tag(&read_tag_);
       this->BindReactor(reactor);
-      this->MaybeCallOnCancel(reactor, true);
+      this->MaybeCallOnCancel(reactor);
+      this->MaybeDone();
     }
 
     ~ServerCallbackReaderImpl() {}
@@ -528,7 +530,8 @@ class CallbackServerStreamingHandler : public ::grpc::internal::MethodHandler {
           &write_ops_, false);
       write_ops_.set_core_cq_tag(&write_tag_);
       this->BindReactor(reactor);
-      this->MaybeCallOnCancel(reactor, true);
+      this->MaybeCallOnCancel(reactor);
+      this->MaybeDone();
     }
     ~ServerCallbackWriterImpl() { req_->~RequestType(); }
 
@@ -719,7 +722,8 @@ class CallbackBidiHandler : public ::grpc::internal::MethodHandler {
                     &read_ops_, false);
       read_ops_.set_core_cq_tag(&read_tag_);
       this->BindReactor(reactor);
-      this->MaybeCallOnCancel(reactor, true);
+      this->MaybeCallOnCancel(reactor);
+      this->MaybeDone();
     }
 
     void MaybeDone() override {

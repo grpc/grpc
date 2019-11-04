@@ -24,31 +24,23 @@
 namespace grpc_impl {
 namespace internal {
 
-void ServerCallbackCall::CallOnCancel(ServerReactor* reactor,
-                                      bool invoke_done) {
+void ServerCallbackCall::CallOnCancel(ServerReactor* reactor) {
   if (reactor->InternalInlineable()) {
     reactor->OnCancel();
-    if (invoke_done) {
-      MaybeDone();
-    }
   } else {
     Ref();
     grpc_core::ExecCtx exec_ctx;
     struct ClosureArg {
       ServerCallbackCall* call;
       ServerReactor* reactor;
-      bool invoke_done;
     };
-    ClosureArg* arg = new ClosureArg{this, reactor, invoke_done};
+    ClosureArg* arg = new ClosureArg{this, reactor};
     grpc_core::Executor::Run(GRPC_CLOSURE_CREATE(
                                  [](void* void_arg, grpc_error*) {
                                    ClosureArg* arg =
                                        static_cast<ClosureArg*>(void_arg);
                                    arg->reactor->OnCancel();
                                    arg->call->MaybeDone();
-                                   if (arg->invoke_done) {
-                                     arg->call->MaybeDone();
-                                   }
                                    delete arg;
                                  },
                                  arg, nullptr),
