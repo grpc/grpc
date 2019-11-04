@@ -1224,13 +1224,8 @@ static void post_batch_completion(batch_control* bctl) {
   if (bctl->completion_data.notify_tag.is_closure) {
     /* unrefs error */
     bctl->call = nullptr;
-    /* This closure may be meant to be run within some combiner. Since we aren't
-     * running in any combiner here, we need to use GRPC_CLOSURE_SCHED instead
-     * of GRPC_CLOSURE_RUN.
-     */
-    grpc_core::ExecCtx::Run(DEBUG_LOCATION,
-                            (grpc_closure*)bctl->completion_data.notify_tag.tag,
-                            error);
+    GRPC_CLOSURE_RUN((grpc_closure*)bctl->completion_data.notify_tag.tag,
+                     error);
     GRPC_CALL_INTERNAL_UNREF(call, "completion");
   } else {
     /* unrefs error */
@@ -1575,8 +1570,7 @@ static grpc_call_error call_start_batch(grpc_call* call, const grpc_op* ops,
                      static_cast<grpc_cq_completion*>(
                          gpr_malloc(sizeof(grpc_cq_completion))));
     } else {
-      grpc_core::ExecCtx::Run(DEBUG_LOCATION, (grpc_closure*)notify_tag,
-                              GRPC_ERROR_NONE);
+      GRPC_CLOSURE_RUN((grpc_closure*)notify_tag, GRPC_ERROR_NONE);
     }
     error = GRPC_CALL_OK;
     goto done;
