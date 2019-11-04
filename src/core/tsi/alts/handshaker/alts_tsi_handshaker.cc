@@ -514,7 +514,9 @@ static void handshaker_shutdown(tsi_handshaker* self) {
   if (handshaker->shutdown) {
     return;
   }
-  alts_handshaker_client_shutdown(handshaker->client);
+  if (handshaker->client != nullptr) {
+    alts_handshaker_client_shutdown(handshaker->client);
+  }
   handshaker->shutdown = true;
 }
 
