@@ -26,6 +26,7 @@
 load("//bazel:cc_grpc_library.bzl", "cc_grpc_library")
 load("@upb//bazel:upb_proto_library.bzl", "upb_proto_library")
 load("@build_bazel_rules_apple//apple:ios.bzl", "ios_unit_test")
+load("@grpc_custom_exec_properties//:constants.bzl", _LARGE_MACHINE = "LARGE_MACHINE")
 
 
 # The set of pollers to test against if a test exercises polling
@@ -342,3 +343,4 @@ def python_config_settings():
         flag_values = {"@bazel_tools//tools/python:python_version": "PY3"},
     )
 
+LARGE_MACHINE = _LARGE_MACHINE

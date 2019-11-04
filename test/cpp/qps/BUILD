@@ -14,9 +14,8 @@
 
 licenses(["notice"])  # Apache v2
 
-load("//bazel:grpc_build_system.bzl", "grpc_cc_test", "grpc_cc_library", "grpc_cc_binary", "grpc_package")
+load("//bazel:grpc_build_system.bzl", "grpc_cc_test", "grpc_cc_library", "grpc_cc_binary", "grpc_package", "LARGE_MACHINE")
 load("//test/cpp/qps:qps_benchmark_script.bzl", "qps_json_driver_batch", "json_run_localhost_batch")
-load("//bazel:custom_exec_properties.bzl", "LARGE_MACHINE")
 
 grpc_package(name = "test/cpp/qps")
 
