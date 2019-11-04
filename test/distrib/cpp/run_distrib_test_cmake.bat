@@ -50,6 +50,10 @@ cmake -DCMAKE_INSTALL_PREFIX=%INSTALL_DIR% ..\..
 cmake --build . --config Release --target install || goto :error
 popd
 
+@rem Just before installing gRPC, wipe out contents of all the submodules to simulate
+@rem a standalone build from an archive
+git submodule deinit --all --force
+
 @rem Install gRPC
 mkdir cmake\build
 pushd cmake\build
