@@ -43,6 +43,8 @@ using grpc_core::internal::
 using grpc_core::internal::
     alts_handshaker_client_get_recv_buffer_addr_for_testing;
 using grpc_core::internal::alts_handshaker_client_get_send_buffer_for_testing;
+using grpc_core::internal::
+    alts_handshaker_client_on_status_received_for_testing;
 using grpc_core::internal::alts_handshaker_client_set_grpc_caller_for_testing;
 
 typedef struct alts_handshaker_client_test_config {
@@ -130,6 +132,13 @@ static grpc_gcp_HandshakerReq* deserialize_handshaker_req(
   return req;
 }
 
+static bool is_recv_status_op(const grpc_op* op, size_t nops) {
+  if (nops == 1 && op->op == GRPC_OP_RECV_STATUS_ON_CLIENT) {
+    return true;
+  }
+  return false;
+}
+
 /**
  * A mock grpc_caller used to check if client_start, server_start, and next
  * operations correctly handle invalid arguments. It should not be called.
@@ -151,6 +160,10 @@ static grpc_call_error check_client_start_success(grpc_call* /*call*/,
                                                   const grpc_op* op,
                                                   size_t nops,
                                                   grpc_closure* closure) {
+  // RECV_STATUS ops are asserted to always succeed
+  if (is_recv_status_op(op, nops)) {
+    return GRPC_CALL_OK;
+  }
   upb::Arena arena;
   alts_handshaker_client* client =
       static_cast<alts_handshaker_client*>(closure->cb_arg);
@@ -196,6 +209,10 @@ static grpc_call_error check_server_start_success(grpc_call* /*call*/,
                                                   const grpc_op* op,
                                                   size_t nops,
                                                   grpc_closure* closure) {
+  // RECV_STATUS ops are asserted to always succeed
+  if (is_recv_status_op(op, nops)) {
+    return GRPC_CALL_OK;
+  }
   upb::Arena arena;
   alts_handshaker_client* client =
       static_cast<alts_handshaker_client*>(closure->cb_arg);
@@ -259,9 +276,12 @@ static grpc_call_error check_next_success(grpc_call* /*call*/,
  * handshaker service fails.
  */
 static grpc_call_error check_grpc_call_failure(grpc_call* /*call*/,
-                                               const grpc_op* /*op*/,
-                                               size_t /*nops*/,
+                                               const grpc_op* op, size_t nops,
                                                grpc_closure* /*tag*/) {
+  // RECV_STATUS ops are asserted to always succeed
+  if (is_recv_status_op(op, nops)) {
+    return GRPC_CALL_OK;
+  }
   return GRPC_CALL_ERROR;
 }
 
@@ -374,6 +394,10 @@ static void schedule_request_success_test() {
   GPR_ASSERT(alts_handshaker_client_next(config->server, &config->out_frame) ==
              TSI_OK);
   /* Cleanup. */
+  alts_handshaker_client_on_status_received_for_testing(
+      config->client, GRPC_STATUS_OK, GRPC_ERROR_NONE);
+  alts_handshaker_client_on_status_received_for_testing(
+      config->server, GRPC_STATUS_OK, GRPC_ERROR_NONE);
   destroy_config(config);
 }
 
@@ -397,6 +421,10 @@ static void schedule_request_grpc_call_failure_test() {
   GPR_ASSERT(alts_handshaker_client_next(config->server, &config->out_frame) ==
              TSI_INTERNAL_ERROR);
   /* Cleanup. */
+  alts_handshaker_client_on_status_received_for_testing(
+      config->client, GRPC_STATUS_OK, GRPC_ERROR_NONE);
+  alts_handshaker_client_on_status_received_for_testing(
+      config->server, GRPC_STATUS_OK, GRPC_ERROR_NONE);
   destroy_config(config);
 }
 
