@@ -1191,7 +1191,7 @@ void ChannelData::ExternalConnectivityWatcher::AddWatcherLocked(
     void* arg, grpc_error* /*ignored*/) {
   ExternalConnectivityWatcher* self =
       static_cast<ExternalConnectivityWatcher*>(arg);
-  grpc_core::Closure::Run(DEBUG_LOCATION, self->watcher_timer_init_,
+  Closure::Run(DEBUG_LOCATION, self->watcher_timer_init_,
                           GRPC_ERROR_NONE);
   // Add new watcher.
   self->chand_->state_tracker_.AddWatcher(
@@ -2262,7 +2262,7 @@ void CallData::RecvTrailingMetadataReadyForLoadBalancingPolicy(
   calld->lb_recv_trailing_metadata_ready_(error, &trailing_metadata,
                                           &calld->lb_call_state_);
   // Chain to original callback.
-  grpc_core::Closure::Run(DEBUG_LOCATION,
+  Closure::Run(DEBUG_LOCATION,
                           calld->original_recv_trailing_metadata_ready_,
                           GRPC_ERROR_REF(error));
 }
@@ -2759,7 +2759,7 @@ void CallData::InvokeRecvInitialMetadataCallback(void* arg, grpc_error* error) {
   calld->MaybeClearPendingBatch(batch_data->elem, pending);
   batch_data->Unref();
   // Invoke callback.
-  grpc_core::Closure::Run(DEBUG_LOCATION, recv_initial_metadata_ready,
+  Closure::Run(DEBUG_LOCATION, recv_initial_metadata_ready,
                           GRPC_ERROR_REF(error));
 }
 
@@ -2850,7 +2850,7 @@ void CallData::InvokeRecvMessageCallback(void* arg, grpc_error* error) {
   calld->MaybeClearPendingBatch(batch_data->elem, pending);
   batch_data->Unref();
   // Invoke callback.
-  grpc_core::Closure::Run(DEBUG_LOCATION, recv_message_ready,
+  Closure::Run(DEBUG_LOCATION, recv_message_ready,
                           GRPC_ERROR_REF(error));
 }
 
