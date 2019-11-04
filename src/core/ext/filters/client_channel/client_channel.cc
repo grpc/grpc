@@ -2059,6 +2059,7 @@ void CallData::Destroy(grpc_call_element* elem,
     then_schedule_closure = nullptr;
   }
   calld->~CallData();
+  // TODO(yashkt) : This can potentially be a Closure::Run
   ExecCtx::Run(DEBUG_LOCATION, then_schedule_closure, GRPC_ERROR_NONE);
 }
 

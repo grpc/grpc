@@ -157,7 +157,7 @@ class CallCombinerClosureList {
   //
   // All but one of the closures in the list will be scheduled via
   // GRPC_CALL_COMBINER_START(), and the remaining closure will be
-  // scheduled via ExecCtx::Run(DEBUG_LOCATION,), which will eventually result
+  // scheduled via ExecCtx::Run(), which will eventually result
   // in yielding the call combiner.  If the list is empty, then the call
   // combiner will be yielded immediately.
   void RunClosures(CallCombiner* call_combiner) {
