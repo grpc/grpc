@@ -13,7 +13,7 @@
 # limitations under the License.
 
 load("//bazel:grpc_build_system.bzl", "grpc_cc_library", "grpc_cc_test", "grpc_cc_binary", "grpc_package")
-load("@grpc_custom_exec_properties//:constants.bzl", "LARGE_MACHINE")
+load("//bazel:custom_exec_properties.bzl", "LARGE_MACHINE")
 
 licenses(["notice"])  # Apache v2
 
