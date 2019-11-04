@@ -13,6 +13,7 @@
 # limitations under the License.
 """Invocation-side implementation of gRPC Python."""
 
+import copy
 import functools
 import logging
 import sys
@@ -266,27 +267,20 @@ def _rpc_state_string(class_name, rpc_state):
 class _RpcError(grpc.RpcError, grpc.Call, grpc.Future):
     """An RPC error not tied to the execution of a particular RPC.
 
-    The state passed to _RpcError must be guaranteed not to be accessed by any
-    other threads.
-
-    The RPC represented by the state object must not be in-progress.
+    The RPC represented by the state object must not be in-progress or
+    cancelled.
 
     Attributes:
       _state: An instance of _RPCState.
     """
 
     def __init__(self, state):
-        if state.cancelled:
-            raise ValueError(
-                "Cannot instantiate an _RpcError for a cancelled RPC.")
-        if state.code is grpc.StatusCode.OK:
-            raise ValueError(
-                "Cannot instantiate an _RpcError for a successfully completed RPC."
-            )
-        if state.code is None:
-            raise ValueError(
-                "Cannot instantiate an _RpcError for an incomplete RPC.")
-        self._state = state
+        with state.condition:
+            self._state = _RPCState((), copy.deepcopy(state.initial_metadata),
+                                    copy.deepcopy(state.trailing_metadata),
+                                    state.code, copy.deepcopy(state.details))
+            self._state.response = copy.copy(state.response)
+            self._state.debug_error_string = copy.copy(state.debug_error_string)
 
     def initial_metadata(self):
         return self._state.initial_metadata

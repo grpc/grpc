@@ -40,6 +40,10 @@ _STREAM_UNARY = '/test/StreamUnary'
 _STREAM_STREAM = '/test/StreamStream'
 
 
+class _ApplicationErrorStandin(Exception):
+    pass
+
+
 class _Callback(object):
 
     def __init__(self):
@@ -73,12 +77,12 @@ class _Handler(object):
                 'testvalue',
             ),))
         if request == _EXCEPTION_REQUEST:
-            raise RuntimeError()
+            raise _ApplicationErrorStandin()
         return request
 
     def handle_unary_stream(self, request, servicer_context):
         if request == _EXCEPTION_REQUEST:
-            raise RuntimeError()
+            raise _ApplicationErrorStandin()
         for _ in range(test_constants.STREAM_LENGTH):
             self._control.control()
             yield request
@@ -104,7 +108,7 @@ class _Handler(object):
                 'testvalue',
             ),))
         if _EXCEPTION_REQUEST in response_elements:
-            raise RuntimeError()
+            raise _ApplicationErrorStandin()
         return b''.join(response_elements)
 
     def handle_stream_stream(self, request_iterator, servicer_context):
@@ -116,7 +120,7 @@ class _Handler(object):
             ),))
         for request in request_iterator:
             if request == _EXCEPTION_REQUEST:
-                raise RuntimeError()
+                raise _ApplicationErrorStandin()
             self._control.control()
             yield request
         self._control.control()
@@ -245,10 +249,12 @@ class _LoggingInterceptor(
         result = continuation(client_call_details, request)
         assert isinstance(
             result,
-            grpc.Call), '{} is not an instance of grpc.Call'.format(result)
+            grpc.Call), '{} ({}) is not an instance of grpc.Call'.format(
+                result, type(result))
         assert isinstance(
             result,
-            grpc.Future), '{} is not an instance of grpc.Future'.format(result)
+            grpc.Future), '{} ({}) is not an instance of grpc.Future'.format(
+                result, type(result))
         return result
 
     def intercept_unary_stream(self, continuation, client_call_details,
@@ -476,11 +482,18 @@ class InterceptorTest(unittest.TestCase):
                                              'c2', self._record))
 
         multi_callable = _unary_unary_multi_callable(channel)
-        with self.assertRaises(grpc.RpcError):
+        with self.assertRaises(grpc.RpcError) as exception_context:
             multi_callable(
                 request,
                 metadata=(('test',
                            'InterceptedUnaryRequestBlockingUnaryResponse'),))
+        exception = exception_context.exception
+        self.assertFalse(exception.cancelled())
+        self.assertFalse(exception.running())
+        self.assertTrue(exception.done())
+        with self.assertRaises(grpc.RpcError):
+            exception.result()
+        self.assertIsInstance(exception.exception(), grpc.RpcError)
 
     def testInterceptedUnaryRequestBlockingUnaryResponseWithCall(self):
         request = b'\x07\x08'
@@ -561,8 +574,15 @@ class InterceptorTest(unittest.TestCase):
         response_iterator = multi_callable(
             request,
             metadata=(('test', 'InterceptedUnaryRequestStreamResponse'),))
-        with self.assertRaises(grpc.RpcError):
+        with self.assertRaises(grpc.RpcError) as exception_context:
             tuple(response_iterator)
+        exception = exception_context.exception
+        self.assertFalse(exception.cancelled())
+        self.assertFalse(exception.running())
+        self.assertTrue(exception.done())
+        with self.assertRaises(grpc.RpcError):
+            exception.result()
+        self.assertIsInstance(exception.exception(), grpc.RpcError)
 
     def testInterceptedStreamRequestBlockingUnaryResponse(self):
         requests = tuple(
@@ -650,8 +670,15 @@ class InterceptorTest(unittest.TestCase):
         response_future = multi_callable.future(
             request_iterator,
             metadata=(('test', 'InterceptedStreamRequestFutureUnaryResponse'),))
-        with self.assertRaises(grpc.RpcError):
+        with self.assertRaises(grpc.RpcError) as exception_context:
             response_future.result()
+        exception = exception_context.exception
+        self.assertFalse(exception.cancelled())
+        self.assertFalse(exception.running())
+        self.assertTrue(exception.done())
+        with self.assertRaises(grpc.RpcError):
+            exception.result()
+        self.assertIsInstance(exception.exception(), grpc.RpcError)
 
     def testInterceptedStreamRequestStreamResponse(self):
         requests = tuple(
@@ -692,8 +719,15 @@ class InterceptorTest(unittest.TestCase):
         response_iterator = multi_callable(
             request_iterator,
             metadata=(('test', 'InterceptedStreamRequestStreamResponse'),))
-        with self.assertRaises(grpc.RpcError):
+        with self.assertRaises(grpc.RpcError) as exception_context:
             tuple(response_iterator)
+        exception = exception_context.exception
+        self.assertFalse(exception.cancelled())
+        self.assertFalse(exception.running())
+        self.assertTrue(exception.done())
+        with self.assertRaises(grpc.RpcError):
+            exception.result()
+        self.assertIsInstance(exception.exception(), grpc.RpcError)
 
 
 if __name__ == '__main__':
