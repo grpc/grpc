@@ -59,6 +59,8 @@ def _get_external_deps(external_deps):
             })
         elif dep == "cronet_c_for_grpc":
             ret += ["//third_party/objective_c/Cronet:cronet_c_for_grpc"]
+        elif dep.startswith("absl/"):
+            ret += ["@com_google_absl//" + dep]
         else:
             ret += ["//external:" + dep]
     return ret
@@ -86,6 +88,11 @@ def grpc_cc_library(
     linkopts = if_not_windows(["-pthread"])
     if use_cfstream:
         linkopts = linkopts + if_mac(["-framework CoreFoundation"])
+    # Temporary hack for GRPC_USE_ABSL {
+    more_external_deps = []
+    if name == "inlined_vector":
+        more_external_deps += ["absl/container:inlined_vector"]
+    # Temporary hack for GRPC_USE_ABSL }
     native.cc_library(
         name = name,
         srcs = srcs,
@@ -101,9 +108,13 @@ def grpc_cc_library(
                       "//:grpc_allow_exceptions": ["GRPC_ALLOW_EXCEPTIONS=1"],
                       "//:grpc_disallow_exceptions": ["GRPC_ALLOW_EXCEPTIONS=0"],
                       "//conditions:default": [],
+                  }) +
+                  select({	
+                      "//:grpc_use_absl": ["GRPC_USE_ABSL=1"],	
+                      "//conditions:default": [],	
                   }),
         hdrs = hdrs + public_hdrs,
-        deps = deps + _get_external_deps(external_deps),
+        deps = deps + _get_external_deps(external_deps + more_external_deps),
         copts = copts,
         visibility = visibility,
         testonly = testonly,
