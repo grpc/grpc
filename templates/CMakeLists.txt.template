@@ -657,7 +657,7 @@
     "high performance general RPC framework"
     "<%text>${gRPC_CORE_VERSION}</%text>"
     "gpr openssl"
-    "-lgrpc -laddress_sorting -lupb -lcares -lz"
+    "-lgrpc -laddress_sorting -lcares -lz"
     ""
     "grpc.pc")
 

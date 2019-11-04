@@ -17928,7 +17928,7 @@ generate_pkgconfig(
   "high performance general RPC framework"
   "${gRPC_CORE_VERSION}"
   "gpr openssl"
-  "-lgrpc -laddress_sorting -lupb -lcares -lz"
+  "-lgrpc -laddress_sorting -lcares -lz"
   ""
   "grpc.pc")
 
