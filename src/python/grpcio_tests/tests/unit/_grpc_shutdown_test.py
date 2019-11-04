@@ -27,7 +27,7 @@ class GrpcShutdownTest(unittest.TestCase):
 
     def test_channel_close_with_connectivity_watcher(self):
         """Originated by https://github.com/grpc/grpc/issues/20299.
-        
+
         The grpc_shutdown happens synchronously, but there might be Core object
         references left in Cython which might lead to ABORT or SIGSEGV.
         """
