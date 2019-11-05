@@ -22,6 +22,9 @@ from tests.unit.framework.common import test_constants
 from tests_aio.unit._test_server import start_test_server
 from tests_aio.unit._test_base import AioTestBase
 
+_UNARY_CALL_METHOD = '/grpc.testing.TestService/UnaryCall'
+_EMPTY_CALL_METHOD = '/grpc.testing.TestService/EmptyCall'
+
 
 class TestChannel(AioTestBase):
 
@@ -32,7 +35,7 @@ class TestChannel(AioTestBase):
 
             async with aio.insecure_channel(server_target) as channel:
                 hi = channel.unary_unary(
-                    '/grpc.testing.TestService/UnaryCall',
+                    _UNARY_CALL_METHOD,
                     request_serializer=messages_pb2.SimpleRequest.
                     SerializeToString,
                     response_deserializer=messages_pb2.SimpleResponse.FromString
@@ -48,7 +51,7 @@ class TestChannel(AioTestBase):
 
             channel = aio.insecure_channel(server_target)
             hi = channel.unary_unary(
-                '/grpc.testing.TestService/UnaryCall',
+                _UNARY_CALL_METHOD,
                 request_serializer=messages_pb2.SimpleRequest.SerializeToString,
                 response_deserializer=messages_pb2.SimpleResponse.FromString)
             response = await hi(messages_pb2.SimpleRequest())
@@ -66,7 +69,7 @@ class TestChannel(AioTestBase):
 
             async with aio.insecure_channel(server_target) as channel:
                 empty_call_with_sleep = channel.unary_unary(
-                    "/grpc.testing.TestService/EmptyCall",
+                    _EMPTY_CALL_METHOD,
                     request_serializer=messages_pb2.SimpleRequest.
                     SerializeToString,
                     response_deserializer=messages_pb2.SimpleResponse.
@@ -91,6 +94,23 @@ class TestChannel(AioTestBase):
                     exception_context.exception.initial_metadata())
                 self.assertIsNotNone(
                     exception_context.exception.trailing_metadata())
+
+        self.loop.run_until_complete(coro())
+
+    @unittest.skip('https://github.com/grpc/grpc/issues/20818')
+    def test_call_to_the_void(self):
+
+        async def coro():
+            channel = aio.insecure_channel('0.1.1.1:1111')
+            hi = channel.unary_unary(
+                _UNARY_CALL_METHOD,
+                request_serializer=messages_pb2.SimpleRequest.SerializeToString,
+                response_deserializer=messages_pb2.SimpleResponse.FromString)
+            response = await hi(messages_pb2.SimpleRequest())
+
+            self.assertIs(type(response), messages_pb2.SimpleResponse)
+
+            await channel.close()
 
         self.loop.run_until_complete(coro())
 

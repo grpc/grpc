@@ -17,6 +17,8 @@ import abc
 import six
 
 import grpc
+from grpc import _common
+from grpc._cython import cygrpc
 from grpc._cython.cygrpc import init_grpc_aio
 
 from ._call import AioRpcError
