@@ -167,7 +167,7 @@ class grpc_ssl_channel_security_connector final
         }
       }
     }
-    GRPC_CLOSURE_SCHED(on_peer_checked, error);
+    grpc_core::ExecCtx::Run(DEBUG_LOCATION, on_peer_checked, error);
     tsi_peer_destruct(&peer);
   }
 
@@ -302,7 +302,7 @@ class grpc_ssl_server_security_connector
                   grpc_closure* on_peer_checked) override {
     grpc_error* error = ssl_check_peer(nullptr, &peer, auth_context);
     tsi_peer_destruct(&peer);
-    GRPC_CLOSURE_SCHED(on_peer_checked, error);
+    grpc_core::ExecCtx::Run(DEBUG_LOCATION, on_peer_checked, error);
   }
 
   int cmp(const grpc_security_connector* other) const override {

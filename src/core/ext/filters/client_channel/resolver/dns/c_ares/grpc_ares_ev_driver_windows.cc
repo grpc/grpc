@@ -128,12 +128,12 @@ class GrpcPolledFdWindows {
   }
 
   void ScheduleAndNullReadClosure(grpc_error* error) {
-    GRPC_CLOSURE_SCHED(read_closure_, error);
+    grpc_core::ExecCtx::Run(DEBUG_LOCATION, read_closure_, error);
     read_closure_ = nullptr;
   }
 
   void ScheduleAndNullWriteClosure(grpc_error* error) {
-    GRPC_CLOSURE_SCHED(write_closure_, error);
+    grpc_core::ExecCtx::Run(DEBUG_LOCATION, write_closure_, error);
     write_closure_ = nullptr;
   }
 

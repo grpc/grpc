@@ -59,7 +59,7 @@ void alts_check_peer(tsi_peer peer,
           ? GRPC_ERROR_NONE
           : GRPC_ERROR_CREATE_FROM_STATIC_STRING(
                 "Could not get ALTS auth context from TSI peer");
-  GRPC_CLOSURE_SCHED(on_peer_checked, error);
+  grpc_core::ExecCtx::Run(DEBUG_LOCATION, on_peer_checked, error);
 }
 
 class grpc_alts_channel_security_connector final

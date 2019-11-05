@@ -1163,7 +1163,7 @@ void ChannelData::ExternalConnectivityWatcher::Notify(
   chand_->RemoveExternalConnectivityWatcher(on_complete_, /*cancel=*/false);
   // Report new state to the user.
   *state_ = state;
-  GRPC_CLOSURE_SCHED(on_complete_, GRPC_ERROR_NONE);
+  ExecCtx::Run(DEBUG_LOCATION, on_complete_, GRPC_ERROR_NONE);
   // Hop back into the combiner to clean up.
   // Not needed in state SHUTDOWN, because the tracker will
   // automatically remove all watchers in that case.
@@ -1180,7 +1180,7 @@ void ChannelData::ExternalConnectivityWatcher::Cancel() {
                                    MemoryOrder::RELAXED)) {
     return;  // Already done.
   }
-  GRPC_CLOSURE_SCHED(on_complete_, GRPC_ERROR_CANCELLED);
+  ExecCtx::Run(DEBUG_LOCATION, on_complete_, GRPC_ERROR_CANCELLED);
   // Hop back into the combiner to clean up.
   chand_->combiner_->Run(
       GRPC_CLOSURE_INIT(&remove_closure_, RemoveWatcherLocked, this, nullptr),
@@ -1826,8 +1826,9 @@ void ChannelData::StartTransportOpLocked(void* arg, grpc_error* /*ignored*/) {
   if (op->send_ping.on_initiate != nullptr || op->send_ping.on_ack != nullptr) {
     grpc_error* error = chand->DoPingLocked(op);
     if (error != GRPC_ERROR_NONE) {
-      GRPC_CLOSURE_SCHED(op->send_ping.on_initiate, GRPC_ERROR_REF(error));
-      GRPC_CLOSURE_SCHED(op->send_ping.on_ack, error);
+      ExecCtx::Run(DEBUG_LOCATION, op->send_ping.on_initiate,
+                   GRPC_ERROR_REF(error));
+      ExecCtx::Run(DEBUG_LOCATION, op->send_ping.on_ack, error);
     }
     op->bind_pollset = nullptr;
     op->send_ping.on_initiate = nullptr;
@@ -1869,7 +1870,7 @@ void ChannelData::StartTransportOpLocked(void* arg, grpc_error* /*ignored*/) {
     }
   }
   GRPC_CHANNEL_STACK_UNREF(chand->owning_stack_, "start_transport_op");
-  GRPC_CLOSURE_SCHED(op->on_consumed, GRPC_ERROR_NONE);
+  ExecCtx::Run(DEBUG_LOCATION, op->on_consumed, GRPC_ERROR_NONE);
 }
 
 void ChannelData::StartTransportOp(grpc_channel_element* elem,
@@ -2058,7 +2059,8 @@ void CallData::Destroy(grpc_call_element* elem,
     then_schedule_closure = nullptr;
   }
   calld->~CallData();
-  GRPC_CLOSURE_SCHED(then_schedule_closure, GRPC_ERROR_NONE);
+  // TODO(yashkt) : This can potentially be a Closure::Run
+  ExecCtx::Run(DEBUG_LOCATION, then_schedule_closure, GRPC_ERROR_NONE);
 }
 
 void CallData::StartTransportStreamOpBatch(
@@ -3679,7 +3681,7 @@ void CallData::CreateSubchannelCall(grpc_call_element* elem) {
 
 void CallData::AsyncPickDone(grpc_call_element* elem, grpc_error* error) {
   GRPC_CLOSURE_INIT(&pick_closure_, PickDone, elem, grpc_schedule_on_exec_ctx);
-  GRPC_CLOSURE_SCHED(&pick_closure_, error);
+  ExecCtx::Run(DEBUG_LOCATION, &pick_closure_, error);
 }
 
 void CallData::PickDone(void* arg, grpc_error* error) {

@@ -124,7 +124,7 @@ void HttpConnectHandshaker::HandshakeFailedLocked(grpc_error* error) {
     is_shutdown_ = true;
   }
   // Invoke callback.
-  GRPC_CLOSURE_SCHED(on_handshake_done_, error);
+  ExecCtx::Run(DEBUG_LOCATION, on_handshake_done_, error);
 }
 
 // Callback invoked when finished writing HTTP CONNECT request.
@@ -220,7 +220,7 @@ void HttpConnectHandshaker::OnReadDone(void* arg, grpc_error* error) {
     goto done;
   }
   // Success.  Invoke handshake-done callback.
-  GRPC_CLOSURE_SCHED(handshaker->on_handshake_done_, error);
+  ExecCtx::Run(DEBUG_LOCATION, handshaker->on_handshake_done_, error);
 done:
   // Set shutdown to true so that subsequent calls to
   // http_connect_handshaker_shutdown() do nothing.
@@ -260,7 +260,7 @@ void HttpConnectHandshaker::DoHandshake(grpc_tcp_server_acceptor* /*acceptor*/,
       MutexLock lock(&mu_);
       is_shutdown_ = true;
     }
-    GRPC_CLOSURE_SCHED(on_handshake_done, GRPC_ERROR_NONE);
+    ExecCtx::Run(DEBUG_LOCATION, on_handshake_done, GRPC_ERROR_NONE);
     return;
   }
   // Get headers from channel args.

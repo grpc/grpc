@@ -80,7 +80,8 @@ static void composite_call_metadata_cb(void* arg, grpc_error* error) {
     }
     // We're done!
   }
-  GRPC_CLOSURE_SCHED(ctx->on_request_metadata, GRPC_ERROR_REF(error));
+  grpc_core::ExecCtx::Run(DEBUG_LOCATION, ctx->on_request_metadata,
+                          GRPC_ERROR_REF(error));
   gpr_free(ctx);
 }
 

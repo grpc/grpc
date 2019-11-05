@@ -94,7 +94,8 @@ bool grpc_md_only_test_credentials::get_request_metadata(
     grpc_error** /*error*/) {
   grpc_credentials_mdelem_array_add(md_array, md_);
   if (is_async_) {
-    GRPC_CLOSURE_SCHED(on_request_metadata, GRPC_ERROR_NONE);
+    grpc_core::ExecCtx::Run(DEBUG_LOCATION, on_request_metadata,
+                            GRPC_ERROR_NONE);
     return false;
   }
   return true;
