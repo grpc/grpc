@@ -419,7 +419,7 @@ static tsi_result handshaker_next(
     // stack. Doing so avoids potential lock cycles between g_init_mu and other
     // mutexes within core that might be held on the current call stack
     // (note that g_init_mu gets acquired during channel creation).
-    GRPC_CLOSURE_SCHED(&args->closure, GRPC_ERROR_NONE);
+    grpc_core::ExecCtx::Run(DEBUG_LOCATION, &args->closure, GRPC_ERROR_NONE);
   } else {
     tsi_result ok = alts_tsi_handshaker_continue_handshaker_next(
         handshaker, received_bytes, received_bytes_size, cb, user_data);
