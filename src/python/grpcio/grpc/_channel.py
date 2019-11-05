@@ -16,6 +16,7 @@
 import copy
 import functools
 import logging
+import os
 import sys
 import threading
 import time
@@ -32,6 +33,11 @@ _LOGGER = logging.getLogger(__name__)
 _USER_AGENT = 'grpc-python/{}'.format(_grpcio_metadata.__version__)
 
 _EMPTY_FLAGS = 0
+
+# NOTE(rbellevi): No guarantees are given about the maintenance of this
+# environment variable.
+_DEFAULT_SINGLE_THREADED_UNARY_STREAM = os.getenv(
+    "GRPC_SINGLE_THREADED_UNARY_STREAM") is not None
 
 _UNARY_UNARY_INITIAL_DUE = (
     cygrpc.OperationType.send_initial_metadata,
@@ -1334,7 +1340,7 @@ class Channel(grpc.Channel):
             used over the lifetime of the channel.
         """
         python_options, core_options = _separate_channel_options(options)
-        self._single_threaded_unary_stream = False
+        self._single_threaded_unary_stream = _DEFAULT_SINGLE_THREADED_UNARY_STREAM
         self._process_python_options(python_options)
         self._channel = cygrpc.Channel(
             _common.encode(target), _augment_options(core_options, compression),
