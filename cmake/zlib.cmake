@@ -12,6 +12,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+# The CMakeLists.txt for zlib doesn't propagate include directories
+# transitively so `_gRPC_ZLIB_INCLUDE_DIR` should be set for gRPC
+# to find header files.
+
 if(gRPC_ZLIB_PROVIDER STREQUAL "module")
   if(NOT ZLIB_ROOT_DIR)
     set(ZLIB_ROOT_DIR ${CMAKE_CURRENT_SOURCE_DIR}/third_party/zlib)
