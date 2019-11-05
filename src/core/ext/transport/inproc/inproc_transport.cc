@@ -900,7 +900,7 @@ bool cancel_stream_locked(inproc_stream* s, grpc_error* error) {
   return ret;
 }
 
-void do_nothing(void* arg, grpc_error* error) {}
+void do_nothing(void* /*arg*/, grpc_error* /*error*/) {}
 
 void perform_stream_op(grpc_transport* gt, grpc_stream* gs,
                        grpc_transport_stream_op_batch* op) {
@@ -1140,7 +1140,7 @@ void perform_transport_op(grpc_transport* gt, grpc_transport_op* op) {
   gpr_mu_unlock(&t->mu->mu);
 }
 
-void destroy_stream(grpc_transport* gt, grpc_stream* gs,
+void destroy_stream(grpc_transport* /*gt*/, grpc_stream* gs,
                     grpc_closure* then_schedule_closure) {
   INPROC_LOG(GPR_INFO, "destroy_stream %p %p", gs, then_schedule_closure);
   inproc_stream* s = reinterpret_cast<inproc_stream*>(gs);
@@ -1162,16 +1162,17 @@ void destroy_transport(grpc_transport* gt) {
  * INTEGRATION GLUE
  */
 
-void set_pollset(grpc_transport* gt, grpc_stream* gs, grpc_pollset* pollset) {
+void set_pollset(grpc_transport* /*gt*/, grpc_stream* /*gs*/,
+                 grpc_pollset* /*pollset*/) {
   // Nothing to do here
 }
 
-void set_pollset_set(grpc_transport* gt, grpc_stream* gs,
-                     grpc_pollset_set* pollset_set) {
+void set_pollset_set(grpc_transport* /*gt*/, grpc_stream* /*gs*/,
+                     grpc_pollset_set* /*pollset_set*/) {
   // Nothing to do here
 }
 
-grpc_endpoint* get_endpoint(grpc_transport* t) { return nullptr; }
+grpc_endpoint* get_endpoint(grpc_transport* /*t*/) { return nullptr; }
 
 const grpc_transport_vtable inproc_vtable = {
     sizeof(inproc_stream), "inproc",        init_stream,
@@ -1183,9 +1184,9 @@ const grpc_transport_vtable inproc_vtable = {
  * Main inproc transport functions
  */
 void inproc_transports_create(grpc_transport** server_transport,
-                              const grpc_channel_args* server_args,
+                              const grpc_channel_args* /*server_args*/,
                               grpc_transport** client_transport,
-                              const grpc_channel_args* client_args) {
+                              const grpc_channel_args* /*client_args*/) {
   INPROC_LOG(GPR_INFO, "inproc_transports_create");
   shared_mu* mu = new (gpr_malloc(sizeof(*mu))) shared_mu();
   inproc_transport* st = new (gpr_malloc(sizeof(*st)))
@@ -1221,7 +1222,7 @@ void grpc_inproc_transport_init(void) {
 
 grpc_channel* grpc_inproc_channel_create(grpc_server* server,
                                          grpc_channel_args* args,
-                                         void* reserved) {
+                                         void* /*reserved*/) {
   GRPC_API_TRACE("grpc_inproc_channel_create(server=%p, args=%p)", 2,
                  (server, args));
 

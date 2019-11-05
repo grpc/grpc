@@ -5861,11 +5861,11 @@
       "posix", 
       "windows"
     ], 
-    "cpu_cost": 1.0, 
+    "cpu_cost": 20, 
     "exclude_configs": [], 
     "exclude_iomgrs": [], 
     "flaky": false, 
-    "gtest": false, 
+    "gtest": true, 
     "language": "c++", 
     "name": "thread_manager_test", 
     "platforms": [

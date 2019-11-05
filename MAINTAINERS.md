@@ -37,6 +37,7 @@ for general contribution guidelines.
 - [nanahpang](https://github.com/nanahpang), Google LLC
 - [nathanielmanistaatgoogle](https://github.com/nathanielmanistaatgoogle), Google LLC
 - [nicolasnoble](https://github.com/nicolasnoble), Google LLC
+- [pfreixes](https://github.com/pfreixes), Skyscanner Ltd
 - [qixuanl1](https://github.com/qixuanl1), Google LLC
 - [ran-su](https://github.com/ran-su), Google LLC
 - [rmstar](https://github.com/rmstar), Google LLC

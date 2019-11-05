@@ -28,7 +28,7 @@
    */
 #define STATUS_OFFSET 1
 
-static void destroy_status(void* ignored) {}
+static void destroy_status(void* /*ignored*/) {}
 
 grpc_status_code grpc_get_status_code_from_metadata(grpc_mdelem md) {
   if (grpc_mdelem_static_value_eq(md, GRPC_MDELEM_GRPC_STATUS_0)) {
@@ -51,4 +51,11 @@ grpc_status_code grpc_get_status_code_from_metadata(grpc_mdelem md) {
   grpc_mdelem_set_user_data(
       md, destroy_status, (void*)static_cast<intptr_t>(status + STATUS_OFFSET));
   return static_cast<grpc_status_code>(status);
+}
+
+grpc_mdelem grpc_get_reffed_status_elem_slowpath(int status_code) {
+  char tmp[GPR_LTOA_MIN_BUFSIZE];
+  gpr_ltoa(status_code, tmp);
+  return grpc_mdelem_from_slices(GRPC_MDSTR_GRPC_STATUS,
+                                 grpc_core::UnmanagedMemorySlice(tmp));
 }

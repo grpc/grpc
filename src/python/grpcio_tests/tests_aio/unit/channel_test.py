@@ -12,23 +12,27 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import asyncio
 import logging
 import unittest
 
 import grpc
 
 from grpc.experimental import aio
-from tests_aio.unit import test_base
 from src.proto.grpc.testing import messages_pb2
 from tests.unit.framework.common import test_constants
+from tests_aio.unit._test_server import start_test_server
+from tests_aio.unit._test_base import AioTestBase
 
 
-class TestChannel(test_base.AioTestBase):
+class TestChannel(AioTestBase):
 
     def test_async_context(self):
 
         async def coro():
-            async with aio.insecure_channel(self.server_target) as channel:
+            server_target, unused_server = await start_test_server()
+
+            async with aio.insecure_channel(server_target) as channel:
                 hi = channel.unary_unary(
                     '/grpc.testing.TestService/UnaryCall',
                     request_serializer=messages_pb2.SimpleRequest.
@@ -42,7 +46,9 @@ class TestChannel(test_base.AioTestBase):
     def test_unary_unary(self):
 
         async def coro():
-            channel = aio.insecure_channel(self.server_target)
+            server_target, unused_server = await start_test_server()
+
+            channel = aio.insecure_channel(server_target)
             hi = channel.unary_unary(
                 '/grpc.testing.TestService/UnaryCall',
                 request_serializer=messages_pb2.SimpleRequest.SerializeToString,
@@ -58,7 +64,9 @@ class TestChannel(test_base.AioTestBase):
     def test_unary_call_times_out(self):
 
         async def coro():
-            async with aio.insecure_channel(self.server_target) as channel:
+            server_target, unused_server = await start_test_server()
+
+            async with aio.insecure_channel(server_target) as channel:
                 empty_call_with_sleep = channel.unary_unary(
                     "/grpc.testing.TestService/EmptyCall",
                     request_serializer=messages_pb2.SimpleRequest.

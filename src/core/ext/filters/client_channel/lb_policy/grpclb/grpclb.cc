@@ -468,7 +468,7 @@ void client_stats_destroy(void* p) {
   GrpcLbClientStats* client_stats = static_cast<GrpcLbClientStats*>(p);
   client_stats->Unref();
 }
-int equal_cmp(void* p1, void* p2) {
+int equal_cmp(void* /*p1*/, void* /*p2*/) {
   // Always indicate a match, since we don't want this channel arg to
   // affect the subchannel's key in the index.
   // TODO(roth): Is this right?  This does prevent us from needlessly
@@ -1025,8 +1025,8 @@ void GrpcLb::BalancerCallState::OnInitialRequestSent(void* arg,
       GRPC_ERROR_REF(error));
 }
 
-void GrpcLb::BalancerCallState::OnInitialRequestSentLocked(void* arg,
-                                                           grpc_error* error) {
+void GrpcLb::BalancerCallState::OnInitialRequestSentLocked(
+    void* arg, grpc_error* /*error*/) {
   BalancerCallState* lb_calld = static_cast<BalancerCallState*>(arg);
   grpc_byte_buffer_destroy(lb_calld->send_message_payload_);
   lb_calld->send_message_payload_ = nullptr;
@@ -1050,7 +1050,7 @@ void GrpcLb::BalancerCallState::OnBalancerMessageReceived(void* arg,
 }
 
 void GrpcLb::BalancerCallState::OnBalancerMessageReceivedLocked(
-    void* arg, grpc_error* error) {
+    void* arg, grpc_error* /*error*/) {
   BalancerCallState* lb_calld = static_cast<BalancerCallState*>(arg);
   GrpcLb* grpclb_policy = lb_calld->grpclb_policy();
   // Null payload means the LB call was cancelled.
@@ -1547,7 +1547,7 @@ void GrpcLb::OnBalancerChannelConnectivityChanged(void* arg,
 }
 
 void GrpcLb::OnBalancerChannelConnectivityChangedLocked(void* arg,
-                                                        grpc_error* error) {
+                                                        grpc_error* /*error*/) {
   GrpcLb* self = static_cast<GrpcLb*>(arg);
   if (!self->shutting_down_ && self->fallback_at_startup_checks_pending_) {
     if (self->lb_channel_connectivity_ != GRPC_CHANNEL_TRANSIENT_FAILURE) {

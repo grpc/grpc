@@ -191,7 +191,7 @@ class WorkerServiceImpl final : public WorkerService::Service {
       return Status(StatusCode::INVALID_ARGUMENT, "Invalid setup arg");
     }
     gpr_log(GPR_INFO, "RunClientBody: about to create client");
-    auto client = CreateClient(args.setup());
+    std::unique_ptr<Client> client = CreateClient(args.setup());
     if (!client) {
       return Status(StatusCode::INVALID_ARGUMENT, "Couldn't create client");
     }
@@ -234,7 +234,7 @@ class WorkerServiceImpl final : public WorkerService::Service {
       args.mutable_setup()->set_port(server_port_);
     }
     gpr_log(GPR_INFO, "RunServerBody: about to create server");
-    auto server = CreateServer(args.setup());
+    std::unique_ptr<Server> server = CreateServer(args.setup());
     if (g_inproc_servers != nullptr) {
       g_inproc_servers->push_back(server.get());
     }

@@ -140,28 +140,28 @@ RefCountedPtr<GlobalSubchannelPool>* GlobalSubchannelPool::instance_ = nullptr;
 
 namespace {
 
-void sck_avl_destroy(void* p, void* user_data) {
+void sck_avl_destroy(void* p, void* /*user_data*/) {
   SubchannelKey* key = static_cast<SubchannelKey*>(p);
   Delete(key);
 }
 
-void* sck_avl_copy(void* p, void* unused) {
+void* sck_avl_copy(void* p, void* /*unused*/) {
   const SubchannelKey* key = static_cast<const SubchannelKey*>(p);
   auto* new_key = New<SubchannelKey>(*key);
   return static_cast<void*>(new_key);
 }
 
-long sck_avl_compare(void* a, void* b, void* unused) {
+long sck_avl_compare(void* a, void* b, void* /*unused*/) {
   const SubchannelKey* key_a = static_cast<const SubchannelKey*>(a);
   const SubchannelKey* key_b = static_cast<const SubchannelKey*>(b);
   return key_a->Cmp(*key_b);
 }
 
-void scv_avl_destroy(void* p, void* user_data) {
+void scv_avl_destroy(void* p, void* /*user_data*/) {
   GRPC_SUBCHANNEL_WEAK_UNREF((Subchannel*)p, "global_subchannel_pool");
 }
 
-void* scv_avl_copy(void* p, void* unused) {
+void* scv_avl_copy(void* p, void* /*unused*/) {
   GRPC_SUBCHANNEL_WEAK_REF((Subchannel*)p, "global_subchannel_pool");
   return p;
 }

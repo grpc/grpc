@@ -125,6 +125,7 @@ class ThreadManager {
     ~WorkerThread();
 
     bool created() const { return created_; }
+    void Start() { thd_.Start(); }
 
    private:
     // Calls thd_mgr_->MainWorkLoop() and once that completes, calls

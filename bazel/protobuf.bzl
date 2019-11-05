@@ -89,7 +89,12 @@ def get_include_directory(source_file):
     else:
         return source_file.root.path if source_file.root.path else "."
 
-def get_plugin_args(plugin, flags, dir_out, generate_mocks):
+def get_plugin_args(
+        plugin,
+        flags,
+        dir_out,
+        generate_mocks,
+        plugin_name = "PLUGIN"):
     """Returns arguments configuring protoc to use a plugin for a language.
 
     Args:
@@ -97,16 +102,28 @@ def get_plugin_args(plugin, flags, dir_out, generate_mocks):
       flags: The plugin flags to be passed to protoc.
       dir_out: The output directory for the plugin.
       generate_mocks: A bool indicating whether to generate mocks.
-
+      plugin_name: A name of the plugin, it is required to be unique when there
+      are more than one plugin used in a single protoc command.
     Returns:
       A list of protoc arguments configuring the plugin.
     """
     augmented_flags = list(flags)
     if generate_mocks:
         augmented_flags.append("generate_mock_code=true")
+
+    augmented_dir_out = dir_out
+    if augmented_flags:
+        augmented_dir_out = ",".join(augmented_flags) + ":" + dir_out
+
     return [
-        "--plugin=protoc-gen-PLUGIN=" + plugin.path,
-        "--PLUGIN_out=" + ",".join(augmented_flags) + ":" + dir_out,
+        "--plugin=protoc-gen-{plugin_name}={plugin_path}".format(
+            plugin_name = plugin_name,
+            plugin_path = plugin.path,
+        ),
+        "--{plugin_name}_out={dir_out}".format(
+            plugin_name = plugin_name,
+            dir_out = augmented_dir_out,
+        )
     ]
 
 def _get_staged_proto_file(context, source_file):

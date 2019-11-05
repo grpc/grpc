@@ -56,8 +56,24 @@ If your project is using cmake, there are several ways to add gRPC dependency.
 
 ## Packaging systems
 
-There's no standard packaging system for C++. We've looked into supporting some (e.g. Conan and vcpkg) but we are not there yet.
-Contributions and community-maintained packages for popular packaging systems are welcome!
+We do not officially support any packaging system for C++, but there are some community-maintained packages that are kept up-to-date
+and are known to work well. More contributions and support for popular packaging systems are welcome!
+
+### Install using vcpkg package
+gRPC is available using the [vcpkg](https://github.com/Microsoft/vcpkg) dependency manager:
+
+```
+# install vcpkg package manager on your system using the official instructions
+git clone https://github.com/Microsoft/vcpkg.git
+cd vcpkg
+./bootstrap-vcpkg.sh
+./vcpkg integrate install
+
+# install gRPC using vcpkg package manager
+vcpkg install grpc
+```
+
+The gRPC port in vcpkg is kept up to date by Microsoft team members and community contributors. If the version is out of date, please [create an issue or pull request](https://github.com/Microsoft/vcpkg) on the vcpkg repository.
 
 
 ## Examples & Additional Documentation

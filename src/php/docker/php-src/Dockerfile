@@ -36,6 +36,8 @@ RUN wget http://ftp.gnu.org/gnu/bison/bison-3.4.2.tar.gz && \
 
 WORKDIR /github/php-src
 
+ARG MAKEFLAGS=-j8
+
 RUN git clone https://github.com/php/php-src .
 
 RUN git checkout php-7.2.22 && \

@@ -1,4 +1,4 @@
-# Copyright 2015 gRPC authors.
+# Copyright 2019 The gRPC Authors
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -12,13 +12,18 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-FROM ubuntu:12.04
+import asyncio
+import unittest
+from grpc.experimental import aio
 
-RUN apt-get update -y && apt-get install -y curl
 
-# Install rvm
-RUN gpg --keyserver hkp://keys.gnupg.net --recv-keys 409B6B1796C275462A1703113804BB82D39DC0E3
-RUN \curl -sSL https://get.rvm.io | bash -s stable --ruby
+class AioTestBase(unittest.TestCase):
 
-RUN /bin/bash -l -c "echo '. /etc/profile.d/rvm.sh' >> ~/.bashrc"
-RUN /bin/bash -l -c "gem install --update bundler"
+    def setUp(self):
+        self._loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(self._loop)
+        aio.init_grpc_aio()
+
+    @property
+    def loop(self):
+        return self._loop

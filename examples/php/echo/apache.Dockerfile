@@ -44,6 +44,8 @@ COPY client.php ./index.php
 COPY composer.json .
 COPY echo.proto .
 
+RUN chmod 644 index.php
+
 RUN protoc -I=. echo.proto --php_out=. --grpc_out=.
 
 RUN composer install
