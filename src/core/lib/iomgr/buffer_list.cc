@@ -293,8 +293,13 @@ void grpc_tcp_set_write_timestamps_callback(void (*fn)(void*,
 #else /* GRPC_LINUX_ERRQUEUE */
 
 namespace grpc_core {
-void grpc_tcp_set_write_timestamps_callback(
-    void (*/*fn*/)(void*, grpc_core::Timestamps*, grpc_error* error)) {
+void grpc_tcp_set_write_timestamps_callback(void (*fn)(void*,
+                                                       grpc_core::Timestamps*,
+                                                       grpc_error* error)) {
+  // Cast value of fn to void to avoid unused parameter warning.
+  // Can't comment out the name because some compilers and formatters don't
+  // like the sequence */* , which would arise from */*fn*/.
+  (void)fn;
   gpr_log(GPR_DEBUG, "Timestamps callback is not enabled for this platform");
 }
 } /* namespace grpc_core */

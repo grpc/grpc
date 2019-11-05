@@ -15,6 +15,10 @@
  * limitations under the License.
  *
  */
+
+#ifndef TEST_CORE_TSI_ALTS_FAKE_HANDSHAKER_FAKE_HANDSHAKER_SERVER_H
+#define TEST_CORE_TSI_ALTS_FAKE_HANDSHAKER_FAKE_HANDSHAKER_SERVER_H
+
 #include <memory>
 #include <string>
 
@@ -27,3 +31,5 @@ std::unique_ptr<grpc::Service> CreateFakeHandshakerService();
 
 }  // namespace gcp
 }  // namespace grpc
+
+#endif  // TEST_CORE_TSI_ALTS_FAKE_HANDSHAKER_FAKE_HANDSHAKER_SERVER_H

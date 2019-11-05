@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-load("//bazel:grpc_build_system.bzl", "grpc_cc_library", "grpc_cc_test", "grpc_cc_binary", "grpc_package")
+load("//bazel:grpc_build_system.bzl", "grpc_cc_library", "grpc_cc_test", "grpc_cc_binary", "grpc_package", "LARGE_MACHINE")
 
 licenses(["notice"])  # Apache v2
 
@@ -39,9 +39,9 @@ grpc_cc_library(
 grpc_cc_test(
     name = "combiner_test",
     srcs = ["combiner_test.cc"],
-    exec_compatible_with = ["//third_party/toolchains/machine_size:large"],
+    exec_properties = LARGE_MACHINE,
     language = "C++",
-    tags = ["no_windows"],  # machine_size:large is not configured for windows RBE
+    tags = ["no_windows"],  # LARGE_MACHINE is not configured for windows RBE
     deps = [
         "//:gpr",
         "//:grpc",

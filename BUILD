@@ -74,7 +74,7 @@ python_config_settings()
 # This should be updated along with build.yaml
 g_stands_for = "gon"
 
-core_version = "7.0.0"
+core_version = "9.0.0"
 
 version = "1.26.0-dev"
 
@@ -321,6 +321,7 @@ grpc_cc_library(
         "grpc_common",
         "grpc_lb_policy_grpclb",
         "grpc_lb_policy_xds",
+        "grpc_lb_policy_cds",
         "grpc_resolver_xds",
     ],
 )
@@ -338,6 +339,7 @@ grpc_cc_library(
         "grpc_common",
         "grpc_lb_policy_grpclb_secure",
         "grpc_lb_policy_xds_secure",
+        "grpc_lb_policy_cds_secure",
         "grpc_resolver_xds_secure",
         "grpc_secure",
         "grpc_transport_chttp2_client_secure",
@@ -1328,6 +1330,32 @@ grpc_cc_library(
     ],
     hdrs = [
         "src/core/ext/filters/client_channel/lb_policy/xds/xds.h",
+    ],
+    language = "c++",
+    deps = [
+        "grpc_base",
+        "grpc_client_channel",
+        "grpc_xds_client_secure",
+    ],
+)
+
+grpc_cc_library(
+    name = "grpc_lb_policy_cds",
+    srcs = [
+        "src/core/ext/filters/client_channel/lb_policy/xds/cds.cc",
+    ],
+    language = "c++",
+    deps = [
+        "grpc_base",
+        "grpc_client_channel",
+        "grpc_xds_client",
+    ],
+)
+
+grpc_cc_library(
+    name = "grpc_lb_policy_cds_secure",
+    srcs = [
+        "src/core/ext/filters/client_channel/lb_policy/xds/cds.cc",
     ],
     language = "c++",
     deps = [

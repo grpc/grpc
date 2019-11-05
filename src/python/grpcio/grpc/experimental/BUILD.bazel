@@ -4,6 +4,7 @@ py_library(
     name = "aio",
     srcs = [
         "aio/__init__.py",
+        "aio/_call.py",
         "aio/_channel.py",
         "aio/_server.py",
     ],

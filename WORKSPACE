@@ -1,8 +1,6 @@
 workspace(name = "com_github_grpc_grpc")
 
-load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 load("//bazel:grpc_deps.bzl", "grpc_deps", "grpc_test_only_deps")
-load("@bazel_tools//tools/build_defs/repo:git.bzl", "git_repository")
 
 grpc_deps()
 
@@ -27,6 +25,8 @@ load("@bazel_toolchains//rules:rbe_repo.bzl", "rbe_autoconfig")
 # Create toolchain configuration for remote execution.
 rbe_autoconfig(
     name = "rbe_default",
+    # use exec_properties instead of deprecated remote_execution_properties
+    use_legacy_platform_definition = False,
 )
 
 load("@bazel_toolchains//rules:environments.bzl", "clang_env")
@@ -50,7 +50,6 @@ pip_import(
     requirements = "@com_github_grpc_grpc//:requirements.bazel.txt",
 )
 
-load("@io_bazel_rules_python//python:pip.bzl", "pip_repositories")
 load("@grpc_python_dependencies//:requirements.bzl", "pip_install")
 pip_repositories()
 pip_install()

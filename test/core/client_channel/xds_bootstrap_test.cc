@@ -267,6 +267,16 @@ TEST(XdsBootstrapTest, BadChannelCredsContents) {
   VerifyRegexMatch(error, e);
 }
 
+// under TSAN, ASAN and UBSAN, bazel RBE can suffer from a std::regex
+// stackoverflow bug if the analyzed string is too long (> ~2000 characters). As
+// this test is only single-thread and deterministic, it is safe to just disable
+// it under TSAN and ASAN until
+// https://github.com/GoogleCloudPlatform/layer-definitions/issues/591
+// is resolved. The risk for UBSAN problem also doesn't seem to be very high.
+#ifndef GRPC_ASAN
+#ifndef GRPC_TSAN
+#ifndef GRPC_UBSAN
+
 TEST(XdsBootstrapTest, BadNode) {
   grpc_slice slice = grpc_slice_from_copied_string(
       "{"
@@ -320,6 +330,10 @@ TEST(XdsBootstrapTest, BadNode) {
                   "duplicate metadata key \"foo\""));
   VerifyRegexMatch(error, e);
 }
+
+#endif
+#endif
+#endif
 
 }  // namespace testing
 }  // namespace grpc_core

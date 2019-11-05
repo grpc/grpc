@@ -12,7 +12,7 @@ settings:
   '#08': Use "-preN" suffixes to identify pre-release versions
   '#09': Per-language overrides are possible with (eg) ruby_version tag here
   '#10': See the expand_version.py for all the quirks here
-  core_version: 8.0.0
+  core_version: 9.0.0
   csharp_major_version: 2
   g_stands_for: gon
   version: 1.26.0-dev
@@ -1069,6 +1069,22 @@ filegroups:
   plugin: grpc_http_filters
   uses:
   - grpc_base
+- name: grpc_lb_policy_cds
+  src:
+  - src/core/ext/filters/client_channel/lb_policy/xds/cds.cc
+  plugin: grpc_lb_policy_cds
+  uses:
+  - grpc_base
+  - grpc_client_channel
+  - grpc_xds_client
+- name: grpc_lb_policy_cds_secure
+  src:
+  - src/core/ext/filters/client_channel/lb_policy/xds/cds.cc
+  plugin: grpc_lb_policy_cds
+  uses:
+  - grpc_base
+  - grpc_client_channel
+  - grpc_xds_client_secure
 - name: grpc_lb_policy_grpclb
   headers:
   - src/core/ext/filters/client_channel/lb_policy/grpclb/client_load_reporting_filter.h
@@ -1685,6 +1701,7 @@ libs:
   - grpc_transport_chttp2_client_insecure
   - grpc_transport_inproc
   - grpc_lb_policy_grpclb_secure
+  - grpc_lb_policy_cds_secure
   - grpc_lb_policy_xds_secure
   - grpc_lb_policy_pick_first
   - grpc_lb_policy_round_robin
@@ -1766,6 +1783,7 @@ libs:
   - grpc_resolver_fake
   - grpc_resolver_xds
   - grpc_lb_policy_grpclb
+  - grpc_lb_policy_cds
   - grpc_lb_policy_xds
   - grpc_lb_policy_pick_first
   - grpc_lb_policy_round_robin
@@ -3301,41 +3319,6 @@ targets:
   - mac
   - linux
   - posix
-- name: memory_usage_client
-  build: test
-  run: false
-  language: c
-  src:
-  - test/core/memory_usage/client.cc
-  deps:
-  - grpc_test_util
-  - grpc
-  - gpr
-  uses_polling: false
-- name: memory_usage_server
-  build: test
-  run: false
-  language: c
-  src:
-  - test/core/memory_usage/server.cc
-  deps:
-  - grpc_test_util
-  - grpc
-  - gpr
-- name: memory_usage_test
-  cpu_cost: 1.5
-  build: test
-  language: c
-  src:
-  - test/core/memory_usage/memory_usage_test.cc
-  deps:
-  - grpc_test_util
-  - grpc
-  - gpr
-  platforms:
-  - mac
-  - linux
-  - posix
 - name: message_compress_test
   build: test
   language: c
@@ -3930,6 +3913,25 @@ targets:
   - grpc++_unsecure
   - grpc_unsecure
   - gpr
+- name: alts_concurrent_connectivity_test
+  build: test
+  language: c++
+  headers:
+  - test/core/tsi/alts/fake_handshaker/fake_handshaker_server.h
+  src:
+  - test/core/tsi/alts/fake_handshaker/handshaker.proto
+  - test/core/tsi/alts/fake_handshaker/transport_security_common.proto
+  - test/core/tsi/alts/fake_handshaker/fake_handshaker_server.cc
+  - test/core/tsi/alts/handshaker/alts_concurrent_connectivity_test.cc
+  deps:
+  - grpc++_test_util
+  - grpc_test_util
+  - grpc++
+  - grpc
+  - gpr
+  - grpc++_test_config
+  platforms:
+  - linux
 - name: alts_counter_test
   build: test
   language: c++
@@ -6130,6 +6132,10 @@ configs:
   counters:
     CPPFLAGS: -O2 -DGPR_LOW_LEVEL_COUNTERS
     DEFINES: NDEBUG
+  counters_with_memory_counter:
+    CPPFLAGS: -O2 -DGPR_LOW_LEVEL_COUNTERS -DGPR_WRAP_MEMORY_COUNTER
+    DEFINES: NDEBUG
+    LDFLAGS: -Wl,--wrap=malloc -Wl,--wrap=calloc -Wl,--wrap=realloc -Wl,--wrap=free
   dbg:
     CPPFLAGS: -O0
     DEFINES: _DEBUG DEBUG
