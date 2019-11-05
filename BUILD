@@ -74,7 +74,7 @@ python_config_settings()
 # This should be updated along with build.yaml
 g_stands_for = "gon"
 
-core_version = "7.0.0"
+core_version = "9.0.0"
 
 version = "1.26.0-dev"
 
