@@ -484,10 +484,6 @@
     PRIVATE
       <%text>${CMAKE_CURRENT_SOURCE_DIR}</%text>
       <%text>${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}</%text>
-      <%text>${_gRPC_BENCHMARK_INCLUDE_DIR}</%text>
-      <%text>${_gRPC_CARES_INCLUDE_DIR}</%text>
-      <%text>${_gRPC_GFLAGS_INCLUDE_DIR}</%text>
-      <%text>${_gRPC_PROTOBUF_INCLUDE_DIR}</%text>
       <%text>${_gRPC_SSL_INCLUDE_DIR}</%text>
       <%text>${_gRPC_UPB_GENERATED_DIR}</%text>
       <%text>${_gRPC_UPB_GRPC_GENERATED_DIR}</%text>
@@ -567,10 +563,6 @@
       <%text>${CMAKE_CURRENT_SOURCE_DIR}</%text>
       <%text>${CMAKE_CURRENT_SOURCE_DIR}</%text>/include
       <%text>${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}</%text>
-      <%text>${_gRPC_BENCHMARK_INCLUDE_DIR}</%text>
-      <%text>${_gRPC_CARES_INCLUDE_DIR}</%text>
-      <%text>${_gRPC_GFLAGS_INCLUDE_DIR}</%text>
-      <%text>${_gRPC_PROTOBUF_INCLUDE_DIR}</%text>
       <%text>${_gRPC_SSL_INCLUDE_DIR}</%text>
       <%text>${_gRPC_UPB_GENERATED_DIR}</%text>
       <%text>${_gRPC_UPB_GRPC_GENERATED_DIR}</%text>

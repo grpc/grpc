@@ -12,6 +12,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+# The CMakeLists.txt for BoringSSL doesn't propagate include directories
+# transitively so `_gRPC_SSL_INCLUDE_DIR` should be set for gRPC
+# to find header files.
+
 if(gRPC_SSL_PROVIDER STREQUAL "module")
   if(NOT BORINGSSL_ROOT_DIR)
     set(BORINGSSL_ROOT_DIR ${CMAKE_CURRENT_SOURCE_DIR}/third_party/boringssl)
