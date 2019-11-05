@@ -80,8 +80,8 @@ grpc_channel* create_secure_channel_for_test(
   grpc_alts_credentials_options_destroy(alts_options);
   // The main goal of these tests are to stress concurrent ALTS handshakes,
   // so we prevent subchnannel sharing.
-  grpc_arg disable_subchannel_sharing_arg =
-      grpc_channel_arg_integer_create(GRPC_ARG_USE_LOCAL_SUBCHANNEL_POOL, true);
+  grpc_arg disable_subchannel_sharing_arg = grpc_channel_arg_integer_create(
+      const_cast<char*>(GRPC_ARG_USE_LOCAL_SUBCHANNEL_POOL), true);
   grpc_channel_args channel_args = {1, &disable_subchannel_sharing_arg};
   grpc_channel* channel = grpc_secure_channel_create(channel_creds, server_addr,
                                                      &channel_args, nullptr);
