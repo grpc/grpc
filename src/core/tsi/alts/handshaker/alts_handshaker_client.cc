@@ -429,9 +429,11 @@ static void handshaker_client_destruct(alts_handshaker_client* c) {
     // TODO(apolcyn): we could remove this indirection and call
     // grpc_call_unref inline if there was an internal variant of
     // grpc_call_unref that didn't need to flush an ExecCtx.
-    GRPC_CLOSURE_SCHED(GRPC_CLOSURE_CREATE(handshaker_call_unref, client->call,
-                                           grpc_schedule_on_exec_ctx),
-                       GRPC_ERROR_NONE);
+    grpc_core::ExecCtx::Run(
+        DEBUG_LOCATION,
+        GRPC_CLOSURE_CREATE(handshaker_call_unref, client->call,
+                            grpc_schedule_on_exec_ctx),
+        GRPC_ERROR_NONE);
   }
 }
 
