@@ -264,7 +264,7 @@ def _rpc_state_string(class_name, rpc_state):
                 rpc_state.debug_error_string)
 
 
-class _RpcError(grpc.RpcError, grpc.Call, grpc.Future):
+class _InactiveRpcError(grpc.RpcError, grpc.Call, grpc.Future):
     """An RPC error not tied to the execution of a particular RPC.
 
     The RPC represented by the state object must not be in-progress or
@@ -703,7 +703,7 @@ def _start_unary_request(request, timeout, request_serializer):
     if serialized_request is None:
         state = _RPCState((), (), (), grpc.StatusCode.INTERNAL,
                           'Exception serializing request!')
-        error = _RpcError(state)
+        error = _InactiveRpcError(state)
         return deadline, None, error
     else:
         return deadline, serialized_request, None
@@ -717,7 +717,7 @@ def _end_unary_response_blocking(state, call, with_call, deadline):
         else:
             return state.response
     else:
-        raise _RpcError(state)
+        raise _InactiveRpcError(state)
 
 
 def _stream_unary_invocation_operationses(metadata, initial_metadata_flags):
@@ -875,7 +875,7 @@ class _SingleThreadedUnaryStreamMultiCallable(grpc.UnaryStreamMultiCallable):
         if serialized_request is None:
             state = _RPCState((), (), (), grpc.StatusCode.INTERNAL,
                               'Exception serializing request!')
-            raise _RpcError(state)
+            raise _InactiveRpcError(state)
 
         state = _RPCState(_UNARY_STREAM_INITIAL_DUE, None, None, None, None)
         call_credentials = None if credentials is None else credentials._credentials
