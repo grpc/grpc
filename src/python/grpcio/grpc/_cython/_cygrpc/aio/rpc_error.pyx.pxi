@@ -14,7 +14,7 @@
 """Exceptions for the aio version of the RPC calls."""
 
 
-cdef class _AioRpcError(Exception):
+cdef class AioRpcError(Exception):
 
     def __cinit__(self, tuple initial_metadata, int code, str details, tuple trailing_metadata):
         self._initial_metadata = initial_metadata

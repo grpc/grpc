@@ -1,7 +1,8 @@
 [
   "_sanity._sanity_test.AioSanityTest",
+  "unit.call_test.TestAioRpcError",
+  "unit.call_test.TestCall",
   "unit.channel_test.TestChannel",
-  "unit.init_test.TestAioRpcError",
   "unit.init_test.TestInsecureChannel",
   "unit.server_test.TestServer"
 ]

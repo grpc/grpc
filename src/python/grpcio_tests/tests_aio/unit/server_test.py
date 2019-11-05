@@ -12,14 +12,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import asyncio
 import logging
 import unittest
 
 import grpc
 from grpc.experimental import aio
-from src.proto.grpc.testing import messages_pb2
-from src.proto.grpc.testing import benchmark_service_pb2_grpc
 from tests_aio.unit._test_base import AioTestBase
 
 _TEST_METHOD_PATH = ''
