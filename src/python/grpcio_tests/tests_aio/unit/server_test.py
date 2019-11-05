@@ -12,6 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import asyncio
 import logging
 import unittest
 import time
@@ -110,8 +111,7 @@ class TestServer(AioTestBase):
             server_target, server, generic_handler = await _start_test_server()
 
             channel = aio.insecure_channel(server_target)
-            call_task = self.loop.create_task(
-                channel.unary_unary(_BLOCK_BRIEFLY)(_REQUEST))
+            call = channel.unary_unary(_BLOCK_BRIEFLY)(_REQUEST)
             await generic_handler.wait_for_call()
 
             shutdown_start_time = time.time()
@@ -122,8 +122,8 @@ class TestServer(AioTestBase):
 
             # Validates the states.
             await channel.close()
-            self.assertEqual(_RESPONSE, await call_task)
-            self.assertTrue(call_task.done())
+            self.assertEqual(_RESPONSE, await call)
+            self.assertTrue(call.done())
 
         self.loop.run_until_complete(test_graceful_shutdown_success_body())
 
@@ -133,14 +133,13 @@ class TestServer(AioTestBase):
             server_target, server, generic_handler = await _start_test_server()
 
             channel = aio.insecure_channel(server_target)
-            call_task = self.loop.create_task(
-                channel.unary_unary(_BLOCK_FOREVER)(_REQUEST))
+            call = channel.unary_unary(_BLOCK_FOREVER)(_REQUEST)
             await generic_handler.wait_for_call()
 
             await server.stop(test_constants.SHORT_TIMEOUT)
 
             with self.assertRaises(aio.AioRpcError) as exception_context:
-                await call_task
+                await call
             self.assertEqual(grpc.StatusCode.UNAVAILABLE,
                              exception_context.exception.code())
             self.assertIn('GOAWAY', exception_context.exception.details())
@@ -154,8 +153,7 @@ class TestServer(AioTestBase):
             server_target, server, generic_handler = await _start_test_server()
 
             channel = aio.insecure_channel(server_target)
-            call_task = self.loop.create_task(
-                channel.unary_unary(_BLOCK_BRIEFLY)(_REQUEST))
+            call = channel.unary_unary(_BLOCK_BRIEFLY)(_REQUEST)
             await generic_handler.wait_for_call()
 
             # Expects the shortest grace period to be effective.
@@ -170,8 +168,8 @@ class TestServer(AioTestBase):
                                test_constants.SHORT_TIMEOUT / 3)
 
             await channel.close()
-            self.assertEqual(_RESPONSE, await call_task)
-            self.assertTrue(call_task.done())
+            self.assertEqual(_RESPONSE, await call)
+            self.assertTrue(call.done())
 
         self.loop.run_until_complete(test_concurrent_graceful_shutdown_body())
 
@@ -181,8 +179,7 @@ class TestServer(AioTestBase):
             server_target, server, generic_handler = await _start_test_server()
 
             channel = aio.insecure_channel(server_target)
-            call_task = self.loop.create_task(
-                channel.unary_unary(_BLOCK_FOREVER)(_REQUEST))
+            call = channel.unary_unary(_BLOCK_FOREVER)(_REQUEST)
             await generic_handler.wait_for_call()
 
             # Expects no grace period, due to the "server.stop(None)".
@@ -194,7 +191,7 @@ class TestServer(AioTestBase):
             )
 
             with self.assertRaises(aio.AioRpcError) as exception_context:
-                await call_task
+                await call
             self.assertEqual(grpc.StatusCode.UNAVAILABLE,
                              exception_context.exception.code())
             self.assertIn('GOAWAY', exception_context.exception.details())

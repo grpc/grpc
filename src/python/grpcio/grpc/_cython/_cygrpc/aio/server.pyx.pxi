@@ -64,7 +64,7 @@ cdef class CallbackWrapper:
             grpc_experimental_completion_queue_functor* functor,
             int success):
         cdef CallbackContext *context = <CallbackContext *>functor
-        if succeed == 0:
+        if success == 0:
             (<_CallbackFailureHandler>context.failure_handler).handle(
                 <object>context.waiter)
         else:
