@@ -14,9 +14,9 @@
 
 licenses(["notice"])  # Apache v2
 
-load("//bazel:grpc_build_system.bzl", "grpc_proto_library", "grpc_package")
+load("//bazel:grpc_build_system.bzl", "grpc_package", "grpc_proto_library")
 load("@grpc_python_dependencies//:requirements.bzl", "requirement")
-load("//bazel:python_rules.bzl", "py_proto_library", "py_grpc_library")
+load("//bazel:python_rules.bzl", "py_grpc_library", "py_proto_library")
 
 grpc_package(
     name = "testing",
@@ -231,4 +231,3 @@ py_grpc_library(
     srcs = [":test_proto_descriptor"],
     deps = [":py_test_proto"],
 )
-

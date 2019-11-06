@@ -1,4 +1,3 @@
-
 load("@upb//bazel:upb_proto_library.bzl", "upb_proto_library")
 
 proto_library(

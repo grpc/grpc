@@ -23,5 +23,5 @@ cc_library(
     name = "cronet_c_for_grpc",
     hdrs = [
         "bidirectional_stream_c.h",
-    ]
+    ],
 )
