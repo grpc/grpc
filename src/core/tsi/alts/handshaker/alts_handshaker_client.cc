@@ -25,6 +25,8 @@
 #include <grpc/support/log.h>
 
 #include "src/core/lib/gprpp/sync.h"
+#include "src/core/lib/iomgr/combiner.h"
+#include "src/core/lib/iomgr/exec_ctx.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/surface/call.h"
 #include "src/core/lib/surface/channel.h"
@@ -171,26 +173,6 @@ static void maybe_complete_tsi_next(
   gpr_free(r);
 }
 
-static void on_status_received(void* arg, grpc_error* error) {
-  alts_grpc_handshaker_client* client =
-      static_cast<alts_grpc_handshaker_client*>(arg);
-  if (client->handshake_status_code != GRPC_STATUS_OK) {
-    // TODO(apolcyn): consider overriding the handshake result's
-    // status from the final ALTS message with the status here.
-    char* status_details =
-        grpc_slice_to_c_string(client->handshake_status_details);
-    gpr_log(GPR_INFO,
-            "alts_grpc_handshaker_client:%p on_status_received "
-            "status:%d details:|%s| error:|%s|",
-            client, client->handshake_status_code, status_details,
-            grpc_error_string(error));
-    gpr_free(status_details);
-  }
-  maybe_complete_tsi_next(client, true /* receive_status_finished */,
-                          nullptr /* pending_recv_message_result */);
-  alts_grpc_handshaker_client_unref(client);
-}
-
 static void handle_response_done(alts_grpc_handshaker_client* client,
                                  tsi_result status,
                                  const unsigned char* bytes_to_send,
@@ -301,14 +283,9 @@ void alts_handshaker_client_handle_response(alts_handshaker_client* c,
                        bytes_to_send, bytes_to_send_size, result);
 }
 
-/**
- * Populate grpc operation data with the fields of ALTS handshaker client and
- * make a grpc call.
- */
-static tsi_result make_grpc_call(alts_handshaker_client* c, bool is_start) {
-  GPR_ASSERT(c != nullptr);
-  alts_grpc_handshaker_client* client =
-      reinterpret_cast<alts_grpc_handshaker_client*>(c);
+static tsi_result continue_make_grpc_call(alts_grpc_handshaker_client* client,
+                                          bool is_start) {
+  GPR_ASSERT(client != nullptr);
   grpc_op ops[kHandshakerClientOpNum];
   memset(ops, 0, sizeof(ops));
   grpc_op* op = ops;
@@ -356,6 +333,164 @@ static tsi_result make_grpc_call(alts_handshaker_client* c, bool is_start) {
     return TSI_INTERNAL_ERROR;
   }
   return TSI_OK;
+}
+
+// TODO(apolcyn): remove this global queue when we can safely rely
+// on a MAX_CONCURRENT_STREAMS setting in the ALTS handshake server to
+// limit the number of concurrent handshakes.
+namespace {
+
+class HandshakeQueue {
+ public:
+  HandshakeQueue(size_t max_outstanding_handshakes)
+      : max_outstanding_handshakes_(max_outstanding_handshakes) {}
+
+  ~HandshakeQueue() { GRPC_COMBINER_UNREF(combiner_, "~HandshakeQueue"); }
+
+  void EnqueueHandshakeAndMaybeStartSome(alts_grpc_handshaker_client* client) {
+    Arg* arg = grpc_core::New<Arg>();
+    arg->client = client;
+    arg->self = this;
+    GRPC_CLOSURE_INIT(&arg->closure, EnqueueHandshakeAndMaybeStartSomeLocked,
+                      arg, nullptr);
+    combiner_->Run(&arg->closure, GRPC_ERROR_NONE);
+  }
+
+ private:
+  struct Node {
+    alts_grpc_handshaker_client* client = nullptr;
+    Node* next = nullptr;
+    Node* prev = nullptr;
+  };
+
+  struct Arg {
+    alts_grpc_handshaker_client* client;
+    HandshakeQueue* self;
+    grpc_closure closure;
+  };
+
+  static void EnqueueHandshakeAndMaybeStartSomeLocked(
+      void* arg, grpc_error* unused_error) {
+    Arg* args = static_cast<Arg*>(arg);
+    args->self->EnqueueHandshakeAndMaybeStartSomeInnerLocked(args->client);
+    grpc_core::Delete(args);
+  }
+
+  void EnqueueHandshakeAndMaybeStartSomeInnerLocked(
+      alts_grpc_handshaker_client* client) {
+    if (client == nullptr) {
+      outstanding_handshakes_--;
+    } else {
+      Node* node = grpc_core::New<Node>();
+      node->client = client;
+      gpr_log(GPR_DEBUG,
+              "HandshakeQueue:%p: outstanding_handshakes_:%ld "
+              "old head_:%p new head_: %p tail_:%p",
+              this, outstanding_handshakes_, head_, node, tail_);
+      if (head_ == nullptr) {
+        GPR_ASSERT(tail_ == nullptr);
+        head_ = node;
+        tail_ = node;
+      } else {
+        GPR_ASSERT(tail_ != nullptr);
+        node->next = head_;
+        GPR_ASSERT(head_->prev == nullptr);
+        head_->prev = node;
+        head_ = node;
+      }
+    }
+    while (outstanding_handshakes_ < max_outstanding_handshakes_ &&
+           tail_ != nullptr) {
+      gpr_log(GPR_DEBUG,
+              "start handshake "
+              "outstanding_handshakes_:%ld "
+              "head_:%p tail_:%p",
+              outstanding_handshakes_, head_, tail_);
+      GPR_ASSERT(outstanding_handshakes_ < max_outstanding_handshakes_);
+      continue_make_grpc_call(tail_->client, true /* is_start */);
+      Node* prev = tail_;
+      tail_ = tail_->prev;
+      grpc_core::Delete(prev);
+      outstanding_handshakes_++;
+    }
+    if (tail_ == nullptr) {
+      head_ = nullptr;
+    }
+  }
+
+  grpc_core::Combiner* combiner_ = grpc_combiner_create();
+  Node* head_ = nullptr;
+  Node* tail_ = nullptr;
+  size_t outstanding_handshakes_ = 0;
+  const size_t max_outstanding_handshakes_;
+};
+
+gpr_once g_queued_handshakes_init = GPR_ONCE_INIT;
+/* Using separate queues for client and server handshakes is a
+ * hack that's mainly intended to satisfy the alts_concurrent_connectivity_test,
+ * which runs many concurrent handshakes where both endpoints
+ * are in the same process; this situation is problematic with a
+ * single queue because we have a high chance of using up all outstanding
+ * slots in the queue, such that there aren't any
+ * mutual client/server handshakes outstanding at the same time and
+ * able to make progress. */
+HandshakeQueue* g_client_handshake_queue;
+HandshakeQueue* g_server_handshake_queue;
+
+void DoHandshakeQueuesInit(void) {
+  g_client_handshake_queue =
+      grpc_core::New<HandshakeQueue>(40 /* max outstanding handshakes */);
+  g_server_handshake_queue =
+      grpc_core::New<HandshakeQueue>(40 /* max outstanding handshakes */);
+}
+
+void EnqueueHandshakeAndMaybeStartSome(alts_grpc_handshaker_client* client,
+                                       bool is_client) {
+  gpr_once_init(&g_queued_handshakes_init, DoHandshakeQueuesInit);
+  if (is_client) {
+    g_client_handshake_queue->EnqueueHandshakeAndMaybeStartSome(client);
+  } else {
+    g_server_handshake_queue->EnqueueHandshakeAndMaybeStartSome(client);
+  }
+}
+
+};  // namespace
+
+/**
+ * Populate grpc operation data with the fields of ALTS handshaker client and
+ * make a grpc call.
+ */
+static tsi_result make_grpc_call(alts_handshaker_client* c, bool is_start) {
+  GPR_ASSERT(c != nullptr);
+  alts_grpc_handshaker_client* client =
+      reinterpret_cast<alts_grpc_handshaker_client*>(c);
+  if (is_start) {
+    EnqueueHandshakeAndMaybeStartSome(client, client->is_client);
+    return TSI_OK;
+  } else {
+    return continue_make_grpc_call(client, is_start);
+  }
+}
+
+static void on_status_received(void* arg, grpc_error* error) {
+  alts_grpc_handshaker_client* client =
+      static_cast<alts_grpc_handshaker_client*>(arg);
+  if (client->handshake_status_code != GRPC_STATUS_OK) {
+    // TODO(apolcyn): consider overriding the handshake result's
+    // status from the final ALTS message with the status here.
+    char* status_details =
+        grpc_slice_to_c_string(client->handshake_status_details);
+    gpr_log(GPR_INFO,
+            "alts_grpc_handshaker_client:%p on_status_received "
+            "status:%d details:|%s| error:|%s|",
+            client, client->handshake_status_code, status_details,
+            grpc_error_string(error));
+    gpr_free(status_details);
+  }
+  maybe_complete_tsi_next(client, true /* receive_status_finished */,
+                          nullptr /* pending_recv_message_result */);
+  EnqueueHandshakeAndMaybeStartSome(nullptr, client->is_client);
+  alts_grpc_handshaker_client_unref(client);
 }
 
 /* Serializes a grpc_gcp_HandshakerReq message into a buffer and returns newly
