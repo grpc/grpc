@@ -105,12 +105,13 @@ class FakeHandshakeServer {
   FakeHandshakeServer() {
     int port = grpc_pick_unused_port_or_die();
     grpc_core::JoinHostPort(&address_, "localhost", port);
-    service_ = grpc::gcp::CreateFakeHandshakerService();
+    service_ = grpc::gcp::CreateFakeHandshakerService(
+        kFakeHandshakeServerMaxConcurrentStreams /* expected max concurrent rpcs */);
     grpc::ServerBuilder builder;
     builder.AddListeningPort(address_.get(), grpc::InsecureServerCredentials());
     builder.RegisterService(service_.get());
-    builder.AddChannelArgument(GRPC_ARG_MAX_CONCURRENT_STREAMS,
-                               kFakeHandshakeServerMaxConcurrentStreams);
+    // TODO(apolcyn): when removing the global concurrent handshake limiting
+    // queue, set MAX_CONCURRENT_STREAMS on this server.
     server_ = builder.BuildAndStart();
     gpr_log(GPR_INFO, "Fake handshaker server listening on %s", address_.get());
   }
