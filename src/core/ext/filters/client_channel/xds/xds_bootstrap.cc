@@ -320,7 +320,7 @@ grpc_error* XdsBootstrap::ParseLocality(grpc_json* json) {
 
 InlinedVector<grpc_error*, 1> XdsBootstrap::ParseMetadataStruct(
     grpc_json* json,
-    Map<const char*, XdsBootstrap::MetadataValue, StringLess>* result) {
+    std::map<const char*, XdsBootstrap::MetadataValue, StringLess>* result) {
   InlinedVector<grpc_error*, 1> error_list;
   for (grpc_json* child = json->child; child != nullptr; child = child->next) {
     if (child->key == nullptr) {

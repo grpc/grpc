@@ -114,9 +114,9 @@ void PopulateListValue(upb_arena* arena, google_protobuf_ListValue* list_value,
   }
 }
 
-void PopulateMetadata(
-    upb_arena* arena, google_protobuf_Struct* metadata_pb,
-    const Map<const char*, XdsBootstrap::MetadataValue, StringLess>& metadata) {
+void PopulateMetadata(upb_arena* arena, google_protobuf_Struct* metadata_pb,
+                      const std::map<const char*, XdsBootstrap::MetadataValue,
+                                     StringLess>& metadata) {
   for (const auto& p : metadata) {
     google_protobuf_Struct_FieldsEntry* field =
         google_protobuf_Struct_add_fields(metadata_pb, arena);
