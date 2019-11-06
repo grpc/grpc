@@ -501,7 +501,6 @@ TEST(AltsConcurrentConnectivityTest,
      TestHandshakeFailsFastWhenHandshakeServerClosesConnectionAfterAccepting) {
   FakeTcpServer fake_handshake_server(
       FakeTcpServer::CloseSocketUponReceivingBytesFromPeer);
-  ;
   FakeTcpServer fake_tcp_server(FakeTcpServer::CloseSocketUponCloseFromPeer);
   {
     gpr_timespec test_deadline = grpc_timeout_seconds_to_deadline(20);
