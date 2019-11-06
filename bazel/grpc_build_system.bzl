@@ -100,6 +100,11 @@ def grpc_cc_library(
             "//:grpc_use_absl": ["@com_google_absl//absl/container:inlined_vector"],
             "//conditions:default": [],
         })
+    if name == "gpr_base":
+        more_external_deps += select({
+            "//:grpc_use_absl": ["@com_google_absl//absl/strings:strings"],
+            "//conditions:default": [],
+        })
 
     native.cc_library(
         name = name,

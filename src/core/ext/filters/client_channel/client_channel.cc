@@ -403,8 +403,9 @@ class CallData {
         intptr_t handle) const override {
       grpc_linked_mdelem* linked_mdelem =
           reinterpret_cast<grpc_linked_mdelem*>(handle);
-      return std::make_pair(StringView(GRPC_MDKEY(linked_mdelem->md)),
-                            StringView(GRPC_MDVALUE(linked_mdelem->md)));
+      return std::make_pair(
+          StringViewFromSlice(GRPC_MDKEY(linked_mdelem->md)),
+          StringViewFromSlice(GRPC_MDVALUE(linked_mdelem->md)));
     }
 
     CallData* calld_;
