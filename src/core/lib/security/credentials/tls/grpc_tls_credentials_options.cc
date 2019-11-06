@@ -76,7 +76,7 @@ grpc_tls_server_authorization_check_config::
 
 /** -- Wrapper APIs declared in grpc_security.h -- **/
 grpc_tls_credentials_options* grpc_tls_credentials_options_create() {
-  return grpc_core::New<grpc_tls_credentials_options>();
+  return new grpc_tls_credentials_options();
 }
 
 int grpc_tls_credentials_options_set_cert_request_type(
@@ -133,7 +133,7 @@ int grpc_tls_credentials_options_set_server_authorization_check_config(
 }
 
 grpc_tls_key_materials_config* grpc_tls_key_materials_config_create() {
-  return grpc_core::New<grpc_tls_key_materials_config>();
+  return new grpc_tls_key_materials_config();
 }
 
 int grpc_tls_key_materials_config_set_key_materials(
@@ -192,8 +192,8 @@ grpc_tls_credential_reload_config* grpc_tls_credential_reload_config_create(
         "Schedule API is nullptr in creating TLS credential reload config.");
     return nullptr;
   }
-  return grpc_core::New<grpc_tls_credential_reload_config>(
-      config_user_data, schedule, cancel, destruct);
+  return new grpc_tls_credential_reload_config(config_user_data, schedule,
+                                               cancel, destruct);
 }
 
 grpc_tls_server_authorization_check_config*
@@ -210,6 +210,6 @@ grpc_tls_server_authorization_check_config_create(
             "check config.");
     return nullptr;
   }
-  return grpc_core::New<grpc_tls_server_authorization_check_config>(
+  return new grpc_tls_server_authorization_check_config(
       config_user_data, schedule, cancel, destruct);
 }

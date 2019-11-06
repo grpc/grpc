@@ -92,7 +92,7 @@ static grpc_error* try_split_host_port(const char* name,
                                        grpc_core::UniquePtr<char>* port) {
   /* parse name, splitting it into host and port parts */
   grpc_error* error;
-  SplitHostPort(name, host, port);
+  grpc_core::SplitHostPort(name, host, port);
   if (*host == nullptr) {
     char* msg;
     gpr_asprintf(&msg, "unparseable host:port: '%s'", name);

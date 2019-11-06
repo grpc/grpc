@@ -643,7 +643,7 @@ grpc_error* ValidateStsCredentialsOptions(
   };
   *sts_url_out = nullptr;
   InlinedVector<grpc_error*, 3> error_list;
-  UniquePtr<grpc_uri, GrpcUriDeleter> sts_url(
+  std::unique_ptr<grpc_uri, GrpcUriDeleter> sts_url(
       options->token_exchange_service_uri != nullptr
           ? grpc_uri_parse(options->token_exchange_service_uri, false)
           : nullptr);

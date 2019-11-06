@@ -355,14 +355,14 @@ static void finish_resolve(void* arg, grpc_error* error) {
   }
 
   gpr_free(r->addr);
-  grpc_core::Delete(r);
+  delete r;
 }
 
 void my_resolve_address(const char* addr, const char* /*default_port*/,
                         grpc_pollset_set* /*interested_parties*/,
                         grpc_closure* on_done,
                         grpc_resolved_addresses** addrs) {
-  addr_req* r = grpc_core::New<addr_req>();
+  addr_req* r = new addr_req();
   r->addr = gpr_strdup(addr);
   r->on_done = on_done;
   r->addrs = addrs;

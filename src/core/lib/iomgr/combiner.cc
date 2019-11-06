@@ -53,7 +53,7 @@ static void combiner_finally_exec(grpc_core::Combiner* lock,
 static void offload(void* arg, grpc_error* error);
 
 grpc_core::Combiner* grpc_combiner_create(void) {
-  grpc_core::Combiner* lock = grpc_core::New<grpc_core::Combiner>();
+  grpc_core::Combiner* lock = new grpc_core::Combiner();
   gpr_ref_init(&lock->refs, 1);
   gpr_atm_no_barrier_store(&lock->state, STATE_UNORPHANED);
   grpc_closure_list_init(&lock->final_list);
@@ -65,7 +65,7 @@ grpc_core::Combiner* grpc_combiner_create(void) {
 static void really_destroy(grpc_core::Combiner* lock) {
   GRPC_COMBINER_TRACE(gpr_log(GPR_INFO, "C:%p really_destroy", lock));
   GPR_ASSERT(gpr_atm_no_barrier_load(&lock->state) == 0);
-  grpc_core::Delete(lock);
+  delete lock;
 }
 
 static void start_destroy(grpc_core::Combiner* lock) {

@@ -371,7 +371,7 @@ OrphanablePtr<LoadBalancingPolicy>
 ResolvingLoadBalancingPolicy::CreateLbPolicyLocked(
     const char* lb_policy_name, const grpc_channel_args& args,
     TraceStringVector* trace_strings) {
-  ResolvingControlHelper* helper = New<ResolvingControlHelper>(Ref());
+  ResolvingControlHelper* helper = new ResolvingControlHelper(Ref());
   LoadBalancingPolicy::Args lb_policy_args;
   lb_policy_args.combiner = combiner();
   lb_policy_args.channel_control_helper =

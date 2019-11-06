@@ -491,7 +491,7 @@ class RoundRobinFactory : public LoadBalancingPolicyFactory {
       GPR_DEBUG_ASSERT(strcmp(json->key, name()) == 0);
     }
     return RefCountedPtr<LoadBalancingPolicy::Config>(
-        New<ParsedRoundRobinConfig>());
+        new ParsedRoundRobinConfig());
   }
 };
 

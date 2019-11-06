@@ -83,20 +83,6 @@ grpc_cc_test(
 )
 
 grpc_cc_test(
-    name = "memory_test",
-    srcs = ["memory_test.cc"],
-    external_deps = [
-        "gtest",
-    ],
-    language = "C++",
-    uses_polling = False,
-    deps = [
-        "//:gpr_base",
-        "//test/core/util:grpc_test_util",
-    ],
-)
-
-grpc_cc_test(
     name = "inlined_vector_test",
     srcs = ["inlined_vector_test.cc"],
     external_deps = [

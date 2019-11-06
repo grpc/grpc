@@ -103,11 +103,11 @@ static RegistryState* g_state = nullptr;
 //
 
 void ResolverRegistry::Builder::InitRegistry() {
-  if (g_state == nullptr) g_state = New<RegistryState>();
+  if (g_state == nullptr) g_state = new RegistryState();
 }
 
 void ResolverRegistry::Builder::ShutdownRegistry() {
-  Delete(g_state);
+  delete g_state;
   g_state = nullptr;
 }
 

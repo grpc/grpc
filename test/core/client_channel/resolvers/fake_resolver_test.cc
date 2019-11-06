@@ -120,7 +120,7 @@ static void test_fake_resolver() {
   grpc_core::ExecCtx exec_ctx;
   grpc_core::Combiner* combiner = grpc_combiner_create();
   // Create resolver.
-  ResultHandler* result_handler = grpc_core::New<ResultHandler>();
+  ResultHandler* result_handler = new ResultHandler();
   grpc_core::RefCountedPtr<grpc_core::FakeResolverResponseGenerator>
       response_generator =
           grpc_core::MakeRefCounted<grpc_core::FakeResolverResponseGenerator>();

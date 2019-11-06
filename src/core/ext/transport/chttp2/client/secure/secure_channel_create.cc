@@ -181,7 +181,7 @@ grpc_core::Chttp2SecureClientChannelFactory* g_factory;
 gpr_once g_factory_once = GPR_ONCE_INIT;
 
 void FactoryInit() {
-  g_factory = grpc_core::New<grpc_core::Chttp2SecureClientChannelFactory>();
+  g_factory = new grpc_core::Chttp2SecureClientChannelFactory();
 }
 
 }  // namespace

@@ -335,7 +335,7 @@ static void add_to_storage(struct stream_obj* s,
   struct op_storage* storage = &s->storage;
   /* add new op at the beginning of the linked list. The memory is freed
   in remove_from_storage */
-  op_and_state* new_op = grpc_core::New<op_and_state>(s, *op);
+  op_and_state* new_op = new op_and_state(s, *op);
   gpr_mu_lock(&s->mu);
   new_op->next = storage->head;
   storage->head = new_op;
@@ -363,7 +363,7 @@ static void remove_from_storage(struct stream_obj* s,
   }
   if (s->storage.head == oas) {
     s->storage.head = oas->next;
-    grpc_core::Delete(oas);
+    delete oas;
     s->storage.num_pending_ops--;
     CRONET_LOG(GPR_DEBUG, "Freed %p. Now %d in the queue", oas,
                s->storage.num_pending_ops);
@@ -374,7 +374,7 @@ static void remove_from_storage(struct stream_obj* s,
         s->storage.num_pending_ops--;
         CRONET_LOG(GPR_DEBUG, "Freed %p. Now %d in the queue", oas,
                    s->storage.num_pending_ops);
-        grpc_core::Delete(oas);
+        delete oas;
         break;
       } else if (GPR_UNLIKELY(curr->next == nullptr)) {
         CRONET_LOG(GPR_ERROR, "Reached end of LL and did not find op to free");

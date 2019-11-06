@@ -104,7 +104,7 @@ struct secure_endpoint {
 
 grpc_core::TraceFlag grpc_trace_secure_endpoint(false, "secure_endpoint");
 
-static void destroy(secure_endpoint* ep) { grpc_core::Delete(ep); }
+static void destroy(secure_endpoint* ep) { delete ep; }
 
 #ifndef NDEBUG
 #define SECURE_ENDPOINT_UNREF(ep, reason) \
@@ -439,8 +439,8 @@ grpc_endpoint* grpc_secure_endpoint_create(
     struct tsi_zero_copy_grpc_protector* zero_copy_protector,
     grpc_endpoint* transport, grpc_slice* leftover_slices,
     size_t leftover_nslices) {
-  secure_endpoint* ep = grpc_core::New<secure_endpoint>(
-      &vtable, protector, zero_copy_protector, transport, leftover_slices,
-      leftover_nslices);
+  secure_endpoint* ep =
+      new secure_endpoint(&vtable, protector, zero_copy_protector, transport,
+                          leftover_slices, leftover_nslices);
   return &ep->base;
 }
