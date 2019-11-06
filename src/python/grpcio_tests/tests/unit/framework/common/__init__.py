@@ -13,11 +13,15 @@
 # limitations under the License.
 
 import contextlib
+import os
 import socket
+
+_DEFAULT_SOCK_OPTION = socket.SO_REUSEADDR if os.name == 'nt' else socket.SO_REUSEPORT
+
 
 def get_socket(bind_address='localhost',
                listen=True,
-               sock_options=(socket.SO_REUSEPORT,)):
+               sock_options=(_DEFAULT_SOCK_OPTION,)):
     """Opens a socket bound to an arbitrary port.
 
     Useful for reserving a port for a system-under-test.
@@ -37,7 +41,7 @@ def get_socket(bind_address='localhost',
     if socket.has_ipv6:
         address_families = (socket.AF_INET6, socket.AF_INET)
     else:
-        address_families =  (socket.AF_INET)
+        address_families = (socket.AF_INET)
     for address_family in address_families:
         try:
             sock = socket.socket(address_family, socket.SOCK_STREAM)
@@ -57,7 +61,7 @@ def get_socket(bind_address='localhost',
 @contextlib.contextmanager
 def bound_socket(bind_address='localhost',
                  listen=True,
-                 sock_options=(socket.SO_REUSEPORT,)):
+                 sock_options=(_DEFAULT_SOCK_OPTION,)):
     """Opens a socket bound to an arbitrary port.
 
     Useful for reserving a port for a system-under-test.
