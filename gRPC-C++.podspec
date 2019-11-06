@@ -465,15 +465,7 @@ Pod::Spec.new do |s|
                               'src/cpp/server/health/default_health_check_service.h',
                               'src/cpp/server/secure_server_credentials.h',
                               'src/cpp/server/thread_pool_interface.h',
-                              'src/cpp/thread_manager/thread_manager.h',
-                              'third_party/upb/upb/decode.h',
-                              'third_party/upb/upb/encode.h',
-                              'third_party/upb/upb/generated_util.h',
-                              'third_party/upb/upb/msg.h',
-                              'third_party/upb/upb/port_def.inc',
-                              'third_party/upb/upb/port_undef.inc',
-                              'third_party/upb/upb/table.int.h',
-                              'third_party/upb/upb/upb.h'
+                              'src/cpp/thread_manager/thread_manager.h'
   end
 
   s.subspec 'Protobuf' do |ss|
