@@ -26,6 +26,7 @@ namespace grpc {
 typedef ::grpc_impl::ChannelCredentials ChannelCredentials;
 typedef ::grpc_impl::CallCredentials CallCredentials;
 typedef ::grpc_impl::SslCredentialsOptions SslCredentialsOptions;
+typedef ::grpc_impl::SslClientCredentialsOptions SslClientCredentialsOptions;
 typedef ::grpc_impl::SecureCallCredentials SecureCallCredentials;
 typedef ::grpc_impl::SecureChannelCredentials SecureChannelCredentials;
 typedef ::grpc_impl::MetadataCredentialsPlugin MetadataCredentialsPlugin;
@@ -38,6 +39,11 @@ GoogleDefaultCredentials() {
 static inline std::shared_ptr<ChannelCredentials> SslCredentials(
     const SslCredentialsOptions& options) {
   return ::grpc_impl::SslCredentials(options);
+}
+
+static inline std::shared_ptr<ChannelCredentials> SslClientCredentials(
+    const SslClientCredentialsOptions& options) {
+  return ::grpc_impl::SslClientCredentials(options);
 }
 
 static inline std::shared_ptr<grpc_impl::CallCredentials>

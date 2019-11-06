@@ -46,9 +46,11 @@ void grpc_tsi_ssl_pem_key_cert_pairs_destroy(tsi_ssl_pem_key_cert_pair* kp,
 
 grpc_ssl_credentials::grpc_ssl_credentials(
     const char* pem_root_certs, grpc_ssl_pem_key_cert_pair* pem_key_cert_pair,
-    const grpc_ssl_verify_peer_options* verify_options)
+    const grpc_ssl_verify_peer_options* verify_options,
+    grpc_ssl_server_verification_option server_verification_option)
     : grpc_channel_credentials(GRPC_CHANNEL_CREDENTIALS_TYPE_SSL) {
-  build_config(pem_root_certs, pem_key_cert_pair, verify_options);
+  build_config(pem_root_certs, pem_key_cert_pair, verify_options,
+               server_verification_option);
 }
 
 grpc_ssl_credentials::~grpc_ssl_credentials() {
@@ -94,7 +96,8 @@ grpc_ssl_credentials::create_security_connector(
 
 void grpc_ssl_credentials::build_config(
     const char* pem_root_certs, grpc_ssl_pem_key_cert_pair* pem_key_cert_pair,
-    const grpc_ssl_verify_peer_options* verify_options) {
+    const grpc_ssl_verify_peer_options* verify_options,
+    grpc_ssl_server_verification_option server_verification_option) {
   config_.pem_root_certs = gpr_strdup(pem_root_certs);
   if (pem_key_cert_pair != nullptr) {
     GPR_ASSERT(pem_key_cert_pair->private_key != nullptr);
@@ -110,11 +113,12 @@ void grpc_ssl_credentials::build_config(
   }
   if (verify_options != nullptr) {
     memcpy(&config_.verify_options, verify_options,
-           sizeof(verify_peer_options));
+           sizeof(grpc_ssl_verify_peer_options));
   } else {
     // Otherwise set all options to default values
-    memset(&config_.verify_options, 0, sizeof(verify_peer_options));
+    memset(&config_.verify_options, 0, sizeof(grpc_ssl_verify_peer_options));
   }
+  config_.server_verification_option = server_verification_option;
 }
 
 /* Deprecated in favor of grpc_ssl_credentials_create_ex. Will be removed
@@ -132,7 +136,8 @@ grpc_channel_credentials* grpc_ssl_credentials_create(
 
   return grpc_core::New<grpc_ssl_credentials>(
       pem_root_certs, pem_key_cert_pair,
-      reinterpret_cast<const grpc_ssl_verify_peer_options*>(verify_options));
+      reinterpret_cast<const grpc_ssl_verify_peer_options*>(verify_options),
+      GRPC_SSL_SERVER_VERIFICATION_DEFAULT);
 }
 
 grpc_channel_credentials* grpc_ssl_credentials_create_ex(
@@ -146,8 +151,26 @@ grpc_channel_credentials* grpc_ssl_credentials_create_ex(
       4, (pem_root_certs, pem_key_cert_pair, verify_options, reserved));
   GPR_ASSERT(reserved == nullptr);
 
+  return grpc_core::New<grpc_ssl_credentials>(pem_root_certs, pem_key_cert_pair, verify_options,
+      GRPC_SSL_SERVER_VERIFICATION_DEFAULT);
+}
+
+grpc_channel_credentials* grpc_ssl_client_credentials_create(
+    const char* pem_root_certs, grpc_ssl_pem_key_cert_pair* pem_key_cert_pair,
+    const grpc_ssl_verify_peer_options* verify_options,
+    grpc_ssl_server_verification_option server_verification_option) {
+  GRPC_API_TRACE(
+      "grpc_ssl_credentials_create(pem_root_certs=%s, "
+      "pem_key_cert_pair=%p, "
+      "verify_options=%p, "
+      "ignore_verify_peer=%d)",
+      4,
+      (pem_root_certs, pem_key_cert_pair, verify_options,
+       server_verification_option));
+
   return grpc_core::New<grpc_ssl_credentials>(pem_root_certs, pem_key_cert_pair,
-                                              verify_options);
+                                              verify_options,
+                                              server_verification_option);
 }
 
 //
