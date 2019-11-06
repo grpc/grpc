@@ -560,6 +560,9 @@ class InterceptorTest(unittest.TestCase):
             's1:intercept_service', 's2:intercept_service'
         ])
 
+    # NOTE: The single-threaded unary-stream path does not support the
+    # grpc.Future interface, so this test does not apply.
+    @unittest.skipIf(os.getenv("GRPC_SINGLE_THREADED_UNARY_STREAM"))
     def testInterceptedUnaryRequestStreamResponseWithError(self):
         request = _EXCEPTION_REQUEST
 
