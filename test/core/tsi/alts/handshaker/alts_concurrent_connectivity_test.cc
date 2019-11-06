@@ -104,13 +104,19 @@ grpc_channel* create_secure_channel_for_test(
 
 class FakeHandshakeServer {
  public:
-  FakeHandshakeServer() {
+  // TODO(apolcyn): remove this max_concurrent_streams
+  // option and hardcode to 40 after all tests pass with it.
+  FakeHandshakeServer(int max_concurrent_streams) {
     int port = grpc_pick_unused_port_or_die();
     grpc_core::JoinHostPort(&address_, "localhost", port);
     service_ = grpc::gcp::CreateFakeHandshakerService();
     grpc::ServerBuilder builder;
     builder.AddListeningPort(address_.get(), grpc::InsecureServerCredentials());
     builder.RegisterService(service_.get());
+    if (max_concurrent_streams != 0) {
+      builder.AddChannelArgument(GRPC_ARG_MAX_CONCURRENT_STREAMS,
+                                 max_concurrent_streams);
+    }
     server_ = builder.BuildAndStart();
     gpr_log(GPR_INFO, "Fake handshaker server listening on %s", address_.get());
   }
@@ -250,7 +256,7 @@ class ConnectLoopRunner {
 // Perform a few ALTS handshakes sequentially (using the fake, in-process ALTS
 // handshake server).
 TEST(AltsConcurrentConnectivityTest, TestBasicClientServerHandshakes) {
-  FakeHandshakeServer fake_handshake_server;
+  FakeHandshakeServer fake_handshake_server(40 /* max concurrent streams */);
   TestServer test_server(fake_handshake_server.address());
   {
     ConnectLoopRunner runner(
@@ -264,7 +270,12 @@ TEST(AltsConcurrentConnectivityTest, TestBasicClientServerHandshakes) {
 /* Run a bunch of concurrent ALTS handshakes on concurrent channels
  * (using the fake, in-process handshake server). */
 TEST(AltsConcurrentConnectivityTest, TestConcurrentClientServerHandshakes) {
-  FakeHandshakeServer fake_handshake_server;
+  // TODO(apolcyn): have this test's handshake server use max concurrent streams
+  // of 40 after fixing problem whereby all streams get used up by one type of
+  // handshake (either "client" or "server"), in which case no handshakes
+  // can make progress because there are no matching client/server pairs.
+  FakeHandshakeServer fake_handshake_server(
+      0 /* max concurrent streams unset */);
   // Test
   {
     TestServer test_server(fake_handshake_server.address());
@@ -457,7 +468,7 @@ class FakeTcpServer {
  * handshake. */
 TEST(AltsConcurrentConnectivityTest,
      TestHandshakeFailsFastWhenPeerEndpointClosesConnectionAfterAccepting) {
-  FakeHandshakeServer fake_handshake_server;
+  FakeHandshakeServer fake_handshake_server(40 /* max concurrent streams */);
   FakeTcpServer fake_tcp_server(
       FakeTcpServer::CloseSocketUponReceivingBytesFromPeer);
   {
