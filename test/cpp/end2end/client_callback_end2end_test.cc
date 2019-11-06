@@ -95,6 +95,13 @@ void TestScenario::Log() const {
 class ClientCallbackEnd2endTest
     : public ::testing::TestWithParam<TestScenario> {
  protected:
+  std::mutex mu1;
+  std::condition_variable cv;
+  bool done = false;
+  EchoRequest request1;
+  EchoResponse response1;
+  ClientContext cli_ctx1;
+
   ClientCallbackEnd2endTest() { GetParam().Log(); }
 
   void SetUp() override {
@@ -173,6 +180,34 @@ class ClientCallbackEnd2endTest
     }
     if (picked_port_ > 0) {
       grpc_recycle_unused_port(picked_port_);
+    }
+  }
+
+  void CallResponseCallback() {
+    gpr_log(GPR_ERROR, "KRS: CallResponseCallback");
+    std::lock_guard<std::mutex> l1(mu1);
+    ResponseCallback();
+    gpr_log(GPR_ERROR, "KRS: CallResponseCallback - end");
+  }
+
+  void ResponseCallback() {
+    gpr_log(GPR_ERROR, "KRS: ResponseCallback");
+    request1.set_message("Hello locked world1.");
+    // Take lock and call RPC.
+    gpr_log(GPR_ERROR, "KRS: ResponseCallback: before lock");
+    std::lock_guard<std::mutex> l1(mu1);
+    gpr_log(GPR_ERROR, "KRS: ResponseCallback: after lock");
+    {
+      gpr_log(GPR_ERROR, "KRS: ResponseCallback: calling RPC");
+      stub_->experimental_async()->Echo(
+          &cli_ctx1, &request1, &response1,
+          [this](Status s1) {
+            EXPECT_TRUE(s1.ok());
+            EXPECT_EQ(request1.message(), response1.message());
+            gpr_log(GPR_ERROR, "KRS: ResponseCallback: RPC lambda - calling CallResponseCallback");
+            CallResponseCallback();
+            gpr_log(GPR_ERROR, "KRS: ResponseCallback: RPC lambda - calling CallResponseCallback - after");
+      });
     }
   }
 
@@ -424,6 +459,12 @@ TEST_P(ClientCallbackEnd2endTest, SimpleRpcUnderLockNested) {
   while (!done) {
     cv.wait(l);
   }
+}
+
+TEST_P(ClientCallbackEnd2endTest, SimpleRpcUnderLockNestedComplex) {
+  MAYBE_SKIP_TEST;
+  ResetStub();
+  CallResponseCallback();
 }
 
 TEST_P(ClientCallbackEnd2endTest, SimpleRpcUnderLock) {
