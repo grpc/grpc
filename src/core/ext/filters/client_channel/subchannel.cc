@@ -669,21 +669,21 @@ Subchannel::~Subchannel() {
   grpc_channel_args_destroy(args_);
   grpc_connector_unref(connector_);
   grpc_pollset_set_destroy(pollset_set_);
-  Delete(key_);
+  delete key_;
 }
 
 Subchannel* Subchannel::Create(grpc_connector* connector,
                                const grpc_channel_args* args) {
-  SubchannelKey* key = New<SubchannelKey>(args);
+  SubchannelKey* key = new SubchannelKey(args);
   SubchannelPoolInterface* subchannel_pool =
       SubchannelPoolInterface::GetSubchannelPoolFromChannelArgs(args);
   GPR_ASSERT(subchannel_pool != nullptr);
   Subchannel* c = subchannel_pool->FindSubchannel(key);
   if (c != nullptr) {
-    Delete(key);
+    delete key;
     return c;
   }
-  c = New<Subchannel>(key, connector, args);
+  c = new Subchannel(key, connector, args);
   // Try to register the subchannel before setting the subchannel pool.
   // Otherwise, in case of a registration race, unreffing c in
   // RegisterSubchannel() will cause c to be tried to be unregistered, while
@@ -724,7 +724,7 @@ namespace {
 
 void subchannel_destroy(void* arg, grpc_error* /*error*/) {
   Subchannel* self = static_cast<Subchannel*>(arg);
-  Delete(self);
+  delete self;
 }
 
 }  // namespace
@@ -1050,7 +1050,7 @@ bool Subchannel::PublishTransportLocked() {
   }
   // Publish.
   connected_subchannel_.reset(
-      New<ConnectedSubchannel>(stk, args_, channelz_node_));
+      new ConnectedSubchannel(stk, args_, channelz_node_));
   gpr_log(GPR_INFO, "New connected subchannel at %p for subchannel %p",
           connected_subchannel_.get(), this);
   if (channelz_node_ != nullptr) {

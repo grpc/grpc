@@ -27,10 +27,9 @@ static const int kThreadLargeIter = 10000;
 
 static void test_size_zero(void) {
   gpr_log(GPR_INFO, "test_size_zero");
-  grpc_core::ThreadPool* pool_size_zero =
-      grpc_core::New<grpc_core::ThreadPool>(0);
+  grpc_core::ThreadPool* pool_size_zero = new grpc_core::ThreadPool(0);
   GPR_ASSERT(pool_size_zero->pool_capacity() == 1);
-  Delete(pool_size_zero);
+  delete pool_size_zero;
 }
 
 static void test_constructor_option(void) {
@@ -38,10 +37,10 @@ static void test_constructor_option(void) {
   // Tests options
   grpc_core::Thread::Options options;
   options.set_stack_size(192 * 1024);  // Random non-default value
-  grpc_core::ThreadPool* pool = grpc_core::New<grpc_core::ThreadPool>(
-      0, "test_constructor_option", options);
+  grpc_core::ThreadPool* pool =
+      new grpc_core::ThreadPool(0, "test_constructor_option", options);
   GPR_ASSERT(pool->thread_options().stack_size() == options.stack_size());
-  Delete(pool);
+  delete pool;
 }
 
 // Simple functor for testing. It will count how many times being called.
@@ -69,15 +68,15 @@ class SimpleFunctorForAdd : public grpc_experimental_completion_queue_functor {
 static void test_add(void) {
   gpr_log(GPR_INFO, "test_add");
   grpc_core::ThreadPool* pool =
-      grpc_core::New<grpc_core::ThreadPool>(kSmallThreadPoolSize, "test_add");
+      new grpc_core::ThreadPool(kSmallThreadPoolSize, "test_add");
 
-  SimpleFunctorForAdd* functor = grpc_core::New<SimpleFunctorForAdd>();
+  SimpleFunctorForAdd* functor = new SimpleFunctorForAdd();
   for (int i = 0; i < kThreadSmallIter; ++i) {
     pool->Add(functor);
   }
-  grpc_core::Delete(pool);
+  delete pool;
   GPR_ASSERT(functor->count() == kThreadSmallIter);
-  grpc_core::Delete(functor);
+  delete functor;
   gpr_log(GPR_DEBUG, "Done.");
 }
 
@@ -111,29 +110,29 @@ class WorkThread {
 static void test_multi_add(void) {
   gpr_log(GPR_INFO, "test_multi_add");
   const int num_work_thds = 10;
-  grpc_core::ThreadPool* pool = grpc_core::New<grpc_core::ThreadPool>(
-      kLargeThreadPoolSize, "test_multi_add");
-  SimpleFunctorForAdd* functor = grpc_core::New<SimpleFunctorForAdd>();
+  grpc_core::ThreadPool* pool =
+      new grpc_core::ThreadPool(kLargeThreadPoolSize, "test_multi_add");
+  SimpleFunctorForAdd* functor = new SimpleFunctorForAdd();
   WorkThread** work_thds = static_cast<WorkThread**>(
       gpr_zalloc(sizeof(WorkThread*) * num_work_thds));
   gpr_log(GPR_DEBUG, "Fork threads for adding...");
   for (int i = 0; i < num_work_thds; ++i) {
-    work_thds[i] = grpc_core::New<WorkThread>(pool, functor, kThreadLargeIter);
+    work_thds[i] = new WorkThread(pool, functor, kThreadLargeIter);
     work_thds[i]->Start();
   }
   // Wait for all threads finish
   gpr_log(GPR_DEBUG, "Waiting for all work threads finish...");
   for (int i = 0; i < num_work_thds; ++i) {
     work_thds[i]->Join();
-    grpc_core::Delete(work_thds[i]);
+    delete work_thds[i];
   }
   gpr_free(work_thds);
   gpr_log(GPR_DEBUG, "Done.");
   gpr_log(GPR_DEBUG, "Waiting for all closures finish...");
   // Destructor of thread pool will wait for all closures to finish
-  grpc_core::Delete(pool);
+  delete pool;
   GPR_ASSERT(functor->count() == kThreadLargeIter * num_work_thds);
-  grpc_core::Delete(functor);
+  delete functor;
   gpr_log(GPR_DEBUG, "Done.");
 }
 
@@ -161,19 +160,18 @@ static void test_one_thread_FIFO(void) {
   gpr_log(GPR_INFO, "test_one_thread_FIFO");
   int counter = 0;
   grpc_core::ThreadPool* pool =
-      grpc_core::New<grpc_core::ThreadPool>(1, "test_one_thread_FIFO");
+      new grpc_core::ThreadPool(1, "test_one_thread_FIFO");
   SimpleFunctorCheckForAdd** check_functors =
       static_cast<SimpleFunctorCheckForAdd**>(
           gpr_zalloc(sizeof(SimpleFunctorCheckForAdd*) * kThreadSmallIter));
   for (int i = 0; i < kThreadSmallIter; ++i) {
-    check_functors[i] =
-        grpc_core::New<SimpleFunctorCheckForAdd>(i + 1, &counter);
+    check_functors[i] = new SimpleFunctorCheckForAdd(i + 1, &counter);
     pool->Add(check_functors[i]);
   }
   // Destructor of pool will wait until all closures finished.
-  grpc_core::Delete(pool);
+  delete pool;
   for (int i = 0; i < kThreadSmallIter; ++i) {
-    grpc_core::Delete(check_functors[i]);
+    delete check_functors[i];
   }
   gpr_free(check_functors);
   gpr_log(GPR_DEBUG, "Done.");

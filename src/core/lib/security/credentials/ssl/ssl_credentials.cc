@@ -130,7 +130,7 @@ grpc_channel_credentials* grpc_ssl_credentials_create(
       4, (pem_root_certs, pem_key_cert_pair, verify_options, reserved));
   GPR_ASSERT(reserved == nullptr);
 
-  return grpc_core::New<grpc_ssl_credentials>(
+  return new grpc_ssl_credentials(
       pem_root_certs, pem_key_cert_pair,
       reinterpret_cast<const grpc_ssl_verify_peer_options*>(verify_options));
 }
@@ -146,8 +146,8 @@ grpc_channel_credentials* grpc_ssl_credentials_create_ex(
       4, (pem_root_certs, pem_key_cert_pair, verify_options, reserved));
   GPR_ASSERT(reserved == nullptr);
 
-  return grpc_core::New<grpc_ssl_credentials>(pem_root_certs, pem_key_cert_pair,
-                                              verify_options);
+  return new grpc_ssl_credentials(pem_root_certs, pem_key_cert_pair,
+                                  verify_options);
 }
 
 //
@@ -348,7 +348,7 @@ grpc_server_credentials* grpc_ssl_server_credentials_create_with_options(
     goto done;
   }
 
-  retval = grpc_core::New<grpc_ssl_server_credentials>(*options);
+  retval = new grpc_ssl_server_credentials(*options);
 
 done:
   grpc_ssl_server_credentials_options_destroy(options);

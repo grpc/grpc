@@ -442,8 +442,7 @@ class check_channel_oauth2 final : public grpc_channel_credentials {
 static void test_channel_oauth2_composite_creds(void) {
   grpc_core::ExecCtx exec_ctx;
   grpc_channel_args* new_args;
-  grpc_channel_credentials* channel_creds =
-      grpc_core::New<check_channel_oauth2>();
+  grpc_channel_credentials* channel_creds = new check_channel_oauth2();
   grpc_call_credentials* oauth2_creds =
       grpc_access_token_credentials_create("blah", nullptr);
   grpc_channel_credentials* channel_oauth2_creds =
@@ -523,7 +522,7 @@ static void test_channel_oauth2_google_iam_composite_creds(void) {
   grpc_core::ExecCtx exec_ctx;
   grpc_channel_args* new_args;
   grpc_channel_credentials* channel_creds =
-      grpc_core::New<check_channel_oauth2_google_iam>();
+      new check_channel_oauth2_google_iam();
   grpc_call_credentials* oauth2_creds =
       grpc_access_token_credentials_create("blah", nullptr);
   grpc_channel_credentials* channel_oauth2_creds =

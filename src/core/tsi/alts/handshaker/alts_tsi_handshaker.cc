@@ -378,7 +378,7 @@ static void alts_tsi_handshaker_create_channel(void* arg,
     next_args->cb(continue_next_result, next_args->user_data, nullptr, 0,
                   nullptr);
   }
-  grpc_core::Delete(next_args);
+  delete next_args;
 }
 
 static tsi_result handshaker_next(
@@ -401,7 +401,7 @@ static tsi_result handshaker_next(
   }
   if (handshaker->channel == nullptr && !handshaker->use_dedicated_cq) {
     alts_tsi_handshaker_continue_handshaker_next_args* args =
-        grpc_core::New<alts_tsi_handshaker_continue_handshaker_next_args>();
+        new alts_tsi_handshaker_continue_handshaker_next_args();
     args->handshaker = handshaker;
     args->received_bytes = nullptr;
     args->received_bytes_size = received_bytes_size;

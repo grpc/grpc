@@ -239,7 +239,7 @@ class Chttp2IncomingByteStream : public ByteStream {
   void Ref() { refs_.Ref(); }
   void Unref() {
     if (GPR_UNLIKELY(refs_.Unref())) {
-      grpc_core::Delete(this);
+      delete this;
     }
   }
 
@@ -814,7 +814,7 @@ inline void grpc_chttp2_unref_transport(grpc_chttp2_transport* t,
                                         const char* reason, const char* file,
                                         int line) {
   if (t->refs.Unref(grpc_core::DebugLocation(file, line), reason)) {
-    grpc_core::Delete(t);
+    delete t;
   }
 }
 inline void grpc_chttp2_ref_transport(grpc_chttp2_transport* t,
@@ -827,7 +827,7 @@ inline void grpc_chttp2_ref_transport(grpc_chttp2_transport* t,
 #define GRPC_CHTTP2_UNREF_TRANSPORT(t, r) grpc_chttp2_unref_transport(t)
 inline void grpc_chttp2_unref_transport(grpc_chttp2_transport* t) {
   if (t->refs.Unref()) {
-    grpc_core::Delete(t);
+    delete t;
   }
 }
 inline void grpc_chttp2_ref_transport(grpc_chttp2_transport* t) {

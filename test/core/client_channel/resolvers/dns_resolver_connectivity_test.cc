@@ -167,7 +167,7 @@ int main(int argc, char** argv) {
 
   {
     grpc_core::ExecCtx exec_ctx;
-    ResultHandler* result_handler = grpc_core::New<ResultHandler>();
+    ResultHandler* result_handler = new ResultHandler();
     grpc_core::OrphanablePtr<grpc_core::Resolver> resolver = create_resolver(
         "dns:test", grpc_core::UniquePtr<grpc_core::Resolver::ResultHandler>(
                         result_handler));

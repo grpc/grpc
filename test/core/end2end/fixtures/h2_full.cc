@@ -42,7 +42,7 @@ static grpc_end2end_test_fixture chttp2_create_fixture_fullstack(
     grpc_channel_args* /*client_args*/, grpc_channel_args* /*server_args*/) {
   grpc_end2end_test_fixture f;
   int port = grpc_pick_unused_port_or_die();
-  fullstack_fixture_data* ffd = grpc_core::New<fullstack_fixture_data>();
+  fullstack_fixture_data* ffd = new fullstack_fixture_data();
   memset(&f, 0, sizeof(f));
 
   grpc_core::JoinHostPort(&ffd->localaddr, "localhost", port);
@@ -80,7 +80,7 @@ void chttp2_init_server_fullstack(grpc_end2end_test_fixture* f,
 void chttp2_tear_down_fullstack(grpc_end2end_test_fixture* f) {
   fullstack_fixture_data* ffd =
       static_cast<fullstack_fixture_data*>(f->fixture_data);
-  grpc_core::Delete(ffd);
+  delete ffd;
 }
 
 /* All test configurations */

@@ -85,7 +85,7 @@ grpc_channel_credentials* grpc_alts_credentials_create_customized(
   if (!enable_untrusted_alts && !grpc_alts_is_running_on_gcp()) {
     return nullptr;
   }
-  return grpc_core::New<grpc_alts_credentials>(options, handshaker_service_url);
+  return new grpc_alts_credentials(options, handshaker_service_url);
 }
 
 grpc_server_credentials* grpc_alts_server_credentials_create_customized(
@@ -94,8 +94,7 @@ grpc_server_credentials* grpc_alts_server_credentials_create_customized(
   if (!enable_untrusted_alts && !grpc_alts_is_running_on_gcp()) {
     return nullptr;
   }
-  return grpc_core::New<grpc_alts_server_credentials>(options,
-                                                      handshaker_service_url);
+  return new grpc_alts_server_credentials(options, handshaker_service_url);
 }
 
 grpc_channel_credentials* grpc_alts_credentials_create(

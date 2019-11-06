@@ -423,7 +423,7 @@ class ResultHandler : public grpc_core::Resolver::ResultHandler {
   static grpc_core::UniquePtr<grpc_core::Resolver::ResultHandler> Create(
       ArgsStruct* args) {
     return grpc_core::UniquePtr<grpc_core::Resolver::ResultHandler>(
-        grpc_core::New<ResultHandler>(args));
+        new ResultHandler(args));
   }
 
   explicit ResultHandler(ArgsStruct* args) : args_(args) {}
@@ -456,7 +456,7 @@ class CheckingResultHandler : public ResultHandler {
   static grpc_core::UniquePtr<grpc_core::Resolver::ResultHandler> Create(
       ArgsStruct* args) {
     return grpc_core::UniquePtr<grpc_core::Resolver::ResultHandler>(
-        grpc_core::New<CheckingResultHandler>(args));
+        new CheckingResultHandler(args));
   }
 
   explicit CheckingResultHandler(ArgsStruct* args) : ResultHandler(args) {}
@@ -559,7 +559,7 @@ void RunResolvesRelevantRecordsTest(
   if (FLAGS_inject_broken_nameserver_list == "True") {
     g_fake_non_responsive_dns_server_port = grpc_pick_unused_port_or_die();
     fake_non_responsive_dns_server.reset(
-        grpc_core::New<grpc::testing::FakeNonResponsiveDNSServer>(
+        new grpc::testing::FakeNonResponsiveDNSServer(
             g_fake_non_responsive_dns_server_port));
     grpc_ares_test_only_inject_config = InjectBrokenNameServerList;
     GPR_ASSERT(

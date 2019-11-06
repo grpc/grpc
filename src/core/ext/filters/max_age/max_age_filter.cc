@@ -267,8 +267,7 @@ static void start_max_age_timer_after_init(void* arg, grpc_error* /*error*/) {
                   &chand->close_max_age_channel);
   gpr_mu_unlock(&chand->max_age_timer_mu);
   grpc_transport_op* op = grpc_make_transport_op(nullptr);
-  op->start_connectivity_watch.reset(
-      grpc_core::New<grpc_core::ConnectivityWatcher>(chand));
+  op->start_connectivity_watch.reset(new grpc_core::ConnectivityWatcher(chand));
   op->start_connectivity_watch_state = GRPC_CHANNEL_IDLE;
   grpc_channel_next_op(grpc_channel_stack_element(chand->channel_stack, 0), op);
   GRPC_CHANNEL_STACK_UNREF(chand->channel_stack,

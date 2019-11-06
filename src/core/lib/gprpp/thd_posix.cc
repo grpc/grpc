@@ -133,7 +133,7 @@ class ThreadInternalsPosix : public internal::ThreadInternalsInterface {
                           gpr_mu_unlock(&arg.thread->mu_);
 
                           if (!arg.joinable) {
-                            Delete(arg.thread);
+                            delete arg.thread;
                           }
 
                           (*arg.body)(arg.arg);
@@ -182,12 +182,12 @@ Thread::Thread(const char* thd_name, void (*thd_body)(void* arg), void* arg,
                bool* success, const Options& options)
     : options_(options) {
   bool outcome = false;
-  impl_ = New<ThreadInternalsPosix>(thd_name, thd_body, arg, &outcome, options);
+  impl_ = new ThreadInternalsPosix(thd_name, thd_body, arg, &outcome, options);
   if (outcome) {
     state_ = ALIVE;
   } else {
     state_ = FAILED;
-    Delete(impl_);
+    delete impl_;
     impl_ = nullptr;
   }
 

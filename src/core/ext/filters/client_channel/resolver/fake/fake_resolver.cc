@@ -191,7 +191,7 @@ void FakeResolverResponseGenerator::SetResponseLocked(void* arg,
     resolver->has_next_result_ = true;
     resolver->MaybeSendResultLocked();
   }
-  Delete(closure_arg);
+  delete closure_arg;
 }
 
 void FakeResolverResponseGenerator::SetResponse(Resolver::Result result) {
@@ -205,7 +205,7 @@ void FakeResolverResponseGenerator::SetResponse(Resolver::Result result) {
     }
     resolver = resolver_->Ref();
   }
-  SetResponseClosureArg* closure_arg = New<SetResponseClosureArg>();
+  SetResponseClosureArg* closure_arg = new SetResponseClosureArg();
   closure_arg->resolver = std::move(resolver);
   closure_arg->result = std::move(result);
   closure_arg->resolver->combiner()->Run(
@@ -222,7 +222,7 @@ void FakeResolverResponseGenerator::SetReresolutionResponseLocked(
     resolver->reresolution_result_ = std::move(closure_arg->result);
     resolver->has_reresolution_result_ = closure_arg->has_result;
   }
-  Delete(closure_arg);
+  delete closure_arg;
 }
 
 void FakeResolverResponseGenerator::SetReresolutionResponse(
@@ -233,7 +233,7 @@ void FakeResolverResponseGenerator::SetReresolutionResponse(
     GPR_ASSERT(resolver_ != nullptr);
     resolver = resolver_->Ref();
   }
-  SetResponseClosureArg* closure_arg = New<SetResponseClosureArg>();
+  SetResponseClosureArg* closure_arg = new SetResponseClosureArg();
   closure_arg->resolver = std::move(resolver);
   closure_arg->result = std::move(result);
   closure_arg->has_result = true;
@@ -250,7 +250,7 @@ void FakeResolverResponseGenerator::UnsetReresolutionResponse() {
     GPR_ASSERT(resolver_ != nullptr);
     resolver = resolver_->Ref();
   }
-  SetResponseClosureArg* closure_arg = New<SetResponseClosureArg>();
+  SetResponseClosureArg* closure_arg = new SetResponseClosureArg();
   closure_arg->resolver = std::move(resolver);
   closure_arg->resolver->combiner()->Run(
       GRPC_CLOSURE_INIT(&closure_arg->set_response_closure,
@@ -266,7 +266,7 @@ void FakeResolverResponseGenerator::SetFailureLocked(void* arg,
     resolver->return_failure_ = true;
     if (closure_arg->immediate) resolver->MaybeSendResultLocked();
   }
-  Delete(closure_arg);
+  delete closure_arg;
 }
 
 void FakeResolverResponseGenerator::SetFailure() {
@@ -276,7 +276,7 @@ void FakeResolverResponseGenerator::SetFailure() {
     GPR_ASSERT(resolver_ != nullptr);
     resolver = resolver_->Ref();
   }
-  SetResponseClosureArg* closure_arg = New<SetResponseClosureArg>();
+  SetResponseClosureArg* closure_arg = new SetResponseClosureArg();
   closure_arg->resolver = std::move(resolver);
   closure_arg->resolver->combiner()->Run(
       GRPC_CLOSURE_INIT(&closure_arg->set_response_closure, SetFailureLocked,
@@ -291,7 +291,7 @@ void FakeResolverResponseGenerator::SetFailureOnReresolution() {
     GPR_ASSERT(resolver_ != nullptr);
     resolver = resolver_->Ref();
   }
-  SetResponseClosureArg* closure_arg = New<SetResponseClosureArg>();
+  SetResponseClosureArg* closure_arg = new SetResponseClosureArg();
   closure_arg->resolver = std::move(resolver);
   closure_arg->immediate = false;
   closure_arg->resolver->combiner()->Run(
@@ -306,7 +306,7 @@ void FakeResolverResponseGenerator::SetFakeResolver(
   resolver_ = std::move(resolver);
   if (resolver_ == nullptr) return;
   if (has_result_) {
-    SetResponseClosureArg* closure_arg = New<SetResponseClosureArg>();
+    SetResponseClosureArg* closure_arg = new SetResponseClosureArg();
     closure_arg->resolver = resolver_->Ref();
     closure_arg->result = std::move(result_);
     resolver_->combiner()->Run(

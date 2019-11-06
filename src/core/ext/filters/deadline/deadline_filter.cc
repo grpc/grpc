@@ -175,7 +175,7 @@ static void start_timer_after_init(void* arg, grpc_error* error) {
                              "scheduling deadline timer");
     return;
   }
-  grpc_core::Delete(state);
+  delete state;
   GRPC_CALL_COMBINER_STOP(deadline_state->call_combiner,
                           "done scheduling deadline timer");
 }
@@ -196,7 +196,7 @@ grpc_deadline_state::grpc_deadline_state(grpc_call_element* elem,
     // create a closure to start the timer, and we schedule that closure
     // to be run after call stack initialization is done.
     struct start_timer_after_init_state* state =
-        grpc_core::New<start_timer_after_init_state>(elem, deadline);
+        new start_timer_after_init_state(elem, deadline);
     GRPC_CLOSURE_INIT(&state->closure, start_timer_after_init, state,
                       grpc_schedule_on_exec_ctx);
     grpc_core::ExecCtx::Run(DEBUG_LOCATION, &state->closure, GRPC_ERROR_NONE);
