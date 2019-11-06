@@ -89,7 +89,8 @@ grpc_channel* create_secure_channel_for_test(
     gpr_log(GPR_DEBUG, "create_secure_channel_for_test reconnect_backoff_ms:%d",
             reconnect_backoff_ms);
     grpc_arg new_arg = grpc_channel_arg_integer_create(
-        "grpc.testing.fixed_reconnect_backoff_ms", reconnect_backoff_ms);
+        const_cast<char*>("grpc.testing.fixed_reconnect_backoff_ms"),
+        reconnect_backoff_ms);
     grpc_channel_args* new_channel_args =
         grpc_channel_args_copy_and_add(channel_args, &new_arg, 1);
     grpc_channel_args_destroy(channel_args);
