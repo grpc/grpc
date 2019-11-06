@@ -172,9 +172,9 @@ class ConnectLoopRunner {
       const char* server_address, const char* fake_handshake_server_addr,
       int per_connect_deadline_seconds, size_t loops,
       grpc_connectivity_state expected_connectivity_states)
-      : server_address_(std::unique_ptr<char>(gpr_strdup(server_address))),
+      : server_address_(grpc_core::UniquePtr<char>(gpr_strdup(server_address))),
         fake_handshake_server_addr_(
-            std::unique_ptr<char>(gpr_strdup(fake_handshake_server_addr))),
+            grpc_core::UniquePtr<char>(gpr_strdup(fake_handshake_server_addr))),
         per_connect_deadline_seconds_(per_connect_deadline_seconds),
         loops_(loops),
         expected_connectivity_states_(expected_connectivity_states) {
@@ -222,8 +222,8 @@ class ConnectLoopRunner {
   }
 
  private:
-  std::unique_ptr<char> server_address_;
-  std::unique_ptr<char> fake_handshake_server_addr_;
+  grpc_core::UniquePtr<char> server_address_;
+  grpc_core::UniquePtr<char> fake_handshake_server_addr_;
   int per_connect_deadline_seconds_;
   size_t loops_;
   grpc_connectivity_state expected_connectivity_states_;
@@ -286,7 +286,7 @@ class FakeTcpServer {
     accept_socket_ = socket(AF_INET6, SOCK_STREAM, 0);
     char* addr_str;
     GPR_ASSERT(gpr_asprintf(&addr_str, "[::]:%d", port_));
-    address_ = std::unique_ptr<char>(addr_str);
+    address_ = grpc_core::UniquePtr<char>(addr_str);
     GPR_ASSERT(accept_socket_ != -1);
     if (accept_socket_ == -1) {
       gpr_log(GPR_ERROR, "Failed to create socket: %d", errno);
@@ -426,7 +426,7 @@ class FakeTcpServer {
   int accept_socket_;
   int port_;
   gpr_event stop_ev_;
-  std::unique_ptr<char> address_;
+  grpc_core::UniquePtr<char> address_;
   std::unique_ptr<std::thread> run_server_loop_thd_;
   std::function<ProcessReadResult(int, int, int)> process_read_cb_;
 };
