@@ -97,6 +97,7 @@ grpc_channel* create_secure_channel_for_test(
   }
   grpc_channel* channel = grpc_secure_channel_create(channel_creds, server_addr,
                                                      channel_args, nullptr);
+  grpc_channel_args_destroy(channel_args);
   grpc_channel_credentials_release(channel_creds);
   return channel;
 }
