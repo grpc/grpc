@@ -54,7 +54,7 @@ static void my_resolve_address(const char* addr, const char* /*default_port*/,
         gpr_malloc(sizeof(*(*addrs)->addrs)));
     (*addrs)->addrs[0].len = 123;
   }
-  GRPC_CLOSURE_SCHED(on_done, error);
+  grpc_core::ExecCtx::Run(DEBUG_LOCATION, on_done, error);
 }
 
 static grpc_address_resolver_vtable test_resolver = {my_resolve_address,
@@ -81,7 +81,7 @@ static grpc_ares_request* my_dns_lookup_ares_locked(
     dummy_resolved_address.len = 123;
     (*addresses)->emplace_back(dummy_resolved_address, nullptr);
   }
-  GRPC_CLOSURE_SCHED(on_done, error);
+  grpc_core::ExecCtx::Run(DEBUG_LOCATION, on_done, error);
   return nullptr;
 }
 

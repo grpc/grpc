@@ -40,7 +40,7 @@ PROJECT_NAME           = "GRPC Core"
 # could be handy for archiving the generated documentation or if some version
 # control system is used.
 
-PROJECT_NUMBER         = 8.0.0
+PROJECT_NUMBER         = 9.0.0
 
 # Using the PROJECT_BRIEF tag one can provide an optional one line description
 # for a project that appears at the top of each page and should give viewer a
@@ -913,6 +913,7 @@ src/core/ext/filters/client_channel/lb_policy/grpclb/load_balancer_api.h \
 src/core/ext/filters/client_channel/lb_policy/pick_first/pick_first.cc \
 src/core/ext/filters/client_channel/lb_policy/round_robin/round_robin.cc \
 src/core/ext/filters/client_channel/lb_policy/subchannel_list.h \
+src/core/ext/filters/client_channel/lb_policy/xds/cds.cc \
 src/core/ext/filters/client_channel/lb_policy/xds/xds.cc \
 src/core/ext/filters/client_channel/lb_policy/xds/xds.h \
 src/core/ext/filters/client_channel/lb_policy_factory.h \
@@ -1659,21 +1660,7 @@ src/core/tsi/transport_security.cc \
 src/core/tsi/transport_security.h \
 src/core/tsi/transport_security_grpc.cc \
 src/core/tsi/transport_security_grpc.h \
-src/core/tsi/transport_security_interface.h \
-third_party/upb/upb/decode.c \
-third_party/upb/upb/decode.h \
-third_party/upb/upb/encode.c \
-third_party/upb/upb/encode.h \
-third_party/upb/upb/generated_util.h \
-third_party/upb/upb/msg.c \
-third_party/upb/upb/msg.h \
-third_party/upb/upb/port.c \
-third_party/upb/upb/port_def.inc \
-third_party/upb/upb/port_undef.inc \
-third_party/upb/upb/table.c \
-third_party/upb/upb/table.int.h \
-third_party/upb/upb/upb.c \
-third_party/upb/upb/upb.h
+src/core/tsi/transport_security_interface.h
 
 # This tag can be used to specify the character encoding of the source files
 # that doxygen parses. Internally doxygen uses the UTF-8 encoding. Doxygen uses

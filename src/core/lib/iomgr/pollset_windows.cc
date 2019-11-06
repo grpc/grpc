@@ -98,7 +98,7 @@ static void pollset_shutdown(grpc_pollset* pollset, grpc_closure* closure) {
   pollset->shutting_down = 1;
   grpc_pollset_kick(pollset, GRPC_POLLSET_KICK_BROADCAST);
   if (!pollset->is_iocp_worker) {
-    GRPC_CLOSURE_SCHED(closure, GRPC_ERROR_NONE);
+    grpc_core::ExecCtx::Run(DEBUG_LOCATION, closure, GRPC_ERROR_NONE);
   } else {
     pollset->on_shutdown = closure;
   }
@@ -146,7 +146,8 @@ static grpc_error* pollset_work(grpc_pollset* pollset,
       }
 
       if (pollset->shutting_down && pollset->on_shutdown != NULL) {
-        GRPC_CLOSURE_SCHED(pollset->on_shutdown, GRPC_ERROR_NONE);
+        grpc_core::ExecCtx::Run(DEBUG_LOCATION, pollset->on_shutdown,
+                                GRPC_ERROR_NONE);
         pollset->on_shutdown = NULL;
       }
       goto done;

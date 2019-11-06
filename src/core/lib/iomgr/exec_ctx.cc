@@ -174,4 +174,30 @@ grpc_millis ExecCtx::Now() {
   return now_;
 }
 
+void ExecCtx::Run(const DebugLocation& location, grpc_closure* closure,
+                  grpc_error* error) {
+  if (closure == nullptr) {
+    GRPC_ERROR_UNREF(error);
+    return;
+  }
+#ifndef NDEBUG
+  if (closure->scheduled) {
+    gpr_log(GPR_ERROR,
+            "Closure already scheduled. (closure: %p, created: [%s:%d], "
+            "previously scheduled at: [%s: %d], newly scheduled at [%s: %d], "
+            "run?: %s",
+            closure, closure->file_created, closure->line_created,
+            closure->file_initiated, closure->line_initiated, location.file(),
+            location.line(), closure->run ? "true" : "false");
+    abort();
+  }
+  closure->scheduled = true;
+  closure->file_initiated = location.file();
+  closure->line_initiated = location.line();
+  closure->run = false;
+  GPR_ASSERT(closure->cb != nullptr);
+#endif
+  exec_ctx_sched(closure, error);
+}
+
 }  // namespace grpc_core

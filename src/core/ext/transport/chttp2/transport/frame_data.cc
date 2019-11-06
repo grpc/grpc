@@ -291,7 +291,7 @@ grpc_error* grpc_chttp2_data_parser_parse(void* /*parser*/,
     GPR_ASSERT(s->frame_storage.length == 0);
     grpc_slice_ref_internal(slice);
     grpc_slice_buffer_add(&s->unprocessed_incoming_frames_buffer, slice);
-    GRPC_CLOSURE_SCHED(s->on_next, GRPC_ERROR_NONE);
+    grpc_core::ExecCtx::Run(DEBUG_LOCATION, s->on_next, GRPC_ERROR_NONE);
     s->on_next = nullptr;
     s->unprocessed_incoming_frames_decompressed = false;
   } else {

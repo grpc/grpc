@@ -45,7 +45,7 @@ static grpc_completion_queue* g_cq;
 static grpc_event_engine_vtable g_vtable;
 
 static void pollset_shutdown(grpc_pollset* /*ps*/, grpc_closure* closure) {
-  GRPC_CLOSURE_SCHED(closure, GRPC_ERROR_NONE);
+  grpc_core::ExecCtx::Run(DEBUG_LOCATION, closure, GRPC_ERROR_NONE);
 }
 
 static void pollset_init(grpc_pollset* ps, gpr_mu** mu) {

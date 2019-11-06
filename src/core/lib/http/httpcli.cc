@@ -88,7 +88,7 @@ static void next_address(internal_request* req, grpc_error* due_to_error);
 static void finish(internal_request* req, grpc_error* error) {
   grpc_polling_entity_del_from_pollset_set(req->pollent,
                                            req->context->pollset_set);
-  GRPC_CLOSURE_SCHED(req->on_done, error);
+  grpc_core::ExecCtx::Run(DEBUG_LOCATION, req->on_done, error);
   grpc_http_parser_destroy(&req->parser);
   if (req->addresses != nullptr) {
     grpc_resolved_addresses_destroy(req->addresses);

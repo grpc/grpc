@@ -12,8 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-load("//bazel:grpc_build_system.bzl", "grpc_cc_library", "grpc_cc_test", "grpc_cc_binary", "grpc_package")
-load("//bazel:custom_exec_properties.bzl", "LARGE_MACHINE")
+load("//bazel:grpc_build_system.bzl", "grpc_cc_binary", "grpc_cc_library", "grpc_cc_test", "grpc_package")
 
 licenses(["notice"])  # Apache v2
 
@@ -24,11 +23,11 @@ grpc_cc_test(
     srcs = ["fork_test.cc"],
     language = "C++",
     tags = ["no_windows"],
+    uses_polling = False,
     deps = [
         "//:gpr",
         "//test/core/util:grpc_test_util",
     ],
-    uses_polling = False,
 )
 
 grpc_cc_test(
@@ -38,11 +37,11 @@ grpc_cc_test(
         "gtest",
     ],
     language = "C++",
+    uses_polling = False,
     deps = [
         "//:gpr",
         "//test/core/util:grpc_test_util",
     ],
-    uses_polling = False,
 )
 
 grpc_cc_test(
@@ -53,33 +52,33 @@ grpc_cc_test(
     ],
     language = "C++",
     tags = ["no_windows"],  # TODO(jtattermusch): fix the failure on windows
+    uses_polling = False,
     deps = [
         "//:gpr",
         "//test/core/util:grpc_test_util",
     ],
-    uses_polling = False,
 )
 
 grpc_cc_test(
     name = "manual_constructor_test",
     srcs = ["manual_constructor_test.cc"],
     language = "C++",
+    uses_polling = False,
     deps = [
         "//:gpr",
         "//test/core/util:grpc_test_util",
     ],
-    uses_polling = False,
 )
 
 grpc_cc_test(
     name = "host_port_test",
     srcs = ["host_port_test.cc"],
     language = "C++",
+    uses_polling = False,
     deps = [
         "//:gpr",
         "//test/core/util:grpc_test_util",
     ],
-    uses_polling = False,
 )
 
 grpc_cc_test(
@@ -89,11 +88,11 @@ grpc_cc_test(
         "gtest",
     ],
     language = "C++",
+    uses_polling = False,
     deps = [
         "//:gpr_base",
         "//test/core/util:grpc_test_util",
     ],
-    uses_polling = False,
 )
 
 grpc_cc_test(
@@ -115,11 +114,11 @@ grpc_cc_test(
     exec_properties = LARGE_MACHINE,
     language = "C++",
     tags = ["no_windows"],  # LARGE_MACHINE is not configured for windows RBE
+    uses_polling = False,
     deps = [
         "//:gpr",
         "//test/core/util:grpc_test_util",
     ],
-    uses_polling = False,
 )
 
 grpc_cc_test(
@@ -192,9 +191,9 @@ grpc_cc_test(
     name = "thd_test",
     srcs = ["thd_test.cc"],
     language = "C++",
+    uses_polling = False,
     deps = [
         "//:gpr",
         "//test/core/util:grpc_test_util",
     ],
-    uses_polling = False,
 )

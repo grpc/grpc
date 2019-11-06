@@ -30,12 +30,10 @@
 #include "src/core/lib/surface/init.h"
 #include "test/core/util/memory_counters.h"
 
-static struct grpc_memory_counters g_memory_counters;
-static gpr_allocation_functions g_old_allocs;
+#include <stdio.h>
 
-static void* guard_malloc(size_t size);
-static void* guard_realloc(void* vptr, size_t size);
-static void guard_free(void* vptr);
+static struct grpc_memory_counters g_memory_counters;
+static bool g_memory_counter_enabled;
 
 #ifdef GPR_LOW_LEVEL_COUNTERS
 /* hide these from the microbenchmark atomic stats */
@@ -47,61 +45,89 @@ static void guard_free(void* vptr);
 #define NO_BARRIER_LOAD(x) gpr_atm_no_barrier_load(x)
 #endif
 
-static void* guard_malloc(size_t size) {
+// Memory counter uses --wrap=symbol feature from ld. To use this,
+// `GPR_WRAP_MEMORY_COUNTER` needs to be defined. following  options should be
+// passed to the compiler.
+//   -Wl,--wrap=malloc -Wl,--wrap=calloc -Wl,--wrap=realloc -Wl,--wrap=free
+// * Reference: https://linux.die.net/man/1/ld)
+#if GPR_WRAP_MEMORY_COUNTER
+
+extern "C" {
+void* __real_malloc(size_t size);
+void* __real_calloc(size_t size);
+void* __real_realloc(void* ptr, size_t size);
+void __real_free(void* ptr);
+
+void* __wrap_malloc(size_t size);
+void* __wrap_calloc(size_t size);
+void* __wrap_realloc(void* ptr, size_t size);
+void __wrap_free(void* ptr);
+}
+
+void* __wrap_malloc(size_t size) {
   if (!size) return nullptr;
   NO_BARRIER_FETCH_ADD(&g_memory_counters.total_size_absolute, (gpr_atm)size);
   NO_BARRIER_FETCH_ADD(&g_memory_counters.total_size_relative, (gpr_atm)size);
   NO_BARRIER_FETCH_ADD(&g_memory_counters.total_allocs_absolute, (gpr_atm)1);
   NO_BARRIER_FETCH_ADD(&g_memory_counters.total_allocs_relative, (gpr_atm)1);
-  void* ptr = g_old_allocs.malloc_fn(
-      GPR_ROUND_UP_TO_ALIGNMENT_SIZE(sizeof(size)) + size);
+  void* ptr =
+      __real_malloc(GPR_ROUND_UP_TO_ALIGNMENT_SIZE(sizeof(size)) + size);
   *static_cast<size_t*>(ptr) = size;
   return static_cast<char*>(ptr) + GPR_ROUND_UP_TO_ALIGNMENT_SIZE(sizeof(size));
 }
 
-static void* guard_realloc(void* vptr, size_t size) {
-  if (vptr == nullptr) {
-    return guard_malloc(size);
-  }
-  if (size == 0) {
-    guard_free(vptr);
-    return nullptr;
-  }
-  void* ptr =
-      static_cast<char*>(vptr) - GPR_ROUND_UP_TO_ALIGNMENT_SIZE(sizeof(size));
+void* __wrap_calloc(size_t size) {
+  if (!size) return nullptr;
   NO_BARRIER_FETCH_ADD(&g_memory_counters.total_size_absolute, (gpr_atm)size);
-  NO_BARRIER_FETCH_ADD(&g_memory_counters.total_size_relative,
-                       -*static_cast<gpr_atm*>(ptr));
   NO_BARRIER_FETCH_ADD(&g_memory_counters.total_size_relative, (gpr_atm)size);
   NO_BARRIER_FETCH_ADD(&g_memory_counters.total_allocs_absolute, (gpr_atm)1);
-  ptr = g_old_allocs.realloc_fn(
-      ptr, GPR_ROUND_UP_TO_ALIGNMENT_SIZE(sizeof(size)) + size);
+  NO_BARRIER_FETCH_ADD(&g_memory_counters.total_allocs_relative, (gpr_atm)1);
+  void* ptr =
+      __real_calloc(GPR_ROUND_UP_TO_ALIGNMENT_SIZE(sizeof(size)) + size);
   *static_cast<size_t*>(ptr) = size;
   return static_cast<char*>(ptr) + GPR_ROUND_UP_TO_ALIGNMENT_SIZE(sizeof(size));
 }
 
-static void guard_free(void* vptr) {
-  if (vptr == nullptr) return;
-  void* ptr =
-      static_cast<char*>(vptr) - GPR_ROUND_UP_TO_ALIGNMENT_SIZE(sizeof(size_t));
+void* __wrap_realloc(void* ptr, size_t size) {
+  if (ptr == nullptr) {
+    return __wrap_malloc(size);
+  }
+  if (size == 0) {
+    __wrap_free(ptr);
+    return nullptr;
+  }
+  void* rptr =
+      static_cast<char*>(ptr) - GPR_ROUND_UP_TO_ALIGNMENT_SIZE(sizeof(size));
+  NO_BARRIER_FETCH_ADD(&g_memory_counters.total_size_absolute, (gpr_atm)size);
   NO_BARRIER_FETCH_ADD(&g_memory_counters.total_size_relative,
-                       -*static_cast<gpr_atm*>(ptr));
-  NO_BARRIER_FETCH_ADD(&g_memory_counters.total_allocs_relative, -(gpr_atm)1);
-  g_old_allocs.free_fn(ptr);
+                       -*static_cast<gpr_atm*>(rptr));
+  NO_BARRIER_FETCH_ADD(&g_memory_counters.total_size_relative, (gpr_atm)size);
+  NO_BARRIER_FETCH_ADD(&g_memory_counters.total_allocs_absolute, (gpr_atm)1);
+  void* new_ptr =
+      __real_realloc(rptr, GPR_ROUND_UP_TO_ALIGNMENT_SIZE(sizeof(size)) + size);
+  *static_cast<size_t*>(new_ptr) = size;
+  return static_cast<char*>(new_ptr) +
+         GPR_ROUND_UP_TO_ALIGNMENT_SIZE(sizeof(size));
 }
 
-struct gpr_allocation_functions g_guard_allocs = {guard_malloc, nullptr,
-                                                  guard_realloc, guard_free};
+void __wrap_free(void* ptr) {
+  if (ptr == nullptr) return;
+  void* rptr =
+      static_cast<char*>(ptr) - GPR_ROUND_UP_TO_ALIGNMENT_SIZE(sizeof(size_t));
+  NO_BARRIER_FETCH_ADD(&g_memory_counters.total_size_relative,
+                       -*static_cast<gpr_atm*>(rptr));
+  NO_BARRIER_FETCH_ADD(&g_memory_counters.total_allocs_relative, -(gpr_atm)1);
+  __real_free(rptr);
+}
+
+#endif  // GPR_WRAP_MEMORY_COUNTER
 
 void grpc_memory_counters_init() {
   memset(&g_memory_counters, 0, sizeof(g_memory_counters));
-  g_old_allocs = gpr_get_allocation_functions();
-  gpr_set_allocation_functions(g_guard_allocs);
+  g_memory_counter_enabled = true;
 }
 
-void grpc_memory_counters_destroy() {
-  gpr_set_allocation_functions(g_old_allocs);
-}
+void grpc_memory_counters_destroy() { g_memory_counter_enabled = false; }
 
 struct grpc_memory_counters grpc_memory_counters_snapshot() {
   struct grpc_memory_counters counters;

@@ -52,7 +52,8 @@ void grpc_stream_destroy(grpc_stream_refcount* refcount) {
        there. */
     grpc_core::Executor::Run(&refcount->destroy, GRPC_ERROR_NONE);
   } else {
-    GRPC_CLOSURE_SCHED(&refcount->destroy, GRPC_ERROR_NONE);
+    grpc_core::ExecCtx::Run(DEBUG_LOCATION, &refcount->destroy,
+                            GRPC_ERROR_NONE);
   }
 }
 
@@ -218,7 +219,8 @@ struct made_transport_op {
 
 static void destroy_made_transport_op(void* arg, grpc_error* error) {
   made_transport_op* op = static_cast<made_transport_op*>(arg);
-  GRPC_CLOSURE_SCHED(op->inner_on_complete, GRPC_ERROR_REF(error));
+  grpc_core::ExecCtx::Run(DEBUG_LOCATION, op->inner_on_complete,
+                          GRPC_ERROR_REF(error));
   grpc_core::Delete<made_transport_op>(op);
 }
 

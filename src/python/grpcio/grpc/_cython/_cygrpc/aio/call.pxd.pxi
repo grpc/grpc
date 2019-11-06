@@ -20,8 +20,9 @@ cdef class _AioCall:
         grpc_completion_queue * _cq
         grpc_experimental_completion_queue_functor _functor
         object _waiter_call
+        list _references
 
     @staticmethod
-    cdef void functor_run(grpc_experimental_completion_queue_functor* functor, int succeed)
+    cdef void functor_run(grpc_experimental_completion_queue_functor* functor, int success) with gil
     @staticmethod
-    cdef void watcher_call_functor_run(grpc_experimental_completion_queue_functor* functor, int succeed)
+    cdef void watcher_call_functor_run(grpc_experimental_completion_queue_functor* functor, int success) with gil

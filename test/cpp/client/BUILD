@@ -35,6 +35,9 @@ grpc_cc_test(
 grpc_cc_test(
     name = "client_channel_stress_test",
     srcs = ["client_channel_stress_test.cc"],
+    # TODO(jtattermusch): test fails frequently on Win RBE, but passes locally
+    # reenable the tests once it works reliably on Win RBE.
+    tags = ["no_windows"],
     deps = [
         "//:gpr",
         "//:grpc",
@@ -48,7 +51,4 @@ grpc_cc_test(
         "//test/cpp/end2end:test_service_impl",
         "//test/cpp/util:test_util",
     ],
-    # TODO(jtattermusch): test fails frequently on Win RBE, but passes locally
-    # reenable the tests once it works reliably on Win RBE.
-    tags = ["no_windows"],
 )

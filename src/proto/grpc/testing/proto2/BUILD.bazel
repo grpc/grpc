@@ -1,6 +1,7 @@
 load("@grpc_python_dependencies//:requirements.bzl", "requirement")
 
 package(default_visibility = ["//visibility:public"])
+
 load("//bazel:python_rules.bzl", "py_proto_library")
 
 proto_library(
@@ -18,11 +19,10 @@ proto_library(
     srcs = ["empty2_extensions.proto"],
     deps = [
         ":empty2_proto_descriptor",
-    ]
+    ],
 )
 
 py_proto_library(
     name = "empty2_extensions_proto",
     deps = [":empty2_extensions_proto_descriptor"],
 )
-

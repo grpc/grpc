@@ -30,16 +30,18 @@
           out += lib.get(group, [])
     return sorted(out)
 
+  grpc_libs = ("grpc", "gpr", "upb")
+
   def grpc_private_files(libs):
-    out = grpc_lib_files(libs, ("grpc", "gpr"), ("headers", "src"))
+    out = grpc_lib_files(libs, grpc_libs, ("headers", "src"))
     return out
 
   def grpc_public_headers(libs):
-    out = grpc_lib_files(libs, ("grpc", "gpr"), ("public_headers",))
+    out = grpc_lib_files(libs, grpc_libs, ("public_headers",))
     return out
 
   def grpc_private_headers(libs):
-    out = grpc_lib_files(libs, ("grpc", "gpr"), ("headers",))
+    out = grpc_lib_files(libs, grpc_libs, ("headers",))
     return out
 
   def grpc_cronet_files(libs):

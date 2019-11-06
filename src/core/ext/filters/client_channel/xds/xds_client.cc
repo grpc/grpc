@@ -1289,14 +1289,27 @@ void XdsClient::Orphan() {
   Unref(DEBUG_LOCATION, "XdsClient::Orphan()");
 }
 
-void XdsClient::WatchClusterData(
-    StringView /*cluster*/, UniquePtr<ClusterWatcherInterface> /*watcher*/) {
-  // TODO(juanlishen): Implement.
+void XdsClient::WatchClusterData(StringView cluster,
+                                 UniquePtr<ClusterWatcherInterface> watcher) {
+  ClusterWatcherInterface* w = watcher.get();
+  cluster_state_.cluster_watchers[w] = std::move(watcher);
+  // TODO(juanlishen): Start CDS call if not already started and return
+  // real data via watcher.
+  CdsUpdate update;
+  update.eds_service_name = cluster.dup();
+  update.lrs_load_reporting_server_name.reset(gpr_strdup(""));
+  w->OnClusterChanged(std::move(update));
 }
 
-void XdsClient::CancelClusterDataWatch(StringView /*cluster*/,
-                                       ClusterWatcherInterface* /*watcher*/) {
-  // TODO(juanlishen): Implement.
+void XdsClient::CancelClusterDataWatch(StringView cluster,
+                                       ClusterWatcherInterface* watcher) {
+  auto it = cluster_state_.cluster_watchers.find(watcher);
+  if (it != cluster_state_.cluster_watchers.end()) {
+    cluster_state_.cluster_watchers.erase(it);
+  }
+  if (chand_ != nullptr && cluster_state_.cluster_watchers.empty()) {
+    // TODO(juanlishen): Stop CDS call.
+  }
 }
 
 void XdsClient::WatchEndpointData(StringView /*cluster*/,
@@ -1371,16 +1384,19 @@ void XdsClient::NotifyOnServiceConfig(void* arg, grpc_error* error) {
   XdsClient* self = static_cast<XdsClient*>(arg);
   // TODO(roth): When we add support for WeightedClusters, select the
   // LB policy based on that functionality.
-  static const char* json =
-      "{\n"
-      "  \"loadBalancingConfig\":[\n"
-      "    { \"xds_experimental\":{\n"
-      "      \"lrsLoadReportingServerName\": \"\"\n"
-      "    } }\n"
-      "  ]\n"
-      "}";
+  char* json;
+  gpr_asprintf(&json,
+               "{\n"
+               "  \"loadBalancingConfig\":[\n"
+               "    { \"cds_experimental\":{\n"
+               "      \"cluster\": \"%s\"\n"
+               "    } }\n"
+               "  ]\n"
+               "}",
+               self->server_name_.get());
   RefCountedPtr<ServiceConfig> service_config =
       ServiceConfig::Create(json, &error);
+  gpr_free(json);
   if (error != GRPC_ERROR_NONE) {
     self->service_config_watcher_->OnError(error);
   } else {

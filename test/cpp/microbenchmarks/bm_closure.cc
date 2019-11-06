@@ -125,7 +125,7 @@ static void BM_ClosureSchedOnExecCtx(benchmark::State& state) {
   GRPC_CLOSURE_INIT(&c, DoNothing, nullptr, grpc_schedule_on_exec_ctx);
   grpc_core::ExecCtx exec_ctx;
   for (auto _ : state) {
-    GRPC_CLOSURE_SCHED(&c, GRPC_ERROR_NONE);
+    grpc_core::ExecCtx::Run(DEBUG_LOCATION, &c, GRPC_ERROR_NONE);
     grpc_core::ExecCtx::Get()->Flush();
   }
 
@@ -141,8 +141,8 @@ static void BM_ClosureSched2OnExecCtx(benchmark::State& state) {
   GRPC_CLOSURE_INIT(&c2, DoNothing, nullptr, grpc_schedule_on_exec_ctx);
   grpc_core::ExecCtx exec_ctx;
   for (auto _ : state) {
-    GRPC_CLOSURE_SCHED(&c1, GRPC_ERROR_NONE);
-    GRPC_CLOSURE_SCHED(&c2, GRPC_ERROR_NONE);
+    grpc_core::ExecCtx::Run(DEBUG_LOCATION, &c1, GRPC_ERROR_NONE);
+    grpc_core::ExecCtx::Run(DEBUG_LOCATION, &c2, GRPC_ERROR_NONE);
     grpc_core::ExecCtx::Get()->Flush();
   }
 
@@ -160,9 +160,9 @@ static void BM_ClosureSched3OnExecCtx(benchmark::State& state) {
   GRPC_CLOSURE_INIT(&c3, DoNothing, nullptr, grpc_schedule_on_exec_ctx);
   grpc_core::ExecCtx exec_ctx;
   for (auto _ : state) {
-    GRPC_CLOSURE_SCHED(&c1, GRPC_ERROR_NONE);
-    GRPC_CLOSURE_SCHED(&c2, GRPC_ERROR_NONE);
-    GRPC_CLOSURE_SCHED(&c3, GRPC_ERROR_NONE);
+    grpc_core::ExecCtx::Run(DEBUG_LOCATION, &c1, GRPC_ERROR_NONE);
+    grpc_core::ExecCtx::Run(DEBUG_LOCATION, &c2, GRPC_ERROR_NONE);
+    grpc_core::ExecCtx::Run(DEBUG_LOCATION, &c3, GRPC_ERROR_NONE);
     grpc_core::ExecCtx::Get()->Flush();
   }
 
@@ -354,12 +354,15 @@ class Rescheduler {
     GRPC_CLOSURE_INIT(&closure_, Step, this, scheduler);
   }
 
-  void ScheduleFirst() { GRPC_CLOSURE_SCHED(&closure_, GRPC_ERROR_NONE); }
+  void ScheduleFirst() {
+    grpc_core::ExecCtx::Run(DEBUG_LOCATION, &closure_, GRPC_ERROR_NONE);
+  }
 
   void ScheduleFirstAgainstDifferentScheduler(
       grpc_closure_scheduler* scheduler) {
-    GRPC_CLOSURE_SCHED(GRPC_CLOSURE_CREATE(Step, this, scheduler),
-                       GRPC_ERROR_NONE);
+    grpc_core::ExecCtx::Run(DEBUG_LOCATION,
+                            GRPC_CLOSURE_CREATE(Step, this, scheduler),
+                            GRPC_ERROR_NONE);
   }
 
  private:
@@ -369,7 +372,7 @@ class Rescheduler {
   static void Step(void* arg, grpc_error* /*error*/) {
     Rescheduler* self = static_cast<Rescheduler*>(arg);
     if (self->state_.KeepRunning()) {
-      GRPC_CLOSURE_SCHED(&self->closure_, GRPC_ERROR_NONE);
+      grpc_core::ExecCtx::Run(DEBUG_LOCATION, &self->closure_, GRPC_ERROR_NONE);
     }
   }
 };

@@ -172,7 +172,7 @@ void SpiffeChannelSecurityConnector::check_peer(
                                 : target_name_.get();
   grpc_error* error = grpc_ssl_check_alpn(&peer);
   if (error != GRPC_ERROR_NONE) {
-    GRPC_CLOSURE_SCHED(on_peer_checked, error);
+    grpc_core::ExecCtx::Run(DEBUG_LOCATION, on_peer_checked, error);
     tsi_peer_destruct(&peer);
     return;
   }
@@ -213,7 +213,7 @@ void SpiffeChannelSecurityConnector::check_peer(
       error = ProcessServerAuthorizationCheckResult(check_arg_);
     }
   }
-  GRPC_CLOSURE_SCHED(on_peer_checked, error);
+  grpc_core::ExecCtx::Run(DEBUG_LOCATION, on_peer_checked, error);
   tsi_peer_destruct(&peer);
 }
 
@@ -342,7 +342,7 @@ void SpiffeChannelSecurityConnector::ServerAuthorizationCheckDone(
   grpc_error* error = ProcessServerAuthorizationCheckResult(arg);
   SpiffeChannelSecurityConnector* connector =
       static_cast<SpiffeChannelSecurityConnector*>(arg->cb_user_data);
-  GRPC_CLOSURE_SCHED(connector->on_peer_checked_, error);
+  grpc_core::ExecCtx::Run(DEBUG_LOCATION, connector->on_peer_checked_, error);
 }
 
 grpc_error*
@@ -446,7 +446,7 @@ void SpiffeServerSecurityConnector::check_peer(
   *auth_context = grpc_ssl_peer_to_auth_context(
       &peer, GRPC_TLS_SPIFFE_TRANSPORT_SECURITY_TYPE);
   tsi_peer_destruct(&peer);
-  GRPC_CLOSURE_SCHED(on_peer_checked, error);
+  grpc_core::ExecCtx::Run(DEBUG_LOCATION, on_peer_checked, error);
 }
 
 int SpiffeServerSecurityConnector::cmp(

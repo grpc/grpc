@@ -66,49 +66,49 @@ grpc_cc_test(
     name = "error_test",
     srcs = ["error_test.cc"],
     language = "C++",
+    uses_polling = False,
     deps = [
         ":endpoint_tests",
         "//:gpr",
         "//:grpc",
         "//test/core/util:grpc_test_util",
     ],
-    uses_polling = False,
 )
 
 grpc_cc_test(
     name = "ev_epollex_linux_test",
     srcs = ["ev_epollex_linux_test.cc"],
     language = "C++",
+    tags = ["no_windows"],
     deps = [
         "//:gpr",
         "//:grpc",
         "//test/core/util:grpc_test_util",
     ],
-    tags = ["no_windows"],
 )
 
 grpc_cc_test(
     name = "fd_conservation_posix_test",
     srcs = ["fd_conservation_posix_test.cc"],
     language = "C++",
+    tags = ["no_windows"],
     deps = [
         "//:gpr",
         "//:grpc",
         "//test/core/util:grpc_test_util",
     ],
-    tags = ["no_windows"],
 )
 
 grpc_cc_test(
     name = "fd_posix_test",
     srcs = ["fd_posix_test.cc"],
     language = "C++",
+    tags = ["no_windows"],
     deps = [
         "//:gpr",
         "//:grpc",
         "//test/core/util:grpc_test_util",
     ],
-    tags = ["no_windows"],
 )
 
 grpc_cc_test(
@@ -126,24 +126,24 @@ grpc_cc_test(
     name = "load_file_test",
     srcs = ["load_file_test.cc"],
     language = "C++",
+    uses_polling = False,
     deps = [
         "//:gpr",
         "//:grpc",
         "//test/core/util:grpc_test_util",
     ],
-    uses_polling = False,
 )
 
 grpc_cc_test(
     name = "mpmcqueue_test",
     srcs = ["mpmcqueue_test.cc"],
     language = "C++",
+    uses_polling = False,
     deps = [
         "//:gpr",
         "//:grpc",
         "//test/core/util:grpc_test_util",
     ],
-    uses_polling = False,
 )
 
 grpc_cc_test(
@@ -153,12 +153,12 @@ grpc_cc_test(
         "--resolver=ares",
     ],
     language = "C++",
+    tags = ["no_windows"],
     deps = [
         "//:gpr",
         "//:grpc",
         "//test/core/util:grpc_test_util",
     ],
-    tags = ["no_windows"],
 )
 
 grpc_cc_test(
@@ -168,12 +168,12 @@ grpc_cc_test(
         "--resolver=native",
     ],
     language = "C++",
+    tags = ["no_windows"],
     deps = [
         "//:gpr",
         "//:grpc",
         "//test/core/util:grpc_test_util",
     ],
-    tags = ["no_windows"],
 )
 
 grpc_cc_test(
@@ -230,37 +230,37 @@ grpc_cc_test(
     name = "socket_utils_test",
     srcs = ["socket_utils_test.cc"],
     language = "C++",
+    tags = ["no_windows"],
     deps = [
         "//:gpr",
         "//:grpc",
         "//test/core/util:grpc_test_util",
     ],
-    tags = ["no_windows"],
 )
 
 grpc_cc_test(
     name = "tcp_client_posix_test",
     srcs = ["tcp_client_posix_test.cc"],
     language = "C++",
+    tags = ["no_windows"],
     deps = [
         "//:gpr",
         "//:grpc",
         "//test/core/util:grpc_test_util",
     ],
-    tags = ["no_windows"],
 )
 
 grpc_cc_test(
     name = "tcp_posix_test",
     srcs = ["tcp_posix_test.cc"],
     language = "C++",
+    tags = ["no_windows"],
     deps = [
         ":endpoint_tests",
         "//:gpr",
         "//:grpc",
         "//test/core/util:grpc_test_util",
     ],
-    tags = ["no_windows"],
 )
 
 grpc_cc_test(
@@ -278,70 +278,70 @@ grpc_cc_test(
     name = "tcp_server_posix_test",
     srcs = ["tcp_server_posix_test.cc"],
     language = "C++",
+    tags = ["no_windows"],
     deps = [
         "//:gpr",
         "//:grpc",
         "//test/core/util:grpc_test_util",
     ],
-    tags = ["no_windows"],
 )
 
 grpc_cc_test(
     name = "threadpool_test",
     srcs = ["threadpool_test.cc"],
     language = "C++",
+    uses_polling = False,
     deps = [
         "//:gpr",
         "//:grpc",
         "//test/core/util:grpc_test_util",
     ],
-    uses_polling = False,
 )
 
 grpc_cc_test(
     name = "time_averaged_stats_test",
     srcs = ["time_averaged_stats_test.cc"],
     language = "C++",
+    uses_polling = False,
     deps = [
         "//:gpr",
         "//:grpc",
         "//test/core/util:grpc_test_util",
     ],
-    uses_polling = False,
 )
 
 grpc_cc_test(
     name = "timer_heap_test",
     srcs = ["timer_heap_test.cc"],
     language = "C++",
+    uses_polling = False,
     deps = [
         "//:gpr",
         "//:grpc",
         "//test/core/util:grpc_test_util",
     ],
-    uses_polling = False,
 )
 
 grpc_cc_test(
     name = "timer_list_test",
     srcs = ["timer_list_test.cc"],
     language = "C++",
+    uses_polling = False,
     deps = [
         "//:gpr",
         "//:grpc",
         "//test/core/util:grpc_test_util",
     ],
-    uses_polling = False,
 )
 
 grpc_cc_test(
     name = "udp_server_test",
     srcs = ["udp_server_test.cc"],
     language = "C++",
+    tags = ["no_windows"],
     deps = [
         "//:gpr",
         "//:grpc",
         "//test/core/util:grpc_test_util",
     ],
-    tags = ["no_windows"],
 )

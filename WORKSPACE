@@ -1,8 +1,6 @@
 workspace(name = "com_github_grpc_grpc")
 
-load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 load("//bazel:grpc_deps.bzl", "grpc_deps", "grpc_test_only_deps")
-load("@bazel_tools//tools/build_defs/repo:git.bzl", "git_repository")
 
 grpc_deps()
 
@@ -60,14 +58,15 @@ rbe_autoconfig(
     ),
 )
 
-load("@io_bazel_rules_python//python:pip.bzl", "pip_repositories", "pip_import")
+load("@io_bazel_rules_python//python:pip.bzl", "pip_import", "pip_repositories")
 
 pip_import(
     name = "grpc_python_dependencies",
     requirements = "@com_github_grpc_grpc//:requirements.bazel.txt",
 )
 
-load("@io_bazel_rules_python//python:pip.bzl", "pip_repositories")
 load("@grpc_python_dependencies//:requirements.bzl", "pip_install")
+
 pip_repositories()
+
 pip_install()
