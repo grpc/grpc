@@ -7,7 +7,7 @@ pyx_library(
     srcs = glob([
         "**/*.pxi",
         "cygrpc.pxd",
-        "cygrpc.pyx"
+        "cygrpc.pyx",
     ]),
     deps = [
         "//:grpc",
