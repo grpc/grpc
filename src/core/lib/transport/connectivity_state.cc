@@ -79,7 +79,7 @@ class AsyncConnectivityStateWatcherInterface::Notifier {
               self->watcher_.get(), ConnectivityStateName(self->state_));
     }
     self->watcher_->OnConnectivityStateChange(self->state_);
-    Delete(self);
+    delete self;
   }
 
   RefCountedPtr<AsyncConnectivityStateWatcherInterface> watcher_;
@@ -89,7 +89,7 @@ class AsyncConnectivityStateWatcherInterface::Notifier {
 
 void AsyncConnectivityStateWatcherInterface::Notify(
     grpc_connectivity_state state) {
-  New<Notifier>(Ref(), state, combiner_);  // Deletes itself when done.
+  new Notifier(Ref(), state, combiner_);  // Deletes itself when done.
 }
 
 //

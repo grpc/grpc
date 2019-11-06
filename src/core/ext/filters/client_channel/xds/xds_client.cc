@@ -378,16 +378,16 @@ bool XdsClient::ChannelState::HasActiveAdsCall() const {
 
 void XdsClient::ChannelState::MaybeStartAdsCall() {
   if (ads_calld_ != nullptr) return;
-  ads_calld_.reset(New<RetryableCall<AdsCallState>>(
-      Ref(DEBUG_LOCATION, "ChannelState+ads")));
+  ads_calld_.reset(
+      new RetryableCall<AdsCallState>(Ref(DEBUG_LOCATION, "ChannelState+ads")));
 }
 
 void XdsClient::ChannelState::StopAdsCall() { ads_calld_.reset(); }
 
 void XdsClient::ChannelState::MaybeStartLrsCall() {
   if (lrs_calld_ != nullptr) return;
-  lrs_calld_.reset(New<RetryableCall<LrsCallState>>(
-      Ref(DEBUG_LOCATION, "ChannelState+lrs")));
+  lrs_calld_.reset(
+      new RetryableCall<LrsCallState>(Ref(DEBUG_LOCATION, "ChannelState+lrs")));
 }
 
 void XdsClient::ChannelState::StopLrsCall() { lrs_calld_.reset(); }
@@ -396,7 +396,7 @@ void XdsClient::ChannelState::StartConnectivityWatchLocked() {
   grpc_channel_element* client_channel_elem =
       grpc_channel_stack_last_element(grpc_channel_get_channel_stack(channel_));
   GPR_ASSERT(client_channel_elem->filter == &grpc_client_channel_filter);
-  watcher_ = New<StateWatcher>(Ref());
+  watcher_ = new StateWatcher(Ref());
   grpc_client_channel_start_connectivity_watch(
       client_channel_elem, GRPC_CHANNEL_IDLE,
       OrphanablePtr<AsyncConnectivityStateWatcherInterface>(watcher_));

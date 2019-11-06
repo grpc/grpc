@@ -80,8 +80,7 @@ grpc_status_code TlsFetchKeyMaterials(
   grpc_status_code status = GRPC_STATUS_OK;
   /* Use credential reload config to fetch credentials. */
   if (options.credential_reload_config() != nullptr) {
-    grpc_tls_credential_reload_arg* arg =
-        grpc_core::New<grpc_tls_credential_reload_arg>();
+    grpc_tls_credential_reload_arg* arg = new grpc_tls_credential_reload_arg();
     arg->key_materials_config = key_materials_config.get();
     int result = options.credential_reload_config()->Schedule(arg);
     if (result) {
@@ -107,7 +106,7 @@ grpc_status_code TlsFetchKeyMaterials(
     if (arg->destroy_context != nullptr) {
       arg->destroy_context(arg->context);
     }
-    grpc_core::Delete(arg);
+    delete arg;
   }
   return status;
 }
@@ -381,7 +380,7 @@ grpc_tls_server_authorization_check_arg*
 SpiffeChannelSecurityConnector::ServerAuthorizationCheckArgCreate(
     void* user_data) {
   grpc_tls_server_authorization_check_arg* arg =
-      grpc_core::New<grpc_tls_server_authorization_check_arg>();
+      new grpc_tls_server_authorization_check_arg();
   arg->cb = ServerAuthorizationCheckDone;
   arg->cb_user_data = user_data;
   arg->status = GRPC_STATUS_OK;
@@ -399,7 +398,7 @@ void SpiffeChannelSecurityConnector::ServerAuthorizationCheckArgDestroy(
   if (arg->destroy_context != nullptr) {
     arg->destroy_context(arg->context);
   }
-  grpc_core::Delete(arg);
+  delete arg;
 }
 
 SpiffeServerSecurityConnector::SpiffeServerSecurityConnector(

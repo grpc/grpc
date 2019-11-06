@@ -717,7 +717,7 @@ static void on_dns_lookup_done_locked(void* arg, grpc_error* error) {
   grpc_core::ExecCtx::Run(DEBUG_LOCATION, r->on_resolve_address_done,
                           GRPC_ERROR_REF(error));
   GRPC_COMBINER_UNREF(r->combiner, "on_dns_lookup_done_cb");
-  grpc_core::Delete(r);
+  delete r;
 }
 
 static void on_dns_lookup_done(void* arg, grpc_error* error) {
@@ -747,7 +747,7 @@ static void grpc_resolve_address_ares_impl(const char* name,
                                            grpc_closure* on_done,
                                            grpc_resolved_addresses** addrs) {
   grpc_resolve_address_ares_request* r =
-      grpc_core::New<grpc_resolve_address_ares_request>();
+      new grpc_resolve_address_ares_request();
   r->combiner = grpc_combiner_create();
   r->addrs_out = addrs;
   r->on_resolve_address_done = on_done;

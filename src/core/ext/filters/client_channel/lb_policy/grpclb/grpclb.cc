@@ -1725,7 +1725,7 @@ grpc_channel_args* GrpcLb::CreateChildPolicyArgsLocked(
 
 OrphanablePtr<LoadBalancingPolicy> GrpcLb::CreateChildPolicyLocked(
     const char* name, const grpc_channel_args* args) {
-  Helper* helper = New<Helper>(Ref());
+  Helper* helper = new Helper(Ref());
   LoadBalancingPolicy::Args lb_policy_args;
   lb_policy_args.combiner = combiner();
   lb_policy_args.args = args;
@@ -1884,7 +1884,7 @@ class GrpcLbFactory : public LoadBalancingPolicyFactory {
     GPR_DEBUG_ASSERT(error != nullptr && *error == GRPC_ERROR_NONE);
     if (json == nullptr) {
       return RefCountedPtr<LoadBalancingPolicy::Config>(
-          New<ParsedGrpcLbConfig>(nullptr));
+          new ParsedGrpcLbConfig(nullptr));
     }
     InlinedVector<grpc_error*, 2> error_list;
     RefCountedPtr<LoadBalancingPolicy::Config> child_policy;
@@ -1906,7 +1906,7 @@ class GrpcLbFactory : public LoadBalancingPolicyFactory {
     }
     if (error_list.empty()) {
       return RefCountedPtr<LoadBalancingPolicy::Config>(
-          New<ParsedGrpcLbConfig>(std::move(child_policy)));
+          new ParsedGrpcLbConfig(std::move(child_policy)));
     } else {
       *error = GRPC_ERROR_CREATE_FROM_VECTOR("GrpcLb Parser", &error_list);
       return nullptr;

@@ -161,7 +161,7 @@ class ChannelData {
     MutexLock lock(&external_watchers_mu_);
     // Will be deleted when the watch is complete.
     GPR_ASSERT(external_watchers_[on_complete] == nullptr);
-    external_watchers_[on_complete] = New<ExternalConnectivityWatcher>(
+    external_watchers_[on_complete] = new ExternalConnectivityWatcher(
         this, pollent, state, on_complete, watcher_timer_init);
   }
 
@@ -900,9 +900,9 @@ class ChannelData::SubchannelWrapper : public SubchannelInterface {
       UniquePtr<ConnectivityStateWatcherInterface> watcher) override {
     auto& watcher_wrapper = watcher_map_[watcher.get()];
     GPR_ASSERT(watcher_wrapper == nullptr);
-    watcher_wrapper = New<WatcherWrapper>(std::move(watcher),
-                                          Ref(DEBUG_LOCATION, "WatcherWrapper"),
-                                          initial_state);
+    watcher_wrapper = new WatcherWrapper(std::move(watcher),
+                                         Ref(DEBUG_LOCATION, "WatcherWrapper"),
+                                         initial_state);
     subchannel_->WatchConnectivityState(
         initial_state,
         UniquePtr<char>(gpr_strdup(health_check_service_name_.get())),
@@ -1017,7 +1017,7 @@ class ChannelData::SubchannelWrapper : public SubchannelInterface {
                 connected_subchannel.get(), ConnectivityStateName(new_state));
       }
       // Will delete itself.
-      New<Updater>(Ref(), new_state, std::move(connected_subchannel));
+      new Updater(Ref(), new_state, std::move(connected_subchannel));
     }
 
     grpc_pollset_set* interested_parties() override {
@@ -1029,7 +1029,7 @@ class ChannelData::SubchannelWrapper : public SubchannelInterface {
 
     WatcherWrapper* MakeReplacement() {
       auto* replacement =
-          New<WatcherWrapper>(std::move(watcher_), parent_, last_seen_state_);
+          new WatcherWrapper(std::move(watcher_), parent_, last_seen_state_);
       replacement_ = replacement;
       return replacement;
     }
@@ -1073,7 +1073,7 @@ class ChannelData::SubchannelWrapper : public SubchannelInterface {
         self->parent_->parent_->MaybeUpdateConnectedSubchannel(
             std::move(self->connected_subchannel_));
         self->parent_->watcher_->OnConnectivityStateChange(self->state_);
-        Delete(self);
+        delete self;
       }
 
       RefCountedPtr<WatcherWrapper> parent_;
@@ -1236,7 +1236,7 @@ class ChannelData::ConnectivityWatcherAdder {
                                             std::move(self->watcher_));
     GRPC_CHANNEL_STACK_UNREF(self->chand_->owning_stack_,
                              "ConnectivityWatcherAdder");
-    Delete(self);
+    delete self;
   }
 
   ChannelData* chand_;
@@ -1269,7 +1269,7 @@ class ChannelData::ConnectivityWatcherRemover {
     self->chand_->state_tracker_.RemoveWatcher(self->watcher_);
     GRPC_CHANNEL_STACK_UNREF(self->chand_->owning_stack_,
                              "ConnectivityWatcherRemover");
-    Delete(self);
+    delete self;
   }
 
   ChannelData* chand_;
@@ -1594,7 +1594,7 @@ void ChannelData::CreateResolvingLoadBalancingPolicyLocked() {
   lb_args.channel_control_helper = MakeUnique<ClientChannelControlHelper>(this);
   lb_args.args = channel_args_;
   UniquePtr<char> target_uri(gpr_strdup(target_uri_.get()));
-  resolving_lb_policy_.reset(New<ResolvingLoadBalancingPolicy>(
+  resolving_lb_policy_.reset(new ResolvingLoadBalancingPolicy(
       std::move(lb_args), &grpc_client_channel_routing_trace,
       std::move(target_uri), ProcessResolverResultLocked, this));
   grpc_pollset_set_add_pollset_set(resolving_lb_policy_->interested_parties(),
@@ -1963,12 +1963,12 @@ grpc_connectivity_state ChannelData::CheckConnectivityState(
 void ChannelData::AddConnectivityWatcher(
     grpc_connectivity_state initial_state,
     OrphanablePtr<AsyncConnectivityStateWatcherInterface> watcher) {
-  New<ConnectivityWatcherAdder>(this, initial_state, std::move(watcher));
+  new ConnectivityWatcherAdder(this, initial_state, std::move(watcher));
 }
 
 void ChannelData::RemoveConnectivityWatcher(
     AsyncConnectivityStateWatcherInterface* watcher) {
-  New<ConnectivityWatcherRemover>(this, watcher);
+  new ConnectivityWatcherRemover(this, watcher);
 }
 
 //
@@ -3734,7 +3734,7 @@ class CallData::QueuedPickCanceller {
                                 YieldCallCombinerIfPendingBatchesFound);
     }
     GRPC_CALL_STACK_UNREF(calld->owning_call_, "QueuedPickCanceller");
-    Delete(self);
+    delete self;
   }
 
   grpc_call_element* elem_;
@@ -3763,7 +3763,7 @@ void CallData::AddCallToQueuedPicksLocked(grpc_call_element* elem) {
   pick_.elem = elem;
   chand->AddQueuedPick(&pick_, pollent_);
   // Register call combiner cancellation callback.
-  pick_canceller_ = New<QueuedPickCanceller>(elem);
+  pick_canceller_ = new QueuedPickCanceller(elem);
 }
 
 void CallData::ApplyServiceConfigToCallLocked(grpc_call_element* elem) {

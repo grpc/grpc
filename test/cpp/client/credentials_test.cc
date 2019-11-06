@@ -332,8 +332,7 @@ TEST_F(CredentialsTest, TlsCredentialReloadConfigSchedule) {
       new TestTlsCredentialReload());
   std::shared_ptr<TlsCredentialReloadConfig> config(
       new TlsCredentialReloadConfig(test_credential_reload));
-  grpc_tls_credential_reload_arg* c_arg =
-      grpc_core::New<grpc_tls_credential_reload_arg>();
+  grpc_tls_credential_reload_arg* c_arg = new grpc_tls_credential_reload_arg();
   c_arg->context = nullptr;
   TlsCredentialReloadArg* arg = new TlsCredentialReloadArg(c_arg);
   std::shared_ptr<TlsKeyMaterialsConfig> key_materials_config(
@@ -368,7 +367,7 @@ TEST_F(CredentialsTest, TlsCredentialReloadConfigSchedule) {
 
   // Cleanup.
   gpr_free(const_cast<char*>(error_details_before_schedule));
-  grpc_core::Delete(c_arg->key_materials_config);
+  delete c_arg->key_materials_config;
   if (c_arg->destroy_context != nullptr) {
     c_arg->destroy_context(c_arg->context);
   }
@@ -424,7 +423,7 @@ TEST_F(CredentialsTest, TlsCredentialReloadConfigCppToC) {
 
   // Cleanup.
   c_arg.destroy_context(c_arg.context);
-  ::grpc_core::Delete(config.c_config());
+  ::delete config.c_config();
 }
 
 typedef class ::grpc_impl::experimental::TlsServerAuthorizationCheckArg
@@ -474,7 +473,7 @@ TEST_F(CredentialsTest, TlsServerAuthorizationCheckConfigSchedule) {
       test_server_authorization_check(new TestTlsServerAuthorizationCheck());
   TlsServerAuthorizationCheckConfig config(test_server_authorization_check);
   grpc_tls_server_authorization_check_arg* c_arg =
-      grpc_core::New<grpc_tls_server_authorization_check_arg>();
+      new grpc_tls_server_authorization_check_arg();
   c_arg->context = nullptr;
   TlsServerAuthorizationCheckArg* arg =
       new TlsServerAuthorizationCheckArg(c_arg);
@@ -641,7 +640,7 @@ TEST_F(CredentialsTest, TlsCredentialsOptionsCppToC) {
                "sync_error_details");
 
   // Cleanup.
-  ::grpc_core::Delete(c_credential_reload_arg.key_materials_config);
+  ::delete c_credential_reload_arg.key_materials_config;
   c_credential_reload_arg.destroy_context(c_credential_reload_arg.context);
   c_server_authorization_check_arg.destroy_context(
       c_server_authorization_check_arg.context);
@@ -649,8 +648,8 @@ TEST_F(CredentialsTest, TlsCredentialsOptionsCppToC) {
   gpr_free(const_cast<char*>(c_server_authorization_check_arg.target_name));
   gpr_free(const_cast<char*>(c_server_authorization_check_arg.peer_cert));
   gpr_free(const_cast<char*>(c_server_authorization_check_arg.error_details));
-  ::grpc_core::Delete(c_credential_reload_config);
-  ::grpc_core::Delete(c_server_authorization_check_config);
+  ::delete c_credential_reload_config;
+  ::delete c_server_authorization_check_config;
   gpr_free(c_options);
 }
 

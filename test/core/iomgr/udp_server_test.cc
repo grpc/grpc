@@ -113,12 +113,12 @@ class TestGrpcUdpHandlerFactory : public GrpcUdpHandlerFactory {
  public:
   GrpcUdpHandler* CreateUdpHandler(grpc_fd* emfd, void* user_data) override {
     gpr_log(GPR_INFO, "create udp handler for fd %d", grpc_fd_wrapped_fd(emfd));
-    return grpc_core::New<TestGrpcUdpHandler>(emfd, user_data);
+    return new TestGrpcUdpHandler(emfd, user_data);
   }
 
   void DestroyUdpHandler(GrpcUdpHandler* handler) override {
     gpr_log(GPR_INFO, "Destroy handler");
-    grpc_core::Delete(reinterpret_cast<TestGrpcUdpHandler*>(handler));
+    delete reinterpret_cast<TestGrpcUdpHandler*>(handler);
   }
 };
 

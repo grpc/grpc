@@ -230,7 +230,7 @@ static void on_fourth_resolution(OnResolutionCallbackArg* cb_arg) {
   GRPC_LOG_IF_ERROR("pollset_kick",
                     grpc_pollset_kick(g_iomgr_args.pollset, nullptr));
   gpr_mu_unlock(g_iomgr_args.mu);
-  grpc_core::Delete(cb_arg);
+  delete cb_arg;
   g_all_callbacks_invoked = true;
 }
 
@@ -274,7 +274,7 @@ static void on_first_resolution(OnResolutionCallbackArg* cb_arg) {
 static void start_test_under_combiner(void* arg, grpc_error* /*error*/) {
   OnResolutionCallbackArg* res_cb_arg =
       static_cast<OnResolutionCallbackArg*>(arg);
-  res_cb_arg->result_handler = grpc_core::New<ResultHandler>();
+  res_cb_arg->result_handler = new ResultHandler();
   grpc_core::ResolverFactory* factory =
       grpc_core::ResolverRegistry::LookupResolverFactory("dns");
   grpc_uri* uri = grpc_uri_parse(res_cb_arg->uri_str, 0);
@@ -305,8 +305,7 @@ static void start_test_under_combiner(void* arg, grpc_error* /*error*/) {
 static void test_cooldown() {
   grpc_core::ExecCtx exec_ctx;
   iomgr_args_init(&g_iomgr_args);
-  OnResolutionCallbackArg* res_cb_arg =
-      grpc_core::New<OnResolutionCallbackArg>();
+  OnResolutionCallbackArg* res_cb_arg = new OnResolutionCallbackArg();
   res_cb_arg->uri_str = "dns:127.0.0.1";
 
   g_combiner->Run(

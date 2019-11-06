@@ -37,14 +37,14 @@ namespace grpc_core {
 
 void ares_uv_poll_cb(uv_poll_t* handle, int status, int events);
 
-void ares_uv_poll_close_cb(uv_handle_t* handle) { Delete(handle); }
+void ares_uv_poll_close_cb(uv_handle_t* handle) { delete handle; }
 
 class GrpcPolledFdLibuv : public GrpcPolledFd {
  public:
   GrpcPolledFdLibuv(ares_socket_t as, Combiner* combiner)
       : as_(as), combiner_(combiner) {
     gpr_asprintf(&name_, "c-ares socket: %" PRIdPTR, (intptr_t)as);
-    handle_ = New<uv_poll_t>();
+    handle_ = new uv_poll_t();
     uv_poll_init_socket(uv_default_loop(), handle_, as);
     handle_->data = this;
     GRPC_COMBINER_REF(combiner_, "libuv ares event driver");
@@ -154,7 +154,7 @@ void ares_uv_poll_cb(uv_poll_t* handle, int status, int events) {
   grpc_core::ExecCtx exec_ctx;
   GrpcPolledFdLibuv* polled_fd =
       reinterpret_cast<GrpcPolledFdLibuv*>(handle->data);
-  AresUvPollCbArg* arg = New<AresUvPollCbArg>(handle, status, events);
+  AresUvPollCbArg* arg = new AresUvPollCbArg(handle, status, events);
   polled_fd->combiner_->Run(
       GRPC_CLOSURE_CREATE(ares_uv_poll_cb_locked, arg, nullptr),
       GRPC_ERROR_NONE);
@@ -165,7 +165,7 @@ class GrpcPolledFdFactoryLibuv : public GrpcPolledFdFactory {
   GrpcPolledFd* NewGrpcPolledFdLocked(ares_socket_t as,
                                       grpc_pollset_set* driver_pollset_set,
                                       Combiner* combiner) override {
-    return New<GrpcPolledFdLibuv>(as, combiner);
+    return new GrpcPolledFdLibuv(as, combiner);
   }
 
   void ConfigureAresChannelLocked(ares_channel channel) override {}
