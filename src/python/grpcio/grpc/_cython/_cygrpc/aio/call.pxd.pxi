@@ -16,7 +16,6 @@
 cdef class _AioCall:
     cdef:
         AioChannel _channel
-        
         list _references
         GrpcCallWrapper _grpc_call_wrapper
 
