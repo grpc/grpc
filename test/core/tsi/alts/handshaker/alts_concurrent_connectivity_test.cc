@@ -531,7 +531,7 @@ TEST(AltsConcurrentConnectivityTest,
  * fail fast when the ALTS handshake server is non-responsive, in which case
  * the overall connection deadline kicks in. */
 TEST(AltsConcurrentConnectivityTest,
-     TestHandshakeFailsFastWhenHandshakeServerHangsAfterCloseFromPeer) {
+     TestHandshakeFailsFastWhenHandshakeServerHangsAfterAccepting) {
   FakeTcpServer fake_handshake_server(
       FakeTcpServer::CloseSocketUponCloseFromPeer);
   FakeTcpServer fake_tcp_server(FakeTcpServer::CloseSocketUponCloseFromPeer);
