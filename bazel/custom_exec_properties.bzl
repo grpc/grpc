@@ -12,7 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-
 load("@grpc_custom_exec_properties//:constants.bzl", _LARGE_MACHINE = "LARGE_MACHINE")
 
 LARGE_MACHINE = _LARGE_MACHINE

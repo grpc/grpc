@@ -32,16 +32,16 @@ load("@bazel_toolchains//rules:rbe_repo.bzl", "rbe_autoconfig")
 # Create toolchain configuration for remote execution.
 rbe_autoconfig(
     name = "rbe_default",
-    # use exec_properties instead of deprecated remote_execution_properties
-    use_legacy_platform_definition = False,
     exec_properties = create_exec_properties_dict(
+        docker_add_capabilities = "SYS_PTRACE",
+        docker_privileged = True,
         # n1-highmem-2 is the default (small machine) machine type. Targets
         # that want to use other machines (such as LARGE_MACHINE) will override
         # this value.
         gce_machine_type = "n1-highmem-2",
-        docker_add_capabilities = "SYS_PTRACE",
-        docker_privileged = True,
     ),
+    # use exec_properties instead of deprecated remote_execution_properties
+    use_legacy_platform_definition = False,
 )
 
 load("@bazel_toolchains//rules:environments.bzl", "clang_env")
