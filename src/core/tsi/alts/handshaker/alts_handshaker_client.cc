@@ -326,6 +326,7 @@ static tsi_result make_grpc_call(alts_handshaker_client* c, bool is_start) {
     grpc_call_error call_error =
         client->grpc_caller(client->call, ops, static_cast<size_t>(op - ops),
                             &client->on_status_received);
+    // TODO(apolcyn): return the error here instead, as done for other ops?
     GPR_ASSERT(call_error == GRPC_CALL_OK);
     memset(ops, 0, sizeof(ops));
     op = ops;
