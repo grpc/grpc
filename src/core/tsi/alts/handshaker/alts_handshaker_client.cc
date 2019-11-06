@@ -172,6 +172,8 @@ static void on_status_received(void* arg, grpc_error* error) {
   alts_grpc_handshaker_client* client =
       static_cast<alts_grpc_handshaker_client*>(arg);
   if (client->handshake_status_code != GRPC_STATUS_OK) {
+    // TODO(apolcyn): consider overriding the handshake result's
+    // status from the final ALTS message with the status here.
     char* status_details =
         grpc_slice_to_c_string(client->handshake_status_details);
     gpr_log(GPR_INFO,
@@ -549,6 +551,7 @@ static void handshaker_client_destruct(alts_handshaker_client* c) {
   }
   alts_grpc_handshaker_client* client =
       reinterpret_cast<alts_grpc_handshaker_client*>(c);
+  gpr_mu_destroy(&client->mu);
   if (client->call != nullptr) {
     // Throw this grpc_call_unref over to the ExecCtx so that
     // we invoke it at the bottom of the call stack and
@@ -582,6 +585,7 @@ alts_handshaker_client* alts_grpc_handshaker_client_create(
   }
   alts_grpc_handshaker_client* client =
       static_cast<alts_grpc_handshaker_client*>(gpr_zalloc(sizeof(*client)));
+  gpr_mu_init(&client->mu);
   gpr_ref_init(&client->refs, 1);
   client->grpc_caller = grpc_call_start_batch_and_execute;
   client->handshaker = handshaker;
