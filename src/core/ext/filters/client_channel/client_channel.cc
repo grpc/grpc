@@ -26,6 +26,8 @@
 #include <stdio.h>
 #include <string.h>
 
+#include <set>
+
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
@@ -53,7 +55,6 @@
 #include "src/core/lib/gprpp/inlined_vector.h"
 #include "src/core/lib/gprpp/manual_constructor.h"
 #include "src/core/lib/gprpp/map.h"
-#include "src/core/lib/gprpp/set.h"
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/iomgr/combiner.h"
 #include "src/core/lib/iomgr/iomgr.h"
@@ -295,7 +296,7 @@ class ChannelData {
   // The set of SubchannelWrappers that currently exist.
   // No need to hold a ref, since the map is updated in the control-plane
   // combiner when the SubchannelWrappers are created and destroyed.
-  Set<SubchannelWrapper*> subchannel_wrappers_;
+  std::set<SubchannelWrapper*> subchannel_wrappers_;
   // Pending ConnectedSubchannel updates for each SubchannelWrapper.
   // Updates are queued here in the control plane combiner and then applied
   // in the data plane mutex when the picker is updated.

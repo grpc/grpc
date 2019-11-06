@@ -19,6 +19,8 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <set>
+
 #include "src/core/ext/filters/client_channel/service_config.h"
 #include "src/core/ext/filters/client_channel/xds/xds_api.h"
 #include "src/core/ext/filters/client_channel/xds/xds_bootstrap.h"
@@ -28,7 +30,6 @@
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/gprpp/ref_counted.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
-#include "src/core/lib/gprpp/set.h"
 #include "src/core/lib/gprpp/string_view.h"
 #include "src/core/lib/iomgr/combiner.h"
 
@@ -175,7 +176,7 @@ class XdsClient : public InternallyRefCounted<XdsClient> {
         cluster_watchers;
     Map<EndpointWatcherInterface*, UniquePtr<EndpointWatcherInterface>>
         endpoint_watchers;
-    Set<XdsClientStats*> client_stats;
+    std::set<XdsClientStats*> client_stats;
     // The latest data seen from EDS.
     EdsUpdate eds_update;
   };
