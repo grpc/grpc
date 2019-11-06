@@ -197,18 +197,14 @@ class ClientCallbackEnd2endTest
     gpr_log(GPR_ERROR, "KRS: ResponseCallback: before lock");
     std::lock_guard<std::mutex> l1(mu1);
     gpr_log(GPR_ERROR, "KRS: ResponseCallback: after lock");
-    {
-      gpr_log(GPR_ERROR, "KRS: ResponseCallback: calling RPC");
-      stub_->experimental_async()->Echo(
-          &cli_ctx1, &request1, &response1,
-          [this](Status s1) {
-            EXPECT_TRUE(s1.ok());
-            EXPECT_EQ(request1.message(), response1.message());
-            gpr_log(GPR_ERROR, "KRS: ResponseCallback: RPC lambda - calling CallResponseCallback");
-            CallResponseCallback();
-            gpr_log(GPR_ERROR, "KRS: ResponseCallback: RPC lambda - calling CallResponseCallback - after");
-      });
-    }
+    gpr_log(GPR_ERROR, "KRS: ResponseCallback: calling RPC");
+    stub_->experimental_async()->Echo(
+        &cli_ctx1, &request1, &response1,
+        [this](Status s1) {
+          gpr_log(GPR_ERROR, "KRS: ResponseCallback: RPC lambda - calling CallResponseCallback");
+          CallResponseCallback();
+          gpr_log(GPR_ERROR, "KRS: ResponseCallback: RPC lambda - calling CallResponseCallback - after");
+    });
   }
 
   void SendRpcs(int num_rpcs, bool with_binary_metadata) {
@@ -464,7 +460,7 @@ TEST_P(ClientCallbackEnd2endTest, SimpleRpcUnderLockNested) {
 TEST_P(ClientCallbackEnd2endTest, SimpleRpcUnderLockNestedComplex) {
   MAYBE_SKIP_TEST;
   ResetStub();
-  CallResponseCallback();
+  ResponseCallback();
 }
 
 TEST_P(ClientCallbackEnd2endTest, SimpleRpcUnderLock) {
