@@ -69,6 +69,11 @@ config_setting(
     values = {"cpu": "darwin"},
 )
 
+config_setting(
+    name = "grpc_use_absl",
+    values = {"define": "GRPC_USE_ABSL=1"},
+)
+
 python_config_settings()
 
 # This should be updated along with build.yaml
