@@ -23,6 +23,8 @@
 
 #include <grpc/grpc.h>
 
+#include <string>
+
 #include "src/core/lib/channel/channel_trace.h"
 #include "src/core/lib/gpr/time_precise.h"
 #include "src/core/lib/gprpp/inlined_vector.h"
@@ -82,7 +84,7 @@ class BaseNode : public RefCounted<BaseNode> {
   };
 
  protected:
-  BaseNode(EntityType type, UniquePtr<char> name);
+  BaseNode(EntityType type, std::string name);
 
  public:
   virtual ~BaseNode();
@@ -96,14 +98,14 @@ class BaseNode : public RefCounted<BaseNode> {
 
   EntityType type() const { return type_; }
   intptr_t uuid() const { return uuid_; }
-  const char* name() const { return name_.get(); }
+  const std::string& name() const { return name_; }
 
  private:
   // to allow the ChannelzRegistry to set uuid_ under its lock.
   friend class ChannelzRegistry;
   const EntityType type_;
   intptr_t uuid_;
-  UniquePtr<char> name_;
+  std::string name_;
 };
 
 // This class is a helper class for channelz entities that deal with Channels,
@@ -165,7 +167,7 @@ class CallCountingHelper {
 // Handles channelz bookkeeping for channels
 class ChannelNode : public BaseNode {
  public:
-  ChannelNode(UniquePtr<char> target, size_t channel_tracer_max_nodes,
+  ChannelNode(std::string target, size_t channel_tracer_max_nodes,
               intptr_t parent_uuid);
 
   // Returns the string description of the given connectivity state.
@@ -208,7 +210,7 @@ class ChannelNode : public BaseNode {
   // to allow the channel trace test to access trace_.
   friend class testing::ChannelNodePeer;
 
-  UniquePtr<char> target_;
+  std::string target_;
   CallCountingHelper call_counter_;
   ChannelTrace trace_;
   const intptr_t parent_uuid_;
@@ -269,8 +271,7 @@ class ServerNode : public BaseNode {
 // Handles channelz bookkeeping for sockets
 class SocketNode : public BaseNode {
  public:
-  SocketNode(UniquePtr<char> local, UniquePtr<char> remote,
-             UniquePtr<char> name);
+  SocketNode(std::string local, std::string remote, std::string name);
   ~SocketNode() override {}
 
   grpc_json* RenderJson() override;
@@ -289,7 +290,7 @@ class SocketNode : public BaseNode {
     gpr_atm_no_barrier_fetch_add(&keepalives_sent_, static_cast<gpr_atm>(1));
   }
 
-  const char* remote() { return remote_.get(); }
+  const std::string& remote() { return remote_; }
 
  private:
   gpr_atm streams_started_ = 0;
@@ -302,20 +303,20 @@ class SocketNode : public BaseNode {
   gpr_atm last_remote_stream_created_cycle_ = 0;
   gpr_atm last_message_sent_cycle_ = 0;
   gpr_atm last_message_received_cycle_ = 0;
-  UniquePtr<char> local_;
-  UniquePtr<char> remote_;
+  std::string local_;
+  std::string remote_;
 };
 
 // Handles channelz bookkeeping for listen sockets
 class ListenSocketNode : public BaseNode {
  public:
-  ListenSocketNode(UniquePtr<char> local_addr, UniquePtr<char> name);
+  ListenSocketNode(std::string local_addr, std::string name);
   ~ListenSocketNode() override {}
 
   grpc_json* RenderJson() override;
 
  private:
-  UniquePtr<char> local_addr_;
+  std::string local_addr_;
 };
 
 }  // namespace channelz

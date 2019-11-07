@@ -382,9 +382,10 @@ static bool read_channel_args(grpc_chttp2_transport* t,
     gpr_asprintf(&socket_name, "%s %s", get_vtable()->name, t->peer_string);
     t->channelz_socket =
         grpc_core::MakeRefCounted<grpc_core::channelz::SocketNode>(
-            grpc_core::UniquePtr<char>(),
-            grpc_core::UniquePtr<char>(gpr_strdup(t->peer_string)),
-            grpc_core::UniquePtr<char>(socket_name));
+            "", t->peer_string, socket_name);
+    // TODO(veblush): Remove this once gpr_asprintf is replaced by
+    // absl::StrFormat
+    gpr_free(socket_name);
   }
   return enable_bdp;
 }
