@@ -108,7 +108,7 @@ class AresDnsResolver : public Resolver {
   /// retry backoff state
   BackOff backoff_;
   /// currently resolving addresses
-  UniquePtr<ServerAddressList> addresses_;
+  std::unique_ptr<ServerAddressList> addresses_;
   /// currently resolving service config
   char* service_config_json_ = nullptr;
   // has shutdown been initiated
@@ -496,8 +496,7 @@ static bool should_use_ares(const char* resolver_env) {
 static bool g_use_ares_dns_resolver;
 
 void grpc_resolver_dns_ares_init() {
-  grpc_core::UniquePtr<char> resolver =
-      GPR_GLOBAL_CONFIG_GET(grpc_dns_resolver);
+  std::unique_ptr<char> resolver = GPR_GLOBAL_CONFIG_GET(grpc_dns_resolver);
   if (should_use_ares(resolver.get())) {
     g_use_ares_dns_resolver = true;
     gpr_log(GPR_DEBUG, "Using ares dns resolver");

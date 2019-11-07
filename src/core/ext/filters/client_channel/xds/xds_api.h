@@ -101,19 +101,19 @@ class XdsDropConfig : public RefCounted<XdsDropConfig> {
              parts_per_million == other.parts_per_million;
     }
 
-    UniquePtr<char> name;
+    std::unique_ptr<char> name;
     const uint32_t parts_per_million;
   };
 
   using DropCategoryList = InlinedVector<DropCategory, 2>;
 
-  void AddCategory(UniquePtr<char> name, uint32_t parts_per_million) {
+  void AddCategory(std::unique_ptr<char> name, uint32_t parts_per_million) {
     drop_category_list_.emplace_back(
         DropCategory{std::move(name), parts_per_million});
   }
 
   // The only method invoked from the data plane combiner.
-  bool ShouldDrop(const UniquePtr<char>** category_name) const;
+  bool ShouldDrop(const std::unique_ptr<char>** category_name) const;
 
   const DropCategoryList& drop_category_list() const {
     return drop_category_list_;
@@ -139,12 +139,12 @@ struct EdsUpdate {
 struct CdsUpdate {
   // The name to use in the EDS request.
   // If null, the cluster name will be used.
-  UniquePtr<char> eds_service_name;
+  std::unique_ptr<char> eds_service_name;
   // The LRS server to use for load reporting.
   // If null, load reporting will be disabled.
   // If set to the empty string, will use the same server we obtained
   // the CDS data from.
-  UniquePtr<char> lrs_load_reporting_server_name;
+  std::unique_ptr<char> lrs_load_reporting_server_name;
 };
 
 // Creates an EDS request querying \a service_name.
@@ -171,7 +171,7 @@ grpc_slice XdsLrsRequestCreateAndEncode(const char* server_name,
 // load_reporting_interval for client-side load reporting. If there is any
 // error, the output config is invalid.
 grpc_error* XdsLrsResponseDecodeAndParse(const grpc_slice& encoded_response,
-                                         UniquePtr<char>* cluster_name,
+                                         std::unique_ptr<char>* cluster_name,
                                          grpc_millis* load_reporting_interval);
 
 }  // namespace grpc_core

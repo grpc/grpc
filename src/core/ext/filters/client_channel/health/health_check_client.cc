@@ -200,7 +200,7 @@ bool DecodeResponse(grpc_slice_buffer* slice_buffer, grpc_error** error) {
     return false;
   }
   // Concatenate the slices to form a single string.
-  UniquePtr<uint8_t> recv_message_deleter;
+  std::unique_ptr<uint8_t> recv_message_deleter;
   uint8_t* recv_message;
   if (slice_buffer->count == 1) {
     recv_message = GRPC_SLICE_START_PTR(slice_buffer->slices[0]);

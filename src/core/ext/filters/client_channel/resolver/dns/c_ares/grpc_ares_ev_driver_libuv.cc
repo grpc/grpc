@@ -122,7 +122,7 @@ struct AresUvPollCbArg {
 };
 
 static void ares_uv_poll_cb_locked(void* arg, grpc_error* error) {
-  grpc_core::UniquePtr<AresUvPollCbArg> arg_struct(
+  std::unique_ptr<AresUvPollCbArg> arg_struct(
       reinterpret_cast<AresUvPollCbArg*>(arg));
   uv_poll_t* handle = arg_struct->handle;
   int status = arg_struct->status;
@@ -171,7 +171,8 @@ class GrpcPolledFdFactoryLibuv : public GrpcPolledFdFactory {
   void ConfigureAresChannelLocked(ares_channel channel) override {}
 };
 
-UniquePtr<GrpcPolledFdFactory> NewGrpcPolledFdFactory(Combiner* combiner) {
+std::unique_ptr<GrpcPolledFdFactory> NewGrpcPolledFdFactory(
+    Combiner* combiner) {
   return MakeUnique<GrpcPolledFdFactoryLibuv>();
 }
 

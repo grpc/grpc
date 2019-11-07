@@ -35,7 +35,7 @@
 #include "test/core/util/test_config.h"
 
 struct fullstack_secure_fixture_data {
-  grpc_core::UniquePtr<char> localaddr;
+  std::unique_ptr<char> localaddr;
   bool server_credential_reloaded = false;
 };
 

@@ -30,7 +30,7 @@
 #include "src/core/lib/gprpp/string_view.h"
 
 namespace grpc_core {
-int JoinHostPort(UniquePtr<char>* out, const char* host, int port) {
+int JoinHostPort(std::unique_ptr<char>* out, const char* host, int port) {
   char* tmp;
   int ret;
   if (host[0] != '[' && strchr(host, ':') != nullptr) {
@@ -96,8 +96,8 @@ bool SplitHostPort(StringView name, StringView* host, StringView* port) {
   return DoSplitHostPort(name, host, port, &unused);
 }
 
-bool SplitHostPort(StringView name, UniquePtr<char>* host,
-                   UniquePtr<char>* port) {
+bool SplitHostPort(StringView name, std::unique_ptr<char>* host,
+                   std::unique_ptr<char>* port) {
   GPR_DEBUG_ASSERT(host != nullptr && *host == nullptr);
   GPR_DEBUG_ASSERT(port != nullptr && *port == nullptr);
   StringView host_view;
