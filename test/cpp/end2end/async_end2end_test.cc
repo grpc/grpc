@@ -1378,7 +1378,7 @@ class AsyncEnd2endServerTryCancelTest : public AsyncEnd2endTest {
 
     if (server_try_cancel == CANCEL_DURING_PROCESSING) {
       server_try_cancel_thd =
-          new std::thread(&ServerContext::TryCancel, &srv_ctx);
+          new std::thread([&srv_ctx] { srv_ctx.TryCancel(); });
       // Server will cancel the RPC in a parallel thread while reading the
       // requests from the client. Since the cancellation can happen at anytime,
       // some of the cq results (i.e those until cancellation) might be true but
@@ -1526,7 +1526,7 @@ class AsyncEnd2endServerTryCancelTest : public AsyncEnd2endTest {
 
     if (server_try_cancel == CANCEL_DURING_PROCESSING) {
       server_try_cancel_thd =
-          new std::thread(&ServerContext::TryCancel, &srv_ctx);
+          new std::thread([&srv_ctx] { srv_ctx.TryCancel(); });
 
       // Server will cancel the RPC in a parallel thread while writing responses
       // to the client. Since the cancellation can happen at anytime, some of
@@ -1673,7 +1673,7 @@ class AsyncEnd2endServerTryCancelTest : public AsyncEnd2endTest {
 
     if (server_try_cancel == CANCEL_DURING_PROCESSING) {
       server_try_cancel_thd =
-          new std::thread(&ServerContext::TryCancel, &srv_ctx);
+          new std::thread([&srv_ctx] { srv_ctx.TryCancel(); });
 
       // Since server is going to cancel the RPC in a parallel thread, some of
       // the cq results (i.e those until the cancellation) might be true. Since
