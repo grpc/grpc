@@ -1224,8 +1224,9 @@ static void post_batch_completion(batch_control* bctl) {
   if (bctl->completion_data.notify_tag.is_closure) {
     /* unrefs error */
     bctl->call = nullptr;
-    GRPC_CLOSURE_RUN((grpc_closure*)bctl->completion_data.notify_tag.tag,
-                     error);
+    grpc_core::Closure::Run(DEBUG_LOCATION,
+                            (grpc_closure*)bctl->completion_data.notify_tag.tag,
+                            error);
     GRPC_CALL_INTERNAL_UNREF(call, "completion");
   } else {
     /* unrefs error */
@@ -1571,7 +1572,8 @@ static grpc_call_error call_start_batch(grpc_call* call, const grpc_op* ops,
                      static_cast<grpc_cq_completion*>(
                          gpr_malloc(sizeof(grpc_cq_completion))));
     } else {
-      GRPC_CLOSURE_RUN((grpc_closure*)notify_tag, GRPC_ERROR_NONE);
+      grpc_core::Closure::Run(DEBUG_LOCATION, (grpc_closure*)notify_tag,
+                              GRPC_ERROR_NONE);
     }
     error = GRPC_CALL_OK;
     goto done;
