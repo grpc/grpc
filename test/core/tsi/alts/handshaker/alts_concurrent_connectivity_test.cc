@@ -48,7 +48,6 @@
 #include "src/core/lib/gprpp/thd.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/security/credentials/alts/alts_credentials.h"
-#include "src/core/lib/security/credentials/alts/grpc_alts_credentials_options.h"
 #include "src/core/lib/security/credentials/credentials.h"
 #include "src/core/lib/security/security_connector/alts/alts_security_connector.h"
 #include "src/core/lib/slice/slice_string_helpers.h"
@@ -135,23 +134,12 @@ class FakeHandshakeServer {
 
 class TestServer {
  public:
-  explicit TestServer(const char* fake_handshake_server_address) {
+  explicit TestServer() {
     grpc_alts_credentials_options* alts_options =
         grpc_alts_credentials_server_options_create();
-    // Since this test involves many concurrent ALTS handshakes
-    // where both the client and server are in the same process (this
-    // situation is assumed to be rare), we disable ALTS handshaker
-    // subchannel sharing on the server-side only in order to prevent
-    // contention over ALTS handshake resources between peer endpoints
-    // that are trying to do a mutual handshake (e.g. if clients consume
-    // all handshake resources, then servers won't be able to even start
-    // any handshakes and so no mutual handshakes can make progress).
-    // TODO(apolcyn): make this API not test-only if this is needed
-    // outside this test.
-    alts_options->test_only_disable_handshaker_subchannel_sharing = true;
     grpc_server_credentials* server_creds =
         grpc_alts_server_credentials_create_customized(
-            alts_options, fake_handshake_server_address,
+            alts_options, fake_handshake_server_.address(),
             true /* enable_untrusted_alts */);
     grpc_alts_credentials_options_destroy(alts_options);
     server_ = grpc_server_create(nullptr, nullptr);
@@ -194,6 +182,15 @@ class TestServer {
   grpc_completion_queue* server_cq_;
   std::unique_ptr<std::thread> server_thd_;
   grpc_core::UniquePtr<char> server_addr_;
+  // Give this test server its own ALTS handshake server
+  // so that we avoid competing for ALTS handshake server resources (e.g.
+  // available HTTP2 streams on a globally shared handshaker subchannel)
+  // with clients that are trying to do mutual ALTS handshakes
+  // with this server (which could "deadlock" mutual handshakes).
+  // TODO(apolcyn): remove this workaround from this test and have
+  // clients/servers share a single fake handshake server if
+  // the underlying issue needs to be fixed.
+  FakeHandshakeServer fake_handshake_server_;
 };
 
 class ConnectLoopRunner {
@@ -268,7 +265,7 @@ class ConnectLoopRunner {
 // handshake server).
 TEST(AltsConcurrentConnectivityTest, TestBasicClientServerHandshakes) {
   FakeHandshakeServer fake_handshake_server;
-  TestServer test_server(fake_handshake_server.address());
+  TestServer test_server;
   {
     ConnectLoopRunner runner(
         test_server.address(), fake_handshake_server.address(),
@@ -284,7 +281,7 @@ TEST(AltsConcurrentConnectivityTest, TestConcurrentClientServerHandshakes) {
   FakeHandshakeServer fake_handshake_server;
   // Test
   {
-    TestServer test_server(fake_handshake_server.address());
+    TestServer test_server;
     gpr_timespec test_deadline = grpc_timeout_seconds_to_deadline(20);
     size_t num_concurrent_connects = 50;
     std::vector<std::unique_ptr<ConnectLoopRunner>> connect_loop_runners;

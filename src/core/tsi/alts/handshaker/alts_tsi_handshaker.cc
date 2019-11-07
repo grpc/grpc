@@ -368,11 +368,8 @@ static void alts_tsi_handshaker_create_channel(void* arg,
       static_cast<alts_tsi_handshaker_continue_handshaker_next_args*>(arg);
   alts_tsi_handshaker* handshaker = next_args->handshaker;
   GPR_ASSERT(handshaker->channel == nullptr);
-  grpc_arg use_local_subchannel_pool_arg = grpc_channel_arg_integer_create(GRPC_ARG_USE_LOCAL_SUBCHANNEL_POOL, handshaker->options->test_only_disable_handshaker_subchannel_sharing);
-  grpc_channel_args channel_args = {1, &use_local_subchannel_pool_arg};
-  gpr_log(GPR_DEBUG, "use local subchannel pool:%d", handshaker->options->test_only_disable_handshaker_subchannel_sharing);
   handshaker->channel = grpc_insecure_channel_create(
-      next_args->handshaker->handshaker_service_url, &channel_args, nullptr);
+      next_args->handshaker->handshaker_service_url, nullptr, nullptr);
   tsi_result continue_next_result =
       alts_tsi_handshaker_continue_handshaker_next(
           handshaker, next_args->received_bytes.get(),
