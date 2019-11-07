@@ -76,7 +76,7 @@ cc_library(
     ],
     copts = select({
         ":windows": [],
-        "//conditions:default": COPTS
+        "//conditions:default": COPTS,
     }),
     visibility = ["//visibility:public"],
 )
@@ -95,7 +95,7 @@ cc_library(
     ],
     copts = select({
         ":windows": [],
-        "//conditions:default": COPTS
+        "//conditions:default": COPTS,
     }),
     textual_hdrs = [
         "upb/port_def.inc",
@@ -123,7 +123,7 @@ cc_library(
     ],
     copts = select({
         ":windows": [],
-        "//conditions:default": COPTS
+        "//conditions:default": COPTS,
     }),
     visibility = ["//visibility:public"],
     deps = [
@@ -151,7 +151,7 @@ cc_library(
     hdrs = ["upb/legacy_msg_reflection.h"],
     copts = select({
         ":windows": [],
-        "//conditions:default": COPTS
+        "//conditions:default": COPTS,
     }),
     deps = [
         ":table",
@@ -172,7 +172,7 @@ cc_library(
     ],
     copts = select({
         ":windows": [],
-        "//conditions:default": COPTS
+        "//conditions:default": COPTS,
     }),
     deps = [
         ":reflection",
@@ -199,7 +199,7 @@ cc_library(
     ],
     copts = select({
         ":windows": [],
-        "//conditions:default": COPTS
+        "//conditions:default": COPTS,
     }),
     deps = [
         ":descriptor_upbproto",
@@ -223,7 +223,7 @@ cc_library(
     ],
     copts = select({
         ":windows": [],
-        "//conditions:default": COPTS
+        "//conditions:default": COPTS,
     }),
     deps = [
         ":upb",
@@ -256,7 +256,7 @@ cc_library(
     hdrs = ["upbc/generator.h"],
     copts = select({
         ":windows": [],
-        "//conditions:default": CPPOPTS
+        "//conditions:default": CPPOPTS,
     }),
     deps = [
         "@absl//absl/base:core_headers",
@@ -272,7 +272,7 @@ cc_binary(
     srcs = ["upbc/main.cc"],
     copts = select({
         ":windows": [],
-        "//conditions:default": CPPOPTS
+        "//conditions:default": CPPOPTS,
     }),
     visibility = ["//visibility:public"],
     deps = [
@@ -309,7 +309,7 @@ cc_library(
     ],
     copts = select({
         ":windows": [],
-        "//conditions:default": CPPOPTS
+        "//conditions:default": CPPOPTS,
     }),
     deps = [
         ":handlers",
@@ -325,7 +325,7 @@ cc_test(
     ],
     copts = select({
         ":windows": [],
-        "//conditions:default": COPTS
+        "//conditions:default": COPTS,
     }),
     deps = [
         ":upb",
@@ -354,7 +354,7 @@ cc_test(
     ],
     copts = select({
         ":windows": [],
-        "//conditions:default": CPPOPTS
+        "//conditions:default": CPPOPTS,
     }),
     deps = [
         ":handlers",
@@ -382,7 +382,7 @@ cc_test(
     srcs = ["tests/test_cpp.cc"],
     copts = select({
         ":windows": [],
-        "//conditions:default": CPPOPTS
+        "//conditions:default": CPPOPTS,
     }),
     deps = [
         ":handlers",
@@ -399,7 +399,7 @@ cc_test(
     srcs = ["tests/test_table.cc"],
     copts = select({
         ":windows": [],
-        "//conditions:default": CPPOPTS
+        "//conditions:default": CPPOPTS,
     }),
     deps = [
         ":table",
@@ -415,7 +415,7 @@ cc_binary(
     srcs = ["tests/file_descriptor_parsenew_fuzzer.cc"],
     copts = select({
         ":windows": [],
-        "//conditions:default": CPPOPTS
+        "//conditions:default": CPPOPTS,
     }) + select({
         "//conditions:default": [],
         ":fuzz": ["-fsanitize=fuzzer,address"],
@@ -441,7 +441,7 @@ cc_test(
     srcs = ["tests/pb/test_encoder.cc"],
     copts = select({
         ":windows": [],
-        "//conditions:default": CPPOPTS
+        "//conditions:default": CPPOPTS,
     }),
     deps = [
         ":descriptor_upbproto",
@@ -486,7 +486,7 @@ cc_test(
     ],
     copts = select({
         ":windows": [],
-        "//conditions:default": CPPOPTS
+        "//conditions:default": CPPOPTS,
     }),
     deps = [
         ":test_json_upbproto",
@@ -517,7 +517,7 @@ cc_binary(
     ],
     copts = select({
         ":windows": [],
-        "//conditions:default": COPTS
+        "//conditions:default": COPTS,
     }) + ["-Ibazel-out/k8-fastbuild/bin"],
     deps = [
         ":conformance_proto_upb",
@@ -574,7 +574,7 @@ cc_library(
     hdrs = ["upb.h"],
     copts = select({
         ":windows": [],
-        "//conditions:default": COPTS
+        "//conditions:default": COPTS,
     }),
 )
 
