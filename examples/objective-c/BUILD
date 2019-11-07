@@ -23,29 +23,29 @@ load("@build_bazel_rules_apple//apple:macos.bzl", "macos_application")
 objc_grpc_library(
     name = "HelloWorld_grpc_proto",
     srcs = ["//examples:protos/helloworld.proto"],
-    deps = ["//examples:helloworld_proto"],
     tags = ["manual"],
+    deps = ["//examples:helloworld_proto"],
 )
 
 # This one works with import "external/com_github_grpc_grpc/examples/protos/Helloworld.pbrpc.h"
 objc_grpc_library(
     name = "HelloWorld_grpc_proto_external",
     srcs = ["//external/com_github_grpc_grpc/examples:protos/helloworld.proto"],
-    deps = ["@com_github_grpc_grpc//examples:helloworld_proto"],
     tags = ["manual"],
+    deps = ["@com_github_grpc_grpc//examples:helloworld_proto"],
 )
 
 objc_library(
     name = "HelloWorld-lib",
-    srcs = glob(["helloworld/**/*.m",]),
+    srcs = glob(["helloworld/**/*.m"]),
     hdrs = glob(["helloworld/**/*.h"]),
     data = glob([
         "helloworld/HelloWorld/Base.lproj/**",
         "helloworld/HelloWorld/Images.xcassets/**",
     ]),
     includes = ["helloworld/HelloWorld"],
-    deps = [":HelloWorld_grpc_proto"],
     tags = ["manual"],
+    deps = [":HelloWorld_grpc_proto"],
 )
 
 ios_application(
@@ -55,40 +55,40 @@ ios_application(
         "iphone",
         "ipad",
     ],
-    minimum_os_version = "8.0",
     infoplists = ["helloworld/HelloWorld/Info.plist"],
-    deps = [":HelloWorld-lib"],
+    minimum_os_version = "8.0",
     tags = ["manual"],
+    deps = [":HelloWorld-lib"],
 )
 
 objc_library(
     name = "HelloWorldMacos-lib",
-    srcs = glob(["helloworld_macos/**/*.m",]),
+    srcs = glob(["helloworld_macos/**/*.m"]),
     hdrs = glob(["helloworld_macos/**/*.h"]),
     data = glob([
         "helloworld_macos/HelloWorld/Base.lproj/**",
         "helloworld_macos/HelloWorld/Images.xcassets/**",
     ]),
     includes = ["helloworld_macos/HelloWorld"],
-    deps = [":HelloWorld_grpc_proto"],
     tags = ["manual"],
+    deps = [":HelloWorld_grpc_proto"],
 )
 
 macos_application(
     name = "HelloWorldMacos",
     bundle_id = "io.grpc.HelloWorld",
-    minimum_os_version = "10.13",
     entitlements = "helloworld_macos/HelloWorld/Helloworld.entitlements",
     infoplists = ["helloworld_macos/HelloWorld/Info.plist"],
-    deps = [":HelloWorldMacos-lib"],
+    minimum_os_version = "10.13",
     tags = ["manual"],
+    deps = [":HelloWorldMacos-lib"],
 )
 
 objc_grpc_library(
     name = "RouteGuide",
     srcs = ["//examples:protos/route_guide.proto"],
-    deps = ["//examples:route_guide_proto"],
     tags = ["manual"],
+    deps = ["//examples:route_guide_proto"],
 )
 
 objc_library(
@@ -101,8 +101,8 @@ objc_library(
         "route_guide/route_guide_db.json",
     ]),
     includes = ["route_guide/Misc"],
-    deps = [":RouteGuide"],
     tags = ["manual"],
+    deps = [":RouteGuide"],
 )
 
 ios_application(
@@ -112,8 +112,8 @@ ios_application(
         "iphone",
         "ipad",
     ],
-    minimum_os_version = "8.0",
     infoplists = ["route_guide/Misc/Info.plist"],
-    deps = [":RouteGuideClient-lib"],
+    minimum_os_version = "8.0",
     tags = ["manual"],
+    deps = [":RouteGuideClient-lib"],
 )

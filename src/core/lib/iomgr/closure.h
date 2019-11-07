@@ -282,44 +282,6 @@ class Closure {
 }  // namespace grpc_core
 
 #ifndef NDEBUG
-inline void grpc_closure_sched(const char* file, int line, grpc_closure* c,
-                               grpc_error* error) {
-#else
-inline void grpc_closure_sched(grpc_closure* c, grpc_error* error) {
-#endif
-  GPR_TIMER_SCOPE("grpc_closure_sched", 0);
-  if (c != nullptr) {
-#ifndef NDEBUG
-    if (c->scheduled) {
-      gpr_log(GPR_ERROR,
-              "Closure already scheduled. (closure: %p, created: [%s:%d], "
-              "previously scheduled at: [%s: %d], newly scheduled at [%s: %d], "
-              "run?: %s",
-              c, c->file_created, c->line_created, c->file_initiated,
-              c->line_initiated, file, line, c->run ? "true" : "false");
-      abort();
-    }
-    c->scheduled = true;
-    c->file_initiated = file;
-    c->line_initiated = line;
-    c->run = false;
-    GPR_ASSERT(c->cb != nullptr);
-#endif
-    c->scheduler->vtable->sched(c, error);
-  } else {
-    GRPC_ERROR_UNREF(error);
-  }
-}
-
-/** Schedule a closure to be run. Does not need to be run from a safe point. */
-#ifndef NDEBUG
-#define GRPC_CLOSURE_SCHED(closure, error) \
-  grpc_closure_sched(__FILE__, __LINE__, closure, error)
-#else
-#define GRPC_CLOSURE_SCHED(closure, error) grpc_closure_sched(closure, error)
-#endif
-
-#ifndef NDEBUG
 inline void grpc_closure_list_sched(const char* file, int line,
                                     grpc_closure_list* list) {
 #else

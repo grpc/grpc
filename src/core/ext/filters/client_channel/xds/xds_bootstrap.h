@@ -40,7 +40,7 @@ class XdsBootstrap {
     double double_value;
     const char* string_value;
     bool bool_value;
-    Map<const char*, MetadataValue, StringLess> struct_value;
+    std::map<const char*, MetadataValue, StringLess> struct_value;
     std::vector<MetadataValue> list_value;
   };
 
@@ -50,7 +50,7 @@ class XdsBootstrap {
     const char* locality_region = nullptr;
     const char* locality_zone = nullptr;
     const char* locality_subzone = nullptr;
-    Map<const char*, MetadataValue, StringLess> metadata;
+    std::map<const char*, MetadataValue, StringLess> metadata;
   };
 
   struct ChannelCreds {
@@ -60,7 +60,7 @@ class XdsBootstrap {
 
   // If *error is not GRPC_ERROR_NONE after returning, then there was an
   // error reading the file.
-  static UniquePtr<XdsBootstrap> ReadFromFile(grpc_error** error);
+  static std::unique_ptr<XdsBootstrap> ReadFromFile(grpc_error** error);
 
   // Do not instantiate directly -- use ReadFromFile() above instead.
   XdsBootstrap(grpc_slice contents, grpc_error** error);
@@ -80,7 +80,8 @@ class XdsBootstrap {
   grpc_error* ParseLocality(grpc_json* json);
 
   InlinedVector<grpc_error*, 1> ParseMetadataStruct(
-      grpc_json* json, Map<const char*, MetadataValue, StringLess>* result);
+      grpc_json* json,
+      std::map<const char*, MetadataValue, StringLess>* result);
   InlinedVector<grpc_error*, 1> ParseMetadataList(
       grpc_json* json, std::vector<MetadataValue>* result);
   grpc_error* ParseMetadataValue(grpc_json* json, size_t idx,
@@ -91,7 +92,7 @@ class XdsBootstrap {
 
   const char* server_uri_ = nullptr;
   InlinedVector<ChannelCreds, 1> channel_creds_;
-  UniquePtr<Node> node_;
+  std::unique_ptr<Node> node_;
 };
 
 }  // namespace grpc_core

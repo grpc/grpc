@@ -405,7 +405,7 @@ void Subchannel::ConnectivityStateWatcherList::NotifyLocked(
 class Subchannel::HealthWatcherMap::HealthWatcher
     : public AsyncConnectivityStateWatcherInterface {
  public:
-  HealthWatcher(Subchannel* c, UniquePtr<char> health_check_service_name,
+  HealthWatcher(Subchannel* c, std::unique_ptr<char> health_check_service_name,
                 grpc_connectivity_state subchannel_state)
       : subchannel_(c),
         health_check_service_name_(std::move(health_check_service_name)),
@@ -490,7 +490,7 @@ class Subchannel::HealthWatcherMap::HealthWatcher
   }
 
   Subchannel* subchannel_;
-  UniquePtr<char> health_check_service_name_;
+  std::unique_ptr<char> health_check_service_name_;
   OrphanablePtr<HealthCheckClient> health_check_client_;
   grpc_connectivity_state state_;
   ConnectivityStateWatcherList watcher_list_;
@@ -502,7 +502,7 @@ class Subchannel::HealthWatcherMap::HealthWatcher
 
 void Subchannel::HealthWatcherMap::AddWatcherLocked(
     Subchannel* subchannel, grpc_connectivity_state initial_state,
-    UniquePtr<char> health_check_service_name,
+    std::unique_ptr<char> health_check_service_name,
     OrphanablePtr<ConnectivityStateWatcherInterface> watcher) {
   // If the health check service name is not already present in the map,
   // add it.
@@ -670,21 +670,21 @@ Subchannel::~Subchannel() {
   grpc_channel_args_destroy(args_);
   grpc_connector_unref(connector_);
   grpc_pollset_set_destroy(pollset_set_);
-  Delete(key_);
+  delete key_;
 }
 
 Subchannel* Subchannel::Create(grpc_connector* connector,
                                const grpc_channel_args* args) {
-  SubchannelKey* key = New<SubchannelKey>(args);
+  SubchannelKey* key = new SubchannelKey(args);
   SubchannelPoolInterface* subchannel_pool =
       SubchannelPoolInterface::GetSubchannelPoolFromChannelArgs(args);
   GPR_ASSERT(subchannel_pool != nullptr);
   Subchannel* c = subchannel_pool->FindSubchannel(key);
   if (c != nullptr) {
-    Delete(key);
+    delete key;
     return c;
   }
-  c = New<Subchannel>(key, connector, args);
+  c = new Subchannel(key, connector, args);
   // Try to register the subchannel before setting the subchannel pool.
   // Otherwise, in case of a registration race, unreffing c in
   // RegisterSubchannel() will cause c to be tried to be unregistered, while
@@ -725,7 +725,7 @@ namespace {
 
 void subchannel_destroy(void* arg, grpc_error* /*error*/) {
   Subchannel* self = static_cast<Subchannel*>(arg);
-  Delete(self);
+  delete self;
 }
 
 }  // namespace
@@ -735,9 +735,10 @@ void Subchannel::WeakUnref(GRPC_SUBCHANNEL_REF_EXTRA_ARGS) {
   old_refs = RefMutate(-static_cast<gpr_atm>(1),
                        1 GRPC_SUBCHANNEL_REF_MUTATE_PURPOSE("WEAK_UNREF"));
   if (old_refs == 1) {
-    GRPC_CLOSURE_SCHED(GRPC_CLOSURE_CREATE(subchannel_destroy, this,
-                                           grpc_schedule_on_exec_ctx),
-                       GRPC_ERROR_NONE);
+    ExecCtx::Run(DEBUG_LOCATION,
+                 GRPC_CLOSURE_CREATE(subchannel_destroy, this,
+                                     grpc_schedule_on_exec_ctx),
+                 GRPC_ERROR_NONE);
   }
 }
 
@@ -786,7 +787,7 @@ grpc_connectivity_state Subchannel::CheckConnectivityState(
 
 void Subchannel::WatchConnectivityState(
     grpc_connectivity_state initial_state,
-    UniquePtr<char> health_check_service_name,
+    std::unique_ptr<char> health_check_service_name,
     OrphanablePtr<ConnectivityStateWatcherInterface> watcher) {
   MutexLock lock(&mu_);
   grpc_pollset_set* interested_parties = watcher->interested_parties();
@@ -1050,7 +1051,7 @@ bool Subchannel::PublishTransportLocked() {
   }
   // Publish.
   connected_subchannel_.reset(
-      New<ConnectedSubchannel>(stk, args_, channelz_node_));
+      new ConnectedSubchannel(stk, args_, channelz_node_));
   gpr_log(GPR_INFO, "New connected subchannel at %p for subchannel %p",
           connected_subchannel_.get(), this);
   if (channelz_node_ != nullptr) {

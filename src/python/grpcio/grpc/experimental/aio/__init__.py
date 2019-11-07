@@ -14,16 +14,18 @@
 """gRPC's Asynchronous Python API."""
 
 import abc
-import types
 import six
 
 import grpc
+from grpc import _common
 from grpc._cython import cygrpc
 from grpc._cython.cygrpc import init_grpc_aio
-from ._server import server
 
+from ._call import AioRpcError
+from ._call import Call
 from ._channel import Channel
 from ._channel import UnaryUnaryMultiCallable
+from ._server import server
 
 
 def insecure_channel(target, options=None, compression=None):
@@ -39,39 +41,11 @@ def insecure_channel(target, options=None, compression=None):
     Returns:
       A Channel.
     """
-    from grpc.experimental.aio import _channel  # pylint: disable=cyclic-import
-    return _channel.Channel(target, ()
-                            if options is None else options, None, compression)
-
-
-class _AioRpcError:
-    """Private implementation of AioRpcError"""
-
-
-class AioRpcError:
-    """An RpcError to be used by the asynchronous API.
-
-    Parent classes: (cygrpc._AioRpcError, RpcError)
-    """
-    # Dynamically registered as subclass of _AioRpcError and RpcError, because the former one is
-    # only available after the cython code has been compiled.
-    _class_built = _AioRpcError
-
-    def __new__(cls, *args, **kwargs):
-        if cls._class_built is _AioRpcError:
-            cls._class_built = types.new_class(
-                "AioRpcError", (cygrpc._AioRpcError, grpc.RpcError))
-            cls._class_built.__doc__ = cls.__doc__
-
-        return cls._class_built(*args, **kwargs)
+    return Channel(target, ()
+                   if options is None else options, None, compression)
 
 
 ###################################  __all__  #################################
 
-__all__ = (
-    'init_grpc_aio',
-    'Channel',
-    'UnaryUnaryMultiCallable',
-    'insecure_channel',
-    'AioRpcError',
-)
+__all__ = ('AioRpcError', 'Call', 'init_grpc_aio', 'Channel',
+           'UnaryUnaryMultiCallable', 'insecure_channel', 'server')

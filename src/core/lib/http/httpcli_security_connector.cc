@@ -100,7 +100,7 @@ class grpc_httpcli_ssl_channel_security_connector final
       error = GRPC_ERROR_CREATE_FROM_COPIED_STRING(msg);
       gpr_free(msg);
     }
-    GRPC_CLOSURE_SCHED(on_peer_checked, error);
+    grpc_core::ExecCtx::Run(DEBUG_LOCATION, on_peer_checked, error);
     tsi_peer_destruct(&peer);
   }
 
@@ -174,13 +174,13 @@ static void on_handshake_done(void* arg, grpc_error* error) {
     gpr_free(args->read_buffer);
     c->func(c->arg, args->endpoint);
   }
-  grpc_core::Delete<on_done_closure>(c);
+  delete c;
 }
 
 static void ssl_handshake(void* arg, grpc_endpoint* tcp, const char* host,
                           grpc_millis deadline,
                           void (*on_done)(void* arg, grpc_endpoint* endpoint)) {
-  auto* c = grpc_core::New<on_done_closure>();
+  auto* c = new on_done_closure();
   const char* pem_root_certs =
       grpc_core::DefaultSslRootStore::GetPemRootCerts();
   const tsi_ssl_root_certs_store* root_store =

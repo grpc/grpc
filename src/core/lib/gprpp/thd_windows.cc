@@ -121,7 +121,7 @@ class ThreadInternalsWindows
     }
     gpr_mu_unlock(&g_thd_info->thread->mu_);
     if (!g_thd_info->joinable) {
-      grpc_core::Delete(g_thd_info->thread);
+      delete g_thd_info->thread;
       g_thd_info->thread = nullptr;
     }
     g_thd_info->body(g_thd_info->arg);
@@ -155,12 +155,12 @@ Thread::Thread(const char* thd_name, void (*thd_body)(void* arg), void* arg,
                bool* success, const Options& options)
     : options_(options) {
   bool outcome = false;
-  impl_ = New<ThreadInternalsWindows>(thd_body, arg, &outcome, options);
+  impl_ = new ThreadInternalsWindows(thd_body, arg, &outcome, options);
   if (outcome) {
     state_ = ALIVE;
   } else {
     state_ = FAILED;
-    Delete(impl_);
+    delete impl_;
     impl_ = nullptr;
   }
 

@@ -4,20 +4,19 @@ load("//bazel:python_rules.bzl", "py2and3_test")
 package(default_visibility = ["//visibility:public"])
 
 py2and3_test(
-    name="_reflection_servicer_test",
-    size="small",
-    timeout="moderate",
-    srcs=["_reflection_servicer_test.py",],
-    main="_reflection_servicer_test.py",
-    deps=[
-        "//src/python/grpcio/grpc:grpcio",
-        "//src/python/grpcio_reflection/grpc_reflection/v1alpha:grpc_reflection",
-        "//src/python/grpcio_tests/tests/unit:test_common",
+    name = "_reflection_servicer_test",
+    size = "small",
+    timeout = "moderate",
+    srcs = ["_reflection_servicer_test.py"],
+    imports = ["../../"],
+    main = "_reflection_servicer_test.py",
+    deps = [
         "//src/proto/grpc/testing:empty_py_pb2",
         "//src/proto/grpc/testing/proto2:empty2_extensions_proto",
         "//src/proto/grpc/testing/proto2:empty2_proto",
-        requirement('protobuf'),
+        "//src/python/grpcio/grpc:grpcio",
+        "//src/python/grpcio_reflection/grpc_reflection/v1alpha:grpc_reflection",
+        "//src/python/grpcio_tests/tests/unit:test_common",
+        requirement("protobuf"),
     ],
-    imports=["../../",],
 )
-

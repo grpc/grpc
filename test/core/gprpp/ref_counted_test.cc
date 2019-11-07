@@ -36,12 +36,12 @@ class Foo : public RefCounted<Foo> {
 };
 
 TEST(RefCounted, Basic) {
-  Foo* foo = New<Foo>();
+  Foo* foo = new Foo();
   foo->Unref();
 }
 
 TEST(RefCounted, ExtraRef) {
-  Foo* foo = New<Foo>();
+  Foo* foo = new Foo();
   RefCountedPtr<Foo> foop = foo->Ref();
   foop.release();
   foo->Unref();
@@ -58,12 +58,12 @@ class FooNonPolymorphic
 };
 
 TEST(RefCountedNonPolymorphic, Basic) {
-  FooNonPolymorphic* foo = New<FooNonPolymorphic>();
+  FooNonPolymorphic* foo = new FooNonPolymorphic();
   foo->Unref();
 }
 
 TEST(RefCountedNonPolymorphic, ExtraRef) {
-  FooNonPolymorphic* foo = New<FooNonPolymorphic>();
+  FooNonPolymorphic* foo = new FooNonPolymorphic();
   RefCountedPtr<FooNonPolymorphic> foop = foo->Ref();
   foop.release();
   foo->Unref();
@@ -80,7 +80,7 @@ class FooWithTracing : public RefCounted<FooWithTracing> {
 };
 
 TEST(RefCountedWithTracing, Basic) {
-  FooWithTracing* foo = New<FooWithTracing>();
+  FooWithTracing* foo = new FooWithTracing();
   RefCountedPtr<FooWithTracing> foop = foo->Ref(DEBUG_LOCATION, "extra_ref");
   foop.release();
   foo->Unref(DEBUG_LOCATION, "extra_ref");
@@ -98,7 +98,7 @@ class FooNonPolymorphicWithTracing
 };
 
 TEST(RefCountedNonPolymorphicWithTracing, Basic) {
-  FooNonPolymorphicWithTracing* foo = New<FooNonPolymorphicWithTracing>();
+  FooNonPolymorphicWithTracing* foo = new FooNonPolymorphicWithTracing();
   RefCountedPtr<FooNonPolymorphicWithTracing> foop =
       foo->Ref(DEBUG_LOCATION, "extra_ref");
   foop.release();

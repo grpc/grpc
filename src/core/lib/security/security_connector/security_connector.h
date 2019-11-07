@@ -138,7 +138,7 @@ class grpc_channel_security_connector : public grpc_security_connector {
  private:
   grpc_core::RefCountedPtr<grpc_channel_credentials> channel_creds_;
   grpc_core::RefCountedPtr<grpc_call_credentials> request_metadata_creds_;
-  grpc_core::UniquePtr<grpc_channel_args> channel_args_;
+  std::unique_ptr<grpc_channel_args> channel_args_;
 };
 
 /* --- server_security_connector object. ---

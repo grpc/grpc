@@ -773,8 +773,6 @@ class PythonLanguage(object):
             return 'stretch_' + self.args.compiler[len('python'):]
         elif self.args.compiler == 'python_alpine':
             return 'alpine'
-        elif self.args.compiler == 'python3.4':
-            return 'jessie'
         else:
             return 'stretch_default'
 
@@ -828,12 +826,6 @@ class PythonLanguage(object):
             minor='7',
             bits=bits,
             config_vars=config_vars)
-        python34_config = _python_config_generator(
-            name='py34',
-            major='3',
-            minor='4',
-            bits=bits,
-            config_vars=config_vars)
         python35_config = _python_config_generator(
             name='py35',
             major='3',
@@ -872,7 +864,7 @@ class PythonLanguage(object):
 
         if args.compiler == 'default':
             if os.name == 'nt':
-                return (python35_config,)
+                return (python36_config,)
             else:
                 if args.iomgr_platform == 'asyncio':
                     return (python36_config,)
@@ -884,8 +876,6 @@ class PythonLanguage(object):
                     )
         elif args.compiler == 'python2.7':
             return (python27_config,)
-        elif args.compiler == 'python3.4':
-            return (python34_config,)
         elif args.compiler == 'python3.5':
             return (python35_config,)
         elif args.compiler == 'python3.6':
@@ -903,11 +893,10 @@ class PythonLanguage(object):
         elif args.compiler == 'all_the_cpythons':
             return (
                 python27_config,
-                python34_config,
                 python35_config,
                 python36_config,
                 python37_config,
-                # TODO: Add Python 3.8 once it's released.
+                python38_config,
             )
         else:
             raise Exception('Compiler %s not supported.' % args.compiler)
@@ -1479,10 +1468,10 @@ argp.add_argument(
     choices=[
         'default', 'gcc4.4', 'gcc4.6', 'gcc4.8', 'gcc4.9', 'gcc5.3', 'gcc7.4',
         'gcc8.3', 'gcc_musl', 'clang3.4', 'clang3.5', 'clang3.6', 'clang3.7',
-        'clang7.0', 'python2.7', 'python3.4', 'python3.5', 'python3.6',
-        'python3.7', 'python3.8', 'pypy', 'pypy3', 'python_alpine',
-        'all_the_cpythons', 'electron1.3', 'electron1.6', 'coreclr', 'cmake',
-        'cmake_vs2015', 'cmake_vs2017'
+        'clang7.0', 'python2.7', 'python3.5', 'python3.6', 'python3.7',
+        'python3.8', 'pypy', 'pypy3', 'python_alpine', 'all_the_cpythons',
+        'electron1.3', 'electron1.6', 'coreclr', 'cmake', 'cmake_vs2015',
+        'cmake_vs2017'
     ],
     default='default',
     help=

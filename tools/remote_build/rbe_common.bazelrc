@@ -22,9 +22,9 @@ startup --host_jvm_args=-Dbazel.DigestFunction=SHA256
 build --crosstool_top=@rbe_default//cc:toolchain
 build --extra_toolchains=@rbe_default//config:cc-toolchain
 # Use custom execution platforms defined in third_party/toolchains
-build --extra_execution_platforms=//third_party/toolchains:rbe_ubuntu1604,//third_party/toolchains:rbe_ubuntu1604_large
-build --host_platform=//third_party/toolchains:rbe_ubuntu1604
-build --platforms=//third_party/toolchains:rbe_ubuntu1604
+build --extra_execution_platforms=@rbe_default//config:platform
+build --host_platform=@rbe_default//config:platform
+build --platforms=@rbe_default//config:platform
 
 build --spawn_strategy=remote
 build --strategy=Javac=remote
@@ -81,7 +81,7 @@ build:tsan --copt=-gmlt
 # TODO(jtattermusch): use more reasonable test timeout
 build:tsan --test_timeout=3600
 build:tsan --test_tag_filters=-no_linux,-qps_json_driver
-build:tsan --extra_execution_platforms=//third_party/toolchains:rbe_ubuntu1604,//third_party/toolchains:rbe_ubuntu1604_large
+build:tsan --extra_execution_platforms=@rbe_default//config:platform
 
 # undefined behavior sanitizer: most settings are already in %workspace%/.bazelrc
 # we only need a few additional ones that are Foundry specific

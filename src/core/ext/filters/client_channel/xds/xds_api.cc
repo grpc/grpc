@@ -88,7 +88,8 @@ bool XdsPriorityListUpdate::Contains(
   return false;
 }
 
-bool XdsDropConfig::ShouldDrop(const UniquePtr<char>** category_name) const {
+bool XdsDropConfig::ShouldDrop(
+    const std::unique_ptr<char>** category_name) const {
   for (size_t i = 0; i < drop_category_list_.size(); ++i) {
     const auto& drop_category = drop_category_list_[i];
     // Generate a random number in [0, 1000000).
@@ -114,9 +115,9 @@ void PopulateListValue(upb_arena* arena, google_protobuf_ListValue* list_value,
   }
 }
 
-void PopulateMetadata(
-    upb_arena* arena, google_protobuf_Struct* metadata_pb,
-    const Map<const char*, XdsBootstrap::MetadataValue, StringLess>& metadata) {
+void PopulateMetadata(upb_arena* arena, google_protobuf_Struct* metadata_pb,
+                      const std::map<const char*, XdsBootstrap::MetadataValue,
+                                     StringLess>& metadata) {
   for (const auto& p : metadata) {
     google_protobuf_Struct_FieldsEntry* field =
         google_protobuf_Struct_add_fields(metadata_pb, arena);
@@ -258,11 +259,11 @@ grpc_error* ServerAddressParseAndAppend(
 
 namespace {
 
-UniquePtr<char> StringCopy(const upb_strview& strview) {
+std::unique_ptr<char> StringCopy(const upb_strview& strview) {
   char* str = static_cast<char*>(gpr_malloc(strview.size + 1));
   memcpy(str, strview.data, strview.size);
   str[strview.size] = '\0';
-  return UniquePtr<char>(str);
+  return std::unique_ptr<char>(str);
 }
 
 }  // namespace
@@ -542,7 +543,7 @@ grpc_slice XdsLrsRequestCreateAndEncode(const char* server_name,
 }
 
 grpc_error* XdsLrsResponseDecodeAndParse(const grpc_slice& encoded_response,
-                                         UniquePtr<char>* cluster_name,
+                                         std::unique_ptr<char>* cluster_name,
                                          grpc_millis* load_reporting_interval) {
   upb::Arena arena;
   // Decode the response.

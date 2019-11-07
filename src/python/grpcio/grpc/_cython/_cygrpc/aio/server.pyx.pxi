@@ -12,6 +12,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+# TODO(https://github.com/grpc/grpc/issues/20850) refactor this.
+_LOGGER = logging.getLogger(__name__)
+cdef int _EMPTY_FLAG = 0
+
+
 cdef class _HandlerCallDetails:
     def __cinit__(self, str method, tuple invocation_metadata):
         self.method = method
@@ -21,24 +26,47 @@ cdef class _HandlerCallDetails:
 class _ServicerContextPlaceHolder(object): pass
 
 
+cdef class _CallbackFailureHandler:
+    cdef str _core_function_name
+    cdef object _error_details
+    cdef object _exception_type
+
+    def __cinit__(self,
+                  str core_function_name,
+                  object error_details,
+                  object exception_type):
+        """Handles failure by raising exception."""
+        self._core_function_name = core_function_name
+        self._error_details = error_details
+        self._exception_type = exception_type
+
+    cdef handle(self, object future):
+        future.set_exception(self._exception_type(
+            'Failed "%s": %s' % (self._core_function_name, self._error_details)
+        ))
+
+
 # TODO(https://github.com/grpc/grpc/issues/20669)
 # Apply this to the client-side
 cdef class CallbackWrapper:
-    cdef CallbackContext context
-    cdef object _reference
 
-    def __cinit__(self, object future):
+    def __cinit__(self, object future, _CallbackFailureHandler failure_handler):
         self.context.functor.functor_run = self.functor_run
-        self.context.waiter = <cpython.PyObject*>(future)
-        self._reference = future
+        self.context.waiter = <cpython.PyObject*>future
+        self.context.failure_handler = <cpython.PyObject*>failure_handler
+        # NOTE(lidiz) Not using a list here, because this class is critical in
+        # data path. We should make it as efficient as possible.
+        self._reference_of_future = future
+        self._reference_of_failure_handler = failure_handler
 
     @staticmethod
     cdef void functor_run(
             grpc_experimental_completion_queue_functor* functor,
-            int succeed):
+            int success):
         cdef CallbackContext *context = <CallbackContext *>functor
-        if succeed == 0:
-            (<object>context.waiter).set_exception(RuntimeError())
+        if success == 0:
+            (<_CallbackFailureHandler>context.failure_handler).handle(
+                <object>context.waiter)
         else:
             (<object>context.waiter).set_result(None)
 
@@ -85,7 +113,9 @@ async def callback_start_batch(RPCState rpc_state,
     batch_operation_tag.prepare()
 
     cdef object future = loop.create_future()
-    cdef CallbackWrapper wrapper = CallbackWrapper(future)
+    cdef CallbackWrapper wrapper = CallbackWrapper(
+        future,
+        _CallbackFailureHandler('callback_start_batch', operations, RuntimeError))
     # NOTE(lidiz) Without Py_INCREF, the wrapper object will be destructed
     # when calling "await". This is an over-optimization by Cython.
     cpython.Py_INCREF(wrapper)
@@ -142,6 +172,9 @@ async def _handle_unary_unary_rpc(object method_handler,
     await callback_start_batch(rpc_state, send_ops, loop)
 
 
+
+
+
 async def _handle_rpc(list generic_handlers, RPCState rpc_state, object loop):
     # Finds the method handler (application logic)
     cdef object method_handler = _find_method_handler(
@@ -151,6 +184,7 @@ async def _handle_rpc(list generic_handlers, RPCState rpc_state, object loop):
     if method_handler is None:
         # TODO(lidiz) return unimplemented error to client side
         raise NotImplementedError()
+
     # TODO(lidiz) extend to all 4 types of RPC
     if method_handler.request_streaming or method_handler.response_streaming:
         raise NotImplementedError()
@@ -162,13 +196,21 @@ async def _handle_rpc(list generic_handlers, RPCState rpc_state, object loop):
         )
 
 
+class _RequestCallError(Exception): pass
+
+cdef _CallbackFailureHandler REQUEST_CALL_FAILURE_HANDLER = _CallbackFailureHandler(
+    'grpc_server_request_call', 'server shutdown', _RequestCallError)
+
+
 async def _server_call_request_call(Server server,
                                     _CallbackCompletionQueue cq,
                                     object loop):
     cdef grpc_call_error error
     cdef RPCState rpc_state = RPCState()
     cdef object future = loop.create_future()
-    cdef CallbackWrapper wrapper = CallbackWrapper(future)
+    cdef CallbackWrapper wrapper = CallbackWrapper(
+        future,
+        REQUEST_CALL_FAILURE_HANDLER)
     # NOTE(lidiz) Without Py_INCREF, the wrapper object will be destructed
     # when calling "await". This is an over-optimization by Cython.
     cpython.Py_INCREF(wrapper)
@@ -186,54 +228,76 @@ async def _server_call_request_call(Server server,
     return rpc_state
 
 
-async def _server_main_loop(Server server,
-                            _CallbackCompletionQueue cq,
-                            list generic_handlers):
-    cdef object loop = asyncio.get_event_loop()
-    cdef RPCState rpc_state
-
-    while True:
-        rpc_state = await _server_call_request_call(
-            server,
-            cq,
-            loop)
-
-        loop.create_task(_handle_rpc(generic_handlers, rpc_state, loop))
+async def _handle_cancellation_from_core(object rpc_task,
+                                          RPCState rpc_state,
+                                          object loop):
+    cdef ReceiveCloseOnServerOperation op = ReceiveCloseOnServerOperation(_EMPTY_FLAG)
+    cdef tuple ops = (op,)
+    await callback_start_batch(rpc_state, ops, loop)
+    if op.cancelled() and not rpc_task.done():
+        rpc_task.cancel()
 
 
-async def _server_start(Server server,
-                        _CallbackCompletionQueue cq,
-                        list generic_handlers):
-    server.start()
-    await _server_main_loop(server, cq, generic_handlers)
+cdef _CallbackFailureHandler CQ_SHUTDOWN_FAILURE_HANDLER = _CallbackFailureHandler(
+    'grpc_completion_queue_shutdown',
+    'Unknown',
+    RuntimeError)
 
 
 cdef class _CallbackCompletionQueue:
 
-    def __cinit__(self):
+    def __cinit__(self, object loop):
+        self._loop = loop
+        self._shutdown_completed = loop.create_future()
+        self._wrapper = CallbackWrapper(
+            self._shutdown_completed,
+            CQ_SHUTDOWN_FAILURE_HANDLER)
         self._cq = grpc_completion_queue_create_for_callback(
-            NULL,
+            self._wrapper.c_functor(),
             NULL
         )
 
     cdef grpc_completion_queue* c_ptr(self):
         return self._cq
+    
+    async def shutdown(self):
+        grpc_completion_queue_shutdown(self._cq)
+        await self._shutdown_completed
+        grpc_completion_queue_destroy(self._cq)
+
+
+cdef _CallbackFailureHandler SERVER_SHUTDOWN_FAILURE_HANDLER = _CallbackFailureHandler(
+    'grpc_server_shutdown_and_notify',
+    'Unknown',
+    RuntimeError)
 
 
 cdef class AioServer:
 
-    def __init__(self, thread_pool, generic_handlers, interceptors, options,
-                 maximum_concurrent_rpcs, compression):
+    def __init__(self, loop, thread_pool, generic_handlers, interceptors,
+                 options, maximum_concurrent_rpcs, compression):
+        # NOTE(lidiz) Core objects won't be deallocated automatically.
+        # If AioServer.shutdown is not called, those objects will leak.
         self._server = Server(options)
-        self._cq = _CallbackCompletionQueue()
-        self._status = AIO_SERVER_STATUS_READY
-        self._generic_handlers = []
+        self._cq = _CallbackCompletionQueue(loop)
         grpc_server_register_completion_queue(
             self._server.c_server,
             self._cq.c_ptr(),
             NULL
         )
+
+        self._loop = loop
+        self._status = AIO_SERVER_STATUS_READY
+        self._generic_handlers = []
         self.add_generic_rpc_handlers(generic_handlers)
+        self._serving_task = None
+
+        self._shutdown_lock = asyncio.Lock(loop=self._loop)
+        self._shutdown_completed = self._loop.create_future()
+        self._shutdown_callback_wrapper = CallbackWrapper(
+            self._shutdown_completed,
+            SERVER_SHUTDOWN_FAILURE_HANDLER)
+        self._crash_exception = None
 
         if interceptors:
             raise NotImplementedError()
@@ -255,6 +319,46 @@ cdef class AioServer:
         return self._server.add_http2_port(address,
                                           server_credentials._credentials)
 
+    async def _server_main_loop(self,
+                                object server_started):
+        self._server.start()
+        cdef RPCState rpc_state
+        server_started.set_result(True)
+
+        while True:
+            # When shutdown begins, no more new connections.
+            if self._status != AIO_SERVER_STATUS_RUNNING:
+                break
+
+            rpc_state = await _server_call_request_call(
+                self._server,
+                self._cq,
+                self._loop)
+
+            rpc_task = self._loop.create_task(
+                _handle_rpc(
+                    self._generic_handlers,
+                    rpc_state,
+                    self._loop
+                )
+            )
+            self._loop.create_task(
+                _handle_cancellation_from_core(
+                    rpc_task,
+                    rpc_state,
+                    self._loop
+                )
+            )
+
+    def _serving_task_crash_handler(self, object task):
+        """Shutdown the server immediately if unexpectedly exited."""
+        if task.exception() is None:
+            return
+        if self._status != AIO_SERVER_STATUS_STOPPING:
+            self._crash_exception = task.exception()
+            _LOGGER.exception(self._crash_exception)
+            self._loop.create_task(self.shutdown(None))
+
     async def start(self):
         if self._status == AIO_SERVER_STATUS_RUNNING:
             return
@@ -262,14 +366,103 @@ cdef class AioServer:
             raise RuntimeError('Server not in ready state')
 
         self._status = AIO_SERVER_STATUS_RUNNING
-        loop = asyncio.get_event_loop()
-        loop.create_task(_server_start(
-            self._server,
-            self._cq,
-            self._generic_handlers,
-        ))
+        cdef object server_started = self._loop.create_future()
+        self._serving_task = self._loop.create_task(self._server_main_loop(server_started))
+        self._serving_task.add_done_callback(self._serving_task_crash_handler)
+        # Needs to explicitly wait for the server to start up.
+        # Otherwise, the actual start time of the server is un-controllable.
+        await server_started
 
-    # TODO(https://github.com/grpc/grpc/issues/20668)
-    # Implement Destruction Methods for AsyncIO Server
-    def stop(self, unused_grace):
-        pass
+    async def _start_shutting_down(self):
+        """Prepares the server to shutting down.
+
+        This coroutine function is NOT coroutine-safe.
+        """
+        # The shutdown callback won't be called until there is no live RPC.
+        grpc_server_shutdown_and_notify(
+            self._server.c_server,
+            self._cq._cq,
+            self._shutdown_callback_wrapper.c_functor())
+
+        # Ensures the serving task (coroutine) exits.
+        try:
+            await self._serving_task
+        except _RequestCallError:
+            pass
+
+    async def shutdown(self, grace):
+        """Gracefully shutdown the C-Core server.
+
+        Application should only call shutdown once.
+
+        Args:
+          grace: An optional float indicating the length of grace period in
+            seconds.
+        """
+        if self._status == AIO_SERVER_STATUS_READY or self._status == AIO_SERVER_STATUS_STOPPED:
+            return
+
+        async with self._shutdown_lock:
+            if self._status == AIO_SERVER_STATUS_RUNNING:
+                self._server.is_shutting_down = True
+                self._status = AIO_SERVER_STATUS_STOPPING
+                await self._start_shutting_down()
+
+        if grace is None:
+            # Directly cancels all calls
+            grpc_server_cancel_all_calls(self._server.c_server)
+            await self._shutdown_completed
+        else:
+            try:
+                await asyncio.wait_for(
+                    asyncio.shield(
+                        self._shutdown_completed,
+                        loop=self._loop
+                    ),
+                    grace,
+                    loop=self._loop,
+                )
+            except asyncio.TimeoutError:
+                # Cancels all ongoing calls by the end of grace period.
+                grpc_server_cancel_all_calls(self._server.c_server)
+                await self._shutdown_completed
+
+        async with self._shutdown_lock:
+            if self._status == AIO_SERVER_STATUS_STOPPING:
+                grpc_server_destroy(self._server.c_server)
+                self._server.c_server = NULL
+                self._server.is_shutdown = True
+                self._status = AIO_SERVER_STATUS_STOPPED
+
+                # Shuts down the completion queue
+                await self._cq.shutdown()
+    
+    async def wait_for_termination(self, float timeout):
+        if timeout is None:
+            await self._shutdown_completed
+        else:
+            try:
+                await asyncio.wait_for(
+                    asyncio.shield(
+                        self._shutdown_completed,
+                        loop=self._loop,
+                    ),
+                    timeout,
+                    loop=self._loop,
+                )
+            except asyncio.TimeoutError:
+                if self._crash_exception is not None:
+                    raise self._crash_exception
+                return False
+        if self._crash_exception is not None:
+            raise self._crash_exception
+        return True
+
+    def __dealloc__(self):
+        """Deallocation of Core objects are ensured by Python grpc.aio.Server.
+
+        If the Cython representation is deallocated without underlying objects
+        freed, raise an RuntimeError.
+        """
+        if self._status != AIO_SERVER_STATUS_STOPPED:
+            raise RuntimeError('__dealloc__ called on running server: %d', self._status)

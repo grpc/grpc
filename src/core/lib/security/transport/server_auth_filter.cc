@@ -159,7 +159,7 @@ static void on_md_processing_done_inner(grpc_call_element* elem,
                              calld->recv_trailing_metadata_error,
                              "continue recv_trailing_metadata_ready");
   }
-  GRPC_CLOSURE_SCHED(closure, error);
+  grpc_core::ExecCtx::Run(DEBUG_LOCATION, closure, error);
 }
 
 // Called from application code.

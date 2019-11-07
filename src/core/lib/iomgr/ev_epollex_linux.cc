@@ -393,7 +393,8 @@ static void unref_by(grpc_fd* fd, int n) {
 #endif
   gpr_atm old = gpr_atm_full_fetch_add(&fd->refst, -n);
   if (old == n) {
-    GRPC_CLOSURE_SCHED(
+    grpc_core::ExecCtx::Run(
+        DEBUG_LOCATION,
         GRPC_CLOSURE_CREATE(fd_destroy, fd, grpc_schedule_on_exec_ctx),
         GRPC_ERROR_NONE);
   } else {
@@ -487,7 +488,7 @@ static void fd_orphan(grpc_fd* fd, grpc_closure* on_done, int* release_fd,
      to be alive (and not added to freelist) until the end of this function */
   REF_BY(fd, 1, reason);
 
-  GRPC_CLOSURE_SCHED(fd->on_done_closure, GRPC_ERROR_NONE);
+  grpc_core::ExecCtx::Run(DEBUG_LOCATION, fd->on_done_closure, GRPC_ERROR_NONE);
 
   if (pollable_obj) {
     gpr_mu_unlock(&pollable_obj->owner_orphan_mu);
@@ -662,7 +663,8 @@ static void pollset_maybe_finish_shutdown(grpc_pollset* pollset) {
   if (pollset->shutdown_closure != nullptr && pollset->root_worker == nullptr &&
       pollset->containing_pollset_set_count == 0) {
     GPR_TIMER_MARK("pollset_finish_shutdown", 0);
-    GRPC_CLOSURE_SCHED(pollset->shutdown_closure, GRPC_ERROR_NONE);
+    grpc_core::ExecCtx::Run(DEBUG_LOCATION, pollset->shutdown_closure,
+                            GRPC_ERROR_NONE);
     pollset->shutdown_closure = nullptr;
     pollset->already_shutdown = true;
   }

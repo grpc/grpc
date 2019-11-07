@@ -150,7 +150,7 @@ static void on_handshake_done(void* arg, grpc_error* error) {
   }
   grpc_closure* notify = c->notify;
   c->notify = nullptr;
-  GRPC_CLOSURE_SCHED(notify, error);
+  grpc_core::ExecCtx::Run(DEBUG_LOCATION, notify, error);
   c->handshake_mgr.reset();
   gpr_mu_unlock(&c->mu);
   chttp2_connector_unref(reinterpret_cast<grpc_connector*>(c));
@@ -182,7 +182,7 @@ static void connected(void* arg, grpc_error* error) {
     c->result->reset();
     grpc_closure* notify = c->notify;
     c->notify = nullptr;
-    GRPC_CLOSURE_SCHED(notify, error);
+    grpc_core::ExecCtx::Run(DEBUG_LOCATION, notify, error);
     if (c->endpoint != nullptr) {
       grpc_endpoint_shutdown(c->endpoint, GRPC_ERROR_REF(error));
     }

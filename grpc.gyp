@@ -225,6 +225,7 @@
       'type': 'static_library',
       'dependencies': [
         'gpr',
+        'upb',
       ],
       'sources': [
         'src/core/lib/surface/init.cc',
@@ -481,12 +482,6 @@
         'src/core/ext/upb-generated/src/proto/grpc/gcp/altscontext.upb.c',
         'src/core/ext/upb-generated/src/proto/grpc/gcp/handshaker.upb.c',
         'src/core/ext/upb-generated/src/proto/grpc/gcp/transport_security_common.upb.c',
-        'third_party/upb/upb/decode.c',
-        'third_party/upb/upb/encode.c',
-        'third_party/upb/upb/msg.c',
-        'third_party/upb/upb/port.c',
-        'third_party/upb/upb/table.c',
-        'third_party/upb/upb/upb.c',
         'src/core/tsi/transport_security.cc',
         'src/core/ext/transport/chttp2/client/insecure/channel_create.cc',
         'src/core/ext/transport/chttp2/client/insecure/channel_create_posix.cc',
@@ -614,6 +609,7 @@
       'dependencies': [
         'gpr',
         'grpc',
+        'upb',
       ],
       'sources': [
         'test/core/end2end/data/client_certs.cc',
@@ -833,12 +829,6 @@
         'src/core/ext/filters/client_channel/subchannel_pool_interface.cc',
         'src/core/ext/filters/deadline/deadline_filter.cc',
         'src/core/ext/upb-generated/src/proto/grpc/health/v1/health.upb.c',
-        'third_party/upb/upb/decode.c',
-        'third_party/upb/upb/encode.c',
-        'third_party/upb/upb/msg.c',
-        'third_party/upb/upb/port.c',
-        'third_party/upb/upb/table.c',
-        'third_party/upb/upb/upb.c',
         'src/core/ext/upb-generated/udpa/data/orca/v1/orca_load_report.upb.c',
         'src/core/ext/upb-generated/gogoproto/gogo.upb.c',
         'src/core/ext/upb-generated/validate/validate.upb.c',
@@ -888,6 +878,7 @@
       'dependencies': [
         'gpr',
         'grpc_unsecure',
+        'upb',
       ],
       'sources': [
         'src/core/ext/filters/client_channel/resolver/fake/fake_resolver.cc',
@@ -1102,12 +1093,6 @@
         'src/core/ext/filters/client_channel/subchannel_pool_interface.cc',
         'src/core/ext/filters/deadline/deadline_filter.cc',
         'src/core/ext/upb-generated/src/proto/grpc/health/v1/health.upb.c',
-        'third_party/upb/upb/decode.c',
-        'third_party/upb/upb/encode.c',
-        'third_party/upb/upb/msg.c',
-        'third_party/upb/upb/port.c',
-        'third_party/upb/upb/table.c',
-        'third_party/upb/upb/upb.c',
         'src/core/ext/upb-generated/udpa/data/orca/v1/orca_load_report.upb.c',
         'src/core/ext/upb-generated/gogoproto/gogo.upb.c',
         'src/core/ext/upb-generated/validate/validate.upb.c',
@@ -1156,6 +1141,7 @@
       'type': 'static_library',
       'dependencies': [
         'gpr',
+        'upb',
       ],
       'sources': [
         'src/core/lib/surface/init.cc',
@@ -1382,12 +1368,6 @@
         'src/core/ext/filters/client_channel/subchannel_pool_interface.cc',
         'src/core/ext/filters/deadline/deadline_filter.cc',
         'src/core/ext/upb-generated/src/proto/grpc/health/v1/health.upb.c',
-        'third_party/upb/upb/decode.c',
-        'third_party/upb/upb/encode.c',
-        'third_party/upb/upb/msg.c',
-        'third_party/upb/upb/port.c',
-        'third_party/upb/upb/table.c',
-        'third_party/upb/upb/upb.c',
         'src/core/ext/upb-generated/udpa/data/orca/v1/orca_load_report.upb.c',
         'src/core/ext/upb-generated/gogoproto/gogo.upb.c',
         'src/core/ext/upb-generated/validate/validate.upb.c',
@@ -1522,6 +1502,7 @@
       'dependencies': [
         'grpc',
         'gpr',
+        'upb',
       ],
       'sources': [
         'src/cpp/client/insecure_credentials.cc',
@@ -1570,12 +1551,6 @@
         'src/cpp/util/string_ref.cc',
         'src/cpp/util/time_cc.cc',
         'src/core/ext/upb-generated/src/proto/grpc/health/v1/health.upb.c',
-        'third_party/upb/upb/decode.c',
-        'third_party/upb/upb/encode.c',
-        'third_party/upb/upb/msg.c',
-        'third_party/upb/upb/port.c',
-        'third_party/upb/upb/table.c',
-        'third_party/upb/upb/upb.c',
         'src/cpp/codegen/codegen_init.cc',
       ],
     },
@@ -1689,6 +1664,7 @@
       'dependencies': [
         'gpr',
         'grpc_unsecure',
+        'upb',
       ],
       'sources': [
         'src/cpp/client/insecure_credentials.cc',
@@ -1730,12 +1706,6 @@
         'src/cpp/util/string_ref.cc',
         'src/cpp/util/time_cc.cc',
         'src/core/ext/upb-generated/src/proto/grpc/health/v1/health.upb.c',
-        'third_party/upb/upb/decode.c',
-        'third_party/upb/upb/encode.c',
-        'third_party/upb/upb/msg.c',
-        'third_party/upb/upb/port.c',
-        'third_party/upb/upb/table.c',
-        'third_party/upb/upb/upb.c',
         'src/cpp/codegen/codegen_init.cc',
       ],
     },
@@ -2245,6 +2215,20 @@
         'third_party/benchmark/src/string_util.cc',
         'third_party/benchmark/src/sysinfo.cc',
         'third_party/benchmark/src/timers.cc',
+      ],
+    },
+    {
+      'target_name': 'upb',
+      'type': 'static_library',
+      'dependencies': [
+      ],
+      'sources': [
+        'third_party/upb/upb/decode.c',
+        'third_party/upb/upb/encode.c',
+        'third_party/upb/upb/msg.c',
+        'third_party/upb/upb/port.c',
+        'third_party/upb/upb/table.c',
+        'third_party/upb/upb/upb.c',
       ],
     },
     {

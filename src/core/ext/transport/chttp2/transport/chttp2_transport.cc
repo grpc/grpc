@@ -382,9 +382,10 @@ static bool read_channel_args(grpc_chttp2_transport* t,
     gpr_asprintf(&socket_name, "%s %s", get_vtable()->name, t->peer_string);
     t->channelz_socket =
         grpc_core::MakeRefCounted<grpc_core::channelz::SocketNode>(
-            grpc_core::UniquePtr<char>(),
-            grpc_core::UniquePtr<char>(gpr_strdup(t->peer_string)),
-            grpc_core::UniquePtr<char>(socket_name));
+            "", t->peer_string, socket_name);
+    // TODO(veblush): Remove this once gpr_asprintf is replaced by
+    // absl::StrFormat
+    gpr_free(socket_name);
   }
   return enable_bdp;
 }
@@ -593,7 +594,8 @@ static void close_transport_locked(grpc_chttp2_transport* t,
     grpc_endpoint_shutdown(t->ep, GRPC_ERROR_REF(error));
   }
   if (t->notify_on_receive_settings != nullptr) {
-    GRPC_CLOSURE_SCHED(t->notify_on_receive_settings, GRPC_ERROR_CANCELLED);
+    grpc_core::ExecCtx::Run(DEBUG_LOCATION, t->notify_on_receive_settings,
+                            GRPC_ERROR_CANCELLED);
     t->notify_on_receive_settings = nullptr;
   }
   GRPC_ERROR_UNREF(error);
@@ -706,7 +708,7 @@ grpc_chttp2_stream::~grpc_chttp2_stream() {
   }
 
   GRPC_CHTTP2_UNREF_TRANSPORT(t, "stream");
-  GRPC_CLOSURE_SCHED(destroy_stream_arg, GRPC_ERROR_NONE);
+  grpc_core::ExecCtx::Run(DEBUG_LOCATION, destroy_stream_arg, GRPC_ERROR_NONE);
 }
 
 static int init_stream(grpc_transport* gt, grpc_stream* gs,
@@ -1177,7 +1179,7 @@ static grpc_closure* add_closure_barrier(grpc_closure* closure) {
 static void null_then_sched_closure(grpc_closure** closure) {
   grpc_closure* c = *closure;
   *closure = nullptr;
-  GRPC_CLOSURE_SCHED(c, GRPC_ERROR_NONE);
+  grpc_core::ExecCtx::Run(DEBUG_LOCATION, c, GRPC_ERROR_NONE);
 }
 
 void grpc_chttp2_complete_closure_step(grpc_chttp2_transport* t,
@@ -1220,7 +1222,8 @@ void grpc_chttp2_complete_closure_step(grpc_chttp2_transport* t,
         !(closure->next_data.scratch & CLOSURE_BARRIER_MAY_COVER_WRITE)) {
       // Using GRPC_CLOSURE_SCHED instead of GRPC_CLOSURE_RUN to avoid running
       // closures earlier than when it is safe to do so.
-      GRPC_CLOSURE_SCHED(closure, closure->error_data.error);
+      grpc_core::ExecCtx::Run(DEBUG_LOCATION, closure,
+                              closure->error_data.error);
     } else {
       grpc_closure_list_append(&t->run_after_write, closure,
                                closure->error_data.error);
@@ -1678,8 +1681,10 @@ static void cancel_pings(grpc_chttp2_transport* t, grpc_error* error) {
 static void send_ping_locked(grpc_chttp2_transport* t,
                              grpc_closure* on_initiate, grpc_closure* on_ack) {
   if (t->closed_with_error != GRPC_ERROR_NONE) {
-    GRPC_CLOSURE_SCHED(on_initiate, GRPC_ERROR_REF(t->closed_with_error));
-    GRPC_CLOSURE_SCHED(on_ack, GRPC_ERROR_REF(t->closed_with_error));
+    grpc_core::ExecCtx::Run(DEBUG_LOCATION, on_initiate,
+                            GRPC_ERROR_REF(t->closed_with_error));
+    grpc_core::ExecCtx::Run(DEBUG_LOCATION, on_ack,
+                            GRPC_ERROR_REF(t->closed_with_error));
     return;
   }
   grpc_chttp2_ping_queue* pq = &t->ping_queue;
@@ -2933,7 +2938,7 @@ static void reset_byte_stream(void* arg, grpc_error* error) {
     grpc_chttp2_maybe_complete_recv_trailing_metadata(s->t, s);
   } else {
     GPR_ASSERT(error != GRPC_ERROR_NONE);
-    GRPC_CLOSURE_SCHED(s->on_next, GRPC_ERROR_REF(error));
+    grpc_core::ExecCtx::Run(DEBUG_LOCATION, s->on_next, GRPC_ERROR_REF(error));
     s->on_next = nullptr;
     GRPC_ERROR_UNREF(s->byte_stream_error);
     s->byte_stream_error = GRPC_ERROR_NONE;
@@ -2991,10 +2996,11 @@ void Chttp2IncomingByteStream::NextLocked(void* arg,
     grpc_slice_buffer_swap(&s->frame_storage,
                            &s->unprocessed_incoming_frames_buffer);
     s->unprocessed_incoming_frames_decompressed = false;
-    GRPC_CLOSURE_SCHED(bs->next_action_.on_complete, GRPC_ERROR_NONE);
+    grpc_core::ExecCtx::Run(DEBUG_LOCATION, bs->next_action_.on_complete,
+                            GRPC_ERROR_NONE);
   } else if (s->byte_stream_error != GRPC_ERROR_NONE) {
-    GRPC_CLOSURE_SCHED(bs->next_action_.on_complete,
-                       GRPC_ERROR_REF(s->byte_stream_error));
+    grpc_core::ExecCtx::Run(DEBUG_LOCATION, bs->next_action_.on_complete,
+                            GRPC_ERROR_REF(s->byte_stream_error));
     if (s->data_parser.parsing_frame != nullptr) {
       s->data_parser.parsing_frame->Unref();
       s->data_parser.parsing_frame = nullptr;
@@ -3003,8 +3009,8 @@ void Chttp2IncomingByteStream::NextLocked(void* arg,
     if (bs->remaining_bytes_ != 0) {
       s->byte_stream_error =
           GRPC_ERROR_CREATE_FROM_STATIC_STRING("Truncated message");
-      GRPC_CLOSURE_SCHED(bs->next_action_.on_complete,
-                         GRPC_ERROR_REF(s->byte_stream_error));
+      grpc_core::ExecCtx::Run(DEBUG_LOCATION, bs->next_action_.on_complete,
+                              GRPC_ERROR_REF(s->byte_stream_error));
       if (s->data_parser.parsing_frame != nullptr) {
         s->data_parser.parsing_frame->Unref();
         s->data_parser.parsing_frame = nullptr;
@@ -3092,7 +3098,8 @@ grpc_error* Chttp2IncomingByteStream::Pull(grpc_slice* slice) {
 
 void Chttp2IncomingByteStream::PublishError(grpc_error* error) {
   GPR_ASSERT(error != GRPC_ERROR_NONE);
-  GRPC_CLOSURE_SCHED(stream_->on_next, GRPC_ERROR_REF(error));
+  grpc_core::ExecCtx::Run(DEBUG_LOCATION, stream_->on_next,
+                          GRPC_ERROR_REF(error));
   stream_->on_next = nullptr;
   GRPC_ERROR_UNREF(stream_->byte_stream_error);
   stream_->byte_stream_error = GRPC_ERROR_REF(error);
@@ -3316,8 +3323,8 @@ grpc_chttp2_transport_get_socket_node(grpc_transport* transport) {
 grpc_transport* grpc_create_chttp2_transport(
     const grpc_channel_args* channel_args, grpc_endpoint* ep, bool is_client,
     grpc_resource_user* resource_user) {
-  auto t = grpc_core::New<grpc_chttp2_transport>(channel_args, ep, is_client,
-                                                 resource_user);
+  auto t =
+      new grpc_chttp2_transport(channel_args, ep, is_client, resource_user);
   return &t->base;
 }
 

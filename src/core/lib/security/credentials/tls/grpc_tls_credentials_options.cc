@@ -29,7 +29,7 @@
 
 /** -- gRPC TLS key materials config API implementation. -- **/
 void grpc_tls_key_materials_config::set_key_materials(
-    grpc_core::UniquePtr<char> pem_root_certs,
+    std::unique_ptr<char> pem_root_certs,
     PemKeyCertPairList pem_key_cert_pair_list) {
   pem_key_cert_pair_list_ = std::move(pem_key_cert_pair_list);
   pem_root_certs_ = std::move(pem_root_certs);
@@ -76,7 +76,7 @@ grpc_tls_server_authorization_check_config::
 
 /** -- Wrapper APIs declared in grpc_security.h -- **/
 grpc_tls_credentials_options* grpc_tls_credentials_options_create() {
-  return grpc_core::New<grpc_tls_credentials_options>();
+  return new grpc_tls_credentials_options();
 }
 
 int grpc_tls_credentials_options_set_cert_request_type(
@@ -133,7 +133,7 @@ int grpc_tls_credentials_options_set_server_authorization_check_config(
 }
 
 grpc_tls_key_materials_config* grpc_tls_key_materials_config_create() {
-  return grpc_core::New<grpc_tls_key_materials_config>();
+  return new grpc_tls_key_materials_config();
 }
 
 int grpc_tls_key_materials_config_set_key_materials(
@@ -145,7 +145,7 @@ int grpc_tls_key_materials_config_set_key_materials(
             "grpc_tls_key_materials_config_set_key_materials()");
     return 0;
   }
-  grpc_core::UniquePtr<char> pem_root(const_cast<char*>(root_certs));
+  std::unique_ptr<char> pem_root(const_cast<char*>(root_certs));
   grpc_tls_key_materials_config::PemKeyCertPairList cert_pair_list;
   for (size_t i = 0; i < num; i++) {
     grpc_core::PemKeyCertPair key_cert_pair(
@@ -192,8 +192,8 @@ grpc_tls_credential_reload_config* grpc_tls_credential_reload_config_create(
         "Schedule API is nullptr in creating TLS credential reload config.");
     return nullptr;
   }
-  return grpc_core::New<grpc_tls_credential_reload_config>(
-      config_user_data, schedule, cancel, destruct);
+  return new grpc_tls_credential_reload_config(config_user_data, schedule,
+                                               cancel, destruct);
 }
 
 grpc_tls_server_authorization_check_config*
@@ -210,6 +210,6 @@ grpc_tls_server_authorization_check_config_create(
             "check config.");
     return nullptr;
   }
-  return grpc_core::New<grpc_tls_server_authorization_check_config>(
+  return new grpc_tls_server_authorization_check_config(
       config_user_data, schedule, cancel, destruct);
 }

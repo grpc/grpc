@@ -242,7 +242,7 @@ class Subchannel {
   // destroyed or when CancelConnectivityStateWatch() is called.
   void WatchConnectivityState(
       grpc_connectivity_state initial_state,
-      UniquePtr<char> health_check_service_name,
+      std::unique_ptr<char> health_check_service_name,
       OrphanablePtr<ConnectivityStateWatcherInterface> watcher);
 
   // Cancels a connectivity state watch.
@@ -293,8 +293,8 @@ class Subchannel {
    private:
     // TODO(roth): Once we can use C++-14 heterogeneous lookups, this can
     // be a set instead of a map.
-    Map<ConnectivityStateWatcherInterface*,
-        OrphanablePtr<ConnectivityStateWatcherInterface>>
+    std::map<ConnectivityStateWatcherInterface*,
+             OrphanablePtr<ConnectivityStateWatcherInterface>>
         watchers_;
   };
 
@@ -311,7 +311,7 @@ class Subchannel {
    public:
     void AddWatcherLocked(
         Subchannel* subchannel, grpc_connectivity_state initial_state,
-        UniquePtr<char> health_check_service_name,
+        std::unique_ptr<char> health_check_service_name,
         OrphanablePtr<ConnectivityStateWatcherInterface> watcher);
     void RemoveWatcherLocked(const char* health_check_service_name,
                              ConnectivityStateWatcherInterface* watcher);
@@ -327,7 +327,7 @@ class Subchannel {
    private:
     class HealthWatcher;
 
-    Map<const char*, OrphanablePtr<HealthWatcher>, StringLess> map_;
+    std::map<const char*, OrphanablePtr<HealthWatcher>, StringLess> map_;
   };
 
   class ConnectedSubchannelStateWatcher;

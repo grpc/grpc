@@ -208,7 +208,7 @@ static grpc_socket_factory* get_socket_factory(const grpc_channel_args* args) {
 }
 
 grpc_udp_server* grpc_udp_server_create(const grpc_channel_args* args) {
-  grpc_udp_server* s = grpc_core::New<grpc_udp_server>();
+  grpc_udp_server* s = new grpc_udp_server();
   gpr_mu_init(&s->mu);
   s->socket_factory = get_socket_factory(args);
   if (s->socket_factory) {
@@ -243,7 +243,8 @@ void GrpcUdpListener::shutdown_fd(void* args, grpc_error* error) {
 
 static void finish_shutdown(grpc_udp_server* s) {
   if (s->shutdown_complete != nullptr) {
-    GRPC_CLOSURE_SCHED(s->shutdown_complete, GRPC_ERROR_NONE);
+    grpc_core::ExecCtx::Run(DEBUG_LOCATION, s->shutdown_complete,
+                            GRPC_ERROR_NONE);
   }
 
   gpr_mu_destroy(&s->mu);
@@ -257,7 +258,7 @@ static void finish_shutdown(grpc_udp_server* s) {
     grpc_socket_factory_unref(s->socket_factory);
   }
 
-  grpc_core::Delete(s);
+  delete s;
 }
 
 static void destroyed_port(void* server, grpc_error* /*error*/) {

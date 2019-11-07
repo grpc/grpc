@@ -188,6 +188,7 @@ class TestGevent(setuptools.Command):
         'unit._cython._channel_test.ChannelTest.test_negative_deadline_connectivity',
         # TODO(https://github.com/grpc/grpc/issues/15411) enable this test
         'unit._local_credentials_test.LocalCredentialsTest',
+        'testing._time_test.StrictRealTimeTest',
     )
     BANNED_WINDOWS_TESTS = (
         # TODO(https://github.com/grpc/grpc/pull/15411) enable this test

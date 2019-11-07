@@ -165,20 +165,20 @@ def grpc_deps():
     if "com_google_absl" not in native.existing_rules():
         http_archive(
             name = "com_google_absl",
-            sha256 = "fd4edc10767c28b23bf9f41114c6bcd9625c165a31baa0e6939f01058029a912",
-            strip_prefix = "abseil-cpp-74d91756c11bc22f9b0108b94da9326f7f9e376f",
-            url = "https://github.com/abseil/abseil-cpp/archive/74d91756c11bc22f9b0108b94da9326f7f9e376f.tar.gz",
+            sha256 = "c5f6429c067e6b8f3c6d13d1ab2bdcd559c6f8b85317aa5b0dc8c364c37d1742",
+            strip_prefix = "abseil-cpp-846e5dbedac123d12455adcfe6f53c8b5dcbfeef",
+            url = "https://github.com/abseil/abseil-cpp/archive/846e5dbedac123d12455adcfe6f53c8b5dcbfeef.tar.gz",
         )
 
     if "bazel_toolchains" not in native.existing_rules():
         # list of releases is at https://releases.bazel.build/bazel-toolchains.html
         http_archive(
             name = "bazel_toolchains",
-            sha256 = "e9bab54199722935f239cb1cd56a80be2ac3c3843e1a6d3492e2bc11f9c21daf",
-            strip_prefix = "bazel-toolchains-1.0.0",
+            sha256 = "0b36eef8a66f39c8dbae88e522d5bbbef49d5e66e834a982402c79962281be10",
+            strip_prefix = "bazel-toolchains-1.0.1",
             urls = [
-                "https://github.com/bazelbuild/bazel-toolchains/releases/download/1.0.0/bazel-toolchains-1.0.0.tar.gz",
-                "https://mirror.bazel.build/github.com/bazelbuild/bazel-toolchains/archive/1.0.0.tar.gz",
+                "https://github.com/bazelbuild/bazel-toolchains/releases/download/1.0.1/bazel-toolchains-1.0.1.tar.gz",
+                "https://mirror.bazel.build/github.com/bazelbuild/bazel-toolchains/archive/1.0.1.tar.gz",
             ],
         )
 

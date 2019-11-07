@@ -18,6 +18,7 @@ GRPCIO_TESTS_UNIT = [
     "_empty_message_test.py",
     "_error_message_encoding_test.py",
     "_exit_test.py",
+    "_grpc_shutdown_test.py",
     "_interceptor_test.py",
     "_invalid_metadata_test.py",
     "_invocation_defects_test.py",
@@ -26,8 +27,7 @@ GRPCIO_TESTS_UNIT = [
     "_metadata_flags_test.py",
     "_metadata_code_details_test.py",
     "_metadata_test.py",
-    # TODO: Issue 16336
-    # "_reconnect_test.py",
+    "_reconnect_test.py",
     "_resource_exhausted_test.py",
     "_rpc_test.py",
     "_signal_handling_test.py",
@@ -52,7 +52,7 @@ py_library(
 py_library(
     name = "resources",
     srcs = ["resources.py"],
-    data=[
+    data = [
         "//src/python/grpcio_tests/tests/unit/credentials",
     ],
 )
@@ -84,28 +84,28 @@ py_library(
 
 [
     py2and3_test(
-        name=test_file_name[:-3],
-        size="small",
-        srcs=[test_file_name],
-        main=test_file_name,
-        deps=[
-            "//src/python/grpcio/grpc:grpcio",
+        name = test_file_name[:-3],
+        size = "small",
+        srcs = [test_file_name],
+        data = [
+            "//src/python/grpcio_tests/tests/unit/credentials",
+        ],
+        imports = ["../../"],
+        main = test_file_name,
+        deps = [
+            ":_exit_scenarios",
+            ":_from_grpc_import_star",
+            ":_server_shutdown_scenarios",
+            ":_signal_client",
+            ":_tcp_proxy",
             ":resources",
             ":test_common",
             ":thread_pool",
-            ":_exit_scenarios",
-            ":_server_shutdown_scenarios",
-            ":_from_grpc_import_star",
-            ":_tcp_proxy",
-            ":_signal_client",
-            "//src/python/grpcio_tests/tests/unit/framework/common",
+            "//external:six",
+            "//src/python/grpcio/grpc:grpcio",
             "//src/python/grpcio_tests/tests/testing",
-            "//external:six"
+            "//src/python/grpcio_tests/tests/unit/framework/common",
         ],
-        imports=["../../",],
-        data=[
-            "//src/python/grpcio_tests/tests/unit/credentials",
-        ],
-    ) for test_file_name in GRPCIO_TESTS_UNIT
+    )
+    for test_file_name in GRPCIO_TESTS_UNIT
 ]
-

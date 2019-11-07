@@ -108,7 +108,8 @@ static void finish_shutdown(grpc_tcp_server* s) {
   GPR_ASSERT(s->shutdown);
   gpr_mu_unlock(&s->mu);
   if (s->shutdown_complete != nullptr) {
-    GRPC_CLOSURE_SCHED(s->shutdown_complete, GRPC_ERROR_NONE);
+    grpc_core::ExecCtx::Run(DEBUG_LOCATION, s->shutdown_complete,
+                            GRPC_ERROR_NONE);
   }
 
   gpr_mu_destroy(&s->mu);
@@ -119,7 +120,7 @@ static void finish_shutdown(grpc_tcp_server* s) {
     gpr_free(sp);
   }
   grpc_channel_args_destroy(s->channel_args);
-  grpc_core::Delete(s->fd_handler);
+  delete s->fd_handler;
 
   gpr_free(s);
 }
@@ -622,7 +623,7 @@ class ExternalConnectionHandler : public grpc_core::TcpServerFdHandler {
 
 static grpc_core::TcpServerFdHandler* tcp_server_create_fd_handler(
     grpc_tcp_server* s) {
-  s->fd_handler = grpc_core::New<ExternalConnectionHandler>(s);
+  s->fd_handler = new ExternalConnectionHandler(s);
   return s->fd_handler;
 }
 

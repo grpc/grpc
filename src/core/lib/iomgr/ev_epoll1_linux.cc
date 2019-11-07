@@ -420,7 +420,7 @@ static void fd_orphan(grpc_fd* fd, grpc_closure* on_done, int* release_fd,
     close(fd->fd);
   }
 
-  GRPC_CLOSURE_SCHED(on_done, GRPC_ERROR_REF(error));
+  grpc_core::ExecCtx::Run(DEBUG_LOCATION, on_done, GRPC_ERROR_REF(error));
 
   grpc_iomgr_unregister_object(&fd->iomgr_object);
   fork_fd_list_remove_grpc_fd(fd);
@@ -623,7 +623,8 @@ static void pollset_maybe_finish_shutdown(grpc_pollset* pollset) {
   if (pollset->shutdown_closure != nullptr && pollset->root_worker == nullptr &&
       pollset->begin_refs == 0) {
     GPR_TIMER_MARK("pollset_finish_shutdown", 0);
-    GRPC_CLOSURE_SCHED(pollset->shutdown_closure, GRPC_ERROR_NONE);
+    grpc_core::ExecCtx::Run(DEBUG_LOCATION, pollset->shutdown_closure,
+                            GRPC_ERROR_NONE);
     pollset->shutdown_closure = nullptr;
   }
 }

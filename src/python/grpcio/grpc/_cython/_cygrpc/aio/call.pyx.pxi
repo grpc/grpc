@@ -34,6 +34,7 @@ cdef class _AioCall:
         self._watcher_call.functor.functor_run = _AioCall.watcher_call_functor_run
         self._watcher_call.waiter = <cpython.PyObject *> self
         self._waiter_call = None
+        self._references = []
 
     def __dealloc__(self):
         grpc_completion_queue_shutdown(self._cq)
@@ -45,21 +46,20 @@ cdef class _AioCall:
         return f"<{class_name} {id_}>"
 
     @staticmethod
-    cdef void functor_run(grpc_experimental_completion_queue_functor* functor, int succeed):
+    cdef void functor_run(grpc_experimental_completion_queue_functor* functor, int success) with gil:
         pass
 
     @staticmethod
-    cdef void watcher_call_functor_run(grpc_experimental_completion_queue_functor* functor, int succeed):
+    cdef void watcher_call_functor_run(grpc_experimental_completion_queue_functor* functor, int success) with gil:
         call = <_AioCall>(<CallbackContext *>functor).waiter
 
-        assert call._waiter_call
+        if not call._waiter_call.done():
+            if success == 0:
+                call._waiter_call.set_exception(Exception("Some error occurred"))
+            else:
+                call._waiter_call.set_result(None)
 
-        if succeed == 0:
-            call._waiter_call.set_exception(Exception("Some error occurred"))
-        else:
-            call._waiter_call.set_result(None)
-
-    async def unary_unary(self, method, request, timeout):
+    async def unary_unary(self, bytes method, bytes request, object timeout, AioCancelStatus cancel_status):
         cdef grpc_call * call
         cdef grpc_slice method_slice
         cdef grpc_op * ops
@@ -73,6 +73,7 @@ cdef class _AioCall:
 
         cdef grpc_call_error call_status
         cdef gpr_timespec deadline = _timespec_from_time(timeout)
+        cdef char *c_details = NULL
 
         method_slice = grpc_slice_from_copied_buffer(
             <const char *> method,
@@ -133,8 +134,21 @@ cdef class _AioCall:
                 self._waiter_call = None
                 raise Exception("Error with grpc_call_start_batch {}".format(call_status))
 
-            await self._waiter_call
-
+            try:
+                await self._waiter_call
+            except asyncio.CancelledError:
+                if cancel_status:
+                    details = str_to_bytes(cancel_status.details())
+                    self._references.append(details)
+                    c_details = <char *>details
+                    call_status = grpc_call_cancel_with_status(
+                        call, cancel_status.code(), c_details, NULL)
+                else:
+                    call_status = grpc_call_cancel(
+                        call, NULL)
+                if call_status != GRPC_CALL_OK:
+                    raise Exception("RPC call couldn't be cancelled. Error {}".format(call_status))
+                raise
         finally:
             initial_metadata_operation.un_c()
             send_message_operation.un_c()
@@ -149,7 +163,7 @@ cdef class _AioCall:
         if receive_status_on_client_operation.code() == StatusCode.ok:
             return receive_message_operation.message()
 
-        raise grpc.experimental.aio.AioRpcError(
+        raise AioRpcError(
             receive_initial_metadata_operation.initial_metadata(),
             receive_status_on_client_operation.code(),
             receive_status_on_client_operation.details(),

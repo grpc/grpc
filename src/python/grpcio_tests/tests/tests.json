@@ -50,6 +50,7 @@
   "unit._empty_message_test.EmptyMessageTest",
   "unit._error_message_encoding_test.ErrorMessageEncodingTest",
   "unit._exit_test.ExitTest",
+  "unit._grpc_shutdown_test.GrpcShutdownTest",
   "unit._interceptor_test.InterceptorTest",
   "unit._invalid_metadata_test.InvalidMetadataTest",
   "unit._invocation_defects_test.InvocationDefectsTest",

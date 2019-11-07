@@ -54,7 +54,7 @@ static void my_resolve_address(const char* addr, const char* /*default_port*/,
         gpr_malloc(sizeof(*(*addrs)->addrs)));
     (*addrs)->addrs[0].len = 123;
   }
-  GRPC_CLOSURE_SCHED(on_done, error);
+  grpc_core::ExecCtx::Run(DEBUG_LOCATION, on_done, error);
 }
 
 static grpc_address_resolver_vtable test_resolver = {my_resolve_address,
@@ -63,7 +63,7 @@ static grpc_address_resolver_vtable test_resolver = {my_resolve_address,
 static grpc_ares_request* my_dns_lookup_ares_locked(
     const char* /*dns_server*/, const char* addr, const char* /*default_port*/,
     grpc_pollset_set* /*interested_parties*/, grpc_closure* on_done,
-    grpc_core::UniquePtr<grpc_core::ServerAddressList>* addresses,
+    std::unique_ptr<grpc_core::ServerAddressList>* addresses,
     bool /*check_grpclb*/, char** /*service_config_json*/,
     int /*query_timeout_ms*/, grpc_core::Combiner* /*combiner*/) {
   gpr_mu_lock(&g_mu);
@@ -81,7 +81,7 @@ static grpc_ares_request* my_dns_lookup_ares_locked(
     dummy_resolved_address.len = 123;
     (*addresses)->emplace_back(dummy_resolved_address, nullptr);
   }
-  GRPC_CLOSURE_SCHED(on_done, error);
+  grpc_core::ExecCtx::Run(DEBUG_LOCATION, on_done, error);
   return nullptr;
 }
 
@@ -91,7 +91,7 @@ static void my_cancel_ares_request_locked(grpc_ares_request* request) {
 
 static grpc_core::OrphanablePtr<grpc_core::Resolver> create_resolver(
     const char* name,
-    grpc_core::UniquePtr<grpc_core::Resolver::ResultHandler> result_handler) {
+    std::unique_ptr<grpc_core::Resolver::ResultHandler> result_handler) {
   grpc_core::ResolverFactory* factory =
       grpc_core::ResolverRegistry::LookupResolverFactory("dns");
   grpc_uri* uri = grpc_uri_parse(name, 0);
@@ -167,10 +167,10 @@ int main(int argc, char** argv) {
 
   {
     grpc_core::ExecCtx exec_ctx;
-    ResultHandler* result_handler = grpc_core::New<ResultHandler>();
+    ResultHandler* result_handler = new ResultHandler();
     grpc_core::OrphanablePtr<grpc_core::Resolver> resolver = create_resolver(
-        "dns:test", grpc_core::UniquePtr<grpc_core::Resolver::ResultHandler>(
-                        result_handler));
+        "dns:test",
+        std::unique_ptr<grpc_core::Resolver::ResultHandler>(result_handler));
     ResultHandler::ResolverOutput output1;
     result_handler->SetOutput(&output1);
     resolver->StartLocked();

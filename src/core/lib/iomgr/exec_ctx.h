@@ -28,6 +28,7 @@
 
 #include "src/core/lib/gpr/time_precise.h"
 #include "src/core/lib/gpr/tls.h"
+#include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/fork.h"
 #include "src/core/lib/iomgr/closure.h"
 
@@ -220,6 +221,9 @@ class ExecCtx {
   static void Set(ExecCtx* exec_ctx) {
     gpr_tls_set(&exec_ctx_, reinterpret_cast<intptr_t>(exec_ctx));
   }
+
+  static void Run(const DebugLocation& location, grpc_closure* closure,
+                  grpc_error* error);
 
  protected:
   /** Check if ready to finish. */

@@ -197,7 +197,7 @@ static int get_socket_tcp_info(grpc_core::tcp_info* info, int fd) {
 void TracedBuffer::AddNewEntry(TracedBuffer** head, uint32_t seq_no, int fd,
                                void* arg) {
   GPR_DEBUG_ASSERT(head != nullptr);
-  TracedBuffer* new_elem = New<TracedBuffer>(seq_no, arg);
+  TracedBuffer* new_elem = new TracedBuffer(seq_no, arg);
   /* Store the current time as the sendmsg time. */
   new_elem->ts_.sendmsg_time.time = gpr_now(GPR_CLOCK_REALTIME);
   new_elem->ts_.scheduled_time.time = gpr_inf_past(GPR_CLOCK_REALTIME);
@@ -254,7 +254,7 @@ void TracedBuffer::ProcessTimestamp(TracedBuffer** head,
            * restriction on the lifetime. */
           timestamps_callback(elem->arg_, &(elem->ts_), GRPC_ERROR_NONE);
           next = elem->next_;
-          Delete<TracedBuffer>(elem);
+          delete static_cast<TracedBuffer*>(elem);
           *head = elem = next;
           break;
         default:
@@ -273,7 +273,7 @@ void TracedBuffer::Shutdown(TracedBuffer** head, void* remaining,
   while (elem != nullptr) {
     timestamps_callback(elem->arg_, &(elem->ts_), shutdown_err);
     auto* next = elem->next_;
-    Delete<TracedBuffer>(elem);
+    delete elem;
     elem = next;
   }
   *head = nullptr;
@@ -293,8 +293,13 @@ void grpc_tcp_set_write_timestamps_callback(void (*fn)(void*,
 #else /* GRPC_LINUX_ERRQUEUE */
 
 namespace grpc_core {
-void grpc_tcp_set_write_timestamps_callback(
-    void (*/*fn*/)(void*, grpc_core::Timestamps*, grpc_error* error)) {
+void grpc_tcp_set_write_timestamps_callback(void (*fn)(void*,
+                                                       grpc_core::Timestamps*,
+                                                       grpc_error* error)) {
+  // Cast value of fn to void to avoid unused parameter warning.
+  // Can't comment out the name because some compilers and formatters don't
+  // like the sequence */* , which would arise from */*fn*/.
+  (void)fn;
   gpr_log(GPR_DEBUG, "Timestamps callback is not enabled for this platform");
 }
 } /* namespace grpc_core */

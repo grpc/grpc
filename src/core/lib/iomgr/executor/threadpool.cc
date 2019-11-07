@@ -54,11 +54,11 @@ void ThreadPool::SharedThreadPoolConstructor() {
   // Create at least 1 worker thread.
   if (num_threads_ <= 0) num_threads_ = 1;
 
-  queue_ = New<InfLenFIFOQueue>();
+  queue_ = new InfLenFIFOQueue();
   threads_ = static_cast<ThreadPoolWorker**>(
       gpr_zalloc(num_threads_ * sizeof(ThreadPoolWorker*)));
   for (int i = 0; i < num_threads_; ++i) {
-    threads_[i] = New<ThreadPoolWorker>(thd_name_, queue_, thread_options_, i);
+    threads_[i] = new ThreadPoolWorker(thd_name_, queue_, thread_options_, i);
     threads_[i]->Start();
   }
 }
@@ -114,10 +114,10 @@ ThreadPool::~ThreadPool() {
   }
 
   for (int i = 0; i < num_threads_; ++i) {
-    Delete(threads_[i]);
+    delete threads_[i];
   }
   gpr_free(threads_);
-  Delete(queue_);
+  delete queue_;
 }
 
 void ThreadPool::Add(grpc_experimental_completion_queue_functor* closure) {

@@ -16,6 +16,8 @@ licenses(["notice"])  # Apache v2
 
 package(default_visibility = ["//visibility:public"])
 
+load("@bazel_toolchains//rules/exec_properties:exec_properties.bzl", "create_exec_properties_dict")
+
 alias(
     name = "rbe_windows",
     actual = ":rbe_windows_1803",
@@ -29,56 +31,9 @@ platform(
         "@bazel_tools//platforms:windows",
         "@bazel_tools//tools/cpp:msvc",
     ],
-    exec_properties = {
-        "container-image" : "docker://gcr.io/grpc-testing/rbe_windows_toolchain@sha256:75728e7d6d804090f71095e5fec627b18cfa1f47adc52096c209f2a687e06b2e",
-        "gceMachineType" : "n1-highmem-2",
-        "OSFamily" : "Windows",
-    },
-)
-
-# RBE Ubuntu16_04 r346485
-platform(
-    name = "rbe_ubuntu1604",
-    parents = ["@rbe_default//config:platform"],
-    constraint_values = [
-        "//third_party/toolchains/machine_size:standard",
-    ],
-    exec_properties = {
-        "gceMachineType" : "n1-highmem-2",  # Small machines for majority of tests
-        "dockerSiblingContainers" : "false",
-        "dockerNetwork" : "off",
-        "dockerAddCapabilities" : "SYS_PTRACE",
-        "dockerPrivileged" : "true"
-    },
-)
-
-platform(
-    name = "rbe_ubuntu1604_large",
-    parents = ["@rbe_default//config:platform"],
-    constraint_values = [
-        "//third_party/toolchains/machine_size:large",
-    ],
-    exec_properties = {
-        "gceMachineType" : "n1-standard-8",  # Large machines for some resource demanding tests (TSAN).
-        "dockerSiblingContainers" : "false",
-        "dockerNetwork" : "off",
-        "dockerAddCapabilities" : "SYS_PTRACE",
-        "dockerPrivileged" : "true"
-    },
-)
-
-platform(
-    name = "local",
-    parents = ["@bazel_tools//platforms:target_platform"],
-    constraint_values = [
-        "//third_party/toolchains/machine_size:standard",
-    ],
-)
-
-platform(
-    name = "local_large",
-    parents = ["@bazel_tools//platforms:target_platform"],
-    constraint_values = [
-        "//third_party/toolchains/machine_size:large",
-    ],
+    exec_properties = create_exec_properties_dict(
+        container_image = "docker://gcr.io/grpc-testing/rbe_windows_toolchain@sha256:75728e7d6d804090f71095e5fec627b18cfa1f47adc52096c209f2a687e06b2e",
+        gce_machine_type = "n1-highmem-2",
+        os_family = "Windows",
+    ),
 )

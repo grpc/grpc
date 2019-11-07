@@ -80,8 +80,7 @@ void TlsCredentialReloadArg::set_cb_user_data(void* cb_user_data) {
 
 void TlsCredentialReloadArg::set_pem_root_certs(
     const grpc::string& pem_root_certs) {
-  ::grpc_core::UniquePtr<char> c_pem_root_certs(
-      gpr_strdup(pem_root_certs.c_str()));
+  ::std::unique_ptr<char> c_pem_root_certs(gpr_strdup(pem_root_certs.c_str()));
   c_arg_->key_materials_config->set_pem_root_certs(std::move(c_pem_root_certs));
 }
 
@@ -117,7 +116,7 @@ void TlsCredentialReloadArg::set_key_materials_config(
         ::grpc_core::PemKeyCertPair(ssl_pair);
     c_pem_key_cert_pair_list.emplace_back(std::move(c_pem_key_cert_pair));
   }
-  ::grpc_core::UniquePtr<char> c_pem_root_certs(
+  ::std::unique_ptr<char> c_pem_root_certs(
       gpr_strdup(key_materials_config->pem_root_certs().c_str()));
   if (c_arg_->key_materials_config == nullptr) {
     c_arg_->key_materials_config = grpc_tls_key_materials_config_create();

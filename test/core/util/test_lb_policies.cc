@@ -51,7 +51,7 @@ namespace {
 class ForwardingLoadBalancingPolicy : public LoadBalancingPolicy {
  public:
   ForwardingLoadBalancingPolicy(
-      UniquePtr<ChannelControlHelper> delegating_helper, Args args,
+      std::unique_ptr<ChannelControlHelper> delegating_helper, Args args,
       const std::string& delegate_policy_name, intptr_t initial_refcount = 1)
       : LoadBalancingPolicy(std::move(args), initial_refcount) {
     Args delegate_args;
@@ -93,7 +93,7 @@ class InterceptRecvTrailingMetadataLoadBalancingPolicy
   InterceptRecvTrailingMetadataLoadBalancingPolicy(
       Args args, InterceptRecvTrailingMetadataCallback cb, void* user_data)
       : ForwardingLoadBalancingPolicy(
-            UniquePtr<ChannelControlHelper>(New<Helper>(
+            std::unique_ptr<ChannelControlHelper>(new Helper(
                 RefCountedPtr<InterceptRecvTrailingMetadataLoadBalancingPolicy>(
                     this),
                 cb, user_data)),
@@ -110,7 +110,7 @@ class InterceptRecvTrailingMetadataLoadBalancingPolicy
  private:
   class Picker : public SubchannelPicker {
    public:
-    explicit Picker(UniquePtr<SubchannelPicker> delegate_picker,
+    explicit Picker(std::unique_ptr<SubchannelPicker> delegate_picker,
                     InterceptRecvTrailingMetadataCallback cb, void* user_data)
         : delegate_picker_(std::move(delegate_picker)),
           cb_(cb),
@@ -133,7 +133,7 @@ class InterceptRecvTrailingMetadataLoadBalancingPolicy
     }
 
    private:
-    UniquePtr<SubchannelPicker> delegate_picker_;
+    std::unique_ptr<SubchannelPicker> delegate_picker_;
     InterceptRecvTrailingMetadataCallback cb_;
     void* user_data_;
   };
@@ -151,10 +151,10 @@ class InterceptRecvTrailingMetadataLoadBalancingPolicy
     }
 
     void UpdateState(grpc_connectivity_state state,
-                     UniquePtr<SubchannelPicker> picker) override {
+                     std::unique_ptr<SubchannelPicker> picker) override {
       parent_->channel_control_helper()->UpdateState(
-          state, UniquePtr<SubchannelPicker>(
-                     New<Picker>(std::move(picker), cb_, user_data_)));
+          state, std::unique_ptr<SubchannelPicker>(
+                     new Picker(std::move(picker), cb_, user_data_)));
     }
 
     void RequestReresolution() override {
@@ -240,8 +240,8 @@ class InterceptTrailingFactory : public LoadBalancingPolicyFactory {
 void RegisterInterceptRecvTrailingMetadataLoadBalancingPolicy(
     InterceptRecvTrailingMetadataCallback cb, void* user_data) {
   LoadBalancingPolicyRegistry::Builder::RegisterLoadBalancingPolicyFactory(
-      UniquePtr<LoadBalancingPolicyFactory>(
-          New<InterceptTrailingFactory>(cb, user_data)));
+      std::unique_ptr<LoadBalancingPolicyFactory>(
+          new InterceptTrailingFactory(cb, user_data)));
 }
 
 }  // namespace grpc_core

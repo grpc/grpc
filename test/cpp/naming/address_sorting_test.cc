@@ -64,8 +64,8 @@ struct TestAddress {
 };
 
 grpc_resolved_address TestAddressToGrpcResolvedAddress(TestAddress test_addr) {
-  grpc_core::UniquePtr<char> host;
-  grpc_core::UniquePtr<char> port;
+  std::unique_ptr<char> host;
+  std::unique_ptr<char> port;
   grpc_resolved_address resolved_addr;
   grpc_core::SplitHostPort(test_addr.dest_addr.c_str(), &host, &port);
   if (test_addr.family == AF_INET) {
@@ -827,8 +827,7 @@ TEST_F(AddressSortingTest, TestSorterKnowsIpv6LoopbackIsAvailable) {
 }  // namespace
 
 int main(int argc, char** argv) {
-  grpc_core::UniquePtr<char> resolver =
-      GPR_GLOBAL_CONFIG_GET(grpc_dns_resolver);
+  std::unique_ptr<char> resolver = GPR_GLOBAL_CONFIG_GET(grpc_dns_resolver);
   if (strlen(resolver.get()) == 0) {
     GPR_GLOBAL_CONFIG_SET(grpc_dns_resolver, "ares");
   } else if (strcmp("ares", resolver.get())) {

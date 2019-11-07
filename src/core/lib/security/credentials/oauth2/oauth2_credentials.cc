@@ -256,7 +256,8 @@ void grpc_oauth2_token_fetcher_credentials::on_http_response(
       new_error = GRPC_ERROR_CREATE_REFERENCING_FROM_STATIC_STRING(
           "Error occurred when fetching oauth2 token.", &error, 1);
     }
-    GRPC_CLOSURE_SCHED(pending_request->on_request_metadata, new_error);
+    grpc_core::ExecCtx::Run(DEBUG_LOCATION,
+                            pending_request->on_request_metadata, new_error);
     grpc_polling_entity_del_from_pollset_set(
         pending_request->pollent, grpc_polling_entity_pollset_set(&pollent_));
     grpc_oauth2_pending_get_request_metadata* prev = pending_request;
@@ -332,8 +333,9 @@ void grpc_oauth2_token_fetcher_credentials::cancel_get_request_metadata(
         pending_requests_ = pending_request->next;
       }
       // Invoke the callback immediately with an error.
-      GRPC_CLOSURE_SCHED(pending_request->on_request_metadata,
-                         GRPC_ERROR_REF(error));
+      grpc_core::ExecCtx::Run(DEBUG_LOCATION,
+                              pending_request->on_request_metadata,
+                              GRPC_ERROR_REF(error));
       gpr_free(pending_request);
       break;
     }
@@ -622,14 +624,14 @@ class StsTokenFetcherCredentials
 
   grpc_uri* sts_url_;
   grpc_closure http_post_cb_closure_;
-  grpc_core::UniquePtr<char> resource_;
-  grpc_core::UniquePtr<char> audience_;
-  grpc_core::UniquePtr<char> scope_;
-  grpc_core::UniquePtr<char> requested_token_type_;
-  grpc_core::UniquePtr<char> subject_token_path_;
-  grpc_core::UniquePtr<char> subject_token_type_;
-  grpc_core::UniquePtr<char> actor_token_path_;
-  grpc_core::UniquePtr<char> actor_token_type_;
+  std::unique_ptr<char> resource_;
+  std::unique_ptr<char> audience_;
+  std::unique_ptr<char> scope_;
+  std::unique_ptr<char> requested_token_type_;
+  std::unique_ptr<char> subject_token_path_;
+  std::unique_ptr<char> subject_token_type_;
+  std::unique_ptr<char> actor_token_path_;
+  std::unique_ptr<char> actor_token_type_;
 };
 
 }  // namespace
@@ -641,7 +643,7 @@ grpc_error* ValidateStsCredentialsOptions(
   };
   *sts_url_out = nullptr;
   InlinedVector<grpc_error*, 3> error_list;
-  UniquePtr<grpc_uri, GrpcUriDeleter> sts_url(
+  std::unique_ptr<grpc_uri, GrpcUriDeleter> sts_url(
       options->token_exchange_service_uri != nullptr
           ? grpc_uri_parse(options->token_exchange_service_uri, false)
           : nullptr);

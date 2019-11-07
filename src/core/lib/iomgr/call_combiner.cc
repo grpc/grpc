@@ -93,9 +93,9 @@ void CallCombiner::TsanClosure(void* arg, grpc_error* error) {
 void CallCombiner::ScheduleClosure(grpc_closure* closure, grpc_error* error) {
 #ifdef GRPC_TSAN_ENABLED
   original_closure_ = closure;
-  GRPC_CLOSURE_SCHED(&tsan_closure_, error);
+  ExecCtx::Run(DEBUG_LOCATION, &tsan_closure_, error);
 #else
-  GRPC_CLOSURE_SCHED(closure, error);
+  ExecCtx::Run(DEBUG_LOCATION, closure, error);
 #endif
 }
 
@@ -200,7 +200,7 @@ void CallCombiner::SetNotifyOnCancel(grpc_closure* closure) {
                 "for pre-existing cancellation",
                 this, closure);
       }
-      GRPC_CLOSURE_SCHED(closure, GRPC_ERROR_REF(original_error));
+      ExecCtx::Run(DEBUG_LOCATION, closure, GRPC_ERROR_REF(original_error));
       break;
     } else {
       if (gpr_atm_full_cas(&cancel_state_, original_state, (gpr_atm)closure)) {
@@ -218,7 +218,7 @@ void CallCombiner::SetNotifyOnCancel(grpc_closure* closure) {
                     "call_combiner=%p: scheduling old cancel callback=%p", this,
                     closure);
           }
-          GRPC_CLOSURE_SCHED(closure, GRPC_ERROR_NONE);
+          ExecCtx::Run(DEBUG_LOCATION, closure, GRPC_ERROR_NONE);
         }
         break;
       }
@@ -245,7 +245,7 @@ void CallCombiner::Cancel(grpc_error* error) {
                   "call_combiner=%p: scheduling notify_on_cancel callback=%p",
                   this, notify_on_cancel);
         }
-        GRPC_CLOSURE_SCHED(notify_on_cancel, GRPC_ERROR_REF(error));
+        ExecCtx::Run(DEBUG_LOCATION, notify_on_cancel, GRPC_ERROR_REF(error));
       }
       break;
     }

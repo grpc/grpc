@@ -14,11 +14,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-load("//bazel:python_rules.bzl", "py_proto_library", "py_grpc_library")
+load("//bazel:python_rules.bzl", "py_grpc_library", "py_proto_library")
 
 proto_library(
     name = "prime_proto",
-    srcs = ["prime.proto"]
+    srcs = ["prime.proto"],
 )
 
 py_proto_library(
@@ -36,19 +36,21 @@ py_binary(
     name = "client",
     testonly = 1,
     srcs = ["client.py"],
+    python_version = "PY3",
+    srcs_version = "PY3",
     deps = [
-        "//src/python/grpcio/grpc:grpcio",
         ":prime_proto_pb2",
         ":prime_proto_pb2_grpc",
+        "//src/python/grpcio/grpc:grpcio",
     ],
-    srcs_version = "PY3",
-    python_version = "PY3",
 )
 
 py_binary(
     name = "server",
     testonly = 1,
     srcs = ["server.py"],
+    python_version = "PY3",
+    srcs_version = "PY3",
     deps = [
         "//src/python/grpcio/grpc:grpcio",
         ":prime_proto_pb2",
@@ -57,17 +59,15 @@ py_binary(
         "//conditions:default": ["@futures//:futures"],
         "//:python3": [],
     }),
-    srcs_version = "PY3",
-    python_version = "PY3",
 )
 
 py_test(
     name = "test/_multiprocessing_example_test",
+    size = "small",
     srcs = ["test/_multiprocessing_example_test.py"],
     data = [
         ":client",
-        ":server"
+        ":server",
     ],
-    size = "small",
     python_version = "PY3",
 )
