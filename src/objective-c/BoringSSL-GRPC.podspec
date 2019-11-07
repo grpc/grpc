@@ -128,22 +128,23 @@ Pod::Spec.new do |s|
   end
   s.subspec 'Implementation' do |ss|
     ss.header_mappings_dir = '.'
-    ss.source_files = 'ssl/*.{h,cc}',
-                      'ssl/**/*.{h,cc}',
-                      '*.{h,c}',
-                      'crypto/*.{h,c}',
-                      'crypto/**/*.{h,c}',
-                      'third_party/fiat/*.{h,c}'
+    ss.source_files = 'ssl/*.{h,c,cc}',
+                      'ssl/**/*.{h,c,cc}',
+                      '*.{h,c,cc}', # for generated file such as err_data.c
+                      'crypto/*.{h,c,cc}',
+                      'crypto/**/*.{h,c,cc}',
+                      'third_party/fiat/*.{h,c,cc}' # has to include fiat because spake25519 depends
+                                                    # on it
     ss.private_header_files = 'ssl/*.h',
                               'ssl/**/*.h',
                               '*.h',
                               'crypto/*.h',
-                              'crypto/**/*.h'
+                              'crypto/**/*.h',
+                              'third_party/fiat/*.h'
     # bcm.c includes other source files, creating duplicated symbols. Since it is not used, we
     # explicitly exclude it from the pod.
     # TODO (mxyan): Work with BoringSSL team to remove this hack.
-    ss.exclude_files = 'crypto/fipsmodule/bcm.c',
-                       '**/*_test.*',
+    ss.exclude_files = '**/*_test.*',
                        '**/test_*.*',
                        '**/test/*.*'
 
@@ -1619,13 +1620,18 @@ Pod::Spec.new do |s|
       
     EOF
 
-    # Remove lines of the format "#define SOME_MACRO SOME_MACRO" because they mess up the symbol prefix
+    # The symbol prefixing mechanism is performed by redefining BoringSSL symbols with
+    # "#define SOME_BORINGSSL_SYMBOL GRPC_SHADOW_SOME_BORINGSSL_SYMBOL". Unfortunately, some symbols are already
+    # redefined as macros in BoringSSL headers in the form "#define SOME_BORINGSSL_SYMBOL SOME_BORINGSSL_SYMBOL"
+    # Such type of redefinition will cause "duplicate symbols" when using together with our prefix header. So
+    # the workaround in the below lines removes all such type of #define directives.
     sed -i'.back' '/^#define \\([A-Za-z0-9_]*\\) \\1/d' include/openssl/*.h
-    # Remove lines of the format below because they mess up the symbol prefix
-    #     #define SOME_MACRO \
-    #         SOME_MACRO
+    # Remove lines of the format below for the same reason above
+    #     #define SOME_BORINGSSL_SYMBOL \
+    #         SOME_BORINGSSL_SYMBOL
     sed -i'.back' '/^#define.*\\\\$/{N;/^#define \\([A-Za-z0-9_]*\\) *\\\\\\n *\\1/d;}' include/openssl/*.h
-    sed -i'.back' 's/#ifndef md5_block_data_order/#ifndef GRPC_SHADOW_md5_block_data_order/g' crypto/fipsmodule/md5/md5.c
+
+    # We are renaming openssl to openssl_grpc so that there is no conflict with openssl if it exists
     find . -type f \\( -path '*.h' -or -path '*.cc' -or -path '*.c' \\) -print0 | xargs -0 -L1 sed -E -i'.grpc_back' 's;#include <openssl/;#include <openssl_grpc/;g'
   END_OF_COMMAND
 
