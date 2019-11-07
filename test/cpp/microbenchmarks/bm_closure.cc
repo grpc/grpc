@@ -78,14 +78,13 @@ static void BM_ClosureInitAgainstCombiner(benchmark::State& state) {
 }
 BENCHMARK(BM_ClosureInitAgainstCombiner);
 
-static void BM_ClosureRunOnExecCtx(benchmark::State& state) {
+static void BM_ClosureRun(benchmark::State& state) {
   TrackCounters track_counters;
   grpc_closure c;
   GRPC_CLOSURE_INIT(&c, DoNothing, nullptr, grpc_schedule_on_exec_ctx);
   grpc_core::ExecCtx exec_ctx;
   for (auto _ : state) {
     grpc_core::Closure::Run(DEBUG_LOCATION, &c, GRPC_ERROR_NONE);
-    grpc_core::ExecCtx::Get()->Flush();
   }
 
   track_counters.Finish(state);

@@ -253,30 +253,25 @@ class Closure {
  public:
   static void Run(const DebugLocation& location, grpc_closure* closure,
                   grpc_error* error) {
-    if (closure != nullptr) {
-#ifndef NDEBUG
-      closure->file_initiated = location.file();
-      closure->line_initiated = location.line();
-      closure->run = true;
-      closure->scheduled = false;
-      if (grpc_trace_closure.enabled()) {
-        gpr_log(GPR_DEBUG, "running closure %p: created [%s:%d]: %s [%s:%d]",
-                closure, closure->file_created, closure->line_created,
-                closure->run ? "run" : "scheduled", closure->file_initiated,
-                closure->line_initiated);
-      }
-      GPR_ASSERT(closure->cb != nullptr);
-#endif
-      closure->cb(closure->cb_arg, error);
-#ifndef NDEBUG
-      if (grpc_trace_closure.enabled()) {
-        gpr_log(GPR_DEBUG, "closure %p finished", closure);
-      }
-#endif
+    if (closure == nullptr) {
       GRPC_ERROR_UNREF(error);
-    } else {
-      GRPC_ERROR_UNREF(error);
+      return;
     }
+#ifndef NDEBUG
+    if (grpc_trace_closure.enabled()) {
+      gpr_log(GPR_DEBUG, "running closure %p: created [%s:%d]: %s [%s:%d]",
+              closure, closure->file_created, closure->line_created, "run",
+              location.file(), location.line());
+    }
+    GPR_ASSERT(closure->cb != nullptr);
+#endif
+    closure->cb(closure->cb_arg, error);
+#ifndef NDEBUG
+    if (grpc_trace_closure.enabled()) {
+      gpr_log(GPR_DEBUG, "closure %p finished", closure);
+    }
+#endif
+    GRPC_ERROR_UNREF(error);
   }
 };
 }  // namespace grpc_core
