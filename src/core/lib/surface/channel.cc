@@ -204,8 +204,7 @@ void CreateChannelzNode(grpc_channel_stack_builder* builder) {
   // Create the channelz node.
   grpc_core::RefCountedPtr<grpc_core::channelz::ChannelNode> channelz_node =
       grpc_core::MakeRefCounted<grpc_core::channelz::ChannelNode>(
-          grpc_core::UniquePtr<char>(
-              gpr_strdup(grpc_channel_stack_builder_get_target(builder))),
+          grpc_channel_stack_builder_get_target(builder),
           channel_tracer_max_memory, channelz_parent_uuid);
   channelz_node->AddTraceEvent(
       grpc_core::channelz::ChannelTrace::Severity::Info,
