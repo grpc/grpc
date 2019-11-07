@@ -1,8 +1,10 @@
 %YAML 1.2
 --- |
   <%!
-  def expand_symbol_list(symbol_list):
-      return ',\n    '.join("'#define %s GRPC_SHADOW_%s'" % (symbol, symbol) for symbol in symbol_list)
+    def expand_symbol_list(symbol_list):
+        return ',\n    '.join("'#define %s GRPC_SHADOW_%s'" % (symbol, symbol) for symbol in symbol_list)
+    import subprocess
+    boringssl_commit = subprocess.check_output(['git', 'rev-parse', 'HEAD'], cwd='third_party/boringssl').decode().strip()
   %>
 
   # This file has been automatically generated from a template file.
@@ -83,7 +85,7 @@
 
     s.source = {
       :git => 'https://github.com/google/boringssl.git',
-      :commit => "7f02881e96e51f1873afcf384d02f782b48967ca",
+      :commit => "${boringssl_commit}",
     }
 
     s.ios.deployment_target = '7.0'
