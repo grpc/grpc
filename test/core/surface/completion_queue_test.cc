@@ -429,7 +429,7 @@ static void test_callback(void) {
             gpr_cv_signal(&cv);
           }
           gpr_mu_unlock(&mu);
-          grpc_core::Delete(callback);
+          delete callback;
         };
 
        private:
@@ -438,7 +438,7 @@ static void test_callback(void) {
       };
 
       for (i = 0; i < GPR_ARRAY_SIZE(tags); i++) {
-        tags[i] = static_cast<void*>(grpc_core::New<TagCallback>(&counter, i));
+        tags[i] = static_cast<void*>(new TagCallback(&counter, i));
         sumtags += i;
       }
 

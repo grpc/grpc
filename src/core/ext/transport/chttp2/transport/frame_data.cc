@@ -193,7 +193,7 @@ grpc_error* grpc_deframe_unprocessed_incoming_frames(
         if (p->is_frame_compressed) {
           message_flags |= GRPC_WRITE_INTERNAL_COMPRESS;
         }
-        p->parsing_frame = grpc_core::New<grpc_core::Chttp2IncomingByteStream>(
+        p->parsing_frame = new grpc_core::Chttp2IncomingByteStream(
             t, s, p->frame_size, message_flags);
         stream_out->reset(p->parsing_frame);
         if (p->parsing_frame->remaining_bytes() == 0) {

@@ -992,7 +992,7 @@ void XdsLb::UpdateFallbackPolicyLocked() {
 OrphanablePtr<LoadBalancingPolicy> XdsLb::CreateFallbackPolicyLocked(
     const char* name, const grpc_channel_args* args) {
   FallbackHelper* helper =
-      New<FallbackHelper>(Ref(DEBUG_LOCATION, "FallbackHelper"));
+      new FallbackHelper(Ref(DEBUG_LOCATION, "FallbackHelper"));
   LoadBalancingPolicy::Args lb_policy_args;
   lb_policy_args.combiner = combiner();
   lb_policy_args.args = args;
@@ -1081,7 +1081,7 @@ void XdsLb::PriorityList::UpdateXdsPickerLocked() {
 void XdsLb::PriorityList::MaybeCreateLocalityMapLocked(uint32_t priority) {
   // Exhausted priorities in the update.
   if (!priority_list_update().Contains(priority)) return;
-  auto new_locality_map = New<LocalityMap>(
+  auto new_locality_map = new LocalityMap(
       xds_policy_->Ref(DEBUG_LOCATION, "XdsLb+LocalityMap"), priority);
   priorities_.emplace_back(OrphanablePtr<LocalityMap>(new_locality_map));
   new_locality_map->UpdateLocked(*priority_list_update().Find(priority));
@@ -1500,7 +1500,7 @@ XdsLb::PriorityList::LocalityMap::Locality::CreateChildPolicyArgsLocked(
 OrphanablePtr<LoadBalancingPolicy>
 XdsLb::PriorityList::LocalityMap::Locality::CreateChildPolicyLocked(
     const char* name, const grpc_channel_args* args) {
-  Helper* helper = New<Helper>(this->Ref(DEBUG_LOCATION, "Helper"));
+  Helper* helper = new Helper(this->Ref(DEBUG_LOCATION, "Helper"));
   LoadBalancingPolicy::Args lb_policy_args;
   lb_policy_args.combiner = xds_policy()->combiner();
   lb_policy_args.args = args;

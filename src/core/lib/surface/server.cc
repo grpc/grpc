@@ -1249,8 +1249,7 @@ void grpc_server_setup_transport(
   op->set_accept_stream = true;
   op->set_accept_stream_fn = accept_stream;
   op->set_accept_stream_user_data = chand;
-  op->start_connectivity_watch.reset(
-      grpc_core::New<ConnectivityWatcher>(chand));
+  op->start_connectivity_watch.reset(new ConnectivityWatcher(chand));
   if (gpr_atm_acq_load(&s->shutdown_flag) != 0) {
     op->disconnect_with_error =
         GRPC_ERROR_CREATE_FROM_STATIC_STRING("Server shutdown");

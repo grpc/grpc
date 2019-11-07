@@ -3322,8 +3322,8 @@ grpc_chttp2_transport_get_socket_node(grpc_transport* transport) {
 grpc_transport* grpc_create_chttp2_transport(
     const grpc_channel_args* channel_args, grpc_endpoint* ep, bool is_client,
     grpc_resource_user* resource_user) {
-  auto t = grpc_core::New<grpc_chttp2_transport>(channel_args, ep, is_client,
-                                                 resource_user);
+  auto t =
+      new grpc_chttp2_transport(channel_args, ep, is_client, resource_user);
   return &t->base;
 }
 

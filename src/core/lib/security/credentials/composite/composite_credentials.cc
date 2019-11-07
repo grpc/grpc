@@ -90,7 +90,7 @@ bool grpc_composite_call_credentials::get_request_metadata(
     grpc_credentials_mdelem_array* md_array, grpc_closure* on_request_metadata,
     grpc_error** error) {
   grpc_composite_call_credentials_metadata_context* ctx;
-  ctx = grpc_core::New<grpc_composite_call_credentials_metadata_context>(
+  ctx = new grpc_composite_call_credentials_metadata_context(
       this, pollent, auth_md_context, md_array, on_request_metadata);
   bool synchronous = true;
   const CallCredentialsList& inner = ctx->composite_creds->inner();
@@ -104,7 +104,7 @@ bool grpc_composite_call_credentials::get_request_metadata(
       break;
     }
   }
-  if (synchronous) grpc_core::Delete(ctx);
+  if (synchronous) delete ctx;
   return synchronous;
 }
 
@@ -205,6 +205,6 @@ grpc_channel_credentials* grpc_composite_channel_credentials_create(
       "grpc_composite_channel_credentials_create(channel_creds=%p, "
       "call_creds=%p, reserved=%p)",
       3, (channel_creds, call_creds, reserved));
-  return grpc_core::New<grpc_composite_channel_credentials>(
-      channel_creds->Ref(), call_creds->Ref());
+  return new grpc_composite_channel_credentials(channel_creds->Ref(),
+                                                call_creds->Ref());
 }

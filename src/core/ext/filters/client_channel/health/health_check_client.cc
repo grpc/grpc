@@ -400,7 +400,7 @@ void HealthCheckClient::CallState::AfterCallStackDestruction(
     void* arg, grpc_error* /*error*/) {
   HealthCheckClient::CallState* self =
       static_cast<HealthCheckClient::CallState*>(arg);
-  Delete(self);
+  delete self;
 }
 
 void HealthCheckClient::CallState::OnCancelComplete(void* arg,

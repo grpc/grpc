@@ -250,5 +250,5 @@ grpc_call_credentials* grpc_metadata_credentials_create_from_plugin(
   GRPC_API_TRACE("grpc_metadata_credentials_create_from_plugin(reserved=%p)", 1,
                  (reserved));
   GPR_ASSERT(reserved == nullptr);
-  return grpc_core::New<grpc_plugin_credentials>(plugin);
+  return new grpc_plugin_credentials(plugin);
 }

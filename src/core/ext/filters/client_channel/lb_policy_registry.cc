@@ -64,11 +64,11 @@ RegistryState* g_state = nullptr;
 //
 
 void LoadBalancingPolicyRegistry::Builder::InitRegistry() {
-  if (g_state == nullptr) g_state = New<RegistryState>();
+  if (g_state == nullptr) g_state = new RegistryState();
 }
 
 void LoadBalancingPolicyRegistry::Builder::ShutdownRegistry() {
-  Delete(g_state);
+  delete g_state;
   g_state = nullptr;
 }
 
