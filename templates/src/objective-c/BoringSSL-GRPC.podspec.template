@@ -135,22 +135,23 @@
     end
     s.subspec 'Implementation' do |ss|
       ss.header_mappings_dir = '.'
-      ss.source_files = 'ssl/*.{h,cc}',
-                        'ssl/**/*.{h,cc}',
-                        '*.{h,c}',
-                        'crypto/*.{h,c}',
-                        'crypto/**/*.{h,c}',
-                        'third_party/fiat/*.{h,c}'
+      ss.source_files = 'ssl/*.{h,c,cc}',
+                        'ssl/**/*.{h,c,cc}',
+                        '*.{h,c,cc}', # for generated file such as err_data.c
+                        'crypto/*.{h,c,cc}',
+                        'crypto/**/*.{h,c,cc}',
+                        'third_party/fiat/*.{h,c,cc}' # has to include fiat because spake25519 depends
+                                                      # on it
       ss.private_header_files = 'ssl/*.h',
                                 'ssl/**/*.h',
                                 '*.h',
                                 'crypto/*.h',
-                                'crypto/**/*.h'
+                                'crypto/**/*.h',
+                                'third_party/fiat/*.h'
       # bcm.c includes other source files, creating duplicated symbols. Since it is not used, we
       # explicitly exclude it from the pod.
       # TODO (mxyan): Work with BoringSSL team to remove this hack.
-      ss.exclude_files = 'crypto/fipsmodule/bcm.c',
-                         '**/*_test.*',
+      ss.exclude_files = '**/*_test.*',
                          '**/test_*.*',
                          '**/test/*.*'
 
