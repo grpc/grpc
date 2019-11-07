@@ -28,6 +28,7 @@
 #include <grpcpp/server.h>
 #include <grpcpp/server_builder.h>
 #include <grpcpp/server_context.h>
+#include <grpcpp/test/default_reactor_test_peer.h>
 
 #include "src/proto/grpc/testing/duplicate/echo_duplicate.grpc.pb.h"
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
@@ -50,6 +51,7 @@ using ::testing::SaveArg;
 using ::testing::SetArgPointee;
 using ::testing::WithArg;
 using ::testing::_;
+using grpc::testing::DefaultReactorTestPeer;
 using grpc::testing::EchoRequest;
 using grpc::testing::EchoResponse;
 using grpc::testing::EchoTestService;
@@ -191,25 +193,25 @@ TEST_F(MockCallbackTest, MockedCallSucceeds) {
   experimental::CallbackServerContext ctx;
   EchoRequest req;
   EchoResponse resp;
+  DefaultReactorTestPeer peer(&ctx);
 
   req.set_message("ha ha, consider yourself mocked.");
-  auto* test_reactor = ctx.EnableTestDefaultReactor();
   auto* reactor = service_.Echo(&ctx, &req, &resp);
-  EXPECT_EQ(test_reactor, reactor);
-  EXPECT_TRUE(ctx.test_status_set());
-  EXPECT_TRUE(ctx.test_status().ok());
+  EXPECT_EQ(reactor, peer.reactor());
+  EXPECT_TRUE(peer.test_status_set());
+  EXPECT_TRUE(peer.test_status().ok());
 }
 
 TEST_F(MockCallbackTest, MockedCallFails) {
   experimental::CallbackServerContext ctx;
   EchoRequest req;
   EchoResponse resp;
+  DefaultReactorTestPeer peer(&ctx);
 
-  auto* test_reactor = ctx.EnableTestDefaultReactor();
   auto* reactor = service_.Echo(&ctx, &req, &resp);
-  EXPECT_EQ(test_reactor, reactor);
-  EXPECT_TRUE(ctx.test_status_set());
-  EXPECT_EQ(ctx.test_status().error_code(), StatusCode::INVALID_ARGUMENT);
+  EXPECT_EQ(reactor, peer.reactor());
+  EXPECT_TRUE(peer.test_status_set());
+  EXPECT_EQ(peer.test_status().error_code(), StatusCode::INVALID_ARGUMENT);
 }
 
 class TestServiceImpl : public EchoTestService::Service {

@@ -106,6 +106,7 @@ class Call;
 namespace testing {
 class InteropServerContextInspector;
 class ServerContextTestSpouse;
+class DefaultReactorTestPeer;
 }  // namespace testing
 
 }  // namespace grpc
@@ -298,20 +299,6 @@ class ServerContextBase {
     return reactor;
   }
 
-  /// APIs for use only in unit tests of a service. Will prevent RPCs from
-  /// having normal functionality. Will not work for non-callback methods,
-  /// streaming methods, or unary methods that use anything other than the
-  /// default reactor (which can be checked by comparing the pointer result
-  /// from EnableTestDefaultReactor with the reactor result of the RPC method).
-  ::grpc_impl::experimental::ServerUnaryReactor* EnableTestDefaultReactor() {
-    test_unary_.reset(new TestServerCallbackUnary(this));
-    return &default_reactor_;
-  }
-  bool test_status_set() const {
-    return (test_unary_ != nullptr) && test_unary_->status_set();
-  }
-  ::grpc::Status test_status() const { return test_unary_->status(); }
-
   /// Constructors for use by derived classes
   ServerContextBase();
   ServerContextBase(gpr_timespec deadline, grpc_metadata_array* arr);
@@ -319,6 +306,7 @@ class ServerContextBase {
  private:
   friend class ::grpc::testing::InteropServerContextInspector;
   friend class ::grpc::testing::ServerContextTestSpouse;
+  friend class ::grpc::testing::DefaultReactorTestPeer;
   friend class ::grpc::ServerInterface;
   friend class ::grpc_impl::Server;
   template <class W, class R>
@@ -434,6 +422,14 @@ class ServerContextBase {
     bool InternalInlineable() override { return true; }
   };
 
+  void SetupTestDefaultReactor() {
+    test_unary_.reset(new TestServerCallbackUnary(this));
+  }
+  bool test_status_set() const {
+    return (test_unary_ != nullptr) && test_unary_->status_set();
+  }
+  ::grpc::Status test_status() const { return test_unary_->status(); }
+
   class TestServerCallbackUnary
       : public ::grpc_impl::experimental::ServerCallbackUnary {
    public:
@@ -443,7 +439,7 @@ class ServerContextBase {
     }
     void Finish(::grpc::Status s) override {
       status_ = s;
-      status_set_ = true;
+      status_set_.store(true, std::memory_order_release);
     }
     void SendInitialMetadata() override {}
 
@@ -519,10 +515,7 @@ class ServerContext : public experimental::ServerContextBase {
 
   // CallbackServerContext only
   using experimental::ServerContextBase::DefaultReactor;
-  using experimental::ServerContextBase::EnableTestDefaultReactor;
   using experimental::ServerContextBase::GetRpcAllocatorState;
-  using experimental::ServerContextBase::test_status;
-  using experimental::ServerContextBase::test_status_set;
 
   /// Prevent copying.
   ServerContext(const ServerContext&) = delete;
@@ -557,10 +550,7 @@ class CallbackServerContext : public ServerContextBase {
 
   // CallbackServerContext only
   using ServerContextBase::DefaultReactor;
-  using ServerContextBase::EnableTestDefaultReactor;
   using ServerContextBase::GetRpcAllocatorState;
-  using ServerContextBase::test_status;
-  using ServerContextBase::test_status_set;
 
  private:
   // Sync/CQ-based Async ServerContext only

@@ -2240,6 +2240,7 @@ grpc_cc_library(
         "include/grpc++/test/server_context_test_spouse.h",
         "include/grpcpp/test/mock_stream.h",
         "include/grpcpp/test/server_context_test_spouse.h",
+        "include/grpcpp/test/default_reactor_test_peer.h",
     ],
     deps = [
         ":grpc++",
