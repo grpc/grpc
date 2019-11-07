@@ -22,7 +22,15 @@
 #include <grpcpp/impl/codegen/server_context_impl.h>
 
 namespace grpc {
+
 typedef ::grpc_impl::ServerContext ServerContext;
+
+namespace experimental {
+
+typedef ::grpc_impl::experimental::ServerContextBase ServerContextBase;
+typedef ::grpc_impl::experimental::CallbackServerContext CallbackServerContext;
+
+}  // namespace experimental
 }  // namespace grpc
 
 #endif  // GRPCPP_IMPL_CODEGEN_SERVER_CONTEXT_H

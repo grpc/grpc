@@ -543,8 +543,9 @@ class Server::CallbackRequestBase : public grpc::internal::CompletionQueueTag {
 template <class ServerContextType>
 class Server::CallbackRequest final : public Server::CallbackRequestBase {
  public:
-  static_assert(std::is_base_of<grpc::ServerContext, ServerContextType>::value,
-                "ServerContextType must be derived from ServerContext");
+  static_assert(std::is_base_of<grpc::experimental::CallbackServerContext,
+                                ServerContextType>::value,
+                "ServerContextType must be derived from CallbackServerContext");
 
   // The constructor needs to know the server for this callback request and its
   // index in the server's request count array to allow for proper dynamic
@@ -798,14 +799,14 @@ class Server::CallbackRequest final : public Server::CallbackRequestBase {
 };
 
 template <>
-bool Server::CallbackRequest<grpc::ServerContext>::FinalizeResult(
-    void** /*tag*/, bool* /*status*/) {
+bool Server::CallbackRequest<grpc::experimental::CallbackServerContext>::
+    FinalizeResult(void** /*tag*/, bool* /*status*/) {
   return false;
 }
 
 template <>
-bool Server::CallbackRequest<grpc::GenericServerContext>::FinalizeResult(
-    void** /*tag*/, bool* status) {
+bool Server::CallbackRequest<grpc::experimental::GenericCallbackServerContext>::
+    FinalizeResult(void** /*tag*/, bool* status) {
   if (*status) {
     // TODO(yangg) remove the copy here
     ctx_.method_ = grpc::StringFromCopiedSlice(call_details_->method);
@@ -817,13 +818,14 @@ bool Server::CallbackRequest<grpc::GenericServerContext>::FinalizeResult(
 }
 
 template <>
-const char* Server::CallbackRequest<grpc::ServerContext>::method_name() const {
+const char* Server::CallbackRequest<
+    grpc::experimental::CallbackServerContext>::method_name() const {
   return method_->name();
 }
 
 template <>
-const char* Server::CallbackRequest<grpc::GenericServerContext>::method_name()
-    const {
+const char* Server::CallbackRequest<
+    grpc::experimental::GenericCallbackServerContext>::method_name() const {
   return ctx_.method().c_str();
 }
 
@@ -1128,7 +1130,7 @@ bool Server::RegisterService(const grpc::string* host, grpc::Service* service) {
       // TODO(vjpai): Register these dynamically based on need
       for (int i = 0; i < DEFAULT_CALLBACK_REQS_PER_METHOD; i++) {
         callback_reqs_to_start_.push_back(
-            new CallbackRequest<grpc::ServerContext>(
+            new CallbackRequest<grpc::experimental::CallbackServerContext>(
                 this, method_index, method.get(), method_registration_tag));
       }
       // Enqueue it so that it will be Request'ed later after all request
@@ -1171,8 +1173,8 @@ void Server::RegisterCallbackGenericService(
   // TODO(vjpai): Register these dynamically based on need
   for (int i = 0; i < DEFAULT_CALLBACK_REQS_PER_METHOD; i++) {
     callback_reqs_to_start_.push_back(
-        new CallbackRequest<grpc::GenericServerContext>(this, method_index,
-                                                        nullptr, nullptr));
+        new CallbackRequest<grpc::experimental::GenericCallbackServerContext>(
+            this, method_index, nullptr, nullptr));
   }
 }
 

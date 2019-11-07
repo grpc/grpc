@@ -90,25 +90,24 @@ class CallbackTestServiceImpl
   explicit CallbackTestServiceImpl(const grpc::string& host)
       : signal_client_(false), host_(new grpc::string(host)) {}
 
-  void Echo(ServerContext* context, const EchoRequest* request,
-            EchoResponse* response,
-            experimental::ServerUnaryReactor** reactor) override;
+  experimental::ServerUnaryReactor* Echo(
+      experimental::CallbackServerContext* context, const EchoRequest* request,
+      EchoResponse* response) override;
 
-  void CheckClientInitialMetadata(
-      ServerContext* context, const SimpleRequest*, SimpleResponse*,
-      experimental::ServerUnaryReactor** reactor) override;
+  experimental::ServerUnaryReactor* CheckClientInitialMetadata(
+      experimental::CallbackServerContext* context, const SimpleRequest*,
+      SimpleResponse*) override;
 
-  void RequestStream(
-      ServerContext* context, EchoResponse* response,
-      experimental::ServerReadReactor<EchoRequest>** reactor) override;
+  experimental::ServerReadReactor<EchoRequest>* RequestStream(
+      experimental::CallbackServerContext* context,
+      EchoResponse* response) override;
 
-  void ResponseStream(
-      ServerContext* context, const EchoRequest* request,
-      experimental::ServerWriteReactor<EchoResponse>** reactor) override;
+  experimental::ServerWriteReactor<EchoResponse>* ResponseStream(
+      experimental::CallbackServerContext* context,
+      const EchoRequest* request) override;
 
-  void BidiStream(ServerContext* context,
-                  experimental::ServerBidiReactor<EchoRequest, EchoResponse>**
-                      reactor) override;
+  experimental::ServerBidiReactor<EchoRequest, EchoResponse>* BidiStream(
+      experimental::CallbackServerContext* context) override;
 
   // Unimplemented is left unimplemented to test the returned error.
   bool signal_client() {

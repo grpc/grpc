@@ -94,6 +94,26 @@ namespace experimental {
 /// ByteBuffer arguments.
 using ServerGenericBidiReactor = ServerBidiReactor<ByteBuffer, ByteBuffer>;
 
+class GenericCallbackServerContext final
+    : public ::grpc_impl::experimental::CallbackServerContext {
+ public:
+  const grpc::string& method() const { return method_; }
+  const grpc::string& host() const { return host_; }
+
+ private:
+  friend class ::grpc_impl::Server;
+  friend class ServerInterface;
+
+  void Clear() {
+    method_.clear();
+    host_.clear();
+    ::grpc_impl::experimental::CallbackServerContext::Clear();
+  }
+
+  grpc::string method_;
+  grpc::string host_;
+};
+
 /// \a CallbackGenericService is the base class for generic services implemented
 /// using the callback API and registered through the ServerBuilder using
 /// RegisterCallbackGenericService.
@@ -105,14 +125,14 @@ class CallbackGenericService {
   /// The "method handler" for the generic API. This function should be
   /// overridden to provide a ServerGenericBidiReactor that implements the
   /// application-level interface for this RPC. Unimplemented by default.
-  virtual void CreateReactor(GenericServerContext* /*ctx*/,
-                             ServerGenericBidiReactor** reactor) {
+  virtual ServerGenericBidiReactor* CreateReactor(
+      GenericCallbackServerContext* /*ctx*/) {
     class Reactor : public ServerGenericBidiReactor {
      public:
       Reactor() { this->Finish(Status(StatusCode::UNIMPLEMENTED, "")); }
       void OnDone() override { delete this; }
     };
-    *reactor = new Reactor;
+    return new Reactor;
   }
 
  private:
@@ -122,9 +142,8 @@ class CallbackGenericService {
   Handler() {
     return new ::grpc_impl::internal::CallbackBidiHandler<ByteBuffer,
                                                           ByteBuffer>(
-        [this](::grpc_impl::ServerContext* ctx,
-               ServerGenericBidiReactor** reactor) {
-          CreateReactor(static_cast<GenericServerContext*>(ctx), reactor);
+        [this](::grpc_impl::experimental::CallbackServerContext* ctx) {
+          return CreateReactor(static_cast<GenericCallbackServerContext*>(ctx));
         });
   }
 

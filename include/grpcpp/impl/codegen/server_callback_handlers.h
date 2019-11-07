@@ -31,8 +31,9 @@ template <class RequestType, class ResponseType>
 class CallbackUnaryHandler : public ::grpc::internal::MethodHandler {
  public:
   explicit CallbackUnaryHandler(
-      std::function<void(::grpc_impl::ServerContext*, const RequestType*,
-                         ResponseType*, experimental::ServerUnaryReactor**)>
+      std::function<experimental::ServerUnaryReactor*(
+          ::grpc_impl::experimental::CallbackServerContext*, const RequestType*,
+          ResponseType*)>
           get_reactor)
       : get_reactor_(std::move(get_reactor)) {}
 
@@ -51,17 +52,21 @@ class CallbackUnaryHandler : public ::grpc::internal::MethodHandler {
 
     auto* call = new (::grpc::g_core_codegen_interface->grpc_call_arena_alloc(
         param.call->call(), sizeof(ServerCallbackUnaryImpl)))
-        ServerCallbackUnaryImpl(param.server_context, param.call,
-                                allocator_state,
-                                std::move(param.call_requester));
+        ServerCallbackUnaryImpl(
+            static_cast<::grpc_impl::experimental::CallbackServerContext*>(
+                param.server_context),
+            param.call, allocator_state, std::move(param.call_requester));
     param.server_context->BeginCompletionOp(
         param.call, [call](bool) { call->MaybeDone(); }, call);
 
     experimental::ServerUnaryReactor* reactor = nullptr;
     if (param.status.ok()) {
-      ::grpc::internal::CatchingReactorGetter(
-          &reactor, get_reactor_, param.server_context, call->request(),
-          call->response());
+      reactor = ::grpc::internal::CatchingReactorGetter<
+          experimental::ServerUnaryReactor>(
+          get_reactor_,
+          static_cast<::grpc_impl::experimental::CallbackServerContext*>(
+              param.server_context),
+          call->request(), call->response());
     }
 
     if (reactor == nullptr) {
@@ -105,8 +110,9 @@ class CallbackUnaryHandler : public ::grpc::internal::MethodHandler {
   }
 
  private:
-  std::function<void(::grpc_impl::ServerContext*, const RequestType*,
-                     ResponseType*, experimental::ServerUnaryReactor**)>
+  std::function<experimental::ServerUnaryReactor*(
+      ::grpc_impl::experimental::CallbackServerContext*, const RequestType*,
+      ResponseType*)>
       get_reactor_;
   ::grpc::experimental::MessageAllocator<RequestType, ResponseType>*
       allocator_ = nullptr;
@@ -162,7 +168,8 @@ class CallbackUnaryHandler : public ::grpc::internal::MethodHandler {
     friend class CallbackUnaryHandler<RequestType, ResponseType>;
 
     ServerCallbackUnaryImpl(
-        ::grpc_impl::ServerContext* ctx, ::grpc::internal::Call* call,
+        ::grpc_impl::experimental::CallbackServerContext* ctx,
+        ::grpc::internal::Call* call,
         ::grpc::experimental::MessageHolder<RequestType, ResponseType>*
             allocator_state,
         std::function<void()> call_requester)
@@ -212,7 +219,7 @@ class CallbackUnaryHandler : public ::grpc::internal::MethodHandler {
         finish_ops_;
     ::grpc::internal::CallbackWithSuccessTag finish_tag_;
 
-    ::grpc_impl::ServerContext* ctx_;
+    ::grpc_impl::experimental::CallbackServerContext* const ctx_;
     ::grpc::internal::Call call_;
     ::grpc::experimental::MessageHolder<RequestType, ResponseType>* const
         allocator_state_;
@@ -227,8 +234,8 @@ template <class RequestType, class ResponseType>
 class CallbackClientStreamingHandler : public ::grpc::internal::MethodHandler {
  public:
   explicit CallbackClientStreamingHandler(
-      std::function<void(::grpc_impl::ServerContext*, ResponseType*,
-                         experimental::ServerReadReactor<RequestType>**)>
+      std::function<experimental::ServerReadReactor<RequestType>*(
+          ::grpc_impl::experimental::CallbackServerContext*, ResponseType*)>
           get_reactor)
       : get_reactor_(std::move(get_reactor)) {}
   void RunHandler(const HandlerParameter& param) final {
@@ -237,15 +244,21 @@ class CallbackClientStreamingHandler : public ::grpc::internal::MethodHandler {
 
     auto* reader = new (::grpc::g_core_codegen_interface->grpc_call_arena_alloc(
         param.call->call(), sizeof(ServerCallbackReaderImpl)))
-        ServerCallbackReaderImpl(param.server_context, param.call,
-                                 std::move(param.call_requester));
+        ServerCallbackReaderImpl(
+            static_cast<::grpc_impl::experimental::CallbackServerContext*>(
+                param.server_context),
+            param.call, std::move(param.call_requester));
     param.server_context->BeginCompletionOp(
         param.call, [reader](bool) { reader->MaybeDone(); }, reader);
 
     experimental::ServerReadReactor<RequestType>* reactor = nullptr;
     if (param.status.ok()) {
-      ::grpc::internal::CatchingReactorGetter(
-          &reactor, get_reactor_, param.server_context, reader->response());
+      reactor = ::grpc::internal::CatchingReactorGetter<
+          experimental::ServerReadReactor<RequestType>>(
+          get_reactor_,
+          static_cast<::grpc_impl::experimental::CallbackServerContext*>(
+              param.server_context),
+          reader->response());
     }
 
     if (reactor == nullptr) {
@@ -260,8 +273,8 @@ class CallbackClientStreamingHandler : public ::grpc::internal::MethodHandler {
   }
 
  private:
-  std::function<void(::grpc_impl::ServerContext*, ResponseType*,
-                     experimental::ServerReadReactor<RequestType>**)>
+  std::function<experimental::ServerReadReactor<RequestType>*(
+      ::grpc_impl::experimental::CallbackServerContext*, ResponseType*)>
       get_reactor_;
 
   class ServerCallbackReaderImpl
@@ -318,9 +331,9 @@ class CallbackClientStreamingHandler : public ::grpc::internal::MethodHandler {
    private:
     friend class CallbackClientStreamingHandler<RequestType, ResponseType>;
 
-    ServerCallbackReaderImpl(::grpc_impl::ServerContext* ctx,
-                             ::grpc::internal::Call* call,
-                             std::function<void()> call_requester)
+    ServerCallbackReaderImpl(
+        ::grpc_impl::experimental::CallbackServerContext* ctx,
+        ::grpc::internal::Call* call, std::function<void()> call_requester)
         : ctx_(ctx), call_(*call), call_requester_(std::move(call_requester)) {}
 
     void SetupReactor(experimental::ServerReadReactor<RequestType>* reactor) {
@@ -369,7 +382,7 @@ class CallbackClientStreamingHandler : public ::grpc::internal::MethodHandler {
         read_ops_;
     ::grpc::internal::CallbackWithSuccessTag read_tag_;
 
-    ::grpc_impl::ServerContext* ctx_;
+    ::grpc_impl::experimental::CallbackServerContext* const ctx_;
     ::grpc::internal::Call call_;
     ResponseType resp_;
     std::function<void()> call_requester_;
@@ -383,8 +396,9 @@ template <class RequestType, class ResponseType>
 class CallbackServerStreamingHandler : public ::grpc::internal::MethodHandler {
  public:
   explicit CallbackServerStreamingHandler(
-      std::function<void(::grpc_impl::ServerContext*, const RequestType*,
-                         experimental::ServerWriteReactor<ResponseType>**)>
+      std::function<experimental::ServerWriteReactor<ResponseType>*(
+          ::grpc_impl::experimental::CallbackServerContext*,
+          const RequestType*)>
           get_reactor)
       : get_reactor_(std::move(get_reactor)) {}
   void RunHandler(const HandlerParameter& param) final {
@@ -393,16 +407,22 @@ class CallbackServerStreamingHandler : public ::grpc::internal::MethodHandler {
 
     auto* writer = new (::grpc::g_core_codegen_interface->grpc_call_arena_alloc(
         param.call->call(), sizeof(ServerCallbackWriterImpl)))
-        ServerCallbackWriterImpl(param.server_context, param.call,
-                                 static_cast<RequestType*>(param.request),
-                                 std::move(param.call_requester));
+        ServerCallbackWriterImpl(
+            static_cast<::grpc_impl::experimental::CallbackServerContext*>(
+                param.server_context),
+            param.call, static_cast<RequestType*>(param.request),
+            std::move(param.call_requester));
     param.server_context->BeginCompletionOp(
         param.call, [writer](bool) { writer->MaybeDone(); }, writer);
 
     experimental::ServerWriteReactor<ResponseType>* reactor = nullptr;
     if (param.status.ok()) {
-      ::grpc::internal::CatchingReactorGetter(
-          &reactor, get_reactor_, param.server_context, writer->request());
+      reactor = ::grpc::internal::CatchingReactorGetter<
+          experimental::ServerWriteReactor<ResponseType>>(
+          get_reactor_,
+          static_cast<::grpc_impl::experimental::CallbackServerContext*>(
+              param.server_context),
+          writer->request());
     }
     if (reactor == nullptr) {
       // if deserialization or reactor creator failed, we need to fail the call
@@ -433,8 +453,8 @@ class CallbackServerStreamingHandler : public ::grpc::internal::MethodHandler {
   }
 
  private:
-  std::function<void(::grpc_impl::ServerContext*, const RequestType*,
-                     experimental::ServerWriteReactor<ResponseType>**)>
+  std::function<experimental::ServerWriteReactor<ResponseType>*(
+      ::grpc_impl::experimental::CallbackServerContext*, const RequestType*)>
       get_reactor_;
 
   class ServerCallbackWriterImpl
@@ -510,10 +530,10 @@ class CallbackServerStreamingHandler : public ::grpc::internal::MethodHandler {
    private:
     friend class CallbackServerStreamingHandler<RequestType, ResponseType>;
 
-    ServerCallbackWriterImpl(::grpc_impl::ServerContext* ctx,
-                             ::grpc::internal::Call* call,
-                             const RequestType* req,
-                             std::function<void()> call_requester)
+    ServerCallbackWriterImpl(
+        ::grpc_impl::experimental::CallbackServerContext* ctx,
+        ::grpc::internal::Call* call, const RequestType* req,
+        std::function<void()> call_requester)
         : ctx_(ctx),
           call_(*call),
           req_(req),
@@ -565,7 +585,7 @@ class CallbackServerStreamingHandler : public ::grpc::internal::MethodHandler {
         write_ops_;
     ::grpc::internal::CallbackWithSuccessTag write_tag_;
 
-    ::grpc_impl::ServerContext* ctx_;
+    ::grpc_impl::experimental::CallbackServerContext* const ctx_;
     ::grpc::internal::Call call_;
     const RequestType* req_;
     std::function<void()> call_requester_;
@@ -579,9 +599,8 @@ template <class RequestType, class ResponseType>
 class CallbackBidiHandler : public ::grpc::internal::MethodHandler {
  public:
   explicit CallbackBidiHandler(
-      std::function<
-          void(::grpc_impl::ServerContext*,
-               experimental::ServerBidiReactor<RequestType, ResponseType>**)>
+      std::function<experimental::ServerBidiReactor<RequestType, ResponseType>*(
+          ::grpc_impl::experimental::CallbackServerContext*)>
           get_reactor)
       : get_reactor_(std::move(get_reactor)) {}
   void RunHandler(const HandlerParameter& param) final {
@@ -589,16 +608,21 @@ class CallbackBidiHandler : public ::grpc::internal::MethodHandler {
 
     auto* stream = new (::grpc::g_core_codegen_interface->grpc_call_arena_alloc(
         param.call->call(), sizeof(ServerCallbackReaderWriterImpl)))
-        ServerCallbackReaderWriterImpl(param.server_context, param.call,
-                                       std::move(param.call_requester));
+        ServerCallbackReaderWriterImpl(
+            static_cast<::grpc_impl::experimental::CallbackServerContext*>(
+                param.server_context),
+            param.call, std::move(param.call_requester));
     param.server_context->BeginCompletionOp(
         param.call, [stream](bool) { stream->MaybeDone(); }, stream);
 
     experimental::ServerBidiReactor<RequestType, ResponseType>* reactor =
         nullptr;
     if (param.status.ok()) {
-      ::grpc::internal::CatchingReactorGetter(&reactor, get_reactor_,
-                                              param.server_context);
+      reactor = ::grpc::internal::CatchingReactorGetter<
+          experimental::ServerBidiReactor<RequestType, ResponseType>>(
+          get_reactor_,
+          static_cast<::grpc_impl::experimental::CallbackServerContext*>(
+              param.server_context));
     }
 
     if (reactor == nullptr) {
@@ -614,9 +638,8 @@ class CallbackBidiHandler : public ::grpc::internal::MethodHandler {
   }
 
  private:
-  std::function<void(
-      ::grpc_impl::ServerContext*,
-      experimental::ServerBidiReactor<RequestType, ResponseType>**)>
+  std::function<experimental::ServerBidiReactor<RequestType, ResponseType>*(
+      ::grpc_impl::experimental::CallbackServerContext*)>
       get_reactor_;
 
   class ServerCallbackReaderWriterImpl
@@ -698,9 +721,9 @@ class CallbackBidiHandler : public ::grpc::internal::MethodHandler {
    private:
     friend class CallbackBidiHandler<RequestType, ResponseType>;
 
-    ServerCallbackReaderWriterImpl(::grpc_impl::ServerContext* ctx,
-                                   ::grpc::internal::Call* call,
-                                   std::function<void()> call_requester)
+    ServerCallbackReaderWriterImpl(
+        ::grpc_impl::experimental::CallbackServerContext* ctx,
+        ::grpc::internal::Call* call, std::function<void()> call_requester)
         : ctx_(ctx), call_(*call), call_requester_(std::move(call_requester)) {}
 
     void SetupReactor(
@@ -758,7 +781,7 @@ class CallbackBidiHandler : public ::grpc::internal::MethodHandler {
         read_ops_;
     ::grpc::internal::CallbackWithSuccessTag read_tag_;
 
-    ::grpc_impl::ServerContext* ctx_;
+    ::grpc_impl::experimental::CallbackServerContext* const ctx_;
     ::grpc::internal::Call call_;
     std::function<void()> call_requester_;
     std::atomic<experimental::ServerBidiReactor<RequestType, ResponseType>*>

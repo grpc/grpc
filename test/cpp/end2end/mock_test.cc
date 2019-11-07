@@ -164,19 +164,19 @@ class FakeClient {
 class CallbackTestServiceImpl
     : public EchoTestService::ExperimentalCallbackService {
  public:
-  void Echo(ServerContext* context, const EchoRequest* request,
-            EchoResponse* response,
-            experimental::ServerUnaryReactor** reactor) override {
+  experimental::ServerUnaryReactor* Echo(
+      experimental::CallbackServerContext* context, const EchoRequest* request,
+      EchoResponse* response) override {
     // Make the mock service return a choice of Status even though the
     // real one doesn't, so that we can test the status options.
-    *reactor = context->DefaultReactor();
+    auto* reactor = context->DefaultReactor();
     if (request->message().length() > 0) {
       response->set_message(request->message());
-      (*reactor)->Finish(Status::OK);
+      reactor->Finish(Status::OK);
     } else {
-      (*reactor)->Finish(
-          Status(StatusCode::INVALID_ARGUMENT, "Invalid request"));
+      reactor->Finish(Status(StatusCode::INVALID_ARGUMENT, "Invalid request"));
     }
+    return reactor;
   }
 };
 
@@ -188,27 +188,25 @@ class MockCallbackTest : public ::testing::Test {
 };
 
 TEST_F(MockCallbackTest, MockedCallSucceeds) {
-  ServerContext ctx;
+  experimental::CallbackServerContext ctx;
   EchoRequest req;
   EchoResponse resp;
-  experimental::ServerUnaryReactor* reactor;
 
   req.set_message("ha ha, consider yourself mocked.");
   auto* test_reactor = ctx.EnableTestDefaultReactor();
-  service_.Echo(&ctx, &req, &resp, &reactor);
+  auto* reactor = service_.Echo(&ctx, &req, &resp);
   EXPECT_EQ(test_reactor, reactor);
   EXPECT_TRUE(ctx.test_status_set());
   EXPECT_TRUE(ctx.test_status().ok());
 }
 
 TEST_F(MockCallbackTest, MockedCallFails) {
-  ServerContext ctx;
+  experimental::CallbackServerContext ctx;
   EchoRequest req;
   EchoResponse resp;
-  experimental::ServerUnaryReactor* reactor;
 
   auto* test_reactor = ctx.EnableTestDefaultReactor();
-  service_.Echo(&ctx, &req, &resp, &reactor);
+  auto* reactor = service_.Echo(&ctx, &req, &resp);
   EXPECT_EQ(test_reactor, reactor);
   EXPECT_TRUE(ctx.test_status_set());
   EXPECT_EQ(ctx.test_status().error_code(), StatusCode::INVALID_ARGUMENT);

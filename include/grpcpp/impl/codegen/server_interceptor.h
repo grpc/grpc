@@ -27,8 +27,10 @@
 #include <grpcpp/impl/codegen/string_ref.h>
 
 namespace grpc_impl {
-class ServerContext;
+namespace experimental {
+class ServerContextBase;
 }
+}  // namespace grpc_impl
 
 namespace grpc {
 
@@ -80,7 +82,7 @@ class ServerRpcInfo {
 
   /// Return a pointer to the underlying ServerContext structure associated
   /// with the RPC to support features that apply to it
-  grpc_impl::ServerContext* server_context() { return ctx_; }
+  grpc_impl::experimental::ServerContextBase* server_context() { return ctx_; }
 
  private:
   static_assert(Type::UNARY ==
@@ -96,8 +98,8 @@ class ServerRpcInfo {
                     static_cast<Type>(internal::RpcMethod::BIDI_STREAMING),
                 "violated expectation about Type enum");
 
-  ServerRpcInfo(grpc_impl::ServerContext* ctx, const char* method,
-                internal::RpcMethod::RpcType type)
+  ServerRpcInfo(grpc_impl::experimental::ServerContextBase* ctx,
+                const char* method, internal::RpcMethod::RpcType type)
       : ctx_(ctx), method_(method), type_(static_cast<Type>(type)) {}
 
   // Runs interceptor at pos \a pos.
@@ -127,14 +129,14 @@ class ServerRpcInfo {
     }
   }
 
-  grpc_impl::ServerContext* ctx_ = nullptr;
+  grpc_impl::experimental::ServerContextBase* ctx_ = nullptr;
   const char* method_ = nullptr;
   const Type type_;
   std::atomic<intptr_t> ref_{1};
   std::vector<std::unique_ptr<experimental::Interceptor>> interceptors_;
 
   friend class internal::InterceptorBatchMethodsImpl;
-  friend class grpc_impl::ServerContext;
+  friend class grpc_impl::experimental::ServerContextBase;
 };
 
 }  // namespace experimental

@@ -95,6 +95,10 @@ namespace grpc {
 class GenericServerContext;
 class ServerInterface;
 
+namespace experimental {
+class GenericCallbackServerContext;
+}  // namespace experimental
+
 namespace internal {
 class Call;
 }  // namespace internal
@@ -103,28 +107,16 @@ namespace testing {
 class InteropServerContextInspector;
 class ServerContextTestSpouse;
 }  // namespace testing
+
 }  // namespace grpc
 
 namespace grpc_impl {
-/// A ServerContext allows the person implementing a service handler to:
-///
-/// - Add custom initial and trailing metadata key-value pairs that will
-///   propagated to the client side.
-/// - Control call settings such as compression and authentication.
-/// - Access metadata coming from the client.
-/// - Get performance metrics (ie, census).
-///
-/// Context settings are only relevant to the call handler they are supplied to,
-/// that is to say, they aren't sticky across multiple calls. Some of these
-/// settings, such as the compression options, can be made persistent at server
-/// construction time by specifying the appropriate \a ChannelArguments
-/// to a \a grpc::ServerBuilder, via \a ServerBuilder::AddChannelArgument.
-///
-/// \warning ServerContext instances should \em not be reused across rpcs.
-class ServerContext {
+namespace experimental {
+
+/// Base class of ServerContext. Experimental until callback API is final.
+class ServerContextBase {
  public:
-  ServerContext();  // for async calls
-  ~ServerContext();
+  virtual ~ServerContextBase();
 
   /// Return the deadline for the server call.
   std::chrono::system_clock::time_point deadline() const {
@@ -265,6 +257,11 @@ class ServerContext {
   /// Get the census context associated with this server call.
   const struct census_context* census_context() const;
 
+  /// Should be used for framework-level extensions only.
+  /// Applications never need to call this method.
+  grpc_call* c_call() { return call_; }
+
+ protected:
   /// Async only. Has to be called before the rpc starts.
   /// Returns the tag in completion queue when the rpc finishes.
   /// IsCancelled() can then be called to check whether the rpc was cancelled.
@@ -274,10 +271,6 @@ class ServerContext {
     has_notify_when_done_tag_ = true;
     async_notify_when_done_tag_ = tag;
   }
-
-  /// Should be used for framework-level extensions only.
-  /// Applications never need to call this method.
-  grpc_call* c_call() { return call_; }
 
   /// NOTE: This is an API for advanced users who need custom allocators.
   /// Get and maybe mutate the allocator state associated with the current RPC.
@@ -299,7 +292,7 @@ class ServerContext {
   /// from the method handler.
   ///
   /// WARNING: This is experimental API and could be changed or removed.
-  experimental::ServerUnaryReactor* DefaultReactor() {
+  ::grpc_impl::experimental::ServerUnaryReactor* DefaultReactor() {
     auto reactor = &default_reactor_;
     default_reactor_used_.store(true, std::memory_order_relaxed);
     return reactor;
@@ -310,7 +303,7 @@ class ServerContext {
   /// streaming methods, or unary methods that use anything other than the
   /// default reactor (which can be checked by comparing the pointer result
   /// from EnableTestDefaultReactor with the reactor result of the RPC method).
-  experimental::ServerUnaryReactor* EnableTestDefaultReactor() {
+  ::grpc_impl::experimental::ServerUnaryReactor* EnableTestDefaultReactor() {
     test_unary_.reset(new TestServerCallbackUnary(this));
     return &default_reactor_;
   }
@@ -318,6 +311,10 @@ class ServerContext {
     return (test_unary_ != nullptr) && test_unary_->status_set();
   }
   ::grpc::Status test_status() const { return test_unary_->status(); }
+
+  /// Constructors for use by derived classes
+  ServerContextBase();
+  ServerContextBase(gpr_timespec deadline, grpc_metadata_array* arr);
 
  private:
   friend class ::grpc::testing::InteropServerContextInspector;
@@ -360,10 +357,11 @@ class ServerContext {
   friend class ::grpc_impl::internal::FinishOnlyReactor;
   friend class ::grpc_impl::ClientContext;
   friend class ::grpc::GenericServerContext;
+  friend class ::grpc::experimental::GenericCallbackServerContext;
 
   /// Prevent copying.
-  ServerContext(const ServerContext&);
-  ServerContext& operator=(const ServerContext&);
+  ServerContextBase(const ServerContextBase&);
+  ServerContextBase& operator=(const ServerContextBase&);
 
   class CompletionOp;
 
@@ -372,8 +370,6 @@ class ServerContext {
       ::grpc_impl::internal::ServerCallbackCall* callback_controller);
   /// Return the tag queued by BeginCompletionOp()
   ::grpc::internal::CompletionQueueTag* GetCompletionOpTag();
-
-  ServerContext(gpr_timespec deadline, grpc_metadata_array* arr);
 
   void set_call(grpc_call* call) { call_ = call; }
 
@@ -438,9 +434,10 @@ class ServerContext {
     bool InternalInlineable() override { return true; }
   };
 
-  class TestServerCallbackUnary : public experimental::ServerCallbackUnary {
+  class TestServerCallbackUnary
+      : public ::grpc_impl::experimental::ServerCallbackUnary {
    public:
-    explicit TestServerCallbackUnary(ServerContext* ctx)
+    explicit TestServerCallbackUnary(ServerContextBase* ctx)
         : reactor_(&ctx->default_reactor_) {
       this->BindReactor(reactor_);
     }
@@ -457,9 +454,11 @@ class ServerContext {
 
    private:
     void MaybeDone() override {}
-    internal::ServerReactor* reactor() override { return reactor_; }
+    ::grpc_impl::internal::ServerReactor* reactor() override {
+      return reactor_;
+    }
 
-    experimental::ServerUnaryReactor* const reactor_;
+    ::grpc_impl::experimental::ServerUnaryReactor* const reactor_;
     std::atomic_bool status_set_{false};
     ::grpc::Status status_;
   };
@@ -468,5 +467,125 @@ class ServerContext {
   std::atomic_bool default_reactor_used_{false};
   std::unique_ptr<TestServerCallbackUnary> test_unary_;
 };
+
+}  // namespace experimental
+
+/// A ServerContext or CallbackServerContext allows the code implementing a
+/// service handler to:
+///
+/// - Add custom initial and trailing metadata key-value pairs that will
+///   propagated to the client side.
+/// - Control call settings such as compression and authentication.
+/// - Access metadata coming from the client.
+/// - Get performance metrics (ie, census).
+///
+/// Context settings are only relevant to the call handler they are supplied to,
+/// that is to say, they aren't sticky across multiple calls. Some of these
+/// settings, such as the compression options, can be made persistent at server
+/// construction time by specifying the appropriate \a ChannelArguments
+/// to a \a grpc::ServerBuilder, via \a ServerBuilder::AddChannelArgument.
+///
+/// \warning ServerContext instances should \em not be reused across rpcs.
+class ServerContext : public experimental::ServerContextBase {
+ public:
+  ServerContext() {}  // for async calls
+
+  using experimental::ServerContextBase::AddInitialMetadata;
+  using experimental::ServerContextBase::AddTrailingMetadata;
+  using experimental::ServerContextBase::IsCancelled;
+  using experimental::ServerContextBase::SetLoadReportingCosts;
+  using experimental::ServerContextBase::TryCancel;
+  using experimental::ServerContextBase::auth_context;
+  using experimental::ServerContextBase::c_call;
+  using experimental::ServerContextBase::census_context;
+  using experimental::ServerContextBase::client_metadata;
+  using experimental::ServerContextBase::compression_algorithm;
+  using experimental::ServerContextBase::compression_level;
+  using experimental::ServerContextBase::compression_level_set;
+  using experimental::ServerContextBase::deadline;
+  using experimental::ServerContextBase::peer;
+  using experimental::ServerContextBase::raw_deadline;
+  using experimental::ServerContextBase::set_compression_algorithm;
+  using experimental::ServerContextBase::set_compression_level;
+
+  // Sync/CQ-based Async ServerContext only
+  using experimental::ServerContextBase::AsyncNotifyWhenDone;
+
+ private:
+  // Constructor for internal use by server only
+  friend class ::grpc_impl::Server;
+  ServerContext(gpr_timespec deadline, grpc_metadata_array* arr)
+      : experimental::ServerContextBase(deadline, arr) {}
+
+  // CallbackServerContext only
+  using experimental::ServerContextBase::DefaultReactor;
+  using experimental::ServerContextBase::EnableTestDefaultReactor;
+  using experimental::ServerContextBase::GetRpcAllocatorState;
+  using experimental::ServerContextBase::test_status;
+  using experimental::ServerContextBase::test_status_set;
+
+  /// Prevent copying.
+  ServerContext(const ServerContext&) = delete;
+  ServerContext& operator=(const ServerContext&) = delete;
+};
+
+namespace experimental {
+
+class CallbackServerContext : public ServerContextBase {
+ public:
+  /// Public constructors are for direct use only by mocking tests. In practice,
+  /// these objects will be owned by the library.
+  CallbackServerContext() {}
+
+  using ServerContextBase::AddInitialMetadata;
+  using ServerContextBase::AddTrailingMetadata;
+  using ServerContextBase::IsCancelled;
+  using ServerContextBase::SetLoadReportingCosts;
+  using ServerContextBase::TryCancel;
+  using ServerContextBase::auth_context;
+  using ServerContextBase::c_call;
+  using ServerContextBase::census_context;
+  using ServerContextBase::client_metadata;
+  using ServerContextBase::compression_algorithm;
+  using ServerContextBase::compression_level;
+  using ServerContextBase::compression_level_set;
+  using ServerContextBase::deadline;
+  using ServerContextBase::peer;
+  using ServerContextBase::raw_deadline;
+  using ServerContextBase::set_compression_algorithm;
+  using ServerContextBase::set_compression_level;
+
+  // CallbackServerContext only
+  using ServerContextBase::DefaultReactor;
+  using ServerContextBase::EnableTestDefaultReactor;
+  using ServerContextBase::GetRpcAllocatorState;
+  using ServerContextBase::test_status;
+  using ServerContextBase::test_status_set;
+
+ private:
+  // Sync/CQ-based Async ServerContext only
+  using ServerContextBase::AsyncNotifyWhenDone;
+
+  /// Prevent copying.
+  CallbackServerContext(const CallbackServerContext&) = delete;
+  CallbackServerContext& operator=(const CallbackServerContext&) = delete;
+};
+
+}  // namespace experimental
 }  // namespace grpc_impl
+
+static_assert(std::is_base_of<::grpc_impl::experimental::ServerContextBase,
+                              ::grpc_impl::ServerContext>::value,
+              "improper base class");
+static_assert(
+    std::is_base_of<::grpc_impl::experimental::ServerContextBase,
+                    ::grpc_impl::experimental::CallbackServerContext>::value,
+    "improper base class");
+static_assert(sizeof(::grpc_impl::experimental::ServerContextBase) ==
+                  sizeof(::grpc_impl::ServerContext),
+              "wrong size");
+static_assert(sizeof(::grpc_impl::experimental::ServerContextBase) ==
+                  sizeof(::grpc_impl::experimental::CallbackServerContext),
+              "wrong size");
+
 #endif  // GRPCPP_IMPL_CODEGEN_SERVER_CONTEXT_IMPL_H

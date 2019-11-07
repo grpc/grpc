@@ -809,9 +809,8 @@ TEST_P(HybridEnd2endTest, CallbackGenericEcho) {
   EchoTestService::WithGenericMethod_Echo<TestServiceImpl> service;
   class GenericEchoService : public experimental::CallbackGenericService {
    private:
-    void CreateReactor(
-        GenericServerContext* context,
-        experimental::ServerGenericBidiReactor** reactor) override {
+    experimental::ServerGenericBidiReactor* CreateReactor(
+        experimental::GenericCallbackServerContext* context) override {
       EXPECT_EQ(context->method(), "/grpc.testing.EchoTestService/Echo");
 
       class Reactor : public experimental::ServerGenericBidiReactor {
@@ -838,7 +837,7 @@ TEST_P(HybridEnd2endTest, CallbackGenericEcho) {
         ByteBuffer response_;
         std::atomic_int reads_complete_{0};
       };
-      *reactor = new Reactor;
+      return new Reactor;
     }
   } generic_service;
 

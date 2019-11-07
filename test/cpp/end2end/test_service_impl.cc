@@ -37,8 +37,8 @@ namespace {
 
 // When echo_deadline is requested, deadline seen in the ServerContext is set in
 // the response in seconds.
-void MaybeEchoDeadline(ServerContext* context, const EchoRequest* request,
-                       EchoResponse* response) {
+void MaybeEchoDeadline(experimental::ServerContextBase* context,
+                       const EchoRequest* request, EchoResponse* response) {
   if (request->has_param() && request->param().echo_deadline()) {
     gpr_timespec deadline = gpr_inf_future(GPR_CLOCK_REALTIME);
     if (context->deadline() != system_clock::time_point::max()) {
@@ -49,7 +49,7 @@ void MaybeEchoDeadline(ServerContext* context, const EchoRequest* request,
 }
 
 void CheckServerAuthContext(
-    const ServerContext* context,
+    const experimental::ServerContextBase* context,
     const grpc::string& expected_transport_security_type,
     const grpc::string& expected_client_identity) {
   std::shared_ptr<const AuthContext> auth_ctx = context->auth_context();
@@ -117,7 +117,7 @@ void ServerTryCancel(ServerContext* context) {
   }
 }
 
-void ServerTryCancelNonblocking(ServerContext* context) {
+void ServerTryCancelNonblocking(experimental::CallbackServerContext* context) {
   EXPECT_FALSE(context->IsCancelled());
   context->TryCancel();
   gpr_log(GPR_INFO, "Server called TryCancel() to cancel the request");
@@ -405,13 +405,13 @@ Status TestServiceImpl::BidiStream(
   return Status::OK;
 }
 
-void CallbackTestServiceImpl::Echo(ServerContext* context,
-                                   const EchoRequest* request,
-                                   EchoResponse* response,
-                                   experimental::ServerUnaryReactor** reactor) {
+experimental::ServerUnaryReactor* CallbackTestServiceImpl::Echo(
+    experimental::CallbackServerContext* context, const EchoRequest* request,
+    EchoResponse* response) {
   class Reactor : public ::grpc::experimental::ServerUnaryReactor {
    public:
-    Reactor(CallbackTestServiceImpl* service, ServerContext* ctx,
+    Reactor(CallbackTestServiceImpl* service,
+            experimental::CallbackServerContext* ctx,
             const EchoRequest* request, EchoResponse* response)
         : service_(service), ctx_(ctx), req_(request), resp_(response) {
       // It should be safe to call IsCancelled here, even though we don't know
@@ -567,7 +567,7 @@ void CallbackTestServiceImpl::Echo(ServerContext* context,
     }
 
     CallbackTestServiceImpl* const service_;
-    ServerContext* const ctx_;
+    experimental::CallbackServerContext* const ctx_;
     const EchoRequest* const req_;
     EchoResponse* const resp_;
     Alarm alarm_;
@@ -577,15 +577,16 @@ void CallbackTestServiceImpl::Echo(ServerContext* context,
     std::thread async_cancel_check_;
   };
 
-  *reactor = new Reactor(this, context, request, response);
+  return new Reactor(this, context, request, response);
 }
 
-void CallbackTestServiceImpl::CheckClientInitialMetadata(
-    ServerContext* context, const SimpleRequest*, SimpleResponse*,
-    experimental::ServerUnaryReactor** reactor) {
+experimental::ServerUnaryReactor*
+CallbackTestServiceImpl::CheckClientInitialMetadata(
+    experimental::CallbackServerContext* context, const SimpleRequest*,
+    SimpleResponse*) {
   class Reactor : public ::grpc::experimental::ServerUnaryReactor {
    public:
-    explicit Reactor(ServerContext* ctx) {
+    explicit Reactor(experimental::CallbackServerContext* ctx) {
       EXPECT_EQ(MetadataMatchCount(ctx->client_metadata(),
                                    kCheckClientInitialMetadataKey,
                                    kCheckClientInitialMetadataVal),
@@ -597,12 +598,12 @@ void CallbackTestServiceImpl::CheckClientInitialMetadata(
     void OnDone() override { delete this; }
   };
 
-  *reactor = new Reactor(context);
+  return new Reactor(context);
 }
 
-void CallbackTestServiceImpl::RequestStream(
-    ServerContext* context, EchoResponse* response,
-    experimental::ServerReadReactor<EchoRequest>** reactor) {
+experimental::ServerReadReactor<EchoRequest>*
+CallbackTestServiceImpl::RequestStream(
+    experimental::CallbackServerContext* context, EchoResponse* response) {
   // If 'server_try_cancel' is set in the metadata, the RPC is cancelled by
   // the server by calling ServerContext::TryCancel() depending on the
   // value:
@@ -616,12 +617,13 @@ void CallbackTestServiceImpl::RequestStream(
   if (server_try_cancel == CANCEL_BEFORE_PROCESSING) {
     ServerTryCancelNonblocking(context);
     // Don't need to provide a reactor since the RPC is canceled
-    return;
+    return nullptr;
   }
 
   class Reactor : public ::grpc::experimental::ServerReadReactor<EchoRequest> {
    public:
-    Reactor(ServerContext* ctx, EchoResponse* response, int server_try_cancel)
+    Reactor(experimental::CallbackServerContext* ctx, EchoResponse* response,
+            int server_try_cancel)
         : ctx_(ctx),
           response_(response),
           server_try_cancel_(server_try_cancel) {
@@ -670,7 +672,7 @@ void CallbackTestServiceImpl::RequestStream(
       }
     }
 
-    ServerContext* const ctx_;
+    experimental::CallbackServerContext* const ctx_;
     EchoResponse* const response_;
     EchoRequest request_;
     int num_msgs_read_{0};
@@ -680,14 +682,14 @@ void CallbackTestServiceImpl::RequestStream(
     bool setup_done_{false};
   };
 
-  *reactor = new Reactor(context, response, server_try_cancel);
+  return new Reactor(context, response, server_try_cancel);
 }
 
 // Return 'kNumResponseStreamMsgs' messages.
 // TODO(yangg) make it generic by adding a parameter into EchoRequest
-void CallbackTestServiceImpl::ResponseStream(
-    ServerContext* context, const EchoRequest* request,
-    experimental::ServerWriteReactor<EchoResponse>** reactor) {
+experimental::ServerWriteReactor<EchoResponse>*
+CallbackTestServiceImpl::ResponseStream(
+    experimental::CallbackServerContext* context, const EchoRequest* request) {
   // If 'server_try_cancel' is set in the metadata, the RPC is cancelled by
   // the server by calling ServerContext::TryCancel() depending on the
   // value:
@@ -705,8 +707,8 @@ void CallbackTestServiceImpl::ResponseStream(
   class Reactor
       : public ::grpc::experimental::ServerWriteReactor<EchoResponse> {
    public:
-    Reactor(ServerContext* ctx, const EchoRequest* request,
-            int server_try_cancel)
+    Reactor(experimental::CallbackServerContext* ctx,
+            const EchoRequest* request, int server_try_cancel)
         : ctx_(ctx), request_(request), server_try_cancel_(server_try_cancel) {
       server_coalescing_api_ = GetIntValueFromMetadata(
           kServerUseCoalescingApi, ctx->client_metadata(), 0);
@@ -766,7 +768,7 @@ void CallbackTestServiceImpl::ResponseStream(
         StartWrite(&response_);
       }
     }
-    ServerContext* const ctx_;
+    experimental::CallbackServerContext* const ctx_;
     const EchoRequest* const request_;
     EchoResponse response_;
     int num_msgs_sent_{0};
@@ -777,16 +779,16 @@ void CallbackTestServiceImpl::ResponseStream(
     bool finished_{false};
     bool setup_done_{false};
   };
-  *reactor = new Reactor(context, request, server_try_cancel);
+  return new Reactor(context, request, server_try_cancel);
 }
 
-void CallbackTestServiceImpl::BidiStream(
-    ServerContext* context,
-    experimental::ServerBidiReactor<EchoRequest, EchoResponse>** reactor) {
+experimental::ServerBidiReactor<EchoRequest, EchoResponse>*
+CallbackTestServiceImpl::BidiStream(
+    experimental::CallbackServerContext* context) {
   class Reactor : public ::grpc::experimental::ServerBidiReactor<EchoRequest,
                                                                  EchoResponse> {
    public:
-    explicit Reactor(ServerContext* ctx) : ctx_(ctx) {
+    explicit Reactor(experimental::CallbackServerContext* ctx) : ctx_(ctx) {
       // If 'server_try_cancel' is set in the metadata, the RPC is cancelled by
       // the server by calling ServerContext::TryCancel() depending on the
       // value:
@@ -853,7 +855,7 @@ void CallbackTestServiceImpl::BidiStream(
       }
     }
 
-    ServerContext* const ctx_;
+    experimental::CallbackServerContext* const ctx_;
     EchoRequest request_;
     EchoResponse response_;
     int num_msgs_read_{0};
@@ -864,7 +866,7 @@ void CallbackTestServiceImpl::BidiStream(
     bool setup_done_{false};
   };
 
-  *reactor = new Reactor(context);
+  return new Reactor(context);
 }
 
 }  // namespace testing
