@@ -153,11 +153,9 @@ static void maybe_complete_tsi_next(
     if (client->pending_recv_message_result == nullptr) {
       return;
     }
-    bool have_final_result = false;
-    if (client->pending_recv_message_result->result != nullptr ||
-        client->pending_recv_message_result->status != TSI_OK) {
-      have_final_result = true;
-    }
+    bool have_final_result =
+        client->pending_recv_message_result->result != nullptr ||
+        client->pending_recv_message_result->status != TSI_OK;
     if (have_final_result && !client->receive_status_finished) {
       return;
     }
@@ -189,11 +187,11 @@ static void on_status_received(void* arg, grpc_error* error) {
   alts_grpc_handshaker_client_unref(client);
 }
 
-static void handle_response_done_locked(alts_grpc_handshaker_client* client,
-                                        tsi_result status,
-                                        const unsigned char* bytes_to_send,
-                                        size_t bytes_to_send_size,
-                                        tsi_handshaker_result* result) {
+static void handle_response_done(alts_grpc_handshaker_client* client,
+                                 tsi_result status,
+                                 const unsigned char* bytes_to_send,
+                                 size_t bytes_to_send_size,
+                                 tsi_handshaker_result* result) {
   recv_message_result* p =
       static_cast<recv_message_result*>(gpr_zalloc(sizeof(*p)));
   p->status = status;
@@ -221,29 +219,25 @@ void alts_handshaker_client_handle_response(alts_handshaker_client* c,
   if (handshaker == nullptr) {
     gpr_log(GPR_ERROR,
             "handshaker is nullptr in alts_tsi_handshaker_handle_response()");
-    handle_response_done_locked(client, TSI_INTERNAL_ERROR, nullptr, 0,
-                                nullptr);
+    handle_response_done(client, TSI_INTERNAL_ERROR, nullptr, 0, nullptr);
     return;
   }
   /* TSI handshake has been shutdown. */
   if (alts_tsi_handshaker_has_shutdown(handshaker)) {
     gpr_log(GPR_ERROR, "TSI handshake shutdown");
-    handle_response_done_locked(client, TSI_HANDSHAKE_SHUTDOWN, nullptr, 0,
-                                nullptr);
+    handle_response_done(client, TSI_HANDSHAKE_SHUTDOWN, nullptr, 0, nullptr);
     return;
   }
   /* Failed grpc call check. */
   if (!is_ok || status != GRPC_STATUS_OK) {
     gpr_log(GPR_ERROR, "grpc call made to handshaker service failed");
-    handle_response_done_locked(client, TSI_INTERNAL_ERROR, nullptr, 0,
-                                nullptr);
+    handle_response_done(client, TSI_INTERNAL_ERROR, nullptr, 0, nullptr);
     return;
   }
   if (recv_buffer == nullptr) {
     gpr_log(GPR_ERROR,
             "recv_buffer is nullptr in alts_tsi_handshaker_handle_response()");
-    handle_response_done_locked(client, TSI_INTERNAL_ERROR, nullptr, 0,
-                                nullptr);
+    handle_response_done(client, TSI_INTERNAL_ERROR, nullptr, 0, nullptr);
     return;
   }
   upb::Arena arena;
@@ -254,16 +248,14 @@ void alts_handshaker_client_handle_response(alts_handshaker_client* c,
   /* Invalid handshaker response check. */
   if (resp == nullptr) {
     gpr_log(GPR_ERROR, "alts_tsi_utils_deserialize_response() failed");
-    handle_response_done_locked(client, TSI_DATA_CORRUPTED, nullptr, 0,
-                                nullptr);
+    handle_response_done(client, TSI_DATA_CORRUPTED, nullptr, 0, nullptr);
     return;
   }
   const grpc_gcp_HandshakerStatus* resp_status =
       grpc_gcp_HandshakerResp_status(resp);
   if (resp_status == nullptr) {
     gpr_log(GPR_ERROR, "No status in HandshakerResp");
-    handle_response_done_locked(client, TSI_DATA_CORRUPTED, nullptr, 0,
-                                nullptr);
+    handle_response_done(client, TSI_DATA_CORRUPTED, nullptr, 0, nullptr);
     return;
   }
   upb_strview out_frames = grpc_gcp_HandshakerResp_out_frames(resp);
@@ -297,9 +289,8 @@ void alts_handshaker_client_handle_response(alts_handshaker_client* c,
       gpr_free(error_details);
     }
   }
-  handle_response_done_locked(client,
-                              alts_tsi_utils_convert_to_tsi_result(code),
-                              bytes_to_send, bytes_to_send_size, result);
+  handle_response_done(client, alts_tsi_utils_convert_to_tsi_result(code),
+                       bytes_to_send, bytes_to_send_size, result);
 }
 
 /**

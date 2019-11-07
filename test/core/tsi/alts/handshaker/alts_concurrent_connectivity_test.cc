@@ -83,21 +83,16 @@ grpc_channel* create_secure_channel_for_test(
   grpc_alts_credentials_options_destroy(alts_options);
   // The main goal of these tests are to stress concurrent ALTS handshakes,
   // so we prevent subchnannel sharing.
-  grpc_arg disable_subchannel_sharing_arg = grpc_channel_arg_integer_create(
-      const_cast<char*>(GRPC_ARG_USE_LOCAL_SUBCHANNEL_POOL), true);
-  grpc_channel_args* channel_args = grpc_channel_args_copy_and_add(
-      nullptr, &disable_subchannel_sharing_arg, 1);
+  std::vector<grpc_arg> new_args;
+  new_args.push_back(grpc_channel_arg_integer_create(
+      const_cast<char*>(GRPC_ARG_USE_LOCAL_SUBCHANNEL_POOL), true));
   if (reconnect_backoff_ms != 0) {
-    gpr_log(GPR_DEBUG, "create_secure_channel_for_test reconnect_backoff_ms:%d",
-            reconnect_backoff_ms);
-    grpc_arg new_arg = grpc_channel_arg_integer_create(
+    new_args.push_back(grpc_channel_arg_integer_create(
         const_cast<char*>("grpc.testing.fixed_reconnect_backoff_ms"),
-        reconnect_backoff_ms);
-    grpc_channel_args* new_channel_args =
-        grpc_channel_args_copy_and_add(channel_args, &new_arg, 1);
-    grpc_channel_args_destroy(channel_args);
-    channel_args = new_channel_args;
+        reconnect_backoff_ms));
   }
+  grpc_channel_args* channel_args =
+      grpc_channel_args_copy_and_add(nullptr, new_args.data(), new_args.size());
   grpc_channel* channel = grpc_secure_channel_create(channel_creds, server_addr,
                                                      channel_args, nullptr);
   grpc_channel_args_destroy(channel_args);
