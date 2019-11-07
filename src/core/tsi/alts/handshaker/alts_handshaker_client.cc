@@ -134,6 +134,7 @@ static void alts_grpc_handshaker_client_unref(
     grpc_alts_credentials_options_destroy(client->options);
     gpr_free(client->buffer);
     grpc_slice_unref_internal(client->handshake_status_details);
+    gpr_mu_destroy(&client->mu);
     gpr_free(client);
   }
 }
@@ -552,7 +553,6 @@ static void handshaker_client_destruct(alts_handshaker_client* c) {
   }
   alts_grpc_handshaker_client* client =
       reinterpret_cast<alts_grpc_handshaker_client*>(c);
-  gpr_mu_destroy(&client->mu);
   if (client->call != nullptr) {
     // Throw this grpc_call_unref over to the ExecCtx so that
     // we invoke it at the bottom of the call stack and
