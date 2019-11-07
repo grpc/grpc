@@ -41,8 +41,8 @@ struct grpc_end2end_proxy {
     memset(&new_call_metadata, 0, sizeof(new_call_metadata));
   }
   grpc_core::Thread thd;
-  grpc_core::UniquePtr<char> proxy_port;
-  grpc_core::UniquePtr<char> server_port;
+  std::unique_ptr<char> proxy_port;
+  std::unique_ptr<char> server_port;
   grpc_completion_queue* cq;
   grpc_server* server;
   grpc_channel* client;
@@ -89,7 +89,7 @@ grpc_end2end_proxy* grpc_end2end_proxy_create(const grpc_end2end_proxy_def* def,
   int proxy_port = grpc_pick_unused_port_or_die();
   int server_port = grpc_pick_unused_port_or_die();
 
-  grpc_end2end_proxy* proxy = grpc_core::New<grpc_end2end_proxy>();
+  grpc_end2end_proxy* proxy = new grpc_end2end_proxy();
 
   grpc_core::JoinHostPort(&proxy->proxy_port, "localhost", proxy_port);
   grpc_core::JoinHostPort(&proxy->server_port, "localhost", server_port);
@@ -134,7 +134,7 @@ void grpc_end2end_proxy_destroy(grpc_end2end_proxy* proxy) {
   grpc_channel_destroy(proxy->client);
   grpc_completion_queue_destroy(proxy->cq);
   grpc_call_details_destroy(&proxy->new_call_details);
-  grpc_core::Delete(proxy);
+  delete proxy;
 }
 
 static void unrefpc(proxy_call* pc, const char* /*reason*/) {

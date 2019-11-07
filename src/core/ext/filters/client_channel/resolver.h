@@ -127,7 +127,7 @@ class Resolver : public InternallyRefCounted<Resolver> {
   // API should change to take a RefCountedPtr<>, so that we always take
   // ownership of a new ref.
   explicit Resolver(Combiner* combiner,
-                    UniquePtr<ResultHandler> result_handler);
+                    std::unique_ptr<ResultHandler> result_handler);
 
   /// Shuts down the resolver.
   virtual void ShutdownLocked() = 0;
@@ -137,7 +137,7 @@ class Resolver : public InternallyRefCounted<Resolver> {
   ResultHandler* result_handler() const { return result_handler_.get(); }
 
  private:
-  UniquePtr<ResultHandler> result_handler_;
+  std::unique_ptr<ResultHandler> result_handler_;
   Combiner* combiner_;
 };
 

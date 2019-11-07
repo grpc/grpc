@@ -42,8 +42,8 @@ static grpc_core::Combiner* g_combiner;
 static grpc_ares_request* (*g_default_dns_lookup_ares_locked)(
     const char* dns_server, const char* name, const char* default_port,
     grpc_pollset_set* interested_parties, grpc_closure* on_done,
-    grpc_core::UniquePtr<grpc_core::ServerAddressList>* addresses,
-    bool check_grpclb, char** service_config_json, int query_timeout_ms,
+    std::unique_ptr<grpc_core::ServerAddressList>* addresses, bool check_grpclb,
+    char** service_config_json, int query_timeout_ms,
     grpc_core::Combiner* combiner);
 
 // Counter incremented by test_resolve_address_impl indicating the number of
@@ -93,8 +93,8 @@ static grpc_address_resolver_vtable test_resolver = {
 static grpc_ares_request* test_dns_lookup_ares_locked(
     const char* dns_server, const char* name, const char* default_port,
     grpc_pollset_set* /*interested_parties*/, grpc_closure* on_done,
-    grpc_core::UniquePtr<grpc_core::ServerAddressList>* addresses,
-    bool check_grpclb, char** service_config_json, int query_timeout_ms,
+    std::unique_ptr<grpc_core::ServerAddressList>* addresses, bool check_grpclb,
+    char** service_config_json, int query_timeout_ms,
     grpc_core::Combiner* combiner) {
   grpc_ares_request* result = g_default_dns_lookup_ares_locked(
       dns_server, name, default_port, g_iomgr_args.pollset_set, on_done,
@@ -230,7 +230,7 @@ static void on_fourth_resolution(OnResolutionCallbackArg* cb_arg) {
   GRPC_LOG_IF_ERROR("pollset_kick",
                     grpc_pollset_kick(g_iomgr_args.pollset, nullptr));
   gpr_mu_unlock(g_iomgr_args.mu);
-  grpc_core::Delete(cb_arg);
+  delete cb_arg;
   g_all_callbacks_invoked = true;
 }
 
@@ -274,7 +274,7 @@ static void on_first_resolution(OnResolutionCallbackArg* cb_arg) {
 static void start_test_under_combiner(void* arg, grpc_error* /*error*/) {
   OnResolutionCallbackArg* res_cb_arg =
       static_cast<OnResolutionCallbackArg*>(arg);
-  res_cb_arg->result_handler = grpc_core::New<ResultHandler>();
+  res_cb_arg->result_handler = new ResultHandler();
   grpc_core::ResolverFactory* factory =
       grpc_core::ResolverRegistry::LookupResolverFactory("dns");
   grpc_uri* uri = grpc_uri_parse(res_cb_arg->uri_str, 0);
@@ -284,9 +284,8 @@ static void start_test_under_combiner(void* arg, grpc_error* /*error*/) {
   grpc_core::ResolverArgs args;
   args.uri = uri;
   args.combiner = g_combiner;
-  args.result_handler =
-      grpc_core::UniquePtr<grpc_core::Resolver::ResultHandler>(
-          res_cb_arg->result_handler);
+  args.result_handler = std::unique_ptr<grpc_core::Resolver::ResultHandler>(
+      res_cb_arg->result_handler);
   g_resolution_count = 0;
 
   grpc_arg cooldown_arg = grpc_channel_arg_integer_create(
@@ -305,8 +304,7 @@ static void start_test_under_combiner(void* arg, grpc_error* /*error*/) {
 static void test_cooldown() {
   grpc_core::ExecCtx exec_ctx;
   iomgr_args_init(&g_iomgr_args);
-  OnResolutionCallbackArg* res_cb_arg =
-      grpc_core::New<OnResolutionCallbackArg>();
+  OnResolutionCallbackArg* res_cb_arg = new OnResolutionCallbackArg();
   res_cb_arg->uri_str = "dns:127.0.0.1";
 
   g_combiner->Run(

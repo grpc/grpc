@@ -67,7 +67,7 @@ class DummyEndpoint : public grpc_endpoint {
       return;
     }
     grpc_slice_buffer_add(slices_, slice);
-    GRPC_CLOSURE_SCHED(read_cb_, GRPC_ERROR_NONE);
+    grpc_core::ExecCtx::Run(DEBUG_LOCATION, read_cb_, GRPC_ERROR_NONE);
     read_cb_ = nullptr;
   }
 
@@ -83,7 +83,7 @@ class DummyEndpoint : public grpc_endpoint {
     if (have_slice_) {
       have_slice_ = false;
       grpc_slice_buffer_add(slices, buffered_slice_);
-      GRPC_CLOSURE_SCHED(cb, GRPC_ERROR_NONE);
+      grpc_core::ExecCtx::Run(DEBUG_LOCATION, cb, GRPC_ERROR_NONE);
       return;
     }
     read_cb_ = cb;
@@ -97,7 +97,7 @@ class DummyEndpoint : public grpc_endpoint {
 
   static void write(grpc_endpoint* /*ep*/, grpc_slice_buffer* /*slices*/,
                     grpc_closure* cb, void* /*arg*/) {
-    GRPC_CLOSURE_SCHED(cb, GRPC_ERROR_NONE);
+    grpc_core::ExecCtx::Run(DEBUG_LOCATION, cb, GRPC_ERROR_NONE);
   }
 
   static void add_to_pollset(grpc_endpoint* /*ep*/, grpc_pollset* /*pollset*/) {
@@ -111,7 +111,8 @@ class DummyEndpoint : public grpc_endpoint {
 
   static void shutdown(grpc_endpoint* ep, grpc_error* why) {
     grpc_resource_user_shutdown(static_cast<DummyEndpoint*>(ep)->ru_);
-    GRPC_CLOSURE_SCHED(static_cast<DummyEndpoint*>(ep)->read_cb_, why);
+    grpc_core::ExecCtx::Run(DEBUG_LOCATION,
+                            static_cast<DummyEndpoint*>(ep)->read_cb_, why);
   }
 
   static void destroy(grpc_endpoint* ep) {
@@ -354,7 +355,7 @@ static void BM_StreamCreateSendInitialMetadataDestroy(benchmark::State& state) {
     s->Op(&op);
     s->DestroyThen(start.get());
   });
-  GRPC_CLOSURE_SCHED(start.get(), GRPC_ERROR_NONE);
+  grpc_core::ExecCtx::Run(DEBUG_LOCATION, start.get(), GRPC_ERROR_NONE);
   f.FlushExecCtx();
   gpr_event_wait(&bm_done, gpr_inf_future(GPR_CLOCK_REALTIME));
   grpc_metadata_batch_destroy(&b);
@@ -381,7 +382,7 @@ static void BM_TransportEmptyOp(benchmark::State& state) {
     op.on_complete = c.get();
     s->Op(&op);
   });
-  GRPC_CLOSURE_SCHED(c.get(), GRPC_ERROR_NONE);
+  grpc_core::ExecCtx::Run(DEBUG_LOCATION, c.get(), GRPC_ERROR_NONE);
   f.FlushExecCtx();
   reset_op();
   op.cancel_stream = true;
@@ -613,7 +614,7 @@ static void BM_TransportStreamRecv(benchmark::State& state) {
     do {
       if (received == recv_stream->length()) {
         recv_stream.reset();
-        GRPC_CLOSURE_SCHED(c.get(), GRPC_ERROR_NONE);
+        grpc_core::ExecCtx::Run(DEBUG_LOCATION, c.get(), GRPC_ERROR_NONE);
         return;
       }
     } while (recv_stream->Next(recv_stream->length() - received,

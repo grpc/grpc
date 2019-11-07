@@ -22,9 +22,9 @@
 #include <grpc/support/port_platform.h>
 
 #include <stdint.h>
+#include <set>
 
 #include <grpc/slice_buffer.h>
-#include <src/core/lib/gprpp/set.h>
 
 #include "src/core/ext/filters/client_channel/server_address.h"
 #include "src/core/ext/filters/client_channel/xds/xds_bootstrap.h"
@@ -60,7 +60,7 @@ class XdsPriorityListUpdate {
 
     size_t size() const { return localities.size(); }
 
-    Map<RefCountedPtr<XdsLocalityName>, Locality, XdsLocalityName::Less>
+    std::map<RefCountedPtr<XdsLocalityName>, Locality, XdsLocalityName::Less>
         localities;
   };
 
@@ -102,19 +102,19 @@ class XdsDropConfig : public RefCounted<XdsDropConfig> {
              parts_per_million == other.parts_per_million;
     }
 
-    UniquePtr<char> name;
+    std::unique_ptr<char> name;
     const uint32_t parts_per_million;
   };
 
   using DropCategoryList = InlinedVector<DropCategory, 2>;
 
-  void AddCategory(UniquePtr<char> name, uint32_t parts_per_million) {
+  void AddCategory(std::unique_ptr<char> name, uint32_t parts_per_million) {
     drop_category_list_.emplace_back(
         DropCategory{std::move(name), parts_per_million});
   }
 
   // The only method invoked from the data plane combiner.
-  bool ShouldDrop(const UniquePtr<char>** category_name) const;
+  bool ShouldDrop(const std::unique_ptr<char>** category_name) const;
 
   const DropCategoryList& drop_category_list() const {
     return drop_category_list_;
@@ -137,24 +137,25 @@ struct EdsUpdate {
   bool drop_all = false;
 };
 
-using EdsUpdateMap = Map<UniquePtr<char> /*cluster*/, EdsUpdate, StringLess>;
+using EdsUpdateMap =
+    std::map<std::unique_ptr<char> /*cluster*/, EdsUpdate, StringLess>;
 
 struct CdsUpdate {
   // The name to use in the EDS request.
   // If null, the cluster name will be used.
-  UniquePtr<char> eds_service_name;
+  std::unique_ptr<char> eds_service_name;
   // The LRS server to use for load reporting.
   // If null, load reporting will be disabled.
   // If set to the empty string, will use the same server we obtained
   // the CDS data from.
-  UniquePtr<char> lrs_load_reporting_server_name;
+  std::unique_ptr<char> lrs_load_reporting_server_name;
 
   CdsUpdate() {}
   CdsUpdate(const CdsUpdate& other)
       : eds_service_name(
-            UniquePtr<char>(gpr_strdup(other.eds_service_name.get()))),
+            std::unique_ptr<char>(gpr_strdup(other.eds_service_name.get()))),
         lrs_load_reporting_server_name(
-            UniquePtr<char>(gpr_strdup(other.eds_service_name.get()))) {}
+            std::unique_ptr<char>(gpr_strdup(other.eds_service_name.get()))) {}
 
   CdsUpdate& operator=(CdsUpdate&& other) {
     eds_service_name = std::move(other.eds_service_name);
@@ -163,33 +164,34 @@ struct CdsUpdate {
   }
 };
 
-using CdsUpdateMap = Map<UniquePtr<char> /*cluster*/, CdsUpdate, StringLess>;
+using CdsUpdateMap =
+    std::map<std::unique_ptr<char> /*cluster*/, CdsUpdate, StringLess>;
 
 struct VersionState {
-  UniquePtr<char> version_info;
-  UniquePtr<char> nonce;
+  std::unique_ptr<char> version_info;
+  std::unique_ptr<char> nonce;
 
   VersionState()
-      : version_info(UniquePtr<char>(gpr_strdup(""))),
-        nonce(UniquePtr<char>(gpr_strdup(""))) {}
+      : version_info(std::unique_ptr<char>(gpr_strdup(""))),
+        nonce(std::unique_ptr<char>(gpr_strdup(""))) {}
 };
 
 // Creates a CDS request querying \a cluster_name.
-grpc_slice XdsCdsRequestCreateAndEncode(Set<StringView> cluster_names,
+grpc_slice XdsCdsRequestCreateAndEncode(std::set<StringView> cluster_names,
                                         const XdsBootstrap::Node* node,
                                         const char* build_version,
                                         const VersionState& cds_version);
 
 // Creates an EDS request querying \a service_name.
-grpc_slice XdsEdsRequestCreateAndEncode(Set<StringView> eds_service_names,
+grpc_slice XdsEdsRequestCreateAndEncode(std::set<StringView> eds_service_names,
                                         const VersionState& eds_version);
 
 // Parses the ADS response and outputs update for either CDS or EDS. If there
 // is any error, the output update is invalid.
 grpc_error* XdsAdsResponseDecodeAndParse(
     const grpc_slice& encoded_response,
-    const Set<StringView>& expected_cluster_names,
-    const Set<StringView>& expected_eds_service_names,
+    const std::set<StringView>& expected_cluster_names,
+    const std::set<StringView>& expected_eds_service_names,
     CdsUpdateMap* cds_update_map, EdsUpdateMap* eds_update_map,
     VersionState* new_version, bool* is_cds);
 
@@ -201,14 +203,14 @@ grpc_slice XdsLrsRequestCreateAndEncode(const char* server_name,
 // Creates an LRS request sending client-side load reports. If all the counters
 // in \a client_stats are zero, returns empty slice.
 grpc_slice XdsLrsRequestCreateAndEncode(
-    Map<StringView, Set<XdsClientStats*>> client_stats_map);
+    std::map<StringView, std::set<XdsClientStats*>> client_stats_map);
 
 // Parses the LRS response and returns \a cluster_name and \a
 // load_reporting_interval for client-side load reporting. If there is any
 // error, the output config is invalid.
 grpc_error* XdsLrsResponseDecodeAndParse(
     const grpc_slice& encoded_response,
-    const Set<StringView>& expected_eds_service_names,
+    const std::set<StringView>& expected_eds_service_names,
     grpc_millis* load_reporting_interval);
 
 }  // namespace grpc_core

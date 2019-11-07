@@ -206,10 +206,6 @@ class SubchannelList : public InternallyRefCounted<SubchannelListType> {
   virtual ~SubchannelList();
 
  private:
-  // So New() can call our private ctor.
-  template <typename T, typename... Args>
-  friend T* New(Args&&... args);
-
   // For accessing Ref() and Unref().
   friend class SubchannelData<SubchannelListType, SubchannelDataType>;
 
@@ -317,10 +313,10 @@ void SubchannelData<SubchannelListType,
   }
   GPR_ASSERT(pending_watcher_ == nullptr);
   pending_watcher_ =
-      New<Watcher>(this, subchannel_list()->Ref(DEBUG_LOCATION, "Watcher"));
+      new Watcher(this, subchannel_list()->Ref(DEBUG_LOCATION, "Watcher"));
   subchannel_->WatchConnectivityState(
       connectivity_state_,
-      UniquePtr<SubchannelInterface::ConnectivityStateWatcherInterface>(
+      std::unique_ptr<SubchannelInterface::ConnectivityStateWatcherInterface>(
           pending_watcher_));
 }
 

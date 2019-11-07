@@ -24,7 +24,6 @@
 #include "src/core/lib/security/credentials/credentials.h"
 #include "src/core/lib/security/security_connector/security_connector.h"
 #include "test/core/end2end/data/ssl_test_data.h"
-#include "test/core/util/memory_counters.h"
 #include "test/core/util/mock_endpoint.h"
 
 bool squelch = true;
@@ -53,7 +52,6 @@ static void on_handshake_done(void* arg, grpc_error* error) {
 
 extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
   if (squelch) gpr_set_log_function(dont_log);
-  grpc_core::testing::LeakDetector leak_detector(leak_check);
   grpc_init();
   {
     grpc_core::ExecCtx exec_ctx;

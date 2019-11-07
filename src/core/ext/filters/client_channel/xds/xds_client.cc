@@ -395,16 +395,16 @@ bool XdsClient::ChannelState::HasActiveAdsCall() const {
 
 void XdsClient::ChannelState::MaybeStartAdsCall() {
   if (ads_calld_ != nullptr) return;
-  ads_calld_.reset(New<RetryableCall<AdsCallState>>(
-      Ref(DEBUG_LOCATION, "ChannelState+ads")));
+  ads_calld_.reset(
+      new RetryableCall<AdsCallState>(Ref(DEBUG_LOCATION, "ChannelState+ads")));
 }
 
 void XdsClient::ChannelState::StopAdsCall() { ads_calld_.reset(); }
 
 void XdsClient::ChannelState::MaybeStartLrsCall() {
   if (lrs_calld_ != nullptr) return;
-  lrs_calld_.reset(New<RetryableCall<LrsCallState>>(
-      Ref(DEBUG_LOCATION, "ChannelState+lrs")));
+  lrs_calld_.reset(
+      new RetryableCall<LrsCallState>(Ref(DEBUG_LOCATION, "ChannelState+lrs")));
 }
 
 void XdsClient::ChannelState::StopLrsCall() { lrs_calld_.reset(); }
@@ -413,7 +413,7 @@ void XdsClient::ChannelState::StartConnectivityWatchLocked() {
   grpc_channel_element* client_channel_elem =
       grpc_channel_stack_last_element(grpc_channel_get_channel_stack(channel_));
   GPR_ASSERT(client_channel_elem->filter == &grpc_client_channel_filter);
-  watcher_ = New<StateWatcher>(Ref());
+  watcher_ = new StateWatcher(Ref());
   grpc_client_channel_start_connectivity_watch(
       client_channel_elem, GRPC_CHANNEL_IDLE,
       OrphanablePtr<AsyncConnectivityStateWatcherInterface>(watcher_));
@@ -1340,7 +1340,7 @@ void XdsClient::ChannelState::LrsCallState::OnResponseReceivedLocked(
   // This anonymous lambda is a hack to avoid the usage of goto.
   [&]() {
     // Parse the response.
-    UniquePtr<char> new_cluster_name;
+    std::unique_ptr<char> new_cluster_name;
     grpc_millis new_load_reporting_interval;
     grpc_error* parse_error = XdsLrsResponseDecodeAndParse(
         response_slice, xds_client->EdsServiceNames(),
@@ -1455,24 +1455,24 @@ bool XdsClient::ChannelState::LrsCallState::IsCurrentCallOnChannel() const {
 
 namespace {
 
-UniquePtr<char> GenerateBuildVersionString() {
+std::unique_ptr<char> GenerateBuildVersionString() {
   char* build_version_str;
   gpr_asprintf(&build_version_str, "gRPC C-core %s %s", grpc_version_string(),
                GPR_PLATFORM_STRING);
-  return UniquePtr<char>(build_version_str);
+  return std::unique_ptr<char>(build_version_str);
 }
 
 }  // namespace
 
 XdsClient::XdsClient(Combiner* combiner, grpc_pollset_set* interested_parties,
                      StringView server_name,
-                     UniquePtr<ServiceConfigWatcherInterface> watcher,
+                     std::unique_ptr<ServiceConfigWatcherInterface> watcher,
                      const grpc_channel_args& channel_args, grpc_error** error)
     : build_version_(GenerateBuildVersionString()),
       combiner_(GRPC_COMBINER_REF(combiner, "xds_client")),
       interested_parties_(interested_parties),
       bootstrap_(XdsBootstrap::ReadFromFile(error)),
-      server_name_(server_name.dup()),
+      server_name_(StringViewToCString(server_name)),
       service_config_watcher_(std::move(watcher)) {
   if (*error != GRPC_ERROR_NONE) {
     if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_client_trace)) {

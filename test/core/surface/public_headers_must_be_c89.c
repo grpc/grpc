@@ -282,8 +282,6 @@ int main(int argc, char **argv) {
   printf("%lx", (unsigned long) gpr_realloc);
   printf("%lx", (unsigned long) gpr_malloc_aligned);
   printf("%lx", (unsigned long) gpr_free_aligned);
-  printf("%lx", (unsigned long) gpr_set_allocation_functions);
-  printf("%lx", (unsigned long) gpr_get_allocation_functions);
   printf("%lx", (unsigned long) gpr_cpu_num_cores);
   printf("%lx", (unsigned long) gpr_cpu_current_cpu);
   printf("%lx", (unsigned long) gpr_strdup);

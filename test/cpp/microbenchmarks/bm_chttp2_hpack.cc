@@ -440,7 +440,7 @@ static void BM_HpackParserInitDestroy(benchmark::State& state) {
     grpc_chttp2_hpack_parser_init(&p);
     // Note that grpc_chttp2_hpack_parser_destroy frees the table dynamic
     // elements so we need to recreate it here. In actual operation,
-    // grpc_core::New<grpc_chttp2_hpack_parser_destroy> allocates the table once
+    // new grpc_chttp2_hpack_parser_destroy allocates the table once
     // and for all.
     new (&p.table) grpc_chttp2_hptbl();
     grpc_chttp2_hpack_parser_destroy(&p);

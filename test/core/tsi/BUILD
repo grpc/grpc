@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-load("//bazel:grpc_build_system.bzl", "grpc_cc_library", "grpc_cc_test", "grpc_cc_binary", "grpc_package")
+load("//bazel:grpc_build_system.bzl", "grpc_cc_binary", "grpc_cc_library", "grpc_cc_test", "grpc_package")
 
 licenses(["notice"])  # Apache v2
 
@@ -70,14 +70,15 @@ grpc_cc_test(
         "//src/core/tsi/test_creds:ca.pem",
         "//src/core/tsi/test_creds:client.key",
         "//src/core/tsi/test_creds:client.pem",
+        "//src/core/tsi/test_creds:multi-domain.key",
+        "//src/core/tsi/test_creds:multi-domain.pem",
         "//src/core/tsi/test_creds:server0.key",
         "//src/core/tsi/test_creds:server0.pem",
         "//src/core/tsi/test_creds:server1.key",
         "//src/core/tsi/test_creds:server1.pem",
-        "//src/core/tsi/test_creds:multi-domain.key",
-        "//src/core/tsi/test_creds:multi-domain.pem",
     ],
     language = "C++",
+    tags = ["no_windows"],
     deps = [
         ":transport_security_test_lib",
         "//:gpr",
@@ -85,7 +86,6 @@ grpc_cc_test(
         "//:tsi",
         "//test/core/util:grpc_test_util",
     ],
-    tags = ["no_windows"],
 )
 
 grpc_cc_test(

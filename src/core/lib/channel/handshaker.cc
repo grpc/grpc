@@ -169,7 +169,7 @@ bool HandshakeManager::CallNextHandshakerLocked(grpc_error* error) {
     // Cancel deadline timer, since we're invoking the on_handshake_done
     // callback now.
     grpc_timer_cancel(&deadline_timer_);
-    GRPC_CLOSURE_SCHED(&on_handshake_done_, error);
+    ExecCtx::Run(DEBUG_LOCATION, &on_handshake_done_, error);
     is_shutdown_ = true;
   } else {
     auto handshaker = handshakers_[index_];

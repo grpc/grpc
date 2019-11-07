@@ -80,8 +80,7 @@ grpc_status_code TlsFetchKeyMaterials(
   grpc_status_code status = GRPC_STATUS_OK;
   /* Use credential reload config to fetch credentials. */
   if (options.credential_reload_config() != nullptr) {
-    grpc_tls_credential_reload_arg* arg =
-        grpc_core::New<grpc_tls_credential_reload_arg>();
+    grpc_tls_credential_reload_arg* arg = new grpc_tls_credential_reload_arg();
     arg->key_materials_config = key_materials_config.get();
     int result = options.credential_reload_config()->Schedule(arg);
     if (result) {
@@ -107,7 +106,7 @@ grpc_status_code TlsFetchKeyMaterials(
     if (arg->destroy_context != nullptr) {
       arg->destroy_context(arg->context);
     }
-    grpc_core::Delete(arg);
+    delete arg;
   }
   return status;
 }
@@ -127,7 +126,7 @@ SpiffeChannelSecurityConnector::SpiffeChannelSecurityConnector(
   grpc_core::StringView host;
   grpc_core::StringView port;
   grpc_core::SplitHostPort(target_name, &host, &port);
-  target_name_ = host.dup();
+  target_name_ = grpc_core::StringViewToCString(host);
 }
 
 SpiffeChannelSecurityConnector::~SpiffeChannelSecurityConnector() {
@@ -172,7 +171,7 @@ void SpiffeChannelSecurityConnector::check_peer(
                                 : target_name_.get();
   grpc_error* error = grpc_ssl_check_alpn(&peer);
   if (error != GRPC_ERROR_NONE) {
-    GRPC_CLOSURE_SCHED(on_peer_checked, error);
+    grpc_core::ExecCtx::Run(DEBUG_LOCATION, on_peer_checked, error);
     tsi_peer_destruct(&peer);
     return;
   }
@@ -213,7 +212,7 @@ void SpiffeChannelSecurityConnector::check_peer(
       error = ProcessServerAuthorizationCheckResult(check_arg_);
     }
   }
-  GRPC_CLOSURE_SCHED(on_peer_checked, error);
+  grpc_core::ExecCtx::Run(DEBUG_LOCATION, on_peer_checked, error);
   tsi_peer_destruct(&peer);
 }
 
@@ -301,7 +300,7 @@ SpiffeChannelSecurityConnector::InitializeHandshakerFactory(
   if (key_materials_config != nullptr) {
     grpc_tls_key_materials_config::PemKeyCertPairList cert_pair_list =
         key_materials_config->pem_key_cert_pair_list();
-    auto pem_root_certs = grpc_core::UniquePtr<char>(
+    auto pem_root_certs = std::unique_ptr<char>(
         gpr_strdup(key_materials_config->pem_root_certs()));
     key_materials_config_->set_key_materials(std::move(pem_root_certs),
                                              std::move(cert_pair_list));
@@ -342,7 +341,7 @@ void SpiffeChannelSecurityConnector::ServerAuthorizationCheckDone(
   grpc_error* error = ProcessServerAuthorizationCheckResult(arg);
   SpiffeChannelSecurityConnector* connector =
       static_cast<SpiffeChannelSecurityConnector*>(arg->cb_user_data);
-  GRPC_CLOSURE_SCHED(connector->on_peer_checked_, error);
+  grpc_core::ExecCtx::Run(DEBUG_LOCATION, connector->on_peer_checked_, error);
 }
 
 grpc_error*
@@ -381,7 +380,7 @@ grpc_tls_server_authorization_check_arg*
 SpiffeChannelSecurityConnector::ServerAuthorizationCheckArgCreate(
     void* user_data) {
   grpc_tls_server_authorization_check_arg* arg =
-      grpc_core::New<grpc_tls_server_authorization_check_arg>();
+      new grpc_tls_server_authorization_check_arg();
   arg->cb = ServerAuthorizationCheckDone;
   arg->cb_user_data = user_data;
   arg->status = GRPC_STATUS_OK;
@@ -399,7 +398,7 @@ void SpiffeChannelSecurityConnector::ServerAuthorizationCheckArgDestroy(
   if (arg->destroy_context != nullptr) {
     arg->destroy_context(arg->context);
   }
-  grpc_core::Delete(arg);
+  delete arg;
 }
 
 SpiffeServerSecurityConnector::SpiffeServerSecurityConnector(
@@ -446,7 +445,7 @@ void SpiffeServerSecurityConnector::check_peer(
   *auth_context = grpc_ssl_peer_to_auth_context(
       &peer, GRPC_TLS_SPIFFE_TRANSPORT_SECURITY_TYPE);
   tsi_peer_destruct(&peer);
-  GRPC_CLOSURE_SCHED(on_peer_checked, error);
+  grpc_core::ExecCtx::Run(DEBUG_LOCATION, on_peer_checked, error);
 }
 
 int SpiffeServerSecurityConnector::cmp(
@@ -506,7 +505,7 @@ SpiffeServerSecurityConnector::InitializeHandshakerFactory() {
   if (key_materials_config != nullptr) {
     grpc_tls_key_materials_config::PemKeyCertPairList cert_pair_list =
         key_materials_config->pem_key_cert_pair_list();
-    auto pem_root_certs = grpc_core::UniquePtr<char>(
+    auto pem_root_certs = std::unique_ptr<char>(
         gpr_strdup(key_materials_config->pem_root_certs()));
     key_materials_config_->set_key_materials(std::move(pem_root_certs),
                                              std::move(cert_pair_list));

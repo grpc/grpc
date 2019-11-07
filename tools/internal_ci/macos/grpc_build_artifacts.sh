@@ -22,7 +22,6 @@ source tools/internal_ci/helper_scripts/prepare_build_macos_rc
 
 # install cython for all python versions
 python2.7 -m pip install cython setuptools wheel
-python3.4 -m pip install cython setuptools wheel
 python3.5 -m pip install cython setuptools wheel
 python3.6 -m pip install cython setuptools wheel
 python3.7 -m pip install cython setuptools wheel

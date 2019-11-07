@@ -69,12 +69,17 @@ config_setting(
     values = {"cpu": "darwin"},
 )
 
+config_setting(
+    name = "grpc_use_absl",
+    values = {"define": "GRPC_USE_ABSL=1"},
+)
+
 python_config_settings()
 
 # This should be updated along with build.yaml
 g_stands_for = "gon"
 
-core_version = "7.0.0"
+core_version = "9.0.0"
 
 version = "1.26.0-dev"
 
@@ -318,9 +323,9 @@ grpc_cc_library(
     standalone = True,
     deps = [
         "grpc_common",
+        "grpc_lb_policy_cds",
         "grpc_lb_policy_grpclb",
         "grpc_lb_policy_xds",
-        "grpc_lb_policy_cds",
         "grpc_resolver_xds",
     ],
 )
@@ -336,9 +341,9 @@ grpc_cc_library(
     standalone = True,
     deps = [
         "grpc_common",
+        "grpc_lb_policy_cds_secure",
         "grpc_lb_policy_grpclb_secure",
         "grpc_lb_policy_xds_secure",
-        "grpc_lb_policy_cds_secure",
         "grpc_resolver_xds_secure",
         "grpc_secure",
         "grpc_transport_chttp2_client_secure",
@@ -530,7 +535,6 @@ grpc_cc_library(
         "src/core/lib/gprpp/map.h",
         "src/core/lib/gprpp/memory.h",
         "src/core/lib/gprpp/mpscq.h",
-        "src/core/lib/gprpp/set.h",
         "src/core/lib/gprpp/string_view.h",
         "src/core/lib/gprpp/sync.h",
         "src/core/lib/gprpp/thd.h",

@@ -46,8 +46,8 @@ class XdsLocalityName : public RefCounted<XdsLocalityName> {
     }
   };
 
-  XdsLocalityName(UniquePtr<char> region, UniquePtr<char> zone,
-                  UniquePtr<char> subzone)
+  XdsLocalityName(std::unique_ptr<char> region, std::unique_ptr<char> zone,
+                  std::unique_ptr<char> subzone)
       : region_(std::move(region)),
         zone_(std::move(zone)),
         sub_zone_(std::move(subzone)) {}
@@ -73,10 +73,10 @@ class XdsLocalityName : public RefCounted<XdsLocalityName> {
   }
 
  private:
-  UniquePtr<char> region_;
-  UniquePtr<char> zone_;
-  UniquePtr<char> sub_zone_;
-  UniquePtr<char> human_readable_string_;
+  std::unique_ptr<char> region_;
+  std::unique_ptr<char> zone_;
+  std::unique_ptr<char> sub_zone_;
+  std::unique_ptr<char> human_readable_string_;
 };
 
 // The stats classes (i.e., XdsClientStats, LocalityStats, and LoadMetric) can
@@ -111,9 +111,10 @@ class XdsClientStats {
       double total_metric_value_{0};
     };
 
-    using LoadMetricMap = Map<UniquePtr<char>, LoadMetric, StringLess>;
+    using LoadMetricMap =
+        std::map<std::unique_ptr<char>, LoadMetric, StringLess>;
     using LoadMetricSnapshotMap =
-        Map<UniquePtr<char>, LoadMetric::Snapshot, StringLess>;
+        std::map<std::unique_ptr<char>, LoadMetric::Snapshot, StringLess>;
 
     struct Snapshot {
       // TODO(juanlishen): Change this to const method when const_iterator is
@@ -177,15 +178,16 @@ class XdsClientStats {
 
   // TODO(juanlishen): The value type of Map<> must be movable in current
   // implementation. To avoid making LocalityStats movable, we wrap it by
-  // UniquePtr<>. We should remove this wrapper if the value type of Map<>
+  // std::unique_ptr<>. We should remove this wrapper if the value type of Map<>
   // doesn't have to be movable.
   using LocalityStatsMap =
-      Map<RefCountedPtr<XdsLocalityName>, RefCountedPtr<LocalityStats>,
-          XdsLocalityName::Less>;
+      std::map<RefCountedPtr<XdsLocalityName>, RefCountedPtr<LocalityStats>,
+               XdsLocalityName::Less>;
   using LocalityStatsSnapshotMap =
-      Map<RefCountedPtr<XdsLocalityName>, LocalityStats::Snapshot,
-          XdsLocalityName::Less>;
-  using DroppedRequestsMap = Map<UniquePtr<char>, uint64_t, StringLess>;
+      std::map<RefCountedPtr<XdsLocalityName>, LocalityStats::Snapshot,
+               XdsLocalityName::Less>;
+  using DroppedRequestsMap =
+      std::map<std::unique_ptr<char>, uint64_t, StringLess>;
   using DroppedRequestsSnapshotMap = DroppedRequestsMap;
 
   struct Snapshot {
@@ -208,7 +210,7 @@ class XdsClientStats {
   RefCountedPtr<LocalityStats> FindLocalityStats(
       const RefCountedPtr<XdsLocalityName>& locality_name);
   void PruneLocalityStats();
-  void AddCallDropped(const UniquePtr<char>& category);
+  void AddCallDropped(const std::unique_ptr<char>& category);
 
  private:
   // The stats for each locality.

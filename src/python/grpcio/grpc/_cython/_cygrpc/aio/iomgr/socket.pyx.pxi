@@ -61,6 +61,7 @@ cdef class _AsyncioSocket:
             self._reader, self._writer = future.result()
         except Exception as e:
             error = True
+            error_msg = str(e)
         finally:
             self._task_connect = None
 
@@ -77,7 +78,7 @@ cdef class _AsyncioSocket:
         else:
             self._grpc_connect_cb(
                 <grpc_custom_socket*>self._grpc_socket,
-                grpc_socket_error("connect {}".format(str(e)).encode())
+                grpc_socket_error("connect {}".format(error_msg).encode())
             )
 
     def _read_cb(self, future):
@@ -152,6 +153,13 @@ cdef class _AsyncioSocket:
     cdef void close(self):
         if self.is_connected():
             self._writer.close()
+        if self._server:
+            self._server.close()
+        # NOTE(lidiz) If the asyncio.Server is created from a Python socket,
+        # the server.close() won't release the fd until the close() is called
+        # for the Python socket.
+        if self._py_socket:
+            self._py_socket.close()
 
     def _new_connection_callback(self, object reader, object writer):
         client_socket = _AsyncioSocket.create(

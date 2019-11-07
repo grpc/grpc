@@ -41,7 +41,7 @@ class LoadBalancingPolicyRegistry {
     /// Registers an LB policy factory.  The factory will be used to create an
     /// LB policy whose name matches that of the factory.
     static void RegisterLoadBalancingPolicyFactory(
-        UniquePtr<LoadBalancingPolicyFactory> factory);
+        std::unique_ptr<LoadBalancingPolicyFactory> factory);
   };
 
   /// Creates an LB policy of the type specified by \a name.

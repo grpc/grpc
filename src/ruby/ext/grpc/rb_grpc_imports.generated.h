@@ -695,12 +695,6 @@ extern gpr_malloc_aligned_type gpr_malloc_aligned_import;
 typedef void(*gpr_free_aligned_type)(void* ptr);
 extern gpr_free_aligned_type gpr_free_aligned_import;
 #define gpr_free_aligned gpr_free_aligned_import
-typedef void(*gpr_set_allocation_functions_type)(gpr_allocation_functions functions);
-extern gpr_set_allocation_functions_type gpr_set_allocation_functions_import;
-#define gpr_set_allocation_functions gpr_set_allocation_functions_import
-typedef gpr_allocation_functions(*gpr_get_allocation_functions_type)(void);
-extern gpr_get_allocation_functions_type gpr_get_allocation_functions_import;
-#define gpr_get_allocation_functions gpr_get_allocation_functions_import
 typedef unsigned(*gpr_cpu_num_cores_type)(void);
 extern gpr_cpu_num_cores_type gpr_cpu_num_cores_import;
 #define gpr_cpu_num_cores gpr_cpu_num_cores_import

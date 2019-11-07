@@ -63,7 +63,7 @@ grpc_grpclb_request* grpc_grpclb_load_report_request_create(
   int64_t num_calls_finished;
   int64_t num_calls_finished_with_client_failed_to_send;
   int64_t num_calls_finished_known_received;
-  UniquePtr<GrpcLbClientStats::DroppedCallCounts> drop_token_counts;
+  std::unique_ptr<GrpcLbClientStats::DroppedCallCounts> drop_token_counts;
   client_stats->Get(&num_calls_started, &num_calls_finished,
                     &num_calls_finished_with_client_failed_to_send,
                     &num_calls_finished_known_received, &drop_token_counts);

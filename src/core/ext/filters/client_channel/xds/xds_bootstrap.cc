@@ -29,8 +29,8 @@
 
 namespace grpc_core {
 
-UniquePtr<XdsBootstrap> XdsBootstrap::ReadFromFile(grpc_error** error) {
-  UniquePtr<char> path(gpr_getenv("GRPC_XDS_BOOTSTRAP"));
+std::unique_ptr<XdsBootstrap> XdsBootstrap::ReadFromFile(grpc_error** error) {
+  std::unique_ptr<char> path(gpr_getenv("GRPC_XDS_BOOTSTRAP"));
   if (path == nullptr) {
     *error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
         "GRPC_XDS_BOOTSTRAP env var not set");
@@ -320,7 +320,7 @@ grpc_error* XdsBootstrap::ParseLocality(grpc_json* json) {
 
 InlinedVector<grpc_error*, 1> XdsBootstrap::ParseMetadataStruct(
     grpc_json* json,
-    Map<const char*, XdsBootstrap::MetadataValue, StringLess>* result) {
+    std::map<const char*, XdsBootstrap::MetadataValue, StringLess>* result) {
   InlinedVector<grpc_error*, 1> error_list;
   for (grpc_json* child = json->child; child != nullptr; child = child->next) {
     if (child->key == nullptr) {

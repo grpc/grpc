@@ -131,7 +131,7 @@ static void plugin_md_request_metadata_ready(void* request,
   if (!r->cancelled) {
     grpc_error* error =
         process_plugin_result(r, md, num_md, status, error_details);
-    GRPC_CLOSURE_SCHED(r->on_request_metadata, error);
+    grpc_core::ExecCtx::Run(DEBUG_LOCATION, r->on_request_metadata, error);
   } else if (GRPC_TRACE_FLAG_ENABLED(grpc_plugin_credentials_trace)) {
     gpr_log(GPR_INFO,
             "plugin_credentials[%p]: request %p: plugin was previously "
@@ -228,8 +228,9 @@ void grpc_plugin_credentials::cancel_get_request_metadata(
                 pending_request);
       }
       pending_request->cancelled = true;
-      GRPC_CLOSURE_SCHED(pending_request->on_request_metadata,
-                         GRPC_ERROR_REF(error));
+      grpc_core::ExecCtx::Run(DEBUG_LOCATION,
+                              pending_request->on_request_metadata,
+                              GRPC_ERROR_REF(error));
       pending_request_remove_locked(pending_request);
       break;
     }
@@ -249,5 +250,5 @@ grpc_call_credentials* grpc_metadata_credentials_create_from_plugin(
   GRPC_API_TRACE("grpc_metadata_credentials_create_from_plugin(reserved=%p)", 1,
                  (reserved));
   GPR_ASSERT(reserved == nullptr);
-  return grpc_core::New<grpc_plugin_credentials>(plugin);
+  return new grpc_plugin_credentials(plugin);
 }

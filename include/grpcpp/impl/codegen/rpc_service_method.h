@@ -62,12 +62,12 @@ class MethodHandler {
           internal_data(handler_data),
           call_requester(std::move(requester)) {}
     ~HandlerParameter() {}
-    Call* call;
-    ::grpc_impl::ServerContext* server_context;
-    void* request;
-    Status status;
-    void* internal_data;
-    std::function<void()> call_requester;
+    Call* const call;
+    ::grpc_impl::ServerContext* const server_context;
+    void* const request;
+    const Status status;
+    void* const internal_data;
+    const std::function<void()> call_requester;
   };
   virtual void RunHandler(const HandlerParameter& param) = 0;
 

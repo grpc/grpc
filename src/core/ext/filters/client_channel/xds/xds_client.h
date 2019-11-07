@@ -19,6 +19,8 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <set>
+
 #include "src/core/ext/filters/client_channel/service_config.h"
 #include "src/core/ext/filters/client_channel/xds/xds_api.h"
 #include "src/core/ext/filters/client_channel/xds/xds_bootstrap.h"
@@ -28,7 +30,6 @@
 #include "src/core/lib/gprpp/orphanable.h"
 #include "src/core/lib/gprpp/ref_counted.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
-#include "src/core/lib/gprpp/set.h"
 #include "src/core/lib/gprpp/string_view.h"
 #include "src/core/lib/iomgr/combiner.h"
 
@@ -73,7 +74,7 @@ class XdsClient : public InternallyRefCounted<XdsClient> {
   // an error initializing the client.
   XdsClient(Combiner* combiner, grpc_pollset_set* interested_parties,
             StringView server_name,
-            UniquePtr<ServiceConfigWatcherInterface> watcher,
+            std::unique_ptr<ServiceConfigWatcherInterface> watcher,
             const grpc_channel_args& channel_args, grpc_error** error);
   ~XdsClient();
 
@@ -85,7 +86,7 @@ class XdsClient : public InternallyRefCounted<XdsClient> {
   // cancellation.  (Because the caller does not own the watcher, the
   // pointer must not be used for any other purpose.)
   void WatchClusterData(StringView cluster_name,
-                        UniquePtr<ClusterWatcherInterface> watcher);
+                        std::unique_ptr<ClusterWatcherInterface> watcher);
   void CancelClusterDataWatch(StringView cluster_name,
                               ClusterWatcherInterface* watcher);
 
@@ -95,7 +96,7 @@ class XdsClient : public InternallyRefCounted<XdsClient> {
   // cancellation.  (Because the caller does not own the watcher, the
   // pointer must not be used for any other purpose.)
   void WatchEndpointData(StringView eds_service_name,
-                         UniquePtr<EndpointWatcherInterface> watcher);
+                         std::unique_ptr<EndpointWatcherInterface> watcher);
   void CancelEndpointDataWatch(StringView eds_service_name,
                                EndpointWatcherInterface* watcher);
 
@@ -111,8 +112,8 @@ class XdsClient : public InternallyRefCounted<XdsClient> {
   // Resets connection backoff state.
   void ResetBackoff();
 
-  Set<StringView> ClusterNames() {
-    Set<StringView> cluster_names;
+  std::set<StringView> ClusterNames() {
+    std::set<StringView> cluster_names;
     for (const auto& p : cluster_map_) {
       const StringView& cluster_name = p.first;
       cluster_names.emplace(cluster_name);
@@ -120,8 +121,8 @@ class XdsClient : public InternallyRefCounted<XdsClient> {
     return cluster_names;
   }
 
-  Set<StringView> EdsServiceNames() {
-    Set<StringView> eds_service_names;
+  std::set<StringView> EdsServiceNames() {
+    std::set<StringView> eds_service_names;
     for (const auto& p : endpoint_map_) {
       const StringView& eds_service_name = p.first;
       eds_service_names.emplace(eds_service_name);
@@ -129,8 +130,8 @@ class XdsClient : public InternallyRefCounted<XdsClient> {
     return eds_service_names;
   }
 
-  Map<StringView, Set<XdsClientStats*>> ClientStatsMap() {
-    Map<StringView, Set<XdsClientStats*>> client_stats_map;
+  std::map<StringView, std::set<XdsClientStats*>> ClientStatsMap() {
+    std::map<StringView, std::set<XdsClientStats*>> client_stats_map;
     for (const auto& p : endpoint_map_) {
       const StringView& cluster_name = p.first;
       const auto& client_stats = p.second.client_stats;
@@ -212,7 +213,7 @@ class XdsClient : public InternallyRefCounted<XdsClient> {
   };
 
   struct ClusterState {
-    Map<ClusterWatcherInterface*, UniquePtr<ClusterWatcherInterface>>
+    std::map<ClusterWatcherInterface*, std::unique_ptr<ClusterWatcherInterface>>
         cluster_watchers;
     // The latest data seen from CDS.
     bool seen_cds_update = false;
@@ -220,9 +221,10 @@ class XdsClient : public InternallyRefCounted<XdsClient> {
   };
 
   struct EndpointState {
-    Map<EndpointWatcherInterface*, UniquePtr<EndpointWatcherInterface>>
+    std::map<EndpointWatcherInterface*,
+             std::unique_ptr<EndpointWatcherInterface>>
         endpoint_watchers;
-    Set<XdsClientStats*> client_stats;
+    std::set<XdsClientStats*> client_stats;
     // The latest data seen from EDS.
     bool seen_cds_update = false;
     EdsUpdate eds_update;
@@ -242,15 +244,15 @@ class XdsClient : public InternallyRefCounted<XdsClient> {
 
   static const grpc_arg_pointer_vtable kXdsClientVtable;
 
-  UniquePtr<char> build_version_;
+  std::unique_ptr<char> build_version_;
 
   Combiner* combiner_;
   grpc_pollset_set* interested_parties_;
 
-  UniquePtr<XdsBootstrap> bootstrap_;
+  std::unique_ptr<XdsBootstrap> bootstrap_;
 
-  UniquePtr<char> server_name_;
-  UniquePtr<ServiceConfigWatcherInterface> service_config_watcher_;
+  std::unique_ptr<char> server_name_;
+  std::unique_ptr<ServiceConfigWatcherInterface> service_config_watcher_;
   // TODO(juanlishen): Once we implement LDS support, this will no
   // longer be needed.
   grpc_closure service_config_notify_;
@@ -259,8 +261,8 @@ class XdsClient : public InternallyRefCounted<XdsClient> {
   OrphanablePtr<ChannelState> chand_;
 
   // Clusters keyed by cluster name.
-  Map<StringView, ClusterState, StringLess> cluster_map_;
-  Map<StringView, EndpointState, StringLess> endpoint_map_;
+  std::map<StringView, ClusterState, StringLess> cluster_map_;
+  std::map<StringView, EndpointState, StringLess> endpoint_map_;
   VersionState cds_version_state_;
   VersionState eds_version_state_;
 

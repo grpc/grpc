@@ -66,12 +66,12 @@ class grpc_fake_server_credentials final : public grpc_server_credentials {
 }  // namespace
 
 grpc_channel_credentials* grpc_fake_transport_security_credentials_create() {
-  return grpc_core::New<grpc_fake_channel_credentials>();
+  return new grpc_fake_channel_credentials();
 }
 
 grpc_server_credentials*
 grpc_fake_transport_security_server_credentials_create() {
-  return grpc_core::New<grpc_fake_server_credentials>();
+  return new grpc_fake_server_credentials();
 }
 
 grpc_arg grpc_fake_transport_expected_targets_arg(char* expected_targets) {
@@ -94,7 +94,8 @@ bool grpc_md_only_test_credentials::get_request_metadata(
     grpc_error** /*error*/) {
   grpc_credentials_mdelem_array_add(md_array, md_);
   if (is_async_) {
-    GRPC_CLOSURE_SCHED(on_request_metadata, GRPC_ERROR_NONE);
+    grpc_core::ExecCtx::Run(DEBUG_LOCATION, on_request_metadata,
+                            GRPC_ERROR_NONE);
     return false;
   }
   return true;
@@ -107,6 +108,5 @@ void grpc_md_only_test_credentials::cancel_get_request_metadata(
 
 grpc_call_credentials* grpc_md_only_test_credentials_create(
     const char* md_key, const char* md_value, bool is_async) {
-  return grpc_core::New<grpc_md_only_test_credentials>(md_key, md_value,
-                                                       is_async);
+  return new grpc_md_only_test_credentials(md_key, md_value, is_async);
 }

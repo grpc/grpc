@@ -223,7 +223,7 @@ TEST_F(SpiffeSecurityConnectorTest, WithKeyUnchangedReload) {
 
 TEST_F(SpiffeSecurityConnectorTest, CreateChannelSecurityConnectorSuccess) {
   SetOptions(SUCCESS);
-  auto cred = grpc_core::UniquePtr<grpc_channel_credentials>(
+  auto cred = std::unique_ptr<grpc_channel_credentials>(
       grpc_tls_spiffe_credentials_create(options_.get()));
   const char* target_name = "some_target";
   grpc_channel_args* new_args = nullptr;
@@ -236,7 +236,7 @@ TEST_F(SpiffeSecurityConnectorTest, CreateChannelSecurityConnectorSuccess) {
 TEST_F(SpiffeSecurityConnectorTest,
        CreateChannelSecurityConnectorFailNoTargetName) {
   SetOptions(SUCCESS);
-  auto cred = grpc_core::UniquePtr<grpc_channel_credentials>(
+  auto cred = std::unique_ptr<grpc_channel_credentials>(
       grpc_tls_spiffe_credentials_create(options_.get()));
   grpc_channel_args* new_args = nullptr;
   auto connector =
@@ -246,7 +246,7 @@ TEST_F(SpiffeSecurityConnectorTest,
 
 TEST_F(SpiffeSecurityConnectorTest, CreateChannelSecurityConnectorFailInit) {
   SetOptions(FAIL);
-  auto cred = grpc_core::UniquePtr<grpc_channel_credentials>(
+  auto cred = std::unique_ptr<grpc_channel_credentials>(
       grpc_tls_spiffe_credentials_create(options_.get()));
   grpc_channel_args* new_args = nullptr;
   auto connector =
@@ -256,7 +256,7 @@ TEST_F(SpiffeSecurityConnectorTest, CreateChannelSecurityConnectorFailInit) {
 
 TEST_F(SpiffeSecurityConnectorTest, CreateServerSecurityConnectorSuccess) {
   SetOptions(SUCCESS);
-  auto cred = grpc_core::UniquePtr<grpc_server_credentials>(
+  auto cred = std::unique_ptr<grpc_server_credentials>(
       grpc_tls_spiffe_server_credentials_create(options_.get()));
   auto connector = cred->create_security_connector();
   EXPECT_NE(connector, nullptr);
@@ -264,7 +264,7 @@ TEST_F(SpiffeSecurityConnectorTest, CreateServerSecurityConnectorSuccess) {
 
 TEST_F(SpiffeSecurityConnectorTest, CreateServerSecurityConnectorFailInit) {
   SetOptions(FAIL);
-  auto cred = grpc_core::UniquePtr<grpc_server_credentials>(
+  auto cred = std::unique_ptr<grpc_server_credentials>(
       grpc_tls_spiffe_server_credentials_create(options_.get()));
   auto connector = cred->create_security_connector();
   EXPECT_EQ(connector, nullptr);

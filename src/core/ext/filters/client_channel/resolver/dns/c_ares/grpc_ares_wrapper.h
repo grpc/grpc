@@ -63,8 +63,8 @@ extern void (*grpc_resolve_address_ares)(const char* name,
 extern grpc_ares_request* (*grpc_dns_lookup_ares_locked)(
     const char* dns_server, const char* name, const char* default_port,
     grpc_pollset_set* interested_parties, grpc_closure* on_done,
-    grpc_core::UniquePtr<grpc_core::ServerAddressList>* addresses,
-    bool check_grpclb, char** service_config_json, int query_timeout_ms,
+    std::unique_ptr<grpc_core::ServerAddressList>* addresses, bool check_grpclb,
+    char** service_config_json, int query_timeout_ms,
     grpc_core::Combiner* combiner);
 
 /* Cancel the pending grpc_ares_request \a request */

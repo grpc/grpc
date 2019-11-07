@@ -123,7 +123,7 @@ def get_plugin_args(
         "--{plugin_name}_out={dir_out}".format(
             plugin_name = plugin_name,
             dir_out = augmented_dir_out,
-        )
+        ),
     ]
 
 def _get_staged_proto_file(context, source_file):

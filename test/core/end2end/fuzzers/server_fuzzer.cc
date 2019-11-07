@@ -23,7 +23,6 @@
 #include "src/core/lib/security/credentials/credentials.h"
 #include "src/core/lib/slice/slice_internal.h"
 #include "src/core/lib/surface/server.h"
-#include "test/core/util/memory_counters.h"
 #include "test/core/util/mock_endpoint.h"
 
 bool squelch = true;
@@ -39,7 +38,6 @@ static void dont_log(gpr_log_func_args* /*args*/) {}
 extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
   grpc_test_only_set_slice_hash_seed(0);
   if (squelch) gpr_set_log_function(dont_log);
-  grpc_core::testing::LeakDetector leak_detector(leak_check);
   grpc_init();
   grpc_test_only_control_plane_credentials_force_init();
   {

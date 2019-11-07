@@ -34,7 +34,7 @@ class RegistryState {
   RegistryState() {}
 
   void RegisterLoadBalancingPolicyFactory(
-      UniquePtr<LoadBalancingPolicyFactory> factory) {
+      std::unique_ptr<LoadBalancingPolicyFactory> factory) {
     for (size_t i = 0; i < factories_.size(); ++i) {
       GPR_ASSERT(strcmp(factories_[i]->name(), factory->name()) != 0);
     }
@@ -52,7 +52,7 @@ class RegistryState {
   }
 
  private:
-  InlinedVector<UniquePtr<LoadBalancingPolicyFactory>, 10> factories_;
+  InlinedVector<std::unique_ptr<LoadBalancingPolicyFactory>, 10> factories_;
 };
 
 RegistryState* g_state = nullptr;
@@ -64,16 +64,16 @@ RegistryState* g_state = nullptr;
 //
 
 void LoadBalancingPolicyRegistry::Builder::InitRegistry() {
-  if (g_state == nullptr) g_state = New<RegistryState>();
+  if (g_state == nullptr) g_state = new RegistryState();
 }
 
 void LoadBalancingPolicyRegistry::Builder::ShutdownRegistry() {
-  Delete(g_state);
+  delete g_state;
   g_state = nullptr;
 }
 
 void LoadBalancingPolicyRegistry::Builder::RegisterLoadBalancingPolicyFactory(
-    UniquePtr<LoadBalancingPolicyFactory> factory) {
+    std::unique_ptr<LoadBalancingPolicyFactory> factory) {
   InitRegistry();
   g_state->RegisterLoadBalancingPolicyFactory(std::move(factory));
 }

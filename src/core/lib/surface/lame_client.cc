@@ -111,18 +111,16 @@ static void lame_start_transport_op(grpc_channel_element* elem,
     }
   }
   if (op->send_ping.on_initiate != nullptr) {
-    GRPC_CLOSURE_SCHED(
-        op->send_ping.on_initiate,
-        GRPC_ERROR_CREATE_FROM_STATIC_STRING("lame client channel"));
+    ExecCtx::Run(DEBUG_LOCATION, op->send_ping.on_initiate,
+                 GRPC_ERROR_CREATE_FROM_STATIC_STRING("lame client channel"));
   }
   if (op->send_ping.on_ack != nullptr) {
-    GRPC_CLOSURE_SCHED(
-        op->send_ping.on_ack,
-        GRPC_ERROR_CREATE_FROM_STATIC_STRING("lame client channel"));
+    ExecCtx::Run(DEBUG_LOCATION, op->send_ping.on_ack,
+                 GRPC_ERROR_CREATE_FROM_STATIC_STRING("lame client channel"));
   }
   GRPC_ERROR_UNREF(op->disconnect_with_error);
   if (op->on_consumed != nullptr) {
-    GRPC_CLOSURE_SCHED(op->on_consumed, GRPC_ERROR_NONE);
+    ExecCtx::Run(DEBUG_LOCATION, op->on_consumed, GRPC_ERROR_NONE);
   }
 }
 
@@ -136,7 +134,7 @@ static grpc_error* lame_init_call_elem(grpc_call_element* elem,
 static void lame_destroy_call_elem(grpc_call_element* /*elem*/,
                                    const grpc_call_final_info* /*final_info*/,
                                    grpc_closure* then_schedule_closure) {
-  GRPC_CLOSURE_SCHED(then_schedule_closure, GRPC_ERROR_NONE);
+  ExecCtx::Run(DEBUG_LOCATION, then_schedule_closure, GRPC_ERROR_NONE);
 }
 
 static grpc_error* lame_init_channel_elem(grpc_channel_element* elem,

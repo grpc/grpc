@@ -346,7 +346,8 @@ static void client_auth_start_transport_stream_op_batch(
       GRPC_CALL_STACK_REF(calld->owning_call, "check_call_host");
       GRPC_CLOSURE_INIT(&calld->async_result_closure, on_host_checked, batch,
                         grpc_schedule_on_exec_ctx);
-      grpc_core::StringView call_host(calld->host);
+      grpc_core::StringView call_host(
+          grpc_core::StringViewFromSlice(calld->host));
       grpc_error* error = GRPC_ERROR_NONE;
       if (chand->security_connector->check_call_host(
               call_host, chand->auth_context.get(),

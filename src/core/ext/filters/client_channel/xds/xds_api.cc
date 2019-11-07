@@ -91,7 +91,8 @@ bool XdsPriorityListUpdate::Contains(
   return false;
 }
 
-bool XdsDropConfig::ShouldDrop(const UniquePtr<char>** category_name) const {
+bool XdsDropConfig::ShouldDrop(
+    const std::unique_ptr<char>** category_name) const {
   for (size_t i = 0; i < drop_category_list_.size(); ++i) {
     const auto& drop_category = drop_category_list_[i];
     // Generate a random number in [0, 1000000).
@@ -117,9 +118,9 @@ void PopulateListValue(upb_arena* arena, google_protobuf_ListValue* list_value,
   }
 }
 
-void PopulateMetadata(
-    upb_arena* arena, google_protobuf_Struct* metadata_pb,
-    const Map<const char*, XdsBootstrap::MetadataValue, StringLess>& metadata) {
+void PopulateMetadata(upb_arena* arena, google_protobuf_Struct* metadata_pb,
+                      const std::map<const char*, XdsBootstrap::MetadataValue,
+                                     StringLess>& metadata) {
   for (const auto& p : metadata) {
     google_protobuf_Struct_FieldsEntry* field =
         google_protobuf_Struct_add_fields(metadata_pb, arena);
