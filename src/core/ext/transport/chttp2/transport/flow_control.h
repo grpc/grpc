@@ -280,16 +280,12 @@ class TransportFlowControl final : public TransportFlowControlBase {
   void PreUpdateAnnouncedWindowOverIncomingWindow(int64_t delta) {
     if (delta > 0) {
       announced_stream_total_over_incoming_window_ -= delta;
-    } else {
-      announced_stream_total_under_incoming_window_ += -delta;
     }
   }
 
   void PostUpdateAnnouncedWindowOverIncomingWindow(int64_t delta) {
     if (delta > 0) {
       announced_stream_total_over_incoming_window_ += delta;
-    } else {
-      announced_stream_total_under_incoming_window_ -= -delta;
     }
   }
 
@@ -325,7 +321,6 @@ class TransportFlowControl final : public TransportFlowControlBase {
       we want to adjust incoming_window such that:
       incoming_window = total_over - max(bdp - total_under, 0) */
   int64_t announced_stream_total_over_incoming_window_ = 0;
-  int64_t announced_stream_total_under_incoming_window_ = 0;
 
   /** should we probe bdp? */
   const bool enable_bdp_probe_;
