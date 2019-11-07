@@ -35,6 +35,7 @@ typedef struct grpc_alts_credentials_options_vtable {
 struct grpc_alts_credentials_options {
   const struct grpc_alts_credentials_options_vtable* vtable;
   grpc_gcp_rpc_protocol_versions rpc_versions;
+  bool test_only_disable_handshaker_subchannel_sharing;
 };
 
 typedef struct target_service_account {

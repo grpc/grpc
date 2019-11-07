@@ -55,5 +55,7 @@ static grpc_alts_credentials_options* alts_server_options_copy(
   /* Copy rpc protocol versions. */
   grpc_gcp_rpc_protocol_versions_copy(&options->rpc_versions,
                                       &new_options->rpc_versions);
+  /* Copy test_only_disable_handshaker_subchannel_sharing. */
+  new_options->test_only_disable_handshaker_subchannel_sharing = options->test_only_disable_handshaker_subchannel_sharing;
   return new_options;
 }

@@ -48,6 +48,7 @@
 #include "src/core/lib/gprpp/thd.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/security/credentials/alts/alts_credentials.h"
+#include "src/core/lib/security/credentials/alts/grpc_alts_credentials_options.h"
 #include "src/core/lib/security/credentials/credentials.h"
 #include "src/core/lib/security/security_connector/alts/alts_security_connector.h"
 #include "src/core/lib/slice/slice_string_helpers.h"
@@ -60,6 +61,8 @@
 #include "test/core/end2end/cq_verifier.h"
 
 namespace {
+
+const int kFakeHandshakeServerMaxConcurrentStreams = 40;
 
 void drain_cq(grpc_completion_queue* cq) {
   grpc_event ev;
@@ -105,19 +108,15 @@ grpc_channel* create_secure_channel_for_test(
 
 class FakeHandshakeServer {
  public:
-  // TODO(apolcyn): remove this max_concurrent_streams
-  // option and hardcode to 40 after all tests pass with it.
-  FakeHandshakeServer(int max_concurrent_streams) {
+  FakeHandshakeServer() {
     int port = grpc_pick_unused_port_or_die();
     grpc_core::JoinHostPort(&address_, "localhost", port);
     service_ = grpc::gcp::CreateFakeHandshakerService();
     grpc::ServerBuilder builder;
     builder.AddListeningPort(address_.get(), grpc::InsecureServerCredentials());
     builder.RegisterService(service_.get());
-    if (max_concurrent_streams != 0) {
-      builder.AddChannelArgument(GRPC_ARG_MAX_CONCURRENT_STREAMS,
-                                 max_concurrent_streams);
-    }
+    builder.AddChannelArgument(GRPC_ARG_MAX_CONCURRENT_STREAMS,
+                               kFakeHandshakeServerMaxConcurrentStreams);
     server_ = builder.BuildAndStart();
     gpr_log(GPR_INFO, "Fake handshaker server listening on %s", address_.get());
   }
@@ -139,6 +138,17 @@ class TestServer {
   explicit TestServer(const char* fake_handshake_server_address) {
     grpc_alts_credentials_options* alts_options =
         grpc_alts_credentials_server_options_create();
+    // Since this test involves many concurrent ALTS handshakes
+    // where both the client and server are in the same process (this
+    // situation is assumed to be rare), we disable ALTS handshaker
+    // subchannel sharing on the server-side only in order to prevent
+    // contention over ALTS handshake resources between peer endpoints
+    // that are trying to do a mutual handshake (e.g. if clients consume
+    // all handshake resources, then servers won't be able to even start
+    // any handshakes and so no mutual handshakes can make progress).
+    // TODO(apolcyn): make this API not test-only if this is needed
+    // outside this test.
+    alts_options->test_only_disable_handshaker_subchannel_sharing = true;
     grpc_server_credentials* server_creds =
         grpc_alts_server_credentials_create_customized(
             alts_options, fake_handshake_server_address,
@@ -257,7 +267,7 @@ class ConnectLoopRunner {
 // Perform a few ALTS handshakes sequentially (using the fake, in-process ALTS
 // handshake server).
 TEST(AltsConcurrentConnectivityTest, TestBasicClientServerHandshakes) {
-  FakeHandshakeServer fake_handshake_server(40 /* max concurrent streams */);
+  FakeHandshakeServer fake_handshake_server;
   TestServer test_server(fake_handshake_server.address());
   {
     ConnectLoopRunner runner(
@@ -271,12 +281,7 @@ TEST(AltsConcurrentConnectivityTest, TestBasicClientServerHandshakes) {
 /* Run a bunch of concurrent ALTS handshakes on concurrent channels
  * (using the fake, in-process handshake server). */
 TEST(AltsConcurrentConnectivityTest, TestConcurrentClientServerHandshakes) {
-  // TODO(apolcyn): have this test's handshake server use max concurrent streams
-  // of 40 after fixing problem whereby all streams get used up by one type of
-  // handshake (either "client" or "server"), in which case no handshakes
-  // can make progress because there are no matching client/server pairs.
-  FakeHandshakeServer fake_handshake_server(
-      0 /* max concurrent streams unset */);
+  FakeHandshakeServer fake_handshake_server;
   // Test
   {
     TestServer test_server(fake_handshake_server.address());
@@ -469,7 +474,7 @@ class FakeTcpServer {
  * handshake. */
 TEST(AltsConcurrentConnectivityTest,
      TestHandshakeFailsFastWhenPeerEndpointClosesConnectionAfterAccepting) {
-  FakeHandshakeServer fake_handshake_server(40 /* max concurrent streams */);
+  FakeHandshakeServer fake_handshake_server;
   FakeTcpServer fake_tcp_server(
       FakeTcpServer::CloseSocketUponReceivingBytesFromPeer);
   {
