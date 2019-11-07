@@ -84,9 +84,9 @@ class XdsClient : public InternallyRefCounted<XdsClient> {
   // keep a raw pointer to the watcher, which may be used only for
   // cancellation.  (Because the caller does not own the watcher, the
   // pointer must not be used for any other purpose.)
-  void WatchClusterData(StringView cluster,
+  void WatchClusterData(StringView cluster_name,
                         UniquePtr<ClusterWatcherInterface> watcher);
-  void CancelClusterDataWatch(StringView cluster,
+  void CancelClusterDataWatch(StringView cluster_name,
                               ClusterWatcherInterface* watcher);
 
   // Start and cancel endpoint data watch for a cluster.
@@ -94,15 +94,18 @@ class XdsClient : public InternallyRefCounted<XdsClient> {
   // keep a raw pointer to the watcher, which may be used only for
   // cancellation.  (Because the caller does not own the watcher, the
   // pointer must not be used for any other purpose.)
-  void WatchEndpointData(StringView cluster,
+  void WatchEndpointData(StringView eds_service_name,
                          UniquePtr<EndpointWatcherInterface> watcher);
-  void CancelEndpointDataWatch(StringView cluster,
+  void CancelEndpointDataWatch(StringView eds_service_name,
                                EndpointWatcherInterface* watcher);
 
   // Adds and removes client stats for cluster.
-  void AddClientStats(StringView lrs_server, StringView cluster,
+  // FIXME: Add eds_service_name key so that the management server can aggregate
+  // loads?
+  // https://github.com/envoyproxy/envoy/blob/be5e7a565b3571556f2d06035ad743923e87b48c/api/envoy/api/v2/endpoint/load_report.proto#L127-L130
+  void AddClientStats(StringView, StringView eds_service_name,
                       XdsClientStats* client_stats);
-  void RemoveClientStats(StringView lrs_server, StringView cluster,
+  void RemoveClientStats(StringView, StringView eds_service_name,
                          XdsClientStats* client_stats);
 
   // Resets connection backoff state.
@@ -110,7 +113,7 @@ class XdsClient : public InternallyRefCounted<XdsClient> {
 
   Set<StringView> ClusterNames() {
     Set<StringView> cluster_names;
-    for (const auto& p : clusters_) {
+    for (const auto& p : cluster_map_) {
       const StringView& cluster_name = p.first;
       cluster_names.emplace(cluster_name);
     }
@@ -119,14 +122,21 @@ class XdsClient : public InternallyRefCounted<XdsClient> {
 
   Set<StringView> EdsServiceNames() {
     Set<StringView> eds_service_names;
-    for (const auto& p : clusters_) {
-      const StringView& cluster_name = p.first;
-      const CdsUpdate& cds_update = p.second.cds_update;
-      eds_service_names.emplace(cds_update.eds_service_name != nullptr
-                                    ? cds_update.eds_service_name.get()
-                                    : cluster_name);
+    for (const auto& p : endpoint_map_) {
+      const StringView& eds_service_name = p.first;
+      eds_service_names.emplace(eds_service_name);
     }
     return eds_service_names;
+  }
+
+  Map<StringView, Set<XdsClientStats*>> ClientStatsMap() {
+    Map<StringView, Set<XdsClientStats*>> client_stats_map;
+    for (const auto& p : endpoint_map_) {
+      const StringView& cluster_name = p.first;
+      const auto& client_stats = p.second.client_stats;
+      client_stats_map.emplace(cluster_name, client_stats);
+    }
+    return client_stats_map;
   }
 
   // Helpers for encoding the XdsClient object in channel args.
@@ -175,6 +185,16 @@ class XdsClient : public InternallyRefCounted<XdsClient> {
     void StartConnectivityWatchLocked();
     void CancelConnectivityWatchLocked();
 
+    void WatchClusterData(StringView cluster_name,
+                          UniquePtr<ClusterWatcherInterface> watcher);
+    void CancelClusterDataWatch(StringView cluster_name,
+                                ClusterWatcherInterface* watcher);
+
+    void WatchEndpointData(StringView eds_service_name,
+                           UniquePtr<EndpointWatcherInterface> watcher);
+    void CancelEndpointDataWatch(StringView eds_service_name,
+                                 EndpointWatcherInterface* watcher);
+
    private:
     class StateWatcher;
 
@@ -192,15 +212,19 @@ class XdsClient : public InternallyRefCounted<XdsClient> {
   };
 
   struct ClusterState {
-    const char* cluster_name;
     Map<ClusterWatcherInterface*, UniquePtr<ClusterWatcherInterface>>
         cluster_watchers;
+    // The latest data seen from CDS.
+    bool seen_cds_update = false;
+    CdsUpdate cds_update;
+  };
+
+  struct EndpointState {
     Map<EndpointWatcherInterface*, UniquePtr<EndpointWatcherInterface>>
         endpoint_watchers;
     Set<XdsClientStats*> client_stats;
-    // The latest data seen from CDS and EDS.
+    // The latest data seen from EDS.
     bool seen_cds_update = false;
-    CdsUpdate cds_update;
     EdsUpdate eds_update;
   };
 
@@ -235,7 +259,8 @@ class XdsClient : public InternallyRefCounted<XdsClient> {
   OrphanablePtr<ChannelState> chand_;
 
   // Clusters keyed by cluster name.
-  Map<StringView /*cluster*/, ClusterState, StringLess> clusters_;
+  Map<StringView, ClusterState, StringLess> cluster_map_;
+  Map<StringView, EndpointState, StringLess> endpoint_map_;
   VersionState cds_version_state_;
   VersionState eds_version_state_;
 

@@ -235,7 +235,7 @@ grpc_slice XdsCdsRequestCreateAndEncode(Set<StringView> cluster_names,
   return grpc_slice_from_copied_buffer(output, output_length);
 }
 
-grpc_slice XdsEdsRequestCreateAndEncode(Set<StringView> server_names,
+grpc_slice XdsEdsRequestCreateAndEncode(Set<StringView> eds_service_names,
                                         const VersionState& eds_version) {
   upb::Arena arena;
   // Create a request.
@@ -245,9 +245,10 @@ grpc_slice XdsEdsRequestCreateAndEncode(Set<StringView> server_names,
   envoy_api_v2_DiscoveryRequest_set_version_info(
       request, upb_strview_makez(eds_version.version_info.get()));
   // Add resource_names.
-  for (const auto& server_name : server_names) {
+  for (const auto& eds_service_name : eds_service_names) {
     envoy_api_v2_DiscoveryRequest_add_resource_names(
-        request, upb_strview_make(server_name.data(), server_name.size()),
+        request,
+        upb_strview_make(eds_service_name.data(), eds_service_name.size()),
         arena.ptr());
   }
   // Set type_url.
@@ -461,7 +462,7 @@ grpc_error* DropParseAndAppend(
 }
 
 grpc_error* EdsResponsedParse(const envoy_api_v2_DiscoveryResponse* response,
-                              const Set<StringView>& expected_cluster_names,
+                              const Set<StringView>& expected_eds_service_names,
                               EdsUpdateMap* eds_update_map, upb_arena* arena) {
   // Get the resources from the response.
   size_t size;
@@ -493,8 +494,8 @@ grpc_error* EdsResponsedParse(const envoy_api_v2_DiscoveryResponse* response,
     upb_strview cluster_name = envoy_api_v2_ClusterLoadAssignment_cluster_name(
         cluster_load_assignment);
     StringView cluster_name_strview(cluster_name.data, cluster_name.size);
-    if (expected_cluster_names.find(cluster_name_strview) ==
-        expected_cluster_names.end()) {
+    if (expected_eds_service_names.find(cluster_name_strview) ==
+        expected_eds_service_names.end()) {
       continue;
     }
     // Get the endpoints.
@@ -540,8 +541,10 @@ grpc_error* EdsResponsedParse(const envoy_api_v2_DiscoveryResponse* response,
 
 grpc_error* XdsAdsResponseDecodeAndParse(
     const grpc_slice& encoded_response,
-    const Set<StringView>& expected_cluster_names, CdsUpdateMap* cds_update_map,
-    EdsUpdateMap* eds_update_map, VersionState* new_version, bool* cds) {
+    const Set<StringView>& expected_cluster_names,
+    const Set<StringView>& expected_eds_service_names,
+    CdsUpdateMap* cds_update_map, EdsUpdateMap* eds_update_map,
+    VersionState* new_version, bool* cds) {
   upb::Arena arena;
   // Decode the response.
   const envoy_api_v2_DiscoveryResponse* response =
@@ -565,8 +568,8 @@ grpc_error* XdsAdsResponseDecodeAndParse(
                              arena.ptr());
   } else if (upb_strview_eql(type_url, upb_strview_makez(kEdsTypeUrl))) {
     *cds = false;
-    return EdsResponsedParse(response, expected_cluster_names, eds_update_map,
-                             arena.ptr());
+    return EdsResponsedParse(response, expected_eds_service_names,
+                             eds_update_map, arena.ptr());
   } else {
     return GRPC_ERROR_CREATE_FROM_STATIC_STRING("Unsupported response type.");
   }
@@ -612,8 +615,8 @@ namespace {
 
 void LocalityStatsPopulate(
     envoy_api_v2_endpoint_UpstreamLocalityStats* output,
-    std::pair<const RefCountedPtr<XdsLocalityName>,
-              XdsClientStats::LocalityStats::Snapshot>& input,
+    const std::pair<const RefCountedPtr<XdsLocalityName>,
+                    XdsClientStats::LocalityStats::Snapshot>& input,
     upb_arena* arena) {
   // Set sub_zone.
   envoy_api_v2_core_Locality* locality =
@@ -622,7 +625,7 @@ void LocalityStatsPopulate(
   envoy_api_v2_core_Locality_set_sub_zone(
       locality, upb_strview_makez(input.first->sub_zone()));
   // Set total counts.
-  XdsClientStats::LocalityStats::Snapshot& snapshot = input.second;
+  const XdsClientStats::LocalityStats::Snapshot& snapshot = input.second;
   envoy_api_v2_endpoint_UpstreamLocalityStats_set_total_successful_requests(
       output, snapshot.total_successful_requests);
   envoy_api_v2_endpoint_UpstreamLocalityStats_set_total_requests_in_progress(
@@ -650,61 +653,79 @@ void LocalityStatsPopulate(
 
 }  // namespace
 
-grpc_slice XdsLrsRequestCreateAndEncode(const char* server_name,
-                                        XdsClientStats* client_stats) {
+grpc_slice XdsLrsRequestCreateAndEncode(
+    Map<StringView, Set<XdsClientStats*>> client_stats_map) {
   upb::Arena arena;
-  XdsClientStats::Snapshot snapshot = client_stats->GetSnapshotAndReset();
-  // Prune unused locality stats.
-  client_stats->PruneLocalityStats();
+  // Get the snapshots.
+  Map<StringView, Set<XdsClientStats::Snapshot>> snapshot_map;
+  bool all_zero = true;
+  for (auto& p : client_stats_map) {
+    const StringView& cluster_name = p.first;
+    for (auto* client_stats : p.second) {
+      XdsClientStats::Snapshot snapshot = client_stats->GetSnapshotAndReset();
+      // Prune unused locality stats.
+      client_stats->PruneLocalityStats();
+      if (!snapshot.IsAllZero()) all_zero = false;
+      snapshot_map[cluster_name].emplace(std::move(snapshot));
+    }
+  }
   // When all the counts are zero, return empty slice.
-  if (snapshot.IsAllZero()) return grpc_empty_slice();
+  if (all_zero) return grpc_empty_slice();
   // Create a request.
   envoy_service_load_stats_v2_LoadStatsRequest* request =
       envoy_service_load_stats_v2_LoadStatsRequest_new(arena.ptr());
-  // Add cluster stats. There is only one because we only use one server name in
-  // one channel.
-  envoy_api_v2_endpoint_ClusterStats* cluster_stats =
-      envoy_service_load_stats_v2_LoadStatsRequest_add_cluster_stats(
-          request, arena.ptr());
-  // Set the cluster name.
-  envoy_api_v2_endpoint_ClusterStats_set_cluster_name(
-      cluster_stats, upb_strview_makez(server_name));
-  // Add locality stats.
-  for (auto& p : snapshot.upstream_locality_stats) {
-    envoy_api_v2_endpoint_UpstreamLocalityStats* locality_stats =
-        envoy_api_v2_endpoint_ClusterStats_add_upstream_locality_stats(
-            cluster_stats, arena.ptr());
-    LocalityStatsPopulate(locality_stats, p, arena.ptr());
+  for (auto& p : snapshot_map) {
+    const StringView& eds_service_name = p.first;
+    for (const auto& snapshot : p.second) {
+      // Add cluster stats.
+      envoy_api_v2_endpoint_ClusterStats* cluster_stats =
+          envoy_service_load_stats_v2_LoadStatsRequest_add_cluster_stats(
+              request, arena.ptr());
+      // Set the cluster name.
+      envoy_api_v2_endpoint_ClusterStats_set_cluster_name(
+          cluster_stats,
+          upb_strview_make(eds_service_name.data(), eds_service_name.size()));
+      // Add locality stats.
+      for (auto& p : snapshot.upstream_locality_stats) {
+        envoy_api_v2_endpoint_UpstreamLocalityStats* locality_stats =
+            envoy_api_v2_endpoint_ClusterStats_add_upstream_locality_stats(
+                cluster_stats, arena.ptr());
+        LocalityStatsPopulate(locality_stats, p, arena.ptr());
+      }
+      // Add dropped requests.
+      for (auto& p : snapshot.dropped_requests) {
+        const char* category = p.first.get();
+        const uint64_t count = p.second;
+        envoy_api_v2_endpoint_ClusterStats_DroppedRequests* dropped_requests =
+            envoy_api_v2_endpoint_ClusterStats_add_dropped_requests(
+                cluster_stats, arena.ptr());
+        envoy_api_v2_endpoint_ClusterStats_DroppedRequests_set_category(
+            dropped_requests, upb_strview_makez(category));
+        envoy_api_v2_endpoint_ClusterStats_DroppedRequests_set_dropped_count(
+            dropped_requests, count);
+      }
+      // Set total dropped requests.
+      envoy_api_v2_endpoint_ClusterStats_set_total_dropped_requests(
+          cluster_stats, snapshot.total_dropped_requests);
+      // Set real load report interval.
+      gpr_timespec timespec =
+          grpc_millis_to_timespec(snapshot.load_report_interval, GPR_TIMESPAN);
+      google_protobuf_Duration* load_report_interval =
+          envoy_api_v2_endpoint_ClusterStats_mutable_load_report_interval(
+              cluster_stats, arena.ptr());
+      google_protobuf_Duration_set_seconds(load_report_interval,
+                                           timespec.tv_sec);
+      google_protobuf_Duration_set_nanos(load_report_interval,
+                                         timespec.tv_nsec);
+    }
   }
-  // Add dropped requests.
-  for (auto& p : snapshot.dropped_requests) {
-    const char* category = p.first.get();
-    const uint64_t count = p.second;
-    envoy_api_v2_endpoint_ClusterStats_DroppedRequests* dropped_requests =
-        envoy_api_v2_endpoint_ClusterStats_add_dropped_requests(cluster_stats,
-                                                                arena.ptr());
-    envoy_api_v2_endpoint_ClusterStats_DroppedRequests_set_category(
-        dropped_requests, upb_strview_makez(category));
-    envoy_api_v2_endpoint_ClusterStats_DroppedRequests_set_dropped_count(
-        dropped_requests, count);
-  }
-  // Set total dropped requests.
-  envoy_api_v2_endpoint_ClusterStats_set_total_dropped_requests(
-      cluster_stats, snapshot.total_dropped_requests);
-  // Set real load report interval.
-  gpr_timespec timespec =
-      grpc_millis_to_timespec(snapshot.load_report_interval, GPR_TIMESPAN);
-  google_protobuf_Duration* load_report_interval =
-      envoy_api_v2_endpoint_ClusterStats_mutable_load_report_interval(
-          cluster_stats, arena.ptr());
-  google_protobuf_Duration_set_seconds(load_report_interval, timespec.tv_sec);
-  google_protobuf_Duration_set_nanos(load_report_interval, timespec.tv_nsec);
   return LrsRequestEncode(request, arena.ptr());
 }
 
-grpc_error* XdsLrsResponseDecodeAndParse(const grpc_slice& encoded_response,
-                                         UniquePtr<char>* cluster_name,
-                                         grpc_millis* load_reporting_interval) {
+grpc_error* XdsLrsResponseDecodeAndParse(
+    const grpc_slice& encoded_response,
+    const Set<StringView>& expected_eds_service_names,
+    grpc_millis* load_reporting_interval) {
   upb::Arena arena;
   // Decode the response.
   const envoy_service_load_stats_v2_LoadStatsResponse* decoded_response =
@@ -715,17 +736,20 @@ grpc_error* XdsLrsResponseDecodeAndParse(const grpc_slice& encoded_response,
   if (decoded_response == nullptr) {
     return GRPC_ERROR_CREATE_FROM_STATIC_STRING("Can't decode response.");
   }
-  // Check the cluster size in the response.
+  // Check the cluster names in the response.
+  // FIXME: Do we need to check and return error if unmatched? Or just ignore
+  // totally and only use the received internal?
   size_t size;
   const upb_strview* clusters =
       envoy_service_load_stats_v2_LoadStatsResponse_clusters(decoded_response,
                                                              &size);
-  if (size != 1) {
-    return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-        "The number of clusters (server names) is not 1.");
+  for (size_t i = 0; i < size; ++i) {
+    StringView cluster(clusters[i].data, clusters[i].size);
+    if (expected_eds_service_names.find(cluster) ==
+        expected_eds_service_names.end()) {
+      return GRPC_ERROR_CREATE_FROM_STATIC_STRING("Unexpected cluster name.");
+    }
   }
-  // Get the cluster name for reporting loads.
-  *cluster_name = StringCopy(clusters[0]);
   // Get the load report interval.
   const google_protobuf_Duration* load_reporting_interval_duration =
       envoy_service_load_stats_v2_LoadStatsResponse_load_reporting_interval(

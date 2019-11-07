@@ -181,15 +181,17 @@ grpc_slice XdsCdsRequestCreateAndEncode(Set<StringView> cluster_names,
                                         const VersionState& cds_version);
 
 // Creates an EDS request querying \a service_name.
-grpc_slice XdsEdsRequestCreateAndEncode(Set<StringView> server_names,
+grpc_slice XdsEdsRequestCreateAndEncode(Set<StringView> eds_service_names,
                                         const VersionState& eds_version);
 
 // Parses the ADS response and outputs update for either CDS or EDS. If there
 // is any error, the output update is invalid.
 grpc_error* XdsAdsResponseDecodeAndParse(
     const grpc_slice& encoded_response,
-    const Set<StringView>& expected_cluster_names, CdsUpdateMap* cds_update_map,
-    EdsUpdateMap* eds_update_map, VersionState* new_version, bool* is_cds);
+    const Set<StringView>& expected_cluster_names,
+    const Set<StringView>& expected_eds_service_names,
+    CdsUpdateMap* cds_update_map, EdsUpdateMap* eds_update_map,
+    VersionState* new_version, bool* is_cds);
 
 // Creates an LRS request querying \a server_name.
 grpc_slice XdsLrsRequestCreateAndEncode(const char* server_name,
@@ -198,15 +200,16 @@ grpc_slice XdsLrsRequestCreateAndEncode(const char* server_name,
 
 // Creates an LRS request sending client-side load reports. If all the counters
 // in \a client_stats are zero, returns empty slice.
-grpc_slice XdsLrsRequestCreateAndEncode(const char* server_name,
-                                        XdsClientStats* client_stats);
+grpc_slice XdsLrsRequestCreateAndEncode(
+    Map<StringView, Set<XdsClientStats*>> client_stats_map);
 
 // Parses the LRS response and returns \a cluster_name and \a
 // load_reporting_interval for client-side load reporting. If there is any
 // error, the output config is invalid.
-grpc_error* XdsLrsResponseDecodeAndParse(const grpc_slice& encoded_response,
-                                         UniquePtr<char>* cluster_name,
-                                         grpc_millis* load_reporting_interval);
+grpc_error* XdsLrsResponseDecodeAndParse(
+    const grpc_slice& encoded_response,
+    const Set<StringView>& expected_eds_service_names,
+    grpc_millis* load_reporting_interval);
 
 }  // namespace grpc_core
 
