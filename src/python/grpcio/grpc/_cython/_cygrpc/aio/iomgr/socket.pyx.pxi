@@ -61,6 +61,7 @@ cdef class _AsyncioSocket:
             self._reader, self._writer = future.result()
         except Exception as e:
             error = True
+            error_msg = str(e)
         finally:
             self._task_connect = None
 
@@ -77,7 +78,7 @@ cdef class _AsyncioSocket:
         else:
             self._grpc_connect_cb(
                 <grpc_custom_socket*>self._grpc_socket,
-                grpc_socket_error("connect {}".format(str(e)).encode())
+                grpc_socket_error("connect {}".format(error_msg).encode())
             )
 
     def _read_cb(self, future):
