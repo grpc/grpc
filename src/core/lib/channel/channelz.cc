@@ -185,7 +185,7 @@ ChannelNode::ChannelNode(std::string target, size_t channel_tracer_max_nodes,
     : BaseNode(parent_uuid == 0 ? EntityType::kTopLevelChannel
                                 : EntityType::kInternalChannel,
                target),
-      target_(target),
+      target_(std::move(target)),
       trace_(channel_tracer_max_nodes),
       parent_uuid_(parent_uuid) {}
 

@@ -382,7 +382,7 @@ static bool read_channel_args(grpc_chttp2_transport* t,
     gpr_asprintf(&socket_name, "%s %s", get_vtable()->name, t->peer_string);
     t->channelz_socket =
         grpc_core::MakeRefCounted<grpc_core::channelz::SocketNode>(
-            std::string(), t->peer_string, socket_name);
+            "", t->peer_string, socket_name);
   }
   return enable_bdp;
 }

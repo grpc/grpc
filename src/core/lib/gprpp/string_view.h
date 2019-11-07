@@ -113,10 +113,12 @@ class StringView final {
   }
 
   // Converts to `std::basic_string`.
-  template <typename A>
-  explicit operator std::basic_string<char, std::char_traits<char>, A>() const {
-    if (!data()) return {};
-    return std::basic_string<char, std::char_traits<char>, A>(data(), size());
+  template <typename Allocator>
+  explicit operator std::basic_string<char, std::char_traits<char>, Allocator>()
+      const {
+    if (data() == nullptr) return {};
+    return std::basic_string<char, std::char_traits<char>, Allocator>(data(),
+                                                                      size());
   }
 
  private:

@@ -33,7 +33,7 @@ namespace channelz {
 SubchannelNode::SubchannelNode(std::string target_address,
                                size_t channel_tracer_max_nodes)
     : BaseNode(EntityType::kSubchannel, target_address),
-      target_(target_address),
+      target_(std::move(target_address)),
       trace_(channel_tracer_max_nodes) {}
 
 SubchannelNode::~SubchannelNode() {}
