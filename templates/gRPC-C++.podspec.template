@@ -128,30 +128,20 @@
   def ruby_multiline_list(files, indent):
     return (',\n' + indent*' ').join('\'%s\'' % f for f in files)
 
-  def modify_podspec_version_string(pod_version, grpc_version):
-    # Append -preX when it is a pre-release
-    if len(str(grpc_version).split('-')) > 1:
-      return pod_version + '-' + str(grpc_version).split('-')[-1]
-    else:
-      return pod_version
-
   %>
   Pod::Spec.new do |s|
     s.name     = 'gRPC-C++'
     # TODO (mxyan): use version that match gRPC version when pod is stabilized
-    # version = '${settings.version}'
-    version = '${modify_podspec_version_string('0.0.9', settings.version)}'
+    version = '${settings.version}'
     s.version  = version
     s.summary  = 'gRPC C++ library'
     s.homepage = 'https://grpc.io'
     s.license  = 'Apache License, Version 2.0'
     s.authors  = { 'The gRPC contributors' => 'grpc-packages@google.com' }
 
-    grpc_version = '${settings.version}'
-
     s.source = {
       :git => 'https://github.com/grpc/grpc.git',
-      :tag => "v#{grpc_version}",
+      :tag => "v#{version}",
     }
 
     s.ios.deployment_target = '7.0'
@@ -201,7 +191,7 @@
     s.subspec 'Implementation' do |ss|
       ss.header_mappings_dir = '.'
       ss.dependency "#{s.name}/Interface", version
-      ss.dependency 'gRPC-Core', grpc_version
+      ss.dependency 'gRPC-Core', version
 
       ss.source_files = ${ruby_multiline_list(grpcpp_private_files(libs, filegroups), 22)}
 
