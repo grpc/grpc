@@ -932,7 +932,8 @@ class GrpcPolledFdFactoryWindows : public GrpcPolledFdFactory {
   SockToPolledFdMap sock_to_polled_fd_map_;
 };
 
-UniquePtr<GrpcPolledFdFactory> NewGrpcPolledFdFactory(Combiner* combiner) {
+std::unique_ptr<GrpcPolledFdFactory> NewGrpcPolledFdFactory(
+    Combiner* combiner) {
   return MakeUnique<GrpcPolledFdFactoryWindows>(combiner);
 }
 

@@ -41,7 +41,7 @@ struct fullstack_compression_fixture_data {
     grpc_channel_args_destroy(client_args_compression);
     grpc_channel_args_destroy(server_args_compression);
   }
-  grpc_core::UniquePtr<char> localaddr;
+  std::unique_ptr<char> localaddr;
   grpc_channel_args* client_args_compression = nullptr;
   grpc_channel_args* server_args_compression = nullptr;
 };

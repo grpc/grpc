@@ -44,8 +44,9 @@ namespace {
 size_t g_message_size_parser_index;
 }  // namespace
 
-UniquePtr<ServiceConfig::ParsedConfig> MessageSizeParser::ParsePerMethodParams(
-    const grpc_json* json, grpc_error** error) {
+std::unique_ptr<ServiceConfig::ParsedConfig>
+MessageSizeParser::ParsePerMethodParams(const grpc_json* json,
+                                        grpc_error** error) {
   GPR_DEBUG_ASSERT(error != nullptr && *error == GRPC_ERROR_NONE);
   int max_request_message_bytes = -1;
   int max_response_message_bytes = -1;

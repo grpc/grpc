@@ -76,7 +76,7 @@ class SslSessionLRUCache::Node {
   friend class SslSessionLRUCache;
 
   grpc_slice key_;
-  grpc_core::UniquePtr<SslCachedSession> session_;
+  std::unique_ptr<SslCachedSession> session_;
 
   Node* next_ = nullptr;
   Node* prev_ = nullptr;

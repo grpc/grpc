@@ -355,7 +355,7 @@ static tsi_result alts_tsi_handshaker_continue_handshaker_next(
 
 struct alts_tsi_handshaker_continue_handshaker_next_args {
   alts_tsi_handshaker* handshaker;
-  grpc_core::UniquePtr<unsigned char> received_bytes;
+  std::unique_ptr<unsigned char> received_bytes;
   size_t received_bytes_size;
   tsi_handshaker_on_next_done_cb cb;
   void* user_data;
@@ -406,7 +406,7 @@ static tsi_result handshaker_next(
     args->received_bytes = nullptr;
     args->received_bytes_size = received_bytes_size;
     if (received_bytes_size > 0) {
-      args->received_bytes = grpc_core::UniquePtr<unsigned char>(
+      args->received_bytes = std::unique_ptr<unsigned char>(
           static_cast<unsigned char*>(gpr_zalloc(received_bytes_size)));
       memcpy(args->received_bytes.get(), received_bytes, received_bytes_size);
     }

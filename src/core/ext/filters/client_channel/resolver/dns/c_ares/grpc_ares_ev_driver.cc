@@ -77,7 +77,7 @@ struct grpc_ares_ev_driver {
   /** request object that's using this ev driver */
   grpc_ares_request* request;
   /** Owned by the ev_driver. Creates new GrpcPolledFd's */
-  grpc_core::UniquePtr<grpc_core::GrpcPolledFdFactory> polled_fd_factory;
+  std::unique_ptr<grpc_core::GrpcPolledFdFactory> polled_fd_factory;
   /** query timeout in milliseconds */
   int query_timeout_ms;
   /** alarm to cancel active queries */

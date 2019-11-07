@@ -66,7 +66,7 @@ class SubchannelInterface : public RefCounted<SubchannelInterface> {
   // the previous watcher using CancelConnectivityStateWatch().
   virtual void WatchConnectivityState(
       grpc_connectivity_state initial_state,
-      UniquePtr<ConnectivityStateWatcherInterface> watcher) = 0;
+      std::unique_ptr<ConnectivityStateWatcherInterface> watcher) = 0;
 
   // Cancels a connectivity state watch.
   // If the watcher has already been destroyed, this is a no-op.

@@ -148,7 +148,7 @@ struct grpc_channel_credentials
 
  private:
   const char* type_;
-  std::map<grpc_core::UniquePtr<char>,
+  std::map<std::unique_ptr<char>,
            grpc_core::RefCountedPtr<grpc_channel_credentials>,
            grpc_core::StringLess>
       local_control_plane_creds_;

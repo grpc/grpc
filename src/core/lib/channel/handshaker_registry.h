@@ -38,9 +38,9 @@ class HandshakerRegistry {
   /// Registers a new handshaker factory.  Takes ownership.
   /// If \a at_start is true, the new handshaker will be at the beginning of
   /// the list.  Otherwise, it will be added to the end.
-  static void RegisterHandshakerFactory(bool at_start,
-                                        HandshakerType handshaker_type,
-                                        UniquePtr<HandshakerFactory> factory);
+  static void RegisterHandshakerFactory(
+      bool at_start, HandshakerType handshaker_type,
+      std::unique_ptr<HandshakerFactory> factory);
   static void AddHandshakers(HandshakerType handshaker_type,
                              const grpc_channel_args* args,
                              grpc_pollset_set* interested_parties,

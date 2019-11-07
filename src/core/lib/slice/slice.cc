@@ -156,7 +156,7 @@ class NewWithLenSliceRefcount {
 /** grpc_slice_from_moved_(string|buffer) ref count .*/
 class MovedStringSliceRefCount {
  public:
-  MovedStringSliceRefCount(grpc_core::UniquePtr<char>&& str)
+  MovedStringSliceRefCount(std::unique_ptr<char>&& str)
       : base_(grpc_slice_refcount::Type::REGULAR, &refs_, Destroy, this,
               &base_),
         str_(std::move(str)) {}
@@ -170,7 +170,7 @@ class MovedStringSliceRefCount {
 
   grpc_slice_refcount base_;
   grpc_core::RefCount refs_;
-  grpc_core::UniquePtr<char> str_;
+  std::unique_ptr<char> str_;
 };
 
 }  // namespace grpc_core
@@ -210,8 +210,7 @@ grpc_slice grpc_slice_from_copied_string(const char* source) {
   return grpc_core::UnmanagedMemorySlice(source, strlen(source));
 }
 
-grpc_slice grpc_slice_from_moved_buffer(grpc_core::UniquePtr<char> p,
-                                        size_t len) {
+grpc_slice grpc_slice_from_moved_buffer(std::unique_ptr<char> p, size_t len) {
   uint8_t* ptr = reinterpret_cast<uint8_t*>(p.get());
   grpc_slice slice;
   if (len <= sizeof(slice.data.inlined.bytes)) {
@@ -227,7 +226,7 @@ grpc_slice grpc_slice_from_moved_buffer(grpc_core::UniquePtr<char> p,
   return slice;
 }
 
-grpc_slice grpc_slice_from_moved_string(grpc_core::UniquePtr<char> p) {
+grpc_slice grpc_slice_from_moved_string(std::unique_ptr<char> p) {
   const size_t len = strlen(p.get());
   return grpc_slice_from_moved_buffer(std::move(p), len);
 }
