@@ -85,8 +85,8 @@ class TestGrpcUdpHandler : public GrpcUdpHandler {
     return false;
   }
 
-  void OnCanWrite(void* user_data,
-                  grpc_closure* notify_on_write_closure) override {
+  void OnCanWrite(void* /*user_data*/,
+                  grpc_closure* /*notify_on_write_closure*/) override {
     gpr_mu_lock(g_mu);
     g_number_of_writes++;
 
@@ -96,10 +96,10 @@ class TestGrpcUdpHandler : public GrpcUdpHandler {
   }
 
   void OnFdAboutToOrphan(grpc_closure* orphan_fd_closure,
-                         void* user_data) override {
+                         void* /*user_data*/) override {
     gpr_log(GPR_INFO, "gRPC FD about to be orphaned: %d",
             grpc_fd_wrapped_fd(emfd()));
-    GRPC_CLOSURE_SCHED(orphan_fd_closure, GRPC_ERROR_NONE);
+    grpc_core::ExecCtx::Run(DEBUG_LOCATION, orphan_fd_closure, GRPC_ERROR_NONE);
     g_number_of_orphan_calls++;
   }
 
@@ -113,12 +113,12 @@ class TestGrpcUdpHandlerFactory : public GrpcUdpHandlerFactory {
  public:
   GrpcUdpHandler* CreateUdpHandler(grpc_fd* emfd, void* user_data) override {
     gpr_log(GPR_INFO, "create udp handler for fd %d", grpc_fd_wrapped_fd(emfd));
-    return grpc_core::New<TestGrpcUdpHandler>(emfd, user_data);
+    return new TestGrpcUdpHandler(emfd, user_data);
   }
 
   void DestroyUdpHandler(GrpcUdpHandler* handler) override {
     gpr_log(GPR_INFO, "Destroy handler");
-    grpc_core::Delete(reinterpret_cast<TestGrpcUdpHandler*>(handler));
+    delete reinterpret_cast<TestGrpcUdpHandler*>(handler);
   }
 };
 
@@ -170,7 +170,7 @@ static test_socket_factory* test_socket_factory_create(void) {
   return factory;
 }
 
-static void destroy_pollset(void* p, grpc_error* error) {
+static void destroy_pollset(void* p, grpc_error* /*error*/) {
   grpc_pollset_destroy(static_cast<grpc_pollset*>(p));
 }
 

@@ -35,6 +35,7 @@ cdef class _AsyncioResolver:
             res = future.result()
         except Exception as e:
             error = True
+            error_msg = str(e)
         finally:
             self._task_resolve = None
 
@@ -48,7 +49,7 @@ cdef class _AsyncioResolver:
             grpc_custom_resolve_callback(
                 <grpc_custom_resolver*>self._grpc_resolver,
                 NULL,
-                grpc_socket_error("getaddrinfo {}".format(str(e)).encode())
+                grpc_socket_error("getaddrinfo {}".format(error_msg).encode())
             )
 
     cdef void resolve(self, char* host, char* port):

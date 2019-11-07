@@ -96,6 +96,9 @@ static void maybe_initiate_ping(grpc_chttp2_transport* t) {
     if (!t->ping_state.is_delayed_ping_timer_set) {
       t->ping_state.is_delayed_ping_timer_set = true;
       GRPC_CHTTP2_REF_TRANSPORT(t, "retry_initiate_ping_locked");
+      GRPC_CLOSURE_INIT(&t->retry_initiate_ping_locked,
+                        grpc_chttp2_retry_initiate_ping, t,
+                        grpc_schedule_on_exec_ctx);
       grpc_timer_init(&t->ping_state.delayed_ping_timer, next_allowed_ping,
                       &t->retry_initiate_ping_locked);
     }
@@ -173,7 +176,7 @@ static void report_stall(grpc_chttp2_transport* t, grpc_chttp2_stream* s,
 }
 
 /* How many bytes would we like to put on the wire during a single syscall */
-static uint32_t target_write_size(grpc_chttp2_transport* t) {
+static uint32_t target_write_size(grpc_chttp2_transport* /*t*/) {
   return 1024 * 1024;
 }
 

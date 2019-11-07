@@ -26,6 +26,7 @@
 #include <grpc/slice_buffer.h>
 
 #include "src/core/ext/filters/client_channel/server_address.h"
+#include "src/core/ext/filters/client_channel/xds/xds_bootstrap.h"
 #include "src/core/ext/filters/client_channel/xds/xds_client_stats.h"
 
 namespace grpc_core {
@@ -58,7 +59,7 @@ class XdsPriorityListUpdate {
 
     size_t size() const { return localities.size(); }
 
-    Map<RefCountedPtr<XdsLocalityName>, Locality, XdsLocalityName::Less>
+    std::map<RefCountedPtr<XdsLocalityName>, Locality, XdsLocalityName::Less>
         localities;
   };
 
@@ -135,11 +136,21 @@ struct EdsUpdate {
   bool drop_all = false;
 };
 
-// TODO(juanlishen): Add fields as part of implementing CDS support.
-struct CdsUpdate {};
+struct CdsUpdate {
+  // The name to use in the EDS request.
+  // If null, the cluster name will be used.
+  UniquePtr<char> eds_service_name;
+  // The LRS server to use for load reporting.
+  // If null, load reporting will be disabled.
+  // If set to the empty string, will use the same server we obtained
+  // the CDS data from.
+  UniquePtr<char> lrs_load_reporting_server_name;
+};
 
 // Creates an EDS request querying \a service_name.
-grpc_slice XdsEdsRequestCreateAndEncode(const char* server_name);
+grpc_slice XdsEdsRequestCreateAndEncode(const char* server_name,
+                                        const XdsBootstrap::Node* node,
+                                        const char* build_version);
 
 // Parses the EDS response and returns the args to update locality map. If there
 // is any error, the output update is invalid.
@@ -147,7 +158,9 @@ grpc_error* XdsEdsResponseDecodeAndParse(const grpc_slice& encoded_response,
                                          EdsUpdate* update);
 
 // Creates an LRS request querying \a server_name.
-grpc_slice XdsLrsRequestCreateAndEncode(const char* server_name);
+grpc_slice XdsLrsRequestCreateAndEncode(const char* server_name,
+                                        const XdsBootstrap::Node* node,
+                                        const char* build_version);
 
 // Creates an LRS request sending client-side load reports. If all the counters
 // in \a client_stats are zero, returns empty slice.

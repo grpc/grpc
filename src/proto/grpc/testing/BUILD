@@ -14,9 +14,9 @@
 
 licenses(["notice"])  # Apache v2
 
-load("//bazel:grpc_build_system.bzl", "grpc_proto_library", "grpc_package")
+load("//bazel:grpc_build_system.bzl", "grpc_package", "grpc_proto_library")
 load("@grpc_python_dependencies//:requirements.bzl", "requirement")
-load("//bazel:python_rules.bzl", "py_proto_library", "py_grpc_library")
+load("//bazel:python_rules.bzl", "py_grpc_library", "py_proto_library")
 
 grpc_package(
     name = "testing",
@@ -125,6 +125,23 @@ grpc_proto_library(
     ],
 )
 
+proto_library(
+    name = "benchmark_service_descriptor",
+    srcs = ["benchmark_service.proto"],
+    deps = [":messages_proto_descriptor"],
+)
+
+py_proto_library(
+    name = "benchmark_service_py_pb2",
+    deps = [":benchmark_service_descriptor"],
+)
+
+py_grpc_library(
+    name = "benchmark_service_py_pb2_grpc",
+    srcs = [":benchmark_service_descriptor"],
+    deps = [":benchmark_service_py_pb2"],
+)
+
 grpc_proto_library(
     name = "report_qps_scenario_service_proto",
     srcs = ["report_qps_scenario_service.proto"],
@@ -214,4 +231,3 @@ py_grpc_library(
     srcs = [":test_proto_descriptor"],
     deps = [":py_test_proto"],
 )
-

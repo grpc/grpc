@@ -240,7 +240,7 @@ static void on_accept(void* arg, grpc_endpoint* tcp,
 }
 
 /* Server callback: start listening on our ports */
-static void server_start_listener(grpc_server* server, void* arg,
+static void server_start_listener(grpc_server* /*server*/, void* arg,
                                   grpc_pollset** pollsets,
                                   size_t pollset_count) {
   server_state* state = static_cast<server_state*>(arg);
@@ -266,7 +266,8 @@ static void tcp_server_shutdown_complete(void* arg, grpc_error* error) {
   // may do a synchronous unref.
   grpc_core::ExecCtx::Get()->Flush();
   if (destroy_done != nullptr) {
-    GRPC_CLOSURE_SCHED(destroy_done, GRPC_ERROR_REF(error));
+    grpc_core::ExecCtx::Run(DEBUG_LOCATION, destroy_done,
+                            GRPC_ERROR_REF(error));
     grpc_core::ExecCtx::Get()->Flush();
   }
   grpc_channel_args_destroy(state->args);
@@ -276,7 +277,7 @@ static void tcp_server_shutdown_complete(void* arg, grpc_error* error) {
 
 /* Server callback: destroy the tcp listener (so we don't generate further
    callbacks) */
-static void server_destroy_listener(grpc_server* server, void* arg,
+static void server_destroy_listener(grpc_server* /*server*/, void* arg,
                                     grpc_closure* destroy_done) {
   server_state* state = static_cast<server_state*>(arg);
   gpr_mu_lock(&state->mu);

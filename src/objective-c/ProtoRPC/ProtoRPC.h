@@ -53,8 +53,8 @@ NS_ASSUME_NONNULL_BEGIN
 - (void)didReceiveProtoMessage:(nullable GPBMessage *)message;
 
 /**
- * Issued when a call finished. If the call finished successfully, \a error is nil and \a
- * trainingMetadata consists any trailing metadata received from the server. Otherwise, \a error
+ * Issued when a call finished. If the call finished successfully, \p error is nil and \p
+ * trainingMetadata consists any trailing metadata received from the server. Otherwise, \p error
  * is non-nil and contains the corresponding error information, including gRPC error codes and
  * error descriptions.
  */
@@ -67,6 +67,30 @@ NS_ASSUME_NONNULL_BEGIN
  * SEND_MESSAGE operation.
  */
 - (void)didWriteMessage;
+
+@end
+
+/**
+ * A convenience class of objects that act as response handlers of calls. Issues
+ * response to a single handler when the response is completed.
+ */
+@interface GRPCUnaryResponseHandler : NSObject<GRPCProtoResponseHandler>
+
+/**
+ * Creates a responsehandler object with a unary call handler.
+ *
+ * responseHandler: The unary handler to be called when the call is completed.
+ * responseDispatchQueue: the dispatch queue on which the response handler
+ * should be issued. If it's nil, the handler will use the main queue.
+ */
+- (nullable instancetype)initWithResponseHandler:(void (^)(GPBMessage *, NSError *))handler
+                           responseDispatchQueue:(nullable dispatch_queue_t)dispatchQueue;
+
+/** Response headers received during the call. */
+@property(readonly, nullable) NSDictionary *responseHeaders;
+
+/** Response trailers received during the call. */
+@property(readonly, nullable) NSDictionary *responseTrailers;
 
 @end
 

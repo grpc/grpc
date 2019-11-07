@@ -103,15 +103,13 @@ void TlsCredentialReloadArg::set_key_materials_config(
   }
   ::grpc_core::InlinedVector<::grpc_core::PemKeyCertPair, 1>
       c_pem_key_cert_pair_list;
-  for (auto key_cert_pair =
-           key_materials_config->pem_key_cert_pair_list().begin();
-       key_cert_pair != key_materials_config->pem_key_cert_pair_list().end();
-       key_cert_pair++) {
+  for (const auto& key_cert_pair :
+       key_materials_config->pem_key_cert_pair_list()) {
     grpc_ssl_pem_key_cert_pair* ssl_pair =
         (grpc_ssl_pem_key_cert_pair*)gpr_malloc(
             sizeof(grpc_ssl_pem_key_cert_pair));
-    ssl_pair->private_key = gpr_strdup(key_cert_pair->private_key.c_str());
-    ssl_pair->cert_chain = gpr_strdup(key_cert_pair->cert_chain.c_str());
+    ssl_pair->private_key = gpr_strdup(key_cert_pair.private_key.c_str());
+    ssl_pair->cert_chain = gpr_strdup(key_cert_pair.cert_chain.c_str());
     ::grpc_core::PemKeyCertPair c_pem_key_cert_pair =
         ::grpc_core::PemKeyCertPair(ssl_pair);
     c_pem_key_cert_pair_list.emplace_back(std::move(c_pem_key_cert_pair));

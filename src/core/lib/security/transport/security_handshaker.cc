@@ -66,6 +66,8 @@ class SecurityHandshaker : public Handshaker {
   void HandshakeFailedLocked(grpc_error* error);
   void CleanupArgsForFailureLocked();
 
+  static void ScheduleRead(void* arg, grpc_error* /* error */);
+  static void ScheduleWrite(void* arg, grpc_error* /* error */);
   static void OnHandshakeDataReceivedFromPeerFn(void* arg, grpc_error* error);
   static void OnHandshakeDataSentToPeerFn(void* arg, grpc_error* error);
   static void OnHandshakeNextDoneGrpcWrapper(
@@ -94,6 +96,8 @@ class SecurityHandshaker : public Handshaker {
   size_t handshake_buffer_size_;
   unsigned char* handshake_buffer_;
   grpc_slice_buffer outgoing_;
+  grpc_closure schedule_read_closure_;
+  grpc_closure schedule_write_closure_;
   grpc_closure on_handshake_data_sent_to_peer_;
   grpc_closure on_handshake_data_received_from_peer_;
   grpc_closure on_peer_checked_;
@@ -118,6 +122,11 @@ SecurityHandshaker::SecurityHandshaker(tsi_handshaker* handshaker,
   }
   gpr_mu_init(&mu_);
   grpc_slice_buffer_init(&outgoing_);
+  GRPC_CLOSURE_INIT(&schedule_read_closure_, &SecurityHandshaker::ScheduleRead,
+                    this, grpc_schedule_on_exec_ctx);
+  GRPC_CLOSURE_INIT(&schedule_write_closure_,
+                    &SecurityHandshaker::ScheduleWrite, this,
+                    grpc_schedule_on_exec_ctx);
   GRPC_CLOSURE_INIT(&on_handshake_data_sent_to_peer_,
                     &SecurityHandshaker::OnHandshakeDataSentToPeerFn, this,
                     grpc_schedule_on_exec_ctx);
@@ -199,7 +208,7 @@ void SecurityHandshaker::HandshakeFailedLocked(grpc_error* error) {
     is_shutdown_ = true;
   }
   // Invoke callback.
-  GRPC_CLOSURE_SCHED(on_handshake_done_, error);
+  ExecCtx::Run(DEBUG_LOCATION, on_handshake_done_, error);
 }
 
 void SecurityHandshaker::OnPeerCheckedInner(grpc_error* error) {
@@ -259,7 +268,7 @@ void SecurityHandshaker::OnPeerCheckedInner(grpc_error* error) {
   args_->args = grpc_channel_args_copy_and_add(tmp_args, &auth_context_arg, 1);
   grpc_channel_args_destroy(tmp_args);
   // Invoke callback.
-  GRPC_CLOSURE_SCHED(on_handshake_done_, GRPC_ERROR_NONE);
+  ExecCtx::Run(DEBUG_LOCATION, on_handshake_done_, GRPC_ERROR_NONE);
   // Set shutdown to true so that subsequent calls to
   // security_handshaker_shutdown() do nothing.
   is_shutdown_ = true;
@@ -283,6 +292,19 @@ grpc_error* SecurityHandshaker::CheckPeerLocked() {
   return GRPC_ERROR_NONE;
 }
 
+void SecurityHandshaker::ScheduleRead(void* arg, grpc_error* /* error */) {
+  SecurityHandshaker* h = static_cast<SecurityHandshaker*>(arg);
+  grpc_endpoint_read(h->args_->endpoint, h->args_->read_buffer,
+                     &h->on_handshake_data_received_from_peer_,
+                     /*urgent=*/true);
+}
+
+void SecurityHandshaker::ScheduleWrite(void* arg, grpc_error* /* error */) {
+  SecurityHandshaker* h = static_cast<SecurityHandshaker*>(arg);
+  grpc_endpoint_write(h->args_->endpoint, &h->outgoing_,
+                      &h->on_handshake_data_sent_to_peer_, nullptr);
+}
+
 grpc_error* SecurityHandshaker::OnHandshakeNextDoneLocked(
     tsi_result result, const unsigned char* bytes_to_send,
     size_t bytes_to_send_size, tsi_handshaker_result* handshaker_result) {
@@ -294,8 +316,7 @@ grpc_error* SecurityHandshaker::OnHandshakeNextDoneLocked(
   // Read more if we need to.
   if (result == TSI_INCOMPLETE_DATA) {
     GPR_ASSERT(bytes_to_send_size == 0);
-    grpc_endpoint_read(args_->endpoint, args_->read_buffer,
-                       &on_handshake_data_received_from_peer_, /*urgent=*/true);
+    ExecCtx::Run(DEBUG_LOCATION, &schedule_read_closure_, GRPC_ERROR_NONE);
     return error;
   }
   if (result != TSI_OK) {
@@ -313,12 +334,10 @@ grpc_error* SecurityHandshaker::OnHandshakeNextDoneLocked(
         reinterpret_cast<const char*>(bytes_to_send), bytes_to_send_size);
     grpc_slice_buffer_reset_and_unref_internal(&outgoing_);
     grpc_slice_buffer_add(&outgoing_, to_send);
-    grpc_endpoint_write(args_->endpoint, &outgoing_,
-                        &on_handshake_data_sent_to_peer_, nullptr);
+    ExecCtx::Run(DEBUG_LOCATION, &schedule_write_closure_, GRPC_ERROR_NONE);
   } else if (handshaker_result == nullptr) {
     // There is nothing to send, but need to read from peer.
-    grpc_endpoint_read(args_->endpoint, args_->read_buffer,
-                       &on_handshake_data_received_from_peer_, /*urgent=*/true);
+    ExecCtx::Run(DEBUG_LOCATION, &schedule_read_closure_, GRPC_ERROR_NONE);
   } else {
     // Handshake has finished, check peer and so on.
     error = CheckPeerLocked();
@@ -393,9 +412,7 @@ void SecurityHandshaker::OnHandshakeDataSentToPeerFn(void* arg,
   }
   // We may be done.
   if (h->handshaker_result_ == nullptr) {
-    grpc_endpoint_read(h->args_->endpoint, h->args_->read_buffer,
-                       &h->on_handshake_data_received_from_peer_,
-                       /*urgent=*/true);
+    ExecCtx::Run(DEBUG_LOCATION, &h->schedule_read_closure_, GRPC_ERROR_NONE);
   } else {
     error = h->CheckPeerLocked();
     if (error != GRPC_ERROR_NONE) {
@@ -421,7 +438,7 @@ void SecurityHandshaker::Shutdown(grpc_error* why) {
   GRPC_ERROR_UNREF(why);
 }
 
-void SecurityHandshaker::DoHandshake(grpc_tcp_server_acceptor* acceptor,
+void SecurityHandshaker::DoHandshake(grpc_tcp_server_acceptor* /*acceptor*/,
                                      grpc_closure* on_handshake_done,
                                      HandshakerArgs* args) {
   auto ref = Ref();
@@ -446,12 +463,12 @@ class FailHandshaker : public Handshaker {
  public:
   const char* name() const override { return "security_fail"; }
   void Shutdown(grpc_error* why) override { GRPC_ERROR_UNREF(why); }
-  void DoHandshake(grpc_tcp_server_acceptor* acceptor,
+  void DoHandshake(grpc_tcp_server_acceptor* /*acceptor*/,
                    grpc_closure* on_handshake_done,
-                   HandshakerArgs* args) override {
-    GRPC_CLOSURE_SCHED(on_handshake_done,
-                       GRPC_ERROR_CREATE_FROM_STATIC_STRING(
-                           "Failed to create security handshaker"));
+                   HandshakerArgs* /*args*/) override {
+    ExecCtx::Run(DEBUG_LOCATION, on_handshake_done,
+                 GRPC_ERROR_CREATE_FROM_STATIC_STRING(
+                     "Failed to create security handshaker"));
   }
 
  private:

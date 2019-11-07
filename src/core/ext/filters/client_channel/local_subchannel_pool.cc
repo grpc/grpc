@@ -43,7 +43,7 @@ Subchannel* LocalSubchannelPool::RegisterSubchannel(SubchannelKey* key,
     GRPC_SUBCHANNEL_UNREF(constructed, "subchannel_register+found_existing");
   } else {
     // There hasn't been such subchannel. Add one.
-    subchannel_map_ = grpc_avl_add(subchannel_map_, New<SubchannelKey>(*key),
+    subchannel_map_ = grpc_avl_add(subchannel_map_, new SubchannelKey(*key),
                                    constructed, nullptr);
     c = constructed;
   }
@@ -62,26 +62,26 @@ Subchannel* LocalSubchannelPool::FindSubchannel(SubchannelKey* key) {
 
 namespace {
 
-void sck_avl_destroy(void* p, void* user_data) {
+void sck_avl_destroy(void* p, void* /*user_data*/) {
   SubchannelKey* key = static_cast<SubchannelKey*>(p);
-  Delete(key);
+  delete key;
 }
 
-void* sck_avl_copy(void* p, void* unused) {
+void* sck_avl_copy(void* p, void* /*unused*/) {
   const SubchannelKey* key = static_cast<const SubchannelKey*>(p);
-  auto new_key = New<SubchannelKey>(*key);
+  auto new_key = new SubchannelKey(*key);
   return static_cast<void*>(new_key);
 }
 
-long sck_avl_compare(void* a, void* b, void* unused) {
+long sck_avl_compare(void* a, void* b, void* /*unused*/) {
   const SubchannelKey* key_a = static_cast<const SubchannelKey*>(a);
   const SubchannelKey* key_b = static_cast<const SubchannelKey*>(b);
   return key_a->Cmp(*key_b);
 }
 
-void scv_avl_destroy(void* p, void* user_data) {}
+void scv_avl_destroy(void* /*p*/, void* /*user_data*/) {}
 
-void* scv_avl_copy(void* p, void* unused) { return p; }
+void* scv_avl_copy(void* p, void* /*unused*/) { return p; }
 
 }  // namespace
 

@@ -79,7 +79,7 @@ grpc_core::Chttp2InsecureClientChannelFactory* g_factory;
 gpr_once g_factory_once = GPR_ONCE_INIT;
 
 void FactoryInit() {
-  g_factory = grpc_core::New<grpc_core::Chttp2InsecureClientChannelFactory>();
+  g_factory = new grpc_core::Chttp2InsecureClientChannelFactory();
 }
 
 }  // namespace
@@ -99,7 +99,9 @@ grpc_channel* grpc_insecure_channel_create(const char* target,
   // Add channel arg containing the client channel factory.
   gpr_once_init(&g_factory_once, FactoryInit);
   grpc_arg arg = grpc_core::ClientChannelFactory::CreateChannelArg(g_factory);
-  grpc_channel_args* new_args = grpc_channel_args_copy_and_add(args, &arg, 1);
+  const char* arg_to_remove = arg.key;
+  grpc_channel_args* new_args = grpc_channel_args_copy_and_add_and_remove(
+      args, &arg_to_remove, 1, &arg, 1);
   // Create channel.
   grpc_channel* channel = grpc_core::CreateChannel(target, new_args);
   // Clean up.

@@ -72,7 +72,7 @@ TEST(InlinedVectorTest, PushBackWithMove) {
 
 TEST(InlinedVectorTest, EmplaceBack) {
   InlinedVector<UniquePtr<int>, 1> v;
-  v.emplace_back(New<int>(3));
+  v.emplace_back(new int(3));
   EXPECT_EQ(1UL, v.size());
   EXPECT_EQ(3, *v[0]);
 }
@@ -484,6 +484,19 @@ TEST(InlinedVectorTest, PopBackAllocated) {
   size_t sz = v.size();
   v.pop_back();
   EXPECT_EQ(sz - 1, v.size());
+}
+
+TEST(InlinedVectorTest, Resize) {
+  const int kInlinedSize = 2;
+  InlinedVector<UniquePtr<int>, kInlinedSize> v;
+  // Size up.
+  v.resize(5);
+  EXPECT_EQ(5UL, v.size());
+  EXPECT_EQ(nullptr, v[4]);
+  // Size down.
+  v[4] = MakeUnique<int>(5);
+  v.resize(1);
+  EXPECT_EQ(1UL, v.size());
 }
 
 }  // namespace testing

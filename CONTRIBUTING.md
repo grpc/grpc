@@ -72,6 +72,10 @@ How to get your contributions merged smoothly and quickly.
 - Don't fix code style and formatting unless you are already changing that line
   to address an issue.  PRs with irrelevant changes won't be merged.  If you do
   want to fix formatting or style, do that in a separate PR.
+
+- If you are adding a new file, make sure it has the copyright message template
+  at the top as a comment. You can copy over the message from an existing file
+  and update the year.
  
 - Unless your PR is trivial, you should expect there will be reviewer comments
   that you'll need to address before merging.  We expect you to be reasonably

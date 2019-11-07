@@ -11,20 +11,22 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
 import logging
 import unittest
 
 from grpc.experimental import aio
-from tests_aio.unit import test_base
+from tests_aio.unit._test_server import start_test_server
+from tests_aio.unit._test_base import AioTestBase
 
 
-class TestInsecureChannel(test_base.AioTestBase):
+class TestInsecureChannel(AioTestBase):
 
     def test_insecure_channel(self):
 
         async def coro():
-            channel = aio.insecure_channel(self.server_target)
+            server_target, _ = await start_test_server()  # pylint: disable=unused-variable
+
+            channel = aio.insecure_channel(server_target)
             self.assertIsInstance(channel, aio.Channel)
 
         self.loop.run_until_complete(coro())

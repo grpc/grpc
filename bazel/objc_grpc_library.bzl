@@ -2,8 +2,8 @@ load(
     "//bazel:generate_objc.bzl",
     "generate_objc",
     "generate_objc_hdrs",
+    "generate_objc_non_arc_srcs",
     "generate_objc_srcs",
-    "generate_objc_non_arc_srcs"
 )
 load("//bazel:protobuf.bzl", "well_known_proto_libs")
 
@@ -66,4 +66,3 @@ def objc_grpc_library(name, deps, srcs = [], use_well_known_protos = False, **kw
         ],
         **kwargs
     )
-

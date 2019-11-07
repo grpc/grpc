@@ -21,6 +21,7 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <functional>
 #include <iterator>
 
 #include "src/core/ext/filters/client_channel/server_address.h"
@@ -92,11 +93,11 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
     /// Application-specific requests cost metrics.  Metric names are
     /// determined by the application.  Each value is an absolute cost
     /// (e.g. 3487 bytes of storage) associated with the request.
-    Map<StringView, double, StringLess> request_cost;
+    std::map<StringView, double, StringLess> request_cost;
     /// Application-specific resource utilization metrics.  Metric names
     /// are determined by the application.  Each value is expressed as a
     /// fraction of total resources available.
-    Map<StringView, double, StringLess> utilization;
+    std::map<StringView, double, StringLess> utilization;
   };
 
   /// Interface for accessing per-call state.
@@ -313,13 +314,16 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
     // TODO(roth): Once we have a C++-like interface for combiners, this
     // API should change to take a smart pointer that does pass ownership
     // of a reference.
-    grpc_combiner* combiner = nullptr;
+    Combiner* combiner = nullptr;
     /// Channel control helper.
     /// Note: LB policies MUST NOT call any method on the helper from
     /// their constructor.
     UniquePtr<ChannelControlHelper> channel_control_helper;
     /// Channel args.
     // TODO(roth): Find a better channel args representation for this API.
+    // TODO(roth): Clarify ownership semantics here -- currently, this
+    // does not take ownership of args, which is the opposite of how we
+    // handle them in UpdateArgs.
     const grpc_channel_args* args = nullptr;
   };
 
@@ -383,7 +387,7 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
   };
 
  protected:
-  grpc_combiner* combiner() const { return combiner_; }
+  Combiner* combiner() const { return combiner_; }
 
   // Note: LB policies MUST NOT call any method on the helper from their
   // constructor.
@@ -396,7 +400,7 @@ class LoadBalancingPolicy : public InternallyRefCounted<LoadBalancingPolicy> {
 
  private:
   /// Combiner under which LB policy actions take place.
-  grpc_combiner* combiner_;
+  Combiner* combiner_;
   /// Owned pointer to interested parties in load balancing decisions.
   grpc_pollset_set* interested_parties_;
   /// Channel control helper.

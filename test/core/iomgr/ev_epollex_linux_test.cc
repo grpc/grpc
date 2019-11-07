@@ -27,7 +27,7 @@
 
 #include "test/core/util/test_config.h"
 
-static void pollset_destroy(void* ps, grpc_error* error) {
+static void pollset_destroy(void* ps, grpc_error* /*error*/) {
   grpc_pollset_destroy(static_cast<grpc_pollset*>(ps));
   gpr_free(ps);
 }
@@ -111,5 +111,5 @@ int main(int argc, char** argv) {
   return 0;
 }
 #else /* defined(GRPC_LINUX_EPOLL_CREATE1) && defined(GRPC_LINUX_EVENTFD) */
-int main(int argc, char** argv) { return 0; }
+int main(int /*argc*/, char** /*argv*/) { return 0; }
 #endif

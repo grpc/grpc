@@ -239,7 +239,7 @@ class Chttp2IncomingByteStream : public ByteStream {
   void Ref() { refs_.Ref(); }
   void Unref() {
     if (GPR_UNLIKELY(refs_.Unref())) {
-      grpc_core::Delete(this);
+      delete this;
     }
   }
 
@@ -300,7 +300,7 @@ struct grpc_chttp2_transport {
 
   grpc_resource_user* resource_user;
 
-  grpc_combiner* combiner;
+  grpc_core::Combiner* combiner;
 
   grpc_closure* notify_on_receive_settings = nullptr;
 
@@ -459,6 +459,8 @@ struct grpc_chttp2_transport {
 
   /* next bdp ping timer */
   bool have_next_bdp_ping_timer = false;
+  /** If start_bdp_ping_locked has been called */
+  bool bdp_ping_started = false;
   grpc_timer next_bdp_ping_timer;
 
   /* keep-alive ping support */
@@ -480,6 +482,8 @@ struct grpc_chttp2_transport {
   grpc_millis keepalive_timeout;
   /** if keepalive pings are allowed when there's no outstanding streams */
   bool keepalive_permit_without_calls = false;
+  /** If start_keepalive_ping_locked has been called */
+  bool keepalive_ping_started = false;
   /** keep-alive state machine state */
   grpc_chttp2_keepalive_state keepalive_state;
   grpc_core::ContextList* cl = nullptr;
@@ -810,7 +814,7 @@ inline void grpc_chttp2_unref_transport(grpc_chttp2_transport* t,
                                         const char* reason, const char* file,
                                         int line) {
   if (t->refs.Unref(grpc_core::DebugLocation(file, line), reason)) {
-    grpc_core::Delete(t);
+    delete t;
   }
 }
 inline void grpc_chttp2_ref_transport(grpc_chttp2_transport* t,
@@ -823,7 +827,7 @@ inline void grpc_chttp2_ref_transport(grpc_chttp2_transport* t,
 #define GRPC_CHTTP2_UNREF_TRANSPORT(t, r) grpc_chttp2_unref_transport(t)
 inline void grpc_chttp2_unref_transport(grpc_chttp2_transport* t) {
   if (t->refs.Unref()) {
-    grpc_core::Delete(t);
+    delete t;
   }
 }
 inline void grpc_chttp2_ref_transport(grpc_chttp2_transport* t) {
@@ -861,5 +865,7 @@ void grpc_chttp2_fail_pending_writes(grpc_chttp2_transport* t,
     initialization */
 void grpc_chttp2_config_default_keepalive_args(grpc_channel_args* args,
                                                bool is_client);
+
+void grpc_chttp2_retry_initiate_ping(void* tp, grpc_error* error);
 
 #endif /* GRPC_CORE_EXT_TRANSPORT_CHTTP2_TRANSPORT_INTERNAL_H */

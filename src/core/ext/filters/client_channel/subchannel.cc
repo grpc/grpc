@@ -213,11 +213,12 @@ void SubchannelCall::Unref() {
   GRPC_CALL_STACK_UNREF(SUBCHANNEL_CALL_TO_CALL_STACK(this), "");
 }
 
-void SubchannelCall::Unref(const DebugLocation& location, const char* reason) {
+void SubchannelCall::Unref(const DebugLocation& /*location*/,
+                           const char* reason) {
   GRPC_CALL_STACK_UNREF(SUBCHANNEL_CALL_TO_CALL_STACK(this), reason);
 }
 
-void SubchannelCall::Destroy(void* arg, grpc_error* error) {
+void SubchannelCall::Destroy(void* arg, grpc_error* /*error*/) {
   GPR_TIMER_SCOPE("subchannel_call_destroy", 0);
   SubchannelCall* self = static_cast<SubchannelCall*>(arg);
   // Keep some members before destroying the subchannel call.
@@ -300,8 +301,8 @@ void SubchannelCall::IncrementRefCount() {
   GRPC_CALL_STACK_REF(SUBCHANNEL_CALL_TO_CALL_STACK(this), "");
 }
 
-void SubchannelCall::IncrementRefCount(const grpc_core::DebugLocation& location,
-                                       const char* reason) {
+void SubchannelCall::IncrementRefCount(
+    const grpc_core::DebugLocation& /*location*/, const char* reason) {
   GRPC_CALL_STACK_REF(SUBCHANNEL_CALL_TO_CALL_STACK(this), reason);
 }
 
@@ -668,21 +669,21 @@ Subchannel::~Subchannel() {
   grpc_channel_args_destroy(args_);
   grpc_connector_unref(connector_);
   grpc_pollset_set_destroy(pollset_set_);
-  Delete(key_);
+  delete key_;
 }
 
 Subchannel* Subchannel::Create(grpc_connector* connector,
                                const grpc_channel_args* args) {
-  SubchannelKey* key = New<SubchannelKey>(args);
+  SubchannelKey* key = new SubchannelKey(args);
   SubchannelPoolInterface* subchannel_pool =
       SubchannelPoolInterface::GetSubchannelPoolFromChannelArgs(args);
   GPR_ASSERT(subchannel_pool != nullptr);
   Subchannel* c = subchannel_pool->FindSubchannel(key);
   if (c != nullptr) {
-    Delete(key);
+    delete key;
     return c;
   }
-  c = New<Subchannel>(key, connector, args);
+  c = new Subchannel(key, connector, args);
   // Try to register the subchannel before setting the subchannel pool.
   // Otherwise, in case of a registration race, unreffing c in
   // RegisterSubchannel() will cause c to be tried to be unregistered, while
@@ -721,9 +722,9 @@ Subchannel* Subchannel::WeakRef(GRPC_SUBCHANNEL_REF_EXTRA_ARGS) {
 
 namespace {
 
-void subchannel_destroy(void* arg, grpc_error* error) {
+void subchannel_destroy(void* arg, grpc_error* /*error*/) {
   Subchannel* self = static_cast<Subchannel*>(arg);
-  Delete(self);
+  delete self;
 }
 
 }  // namespace
@@ -733,13 +734,14 @@ void Subchannel::WeakUnref(GRPC_SUBCHANNEL_REF_EXTRA_ARGS) {
   old_refs = RefMutate(-static_cast<gpr_atm>(1),
                        1 GRPC_SUBCHANNEL_REF_MUTATE_PURPOSE("WEAK_UNREF"));
   if (old_refs == 1) {
-    GRPC_CLOSURE_SCHED(GRPC_CLOSURE_CREATE(subchannel_destroy, this,
-                                           grpc_schedule_on_exec_ctx),
-                       GRPC_ERROR_NONE);
+    ExecCtx::Run(DEBUG_LOCATION,
+                 GRPC_CLOSURE_CREATE(subchannel_destroy, this,
+                                     grpc_schedule_on_exec_ctx),
+                 GRPC_ERROR_NONE);
   }
 }
 
-Subchannel* Subchannel::RefFromWeakRef(GRPC_SUBCHANNEL_REF_EXTRA_ARGS) {
+Subchannel* Subchannel::RefFromWeakRef() {
   for (;;) {
     gpr_atm old_refs = gpr_atm_acq_load(&ref_pair_);
     if (old_refs >= (1 << INTERNAL_REF_BITS)) {
@@ -1008,7 +1010,7 @@ void Subchannel::OnConnectingFinished(void* arg, grpc_error* error) {
 
 namespace {
 
-void ConnectionDestroy(void* arg, grpc_error* error) {
+void ConnectionDestroy(void* arg, grpc_error* /*error*/) {
   grpc_channel_stack* stk = static_cast<grpc_channel_stack*>(arg);
   grpc_channel_stack_destroy(stk);
   gpr_free(stk);
@@ -1048,7 +1050,7 @@ bool Subchannel::PublishTransportLocked() {
   }
   // Publish.
   connected_subchannel_.reset(
-      New<ConnectedSubchannel>(stk, args_, channelz_node_));
+      new ConnectedSubchannel(stk, args_, channelz_node_));
   gpr_log(GPR_INFO, "New connected subchannel at %p for subchannel %p",
           connected_subchannel_.get(), this);
   if (channelz_node_ != nullptr) {

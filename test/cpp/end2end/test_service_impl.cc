@@ -246,9 +246,9 @@ Status TestServiceImpl::Echo(ServerContext* context, const EchoRequest* request,
   return Status::OK;
 }
 
-Status TestServiceImpl::CheckClientInitialMetadata(ServerContext* context,
-                                                   const SimpleRequest* request,
-                                                   SimpleResponse* response) {
+Status TestServiceImpl::CheckClientInitialMetadata(
+    ServerContext* context, const SimpleRequest* /*request*/,
+    SimpleResponse* /*response*/) {
   EXPECT_EQ(MetadataMatchCount(context->client_metadata(),
                                kCheckClientInitialMetadataKey,
                                kCheckClientInitialMetadataVal),
@@ -296,8 +296,8 @@ void CallbackTestServiceImpl::Echo(
 }
 
 void CallbackTestServiceImpl::CheckClientInitialMetadata(
-    ServerContext* context, const SimpleRequest* request,
-    SimpleResponse* response,
+    ServerContext* context, const SimpleRequest* /*request*/,
+    SimpleResponse* /*response*/,
     experimental::ServerCallbackRpcController* controller) {
   EXPECT_EQ(MetadataMatchCount(context->client_metadata(),
                                kCheckClientInitialMetadataKey,
@@ -741,7 +741,7 @@ CallbackTestServiceImpl::ResponseStream() {
       EXPECT_TRUE(ctx_->IsCancelled());
       FinishOnce(Status::CANCELLED);
     }
-    void OnWriteDone(bool ok) override {
+    void OnWriteDone(bool /*ok*/) override {
       if (num_msgs_sent_ < server_responses_to_send_) {
         NextWrite();
       } else if (server_coalescing_api_ != 0) {
@@ -854,7 +854,7 @@ CallbackTestServiceImpl::BidiStream() {
         FinishOnce(Status::OK);
       }
     }
-    void OnWriteDone(bool ok) override {
+    void OnWriteDone(bool /*ok*/) override {
       std::lock_guard<std::mutex> l(finish_mu_);
       if (!finished_) {
         StartRead(&request_);

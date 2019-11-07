@@ -32,6 +32,10 @@ grpc_channel* grpc_channel_create(const char* target,
                                   grpc_transport* optional_transport,
                                   grpc_resource_user* resource_user = nullptr);
 
+/** The same as grpc_channel_destroy, but doesn't create an ExecCtx, and so
+ * is safe to use from within core. */
+void grpc_channel_destroy_internal(grpc_channel* channel);
+
 grpc_channel* grpc_channel_create_with_builder(
     grpc_channel_stack_builder* builder,
     grpc_channel_stack_type channel_stack_type);
@@ -54,25 +58,6 @@ grpc_channel_stack* grpc_channel_get_channel_stack(grpc_channel* channel);
 
 grpc_core::channelz::ChannelNode* grpc_channel_get_channelz_node(
     grpc_channel* channel);
-
-/** Get a grpc_mdelem of grpc-status: X where X is the numeric value of
-    status_code.
-
-    The returned elem is owned by the caller. */
-grpc_mdelem grpc_channel_get_reffed_status_elem_slowpath(grpc_channel* channel,
-                                                         int status_code);
-inline grpc_mdelem grpc_channel_get_reffed_status_elem(grpc_channel* channel,
-                                                       int status_code) {
-  switch (status_code) {
-    case 0:
-      return GRPC_MDELEM_GRPC_STATUS_0;
-    case 1:
-      return GRPC_MDELEM_GRPC_STATUS_1;
-    case 2:
-      return GRPC_MDELEM_GRPC_STATUS_2;
-  }
-  return grpc_channel_get_reffed_status_elem_slowpath(channel, status_code);
-}
 
 size_t grpc_channel_get_call_size_estimate(grpc_channel* channel);
 void grpc_channel_update_call_size_estimate(grpc_channel* channel, size_t size);

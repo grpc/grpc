@@ -67,6 +67,7 @@ grpc_cc_test(
     external_deps = [
         "gtest",
     ],
+    tags = ["no_test_ios"],
     deps = [
         "//:gpr",
         "//:grpc",
@@ -78,7 +79,6 @@ grpc_cc_test(
         "//test/core/util:grpc_test_util",
         "//test/cpp/util:test_util",
     ],
-    tags = ["no_test_ios"],
 )
 
 grpc_cc_test(
@@ -90,7 +90,10 @@ grpc_cc_test(
     external_deps = [
         "gtest",
     ],
-    tags = ["no_windows", "no_test_ios"],
+    tags = [
+        "no_test_ios",
+        "no_windows",
+    ],
     deps = [
         ":test_service_impl",
         "//:gpr",
@@ -112,6 +115,10 @@ grpc_cc_test(
     external_deps = [
         "gtest",
     ],
+    tags = [
+        "no_test_ios",
+        "no_windows",
+    ],
     deps = [
         "//:gpr",
         "//:grpc",
@@ -122,7 +129,6 @@ grpc_cc_test(
         "//test/core/util:grpc_test_util",
         "//test/cpp/util:test_util",
     ],
-    tags = ["no_test_ios", "no_windows"],
 )
 
 grpc_cc_binary(
@@ -267,13 +273,13 @@ grpc_cc_test(
 grpc_cc_test(
     name = "end2end_test",
     size = "large",
+    tags = ["no_test_ios"],
     deps = [
         ":end2end_test_lib",
         # DO NOT REMOVE THE grpc++ dependence below since the internal build
         # system uses it to specialize targets
         "//:grpc++",
     ],
-    tags = ["no_test_ios"],
 )
 
 grpc_cc_test(
@@ -430,20 +436,20 @@ grpc_cc_test(
     external_deps = [
         "gtest",
     ],
+    tags = ["no_windows"],  # TODO(jtattermusch): fix test on windows
     deps = [
         ":test_service_impl",
         "//:gpr",
         "//:grpc",
         "//:grpc++",
-        "//src/proto/grpc/testing/xds:orca_load_report_for_test_proto",
         "//src/proto/grpc/testing:echo_messages_proto",
         "//src/proto/grpc/testing:echo_proto",
         "//src/proto/grpc/testing/duplicate:echo_duplicate_proto",
+        "//src/proto/grpc/testing/xds:orca_load_report_for_test_proto",
         "//test/core/util:grpc_test_util",
         "//test/core/util:test_lb_policies",
         "//test/cpp/util:test_util",
     ],
-    tags = ["no_windows"],  # TODO(jtattermusch): fix test on windows
 )
 
 grpc_cc_test(
@@ -471,6 +477,7 @@ grpc_cc_test(
     external_deps = [
         "gtest",
     ],
+    tags = ["no_windows"],  # TODO(jtattermusch): fix test on windows
     deps = [
         ":test_service_impl",
         "//:gpr",
@@ -484,7 +491,6 @@ grpc_cc_test(
         "//test/core/util:grpc_test_util",
         "//test/cpp/util:test_util",
     ],
-    tags = ["no_windows"],  # TODO(jtattermusch): fix test on windows
 )
 
 grpc_cc_test(
@@ -494,22 +500,25 @@ grpc_cc_test(
     external_deps = [
         "gtest",
     ],
+    tags = [
+        "no_test_ios",
+        "no_windows",
+    ],  # TODO(jtattermusch): fix test on windows
     deps = [
         ":test_service_impl",
         "//:gpr",
         "//:grpc",
         "//:grpc++",
         "//:grpc_resolver_fake",
-        "//src/proto/grpc/testing/xds:ads_for_test_proto",
-        "//src/proto/grpc/testing/xds:eds_for_test_proto",
-        "//src/proto/grpc/testing/xds:lrs_for_test_proto",
         "//src/proto/grpc/testing:echo_messages_proto",
         "//src/proto/grpc/testing:echo_proto",
         "//src/proto/grpc/testing/duplicate:echo_duplicate_proto",
+        "//src/proto/grpc/testing/xds:ads_for_test_proto",
+        "//src/proto/grpc/testing/xds:eds_for_test_proto",
+        "//src/proto/grpc/testing/xds:lrs_for_test_proto",
         "//test/core/util:grpc_test_util",
         "//test/cpp/util:test_util",
     ],
-    tags = ["no_windows"],  # TODO(jtattermusch): fix test on windows
 )
 
 grpc_cc_test(
@@ -562,6 +571,10 @@ grpc_cc_test(
     external_deps = [
         "gtest",
     ],
+    tags = [
+        "no_test_ios",
+        "no_windows",
+    ],
     deps = [
         "//:gpr",
         "//:grpc",
@@ -572,7 +585,6 @@ grpc_cc_test(
         "//test/core/util:grpc_test_util",
         "//test/cpp/util:test_util",
     ],
-    tags = ["no_test_ios", "no_windows"],
 )
 
 grpc_cc_binary(
@@ -621,12 +633,15 @@ grpc_cc_test(
     external_deps = [
         "gtest",
     ],
+    tags = [
+        "no_test_ios",
+        "no_windows",
+    ],
     deps = [
         "//:grpcpp_server_load_reporting",
         "//src/proto/grpc/testing:echo_proto",
         "//test/cpp/util:test_util",
     ],
-    tags = ["no_test_ios", "no_windows"],
 )
 
 grpc_cc_test(
@@ -635,7 +650,10 @@ grpc_cc_test(
     external_deps = [
         "gtest",
     ],
-    tags = ["manual", "no_test_ios"],
+    tags = [
+        "manual",
+        "no_test_ios",
+    ],
     deps = [
         ":test_service_impl",
         "//:gpr",
@@ -711,7 +729,10 @@ grpc_cc_test(
     external_deps = [
         "gtest",
     ],
-    tags = ["manual", "no_test_ios"],  # test requires root, won't work with bazel RBE
+    tags = [
+        "manual",
+        "no_test_ios",
+    ],  # test requires root, won't work with bazel RBE
     deps = [
         ":test_service_impl",
         "//:gpr",

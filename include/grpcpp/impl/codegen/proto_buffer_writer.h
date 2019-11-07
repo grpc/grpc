@@ -86,7 +86,7 @@ class ProtoBufferWriter : public ::grpc::protobuf::io::ZeroCopyOutputStream {
     //    or our maximum allocation size
     // 3. Provide the slice start and size available
     // 4. Add the slice being returned to the slice buffer
-    size_t remain = total_size_ - byte_count_;
+    size_t remain = static_cast<size_t>(total_size_ - byte_count_);
     if (have_backup_) {
       /// If we have a backup slice, we should use it first
       slice_ = backup_slice_;

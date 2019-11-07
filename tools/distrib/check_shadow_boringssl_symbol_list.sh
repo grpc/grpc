@@ -27,6 +27,6 @@ symbol_list="../../src/objective-c/grpc_shadow_boringssl_symbol_list"
 ver1=$(git submodule |grep "boringssl " | awk '{print $1}' | head -n 1)
 ver2=$(cat $boringssl_podspec_original | grep ':commit =>' | sed -E 's/.*"(.*)".*/\1/g')
 ver3=$(cat $symbol_list | sed -n '2 p')
-[ $ver1 == $ver2 ] && [ $ver1 == $ver3 ] || { echo "BoringSSL podspec (src/objective-c/BoringSSL.podspec), BoringSSL submodule (third_party/boringssl), and BoringSSL symbol list (src/objective-c/grpc_shadow_boringssl_symbol_list) commit do not match." ; echo "BoringSSL podspec: $ver1" ; echo "BoringSSL submodule: $ver2" ; echo "BoringSSL symbol list: $ver3" ; exit 1 ; }
+[ $ver1 == $ver2 ] && [ $ver1 == $ver3 ] || { echo "BoringSSL submodule (third_party/boringssl), BoringSSL podspec (src/objective-c/BoringSSL.podspec), and BoringSSL symbol list (src/objective-c/grpc_shadow_boringssl_symbol_list) commit do not match." ; echo "BoringSSL submodule: $ver1" ; echo "BoringSSL podspec: $ver2" ;  echo "BoringSSL symbol list: $ver3" ; exit 1 ; }
 
 exit 0

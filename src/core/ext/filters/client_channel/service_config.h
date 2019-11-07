@@ -69,14 +69,18 @@ class ServiceConfig : public RefCounted<ServiceConfig> {
    public:
     virtual ~Parser() = default;
 
-    virtual UniquePtr<ParsedConfig> ParseGlobalParams(const grpc_json* json,
-                                                      grpc_error** error) {
+    virtual UniquePtr<ParsedConfig> ParseGlobalParams(
+        const grpc_json* /* json */, grpc_error** error) {
+      // Avoid unused parameter warning on debug-only parameter
+      (void)error;
       GPR_DEBUG_ASSERT(error != nullptr);
       return nullptr;
     }
 
-    virtual UniquePtr<ParsedConfig> ParsePerMethodParams(const grpc_json* json,
-                                                         grpc_error** error) {
+    virtual UniquePtr<ParsedConfig> ParsePerMethodParams(
+        const grpc_json* /* json */, grpc_error** error) {
+      // Avoid unused parameter warning on debug-only parameter
+      (void)error;
       GPR_DEBUG_ASSERT(error != nullptr);
       return nullptr;
     }
@@ -124,6 +128,10 @@ class ServiceConfig : public RefCounted<ServiceConfig> {
   static RefCountedPtr<ServiceConfig> Create(const char* json,
                                              grpc_error** error);
 
+  // Takes ownership of \a json_tree.
+  ServiceConfig(UniquePtr<char> service_config_json,
+                UniquePtr<char> json_string, grpc_json* json_tree,
+                grpc_error** error);
   ~ServiceConfig();
 
   const char* service_config_json() const { return service_config_json_.get(); }
@@ -154,15 +162,6 @@ class ServiceConfig : public RefCounted<ServiceConfig> {
   static void Shutdown();
 
  private:
-  // So New() can call our private ctor.
-  template <typename T, typename... Args>
-  friend T* New(Args&&... args);
-
-  // Takes ownership of \a json_tree.
-  ServiceConfig(UniquePtr<char> service_config_json,
-                UniquePtr<char> json_string, grpc_json* json_tree,
-                grpc_error** error);
-
   // Helper functions to parse the service config
   grpc_error* ParseGlobalParams(const grpc_json* json_tree);
   grpc_error* ParsePerMethodParams(const grpc_json* json_tree);

@@ -56,6 +56,11 @@ namespace Grpc.Core.Internal
             return sliceBuffer;
         }
 
+        public override void SetPayloadLength(int payloadLength)
+        {
+            // Length is calculated using the buffer writer
+        }
+
         /// <summary>
         /// Complete the payload written so far.
         /// </summary>

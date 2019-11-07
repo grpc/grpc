@@ -148,9 +148,9 @@ struct grpc_channel_credentials
 
  private:
   const char* type_;
-  grpc_core::Map<grpc_core::UniquePtr<char>,
-                 grpc_core::RefCountedPtr<grpc_channel_credentials>,
-                 grpc_core::StringLess>
+  std::map<grpc_core::UniquePtr<char>,
+           grpc_core::RefCountedPtr<grpc_channel_credentials>,
+           grpc_core::StringLess>
       local_control_plane_creds_;
 };
 
@@ -314,12 +314,12 @@ struct grpc_credentials_metadata_request {
 inline grpc_credentials_metadata_request*
 grpc_credentials_metadata_request_create(
     grpc_core::RefCountedPtr<grpc_call_credentials> creds) {
-  return grpc_core::New<grpc_credentials_metadata_request>(std::move(creds));
+  return new grpc_credentials_metadata_request(std::move(creds));
 }
 
 inline void grpc_credentials_metadata_request_destroy(
     grpc_credentials_metadata_request* r) {
-  grpc_core::Delete(r);
+  delete r;
 }
 
 #endif /* GRPC_CORE_LIB_SECURITY_CREDENTIALS_CREDENTIALS_H */

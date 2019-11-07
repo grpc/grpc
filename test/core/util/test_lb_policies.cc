@@ -93,7 +93,7 @@ class InterceptRecvTrailingMetadataLoadBalancingPolicy
   InterceptRecvTrailingMetadataLoadBalancingPolicy(
       Args args, InterceptRecvTrailingMetadataCallback cb, void* user_data)
       : ForwardingLoadBalancingPolicy(
-            UniquePtr<ChannelControlHelper>(New<Helper>(
+            UniquePtr<ChannelControlHelper>(new Helper(
                 RefCountedPtr<InterceptRecvTrailingMetadataLoadBalancingPolicy>(
                     this),
                 cb, user_data)),
@@ -154,7 +154,7 @@ class InterceptRecvTrailingMetadataLoadBalancingPolicy
                      UniquePtr<SubchannelPicker> picker) override {
       parent_->channel_control_helper()->UpdateState(
           state, UniquePtr<SubchannelPicker>(
-                     New<Picker>(std::move(picker), cb_, user_data_)));
+                     new Picker(std::move(picker), cb_, user_data_)));
     }
 
     void RequestReresolution() override {
@@ -185,7 +185,7 @@ class InterceptRecvTrailingMetadataLoadBalancingPolicy
     }
 
    private:
-    void RecordRecvTrailingMetadata(grpc_error* error,
+    void RecordRecvTrailingMetadata(grpc_error* /*error*/,
                                     MetadataInterface* recv_trailing_metadata,
                                     CallState* call_state) {
       GPR_ASSERT(recv_trailing_metadata != nullptr);
@@ -226,7 +226,7 @@ class InterceptTrailingFactory : public LoadBalancingPolicyFactory {
   }
 
   RefCountedPtr<LoadBalancingPolicy::Config> ParseLoadBalancingConfig(
-      const grpc_json* json, grpc_error** error) const override {
+      const grpc_json* /*json*/, grpc_error** /*error*/) const override {
     return nullptr;
   }
 
@@ -241,7 +241,7 @@ void RegisterInterceptRecvTrailingMetadataLoadBalancingPolicy(
     InterceptRecvTrailingMetadataCallback cb, void* user_data) {
   LoadBalancingPolicyRegistry::Builder::RegisterLoadBalancingPolicyFactory(
       UniquePtr<LoadBalancingPolicyFactory>(
-          New<InterceptTrailingFactory>(cb, user_data)));
+          new InterceptTrailingFactory(cb, user_data)));
 }
 
 }  // namespace grpc_core

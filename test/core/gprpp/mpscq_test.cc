@@ -38,7 +38,7 @@ typedef struct test_node {
 } test_node;
 
 static test_node* new_node(size_t i, size_t* ctr) {
-  test_node* n = grpc_core::New<test_node>();
+  test_node* n = new test_node();
   n->i = i;
   n->ctr = ctr;
   return n;

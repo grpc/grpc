@@ -72,7 +72,10 @@ void grpc_stream_ref_init(grpc_stream_refcount* refcount, int initial_refs,
 void grpc_stream_ref_init(grpc_stream_refcount* refcount, int initial_refs,
                           grpc_iomgr_cb_func cb, void* cb_arg);
 #define GRPC_STREAM_REF_INIT(rc, ir, cb, cb_arg, objtype) \
-  grpc_stream_ref_init(rc, ir, cb, cb_arg)
+  do {                                                    \
+    grpc_stream_ref_init(rc, ir, cb, cb_arg);             \
+    (void)(objtype);                                      \
+  } while (0)
 #endif
 
 #ifndef NDEBUG
@@ -293,7 +296,7 @@ struct grpc_transport_stream_op_batch_payload {
   struct {
     grpc_metadata_batch* recv_trailing_metadata = nullptr;
     grpc_transport_stream_stats* collect_stats = nullptr;
-    /** Should be enqueued when initial metadata is ready to be processed. */
+    /** Should be enqueued when trailing metadata is ready to be processed. */
     grpc_closure* recv_trailing_metadata_ready = nullptr;
   } recv_trailing_metadata;
 

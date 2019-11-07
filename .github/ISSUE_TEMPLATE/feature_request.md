@@ -1,8 +1,8 @@
 ---
 name: Request a feature
 about: Suggest an idea for this project
-labels: kind/enhancement
-assignees: AspirinSJL
+labels: kind/enhancement, priority/P2
+assignees: hcaseyal
 
 ---
 

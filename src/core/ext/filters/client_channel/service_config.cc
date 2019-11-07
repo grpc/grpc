@@ -318,11 +318,11 @@ size_t ServiceConfig::RegisterParser(UniquePtr<Parser> parser) {
 
 void ServiceConfig::Init() {
   GPR_ASSERT(g_registered_parsers == nullptr);
-  g_registered_parsers = New<ServiceConfigParserList>();
+  g_registered_parsers = new ServiceConfigParserList();
 }
 
 void ServiceConfig::Shutdown() {
-  Delete(g_registered_parsers);
+  delete g_registered_parsers;
   g_registered_parsers = nullptr;
 }
 

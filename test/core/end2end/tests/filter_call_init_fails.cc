@@ -394,23 +394,23 @@ static void test_client_subchannel_filter(grpc_end2end_test_config config) {
  * Test filter - always fails to initialize a call
  */
 
-static grpc_error* init_call_elem(grpc_call_element* elem,
-                                  const grpc_call_element_args* args) {
+static grpc_error* init_call_elem(grpc_call_element* /*elem*/,
+                                  const grpc_call_element_args* /*args*/) {
   return grpc_error_set_int(
       GRPC_ERROR_CREATE_FROM_STATIC_STRING("access denied"),
       GRPC_ERROR_INT_GRPC_STATUS, GRPC_STATUS_PERMISSION_DENIED);
 }
 
-static void destroy_call_elem(grpc_call_element* elem,
-                              const grpc_call_final_info* final_info,
-                              grpc_closure* ignored) {}
+static void destroy_call_elem(grpc_call_element* /*elem*/,
+                              const grpc_call_final_info* /*final_info*/,
+                              grpc_closure* /*ignored*/) {}
 
-static grpc_error* init_channel_elem(grpc_channel_element* elem,
-                                     grpc_channel_element_args* args) {
+static grpc_error* init_channel_elem(grpc_channel_element* /*elem*/,
+                                     grpc_channel_element_args* /*args*/) {
   return GRPC_ERROR_NONE;
 }
 
-static void destroy_channel_elem(grpc_channel_element* elem) {}
+static void destroy_channel_elem(grpc_channel_element* /*elem*/) {}
 
 static const grpc_channel_filter test_filter = {
     grpc_call_next_op,
@@ -430,7 +430,7 @@ static const grpc_channel_filter test_filter = {
  */
 
 static bool maybe_add_server_channel_filter(grpc_channel_stack_builder* builder,
-                                            void* arg) {
+                                            void* /*arg*/) {
   if (g_enable_server_channel_filter) {
     // Want to add the filter as close to the end as possible, to make
     // sure that all of the filters work well together.  However, we
@@ -449,7 +449,7 @@ static bool maybe_add_server_channel_filter(grpc_channel_stack_builder* builder,
 }
 
 static bool maybe_add_client_channel_filter(grpc_channel_stack_builder* builder,
-                                            void* arg) {
+                                            void* /*arg*/) {
   if (g_enable_client_channel_filter) {
     // Want to add the filter as close to the end as possible, to make
     // sure that all of the filters work well together.  However, we
@@ -468,7 +468,7 @@ static bool maybe_add_client_channel_filter(grpc_channel_stack_builder* builder,
 }
 
 static bool maybe_add_client_subchannel_filter(
-    grpc_channel_stack_builder* builder, void* arg) {
+    grpc_channel_stack_builder* builder, void* /*arg*/) {
   if (g_enable_client_subchannel_filter) {
     // Want to add the filter as close to the end as possible, to make
     // sure that all of the filters work well together.  However, we

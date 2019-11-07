@@ -30,6 +30,7 @@
 
 #include "envoy/api/v2/core/address.upb.h"
 #include "envoy/api/v2/core/base.upb.h"
+#include "envoy/api/v2/core/health_check.upb.h"
 #include "envoy/api/v2/discovery.upb.h"
 #include "envoy/api/v2/eds.upb.h"
 #include "envoy/api/v2/endpoint/endpoint.upb.h"
@@ -49,7 +50,6 @@ namespace {
 
 constexpr char kEdsTypeUrl[] =
     "type.googleapis.com/envoy.api.v2.ClusterLoadAssignment";
-constexpr char kEndpointRequired[] = "endpointRequired";
 
 }  // namespace
 
@@ -68,8 +68,7 @@ void XdsPriorityListUpdate::Add(
     XdsPriorityListUpdate::LocalityMap::Locality locality) {
   // Pad the missing priorities in case the localities are not ordered by
   // priority.
-  // TODO(juanlishen): Implement InlinedVector::resize() and use that instead.
-  while (!Contains(locality.priority)) priorities_.emplace_back();
+  if (!Contains(locality.priority)) priorities_.resize(locality.priority + 1);
   LocalityMap& locality_map = priorities_[locality.priority];
   locality_map.localities.emplace(locality.name, std::move(locality));
 }
@@ -93,7 +92,7 @@ bool XdsDropConfig::ShouldDrop(const UniquePtr<char>** category_name) const {
   for (size_t i = 0; i < drop_category_list_.size(); ++i) {
     const auto& drop_category = drop_category_list_[i];
     // Generate a random number in [0, 1000000).
-    const int random = rand() % 1000000;
+    const uint32_t random = static_cast<uint32_t>(rand()) % 1000000;
     if (random < drop_category.parts_per_million) {
       *category_name = &drop_category.name;
       return true;
@@ -102,22 +101,113 @@ bool XdsDropConfig::ShouldDrop(const UniquePtr<char>** category_name) const {
   return false;
 }
 
-grpc_slice XdsEdsRequestCreateAndEncode(const char* server_name) {
+namespace {
+
+void PopulateMetadataValue(upb_arena* arena, google_protobuf_Value* value_pb,
+                           const XdsBootstrap::MetadataValue& value);
+
+void PopulateListValue(upb_arena* arena, google_protobuf_ListValue* list_value,
+                       const std::vector<XdsBootstrap::MetadataValue>& values) {
+  for (const auto& value : values) {
+    auto* value_pb = google_protobuf_ListValue_add_values(list_value, arena);
+    PopulateMetadataValue(arena, value_pb, value);
+  }
+}
+
+void PopulateMetadata(upb_arena* arena, google_protobuf_Struct* metadata_pb,
+                      const std::map<const char*, XdsBootstrap::MetadataValue,
+                                     StringLess>& metadata) {
+  for (const auto& p : metadata) {
+    google_protobuf_Struct_FieldsEntry* field =
+        google_protobuf_Struct_add_fields(metadata_pb, arena);
+    google_protobuf_Struct_FieldsEntry_set_key(field,
+                                               upb_strview_makez(p.first));
+    google_protobuf_Value* value =
+        google_protobuf_Struct_FieldsEntry_mutable_value(field, arena);
+    PopulateMetadataValue(arena, value, p.second);
+  }
+}
+
+void PopulateMetadataValue(upb_arena* arena, google_protobuf_Value* value_pb,
+                           const XdsBootstrap::MetadataValue& value) {
+  switch (value.type) {
+    case XdsBootstrap::MetadataValue::Type::MD_NULL:
+      google_protobuf_Value_set_null_value(value_pb, 0);
+      break;
+    case XdsBootstrap::MetadataValue::Type::DOUBLE:
+      google_protobuf_Value_set_number_value(value_pb, value.double_value);
+      break;
+    case XdsBootstrap::MetadataValue::Type::STRING:
+      google_protobuf_Value_set_string_value(
+          value_pb, upb_strview_makez(value.string_value));
+      break;
+    case XdsBootstrap::MetadataValue::Type::BOOL:
+      google_protobuf_Value_set_bool_value(value_pb, value.bool_value);
+      break;
+    case XdsBootstrap::MetadataValue::Type::STRUCT: {
+      google_protobuf_Struct* struct_value =
+          google_protobuf_Value_mutable_struct_value(value_pb, arena);
+      PopulateMetadata(arena, struct_value, value.struct_value);
+      break;
+    }
+    case XdsBootstrap::MetadataValue::Type::LIST: {
+      google_protobuf_ListValue* list_value =
+          google_protobuf_Value_mutable_list_value(value_pb, arena);
+      PopulateListValue(arena, list_value, value.list_value);
+      break;
+    }
+  }
+}
+
+void PopulateNode(upb_arena* arena, const XdsBootstrap::Node* node,
+                  const char* build_version, envoy_api_v2_core_Node* node_msg) {
+  if (node != nullptr) {
+    if (node->id != nullptr) {
+      envoy_api_v2_core_Node_set_id(node_msg, upb_strview_makez(node->id));
+    }
+    if (node->cluster != nullptr) {
+      envoy_api_v2_core_Node_set_cluster(node_msg,
+                                         upb_strview_makez(node->cluster));
+    }
+    if (!node->metadata.empty()) {
+      google_protobuf_Struct* metadata =
+          envoy_api_v2_core_Node_mutable_metadata(node_msg, arena);
+      PopulateMetadata(arena, metadata, node->metadata);
+    }
+    if (node->locality_region != nullptr || node->locality_zone != nullptr ||
+        node->locality_subzone != nullptr) {
+      envoy_api_v2_core_Locality* locality =
+          envoy_api_v2_core_Node_mutable_locality(node_msg, arena);
+      if (node->locality_region != nullptr) {
+        envoy_api_v2_core_Locality_set_region(
+            locality, upb_strview_makez(node->locality_region));
+      }
+      if (node->locality_zone != nullptr) {
+        envoy_api_v2_core_Locality_set_zone(
+            locality, upb_strview_makez(node->locality_zone));
+      }
+      if (node->locality_subzone != nullptr) {
+        envoy_api_v2_core_Locality_set_sub_zone(
+            locality, upb_strview_makez(node->locality_subzone));
+      }
+    }
+  }
+  envoy_api_v2_core_Node_set_build_version(node_msg,
+                                           upb_strview_makez(build_version));
+}
+
+}  // namespace
+
+grpc_slice XdsEdsRequestCreateAndEncode(const char* server_name,
+                                        const XdsBootstrap::Node* node,
+                                        const char* build_version) {
   upb::Arena arena;
   // Create a request.
   envoy_api_v2_DiscoveryRequest* request =
       envoy_api_v2_DiscoveryRequest_new(arena.ptr());
-  envoy_api_v2_core_Node* node =
+  envoy_api_v2_core_Node* node_msg =
       envoy_api_v2_DiscoveryRequest_mutable_node(request, arena.ptr());
-  google_protobuf_Struct* metadata =
-      envoy_api_v2_core_Node_mutable_metadata(node, arena.ptr());
-  google_protobuf_Struct_FieldsEntry* field =
-      google_protobuf_Struct_add_fields(metadata, arena.ptr());
-  google_protobuf_Struct_FieldsEntry_set_key(
-      field, upb_strview_makez(kEndpointRequired));
-  google_protobuf_Value* value =
-      google_protobuf_Struct_FieldsEntry_mutable_value(field, arena.ptr());
-  google_protobuf_Value_set_bool_value(value, true);
+  PopulateNode(arena.ptr(), node, build_version, node_msg);
   envoy_api_v2_DiscoveryRequest_add_resource_names(
       request, upb_strview_makez(server_name), arena.ptr());
   envoy_api_v2_DiscoveryRequest_set_type_url(request,
@@ -134,6 +224,13 @@ namespace {
 grpc_error* ServerAddressParseAndAppend(
     const envoy_api_v2_endpoint_LbEndpoint* lb_endpoint,
     ServerAddressList* list) {
+  // If health_status is not HEALTHY or UNKNOWN, skip this endpoint.
+  const int32_t health_status =
+      envoy_api_v2_endpoint_LbEndpoint_health_status(lb_endpoint);
+  if (health_status != envoy_api_v2_core_UNKNOWN &&
+      health_status != envoy_api_v2_core_HEALTHY) {
+    return GRPC_ERROR_NONE;
+  }
   // Find the ip:port.
   const envoy_api_v2_endpoint_Endpoint* endpoint =
       envoy_api_v2_endpoint_LbEndpoint_endpoint(lb_endpoint);
@@ -327,11 +424,18 @@ grpc_slice LrsRequestEncode(
 
 }  // namespace
 
-grpc_slice XdsLrsRequestCreateAndEncode(const char* server_name) {
+grpc_slice XdsLrsRequestCreateAndEncode(const char* server_name,
+                                        const XdsBootstrap::Node* node,
+                                        const char* build_version) {
   upb::Arena arena;
   // Create a request.
   envoy_service_load_stats_v2_LoadStatsRequest* request =
       envoy_service_load_stats_v2_LoadStatsRequest_new(arena.ptr());
+  // Populate node.
+  envoy_api_v2_core_Node* node_msg =
+      envoy_service_load_stats_v2_LoadStatsRequest_mutable_node(request,
+                                                                arena.ptr());
+  PopulateNode(arena.ptr(), node, build_version, node_msg);
   // Add cluster stats. There is only one because we only use one server name in
   // one channel.
   envoy_api_v2_endpoint_ClusterStats* cluster_stats =

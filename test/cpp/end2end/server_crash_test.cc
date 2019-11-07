@@ -50,7 +50,7 @@ class ServiceImpl final : public ::grpc::testing::EchoTestService::Service {
   ServiceImpl() : bidi_stream_count_(0), response_stream_count_(0) {}
 
   Status BidiStream(
-      ServerContext* context,
+      ServerContext* /*context*/,
       ServerReaderWriter<EchoResponse, EchoRequest>* stream) override {
     bidi_stream_count_++;
     EchoRequest request;
@@ -65,7 +65,8 @@ class ServiceImpl final : public ::grpc::testing::EchoTestService::Service {
     return Status::OK;
   }
 
-  Status ResponseStream(ServerContext* context, const EchoRequest* request,
+  Status ResponseStream(ServerContext* /*context*/,
+                        const EchoRequest* /*request*/,
                         ServerWriter<EchoResponse>* writer) override {
     EchoResponse response;
     response_stream_count_++;

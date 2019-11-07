@@ -16,20 +16,19 @@ FROM php:7.2-alpine3.9
 
 RUN apk add autoconf g++ make zlib-dev git bash wget
 
+ARG MAKEFLAGS=-j8
+
 
 WORKDIR /tmp
 
-RUN wget https://phar.phpunit.de/phpunit-4.8.36.phar && \
-  mv phpunit-4.8.36.phar /usr/local/bin/phpunit && \
+RUN wget https://phar.phpunit.de/phpunit-5.7.27.phar && \
+  mv phpunit-5.7.27.phar /usr/local/bin/phpunit && \
   chmod +x /usr/local/bin/phpunit
 
 
 WORKDIR /github/grpc
 
-RUN git clone https://github.com/grpc/grpc . && \
-  git submodule update --init
-
-COPY src/ ./src
+COPY . .
 
 RUN pear package && \
   find . -name grpc-*.tgz | xargs -I{} pecl install {}

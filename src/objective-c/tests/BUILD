@@ -39,15 +39,15 @@ proto_library_objc_wrapper(
 proto_library_objc_wrapper(
     name = "test_proto",
     srcs = ["RemoteTestClient/test.proto"],
-    deps = [":messages_proto"],
     use_well_known_protos = True,
+    deps = [":messages_proto"],
 )
 
 local_objc_grpc_library(
     name = "RemoteTest",
     srcs = ["RemoteTestClient/test.proto"],
-    use_well_known_protos = True,
     testing = True,
+    use_well_known_protos = True,
     deps = [":test_proto"],
 )
 
@@ -78,12 +78,12 @@ objc_library(
 ios_application(
     name = "ios-host",
     bundle_id = "grpc.objc.tests.ios-host",
-    infoplists = ["Hosts/ios-host/Info.plist"],
-    minimum_os_version = "9.0",
     families = [
         "iphone",
         "ipad",
     ],
+    infoplists = ["Hosts/ios-host/Info.plist"],
+    minimum_os_version = "9.0",
     deps = ["host-lib"],
 )
 
@@ -97,8 +97,8 @@ tvos_application(
 
 grpc_objc_testing_library(
     name = "InteropTests-lib",
-    hdrs = ["InteropTests/InteropTests.h"],
     srcs = ["InteropTests/InteropTests.m"],
+    hdrs = ["InteropTests/InteropTests.h"],
     deps = [
         ":InteropTestsBlockCallbacks-lib",
     ],
@@ -112,8 +112,8 @@ grpc_objc_testing_library(
 
 grpc_objc_testing_library(
     name = "InteropTestsBlockCallbacks-lib",
-    hdrs = ["InteropTests/InteropTestsBlockCallbacks.h"],
     srcs = ["InteropTests/InteropTestsBlockCallbacks.m"],
+    hdrs = ["InteropTests/InteropTestsBlockCallbacks.h"],
 )
 
 grpc_objc_testing_library(
@@ -175,26 +175,26 @@ grpc_objc_testing_library(
 ios_unit_test(
     name = "UnitTests",
     minimum_os_version = "8.0",
+    test_host = ":ios-host",
     deps = [
-        ":RxLibraryUnitTests-lib",
-        ":GRPCClientTests-lib",
         ":APIv2Tests-lib",
         ":ChannelPoolTest-lib",
         ":ChannelTests-lib",
+        ":GRPCClientTests-lib",
         ":NSErrorUnitTests-lib",
+        ":RxLibraryUnitTests-lib",
     ],
-    test_host = ":ios-host",
 )
 
 ios_unit_test(
     name = "InteropTests",
     minimum_os_version = "8.0",
-    deps = [
-        ":InteropTestsRemote-lib",
-        ":InteropTestsLocalSSL-lib",
-        ":InteropTestsLocalCleartext-lib",
-    ],
     test_host = ":ios-host",
+    deps = [
+        ":InteropTestsLocalCleartext-lib",
+        ":InteropTestsLocalSSL-lib",
+        ":InteropTestsRemote-lib",
+    ],
 )
 
 macos_unit_test(
@@ -202,26 +202,26 @@ macos_unit_test(
     minimum_os_version = "10.9",
     deps = [
         ":APIv2Tests-lib",
-        ":RxLibraryUnitTests-lib",
-        ":NSErrorUnitTests-lib",
-        ":InteropTestsRemote-lib",
-        ":InteropTestsLocalSSL-lib",
         ":InteropTestsLocalCleartext-lib",
+        ":InteropTestsLocalSSL-lib",
+        ":InteropTestsRemote-lib",
         ":MacStressTests-lib",
-    ]
+        ":NSErrorUnitTests-lib",
+        ":RxLibraryUnitTests-lib",
+    ],
 )
 
 # bazel run tvos_unit_test is not yet supported by xctestrunner
 tvos_unit_test(
     name = "TvTests",
     minimum_os_version = "10.0",
+    test_host = ":tvos-host",
     deps = [
         ":APIv2Tests-lib",
-        ":RxLibraryUnitTests-lib",
-        ":NSErrorUnitTests-lib",
-        ":InteropTestsRemote-lib",
-        ":InteropTestsLocalSSL-lib",
         ":InteropTestsLocalCleartext-lib",
+        ":InteropTestsLocalSSL-lib",
+        ":InteropTestsRemote-lib",
+        ":NSErrorUnitTests-lib",
+        ":RxLibraryUnitTests-lib",
     ],
-    test_host = ":tvos-host",
 )

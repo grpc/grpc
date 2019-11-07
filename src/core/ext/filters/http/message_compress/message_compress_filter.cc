@@ -361,7 +361,7 @@ static void on_send_message_next_done(void* arg, grpc_error* error) {
   }
 }
 
-static void start_send_message_batch(void* arg, grpc_error* unused) {
+static void start_send_message_batch(void* arg, grpc_error* /*unused*/) {
   grpc_call_element* elem = static_cast<grpc_call_element*>(arg);
   if (skip_message_compression(elem)) {
     send_message_batch_continue(elem);
@@ -448,9 +448,9 @@ static grpc_error* compress_init_call_elem(grpc_call_element* elem,
 }
 
 /* Destructor for call_data */
-static void compress_destroy_call_elem(grpc_call_element* elem,
-                                       const grpc_call_final_info* final_info,
-                                       grpc_closure* ignored) {
+static void compress_destroy_call_elem(
+    grpc_call_element* elem, const grpc_call_final_info* /*final_info*/,
+    grpc_closure* /*ignored*/) {
   call_data* calld = static_cast<call_data*>(elem->call_data);
   calld->~call_data();
 }
@@ -487,7 +487,7 @@ static grpc_error* compress_init_channel_elem(grpc_channel_element* elem,
 }
 
 /* Destructor for channel data */
-static void compress_destroy_channel_elem(grpc_channel_element* elem) {}
+static void compress_destroy_channel_elem(grpc_channel_element* /*elem*/) {}
 
 const grpc_channel_filter grpc_message_compress_filter = {
     compress_start_transport_stream_op_batch,

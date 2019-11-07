@@ -159,7 +159,7 @@ static void on_md_processing_done_inner(grpc_call_element* elem,
                              calld->recv_trailing_metadata_error,
                              "continue recv_trailing_metadata_ready");
   }
-  GRPC_CLOSURE_SCHED(closure, error);
+  grpc_core::ExecCtx::Run(DEBUG_LOCATION, closure, error);
 }
 
 // Called from application code.
@@ -286,8 +286,8 @@ static grpc_error* server_auth_init_call_elem(
 
 /* Destructor for call_data */
 static void server_auth_destroy_call_elem(
-    grpc_call_element* elem, const grpc_call_final_info* final_info,
-    grpc_closure* ignored) {
+    grpc_call_element* elem, const grpc_call_final_info* /*final_info*/,
+    grpc_closure* /*ignored*/) {
   call_data* calld = static_cast<call_data*>(elem->call_data);
   calld->~call_data();
 }

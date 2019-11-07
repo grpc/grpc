@@ -57,7 +57,7 @@ class TestServiceImpl : public ::grpc::testing::EchoTestService::Service {
  public:
   TestServiceImpl() {}
 
-  Status Echo(ServerContext* context, const EchoRequest* request,
+  Status Echo(ServerContext* /*context*/, const EchoRequest* request,
               EchoResponse* response) override {
     response->set_message(request->message());
     return Status::OK;
@@ -309,7 +309,7 @@ typedef ::testing::Types<
     CommonStressTestAsyncServer<CommonStressTestInproc<
         grpc::testing::EchoTestService::AsyncService, false>>>
     CommonTypes;
-TYPED_TEST_CASE(End2endTest, CommonTypes);
+TYPED_TEST_SUITE(End2endTest, CommonTypes);
 TYPED_TEST(End2endTest, ThreadStress) {
   this->common_.ResetStub();
   std::vector<std::thread> threads;
@@ -408,7 +408,7 @@ class AsyncClientEnd2endTest : public ::testing::Test {
   int rpcs_outstanding_;
 };
 
-TYPED_TEST_CASE(AsyncClientEnd2endTest, CommonTypes);
+TYPED_TEST_SUITE(AsyncClientEnd2endTest, CommonTypes);
 TYPED_TEST(AsyncClientEnd2endTest, ThreadStress) {
   this->common_.ResetStub();
   std::vector<std::thread> send_threads, completion_threads;

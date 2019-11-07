@@ -23,20 +23,12 @@
 
 #include <string.h>
 
-#include <algorithm>
-#include <functional>
-#include <iterator>
 #include <map>
 
-#include "src/core/lib/gpr/useful.h"
-#include "src/core/lib/gprpp/memory.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/gprpp/string_view.h"
 
 namespace grpc_core {
-
-template <class Key, class T, class Compare = std::less<Key>>
-using Map = std::map<Key, T, Compare, Allocator<std::pair<const Key, T>>>;
 
 struct StringLess {
   bool operator()(const char* a, const char* b) const {

@@ -38,7 +38,7 @@
 
 // The on_complete callback used when sending a cancel_error batch down the
 // filter stack.  Yields the call combiner when the batch returns.
-static void yield_call_combiner(void* arg, grpc_error* ignored) {
+static void yield_call_combiner(void* arg, grpc_error* /*ignored*/) {
   grpc_deadline_state* deadline_state = static_cast<grpc_deadline_state*>(arg);
   GRPC_CALL_COMBINER_STOP(deadline_state->call_combiner,
                           "got on_complete from cancel_stream batch");
@@ -175,7 +175,7 @@ static void start_timer_after_init(void* arg, grpc_error* error) {
                              "scheduling deadline timer");
     return;
   }
-  grpc_core::Delete(state);
+  delete state;
   GRPC_CALL_COMBINER_STOP(deadline_state->call_combiner,
                           "done scheduling deadline timer");
 }
@@ -196,10 +196,10 @@ grpc_deadline_state::grpc_deadline_state(grpc_call_element* elem,
     // create a closure to start the timer, and we schedule that closure
     // to be run after call stack initialization is done.
     struct start_timer_after_init_state* state =
-        grpc_core::New<start_timer_after_init_state>(elem, deadline);
+        new start_timer_after_init_state(elem, deadline);
     GRPC_CLOSURE_INIT(&state->closure, start_timer_after_init, state,
                       grpc_schedule_on_exec_ctx);
-    GRPC_CLOSURE_SCHED(&state->closure, GRPC_ERROR_NONE);
+    grpc_core::ExecCtx::Run(DEBUG_LOCATION, &state->closure, GRPC_ERROR_NONE);
   }
 }
 
@@ -233,14 +233,14 @@ void grpc_deadline_state_client_start_transport_stream_op_batch(
 //
 
 // Constructor for channel_data.  Used for both client and server filters.
-static grpc_error* deadline_init_channel_elem(grpc_channel_element* elem,
+static grpc_error* deadline_init_channel_elem(grpc_channel_element* /*elem*/,
                                               grpc_channel_element_args* args) {
   GPR_ASSERT(!args->is_last);
   return GRPC_ERROR_NONE;
 }
 
 // Destructor for channel_data.  Used for both client and server filters.
-static void deadline_destroy_channel_elem(grpc_channel_element* elem) {}
+static void deadline_destroy_channel_elem(grpc_channel_element* /*elem*/) {}
 
 // Call data used for both client and server filter.
 typedef struct base_call_data {
@@ -268,9 +268,9 @@ static grpc_error* deadline_init_call_elem(grpc_call_element* elem,
 }
 
 // Destructor for call_data.  Used for both client and server filters.
-static void deadline_destroy_call_elem(grpc_call_element* elem,
-                                       const grpc_call_final_info* final_info,
-                                       grpc_closure* ignored) {
+static void deadline_destroy_call_elem(
+    grpc_call_element* elem, const grpc_call_final_info* /*final_info*/,
+    grpc_closure* /*ignored*/) {
   grpc_deadline_state* deadline_state =
       static_cast<grpc_deadline_state*>(elem->call_data);
   deadline_state->~grpc_deadline_state();

@@ -26,6 +26,7 @@
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
 
+#include "src/core/lib/iomgr/combiner.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
 
 namespace grpc_core {
@@ -57,21 +58,28 @@ const char* ConnectivityStateName(grpc_connectivity_state state) {
 class AsyncConnectivityStateWatcherInterface::Notifier {
  public:
   Notifier(RefCountedPtr<AsyncConnectivityStateWatcherInterface> watcher,
-           grpc_connectivity_state state, grpc_closure_scheduler* scheduler)
+           grpc_connectivity_state state, Combiner* combiner)
       : watcher_(std::move(watcher)), state_(state) {
-    GRPC_CLOSURE_INIT(&closure_, SendNotification, this, scheduler);
-    GRPC_CLOSURE_SCHED(&closure_, GRPC_ERROR_NONE);
+    if (combiner != nullptr) {
+      combiner->Run(
+          GRPC_CLOSURE_INIT(&closure_, SendNotification, this, nullptr),
+          GRPC_ERROR_NONE);
+    } else {
+      GRPC_CLOSURE_INIT(&closure_, SendNotification, this,
+                        grpc_schedule_on_exec_ctx);
+      ExecCtx::Run(DEBUG_LOCATION, &closure_, GRPC_ERROR_NONE);
+    }
   }
 
  private:
-  static void SendNotification(void* arg, grpc_error* ignored) {
+  static void SendNotification(void* arg, grpc_error* /*ignored*/) {
     Notifier* self = static_cast<Notifier*>(arg);
     if (GRPC_TRACE_FLAG_ENABLED(grpc_connectivity_state_trace)) {
       gpr_log(GPR_INFO, "watcher %p: delivering async notification for %s",
               self->watcher_.get(), ConnectivityStateName(self->state_));
     }
     self->watcher_->OnConnectivityStateChange(self->state_);
-    Delete(self);
+    delete self;
   }
 
   RefCountedPtr<AsyncConnectivityStateWatcherInterface> watcher_;
@@ -81,7 +89,7 @@ class AsyncConnectivityStateWatcherInterface::Notifier {
 
 void AsyncConnectivityStateWatcherInterface::Notify(
     grpc_connectivity_state state) {
-  New<Notifier>(Ref(), state, scheduler_);  // Deletes itself when done.
+  new Notifier(Ref(), state, combiner_);  // Deletes itself when done.
 }
 
 //

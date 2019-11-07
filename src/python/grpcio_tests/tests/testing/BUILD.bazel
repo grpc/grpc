@@ -2,7 +2,7 @@ package(default_visibility = ["//visibility:public"])
 
 py_library(
     name = "testing",
-    srcs = ["__init__.py",],
+    srcs = ["__init__.py"],
     deps = [
         # ":_application_common",
         ":_server_application",
@@ -22,9 +22,6 @@ py_library(
 
 py_library(
     name = "_server_application",
-    srcs = ["_server_application.py",],
-    imports = ["../../",],
+    srcs = ["_server_application.py"],
+    imports = ["../../"],
 )
-
-
-

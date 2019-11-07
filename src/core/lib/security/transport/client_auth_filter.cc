@@ -346,7 +346,8 @@ static void client_auth_start_transport_stream_op_batch(
       GRPC_CALL_STACK_REF(calld->owning_call, "check_call_host");
       GRPC_CLOSURE_INIT(&calld->async_result_closure, on_host_checked, batch,
                         grpc_schedule_on_exec_ctx);
-      grpc_core::StringView call_host(calld->host);
+      grpc_core::StringView call_host(
+          grpc_core::StringViewFromSlice(calld->host));
       grpc_error* error = GRPC_ERROR_NONE;
       if (chand->security_connector->check_call_host(
               call_host, chand->auth_context.get(),
@@ -383,8 +384,8 @@ static void client_auth_set_pollset_or_pollset_set(
 
 /* Destructor for call_data */
 static void client_auth_destroy_call_elem(
-    grpc_call_element* elem, const grpc_call_final_info* final_info,
-    grpc_closure* ignored) {
+    grpc_call_element* elem, const grpc_call_final_info* /*final_info*/,
+    grpc_closure* /*ignored*/) {
   call_data* calld = static_cast<call_data*>(elem->call_data);
   calld->destroy();
 }

@@ -39,7 +39,7 @@ static void* tag(intptr_t x) { return (void*)x; }
 
 static grpc_closure transport_op_cb;
 
-static void do_nothing(void* arg, grpc_error* error) {}
+static void do_nothing(void* /*arg*/, grpc_error* /*error*/) {}
 
 void test_transport_op(grpc_channel* channel) {
   grpc_core::ExecCtx exec_ctx;

@@ -17,7 +17,6 @@
  */
 
 #include <grpcpp/impl/codegen/server_context_impl.h>
-#include <grpcpp/support/server_callback.h>
 
 #include <algorithm>
 #include <mutex>
@@ -30,6 +29,7 @@
 #include <grpc/support/log.h>
 #include <grpcpp/impl/call.h>
 #include <grpcpp/impl/codegen/completion_queue_impl.h>
+#include <grpcpp/support/server_callback.h>
 #include <grpcpp/support/time.h>
 
 #include "src/core/lib/gprpp/ref_counted.h"
@@ -73,7 +73,10 @@ class ServerContext::CompletionOp final
   // This should always be arena allocated in the call, so override delete.
   // But this class is not trivially destructible, so must actually call delete
   // before allowing the arena to be freed
-  static void operator delete(void* ptr, std::size_t size) {
+  static void operator delete(void* /*ptr*/, std::size_t size) {
+    // Use size to avoid unused-parameter warning since assert seems to be
+    // compiled out and treated as unused in some gcc optimized versions.
+    (void)size;
     assert(size == sizeof(CompletionOp));
   }
 
@@ -123,7 +126,7 @@ class ServerContext::CompletionOp final
   // RPC. This should set hijacking state for each of the ops.
   void SetHijackingState() override {
     /* Servers don't allow hijacking */
-    GPR_CODEGEN_ASSERT(false);
+    GPR_ASSERT(false);
   }
 
   /* Should be called after interceptors are done running */
@@ -139,9 +142,8 @@ class ServerContext::CompletionOp final
       return;
     }
     /* Start a dummy op so that we can return the tag */
-    GPR_CODEGEN_ASSERT(
-        GRPC_CALL_OK ==
-        grpc_call_start_batch(call_.call(), nullptr, 0, core_cq_tag_, nullptr));
+    GPR_ASSERT(grpc_call_start_batch(call_.call(), nullptr, 0, core_cq_tag_,
+                                     nullptr) == GRPC_CALL_OK);
   }
 
  private:
@@ -181,8 +183,10 @@ void ServerContext::CompletionOp::FillOps(::grpc::internal::Call* call) {
   interceptor_methods_.SetCall(&call_);
   interceptor_methods_.SetReverse();
   interceptor_methods_.SetCallOpSetInterface(this);
-  GPR_ASSERT(GRPC_CALL_OK == grpc_call_start_batch(call->call(), &ops, 1,
-                                                   core_cq_tag_, nullptr));
+  // The following call_start_batch is internally-generated so no need for an
+  // explanatory log on failure.
+  GPR_ASSERT(grpc_call_start_batch(call->call(), &ops, 1, core_cq_tag_,
+                                   nullptr) == GRPC_CALL_OK);
   /* No interceptors to run here */
 }
 

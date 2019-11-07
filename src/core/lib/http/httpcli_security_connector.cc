@@ -67,7 +67,7 @@ class grpc_httpcli_ssl_channel_security_connector final
   }
 
   void add_handshakers(const grpc_channel_args* args,
-                       grpc_pollset_set* interested_parties,
+                       grpc_pollset_set* /*interested_parties*/,
                        grpc_core::HandshakeManager* handshake_mgr) override {
     tsi_handshaker* handshaker = nullptr;
     if (handshaker_factory_ != nullptr) {
@@ -86,7 +86,7 @@ class grpc_httpcli_ssl_channel_security_connector final
     return handshaker_factory_;
   }
 
-  void check_peer(tsi_peer peer, grpc_endpoint* ep,
+  void check_peer(tsi_peer peer, grpc_endpoint* /*ep*/,
                   grpc_core::RefCountedPtr<grpc_auth_context>* /*auth_context*/,
                   grpc_closure* on_peer_checked) override {
     grpc_error* error = GRPC_ERROR_NONE;
@@ -100,7 +100,7 @@ class grpc_httpcli_ssl_channel_security_connector final
       error = GRPC_ERROR_CREATE_FROM_COPIED_STRING(msg);
       gpr_free(msg);
     }
-    GRPC_CLOSURE_SCHED(on_peer_checked, error);
+    grpc_core::ExecCtx::Run(DEBUG_LOCATION, on_peer_checked, error);
     tsi_peer_destruct(&peer);
   }
 
@@ -111,15 +111,15 @@ class grpc_httpcli_ssl_channel_security_connector final
     return strcmp(secure_peer_name_, other->secure_peer_name_);
   }
 
-  bool check_call_host(grpc_core::StringView host,
-                       grpc_auth_context* auth_context,
-                       grpc_closure* on_call_host_checked,
+  bool check_call_host(grpc_core::StringView /*host*/,
+                       grpc_auth_context* /*auth_context*/,
+                       grpc_closure* /*on_call_host_checked*/,
                        grpc_error** error) override {
     *error = GRPC_ERROR_NONE;
     return true;
   }
 
-  void cancel_check_call_host(grpc_closure* on_call_host_checked,
+  void cancel_check_call_host(grpc_closure* /*on_call_host_checked*/,
                               grpc_error* error) override {
     GRPC_ERROR_UNREF(error);
   }
@@ -134,7 +134,7 @@ class grpc_httpcli_ssl_channel_security_connector final
 static grpc_core::RefCountedPtr<grpc_channel_security_connector>
 httpcli_ssl_channel_security_connector_create(
     const char* pem_root_certs, const tsi_ssl_root_certs_store* root_store,
-    const char* secure_peer_name, grpc_channel_args* channel_args) {
+    const char* secure_peer_name, grpc_channel_args* /*channel_args*/) {
   if (secure_peer_name != nullptr && pem_root_certs == nullptr) {
     gpr_log(GPR_ERROR,
             "Cannot assert a secure peer name without a trust root.");
@@ -174,13 +174,13 @@ static void on_handshake_done(void* arg, grpc_error* error) {
     gpr_free(args->read_buffer);
     c->func(c->arg, args->endpoint);
   }
-  grpc_core::Delete<on_done_closure>(c);
+  delete c;
 }
 
 static void ssl_handshake(void* arg, grpc_endpoint* tcp, const char* host,
                           grpc_millis deadline,
                           void (*on_done)(void* arg, grpc_endpoint* endpoint)) {
-  auto* c = grpc_core::New<on_done_closure>();
+  auto* c = new on_done_closure();
   const char* pem_root_certs =
       grpc_core::DefaultSslRootStore::GetPemRootCerts();
   const tsi_ssl_root_certs_store* root_store =

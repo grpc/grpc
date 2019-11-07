@@ -69,7 +69,14 @@ class RefCount {
   // Note: RefCount tracing is only enabled on debug builds, even when a
   //       TraceFlag is used.
   template <typename TraceFlagT = TraceFlag>
-  constexpr explicit RefCount(Value init = 1, TraceFlagT* trace_flag = nullptr)
+  constexpr explicit RefCount(
+      Value init = 1,
+      TraceFlagT*
+#ifndef NDEBUG
+          // Leave unnamed if NDEBUG to avoid unused parameter warning
+          trace_flag
+#endif
+      = nullptr)
       :
 #ifndef NDEBUG
         trace_flag_(trace_flag),
@@ -98,6 +105,10 @@ class RefCount {
               prior, prior + n, reason);
     }
 #else
+    // Use conditionally-important parameters
+    (void)location;
+    (void)reason;
+
     value_.FetchAdd(n, MemoryOrder::RELAXED);
 #endif
   }
@@ -125,6 +136,9 @@ class RefCount {
     }
     assert(prior > 0);
 #else
+    // Avoid unused-parameter warnings for debug-only parameters
+    (void)location;
+    (void)reason;
     RefNonZero();
 #endif
   }
@@ -150,6 +164,9 @@ class RefCount {
               prior, prior + 1, reason);
     }
 #endif
+    // Avoid unused-parameter warnings for debug-only parameters
+    (void)location;
+    (void)reason;
     return value_.IncrementIfNonzero();
   }
 
@@ -184,6 +201,10 @@ class RefCount {
               prior - 1, reason);
     }
     GPR_DEBUG_ASSERT(prior > 0);
+#else
+    // Avoid unused-parameter warnings for debug-only parameters
+    (void)location;
+    (void)reason;
 #endif
     return prior == 1;
   }
@@ -199,7 +220,7 @@ class RefCount {
 
 // A base class for reference-counted objects.
 // New objects should be created via New() and start with a refcount of 1.
-// When the refcount reaches 0, the object will be deleted via Delete().
+// When the refcount reaches 0, the object will be deleted via delete .
 //
 // This will commonly be used by CRTP (curiously-recurring template pattern)
 // e.g., class MyClass : public RefCounted<MyClass>
@@ -246,12 +267,12 @@ class RefCounted : public Impl {
   // friend of this class.
   void Unref() {
     if (GPR_UNLIKELY(refs_.Unref())) {
-      Delete(static_cast<Child*>(this));
+      delete static_cast<Child*>(this);
     }
   }
   void Unref(const DebugLocation& location, const char* reason) {
     if (GPR_UNLIKELY(refs_.Unref(location, reason))) {
-      Delete(static_cast<Child*>(this));
+      delete static_cast<Child*>(this);
     }
   }
 
