@@ -104,7 +104,7 @@ async def callback_start_batch(GrpcCallWrapper grpc_call_wrapper,
         wrapper.c_functor(), NULL)
 
     if error != GRPC_CALL_OK:
-        raise RuntimeError("Error with callback_start_batch {}".format(error))
+        raise RuntimeError("Failed grpc_call_start_batch: {}".format(error))
 
     await future
     cpython.Py_DECREF(wrapper)
