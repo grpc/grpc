@@ -40,7 +40,7 @@ class XdsBootstrap {
     double double_value;
     const char* string_value;
     bool bool_value;
-    Map<const char*, MetadataValue, StringLess> struct_value;
+    std::map<const char*, MetadataValue, StringLess> struct_value;
     std::vector<MetadataValue> list_value;
   };
 
@@ -50,7 +50,7 @@ class XdsBootstrap {
     const char* locality_region = nullptr;
     const char* locality_zone = nullptr;
     const char* locality_subzone = nullptr;
-    Map<const char*, MetadataValue, StringLess> metadata;
+    std::map<const char*, MetadataValue, StringLess> metadata;
   };
 
   struct ChannelCreds {
@@ -80,7 +80,8 @@ class XdsBootstrap {
   grpc_error* ParseLocality(grpc_json* json);
 
   InlinedVector<grpc_error*, 1> ParseMetadataStruct(
-      grpc_json* json, Map<const char*, MetadataValue, StringLess>* result);
+      grpc_json* json,
+      std::map<const char*, MetadataValue, StringLess>* result);
   InlinedVector<grpc_error*, 1> ParseMetadataList(
       grpc_json* json, std::vector<MetadataValue>* result);
   grpc_error* ParseMetadataValue(grpc_json* json, size_t idx,

@@ -479,8 +479,7 @@ int equal_cmp(void* /*p1*/, void* /*p2*/) {
   // token or client stats.  A better approach might be to find somewhere
   // other than the subchannel args to store the LB token and client
   // stats.  They could be stored in a map and then looked up for each
-  // call (although we'd need to make sure our Map<> implementation is
-  // performant enough).  Or we could do something more complicated whereby
+  // call. Or we could do something more complicated whereby
   // we create our own subchannel wrapper to store them, although that would
   // involve a lot of refcounting overhead.
   // Given that we're trying to move from grpclb to xds at this point,

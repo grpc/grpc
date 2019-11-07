@@ -172,9 +172,9 @@ class XdsClient : public InternallyRefCounted<XdsClient> {
   };
 
   struct ClusterState {
-    Map<ClusterWatcherInterface*, UniquePtr<ClusterWatcherInterface>>
+    std::map<ClusterWatcherInterface*, UniquePtr<ClusterWatcherInterface>>
         cluster_watchers;
-    Map<EndpointWatcherInterface*, UniquePtr<EndpointWatcherInterface>>
+    std::map<EndpointWatcherInterface*, UniquePtr<EndpointWatcherInterface>>
         endpoint_watchers;
     std::set<XdsClientStats*> client_stats;
     // The latest data seen from EDS.
