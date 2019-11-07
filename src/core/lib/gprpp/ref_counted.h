@@ -267,12 +267,12 @@ class RefCounted : public Impl {
   // friend of this class.
   void Unref() {
     if (GPR_UNLIKELY(refs_.Unref())) {
-      delete this;
+      delete static_cast<Child*>(this);
     }
   }
   void Unref(const DebugLocation& location, const char* reason) {
     if (GPR_UNLIKELY(refs_.Unref(location, reason))) {
-      delete this;
+      delete static_cast<Child*>(this);
     }
   }
 

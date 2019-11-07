@@ -103,7 +103,7 @@ static void chttp2_init_server_secure_fullstack(grpc_end2end_test_fixture *f,
 
 static void chttp2_tear_down_secure_fullstack(grpc_end2end_test_fixture *f) {
   fullstack_secure_fixture_data *ffd = (fullstack_secure_fixture_data *)f->fixture_data;
-  grpc_core::Delete(ffd);
+  delete ffd;
 }
 
 static void cronet_init_client_simple_ssl_secure_fullstack(grpc_end2end_test_fixture *f,
