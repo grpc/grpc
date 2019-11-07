@@ -47,6 +47,7 @@
       deps.append("${_gRPC_ZLIB_LIBRARIES}")
       deps.append("${_gRPC_CARES_LIBRARIES}")
       deps.append("${_gRPC_ADDRESS_SORTING_LIBRARIES}")
+      deps.append("${_gRPC_UPB_LIBRARIES}")
     deps.append("${_gRPC_ALLTARGETS_LIBRARIES}")
     for d in target_dict.get('deps', []):
       if d == 'benchmark':
@@ -376,7 +377,7 @@
   % for lib in libs:
   % if lib.build in ["all", "protoc", "tool", "test", "private"] and not lib.boringssl:
   % if not lib.get('build_system', []) or 'cmake' in lib.get('build_system', []):
-  % if not lib.name in ['ares', 'benchmark', 'upb', 'z']:  # we build these using CMake instead
+  % if not lib.name in ['ares', 'benchmark', 'z']:  # we build these using CMake instead
   % if lib.build in ["test", "private"]:
   if(gRPC_BUILD_TESTS)
   ${cc_library(lib)}
@@ -656,7 +657,7 @@
     "high performance general RPC framework"
     "<%text>${gRPC_CORE_VERSION}</%text>"
     "gpr openssl"
-    "-lgrpc -laddress_sorting -lcares -lz"
+    "-lgrpc -laddress_sorting -lupb -lcares -lz"
     ""
     "grpc.pc")
 

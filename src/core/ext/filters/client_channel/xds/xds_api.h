@@ -59,7 +59,7 @@ class XdsPriorityListUpdate {
 
     size_t size() const { return localities.size(); }
 
-    Map<RefCountedPtr<XdsLocalityName>, Locality, XdsLocalityName::Less>
+    std::map<RefCountedPtr<XdsLocalityName>, Locality, XdsLocalityName::Less>
         localities;
   };
 

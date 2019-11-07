@@ -113,7 +113,6 @@
     <file baseinstalldir="/" name="src/core/lib/gprpp/map.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gprpp/memory.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gprpp/mpscq.h" role="src" />
-    <file baseinstalldir="/" name="src/core/lib/gprpp/set.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gprpp/sync.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/gprpp/thd.h" role="src" />
     <file baseinstalldir="/" name="src/core/lib/profiling/timers.h" role="src" />
@@ -275,14 +274,6 @@
     <file baseinstalldir="/" name="src/core/ext/upb-generated/src/proto/grpc/gcp/altscontext.upb.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upb-generated/src/proto/grpc/gcp/handshaker.upb.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upb-generated/src/proto/grpc/gcp/transport_security_common.upb.h" role="src" />
-    <file baseinstalldir="/" name="third_party/upb/upb/decode.h" role="src" />
-    <file baseinstalldir="/" name="third_party/upb/upb/encode.h" role="src" />
-    <file baseinstalldir="/" name="third_party/upb/upb/generated_util.h" role="src" />
-    <file baseinstalldir="/" name="third_party/upb/upb/msg.h" role="src" />
-    <file baseinstalldir="/" name="third_party/upb/upb/port_def.inc" role="src" />
-    <file baseinstalldir="/" name="third_party/upb/upb/port_undef.inc" role="src" />
-    <file baseinstalldir="/" name="third_party/upb/upb/table.int.h" role="src" />
-    <file baseinstalldir="/" name="third_party/upb/upb/upb.h" role="src" />
     <file baseinstalldir="/" name="src/core/tsi/transport_security.h" role="src" />
     <file baseinstalldir="/" name="src/core/tsi/transport_security_interface.h" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/client/authority.h" role="src" />
@@ -780,12 +771,6 @@
     <file baseinstalldir="/" name="src/core/ext/upb-generated/src/proto/grpc/gcp/altscontext.upb.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upb-generated/src/proto/grpc/gcp/handshaker.upb.c" role="src" />
     <file baseinstalldir="/" name="src/core/ext/upb-generated/src/proto/grpc/gcp/transport_security_common.upb.c" role="src" />
-    <file baseinstalldir="/" name="third_party/upb/upb/decode.c" role="src" />
-    <file baseinstalldir="/" name="third_party/upb/upb/encode.c" role="src" />
-    <file baseinstalldir="/" name="third_party/upb/upb/msg.c" role="src" />
-    <file baseinstalldir="/" name="third_party/upb/upb/port.c" role="src" />
-    <file baseinstalldir="/" name="third_party/upb/upb/table.c" role="src" />
-    <file baseinstalldir="/" name="third_party/upb/upb/upb.c" role="src" />
     <file baseinstalldir="/" name="src/core/tsi/transport_security.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/client/insecure/channel_create.cc" role="src" />
     <file baseinstalldir="/" name="src/core/ext/transport/chttp2/client/insecure/channel_create_posix.cc" role="src" />
@@ -1359,6 +1344,20 @@
     <file baseinstalldir="/" name="third_party/boringssl/ssl/tls_method.cc" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl/ssl/tls_record.cc" role="src" />
     <file baseinstalldir="/" name="third_party/boringssl/third_party/fiat/curve25519.c" role="src" />
+    <file baseinstalldir="/" name="third_party/upb/upb/decode.h" role="src" />
+    <file baseinstalldir="/" name="third_party/upb/upb/encode.h" role="src" />
+    <file baseinstalldir="/" name="third_party/upb/upb/generated_util.h" role="src" />
+    <file baseinstalldir="/" name="third_party/upb/upb/msg.h" role="src" />
+    <file baseinstalldir="/" name="third_party/upb/upb/port_def.inc" role="src" />
+    <file baseinstalldir="/" name="third_party/upb/upb/port_undef.inc" role="src" />
+    <file baseinstalldir="/" name="third_party/upb/upb/table.int.h" role="src" />
+    <file baseinstalldir="/" name="third_party/upb/upb/upb.h" role="src" />
+    <file baseinstalldir="/" name="third_party/upb/upb/decode.c" role="src" />
+    <file baseinstalldir="/" name="third_party/upb/upb/encode.c" role="src" />
+    <file baseinstalldir="/" name="third_party/upb/upb/msg.c" role="src" />
+    <file baseinstalldir="/" name="third_party/upb/upb/port.c" role="src" />
+    <file baseinstalldir="/" name="third_party/upb/upb/table.c" role="src" />
+    <file baseinstalldir="/" name="third_party/upb/upb/upb.c" role="src" />
     <file baseinstalldir="/" name="third_party/zlib/crc32.h" role="src" />
     <file baseinstalldir="/" name="third_party/zlib/deflate.h" role="src" />
     <file baseinstalldir="/" name="third_party/zlib/gzguts.h" role="src" />

@@ -4,11 +4,11 @@ package(default_visibility = ["//visibility:public"])
 
 py_library(
     name = "grpc_status",
-    srcs = ["rpc_status.py",],
+    srcs = ["rpc_status.py"],
+    imports = ["../"],
     deps = [
         "//src/python/grpcio/grpc:grpcio",
         "@com_google_protobuf//:protobuf_python",
-        requirement('googleapis-common-protos'),
+        requirement("googleapis-common-protos"),
     ],
-    imports=["../",],
 )

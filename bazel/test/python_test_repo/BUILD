@@ -16,9 +16,9 @@
 
 load(
     "@com_github_grpc_grpc//bazel:python_rules.bzl",
-    "py_proto_library",
-    "py_grpc_library",
     "py2and3_test",
+    "py_grpc_library",
+    "py_proto_library",
 )
 
 package(default_testonly = 1)
@@ -55,12 +55,12 @@ py_proto_library(
 
 py2and3_test(
     name = "import_test",
-    main = "helloworld.py",
     srcs = ["helloworld.py"],
+    main = "helloworld.py",
     deps = [
+        ":duration_py_pb2",
         ":helloworld_py_pb2",
         ":helloworld_py_pb2_grpc",
-        ":duration_py_pb2",
         ":timestamp_py_pb2",
     ],
 )
@@ -71,19 +71,19 @@ py2and3_test(
 proto_library(
     name = "helloworld_moved_proto",
     srcs = ["helloworld.proto"],
+    import_prefix = "google/cloud",
+    strip_import_prefix = "",
     deps = [
         "@com_google_protobuf//:duration_proto",
         "@com_google_protobuf//:timestamp_proto",
     ],
-    import_prefix = "google/cloud",
-    strip_import_prefix = ""
 )
 
 # Also test the custom plugin execution parameter
 py_proto_library(
     name = "helloworld_moved_py_pb2",
+    plugin = ":dummy_plugin",
     deps = [":helloworld_moved_proto"],
-    plugin = ":dummy_plugin"
 )
 
 py_grpc_library(
@@ -94,12 +94,12 @@ py_grpc_library(
 
 py2and3_test(
     name = "import_moved_test",
-    main = "helloworld_moved.py",
     srcs = ["helloworld_moved.py"],
+    main = "helloworld_moved.py",
     deps = [
+        ":duration_py_pb2",
         ":helloworld_moved_py_pb2",
         ":helloworld_moved_py_pb2_grpc",
-        ":duration_py_pb2",
         ":timestamp_py_pb2",
     ],
 )

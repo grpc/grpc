@@ -88,7 +88,7 @@ static void my_resolve_address(const char* addr, const char* default_port,
     (*addrs)->addrs[0].len = static_cast<socklen_t>(sizeof(*sa));
     gpr_mu_unlock(&g_mu);
   }
-  GRPC_CLOSURE_SCHED(on_done, error);
+  grpc_core::ExecCtx::Run(DEBUG_LOCATION, on_done, error);
 }
 
 static grpc_error* my_blocking_resolve_address(
@@ -127,7 +127,7 @@ static grpc_ares_request* my_dns_lookup_ares_locked(
     (*addresses)->emplace_back(&sa, sizeof(sa), nullptr);
     gpr_mu_unlock(&g_mu);
   }
-  GRPC_CLOSURE_SCHED(on_done, error);
+  grpc_core::ExecCtx::Run(DEBUG_LOCATION, on_done, error);
   return nullptr;
 }
 

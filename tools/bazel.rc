@@ -86,3 +86,5 @@ build:basicprof --copt=-DNDEBUG
 build:basicprof --copt=-O2
 build:basicprof --copt=-DGRPC_BASIC_PROFILER
 build:basicprof --copt=-DGRPC_TIMERS_RDTSC
+
+build:python_single_threaded_unary_stream --test_env="GRPC_SINGLE_THREADED_UNARY_STREAM=true"

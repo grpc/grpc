@@ -57,7 +57,7 @@ bool DoSplitHostPort(StringView name, StringView* host, StringView* port,
     }
     if (rbracket == name.size() - 1) {
       /* ]<end> */
-      port->clear();
+      *port = StringView();
     } else if (name[rbracket + 1] == ':') {
       /* ]:<port?> */
       *port = name.substr(rbracket + 2, name.size() - rbracket - 2);
@@ -70,7 +70,7 @@ bool DoSplitHostPort(StringView name, StringView* host, StringView* port,
     if (host->find(':') == grpc_core::StringView::npos) {
       /* Require all bracketed hosts to contain a colon, because a hostname or
          IPv4 address should never use brackets. */
-      host->clear();
+      *host = StringView();
       return false;
     }
   } else {
@@ -84,7 +84,7 @@ bool DoSplitHostPort(StringView name, StringView* host, StringView* port,
     } else {
       /* 0 or 2+ colons.  Bare hostname or IPv6 litearal. */
       *host = name;
-      port->clear();
+      *port = StringView();
     }
   }
   return true;
@@ -108,9 +108,9 @@ bool SplitHostPort(StringView name, UniquePtr<char>* host,
     // We always set the host, but port is set only when DoSplitHostPort find a
     // port in the string, to remain backward compatible with the old
     // gpr_split_host_port API.
-    *host = host_view.dup();
+    *host = StringViewToCString(host_view);
     if (has_port) {
-      *port = port_view.dup();
+      *port = StringViewToCString(port_view);
     }
   }
   return ret;

@@ -1323,12 +1323,6 @@ add_library(grpc
   src/core/ext/upb-generated/src/proto/grpc/gcp/altscontext.upb.c
   src/core/ext/upb-generated/src/proto/grpc/gcp/handshaker.upb.c
   src/core/ext/upb-generated/src/proto/grpc/gcp/transport_security_common.upb.c
-  third_party/upb/upb/decode.c
-  third_party/upb/upb/encode.c
-  third_party/upb/upb/msg.c
-  third_party/upb/upb/port.c
-  third_party/upb/upb/table.c
-  third_party/upb/upb/upb.c
   src/core/tsi/transport_security.cc
   src/core/ext/transport/chttp2/client/insecure/channel_create.cc
   src/core/ext/transport/chttp2/client/insecure/channel_create_posix.cc
@@ -1483,8 +1477,10 @@ target_link_libraries(grpc
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_CARES_LIBRARIES}
   ${_gRPC_ADDRESS_SORTING_LIBRARIES}
+  ${_gRPC_UPB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gpr
+  upb
 )
 if(_gRPC_PLATFORM_IOS OR _gRPC_PLATFORM_MAC)
   target_link_libraries(grpc "-framework CoreFoundation")
@@ -1767,12 +1763,6 @@ add_library(grpc_cronet
   src/core/ext/filters/client_channel/subchannel_pool_interface.cc
   src/core/ext/filters/deadline/deadline_filter.cc
   src/core/ext/upb-generated/src/proto/grpc/health/v1/health.upb.c
-  third_party/upb/upb/decode.c
-  third_party/upb/upb/encode.c
-  third_party/upb/upb/msg.c
-  third_party/upb/upb/port.c
-  third_party/upb/upb/table.c
-  third_party/upb/upb/upb.c
   src/core/ext/upb-generated/udpa/data/orca/v1/orca_load_report.upb.c
   src/core/ext/upb-generated/gogoproto/gogo.upb.c
   src/core/ext/upb-generated/validate/validate.upb.c
@@ -1899,8 +1889,10 @@ target_link_libraries(grpc_cronet
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_CARES_LIBRARIES}
   ${_gRPC_ADDRESS_SORTING_LIBRARIES}
+  ${_gRPC_UPB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gpr
+  upb
 )
 if(_gRPC_PLATFORM_IOS OR _gRPC_PLATFORM_MAC)
   target_link_libraries(grpc_cronet "-framework CoreFoundation")
@@ -2169,12 +2161,6 @@ add_library(grpc_test_util
   src/core/ext/filters/client_channel/subchannel_pool_interface.cc
   src/core/ext/filters/deadline/deadline_filter.cc
   src/core/ext/upb-generated/src/proto/grpc/health/v1/health.upb.c
-  third_party/upb/upb/decode.c
-  third_party/upb/upb/encode.c
-  third_party/upb/upb/msg.c
-  third_party/upb/upb/port.c
-  third_party/upb/upb/table.c
-  third_party/upb/upb/upb.c
   src/core/ext/upb-generated/udpa/data/orca/v1/orca_load_report.upb.c
   src/core/ext/upb-generated/gogoproto/gogo.upb.c
   src/core/ext/upb-generated/validate/validate.upb.c
@@ -2249,6 +2235,7 @@ target_link_libraries(grpc_test_util
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gpr
   grpc
+  upb
 )
 if(_gRPC_PLATFORM_IOS OR _gRPC_PLATFORM_MAC)
   target_link_libraries(grpc_test_util "-framework CoreFoundation")
@@ -2518,12 +2505,6 @@ add_library(grpc_test_util_unsecure
   src/core/ext/filters/client_channel/subchannel_pool_interface.cc
   src/core/ext/filters/deadline/deadline_filter.cc
   src/core/ext/upb-generated/src/proto/grpc/health/v1/health.upb.c
-  third_party/upb/upb/decode.c
-  third_party/upb/upb/encode.c
-  third_party/upb/upb/msg.c
-  third_party/upb/upb/port.c
-  third_party/upb/upb/table.c
-  third_party/upb/upb/upb.c
   src/core/ext/upb-generated/udpa/data/orca/v1/orca_load_report.upb.c
   src/core/ext/upb-generated/gogoproto/gogo.upb.c
   src/core/ext/upb-generated/validate/validate.upb.c
@@ -2598,6 +2579,7 @@ target_link_libraries(grpc_test_util_unsecure
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gpr
   grpc_unsecure
+  upb
 )
 if(_gRPC_PLATFORM_IOS OR _gRPC_PLATFORM_MAC)
   target_link_libraries(grpc_test_util_unsecure "-framework CoreFoundation")
@@ -2878,12 +2860,6 @@ add_library(grpc_unsecure
   src/core/ext/filters/client_channel/subchannel_pool_interface.cc
   src/core/ext/filters/deadline/deadline_filter.cc
   src/core/ext/upb-generated/src/proto/grpc/health/v1/health.upb.c
-  third_party/upb/upb/decode.c
-  third_party/upb/upb/encode.c
-  third_party/upb/upb/msg.c
-  third_party/upb/upb/port.c
-  third_party/upb/upb/table.c
-  third_party/upb/upb/upb.c
   src/core/ext/upb-generated/udpa/data/orca/v1/orca_load_report.upb.c
   src/core/ext/upb-generated/gogoproto/gogo.upb.c
   src/core/ext/upb-generated/validate/validate.upb.c
@@ -2992,8 +2968,10 @@ target_link_libraries(grpc_unsecure
   ${_gRPC_ZLIB_LIBRARIES}
   ${_gRPC_CARES_LIBRARIES}
   ${_gRPC_ADDRESS_SORTING_LIBRARIES}
+  ${_gRPC_UPB_LIBRARIES}
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gpr
+  upb
 )
 if(_gRPC_PLATFORM_IOS OR _gRPC_PLATFORM_MAC)
   target_link_libraries(grpc_unsecure "-framework CoreFoundation")
@@ -3293,12 +3271,6 @@ add_library(grpc++
   src/cpp/util/string_ref.cc
   src/cpp/util/time_cc.cc
   src/core/ext/upb-generated/src/proto/grpc/health/v1/health.upb.c
-  third_party/upb/upb/decode.c
-  third_party/upb/upb/encode.c
-  third_party/upb/upb/msg.c
-  third_party/upb/upb/port.c
-  third_party/upb/upb/table.c
-  third_party/upb/upb/upb.c
   src/cpp/codegen/codegen_init.cc
 )
 
@@ -3337,6 +3309,7 @@ target_link_libraries(grpc++
   ${_gRPC_ALLTARGETS_LIBRARIES}
   grpc
   gpr
+  upb
 )
 
 foreach(_hdr
@@ -4365,12 +4338,6 @@ add_library(grpc++_unsecure
   src/cpp/util/string_ref.cc
   src/cpp/util/time_cc.cc
   src/core/ext/upb-generated/src/proto/grpc/health/v1/health.upb.c
-  third_party/upb/upb/decode.c
-  third_party/upb/upb/encode.c
-  third_party/upb/upb/msg.c
-  third_party/upb/upb/port.c
-  third_party/upb/upb/table.c
-  third_party/upb/upb/upb.c
   src/cpp/codegen/codegen_init.cc
 )
 
@@ -4408,6 +4375,7 @@ target_link_libraries(grpc++_unsecure
   ${_gRPC_ALLTARGETS_LIBRARIES}
   gpr
   grpc_unsecure
+  upb
 )
 
 foreach(_hdr
@@ -5436,6 +5404,57 @@ if(gRPC_INSTALL)
 endif()
 
 endif()
+
+add_library(upb
+  third_party/upb/upb/decode.c
+  third_party/upb/upb/encode.c
+  third_party/upb/upb/msg.c
+  third_party/upb/upb/port.c
+  third_party/upb/upb/table.c
+  third_party/upb/upb/upb.c
+)
+
+set_target_properties(upb PROPERTIES
+  VERSION ${gRPC_CORE_VERSION}
+  SOVERSION ${gRPC_CORE_SOVERSION}
+)
+
+if(WIN32 AND MSVC)
+  set_target_properties(upb PROPERTIES COMPILE_PDB_NAME "upb"
+    COMPILE_PDB_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}"
+  )
+  if(gRPC_INSTALL)
+    install(FILES ${CMAKE_CURRENT_BINARY_DIR}/upb.pdb
+      DESTINATION ${gRPC_INSTALL_LIBDIR} OPTIONAL
+    )
+  endif()
+endif()
+
+target_include_directories(upb
+  PUBLIC $<INSTALL_INTERFACE:${gRPC_INSTALL_INCLUDEDIR}> $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+  PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+    ${_gRPC_SSL_INCLUDE_DIR}
+    ${_gRPC_UPB_GENERATED_DIR}
+    ${_gRPC_UPB_GRPC_GENERATED_DIR}
+    ${_gRPC_UPB_INCLUDE_DIR}
+    ${_gRPC_ZLIB_INCLUDE_DIR}
+)
+target_link_libraries(upb
+  ${_gRPC_ALLTARGETS_LIBRARIES}
+)
+
+
+
+if(gRPC_INSTALL)
+  install(TARGETS upb EXPORT gRPCTargets
+    RUNTIME DESTINATION ${gRPC_INSTALL_BINDIR}
+    LIBRARY DESTINATION ${gRPC_INSTALL_LIBDIR}
+    ARCHIVE DESTINATION ${gRPC_INSTALL_LIBDIR}
+  )
+endif()
+
 if(gRPC_BUILD_TESTS)
 
 add_library(bad_client_test
@@ -9449,10 +9468,6 @@ if(_gRPC_PLATFORM_LINUX)
       ${CMAKE_CURRENT_SOURCE_DIR}
       ${CMAKE_CURRENT_SOURCE_DIR}/include
       ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
-      ${_gRPC_BENCHMARK_INCLUDE_DIR}
-      ${_gRPC_CARES_INCLUDE_DIR}
-      ${_gRPC_GFLAGS_INCLUDE_DIR}
-      ${_gRPC_PROTOBUF_INCLUDE_DIR}
       ${_gRPC_SSL_INCLUDE_DIR}
       ${_gRPC_UPB_GENERATED_DIR}
       ${_gRPC_UPB_GRPC_GENERATED_DIR}
@@ -17919,7 +17934,7 @@ generate_pkgconfig(
   "high performance general RPC framework"
   "${gRPC_CORE_VERSION}"
   "gpr openssl"
-  "-lgrpc -laddress_sorting -lcares -lz"
+  "-lgrpc -laddress_sorting -lupb -lcares -lz"
   ""
   "grpc.pc")
 

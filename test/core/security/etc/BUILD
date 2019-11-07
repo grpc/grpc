@@ -15,8 +15,8 @@
 licenses(["notice"])  # Apache v2
 
 exports_files([
-        "bundle.pem",
-        "test_roots/cert1.pem",
-        "test_roots/cert2.pem",
-        "test_roots/cert3.pem",
+    "bundle.pem",
+    "test_roots/cert1.pem",
+    "test_roots/cert2.pem",
+    "test_roots/cert3.pem",
 ])

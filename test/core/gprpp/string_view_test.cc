@@ -40,7 +40,8 @@ TEST(StringViewTest, Empty) {
   EXPECT_TRUE(empty_trimmed.empty());
   EXPECT_EQ(empty_trimmed.size(), 0lu);
 
-  grpc_core::StringView empty_slice(grpc_empty_slice());
+  grpc_core::StringView empty_slice(
+      grpc_core::StringViewFromSlice(grpc_empty_slice()));
   EXPECT_TRUE(empty_slice.empty());
   EXPECT_EQ(empty_slice.size(), 0lu);
 }
@@ -64,14 +65,16 @@ TEST(StringViewTest, Data) {
 
 TEST(StringViewTest, Slice) {
   constexpr char kStr[] = "foo";
-  grpc_core::StringView slice(grpc_slice_from_static_string(kStr));
+  grpc_core::StringView slice(
+      grpc_core::StringViewFromSlice(grpc_slice_from_static_string(kStr)));
   EXPECT_EQ(slice.size(), strlen(kStr));
 }
 
 TEST(StringViewTest, Dup) {
   constexpr char kStr[] = "foo";
-  grpc_core::StringView slice(grpc_slice_from_static_string(kStr));
-  grpc_core::UniquePtr<char> dup = slice.dup();
+  grpc_core::StringView slice(
+      grpc_core::StringViewFromSlice(grpc_slice_from_static_string(kStr)));
+  grpc_core::UniquePtr<char> dup = grpc_core::StringViewToCString(slice);
   EXPECT_EQ(0, strcmp(kStr, dup.get()));
   EXPECT_EQ(slice.size(), strlen(kStr));
 }
@@ -82,12 +85,14 @@ TEST(StringViewTest, Eq) {
   grpc_core::StringView str1(kStr1);
   EXPECT_EQ(kStr1, str1);
   EXPECT_EQ(str1, kStr1);
-  grpc_core::StringView slice1(grpc_slice_from_static_string(kStr1));
+  grpc_core::StringView slice1(
+      grpc_core::StringViewFromSlice(grpc_slice_from_static_string(kStr1)));
   EXPECT_EQ(slice1, str1);
   EXPECT_EQ(str1, slice1);
   EXPECT_NE(slice1, kStr2);
   EXPECT_NE(kStr2, slice1);
-  grpc_core::StringView slice2(grpc_slice_from_static_string(kStr2));
+  grpc_core::StringView slice2(
+      grpc_core::StringViewFromSlice(grpc_slice_from_static_string(kStr2)));
   EXPECT_NE(slice2, str1);
   EXPECT_NE(str1, slice2);
 }
@@ -99,15 +104,15 @@ TEST(StringViewTest, Cmp) {
   grpc_core::StringView str1(kStr1);
   grpc_core::StringView str2(kStr2);
   grpc_core::StringView str3(kStr3);
-  EXPECT_EQ(str1.cmp(str1), 0);
-  EXPECT_LT(str1.cmp(str2), 0);
-  EXPECT_LT(str1.cmp(str3), 0);
-  EXPECT_EQ(str2.cmp(str2), 0);
-  EXPECT_GT(str2.cmp(str1), 0);
-  EXPECT_GT(str2.cmp(str3), 0);
-  EXPECT_EQ(str3.cmp(str3), 0);
-  EXPECT_GT(str3.cmp(str1), 0);
-  EXPECT_LT(str3.cmp(str2), 0);
+  EXPECT_EQ(grpc_core::StringViewCmp(str1, str1), 0);
+  EXPECT_LT(grpc_core::StringViewCmp(str1, str2), 0);
+  EXPECT_LT(grpc_core::StringViewCmp(str1, str3), 0);
+  EXPECT_EQ(grpc_core::StringViewCmp(str2, str2), 0);
+  EXPECT_GT(grpc_core::StringViewCmp(str2, str1), 0);
+  EXPECT_GT(grpc_core::StringViewCmp(str2, str3), 0);
+  EXPECT_EQ(grpc_core::StringViewCmp(str3, str3), 0);
+  EXPECT_GT(grpc_core::StringViewCmp(str3, str1), 0);
+  EXPECT_LT(grpc_core::StringViewCmp(str3, str2), 0);
 }
 
 TEST(StringViewTest, RemovePrefix) {

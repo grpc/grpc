@@ -1,4 +1,4 @@
-load("@com_github_grpc_grpc//bazel:python_rules.bzl", "py_proto_library", "py_grpc_library")
+load("@com_github_grpc_grpc//bazel:python_rules.bzl", "py_grpc_library", "py_proto_library")
 
 proto_library(
     name = "unary_stream_benchmark_proto",
@@ -7,24 +7,24 @@ proto_library(
 )
 
 py_proto_library(
-  name = "unary_stream_benchmark_py_pb2",
-  deps = [":unary_stream_benchmark_proto"],
+    name = "unary_stream_benchmark_py_pb2",
+    deps = [":unary_stream_benchmark_proto"],
 )
 
 py_grpc_library(
-  name = "unary_stream_benchmark_py_pb2_grpc",
-  srcs = [":unary_stream_benchmark_proto"],
-  deps = [":unary_stream_benchmark_py_pb2"],
+    name = "unary_stream_benchmark_py_pb2_grpc",
+    srcs = [":unary_stream_benchmark_proto"],
+    deps = [":unary_stream_benchmark_py_pb2"],
 )
 
 py_binary(
     name = "unary_stream_benchmark",
-    srcs_version = "PY3",
-    python_version = "PY3",
     srcs = ["unary_stream_benchmark.py"],
+    python_version = "PY3",
+    srcs_version = "PY3",
     deps = [
-        "//src/python/grpcio/grpc:grpcio",
         ":unary_stream_benchmark_py_pb2",
         ":unary_stream_benchmark_py_pb2_grpc",
-    ]
+        "//src/python/grpcio/grpc:grpcio",
+    ],
 )

@@ -141,7 +141,8 @@ static void read_and_write_test_read_handler(void* data, grpc_error* error) {
     /* We perform many reads one after another. If grpc_endpoint_read and the
      * read_handler are both run inline, we might end up growing the stack
      * beyond the limit. Schedule the read on ExecCtx to avoid this. */
-    GRPC_CLOSURE_SCHED(&state->read_scheduler, GRPC_ERROR_NONE);
+    grpc_core::ExecCtx::Run(DEBUG_LOCATION, &state->read_scheduler,
+                            GRPC_ERROR_NONE);
   }
 }
 
@@ -172,7 +173,8 @@ static void read_and_write_test_write_handler(void* data, grpc_error* error) {
       /* We perform many writes one after another. If grpc_endpoint_write and
        * the write_handler are both run inline, we might end up growing the
        * stack beyond the limit. Schedule the write on ExecCtx to avoid this. */
-      GRPC_CLOSURE_SCHED(&state->write_scheduler, GRPC_ERROR_NONE);
+      grpc_core::ExecCtx::Run(DEBUG_LOCATION, &state->write_scheduler,
+                              GRPC_ERROR_NONE);
       gpr_free(slices);
       return;
     }

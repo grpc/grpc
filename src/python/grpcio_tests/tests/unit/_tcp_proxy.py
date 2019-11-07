@@ -27,33 +27,10 @@ import select
 import socket
 import threading
 
+from tests.unit.framework.common import get_socket
+
 _TCP_PROXY_BUFFER_SIZE = 1024
 _TCP_PROXY_TIMEOUT = datetime.timedelta(milliseconds=500)
-
-
-def _create_socket_ipv6(bind_address):
-    listen_socket = socket.socket(socket.AF_INET6, socket.SOCK_STREAM)
-    listen_socket.bind((bind_address, 0, 0, 0))
-    return listen_socket
-
-
-def _create_socket_ipv4(bind_address):
-    listen_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    listen_socket.bind((bind_address, 0))
-    return listen_socket
-
-
-def _init_listen_socket(bind_address):
-    listen_socket = None
-    if socket.has_ipv6:
-        try:
-            listen_socket = _create_socket_ipv6(bind_address)
-        except socket.error:
-            listen_socket = _create_socket_ipv4(bind_address)
-    else:
-        listen_socket = _create_socket_ipv4(bind_address)
-    listen_socket.listen(1)
-    return listen_socket, listen_socket.getsockname()[1]
 
 
 def _init_proxy_socket(gateway_address, gateway_port):
@@ -87,8 +64,8 @@ class TcpProxy(object):
         self._thread = threading.Thread(target=self._run_proxy)
 
     def start(self):
-        self._listen_socket, self._port = _init_listen_socket(
-            self._bind_address)
+        _, self._port, self._listen_socket = get_socket(
+            bind_address=self._bind_address)
         self._proxy_socket = _init_proxy_socket(self._gateway_address,
                                                 self._gateway_port)
         self._thread.start()

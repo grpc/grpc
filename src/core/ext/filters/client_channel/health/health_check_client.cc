@@ -300,7 +300,8 @@ void HealthCheckClient::CallState::StartCall() {
     // Schedule instead of running directly, since we must not be
     // holding health_check_client_->mu_ when CallEnded() is called.
     call_->Ref(DEBUG_LOCATION, "call_end_closure").release();
-    GRPC_CLOSURE_SCHED(
+    ExecCtx::Run(
+        DEBUG_LOCATION,
         GRPC_CLOSURE_INIT(&batch_.handler_private.closure, CallEndedRetry, this,
                           grpc_schedule_on_exec_ctx),
         GRPC_ERROR_NONE);

@@ -1257,7 +1257,7 @@ XdsClient::XdsClient(Combiner* combiner, grpc_pollset_set* interested_parties,
       combiner_(GRPC_COMBINER_REF(combiner, "xds_client")),
       interested_parties_(interested_parties),
       bootstrap_(XdsBootstrap::ReadFromFile(error)),
-      server_name_(server_name.dup()),
+      server_name_(StringViewToCString(server_name)),
       service_config_watcher_(std::move(watcher)) {
   if (*error != GRPC_ERROR_NONE) {
     if (GRPC_TRACE_FLAG_ENABLED(grpc_xds_client_trace)) {
@@ -1296,7 +1296,7 @@ void XdsClient::WatchClusterData(StringView cluster,
   // TODO(juanlishen): Start CDS call if not already started and return
   // real data via watcher.
   CdsUpdate update;
-  update.eds_service_name = cluster.dup();
+  update.eds_service_name = StringViewToCString(cluster);
   update.lrs_load_reporting_server_name.reset(gpr_strdup(""));
   w->OnClusterChanged(std::move(update));
 }

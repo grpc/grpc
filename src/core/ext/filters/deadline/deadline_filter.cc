@@ -199,7 +199,7 @@ grpc_deadline_state::grpc_deadline_state(grpc_call_element* elem,
         grpc_core::New<start_timer_after_init_state>(elem, deadline);
     GRPC_CLOSURE_INIT(&state->closure, start_timer_after_init, state,
                       grpc_schedule_on_exec_ctx);
-    GRPC_CLOSURE_SCHED(&state->closure, GRPC_ERROR_NONE);
+    grpc_core::ExecCtx::Run(DEBUG_LOCATION, &state->closure, GRPC_ERROR_NONE);
   }
 }
 

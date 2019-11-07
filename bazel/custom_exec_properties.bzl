@@ -1,4 +1,4 @@
-# Copyright 2018 gRPC authors.
+# Copyright 2019 The gRPC authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -12,20 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-licenses(["notice"])  # Apache v2
+load("@grpc_custom_exec_properties//:constants.bzl", _LARGE_MACHINE = "LARGE_MACHINE")
 
-package(default_visibility = ["//visibility:public"])
-
-constraint_setting(name = "machine_size")
-
-constraint_value(
-    name = "large",
-    constraint_setting = ":machine_size",
-)
-
-constraint_value(
-    name = "standard",
-    constraint_setting = ":machine_size",
-)
-
-# Add other constraint values as needed (tiny, huge, etc.) in the future.
+LARGE_MACHINE = _LARGE_MACHINE

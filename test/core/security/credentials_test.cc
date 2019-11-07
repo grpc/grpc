@@ -564,7 +564,7 @@ static int compute_engine_httpcli_get_success_override(
     grpc_closure* on_done, grpc_httpcli_response* response) {
   validate_compute_engine_http_request(request);
   *response = http_response(200, valid_oauth2_json_response);
-  GRPC_CLOSURE_SCHED(on_done, GRPC_ERROR_NONE);
+  grpc_core::ExecCtx::Run(DEBUG_LOCATION, on_done, GRPC_ERROR_NONE);
   return 1;
 }
 
@@ -573,7 +573,7 @@ static int compute_engine_httpcli_get_failure_override(
     grpc_closure* on_done, grpc_httpcli_response* response) {
   validate_compute_engine_http_request(request);
   *response = http_response(403, "Not Authorized.");
-  GRPC_CLOSURE_SCHED(on_done, GRPC_ERROR_NONE);
+  grpc_core::ExecCtx::Run(DEBUG_LOCATION, on_done, GRPC_ERROR_NONE);
   return 1;
 }
 
@@ -667,7 +667,7 @@ static int refresh_token_httpcli_post_success(
     grpc_httpcli_response* response) {
   validate_refresh_token_http_request(request, body, body_size);
   *response = http_response(200, valid_oauth2_json_response);
-  GRPC_CLOSURE_SCHED(on_done, GRPC_ERROR_NONE);
+  grpc_core::ExecCtx::Run(DEBUG_LOCATION, on_done, GRPC_ERROR_NONE);
   return 1;
 }
 
@@ -678,7 +678,7 @@ static int token_httpcli_post_failure(const grpc_httpcli_request* /*request*/,
                                       grpc_closure* on_done,
                                       grpc_httpcli_response* response) {
   *response = http_response(403, "Not Authorized.");
-  GRPC_CLOSURE_SCHED(on_done, GRPC_ERROR_NONE);
+  grpc_core::ExecCtx::Run(DEBUG_LOCATION, on_done, GRPC_ERROR_NONE);
   return 1;
 }
 
@@ -748,8 +748,8 @@ static void test_valid_sts_creds_options(void) {
   grpc_core::StringView host;
   grpc_core::StringView port;
   GPR_ASSERT(grpc_core::SplitHostPort(sts_url->authority, &host, &port));
-  GPR_ASSERT(host.cmp("foo.com") == 0);
-  GPR_ASSERT(port.cmp("5555") == 0);
+  GPR_ASSERT(grpc_core::StringViewCmp(host, "foo.com") == 0);
+  GPR_ASSERT(grpc_core::StringViewCmp(port, "5555") == 0);
   grpc_uri_destroy(sts_url);
 }
 
@@ -881,7 +881,7 @@ static int sts_token_httpcli_post_success(const grpc_httpcli_request* request,
                                           grpc_httpcli_response* response) {
   validate_sts_token_http_request(request, body, body_size);
   *response = http_response(200, valid_sts_json_response);
-  GRPC_CLOSURE_SCHED(on_done, GRPC_ERROR_NONE);
+  grpc_core::ExecCtx::Run(DEBUG_LOCATION, on_done, GRPC_ERROR_NONE);
   return 1;
 }
 
@@ -1215,7 +1215,7 @@ static int default_creds_metadata_server_detection_httpcli_get_success_override(
   response->hdrs = headers;
   GPR_ASSERT(strcmp(request->http.path, "/") == 0);
   GPR_ASSERT(strcmp(request->host, "metadata.google.internal.") == 0);
-  GRPC_CLOSURE_SCHED(on_done, GRPC_ERROR_NONE);
+  grpc_core::ExecCtx::Run(DEBUG_LOCATION, on_done, GRPC_ERROR_NONE);
   return 1;
 }
 
@@ -1306,7 +1306,7 @@ static int default_creds_gce_detection_httpcli_get_failure_override(
   GPR_ASSERT(strcmp(request->http.path, "/") == 0);
   GPR_ASSERT(strcmp(request->host, "metadata.google.internal.") == 0);
   *response = http_response(200, "");
-  GRPC_CLOSURE_SCHED(on_done, GRPC_ERROR_NONE);
+  grpc_core::ExecCtx::Run(DEBUG_LOCATION, on_done, GRPC_ERROR_NONE);
   return 1;
 }
 

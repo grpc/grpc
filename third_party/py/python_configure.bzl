@@ -13,13 +13,14 @@ _PYTHON2_LIB_PATH = "PYTHON2_LIB_PATH"
 _PYTHON3_BIN_PATH = "PYTHON3_BIN_PATH"
 _PYTHON3_LIB_PATH = "PYTHON3_LIB_PATH"
 
-
-def _tpl(repository_ctx, tpl, substitutions={}, out=None):
+def _tpl(repository_ctx, tpl, substitutions = {}, out = None):
     if not out:
         out = tpl
-    repository_ctx.template(out, Label("//third_party/py:%s.tpl" % tpl),
-                            substitutions)
-
+    repository_ctx.template(
+        out,
+        Label("//third_party/py:%s.tpl" % tpl),
+        substitutions,
+    )
 
 def _fail(msg):
     """Output failure message when auto configuration fails."""
@@ -27,18 +28,17 @@ def _fail(msg):
     no_color = "\033[0m"
     fail("%sPython Configuration Error:%s %s\n" % (red, no_color, msg))
 
-
 def _is_windows(repository_ctx):
     """Returns true if the host operating system is windows."""
     os_name = repository_ctx.os.name.lower()
     return os_name.find("windows") != -1
 
-
-def _execute(repository_ctx,
-             cmdline,
-             error_msg=None,
-             error_details=None,
-             empty_stdout_fine=False):
+def _execute(
+        repository_ctx,
+        cmdline,
+        error_msg = None,
+        error_details = None,
+        empty_stdout_fine = False):
     """Executes an arbitrary shell command.
 
     Args:
@@ -55,11 +55,11 @@ def _execute(repository_ctx,
     if result.stderr or not (empty_stdout_fine or result.stdout):
         _fail("\n".join([
             error_msg.strip() if error_msg else "Repository command failed",
-            result.stderr.strip(), error_details if error_details else ""
+            result.stderr.strip(),
+            error_details if error_details else "",
         ]))
     else:
         return result
-
 
 def _read_dir(repository_ctx, src_dir):
     """Returns a string with all files in a directory.
@@ -73,26 +73,28 @@ def _read_dir(repository_ctx, src_dir):
         find_result = _execute(
             repository_ctx,
             ["cmd.exe", "/c", "dir", src_dir, "/b", "/s", "/a-d"],
-            empty_stdout_fine=True)
+            empty_stdout_fine = True,
+        )
+
         # src_files will be used in genrule.outs where the paths must
         # use forward slashes.
         return find_result.stdout.replace("\\", "/")
     else:
         find_result = _execute(
-            repository_ctx, ["find", src_dir, "-follow", "-type", "f"],
-            empty_stdout_fine=True)
+            repository_ctx,
+            ["find", src_dir, "-follow", "-type", "f"],
+            empty_stdout_fine = True,
+        )
         return find_result.stdout
-
 
 def _genrule(src_dir, genrule_name, command, outs):
     """Returns a string with a genrule.
 
   Genrule executes the given command and produces the given outputs.
   """
-    return ('genrule(\n' + '    name = "' + genrule_name + '",\n' +
-            '    outs = [\n' + outs + '\n    ],\n' + '    cmd = """\n' +
-            command + '\n   """,\n' + ')\n')
-
+    return ("genrule(\n" + '    name = "' + genrule_name + '",\n' +
+            "    outs = [\n" + outs + "\n    ],\n" + '    cmd = """\n' +
+            command + '\n   """,\n' + ")\n")
 
 def _normalize_path(path):
     """Returns a path with '/' and remove the trailing slash."""
@@ -101,13 +103,13 @@ def _normalize_path(path):
         path = path[:-1]
     return path
 
-
-def _symlink_genrule_for_dir(repository_ctx,
-                             src_dir,
-                             dest_dir,
-                             genrule_name,
-                             src_files=[],
-                             dest_files=[]):
+def _symlink_genrule_for_dir(
+        repository_ctx,
+        src_dir,
+        dest_dir,
+        genrule_name,
+        src_files = [],
+        dest_files = []):
     """Returns a genrule to symlink(or copy if on Windows) a set of files.
 
   If src_dir is passed, files will be read from the given directory; otherwise
@@ -116,10 +118,12 @@ def _symlink_genrule_for_dir(repository_ctx,
     if src_dir != None:
         src_dir = _normalize_path(src_dir)
         dest_dir = _normalize_path(dest_dir)
-        files = '\n'.join(
-            sorted(_read_dir(repository_ctx, src_dir).splitlines()))
+        files = "\n".join(
+            sorted(_read_dir(repository_ctx, src_dir).splitlines()),
+        )
+
         # Create a list with the src_dir stripped to use for outputs.
-        dest_files = files.replace(src_dir, '').splitlines()
+        dest_files = files.replace(src_dir, "").splitlines()
         src_files = files.splitlines()
     command = []
     outs = []
@@ -127,15 +131,20 @@ def _symlink_genrule_for_dir(repository_ctx,
         if dest_files[i] != "":
             # If we have only one file to link we do not want to use the dest_dir, as
             # $(@D) will include the full path to the file.
-            dest = '$(@D)/' + dest_dir + dest_files[i] if len(
-                dest_files) != 1 else '$(@D)/' + dest_files[i]
+            dest = "$(@D)/" + dest_dir + dest_files[i] if len(
+                dest_files,
+            ) != 1 else "$(@D)/" + dest_files[i]
+
             # On Windows, symlink is not supported, so we just copy all the files.
-            cmd = 'cp -f' if _is_windows(repository_ctx) else 'ln -s'
+            cmd = "cp -f" if _is_windows(repository_ctx) else "ln -s"
             command.append(cmd + ' "%s" "%s"' % (src_files[i], dest))
             outs.append('        "' + dest_dir + dest_files[i] + '",')
-    return _genrule(src_dir, genrule_name, " && ".join(command),
-                    "\n".join(outs))
-
+    return _genrule(
+        src_dir,
+        genrule_name,
+        " && ".join(command),
+        "\n".join(outs),
+    )
 
 def _get_python_bin(repository_ctx, bin_path_key, default_bin_path):
     """Gets the python bin path."""
@@ -153,7 +162,6 @@ def _get_python_bin(repository_ctx, bin_path_key, default_bin_path):
           "%s='/something/else'.\nPATH=%s" %
           (bin_path_key, repository_ctx.os.environ.get("PATH", "")))
 
-
 def _get_bash_bin(repository_ctx):
     """Gets the bash bin path."""
     bash_bin = repository_ctx.os.environ.get(_BAZEL_SH)
@@ -166,10 +174,10 @@ def _get_bash_bin(repository_ctx):
         else:
             _fail(
                 "Cannot find bash in PATH, please make sure " +
-                "bash is installed and add its directory in PATH, or --define "
-                + "%s='/path/to/bash'.\nPATH=%s" %
-                (_BAZEL_SH, repository_ctx.os.environ.get("PATH", "")))
-
+                "bash is installed and add its directory in PATH, or --define " +
+                "%s='/path/to/bash'.\nPATH=%s" %
+                (_BAZEL_SH, repository_ctx.os.environ.get("PATH", "")),
+            )
 
 def _get_python_lib(repository_ctx, python_bin, lib_path_key):
     """Gets the python lib path."""
@@ -189,11 +197,11 @@ def _get_python_lib(repository_ctx, python_bin, lib_path_key):
         "all_paths = set(python_paths + library_paths)\n" + "paths = []\n" +
         "for path in all_paths:\n" + "  if os.path.isdir(path):\n" +
         "    paths.append(path)\n" + "if len(paths) >=1:\n" +
-        "  print(paths[0])\n" + "END")
-    cmd = '%s - %s' % (python_bin, print_lib)
+        "  print(paths[0])\n" + "END"
+    )
+    cmd = "%s - %s" % (python_bin, print_lib)
     result = repository_ctx.execute([_get_bash_bin(repository_ctx), "-c", cmd])
-    return result.stdout.strip('\n')
-
+    return result.stdout.strip("\n")
 
 def _check_python_lib(repository_ctx, python_lib):
     """Checks the python lib path."""
@@ -201,7 +209,6 @@ def _check_python_lib(repository_ctx, python_lib):
     result = repository_ctx.execute([_get_bash_bin(repository_ctx), "-c", cmd])
     if result.return_code == 1:
         _fail("Invalid python library path: %s" % python_lib)
-
 
 def _check_python_bin(repository_ctx, python_bin, bin_path_key):
     """Checks the python bin path."""
@@ -211,41 +218,47 @@ def _check_python_bin(repository_ctx, python_bin, bin_path_key):
         _fail("--define %s='%s' is not executable. Is it the python binary?" %
               (bin_path_key, python_bin))
 
-
 def _get_python_include(repository_ctx, python_bin):
     """Gets the python include path."""
     result = _execute(
-        repository_ctx, [
-            python_bin, "-c", 'from __future__ import print_function;' +
-            'from distutils import sysconfig;' +
-            'print(sysconfig.get_python_inc())'
+        repository_ctx,
+        [
+            python_bin,
+            "-c",
+            "from __future__ import print_function;" +
+            "from distutils import sysconfig;" +
+            "print(sysconfig.get_python_inc())",
         ],
-        error_msg="Problem getting python include path.",
-        error_details=(
-            "Is the Python binary path set up right? " + "(See ./configure or "
-            + _PYTHON2_BIN_PATH + ".) " + "Is distutils installed?"))
+        error_msg = "Problem getting python include path.",
+        error_details = (
+            "Is the Python binary path set up right? " + "(See ./configure or " +
+            _PYTHON2_BIN_PATH + ".) " + "Is distutils installed?"
+        ),
+    )
     return result.stdout.splitlines()[0]
-
 
 def _get_python_import_lib_name(repository_ctx, python_bin, bin_path_key):
     """Get Python import library name (pythonXY.lib) on Windows."""
     result = _execute(
-        repository_ctx, [
-            python_bin, "-c",
-            'import sys;' + 'print("python" + str(sys.version_info[0]) + ' +
-            '      str(sys.version_info[1]) + ".lib")'
+        repository_ctx,
+        [
+            python_bin,
+            "-c",
+            "import sys;" + 'print("python" + str(sys.version_info[0]) + ' +
+            '      str(sys.version_info[1]) + ".lib")',
         ],
-        error_msg="Problem getting python import library.",
-        error_details=("Is the Python binary path set up right? " +
-                       "(See ./configure or " + bin_path_key + ".) "))
+        error_msg = "Problem getting python import library.",
+        error_details = ("Is the Python binary path set up right? " +
+                         "(See ./configure or " + bin_path_key + ".) "),
+    )
     return result.stdout.splitlines()[0]
 
-
-def _create_single_version_package(repository_ctx,
-                                   variety_name,
-                                   bin_path_key,
-                                   default_bin_path,
-                                   lib_path_key):
+def _create_single_version_package(
+        repository_ctx,
+        variety_name,
+        bin_path_key,
+        default_bin_path,
+        lib_path_key):
     """Creates the repository containing files set up to build with Python."""
     python_bin = _get_python_bin(repository_ctx, bin_path_key, default_bin_path)
     _check_python_bin(repository_ctx, python_bin, bin_path_key)
@@ -253,43 +266,62 @@ def _create_single_version_package(repository_ctx,
     _check_python_lib(repository_ctx, python_lib)
     python_include = _get_python_include(repository_ctx, python_bin)
     python_include_rule = _symlink_genrule_for_dir(
-        repository_ctx, python_include, '{}_include'.format(variety_name),
-        '{}_include'.format(variety_name))
+        repository_ctx,
+        python_include,
+        "{}_include".format(variety_name),
+        "{}_include".format(variety_name),
+    )
     python_import_lib_genrule = ""
+
     # To build Python C/C++ extension on Windows, we need to link to python import library pythonXY.lib
     # See https://docs.python.org/3/extending/windows.html
     if _is_windows(repository_ctx):
         python_include = _normalize_path(python_include)
         python_import_lib_name = _get_python_import_lib_name(
-            repository_ctx, python_bin, bin_path_key)
+            repository_ctx,
+            python_bin,
+            bin_path_key,
+        )
         python_import_lib_src = python_include.rsplit(
-            '/', 1)[0] + "/libs/" + python_import_lib_name
+            "/",
+            1,
+        )[0] + "/libs/" + python_import_lib_name
         python_import_lib_genrule = _symlink_genrule_for_dir(
-            repository_ctx, None, '', '{}_import_lib'.format(variety_name),
-            [python_import_lib_src], [python_import_lib_name])
+            repository_ctx,
+            None,
+            "",
+            "{}_import_lib".format(variety_name),
+            [python_import_lib_src],
+            [python_import_lib_name],
+        )
     _tpl(
-        repository_ctx, "variety", {
+        repository_ctx,
+        "variety",
+        {
             "%{PYTHON_INCLUDE_GENRULE}": python_include_rule,
             "%{PYTHON_IMPORT_LIB_GENRULE}": python_import_lib_genrule,
             "%{VARIETY_NAME}": variety_name,
         },
-        out="{}/BUILD".format(variety_name))
-
+        out = "{}/BUILD".format(variety_name),
+    )
 
 def _python_autoconf_impl(repository_ctx):
     """Implementation of the python_autoconf repository rule."""
-    _create_single_version_package(repository_ctx,
-                                   "_python2",
-                                   _PYTHON2_BIN_PATH,
-                                   "python",
-                                   _PYTHON2_LIB_PATH)
-    _create_single_version_package(repository_ctx,
-                                   "_python3",
-                                   _PYTHON3_BIN_PATH,
-                                   "python3",
-                                   _PYTHON3_LIB_PATH)
+    _create_single_version_package(
+        repository_ctx,
+        "_python2",
+        _PYTHON2_BIN_PATH,
+        "python",
+        _PYTHON2_LIB_PATH,
+    )
+    _create_single_version_package(
+        repository_ctx,
+        "_python3",
+        _PYTHON3_BIN_PATH,
+        "python3",
+        _PYTHON3_LIB_PATH,
+    )
     _tpl(repository_ctx, "BUILD")
-
 
 python_configure = repository_rule(
     implementation = _python_autoconf_impl,
@@ -300,7 +332,7 @@ python_configure = repository_rule(
         _PYTHON3_BIN_PATH,
         _PYTHON3_LIB_PATH,
     ],
-    attrs={
+    attrs = {
         "_build_tpl": attr.label(
             default = Label("//third_party/py:BUILD.tpl"),
             allow_single_file = True,
@@ -325,4 +357,3 @@ python_configure(name = "local_config_python")
 Args:
   name: A unique name for this workspace rule.
 """
-

@@ -1122,7 +1122,6 @@ src/core/lib/gprpp/optional.h \
 src/core/lib/gprpp/orphanable.h \
 src/core/lib/gprpp/ref_counted.h \
 src/core/lib/gprpp/ref_counted_ptr.h \
-src/core/lib/gprpp/set.h \
 src/core/lib/gprpp/string_view.h \
 src/core/lib/gprpp/sync.h \
 src/core/lib/gprpp/thd.h \
@@ -1298,21 +1297,7 @@ src/cpp/thread_manager/thread_manager.h \
 src/cpp/util/byte_buffer_cc.cc \
 src/cpp/util/status.cc \
 src/cpp/util/string_ref.cc \
-src/cpp/util/time_cc.cc \
-third_party/upb/upb/decode.c \
-third_party/upb/upb/decode.h \
-third_party/upb/upb/encode.c \
-third_party/upb/upb/encode.h \
-third_party/upb/upb/generated_util.h \
-third_party/upb/upb/msg.c \
-third_party/upb/upb/msg.h \
-third_party/upb/upb/port.c \
-third_party/upb/upb/port_def.inc \
-third_party/upb/upb/port_undef.inc \
-third_party/upb/upb/table.c \
-third_party/upb/upb/table.int.h \
-third_party/upb/upb/upb.c \
-third_party/upb/upb/upb.h
+src/cpp/util/time_cc.cc
 
 # This tag can be used to specify the character encoding of the source files
 # that doxygen parses. Internally doxygen uses the UTF-8 encoding. Doxygen uses

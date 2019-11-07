@@ -3,9 +3,9 @@ package(default_visibility = ["//visibility:public"])
 py_library(
     name = "common",
     srcs = [
+        "__init__.py",
         "test_constants.py",
         "test_control.py",
         "test_coverage.py",
     ],
 )
-

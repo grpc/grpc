@@ -27,13 +27,8 @@ load("//bazel:cc_grpc_library.bzl", "cc_grpc_library")
 load("@upb//bazel:upb_proto_library.bzl", "upb_proto_library")
 load("@build_bazel_rules_apple//apple:ios.bzl", "ios_unit_test")
 
-
 # The set of pollers to test against if a test exercises polling
 POLLERS = ["epollex", "epoll1", "poll"]
-
-# set exec_properties = LARGE_MACHINE, to run the test on a large machine
-# see //third_party/toolchains/machine_size for details
-LARGE_MACHINE = { "gceMachineType" : "n1-standard-8"}
 
 def if_not_windows(a):
     return select({
@@ -60,6 +55,8 @@ def _get_external_deps(external_deps):
             })
         elif dep == "cronet_c_for_grpc":
             ret += ["//third_party/objective_c/Cronet:cronet_c_for_grpc"]
+        elif dep.startswith("absl/"):
+            ret += ["@com_google_absl//" + dep]
         else:
             ret += ["//external:" + dep]
     return ret
@@ -87,6 +84,24 @@ def grpc_cc_library(
     linkopts = if_not_windows(["-pthread"])
     if use_cfstream:
         linkopts = linkopts + if_mac(["-framework CoreFoundation"])
+
+    # This is a temporary solution to enable absl dependency only for
+    # Bazel-build with grpc_use_absl enabled to abseilfy in-house classes
+    # such as inlined_vector before absl is fully supported.
+    # When https://github.com/grpc/grpc/pull/20184 is merged, it will
+    # be removed.
+    more_external_deps = []
+    if name == "inlined_vector":
+        more_external_deps += select({
+            "//:grpc_use_absl": ["@com_google_absl//absl/container:inlined_vector"],
+            "//conditions:default": [],
+        })
+    if name == "gpr_base":
+        more_external_deps += select({
+            "//:grpc_use_absl": ["@com_google_absl//absl/strings:strings"],
+            "//conditions:default": [],
+        })
+
     native.cc_library(
         name = name,
         srcs = srcs,
@@ -102,16 +117,20 @@ def grpc_cc_library(
                       "//:grpc_allow_exceptions": ["GRPC_ALLOW_EXCEPTIONS=1"],
                       "//:grpc_disallow_exceptions": ["GRPC_ALLOW_EXCEPTIONS=0"],
                       "//conditions:default": [],
+                  }) +
+                  select({
+                      "//:grpc_use_absl": ["GRPC_USE_ABSL=1"],
+                      "//conditions:default": [],
                   }),
         hdrs = hdrs + public_hdrs,
-        deps = deps + _get_external_deps(external_deps),
+        deps = deps + _get_external_deps(external_deps) + more_external_deps,
         copts = copts,
         visibility = visibility,
         testonly = testonly,
         linkopts = linkopts,
         includes = [
-            "include", 
-            "src/core/ext/upb-generated", # Once upb code-gen issue is resolved, remove this.
+            "include",
+            "src/core/ext/upb-generated",  # Once upb code-gen issue is resolved, remove this.
         ],
         alwayslink = alwayslink,
         data = data,
@@ -142,11 +161,12 @@ def grpc_proto_library(
         use_external = use_external,
         generate_mocks = generate_mocks,
     )
+
 def ios_cc_test(
         name,
         tags = [],
         **kwargs):
-    ios_test_adapter = "//third_party/objective_c/google_toolbox_for_mac:GTM_GoogleTestRunner_GTM_USING_XCTEST";
+    ios_test_adapter = "//third_party/objective_c/google_toolbox_for_mac:GTM_GoogleTestRunner_GTM_USING_XCTEST"
 
     test_lib_ios = name + "_test_lib_ios"
     ios_tags = tags + ["manual", "ios_cc_test"]
@@ -186,7 +206,7 @@ def grpc_cc_test(name, srcs = [], deps = [], external_deps = [], args = [], data
         "exec_properties": exec_properties,
     }
     if uses_polling:
-        # the vanilla version of the test should run on platforms that only 
+        # the vanilla version of the test should run on platforms that only
         # support a single poller
         native.cc_test(
             name = name,
@@ -196,6 +216,7 @@ def grpc_cc_test(name, srcs = [], deps = [], external_deps = [], args = [], data
             ]),
             **args
         )
+
         # on linux we run the same test multiple times, once for each poller
         for poller in POLLERS:
             native.sh_test(
@@ -222,7 +243,6 @@ def grpc_cc_test(name, srcs = [], deps = [], external_deps = [], args = [], data
         tags = tags,
         **args
     )
-
 
 def grpc_cc_binary(name, srcs = [], deps = [], external_deps = [], args = [], data = [], language = "C++", testonly = False, linkshared = False, linkopts = [], tags = []):
     copts = []
@@ -266,14 +286,15 @@ def grpc_sh_binary(name, srcs, data = []):
         data = data,
     )
 
-def grpc_py_binary(name,
-                   srcs,
-                   data = [],
-                   deps = [],
-                   external_deps = [],
-                   testonly = False,
-                   python_version = "PY2",
-                   **kwargs):
+def grpc_py_binary(
+        name,
+        srcs,
+        data = [],
+        deps = [],
+        external_deps = [],
+        testonly = False,
+        python_version = "PY2",
+        **kwargs):
     native.py_binary(
         name = name,
         srcs = srcs,
@@ -323,7 +344,7 @@ def grpc_objc_library(
         deps: dependencies
         visibility: visibility, default to public
     """
-    
+
     native.objc_library(
         name = name,
         hdrs = hdrs,
@@ -335,14 +356,12 @@ def grpc_objc_library(
         includes = includes,
         visibility = visibility,
     )
-    
+
 def grpc_upb_proto_library(name, deps):
     upb_proto_library(name = name, deps = deps)
-
 
 def python_config_settings():
     native.config_setting(
         name = "python3",
         flag_values = {"@bazel_tools//tools/python:python_version": "PY3"},
     )
-

@@ -18,6 +18,7 @@ for general contribution guidelines.
 - [dfawley](https://github.com/dfawley), Google LLC
 - [dklempner](https://github.com/dklempner), Google LLC
 - [ejona86](https://github.com/ejona86), Google LLC
+- [ericgribkoff](https://github.com/ericgribkoff), Google LLC
 - [gnossen](https://github.com/gnossen), Google LLC
 - [guantaol](https://github.com/guantaol), Google LLC
 - [hcaseyal](https://github.com/hcaseyal), Google LLC
@@ -64,7 +65,6 @@ for general contribution guidelines.
 - [billfeng327](https://github.com/billfeng327), Google LLC
 - [ctiller](https://github.com/ctiller), Google LLC
 - [dgquintas](https://github.com/dgquintas), Google LLC
-- [ericgribkoff](https://github.com/ericgribkoff), Google LLC
 - [fengli79](https://github.com/fengli79), Google LLC
 - [jcanizales](https://github.com/jcanizales), Google LLC
 - [jpalmerLinuxFoundation](https://github.com/jpalmerLinuxFoundation), Linux Foundation

@@ -100,7 +100,7 @@ void local_check_peer(grpc_security_connector* /*sc*/, tsi_peer /*peer*/,
   if (!is_endpoint_local) {
     error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
         "Endpoint is neither UDS or TCP loopback address.");
-    GRPC_CLOSURE_SCHED(on_peer_checked, error);
+    grpc_core::ExecCtx::Run(DEBUG_LOCATION, on_peer_checked, error);
     return;
   }
   /* Create an auth context which is necessary to pass the santiy check in
@@ -112,7 +112,7 @@ void local_check_peer(grpc_security_connector* /*sc*/, tsi_peer /*peer*/,
   error = *auth_context != nullptr ? GRPC_ERROR_NONE
                                    : GRPC_ERROR_CREATE_FROM_STATIC_STRING(
                                          "Could not create local auth context");
-  GRPC_CLOSURE_SCHED(on_peer_checked, error);
+  grpc_core::ExecCtx::Run(DEBUG_LOCATION, on_peer_checked, error);
 }
 
 class grpc_local_channel_security_connector final

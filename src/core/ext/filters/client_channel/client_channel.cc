@@ -26,6 +26,8 @@
 #include <stdio.h>
 #include <string.h>
 
+#include <set>
+
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
@@ -53,7 +55,6 @@
 #include "src/core/lib/gprpp/inlined_vector.h"
 #include "src/core/lib/gprpp/manual_constructor.h"
 #include "src/core/lib/gprpp/map.h"
-#include "src/core/lib/gprpp/set.h"
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/iomgr/combiner.h"
 #include "src/core/lib/iomgr/iomgr.h"
@@ -291,16 +292,16 @@ class ChannelData {
   RefCountedPtr<ServiceConfig> saved_service_config_;
   bool received_first_resolver_result_ = false;
   // The number of SubchannelWrapper instances referencing a given Subchannel.
-  Map<Subchannel*, int> subchannel_refcount_map_;
+  std::map<Subchannel*, int> subchannel_refcount_map_;
   // The set of SubchannelWrappers that currently exist.
   // No need to hold a ref, since the map is updated in the control-plane
   // combiner when the SubchannelWrappers are created and destroyed.
-  Set<SubchannelWrapper*> subchannel_wrappers_;
+  std::set<SubchannelWrapper*> subchannel_wrappers_;
   // Pending ConnectedSubchannel updates for each SubchannelWrapper.
   // Updates are queued here in the control plane combiner and then applied
   // in the data plane mutex when the picker is updated.
-  Map<RefCountedPtr<SubchannelWrapper>, RefCountedPtr<ConnectedSubchannel>,
-      RefCountedPtrLess<SubchannelWrapper>>
+  std::map<RefCountedPtr<SubchannelWrapper>, RefCountedPtr<ConnectedSubchannel>,
+           RefCountedPtrLess<SubchannelWrapper>>
       pending_subchannel_updates_;
 
   //
@@ -321,7 +322,7 @@ class ChannelData {
   // synchronously via grpc_channel_num_external_connectivity_watchers().
   //
   mutable Mutex external_watchers_mu_;
-  Map<grpc_closure*, ExternalConnectivityWatcher*> external_watchers_;
+  std::map<grpc_closure*, ExternalConnectivityWatcher*> external_watchers_;
 };
 
 //
@@ -403,8 +404,9 @@ class CallData {
         intptr_t handle) const override {
       grpc_linked_mdelem* linked_mdelem =
           reinterpret_cast<grpc_linked_mdelem*>(handle);
-      return std::make_pair(StringView(GRPC_MDKEY(linked_mdelem->md)),
-                            StringView(GRPC_MDVALUE(linked_mdelem->md)));
+      return std::make_pair(
+          StringViewFromSlice(GRPC_MDKEY(linked_mdelem->md)),
+          StringViewFromSlice(GRPC_MDVALUE(linked_mdelem->md)));
     }
 
     CallData* calld_;
@@ -1116,7 +1118,7 @@ class ChannelData::SubchannelWrapper : public SubchannelInterface {
   // subchannel.  This is needed so that when the LB policy calls
   // CancelConnectivityStateWatch() with its watcher, we know the
   // corresponding WrapperWatcher to cancel on the underlying subchannel.
-  Map<ConnectivityStateWatcherInterface*, WatcherWrapper*> watcher_map_;
+  std::map<ConnectivityStateWatcherInterface*, WatcherWrapper*> watcher_map_;
   // To be accessed only in the control plane combiner.
   RefCountedPtr<ConnectedSubchannel> connected_subchannel_;
   // To be accessed only in the data plane mutex.
@@ -1163,7 +1165,7 @@ void ChannelData::ExternalConnectivityWatcher::Notify(
   chand_->RemoveExternalConnectivityWatcher(on_complete_, /*cancel=*/false);
   // Report new state to the user.
   *state_ = state;
-  GRPC_CLOSURE_SCHED(on_complete_, GRPC_ERROR_NONE);
+  ExecCtx::Run(DEBUG_LOCATION, on_complete_, GRPC_ERROR_NONE);
   // Hop back into the combiner to clean up.
   // Not needed in state SHUTDOWN, because the tracker will
   // automatically remove all watchers in that case.
@@ -1180,7 +1182,7 @@ void ChannelData::ExternalConnectivityWatcher::Cancel() {
                                    MemoryOrder::RELAXED)) {
     return;  // Already done.
   }
-  GRPC_CLOSURE_SCHED(on_complete_, GRPC_ERROR_CANCELLED);
+  ExecCtx::Run(DEBUG_LOCATION, on_complete_, GRPC_ERROR_CANCELLED);
   // Hop back into the combiner to clean up.
   chand_->combiner_->Run(
       GRPC_CLOSURE_INIT(&remove_closure_, RemoveWatcherLocked, this, nullptr),
@@ -1826,8 +1828,9 @@ void ChannelData::StartTransportOpLocked(void* arg, grpc_error* /*ignored*/) {
   if (op->send_ping.on_initiate != nullptr || op->send_ping.on_ack != nullptr) {
     grpc_error* error = chand->DoPingLocked(op);
     if (error != GRPC_ERROR_NONE) {
-      GRPC_CLOSURE_SCHED(op->send_ping.on_initiate, GRPC_ERROR_REF(error));
-      GRPC_CLOSURE_SCHED(op->send_ping.on_ack, error);
+      ExecCtx::Run(DEBUG_LOCATION, op->send_ping.on_initiate,
+                   GRPC_ERROR_REF(error));
+      ExecCtx::Run(DEBUG_LOCATION, op->send_ping.on_ack, error);
     }
     op->bind_pollset = nullptr;
     op->send_ping.on_initiate = nullptr;
@@ -1869,7 +1872,7 @@ void ChannelData::StartTransportOpLocked(void* arg, grpc_error* /*ignored*/) {
     }
   }
   GRPC_CHANNEL_STACK_UNREF(chand->owning_stack_, "start_transport_op");
-  GRPC_CLOSURE_SCHED(op->on_consumed, GRPC_ERROR_NONE);
+  ExecCtx::Run(DEBUG_LOCATION, op->on_consumed, GRPC_ERROR_NONE);
 }
 
 void ChannelData::StartTransportOp(grpc_channel_element* elem,
@@ -2058,7 +2061,8 @@ void CallData::Destroy(grpc_call_element* elem,
     then_schedule_closure = nullptr;
   }
   calld->~CallData();
-  GRPC_CLOSURE_SCHED(then_schedule_closure, GRPC_ERROR_NONE);
+  // TODO(yashkt) : This can potentially be a Closure::Run
+  ExecCtx::Run(DEBUG_LOCATION, then_schedule_closure, GRPC_ERROR_NONE);
 }
 
 void CallData::StartTransportStreamOpBatch(
@@ -3679,7 +3683,7 @@ void CallData::CreateSubchannelCall(grpc_call_element* elem) {
 
 void CallData::AsyncPickDone(grpc_call_element* elem, grpc_error* error) {
   GRPC_CLOSURE_INIT(&pick_closure_, PickDone, elem, grpc_schedule_on_exec_ctx);
-  GRPC_CLOSURE_SCHED(&pick_closure_, error);
+  ExecCtx::Run(DEBUG_LOCATION, &pick_closure_, error);
 }
 
 void CallData::PickDone(void* arg, grpc_error* error) {

@@ -99,7 +99,7 @@ class TestGrpcUdpHandler : public GrpcUdpHandler {
                          void* /*user_data*/) override {
     gpr_log(GPR_INFO, "gRPC FD about to be orphaned: %d",
             grpc_fd_wrapped_fd(emfd()));
-    GRPC_CLOSURE_SCHED(orphan_fd_closure, GRPC_ERROR_NONE);
+    grpc_core::ExecCtx::Run(DEBUG_LOCATION, orphan_fd_closure, GRPC_ERROR_NONE);
     g_number_of_orphan_calls++;
   }
 
