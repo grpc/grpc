@@ -30,18 +30,6 @@
 
 namespace grpc_core {
 
-// Gets the base pointer of any class, in case of multiple inheritance.
-// Used by Delete and friends.
-template <typename T, bool isPolymorphic>
-struct BasePointerGetter {
-  static void* get(T* p) { return p; }
-};
-
-template <typename T>
-struct BasePointerGetter<T, true> {
-  static void* get(T* p) { return dynamic_cast<void*>(p); }
-};
-
 template <typename T>
 using UniquePtr = std::unique_ptr<T>;
 
