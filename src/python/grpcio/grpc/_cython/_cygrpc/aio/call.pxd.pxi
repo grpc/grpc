@@ -16,13 +16,8 @@
 cdef class _AioCall:
     cdef:
         AioChannel _channel
-        CallbackContext _watcher_call
-        grpc_completion_queue * _cq
-        grpc_experimental_completion_queue_functor _functor
-        object _waiter_call
         list _references
+        GrpcCallWrapper _grpc_call_wrapper
 
-    @staticmethod
-    cdef void functor_run(grpc_experimental_completion_queue_functor* functor, int success) with gil
-    @staticmethod
-    cdef void watcher_call_functor_run(grpc_experimental_completion_queue_functor* functor, int success) with gil
+    cdef grpc_call* _create_grpc_call(self, object timeout, bytes method) except *
+    cdef void _destroy_grpc_call(self)

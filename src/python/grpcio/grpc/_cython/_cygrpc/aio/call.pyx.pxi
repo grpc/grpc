@@ -16,54 +16,60 @@ cimport cpython
 import grpc
 
 _EMPTY_FLAGS = 0
+_EMPTY_MASK = 0
 _EMPTY_METADATA = None
-_OP_ARRAY_LENGTH = 6
 
 
 cdef class _AioCall:
 
     def __cinit__(self, AioChannel channel):
         self._channel = channel
-        self._functor.functor_run = _AioCall.functor_run
-
-        self._cq = grpc_completion_queue_create_for_callback(
-            <grpc_experimental_completion_queue_functor *> &self._functor,
-            NULL
-        )
-
-        self._watcher_call.functor.functor_run = _AioCall.watcher_call_functor_run
-        self._watcher_call.waiter = <cpython.PyObject *> self
-        self._waiter_call = None
         self._references = []
-
-    def __dealloc__(self):
-        grpc_completion_queue_shutdown(self._cq)
-        grpc_completion_queue_destroy(self._cq)
+        self._grpc_call_wrapper = GrpcCallWrapper()
 
     def __repr__(self):
         class_name = self.__class__.__name__
         id_ = id(self)
         return f"<{class_name} {id_}>"
 
-    @staticmethod
-    cdef void functor_run(grpc_experimental_completion_queue_functor* functor, int success) with gil:
-        pass
+    cdef grpc_call* _create_grpc_call(self,
+                                      object timeout,
+                                      bytes method) except *:
+        """Creates the corresponding Core object for this RPC.
 
-    @staticmethod
-    cdef void watcher_call_functor_run(grpc_experimental_completion_queue_functor* functor, int success) with gil:
-        call = <_AioCall>(<CallbackContext *>functor).waiter
+        For unary calls, the grpc_call lives shortly and can be destroied after
+        invoke start_batch. However, if either side is streaming, the grpc_call
+        life span will be longer than one function. So, it would better save it
+        as an instance variable than a stack variable, which reflects its
+        nature in Core.
+        """
+        cdef grpc_slice method_slice
+        cdef gpr_timespec deadline = _timespec_from_time(timeout)
 
-        if not call._waiter_call.done():
-            if success == 0:
-                call._waiter_call.set_exception(Exception("Some error occurred"))
-            else:
-                call._waiter_call.set_result(None)
+        method_slice = grpc_slice_from_copied_buffer(
+            <const char *> method,
+            <size_t> len(method)
+        )
+        self._grpc_call_wrapper.call = grpc_channel_create_call(
+            self._channel.channel,
+            NULL,
+            _EMPTY_MASK,
+            self._channel.cq.c_ptr(),
+            method_slice,
+            NULL,
+            deadline,
+            NULL
+        )
+        grpc_slice_unref(method_slice)
+
+    cdef void _destroy_grpc_call(self):
+        """Destroys the corresponding Core object for this RPC."""
+        grpc_call_unref(self._grpc_call_wrapper.call)
 
     async def unary_unary(self, bytes method, bytes request, object timeout, AioCancelStatus cancel_status):
-        cdef grpc_call * call
-        cdef grpc_slice method_slice
-        cdef grpc_op * ops
+        cdef object loop = asyncio.get_event_loop()
 
+        cdef tuple operations
         cdef Operation initial_metadata_operation
         cdef Operation send_message_operation
         cdef Operation send_close_from_client_operation
@@ -71,94 +77,66 @@ cdef class _AioCall:
         cdef Operation receive_message_operation
         cdef Operation receive_status_on_client_operation
 
-        cdef grpc_call_error call_status
-        cdef gpr_timespec deadline = _timespec_from_time(timeout)
         cdef char *c_details = NULL
-
-        method_slice = grpc_slice_from_copied_buffer(
-            <const char *> method,
-            <size_t> len(method)
-        )
-
-        call = grpc_channel_create_call(
-            self._channel.channel,
-            NULL,
-            0,
-            self._cq,
-            method_slice,
-            NULL,
-            deadline,
-            NULL
-        )
-
-        grpc_slice_unref(method_slice)
-
-        ops = <grpc_op *>gpr_malloc(sizeof(grpc_op) * _OP_ARRAY_LENGTH)
 
         initial_metadata_operation = SendInitialMetadataOperation(_EMPTY_METADATA, GRPC_INITIAL_METADATA_USED_MASK)
         initial_metadata_operation.c()
-        ops[0] = <grpc_op> initial_metadata_operation.c_op
 
         send_message_operation = SendMessageOperation(request, _EMPTY_FLAGS)
         send_message_operation.c()
-        ops[1] = <grpc_op> send_message_operation.c_op
 
         send_close_from_client_operation = SendCloseFromClientOperation(_EMPTY_FLAGS)
         send_close_from_client_operation.c()
-        ops[2] = <grpc_op> send_close_from_client_operation.c_op
 
         receive_initial_metadata_operation = ReceiveInitialMetadataOperation(_EMPTY_FLAGS)
         receive_initial_metadata_operation.c()
-        ops[3] = <grpc_op> receive_initial_metadata_operation.c_op
 
         receive_message_operation = ReceiveMessageOperation(_EMPTY_FLAGS)
         receive_message_operation.c()
-        ops[4] = <grpc_op> receive_message_operation.c_op
 
         receive_status_on_client_operation = ReceiveStatusOnClientOperation(_EMPTY_FLAGS)
         receive_status_on_client_operation.c()
-        ops[5] = <grpc_op> receive_status_on_client_operation.c_op
 
-        self._waiter_call = asyncio.get_event_loop().create_future()
-
-        call_status = grpc_call_start_batch(
-            call,
-            ops,
-            _OP_ARRAY_LENGTH,
-            &self._watcher_call.functor,
-            NULL
+        operations = (
+            initial_metadata_operation,
+            send_message_operation,
+            send_close_from_client_operation,
+            receive_initial_metadata_operation,
+            receive_message_operation,
+            receive_status_on_client_operation,
         )
 
         try:
-            if call_status != GRPC_CALL_OK:
-                self._waiter_call = None
-                raise Exception("Error with grpc_call_start_batch {}".format(call_status))
+            self._create_grpc_call(
+                timeout,
+                method,
+            )
 
             try:
-                await self._waiter_call
+                await callback_start_batch(
+                    self._grpc_call_wrapper,
+                    operations,
+                    loop
+                )
             except asyncio.CancelledError:
                 if cancel_status:
                     details = str_to_bytes(cancel_status.details())
                     self._references.append(details)
                     c_details = <char *>details
                     call_status = grpc_call_cancel_with_status(
-                        call, cancel_status.code(), c_details, NULL)
+                        self._grpc_call_wrapper.call,
+                        cancel_status.code(),
+                        c_details,
+                        NULL,
+                    )
                 else:
                     call_status = grpc_call_cancel(
-                        call, NULL)
+                        self._grpc_call_wrapper.call, NULL)
                 if call_status != GRPC_CALL_OK:
                     raise Exception("RPC call couldn't be cancelled. Error {}".format(call_status))
                 raise
         finally:
-            initial_metadata_operation.un_c()
-            send_message_operation.un_c()
-            send_close_from_client_operation.un_c()
-            receive_initial_metadata_operation.un_c()
-            receive_message_operation.un_c()
-            receive_status_on_client_operation.un_c()
-
-            grpc_call_unref(call)
-            gpr_free(ops)
+            self._destroy_grpc_call()
 
         if receive_status_on_client_operation.code() == StatusCode.ok:
             return receive_message_operation.message()
