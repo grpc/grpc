@@ -601,7 +601,8 @@ static void ru_allocated_slices(void* arg, grpc_error* error) {
   grpc_resource_user_slice_allocator* slice_allocator =
       static_cast<grpc_resource_user_slice_allocator*>(arg);
   if (error == GRPC_ERROR_NONE) ru_alloc_slices(slice_allocator);
-  GRPC_CLOSURE_RUN(&slice_allocator->on_done, GRPC_ERROR_REF(error));
+  grpc_core::Closure::Run(DEBUG_LOCATION, &slice_allocator->on_done,
+                          GRPC_ERROR_REF(error));
 }
 
 /*******************************************************************************

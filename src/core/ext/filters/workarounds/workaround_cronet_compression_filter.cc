@@ -70,8 +70,9 @@ static void recv_initial_metadata_ready(void* user_data, grpc_error* error) {
   }
 
   // Invoke the next callback.
-  GRPC_CLOSURE_RUN(calld->next_recv_initial_metadata_ready,
-                   GRPC_ERROR_REF(error));
+  grpc_core::Closure::Run(DEBUG_LOCATION,
+                          calld->next_recv_initial_metadata_ready,
+                          GRPC_ERROR_REF(error));
 }
 
 // Start transport stream op.

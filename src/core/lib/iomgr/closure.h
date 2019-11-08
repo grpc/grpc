@@ -27,6 +27,7 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 
+#include "src/core/lib/gprpp/debug_location.h"
 #include "src/core/lib/gprpp/manual_constructor.h"
 #include "src/core/lib/gprpp/mpscq.h"
 #include "src/core/lib/iomgr/error.h"
@@ -247,35 +248,33 @@ inline bool grpc_closure_list_empty(grpc_closure_list closure_list) {
   return closure_list.head == nullptr;
 }
 
+namespace grpc_core {
+class Closure {
+ public:
+  static void Run(const DebugLocation& location, grpc_closure* closure,
+                  grpc_error* error) {
+    if (closure == nullptr) {
+      GRPC_ERROR_UNREF(error);
+      return;
+    }
 #ifndef NDEBUG
-inline void grpc_closure_run(const char* file, int line, grpc_closure* c,
-                             grpc_error* error) {
-#else
-inline void grpc_closure_run(grpc_closure* c, grpc_error* error) {
+    if (grpc_trace_closure.enabled()) {
+      gpr_log(GPR_DEBUG, "running closure %p: created [%s:%d]: run [%s:%d]",
+              closure, closure->file_created, closure->line_created,
+              location.file(), location.line());
+    }
+    GPR_ASSERT(closure->cb != nullptr);
 #endif
-  GPR_TIMER_SCOPE("grpc_closure_run", 0);
-  if (c != nullptr) {
+    closure->cb(closure->cb_arg, error);
 #ifndef NDEBUG
-    c->file_initiated = file;
-    c->line_initiated = line;
-    c->run = true;
-    GPR_ASSERT(c->cb != nullptr);
+    if (grpc_trace_closure.enabled()) {
+      gpr_log(GPR_DEBUG, "closure %p finished", closure);
+    }
 #endif
-    c->scheduler->vtable->run(c, error);
-  } else {
     GRPC_ERROR_UNREF(error);
   }
-}
-
-/** Run a closure directly. Caller ensures that no locks are being held above.
- *  Note that calling this at the end of a closure callback function itself is
- *  by definition safe. */
-#ifndef NDEBUG
-#define GRPC_CLOSURE_RUN(closure, error) \
-  grpc_closure_run(__FILE__, __LINE__, closure, error)
-#else
-#define GRPC_CLOSURE_RUN(closure, error) grpc_closure_run(closure, error)
-#endif
+};
+}  // namespace grpc_core
 
 #ifndef NDEBUG
 inline void grpc_closure_list_sched(const char* file, int line,

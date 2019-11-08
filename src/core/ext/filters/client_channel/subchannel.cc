@@ -293,8 +293,8 @@ void SubchannelCall::RecvTrailingMetadataReady(void* arg, grpc_error* error) {
   } else {
     channelz_subchannel->RecordCallFailed();
   }
-  GRPC_CLOSURE_RUN(call->original_recv_trailing_metadata_,
-                   GRPC_ERROR_REF(error));
+  Closure::Run(DEBUG_LOCATION, call->original_recv_trailing_metadata_,
+               GRPC_ERROR_REF(error));
 }
 
 void SubchannelCall::IncrementRefCount() {

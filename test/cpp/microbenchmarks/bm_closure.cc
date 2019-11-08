@@ -78,25 +78,25 @@ static void BM_ClosureInitAgainstCombiner(benchmark::State& state) {
 }
 BENCHMARK(BM_ClosureInitAgainstCombiner);
 
-static void BM_ClosureRunOnExecCtx(benchmark::State& state) {
+static void BM_ClosureRun(benchmark::State& state) {
   TrackCounters track_counters;
   grpc_closure c;
   GRPC_CLOSURE_INIT(&c, DoNothing, nullptr, grpc_schedule_on_exec_ctx);
   grpc_core::ExecCtx exec_ctx;
   for (auto _ : state) {
-    GRPC_CLOSURE_RUN(&c, GRPC_ERROR_NONE);
-    grpc_core::ExecCtx::Get()->Flush();
+    grpc_core::Closure::Run(DEBUG_LOCATION, &c, GRPC_ERROR_NONE);
   }
 
   track_counters.Finish(state);
 }
-BENCHMARK(BM_ClosureRunOnExecCtx);
+BENCHMARK(BM_ClosureRun);
 
 static void BM_ClosureCreateAndRun(benchmark::State& state) {
   TrackCounters track_counters;
   grpc_core::ExecCtx exec_ctx;
   for (auto _ : state) {
-    GRPC_CLOSURE_RUN(
+    grpc_core::Closure::Run(
+        DEBUG_LOCATION,
         GRPC_CLOSURE_CREATE(DoNothing, nullptr, grpc_schedule_on_exec_ctx),
         GRPC_ERROR_NONE);
   }
@@ -110,7 +110,8 @@ static void BM_ClosureInitAndRun(benchmark::State& state) {
   grpc_core::ExecCtx exec_ctx;
   grpc_closure c;
   for (auto _ : state) {
-    GRPC_CLOSURE_RUN(
+    grpc_core::Closure::Run(
+        DEBUG_LOCATION,
         GRPC_CLOSURE_INIT(&c, DoNothing, nullptr, grpc_schedule_on_exec_ctx),
         GRPC_ERROR_NONE);
   }

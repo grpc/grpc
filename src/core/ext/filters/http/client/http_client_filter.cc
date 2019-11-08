@@ -188,7 +188,7 @@ static void recv_initial_metadata_ready(void* user_data, grpc_error* error) {
         calld->call_combiner, &calld->recv_trailing_metadata_ready,
         calld->recv_trailing_metadata_error, "continue recv_trailing_metadata");
   }
-  GRPC_CLOSURE_RUN(closure, error);
+  grpc_core::Closure::Run(DEBUG_LOCATION, closure, error);
 }
 
 static void recv_trailing_metadata_ready(void* user_data, grpc_error* error) {
@@ -209,15 +209,17 @@ static void recv_trailing_metadata_ready(void* user_data, grpc_error* error) {
   }
   error = grpc_error_add_child(
       error, GRPC_ERROR_REF(calld->recv_initial_metadata_error));
-  GRPC_CLOSURE_RUN(calld->original_recv_trailing_metadata_ready, error);
+  grpc_core::Closure::Run(DEBUG_LOCATION,
+                          calld->original_recv_trailing_metadata_ready, error);
 }
 
 static void send_message_on_complete(void* arg, grpc_error* error) {
   grpc_call_element* elem = static_cast<grpc_call_element*>(arg);
   call_data* calld = static_cast<call_data*>(elem->call_data);
   calld->send_message_cache.Destroy();
-  GRPC_CLOSURE_RUN(calld->original_send_message_on_complete,
-                   GRPC_ERROR_REF(error));
+  grpc_core::Closure::Run(DEBUG_LOCATION,
+                          calld->original_send_message_on_complete,
+                          GRPC_ERROR_REF(error));
 }
 
 // Pulls a slice from the send_message byte stream, updating

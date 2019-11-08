@@ -80,7 +80,8 @@ void CallCombiner::TsanClosure(void* arg, grpc_error* error) {
   } else {
     lock.reset();
   }
-  GRPC_CLOSURE_RUN(self->original_closure_, GRPC_ERROR_REF(error));
+  grpc_core::Closure::Run(DEBUG_LOCATION, self->original_closure_,
+                          GRPC_ERROR_REF(error));
   if (lock != nullptr) {
     TSAN_ANNOTATE_RWLOCK_RELEASED(&lock->taken, true);
     bool prev = true;
