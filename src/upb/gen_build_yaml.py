@@ -16,6 +16,7 @@
 
 # TODO: This should ideally be in upb submodule to avoid hardcoding this here.
 
+from __future__ import print_function
 import re
 import os
 import sys
@@ -53,4 +54,4 @@ try:
 except:
   pass
 
-print yaml.dump(out)
+print(yaml.dump(out))
