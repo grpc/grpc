@@ -259,8 +259,8 @@ class Closure {
     }
 #ifndef NDEBUG
     if (grpc_trace_closure.enabled()) {
-      gpr_log(GPR_DEBUG, "running closure %p: created [%s:%d]: %s [%s:%d]",
-              closure, closure->file_created, closure->line_created, "run",
+      gpr_log(GPR_DEBUG, "running closure %p: created [%s:%d]: run [%s:%d]",
+              closure, closure->file_created, closure->line_created,
               location.file(), location.line());
     }
     GPR_ASSERT(closure->cb != nullptr);
