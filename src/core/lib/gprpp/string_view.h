@@ -39,6 +39,8 @@
 #endif
 
 namespace grpc_core {
+  class StringView;
+inline int StringViewCmp(const StringView lhs, const StringView rhs);
 
 #if GRPC_USE_ABSL
 
@@ -120,6 +122,8 @@ class StringView final {
     return std::basic_string<char, std::char_traits<char>, Allocator>(data(),
                                                                       size());
   }
+
+  bool operator<(const StringView& other) const {return StringViewCmp(*this, other) < 0;}
 
  private:
   const char* ptr_;
