@@ -153,7 +153,7 @@ static void maybe_complete_tsi_next(
     if (client->pending_recv_message_result == nullptr) {
       return;
     }
-    bool have_final_result =
+    const bool have_final_result =
         client->pending_recv_message_result->result != nullptr ||
         client->pending_recv_message_result->status != TSI_OK;
     if (have_final_result && !client->receive_status_finished) {
@@ -289,6 +289,9 @@ void alts_handshaker_client_handle_response(alts_handshaker_client* c,
       gpr_free(error_details);
     }
   }
+  // TODO(apolcyn): consider short ciruiting handle_response_done and
+  // invoking the TSI callback directly if we aren't done yet, if
+  // handle_response_done's allocation causes a performance issue.
   handle_response_done(client, alts_tsi_utils_convert_to_tsi_result(code),
                        bytes_to_send, bytes_to_send_size, result);
 }
