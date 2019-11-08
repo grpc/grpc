@@ -80,7 +80,8 @@ GPR_GLOBAL_CONFIG_DEFINE_STRING(grpc_latency_trace, "latency_trace.txt",
 
 static const char* output_filename() {
   if (output_filename_or_null == NULL) {
-    std::unique_ptr<char> value = GPR_GLOBAL_CONFIG_GET(grpc_latency_trace);
+    grpc_core::UniquePtr<char> value =
+        GPR_GLOBAL_CONFIG_GET(grpc_latency_trace);
     if (strlen(value.get()) > 0) {
       output_filename_or_null = value.release();
     } else {

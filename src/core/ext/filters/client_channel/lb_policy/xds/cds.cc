@@ -39,13 +39,13 @@ constexpr char kCds[] = "cds_experimental";
 // Parsed config for this LB policy.
 class ParsedCdsConfig : public LoadBalancingPolicy::Config {
  public:
-  explicit ParsedCdsConfig(std::unique_ptr<char> cluster)
+  explicit ParsedCdsConfig(grpc_core::UniquePtr<char> cluster)
       : cluster_(std::move(cluster)) {}
   const char* cluster() const { return cluster_.get(); }
   const char* name() const override { return kCds; }
 
  private:
-  std::unique_ptr<char> cluster_;
+  grpc_core::UniquePtr<char> cluster_;
 };
 
 // CDS LB policy.
@@ -136,7 +136,7 @@ void CdsLb::ClusterWatcher::OnClusterChanged(CdsUpdate cluster_data) {
                     ? parent_->config_->cluster()
                     : cluster_data.eds_service_name.get()));
   gpr_free(lrs_str);
-  std::unique_ptr<char> json_str_deleter(json_str);
+  grpc_core::UniquePtr<char> json_str_deleter(json_str);
   if (GRPC_TRACE_FLAG_ENABLED(grpc_cds_lb_trace)) {
     gpr_log(GPR_INFO, "[cdslb %p] generated config for child policy: %s",
             parent_.get(), json_str);
@@ -343,7 +343,7 @@ class CdsFactory : public LoadBalancingPolicyFactory {
     }
     if (error_list.empty()) {
       return MakeRefCounted<ParsedCdsConfig>(
-          std::unique_ptr<char>(gpr_strdup(cluster)));
+          grpc_core::UniquePtr<char>(gpr_strdup(cluster)));
     } else {
       *error = GRPC_ERROR_CREATE_FROM_VECTOR("Cds Parser", &error_list);
       return nullptr;

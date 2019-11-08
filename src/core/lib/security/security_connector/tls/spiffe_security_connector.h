@@ -98,8 +98,8 @@ class SpiffeChannelSecurityConnector final
 
   grpc_core::Mutex mu_;
   grpc_closure* on_peer_checked_;
-  std::unique_ptr<char> target_name_;
-  std::unique_ptr<char> overridden_target_name_;
+  grpc_core::UniquePtr<char> target_name_;
+  grpc_core::UniquePtr<char> overridden_target_name_;
   tsi_ssl_client_handshaker_factory* client_handshaker_factory_ = nullptr;
   grpc_tls_server_authorization_check_arg* check_arg_;
   grpc_core::RefCountedPtr<grpc_tls_key_materials_config> key_materials_config_;

@@ -73,8 +73,8 @@ bool grpc_parse_ipv4_hostport(const char* hostport, grpc_resolved_address* addr,
                               bool log_errors) {
   bool success = false;
   // Split host and port.
-  std::unique_ptr<char> host;
-  std::unique_ptr<char> port;
+  grpc_core::UniquePtr<char> host;
+  grpc_core::UniquePtr<char> port;
   if (!grpc_core::SplitHostPort(hostport, &host, &port)) {
     if (log_errors) {
       gpr_log(GPR_ERROR, "Failed gpr_split_host_port(%s, ...)", hostport);
@@ -125,8 +125,8 @@ bool grpc_parse_ipv6_hostport(const char* hostport, grpc_resolved_address* addr,
                               bool log_errors) {
   bool success = false;
   // Split host and port.
-  std::unique_ptr<char> host;
-  std::unique_ptr<char> port;
+  grpc_core::UniquePtr<char> host;
+  grpc_core::UniquePtr<char> port;
   if (!grpc_core::SplitHostPort(hostport, &host, &port)) {
     if (log_errors) {
       gpr_log(GPR_ERROR, "Failed gpr_split_host_port(%s, ...)", hostport);

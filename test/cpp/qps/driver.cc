@@ -333,7 +333,7 @@ std::unique_ptr<ScenarioResult> RunScenario(
       client_config.add_server_targets(cli_target);
     } else {
       std::string host;
-      std::unique_ptr<char> cli_target;
+      grpc_core::UniquePtr<char> cli_target;
       host = get_host(workers[i]);
       grpc_core::JoinHostPort(&cli_target, host.c_str(), init_status.port());
       client_config.add_server_targets(cli_target.get());

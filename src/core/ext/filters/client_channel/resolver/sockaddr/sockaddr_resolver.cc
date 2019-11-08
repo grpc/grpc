@@ -97,7 +97,7 @@ bool ParseUri(const grpc_uri* uri,
   bool errors_found = false;
   for (size_t i = 0; i < path_parts.count; i++) {
     grpc_uri ith_uri = *uri;
-    std::unique_ptr<char> part_str(
+    grpc_core::UniquePtr<char> part_str(
         grpc_slice_to_c_string(path_parts.slices[i]));
     ith_uri.path = part_str.get();
     grpc_resolved_address addr;
@@ -161,8 +161,9 @@ class UnixResolverFactory : public ResolverFactory {
     return CreateSockaddrResolver(std::move(args), grpc_parse_unix);
   }
 
-  std::unique_ptr<char> GetDefaultAuthority(grpc_uri* /*uri*/) const override {
-    return std::unique_ptr<char>(gpr_strdup("localhost"));
+  grpc_core::UniquePtr<char> GetDefaultAuthority(
+      grpc_uri* /*uri*/) const override {
+    return grpc_core::UniquePtr<char>(gpr_strdup("localhost"));
   }
 
   const char* scheme() const override { return "unix"; }

@@ -37,7 +37,7 @@ static const char* client_identity_property_name = "smurf_name";
 static const char* client_identity = "Brainy Smurf";
 
 struct fullstack_secure_fixture_data {
-  std::unique_ptr<char> localaddr;
+  grpc_core::UniquePtr<char> localaddr;
 };
 
 static const grpc_metadata* find_metadata(const grpc_metadata* md,

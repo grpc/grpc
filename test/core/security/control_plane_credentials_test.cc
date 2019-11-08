@@ -83,10 +83,10 @@ grpc_server_credentials* create_test_ssl_server_creds() {
 // Perform a simple RPC and capture the ASCII value of the
 // authorization metadata sent to the server, if any. Return
 // nullptr if no authorization metadata was sent to the server.
-std::unique_ptr<char> perform_call_and_get_authorization_header(
+grpc_core::UniquePtr<char> perform_call_and_get_authorization_header(
     grpc_channel_credentials* channel_creds) {
   // Create a new channel and call
-  std::unique_ptr<char> server_addr = nullptr;
+  grpc_core::UniquePtr<char> server_addr = nullptr;
   grpc_core::JoinHostPort(&server_addr, "localhost", g_port);
   grpc_arg ssl_name_override = {
       GRPC_ARG_STRING,
@@ -196,7 +196,7 @@ std::unique_ptr<char> perform_call_and_get_authorization_header(
   cq_verify(cqv);
   GPR_ASSERT(status == GRPC_STATUS_OK);
   // Extract the ascii value of the authorization header, if present
-  std::unique_ptr<char> authorization_header_val;
+  grpc_core::UniquePtr<char> authorization_header_val;
   gpr_log(GPR_DEBUG, "RPC done. Now examine received metadata on server...");
   for (size_t i = 0; i < request_metadata_recv.count; i++) {
     char* cur_key =
@@ -239,10 +239,10 @@ void test_attach_and_get() {
       create_test_ssl_plus_token_channel_creds("foo-auth-header");
   grpc_channel_credentials* bar_creds =
       create_test_ssl_plus_token_channel_creds("bar-auth-header");
-  auto foo_key = std::unique_ptr<char>(gpr_strdup("foo"));
+  auto foo_key = grpc_core::UniquePtr<char>(gpr_strdup("foo"));
   GPR_ASSERT(grpc_channel_credentials_attach_credentials(
                  main_creds, foo_key.get(), foo_creds) == true);
-  auto bar_key = std::unique_ptr<char>(gpr_strdup("bar"));
+  auto bar_key = grpc_core::UniquePtr<char>(gpr_strdup("bar"));
   GPR_ASSERT(grpc_channel_credentials_attach_credentials(
                  main_creds, bar_key.get(), bar_creds) == true);
   GPR_ASSERT(grpc_channel_credentials_attach_credentials(main_creds, "foo",
@@ -295,10 +295,10 @@ void test_registering_same_creds_under_different_keys() {
       create_test_ssl_plus_token_channel_creds("main-auth-header");
   grpc_channel_credentials* foo_creds =
       create_test_ssl_plus_token_channel_creds("foo-auth-header");
-  auto foo_key = std::unique_ptr<char>(gpr_strdup("foo"));
+  auto foo_key = grpc_core::UniquePtr<char>(gpr_strdup("foo"));
   GPR_ASSERT(grpc_channel_credentials_attach_credentials(
                  main_creds, foo_key.get(), foo_creds) == true);
-  auto foo2_key = std::unique_ptr<char>(gpr_strdup("foo2"));
+  auto foo2_key = grpc_core::UniquePtr<char>(gpr_strdup("foo2"));
   GPR_ASSERT(grpc_channel_credentials_attach_credentials(
                  main_creds, foo2_key.get(), foo_creds) == true);
   GPR_ASSERT(grpc_channel_credentials_attach_credentials(main_creds, "foo",
@@ -335,7 +335,7 @@ void test_attach_and_get_with_global_registry() {
       create_test_ssl_plus_token_channel_creds("global-override-auth-header");
   grpc_channel_credentials* random_creds =
       create_test_ssl_plus_token_channel_creds("random-auth-header");
-  auto global_key = std::unique_ptr<char>(gpr_strdup("global"));
+  auto global_key = grpc_core::UniquePtr<char>(gpr_strdup("global"));
   GPR_ASSERT(grpc_channel_credentials_attach_credentials(
                  main_creds, global_key.get(), global_override_creds) == true);
   GPR_ASSERT(grpc_channel_credentials_attach_credentials(
@@ -392,7 +392,7 @@ int main(int argc, char** argv) {
     g_server = grpc_server_create(nullptr, nullptr);
     g_port = grpc_pick_unused_port_or_die();
     grpc_server_register_completion_queue(g_server, g_cq, nullptr);
-    std::unique_ptr<char> localaddr;
+    grpc_core::UniquePtr<char> localaddr;
     grpc_core::JoinHostPort(&localaddr, "localhost", g_port);
     GPR_ASSERT(grpc_server_add_secure_http2_port(g_server, localaddr.get(),
                                                  server_creds));
@@ -403,7 +403,7 @@ int main(int argc, char** argv) {
       // will have access.
       grpc_channel_credentials* global_creds =
           create_test_ssl_plus_token_channel_creds("global-auth-header");
-      auto global_key = std::unique_ptr<char>(gpr_strdup("global"));
+      auto global_key = grpc_core::UniquePtr<char>(gpr_strdup("global"));
       GPR_ASSERT(grpc_control_plane_credentials_register(global_key.get(),
                                                          global_creds) == true);
       GPR_ASSERT(grpc_control_plane_credentials_register(
@@ -439,7 +439,7 @@ int main(int argc, char** argv) {
     // a full shutdown and restart of the library.
     grpc_channel_credentials* global_creds =
         create_test_ssl_plus_token_channel_creds("global-auth-header");
-    auto global_key = std::unique_ptr<char>(gpr_strdup("global"));
+    auto global_key = grpc_core::UniquePtr<char>(gpr_strdup("global"));
     GPR_ASSERT(grpc_control_plane_credentials_register(global_key.get(),
                                                        global_creds) == false);
     grpc_channel_credentials_release(global_creds);

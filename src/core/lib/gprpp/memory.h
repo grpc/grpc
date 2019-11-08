@@ -43,8 +43,29 @@ inline void Delete(T* p) {
 }
 
 // TODO(veblush): Remove this after removing all usages.
+class DefaultDeleteChar {
+ public:
+  void operator()(char* p) {
+    if (p == nullptr) return;
+    gpr_free(p);
+  }
+};
+
+// TODO(veblush): Remove this after removing all usages.
 template <typename T>
-using UniquePtr = std::unique_ptr<T>;
+struct ResolveDeleter {
+  using deleter = std::default_delete<T>;
+};
+template <>
+struct ResolveDeleter<char> {
+  using deleter = DefaultDeleteChar;
+};
+
+// TODO(veblush): Remove this after removing all usages.
+// This is equivalent to std::unique_ptr except that it uses gpr_free
+// for deleter only for UniquePtr<char>
+template <typename T>
+using UniquePtr = std::unique_ptr<T, typename ResolveDeleter<T>::deleter>;
 
 // TODO(veblush): Replace this with absl::make_unique once abseil is added.
 template <typename T, typename... Args>

@@ -355,8 +355,8 @@ void grpc_dns_lookup_ares_continue_after_check_localhost_and_ip_literals_locked(
   grpc_ares_hostbyname_request* hr = nullptr;
   ares_channel* channel = nullptr;
   /* parse name, splitting it into host and port parts */
-  std::unique_ptr<char> host;
-  std::unique_ptr<char> port;
+  grpc_core::UniquePtr<char> host;
+  grpc_core::UniquePtr<char> port;
   grpc_core::SplitHostPort(name, &host, &port);
   if (host == nullptr) {
     error = grpc_error_set_str(
@@ -453,8 +453,8 @@ error_cleanup:
 static bool inner_resolve_as_ip_literal_locked(
     const char* name, const char* default_port,
     std::unique_ptr<grpc_core::ServerAddressList>* addrs,
-    std::unique_ptr<char>* host, std::unique_ptr<char>* port,
-    std::unique_ptr<char>* hostport) {
+    grpc_core::UniquePtr<char>* host, grpc_core::UniquePtr<char>* port,
+    grpc_core::UniquePtr<char>* hostport) {
   grpc_core::SplitHostPort(name, host, port);
   if (*host == nullptr) {
     gpr_log(GPR_ERROR,
@@ -490,17 +490,17 @@ static bool inner_resolve_as_ip_literal_locked(
 static bool resolve_as_ip_literal_locked(
     const char* name, const char* default_port,
     std::unique_ptr<grpc_core::ServerAddressList>* addrs) {
-  std::unique_ptr<char> host;
-  std::unique_ptr<char> port;
-  std::unique_ptr<char> hostport;
+  grpc_core::UniquePtr<char> host;
+  grpc_core::UniquePtr<char> port;
+  grpc_core::UniquePtr<char> hostport;
   bool out = inner_resolve_as_ip_literal_locked(name, default_port, addrs,
                                                 &host, &port, &hostport);
   return out;
 }
 
 static bool target_matches_localhost_inner(const char* name,
-                                           std::unique_ptr<char>* host,
-                                           std::unique_ptr<char>* port) {
+                                           grpc_core::UniquePtr<char>* host,
+                                           grpc_core::UniquePtr<char>* port) {
   if (!grpc_core::SplitHostPort(name, host, port)) {
     gpr_log(GPR_ERROR, "Unable to split host and port for name: %s", name);
     return false;
@@ -513,8 +513,8 @@ static bool target_matches_localhost_inner(const char* name,
 }
 
 static bool target_matches_localhost(const char* name) {
-  std::unique_ptr<char> host;
-  std::unique_ptr<char> port;
+  grpc_core::UniquePtr<char> host;
+  grpc_core::UniquePtr<char> port;
   return target_matches_localhost_inner(name, &host, &port);
 }
 
@@ -522,7 +522,7 @@ static bool target_matches_localhost(const char* name) {
 static bool inner_maybe_resolve_localhost_manually_locked(
     const char* name, const char* default_port,
     std::unique_ptr<grpc_core::ServerAddressList>* addrs,
-    std::unique_ptr<char>* host, std::unique_ptr<char>* port) {
+    grpc_core::UniquePtr<char>* host, grpc_core::UniquePtr<char>* port) {
   grpc_core::SplitHostPort(name, host, port);
   if (*host == nullptr) {
     gpr_log(GPR_ERROR,
@@ -572,8 +572,8 @@ static bool inner_maybe_resolve_localhost_manually_locked(
 static bool grpc_ares_maybe_resolve_localhost_manually_locked(
     const char* name, const char* default_port,
     std::unique_ptr<grpc_core::ServerAddressList>* addrs) {
-  std::unique_ptr<char> host;
-  std::unique_ptr<char> port;
+  grpc_core::UniquePtr<char> host;
+  grpc_core::UniquePtr<char> port;
   return inner_maybe_resolve_localhost_manually_locked(name, default_port,
                                                        addrs, &host, &port);
 }

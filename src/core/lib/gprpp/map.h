@@ -34,8 +34,8 @@ struct StringLess {
   bool operator()(const char* a, const char* b) const {
     return strcmp(a, b) < 0;
   }
-  bool operator()(const std::unique_ptr<char>& a,
-                  const std::unique_ptr<char>& b) const {
+  bool operator()(const grpc_core::UniquePtr<char>& a,
+                  const grpc_core::UniquePtr<char>& b) const {
     return strcmp(a.get(), b.get()) < 0;
   }
   bool operator()(const StringView& a, const StringView& b) const {

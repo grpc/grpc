@@ -506,8 +506,8 @@ int g_fake_non_responsive_dns_server_port = -1;
 void InjectBrokenNameServerList(ares_channel channel) {
   struct ares_addr_port_node dns_server_addrs[2];
   memset(dns_server_addrs, 0, sizeof(dns_server_addrs));
-  std::unique_ptr<char> unused_host;
-  std::unique_ptr<char> local_dns_server_port;
+  grpc_core::UniquePtr<char> unused_host;
+  grpc_core::UniquePtr<char> local_dns_server_port;
   GPR_ASSERT(grpc_core::SplitHostPort(FLAGS_local_dns_server_address.c_str(),
                                       &unused_host, &local_dns_server_port));
   gpr_log(GPR_DEBUG,

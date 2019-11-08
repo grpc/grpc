@@ -71,7 +71,7 @@
 #define SERVER_INCOMING_DATA_LENGTH_LOWER_THRESHOLD (size_t)200
 
 struct rpc_state {
-  std::unique_ptr<char> target;
+  grpc_core::UniquePtr<char> target;
   grpc_completion_queue* cq;
   grpc_channel* channel;
   grpc_call* call;

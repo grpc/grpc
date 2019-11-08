@@ -29,7 +29,7 @@
 
 /** -- gRPC TLS key materials config API implementation. -- **/
 void grpc_tls_key_materials_config::set_key_materials(
-    std::unique_ptr<char> pem_root_certs,
+    grpc_core::UniquePtr<char> pem_root_certs,
     PemKeyCertPairList pem_key_cert_pair_list) {
   pem_key_cert_pair_list_ = std::move(pem_key_cert_pair_list);
   pem_root_certs_ = std::move(pem_root_certs);
@@ -145,7 +145,7 @@ int grpc_tls_key_materials_config_set_key_materials(
             "grpc_tls_key_materials_config_set_key_materials()");
     return 0;
   }
-  std::unique_ptr<char> pem_root(const_cast<char*>(root_certs));
+  grpc_core::UniquePtr<char> pem_root(const_cast<char*>(root_certs));
   grpc_tls_key_materials_config::PemKeyCertPairList cert_pair_list;
   for (size_t i = 0; i < num; i++) {
     grpc_core::PemKeyCertPair key_cert_pair(

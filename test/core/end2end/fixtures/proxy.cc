@@ -41,8 +41,8 @@ struct grpc_end2end_proxy {
     memset(&new_call_metadata, 0, sizeof(new_call_metadata));
   }
   grpc_core::Thread thd;
-  std::unique_ptr<char> proxy_port;
-  std::unique_ptr<char> server_port;
+  grpc_core::UniquePtr<char> proxy_port;
+  grpc_core::UniquePtr<char> server_port;
   grpc_completion_queue* cq;
   grpc_server* server;
   grpc_channel* client;

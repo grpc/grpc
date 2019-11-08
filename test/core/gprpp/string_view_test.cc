@@ -74,7 +74,7 @@ TEST(StringViewTest, Dup) {
   constexpr char kStr[] = "foo";
   grpc_core::StringView slice(
       grpc_core::StringViewFromSlice(grpc_slice_from_static_string(kStr)));
-  std::unique_ptr<char> dup = grpc_core::StringViewToCString(slice);
+  grpc_core::UniquePtr<char> dup = grpc_core::StringViewToCString(slice);
   EXPECT_EQ(0, strcmp(kStr, dup.get()));
   EXPECT_EQ(slice.size(), strlen(kStr));
 }

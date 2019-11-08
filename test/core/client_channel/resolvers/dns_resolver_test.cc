@@ -82,7 +82,8 @@ int main(int argc, char** argv) {
   test_succeeds(dns, "dns:10.2.1.1:1234");
   test_succeeds(dns, "dns:www.google.com");
   test_succeeds(dns, "dns:///www.google.com");
-  std::unique_ptr<char> resolver = GPR_GLOBAL_CONFIG_GET(grpc_dns_resolver);
+  grpc_core::UniquePtr<char> resolver =
+      GPR_GLOBAL_CONFIG_GET(grpc_dns_resolver);
   if (gpr_stricmp(resolver.get(), "native") == 0) {
     test_fails(dns, "dns://8.8.8.8/8.8.8.8:8888");
   } else {

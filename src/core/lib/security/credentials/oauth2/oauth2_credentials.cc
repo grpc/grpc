@@ -624,14 +624,14 @@ class StsTokenFetcherCredentials
 
   grpc_uri* sts_url_;
   grpc_closure http_post_cb_closure_;
-  std::unique_ptr<char> resource_;
-  std::unique_ptr<char> audience_;
-  std::unique_ptr<char> scope_;
-  std::unique_ptr<char> requested_token_type_;
-  std::unique_ptr<char> subject_token_path_;
-  std::unique_ptr<char> subject_token_type_;
-  std::unique_ptr<char> actor_token_path_;
-  std::unique_ptr<char> actor_token_type_;
+  grpc_core::UniquePtr<char> resource_;
+  grpc_core::UniquePtr<char> audience_;
+  grpc_core::UniquePtr<char> scope_;
+  grpc_core::UniquePtr<char> requested_token_type_;
+  grpc_core::UniquePtr<char> subject_token_path_;
+  grpc_core::UniquePtr<char> subject_token_type_;
+  grpc_core::UniquePtr<char> actor_token_path_;
+  grpc_core::UniquePtr<char> actor_token_type_;
 };
 
 }  // namespace

@@ -61,7 +61,8 @@ void GrpcLbClientStats::AddCallDropped(const char* token) {
     }
   }
   // Not found, so add a new entry.
-  drop_token_counts_->emplace_back(std::unique_ptr<char>(gpr_strdup(token)), 1);
+  drop_token_counts_->emplace_back(
+      grpc_core::UniquePtr<char>(gpr_strdup(token)), 1);
 }
 
 namespace {

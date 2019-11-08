@@ -279,7 +279,7 @@ QpsWorker::QpsWorker(int driver_port, int server_port,
 
   std::unique_ptr<ServerBuilder> builder = CreateQpsServerBuilder();
   if (driver_port >= 0) {
-    std::unique_ptr<char> server_address;
+    grpc_core::UniquePtr<char> server_address;
     grpc_core::JoinHostPort(&server_address, "::", driver_port);
     builder->AddListeningPort(
         server_address.get(),

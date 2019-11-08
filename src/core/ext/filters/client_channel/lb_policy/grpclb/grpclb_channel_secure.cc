@@ -39,8 +39,8 @@ namespace grpc_core {
 
 namespace {
 
-int BalancerNameCmp(const std::unique_ptr<char>& a,
-                    const std::unique_ptr<char>& b) {
+int BalancerNameCmp(const grpc_core::UniquePtr<char>& a,
+                    const grpc_core::UniquePtr<char>& b) {
   return strcmp(a.get(), b.get());
 }
 

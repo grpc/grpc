@@ -347,7 +347,8 @@ int main(int argc, char** argv) {
   // --resolver will always be the first one, so only parse the first argument
   // (other arguments may be unknown to cl)
   gpr_cmdline_parse(cl, argc > 2 ? 2 : argc, argv);
-  std::unique_ptr<char> resolver = GPR_GLOBAL_CONFIG_GET(grpc_dns_resolver);
+  grpc_core::UniquePtr<char> resolver =
+      GPR_GLOBAL_CONFIG_GET(grpc_dns_resolver);
   if (strlen(resolver.get()) != 0) {
     gpr_log(GPR_INFO, "Warning: overriding resolver setting of %s",
             resolver.get());
