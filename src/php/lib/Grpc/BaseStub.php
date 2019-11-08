@@ -47,7 +47,7 @@ class BaseStub
             $ssl_roots = file_get_contents(
                 dirname(__FILE__).'/../../../../etc/roots.pem'
             );
-	    ChannelCredentials::setDefaultRootsPem($ssl_roots);
+            ChannelCredentials::setDefaultRootsPem($ssl_roots);
         }
 
         $this->hostname = $hostname;
