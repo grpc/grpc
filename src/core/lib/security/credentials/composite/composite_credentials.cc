@@ -82,7 +82,7 @@ static void composite_call_metadata_cb(void* arg, grpc_error* error) {
   }
   grpc_core::ExecCtx::Run(DEBUG_LOCATION, ctx->on_request_metadata,
                           GRPC_ERROR_REF(error));
-  gpr_free(ctx);
+  delete ctx;
 }
 
 bool grpc_composite_call_credentials::get_request_metadata(
