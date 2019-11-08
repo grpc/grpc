@@ -83,6 +83,7 @@ namespace {
 
 using std::chrono::system_clock;
 
+using ::envoy::api::v2::Cluster;
 using ::envoy::api::v2::ClusterLoadAssignment;
 using ::envoy::api::v2::DiscoveryRequest;
 using ::envoy::api::v2::DiscoveryResponse;
@@ -94,6 +95,7 @@ using ::envoy::service::load_stats::v2::LoadStatsRequest;
 using ::envoy::service::load_stats::v2::LoadStatsResponse;
 using ::envoy::service::load_stats::v2::UpstreamLocalityStats;
 
+constexpr char kCdsTypeUrl[] = "type.googleapis.com/envoy.api.v2.Cluster";
 constexpr char kEdsTypeUrl[] =
     "type.googleapis.com/envoy.api.v2.ClusterLoadAssignment";
 constexpr char kDefaultLocalityRegion[] = "xds_default_locality_region";
@@ -367,6 +369,9 @@ class AdsServiceImpl : public AdsService {
   using Stream = ServerReaderWriter<DiscoveryResponse, DiscoveryRequest>;
   using ResponseDelayPair = std::pair<DiscoveryResponse, int>;
 
+  AdsServiceImpl(bool enable_load_reporting)
+      : enable_load_reporting_(enable_load_reporting) {}
+
   Status StreamAggregatedResources(ServerContext* context,
                                    Stream* stream) override {
     gpr_log(GPR_INFO, "ADS[%p]: StreamAggregatedResources starts", this);
@@ -381,6 +386,18 @@ class AdsServiceImpl : public AdsService {
       // Read request.
       DiscoveryRequest request;
       if (!stream->Read(&request)) return;
+      // FIXME: Record CDS request number.
+      if (strcmp(request.type_url.get(), kCdsTypeUrl)) {
+        DiscoveryResponse response;
+        response.set_type_url(kCdsTypeUrl);
+        Cluster cluster;
+        if (enable_load_reporting_) {
+          cluster.mutable_lrs_server()->mutable_self();
+        }
+        response.add_resources()->PackFrom(cluster);
+        stream->Write(response);
+        if (!stream->Read(&request)) return;
+      }
       IncreaseRequestCount();
       gpr_log(GPR_INFO, "ADS[%p]: received initial message '%s'", this,
               request.DebugString().c_str());
@@ -490,6 +507,7 @@ class AdsServiceImpl : public AdsService {
     stream->Write(response);
   }
 
+  bool enable_load_reporting_;
   grpc_core::CondVar ads_cond_;
   // Protect the members below.
   grpc_core::Mutex ads_mu_;
@@ -652,7 +670,9 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
     // Start the load balancers.
     for (size_t i = 0; i < num_balancers_; ++i) {
       balancers_.emplace_back(
-          new BalancerServerThread(client_load_reporting_interval_seconds_));
+          new BalancerServerThread(GetParam().enable_load_reporting()
+                                       ? client_load_reporting_interval_seconds_
+                                       : 0));
       balancers_.back()->Start(server_host_);
     }
     ResetStub();
@@ -979,7 +999,8 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
   class BalancerServerThread : public ServerThread {
    public:
     explicit BalancerServerThread(int client_load_reporting_interval = 0)
-        : lrs_service_(client_load_reporting_interval) {}
+        : ads_service_(client_load_reporting_interval > 0),
+          lrs_service_(client_load_reporting_interval) {}
 
     AdsServiceImpl* ads_service() { return &ads_service_; }
     LrsServiceImpl* lrs_service() { return &lrs_service_; }
@@ -2428,13 +2449,9 @@ grpc::string TestTypeName(const ::testing::TestParamInfo<TestType>& info) {
   return info.param.AsString();
 }
 
-// TODO(juanlishen): Load reporting disabled is currently tested only with DNS
-// resolver.  Once we implement CDS, test it via the xds resolver too.
-
 INSTANTIATE_TEST_SUITE_P(XdsTest, BasicTest,
-                         ::testing::Values(TestType(false, true),
-                                           TestType(false, false),
-                                           TestType(true, true)),
+                         ::tesing::Combine(::testing::Bool(),
+                                           ::testing::Bool()),
                          &TestTypeName);
 
 INSTANTIATE_TEST_SUITE_P(XdsTest, SecureNamingTest,

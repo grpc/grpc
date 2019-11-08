@@ -202,7 +202,7 @@ void PopulateNode(upb_arena* arena, const XdsBootstrap::Node* node,
 
 }  // namespace
 
-grpc_slice XdsCdsRequestCreateAndEncode(Set<StringView> cluster_names,
+grpc_slice XdsCdsRequestCreateAndEncode(std::set<StringView> cluster_names,
                                         const XdsBootstrap::Node* node,
                                         const char* build_version,
                                         const VersionState& cds_version) {
@@ -214,9 +214,11 @@ grpc_slice XdsCdsRequestCreateAndEncode(Set<StringView> cluster_names,
   envoy_api_v2_DiscoveryRequest_set_version_info(
       request, upb_strview_makez(cds_version.version_info.get()));
   // Populate node.
-  envoy_api_v2_core_Node* node_msg =
-      envoy_api_v2_DiscoveryRequest_mutable_node(request, arena.ptr());
-  PopulateNode(arena.ptr(), node, build_version, node_msg);
+  if (build_version != nullptr) {
+    envoy_api_v2_core_Node* node_msg =
+        envoy_api_v2_DiscoveryRequest_mutable_node(request, arena.ptr());
+    PopulateNode(arena.ptr(), node, build_version, node_msg);
+  }
   // Add resource_names.
   for (const auto& cluster_name : cluster_names) {
     envoy_api_v2_DiscoveryRequest_add_resource_names(
@@ -236,7 +238,9 @@ grpc_slice XdsCdsRequestCreateAndEncode(Set<StringView> cluster_names,
   return grpc_slice_from_copied_buffer(output, output_length);
 }
 
-grpc_slice XdsEdsRequestCreateAndEncode(Set<StringView> eds_service_names,
+grpc_slice XdsEdsRequestCreateAndEncode(std::set<StringView> eds_service_names,
+                                        const XdsBootstrap::Node* node,
+                                        const char* build_version,
                                         const VersionState& eds_version) {
   upb::Arena arena;
   // Create a request.
@@ -245,6 +249,12 @@ grpc_slice XdsEdsRequestCreateAndEncode(Set<StringView> eds_service_names,
   // Set version_info.
   envoy_api_v2_DiscoveryRequest_set_version_info(
       request, upb_strview_makez(eds_version.version_info.get()));
+  // Populate node.
+  if (build_version != nullptr) {
+    envoy_api_v2_core_Node* node_msg =
+        envoy_api_v2_DiscoveryRequest_mutable_node(request, arena.ptr());
+    PopulateNode(arena.ptr(), node, build_version, node_msg);
+  }
   // Add resource_names.
   for (const auto& eds_service_name : eds_service_names) {
     envoy_api_v2_DiscoveryRequest_add_resource_names(
@@ -267,18 +277,19 @@ grpc_slice XdsEdsRequestCreateAndEncode(Set<StringView> eds_service_names,
 
 namespace {
 
-UniquePtr<char> StringCopy(const upb_strview& strview) {
+std::unique_ptr<char> StringCopy(const upb_strview& strview) {
   char* str = static_cast<char*>(gpr_malloc(strview.size + 1));
   memcpy(str, strview.data, strview.size);
   str[strview.size] = '\0';
-  return UniquePtr<char>(str);
+  return std::unique_ptr<char>(str);
 }
 
 }  // namespace
 
-grpc_error* CdsResponsedParse(const envoy_api_v2_DiscoveryResponse* response,
-                              const Set<StringView>& expected_cluster_names,
-                              CdsUpdateMap* cds_update_map, upb_arena* arena) {
+grpc_error* CdsResponsedParse(
+    const envoy_api_v2_DiscoveryResponse* response,
+    const std::set<StringView>& expected_cluster_names,
+    CdsUpdateMap* cds_update_map, upb_arena* arena) {
   // Get the resources from the response.
   size_t size;
   const google_protobuf_Any* const* resources =
@@ -462,9 +473,10 @@ grpc_error* DropParseAndAppend(
   return GRPC_ERROR_NONE;
 }
 
-grpc_error* EdsResponsedParse(const envoy_api_v2_DiscoveryResponse* response,
-                              const Set<StringView>& expected_eds_service_names,
-                              EdsUpdateMap* eds_update_map, upb_arena* arena) {
+grpc_error* EdsResponsedParse(
+    const envoy_api_v2_DiscoveryResponse* response,
+    const std::set<StringView>& expected_eds_service_names,
+    EdsUpdateMap* eds_update_map, upb_arena* arena) {
   // Get the resources from the response.
   size_t size;
   const google_protobuf_Any* const* resources =
@@ -542,8 +554,8 @@ grpc_error* EdsResponsedParse(const envoy_api_v2_DiscoveryResponse* response,
 
 grpc_error* XdsAdsResponseDecodeAndParse(
     const grpc_slice& encoded_response,
-    const Set<StringView>& expected_cluster_names,
-    const Set<StringView>& expected_eds_service_names,
+    const std::set<StringView>& expected_cluster_names,
+    const std::set<StringView>& expected_eds_service_names,
     CdsUpdateMap* cds_update_map, EdsUpdateMap* eds_update_map,
     VersionState* new_version, bool* cds) {
   upb::Arena arena;
@@ -655,10 +667,10 @@ void LocalityStatsPopulate(
 }  // namespace
 
 grpc_slice XdsLrsRequestCreateAndEncode(
-    Map<StringView, Set<XdsClientStats*>> client_stats_map) {
+    std::map<StringView, std::set<XdsClientStats*>> client_stats_map) {
   upb::Arena arena;
   // Get the snapshots.
-  Map<StringView, Set<XdsClientStats::Snapshot>> snapshot_map;
+  std::map<StringView, std::set<XdsClientStats::Snapshot>> snapshot_map;
   bool all_zero = true;
   for (auto& p : client_stats_map) {
     const StringView& cluster_name = p.first;
@@ -683,6 +695,9 @@ grpc_slice XdsLrsRequestCreateAndEncode(
           envoy_service_load_stats_v2_LoadStatsRequest_add_cluster_stats(
               request, arena.ptr());
       // Set the cluster name.
+      // FIXME: The cluster_name is set to the eds_service_name according to the
+      // LRS design doc. But Jie says this might no longer be the case. Not sure
+      // what the current design is.
       envoy_api_v2_endpoint_ClusterStats_set_cluster_name(
           cluster_stats,
           upb_strview_make(eds_service_name.data(), eds_service_name.size()));
@@ -725,7 +740,7 @@ grpc_slice XdsLrsRequestCreateAndEncode(
 
 grpc_error* XdsLrsResponseDecodeAndParse(
     const grpc_slice& encoded_response,
-    const Set<StringView>& expected_eds_service_names,
+    const std::set<StringView>& expected_eds_service_names,
     grpc_millis* load_reporting_interval) {
   upb::Arena arena;
   // Decode the response.

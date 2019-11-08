@@ -22,6 +22,7 @@
 #include <grpc/support/port_platform.h>
 
 #include <stdint.h>
+
 #include <set>
 
 #include <grpc/slice_buffer.h>
@@ -131,15 +132,6 @@ class XdsDropConfig : public RefCounted<XdsDropConfig> {
   DropCategoryList drop_category_list_;
 };
 
-struct EdsUpdate {
-  XdsPriorityListUpdate priority_list_update;
-  RefCountedPtr<XdsDropConfig> drop_config;
-  bool drop_all = false;
-};
-
-using EdsUpdateMap =
-    std::map<std::unique_ptr<char> /*cluster*/, EdsUpdate, StringLess>;
-
 struct CdsUpdate {
   // The name to use in the EDS request.
   // If null, the cluster name will be used.
@@ -150,7 +142,7 @@ struct CdsUpdate {
   // the CDS data from.
   std::unique_ptr<char> lrs_load_reporting_server_name;
 
-  CdsUpdate() {}
+  CdsUpdate() = default;
   CdsUpdate(const CdsUpdate& other)
       : eds_service_name(
             std::unique_ptr<char>(gpr_strdup(other.eds_service_name.get()))),
@@ -165,7 +157,16 @@ struct CdsUpdate {
 };
 
 using CdsUpdateMap =
-    std::map<std::unique_ptr<char> /*cluster*/, CdsUpdate, StringLess>;
+    std::map<std::unique_ptr<char> /*cluster_name*/, CdsUpdate, StringLess>;
+
+struct EdsUpdate {
+  XdsPriorityListUpdate priority_list_update;
+  RefCountedPtr<XdsDropConfig> drop_config;
+  bool drop_all = false;
+};
+
+using EdsUpdateMap =
+    std::map<std::unique_ptr<char> /*eds_service_name*/, EdsUpdate, StringLess>;
 
 struct VersionState {
   std::unique_ptr<char> version_info;
@@ -182,8 +183,10 @@ grpc_slice XdsCdsRequestCreateAndEncode(std::set<StringView> cluster_names,
                                         const char* build_version,
                                         const VersionState& cds_version);
 
-// Creates an EDS request querying \a service_name.
+// Creates an EDS request querying \a eds_service_name.
 grpc_slice XdsEdsRequestCreateAndEncode(std::set<StringView> eds_service_names,
+                                        const XdsBootstrap::Node* node,
+                                        const char* build_version,
                                         const VersionState& eds_version);
 
 // Parses the ADS response and outputs update for either CDS or EDS. If there
@@ -201,11 +204,11 @@ grpc_slice XdsLrsRequestCreateAndEncode(const char* server_name,
                                         const char* build_version);
 
 // Creates an LRS request sending client-side load reports. If all the counters
-// in \a client_stats are zero, returns empty slice.
+// are zero, returns empty slice.
 grpc_slice XdsLrsRequestCreateAndEncode(
     std::map<StringView, std::set<XdsClientStats*>> client_stats_map);
 
-// Parses the LRS response and returns \a cluster_name and \a
+// Parses the LRS response and returns \a
 // load_reporting_interval for client-side load reporting. If there is any
 // error, the output config is invalid.
 grpc_error* XdsLrsResponseDecodeAndParse(

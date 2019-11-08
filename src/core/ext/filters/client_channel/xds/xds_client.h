@@ -187,12 +187,12 @@ class XdsClient : public InternallyRefCounted<XdsClient> {
     void CancelConnectivityWatchLocked();
 
     void WatchClusterData(StringView cluster_name,
-                          UniquePtr<ClusterWatcherInterface> watcher);
+                          std::unique_ptr<ClusterWatcherInterface> watcher);
     void CancelClusterDataWatch(StringView cluster_name,
                                 ClusterWatcherInterface* watcher);
 
     void WatchEndpointData(StringView eds_service_name,
-                           UniquePtr<EndpointWatcherInterface> watcher);
+                           std::unique_ptr<EndpointWatcherInterface> watcher);
     void CancelEndpointDataWatch(StringView eds_service_name,
                                  EndpointWatcherInterface* watcher);
 

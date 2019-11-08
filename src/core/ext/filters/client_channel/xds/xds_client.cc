@@ -115,8 +115,7 @@ class XdsClient::ChannelState::AdsCallState
     : public InternallyRefCounted<AdsCallState> {
  public:
   // The ctor and dtor should not be used directly.
-  explicit AdsCallState(RefCountedPtr<RetryableCall<AdsCallState>> parent,
-                        bool is_cds);
+  explicit AdsCallState(RefCountedPtr<RetryableCall<AdsCallState>> parent);
   ~AdsCallState() override;
 
   void Orphan() override;
@@ -126,6 +125,7 @@ class XdsClient::ChannelState::AdsCallState
   XdsClient* xds_client() const { return chand()->xds_client(); }
   bool seen_response() const { return seen_response_; }
 
+  void StartCallLocked();
   void SendMessageLocked(bool is_cds);
 
   bool HasWatcher() const {
@@ -428,8 +428,7 @@ void XdsClient::ChannelState::CancelConnectivityWatchLocked() {
 
 void XdsClient::ChannelState::WatchClusterData(
     grpc_core::StringView cluster_name,
-    grpc_core::UniquePtr<grpc_core::XdsClient::ClusterWatcherInterface>
-        watcher) {
+    std::unique_ptr<grpc_core::XdsClient::ClusterWatcherInterface> watcher) {
   const bool new_name = xds_client()->cluster_map_.find(cluster_name) ==
                         xds_client()->cluster_map_.end();
   ClusterState& cluster_state = xds_client()->cluster_map_[cluster_name];
@@ -442,8 +441,8 @@ void XdsClient::ChannelState::WatchClusterData(
   }
   if (new_name) {
     if (ads_calld_ == nullptr) {
-      ads_calld_.reset(New<RetryableCall<AdsCallState>>(
-          Ref(DEBUG_LOCATION, "ChannelState+ads"), true));
+      ads_calld_.reset(new RetryableCall<AdsCallState>(
+          Ref(DEBUG_LOCATION, "ChannelState+ads")));
     } else {
       ads_calld()->SendMessageLocked(true);
     }
@@ -467,8 +466,7 @@ void XdsClient::ChannelState::CancelClusterDataWatch(
 
 void XdsClient::ChannelState::WatchEndpointData(
     grpc_core::StringView eds_service_name,
-    grpc_core::UniquePtr<grpc_core::XdsClient::EndpointWatcherInterface>
-        watcher) {
+    std::unique_ptr<grpc_core::XdsClient::EndpointWatcherInterface> watcher) {
   const bool new_name = xds_client()->cluster_map_.find(eds_service_name) ==
                         xds_client()->cluster_map_.end();
   EndpointState& endpoint_state = xds_client()->endpoint_map_[eds_service_name];
@@ -481,8 +479,8 @@ void XdsClient::ChannelState::WatchEndpointData(
   }
   if (new_name) {
     if (ads_calld_ == nullptr) {
-      ads_calld_.reset(New<RetryableCall<AdsCallState>>(
-          Ref(DEBUG_LOCATION, "ChannelState+ads"), false));
+      ads_calld_.reset(new RetryableCall<AdsCallState>(
+          Ref(DEBUG_LOCATION, "ChannelState+ads")));
     } else {
       ads_calld()->SendMessageLocked(false);
     }
@@ -607,7 +605,7 @@ void XdsClient::ChannelState::RetryableCall<T>::OnRetryTimerLocked(
 //
 
 XdsClient::ChannelState::AdsCallState::AdsCallState(
-    RefCountedPtr<RetryableCall<AdsCallState>> parent, bool is_cds)
+    RefCountedPtr<RetryableCall<AdsCallState>> parent)
     : InternallyRefCounted<AdsCallState>(&grpc_xds_client_trace),
       parent_(std::move(parent)) {
   // Init the ADS call. Note that the call will progress every time there's
@@ -623,20 +621,7 @@ XdsClient::ChannelState::AdsCallState::AdsCallState(
       GRPC_MDSTR_SLASH_ENVOY_DOT_SERVICE_DOT_DISCOVERY_DOT_V2_DOT_AGGREGATEDDISCOVERYSERVICE_SLASH_STREAMAGGREGATEDRESOURCES,
       nullptr, GRPC_MILLIS_INF_FUTURE, nullptr);
   GPR_ASSERT(call_ != nullptr);
-  // Init the request payload.
-  grpc_slice request_payload_slice;
-  if (is_cds) {
-    request_payload_slice = XdsCdsRequestCreateAndEncode(
-        xds_client()->ClusterNames(), xds_client()->bootstrap_->node(),
-        xds_client()->build_version_.get(), xds_client()->cds_version_state_);
-  } else {
-    request_payload_slice = XdsEdsRequestCreateAndEncode(
-        xds_client()->EdsServiceNames(), xds_client()->eds_version_state_);
-  }
-  send_message_payload_ =
-      grpc_raw_byte_buffer_create(&request_payload_slice, 1);
-  grpc_slice_unref_internal(request_payload_slice);
-  // Init other data associated with the call.
+  // Init data associated with the call.
   grpc_metadata_array_init(&initial_metadata_recv_);
   grpc_metadata_array_init(&trailing_metadata_recv_);
   // Start the call.
@@ -657,19 +642,12 @@ XdsClient::ChannelState::AdsCallState::AdsCallState(
   op->flags = 0;
   op->reserved = nullptr;
   op++;
-  // Op: send request message.
-  GPR_ASSERT(send_message_payload_ != nullptr);
-  op->op = GRPC_OP_SEND_MESSAGE;
-  op->data.send_message.send_message = send_message_payload_;
-  op->flags = 0;
-  op->reserved = nullptr;
-  op++;
-  Ref(DEBUG_LOCATION, "ADS+OnRequestSentLocked").release();
-  GRPC_CLOSURE_INIT(&on_request_sent_, OnRequestSentLocked, this,
-                    grpc_schedule_on_exec_ctx);
   call_error = grpc_call_start_batch_and_execute(call_, ops, (size_t)(op - ops),
-                                                 &on_request_sent_);
+                                                 nullptr);
   GPR_ASSERT(GRPC_CALL_OK == call_error);
+  // Op: send request message.
+  if (!xds_client()->cluster_map_.empty()) SendMessageLocked(true);
+  if (!xds_client()->endpoint_map_.empty()) SendMessageLocked(false);
   // Op: recv initial metadata.
   op = ops;
   op->op = GRPC_OP_RECV_INITIAL_METADATA;
@@ -877,7 +855,8 @@ void XdsClient::ChannelState::AdsCallState::SendMessageLocked(bool is_cds) {
         xds_client()->build_version_.get(), xds_client()->cds_version_state_);
   } else {
     request_payload_slice = XdsEdsRequestCreateAndEncode(
-        xds_client()->EdsServiceNames(), xds_client()->eds_version_state_);
+        xds_client()->EdsServiceNames(), xds_client()->bootstrap_->node(),
+        xds_client()->build_version_.get(), xds_client()->eds_version_state_);
   }
   // Create message payload.
   send_message_payload_ =
@@ -1504,8 +1483,8 @@ void XdsClient::Orphan() {
   Unref(DEBUG_LOCATION, "XdsClient::Orphan()");
 }
 
-void XdsClient::WatchClusterData(StringView cluster_name,
-                                 UniquePtr<ClusterWatcherInterface> watcher) {
+void XdsClient::WatchClusterData(
+    StringView cluster_name, std::unique_ptr<ClusterWatcherInterface> watcher) {
   chand_->WatchClusterData(cluster_name, std::move(watcher));
 }
 
@@ -1514,8 +1493,9 @@ void XdsClient::CancelClusterDataWatch(StringView cluster_name,
   chand_->CancelClusterDataWatch(cluster_name, watcher);
 }
 
-void XdsClient::WatchEndpointData(StringView eds_service_name,
-                                  UniquePtr<EndpointWatcherInterface> watcher) {
+void XdsClient::WatchEndpointData(
+    StringView eds_service_name,
+    std::unique_ptr<EndpointWatcherInterface> watcher) {
   chand_->WatchEndpointData(eds_service_name, std::move(watcher));
 }
 
