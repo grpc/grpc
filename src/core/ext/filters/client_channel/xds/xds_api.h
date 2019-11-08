@@ -191,7 +191,8 @@ grpc_slice XdsEdsRequestCreateAndEncode(std::set<StringView> eds_service_names,
                                         const VersionState& eds_version);
 
 // Parses the ADS response and outputs update for either CDS or EDS. If there
-// is any error, the output update is invalid.
+// is any error, the output update is invalid. Ignore the update for unexpected
+// names.
 grpc_error* XdsAdsResponseDecodeAndParse(
     const grpc_slice& encoded_response,
     const std::set<StringView>& expected_cluster_names,

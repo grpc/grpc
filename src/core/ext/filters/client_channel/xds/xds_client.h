@@ -101,8 +101,8 @@ class XdsClient : public InternallyRefCounted<XdsClient> {
                                EndpointWatcherInterface* watcher);
 
   // Adds and removes client stats for cluster.
-  // FIXME: Add eds_service_name key so that the management server can aggregate
-  // loads?
+  // FIXME: Looks like eds_service_name key is necessary so that the management
+  // server can aggregate loads. But do we need to add cluster_name too?
   // https://github.com/envoyproxy/envoy/blob/be5e7a565b3571556f2d06035ad743923e87b48c/api/envoy/api/v2/endpoint/load_report.proto#L127-L130
   void AddClientStats(StringView, StringView eds_service_name,
                       XdsClientStats* client_stats);
@@ -112,33 +112,11 @@ class XdsClient : public InternallyRefCounted<XdsClient> {
   // Resets connection backoff state.
   void ResetBackoff();
 
-  std::set<StringView> ClusterNames() {
-    std::set<StringView> cluster_names;
-    for (const auto& p : cluster_map_) {
-      const StringView& cluster_name = p.first;
-      cluster_names.emplace(cluster_name);
-    }
-    return cluster_names;
-  }
+  std::set<StringView> ClusterNames() const;
 
-  std::set<StringView> EdsServiceNames() {
-    std::set<StringView> eds_service_names;
-    for (const auto& p : endpoint_map_) {
-      const StringView& eds_service_name = p.first;
-      eds_service_names.emplace(eds_service_name);
-    }
-    return eds_service_names;
-  }
+  std::set<StringView> EdsServiceNames() const;
 
-  std::map<StringView, std::set<XdsClientStats*>> ClientStatsMap() {
-    std::map<StringView, std::set<XdsClientStats*>> client_stats_map;
-    for (const auto& p : endpoint_map_) {
-      const StringView& cluster_name = p.first;
-      const auto& client_stats = p.second.client_stats;
-      client_stats_map.emplace(cluster_name, client_stats);
-    }
-    return client_stats_map;
-  }
+  std::map<StringView, std::set<XdsClientStats*>> ClientStatsMap() const;
 
   // Helpers for encoding the XdsClient object in channel args.
   grpc_arg MakeChannelArg() const;
@@ -214,20 +192,19 @@ class XdsClient : public InternallyRefCounted<XdsClient> {
 
   struct ClusterState {
     std::map<ClusterWatcherInterface*, std::unique_ptr<ClusterWatcherInterface>>
-        cluster_watchers;
+        watchers;
     // The latest data seen from CDS.
-    bool seen_cds_update = false;
-    CdsUpdate cds_update;
+    CdsUpdate update;
+    bool seen_update = false;
   };
 
   struct EndpointState {
     std::map<EndpointWatcherInterface*,
              std::unique_ptr<EndpointWatcherInterface>>
-        endpoint_watchers;
+        watchers;
     std::set<XdsClientStats*> client_stats;
     // The latest data seen from EDS.
-    bool seen_cds_update = false;
-    EdsUpdate eds_update;
+    EdsUpdate update;
   };
 
   // Sends an error notification to all watchers.
@@ -260,9 +237,9 @@ class XdsClient : public InternallyRefCounted<XdsClient> {
   // The channel for communicating with the xds server.
   OrphanablePtr<ChannelState> chand_;
 
-  // Clusters keyed by cluster name.
-  std::map<StringView, ClusterState, StringLess> cluster_map_;
-  std::map<StringView, EndpointState, StringLess> endpoint_map_;
+  std::map<StringView /*cluster_name*/, ClusterState, StringLess> cluster_map_;
+  std::map<StringView /*eds_service_name*/, EndpointState, StringLess>
+      endpoint_map_;
   VersionState cds_version_state_;
   VersionState eds_version_state_;
 

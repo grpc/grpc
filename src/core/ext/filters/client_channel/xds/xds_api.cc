@@ -314,7 +314,7 @@ grpc_error* CdsResponsedParse(
     if (cluster == nullptr) {
       return GRPC_ERROR_CREATE_FROM_STATIC_STRING("Can't decode cluster.");
     }
-    // Check the cluster name.
+    // Check the cluster name and skip the unexpected ones.
     upb_strview cluster_name = envoy_api_v2_Cluster_name(cluster);
     StringView cluster_name_strview(cluster_name.data, cluster_name.size);
     if (expected_cluster_names.find(cluster_name_strview) ==
@@ -328,7 +328,7 @@ grpc_error* CdsResponsedParse(
     if (envoy_api_v2_Cluster_type(cluster) != envoy_api_v2_Cluster_EDS) {
       return GRPC_ERROR_CREATE_FROM_STATIC_STRING("DiscoveryType is not EDS.");
     }
-    // Check the config source.
+    // Check the EDS config source.
     const envoy_api_v2_Cluster_EdsClusterConfig* eds_cluster_config =
         envoy_api_v2_Cluster_eds_cluster_config(cluster);
     const envoy_api_v2_core_ConfigSource* eds_config =
@@ -356,6 +356,8 @@ grpc_error* CdsResponsedParse(
         return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
             "ConfigSource is not self.");
       }
+      // FIXME: If we only use this field to enable/disable load reporting, we
+      // are violating the proto?
       cds_update.lrs_load_reporting_server_name.reset(gpr_strdup(""));
     }
     cds_update_map->emplace(StringCopy(cluster_name), std::move(cds_update));
@@ -486,16 +488,16 @@ grpc_error* EdsResponsedParse(
     return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
         "EDS response contains 0 resource.");
   }
-  for (size_t j = 0; j < size; ++j) {
+  for (size_t i = 0; i < size; ++i) {
     EdsUpdate eds_update;
     // Check the type_url of the resource.
-    upb_strview type_url = google_protobuf_Any_type_url(resources[j]);
+    upb_strview type_url = google_protobuf_Any_type_url(resources[i]);
     if (!upb_strview_eql(type_url, upb_strview_makez(kEdsTypeUrl))) {
       return GRPC_ERROR_CREATE_FROM_STATIC_STRING("Resource is not EDS.");
     }
     // Get the cluster_load_assignment.
     upb_strview encoded_cluster_load_assignment =
-        google_protobuf_Any_value(resources[j]);
+        google_protobuf_Any_value(resources[i]);
     envoy_api_v2_ClusterLoadAssignment* cluster_load_assignment =
         envoy_api_v2_ClusterLoadAssignment_parse(
             encoded_cluster_load_assignment.data,
@@ -516,9 +518,9 @@ grpc_error* EdsResponsedParse(
     const envoy_api_v2_endpoint_LocalityLbEndpoints* const* endpoints =
         envoy_api_v2_ClusterLoadAssignment_endpoints(cluster_load_assignment,
                                                      &size);
-    for (size_t i = 0; i < size; ++i) {
+    for (size_t j = 0; j < size; ++j) {
       XdsPriorityListUpdate::LocalityMap::Locality locality;
-      grpc_error* error = LocalityParse(endpoints[i], &locality);
+      grpc_error* error = LocalityParse(endpoints[j], &locality);
       if (error != GRPC_ERROR_NONE) return error;
       // Filter out locality with weight 0.
       if (locality.lb_weight == 0) continue;
@@ -533,9 +535,9 @@ grpc_error* EdsResponsedParse(
           drop_overload =
               envoy_api_v2_ClusterLoadAssignment_Policy_drop_overloads(policy,
                                                                        &size);
-      for (size_t i = 0; i < size; ++i) {
+      for (size_t j = 0; j < size; ++j) {
         grpc_error* error =
-            DropParseAndAppend(drop_overload[i], eds_update.drop_config.get(),
+            DropParseAndAppend(drop_overload[j], eds_update.drop_config.get(),
                                &eds_update.drop_all);
         if (error != GRPC_ERROR_NONE) return error;
       }
