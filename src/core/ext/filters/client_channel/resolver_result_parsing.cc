@@ -66,7 +66,7 @@ bool ParseDuration(grpc_json* field, grpc_millis* duration) {
   if (field->type != GRPC_JSON_STRING) return false;
   size_t len = strlen(field->value);
   if (field->value[len - 1] != 's') return false;
-  std::unique_ptr<char> buf(gpr_strdup(field->value));
+  grpc_core::UniquePtr<char> buf(gpr_strdup(field->value));
   *(buf.get() + len - 1) = '\0';  // Remove trailing 's'.
   char* decimal_point = strchr(buf.get(), '.');
   int nanos = 0;
@@ -268,7 +268,7 @@ ClientChannelServiceConfigParser::ParseGlobalParams(const grpc_json* json,
   GPR_DEBUG_ASSERT(error != nullptr && *error == GRPC_ERROR_NONE);
   InlinedVector<grpc_error*, 4> error_list;
   RefCountedPtr<LoadBalancingPolicy::Config> parsed_lb_config;
-  std::unique_ptr<char> lb_policy_name;
+  grpc_core::UniquePtr<char> lb_policy_name;
   Optional<ClientChannelGlobalParsedConfig::RetryThrottling> retry_throttling;
   const char* health_check_service_name = nullptr;
   for (grpc_json* field = json->child; field != nullptr; field = field->next) {

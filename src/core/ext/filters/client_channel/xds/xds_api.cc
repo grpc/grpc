@@ -89,7 +89,7 @@ bool XdsPriorityListUpdate::Contains(
 }
 
 bool XdsDropConfig::ShouldDrop(
-    const std::unique_ptr<char>** category_name) const {
+    const grpc_core::UniquePtr<char>** category_name) const {
   for (size_t i = 0; i < drop_category_list_.size(); ++i) {
     const auto& drop_category = drop_category_list_[i];
     // Generate a random number in [0, 1000000).
@@ -259,11 +259,11 @@ grpc_error* ServerAddressParseAndAppend(
 
 namespace {
 
-std::unique_ptr<char> StringCopy(const upb_strview& strview) {
+grpc_core::UniquePtr<char> StringCopy(const upb_strview& strview) {
   char* str = static_cast<char*>(gpr_malloc(strview.size + 1));
   memcpy(str, strview.data, strview.size);
   str[strview.size] = '\0';
-  return std::unique_ptr<char>(str);
+  return grpc_core::UniquePtr<char>(str);
 }
 
 }  // namespace
@@ -542,9 +542,10 @@ grpc_slice XdsLrsRequestCreateAndEncode(const char* server_name,
   return LrsRequestEncode(request, arena.ptr());
 }
 
-grpc_error* XdsLrsResponseDecodeAndParse(const grpc_slice& encoded_response,
-                                         std::unique_ptr<char>* cluster_name,
-                                         grpc_millis* load_reporting_interval) {
+grpc_error* XdsLrsResponseDecodeAndParse(
+    const grpc_slice& encoded_response,
+    grpc_core::UniquePtr<char>* cluster_name,
+    grpc_millis* load_reporting_interval) {
   upb::Arena arena;
   // Decode the response.
   const envoy_service_load_stats_v2_LoadStatsResponse* decoded_response =

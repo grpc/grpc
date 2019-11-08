@@ -56,7 +56,7 @@ static void run_test(const test_fixture* fixture) {
 
   grpc_init();
 
-  std::unique_ptr<char> addr;
+  grpc_core::UniquePtr<char> addr;
   grpc_core::JoinHostPort(&addr, "localhost", grpc_pick_unused_port_or_die());
 
   grpc_server* server = grpc_server_create(nullptr, nullptr);

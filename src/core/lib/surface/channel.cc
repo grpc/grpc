@@ -138,11 +138,11 @@ grpc_channel* grpc_channel_create_with_builder(
   return channel;
 }
 
-static std::unique_ptr<char> get_default_authority(
+static grpc_core::UniquePtr<char> get_default_authority(
     const grpc_channel_args* input_args) {
   bool has_default_authority = false;
   char* ssl_override = nullptr;
-  std::unique_ptr<char> default_authority;
+  grpc_core::UniquePtr<char> default_authority;
   const size_t num_args = input_args != nullptr ? input_args->num_args : 0;
   for (size_t i = 0; i < num_args; ++i) {
     if (0 == strcmp(input_args->args[i].key, GRPC_ARG_DEFAULT_AUTHORITY)) {
@@ -257,7 +257,7 @@ grpc_channel* grpc_channel_create(const char* target,
   // ensuring that shutdown is deferred until that point.
   grpc_init();
   grpc_channel_stack_builder* builder = grpc_channel_stack_builder_create();
-  const std::unique_ptr<char> default_authority =
+  const grpc_core::UniquePtr<char> default_authority =
       get_default_authority(input_args);
   grpc_channel_args* args =
       build_channel_args(input_args, default_authority.get());

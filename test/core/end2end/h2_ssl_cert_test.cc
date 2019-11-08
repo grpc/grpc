@@ -41,7 +41,7 @@ namespace grpc {
 namespace testing {
 
 struct fullstack_secure_fixture_data {
-  std::unique_ptr<char> localaddr;
+  grpc_core::UniquePtr<char> localaddr;
 };
 
 static grpc_end2end_test_fixture chttp2_create_fixture_secure_fullstack(

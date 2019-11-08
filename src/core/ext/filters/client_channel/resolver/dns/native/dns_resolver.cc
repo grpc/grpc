@@ -300,7 +300,8 @@ class NativeDnsResolverFactory : public ResolverFactory {
 }  // namespace grpc_core
 
 void grpc_resolver_dns_native_init() {
-  std::unique_ptr<char> resolver = GPR_GLOBAL_CONFIG_GET(grpc_dns_resolver);
+  grpc_core::UniquePtr<char> resolver =
+      GPR_GLOBAL_CONFIG_GET(grpc_dns_resolver);
   if (gpr_stricmp(resolver.get(), "native") == 0) {
     gpr_log(GPR_DEBUG, "Using native dns resolver");
     grpc_core::ResolverRegistry::Builder::RegisterResolverFactory(

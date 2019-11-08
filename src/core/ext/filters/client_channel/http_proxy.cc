@@ -130,8 +130,8 @@ static bool proxy_mapper_map_name(grpc_proxy_mapper* /*mapper*/,
   if (no_proxy_str != nullptr) {
     static const char* NO_PROXY_SEPARATOR = ",";
     bool use_proxy = true;
-    std::unique_ptr<char> server_host;
-    std::unique_ptr<char> server_port;
+    grpc_core::UniquePtr<char> server_host;
+    grpc_core::UniquePtr<char> server_port;
     if (!grpc_core::SplitHostPort(
             uri->path[0] == '/' ? uri->path + 1 : uri->path, &server_host,
             &server_port)) {

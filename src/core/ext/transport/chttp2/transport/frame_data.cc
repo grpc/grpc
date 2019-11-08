@@ -138,7 +138,7 @@ grpc_error* grpc_deframe_unprocessed_incoming_frames(
             gpr_free(msg);
             p->error = grpc_error_set_str(
                 p->error, GRPC_ERROR_STR_RAW_BYTES,
-                grpc_slice_from_moved_string(std::unique_ptr<char>(
+                grpc_slice_from_moved_string(grpc_core::UniquePtr<char>(
                     grpc_dump_slice(*slice, GPR_DUMP_HEX | GPR_DUMP_ASCII))));
             p->error =
                 grpc_error_set_int(p->error, GRPC_ERROR_INT_OFFSET, cur - beg);

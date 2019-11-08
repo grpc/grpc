@@ -47,7 +47,7 @@ TEST(GlobalConfigTest, Int32Test) {
 }
 
 TEST(GlobalConfigTest, StringTest) {
-  std::unique_ptr<char> value;
+  grpc_core::UniquePtr<char> value;
 
   value = GPR_GLOBAL_CONFIG_GET(string_var);
   EXPECT_EQ(0, strcmp(value.get(), ""));

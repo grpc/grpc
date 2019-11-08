@@ -91,7 +91,7 @@ class RegistryState {
   // hurting performance (which is unlikely, since these allocations
   // only occur at gRPC initialization time).
   InlinedVector<std::unique_ptr<ResolverFactory>, 10> factories_;
-  std::unique_ptr<char> default_prefix_;
+  grpc_core::UniquePtr<char> default_prefix_;
 };
 
 static RegistryState* g_state = nullptr;
@@ -166,29 +166,29 @@ OrphanablePtr<Resolver> ResolverRegistry::CreateResolver(
   return resolver;
 }
 
-std::unique_ptr<char> ResolverRegistry::GetDefaultAuthority(
+grpc_core::UniquePtr<char> ResolverRegistry::GetDefaultAuthority(
     const char* target) {
   GPR_ASSERT(g_state != nullptr);
   grpc_uri* uri = nullptr;
   char* canonical_target = nullptr;
   ResolverFactory* factory =
       g_state->FindResolverFactory(target, &uri, &canonical_target);
-  std::unique_ptr<char> authority =
+  grpc_core::UniquePtr<char> authority =
       factory == nullptr ? nullptr : factory->GetDefaultAuthority(uri);
   grpc_uri_destroy(uri);
   gpr_free(canonical_target);
   return authority;
 }
 
-std::unique_ptr<char> ResolverRegistry::AddDefaultPrefixIfNeeded(
+grpc_core::UniquePtr<char> ResolverRegistry::AddDefaultPrefixIfNeeded(
     const char* target) {
   GPR_ASSERT(g_state != nullptr);
   grpc_uri* uri = nullptr;
   char* canonical_target = nullptr;
   g_state->FindResolverFactory(target, &uri, &canonical_target);
   grpc_uri_destroy(uri);
-  return std::unique_ptr<char>(canonical_target == nullptr ? gpr_strdup(target)
-                                                           : canonical_target);
+  return grpc_core::UniquePtr<char>(
+      canonical_target == nullptr ? gpr_strdup(target) : canonical_target);
 }
 
 }  // namespace grpc_core

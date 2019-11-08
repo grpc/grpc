@@ -160,7 +160,7 @@ class SynchronousServer final : public grpc::testing::Server {
     auto port_num = port();
     // Negative port number means inproc server, so no listen port needed
     if (port_num >= 0) {
-      std::unique_ptr<char> server_address;
+      grpc_core::UniquePtr<char> server_address;
       grpc_core::JoinHostPort(&server_address, "::", port_num);
       builder->AddListeningPort(server_address.get(),
                                 Server::CreateServerCredentials(config));

@@ -61,7 +61,7 @@ struct grpc_end2end_http_proxy {
     gpr_ref_init(&users, 1);
     combiner = grpc_combiner_create();
   }
-  std::unique_ptr<char> proxy_name;
+  grpc_core::UniquePtr<char> proxy_name;
   grpc_core::Thread thd;
   grpc_tcp_server* server;
   grpc_channel_args* channel_args;

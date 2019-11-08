@@ -133,7 +133,7 @@ unsigned int parse_h2_length(const char *field) {
                               {{NULL, NULL, NULL, NULL}}}};
 
   int port = grpc_pick_unused_port_or_die();
-  std::unique_ptr<char> addr;
+  grpc_core::UniquePtr<char> addr;
   grpc_core::JoinHostPort(&addr, "127.0.0.1", port);
   grpc_completion_queue *cq = grpc_completion_queue_create_for_next(NULL);
   stream_engine *cronetEngine = [Cronet getGlobalEngine];
@@ -264,7 +264,7 @@ unsigned int parse_h2_length(const char *field) {
                               {{NULL, NULL, NULL, NULL}}}};
 
   int port = grpc_pick_unused_port_or_die();
-  std::unique_ptr<char> addr;
+  grpc_core::UniquePtr<char> addr;
   grpc_core::JoinHostPort(&addr, "127.0.0.1", port);
   grpc_completion_queue *cq = grpc_completion_queue_create_for_next(NULL);
   stream_engine *cronetEngine = [Cronet getGlobalEngine];

@@ -40,7 +40,7 @@ static char* workarounds_arg[GRPC_MAX_WORKAROUND_ID] = {
     const_cast<char*>(GRPC_ARG_WORKAROUND_CRONET_COMPRESSION)};
 
 struct fullstack_fixture_data {
-  std::unique_ptr<char> localaddr;
+  grpc_core::UniquePtr<char> localaddr;
 };
 
 static grpc_end2end_test_fixture chttp2_create_fixture_fullstack(

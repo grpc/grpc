@@ -442,8 +442,8 @@ void PopulateSocketAddressJson(grpc_json* json, const char* name,
                            (strcmp(uri->scheme, "ipv6") == 0))) {
     const char* host_port = uri->path;
     if (*host_port == '/') ++host_port;
-    std::unique_ptr<char> host;
-    std::unique_ptr<char> port;
+    grpc_core::UniquePtr<char> host;
+    grpc_core::UniquePtr<char> port;
     GPR_ASSERT(SplitHostPort(host_port, &host, &port));
     int port_num = -1;
     if (port != nullptr) {

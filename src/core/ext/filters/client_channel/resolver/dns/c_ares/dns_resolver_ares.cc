@@ -496,7 +496,8 @@ static bool should_use_ares(const char* resolver_env) {
 static bool g_use_ares_dns_resolver;
 
 void grpc_resolver_dns_ares_init() {
-  std::unique_ptr<char> resolver = GPR_GLOBAL_CONFIG_GET(grpc_dns_resolver);
+  grpc_core::UniquePtr<char> resolver =
+      GPR_GLOBAL_CONFIG_GET(grpc_dns_resolver);
   if (should_use_ares(resolver.get())) {
     g_use_ares_dns_resolver = true;
     gpr_log(GPR_DEBUG, "Using ares dns resolver");

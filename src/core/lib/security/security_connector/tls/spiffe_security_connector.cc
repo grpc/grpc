@@ -300,7 +300,7 @@ SpiffeChannelSecurityConnector::InitializeHandshakerFactory(
   if (key_materials_config != nullptr) {
     grpc_tls_key_materials_config::PemKeyCertPairList cert_pair_list =
         key_materials_config->pem_key_cert_pair_list();
-    auto pem_root_certs = std::unique_ptr<char>(
+    auto pem_root_certs = grpc_core::UniquePtr<char>(
         gpr_strdup(key_materials_config->pem_root_certs()));
     key_materials_config_->set_key_materials(std::move(pem_root_certs),
                                              std::move(cert_pair_list));
@@ -505,7 +505,7 @@ SpiffeServerSecurityConnector::InitializeHandshakerFactory() {
   if (key_materials_config != nullptr) {
     grpc_tls_key_materials_config::PemKeyCertPairList cert_pair_list =
         key_materials_config->pem_key_cert_pair_list();
-    auto pem_root_certs = std::unique_ptr<char>(
+    auto pem_root_certs = grpc_core::UniquePtr<char>(
         gpr_strdup(key_materials_config->pem_root_certs()));
     key_materials_config_->set_key_materials(std::move(pem_root_certs),
                                              std::move(cert_pair_list));

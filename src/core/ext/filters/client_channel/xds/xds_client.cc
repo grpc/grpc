@@ -244,7 +244,7 @@ class XdsClient::ChannelState::LrsCallState
   grpc_closure on_status_received_;
 
   // Load reporting state.
-  std::unique_ptr<char> cluster_name_;
+  grpc_core::UniquePtr<char> cluster_name_;
   grpc_millis load_reporting_interval_ = 0;
   OrphanablePtr<Reporter> reporter_;
 };
@@ -1124,7 +1124,7 @@ void XdsClient::ChannelState::LrsCallState::OnResponseReceivedLocked(
   // This anonymous lambda is a hack to avoid the usage of goto.
   [&]() {
     // Parse the response.
-    std::unique_ptr<char> new_cluster_name;
+    grpc_core::UniquePtr<char> new_cluster_name;
     grpc_millis new_load_reporting_interval;
     grpc_error* parse_error = XdsLrsResponseDecodeAndParse(
         response_slice, &new_cluster_name, &new_load_reporting_interval);
@@ -1240,11 +1240,11 @@ bool XdsClient::ChannelState::LrsCallState::IsCurrentCallOnChannel() const {
 
 namespace {
 
-std::unique_ptr<char> GenerateBuildVersionString() {
+grpc_core::UniquePtr<char> GenerateBuildVersionString() {
   char* build_version_str;
   gpr_asprintf(&build_version_str, "gRPC C-core %s %s", grpc_version_string(),
                GPR_PLATFORM_STRING);
-  return std::unique_ptr<char>(build_version_str);
+  return grpc_core::UniquePtr<char>(build_version_str);
 }
 
 }  // namespace
