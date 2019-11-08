@@ -66,8 +66,6 @@ class SecurityHandshaker : public Handshaker {
   void HandshakeFailedLocked(grpc_error* error);
   void CleanupArgsForFailureLocked();
 
-  static void ScheduleRead(void* arg, grpc_error* /* error */);
-  static void ScheduleWrite(void* arg, grpc_error* /* error */);
   static void OnHandshakeDataReceivedFromPeerFn(void* arg, grpc_error* error);
   static void OnHandshakeDataSentToPeerFn(void* arg, grpc_error* error);
   static void OnHandshakeDataReceivedFromPeerFnScheduler(void* arg,
