@@ -27,6 +27,7 @@
 #include "src/core/tsi/alts/handshaker/alts_shared_resource.h"
 #include "src/core/tsi/alts/handshaker/alts_tsi_handshaker.h"
 #include "src/core/tsi/alts/handshaker/alts_tsi_handshaker_private.h"
+#include "src/proto/grpc/gcp/altscontext.upb.h"
 #include "test/core/tsi/alts/handshaker/alts_handshaker_service_api_test_lib.h"
 
 #define ALTS_TSI_HANDSHAKER_TEST_RECV_BYTES "Hello World"
@@ -42,6 +43,10 @@
 #define ALTS_TSI_HANDSHAKER_TEST_MAX_RPC_VERSION_MINOR 2
 #define ALTS_TSI_HANDSHAKER_TEST_MIN_RPC_VERSION_MAJOR 2
 #define ALTS_TSI_HANDSHAKER_TEST_MIN_RPC_VERSION_MINOR 1
+#define ALTS_TSI_HANDSHAKER_TEST_LOCAL_IDENTITY "chapilocal@service.google.com"
+#define ALTS_TSI_HANDSHAKER_TEST_APPLICATION_PROTOCOL \
+  "test application protocol"
+#define ALTS_TSI_HANDSHAKER_TEST_RECORD_PROTOCOL "test record protocol"
 
 using grpc_core::internal::alts_handshaker_client_check_fields_for_testing;
 using grpc_core::internal::alts_handshaker_client_get_handshaker_for_testing;
@@ -117,6 +122,7 @@ static grpc_byte_buffer* generate_handshaker_response(
   grpc_gcp_HandshakerStatus* status =
       grpc_gcp_HandshakerResp_mutable_status(resp, arena.ptr());
   grpc_gcp_HandshakerStatus_set_code(status, 0);
+  grpc_gcp_Identity* local_identity;
   switch (type) {
     case INVALID:
       break;
@@ -143,6 +149,16 @@ static grpc_byte_buffer* generate_handshaker_response(
           ALTS_TSI_HANDSHAKER_TEST_MAX_RPC_VERSION_MINOR,
           ALTS_TSI_HANDSHAKER_TEST_MIN_RPC_VERSION_MAJOR,
           ALTS_TSI_HANDSHAKER_TEST_MIN_RPC_VERSION_MINOR));
+      local_identity =
+          grpc_gcp_HandshakerResult_mutable_local_identity(result, arena.ptr());
+      grpc_gcp_Identity_set_service_account(
+          local_identity,
+          upb_strview_makez(ALTS_TSI_HANDSHAKER_TEST_LOCAL_IDENTITY));
+      grpc_gcp_HandshakerResult_set_application_protocol(
+          result,
+          upb_strview_makez(ALTS_TSI_HANDSHAKER_TEST_APPLICATION_PROTOCOL));
+      grpc_gcp_HandshakerResult_set_record_protocol(
+          result, upb_strview_makez(ALTS_TSI_HANDSHAKER_TEST_RECORD_PROTOCOL));
       break;
     case SERVER_NEXT:
       grpc_gcp_HandshakerResp_set_bytes_consumed(
@@ -160,6 +176,16 @@ static grpc_byte_buffer* generate_handshaker_response(
           ALTS_TSI_HANDSHAKER_TEST_MAX_RPC_VERSION_MINOR,
           ALTS_TSI_HANDSHAKER_TEST_MIN_RPC_VERSION_MAJOR,
           ALTS_TSI_HANDSHAKER_TEST_MIN_RPC_VERSION_MINOR));
+      local_identity =
+          grpc_gcp_HandshakerResult_mutable_local_identity(result, arena.ptr());
+      grpc_gcp_Identity_set_service_account(
+          local_identity,
+          upb_strview_makez(ALTS_TSI_HANDSHAKER_TEST_LOCAL_IDENTITY));
+      grpc_gcp_HandshakerResult_set_application_protocol(
+          result,
+          upb_strview_makez(ALTS_TSI_HANDSHAKER_TEST_APPLICATION_PROTOCOL));
+      grpc_gcp_HandshakerResult_set_record_protocol(
+          result, upb_strview_makez(ALTS_TSI_HANDSHAKER_TEST_RECORD_PROTOCOL));
       break;
     case FAILED:
       grpc_gcp_HandshakerStatus_set_code(status, 3 /* INVALID ARGUMENT */);
@@ -261,6 +287,25 @@ static void on_client_next_success_cb(tsi_result status, void* user_data,
   GPR_ASSERT(memcmp(ALTS_TSI_HANDSHAKER_TEST_PEER_IDENTITY,
                     peer.properties[1].value.data,
                     peer.properties[1].value.length) == 0);
+  /* Validate alts context. */
+  upb::Arena context_arena;
+  grpc_gcp_AltsContext* ctx = grpc_gcp_AltsContext_parse(
+      peer.properties[3].value.data, peer.properties[3].value.length,
+      context_arena.ptr());
+  GPR_ASSERT(ctx != nullptr);
+  upb_strview application_protocol =
+      grpc_gcp_AltsContext_application_protocol(ctx);
+  upb_strview record_protocol = grpc_gcp_AltsContext_record_protocol(ctx);
+  upb_strview peer_account = grpc_gcp_AltsContext_peer_service_account(ctx);
+  upb_strview local_account = grpc_gcp_AltsContext_local_service_account(ctx);
+  GPR_ASSERT(memcmp(ALTS_TSI_HANDSHAKER_TEST_APPLICATION_PROTOCOL,
+                    application_protocol.data, application_protocol.size) == 0);
+  GPR_ASSERT(memcmp(ALTS_TSI_HANDSHAKER_TEST_RECORD_PROTOCOL,
+                    record_protocol.data, record_protocol.size) == 0);
+  GPR_ASSERT(memcmp(ALTS_TSI_HANDSHAKER_TEST_PEER_IDENTITY, peer_account.data,
+                    peer_account.size) == 0);
+  GPR_ASSERT(memcmp(ALTS_TSI_HANDSHAKER_TEST_LOCAL_IDENTITY, local_account.data,
+                    local_account.size) == 0);
   tsi_peer_destruct(&peer);
   /* Validate unused bytes. */
   const unsigned char* bytes = nullptr;
@@ -298,6 +343,25 @@ static void on_server_next_success_cb(tsi_result status, void* user_data,
   GPR_ASSERT(memcmp(ALTS_TSI_HANDSHAKER_TEST_PEER_IDENTITY,
                     peer.properties[1].value.data,
                     peer.properties[1].value.length) == 0);
+  /* Validate alts context. */
+  upb::Arena context_arena;
+  grpc_gcp_AltsContext* ctx = grpc_gcp_AltsContext_parse(
+      peer.properties[3].value.data, peer.properties[3].value.length,
+      context_arena.ptr());
+  GPR_ASSERT(ctx != nullptr);
+  upb_strview application_protocol =
+      grpc_gcp_AltsContext_application_protocol(ctx);
+  upb_strview record_protocol = grpc_gcp_AltsContext_record_protocol(ctx);
+  upb_strview peer_account = grpc_gcp_AltsContext_peer_service_account(ctx);
+  upb_strview local_account = grpc_gcp_AltsContext_local_service_account(ctx);
+  GPR_ASSERT(memcmp(ALTS_TSI_HANDSHAKER_TEST_APPLICATION_PROTOCOL,
+                    application_protocol.data, application_protocol.size) == 0);
+  GPR_ASSERT(memcmp(ALTS_TSI_HANDSHAKER_TEST_RECORD_PROTOCOL,
+                    record_protocol.data, record_protocol.size) == 0);
+  GPR_ASSERT(memcmp(ALTS_TSI_HANDSHAKER_TEST_PEER_IDENTITY, peer_account.data,
+                    peer_account.size) == 0);
+  GPR_ASSERT(memcmp(ALTS_TSI_HANDSHAKER_TEST_LOCAL_IDENTITY, local_account.data,
+                    local_account.size) == 0);
   tsi_peer_destruct(&peer);
   /* Validate unused bytes. */
   const unsigned char* bytes = nullptr;
