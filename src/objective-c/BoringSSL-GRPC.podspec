@@ -130,14 +130,15 @@ Pod::Spec.new do |s|
     ss.header_mappings_dir = '.'
     ss.source_files = 'ssl/*.{h,c,cc}',
                       'ssl/**/*.{h,c,cc}',
-                      '*.{h,c,cc}', # for generated file such as err_data.c
                       'crypto/*.{h,c,cc}',
                       'crypto/**/*.{h,c,cc}',
-                      'third_party/fiat/*.{h,c,cc}' # has to include fiat because spake25519 depends
-                                                    # on it
+                      # We have to include fiat because spake25519 depends on it
+                      'third_party/fiat/*.{h,c,cc}',
+                      # Include the err_data.c generated in prepare_command below
+                      'err_data.c'
+
     ss.private_header_files = 'ssl/*.h',
                               'ssl/**/*.h',
-                              '*.h',
                               'crypto/*.h',
                               'crypto/**/*.h',
                               'third_party/fiat/*.h'
