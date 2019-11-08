@@ -23,19 +23,16 @@
 Pod::Spec.new do |s|
   s.name     = 'gRPC-C++'
   # TODO (mxyan): use version that match gRPC version when pod is stabilized
-  # version = '1.26.0-dev'
-  version = '0.0.9-dev'
+  version = '1.26.0-dev'
   s.version  = version
   s.summary  = 'gRPC C++ library'
   s.homepage = 'https://grpc.io'
   s.license  = 'Apache License, Version 2.0'
   s.authors  = { 'The gRPC contributors' => 'grpc-packages@google.com' }
 
-  grpc_version = '1.26.0-dev'
-
   s.source = {
     :git => 'https://github.com/grpc/grpc.git',
-    :tag => "v#{grpc_version}",
+    :tag => "v#{version}",
   }
 
   s.ios.deployment_target = '7.0'
@@ -216,7 +213,7 @@ Pod::Spec.new do |s|
   s.subspec 'Implementation' do |ss|
     ss.header_mappings_dir = '.'
     ss.dependency "#{s.name}/Interface", version
-    ss.dependency 'gRPC-Core', grpc_version
+    ss.dependency 'gRPC-Core', version
 
     ss.source_files = 'include/grpcpp/impl/codegen/core_codegen.h',
                       'src/cpp/client/channel_cc.cc',
