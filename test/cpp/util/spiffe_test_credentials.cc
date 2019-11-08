@@ -18,11 +18,12 @@
 
 #include "test/cpp/util/spiffe_test_credentials.h"
 #include "test/core/end2end/data/ssl_test_data.h"
+#include <iostream>
 
 namespace grpc {
 namespace testing {
 
-class TestTlsCredentialReloadInterface
+class TestSyncTlsCredentialReload
     : public ::grpc_impl::experimental::TlsCredentialReloadInterface {
   // Sync implementation.
   int Schedule(
@@ -31,11 +32,12 @@ class TestTlsCredentialReloadInterface
         pem_key_cert_pair = {test_server1_key, test_server1_cert};
     arg->set_pem_root_certs(test_root_cert);
     arg->add_pem_key_cert_pair(pem_key_cert_pair);
+    arg->set_status(GRPC_SSL_CERTIFICATE_CONFIG_RELOAD_NEW);
     return 0;
   }
 };
 
-class TestTlsServerAuthorizationCheckInterface
+class TestSyncTlsServerAuthorizationCheck
     : public ::grpc_impl::experimental::TlsServerAuthorizationCheckInterface {
   // Sync implementation.
   int Schedule(
@@ -47,37 +49,80 @@ class TestTlsServerAuthorizationCheckInterface
   }
 };
 
+class TestAsyncTlsServerAuthorizationCheck
+    : public ::grpc_impl::experimental::TlsServerAuthorizationCheckInterface {
+  // Async implementation.
+  int Schedule(
+      ::grpc_impl::experimental::TlsServerAuthorizationCheckArg* arg) override {
+    std::cout << "****************Entered async serv authz schedule." << std::endl;
+    GPR_ASSERT(arg != nullptr);
+    arg->set_success(1);
+    arg->set_status(GRPC_STATUS_OK);
+    //arg->OnServerAuthorizationCheckDoneCallback();
+    return 1;
+  }
+};
+
+/** This method creates a TlsCredentialsOptions instance with no key materials,
+ *  whose credential reload config is configured using the
+ *  TestSyncTlsCredentialReload class, and whose server authorization check
+ *  config is determined as follows:
+ *  - if |is_client| is true,
+ *      -if |is_async|, configured by TestAsyncTlsServerAuthorizationCheck,
+ *      -otherwise, configured by TestSyncTlsServerAuthorizationCheck.
+ *  - otherwise, the server authorization check config is not populated.
+ *
+ *  Further, the cert request type of the options instance is always set to
+ *  GRPC_SSL_REQUEST_AND_REQUIRE_CLIENT_CERTIFICATE_AND_VERIFY for both the
+ *  client and the server. **/
 ::grpc_impl::experimental::TlsCredentialsOptions*
-CreateTestTlsCredentialsOptions(bool is_client) {
-  std::shared_ptr<TestTlsCredentialReloadInterface> credential_reload_interface(
-      new TestTlsCredentialReloadInterface());
+CreateTestTlsCredentialsOptions(bool is_client, bool is_async) {
+  /** Create a credential reload config that is configured using the
+   *  TestSyncTlsCredentialReload class. **/
+  std::shared_ptr<TestSyncTlsCredentialReload> credential_reload_interface(
+      new TestSyncTlsCredentialReload());
   std::shared_ptr<::grpc_impl::experimental::TlsCredentialReloadConfig>
       test_credential_reload_config(
           new ::grpc_impl::experimental::TlsCredentialReloadConfig(
               credential_reload_interface));
-  std::shared_ptr<TestTlsServerAuthorizationCheckInterface>
-      server_authorization_check_interface(
-          new TestTlsServerAuthorizationCheckInterface());
+
+  /** Create a server authorization check config that is configured depending on
+   *  the parameters |is_client| and |is_async|. **/
   std::shared_ptr<::grpc_impl::experimental::TlsServerAuthorizationCheckConfig>
-      test_server_authorization_check_config(
-          new ::grpc_impl::experimental::TlsServerAuthorizationCheckConfig(
-              server_authorization_check_interface));
+      test_server_authorization_check_config = nullptr;
+  if (is_client) {
+    if (is_async) {
+      std::shared_ptr<TestAsyncTlsServerAuthorizationCheck>
+          async_interface(new TestAsyncTlsServerAuthorizationCheck());
+      test_server_authorization_check_config = std::make_shared<::grpc_impl::experimental::TlsServerAuthorizationCheckConfig>(async_interface);
+    } else {
+      std::shared_ptr<TestSyncTlsServerAuthorizationCheck>
+          sync_interface(new TestSyncTlsServerAuthorizationCheck());
+      test_server_authorization_check_config = std::make_shared<::grpc_impl::experimental::TlsServerAuthorizationCheckConfig>(sync_interface);
+    }
+  }
+
+  /** Create a TlsCredentialsOptions instance with an empty key materials
+   *  config, and the credential reload and server authorization check configs
+   *  are set based upon the ... **/
   ::grpc_impl::experimental::TlsCredentialsOptions* options =
       new ::grpc_impl::experimental::TlsCredentialsOptions(
-          is_client
-              ? GRPC_SSL_DONT_REQUEST_CLIENT_CERTIFICATE
-              : GRPC_SSL_REQUEST_AND_REQUIRE_CLIENT_CERTIFICATE_AND_VERIFY,
-          nullptr, test_credential_reload_config,
-          is_client ? test_server_authorization_check_config : nullptr);
+          GRPC_SSL_REQUEST_AND_REQUIRE_CLIENT_CERTIFICATE_AND_VERIFY,
+          /** key materials config **/ nullptr, test_credential_reload_config,
+          test_server_authorization_check_config);
   return options;
 }
 
 std::shared_ptr<grpc_impl::ChannelCredentials> SpiffeTestChannelCredentials() {
-  return TlsCredentials(*CreateTestTlsCredentialsOptions(true));
+  return TlsCredentials(*CreateTestTlsCredentialsOptions(true, false));
 }
 
 std::shared_ptr<ServerCredentials> SpiffeTestServerCredentials() {
-  return TlsServerCredentials(*CreateTestTlsCredentialsOptions(false));
+  return TlsServerCredentials(*CreateTestTlsCredentialsOptions(false, false));
+}
+
+std::shared_ptr<grpc_impl::ChannelCredentials> SpiffeAsyncTestChannelCredentials() {
+  return TlsCredentials(*CreateTestTlsCredentialsOptions(true, true));
 }
 
 }  // namespace testing

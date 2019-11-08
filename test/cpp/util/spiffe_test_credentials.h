@@ -30,23 +30,38 @@ namespace testing {
 
 const char kSpiffeCredentialsType[] = "spiffe";
 
-/** Creates an instance of TlsCredentialsOptions to be used for testing
- *  purposes. For these options, the key_materials_config is nullptr,
- *  the credential_reload_config is populated, and the
- * server_authorization_check_config is populated only for the client. **/
-::grpc_impl::experimental::TlsCredentialsOptions*
-CreateTestTlsCredentialsOptions(bool is_client);
-
 std::shared_ptr<grpc_impl::ChannelCredentials> SpiffeTestChannelCredentials();
 
 std::shared_ptr<ServerCredentials> SpiffeTestServerCredentials();
+
+std::shared_ptr<grpc_impl::ChannelCredentials> SpiffeAsyncTestChannelCredentials();
 
 class SpiffeCredentialTypeProvider : public CredentialTypeProvider {
  public:
   std::shared_ptr<ChannelCredentials> GetChannelCredentials(
       ChannelArguments* args) override {
+    /** Overriding the ssl target name is necessary for the key materials
+     *  provisioned in the example to be valid for this target; without the
+     *  override, the test sets the target name to localhost:port_number,
+     *  yielding a mismatched with the example key materials. **/
     args->SetSslTargetNameOverride("foo.test.google.fr");
     return SpiffeTestChannelCredentials();
+  }
+  std::shared_ptr<ServerCredentials> GetServerCredentials() override {
+    return SpiffeTestServerCredentials();
+  }
+};
+
+class SpiffeAsyncCredentialTypeProvider : public CredentialTypeProvider {
+ public:
+  std::shared_ptr<ChannelCredentials> GetChannelCredentials(
+      ChannelArguments* args) override {
+    /** Overriding the ssl target name is necessary for the key materials
+     *  provisioned in the example to be valid for this target; without the
+     *  override, the test sets the target name to localhost:port_number,
+     *  yielding a mismatched with the example key materials. **/
+    args->SetSslTargetNameOverride("foo.test.google.fr");
+    return SpiffeAsyncTestChannelCredentials();
   }
   std::shared_ptr<ServerCredentials> GetServerCredentials() override {
     return SpiffeTestServerCredentials();

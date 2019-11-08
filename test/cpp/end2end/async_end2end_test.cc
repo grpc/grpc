@@ -40,6 +40,7 @@
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
+#include "test/cpp/util/spiffe_test_credentials.h"
 #include "test/cpp/util/string_ref_helper.h"
 #include "test/cpp/util/test_credentials_provider.h"
 
@@ -1837,6 +1838,15 @@ std::vector<TestScenario> CreateTestScenarios(bool /*test_secure*/,
   if (insec_ok()) {
     credentials_types.push_back(kInsecureCredentialsType);
   }
+
+  /** Add Spiffe credentials to the credential provider. **/
+  CredentialsProvider* credentials_provider = GetCredentialsProvider();
+  credentials_provider->AddSecureType(
+        kSpiffeCredentialsType,
+        std::unique_ptr<SpiffeAsyncCredentialTypeProvider>(
+            new SpiffeAsyncCredentialTypeProvider));
+
+
   auto sec_list = GetCredentialsProvider()->GetSecureCredentialsTypeList();
   for (auto sec = sec_list.begin(); sec != sec_list.end(); sec++) {
     credentials_types.push_back(*sec);

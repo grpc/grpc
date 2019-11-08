@@ -44,8 +44,8 @@
 #include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
 #include "test/cpp/end2end/interceptors_util.h"
-#include "test/cpp/util/spiffe_test_credentials.h"
 #include "test/cpp/end2end/test_service_impl.h"
+#include "test/cpp/util/spiffe_test_credentials.h"
 #include "test/cpp/util/string_ref_helper.h"
 #include "test/cpp/util/test_credentials_provider.h"
 
