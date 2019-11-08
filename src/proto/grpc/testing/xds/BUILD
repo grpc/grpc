@@ -31,6 +31,13 @@ grpc_proto_library(
 )
 
 grpc_proto_library(
+    name = "cds_for_test_proto",
+    srcs = [
+        "cds_for_test.proto",
+    ],
+)
+
+grpc_proto_library(
     name = "eds_for_test_proto",
     srcs = [
         "eds_for_test.proto",

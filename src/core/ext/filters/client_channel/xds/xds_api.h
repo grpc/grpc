@@ -149,10 +149,11 @@ struct CdsUpdate {
         lrs_load_reporting_server_name(
             std::unique_ptr<char>(gpr_strdup(other.eds_service_name.get()))) {}
 
-  CdsUpdate& operator=(CdsUpdate&& other) {
+  CdsUpdate& operator=(CdsUpdate&& other) noexcept {
     eds_service_name = std::move(other.eds_service_name);
     lrs_load_reporting_server_name =
         std::move(other.lrs_load_reporting_server_name);
+    return *this;
   }
 };
 

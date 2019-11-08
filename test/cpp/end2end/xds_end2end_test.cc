@@ -54,6 +54,7 @@
 
 #include "src/proto/grpc/testing/echo.grpc.pb.h"
 #include "src/proto/grpc/testing/xds/ads_for_test.grpc.pb.h"
+#include "src/proto/grpc/testing/xds/cds_for_test.grpc.pb.h"
 #include "src/proto/grpc/testing/xds/eds_for_test.grpc.pb.h"
 #include "src/proto/grpc/testing/xds/lrs_for_test.grpc.pb.h"
 
@@ -387,7 +388,7 @@ class AdsServiceImpl : public AdsService {
       DiscoveryRequest request;
       if (!stream->Read(&request)) return;
       // FIXME: Record CDS request number.
-      if (strcmp(request.type_url.get(), kCdsTypeUrl)) {
+      if (request.type_url() == kCdsTypeUrl) {
         DiscoveryResponse response;
         response.set_type_url(kCdsTypeUrl);
         Cluster cluster;
@@ -2450,31 +2451,37 @@ grpc::string TestTypeName(const ::testing::TestParamInfo<TestType>& info) {
 }
 
 INSTANTIATE_TEST_SUITE_P(XdsTest, BasicTest,
-                         ::tesing::Combine(::testing::Bool(),
-                                           ::testing::Bool()),
+                         ::testing::Values(TestType(false, true),
+                                           TestType(false, false),
+                                           TestType(true, false),
+                                           TestType(true, true)),
                          &TestTypeName);
 
 INSTANTIATE_TEST_SUITE_P(XdsTest, SecureNamingTest,
                          ::testing::Values(TestType(false, true),
                                            TestType(false, false),
+                                           TestType(true, false),
                                            TestType(true, true)),
                          &TestTypeName);
 
 INSTANTIATE_TEST_SUITE_P(XdsTest, LocalityMapTest,
                          ::testing::Values(TestType(false, true),
                                            TestType(false, false),
+                                           TestType(true, false),
                                            TestType(true, true)),
                          &TestTypeName);
 
 INSTANTIATE_TEST_SUITE_P(XdsTest, FailoverTest,
                          ::testing::Values(TestType(false, true),
                                            TestType(false, false),
+                                           TestType(true, false),
                                            TestType(true, true)),
                          &TestTypeName);
 
 INSTANTIATE_TEST_SUITE_P(XdsTest, DropTest,
                          ::testing::Values(TestType(false, true),
                                            TestType(false, false),
+                                           TestType(true, false),
                                            TestType(true, true)),
                          &TestTypeName);
 

@@ -25,6 +25,7 @@
 #include <grpc/support/string_util.h>
 
 #include "src/core/ext/filters/client_channel/xds/xds_api.h"
+#include "src/core/lib/gprpp/inlined_vector.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/sockaddr_utils.h"
 
@@ -670,7 +671,8 @@ grpc_slice XdsLrsRequestCreateAndEncode(
     std::map<StringView, std::set<XdsClientStats*>> client_stats_map) {
   upb::Arena arena;
   // Get the snapshots.
-  std::map<StringView, std::set<XdsClientStats::Snapshot>> snapshot_map;
+  std::map<StringView, grpc_core::InlinedVector<XdsClientStats::Snapshot, 1>>
+      snapshot_map;
   bool all_zero = true;
   for (auto& p : client_stats_map) {
     const StringView& cluster_name = p.first;
@@ -679,7 +681,7 @@ grpc_slice XdsLrsRequestCreateAndEncode(
       // Prune unused locality stats.
       client_stats->PruneLocalityStats();
       if (!snapshot.IsAllZero()) all_zero = false;
-      snapshot_map[cluster_name].emplace(std::move(snapshot));
+      snapshot_map[cluster_name].emplace_back(std::move(snapshot));
     }
   }
   // When all the counts are zero, return empty slice.
@@ -689,7 +691,9 @@ grpc_slice XdsLrsRequestCreateAndEncode(
       envoy_service_load_stats_v2_LoadStatsRequest_new(arena.ptr());
   for (auto& p : snapshot_map) {
     const StringView& eds_service_name = p.first;
-    for (const auto& snapshot : p.second) {
+    const auto& snapshot_list = p.second;
+    for (size_t i = 0; i < snapshot_list.size(); ++i) {
+      const auto& snapshot = snapshot_list[i];
       // Add cluster stats.
       envoy_api_v2_endpoint_ClusterStats* cluster_stats =
           envoy_service_load_stats_v2_LoadStatsRequest_add_cluster_stats(

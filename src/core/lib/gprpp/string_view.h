@@ -39,7 +39,7 @@
 #endif
 
 namespace grpc_core {
-  class StringView;
+class StringView;
 inline int StringViewCmp(const StringView lhs, const StringView rhs);
 
 #if GRPC_USE_ABSL
@@ -123,7 +123,9 @@ class StringView final {
                                                                       size());
   }
 
-  bool operator<(const StringView& other) const {return StringViewCmp(*this, other) < 0;}
+  bool operator<(const StringView& other) const {
+    return StringViewCmp(*this, other) < 0;
+  }
 
  private:
   const char* ptr_;

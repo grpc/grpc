@@ -126,7 +126,7 @@ class XdsClient::ChannelState::AdsCallState
   bool seen_response() const { return seen_response_; }
 
   void StartCallLocked();
-  void SendMessageLocked(bool is_cds, bool is_first_message = fasle);
+  void SendMessageLocked(bool is_cds, bool is_first_message = false);
 
   bool HasWatcher() const {
     return xds_client()->cluster_map_.empty() &&
@@ -845,7 +845,7 @@ void XdsClient::ChannelState::AdsCallState::HandleEdsUpdate(
 }
 
 void XdsClient::ChannelState::AdsCallState::SendMessageLocked(
-    bool is_cds, bool is_first_message = false) {
+    bool is_cds, bool is_first_message) {
   // Buffer message sending if an existing message is in flight.
   if (send_message_payload_ != nullptr) {
     if (is_cds) {
