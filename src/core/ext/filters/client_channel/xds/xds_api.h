@@ -177,13 +177,13 @@ struct VersionState {
         nonce(std::unique_ptr<char>(gpr_strdup(""))) {}
 };
 
-// Creates a CDS request querying \a cluster_name.
+// Creates a CDS request querying \a cluster_names.
 grpc_slice XdsCdsRequestCreateAndEncode(std::set<StringView> cluster_names,
                                         const XdsBootstrap::Node* node,
                                         const char* build_version,
                                         const VersionState& cds_version);
 
-// Creates an EDS request querying \a eds_service_name.
+// Creates an EDS request querying \a eds_service_names.
 grpc_slice XdsEdsRequestCreateAndEncode(std::set<StringView> eds_service_names,
                                         const XdsBootstrap::Node* node,
                                         const char* build_version,

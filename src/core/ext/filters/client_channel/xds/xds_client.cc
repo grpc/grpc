@@ -126,7 +126,7 @@ class XdsClient::ChannelState::AdsCallState
   bool seen_response() const { return seen_response_; }
 
   void StartCallLocked();
-  void SendMessageLocked(bool is_cds);
+  void SendMessageLocked(bool is_cds, bool is_first_message = fasle);
 
   bool HasWatcher() const {
     return xds_client()->cluster_map_.empty() &&
@@ -646,8 +646,13 @@ XdsClient::ChannelState::AdsCallState::AdsCallState(
                                                  nullptr);
   GPR_ASSERT(GRPC_CALL_OK == call_error);
   // Op: send request message.
-  if (!xds_client()->cluster_map_.empty()) SendMessageLocked(true);
-  if (!xds_client()->endpoint_map_.empty()) SendMessageLocked(false);
+  bool initial_message = true;
+  if (!xds_client()->cluster_map_.empty()) {
+    SendMessageLocked(true, initial_message);
+    initial_message = false;
+  }
+  if (!xds_client()->endpoint_map_.empty())
+    SendMessageLocked(false, initial_message);
   // Op: recv initial metadata.
   op = ops;
   op->op = GRPC_OP_RECV_INITIAL_METADATA;
@@ -839,7 +844,8 @@ void XdsClient::ChannelState::AdsCallState::HandleEdsUpdate(
       std::move(new_version.version_info);
 }
 
-void XdsClient::ChannelState::AdsCallState::SendMessageLocked(bool is_cds) {
+void XdsClient::ChannelState::AdsCallState::SendMessageLocked(
+    bool is_cds, bool is_first_message = false) {
   // Buffer message sending if an existing message is in flight.
   if (send_message_payload_ != nullptr) {
     if (is_cds) {
@@ -849,14 +855,18 @@ void XdsClient::ChannelState::AdsCallState::SendMessageLocked(bool is_cds) {
     }
   }
   grpc_slice request_payload_slice;
+  const XdsBootstrap::Node* node =
+      is_first_message ? xds_client()->bootstrap_->node() : nullptr;
+  const char* build_version =
+      is_first_message ? xds_client()->build_version_.get() : nullptr;
   if (is_cds) {
     request_payload_slice = XdsCdsRequestCreateAndEncode(
-        xds_client()->ClusterNames(), xds_client()->bootstrap_->node(),
-        xds_client()->build_version_.get(), xds_client()->cds_version_state_);
+        xds_client()->ClusterNames(), node, build_version,
+        xds_client()->cds_version_state_);
   } else {
     request_payload_slice = XdsEdsRequestCreateAndEncode(
-        xds_client()->EdsServiceNames(), xds_client()->bootstrap_->node(),
-        xds_client()->build_version_.get(), xds_client()->eds_version_state_);
+        xds_client()->EdsServiceNames(), node, build_version,
+        xds_client()->eds_version_state_);
   }
   // Create message payload.
   send_message_payload_ =
