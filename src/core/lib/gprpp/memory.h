@@ -30,6 +30,22 @@
 
 namespace grpc_core {
 
+// TODO(veblush): Remove this after removing all usages.
+template <typename T, typename... Args>
+inline T* New(Args&&... args) {
+  return new T(std::forward<Args>(args)...);
+}
+
+// TODO(veblush): Remove this after removing all usages.
+template <typename T>
+inline void Delete(T* p) {
+  delete p;
+}
+
+// TODO(veblush): Remove this after removing all usages.
+template <typename T>
+using UniquePtr = std::unique_ptr<T>;
+
 // TODO(veblush): Replace this with absl::make_unique once abseil is added.
 template <typename T, typename... Args>
 inline std::unique_ptr<T> MakeUnique(Args&&... args) {
