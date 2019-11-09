@@ -271,7 +271,7 @@ static void custom_logger(gpr_log_func_args* args) {
     return;
   }
 
-  gpr_asprintf(&prefix, "%s%ld.%09" PRId32 " %s:%d]",
+  gpr_asprintf(&prefix, "%s%" PRId64 ".%09" PRId32 " %s:%d]",
                gpr_log_severity_string(args->severity), now.tv_sec,
                now.tv_nsec, display_file, args->line);
 
