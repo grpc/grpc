@@ -30,7 +30,7 @@
     <dir baseinstalldir="/" name="/">
       <file baseinstalldir="/" name="config.m4" role="src" />
       <file baseinstalldir="/" name="config.w32" role="src" />
-      <file baseinstalldir="/" name="src/php/README.md" role="src" />
+      <file baseinstalldir="/" name="src/php/README.md" role="src" />\
   <%
     srcs = []
     for src in (php_config_m4.src + php_config_m4.headers):
@@ -39,8 +39,8 @@
       if lib.name in php_config_m4.get('deps', []):
         for src in (lib.get('public_headers', []) + lib.headers + lib.src):
           srcs.append(src)
-    srcs = sorted(srcs)
-  %>      
+    srcs = sorted(set(srcs))
+  %>
       % for src in srcs:
       <file baseinstalldir="/" name="${src}" role="src" />
       % endfor

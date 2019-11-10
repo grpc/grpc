@@ -21,7 +21,7 @@
       if lib.name in python_dependencies.transitive_deps:
         for src in lib.src:
           srcs.append(src)
-    srcs = sorted(srcs)
+    srcs = sorted(set(srcs))
   %>
   CORE_SOURCE_FILES = [
   % for src in srcs:

@@ -53,7 +53,7 @@
       if lib.name in ruby_gem.get('deps', []):
         for file in (lib.get('public_headers', []) + lib.headers + lib.src):
           files.append(file)
-    files = sorted(files)
+    files = sorted(set(files))
   %>
     % for file in files:
     s.files += %w( ${file} )
