@@ -15,13 +15,16 @@
   # limitations under the License.
 
   # AUTO-GENERATED FROM `$REPO_ROOT/templates/src/python/grpcio/grpc_core_dependencies.py.template`!!!
-
+  <%
+    srcs = []
+    for lib in libs:
+      if lib.name in python_dependencies.transitive_deps:
+        for src in lib.src:
+          srcs.append(src)
+    srcs = sorted(set(srcs))
+  %>
   CORE_SOURCE_FILES = [
-  % for lib in libs:
-  % if lib.name in python_dependencies.transitive_deps:
-  % for src in lib.src:
+  % for src in srcs:
       '${src}',
-  % endfor
-  % endif
   % endfor
   ]

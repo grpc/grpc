@@ -36,17 +36,19 @@
     esac
 
     PHP_SUBST(GRPC_SHARED_LIBADD)
-
+  <%
+    srcs = []
+    for src in php_config_m4.src:
+      srcs.append(src)
+    for lib in libs:
+      if lib.name in php_config_m4.get('deps', []) and lib.name != 'z':
+        for src in lib.src:
+          srcs.append(src)
+    srcs = sorted(srcs)
+  %>
     PHP_NEW_EXTENSION(grpc,
-      % for source in php_config_m4.src:
-      ${source} ${"\\"}
-      % endfor
-      % for lib in libs:
-      % if lib.name in php_config_m4.get('deps', []) and lib.name != 'z':
-      % for source in lib.src:
-      ${source} ${"\\"}
-      % endfor
-      % endif
+      % for src in srcs:
+      ${src} ${"\\"}
       % endfor
       , $ext_shared, , -fvisibility=hidden ${"\\"}
       -DOPENSSL_NO_ASM -D_GNU_SOURCE -DWIN32_LEAN_AND_MEAN ${"\\"}
