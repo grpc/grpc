@@ -34,13 +34,14 @@ def uniquify(lst):
     return out
 
 
-FILEGROUP_LISTS = ['src', 'headers', 'public_headers', 'deps']
+FILEGROUP_LISTS = ['src', 'headers', 'public_headers', 'deps', 'extra_cond']
 
 FILEGROUP_DEFAULTS = {
     'language': 'c',
     'boringssl': False,
     'zlib': False,
     'ares': False,
+    'extra_cond': False,
 }
 
 

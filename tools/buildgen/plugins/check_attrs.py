@@ -45,6 +45,7 @@ VALID_ATTRIBUTE_KEYS_MAP = {
         'deps_linkage': one_of(('static',)),
         'deps': anything(),
         'dll': one_of((True, 'only')),
+        'extra_cond': anything(),
         'filegroups': anything(),
         'generate_plugin_registry': anything(),
         'headers': anything(),

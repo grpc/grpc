@@ -2110,6 +2110,8 @@ libs:
   - grpc
   filegroups:
   - grpcpp_channelz_proto
+  extra_cond:
+  - NOT gRPC_USE_PROTO_LITE
 - name: http2_client_main
   build: private
   language: c++

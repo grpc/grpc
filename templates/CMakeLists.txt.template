@@ -386,7 +386,7 @@
   if(gRPC_BUILD_CSHARP_EXT)
   ${cc_library(lib)}
   % if any(proto_re.match(src) for src in lib.src):
-  if(gRPC_BUILD_CODEGEN)
+  ${build_cond('gRPC_BUILD_CODEGEN', lib.extra_cond, 'if')}
   % endif
   ${cc_install(lib)}
   % if any(proto_re.match(src) for src in lib.src):
@@ -397,7 +397,7 @@
   ${cc_library(lib)}
   % if not lib.build in ["tool"]:
   % if any(proto_re.match(src) for src in lib.src):
-  if(gRPC_BUILD_CODEGEN)
+  ${build_cond('gRPC_BUILD_CODEGEN', lib.extra_cond, 'if')}
   % endif
   ${cc_install(lib)}
   % if any(proto_re.match(src) for src in lib.src):
@@ -436,9 +436,17 @@
   % endif
   % endfor
 
+  <%def name="build_cond(base, extra)">
+  % if extra:
+  if (${base} AND ${' AND'.join(extra)})
+  % else:
+  if (${base})
+  % endif
+  </%def>
+
   <%def name="cc_library(lib)">
   % if any(proto_re.match(src) for src in lib.src):
-  if(gRPC_BUILD_CODEGEN)
+  ${build_cond('gRPC_BUILD_CODEGEN', lib.extra_cond, 'if')}
   % endif
   add_library(${lib.name}${' SHARED' if lib.get('dll', None) == 'only' else ''}
   % for src in lib.src:
