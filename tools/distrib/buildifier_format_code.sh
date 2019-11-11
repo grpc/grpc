@@ -45,7 +45,7 @@ function download_buildifier() {
 }
 
 
-# Get the correct versino of buildifier
+# Get the correct version of buildifier
 if [ -x "$(command -v buildifier)" ]; then
     existing_buildifier_version="$(buildifier -version 2>&1 | head -n1 | cut -d" " -f3)"
     if [[ "${existing_buildifier_version}" != "${BUILDIFIER_VERSION}" ]]; then
