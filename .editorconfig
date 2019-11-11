@@ -1,7 +1,0 @@
-root = true
-[**]
-end_of_line = LF
-indent_style = space
-indent_size = 2
-insert_final_newline = true
-tab_width = 8
