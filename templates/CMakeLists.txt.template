@@ -438,7 +438,11 @@
 
   <%def name="cc_library(lib)">
   % if any(proto_re.match(src) for src in lib.src):
+  % if lib.name == 'grpcpp_channelz':
+  if(gRPC_BUILD_CODEGEN AND NOT gRPC_USE_PROTO_LITE)
+  % else:
   if(gRPC_BUILD_CODEGEN)
+  % endif
   % endif
   add_library(${lib.name}${' SHARED' if lib.get('dll', None) == 'only' else ''}
   % for src in lib.src:
