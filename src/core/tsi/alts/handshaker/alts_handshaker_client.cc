@@ -736,7 +736,7 @@ void alts_handshaker_client_on_status_received_for_testing(
       reinterpret_cast<alts_grpc_handshaker_client*>(c);
   client->handshake_status_code = status;
   client->handshake_status_details = grpc_empty_slice();
-  GRPC_CLOSURE_RUN(&client->on_status_received, error);
+  grpc_core::Closure::Run(DEBUG_LOCATION, &client->on_status_received, error);
 }
 
 }  // namespace internal
