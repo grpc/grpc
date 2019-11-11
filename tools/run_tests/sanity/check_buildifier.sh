@@ -26,7 +26,7 @@ if [[ ${result} != 0 ]]; then
     echo "==========BUILDIFIER CHECK FAILED=========="
     echo "Recommend to use following script to fix automatically:"
     echo ""
-    echo "    tools/distrib/buildifier_format_code"
+    echo "    tools/distrib/buildifier_format_code.sh"
     echo ""
 else
     echo "==========BUILDIFIER CHECK PASSED=========="
