@@ -209,8 +209,10 @@
 
     s.subspec 'Cronet-Implementation' do |ss|
       ss.header_mappings_dir = 'include/grpcpp'
-      ss.dependency 'gRPC-Core/Cronet-Implementation', version
+      ss.dependency "#{s.name}/Cronet-Interface", version
       ss.dependency "#{s.name}/Implementation", version
+
+      ss.dependency 'gRPC-Core/Cronet-Implementation', version
 
       ss.source_files = "src/cpp/client/cronet_credentials.cc"
     end
