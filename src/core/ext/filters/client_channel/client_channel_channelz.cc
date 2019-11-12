@@ -29,7 +29,7 @@
 
 #include <grpc/support/string_util.h>
 
-using json = nlohmann::json;
+using nlohmann::json;
 
 namespace grpc_core {
 namespace channelz {

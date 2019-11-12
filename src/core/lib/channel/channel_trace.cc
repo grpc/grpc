@@ -40,7 +40,7 @@
 #include "src/core/lib/transport/error_utils.h"
 #include "third_party/json/src/json.hpp"
 
-using json = nlohmann::json;
+using nlohmann::json;
 
 namespace grpc_core {
 namespace channelz {

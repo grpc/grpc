@@ -30,7 +30,7 @@
 
 #include "third_party/json/src/json.hpp"
 
-using json = nlohmann::json;
+using nlohmann::json;
 
 namespace grpc {
 

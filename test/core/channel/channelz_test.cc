@@ -39,7 +39,7 @@
 #include "test/core/util/test_config.h"
 #include "test/cpp/util/channel_trace_proto_helper.h"
 
-using json = nlohmann::json;
+using nlohmann::json;
 
 namespace grpc_core {
 namespace channelz {
