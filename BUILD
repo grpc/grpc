@@ -956,6 +956,7 @@ grpc_cc_library(
     ],
     external_deps = [
         "madler_zlib",
+        "nlohmann_json",
     ],
     language = "c++",
     public_hdrs = GRPC_PUBLIC_HDRS,

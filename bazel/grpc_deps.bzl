@@ -32,6 +32,11 @@ def grpc_deps():
     )
 
     native.bind(
+        name = "nlohmann_json",
+        actual = "@json//:json",
+    )
+
+    native.bind(
         name = "protobuf",
         actual = "@com_google_protobuf//:protobuf",
     )
@@ -111,6 +116,13 @@ def grpc_deps():
             sha256 = "6d4d6640ca3121620995ee255945161821218752b551a1a180f4215f7d124d45",
             strip_prefix = "zlib-cacf7f1d4e3d44d871b605da3b647f07d718623f",
             url = "https://github.com/madler/zlib/archive/cacf7f1d4e3d44d871b605da3b647f07d718623f.tar.gz",
+        )
+
+    if "json" not in native.existing_rules():
+        http_archive(
+            name = "json",
+            build_file = "@com_github_grpc_grpc//third_party:json.BUILD",
+            url = "https://github.com/nlohmann/json/releases/download/v3.7.1/include.zip",
         )
 
     if "com_google_protobuf" not in native.existing_rules():

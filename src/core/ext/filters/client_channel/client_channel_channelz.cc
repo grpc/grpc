@@ -27,6 +27,8 @@
 
 #include <grpc/support/string_util.h>
 
+using json = nlohmann::json;
+
 namespace grpc_core {
 namespace channelz {
 
@@ -47,64 +49,51 @@ void SubchannelNode::SetChildSocket(RefCountedPtr<SocketNode> socket) {
   child_socket_ = std::move(socket);
 }
 
-void SubchannelNode::PopulateConnectivityState(grpc_json* json) {
-  grpc_connectivity_state state =
-      connectivity_state_.Load(MemoryOrder::RELAXED);
-  json = grpc_json_create_child(nullptr, json, "state", nullptr,
-                                GRPC_JSON_OBJECT, false);
-  grpc_json_create_child(nullptr, json, "state", ConnectivityStateName(state),
-                         GRPC_JSON_STRING, false);
+namespace {
+
+std::string NumberToString(intptr_t number) {
+  char* tmp;
+  gpr_asprintf(&tmp, "%" PRIuPTR, number);
+  std::unique_ptr<char> deleter(tmp);
+  return tmp;
 }
 
-grpc_json* SubchannelNode::RenderJson() {
-  grpc_json* top_level_json = grpc_json_create(GRPC_JSON_OBJECT);
-  grpc_json* json = top_level_json;
-  grpc_json* json_iterator = nullptr;
-  json_iterator = grpc_json_create_child(json_iterator, json, "ref", nullptr,
-                                         GRPC_JSON_OBJECT, false);
-  json = json_iterator;
-  json_iterator = nullptr;
-  json_iterator = grpc_json_add_number_string_child(json, json_iterator,
-                                                    "subchannelId", uuid());
-  // reset json iterators to top level object
-  json = top_level_json;
-  json_iterator = nullptr;
-  // create and fill the data child.
-  grpc_json* data = grpc_json_create_child(json_iterator, json, "data", nullptr,
-                                           GRPC_JSON_OBJECT, false);
-  json = data;
-  json_iterator = nullptr;
-  PopulateConnectivityState(json);
-  GPR_ASSERT(!target_.empty());
-  grpc_json_create_child(nullptr, json, "target", target_.c_str(),
-                         GRPC_JSON_STRING, false);
-  // fill in the channel trace if applicable
-  grpc_json* trace_json = trace_.RenderJson();
-  if (trace_json != nullptr) {
-    trace_json->key = "trace";  // this object is named trace in channelz.proto
-    grpc_json_link_child(json, trace_json, nullptr);
-  }
-  // ask CallCountingHelper to populate trace and call count data.
-  call_counter_.PopulateCallCounts(json);
-  json = top_level_json;
-  // populate the child socket.
+}  // namespace
+
+json SubchannelNode::RenderJson() {
+  json j = {
+      {"ref", {
+          {"subchannelId", NumberToString(uuid())}
+      }},
+  };
+  // Create and fill the data child.
+  grpc_connectivity_state state =
+      connectivity_state_.Load(MemoryOrder::RELAXED);
+  j["data"] = {
+      {"state",
+          {{"state", ConnectivityStateName(state)}},
+      },
+      {"target", target_},
+  };
+  // Fill in the channel trace if applicable.
+  json trace_json = trace_.RenderJson();
+  if (!trace_json.is_null()) j["data"]["trace"] = std::move(trace_json);
+  // Ask CallCountingHelper to populate trace and call count data.
+  call_counter_.PopulateCallCounts(&j["data"]);
+  // Populate the child socket.
   RefCountedPtr<SocketNode> child_socket;
   {
     MutexLock lock(&socket_mu_);
     child_socket = child_socket_;
   }
   if (child_socket != nullptr && child_socket->uuid() != 0) {
-    grpc_json* array_parent = grpc_json_create_child(
-        nullptr, json, "socketRef", nullptr, GRPC_JSON_ARRAY, false);
-    json_iterator = grpc_json_create_child(json_iterator, array_parent, nullptr,
-                                           nullptr, GRPC_JSON_OBJECT, false);
-    grpc_json* sibling_iterator = grpc_json_add_number_string_child(
-        json_iterator, nullptr, "socketId", child_socket->uuid());
-    grpc_json_create_child(sibling_iterator, json_iterator, "name",
-                           child_socket->name().c_str(), GRPC_JSON_STRING,
-                           false);
+    j["socketRef"] = json::array();
+    j["socketRef"].push_back({
+        {"socketId", NumberToString(child_socket->uuid())},
+        {"name", child_socket->name()},
+    });
   }
-  return top_level_json;
+  return j;
 }
 
 }  // namespace channelz

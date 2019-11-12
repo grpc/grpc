@@ -28,6 +28,10 @@
 
 #include "src/proto/grpc/channelz/channelz.pb.h"
 
+#include "single_include/nlohmann/json.hpp"
+
+using json = nlohmann::json;
+
 namespace grpc {
 
 namespace {
@@ -36,7 +40,7 @@ namespace {
 // then back to json. This ensures that the json string was correctly formatted
 // according to https://developers.google.com/protocol-buffers/docs/proto3#json
 template <typename Message>
-void VaidateProtoJsonTranslation(char* json_c_str) {
+void VaidateProtoJsonTranslation(const char* json_c_str) {
   grpc::string json_str(json_c_str);
   Message msg;
   grpc::protobuf::json::JsonParseOptions parse_options;
@@ -58,45 +62,51 @@ void VaidateProtoJsonTranslation(char* json_c_str) {
   // uncomment these to compare the json strings.
   // gpr_log(GPR_ERROR, "tracer json: %s", json_str.c_str());
   // gpr_log(GPR_ERROR, "proto  json: %s", proto_json_str.c_str());
-  EXPECT_EQ(json_str, proto_json_str);
+  json expected =
+      json::parse(json_str, nullptr /* cb */, false /* allow_exceptions */);
+  ASSERT_NE(expected, json::value_t::discarded);
+  json actual = json::parse(proto_json_str, nullptr /* cb */,
+                            false /* allow_exceptions */);
+  ASSERT_NE(actual, json::value_t::discarded);
+  EXPECT_EQ(expected, actual);
 }
 
 }  // namespace
 
 namespace testing {
 
-void ValidateChannelTraceProtoJsonTranslation(char* json_c_str) {
+void ValidateChannelTraceProtoJsonTranslation(const char* json_c_str) {
   VaidateProtoJsonTranslation<grpc::channelz::v1::ChannelTrace>(json_c_str);
 }
 
-void ValidateChannelProtoJsonTranslation(char* json_c_str) {
+void ValidateChannelProtoJsonTranslation(const char* json_c_str) {
   VaidateProtoJsonTranslation<grpc::channelz::v1::Channel>(json_c_str);
 }
 
-void ValidateGetTopChannelsResponseProtoJsonTranslation(char* json_c_str) {
+void ValidateGetTopChannelsResponseProtoJsonTranslation(const char* json_c_str) {
   VaidateProtoJsonTranslation<grpc::channelz::v1::GetTopChannelsResponse>(
       json_c_str);
 }
 
-void ValidateGetChannelResponseProtoJsonTranslation(char* json_c_str) {
+void ValidateGetChannelResponseProtoJsonTranslation(const char* json_c_str) {
   VaidateProtoJsonTranslation<grpc::channelz::v1::GetChannelResponse>(
       json_c_str);
 }
 
-void ValidateGetServerResponseProtoJsonTranslation(char* json_c_str) {
+void ValidateGetServerResponseProtoJsonTranslation(const char* json_c_str) {
   VaidateProtoJsonTranslation<grpc::channelz::v1::GetServerResponse>(
       json_c_str);
 }
 
-void ValidateSubchannelProtoJsonTranslation(char* json_c_str) {
+void ValidateSubchannelProtoJsonTranslation(const char* json_c_str) {
   VaidateProtoJsonTranslation<grpc::channelz::v1::Subchannel>(json_c_str);
 }
 
-void ValidateServerProtoJsonTranslation(char* json_c_str) {
+void ValidateServerProtoJsonTranslation(const char* json_c_str) {
   VaidateProtoJsonTranslation<grpc::channelz::v1::Server>(json_c_str);
 }
 
-void ValidateGetServersResponseProtoJsonTranslation(char* json_c_str) {
+void ValidateGetServersResponseProtoJsonTranslation(const char* json_c_str) {
   VaidateProtoJsonTranslation<grpc::channelz::v1::GetServersResponse>(
       json_c_str);
 }

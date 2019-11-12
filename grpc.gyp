@@ -57,6 +57,7 @@
       '-DOSATOMIC_USE_INLINED=1',
       '-Ithird_party/upb',
       '-Isrc/core/ext/upb-generated',
+      '-Ithird_party/json',
     ],
     'ldflags': [
       '-g',
@@ -133,6 +134,7 @@
             '-DOSATOMIC_USE_INLINED=1',
             '-Ithird_party/upb',
             '-Isrc/core/ext/upb-generated',
+            '-Ithird_party/json',
           ],
           'OTHER_CPLUSPLUSFLAGS': [
             '-g',
@@ -141,6 +143,7 @@
             '-DOSATOMIC_USE_INLINED=1',
             '-Ithird_party/upb',
             '-Isrc/core/ext/upb-generated',
+            '-Ithird_party/json',
             '-stdlib=libc++',
             '-std=c++11',
             '-Wno-error=deprecated-declarations',

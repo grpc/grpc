@@ -22,10 +22,11 @@
 #include <grpc/impl/codegen/port_platform.h>
 
 #include <grpc/grpc.h>
+
+#include "single_include/nlohmann/json.hpp"
 #include "src/core/lib/gprpp/ref_counted.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/iomgr/error.h"
-#include "src/core/lib/json/json.h"
 
 namespace grpc_core {
 namespace channelz {
@@ -75,9 +76,9 @@ class ChannelTrace {
   void AddTraceEventWithReference(Severity severity, const grpc_slice& data,
                                   RefCountedPtr<BaseNode> referenced_entity);
 
-  // Creates and returns the raw grpc_json object, so a parent channelz
-  // object may incorporate the json before rendering.
-  grpc_json* RenderJson() const;
+  // Creates and returns the raw JSON object, so a parent channelz
+  // object may incorporate the JSON before rendering.
+  nlohmann::json RenderJson() const;
 
  private:
   friend size_t testing::GetSizeofTraceEvent(void);
@@ -96,9 +97,9 @@ class ChannelTrace {
 
     ~TraceEvent();
 
-    // Renders the data inside of this TraceEvent into a json object. This is
+    // Renders the data inside of this TraceEvent into a JSON object. This is
     // used by the ChannelTrace, when it is rendering itself.
-    void RenderTraceEvent(grpc_json* json) const;
+    nlohmann::json RenderTraceEvent() const;
 
     // set and get for the next_ pointer.
     TraceEvent* next() const { return next_; }

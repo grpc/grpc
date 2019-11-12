@@ -24,6 +24,7 @@
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -37,6 +38,8 @@
 #include "src/core/lib/surface/channel.h"
 #include "src/core/lib/transport/connectivity_state.h"
 #include "src/core/lib/transport/error_utils.h"
+
+using json = nlohmann::json;
 
 namespace grpc_core {
 namespace channelz {
@@ -142,61 +145,57 @@ const char* severity_string(ChannelTrace::Severity severity) {
   }
 }
 
+std::string NumberToString(intptr_t number) {
+  char* tmp;
+  gpr_asprintf(&tmp, "%" PRIuPTR, number);
+  std::unique_ptr<char> deleter(tmp);
+  return tmp;
+}
+
 }  // anonymous namespace
 
-void ChannelTrace::TraceEvent::RenderTraceEvent(grpc_json* json) const {
-  grpc_json* json_iterator = nullptr;
-  json_iterator = grpc_json_create_child(json_iterator, json, "description",
-                                         grpc_slice_to_c_string(data_),
-                                         GRPC_JSON_STRING, true);
-  json_iterator = grpc_json_create_child(json_iterator, json, "severity",
-                                         severity_string(severity_),
-                                         GRPC_JSON_STRING, false);
-  json_iterator = grpc_json_create_child(json_iterator, json, "timestamp",
-                                         gpr_format_timespec(timestamp_),
-                                         GRPC_JSON_STRING, true);
+json ChannelTrace::TraceEvent::RenderTraceEvent() const {
+  json j;
+  char* tmp = grpc_slice_to_c_string(data_);
+  j["description"] = tmp;
+  free(tmp);
+  j["severity"] = severity_string(severity_);
+  tmp = gpr_format_timespec(timestamp_);
+  j["timestamp"] = tmp;
+  free(tmp);
   if (referenced_entity_ != nullptr) {
     const bool is_channel =
         (referenced_entity_->type() == BaseNode::EntityType::kTopLevelChannel ||
          referenced_entity_->type() == BaseNode::EntityType::kInternalChannel);
-    char* uuid_str;
-    gpr_asprintf(&uuid_str, "%" PRIdPTR, referenced_entity_->uuid());
-    grpc_json* child_ref = grpc_json_create_child(
-        json_iterator, json, is_channel ? "channelRef" : "subchannelRef",
-        nullptr, GRPC_JSON_OBJECT, false);
-    json_iterator = grpc_json_create_child(
-        nullptr, child_ref, is_channel ? "channelId" : "subchannelId", uuid_str,
-        GRPC_JSON_STRING, true);
-    json_iterator = child_ref;
+    if (is_channel) {
+      j["channelRef"] =
+          {{"channelId", NumberToString(referenced_entity_->uuid())}};
+    } else {
+      j["subchannelRef"] =
+          {{"subchannelId", NumberToString(referenced_entity_->uuid())}};
+    };
   }
+  return j;
 }
 
-grpc_json* ChannelTrace::RenderJson() const {
-  if (max_event_memory_ == 0)
-    return nullptr;  // tracing is disabled if max_event_memory_ == 0
-  grpc_json* json = grpc_json_create(GRPC_JSON_OBJECT);
-  grpc_json* json_iterator = nullptr;
+json ChannelTrace::RenderJson() const {
+  json j;
+  // Tracing is disabled if max_event_memory_ == 0.
+  if (max_event_memory_ == 0) return j;
   if (num_events_logged_ > 0) {
-    json_iterator = grpc_json_add_number_string_child(
-        json, json_iterator, "numEventsLogged", num_events_logged_);
+    j["numEventsLogged"] = NumberToString(num_events_logged_);
   }
-  json_iterator = grpc_json_create_child(
-      json_iterator, json, "creationTimestamp",
-      gpr_format_timespec(time_created_), GRPC_JSON_STRING, true);
-  // only add in the event list if it is non-empty.
+  char* tmp = gpr_format_timespec(time_created_);
+  j["creationTimestamp"] = tmp;
+  free(tmp);
+  // Add the event list only if it is non-empty.
   if (head_trace_ != nullptr) {
-    grpc_json* events = grpc_json_create_child(json_iterator, json, "events",
-                                               nullptr, GRPC_JSON_ARRAY, false);
-    json_iterator = nullptr;
-    TraceEvent* it = head_trace_;
-    while (it != nullptr) {
-      json_iterator = grpc_json_create_child(json_iterator, events, nullptr,
-                                             nullptr, GRPC_JSON_OBJECT, false);
-      it->RenderTraceEvent(json_iterator);
-      it = it->next();
+    j["events"] = json::array();
+    for (TraceEvent* it = head_trace_; it != nullptr; it = it->next()) {
+      j["events"].push_back(it->RenderTraceEvent());
     }
   }
-  return json;
+  return j;
 }
 
 }  // namespace channelz

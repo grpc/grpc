@@ -19,7 +19,9 @@
 #include <grpc/impl/codegen/port_platform.h>
 
 #include <algorithm>
+#include <cstdlib>
 #include <cstring>
+#include <string>
 
 #include "src/core/lib/channel/channel_trace.h"
 #include "src/core/lib/channel/channelz.h"
@@ -30,7 +32,10 @@
 
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
+#include <grpc/support/string_util.h>
 #include <grpc/support/sync.h>
+
+using json = nlohmann::json;
 
 namespace grpc_core {
 namespace channelz {
@@ -79,10 +84,9 @@ RefCountedPtr<BaseNode> ChannelzRegistry::InternalGet(intptr_t uuid) {
   return RefCountedPtr<BaseNode>(node);
 }
 
-char* ChannelzRegistry::InternalGetTopChannels(intptr_t start_channel_id) {
-  grpc_json* top_level_json = grpc_json_create(GRPC_JSON_OBJECT);
-  grpc_json* json = top_level_json;
-  grpc_json* json_iterator = nullptr;
+std::string ChannelzRegistry::InternalGetTopChannels(
+    intptr_t start_channel_id) {
+  // Get the list of channels up to the pagination limit.
   InlinedVector<RefCountedPtr<BaseNode>, 10> top_level_channels;
   RefCountedPtr<BaseNode> node_after_pagination_limit;
   {
@@ -106,29 +110,20 @@ char* ChannelzRegistry::InternalGetTopChannels(intptr_t start_channel_id) {
       }
     }
   }
+  // Construct json.
+  json j;
   if (!top_level_channels.empty()) {
-    // create list of channels
-    grpc_json* array_parent = grpc_json_create_child(
-        nullptr, json, "channel", nullptr, GRPC_JSON_ARRAY, false);
+    j["channel"] = json::array();
     for (size_t i = 0; i < top_level_channels.size(); ++i) {
-      grpc_json* channel_json = top_level_channels[i]->RenderJson();
-      json_iterator =
-          grpc_json_link_child(array_parent, channel_json, json_iterator);
+      j["channel"].push_back(top_level_channels[i]->RenderJson());
     }
   }
-  if (node_after_pagination_limit == nullptr) {
-    grpc_json_create_child(nullptr, json, "end", nullptr, GRPC_JSON_TRUE,
-                           false);
-  }
-  char* json_str = grpc_json_dump_to_string(top_level_json, 0);
-  grpc_json_destroy(top_level_json);
-  return json_str;
+  if (node_after_pagination_limit == nullptr) j["end"] = true;
+  return j.dump();
 }
 
-char* ChannelzRegistry::InternalGetServers(intptr_t start_server_id) {
-  grpc_json* top_level_json = grpc_json_create(GRPC_JSON_OBJECT);
-  grpc_json* json = top_level_json;
-  grpc_json* json_iterator = nullptr;
+std::string ChannelzRegistry::InternalGetServers(intptr_t start_server_id) {
+  // Get the list of servers up to the pagination limit.
   InlinedVector<RefCountedPtr<BaseNode>, 10> servers;
   RefCountedPtr<BaseNode> node_after_pagination_limit;
   {
@@ -152,23 +147,16 @@ char* ChannelzRegistry::InternalGetServers(intptr_t start_server_id) {
       }
     }
   }
+  // Construct json.
+  json j;
   if (!servers.empty()) {
-    // create list of servers
-    grpc_json* array_parent = grpc_json_create_child(
-        nullptr, json, "server", nullptr, GRPC_JSON_ARRAY, false);
+    j["server"] = json::array();
     for (size_t i = 0; i < servers.size(); ++i) {
-      grpc_json* server_json = servers[i]->RenderJson();
-      json_iterator =
-          grpc_json_link_child(array_parent, server_json, json_iterator);
+      j["server"].push_back(servers[i]->RenderJson());
     }
   }
-  if (node_after_pagination_limit == nullptr) {
-    grpc_json_create_child(nullptr, json, "end", nullptr, GRPC_JSON_TRUE,
-                           false);
-  }
-  char* json_str = grpc_json_dump_to_string(top_level_json, 0);
-  grpc_json_destroy(top_level_json);
-  return json_str;
+  if (node_after_pagination_limit == nullptr) j["end"] = true;
+  return j.dump();
 }
 
 void ChannelzRegistry::InternalLogAllEntities() {
@@ -183,9 +171,8 @@ void ChannelzRegistry::InternalLogAllEntities() {
     }
   }
   for (size_t i = 0; i < nodes.size(); ++i) {
-    char* json = nodes[i]->RenderJsonString();
-    gpr_log(GPR_INFO, "%s", json);
-    gpr_free(json);
+    std::string json = nodes[i]->RenderJsonString();
+    gpr_log(GPR_INFO, "%s", json.c_str());
   }
 }
 
@@ -193,12 +180,13 @@ void ChannelzRegistry::InternalLogAllEntities() {
 }  // namespace grpc_core
 
 char* grpc_channelz_get_top_channels(intptr_t start_channel_id) {
-  return grpc_core::channelz::ChannelzRegistry::GetTopChannels(
-      start_channel_id);
+  return gpr_strdup(grpc_core::channelz::ChannelzRegistry::GetTopChannels(
+      start_channel_id).c_str());
 }
 
 char* grpc_channelz_get_servers(intptr_t start_server_id) {
-  return grpc_core::channelz::ChannelzRegistry::GetServers(start_server_id);
+  return gpr_strdup(grpc_core::channelz::ChannelzRegistry::GetServers(
+      start_server_id).c_str());
 }
 
 char* grpc_channelz_get_server(intptr_t server_id) {
@@ -209,14 +197,8 @@ char* grpc_channelz_get_server(intptr_t server_id) {
           grpc_core::channelz::BaseNode::EntityType::kServer) {
     return nullptr;
   }
-  grpc_json* top_level_json = grpc_json_create(GRPC_JSON_OBJECT);
-  grpc_json* json = top_level_json;
-  grpc_json* channel_json = server_node->RenderJson();
-  channel_json->key = "server";
-  grpc_json_link_child(json, channel_json, nullptr);
-  char* json_str = grpc_json_dump_to_string(top_level_json, 0);
-  grpc_json_destroy(top_level_json);
-  return json_str;
+  json j = {{"server", server_node->RenderJson()}};
+  return gpr_strdup(j.dump().c_str());
 }
 
 char* grpc_channelz_get_server_sockets(intptr_t server_id,
@@ -232,7 +214,8 @@ char* grpc_channelz_get_server_sockets(intptr_t server_id,
   // actually a server node
   grpc_core::channelz::ServerNode* server_node =
       static_cast<grpc_core::channelz::ServerNode*>(base_node.get());
-  return server_node->RenderServerSockets(start_socket_id, max_results);
+  return gpr_strdup(
+      server_node->RenderServerSockets(start_socket_id, max_results).c_str());
 }
 
 char* grpc_channelz_get_channel(intptr_t channel_id) {
@@ -245,14 +228,8 @@ char* grpc_channelz_get_channel(intptr_t channel_id) {
            grpc_core::channelz::BaseNode::EntityType::kInternalChannel)) {
     return nullptr;
   }
-  grpc_json* top_level_json = grpc_json_create(GRPC_JSON_OBJECT);
-  grpc_json* json = top_level_json;
-  grpc_json* channel_json = channel_node->RenderJson();
-  channel_json->key = "channel";
-  grpc_json_link_child(json, channel_json, nullptr);
-  char* json_str = grpc_json_dump_to_string(top_level_json, 0);
-  grpc_json_destroy(top_level_json);
-  return json_str;
+  json j = {{"channel", channel_node->RenderJson()}};
+  return gpr_strdup(j.dump().c_str());
 }
 
 char* grpc_channelz_get_subchannel(intptr_t subchannel_id) {
@@ -263,14 +240,8 @@ char* grpc_channelz_get_subchannel(intptr_t subchannel_id) {
           grpc_core::channelz::BaseNode::EntityType::kSubchannel) {
     return nullptr;
   }
-  grpc_json* top_level_json = grpc_json_create(GRPC_JSON_OBJECT);
-  grpc_json* json = top_level_json;
-  grpc_json* subchannel_json = subchannel_node->RenderJson();
-  subchannel_json->key = "subchannel";
-  grpc_json_link_child(json, subchannel_json, nullptr);
-  char* json_str = grpc_json_dump_to_string(top_level_json, 0);
-  grpc_json_destroy(top_level_json);
-  return json_str;
+  json j = {{"subchannel", subchannel_node->RenderJson()}};
+  return gpr_strdup(j.dump().c_str());
 }
 
 char* grpc_channelz_get_socket(intptr_t socket_id) {
@@ -281,12 +252,6 @@ char* grpc_channelz_get_socket(intptr_t socket_id) {
           grpc_core::channelz::BaseNode::EntityType::kSocket) {
     return nullptr;
   }
-  grpc_json* top_level_json = grpc_json_create(GRPC_JSON_OBJECT);
-  grpc_json* json = top_level_json;
-  grpc_json* socket_json = socket_node->RenderJson();
-  socket_json->key = "socket";
-  grpc_json_link_child(json, socket_json, nullptr);
-  char* json_str = grpc_json_dump_to_string(top_level_json, 0);
-  grpc_json_destroy(top_level_json);
-  return json_str;
+  json j = {{"socket", socket_node->RenderJson()}};
+  return gpr_strdup(j.dump().c_str());
 }
