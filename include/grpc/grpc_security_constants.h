@@ -106,6 +106,21 @@ typedef enum {
   GRPC_SSL_REQUEST_AND_REQUIRE_CLIENT_CERTIFICATE_AND_VERIFY
 } grpc_ssl_client_certificate_request_type;
 
+
+typedef enum {
+  /** Use default server verification */
+  GRPC_SSL_SERVER_VERIFICATION,
+  /** Skips the default server verification */
+  GRPC_SSL_SKIP_SERVER_VERIFICATION
+} grpc_ssl_server_verification_option;
+
+typedef enum {
+  /** Get peer leaf certificate */
+  GRPC_SSL_PEER_LEAF_CERTIFICATE,
+  /** Get peer full chain */
+  GRPC_SSL_PEER_FULL_CHAIN
+} grpc_ssl_peer_cert_request_type;
+
 /**
  * Type of local connections for which local channel/server credentials will be
  * applied. It supports UDS and local TCP connections.

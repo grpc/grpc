@@ -185,21 +185,6 @@ typedef struct {
   void (*verify_peer_destruct)(void* userdata);
 } verify_peer_options;
 
-
-typedef enum {
-  /** Use default underlying verification */
-  GRPC_SSL_SERVER_VERIFICATION_DEFAULT,
-  /** Ignore default underlying verification */
-  GRPC_SSL_SERVER_VERIFICATION_IGNORE
-} grpc_ssl_server_verification_option;
-
-typedef enum {
-  /** Use default underlying verification */
-  GRPC_SSL_PEER_LEAF_CERTIFICATE,
-  /** Ignore default underlying verification */
-  GRPC_SSL_PEER_FULL_CHAIN
-} grpc_ssl_peer_cert_request_type;
-
 /** Object that holds additional peer-verification options on a secure
    channel. */
 typedef struct {
@@ -282,16 +267,14 @@ GRPCAPI grpc_channel_credentials* grpc_ssl_credentials_create(
      with which you can do additional verification. Can be NULL, in which
      case verification will retain default behavior. Any settings in
      verify_options are copied during this call, so the verify_options
-     object can be released afterwards. */
+     object can be released afterwards.
+   - server_verification_option controls whether default server verification
+     will be done or skipped */
 GRPCAPI grpc_channel_credentials* grpc_ssl_credentials_create_ex(
     const char* pem_root_certs, grpc_ssl_pem_key_cert_pair* pem_key_cert_pair,
-    const grpc_ssl_verify_peer_options* verify_options, void* reserved);
-
-/* Create a SSL Credentials object*/
-GRPCAPI grpc_channel_credentials* grpc_ssl_client_credentials_create(
-    const char* pem_root_certs, grpc_ssl_pem_key_cert_pair* pem_key_cert_pair,
     const grpc_ssl_verify_peer_options* verify_options,
-    grpc_ssl_server_verification_option server_verification_option);
+    grpc_ssl_server_verification_option server_verification_option,
+    void* reserved);
 
 /** --- grpc_call_credentials object.
 

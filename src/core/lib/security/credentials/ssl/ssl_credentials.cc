@@ -137,41 +137,29 @@ grpc_channel_credentials* grpc_ssl_credentials_create(
   return grpc_core::New<grpc_ssl_credentials>(
       pem_root_certs, pem_key_cert_pair,
       reinterpret_cast<const grpc_ssl_verify_peer_options*>(verify_options),
-      GRPC_SSL_SERVER_VERIFICATION_DEFAULT);
+      GRPC_SSL_SERVER_VERIFICATION);
 }
 
 grpc_channel_credentials* grpc_ssl_credentials_create_ex(
     const char* pem_root_certs, grpc_ssl_pem_key_cert_pair* pem_key_cert_pair,
-    const grpc_ssl_verify_peer_options* verify_options, void* reserved) {
+    const grpc_ssl_verify_peer_options* verify_options,
+    grpc_ssl_server_verification_option server_verification_option,
+    void* reserved) {
   GRPC_API_TRACE(
       "grpc_ssl_credentials_create(pem_root_certs=%s, "
       "pem_key_cert_pair=%p, "
       "verify_options=%p, "
+      "server_verification_option=%d, "
       "reserved=%p)",
-      4, (pem_root_certs, pem_key_cert_pair, verify_options, reserved));
+      5,
+      (pem_root_certs, pem_key_cert_pair, verify_options,
+       server_verification_option, reserved));
   GPR_ASSERT(reserved == nullptr);
 
   return grpc_core::New<grpc_ssl_credentials>(pem_root_certs, pem_key_cert_pair, verify_options,
-      GRPC_SSL_SERVER_VERIFICATION_DEFAULT);
-}
-
-grpc_channel_credentials* grpc_ssl_client_credentials_create(
-    const char* pem_root_certs, grpc_ssl_pem_key_cert_pair* pem_key_cert_pair,
-    const grpc_ssl_verify_peer_options* verify_options,
-    grpc_ssl_server_verification_option server_verification_option) {
-  GRPC_API_TRACE(
-      "grpc_ssl_credentials_create(pem_root_certs=%s, "
-      "pem_key_cert_pair=%p, "
-      "verify_options=%p, "
-      "ignore_verify_peer=%d)",
-      4,
-      (pem_root_certs, pem_key_cert_pair, verify_options,
-       server_verification_option));
-
-  return grpc_core::New<grpc_ssl_credentials>(pem_root_certs, pem_key_cert_pair,
-                                              verify_options,
                                               server_verification_option);
 }
+
 
 //
 // SSL Server Credentials.

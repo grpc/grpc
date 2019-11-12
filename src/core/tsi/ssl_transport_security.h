@@ -156,7 +156,7 @@ struct tsi_ssl_client_handshaker_options {
         alpn_protocols(nullptr),
         num_alpn_protocols(0),
         session_cache(nullptr),
-        server_verification_option(GRPC_SSL_SERVER_VERIFICATION_DEFAULT) {}
+        server_verification_option(GRPC_SSL_SERVER_VERIFICATION) {}
 };
 
 /* Creates a client handshaker factory.
