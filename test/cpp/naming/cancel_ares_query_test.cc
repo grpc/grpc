@@ -314,7 +314,7 @@ void TestCancelDuringActiveQuery(
   gpr_free(client_target);
   grpc_completion_queue* cq = grpc_completion_queue_create_for_next(nullptr);
   cq_verifier* cqv = cq_verifier_create(cq);
-  gpr_timespec deadline = grpc_timeout_milliseconds_to_deadline(10);
+  gpr_timespec deadline = grpc_timeout_milliseconds_to_deadline(100);
   grpc_call* call = grpc_channel_create_call(
       client, nullptr, GRPC_PROPAGATE_DEFAULTS, cq,
       grpc_slice_from_static_string("/foo"), nullptr, deadline, nullptr);
