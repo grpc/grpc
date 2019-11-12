@@ -29,7 +29,6 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "third_party/json/src/json.hpp"
 #include "src/core/lib/channel/status_util.h"
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gpr/useful.h"
@@ -39,6 +38,7 @@
 #include "src/core/lib/surface/channel.h"
 #include "src/core/lib/transport/connectivity_state.h"
 #include "src/core/lib/transport/error_utils.h"
+#include "third_party/json/src/json.hpp"
 
 using json = nlohmann::json;
 
@@ -162,11 +162,11 @@ json ChannelTrace::TraceEvent::RenderTraceEvent() const {
         (referenced_entity_->type() == BaseNode::EntityType::kTopLevelChannel ||
          referenced_entity_->type() == BaseNode::EntityType::kInternalChannel);
     if (is_channel) {
-      j["channelRef"] =
-          {{"channelId", std::to_string(referenced_entity_->uuid())}};
+      j["channelRef"] = {
+          {"channelId", std::to_string(referenced_entity_->uuid())}};
     } else {
-      j["subchannelRef"] =
-          {{"subchannelId", std::to_string(referenced_entity_->uuid())}};
+      j["subchannelRef"] = {
+          {"subchannelId", std::to_string(referenced_entity_->uuid())}};
     };
   }
   return j;

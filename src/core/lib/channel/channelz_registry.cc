@@ -23,13 +23,13 @@
 #include <cstring>
 #include <string>
 
-#include "third_party/json/src/json.hpp"
 #include "src/core/lib/channel/channel_trace.h"
 #include "src/core/lib/channel/channelz.h"
 #include "src/core/lib/channel/channelz_registry.h"
 #include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/gprpp/memory.h"
 #include "src/core/lib/gprpp/sync.h"
+#include "third_party/json/src/json.hpp"
 
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
@@ -181,13 +181,15 @@ void ChannelzRegistry::InternalLogAllEntities() {
 }  // namespace grpc_core
 
 char* grpc_channelz_get_top_channels(intptr_t start_channel_id) {
-  return gpr_strdup(grpc_core::channelz::ChannelzRegistry::GetTopChannels(
-      start_channel_id).c_str());
+  return gpr_strdup(
+      grpc_core::channelz::ChannelzRegistry::GetTopChannels(start_channel_id)
+          .c_str());
 }
 
 char* grpc_channelz_get_servers(intptr_t start_server_id) {
-  return gpr_strdup(grpc_core::channelz::ChannelzRegistry::GetServers(
-      start_server_id).c_str());
+  return gpr_strdup(
+      grpc_core::channelz::ChannelzRegistry::GetServers(start_server_id)
+          .c_str());
 }
 
 char* grpc_channelz_get_server(intptr_t server_id) {

@@ -28,7 +28,6 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "third_party/json/src/json.hpp"
 #include "src/core/lib/channel/channelz_registry.h"
 #include "src/core/lib/channel/status_util.h"
 #include "src/core/lib/gpr/string.h"
@@ -45,6 +44,7 @@
 #include "src/core/lib/transport/connectivity_state.h"
 #include "src/core/lib/transport/error_utils.h"
 #include "src/core/lib/uri/uri_parser.h"
+#include "third_party/json/src/json.hpp"
 
 using json = nlohmann::json;
 
@@ -205,8 +205,8 @@ const char* ChannelNode::GetChannelConnectivityStateChangeString(
 
 json ChannelNode::RenderJson() {
   json j = {
-    {"ref", {{"channelId", std::to_string(uuid())}}},
-    {"data", {{"target", target_}}},
+      {"ref", {{"channelId", std::to_string(uuid())}}},
+      {"data", {{"target", target_}}},
   };
   // Connectivity state.  If low-order bit is on, then the field is set.
   int state_field = connectivity_state_.Load(MemoryOrder::RELAXED);
@@ -414,10 +414,11 @@ void SocketNode::RecordMessageReceived() {
 
 json SocketNode::RenderJson() {
   json j = {
-      {"ref", {
-          {"socketId", std::to_string(uuid())},
-          {"name", name()},
-      }},
+      {"ref",
+       {
+           {"socketId", std::to_string(uuid())},
+           {"name", name()},
+       }},
   };
   json remote_json = CreateSocketAddressJson(remote_.c_str());
   if (!remote_json.is_null()) {
@@ -501,10 +502,11 @@ ListenSocketNode::ListenSocketNode(std::string local_addr, std::string name)
 
 json ListenSocketNode::RenderJson() {
   json j = {
-      {"ref", {
-          {"socketId", std::to_string(uuid())},
-          {"name", name()},
-      }},
+      {"ref",
+       {
+           {"socketId", std::to_string(uuid())},
+           {"name", name()},
+       }},
   };
   json local_json = CreateSocketAddressJson(local_addr_.c_str());
   if (!local_json.is_null()) {

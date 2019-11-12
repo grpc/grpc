@@ -53,15 +53,14 @@ void SubchannelNode::SetChildSocket(RefCountedPtr<SocketNode> socket) {
 
 json SubchannelNode::RenderJson() {
   json j = {
-      {"ref", {
-          {"subchannelId", std::to_string(uuid())}
-      }},
+      {"ref", {{"subchannelId", std::to_string(uuid())}}},
   };
   // Create and fill the data child.
   grpc_connectivity_state state =
       connectivity_state_.Load(MemoryOrder::RELAXED);
   j["data"] = {
-      {"state",
+      {
+          "state",
           {{"state", ConnectivityStateName(state)}},
       },
       {"target", target_},

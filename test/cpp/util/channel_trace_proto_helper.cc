@@ -83,7 +83,8 @@ void ValidateChannelProtoJsonTranslation(const char* json_c_str) {
   ValidateProtoJsonTranslation<grpc::channelz::v1::Channel>(json_c_str);
 }
 
-void ValidateGetTopChannelsResponseProtoJsonTranslation(const char* json_c_str) {
+void ValidateGetTopChannelsResponseProtoJsonTranslation(
+    const char* json_c_str) {
   ValidateProtoJsonTranslation<grpc::channelz::v1::GetTopChannelsResponse>(
       json_c_str);
 }
