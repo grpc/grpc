@@ -21,7 +21,8 @@
 
 #include <grpc/impl/codegen/port_platform.h>
 
-#include <stdint.h>
+#include <cstdint>
+#include <string>
 
 #include "src/core/lib/channel/channel_trace.h"
 #include "src/core/lib/channel/channelz.h"

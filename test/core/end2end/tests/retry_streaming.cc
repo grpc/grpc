@@ -399,16 +399,16 @@ static void test_retry_streaming(grpc_end2end_test_config config) {
   std::string json = channelz_channel->RenderJsonString();
   GPR_ASSERT(!json.empty());
   gpr_log(GPR_INFO, "%s", json.c_str());
-  GPR_ASSERT(nullptr != strstr(json.c_str(), "\"trace\""));
-  GPR_ASSERT(nullptr !=
-             strstr(json.c_str(), "\"description\":\"Channel created\""));
-  GPR_ASSERT(nullptr != strstr(json.c_str(), "\"severity\":\"CT_INFO\""));
-  GPR_ASSERT(nullptr != strstr(json.c_str(), "Resolution event"));
-  GPR_ASSERT(nullptr != strstr(json.c_str(), "Created new LB policy"));
-  GPR_ASSERT(nullptr != strstr(json.c_str(), "Service config changed"));
-  GPR_ASSERT(nullptr != strstr(json.c_str(), "Address list became non-empty"));
-  GPR_ASSERT(nullptr !=
-             strstr(json.c_str(), "Channel state change to CONNECTING"));
+  GPR_ASSERT(json.find("\"trace\"") != std::string::npos);
+  GPR_ASSERT(json.find("\"description\":\"Channel created\"") !=
+             std::string::npos);
+  GPR_ASSERT(json.find("\"severity\":\"CT_INFO\"") != std::string::npos);
+  GPR_ASSERT(json.find("Resolution event") != std::string::npos);
+  GPR_ASSERT(json.find("Created new LB policy") != std::string::npos);
+  GPR_ASSERT(json.find("Service config changed") != std::string::npos);
+  GPR_ASSERT(json.find("Address list became non-empty") != std::string::npos);
+  GPR_ASSERT(json.find("Channel state change to CONNECTING") !=
+             std::string::npos);
 
   grpc_slice_unref(details);
   grpc_metadata_array_destroy(&initial_metadata_recv);

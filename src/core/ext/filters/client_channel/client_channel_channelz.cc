@@ -18,6 +18,8 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <string>
+
 #include "src/core/ext/filters/client_channel/client_channel.h"
 #include "src/core/ext/filters/client_channel/client_channel_channelz.h"
 #include "src/core/lib/channel/channelz_registry.h"
@@ -49,21 +51,10 @@ void SubchannelNode::SetChildSocket(RefCountedPtr<SocketNode> socket) {
   child_socket_ = std::move(socket);
 }
 
-namespace {
-
-std::string NumberToString(intptr_t number) {
-  char* tmp;
-  gpr_asprintf(&tmp, "%" PRIuPTR, number);
-  std::unique_ptr<char> deleter(tmp);
-  return tmp;
-}
-
-}  // namespace
-
 json SubchannelNode::RenderJson() {
   json j = {
       {"ref", {
-          {"subchannelId", NumberToString(uuid())}
+          {"subchannelId", std::to_string(uuid())}
       }},
   };
   // Create and fill the data child.
@@ -89,7 +80,7 @@ json SubchannelNode::RenderJson() {
   if (child_socket != nullptr && child_socket->uuid() != 0) {
     j["socketRef"] = json::array();
     j["socketRef"].push_back({
-        {"socketId", NumberToString(child_socket->uuid())},
+        {"socketId", std::to_string(child_socket->uuid())},
         {"name", child_socket->name()},
     });
   }

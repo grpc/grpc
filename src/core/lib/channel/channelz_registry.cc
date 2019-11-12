@@ -19,10 +19,11 @@
 #include <grpc/impl/codegen/port_platform.h>
 
 #include <algorithm>
-#include <cstdlib>
+#include <cstdint>
 #include <cstring>
 #include <string>
 
+#include "single_include/nlohmann/json.hpp"
 #include "src/core/lib/channel/channel_trace.h"
 #include "src/core/lib/channel/channelz.h"
 #include "src/core/lib/channel/channelz_registry.h"

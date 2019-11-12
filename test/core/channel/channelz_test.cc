@@ -16,8 +16,10 @@
  *
  */
 
-#include <stdlib.h>
-#include <string.h>
+#include <cstdint>
+#include <cstdlib>
+#include <cstring>
+#include <vector>
 
 #include <gtest/gtest.h>
 
@@ -155,13 +157,6 @@ struct validate_channel_data_args {
   int64_t calls_succeeded;
 };
 
-std::string NumberToString(intptr_t number) {
-  char* tmp;
-  gpr_asprintf(&tmp, "%" PRIuPTR, number);
-  std::unique_ptr<char> deleter(tmp);
-  return tmp;
-}
-
 void ValidateCounters(const std::string& json_str,
                       validate_channel_data_args args) {
   json j =
@@ -171,17 +166,17 @@ void ValidateCounters(const std::string& json_str,
   if (!j["data"]["callsStarted"].is_null()) {
     actual = j["data"]["callsStarted"].get<std::string>();
   }
-  EXPECT_EQ(actual, NumberToString(args.calls_started));
+  EXPECT_EQ(actual, std::to_string(args.calls_started));
   actual = "0";
   if (!j["data"]["callsFailed"].is_null()) {
     actual = j["data"]["callsFailed"].get<std::string>();
   }
-  EXPECT_EQ(actual, NumberToString(args.calls_failed));
+  EXPECT_EQ(actual, std::to_string(args.calls_failed));
   actual = "0";
   if (!j["data"]["callsSucceeded"].is_null()) {
     actual = j["data"]["callsSucceeded"].get<std::string>();
   }
-  EXPECT_EQ(actual, NumberToString(args.calls_succeeded));
+  EXPECT_EQ(actual, std::to_string(args.calls_succeeded));
 }
 
 void ValidateChannel(ChannelNode* channel, validate_channel_data_args args) {

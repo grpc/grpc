@@ -28,6 +28,7 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "single_include/nlohmann/json.hpp"
 #include "src/core/lib/channel/channelz_registry.h"
 #include "src/core/lib/channel/status_util.h"
 #include "src/core/lib/gpr/string.h"
@@ -150,28 +151,17 @@ void CallCountingHelper::CollectData(CounterData* out) {
   }
 }
 
-namespace {
-
-std::string NumberToString(intptr_t number) {
-  char* tmp;
-  gpr_asprintf(&tmp, "%" PRIuPTR, number);
-  std::unique_ptr<char> deleter(tmp);
-  return tmp;
-}
-
-}  // namespace
-
 void CallCountingHelper::PopulateCallCounts(json* j) {
   CounterData data;
   CollectData(&data);
   if (data.calls_started != 0) {
-    (*j)["callsStarted"] = NumberToString(data.calls_started);
+    (*j)["callsStarted"] = std::to_string(data.calls_started);
   }
   if (data.calls_succeeded != 0) {
-    (*j)["callsSucceeded"] = NumberToString(data.calls_succeeded);
+    (*j)["callsSucceeded"] = std::to_string(data.calls_succeeded);
   }
   if (data.calls_failed > 0) {
-    (*j)["callsFailed"] = NumberToString(data.calls_failed);
+    (*j)["callsFailed"] = std::to_string(data.calls_failed);
   }
   if (data.calls_started != 0) {
     gpr_timespec ts = gpr_convert_clock_type(
@@ -215,7 +205,7 @@ const char* ChannelNode::GetChannelConnectivityStateChangeString(
 
 json ChannelNode::RenderJson() {
   json j = {
-    {"ref", {{"channelId", NumberToString(uuid())}}},
+    {"ref", {{"channelId", std::to_string(uuid())}}},
     {"data", {{"target", target_}}},
   };
   // Connectivity state.  If low-order bit is on, then the field is set.
@@ -242,13 +232,13 @@ void ChannelNode::PopulateChildRefs(json* j) {
     (*j)["subchannelRef"] = json::array();
     for (const auto& p : child_subchannels_) {
       (*j)["subchannelRef"].push_back(
-          {{"subchannelId", NumberToString(p.first)}});
+          {{"subchannelId", std::to_string(p.first)}});
     }
   }
   if (!child_channels_.empty()) {
     (*j)["channelRef"] = json::array();
     for (const auto& p : child_channels_) {
-      (*j)["channelRef"].push_back({{"channelId", NumberToString(p.first)}});
+      (*j)["channelRef"].push_back({{"channelId", std::to_string(p.first)}});
     }
   }
 }
@@ -323,7 +313,7 @@ std::string ServerNode::RenderServerSockets(intptr_t start_socket_id,
          it != child_sockets_.end() && sockets_rendered < limit;
          ++it, ++sockets_rendered) {
       j["socketRef"].push_back({
-          {"socketId", NumberToString(it->first)},
+          {"socketId", std::to_string(it->first)},
           {"name", it->second->name()},
       });
     }
@@ -334,7 +324,7 @@ std::string ServerNode::RenderServerSockets(intptr_t start_socket_id,
 
 json ServerNode::RenderJson() {
   json j;
-  j["ref"] = {{"serverId", NumberToString(uuid())}};
+  j["ref"] = {{"serverId", std::to_string(uuid())}};
   j["data"] = json::object();
   // Fill in the channel trace if applicable.
   json trace_json = trace_.RenderJson();
@@ -347,7 +337,7 @@ json ServerNode::RenderJson() {
     j["listenSocket"] = json::array();
     for (const auto& p : child_listen_sockets_) {
       j["listenSocket"].push_back({
-          {"socketId", NumberToString(p.first)},
+          {"socketId", std::to_string(p.first)},
           {"name", p.second->name()},
       });
     }
@@ -379,7 +369,7 @@ json CreateSocketAddressJson(const char* addr_str) {
     char* b64_host =
         grpc_base64_encode(host.get(), strlen(host.get()), false, false);
     j["tcpip_address"] = {
-        {"port", NumberToString(port_num)},
+        {"port", std::to_string(port_num)},
         {"ip_address", b64_host},
     };
     free(b64_host);
@@ -425,7 +415,7 @@ void SocketNode::RecordMessageReceived() {
 json SocketNode::RenderJson() {
   json j = {
       {"ref", {
-          {"socketId", NumberToString(uuid())},
+          {"socketId", std::to_string(uuid())},
           {"name", name()},
       }},
   };
@@ -442,7 +432,7 @@ json SocketNode::RenderJson() {
   gpr_timespec ts;
   int64_t streams_started = streams_started_.Load(MemoryOrder::RELAXED);
   if (streams_started != 0) {
-    j["data"]["streamsStarted"] = NumberToString(streams_started);
+    j["data"]["streamsStarted"] = std::to_string(streams_started);
     gpr_cycle_counter last_local_stream_created_cycle =
         last_local_stream_created_cycle_.Load(MemoryOrder::RELAXED);
     if (last_local_stream_created_cycle != 0) {
@@ -466,15 +456,15 @@ json SocketNode::RenderJson() {
   }
   int64_t streams_succeeded = streams_succeeded_.Load(MemoryOrder::RELAXED);
   if (streams_succeeded != 0) {
-    j["data"]["streamsSucceeded"] = NumberToString(streams_succeeded);
+    j["data"]["streamsSucceeded"] = std::to_string(streams_succeeded);
   }
   int64_t streams_failed = streams_failed_.Load(MemoryOrder::RELAXED);
   if (streams_failed) {
-    j["data"]["streamsFailed"] = NumberToString(streams_failed);
+    j["data"]["streamsFailed"] = std::to_string(streams_failed);
   }
   int64_t messages_sent = messages_sent_.Load(MemoryOrder::RELAXED);
   if (messages_sent != 0) {
-    j["data"]["messagesSent"] = NumberToString(messages_sent);
+    j["data"]["messagesSent"] = std::to_string(messages_sent);
     ts = gpr_convert_clock_type(
         gpr_cycle_counter_to_time(
             last_message_sent_cycle_.Load(MemoryOrder::RELAXED)),
@@ -485,7 +475,7 @@ json SocketNode::RenderJson() {
   }
   int64_t messages_received = messages_received_.Load(MemoryOrder::RELAXED);
   if (messages_received != 0) {
-    j["data"]["messagesReceived"] = NumberToString(messages_received);
+    j["data"]["messagesReceived"] = std::to_string(messages_received);
     ts = gpr_convert_clock_type(
         gpr_cycle_counter_to_time(
             last_message_received_cycle_.Load(MemoryOrder::RELAXED)),
@@ -496,7 +486,7 @@ json SocketNode::RenderJson() {
   }
   int64_t keepalives_sent = keepalives_sent_.Load(MemoryOrder::RELAXED);
   if (keepalives_sent != 0) {
-    j["data"]["keepAlivesSent"] = NumberToString(keepalives_sent);
+    j["data"]["keepAlivesSent"] = std::to_string(keepalives_sent);
   }
   return j;
 }
@@ -512,7 +502,7 @@ ListenSocketNode::ListenSocketNode(std::string local_addr, std::string name)
 json ListenSocketNode::RenderJson() {
   json j = {
       {"ref", {
-          {"socketId", NumberToString(uuid())},
+          {"socketId", std::to_string(uuid())},
           {"name", name()},
       }},
   };

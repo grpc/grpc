@@ -29,6 +29,7 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "single_include/nlohmann/json.hpp"
 #include "src/core/lib/channel/status_util.h"
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/gpr/useful.h"
@@ -145,13 +146,6 @@ const char* severity_string(ChannelTrace::Severity severity) {
   }
 }
 
-std::string NumberToString(intptr_t number) {
-  char* tmp;
-  gpr_asprintf(&tmp, "%" PRIuPTR, number);
-  std::unique_ptr<char> deleter(tmp);
-  return tmp;
-}
-
 }  // anonymous namespace
 
 json ChannelTrace::TraceEvent::RenderTraceEvent() const {
@@ -169,10 +163,10 @@ json ChannelTrace::TraceEvent::RenderTraceEvent() const {
          referenced_entity_->type() == BaseNode::EntityType::kInternalChannel);
     if (is_channel) {
       j["channelRef"] =
-          {{"channelId", NumberToString(referenced_entity_->uuid())}};
+          {{"channelId", std::to_string(referenced_entity_->uuid())}};
     } else {
       j["subchannelRef"] =
-          {{"subchannelId", NumberToString(referenced_entity_->uuid())}};
+          {{"subchannelId", std::to_string(referenced_entity_->uuid())}};
     };
   }
   return j;
@@ -183,7 +177,7 @@ json ChannelTrace::RenderJson() const {
   // Tracing is disabled if max_event_memory_ == 0.
   if (max_event_memory_ == 0) return j;
   if (num_events_logged_ > 0) {
-    j["numEventsLogged"] = NumberToString(num_events_logged_);
+    j["numEventsLogged"] = std::to_string(num_events_logged_);
   }
   char* tmp = gpr_format_timespec(time_created_);
   j["creationTimestamp"] = tmp;
