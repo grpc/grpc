@@ -27,7 +27,7 @@
 #include <grpc/support/log.h>
 #include <grpc/support/string_util.h>
 
-#include "single_include/nlohmann/json.hpp"
+#include "third_party/json/src/json.hpp"
 #include "src/core/lib/channel/channel_trace.h"
 #include "src/core/lib/channel/channelz.h"
 #include "src/core/lib/channel/channelz_registry.h"

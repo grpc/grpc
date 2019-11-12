@@ -25,7 +25,7 @@
 
 #include <grpc/grpc.h>
 
-#include "single_include/nlohmann/json.hpp"
+#include "third_party/json/src/json.hpp"
 #include "src/core/lib/channel/channel_trace.h"
 #include "src/core/lib/gpr/time_precise.h"
 #include "src/core/lib/gprpp/atomic.h"

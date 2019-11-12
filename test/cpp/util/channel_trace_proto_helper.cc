@@ -28,7 +28,7 @@
 
 #include "src/proto/grpc/channelz/channelz.pb.h"
 
-#include "single_include/nlohmann/json.hpp"
+#include "third_party/json/src/json.hpp"
 
 using json = nlohmann::json;
 

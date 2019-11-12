@@ -23,7 +23,7 @@
 
 #include <string>
 
-#include "single_include/nlohmann/json.hpp"
+#include "third_party/json/src/json.hpp"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/channel/channel_trace.h"

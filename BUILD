@@ -956,7 +956,6 @@ grpc_cc_library(
     ],
     external_deps = [
         "madler_zlib",
-        "nlohmann_json",
     ],
     language = "c++",
     public_hdrs = GRPC_PUBLIC_HDRS,
@@ -970,6 +969,7 @@ grpc_cc_library(
         "orphanable",
         "ref_counted",
         "ref_counted_ptr",
+        "//third_party/json",
     ],
 )
 
