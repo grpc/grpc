@@ -23,7 +23,7 @@ sys.dont_write_bytecode = True
 
 boring_ssl_root = os.path.abspath(os.path.join(
     os.path.dirname(sys.argv[0]),
-    '../../third_party/boringssl'))
+    '../../third_party/boringssl/src'))
 sys.path.append(os.path.join(boring_ssl_root, 'util'))
 
 try:
@@ -33,14 +33,15 @@ except ImportError:
   sys.exit()
 
 def map_dir(filename):
-  if filename[0:4] == 'src/':
-    return 'third_party/boringssl/' + filename[4:]
-  else:
-    return 'src/boringssl/' + filename
+  #if filename[0:4] == 'src/':
+  #  return 'third_party/boringssl/src/' + filename[4:]
+  #else:
+  return 'third_party/boringssl/' + filename
 
+# TODO(jtattermusch): is this used at all?
 def map_testarg(arg):
   if '/' in arg:
-    return 'third_party/boringssl/' + arg
+    return 'third_party/boringssl/src/' + arg
   else:
     return arg
 
