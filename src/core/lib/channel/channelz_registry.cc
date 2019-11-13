@@ -29,7 +29,7 @@
 #include "src/core/lib/gpr/useful.h"
 #include "src/core/lib/gprpp/memory.h"
 #include "src/core/lib/gprpp/sync.h"
-#include "third_party/json/src/json.hpp"
+#include "single_include/nlohmann/json.hpp"
 
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>

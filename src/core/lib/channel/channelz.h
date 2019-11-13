@@ -36,7 +36,7 @@
 #include "src/core/lib/gprpp/sync.h"
 #include "src/core/lib/iomgr/error.h"
 #include "src/core/lib/iomgr/exec_ctx.h"
-#include "third_party/json/src/json.hpp"
+#include "single_include/nlohmann/json.hpp"
 
 // Channel arg key for channelz node.
 #define GRPC_ARG_CHANNELZ_CHANNEL_NODE "grpc.channelz_channel_node"

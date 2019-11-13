@@ -27,7 +27,7 @@
 #include "src/core/lib/channel/channel_stack.h"
 #include "src/core/lib/channel/channel_trace.h"
 #include "src/core/lib/channel/channelz.h"
-#include "third_party/json/src/json.hpp"
+#include "single_include/nlohmann/json.hpp"
 
 namespace grpc_core {
 

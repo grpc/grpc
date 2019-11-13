@@ -44,7 +44,7 @@
 #include "src/core/lib/transport/connectivity_state.h"
 #include "src/core/lib/transport/error_utils.h"
 #include "src/core/lib/uri/uri_parser.h"
-#include "third_party/json/src/json.hpp"
+#include "single_include/nlohmann/json.hpp"
 
 using nlohmann::json;
 

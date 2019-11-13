@@ -35,7 +35,7 @@
 #include "test/core/util/test_config.h"
 #include "test/cpp/util/channel_trace_proto_helper.h"
 
-#include "third_party/json/src/json.hpp"
+#include "single_include/nlohmann/json.hpp"
 
 #include <stdlib.h>
 #include <string.h>
