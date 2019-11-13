@@ -315,13 +315,21 @@
     endforeach()
   endfunction()
 
-  add_custom_target(plugins
-    DEPENDS
+  # These options allow users to enable or disable the building of the various
+  # protoc plugins. For example, running CMake with
+  # -DgRPC_BUILD_GRPC_CSHARP_PLUGIN=OFF will disable building the C# plugin.
+  set(_gRPC_PLUGIN_LIST)
   % for tgt in targets:
   % if tgt.build == 'protoc':
-    ${tgt.name}
+  option(gRPC_BUILD_${tgt.name.upper()} "Build ${tgt.name}" ON)
+  if (gRPC_BUILD_${tgt.name.upper()})
+    list(APPEND _gRPC_PLUGIN_LIST ${tgt.name})
+  endif ()
   % endif
   % endfor
+
+  add_custom_target(plugins
+    DEPENDS <%text>${_gRPC_PLUGIN_LIST}</%text>
   )
 
   add_custom_target(tools_c
@@ -419,7 +427,7 @@
   </%block>
   endif()
   % elif tgt.build in ["protoc"]:
-  if(gRPC_BUILD_CODEGEN)
+  if(gRPC_BUILD_CODEGEN AND gRPC_BUILD_${tgt.name.upper()})
   <%block filter='platforms_condition_block(tgt.platforms)'>
   ${cc_binary(tgt)}
   ${cc_install(tgt)}
