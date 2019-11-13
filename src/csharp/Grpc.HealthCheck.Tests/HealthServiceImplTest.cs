@@ -1,4 +1,4 @@
-﻿#region Copyright notice and license
+#region Copyright notice and license
 // Copyright 2015 gRPC authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -18,6 +18,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 
 using Grpc.Core;
@@ -81,6 +82,40 @@ namespace Grpc.HealthCheck.Tests
             Assert.Throws(typeof(ArgumentNullException), () => impl.SetStatus(null, HealthCheckResponse.Types.ServingStatus.Serving));
 
             Assert.Throws(typeof(ArgumentNullException), () => impl.ClearStatus(null));
+        }
+
+        [Test]
+        public async Task Watch()
+        {
+            var cts = new CancellationTokenSource();
+            var context = new TestServerCallContext(cts.Token);
+            var writer = new TestResponseStreamWriter();
+
+            var impl = new HealthServiceImpl();
+            var callTask = impl.Watch(new HealthCheckRequest { Service = "" }, writer, context);
+
+            var nextWriteTask = writer.WaitNextAsync();
+            impl.SetStatus("", HealthCheckResponse.Types.ServingStatus.Serving);
+            Assert.AreEqual(HealthCheckResponse.Types.ServingStatus.Serving, (await nextWriteTask).Status);
+
+            nextWriteTask = writer.WaitNextAsync();
+            impl.SetStatus("", HealthCheckResponse.Types.ServingStatus.NotServing);
+            Assert.AreEqual(HealthCheckResponse.Types.ServingStatus.NotServing, (await nextWriteTask).Status);
+
+            nextWriteTask = writer.WaitNextAsync();
+            impl.SetStatus("", HealthCheckResponse.Types.ServingStatus.Unknown);
+            Assert.AreEqual(HealthCheckResponse.Types.ServingStatus.Unknown, (await nextWriteTask).Status);
+
+            nextWriteTask = writer.WaitNextAsync();
+            impl.SetStatus("grpc.test.TestService", HealthCheckResponse.Types.ServingStatus.Serving);
+            Assert.IsFalse(nextWriteTask.IsCompleted);
+
+            nextWriteTask = writer.WaitNextAsync();
+            impl.ClearStatus("");
+            Assert.AreEqual(HealthCheckResponse.Types.ServingStatus.ServiceUnknown, (await nextWriteTask).Status);
+
+            cts.Cancel();
+            await callTask;
         }
 
         private static HealthCheckResponse.Types.ServingStatus GetStatusHelper(HealthServiceImpl impl, string service)
