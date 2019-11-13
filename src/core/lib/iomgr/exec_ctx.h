@@ -55,8 +55,6 @@ typedef struct grpc_combiner grpc_combiner;
    should not be counted by fork handlers */
 #define GRPC_APP_CALLBACK_EXEC_CTX_FLAG_IS_INTERNAL_THREAD 1
 
-extern grpc_closure_scheduler* grpc_schedule_on_exec_ctx;
-
 gpr_timespec grpc_millis_to_timespec(grpc_millis millis, gpr_clock_type clock);
 grpc_millis grpc_timespec_to_millis_round_down(gpr_timespec timespec);
 grpc_millis grpc_timespec_to_millis_round_up(gpr_timespec timespec);
@@ -224,6 +222,8 @@ class ExecCtx {
 
   static void Run(const DebugLocation& location, grpc_closure* closure,
                   grpc_error* error);
+
+  static void RunList(const DebugLocation& location, grpc_closure_list* list);
 
  protected:
   /** Check if ready to finish. */
