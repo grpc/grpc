@@ -1247,7 +1247,7 @@ Pod::Spec.new do |s|
   end
 
   s.subspec 'Cronet-Implementation' do |ss|
-    ss.header_mappings_dir = 'include/grpcpp'
+    ss.header_mappings_dir = '.'
     ss.dependency "#{s.name}/Cronet-Interface", version
     ss.dependency "#{s.name}/Implementation", version
 
