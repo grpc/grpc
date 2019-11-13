@@ -236,7 +236,22 @@ class ConnectLoopRunner {
             << "connect_loop runner:" << std::hex << self
             << " got ev.type:" << ev.type << " i:" << i;
         ASSERT_TRUE(ev.success);
+        grpc_connectivity_state prev_state = state;
         state = grpc_channel_check_connectivity_state(channel, 1);
+        if (self->expected_connectivity_states_ ==
+                GRPC_CHANNEL_TRANSIENT_FAILURE &&
+            prev_state == GRPC_CHANNEL_CONNECTING &&
+            state == GRPC_CHANNEL_CONNECTING) {
+          // Detect a race in state checking: if the watch_connectivity_state
+          // completed from prior state "connecting", this could be because the
+          // channel momentarily entered state "transient failure", which is
+          // what we want. However, if the channel immediately re-enters
+          // "connecting" state, then the new state check might still result in
+          // "connecting". A continuous repeat of this can cause this loop to
+          // never terminate in time. So take this scenario to indicate that the
+          // channel momentarily entered transient failure.
+          break;
+        }
       }
       grpc_channel_destroy(channel);
       grpc_completion_queue_shutdown(cq);
