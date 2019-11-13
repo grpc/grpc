@@ -114,6 +114,7 @@ namespace Grpc.HealthCheck.Tests
             impl.ClearStatus("");
             Assert.AreEqual(HealthCheckResponse.Types.ServingStatus.ServiceUnknown, (await nextWriteTask).Status);
 
+            Assert.IsFalse(callTask.IsCompleted);
             cts.Cancel();
             await callTask;
         }

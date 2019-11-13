@@ -33,7 +33,7 @@ namespace Grpc.HealthCheck.Tests
         public static int Main(string[] args)
         {
             // Make logger immune to NUnit capturing stdout and stderr to workaround https://github.com/nunit/nunit/issues/1406.
-            //GrpcEnvironment.SetLogger(new ConsoleLogger());
+            GrpcEnvironment.SetLogger(new ConsoleLogger());
             return new AutoRun(typeof(NUnitMain).GetTypeInfo().Assembly).Execute(args);
         }
     }
