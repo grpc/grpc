@@ -35,6 +35,7 @@ using grpc::Status;
 using helloworld::HelloRequest;
 using helloworld::HelloReply;
 using helloworld::Greeter;
+using helloworld::Empty;
 
 class GreeterClient {
  public:
@@ -49,7 +50,7 @@ class GreeterClient {
     request.set_name(user);
 
     // Container for the data we expect from the server.
-    HelloReply reply;
+    Empty reply;
 
     // Context for the client. It could be used to convey extra information to
     // the server and/or tweak certain RPC behaviors.
@@ -59,11 +60,11 @@ class GreeterClient {
     context.set_compression_algorithm(GRPC_COMPRESS_DEFLATE);
 
     // The actual RPC.
-    Status status = stub_->SayHello(&context, request, &reply);
+    Status status = stub_->CrashServer(&context, request, &reply);
 
     // Act upon its status.
     if (status.ok()) {
-      return reply.message();
+      return "RPC ok";
     } else {
       std::cout << status.error_code() << ": " << status.error_message()
                 << std::endl;

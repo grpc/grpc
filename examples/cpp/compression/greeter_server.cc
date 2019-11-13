@@ -35,15 +35,12 @@ using grpc::Status;
 using helloworld::HelloRequest;
 using helloworld::HelloReply;
 using helloworld::Greeter;
+using helloworld::Empty;
 
 // Logic and data behind the server's behavior.
 class GreeterServiceImpl final : public Greeter::Service {
-  Status SayHello(ServerContext* context, const HelloRequest* request,
-                  HelloReply* reply) override {
-    // Overwrite the call's compression algorithm to DEFLATE.
-    context->set_compression_algorithm(GRPC_COMPRESS_DEFLATE);
-    std::string prefix("Hello ");
-    reply->set_message(prefix + request->name());
+  Status CrashServer(ServerContext* context, const HelloRequest* request,
+                  Empty* reply) override {
     return Status::OK;
   }
 };
