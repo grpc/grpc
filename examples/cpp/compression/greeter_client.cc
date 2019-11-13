@@ -56,9 +56,6 @@ class GreeterClient {
     // the server and/or tweak certain RPC behaviors.
     ClientContext context;
 
-    // Overwrite the call's compression algorithm to DEFLATE.
-    context.set_compression_algorithm(GRPC_COMPRESS_DEFLATE);
-
     // The actual RPC.
     Status status = stub_->CrashServer(&context, request, &reply);
 
