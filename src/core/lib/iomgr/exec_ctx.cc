@@ -180,11 +180,10 @@ void ExecCtx::Run(const DebugLocation& location, grpc_closure* closure,
   if (closure->scheduled) {
     gpr_log(GPR_ERROR,
             "Closure already scheduled. (closure: %p, created: [%s:%d], "
-            "previously scheduled at: [%s: %d], newly scheduled at [%s: %d], "
-            "run?: %s",
+            "previously scheduled at: [%s: %d], newly scheduled at [%s: %d]",
             closure, closure->file_created, closure->line_created,
             closure->file_initiated, closure->line_initiated, location.file(),
-            location.line(), closure->run ? "true" : "false");
+            location.line());
     abort();
   }
   closure->scheduled = true;
@@ -205,9 +204,9 @@ void ExecCtx::RunList(const DebugLocation& location, grpc_closure_list* list) {
     if (c->scheduled) {
       gpr_log(GPR_ERROR,
               "Closure already scheduled. (closure: %p, created: [%s:%d], "
-              "previously scheduled at: [%s: %d] run?: %s",
+              "previously scheduled at: [%s: %d], newly scheduled at [%s:%d]",
               c, c->file_created, c->line_created, c->file_initiated,
-              c->line_initiated, c->run ? "true" : "false");
+              c->line_initiated, location.file(), location.line());
       abort();
     }
     c->scheduled = true;

@@ -350,7 +350,7 @@ BENCHMARK(BM_ClosureSched4OnTwoCombiners);
 // the benchmark is complete
 class Rescheduler {
  public:
-  Rescheduler(benchmark::State& state) : state_(state) {
+  explicit Rescheduler(benchmark::State& state) : state_(state) {
     GRPC_CLOSURE_INIT(&closure_, Step, this, nullptr);
   }
 

@@ -162,7 +162,9 @@ class Closure : public grpc_closure {
 template <class F>
 std::unique_ptr<Closure> MakeClosure(F f) {
   struct C : public Closure {
-    C(const F& f) : f_(f) { GRPC_CLOSURE_INIT(this, Execute, this, nullptr); }
+    explicit C(const F& f) : f_(f) {
+      GRPC_CLOSURE_INIT(this, Execute, this, nullptr);
+    }
     F f_;
     static void Execute(void* arg, grpc_error* error) {
       static_cast<C*>(arg)->f_(error);

@@ -165,7 +165,7 @@ class Closure : public grpc_closure {
 template <class F>
 Closure* MakeClosure(F f) {
   struct C : public Closure {
-    C(F f) : f_(f) { GRPC_CLOSURE_INIT(this, C::cbfn, this, nullptr); }
+    explicit C(F f) : f_(f) { GRPC_CLOSURE_INIT(this, C::cbfn, this, nullptr); }
     static void cbfn(void* arg, grpc_error* /*error*/) {
       C* p = static_cast<C*>(arg);
       p->f_();
