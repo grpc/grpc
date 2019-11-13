@@ -186,7 +186,7 @@ Pod::Spec.new do |s|
     ss.libraries = 'z'
     ss.dependency "#{s.name}/Interface", version
     ss.dependency 'BoringSSL-GRPC', '0.0.5'
-    ss.compiler_flags = '-DGRPC_SHADOW_BORINGSSL_SYMBOLS'
+    ss.compiler_flags = '-DBORINGSSL_PREFIX=GRPC'
 
     ss.source_files = 'src/core/ext/filters/census/grpc_context.cc',
                       'src/core/ext/filters/client_channel/backend_metric.cc',
