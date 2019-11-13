@@ -184,7 +184,6 @@ void SecurityHandshaker::HandshakeFailedLocked(grpc_error* error) {
   gpr_log(GPR_DEBUG, "Security handshake failed: %s", msg);
 
   if (!is_shutdown_) {
-    tsi_handshaker_shutdown(handshaker_);
     // TODO(ctiller): It is currently necessary to shutdown endpoints
     // before destroying them, even if we know that there are no
     // pending read/write callbacks.  This should be fixed, at which

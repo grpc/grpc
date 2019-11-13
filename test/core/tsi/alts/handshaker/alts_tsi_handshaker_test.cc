@@ -52,9 +52,6 @@ using grpc_core::internal::alts_handshaker_client_check_fields_for_testing;
 using grpc_core::internal::alts_handshaker_client_get_handshaker_for_testing;
 using grpc_core::internal::
     alts_handshaker_client_get_recv_buffer_addr_for_testing;
-using grpc_core::internal::
-    alts_handshaker_client_on_status_received_for_testing;
-using grpc_core::internal::alts_handshaker_client_ref_for_testing;
 using grpc_core::internal::alts_handshaker_client_set_cb_for_testing;
 using grpc_core::internal::alts_handshaker_client_set_fields_for_testing;
 using grpc_core::internal::alts_handshaker_client_set_recv_bytes_for_testing;
@@ -623,7 +620,7 @@ static void on_failed_grpc_call_cb(tsi_result status, void* user_data,
   GPR_ASSERT(result == nullptr);
 }
 
-static void check_handle_response_nullptr_handshaker() {
+static void check_handle_response_invalid_input() {
   /* Initialization. */
   notification_init(&caller_to_tsi_notification);
   notification_init(&tsi_to_caller_notification);
@@ -645,107 +642,20 @@ static void check_handle_response_nullptr_handshaker() {
                                                 on_invalid_input_cb, nullptr,
                                                 recv_buffer, GRPC_STATUS_OK);
   alts_handshaker_client_handle_response(client, true);
-  /* Note: here and elsewhere in this test, we first ref the handshaker in order
-   * to match the unref that on_status_received will do. This necessary
-   * because this test mocks out the grpc call in such a way that the code
-   * path that would usually take this ref is skipped. */
-  alts_handshaker_client_ref_for_testing(client);
-  alts_handshaker_client_on_status_received_for_testing(client, GRPC_STATUS_OK,
-                                                        GRPC_ERROR_NONE);
-  /* Cleanup. */
-  grpc_slice_unref(slice);
-  run_tsi_handshaker_destroy_with_exec_ctx(handshaker);
-  notification_destroy(&caller_to_tsi_notification);
-  notification_destroy(&tsi_to_caller_notification);
-}
-
-static void check_handle_response_nullptr_recv_bytes() {
-  /* Initialization. */
-  notification_init(&caller_to_tsi_notification);
-  notification_init(&tsi_to_caller_notification);
-  /**
-   * Create a handshaker at the client side, for which internal mock client is
-   * always going to fail.
-   */
-  tsi_handshaker* handshaker = create_test_handshaker(true /* is_client */);
-  tsi_handshaker_next(handshaker, nullptr, 0, nullptr, nullptr, nullptr,
-                      on_client_start_success_cb, nullptr);
-  alts_tsi_handshaker* alts_handshaker =
-      reinterpret_cast<alts_tsi_handshaker*>(handshaker);
-  alts_handshaker_client* client =
-      alts_tsi_handshaker_get_client_for_testing(alts_handshaker);
   /* Check nullptr recv_bytes. */
   alts_handshaker_client_set_fields_for_testing(client, alts_handshaker,
                                                 on_invalid_input_cb, nullptr,
                                                 nullptr, GRPC_STATUS_OK);
   alts_handshaker_client_handle_response(client, true);
-  alts_handshaker_client_ref_for_testing(client);
-  alts_handshaker_client_on_status_received_for_testing(client, GRPC_STATUS_OK,
-                                                        GRPC_ERROR_NONE);
-  /* Cleanup. */
-  run_tsi_handshaker_destroy_with_exec_ctx(handshaker);
-  notification_destroy(&caller_to_tsi_notification);
-  notification_destroy(&tsi_to_caller_notification);
-}
-
-static void check_handle_response_failed_grpc_call_to_handshaker_service() {
-  /* Initialization. */
-  notification_init(&caller_to_tsi_notification);
-  notification_init(&tsi_to_caller_notification);
-  /**
-   * Create a handshaker at the client side, for which internal mock client is
-   * always going to fail.
-   */
-  tsi_handshaker* handshaker = create_test_handshaker(true /* is_client */);
-  tsi_handshaker_next(handshaker, nullptr, 0, nullptr, nullptr, nullptr,
-                      on_client_start_success_cb, nullptr);
-  alts_tsi_handshaker* alts_handshaker =
-      reinterpret_cast<alts_tsi_handshaker*>(handshaker);
-  grpc_slice slice = grpc_empty_slice();
-  grpc_byte_buffer* recv_buffer = grpc_raw_byte_buffer_create(&slice, 1);
-  alts_handshaker_client* client =
-      alts_tsi_handshaker_get_client_for_testing(alts_handshaker);
   /* Check failed grpc call made to handshaker service. */
   alts_handshaker_client_set_fields_for_testing(
       client, alts_handshaker, on_failed_grpc_call_cb, nullptr, recv_buffer,
       GRPC_STATUS_UNKNOWN);
   alts_handshaker_client_handle_response(client, true);
-  alts_handshaker_client_ref_for_testing(client);
-  alts_handshaker_client_on_status_received_for_testing(
-      client, GRPC_STATUS_UNKNOWN, GRPC_ERROR_NONE);
-  /* Cleanup. */
-  grpc_slice_unref(slice);
-  run_tsi_handshaker_destroy_with_exec_ctx(handshaker);
-  notification_destroy(&caller_to_tsi_notification);
-  notification_destroy(&tsi_to_caller_notification);
-}
-
-static void
-check_handle_response_failed_recv_message_from_handshaker_service() {
-  /* Initialization. */
-  notification_init(&caller_to_tsi_notification);
-  notification_init(&tsi_to_caller_notification);
-  /**
-   * Create a handshaker at the client side, for which internal mock client is
-   * always going to fail.
-   */
-  tsi_handshaker* handshaker = create_test_handshaker(true /* is_client */);
-  tsi_handshaker_next(handshaker, nullptr, 0, nullptr, nullptr, nullptr,
-                      on_client_start_success_cb, nullptr);
-  alts_tsi_handshaker* alts_handshaker =
-      reinterpret_cast<alts_tsi_handshaker*>(handshaker);
-  grpc_slice slice = grpc_empty_slice();
-  grpc_byte_buffer* recv_buffer = grpc_raw_byte_buffer_create(&slice, 1);
-  alts_handshaker_client* client =
-      alts_tsi_handshaker_get_client_for_testing(alts_handshaker);
-  /* Check failed recv message op from handshaker service. */
   alts_handshaker_client_set_fields_for_testing(client, alts_handshaker,
                                                 on_failed_grpc_call_cb, nullptr,
                                                 recv_buffer, GRPC_STATUS_OK);
   alts_handshaker_client_handle_response(client, false);
-  alts_handshaker_client_ref_for_testing(client);
-  alts_handshaker_client_on_status_received_for_testing(client, GRPC_STATUS_OK,
-                                                        GRPC_ERROR_NONE);
   /* Cleanup. */
   grpc_slice_unref(slice);
   run_tsi_handshaker_destroy_with_exec_ctx(handshaker);
@@ -785,9 +695,6 @@ static void check_handle_response_invalid_resp() {
                                                 on_invalid_resp_cb, nullptr,
                                                 recv_buffer, GRPC_STATUS_OK);
   alts_handshaker_client_handle_response(client, true);
-  alts_handshaker_client_ref_for_testing(client);
-  alts_handshaker_client_on_status_received_for_testing(client, GRPC_STATUS_OK,
-                                                        GRPC_ERROR_NONE);
   /* Cleanup. */
   run_tsi_handshaker_destroy_with_exec_ctx(handshaker);
   notification_destroy(&caller_to_tsi_notification);
@@ -801,18 +708,12 @@ static void check_handle_response_success(void* /*unused*/) {
   /* Client next. */
   wait(&caller_to_tsi_notification);
   alts_handshaker_client_handle_response(cb_event, true /* is_ok */);
-  alts_handshaker_client_ref_for_testing(cb_event);
-  alts_handshaker_client_on_status_received_for_testing(
-      cb_event, GRPC_STATUS_OK, GRPC_ERROR_NONE);
   /* Server start. */
   wait(&caller_to_tsi_notification);
   alts_handshaker_client_handle_response(cb_event, true /* is_ok */);
   /* Server next. */
   wait(&caller_to_tsi_notification);
   alts_handshaker_client_handle_response(cb_event, true /* is_ok */);
-  alts_handshaker_client_ref_for_testing(cb_event);
-  alts_handshaker_client_on_status_received_for_testing(
-      cb_event, GRPC_STATUS_OK, GRPC_ERROR_NONE);
 }
 
 static void on_failed_resp_cb(tsi_result status, void* user_data,
@@ -847,9 +748,6 @@ static void check_handle_response_failure() {
                                                 on_failed_resp_cb, nullptr,
                                                 recv_buffer, GRPC_STATUS_OK);
   alts_handshaker_client_handle_response(client, true /* is_ok*/);
-  alts_handshaker_client_ref_for_testing(client);
-  alts_handshaker_client_on_status_received_for_testing(client, GRPC_STATUS_OK,
-                                                        GRPC_ERROR_NONE);
   /* Cleanup. */
   run_tsi_handshaker_destroy_with_exec_ctx(handshaker);
   notification_destroy(&caller_to_tsi_notification);
@@ -889,9 +787,6 @@ static void check_handle_response_after_shutdown() {
                                                 on_shutdown_resp_cb, nullptr,
                                                 recv_buffer, GRPC_STATUS_OK);
   alts_handshaker_client_handle_response(client, true);
-  alts_handshaker_client_ref_for_testing(client);
-  alts_handshaker_client_on_status_received_for_testing(client, GRPC_STATUS_OK,
-                                                        GRPC_ERROR_NONE);
   /* Cleanup. */
   run_tsi_handshaker_destroy_with_exec_ctx(handshaker);
   notification_destroy(&caller_to_tsi_notification);
@@ -942,10 +837,7 @@ int main(int /*argc*/, char** /*argv*/) {
   should_handshaker_client_api_succeed = false;
   check_handshaker_shutdown_invalid_input();
   check_handshaker_next_failure();
-  check_handle_response_nullptr_handshaker();
-  check_handle_response_nullptr_recv_bytes();
-  check_handle_response_failed_grpc_call_to_handshaker_service();
-  check_handle_response_failed_recv_message_from_handshaker_service();
+  check_handle_response_invalid_input();
   check_handle_response_invalid_resp();
   check_handle_response_failure();
   /* Cleanup. */
