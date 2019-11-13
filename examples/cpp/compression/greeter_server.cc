@@ -41,6 +41,7 @@ using helloworld::Empty;
 class GreeterServiceImpl final : public Greeter::Service {
   Status CrashServer(ServerContext* context, const HelloRequest* request,
                   Empty* reply) override {
+    context->set_compression_algorithm(GRPC_COMPRESS_GZIP);
     return Status::OK;
   }
 };
@@ -50,8 +51,6 @@ void RunServer() {
   GreeterServiceImpl service;
 
   ServerBuilder builder;
-  // Set the default compression algorithm for the server.
-  builder.SetDefaultCompressionAlgorithm(GRPC_COMPRESS_GZIP);
   // Listen on the given address without any authentication mechanism.
   builder.AddListeningPort(server_address, grpc::InsecureServerCredentials());
   // Register "service" as the instance through which we'll communicate with

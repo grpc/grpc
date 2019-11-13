@@ -79,8 +79,7 @@ int main(int argc, char** argv) {
   // localhost at port 50051). We indicate that the channel isn't authenticated
   // (use of InsecureChannelCredentials()).
   ChannelArguments args;
-  // Set the default compression algorithm for the channel.
-  args.SetCompressionAlgorithm(GRPC_COMPRESS_GZIP);
+  context->set_compression_algorithm(GRPC_COMPRESS_GZIP);
   GreeterClient greeter(grpc::CreateCustomChannel(
       "localhost:50051", grpc::InsecureChannelCredentials(), args));
   std::string user("world");
