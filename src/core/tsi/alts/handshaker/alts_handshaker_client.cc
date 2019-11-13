@@ -347,6 +347,14 @@ class HandshakeQueue {
 
   ~HandshakeQueue() { GRPC_COMBINER_UNREF(combiner_, "~HandshakeQueue"); }
 
+  // This has the following behavior:
+  // 1) Append client to this end of this HandshakeQueue's queue
+  // 2) Start as many handshakes that are currently in the queue as we can, so
+  //    long as we don't exceed our limit for the number of active handshakes.
+  //
+  // If client is nullptr, then don't add anything to queue and skip straight
+  // to step 2). A nullptr client signals to the queue that we've just finished
+  // a handshake.
   void EnqueueHandshakeAndMaybeStartSome(alts_grpc_handshaker_client* client) {
     Arg* arg = grpc_core::New<Arg>();
     arg->client = client;
