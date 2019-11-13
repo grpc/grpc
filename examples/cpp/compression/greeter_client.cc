@@ -55,7 +55,7 @@ class GreeterClient {
     // Context for the client. It could be used to convey extra information to
     // the server and/or tweak certain RPC behaviors.
     ClientContext context;
-
+    context.set_compression_algorithm(GRPC_COMPRESS_GZIP);
     // The actual RPC.
     Status status = stub_->CrashServer(&context, request, &reply);
 
@@ -79,7 +79,6 @@ int main(int argc, char** argv) {
   // localhost at port 50051). We indicate that the channel isn't authenticated
   // (use of InsecureChannelCredentials()).
   ChannelArguments args;
-  context->set_compression_algorithm(GRPC_COMPRESS_GZIP);
   GreeterClient greeter(grpc::CreateCustomChannel(
       "localhost:50051", grpc::InsecureChannelCredentials(), args));
   std::string user("world");
