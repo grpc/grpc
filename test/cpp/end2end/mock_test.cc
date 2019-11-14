@@ -168,8 +168,11 @@ class CallbackTestServiceImpl
   experimental::ServerUnaryReactor* Echo(
       experimental::CallbackServerContext* context, const EchoRequest* request,
       EchoResponse* response) override {
-    // Make the mock service return a choice of Status even though the
-    // real one doesn't, so that we can test the status options.
+    // Make the mock service explicitly treat empty input messages as invalid
+    // arguments so that we can test various results of status. In general, a
+    // mocked service should just use the original service methods, but we are
+    // adding this variance in Status return value just to improve coverage in
+    // this test.
     auto* reactor = context->DefaultReactor();
     if (request->message().length() > 0) {
       response->set_message(request->message());
@@ -184,7 +187,6 @@ class CallbackTestServiceImpl
 class MockCallbackTest : public ::testing::Test {
  protected:
   CallbackTestServiceImpl service_;
-
   ServerContext context_;
 };
 

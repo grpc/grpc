@@ -24,7 +24,11 @@
 namespace grpc {
 namespace testing {
 
-/// A test-only class to access private members and methods of ServerContext.
+/// A test-only class to monitor the behavior of the ServerContext's
+/// DefaultReactor. It is intended for allow unit-testing of a callback API
+/// service via direct invocation of the service methods rather than through
+/// RPCs. It is only applicable for unary RPC methods that use the
+/// DefaultReactor rather than any user-defined reactor.
 class DefaultReactorTestPeer {
  public:
   explicit DefaultReactorTestPeer(experimental::CallbackServerContext* ctx)

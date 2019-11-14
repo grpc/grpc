@@ -287,7 +287,11 @@ class ServerContextBase {
   /// handler) or delayed Finish (finish called after the method handler
   /// invocation). It does not support reacting to cancellation or completion,
   /// or early sending of initial metadata. Since this is a library-owned
-  /// reactor, it should not be delete'd or freed in any way.
+  /// reactor, it should not be delete'd or freed in any way. This is more
+  /// efficient than creating a user-owned reactor both because of avoiding an
+  /// allocation and because its minimal reactions are optimized using a core
+  /// surface flag that allows their reactions to run inline without any
+  /// thread-hop.
   ///
   /// This method should not be called more than once or called after return
   /// from the method handler.
