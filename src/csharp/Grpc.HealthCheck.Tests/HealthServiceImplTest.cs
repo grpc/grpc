@@ -84,6 +84,7 @@ namespace Grpc.HealthCheck.Tests
             Assert.Throws(typeof(ArgumentNullException), () => impl.ClearStatus(null));
         }
 
+#if GRPC_SUPPORT_WATCH
         [Test]
         public async Task Watch()
         {
@@ -118,6 +119,7 @@ namespace Grpc.HealthCheck.Tests
             cts.Cancel();
             await callTask;
         }
+#endif
 
         private static HealthCheckResponse.Types.ServingStatus GetStatusHelper(HealthServiceImpl impl, string service)
         {

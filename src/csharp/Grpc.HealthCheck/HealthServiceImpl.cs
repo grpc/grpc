@@ -15,14 +15,14 @@
 #endregion
 
 using System;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
+#if GRPC_SUPPORT_WATCH
+using System.Threading.Channels;
+#endif
 using System.Threading.Tasks;
 
 using Grpc.Core;
-using Grpc.Core.Utils;
 using Grpc.Health.V1;
 
 namespace Grpc.HealthCheck
@@ -44,8 +44,10 @@ namespace Grpc.HealthCheck
 
         private readonly Dictionary<string, HealthCheckResponse.Types.ServingStatus> statusMap =
             new Dictionary<string, HealthCheckResponse.Types.ServingStatus>();
-        private readonly Dictionary<string, List<IServerStreamWriter<HealthCheckResponse>>> watchers =
-            new Dictionary<string, List<IServerStreamWriter<HealthCheckResponse>>>();
+#if GRPC_SUPPORT_WATCH
+        private readonly Dictionary<string, List<ChannelWriter<HealthCheckResponse>>> watchers =
+            new Dictionary<string, List<ChannelWriter<HealthCheckResponse>>>();
+#endif
 
         /// <summary>
         /// Sets the health status for given service.
@@ -61,10 +63,12 @@ namespace Grpc.HealthCheck
                 statusMap[service] = status;
             }
 
+#if GRPC_SUPPORT_WATCH
             if (status != previousStatus)
             {
                 NotifyStatus(service, status);
             }
+#endif
         }
 
         /// <summary>
@@ -80,10 +84,12 @@ namespace Grpc.HealthCheck
                 statusMap.Remove(service);
             }
 
+#if GRPC_SUPPORT_WATCH
             if (previousStatus != HealthCheckResponse.Types.ServingStatus.ServiceUnknown)
             {
                 NotifyStatus(service, HealthCheckResponse.Types.ServingStatus.ServiceUnknown);
             }
+#endif
         }
 
         /// <summary>
@@ -98,6 +104,7 @@ namespace Grpc.HealthCheck
                 statusMap.Clear();
             }
 
+#if GRPC_SUPPORT_WATCH
             foreach (KeyValuePair<string, HealthCheckResponse.Types.ServingStatus> status in statuses)
             {
                 if (status.Value != HealthCheckResponse.Types.ServingStatus.ServiceUnknown)
@@ -105,6 +112,7 @@ namespace Grpc.HealthCheck
                     NotifyStatus(status.Key, HealthCheckResponse.Types.ServingStatus.ServiceUnknown);
                 }
             }
+#endif
         }
 
         /// <summary>
@@ -120,6 +128,7 @@ namespace Grpc.HealthCheck
             return Task.FromResult(response);
         }
 
+#if GRPC_SUPPORT_WATCH
         /// <summary>
         /// Performs a watch for the serving status of the requested service.
         /// The server will immediately send back a message indicating the current
@@ -144,33 +153,41 @@ namespace Grpc.HealthCheck
         public override async Task Watch(HealthCheckRequest request, IServerStreamWriter<HealthCheckResponse> responseStream, ServerCallContext context)
         {
             string service = request.Service;
-            TaskCompletionSource<object> watchTcs = new TaskCompletionSource<object>();
 
             HealthCheckResponse response = GetHealthCheckResponse(service, throwOnNotFound: false);
             await responseStream.WriteAsync(response);
 
+            // Channel is used to to marshell multiple callers updating status into a single queue.
+            // This is required because IServerStreamWriter is not thread safe.
+            // The channel will buffer up to XXX messages, after which it will drop the oldest messages.
+            Channel<HealthCheckResponse> channel = Channel.CreateBounded<HealthCheckResponse>(new BoundedChannelOptions(capacity: 5) {
+                SingleReader = true,
+                SingleWriter = false,
+                FullMode = BoundedChannelFullMode.DropOldest
+            });
+
             lock (watchersLock)
             {
-                if (!watchers.TryGetValue(service, out List<IServerStreamWriter<HealthCheckResponse>> serverStreamWriters))
+                if (!watchers.TryGetValue(service, out List<ChannelWriter<HealthCheckResponse>> channelWriters))
                 {
-                    serverStreamWriters = new List<IServerStreamWriter<HealthCheckResponse>>();
-                    watchers.Add(service, serverStreamWriters);
+                    channelWriters = new List<ChannelWriter<HealthCheckResponse>>();
+                    watchers.Add(service, channelWriters);
                 }
 
-                serverStreamWriters.Add(responseStream);
+                channelWriters.Add(channel.Writer);
             }
 
-            // Handle the Watch call being canceled
+            // Watch calls run until ended by the client canceling them.
             context.CancellationToken.Register(() => {
                 lock (watchersLock)
                 {
-                    if (watchers.TryGetValue(service, out List<IServerStreamWriter<HealthCheckResponse>> serverStreamWriters))
+                    if (watchers.TryGetValue(service, out List<ChannelWriter<HealthCheckResponse>> channelWriters))
                     {
-                        // Remove the response stream from the watchers
-                        if (serverStreamWriters.Remove(responseStream))
+                        // Remove the writer from the watchers
+                        if (channelWriters.Remove(channel.Writer))
                         {
                             // Remove empty collection if service has no more response streams
-                            if (serverStreamWriters.Count == 0)
+                            if (channelWriters.Count == 0)
                             {
                                 watchers.Remove(service);
                             }
@@ -178,13 +195,40 @@ namespace Grpc.HealthCheck
                     }
                 }
 
-                // Allow watch method to exit.
-                watchTcs.TrySetResult(null);
+                // Signal the writer is complete and the watch method can exit.
+                channel.Writer.Complete();
             });
 
-            // Wait for call to be cancelled before exiting.
-            await watchTcs.Task;
+            // Read messages. WaitToReadyAsync will wait until new messages are available.
+            // Loop will exit when the call is canceled and the writer is marked as complete.
+            while (await channel.Reader.WaitToReadAsync())
+            {
+                if (channel.Reader.TryRead(out HealthCheckResponse item))
+                {
+                    await responseStream.WriteAsync(item);
+                }
+            }
         }
+
+        private void NotifyStatus(string service, HealthCheckResponse.Types.ServingStatus status)
+        {
+            lock (watchersLock)
+            {
+                if (watchers.TryGetValue(service, out List<ChannelWriter<HealthCheckResponse>> channelWriters))
+                {
+                    HealthCheckResponse response = new HealthCheckResponse { Status = status };
+
+                    foreach (ChannelWriter<HealthCheckResponse> writer in channelWriters)
+                    {
+                        if (!writer.TryWrite(response))
+                        {
+                            throw new InvalidOperationException("Unable to queue health check notification.");
+                        }
+                    }
+                }
+            }
+        }
+#endif
 
         private HealthCheckResponse GetHealthCheckResponse(string service, bool throwOnNotFound)
         {
@@ -218,24 +262,8 @@ namespace Grpc.HealthCheck
             }
             else
             {
+                // A service with no set status has a status of ServiceUnknown
                 return HealthCheckResponse.Types.ServingStatus.ServiceUnknown;
-            }
-        }
-
-        private void NotifyStatus(string service, HealthCheckResponse.Types.ServingStatus status)
-        {
-            lock (watchersLock)
-            {
-                if (watchers.TryGetValue(service, out List<IServerStreamWriter<HealthCheckResponse>> serverStreamWriters))
-                {
-                    HealthCheckResponse response = new HealthCheckResponse { Status = status };
-
-                    foreach (IServerStreamWriter<HealthCheckResponse> serverStreamWriter in serverStreamWriters)
-                    {
-                        // TODO(JamesNK): This will fail if a pending write is already in progress.
-                        _ = serverStreamWriter.WriteAsync(response);
-                    }
-                }
             }
         }
     }
