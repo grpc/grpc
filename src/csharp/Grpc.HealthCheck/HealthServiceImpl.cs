@@ -40,11 +40,11 @@ namespace Grpc.HealthCheck
     public class HealthServiceImpl : Grpc.Health.V1.Health.HealthBase
     {
         private readonly object statusLock = new object();
-        private readonly object watchersLock = new object();
-
         private readonly Dictionary<string, HealthCheckResponse.Types.ServingStatus> statusMap =
             new Dictionary<string, HealthCheckResponse.Types.ServingStatus>();
+
 #if GRPC_SUPPORT_WATCH
+        private readonly object watchersLock = new object();
         private readonly Dictionary<string, List<ChannelWriter<HealthCheckResponse>>> watchers =
             new Dictionary<string, List<ChannelWriter<HealthCheckResponse>>>();
 #endif
