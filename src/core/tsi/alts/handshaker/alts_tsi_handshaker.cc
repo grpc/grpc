@@ -293,8 +293,10 @@ tsi_result alts_tsi_handshaker_result_create(grpc_gcp_HandshakerResp* resp,
   // which is "grpc_gcp_INTEGRITY_AND_PRIVACY".
   grpc_gcp_AltsContext_set_security_level(context, 2);
   grpc_gcp_AltsContext_set_peer_service_account(context, peer_service_account);
-  grpc_gcp_AltsContext_set_local_service_account(context,
+  if (local_service_account.size != 0) {
+    grpc_gcp_AltsContext_set_local_service_account(context,
                                                  local_service_account);
+  }
   grpc_gcp_AltsContext_set_peer_rpc_versions(
       context, const_cast<grpc_gcp_RpcProtocolVersions*>(peer_rpc_version));
   size_t serialized_ctx_length;
