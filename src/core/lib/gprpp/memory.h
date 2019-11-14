@@ -30,19 +30,6 @@
 
 namespace grpc_core {
 
-// TODO(veblush): Remove this after removing all usages.
-template <typename T, typename... Args>
-inline T* New(Args&&... args) {
-  return new T(std::forward<Args>(args)...);
-}
-
-// TODO(veblush): Remove this after removing all usages.
-template <typename T>
-inline void Delete(T* p) {
-  delete p;
-}
-
-// TODO(veblush): Remove this after removing all usages.
 class DefaultDeleteChar {
  public:
   void operator()(char* p) {
@@ -51,21 +38,11 @@ class DefaultDeleteChar {
   }
 };
 
-// TODO(veblush): Remove this after removing all usages.
+// UniquePtr<T> is only allowed for char and UniquePtr<char> is deprecated
+// in favor of std::string. UniquePtr<char> is equivalent std::unique_ptr
+// except that it uses gpr_free for deleter.
 template <typename T>
-struct ResolveDeleter {
-  using deleter = std::default_delete<T>;
-};
-template <>
-struct ResolveDeleter<char> {
-  using deleter = DefaultDeleteChar;
-};
-
-// TODO(veblush): Remove this after removing all usages.
-// This is equivalent to std::unique_ptr except that it uses gpr_free
-// for deleter only for UniquePtr<char>
-template <typename T>
-using UniquePtr = std::unique_ptr<T, typename ResolveDeleter<T>::deleter>;
+using UniquePtr = std::unique_ptr<T, DefaultDeleteChar>;
 
 // TODO(veblush): Replace this with absl::make_unique once abseil is added.
 template <typename T, typename... Args>
