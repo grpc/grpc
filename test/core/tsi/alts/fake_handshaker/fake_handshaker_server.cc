@@ -24,6 +24,7 @@
 #include <grpc/grpc.h>
 #include <grpc/support/log.h>
 #include <grpcpp/impl/codegen/async_stream.h>
+#include <grpcpp/impl/codegen/sync.h>
 #include <grpcpp/security/server_credentials.h>
 #include <grpcpp/server.h>
 #include <grpcpp/server_builder.h>
@@ -54,7 +55,8 @@ namespace gcp {
 // It is thread-safe.
 class FakeHandshakerService : public HandshakerService::Service {
  public:
-  explicit FakeHandshakerService(int expected_max_concurrent_rpcs) : expected_max_concurrent_rpcs_(expected_max_concurrent_rpcs) {}
+  explicit FakeHandshakerService(int expected_max_concurrent_rpcs)
+      : expected_max_concurrent_rpcs_(expected_max_concurrent_rpcs) {}
 
   Status DoHandshake(
       ServerContext* server_context,
@@ -243,29 +245,38 @@ class FakeHandshakerService : public HandshakerService::Service {
 
   class ConcurrentRpcsCheck {
    public:
-    explicit ConcurrentRpcsCheck(FakeHandshakerService* parent) : parent_(parent), lock_(&parent->expected_max_concurrent_rpcs_mu_) {
+    explicit ConcurrentRpcsCheck(FakeHandshakerService* parent)
+        : parent_(parent) {
+      grpc::internal::MutexLock lock(&parent->expected_max_concurrent_rpcs_mu_);
       if (++parent->concurrent_rpcs_ > parent->expected_max_concurrent_rpcs_) {
-        gpr_log(GPR_ERROR, "FakeHandshakerService:%p concurrent_rpcs_:%d expected_max_concurrent_rpcs:%d", parent->concurrent_rpcs_, parent->expected_max_concurrent_rpcs__);
+        gpr_log(GPR_ERROR,
+                "FakeHandshakerService:%p concurrent_rpcs_:%d "
+                "expected_max_concurrent_rpcs:%d",
+                parent, parent->concurrent_rpcs_,
+                parent->expected_max_concurrent_rpcs_);
         abort();
       }
     }
 
     ~ConcurrentRpcsCheck() {
+      grpc::internal::MutexLock lock(
+          &parent_->expected_max_concurrent_rpcs_mu_);
       parent_->concurrent_rpcs_--;
     }
 
    private:
     FakeHandshakerService* parent_;
-    grpc::internal::MutexLock lock_;
-  }
+  };
 
   grpc::internal::Mutex expected_max_concurrent_rpcs_mu_;
   int concurrent_rpcs_ = 0;
   const int expected_max_concurrent_rpcs_;
 };
 
-std::unique_ptr<grpc::Service> CreateFakeHandshakerService(int expected_max_concurrent_rpcs) {
-  return std::unique_ptr<grpc::Service>{new grpc::gcp::FakeHandshakerService(expected_max_concurrent_rpcs)};
+std::unique_ptr<grpc::Service> CreateFakeHandshakerService(
+    int expected_max_concurrent_rpcs) {
+  return std::unique_ptr<grpc::Service>{
+      new grpc::gcp::FakeHandshakerService(expected_max_concurrent_rpcs)};
 }
 
 }  // namespace gcp

@@ -406,15 +406,16 @@ HandshakeQueue* g_server_handshake_queue;
 
 void DoHandshakeQueuesInit(void) {
   g_client_handshake_queue =
-      grpc_core::New<HandshakeQueue>(40 /* max outstanding handshakes */);
+      new HandshakeQueue(40 /* max outstanding handshakes */);
   g_server_handshake_queue =
-      grpc_core::New<HandshakeQueue>(40 /* max outstanding handshakes */);
+      new HandshakeQueue(40 /* max outstanding handshakes */);
 }
 
 void EnqueueHandshakeAndMaybeStartSome(alts_grpc_handshaker_client* client,
                                        bool is_client) {
   gpr_once_init(&g_queued_handshakes_init, DoHandshakeQueuesInit);
-  HandshakeQueue* queue = is_client ? g_client_handshake_queue : g_server_handshake_queue;
+  HandshakeQueue* queue =
+      is_client ? g_client_handshake_queue : g_server_handshake_queue;
   queue->EnqueueHandshakeAndMaybeStartSome(client);
 }
 
