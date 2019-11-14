@@ -18,6 +18,8 @@
 
 #include <grpc/support/port_platform.h>
 
+#include <list>
+
 #include "src/core/tsi/alts/handshaker/alts_handshaker_client.h"
 
 #include <grpc/byte_buffer.h>
@@ -342,93 +344,50 @@ namespace {
 
 class HandshakeQueue {
  public:
-  HandshakeQueue(size_t max_outstanding_handshakes)
-      : max_outstanding_handshakes_(max_outstanding_handshakes) {}
+  explicit HandshakeQueue(size_t max_outstanding_handshakes)
+      : max_outstanding_handshakes_(max_outstanding_handshakes) {
+    gpr_mu_init(&mu_);
+  }
 
-  ~HandshakeQueue() { GRPC_COMBINER_UNREF(combiner_, "~HandshakeQueue"); }
+  ~HandshakeQueue() { gpr_mu_destroy(&mu_); }
 
   // This has the following behavior:
   // 1) Append client to this end of this HandshakeQueue's queue
   // 2) Start as many handshakes that are currently in the queue as we can, so
   //    long as we don't exceed our limit for the number of active handshakes.
-  //
-  // If client is nullptr, then don't add anything to queue and skip straight
-  // to step 2). A nullptr client signals to the queue that we've just finished
-  // a handshake.
   void EnqueueHandshakeAndMaybeStartSome(alts_grpc_handshaker_client* client) {
-    Arg* arg = grpc_core::New<Arg>();
-    arg->client = client;
-    arg->self = this;
-    GRPC_CLOSURE_INIT(&arg->closure, EnqueueHandshakeAndMaybeStartSomeLocked,
-                      arg, nullptr);
-    combiner_->Run(&arg->closure, GRPC_ERROR_NONE);
-  }
-
- private:
-  struct Node {
-    alts_grpc_handshaker_client* client = nullptr;
-    Node* next = nullptr;
-    Node* prev = nullptr;
-  };
-
-  struct Arg {
-    alts_grpc_handshaker_client* client;
-    HandshakeQueue* self;
-    grpc_closure closure;
-  };
-
-  static void EnqueueHandshakeAndMaybeStartSomeLocked(
-      void* arg, grpc_error* unused_error) {
-    Arg* args = static_cast<Arg*>(arg);
-    args->self->EnqueueHandshakeAndMaybeStartSomeInnerLocked(args->client);
-    grpc_core::Delete(args);
-  }
-
-  void EnqueueHandshakeAndMaybeStartSomeInnerLocked(
-      alts_grpc_handshaker_client* client) {
+    grpc_core::MutexLock lock(&mu_);
     if (client == nullptr) {
+      // If client is nullptr, then don't add anything to queue. A nullptr
+      // client signals to the queue that we've just finished a handshake, and
+      // should now check if more can resume.
       outstanding_handshakes_--;
     } else {
-      Node* node = grpc_core::New<Node>();
-      node->client = client;
       gpr_log(GPR_DEBUG,
               "HandshakeQueue:%p: outstanding_handshakes_:%ld "
-              "old head_:%p new head_: %p tail_:%p",
-              this, outstanding_handshakes_, head_, node, tail_);
-      if (head_ == nullptr) {
-        GPR_ASSERT(tail_ == nullptr);
-        head_ = node;
-        tail_ = node;
-      } else {
-        GPR_ASSERT(tail_ != nullptr);
-        node->next = head_;
-        GPR_ASSERT(head_->prev == nullptr);
-        head_->prev = node;
-        head_ = node;
-      }
+              "old head:%p new head:%p tail:%p",
+              this, outstanding_handshakes_, queued_handshakes_.front(), client,
+              queued_handshakes_.back());
+      queued_handshakes_.push_back(client);
     }
     while (outstanding_handshakes_ < max_outstanding_handshakes_ &&
-           tail_ != nullptr) {
+           queued_handshakes_.size() > 0) {
       gpr_log(GPR_DEBUG,
               "start handshake "
               "outstanding_handshakes_:%ld "
-              "head_:%p tail_:%p",
-              outstanding_handshakes_, head_, tail_);
+              "head:%p tail:%p",
+              outstanding_handshakes_, queued_handshakes_.front(),
+              queued_handshakes_.back());
       GPR_ASSERT(outstanding_handshakes_ < max_outstanding_handshakes_);
-      continue_make_grpc_call(tail_->client, true /* is_start */);
-      Node* prev = tail_;
-      tail_ = tail_->prev;
-      grpc_core::Delete(prev);
+      continue_make_grpc_call(queued_handshakes_.front(), true /* is_start */);
+      queued_handshakes_.pop_front();
       outstanding_handshakes_++;
-    }
-    if (tail_ == nullptr) {
-      head_ = nullptr;
     }
   }
 
-  grpc_core::Combiner* combiner_ = grpc_combiner_create();
-  Node* head_ = nullptr;
-  Node* tail_ = nullptr;
+ private:
+  gpr_mu mu_;
+  std::list<alts_grpc_handshaker_client*> queued_handshakes_;
   size_t outstanding_handshakes_ = 0;
   const size_t max_outstanding_handshakes_;
 };
