@@ -63,7 +63,7 @@ time sudo installer -pkg ./python-3.7.0-macosx10.9.pkg -target /
 time sudo installer -pkg ./python-3.8.0-macosx10.9.pkg -target /
 
 # set xcode version for Obj-C tests
-sudo xcode-select -switch /Applications/Xcode_9.2.app/Contents/Developer/
+sudo xcode-select -switch /Applications/Xcode_11.0.app/Contents/Developer/
 
 # Disable some unwanted dotnet options
 export NUGET_XMLDOC_MODE=skip
