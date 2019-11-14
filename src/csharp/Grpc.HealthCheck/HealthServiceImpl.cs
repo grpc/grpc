@@ -157,7 +157,7 @@ namespace Grpc.HealthCheck
             HealthCheckResponse response = GetHealthCheckResponse(service, throwOnNotFound: false);
             await responseStream.WriteAsync(response);
 
-            // Channel is used to to marshell multiple callers updating status into a single queue.
+            // Channel is used to to marshall multiple callers updating status into a single queue.
             // This is required because IServerStreamWriter is not thread safe.
             // The channel will buffer up to XXX messages, after which it will drop the oldest messages.
             Channel<HealthCheckResponse> channel = Channel.CreateBounded<HealthCheckResponse>(new BoundedChannelOptions(capacity: 5) {
