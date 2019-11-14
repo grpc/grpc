@@ -3848,7 +3848,6 @@ LIBGRPC_SRC = \
     src/core/ext/filters/client_channel/client_channel_channelz.cc \
     src/core/ext/filters/client_channel/client_channel_factory.cc \
     src/core/ext/filters/client_channel/client_channel_plugin.cc \
-    src/core/ext/filters/client_channel/connector.cc \
     src/core/ext/filters/client_channel/global_subchannel_pool.cc \
     src/core/ext/filters/client_channel/health/health_check_client.cc \
     src/core/ext/filters/client_channel/http_connect_handshaker.cc \
@@ -4246,7 +4245,6 @@ LIBGRPC_CRONET_SRC = \
     src/core/ext/filters/client_channel/client_channel_channelz.cc \
     src/core/ext/filters/client_channel/client_channel_factory.cc \
     src/core/ext/filters/client_channel/client_channel_plugin.cc \
-    src/core/ext/filters/client_channel/connector.cc \
     src/core/ext/filters/client_channel/global_subchannel_pool.cc \
     src/core/ext/filters/client_channel/health/health_check_client.cc \
     src/core/ext/filters/client_channel/http_connect_handshaker.cc \
@@ -4635,7 +4633,6 @@ LIBGRPC_TEST_UTIL_SRC = \
     src/core/ext/filters/client_channel/client_channel_channelz.cc \
     src/core/ext/filters/client_channel/client_channel_factory.cc \
     src/core/ext/filters/client_channel/client_channel_plugin.cc \
-    src/core/ext/filters/client_channel/connector.cc \
     src/core/ext/filters/client_channel/global_subchannel_pool.cc \
     src/core/ext/filters/client_channel/health/health_check_client.cc \
     src/core/ext/filters/client_channel/http_connect_handshaker.cc \
@@ -4965,7 +4962,6 @@ LIBGRPC_TEST_UTIL_UNSECURE_SRC = \
     src/core/ext/filters/client_channel/client_channel_channelz.cc \
     src/core/ext/filters/client_channel/client_channel_factory.cc \
     src/core/ext/filters/client_channel/client_channel_plugin.cc \
-    src/core/ext/filters/client_channel/connector.cc \
     src/core/ext/filters/client_channel/global_subchannel_pool.cc \
     src/core/ext/filters/client_channel/health/health_check_client.cc \
     src/core/ext/filters/client_channel/http_connect_handshaker.cc \
@@ -5293,7 +5289,6 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/ext/filters/client_channel/client_channel_channelz.cc \
     src/core/ext/filters/client_channel/client_channel_factory.cc \
     src/core/ext/filters/client_channel/client_channel_plugin.cc \
-    src/core/ext/filters/client_channel/connector.cc \
     src/core/ext/filters/client_channel/global_subchannel_pool.cc \
     src/core/ext/filters/client_channel/health/health_check_client.cc \
     src/core/ext/filters/client_channel/http_connect_handshaker.cc \
@@ -5696,7 +5691,6 @@ LIBGRPC++_SRC = \
     src/core/ext/filters/client_channel/client_channel_channelz.cc \
     src/core/ext/filters/client_channel/client_channel_factory.cc \
     src/core/ext/filters/client_channel/client_channel_plugin.cc \
-    src/core/ext/filters/client_channel/connector.cc \
     src/core/ext/filters/client_channel/global_subchannel_pool.cc \
     src/core/ext/filters/client_channel/health/health_check_client.cc \
     src/core/ext/filters/client_channel/http_connect_handshaker.cc \
@@ -6924,7 +6918,6 @@ LIBGRPC++_UNSECURE_SRC = \
     src/core/ext/filters/client_channel/client_channel_channelz.cc \
     src/core/ext/filters/client_channel/client_channel_factory.cc \
     src/core/ext/filters/client_channel/client_channel_plugin.cc \
-    src/core/ext/filters/client_channel/connector.cc \
     src/core/ext/filters/client_channel/global_subchannel_pool.cc \
     src/core/ext/filters/client_channel/health/health_check_client.cc \
     src/core/ext/filters/client_channel/http_connect_handshaker.cc \

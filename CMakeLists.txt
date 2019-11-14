@@ -1360,7 +1360,6 @@ add_library(grpc
   src/core/ext/filters/client_channel/client_channel_channelz.cc
   src/core/ext/filters/client_channel/client_channel_factory.cc
   src/core/ext/filters/client_channel/client_channel_plugin.cc
-  src/core/ext/filters/client_channel/connector.cc
   src/core/ext/filters/client_channel/global_subchannel_pool.cc
   src/core/ext/filters/client_channel/health/health_check_client.cc
   src/core/ext/filters/client_channel/http_connect_handshaker.cc
@@ -1766,7 +1765,6 @@ add_library(grpc_cronet
   src/core/ext/filters/client_channel/client_channel_channelz.cc
   src/core/ext/filters/client_channel/client_channel_factory.cc
   src/core/ext/filters/client_channel/client_channel_plugin.cc
-  src/core/ext/filters/client_channel/connector.cc
   src/core/ext/filters/client_channel/global_subchannel_pool.cc
   src/core/ext/filters/client_channel/health/health_check_client.cc
   src/core/ext/filters/client_channel/http_connect_handshaker.cc
@@ -2164,7 +2162,6 @@ add_library(grpc_test_util
   src/core/ext/filters/client_channel/client_channel_channelz.cc
   src/core/ext/filters/client_channel/client_channel_factory.cc
   src/core/ext/filters/client_channel/client_channel_plugin.cc
-  src/core/ext/filters/client_channel/connector.cc
   src/core/ext/filters/client_channel/global_subchannel_pool.cc
   src/core/ext/filters/client_channel/health/health_check_client.cc
   src/core/ext/filters/client_channel/http_connect_handshaker.cc
@@ -2508,7 +2505,6 @@ add_library(grpc_test_util_unsecure
   src/core/ext/filters/client_channel/client_channel_channelz.cc
   src/core/ext/filters/client_channel/client_channel_factory.cc
   src/core/ext/filters/client_channel/client_channel_plugin.cc
-  src/core/ext/filters/client_channel/connector.cc
   src/core/ext/filters/client_channel/global_subchannel_pool.cc
   src/core/ext/filters/client_channel/health/health_check_client.cc
   src/core/ext/filters/client_channel/http_connect_handshaker.cc
@@ -2863,7 +2859,6 @@ add_library(grpc_unsecure
   src/core/ext/filters/client_channel/client_channel_channelz.cc
   src/core/ext/filters/client_channel/client_channel_factory.cc
   src/core/ext/filters/client_channel/client_channel_plugin.cc
-  src/core/ext/filters/client_channel/connector.cc
   src/core/ext/filters/client_channel/global_subchannel_pool.cc
   src/core/ext/filters/client_channel/health/health_check_client.cc
   src/core/ext/filters/client_channel/http_connect_handshaker.cc
@@ -3301,7 +3296,6 @@ add_library(grpc++
   src/core/ext/filters/client_channel/client_channel_channelz.cc
   src/core/ext/filters/client_channel/client_channel_factory.cc
   src/core/ext/filters/client_channel/client_channel_plugin.cc
-  src/core/ext/filters/client_channel/connector.cc
   src/core/ext/filters/client_channel/global_subchannel_pool.cc
   src/core/ext/filters/client_channel/health/health_check_client.cc
   src/core/ext/filters/client_channel/http_connect_handshaker.cc
@@ -4563,7 +4557,6 @@ add_library(grpc++_unsecure
   src/core/ext/filters/client_channel/client_channel_channelz.cc
   src/core/ext/filters/client_channel/client_channel_factory.cc
   src/core/ext/filters/client_channel/client_channel_plugin.cc
-  src/core/ext/filters/client_channel/connector.cc
   src/core/ext/filters/client_channel/global_subchannel_pool.cc
   src/core/ext/filters/client_channel/health/health_check_client.cc
   src/core/ext/filters/client_channel/http_connect_handshaker.cc
