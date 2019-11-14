@@ -490,6 +490,7 @@
       <%text>${_gRPC_UPB_GRPC_GENERATED_DIR}</%text>
       <%text>${_gRPC_UPB_INCLUDE_DIR}</%text>
       <%text>${_gRPC_ZLIB_INCLUDE_DIR}</%text>
+      third_party/json
   % if lib.build in ['test', 'private'] and lib.language == 'c++':
       third_party/googletest/googletest/include
       third_party/googletest/googletest
@@ -569,6 +570,7 @@
       <%text>${_gRPC_UPB_GRPC_GENERATED_DIR}</%text>
       <%text>${_gRPC_UPB_INCLUDE_DIR}</%text>
       <%text>${_gRPC_ZLIB_INCLUDE_DIR}</%text>
+      third_party/json
   % if tgt.build in ['test', 'private'] and tgt.language == 'c++':
       third_party/googletest/googletest/include
       third_party/googletest/googletest
