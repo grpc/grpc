@@ -3244,37 +3244,6 @@ targets:
   corpus_dirs:
   - test/core/json/corpus
   maxlen: 512
-- name: json_rewrite
-  build: test
-  run: false
-  language: c
-  src:
-  - test/core/json/json_rewrite.cc
-  deps:
-  - grpc_test_util
-  - grpc
-  - gpr
-  uses_polling: false
-- name: json_rewrite_test
-  build: test
-  language: c
-  src:
-  - test/core/json/json_rewrite_test.cc
-  deps:
-  - grpc_test_util
-  - grpc
-  - gpr
-  uses_polling: false
-- name: json_stream_error_test
-  build: test
-  language: c
-  src:
-  - test/core/json/json_stream_error_test.cc
-  deps:
-  - grpc_test_util
-  - grpc
-  - gpr
-  uses_polling: false
 - name: json_test
   build: test
   language: c
