@@ -414,11 +414,8 @@ void DoHandshakeQueuesInit(void) {
 void EnqueueHandshakeAndMaybeStartSome(alts_grpc_handshaker_client* client,
                                        bool is_client) {
   gpr_once_init(&g_queued_handshakes_init, DoHandshakeQueuesInit);
-  if (is_client) {
-    g_client_handshake_queue->EnqueueHandshakeAndMaybeStartSome(client);
-  } else {
-    g_server_handshake_queue->EnqueueHandshakeAndMaybeStartSome(client);
-  }
+  HandshakeQueue* queue = is_client ? g_client_handshake_queue : g_server_handshake_queue;
+  queue->EnqueueHandshakeAndMaybeStartSome(client);
 }
 
 };  // namespace
