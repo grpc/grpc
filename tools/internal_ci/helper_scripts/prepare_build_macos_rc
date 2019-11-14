@@ -36,9 +36,9 @@ source $HOME/.rvm/scripts/rvm
 set -e  # rvm commands are very verbose
 time rvm install 2.5.0
 rvm use 2.5.0 --default
-time gem install bundler -v 1.17.3 --no-ri --no-doc
-time gem install cocoapods --version 1.3.1 --no-ri --no-doc
-time gem install rake-compiler --no-ri --no-doc
+time gem install bundler -v 1.17.3 --no-document
+time gem install cocoapods --version 1.3.1 --no-document
+time gem install rake-compiler --no-document
 rvm osx-ssl-certs status all
 rvm osx-ssl-certs update all
 set -ex
