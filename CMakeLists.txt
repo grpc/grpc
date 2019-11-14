@@ -1212,7 +1212,6 @@ add_library(grpc
   src/core/lib/iomgr/wakeup_fd_posix.cc
   src/core/lib/json/json.cc
   src/core/lib/json/json_reader.cc
-  src/core/lib/json/json_string.cc
   src/core/lib/json/json_writer.cc
   src/core/lib/slice/b64.cc
   src/core/lib/slice/percent_encoding.cc
@@ -1686,7 +1685,6 @@ add_library(grpc_cronet
   src/core/lib/iomgr/wakeup_fd_posix.cc
   src/core/lib/json/json.cc
   src/core/lib/json/json_reader.cc
-  src/core/lib/json/json_string.cc
   src/core/lib/json/json_writer.cc
   src/core/lib/slice/b64.cc
   src/core/lib/slice/percent_encoding.cc
@@ -2116,7 +2114,6 @@ add_library(grpc_test_util
   src/core/lib/iomgr/wakeup_fd_posix.cc
   src/core/lib/json/json.cc
   src/core/lib/json/json_reader.cc
-  src/core/lib/json/json_string.cc
   src/core/lib/json/json_writer.cc
   src/core/lib/slice/b64.cc
   src/core/lib/slice/percent_encoding.cc
@@ -2460,7 +2457,6 @@ add_library(grpc_test_util_unsecure
   src/core/lib/iomgr/wakeup_fd_posix.cc
   src/core/lib/json/json.cc
   src/core/lib/json/json_reader.cc
-  src/core/lib/json/json_string.cc
   src/core/lib/json/json_writer.cc
   src/core/lib/slice/b64.cc
   src/core/lib/slice/percent_encoding.cc
@@ -2780,7 +2776,6 @@ add_library(grpc_unsecure
   src/core/lib/iomgr/wakeup_fd_posix.cc
   src/core/lib/json/json.cc
   src/core/lib/json/json_reader.cc
-  src/core/lib/json/json_string.cc
   src/core/lib/json/json_writer.cc
   src/core/lib/slice/b64.cc
   src/core/lib/slice/percent_encoding.cc
@@ -3438,7 +3433,6 @@ add_library(grpc++
   src/core/lib/iomgr/wakeup_fd_posix.cc
   src/core/lib/json/json.cc
   src/core/lib/json/json_reader.cc
-  src/core/lib/json/json_string.cc
   src/core/lib/json/json_writer.cc
   src/core/lib/slice/b64.cc
   src/core/lib/slice/percent_encoding.cc
@@ -4700,7 +4694,6 @@ add_library(grpc++_unsecure
   src/core/lib/iomgr/wakeup_fd_posix.cc
   src/core/lib/json/json.cc
   src/core/lib/json/json_reader.cc
-  src/core/lib/json/json_string.cc
   src/core/lib/json/json_writer.cc
   src/core/lib/slice/b64.cc
   src/core/lib/slice/percent_encoding.cc

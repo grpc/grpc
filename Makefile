@@ -3700,7 +3700,6 @@ LIBGRPC_SRC = \
     src/core/lib/iomgr/wakeup_fd_posix.cc \
     src/core/lib/json/json.cc \
     src/core/lib/json/json_reader.cc \
-    src/core/lib/json/json_string.cc \
     src/core/lib/json/json_writer.cc \
     src/core/lib/slice/b64.cc \
     src/core/lib/slice/percent_encoding.cc \
@@ -4166,7 +4165,6 @@ LIBGRPC_CRONET_SRC = \
     src/core/lib/iomgr/wakeup_fd_posix.cc \
     src/core/lib/json/json.cc \
     src/core/lib/json/json_reader.cc \
-    src/core/lib/json/json_string.cc \
     src/core/lib/json/json_writer.cc \
     src/core/lib/slice/b64.cc \
     src/core/lib/slice/percent_encoding.cc \
@@ -4587,7 +4585,6 @@ LIBGRPC_TEST_UTIL_SRC = \
     src/core/lib/iomgr/wakeup_fd_posix.cc \
     src/core/lib/json/json.cc \
     src/core/lib/json/json_reader.cc \
-    src/core/lib/json/json_string.cc \
     src/core/lib/json/json_writer.cc \
     src/core/lib/slice/b64.cc \
     src/core/lib/slice/percent_encoding.cc \
@@ -4917,7 +4914,6 @@ LIBGRPC_TEST_UTIL_UNSECURE_SRC = \
     src/core/lib/iomgr/wakeup_fd_posix.cc \
     src/core/lib/json/json.cc \
     src/core/lib/json/json_reader.cc \
-    src/core/lib/json/json_string.cc \
     src/core/lib/json/json_writer.cc \
     src/core/lib/slice/b64.cc \
     src/core/lib/slice/percent_encoding.cc \
@@ -5210,7 +5206,6 @@ LIBGRPC_UNSECURE_SRC = \
     src/core/lib/iomgr/wakeup_fd_posix.cc \
     src/core/lib/json/json.cc \
     src/core/lib/json/json_reader.cc \
-    src/core/lib/json/json_string.cc \
     src/core/lib/json/json_writer.cc \
     src/core/lib/slice/b64.cc \
     src/core/lib/slice/percent_encoding.cc \
@@ -5833,7 +5828,6 @@ LIBGRPC++_SRC = \
     src/core/lib/iomgr/wakeup_fd_posix.cc \
     src/core/lib/json/json.cc \
     src/core/lib/json/json_reader.cc \
-    src/core/lib/json/json_string.cc \
     src/core/lib/json/json_writer.cc \
     src/core/lib/slice/b64.cc \
     src/core/lib/slice/percent_encoding.cc \
@@ -7061,7 +7055,6 @@ LIBGRPC++_UNSECURE_SRC = \
     src/core/lib/iomgr/wakeup_fd_posix.cc \
     src/core/lib/json/json.cc \
     src/core/lib/json/json_reader.cc \
-    src/core/lib/json/json_string.cc \
     src/core/lib/json/json_writer.cc \
     src/core/lib/slice/b64.cc \
     src/core/lib/slice/percent_encoding.cc \

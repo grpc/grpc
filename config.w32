@@ -177,7 +177,6 @@ if (PHP_GRPC != "no") {
     "src\\core\\lib\\iomgr\\wakeup_fd_posix.cc " +
     "src\\core\\lib\\json\\json.cc " +
     "src\\core\\lib\\json\\json_reader.cc " +
-    "src\\core\\lib\\json\\json_string.cc " +
     "src\\core\\lib\\json\\json_writer.cc " +
     "src\\core\\lib\\slice\\b64.cc " +
     "src\\core\\lib\\slice\\percent_encoding.cc " +
