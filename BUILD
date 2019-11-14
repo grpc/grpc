@@ -916,7 +916,6 @@ grpc_cc_library(
         "src/core/lib/iomgr/wakeup_fd_posix.h",
         "src/core/lib/json/json.h",
         "src/core/lib/json/json_common.h",
-        "src/core/lib/json/json_reader.h",
         "src/core/lib/json/json_writer.h",
         "src/core/lib/slice/b64.h",
         "src/core/lib/slice/percent_encoding.h",
