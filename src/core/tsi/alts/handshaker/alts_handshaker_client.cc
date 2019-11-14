@@ -343,48 +343,42 @@ namespace {
 class HandshakeQueue {
  public:
   explicit HandshakeQueue(size_t max_outstanding_handshakes)
-      : max_outstanding_handshakes_(max_outstanding_handshakes) {
-    gpr_mu_init(&mu_);
+      : max_outstanding_handshakes_(max_outstanding_handshakes) {}
+
+  void RequestHandshake(alts_grpc_handshaker_client* client) {
+    {
+      grpc_core::MutexLock lock(&mu_);
+      if (outstanding_handshakes_ == max_outstanding_handshakes_) {
+        // Max number already running, add to queue.
+        queued_handshakes_.push_back(client);
+        return;
+      }
+      // Start the handshake immediately.
+      ++outstanding_handshakes_;
+    }
+    continue_make_grpc_call(client, true /* is_start */);
   }
 
-  ~HandshakeQueue() { gpr_mu_destroy(&mu_); }
-
-  // This has the following behavior:
-  // 1) Append client to this end of this HandshakeQueue's queue
-  // 2) Start as many handshakes that are currently in the queue as we can, so
-  //    long as we don't exceed our limit for the number of active handshakes.
-  void EnqueueHandshakeAndMaybeStartSome(alts_grpc_handshaker_client* client) {
-    grpc_core::MutexLock lock(&mu_);
-    if (client == nullptr) {
-      // If client is nullptr, then don't add anything to queue. A nullptr
-      // client signals to the queue that we've just finished a handshake, and
-      // should now check if more can resume.
-      outstanding_handshakes_--;
-    } else {
-      gpr_log(GPR_DEBUG,
-              "HandshakeQueue:%p: outstanding_handshakes_:%ld "
-              "old head:%p new head:%p tail:%p",
-              this, outstanding_handshakes_, queued_handshakes_.front(), client,
-              queued_handshakes_.back());
-      queued_handshakes_.push_back(client);
-    }
-    while (outstanding_handshakes_ < max_outstanding_handshakes_ &&
-           queued_handshakes_.size() > 0) {
-      gpr_log(GPR_DEBUG,
-              "start handshake "
-              "outstanding_handshakes_:%ld "
-              "head:%p tail:%p",
-              outstanding_handshakes_, queued_handshakes_.front(),
-              queued_handshakes_.back());
-      GPR_ASSERT(outstanding_handshakes_ < max_outstanding_handshakes_);
-      continue_make_grpc_call(queued_handshakes_.front(), true /* is_start */);
+  void HandshakeDone() {
+    alts_grpc_handshaker_client* client = nullptr;
+    {
+      grpc_core::MutexLock lock(&mu_);
+      if (queued_handshakes_.empty()) {
+        // Nothing more in queue.  Decrement count and return immediately.
+        --outstanding_handshakes_;
+        return;
+      }
+      // Remove next entry from queue and start the handshake.
+      client = queued_handshakes_.front();
       queued_handshakes_.pop_front();
-      outstanding_handshakes_++;
+    }
+    if (client != nullptr) {
+      continue_make_grpc_call(client, true /* is_start */);
     }
   }
 
  private:
-  gpr_mu mu_;
+  grpc_core::Mutex mu_;
   std::list<alts_grpc_handshaker_client*> queued_handshakes_;
   size_t outstanding_handshakes_ = 0;
   const size_t max_outstanding_handshakes_;
@@ -409,12 +403,17 @@ void DoHandshakeQueuesInit(void) {
       new HandshakeQueue(40 /* max outstanding handshakes */);
 }
 
-void EnqueueHandshakeAndMaybeStartSome(alts_grpc_handshaker_client* client,
-                                       bool is_client) {
+void RequestHandshake(alts_grpc_handshaker_client* client, bool is_client) {
   gpr_once_init(&g_queued_handshakes_init, DoHandshakeQueuesInit);
   HandshakeQueue* queue =
       is_client ? g_client_handshake_queue : g_server_handshake_queue;
-  queue->EnqueueHandshakeAndMaybeStartSome(client);
+  queue->RequestHandshake(client);
+}
+
+void HandshakeDone(bool is_client) {
+  HandshakeQueue* queue =
+      is_client ? g_client_handshake_queue : g_server_handshake_queue;
+  queue->HandshakeDone();
 }
 
 };  // namespace
@@ -428,7 +427,7 @@ static tsi_result make_grpc_call(alts_handshaker_client* c, bool is_start) {
   alts_grpc_handshaker_client* client =
       reinterpret_cast<alts_grpc_handshaker_client*>(c);
   if (is_start) {
-    EnqueueHandshakeAndMaybeStartSome(client, client->is_client);
+    RequestHandshake(client, client->is_client);
     return TSI_OK;
   } else {
     return continue_make_grpc_call(client, is_start);
@@ -452,7 +451,7 @@ static void on_status_received(void* arg, grpc_error* error) {
   }
   maybe_complete_tsi_next(client, true /* receive_status_finished */,
                           nullptr /* pending_recv_message_result */);
-  EnqueueHandshakeAndMaybeStartSome(nullptr, client->is_client);
+  HandshakeDone(client->is_client);
   alts_grpc_handshaker_client_unref(client);
 }
 

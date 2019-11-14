@@ -247,21 +247,27 @@ class FakeHandshakerService : public HandshakerService::Service {
    public:
     explicit ConcurrentRpcsCheck(FakeHandshakerService* parent)
         : parent_(parent) {
-      grpc::internal::MutexLock lock(&parent->expected_max_concurrent_rpcs_mu_);
-      if (++parent->concurrent_rpcs_ > parent->expected_max_concurrent_rpcs_) {
-        gpr_log(GPR_ERROR,
-                "FakeHandshakerService:%p concurrent_rpcs_:%d "
-                "expected_max_concurrent_rpcs:%d",
-                parent, parent->concurrent_rpcs_,
-                parent->expected_max_concurrent_rpcs_);
-        abort();
+      if (parent->expected_max_concurrent_rpcs_ > 0) {
+        grpc::internal::MutexLock lock(
+            &parent->expected_max_concurrent_rpcs_mu_);
+        if (++parent->concurrent_rpcs_ >
+            parent->expected_max_concurrent_rpcs_) {
+          gpr_log(GPR_ERROR,
+                  "FakeHandshakerService:%p concurrent_rpcs_:%d "
+                  "expected_max_concurrent_rpcs:%d",
+                  parent, parent->concurrent_rpcs_,
+                  parent->expected_max_concurrent_rpcs_);
+          abort();
+        }
       }
     }
 
     ~ConcurrentRpcsCheck() {
-      grpc::internal::MutexLock lock(
-          &parent_->expected_max_concurrent_rpcs_mu_);
-      parent_->concurrent_rpcs_--;
+      if (parent_->expected_max_concurrent_rpcs_ > 0) {
+        grpc::internal::MutexLock lock(
+            &parent_->expected_max_concurrent_rpcs_mu_);
+        parent_->concurrent_rpcs_--;
+      }
     }
 
    private:
