@@ -236,10 +236,11 @@ class ServerBidiReactor : public internal::ServerReactor {
   /// any initial metadata will be passed along with the first Write or the
   /// Finish (if there are no writes).
   void StartSendInitialMetadata() {
-    auto* stream = stream_.load(std::memory_order_acquire);
+    ServerCallbackReaderWriter<Request, Response>* stream =
+        stream_.load(std::memory_order_acquire);
     if (stream == nullptr) {
       grpc::internal::MutexLock l(&stream_mu_);
-      stream = stream_.load(std::memory_order_acquire);
+      stream = stream_.load(std::memory_order_relaxed);
       if (stream == nullptr) {
         send_initial_metadata_wanted_ = true;
         return;
@@ -253,10 +254,11 @@ class ServerBidiReactor : public internal::ServerReactor {
   /// \param[out] req Where to eventually store the read message. Valid when
   ///                 the library calls OnReadDone
   void StartRead(Request* req) {
-    auto* stream = stream_.load(std::memory_order_acquire);
+    ServerCallbackReaderWriter<Request, Response>* stream =
+        stream_.load(std::memory_order_acquire);
     if (stream == nullptr) {
       grpc::internal::MutexLock l(&stream_mu_);
-      stream = stream_.load(std::memory_order_acquire);
+      stream = stream_.load(std::memory_order_relaxed);
       if (stream == nullptr) {
         read_wanted_ = req;
         return;
@@ -281,10 +283,11 @@ class ServerBidiReactor : public internal::ServerReactor {
   ///                 application regains ownership of resp.
   /// \param[in] options The WriteOptions to use for writing this message
   void StartWrite(const Response* resp, ::grpc::WriteOptions options) {
-    auto* stream = stream_.load(std::memory_order_acquire);
+    ServerCallbackReaderWriter<Request, Response>* stream =
+        stream_.load(std::memory_order_acquire);
     if (stream == nullptr) {
       grpc::internal::MutexLock l(&stream_mu_);
-      stream = stream_.load(std::memory_order_acquire);
+      stream = stream_.load(std::memory_order_relaxed);
       if (stream == nullptr) {
         write_wanted_ = resp;
         write_options_wanted_ = std::move(options);
@@ -309,10 +312,11 @@ class ServerBidiReactor : public internal::ServerReactor {
   /// \param[in] s The status outcome of this RPC
   void StartWriteAndFinish(const Response* resp, ::grpc::WriteOptions options,
                            ::grpc::Status s) {
-    auto* stream = stream_.load(std::memory_order_acquire);
+    ServerCallbackReaderWriter<Request, Response>* stream =
+        stream_.load(std::memory_order_acquire);
     if (stream == nullptr) {
       grpc::internal::MutexLock l(&stream_mu_);
-      stream = stream_.load(std::memory_order_acquire);
+      stream = stream_.load(std::memory_order_relaxed);
       if (stream == nullptr) {
         write_and_finish_wanted_ = true;
         write_wanted_ = resp;
@@ -343,10 +347,11 @@ class ServerBidiReactor : public internal::ServerReactor {
   ///
   /// \param[in] s The status outcome of this RPC
   void Finish(::grpc::Status s) {
-    auto* stream = stream_.load(std::memory_order_acquire);
+    ServerCallbackReaderWriter<Request, Response>* stream =
+        stream_.load(std::memory_order_acquire);
     if (stream == nullptr) {
       grpc::internal::MutexLock l(&stream_mu_);
-      stream = stream_.load(std::memory_order_acquire);
+      stream = stream_.load(std::memory_order_relaxed);
       if (stream == nullptr) {
         finish_wanted_ = true;
         status_wanted_ = std::move(s);
@@ -397,19 +402,24 @@ class ServerBidiReactor : public internal::ServerReactor {
     stream_.store(stream, std::memory_order_release);
     if (send_initial_metadata_wanted_) {
       stream->SendInitialMetadata();
+      send_initial_metadata_wanted_ = false;
     }
     if (read_wanted_ != nullptr) {
       stream->Read(read_wanted_);
+      read_wanted_ = nullptr;
     }
     if (write_and_finish_wanted_) {
       stream->WriteAndFinish(write_wanted_, std::move(write_options_wanted_),
                              std::move(status_wanted_));
+      write_and_finish_wanted_ = nullptr;
     } else {
       if (write_wanted_ != nullptr) {
         stream->Write(write_wanted_, std::move(write_options_wanted_));
+        write_wanted_ = nullptr;
       }
       if (finish_wanted_) {
         stream->Finish(std::move(status_wanted_));
+        finish_wanted_ = false;
       }
     }
   }
@@ -434,10 +444,11 @@ class ServerReadReactor : public internal::ServerReactor {
 
   /// The following operation initiations are exactly like ServerBidiReactor.
   void StartSendInitialMetadata() {
-    auto* reader = reader_.load(std::memory_order_acquire);
+    ServerCallbackReader<Request>* reader =
+        reader_.load(std::memory_order_acquire);
     if (reader == nullptr) {
       grpc::internal::MutexLock l(&reader_mu_);
-      reader = reader_.load(std::memory_order_acquire);
+      reader = reader_.load(std::memory_order_relaxed);
       if (reader == nullptr) {
         send_initial_metadata_wanted_ = true;
         return;
@@ -446,10 +457,11 @@ class ServerReadReactor : public internal::ServerReactor {
     reader->SendInitialMetadata();
   }
   void StartRead(Request* req) {
-    auto* reader = reader_.load(std::memory_order_acquire);
+    ServerCallbackReader<Request>* reader =
+        reader_.load(std::memory_order_acquire);
     if (reader == nullptr) {
       grpc::internal::MutexLock l(&reader_mu_);
-      reader = reader_.load(std::memory_order_acquire);
+      reader = reader_.load(std::memory_order_relaxed);
       if (reader == nullptr) {
         read_wanted_ = req;
         return;
@@ -458,10 +470,11 @@ class ServerReadReactor : public internal::ServerReactor {
     reader->Read(req);
   }
   void Finish(::grpc::Status s) {
-    auto* reader = reader_.load(std::memory_order_acquire);
+    ServerCallbackReader<Request>* reader =
+        reader_.load(std::memory_order_acquire);
     if (reader == nullptr) {
       grpc::internal::MutexLock l(&reader_mu_);
-      reader = reader_.load(std::memory_order_acquire);
+      reader = reader_.load(std::memory_order_relaxed);
       if (reader == nullptr) {
         finish_wanted_ = true;
         status_wanted_ = std::move(s);
@@ -487,12 +500,15 @@ class ServerReadReactor : public internal::ServerReactor {
     reader_.store(reader, std::memory_order_release);
     if (send_initial_metadata_wanted_) {
       reader->SendInitialMetadata();
+      send_initial_metadata_wanted_ = false;
     }
     if (read_wanted_ != nullptr) {
       reader->Read(read_wanted_);
+      read_wanted_ = nullptr;
     }
     if (finish_wanted_) {
       reader->Finish(std::move(status_wanted_));
+      finish_wanted_ = false;
     }
   }
 
@@ -513,10 +529,11 @@ class ServerWriteReactor : public internal::ServerReactor {
 
   /// The following operation initiations are exactly like ServerBidiReactor.
   void StartSendInitialMetadata() {
-    auto* writer = writer_.load(std::memory_order_acquire);
+    ServerCallbackWriter<Response>* writer =
+        writer_.load(std::memory_order_acquire);
     if (writer == nullptr) {
       grpc::internal::MutexLock l(&writer_mu_);
-      writer = writer_.load(std::memory_order_acquire);
+      writer = writer_.load(std::memory_order_relaxed);
       if (writer == nullptr) {
         send_initial_metadata_wanted_ = true;
         return;
@@ -528,10 +545,11 @@ class ServerWriteReactor : public internal::ServerReactor {
     StartWrite(resp, ::grpc::WriteOptions());
   }
   void StartWrite(const Response* resp, ::grpc::WriteOptions options) {
-    auto* writer = writer_.load(std::memory_order_acquire);
+    ServerCallbackWriter<Response>* writer =
+        writer_.load(std::memory_order_acquire);
     if (writer == nullptr) {
       grpc::internal::MutexLock l(&writer_mu_);
-      writer = writer_.load(std::memory_order_acquire);
+      writer = writer_.load(std::memory_order_relaxed);
       if (writer == nullptr) {
         write_wanted_ = resp;
         write_options_wanted_ = std::move(options);
@@ -542,10 +560,11 @@ class ServerWriteReactor : public internal::ServerReactor {
   }
   void StartWriteAndFinish(const Response* resp, ::grpc::WriteOptions options,
                            ::grpc::Status s) {
-    auto* writer = writer_.load(std::memory_order_acquire);
+    ServerCallbackWriter<Response>* writer =
+        writer_.load(std::memory_order_acquire);
     if (writer == nullptr) {
       grpc::internal::MutexLock l(&writer_mu_);
-      writer = writer_.load(std::memory_order_acquire);
+      writer = writer_.load(std::memory_order_relaxed);
       if (writer == nullptr) {
         write_and_finish_wanted_ = true;
         write_wanted_ = resp;
@@ -560,10 +579,11 @@ class ServerWriteReactor : public internal::ServerReactor {
     StartWrite(resp, std::move(options.set_last_message()));
   }
   void Finish(::grpc::Status s) {
-    auto* writer = writer_.load(std::memory_order_acquire);
+    ServerCallbackWriter<Response>* writer =
+        writer_.load(std::memory_order_acquire);
     if (writer == nullptr) {
       grpc::internal::MutexLock l(&writer_mu_);
-      writer = writer_.load(std::memory_order_acquire);
+      writer = writer_.load(std::memory_order_relaxed);
       if (writer == nullptr) {
         finish_wanted_ = true;
         status_wanted_ = std::move(s);
@@ -588,16 +608,20 @@ class ServerWriteReactor : public internal::ServerReactor {
     writer_.store(writer, std::memory_order_release);
     if (send_initial_metadata_wanted_) {
       writer->SendInitialMetadata();
+      send_initial_metadata_wanted_ = false;
     }
     if (write_and_finish_wanted_) {
       writer->WriteAndFinish(write_wanted_, std::move(write_options_wanted_),
                              std::move(status_wanted_));
+      write_and_finish_wanted_ = nullptr;
     } else {
       if (write_wanted_ != nullptr) {
         writer->Write(write_wanted_, std::move(write_options_wanted_));
+        write_wanted_ = nullptr;
       }
       if (finish_wanted_) {
         writer->Finish(std::move(status_wanted_));
+        finish_wanted_ = false;
       }
     }
   }
@@ -619,10 +643,10 @@ class ServerUnaryReactor : public internal::ServerReactor {
 
   /// The following operation initiations are exactly like ServerBidiReactor.
   void StartSendInitialMetadata() {
-    auto* call = call_.load(std::memory_order_acquire);
+    ServerCallbackUnary* call = call_.load(std::memory_order_acquire);
     if (call == nullptr) {
       grpc::internal::MutexLock l(&call_mu_);
-      call = call_.load(std::memory_order_acquire);
+      call = call_.load(std::memory_order_relaxed);
       if (call == nullptr) {
         send_initial_metadata_wanted_ = true;
         return;
@@ -631,10 +655,10 @@ class ServerUnaryReactor : public internal::ServerReactor {
     call->SendInitialMetadata();
   }
   void Finish(::grpc::Status s) {
-    auto* call = call_.load(std::memory_order_acquire);
+    ServerCallbackUnary* call = call_.load(std::memory_order_acquire);
     if (call == nullptr) {
       grpc::internal::MutexLock l(&call_mu_);
-      call = call_.load(std::memory_order_acquire);
+      call = call_.load(std::memory_order_relaxed);
       if (call == nullptr) {
         finish_wanted_ = true;
         status_wanted_ = std::move(s);
@@ -658,9 +682,11 @@ class ServerUnaryReactor : public internal::ServerReactor {
     call_.store(call, std::memory_order_release);
     if (send_initial_metadata_wanted_) {
       call->SendInitialMetadata();
+      send_initial_metadata_wanted_ = false;
     }
     if (finish_wanted_) {
       call->Finish(std::move(status_wanted_));
+      finish_wanted_ = false;
     }
   }
 
