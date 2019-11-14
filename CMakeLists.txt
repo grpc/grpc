@@ -4831,6 +4831,8 @@ if(gRPC_INSTALL)
 endif()
 
 
+# grpcpp_channelz doesn't build with protobuf-lite
+# See https://github.com/grpc/grpc/issues/19473
 if(gRPC_BUILD_CODEGEN AND NOT gRPC_USE_PROTO_LITE)
 add_library(grpcpp_channelz
   src/cpp/server/channelz/channelz_service.cc

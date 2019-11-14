@@ -439,6 +439,8 @@
   <%def name="cc_library(lib)">
   % if any(proto_re.match(src) for src in lib.src):
   % if lib.name == 'grpcpp_channelz':
+  # grpcpp_channelz doesn't build with protobuf-lite
+  # See https://github.com/grpc/grpc/issues/19473
   if(gRPC_BUILD_CODEGEN AND NOT gRPC_USE_PROTO_LITE)
   % else:
   if(gRPC_BUILD_CODEGEN)
