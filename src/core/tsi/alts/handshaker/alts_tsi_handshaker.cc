@@ -267,8 +267,10 @@ tsi_result alts_tsi_handshaker_result_create(grpc_gcp_HandshakerResp* resp,
   }
   upb_strview local_service_account =
       grpc_gcp_Identity_service_account(local_identity);
-  // We don't check if local service account is empty here
-  // because local identity could be empty in certain situations.
+  if (local_service_account.size == 0) {
+    gpr_log(GPR_ERROR, "Invalid local service account");
+    return TSI_FAILED_PRECONDITION;
+  }
   alts_tsi_handshaker_result* result =
       static_cast<alts_tsi_handshaker_result*>(gpr_zalloc(sizeof(*result)));
   result->key_data =
@@ -290,7 +292,7 @@ tsi_result alts_tsi_handshaker_result_create(grpc_gcp_HandshakerResp* resp,
   grpc_gcp_AltsContext_set_application_protocol(context, application_protocol);
   grpc_gcp_AltsContext_set_record_protocol(context, record_protocol);
   // ALTS currently only supports the security level of 2,
-  // which is "grpc_gcp_INTEGRITY_AND_PRIVACY".
+  // which is "grpc_gcp_INTEGRITY_AND_PRIVACY"
   grpc_gcp_AltsContext_set_security_level(context, 2);
   grpc_gcp_AltsContext_set_peer_service_account(context, peer_service_account);
   grpc_gcp_AltsContext_set_local_service_account(context,
