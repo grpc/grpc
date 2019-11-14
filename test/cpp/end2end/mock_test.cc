@@ -42,7 +42,6 @@
 
 #include <iostream>
 
-using ::testing::_;
 using ::testing::AtLeast;
 using ::testing::DoAll;
 using ::testing::Invoke;
@@ -50,6 +49,7 @@ using ::testing::Return;
 using ::testing::SaveArg;
 using ::testing::SetArgPointee;
 using ::testing::WithArg;
+using ::testing::_;
 using grpc::testing::DefaultReactorTestPeer;
 using grpc::testing::EchoRequest;
 using grpc::testing::EchoResponse;
