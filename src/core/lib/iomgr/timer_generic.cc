@@ -548,9 +548,8 @@ static grpc_timer* pop_one(timer_shard* shard, grpc_millis now) {
     }
     if (timer->deadline > now) return nullptr;
     if (GRPC_TRACE_FLAG_ENABLED(grpc_timer_trace)) {
-      gpr_log(GPR_INFO, "TIMER %p: FIRE %" PRId64 "ms late via %s scheduler",
-              timer, now - timer->deadline,
-              timer->closure->scheduler->vtable->name);
+      gpr_log(GPR_INFO, "TIMER %p: FIRE %" PRId64 "ms late", timer,
+              now - timer->deadline);
     }
     timer->pending = false;
     grpc_timer_heap_pop(&shard->heap);
