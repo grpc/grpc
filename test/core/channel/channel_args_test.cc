@@ -126,12 +126,12 @@ grpc_channel_args* mutate_channel_args(const char* target,
   return new_args;
 }
 
-// Minimal stack should not have deadline filter
-static bool channel_has_deadline_filter(grpc_channel* c) {
+// Minimal stack should not have client_idle filter
+static bool channel_has_client_idle_filter(grpc_channel* c) {
   grpc_channel_stack* stack = grpc_channel_get_channel_stack(c);
   for (size_t i = 0; i < stack->count; i++) {
     if (strcmp(grpc_channel_stack_element(stack, i)->filter->name,
-               "deadline") == 0) {
+               "client_idle") == 0) {
       return true;
     }
   }
@@ -157,12 +157,12 @@ static void test_channel_create_with_global_mutator(void) {
   grpc_channel_args client_args = {GPR_ARRAY_SIZE(client_a), client_a};
   grpc_channel* c =
       grpc_insecure_channel_create("no_op_mutator", &client_args, nullptr);
-  GPR_ASSERT(channel_has_deadline_filter(c));
+  GPR_ASSERT(channel_has_client_idle_filter(c));
   grpc_channel_destroy(c);
 
   c = grpc_insecure_channel_create("minimal_stack_mutator", &client_args,
                                    nullptr);
-  GPR_ASSERT(channel_has_deadline_filter(c) == false);
+  GPR_ASSERT(channel_has_client_idle_filter(c) == false);
   grpc_channel_destroy(c);
 
   gpr_free(fc);
@@ -206,7 +206,8 @@ int main(int argc, char** argv) {
   test_channel_create_with_args();
   test_server_create_with_args();
   // This has to be the last test.
-  test_channel_create_with_global_mutator();
+  // TODO(markdroth): re-enable this test once client_idle is re-enabled
+  // test_channel_create_with_global_mutator();
   grpc_shutdown();
   return 0;
 }
