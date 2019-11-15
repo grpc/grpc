@@ -16,8 +16,8 @@
  *
  */
 
-#ifndef GRPC_SRC_CORE_LIB_IOMGR_POLLER_EVENTMANAGER_LIBUV_H
-#define GRPC_SRC_CORE_LIB_IOMGR_POLLER_EVENTMANAGER_LIBUV_H
+#ifndef GRPC_CORE_LIB_IOMGR_POLLER_EVENTMANAGER_LIBUV_H
+#define GRPC_CORE_LIB_IOMGR_POLLER_EVENTMANAGER_LIBUV_H
 
 #include <grpc/support/port_platform.h>
 
@@ -81,4 +81,4 @@ class LibuvEventManager {
 }  // namespace experimental
 }  // namespace grpc
 
-#endif  // GRPC_SRC_CORE_LIB_IOMGR_POLLER_EVENTMANAGER_LIBUV_H
+#endif /* GRPC_CORE_LIB_IOMGR_POLLER_EVENTMANAGER_LIBUV_H */
