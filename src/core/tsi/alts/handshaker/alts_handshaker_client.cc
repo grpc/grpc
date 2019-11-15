@@ -829,6 +829,12 @@ void alts_handshaker_client_ref_for_testing(alts_handshaker_client* c) {
 
 void alts_handshaker_client_on_status_received_for_testing(
     alts_handshaker_client* c, grpc_status_code status, grpc_error* error) {
+  // We first make sure that the handshake queue has been initialized
+  // here because there are tests that use this API that mock out
+  // other parts of the alts_handshaker_client in such a way that the
+  // code path that would normally ensure that the handshake queue
+  // has been initialized isn't taken.
+  gpr_once_init(&g_queued_handshakes_init, DoHandshakeQueuesInit);
   alts_grpc_handshaker_client* client =
       reinterpret_cast<alts_grpc_handshaker_client*>(c);
   client->handshake_status_code = status;
