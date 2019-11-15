@@ -49,10 +49,6 @@ test --test_env=GRPC_VERBOSITY=debug
 build --test_tag_filters=-no_linux
 build --build_tag_filters=-no_linux
 
-# Default test timeouts for all RBE tests (sanitizers override these values)
-# TODO(jtattermusch): revisit the non-standard test timeout values
-build --test_timeout=300,450,1200,3600
-
 # address sanitizer: most settings are already in %workspace%/.bazelrc
 # we only need a few additional ones that are Foundry specific
 build:asan --copt=-gmlt
