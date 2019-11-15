@@ -1622,8 +1622,8 @@ Pod::Spec.new do |s|
       
     EOF
 
-    # Grab prefix header from GCS
-    curl -o include/openssl/boringssl_prefix_symbols.h https://storage.googleapis.com/grpc_boringssl_prefix_headers/boringssl_prefix_symbols-7f02881e96e51f1873afcf384d02f782b48967ca.h
+    # Grab prefix header from Github repo
+    curl -o include/openssl/boringssl_prefix_symbols.h -L https://raw.githubusercontent.com/grpc/grpc/master/src/objective-c/boringssl_prefix_headers/boringssl_prefix_symbols-7f02881e96e51f1873afcf384d02f782b48967ca.h
 
     # We are renaming openssl to openssl_grpc so that there is no conflict with openssl if it exists
     find . -type f \\( -path '*.h' -or -path '*.cc' -or -path '*.c' \\) -print0 | xargs -0 -L1 sed -E -i'.grpc_back' 's;#include <openssl/;#include <openssl_grpc/;g'
