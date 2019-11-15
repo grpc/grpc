@@ -372,9 +372,7 @@ class HandshakeQueue {
       client = queued_handshakes_.front();
       queued_handshakes_.pop_front();
     }
-    if (client != nullptr) {
-      continue_make_grpc_call(client, true /* is_start */);
-    }
+    continue_make_grpc_call(client, true /* is_start */);
   }
 
  private:
@@ -397,10 +395,11 @@ HandshakeQueue* g_client_handshake_queue;
 HandshakeQueue* g_server_handshake_queue;
 
 void DoHandshakeQueuesInit(void) {
+  const size_t per_queue_max_outstanding_handshakes = 40;
   g_client_handshake_queue =
-      new HandshakeQueue(40 /* max outstanding handshakes */);
+      new HandshakeQueue(per_queue_max_outstanding_handshakes);
   g_server_handshake_queue =
-      new HandshakeQueue(40 /* max outstanding handshakes */);
+      new HandshakeQueue(per_queue_max_outstanding_handshakes);
 }
 
 void RequestHandshake(alts_grpc_handshaker_client* client, bool is_client) {
