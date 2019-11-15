@@ -20,7 +20,6 @@
 #define GRPCPP_CHANNEL_IMPL_H
 
 #include <memory>
-#include <mutex>
 
 #include <grpc/grpc.h>
 #include <grpcpp/impl/call.h>
