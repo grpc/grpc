@@ -38,10 +38,9 @@ C++ compatible with
 - gRPC main libraries (grpc, grpc+++, and plugins) cannot use following C++ libraries:
   (Test and example codes are relatively free from this constraints)
   - `<thread>`. Use `grpc_core::Thread`.
-  - `<condition_variable>`. Use `gpr_cv_init`.
+  - `<condition_variable>`. Use `grpc_core::CondVar`.
+  - `<mutex>`. Use `grpc_core::Mutex`, `grpc_core::MutexLock`, and `grpc_core::ReleasableMutexLock`.
   - `<future>`
-  - `<mutex>`. Use `gpr_mu_init`.
-  - `<chrono>`
   - `<ratio>`
   - `<system_error>`
   - `<filesystem>`
