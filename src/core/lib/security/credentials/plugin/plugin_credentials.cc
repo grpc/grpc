@@ -241,7 +241,9 @@ void grpc_plugin_credentials::cancel_get_request_metadata(
 
 grpc_plugin_credentials::grpc_plugin_credentials(
     grpc_metadata_credentials_plugin plugin)
-    : grpc_call_credentials(plugin.type), plugin_(plugin) {
+    // TODO(yihuazhang): Elevate security level to GRPC_PRIVACY_AND_INTEGRITY to
+    // make it consistent with other languages.
+    : grpc_call_credentials(plugin.type, GRPC_INTEGRITY_ONLY), plugin_(plugin) {
   gpr_mu_init(&mu_);
 }
 

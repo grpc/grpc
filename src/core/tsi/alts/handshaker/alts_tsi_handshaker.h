@@ -33,10 +33,11 @@
 
 #define TSI_ALTS_SERVICE_ACCOUNT_PEER_PROPERTY "service_account"
 #define TSI_ALTS_CERTIFICATE_TYPE "ALTS"
+#define TSI_ALTS_SECURITY_LEVEL "TSI_PRIVACY_AND_INTEGRITY"
 #define TSI_ALTS_RPC_VERSIONS "rpc_versions"
 #define TSI_ALTS_CONTEXT "alts_context"
 
-const size_t kTsiAltsNumOfPeerProperties = 4;
+const size_t kTsiAltsNumOfPeerProperties = 5;
 
 typedef struct alts_tsi_handshaker alts_tsi_handshaker;
 

@@ -68,6 +68,14 @@ tsi_client_certificate_request_type
 grpc_get_tsi_client_certificate_request_type(
     grpc_ssl_client_certificate_request_type grpc_request_type);
 
+/* Map grpc_security_level string to its enum. */
+grpc_security_level grpc_security_level_string_to_enum(
+    const char* security_level);
+
+/* Check security level of channel and call credential.*/
+bool grpc_check_security_level(grpc_security_level channel_level,
+                               grpc_security_level call_cred_level);
+
 /* Return an array of strings containing alpn protocols. */
 const char** grpc_fill_alpn_protocol_strings(size_t* num_alpn_protocols);
 

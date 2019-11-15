@@ -84,6 +84,26 @@ const char* grpc_get_ssl_cipher_suites(void) {
   return cipher_suites;
 }
 
+grpc_security_level grpc_security_level_string_to_enum(
+    const char* security_level) {
+  if (strcmp(security_level, "TSI_SECURITY_NONE") == 0) {
+    return GRPC_SECURITY_NONE;
+  } else if (strcmp(security_level, "TSI_INTEGRITY_ONLY") == 0) {
+    return GRPC_INTEGRITY_ONLY;
+  } else if (strcmp(security_level, "TSI_PRIVACY_AND_INTEGRITY") == 0) {
+    return GRPC_PRIVACY_AND_INTEGRITY;
+  }
+}
+
+bool grpc_check_security_level(grpc_security_level channel_level,
+                               grpc_security_level call_cred_level) {
+  if (static_cast<int>(channel_level) >= static_cast<int>(call_cred_level)) {
+    return true;
+  } else {
+    return false;
+  }
+}
+
 tsi_client_certificate_request_type
 grpc_get_tsi_client_certificate_request_type(
     grpc_ssl_client_certificate_request_type grpc_request_type) {
@@ -230,6 +250,9 @@ grpc_core::RefCountedPtr<grpc_auth_context> grpc_ssl_peer_to_auth_context(
       grpc_auth_context_add_property(ctx.get(),
                                      GRPC_SSL_SESSION_REUSED_PROPERTY,
                                      prop->value.data, prop->value.length);
+    } else if (strcmp(prop->name, TSI_SECURITY_LEVEL_PEER_PROPERTY) == 0) {
+      grpc_auth_context_add_property(ctx.get(), GRPC_TRANSPORT_SECURITY_LEVEL,
+                                     prop->value.data, prop->value.length);
     }
   }
   if (peer_identity_property_name != nullptr) {
@@ -273,6 +296,9 @@ tsi_peer grpc_shallow_peer_from_ssl_auth_context(
       } else if (strcmp(prop->name, GRPC_X509_PEM_CERT_PROPERTY_NAME) == 0) {
         add_shallow_auth_property_to_peer(&peer, prop,
                                           TSI_X509_PEM_CERT_PROPERTY);
+      } else if (strcmp(prop->name, GRPC_TRANSPORT_SECURITY_LEVEL) == 0) {
+        add_shallow_auth_property_to_peer(&peer, prop,
+                                          TSI_SECURITY_LEVEL_PEER_PROPERTY);
       }
     }
   }

@@ -347,7 +347,10 @@ void grpc_oauth2_token_fetcher_credentials::cancel_get_request_metadata(
 }
 
 grpc_oauth2_token_fetcher_credentials::grpc_oauth2_token_fetcher_credentials()
-    : grpc_call_credentials(GRPC_CALL_CREDENTIALS_TYPE_OAUTH2),
+    // TODO(yihuazhang): Elevate security level to GRPC_PRIVACY_AND_INTEGRITY to
+    // make it consistent with other languages.
+    : grpc_call_credentials(GRPC_CALL_CREDENTIALS_TYPE_OAUTH2,
+                            GRPC_INTEGRITY_ONLY),
       token_expiration_(gpr_inf_past(GPR_CLOCK_MONOTONIC)),
       pollent_(grpc_polling_entity_create_from_pollset_set(
           grpc_pollset_set_create())) {
@@ -718,7 +721,10 @@ void grpc_access_token_credentials::cancel_get_request_metadata(
 
 grpc_access_token_credentials::grpc_access_token_credentials(
     const char* access_token)
-    : grpc_call_credentials(GRPC_CALL_CREDENTIALS_TYPE_OAUTH2) {
+    // TODO(yihuazhang): Elevate security level to GRPC_PRIVACY_AND_INTEGRITY to
+    // make it consistent with other languages.
+    : grpc_call_credentials(GRPC_CALL_CREDENTIALS_TYPE_OAUTH2,
+                            GRPC_INTEGRITY_ONLY) {
   char* token_md_value;
   gpr_asprintf(&token_md_value, "Bearer %s", access_token);
   grpc_core::ExecCtx exec_ctx;

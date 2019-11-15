@@ -86,9 +86,12 @@ class grpc_composite_call_credentials : public grpc_call_credentials {
   void cancel_get_request_metadata(grpc_credentials_mdelem_array* md_array,
                                    grpc_error* error) override;
 
+  grpc_security_level security_level() override;
+
   const CallCredentialsList& inner() const { return inner_; }
 
  private:
+  grpc_security_level security_level_;
   void push_to_inner(grpc_core::RefCountedPtr<grpc_call_credentials> creds,
                      bool is_composite);
 

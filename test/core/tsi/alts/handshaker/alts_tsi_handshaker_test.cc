@@ -35,6 +35,7 @@
 #define ALTS_TSI_HANDSHAKER_TEST_CONSUMED_BYTES "Hello "
 #define ALTS_TSI_HANDSHAKER_TEST_REMAIN_BYTES "Google"
 #define ALTS_TSI_HANDSHAKER_TEST_PEER_IDENTITY "chapi@service.google.com"
+#define ALTS_TSI_HANDSHAKER_TEST_SECURITY_LEVEL "TSI_PRIVACY_AND_INTEGRITY"
 #define ALTS_TSI_HANDSHAKER_TEST_KEY_DATA \
   "ABCDEFGHIJKLMNOPABCDEFGHIJKLMNOPABCDEFGHIJKL"
 #define ALTS_TSI_HANDSHAKER_TEST_BUFFER_SIZE 100
@@ -309,6 +310,10 @@ static void on_client_next_success_cb(tsi_result status, void* user_data,
                     peer_account.size) == 0);
   GPR_ASSERT(memcmp(ALTS_TSI_HANDSHAKER_TEST_LOCAL_IDENTITY, local_account.data,
                     local_account.size) == 0);
+  /* Validate security level. */
+  GPR_ASSERT(memcmp(ALTS_TSI_HANDSHAKER_TEST_SECURITY_LEVEL,
+                    peer.properties[4].value.data,
+                    peer.properties[4].value.length) == 0);
   tsi_peer_destruct(&peer);
   /* Validate unused bytes. */
   const unsigned char* bytes = nullptr;
@@ -365,6 +370,11 @@ static void on_server_next_success_cb(tsi_result status, void* user_data,
                     peer_account.size) == 0);
   GPR_ASSERT(memcmp(ALTS_TSI_HANDSHAKER_TEST_LOCAL_IDENTITY, local_account.data,
                     local_account.size) == 0);
+  /* Check security level. */
+  GPR_ASSERT(memcmp(ALTS_TSI_HANDSHAKER_TEST_SECURITY_LEVEL,
+                    peer.properties[4].value.data,
+                    peer.properties[4].value.length) == 0);
+
   tsi_peer_destruct(&peer);
   /* Validate unused bytes. */
   const unsigned char* bytes = nullptr;

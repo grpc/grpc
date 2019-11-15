@@ -266,6 +266,21 @@ static void send_security_metadata(grpc_call_element* elem,
         call_creds_has_md ? ctx->creds->Ref() : channel_call_creds->Ref();
   }
 
+  /* Check security level of call credential and channel, and do not send
+   * metadata if the check fails. */
+  grpc_auth_property_iterator it = grpc_auth_context_find_properties_by_name(
+      chand->auth_context.get(), GRPC_TRANSPORT_SECURITY_LEVEL);
+  const grpc_auth_property* prop = grpc_auth_property_iterator_next(&it);
+  int is_security_level_ok =
+      (prop != nullptr) &&
+      grpc_check_security_level(grpc_security_level_string_to_enum(prop->value),
+                                calld->creds->security_level());
+  if (!is_security_level_ok) {
+    /* Skip sending metadata altoghether. */
+    grpc_call_next_op(elem, batch);
+    return;
+  }
+
   grpc_auth_metadata_context_build(
       chand->security_connector->url_scheme(), calld->host, calld->method,
       chand->auth_context.get(), &calld->auth_md_context);

@@ -49,7 +49,10 @@ void grpc_google_iam_credentials::cancel_get_request_metadata(
 
 grpc_google_iam_credentials::grpc_google_iam_credentials(
     const char* token, const char* authority_selector)
-    : grpc_call_credentials(GRPC_CALL_CREDENTIALS_TYPE_IAM) {
+    // TODO(yihuazhang): elevate security level to GRPC_PRIVACY_INTEGRITY to
+    // make it consistent with other languages.
+    : grpc_call_credentials(GRPC_CALL_CREDENTIALS_TYPE_IAM,
+                            GRPC_INTEGRITY_ONLY) {
   grpc_mdelem md = grpc_mdelem_from_slices(
       grpc_slice_from_static_string(GRPC_IAM_AUTHORIZATION_TOKEN_METADATA_KEY),
       grpc_slice_from_copied_string(token));
