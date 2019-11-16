@@ -23,12 +23,14 @@ cdef class _AsyncioSocket:
         object _task_read
         object _task_connect
         char * _read_buffer
+        object _loop
 
         # Client-side attributes
         grpc_custom_connect_callback _grpc_connect_cb
         
         # Server-side attributes
         grpc_custom_accept_callback _grpc_accept_cb
+        grpc_custom_write_callback _grpc_write_cb
         grpc_custom_socket * _grpc_client_socket
         object _server
         object _py_socket

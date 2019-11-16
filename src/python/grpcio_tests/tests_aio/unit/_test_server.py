@@ -12,12 +12,16 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import asyncio
 from time import sleep
+import logging
 
 from grpc.experimental import aio
 from src.proto.grpc.testing import messages_pb2
 from src.proto.grpc.testing import test_pb2_grpc
 from tests.unit.framework.common import test_constants
+
+_US_IN_A_SECOND = 1000 * 1000
 
 
 class _TestServiceServicer(test_pb2_grpc.TestServiceServicer):
@@ -25,9 +29,22 @@ class _TestServiceServicer(test_pb2_grpc.TestServiceServicer):
     async def UnaryCall(self, request, context):
         return messages_pb2.SimpleResponse()
 
+    # TODO(lidizheng) The semantic of this call is not matching its description
+    # See src/proto/grpc/testing/test.proto
     async def EmptyCall(self, request, context):
         while True:
-            sleep(test_constants.LONG_TIMEOUT)
+            await asyncio.sleep(test_constants.LONG_TIMEOUT)
+
+    async def StreamingOutputCall(
+            self, request: messages_pb2.StreamingOutputCallRequest, context):
+        for response_parameters in request.response_parameters:
+            if response_parameters.interval_us != 0:
+                await asyncio.sleep(
+                    response_parameters.interval_us / _US_IN_A_SECOND)
+            yield messages_pb2.StreamingOutputCallResponse(
+                payload=messages_pb2.Payload(
+                    type=request.response_type,
+                    body=b'\x00' * response_parameters.size))
 
 
 async def start_test_server():

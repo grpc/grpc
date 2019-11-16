@@ -1,4 +1,4 @@
-# Copyright 2019 gRPC authors.
+# Copyright 2019 The gRPC Authors
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -11,26 +11,25 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-"""Desired cancellation status for canceling an ongoing RPC call."""
 
 
-cdef class AioCancelStatus:
+cdef object deserialize(object deserializer, bytes raw_message):
+    """Perform deserialization on raw bytes.
 
-    def __cinit__(self):
-        self._code = None
-        self._details = None
+    Failure to deserialize is a fatal error.
+    """
+    if deserializer:
+        return deserializer(raw_message)
+    else:
+        return raw_message
 
-    def __len__(self):
-        if self._code is None:
-            return 0
-        return 1
 
-    def cancel(self, grpc_status_code code, str details=None):
-        self._code = code
-        self._details = details
+cdef bytes serialize(object serializer, object message):
+    """Perform serialization on a message.
 
-    cpdef object code(self):
-        return self._code
-
-    cpdef str details(self):
-        return self._details
+    Failure to serialize is a fatal error.
+    """
+    if serializer:
+        return serializer(message)
+    else:
+        return message
