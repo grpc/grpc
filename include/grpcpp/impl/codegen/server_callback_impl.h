@@ -411,7 +411,7 @@ class ServerBidiReactor : public internal::ServerReactor {
     if (write_and_finish_wanted_) {
       stream->WriteAndFinish(write_wanted_, std::move(write_options_wanted_),
                              std::move(status_wanted_));
-      write_and_finish_wanted_ = nullptr;
+      write_and_finish_wanted_ = false;
     } else {
       if (write_wanted_ != nullptr) {
         stream->Write(write_wanted_, std::move(write_options_wanted_));
@@ -613,7 +613,7 @@ class ServerWriteReactor : public internal::ServerReactor {
     if (write_and_finish_wanted_) {
       writer->WriteAndFinish(write_wanted_, std::move(write_options_wanted_),
                              std::move(status_wanted_));
-      write_and_finish_wanted_ = nullptr;
+      write_and_finish_wanted_ = false;
     } else {
       if (write_wanted_ != nullptr) {
         writer->Write(write_wanted_, std::move(write_options_wanted_));
