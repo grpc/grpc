@@ -127,11 +127,11 @@ class XdsClient::ChannelState::AdsCallState
 
   bool HasWatcher() const;
 
-  void SendMessageLocked(bool is_cds, bool is_first_message = false);
+  void SendMessageLocked(AdsType ads_type, bool is_first_message = false);
 
  private:
-  void HandleCdsUpdate(CdsUpdateMap cds_update_map, VersionState new_version);
-  void HandleEdsUpdate(EdsUpdateMap eds_update_map, VersionState new_version);
+  void AcceptCdsUpdate(CdsUpdateMap cds_update_map, VersionState new_version);
+  void AcceptEdsUpdate(EdsUpdateMap eds_update_map, VersionState new_version);
 
   static void OnRequestSentLocked(void* arg, grpc_error* error);
   static void OnResponseReceived(void* arg, grpc_error* error);
@@ -164,6 +164,10 @@ class XdsClient::ChannelState::AdsCallState
   grpc_status_code status_code_;
   grpc_slice status_details_;
   grpc_closure on_status_received_;
+
+  // Version states.
+  VersionState cds_version_state_;
+  VersionState eds_version_state_;
 
   // Is there any request buffered?
   bool cds_request_buffered_ = false;
@@ -388,14 +392,6 @@ bool XdsClient::ChannelState::HasActiveAdsCall() const {
   return ads_calld_->calld() != nullptr;
 }
 
-void XdsClient::ChannelState::MaybeStartAdsCall() {
-  if (ads_calld_ != nullptr) return;
-  ads_calld_.reset(
-      new RetryableCall<AdsCallState>(Ref(DEBUG_LOCATION, "ChannelState+ads")));
-}
-
-void XdsClient::ChannelState::StopAdsCall() { ads_calld_.reset(); }
-
 void XdsClient::ChannelState::MaybeStartLrsCall() {
   if (lrs_calld_ != nullptr) return;
   lrs_calld_.reset(
@@ -440,7 +436,7 @@ void XdsClient::ChannelState::WatchClusterData(
       ads_calld_.reset(new RetryableCall<AdsCallState>(
           Ref(DEBUG_LOCATION, "ChannelState+ads")));
     } else {
-      ads_calld()->SendMessageLocked(true);
+      ads_calld()->SendMessageLocked(CDS);
     }
   }
 }
@@ -478,7 +474,7 @@ void XdsClient::ChannelState::WatchEndpointData(
       ads_calld_.reset(new RetryableCall<AdsCallState>(
           Ref(DEBUG_LOCATION, "ChannelState+ads")));
     } else {
-      ads_calld()->SendMessageLocked(false);
+      ads_calld()->SendMessageLocked(EDS);
     }
   }
 }
@@ -644,13 +640,16 @@ XdsClient::ChannelState::AdsCallState::AdsCallState(
                                                  nullptr);
   GPR_ASSERT(GRPC_CALL_OK == call_error);
   // Op: send request message.
+  GRPC_CLOSURE_INIT(&on_request_sent_, OnRequestSentLocked, this,
+                    grpc_schedule_on_exec_ctx);
   bool initial_message = true;
   if (!xds_client()->cluster_map_.empty()) {
-    SendMessageLocked(true, initial_message);
+    SendMessageLocked(CDS, initial_message);
     initial_message = false;
   }
-  if (!xds_client()->endpoint_map_.empty())
-    SendMessageLocked(false, initial_message);
+  if (!xds_client()->endpoint_map_.empty()) {
+    SendMessageLocked(EDS, initial_message);
+  }
   // Op: recv initial metadata.
   op = ops;
   op->op = GRPC_OP_RECV_INITIAL_METADATA;
@@ -717,13 +716,18 @@ bool XdsClient::ChannelState::AdsCallState::HasWatcher() const {
 }
 
 void XdsClient::ChannelState::AdsCallState::SendMessageLocked(
-    bool is_cds, bool is_first_message) {
+    AdsType ads_type, bool is_first_message) {
   // Buffer message sending if an existing message is in flight.
   if (send_message_payload_ != nullptr) {
-    if (is_cds) {
-      cds_request_buffered_ = true;
-    } else {
-      eds_request_buffered_ = true;
+    switch (ads_type) {
+      case CDS:
+        cds_request_buffered_ = true;
+        break;
+      case EDS:
+        eds_request_buffered_ = true;
+        break;
+      default:
+        GPR_UNREACHABLE_CODE(return );
     }
     return;
   }
@@ -732,14 +736,19 @@ void XdsClient::ChannelState::AdsCallState::SendMessageLocked(
       is_first_message ? xds_client()->bootstrap_->node() : nullptr;
   const char* build_version =
       is_first_message ? xds_client()->build_version_.get() : nullptr;
-  if (is_cds) {
-    request_payload_slice = XdsCdsRequestCreateAndEncode(
-        xds_client()->ClusterNames(), node, build_version,
-        xds_client()->cds_version_state_);
-  } else {
-    request_payload_slice = XdsEdsRequestCreateAndEncode(
-        xds_client()->EdsServiceNames(), node, build_version,
-        xds_client()->eds_version_state_);
+  switch (ads_type) {
+    case CDS:
+      request_payload_slice =
+          XdsCdsRequestCreateAndEncode(xds_client()->ClusterNames(), node,
+                                       build_version, cds_version_state_);
+      break;
+    case EDS:
+      request_payload_slice =
+          XdsEdsRequestCreateAndEncode(xds_client()->EdsServiceNames(), node,
+                                       build_version, eds_version_state_);
+      break;
+    default:
+      GPR_UNREACHABLE_CODE(return );
   }
   // Create message payload.
   send_message_payload_ =
@@ -751,8 +760,6 @@ void XdsClient::ChannelState::AdsCallState::SendMessageLocked(
   op.op = GRPC_OP_SEND_MESSAGE;
   op.data.send_message.send_message = send_message_payload_;
   Ref(DEBUG_LOCATION, "ADS+OnRequestSentLocked").release();
-  GRPC_CLOSURE_INIT(&on_request_sent_, OnRequestSentLocked, this,
-                    grpc_schedule_on_exec_ctx);
   grpc_call_error call_error =
       grpc_call_start_batch_and_execute(call_, &op, 1, &on_request_sent_);
   if (GPR_UNLIKELY(call_error != GRPC_CALL_OK)) {
@@ -763,9 +770,9 @@ void XdsClient::ChannelState::AdsCallState::SendMessageLocked(
   }
 }
 
-void XdsClient::ChannelState::AdsCallState::HandleCdsUpdate(
+void XdsClient::ChannelState::AdsCallState::AcceptCdsUpdate(
     CdsUpdateMap cds_update_map, VersionState new_version) {
-  xds_client()->cds_version_state_.nonce = std::move(new_version.nonce);
+  cds_version_state_.nonce = std::move(new_version.nonce);
   for (auto& p : cds_update_map) {
     const char* cluster_name = p.first.get();
     CdsUpdate& cds_update = p.second;
@@ -807,13 +814,12 @@ void XdsClient::ChannelState::AdsCallState::HandleCdsUpdate(
       p.first->OnClusterChanged(cluster_state.update);
     }
   }
-  xds_client()->cds_version_state_.version_info =
-      std::move(new_version.version_info);
+  cds_version_state_.version_info = std::move(new_version.version_info);
 }
 
-void XdsClient::ChannelState::AdsCallState::HandleEdsUpdate(
+void XdsClient::ChannelState::AdsCallState::AcceptEdsUpdate(
     EdsUpdateMap eds_update_map, VersionState new_version) {
-  xds_client()->eds_version_state_.nonce = std::move(new_version.nonce);
+  eds_version_state_.nonce = std::move(new_version.nonce);
   for (auto& p : eds_update_map) {
     const char* eds_service_name = p.first.get();
     EdsUpdate& eds_update = p.second;
@@ -890,8 +896,7 @@ void XdsClient::ChannelState::AdsCallState::HandleEdsUpdate(
       p.first->OnEndpointChanged(endpoint_state.update);
     }
   }
-  xds_client()->eds_version_state_.version_info =
-      std::move(new_version.version_info);
+  eds_version_state_.version_info = std::move(new_version.version_info);
 }
 
 void XdsClient::ChannelState::AdsCallState::OnRequestSentLocked(
@@ -905,11 +910,19 @@ void XdsClient::ChannelState::AdsCallState::OnRequestSentLocked(
   grpc_byte_buffer_destroy(self->send_message_payload_);
   self->send_message_payload_ = nullptr;
   // Continue to send another pending message if any.
+  // TODO(roth): The current code to handle buffered messages has the advantage
+  // of sending only the most recent list
+  //  of resource names for each resource type (no matter how many times that
+  //  resource type has been requested to send while the current message sending
+  //  is still pending). But its disadvantage is that CDS requests are always
+  //  prioritized over EDS, so the EDS requests may be starved in case we are
+  //  constantly asked to send CDS messages. We need to fix this if we are
+  //  seeing EDS starved due to frequent CDS requests.
   if (self->cds_request_buffered_) {
-    self->SendMessageLocked(true);
+    self->SendMessageLocked(CDS);
     self->cds_request_buffered_ = false;
   } else if (self->eds_request_buffered_) {
-    self->SendMessageLocked(false);
+    self->SendMessageLocked(EDS);
     self->eds_request_buffered_ = false;
   }
 }
@@ -952,34 +965,39 @@ void XdsClient::ChannelState::AdsCallState::OnResponseReceivedLocked(
   CdsUpdateMap cds_update_map;
   EdsUpdateMap eds_update_map;
   VersionState new_version;
-  bool is_cds;
+  AdsType ads_type;
   // FIXME: 1. If decoding fails, we don't know whether it's CDS or not, then
   // which kind should we NACK? This can be solved when separate streams are
   // used. 2. If decoding fails, We don't know the new nonce to NACK. Is using
   // the previous nonce OK in this case?
   grpc_error* parse_error = XdsAdsResponseDecodeAndParse(
-      response_slice, xds_client->ClusterNames(), xds_client->EdsServiceNames(),
-      &cds_update_map, &eds_update_map, &new_version, &is_cds);
+      response_slice, xds_client->EdsServiceNames(), &cds_update_map,
+      &eds_update_map, &new_version, &ads_type);
   grpc_slice_unref_internal(response_slice);
   if (parse_error != GRPC_ERROR_NONE) {
     gpr_log(GPR_ERROR, "[xds_client %p] ADS response parsing failed. error=%s",
             xds_client, grpc_error_string(parse_error));
     GRPC_ERROR_UNREF(parse_error);
     // NACK.
-    ads_calld->SendMessageLocked(is_cds);
+    ads_calld->SendMessageLocked(ads_type);
     return;
   }
   ads_calld->seen_response_ = true;
   // Handle the (CDS or EDS) response.
-  if (is_cds) {
-    ads_calld->HandleCdsUpdate(std::move(cds_update_map),
-                               std::move(new_version));
-  } else {
-    ads_calld->HandleEdsUpdate(std::move(eds_update_map),
-                               std::move(new_version));
+  switch (ads_type) {
+    case CDS:
+      ads_calld->AcceptCdsUpdate(std::move(cds_update_map),
+                                 std::move(new_version));
+      break;
+    case EDS:
+      ads_calld->AcceptEdsUpdate(std::move(eds_update_map),
+                                 std::move(new_version));
+      break;
+    default:
+      GPR_UNREACHABLE_CODE(return );
   }
   // ACK.
-  ads_calld->SendMessageLocked(is_cds);
+  ads_calld->SendMessageLocked(ads_type);
   // Start load reporting if needed.
   LrsCallState* lrs_calld = ads_calld->chand()->lrs_calld_->calld();
   if (lrs_calld != nullptr) lrs_calld->MaybeStartReportingLocked();

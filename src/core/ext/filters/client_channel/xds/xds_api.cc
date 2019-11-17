@@ -287,10 +287,8 @@ std::unique_ptr<char> StringCopy(const upb_strview& strview) {
 
 }  // namespace
 
-grpc_error* CdsResponsedParse(
-    const envoy_api_v2_DiscoveryResponse* response,
-    const std::set<StringView>& expected_cluster_names,
-    CdsUpdateMap* cds_update_map, upb_arena* arena) {
+grpc_error* CdsResponseParse(const envoy_api_v2_DiscoveryResponse* response,
+                             CdsUpdateMap* cds_update_map, upb_arena* arena) {
   // Get the resources from the response.
   size_t size;
   const google_protobuf_Any* const* resources =
@@ -299,7 +297,7 @@ grpc_error* CdsResponsedParse(
     return GRPC_ERROR_CREATE_FROM_STATIC_STRING(
         "CDS response contains 0 resource.");
   }
-  // Find the expected cluster.
+  // Parse all the resources in the CDS response.
   for (size_t i = 0; i < size; ++i) {
     CdsUpdate cds_update;
     // Check the type_url of the resource.
@@ -313,13 +311,6 @@ grpc_error* CdsResponsedParse(
         encoded_cluster.data, encoded_cluster.size, arena);
     if (cluster == nullptr) {
       return GRPC_ERROR_CREATE_FROM_STATIC_STRING("Can't decode cluster.");
-    }
-    // Check the cluster name and skip the unexpected ones.
-    upb_strview cluster_name = envoy_api_v2_Cluster_name(cluster);
-    StringView cluster_name_strview(cluster_name.data, cluster_name.size);
-    if (expected_cluster_names.find(cluster_name_strview) ==
-        expected_cluster_names.end()) {
-      continue;
     }
     // Check the cluster_discovery_type.
     if (!envoy_api_v2_Cluster_has_type(cluster)) {
@@ -557,10 +548,9 @@ grpc_error* EdsResponsedParse(
 
 grpc_error* XdsAdsResponseDecodeAndParse(
     const grpc_slice& encoded_response,
-    const std::set<StringView>& expected_cluster_names,
     const std::set<StringView>& expected_eds_service_names,
     CdsUpdateMap* cds_update_map, EdsUpdateMap* eds_update_map,
-    VersionState* new_version, bool* cds) {
+    VersionState* new_version, AdsType* ads_type) {
   upb::Arena arena;
   // Decode the response.
   const envoy_api_v2_DiscoveryResponse* response =
@@ -579,11 +569,10 @@ grpc_error* XdsAdsResponseDecodeAndParse(
   // Check the type_url of the response.
   upb_strview type_url = envoy_api_v2_DiscoveryResponse_type_url(response);
   if (upb_strview_eql(type_url, upb_strview_makez(kCdsTypeUrl))) {
-    *cds = true;
-    return CdsResponsedParse(response, expected_cluster_names, cds_update_map,
-                             arena.ptr());
+    *ads_type = CDS;
+    return CdsResponseParse(response, cds_update_map, arena.ptr());
   } else if (upb_strview_eql(type_url, upb_strview_makez(kEdsTypeUrl))) {
-    *cds = false;
+    *ads_type = EDS;
     return EdsResponsedParse(response, expected_eds_service_names,
                              eds_update_map, arena.ptr());
   } else {

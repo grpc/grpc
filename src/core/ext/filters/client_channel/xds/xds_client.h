@@ -153,9 +153,6 @@ class XdsClient : public InternallyRefCounted<XdsClient> {
     AdsCallState* ads_calld() const;
     LrsCallState* lrs_calld() const;
 
-    void MaybeStartAdsCall();
-    void StopAdsCall();
-
     void MaybeStartLrsCall();
     void StopLrsCall();
 
@@ -240,8 +237,6 @@ class XdsClient : public InternallyRefCounted<XdsClient> {
   std::map<StringView /*cluster_name*/, ClusterState, StringLess> cluster_map_;
   std::map<StringView /*eds_service_name*/, EndpointState, StringLess>
       endpoint_map_;
-  VersionState cds_version_state_;
-  VersionState eds_version_state_;
 
   bool shutting_down_ = false;
 };

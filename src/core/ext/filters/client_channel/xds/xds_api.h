@@ -33,6 +33,39 @@
 
 namespace grpc_core {
 
+enum AdsType {
+  CDS,
+  EDS,
+};
+
+struct CdsUpdate {
+  // The name to use in the EDS request.
+  // If null, the cluster name will be used.
+  std::unique_ptr<char> eds_service_name;
+  // The LRS server to use for load reporting.
+  // If null, load reporting will be disabled.
+  // If set to the empty string, will use the same server we obtained
+  // the CDS data from.
+  std::unique_ptr<char> lrs_load_reporting_server_name;
+
+  CdsUpdate() = default;
+  CdsUpdate(const CdsUpdate& other)
+      : eds_service_name(
+            std::unique_ptr<char>(gpr_strdup(other.eds_service_name.get()))),
+        lrs_load_reporting_server_name(
+            std::unique_ptr<char>(gpr_strdup(other.eds_service_name.get()))) {}
+
+  CdsUpdate& operator=(CdsUpdate&& other) noexcept {
+    eds_service_name = std::move(other.eds_service_name);
+    lrs_load_reporting_server_name =
+        std::move(other.lrs_load_reporting_server_name);
+    return *this;
+  }
+};
+
+using CdsUpdateMap =
+    std::map<std::unique_ptr<char> /*cluster_name*/, CdsUpdate, StringLess>;
+
 class XdsPriorityListUpdate {
  public:
   struct LocalityMap {
@@ -132,34 +165,6 @@ class XdsDropConfig : public RefCounted<XdsDropConfig> {
   DropCategoryList drop_category_list_;
 };
 
-struct CdsUpdate {
-  // The name to use in the EDS request.
-  // If null, the cluster name will be used.
-  std::unique_ptr<char> eds_service_name;
-  // The LRS server to use for load reporting.
-  // If null, load reporting will be disabled.
-  // If set to the empty string, will use the same server we obtained
-  // the CDS data from.
-  std::unique_ptr<char> lrs_load_reporting_server_name;
-
-  CdsUpdate() = default;
-  CdsUpdate(const CdsUpdate& other)
-      : eds_service_name(
-            std::unique_ptr<char>(gpr_strdup(other.eds_service_name.get()))),
-        lrs_load_reporting_server_name(
-            std::unique_ptr<char>(gpr_strdup(other.eds_service_name.get()))) {}
-
-  CdsUpdate& operator=(CdsUpdate&& other) noexcept {
-    eds_service_name = std::move(other.eds_service_name);
-    lrs_load_reporting_server_name =
-        std::move(other.lrs_load_reporting_server_name);
-    return *this;
-  }
-};
-
-using CdsUpdateMap =
-    std::map<std::unique_ptr<char> /*cluster_name*/, CdsUpdate, StringLess>;
-
 struct EdsUpdate {
   XdsPriorityListUpdate priority_list_update;
   RefCountedPtr<XdsDropConfig> drop_config;
@@ -195,10 +200,9 @@ grpc_slice XdsEdsRequestCreateAndEncode(std::set<StringView> eds_service_names,
 // names.
 grpc_error* XdsAdsResponseDecodeAndParse(
     const grpc_slice& encoded_response,
-    const std::set<StringView>& expected_cluster_names,
     const std::set<StringView>& expected_eds_service_names,
     CdsUpdateMap* cds_update_map, EdsUpdateMap* eds_update_map,
-    VersionState* new_version, bool* is_cds);
+    VersionState* new_version, AdsType* ads_type);
 
 // Creates an LRS request querying \a server_name.
 grpc_slice XdsLrsRequestCreateAndEncode(const char* server_name,
