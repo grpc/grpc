@@ -15,6 +15,7 @@
 cimport cpython
 import grpc
 
+
 _EMPTY_FLAGS = 0
 _EMPTY_MASK = 0
 _EMPTY_METADATA = None
