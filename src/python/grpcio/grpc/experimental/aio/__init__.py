@@ -25,10 +25,11 @@ from ._call import AioRpcError
 from ._call import Call
 from ._channel import Channel
 from ._channel import UnaryUnaryMultiCallable
+from ._interceptor import UnaryUnaryClientInterceptor
 from ._server import server
 
 
-def insecure_channel(target, options=None, compression=None):
+def insecure_channel(target, options=None, compression=None, interceptors=None):
     """Creates an insecure asynchronous Channel to a server.
 
     Args:
@@ -37,15 +38,21 @@ def insecure_channel(target, options=None, compression=None):
         in gRPC Core runtime) to configure the channel.
       compression: An optional value indicating the compression method to be
         used over the lifetime of the channel. This is an EXPERIMENTAL option.
+      intereceptors: An optional list of interceptors that will be executed for
+        any call executed with this channel.
 
     Returns:
       A Channel.
     """
-    return Channel(target, ()
-                   if options is None else options, None, compression)
+    return Channel(
+        target, () if options is None else options,
+        None,
+        compression,
+        interceptors=interceptors)
 
 
 ###################################  __all__  #################################
 
 __all__ = ('AioRpcError', 'Call', 'init_grpc_aio', 'Channel',
-           'UnaryUnaryMultiCallable', 'insecure_channel', 'server')
+           'UnaryUnaryClientInterceptor', 'UnaryUnaryMultiCallable',
+           'insecure_channel', 'server')

@@ -17,10 +17,10 @@ import unittest
 import grpc
 
 from grpc.experimental import aio
-from src.proto.grpc.testing import messages_pb2
 from tests.unit.framework.common import test_constants
 from tests_aio.unit._test_server import start_test_server
 from tests_aio.unit._test_base import AioTestBase
+from src.proto.grpc.testing import messages_pb2
 
 _UNARY_CALL_METHOD = '/grpc.testing.TestService/UnaryCall'
 _EMPTY_CALL_METHOD = '/grpc.testing.TestService/EmptyCall'

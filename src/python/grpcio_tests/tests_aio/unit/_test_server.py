@@ -15,9 +15,9 @@
 from time import sleep
 
 from grpc.experimental import aio
+from tests.unit.framework.common import test_constants
 from src.proto.grpc.testing import messages_pb2
 from src.proto.grpc.testing import test_pb2_grpc
-from tests.unit.framework.common import test_constants
 
 
 class _TestServiceServicer(test_pb2_grpc.TestServiceServicer):

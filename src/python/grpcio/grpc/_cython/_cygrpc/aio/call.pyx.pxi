@@ -33,7 +33,7 @@ cdef class _AioCall:
         return f"<{class_name} {id_}>"
 
     cdef grpc_call* _create_grpc_call(self,
-                                      object timeout,
+                                      object deadline,
                                       bytes method) except *:
         """Creates the corresponding Core object for this RPC.
 
@@ -44,7 +44,7 @@ cdef class _AioCall:
         nature in Core.
         """
         cdef grpc_slice method_slice
-        cdef gpr_timespec deadline = _timespec_from_time(timeout)
+        cdef gpr_timespec c_deadline = _timespec_from_time(deadline)
 
         method_slice = grpc_slice_from_copied_buffer(
             <const char *> method,
@@ -57,7 +57,7 @@ cdef class _AioCall:
             self._channel.cq.c_ptr(),
             method_slice,
             NULL,
-            deadline,
+            c_deadline,
             NULL
         )
         grpc_slice_unref(method_slice)
@@ -66,7 +66,7 @@ cdef class _AioCall:
         """Destroys the corresponding Core object for this RPC."""
         grpc_call_unref(self._grpc_call_wrapper.call)
 
-    async def unary_unary(self, bytes method, bytes request, object timeout, AioCancelStatus cancel_status):
+    async def unary_unary(self, bytes method, bytes request, object deadline, AioCancelStatus cancel_status):
         cdef object loop = asyncio.get_event_loop()
 
         cdef tuple operations
@@ -108,7 +108,7 @@ cdef class _AioCall:
 
         try:
             self._create_grpc_call(
-                timeout,
+                deadline,
                 method,
             )
 

@@ -237,19 +237,14 @@ class Call:
 
         try:
             buffer_ = yield from self._call.__await__()
-        except cygrpc.AioRpcError as aio_rpc_error:
+        except AioRpcError as aio_rpc_error:
             self._state = _RpcState.ABORT
-            self._code = _common.CYGRPC_STATUS_CODE_TO_STATUS_CODE[
-                aio_rpc_error.code()]
+            self._exception = aio_rpc_error
+            self._code = aio_rpc_error.code()
             self._details = aio_rpc_error.details()
             self._initial_metadata = aio_rpc_error.initial_metadata()
             self._trailing_metadata = aio_rpc_error.trailing_metadata()
-
-            # Propagates the pure Python class
-            self._exception = AioRpcError(self._code, self._details,
-                                          self._initial_metadata,
-                                          self._trailing_metadata)
-            raise self._exception from aio_rpc_error
+            raise
         except asyncio.CancelledError as cancel_error:
             # _state, _code, _details are managed in the `cancel` method
             self._exception = cancel_error
