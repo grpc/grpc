@@ -16,8 +16,6 @@ syntax = "proto3";
 
 package grpc.http_over_grpc;
 
-//option go_package = "google.golang.org/grpc/http_over_grpc/...";
-
 // Represents HTTP 1.1 header.
 message Header {
   string key = 1;
@@ -46,6 +44,7 @@ message HTTPOverGRPCReply {
   bytes body = 3;
 }
 
+// Currently does not support HTTP chunked transfer encoding.
 service HTTPOverGRPC {
  // Perform the given HTTP request.
  rpc HTTPRequest(HTTPOverGRPCRequest) returns (HTTPOverGRPCReply) {}
