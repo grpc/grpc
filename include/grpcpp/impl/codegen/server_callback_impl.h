@@ -398,7 +398,7 @@ class ServerBidiReactor : public internal::ServerReactor {
   // customization point.
   virtual void InternalBindStream(
       ServerCallbackReaderWriter<Request, Response>* stream) {
-    grpc::internal::MutexLock l(&stream_mu_);
+    grpc::internal::ReleasableMutexLock l(&stream_mu_);
     stream_.store(stream, std::memory_order_release);
     if (send_initial_metadata_wanted_) {
       stream->SendInitialMetadata();
@@ -409,17 +409,28 @@ class ServerBidiReactor : public internal::ServerReactor {
       read_wanted_ = nullptr;
     }
     if (write_and_finish_wanted_) {
-      stream->WriteAndFinish(write_wanted_, std::move(write_options_wanted_),
-                             std::move(status_wanted_));
+      // Don't perform actual finish actions while holding lock since it could
+      // trigger OnDone that destroys this object including the still-held lock.
       write_and_finish_wanted_ = false;
+      const Response* write_wanted = write_wanted_;
+      ::grpc::WriteOptions write_options_wanted =
+          std::move(write_options_wanted_);
+      ::grpc::Status status_wanted = std::move(status_wanted_);
+      l.Unlock();
+      stream->WriteAndFinish(write_wanted, std::move(write_options_wanted),
+                             std::move(status_wanted));
+      return;
     } else {
       if (write_wanted_ != nullptr) {
         stream->Write(write_wanted_, std::move(write_options_wanted_));
         write_wanted_ = nullptr;
       }
       if (finish_wanted_) {
-        stream->Finish(std::move(status_wanted_));
         finish_wanted_ = false;
+        ::grpc::Status status_wanted = std::move(status_wanted_);
+        l.Unlock();
+        stream->Finish(std::move(status_wanted));
+        return;
       }
     }
   }
@@ -496,7 +507,7 @@ class ServerReadReactor : public internal::ServerReactor {
   // May be overridden by internal implementation details. This is not a public
   // customization point.
   virtual void InternalBindReader(ServerCallbackReader<Request>* reader) {
-    grpc::internal::MutexLock l(&reader_mu_);
+    grpc::internal::ReleasableMutexLock l(&reader_mu_);
     reader_.store(reader, std::memory_order_release);
     if (send_initial_metadata_wanted_) {
       reader->SendInitialMetadata();
@@ -507,8 +518,11 @@ class ServerReadReactor : public internal::ServerReactor {
       read_wanted_ = nullptr;
     }
     if (finish_wanted_) {
-      reader->Finish(std::move(status_wanted_));
       finish_wanted_ = false;
+      ::grpc::Status status_wanted = std::move(status_wanted_);
+      l.Unlock();
+      reader->Finish(std::move(status_wanted));
+      return;
     }
   }
 
@@ -604,24 +618,33 @@ class ServerWriteReactor : public internal::ServerReactor {
   // May be overridden by internal implementation details. This is not a public
   // customization point.
   virtual void InternalBindWriter(ServerCallbackWriter<Response>* writer) {
-    grpc::internal::MutexLock l(&writer_mu_);
+    grpc::internal::ReleasableMutexLock l(&writer_mu_);
     writer_.store(writer, std::memory_order_release);
     if (send_initial_metadata_wanted_) {
       writer->SendInitialMetadata();
       send_initial_metadata_wanted_ = false;
     }
     if (write_and_finish_wanted_) {
-      writer->WriteAndFinish(write_wanted_, std::move(write_options_wanted_),
-                             std::move(status_wanted_));
       write_and_finish_wanted_ = false;
+      const Response* write_wanted = write_wanted_;
+      ::grpc::WriteOptions write_options_wanted =
+          std::move(write_options_wanted_);
+      ::grpc::Status status_wanted = std::move(status_wanted_);
+      l.Unlock();
+      writer->WriteAndFinish(write_wanted, std::move(write_options_wanted),
+                             std::move(status_wanted));
+      return;
     } else {
       if (write_wanted_ != nullptr) {
         writer->Write(write_wanted_, std::move(write_options_wanted_));
         write_wanted_ = nullptr;
       }
       if (finish_wanted_) {
-        writer->Finish(std::move(status_wanted_));
         finish_wanted_ = false;
+        ::grpc::Status status_wanted = std::move(status_wanted_);
+        l.Unlock();
+        writer->Finish(std::move(status_wanted));
+        return;
       }
     }
   }
@@ -678,15 +701,18 @@ class ServerUnaryReactor : public internal::ServerReactor {
   // May be overridden by internal implementation details. This is not a public
   // customization point.
   virtual void InternalBindCall(ServerCallbackUnary* call) {
-    grpc::internal::MutexLock l(&call_mu_);
+    grpc::internal::ReleasableMutexLock l(&call_mu_);
     call_.store(call, std::memory_order_release);
     if (send_initial_metadata_wanted_) {
       call->SendInitialMetadata();
       send_initial_metadata_wanted_ = false;
     }
     if (finish_wanted_) {
-      call->Finish(std::move(status_wanted_));
       finish_wanted_ = false;
+      ::grpc::Status status_wanted = std::move(status_wanted_);
+      l.Unlock();
+      call->Finish(std::move(status_wanted));
+      return;
     }
   }
 
