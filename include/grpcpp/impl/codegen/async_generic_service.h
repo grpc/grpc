@@ -43,7 +43,7 @@ class GenericServerContext final : public ::grpc_impl::ServerContext {
 
  private:
   friend class grpc_impl::Server;
-  friend class ServerInterface;
+  friend class grpc::ServerInterface;
 
   void Clear() {
     method_.clear();
@@ -102,7 +102,7 @@ class GenericCallbackServerContext final
 
  private:
   friend class ::grpc_impl::Server;
-  friend class ServerInterface;
+  friend class ::grpc::ServerInterface;
 
   void Clear() {
     method_.clear();
