@@ -35,7 +35,7 @@
 #include <grpcpp/impl/codegen/message_allocator.h>
 #include <grpcpp/impl/codegen/metadata_map.h>
 #include <grpcpp/impl/codegen/security/auth_context.h>
-#include <grpcpp/impl/codegen/server_callback.h>
+#include <grpcpp/impl/codegen/server_callback_impl.h>
 #include <grpcpp/impl/codegen/server_interceptor.h>
 #include <grpcpp/impl/codegen/status.h>
 #include <grpcpp/impl/codegen/string_ref.h>

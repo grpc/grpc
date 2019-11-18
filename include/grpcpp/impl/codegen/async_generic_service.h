@@ -21,8 +21,8 @@
 
 #include <grpcpp/impl/codegen/async_stream_impl.h>
 #include <grpcpp/impl/codegen/byte_buffer.h>
-#include <grpcpp/impl/codegen/server_callback.h>
 #include <grpcpp/impl/codegen/server_callback_handlers.h>
+#include <grpcpp/impl/codegen/server_callback_impl.h>
 
 struct grpc_server;
 
@@ -92,7 +92,8 @@ namespace experimental {
 /// \a ServerGenericBidiReactor is the reactor class for bidi streaming RPCs
 /// invoked on a CallbackGenericService. It is just a ServerBidi reactor with
 /// ByteBuffer arguments.
-using ServerGenericBidiReactor = ServerBidiReactor<ByteBuffer, ByteBuffer>;
+using ServerGenericBidiReactor =
+    ::grpc_impl::experimental::ServerBidiReactor<ByteBuffer, ByteBuffer>;
 
 class GenericCallbackServerContext final
     : public ::grpc_impl::experimental::CallbackServerContext {
