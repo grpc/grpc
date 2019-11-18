@@ -45,6 +45,7 @@
 #include "google/protobuf/struct.upb.h"
 #include "google/protobuf/timestamp.upb.h"
 #include "google/protobuf/wrappers.upb.h"
+#include "google/rpc/status.upb.h"
 #include "upb/upb.h"
 
 namespace grpc_core {
@@ -206,7 +207,8 @@ void PopulateNode(upb_arena* arena, const XdsBootstrap::Node* node,
 grpc_slice XdsCdsRequestCreateAndEncode(std::set<StringView> cluster_names,
                                         const XdsBootstrap::Node* node,
                                         const char* build_version,
-                                        const VersionState& cds_version) {
+                                        const VersionState& cds_version,
+                                        grpc_error* error) {
   upb::Arena arena;
   // Create a request.
   envoy_api_v2_DiscoveryRequest* request =
@@ -232,6 +234,15 @@ grpc_slice XdsCdsRequestCreateAndEncode(std::set<StringView> cluster_names,
   // Set nonce.
   envoy_api_v2_DiscoveryRequest_set_response_nonce(
       request, upb_strview_makez(cds_version.version_info.get()));
+  // Set error_detail if it's a NACK.
+  if (error != GRPC_ERROR_NONE) {
+    const char* error_string = grpc_error_string(error);
+    google_rpc_Status* error_detail =
+        envoy_api_v2_DiscoveryRequest_mutable_error_detail(request,
+                                                           arena.ptr());
+    google_rpc_Status_set_message(error_detail,
+                                  upb_strview_makez(error_string));
+  }
   // Encode the request.
   size_t output_length;
   char* output = envoy_api_v2_DiscoveryRequest_serialize(request, arena.ptr(),
@@ -242,7 +253,8 @@ grpc_slice XdsCdsRequestCreateAndEncode(std::set<StringView> cluster_names,
 grpc_slice XdsEdsRequestCreateAndEncode(std::set<StringView> eds_service_names,
                                         const XdsBootstrap::Node* node,
                                         const char* build_version,
-                                        const VersionState& eds_version) {
+                                        const VersionState& eds_version,
+                                        grpc_error* error) {
   upb::Arena arena;
   // Create a request.
   envoy_api_v2_DiscoveryRequest* request =
@@ -269,6 +281,15 @@ grpc_slice XdsEdsRequestCreateAndEncode(std::set<StringView> eds_service_names,
   // Set nonce.
   envoy_api_v2_DiscoveryRequest_set_response_nonce(
       request, upb_strview_makez(eds_version.version_info.get()));
+  // Set error_detail if it's a NACK.
+  if (error != GRPC_ERROR_NONE) {
+    const char* error_string = grpc_error_string(error);
+    google_rpc_Status* error_detail =
+        envoy_api_v2_DiscoveryRequest_mutable_error_detail(request,
+                                                           arena.ptr());
+    google_rpc_Status_set_message(error_detail,
+                                  upb_strview_makez(error_string));
+  }
   // Encode the request.
   size_t output_length;
   char* output = envoy_api_v2_DiscoveryRequest_serialize(request, arena.ptr(),
@@ -550,7 +571,7 @@ grpc_error* XdsAdsResponseDecodeAndParse(
     const grpc_slice& encoded_response,
     const std::set<StringView>& expected_eds_service_names,
     CdsUpdateMap* cds_update_map, EdsUpdateMap* eds_update_map,
-    VersionState* new_version, AdsType* ads_type) {
+    VersionState* new_version, AdsResourceType* ads_type) {
   upb::Arena arena;
   // Decode the response.
   const envoy_api_v2_DiscoveryResponse* response =
@@ -735,7 +756,7 @@ grpc_slice XdsLrsRequestCreateAndEncode(
 
 grpc_error* XdsLrsResponseDecodeAndParse(
     const grpc_slice& encoded_response,
-    const std::set<StringView>& expected_eds_service_names,
+    std::set<std::unique_ptr<char>>* cluster_names,
     grpc_millis* load_reporting_interval) {
   upb::Arena arena;
   // Decode the response.
@@ -747,19 +768,13 @@ grpc_error* XdsLrsResponseDecodeAndParse(
   if (decoded_response == nullptr) {
     return GRPC_ERROR_CREATE_FROM_STATIC_STRING("Can't decode response.");
   }
-  // Check the cluster names in the response.
-  // FIXME: Do we need to check and return error if unmatched? Or just ignore
-  // totally and only use the received internal?
+  // Store the cluster names.
   size_t size;
   const upb_strview* clusters =
       envoy_service_load_stats_v2_LoadStatsResponse_clusters(decoded_response,
                                                              &size);
   for (size_t i = 0; i < size; ++i) {
-    StringView cluster(clusters[i].data, clusters[i].size);
-    if (expected_eds_service_names.find(cluster) ==
-        expected_eds_service_names.end()) {
-      return GRPC_ERROR_CREATE_FROM_STATIC_STRING("Unexpected cluster name.");
-    }
+    cluster_names->emplace(StringCopy(clusters[i]));
   }
   // Get the load report interval.
   const google_protobuf_Duration* load_reporting_interval_duration =

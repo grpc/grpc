@@ -33,7 +33,7 @@
 
 namespace grpc_core {
 
-enum AdsType {
+enum AdsResourceType {
   CDS,
   EDS,
 };
@@ -49,12 +49,24 @@ struct CdsUpdate {
   std::unique_ptr<char> lrs_load_reporting_server_name;
 
   CdsUpdate() = default;
+
+  // Copyable.
   CdsUpdate(const CdsUpdate& other)
       : eds_service_name(
             std::unique_ptr<char>(gpr_strdup(other.eds_service_name.get()))),
         lrs_load_reporting_server_name(
             std::unique_ptr<char>(gpr_strdup(other.eds_service_name.get()))) {}
-
+  CdsUpdate& operator=(const CdsUpdate& other) noexcept {
+    eds_service_name.reset(gpr_strdup(other.eds_service_name.get()));
+    lrs_load_reporting_server_name.reset(
+        gpr_strdup(other.eds_service_name.get()));
+    return *this;
+  }
+  // Movable.
+  CdsUpdate(CdsUpdate&& other) noexcept
+      : eds_service_name(std::move(other.eds_service_name)),
+        lrs_load_reporting_server_name(
+            std::move(other.lrs_load_reporting_server_name)) {}
   CdsUpdate& operator=(CdsUpdate&& other) noexcept {
     eds_service_name = std::move(other.eds_service_name);
     lrs_load_reporting_server_name =
@@ -187,13 +199,15 @@ struct VersionState {
 grpc_slice XdsCdsRequestCreateAndEncode(std::set<StringView> cluster_names,
                                         const XdsBootstrap::Node* node,
                                         const char* build_version,
-                                        const VersionState& cds_version);
+                                        const VersionState& cds_version,
+                                        grpc_error* error);
 
 // Creates an EDS request querying \a eds_service_names.
 grpc_slice XdsEdsRequestCreateAndEncode(std::set<StringView> eds_service_names,
                                         const XdsBootstrap::Node* node,
                                         const char* build_version,
-                                        const VersionState& eds_version);
+                                        const VersionState& eds_version,
+                                        grpc_error* error);
 
 // Parses the ADS response and outputs update for either CDS or EDS. If there
 // is any error, the output update is invalid. Ignore the update for unexpected
@@ -202,7 +216,7 @@ grpc_error* XdsAdsResponseDecodeAndParse(
     const grpc_slice& encoded_response,
     const std::set<StringView>& expected_eds_service_names,
     CdsUpdateMap* cds_update_map, EdsUpdateMap* eds_update_map,
-    VersionState* new_version, AdsType* ads_type);
+    VersionState* new_version, AdsResourceType* ads_type);
 
 // Creates an LRS request querying \a server_name.
 grpc_slice XdsLrsRequestCreateAndEncode(const char* server_name,
@@ -212,14 +226,15 @@ grpc_slice XdsLrsRequestCreateAndEncode(const char* server_name,
 // Creates an LRS request sending client-side load reports. If all the counters
 // are zero, returns empty slice.
 grpc_slice XdsLrsRequestCreateAndEncode(
-    std::map<StringView, std::set<XdsClientStats*>> client_stats_map);
+    std::map<StringView /*cluster_name*/, std::set<XdsClientStats*>>
+        client_stats_map);
 
 // Parses the LRS response and returns \a
 // load_reporting_interval for client-side load reporting. If there is any
 // error, the output config is invalid.
 grpc_error* XdsLrsResponseDecodeAndParse(
     const grpc_slice& encoded_response,
-    const std::set<StringView>& expected_eds_service_names,
+    std::set<std::unique_ptr<char>>* cluster_names,
     grpc_millis* load_reporting_interval);
 
 }  // namespace grpc_core
