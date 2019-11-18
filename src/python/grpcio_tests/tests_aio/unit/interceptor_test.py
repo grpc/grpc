@@ -63,9 +63,9 @@ class TestUnaryUnaryClientInterceptor(AioTestBase):
                     response_deserializer=messages_pb2.SimpleResponse.FromString
                 )
                 response = await multicallable(messages_pb2.SimpleRequest())
+
                 self.assertTrue(
                     all([interceptor.executed for interceptor in interceptors]))
-
                 self.assertEqual(type(response), messages_pb2.SimpleResponse)
 
         self.loop.run_until_complete(coro())
