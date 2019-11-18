@@ -45,6 +45,7 @@ grpc_cc_test(
 
 grpc_cc_test(
     name = "time_jump_test",
+    timeout = "short",
     srcs = ["time_jump_test.cc"],
     external_deps = [
         "gtest",
