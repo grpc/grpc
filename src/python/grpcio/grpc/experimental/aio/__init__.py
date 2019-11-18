@@ -38,7 +38,7 @@ def insecure_channel(target, options=None, compression=None, interceptors=None):
         in gRPC Core runtime) to configure the channel.
       compression: An optional value indicating the compression method to be
         used over the lifetime of the channel. This is an EXPERIMENTAL option.
-      intereceptors: An optional list of interceptors that will be executed for
+      interceptors: An optional list of interceptors that will be executed for
         any call executed with this channel.
 
     Returns:
