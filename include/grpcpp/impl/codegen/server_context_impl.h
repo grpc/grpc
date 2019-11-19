@@ -171,7 +171,7 @@ class ServerContext {
 
   /// IsCancelled is always safe to call when using sync or callback API.
   /// When using async API, it is only safe to call IsCancelled after
-  /// the AsyncNotifyWhenDone tag has been delivered.
+  /// the AsyncNotifyWhenDone tag has been delivered. Thread-safe.
   bool IsCancelled() const;
 
   /// Cancel the Call from the server. This is a best-effort API and
