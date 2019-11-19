@@ -113,6 +113,9 @@ class CallCredentials : private grpc::GrpcLibraryCodegen {
   CallCredentials();
   ~CallCredentials();
 
+  /// Set security level of call credential.
+  virtual void SetSecurityLevel(grpc_security_level security_level) = 0;
+
   /// Apply this instance's credentials to \a call.
   virtual bool ApplyToCall(grpc_call* call) = 0;
 

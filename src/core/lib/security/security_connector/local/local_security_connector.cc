@@ -122,7 +122,7 @@ void local_check_peer(grpc_security_connector* sc, tsi_peer peer,
   // TODO(yihuazhang): Set security level of local TCP to TSI_SECURITY_NONE.
   const char* security_level =
       type == UDS ? tsi_security_level_to_string(TSI_PRIVACY_AND_INTEGRITY)
-                  : tsi_security_level_to_string(TSI_INTEGRITY_ONLY);
+                  : tsi_security_level_to_string(TSI_PRIVACY_AND_INTEGRITY);
   tsi_result result = tsi_construct_string_peer_property_from_cstring(
       TSI_SECURITY_LEVEL_PEER_PROPERTY, security_level,
       &peer.properties[peer.property_count]);

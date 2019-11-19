@@ -225,11 +225,8 @@ void grpc_credentials_mdelem_array_destroy(grpc_credentials_mdelem_array* list);
 struct grpc_call_credentials
     : public grpc_core::RefCounted<grpc_call_credentials> {
  public:
-  explicit grpc_call_credentials(const char* type,
-                                 grpc_security_level security_level)
-      : type_(type), security_level_(security_level) {}
   explicit grpc_call_credentials(const char* type)
-      : type_(type), security_level_(GRPC_SECURITY_NONE) {}
+      : type_(type), security_level_(GRPC_PRIVACY_AND_INTEGRITY) {}
 
   virtual ~grpc_call_credentials() = default;
 
@@ -250,6 +247,13 @@ struct grpc_call_credentials
       grpc_credentials_mdelem_array* md_array, grpc_error* error) = 0;
 
   virtual grpc_security_level security_level() { return security_level_; }
+
+  // Set \a security_level_ with a provided security_level. This API will
+  // lower channel's security level needed to transfer call credential and
+  // should be used with caution.
+  virtual void set_security_level(grpc_security_level security_level) {
+    security_level_ = security_level;
+  }
 
   const char* type() const { return type_; }
 

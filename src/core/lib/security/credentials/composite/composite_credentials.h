@@ -86,7 +86,11 @@ class grpc_composite_call_credentials : public grpc_call_credentials {
   void cancel_get_request_metadata(grpc_credentials_mdelem_array* md_array,
                                    grpc_error* error) override;
 
-  grpc_security_level security_level() override;
+  grpc_security_level security_level() override { return security_level_; }
+
+  void set_security_level(grpc_security_level security_level) override {
+    security_level_ = security_level;
+  }
 
   const CallCredentialsList& inner() const { return inner_; }
 

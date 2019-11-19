@@ -111,11 +111,7 @@ void grpc_service_account_jwt_access_credentials::cancel_get_request_metadata(
 grpc_service_account_jwt_access_credentials::
     grpc_service_account_jwt_access_credentials(grpc_auth_json_key key,
                                                 gpr_timespec token_lifetime)
-    // TODO(yihuazhang): Elevate security level to GRPC_PRIVACY_AND_INTEGRITY to
-    // make it consistent with other languages.
-    : grpc_call_credentials(GRPC_CALL_CREDENTIALS_TYPE_JWT,
-                            GRPC_INTEGRITY_ONLY),
-      key_(key) {
+    : grpc_call_credentials(GRPC_CALL_CREDENTIALS_TYPE_JWT), key_(key) {
   gpr_timespec max_token_lifetime = grpc_max_auth_token_lifetime();
   if (gpr_time_cmp(token_lifetime, max_token_lifetime) > 0) {
     gpr_log(GPR_INFO,
