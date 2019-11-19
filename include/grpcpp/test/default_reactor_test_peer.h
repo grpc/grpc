@@ -20,6 +20,7 @@
 #define GRPCPP_TEST_DEFAULT_REACTOR_TEST_PEER_H
 
 #include <grpcpp/server_context.h>
+#include <grpcpp/support/server_callback.h>
 
 namespace grpc {
 namespace testing {
