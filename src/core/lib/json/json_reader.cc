@@ -212,9 +212,7 @@ grpc_json_type JsonReader::ContainerEnds() {
   return container_type;
 }
 
-void JsonReader::SetKey() {
-  key_ = string_;
-}
+void JsonReader::SetKey() { key_ = string_; }
 
 void JsonReader::SetString() {
   grpc_json* json = CreateAndLink(GRPC_JSON_STRING);
@@ -234,9 +232,8 @@ void JsonReader::SetFalse() { CreateAndLink(GRPC_JSON_FALSE); }
 void JsonReader::SetNull() { CreateAndLink(GRPC_JSON_NULL); }
 
 bool JsonReader::IsComplete() {
-  return (depth_ == 0 &&
-          (state_ == State::GRPC_JSON_STATE_END ||
-           state_ == State::GRPC_JSON_STATE_VALUE_END));
+  return (depth_ == 0 && (state_ == State::GRPC_JSON_STATE_END ||
+                          state_ == State::GRPC_JSON_STATE_VALUE_END));
 }
 
 /* Call this function to start parsing the input. It will return the following:
@@ -353,7 +350,8 @@ JsonReader::Status JsonReader::Run() {
                   !container_just_begun_) {
                 return Status::GRPC_JSON_PARSE_ERROR;
               }
-              if ((c == ']') && !in_array_) return Status::GRPC_JSON_PARSE_ERROR;
+              if ((c == ']') && !in_array_)
+                return Status::GRPC_JSON_PARSE_ERROR;
               if ((c == ']') &&
                   (state_ == State::GRPC_JSON_STATE_VALUE_BEGIN) &&
                   !container_just_begun_) {
@@ -566,10 +564,8 @@ JsonReader::Status JsonReader::Run() {
             } else {
               return Status::GRPC_JSON_PARSE_ERROR;
             }
-            unicode_char_ =
-                static_cast<uint16_t>(unicode_char_ << 4);
-            unicode_char_ =
-                static_cast<uint16_t>(unicode_char_ | c);
+            unicode_char_ = static_cast<uint16_t>(unicode_char_ << 4);
+            unicode_char_ = static_cast<uint16_t>(unicode_char_ | c);
 
             switch (state_) {
               case State::GRPC_JSON_STATE_STRING_ESCAPE_U1:
