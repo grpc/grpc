@@ -429,78 +429,18 @@ void XdsClient::ChannelState::CancelConnectivityWatchLocked() {
   grpc_client_channel_stop_connectivity_watch(client_channel_elem, watcher_);
 }
 
-void XdsClient::ChannelState::WatchClusterData(
-    StringView cluster_name,
-    std::unique_ptr<XdsClient::ClusterWatcherInterface> watcher) {
-  const bool new_name = xds_client()->cluster_map_.find(cluster_name) ==
-                        xds_client()->cluster_map_.end();
-  ClusterState& cluster_state = xds_client()->cluster_map_[cluster_name];
-  ClusterWatcherInterface* w = watcher.get();
-  cluster_state.watchers[w] = std::move(watcher);
-  // If we've already received an CDS update, notify the new watcher
-  // immediately.
-  if (cluster_state.seen_update) {
-    w->OnClusterChanged(cluster_state.update);
-  }
-  if (new_name) {
-    if (ads_calld_ == nullptr) {
-      // FIXME: Honor backoff.
-      ads_calld_.reset(new RetryableCall<AdsCallState>(
-          Ref(DEBUG_LOCATION, "ChannelState+ads")));
-    } else {
-      ads_calld()->SendMessageLocked(CDS, nullptr, false);
-    }
+void XdsClient::ChannelState::OnNewResourceNameWatched(
+    AdsResourceType ads_type) {
+  if (ads_calld_ == nullptr) {
+    // FIXME: Honor backoff.
+    ads_calld_.reset(new RetryableCall<AdsCallState>(
+        Ref(DEBUG_LOCATION, "ChannelState+ads")));
+  } else {
+    ads_calld()->SendMessageLocked(ads_type, nullptr, false);
   }
 }
 
-void XdsClient::ChannelState::CancelClusterDataWatch(
-    StringView cluster_name, XdsClient::ClusterWatcherInterface* watcher) {
-  ClusterState& cluster_state = xds_client()->cluster_map_[cluster_name];
-  auto it = cluster_state.watchers.find(watcher);
-  if (it != cluster_state.watchers.end()) {
-    cluster_state.watchers.erase(it);
-    if (cluster_state.watchers.empty()) {
-      xds_client()->cluster_map_.erase(cluster_name);
-    }
-  }
-  // Stop ADS call if there are no watchers.
-  if (!ads_calld()->HasWatcher()) ads_calld_.reset();
-}
-
-void XdsClient::ChannelState::WatchEndpointData(
-    StringView eds_service_name,
-    std::unique_ptr<XdsClient::EndpointWatcherInterface> watcher) {
-  const bool new_name = xds_client()->cluster_map_.find(eds_service_name) ==
-                        xds_client()->cluster_map_.end();
-  EndpointState& endpoint_state = xds_client()->endpoint_map_[eds_service_name];
-  EndpointWatcherInterface* w = watcher.get();
-  endpoint_state.watchers[w] = std::move(watcher);
-  // If we've already received an EDS update, notify the new watcher
-  // immediately.
-  if (!endpoint_state.update.priority_list_update.empty()) {
-    w->OnEndpointChanged(endpoint_state.update);
-  }
-  if (new_name) {
-    if (ads_calld_ == nullptr) {
-      // FIXME: Honor backoff.
-      ads_calld_.reset(new RetryableCall<AdsCallState>(
-          Ref(DEBUG_LOCATION, "ChannelState+ads")));
-    } else {
-      ads_calld()->SendMessageLocked(EDS, nullptr, false);
-    }
-  }
-}
-
-void XdsClient::ChannelState::CancelEndpointDataWatch(
-    StringView eds_service_name, XdsClient::EndpointWatcherInterface* watcher) {
-  EndpointState& endpoint_state = xds_client()->endpoint_map_[eds_service_name];
-  auto it = endpoint_state.watchers.find(watcher);
-  if (it != endpoint_state.watchers.end()) {
-    endpoint_state.watchers.erase(it);
-    if (endpoint_state.watchers.empty()) {
-      xds_client()->endpoint_map_.erase(eds_service_name);
-    }
-  }
+void XdsClient::ChannelState::OnWatcherRemoved() {
   // Stop ADS call if there are no watchers.
   if (!ads_calld()->HasWatcher()) ads_calld_.reset();
 }
@@ -751,8 +691,8 @@ void XdsClient::ChannelState::AdsCallState::SendMessageLocked(
   switch (type) {
     case CDS:
       request_payload_slice = XdsCdsRequestCreateAndEncode(
-          xds_client()->ClusterNames(), node, build_version, cds_version_state_,
-          error);
+          xds_client()->WatchedClusterNames(), node, build_version,
+          cds_version_state_, error);
       break;
     case EDS:
       request_payload_slice = XdsEdsRequestCreateAndEncode(
@@ -1310,7 +1250,7 @@ void XdsClient::ChannelState::LrsCallState::MaybeStartReportingLocked() {
   AdsCallState* ads_calld = chand()->ads_calld_->calld();
   if (ads_calld == nullptr || !ads_calld->seen_response()) return;
   // Start reporting.
-  for (auto& p : chand()->xds_client_->endpoint_map_) {
+  for (auto& p : chand()->xds_client_->cluster_map_) {
     for (auto* client_stats : p.second.client_stats) {
       client_stats->MaybeInitLastReportTime();
     }
@@ -1548,49 +1488,84 @@ void XdsClient::Orphan() {
 
 void XdsClient::WatchClusterData(
     StringView cluster_name, std::unique_ptr<ClusterWatcherInterface> watcher) {
-  chand_->WatchClusterData(cluster_name, std::move(watcher));
+  const bool new_name = cluster_map_.find(cluster_name) == cluster_map_.end();
+  ClusterState& cluster_state = cluster_map_[cluster_name];
+  ClusterWatcherInterface* w = watcher.get();
+  cluster_state.watchers[w] = std::move(watcher);
+  // If we've already received an CDS update, notify the new watcher
+  // immediately.
+  if (cluster_state.seen_update) {
+    w->OnClusterChanged(cluster_state.update);
+  }
+  if (new_name) chand_->OnNewResourceNameWatched(CDS);
 }
 
 void XdsClient::CancelClusterDataWatch(StringView cluster_name,
                                        ClusterWatcherInterface* watcher) {
-  chand_->CancelClusterDataWatch(cluster_name, watcher);
+  ClusterState& cluster_state = cluster_map_[cluster_name];
+  auto it = cluster_state.watchers.find(watcher);
+  if (it != cluster_state.watchers.end()) {
+    cluster_state.watchers.erase(it);
+    if (cluster_state.watchers.empty()) {
+      cluster_map_.erase(cluster_name);
+    }
+  }
+  chand_->OnWatcherRemoved();
 }
 
 void XdsClient::WatchEndpointData(
     StringView eds_service_name,
     std::unique_ptr<EndpointWatcherInterface> watcher) {
-  chand_->WatchEndpointData(eds_service_name, std::move(watcher));
+  const bool new_name =
+      cluster_map_.find(eds_service_name) == cluster_map_.end();
+  EndpointState& endpoint_state = endpoint_map_[eds_service_name];
+  EndpointWatcherInterface* w = watcher.get();
+  endpoint_state.watchers[w] = std::move(watcher);
+  // If we've already received an EDS update, notify the new watcher
+  // immediately.
+  if (!endpoint_state.update.priority_list_update.empty()) {
+    w->OnEndpointChanged(endpoint_state.update);
+  }
+  if (new_name) chand_->OnNewResourceNameWatched(EDS);
 }
 
 void XdsClient::CancelEndpointDataWatch(StringView eds_service_name,
                                         EndpointWatcherInterface* watcher) {
-  chand_->CancelEndpointDataWatch(eds_service_name, watcher);
+  EndpointState& endpoint_state = endpoint_map_[eds_service_name];
+  auto it = endpoint_state.watchers.find(watcher);
+  if (it != endpoint_state.watchers.end()) {
+    endpoint_state.watchers.erase(it);
+    if (endpoint_state.watchers.empty()) {
+      endpoint_map_.erase(eds_service_name);
+    }
+  }
+  chand_->OnWatcherRemoved();
 }
 
 void XdsClient::AddClientStats(StringView /*lrs_server*/,
-                               StringView eds_service_name,
+                               StringView cluster_name,
                                XdsClientStats* client_stats) {
-  EndpointState& endpoint_state = endpoint_map_[eds_service_name];
+  ClusterState& cluster_state = cluster_map_[cluster_name];
   // TODO(roth): When we add support for direct federation, use the
   // server name specified in lrs_server.
-  endpoint_state.client_stats.insert(client_stats);
+  cluster_state.client_stats.insert(client_stats);
   chand_->MaybeStartLrsCall();
 }
 
 void XdsClient::RemoveClientStats(StringView /*lrs_server*/,
-                                  StringView eds_service_name,
+                                  StringView cluster_name,
                                   XdsClientStats* client_stats) {
-  EndpointState& endpoint_state = endpoint_map_[eds_service_name];
+  ClusterState& cluster_state = cluster_map_[cluster_name];
   // TODO(roth): When we add support for direct federation, use the
   // server name specified in lrs_server.
   // TODO(roth): In principle, we should try to send a final load report
   // containing whatever final stats have been accumulated since the
   // last load report.
-  auto it = endpoint_state.client_stats.find(client_stats);
-  if (it != endpoint_state.client_stats.end()) {
-    endpoint_state.client_stats.erase(it);
+  auto it = cluster_state.client_stats.find(client_stats);
+  if (it != cluster_state.client_stats.end()) {
+    cluster_state.client_stats.erase(it);
   }
-  if (chand_ != nullptr && endpoint_state.client_stats.empty()) {
+  if (chand_ != nullptr && cluster_state.client_stats.empty()) {
     chand_->StopLrsCall();
   }
 }
@@ -1601,10 +1576,13 @@ void XdsClient::ResetBackoff() {
   }
 }
 
-std::set<StringView> XdsClient::ClusterNames() const {
+std::set<StringView> XdsClient::WatchedClusterNames() const {
   std::set<StringView> cluster_names;
   for (const auto& p : cluster_map_) {
     const StringView& cluster_name = p.first;
+    const ClusterState& cluster_state = p.second;
+    // Don't request for the clusters that are cached before watched.
+    if (cluster_state.watchers.empty()) continue;
     cluster_names.emplace(cluster_name);
   }
   return cluster_names;
@@ -1622,7 +1600,7 @@ std::set<StringView> XdsClient::EdsServiceNames() const {
 std::map<StringView, std::set<XdsClientStats*>> XdsClient::ClientStatsMap()
     const {
   std::map<StringView, std::set<XdsClientStats*>> client_stats_map;
-  for (const auto& p : endpoint_map_) {
+  for (const auto& p : cluster_map_) {
     const StringView& cluster_name = p.first;
     const auto& client_stats = p.second.client_stats;
     client_stats_map.emplace(cluster_name, client_stats);

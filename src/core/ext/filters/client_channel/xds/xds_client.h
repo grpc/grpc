@@ -100,23 +100,17 @@ class XdsClient : public InternallyRefCounted<XdsClient> {
   void CancelEndpointDataWatch(StringView eds_service_name,
                                EndpointWatcherInterface* watcher);
 
-  // Adds and removes client stats for cluster.
+  // Adds and removes client stats for \a cluster_name.
   // FIXME: Looks like eds_service_name key is necessary so that the management
-  // server can aggregate loads. But do we need to add cluster_name too?
+  // server can aggregate loads. Should we also pass it?
   // https://github.com/envoyproxy/envoy/blob/be5e7a565b3571556f2d06035ad743923e87b48c/api/envoy/api/v2/endpoint/load_report.proto#L127-L130
-  void AddClientStats(StringView, StringView eds_service_name,
+  void AddClientStats(StringView /*lrs_server*/, StringView cluster_name,
                       XdsClientStats* client_stats);
-  void RemoveClientStats(StringView, StringView eds_service_name,
+  void RemoveClientStats(StringView /*lrs_server*/, StringView cluster_name,
                          XdsClientStats* client_stats);
 
   // Resets connection backoff state.
   void ResetBackoff();
-
-  std::set<StringView> ClusterNames() const;
-
-  std::set<StringView> EdsServiceNames() const;
-
-  std::map<StringView, std::set<XdsClientStats*>> ClientStatsMap() const;
 
   // Helpers for encoding the XdsClient object in channel args.
   grpc_arg MakeChannelArg() const;
@@ -161,15 +155,8 @@ class XdsClient : public InternallyRefCounted<XdsClient> {
     void StartConnectivityWatchLocked();
     void CancelConnectivityWatchLocked();
 
-    void WatchClusterData(StringView cluster_name,
-                          std::unique_ptr<ClusterWatcherInterface> watcher);
-    void CancelClusterDataWatch(StringView cluster_name,
-                                ClusterWatcherInterface* watcher);
-
-    void WatchEndpointData(StringView eds_service_name,
-                           std::unique_ptr<EndpointWatcherInterface> watcher);
-    void CancelEndpointDataWatch(StringView eds_service_name,
-                                 EndpointWatcherInterface* watcher);
+    void OnNewResourceNameWatched(AdsResourceType ads_type);
+    void OnWatcherRemoved();
 
    private:
     class StateWatcher;
@@ -190,6 +177,7 @@ class XdsClient : public InternallyRefCounted<XdsClient> {
   struct ClusterState {
     std::map<ClusterWatcherInterface*, std::unique_ptr<ClusterWatcherInterface>>
         watchers;
+    std::set<XdsClientStats*> client_stats;
     // The latest data seen from CDS.
     CdsUpdate update;
     bool seen_update = false;
@@ -199,7 +187,6 @@ class XdsClient : public InternallyRefCounted<XdsClient> {
     std::map<EndpointWatcherInterface*,
              std::unique_ptr<EndpointWatcherInterface>>
         watchers;
-    std::set<XdsClientStats*> client_stats;
     // The latest data seen from EDS.
     EdsUpdate update;
   };
@@ -210,6 +197,12 @@ class XdsClient : public InternallyRefCounted<XdsClient> {
   // TODO(juanlishen): Once we implement LDS support, this can be a
   // normal method instead of a closure callback.
   static void NotifyOnServiceConfig(void* arg, grpc_error* error);
+
+  std::set<StringView> WatchedClusterNames() const;
+
+  std::set<StringView> EdsServiceNames() const;
+
+  std::map<StringView, std::set<XdsClientStats*>> ClientStatsMap() const;
 
   // Channel arg vtable functions.
   static void* ChannelArgCopy(void* p);

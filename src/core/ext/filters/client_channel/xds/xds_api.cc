@@ -702,7 +702,7 @@ grpc_slice XdsLrsRequestCreateAndEncode(
   envoy_service_load_stats_v2_LoadStatsRequest* request =
       envoy_service_load_stats_v2_LoadStatsRequest_new(arena.ptr());
   for (auto& p : snapshot_map) {
-    const StringView& eds_service_name = p.first;
+    const StringView& cluster_name = p.first;
     const auto& snapshot_list = p.second;
     for (size_t i = 0; i < snapshot_list.size(); ++i) {
       const auto& snapshot = snapshot_list[i];
@@ -711,12 +711,9 @@ grpc_slice XdsLrsRequestCreateAndEncode(
           envoy_service_load_stats_v2_LoadStatsRequest_add_cluster_stats(
               request, arena.ptr());
       // Set the cluster name.
-      // FIXME: The cluster_name is set to the eds_service_name according to the
-      // LRS design doc. But Jie says this might no longer be the case. Not sure
-      // what the current design is.
       envoy_api_v2_endpoint_ClusterStats_set_cluster_name(
           cluster_stats,
-          upb_strview_make(eds_service_name.data(), eds_service_name.size()));
+          upb_strview_make(cluster_name.data(), cluster_name.size()));
       // Add locality stats.
       for (auto& p : snapshot.upstream_locality_stats) {
         envoy_api_v2_endpoint_UpstreamLocalityStats* locality_stats =
