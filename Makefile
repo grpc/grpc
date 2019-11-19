@@ -1263,6 +1263,7 @@ nonblocking_test: $(BINDIR)/$(CONFIG)/nonblocking_test
 noop-benchmark: $(BINDIR)/$(CONFIG)/noop-benchmark
 optional_test: $(BINDIR)/$(CONFIG)/optional_test
 orphanable_test: $(BINDIR)/$(CONFIG)/orphanable_test
+pollset_windows_starvation_test.cc: $(BINDIR)/$(CONFIG)/pollset_windows_starvation_test.cc
 port_sharing_end2end_test: $(BINDIR)/$(CONFIG)/port_sharing_end2end_test
 proto_server_reflection_test: $(BINDIR)/$(CONFIG)/proto_server_reflection_test
 proto_utils_test: $(BINDIR)/$(CONFIG)/proto_utils_test
@@ -1732,6 +1733,7 @@ buildtests_cxx: privatelibs_cxx \
   $(BINDIR)/$(CONFIG)/noop-benchmark \
   $(BINDIR)/$(CONFIG)/optional_test \
   $(BINDIR)/$(CONFIG)/orphanable_test \
+  $(BINDIR)/$(CONFIG)/pollset_windows_starvation_test.cc \
   $(BINDIR)/$(CONFIG)/port_sharing_end2end_test \
   $(BINDIR)/$(CONFIG)/proto_server_reflection_test \
   $(BINDIR)/$(CONFIG)/proto_utils_test \
@@ -1903,6 +1905,7 @@ buildtests_cxx: privatelibs_cxx \
   $(BINDIR)/$(CONFIG)/noop-benchmark \
   $(BINDIR)/$(CONFIG)/optional_test \
   $(BINDIR)/$(CONFIG)/orphanable_test \
+  $(BINDIR)/$(CONFIG)/pollset_windows_starvation_test.cc \
   $(BINDIR)/$(CONFIG)/port_sharing_end2end_test \
   $(BINDIR)/$(CONFIG)/proto_server_reflection_test \
   $(BINDIR)/$(CONFIG)/proto_utils_test \
@@ -2419,6 +2422,8 @@ test_cxx: buildtests_cxx
 	$(Q) $(BINDIR)/$(CONFIG)/optional_test || ( echo test optional_test failed ; exit 1 )
 	$(E) "[RUN]     Testing orphanable_test"
 	$(Q) $(BINDIR)/$(CONFIG)/orphanable_test || ( echo test orphanable_test failed ; exit 1 )
+	$(E) "[RUN]     Testing pollset_windows_starvation_test.cc"
+	$(Q) $(BINDIR)/$(CONFIG)/pollset_windows_starvation_test.cc || ( echo test pollset_windows_starvation_test.cc failed ; exit 1 )
 	$(E) "[RUN]     Testing port_sharing_end2end_test"
 	$(Q) $(BINDIR)/$(CONFIG)/port_sharing_end2end_test || ( echo test port_sharing_end2end_test failed ; exit 1 )
 	$(E) "[RUN]     Testing proto_server_reflection_test"
@@ -18506,6 +18511,49 @@ deps_orphanable_test: $(ORPHANABLE_TEST_OBJS:.o=.dep)
 ifneq ($(NO_SECURE),true)
 ifneq ($(NO_DEPS),true)
 -include $(ORPHANABLE_TEST_OBJS:.o=.dep)
+endif
+endif
+
+
+POLLSET_WINDOWS_STARVATION_TEST.CC_SRC = \
+    test/core/iomgr/pollset_windows_starvation_test.cc \
+
+POLLSET_WINDOWS_STARVATION_TEST.CC_OBJS = $(addprefix $(OBJDIR)/$(CONFIG)/, $(addsuffix .o, $(basename $(POLLSET_WINDOWS_STARVATION_TEST.CC_SRC))))
+ifeq ($(NO_SECURE),true)
+
+# You can't build secure targets if you don't have OpenSSL.
+
+$(BINDIR)/$(CONFIG)/pollset_windows_starvation_test.cc: openssl_dep_error
+
+else
+
+
+
+
+ifeq ($(NO_PROTOBUF),true)
+
+# You can't build the protoc plugins or protobuf-enabled targets if you don't have protobuf 3.5.0+.
+
+$(BINDIR)/$(CONFIG)/pollset_windows_starvation_test.cc: protobuf_dep_error
+
+else
+
+$(BINDIR)/$(CONFIG)/pollset_windows_starvation_test.cc: $(PROTOBUF_DEP) $(POLLSET_WINDOWS_STARVATION_TEST.CC_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a
+	$(E) "[LD]      Linking $@"
+	$(Q) mkdir -p `dirname $@`
+	$(Q) $(LDXX) $(LDFLAGS) $(POLLSET_WINDOWS_STARVATION_TEST.CC_OBJS) $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a $(LDLIBSXX) $(LDLIBS_PROTOBUF) $(LDLIBS) $(LDLIBS_SECURE) $(GTEST_LIB) -o $(BINDIR)/$(CONFIG)/pollset_windows_starvation_test.cc
+
+endif
+
+endif
+
+$(OBJDIR)/$(CONFIG)/test/core/iomgr/pollset_windows_starvation_test.o:  $(LIBDIR)/$(CONFIG)/libgrpc_test_util.a $(LIBDIR)/$(CONFIG)/libgrpc.a $(LIBDIR)/$(CONFIG)/libgpr.a
+
+deps_pollset_windows_starvation_test.cc: $(POLLSET_WINDOWS_STARVATION_TEST.CC_OBJS:.o=.dep)
+
+ifneq ($(NO_SECURE),true)
+ifneq ($(NO_DEPS),true)
+-include $(POLLSET_WINDOWS_STARVATION_TEST.CC_OBJS:.o=.dep)
 endif
 endif
 
