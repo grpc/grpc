@@ -105,6 +105,7 @@ class AuthContextTest(unittest.TestCase):
         self.assertIsNone(auth_data[_ID])
         self.assertIsNone(auth_data[_ID_KEY])
         self.assertDictEqual({
+            'security_level': [b'TSI_PRIVACY_AND_INTEGRITY'],
             'transport_security_type': [b'ssl'],
             'ssl_session_reused': [b'false'],
         }, auth_data[_AUTH_CTX])

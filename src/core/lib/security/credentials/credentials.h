@@ -249,8 +249,8 @@ struct grpc_call_credentials
   virtual grpc_security_level security_level() { return security_level_; }
 
   // Set \a security_level_ with a provided security_level. This API will
-  // lower channel's security level needed to transfer call credential and
-  // should be used with caution.
+  // lower security level of a channel needed to transfer the call credential,
+  // and should be used with caution.
   virtual void set_security_level(grpc_security_level security_level) {
     security_level_ = security_level;
   }
