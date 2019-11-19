@@ -18,8 +18,8 @@
 
 #include <grpc/support/port_platform.h>
 
-#include <string.h>
 #include <stdlib.h>
+#include <string.h>
 
 #include <grpc/support/alloc.h>
 #include <grpc/support/log.h>
@@ -58,8 +58,8 @@ static void json_writer_output_check(grpc_json_writer* writer, size_t needed) {
   needed -= writer->free_space;
   /* Round up by 256 bytes. */
   needed = (needed + 0xff) & ~0xffU;
-  writer->output = static_cast<char*>(gpr_realloc(writer->output,
-                                                  writer->allocated + needed));
+  writer->output = static_cast<char*>(
+      gpr_realloc(writer->output, writer->allocated + needed));
   writer->free_space += needed;
   writer->allocated += needed;
 }

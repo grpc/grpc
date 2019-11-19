@@ -111,8 +111,7 @@ static void json_reader_string_add_char(grpc_json_reader* reader, uint32_t c) {
   *reader->string_ptr++ = static_cast<uint8_t>(c);
 }
 
-static void json_reader_string_add_utf32(grpc_json_reader* reader,
-                                         uint32_t c) {
+static void json_reader_string_add_utf32(grpc_json_reader* reader, uint32_t c) {
   if (c <= 0x7f) {
     json_reader_string_add_char(reader, c);
   } else if (c <= 0x7ff) {
