@@ -663,8 +663,11 @@ void XdsClient::ChannelState::AdsCallState::Orphan() {
 }
 
 bool XdsClient::ChannelState::AdsCallState::HasWatcher() const {
-  return !xds_client()->cluster_map_.empty() ||
-         !xds_client()->endpoint_map_.empty();
+  for (const auto p : xds_client()->cluster_map_) {
+    const ClusterState& cluster_state = p.second;
+    if (!cluster_state.watchers.empty()) return true;
+  }
+  return !xds_client()->endpoint_map_.empty();
 }
 
 void XdsClient::ChannelState::AdsCallState::SendMessageLocked(
