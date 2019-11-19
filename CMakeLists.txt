@@ -781,6 +781,9 @@ if(gRPC_BUILD_TESTS)
   add_dependencies(buildtests_cxx noop-benchmark)
   add_dependencies(buildtests_cxx optional_test)
   add_dependencies(buildtests_cxx orphanable_test)
+  if(_gRPC_PLATFORM_WINDOWS)
+    add_dependencies(buildtests_cxx pollset_windows_starvation_test.cc)
+  endif()
   add_dependencies(buildtests_cxx port_sharing_end2end_test)
   add_dependencies(buildtests_cxx proto_server_reflection_test)
   add_dependencies(buildtests_cxx proto_utils_test)
@@ -5255,7 +5258,9 @@ if(gRPC_INSTALL)
 endif()
 
 
-if(gRPC_BUILD_CODEGEN)
+# grpcpp_channelz doesn't build with protobuf-lite
+# See https://github.com/grpc/grpc/issues/19473
+if(gRPC_BUILD_CODEGEN AND NOT gRPC_USE_PROTO_LITE)
 add_library(grpcpp_channelz
   src/cpp/server/channelz/channelz_service.cc
   src/cpp/server/channelz/channelz_service_plugin.cc
@@ -14184,6 +14189,44 @@ target_link_libraries(orphanable_test
 )
 
 
+endif()
+if(gRPC_BUILD_TESTS)
+if(_gRPC_PLATFORM_WINDOWS)
+
+  add_executable(pollset_windows_starvation_test.cc
+    test/core/iomgr/pollset_windows_starvation_test.cc
+    third_party/googletest/googletest/src/gtest-all.cc
+    third_party/googletest/googlemock/src/gmock-all.cc
+  )
+
+  target_include_directories(pollset_windows_starvation_test.cc
+    PRIVATE
+      ${CMAKE_CURRENT_SOURCE_DIR}
+      ${CMAKE_CURRENT_SOURCE_DIR}/include
+      ${_gRPC_ADDRESS_SORTING_INCLUDE_DIR}
+      ${_gRPC_SSL_INCLUDE_DIR}
+      ${_gRPC_UPB_GENERATED_DIR}
+      ${_gRPC_UPB_GRPC_GENERATED_DIR}
+      ${_gRPC_UPB_INCLUDE_DIR}
+      ${_gRPC_ZLIB_INCLUDE_DIR}
+      third_party/googletest/googletest/include
+      third_party/googletest/googletest
+      third_party/googletest/googlemock/include
+      third_party/googletest/googlemock
+      ${_gRPC_PROTO_GENS_DIR}
+  )
+
+  target_link_libraries(pollset_windows_starvation_test.cc
+    ${_gRPC_PROTOBUF_LIBRARIES}
+    ${_gRPC_ALLTARGETS_LIBRARIES}
+    grpc_test_util
+    grpc
+    gpr
+    ${_gRPC_GFLAGS_LIBRARIES}
+  )
+
+
+endif()
 endif()
 if(gRPC_BUILD_TESTS)
 

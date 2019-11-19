@@ -91,6 +91,7 @@ grpc_cc_test(
         "gtest",
     ],
     tags = [
+        "no_test_android",  # android_cc_test doesn't work with data dependency.
         "no_test_ios",
         "no_windows",
     ],
@@ -116,6 +117,7 @@ grpc_cc_test(
         "gtest",
     ],
     tags = [
+        "no_test_android",  # android_cc_test doesn't work with data dependency.
         "no_test_ios",
         "no_windows",
     ],
@@ -571,6 +573,7 @@ grpc_cc_test(
         "gtest",
     ],
     tags = [
+        "no_test_android",  # android_cc_test doesn't work with data dependency.
         "no_test_ios",
         "no_windows",
     ],
@@ -730,6 +733,7 @@ grpc_cc_test(
     ],
     tags = [
         "manual",
+        "no_test_android",
         "no_test_ios",
     ],  # test requires root, won't work with bazel RBE
     deps = [
