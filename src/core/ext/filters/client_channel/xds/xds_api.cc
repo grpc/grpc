@@ -372,6 +372,7 @@ grpc_error* CdsResponseParse(const envoy_api_v2_DiscoveryResponse* response,
       // are violating the proto?
       cds_update.lrs_load_reporting_server_name.reset(gpr_strdup(""));
     }
+    upb_strview cluster_name = envoy_api_v2_Cluster_name(cluster);
     cds_update_map->emplace(StringCopy(cluster_name), std::move(cds_update));
   }
   return GRPC_ERROR_NONE;

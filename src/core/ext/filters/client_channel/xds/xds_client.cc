@@ -1520,7 +1520,7 @@ void XdsClient::WatchEndpointData(
     StringView eds_service_name,
     std::unique_ptr<EndpointWatcherInterface> watcher) {
   const bool new_name =
-      cluster_map_.find(eds_service_name) == cluster_map_.end();
+      endpoint_map_.find(eds_service_name) == endpoint_map_.end();
   EndpointState& endpoint_state = endpoint_map_[eds_service_name];
   EndpointWatcherInterface* w = watcher.get();
   endpoint_state.watchers[w] = std::move(watcher);

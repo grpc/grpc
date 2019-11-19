@@ -227,7 +227,9 @@ class XdsClient : public InternallyRefCounted<XdsClient> {
   // The channel for communicating with the xds server.
   OrphanablePtr<ChannelState> chand_;
 
+  // All the received clusters are cached, no matter they are watched or not.
   std::map<StringView /*cluster_name*/, ClusterState, StringLess> cluster_map_;
+  // Only the watched EDS service names are stored.
   std::map<StringView /*eds_service_name*/, EndpointState, StringLess>
       endpoint_map_;
 
