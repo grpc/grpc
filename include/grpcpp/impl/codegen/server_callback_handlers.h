@@ -224,7 +224,18 @@ class CallbackUnaryHandler : public ::grpc::internal::MethodHandler {
     ::grpc::experimental::MessageHolder<RequestType, ResponseType>* const
         allocator_state_;
     std::function<void()> call_requester_;
+    // reactor_ can always be loaded/stored with relaxed memory ordering because
+    // its value is only set once, independently of other data in the object,
+    // and the loads that use it will always actually come provably later even
+    // though they are from different threads since they are triggered by
+    // actions initiated only by the setting up of the reactor_ variable. In
+    // a sense, it's a delayed "const": it gets its value from the SetupReactor
+    // method (not the constructor, so it's not a true const), but it doesn't
+    // change after that and it only gets used by actions caused, directly or
+    // indirectly, by that setup. This comment also applies to the reactor_
+    // variables of the other streaming objects in this file.
     std::atomic<experimental::ServerUnaryReactor*> reactor_;
+    // callbacks_outstanding_ follows a refcount pattern
     std::atomic<intptr_t> callbacks_outstanding_{
         3};  // reserve for start, Finish, and CompletionOp
   };
@@ -386,7 +397,9 @@ class CallbackClientStreamingHandler : public ::grpc::internal::MethodHandler {
     ::grpc::internal::Call call_;
     ResponseType resp_;
     std::function<void()> call_requester_;
+    // The memory ordering of reactor_ follows ServerCallbackUnaryImpl.
     std::atomic<experimental::ServerReadReactor<RequestType>*> reactor_;
+    // callbacks_outstanding_ follows a refcount pattern
     std::atomic<intptr_t> callbacks_outstanding_{
         3};  // reserve for OnStarted, Finish, and CompletionOp
   };
@@ -589,7 +602,9 @@ class CallbackServerStreamingHandler : public ::grpc::internal::MethodHandler {
     ::grpc::internal::Call call_;
     const RequestType* req_;
     std::function<void()> call_requester_;
+    // The memory ordering of reactor_ follows ServerCallbackUnaryImpl.
     std::atomic<experimental::ServerWriteReactor<ResponseType>*> reactor_;
+    // callbacks_outstanding_ follows a refcount pattern
     std::atomic<intptr_t> callbacks_outstanding_{
         3};  // reserve for OnStarted, Finish, and CompletionOp
   };
@@ -784,8 +799,10 @@ class CallbackBidiHandler : public ::grpc::internal::MethodHandler {
     ::grpc_impl::experimental::CallbackServerContext* const ctx_;
     ::grpc::internal::Call call_;
     std::function<void()> call_requester_;
+    // The memory ordering of reactor_ follows ServerCallbackUnaryImpl.
     std::atomic<experimental::ServerBidiReactor<RequestType, ResponseType>*>
         reactor_;
+    // callbacks_outstanding_ follows a refcount pattern
     std::atomic<intptr_t> callbacks_outstanding_{
         3};  // reserve for OnStarted, Finish, and CompletionOp
   };
