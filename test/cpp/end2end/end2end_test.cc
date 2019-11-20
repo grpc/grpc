@@ -2218,6 +2218,10 @@ std::vector<TestScenario> CreateTestScenarios(bool use_proxy,
     credentials_provider->AddSecureType(
         kSpiffeCredentialsType, std::unique_ptr<SpiffeCredentialTypeProvider>(
                                     new SpiffeCredentialTypeProvider));
+    credentials_provider->AddSecureType(
+        kSpiffeCredentialsType,
+        std::unique_ptr<SpiffeAsyncCredentialTypeProvider>(
+            new SpiffeAsyncCredentialTypeProvider));
     credentials_types = credentials_provider->GetSecureCredentialsTypeList();
   }
   auto insec_ok = [] {

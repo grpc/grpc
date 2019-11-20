@@ -17,8 +17,8 @@
  */
 
 #include "test/cpp/util/spiffe_test_credentials.h"
+#include <thread>
 #include "test/core/end2end/data/ssl_test_data.h"
-#include <iostream>
 
 namespace grpc {
 namespace testing {
@@ -49,18 +49,34 @@ class TestSyncTlsServerAuthorizationCheck
   }
 };
 
+static void TestAsyncTlsServerAuthorizationCheckCallback(
+    ::grpc_impl::experimental::TlsServerAuthorizationCheckArg* arg) {
+  GPR_ASSERT(arg != nullptr);
+  arg->set_success(1);
+  arg->set_status(GRPC_STATUS_OK);
+  arg->OnServerAuthorizationCheckDoneCallback();
+}
+
 class TestAsyncTlsServerAuthorizationCheck
     : public ::grpc_impl::experimental::TlsServerAuthorizationCheckInterface {
+ public:
+  ~TestAsyncTlsServerAuthorizationCheck() override {
+    if (server_authz_check_thread_ != nullptr) {
+      server_authz_check_thread_->join();
+    }
+  }
+
   // Async implementation.
   int Schedule(
       ::grpc_impl::experimental::TlsServerAuthorizationCheckArg* arg) override {
-    std::cout << "****************Entered async serv authz schedule." << std::endl;
     GPR_ASSERT(arg != nullptr);
-    arg->set_success(1);
-    arg->set_status(GRPC_STATUS_OK);
-    //arg->OnServerAuthorizationCheckDoneCallback();
+    server_authz_check_thread_ = std::unique_ptr<std::thread>(
+        new std::thread(TestAsyncTlsServerAuthorizationCheckCallback, arg));
     return 1;
   }
+
+ private:
+  std::unique_ptr<std::thread> server_authz_check_thread_ = nullptr;
 };
 
 /** This method creates a TlsCredentialsOptions instance with no key materials,
@@ -92,13 +108,17 @@ CreateTestTlsCredentialsOptions(bool is_client, bool is_async) {
       test_server_authorization_check_config = nullptr;
   if (is_client) {
     if (is_async) {
-      std::shared_ptr<TestAsyncTlsServerAuthorizationCheck>
-          async_interface(new TestAsyncTlsServerAuthorizationCheck());
-      test_server_authorization_check_config = std::make_shared<::grpc_impl::experimental::TlsServerAuthorizationCheckConfig>(async_interface);
+      std::shared_ptr<TestAsyncTlsServerAuthorizationCheck> async_interface(
+          new TestAsyncTlsServerAuthorizationCheck());
+      test_server_authorization_check_config = std::make_shared<
+          ::grpc_impl::experimental::TlsServerAuthorizationCheckConfig>(
+          async_interface);
     } else {
-      std::shared_ptr<TestSyncTlsServerAuthorizationCheck>
-          sync_interface(new TestSyncTlsServerAuthorizationCheck());
-      test_server_authorization_check_config = std::make_shared<::grpc_impl::experimental::TlsServerAuthorizationCheckConfig>(sync_interface);
+      std::shared_ptr<TestSyncTlsServerAuthorizationCheck> sync_interface(
+          new TestSyncTlsServerAuthorizationCheck());
+      test_server_authorization_check_config = std::make_shared<
+          ::grpc_impl::experimental::TlsServerAuthorizationCheckConfig>(
+          sync_interface);
     }
   }
 
@@ -121,7 +141,8 @@ std::shared_ptr<ServerCredentials> SpiffeTestServerCredentials() {
   return TlsServerCredentials(*CreateTestTlsCredentialsOptions(false, false));
 }
 
-std::shared_ptr<grpc_impl::ChannelCredentials> SpiffeAsyncTestChannelCredentials() {
+std::shared_ptr<grpc_impl::ChannelCredentials>
+SpiffeAsyncTestChannelCredentials() {
   return TlsCredentials(*CreateTestTlsCredentialsOptions(true, true));
 }
 

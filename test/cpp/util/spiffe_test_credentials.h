@@ -34,7 +34,8 @@ std::shared_ptr<grpc_impl::ChannelCredentials> SpiffeTestChannelCredentials();
 
 std::shared_ptr<ServerCredentials> SpiffeTestServerCredentials();
 
-std::shared_ptr<grpc_impl::ChannelCredentials> SpiffeAsyncTestChannelCredentials();
+std::shared_ptr<grpc_impl::ChannelCredentials>
+SpiffeAsyncTestChannelCredentials();
 
 class SpiffeCredentialTypeProvider : public CredentialTypeProvider {
  public:
