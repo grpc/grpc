@@ -32,5 +32,6 @@ elseif(gRPC_BENCHMARK_PROVIDER STREQUAL "package")
     set(_gRPC_BENCHMARK_LIBRARIES benchmark::benchmark)
   endif()
   set(_gRPC_FIND_BENCHMARK "if(NOT benchmark_FOUND)\n  find_package(benchmark CONFIG)\nendif()")
+elseif(gRPC_BENCHMARK_PROVIDER STREQUAL "none")
+  # Benchmark is a test-only dependency and can be avoided if we're not building tests.
 endif()
-
