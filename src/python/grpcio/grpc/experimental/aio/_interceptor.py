@@ -34,10 +34,8 @@ class UnaryUnaryClientInterceptor:
     """Affords intercepting unary-unary invocations."""
 
     async def intercept_unary_unary(
-            self,
-            continuation: Callable[[ClientCallDetails, Any], Any],
-            client_call_details: ClientCallDetails,
-            request: Any) -> Any:
+            self, continuation: Callable[[ClientCallDetails, Any], Any],
+            client_call_details: ClientCallDetails, request: Any) -> Any:
         """Intercepts a unary-unary invocation asynchronously.
         Args:
           continuation: A coroutine that proceeds with the invocation by

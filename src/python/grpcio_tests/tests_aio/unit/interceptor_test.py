@@ -40,8 +40,9 @@ class TestUnaryUnaryClientInterceptor(AioTestBase):
 
         class Interceptor(aio.UnaryUnaryClientInterceptor):
             """Interceptor used for testing if the interceptor is being called"""
-            async def intercept_unary_unary(self, continuation, client_call_details,
-                                            request):
+
+            async def intercept_unary_unary(self, continuation,
+                                            client_call_details, request):
                 interceptors_executed.append(self)
                 return await continuation(client_call_details, request)
 
@@ -93,8 +94,8 @@ class TestUnaryUnaryClientInterceptor(AioTestBase):
                     grpc.StatusCode.DEADLINE_EXCEEDED: 0
                 }
 
-            async def intercept_unary_unary(self, continuation, client_call_details,
-                                            request):
+            async def intercept_unary_unary(self, continuation,
+                                            client_call_details, request):
                 status_code = grpc.StatusCode.OK
                 try:
                     return await continuation(client_call_details, request)
@@ -181,8 +182,8 @@ class TestUnaryUnaryClientInterceptor(AioTestBase):
         class TimeoutInterceptor(aio.UnaryUnaryClientInterceptor):
             """Interceptor used for adding a timeout to the RPC"""
 
-            async def intercept_unary_unary(self, continuation, client_call_details,
-                                            request):
+            async def intercept_unary_unary(self, continuation,
+                                            client_call_details, request):
                 new_client_call_details = aio.ClientCallDetails(
                     method=client_call_details.method,
                     timeout=0.1,

@@ -202,7 +202,8 @@ class Channel:
                     lambda interceptor: isinstance(interceptor, UnaryUnaryClientInterceptor),
                     interceptors)) or None
 
-            invalid_interceptors = set(interceptors) - set(self._unary_unary_interceptors or [])
+            invalid_interceptors = set(interceptors) - set(
+                self._unary_unary_interceptors or [])
             if invalid_interceptors:
                 raise ValueError(
                     "Interceptor must be "+\
