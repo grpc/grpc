@@ -12,9 +12,22 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """Interceptors implementation of gRPC Asyncio Python."""
-from typing import Callable
+import collections
+from typing import Any, Dict, Callable, Optional
 
 import grpc
+
+
+class ClientCallDetails(
+        collections.namedtuple(
+            'ClientCallDetails',
+            ('method', 'timeout', 'metadata', 'credentials')),
+        grpc.ClientCallDetails):
+
+    method: int
+    timeout: Optional[float]
+    metadata: Optional[Dict]
+    credentials: Optional[Any]
 
 
 class UnaryUnaryClientInterceptor:
@@ -22,9 +35,9 @@ class UnaryUnaryClientInterceptor:
 
     async def intercept_unary_unary(
             self,
-            continuation: Callable[[grpc.ClientCallDetails, bytes], bytes],
-            client_call_details: grpc.ClientCallDetails,
-            request: bytes) -> bytes:
+            continuation: Callable[[ClientCallDetails, Any], Any],
+            client_call_details: ClientCallDetails,
+            request: Any) -> Any:
         """Intercepts a unary-unary invocation asynchronously.
         Args:
           continuation: A coroutine that proceeds with the invocation by

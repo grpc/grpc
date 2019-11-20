@@ -24,33 +24,29 @@ from tests_aio.unit._test_base import AioTestBase
 from src.proto.grpc.testing import messages_pb2
 
 
-class _ClientCallDetails(
-        collections.namedtuple(
-            '_ClientCallDetails',
-            ('method', 'timeout', 'metadata', 'credentials')),
-        grpc.ClientCallDetails):
-    pass
-
-
 class TestUnaryUnaryClientInterceptor(AioTestBase):
 
-    def test_many_interceptors(self):
+    def test_invalid(self):
+
+        class InvalidInterceptor:
+            """Just an invalid Interceptor"""
+
+        with self.assertRaises(ValueError):
+            aio.insecure_channel("", interceptors=[InvalidInterceptor()])
+
+    def test_executed_right_order(self):
+
+        interceptors_executed = []
 
         class Interceptor(aio.UnaryUnaryClientInterceptor):
             """Interceptor used for testing if the interceptor is being called"""
-
-            def __init__(self):
-                self.executed = False
-
             async def intercept_unary_unary(self, continuation, client_call_details,
                                             request):
-                self.executed = True
+                interceptors_executed.append(self)
                 return await continuation(client_call_details, request)
 
         async def coro():
             interceptors = [Interceptor() for i in range(2)]
-            self.assertTrue(
-                all([not interceptor.executed for interceptor in interceptors]))
 
             server_target, _ = await start_test_server()  # pylint: disable=unused-variable
 
@@ -64,8 +60,10 @@ class TestUnaryUnaryClientInterceptor(AioTestBase):
                 )
                 response = await multicallable(messages_pb2.SimpleRequest())
 
-                self.assertTrue(
-                    all([interceptor.executed for interceptor in interceptors]))
+                # Check that all interceptors were executed, and were executed
+                # in the right order.
+                self.assertEqual(interceptors_executed, interceptors)
+
                 self.assertEqual(type(response), messages_pb2.SimpleResponse)
 
         self.loop.run_until_complete(coro())
@@ -74,6 +72,12 @@ class TestUnaryUnaryClientInterceptor(AioTestBase):
     # TODO(https://github.com/grpc/grpc/issues/20144) Once metadata support is
     # implemented in the client-side, this test must be implemented.
     def test_modify_metadata(self):
+        raise NotImplementedError()
+
+    @unittest.expectedFailure
+    # TODO(https://github.com/grpc/grpc/issues/20532) Once credentials support is
+    # implemented in the client-side, this test must be implemented.
+    def test_modify_credentials(self):
         raise NotImplementedError()
 
     def test_status_code_observability(self):
@@ -179,7 +183,7 @@ class TestUnaryUnaryClientInterceptor(AioTestBase):
 
             async def intercept_unary_unary(self, continuation, client_call_details,
                                             request):
-                new_client_call_details = _ClientCallDetails(
+                new_client_call_details = aio.ClientCallDetails(
                     method=client_call_details.method,
                     timeout=0.1,
                     metadata=client_call_details.metadata,

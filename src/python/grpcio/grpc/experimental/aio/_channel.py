@@ -14,19 +14,20 @@
 """Invocation-side implementation of gRPC Asyncio Python."""
 import asyncio
 import functools
-from typing import Callable, Optional, List, Iterable, Dict
+from typing import Callable, Optional, List, Sequence, Dict, TypeVar
 
 from grpc import _common
-from grpc import ClientCallDetails
 from grpc._cython import cygrpc
 from grpc._interceptor import _ClientCallDetails
 
 from ._call import Call
 from ._call import AioRpcError
+from ._interceptor import ClientCallDetails
 from ._interceptor import UnaryUnaryClientInterceptor
 
 SerializingFunction = Callable[[str], bytes]
 DeserializingFunction = Callable[[bytes], str]
+Request = TypeVar('Request')
 
 
 class UnaryUnaryMultiCallable:
@@ -60,7 +61,7 @@ class UnaryUnaryMultiCallable:
         return self._loop.time() + timeout
 
     def __call__(self,
-                 request,
+                 request: Request,
                  *,
                  timeout: Optional[float] = None,
                  metadata: Optional[Dict] = None,
@@ -125,7 +126,7 @@ class UnaryUnaryMultiCallable:
         """Run the RPC call wraped in interceptors"""
 
         async def _run_interceptor(
-                interceptors: Iterable[UnaryUnaryClientInterceptor],
+                interceptors: Sequence[UnaryUnaryClientInterceptor],
                 client_call_details: ClientCallDetails, request: bytes):
             try:
                 interceptor = next(interceptors)
@@ -180,6 +181,8 @@ class Channel:
           credentials: A cygrpc.ChannelCredentials or None.
           compression: An optional value indicating the compression method to be
             used over the lifetime of the channel.
+          interceptors: An optional list of interceptors that would be used for
+            intercepting any RPC executed with that channel.
         """
 
         if options:
@@ -198,6 +201,13 @@ class Channel:
                 filter(
                     lambda interceptor: isinstance(interceptor, UnaryUnaryClientInterceptor),
                     interceptors)) or None
+
+            invalid_interceptors = set(interceptors) - set(self._unary_unary_interceptors or [])
+            if invalid_interceptors:
+                raise ValueError(
+                    "Interceptor must be "+\
+                    "UnaryUnaryClientInterceptors, the following are invalid: {}"\
+                    .format(invalid_interceptors))
 
         self._channel = cygrpc.AioChannel(_common.encode(target))
 

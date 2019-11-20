@@ -25,6 +25,7 @@ from ._call import AioRpcError
 from ._call import Call
 from ._channel import Channel
 from ._channel import UnaryUnaryMultiCallable
+from ._interceptor import ClientCallDetails
 from ._interceptor import UnaryUnaryClientInterceptor
 from ._server import server
 
@@ -54,5 +55,5 @@ def insecure_channel(target, options=None, compression=None, interceptors=None):
 ###################################  __all__  #################################
 
 __all__ = ('AioRpcError', 'Call', 'init_grpc_aio', 'Channel',
-           'UnaryUnaryClientInterceptor', 'UnaryUnaryMultiCallable',
-           'insecure_channel', 'server')
+           'ClientCallDetails', 'UnaryUnaryClientInterceptor',
+           'UnaryUnaryMultiCallable', 'insecure_channel', 'server')
