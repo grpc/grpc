@@ -78,6 +78,7 @@ grpc_cc_test(
         "//src/proto/grpc/testing/duplicate:echo_duplicate_proto",
         "//test/core/util:grpc_test_util",
         "//test/cpp/util:test_util",
+        "//test/cpp/util:spiffe_test_credentials",
     ],
 )
 

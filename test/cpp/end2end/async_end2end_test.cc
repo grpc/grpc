@@ -1842,6 +1842,9 @@ std::vector<TestScenario> CreateTestScenarios(bool /*test_secure*/,
   /** Add Spiffe credentials to the credential provider. **/
   CredentialsProvider* credentials_provider = GetCredentialsProvider();
   credentials_provider->AddSecureType(
+      kSpiffeCredentialsType, std::unique_ptr<SpiffeCredentialTypeProvider>(
+                                  new SpiffeCredentialTypeProvider));
+  credentials_provider->AddSecureType(
       kSpiffeCredentialsType,
       std::unique_ptr<SpiffeAsyncCredentialTypeProvider>(
           new SpiffeAsyncCredentialTypeProvider));
