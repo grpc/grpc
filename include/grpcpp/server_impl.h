@@ -19,10 +19,8 @@
 #ifndef GRPCPP_SERVER_IMPL_H
 #define GRPCPP_SERVER_IMPL_H
 
-#include <condition_variable>
 #include <list>
 #include <memory>
-#include <mutex>
 #include <vector>
 
 #include <grpc/compression.h>

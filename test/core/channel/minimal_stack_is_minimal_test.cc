@@ -100,8 +100,8 @@ int main(int argc, char** argv) {
   errors += CHECK_STACK("chttp2", nullptr, GRPC_SERVER_CHANNEL, "server",
                         "message_size", "deadline", "http-server",
                         "message_compress", "connected", NULL);
-  errors += CHECK_STACK(nullptr, nullptr, GRPC_CLIENT_CHANNEL,
-                        "client_idle, client-channel", NULL);
+  errors += CHECK_STACK(nullptr, nullptr, GRPC_CLIENT_CHANNEL, "client-channel",
+                        NULL);
 
   GPR_ASSERT(errors == 0);
   grpc_shutdown();

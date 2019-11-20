@@ -36,7 +36,6 @@
 
 #include <map>
 #include <memory>
-#include <mutex>
 #include <string>
 
 #include <grpc/impl/codegen/compression_types.h>

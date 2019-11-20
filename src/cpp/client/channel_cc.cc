@@ -20,7 +20,6 @@
 
 #include <cstring>
 #include <memory>
-#include <mutex>
 
 #include <grpc/grpc.h>
 #include <grpc/slice.h>

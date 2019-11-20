@@ -1,6 +1,4 @@
-#!/bin/bash
-
-# Copyright 2016 gRPC authors.
+# Copyright 2019 gRPC authors.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -14,8 +12,20 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-cd $(dirname $0)/../../../
+load("//bazel:grpc_build_system.bzl", "grpc_package", "grpc_proto_library")
 
-cd third_party/protobuf
-# use tools/bazel wrapper to make sure we use the right version of bazel
-../../tools/bazel query 'deps('$1')'
+licenses(["notice"])  # Apache v2
+
+grpc_package(
+    name = "http_over_grpc",
+    visibility = "public",
+)
+
+grpc_proto_library(
+    name = "http_over_grpc_proto",
+    srcs = [
+        "http_over_grpc.proto",
+    ],
+    has_services = True,
+    well_known_protos = True,
+)
