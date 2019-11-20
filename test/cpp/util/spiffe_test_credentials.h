@@ -37,8 +37,28 @@ std::shared_ptr<ServerCredentials> SpiffeTestServerCredentials();
 std::shared_ptr<grpc_impl::ChannelCredentials>
 SpiffeAsyncTestChannelCredentials();
 
+/** This method creates a TlsCredentialsOptions instance with no key materials,
+ *  whose credential reload config is configured using the
+ *  TestSyncTlsCredentialReload class, and whose server authorization check
+ *  config is determined as follows:
+ *  - if |is_client| is true,
+ *      -if |is_async|, configured by TestAsyncTlsServerAuthorizationCheck,
+ *      -otherwise, configured by TestSyncTlsServerAuthorizationCheck.
+ *  - otherwise, the server authorization check config is not populated.
+ *
+ *  Further, the cert request type of the options instance is always set to
+ *  GRPC_SSL_REQUEST_AND_REQUIRE_CLIENT_CERTIFICATE_AND_VERIFY for both the
+ *  client and the server. **/
+std::shared_ptr<::grpc_impl::experimental::TlsCredentialsOptions>
+CreateTestTlsCredentialsOptions(bool is_client, bool is_async);
+
 class SpiffeCredentialTypeProvider : public CredentialTypeProvider {
  public:
+  SpiffeCredentialTypeProvider() {
+    channel_options = CreateTestTlsCredentialsOptions(true, false);
+    server_options = CreateTestTlsCredentialsOptions(false, false);
+  }
+
   std::shared_ptr<ChannelCredentials> GetChannelCredentials(
       ChannelArguments* args) override {
     /** Overriding the ssl target name is necessary for the key materials
@@ -46,11 +66,15 @@ class SpiffeCredentialTypeProvider : public CredentialTypeProvider {
      *  override, the test sets the target name to localhost:port_number,
      *  yielding a mismatched with the example key materials. **/
     args->SetSslTargetNameOverride("foo.test.google.fr");
-    return SpiffeTestChannelCredentials();
+    return TlsCredentials(*channel_options);
   }
   std::shared_ptr<ServerCredentials> GetServerCredentials() override {
-    return SpiffeTestServerCredentials();
+    return TlsServerCredentials(*server_options);
   }
+
+ private:
+  std::shared_ptr<::grpc_impl::experimental::TlsCredentialsOptions> channel_options;
+  std::shared_ptr<::grpc_impl::experimental::TlsCredentialsOptions> server_options;
 };
 
 class SpiffeAsyncCredentialTypeProvider : public CredentialTypeProvider {

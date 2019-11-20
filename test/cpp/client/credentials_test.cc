@@ -31,8 +31,6 @@
 #include "src/cpp/client/secure_credentials.h"
 #include "src/cpp/common/tls_credentials_options_util.h"
 
-#include <iostream>
-
 namespace {
 
 typedef class ::grpc_impl::experimental::TlsKeyMaterialsConfig
@@ -55,14 +53,9 @@ static void tls_credential_reload_callback(
 class TestTlsCredentialReload : public TlsCredentialReloadInterface {
   int Schedule(TlsCredentialReloadArg* arg) override {
     GPR_ASSERT(arg != nullptr);
-    std::cout << "*********Into interface schedule" << std::endl;
     TlsKeyMaterialsConfig::PemKeyCertPair pair3 = {"private_key3", "cert_chain3"};
-    //std::vector<TlsKeyMaterialsConfig::PemKeyCertPair> pem_key_cert_pair_list = {pair3};
     arg->set_pem_root_certs("new_pem_root_certs");
     arg->add_pem_key_cert_pair(pair3);
-    std::cout << "******set the new stuff" << std::endl;
-    GPR_ASSERT(1 == 0);
-    //arg->set_key_materials("new_pem_root_certs", pem_key_cert_pair_list);
     arg->set_status(GRPC_SSL_CERTIFICATE_CONFIG_RELOAD_NEW);
     return 0;
   }
@@ -278,7 +271,7 @@ TEST_F(CredentialsTest, StsCredentialsOptionsFromEnv) {
 
 typedef class ::grpc_impl::experimental::TlsKeyMaterialsConfig
     TlsKeyMaterialsConfig;
-/**
+
 TEST_F(CredentialsTest, TlsKeyMaterialsConfigCppToC) {
   std::shared_ptr<TlsKeyMaterialsConfig> config(new TlsKeyMaterialsConfig());
   struct TlsKeyMaterialsConfig::PemKeyCertPair pair = {"private_key",
@@ -299,8 +292,6 @@ TEST_F(CredentialsTest, TlsKeyMaterialsConfigCppToC) {
 TEST_F(CredentialsTest, TlsKeyMaterialsModifiers) {
   std::shared_ptr<TlsKeyMaterialsConfig> config(new TlsKeyMaterialsConfig());
   TlsKeyMaterialsConfig::PemKeyCertPair pair = {"private_key", "cert_chain"};
-  //std::vector<TlsKeyMaterialsConfig::PemKeyCertPair> pem_key_cert_pair_list = {pair};
-  //config->set_key_materials("pem_root_certs", pem_key_cert_pair_list);
   config->add_pem_key_cert_pair(pair);
   config->set_pem_root_certs("pem_root_certs");
   EXPECT_STREQ(config->pem_root_certs().c_str(), "pem_root_certs");
@@ -310,9 +301,8 @@ TEST_F(CredentialsTest, TlsKeyMaterialsModifiers) {
   EXPECT_STREQ(list[0].private_key.c_str(), "private_key");
   EXPECT_STREQ(list[0].cert_chain.c_str(), "cert_chain");
 }
-**/
 
-/**
+
 typedef class ::grpc_impl::experimental::TlsCredentialReloadArg
     TlsCredentialReloadArg;
 typedef class ::grpc_impl::experimental::TlsCredentialReloadConfig
@@ -320,15 +310,24 @@ typedef class ::grpc_impl::experimental::TlsCredentialReloadConfig
 
 TEST_F(CredentialsTest, TlsCredentialReloadArgCallback) {
   grpc_tls_credential_reload_arg* c_arg = new grpc_tls_credential_reload_arg;
+  c_arg->key_materials_config = grpc_tls_key_materials_config_create();
   c_arg->cb = tls_credential_reload_callback;
   c_arg->context = nullptr;
   TlsCredentialReloadArg* arg = new TlsCredentialReloadArg(c_arg);
+  arg->set_pem_root_certs("pem_root_certs");
+  TlsKeyMaterialsConfig::PemKeyCertPair pair = {"private_key", "cert_chain"};
+  arg->add_pem_key_cert_pair(pair);
   arg->set_status(GRPC_SSL_CERTIFICATE_CONFIG_RELOAD_NEW);
   arg->OnCredentialReloadDoneCallback();
   EXPECT_EQ(arg->status(), GRPC_SSL_CERTIFICATE_CONFIG_RELOAD_UNCHANGED);
+  EXPECT_STREQ(c_arg->key_materials_config->pem_root_certs(), "pem_root_certs");
+  EXPECT_EQ(c_arg->key_materials_config->pem_key_cert_pair_list().size(), 1);
+  EXPECT_STREQ(c_arg->key_materials_config->pem_key_cert_pair_list()[0].private_key(), "private_key");
+  EXPECT_STREQ(c_arg->key_materials_config->pem_key_cert_pair_list()[0].cert_chain(), "cert_chain");
 
   // Cleanup.
   delete arg;
+  delete c_arg->key_materials_config;
   delete c_arg;
 }
 
@@ -340,20 +339,20 @@ TEST_F(CredentialsTest, TlsCredentialReloadConfigSchedule) {
   grpc_tls_credential_reload_arg* c_arg = new grpc_tls_credential_reload_arg();
   c_arg->context = nullptr;
   TlsCredentialReloadArg* arg = new TlsCredentialReloadArg(c_arg);
-  std::shared_ptr<TlsKeyMaterialsConfig> key_materials_config(
-      new TlsKeyMaterialsConfig());
+  //std::shared_ptr<TlsKeyMaterialsConfig> key_materials_config(
+  //    new TlsKeyMaterialsConfig());
   struct TlsKeyMaterialsConfig::PemKeyCertPair pair1 = {"private_key1",
                                                         "cert_chain1"};
   struct TlsKeyMaterialsConfig::PemKeyCertPair pair2 = {"private_key2",
                                                         "cert_chain2"};
   std::vector<TlsKeyMaterialsConfig::PemKeyCertPair> pair_list = {pair1, pair2};
-  key_materials_config->set_key_materials("pem_root_certs", pair_list);
-  arg->set_key_materials_config(key_materials_config);
+  //key_materials_config->set_key_materials("pem_root_certs", pair_list);
+  //arg->set_key_materials_config(key_materials_config);
+  arg->set_key_materials("pem_root_certs", pair_list);
   arg->set_status(GRPC_SSL_CERTIFICATE_CONFIG_RELOAD_NEW);
   arg->set_error_details("error_details");
   const char* error_details_before_schedule = c_arg->error_details;
 
-  std::cout << "*******About to run schedule" << std::endl;
   int schedule_output = config->Schedule(arg);
   EXPECT_EQ(schedule_output, 0);
   EXPECT_STREQ(c_arg->key_materials_config->pem_root_certs(),
@@ -380,9 +379,7 @@ TEST_F(CredentialsTest, TlsCredentialReloadConfigSchedule) {
   delete c_arg;
   delete config->c_config();
 }
-**/
 
-/**
 TEST_F(CredentialsTest, TlsCredentialReloadConfigCppToC) {
   std::shared_ptr<TestTlsCredentialReload> test_credential_reload(
       new TestTlsCredentialReload());
@@ -740,7 +737,7 @@ TEST_F(CredentialsTest, TlsServerAuthorizationCheckConfigErrorMessages) {
   delete c_arg;
   delete config->c_config();
 }
-**/
+
 }  // namespace testing
 }  // namespace grpc
 
