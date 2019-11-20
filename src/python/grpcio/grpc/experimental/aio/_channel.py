@@ -14,7 +14,7 @@
 """Invocation-side implementation of gRPC Asyncio Python."""
 import asyncio
 import functools
-from typing import Callable, Optional, List, Sequence, Dict, TypeVar
+from typing import Callable, Optional, List, Sequence, Iterator, Dict, TypeVar
 
 from grpc import _common
 from grpc._cython import cygrpc
@@ -37,7 +37,7 @@ class UnaryUnaryMultiCallable:
     _method: bytes
     _request_serializer: SerializingFunction
     _response_deserializer: DeserializingFunction
-    _interceptors: Optional[List[UnaryUnaryClientInterceptor]]
+    _interceptors: Optional[Sequence[UnaryUnaryClientInterceptor]]
     _loop: asyncio.AbstractEventLoop
 
     def __init__(
@@ -126,7 +126,7 @@ class UnaryUnaryMultiCallable:
         """Run the RPC call wraped in interceptors"""
 
         async def _run_interceptor(
-                interceptors: Sequence[UnaryUnaryClientInterceptor],
+                interceptors: Iterator[UnaryUnaryClientInterceptor],
                 client_call_details: ClientCallDetails, request: bytes):
             try:
                 interceptor = next(interceptors)
