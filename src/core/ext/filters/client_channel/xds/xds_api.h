@@ -41,38 +41,12 @@ enum AdsResourceType {
 struct CdsUpdate {
   // The name to use in the EDS request.
   // If null, the cluster name will be used.
-  std::unique_ptr<char> eds_service_name;
+  std::string eds_service_name;
   // The LRS server to use for load reporting.
   // If null, load reporting will be disabled.
   // If set to the empty string, will use the same server we obtained
   // the CDS data from.
-  std::unique_ptr<char> lrs_load_reporting_server_name;
-
-  CdsUpdate() = default;
-
-  // Copyable.
-  CdsUpdate(const CdsUpdate& other)
-      : eds_service_name(
-            std::unique_ptr<char>(gpr_strdup(other.eds_service_name.get()))),
-        lrs_load_reporting_server_name(
-            std::unique_ptr<char>(gpr_strdup(other.eds_service_name.get()))) {}
-  CdsUpdate& operator=(const CdsUpdate& other) noexcept {
-    eds_service_name.reset(gpr_strdup(other.eds_service_name.get()));
-    lrs_load_reporting_server_name.reset(
-        gpr_strdup(other.eds_service_name.get()));
-    return *this;
-  }
-  // Movable.
-  CdsUpdate(CdsUpdate&& other) noexcept
-      : eds_service_name(std::move(other.eds_service_name)),
-        lrs_load_reporting_server_name(
-            std::move(other.lrs_load_reporting_server_name)) {}
-  CdsUpdate& operator=(CdsUpdate&& other) noexcept {
-    eds_service_name = std::move(other.eds_service_name);
-    lrs_load_reporting_server_name =
-        std::move(other.lrs_load_reporting_server_name);
-    return *this;
-  }
+  std::string lrs_load_reporting_server_name;
 };
 
 using CdsUpdateMap =
@@ -190,10 +164,6 @@ using EdsUpdateMap =
 struct VersionState {
   std::unique_ptr<char> version_info;
   std::unique_ptr<char> nonce;
-
-  VersionState()
-      : version_info(std::unique_ptr<char>(gpr_strdup(""))),
-        nonce(std::unique_ptr<char>(gpr_strdup(""))) {}
 };
 
 // Creates a CDS request querying \a cluster_names.
@@ -233,10 +203,9 @@ grpc_slice XdsLrsRequestCreateAndEncode(
 // Parses the LRS response and returns \a
 // load_reporting_interval for client-side load reporting. If there is any
 // error, the output config is invalid.
-grpc_error* XdsLrsResponseDecodeAndParse(
-    const grpc_slice& encoded_response,
-    std::set<std::unique_ptr<char>>* cluster_names,
-    grpc_millis* load_reporting_interval);
+grpc_error* XdsLrsResponseDecodeAndParse(const grpc_slice& encoded_response,
+                                         std::set<std::string>* cluster_names,
+                                         grpc_millis* load_reporting_interval);
 
 }  // namespace grpc_core
 

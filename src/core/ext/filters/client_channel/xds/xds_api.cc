@@ -214,8 +214,10 @@ grpc_slice XdsCdsRequestCreateAndEncode(std::set<StringView> cluster_names,
   envoy_api_v2_DiscoveryRequest* request =
       envoy_api_v2_DiscoveryRequest_new(arena.ptr());
   // Set version_info.
-  envoy_api_v2_DiscoveryRequest_set_version_info(
-      request, upb_strview_makez(cds_version.version_info.get()));
+  if (cds_version.version_info != nullptr) {
+    envoy_api_v2_DiscoveryRequest_set_version_info(
+        request, upb_strview_makez(cds_version.version_info.get()));
+  }
   // Populate node.
   if (build_version != nullptr) {
     envoy_api_v2_core_Node* node_msg =
@@ -232,16 +234,23 @@ grpc_slice XdsCdsRequestCreateAndEncode(std::set<StringView> cluster_names,
   envoy_api_v2_DiscoveryRequest_set_type_url(request,
                                              upb_strview_makez(kCdsTypeUrl));
   // Set nonce.
-  envoy_api_v2_DiscoveryRequest_set_response_nonce(
-      request, upb_strview_makez(cds_version.version_info.get()));
+  if (cds_version.nonce != nullptr) {
+    envoy_api_v2_DiscoveryRequest_set_response_nonce(
+        request, upb_strview_makez(cds_version.version_info.get()));
+  }
   // Set error_detail if it's a NACK.
   if (error != GRPC_ERROR_NONE) {
-    const char* error_string = grpc_error_string(error);
+    grpc_slice error_description_slice;
+    GPR_ASSERT(grpc_error_get_str(error, GRPC_ERROR_STR_DESCRIPTION,
+                                  &error_description_slice));
+    upb_strview error_description_strview =
+        upb_strview_make(reinterpret_cast<const char*>(
+                             GPR_SLICE_START_PTR(error_description_slice)),
+                         GPR_SLICE_LENGTH(error_description_slice));
     google_rpc_Status* error_detail =
         envoy_api_v2_DiscoveryRequest_mutable_error_detail(request,
                                                            arena.ptr());
-    google_rpc_Status_set_message(error_detail,
-                                  upb_strview_makez(error_string));
+    google_rpc_Status_set_message(error_detail, error_description_strview);
   }
   // Encode the request.
   size_t output_length;
@@ -260,8 +269,10 @@ grpc_slice XdsEdsRequestCreateAndEncode(std::set<StringView> eds_service_names,
   envoy_api_v2_DiscoveryRequest* request =
       envoy_api_v2_DiscoveryRequest_new(arena.ptr());
   // Set version_info.
-  envoy_api_v2_DiscoveryRequest_set_version_info(
-      request, upb_strview_makez(eds_version.version_info.get()));
+  if (eds_version.version_info != nullptr) {
+    envoy_api_v2_DiscoveryRequest_set_version_info(
+        request, upb_strview_makez(eds_version.version_info.get()));
+  }
   // Populate node.
   if (build_version != nullptr) {
     envoy_api_v2_core_Node* node_msg =
@@ -279,16 +290,23 @@ grpc_slice XdsEdsRequestCreateAndEncode(std::set<StringView> eds_service_names,
   envoy_api_v2_DiscoveryRequest_set_type_url(request,
                                              upb_strview_makez(kEdsTypeUrl));
   // Set nonce.
-  envoy_api_v2_DiscoveryRequest_set_response_nonce(
-      request, upb_strview_makez(eds_version.version_info.get()));
+  if (eds_version.version_info != nullptr) {
+    envoy_api_v2_DiscoveryRequest_set_response_nonce(
+        request, upb_strview_makez(eds_version.version_info.get()));
+  }
   // Set error_detail if it's a NACK.
   if (error != GRPC_ERROR_NONE) {
-    const char* error_string = grpc_error_string(error);
+    grpc_slice error_description_slice;
+    GPR_ASSERT(grpc_error_get_str(error, GRPC_ERROR_STR_DESCRIPTION,
+                                  &error_description_slice));
+    upb_strview error_description_strview =
+        upb_strview_make(reinterpret_cast<const char*>(
+                             GPR_SLICE_START_PTR(error_description_slice)),
+                         GPR_SLICE_LENGTH(error_description_slice));
     google_rpc_Status* error_detail =
         envoy_api_v2_DiscoveryRequest_mutable_error_detail(request,
                                                            arena.ptr());
-    google_rpc_Status_set_message(error_detail,
-                                  upb_strview_makez(error_string));
+    google_rpc_Status_set_message(error_detail, error_description_strview);
   }
   // Encode the request.
   size_t output_length;
@@ -752,10 +770,9 @@ grpc_slice XdsLrsRequestCreateAndEncode(
   return LrsRequestEncode(request, arena.ptr());
 }
 
-grpc_error* XdsLrsResponseDecodeAndParse(
-    const grpc_slice& encoded_response,
-    std::set<std::unique_ptr<char>>* cluster_names,
-    grpc_millis* load_reporting_interval) {
+grpc_error* XdsLrsResponseDecodeAndParse(const grpc_slice& encoded_response,
+                                         std::set<std::string>* cluster_names,
+                                         grpc_millis* load_reporting_interval) {
   upb::Arena arena;
   // Decode the response.
   const envoy_service_load_stats_v2_LoadStatsResponse* decoded_response =
@@ -772,7 +789,7 @@ grpc_error* XdsLrsResponseDecodeAndParse(
       envoy_service_load_stats_v2_LoadStatsResponse_clusters(decoded_response,
                                                              &size);
   for (size_t i = 0; i < size; ++i) {
-    cluster_names->emplace(StringCopy(clusters[i]));
+    cluster_names->emplace(clusters[i].data, clusters[i].size);
   }
   // Get the load report interval.
   const google_protobuf_Duration* load_reporting_interval_duration =
