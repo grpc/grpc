@@ -496,7 +496,7 @@ grpc_cc_test(
 
 grpc_cc_test(
     name = "xds_end2end_test",
-    timeout = "long",
+    size = "large",
     srcs = ["xds_end2end_test.cc"],
     external_deps = [
         "gtest",
@@ -707,7 +707,7 @@ grpc_cc_test(
 
 grpc_cc_test(
     name = "thread_stress_test",
-    timeout = "long",
+    size = "large",
     srcs = ["thread_stress_test.cc"],
     external_deps = [
         "gtest",
