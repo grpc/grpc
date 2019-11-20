@@ -46,8 +46,9 @@ class XdsLocalityName : public RefCounted<XdsLocalityName> {
     }
   };
 
-  XdsLocalityName(std::unique_ptr<char> region, std::unique_ptr<char> zone,
-                  std::unique_ptr<char> subzone)
+  XdsLocalityName(grpc_core::UniquePtr<char> region,
+                  grpc_core::UniquePtr<char> zone,
+                  grpc_core::UniquePtr<char> subzone)
       : region_(std::move(region)),
         zone_(std::move(zone)),
         sub_zone_(std::move(subzone)) {}
@@ -73,10 +74,10 @@ class XdsLocalityName : public RefCounted<XdsLocalityName> {
   }
 
  private:
-  std::unique_ptr<char> region_;
-  std::unique_ptr<char> zone_;
-  std::unique_ptr<char> sub_zone_;
-  std::unique_ptr<char> human_readable_string_;
+  grpc_core::UniquePtr<char> region_;
+  grpc_core::UniquePtr<char> zone_;
+  grpc_core::UniquePtr<char> sub_zone_;
+  grpc_core::UniquePtr<char> human_readable_string_;
 };
 
 // The stats classes (i.e., XdsClientStats, LocalityStats, and LoadMetric) can
@@ -112,9 +113,9 @@ class XdsClientStats {
     };
 
     using LoadMetricMap =
-        std::map<std::unique_ptr<char>, LoadMetric, StringLess>;
+        std::map<grpc_core::UniquePtr<char>, LoadMetric, StringLess>;
     using LoadMetricSnapshotMap =
-        std::map<std::unique_ptr<char>, LoadMetric::Snapshot, StringLess>;
+        std::map<grpc_core::UniquePtr<char>, LoadMetric::Snapshot, StringLess>;
 
     struct Snapshot {
       // TODO(juanlishen): Change this to const method when const_iterator is
@@ -187,7 +188,7 @@ class XdsClientStats {
       std::map<RefCountedPtr<XdsLocalityName>, LocalityStats::Snapshot,
                XdsLocalityName::Less>;
   using DroppedRequestsMap =
-      std::map<std::unique_ptr<char>, uint64_t, StringLess>;
+      std::map<grpc_core::UniquePtr<char>, uint64_t, StringLess>;
   using DroppedRequestsSnapshotMap = DroppedRequestsMap;
 
   struct Snapshot {
@@ -210,7 +211,7 @@ class XdsClientStats {
   RefCountedPtr<LocalityStats> FindLocalityStats(
       const RefCountedPtr<XdsLocalityName>& locality_name);
   void PruneLocalityStats();
-  void AddCallDropped(const std::unique_ptr<char>& category);
+  void AddCallDropped(const grpc_core::UniquePtr<char>& category);
 
  private:
   // The stats for each locality.

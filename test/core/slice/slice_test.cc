@@ -301,7 +301,7 @@ static void test_moved_string_slice(void) {
   constexpr char kSmallStr[] = "hello12345";
   char* small_ptr = strdup(kSmallStr);
   grpc_slice small =
-      grpc_slice_from_moved_string(std::unique_ptr<char>(small_ptr));
+      grpc_slice_from_moved_string(grpc_core::UniquePtr<char>(small_ptr));
   GPR_ASSERT(GRPC_SLICE_LENGTH(small) == strlen(kSmallStr));
   GPR_ASSERT(GRPC_SLICE_START_PTR(small) !=
              reinterpret_cast<uint8_t*>(small_ptr));
@@ -311,7 +311,7 @@ static void test_moved_string_slice(void) {
   constexpr char kSLargeStr[] = "hello123456789123456789123456789";
   char* large_ptr = strdup(kSLargeStr);
   grpc_slice large =
-      grpc_slice_from_moved_string(std::unique_ptr<char>(large_ptr));
+      grpc_slice_from_moved_string(grpc_core::UniquePtr<char>(large_ptr));
   GPR_ASSERT(GRPC_SLICE_LENGTH(large) == strlen(kSLargeStr));
   GPR_ASSERT(GRPC_SLICE_START_PTR(large) ==
              reinterpret_cast<uint8_t*>(large_ptr));
@@ -320,7 +320,7 @@ static void test_moved_string_slice(void) {
   // Moved buffer must respect the provided length not the actual length of the
   // string.
   large_ptr = strdup(kSLargeStr);
-  small = grpc_slice_from_moved_buffer(std::unique_ptr<char>(large_ptr),
+  small = grpc_slice_from_moved_buffer(grpc_core::UniquePtr<char>(large_ptr),
                                        strlen(kSmallStr));
   GPR_ASSERT(GRPC_SLICE_LENGTH(small) == strlen(kSmallStr));
   GPR_ASSERT(GRPC_SLICE_START_PTR(small) !=

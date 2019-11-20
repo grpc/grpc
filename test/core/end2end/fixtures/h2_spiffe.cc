@@ -48,7 +48,7 @@ struct fullstack_secure_fixture_data {
       thd_list[ind].Join();
     }
   }
-  std::unique_ptr<char> localaddr;
+  grpc_core::UniquePtr<char> localaddr;
   ThreadList thd_list;
 };
 

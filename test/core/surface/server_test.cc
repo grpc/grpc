@@ -106,7 +106,7 @@ void test_bind_server_twice(void) {
 
 void test_bind_server_to_addr(const char* host, bool secure) {
   int port = grpc_pick_unused_port_or_die();
-  std::unique_ptr<char> addr;
+  grpc_core::UniquePtr<char> addr;
   grpc_core::JoinHostPort(&addr, host, port);
   gpr_log(GPR_INFO, "Test bind to %s", addr.get());
 

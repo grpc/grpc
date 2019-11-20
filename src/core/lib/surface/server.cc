@@ -784,7 +784,7 @@ static void server_on_recv_initial_metadata(void* ptr, grpc_error* error) {
                              calld->recv_trailing_metadata_error,
                              "continue server_recv_trailing_metadata_ready");
   }
-  GRPC_CLOSURE_RUN(closure, error);
+  grpc_core::Closure::Run(DEBUG_LOCATION, closure, error);
 }
 
 static void server_recv_trailing_metadata_ready(void* user_data,
@@ -805,7 +805,8 @@ static void server_recv_trailing_metadata_ready(void* user_data,
   error =
       grpc_error_add_child(GRPC_ERROR_REF(error),
                            GRPC_ERROR_REF(calld->recv_initial_metadata_error));
-  GRPC_CLOSURE_RUN(calld->original_recv_trailing_metadata_ready, error);
+  grpc_core::Closure::Run(DEBUG_LOCATION,
+                          calld->original_recv_trailing_metadata_ready, error);
 }
 
 static void server_mutate_op(grpc_call_element* elem,

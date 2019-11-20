@@ -77,7 +77,7 @@ static void prepare_test(int is_client) {
   } else {
     g_state.server = grpc_server_create(nullptr, nullptr);
     grpc_server_register_completion_queue(g_state.server, g_state.cq, nullptr);
-    std::unique_ptr<char> server_hostport;
+    grpc_core::UniquePtr<char> server_hostport;
     grpc_core::JoinHostPort(&server_hostport, "0.0.0.0", port);
     grpc_server_add_insecure_http2_port(g_state.server, server_hostport.get());
     grpc_server_start(g_state.server);

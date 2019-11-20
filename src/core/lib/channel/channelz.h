@@ -27,6 +27,7 @@
 
 #include "src/core/lib/channel/channel_trace.h"
 #include "src/core/lib/gpr/time_precise.h"
+#include "src/core/lib/gprpp/atomic.h"
 #include "src/core/lib/gprpp/inlined_vector.h"
 #include "src/core/lib/gprpp/manual_constructor.h"
 #include "src/core/lib/gprpp/map.h"
@@ -140,9 +141,9 @@ class CallCountingHelper {
           last_call_started_cycle(
               that.last_call_started_cycle.Load(MemoryOrder::RELAXED)) {}
 
-    Atomic<intptr_t> calls_started{0};
-    Atomic<intptr_t> calls_succeeded{0};
-    Atomic<intptr_t> calls_failed{0};
+    Atomic<int64_t> calls_started{0};
+    Atomic<int64_t> calls_succeeded{0};
+    Atomic<int64_t> calls_failed{0};
     Atomic<gpr_cycle_counter> last_call_started_cycle{0};
     // Make sure the size is exactly one cache line.
     uint8_t padding[GPR_CACHELINE_SIZE - 3 * sizeof(Atomic<intptr_t>) -
@@ -150,9 +151,9 @@ class CallCountingHelper {
   } GPR_ALIGN_STRUCT(GPR_CACHELINE_SIZE);
 
   struct CounterData {
-    intptr_t calls_started = 0;
-    intptr_t calls_succeeded = 0;
-    intptr_t calls_failed = 0;
+    int64_t calls_started = 0;
+    int64_t calls_succeeded = 0;
+    int64_t calls_failed = 0;
     gpr_cycle_counter last_call_started_cycle = 0;
   };
 
@@ -279,30 +280,30 @@ class SocketNode : public BaseNode {
   void RecordStreamStartedFromLocal();
   void RecordStreamStartedFromRemote();
   void RecordStreamSucceeded() {
-    gpr_atm_no_barrier_fetch_add(&streams_succeeded_, static_cast<gpr_atm>(1));
+    streams_succeeded_.FetchAdd(1, MemoryOrder::RELAXED);
   }
   void RecordStreamFailed() {
-    gpr_atm_no_barrier_fetch_add(&streams_failed_, static_cast<gpr_atm>(1));
+    streams_failed_.FetchAdd(1, MemoryOrder::RELAXED);
   }
   void RecordMessagesSent(uint32_t num_sent);
   void RecordMessageReceived();
   void RecordKeepaliveSent() {
-    gpr_atm_no_barrier_fetch_add(&keepalives_sent_, static_cast<gpr_atm>(1));
+    keepalives_sent_.FetchAdd(1, MemoryOrder::RELAXED);
   }
 
   const std::string& remote() { return remote_; }
 
  private:
-  gpr_atm streams_started_ = 0;
-  gpr_atm streams_succeeded_ = 0;
-  gpr_atm streams_failed_ = 0;
-  gpr_atm messages_sent_ = 0;
-  gpr_atm messages_received_ = 0;
-  gpr_atm keepalives_sent_ = 0;
-  gpr_atm last_local_stream_created_cycle_ = 0;
-  gpr_atm last_remote_stream_created_cycle_ = 0;
-  gpr_atm last_message_sent_cycle_ = 0;
-  gpr_atm last_message_received_cycle_ = 0;
+  Atomic<int64_t> streams_started_{0};
+  Atomic<int64_t> streams_succeeded_{0};
+  Atomic<int64_t> streams_failed_{0};
+  Atomic<int64_t> messages_sent_{0};
+  Atomic<int64_t> messages_received_{0};
+  Atomic<int64_t> keepalives_sent_{0};
+  Atomic<gpr_cycle_counter> last_local_stream_created_cycle_{0};
+  Atomic<gpr_cycle_counter> last_remote_stream_created_cycle_{0};
+  Atomic<gpr_cycle_counter> last_message_sent_cycle_{0};
+  Atomic<gpr_cycle_counter> last_message_received_cycle_{0};
   std::string local_;
   std::string remote_;
 };

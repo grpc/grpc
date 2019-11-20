@@ -148,19 +148,20 @@ class XdsDropConfig : public RefCounted<XdsDropConfig> {
              parts_per_million == other.parts_per_million;
     }
 
-    std::unique_ptr<char> name;
+    grpc_core::UniquePtr<char> name;
     const uint32_t parts_per_million;
   };
 
   using DropCategoryList = InlinedVector<DropCategory, 2>;
 
-  void AddCategory(std::unique_ptr<char> name, uint32_t parts_per_million) {
+  void AddCategory(grpc_core::UniquePtr<char> name,
+                   uint32_t parts_per_million) {
     drop_category_list_.emplace_back(
         DropCategory{std::move(name), parts_per_million});
   }
 
   // The only method invoked from the data plane combiner.
-  bool ShouldDrop(const std::unique_ptr<char>** category_name) const;
+  bool ShouldDrop(const grpc_core::UniquePtr<char>** category_name) const;
 
   const DropCategoryList& drop_category_list() const {
     return drop_category_list_;

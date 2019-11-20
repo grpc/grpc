@@ -105,7 +105,7 @@ TEST_F(GlobalConfigEnvTest, Int32WithEnvTest) {
 
 TEST_F(GlobalConfigEnvTest, StringWithEnvTest) {
   const char* string_var_name = "STRING_VAR";
-  std::unique_ptr<char> value;
+  grpc_core::UniquePtr<char> value;
 
   gpr_unsetenv(string_var_name);
   value = GPR_GLOBAL_CONFIG_GET(string_var);

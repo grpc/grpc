@@ -42,8 +42,8 @@ ServiceConfigParserList* g_registered_parsers;
 
 RefCountedPtr<ServiceConfig> ServiceConfig::Create(const char* json,
                                                    grpc_error** error) {
-  std::unique_ptr<char> service_config_json(gpr_strdup(json));
-  std::unique_ptr<char> json_string(gpr_strdup(json));
+  grpc_core::UniquePtr<char> service_config_json(gpr_strdup(json));
+  grpc_core::UniquePtr<char> json_string(gpr_strdup(json));
   GPR_DEBUG_ASSERT(error != nullptr);
   grpc_json* json_tree = grpc_json_parse_string(json_string.get());
   if (json_tree == nullptr) {
@@ -55,8 +55,8 @@ RefCountedPtr<ServiceConfig> ServiceConfig::Create(const char* json,
       std::move(service_config_json), std::move(json_string), json_tree, error);
 }
 
-ServiceConfig::ServiceConfig(std::unique_ptr<char> service_config_json,
-                             std::unique_ptr<char> json_string,
+ServiceConfig::ServiceConfig(grpc_core::UniquePtr<char> service_config_json,
+                             grpc_core::UniquePtr<char> json_string,
                              grpc_json* json_tree, grpc_error** error)
     : service_config_json_(std::move(service_config_json)),
       json_string_(std::move(json_string)),
@@ -121,7 +121,7 @@ grpc_error* ServiceConfig::ParseJsonMethodConfigToServiceConfigVectorTable(
           [parsed_method_config_vectors_storage_.size() - 1]
               .get();
   // Construct list of paths.
-  InlinedVector<std::unique_ptr<char>, 10> paths;
+  InlinedVector<grpc_core::UniquePtr<char>, 10> paths;
   for (grpc_json* child = json->child; child != nullptr; child = child->next) {
     if (child->key == nullptr) continue;
     if (strcmp(child->key, "name") == 0) {
@@ -132,7 +132,8 @@ grpc_error* ServiceConfig::ParseJsonMethodConfigToServiceConfigVectorTable(
       }
       for (grpc_json* name = child->child; name != nullptr; name = name->next) {
         grpc_error* parse_error = GRPC_ERROR_NONE;
-        std::unique_ptr<char> path = ParseJsonMethodName(name, &parse_error);
+        grpc_core::UniquePtr<char> path =
+            ParseJsonMethodName(name, &parse_error);
         if (path == nullptr) {
           error_list.push_back(parse_error);
         } else {
@@ -228,8 +229,8 @@ int ServiceConfig::CountNamesInMethodConfig(grpc_json* json) {
   return num_names;
 }
 
-std::unique_ptr<char> ServiceConfig::ParseJsonMethodName(grpc_json* json,
-                                                         grpc_error** error) {
+grpc_core::UniquePtr<char> ServiceConfig::ParseJsonMethodName(
+    grpc_json* json, grpc_error** error) {
   if (json->type != GRPC_JSON_OBJECT) {
     *error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
         "field:name error:type is not object");
@@ -282,7 +283,7 @@ std::unique_ptr<char> ServiceConfig::ParseJsonMethodName(grpc_json* json,
   char* path;
   gpr_asprintf(&path, "/%s/%s", service_name,
                method_name == nullptr ? "*" : method_name);
-  return std::unique_ptr<char>(path);
+  return grpc_core::UniquePtr<char>(path);
 }
 
 const ServiceConfig::ParsedConfigVector*

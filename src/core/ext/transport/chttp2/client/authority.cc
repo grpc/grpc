@@ -26,7 +26,7 @@ grpc_channel_args* grpc_default_authority_add_if_not_present(
       grpc_channel_args_find(args, GRPC_ARG_DEFAULT_AUTHORITY) != nullptr;
   grpc_arg new_args[1];
   size_t num_new_args = 0;
-  std::unique_ptr<char> default_authority;
+  grpc_core::UniquePtr<char> default_authority;
   if (!has_default_authority) {
     const grpc_arg* server_uri_arg =
         grpc_channel_args_find(args, GRPC_ARG_SERVER_URI);

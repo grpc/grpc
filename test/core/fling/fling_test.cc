@@ -47,7 +47,7 @@ int main(int /*argc*/, const char** argv) {
   gpr_asprintf(&args[0], "%s/fling_server%s", root,
                gpr_subprocess_binary_extension());
   args[1] = const_cast<char*>("--bind");
-  std::unique_ptr<char> joined;
+  grpc_core::UniquePtr<char> joined;
   grpc_core::JoinHostPort(&joined, "::", port);
   args[2] = joined.get();
   args[3] = const_cast<char*>("--no-secure");

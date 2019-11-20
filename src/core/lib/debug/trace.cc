@@ -143,7 +143,7 @@ void grpc_tracer_init(const char* env_var_name) {
 }
 
 void grpc_tracer_init() {
-  std::unique_ptr<char> value = GPR_GLOBAL_CONFIG_GET(grpc_trace);
+  grpc_core::UniquePtr<char> value = GPR_GLOBAL_CONFIG_GET(grpc_trace);
   parse(value.get());
 }
 

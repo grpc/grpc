@@ -62,8 +62,8 @@ static grpc_error* windows_blocking_resolve_address(
   grpc_error* error = GRPC_ERROR_NONE;
 
   /* parse name, splitting it into host and port parts */
-  std::unique_ptr<char> host;
-  std::unique_ptr<char> port;
+  grpc_core::UniquePtr<char> host;
+  grpc_core::UniquePtr<char> port;
   grpc_core::SplitHostPort(name, &host, &port);
   if (host == NULL) {
     char* msg;

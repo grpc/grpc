@@ -94,7 +94,7 @@ bool XdsPriorityListUpdate::Contains(
 }
 
 bool XdsDropConfig::ShouldDrop(
-    const std::unique_ptr<char>** category_name) const {
+    const grpc_core::UniquePtr<char>** category_name) const {
   for (size_t i = 0; i < drop_category_list_.size(); ++i) {
     const auto& drop_category = drop_category_list_[i];
     // Generate a random number in [0, 1000000).

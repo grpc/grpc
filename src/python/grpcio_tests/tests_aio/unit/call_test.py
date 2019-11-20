@@ -163,8 +163,8 @@ class TestCall(AioTestBase):
 
                 self.assertFalse(call.cancelled())
 
-                # Force the loop to execute the RPC task, cython
-                # code is executed.
+                # TODO(https://github.com/grpc/grpc/issues/20869) remove sleep.
+                # Force the loop to execute the RPC task.
                 await asyncio.sleep(0)
 
                 self.assertTrue(call.cancel())

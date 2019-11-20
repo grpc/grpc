@@ -211,7 +211,7 @@ void grpc_register_event_engine_factory(const char* name,
 const char* grpc_get_poll_strategy_name() { return g_poll_strategy_name; }
 
 void grpc_event_engine_init(void) {
-  std::unique_ptr<char> value = GPR_GLOBAL_CONFIG_GET(grpc_poll_strategy);
+  grpc_core::UniquePtr<char> value = GPR_GLOBAL_CONFIG_GET(grpc_poll_strategy);
 
   char** strings = nullptr;
   size_t nstrings = 0;

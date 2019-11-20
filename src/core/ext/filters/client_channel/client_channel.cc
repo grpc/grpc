@@ -252,7 +252,7 @@ class ChannelData {
   void ProcessLbPolicy(
       const Resolver::Result& resolver_result,
       const internal::ClientChannelGlobalParsedConfig* parsed_service_config,
-      std::unique_ptr<char>* lb_policy_name,
+      grpc_core::UniquePtr<char>* lb_policy_name,
       RefCountedPtr<LoadBalancingPolicy::Config>* lb_policy_config);
 
   //
@@ -265,8 +265,8 @@ class ChannelData {
   ClientChannelFactory* client_channel_factory_;
   const grpc_channel_args* channel_args_;
   RefCountedPtr<ServiceConfig> default_service_config_;
-  std::unique_ptr<char> server_name_;
-  std::unique_ptr<char> target_uri_;
+  grpc_core::UniquePtr<char> server_name_;
+  grpc_core::UniquePtr<char> target_uri_;
   channelz::ChannelNode* channelz_node_;
 
   //
@@ -288,7 +288,7 @@ class ChannelData {
   RefCountedPtr<SubchannelPoolInterface> subchannel_pool_;
   OrphanablePtr<ResolvingLoadBalancingPolicy> resolving_lb_policy_;
   ConnectivityStateTracker state_tracker_;
-  std::unique_ptr<char> health_check_service_name_;
+  grpc_core::UniquePtr<char> health_check_service_name_;
   RefCountedPtr<ServiceConfig> saved_service_config_;
   bool received_first_resolver_result_ = false;
   // The number of SubchannelWrapper instances referencing a given Subchannel.
@@ -314,8 +314,8 @@ class ChannelData {
   // synchronously via get_channel_info().
   //
   gpr_mu info_mu_;
-  std::unique_ptr<char> info_lb_policy_name_;
-  std::unique_ptr<char> info_service_config_json_;
+  grpc_core::UniquePtr<char> info_lb_policy_name_;
+  grpc_core::UniquePtr<char> info_service_config_json_;
 
   //
   // Fields guarded by a mutex, since they need to be accessed
@@ -843,7 +843,7 @@ class CallData {
 class ChannelData::SubchannelWrapper : public SubchannelInterface {
  public:
   SubchannelWrapper(ChannelData* chand, Subchannel* subchannel,
-                    std::unique_ptr<char> health_check_service_name)
+                    grpc_core::UniquePtr<char> health_check_service_name)
       : SubchannelInterface(&grpc_client_channel_routing_trace),
         chand_(chand),
         subchannel_(subchannel),
@@ -906,7 +906,8 @@ class ChannelData::SubchannelWrapper : public SubchannelInterface {
                                          initial_state);
     subchannel_->WatchConnectivityState(
         initial_state,
-        std::unique_ptr<char>(gpr_strdup(health_check_service_name_.get())),
+        grpc_core::UniquePtr<char>(
+            gpr_strdup(health_check_service_name_.get())),
         OrphanablePtr<Subchannel::ConnectivityStateWatcherInterface>(
             watcher_wrapper));
   }
@@ -929,7 +930,7 @@ class ChannelData::SubchannelWrapper : public SubchannelInterface {
   }
 
   void UpdateHealthCheckServiceName(
-      std::unique_ptr<char> health_check_service_name) {
+      grpc_core::UniquePtr<char> health_check_service_name) {
     if (GRPC_TRACE_FLAG_ENABLED(grpc_client_channel_routing_trace)) {
       gpr_log(GPR_INFO,
               "chand=%p: subchannel wrapper %p: updating health check service "
@@ -955,7 +956,8 @@ class ChannelData::SubchannelWrapper : public SubchannelInterface {
       watcher_wrapper = replacement;
       subchannel_->WatchConnectivityState(
           replacement->last_seen_state(),
-          std::unique_ptr<char>(gpr_strdup(health_check_service_name.get())),
+          grpc_core::UniquePtr<char>(
+              gpr_strdup(health_check_service_name.get())),
           OrphanablePtr<Subchannel::ConnectivityStateWatcherInterface>(
               replacement));
     }
@@ -1114,7 +1116,7 @@ class ChannelData::SubchannelWrapper : public SubchannelInterface {
 
   ChannelData* chand_;
   Subchannel* subchannel_;
-  std::unique_ptr<char> health_check_service_name_;
+  grpc_core::UniquePtr<char> health_check_service_name_;
   // Maps from the address of the watcher passed to us by the LB policy
   // to the address of the WrapperWatcher that we passed to the underlying
   // subchannel.  This is needed so that when the LB policy calls
@@ -1195,9 +1197,7 @@ void ChannelData::ExternalConnectivityWatcher::AddWatcherLocked(
     void* arg, grpc_error* /*ignored*/) {
   ExternalConnectivityWatcher* self =
       static_cast<ExternalConnectivityWatcher*>(arg);
-  // This assumes that the closure is scheduled on the ExecCtx scheduler
-  // and that GRPC_CLOSURE_RUN() will run the closure immediately.
-  GRPC_CLOSURE_RUN(self->watcher_timer_init_, GRPC_ERROR_NONE);
+  Closure::Run(DEBUG_LOCATION, self->watcher_timer_init_, GRPC_ERROR_NONE);
   // Add new watcher.
   self->chand_->state_tracker_.AddWatcher(
       self->initial_state_,
@@ -1300,7 +1300,7 @@ class ChannelData::ClientChannelControlHelper
       const grpc_channel_args& args) override {
     bool inhibit_health_checking = grpc_channel_arg_get_bool(
         grpc_channel_args_find(&args, GRPC_ARG_INHIBIT_HEALTH_CHECKING), false);
-    std::unique_ptr<char> health_check_service_name;
+    grpc_core::UniquePtr<char> health_check_service_name;
     if (!inhibit_health_checking) {
       health_check_service_name.reset(
           gpr_strdup(chand_->health_check_service_name_.get()));
@@ -1596,7 +1596,7 @@ void ChannelData::CreateResolvingLoadBalancingPolicyLocked() {
   lb_args.combiner = combiner_;
   lb_args.channel_control_helper = MakeUnique<ClientChannelControlHelper>(this);
   lb_args.args = channel_args_;
-  std::unique_ptr<char> target_uri(gpr_strdup(target_uri_.get()));
+  grpc_core::UniquePtr<char> target_uri(gpr_strdup(target_uri_.get()));
   resolving_lb_policy_.reset(new ResolvingLoadBalancingPolicy(
       std::move(lb_args), &grpc_client_channel_routing_trace,
       std::move(target_uri), ProcessResolverResultLocked, this));
@@ -1619,7 +1619,7 @@ void ChannelData::DestroyResolvingLoadBalancingPolicyLocked() {
 void ChannelData::ProcessLbPolicy(
     const Resolver::Result& resolver_result,
     const internal::ClientChannelGlobalParsedConfig* parsed_service_config,
-    std::unique_ptr<char>* lb_policy_name,
+    grpc_core::UniquePtr<char>* lb_policy_name,
     RefCountedPtr<LoadBalancingPolicy::Config>* lb_policy_config) {
   // Prefer the LB policy name found in the service config.
   if (parsed_service_config != nullptr &&
@@ -1714,7 +1714,7 @@ bool ChannelData::ProcessResolverResultLocked(
     return false;
   }
   // Process service config.
-  std::unique_ptr<char> service_config_json;
+  grpc_core::UniquePtr<char> service_config_json;
   const internal::ClientChannelGlobalParsedConfig* parsed_service_config =
       nullptr;
   if (service_config != nullptr) {
@@ -1748,8 +1748,9 @@ bool ChannelData::ProcessResolverResultLocked(
     }
     // Update health check service name used by existing subchannel wrappers.
     for (auto* subchannel_wrapper : chand->subchannel_wrappers_) {
-      subchannel_wrapper->UpdateHealthCheckServiceName(std::unique_ptr<char>(
-          gpr_strdup(chand->health_check_service_name_.get())));
+      subchannel_wrapper->UpdateHealthCheckServiceName(
+          grpc_core::UniquePtr<char>(
+              gpr_strdup(chand->health_check_service_name_.get())));
     }
     // Save service config.
     chand->saved_service_config_ = std::move(service_config);
@@ -1774,7 +1775,7 @@ bool ChannelData::ProcessResolverResultLocked(
     chand->UpdateServiceConfigLocked(std::move(retry_throttle_data),
                                      chand->saved_service_config_);
   }
-  std::unique_ptr<char> processed_lb_policy_name;
+  grpc_core::UniquePtr<char> processed_lb_policy_name;
   chand->ProcessLbPolicy(result, parsed_service_config,
                          &processed_lb_policy_name, lb_policy_config);
   // Swap out the data used by GetChannelInfo().
@@ -2269,8 +2270,8 @@ void CallData::RecvTrailingMetadataReadyForLoadBalancingPolicy(
   calld->lb_recv_trailing_metadata_ready_(error, &trailing_metadata,
                                           &calld->lb_call_state_);
   // Chain to original callback.
-  GRPC_CLOSURE_RUN(calld->original_recv_trailing_metadata_ready_,
-                   GRPC_ERROR_REF(error));
+  Closure::Run(DEBUG_LOCATION, calld->original_recv_trailing_metadata_ready_,
+               GRPC_ERROR_REF(error));
 }
 
 void CallData::MaybeInjectRecvTrailingMetadataReadyForLoadBalancingPolicy(
@@ -2765,7 +2766,8 @@ void CallData::InvokeRecvInitialMetadataCallback(void* arg, grpc_error* error) {
   calld->MaybeClearPendingBatch(batch_data->elem, pending);
   batch_data->Unref();
   // Invoke callback.
-  GRPC_CLOSURE_RUN(recv_initial_metadata_ready, GRPC_ERROR_REF(error));
+  Closure::Run(DEBUG_LOCATION, recv_initial_metadata_ready,
+               GRPC_ERROR_REF(error));
 }
 
 void CallData::RecvInitialMetadataReady(void* arg, grpc_error* error) {
@@ -2855,7 +2857,7 @@ void CallData::InvokeRecvMessageCallback(void* arg, grpc_error* error) {
   calld->MaybeClearPendingBatch(batch_data->elem, pending);
   batch_data->Unref();
   // Invoke callback.
-  GRPC_CLOSURE_RUN(recv_message_ready, GRPC_ERROR_REF(error));
+  Closure::Run(DEBUG_LOCATION, recv_message_ready, GRPC_ERROR_REF(error));
 }
 
 void CallData::RecvMessageReady(void* arg, grpc_error* error) {

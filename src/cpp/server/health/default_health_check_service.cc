@@ -17,7 +17,6 @@
  */
 
 #include <memory>
-#include <mutex>
 
 #include <grpc/slice.h>
 #include <grpc/support/alloc.h>

@@ -14,6 +14,15 @@
 
 cimport cpython
 
+
+cdef class CallbackFailureHandler:
+    cdef str _core_function_name
+    cdef object _error_details
+    cdef object _exception_type
+
+    cdef handle(self, object future)
+
+
 cdef struct CallbackContext:
     # C struct to store callback context in the form of pointers.
     #    
@@ -27,3 +36,28 @@ cdef struct CallbackContext:
     grpc_experimental_completion_queue_functor functor
     cpython.PyObject *waiter
     cpython.PyObject *failure_handler
+
+
+cdef class CallbackWrapper:
+    cdef CallbackContext context
+    cdef object _reference_of_future
+    cdef object _reference_of_failure_handler
+
+    @staticmethod
+    cdef void functor_run(
+            grpc_experimental_completion_queue_functor* functor,
+            int succeed)
+
+    cdef grpc_experimental_completion_queue_functor *c_functor(self)
+
+
+cdef class CallbackCompletionQueue:
+    cdef grpc_completion_queue *_cq
+    cdef object _shutdown_completed  # asyncio.Future
+    cdef CallbackWrapper _wrapper
+
+    cdef grpc_completion_queue* c_ptr(self)
+
+
+cdef class GrpcCallWrapper:
+    cdef grpc_call* call

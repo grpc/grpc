@@ -237,7 +237,7 @@ class GrpcLb : public LoadBalancingPolicy {
     const grpc_grpclb_serverlist* serverlist() const { return serverlist_; }
 
     // Returns a text representation suitable for logging.
-    std::unique_ptr<char> AsText() const;
+    grpc_core::UniquePtr<char> AsText() const;
 
     // Extracts all non-drop entries into a ServerAddressList.
     ServerAddressList GetServerAddressList(
@@ -430,7 +430,7 @@ void ParseServer(const grpc_grpclb_server* server,
   }
 }
 
-std::unique_ptr<char> GrpcLb::Serverlist::AsText() const {
+grpc_core::UniquePtr<char> GrpcLb::Serverlist::AsText() const {
   gpr_strvec entries;
   gpr_strvec_init(&entries);
   for (size_t i = 0; i < serverlist_->num_servers; ++i) {
@@ -449,7 +449,7 @@ std::unique_ptr<char> GrpcLb::Serverlist::AsText() const {
     gpr_free(ipport);
     gpr_strvec_add(&entries, entry);
   }
-  std::unique_ptr<char> result(gpr_strvec_flatten(&entries, nullptr));
+  grpc_core::UniquePtr<char> result(gpr_strvec_flatten(&entries, nullptr));
   gpr_strvec_destroy(&entries);
   return result;
 }
@@ -1099,7 +1099,7 @@ void GrpcLb::BalancerCallState::OnBalancerMessageReceivedLocked(
     GPR_ASSERT(lb_calld->lb_call_ != nullptr);
     auto serverlist_wrapper = MakeRefCounted<Serverlist>(serverlist);
     if (GRPC_TRACE_FLAG_ENABLED(grpc_lb_glb_trace)) {
-      std::unique_ptr<char> serverlist_text = serverlist_wrapper->AsText();
+      grpc_core::UniquePtr<char> serverlist_text = serverlist_wrapper->AsText();
       gpr_log(GPR_INFO,
               "[grpclb %p] lb_calld=%p: Serverlist with %" PRIuPTR
               " servers received:\n%s",

@@ -26,54 +26,6 @@ cdef class _HandlerCallDetails:
 class _ServicerContextPlaceHolder(object): pass
 
 
-cdef class _CallbackFailureHandler:
-    cdef str _core_function_name
-    cdef object _error_details
-    cdef object _exception_type
-
-    def __cinit__(self,
-                  str core_function_name,
-                  object error_details,
-                  object exception_type):
-        """Handles failure by raising exception."""
-        self._core_function_name = core_function_name
-        self._error_details = error_details
-        self._exception_type = exception_type
-
-    cdef handle(self, object future):
-        future.set_exception(self._exception_type(
-            'Failed "%s": %s' % (self._core_function_name, self._error_details)
-        ))
-
-
-# TODO(https://github.com/grpc/grpc/issues/20669)
-# Apply this to the client-side
-cdef class CallbackWrapper:
-
-    def __cinit__(self, object future, _CallbackFailureHandler failure_handler):
-        self.context.functor.functor_run = self.functor_run
-        self.context.waiter = <cpython.PyObject*>future
-        self.context.failure_handler = <cpython.PyObject*>failure_handler
-        # NOTE(lidiz) Not using a list here, because this class is critical in
-        # data path. We should make it as efficient as possible.
-        self._reference_of_future = future
-        self._reference_of_failure_handler = failure_handler
-
-    @staticmethod
-    cdef void functor_run(
-            grpc_experimental_completion_queue_functor* functor,
-            int success):
-        cdef CallbackContext *context = <CallbackContext *>functor
-        if success == 0:
-            (<_CallbackFailureHandler>context.failure_handler).handle(
-                <object>context.waiter)
-        else:
-            (<object>context.waiter).set_result(None)
-
-    cdef grpc_experimental_completion_queue_functor *c_functor(self):
-        return &self.context.functor
-
-
 cdef class RPCState:
 
     def __cinit__(self):
@@ -103,36 +55,6 @@ cdef _find_method_handler(str method, list generic_handlers):
         if method_handler is not None:
             return method_handler
     return None
-
-
-async def callback_start_batch(RPCState rpc_state,
-                               tuple operations,
-                               object loop):
-    """The callback version of start batch operations."""
-    cdef _BatchOperationTag batch_operation_tag = _BatchOperationTag(None, operations, None)
-    batch_operation_tag.prepare()
-
-    cdef object future = loop.create_future()
-    cdef CallbackWrapper wrapper = CallbackWrapper(
-        future,
-        _CallbackFailureHandler('callback_start_batch', operations, RuntimeError))
-    # NOTE(lidiz) Without Py_INCREF, the wrapper object will be destructed
-    # when calling "await". This is an over-optimization by Cython.
-    cpython.Py_INCREF(wrapper)
-    cdef grpc_call_error error = grpc_call_start_batch(
-        rpc_state.call,
-        batch_operation_tag.c_ops,
-        batch_operation_tag.c_nops,
-        wrapper.c_functor(), NULL)
-
-    if error != GRPC_CALL_OK:
-        raise RuntimeError("Error with callback_start_batch {}".format(error))
-
-    await future
-    cpython.Py_DECREF(wrapper)
-    cdef grpc_event c_event
-    # Tag.event must be called, otherwise messages won't be parsed from C
-    batch_operation_tag.event(c_event)
 
 
 async def _handle_unary_unary_rpc(object method_handler,
@@ -172,9 +94,6 @@ async def _handle_unary_unary_rpc(object method_handler,
     await callback_start_batch(rpc_state, send_ops, loop)
 
 
-
-
-
 async def _handle_rpc(list generic_handlers, RPCState rpc_state, object loop):
     # Finds the method handler (application logic)
     cdef object method_handler = _find_method_handler(
@@ -198,12 +117,12 @@ async def _handle_rpc(list generic_handlers, RPCState rpc_state, object loop):
 
 class _RequestCallError(Exception): pass
 
-cdef _CallbackFailureHandler REQUEST_CALL_FAILURE_HANDLER = _CallbackFailureHandler(
+cdef CallbackFailureHandler REQUEST_CALL_FAILURE_HANDLER = CallbackFailureHandler(
     'grpc_server_request_call', 'server shutdown', _RequestCallError)
 
 
 async def _server_call_request_call(Server server,
-                                    _CallbackCompletionQueue cq,
+                                    CallbackCompletionQueue cq,
                                     object loop):
     cdef grpc_call_error error
     cdef RPCState rpc_state = RPCState()
@@ -238,35 +157,7 @@ async def _handle_cancellation_from_core(object rpc_task,
         rpc_task.cancel()
 
 
-cdef _CallbackFailureHandler CQ_SHUTDOWN_FAILURE_HANDLER = _CallbackFailureHandler(
-    'grpc_completion_queue_shutdown',
-    'Unknown',
-    RuntimeError)
-
-
-cdef class _CallbackCompletionQueue:
-
-    def __cinit__(self, object loop):
-        self._loop = loop
-        self._shutdown_completed = loop.create_future()
-        self._wrapper = CallbackWrapper(
-            self._shutdown_completed,
-            CQ_SHUTDOWN_FAILURE_HANDLER)
-        self._cq = grpc_completion_queue_create_for_callback(
-            self._wrapper.c_functor(),
-            NULL
-        )
-
-    cdef grpc_completion_queue* c_ptr(self):
-        return self._cq
-    
-    async def shutdown(self):
-        grpc_completion_queue_shutdown(self._cq)
-        await self._shutdown_completed
-        grpc_completion_queue_destroy(self._cq)
-
-
-cdef _CallbackFailureHandler SERVER_SHUTDOWN_FAILURE_HANDLER = _CallbackFailureHandler(
+cdef CallbackFailureHandler SERVER_SHUTDOWN_FAILURE_HANDLER = CallbackFailureHandler(
     'grpc_server_shutdown_and_notify',
     'Unknown',
     RuntimeError)
@@ -279,7 +170,7 @@ cdef class AioServer:
         # NOTE(lidiz) Core objects won't be deallocated automatically.
         # If AioServer.shutdown is not called, those objects will leak.
         self._server = Server(options)
-        self._cq = _CallbackCompletionQueue(loop)
+        self._cq = CallbackCompletionQueue()
         grpc_server_register_completion_queue(
             self._server.c_server,
             self._cq.c_ptr(),

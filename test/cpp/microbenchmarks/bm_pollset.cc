@@ -163,18 +163,16 @@ class Closure : public grpc_closure {
 };
 
 template <class F>
-Closure* MakeClosure(F f, grpc_closure_scheduler* scheduler) {
+Closure* MakeClosure(F f) {
   struct C : public Closure {
-    C(F f, grpc_closure_scheduler* scheduler) : f_(f) {
-      GRPC_CLOSURE_INIT(this, C::cbfn, this, scheduler);
-    }
+    explicit C(F f) : f_(f) { GRPC_CLOSURE_INIT(this, C::cbfn, this, nullptr); }
     static void cbfn(void* arg, grpc_error* /*error*/) {
       C* p = static_cast<C*>(arg);
       p->f_();
     }
     F f_;
   };
-  return new C(f, scheduler);
+  return new C(f);
 }
 
 #ifdef GRPC_LINUX_MULTIPOLL_WITH_EPOLL
@@ -223,17 +221,15 @@ static void BM_SingleThreadPollOneFd(benchmark::State& state) {
   grpc_fd* wakeup = grpc_fd_create(wakeup_fd.read_fd, "wakeup_read", false);
   grpc_pollset_add_fd(ps, wakeup);
   bool done = false;
-  Closure* continue_closure = MakeClosure(
-      [&]() {
-        GRPC_ERROR_UNREF(grpc_wakeup_fd_consume_wakeup(&wakeup_fd));
-        if (!state.KeepRunning()) {
-          done = true;
-          return;
-        }
-        GRPC_ERROR_UNREF(grpc_wakeup_fd_wakeup(&wakeup_fd));
-        grpc_fd_notify_on_read(wakeup, continue_closure);
-      },
-      grpc_schedule_on_exec_ctx);
+  Closure* continue_closure = MakeClosure([&]() {
+    GRPC_ERROR_UNREF(grpc_wakeup_fd_consume_wakeup(&wakeup_fd));
+    if (!state.KeepRunning()) {
+      done = true;
+      return;
+    }
+    GRPC_ERROR_UNREF(grpc_wakeup_fd_wakeup(&wakeup_fd));
+    grpc_fd_notify_on_read(wakeup, continue_closure);
+  });
   GRPC_ERROR_UNREF(grpc_wakeup_fd_wakeup(&wakeup_fd));
   grpc_fd_notify_on_read(wakeup, continue_closure);
   gpr_mu_lock(mu);

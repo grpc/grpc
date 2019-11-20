@@ -230,7 +230,7 @@ static void test_keepalive_timeout(grpc_end2end_test_config config) {
  * that the keepalive ping is never sent. */
 static void test_read_delays_keepalive(grpc_end2end_test_config config) {
 #ifdef GRPC_POSIX_SOCKET
-  std::unique_ptr<char> poller = GPR_GLOBAL_CONFIG_GET(grpc_poll_strategy);
+  grpc_core::UniquePtr<char> poller = GPR_GLOBAL_CONFIG_GET(grpc_poll_strategy);
   /* It is hard to get the timing right for the polling engine poll. */
   if ((0 == strcmp(poller.get(), "poll"))) {
     return;

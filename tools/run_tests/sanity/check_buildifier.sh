@@ -1,4 +1,4 @@
-#! /bin/bash -ex
+#! /bin/bash -x
 # Copyright 2019 The gRPC Authors
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -17,5 +17,17 @@
 
 GIT_ROOT="$(dirname "$0")/../../.."
 TMP_ROOT="/tmp/buildifier_grpc"
+rm -rf "${TMP_ROOT}"
 git clone -- "$GIT_ROOT" "$TMP_ROOT"
 buildifier -r -v -mode=diff $TMP_ROOT
+result=$?
+
+if [[ ${result} != 0 ]]; then
+    echo "==========BUILDIFIER CHECK FAILED=========="
+    echo "Please try using the following script to fix automatically:"
+    echo ""
+    echo "    tools/distrib/buildifier_format_code.sh"
+    echo ""
+else
+    echo "==========BUILDIFIER CHECK PASSED=========="
+fi

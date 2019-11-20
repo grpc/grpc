@@ -66,10 +66,12 @@ class SecurityHandshaker : public Handshaker {
   void HandshakeFailedLocked(grpc_error* error);
   void CleanupArgsForFailureLocked();
 
-  static void ScheduleRead(void* arg, grpc_error* /* error */);
-  static void ScheduleWrite(void* arg, grpc_error* /* error */);
   static void OnHandshakeDataReceivedFromPeerFn(void* arg, grpc_error* error);
   static void OnHandshakeDataSentToPeerFn(void* arg, grpc_error* error);
+  static void OnHandshakeDataReceivedFromPeerFnScheduler(void* arg,
+                                                         grpc_error* error);
+  static void OnHandshakeDataSentToPeerFnScheduler(void* arg,
+                                                   grpc_error* error);
   static void OnHandshakeNextDoneGrpcWrapper(
       tsi_result result, void* user_data, const unsigned char* bytes_to_send,
       size_t bytes_to_send_size, tsi_handshaker_result* handshaker_result);
@@ -96,8 +98,6 @@ class SecurityHandshaker : public Handshaker {
   size_t handshake_buffer_size_;
   unsigned char* handshake_buffer_;
   grpc_slice_buffer outgoing_;
-  grpc_closure schedule_read_closure_;
-  grpc_closure schedule_write_closure_;
   grpc_closure on_handshake_data_sent_to_peer_;
   grpc_closure on_handshake_data_received_from_peer_;
   grpc_closure on_peer_checked_;
@@ -122,17 +122,6 @@ SecurityHandshaker::SecurityHandshaker(tsi_handshaker* handshaker,
   }
   gpr_mu_init(&mu_);
   grpc_slice_buffer_init(&outgoing_);
-  GRPC_CLOSURE_INIT(&schedule_read_closure_, &SecurityHandshaker::ScheduleRead,
-                    this, grpc_schedule_on_exec_ctx);
-  GRPC_CLOSURE_INIT(&schedule_write_closure_,
-                    &SecurityHandshaker::ScheduleWrite, this,
-                    grpc_schedule_on_exec_ctx);
-  GRPC_CLOSURE_INIT(&on_handshake_data_sent_to_peer_,
-                    &SecurityHandshaker::OnHandshakeDataSentToPeerFn, this,
-                    grpc_schedule_on_exec_ctx);
-  GRPC_CLOSURE_INIT(&on_handshake_data_received_from_peer_,
-                    &SecurityHandshaker::OnHandshakeDataReceivedFromPeerFn,
-                    this, grpc_schedule_on_exec_ctx);
   GRPC_CLOSURE_INIT(&on_peer_checked_, &SecurityHandshaker::OnPeerCheckedFn,
                     this, grpc_schedule_on_exec_ctx);
 }
@@ -195,6 +184,7 @@ void SecurityHandshaker::HandshakeFailedLocked(grpc_error* error) {
   gpr_log(GPR_DEBUG, "Security handshake failed: %s", msg);
 
   if (!is_shutdown_) {
+    tsi_handshaker_shutdown(handshaker_);
     // TODO(ctiller): It is currently necessary to shutdown endpoints
     // before destroying them, even if we know that there are no
     // pending read/write callbacks.  This should be fixed, at which
@@ -292,19 +282,6 @@ grpc_error* SecurityHandshaker::CheckPeerLocked() {
   return GRPC_ERROR_NONE;
 }
 
-void SecurityHandshaker::ScheduleRead(void* arg, grpc_error* /* error */) {
-  SecurityHandshaker* h = static_cast<SecurityHandshaker*>(arg);
-  grpc_endpoint_read(h->args_->endpoint, h->args_->read_buffer,
-                     &h->on_handshake_data_received_from_peer_,
-                     /*urgent=*/true);
-}
-
-void SecurityHandshaker::ScheduleWrite(void* arg, grpc_error* /* error */) {
-  SecurityHandshaker* h = static_cast<SecurityHandshaker*>(arg);
-  grpc_endpoint_write(h->args_->endpoint, &h->outgoing_,
-                      &h->on_handshake_data_sent_to_peer_, nullptr);
-}
-
 grpc_error* SecurityHandshaker::OnHandshakeNextDoneLocked(
     tsi_result result, const unsigned char* bytes_to_send,
     size_t bytes_to_send_size, tsi_handshaker_result* handshaker_result) {
@@ -316,7 +293,13 @@ grpc_error* SecurityHandshaker::OnHandshakeNextDoneLocked(
   // Read more if we need to.
   if (result == TSI_INCOMPLETE_DATA) {
     GPR_ASSERT(bytes_to_send_size == 0);
-    ExecCtx::Run(DEBUG_LOCATION, &schedule_read_closure_, GRPC_ERROR_NONE);
+    grpc_endpoint_read(
+        args_->endpoint, args_->read_buffer,
+        GRPC_CLOSURE_INIT(
+            &on_handshake_data_received_from_peer_,
+            &SecurityHandshaker::OnHandshakeDataReceivedFromPeerFnScheduler,
+            this, grpc_schedule_on_exec_ctx),
+        /*urgent=*/true);
     return error;
   }
   if (result != TSI_OK) {
@@ -334,10 +317,22 @@ grpc_error* SecurityHandshaker::OnHandshakeNextDoneLocked(
         reinterpret_cast<const char*>(bytes_to_send), bytes_to_send_size);
     grpc_slice_buffer_reset_and_unref_internal(&outgoing_);
     grpc_slice_buffer_add(&outgoing_, to_send);
-    ExecCtx::Run(DEBUG_LOCATION, &schedule_write_closure_, GRPC_ERROR_NONE);
+    grpc_endpoint_write(
+        args_->endpoint, &outgoing_,
+        GRPC_CLOSURE_INIT(
+            &on_handshake_data_sent_to_peer_,
+            &SecurityHandshaker::OnHandshakeDataSentToPeerFnScheduler, this,
+            grpc_schedule_on_exec_ctx),
+        nullptr);
   } else if (handshaker_result == nullptr) {
     // There is nothing to send, but need to read from peer.
-    ExecCtx::Run(DEBUG_LOCATION, &schedule_read_closure_, GRPC_ERROR_NONE);
+    grpc_endpoint_read(
+        args_->endpoint, args_->read_buffer,
+        GRPC_CLOSURE_INIT(
+            &on_handshake_data_received_from_peer_,
+            &SecurityHandshaker::OnHandshakeDataReceivedFromPeerFnScheduler,
+            this, grpc_schedule_on_exec_ctx),
+        /*urgent=*/true);
   } else {
     // Handshake has finished, check peer and so on.
     error = CheckPeerLocked();
@@ -380,6 +375,19 @@ grpc_error* SecurityHandshaker::DoHandshakerNextLocked(
                                    hs_result);
 }
 
+// This callback might be run inline while we are still holding on to the mutex,
+// so schedule OnHandshakeDataReceivedFromPeerFn on ExecCtx to avoid a deadlock.
+void SecurityHandshaker::OnHandshakeDataReceivedFromPeerFnScheduler(
+    void* arg, grpc_error* error) {
+  SecurityHandshaker* h = static_cast<SecurityHandshaker*>(arg);
+  grpc_core::ExecCtx::Run(
+      DEBUG_LOCATION,
+      GRPC_CLOSURE_INIT(&h->on_handshake_data_received_from_peer_,
+                        &SecurityHandshaker::OnHandshakeDataReceivedFromPeerFn,
+                        h, grpc_schedule_on_exec_ctx),
+      GRPC_ERROR_REF(error));
+}
+
 void SecurityHandshaker::OnHandshakeDataReceivedFromPeerFn(void* arg,
                                                            grpc_error* error) {
   RefCountedPtr<SecurityHandshaker> h(static_cast<SecurityHandshaker*>(arg));
@@ -401,6 +409,19 @@ void SecurityHandshaker::OnHandshakeDataReceivedFromPeerFn(void* arg,
   }
 }
 
+// This callback might be run inline while we are still holding on to the mutex,
+// so schedule OnHandshakeDataSentToPeerFn on ExecCtx to avoid a deadlock.
+void SecurityHandshaker::OnHandshakeDataSentToPeerFnScheduler(
+    void* arg, grpc_error* error) {
+  SecurityHandshaker* h = static_cast<SecurityHandshaker*>(arg);
+  grpc_core::ExecCtx::Run(
+      DEBUG_LOCATION,
+      GRPC_CLOSURE_INIT(&h->on_handshake_data_sent_to_peer_,
+                        &SecurityHandshaker::OnHandshakeDataSentToPeerFn, h,
+                        grpc_schedule_on_exec_ctx),
+      GRPC_ERROR_REF(error));
+}
+
 void SecurityHandshaker::OnHandshakeDataSentToPeerFn(void* arg,
                                                      grpc_error* error) {
   RefCountedPtr<SecurityHandshaker> h(static_cast<SecurityHandshaker*>(arg));
@@ -412,7 +433,13 @@ void SecurityHandshaker::OnHandshakeDataSentToPeerFn(void* arg,
   }
   // We may be done.
   if (h->handshaker_result_ == nullptr) {
-    ExecCtx::Run(DEBUG_LOCATION, &h->schedule_read_closure_, GRPC_ERROR_NONE);
+    grpc_endpoint_read(
+        h->args_->endpoint, h->args_->read_buffer,
+        GRPC_CLOSURE_INIT(
+            &h->on_handshake_data_received_from_peer_,
+            &SecurityHandshaker::OnHandshakeDataReceivedFromPeerFnScheduler,
+            h.get(), grpc_schedule_on_exec_ctx),
+        /*urgent=*/true);
   } else {
     error = h->CheckPeerLocked();
     if (error != GRPC_ERROR_NONE) {

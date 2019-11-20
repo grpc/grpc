@@ -36,7 +36,7 @@
 #include "test/core/util/test_config.h"
 
 struct fullstack_fixture_data {
-  std::unique_ptr<char> localaddr;
+  grpc_core::UniquePtr<char> localaddr;
 };
 
 static grpc_end2end_test_fixture chttp2_create_fixture_fullstack(

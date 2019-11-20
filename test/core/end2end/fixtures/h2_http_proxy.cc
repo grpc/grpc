@@ -39,7 +39,7 @@
 
 struct fullstack_fixture_data {
   ~fullstack_fixture_data() { grpc_end2end_http_proxy_destroy(proxy); }
-  std::unique_ptr<char> server_addr;
+  grpc_core::UniquePtr<char> server_addr;
   grpc_end2end_http_proxy* proxy = nullptr;
 };
 

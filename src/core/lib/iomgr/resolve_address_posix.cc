@@ -57,8 +57,8 @@ static grpc_error* posix_blocking_resolve_address(
     return grpc_resolve_unix_domain_address(name + 5, addresses);
   }
 
-  std::unique_ptr<char> host;
-  std::unique_ptr<char> port;
+  grpc_core::UniquePtr<char> host;
+  grpc_core::UniquePtr<char> port;
   /* parse name, splitting it into host and port parts */
   grpc_core::SplitHostPort(name, &host, &port);
   if (host == nullptr) {

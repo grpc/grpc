@@ -160,23 +160,21 @@ class Closure : public grpc_closure {
 };
 
 template <class F>
-std::unique_ptr<Closure> MakeClosure(
-    F f, grpc_closure_scheduler* sched = grpc_schedule_on_exec_ctx) {
+std::unique_ptr<Closure> MakeClosure(F f) {
   struct C : public Closure {
-    C(const F& f, grpc_closure_scheduler* sched) : f_(f) {
-      GRPC_CLOSURE_INIT(this, Execute, this, sched);
+    explicit C(const F& f) : f_(f) {
+      GRPC_CLOSURE_INIT(this, Execute, this, nullptr);
     }
     F f_;
     static void Execute(void* arg, grpc_error* error) {
       static_cast<C*>(arg)->f_(error);
     }
   };
-  return std::unique_ptr<Closure>(new C(f, sched));
+  return std::unique_ptr<Closure>(new C(f));
 }
 
 template <class F>
-grpc_closure* MakeOnceClosure(
-    F f, grpc_closure_scheduler* sched = grpc_schedule_on_exec_ctx) {
+grpc_closure* MakeOnceClosure(F f) {
   struct C : public grpc_closure {
     C(const F& f) : f_(f) {}
     F f_;
@@ -186,7 +184,7 @@ grpc_closure* MakeOnceClosure(
     }
   };
   auto* c = new C{f};
-  return GRPC_CLOSURE_INIT(c, C::Execute, c, sched);
+  return GRPC_CLOSURE_INIT(c, C::Execute, c, nullptr);
 }
 
 class Stream {
@@ -278,7 +276,7 @@ static void BM_StreamCreateDestroy(benchmark::State& state) {
     s->Op(&op);
     s->DestroyThen(next.get());
   });
-  GRPC_CLOSURE_RUN(next.get(), GRPC_ERROR_NONE);
+  grpc_core::Closure::Run(DEBUG_LOCATION, next.get(), GRPC_ERROR_NONE);
   f.FlushExecCtx();
   track_counters.Finish(state);
 }
@@ -607,7 +605,7 @@ static void BM_TransportStreamRecv(benchmark::State& state) {
       GPR_ASSERT(!state.KeepRunning());
       return;
     }
-    GRPC_CLOSURE_RUN(drain.get(), GRPC_ERROR_NONE);
+    grpc_core::Closure::Run(DEBUG_LOCATION, drain.get(), GRPC_ERROR_NONE);
   });
 
   drain = MakeClosure([&](grpc_error* /*error*/) {
@@ -628,7 +626,7 @@ static void BM_TransportStreamRecv(benchmark::State& state) {
     recv_stream->Pull(&recv_slice);
     received += GRPC_SLICE_LENGTH(recv_slice);
     grpc_slice_unref_internal(recv_slice);
-    GRPC_CLOSURE_RUN(drain.get(), GRPC_ERROR_NONE);
+    grpc_core::Closure::Run(DEBUG_LOCATION, drain.get(), GRPC_ERROR_NONE);
   });
 
   reset_op();

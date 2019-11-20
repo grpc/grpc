@@ -97,7 +97,7 @@ void test_connect(const char* server_host, const char* client_host, int port,
     picked_port = 1;
   }
 
-  std::unique_ptr<char> server_hostport;
+  grpc_core::UniquePtr<char> server_hostport;
   grpc_core::JoinHostPort(&server_hostport, server_host, port);
 
   grpc_metadata_array_init(&initial_metadata_recv);
@@ -120,7 +120,7 @@ void test_connect(const char* server_host, const char* client_host, int port,
   cqv = cq_verifier_create(cq);
 
   /* Create client. */
-  std::unique_ptr<char> client_hostport;
+  grpc_core::UniquePtr<char> client_hostport;
   if (client_host[0] == 'i') {
     /* for ipv4:/ipv6: addresses, concatenate the port to each of the parts */
     size_t i;

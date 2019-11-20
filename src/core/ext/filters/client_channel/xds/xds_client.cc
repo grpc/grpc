@@ -1440,11 +1440,11 @@ bool XdsClient::ChannelState::LrsCallState::IsCurrentCallOnChannel() const {
 
 namespace {
 
-std::unique_ptr<char> GenerateBuildVersionString() {
+grpc_core::UniquePtr<char> GenerateBuildVersionString() {
   char* build_version_str;
   gpr_asprintf(&build_version_str, "gRPC C-core %s %s", grpc_version_string(),
                GPR_PLATFORM_STRING);
-  return std::unique_ptr<char>(build_version_str);
+  return grpc_core::UniquePtr<char>(build_version_str);
 }
 
 }  // namespace

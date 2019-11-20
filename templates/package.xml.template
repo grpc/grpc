@@ -30,16 +30,19 @@
     <dir baseinstalldir="/" name="/">
       <file baseinstalldir="/" name="config.m4" role="src" />
       <file baseinstalldir="/" name="config.w32" role="src" />
-      <file baseinstalldir="/" name="src/php/README.md" role="src" />
-      % for source in php_config_m4.src + php_config_m4.headers:
-      <file baseinstalldir="/" name="${source}" role="src" />
-      % endfor
-      % for lib in libs:
-      % if lib.name in php_config_m4.get('deps', []):
-      % for source in lib.get('public_headers', []) + lib.headers + lib.src:
-      <file baseinstalldir="/" name="${source}" role="src" />
-      % endfor
-      % endif
+      <file baseinstalldir="/" name="src/php/README.md" role="src" />\
+  <%
+    srcs = []
+    for src in (php_config_m4.src + php_config_m4.headers):
+      srcs.append(src)
+    for lib in libs:
+      if lib.name in php_config_m4.get('deps', []):
+        for src in (lib.get('public_headers', []) + lib.headers + lib.src):
+          srcs.append(src)
+    srcs = sorted(set(srcs))
+  %>
+      % for src in srcs:
+      <file baseinstalldir="/" name="${src}" role="src" />
       % endfor
       <file name="LICENSE" role="doc" />
     </dir>

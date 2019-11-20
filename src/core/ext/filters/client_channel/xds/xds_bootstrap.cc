@@ -30,7 +30,7 @@
 namespace grpc_core {
 
 std::unique_ptr<XdsBootstrap> XdsBootstrap::ReadFromFile(grpc_error** error) {
-  std::unique_ptr<char> path(gpr_getenv("GRPC_XDS_BOOTSTRAP"));
+  grpc_core::UniquePtr<char> path(gpr_getenv("GRPC_XDS_BOOTSTRAP"));
   if (path == nullptr) {
     *error = GRPC_ERROR_CREATE_FROM_STATIC_STRING(
         "GRPC_XDS_BOOTSTRAP env var not set");

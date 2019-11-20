@@ -88,8 +88,8 @@ void grpc_custom_resolve_callback(grpc_custom_resolver* r,
 
 static grpc_error* try_split_host_port(const char* name,
                                        const char* default_port,
-                                       std::unique_ptr<char>* host,
-                                       std::unique_ptr<char>* port) {
+                                       grpc_core::UniquePtr<char>* host,
+                                       grpc_core::UniquePtr<char>* port) {
   /* parse name, splitting it into host and port parts */
   grpc_error* error;
   grpc_core::SplitHostPort(name, host, port);
@@ -117,8 +117,8 @@ static grpc_error* try_split_host_port(const char* name,
 static grpc_error* blocking_resolve_address_impl(
     const char* name, const char* default_port,
     grpc_resolved_addresses** addresses) {
-  std::unique_ptr<char> host;
-  std::unique_ptr<char> port;
+  grpc_core::UniquePtr<char> host;
+  grpc_core::UniquePtr<char> port;
   grpc_error* err;
 
   GRPC_CUSTOM_IOMGR_ASSERT_SAME_THREAD();
@@ -155,8 +155,8 @@ static void resolve_address_impl(const char* name, const char* default_port,
                                  grpc_closure* on_done,
                                  grpc_resolved_addresses** addrs) {
   grpc_custom_resolver* r = nullptr;
-  std::unique_ptr<char> host;
-  std::unique_ptr<char> port;
+  grpc_core::UniquePtr<char> host;
+  grpc_core::UniquePtr<char> port;
   grpc_error* err;
   GRPC_CUSTOM_IOMGR_ASSERT_SAME_THREAD();
   err = try_split_host_port(name, default_port, &host, &port);

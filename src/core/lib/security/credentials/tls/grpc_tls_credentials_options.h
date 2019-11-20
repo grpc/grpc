@@ -42,20 +42,20 @@ struct grpc_tls_key_materials_config
   int version() const { return version_; }
 
   /** Setters for member fields. **/
-  void set_pem_root_certs(std::unique_ptr<char> pem_root_certs) {
+  void set_pem_root_certs(grpc_core::UniquePtr<char> pem_root_certs) {
     pem_root_certs_ = std::move(pem_root_certs);
   }
   void add_pem_key_cert_pair(grpc_core::PemKeyCertPair pem_key_cert_pair) {
     pem_key_cert_pair_list_.push_back(pem_key_cert_pair);
   }
-  void set_key_materials(std::unique_ptr<char> pem_root_certs,
+  void set_key_materials(grpc_core::UniquePtr<char> pem_root_certs,
                          PemKeyCertPairList pem_key_cert_pair_list);
   void set_version(int version) { version_ = version; }
 
  private:
   int version_ = 0;
   PemKeyCertPairList pem_key_cert_pair_list_;
-  std::unique_ptr<char> pem_root_certs_;
+  grpc_core::UniquePtr<char> pem_root_certs_;
 };
 
 /** TLS credential reload config. **/

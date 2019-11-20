@@ -169,7 +169,10 @@ class ClientCallbackEnd2endTest
 
   void TearDown() override {
     if (is_server_started_) {
-      server_->Shutdown();
+      // Although we would normally do an explicit shutdown, the server
+      // should also work correctly with just a destructor call. The regular
+      // end2end test uses explicit shutdown, so let this one just do reset.
+      server_.reset();
     }
     if (picked_port_ > 0) {
       grpc_recycle_unused_port(picked_port_);

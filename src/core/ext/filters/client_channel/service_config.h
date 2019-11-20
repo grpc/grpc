@@ -129,8 +129,8 @@ class ServiceConfig : public RefCounted<ServiceConfig> {
                                              grpc_error** error);
 
   // Takes ownership of \a json_tree.
-  ServiceConfig(std::unique_ptr<char> service_config_json,
-                std::unique_ptr<char> json_string, grpc_json* json_tree,
+  ServiceConfig(grpc_core::UniquePtr<char> service_config_json,
+                grpc_core::UniquePtr<char> json_string, grpc_json* json_tree,
                 grpc_error** error);
   ~ServiceConfig();
 
@@ -171,15 +171,15 @@ class ServiceConfig : public RefCounted<ServiceConfig> {
 
   // Returns a path string for the JSON name object specified by \a json.
   // Returns null on error, and stores error in \a error.
-  static std::unique_ptr<char> ParseJsonMethodName(grpc_json* json,
-                                                   grpc_error** error);
+  static grpc_core::UniquePtr<char> ParseJsonMethodName(grpc_json* json,
+                                                        grpc_error** error);
 
   grpc_error* ParseJsonMethodConfigToServiceConfigVectorTable(
       const grpc_json* json,
       SliceHashTable<const ParsedConfigVector*>::Entry* entries, size_t* idx);
 
-  std::unique_ptr<char> service_config_json_;
-  std::unique_ptr<char> json_string_;  // Underlying storage for json_tree.
+  grpc_core::UniquePtr<char> service_config_json_;
+  grpc_core::UniquePtr<char> json_string_;  // Underlying storage for json_tree.
   grpc_json* json_tree_;
 
   InlinedVector<std::unique_ptr<ParsedConfig>, kNumPreallocatedParsers>

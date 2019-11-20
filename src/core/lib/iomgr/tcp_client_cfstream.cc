@@ -145,8 +145,8 @@ static void ParseResolvedAddress(const grpc_resolved_address* addr,
                                  CFStringRef* host, int* port) {
   char* host_port;
   grpc_sockaddr_to_string(&host_port, addr, 1);
-  std::unique_ptr<char> host_string;
-  std::unique_ptr<char> port_string;
+  grpc_core::UniquePtr<char> host_string;
+  grpc_core::UniquePtr<char> port_string;
   grpc_core::SplitHostPort(host_port, &host_string, &port_string);
   *host =
       CFStringCreateWithCString(NULL, host_string.get(), kCFStringEncodingUTF8);

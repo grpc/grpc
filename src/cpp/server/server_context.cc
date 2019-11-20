@@ -19,7 +19,6 @@
 #include <grpcpp/impl/codegen/server_context_impl.h>
 
 #include <algorithm>
-#include <mutex>
 #include <utility>
 
 #include <grpc/compression.h>

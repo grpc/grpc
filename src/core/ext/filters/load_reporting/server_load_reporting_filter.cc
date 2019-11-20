@@ -267,8 +267,9 @@ void ServerLoadReportingCallData::RecvInitialMetadataReady(void* arg,
          {::grpc::load_reporter::TagKeyUserId(),
           {chand->peer_identity(), chand->peer_identity_len()}}});
   }
-  GRPC_CLOSURE_RUN(calld->original_recv_initial_metadata_ready_,
-                   GRPC_ERROR_REF(err));
+  grpc_core::Closure::Run(DEBUG_LOCATION,
+                          calld->original_recv_initial_metadata_ready_,
+                          GRPC_ERROR_REF(err));
 }
 
 grpc_error* ServerLoadReportingCallData::Init(

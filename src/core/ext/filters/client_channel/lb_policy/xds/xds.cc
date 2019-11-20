@@ -78,8 +78,8 @@ class ParsedXdsConfig : public LoadBalancingPolicy::Config {
  public:
   ParsedXdsConfig(RefCountedPtr<LoadBalancingPolicy::Config> child_policy,
                   RefCountedPtr<LoadBalancingPolicy::Config> fallback_policy,
-                  std::unique_ptr<char> eds_service_name,
-                  std::unique_ptr<char> lrs_load_reporting_server_name)
+                  grpc_core::UniquePtr<char> eds_service_name,
+                  grpc_core::UniquePtr<char> lrs_load_reporting_server_name)
       : child_policy_(std::move(child_policy)),
         fallback_policy_(std::move(fallback_policy)),
         eds_service_name_(std::move(eds_service_name)),
@@ -105,8 +105,8 @@ class ParsedXdsConfig : public LoadBalancingPolicy::Config {
  private:
   RefCountedPtr<LoadBalancingPolicy::Config> child_policy_;
   RefCountedPtr<LoadBalancingPolicy::Config> fallback_policy_;
-  std::unique_ptr<char> eds_service_name_;
-  std::unique_ptr<char> lrs_load_reporting_server_name_;
+  grpc_core::UniquePtr<char> eds_service_name_;
+  grpc_core::UniquePtr<char> lrs_load_reporting_server_name_;
 };
 
 class XdsLb : public LoadBalancingPolicy {
@@ -406,7 +406,7 @@ class XdsLb : public LoadBalancingPolicy {
   }
 
   // Server name from target URI.
-  std::unique_ptr<char> server_name_;
+  grpc_core::UniquePtr<char> server_name_;
 
   // Current channel args and config from the resolver.
   const grpc_channel_args* args_ = nullptr;
@@ -495,7 +495,7 @@ LoadBalancingPolicy::PickResult XdsLb::EndpointPickerWrapper::Pick(
 
 XdsLb::PickResult XdsLb::LocalityPicker::Pick(PickArgs args) {
   // Handle drop.
-  const std::unique_ptr<char>* drop_category;
+  const grpc_core::UniquePtr<char>* drop_category;
   if (drop_config_->ShouldDrop(&drop_category)) {
     xds_policy_->client_stats_.AddCallDropped(*drop_category);
     PickResult result;
@@ -1877,8 +1877,9 @@ class XdsFactory : public LoadBalancingPolicyFactory {
     if (error_list.empty()) {
       return MakeRefCounted<ParsedXdsConfig>(
           std::move(child_policy), std::move(fallback_policy),
-          std::unique_ptr<char>(gpr_strdup(eds_service_name)),
-          std::unique_ptr<char>(gpr_strdup(lrs_load_reporting_server_name)));
+          grpc_core::UniquePtr<char>(gpr_strdup(eds_service_name)),
+          grpc_core::UniquePtr<char>(
+              gpr_strdup(lrs_load_reporting_server_name)));
     } else {
       *error = GRPC_ERROR_CREATE_FROM_VECTOR("Xds Parser", &error_list);
       return nullptr;

@@ -211,14 +211,14 @@ class XdsClient : public InternallyRefCounted<XdsClient> {
 
   static const grpc_arg_pointer_vtable kXdsClientVtable;
 
-  std::unique_ptr<char> build_version_;
+  grpc_core::UniquePtr<char> build_version_;
 
   Combiner* combiner_;
   grpc_pollset_set* interested_parties_;
 
   std::unique_ptr<XdsBootstrap> bootstrap_;
 
-  std::unique_ptr<char> server_name_;
+  grpc_core::UniquePtr<char> server_name_;
   std::unique_ptr<ServiceConfigWatcherInterface> service_config_watcher_;
   // TODO(juanlishen): Once we implement LDS support, this will no
   // longer be needed.

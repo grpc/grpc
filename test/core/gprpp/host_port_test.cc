@@ -26,7 +26,7 @@
 
 static void join_host_port_expect(const char* host, int port,
                                   const char* expected) {
-  std::unique_ptr<char> buf;
+  grpc_core::UniquePtr<char> buf;
   int len;
   len = grpc_core::JoinHostPort(&buf, host, port);
   GPR_ASSERT(len >= 0);
@@ -50,8 +50,8 @@ static void test_join_host_port_garbage(void) {
 
 static void split_host_port_expect(const char* name, const char* host,
                                    const char* port, bool ret) {
-  std::unique_ptr<char> actual_host;
-  std::unique_ptr<char> actual_port;
+  grpc_core::UniquePtr<char> actual_host;
+  grpc_core::UniquePtr<char> actual_port;
   const bool actual_ret =
       grpc_core::SplitHostPort(name, &actual_host, &actual_port);
   GPR_ASSERT(actual_ret == ret);

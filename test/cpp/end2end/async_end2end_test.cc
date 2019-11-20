@@ -365,7 +365,7 @@ TEST_P(AsyncEnd2endTest, ReconnectChannel) {
 #ifdef GRPC_POSIX_SOCKET
   // It needs 2 pollset_works to reconnect the channel with polling engine
   // "poll"
-  std::unique_ptr<char> poller = GPR_GLOBAL_CONFIG_GET(grpc_poll_strategy);
+  grpc_core::UniquePtr<char> poller = GPR_GLOBAL_CONFIG_GET(grpc_poll_strategy);
   if (0 == strcmp(poller.get(), "poll")) {
     poller_slowdown_factor = 2;
   }

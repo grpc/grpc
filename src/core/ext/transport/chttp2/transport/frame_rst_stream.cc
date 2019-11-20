@@ -109,10 +109,10 @@ grpc_error* grpc_chttp2_rst_stream_parser_parse(void* parser,
       char* message;
       gpr_asprintf(&message, "Received RST_STREAM with error code %d", reason);
       error = grpc_error_set_int(
-          grpc_error_set_str(
-              GRPC_ERROR_CREATE_FROM_STATIC_STRING("RST_STREAM"),
-              GRPC_ERROR_STR_GRPC_MESSAGE,
-              grpc_slice_from_moved_string(std::unique_ptr<char>(message))),
+          grpc_error_set_str(GRPC_ERROR_CREATE_FROM_STATIC_STRING("RST_STREAM"),
+                             GRPC_ERROR_STR_GRPC_MESSAGE,
+                             grpc_slice_from_moved_string(
+                                 grpc_core::UniquePtr<char>(message))),
           GRPC_ERROR_INT_HTTP2_ERROR, static_cast<intptr_t>(reason));
     }
     grpc_chttp2_mark_stream_closed(t, s, true, true, error);

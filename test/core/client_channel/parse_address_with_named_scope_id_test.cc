@@ -61,8 +61,8 @@ static void test_grpc_parse_ipv6_parity_with_getaddrinfo(
 
 struct sockaddr_in6 resolve_with_gettaddrinfo(const char* uri_text) {
   grpc_uri* uri = grpc_uri_parse(uri_text, 0);
-  std::unique_ptr<char> host;
-  std::unique_ptr<char> port;
+  grpc_core::UniquePtr<char> host;
+  grpc_core::UniquePtr<char> port;
   grpc_core::SplitHostPort(uri->path, &host, &port);
   struct addrinfo hints;
   memset(&hints, 0, sizeof(hints));

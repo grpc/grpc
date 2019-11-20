@@ -30,6 +30,20 @@
 
 namespace grpc_core {
 
+class DefaultDeleteChar {
+ public:
+  void operator()(char* p) {
+    if (p == nullptr) return;
+    gpr_free(p);
+  }
+};
+
+// UniquePtr<T> is only allowed for char and UniquePtr<char> is deprecated
+// in favor of std::string. UniquePtr<char> is equivalent std::unique_ptr
+// except that it uses gpr_free for deleter.
+template <typename T>
+using UniquePtr = std::unique_ptr<T, DefaultDeleteChar>;
+
 // TODO(veblush): Replace this with absl::make_unique once abseil is added.
 template <typename T, typename... Args>
 inline std::unique_ptr<T> MakeUnique(Args&&... args) {

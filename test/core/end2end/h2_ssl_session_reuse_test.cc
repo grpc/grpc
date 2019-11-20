@@ -215,7 +215,7 @@ void drain_cq(grpc_completion_queue* cq) {
 TEST(H2SessionReuseTest, SingleReuse) {
   int port = grpc_pick_unused_port_or_die();
 
-  std::unique_ptr<char> server_addr;
+  grpc_core::UniquePtr<char> server_addr;
   grpc_core::JoinHostPort(&server_addr, "localhost", port);
 
   grpc_completion_queue* cq = grpc_completion_queue_create_for_next(nullptr);

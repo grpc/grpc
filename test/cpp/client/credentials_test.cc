@@ -288,10 +288,7 @@ TEST_F(CredentialsTest, TlsKeyMaterialsConfigCppToC) {
                c_config->pem_key_cert_pair_list()[0].private_key());
   EXPECT_STREQ(pair.cert_chain.c_str(),
                c_config->pem_key_cert_pair_list()[0].cert_chain());
-  gpr_free(c_config->pem_key_cert_pair_list()[0].private_key());
-  gpr_free(c_config->pem_key_cert_pair_list()[0].cert_chain());
-  gpr_free(const_cast<char*>(c_config->pem_root_certs()));
-  gpr_free(c_config);
+  delete c_config;
 }
 
 TEST_F(CredentialsTest, TlsKeyMaterialsModifiers) {
@@ -371,8 +368,8 @@ TEST_F(CredentialsTest, TlsCredentialReloadConfigSchedule) {
   if (c_arg->destroy_context != nullptr) {
     c_arg->destroy_context(c_arg->context);
   }
-  gpr_free(c_arg);
-  gpr_free(config->c_config());
+  delete c_arg;
+  delete config->c_config();
 }
 
 TEST_F(CredentialsTest, TlsCredentialReloadConfigCppToC) {
@@ -397,7 +394,7 @@ TEST_F(CredentialsTest, TlsCredentialReloadConfigCppToC) {
   pem_key_cert_pair_list.push_back(pem_key_cert_pair);
   grpc::string test_pem_root_certs = "pem_root_certs";
   c_key_materials.set_key_materials(
-      ::std::unique_ptr<char>(gpr_strdup(test_pem_root_certs.c_str())),
+      ::grpc_core::UniquePtr<char>(gpr_strdup(test_pem_root_certs.c_str())),
       pem_key_cert_pair_list);
   c_arg.key_materials_config = &c_key_materials;
   c_arg.status = GRPC_SSL_CERTIFICATE_CONFIG_RELOAD_UNCHANGED;
@@ -423,7 +420,7 @@ TEST_F(CredentialsTest, TlsCredentialReloadConfigCppToC) {
 
   // Cleanup.
   c_arg.destroy_context(c_arg.context);
-  ::delete config.c_config();
+  delete config.c_config();
 }
 
 typedef class ::grpc_impl::experimental::TlsServerAuthorizationCheckArg
@@ -507,8 +504,8 @@ TEST_F(CredentialsTest, TlsServerAuthorizationCheckConfigSchedule) {
   if (c_arg->destroy_context != nullptr) {
     c_arg->destroy_context(c_arg->context);
   }
-  gpr_free(c_arg);
-  gpr_free(config.c_config());
+  delete c_arg;
+  delete config.c_config();
 }
 
 TEST_F(CredentialsTest, TlsServerAuthorizationCheckConfigCppToC) {
@@ -540,7 +537,7 @@ TEST_F(CredentialsTest, TlsServerAuthorizationCheckConfigCppToC) {
   gpr_free(const_cast<char*>(c_arg.error_details));
   gpr_free(const_cast<char*>(c_arg.target_name));
   gpr_free(const_cast<char*>(c_arg.peer_cert));
-  gpr_free(config.c_config());
+  delete config.c_config();
 }
 
 typedef class ::grpc_impl::experimental::TlsCredentialsOptions
@@ -640,7 +637,6 @@ TEST_F(CredentialsTest, TlsCredentialsOptionsCppToC) {
                "sync_error_details");
 
   // Cleanup.
-  ::delete c_credential_reload_arg.key_materials_config;
   c_credential_reload_arg.destroy_context(c_credential_reload_arg.context);
   c_server_authorization_check_arg.destroy_context(
       c_server_authorization_check_arg.context);
@@ -648,9 +644,7 @@ TEST_F(CredentialsTest, TlsCredentialsOptionsCppToC) {
   gpr_free(const_cast<char*>(c_server_authorization_check_arg.target_name));
   gpr_free(const_cast<char*>(c_server_authorization_check_arg.peer_cert));
   gpr_free(const_cast<char*>(c_server_authorization_check_arg.error_details));
-  ::delete c_credential_reload_config;
-  ::delete c_server_authorization_check_config;
-  gpr_free(c_options);
+  delete c_options;
 }
 
 // This test demonstrates how the SPIFFE credentials will be used.
@@ -700,7 +694,7 @@ TEST_F(CredentialsTest, TlsCredentialReloadConfigErrorMessages) {
     c_arg->destroy_context(c_arg->context);
   }
   delete c_arg;
-  gpr_free(config->c_config());
+  delete config->c_config();
 }
 
 TEST_F(CredentialsTest, TlsServerAuthorizationCheckConfigErrorMessages) {
@@ -733,7 +727,7 @@ TEST_F(CredentialsTest, TlsServerAuthorizationCheckConfigErrorMessages) {
     c_arg->destroy_context(c_arg->context);
   }
   delete c_arg;
-  gpr_free(config->c_config());
+  delete config->c_config();
 }
 
 }  // namespace testing

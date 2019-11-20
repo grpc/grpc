@@ -152,8 +152,8 @@ class PemKeyCertPair {
       : private_key_(gpr_strdup(other.private_key())),
         cert_chain_(gpr_strdup(other.cert_chain())) {}
   PemKeyCertPair& operator=(const PemKeyCertPair& other) {
-    private_key_ = std::unique_ptr<char>(gpr_strdup(other.private_key()));
-    cert_chain_ = std::unique_ptr<char>(gpr_strdup(other.cert_chain()));
+    private_key_ = grpc_core::UniquePtr<char>(gpr_strdup(other.private_key()));
+    cert_chain_ = grpc_core::UniquePtr<char>(gpr_strdup(other.cert_chain()));
     return *this;
   }
 
@@ -161,8 +161,8 @@ class PemKeyCertPair {
   char* cert_chain() const { return cert_chain_.get(); }
 
  private:
-  std::unique_ptr<char> private_key_;
-  std::unique_ptr<char> cert_chain_;
+  grpc_core::UniquePtr<char> private_key_;
+  grpc_core::UniquePtr<char> cert_chain_;
 };
 
 }  // namespace grpc_core

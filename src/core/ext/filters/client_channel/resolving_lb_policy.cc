@@ -177,7 +177,7 @@ class ResolvingLoadBalancingPolicy::ResolvingControlHelper
 //
 
 ResolvingLoadBalancingPolicy::ResolvingLoadBalancingPolicy(
-    Args args, TraceFlag* tracer, std::unique_ptr<char> target_uri,
+    Args args, TraceFlag* tracer, grpc_core::UniquePtr<char> target_uri,
     ProcessResolverResultCallback process_resolver_result,
     void* process_resolver_result_user_data)
     : LoadBalancingPolicy(std::move(args)),
@@ -425,7 +425,7 @@ void ResolvingLoadBalancingPolicy::ConcatenateAndAddChannelTraceLocked(
       gpr_strvec_add(&v, (*trace_strings)[i]);
     }
     size_t len = 0;
-    std::unique_ptr<char> message(gpr_strvec_flatten(&v, &len));
+    grpc_core::UniquePtr<char> message(gpr_strvec_flatten(&v, &len));
     channel_control_helper()->AddTraceEvent(ChannelControlHelper::TRACE_INFO,
                                             StringView(message.get()));
     gpr_strvec_destroy(&v);

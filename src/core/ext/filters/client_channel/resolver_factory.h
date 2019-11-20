@@ -55,10 +55,10 @@ class ResolverFactory {
 
   /// Returns a string representing the default authority to use for this
   /// scheme.
-  virtual std::unique_ptr<char> GetDefaultAuthority(grpc_uri* uri) const {
+  virtual grpc_core::UniquePtr<char> GetDefaultAuthority(grpc_uri* uri) const {
     const char* path = uri->path;
     if (path[0] == '/') ++path;
-    return std::unique_ptr<char>(gpr_strdup(path));
+    return grpc_core::UniquePtr<char>(gpr_strdup(path));
   }
 
   /// Returns the URI scheme that this factory implements.

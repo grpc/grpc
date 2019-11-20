@@ -75,7 +75,7 @@ void gpr_set_log_verbosity(gpr_log_severity min_severity_to_print) {
 }
 
 void gpr_log_verbosity_init() {
-  std::unique_ptr<char> verbosity = GPR_GLOBAL_CONFIG_GET(grpc_verbosity);
+  grpc_core::UniquePtr<char> verbosity = GPR_GLOBAL_CONFIG_GET(grpc_verbosity);
 
   gpr_atm min_severity_to_print = GPR_LOG_SEVERITY_ERROR;
   if (strlen(verbosity.get()) > 0) {

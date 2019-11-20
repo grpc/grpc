@@ -113,7 +113,7 @@ static void append_error(internal_request* req, grpc_error* error) {
         GRPC_ERROR_CREATE_FROM_STATIC_STRING("Failed HTTP/1 client request");
   }
   grpc_resolved_address* addr = &req->addresses->addrs[req->next_address - 1];
-  std::unique_ptr<char> addr_text(grpc_sockaddr_to_uri(addr));
+  grpc_core::UniquePtr<char> addr_text(grpc_sockaddr_to_uri(addr));
   req->overall_error = grpc_error_add_child(
       req->overall_error,
       grpc_error_set_str(error, GRPC_ERROR_STR_TARGET_ADDRESS,

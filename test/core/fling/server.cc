@@ -172,7 +172,7 @@ static void sigint_handler(int /*x*/) { _exit(0); }
 int main(int argc, char** argv) {
   grpc_event ev;
   call_state* s;
-  std::unique_ptr<char> addr_buf;
+  grpc_core::UniquePtr<char> addr_buf;
   gpr_cmdline* cl;
   grpc_completion_queue* shutdown_cq;
   int shutdown_started = 0;

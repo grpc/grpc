@@ -77,7 +77,7 @@ static void run_test(bool wait_for_ready, bool use_service_config) {
 
   /* create a call, channel to a port which will refuse connection */
   int port = grpc_pick_unused_port_or_die();
-  std::unique_ptr<char> addr;
+  grpc_core::UniquePtr<char> addr;
   grpc_core::JoinHostPort(&addr, "127.0.0.1", port);
   gpr_log(GPR_INFO, "server: %s", addr.get());
   chan = grpc_insecure_channel_create(addr.get(), args, nullptr);

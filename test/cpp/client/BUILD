@@ -37,7 +37,10 @@ grpc_cc_test(
     srcs = ["client_channel_stress_test.cc"],
     # TODO(jtattermusch): test fails frequently on Win RBE, but passes locally
     # reenable the tests once it works reliably on Win RBE.
-    tags = ["no_windows"],
+    tags = [
+        "no_test_android",  # fails on android due to "Too many open files".
+        "no_windows",
+    ],
     deps = [
         "//:gpr",
         "//:grpc",

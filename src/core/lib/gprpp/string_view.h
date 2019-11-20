@@ -150,11 +150,11 @@ inline StringView StringViewFromSlice(const grpc_slice& slice) {
 
 // Creates a dup of the string viewed by this class.
 // Return value is null-terminated and never nullptr.
-inline std::unique_ptr<char> StringViewToCString(const StringView sv) {
+inline grpc_core::UniquePtr<char> StringViewToCString(const StringView sv) {
   char* str = static_cast<char*>(gpr_malloc(sv.size() + 1));
   if (sv.size() > 0) memcpy(str, sv.data(), sv.size());
   str[sv.size()] = '\0';
-  return std::unique_ptr<char>(str);
+  return grpc_core::UniquePtr<char>(str);
 }
 
 // Compares lhs and rhs.

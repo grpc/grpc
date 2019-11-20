@@ -77,6 +77,11 @@ void alts_handshaker_client_set_cb_for_testing(
 grpc_closure* alts_handshaker_client_get_closure_for_testing(
     alts_handshaker_client* client);
 
+void alts_handshaker_client_on_status_received_for_testing(
+    alts_handshaker_client* client, grpc_status_code status, grpc_error* error);
+
+void alts_handshaker_client_ref_for_testing(alts_handshaker_client* c);
+
 }  // namespace internal
 }  // namespace grpc_core
 

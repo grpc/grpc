@@ -785,13 +785,14 @@ class XdsEnd2endTest : public ::testing::TestWithParam<TestType> {
   }
 
   void WaitForBackend(size_t backend_idx, bool reset_counters = true) {
-    gpr_log(GPR_INFO,
-            "========= WAITING FOR BACKEND %lu ==========", backend_idx);
+    gpr_log(GPR_INFO, "========= WAITING FOR BACKEND %lu ==========",
+            static_cast<unsigned long>(backend_idx));
     do {
       (void)SendRpc();
     } while (backends_[backend_idx]->backend_service()->request_count() == 0);
     if (reset_counters) ResetBackendCounters();
-    gpr_log(GPR_INFO, "========= BACKEND %lu READY ==========", backend_idx);
+    gpr_log(GPR_INFO, "========= BACKEND %lu READY ==========",
+            static_cast<unsigned long>(backend_idx));
   }
 
   grpc_core::ServerAddressList CreateAddressListFromPortList(

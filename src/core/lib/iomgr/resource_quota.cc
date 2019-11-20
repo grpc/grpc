@@ -333,7 +333,7 @@ static bool rq_alloc(grpc_resource_quota* resource_quota) {
       int64_t aborted_allocations = resource_user->outstanding_allocations;
       resource_user->outstanding_allocations = 0;
       resource_user->free_pool += aborted_allocations;
-      GRPC_CLOSURE_LIST_SCHED(&resource_user->on_allocated);
+      grpc_core::ExecCtx::RunList(DEBUG_LOCATION, &resource_user->on_allocated);
       gpr_mu_unlock(&resource_user->mu);
       ru_unref_by(resource_user, static_cast<gpr_atm>(aborted_allocations));
       continue;
@@ -359,7 +359,7 @@ static bool rq_alloc(grpc_resource_quota* resource_quota) {
     if (resource_user->free_pool >= 0) {
       resource_user->allocating = false;
       resource_user->outstanding_allocations = 0;
-      GRPC_CLOSURE_LIST_SCHED(&resource_user->on_allocated);
+      grpc_core::ExecCtx::RunList(DEBUG_LOCATION, &resource_user->on_allocated);
       gpr_mu_unlock(&resource_user->mu);
     } else {
       rulist_add_head(resource_user, GRPC_RULIST_AWAITING_ALLOCATION);
@@ -601,7 +601,8 @@ static void ru_allocated_slices(void* arg, grpc_error* error) {
   grpc_resource_user_slice_allocator* slice_allocator =
       static_cast<grpc_resource_user_slice_allocator*>(arg);
   if (error == GRPC_ERROR_NONE) ru_alloc_slices(slice_allocator);
-  GRPC_CLOSURE_RUN(&slice_allocator->on_done, GRPC_ERROR_REF(error));
+  grpc_core::Closure::Run(DEBUG_LOCATION, &slice_allocator->on_done,
+                          GRPC_ERROR_REF(error));
 }
 
 /*******************************************************************************
